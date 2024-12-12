@@ -39,6 +39,7 @@
 #include "../ui/Button.hpp"
 #include "../ui/Slider.hpp"
 #include "../collision.hpp"
+#include "../classdescriptions.hpp"
 
 Uint32 svFlags = 30;
 Uint32 settings_svFlags = svFlags;
@@ -1045,6 +1046,7 @@ bool Player::GUI_t::bActiveModuleUsesInventory()
 		case MODULE_FEATHER:
 		case MODULE_SPELLS:
 		case MODULE_ALCHEMY:
+		case MODULE_ASSISTSHRINE:
 			return true;
 		default:
 			break;
@@ -1172,6 +1174,28 @@ bool Player::GUI_t::warpControllerToModule(bool moveCursorInstantly)
 		}
 		return true;
 	}
+	else if ( activeModule == MODULE_ASSISTSHRINE )
+	{
+		auto& assistShrineGUI = GenericGUI[player.playernum].assistShrineGUI;
+		auto& inventoryUI = player.inventoryUI;
+		if ( assistShrineGUI.warpMouseToSelectedAssistShrineItem(nullptr, (Inputs::SET_CONTROLLER))
+			&& inventoryUI.cursor.queuedModule == Player::GUI_t::MODULE_NONE )
+		{
+			if ( auto slot = assistShrineGUI.getAssistShrineSlotFrame(
+				assistShrineGUI.getSelectedAssistShrineX(), assistShrineGUI.getSelectedAssistShrineY()) )
+			{
+				SDL_Rect pos = slot->getAbsoluteSize();
+				pos.x -= player.camera_virtualx1();
+				pos.y -= player.camera_virtualy1();
+
+				pos.w = inventoryUI.getSlotSize();
+				pos.h = inventoryUI.getSlotSize();
+				inventoryUI.updateSelectedSlotAnimation(pos.x, pos.y,
+					pos.w, pos.h, moveCursorInstantly);
+			}
+		}
+		return true;
+	}
 	else if ( activeModule == MODULE_TINKERING )
 	{
 		auto& tinkerGUI = GenericGUI[player.playernum].tinkerGUI;
@@ -1256,7 +1280,8 @@ void Player::GUI_t::activateModule(Player::GUI_t::GUIModules module)
 					|| oldModule == MODULE_SHOP
 					|| oldModule == MODULE_ALCHEMY
 					|| oldModule == MODULE_TINKERING
-					|| oldModule == MODULE_FEATHER)
+					|| oldModule == MODULE_FEATHER
+					|| oldModule == MODULE_ASSISTSHRINE)
 				&& !(activeModule == MODULE_INVENTORY 
 					|| activeModule == MODULE_HOTBAR 
 					|| activeModule == MODULE_SPELLS
@@ -1264,7 +1289,8 @@ void Player::GUI_t::activateModule(Player::GUI_t::GUIModules module)
 					|| activeModule == MODULE_SHOP
 					|| activeModule == MODULE_ALCHEMY
 					|| activeModule == MODULE_TINKERING
-					|| activeModule == MODULE_FEATHER)
+					|| activeModule == MODULE_FEATHER
+					|| activeModule == MODULE_ASSISTSHRINE)
 				&& !bActiveModuleHasNoCursor()
 				&& hoveringOverModuleButton() == MODULE_NONE )
 			{
@@ -1285,7 +1311,8 @@ void Player::GUI_t::activateModule(Player::GUI_t::GUIModules module)
 				|| activeModule == MODULE_SHOP
 				|| activeModule == MODULE_ALCHEMY
 				|| activeModule == MODULE_TINKERING
-				|| activeModule == MODULE_FEATHER)
+				|| activeModule == MODULE_FEATHER
+				|| activeModule == MODULE_ASSISTSHRINE)
 				&& !(oldModule == MODULE_INVENTORY 
 					|| oldModule == MODULE_HOTBAR 
 					|| oldModule == MODULE_SPELLS
@@ -1293,7 +1320,8 @@ void Player::GUI_t::activateModule(Player::GUI_t::GUIModules module)
 					|| oldModule == MODULE_SHOP
 					|| oldModule == MODULE_ALCHEMY
 					|| oldModule == MODULE_TINKERING
-					|| oldModule == MODULE_FEATHER))
+					|| oldModule == MODULE_FEATHER
+					|| oldModule == MODULE_ASSISTSHRINE))
 				|| hoveringOverModuleButton() != MODULE_NONE )
 			{
 				SDL_Rect size = hudCursor->getSize();
@@ -6474,6 +6502,10 @@ void GenericGUIMenu::closeGUI()
 	{
 		itemfxGUI.closeItemEffectMenu();
 	}
+	if ( assistShrineGUI.bOpen )
+	{
+		assistShrineGUI.closeAssistShrine();
+	}
 	if ( wasOpen )
 	{
 		players[gui_player]->inventoryUI.tooltipDelayTick = ticks + TICKS_PER_SECOND / 10;
@@ -6782,6 +6814,55 @@ void GenericGUIMenu::openGUI(int type, Item* itemOpenedWith)
 		scribingToolItem = itemOpenedWith;
 		scribingCreateCraftableItemList();
 		featherGUI.openFeatherMenu();
+	}
+	else if ( guiType == GUI_TYPE_ASSIST )
+	{
+		players[gui_player]->GUI.activateModule(Player::GUI_t::MODULE_ASSISTSHRINE);
+		assistShrineGUI.openAssistShrine(nullptr);
+	}
+
+	FollowerMenu[gui_player].closeFollowerMenuGUI();
+	CalloutMenu[gui_player].closeCalloutMenuGUI();
+
+	if ( openedChest[gui_player] )
+	{
+		openedChest[gui_player]->closeChest();
+	}
+	rebuildGUIInventory();
+}
+
+void GenericGUIMenu::openGUI(int type, Entity* shrine)
+{
+	Uint32 oldUID = assistShrineGUI.shrineUID;
+	assistShrineGUI.shrineUID = 0;
+	this->closeGUI();
+	assistShrineGUI.shrineUID = oldUID;
+	if ( players[gui_player] && players[gui_player]->entity )
+	{
+		if ( players[gui_player]->entity->isBlind() )
+		{
+			messagePlayer(gui_player, MESSAGE_MISC, Language::get(892));
+			return; // I can't see!
+		}
+	}
+
+	if ( players[gui_player]->inventoryUI.bCompactView )
+	{
+		// if compact view, then we don't want the inventory slot being selected
+		// e.g opening a tinkering kit from your hand slot
+		if ( players[gui_player]->inventoryUI.getSelectedSlotY() < 0 )
+		{
+			players[gui_player]->inventoryUI.selectSlot(0, 0);
+		}
+	}
+	players[gui_player]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
+	guiActive = true;
+	guiType = static_cast<GUICurrentType>(type);
+
+	if ( guiType == GUI_TYPE_ASSIST )
+	{
+		players[gui_player]->GUI.activateModule(Player::GUI_t::MODULE_ASSISTSHRINE);
+		assistShrineGUI.openAssistShrine(shrine);
 	}
 
 	FollowerMenu[gui_player].closeFollowerMenuGUI();
@@ -9441,11 +9522,13 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 			break;
 
 		case CLOAK_INVISIBILITY:
+		case CLOAK_GUARDIAN:
 		case AMULET_LIFESAVING:
 		case RING_SLOWDIGESTION:
 		case RING_INVISIBILITY:
 		case RING_LEVITATION:
 		case RING_REGENERATION:
+		case RING_RESOLVE:
 		case GEM_DIAMOND:
 		case TOOL_SKELETONKEY:
 		case VAMPIRE_DOUBLET:
@@ -9464,6 +9547,7 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 			break;
 
 		case MASK_MOUTH_ROSE:
+		case MASK_MARIGOLD:
 		case MASK_GRASS_SPRIG:
 			*metal = 0;
 			*magic = 1;
@@ -12984,6 +13068,7 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 			actionPromptTxt->setSize(pos);
 		}
 	}
+
 	{
 		SDL_Color color;
 		getColor(displayItemName->getColor(), &color.r, &color.g, &color.b, &color.a);
@@ -13053,7 +13138,6 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 			filterNavRight->pos.y -= filterNavRight->pos.h;
 			filterNavRight->pos.y -= *cvar_tinkNavGlyphY;
 		}
-
 	}
 
 	bool activateSelection = false;
@@ -23642,6 +23726,9 @@ std::string CalloutRadialMenu::setCalloutText(Field* field, const char* iconName
 	case CALLOUT_TYPE_DAEDALUS:
 		key = "daedalus";
 		break;
+	case CALLOUT_TYPE_ASSIST_SHRINE:
+		key = "assist_shrine";
+		break;
 	case CALLOUT_TYPE_EXIT:
 		key = "exit";
 		break;
@@ -24200,6 +24287,10 @@ CalloutRadialMenu::CalloutType CalloutRadialMenu::getCalloutTypeForEntity(const 
 	else if ( parent->behavior == &::actDaedalusShrine )
 	{
 		type = CALLOUT_TYPE_DAEDALUS;
+	}
+	else if ( parent->behavior == &::actAssistShrine )
+	{
+		type = CALLOUT_TYPE_ASSIST_SHRINE;
 	}
 	else if ( parent->behavior == &actBell )
 	{
@@ -26354,6 +26445,13 @@ bool CalloutRadialMenu::allowedInteractEntity(Entity& selectedEntity, bool updat
 			strcat(interactText, Language::get(6261)); // "shrine"
 		}
 	}
+	else if ( (selectedEntity.behavior == &::actAssistShrine) && interactWorld )
+	{
+		if ( updateInteractText )
+		{
+			strcat(interactText, Language::get(6353)); // "assist shrine"
+		}
+	}
 	else if ( (selectedEntity.behavior == &actTeleporter) && interactWorld )
 	{
 		if ( updateInteractText )
@@ -26622,4 +26720,6860 @@ bool CalloutRadialMenu::allowedInteractEntity(Entity& selectedEntity, bool updat
 		return false;
 	}
 	return true;
+}
+
+const int GenericGUIMenu::AssistShrineGUI_t::MAX_ASSISTSHRINE_X = 4;
+const int GenericGUIMenu::AssistShrineGUI_t::MAX_ASSISTSHRINE_Y = 20;
+
+void GenericGUIMenu::AssistShrineGUI_t::openAssistShrine(Entity* shrine)
+{
+	shrineUID = 0;
+	if ( shrine )
+	{
+		shrineUID = shrine->getUID();
+	}
+	const int playernum = parentGUI.getPlayer();
+	auto player = players[playernum];
+
+	if ( assistShrineFrame )
+	{
+		bool wasDisabled = assistShrineFrame->isDisabled();
+		assistShrineFrame->setDisabled(false);
+		if ( wasDisabled )
+		{
+			animx = 0.0;
+			animFilter = 0.0;
+			animPrompt = 0.0;
+			animTooltip = 0.0;
+			animInvalidAction = 0.0;
+			animInvalidActionTicks = 0;
+			invalidActionType = INVALID_ACTION_NONE;
+			isInteractable = false;
+			bFirstTimeSnapCursor = false;
+		}
+		selectAssistShrineSlot(ASSIST_SLOT_CLOAK, 0);
+		player->hud.compactLayoutMode = Player::HUD_t::COMPACT_LAYOUT_INVENTORY;
+		player->inventory_mode = INVENTORY_MODE_ITEM;
+		bOpen = true;
+		changeCurrentView(ASSIST_SHRINE_VIEW_ITEMS);
+	}
+	if ( inputs.getUIInteraction(playernum)->selectedItem )
+	{
+		inputs.getUIInteraction(playernum)->selectedItem = nullptr;
+		inputs.getUIInteraction(playernum)->toggleclick = false;
+	}
+	inputs.getUIInteraction(playernum)->selectedItemFromChest = 0;
+	clearItemDisplayed();
+}
+
+void GenericGUIMenu::AssistShrineGUI_t::changeCurrentView(GenericGUIMenu::AssistShrineGUI_t::AssistShrineView_t view)
+{
+	selectedClass = -1;
+	selectedRace = -1;
+	selectedSex = -1;
+	selectedAppearance = -1;
+	selectedDisableAbilities = -1;
+
+	currentView = view;
+	classSlots.clear();
+	raceSlots.clear();
+
+	animClassRaceTooltipOpacity = 0.0;
+
+	isInteractable = false;
+	bFirstTimeSnapCursor = false;
+
+	int x = 0;
+	int y = 0;
+	for ( int i = 0; i < NUMCLASSES; ++i )
+	{
+		int playerRace = stats[parentGUI.gui_player]->playerRace;
+		int appearance = stats[parentGUI.gui_player]->stat_appearance;
+		if ( savedRace >= RACE_HUMAN )
+		{
+			playerRace = savedRace;
+			if ( savedRace > RACE_HUMAN )
+			{
+				appearance = savedAppearance >= 0 ?
+					std::min(savedAppearance, 1) : stats[parentGUI.gui_player]->stat_appearance;
+			}
+			else if ( savedRace == RACE_HUMAN )
+			{
+				appearance = savedAppearance >= 0 ?
+					savedAppearance : stats[parentGUI.gui_player]->stat_appearance;
+			}
+		}
+
+		auto result = isCharacterValidFromDLC(parentGUI.gui_player, i, playerRace, appearance);
+
+		if ( result == CharacterDLCValidation::VALID_OK_CHARACTER )
+		{
+			int coord = x + y * 100;
+			classSlots[coord] = i;
+			++x;
+			if ( x >= MAX_ASSISTSHRINE_X )
+			{
+				x = 0;
+				++y;
+			}
+		}
+	}
+
+	raceSlots.push_back(RACE_HUMAN);
+	if ( enabledDLCPack1 )
+	{
+		raceSlots.push_back(RACE_SKELETON);
+		raceSlots.push_back(RACE_VAMPIRE);
+		raceSlots.push_back(RACE_SUCCUBUS);
+		raceSlots.push_back(RACE_GOATMAN);
+	}
+	if ( enabledDLCPack2 )
+	{
+		raceSlots.push_back(RACE_AUTOMATON);
+		raceSlots.push_back(RACE_INCUBUS);
+		raceSlots.push_back(RACE_GOBLIN);
+		raceSlots.push_back(RACE_INSECTOID);
+	}
+
+	if ( currentView == ASSIST_SHRINE_VIEW_RACE )
+	{
+		int index = -1;
+		int raceHighlighted = -1;
+		for ( auto race : raceSlots )
+		{
+			++index;
+			if ( (selectedRace == -1 && (savedRace == -1 && race == stats[parentGUI.gui_player]->playerRace))
+				|| (savedRace >= 0 && race == savedRace)
+				|| (selectedRace >= 0 && race == selectedRace) )
+			{
+				raceHighlighted = race;
+				scrollToSlot(ASSIST_RACE_COLUMN, index, false);
+				selectAssistShrineSlot(ASSIST_RACE_COLUMN, index);
+				break;
+			}
+		}
+
+		if ( raceHighlighted == -1 )
+		{
+			scrollToSlot(0, 0, false);
+			selectAssistShrineSlot(ASSIST_RACE_COLUMN, 0);
+		}
+
+		if ( assistShrineFrame )
+		{
+			if ( auto raceFrame = assistShrineFrame->findFrame("assist races") )
+			{
+				if ( auto sexBtn = raceFrame->findButton("sex toggle button") )
+				{
+					if ( (selectedSex == -1 && savedSex == -1 && stats[parentGUI.gui_player]->sex == MALE)
+						|| (savedSex == MALE && selectedSex == -1)
+						|| selectedSex == MALE )
+					{
+						sexBtn->setPressed(false);
+					}
+					if ( (selectedSex == -1 && savedSex == -1 && stats[parentGUI.gui_player]->sex == FEMALE)
+						|| (savedSex == FEMALE && selectedSex == -1)
+						|| selectedSex == FEMALE )
+					{
+						sexBtn->setPressed(true);
+					}
+				}
+				if ( auto disableBtn = raceFrame->findButton("race ability btn") )
+				{
+					if ( raceHighlighted == RACE_HUMAN || raceHighlighted == -1 )
+					{
+						disableBtn->setPressed(false);
+						selectedDisableAbilities = -1;
+					}
+					else
+					{
+						if ( (selectedDisableAbilities == -1 && savedAppearance == -1 && stats[parentGUI.gui_player]->stat_appearance == 0)
+							|| (savedAppearance == 0 && selectedDisableAbilities == -1)
+							|| selectedDisableAbilities == 0 )
+						{
+							disableBtn->setPressed(false);
+						}
+						else if ( (selectedDisableAbilities == -1 && savedAppearance == -1 && stats[parentGUI.gui_player]->stat_appearance == 1)
+							|| (savedAppearance == 1 && selectedDisableAbilities == -1)
+							|| selectedDisableAbilities == 1 )
+						{
+							disableBtn->setPressed(true);
+						}
+					}
+				}
+			}
+		}
+	}
+	else if ( currentView == ASSIST_SHRINE_VIEW_CLASSES )
+	{
+		bool found = false;
+		for ( auto& pair : classSlots )
+		{
+			if ( (selectedClass == -1 && (savedClass == -1 && pair.second == client_classes[parentGUI.gui_player]))
+				|| (savedClass >= 0 && pair.second == savedClass)
+				|| (selectedClass >= 0 && pair.second == selectedClass) )
+			{
+				found = true;
+				scrollToSlot(pair.first % 100, pair.first / 100, false);
+				selectAssistShrineSlot(pair.first % 100, pair.first / 100);
+				break;
+			}
+		}
+
+		if ( !found )
+		{
+			scrollToSlot(0, 0, false);
+		}
+
+		if ( selectedAssistShrineSlotX < 0 )
+		{
+			selectAssistShrineSlot(0, 0);
+		}
+	}
+	else if ( currentView == ASSIST_SHRINE_VIEW_ITEMS )
+	{
+		selectAssistShrineSlot(ASSIST_SLOT_CLOAK, 0);
+	}
+
+	players[parentGUI.gui_player]->hud.compactLayoutMode = Player::HUD_t::COMPACT_LAYOUT_INVENTORY;
+	players[parentGUI.gui_player]->GUI.activateModule(Player::GUI_t::MODULE_ASSISTSHRINE);
+	if ( !inputs.getVirtualMouse(parentGUI.gui_player)->draw_cursor )
+	{
+		players[parentGUI.gui_player]->GUI.warpControllerToModule(false);
+	}
+}
+
+void GenericGUIMenu::AssistShrineGUI_t::updateRaceSlots()
+{
+	if ( !assistShrineFrame || !assistShrineGUIHasBeenCreated() )
+	{
+		return;
+	}
+
+	int index = -1;
+	bool usingGamepad = inputs.hasController(parentGUI.gui_player) && !inputs.getVirtualMouse(parentGUI.gui_player)->draw_cursor;
+	for ( auto& race : raceSlots )
+	{
+		++index;
+		static const std::string prefix = "*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/";
+		int x = ASSIST_RACE_COLUMN;
+		int y = index;
+
+		//if ( find != MainMenu::classes.end() )
+		{
+			if ( auto slotFrame = getAssistShrineSlotFrame(ASSIST_RACE_COLUMN, index) )
+			{
+				auto slotBg = slotFrame->findImage("race bg");
+				auto slotFg = slotFrame->findImage("race fg");
+				auto slotGlyph = slotFrame->findImage("race glyph");
+				slotGlyph->disabled = true;
+				slotFg->disabled = false;
+				auto slotTxt = slotFrame->findField("race");
+				if ( slotBg && slotFg )
+				{
+					bool selected = (selectedRace == -1 && savedRace == -1 && stats[parentGUI.gui_player]->playerRace == race)
+						|| (savedRace >= 0 && savedRace == race && selectedRace == -1)
+						|| (selectedRace >= 0 && selectedRace == race);
+					bool highlighted = false;
+					if ( getSelectedAssistShrineX() == x
+						&& getSelectedAssistShrineY() == y
+						&& isInteractable
+						&& abs(scrollSetpoint1 - scrollAnimateX1) < 0.00001
+						&& bOpen
+						&& players[parentGUI.gui_player]->GUI.activeModule == Player::GUI_t::MODULE_ASSISTSHRINE )
+					{
+						if ( inputs.getVirtualMouse(parentGUI.gui_player)->draw_cursor )
+						{
+							if ( !players[parentGUI.gui_player]->GUI.isDropdownActive()
+								&& slotFrame->capturesMouseInRealtimeCoords() )
+							{
+								highlighted = true;
+							}
+						}
+						else
+						{
+							highlighted = true;
+						}
+					}
+
+					if ( selected )
+					{
+						slotFg->path = "*images/ui/Main Menus/sublist_item-picked.png";
+					}
+					else if ( highlighted )
+					{
+						slotFg->path = "*images/ui/Main Menus/sublist_item-unpickedHigh.png";
+						if ( usingGamepad )
+						{
+							slotFg->path = "*images/ui/Main Menus/sublist_item-unpicked.png";
+						}
+					}
+					else
+					{
+						slotFg->path = "*images/ui/Main Menus/sublist_item-unpicked.png";
+					}
+					auto dlcType = MainMenu::DLC::Base;
+					if ( race >= RACE_SKELETON
+						&& race <= RACE_GOATMAN )
+					{
+						dlcType = MainMenu::DLC::MythsAndOutcasts;
+					}
+					if ( race >= RACE_AUTOMATON
+						&& race <= RACE_INSECTOID )
+					{
+						dlcType = MainMenu::DLC::LegendsAndPariahs;
+					}
+					std::string str = getMonsterLocalizedName(getMonsterFromPlayerRace(race)).c_str();
+					uppercaseString(str);
+					slotTxt->setText(str.c_str());
+					switch ( dlcType ) {
+					case MainMenu::DLC::Base:
+						slotTxt->setColor(hudColors.characterBaseClassText);
+						break;
+					case MainMenu::DLC::MythsAndOutcasts:
+						slotTxt->setColor(hudColors.characterDLC1ClassText);
+						break;
+					case MainMenu::DLC::LegendsAndPariahs:
+						slotTxt->setColor(hudColors.characterDLC2ClassText);
+						break;
+					}
+					if ( selected )
+					{
+						slotBg->color = makeColorRGB(143, 105, 60);
+						slotBg->disabled = false;
+					}
+					else
+					{
+						slotBg->color = makeColorRGB(52, 30, 22);
+						slotBg->disabled = true;
+					}
+
+					if ( auto img = Image::get(slotFg->path.c_str()) )
+					{
+						slotFg->pos.x = 4;
+						slotFg->pos.y = 0;
+						slotFg->pos.w = img->getWidth();
+						slotFg->pos.h = img->getHeight();
+						if ( (30 - slotFg->pos.h) > 0 )
+						{
+							int offset = (30 - slotFg->pos.h) / 2;
+							slotFg->pos.x += offset;
+							slotFg->pos.y += offset;
+						}
+					}
+
+					if ( highlighted && usingGamepad )
+					{
+						slotGlyph->path = Input::inputs[parentGUI.gui_player].getGlyphPathForBinding("MenuConfirm");
+						if ( auto img = Image::get(slotGlyph->path.c_str()) )
+						{
+							slotGlyph->disabled = false;
+							slotGlyph->pos.w = img->getWidth();
+							slotGlyph->pos.h = img->getHeight();
+							slotGlyph->pos.x = 8;
+							slotGlyph->pos.y = 4;
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+void GenericGUIMenu::AssistShrineGUI_t::updateClassSlots()
+{
+	if ( !assistShrineFrame || !assistShrineGUIHasBeenCreated() )
+	{
+		return;
+	}
+
+	bool usingGamepad = inputs.hasController(parentGUI.gui_player) && !inputs.getVirtualMouse(parentGUI.gui_player)->draw_cursor;
+	auto classFrame = assistShrineFrame->findFrame("assist classes");
+	if ( !classFrame )
+	{
+		return;
+	}
+	auto classGlyph = classFrame->findImage("class select glyph");
+	classGlyph->disabled = true;
+
+	for ( auto& pair : classSlots )
+	{
+		int classIndex = pair.second;
+		auto key = MainMenu::classes_in_order[classIndex];
+		auto find = MainMenu::classes.find(key);
+		static const std::string prefix = "*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/";
+
+		int x = pair.first % 100;
+		int y = pair.first / 100;
+
+		if ( find != MainMenu::classes.end() )
+		{
+			if ( auto slotFrame = getAssistShrineSlotFrame(x, y) )
+			{
+				auto slotBg = slotFrame->findImage("class bg");
+				auto slotFg = slotFrame->findImage("class fg");
+				/*auto slotGlyph = slotFrame->findImage("class glyph");
+				slotGlyph->disabled = true;*/
+				if ( slotBg && slotFg )
+				{
+					auto& full_class = find->second;
+
+					bool selected = (selectedClass == -1 && savedClass == -1 && client_classes[parentGUI.gui_player] == classIndex)
+						|| (savedClass >= 0 && savedClass == classIndex && selectedClass == -1)
+						|| (selectedClass >= 0 && selectedClass == classIndex);
+					bool highlighted = false;
+					if ( getSelectedAssistShrineX() == x
+						&& getSelectedAssistShrineY() == y
+						&& isInteractable
+						&& bOpen
+						&& players[parentGUI.gui_player]->GUI.activeModule == Player::GUI_t::MODULE_ASSISTSHRINE )
+					{
+						if ( inputs.getVirtualMouse(parentGUI.gui_player)->draw_cursor )
+						{
+							if ( !players[parentGUI.gui_player]->GUI.isDropdownActive()
+								&& slotFrame->capturesMouseInRealtimeCoords() )
+							{
+								highlighted = true;
+							}
+						}
+						else
+						{
+							highlighted = true;
+						}
+					}
+					if ( selected || highlighted )
+					{
+						slotFg->path = (prefix + full_class.image_highlighted).c_str();
+						if ( highlighted && usingGamepad )
+						{
+							/*slotGlyph->path = Input::inputs[parentGUI.gui_player].getGlyphPathForBinding("MenuConfirm");
+							if ( auto img = Image::get(slotGlyph->path.c_str()) )
+							{
+								slotGlyph->disabled = false;
+								slotGlyph->pos.w = img->getWidth();
+								slotGlyph->pos.h = img->getHeight();
+								slotGlyph->pos.x = slotFg->pos.w / 2 - slotGlyph->pos.w / 2;
+								slotGlyph->pos.y = slotFg->pos.h - slotGlyph->pos.h;
+							}*/
+							classGlyph->path = Input::inputs[parentGUI.gui_player].getGlyphPathForBinding("MenuConfirm");
+							if ( auto img = Image::get(classGlyph->path.c_str()) )
+							{
+								classGlyph->disabled = false;
+								classGlyph->pos.w = img->getWidth();
+								classGlyph->pos.h = img->getHeight();
+								classGlyph->pos.x = slotFg->pos.w / 2 - classGlyph->pos.w / 2;
+								classGlyph->pos.y = slotFg->pos.h - classGlyph->pos.h;
+
+								classGlyph->pos.x += slotFrame->getSize().x;
+								classGlyph->pos.y += slotFrame->getSize().y;
+
+								auto slots = slotFrame->getParent();
+								classGlyph->pos.x += slots->getSize().x;
+								classGlyph->pos.y += slots->getSize().y + 12;
+								classGlyph->pos.y -= slots->getActualSize().y;
+
+								if ( classGlyph->pos.y < slots->getSize().y
+									|| classGlyph->pos.y > slots->getSize().y + slots->getSize().h )
+								{
+									classGlyph->disabled = true;
+								}
+							}
+						}
+					}
+					else
+					{
+						slotFg->path = (prefix + full_class.image).c_str();
+					}
+					switch ( full_class.dlc ) {
+					case MainMenu::DLC::Base:
+						slotBg->path = (prefix + "ClassSelect_IconBGBase_00.png");
+						if ( selected )
+						{
+							slotBg->path = (prefix + "ClassSelect_IconBGBaseHigh_00.png");
+						}
+						break;
+					case MainMenu::DLC::MythsAndOutcasts:
+						slotBg->path = (prefix + "ClassSelect_IconBGMyths_00.png");
+						if ( selected )
+						{
+							slotBg->path = (prefix + "ClassSelect_IconBGMythsHigh_00.png");
+						}
+						break;
+					case MainMenu::DLC::LegendsAndPariahs:
+						slotBg->path = (prefix + "ClassSelect_IconBGLegends_00.png");
+						if ( selected )
+						{
+							slotBg->path = (prefix + "ClassSelect_IconBGLegendsHigh_00.png");
+						}
+						break;
+					}
+				}
+			}
+		}
+	}
+}
+
+void GenericGUIMenu::AssistShrineGUI_t::clearItemDisplayed()
+{
+	itemType = -1;
+	itemActionType = ASSIST_ITEM_NONE;
+}
+
+void GenericGUIMenu::AssistShrineGUI_t::closeAssistShrine()
+{
+	const int playernum = parentGUI.getPlayer();
+	auto& player = *players[playernum];
+
+	if ( assistShrineFrame )
+	{
+		assistShrineFrame->setDisabled(true);
+	}
+	animx = 0.0;
+	animFilter = 0.0;
+	animPrompt = 0.0;
+	animTooltip = 0.0;
+	animInvalidAction = 0.0;
+	animInvalidActionTicks = 0;
+	invalidActionType = INVALID_ACTION_NONE;
+	//resetItems();
+
+	notifications.clear();
+
+	isInteractable = false;
+	bool wasOpen = bOpen;
+	bOpen = false;
+	bFirstTimeSnapCursor = false;
+	if ( wasOpen )
+	{
+		if ( inputs.getUIInteraction(playernum)->selectedItem )
+		{
+			inputs.getUIInteraction(playernum)->selectedItem = nullptr;
+			inputs.getUIInteraction(playernum)->toggleclick = false;
+		}
+		inputs.getUIInteraction(playernum)->selectedItemFromChest = 0;
+	}
+	if ( players[playernum]->GUI.activeModule == Player::GUI_t::MODULE_ASSISTSHRINE
+		&& !players[playernum]->shootmode )
+	{
+		// reset to inventory mode if still hanging in assist GUI
+		players[playernum]->hud.compactLayoutMode = Player::HUD_t::COMPACT_LAYOUT_INVENTORY;
+		players[playernum]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
+		if ( !inputs.getVirtualMouse(playernum)->draw_cursor )
+		{
+			players[playernum]->GUI.warpControllerToModule(false);
+		}
+	}
+	clearItemDisplayed();
+	if ( assistShrineFrame )
+	{
+		for ( auto f : assistShrineFrame->getFrames() )
+		{
+			f->removeSelf();
+		}
+		assistShrineSlotFrames.clear();
+	}
+
+	if ( multiplayer != CLIENT )
+	{
+		if ( Entity* shrine = uidToEntity(shrineUID) )
+		{
+			shrine->skill[0] = 0;
+			serverUpdateEntitySkill(shrine, 0);
+		}
+	}
+
+	if ( multiplayer == CLIENT )
+	{
+		strcpy((char*)net_packet->data, "ASCL");
+		net_packet->data[4] = clientnum;
+		SDLNet_Write32(shrineUID, &net_packet->data[5]);
+		net_packet->address.host = net_server.host;
+		net_packet->address.port = net_server.port;
+		net_packet->len = 9;
+		sendPacketSafe(net_sock, -1, net_packet, 0);
+	}
+	shrineUID = 0;
+}
+
+int GenericGUIMenu::AssistShrineGUI_t::heightOffsetWhenNotCompact = 150;
+const int assistShrineBaseWidth = 266;
+
+bool GenericGUIMenu::AssistShrineGUI_t::assistShrineGUIHasBeenCreated() const
+{
+	if ( assistShrineFrame )
+	{
+		if ( !assistShrineFrame->getFrames().empty() )
+		{
+			for ( auto f : assistShrineFrame->getFrames() )
+			{
+				if ( !f->isToBeDeleted() )
+				{
+					return true;
+				}
+			}
+			return false;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	return false;
+}
+
+void buttonAssistShrineUpdateSelectorOnHighlight(const int player, Button* button)
+{
+	if ( button->isHighlighted() )
+	{
+		players[player]->GUI.setHoveringOverModuleButton(Player::GUI_t::MODULE_ASSISTSHRINE);
+		if ( players[player]->GUI.activeModule != Player::GUI_t::MODULE_ASSISTSHRINE )
+		{
+			players[player]->GUI.activateModule(Player::GUI_t::MODULE_ASSISTSHRINE);
+		}
+		SDL_Rect pos = button->getAbsoluteSize();
+		SDL_Rect off = button->getSelectorOffset();
+		pos.x += off.x;
+		pos.y += off.y;
+		pos.w += off.w;
+		pos.h += off.h;
+
+		// make sure to adjust absolute size to camera viewport
+		pos.x -= players[player]->camera_virtualx1();
+		pos.y -= players[player]->camera_virtualy1();
+		players[player]->hud.setCursorDisabled(false);
+		players[player]->hud.updateCursorAnimation(pos.x - 1, pos.y - 1, pos.w, pos.h, inputs.getVirtualMouse(player)->draw_cursor);
+	}
+}
+
+void GenericGUIMenu::AssistShrineGUI_t::selectAssistShrineSlot(const int x, const int y)
+{
+	selectedAssistShrineSlotX = x;
+	selectedAssistShrineSlotY = y;
+}
+
+Frame* GenericGUIMenu::AssistShrineGUI_t::getAssistShrineSlotFrame(int x, int y) const
+{
+	if ( assistShrineFrame )
+	{
+		int key = x + y * 100;
+		if ( assistShrineSlotFrames.find(key) != assistShrineSlotFrames.end() )
+		{
+			return assistShrineSlotFrames.at(key);
+		}
+	}
+	return nullptr;
+}
+
+bool GenericGUIMenu::AssistShrineGUI_t::warpMouseToSelectedAssistShrineItem(Item* snapToItem, Uint32 flags)
+{
+	if ( assistShrineGUIHasBeenCreated() )
+	{
+		int x = getSelectedAssistShrineX();
+		int y = getSelectedAssistShrineY();
+		if ( snapToItem )
+		{
+			x = snapToItem->x;
+			y = snapToItem->y;
+		}
+
+		if ( auto slot = getAssistShrineSlotFrame(x, y) )
+		{
+			int playernum = parentGUI.getPlayer();
+			auto player = players[playernum];
+			if ( !isInteractable )
+			{
+				//messagePlayer(0, "[Debug]: select item queued");
+				player->inventoryUI.cursor.queuedModule = Player::GUI_t::MODULE_ASSISTSHRINE;
+				player->inventoryUI.cursor.queuedFrameToWarpTo = slot;
+				return false;
+			}
+			else
+			{
+				//messagePlayer(0, "[Debug]: select item warped");
+				player->inventoryUI.cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+				player->inventoryUI.cursor.queuedFrameToWarpTo = nullptr;
+				slot->warpMouseToFrame(playernum, flags);
+			}
+			return true;
+		}
+	}
+	return false;
+}
+
+static ConsoleVariable<int> cvar_assistClassListGridY("/assist_grid_y", 112);
+const int kAssistClassHeaderHeight = 46;
+const int kAssistClassFooterHeight = 32;
+const int kAssistClassGridImgHeight = 240;
+const int GenericGUIMenu::AssistShrineGUI_t::kNumClassesToDisplayVertical = 3;
+const int GenericGUIMenu::AssistShrineGUI_t::kClassSlotHeight = 54;
+const int GenericGUIMenu::AssistShrineGUI_t::kNumRacesToDisplayVertical = 4;
+const int GenericGUIMenu::AssistShrineGUI_t::kRaceSlotHeight = 30;
+const int GenericGUIMenu::AssistShrineGUI_t::kRaceSlotWidth = 164 + 54 + 6;
+const int kAssistClassListHeight = GenericGUIMenu::AssistShrineGUI_t::kNumClassesToDisplayVertical * GenericGUIMenu::AssistShrineGUI_t::kClassSlotHeight;
+const int kAssistRaceListHeight = GenericGUIMenu::AssistShrineGUI_t::kNumRacesToDisplayVertical * GenericGUIMenu::AssistShrineGUI_t::kRaceSlotHeight;
+
+void sliderAssistUpdateSelectorOnHighlight(const int player, Slider* slider)
+{
+	if ( slider->isHighlighted() )
+	{
+		players[player]->GUI.setHoveringOverModuleButton(Player::GUI_t::MODULE_ASSISTSHRINE);
+		if ( players[player]->GUI.activeModule != Player::GUI_t::MODULE_ASSISTSHRINE )
+		{
+			players[player]->GUI.activateModule(Player::GUI_t::MODULE_ASSISTSHRINE);
+		}
+		SDL_Rect pos = slider->getAbsoluteSize();
+		// make sure to adjust absolute size to camera viewport
+		pos.x -= players[player]->camera_virtualx1();
+		pos.y -= players[player]->camera_virtualy1();
+		players[player]->hud.setCursorDisabled(false);
+		players[player]->hud.updateCursorAnimation(pos.x - 1, pos.y - 1, pos.w, pos.h, inputs.getVirtualMouse(player)->draw_cursor);
+	}
+}
+
+int GenericGUIMenu::AssistShrineGUI_t::getAssistPointFromItem(Item* item)
+{
+	if ( item )
+	{
+		int val = 0;
+		if ( item->type == MASK_MARIGOLD )
+		{
+			val = 3;
+			val += 2 * abs(item->beatitude);
+		}
+		else if ( item->type == CLOAK_GUARDIAN )
+		{
+			val = 5;
+			val += 4 * abs(item->beatitude);
+		}
+		else if ( item->type == AMULET_LIFESAVING )
+		{
+			val = 4;
+			val += 2 * abs(item->beatitude);
+		}
+		else if ( item->type == RING_RESOLVE )
+		{
+			val = 3;
+			val += 2 * abs(item->beatitude);
+		}
+		return val;
+	}
+	return 0;
+}
+
+int GenericGUIMenu::AssistShrineGUI_t::getAssistPointsSaved()
+{
+	int val = 0;
+	std::vector<Item*> assistItems;
+	assistItems.push_back(&itemRing);
+	assistItems.push_back(&itemMask);
+	assistItems.push_back(&itemAmulet);
+	assistItems.push_back(&itemCloak);
+	for ( auto type : claimedItems )
+	{
+		for ( auto item : assistItems )
+		{
+			if ( type == item->type )
+			{
+				val += getAssistPointFromItem(item);
+			}
+		}
+	}
+	return val;
+}
+
+int GenericGUIMenu::AssistShrineGUI_t::getAssistPointsPreview()
+{
+	int val = std::max(getAssistPointsSaved(), conductGameChallenges[CONDUCT_ASSISTANCE_CLAIMED]);
+	std::vector<Item*> assistItems;
+	assistItems.push_back(&itemRing);
+	assistItems.push_back(&itemMask);
+	assistItems.push_back(&itemAmulet);
+	assistItems.push_back(&itemCloak);
+	for ( auto item : assistItems )
+	{
+		if ( claimedItems.find(item->type) == claimedItems.end() )
+		{
+			if ( !item->itemHiddenFromShop )
+			{
+				val += getAssistPointFromItem(item);
+			}
+		}
+	}
+
+	return val;
+}
+
+GenericGUIMenu::AssistShrineGUI_t::AssistNotification_t* GenericGUIMenu::AssistShrineGUI_t::addNotification(std::string _title, std::string _body, std::string _img, AssistNotification_t::NotificationTypes _notifType)
+{
+	if ( _notifType == AssistNotification_t::NOTIF_CHARACTER_CHANGE_OK )
+	{
+		for ( auto it = notifications.begin(); it != notifications.end(); ++it )
+		{
+			if ( it->second.notificationType == AssistNotification_t::NOTIF_SEND_REQ )
+			{
+				// replace this notification
+				it->second.state = 0;
+				it->second.animx = 0.0;
+				it->second.notificationType = _notifType;
+				it->first = ticks;
+				it->second.body = _body;
+				it->second.title = _title;
+				it->second.img = _img;
+				it->second.lifetime = 4 * TICKS_PER_SECOND;
+				return &it->second;
+			}
+		}
+	}
+	
+	for ( auto it = notifications.begin(); it != notifications.end(); )
+	{
+		if ( it->second.notificationType == _notifType
+			|| (_notifType == AssistNotification_t::NOTIF_SEND_REQ
+				&& (it->second.notificationType == AssistNotification_t::NOTIF_CHARACTER_CHANGE_OK)) )
+		{
+			// erase matching types
+			it = notifications.erase(it);
+		}
+		else
+		{
+			++it;
+		}
+	}
+	notifications.push_back(std::make_pair(ticks, AssistNotification_t(_title, _body, _img, _notifType)));
+	if ( _notifType == AssistNotification_t::NOTIF_CHARACTER_CHANGE_OK )
+	{
+		notifications.back().second.lifetime = 4 * TICKS_PER_SECOND;
+	}
+	return &notifications.back().second;
+
+	return nullptr;
+}
+
+void GenericGUIMenu::AssistShrineGUI_t::serverUpdateStatFlagsForClients()
+{
+	if ( multiplayer != SERVER )
+	{
+		return;
+	}
+	for ( int i = 1; i < MAXPLAYERS; ++i )
+	{
+		if ( !client_disconnected[i] )
+		{
+			for ( int player = 0; player < MAXPLAYERS; ++player )
+			{
+				strcpy((char*)net_packet->data, "ASSU");
+				net_packet->data[4] = player;
+				SDLNet_Write32(stats[player]->MISC_FLAGS[STAT_FLAG_ASSISTANCE_PLAYER_PTS], &net_packet->data[5]);
+				net_packet->address.host = net_clients[i - 1].host;
+				net_packet->address.port = net_clients[i - 1].port;
+				net_packet->len = 9;
+				sendPacketSafe(net_sock, -1, net_packet, i - 1);
+			}
+		}
+	}
+}
+
+void GenericGUIMenu::AssistShrineGUI_t::onCharacterChange()
+{
+	receivedCharacterChangeOK = false;
+	if ( multiplayer == SINGLE )
+	{
+		receivedCharacterChangeOK = true;
+		addNotification(Language::get(6334), Language::get(6335), "", GenericGUIMenu::AssistShrineGUI_t::AssistNotification_t::NOTIF_CHARACTER_CHANGE_OK);
+
+		std::string racename = "";
+		if ( savedRace != RACE_HUMAN )
+		{
+			if ( savedAppearance != 0 )
+			{
+				racename = Language::get(4068); // guised
+				racename += ' ';
+			}
+		}
+		racename += getMonsterLocalizedName(getMonsterFromPlayerRace(savedRace)).c_str();
+		camelCaseString(racename);
+		std::string classname = playerClassLangEntry(savedClass >= 0 ? savedClass : client_classes[parentGUI.gui_player], parentGUI.gui_player);
+		camelCaseString(classname);
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( players[i]->isLocalPlayer() )
+			{
+				if ( i != parentGUI.gui_player )
+				{
+					messagePlayer(i, MESSAGE_WORLD, Language::get(6336), stats[parentGUI.gui_player]->name, racename.c_str(), classname.c_str());
+				}
+				else if ( i == parentGUI.gui_player )
+				{
+					messagePlayer(i, MESSAGE_WORLD, Language::get(6355), racename.c_str(), classname.c_str());
+				}
+			}
+		}
+	}
+	else if ( multiplayer == CLIENT )
+	{
+		strcpy((char*)net_packet->data, "ASSC");
+		net_packet->data[4] = (Sint8)savedClass;
+		net_packet->data[5] = (Sint8)savedRace;
+		net_packet->data[6] = (Sint8)savedSex;
+		net_packet->data[7] = (Sint8)savedAppearance;
+		net_packet->data[8] = parentGUI.gui_player;
+		net_packet->address.host = net_server.host;
+		net_packet->address.port = net_server.port;
+		net_packet->len = 9;
+		sendPacketSafe(net_sock, -1, net_packet, 0);
+
+		addNotification(Language::get(6334), Language::get(6337), "", AssistNotification_t::NOTIF_SEND_REQ);
+	}
+	else if ( multiplayer == SERVER )
+	{
+		receivedCharacterChangeOK = true;
+		addNotification(Language::get(6334), Language::get(6335), "", GenericGUIMenu::AssistShrineGUI_t::AssistNotification_t::NOTIF_CHARACTER_CHANGE_OK);
+
+		std::string racename = "";
+		if ( savedRace != RACE_HUMAN )
+		{
+			if ( savedAppearance != 0 )
+			{
+				racename = Language::get(4068); // guised
+				racename += ' ';
+			}
+		}
+		racename += getMonsterLocalizedName(getMonsterFromPlayerRace(savedRace)).c_str();
+		camelCaseString(racename);
+		std::string classname = playerClassLangEntry(savedClass >= 0 ? savedClass : client_classes[parentGUI.gui_player], parentGUI.gui_player);
+		camelCaseString(classname);
+		messagePlayer(clientnum, MESSAGE_WORLD, Language::get(6355), racename.c_str(), classname.c_str());
+
+		for ( int i = 1; i < MAXPLAYERS; ++i )
+		{
+			if ( !client_disconnected[i] )
+			{
+				strcpy((char*)net_packet->data, "ASSC");
+				net_packet->data[4] = (Sint8)savedClass;
+				net_packet->data[5] = (Sint8)savedRace;
+				net_packet->data[6] = (Sint8)savedSex;
+				net_packet->data[7] = (Sint8)savedAppearance;
+				net_packet->data[8] = parentGUI.gui_player;
+				net_packet->address.host = net_clients[i - 1].host;
+				net_packet->address.port = net_clients[i - 1].port;
+				net_packet->len = 9;
+				sendPacketSafe(net_sock, -1, net_packet, i - 1);
+			}
+		}
+	}
+}
+
+void GenericGUIMenu::AssistShrineGUI_t::createAssistShrine()
+{
+	const int player = parentGUI.getPlayer();
+	if ( !gui || !assistShrineFrame || !players[player]->inventoryUI.frame )
+	{
+		return;
+	}
+	if ( assistShrineGUIHasBeenCreated() )
+	{
+		return;
+	}
+
+	SDL_Rect basePos{ 0, 0, assistShrineBaseWidth, 334 };
+	assistShrineSlotFrames.clear();
+
+	const int inventorySlotSize = players[player]->inventoryUI.getSlotSize();
+
+	{
+		auto tooltipFrame = assistShrineFrame->addFrame("sheet tooltip");
+		{
+			tooltipFrame->setSize(SDL_Rect{ 200, 0, 200, 200 });
+			tooltipFrame->setHollow(true);
+			tooltipFrame->setInheritParentFrameOpacity(false);
+			tooltipFrame->setDisabled(true);
+			Uint32 color = makeColor(255, 255, 255, 255);
+			tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+				color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_TL_00.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::TOP_LEFT].c_str());
+			tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+				color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_TR_00.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::TOP_RIGHT].c_str());
+			tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+				color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_T_00.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::TOP].c_str());
+			tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+				color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_L_00.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::MIDDLE_LEFT].c_str());
+			tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+				color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_R_00.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::MIDDLE_RIGHT].c_str());
+			tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+				makeColor(22, 24, 29, 255), "images/system/white.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::MIDDLE].c_str());
+			tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+				color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_BL_00.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::BOTTOM_LEFT].c_str());
+			tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+				color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_BR_00.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::BOTTOM_RIGHT].c_str());
+			tooltipFrame->addImage(SDL_Rect{ 0, 0, 6, 6 },
+				color, "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_B_00.png", Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::BOTTOM].c_str());
+			Player::GUI_t::imageSetWidthHeight9x9(tooltipFrame, Player::GUI_t::tooltipEffectBackgroundImages);
+			Player::GUI_t::imageResizeToContainer9x9(tooltipFrame, SDL_Rect{ 0, 0, 200, 200 }, Player::GUI_t::tooltipEffectBackgroundImages);
+			auto txt = tooltipFrame->addField("tooltip text", 1024);
+			auto txtRightAlignHint = tooltipFrame->addField("tooltip text right align hint", 128);
+			const char* tooltipFont = "fonts/pixel_maz_multiline.ttf#16#2";
+			txt->setFont(tooltipFont);
+			txt->setColor(makeColor(188, 154, 114, 255));
+			txtRightAlignHint->setFont(tooltipFont);
+			txtRightAlignHint->setColor(hudColors.characterSheetFaintText);
+			auto glyph1 = tooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "images/system/white.png", "glyph 1");
+			glyph1->disabled = true;
+			auto glyph2 = tooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "images/system/white.png", "glyph 2");
+			glyph2->disabled = true;
+			auto glyph3 = tooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "images/system/white.png", "glyph 3");
+			glyph3->disabled = true;
+			auto glyph4 = tooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "images/system/white.png", "glyph 4");
+			glyph4->disabled = true;
+
+			auto div = tooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 1 },
+				makeColor(49, 53, 61, 255),
+				"images/system/white.png", "tooltip divider 1");
+			div->disabled = true;
+			div = tooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 1 },
+				makeColor(255, 255, 255, 255),
+				"images/system/white.png", "tooltip img");
+			div->disabled = true;
+		}
+		{
+			auto raceTooltip = tooltipFrame->addFrame("race tooltip");
+			raceTooltip->setSize(SDL_Rect{ 0, 24, 324, 664 });
+			raceTooltip->setDisabled(true);
+			raceTooltip->setHollow(true);
+
+			auto details_text = raceTooltip->addField("details", 1024);
+			details_text->setFont("fonts/pixel_maz_multiline.ttf#16#2");
+			details_text->setSize(SDL_Rect{ 0, 0, 242, 300 });
+			details_text->setColor(hudColors.characterSheetOffWhiteText);
+
+			auto details_text_right = raceTooltip->addField("details_right", 1024);
+			details_text_right->setFont("fonts/pixel_maz_multiline.ttf#16#2");
+			details_text_right->setSize(SDL_Rect{ 121, 0, 121, 300 });
+			details_text_right->setColor(hudColors.characterSheetOffWhiteText);
+		}
+
+		{
+			auto itemTooltip = tooltipFrame->addFrame("item tooltip");
+			itemTooltip->setDisabled(true);
+			itemTooltip->setHollow(true);
+
+			auto details_text = itemTooltip->addField("details", 1024);
+			details_text->setFont("fonts/pixel_maz_multiline.ttf#16#2");
+			details_text->setSize(SDL_Rect{ 0, 0, 300, 300 });
+			details_text->setColor(hudColors.characterSheetOffWhiteText);
+
+			auto item_request_btn = itemTooltip->addButton("request btn");
+			item_request_btn->setSize(SDL_Rect{ 0, 0, 188, 26 });
+			item_request_btn->setColor(makeColor(255, 255, 255, 255));
+			item_request_btn->setHighlightColor(makeColor(255, 255, 255, 255));
+			item_request_btn->setText("");
+			item_request_btn->setFont(details_text->getFont());
+			item_request_btn->setHideGlyphs(true);
+			item_request_btn->setHideKeyboardGlyphs(true);
+			item_request_btn->setHideSelectors(true);
+			item_request_btn->setMenuConfirmControlType(0);
+			item_request_btn->setBackground("*images/ui/AssistShrine/Button_Request_00.png");
+			item_request_btn->setBackgroundHighlighted("*images/ui/AssistShrine/Button_RequestHigh_00.png");
+			item_request_btn->setBackgroundActivated("*images/ui/AssistShrine/Button_RequestPress_00.png");
+			item_request_btn->setTextHighlightColor(makeColor(201, 162, 100, 255));
+			item_request_btn->setCallback([](Button& button) {
+				if ( !(svFlags & SV_FLAG_ASSIST_ITEMS) )
+				{
+					int player = button.getOwner();
+					if ( player >= 0 && player < MAXPLAYERS && players[player]->entity && players[player]->isLocalPlayer() )
+					{
+						if ( multiplayer == CLIENT )
+						{
+							Player::soundActivate();
+							auto& calloutMenu = CalloutMenu[player];
+							for ( auto node = map.entities->first; node; node = node->next )
+							{
+								Entity* shrine = (Entity*)node->element;
+								if ( shrine && (shrine->behavior == &::actAssistShrine) )
+								{
+									calloutMenu.lockOnEntityUid = shrine->getUID();
+									if ( calloutMenu.createParticleCallout(shrine,
+										CalloutRadialMenu::CALLOUT_CMD_HELP) )
+									{
+										calloutMenu.sendCalloutText(CalloutRadialMenu::CALLOUT_CMD_HELP);
+									}
+								}
+							}
+						}
+						else
+						{
+							if ( button.isSelected() )
+							{
+								button.deselect();
+							}
+							GenericGUI[player].closeGUI();
+							players[player]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
+							if ( !gamePaused && !intro )
+							{
+								pauseGame(0, MAXPLAYERS);
+								if ( gamePaused )
+								{
+									MainMenu::pause_menu_owner = player;
+									if ( MainMenu::main_menu_frame )
+									{
+										MainMenu::destroyMainMenu();
+									}
+									MainMenu::createMainMenu(true);
+									if ( MainMenu::main_menu_frame )
+									{
+										if ( auto buttons = MainMenu::main_menu_frame->findFrame("buttons") )
+										{
+											if ( auto settings = buttons->findButton("Settings") )
+											{
+												settings->getCallback()(*settings);
+												if ( auto settings_menu = MainMenu::main_menu_frame->findFrame("settings") )
+												{
+													if ( auto settings_menu_button = settings_menu->findButton("Game") )
+													{
+														settings_menu_button->getCallback()(*settings_menu_button);
+														if ( auto settings_subwindow = settings_menu->findFrame("settings_subwindow") )
+														{
+															if ( auto assist_items_toggle = settings_subwindow->findButton("setting_assist_items_button") )
+															{
+																assist_items_toggle->select();
+															}
+														}
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			});
+			item_request_btn->setTickCallback(genericgui_deselect_fn);
+			item_request_btn->setDisabled(true);
+			item_request_btn->setInvisible(true);
+
+			auto glyph = itemTooltip->addImage(SDL_Rect{ 0, 0, 0, 0 },
+				makeColor(255, 255, 255, 255),
+				"images/system/white.png", "request glyph");
+			glyph->disabled = true;
+		}
+
+		{
+			auto classTooltip = tooltipFrame->addFrame("class tooltip");
+			classTooltip->setDisabled(true);
+			classTooltip->setHollow(true);
+			auto statGrowths = classTooltip->addFrame("stat growths");
+			// stats definitions
+			const char* class_stats_text[] = {
+				ItemTooltips.getItemStatShortName("STR").c_str(),
+				ItemTooltips.getItemStatShortName("DEX").c_str(),
+				ItemTooltips.getItemStatShortName("CON").c_str(),
+				ItemTooltips.getItemStatShortName("INT").c_str(),
+				ItemTooltips.getItemStatShortName("PER").c_str(),
+				ItemTooltips.getItemStatShortName("CHR").c_str()
+			};
+			constexpr int num_class_stats = sizeof(class_stats_text) / sizeof(class_stats_text[0]);
+			constexpr SDL_Rect bottom{ 0, 0, 236, 36 };
+			constexpr int column = bottom.w / num_class_stats;
+
+			classTooltip->setSize(SDL_Rect{ 0, 0, bottom.w, bottom.h });
+			statGrowths->setSize(bottom);
+
+			for ( int c = 0; c < num_class_stats; ++c )
+			{
+				char buf[16];
+				snprintf(buf, sizeof(buf), "%d", c);
+				auto class_stat = statGrowths->addField(buf, 16);
+				class_stat->setSize(SDL_Rect{
+					bottom.x + column * c, bottom.y, column, bottom.h });
+				class_stat->setHJustify(Field::justify_t::CENTER);
+				class_stat->setVJustify(Field::justify_t::TOP);
+				class_stat->setFont("fonts/pixel_maz_multiline.ttf#16#2");
+				class_stat->setText(class_stats_text[c]);
+				//class_stat->setTickCallback([](Widget& widget) {class_stat_fn(*static_cast<Field*>(&widget), widget.getOwner()); });
+
+				SDL_Rect imgPos = class_stat->getSize();
+				imgPos.x += imgPos.w / 2;
+				imgPos.w = 14;
+				imgPos.x -= imgPos.w / 2;
+				imgPos.h = 16;
+				imgPos.y -= imgPos.h - 4;
+
+				char buf2[32];
+				snprintf(buf2, sizeof(buf2), "stat img bottom %d", c);
+				imgPos.y = class_stat->getSize().y + 17;
+				auto class_stat_img_bottom = statGrowths->addImage(imgPos, 0xFFFFFFFF,
+					"*#images/ui/Main Menus/Play/PlayerCreation/ClassSelection/statgrowth_lo2.png", buf2);
+				class_stat_img_bottom->disabled = true;
+			}
+
+			{
+				SDL_Rect hpmp_size{ 4, 35 + 16, 52, 44 };
+				auto hpmp_header = classTooltip->addField("hpmp_header", 32);
+				hpmp_header->setFont("fonts/pixel_maz_multiline.ttf#16#2");
+				hpmp_header->setColor(makeColorRGB(184, 146, 109));
+				hpmp_header->setText(Language::get(5427));
+				hpmp_header->setHJustify(Field::justify_t::LEFT);
+				hpmp_header->setVJustify(Field::justify_t::TOP);
+				hpmp_header->setSize(hpmp_size);
+				hpmp_header->setPaddingPerLine(-4);
+
+				static constexpr int hpmp_buf_size = 32;
+
+				auto hpmp_values = classTooltip->addField("hpmp_values", 128);
+				hpmp_size.x += 32;
+				hpmp_values->setFont("fonts/pixel_maz_multiline.ttf#16#2");
+				hpmp_values->setPaddingPerLine(-4);
+				hpmp_values->setColor(makeColorRGB(184, 146, 109));
+				hpmp_values->setText("20\n20");
+				hpmp_values->setHJustify(Field::justify_t::RIGHT);
+				if ( hpmp_values->getHJustify() == Field::justify_t::RIGHT )
+				{
+					hpmp_size.x -= 26;
+				}
+				hpmp_values->setVJustify(Field::justify_t::TOP);
+				hpmp_values->setSize(hpmp_size);
+			}
+
+			// difficulty header
+			constexpr SDL_Rect difficulty_size{ 71, 35 + 16, 158, 44 };
+			auto difficulty_header = classTooltip->addField("difficulty_header", 128);
+			difficulty_header->setFont("fonts/pixel_maz_multiline.ttf#16#2");
+			difficulty_header->setColor(makeColorRGB(184, 146, 109));
+			difficulty_header->setText(Language::get(5428));
+			difficulty_header->setHJustify(Field::justify_t::LEFT);
+			difficulty_header->setVJustify(Field::justify_t::TOP);
+			difficulty_header->setSize(difficulty_size);
+			difficulty_header->setPaddingPerLine(-4);
+
+			auto difficulty_stars = classTooltip->addField("difficulty_stars", 32);
+			difficulty_stars->setFont("fonts/pixel_maz_multiline.ttf#16#2");
+			difficulty_stars->setHJustify(Field::justify_t::RIGHT);
+			difficulty_stars->setVJustify(Field::justify_t::TOP);
+			difficulty_stars->setSize(difficulty_size);
+			difficulty_stars->setPaddingPerLine(-4);
+		}
+	}
+
+	{
+		auto notificationFrame = assistShrineFrame->addFrame("notification");
+		notificationFrame->setHollow(false);
+		notificationFrame->setBorder(0);
+		notificationFrame->setInheritParentFrameOpacity(false);
+		notificationFrame->setDisabled(true);
+		notificationFrame->setSize(SDL_Rect{ 0, 0, 180, 56 });
+
+		auto notifBg = notificationFrame->addImage(SDL_Rect{ 0, 0, 180, 56 }, 0xFFFFFFFF,
+			"*#images/ui/AssistShrine/Assist_Notification_00.png", "notif bg");
+
+		auto notifIcon = notificationFrame->addImage(SDL_Rect{ 8, 56 / 2 - players[player]->inventoryUI.getItemSpriteSize() / 2,
+			players[player]->inventoryUI.getItemSpriteSize(),
+			players[player]->inventoryUI.getItemSpriteSize() }, 0xFFFFFFFF,
+			"", "notif icon");
+		notifIcon->disabled = true;
+		notifIcon->pos.w = 16;
+		notifIcon->pos.h = 0;
+
+		auto title = notificationFrame->addField("notif title", 128);
+		title->setFont("fonts/pixel_maz_multiline.ttf#16#2");
+		title->setText("New Title Unlocked!");
+		title->setHJustify(Field::justify_t::LEFT);
+		title->setVJustify(Field::justify_t::TOP);
+		title->setSize(SDL_Rect{ notifIcon->pos.x + notifIcon->pos.w, 8, notificationFrame->getSize().w, 24 });
+		title->setColor(makeColor(255, 255, 0, 255));
+
+		auto body = notificationFrame->addField("notif body", 128);
+		body->setFont("fonts/pixel_maz_multiline.ttf#16#2");
+		body->setText("Blah Blah Blah!");
+		body->setHJustify(Field::justify_t::LEFT);
+		body->setVJustify(Field::justify_t::TOP);
+		body->setSize(SDL_Rect{ notifIcon->pos.x + notifIcon->pos.w, 8 + 18, notificationFrame->getSize().w, 24 });
+		body->setColor(makeColor(255, 255, 255, 255));
+	}
+
+	{
+		auto bgFrame = assistShrineFrame->addFrame("assist base");
+		bgFrame->setSize(basePos);
+		bgFrame->setHollow(false);
+		bgFrame->setDisabled(true);
+		auto bg = bgFrame->addImage(SDL_Rect{ 0, 0, basePos.w, basePos.h },
+			makeColor(255, 255, 255, 255),
+			"*#images/ui/AssistShrine/AssistShrine_Panel00.png", "assist base img");
+
+		auto assistItemFrame = assistShrineFrame->addFrame("assist items");
+		assistItemFrame->setSize(basePos);
+		assistItemFrame->setHollow(true);
+		assistItemFrame->setDisabled(true);
+
+		auto classFrame = assistShrineFrame->addFrame("assist classes");
+		classFrame->setSize(basePos);
+		classFrame->setHollow(true);
+		classFrame->setDisabled(true);
+
+		auto raceFrame = assistShrineFrame->addFrame("assist races");
+		raceFrame->setSize(basePos);
+		raceFrame->setHollow(true);
+		raceFrame->setDisabled(true);
+
+		{
+			int numGrids = (MAX_ASSISTSHRINE_Y / kNumClassesToDisplayVertical) + 1;
+			const int baseSlotOffsetX = 0;
+			const int baseSlotOffsetY = 0;
+	
+			SDL_Rect classSlotsPos{ 16, *cvar_assistClassListGridY, 0, kAssistClassListHeight };
+			classSlotsPos.w = basePos.w - classSlotsPos.x;
+			auto classSlotsFrame = classFrame->addFrame("class slots");
+			classSlotsFrame->setSize(classSlotsPos);
+			classSlotsFrame->setActualSize(SDL_Rect{ 0, 0, classSlotsPos.w, (kAssistClassGridImgHeight + 2) * numGrids });
+			classSlotsFrame->setHollow(true);
+			classSlotsFrame->setAllowScrollBinds(false);
+			classSlotsFrame->setScrollBarsEnabled(false);
+
+			auto classText = classFrame->addField("class txt", 64);
+			classText->setFont("fonts/pixel_maz_multiline.ttf#16");
+			classText->setText("");
+			classText->setHJustify(Field::justify_t::CENTER);
+			classText->setVJustify(Field::justify_t::TOP);
+			classText->setSize(SDL_Rect{ 0, 91, classFrame->getSize().w, 24 });
+			classText->setColor(makeColor(121, 117, 116, 255));
+
+			auto classNewText = classFrame->addField("class new txt", 64);
+			classNewText->setFont("fonts/pixel_maz_multiline.ttf#16");
+			classNewText->setText(Language::get(6319));
+			classNewText->setHJustify(Field::justify_t::LEFT);
+			classNewText->setVJustify(Field::justify_t::TOP);
+			classNewText->setSize(SDL_Rect{ 16 + 8, classFrame->getSize().h - 52 + 5, classFrame->getSize().w / 2, 48 });
+			classNewText->setColor(makeColor(221, 206, 189, 255));
+			classNewText->addColorToLine(1, makeColor(122, 192, 243, 255));
+
+			auto confirmBtn = classFrame->addButton("class confirm btn");
+			SDL_Rect btnPos{ basePos.w - 18 - 64 - 16, basePos.h - 20 - 46 - 28 + 50 - 4, 82, 26 };
+			confirmBtn->setSize(btnPos);
+			confirmBtn->setColor(makeColor(255, 255, 255, 255));
+			confirmBtn->setHighlightColor(makeColor(255, 255, 255, 255));
+			confirmBtn->setText(Language::get(5007));
+			confirmBtn->setFont("fonts/pixel_maz_multiline.ttf#16#2");
+			confirmBtn->setHideGlyphs(true);
+			confirmBtn->setHideKeyboardGlyphs(true);
+			confirmBtn->setHideSelectors(true);
+			confirmBtn->setMenuConfirmControlType(0);
+			confirmBtn->setBackground("*#images/ui/AssistShrine/Button_Confirm_00.png");
+			confirmBtn->setBackgroundHighlighted("*#images/ui/AssistShrine/Button_ConfirmHigh_00.png");
+			confirmBtn->setBackgroundActivated("*#images/ui/AssistShrine/Button_ConfirmPress_00.png");
+			confirmBtn->setTextHighlightColor(makeColor(201, 162, 100, 255));
+			confirmBtn->setCallback([](Button& button) {
+				auto& gui = GenericGUI[button.getOwner()].assistShrineGUI;
+				if ( !gui.classHasChanged() )
+				{
+					playSound(90, 64);
+					return;
+				}
+
+				gui.selectedRace = -1;
+				gui.selectedSex = -1;
+				gui.selectedAppearance = -1;
+				gui.selectedDisableAbilities = -1;
+
+				Player::soundActivate();
+				int prevClass = gui.savedClass == -1 ? client_classes[button.getOwner()] : gui.savedClass;
+				gui.savedClass = gui.selectedClass >= 0 ? gui.selectedClass
+					: (gui.savedClass == -1 ? client_classes[button.getOwner()] : gui.savedClass);
+
+				int prevRace = gui.savedRace == -1 ? stats[button.getOwner()]->playerRace : gui.savedRace;
+				gui.savedRace = gui.selectedRace >= 0 ? gui.selectedRace
+					: (gui.savedRace == -1 ? stats[button.getOwner()]->playerRace : gui.savedRace);
+
+				gui.savedSex = gui.selectedSex >= 0 ? gui.selectedSex
+					: (gui.savedSex == -1 ? stats[button.getOwner()]->sex : gui.savedSex);
+
+				if ( gui.savedRace == RACE_INCUBUS )
+				{
+					gui.savedSex = MALE;
+				}
+				else if ( gui.savedRace == RACE_SUCCUBUS )
+				{
+					gui.savedSex = FEMALE;
+				}
+
+				if ( gui.savedRace > RACE_HUMAN )
+				{
+					if ( prevRace == RACE_HUMAN )
+					{
+						gui.savedAppearance = gui.selectedDisableAbilities >= 0 ? gui.selectedDisableAbilities : 0;
+					}
+					else
+					{
+						gui.savedAppearance = gui.selectedDisableAbilities >= 0 ? gui.selectedDisableAbilities
+							: gui.savedAppearance == -1 ? stats[button.getOwner()]->stat_appearance : gui.savedAppearance;
+					}
+					gui.savedAppearance = std::max(0, std::min(gui.savedAppearance, 1));
+				}
+				else
+				{
+					if ( prevRace != RACE_HUMAN && gui.savedRace == RACE_HUMAN )
+					{
+						gui.savedAppearance = local_rng.rand() % NUMAPPEARANCES; // randomise appearance
+					}
+					else
+					{
+						gui.savedAppearance = gui.selectedAppearance >= 0 ? gui.selectedAppearance
+							: gui.savedAppearance == -1 ? stats[button.getOwner()]->stat_appearance : gui.savedAppearance;
+					}
+				}
+
+				if ( isCharacterValidFromDLC(button.getOwner(), gui.savedClass, gui.savedRace, gui.savedAppearance)
+					!= VALID_OK_CHARACTER )
+				{
+					// reset race
+					if ( gui.savedRace > RACE_HUMAN )
+					{
+						gui.savedRace = RACE_HUMAN;
+						gui.savedAppearance = local_rng.rand() % NUMAPPEARANCES;
+						if ( isCharacterValidFromDLC(button.getOwner(), gui.savedClass, gui.savedRace, gui.savedAppearance)
+							!= VALID_OK_CHARACTER )
+						{
+							// reset class
+							gui.savedClass = CLASS_BARBARIAN;
+						}
+					}
+				}
+
+				gui.selectedClass = -1;
+				gui.onCharacterChange();
+			});
+			confirmBtn->setTickCallback(genericgui_deselect_fn);
+
+			auto claimItemGlyph = classFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+				0xFFFFFFFF, "", "class confirm glyph");
+			claimItemGlyph->disabled = true;
+			claimItemGlyph->ontop = true;
+
+			auto classSelectGlyph = classFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+				0xFFFFFFFF, "", "class select glyph");
+			classSelectGlyph->disabled = true;
+			classSelectGlyph->ontop = true;
+	
+			auto gridImg = classSlotsFrame->addImage(SDL_Rect{ baseSlotOffsetX, 0, 162, (kAssistClassGridImgHeight + 2) * numGrids },
+				0xFFFFFFFF, "*images/ui/AssistShrine/Assist_ScrollGrid.png", "grid img");
+			gridImg->tiled = true;
+			gridImg->disabled = true;
+	
+			SDL_Rect currentSlotPos{ baseSlotOffsetX, baseSlotOffsetY, kClassSlotHeight, kClassSlotHeight };
+			const int maxClassesX = MAX_ASSISTSHRINE_X;
+			const int maxClassesY = MAX_ASSISTSHRINE_Y;
+	
+			for ( int x = 0; x < maxClassesX; ++x )
+			{
+				currentSlotPos.x = baseSlotOffsetX + (x * kClassSlotHeight);
+				for ( int y = 0; y < maxClassesY; ++y )
+				{
+					currentSlotPos.y = baseSlotOffsetY + (y * kClassSlotHeight);
+	
+					char slotname[32] = "";
+					snprintf(slotname, sizeof(slotname), "class %d %d", x, y);
+	
+					auto slotFrame = classSlotsFrame->addFrame(slotname);
+					assistShrineSlotFrames[x + y * 100] = slotFrame;
+					SDL_Rect slotPos{ currentSlotPos.x, currentSlotPos.y, kClassSlotHeight, kClassSlotHeight };
+					slotFrame->setSize(slotPos);
+	
+					auto slotBg = slotFrame->addImage(SDL_Rect{ 0, 0, kClassSlotHeight, kClassSlotHeight }, 0xFFFFFFFF,
+						"", "class bg");
+					auto slotFg = slotFrame->addImage(SDL_Rect{ 0, 0, kClassSlotHeight, kClassSlotHeight }, 0xFFFFFFFF,
+						"", "class fg");
+
+					/*auto classSelectGlyph = slotFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+						0xFFFFFFFF, "", "class glyph");*/
+				}
+			}
+
+			auto slider = classFrame->addSlider("class slider");
+			slider->setBorder(16);
+			slider->setMinValue(0);
+			slider->setMaxValue(100);
+			slider->setValue(0);
+			SDL_Rect sliderPos{ classFrame->getSize().w - 30, *cvar_assistClassListGridY - 2, 20, kAssistClassListHeight + 6 };
+			slider->setRailSize(sliderPos);
+			slider->setHandleSize(SDL_Rect{ 0, 0, 20, 28 });
+			slider->setOrientation(Slider::SLIDER_VERTICAL);
+			//slider->setCallback(callback);
+			slider->setColor(makeColor(255, 255, 255, 255));
+			slider->setHighlightColor(makeColor(255, 255, 255, 255));
+			slider->setHandleImage("*#images/ui/Sliders/HUD_Magic_Slider_Blue_01.png");
+			slider->setRailImage("*#images/ui/Sliders/HUD_Slider_Blank.png");
+			slider->setHideGlyphs(true);
+			slider->setHideKeyboardGlyphs(true);
+			slider->setHideSelectors(true);
+			slider->setMenuConfirmControlType(0);
+
+			auto sliderCapTop = classFrame->addImage(SDL_Rect{ sliderPos.x + 2, sliderPos.y, 16, 16 },
+				0xFFFFFFFF, "*#images/ui/Sliders/HUD_Magic_Slider_SettingTop_01.png", "class slider top");
+			sliderCapTop->ontop = true;
+
+			auto sliderCapBot = classFrame->addImage(SDL_Rect{ sliderPos.x + 2, sliderPos.y + sliderPos.h - 16, 16, 16 },
+				0xFFFFFFFF, "*#images/ui/Sliders/HUD_Magic_Slider_SettingBot_01.png", "class slider bot");
+			sliderCapBot->ontop = true;
+		}
+
+		{
+			int numGrids = (MAX_ASSISTSHRINE_Y / kNumRacesToDisplayVertical) + 1;
+			const int baseSlotOffsetX = 0;
+			const int baseSlotOffsetY = 0;
+
+			SDL_Rect raceSlotsPos{ 6, *cvar_assistClassListGridY, 0, kAssistClassListHeight };
+			raceSlotsPos.w = basePos.w - raceSlotsPos.x;
+			auto raceSlotsFrame = raceFrame->addFrame("race slots");
+			raceSlotsFrame->setSize(raceSlotsPos);
+			raceSlotsFrame->setActualSize(SDL_Rect{ 0, 0, raceSlotsPos.w, (kAssistClassGridImgHeight + 2) * numGrids });
+			raceSlotsFrame->setHollow(true);
+			raceSlotsFrame->setAllowScrollBinds(false);
+			raceSlotsFrame->setScrollBarsEnabled(false);
+
+			auto raceText = raceFrame->addField("race txt", 64);
+			raceText->setFont("fonts/pixel_maz_multiline.ttf#16");
+			raceText->setText("");
+			raceText->setHJustify(Field::justify_t::CENTER);
+			raceText->setVJustify(Field::justify_t::TOP);
+			raceText->setSize(SDL_Rect{ 0, 91, raceFrame->getSize().w, 24 });
+			raceText->setColor(makeColor(121, 117, 116, 255));
+
+			auto confirmBtn = raceFrame->addButton("race confirm btn");
+			SDL_Rect btnPos{ basePos.w - 18 - 64 - 16, basePos.h - 20 - 46 - 28 + 50 - 4, 82, 26 };
+			confirmBtn->setSize(btnPos);
+			confirmBtn->setColor(makeColor(255, 255, 255, 255));
+			confirmBtn->setHighlightColor(makeColor(255, 255, 255, 255));
+			confirmBtn->setText(Language::get(5007));
+			confirmBtn->setFont("fonts/pixel_maz_multiline.ttf#16#2");
+			confirmBtn->setHideGlyphs(true);
+			confirmBtn->setHideKeyboardGlyphs(true);
+			confirmBtn->setHideSelectors(true);
+			confirmBtn->setMenuConfirmControlType(0);
+			confirmBtn->setBackground("*#images/ui/AssistShrine/Button_Confirm_00.png");
+			confirmBtn->setBackgroundHighlighted("*#images/ui/AssistShrine/Button_ConfirmHigh_00.png");
+			confirmBtn->setBackgroundActivated("*#images/ui/AssistShrine/Button_ConfirmPress_00.png");
+			confirmBtn->setTextHighlightColor(makeColor(201, 162, 100, 255));
+			confirmBtn->setCallback([](Button& button) {
+				auto& gui = GenericGUI[button.getOwner()].assistShrineGUI;
+				if ( !gui.raceHasChanged() )
+				{
+					playSound(90, 64);
+					return;
+				}
+				Player::soundActivate();
+
+				int prevRace = gui.savedRace == -1 ? stats[button.getOwner()]->playerRace : gui.savedRace;
+				gui.savedRace = gui.selectedRace >= 0 ? gui.selectedRace 
+					: (gui.savedRace == -1 ? stats[button.getOwner()]->playerRace : gui.savedRace);
+
+				gui.savedSex = gui.selectedSex >= 0 ? gui.selectedSex
+					: (gui.savedSex == -1 ? stats[button.getOwner()]->sex : gui.savedSex);
+
+				if ( gui.savedRace == RACE_INCUBUS )
+				{
+					gui.savedSex = MALE;
+				}
+				else if ( gui.savedRace == RACE_SUCCUBUS )
+				{
+					gui.savedSex = FEMALE;
+				}
+
+				if ( gui.savedRace > RACE_HUMAN )
+				{
+					if ( prevRace == RACE_HUMAN )
+					{
+						gui.savedAppearance = gui.selectedDisableAbilities >= 0 ? gui.selectedDisableAbilities : 0;
+					}
+					else
+					{
+						gui.savedAppearance = gui.selectedDisableAbilities >= 0 ? gui.selectedDisableAbilities 
+							: gui.savedAppearance == -1 ? stats[button.getOwner()]->stat_appearance : gui.savedAppearance;
+					}
+					gui.savedAppearance = std::max(0, std::min(gui.savedAppearance, 1));
+				}
+				else
+				{
+					if ( prevRace != RACE_HUMAN && gui.savedRace == RACE_HUMAN )
+					{
+						gui.savedAppearance = local_rng.rand() % NUMAPPEARANCES; // randomise appearance
+					}
+					else
+					{
+						gui.savedAppearance = gui.selectedAppearance >= 0 ?	gui.selectedAppearance 
+							: gui.savedAppearance == -1 ? stats[button.getOwner()]->stat_appearance : gui.savedAppearance;
+					}
+				}
+
+				int classToChange = client_classes[button.getOwner()];
+				if ( gui.savedClass >= 0 )
+				{
+					classToChange = gui.savedClass;
+				}
+				if ( isCharacterValidFromDLC(button.getOwner(), classToChange, gui.savedRace, gui.savedAppearance)
+					!= VALID_OK_CHARACTER )
+				{
+					// reset class
+					gui.savedClass = CLASS_BARBARIAN;
+
+					gui.addNotification(Language::get(6338), Language::get(6333), "",
+						GenericGUIMenu::AssistShrineGUI_t::AssistNotification_t::NOTIF_CLASS_RESET);
+
+					if ( isCharacterValidFromDLC(button.getOwner(), gui.savedClass, gui.savedRace, gui.savedAppearance)
+						!= VALID_OK_CHARACTER )
+					{
+						// reset race
+						gui.savedRace = RACE_HUMAN;
+						gui.savedAppearance = local_rng.rand() % NUMAPPEARANCES;
+					}
+				}
+
+				gui.selectedClass = -1;
+				gui.selectedRace = -1;
+				gui.selectedSex = -1;
+				gui.selectedAppearance = -1;
+				gui.selectedDisableAbilities = -1;
+
+				gui.onCharacterChange();
+			});
+			confirmBtn->setTickCallback(genericgui_deselect_fn);
+
+			auto claimItemGlyph = raceFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+				0xFFFFFFFF, "", "race confirm glyph");
+			claimItemGlyph->disabled = true;
+			claimItemGlyph->ontop = true;
+
+			auto disableAbilityTxt = raceFrame->addField("race ability txt", 64);
+			disableAbilityTxt->setFont("fonts/pixel_maz_multiline.ttf#16#2");
+			disableAbilityTxt->setText(Language::get(5423));
+			disableAbilityTxt->setHJustify(Field::justify_t::LEFT);
+			disableAbilityTxt->setVJustify(Field::justify_t::TOP);
+			disableAbilityTxt->setSize(SDL_Rect{ 16 + 8, raceFrame->getSize().h - 52 + 5 - 46, raceFrame->getSize().w - 24, 48 });
+			disableAbilityTxt->setColor(makeColor(121, 117, 116, 255));
+			disableAbilityTxt->setTickCallback([](Widget& widget) {
+				auto field = static_cast<Field*>(&widget); assert(field);
+				auto parent = static_cast<Frame*>(widget.getParent()); assert(parent);
+				auto button = parent->findButton("race ability btn"); assert(button);
+				const auto player = widget.getOwner();
+				auto& gui = GenericGUI[player].assistShrineGUI;
+				if ( (gui.selectedRace == -1 && gui.savedRace == -1 && stats[widget.getOwner()]->playerRace == RACE_HUMAN)
+					|| (gui.savedRace == RACE_HUMAN && gui.selectedRace == -1)
+					|| gui.selectedRace == RACE_HUMAN )
+				{
+					field->setColor(makeColor(121, 117, 116, 255));
+					button->setDisabled(true);
+					button->setPressed(false);
+				}
+				else
+				{
+					field->setColor(makeColor(221, 206, 189, 255));
+					button->setDisabled(false);
+				}
+			});
+
+			auto disableAbilityBtn = raceFrame->addButton("race ability btn");
+			disableAbilityBtn->setSize(SDL_Rect{ raceFrame->getSize().w - 44 - 8 - 24, raceFrame->getSize().h - 44 - 44 - 6, 44, 44 });
+			disableAbilityBtn->setColor(0);
+			disableAbilityBtn->setBorderColor(0);
+			disableAbilityBtn->setBorder(0);
+			disableAbilityBtn->setHighlightColor(0);
+			disableAbilityBtn->setHideGlyphs(true);
+			disableAbilityBtn->setHideKeyboardGlyphs(true);
+			disableAbilityBtn->setHideSelectors(true);
+			disableAbilityBtn->setSelectorOffset(SDL_Rect{ 6, 8, -16, -16 });
+			disableAbilityBtn->setStyle(Button::style_t::STYLE_CHECKBOX);
+			disableAbilityBtn->setMenuConfirmControlType(0);
+			disableAbilityBtn->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/Fill_Checked_00.png");
+			disableAbilityBtn->setDisabled(true);
+			disableAbilityBtn->setPressed(false);
+			disableAbilityBtn->setCallback([](Button& button) {
+				const auto player = button.getOwner();
+				auto& gui = GenericGUI[player].assistShrineGUI;
+				gui.selectedDisableAbilities = -1;
+				if ( (gui.selectedRace == -1 && gui.savedRace == -1 && stats[player]->playerRace == RACE_HUMAN)
+					|| (gui.savedRace == RACE_HUMAN && gui.selectedRace == -1)
+					|| gui.selectedRace == RACE_HUMAN )
+				{
+					playSound(498, 48);
+					button.setPressed(false);
+					return;
+				}
+				else {
+					playSound(494, 48);
+					gui.selectedDisableAbilities = button.isPressed() ? 1 : 0;
+				}
+			});
+			disableAbilityBtn->setTickCallback(genericgui_deselect_fn);
+
+			auto disableAbilityGlyph = raceFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+				0xFFFFFFFF, "", "race ability glyph");
+			disableAbilityGlyph->disabled = true;
+			disableAbilityGlyph->ontop = true;
+
+			auto gridImg = raceSlotsFrame->addImage(SDL_Rect{ baseSlotOffsetX, 0, 162, (kAssistClassGridImgHeight + 2) * numGrids },
+				0xFFFFFFFF, "*images/ui/AssistShrine/Assist_ScrollGrid.png", "grid img");
+			gridImg->tiled = true;
+			gridImg->disabled = true;
+
+			SDL_Rect currentSlotPos{ baseSlotOffsetX, baseSlotOffsetY, kRaceSlotWidth, kRaceSlotHeight };
+			const int maxRacesX = 1;
+			const int maxRacesY = MAX_ASSISTSHRINE_Y;
+
+			for ( int x = 0; x < maxRacesX; ++x )
+			{
+				currentSlotPos.x = baseSlotOffsetX + (x * kRaceSlotWidth);
+				for ( int y = 0; y < maxRacesY; ++y )
+				{
+					currentSlotPos.y = baseSlotOffsetY + (y * kRaceSlotHeight);
+
+					char slotname[32] = "";
+					snprintf(slotname, sizeof(slotname), "race %d %d", x, y);
+
+					auto slotFrame = raceSlotsFrame->addFrame(slotname);
+					assistShrineSlotFrames[ASSIST_RACE_COLUMN + y * 100] = slotFrame;
+					SDL_Rect slotPos{ currentSlotPos.x, currentSlotPos.y, kRaceSlotWidth, kRaceSlotHeight };
+					slotFrame->setSize(slotPos);
+
+					auto slotBg = slotFrame->addImage(SDL_Rect{ 0, 0, kRaceSlotWidth, kRaceSlotHeight }, makeColorRGB(52, 30, 22),
+						"images/system/white.png", "race bg");
+					slotBg->disabled = true;
+					auto slotFg = slotFrame->addImage(SDL_Rect{ 4, 0, kRaceSlotHeight, kRaceSlotHeight }, 0xFFFFFFFF,
+						"", "race fg");
+					auto slotGlyph = slotFrame->addImage(SDL_Rect{ 4, 0, 0, 0 }, 0xFFFFFFFF,
+						"", "race glyph");
+					slotGlyph->disabled = true;
+
+					auto slotTxt = slotFrame->addField("race", 32);
+					slotTxt->setFont("fonts/pixel_maz_multiline.ttf#16#2");
+					slotTxt->setText("");
+					slotTxt->setHJustify(Field::justify_t::LEFT);
+					slotTxt->setVJustify(Field::justify_t::TOP);
+					int txtx = 32 + 10;
+					slotTxt->setSize(SDL_Rect{ txtx, 4 + 1, kRaceSlotWidth - txtx, 24 });
+					slotTxt->setColor(makeColor(121, 117, 116, 255));
+				}
+			}
+
+			auto slider = raceFrame->addSlider("race slider");
+			slider->setBorder(16);
+			slider->setMinValue(0);
+			slider->setMaxValue(100);
+			slider->setValue(0);
+			SDL_Rect sliderPos{ raceFrame->getSize().w - 30, *cvar_assistClassListGridY - 2, 20, kAssistRaceListHeight + 6 };
+			slider->setRailSize(sliderPos);
+			slider->setHandleSize(SDL_Rect{ 0, 0, 20, 28 });
+			slider->setOrientation(Slider::SLIDER_VERTICAL);
+			//slider->setCallback(callback);
+			slider->setColor(makeColor(255, 255, 255, 255));
+			slider->setHighlightColor(makeColor(255, 255, 255, 255));
+			slider->setHandleImage("*#images/ui/Sliders/HUD_Magic_Slider_Blue_01.png");
+			slider->setRailImage("*#images/ui/Sliders/HUD_Slider_Blank.png");
+			slider->setHideGlyphs(true);
+			slider->setHideKeyboardGlyphs(true);
+			slider->setHideSelectors(true);
+			slider->setMenuConfirmControlType(0);
+
+			auto sliderCapTop = raceFrame->addImage(SDL_Rect{ sliderPos.x + 2, sliderPos.y, 16, 16 },
+				0xFFFFFFFF, "*#images/ui/Sliders/HUD_Magic_Slider_SettingTop_01.png", "race slider top");
+			sliderCapTop->ontop = true;
+
+			auto sliderCapBot = raceFrame->addImage(SDL_Rect{ sliderPos.x + 2, sliderPos.y + sliderPos.h - 16, 16, 16 },
+				0xFFFFFFFF, "*#images/ui/Sliders/HUD_Magic_Slider_SettingBot_01.png", "race slider bot");
+			sliderCapBot->ontop = true;
+
+			{
+				Button* sexBtn = raceFrame->addButton("sex toggle button");
+				SDL_Rect sexPos{ 42, basePos.h - 58 - 16 + 28 - 4, 82, 30 };
+				sexBtn->setSize(sexPos);
+				sexBtn->setColor(makeColor(255, 255, 255, 255));
+				sexBtn->setHighlightColor(makeColor(255, 255, 255, 255));
+				sexBtn->setHideGlyphs(true);
+				sexBtn->setHideKeyboardGlyphs(true);
+				sexBtn->setHideSelectors(true);
+				sexBtn->setStyle(Button::style_t::STYLE_CHECKBOX);
+				sexBtn->setMenuConfirmControlType(0);
+				sexBtn->setIcon("*images/ui/AssistShrine/Button_SexToggleF_00.png");
+				sexBtn->setBackground("*images/ui/AssistShrine/Button_SexToggleM_00.png");
+				sexBtn->setBackgroundHighlighted("*images/ui/AssistShrine/Button_SexToggleM_00.png");
+				sexBtn->setBackgroundActivated("*images/ui/AssistShrine/Button_SexToggleM_00.png");
+				sexBtn->setCallback([](Button& button) {
+					auto& gui = GenericGUI[button.getOwner()].assistShrineGUI;
+					gui.selectedSex = -1;
+					if ( (gui.selectedRace == -1 && gui.savedRace == -1 && stats[button.getOwner()]->playerRace == RACE_SUCCUBUS)
+						|| (gui.savedRace == RACE_SUCCUBUS && gui.selectedRace == -1)
+						|| gui.selectedRace == RACE_SUCCUBUS )
+					{
+						playSound(498, 48);
+						button.setPressed(true);
+						return;
+					}
+					if ( (gui.selectedRace == -1 && gui.savedRace == -1 && stats[button.getOwner()]->playerRace == RACE_INCUBUS)
+						|| (gui.savedRace == RACE_INCUBUS && gui.selectedRace == -1)
+						|| gui.selectedRace == RACE_INCUBUS )
+					{
+						playSound(498, 48);
+						button.setPressed(false);
+						return;
+					}
+
+					//playSound(494, 48); // checkmark
+					Player::soundActivate();
+					button.setPressed(button.isPressed());
+					gui.selectedSex = button.isPressed() ? 1 : 0;
+				});
+				sexBtn->setPressed(false);
+				sexBtn->setTickCallback(genericgui_deselect_fn);
+				sexBtn->setDrawCallback([](const Widget& widget, SDL_Rect pos) {
+					auto& gui = GenericGUI[widget.getOwner()].assistShrineGUI;
+					auto button = const_cast<Button*>((Button*)(&widget));
+					pos.y += 2;
+					if ( (gui.selectedRace == -1 && gui.savedRace == -1 && stats[widget.getOwner()]->playerRace == RACE_AUTOMATON)
+						|| (gui.savedRace == RACE_AUTOMATON && gui.selectedRace == -1)
+						|| gui.selectedRace == RACE_AUTOMATON )
+					{
+						if ( auto img = Image::get("*images/ui/CharSheet/HUD_CharSheet_Sex_AutomatonM_02.png") )
+						{
+							SDL_Rect pos2 = pos;
+							pos2.x -= img->getWidth();
+							pos2.x -= 8;
+							pos2.w = img->getWidth();
+							pos2.h = img->getHeight();
+							img->drawColor(nullptr, pos2, SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+								!widget.isPressed() ? makeColorRGB(255, 255, 255) : makeColorRGB(128, 128, 128));
+						}
+						if ( auto img = Image::get("*images/ui/CharSheet/HUD_CharSheet_Sex_AutomatonF_02.png") )
+						{
+							SDL_Rect pos2 = pos;
+							pos2.x += button->getSize().w + 8;
+							pos2.w = img->getWidth();
+							pos2.h = img->getHeight();
+							img->drawColor(nullptr, pos2, SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+								widget.isPressed() ? makeColorRGB(255, 255, 255) : makeColorRGB(128, 128, 128));
+						}
+					}
+					else
+					{
+						if ( auto img = Image::get("*images/ui/CharSheet/HUD_CharSheet_Sex_M_02.png") )
+						{
+							SDL_Rect pos2 = pos;
+							pos2.x -= img->getWidth();
+							pos2.x -= 4;
+							pos2.w = img->getWidth();
+							pos2.h = img->getHeight();
+							img->drawColor(nullptr, pos2, SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+								!widget.isPressed() ? makeColorRGB(255, 255, 255) : makeColorRGB(128, 128, 128));
+						}
+						if ( auto img = Image::get("*images/ui/CharSheet/HUD_CharSheet_Sex_F_02.png") )
+						{
+							SDL_Rect pos2 = pos;
+							pos2.x += button->getSize().w + 8;
+							pos2.w = img->getWidth();
+							pos2.h = img->getHeight();
+							img->drawColor(nullptr, pos2, SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+								widget.isPressed() ? makeColorRGB(255, 255, 255) : makeColorRGB(128, 128, 128));
+						}
+					}
+				});
+
+				auto sexToggleGlyph1 = raceFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+					0xFFFFFFFF, "", "sex toggle glyph 1");
+				sexToggleGlyph1->disabled = true;
+				sexToggleGlyph1->ontop = true;
+
+				auto sexToggleGlyph2 = raceFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+					0xFFFFFFFF, "", "sex toggle glyph 2");
+				sexToggleGlyph2->disabled = true;
+				sexToggleGlyph2->ontop = true;
+			}
+
+			//{
+			//	Button* sexBtn = raceFrame->addButton("sex m button");
+			//	SDL_Rect sexPos{ 16, basePos.h - 58 - 16, 58, 52 };
+			//	sexBtn->setSize(sexPos);
+			//	sexBtn->setColor(makeColor(255, 255, 255, 255));
+			//	sexBtn->setHighlightColor(makeColor(255, 255, 255, 255));
+			//	sexBtn->setHideGlyphs(true);
+			//	sexBtn->setHideKeyboardGlyphs(true);
+			//	sexBtn->setHideSelectors(true);
+			//	sexBtn->setStyle(Button::style_t::STYLE_RADIO);
+			//	sexBtn->setMenuConfirmControlType(0);
+			//	if ( (selectedRace == -1 && stats[parentGUI.getPlayer()]->playerRace == RACE_AUTOMATON)
+			//		|| selectedRace == RACE_AUTOMATON )
+			//	{
+			//		sexBtn->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAutoOn_00.png");
+			//		sexBtn->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAuto_00.png");
+			//		sexBtn->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAutoHigh_00.png");
+			//		sexBtn->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAutoPress_00.png");
+			//	}
+			//	else
+			//	{
+			//		sexBtn->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMaleOn_00.png");
+			//		sexBtn->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMale_00.png");
+			//		sexBtn->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMaleHigh_00.png");
+			//		sexBtn->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMalePress_00.png");
+			//	}
+			//	sexBtn->setCallback([](Button& button) {
+			//		if ( gameModeManager.currentSession.challengeRun.isActive()
+			//			&& gameModeManager.currentSession.challengeRun.race == RACE_SUCCUBUS
+			//			&& stats[button.getOwner()]->playerRace == RACE_SUCCUBUS )
+			//		{
+			//			//soundError();
+			//			button.setPressed(false);
+			//			return;
+			//		}
+			//		Player::soundActivate();
+			//		
+			//		button.setPressed(true);
+			//		if ( Frame* parent = static_cast<Frame*>(button.getParent()) )
+			//		{
+			//			auto female = parent->findButton("sex f button");
+			//			female->setPressed(false);
+			//			female->setColor(female->isPressed() ? makeColorRGB(255, 255, 255) : makeColorRGB(127, 127, 127));
+			//			female->setHighlightColor(female->isPressed() ? makeColorRGB(255, 255, 255) : makeColorRGB(127, 127, 127));
+			//		}
+			//	});
+			//	sexBtn->setTickCallback(genericgui_deselect_fn);
+			//	sexBtn->setPressed(false);
+			//}
+
+			//{
+			//	Button* sexBtn = raceFrame->addButton("sex f button");
+			//	SDL_Rect sexPos{ 16 + 58 + 8, basePos.h - 58 - 16, 58, 52 };
+			//	sexBtn->setSize(sexPos);
+			//	sexBtn->setColor(makeColor(255, 255, 255, 255));
+			//	sexBtn->setHighlightColor(makeColor(255, 255, 255, 255));
+			//	sexBtn->setHideGlyphs(true);
+			//	sexBtn->setHideKeyboardGlyphs(true);
+			//	sexBtn->setHideSelectors(true);
+			//	sexBtn->setStyle(Button::style_t::STYLE_RADIO);
+			//	sexBtn->setMenuConfirmControlType(0);
+			//	if ( (selectedRace == -1 && stats[parentGUI.getPlayer()]->playerRace == RACE_AUTOMATON)
+			//		|| selectedRace == RACE_AUTOMATON )
+			//	{
+			//		sexBtn->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAutoOn_00.png");
+			//		sexBtn->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAuto_00.png");
+			//		sexBtn->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAutoHigh_00.png");
+			//		sexBtn->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAutoPress_00.png");
+			//	}
+			//	else
+			//	{
+			//		sexBtn->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFemaleOn_00.png");
+			//		sexBtn->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFemale_00.png");
+			//		sexBtn->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFemaleHigh_00.png");
+			//		sexBtn->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFemalePress_00.png");
+			//	}
+			//	sexBtn->setCallback([](Button& button) {
+			//		if ( gameModeManager.currentSession.challengeRun.isActive()
+			//		&& gameModeManager.currentSession.challengeRun.race == RACE_INCUBUS
+			//			&& stats[button.getOwner()]->playerRace == RACE_INCUBUS )
+			//		{
+			//			//soundError();
+			//			button.setPressed(false);
+			//			return;
+			//		}
+			//		Player::soundActivate();
+
+			//		button.setPressed(true);
+			//		if ( Frame* parent = static_cast<Frame*>(button.getParent()) )
+			//		{
+			//			auto male = parent->findButton("sex m button");
+			//			male->setPressed(false);
+			//			male->setColor(male->isPressed() ? makeColorRGB(255, 255, 255) : makeColorRGB(127, 127, 127));
+			//			male->setHighlightColor(male->isPressed() ? makeColorRGB(255, 255, 255) : makeColorRGB(127, 127, 127));
+			//		}
+			//	});
+			//	sexBtn->setTickCallback(genericgui_deselect_fn);
+			//	sexBtn->setPressed(false);
+			//}
+		}
+
+		auto headerFont = "fonts/pixel_maz_multiline.ttf#16#2";
+		auto itemFont = "fonts/pixel_maz_multiline.ttf#16#2";
+
+		// filters
+		{
+			Button* filterBtn = bgFrame->addButton("filter item btn");
+			filterBtn->setColor(makeColor(255, 255, 255, 255));
+			filterBtn->setHighlightColor(makeColor(255, 255, 255, 255));
+			filterBtn->setText("");
+			filterBtn->setFont(itemFont);
+			filterBtn->setBackground("*#images/ui/AssistShrine/AssistShrine_FilterInactive00.png");
+			filterBtn->setHideGlyphs(true);
+			filterBtn->setHideKeyboardGlyphs(true);
+			filterBtn->setHideSelectors(true);
+			filterBtn->setMenuConfirmControlType(0);
+			filterBtn->setCallback([](Button& button) {
+				auto oldTab = GenericGUI[button.getOwner()].assistShrineGUI.currentView;
+				bool changeToDifferentTab = oldTab != GenericGUIMenu::AssistShrineGUI_t::ASSIST_SHRINE_VIEW_ITEMS;
+				GenericGUI[button.getOwner()].assistShrineGUI.changeCurrentView(GenericGUIMenu::AssistShrineGUI_t::ASSIST_SHRINE_VIEW_ITEMS);
+				//GenericGUI[button.getOwner()].assistShrineGUI.animPromptMoveLeft = false;
+				if ( changeToDifferentTab )
+				{
+					Player::soundModuleNavigation();
+				}
+			});
+			filterBtn->setTickCallback(genericgui_deselect_fn);
+
+			Field* filterTxt = bgFrame->addField("filter item txt", 64);
+			filterTxt->setFont(itemFont);
+			filterTxt->setText(Language::get(6321));
+			filterTxt->setHJustify(Field::justify_t::CENTER);
+			filterTxt->setVJustify(Field::justify_t::TOP);
+			filterTxt->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			filterTxt->setColor(0xFFFFFFFF);
+			filterTxt->setDisabled(true);
+			filterTxt->setOntop(true);
+
+			filterBtn = bgFrame->addButton("filter race btn");
+			filterBtn->setColor(makeColor(255, 255, 255, 255));
+			filterBtn->setHighlightColor(makeColor(255, 255, 255, 255));
+			filterBtn->setText("");
+			filterBtn->setFont(itemFont);
+			filterBtn->setBackground("*#images/ui/AssistShrine/AssistShrine_FilterInactive00.png");
+			filterBtn->setHideGlyphs(true);
+			filterBtn->setHideKeyboardGlyphs(true);
+			filterBtn->setHideSelectors(true);
+			filterBtn->setMenuConfirmControlType(0);
+			filterBtn->setCallback([](Button& button) {
+				auto oldTab = GenericGUI[button.getOwner()].assistShrineGUI.currentView;
+				bool changeToDifferentTab = oldTab != GenericGUIMenu::AssistShrineGUI_t::ASSIST_SHRINE_VIEW_RACE;
+				GenericGUI[button.getOwner()].assistShrineGUI.changeCurrentView(GenericGUIMenu::AssistShrineGUI_t::ASSIST_SHRINE_VIEW_RACE);
+				if ( oldTab == GenericGUIMenu::AssistShrineGUI_t::ASSIST_SHRINE_VIEW_CLASSES )
+				{
+					//GenericGUI[button.getOwner()].assistShrineGUI.animPromptMoveLeft = false;
+				}
+				else
+				{
+					//GenericGUI[button.getOwner()].assistShrineGUI.animPromptMoveLeft = true;
+				}
+				if ( changeToDifferentTab )
+				{
+					Player::soundModuleNavigation();
+				}
+			});
+			filterBtn->setTickCallback(genericgui_deselect_fn);
+
+			filterTxt = bgFrame->addField("filter race txt", 64);
+			filterTxt->setFont(itemFont);
+			filterTxt->setText(Language::get(6322));
+			filterTxt->setHJustify(Field::justify_t::CENTER);
+			filterTxt->setVJustify(Field::justify_t::TOP);
+			filterTxt->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			filterTxt->setColor(0xFFFFFFFF);
+			filterTxt->setDisabled(true);
+			filterTxt->setOntop(true);
+			filterTxt->setTickCallback([](Widget& widget) {
+				widget.setInvisible(false);
+				if ( auto parent = static_cast<Frame*>(widget.getParent()) )
+				{
+					if ( auto filterBtn = parent->findButton("filter race btn") )
+					{
+						widget.setInvisible(filterBtn->isInvisible());
+					}
+				}
+			});
+
+			filterBtn = bgFrame->addButton("filter class btn");
+			filterBtn->setColor(makeColor(255, 255, 255, 255));
+			filterBtn->setHighlightColor(makeColor(255, 255, 255, 255));
+			filterBtn->setText("");
+			filterBtn->setFont(itemFont);
+			filterBtn->setBackground("*#images/ui/AssistShrine/AssistShrine_FilterInactive00.png");
+			filterBtn->setHideGlyphs(true);
+			filterBtn->setHideKeyboardGlyphs(true);
+			filterBtn->setHideSelectors(true);
+			filterBtn->setMenuConfirmControlType(0);
+			filterBtn->setCallback([](Button& button) {
+				auto oldTab = GenericGUI[button.getOwner()].assistShrineGUI.currentView;
+				bool changeToDifferentTab = oldTab != GenericGUIMenu::AssistShrineGUI_t::ASSIST_SHRINE_VIEW_CLASSES;
+				GenericGUI[button.getOwner()].assistShrineGUI.changeCurrentView(GenericGUIMenu::AssistShrineGUI_t::ASSIST_SHRINE_VIEW_CLASSES);
+				//GenericGUI[button.getOwner()].assistShrineGUI.animPromptMoveLeft = false;
+				if ( changeToDifferentTab )
+				{
+					Player::soundModuleNavigation();
+				}
+			});
+			filterBtn->setTickCallback(genericgui_deselect_fn);
+
+			filterTxt = bgFrame->addField("filter class txt", 64);
+			filterTxt->setFont(itemFont);
+			filterTxt->setText(Language::get(6323));
+			filterTxt->setHJustify(Field::justify_t::CENTER);
+			filterTxt->setVJustify(Field::justify_t::TOP);
+			filterTxt->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			filterTxt->setColor(0xFFFFFFFF);
+			filterTxt->setDisabled(true);
+			filterTxt->setOntop(true);
+			filterTxt->setTickCallback([](Widget& widget) {
+				widget.setInvisible(false);
+				if ( auto parent = static_cast<Frame*>(widget.getParent()) )
+				{
+					if ( auto filterBtn = parent->findButton("filter class btn") )
+					{
+						widget.setInvisible(filterBtn->isInvisible());
+					}
+				}
+			});
+
+			auto filterGlyphLeft = bgFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+				0xFFFFFFFF, "", "filter left glyph");
+			filterGlyphLeft->disabled = true;
+			filterGlyphLeft->ontop = true;
+
+			auto filterGlyphRight = bgFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+				0xFFFFFFFF, "", "filter right glyph");
+			filterGlyphRight->disabled = true;
+			filterGlyphRight->ontop = true;
+		}
+
+		{
+			auto closeBtn = bgFrame->addButton("close assist button");
+			SDL_Rect closeBtnPos{ basePos.w - 0 - 26 - 4, 48, 26, 26 };
+			closeBtn->setSize(closeBtnPos);
+			closeBtn->setColor(makeColor(255, 255, 255, 255));
+			closeBtn->setHighlightColor(makeColor(255, 255, 255, 255));
+			closeBtn->setText("X");
+			closeBtn->setFont(itemFont);
+			closeBtn->setHideGlyphs(true);
+			closeBtn->setHideKeyboardGlyphs(true);
+			closeBtn->setHideSelectors(true);
+			closeBtn->setMenuConfirmControlType(0);
+			closeBtn->setBackground("*#images/ui/AssistShrine/Button_X_00.png");
+			closeBtn->setBackgroundHighlighted("*#images/ui/AssistShrine/Button_XHigh_00.png");
+			closeBtn->setBackgroundActivated("*#images/ui/AssistShrine/Button_XPress_00.png");
+			closeBtn->setTextHighlightColor(makeColor(201, 162, 100, 255));
+			closeBtn->setOntop(true);
+			closeBtn->setCallback([](Button& button) {
+				GenericGUI[button.getOwner()].closeGUI();
+				Player::soundCancel();
+				});
+			closeBtn->setTickCallback(genericgui_deselect_fn);
+
+			auto closeGlyph = bgFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+				0xFFFFFFFF, "", "close assist glyph");
+			closeGlyph->disabled = true;
+			closeGlyph->ontop = true;
+
+			auto itemBtn = assistItemFrame->addButton("claim item button");
+			SDL_Rect itemPos{ basePos.w - 18 - 64 - 16, 0, 82, 26 };
+			itemBtn->setSize(itemPos);
+			itemBtn->setColor(makeColor(255, 255, 255, 255));
+			itemBtn->setHighlightColor(makeColor(255, 255, 255, 255));
+			itemBtn->setText(Language::get(6316));
+			itemBtn->setFont(itemFont);
+			itemBtn->setHideGlyphs(true);
+			itemBtn->setHideKeyboardGlyphs(true);
+			itemBtn->setHideSelectors(true);
+			itemBtn->setMenuConfirmControlType(0);
+			itemBtn->setBackground("*#images/ui/AssistShrine/Button_Confirm_00.png");
+			itemBtn->setBackgroundHighlighted("*#images/ui/AssistShrine/Button_ConfirmHigh_00.png");
+			itemBtn->setBackgroundActivated("*#images/ui/AssistShrine/Button_ConfirmPress_00.png");
+			itemBtn->setTextHighlightColor(makeColor(201, 162, 100, 255));
+			itemBtn->setCallback([](Button& button) {
+				if ( !GenericGUI[button.getOwner()].assistShrineGUI.hasItemsToClaim() )
+				{
+					playSound(90, 64);
+					return;
+				}
+				bool success = GenericGUI[button.getOwner()].assistShrineGUI.claimItems(nullptr);
+				if ( success )
+				{
+					Player::soundActivate();
+				}
+				else
+				{
+					playSound(90, 64);
+				}
+			});
+			itemBtn->setTickCallback(genericgui_deselect_fn);
+
+			auto assistPtBackingImg = assistItemFrame->addImage(SDL_Rect{ 0, 0, 246, 24 },
+				0xFFFFFFFF, "*#images/ui/AssistShrine/AssistPtBacking_00.png", "assist pt img");
+			assistPtBackingImg->disabled = true;
+
+			auto assistPtTitle = assistItemFrame->addField("assist pt title", 64);
+			assistPtTitle->setFont("fonts/pixel_maz_multiline.ttf#16");
+			assistPtTitle->setText("");
+			assistPtTitle->setHJustify(Field::justify_t::LEFT);
+			assistPtTitle->setVJustify(Field::justify_t::TOP);
+			assistPtTitle->setSize(SDL_Rect{ 0, 0, 148, 24 });
+			assistPtTitle->setColor(makeColorRGB(221, 206, 189));
+			assistPtTitle->setDisabled(true);
+
+			auto assistPtVal = assistItemFrame->addField("assist pt val", 64);
+			assistPtVal->setFont("fonts/pixel_maz_multiline.ttf#16");
+			assistPtVal->setText("15");
+			assistPtVal->setHJustify(Field::justify_t::RIGHT);
+			assistPtVal->setVJustify(Field::justify_t::TOP);
+			assistPtVal->setSize(SDL_Rect{ 0, 0, 130, 24 });
+			assistPtVal->setColor(makeColorRGB(221, 206, 189));
+			assistPtVal->setDisabled(true);
+
+			auto assistScoreTitle = assistItemFrame->addField("assist score title", 64);
+			assistScoreTitle->setFont("fonts/pixel_maz_multiline.ttf#16");
+			assistScoreTitle->setText("");
+			assistScoreTitle->setHJustify(Field::justify_t::LEFT);
+			assistScoreTitle->setVJustify(Field::justify_t::TOP);
+			assistScoreTitle->setSize(SDL_Rect{ 0, 0, 148, 24 });
+			assistScoreTitle->setColor(makeColorRGB(221, 206, 189));
+			assistScoreTitle->setDisabled(true);
+
+			auto assistScoreVal = assistItemFrame->addField("assist score val", 64);
+			assistScoreVal->setFont("fonts/pixel_maz_multiline.ttf#16");
+			assistScoreVal->setText("-50%");
+			assistScoreVal->setHJustify(Field::justify_t::CENTER);
+			assistScoreVal->setVJustify(Field::justify_t::TOP);
+			assistScoreVal->setSize(SDL_Rect{ 148 + 16, 0, 90, 24 });
+			assistScoreVal->setColor(makeColorRGB(221, 206, 189));
+			assistScoreVal->setDisabled(true);
+
+			auto assistAchievementTitle = assistItemFrame->addField("assist ach title", 64);
+			assistAchievementTitle->setFont("fonts/pixel_maz_multiline.ttf#16");
+			assistAchievementTitle->setText("");
+			assistAchievementTitle->setHJustify(Field::justify_t::LEFT);
+			assistAchievementTitle->setVJustify(Field::justify_t::TOP);
+			assistAchievementTitle->setSize(SDL_Rect{ 0, 0, 148, 24 });
+			assistAchievementTitle->setColor(makeColorRGB(221, 206, 189));
+			assistAchievementTitle->setDisabled(true);
+
+			auto assistAchievementVal = assistItemFrame->addField("assist ach val", 64);
+			assistAchievementVal->setFont("fonts/pixel_maz_multiline.ttf#16");
+			assistAchievementVal->setText("ENABLED");
+			assistAchievementVal->setHJustify(Field::justify_t::CENTER);
+			assistAchievementVal->setVJustify(Field::justify_t::TOP);
+			assistAchievementVal->setSize(SDL_Rect{ 148 + 16, 0, 90, 24 });
+			assistAchievementVal->setColor(makeColorRGB(221, 206, 189));
+			assistAchievementVal->setDisabled(true);
+
+			auto claimItemGlyph = assistItemFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+				0xFFFFFFFF, "", "claim item glyph");
+			claimItemGlyph->disabled = true;
+			claimItemGlyph->ontop = true;
+		}
+
+		{
+			Frame* slotFrame = assistItemFrame->addFrame("assist item 1 frame");
+			SDL_Rect slotPos{ 0, 0, players[player]->inventoryUI.getSlotSize(), players[player]->inventoryUI.getSlotSize() };
+			slotFrame->setSize(slotPos);
+			slotFrame->setDisabled(true);
+			slotFrame->setInheritParentFrameOpacity(false);
+			createPlayerInventorySlotFrameElements(slotFrame);
+			assistShrineSlotFrames[ASSIST_SLOT_CLOAK + 0 * 100] = slotFrame;
+
+			slotFrame = assistItemFrame->addFrame("assist item 2 frame");
+			slotFrame->setSize(slotPos);
+			slotFrame->setDisabled(true);
+			slotFrame->setInheritParentFrameOpacity(false);
+			createPlayerInventorySlotFrameElements(slotFrame);
+			assistShrineSlotFrames[ASSIST_SLOT_MASK + 0 * 100] = slotFrame;
+
+			slotFrame = assistItemFrame->addFrame("assist item 3 frame");
+			slotFrame->setSize(slotPos);
+			slotFrame->setDisabled(true);
+			slotFrame->setInheritParentFrameOpacity(false);
+			createPlayerInventorySlotFrameElements(slotFrame);
+			assistShrineSlotFrames[ASSIST_SLOT_AMULET + 0 * 100] = slotFrame;
+
+			slotFrame = assistItemFrame->addFrame("assist item 4 frame");
+			slotFrame->setSize(slotPos);
+			slotFrame->setDisabled(true);
+			slotFrame->setInheritParentFrameOpacity(false);
+			createPlayerInventorySlotFrameElements(slotFrame);
+			assistShrineSlotFrames[ASSIST_SLOT_RING + 0 * 100] = slotFrame;
+
+			Field* slotHeader = assistItemFrame->addField("assist item 1 title", 32);
+			slotHeader->setFont("fonts/pixel_maz_multiline.ttf#16");
+			slotHeader->setDisabled(true);
+			slotHeader->setColor(makeColorRGB(121, 117, 116));
+			slotHeader->setHJustify(Field::justify_t::CENTER);
+			slotHeader->setVJustify(Field::justify_t::TOP);
+			slotHeader->setSize(SDL_Rect{ 0, 0, 0, 0 });
+
+			slotHeader = assistItemFrame->addField("assist item 2 title", 32);
+			slotHeader->setFont("fonts/pixel_maz_multiline.ttf#16");
+			slotHeader->setDisabled(true);
+			slotHeader->setColor(makeColorRGB(121, 117, 116));
+			slotHeader->setHJustify(Field::justify_t::CENTER);
+			slotHeader->setVJustify(Field::justify_t::TOP);
+			slotHeader->setSize(SDL_Rect{ 0, 0, 0, 0 });
+
+			slotHeader = assistItemFrame->addField("assist item 3 title", 32);
+			slotHeader->setFont("fonts/pixel_maz_multiline.ttf#16");
+			slotHeader->setDisabled(true);
+			slotHeader->setColor(makeColorRGB(121, 117, 116));
+			slotHeader->setHJustify(Field::justify_t::CENTER);
+			slotHeader->setVJustify(Field::justify_t::TOP);
+			slotHeader->setSize(SDL_Rect{ 0, 0, 0, 0 });
+
+			slotHeader = assistItemFrame->addField("assist item 4 title", 32);
+			slotHeader->setFont("fonts/pixel_maz_multiline.ttf#16");
+			slotHeader->setDisabled(true);
+			slotHeader->setColor(makeColorRGB(121, 117, 116));
+			slotHeader->setHJustify(Field::justify_t::CENTER);
+			slotHeader->setVJustify(Field::justify_t::TOP);
+			slotHeader->setSize(SDL_Rect{ 0, 0, 0, 0 });
+
+			Field* slotBless = assistItemFrame->addField("assist item 1 bless", 32);
+			slotBless->setFont("fonts/pixel_maz_multiline.ttf#16");
+			slotBless->setDisabled(true);
+			slotBless->setColor(makeColorRGB(121, 117, 116));
+			slotBless->setHJustify(Field::justify_t::CENTER);
+			slotBless->setVJustify(Field::justify_t::TOP);
+			slotBless->setSize(SDL_Rect{ 0, 0, 0, 0 });
+
+			slotBless = assistItemFrame->addField("assist item 2 bless", 32);
+			slotBless->setFont("fonts/pixel_maz_multiline.ttf#16");
+			slotBless->setDisabled(true);
+			slotBless->setColor(makeColorRGB(121, 117, 116));
+			slotBless->setHJustify(Field::justify_t::CENTER);
+			slotBless->setVJustify(Field::justify_t::TOP);
+			slotBless->setSize(SDL_Rect{ 0, 0, 0, 0 });
+
+			slotBless = assistItemFrame->addField("assist item 3 bless", 32);
+			slotBless->setFont("fonts/pixel_maz_multiline.ttf#16");
+			slotBless->setDisabled(true);
+			slotBless->setColor(makeColorRGB(121, 117, 116));
+			slotBless->setHJustify(Field::justify_t::CENTER);
+			slotBless->setVJustify(Field::justify_t::TOP);
+			slotBless->setSize(SDL_Rect{ 0, 0, 0, 0 });
+
+			slotBless = assistItemFrame->addField("assist item 4 bless", 32);
+			slotBless->setFont("fonts/pixel_maz_multiline.ttf#16");
+			slotBless->setDisabled(true);
+			slotBless->setColor(makeColorRGB(121, 117, 116));
+			slotBless->setHJustify(Field::justify_t::CENTER);
+			slotBless->setVJustify(Field::justify_t::TOP);
+			slotBless->setSize(SDL_Rect{ 0, 0, 0, 0 });
+
+			static auto minus_callback_fn = [](Button& button) {
+				auto& gui = GenericGUI[button.getOwner()].assistShrineGUI;
+				auto slotIndex = reinterpret_cast<intptr_t>(button.getUserData());
+				if ( slotIndex > 0 )
+				{
+					Item* item = nullptr;
+					switch ( slotIndex )
+					{
+					case 1:
+						item = &gui.itemCloak;
+						break;
+					case 2:
+						item = &gui.itemMask;
+						break;
+					case 3:
+						item = &gui.itemAmulet;
+						break;
+					case 4:
+						item = &gui.itemRing;
+						break;
+					default:
+						break;
+					}
+
+					if ( item )
+					{
+						if ( gui.claimedItems.find(item->type) == gui.claimedItems.end() )
+						{
+							if ( !item->itemHiddenFromShop )
+							{
+								if ( item->beatitude > -2 )
+								{
+									item->beatitude -= 1;
+									playSound(494, 48);
+								}
+								else
+								{
+									playSound(498, 48);
+								}
+							}
+						}
+					}
+				}
+			};
+
+			static auto plus_callback_fn = [](Button& button) {
+				auto& gui = GenericGUI[button.getOwner()].assistShrineGUI;
+				auto slotIndex = reinterpret_cast<intptr_t>(button.getUserData());
+				if ( slotIndex > 0 )
+				{
+					Item* item = nullptr;
+					switch ( slotIndex )
+					{
+					case 1:
+						item = &gui.itemCloak;
+						break;
+					case 2:
+						item = &gui.itemMask;
+						break;
+					case 3:
+						item = &gui.itemAmulet;
+						break;
+					case 4:
+						item = &gui.itemRing;
+						break;
+					default:
+						break;
+					}
+
+					if ( item )
+					{
+						if ( gui.claimedItems.find(item->type) == gui.claimedItems.end() )
+						{
+							if ( !item->itemHiddenFromShop )
+							{
+								if ( item->beatitude < 2 )
+								{
+									item->beatitude += 1;
+									Player::soundMovement();
+								}
+								else
+								{
+									playSound(498, 48);
+								}
+							}
+						}
+					}
+				}
+			};
+
+			for ( int i = 1; i <= 4; ++i )
+			{
+				char buf[128];
+				snprintf(buf, sizeof(buf), "assist item %d minus", i);
+				Button* slotMinus = assistItemFrame->addButton(buf);
+				SDL_Rect btnPos{ 0, 0, 26, 26 };
+				slotMinus->setSize(btnPos);
+				slotMinus->setDisabled(true);
+				slotMinus->setColor(makeColor(255, 255, 255, 255));
+				slotMinus->setHighlightColor(makeColor(255, 255, 255, 255));
+				slotMinus->setText("-");
+				slotMinus->setFont(itemFont);
+				slotMinus->setHideGlyphs(true);
+				slotMinus->setHideKeyboardGlyphs(true);
+				slotMinus->setHideSelectors(true);
+				slotMinus->setMenuConfirmControlType(0);
+				slotMinus->setBackground("*#images/ui/AssistShrine/Button_X_00.png");
+				slotMinus->setBackgroundHighlighted("*#images/ui/AssistShrine/Button_XHigh_00.png");
+				slotMinus->setBackgroundActivated("*#images/ui/AssistShrine/Button_XPress_00.png");
+				slotMinus->setTextHighlightColor(makeColor(201, 162, 100, 255));
+				slotMinus->setOntop(true);
+				slotMinus->setUserData((void*)(intptr_t)i);
+				slotMinus->setCallback(minus_callback_fn);
+				slotMinus->setTickCallback(genericgui_deselect_fn);
+
+				snprintf(buf, sizeof(buf), "assist item %d plus", i);
+				Button* slotPlus = assistItemFrame->addButton(buf);
+				slotPlus->setSize(btnPos);
+				slotPlus->setDisabled(true);
+				slotPlus->setColor(makeColor(255, 255, 255, 255));
+				slotPlus->setHighlightColor(makeColor(255, 255, 255, 255));
+				slotPlus->setText("+");
+				slotPlus->setFont(itemFont);
+				slotPlus->setHideGlyphs(true);
+				slotPlus->setHideKeyboardGlyphs(true);
+				slotPlus->setHideSelectors(true);
+				slotPlus->setMenuConfirmControlType(0);
+				slotPlus->setBackground("*#images/ui/AssistShrine/Button_X_00.png");
+				slotPlus->setBackgroundHighlighted("*#images/ui/AssistShrine/Button_XHigh_00.png");
+				slotPlus->setBackgroundActivated("*#images/ui/AssistShrine/Button_XPress_00.png");
+				slotPlus->setTextHighlightColor(makeColor(201, 162, 100, 255));
+				slotPlus->setOntop(true);
+				slotPlus->setUserData((void*)(intptr_t)i);
+				slotPlus->setCallback(plus_callback_fn);
+				slotPlus->setTickCallback(genericgui_deselect_fn);
+
+				/*auto glyphMinus = assistItemFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+					0xFFFFFFFF, "", "assist item minus glyph");
+				glyphMinus->ontop = true;
+				auto glyphPlus = assistItemFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+					0xFFFFFFFF, "", "assist item plus glyph");
+				glyphPlus->ontop = true;*/
+
+			}
+		}
+
+		auto actionPromptBacking = bgFrame->addImage(SDL_Rect{ 0, 0, 246, 32 },
+			0xFFFFFFFF, "*#images/ui/AssistShrine/PromptBacking_00.png", "action prompt img");
+		actionPromptBacking->disabled = true;
+
+		{
+			auto actionPromptTxt = bgFrame->addField("action prompt txt", 64);
+			actionPromptTxt->setFont("fonts/pixel_maz_multiline.ttf#16#2");
+			actionPromptTxt->setText("");
+			actionPromptTxt->setHJustify(Field::justify_t::RIGHT);
+			actionPromptTxt->setVJustify(Field::justify_t::TOP);
+			actionPromptTxt->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			actionPromptTxt->setColor(makeColor(255, 255, 255, 255));
+
+			auto actionPromptGlyph = bgFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+				0xFFFFFFFF, "", "action prompt glyph");
+			actionPromptGlyph->ontop = true;
+		}
+
+		{
+			auto actionPromptTxt = bgFrame->addField("action prompt txt2", 64);
+			actionPromptTxt->setFont("fonts/pixel_maz_multiline.ttf#16#2");
+			actionPromptTxt->setText("");
+			actionPromptTxt->setHJustify(Field::justify_t::RIGHT);
+			actionPromptTxt->setVJustify(Field::justify_t::TOP);
+			actionPromptTxt->setSize(SDL_Rect{ 0, 0, 0, 0 });
+			actionPromptTxt->setColor(makeColor(255, 255, 255, 255));
+
+			auto actionPromptGlyph = bgFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+				0xFFFFFFFF, "", "action prompt glyph2");
+			actionPromptGlyph->ontop = true;
+			actionPromptGlyph = bgFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+				0xFFFFFFFF, "", "action prompt glyph3");
+			actionPromptGlyph->ontop = true;
+		}
+
+
+	}
+}
+
+bool GenericGUIMenu::AssistShrineGUI_t::hasItemsToClaim()
+{
+	if ( !itemMask.itemHiddenFromShop
+		&& claimedItems.find(itemMask.type) == claimedItems.end() )
+	{
+		return true;
+	}
+	if ( !itemAmulet.itemHiddenFromShop
+		&& claimedItems.find(itemAmulet.type) == claimedItems.end() )
+	{
+		return true;
+	}
+	if ( !itemCloak.itemHiddenFromShop
+		&& claimedItems.find(itemCloak.type) == claimedItems.end() )
+	{
+		return true;
+	}
+	if ( !itemRing.itemHiddenFromShop
+		&& claimedItems.find(itemRing.type) == claimedItems.end() )
+	{
+		return true;
+	}
+	return false;
+}
+
+bool GenericGUIMenu::AssistShrineGUI_t::classHasChanged()
+{
+	if ( selectedClass >= 0 )
+	{
+		if ( selectedClass != savedClass && savedClass >= 0 )
+		{
+			return true;
+		}
+		else if ( savedClass == -1 && client_classes[parentGUI.gui_player] != selectedClass )
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+bool GenericGUIMenu::AssistShrineGUI_t::raceHasChanged()
+{
+	if ( selectedRace >= 0 )
+	{
+		if ( selectedRace != savedRace && savedRace >= 0 )
+		{
+			return true;
+		}
+		else if ( savedRace == -1 && stats[parentGUI.gui_player]->playerRace != selectedRace )
+		{
+			return true;
+		}
+	}
+	if ( selectedDisableAbilities >= 0 
+		&& ((selectedRace == -1 && savedRace == -1 && stats[parentGUI.gui_player]->playerRace != RACE_HUMAN)
+			|| (savedRace != RACE_HUMAN && selectedRace == -1)
+			|| selectedRace != RACE_HUMAN) )
+	{
+		if ( selectedDisableAbilities != savedAppearance )
+		{
+			return true;
+		}
+	}
+	if ( selectedSex >= 0 )
+	{
+		if ( selectedSex != savedSex )
+		{
+			return true;
+		}
+	}
+	if ( selectedAppearance >= 0 
+		&& ((selectedRace == -1 && savedRace == -1 && stats[parentGUI.gui_player]->playerRace == RACE_HUMAN)
+		|| (savedRace == RACE_HUMAN && selectedRace == -1)
+		|| selectedRace == RACE_HUMAN) )
+	{
+		if ( selectedAppearance != savedAppearance )
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+bool GenericGUIMenu::AssistShrineGUI_t::claimItems(bool* isEquipped)
+{
+	if ( parentGUI.gui_player < 0 || parentGUI.gui_player >= MAXPLAYERS )
+	{
+		return false;
+	}
+	if ( !players[parentGUI.gui_player]->isLocalPlayerAlive() )
+	{
+		return false;
+	}
+
+	int prevPoints = getAssistPointsSaved();
+
+	int playernum = parentGUI.gui_player;
+	if ( isEquipped )
+	{
+		*isEquipped = false;
+	}
+	bool success = false;
+	if ( !itemMask.itemHiddenFromShop 
+		&& claimedItems.find(itemMask.type) == claimedItems.end() )
+	{
+		success = true;
+		Item* item = newItem(itemMask.type, itemMask.status, itemMask.beatitude, 1, itemMask.appearance, true, nullptr);
+		Item* pickedUp = itemPickup(parentGUI.gui_player, item);
+		if ( pickedUp )
+		{
+			players[playernum]->inventoryUI.activateItemContextMenuOption(pickedUp, ItemContextMenuPrompts::PROMPT_EQUIP);
+			if ( itemIsEquipped(pickedUp, playernum) )
+			{
+				if ( isEquipped )
+				{
+					*isEquipped = true;
+				}
+			}
+			claimedItems.insert(pickedUp->type);
+		}
+		free(item);
+	}
+	if ( !itemAmulet.itemHiddenFromShop 
+		&& claimedItems.find(itemAmulet.type) == claimedItems.end() )
+	{
+		success = true;
+		Item* item = newItem(itemAmulet.type, itemAmulet.status, itemAmulet.beatitude, 1, itemAmulet.appearance, true, nullptr);
+		Item* pickedUp = itemPickup(parentGUI.gui_player, item);
+		if ( pickedUp )
+		{
+			players[playernum]->inventoryUI.activateItemContextMenuOption(pickedUp, ItemContextMenuPrompts::PROMPT_EQUIP);
+			if ( itemIsEquipped(pickedUp, playernum) )
+			{
+				if ( isEquipped )
+				{
+					*isEquipped = true;
+				}
+			}
+			claimedItems.insert(pickedUp->type);
+		}
+		free(item);
+	}
+	if ( !itemCloak.itemHiddenFromShop 
+		&& claimedItems.find(itemCloak.type) == claimedItems.end() )
+	{
+		success = true;
+		Item* item = newItem(itemCloak.type, itemCloak.status, itemCloak.beatitude, 1, itemCloak.appearance, true, nullptr);
+		Item* pickedUp = itemPickup(parentGUI.gui_player, item);
+		if ( pickedUp )
+		{
+			players[playernum]->inventoryUI.activateItemContextMenuOption(pickedUp, ItemContextMenuPrompts::PROMPT_EQUIP);
+			if ( itemIsEquipped(pickedUp, playernum) )
+			{
+				if ( isEquipped )
+				{
+					*isEquipped = true;
+				}
+			}
+			claimedItems.insert(pickedUp->type);
+		}
+		free(item);
+	}
+	if ( !itemRing.itemHiddenFromShop 
+		&& claimedItems.find(itemRing.type) == claimedItems.end() )
+	{
+		success = true;
+		Item* item = newItem(itemRing.type, itemRing.status, itemRing.beatitude, 1, itemRing.appearance, true, nullptr);
+		Item* pickedUp = itemPickup(parentGUI.gui_player, item);
+		if ( pickedUp )
+		{
+			players[playernum]->inventoryUI.activateItemContextMenuOption(pickedUp, ItemContextMenuPrompts::PROMPT_EQUIP);
+			if ( itemIsEquipped(pickedUp, playernum) )
+			{
+				if ( isEquipped )
+				{
+					*isEquipped = true;
+				}
+			}
+			claimedItems.insert(pickedUp->type);
+		}
+		free(item);
+	}
+
+	stats[parentGUI.gui_player]->MISC_FLAGS[STAT_FLAG_ASSISTANCE_PLAYER_PTS] = getAssistPointsSaved();
+
+	if ( multiplayer == SINGLE || multiplayer == SERVER )
+	{
+		int totalClaimed = 0;
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( !client_disconnected[i] )
+			{
+				totalClaimed += stats[i]->MISC_FLAGS[STAT_FLAG_ASSISTANCE_PLAYER_PTS];
+			}
+		}
+
+		if ( getAssistPointsSaved() - prevPoints > 0 )
+		{
+			messagePlayer(parentGUI.gui_player, MESSAGE_WORLD, Language::get(6356), getAssistPointsSaved() - prevPoints);
+		}
+
+		conductGameChallenges[CONDUCT_ASSISTANCE_CLAIMED] = 
+			std::max(totalClaimed, 
+				conductGameChallenges[CONDUCT_ASSISTANCE_CLAIMED]);
+		if ( multiplayer == SERVER )
+		{
+			for ( int i = 1; i < MAXPLAYERS; ++i )
+			{
+				if ( !client_disconnected[i] )
+				{
+					serverUpdatePlayerConduct(i, CONDUCT_ASSISTANCE_CLAIMED, conductGameChallenges[CONDUCT_ASSISTANCE_CLAIMED]);
+				}
+			}
+			GenericGUIMenu::AssistShrineGUI_t::serverUpdateStatFlagsForClients();
+		}
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( !client_disconnected[i] )
+			{
+				if ( i != parentGUI.gui_player )
+				{
+					if ( getAssistPointsSaved() - prevPoints > 0 )
+					{
+						messagePlayer(i, MESSAGE_WORLD, Language::get(6357), stats[parentGUI.gui_player]->name, getAssistPointsSaved() - prevPoints);
+					}
+				}
+			}
+		}
+	}
+	else if ( multiplayer == CLIENT )
+	{
+		strcpy((char*)net_packet->data, "ASSI");
+		net_packet->data[4] = parentGUI.gui_player;
+		SDLNet_Write32(stats[parentGUI.gui_player]->MISC_FLAGS[STAT_FLAG_ASSISTANCE_PLAYER_PTS], &net_packet->data[5]);
+		net_packet->address.host = net_server.host;
+		net_packet->address.port = net_server.port;
+		net_packet->len = 9;
+		sendPacketSafe(net_sock, -1, net_packet, 0);
+	}
+	return success;
+}
+
+void GenericGUIMenu::AssistShrineGUI_t::resetSavedCharacterChanges()
+{
+	selectedClass = -1;
+	selectedRace = -1;
+	selectedSex = -1;
+	selectedAppearance = -1;
+	selectedDisableAbilities = -1;
+
+	savedClass = -1;
+	savedRace = -1;
+	savedSex = -1;
+	savedAppearance = -1;
+	receivedCharacterChangeOK = false;
+}
+
+void GenericGUIMenu::AssistShrineGUI_t::onMainMenuEnd()
+{
+	resetSavedCharacterChanges();
+	resetItems();
+	shrineUID = 0;
+}
+
+void GenericGUIMenu::AssistShrineGUI_t::onGameStart()
+{
+	shrineUID = 0;
+	claimedItems.clear();
+
+	if ( savedClass >= 0 )
+	{
+		client_classes[parentGUI.gui_player] = savedClass;
+	}
+	if ( savedRace >= 0 )
+	{
+		stats[parentGUI.gui_player]->playerRace = savedRace;
+	}
+	if ( savedSex >= 0 )
+	{
+		stats[parentGUI.gui_player]->sex = (sex_t)savedSex;
+	}
+	if ( savedAppearance >= 0 )
+	{
+		stats[parentGUI.gui_player]->stat_appearance = savedAppearance;
+		if ( stats[parentGUI.gui_player]->playerRace == RACE_HUMAN )
+		{
+			stats[parentGUI.gui_player]->stat_appearance = stats[parentGUI.gui_player]->stat_appearance % NUMAPPEARANCES;
+		}
+		else
+		{
+			stats[parentGUI.gui_player]->stat_appearance = std::max(0, (Sint32)stats[parentGUI.gui_player]->stat_appearance);
+			stats[parentGUI.gui_player]->stat_appearance = std::min(1, (Sint32)stats[parentGUI.gui_player]->stat_appearance);
+		}
+	}
+
+	resetSavedCharacterChanges();
+}
+
+void GenericGUIMenu::AssistShrineGUI_t::resetItems()
+{
+	itemCloak.appearance = 0;
+	itemCloak.type = CLOAK_GUARDIAN;
+	itemCloak.node = nullptr;
+	itemCloak.status = EXCELLENT;
+	itemCloak.beatitude = 0;
+	itemCloak.count = 1;
+	itemCloak.identified = true;
+	itemCloak.itemHiddenFromShop = true;
+
+	itemMask.appearance = 0;
+	itemMask.type = MASK_MARIGOLD;
+	itemMask.node = nullptr;
+	itemMask.status = EXCELLENT;
+	itemMask.beatitude = 0;
+	itemMask.count = 1;
+	itemMask.identified = true;
+	itemMask.itemHiddenFromShop = true;
+
+	itemAmulet.appearance = 0;
+	itemAmulet.type = AMULET_LIFESAVING;
+	itemAmulet.node = nullptr;
+	itemAmulet.status = EXCELLENT;
+	itemAmulet.beatitude = 0;
+	itemAmulet.count = 1;
+	itemAmulet.identified = true;
+	itemAmulet.itemHiddenFromShop = true;
+
+	itemRing.appearance = 0;
+	itemRing.type = RING_RESOLVE;
+	itemRing.node = nullptr;
+	itemRing.status = EXCELLENT;
+	itemRing.beatitude = 0;
+	itemRing.count = 1;
+	itemRing.identified = true;
+	itemRing.itemHiddenFromShop = true;
+}
+
+bool GenericGUIMenu::AssistShrineGUI_t::itemIsFromGUI(Item* item)
+{
+	if ( item )
+	{
+		if ( item == &itemAmulet
+			|| item == &itemRing
+			|| item == &itemCloak
+			|| item == &itemMask )
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+GenericGUIMenu::AssistShrineGUI_t::AssistItemActions_t GenericGUIMenu::AssistShrineGUI_t::setItemDisplayNameAndPrice(Item* item, bool checkResultOnly)
+{
+	auto result = ASSIST_ITEM_NONE;
+	if ( !(svFlags & SV_FLAG_ASSIST_ITEMS) && claimedItems.find(item->type) == claimedItems.end() )
+	{
+		result = ASSIST_ITEM_FLAG_DISABLED;
+	}
+	else if ( item )
+	{
+		result = item->itemHiddenFromShop ? ASSIST_ITEM_ACTIVATE : ASSIST_ITEM_DEACTIVATE;
+		if ( claimedItems.find(item->type) != claimedItems.end() )
+		{
+			result = ASSIST_ITEM_CLAIMED;
+		}
+	}
+	else
+	{
+		if ( !checkResultOnly )
+		{
+			clearItemDisplayed();
+		}
+	}
+	if ( !checkResultOnly )
+	{
+		itemActionType = result;
+		if ( item )
+		{
+			itemType = item->type;
+		}
+	}
+	return result;
+}
+
+void GenericGUIMenu::AssistShrineGUI_t::updateAssistShrine()
+{
+	const int playernum = parentGUI.getPlayer();
+	auto player = players[playernum];
+
+	if ( !player->isLocalPlayer() )
+	{
+		closeAssistShrine();
+		return;
+	}
+
+	if ( !assistShrineFrame )
+	{
+		return;
+	}
+
+	if ( bOpen )
+	{
+		if ( shrineUID == 0 )
+		{
+			closeAssistShrine();
+			return;
+		}
+		Entity* shrine = uidToEntity(shrineUID);
+		if ( !shrine )
+		{
+			closeAssistShrine();
+			return;
+		}
+		else if ( player->entity && (entityDist(player->entity, shrine) > TOUCHRANGE) )
+		{
+			closeAssistShrine();
+			return;
+		}
+	}
+
+	//if ( keystatus[SDLK_LCTRL] )
+	/*{
+		if ( inputs.bPlayerUsingKeyboardControl(playernum) )
+		{
+		if ( keystatus[SDLK_g] )
+		{
+			keystatus[SDLK_g] = 0;
+			Entity* dummy = nullptr;
+			parentGUI.openGUI(GUI_TYPE_ASSIST, dummy);
+		}
+		if ( keystatus[SDLK_h] )
+		{
+			keystatus[SDLK_h] = 0;
+			claimedItems.clear();
+			resetItems();
+		}
+		if ( keystatus[SDLK_j] )
+		{
+			keystatus[SDLK_j] = 0;
+			if ( currentView == ASSIST_SHRINE_VIEW_ITEMS )
+			{
+				changeCurrentView(ASSIST_SHRINE_VIEW_RACE);
+			}
+			else if ( currentView == ASSIST_SHRINE_VIEW_RACE )
+			{
+				changeCurrentView(ASSIST_SHRINE_VIEW_CLASSES);
+			}
+			else
+			{
+				changeCurrentView(ASSIST_SHRINE_VIEW_ITEMS);
+			}
+		}
+		}
+	}*/
+
+	assistShrineFrame->setSize(SDL_Rect{ players[playernum]->camera_virtualx1(),
+		players[playernum]->camera_virtualy1(),
+		assistShrineBaseWidth,
+		players[playernum]->camera_virtualHeight() });
+
+	if ( !assistShrineFrame->isDisabled() && bOpen )
+	{
+		if ( !assistShrineGUIHasBeenCreated() )
+		{
+			createAssistShrine();
+		}
+
+		const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
+		real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - animx)) / 2.0;
+		animx += setpointDiffX;
+		animx = std::min(1.0, animx);
+		if ( animx >= .9999 )
+		{
+			if ( !bFirstTimeSnapCursor )
+			{
+				bFirstTimeSnapCursor = true;
+				if ( !inputs.getUIInteraction(playernum)->selectedItem
+					&& player->GUI.activeModule == Player::GUI_t::MODULE_ASSISTSHRINE )
+				{
+					warpMouseToSelectedAssistShrineItem(nullptr, (Inputs::SET_CONTROLLER));
+				}
+			}
+			isInteractable = true;
+		}
+	}
+	else
+	{
+		animx = 0.0;
+		//animTooltip = 0.0;
+		isInteractable = false;
+	}
+
+	auto assistFramePos = assistShrineFrame->getSize();
+	if ( player->inventoryUI.inventoryPanelJustify == Player::PANEL_JUSTIFY_LEFT )
+	{
+		if ( !player->inventoryUI.bCompactView )
+		{
+			const int fullWidth = assistFramePos.w + 210; // inventory width 210
+			assistFramePos.x = -assistFramePos.w + animx * fullWidth;
+			if ( player->bUseCompactGUIWidth() )
+			{
+				if ( player->inventoryUI.slideOutPercent >= .0001 )
+				{
+					isInteractable = false;
+				}
+				assistFramePos.x -= player->inventoryUI.slideOutWidth * player->inventoryUI.slideOutPercent;
+			}
+		}
+		else
+		{
+			if ( player->bAlignGUINextToInventoryCompact() )
+			{
+				const int fullWidth = assistFramePos.w + 210; // inventory width 210
+				assistFramePos.x = -assistFramePos.w + animx * fullWidth;
+			}
+			else
+			{
+				assistFramePos.x = player->camera_virtualWidth() - animx * assistFramePos.w;
+			}
+			if ( player->bUseCompactGUIWidth() )
+			{
+				if ( player->inventoryUI.slideOutPercent >= .0001 )
+				{
+					isInteractable = false;
+				}
+				assistFramePos.x -= -player->inventoryUI.slideOutWidth * player->inventoryUI.slideOutPercent;
+			}
+		}
+	}
+	else if ( player->inventoryUI.inventoryPanelJustify == Player::PANEL_JUSTIFY_RIGHT )
+	{
+		if ( !player->inventoryUI.bCompactView )
+		{
+			const int fullWidth = assistFramePos.w + 210; // inventory width 210
+			assistFramePos.x = player->camera_virtualWidth() - animx * fullWidth;
+			if ( player->bUseCompactGUIWidth() )
+			{
+				if ( player->inventoryUI.slideOutPercent >= .0001 )
+				{
+					isInteractable = false;
+				}
+				assistFramePos.x -= -player->inventoryUI.slideOutWidth * player->inventoryUI.slideOutPercent;
+			}
+		}
+		else
+		{
+			if ( player->bAlignGUINextToInventoryCompact() )
+			{
+				const int fullWidth = assistFramePos.w + 210; // inventory width 210
+				assistFramePos.x = player->camera_virtualWidth() - animx * fullWidth;
+			}
+			else
+			{
+				assistFramePos.x = -assistFramePos.w + animx * assistFramePos.w;
+			}
+			if ( player->bUseCompactGUIWidth() )
+			{
+				if ( player->inventoryUI.slideOutPercent >= .0001 )
+				{
+					isInteractable = false;
+				}
+				assistFramePos.x -= player->inventoryUI.slideOutWidth * player->inventoryUI.slideOutPercent;
+				assistFramePos.w = player->camera_virtualWidth();
+			}
+		}
+	}
+
+	if ( !player->bUseCompactGUIHeight() && !player->bUseCompactGUIWidth() )
+	{
+		assistFramePos.y = heightOffsetWhenNotCompact;
+	}
+	else
+	{
+		assistFramePos.y = 0;
+	}
+
+	if ( !assistShrineGUIHasBeenCreated() )
+	{
+		return;
+	}
+
+	auto baseFrame = assistShrineFrame->findFrame("assist base");
+	baseFrame->setDisabled(false);
+
+	auto bg = baseFrame->findImage("assist base img");
+	if ( currentView == ASSIST_SHRINE_VIEW_ITEMS )
+	{
+		bg->path = "*#images/ui/AssistShrine/AssistShrine_Panel00.png";
+	}
+	else if ( currentView == ASSIST_SHRINE_VIEW_CLASSES )
+	{
+		bg->path = "*#images/ui/AssistShrine/AssistShrine_Panel_Classes00.png";
+	}
+	else if ( currentView == ASSIST_SHRINE_VIEW_RACE )
+	{
+		bg->path = "*#images/ui/AssistShrine/AssistShrine_Panel_Races00.png";
+	}
+
+	auto assistItemFrame = assistShrineFrame->findFrame("assist items");
+	assistItemFrame->setDisabled(currentView != ASSIST_SHRINE_VIEW_ITEMS);
+
+	auto assistClassFrame = assistShrineFrame->findFrame("assist classes");
+	assistClassFrame->setDisabled(currentView != ASSIST_SHRINE_VIEW_CLASSES);
+
+	auto assistRaceFrame = assistShrineFrame->findFrame("assist races");
+	assistRaceFrame->setDisabled(currentView != ASSIST_SHRINE_VIEW_RACE);
+
+	assistShrineFrame->setSize(assistFramePos);
+
+	SDL_Rect baseFramePos = baseFrame->getSize();
+	baseFramePos.x = 0;
+	baseFramePos.w = assistShrineBaseWidth;
+	baseFrame->setSize(baseFramePos);
+
+	assistFramePos.h = player->camera_virtualHeight() - assistFramePos.y;
+	if ( animx >= .9999 )
+	{
+		baseFramePos.x += assistFramePos.x;
+		assistFramePos.w += assistFramePos.x;
+
+		if ( !player->inventoryUI.bCompactView )
+		{
+			if ( player->inventoryUI.inventoryPanelJustify == Player::PANEL_JUSTIFY_LEFT )
+			{
+				assistFramePos.w += 600;
+			}
+		}
+		else
+		{
+			if ( player->inventoryUI.inventoryPanelJustify == Player::PANEL_JUSTIFY_LEFT
+				&& player->bAlignGUINextToInventoryCompact() )
+			{
+				assistFramePos.w += 600;
+			}
+		}
+
+		assistFramePos.w = std::min(player->camera_virtualWidth(), assistFramePos.w);
+		assistFramePos.x = 0;
+		baseFrame->setSize(baseFramePos);
+	}
+	assistShrineFrame->setSize(assistFramePos);
+	assistItemFrame->setSize(baseFramePos);
+	assistClassFrame->setSize(baseFramePos);
+	assistRaceFrame->setSize(baseFramePos);
+
+	if ( !bOpen )
+	{
+		return;
+	}
+
+	if ( !parentGUI.isGUIOpen()
+		|| parentGUI.guiType != GUICurrentType::GUI_TYPE_ASSIST
+		|| !stats[playernum]
+		|| stats[playernum]->HP <= 0
+		|| !player->entity
+		|| player->shootmode )
+	{
+		closeAssistShrine();
+		return;
+	}
+
+	/*if ( keystatus[SDLK_LCTRL] || true )
+	{
+		if ( inputs.bPlayerUsingKeyboardControl(playernum) )
+		{
+			if ( keystatus[SDLK_b] && enableDebugKeys )
+			{
+				keystatus[SDLK_b] = 0;
+				addNotification(Language::get(6334), Language::get(6333), "", AssistNotification_t::NOTIF_DEFAULT);
+			}
+		}
+	}*/
+	auto notificationFrame = assistShrineFrame->findFrame("notification");
+	notificationFrame->setDisabled(true);
+	if ( !notifications.empty() )
+	{
+		auto& n = notifications.front();
+		SDL_Rect notifPos = notificationFrame->getSize();
+		auto notifImg = notificationFrame->findImage("notif bg");
+		if ( auto img = Image::get(notifImg->path.c_str()) )
+		{
+			notifImg->pos.w = img->getWidth();
+			notifImg->pos.h = img->getHeight();
+		}
+		notifPos.w = notifImg->pos.w;
+		notifPos.h = notifImg->pos.h;
+		if ( (player->inventoryUI.inventoryPanelJustify == Player::PanelJustify_t::PANEL_JUSTIFY_LEFT
+			&& !player->inventoryUI.bCompactView)
+			|| (player->inventoryUI.inventoryPanelJustify == Player::PanelJustify_t::PANEL_JUSTIFY_RIGHT
+				&& player->inventoryUI.bCompactView) )
+		{
+			notifPos.x = -8 + baseFrame->getSize().x + baseFrame->getSize().w - (notifPos.w) * (1.0 - n.second.animx);
+		}
+		else
+		{
+			notifPos.x = 8 + baseFrame->getSize().x - (notifPos.w) * (n.second.animx);
+		}
+		notifPos.y = 52;
+		notificationFrame->setSize(notifPos);
+		notificationFrame->setOpacity(100.0 * n.second.animx);
+		notificationFrame->setDisabled(false);
+
+		auto notifTitle = notificationFrame->findField("notif title");
+		if ( n.second.notificationType == AssistNotification_t::NOTIF_CLASS_RESET )
+		{
+			notifTitle->setColor(makeColor(255, 255, 0, 255));
+		}
+		else
+		{
+			notifTitle->setColor(hudColors.characterSheetHeadingText);
+		}
+		notifTitle->setText(n.second.title.c_str());
+		SDL_Rect pos = notifTitle->getSize();
+		pos.w = notificationFrame->getSize().w;
+		notifTitle->setSize(pos);
+		auto notifBody = notificationFrame->findField("notif body");
+		notifBody->setText(n.second.body.c_str());
+		pos = notifBody->getSize();
+		pos.w = notificationFrame->getSize().w;
+		pos.h = notifBody->getNumTextLines() * 24;
+		notifBody->setSize(pos);
+		auto notifIcon = notificationFrame->findImage("notif icon");
+		notifIcon->path = n.second.img;
+		notifIcon->disabled = true;
+
+		if ( n.second.state == 0 )
+		{
+			const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
+			real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - n.second.animx)) / 2.0;
+			n.second.animx += setpointDiffX;
+			n.second.animx = std::min(1.0, n.second.animx);
+			if ( n.second.animx >= 0.999 )
+			{
+				n.second.state = 1;
+				n.first = ticks;
+			}
+		}
+		else if ( n.second.state == 1 )
+		{
+			if ( ticks - n.first > n.second.lifetime )
+			{
+				n.second.state = 2;
+			}
+		}
+		else if ( n.second.state == 2 )
+		{
+			const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
+			real_t setpointDiffX = fpsScale * std::max(.05, (n.second.animx)) / 3.0;
+			n.second.animx -= setpointDiffX;
+			n.second.animx = std::max(0.0, n.second.animx);
+			if ( n.second.animx <= 0.001 )
+			{
+				n.second.state = 3;
+				notifications.erase(notifications.begin());
+			}
+		}
+	}
+
+	auto tooltipFrame = assistShrineFrame->findFrame("sheet tooltip");
+	tooltipFrame->setDisabled(!(currentView == ASSIST_SHRINE_VIEW_RACE 
+		|| currentView == ASSIST_SHRINE_VIEW_CLASSES
+		|| currentView == ASSIST_SHRINE_VIEW_ITEMS));
+	auto raceTooltip = tooltipFrame->findFrame("race tooltip");
+	raceTooltip->setDisabled(currentView != ASSIST_SHRINE_VIEW_RACE);
+	auto classTooltip = tooltipFrame->findFrame("class tooltip");
+	classTooltip->setDisabled(currentView != ASSIST_SHRINE_VIEW_CLASSES);
+	auto itemTooltip = tooltipFrame->findFrame("item tooltip");
+	itemTooltip->setDisabled(currentView != ASSIST_SHRINE_VIEW_ITEMS);
+
+	bool usingGamepad = inputs.hasController(playernum) && !inputs.getVirtualMouse(playernum)->draw_cursor;
+	{
+		// close btn
+		auto closeBtn = baseFrame->findButton("close assist button");
+		auto closeGlyph = baseFrame->findImage("close assist glyph");
+		closeBtn->setDisabled(true);
+		closeGlyph->disabled = true;
+		if ( inputs.getVirtualMouse(playernum)->draw_cursor )
+		{
+			closeBtn->setDisabled(!isInteractable);
+			if ( isInteractable )
+			{
+				buttonAssistShrineUpdateSelectorOnHighlight(playernum, closeBtn);
+			}
+		}
+		else if ( closeBtn->isSelected() )
+		{
+			closeBtn->deselect();
+		}
+		if ( closeBtn->isDisabled() && usingGamepad )
+		{
+			closeGlyph->path = Input::inputs[playernum].getGlyphPathForBinding("MenuCancel");
+			if ( auto imgGet = Image::get(closeGlyph->path.c_str()) )
+			{
+				closeGlyph->pos.w = imgGet->getWidth();
+				closeGlyph->pos.h = imgGet->getHeight();
+				closeGlyph->disabled = false;
+			}
+			closeGlyph->pos.x = closeBtn->getSize().x + closeBtn->getSize().w / 2 - closeGlyph->pos.w / 2;
+			if ( closeGlyph->pos.x % 2 == 1 )
+			{
+				++closeGlyph->pos.x;
+			}
+			closeGlyph->pos.y = closeBtn->getSize().y + closeBtn->getSize().h - 4;
+		}
+	}
+
+	bool inventoryControlActive = player->bControlEnabled
+		&& !gamePaused
+		&& !player->usingCommand()
+		&& !player->GUI.isDropdownActive();
+
+	static ConsoleVariable<float> cvar_assist_slider_speed("/assist_slider_speed", 1.f);
+	{
+		auto slider = assistClassFrame->findSlider("class slider");
+		auto drawerSlotsFrame = assistClassFrame->findFrame("class slots");
+		{
+			auto classText = assistClassFrame->findField("class txt");
+			std::string txt = "";
+			int classnum = -1;
+			Uint32 color = makeColor(121, 117, 116, 255);
+			if ( savedClass == -1 )
+			{
+				txt = Language::get(6320);
+				classnum = client_classes[parentGUI.gui_player];
+			}
+			else
+			{
+				txt = Language::get(6327);
+				classnum = savedClass;
+				color = hudColors.characterBaseClassText;
+				if ( classnum >= CLASS_CONJURER && classnum <= CLASS_BREWER )
+				{
+					color = hudColors.characterDLC1ClassText;
+				}
+				else if ( classnum >= CLASS_MACHINIST && classnum <= CLASS_HUNTER )
+				{
+					color = hudColors.characterDLC2ClassText;
+				}
+			}
+			std::string classname = playerClassLangEntry(classnum, parentGUI.gui_player);
+			uppercaseString(classname);
+			txt += classname;
+			classText->setText(txt.c_str());
+			classText->setColor(color);
+		}
+		{
+			auto classNewText = assistClassFrame->findField("class new txt");
+			std::string txt = Language::get(6319);
+			if ( selectedClass == -1 
+				|| (selectedClass == client_classes[parentGUI.gui_player] && savedClass == -1) )
+			{
+				txt += '-';
+				classNewText->addColorToLine(1, makeColor(121, 117, 116, 255));
+			}
+			else
+			{
+				std::string classname = playerClassLangEntry(selectedClass, parentGUI.gui_player);
+				uppercaseString(classname);
+				txt += classname;
+				classNewText->addColorToLine(1, hudColors.characterBaseClassText);
+				if ( selectedClass >= CLASS_CONJURER && selectedClass <= CLASS_BREWER )
+				{
+					classNewText->addColorToLine(1, hudColors.characterDLC1ClassText);
+				}
+				else if ( selectedClass >= CLASS_MACHINIST && selectedClass <= CLASS_HUNTER )
+				{
+					classNewText->addColorToLine(1, hudColors.characterDLC2ClassText);
+				}
+			}
+			classNewText->setText(txt.c_str());
+		}
+
+		int lowestItemY = 0;
+		for ( auto& pair : classSlots )
+		{
+			lowestItemY = std::max(lowestItemY, pair.first / 100);
+		}
+		lowestItemY += 1;
+
+		// handle height changing..
+		{
+			int numGrids = (lowestItemY / kNumClassesToDisplayVertical) + 1;
+			auto gridImg = drawerSlotsFrame->findImage("grid img");
+
+			SDL_Rect drawerSlotsFramePos = drawerSlotsFrame->getSize();
+			drawerSlotsFramePos.h = ((kNumClassesToDisplayVertical * kClassSlotHeight) + 2);
+
+			SDL_Rect drawerSlotsFrameActualPos{ drawerSlotsFrame->getActualSize().x,
+				drawerSlotsFrame->getActualSize().y,
+				drawerSlotsFrame->getActualSize().w,
+				(drawerSlotsFramePos.h) * numGrids };
+			drawerSlotsFrame->setActualSize(drawerSlotsFrameActualPos);
+			drawerSlotsFrame->setScrollBarsEnabled(false);
+			drawerSlotsFrame->setSize(drawerSlotsFramePos);
+			gridImg->pos.y = 0;
+			gridImg->pos.h = (drawerSlotsFramePos.h) * numGrids;
+		}
+
+		int scrollAmount = std::max((lowestItemY)-(kNumClassesToDisplayVertical), 0) * kClassSlotHeight;
+		if ( scrollAmount == 0 || currentView == ASSIST_SHRINE_VIEW_ITEMS )
+		{
+			slider->setDisabled(true);
+		}
+		else
+		{
+			slider->setDisabled(false);
+		}
+
+		SDL_Rect sliderPos = slider->getRailSize();
+		auto sliderCapTop = assistClassFrame->findImage("class slider top");
+		/*if ( usingGamepad )
+		{
+			sliderPos.y = 104;
+			sliderPos.h = assistClassFrame->getSize().h - 16 - 104;
+		}
+		else*/
+		{
+			sliderPos.y = *cvar_assistClassListGridY - 2;
+			sliderPos.h = kAssistClassListHeight + 6;
+		}
+		sliderCapTop->pos.y = sliderPos.y;
+		slider->setRailSize(sliderPos);
+
+
+		currentScrollRow1 = scrollSetpoint1 / kClassSlotHeight;
+
+		if ( bOpen && isInteractable )
+		{
+			// do sliders
+			if ( !slider->isDisabled() && !(abs(scrollSetpoint1 - scrollAnimateX1) > 0.00001 && usingGamepad) )
+			{
+				if ( !inputs.getUIInteraction(playernum)->selectedItem
+					&& players[playernum]->GUI.activeModule == Player::GUI_t::MODULE_ASSISTSHRINE
+					&& inventoryControlActive
+					&& currentView == ASSIST_SHRINE_VIEW_CLASSES )
+				{
+					auto& input = Input::inputs[playernum];
+					if ( inputs.bPlayerUsingKeyboardControl(playernum) )
+					{
+						if ( input.binaryToggle("MenuMouseWheelDown") )
+						{
+							scrollSetpoint1 = std::max(scrollSetpoint1 + kClassSlotHeight, 0);
+						}
+						if ( input.binaryToggle("MenuMouseWheelUp") )
+						{
+							scrollSetpoint1 = std::max(scrollSetpoint1 - kClassSlotHeight, 0);
+						}
+					}
+					if ( input.binaryToggle("MenuScrollDown") )
+					{
+						scrollSetpoint1 = std::max(scrollSetpoint1 + kClassSlotHeight * kNumClassesToDisplayVertical, 0);
+						if ( player->inventoryUI.cursor.queuedModule == Player::GUI_t::MODULE_ASSISTSHRINE )
+						{
+							player->inventoryUI.cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+						}
+					}
+					else if ( input.binaryToggle("MenuScrollUp") )
+					{
+						scrollSetpoint1 = std::max(scrollSetpoint1 - kClassSlotHeight * kNumClassesToDisplayVertical, 0);
+						if ( player->inventoryUI.cursor.queuedModule == Player::GUI_t::MODULE_ASSISTSHRINE )
+						{
+							player->inventoryUI.cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+						}
+					}
+				}
+			}
+
+			scrollSetpoint1 = std::min(scrollSetpoint1, scrollAmount);
+			currentScrollRow1 = scrollSetpoint1 / kClassSlotHeight;
+
+			if ( abs(scrollSetpoint1 - scrollAnimateX1) > 0.00001 )
+			{
+				isInteractable = false;
+				const real_t fpsScale = getFPSScale(60.0);
+				real_t setpointDiff = 0.0;
+
+				// slightly faster on gamepad
+				const real_t factor = (3.0 * (*cvar_assist_slider_speed + (usingGamepad ? -.25f : 0.f)));
+				if ( scrollSetpoint1 - scrollAnimateX1 > 0.0 )
+				{
+					setpointDiff = fpsScale * std::max(3.0, (scrollSetpoint1 - scrollAnimateX1)) / (factor);
+				}
+				else
+				{
+					setpointDiff = fpsScale * std::min(-3.0, (scrollSetpoint1 - scrollAnimateX1)) / (factor);
+				}
+				scrollAnimateX1 += setpointDiff;
+				if ( setpointDiff > 0.0 )
+				{
+					scrollAnimateX1 = std::min((real_t)scrollSetpoint1, scrollAnimateX1);
+				}
+				else
+				{
+					scrollAnimateX1 = std::max((real_t)scrollSetpoint1, scrollAnimateX1);
+				}
+			}
+			else
+			{
+				scrollAnimateX1 = scrollSetpoint1;
+			}
+		}
+
+		if ( scrollAmount > 0 )
+		{
+			if ( !slider->isDisabled() && !usingGamepad )
+			{
+				sliderAssistUpdateSelectorOnHighlight(playernum, slider);
+			}
+			if ( slider->isCurrentlyPressed() )
+			{
+				auto val = slider->getValue() / 100.0;
+				int animX = val * scrollAmount;
+				animX /= kClassSlotHeight;
+				animX *= kClassSlotHeight;
+
+				scrollSetpoint1 = animX;
+				scrollSetpoint1 = std::min(scrollSetpoint1, scrollAmount);
+			}
+			else
+			{
+				slider->setValue((scrollAnimateX1 / scrollAmount) * 100.0);
+			}
+		}
+		else
+		{
+			slider->setValue(0.0);
+		}
+
+		SDL_Rect actualSize = drawerSlotsFrame->getActualSize();
+		actualSize.y = scrollAnimateX1;
+		drawerSlotsFrame->setActualSize(actualSize);
+	}
+
+	{
+		auto slider = assistRaceFrame->findSlider("race slider");
+		auto drawerSlotsFrame = assistRaceFrame->findFrame("race slots");
+		{
+			auto raceText = assistRaceFrame->findField("race txt");
+			std::string txt = "";
+			int race = -1;
+			Uint32 color = makeColor(121, 117, 116, 255);
+			if ( savedRace == -1 )
+			{
+				txt = Language::get(6320);
+				race = stats[parentGUI.gui_player]->playerRace;
+			}
+			else
+			{
+				txt = Language::get(6327);
+				race = savedRace;
+				color = hudColors.characterBaseClassText;
+				if ( race >= RACE_SKELETON
+					&& race <= RACE_GOATMAN )
+				{
+					color = hudColors.characterDLC1ClassText;
+				}
+				if ( race >= RACE_AUTOMATON
+					&& race <= RACE_INSECTOID )
+				{
+					color = hudColors.characterDLC2ClassText;
+				}
+			}
+			std::string racename = getMonsterLocalizedName(getMonsterFromPlayerRace(race)).c_str();
+			uppercaseString(racename);
+			txt += racename;
+			raceText->setText(txt.c_str());
+			raceText->setColor(color);
+		}
+		/*{
+			auto classNewText = assistClassFrame->findField("class new txt");
+			std::string txt = Language::get(6319);
+			if ( selectedClass == -1 || selectedClass == client_classes[parentGUI.gui_player] )
+			{
+				txt += '-';
+				classNewText->addColorToLine(1, makeColor(121, 117, 116, 255));
+			}
+			else
+			{
+				std::string classname = playerClassLangEntry(selectedClass, parentGUI.gui_player);
+				uppercaseString(classname);
+				txt += classname;
+				classNewText->addColorToLine(1, hudColors.characterBaseClassText);
+				if ( selectedClass >= CLASS_CONJURER && selectedClass <= CLASS_BREWER )
+				{
+					classNewText->addColorToLine(1, hudColors.characterDLC1ClassText);
+				}
+				else if ( selectedClass >= CLASS_MACHINIST && selectedClass <= CLASS_HUNTER )
+				{
+					classNewText->addColorToLine(1, hudColors.characterDLC2ClassText);
+				}
+			}
+			classNewText->setText(txt.c_str());
+		}*/
+
+		int lowestItemY = 0;
+		lowestItemY = std::max((int)raceSlots.size() - 1, lowestItemY);
+		lowestItemY += 1;
+
+		// handle height changing..
+		{
+			int numGrids = (lowestItemY / kNumRacesToDisplayVertical) + 1;
+			auto gridImg = drawerSlotsFrame->findImage("grid img");
+
+			SDL_Rect drawerSlotsFramePos = drawerSlotsFrame->getSize();
+			drawerSlotsFramePos.h = ((kNumRacesToDisplayVertical * kRaceSlotHeight) + 2);
+
+			SDL_Rect drawerSlotsFrameActualPos{ drawerSlotsFrame->getActualSize().x,
+				drawerSlotsFrame->getActualSize().y,
+				drawerSlotsFrame->getActualSize().w,
+				(drawerSlotsFramePos.h) * numGrids };
+			drawerSlotsFrame->setActualSize(drawerSlotsFrameActualPos);
+			drawerSlotsFrame->setScrollBarsEnabled(false);
+			drawerSlotsFrame->setSize(drawerSlotsFramePos);
+			gridImg->pos.y = 0;
+			gridImg->pos.h = (drawerSlotsFramePos.h) * numGrids;
+		}
+
+		int scrollAmount = std::max((lowestItemY)-(kNumRacesToDisplayVertical), 0) * kRaceSlotHeight;
+		if ( scrollAmount == 0 || currentView == ASSIST_SHRINE_VIEW_ITEMS )
+		{
+			slider->setDisabled(true);
+		}
+		else
+		{
+			slider->setDisabled(false);
+		}
+
+		SDL_Rect sliderPos = slider->getRailSize();
+		auto sliderCapTop = assistRaceFrame->findImage("race slider top");
+		/*if ( usingGamepad )
+		{
+			sliderPos.y = 104;
+			sliderPos.h = assistRaceFrame->getSize().h - 16 - 104;
+		}
+		else*/
+		{
+			sliderPos.y = *cvar_assistClassListGridY - 2;
+			sliderPos.h = kAssistRaceListHeight + 6;
+		}
+		sliderCapTop->pos.y = sliderPos.y;
+		slider->setRailSize(sliderPos);
+
+
+		currentScrollRow2 = scrollSetpoint2 / kRaceSlotHeight;
+
+		if ( bOpen && isInteractable )
+		{
+			// do sliders
+			if ( !slider->isDisabled() && !(abs(scrollSetpoint2 - scrollAnimateX2) > 0.00001 && usingGamepad) )
+			{
+				if ( !inputs.getUIInteraction(playernum)->selectedItem
+					&& players[playernum]->GUI.activeModule == Player::GUI_t::MODULE_ASSISTSHRINE
+					&& inventoryControlActive
+					&& currentView == ASSIST_SHRINE_VIEW_RACE )
+				{
+					auto& input = Input::inputs[playernum];
+					if ( inputs.bPlayerUsingKeyboardControl(playernum) )
+					{
+						if ( input.binaryToggle("MenuMouseWheelDown") )
+						{
+							scrollSetpoint2 = std::max(scrollSetpoint2 + kRaceSlotHeight, 0);
+						}
+						if ( input.binaryToggle("MenuMouseWheelUp") )
+						{
+							scrollSetpoint2 = std::max(scrollSetpoint2 - kRaceSlotHeight, 0);
+						}
+					}
+					if ( input.binaryToggle("MenuScrollDown") )
+					{
+						scrollSetpoint2 = std::max(scrollSetpoint2 + kRaceSlotHeight * kNumRacesToDisplayVertical, 0);
+						if ( player->inventoryUI.cursor.queuedModule == Player::GUI_t::MODULE_ASSISTSHRINE )
+						{
+							player->inventoryUI.cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+						}
+					}
+					else if ( input.binaryToggle("MenuScrollUp") )
+					{
+						scrollSetpoint2 = std::max(scrollSetpoint2 - kRaceSlotHeight * kNumRacesToDisplayVertical, 0);
+						if ( player->inventoryUI.cursor.queuedModule == Player::GUI_t::MODULE_ASSISTSHRINE )
+						{
+							player->inventoryUI.cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+						}
+					}
+				}
+			}
+
+			scrollSetpoint2 = std::min(scrollSetpoint2, scrollAmount);
+			currentScrollRow2 = scrollSetpoint2 / kRaceSlotHeight;
+
+			if ( abs(scrollSetpoint2 - scrollAnimateX2) > 0.00001 )
+			{
+				isInteractable = false;
+				const real_t fpsScale = getFPSScale(60.0);
+				real_t setpointDiff = 0.0;
+
+				// slightly faster on gamepad
+				const real_t factor = (3.0 * (*cvar_assist_slider_speed + (usingGamepad ? -.25f : 0.f)));
+				if ( scrollSetpoint2 - scrollAnimateX2 > 0.0 )
+				{
+					setpointDiff = fpsScale * std::max(3.0, (scrollSetpoint2 - scrollAnimateX2)) / (factor);
+				}
+				else
+				{
+					setpointDiff = fpsScale * std::min(-3.0, (scrollSetpoint2 - scrollAnimateX2)) / (factor);
+				}
+				scrollAnimateX2 += setpointDiff;
+				if ( setpointDiff > 0.0 )
+				{
+					scrollAnimateX2 = std::min((real_t)scrollSetpoint2, scrollAnimateX2);
+				}
+				else
+				{
+					scrollAnimateX2 = std::max((real_t)scrollSetpoint2, scrollAnimateX2);
+				}
+			}
+			else
+			{
+				scrollAnimateX2 = scrollSetpoint2;
+			}
+		}
+
+		if ( scrollAmount > 0 )
+		{
+			if ( !slider->isDisabled() && !usingGamepad )
+			{
+				sliderAssistUpdateSelectorOnHighlight(playernum, slider);
+			}
+			if ( slider->isCurrentlyPressed() )
+			{
+				auto val = slider->getValue() / 100.0;
+				int animX = val * scrollAmount;
+				animX /= kRaceSlotHeight;
+				animX *= kRaceSlotHeight;
+
+				scrollSetpoint2 = animX;
+				scrollSetpoint2 = std::min(scrollSetpoint2, scrollAmount);
+			}
+			else
+			{
+				slider->setValue((scrollAnimateX2 / scrollAmount) * 100.0);
+			}
+		}
+		else
+		{
+			slider->setValue(0.0);
+		}
+
+		SDL_Rect actualSize = drawerSlotsFrame->getActualSize();
+		actualSize.y = scrollAnimateX2;
+		drawerSlotsFrame->setActualSize(actualSize);
+	}
+
+	if ( bOpen )
+	{
+		updateClassSlots();
+		updateRaceSlots();
+
+		for ( int x = 0; x < MAX_ASSISTSHRINE_X; ++x )
+		{
+			for ( int y = 0; y < MAX_ASSISTSHRINE_Y; ++y )
+			{
+				if ( auto slotFrame = getAssistShrineSlotFrame(x, y) )
+				{
+					if ( currentView == ASSIST_SHRINE_VIEW_CLASSES )
+					{
+						if ( classSlots.find(x + y * 100) != classSlots.end() )
+						{
+							slotFrame->setDisabled(false);
+						}
+						else
+						{
+							slotFrame->setDisabled(true);
+						}
+					}
+					else
+					{
+						slotFrame->setDisabled(true);
+					}
+				}
+			}
+		}
+
+		for ( int y = 0; y < MAX_ASSISTSHRINE_Y; ++y )
+		{
+			if ( auto slotFrame = getAssistShrineSlotFrame(ASSIST_RACE_COLUMN, y) )
+			{
+				if ( currentView == ASSIST_SHRINE_VIEW_RACE )
+				{
+					if ( y < raceSlots.size() )
+					{
+						slotFrame->setDisabled(false);
+					}
+					else
+					{
+						slotFrame->setDisabled(true);
+					}
+				}
+				else
+				{
+					slotFrame->setDisabled(true);
+				}
+			}
+		}
+	}
+
+	Frame* itemFrameBlessModifierHovered = nullptr;
+	const int blessButtonY = -4;
+	Frame* item1Frame = getAssistShrineSlotFrame(ASSIST_SLOT_CLOAK, 0);
+	{
+		auto pos = item1Frame->getSize();
+		pos.x = 22;
+		pos.y = 112;
+		item1Frame->setSize(pos);
+		item1Frame->setDisabled(true);
+		if ( claimedItems.find(itemCloak.type) == claimedItems.end() )
+		{
+			if ( !(svFlags & SV_FLAG_ASSIST_ITEMS) )
+			{
+				itemCloak.itemHiddenFromShop = true;
+			}
+			updateSlotFrameFromItem(item1Frame, &itemCloak, itemCloak.itemHiddenFromShop);
+		}
+
+		auto header = assistItemFrame->findField("assist item 1 title");
+		header->setText(Language::get(6312));
+		header->setSize(SDL_Rect{ pos.x + pos.w / 2 - 32, pos.y - 24 + 5, 64, 24 });
+		header->setDisabled(false);
+		if ( auto textGet = header->getTextObject() )
+		{
+			if ( (textGet->getWidth() / 2) % 2 == 1 )
+			{
+				SDL_Rect pos = header->getSize();
+				pos.x += 1;
+				header->setSize(pos);
+			}
+		}
+
+		auto bless = assistItemFrame->findField("assist item 1 bless");
+		char buf[32];
+		snprintf(buf, sizeof(buf), "%+d", itemCloak.beatitude);
+		bless->setText(buf);
+		bless->setSize(SDL_Rect{ pos.x + pos.w / 2 - 32, pos.y + pos.h + 8, 64, 24 });
+		bless->setDisabled(false);
+		auto color = makeColorRGB(121, 117, 116);
+		if ( itemCloak.beatitude > 0 )
+		{
+			color = hudColors.characterSheetGreen;
+		}
+		else if ( itemCloak.beatitude < 0 )
+		{
+			color = hudColors.characterSheetRed;
+		}
+		bless->setColor(color);
+		if ( auto textGet = bless->getTextObject() )
+		{
+			if ( (textGet->getWidth() / 2) % 2 == 1 )
+			{
+				SDL_Rect pos = bless->getSize();
+				pos.x += 1;
+				bless->setSize(pos);
+			}
+		}
+
+		auto slotMinus = assistItemFrame->findButton("assist item 1 minus");
+		auto slotPlus = assistItemFrame->findButton("assist item 1 plus");
+		slotMinus->setDisabled(true);
+		slotPlus->setDisabled(true);
+		slotMinus->setInvisible(slotMinus->isDisabled());
+		slotPlus->setInvisible(slotPlus->isDisabled());
+		if ( !usingGamepad )
+		{
+			if ( claimedItems.find(itemCloak.type) == claimedItems.end()
+				&& !itemCloak.itemHiddenFromShop )
+			{
+				slotMinus->setDisabled(false);
+				SDL_Rect pos = slotMinus->getSize();
+				pos.x = item1Frame->getSize().x - 6;
+				pos.y = bless->getSize().y + bless->getSize().h;
+				pos.y += blessButtonY;
+				slotMinus->setSize(pos);
+
+				slotPlus->setDisabled(false);
+				pos = slotPlus->getSize();
+				pos.x = item1Frame->getSize().x + item1Frame->getSize().w - pos.w + 6;
+				pos.y = bless->getSize().y + bless->getSize().h;
+				pos.y += blessButtonY;
+				slotPlus->setSize(pos);
+
+				slotMinus->setTextHighlightColor(makeColor(201, 162, 100, 255));
+				slotMinus->setTextColor(0xFFFFFFFF);
+				slotPlus->setTextHighlightColor(makeColor(201, 162, 100, 255));
+				slotPlus->setTextColor(0xFFFFFFFF);
+				if ( itemCloak.beatitude <= -2 )
+				{
+					slotMinus->setTextColor(hudColors.characterSheetFaintText);
+					slotMinus->setTextHighlightColor(hudColors.characterSheetFaintText);
+				}
+				else if ( itemCloak.beatitude >= 2 )
+				{
+					slotPlus->setTextColor(hudColors.characterSheetFaintText);
+					slotPlus->setTextHighlightColor(hudColors.characterSheetFaintText);
+				}
+			}
+			slotMinus->setInvisible(slotMinus->isDisabled());
+			slotPlus->setInvisible(slotPlus->isDisabled());
+
+			if ( inputs.getVirtualMouse(playernum)->draw_cursor && !slotMinus->isInvisible() )
+			{
+				slotMinus->setDisabled(!isInteractable);
+				if ( isInteractable )
+				{
+					buttonAssistShrineUpdateSelectorOnHighlight(playernum, slotMinus);
+					if ( slotMinus->isHighlighted() )
+					{
+						itemFrameBlessModifierHovered = getAssistShrineSlotFrame(ASSIST_SLOT_CLOAK, 0);
+						selectAssistShrineSlot(ASSIST_SLOT_CLOAK, 0);
+					}
+				}
+			}
+			else if ( slotMinus->isSelected() )
+			{
+				slotMinus->deselect();
+			}
+			if ( inputs.getVirtualMouse(playernum)->draw_cursor && !slotPlus->isInvisible() )
+			{
+				slotPlus->setDisabled(!isInteractable);
+				if ( isInteractable )
+				{
+					buttonAssistShrineUpdateSelectorOnHighlight(playernum, slotPlus);
+					if ( slotPlus->isHighlighted() )
+					{
+						itemFrameBlessModifierHovered = getAssistShrineSlotFrame(ASSIST_SLOT_CLOAK, 0);
+						selectAssistShrineSlot(ASSIST_SLOT_CLOAK, 0);
+					}
+				}
+			}
+			else if ( slotPlus->isSelected() )
+			{
+				slotPlus->deselect();
+			}
+		}
+	}
+	Frame* item2Frame = getAssistShrineSlotFrame(ASSIST_SLOT_MASK, 0);
+	{
+		auto pos = item2Frame->getSize();
+		pos.x = 22 + 60;
+		pos.y = 112;
+		item2Frame->setSize(pos);
+		item2Frame->setDisabled(true);
+
+		if ( claimedItems.find(itemMask.type) == claimedItems.end() )
+		{
+			if ( !(svFlags & SV_FLAG_ASSIST_ITEMS) )
+			{
+				itemMask.itemHiddenFromShop = true;
+			}
+			updateSlotFrameFromItem(item2Frame, &itemMask, itemMask.itemHiddenFromShop);
+		}
+
+		auto header = assistItemFrame->findField("assist item 2 title");
+		header->setText(Language::get(6313));
+		header->setSize(SDL_Rect{ pos.x + pos.w / 2 - 32, pos.y - 24 + 5, 64, 24 });
+		header->setDisabled(false);
+		if ( auto textGet = header->getTextObject() )
+		{
+			if ( (textGet->getWidth() / 2) % 2 == 1 )
+			{
+				SDL_Rect pos = header->getSize();
+				pos.x += 1;
+				header->setSize(pos);
+			}
+		}
+
+		auto bless = assistItemFrame->findField("assist item 2 bless");
+		char buf[32];
+		snprintf(buf, sizeof(buf), "%+d", itemMask.beatitude);
+		bless->setText(buf);
+		bless->setSize(SDL_Rect{ pos.x + pos.w / 2 - 32, pos.y + pos.h + 8, 64, 24 });
+		bless->setDisabled(false);
+		auto color = makeColorRGB(121, 117, 116);
+		if ( itemMask.beatitude > 0 )
+		{
+			color = hudColors.characterSheetGreen;
+		}
+		else if ( itemMask.beatitude < 0 )
+		{
+			color = hudColors.characterSheetRed;
+		}
+		bless->setColor(color);
+		if ( auto textGet = bless->getTextObject() )
+		{
+			if ( (textGet->getWidth() / 2) % 2 == 1 )
+			{
+				SDL_Rect pos = bless->getSize();
+				pos.x += 1;
+				bless->setSize(pos);
+			}
+		}
+
+		auto slotMinus = assistItemFrame->findButton("assist item 2 minus");
+		auto slotPlus = assistItemFrame->findButton("assist item 2 plus");
+		slotMinus->setDisabled(true);
+		slotPlus->setDisabled(true);
+		slotMinus->setInvisible(slotMinus->isDisabled());
+		slotPlus->setInvisible(slotPlus->isDisabled());
+		if ( !usingGamepad )
+		{
+			if ( claimedItems.find(itemMask.type) == claimedItems.end()
+				&& !itemMask.itemHiddenFromShop )
+			{
+				slotMinus->setDisabled(false);
+				SDL_Rect pos = slotMinus->getSize();
+				pos.x = item2Frame->getSize().x - 6;
+				pos.y = bless->getSize().y + bless->getSize().h;
+				pos.y += blessButtonY;
+				slotMinus->setSize(pos);
+
+				slotPlus->setDisabled(false);
+				pos = slotPlus->getSize();
+				pos.x = item2Frame->getSize().x + item2Frame->getSize().w - pos.w + 6;
+				pos.y = bless->getSize().y + bless->getSize().h;
+				pos.y += blessButtonY;
+				slotPlus->setSize(pos);
+
+				slotMinus->setTextHighlightColor(makeColor(201, 162, 100, 255));
+				slotMinus->setTextColor(0xFFFFFFFF);
+				slotPlus->setTextHighlightColor(makeColor(201, 162, 100, 255));
+				slotPlus->setTextColor(0xFFFFFFFF);
+				if ( itemMask.beatitude <= -2 )
+				{
+					slotMinus->setTextColor(hudColors.characterSheetFaintText);
+					slotMinus->setTextHighlightColor(hudColors.characterSheetFaintText);
+				}
+				else if ( itemMask.beatitude >= 2 )
+				{
+					slotPlus->setTextColor(hudColors.characterSheetFaintText);
+					slotPlus->setTextHighlightColor(hudColors.characterSheetFaintText);
+				}
+			}
+			slotMinus->setInvisible(slotMinus->isDisabled());
+			slotPlus->setInvisible(slotPlus->isDisabled());
+
+			if ( inputs.getVirtualMouse(playernum)->draw_cursor && !slotMinus->isInvisible() )
+			{
+				slotMinus->setDisabled(!isInteractable);
+				if ( isInteractable )
+				{
+					buttonAssistShrineUpdateSelectorOnHighlight(playernum, slotMinus);
+					if ( slotMinus->isHighlighted() )
+					{
+						itemFrameBlessModifierHovered = getAssistShrineSlotFrame(ASSIST_SLOT_MASK, 0);
+						selectAssistShrineSlot(ASSIST_SLOT_MASK, 0);
+					}
+				}
+			}
+			else if ( slotMinus->isSelected() )
+			{
+				slotMinus->deselect();
+			}
+			if ( inputs.getVirtualMouse(playernum)->draw_cursor && !slotPlus->isInvisible() )
+			{
+				slotPlus->setDisabled(!isInteractable);
+				if ( isInteractable )
+				{
+					buttonAssistShrineUpdateSelectorOnHighlight(playernum, slotPlus);
+					if ( slotPlus->isHighlighted() )
+					{
+						itemFrameBlessModifierHovered = getAssistShrineSlotFrame(ASSIST_SLOT_MASK, 0);
+						selectAssistShrineSlot(ASSIST_SLOT_MASK, 0);
+					}
+				}
+			}
+			else if ( slotPlus->isSelected() )
+			{
+				slotPlus->deselect();
+			}
+		}
+	}
+	Frame* item3Frame = getAssistShrineSlotFrame(ASSIST_SLOT_AMULET, 0);
+	{
+		auto pos = item3Frame->getSize();
+		pos.x = 22 + 60 * 2;
+		pos.y = 112;
+		item3Frame->setSize(pos);
+		item3Frame->setDisabled(true);
+
+		if ( claimedItems.find(itemAmulet.type) == claimedItems.end() )
+		{
+			if ( !(svFlags & SV_FLAG_ASSIST_ITEMS) )
+			{
+				itemAmulet.itemHiddenFromShop = true;
+			}
+			updateSlotFrameFromItem(item3Frame, &itemAmulet, itemAmulet.itemHiddenFromShop);
+		}
+
+		auto header = assistItemFrame->findField("assist item 3 title");
+		header->setText(Language::get(6314));
+		header->setSize(SDL_Rect{ pos.x + pos.w / 2 - 32, pos.y - 24 + 5, 64, 24 });
+		header->setDisabled(false);
+		if ( auto textGet = header->getTextObject() )
+		{
+			if ( (textGet->getWidth() / 2) % 2 == 1 )
+			{
+				SDL_Rect pos = header->getSize();
+				pos.x += 1;
+				header->setSize(pos);
+			}
+		}
+
+		auto bless = assistItemFrame->findField("assist item 3 bless");
+		char buf[32];
+		snprintf(buf, sizeof(buf), "%+d", itemAmulet.beatitude);
+		bless->setText(buf);
+		bless->setSize(SDL_Rect{ pos.x + pos.w / 2 - 32, pos.y + pos.h + 8, 64, 24 });
+		bless->setDisabled(false);
+		auto color = makeColorRGB(121, 117, 116);
+		if ( itemAmulet.beatitude > 0 )
+		{
+			color = hudColors.characterSheetGreen;
+		}
+		else if ( itemAmulet.beatitude < 0 )
+		{
+			color = hudColors.characterSheetRed;
+		}
+		bless->setColor(color);
+		if ( auto textGet = bless->getTextObject() )
+		{
+			if ( (textGet->getWidth() / 2) % 2 == 1 )
+			{
+				SDL_Rect pos = bless->getSize();
+				pos.x += 1;
+				bless->setSize(pos);
+			}
+		}
+
+		auto slotMinus = assistItemFrame->findButton("assist item 3 minus");
+		auto slotPlus = assistItemFrame->findButton("assist item 3 plus");
+		slotMinus->setDisabled(true);
+		slotPlus->setDisabled(true);
+		slotMinus->setInvisible(slotMinus->isDisabled());
+		slotPlus->setInvisible(slotPlus->isDisabled());
+		if ( !usingGamepad )
+		{
+			if ( claimedItems.find(itemAmulet.type) == claimedItems.end()
+				&& !itemAmulet.itemHiddenFromShop )
+			{
+				slotMinus->setDisabled(false);
+				SDL_Rect pos = slotMinus->getSize();
+				pos.x = item3Frame->getSize().x - 6;
+				pos.y = bless->getSize().y + bless->getSize().h;
+				pos.y += blessButtonY;
+				slotMinus->setSize(pos);
+
+				slotPlus->setDisabled(false);
+				pos = slotPlus->getSize();
+				pos.x = item3Frame->getSize().x + item3Frame->getSize().w - pos.w + 6;
+				pos.y = bless->getSize().y + bless->getSize().h;
+				pos.y += blessButtonY;
+				slotPlus->setSize(pos);
+
+				slotMinus->setTextHighlightColor(makeColor(201, 162, 100, 255));
+				slotMinus->setTextColor(0xFFFFFFFF);
+				slotPlus->setTextHighlightColor(makeColor(201, 162, 100, 255));
+				slotPlus->setTextColor(0xFFFFFFFF);
+				if ( itemAmulet.beatitude <= -2 )
+				{
+					slotMinus->setTextColor(hudColors.characterSheetFaintText);
+					slotMinus->setTextHighlightColor(hudColors.characterSheetFaintText);
+				}
+				else if ( itemAmulet.beatitude >= 2 )
+				{
+					slotPlus->setTextColor(hudColors.characterSheetFaintText);
+					slotPlus->setTextHighlightColor(hudColors.characterSheetFaintText);
+				}
+			}
+			slotMinus->setInvisible(slotMinus->isDisabled());
+			slotPlus->setInvisible(slotPlus->isDisabled());
+
+			if ( inputs.getVirtualMouse(playernum)->draw_cursor && !slotMinus->isInvisible() )
+			{
+				slotMinus->setDisabled(!isInteractable);
+				if ( isInteractable )
+				{
+					buttonAssistShrineUpdateSelectorOnHighlight(playernum, slotMinus);
+					if ( slotMinus->isHighlighted() )
+					{
+						itemFrameBlessModifierHovered = getAssistShrineSlotFrame(ASSIST_SLOT_AMULET, 0);
+						selectAssistShrineSlot(ASSIST_SLOT_AMULET, 0);
+					}
+				}
+			}
+			else if ( slotMinus->isSelected() )
+			{
+				slotMinus->deselect();
+			}
+			if ( inputs.getVirtualMouse(playernum)->draw_cursor && !slotPlus->isInvisible() )
+			{
+				slotPlus->setDisabled(!isInteractable);
+				if ( isInteractable )
+				{
+					buttonAssistShrineUpdateSelectorOnHighlight(playernum, slotPlus);
+					if ( slotPlus->isHighlighted() )
+					{
+						itemFrameBlessModifierHovered = getAssistShrineSlotFrame(ASSIST_SLOT_AMULET, 0);
+						selectAssistShrineSlot(ASSIST_SLOT_AMULET, 0);
+					}
+				}
+			}
+			else if ( slotPlus->isSelected() )
+			{
+				slotPlus->deselect();
+			}
+		}
+	}
+	Frame* item4Frame = getAssistShrineSlotFrame(ASSIST_SLOT_RING, 0);
+	{
+		auto pos = item4Frame->getSize();
+		pos.x = 22 + 60 * 3;
+		pos.y = 112;
+		item4Frame->setSize(pos);
+		item4Frame->setDisabled(true);
+
+		if ( claimedItems.find(itemRing.type) == claimedItems.end() )
+		{
+			if ( !(svFlags & SV_FLAG_ASSIST_ITEMS) )
+			{
+				itemRing.itemHiddenFromShop = true;
+			}
+			updateSlotFrameFromItem(item4Frame, &itemRing, itemRing.itemHiddenFromShop);
+		}
+
+		auto header = assistItemFrame->findField("assist item 4 title");
+		header->setText(Language::get(6315));
+		header->setSize(SDL_Rect{ pos.x + pos.w / 2 - 32, pos.y - 24 + 5, 64, 24 });
+		header->setDisabled(false);
+		if ( auto textGet = header->getTextObject() )
+		{
+			if ( (textGet->getWidth() / 2) % 2 == 1 )
+			{
+				SDL_Rect pos = header->getSize();
+				pos.x += 1;
+				header->setSize(pos);
+			}
+		}
+
+		auto bless = assistItemFrame->findField("assist item 4 bless");
+		char buf[32];
+		snprintf(buf, sizeof(buf), "%+d", itemRing.beatitude);
+		bless->setText(buf);
+		bless->setSize(SDL_Rect{ pos.x + pos.w / 2 - 32, pos.y + pos.h + 8, 64, 24 });
+		bless->setDisabled(false);
+		auto color = makeColorRGB(121, 117, 116);
+		if ( itemRing.beatitude > 0 )
+		{
+			color = hudColors.characterSheetGreen;
+		}
+		else if ( itemRing.beatitude < 0 )
+		{
+			color = hudColors.characterSheetRed;
+		}
+		bless->setColor(color);
+		if ( auto textGet = bless->getTextObject() )
+		{
+			if ( (textGet->getWidth() / 2) % 2 == 1 )
+			{
+				SDL_Rect pos = bless->getSize();
+				pos.x += 1;
+				bless->setSize(pos);
+			}
+		}
+
+		auto slotMinus = assistItemFrame->findButton("assist item 4 minus");
+		auto slotPlus = assistItemFrame->findButton("assist item 4 plus");
+		slotMinus->setDisabled(true);
+		slotPlus->setDisabled(true);
+		slotMinus->setInvisible(slotMinus->isDisabled());
+		slotPlus->setInvisible(slotPlus->isDisabled());
+		if ( !usingGamepad )
+		{
+			if ( claimedItems.find(itemRing.type) == claimedItems.end()
+				&& !itemRing.itemHiddenFromShop )
+			{
+				slotMinus->setDisabled(false);
+				SDL_Rect pos = slotMinus->getSize();
+				pos.x = item4Frame->getSize().x - 6;
+				pos.y = bless->getSize().y + bless->getSize().h;
+				pos.y += blessButtonY;
+				slotMinus->setSize(pos);
+
+				slotPlus->setDisabled(false);
+				pos = slotPlus->getSize();
+				pos.x = item4Frame->getSize().x + item4Frame->getSize().w - pos.w + 6;
+				pos.y = bless->getSize().y + bless->getSize().h;
+				pos.y += blessButtonY;
+				slotPlus->setSize(pos);
+
+				slotMinus->setTextHighlightColor(makeColor(201, 162, 100, 255));
+				slotMinus->setTextColor(0xFFFFFFFF);
+				slotPlus->setTextHighlightColor(makeColor(201, 162, 100, 255));
+				slotPlus->setTextColor(0xFFFFFFFF);
+				if ( itemRing.beatitude <= -2 )
+				{
+					slotMinus->setTextColor(hudColors.characterSheetFaintText);
+					slotMinus->setTextHighlightColor(hudColors.characterSheetFaintText);
+				}
+				else if ( itemRing.beatitude >= 2 )
+				{
+					slotPlus->setTextColor(hudColors.characterSheetFaintText);
+					slotPlus->setTextHighlightColor(hudColors.characterSheetFaintText);
+				}
+			}
+			slotMinus->setInvisible(slotMinus->isDisabled());
+			slotPlus->setInvisible(slotPlus->isDisabled());
+
+			if ( inputs.getVirtualMouse(playernum)->draw_cursor && !slotMinus->isInvisible() )
+			{
+				slotMinus->setDisabled(!isInteractable);
+				if ( isInteractable )
+				{
+					buttonAssistShrineUpdateSelectorOnHighlight(playernum, slotMinus);
+					if ( slotMinus->isHighlighted() )
+					{
+						itemFrameBlessModifierHovered = getAssistShrineSlotFrame(ASSIST_SLOT_RING, 0);
+						selectAssistShrineSlot(ASSIST_SLOT_RING, 0);
+					}
+				}
+			}
+			else if ( slotMinus->isSelected() )
+			{
+				slotMinus->deselect();
+			}
+			if ( inputs.getVirtualMouse(playernum)->draw_cursor && !slotPlus->isInvisible() )
+			{
+				slotPlus->setDisabled(!isInteractable);
+				if ( isInteractable )
+				{
+					buttonAssistShrineUpdateSelectorOnHighlight(playernum, slotPlus);
+					if ( slotPlus->isHighlighted() )
+					{
+						itemFrameBlessModifierHovered = getAssistShrineSlotFrame(ASSIST_SLOT_RING, 0);
+						selectAssistShrineSlot(ASSIST_SLOT_RING, 0);
+					}
+				}
+			}
+			else if ( slotPlus->isSelected() )
+			{
+				slotPlus->deselect();
+			}
+		}
+	}
+
+	// filters
+	{
+		auto filterNavLeft = baseFrame->findImage("filter left glyph");
+		filterNavLeft->disabled = true;
+		auto filterNavRight = baseFrame->findImage("filter right glyph");
+		filterNavRight->disabled = true;
+
+		// filters
+		const int btnWidth = 68;
+		const int txtY = 13;
+		SDL_Rect prevBtn = { 30, 12, btnWidth, 32 };
+
+		Button* filterBtn = baseFrame->findButton("filter item btn");
+		filterBtn->setDisabled(true);
+		if ( inputs.getVirtualMouse(playernum)->draw_cursor )
+		{
+			filterBtn->setDisabled(!isInteractable);
+			if ( isInteractable )
+			{
+				buttonAssistShrineUpdateSelectorOnHighlight(playernum, filterBtn);
+			}
+		}
+		else if ( filterBtn->isSelected() )
+		{
+			filterBtn->deselect();
+		}
+
+		Uint32 inactiveColor = makeColorRGB(161, 103, 33);
+		Uint32 inactiveBorderColor = makeColorRGB(65, 8, 0);
+		Uint32 activeColor = hudColors.characterSheetOffWhiteText;
+		Uint32 highlightColor = hudColors.characterSheetLighter1Neutral;
+
+		filterBtn->setColor(makeColor(255, 255, 255, 255));
+		filterBtn->setBackground("*#images/ui/AssistShrine/AssistShrine_FilterInactive00.png");
+		Field* filterTxt = baseFrame->findField("filter item txt");
+		filterTxt->setDisabled(false);
+		filterTxt->setText(Language::get(6321));
+		filterTxt->setTextColor(inactiveColor);
+		filterTxt->setOutlineColor(inactiveBorderColor);
+		if ( false && filterBtn->isHighlighted() )
+		{
+			filterTxt->setTextColor(highlightColor);
+		}
+		else if ( currentView == ASSIST_SHRINE_VIEW_ITEMS )
+		{
+			filterTxt->setTextColor(activeColor);
+			filterTxt->setOutlineColor(0);
+		}
+		{
+			SDL_Rect btnPos = prevBtn;
+			filterBtn->setSize(btnPos);
+			SDL_Rect txtPos = btnPos;
+			txtPos.y += txtY;
+			txtPos.h = 24;
+			filterTxt->setSize(txtPos);
+		}
+		if ( currentView == ASSIST_SHRINE_VIEW_ITEMS )
+		{
+			filterBtn->setColor(makeColor(255, 255, 255, 255));
+			filterBtn->setBackground("*#images/ui/AssistShrine/AssistShrine_FilterActive00.png");
+			SDL_Rect txtPos = filterTxt->getSize();
+			txtPos.y -= 6;
+			filterTxt->setSize(txtPos);
+		}
+		filterBtn->setHighlightColor(filterBtn->getColor());
+
+		if ( usingGamepad )
+		{
+			filterNavLeft->path = Input::inputs[playernum].getGlyphPathForBinding("MenuPageLeft");
+			if ( auto imgGet = Image::get(filterNavLeft->path.c_str()) )
+			{
+				filterNavLeft->pos.w = imgGet->getWidth();
+				filterNavLeft->pos.h = imgGet->getHeight();
+				filterNavLeft->disabled = false;
+
+				filterNavLeft->pos.x = filterBtn->getSize().x + 2;
+				filterNavLeft->pos.x -= filterNavLeft->pos.w;
+				filterNavLeft->pos.y = filterBtn->getSize().y + filterBtn->getSize().h;
+				filterNavLeft->pos.y -= filterNavLeft->pos.h;
+				if ( filterNavLeft->pos.y % 2 == 1 )
+				{
+					++filterNavLeft->pos.y;
+				}
+			}
+		}
+
+		filterBtn = baseFrame->findButton("filter race btn");
+		filterBtn->setDisabled(true);
+		filterBtn->setInvisible(false);
+
+		if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_CUSTOM_RUN_ONESHOT )
+		{
+			filterBtn->setInvisible(true);
+		}
+		else if ( gameModeManager.currentSession.challengeRun.isActive()
+			&& (gameModeManager.currentSession.challengeRun.race >= 0
+				|| gameModeManager.currentSession.challengeRun.classnum >= 0) )
+		{
+			filterBtn->setInvisible(true);
+		}
+
+		if ( inputs.getVirtualMouse(playernum)->draw_cursor && !filterBtn->isInvisible() )
+		{
+			filterBtn->setDisabled(!isInteractable);
+			if ( isInteractable )
+			{
+				buttonAssistShrineUpdateSelectorOnHighlight(playernum, filterBtn);
+			}
+		}
+		else if ( filterBtn->isSelected() )
+		{
+			filterBtn->deselect();
+		}
+		filterBtn->setColor(makeColor(255, 255, 255, 255));
+		filterBtn->setBackground("*#images/ui/AssistShrine/AssistShrine_FilterInactive00.png");
+		filterTxt = baseFrame->findField("filter race txt");
+		filterTxt->setDisabled(false);
+		filterTxt->setText(Language::get(6322));
+		filterTxt->setTextColor(inactiveColor);
+		filterTxt->setOutlineColor(inactiveBorderColor);
+		if ( false && filterBtn->isHighlighted() )
+		{
+			filterTxt->setTextColor(highlightColor);
+		}
+		else if ( currentView == ASSIST_SHRINE_VIEW_RACE )
+		{
+			filterTxt->setTextColor(activeColor);
+			filterTxt->setOutlineColor(0);
+		}
+		{
+			SDL_Rect btnPos = prevBtn;
+			btnPos.x += btnPos.w;
+			prevBtn = btnPos;
+			filterBtn->setSize(btnPos);
+			SDL_Rect txtPos = btnPos;
+			txtPos.y += txtY;
+			txtPos.h = 24;
+			filterTxt->setSize(txtPos);
+		}
+		if ( currentView == ASSIST_SHRINE_VIEW_RACE )
+		{
+			filterBtn->setColor(makeColor(255, 255, 255, 255));
+			filterBtn->setBackground("*#images/ui/AssistShrine/AssistShrine_FilterActive00.png");
+			SDL_Rect txtPos = filterTxt->getSize();
+			txtPos.y -= 6;
+			filterTxt->setSize(txtPos);
+		}
+		filterBtn->setHighlightColor(filterBtn->getColor());
+
+		int numTabs = 1;
+		if ( !filterBtn->isInvisible() )
+		{
+			++numTabs;
+		}
+
+		filterBtn = baseFrame->findButton("filter class btn");
+		filterBtn->setDisabled(true);
+		filterBtn->setInvisible(false);
+
+		if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_CUSTOM_RUN_ONESHOT )
+		{
+			filterBtn->setInvisible(true);
+		}
+		else if ( gameModeManager.currentSession.challengeRun.isActive()
+			&& (gameModeManager.currentSession.challengeRun.race >= 0
+				|| gameModeManager.currentSession.challengeRun.classnum >= 0) )
+		{
+			filterBtn->setInvisible(true);
+		}
+
+		if ( !filterBtn->isInvisible() )
+		{
+			++numTabs;
+		}
+
+		if ( inputs.getVirtualMouse(playernum)->draw_cursor && !filterBtn->isInvisible() )
+		{
+			filterBtn->setDisabled(!isInteractable);
+			if ( isInteractable )
+			{
+				buttonAssistShrineUpdateSelectorOnHighlight(playernum, filterBtn);
+			}
+		}
+		else if ( filterBtn->isSelected() )
+		{
+			filterBtn->deselect();
+		}
+		filterBtn->setColor(makeColor(255, 255, 255, 255));
+		filterBtn->setBackground("*#images/ui/AssistShrine/AssistShrine_FilterInactive00.png");
+		filterTxt = baseFrame->findField("filter class txt");
+		filterTxt->setDisabled(false);
+		filterTxt->setText(Language::get(6323));
+		filterTxt->setTextColor(inactiveColor);
+		filterTxt->setOutlineColor(inactiveBorderColor);
+		if ( false && filterBtn->isHighlighted() )
+		{
+			filterTxt->setTextColor(highlightColor);
+		}
+		else if ( currentView == ASSIST_SHRINE_VIEW_CLASSES )
+		{
+			filterTxt->setTextColor(activeColor);
+			filterTxt->setOutlineColor(0);
+		}
+		{
+			SDL_Rect btnPos = prevBtn;
+			btnPos.x += btnPos.w;
+			filterBtn->setSize(btnPos);
+			SDL_Rect txtPos = btnPos;
+			txtPos.y += txtY;
+			txtPos.h = 24;
+			filterTxt->setSize(txtPos);
+		}
+		if ( currentView == ASSIST_SHRINE_VIEW_CLASSES )
+		{
+			filterBtn->setColor(makeColor(255, 255, 255, 255));
+			filterBtn->setBackground("*#images/ui/AssistShrine/AssistShrine_FilterActive00.png");
+			SDL_Rect txtPos = filterTxt->getSize();
+			txtPos.y -= 6;
+			filterTxt->setSize(txtPos);
+		}
+		filterBtn->setHighlightColor(filterBtn->getColor());
+
+		if ( usingGamepad )
+		{
+			filterNavRight->path = Input::inputs[playernum].getGlyphPathForBinding("MenuPageRight");
+			if ( auto imgGet = Image::get(filterNavRight->path.c_str()) )
+			{
+				filterNavRight->pos.w = imgGet->getWidth();
+				filterNavRight->pos.h = imgGet->getHeight();
+				filterNavRight->disabled = false;
+
+				filterNavRight->pos.x = filterBtn->getSize().x + filterBtn->getSize().w - 2;
+				filterNavRight->pos.y = filterBtn->getSize().y + filterBtn->getSize().h;
+				filterNavRight->pos.y -= filterNavRight->pos.h;
+				if ( filterNavRight->pos.y % 2 == 1 )
+				{
+					++filterNavRight->pos.y;
+				}
+			}
+		}
+
+		if ( numTabs <= 1 )
+		{
+			filterNavLeft->disabled = true;
+			filterNavRight->disabled = true;
+		}
+	}
+
+	const Uint32 defaultPromptColor = makeColor(255, 255, 255, 255);
+	const Uint32 negativeColor = hudColors.characterSheetRed;
+
+	auto claimItemGlyph = assistItemFrame->findImage("claim item glyph");
+	static ConsoleVariable<int> cvar_assist_pt_y("/assist_pt_y", -94);
+	static ConsoleVariable<int> cvar_assist_pt_y2("/assist_pt_y2", -54);
+	{
+		auto claimItemBtn = assistItemFrame->findButton("claim item button");
+		claimItemBtn->setDisabled(true);
+		SDL_Rect pos = claimItemBtn->getSize();
+		pos.y = assistItemFrame->getSize().h + *cvar_assist_pt_y;
+		claimItemBtn->setSize(pos);
+
+		auto assistPtImg = assistItemFrame->findImage("assist pt img");
+		assistPtImg->disabled = false;
+		assistPtImg->pos.x = 10;
+		assistPtImg->pos.y = pos.y + 2;
+
+		{
+			auto assistPtTitle = assistItemFrame->findField("assist pt title");
+			assistPtTitle->setText(Language::get(6328));
+			assistPtTitle->setDisabled(false);
+			SDL_Rect pos = assistPtTitle->getSize();
+			pos.x = assistPtImg->pos.x + 6;
+			pos.y = assistPtImg->pos.y + 5;
+			assistPtTitle->setSize(pos);
+			auto assistPtVal = assistItemFrame->findField("assist pt val");
+
+			int assistPointsClaimed = std::max(getAssistPointsSaved(), conductGameChallenges[CONDUCT_ASSISTANCE_CLAIMED]);
+			int assistPointsPreview = getAssistPointsPreview();
+			int assistPointChange = assistPointsPreview - assistPointsClaimed;
+			char buf[32];
+			if ( assistPointChange > 0 )
+			{
+				if ( false )
+				{
+					snprintf(buf, sizeof(buf), "%+d", assistPointChange);
+				}
+				else
+				{
+					snprintf(buf, sizeof(buf), "%d", assistPointsPreview);
+				}
+			}
+			else
+			{
+				snprintf(buf, sizeof(buf), "%d", assistPointsClaimed);
+			}
+			assistPtVal->setText(buf);
+			if ( assistPointsClaimed == assistPointsPreview )
+			{
+				assistPtVal->setColor(makeColorRGB(221, 206, 189));
+			}
+			else
+			{
+				animAssistValueFade += 0.003;
+				if ( animAssistValueFade >= 1.0 )
+				{
+					animAssistValueFade = 0.0;
+				}
+				real_t opacity = 0.5 + .4 * (1.0 * cos(animAssistValueFade * 2 * PI) + 1.0);
+				Uint8 r = 122;
+				Uint8 g = 192;
+				Uint8 b = 243;
+				Uint8 a = std::max(0.25, std::min(opacity, 1.0)) * 255;
+				assistPtVal->setColor(makeColor(r, g, b, a));
+			}
+			assistPtVal->setDisabled(false);
+			pos = assistPtVal->getSize();
+			pos.x = assistPtTitle->getSize().x;
+			pos.y = assistPtTitle->getSize().y;
+			assistPtVal->setSize(pos);
+
+			auto assistScoreTitle = assistItemFrame->findField("assist score title");
+			assistScoreTitle->setText(Language::get(6329));
+			assistScoreTitle->setDisabled(false);
+			pos = assistScoreTitle->getSize();
+			pos.x = assistPtTitle->getSize().x;
+			pos.y = assistItemFrame->getSize().h + *cvar_assist_pt_y2 - 1;
+			assistScoreTitle->setSize(pos);
+
+			auto assistScoreVal = assistItemFrame->findField("assist score val");
+			assistScoreVal->setDisabled(false);
+			pos = assistScoreVal->getSize();
+			pos.y = assistScoreTitle->getSize().y;
+			assistScoreVal->setSize(pos);
+
+			auto assistAchievementTitle = assistItemFrame->findField("assist ach title");
+			assistAchievementTitle->setText(Language::get(6330));
+			assistAchievementTitle->setDisabled(false);
+			pos = assistAchievementTitle->getSize();
+			pos.x = assistScoreTitle->getSize().x;
+			pos.y = assistScoreTitle->getSize().y + 24;
+			assistAchievementTitle->setSize(pos);
+
+			auto assistAchievementVal = assistItemFrame->findField("assist ach val");
+			assistAchievementVal->setDisabled(false);
+			pos = assistAchievementVal->getSize();
+			pos.y = assistAchievementTitle->getSize().y;
+			assistAchievementVal->setSize(pos);
+
+			int scorePenalty = 100 - std::max(5, 100 - assistPointsPreview * 10);
+			Uint32 colorPositive = makeColorRGB(122, 192, 243);
+
+			real_t opacity = 0.5 + .4 * (1.0 * cos(animAssistValueFade * 2 * PI) + 1.0);
+			if ( assistPointsClaimed == assistPointsPreview )
+			{
+				if ( assistPointsClaimed >= achievementDisabledLimit )
+				{
+					assistAchievementVal->setColor(hudColors.characterSheetRed);
+					assistAchievementVal->setText(Language::get(6332));
+				}
+				else
+				{
+					assistAchievementVal->setColor(colorPositive);
+					assistAchievementVal->setText(Language::get(6331));
+				}
+
+				if ( scorePenalty > 0 )
+				{
+					assistScoreVal->setColor(hudColors.characterSheetRed);
+					snprintf(buf, sizeof(buf), "%d%%", -scorePenalty);
+					assistScoreVal->setText(buf);
+				}
+				else
+				{
+					assistScoreVal->setColor(makeColorRGB(221, 206, 189));
+					assistScoreVal->setText("-");
+				}
+			}
+			else
+			{
+				Uint8 r, g, b, a;
+				if ( assistPointsClaimed < achievementDisabledLimit && assistPointsPreview >= achievementDisabledLimit )
+				{
+					getColor(hudColors.characterSheetRed, &r, &g, &b, &a);
+					a = std::max(0.25, std::min(opacity, 1.0)) * 255;
+					assistAchievementVal->setText(Language::get(6332));
+					assistAchievementVal->setColor(makeColor(r, g, b, a));
+				}
+				else if ( assistPointsClaimed >= achievementDisabledLimit )
+				{
+					assistAchievementVal->setColor(hudColors.characterSheetRed);
+					assistAchievementVal->setText(Language::get(6332));
+				}
+				else
+				{
+					getColor(colorPositive, &r, &g, &b, &a);
+					assistAchievementVal->setText(Language::get(6331));
+					assistAchievementVal->setColor(makeColor(r, g, b, a));
+				}
+
+				if ( scorePenalty > 0 )
+				{
+					getColor(hudColors.characterSheetRed, &r, &g, &b, &a);
+					a = std::max(0.25, std::min(opacity, 1.0)) * 255;
+					assistScoreVal->setColor(makeColor(r, g, b, a));
+					snprintf(buf, sizeof(buf), "%d%%", -scorePenalty);
+					assistScoreVal->setText(buf);
+				}
+				else
+				{
+					assistScoreVal->setColor(makeColorRGB(221, 206, 189));
+					assistScoreVal->setText("-");
+				}
+			}
+		}
+
+		claimItemGlyph->disabled = true;
+		claimItemBtn->setText(Language::get(6316));
+		if ( inputs.getVirtualMouse(playernum)->draw_cursor )
+		{
+			if ( currentView != ASSIST_SHRINE_VIEW_ITEMS )
+			{
+				if ( claimItemBtn->isSelected() )
+				{
+					claimItemBtn->deselect();
+				}
+			}
+			if ( isInteractable )
+			{
+				claimItemBtn->setDisabled(false);
+				if ( !hasItemsToClaim() )
+				{
+					claimItemBtn->setTextColor(hudColors.characterSheetFaintText);
+					claimItemBtn->setTextHighlightColor(hudColors.characterSheetFaintText);
+				}
+				else
+				{
+					claimItemBtn->setTextColor(makeColor(255, 255, 255, 255));
+					claimItemBtn->setTextHighlightColor(makeColor(201, 162, 100, 255));
+				}
+				if ( claimItemBtn->isSelected() )
+				{
+					buttonAssistShrineUpdateSelectorOnHighlight(playernum, claimItemBtn);
+				}
+			}
+			else
+			{
+				claimItemBtn->setTextColor(hudColors.characterSheetFaintText);
+				claimItemBtn->setTextHighlightColor(hudColors.characterSheetFaintText);
+			}
+		}
+		else if ( claimItemBtn->isSelected() )
+		{
+			claimItemBtn->deselect();
+		}
+		if ( usingGamepad && !inputs.getVirtualMouse(playernum)->draw_cursor )
+		{
+			claimItemBtn->setText(Language::get(6316));
+			claimItemBtn->setDisabled(true);
+			if ( !hasItemsToClaim() || players[playernum]->GUI.activeModule != Player::GUI_t::MODULE_ASSISTSHRINE )
+			{
+				claimItemBtn->setTextColor(hudColors.characterSheetFaintText);
+			}
+			else
+			{
+				claimItemBtn->setTextColor(makeColor(255, 255, 255, 255));
+				claimItemGlyph->path = Input::inputs[playernum].getGlyphPathForBinding("MenuAlt1");
+				if ( auto imgGet = Image::get(claimItemGlyph->path.c_str()) )
+				{
+					claimItemGlyph->pos.w = imgGet->getWidth();
+					claimItemGlyph->pos.h = imgGet->getHeight();
+					claimItemGlyph->disabled = false;
+				}
+				claimItemGlyph->pos.x = claimItemBtn->getSize().x + claimItemBtn->getSize().w - 8;
+				if ( claimItemGlyph->pos.x % 2 == 1 )
+				{
+					++claimItemGlyph->pos.x;
+				}
+				claimItemGlyph->pos.y = claimItemBtn->getSize().y + claimItemBtn->getSize().h / 2 - claimItemGlyph->pos.h / 2;
+				if ( claimItemGlyph->pos.y % 2 == 1 )
+				{
+					++claimItemGlyph->pos.y;
+				}
+			}
+		}
+	}
+
+	{
+		auto confirmBtn = assistRaceFrame->findButton("race confirm btn");
+		auto confirmGlyph = assistRaceFrame->findImage("race confirm glyph");
+		confirmBtn->setDisabled(true);
+		confirmGlyph->disabled = true;
+		confirmBtn->setText(Language::get(5007));
+		if ( inputs.getVirtualMouse(playernum)->draw_cursor )
+		{
+			if ( currentView != ASSIST_SHRINE_VIEW_RACE )
+			{
+				if ( confirmBtn->isSelected() )
+				{
+					confirmBtn->deselect();
+				}
+			}
+			if ( isInteractable )
+			{
+				confirmBtn->setDisabled(false);
+				if ( !raceHasChanged() )
+				{
+					confirmBtn->setTextColor(hudColors.characterSheetFaintText);
+					confirmBtn->setTextHighlightColor(hudColors.characterSheetFaintText);
+				}
+				else
+				{
+					confirmBtn->setTextColor(makeColor(255, 255, 255, 255));
+					confirmBtn->setTextHighlightColor(makeColor(201, 162, 100, 255));
+				}
+				if ( confirmBtn->isSelected() )
+				{
+					buttonAssistShrineUpdateSelectorOnHighlight(playernum, confirmBtn);
+				}
+			}
+			else
+			{
+				if ( !raceHasChanged() )
+				{
+					confirmBtn->setTextColor(hudColors.characterSheetFaintText);
+					confirmBtn->setTextHighlightColor(hudColors.characterSheetFaintText);
+				}
+			}
+		}
+		else if ( confirmBtn->isSelected() )
+		{
+			confirmBtn->deselect();
+		}
+		if ( usingGamepad && !inputs.getVirtualMouse(playernum)->draw_cursor )
+		{
+			confirmBtn->setText(Language::get(5007));
+			confirmBtn->setDisabled(true);
+			if ( !raceHasChanged() || players[playernum]->GUI.activeModule != Player::GUI_t::MODULE_ASSISTSHRINE )
+			{
+				confirmBtn->setTextColor(hudColors.characterSheetFaintText);
+			}
+			else
+			{
+				confirmBtn->setTextColor(makeColor(255, 255, 255, 255));
+				confirmGlyph->path = Input::inputs[playernum].getGlyphPathForBinding("MenuAlt1");
+				if ( auto imgGet = Image::get(confirmGlyph->path.c_str()) )
+				{
+					confirmGlyph->pos.w = imgGet->getWidth();
+					confirmGlyph->pos.h = imgGet->getHeight();
+					confirmGlyph->disabled = false;
+				}
+				confirmGlyph->pos.x = confirmBtn->getSize().x + confirmBtn->getSize().w / 2;
+				confirmGlyph->pos.x -= confirmGlyph->pos.w / 2;
+				if ( confirmGlyph->pos.x % 2 == 1 )
+				{
+					++confirmGlyph->pos.x;
+				}
+				confirmGlyph->pos.y = confirmBtn->getSize().y + confirmBtn->getSize().h - 4;
+			}
+		}
+	}
+
+	{
+		auto confirmBtn = assistClassFrame->findButton("class confirm btn");
+		auto confirmGlyph = assistClassFrame->findImage("class confirm glyph");
+		confirmBtn->setDisabled(true);
+		confirmGlyph->disabled = true;
+		confirmBtn->setText(Language::get(5007));
+		if ( inputs.getVirtualMouse(playernum)->draw_cursor )
+		{
+			if ( currentView != ASSIST_SHRINE_VIEW_CLASSES )
+			{
+				if ( confirmBtn->isSelected() )
+				{
+					confirmBtn->deselect();
+				}
+			}
+			if ( isInteractable )
+			{
+				confirmBtn->setDisabled(false);
+				if ( !classHasChanged() )
+				{
+					confirmBtn->setTextColor(hudColors.characterSheetFaintText);
+					confirmBtn->setTextHighlightColor(hudColors.characterSheetFaintText);
+				}
+				else
+				{
+					confirmBtn->setTextColor(makeColor(255, 255, 255, 255));
+					confirmBtn->setTextHighlightColor(makeColor(201, 162, 100, 255));
+				}
+				if ( confirmBtn->isSelected() )
+				{
+					buttonAssistShrineUpdateSelectorOnHighlight(playernum, confirmBtn);
+				}
+			}
+			else
+			{
+				if ( !classHasChanged() )
+				{
+					confirmBtn->setTextColor(hudColors.characterSheetFaintText);
+					confirmBtn->setTextHighlightColor(hudColors.characterSheetFaintText);
+				}
+			}
+		}
+		else if ( confirmBtn->isSelected() )
+		{
+			confirmBtn->deselect();
+		}
+		if ( usingGamepad && !inputs.getVirtualMouse(playernum)->draw_cursor )
+		{
+			confirmBtn->setText(Language::get(5007));
+			confirmBtn->setDisabled(true);
+			if ( !classHasChanged() || players[playernum]->GUI.activeModule != Player::GUI_t::MODULE_ASSISTSHRINE )
+			{
+				confirmBtn->setTextColor(hudColors.characterSheetFaintText);
+			}
+			else
+			{
+				confirmBtn->setTextColor(makeColor(255, 255, 255, 255));
+				confirmGlyph->path = Input::inputs[playernum].getGlyphPathForBinding("MenuAlt1");
+				if ( auto imgGet = Image::get(confirmGlyph->path.c_str()) )
+				{
+					confirmGlyph->pos.w = imgGet->getWidth();
+					confirmGlyph->pos.h = imgGet->getHeight();
+					confirmGlyph->disabled = false;
+				}
+				confirmGlyph->pos.x = confirmBtn->getSize().x + confirmBtn->getSize().w / 2;
+				confirmGlyph->pos.x -= confirmGlyph->pos.w / 2;
+				if ( confirmGlyph->pos.x % 2 == 1 )
+				{
+					++confirmGlyph->pos.x;
+				}
+				confirmGlyph->pos.y = confirmBtn->getSize().y + confirmBtn->getSize().h - 4;
+			}
+		}
+	}
+
+	//if ( assistRaceFrame )
+	//{
+	//	auto sexBtn = assistRaceFrame->findButton("sex m button");
+	//	//auto sexGlyph = assistItemFrame->findImage("sex m glyph");
+	//	sexBtn->setDisabled(true);
+	//	//sexGlyph->disabled = true;
+
+	//	if ( inputs.getVirtualMouse(playernum)->draw_cursor )
+	//	{
+	//		if ( currentView != ASSIST_SHRINE_VIEW_RACE )
+	//		{
+	//			if ( sexBtn->isSelected() )
+	//			{
+	//				sexBtn->deselect();
+	//			}
+	//		}
+	//		if ( isInteractable )
+	//		{
+	//			sexBtn->setDisabled(false);
+	//			if ( sexBtn->isSelected() )
+	//			{
+	//				buttonAssistShrineUpdateSelectorOnHighlight(playernum, sexBtn);
+	//			}
+	//		}
+	//		else
+	//		{
+	//			sexBtn->setTextColor(hudColors.characterSheetFaintText);
+	//		}
+	//	}
+	//	else if ( sexBtn->isSelected() )
+	//	{
+	//		sexBtn->deselect();
+	//	}
+	//	if ( usingGamepad && !inputs.getVirtualMouse(playernum)->draw_cursor )
+	//	{
+	//		sexBtn->setText(Language::get(6316));
+	//		sexBtn->setDisabled(true);
+	//		/*sexGlyph->path = Input::inputs[playernum].getGlyphPathForBinding("MenuAlt1");
+	//		if ( auto imgGet = Image::get(sexGlyph->path.c_str()) )
+	//		{
+	//			sexGlyph->pos.w = imgGet->getWidth();
+	//			sexGlyph->pos.h = imgGet->getHeight();
+	//			sexGlyph->disabled = false;
+	//		}
+	//		sexGlyph->pos.x = sexBtn->getSize().x + sexBtn->getSize().w - 16;
+	//		if ( sexGlyph->pos.x % 2 == 1 )
+	//		{
+	//			++sexGlyph->pos.x;
+	//		}
+	//		sexGlyph->pos.y = sexBtn->getSize().y + sexBtn->getSize().h - 16;*/
+	//	}
+	//}
+	//if ( assistRaceFrame )
+	//{
+	//	auto sexBtn = assistRaceFrame->findButton("sex f button");
+	//	//auto sexGlyph = assistItemFrame->findImage("sex f glyph");
+	//	sexBtn->setDisabled(true);
+	//	//sexGlyph->disabled = true;
+
+	//	if ( inputs.getVirtualMouse(playernum)->draw_cursor )
+	//	{
+	//		if ( currentView != ASSIST_SHRINE_VIEW_RACE )
+	//		{
+	//			if ( sexBtn->isSelected() )
+	//			{
+	//				sexBtn->deselect();
+	//			}
+	//		}
+	//		if ( isInteractable )
+	//		{
+	//			sexBtn->setDisabled(false);
+	//			if ( sexBtn->isSelected() )
+	//			{
+	//				buttonAssistShrineUpdateSelectorOnHighlight(playernum, sexBtn);
+	//			}
+	//		}
+	//		else
+	//		{
+	//			sexBtn->setTextColor(hudColors.characterSheetFaintText);
+	//		}
+	//	}
+	//	else if ( sexBtn->isSelected() )
+	//	{
+	//		sexBtn->deselect();
+	//	}
+	//	if ( usingGamepad && !inputs.getVirtualMouse(playernum)->draw_cursor )
+	//	{
+	//		sexBtn->setText(Language::get(6316));
+	//		sexBtn->setDisabled(true);
+	//		/*sexGlyph->path = Input::inputs[playernum].getGlyphPathForBinding("MenuAlt1");
+	//		if ( auto imgGet = Image::get(sexGlyph->path.c_str()) )
+	//		{
+	//			sexGlyph->pos.w = imgGet->getWidth();
+	//			sexGlyph->pos.h = imgGet->getHeight();
+	//			sexGlyph->disabled = false;
+	//		}
+	//		sexGlyph->pos.x = sexBtn->getSize().x + sexBtn->getSize().w - 16;
+	//		if ( sexGlyph->pos.x % 2 == 1 )
+	//		{
+	//			++sexGlyph->pos.x;
+	//		}
+	//		sexGlyph->pos.y = sexBtn->getSize().y + sexBtn->getSize().h - 16;*/
+	//	}
+	//}
+	if ( assistRaceFrame )
+	{
+		auto sexBtn = assistRaceFrame->findButton("sex toggle button");
+		auto sexToggleGlyph1 = assistRaceFrame->findImage("sex toggle glyph 1");
+		auto sexToggleGlyph2 = assistRaceFrame->findImage("sex toggle glyph 2");
+		sexBtn->setDisabled(true);
+		sexToggleGlyph1->disabled = true;
+		sexToggleGlyph2->disabled = true;
+
+		if ( inputs.getVirtualMouse(playernum)->draw_cursor )
+		{
+			if ( currentView != ASSIST_SHRINE_VIEW_RACE )
+			{
+				if ( sexBtn->isSelected() )
+				{
+					sexBtn->deselect();
+				}
+			}
+			if ( isInteractable )
+			{
+				sexBtn->setDisabled(false);
+				if ( sexBtn->isSelected() )
+				{
+					buttonAssistShrineUpdateSelectorOnHighlight(playernum, sexBtn);
+				}
+			}
+			else
+			{
+				sexBtn->setTextColor(hudColors.characterSheetFaintText);
+			}
+		}
+		else if ( sexBtn->isSelected() )
+		{
+			sexBtn->deselect();
+		}
+		if ( usingGamepad && !inputs.getVirtualMouse(playernum)->draw_cursor )
+		{
+			sexBtn->setDisabled(true);
+
+			if ( players[playernum]->GUI.activeModule == Player::GUI_t::MODULE_ASSISTSHRINE )
+			{
+				sexToggleGlyph1->path = Input::inputs[playernum].getGlyphPathForBinding("MenuPageLeftAlt");
+				if ( auto imgGet = Image::get(sexToggleGlyph1->path.c_str()) )
+				{
+					sexToggleGlyph1->pos.w = imgGet->getWidth();
+					sexToggleGlyph1->pos.h = imgGet->getHeight();
+					sexToggleGlyph1->disabled = false;
+				}
+				sexToggleGlyph1->pos.x = sexBtn->getSize().x + 16;
+				sexToggleGlyph1->pos.x -= sexToggleGlyph1->pos.w / 2;
+				if ( sexToggleGlyph1->pos.x % 2 == 1 )
+				{
+					++sexToggleGlyph1->pos.x;
+				}
+				sexToggleGlyph1->pos.y = sexBtn->getSize().y + sexBtn->getSize().h - 4;
+				if ( sexToggleGlyph1->pos.y % 2 == 1 )
+				{
+					++sexToggleGlyph1->pos.y;
+				}
+
+				sexToggleGlyph2->path = Input::inputs[playernum].getGlyphPathForBinding("MenuPageRightAlt");
+				if ( auto imgGet = Image::get(sexToggleGlyph2->path.c_str()) )
+				{
+					sexToggleGlyph2->pos.w = imgGet->getWidth();
+					sexToggleGlyph2->pos.h = imgGet->getHeight();
+					sexToggleGlyph2->disabled = false;
+				}
+				sexToggleGlyph2->pos.x = sexBtn->getSize().x + sexBtn->getSize().w - 16;
+				sexToggleGlyph2->pos.x -= sexToggleGlyph2->pos.w / 2;
+				if ( sexToggleGlyph2->pos.x % 2 == 1 )
+				{
+					++sexToggleGlyph2->pos.x;
+				}
+				sexToggleGlyph2->pos.y = sexBtn->getSize().y + sexBtn->getSize().h - 4;
+				if ( sexToggleGlyph2->pos.y % 2 == 1 )
+				{
+					++sexToggleGlyph2->pos.y;
+				}
+			}
+		}
+
+		auto abilityBtn = assistRaceFrame->findButton("race ability btn");
+		auto abilityGlyph = assistRaceFrame->findImage("race ability glyph");
+		auto disableAbilityTxt = assistRaceFrame->findField("race ability txt");
+		abilityBtn->setDisabled(true);
+		abilityGlyph->disabled = true;
+
+		if ( inputs.getVirtualMouse(playernum)->draw_cursor )
+		{
+			if ( currentView != ASSIST_SHRINE_VIEW_RACE )
+			{
+				if ( abilityBtn->isSelected() )
+				{
+					abilityBtn->deselect();
+				}
+			}
+			if ( isInteractable )
+			{
+				abilityBtn->setDisabled(false);
+				if ( abilityBtn->isSelected() )
+				{
+					buttonAssistShrineUpdateSelectorOnHighlight(playernum, abilityBtn);
+				}
+			}
+		}
+		else if ( abilityBtn->isSelected() )
+		{
+			abilityBtn->deselect();
+		}
+		if ( usingGamepad && !inputs.getVirtualMouse(playernum)->draw_cursor )
+		{
+			abilityBtn->setDisabled(true);
+			if ( disableAbilityTxt->getColor() == makeColor(121, 117, 116, 255) || players[playernum]->GUI.activeModule != Player::GUI_t::MODULE_ASSISTSHRINE )
+			{
+				// disabled button via text color
+			}
+			else
+			{
+				abilityGlyph->path = Input::inputs[playernum].getGlyphPathForBinding("MenuAlt2");
+				if ( auto imgGet = Image::get(abilityGlyph->path.c_str()) )
+				{
+					abilityGlyph->pos.w = imgGet->getWidth();
+					abilityGlyph->pos.h = imgGet->getHeight();
+					abilityGlyph->disabled = false;
+				}
+				abilityGlyph->pos.x = abilityBtn->getSize().x + abilityBtn->getSize().w - 4;
+				if ( abilityGlyph->pos.x % 2 == 1 )
+				{
+					++abilityGlyph->pos.x;
+				}
+				abilityGlyph->pos.y = abilityBtn->getSize().y + abilityBtn->getSize().h / 2 - abilityGlyph->pos.h / 2;
+				if ( abilityGlyph->pos.y % 2 == 1 )
+				{
+					++abilityGlyph->pos.y;
+				}
+			}
+		}
+	}
+
+	bool requestAssistItemButtonActive = false;
+	auto request_btn = itemTooltip->findButton("request btn");
+	request_btn->setDisabled(true);
+	request_btn->setInvisible(true);
+	auto request_glyph = itemTooltip->findImage("request glyph");
+	request_glyph->disabled = true;
+
+	clearItemDisplayed();
+
+	bool moduleActive = isInteractable 
+		&& !inputs.getUIInteraction(playernum)->selectedItem
+		&& inventoryControlActive
+		&& player->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_ASSISTSHRINE)
+		&& player->GUI.activeModule == Player::GUI_t::MODULE_ASSISTSHRINE;
+
+	bool classRaceTooltipActive = false;
+
+	if ( currentView == ASSIST_SHRINE_VIEW_ITEMS )
+	{
+		// default tooltip for assist items
+		if ( isInteractable
+			&& !inputs.getUIInteraction(playernum)->selectedItem
+			&& inventoryControlActive 
+			&& player->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_ASSISTSHRINE)
+			&& ( (!usingGamepad && !(player->bUseCompactGUIWidth() && !moduleActive))
+				|| (usingGamepad && moduleActive)) 
+			&& notifications.size() == 0 )
+		{
+			classRaceTooltipActive = true;
+
+			Uint32 defaultColor = hudColors.characterSheetNeutral;
+			auto txt = tooltipFrame->findField("tooltip text");
+			txt->setColor(defaultColor);
+
+			auto div = tooltipFrame->findImage("tooltip divider 1");
+			div->disabled = true;
+			auto img = tooltipFrame->findImage("tooltip img");
+			img->disabled = false;
+			img->path = "*#images/ui/AssistShrine/AssistIcon_00.png";
+			img->pos.w = 42;
+			img->pos.h = 42;
+
+			auto tooltipTopLeft = tooltipFrame->findImage(Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::TOP_LEFT].c_str());
+			tooltipTopLeft->path = "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_TL_Blue_00.png";
+			auto tooltipTop = tooltipFrame->findImage(Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::TOP].c_str());
+			tooltipTop->path = "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_T_Blue_00.png";
+			auto tooltipTopRight = tooltipFrame->findImage(Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::TOP_RIGHT].c_str());
+			tooltipTopRight->path = "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_TR_Blue_00.png";
+			Player::GUI_t::imageSetWidthHeight9x9(tooltipFrame, Player::GUI_t::tooltipEffectBackgroundImages);
+
+			int maxWidth = 308;
+			int minWidth = 308;
+
+			const int padx = 16;
+			const int pady1 = 8;
+			const int pady2 = 4;
+			const int padxMid = 4;
+			const int padyMid = 8;
+			SDL_Rect tooltipPos = SDL_Rect{ 400, 0, maxWidth, 100 };
+
+			txt->setText(Language::get(6340));
+			SDL_Rect txtPos = SDL_Rect{ padx, pady1 - 3, maxWidth - padx * 2, 80 };
+			txt->setSize(txtPos);
+			txt->setColor(hudColors.characterSheetHeadingText);
+			Font* actualFont = Font::get(txt->getFont());
+			int txtHeight = txt->getNumTextLines() * actualFont->height(true);
+			txtPos.h = txtHeight + 4;
+			auto txtGet = Text::get(txt->getLongestLine().c_str(), txt->getFont(),
+				txt->getTextColor(), txt->getOutlineColor());
+			txtPos.w = txtGet->getWidth();
+			txtPos.w = std::max(minWidth - padx * 2, txtPos.w);
+			txt->setSize(txtPos);
+
+			tooltipPos.w = (txtPos.w + padx * 2);
+
+			int currentHeight = txtPos.y + (actualFont->height(true) * 1) + 2;
+			const int extraTextHeightForLowerCharacters = 4;
+			currentHeight += padyMid;
+
+			if ( itemTooltip )
+			{
+				itemTooltip->setDisabled(false);
+
+				SDL_Rect itemTooltipPos = itemTooltip->getSize();
+				itemTooltipPos.x = txtPos.x + padxMid;
+				itemTooltipPos.y = currentHeight;
+				itemTooltipPos.w = maxWidth;
+				int heightOffset = 0;
+				if ( auto details_text = itemTooltip->findField("details") )
+				{
+					details_text->clearLinesToColor();
+					if ( !(svFlags & SV_FLAG_ASSIST_ITEMS) )
+					{
+						if ( multiplayer == CLIENT )
+						{
+							details_text->setText(Language::get(6348));
+						}
+						else
+						{
+							details_text->setText(Language::get(6347));
+						}
+						std::string txt = details_text->getText();
+						std::vector<std::string> lines;
+						for ( int c = 0; c < txt.size(); ++c )
+						{
+							if ( txt[c] == '\n' )
+							{
+								if ( lines.size() > 0 && lines.back() == "" )
+								{
+									// found paragraph
+									break;
+								}
+								lines.push_back("");
+							}
+							else if ( txt[c] != '\r' )
+							{
+								if ( lines.size() == 0 )
+								{
+									lines.push_back("");
+								}
+								lines.back().push_back(txt[c]);
+							}
+						}
+						for ( int i = 0; i < 10; ++i )
+						{
+							details_text->addColorToLine(lines.size() + i, hudColors.characterSheetRed);
+						}
+					}
+					else
+					{
+						details_text->setText(Language::get(6339));
+					}
+					SDL_Rect pos = details_text->getSize();
+					if ( auto actualFont = Font::get(details_text->getFont()) )
+					{
+						const int numlines = details_text->getNumTextLines();
+						const int pad = details_text->getPaddingPerLine();
+						const int actualHeight = actualFont->height(true);
+						pos.h = 4;
+						for ( int line = 0; line < numlines; ++line )
+						{
+							pos.h += actualHeight + pad;// +details_text->getIndividualLinePadding(line);
+							heightOffset += details_text->getIndividualLinePadding(line);
+						}
+					}
+					itemTooltipPos.h = pos.h + pos.y + extraTextHeightForLowerCharacters;
+					details_text->setSize(pos);
+				}
+				itemTooltip->setSize(itemTooltipPos);
+				tooltipPos.w = itemTooltipPos.w + padxMid * 2;
+				currentHeight = std::max(itemTooltipPos.y + itemTooltipPos.h - extraTextHeightForLowerCharacters + heightOffset, 0);
+
+				if ( !(svFlags & SV_FLAG_ASSIST_ITEMS) )
+				{
+					request_btn->setInvisible(false);
+					if ( tooltipFrame->getOpacity() > 99.0 )
+					{
+						requestAssistItemButtonActive = true;
+					}
+					SDL_Rect pos = request_btn->getSize();
+					pos.x = tooltipPos.w / 2 - itemTooltipPos.x - pos.w / 2;
+					pos.y = itemTooltipPos.h - pos.h - 8;
+					request_btn->setSize(pos);
+				}
+			}
+
+			tooltipPos.h = pady1 + currentHeight + pady2;
+
+			Player::PanelJustify_t justify = player->inventoryUI.inventoryPanelJustify;
+			if ( player->inventoryUI.bCompactView )
+			{
+				if ( justify == Player::PanelJustify_t::PANEL_JUSTIFY_LEFT )
+				{
+					justify = Player::PanelJustify_t::PANEL_JUSTIFY_RIGHT;
+				}
+				else if ( justify == Player::PanelJustify_t::PANEL_JUSTIFY_RIGHT )
+				{
+					justify = Player::PanelJustify_t::PANEL_JUSTIFY_LEFT;
+				}
+				if ( player->bAlignGUINextToInventoryCompact() ) // flip justify if next to inventory
+				{
+					justify = (justify == Player::PanelJustify_t::PANEL_JUSTIFY_RIGHT)
+						? Player::PanelJustify_t::PANEL_JUSTIFY_LEFT
+						: Player::PanelJustify_t::PANEL_JUSTIFY_RIGHT;
+				}
+			}
+			if ( justify == Player::PanelJustify_t::PANEL_JUSTIFY_RIGHT )
+			{
+				tooltipPos.x = assistItemFrame->getSize().x - tooltipPos.w;
+				tooltipPos.x -= 8;
+			}
+			else
+			{
+				tooltipPos.x = assistItemFrame->getSize().x + assistItemFrame->getSize().w;
+				tooltipPos.x += 8;
+			}
+
+			img->pos.x = tooltipPos.w - img->pos.w - 16;
+			img->pos.y = tooltipPos.y + 32;
+
+			tooltipPos.y = assistItemFrame->getSize().y + 52 + 22;
+			if ( tooltipPos.y + tooltipPos.h > assistShrineFrame->getSize().h )
+			{
+				// keep on-screen
+				tooltipPos.y -= ((tooltipPos.y + tooltipPos.h) - assistShrineFrame->getSize().h);
+				tooltipFrame->setSize(tooltipPos);
+			}
+			tooltipFrame->setSize(tooltipPos);
+			Player::GUI_t::imageResizeToContainer9x9(tooltipFrame, SDL_Rect{ 0, 0, tooltipPos.w, tooltipPos.h },
+				Player::GUI_t::tooltipEffectBackgroundImages);
+		}
+	}
+
+	if ( moduleActive )
+	{
+		if ( player->GUI.bActiveModuleUsesInventory() && getSelectedAssistShrineX() >= 0 && getSelectedAssistShrineX() < MAX_ASSISTSHRINE_X
+			&& getSelectedAssistShrineY() >= 0 && getSelectedAssistShrineY() < MAX_ASSISTSHRINE_Y
+			&& currentView == ASSIST_SHRINE_VIEW_CLASSES )
+		{
+			if ( auto slotFrame = getAssistShrineSlotFrame(getSelectedAssistShrineX(), getSelectedAssistShrineY()) )
+			{
+				if ( !slotFrame->isDisabled() && slotFrame->capturesMouse() )
+				{
+					auto find = classSlots.find(getSelectedAssistShrineX() + getSelectedAssistShrineY() * 100);
+					if ( find != classSlots.end() )
+					{
+						itemActionType = ASSIST_CLASS_OK;
+						itemType = find->second;
+
+						if ( inventoryControlActive && !player->inventoryUI.bIsTooltipDelayed() )
+						{
+							if ( notifications.size() == 0 )
+							{
+								classRaceTooltipActive = true;
+							}
+						}
+
+						if ( classRaceTooltipActive )
+						{
+							Uint32 defaultColor = hudColors.characterSheetNeutral;
+							auto txt = tooltipFrame->findField("tooltip text");
+							txt->setColor(defaultColor);
+
+							auto div = tooltipFrame->findImage("tooltip divider 1");
+							div->disabled = true;
+							auto img = tooltipFrame->findImage("tooltip img");
+							img->disabled = true;
+
+							auto tooltipTopLeft = tooltipFrame->findImage(Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::TOP_LEFT].c_str());
+							tooltipTopLeft->path = "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_TL_Blue_00.png";
+							auto tooltipTop = tooltipFrame->findImage(Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::TOP].c_str());
+							tooltipTop->path = "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_T_Blue_00.png";
+							auto tooltipTopRight = tooltipFrame->findImage(Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::TOP_RIGHT].c_str());
+							tooltipTopRight->path = "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_TR_Blue_00.png";
+							Player::GUI_t::imageSetWidthHeight9x9(tooltipFrame, Player::GUI_t::tooltipEffectBackgroundImages);
+
+							int maxWidth = 260;
+							int minWidth = 260;
+
+							const int padx = 16;
+							const int pady1 = 8;
+							const int pady2 = 4;
+							const int padxMid = 4;
+							const int padyMid = 8;
+							SDL_Rect tooltipPos = SDL_Rect{ 400, 0, maxWidth, 100 };
+
+							char titleBuf[64];
+							std::string classname = playerClassLangEntry(itemType, parentGUI.gui_player);
+							uppercaseString(classname);
+							txt->setText(classname.c_str());
+							SDL_Rect txtPos = SDL_Rect{ padx, pady1 - 3, maxWidth - padx * 2, 80 };
+							txt->setSize(txtPos);
+							if ( itemType >= CLASS_CONJURER && itemType <= CLASS_BREWER )
+							{
+								txt->setColor(hudColors.characterDLC1ClassText);
+							}
+							else if ( itemType >= CLASS_MACHINIST && itemType <= CLASS_HUNTER )
+							{
+								txt->setColor(hudColors.characterDLC2ClassText);
+							}
+							else
+							{
+								txt->setColor(hudColors.characterBaseClassText);
+							}
+							Font* actualFont = Font::get(txt->getFont());
+							int txtHeight = txt->getNumTextLines() * actualFont->height(true);
+							txtPos.h = txtHeight + 4;
+							auto txtGet = Text::get(txt->getLongestLine().c_str(), txt->getFont(),
+								txt->getTextColor(), txt->getOutlineColor());
+							txtPos.w = txtGet->getWidth();
+							txtPos.w = std::max(minWidth - padx * 2, txtPos.w);
+							txt->setSize(txtPos);
+
+							tooltipPos.w = (txtPos.w + padx * 2);
+
+							int currentHeight = txtPos.y + (actualFont->height(true) * 1) + 2;
+							const int extraTextHeightForLowerCharacters = 4;
+							currentHeight += padyMid;
+
+							if ( classTooltip )
+							{
+								classTooltip->setDisabled(false);
+								auto statGrowths = classTooltip->findFrame("stat growths");
+								MainMenu::ClassDescriptions::update_stat_growths(*statGrowths, itemType, 0);
+
+								div->pos.x = padx;
+								div->pos.y = currentHeight + statGrowths->getSize().h + 5;
+								div->pos.w = txtPos.w;
+								div->disabled = false;
+
+								// hp/mp
+								{
+									auto hpmp_values = classTooltip->findField("hpmp_values");
+									const int i = std::min((Sint32)itemType, (Sint32)(MainMenu::ClassDescriptions::data.size() - 1));
+									char buf[32];
+									snprintf(buf, sizeof(buf), "%d\n%d",
+										MainMenu::ClassDescriptions::data[i].hp,
+										MainMenu::ClassDescriptions::data[i].mp);
+									hpmp_values->setText(buf);
+								}
+
+								// difficulty stars
+								auto difficulty_stars = classTooltip->findField("difficulty_stars");
+								{
+									const int i = std::min((Sint32)itemType, (Sint32)(MainMenu::ClassDescriptions::data.size() - 1));
+									for ( int c = 0; c < 2; ++c ) {
+										difficulty_stars->addColorToLine(c, std::get<2>(MainMenu::ClassDescriptions::data[i].survivalComplexity[c]));
+									}
+									char buf[32];
+									snprintf(buf, sizeof(buf), "%s\n%s",
+										std::get<1>(MainMenu::ClassDescriptions::data[i].survivalComplexity[0]).c_str(),
+										std::get<1>(MainMenu::ClassDescriptions::data[i].survivalComplexity[1]).c_str());
+									difficulty_stars->setText(buf);
+								}
+
+								SDL_Rect classTooltipPos = classTooltip->getSize();
+								classTooltipPos.w = statGrowths->getSize().w;
+								classTooltipPos.h = difficulty_stars->getSize().y + difficulty_stars->getSize().h;
+								classTooltipPos.x = tooltipPos.w / 2 - classTooltipPos.w / 2;
+								classTooltipPos.y = currentHeight;
+								classTooltip->setSize(classTooltipPos);
+
+								currentHeight += classTooltipPos.h - 1;
+
+								std::string descText = "";
+								descText = Player::CharacterSheet_t::getHoverTextString("stat_growth_info");
+							}
+
+							tooltipPos.h = pady1 + currentHeight + pady2 - 8;
+
+							Player::PanelJustify_t justify = player->inventoryUI.inventoryPanelJustify;
+							if ( player->inventoryUI.bCompactView )
+							{
+								if ( justify == Player::PanelJustify_t::PANEL_JUSTIFY_LEFT )
+								{
+									justify = Player::PanelJustify_t::PANEL_JUSTIFY_RIGHT;
+								}
+								else if ( justify == Player::PanelJustify_t::PANEL_JUSTIFY_RIGHT )
+								{
+									justify = Player::PanelJustify_t::PANEL_JUSTIFY_LEFT;
+								}
+								if ( player->bAlignGUINextToInventoryCompact() ) // flip justify if next to inventory
+								{
+									justify = (justify == Player::PanelJustify_t::PANEL_JUSTIFY_RIGHT)
+										? Player::PanelJustify_t::PANEL_JUSTIFY_LEFT
+										: Player::PanelJustify_t::PANEL_JUSTIFY_RIGHT;
+								}
+							}
+							if ( justify == Player::PanelJustify_t::PANEL_JUSTIFY_RIGHT )
+							{
+								tooltipPos.x = assistItemFrame->getSize().x - tooltipPos.w;
+								tooltipPos.x -= 8;
+							}
+							else
+							{
+								tooltipPos.x = assistItemFrame->getSize().x + assistItemFrame->getSize().w;
+								tooltipPos.x += 8;
+							}
+							auto parentGrid = slotFrame->getParent();
+							tooltipPos.y = assistItemFrame->getSize().y + slotFrame->getSize().y + parentGrid->getSize().y - parentGrid->getActualSize().y;
+							if ( tooltipPos.y + tooltipPos.h > assistShrineFrame->getSize().h )
+							{
+								// keep on-screen
+								tooltipPos.y -= ((tooltipPos.y + tooltipPos.h) - assistShrineFrame->getSize().h);
+								tooltipFrame->setSize(tooltipPos);
+							}
+							tooltipFrame->setSize(tooltipPos);
+							Player::GUI_t::imageResizeToContainer9x9(tooltipFrame, SDL_Rect{ 0, 0, tooltipPos.w, tooltipPos.h },
+								Player::GUI_t::tooltipEffectBackgroundImages);
+						}
+					}
+				}
+			}
+		}
+		else if ( player->GUI.bActiveModuleUsesInventory() && getSelectedAssistShrineX() == ASSIST_RACE_COLUMN
+			&& getSelectedAssistShrineY() >= 0 && getSelectedAssistShrineY() < MAX_ASSISTSHRINE_Y
+			&& currentView == ASSIST_SHRINE_VIEW_RACE )
+		{
+			if ( auto slotFrame = getAssistShrineSlotFrame(getSelectedAssistShrineX(), getSelectedAssistShrineY()) )
+			{
+				if ( !slotFrame->isDisabled() && slotFrame->capturesMouse() )
+				{
+					if ( getSelectedAssistShrineY() < raceSlots.size() )
+					{
+						itemActionType = ASSIST_RACE_OK;
+						itemType = raceSlots[getSelectedAssistShrineY()];
+
+						if ( inventoryControlActive && !player->inventoryUI.bIsTooltipDelayed() )
+						{
+							if ( notifications.size() == 0 )
+							{
+								classRaceTooltipActive = true;
+							}
+						}
+
+						if ( classRaceTooltipActive )
+						{
+							Uint32 defaultColor = hudColors.characterSheetNeutral;
+							auto txt = tooltipFrame->findField("tooltip text");
+							txt->setColor(defaultColor);
+
+							auto div = tooltipFrame->findImage("tooltip divider 1");
+							div->disabled = true;
+							auto img = tooltipFrame->findImage("tooltip img");
+							img->disabled = true;
+
+							auto tooltipTopLeft = tooltipFrame->findImage(Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::TOP_LEFT].c_str());
+							tooltipTopLeft->path = "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_TL_Blue_00.png";
+							auto tooltipTop = tooltipFrame->findImage(Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::TOP].c_str());
+							tooltipTop->path = "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_T_Blue_00.png";
+							auto tooltipTopRight = tooltipFrame->findImage(Player::GUI_t::tooltipEffectBackgroundImages[Player::GUI_t::TOP_RIGHT].c_str());
+							tooltipTopRight->path = "*#images/ui/CharSheet/HUD_CharSheet_Tooltip_TR_Blue_00.png";
+							Player::GUI_t::imageSetWidthHeight9x9(tooltipFrame, Player::GUI_t::tooltipEffectBackgroundImages);
+
+							int maxWidth = 260;
+							int minWidth = 260;
+
+							const int padx = 16;
+							const int pady1 = 8;
+							const int pady2 = 4;
+							const int padxMid = 4;
+							const int padyMid = 8;
+							SDL_Rect tooltipPos = SDL_Rect{ 400, 0, maxWidth, 100 };
+
+							Monster race = getMonsterFromPlayerRace(itemType);
+
+							char titleBuf[64];
+							std::string racename;
+							if ( selectedDisableAbilities == 1 && itemType != RACE_HUMAN )
+							{
+								racename += Language::get(4068);
+								racename += ' ';
+								racename += getMonsterLocalizedName(race);
+								race = HUMAN;
+							}
+							else
+							{
+								racename = getMonsterLocalizedName(race);
+							}
+							uppercaseString(racename);
+							txt->setText(racename.c_str());
+							SDL_Rect txtPos = SDL_Rect{ padx, pady1 - 3, maxWidth - padx * 2, 80 };
+							txt->setSize(txtPos);
+							if ( itemType >= RACE_SKELETON
+								&& itemType <= RACE_GOATMAN )
+							{
+								txt->setColor(hudColors.characterDLC1ClassText);
+							}
+							else if ( itemType >= RACE_AUTOMATON
+								&& itemType <= RACE_INSECTOID )
+							{
+								txt->setColor(hudColors.characterDLC2ClassText);
+							}
+							else
+							{
+								txt->setColor(hudColors.characterBaseClassText);
+							}
+							Font* actualFont = Font::get(txt->getFont());
+							int txtHeight = txt->getNumTextLines() * actualFont->height(true);
+							txtPos.h = txtHeight + 4;
+							auto txtGet = Text::get(txt->getLongestLine().c_str(), txt->getFont(),
+								txt->getTextColor(), txt->getOutlineColor());
+							txtPos.w = txtGet->getWidth();
+							txtPos.w = std::max(minWidth - padx * 2, txtPos.w);
+							txt->setSize(txtPos);
+
+							tooltipPos.w = (txtPos.w + padx * 2);
+
+							int currentHeight = txtPos.y + (actualFont->height(true) * 1) + 2;
+							const int extraTextHeightForLowerCharacters = 4;
+							currentHeight += padyMid;
+
+							if ( raceTooltip )
+							{
+								raceTooltip->setDisabled(false);
+								MainMenu::RaceDescriptions::update_details_text(*raceTooltip, race, race);
+
+								SDL_Rect raceTooltipPos = raceTooltip->getSize();
+								raceTooltipPos.x = txtPos.x + padxMid;
+								raceTooltipPos.y = currentHeight;
+								raceTooltipPos.w = 272;
+								int heightOffset = 0;
+								if ( auto details_text = raceTooltip->findField("details") )
+								{
+									SDL_Rect pos = details_text->getSize();
+									if ( auto actualFont = Font::get(details_text->getFont()) )
+									{
+										const int numlines = details_text->getNumTextLines();
+										const int pad = details_text->getPaddingPerLine();
+										const int actualHeight = actualFont->height(true);
+										pos.h = 0;
+										for ( int line = 0; line < numlines; ++line )
+										{
+											pos.h += actualHeight + pad;// +details_text->getIndividualLinePadding(line);
+											heightOffset += details_text->getIndividualLinePadding(line);
+										}
+									}
+									raceTooltipPos.h = pos.h + pos.y + extraTextHeightForLowerCharacters;
+									details_text->setSize(pos);
+								}
+								if ( auto details_text_right = raceTooltip->findField("details_right") )
+								{
+									SDL_Rect pos = details_text_right->getSize();
+									if ( auto actualFont = Font::get(details_text_right->getFont()) )
+									{
+										const int numlines = details_text_right->getNumTextLines();
+										const int pad = details_text_right->getPaddingPerLine();
+										const int actualHeight = actualFont->height(true);
+										pos.h = 0;
+										for ( int line = 0; line < numlines; ++line )
+										{
+											pos.h += actualHeight + pad;// +details_text_right->getIndividualLinePadding(line);
+										}
+									}
+
+									details_text_right->setSize(pos);
+								}
+								raceTooltip->setSize(raceTooltipPos);
+								tooltipPos.w = raceTooltipPos.w + padxMid * 2;
+								currentHeight = std::max(raceTooltipPos.y + raceTooltipPos.h - extraTextHeightForLowerCharacters + heightOffset, 0);
+							}
+
+							tooltipPos.h = pady1 + currentHeight + pady2;
+
+							Player::PanelJustify_t justify = player->inventoryUI.inventoryPanelJustify;
+							if ( player->inventoryUI.bCompactView )
+							{
+								if ( justify == Player::PanelJustify_t::PANEL_JUSTIFY_LEFT )
+								{
+									justify = Player::PanelJustify_t::PANEL_JUSTIFY_RIGHT;
+								}
+								else if ( justify == Player::PanelJustify_t::PANEL_JUSTIFY_RIGHT )
+								{
+									justify = Player::PanelJustify_t::PANEL_JUSTIFY_LEFT;
+								}
+								if ( player->bAlignGUINextToInventoryCompact() ) // flip justify if next to inventory
+								{
+									justify = (justify == Player::PanelJustify_t::PANEL_JUSTIFY_RIGHT)
+										? Player::PanelJustify_t::PANEL_JUSTIFY_LEFT
+										: Player::PanelJustify_t::PANEL_JUSTIFY_RIGHT;
+								}
+							}
+							if ( justify == Player::PanelJustify_t::PANEL_JUSTIFY_RIGHT )
+							{
+								tooltipPos.x = assistItemFrame->getSize().x - tooltipPos.w;
+								tooltipPos.x -= 8;
+							}
+							else
+							{
+								tooltipPos.x = assistItemFrame->getSize().x + assistItemFrame->getSize().w;
+								tooltipPos.x += 8;
+							}
+							auto parentGrid = slotFrame->getParent();
+							tooltipPos.y = assistItemFrame->getSize().y + parentGrid->getSize().y - 40;
+							if ( tooltipPos.y + tooltipPos.h > assistShrineFrame->getSize().h )
+							{
+								// keep on-screen
+								tooltipPos.y -= ((tooltipPos.y + tooltipPos.h) - assistShrineFrame->getSize().h);
+								tooltipFrame->setSize(tooltipPos);
+							}
+							tooltipFrame->setSize(tooltipPos);
+							Player::GUI_t::imageResizeToContainer9x9(tooltipFrame, SDL_Rect{ 0, 0, tooltipPos.w, tooltipPos.h },
+								Player::GUI_t::tooltipEffectBackgroundImages);
+						}
+					}
+				}
+			}
+		}
+		else if ( currentView == ASSIST_SHRINE_VIEW_ITEMS )
+		{
+			Frame* slotFrame = itemFrameBlessModifierHovered;
+			if ( !slotFrame && player->GUI.bActiveModuleUsesInventory() )
+			{
+				if ( getSelectedAssistShrineX() >= ASSIST_SLOT_RING && getSelectedAssistShrineX() < 0
+					&& getSelectedAssistShrineY() == 0 )
+				{
+					if ( slotFrame = getAssistShrineSlotFrame(getSelectedAssistShrineX(), getSelectedAssistShrineY()) )
+					{
+						if ( !slotFrame->capturesMouse() )
+						{
+							slotFrame = nullptr;
+						}
+					}
+				}
+			}
+
+			if ( slotFrame )
+			{
+				if ( /*!slotFrame->isDisabled() && */true )
+				{
+					Item* item = nullptr;
+					switch ( getSelectedAssistShrineX() )
+					{
+					case ASSIST_SLOT_AMULET:
+						item = &itemAmulet;
+						break;
+					case ASSIST_SLOT_CLOAK:
+						item = &itemCloak;
+						break;
+					case ASSIST_SLOT_MASK:
+						item = &itemMask;
+						break;
+					case ASSIST_SLOT_RING:
+						item = &itemRing;
+						break;
+					default:
+						break;
+					}
+
+					if ( item )
+					{
+						setItemDisplayNameAndPrice(item);
+						if ( itemFrameBlessModifierHovered )
+						{
+							itemActionType = ASSIST_ITEM_NONE;
+						}
+
+						if ( !slotFrame->isDisabled() )
+						{
+							Player::PanelJustify_t justify = player->inventoryUI.inventoryPanelJustify;
+							if ( player->inventoryUI.bCompactView )
+							{
+								if ( justify == Player::PanelJustify_t::PANEL_JUSTIFY_LEFT )
+								{
+									justify = Player::PanelJustify_t::PANEL_JUSTIFY_RIGHT;
+								}
+								else if ( justify == Player::PanelJustify_t::PANEL_JUSTIFY_RIGHT )
+								{
+									justify = Player::PanelJustify_t::PANEL_JUSTIFY_LEFT;
+								}
+								if ( player->bAlignGUINextToInventoryCompact() ) // flip justify if next to inventory
+								{
+									justify = (justify == Player::PanelJustify_t::PANEL_JUSTIFY_RIGHT)
+										? Player::PanelJustify_t::PANEL_JUSTIFY_LEFT
+										: Player::PanelJustify_t::PANEL_JUSTIFY_RIGHT;
+								}
+							}
+
+							int tooltipCoordX = 0;
+
+							auto bgFrame = assistShrineFrame->findFrame("assist base");
+							auto bg = bgFrame->findImage("assist base img");
+							if ( !player->inventoryUI.bCompactView )
+							{
+								if ( justify == Player::PanelJustify_t::PANEL_JUSTIFY_LEFT )
+								{
+									tooltipCoordX = assistShrineFrame->getSize().x + bgFrame->getSize().x + 8;
+									tooltipCoordX += bg->pos.w;
+								}
+								else
+								{
+									tooltipCoordX = assistShrineFrame->getSize().x + bgFrame->getSize().x - 8;
+									tooltipCoordX += bg->pos.x;
+								}
+							}
+							else
+							{
+								if ( justify == Player::PanelJustify_t::PANEL_JUSTIFY_LEFT )
+								{
+									tooltipCoordX = assistShrineFrame->getSize().x + bgFrame->getSize().x + 8;
+									tooltipCoordX += bg->pos.w;
+								}
+								else
+								{
+									tooltipCoordX = assistShrineFrame->getSize().x + bgFrame->getSize().x - 8;
+									tooltipCoordX += bg->pos.x;
+								}
+							}
+							int tooltipCoordY = slotFrame->getAbsoluteSize().y - player->camera_virtualy1() - 38 + 16;
+
+							if ( inventoryControlActive && !player->inventoryUI.bIsTooltipDelayed() )
+							{
+								bool itemTooltipOpen = false;
+								if ( !(svFlags & SV_FLAG_ASSIST_ITEMS) )
+								{
+									itemTooltipOpen = false;
+								}
+								else if ( notifications.size() == 0 )
+								{
+									if ( usingGamepad )
+									{
+										if ( itemActionType == ASSIST_ITEM_DEACTIVATE )
+										{
+											itemTooltipOpen = true;
+										}
+									}
+									else
+									{
+										itemTooltipOpen = true;
+									}
+								}
+
+								if ( itemTooltipOpen )
+								{
+									player->hud.updateFrameTooltip(item, tooltipCoordX, tooltipCoordY, justify);
+									if ( classRaceTooltipActive )
+									{
+										animClassRaceTooltipTicks = ticks;
+									}
+									classRaceTooltipActive = false;
+									animClassRaceTooltipOpacity = 0.0;
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	const real_t fpsScale = getFPSScale(144.0);
+	if ( classRaceTooltipActive )
+	{
+		if ( currentView == ASSIST_SHRINE_VIEW_ITEMS )
+		{
+			bool fadein = false;
+			if ( animClassRaceTooltipOpacity < 0.001 )
+			{
+				if ( ticks - animClassRaceTooltipTicks > (usingGamepad ? (TICKS_PER_SECOND / 4) : TICKS_PER_SECOND) )
+				{
+					fadein = true;
+				}
+			}
+			else
+			{
+				fadein = true;
+				animClassRaceTooltipTicks = ticks;
+			}
+
+			if ( fadein )
+			{
+				real_t factor = 10.0;
+				real_t setpointDiff = fpsScale * std::max(.05, (1.0 - animClassRaceTooltipOpacity)) / (factor);
+				animClassRaceTooltipOpacity += setpointDiff;
+				animClassRaceTooltipOpacity = std::min(1.0, animClassRaceTooltipOpacity);
+			}
+
+		}
+		else
+		{
+			animClassRaceTooltipOpacity = 1.0;
+			animClassRaceTooltipTicks = ticks;
+		}
+	}
+
+	if ( ticks - animClassRaceTooltipTicks > 0 )
+	{
+		real_t factor = 10.0;
+		real_t setpointDiff = fpsScale * std::max(.05, (animClassRaceTooltipOpacity)) / (factor);
+		animClassRaceTooltipOpacity -= setpointDiff;
+		animClassRaceTooltipOpacity = std::max(0.0, animClassRaceTooltipOpacity);
+	}
+	tooltipFrame->setOpacity(animClassRaceTooltipOpacity * 100);
+
+	if ( itemActionType == ASSIST_ITEM_ACTIVATE || itemActionType == ASSIST_ITEM_DEACTIVATE )
+	{
+		animInvalidAction = 0.0;
+		animInvalidActionTicks = 0;
+	}
+	else
+	{
+		// shaking feedback for invalid action
+		// constant decay for animation
+		const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
+		real_t setpointDiffX = fpsScale * 1.0 / 25.0;
+		animInvalidAction -= setpointDiffX;
+		animInvalidAction = std::max(0.0, animInvalidAction);
+	}
+	bool bInvalidActionAnimating = false;
+	if ( animInvalidAction > 0.001 || (ticks - animInvalidActionTicks) < TICKS_PER_SECOND * .8 )
+	{
+		bInvalidActionAnimating = true;
+	}
+
+	auto actionPromptTxt = baseFrame->findField("action prompt txt");
+	actionPromptTxt->setDisabled(false);
+	auto actionPromptImg = baseFrame->findImage("action prompt glyph");
+
+	auto actionPromptTxt2 = baseFrame->findField("action prompt txt2");
+	actionPromptTxt2->setDisabled(false);
+	auto actionPromptImg2 = baseFrame->findImage("action prompt glyph2");
+	auto actionPromptImg3 = baseFrame->findImage("action prompt glyph3");
+
+	static ConsoleVariable<int> cvar_assistPromptY("/assist_action_prompt_y", -28);
+	SDL_Rect actionPromptTxtPos{ 0, 211 + *cvar_assistPromptY, baseFrame->getSize().w - 18 - 8, 24 };
+	actionPromptTxt->setSize(actionPromptTxtPos);
+
+	auto actionPromptBacking = baseFrame->findImage("action prompt img");
+	actionPromptBacking->disabled = true;
+	if ( currentView == ASSIST_SHRINE_VIEW_ITEMS && usingGamepad )
+	{
+		actionPromptBacking->pos.x = 10;
+		actionPromptBacking->pos.y = actionPromptTxtPos.y - 5;
+		actionPromptBacking->disabled = false;
+	}
+
+	if ( multiplayer == CLIENT )
+	{
+		request_btn->setText(Language::get(6349));
+	}
+	else
+	{
+		request_btn->setText(Language::get(6350));
+	}
+	if ( inputs.getVirtualMouse(playernum)->draw_cursor && !request_btn->isInvisible() )
+	{
+		if ( currentView != ASSIST_SHRINE_VIEW_ITEMS )
+		{
+			request_btn->setDisabled(true);
+			if ( request_btn->isSelected() )
+			{
+				request_btn->deselect();
+			}
+		}
+		if ( isInteractable )
+		{
+			if ( !requestAssistItemButtonActive )
+			{
+				request_btn->setDisabled(true);
+				request_btn->setTextColor(hudColors.characterSheetFaintText);
+				request_btn->setTextHighlightColor(hudColors.characterSheetFaintText);
+				if ( request_btn->isSelected() )
+				{
+					request_btn->deselect();
+				}
+			}
+			else
+			{
+				request_btn->setDisabled(false);
+				request_btn->setTextColor(makeColor(255, 255, 255, 255));
+				request_btn->setTextHighlightColor(makeColor(201, 162, 100, 255));
+			}
+			if ( request_btn->isSelected() )
+			{
+				buttonAssistShrineUpdateSelectorOnHighlight(playernum, request_btn);
+			}
+		}
+		else
+		{
+			request_btn->setDisabled(true);
+			request_btn->setTextColor(hudColors.characterSheetFaintText);
+			request_btn->setTextHighlightColor(hudColors.characterSheetFaintText);
+		}
+	}
+	else if ( request_btn->isSelected() )
+	{
+		request_btn->deselect();
+	}
+	if ( usingGamepad && !inputs.getVirtualMouse(playernum)->draw_cursor )
+	{
+		request_btn->setDisabled(true);
+		if ( !requestAssistItemButtonActive || players[playernum]->GUI.activeModule != Player::GUI_t::MODULE_ASSISTSHRINE )
+		{
+			request_btn->setTextColor(hudColors.characterSheetFaintText);
+		}
+		else
+		{
+			request_btn->setTextColor(makeColor(255, 255, 255, 255));
+			request_glyph->path = Input::inputs[playernum].getGlyphPathForBinding("MenuAlt2");
+			if ( auto imgGet = Image::get(request_glyph->path.c_str()) )
+			{
+				request_glyph->pos.w = imgGet->getWidth();
+				request_glyph->pos.h = imgGet->getHeight();
+				request_glyph->disabled = false;
+			}
+			request_glyph->pos.x = request_btn->getSize().x + request_btn->getSize().w + 4;
+			if ( request_glyph->pos.x % 2 == 1 )
+			{
+				++request_glyph->pos.x;
+			}
+			request_glyph->pos.y = request_btn->getSize().y + request_btn->getSize().h / 2 - request_glyph->pos.h / 2;
+			if ( request_glyph->pos.y % 2 == 1 )
+			{
+				++request_glyph->pos.y;
+			}
+		}
+	}
+
+	if ( currentView == ASSIST_SHRINE_VIEW_ITEMS
+		&& itemActionType != ASSIST_ITEM_NONE 
+		&& (itemType != -1 || itemActionType == ASSIST_ITEM_NOTHING_TO_CLAIM)
+		&& usingGamepad )
+	{
+		if ( isInteractable )
+		{
+			//const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
+			//real_t setpointDiffX = fpsScale * std::max(.01, (1.0 - animTooltip)) / 2.0;
+			//animTooltip += setpointDiffX;
+			//animTooltip = std::min(1.0, animTooltip);
+			animTooltip = 1.0;
+			animTooltipTicks = ticks;
+		}
+
+		//itemDisplayTooltip->setDisabled(false);
+		{
+			// prompt + glyph
+			actionPromptTxt->setDisabled(false);
+			actionPromptTxt2->setDisabled(false);
+			if ( itemActionType == ASSIST_ITEM_DEACTIVATE || itemActionType == ASSIST_ITEM_ACTIVATE )
+			{
+				actionPromptImg->path = Input::inputs[playernum].getGlyphPathForBinding("MenuConfirm");
+				actionPromptImg2->path = Input::inputs[playernum].getGlyphPathForBinding("MenuPageRightAlt");
+				actionPromptImg3->path = Input::inputs[playernum].getGlyphPathForBinding("MenuPageLeftAlt");
+
+				if ( itemActionType == ASSIST_ITEM_DEACTIVATE )
+				{
+					actionPromptTxt->setText("Deselect");
+					actionPromptTxt2->setText("Bless");
+				}
+				else
+				{
+					actionPromptTxt->setText("Select");
+					actionPromptTxt2->setText("");
+				}
+
+				if ( auto imgGet = Image::get(actionPromptImg->path.c_str()) )
+				{
+					actionPromptImg->pos.w = imgGet->getWidth();
+					actionPromptImg->pos.h = imgGet->getHeight();
+					actionPromptImg->disabled = false;
+				}
+				if ( auto imgGet = Image::get(actionPromptImg2->path.c_str()) )
+				{
+					actionPromptImg2->pos.w = imgGet->getWidth();
+					actionPromptImg2->pos.h = imgGet->getHeight();
+					actionPromptImg2->disabled = !strcmp(actionPromptTxt2->getText(), "");
+				}
+				if ( auto imgGet = Image::get(actionPromptImg3->path.c_str()) )
+				{
+					actionPromptImg3->pos.w = imgGet->getWidth();
+					actionPromptImg3->pos.h = imgGet->getHeight();
+					actionPromptImg3->disabled = actionPromptImg2->disabled;
+
+				}
+				actionPromptTxt->setColor(defaultPromptColor);
+				actionPromptTxt2->setColor(defaultPromptColor);
+			}
+			else
+			{
+				actionPromptTxt->setText("");
+				actionPromptImg->disabled = true;
+				actionPromptTxt2->setText("");
+				actionPromptImg2->disabled = true;
+				actionPromptImg3->disabled = true;
+				switch ( itemActionType )
+				{
+				case ASSIST_ITEM_CLAIMED:
+					actionPromptTxt->setText(Language::get(6317));
+					break;
+				case ASSIST_ITEM_FLAG_DISABLED:
+					actionPromptTxt->setText(Language::get(6346));
+					break;
+				case ASSIST_ITEM_NOTHING_TO_CLAIM:
+					actionPromptTxt->setText(Language::get(6318));
+					break;
+				default:
+					actionPromptTxt->setText("-");
+					break;
+				}
+				actionPromptTxt->setColor(negativeColor);
+			}
+			if ( auto textGet = actionPromptTxt->getTextObject() )
+			{
+				actionPromptImg->pos.x = actionPromptTxtPos.x + actionPromptTxtPos.w
+					- textGet->getWidth() - 8 - actionPromptImg->pos.w;
+				actionPromptImg->pos.y = actionPromptTxtPos.y + actionPromptTxtPos.h / 2 - actionPromptImg->pos.h / 2;
+				if ( actionPromptImg->pos.y % 2 == 1 )
+				{
+					actionPromptImg->pos.y -= 1;
+				}
+
+				actionPromptTxtPos.w = (actionPromptImg->pos.x - 8);
+				actionPromptTxt2->setSize(actionPromptTxtPos);
+				if ( auto textGet = actionPromptTxt2->getTextObject() )
+				{
+					actionPromptImg2->pos.x = actionPromptTxtPos.x + actionPromptTxtPos.w
+						- textGet->getWidth() - 8 - actionPromptImg2->pos.w;
+					actionPromptImg2->pos.y = actionPromptTxtPos.y + actionPromptTxtPos.h / 2 - actionPromptImg2->pos.h / 2;
+					if ( actionPromptImg2->pos.y % 2 == 1 )
+					{
+						actionPromptImg2->pos.y -= 1;
+					}
+				}
+
+				actionPromptImg3->pos.x = actionPromptImg2->pos.x - 4 - actionPromptImg3->pos.w;
+				actionPromptImg3->pos.y = actionPromptTxtPos.y + actionPromptTxtPos.h / 2 - actionPromptImg3->pos.h / 2;
+				if ( actionPromptImg3->pos.y % 2 == 1 )
+				{
+					actionPromptImg3->pos.y -= 1;
+				}
+			}
+		}
+	}
+	else
+	{
+		if ( (!usingGamepad && (ticks - animTooltipTicks > TICKS_PER_SECOND / 3))
+			|| (usingGamepad)
+			|| animTooltip < 0.9999 )
+		{
+			const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
+			real_t setpointDiffX = fpsScale * std::max(.01, (animTooltip)) / 2.0;
+			animTooltip -= setpointDiffX;
+			animTooltip = std::max(0.0, animTooltip);
+		}
+		if ( currentView != ASSIST_SHRINE_VIEW_ITEMS || !usingGamepad )
+		{
+			animTooltip = 0.0;
+		}
+	}
+
+	{
+		if ( ticks - animPromptTicks > TICKS_PER_SECOND / 10 )
+		{
+			const real_t fpsScale = getFPSScale(50.0); // ported from 50Hz
+			real_t setpointDiffX = fpsScale * std::max(.01, (animPrompt)) / 2.0;
+			animPrompt -= setpointDiffX;
+			animPrompt = std::max(0.0, animPrompt);
+		}
+	}
+
+	{
+		SDL_Color color;
+		getColor(actionPromptTxt->getColor(), &color.r, &color.g, &color.b, &color.a);
+		color.a = (Uint8)(255 * animTooltip);
+		actionPromptImg->color = makeColor(255, 255, 255, color.a);
+		actionPromptTxt->setColor(makeColor(color.r, color.g, color.b, color.a));
+
+		actionPromptImg2->color = makeColor(255, 255, 255, color.a);
+		actionPromptImg3->color = makeColor(255, 255, 255, color.a);
+		actionPromptTxt2->setColor(makeColor(color.r, color.g, color.b, color.a));
+		if ( invalidActionType == INVALID_ACTION_SHAKE_PROMPT )
+		{
+			SDL_Rect pos = actionPromptTxt->getSize();
+			pos.x += -4 + 4 * (cos(animInvalidAction * 4 * PI));
+			actionPromptTxt->setSize(pos);
+		}
+	}
+
+	bool tryClaim = false;
+	bool activateSelection = false;
+	int blessToggle = 0;
+	if ( isInteractable )
+	{
+		if ( !inputs.getUIInteraction(playernum)->selectedItem
+			&& !player->GUI.isDropdownActive()
+			&& (player->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_ASSISTSHRINE)
+				|| player->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_INVENTORY))
+			&& player->bControlEnabled && !gamePaused
+			&& !itemFrameBlessModifierHovered
+			&& !player->usingCommand() )
+		{
+			if ( Input::inputs[playernum].binaryToggle("MenuCancel") )
+			{
+				Input::inputs[playernum].consumeBinaryToggle("MenuCancel");
+				parentGUI.closeGUI();
+				Player::soundCancel();
+				return;
+			}
+			else if ( Input::inputs[playernum].binaryToggle("MenuPageLeft") || Input::inputs[playernum].binaryToggle("MenuPageRight") )
+			{
+				{
+					bool left = Input::inputs[playernum].consumeBinaryToggle("MenuPageLeft");
+					bool right = Input::inputs[playernum].consumeBinaryToggle("MenuPageRight");
+					if ( currentView == ASSIST_SHRINE_VIEW_ITEMS )
+					{
+						if ( right )
+						{
+							if ( auto filterBtn = baseFrame->findButton("filter race btn") )
+							{
+								if ( !filterBtn->isInvisible() )
+								{
+									filterBtn->getCallback()(*filterBtn);
+								}
+								else
+								{
+									if ( auto filterBtn = baseFrame->findButton("filter class btn") )
+									{
+										if ( !filterBtn->isInvisible() )
+										{
+											filterBtn->getCallback()(*filterBtn);
+										}
+									}
+								}
+							}
+						}
+					}
+					else if ( currentView == ASSIST_SHRINE_VIEW_RACE )
+					{
+						if ( left )
+						{
+							if ( auto filterBtn = baseFrame->findButton("filter item btn") )
+							{
+								filterBtn->getCallback()(*filterBtn);
+							}
+						}
+						else if ( right )
+						{
+							if ( auto filterBtn = baseFrame->findButton("filter class btn") )
+							{
+								if ( !filterBtn->isInvisible() )
+								{
+									filterBtn->getCallback()(*filterBtn);
+								}
+							}
+						}
+					}
+					else if ( currentView == ASSIST_SHRINE_VIEW_CLASSES )
+					{
+						if ( left )
+						{
+							if ( auto filterBtn = baseFrame->findButton("filter race btn") )
+							{
+								if ( !filterBtn->isInvisible() )
+								{
+									filterBtn->getCallback()(*filterBtn);
+								}
+								else
+								{
+									if ( auto filterBtn = baseFrame->findButton("filter item btn") )
+									{
+										filterBtn->getCallback()(*filterBtn);
+									}
+								}
+							}
+						}
+					}
+				}
+				return;
+			}
+			else if ( currentView == ASSIST_SHRINE_VIEW_CLASSES && player->GUI.activeModule == Player::GUI_t::MODULE_ASSISTSHRINE )
+			{
+				if ( usingGamepad && Input::inputs[playernum].binaryToggle("MenuAlt1") )
+				{
+					Input::inputs[playernum].consumeBinaryToggle("MenuAlt1");
+
+					auto confirmGlyph = assistClassFrame->findImage("class confirm glyph");
+					if ( confirmGlyph && !confirmGlyph->disabled )
+					{
+						animInvalidAction = 0.0;
+						animInvalidActionTicks = 0;
+						invalidActionType = INVALID_ACTION_NONE;
+
+						if ( auto confirmBtn = assistClassFrame->findButton("class confirm btn") )
+						{
+							confirmBtn->getCallback()(*confirmBtn);
+						}
+					}
+				}
+				if ( usingGamepad && Input::inputs[playernum].binaryToggle("MenuConfirm") )
+				{
+					activateSelection = true;
+					Input::inputs[playernum].consumeBinaryToggle("MenuConfirm");
+				}
+				else if ( !usingGamepad && Input::inputs[playernum].binaryToggle("MenuLeftClick") )
+				{
+					activateSelection = true;
+					Input::inputs[playernum].consumeBinaryToggle("MenuLeftClick");
+				}
+			}
+			else if ( currentView == ASSIST_SHRINE_VIEW_RACE && player->GUI.activeModule == Player::GUI_t::MODULE_ASSISTSHRINE )
+			{
+				if ( usingGamepad && Input::inputs[playernum].binaryToggle("MenuAlt1") )
+				{
+					Input::inputs[playernum].consumeBinaryToggle("MenuAlt1");
+
+					auto confirmGlyph = assistRaceFrame->findImage("race confirm glyph");
+					if ( confirmGlyph && !confirmGlyph->disabled )
+					{
+						animInvalidAction = 0.0;
+						animInvalidActionTicks = 0;
+						invalidActionType = INVALID_ACTION_NONE;
+
+						if ( auto confirmBtn = assistRaceFrame->findButton("race confirm btn") )
+						{
+							confirmBtn->getCallback()(*confirmBtn);
+						}
+					}
+				}
+				if ( usingGamepad && Input::inputs[playernum].binaryToggle("MenuAlt2") )
+				{
+					Input::inputs[playernum].consumeBinaryToggle("MenuAlt2");
+					animInvalidAction = 0.0;
+					animInvalidActionTicks = 0;
+					invalidActionType = INVALID_ACTION_NONE;
+
+					auto abilityGlyph = assistRaceFrame->findImage("race ability glyph");
+					if ( abilityGlyph && !abilityGlyph->disabled )
+					{
+						if ( auto abilityBtn = assistRaceFrame->findButton("race ability btn") )
+						{
+							abilityBtn->setPressed(!abilityBtn->isPressed());
+							abilityBtn->getCallback()(*abilityBtn);
+						}
+					}
+				}
+				if ( usingGamepad && Input::inputs[playernum].binaryToggle("MenuPageLeftAlt") )
+				{
+					Input::inputs[playernum].consumeBinaryToggle("MenuPageLeftAlt");
+
+					auto toggleglyph = assistRaceFrame->findImage("sex toggle glyph 1");
+					if ( toggleglyph && !toggleglyph->disabled )
+					{
+						animInvalidAction = 0.0;
+						animInvalidActionTicks = 0;
+						invalidActionType = INVALID_ACTION_NONE;
+
+						if ( auto sexToggleBtn = assistRaceFrame->findButton("sex toggle button") )
+						{
+							if ( sexToggleBtn->isPressed() )
+							{
+								sexToggleBtn->setPressed(!sexToggleBtn->isPressed());
+								sexToggleBtn->getCallback()(*sexToggleBtn);
+							}
+						}
+					}
+				}
+				if ( usingGamepad && Input::inputs[playernum].binaryToggle("MenuPageRightAlt") )
+				{
+					Input::inputs[playernum].consumeBinaryToggle("MenuPageRightAlt");
+
+					auto toggleglyph = assistRaceFrame->findImage("sex toggle glyph 2");
+					if ( toggleglyph && !toggleglyph->disabled )
+					{
+						animInvalidAction = 0.0;
+						animInvalidActionTicks = 0;
+						invalidActionType = INVALID_ACTION_NONE;
+
+						if ( auto sexToggleBtn = assistRaceFrame->findButton("sex toggle button") )
+						{
+							if ( !sexToggleBtn->isPressed() )
+							{
+								sexToggleBtn->setPressed(!sexToggleBtn->isPressed());
+								sexToggleBtn->getCallback()(*sexToggleBtn);
+							}
+						}
+					}
+				}
+				if ( usingGamepad && Input::inputs[playernum].binaryToggle("MenuConfirm") )
+				{
+					activateSelection = true;
+					Input::inputs[playernum].consumeBinaryToggle("MenuConfirm");
+				}
+				else if ( !usingGamepad && Input::inputs[playernum].binaryToggle("MenuLeftClick") )
+				{
+					activateSelection = true;
+					Input::inputs[playernum].consumeBinaryToggle("MenuLeftClick");
+				}
+			}
+			else if ( currentView == ASSIST_SHRINE_VIEW_ITEMS && player->GUI.activeModule == Player::GUI_t::MODULE_ASSISTSHRINE )
+			{
+				if ( Input::inputs[playernum].binaryToggle("MenuAlt2") )
+				{
+					if ( request_glyph && !request_glyph->disabled )
+					{
+						Input::inputs[playernum].consumeBinaryToggle("MenuAlt2");
+
+						animInvalidAction = 0.0;
+						animInvalidActionTicks = 0;
+						invalidActionType = INVALID_ACTION_NONE;
+
+						if ( request_btn )
+						{
+							request_btn->getCallback()(*request_btn);
+						}
+					}
+				}
+				else if ( Input::inputs[playernum].binaryToggle("MenuAlt1") )
+				{
+					if ( !claimItemGlyph->disabled )
+					{
+						activateSelection = true;
+						tryClaim = true;
+						Input::inputs[playernum].consumeBinaryToggle("MenuAlt1");
+					}
+				}
+				else
+				{
+					if ( usingGamepad && Input::inputs[playernum].binaryToggle("MenuConfirm") )
+					{
+						activateSelection = true;
+						Input::inputs[playernum].consumeBinaryToggle("MenuConfirm");
+					}
+					else if ( !usingGamepad && Input::inputs[playernum].binaryToggle("MenuLeftClick") )
+					{
+						activateSelection = true;
+						Input::inputs[playernum].consumeBinaryToggle("MenuLeftClick");
+					}
+					else if ( usingGamepad && Input::inputs[playernum].binaryToggle("MenuPageLeftAlt") )
+					{
+						activateSelection = true;
+						blessToggle = -1;
+						Input::inputs[playernum].consumeBinaryToggle("MenuPageLeftAlt");
+					}
+					else if ( usingGamepad && Input::inputs[playernum].binaryToggle("MenuPageRightAlt") )
+					{
+						activateSelection = true;
+						blessToggle = 1;
+						Input::inputs[playernum].consumeBinaryToggle("MenuPageRightAlt");
+					}
+				}
+			}
+		}
+	}
+
+	if ( activateSelection )
+	{
+		if ( currentView == ASSIST_SHRINE_VIEW_CLASSES )
+		{
+			animInvalidAction = 0.0;
+			animInvalidActionTicks = 0;
+			invalidActionType = INVALID_ACTION_NONE;
+
+			bool success = itemActionType == ASSIST_CLASS_OK;
+			if ( success )
+			{
+				//if ( itemType == selectedClass )
+				//{
+				//	// deselect
+				//	selectedClass = -1;
+				//	Player::soundCancel();
+				//}
+				//else
+				{
+					Player::soundActivate();
+					selectedClass = itemType;
+				}
+			}
+			else if ( itemType >= 0 )
+			{
+				playSound(90, 64);
+			}
+		}
+		else if ( currentView == ASSIST_SHRINE_VIEW_RACE )
+		{
+			animInvalidAction = 0.0;
+			animInvalidActionTicks = 0;
+			invalidActionType = INVALID_ACTION_NONE;
+
+			bool success = itemActionType == ASSIST_RACE_OK;
+			if ( success )
+			{
+				Player::soundActivate();
+				selectedRace = itemType;
+
+				Button* sexBtn = assistRaceFrame->findButton("sex toggle button");
+				if ( selectedRace == RACE_SUCCUBUS )
+				{
+					if ( sexBtn )
+					{
+						sexBtn->setPressed(true);
+						selectedSex = FEMALE;
+					}
+				}
+				else if ( selectedRace == RACE_INCUBUS )
+				{
+					if ( sexBtn )
+					{
+						sexBtn->setPressed(false);
+						selectedSex = MALE;
+					}
+				}
+			}
+			else if ( itemType >= 0 )
+			{
+				playSound(90, 64);
+			}
+		}
+		else if ( currentView == ASSIST_SHRINE_VIEW_ITEMS )
+		{
+			Item* item = nullptr;
+			if ( itemType == itemAmulet.type )
+			{
+				item = &itemAmulet;
+			}
+			else if ( itemType == itemCloak.type )
+			{
+				item = &itemCloak;
+			}
+			else if ( itemType == itemMask.type )
+			{
+				item = &itemMask;
+			}
+			else if ( itemType == itemRing.type )
+			{
+				item = &itemRing;
+			}
+			animInvalidAction = 0.0;
+			animInvalidActionTicks = 0;
+			invalidActionType = INVALID_ACTION_NONE;
+			if ( itemActionType == ASSIST_ITEM_FLAG_DISABLED )
+			{
+				animInvalidAction = 1.0;
+				animInvalidActionTicks = ticks;
+				invalidActionType = INVALID_ACTION_SHAKE_PROMPT;
+				// play bad feedback sfx
+				playSound(90, 64);
+			}
+			else if ( !tryClaim && itemActionType == ASSIST_ITEM_CLAIMED )
+			{
+				if ( blessToggle == 0 )
+				{
+					animInvalidAction = 1.0;
+					animInvalidActionTicks = ticks;
+					invalidActionType = INVALID_ACTION_SHAKE_PROMPT;
+					// play bad feedback sfx
+					playSound(90, 64);
+				}
+			}
+			else if ( tryClaim && players[playernum]->entity )
+			{
+				bool success = claimItems(nullptr);
+				if ( success )
+				{
+					Player::soundActivate();
+				}
+				else
+				{
+					playSound(90, 64);
+				}
+			}
+			else if ( player->GUI.activeModule == Player::GUI_t::MODULE_ASSISTSHRINE
+				&& players[playernum]->entity
+				&& item
+				&& getSelectedAssistShrineX() < 0 && getSelectedAssistShrineX() >= ASSIST_SLOT_RING
+				&& getSelectedAssistShrineY() == 0 )
+			{
+				int i = 0;
+				if ( blessToggle != 0 )
+				{
+					switch ( getSelectedAssistShrineX() )
+					{
+					case ASSIST_SLOT_CLOAK:
+						i = 1;
+						break;
+					case ASSIST_SLOT_MASK:
+						i = 2;
+						break;
+					case ASSIST_SLOT_RING:
+						i = 4;
+						break;
+					case ASSIST_SLOT_AMULET:
+						i = 3;
+						break;
+					default:
+						break;
+					}
+
+					if ( i > 0 )
+					{
+						char buf[128];
+						if ( blessToggle > 0 )
+						{
+							snprintf(buf, sizeof(buf), "assist item %d plus", i);
+						}
+						else
+						{
+							snprintf(buf, sizeof(buf), "assist item %d minus", i);
+						}
+						if ( auto button = assistItemFrame->findButton(buf) )
+						{
+							button->getCallback()(*button);
+						}
+					}
+				}
+				else if ( itemActionType == ASSIST_ITEM_ACTIVATE )
+				{
+					Player::soundActivate();
+					item->itemHiddenFromShop = false;
+				}
+				else if ( itemActionType == ASSIST_ITEM_DEACTIVATE )
+				{
+					Player::soundCancel();
+					item->itemHiddenFromShop = true;
+				}
+			}
+		}
+	}
+}
+
+void GenericGUIMenu::AssistShrineGUI_t::scrollToSlot(int x, int y, bool instantly)
+{
+	auto& currentScrollRow = (currentView == ASSIST_SHRINE_VIEW_CLASSES ? currentScrollRow1 : currentScrollRow2);
+	auto& scrollSetpoint = (currentView == ASSIST_SHRINE_VIEW_CLASSES ? scrollSetpoint1 : scrollSetpoint2);
+	auto& scrollAnimateX = (currentView == ASSIST_SHRINE_VIEW_CLASSES ? scrollAnimateX1 : scrollAnimateX2);
+	int lowerY = currentScrollRow;
+	int upperY = currentScrollRow;
+	int lowestItemY = 0;
+	int slotSize = kClassSlotHeight;
+	int numDisplayVertical = 0;
+	if ( currentView == ASSIST_SHRINE_VIEW_CLASSES )
+	{
+		numDisplayVertical = kNumClassesToDisplayVertical;
+		slotSize = kClassSlotHeight;
+		upperY += numDisplayVertical - 1;
+		for ( auto& pair : classSlots )
+		{
+			lowestItemY = std::max(lowestItemY, pair.first / 100);
+		}
+	}
+	else if ( currentView == ASSIST_SHRINE_VIEW_RACE )
+	{
+		numDisplayVertical = kNumRacesToDisplayVertical;
+		slotSize = kRaceSlotHeight;
+		upperY += numDisplayVertical - 1;
+		lowestItemY = std::max(lowestItemY, (int)raceSlots.size() - 1);
+	}
+
+	if ( y >= lowerY && y <= upperY )
+	{
+		// no work to do.
+		return;
+	}
+	int player = parentGUI.getPlayer();
+	int maxScroll = std::max((lowestItemY + 1) - (numDisplayVertical), 0) * slotSize;
+
+	int scrollAmount = 0;
+	if ( y < lowerY )
+	{
+		scrollAmount = (y)*slotSize;
+		//scrollAmount += scrollSetpoint;
+	}
+	else if ( y > upperY )
+	{
+		scrollAmount = (y - upperY) * slotSize;
+		scrollAmount += scrollSetpoint;
+	}
+	scrollAmount = std::min(scrollAmount, maxScroll);
+
+	scrollSetpoint = scrollAmount;
+	if ( instantly )
+	{
+		scrollAnimateX = scrollSetpoint;
+	}
+	currentScrollRow = scrollSetpoint / slotSize;
+	if ( abs(scrollSetpoint - scrollAnimateX) > 0.00001 )
+	{
+		isInteractable = false;
+	}
+}
+
+bool GenericGUIMenu::AssistShrineGUI_t::isSlotVisible(int x, int y) const
+{
+	if ( assistShrineFrame )
+	{
+		if ( assistShrineFrame->isDisabled() )
+		{
+			return false;
+		}
+	}
+
+	if ( x < 0 )
+	{
+		if ( currentView == ASSIST_SHRINE_VIEW_ITEMS )
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	else if ( x >= 0 )
+	{
+		if ( currentView == ASSIST_SHRINE_VIEW_CLASSES )
+		{
+			int lowerY = currentScrollRow1;
+			int upperY = currentScrollRow1 + kNumClassesToDisplayVertical - 1;
+
+			if ( y >= lowerY && y <= upperY )
+			{
+				if ( classSlots.find(x + y * 100) != classSlots.end() )
+				{
+					return true;
+				}
+			}
+		}
+		else if ( currentView == ASSIST_SHRINE_VIEW_RACE )
+		{
+			int lowerY = currentScrollRow2;
+			int upperY = currentScrollRow2 + kNumRacesToDisplayVertical - 1;
+
+			if ( y >= lowerY && y <= upperY )
+			{
+				if ( x == ASSIST_RACE_COLUMN && y < raceSlots.size() )
+				{
+					return true;
+				}
+			}
+		}
+		else
+		{
+			return false;
+		}
+
+		return false;
+	}
+	return false;
 }
