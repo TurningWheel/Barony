@@ -1922,6 +1922,9 @@ void clientActions(Entity* entity)
 		case 1481:
 			entity->behavior = &actDaedalusShrine;
 			break;
+		case 1484:
+			entity->behavior = &actAssistShrine;
+			break;
 		case Player::Ghost_t::GHOST_MODEL_P1:
 		case Player::Ghost_t::GHOST_MODEL_P2:
 		case Player::Ghost_t::GHOST_MODEL_P3:
@@ -5411,7 +5414,87 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 			net_packet->len = 7;
 			sendPacketSafe(net_sock, -1, net_packet, 0);
 		}
-	}}
+	}},
+
+	// character change
+	{ 'ASSC', []() {
+	int player = net_packet->data[8];
+	if ( player >= 0 && player < MAXPLAYERS )
+	{
+		auto& gui = GenericGUI[player].assistShrineGUI;
+		gui.savedClass = (Sint8)net_packet->data[4];
+		gui.savedRace = (Sint8)net_packet->data[5];
+		gui.savedSex = (Sint8)net_packet->data[6];
+		gui.savedAppearance = (Sint8)net_packet->data[7];
+		gui.receivedCharacterChangeOK = true;
+
+		std::string racename = "";
+		if ( gui.savedRace != RACE_HUMAN )
+		{
+			if ( gui.savedAppearance != 0 )
+			{
+				racename = Language::get(4068); // guised
+				racename += ' ';
+			}
+		}
+		racename += getMonsterLocalizedName(getMonsterFromPlayerRace(gui.savedRace)).c_str();
+		camelCaseString(racename);
+		std::string classname = playerClassLangEntry(gui.savedClass >= 0 ? gui.savedClass : client_classes[player], player);
+		camelCaseString(classname);
+		if ( player == clientnum )
+		{
+			if ( gui.bOpen )
+			{
+				gui.addNotification(Language::get(6334), Language::get(6335), "", GenericGUIMenu::AssistShrineGUI_t::AssistNotification_t::NOTIF_CHARACTER_CHANGE_OK);
+			}
+			messagePlayer(clientnum, MESSAGE_WORLD, Language::get(6355), racename.c_str(), classname.c_str());
+		}
+		else
+		{
+			messagePlayer(clientnum, MESSAGE_WORLD, Language::get(6336), stats[player]->name, racename.c_str(), classname.c_str());
+		}
+	}
+	}},
+
+	{ 'ASSU', []() {
+		// server sent player current assist values
+		const int player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
+		Sint32 assistance = SDLNet_Read32(&net_packet->data[5]);
+		if ( player == clientnum )
+		{
+			stats[player]->MISC_FLAGS[STAT_FLAG_ASSISTANCE_PLAYER_PTS]
+				= std::max(assistance, stats[player]->MISC_FLAGS[STAT_FLAG_ASSISTANCE_PLAYER_PTS]);
+		}
+		else
+		{
+			stats[player]->MISC_FLAGS[STAT_FLAG_ASSISTANCE_PLAYER_PTS] = assistance;
+		}
+	} },
+
+	{ 'ASSO', []() {
+		// server order to open assist gui
+		Uint32 uid = SDLNet_Read32(&net_packet->data[4]);
+		if ( auto entity = uidToEntity(uid) )
+		{
+			if ( entity->behavior == &::actAssistShrine )
+			{
+				GenericGUI[clientnum].openGUI(GUI_TYPE_ASSIST, entity);
+			}
+		}
+	} },
+
+	// server order to close assist shrine
+	{ 'ASCL', []() {
+		int player = net_packet->data[4];
+		if ( player == clientnum )
+		{
+			Uint32 uid = SDLNet_Read32(&net_packet->data[5]);
+			if ( Entity* shrine = uidToEntity(uid) )
+			{
+				GenericGUI[clientnum].assistShrineGUI.closeAssistShrine();
+			}
+		}
+	} },
 };
 
 void clientHandlePacket()
@@ -7366,7 +7449,113 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		{
 			Compendium_t::Events_t::clientDataStrings[player].erase(clientSequence);
 		}
-	}}
+	}},
+
+	// character change
+	{ 'ASSC', []() {
+		int player = net_packet->data[8];
+		if ( player >= 0 && player < MAXPLAYERS )
+		{
+			auto& gui = GenericGUI[player].assistShrineGUI;
+			gui.savedClass = (Sint8)net_packet->data[4];
+			gui.savedRace = (Sint8)net_packet->data[5];
+			gui.savedSex = (Sint8)net_packet->data[6];
+			gui.savedAppearance = (Sint8)net_packet->data[7];
+			gui.receivedCharacterChangeOK = true;
+
+			std::string racename = "";
+			if ( gui.savedRace != RACE_HUMAN )
+			{
+				if ( gui.savedAppearance != 0 )
+				{
+					racename = Language::get(4068); // guised
+					racename += ' ';
+				}
+			}
+			racename += getMonsterLocalizedName(getMonsterFromPlayerRace(gui.savedRace)).c_str();
+			camelCaseString(racename);
+			std::string classname = playerClassLangEntry(gui.savedClass >= 0 ? gui.savedClass : client_classes[player], player);
+			camelCaseString(classname);
+
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				if ( i != player )
+				{
+					messagePlayer(i, MESSAGE_WORLD, Language::get(6336), stats[player]->name, racename.c_str(), classname.c_str());
+				}
+			}
+
+			if ( player > 0 )
+			{
+				// confirm receipt of class change to sender
+				strcpy((char*)net_packet->data, "ASSC");
+				net_packet->data[4] = (Sint8)gui.savedClass;
+				net_packet->data[5] = (Sint8)gui.savedRace;
+				net_packet->data[6] = (Sint8)gui.savedSex;
+				net_packet->data[7] = (Sint8)gui.savedAppearance;
+				net_packet->data[8] = player;
+				net_packet->address.host = net_clients[player - 1].host;
+				net_packet->address.port = net_clients[player - 1].port;
+				net_packet->len = 9;
+				sendPacketSafe(net_sock, -1, net_packet, player - 1);
+			}
+		}
+	}},
+
+	// client closed assist shrine
+	{ 'ASCL', []() {
+		int player = net_packet->data[4];
+		if ( player >= 0 && player < MAXPLAYERS )
+		{
+			Uint32 uid = SDLNet_Read32(&net_packet->data[5]);
+			if ( Entity* shrine = uidToEntity(uid) )
+			{
+				if ( achievementObserver.playerUids[player] == (Uint32)shrine->skill[0] )
+				{
+					shrine->skill[0] = 0;
+					serverUpdateEntitySkill(shrine, 0);
+				}
+			}
+		}
+	}},
+
+	// client claimed some assist items
+	{ 'ASSI', []() {
+	int player = net_packet->data[4];
+	if ( player >= 0 && player < MAXPLAYERS )
+	{
+		Sint32 claimedPts = std::max(0, (Sint32)SDLNet_Read32(&net_packet->data[5]));
+		Sint32 prevPts = stats[player]->MISC_FLAGS[STAT_FLAG_ASSISTANCE_PLAYER_PTS];
+		stats[player]->MISC_FLAGS[STAT_FLAG_ASSISTANCE_PLAYER_PTS] = claimedPts;
+
+		int totalClaimed = 0;
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( !client_disconnected[i] )
+			{
+				totalClaimed += stats[i]->MISC_FLAGS[STAT_FLAG_ASSISTANCE_PLAYER_PTS];
+				if ( i == player )
+				{
+					messagePlayer(i, MESSAGE_WORLD, Language::get(6356), claimedPts);
+				}
+				else
+				{
+					messagePlayer(i, MESSAGE_WORLD, Language::get(6357), stats[player]->name, claimedPts);
+				}
+			}
+		}
+
+		conductGameChallenges[CONDUCT_ASSISTANCE_CLAIMED] = std::max(totalClaimed, conductGameChallenges[CONDUCT_ASSISTANCE_CLAIMED]);
+		for ( int i = 1; i < MAXPLAYERS; ++i )
+		{
+			if ( !client_disconnected[i] )
+			{
+				serverUpdatePlayerConduct(i, CONDUCT_ASSISTANCE_CLAIMED, conductGameChallenges[CONDUCT_ASSISTANCE_CLAIMED]);
+			}
+		}
+		GenericGUIMenu::AssistShrineGUI_t::serverUpdateStatFlagsForClients();
+	}
+	} },
 };
 
 void serverHandlePacket()

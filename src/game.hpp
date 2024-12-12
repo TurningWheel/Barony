@@ -295,6 +295,7 @@ void actTeleporter(Entity* my);
 void actMagicTrapCeiling(Entity* my);
 void actTeleportShrine(Entity* my);
 void actDaedalusShrine(Entity* my);
+void actAssistShrine(Entity* my);
 void actBell(Entity* my);
 void bellBreakBulb(Entity* my, bool minotaurBreak);
 void actSpellShrine(Entity* my);

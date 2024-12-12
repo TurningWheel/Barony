@@ -8572,6 +8572,19 @@ void assignActions(map_t* map)
 				}
 			}
 				break;
+			case 201:
+				entity->x += 8;
+				entity->y += 8;
+				entity->sizex = 4;
+				entity->sizey = 4;
+				entity->behavior = &actAssistShrine;
+				entity->flags[PASSABLE] = false;
+				entity->z = 8.0;
+				entity->sprite = 1484;
+				//entity->focalx = 0.75;
+				entity->yaw = 0.0;// (270)* PI / 180.0;
+				entity->seedEntityRNG(map_rng.getU32());
+				break;
             default:
                 break;
 		}

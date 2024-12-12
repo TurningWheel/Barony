@@ -80,6 +80,7 @@ void PlayfabUser_t::gameEnd()
     eventContent.Payload["charlvl"] = stats[clientnum]->LVL;
     eventContent.Payload["appearance"] = stats[clientnum]->stat_appearance;
     eventContent.Payload["sex"] = stats[clientnum]->sex;
+    eventContent.Payload["assistance"] = conductGameChallenges[CONDUCT_ASSISTANCE_CLAIMED];
     eventContent.Payload["controller"] = inputs.hasController(clientnum) ? 1 : 0;
     eventContent.Payload["theme"] = *cvar_disableHoliday ? 0 : 1;
     eventRequest.Events.push_back(eventContent);
@@ -1445,6 +1446,7 @@ void PlayfabUser_t::postScore(const int player)
 {
     if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED]
         || Mods::disableSteamAchievements
+        || conductGameChallenges[CONDUCT_ASSISTANCE_CLAIMED] >= GenericGUIMenu::AssistShrineGUI_t::achievementDisabledLimit
         || conductGameChallenges[CONDUCT_MODDED_NO_ACHIEVEMENTS])
     {
         return;

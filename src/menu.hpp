@@ -292,6 +292,7 @@ void revertResolution();
 
 class Stat;
 int isCharacterValidFromDLC(Stat& myStats, int characterClass);
+int isCharacterValidFromDLC(int player, int characterClass, int race, int appearance);
 
 // handle intro stage stuff
 void doQuitGame();

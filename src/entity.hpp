@@ -789,6 +789,7 @@ public:
 	void actMagicTrapCeiling();
 	void actTeleportShrine();
 	void actDaedalusShrine();
+	void actAssistShrine();
 	void actSpellShrine();
 	bool magicFallingCollision();
 	bool magicOrbitingCollision();
@@ -1055,7 +1056,7 @@ public:
 
 	int getEntityInspirationFromAllies();
 	int getFollowerBonusDamageResist();
-	int getFollowerBonusTrapResist();
+	int getEntityBonusTrapResist();
 	int getFollowerBonusHPRegen();
 	int getHPRestoreOnLevelUp();
 	void monsterMoveBackwardsAndPath(bool trySidesFirst = false); // monster tries to move backwards in a cross shaped area if stuck against an entity.
@@ -1229,9 +1230,9 @@ void actTextSource(Entity* my);
 
 //checks if a sprite falls in certain sprite ranges
 
-static const int NUM_ITEM_STRINGS = 333;
+static const int NUM_ITEM_STRINGS = 336;
 static const int NUM_ITEM_STRINGS_BY_TYPE = 129;
-static const int NUM_EDITOR_SPRITES = 201;
+static const int NUM_EDITOR_SPRITES = 202;
 static const int NUM_EDITOR_TILES = 350;
 
 // furniture types.

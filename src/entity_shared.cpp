@@ -559,6 +559,9 @@ char itemNameStrings[NUM_ITEM_STRINGS][32] =
 	"hat_hood_apprentice",
 	"hat_hood_assassin",
 	"hat_hood_whispers",
+	"ring_resolve",
+	"cloak_guardian",
+	"mask_marigold"
 	""
 };
 
@@ -806,6 +809,7 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"ring_levitation",
 		"ring_regeneration",
 		"ring_teleportation",
+		"ring_resolve",
 		""
 	},
 	{
@@ -830,6 +834,7 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"cloak_protection",
 		"artifact_cloak",
 		"cloak_backpack",
+		"cloak_guardian",
 		""
 	},
 	{
@@ -856,6 +861,7 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"mask_steel_visor",
 		"mask_crystal_visor",
 		"mask_artifact_visor",
+		"mask_marigold",
 		""
 	},
 	{
@@ -1080,7 +1086,8 @@ char spriteEditorNameStrings[NUM_EDITOR_SPRITES][64] =
 	"SLIME (METAL)",
 	"NOT USED",
 	"NOT USED",
-	"NOT USED"
+	"NOT USED",
+	"ASSIST SHRINE"
 };
 
 char monsterEditorNameStrings[NUMMONSTERS][16] =

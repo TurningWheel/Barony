@@ -67,6 +67,7 @@ static const int EFF_CON_BONUS = 42;
 static const int EFF_PWR = 43;
 static const int EFF_AGILITY = 44;
 static const int EFF_RALLY = 45;
+static const int EFF_MARIGOLD = 46;
 static const int NUMEFFECTS = 64;
 
 // stats
@@ -176,6 +177,9 @@ static const int STAT_FLAG_MONSTER_CAST_INVENTORY_SPELLBOOKS = 23;
 static const int STAT_FLAG_SHOPKEEPER_CUSTOM_PROPERTIES = 24;
 static const int STAT_FLAG_MONSTER_NAME_GENERIC = 25;
 static const int STAT_FLAG_MONSTER_DISABLE_HC_SCALING = 26;
+static const int STAT_FLAG_HP_BONUS = 27;
+static const int STAT_FLAG_MP_BONUS = 28;
+static const int STAT_FLAG_ASSISTANCE_PLAYER_PTS = 29;
 
 typedef enum
 {

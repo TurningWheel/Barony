@@ -1522,7 +1522,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				int trapResist = 0;
 				if ( parent && (parent->behavior == &actMagicTrap || parent->behavior == &actMagicTrapCeiling) )
 				{
-					trapResist = hit.entity ? hit.entity->getFollowerBonusTrapResist() : 0;
+					trapResist = hit.entity ? hit.entity->getEntityBonusTrapResist() : 0;
 				}
 
 				bool alertTarget = false;
@@ -2750,7 +2750,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									}
 								}
 
-								int trapResist = hit.entity->getFollowerBonusTrapResist();
+								int trapResist = hit.entity->getEntityBonusTrapResist();
 								if ( trapResist > 0 )
 								{
 									if ( local_rng.rand() % 100 < trapResist )

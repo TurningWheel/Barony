@@ -834,7 +834,7 @@ void IRCHandler_t::handleMessage(std::string& msg)
 #endif // !NINTENDO
 
 Uint32 ItemTooltips_t::itemsJsonHashRead = 0;
-
+const Uint32 ItemTooltips_t::kItemsJsonHash = 2285426623;
 void ItemTooltips_t::readItemsFromFile()
 {
 	printlog("loading items...\n");
@@ -2988,6 +2988,19 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 					snprintf(buf, sizeof(buf), str.c_str(), items[item.type].attributes["EFF_PARALYZE"] / TICKS_PER_SECOND);
 				}
 			}
+			else if ( conditionalAttribute == "EFF_LIFESAVING" )
+			{
+				if ( item.type == AMULET_LIFESAVING )
+				{
+					real_t restore = 0.5;
+					if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+					{
+						restore += 0.5 * std::min(2, abs(item.beatitude));
+					}
+					restore *= 100.0;
+					snprintf(buf, sizeof(buf), str.c_str(), (int)restore);
+				}
+			}
 			else if ( conditionalAttribute == "EFF_BLEEDING" )
 			{
 				if ( item.type == TOOL_BEARTRAP )
@@ -3014,6 +3027,47 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 			{
 				int manaring = 1;
 				snprintf(buf, sizeof(buf), str.c_str(), manaring,
+					getItemEquipmentEffectsForIconText(conditionalAttribute).c_str());
+			}
+			else if ( conditionalAttribute == "EFF_CLOAK_GUARDIAN1" )
+			{
+				real_t res = 0.75;
+				if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+				{
+					res = std::max(0.25, 0.75 - 0.25 * (abs(item.beatitude)));
+				}
+				snprintf(buf, sizeof(buf), str.c_str(), (int)((100 - (int)(res * 100))),
+					getItemEquipmentEffectsForIconText(conditionalAttribute).c_str());
+			}
+			else if ( conditionalAttribute == "EFF_CLOAK_GUARDIAN2" )
+			{
+				real_t res = 0.5;
+				if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+				{
+					res = std::max(0.25, 0.5 - 0.25 * (abs(item.beatitude)));
+				}
+				snprintf(buf, sizeof(buf), str.c_str(), (int)((100 - (int)(res * 100))),
+					getItemEquipmentEffectsForIconText(conditionalAttribute).c_str());
+			}
+			else if ( conditionalAttribute == "EFF_MARIGOLD1"
+				|| conditionalAttribute == "EFF_MARIGOLD1_HUNGER" )
+			{
+				int foodMod = (svFlags & SV_FLAG_HUNGER) ? 5 : 3;
+				if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+				{
+					foodMod += 3 * std::min(2, (int)abs(item.beatitude));
+				}
+				snprintf(buf, sizeof(buf), str.c_str(), foodMod,
+					getItemEquipmentEffectsForIconText(conditionalAttribute).c_str());
+			}
+			else if ( conditionalAttribute == "EFF_RING_RESOLVE" )
+			{
+				int effect = 10;
+				if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+				{
+					effect += 10 * std::min(2, (int)abs(item.beatitude));
+				}
+				snprintf(buf, sizeof(buf), str.c_str(), effect,
 					getItemEquipmentEffectsForIconText(conditionalAttribute).c_str());
 			}
 			else if ( conditionalAttribute == "EFF_COLDRESIST" )

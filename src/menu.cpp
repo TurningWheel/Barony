@@ -431,6 +431,22 @@ bool isAchievementUnlockedForClassUnlock(int race)
 	return false;
 }
 
+int isCharacterValidFromDLC(int player, int characterClass, int race, int appearance)
+{
+	if ( player < 0 || player >= MAXPLAYERS )
+	{
+		return INVALID_CHARACTER;
+	}
+	auto oldAppearance = stats[player]->stat_appearance;
+	auto oldRace = stats[player]->playerRace;
+	stats[player]->stat_appearance = appearance;
+	stats[player]->playerRace = race;
+	auto result = isCharacterValidFromDLC(*stats[player], characterClass);
+	stats[player]->stat_appearance = oldAppearance;
+	stats[player]->playerRace = oldRace;
+	return result;
+}
+
 int isCharacterValidFromDLC(Stat& myStats, int characterClass)
 {
 	bool challengeClass = false;
@@ -8616,6 +8632,7 @@ void doNewGame(bool makeHighscore) {
 		svFlags &= ~(SV_FLAG_HARDCORE);
 		svFlags &= ~(SV_FLAG_CHEATS);
 		svFlags &= ~(SV_FLAG_LIFESAVING);
+		svFlags &= ~(SV_FLAG_ASSIST_ITEMS);
 		svFlags &= ~(SV_FLAG_CLASSIC);
 		svFlags &= ~(SV_FLAG_KEEPINVENTORY);
 		svFlags |= SV_FLAG_HUNGER;
@@ -8810,11 +8827,19 @@ void doNewGame(bool makeHighscore) {
 					secretlevel = true;
 				}
 			}
+			for ( int c = 0; c < MAXPLAYERS; ++c ) {
+				GenericGUI[c].assistShrineGUI.resetSavedCharacterChanges();
+			}
 		} else {
 			for (int c = 0; c < MAXPLAYERS; ++c) {
 				if (!client_disconnected[c]) {
+					GenericGUI[c].assistShrineGUI.onGameStart();
 					stats[c]->clearStats();
 					initClass(c);
+				}
+				else
+				{
+					GenericGUI[c].assistShrineGUI.resetSavedCharacterChanges();
 				}
 			}
 		}
@@ -9170,6 +9195,7 @@ void doNewGame(bool makeHighscore) {
 		if ( !loadingsavegame )
 		{
 			for (int c = 0; c < MAXPLAYERS; ++c) {
+				GenericGUI[c].assistShrineGUI.onGameStart();
 				stats[c]->clearStats();
 				initClass(c);
 			}
@@ -9196,6 +9222,9 @@ void doNewGame(bool makeHighscore) {
 					challengeRunCustomStartLevel = "minetown";
 					secretlevel = true;
 				}
+			}
+			for ( int c = 0; c < MAXPLAYERS; ++c ) {
+				GenericGUI[c].assistShrineGUI.resetSavedCharacterChanges();
 			}
 		}
 
@@ -9573,6 +9602,7 @@ void doEndgameOnDisconnect()
 	}
 	for ( int c = 0; c < MAXPLAYERS; ++c ) {
 		cameras[c].vang = 0;
+		GenericGUI[c].assistShrineGUI.onMainMenuEnd();
 	}
 	numplayers = 0;
 	assignActions(&map);
@@ -10143,6 +10173,7 @@ void doEndgame(bool saveHighscore, bool onServerDisconnect) {
 	Compendium_t::Events_t::clientReceiveData.clear();
 	for ( int c = 0; c < MAXPLAYERS; ++c )
 	{
+		GenericGUI[c].assistShrineGUI.onMainMenuEnd();
 		Compendium_t::Events_t::clientDataStrings[c].clear();
 		players[c]->compendiumProgress.itemEvents.clear();
 		players[c]->compendiumProgress.floorEvents.clear();

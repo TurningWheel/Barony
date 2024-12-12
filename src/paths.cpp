@@ -583,7 +583,7 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 				// unless they're standing on a trap...
 				if ( standingOnTrap == 0 )
 				{
-					if ( my->getFollowerBonusTrapResist() == 100 )
+					if ( my->getEntityBonusTrapResist() == 100 )
 					{
 						standingOnTrap = 1; // 1 - standing on the trap.
 						continue;
@@ -1249,6 +1249,10 @@ bool isPathObstacle(Entity* entity)
 		return true;
 	}
 	else if ( entity->behavior == &::actDaedalusShrine )
+	{
+		return true;
+	}
+	else if ( entity->behavior == &::actAssistShrine )
 	{
 		return true;
 	}
