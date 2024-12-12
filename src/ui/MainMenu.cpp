@@ -76,7 +76,7 @@ namespace MainMenu {
     ConsoleVariable<int> cvar_desiredFps("/desiredfps", AUTO_FPS);
     ConsoleVariable<int> cvar_displayHz("/displayhz", 0);
 	ConsoleVariable<bool> cvar_hdrEnabled("/hdr_enabled", true);
-	static const int numFilters = NUM_SERVER_FLAGS + 3;
+	static const int numFilters = NUM_SERVER_FLAGS + 2;
 	enum Filter : int {
 		UNCHECKED,
 		OFF,
@@ -622,6 +622,7 @@ namespace MainMenu {
 		bool minotaur_enabled = true;
 		bool random_traps_enabled = true;
 		bool extra_life_enabled = false;
+		bool assist_items_enabled = false;
 		bool cheats_enabled = false;
 		bool skipintro = true;
 		int port_number = DEFAULT_PORT;
@@ -2899,7 +2900,8 @@ namespace MainMenu {
 		    svFlags = hunger_enabled ? svFlags | SV_FLAG_HUNGER : svFlags & ~(SV_FLAG_HUNGER);
 		    svFlags = minotaur_enabled ? svFlags | SV_FLAG_MINOTAURS : svFlags & ~(SV_FLAG_MINOTAURS);
 		    svFlags = random_traps_enabled ? svFlags | SV_FLAG_TRAPS : svFlags & ~(SV_FLAG_TRAPS);
-		    svFlags = extra_life_enabled ? svFlags | SV_FLAG_LIFESAVING : svFlags & ~(SV_FLAG_LIFESAVING);
+		    svFlags = /*extra_life_enabled ? svFlags | SV_FLAG_LIFESAVING : */svFlags & ~(SV_FLAG_LIFESAVING);
+			svFlags = assist_items_enabled ? svFlags | SV_FLAG_ASSIST_ITEMS : svFlags & ~(SV_FLAG_ASSIST_ITEMS);
 		    svFlags = cheats_enabled ? svFlags | SV_FLAG_CHEATS : svFlags & ~(SV_FLAG_CHEATS);
 		}
 	    sendSvFlagsOverNet();
@@ -2996,7 +2998,8 @@ namespace MainMenu {
 		settings.hunger_enabled = svFlags & SV_FLAG_HUNGER;
 		settings.minotaur_enabled = svFlags & SV_FLAG_MINOTAURS;
 		settings.random_traps_enabled = svFlags & SV_FLAG_TRAPS;
-		settings.extra_life_enabled = svFlags & SV_FLAG_LIFESAVING;
+		settings.extra_life_enabled = false; /*svFlags& SV_FLAG_LIFESAVING*/;
+		settings.assist_items_enabled = svFlags & SV_FLAG_ASSIST_ITEMS;
 		settings.cheats_enabled = svFlags & SV_FLAG_CHEATS;
 		settings.skipintro = true;
 		settings.port_number = ::portnumber;
@@ -3142,10 +3145,11 @@ namespace MainMenu {
 		file->property("hunger_enabled", hunger_enabled);
 		file->property("minotaur_enabled", minotaur_enabled);
 		file->property("random_traps_enabled", random_traps_enabled);
-		file->property("extra_life_enabled", extra_life_enabled);
+        bool no = false;
+		file->property("extra_life_enabled", no);
+		file->property("assist_items_enabled", assist_items_enabled);
 		file->property("cheats_enabled", cheats_enabled);
 		file->property("skipintro", skipintro);
-        bool no = false;
 		file->property("use_model_cache", no);
 		file->property("debug_keys_enabled", enableDebugKeys);
 		file->property("port_number", port_number);
@@ -7139,7 +7143,8 @@ bind_failed:
 			allSettings.hunger_enabled = svFlags & SV_FLAG_HUNGER;
 			allSettings.minotaur_enabled = svFlags & SV_FLAG_MINOTAURS;
 			allSettings.random_traps_enabled = svFlags & SV_FLAG_TRAPS;
-			allSettings.extra_life_enabled = svFlags & SV_FLAG_LIFESAVING;
+			allSettings.extra_life_enabled = false; /*svFlags & SV_FLAG_LIFESAVING*/;
+			allSettings.assist_items_enabled = svFlags & SV_FLAG_ASSIST_ITEMS;
 			allSettings.cheats_enabled = svFlags & SV_FLAG_CHEATS;
 		}
 
@@ -7152,14 +7157,16 @@ bind_failed:
 			allSettings.random_traps_enabled, [](Button& button){soundToggleSetting(button); allSettings.random_traps_enabled = button.isPressed();});
 		y += settingsAddBooleanOption(*settings_subwindow, y, "friendly_fire", Language::get(5257), Language::get(5258),
 			allSettings.friendly_fire_enabled, [](Button& button){soundToggleSetting(button); allSettings.friendly_fire_enabled = button.isPressed();});
+		y += settingsAddBooleanOption(*settings_subwindow, y, "assist_items", Language::get(6342), Language::get(6343),
+			allSettings.assist_items_enabled, [](Button& button) {soundToggleSetting(button); allSettings.assist_items_enabled = button.isPressed(); });
 		y += settingsAddBooleanOption(*settings_subwindow, y, "hardcore_mode", Language::get(5259), Language::get(5260),
 			allSettings.hardcore_mode_enabled, [](Button& button){soundToggleSetting(button); allSettings.hardcore_mode_enabled = button.isPressed();});
 		y += settingsAddBooleanOption(*settings_subwindow, y, "classic_mode", Language::get(5261), Language::get(5262),
 			allSettings.classic_mode_enabled, [](Button& button){soundToggleSetting(button); allSettings.classic_mode_enabled = button.isPressed();});
 		y += settingsAddBooleanOption(*settings_subwindow, y, "keep_inventory", Language::get(5263), Language::get(5264),
 			allSettings.keep_inventory_enabled, [](Button& button){soundToggleSetting(button); allSettings.keep_inventory_enabled = button.isPressed();});
-		y += settingsAddBooleanOption(*settings_subwindow, y, "extra_life", Language::get(5265), Language::get(5266),
-			allSettings.extra_life_enabled, [](Button& button){soundToggleSetting(button); allSettings.extra_life_enabled = button.isPressed();});
+		/*y += settingsAddBooleanOption(*settings_subwindow, y, "extra_life", Language::get(5265), Language::get(5266),
+			allSettings.extra_life_enabled, [](Button& button){soundToggleSetting(button); allSettings.extra_life_enabled = button.isPressed();});*/
 #ifndef NINTENDO
 		y += settingsAddBooleanOption(*settings_subwindow, y, "cheats", Language::get(5267), Language::get(5268),
 			allSettings.cheats_enabled, [](Button& button){soundToggleSetting(button); allSettings.cheats_enabled = button.isPressed();});
@@ -7167,14 +7174,15 @@ bind_failed:
 
 #ifndef NINTENDO
 		hookSettings(*settings_subwindow,
-			{{Setting::Type::Boolean, "hunger"},
+			{ {Setting::Type::Boolean, "hunger"},
 			{Setting::Type::Boolean, "minotaur"},
 			{Setting::Type::Boolean, "random_traps"},
 			{Setting::Type::Boolean, "friendly_fire"},
+			{Setting::Type::Boolean, "assist_items"},
 			{Setting::Type::Boolean, "hardcore_mode"},
 			{Setting::Type::Boolean, "classic_mode"},
 			{Setting::Type::Boolean, "keep_inventory"},
-			{Setting::Type::Boolean, "extra_life"},
+			//{Setting::Type::Boolean, "extra_life"},
 			{Setting::Type::Boolean, "cheats"}});
 #else
 		hookSettings(*settings_subwindow,
@@ -7182,10 +7190,11 @@ bind_failed:
 			{Setting::Type::Boolean, "minotaur"},
 			{Setting::Type::Boolean, "random_traps"},
 			{Setting::Type::Boolean, "friendly_fire"},
+			{Setting::Type::Boolean, "assist_items"};
 			{Setting::Type::Boolean, "hardcore_mode"},
 			{Setting::Type::Boolean, "classic_mode"},
-			{Setting::Type::Boolean, "keep_inventory"},
-			{Setting::Type::Boolean, "extra_life"}});
+			{Setting::Type::Boolean, "keep_inventory"}});
+			//{Setting::Type::Boolean, "extra_life"}}),
 #endif
 
 		settingsSubwindowFinalize(*settings_subwindow, y, {Setting::Type::Boolean, "hunger"});
@@ -7204,7 +7213,8 @@ bind_failed:
 					{"setting_hardcore_mode_button", SV_FLAG_HARDCORE},
 					{"setting_classic_mode_button", SV_FLAG_CLASSIC},
 					{"setting_keep_inventory_button", SV_FLAG_KEEPINVENTORY},
-					{"setting_extra_life_button", SV_FLAG_LIFESAVING},
+					//{"setting_extra_life_button", SV_FLAG_LIFESAVING},
+					{"setting_assist_items_button", SV_FLAG_ASSIST_ITEMS},
 					{"setting_cheats_button", SV_FLAG_CHEATS},
 				};
 			}
@@ -7214,6 +7224,10 @@ bind_failed:
 				for ( int c = 0; c < NUM_SERVER_FLAGS; ++c )
 				{
 					const Uint32 flag = (1 << c);
+					if ( flag == SV_FLAG_LIFESAVING )
+					{
+						continue;
+					}
 					const bool locked = (gameModeManager.currentSession.challengeRun.lockedFlags & (flag)) == 0 ? false : true;
 					if ( locked )
 					{
@@ -7226,7 +7240,8 @@ bind_failed:
 						case SV_FLAG_HARDCORE: options["setting_hardcore_mode_button"] = SV_FLAG_HARDCORE; break;
 						case SV_FLAG_CLASSIC: options["setting_classic_mode_button"] = SV_FLAG_CLASSIC; break;
 						case SV_FLAG_KEEPINVENTORY: options["setting_keep_inventory_button"] = SV_FLAG_KEEPINVENTORY; break;
-						case SV_FLAG_LIFESAVING: options["setting_extra_life_button"] = SV_FLAG_LIFESAVING; break;
+						//case SV_FLAG_LIFESAVING: options["setting_extra_life_button"] = SV_FLAG_LIFESAVING; break;
+						case SV_FLAG_ASSIST_ITEMS: options["setting_assist_items_button"] = SV_FLAG_ASSIST_ITEMS; break;
 						case SV_FLAG_CHEATS: options["setting_cheats_button"] = SV_FLAG_CHEATS; break;
 						}
 					}
@@ -8821,30 +8836,32 @@ bind_failed:
 		    struct Conduct {
 		        bool achieved;
 		        const char* name;
-		        const char* text;
+		        const char* conduct_text;
+				int value = 0;
 		    };
 
 		    Conduct conducts[] = {
-		        {(bool)score->conductGameChallenges[CONDUCT_CHEATS_ENABLED], "cheats_enabled", Language::get(5282)},
-		        {(bool)score->conductGameChallenges[CONDUCT_MODDED], "modded", Language::get(5283)},
-		        {(bool)score->conductGameChallenges[CONDUCT_MULTIPLAYER], "multiplayer", Language::get(5284)},
-		        {(bool)score->conductGameChallenges[CONDUCT_HARDCORE], "hardcore", Language::get(5285)},
-		        {(bool)score->conductGameChallenges[CONDUCT_CLASSIC_MODE], "classic_mode", Language::get(5286)},
-		        {score->conductPenniless, "penniless", Language::get(5287)},
-		        {score->conductFoodless, "foodless", Language::get(5288)},
+		        {(bool)score->conductGameChallenges[CONDUCT_CHEATS_ENABLED], "cheats_enabled", Language::get(5282), 0},
+				{(bool)score->conductGameChallenges[CONDUCT_ASSISTANCE_CLAIMED], "assistance", Language::get(6341), score->conductGameChallenges[CONDUCT_ASSISTANCE_CLAIMED]},
+		        {(bool)score->conductGameChallenges[CONDUCT_MODDED], "modded", Language::get(5283), 0},
+		        {(bool)score->conductGameChallenges[CONDUCT_MULTIPLAYER], "multiplayer", Language::get(5284), 0},
+		        {(bool)score->conductGameChallenges[CONDUCT_HARDCORE], "hardcore", Language::get(5285), 0},
+		        {(bool)score->conductGameChallenges[CONDUCT_CLASSIC_MODE], "classic_mode", Language::get(5286), 0},
+		        {score->conductPenniless, "penniless", Language::get(5287), 0},
+		        {score->conductFoodless, "foodless", Language::get(5288), 0},
 		        {score->conductVegetarian &&
-		            !score->conductFoodless, "vegetarian", Language::get(5289)},
-		        {score->conductIlliterate, "illiterate", Language::get(5290)},
-		        {(bool)score->conductGameChallenges[CONDUCT_BRAWLER], "brawler", Language::get(5291)},
+		            !score->conductFoodless, "vegetarian", Language::get(5289), 0},
+		        {score->conductIlliterate, "illiterate", Language::get(5290), 0},
+		        {(bool)score->conductGameChallenges[CONDUCT_BRAWLER], "brawler", Language::get(5291), 0},
 		        {(bool)score->conductGameChallenges[CONDUCT_RANGED_ONLY] &&
-		            !(bool)score->conductGameChallenges[CONDUCT_BRAWLER], "ranged_only", Language::get(5292)},
-		        {(bool)score->conductGameChallenges[CONDUCT_BLESSED_BOOTS_SPEED], "blessed_boots_speed", Language::get(5293)},
+		            !(bool)score->conductGameChallenges[CONDUCT_BRAWLER], "ranged_only", Language::get(5292), 0},
+		        {(bool)score->conductGameChallenges[CONDUCT_BLESSED_BOOTS_SPEED], "blessed_boots_speed", Language::get(5293), 0},
 		        {(bool)score->conductGameChallenges[CONDUCT_BOOTS_SPEED] &&
-		            !(bool)score->conductGameChallenges[CONDUCT_BLESSED_BOOTS_SPEED], "boots_speed", Language::get(5294)},
+		            !(bool)score->conductGameChallenges[CONDUCT_BLESSED_BOOTS_SPEED], "boots_speed", Language::get(5294), 0},
 		        {(bool)score->conductGameChallenges[CONDUCT_KEEPINVENTORY] &&
-		            (bool)score->conductGameChallenges[CONDUCT_MULTIPLAYER], "keep_inventory", Language::get(5295)},
-		        {(bool)score->conductGameChallenges[CONDUCT_LIFESAVING], "life_saving", Language::get(5296)},
-		        {(bool)score->conductGameChallenges[CONDUCT_ACCURSED], "accursed", Language::get(5297)},
+		            (bool)score->conductGameChallenges[CONDUCT_MULTIPLAYER], "keep_inventory", Language::get(5295), 0},
+		        {(bool)score->conductGameChallenges[CONDUCT_LIFESAVING], "life_saving", Language::get(5296), 0},
+		        {(bool)score->conductGameChallenges[CONDUCT_ACCURSED], "accursed", Language::get(5297), 0},
 		    };
 		    constexpr int num_conducts = sizeof(conducts) / sizeof(conducts[0]);
 
@@ -8853,7 +8870,16 @@ bind_failed:
 		        if (conducts[c].achieved) {
 		            atLeastOneConduct = true;
 		            auto entry = conduct->addEntry(conducts[c].name, true);
-		            entry->text = u8" \x1E " + std::string(conducts[c].text);
+					if ( !strcmp(conducts[c].name, "assistance") )
+					{
+						char buf[64];
+						snprintf(buf, sizeof(buf), conducts[c].conduct_text, score->conductGameChallenges[CONDUCT_ASSISTANCE_CLAIMED]);
+						entry->text = u8" \x1E " + std::string(buf);
+					}
+					else
+					{
+						entry->text = u8" \x1E " + std::string(conducts[c].conduct_text);
+					}
 		            entry->color = makeColor(203, 171, 101, 255);
 		        }
 		    }
@@ -12604,157 +12630,6 @@ failed:
 
 /******************************************************************************/
 
-	enum class DLC {
-		Base,
-		MythsAndOutcasts,
-		LegendsAndPariahs
-	};
-
-	struct Class {
-		DLC dlc;
-		const char* image;
-		const char* image_highlighted;
-		const char* image_locked;
-	};
-
-	const std::unordered_map<std::string, Class> classes = {
-		{"barbarian", {
-			DLC::Base,
-			"ClassSelect_Icon_Barbarian_00.png",
-			"ClassSelect_Icon_BarbarianOn_00.png",
-			"ClassSelect_Icon_BarbarianLocked_00.png",
-			}},
-		{"warrior", {
-			DLC::Base,
-			"ClassSelect_Icon_Warrior_00.png",
-			"ClassSelect_Icon_WarriorOn_00.png",
-			"ClassSelect_Icon_WarriorLocked_00.png",
-			}},
-		{"healer", {
-			DLC::Base,
-			"ClassSelect_Icon_Healer_00.png",
-			"ClassSelect_Icon_HealerOn_00.png",
-			"ClassSelect_Icon_HealerLocked_00.png",
-			}},
-		{"rogue", {
-			DLC::Base,
-			"ClassSelect_Icon_Rogue_00.png",
-			"ClassSelect_Icon_RogueOn_00.png",
-			"ClassSelect_Icon_RogueLocked_00.png",
-			}},
-		{"wanderer", {
-			DLC::Base,
-			"ClassSelect_Icon_Wanderer_00.png",
-			"ClassSelect_Icon_WandererOn_00.png",
-			"ClassSelect_Icon_WandererLocked_00.png",
-			}},
-		{"cleric", {
-			DLC::Base,
-			"ClassSelect_Icon_Cleric_00.png",
-			"ClassSelect_Icon_ClericOn_00.png",
-			"ClassSelect_Icon_ClericLocked_00.png",
-			}},
-		{"merchant", {
-			DLC::Base,
-			"ClassSelect_Icon_Merchant_00.png",
-			"ClassSelect_Icon_MerchantOn_00.png",
-			"ClassSelect_Icon_MerchantLocked_00.png",
-			}},
-		{"wizard", {
-			DLC::Base,
-			"ClassSelect_Icon_Wizard_00.png",
-			"ClassSelect_Icon_WizardOn_00.png",
-			"ClassSelect_Icon_WizardLocked_00.png",
-			}},
-		{"arcanist", {
-			DLC::Base,
-			"ClassSelect_Icon_Arcanist_00.png",
-			"ClassSelect_Icon_ArcanistOn_00.png",
-			"ClassSelect_Icon_ArcanistLocked_00.png",
-			}},
-		{"joker", {
-			DLC::Base,
-			"ClassSelect_Icon_Jester_00.png",
-			"ClassSelect_Icon_JesterOn_00.png",
-			"ClassSelect_Icon_JesterLocked_00.png",
-			}},
-		{"sexton", {
-			DLC::Base,
-			"ClassSelect_Icon_Sexton_00.png",
-			"ClassSelect_Icon_SextonOn_00.png",
-			"ClassSelect_Icon_SextonLocked_00.png",
-			}},
-		{"ninja", {
-			DLC::Base,
-			"ClassSelect_Icon_Ninja_00.png",
-			"ClassSelect_Icon_NinjaOn_00.png",
-			"ClassSelect_Icon_NinjaLocked_00.png",
-			}},
-		{"monk", {
-			DLC::Base,
-			"ClassSelect_Icon_Monk_00.png",
-			"ClassSelect_Icon_MonkOn_00.png",
-			"ClassSelect_Icon_MonkLocked_00.png",
-			}},
-		{"conjurer", {
-			DLC::MythsAndOutcasts,
-			"ClassSelect_Icon_Conjurer_00.png",
-			"ClassSelect_Icon_ConjurerOn_00.png",
-			"ClassSelect_Icon_ConjurerLocked_00.png",
-			}},
-		{"accursed", {
-			DLC::MythsAndOutcasts,
-			"ClassSelect_Icon_Accursed_00.png",
-			"ClassSelect_Icon_AccursedOn_00.png",
-			"ClassSelect_Icon_AccursedLocked_00.png",
-			}},
-		{"mesmer", {
-			DLC::MythsAndOutcasts,
-			"ClassSelect_Icon_Mesmer_00.png",
-			"ClassSelect_Icon_MesmerOn_00.png",
-			"ClassSelect_Icon_MesmerLocked_00.png",
-			}},
-		{"brewer", {
-			DLC::MythsAndOutcasts,
-			"ClassSelect_Icon_Brewer_00.png",
-			"ClassSelect_Icon_BrewerOn_00.png",
-			"ClassSelect_Icon_BrewerLocked_00.png",
-			}},
-		{"mechanist", {
-			DLC::LegendsAndPariahs,
-			"ClassSelect_Icon_Mechanist_00.png",
-			"ClassSelect_Icon_MechanistOn_00.png",
-			"ClassSelect_Icon_MechanistLocked_00.png",
-			}},
-		{"punisher", {
-			DLC::LegendsAndPariahs,
-			"ClassSelect_Icon_Punisher_00.png",
-			"ClassSelect_Icon_PunisherOn_00.png",
-			"ClassSelect_Icon_PunisherLocked_00.png",
-			}},
-		{"shaman", {
-			DLC::LegendsAndPariahs,
-			"ClassSelect_Icon_Shaman_00.png",
-			"ClassSelect_Icon_ShamanOn_00.png",
-			"ClassSelect_Icon_ShamanLocked_00.png",
-			}},
-		{"hunter", {
-			DLC::LegendsAndPariahs,
-			"ClassSelect_Icon_Hunter_00.png",
-			"ClassSelect_Icon_HunterOn_00.png",
-			"ClassSelect_Icon_HunterLocked_00.png",
-			}},
-	};
-
-	static const char* classes_in_order[] = {
-		"barbarian", "warrior", "healer",
-		"rogue", "wanderer", "cleric", "merchant",
-		"wizard", "arcanist", "joker", "sexton",
-		"ninja", "monk", "conjurer", "accursed",
-		"mesmer", "brewer", "mechanist", "punisher",
-		"shaman", "hunter"
-	};
-    
     // number of player selectable races
 	constexpr int num_races = 9;
 
@@ -13114,27 +12989,9 @@ failed:
 		return result;
 	}
 
-	void RaceDescriptions::update_details_text(Frame& card, void* stats) {
-		
-		Monster race = HUMAN;
-		if ( static_cast<Stat*>(stats)->stat_appearance == 0 && static_cast<Stat*>(stats)->playerRace != RACE_HUMAN )
-		{
-			race = getMonsterFromPlayerRace(static_cast<Stat*>(stats)->playerRace);
-		}
-		Monster modifiedRace = static_cast<Stat*>(stats)->type;
-		if ( ::arachnophobia_filter )
-		{
-			if ( modifiedRace == SPIDER )
-			{
-				modifiedRace = CRAB;
-			}
-			if ( race == SPIDER )
-			{
-				race = CRAB;
-			}
-		}
-
-		auto& raceDescriptionData = RaceDescriptions::getMonsterDescriptionData(modifiedRace);
+	void RaceDescriptions::update_details_text(Frame& card, int race, int modified_race)
+	{
+		auto& raceDescriptionData = RaceDescriptions::getMonsterDescriptionData(modified_race);
 		auto& raceDescriptionDataBase = RaceDescriptions::getMonsterDescriptionData(race);
 		auto details_text = card.findField("details"); assert(details_text);
 		auto details_text_right = card.findField("details_right"); assert(details_text_right);
@@ -13155,17 +13012,17 @@ failed:
 			if ( raceDescriptionDataBase.racialSpells.size() > 0 )
 			{
 				details_text_buf += raceDescriptionDataBase.racialSpells;
-				if ( race != modifiedRace )
+				if ( race != modified_race )
 				{
 					// Add (Insectoid) etc if we're polymorphed from our base race.
 					char buf[64] = "";
-					auto localizedName = getMonsterLocalizedName(race);
+					auto localizedName = getMonsterLocalizedName((Monster)race);
 					camelCaseString(localizedName);
 					snprintf(buf, sizeof(buf), " (%s)", localizedName.c_str());
 					for ( size_t d = 0; d < details_text_buf.size(); ++d )
 					{
 						// first newline "Innate Spells", insert the monster type name here
-						if ( details_text_buf[d] == '\n' ) 
+						if ( details_text_buf[d] == '\n' )
 						{
 							details_text_buf.insert(d, buf);
 							break;
@@ -13193,7 +13050,7 @@ failed:
 			details_text_buf += '\n';
 			details_text->addColorToLine(line, color_traits);
 			details_text_buf += raceDescriptionData.traitsBasedOnMonsterType;
-			if ( race != modifiedRace )
+			if ( race != modified_race )
 			{
 				if ( raceDescriptionDataBase.traitsBasedOnPlayerRace != "" )
 				{
@@ -13206,7 +13063,7 @@ failed:
 			for ( ; c < details_text_buf.size(); ++c )
 			{
 				if ( details_text_buf[c] == '\n' )
-				{ 
+				{
 					++line;
 					details_text_right_buf += '\n';
 				}
@@ -13247,7 +13104,7 @@ failed:
 
 				if ( height < Frame::virtualScreenY / 2 )
 				{
-					int extraSpace = (Frame::virtualScreenY / 2) - height / std::max(1,  numIndividualPadding);
+					int extraSpace = (Frame::virtualScreenY / 2) - height / std::max(1, numIndividualPadding);
 					extraSpace = std::min(8, extraSpace);
 					for ( int line = 0; line < numlines; ++line )
 					{
@@ -13265,6 +13122,29 @@ failed:
 				}
 			}
 		}
+	}
+
+	void RaceDescriptions::update_details_text(Frame& card, void* stats) 
+	{
+		Monster race = HUMAN;
+		if ( static_cast<Stat*>(stats)->stat_appearance == 0 && static_cast<Stat*>(stats)->playerRace != RACE_HUMAN )
+		{
+			race = getMonsterFromPlayerRace(static_cast<Stat*>(stats)->playerRace);
+		}
+		Monster modifiedRace = static_cast<Stat*>(stats)->type;
+		if ( ::arachnophobia_filter )
+		{
+			if ( modifiedRace == SPIDER )
+			{
+				modifiedRace = CRAB;
+			}
+			if ( race == SPIDER )
+			{
+				race = CRAB;
+			}
+		}
+
+		update_details_text(card, race, modifiedRace);
 	}
 
 	void ClassDescriptions::update_stat_growths(Frame& card, int classnum, int shapeshiftedType)
@@ -13821,7 +13701,8 @@ failed:
 			allSettings.hunger_enabled = lobbyWindowSvFlags & SV_FLAG_HUNGER;
 			allSettings.minotaur_enabled = lobbyWindowSvFlags & SV_FLAG_MINOTAURS;
 			allSettings.random_traps_enabled = lobbyWindowSvFlags & SV_FLAG_TRAPS;
-			allSettings.extra_life_enabled = lobbyWindowSvFlags & SV_FLAG_LIFESAVING;
+			allSettings.extra_life_enabled = false; /*lobbyWindowSvFlags& SV_FLAG_LIFESAVING;*/
+			allSettings.assist_items_enabled = lobbyWindowSvFlags & SV_FLAG_ASSIST_ITEMS;
 			allSettings.cheats_enabled = lobbyWindowSvFlags & SV_FLAG_CHEATS;
 		}
 
@@ -13835,7 +13716,8 @@ failed:
 			    svFlags = allSettings.hunger_enabled ? svFlags | SV_FLAG_HUNGER : svFlags & ~(SV_FLAG_HUNGER);
 			    svFlags = allSettings.minotaur_enabled ? svFlags | SV_FLAG_MINOTAURS : svFlags & ~(SV_FLAG_MINOTAURS);
 			    svFlags = allSettings.random_traps_enabled ? svFlags | SV_FLAG_TRAPS : svFlags & ~(SV_FLAG_TRAPS);
-			    svFlags = allSettings.extra_life_enabled ? svFlags | SV_FLAG_LIFESAVING : svFlags & ~(SV_FLAG_LIFESAVING);
+			    svFlags = /*allSettings.extra_life_enabled ? svFlags | SV_FLAG_LIFESAVING :*/ svFlags & ~(SV_FLAG_LIFESAVING);
+				svFlags = allSettings.assist_items_enabled ? svFlags | SV_FLAG_ASSIST_ITEMS : svFlags & ~(SV_FLAG_ASSIST_ITEMS);
 			    svFlags = allSettings.cheats_enabled ? svFlags | SV_FLAG_CHEATS : svFlags & ~(SV_FLAG_CHEATS);
 			    sendSvFlagsOverNet();
 			}
@@ -13877,7 +13759,8 @@ failed:
 		const char* game_settings_text[] = {
 			Language::get(5378), // disable hunger
 			Language::get(5379), // disable minotaurs
-			Language::get(5380), // life saving amulet
+			//Language::get(5380), // life saving amulet
+			Language::get(6344), // assist items
 			Language::get(5381), // keep items on death
 			Language::get(5382), // disable random traps
 			Language::get(5383), // disable friendly fire
@@ -13968,19 +13851,19 @@ failed:
 					soundCheckmark(); allSettings.minotaur_enabled = !button.isPressed();});
 				break;
 			case 2:
-				if ( gameModeManager.isServerflagDisabledForCurrentMode(SV_FLAG_LIFESAVING) )
+				if ( gameModeManager.isServerflagDisabledForCurrentMode(SV_FLAG_ASSIST_ITEMS) )
 				{
 					label->setColor(makeColor(128, 128, 128, 255));
 				}
-				setting->setPressed(allSettings.extra_life_enabled);
+				setting->setPressed(allSettings.assist_items_enabled);
 				setting->setCallback([](Button& button){
-					if ( gameModeManager.isServerflagDisabledForCurrentMode(SV_FLAG_LIFESAVING) )
+					if ( gameModeManager.isServerflagDisabledForCurrentMode(SV_FLAG_ASSIST_ITEMS) )
 					{
 						soundError();
-						button.setPressed(allSettings.extra_life_enabled);
+						button.setPressed(allSettings.assist_items_enabled);
 						return;
 					}
-					soundCheckmark(); allSettings.extra_life_enabled = button.isPressed();});
+					soundCheckmark(); allSettings.assist_items_enabled = button.isPressed();});
 				break;
 			case 3:
 				if ( gameModeManager.isServerflagDisabledForCurrentMode(SV_FLAG_KEEPINVENTORY) )
@@ -14091,8 +13974,8 @@ failed:
 				else if ( Mods::disableSteamAchievements ) {
 					achievements->setColor(makeColor(180, 37, 37, 255));
 					achievements->setText(Language::get(5387));
-				} else if ( allSettings.cheats_enabled ||
-					allSettings.extra_life_enabled ) {
+				} else if ( allSettings.cheats_enabled 
+					/*|| allSettings.extra_life_enabled*/ ) {
 					achievements->setColor(makeColor(180, 37, 37, 255));
 					achievements->setText(Language::get(5389));
                 } else {
@@ -14112,8 +13995,8 @@ failed:
 				} else if ( Mods::lobbyDisableSteamAchievements ) {
 					achievements->setColor(makeColor(180, 37, 37, 255));
 					achievements->setText(Language::get(5388));
-				} else if ( (lobbyWindowSvFlags & SV_FLAG_CHEATS) ||
-					(lobbyWindowSvFlags & SV_FLAG_LIFESAVING) ) {
+				} else if ( (lobbyWindowSvFlags & SV_FLAG_CHEATS) 
+					/*|| (lobbyWindowSvFlags & SV_FLAG_LIFESAVING)*/ ) {
 					achievements->setColor(makeColor(180, 37, 37, 255));
 					achievements->setText(Language::get(5389));
                 } else {
@@ -14131,7 +14014,7 @@ failed:
                         button->setPressed(!(lobbyWindowSvFlags & SV_FLAG_MINOTAURS));
                         break;
                     case 2:
-                        button->setPressed((lobbyWindowSvFlags & SV_FLAG_LIFESAVING));
+                        button->setPressed((lobbyWindowSvFlags & SV_FLAG_ASSIST_ITEMS));
                         break;
                     case 3:
                         button->setPressed((lobbyWindowSvFlags & SV_FLAG_KEEPINVENTORY));
@@ -19874,7 +19757,7 @@ failed:
                 return;
             }
             if (lobbyFilters[2] == Filter::ON 
-				&& ( (info.flags & (SV_FLAG_CHEATS | SV_FLAG_LIFESAVING) )
+				&& ( (info.flags & (SV_FLAG_CHEATS /*| SV_FLAG_LIFESAVING*/) )
 						|| info.modsDisableAchievements)
 				) {
                 // lobbies with cheats or +1 life do not count for
@@ -19883,7 +19766,7 @@ failed:
                 return;
             }
             if (lobbyFilters[2] == Filter::OFF 
-				&& !( (info.flags & (SV_FLAG_CHEATS | SV_FLAG_LIFESAVING) ) 
+				&& !( (info.flags & (SV_FLAG_CHEATS /*| SV_FLAG_LIFESAVING*/) ) 
 						|| info.modsDisableAchievements )
 				) {
                 // we're only looking for lobbies where achievements aren't enabled
@@ -19891,8 +19774,16 @@ failed:
                 return;
             }
             for (int c = 0; c < NUM_SERVER_FLAGS; ++c) {
+				if ( (1 << c) == SV_FLAG_LIFESAVING )
+				{
+					continue;
+				}
                 const bool flag = (info.flags & (1 << c)) == 0 ? false : true;
-                const int index = (numFilters - NUM_SERVER_FLAGS) + c;
+                int index = (numFilters - (NUM_SERVER_FLAGS - 1)) + c;
+				if ( (1 << c) >= SV_FLAG_ASSIST_ITEMS )
+				{
+					--index; // offset the lifesaving skip
+				}
                 if (lobbyFilters[index] == Filter::ON && !flag) {
                     // check the server flag filters
                     printlog("skipping lobby '%s' (server flag %d is off)\n", info.name.c_str(), c);
@@ -20589,7 +20480,9 @@ failed:
                 Language::get(5495), // hardcore mode
                 Language::get(5496), // classic mode
                 Language::get(5497), // keep items on death
-                Language::get(5498), // +1 life
+                //Language::get(5498), // +1 life
+				Language::get(6345), // assist items
+
             };
             constexpr int num_filter_names = sizeof(filter_names) / sizeof(filter_names[0]);
 
@@ -20703,13 +20596,31 @@ failed:
                 bool foundFlags = false;
                 for (int c = 0, index = 0; c < NUM_SERVER_FLAGS; ++c) {
                     if (lobby.flags & (1 << c)) {
+						if ( (1 << c) == SV_FLAG_LIFESAVING )
+						{
+							continue;
+						}
                         if (index & 1) {
                             flags2.append(u8" \x1E ");
-                            flags2.append(Language::get(5500 + c));
+							if ( (1 << c) == SV_FLAG_ASSIST_ITEMS )
+							{
+								flags2.append(Language::get(6342));
+							}
+							else
+							{
+								flags2.append(Language::get(5500 + c));
+							}
                             flags2.append("\n");
                         } else {
                             flags1.append(u8" \x1E ");
-                            flags1.append(Language::get(5500 + c));
+							if ( (1 << c) == SV_FLAG_ASSIST_ITEMS )
+							{
+								flags1.append(Language::get(6342));
+							}
+							else
+							{
+								flags1.append(Language::get(5500 + c));
+							}
                             flags1.append("\n");
                         }
                         foundFlags = true;
@@ -22445,7 +22356,8 @@ failed:
 		allSettings.hunger_enabled = svFlags & SV_FLAG_HUNGER;
 		allSettings.minotaur_enabled = svFlags & SV_FLAG_MINOTAURS;
 		allSettings.random_traps_enabled = svFlags & SV_FLAG_TRAPS;
-		allSettings.extra_life_enabled = svFlags & SV_FLAG_LIFESAVING;
+		allSettings.extra_life_enabled = false; /*svFlags & SV_FLAG_LIFESAVING;*/
+		allSettings.assist_items_enabled = svFlags & SV_FLAG_ASSIST_ITEMS;
 		allSettings.cheats_enabled = svFlags & SV_FLAG_CHEATS;
 
 		auto dimmer = main_menu_frame->addFrame("dimmer");
@@ -26121,7 +26033,8 @@ failed:
 					achievements->setText(Language::get(5783));
 				}
 				else if (conductGameChallenges[CONDUCT_CHEATS_ENABLED]
-					|| conductGameChallenges[CONDUCT_LIFESAVING] ) {
+					|| conductGameChallenges[CONDUCT_LIFESAVING]
+					|| conductGameChallenges[CONDUCT_ASSISTANCE_CLAIMED] >= GenericGUIMenu::AssistShrineGUI_t::achievementDisabledLimit ) {
 					achievements->setColor(makeColor(180, 37, 37, 255));
 					achievements->setText(Language::get(5784));
 				}
