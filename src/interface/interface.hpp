@@ -715,16 +715,16 @@ public:
 #endif
 		}
 
-		static const int ASSIST_SLOT_CLOAK = -1;
-		static const int ASSIST_SLOT_MASK = -2;
-		static const int ASSIST_SLOT_AMULET = -3;
-		static const int ASSIST_SLOT_RING = -4;
-		static const int ASSIST_RACE_COLUMN = 10;
-		static const int ASSIST_CHAR_NAME = -10;
-		static const int ASSIST_CHAR_RACE = -11;
-		static const int ASSIST_CHAR_CLASS = -12;
+		static constexpr int ASSIST_SLOT_CLOAK = -1;
+		static constexpr int ASSIST_SLOT_MASK = -2;
+		static constexpr int ASSIST_SLOT_AMULET = -3;
+		static constexpr int ASSIST_SLOT_RING = -4;
+		static constexpr int ASSIST_RACE_COLUMN = 10;
+		static constexpr int ASSIST_CHAR_NAME = -10;
+		static constexpr int ASSIST_CHAR_RACE = -11;
+		static constexpr int ASSIST_CHAR_CLASS = -12;
 
-		static const int achievementDisabledLimit = 10;
+		static constexpr int achievementDisabledLimit = 10;
 
 		Item itemCloak;
 		Item itemMask;
