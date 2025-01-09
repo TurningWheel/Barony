@@ -106,8 +106,11 @@ void initGameDatafiles(bool moddedReload)
 	CompendiumEntries.readMagicTranslationsFromFile();
 	Compendium_t::AchievementData_t::readContentsLang();
 	Compendium_t::Events_t::readEventsTranslations();
-	Compendium_t::readUnlocksSaveData();
-	Compendium_t::Events_t::loadItemsSaveData();
+	if ( !moddedReload )
+	{
+		Compendium_t::readUnlocksSaveData();
+		Compendium_t::Events_t::loadItemsSaveData();
+	}
 	CompendiumEntries.readModelLimbsFromFile("monster");
 	CompendiumEntries.readModelLimbsFromFile("world");
 	CompendiumEntries.readModelLimbsFromFile("codex");
