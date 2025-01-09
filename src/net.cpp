@@ -5404,6 +5404,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 			Compendium_t::Events_t::clientReceiveData.erase(clientSequence);
 
 			Compendium_t::Events_t::writeItemsSaveData();
+			Compendium_t::writeUnlocksSaveData();
 
 			// reply got packet
 			strcpy((char*)net_packet->data, "CMPD");
