@@ -1232,7 +1232,7 @@ void actTextSource(Entity* my);
 
 static const int NUM_ITEM_STRINGS = 336;
 static const int NUM_ITEM_STRINGS_BY_TYPE = 129;
-static const int NUM_EDITOR_SPRITES = 202;
+static const int NUM_EDITOR_SPRITES = 208;
 static const int NUM_EDITOR_TILES = 350;
 
 // furniture types.
@@ -1373,7 +1373,11 @@ public:
 		TO_SPELLBOT,
 		TO_GYROBOT,
 		TO_DUMMYBOT,
-		TO_BUGBEAR
+		TO_BUGBEAR,
+		TO_MONSTER_D,
+		TO_MONSTER_M,
+		TO_MONSTER_S,
+		TO_MONSTER_G
 	};
 	enum ScriptType : int
 	{

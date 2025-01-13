@@ -56,6 +56,10 @@ Monster editorSpriteTypeToMonster(Sint32 sprite)
 	case 166: monsterType = GYROBOT; break;
 	case 188: monsterType = BAT_SMALL; break;
 	case 189: monsterType = BUGBEAR; break;
+	case 204: monsterType = MONSTER_D; break;
+	case 205: monsterType = MONSTER_M; break;
+	case 206: monsterType = MONSTER_S; break;
+	case 207: monsterType = MONSTER_G; break;
 	default:
 		break;
 	}
@@ -109,6 +113,10 @@ int checkSpriteType(Sint32 sprite)
 	case 195:
 	case 196:
 	case 197:
+	case 204:
+	case 205:
+	case 206:
+	case 207:
 		//monsters
 		return 1;
 		break;
@@ -1087,7 +1095,13 @@ char spriteEditorNameStrings[NUM_EDITOR_SPRITES][64] =
 	"NOT USED",
 	"NOT USED",
 	"NOT USED",
-	"ASSIST SHRINE"
+	"ASSIST SHRINE",
+	"NOT USED",
+	"NOT USED",
+	"MONSTER_D",
+	"MONSTER_M",
+	"MONSTER_S",
+	"MONSTER_G"
 };
 
 char monsterEditorNameStrings[NUMMONSTERS][16] =
@@ -1129,7 +1143,11 @@ char monsterEditorNameStrings[NUMMONSTERS][16] =
 	"spellbot",
 	"gyrobot",
 	"dummybot",
-	"bugbear"
+	"bugbear",
+	"monster_d",
+	"monster_m",
+	"monster_s",
+	"monster_g"
 };
 
 char tileEditorNameStrings[NUM_EDITOR_TILES][44] =
@@ -1452,6 +1470,10 @@ int canWearEquip(Entity* entity, int category)
 				case GOATMAN:
 				case KOBOLD:
 				case INSECTOID:
+				case MONSTER_D:
+				case MONSTER_M:
+				case MONSTER_S:
+				case MONSTER_G:
 					equipType = 3;
 					break;
 

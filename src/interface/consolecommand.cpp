@@ -5165,6 +5165,10 @@ namespace ConsoleCommands {
 						case 166: monsterType = GYROBOT; break;
 						case 188: monsterType = BAT_SMALL; break;
 						case 189: monsterType = BUGBEAR; break;
+						case 204: monsterType = MONSTER_D; break;
+						case 205: monsterType = MONSTER_M; break;
+						case 206: monsterType = MONSTER_S; break;
+						case 207: monsterType = MONSTER_G; break;
 						default:
 							break;
 						}

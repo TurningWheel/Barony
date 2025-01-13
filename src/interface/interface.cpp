@@ -4355,6 +4355,10 @@ int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monste
 		case INSECTOID:
 		case GOATMAN:
 		case BUGBEAR:
+		case MONSTER_D:
+		case MONSTER_M:
+		case MONSTER_S:
+		case MONSTER_G:
 			creatureTier = 2;
 			break;
 		case CRYSTALGOLEM:

@@ -59,6 +59,10 @@ enum Monster : int
 	GYROBOT,
 	DUMMYBOT,
 	BUGBEAR,
+	MONSTER_D,
+	MONSTER_M,
+	MONSTER_G,
+	MONSTER_S,
 	MAX_MONSTER
 };
 const int NUMMONSTERS = MAX_MONSTER;
@@ -293,6 +297,23 @@ static std::vector<Sint32> monsterSprites[NUMMONSTERS] = {
 	{
 		1412,
 	},
+
+	//MONSTER_D
+	{
+		1485, 1486, 1514, 1515
+	},
+	//MONSTER_M
+	{
+		1519, 1520
+	},
+	//MONSTER_G
+	{
+		9991,
+	},
+	//MONSTER_S
+	{
+		9992,
+	},
 };
 
 static char monstertypename[][15] =
@@ -334,7 +355,11 @@ static char monstertypename[][15] =
 	"spellbot",
 	"gyrobot",
 	"dummybot",
-	"bugbear"
+	"bugbear",
+	"monster_d",
+	"monster_m",
+	"monster_s",
+	"monster_g"
 };
 
 static char monstertypenamecapitalized[][15] =
@@ -376,7 +401,11 @@ static char monstertypenamecapitalized[][15] =
 	"Spellbot",
 	"Gyrobot",
 	"Dummybot",
-	"Bugbear"
+	"Bugbear",
+	"Monster_D",
+	"Monster_M",
+	"Monster_S",
+	"Monster_G"
 };
 
 // body part focal points
@@ -425,7 +454,11 @@ static char gibtype[NUMMONSTERS] =
 	0,	//SPELLBOT
 	0,  //GYROBOT
 	0,	//DUMMYBOT
-	1	//BUGBEAR
+	1,	//BUGBEAR
+	1,	//MONSTER_D
+	1,	//MONSTER_M
+	1,	//MONSTER_S
+	1	//MONSTER_G
 };
 
 // columns go like this:
@@ -470,7 +503,11 @@ static double damagetables[NUMMONSTERS][7] =
 	{ 1.f, 1.f, 1.f, 1.f, 0.5, 0.5, 1.f }, // sentrybot
 	{ 1.f, 1.f, 1.f, 1.f, 0.5, 0.5, 1.f }, // gyrobot
 	{ 1.f, 1.f, 1.f, 1.f, 0.5, 1.2, 0.5 }, // dummybot
-	{ 1.3, 1.2, 1.2, 0.7, 0.8, 1.f, 0.7 }  // bugbear
+	{ 1.3, 1.2, 1.2, 0.7, 0.8, 1.f, 0.7 }, // bugbear
+	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // monster_d
+	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // monster_m
+	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // monster_s
+	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }  // monster_g
 };
 
 enum DamageTableType : int
@@ -710,6 +747,10 @@ void initDummyBot(Entity* my, Stat* myStats);
 void initMimic(Entity* my, Stat* myStats);
 void initBat(Entity* my, Stat* myStats);
 void initBugbear(Entity* my, Stat* myStats);
+void initMonsterD(Entity* my, Stat* myStats);
+void initMonsterM(Entity* my, Stat* myStats);
+void initMonsterS(Entity* my, Stat* myStats);
+void initMonsterG(Entity* my, Stat* myStats);
 
 //--act*Limb functions--
 void actHumanLimb(Entity* my);
@@ -745,6 +786,8 @@ void actDummyBotLimb(Entity* my);
 void actMimicLimb(Entity* my);
 void actBatLimb(Entity* my);
 void actBugbearLimb(Entity* my);
+void actMonsterDLimb(Entity* my);
+void actMonsterMLimb(Entity* my);
 
 //--*Die functions--
 void humanDie(Entity* my);
@@ -782,6 +825,8 @@ void dummyBotDie(Entity* my);
 void mimicDie(Entity* my);
 void batDie(Entity* my);
 void bugbearDie(Entity* my);
+void monsterDDie(Entity* my);
+void monsterMDie(Entity* my);
 
 void monsterAnimate(Entity* my, Stat* myStats, double dist);
 //--*MoveBodyparts functions--
@@ -822,6 +867,8 @@ void dummyBotAnimate(Entity* my, Stat* myStats, double dist);
 void mimicAnimate(Entity* my, Stat* myStats, double dist);
 void batAnimate(Entity* my, Stat* myStats, double dist);
 void bugbearMoveBodyparts(Entity* my, Stat* myStats, double dist);
+void monsterDMoveBodyparts(Entity* my, Stat* myStats, double dist);
+void monsterMMoveBodyparts(Entity* my, Stat* myStats, double dist);
 
 //--misc functions--
 void actMinotaurTrap(Entity* my);
@@ -1272,3 +1319,5 @@ struct MimicGenerator
 	bool bForceSpawnForCurrentFloor();
 };
 extern MimicGenerator mimic_generator;
+
+bool monsterDebugModels(Entity* my, real_t* dist);
