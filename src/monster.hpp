@@ -61,8 +61,8 @@ enum Monster : int
 	BUGBEAR,
 	MONSTER_D,
 	MONSTER_M,
-	MONSTER_G,
 	MONSTER_S,
+	MONSTER_G,
 	MAX_MONSTER
 };
 const int NUMMONSTERS = MAX_MONSTER;
@@ -306,13 +306,13 @@ static std::vector<Sint32> monsterSprites[NUMMONSTERS] = {
 	{
 		1519, 1520
 	},
+	//MONSTER_S
+	{
+		1536, 1538, 1540, 1537, 1539, 1541
+	},
 	//MONSTER_G
 	{
 		9991,
-	},
-	//MONSTER_S
-	{
-		9992,
 	},
 };
 
@@ -788,6 +788,7 @@ void actBatLimb(Entity* my);
 void actBugbearLimb(Entity* my);
 void actMonsterDLimb(Entity* my);
 void actMonsterMLimb(Entity* my);
+void actMonsterSLimb(Entity* my);
 
 //--*Die functions--
 void humanDie(Entity* my);
@@ -827,6 +828,7 @@ void batDie(Entity* my);
 void bugbearDie(Entity* my);
 void monsterDDie(Entity* my);
 void monsterMDie(Entity* my);
+void monsterSDie(Entity* my);
 
 void monsterAnimate(Entity* my, Stat* myStats, double dist);
 //--*MoveBodyparts functions--
@@ -869,6 +871,7 @@ void batAnimate(Entity* my, Stat* myStats, double dist);
 void bugbearMoveBodyparts(Entity* my, Stat* myStats, double dist);
 void monsterDMoveBodyparts(Entity* my, Stat* myStats, double dist);
 void monsterMMoveBodyparts(Entity* my, Stat* myStats, double dist);
+void monsterSMoveBodyparts(Entity* my, Stat* myStats, double dist);
 
 //--misc functions--
 void actMinotaurTrap(Entity* my);

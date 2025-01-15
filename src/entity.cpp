@@ -16929,7 +16929,7 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 					break;
 			}
 
-			if ( monsterType == MONSTER_D || monsterType == MONSTER_M )
+			if ( monsterType == MONSTER_D || monsterType == MONSTER_M || monsterType == MONSTER_S )
 			{
 				weaponLimb->x += limbs[monsterType][17][0] * cos(weaponArmLimb->yaw + PI / 2) + limbs[monsterType][17][1] * cos(weaponArmLimb->yaw);
 				weaponLimb->y += limbs[monsterType][17][0] * sin(weaponArmLimb->yaw + PI / 2) + limbs[monsterType][17][1] * sin(weaponArmLimb->yaw);
@@ -21634,7 +21634,7 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 					}
 				}
 			}
-			if ( race == MONSTER_M )
+			else if ( race == MONSTER_M )
 			{
 				sleepHeight = 3.0;
 				if ( sprite == 1520 )
@@ -21659,6 +21659,25 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 				{
 					limb->x -= .5 * cos(this->yaw);
 					limb->y -= .5 * sin(this->yaw);
+				}
+			}
+			else if ( race == MONSTER_S )
+			{
+				if ( limbType == LIMB_HUMANOID_LEFTLEG || limbType == LIMB_HUMANOID_RIGHTLEG )
+				{
+					limb->z += 0.75;
+					if ( (limb->sprite >= 1554 && limb->sprite <= 1559) )
+					{
+						// base feet, push backward
+						limb->focalx -= .5;
+					}
+				}
+				else if ( limbType == LIMB_HUMANOID_LEFTARM
+					|| limbType == LIMB_HUMANOID_RIGHTARM )
+				{
+					limb->z += .5;
+					limb->x += .25 * cos(this->yaw);
+					limb->y += .25 * sin(this->yaw);
 				}
 			}
 
@@ -21714,6 +21733,19 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 					else if ( limb->sprite == 1513 || limb->sprite == 1516 )
 					{
 						limb->focalz -= 0.25;
+					}
+				}
+				else if ( race == MONSTER_S )
+				{
+					limb->scalex = 1.01;
+					limb->scaley = 1.01;
+					limb->scalez = 1.01;
+
+					if ( limb->sprite != 1560 && limb->sprite != 1561 && limb->sprite != 1562 )
+					{
+						// wearing armor, offset
+						limb->focalx += 1.0;
+						limb->focalz += 0.75;
 					}
 				}
 
