@@ -1809,7 +1809,7 @@ void actHudWeapon(Entity* my)
 					}
 
 
-					if ( thrownWeapon && multiplayer == CLIENT )
+					if ( multiplayer == CLIENT && (thrownWeapon || (stats[HUDWEAPON_PLAYERNUM]->weapon && itemCategory(stats[HUDWEAPON_PLAYERNUM]->weapon) == POTION)) )
 					{
 						Item* item = stats[HUDWEAPON_PLAYERNUM]->weapon;
 						if ( item )
