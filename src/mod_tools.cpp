@@ -10293,11 +10293,15 @@ void EquipmentModelOffsets_t::readFromFile(std::string monsterName, int monsterT
 		return;
 	}
 
+	int version = d["version"].GetInt();
 	monsterModelsMap[monsterType].clear();
 
 	real_t baseFocalX = 0.0;
 	real_t baseFocalY = 0.0;
 	real_t baseFocalZ = 0.0;
+	real_t baseFocalX_rot1 = 0.0;
+	real_t baseFocalY_rot1 = 0.0;
+	real_t baseFocalZ_rot1 = 0.0;
 	if ( d.HasMember("base_offsets") )
 	{
 		if ( d["base_offsets"].HasMember("focalx") )
@@ -10311,6 +10315,18 @@ void EquipmentModelOffsets_t::readFromFile(std::string monsterName, int monsterT
 		if ( d["base_offsets"].HasMember("focalz") )
 		{
 			baseFocalZ = d["base_offsets"]["focalz"].GetDouble();
+		}
+		if ( d["base_offsets"].HasMember("focalx_rot1") )
+		{
+			baseFocalX_rot1 = d["base_offsets"]["focalx_rot1"].GetDouble();
+		}
+		if ( d["base_offsets"].HasMember("focaly_rot1") )
+		{
+			baseFocalY_rot1 = d["base_offsets"]["focaly_rot1"].GetDouble();
+		}
+		if ( d["base_offsets"].HasMember("focalz_rot1") )
+		{
+			baseFocalZ_rot1 = d["base_offsets"]["focalz_rot1"].GetDouble();
 		}
 	}
 
@@ -10380,13 +10396,25 @@ void EquipmentModelOffsets_t::readFromFile(std::string monsterName, int monsterT
 			for ( auto index : models )
 			{
 				auto& entry = monsterModelsMap[monsterType][index];
-				entry.focalx = focalx + baseFocalX;
-				entry.focaly = focaly + baseFocalY;
-				entry.focalz = focalz + baseFocalZ;
+				entry.rotation = rotation * (PI / 2);
+				entry.focalx = focalx;
+				entry.focaly = focaly;
+				entry.focalz = focalz;
+				if ( static_cast<int>(entry.rotation) == 1 && version >= 2 )
+				{
+					entry.focalx += baseFocalX_rot1;
+					entry.focaly += baseFocalY_rot1;
+					entry.focalz += baseFocalZ_rot1;
+				}
+				else
+				{
+					entry.focalx += baseFocalX;
+					entry.focaly += baseFocalY;
+					entry.focalz += baseFocalZ;
+				}
 				entry.scalex = scalex;
 				entry.scaley = scaley;
 				entry.scalez = scalez;
-				entry.rotation = rotation * (PI / 2);
 				entry.pitch = pitch * (PI / 2);
 				entry.limbsIndex = limbsIndex;
 				entry.expandToFitMask = expandToFitMask;
