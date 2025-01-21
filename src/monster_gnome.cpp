@@ -1568,16 +1568,13 @@ void gnomeMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->flags[INVISIBLE] = true;
 					}
 				}
-				entity->x -= cos(my->yaw) * 1.5;
-				entity->y -= sin(my->yaw) * 1.5;
-				entity->yaw += PI / 2;
-
-				if ( entity->sprite != 1427 && entity->sprite != 1431 && entity->sprite != 296 )
+				if ( my->sprite != 1427 && my->sprite != 1431 && my->sprite != 296 )
 				{
 					// push back for larger armors
 					entity->x -= cos(my->yaw) * 1.0;
 					entity->y -= sin(my->yaw) * 1.0;
 				}
+				my->setHumanoidLimbOffset(entity, GNOME, LIMB_HUMANOID_CLOAK);
 				break;
 				// helm
 			case LIMB_HUMANOID_HELMET:
