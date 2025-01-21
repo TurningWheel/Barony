@@ -312,7 +312,7 @@ static std::vector<Sint32> monsterSprites[NUMMONSTERS] = {
 	},
 	//MONSTER_G
 	{
-		9991,
+		1569, 1570
 	},
 };
 
@@ -789,6 +789,7 @@ void actBugbearLimb(Entity* my);
 void actMonsterDLimb(Entity* my);
 void actMonsterMLimb(Entity* my);
 void actMonsterSLimb(Entity* my);
+void actMonsterGLimb(Entity* my);
 
 //--*Die functions--
 void humanDie(Entity* my);
@@ -829,6 +830,7 @@ void bugbearDie(Entity* my);
 void monsterDDie(Entity* my);
 void monsterMDie(Entity* my);
 void monsterSDie(Entity* my);
+void monsterGDie(Entity* my);
 
 void monsterAnimate(Entity* my, Stat* myStats, double dist);
 //--*MoveBodyparts functions--
@@ -872,6 +874,7 @@ void bugbearMoveBodyparts(Entity* my, Stat* myStats, double dist);
 void monsterDMoveBodyparts(Entity* my, Stat* myStats, double dist);
 void monsterMMoveBodyparts(Entity* my, Stat* myStats, double dist);
 void monsterSMoveBodyparts(Entity* my, Stat* myStats, double dist);
+void monsterGMoveBodyparts(Entity* my, Stat* myStats, double dist);
 
 //--misc functions--
 void actMinotaurTrap(Entity* my);

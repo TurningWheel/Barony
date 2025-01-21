@@ -2385,6 +2385,7 @@ void monsterAnimate(Entity* my, Stat* myStats, double dist)
 	case MONSTER_D: monsterDMoveBodyparts(my, myStats, dist); break;
 	case MONSTER_M: monsterMMoveBodyparts(my, myStats, dist); break;
 	case MONSTER_S: monsterSMoveBodyparts(my, myStats, dist); break;
+	case MONSTER_G: monsterGMoveBodyparts(my, myStats, dist); break;
 	default:
 		break;
 	}
@@ -2483,6 +2484,7 @@ void actMonster(Entity* my)
 			case MONSTER_D: initMonsterD(my, nullptr); break;
 			case MONSTER_M: initMonsterM(my, nullptr); break;
 			case MONSTER_S: initMonsterS(my, nullptr); break;
+			case MONSTER_G: initMonsterG(my, nullptr); break;
 			default: printlog("Unknown monster, can't init!"); break;
 			}
 		}
@@ -2581,6 +2583,7 @@ void actMonster(Entity* my)
 				case MONSTER_D: initMonsterD(my, myStats); break;
 				case MONSTER_M: initMonsterM(my, myStats); break;
 				case MONSTER_S: initMonsterS(my, myStats); break;
+				case MONSTER_G: initMonsterG(my, myStats); break;
 				default: break; //This should never be reached.
 			}
 		}
@@ -3752,6 +3755,9 @@ void actMonster(Entity* my)
 				break;
 			case MONSTER_S:
 				monsterSDie(my);
+				break;
+			case MONSTER_G:
+				monsterGDie(my);
 				break;
 			default:
 				break; //This should never be reached.

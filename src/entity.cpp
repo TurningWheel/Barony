@@ -16929,7 +16929,7 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 					break;
 			}
 
-			if ( monsterType == MONSTER_D || monsterType == MONSTER_M || monsterType == MONSTER_S )
+			if ( monsterType == MONSTER_D || monsterType == MONSTER_M || monsterType == MONSTER_S || monsterType == MONSTER_G )
 			{
 				weaponLimb->x += limbs[monsterType][17][0] * cos(weaponArmLimb->yaw + PI / 2) + limbs[monsterType][17][1] * cos(weaponArmLimb->yaw);
 				weaponLimb->y += limbs[monsterType][17][0] * sin(weaponArmLimb->yaw + PI / 2) + limbs[monsterType][17][1] * sin(weaponArmLimb->yaw);
@@ -21260,13 +21260,141 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 	}
 	switch ( race )
 	{
-		case GNOME:
-			if ( limbType == LIMB_HUMANOID_TORSO )
+		case MONSTER_G:
+			if ( limbType == LIMB_HUMANOID_CLOAK )
+			{
+				limb->x -= cos(this->yaw) * 1.5;
+				limb->y -= sin(this->yaw) * 1.5;
+				limb->yaw += PI / 2;
+			}
+			else if ( limbType == LIMB_HUMANOID_TORSO )
 			{
 				limb->x -= .25 * cos(this->yaw);
 				limb->y -= .25 * sin(this->yaw);
 				limb->z += 1.25;
+				/*if ( limb->sprite == 1431 )
+				{
+					limb->focalx += 0.25;
+				}
+				else if ( limb->sprite == 296 )
+				{
+					limb->focalx += 0.5;
+				}*/
 
+				if ( limb->sprite == 1583 || limb->sprite == 1584 )
+				{
+					limb->focalz += 0.5; // default torsos
+				}
+				else if ( limb->sprite != 1583 && limb->sprite != 1584 )
+				{
+					limb->focalz -= 0.25; // armor torsos
+					limb->focalx += 1.0;
+				}
+				if ( limb->sprite == items[MACHINIST_APRON].indexShort )
+				{
+					//limb->focalx -= 0.25;
+					limb->focalz += 0.25;
+				}
+
+				limb->scalex = limbs[MONSTER_G][11][0];
+				limb->scaley = limbs[MONSTER_G][11][1];
+				limb->scalez = limbs[MONSTER_G][11][2];
+			}
+			else if ( limbType == LIMB_HUMANOID_RIGHTLEG )
+			{
+				limb->x += 1.15 * cos(this->yaw + PI / 2);
+				limb->y += 1.15 * sin(this->yaw + PI / 2);
+				limb->z += 3.25;
+				if ( limb->sprite == 1469 || limb->sprite == 1470 )
+				{
+					limb->focalx += 0.5;
+				}
+				if ( this->z >= 3.9 && this->z <= 4.1 )
+				{
+					limb->yaw += PI / 8;
+					limb->pitch = -PI / 2;
+				}
+			}
+			else if ( limbType == LIMB_HUMANOID_LEFTLEG )
+			{
+				limb->x -= 1.15 * cos(this->yaw + PI / 2);
+				limb->y -= 1.15 * sin(this->yaw + PI / 2);
+				limb->z += 3.25;
+				if ( limb->sprite == 1469 || limb->sprite == 1470 )
+				{
+					limb->focalx += 0.5;
+				}
+				if ( this->z >= 3.9 && this->z <= 4.1 )
+				{
+					limb->yaw -= PI / 8;
+					limb->pitch = -PI / 2;
+				}
+			}
+			else if ( limbType == LIMB_HUMANOID_RIGHTARM )
+			{
+				limb->x += 2.5 * cos(this->yaw + PI / 2) - .5 * cos(this->yaw);
+				limb->y += 2.5 * sin(this->yaw + PI / 2) - .5 * sin(this->yaw);
+				limb->z += .5;
+				if ( this->z >= 3.9 && this->z <= 4.1 )
+				{
+					limb->pitch = 0;
+				}
+
+				if ( limb->sprite != 1573
+					&& limb->sprite != 1577 ) // non default arms
+				{
+					limb->x -= 0.25 * cos(this->yaw + PI / 2);
+					limb->y -= 0.25 * sin(this->yaw + PI / 2);
+				}
+				else
+				{
+					limb->focalx += 0.25;
+					limb->focalz -= 0.25;
+				}
+				/*if ( limb->sprite == 1434 )
+				{
+					limb->focalz -= 0.25;
+				}*/
+			}
+			else if ( limbType == LIMB_HUMANOID_LEFTARM )
+			{
+				limb->x -= 2.5 * cos(this->yaw + PI / 2) + .5 * cos(this->yaw);
+				limb->y -= 2.5 * sin(this->yaw + PI / 2) + .5 * sin(this->yaw);
+				limb->z += .5;
+				if ( this->z >= 3.9 && this->z <= 4.1 )
+				{
+					limb->pitch = 0;
+				}
+
+				if ( limb->sprite != 1571
+					&& limb->sprite != 1575 ) // non default arms
+				{
+					limb->x += 0.25 * cos(this->yaw + PI / 2);
+					limb->y += 0.25 * sin(this->yaw + PI / 2);
+				}
+				else
+				{
+					limb->focalx += 0.25;
+					limb->focalz -= 0.25;
+				}
+				/*if ( limb->sprite == 1436 )
+				{
+					limb->focalz -= 0.25;
+				}*/
+			}
+			break;
+		case GNOME:
+			if ( limbType == LIMB_HUMANOID_CLOAK )
+			{
+				limb->x -= cos(this->yaw) * 1.5;
+				limb->y -= sin(this->yaw) * 1.5;
+				limb->yaw += PI / 2;
+			}
+			else if ( limbType == LIMB_HUMANOID_TORSO )
+			{
+				limb->x -= .25 * cos(this->yaw);
+				limb->y -= .25 * sin(this->yaw);
+				limb->z += 1.25;
 				if ( limb->sprite == 1431 )
 				{
 					limb->focalx += 0.25;
@@ -21611,7 +21739,6 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 		case MONSTER_D:
 		case MONSTER_M:
 		case MONSTER_S:
-		case MONSTER_G:
 		{
 			real_t sleepHeight = 2.5;
 			if ( race == MONSTER_D )
@@ -21944,6 +22071,7 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 			}
 			break;
 		case GNOME:
+		case MONSTER_G:
 			shieldLimb->x -= 2.5 * cos(this->yaw + PI / 2) + .20 * cos(this->yaw);
 			shieldLimb->y -= 2.5 * sin(this->yaw + PI / 2) + .20 * sin(this->yaw);
 			shieldLimb->z += 1;
@@ -22268,7 +22396,6 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 		case MONSTER_D:
 		case MONSTER_M:
 		case MONSTER_S:
-		case MONSTER_G:
 			shieldLimb->x -= 2.5 * cos(this->yaw + PI / 2) + .20 * cos(this->yaw);
 			shieldLimb->y -= 2.5 * sin(this->yaw + PI / 2) + .20 * sin(this->yaw);
 			shieldLimb->z += 2.5;
