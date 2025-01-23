@@ -1503,7 +1503,7 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						my->setHelmetLimbOffset(entity);
 						my->setHelmetLimbOffsetWithMask(helmet, entity);
 					}
-					else if ( EquipmentModelOffsets.modelOffsetExists(INSECTOID, entity->sprite) )
+					else if ( EquipmentModelOffsets.modelOffsetExists(INSECTOID, entity->sprite, my->sprite) )
 					{
 						my->setHelmetLimbOffset(entity);
 						my->setHelmetLimbOffsetWithMask(helmet, entity);

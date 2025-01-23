@@ -1161,7 +1161,7 @@ void goblinMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						my->setHelmetLimbOffset(entity);
 						my->setHelmetLimbOffsetWithMask(helmet, entity);
 					}
-					else if ( EquipmentModelOffsets.modelOffsetExists(GOBLIN, entity->sprite) )
+					else if ( EquipmentModelOffsets.modelOffsetExists(GOBLIN, entity->sprite, my->sprite) )
 					{
 						my->setHelmetLimbOffset(entity);
 						my->setHelmetLimbOffsetWithMask(helmet, entity);

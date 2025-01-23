@@ -1704,7 +1704,7 @@ void gnomeMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					my->setHelmetLimbOffset(entity);
 					my->setHelmetLimbOffsetWithMask(helmet, entity);
 				}
-				else if ( EquipmentModelOffsets.modelOffsetExists(GNOME, entity->sprite) )
+				else if ( EquipmentModelOffsets.modelOffsetExists(GNOME, entity->sprite, my->sprite) )
 				{
 					my->setHelmetLimbOffset(entity);
 					my->setHelmetLimbOffsetWithMask(helmet, entity);

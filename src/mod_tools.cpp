@@ -10143,18 +10143,32 @@ int Mods::createBlankModDirectory(std::string foldername)
 
 EquipmentModelOffsets_t EquipmentModelOffsets;
 
-bool EquipmentModelOffsets_t::modelOffsetExists(int monster, int sprite)
+int EquipmentModelOffsets_t::modelOffsetExists(int monster, int sprite, int monsterSprite)
 {
-	auto find = monsterModelsMap.find(monster);
-	if ( find != monsterModelsMap.end() )
+	if ( monsterSprite >= NUMMONSTERS )
 	{
-		auto find2 = find->second.find(sprite);
-		if ( find2 != find->second.end() )
+		auto find = monsterModelsMap.find(monsterSprite);
+		if ( find != monsterModelsMap.end() )
 		{
-			return true;
+			auto find2 = find->second.find(sprite);
+			if ( find2 != find->second.end() )
+			{
+				return monsterSprite;
+			}
 		}
 	}
-	return false;
+	{
+		auto find = monsterModelsMap.find(monster);
+		if ( find != monsterModelsMap.end() )
+		{
+			auto find2 = find->second.find(sprite);
+			if ( find2 != find->second.end() )
+			{
+				return monster;
+			}
+		}
+	}
+	return 0;
 }
 
 EquipmentModelOffsets_t::ModelOffset_t& EquipmentModelOffsets_t::getModelOffset(int monster, int sprite)
@@ -10162,49 +10176,49 @@ EquipmentModelOffsets_t::ModelOffset_t& EquipmentModelOffsets_t::getModelOffset(
 	return monsterModelsMap[monster][sprite];
 }
 
-bool EquipmentModelOffsets_t::expandHelmToFitMask(int monster, int helmSprite, int maskSprite)
+int EquipmentModelOffsets_t::expandHelmToFitMask(int monster, int helmSprite, int maskSprite, int monsterSprite)
 {
-	if ( modelOffsetExists(monster, maskSprite) )
+	if ( int resultMonsterSprite = modelOffsetExists(monster, maskSprite, monsterSprite) )
 	{
-		auto& maskOffset = getModelOffset(monster, maskSprite);
+		auto& maskOffset = getModelOffset(resultMonsterSprite, maskSprite);
 		if ( maskOffset.oversizedMask )
 		{
-			if ( modelOffsetExists(monster, helmSprite) )
+			if ( modelOffsetExists(resultMonsterSprite, helmSprite, 0) )
 			{
-				auto& helmOffset = getModelOffset(monster, helmSprite);
+				auto& helmOffset = getModelOffset(resultMonsterSprite, helmSprite);
 				if ( helmOffset.expandToFitMask )
 				{
-					return true;
+					return resultMonsterSprite;
 				}
 			}
 		}
 	}
-	return false;
+	return 0;
 }
 
-bool EquipmentModelOffsets_t::maskHasAdjustmentForExpandedHelm(int monster, int helmSprite, int maskSprite)
+int EquipmentModelOffsets_t::maskHasAdjustmentForExpandedHelm(int monster, int helmSprite, int maskSprite, int monsterSprite)
 {
-	if ( modelOffsetExists(monster, maskSprite) )
+	if ( int resultMonsterSprite = modelOffsetExists(monster, maskSprite, monsterSprite) )
 	{
-		auto& maskOffset = getModelOffset(monster, maskSprite);
+		auto& maskOffset = getModelOffset(resultMonsterSprite, maskSprite);
 		if ( maskOffset.adjustToExpandedHelm.find(helmSprite) != maskOffset.adjustToExpandedHelm.end() )
 		{
-			return true;
+			return resultMonsterSprite;
 		}
 		else if ( maskOffset.adjustToExpandedHelm.find(-1) != maskOffset.adjustToExpandedHelm.end() )
 		{
-			return true;
+			return resultMonsterSprite;
 		}
 	}
-	return false;
+	return 0;
 }
 
 EquipmentModelOffsets_t::ModelOffset_t::AdditionalOffset_t EquipmentModelOffsets_t::getExpandHelmOffset(int monster, 
 	int helmSprite, int maskSprite)
 {
-	if ( modelOffsetExists(monster, helmSprite) )
+	if ( int resultMonsterSprite = modelOffsetExists(monster, helmSprite, 0) )
 	{
-		auto& helmOffset = getModelOffset(monster, helmSprite);
+		auto& helmOffset = getModelOffset(resultMonsterSprite, helmSprite);
 		if ( helmOffset.adjustToOversizeMask.find(maskSprite) != helmOffset.adjustToOversizeMask.end() )
 		{
 			return helmOffset.adjustToOversizeMask[maskSprite];
@@ -10220,9 +10234,9 @@ EquipmentModelOffsets_t::ModelOffset_t::AdditionalOffset_t EquipmentModelOffsets
 EquipmentModelOffsets_t::ModelOffset_t::AdditionalOffset_t EquipmentModelOffsets_t::getMaskOffsetForExpandHelm(int monster, 
 	int helmSprite, int maskSprite)
 {
-	if ( modelOffsetExists(monster, maskSprite) )
+	if ( int resultMonsterSprite = modelOffsetExists(monster, maskSprite, 0) )
 	{
-		auto& maskOffset = getModelOffset(monster, maskSprite);
+		auto& maskOffset = getModelOffset(resultMonsterSprite, maskSprite);
 		if ( maskOffset.adjustToExpandedHelm.find(helmSprite) != maskOffset.adjustToExpandedHelm.end() )
 		{
 			return maskOffset.adjustToExpandedHelm[helmSprite];
@@ -10511,6 +10525,66 @@ void EquipmentModelOffsets_t::readFromFile(std::string monsterName, int monsterT
 								entry.adjustToExpandedHelm[model].scalez = (*adjItr)["scalez"].GetDouble();
 							}
 						}
+					}
+				}
+			}
+		}
+	}
+
+	if ( d.HasMember("base_offsets") && d["base_offsets"].HasMember("sprite_adjust") && d["base_offsets"]["sprite_adjust"].IsArray() )
+	{
+		for ( auto itr = d["base_offsets"]["sprite_adjust"].Begin(); itr != d["base_offsets"]["sprite_adjust"].End(); ++itr )
+		{
+			if ( (*itr).HasMember("sprite") )
+			{
+				int customSprite = (*itr)["sprite"].GetInt();
+				monsterModelsMap[customSprite] = monsterModelsMap[monsterType];
+
+				real_t baseFocalX = 0.0;
+				real_t baseFocalY = 0.0;
+				real_t baseFocalZ = 0.0;
+				real_t baseFocalX_rot1 = 0.0;
+				real_t baseFocalY_rot1 = 0.0;
+				real_t baseFocalZ_rot1 = 0.0;
+				if ( (*itr).HasMember("focalx") )
+				{
+					baseFocalX = (*itr)["focalx"].GetDouble();
+				}
+				if ( (*itr).HasMember("focaly") )
+				{
+					baseFocalY = (*itr)["focaly"].GetDouble();
+				}
+				if ( (*itr).HasMember("focalz") )
+				{
+					baseFocalZ = (*itr)["focalz"].GetDouble();
+				}
+				if ( (*itr).HasMember("focalx_rot1") )
+				{
+					baseFocalX_rot1 = (*itr)["focalx_rot1"].GetDouble();
+				}
+				if ( (*itr).HasMember("focaly_rot1") )
+				{
+					baseFocalY_rot1 = (*itr)["focaly_rot1"].GetDouble();
+				}
+				if ( (*itr).HasMember("focalz_rot1") )
+				{
+					baseFocalZ_rot1 = (*itr)["focalz_rot1"].GetDouble();
+				}
+
+				for ( auto& model : monsterModelsMap[customSprite] )
+				{
+					auto& entry = model.second;
+					if ( static_cast<int>(entry.rotation) == 1 && version >= 2 )
+					{
+						entry.focalx += baseFocalX_rot1;
+						entry.focaly += baseFocalY_rot1;
+						entry.focalz += baseFocalZ_rot1;
+					}
+					else
+					{
+						entry.focalx += baseFocalX;
+						entry.focaly += baseFocalY;
+						entry.focalz += baseFocalZ;
 					}
 				}
 			}

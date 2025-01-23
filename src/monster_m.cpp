@@ -1645,30 +1645,15 @@ void monsterMMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					entity->flags[INVISIBLE] = true;
 				}
 			}
-			if ( entity->sprite != 165 && entity->sprite != 1196 )
+			if ( EquipmentModelOffsets.modelOffsetExists(MONSTER_M, entity->sprite, my->sprite) )
 			{
-				if ( entity->sprite == items[MASK_SHAMAN].index )
-				{
-					entity->roll = 0;
-					my->setHelmetLimbOffset(entity);
-					my->setHelmetLimbOffsetWithMask(helmet, entity);
-				}
-				else if ( EquipmentModelOffsets.modelOffsetExists(MONSTER_M, entity->sprite) )
-				{
-					my->setHelmetLimbOffset(entity);
-					my->setHelmetLimbOffsetWithMask(helmet, entity);
-				}
-				else
-				{
-					entity->focalx = limbs[MONSTER_M][10][0] + .35; // .35
-					entity->focaly = limbs[MONSTER_M][10][1] - 2; // -2
-					entity->focalz = limbs[MONSTER_M][10][2]; // .25
-				}
+				my->setHelmetLimbOffset(entity);
+				my->setHelmetLimbOffsetWithMask(helmet, entity);
 			}
 			else
 			{
-				entity->focalx = limbs[MONSTER_M][10][0] + .25; // .25
-				entity->focaly = limbs[MONSTER_M][10][1] - 2.25; // -2.25
+				entity->focalx = limbs[MONSTER_M][10][0] + .35; // .35
+				entity->focaly = limbs[MONSTER_M][10][1] - 2; // -2
 				entity->focalz = limbs[MONSTER_M][10][2]; // .25
 			}
 			break;
@@ -1888,7 +1873,8 @@ void monsterMMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					entity->sprite = 1527;
 				}
-				if ( myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+				if ( myStats->EFFECTS[EFF_INVISIBLE] || wearingring
+					|| (helmet && helmet->sprite > 0 && !helmet->flags[INVISIBLE]) ) //TODO: isInvisible()?
 				{
 					entity->flags[INVISIBLE] = true;
 				}

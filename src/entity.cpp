@@ -20472,9 +20472,9 @@ void Entity::setHelmetLimbOffset(Entity* helm)
 	helm->scalez = 1.01;
 	// for non-armor helmets, they are rotated so focaly acts as up/down postion.
 	int monster = getMonsterTypeFromSprite();
-	if ( EquipmentModelOffsets.modelOffsetExists(monster, helm->sprite) )
+	if ( int resultMonsterSprite = EquipmentModelOffsets.modelOffsetExists(monster, helm->sprite, sprite) )
 	{
-		auto& entry = EquipmentModelOffsets.getModelOffset(monster, helm->sprite);
+		auto& entry = EquipmentModelOffsets.getModelOffset(resultMonsterSprite, helm->sprite);
 		helm->focalx = limbs[monster][entry.limbsIndex][0] + entry.focalx;
 		helm->focaly = limbs[monster][entry.limbsIndex][1] + entry.focaly;
 		helm->focalz = limbs[monster][entry.limbsIndex][2] + entry.focalz;
@@ -22685,9 +22685,9 @@ void Entity::setHelmetLimbOffsetWithMask(Entity* helm, Entity* mask)
 		helm->scalez = 1.01;
 
 		int monster = getMonsterTypeFromSprite();
-		if ( EquipmentModelOffsets.modelOffsetExists(monster, helm->sprite) )
+		if ( int resultMonsterSprite = EquipmentModelOffsets.modelOffsetExists(monster, helm->sprite, sprite) )
 		{
-			auto& entry = EquipmentModelOffsets.getModelOffset(monster, helm->sprite);
+			auto& entry = EquipmentModelOffsets.getModelOffset(resultMonsterSprite, helm->sprite);
 			helm->scalex += entry.scalex;
 			helm->scaley += entry.scaley;
 			helm->scalez += entry.scalez;
@@ -22721,9 +22721,9 @@ void Entity::setHelmetLimbOffsetWithMask(Entity* helm, Entity* mask)
 		helm->scaley = 1.05;
 		helm->scalez = 1.05;
 
-		if ( EquipmentModelOffsets.maskHasAdjustmentForExpandedHelm(monster, helm->sprite, mask->sprite) )
+		if ( int resultMonsterSprite = EquipmentModelOffsets.maskHasAdjustmentForExpandedHelm(monster, helm->sprite, mask->sprite, sprite) )
 		{
-			auto offsetMask = EquipmentModelOffsets.getMaskOffsetForExpandHelm(monster, helm->sprite, mask->sprite);
+			auto offsetMask = EquipmentModelOffsets.getMaskOffsetForExpandHelm(resultMonsterSprite, helm->sprite, mask->sprite);
 			mask->focalx += offsetMask.focalx;
 			mask->focaly += offsetMask.focaly;
 			mask->focalz += offsetMask.focalz;
@@ -22740,13 +22740,13 @@ void Entity::setHelmetLimbOffsetWithMask(Entity* helm, Entity* mask)
 			}
 		}
 	}
-	else if ( EquipmentModelOffsets.expandHelmToFitMask(monster, helm->sprite, mask->sprite) )
+	else if ( int resultMonsterSprite = EquipmentModelOffsets.expandHelmToFitMask(monster, helm->sprite, mask->sprite, sprite) )
 	{
 		helm->scalex = 1.05;
 		helm->scaley = 1.05;
 		helm->scalez = 1.05;
 		
-		auto offsetHelm = EquipmentModelOffsets.getExpandHelmOffset(monster, helm->sprite, mask->sprite);
+		auto offsetHelm = EquipmentModelOffsets.getExpandHelmOffset(resultMonsterSprite, helm->sprite, mask->sprite);
 		helm->focalx += offsetHelm.focalx;
 		helm->focaly += offsetHelm.focaly;
 		helm->focalz += offsetHelm.focalz;
@@ -22754,7 +22754,7 @@ void Entity::setHelmetLimbOffsetWithMask(Entity* helm, Entity* mask)
 		helm->scaley += offsetHelm.scaley;
 		helm->scalez += offsetHelm.scalez;
 
-		auto offsetMask = EquipmentModelOffsets.getMaskOffsetForExpandHelm(monster, helm->sprite, mask->sprite);
+		auto offsetMask = EquipmentModelOffsets.getMaskOffsetForExpandHelm(resultMonsterSprite, helm->sprite, mask->sprite);
 		mask->focalx += offsetMask.focalx;
 		mask->focaly += offsetMask.focaly;
 		mask->focalz += offsetMask.focalz;
@@ -22764,9 +22764,9 @@ void Entity::setHelmetLimbOffsetWithMask(Entity* helm, Entity* mask)
 
 		return;
 	}
-	else if ( EquipmentModelOffsets.maskHasAdjustmentForExpandedHelm(monster, helm->sprite, mask->sprite) )
+	else if ( int resultMonsterSprite = EquipmentModelOffsets.maskHasAdjustmentForExpandedHelm(monster, helm->sprite, mask->sprite, sprite) )
 	{
-		auto offsetMask = EquipmentModelOffsets.getMaskOffsetForExpandHelm(monster, helm->sprite, mask->sprite);
+		auto offsetMask = EquipmentModelOffsets.getMaskOffsetForExpandHelm(resultMonsterSprite, helm->sprite, mask->sprite);
 		mask->focalx += offsetMask.focalx;
 		mask->focaly += offsetMask.focaly;
 		mask->focalz += offsetMask.focalz;

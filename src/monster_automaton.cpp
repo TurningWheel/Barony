@@ -1386,7 +1386,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						my->setHelmetLimbOffset(entity);
 						my->setHelmetLimbOffsetWithMask(helmet, entity);
 					}
-					else if ( EquipmentModelOffsets.modelOffsetExists(AUTOMATON, entity->sprite) )
+					else if ( EquipmentModelOffsets.modelOffsetExists(AUTOMATON, entity->sprite, my->sprite) )
 					{
 						my->setHelmetLimbOffset(entity);
 						my->setHelmetLimbOffsetWithMask(helmet, entity);

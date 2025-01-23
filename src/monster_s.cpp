@@ -1602,24 +1602,15 @@ void monsterSMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					entity->flags[INVISIBLE] = true;
 				}
 			}
-			if ( true/*entity->sprite != 165 && entity->sprite != 1196*/ )
+			if ( EquipmentModelOffsets.modelOffsetExists(MONSTER_S, entity->sprite, my->sprite) )
 			{
-				if ( EquipmentModelOffsets.modelOffsetExists(MONSTER_S, entity->sprite) )
-				{
-					my->setHelmetLimbOffset(entity);
-					my->setHelmetLimbOffsetWithMask(helmet, entity);
-				}
-				else
-				{
-					entity->focalx = limbs[MONSTER_S][10][0] + .35; // .35
-					entity->focaly = limbs[MONSTER_S][10][1] - 2; // -2
-					entity->focalz = limbs[MONSTER_S][10][2]; // .25
-				}
+				my->setHelmetLimbOffset(entity);
+				my->setHelmetLimbOffsetWithMask(helmet, entity);
 			}
 			else
 			{
-				entity->focalx = limbs[MONSTER_S][10][0] + .25; // .25
-				entity->focaly = limbs[MONSTER_S][10][1] - 2.25; // -2.25
+				entity->focalx = limbs[MONSTER_S][10][0] + .35; // .35
+				entity->focaly = limbs[MONSTER_S][10][1] - 2; // -2
 				entity->focalz = limbs[MONSTER_S][10][2]; // .25
 			}
 			break;
