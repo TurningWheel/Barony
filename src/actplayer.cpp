@@ -9841,7 +9841,13 @@ void actPlayer(Entity* my)
 					entity->scalex = 0.99;
 					entity->scaley = 0.99;
 					entity->scalez = 0.99;
-					if ( entity->sprite == 165 || entity->sprite == 1196 )
+					
+					if ( EquipmentModelOffsets.modelOffsetExists(playerRace, entity->sprite, my->sprite) )
+					{
+						my->setHelmetLimbOffset(entity);
+						my->setHelmetLimbOffsetWithMask(helmet, entity);
+					}
+					else if ( entity->sprite == 165 || entity->sprite == 1196 )
 					{
 						entity->focalx = limbs[playerRace][10][0] + .25; // .25
 						entity->focaly = limbs[playerRace][10][1] - 2.5; // -2.25
@@ -9850,53 +9856,42 @@ void actPlayer(Entity* my)
 						{
 							switch ( playerRace )
 							{
-								case INCUBUS:
-									entity->focalx -= .4;
-									break;
-								case SUCCUBUS:
-									entity->focalx -= .25;
-									break;
-								case GOBLIN:
-									entity->focalx -= .5;
-									entity->focalz -= .05;
-									break;
-								default:
-									break;
+							case INCUBUS:
+								entity->focalx -= .4;
+								break;
+							case SUCCUBUS:
+								entity->focalx -= .25;
+								break;
+							case GOBLIN:
+								entity->focalx -= .5;
+								entity->focalz -= .05;
+								break;
+							default:
+								break;
 							}
 						}
 						if ( helmet && !helmet->flags[INVISIBLE] && helmet->sprite == items[PUNISHER_HOOD].index )
 						{
 							switch ( playerRace )
 							{
-								case HUMAN:
-								case VAMPIRE:
-								case SHOPKEEPER:
-								case INSECTOID:
-									entity->focaly += 0.25; // lower glasses a bit.
-									break;
-								case INCUBUS:
-								case SUCCUBUS:
-								case AUTOMATON:
-								case GOBLIN:
-								case GOATMAN:
-								case SKELETON:
-									// no change.
-									break;
-								default:
-									break;
+							case HUMAN:
+							case VAMPIRE:
+							case SHOPKEEPER:
+							case INSECTOID:
+								entity->focaly += 0.25; // lower glasses a bit.
+								break;
+							case INCUBUS:
+							case SUCCUBUS:
+							case AUTOMATON:
+							case GOBLIN:
+							case GOATMAN:
+							case SKELETON:
+								// no change.
+								break;
+							default:
+								break;
 							}
 						}
-					}
-					else if ( entity->sprite == items[MASK_SHAMAN].index )
-					{
-						entity->roll = 0;
-						my->setHelmetLimbOffset(entity);
-						my->setHelmetLimbOffsetWithMask(helmet, entity);
-					}
-					else if ( EquipmentModelOffsets.modelOffsetExists(playerRace, entity->sprite) )
-					{
-						my->setHelmetLimbOffset(entity);
-						my->setHelmetLimbOffsetWithMask(helmet, entity);
 					}
 					else if ( playerRace == INCUBUS
 						&& (entity->sprite == items[TOOL_BLINDFOLD].index
