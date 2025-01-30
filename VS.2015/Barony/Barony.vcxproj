@@ -1190,8 +1190,10 @@ if %errorlevel% leq 1 exit 0 else exit %errorlevel%</Command>
     <ClCompile Include="..\..\src\monster_bugbear.cpp" />
     <ClCompile Include="..\..\src\monster_cockatrice.cpp" />
     <ClCompile Include="..\..\src\monster_crystalgolem.cpp" />
+    <ClCompile Include="..\..\src\monster_d.cpp" />
     <ClCompile Include="..\..\src\monster_demon.cpp" />
     <ClCompile Include="..\..\src\monster_devil.cpp" />
+    <ClCompile Include="..\..\src\monster_g.cpp" />
     <ClCompile Include="..\..\src\monster_ghoul.cpp" />
     <ClCompile Include="..\..\src\monster_gnome.cpp" />
     <ClCompile Include="..\..\src\monster_goatman.cpp" />
@@ -1204,9 +1206,11 @@ if %errorlevel% leq 1 exit 0 else exit %errorlevel%</Command>
     <ClCompile Include="..\..\src\monster_lich.cpp" />
     <ClCompile Include="..\..\src\monster_lichfire.cpp" />
     <ClCompile Include="..\..\src\monster_lichice.cpp" />
+    <ClCompile Include="..\..\src\monster_m.cpp" />
     <ClCompile Include="..\..\src\monster_mimic.cpp" />
     <ClCompile Include="..\..\src\monster_minotaur.cpp" />
     <ClCompile Include="..\..\src\monster_rat.cpp" />
+    <ClCompile Include="..\..\src\monster_s.cpp" />
     <ClCompile Include="..\..\src\monster_scarab.cpp" />
     <ClCompile Include="..\..\src\monster_scorpion.cpp" />
     <ClCompile Include="..\..\src\monster_sentrybot.cpp" />
