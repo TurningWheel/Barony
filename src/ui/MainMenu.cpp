@@ -20451,6 +20451,15 @@ failed:
 		frame_right->setActualSize(SDL_Rect{0, 0, 304, 414});
 		frame_right->setBorder(0);
 		frame_right->setColor(0);
+		frame_right->setTickCallback([](Widget& widget) {
+			if ( Frame* frame = static_cast<Frame*>(&widget) )
+			{
+				for ( auto button : frame->getButtons() )
+				{
+					button->setDisabled(frame->isInvisible());
+				}
+			}
+		});
 		{
 		    frame_right->addImage(
 			    frame_right->getActualSize(),
@@ -21391,6 +21400,8 @@ failed:
 			{
 				frame_right->setInvisible(!lobbyFiltersEnabled && !frame_right->isInvisible());
 			}
+
+			frame_right->getTickCallback()(*frame_right);
 
 			/*clearLobbies();
 			for (auto& lobby : lobbies) {
