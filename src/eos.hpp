@@ -533,6 +533,11 @@ public:
 				}
 			}
 		}
+		if ( LobbySearchResults.CurrentLobbySearch )
+		{
+			EOS_LobbySearch_Release(LobbySearchResults.CurrentLobbySearch);
+			LobbySearchResults.CurrentLobbySearch = nullptr;
+		}
 		AccountManager.deinit();
 		UnsubscribeFromConnectionRequests();
 		SetNetworkAvailable(false);
