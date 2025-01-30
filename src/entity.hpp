@@ -593,6 +593,13 @@ public:
 	Sint32& signalGateANDPowerCount; //skill[9]
 	Sint32& signalInvertOutput; //skill[10]
 
+	//--PUBLIC LOCK SKILLS--
+	Sint32& wallLockState; //skill[0]
+	Sint32& wallLockInvertPower; //skill[1]
+	Sint32& wallLockTurnable; //skill[3]
+	Sint32& wallLockMaterial; //skill[4]
+	Sint32& wallLockDir; //skill[5]
+
 	//--THROWN PROJECTILE--
 	Sint32& thrownProjectilePower; //skill[19]
 	Sint32& thrownProjectileCharge; //skill[20]
@@ -1230,9 +1237,9 @@ void actTextSource(Entity* my);
 
 //checks if a sprite falls in certain sprite ranges
 
-static const int NUM_ITEM_STRINGS = 336;
+static const int NUM_ITEM_STRINGS = 344;
 static const int NUM_ITEM_STRINGS_BY_TYPE = 129;
-static const int NUM_EDITOR_SPRITES = 208;
+static const int NUM_EDITOR_SPRITES = 212;
 static const int NUM_EDITOR_TILES = 350;
 
 // furniture types.

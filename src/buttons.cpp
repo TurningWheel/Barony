@@ -2407,6 +2407,20 @@ void buttonSpriteProperties(button_t* my)
 				suby2 = yres / 2 + 60;
 				strcpy(subtext, "Pressure Plate Properties:");
 				break;
+			case 30:
+				snprintf(spriteProperties[0], 2, "%d", static_cast<int>(selectedEntity[0]->wallLockMaterial));
+				snprintf(spriteProperties[1], 2, "%d", static_cast<int>(selectedEntity[0]->wallLockInvertPower));
+				snprintf(spriteProperties[2], 2, "%d", static_cast<int>(selectedEntity[0]->wallLockTurnable));
+				inputstr = spriteProperties[0];
+				cursorflash = ticks;
+				menuVisible = 0;
+				subwindow = 1;
+				newwindow = 34;
+				subx1 = xres / 2 - 170;
+				subx2 = xres / 2 + 170;
+				suby1 = yres / 2 - 90;
+				suby2 = yres / 2 + 90;
+				strcpy(subtext, "Wall Lock Properties:");
 			default:
 				strcpy(message, "No properties available for current sprite.");
 				messagetime = 60;
@@ -3525,6 +3539,11 @@ void buttonSpritePropertiesConfirm(button_t* my)
 				break;
 			case 29: // pressure plate
 				selectedEntity[0]->pressurePlateTriggerType = (Sint32)atoi(spriteProperties[0]);
+				break;
+			case 30:
+				selectedEntity[0]->wallLockMaterial = (Sint32)atoi(spriteProperties[0]);
+				selectedEntity[0]->wallLockInvertPower = (Sint32)atoi(spriteProperties[1]);
+				selectedEntity[0]->wallLockTurnable = (Sint32)atoi(spriteProperties[2]);
 				break;
 			default:
 				break;

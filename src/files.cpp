@@ -2472,6 +2472,11 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 							setSpriteAttributes(entity, nullptr, nullptr);
 						}
 						break;
+					case 30:
+						fp->read(&entity->wallLockMaterial, sizeof(Sint32), 1);
+						fp->read(&entity->wallLockInvertPower, sizeof(Sint32), 1);
+						fp->read(&entity->wallLockTurnable, sizeof(Sint32), 1);
+						break;
 					default:
 						break;
 				}
@@ -2915,6 +2920,11 @@ int saveMap(const char* filename2)
 					break;
 				case 29:
 					fp->write(&entity->pressurePlateTriggerType, sizeof(Sint32), 1);
+					break;
+				case 30:
+					fp->write(&entity->wallLockMaterial, sizeof(Sint32), 1);
+					fp->write(&entity->wallLockInvertPower, sizeof(Sint32), 1);
+					fp->write(&entity->wallLockTurnable, sizeof(Sint32), 1);
 					break;
 				default:
 					break;

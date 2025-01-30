@@ -226,6 +226,12 @@ int checkSpriteType(Sint32 sprite)
 	case 34:
 		// act trap
 		return 29;
+	case 208:
+	case 209:
+	case 210:
+	case 211:
+		// wall locks
+		return 30;
 	default:
 		return 0;
 		break;
@@ -569,7 +575,15 @@ char itemNameStrings[NUM_ITEM_STRINGS][32] =
 	"hat_hood_whispers",
 	"ring_resolve",
 	"cloak_guardian",
-	"mask_marigold"
+	"mask_marigold",
+	"key_stone",
+	"key_bone",
+	"key_bronze",
+	"key_iron",
+	"key_silver",
+	"key_gold",
+	"key_crystal",
+	"key_machine",
 	""
 };
 
@@ -1101,7 +1115,11 @@ char spriteEditorNameStrings[NUM_EDITOR_SPRITES][64] =
 	"MONSTER_D",
 	"MONSTER_M",
 	"MONSTER_S",
-	"MONSTER_G"
+	"MONSTER_G",
+	"WALL LOCK (East)",
+	"WALL LOCK (South)",
+	"WALL LOCK (West)",
+	"WALL LOCK (North)"
 };
 
 char monsterEditorNameStrings[NUMMONSTERS][16] =
@@ -2151,6 +2169,23 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 		{
 			// set default new entity attributes.
 			entityNew->pressurePlateTriggerType = 0;
+		}
+	}
+	else if ( spriteType == 30 ) // wall locks
+	{
+		if ( entityToCopy != nullptr )
+		{
+			// copy old entity attributes to newly created.
+			entityNew->wallLockMaterial = entityToCopy->wallLockMaterial;
+			entityNew->wallLockInvertPower = entityToCopy->wallLockInvertPower;
+			entityNew->wallLockTurnable = entityToCopy->wallLockTurnable;
+		}
+		else
+		{
+			// set default new entity attributes.
+			entityNew->wallLockMaterial = 0;
+			entityNew->wallLockInvertPower = 0;
+			entityNew->wallLockTurnable = 0;
 		}
 	}
 

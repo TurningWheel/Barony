@@ -351,9 +351,17 @@ typedef enum ItemType
 	HAT_HOOD_WHISPERS,
 	RING_RESOLVE,
 	CLOAK_GUARDIAN,
-	MASK_MARIGOLD
+	MASK_MARIGOLD,
+	KEY_STONE,
+	KEY_BONE,
+	KEY_BRONZE,
+	KEY_IRON,
+	KEY_SILVER,
+	KEY_GOLD,
+	KEY_CRYSTAL,
+	KEY_MACHINE
 } ItemType;
-const int NUMITEMS = 332;
+const int NUMITEMS = 340;
 
 //NOTE: If you change this, make sure to update NUMCATEGORIES in game.h to reflect the total number of categories. Not doing that will make bad things happen.
 typedef enum Category

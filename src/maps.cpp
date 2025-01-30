@@ -8589,6 +8589,70 @@ void assignActions(map_t* map)
 				entity->yaw = 0.0;// (270)* PI / 180.0;
 				entity->seedEntityRNG(map_rng.getU32());
 				break;
+			case 208:
+			case 209:
+			case 210:
+			case 211:
+			{
+				entity->wallLockDir = entity->sprite - 208;
+				entity->sizex = 1;
+				entity->sizey = 1;
+				entity->x += 8;
+				entity->y += 8;
+				entity->z = 0.0;
+				entity->sprite = 1161; // stone base
+				switch ( entity->wallLockMaterial )
+				{
+				case 0:
+					entity->sprite = 1161;
+					break;
+				case 1:
+					entity->sprite = 1154;
+					break;
+				case 2:
+					entity->sprite = 1155;
+					break;
+				case 3:
+					entity->sprite = 1158;
+					break;
+				case 4:
+					entity->sprite = 1160;
+					break;
+				case 5:
+					entity->sprite = 1157;
+					break;
+				case 6:
+					entity->sprite = 1156;
+					break;
+				case 7:
+					entity->sprite = 1159;
+					break;
+				default:
+					break;
+				}
+				entity->flags[PASSABLE] = true;
+				entity->flags[BLOCKSIGHT] = false;
+				entity->yaw = (PI / 2) * entity->wallLockDir;
+				const real_t offsetWallDist = 7.25;
+				switch ( entity->wallLockDir )
+				{
+				case 0:
+					entity->x -= offsetWallDist;
+					break;
+				case 1:
+					entity->y -= offsetWallDist;
+					break;
+				case 2:
+					entity->x += offsetWallDist;
+					break;
+				case 3:
+					entity->y += offsetWallDist;
+					break;
+				default:
+					break;
+				}
+			}
+				break;
             default:
                 break;
 		}
