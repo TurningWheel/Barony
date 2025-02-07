@@ -1769,6 +1769,7 @@ voxel_t* loadVoxel(char* filename)
 constexpr float hellAmbience = 32.f;
 #ifndef EDITOR
 static ConsoleVariable<float> cvar_hell_ambience("/hell_ambience", hellAmbience);
+static ConsoleVariable<Vector4> cvar_map_ambience("/map_ambience", { 0.f, 0.f, 0.f, 0.f });
 #endif
 
 /*-------------------------------------------------------------------------------
@@ -2477,6 +2478,10 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 						fp->read(&entity->wallLockInvertPower, sizeof(Sint32), 1);
 						fp->read(&entity->wallLockTurnable, sizeof(Sint32), 1);
 						break;
+					case 31:
+						fp->read(&entity->wallLockInvertPower, sizeof(Sint32), 1);
+						fp->read(&entity->wallLockTimer, sizeof(Sint32), 1);
+						break;
 					default:
 						break;
 				}
@@ -2524,6 +2529,31 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
             {
                 memset(lightmap.data(), 0, sizeof(vec4_t) * map.width * map.height);
                 memset(lightmapSmoothed.data(), 0, sizeof(vec4_t) * (map.width + 2) * (map.height + 2));
+
+#ifndef EDITOR
+				if ( (svFlags & SV_FLAG_CHEATS) && 
+					(cvar_map_ambience->x > 0.01
+						|| cvar_map_ambience->y > 0.01
+						|| cvar_map_ambience->z > 0.01) )
+				{
+					auto ambienceColor = *cvar_map_ambience;
+					ambienceColor.x *= ambienceColor.w;
+					ambienceColor.y *= ambienceColor.w;
+					ambienceColor.z *= ambienceColor.w;
+					for ( int c = 0; c < destmap->width * destmap->height; c++ )
+					{
+						lightmap[c].x = ambienceColor.x;
+						lightmap[c].y = ambienceColor.y;
+						lightmap[c].z = ambienceColor.z;
+					}
+					for ( int c = 0; c < (destmap->width + 2) * (destmap->height + 2); c++ )
+					{
+						lightmapSmoothed[c].x = ambienceColor.x;
+						lightmapSmoothed[c].y = ambienceColor.y;
+						lightmapSmoothed[c].z = ambienceColor.z;
+					}
+				}
+#endif
             }
             else
             {
@@ -2925,6 +2955,10 @@ int saveMap(const char* filename2)
 					fp->write(&entity->wallLockMaterial, sizeof(Sint32), 1);
 					fp->write(&entity->wallLockInvertPower, sizeof(Sint32), 1);
 					fp->write(&entity->wallLockTurnable, sizeof(Sint32), 1);
+					break;
+				case 31:
+					fp->write(&entity->wallLockInvertPower, sizeof(Sint32), 1);
+					fp->write(&entity->wallLockTimer, sizeof(Sint32), 1);
 					break;
 				default:
 					break;

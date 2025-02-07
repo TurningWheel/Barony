@@ -674,6 +674,10 @@ void actThrown(Entity* my)
 		if ( itemCategory(item) == THROWN || itemCategory(item) == GEM || itemCategory(item) == POTION )
 		{
 			my->entityCheckIfTriggeredBomb(true);
+			if ( !hit.entity )
+			{
+				my->entityCheckIfTriggeredWallButton();
+			}
 		}
 		bool tryHitEntity = true;
 		if ( itemIsThrowableTinkerTool(item) && !(item->type >= TOOL_BOMB && item->type <= TOOL_TELEPORT_BOMB) )

@@ -232,6 +232,12 @@ int checkSpriteType(Sint32 sprite)
 	case 211:
 		// wall locks
 		return 30;
+	case 212:
+	case 213:
+	case 214:
+	case 215:
+		// wall buttons
+		return 31;
 	default:
 		return 0;
 		break;
@@ -1119,7 +1125,11 @@ char spriteEditorNameStrings[NUM_EDITOR_SPRITES][64] =
 	"WALL LOCK (East)",
 	"WALL LOCK (South)",
 	"WALL LOCK (West)",
-	"WALL LOCK (North)"
+	"WALL LOCK (North)",
+	"WALL BUTTON (East)",
+	"WALL BUTTON (South)",
+	"WALL BUTTON (West)",
+	"WALL BUTTON (North)"
 };
 
 char monsterEditorNameStrings[NUMMONSTERS][16] =
@@ -2186,6 +2196,21 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			entityNew->wallLockMaterial = 0;
 			entityNew->wallLockInvertPower = 0;
 			entityNew->wallLockTurnable = 0;
+		}
+	}
+	else if ( spriteType == 31 ) // wall buttons
+	{
+		if ( entityToCopy != nullptr )
+		{
+			// copy old entity attributes to newly created.
+			entityNew->wallLockInvertPower = entityToCopy->wallLockInvertPower;
+			entityNew->wallLockTimer = entityToCopy->wallLockTimer;
+		}
+		else
+		{
+			// set default new entity attributes.
+			entityNew->wallLockInvertPower = 0;
+			entityNew->wallLockTimer = 0;
 		}
 	}
 

@@ -599,6 +599,11 @@ public:
 	Sint32& wallLockTurnable; //skill[3]
 	Sint32& wallLockMaterial; //skill[4]
 	Sint32& wallLockDir; //skill[5]
+	Sint32& wallLockClientInteractDelay; //skill[6]
+	Sint32& wallLockPlayerInteracting; //skill[7]
+	Sint32& wallLockPower; //skill[8]
+	Sint32& wallLockInit; //skill[9]
+	Sint32& wallLockTimer; //skill[10]
 
 	//--THROWN PROJECTILE--
 	Sint32& thrownProjectilePower; //skill[19]
@@ -811,6 +816,8 @@ public:
 	void actTextSource();
 	void actSignalTimer();
 	void actSignalGateAND();
+	void actWallLock();
+	void actWallButton();
 
 	Monster getRace() const
 	{
@@ -1087,6 +1094,7 @@ public:
 	void handleKnockbackDamage(Stat& myStats, Entity* knockedInto); // handle knockback damage from getting hit into other things.
 	void setHelmetLimbOffsetWithMask(Entity* helm, Entity* mask);
 	bool entityCheckIfTriggeredBomb(bool triggerBomb);
+	bool entityCheckIfTriggeredWallButton();
 	Sint32 playerInsectoidExpectedManaFromHunger(Stat& myStats);
 	Sint32 playerInsectoidHungerValueOfManaPoint(Stat& myStats);
 	static real_t getDamageTableMultiplier(Entity* my, Stat& myStats, DamageTableType damageType);
@@ -1239,7 +1247,7 @@ void actTextSource(Entity* my);
 
 static const int NUM_ITEM_STRINGS = 344;
 static const int NUM_ITEM_STRINGS_BY_TYPE = 129;
-static const int NUM_EDITOR_SPRITES = 212;
+static const int NUM_EDITOR_SPRITES = 216;
 static const int NUM_EDITOR_TILES = 350;
 
 // furniture types.

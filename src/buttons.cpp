@@ -2421,6 +2421,21 @@ void buttonSpriteProperties(button_t* my)
 				suby1 = yres / 2 - 90;
 				suby2 = yres / 2 + 90;
 				strcpy(subtext, "Wall Lock Properties:");
+				break;
+			case 31:
+				snprintf(spriteProperties[0], 2, "%d", static_cast<int>(selectedEntity[0]->wallLockInvertPower));
+				snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity[0]->wallLockTimer));
+				inputstr = spriteProperties[0];
+				cursorflash = ticks;
+				menuVisible = 0;
+				subwindow = 1;
+				newwindow = 35;
+				subx1 = xres / 2 - 170;
+				subx2 = xres / 2 + 170;
+				suby1 = yres / 2 - 90;
+				suby2 = yres / 2 + 90;
+				strcpy(subtext, "Wall Button Properties:");
+				break;
 			default:
 				strcpy(message, "No properties available for current sprite.");
 				messagetime = 60;
@@ -3544,6 +3559,10 @@ void buttonSpritePropertiesConfirm(button_t* my)
 				selectedEntity[0]->wallLockMaterial = (Sint32)atoi(spriteProperties[0]);
 				selectedEntity[0]->wallLockInvertPower = (Sint32)atoi(spriteProperties[1]);
 				selectedEntity[0]->wallLockTurnable = (Sint32)atoi(spriteProperties[2]);
+				break;
+			case 31:
+				selectedEntity[0]->wallLockInvertPower = (Sint32)atoi(spriteProperties[0]);
+				selectedEntity[0]->wallLockTimer = (Sint32)atoi(spriteProperties[1]);
 				break;
 			default:
 				break;

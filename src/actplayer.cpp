@@ -7326,11 +7326,38 @@ void actPlayer(Entity* my)
 					input.consumeBinaryToggle("Use");
 					//input.consumeBindingsSharedWithBinding("Use");
 					bool foundTinkeringKit = false;
+					bool wallLockInteract = false;
+					Item* foundWallLockKey = nullptr;
 					if ( entityDist(my, selectedEntity[PLAYER_NUM]) <= TOUCHRANGE )
 					{
 						inrange[PLAYER_NUM] = true;
 
-						if ( (selectedEntity[PLAYER_NUM]->behavior == &actItem
+						if ( selectedEntity[PLAYER_NUM]->sprite >= 1585 && selectedEntity[PLAYER_NUM]->sprite <= 1592 )
+						{
+							// wall lock keys, overwrite selection to base
+							if ( parent && parent->behavior == &actWallLock )
+							{
+								selectedEntity[PLAYER_NUM] = parent;
+							}
+						}
+						else if ( selectedEntity[PLAYER_NUM]->sprite == 1151 || selectedEntity[PLAYER_NUM]->sprite == 1152 )
+						{
+							// wall button, overwrite selection to base
+							if ( parent && parent->behavior == &actWallButton )
+							{
+								selectedEntity[PLAYER_NUM] = parent;
+							}
+						}
+
+						if ( selectedEntity[PLAYER_NUM]->behavior == &actWallLock )
+						{
+							wallLockInteract = true;
+							if ( selectedEntity[PLAYER_NUM]->wallLockState == 0 )
+							{
+								foundWallLockKey = players[PLAYER_NUM]->inventoryUI.hasKeyForWallLock(*selectedEntity[PLAYER_NUM]);
+							}
+						}
+						else if ( (selectedEntity[PLAYER_NUM]->behavior == &actItem
 							|| selectedEntity[PLAYER_NUM]->behavior == &actTorch
 							|| selectedEntity[PLAYER_NUM]->behavior == &actCrystalShard)
 							&& stats[PLAYER_NUM] && stats[PLAYER_NUM]->shield && stats[PLAYER_NUM]->defending
@@ -7351,7 +7378,15 @@ void actPlayer(Entity* my)
 					{
 						if ( inrange[PLAYER_NUM] )
 						{
-							if ( foundTinkeringKit )
+							if ( foundWallLockKey )
+							{
+								strcpy((char*)net_packet->data, "LKEY"); // has key
+							}
+							else if ( wallLockInteract )
+							{
+								strcpy((char*)net_packet->data, "LNOK"); // no key
+							}
+							else if ( foundTinkeringKit )
 							{
 								strcpy((char*)net_packet->data, "SALV");
 							}

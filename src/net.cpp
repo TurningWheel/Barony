@@ -1925,6 +1925,24 @@ void clientActions(Entity* entity)
 		case 1484:
 			entity->behavior = &actAssistShrine;
 			break;
+		case 1585:
+		case 1586:
+		case 1587:
+		case 1588:
+		case 1589:
+		case 1590:
+		case 1591:
+		case 1592:
+			// wall lock keys
+			entity->behavior = &actEmpty;
+			entity->flags[NOUPDATE] = true;
+			break;
+		case 1151:
+		case 1152:
+			// wall buttons
+			entity->behavior = &actEmpty;
+			entity->flags[NOUPDATE] = true;
+			break;
 		case Player::Ghost_t::GHOST_MODEL_P1:
 		case Player::Ghost_t::GHOST_MODEL_P2:
 		case Player::Ghost_t::GHOST_MODEL_P3:
@@ -5496,6 +5514,38 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 			}
 		}
 	} },
+
+	// server order to consume key for lock
+	{ 'LKEY', []() {
+		const int player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
+		bool success = false;
+
+		// reply got packet
+		strcpy((char*)net_packet->data, "OKEY");
+		net_packet->data[4] = clientnum;
+
+		if ( player == clientnum )
+		{
+			Uint32 uid = SDLNet_Read32(&net_packet->data[5]);
+			Entity* entity = uidToEntity(uid);
+			if ( entity && entity->behavior == &actWallLock )
+			{
+				Item* key = players[clientnum]->inventoryUI.hasKeyForWallLock(*entity);
+				if ( key )
+				{
+					SDLNet_Write16((Uint16)key->type, &net_packet->data[10]);
+					consumeItem(key, clientnum);
+					success = true;
+				}
+			}
+		}
+
+		net_packet->data[9] = success ? 1 : 0;
+		net_packet->len = 12;
+		net_packet->address.host = net_server.host;
+		net_packet->address.port = net_server.port;
+		sendPacketSafe(net_sock, -1, net_packet, 0);
+	} },
 };
 
 void clientHandlePacket()
@@ -6165,6 +6215,88 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 			}
 			client_selected[player] = entity;
 			inrange[player] = true;
+		}
+	}},
+
+	// clicked wall lock entity in range with key
+	{'LKEY', []() {
+		const int player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
+		client_keepalive[player] = ticks;
+		Uint32 uid = SDLNet_Read32(&net_packet->data[5]);
+		Entity* entity = uidToEntity(uid);
+		if ( entity && entity->behavior == &actWallLock )
+		{
+			if ( players[player]->entity )
+			{
+				client_selected[player] = entity;
+				inrange[player] = true;
+				if ( entity->wallLockState == 0 )
+				{
+					if ( entity->wallLockPlayerInteracting == 0 )
+					{
+						entity->wallLockPlayerInteracting = players[player]->entity->getUID();
+					}
+					else if ( entity->wallLockPlayerInteracting == players[player]->entity->getUID() )
+					{
+						// client has already queued up an action, drop this interaction
+						client_selected[player] = nullptr;
+						inrange[player] = false;
+					}
+				}
+			}
+		}
+	}},
+
+	// clicked wall lock entity in range without key
+	{'LNOK', []() {
+		const int player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
+		client_keepalive[player] = ticks;
+		Uint32 uid = SDLNet_Read32(&net_packet->data[5]);
+		Entity* entity = uidToEntity(uid);
+		if ( entity && entity->behavior == &actWallLock )
+		{
+			if ( players[player]->entity )
+			{
+				client_selected[player] = entity;
+				inrange[player] = true;
+				if ( entity->wallLockState == 0 )
+				{
+					if ( entity->wallLockPlayerInteracting == players[player]->entity->getUID() )
+					{
+						// client has already queued up an action, drop this interaction
+						client_selected[player] = nullptr;
+						inrange[player] = false;
+					}
+				}
+			}
+		}
+	}},
+
+	// client checked valid key for the lock
+	{ 'OKEY', []() {
+		const int player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
+		client_keepalive[player] = ticks;
+		Uint32 uid = SDLNet_Read32(&net_packet->data[5]);
+		Entity* entity = uidToEntity(uid);
+		if ( entity && entity->behavior == &actWallLock )
+		{
+			if ( entity->wallLockState == 0 && net_packet->data[9] != 0 ) // success from client
+			{
+				Uint16 key = SDLNet_Read16(&net_packet->data[10]);
+				if ( key >= WOODEN_SHIELD && key < NUMITEMS )
+				{
+					messagePlayer(player, MESSAGE_INTERACTION, Language::get(6378), items[key].getIdentifiedName());
+				}
+				entity->wallLockState = 1;
+				serverUpdateEntitySkill(entity, 0);
+			}
+			else if ( entity->wallLockState == 0 && net_packet->data[9] == 0 )
+			{
+				messagePlayer(player, MESSAGE_INTERACTION, Language::get(6379));
+				playSoundEntity(entity, 152, 64);
+			}
+			entity->wallLockClientInteractDelay = 0;
+			entity->wallLockPlayerInteracting = 0;
 		}
 	}},
 

@@ -1475,3 +1475,653 @@ void Entity::actSignalGateAND()
 		}
 	}
 }
+
+void actWallButton(Entity* my)
+{
+	if ( !my )
+	{
+		return;
+	}
+
+	my->actWallButton();
+}
+
+void Entity::actWallButton()
+{
+	if ( this->ticks == 1 )
+	{
+		createWorldUITooltip();
+	}
+	node_t* nextnode = nullptr;
+	Entity* key = nullptr;
+	for ( node_t* node = this->children.first; node != nullptr; node = nextnode )
+	{
+		nextnode = node->next;
+		if ( node->element != nullptr )
+		{
+			key = (Entity*)node->element;
+		}
+	}
+
+	// check wall behind me. (e.g mined or destroyed then remove lock)
+	int checkx = x + (wallLockDir == 0 ? -8 : (wallLockDir == 2 ? 8 : 0));
+	int checky = y + (wallLockDir == 1 ? -8 : (wallLockDir == 3 ? 8 : 0));
+	checkx = checkx >> 4;
+	checky = checky >> 4;
+	if ( !map.tiles[OBSTACLELAYER + checky * MAPLAYERS + checkx * MAPLAYERS * map.height] )
+	{
+		if ( key )
+		{
+			list_RemoveNode(key->mynode);
+		}
+		list_RemoveNode(mynode);
+		return;
+	}
+
+	static ConsoleVariable<float> cvar_wall_button_key_z("/wall_button_key_z", 0.5);
+
+	bool updateNeighbors = false;
+	if ( wallLockPower > 0 )
+	{
+		--wallLockPower;
+		if ( ticks % 10 == 0 )
+		{
+			playSoundEntityLocal(this, 247, 32);
+		}
+
+		if ( multiplayer != CLIENT )
+		{
+			if ( wallLockPower == 0 )
+			{
+				if ( wallLockState == 1 )
+				{
+					wallLockState = 0;
+					serverUpdateEntitySkill(this, 0);
+					updateNeighbors = true;
+					playSoundEntity(this, 56, 64);
+				}
+			}
+		}
+	}
+
+	if ( multiplayer != CLIENT )
+	{
+		if ( !wallLockInit )
+		{
+			wallLockInit = 1;
+			if ( key )
+			{
+				key->fskill[0] = 0.25;
+			}
+			if ( wallLockInvertPower != 0 )
+			{
+				updateNeighbors = true; // once off power the neighbours since needs an external kick
+			}
+		}
+
+		int player = -1;
+		bool interacted = false;
+		bool shotByArrow = false;
+		if ( wallLockPlayerInteracting > 0 )
+		{
+			player = wallLockPlayerInteracting - 1;
+			wallLockPlayerInteracting = 0;
+			shotByArrow = true;
+			interacted = true;
+			if ( player >= MAXPLAYERS )
+			{
+				player = -1;
+			}
+		}
+
+		for ( int i = 0; i < MAXPLAYERS; i++ )
+		{
+			if ( (client_selected[i] == this || selectedEntity[i] == this) )
+			{
+				if ( inrange[i] )
+				{
+					if ( players[i] && players[i]->entity )
+					{
+						player = i;
+						interacted = true;
+					}
+				}
+			}
+		}
+
+		if ( interacted )
+		{
+			if ( wallLockState == 0 )
+			{
+				wallLockState = 1;
+				updateNeighbors = true;
+				if ( wallLockTimer > 0 )
+				{
+					wallLockPower = wallLockTimer; // countdown
+					serverUpdateEntitySkill(this, 8);
+				}
+				else
+				{
+					// perma on
+					wallLockPower = -1;
+				}
+				serverUpdateEntitySkill(this, 0);
+				playSoundEntity(this, 248, 64);
+				playSoundEntity(this, 56, 64);
+				if ( shotByArrow )
+				{
+					messagePlayer(player, MESSAGE_INTERACTION, Language::get(6382));
+				}
+				else
+				{
+					messagePlayer(player, MESSAGE_INTERACTION, Language::get(6381));
+				}
+			}
+			else
+			{
+				messagePlayer(player, MESSAGE_INTERACTION, Language::get(6380));
+			}
+		}
+	}
+
+	if ( key )
+	{
+		real_t& inset = key->fskill[0];
+
+		if ( wallLockState == 0 )
+		{
+			inset = std::min(0.25, inset + 0.025);
+		}
+		else if ( wallLockState == 1 )
+		{
+			inset -= std::max(0.01, inset / 10.0);
+			inset = std::max(0.0, inset);
+		}
+
+		key->focalz = *cvar_wall_button_key_z;
+
+		real_t travel = std::max(0.05, 2.0 * inset);
+		key->x = this->x + travel * cos(this->yaw);
+		key->y = this->y + travel * sin(this->yaw);
+	}
+
+	if ( multiplayer != CLIENT )
+	{
+		int tx = x / 16;
+		int ty = y / 16;
+		list_t* neighbors = nullptr;
+		bool power_to_neighbors = wallLockInvertPower ? wallLockPower == 0 : wallLockPower != 0;
+		// comment out power_to_neighbors if we dont want this running all the time
+		// running all the time matches switch behavior so that 1 thing toggling doesnt shut the network
+		// if multiple active mechanisms are also powering it
+		if ( updateNeighbors || power_to_neighbors )
+		{
+			switch ( wallLockDir )
+			{
+			case 0: // west
+				getPowerablesOnTile(tx - 1, ty, &neighbors);
+				break;
+			case 1: // south
+				getPowerablesOnTile(tx, ty - 1, &neighbors);
+				break;
+			case 2: // east
+				getPowerablesOnTile(tx + 1, ty, &neighbors);
+				break;
+			case 3: // north
+				getPowerablesOnTile(tx, ty + 1, &neighbors);
+				break;
+			}
+			if ( neighbors != nullptr )
+			{
+				node_t* node = nullptr;
+				for ( node = neighbors->first; node != nullptr; node = node->next )
+				{
+					if ( node->element )
+					{
+						Entity* powerable = (Entity*)(node->element);
+
+						if ( powerable )
+						{
+							if ( powerable->behavior == actCircuit )
+							{
+								(power_to_neighbors) ? powerable->circuitPowerOn() : powerable->circuitPowerOff();
+							}
+							else
+							{
+								if ( powerable->behavior == &::actSignalTimer )
+								{
+									switch ( powerable->signalInputDirection )
+									{
+									case 0: // west
+										if ( static_cast<int>(this->x / 16) == static_cast<int>((powerable->x / 16) - 1) )
+										{
+											(power_to_neighbors) ? powerable->mechanismPowerOn() : powerable->mechanismPowerOff();
+										}
+										break;
+									case 1: // south
+										if ( static_cast<int>(this->y / 16) == static_cast<int>((powerable->y / 16) - 1) )
+										{
+											(power_to_neighbors) ? powerable->mechanismPowerOn() : powerable->mechanismPowerOff();
+										}
+										break;
+									case 2: // east
+										if ( static_cast<int>(this->x / 16) == static_cast<int>((powerable->x / 16) + 1) )
+										{
+											(power_to_neighbors) ? powerable->mechanismPowerOn() : powerable->mechanismPowerOff();
+										}
+										break;
+									case 3: // north
+										if ( static_cast<int>(this->y / 16) == static_cast<int>((powerable->y / 16) + 1) )
+										{
+											(power_to_neighbors) ? powerable->mechanismPowerOn() : powerable->mechanismPowerOff();
+										}
+										break;
+									default:
+										break;
+									}
+								}
+								else if ( powerable->behavior == &::actSignalGateAND )
+								{
+									int x1 = static_cast<int>(this->x / 16);
+									int y1 = static_cast<int>(this->y / 16);
+									//messagePlayer(0, "%d, %d, %d, %d", x1, x2, y1, y2);
+									signalGateANDOnReceive(*powerable, power_to_neighbors, x1, y1);
+								}
+								else
+								{
+									(power_to_neighbors) ? powerable->mechanismPowerOn() : powerable->mechanismPowerOff();
+								}
+							}
+						}
+					}
+				}
+				list_FreeAll(neighbors); //Free the list.
+				free(neighbors);
+			}
+		}
+	}
+}
+
+void actWallLock(Entity* my)
+{
+	if ( !my )
+	{
+		return;
+	}
+
+	my->actWallLock();
+}
+
+void Entity::actWallLock()
+{
+	if ( this->ticks == 1 )
+	{
+		createWorldUITooltip();
+	}
+	node_t* nextnode = nullptr;
+	Entity* key = nullptr;
+	for ( node_t* node = this->children.first; node != nullptr; node = nextnode )
+	{
+		nextnode = node->next;
+		if ( node->element != nullptr )
+		{
+			key = (Entity*)node->element;
+		}
+	}
+
+	// check wall behind me. (e.g mined or destroyed then remove lock)
+	int checkx = x + (wallLockDir == 0 ? -8 : (wallLockDir == 2 ? 8 : 0));
+	int checky = y + (wallLockDir == 1 ? -8 : (wallLockDir == 3 ? 8 : 0));
+	checkx = checkx >> 4;
+	checky = checky >> 4;
+	if ( !map.tiles[OBSTACLELAYER + checky * MAPLAYERS + checkx * MAPLAYERS * map.height] )
+	{
+		if ( key )
+		{
+			list_RemoveNode(key->mynode);
+		}
+		list_RemoveNode(mynode);
+		return;
+	}
+
+	static ConsoleVariable<float> cvar_wall_lock_key_z("/wall_lock_key_z", 0.5);
+	static ConsoleVariable<float> cvar_wall_lock_key_scale("/wall_lock_key_scale", 0.9);
+	const real_t scaleDown = 1.0 - *cvar_wall_lock_key_scale;
+
+	enum WallLockStats
+	{
+		LOCK_NO_KEY,
+		LOCK_KEY_START,
+		LOCK_KEY_ENTER,
+		LOCK_KEY_ACTIVE_START,
+		LOCK_KEY_ACTIVE,
+		LOCK_KEY_INACTIVE_START,
+		LOCK_KEY_INACTIVE
+	};
+
+	//if ( keystatus[SDLK_g] )
+	//{
+	//	if ( wallLockState != LOCK_NO_KEY )
+	//	{
+	//		wallLockState = LOCK_NO_KEY;
+	//	}
+	//	else
+	//	{
+	//		wallLockState = LOCK_KEY_START;
+	//	}
+	//	//inset = std::min(100.0, inset + 0.01);
+	//}
+
+	if ( wallLockClientInteractDelay > 0 )
+	{
+		--wallLockClientInteractDelay;
+		if ( multiplayer != CLIENT )
+		{
+			if ( wallLockClientInteractDelay == 0 )
+			{
+				wallLockPlayerInteracting = 0;
+			}
+		}
+	}
+
+	bool updateNeighbors = false;
+	if ( multiplayer != CLIENT )
+	{
+		if ( !wallLockInit )
+		{
+			wallLockInit = 1;
+			if ( wallLockInvertPower != 0 )
+			{
+				updateNeighbors = true; // once off power the neighbours since needs an external kick
+			}
+		}
+
+		for ( int i = 0; i < MAXPLAYERS; i++ )
+		{
+			if ( (client_selected[i] == this || selectedEntity[i] == this) )
+			{
+				if ( inrange[i] )
+				{
+					if ( players[i] && players[i]->entity )
+					{
+						if ( wallLockState == LOCK_NO_KEY )
+						{
+							if ( !players[i]->isLocalPlayer() )
+							{
+								if ( wallLockPlayerInteracting == players[i]->entity->getUID() )
+								{
+									// chosen one, allow them to unlock the door.
+									wallLockClientInteractDelay = TICKS_PER_SECOND * 10;
+
+									strcpy((char*)net_packet->data, "LKEY");
+									net_packet->data[4] = i;
+									SDLNet_Write32(getUID(), &net_packet->data[5]);
+									net_packet->len = 9;
+									net_packet->address.host = net_clients[i - 1].host;
+									net_packet->address.port = net_clients[i - 1].port;
+									sendPacketSafe(net_sock, -1, net_packet, i - 1);
+								}
+								else if ( wallLockPlayerInteracting != 0 )
+								{
+									// someone else is using that
+									messagePlayer(i, MESSAGE_INTERACTION, Language::get(6377));
+								}
+								else
+								{
+									// no matching key
+									messagePlayer(i, MESSAGE_INTERACTION, Language::get(6379));
+									playSoundEntity(this, 152, 64);
+								}
+							}
+							else // local player
+							{
+								if ( wallLockPlayerInteracting != 0 )
+								{
+									// someone else is using that
+									if ( wallLockPlayerInteracting != players[i]->entity->getUID() )
+									{
+										messagePlayer(i, MESSAGE_INTERACTION, Language::get(6377));
+									}
+								}
+								else
+								{
+									if ( Item* foundWallLockKey = players[i]->inventoryUI.hasKeyForWallLock(*this) )
+									{
+										messagePlayer(i, MESSAGE_INTERACTION, Language::get(6378), foundWallLockKey->getName());
+										consumeItem(foundWallLockKey, i);
+										wallLockState = LOCK_KEY_START;
+									}
+									else
+									{
+										// no matching key
+										messagePlayer(i, MESSAGE_INTERACTION, Language::get(6379));
+										playSoundEntity(this, 152, 64);
+									}
+								}
+							}
+						}
+						else
+						{
+							if ( wallLockState == LOCK_KEY_ACTIVE || wallLockState == LOCK_KEY_INACTIVE )
+							{
+								if ( wallLockState == LOCK_KEY_ACTIVE )
+								{
+									if ( wallLockTurnable != 0 )
+									{
+										playSoundEntity(this, 56, 64);
+										messagePlayer(i, MESSAGE_INTERACTION, Language::get(6374));
+										wallLockState = LOCK_KEY_INACTIVE_START;
+										serverUpdateEntitySkill(this, 0);
+										break;
+									}
+									else
+									{
+										messagePlayer(i, MESSAGE_INTERACTION, Language::get(6376));
+										playSoundEntity(this, 92, 64);
+										break;
+									}
+								}
+								else if ( wallLockState == LOCK_KEY_INACTIVE )
+								{
+									messagePlayer(i, MESSAGE_INTERACTION, Language::get(6375));
+									playSoundEntity(this, 56, 64);
+									wallLockState = LOCK_KEY_ACTIVE_START;
+									serverUpdateEntitySkill(this, 0);
+									break;
+								}
+							}
+							else
+							{
+								messagePlayer(i, MESSAGE_INTERACTION, Language::get(6377));
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	if ( key )
+	{
+		real_t& inset = key->fskill[0];
+		if ( wallLockState == LOCK_NO_KEY )
+		{
+			key->flags[INVISIBLE] = true;
+		}
+		else
+		{
+			key->flags[INVISIBLE] = false;
+		}
+
+		if ( wallLockState == LOCK_KEY_START )
+		{
+			playSoundEntityLocal(this, 702 + local_rng.rand() % 5, 128);
+			wallLockState = LOCK_KEY_ENTER;
+			key->roll = 0.0;
+			inset = 1.0;
+			fskill[0] = 0.0;
+		}
+		else if ( wallLockState == LOCK_KEY_ENTER )
+		{
+			fskill[0] = 0.0;
+			inset -= std::max(0.01, inset / 10.0);
+			if ( inset <= 0.001 )
+			{
+				inset = 0.0;
+				wallLockState = LOCK_KEY_ACTIVE_START;
+				playSoundEntityLocal(this, 56, 64);
+			}
+		}
+		else if ( wallLockState == LOCK_KEY_ACTIVE_START )
+		{
+			fskill[0] = 0.0;
+			wallLockState = LOCK_KEY_ACTIVE;
+		}
+		else if ( wallLockState == LOCK_KEY_ACTIVE )
+		{
+			// active
+			fskill[0] = std::min(PI / 2, fskill[0] + 0.1);
+			inset = std::max(0.0, inset - 0.025);
+
+			if ( multiplayer != CLIENT )
+			{
+				if ( !wallLockPower )
+				{
+					wallLockPower = 1;
+					updateNeighbors = true;
+				}
+			}
+		}
+		else if ( wallLockState == LOCK_KEY_INACTIVE_START )
+		{
+			fskill[0] = PI / 2;
+			wallLockState = LOCK_KEY_INACTIVE;
+		}
+		else if ( wallLockState == LOCK_KEY_INACTIVE )
+		{
+			// inactive
+			fskill[0] = std::max(0.0, fskill[0] - 0.1);
+			inset = std::min(0.25, inset + 0.025);
+			if ( multiplayer != CLIENT )
+			{
+				if ( wallLockPower )
+				{
+					wallLockPower = 0;
+					updateNeighbors = true;
+				}
+			}
+		}
+
+		key->roll = (3 * PI / 2) * sin(fskill[0]);
+
+		key->scalex = *cvar_wall_lock_key_scale;
+		key->scaley = *cvar_wall_lock_key_scale;
+		key->scalez = *cvar_wall_lock_key_scale;
+		key->focalz = *cvar_wall_lock_key_z;
+		if ( key->sprite == 1177 ) // machine
+		{
+			key->focalz -= 0.5;
+		}
+		key->focalz -= scaleDown / 2;
+
+		real_t travel = 0.95 + 1.5 * inset;
+		key->x = this->x + travel * cos(this->yaw);
+		key->y = this->y + travel * sin(this->yaw);
+	}
+
+	if ( multiplayer != CLIENT )
+	{
+		int tx = x / 16;
+		int ty = y / 16;
+		list_t* neighbors = nullptr;
+		bool power_to_neighbors = wallLockInvertPower ? wallLockPower == 0 : wallLockPower != 0;
+		// comment out power_to_neighbors if we dont want this running all the time
+		// running all the time matches switch behavior so that 1 thing toggling doesnt shut the network
+		// if multiple active mechanisms are also powering it
+		if ( updateNeighbors || power_to_neighbors ) 
+		{
+			switch ( wallLockDir )
+			{
+			case 0: // west
+				getPowerablesOnTile(tx - 1, ty, &neighbors);
+				break;
+			case 1: // south
+				getPowerablesOnTile(tx, ty - 1, &neighbors);
+				break;
+			case 2: // east
+				getPowerablesOnTile(tx + 1, ty, &neighbors);
+				break;
+			case 3: // north
+				getPowerablesOnTile(tx, ty + 1, &neighbors);
+				break;
+			}
+			if ( neighbors != nullptr )
+			{
+				node_t* node = nullptr;
+				for ( node = neighbors->first; node != nullptr; node = node->next )
+				{
+					if ( node->element )
+					{
+						Entity* powerable = (Entity*)(node->element);
+
+						if ( powerable )
+						{
+							if ( powerable->behavior == actCircuit )
+							{
+								(power_to_neighbors) ? powerable->circuitPowerOn() : powerable->circuitPowerOff();
+							}
+							else
+							{
+								if ( powerable->behavior == &::actSignalTimer )
+								{
+									switch ( powerable->signalInputDirection )
+									{
+									case 0: // west
+										if ( static_cast<int>(this->x / 16) == static_cast<int>((powerable->x / 16) - 1) )
+										{
+											(power_to_neighbors) ? powerable->mechanismPowerOn() : powerable->mechanismPowerOff();
+										}
+										break;
+									case 1: // south
+										if ( static_cast<int>(this->y / 16) == static_cast<int>((powerable->y / 16) - 1) )
+										{
+											(power_to_neighbors) ? powerable->mechanismPowerOn() : powerable->mechanismPowerOff();
+										}
+										break;
+									case 2: // east
+										if ( static_cast<int>(this->x / 16) == static_cast<int>((powerable->x / 16) + 1) )
+										{
+											(power_to_neighbors) ? powerable->mechanismPowerOn() : powerable->mechanismPowerOff();
+										}
+										break;
+									case 3: // north
+										if ( static_cast<int>(this->y / 16) == static_cast<int>((powerable->y / 16) + 1) )
+										{
+											(power_to_neighbors) ? powerable->mechanismPowerOn() : powerable->mechanismPowerOff();
+										}
+										break;
+									default:
+										break;
+									}
+								}
+								else if ( powerable->behavior == &::actSignalGateAND )
+								{
+									int x1 = static_cast<int>(this->x / 16);
+									int y1 = static_cast<int>(this->y / 16);
+									//messagePlayer(0, "%d, %d, %d, %d", x1, x2, y1, y2);
+									signalGateANDOnReceive(*powerable, power_to_neighbors, x1, y1);
+								}
+								else
+								{
+									(power_to_neighbors) ? powerable->mechanismPowerOn() : powerable->mechanismPowerOff();
+								}
+							}
+						}
+					}
+				}
+				list_FreeAll(neighbors); //Free the list.
+				free(neighbors);
+			}
+		}
+	}
+}

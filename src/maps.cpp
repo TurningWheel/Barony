@@ -8600,32 +8600,42 @@ void assignActions(map_t* map)
 				entity->x += 8;
 				entity->y += 8;
 				entity->z = 0.0;
+				entity->behavior = &actWallLock;
 				entity->sprite = 1161; // stone base
+				int keySprite = 1592;
 				switch ( entity->wallLockMaterial )
 				{
 				case 0:
 					entity->sprite = 1161;
+					keySprite = 1592;
 					break;
 				case 1:
 					entity->sprite = 1154;
+					keySprite = 1585;
 					break;
 				case 2:
 					entity->sprite = 1155;
+					keySprite = 1586;
 					break;
 				case 3:
 					entity->sprite = 1158;
+					keySprite = 1589;
 					break;
 				case 4:
 					entity->sprite = 1160;
+					keySprite = 1591;
 					break;
 				case 5:
 					entity->sprite = 1157;
+					keySprite = 1588;
 					break;
 				case 6:
 					entity->sprite = 1156;
+					keySprite = 1587;
 					break;
 				case 7:
 					entity->sprite = 1159;
+					keySprite = 1590;
 					break;
 				default:
 					break;
@@ -8650,6 +8660,95 @@ void assignActions(map_t* map)
 					break;
 				default:
 					break;
+				}
+
+				{
+					Entity* childEntity = newEntity(keySprite, 1, map->entities, nullptr); // lock
+					childEntity->parent = entity->getUID();
+					childEntity->x = entity->x + 4 * cos(entity->yaw);
+					childEntity->y = entity->y + 4 * sin(entity->yaw);
+					childEntity->z = entity->z - 0.5;
+					childEntity->skill[2] = entity->getUID();
+					if ( entity->sprite == 1154 )
+					{
+						childEntity->z += 1.0;
+					}
+					else if ( entity->sprite == 1156 )
+					{
+						childEntity->z -= 0.25;
+					}
+					childEntity->yaw = entity->yaw + PI;
+					childEntity->sizex = 1;
+					childEntity->sizey = 1;
+					childEntity->flags[PASSABLE] = true;
+					childEntity->flags[BLOCKSIGHT] = false;
+					childEntity->flags[UNCLICKABLE] = false;
+					childEntity->flags[PASSABLE] = true;
+					childEntity->flags[INVISIBLE] = true;
+					node_t* tempNode = list_AddNodeLast(&entity->children);
+					tempNode->element = childEntity; // add the node to the children list.
+					tempNode->deconstructor = &emptyDeconstructor;
+					tempNode->size = sizeof(Entity*);
+				}
+			}
+				break;
+			case 212:
+			case 213:
+			case 214:
+			case 215:
+			{
+				entity->wallLockDir = entity->sprite - 212;
+				entity->sizex = 5;
+				entity->sizey = 3;
+				entity->x += 8;
+				entity->y += 8;
+				entity->z = 0.0;
+				entity->behavior = &actWallButton;
+				entity->sprite = 1153; // stone base
+				entity->flags[PASSABLE] = true;
+				entity->flags[BLOCKSIGHT] = false;
+				entity->yaw = (PI / 2) * entity->wallLockDir;
+				const real_t offsetWallDist = 7.25;
+				switch ( entity->wallLockDir )
+				{
+				case 0:
+					entity->x -= offsetWallDist;
+					entity->sizey = 2;
+					break;
+				case 1:
+					entity->y -= offsetWallDist;
+					entity->sizex = 2;
+					break;
+				case 2:
+					entity->x += offsetWallDist;
+					entity->sizey = 2;
+					break;
+				case 3:
+					entity->y += offsetWallDist;
+					entity->sizex = 2;
+					break;
+				default:
+					break;
+				}
+
+				{
+					Entity* childEntity = newEntity(1152, 1, map->entities, nullptr); // button
+					childEntity->parent = entity->getUID();
+					childEntity->x = entity->x + 4 * cos(entity->yaw);
+					childEntity->y = entity->y + 4 * sin(entity->yaw);
+					childEntity->z = entity->z - 0.5;
+					childEntity->skill[2] = entity->getUID();
+					childEntity->yaw = entity->yaw;
+					childEntity->sizex = 1;
+					childEntity->sizey = 1;
+					childEntity->flags[PASSABLE] = true;
+					childEntity->flags[BLOCKSIGHT] = false;
+					childEntity->flags[UNCLICKABLE] = false;
+					childEntity->flags[PASSABLE] = true;
+					node_t* tempNode = list_AddNodeLast(&entity->children);
+					tempNode->element = childEntity; // add the node to the children list.
+					tempNode->deconstructor = &emptyDeconstructor;
+					tempNode->size = sizeof(Entity*);
 				}
 			}
 				break;

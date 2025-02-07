@@ -1078,6 +1078,7 @@ public:
 		bool warpMouseToSelectedChestSlot(Item* snapToItem, Uint32 flags);
 		bool guiAllowDropItems(Item* itemToDrop) const;
 		bool guiAllowDefaultRightClick() const;
+		Item* hasKeyForWallLock(Entity& entity) const;
 		void processInventory();
 		void updateInventory();
 		void updateCursor();

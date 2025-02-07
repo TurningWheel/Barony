@@ -1170,6 +1170,56 @@ void actBomb(Entity* my)
 	}
 }
 
+bool Entity::entityCheckIfTriggeredWallButton()
+{
+	if ( multiplayer == CLIENT )
+	{
+		return false;
+	}
+	if ( this->behavior != &actThrown && this->behavior != &actArrow )
+	{
+		return false;
+	}
+
+	bool foundButton = false;
+
+	real_t height_limit = (behavior == &actThrown) ? 3.0 : 2.0;
+
+	// check for wall buttons
+	if ( z < height_limit && z > -height_limit )
+	{
+		std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(this, 1);
+		for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
+		{
+			list_t* currentList = *it;
+			node_t* node;
+			for ( node = currentList->first; node != nullptr; node = node->next )
+			{
+				if ( Entity* entity = ((Entity*)node->element) )
+				{
+					if ( entity->behavior == &::actWallButton )
+					{
+						if ( entityInsideEntity(this, entity) )
+						{
+							entity->wallLockPlayerInteracting = MAXPLAYERS + 1;
+							foundButton = true;
+							if ( Entity* parent = uidToEntity(this->parent) )
+							{
+								if ( parent->behavior == &actPlayer )
+								{
+									entity->wallLockPlayerInteracting = 1 + parent->skill[2];
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return foundButton;
+}
+
 bool Entity::entityCheckIfTriggeredBomb(bool triggerBomb)
 {
 	if ( multiplayer == CLIENT )
