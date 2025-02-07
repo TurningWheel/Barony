@@ -1328,6 +1328,38 @@
 		"mask_marigold": {
 			"name_identified": "marigold",
 			"name_unidentified": "marigold"
+		},
+		"key_stone": {
+			"name_identified": "stone key",
+			"name_unidentified": "stone key"
+		},
+		"key_bone": {
+			"name_identified": "bone key",
+			"name_unidentified": "bone key"
+		},
+		"key_bronze": {
+			"name_identified": "bronze key",
+			"name_unidentified": "bronze key"
+		},
+		"key_iron": {
+			"name_identified": "iron key",
+			"name_unidentified": "iron key"
+		},
+		"key_silver": {
+			"name_identified": "silver key",
+			"name_unidentified": "silver key"
+		},
+		"key_gold": {
+			"name_identified": "gold key",
+			"name_unidentified": "gold key"
+		},
+		"key_crystal": {
+			"name_identified": "crystal key",
+			"name_unidentified": "crystal key"
+		},
+		"key_machine": {
+			"name_identified": "machine key",
+			"name_unidentified": "machine key"
 		}
     },
 	"spell_names": {

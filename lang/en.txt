@@ -6609,5 +6609,30 @@ Host to enable the game setting.
 (%s %s)#
 6356 You claim %d Assistance points from the shrine.#
 6357 %s claims %d Assistance points from the Assist shrine.#
+6358 monster_d#
+6359 monster_m#
+6360 monster_s#
+6361 monster_g#
+6362 monster_ds#
+6363 monster_ms#
+6364 monster_ss#
+6365 monster_gs#
+6366 strikes#
+6367 strikes#
+6368 strikes#
+6369 strikes#
+6370 *grunt*#
+6371 *grunt*#
+6372 *grunt*#
+6373 *grunt*#
+6374 You deactivate the lock.#
+6375 You activate the lock.#
+6376 The key is stuck tight!#
+6377 The lock is currently in use.#
+6378 You open the lock with your %s.#
+6379 You have no matching key for that lock.#
+6380 That button is already pressed.#
+6381 You press the button.#
+6382 You hit the button!#
 
 6399 END#
