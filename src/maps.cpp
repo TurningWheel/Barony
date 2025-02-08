@@ -8668,7 +8668,6 @@ void assignActions(map_t* map)
 					childEntity->x = entity->x + 4 * cos(entity->yaw);
 					childEntity->y = entity->y + 4 * sin(entity->yaw);
 					childEntity->z = entity->z - 0.5;
-					childEntity->skill[2] = entity->getUID();
 					if ( entity->sprite == 1154 )
 					{
 						childEntity->z += 1.0;
@@ -8737,7 +8736,6 @@ void assignActions(map_t* map)
 					childEntity->x = entity->x + 4 * cos(entity->yaw);
 					childEntity->y = entity->y + 4 * sin(entity->yaw);
 					childEntity->z = entity->z - 0.5;
-					childEntity->skill[2] = entity->getUID();
 					childEntity->yaw = entity->yaw;
 					childEntity->sizex = 1;
 					childEntity->sizey = 1;

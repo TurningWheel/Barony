@@ -1079,6 +1079,7 @@ public:
 		bool guiAllowDropItems(Item* itemToDrop) const;
 		bool guiAllowDefaultRightClick() const;
 		Item* hasKeyForWallLock(Entity& entity) const;
+		int getKeyAmountForWallLock(Entity& entity) const;
 		void processInventory();
 		void updateInventory();
 		void updateCursor();
@@ -2081,7 +2082,6 @@ public:
 		real_t tooltipInRange(Entity& tooltip); // returns distance of added tooltip, otherwise 0.
 		void cycleToNextTooltip();
 		void cycleToPreviousTooltip();
-
 	} worldUI;
 
 	class PaperDoll_t

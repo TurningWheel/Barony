@@ -3443,6 +3443,14 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 			{
 				return 0.0;
 			}
+			else if ( parent->behavior == &actWallLock )
+			{
+				if ( parent->wallLockState == Entity::WallLockStates::LOCK_KEY_START
+					|| parent->wallLockState == Entity::WallLockStates::LOCK_KEY_ENTER )
+				{
+					return 0.0;
+				}
+			}
 			else if ( player.ghost.isActive() && !player.ghost.allowedInteractEntity(*parent) )
 			{
 				return 0.0;
@@ -4155,6 +4163,34 @@ void Player::WorldUI_t::setTooltipActive(Entity& tooltip)
 		{
 			interactText += Language::get(6354); // "use shrine";
 		}
+		else if ( parent->behavior == &::actWallLock )
+		{
+			static char buf[256] = "";
+			int wallLockState = parent->wallLockState;
+			if ( wallLockState == Entity::WallLockStates::LOCK_NO_KEY )
+			{
+				snprintf(buf, sizeof(buf), Language::get(6397), Language::get(6383 + parent->wallLockMaterial));
+				interactText = buf;
+				snprintf(buf, sizeof(buf), Language::get(6402), player.inventoryUI.getKeyAmountForWallLock(*parent));
+				interactText += buf;
+			}
+			else if ( wallLockState == Entity::WallLockStates::LOCK_KEY_ACTIVE_START
+				|| wallLockState == Entity::WallLockStates::LOCK_KEY_ACTIVE	)
+			{
+				snprintf(buf, sizeof(buf), Language::get(6399), Language::get(6383 + parent->wallLockMaterial));
+				interactText = buf; // deactivate lock
+			}
+			else if ( wallLockState == Entity::WallLockStates::LOCK_KEY_INACTIVE_START
+				|| wallLockState == Entity::WallLockStates::LOCK_KEY_INACTIVE )
+			{
+				snprintf(buf, sizeof(buf), Language::get(6400), Language::get(6383 + parent->wallLockMaterial));
+				interactText = buf; // deactivate lock
+			}
+		}
+		else if ( parent->behavior == &::actWallButton )
+		{
+			interactText += Language::get(6401); // press button
+		}
 		else if ( parent->behavior == &actBomb && parent->skill[21] != 0 ) //skill[21] item type
 		{
 			interactText = Language::get(4039); // "Disarm ";
@@ -4701,37 +4737,87 @@ void Player::WorldUI_t::handleTooltips()
 				continue;
 			}
 
-			std::array<const char*, 2> switchStrings = { Language::get(4018), Language::get(4019) };
-			bool foundSwitchString = false;
-			for ( auto s : switchStrings )
-			{
-				if ( players[player]->worldUI.interactText.find(s) != std::string::npos )
-				{
-					foundSwitchString = true;
-					break;
-				}
-			}
-
 			for ( auto& tooltip : players[player]->worldUI.tooltipsInRange )
 			{
-				if ( players[player]->worldUI.bTooltipActiveForPlayer(*tooltip.first) && foundSwitchString )
+				if ( players[player]->worldUI.bTooltipActiveForPlayer(*tooltip.first) )
 				{
 					if ( Entity* parent = uidToEntity(tooltip.first->parent) )
 					{
 						if ( parent->behavior == &actSwitch || parent->behavior == &actSwitchWithTimer )
 						{
-							if ( parent->skill[0] == 1 )
+							std::array<const char*, 2> switchStrings = { Language::get(4018), Language::get(4019) };
+							bool foundSwitchString = false;
+							for ( auto s : switchStrings )
 							{
-								if ( players[player]->worldUI.interactText.find(Language::get(4019)) != std::string::npos )
+								if ( players[player]->worldUI.interactText.find(s) != std::string::npos )
+								{
+									foundSwitchString = true;
+									break;
+								}
+							}
+							if ( foundSwitchString )
+							{
+								if ( parent->skill[0] == 1 )
+								{
+									if ( players[player]->worldUI.interactText.find(Language::get(4019)) != std::string::npos )
+									{
+										// rescan, out of date string.
+										players[player]->worldUI.tooltipView = TOOLTIP_VIEW_RESCAN;
+										break;
+									}
+								}
+								else
+								{
+									if ( players[player]->worldUI.interactText.find(Language::get(4018)) != std::string::npos )
+									{
+										// rescan, out of date string.
+										players[player]->worldUI.tooltipView = TOOLTIP_VIEW_RESCAN;
+										break;
+									}
+								}
+							}
+						}
+						else if ( parent->behavior == &actWallLock )
+						{
+							std::string wallLockStringNoKey;
+							std::string wallLockStringActivate;
+							std::string wallLockStringDeactivate;
+							static char buf[256];
+							snprintf(buf, sizeof(buf), Language::get(6397), Language::get(6383 + parent->wallLockMaterial));
+							wallLockStringNoKey = buf;
+							snprintf(buf, sizeof(buf), Language::get(6402), players[player]->inventoryUI.getKeyAmountForWallLock(*parent));
+							wallLockStringNoKey += buf;
+
+							snprintf(buf, sizeof(buf), Language::get(6400), Language::get(6383 + parent->wallLockMaterial));
+							wallLockStringActivate = buf;
+
+							snprintf(buf, sizeof(buf), Language::get(6399), Language::get(6383 + parent->wallLockMaterial));
+							wallLockStringDeactivate = buf;
+
+							int wallLockState = parent->wallLockState;
+							if ( wallLockState == Entity::WallLockStates::LOCK_NO_KEY )
+							{
+								if ( players[player]->worldUI.interactText != wallLockStringNoKey )
 								{
 									// rescan, out of date string.
 									players[player]->worldUI.tooltipView = TOOLTIP_VIEW_RESCAN;
 									break;
 								}
 							}
-							else
+							else if ( wallLockState == Entity::WallLockStates::LOCK_KEY_ACTIVE_START
+								|| wallLockState == Entity::WallLockStates::LOCK_KEY_ACTIVE )
 							{
-								if ( players[player]->worldUI.interactText.find(Language::get(4018)) != std::string::npos )
+								if ( players[player]->worldUI.interactText != wallLockStringDeactivate )
+								{
+									// rescan, out of date string.
+									players[player]->worldUI.tooltipView = TOOLTIP_VIEW_RESCAN;
+									break;
+								}
+							}
+							else if ( wallLockState == Entity::WallLockStates::LOCK_KEY_INACTIVE_START
+								|| wallLockState == Entity::WallLockStates::LOCK_KEY_INACTIVE )
+							{
+								if ( players[player]->worldUI.interactText != wallLockStringActivate )
 								{
 									// rescan, out of date string.
 									players[player]->worldUI.tooltipView = TOOLTIP_VIEW_RESCAN;

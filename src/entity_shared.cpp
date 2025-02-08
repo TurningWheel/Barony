@@ -1880,6 +1880,7 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			entityNew->lightSourceRadius = entityToCopy->lightSourceRadius;
 			entityNew->lightSourceFlicker = entityToCopy->lightSourceFlicker;
 			entityNew->lightSourceDelay = entityToCopy->lightSourceDelay;
+			entityNew->lightSourceRGB = entityToCopy->lightSourceRGB;
 		}
 		else
 		{
@@ -1891,6 +1892,10 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			entityNew->lightSourceRadius = 5;
 			entityNew->lightSourceFlicker = 0;
 			entityNew->lightSourceDelay = 0;
+			entityNew->lightSourceRGB = 0;
+			entityNew->lightSourceRGB |= 255;
+			entityNew->lightSourceRGB |= (255 << 8);
+			entityNew->lightSourceRGB |= (255 << 16);
 		}
 	}
 	else if ( spriteType == 16 )

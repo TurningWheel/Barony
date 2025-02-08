@@ -576,6 +576,7 @@ public:
 	Sint32& lightSourceFlicker; //skill[5]
 	Sint32& lightSourceDelay; //skill[6]
 	Sint32& lightSourceDelayCounter;//skill[7]
+	Sint32& lightSourceRGB;//skill[11]
 
 	//--PUBLIC TEXT SOURCE SKILLS--
 	Sint32& textSourceColorRGB; //skill[0]
@@ -625,6 +626,17 @@ public:
 		PRESSURE_PLATE_PLAYERS_OR_ALLIES,
 		PRESSURE_PLATE_MONSTERS_NON_ALLY,
 		PRESSURE_PLATE_ENUM_END
+	};
+
+	enum WallLockStates
+	{
+		LOCK_NO_KEY,
+		LOCK_KEY_START,
+		LOCK_KEY_ENTER,
+		LOCK_KEY_ACTIVE_START,
+		LOCK_KEY_ACTIVE,
+		LOCK_KEY_INACTIVE_START,
+		LOCK_KEY_INACTIVE
 	};
 
 	//--WORLDTOOLTIP--

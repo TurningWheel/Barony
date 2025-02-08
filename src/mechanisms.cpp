@@ -1788,17 +1788,6 @@ void Entity::actWallLock()
 	static ConsoleVariable<float> cvar_wall_lock_key_scale("/wall_lock_key_scale", 0.9);
 	const real_t scaleDown = 1.0 - *cvar_wall_lock_key_scale;
 
-	enum WallLockStats
-	{
-		LOCK_NO_KEY,
-		LOCK_KEY_START,
-		LOCK_KEY_ENTER,
-		LOCK_KEY_ACTIVE_START,
-		LOCK_KEY_ACTIVE,
-		LOCK_KEY_INACTIVE_START,
-		LOCK_KEY_INACTIVE
-	};
-
 	//if ( keystatus[SDLK_g] )
 	//{
 	//	if ( wallLockState != LOCK_NO_KEY )
@@ -1864,12 +1853,12 @@ void Entity::actWallLock()
 								else if ( wallLockPlayerInteracting != 0 )
 								{
 									// someone else is using that
-									messagePlayer(i, MESSAGE_INTERACTION, Language::get(6377));
+									messagePlayer(i, MESSAGE_INTERACTION, Language::get(6377), Language::get(6383 + wallLockMaterial));
 								}
 								else
 								{
 									// no matching key
-									messagePlayer(i, MESSAGE_INTERACTION, Language::get(6379));
+									messagePlayer(i, MESSAGE_INTERACTION, Language::get(6379), Language::get(6383 + wallLockMaterial));
 									playSoundEntity(this, 152, 64);
 								}
 							}
@@ -1880,7 +1869,7 @@ void Entity::actWallLock()
 									// someone else is using that
 									if ( wallLockPlayerInteracting != players[i]->entity->getUID() )
 									{
-										messagePlayer(i, MESSAGE_INTERACTION, Language::get(6377));
+										messagePlayer(i, MESSAGE_INTERACTION, Language::get(6377), Language::get(6383 + wallLockMaterial));
 									}
 								}
 								else
@@ -1890,11 +1879,12 @@ void Entity::actWallLock()
 										messagePlayer(i, MESSAGE_INTERACTION, Language::get(6378), foundWallLockKey->getName());
 										consumeItem(foundWallLockKey, i);
 										wallLockState = LOCK_KEY_START;
+										serverUpdateEntitySkill(this, 0);
 									}
 									else
 									{
 										// no matching key
-										messagePlayer(i, MESSAGE_INTERACTION, Language::get(6379));
+										messagePlayer(i, MESSAGE_INTERACTION, Language::get(6379), Language::get(6383 + wallLockMaterial));
 										playSoundEntity(this, 152, 64);
 									}
 								}
@@ -1909,7 +1899,7 @@ void Entity::actWallLock()
 									if ( wallLockTurnable != 0 )
 									{
 										playSoundEntity(this, 56, 64);
-										messagePlayer(i, MESSAGE_INTERACTION, Language::get(6374));
+										messagePlayer(i, MESSAGE_INTERACTION, Language::get(6374), Language::get(6383 + wallLockMaterial));
 										wallLockState = LOCK_KEY_INACTIVE_START;
 										serverUpdateEntitySkill(this, 0);
 										break;
@@ -1923,7 +1913,7 @@ void Entity::actWallLock()
 								}
 								else if ( wallLockState == LOCK_KEY_INACTIVE )
 								{
-									messagePlayer(i, MESSAGE_INTERACTION, Language::get(6375));
+									messagePlayer(i, MESSAGE_INTERACTION, Language::get(6375), Language::get(6383 + wallLockMaterial));
 									playSoundEntity(this, 56, 64);
 									wallLockState = LOCK_KEY_ACTIVE_START;
 									serverUpdateEntitySkill(this, 0);
@@ -1932,7 +1922,7 @@ void Entity::actWallLock()
 							}
 							else
 							{
-								messagePlayer(i, MESSAGE_INTERACTION, Language::get(6377));
+								messagePlayer(i, MESSAGE_INTERACTION, Language::get(6377), Language::get(6383 + wallLockMaterial));
 							}
 						}
 					}
@@ -2018,7 +2008,7 @@ void Entity::actWallLock()
 		key->scaley = *cvar_wall_lock_key_scale;
 		key->scalez = *cvar_wall_lock_key_scale;
 		key->focalz = *cvar_wall_lock_key_z;
-		if ( key->sprite == 1177 ) // machine
+		if ( key->sprite == 1590 ) // machine
 		{
 			key->focalz -= 0.5;
 		}

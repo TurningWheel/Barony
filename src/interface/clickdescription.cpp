@@ -276,6 +276,35 @@ void clickDescription(int player, Entity* entity)
 						messagePlayer(player, MESSAGE_INSPECTION, Language::get(272));
 					}
 				}
+				else if ( entity->behavior == &::actWallLock
+					|| (entity->sprite >= 1585 && entity->sprite <= 1592) )
+				{
+					int wallLockState = entity->wallLockState;
+					int wallLockMaterial = entity->wallLockMaterial;
+					if ( entity->sprite >= 1585 && entity->sprite <= 1592 )
+					{
+						if ( Entity* parent = uidToEntity(entity->parent) )
+						{
+							wallLockState = parent->wallLockState;
+							wallLockMaterial = parent->wallLockMaterial;
+						}
+					}
+
+					if ( wallLockState == Entity::WallLockStates::LOCK_NO_KEY )
+					{
+						messagePlayer(player, MESSAGE_INSPECTION, Language::get(6394), Language::get(6383 + wallLockMaterial));
+					}
+					else
+					{
+							messagePlayer(player, MESSAGE_INSPECTION, Language::get(6395), Language::get(6383 + wallLockMaterial));
+					}
+				}
+				else if ( entity->behavior == &::actWallButton
+					|| entity->sprite == 1151
+					|| entity->sprite == 1152 )
+				{
+					messagePlayer(player, MESSAGE_INSPECTION, Language::get(6396));
+				}
 				else if ( entity->behavior == &actFloorDecoration )
 				{
 					if ( entity->sprite == 991 )

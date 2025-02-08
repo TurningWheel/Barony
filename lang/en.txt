@@ -6625,14 +6625,35 @@ Host to enable the game setting.
 6371 *grunt*#
 6372 *grunt*#
 6373 *grunt*#
-6374 You deactivate the lock.#
-6375 You activate the lock.#
-6376 The key is stuck tight!#
-6377 The lock is currently in use.#
-6378 You open the lock with your %s.#
-6379 You have no matching key for that lock.#
+6374 You reset the %s lock.#
+6375 You activate the %s lock.#
+6376 The %s key is stuck tight!#
+6377 The %s lock is currently in use.#
+6378 You activate the lock using your %s.#
+6379 You have no matching key for that %s lock.#
 6380 That button is already pressed.#
 6381 You press the button.#
 6382 You hit the button!#
+# lock types
+6383 stone#
+6384 bone#
+6385 bronze#
+6386 iron#
+6387 silver#
+6388 gold#
+6389 crystal#
+6390 machine#
+6391 key#
+6392 lock#
+6393 button#
+6394 You see a %s lock.#
+6395 You see a %s lock with a key.#
+6396 You see a button.#
+6397 Use %s key #
+6398 #
+6399 Reset %s lock#
+6400 Activate %s lock#
+6401 Press button#
+6402 (%d held)#
 
-6399 END#
+6599 END#

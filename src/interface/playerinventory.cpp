@@ -7455,6 +7455,54 @@ void Player::Inventory_t::closeInventory()
 	itemTooltipDisplay.scrolledToMax = 0;
 }
 
+int Player::Inventory_t::getKeyAmountForWallLock(Entity& entity) const
+{
+	int num = 0;
+	ItemType key = WOODEN_SHIELD;
+	switch ( entity.wallLockMaterial )
+	{
+	case 0:
+		key = KEY_STONE;
+		break;
+	case 1:
+		key = KEY_BONE;
+		break;
+	case 2:
+		key = KEY_BRONZE;
+		break;
+	case 3:
+		key = KEY_IRON;
+		break;
+	case 4:
+		key = KEY_SILVER;
+		break;
+	case 5:
+		key = KEY_GOLD;
+		break;
+	case 6:
+		key = KEY_CRYSTAL;
+		break;
+	case 7:
+		key = KEY_MACHINE;
+		break;
+	default:
+		break;
+	}
+
+	if ( key == WOODEN_SHIELD ) { return num; }
+
+	for ( node_t* node = stats[player.playernum]->inventory.first; node != nullptr; node = node->next )
+	{
+		Item* tempItem = (Item*)(node->element);
+		if ( !tempItem ) { continue; }
+		if ( tempItem->type == key )
+		{
+			num += tempItem->count;
+		}
+	}
+	return num;
+}
+
 Item* Player::Inventory_t::hasKeyForWallLock(Entity& entity) const
 {
 	ItemType key = WOODEN_SHIELD;

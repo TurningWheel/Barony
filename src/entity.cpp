@@ -372,6 +372,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	lightSourceFlicker(skill[5]),
 	lightSourceDelay(skill[6]),
 	lightSourceDelayCounter(skill[7]),
+	lightSourceRGB(skill[11]),
 	textSourceColorRGB(skill[0]),
 	textSourceVariables4W(skill[1]),
 	textSourceDelay(skill[2]),

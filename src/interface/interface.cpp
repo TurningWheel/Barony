@@ -23393,6 +23393,53 @@ std::string CalloutRadialMenu::setCalloutText(Field* field, const char* iconName
 	case CALLOUT_TYPE_SWITCH:
 		key = "switch";
 		break;
+		break;
+	case CALLOUT_TYPE_WALL_LOCK:
+	case CALLOUT_TYPE_WALL_LOCK_ON:
+	case CALLOUT_TYPE_WALL_LOCK_OFF:
+	{
+		if ( calloutType == CALLOUT_TYPE_WALL_LOCK )
+		{
+			key = "wall_lock";
+		}
+		else if ( calloutType == CALLOUT_TYPE_WALL_LOCK_ON )
+		{
+			key = "wall_lock_on";
+		}
+		else if ( calloutType == CALLOUT_TYPE_WALL_LOCK_OFF )
+		{
+			key = "wall_lock_off";
+		}
+		int wallLockMaterial = entity->wallLockMaterial;
+		if ( entity->sprite >= 1585 && entity->sprite <= 1592 )
+		{
+			if ( Entity* parent = uidToEntity(entity->parent) )
+			{
+				wallLockMaterial = parent->wallLockMaterial;
+			}
+		}
+
+		std::string objectName = Language::get(6383 + wallLockMaterial);
+
+		auto& textMap = text_map[key];
+		if ( setType == SET_CALLOUT_BANNER_TEXT )
+		{
+			setCalloutBannerTextFormatted(player, field, color, textMap.bannerHighlights,
+				textMap.bannerText.c_str(), objectName.c_str());
+		}
+		else
+		{
+			return getCalloutMessage(textMap, objectName.c_str(), targetPlayer);
+		}
+		return "";
+		break;
+	}
+	case CALLOUT_TYPE_WALL_BUTTON_ON:
+		key = "wall_button_on";
+		break;
+	case CALLOUT_TYPE_WALL_BUTTON_OFF:
+		key = "wall_button_off";
+		break;
 	case CALLOUT_TYPE_CHEST:
 		key = "chest";
 		break;
@@ -24172,6 +24219,58 @@ CalloutRadialMenu::CalloutType CalloutRadialMenu::getCalloutTypeForEntity(const 
 		else
 		{
 			type = CALLOUT_TYPE_SWITCH_OFF;
+		}
+	}
+	else if ( parent->behavior == &::actWallLock
+		|| (parent->sprite >= 1585 && parent->sprite <= 1592) )
+	{
+		int wallLockState = parent->wallLockState;
+		if ( parent->sprite >= 1585 && parent->sprite <= 1592 )
+		{
+			if ( Entity* lock = uidToEntity(parent->parent) )
+			{
+				wallLockState = lock->wallLockState;
+			}
+		}
+		if ( wallLockState == Entity::WallLockStates::LOCK_NO_KEY )
+		{
+			type = CALLOUT_TYPE_WALL_LOCK;
+		}
+		else if ( wallLockState == Entity::WallLockStates::LOCK_KEY_ACTIVE_START
+			|| wallLockState == Entity::WallLockStates::LOCK_KEY_ACTIVE )
+		{
+			type = CALLOUT_TYPE_WALL_LOCK_ON;
+		}
+		else if ( wallLockState == Entity::WallLockStates::LOCK_KEY_INACTIVE_START
+			|| wallLockState == Entity::WallLockStates::LOCK_KEY_INACTIVE )
+		{
+			type = CALLOUT_TYPE_WALL_LOCK_OFF;
+		}
+		else
+		{
+			type = CALLOUT_TYPE_NO_TARGET;
+		}
+	}
+	else if ( parent->behavior == &::actWallButton
+		|| parent->sprite == 1151
+		|| parent->sprite == 1152 )
+	{
+		int wallLockState = parent->wallLockState;
+		if ( parent->sprite == 1151
+			|| parent->sprite == 1152 )
+		{
+			if ( Entity* lock = uidToEntity(parent->parent) )
+			{
+				wallLockState = lock->wallLockState;
+			}
+		}
+		if ( wallLockState == 0 )
+		{
+			type = CALLOUT_TYPE_WALL_BUTTON_OFF;
+		}
+		else
+		{
+			type = CALLOUT_TYPE_WALL_BUTTON_ON;
 		}
 	}
 	else if ( parent->behavior == &actPowerCrystal )
@@ -26454,6 +26553,66 @@ bool CalloutRadialMenu::allowedInteractEntity(Entity& selectedEntity, bool updat
 		if ( updateInteractText )
 		{
 			strcat(interactText, Language::get(6353)); // "assist shrine"
+		}
+	}
+	else if ( (selectedEntity.behavior == &::actWallButton
+		|| selectedEntity.sprite == 1151
+		|| selectedEntity.sprite == 1152) && interactWorld )
+	{
+		if ( updateInteractText )
+		{
+			strcat(interactText, Language::get(6393)); // "button"
+		}
+	}
+	else if ( (selectedEntity.behavior == &::actWallLock
+		|| (selectedEntity.sprite >= 1585 && selectedEntity.sprite <= 1592)) && interactWorld )
+	{
+		int wallLockState = selectedEntity.wallLockState;
+		int wallLockMaterial = selectedEntity.wallLockMaterial;
+		if ( selectedEntity.sprite >= 1585 && selectedEntity.sprite <= 1592 )
+		{
+			if ( Entity* parent = uidToEntity(selectedEntity.parent) )
+			{
+				wallLockState = parent->wallLockState;
+				wallLockMaterial = parent->wallLockMaterial;
+			}
+		}
+		if ( wallLockState == Entity::WallLockStates::LOCK_NO_KEY )
+		{
+			if ( updateInteractText )
+			{
+				strcat(interactText, Language::get(6383 + wallLockMaterial));
+				strcat(interactText, " ");
+				strcat(interactText, Language::get(6392)); // "%s lock"
+			}
+		}
+		else if ( wallLockState == Entity::WallLockStates::LOCK_KEY_ACTIVE_START
+			|| wallLockState == Entity::WallLockStates::LOCK_KEY_ACTIVE )
+		{
+			if ( updateInteractText )
+			{
+				strcat(interactText, Language::get(6383 + wallLockMaterial));
+				strcat(interactText, " ");
+				strcat(interactText, Language::get(6391)); // "%s key"
+			}
+		}
+		else if ( wallLockState == Entity::WallLockStates::LOCK_KEY_INACTIVE_START
+			|| wallLockState == Entity::WallLockStates::LOCK_KEY_INACTIVE )
+		{
+			if ( updateInteractText )
+			{
+				strcat(interactText, Language::get(6383 + wallLockMaterial));
+				strcat(interactText, " ");
+				strcat(interactText, Language::get(6391)); // "%s key"
+			}
+		}
+		else
+		{
+			if ( updateInteractText )
+			{
+				strcpy(interactText, "");
+			}
+			return false;
 		}
 	}
 	else if ( (selectedEntity.behavior == &actTeleporter) && interactWorld )

@@ -1856,7 +1856,12 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 
 	// read map version number
 	fp->read(valid_data, sizeof(char), strlen("BARONY LMPV2.0"));
-	if ( strncmp(valid_data, "BARONY LMPV2.9", strlen("BARONY LMPV2.0")) == 0 )
+	if ( strncmp(valid_data, "BARONY LMPV3.0", strlen("BARONY LMPV2.0")) == 0 )
+	{
+		// light source rgb
+		editorVersion = 30;
+	}
+	else if ( strncmp(valid_data, "BARONY LMPV2.9", strlen("BARONY LMPV2.0")) == 0 )
 	{
 		// V2.9 version of editor - chest mimic chance, and gates, pressure plate triggers
 		editorVersion = 29;
@@ -2098,6 +2103,7 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 			case 27:
 			case 28:
 			case 29:
+			case 30:
 				// V2.0+ of editor version
 				switch ( checkSpriteType(sprite) )
 				{
@@ -2339,6 +2345,11 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 						fp->read(&entity->soundSourceOrigin, sizeof(Sint32), 1);
 						break;
 					case 15:
+						if ( editorVersion < 30 )
+						{
+							// set default data for rgb
+							setSpriteAttributes(entity, nullptr, nullptr);
+						}
 						fp->read(&entity->lightSourceAlwaysOn, sizeof(Sint32), 1);
 						fp->read(&entity->lightSourceBrightness, sizeof(Sint32), 1);
 						fp->read(&entity->lightSourceInvertPower, sizeof(Sint32), 1);
@@ -2346,6 +2357,10 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 						fp->read(&entity->lightSourceRadius, sizeof(Sint32), 1);
 						fp->read(&entity->lightSourceFlicker, sizeof(Sint32), 1);
 						fp->read(&entity->lightSourceDelay, sizeof(Sint32), 1);
+						if ( editorVersion >= 30 )
+						{
+							fp->read(&entity->lightSourceRGB, sizeof(Sint32), 1);
+						}
 						break;
 					case 16:
 					{
@@ -2706,7 +2721,7 @@ int saveMap(const char* filename2)
 			return 1;
 		}
 
-		fp->write("BARONY LMPV2.9", sizeof(char), strlen("BARONY LMPV2.0")); // magic code
+		fp->write("BARONY LMPV3.0", sizeof(char), strlen("BARONY LMPV2.0")); // magic code
 		fp->write(map.name, sizeof(char), 32); // map filename
 		fp->write(map.author, sizeof(char), 32); // map author
 		fp->write(&map.width, sizeof(Uint32), 1); // map width
@@ -2855,6 +2870,7 @@ int saveMap(const char* filename2)
 					fp->write(&entity->lightSourceRadius, sizeof(Sint32), 1);
 					fp->write(&entity->lightSourceFlicker, sizeof(Sint32), 1);
 					fp->write(&entity->lightSourceDelay, sizeof(Sint32), 1);
+					fp->write(&entity->lightSourceRGB, sizeof(Sint32), 1);
 					break;
 				case 16:
 				{

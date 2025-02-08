@@ -6230,7 +6230,7 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 			{
 				client_selected[player] = entity;
 				inrange[player] = true;
-				if ( entity->wallLockState == 0 )
+				if ( entity->wallLockState == Entity::WallLockStates::LOCK_NO_KEY )
 				{
 					if ( entity->wallLockPlayerInteracting == 0 )
 					{
@@ -6259,7 +6259,7 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 			{
 				client_selected[player] = entity;
 				inrange[player] = true;
-				if ( entity->wallLockState == 0 )
+				if ( entity->wallLockState == Entity::WallLockStates::LOCK_NO_KEY )
 				{
 					if ( entity->wallLockPlayerInteracting == players[player]->entity->getUID() )
 					{
@@ -6280,17 +6280,17 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		Entity* entity = uidToEntity(uid);
 		if ( entity && entity->behavior == &actWallLock )
 		{
-			if ( entity->wallLockState == 0 && net_packet->data[9] != 0 ) // success from client
+			if ( entity->wallLockState == Entity::WallLockStates::LOCK_NO_KEY && net_packet->data[9] != 0 ) // success from client
 			{
 				Uint16 key = SDLNet_Read16(&net_packet->data[10]);
 				if ( key >= WOODEN_SHIELD && key < NUMITEMS )
 				{
 					messagePlayer(player, MESSAGE_INTERACTION, Language::get(6378), items[key].getIdentifiedName());
 				}
-				entity->wallLockState = 1;
+				entity->wallLockState = Entity::WallLockStates::LOCK_KEY_START;
 				serverUpdateEntitySkill(entity, 0);
 			}
-			else if ( entity->wallLockState == 0 && net_packet->data[9] == 0 )
+			else if ( entity->wallLockState == Entity::WallLockStates::LOCK_NO_KEY && net_packet->data[9] == 0 )
 			{
 				messagePlayer(player, MESSAGE_INTERACTION, Language::get(6379));
 				playSoundEntity(entity, 152, 64);

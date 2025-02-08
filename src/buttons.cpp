@@ -2070,6 +2070,9 @@ void buttonSpriteProperties(button_t* my)
 				snprintf(spriteProperties[4], 3, "%d", static_cast<int>(selectedEntity[0]->lightSourceRadius));
 				snprintf(spriteProperties[5], 2, "%d", static_cast<int>(selectedEntity[0]->lightSourceFlicker));
 				snprintf(spriteProperties[6], 5, "%d", static_cast<int>(selectedEntity[0]->lightSourceDelay));
+				snprintf(spriteProperties[7], 4, "%d", static_cast<int>((selectedEntity[0]->lightSourceRGB & 0xFF)));
+				snprintf(spriteProperties[8], 4, "%d", static_cast<int>((selectedEntity[0]->lightSourceRGB >> 8) & 0xFF));
+				snprintf(spriteProperties[9], 4, "%d", static_cast<int>((selectedEntity[0]->lightSourceRGB >> 16) & 0xFF));
 				inputstr = spriteProperties[0];
 				cursorflash = ticks;
 				menuVisible = 0;
@@ -3362,6 +3365,10 @@ void buttonSpritePropertiesConfirm(button_t* my)
 				selectedEntity[0]->lightSourceRadius = (Sint32)atoi(spriteProperties[4]);
 				selectedEntity[0]->lightSourceFlicker = (Sint32)atoi(spriteProperties[5]);
 				selectedEntity[0]->lightSourceDelay = (Sint32)atoi(spriteProperties[6]);
+				selectedEntity[0]->lightSourceRGB = 0;
+				selectedEntity[0]->lightSourceRGB |= std::max(0, std::min(255, (Sint32)atoi(spriteProperties[7])));
+				selectedEntity[0]->lightSourceRGB |= std::max(0, std::min(255, (Sint32)atoi(spriteProperties[8]))) << 8;
+				selectedEntity[0]->lightSourceRGB |= std::max(0, std::min(255, (Sint32)atoi(spriteProperties[9]))) << 16;
 				break;
 			case 16: // text source
 			{

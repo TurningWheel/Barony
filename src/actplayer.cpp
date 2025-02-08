@@ -7335,17 +7335,23 @@ void actPlayer(Entity* my)
 						if ( selectedEntity[PLAYER_NUM]->sprite >= 1585 && selectedEntity[PLAYER_NUM]->sprite <= 1592 )
 						{
 							// wall lock keys, overwrite selection to base
-							if ( parent && parent->behavior == &actWallLock )
+							if ( Entity* parent = uidToEntity(selectedEntity[PLAYER_NUM]->parent) )
 							{
-								selectedEntity[PLAYER_NUM] = parent;
+								if ( parent->behavior == &actWallLock )
+								{
+									selectedEntity[PLAYER_NUM] = parent;
+								}
 							}
 						}
 						else if ( selectedEntity[PLAYER_NUM]->sprite == 1151 || selectedEntity[PLAYER_NUM]->sprite == 1152 )
 						{
 							// wall button, overwrite selection to base
-							if ( parent && parent->behavior == &actWallButton )
+							if ( Entity* parent = uidToEntity(selectedEntity[PLAYER_NUM]->parent) )
 							{
-								selectedEntity[PLAYER_NUM] = parent;
+								if ( parent->behavior == &actWallButton )
+								{
+									selectedEntity[PLAYER_NUM] = parent;
+								}
 							}
 						}
 
