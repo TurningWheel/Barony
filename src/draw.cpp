@@ -2531,6 +2531,18 @@ void drawEntities2D(long camx, long camy)
 				}
 				else
 				{
+					if ( entity->sprite == 131 ) // light source draw rgb
+					{
+						box.w = 12;
+						box.h = 12;
+						box.x = pos.x + 16;
+						box.y = pos.y + 4;
+						drawRect(&box, makeColorRGB(
+							(entity->lightSourceRGB >> 0) & 0xFF,
+							(entity->lightSourceRGB >> 8) & 0xFF,
+							(entity->lightSourceRGB >> 16) & 0xFF), 255);
+					}
+
 					// draw sprite normally from sprites list
 					drawImageScaled(sprites[entity->sprite], nullptr, &pos);
 				}
@@ -2621,8 +2633,17 @@ void drawEntities2D(long camx, long camy)
 								snprintf(tmpStr, 10, "Level: %d", entity->getStats()->LVL);
 								ttfPrintText(ttf8, padx, pady + 20, tmpStr);
 							}
+							break;
+						case 15: // light source
+							pady += 15;
+							strcpy(tmpStr, spriteEditorNameStrings[selectedEntity[0]->sprite]);
+							ttfPrintText(ttf8, padx, pady, tmpStr);
 
-
+							snprintf(tmpStr, sizeof(tmpStr), "R: %d G: %d B: %d",
+								(selectedEntity[0]->lightSourceRGB >> 0) & 0xFF,
+								(selectedEntity[0]->lightSourceRGB >> 8) & 0xFF,
+								(selectedEntity[0]->lightSourceRGB >> 16) & 0xFF);
+							ttfPrintText(ttf8, padx, pady + 10, tmpStr);
 							break;
 						case 2: //chest
 							pady += 5;
