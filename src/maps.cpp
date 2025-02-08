@@ -833,6 +833,11 @@ bool mapTileDiggable(const int x, const int y)
 			return false;
 		}
 	}
+
+	if ( map.tileHasAttribute(x, y, OBSTACLELAYER, map_t::TILE_ATTRIBUTE_NODIG) )
+	{
+		return false;
+	}
 	return true;
 }
 
@@ -8750,6 +8755,13 @@ void assignActions(map_t* map)
 				}
 			}
 				break;
+			case 216: // nodig tile
+				map->tileAttributes[OBSTACLELAYER + (static_cast<int>(entity->y) >> 4)
+					* MAPLAYERS + (static_cast<int>(entity->x) >> 4)
+					* MAPLAYERS * map->height] |= map_t::TILE_ATTRIBUTE_NODIG;
+				list_RemoveNode(entity->mynode);
+				entity = nullptr;
+				break;
             default:
                 break;
 		}
@@ -9236,4 +9248,14 @@ int loadMainMenuMap(bool blessedAdditionMaps, bool forceVictoryMap, int forcemap
 		assert(0 && "selected invalid main menu map");
 		return -1;
 	}
+}
+
+bool map_t::tileHasAttribute(int x, int y, int layer, Uint32 attribute)
+{
+	auto find = tileAttributes.find(layer + y * MAPLAYERS + x * MAPLAYERS * height);
+	if ( find != tileAttributes.end() )
+	{
+		return find->second & attribute;
+	}
+	return false;
 }

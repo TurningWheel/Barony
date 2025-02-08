@@ -1129,7 +1129,8 @@ char spriteEditorNameStrings[NUM_EDITOR_SPRITES][64] =
 	"WALL BUTTON (East)",
 	"WALL BUTTON (South)",
 	"WALL BUTTON (West)",
-	"WALL BUTTON (North)"
+	"WALL BUTTON (North)",
+	"NO DIG TILE"
 };
 
 char monsterEditorNameStrings[NUMMONSTERS][16] =

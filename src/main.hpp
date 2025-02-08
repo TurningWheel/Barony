@@ -463,6 +463,9 @@ typedef struct map_t
 	bool* monsterexcludelocations = nullptr;
 	bool* lootexcludelocations = nullptr;
 	std::set<int> liquidSfxPlayedTiles;
+	std::map<int, Uint32> tileAttributes;
+	static const Uint32 TILE_ATTRIBUTE_NODIG = 1 << 0;
+	bool tileHasAttribute(int x, int y, int layer, Uint32 attribute);
 	char filename[256];
 	~map_t()
 	{

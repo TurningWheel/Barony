@@ -1961,6 +1961,7 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 			list_FreeAll(map.worldUI);
 		}
 		destmap->liquidSfxPlayedTiles.clear();
+		destmap->tileAttributes.clear();
 	}
 	if ( destmap->tiles != nullptr )
 	{
