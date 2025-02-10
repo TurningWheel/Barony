@@ -1906,7 +1906,7 @@ void Entity::actWallLock()
 									}
 									else
 									{
-										messagePlayer(i, MESSAGE_INTERACTION, Language::get(6376));
+										messagePlayer(i, MESSAGE_INTERACTION, Language::get(6376), Language::get(6383 + wallLockMaterial));
 										playSoundEntity(this, 92, 64);
 										break;
 									}
