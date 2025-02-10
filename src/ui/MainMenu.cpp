@@ -7190,7 +7190,7 @@ bind_failed:
 			{Setting::Type::Boolean, "minotaur"},
 			{Setting::Type::Boolean, "random_traps"},
 			{Setting::Type::Boolean, "friendly_fire"},
-			{Setting::Type::Boolean, "assist_items"};
+			{Setting::Type::Boolean, "assist_items"},
 			{Setting::Type::Boolean, "hardcore_mode"},
 			{Setting::Type::Boolean, "classic_mode"},
 			{Setting::Type::Boolean, "keep_inventory"}});
