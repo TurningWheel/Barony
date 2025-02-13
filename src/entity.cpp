@@ -400,6 +400,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	wallLockPickHealth(skill[12]),
 	wallLockPickableSkeletonKey(skill[13]),
 	wallLockPreventLockpickExploit(skill[14]),
+	wallLockAutoGenKey(skill[15]),
 	effectPolymorph(skill[50]),
 	effectShapeshift(skill[53]),
 	entityShowOnMap(skill[59]),

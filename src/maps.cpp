@@ -2715,10 +2715,10 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		printlog("[SUBMAP GENERATOR] Found some junk tiles!");
 	}
 
-	for ( node = map.entities->first; node != nullptr; node = node->next )
+	// fix gate air-gap borders on citadel map next to perimeter gates.
+	if ( !strncmp(map.name, "Citadel", 7) )
 	{
-		// fix gate air-gap borders on citadel map next to perimeter gates.
-		if ( !strncmp(map.name, "Citadel", 7) )
+		for ( node = map.entities->first; node != nullptr; node = node->next )
 		{
 			Entity* gateEntity = (Entity*)node->element;
 			if ( gateEntity->sprite == 19 || gateEntity->sprite == 20 ) // N/S E/W gates take these sprite numbers in the editor.
@@ -3330,11 +3330,21 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			}
 		}
 	}
+
+	std::vector<std::pair<ItemType, int>> generateKeyItems;
 	for ( node = map.entities->first; node != nullptr; node = node->next )
 	{
 		entity = (Entity*)node->element;
 		x = entity->x / 16;
 		y = entity->y / 16;
+
+		if ( checkSpriteType(entity->sprite) == 30 ) // wall locks
+		{
+			if ( entity->wallLockAutoGenKey != 0 )
+			{
+				generateKeyItems.push_back(std::make_pair(static_cast<ItemType>((int)KEY_STONE + entity->wallLockMaterial), x + y * 10000));
+			}
+		}
 		if ( x >= 0 && x < map.width && y >= 0 && y < map.height )
 		{
 			if ( possiblelocations[y + x * map.height] )
@@ -5206,6 +5216,78 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				--numBatAreas;
 
 				areas.erase(areas.begin() + picked);
+				continue;
+			}
+		}
+	}
+
+	if ( generateKeyItems.size() > 0 )
+	{
+		std::vector<int> goodSpots;
+		for ( int x = 0; x < map.width; ++x )
+		{
+			for ( int y = 0; y < map.height; ++y )
+			{
+				if ( possiblelocations[y + x * map.height] == true )
+				{
+					goodSpots.push_back(x + 10000 * y);
+				}
+			}
+		}
+
+		for ( int c = 0; c < std::min(generateKeyItems.size(), goodSpots.size()); ++c )
+		{
+			// choose a random location from those available
+			int pick = map_rng.rand() % goodSpots.size();
+			int x = goodSpots[pick] % 10000;
+			int y = goodSpots[pick] / 10000;
+
+			goodSpots.erase(goodSpots.begin() + pick);
+
+			Entity* keyItem = newEntity(8, 1, map.entities, nullptr); // item
+			keyItem->x = x * 16.0;
+			keyItem->y = y * 16.0;
+			bool nopath = false;
+			for ( node = map.entities->first; node != NULL; node = node->next )
+			{
+				entity2 = (Entity*)node->element;
+				if ( entity2->sprite == 1 ) // note entity->behavior == nullptr at this point
+				{
+					list_t* path = generatePath(x, y, entity2->x / 16, entity2->y / 16,
+						keyItem, entity2, GeneratePathTypes::GENERATE_PATH_CHECK_EXIT, true);
+					if ( path == NULL )
+					{
+						nopath = true;
+					}
+					else
+					{
+						list_FreeAll(path);
+						free(path);
+					}
+					break;
+				}
+			}
+			
+			if ( !nopath )
+			{
+				setSpriteAttributes(keyItem, nullptr, nullptr);
+				keyItem->skill[10] = generateKeyItems[c].first + 2;
+				keyItem->skill[11] = 3;
+				keyItem->skill[12] = 0;
+				keyItem->skill[13] = 1;
+
+				itemsGeneratedList.push_back(keyItem->getUID());
+				numGenItems++;
+
+				possiblelocations[y + x * map.height] = false;
+				numpossiblelocations--;
+			}
+			else
+			{
+				// try again
+				list_RemoveNode(keyItem->mynode);
+				keyItem = nullptr;
+				--c;
 				continue;
 			}
 		}

@@ -379,13 +379,14 @@ char statuePropertyNames[2][16] =
 	"Statue ID",
 };
 
-char wallLockPropertyNames[5][32] =
+char wallLockPropertyNames[6][32] =
 {
 	"Material (0 - 7)",
 	"Invert Power (0 - 1)",
 	"Key Turnable (0 - 1)",
 	"Lockpickable (-1 - 100)",
-	"Skeleton Key Usable (0 - 1)"
+	"Skeleton Key Usable (0 - 1)",
+	"Auto Gen Matching Key (0 - 1)"
 };
 
 char wallButtonPropertyNames[2][49] =
@@ -8939,6 +8940,20 @@ int main(int argc, char** argv)
 										if ( propertyInt == 1 )
 										{
 											printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, color, "skeleton key usable");
+										}
+									}
+								}
+								else if ( i == 5 )
+								{
+									if ( propertyInt > 1 || propertyInt < 0 )
+									{
+										propertyPageError(i, 0); // reset to default 0.
+									}
+									else
+									{
+										if ( propertyInt == 1 )
+										{
+											printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, color, "auto gen key");
 										}
 									}
 								}

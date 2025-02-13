@@ -2222,6 +2222,7 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			entityNew->wallLockTurnable = entityToCopy->wallLockTurnable;
 			entityNew->wallLockPickable = entityToCopy->wallLockPickable;
 			entityNew->wallLockPickableSkeletonKey = entityToCopy->wallLockPickableSkeletonKey;
+			entityNew->wallLockAutoGenKey = entityToCopy->wallLockAutoGenKey;
 		}
 		else
 		{
@@ -2231,6 +2232,7 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			entityNew->wallLockTurnable = 0;
 			entityNew->wallLockPickable = -1;
 			entityNew->wallLockPickableSkeletonKey = 0;
+			entityNew->wallLockAutoGenKey = 0;
 		}
 	}
 	else if ( spriteType == 31 ) // wall buttons

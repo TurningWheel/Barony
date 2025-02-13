@@ -2432,6 +2432,7 @@ void buttonSpriteProperties(button_t* my)
 				snprintf(spriteProperties[2], 2, "%d", static_cast<int>(selectedEntity[0]->wallLockTurnable));
 				snprintf(spriteProperties[3], 4, "%d", static_cast<int>(selectedEntity[0]->wallLockPickable));
 				snprintf(spriteProperties[4], 2, "%d", static_cast<int>(selectedEntity[0]->wallLockPickableSkeletonKey));
+				snprintf(spriteProperties[5], 2, "%d", static_cast<int>(selectedEntity[0]->wallLockAutoGenKey));
 				inputstr = spriteProperties[0];
 				cursorflash = ticks;
 				menuVisible = 0;
@@ -2439,8 +2440,8 @@ void buttonSpriteProperties(button_t* my)
 				newwindow = 34;
 				subx1 = xres / 2 - 170;
 				subx2 = xres / 2 + 170;
-				suby1 = yres / 2 - 110;
-				suby2 = yres / 2 + 110;
+				suby1 = yres / 2 - 120;
+				suby2 = yres / 2 + 120;
 				strcpy(subtext, "Wall Lock Properties:");
 				break;
 			case 31:
@@ -3592,6 +3593,7 @@ void buttonSpritePropertiesConfirm(button_t* my)
 				selectedEntity[0]->wallLockTurnable = (Sint32)atoi(spriteProperties[2]);
 				selectedEntity[0]->wallLockPickable = (Sint32)atoi(spriteProperties[3]);
 				selectedEntity[0]->wallLockPickableSkeletonKey = (Sint32)atoi(spriteProperties[4]);
+				selectedEntity[0]->wallLockAutoGenKey = (Sint32)atoi(spriteProperties[5]);
 				break;
 			case 31:
 				selectedEntity[0]->wallLockInvertPower = (Sint32)atoi(spriteProperties[0]);

@@ -610,6 +610,7 @@ public:
 	Sint32& wallLockPickHealth; //skill[12]
 	Sint32& wallLockPickableSkeletonKey; //skill[13]
 	Sint32& wallLockPreventLockpickExploit; //skill[14]
+	Sint32& wallLockAutoGenKey; //skill[15]
 
 	//--THROWN PROJECTILE--
 	Sint32& thrownProjectilePower; //skill[19]

@@ -2503,6 +2503,7 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 					{
 						fp->read(&entity->wallLockPickable, sizeof(Sint32), 1);
 						fp->read(&entity->wallLockPickableSkeletonKey, sizeof(Sint32), 1);
+						fp->read(&entity->wallLockAutoGenKey, sizeof(Sint32), 1);
 					}
 					break;
 				case 31:
@@ -2988,6 +2989,7 @@ int saveMap(const char* filename2)
 					fp->write(&entity->wallLockTurnable, sizeof(Sint32), 1);
 					fp->write(&entity->wallLockPickable, sizeof(Sint32), 1);
 					fp->write(&entity->wallLockPickableSkeletonKey, sizeof(Sint32), 1);
+					fp->write(&entity->wallLockAutoGenKey, sizeof(Sint32), 1);
 					break;
 				case 31:
 					fp->write(&entity->wallLockInvertPower, sizeof(Sint32), 1);

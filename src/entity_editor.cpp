@@ -369,6 +369,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	wallLockPickHealth(skill[12]),
 	wallLockPickableSkeletonKey(skill[13]),
 	wallLockPreventLockpickExploit(skill[14]),
+	wallLockAutoGenKey(skill[15]),
 	thrownProjectilePower(skill[19]),
 	thrownProjectileCharge(skill[20]),
 	playerStartDir(skill[1]),
