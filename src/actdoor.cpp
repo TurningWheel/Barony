@@ -253,7 +253,7 @@ void actDoor(Entity* my)
 					}
 
 					bool insideEntity = false;
-					if ( entity->behavior == &actDoor )
+					if ( entity->behavior == &actDoor || entity->behavior == &actIronDoor )
 					{
 						real_t oldx = entity->x;
 						real_t oldy = entity->y;
@@ -331,6 +331,10 @@ void actDoorFrame(Entity* my)
 
 void Entity::doorHandleDamageMagic(int damage, Entity &magicProjectile, Entity *caster)
 {
+	if ( behavior == &::actIronDoor )
+	{
+		damage = 0;
+	}
 	doorHealth -= damage; //Decrease door health.
 	if ( caster )
 	{
@@ -340,7 +344,8 @@ void Entity::doorHandleDamageMagic(int damage, Entity &magicProjectile, Entity *
 			{
 				if ( magicProjectile.behavior == &actBomb )
 				{
-					messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(3617), items[magicProjectile.skill[21]].getIdentifiedName(), Language::get(674));
+					messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(3617), items[magicProjectile.skill[21]].getIdentifiedName(), 
+						behavior == &::actIronDoor ? Language::get(6414) : Language::get(674));
 				}
 				else
 				{
@@ -352,14 +357,16 @@ void Entity::doorHandleDamageMagic(int damage, Entity &magicProjectile, Entity *
 			{
 				if ( magicProjectile.behavior == &actBomb )
 				{
-					messagePlayer(caster->skill[2], MESSAGE_COMBAT_BASIC, Language::get(3618), items[magicProjectile.skill[21]].getIdentifiedName(), Language::get(674));
+					messagePlayer(caster->skill[2], MESSAGE_COMBAT_BASIC, Language::get(3618), items[magicProjectile.skill[21]].getIdentifiedName(), 
+						behavior == &::actIronDoor ? Language::get(6414) : Language::get(674));
 				}
 				else
 				{
-					messagePlayer(caster->skill[2], MESSAGE_COMBAT_BASIC, Language::get(378), Language::get(674));
+					messagePlayer(caster->skill[2], MESSAGE_COMBAT_BASIC, Language::get(378), 
+						behavior == &::actIronDoor ? Language::get(6414) : Language::get(674));
 				}
 			}
-			updateEnemyBar(caster, this, Language::get(674), doorHealth, doorMaxHealth,
+			updateEnemyBar(caster, this, behavior == &::actIronDoor ? Language::get(6414) : Language::get(674), doorHealth, doorMaxHealth,
 				false, DamageGib::DMG_DEFAULT);
 		}
 	}
@@ -373,4 +380,317 @@ void Entity::doorHandleDamageMagic(int damage, Entity &magicProjectile, Entity *
 	}
 
 	playSoundEntity(this, 28, 128);
+}
+
+void actIronDoor(Entity* my)
+{
+	if ( my )
+	{
+		my->actIronDoor();
+	}
+}
+
+void Entity::actIronDoor()
+{
+	Entity* entity;
+	int i, c;
+
+	auto& rng = entity_rng ? *entity_rng : local_rng;
+
+	if ( !doorInit )
+	{
+		createWorldUITooltip();
+
+		doorInit = 1;
+		doorStartAng = yaw;
+		doorHealth = 100;
+		doorMaxHealth = doorHealth;
+		doorOldHealth = doorHealth;
+		doorPreventLockpickExploit = 1;
+		doorLockpickHealth = 50;
+		if ( doorForceLockedUnlocked == 2 )
+		{
+			doorLocked = 0; // force unlocked.
+		}
+		else if ( doorForceLockedUnlocked <= 1 )
+		{
+			doorLocked = 1;
+			doorPreventLockpickExploit = 0;
+		}
+		doorOldStatus = doorStatus;
+		scalex = 1.01;
+		scaley = 1.01;
+		scalez = 1.01;
+		flags[BURNABLE] = false;
+	}
+	else
+	{
+		if ( multiplayer != CLIENT )
+		{
+			doorOldHealth = doorHealth;
+
+			// door mortality :p
+			if ( doorHealth <= 0 )
+			{
+				for ( c = 0; c < 5; c++ )
+				{
+					entity = spawnGib(this);
+					entity->flags[INVISIBLE] = false;
+					entity->sprite = 187; // Splinter.vox
+					entity->x = floor(x / 16) * 16 + 8;
+					entity->y = floor(y / 16) * 16 + 8;
+					entity->z = 0;
+					entity->z += -7 + local_rng.rand() % 14;
+					if ( !doorDir )
+					{
+						// horizontal door
+						entity->y += -4 + local_rng.rand() % 8;
+						if ( doorSmacked )
+						{
+							entity->yaw = PI;
+						}
+						else
+						{
+							entity->yaw = 0;
+						}
+					}
+					else
+					{
+						// vertical door
+						entity->x += -4 + local_rng.rand() % 8;
+						if ( doorSmacked )
+						{
+							entity->yaw = PI / 2;
+						}
+						else
+						{
+							entity->yaw = 3 * PI / 2;
+						}
+					}
+					entity->pitch = (local_rng.rand() % 360) * PI / 180.0;
+					entity->roll = (local_rng.rand() % 360) * PI / 180.0;
+					entity->vel_x = cos(entity->yaw) * (1.2 + (local_rng.rand() % 10) / 50.0);
+					entity->vel_y = sin(entity->yaw) * (1.2 + (local_rng.rand() % 10) / 50.0);
+					entity->vel_z = -.25;
+					entity->fskill[3] = 0.04;
+					serverSpawnGibForClient(entity);
+				}
+				playSoundEntity(this, 177, 64);
+				list_RemoveNode(mynode);
+				return;
+			}
+
+			if ( doorUnlockWhenPowered == 1 )
+			{
+				if ( circuit_status == CIRCUIT_ON )
+				{
+					if ( doorLocked == 1 )
+					{
+						doorLocked = 0;
+						playSoundEntity(this, 91, 64);
+					}
+				}
+				else if ( circuit_status == CIRCUIT_OFF )
+				{
+					if ( doorStatus == 0 ) // closed
+					{
+						if ( doorLocked == 0 )
+						{
+							doorLocked = 1;
+							playSoundEntity(this, 57, 64);
+						}
+					}
+				}
+			}
+
+			// using door
+			for ( i = 0; i < MAXPLAYERS; i++ )
+			{
+				if ( selectedEntity[i] == this || client_selected[i] == this )
+				{
+					if ( Player::getPlayerInteractEntity(i) && inrange[i] )
+					{
+						Entity* playerEntity = Player::getPlayerInteractEntity(i);
+						if ( !doorLocked )   // door unlocked
+						{
+							if ( !doorDir && !doorStatus )
+							{
+								// open door
+								doorStatus = 1 + (playerEntity->x > x);
+								playSoundEntity(this, 21, 96);
+								messagePlayer(i, MESSAGE_INTERACTION, Language::get(6404));
+								Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_DOOR_OPENED, "iron door", 1);
+							}
+							else if ( doorDir && !doorStatus )
+							{
+								// open door
+								doorStatus = 1 + (playerEntity->y < y);
+								playSoundEntity(this, 21, 96);
+								messagePlayer(i, MESSAGE_INTERACTION, Language::get(6404));
+								Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_DOOR_OPENED, "iron door", 1);
+							}
+							else
+							{
+								// close door
+								doorStatus = 0;
+								playSoundEntity(this, 22, 96);
+								if ( doorUnlockWhenPowered == 1 && circuit_status == CIRCUIT_OFF )
+								{
+									doorLocked = 1;
+									playSoundEntity(this, 57, 64);
+									messagePlayer(i, MESSAGE_INTERACTION, Language::get(6406));
+								}
+								else
+								{
+									messagePlayer(i, MESSAGE_INTERACTION, Language::get(6405));
+								}
+								Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_DOOR_CLOSED, "iron door", 1);
+							}
+						}
+						else
+						{
+							// door locked
+							messagePlayer(i, MESSAGE_INTERACTION, Language::get(6407));
+							playSoundEntity(this, 152, 64);
+						}
+					}
+				}
+			}
+		}
+
+		// door swinging
+		static const real_t doorSpeed = 0.15;
+		if ( !doorStatus )
+		{
+			// closing door
+			if ( yaw > doorStartAng )
+			{
+				yaw = std::max(doorStartAng, yaw - 0.15);
+			}
+			else if ( yaw < doorStartAng )
+			{
+				yaw = std::min(doorStartAng, yaw + 0.15);
+			}
+		}
+		else
+		{
+			// opening door
+			if ( doorStatus == 1 )
+			{
+				if ( yaw > doorStartAng + PI / 2 )
+				{
+					yaw = std::max(doorStartAng + PI / 2, yaw - doorSpeed);
+				}
+				else if ( yaw < doorStartAng + PI / 2 )
+				{
+					yaw = std::min(doorStartAng + PI / 2, yaw + doorSpeed);
+				}
+			}
+			else if ( doorStatus == 2 )
+			{
+				if ( yaw > doorStartAng - PI / 2 )
+				{
+					yaw = std::max(doorStartAng - PI / 2, yaw - doorSpeed);
+				}
+				else if ( yaw < doorStartAng - PI / 2 )
+				{
+					yaw = std::min(doorStartAng - PI / 2, yaw + doorSpeed);
+				}
+			}
+		}
+
+		// setting collision
+		if ( yaw == doorStartAng && flags[PASSABLE] )
+		{
+			// don't set impassable if someone's inside, otherwise do
+			node_t* node;
+			bool somebodyinside = false;
+			std::vector<list_t*> entLists;
+			if ( multiplayer == CLIENT )
+			{
+				entLists.push_back(map.entities); // clients use old map.entities method
+			}
+			else
+			{
+				entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(this, 2);
+			}
+			real_t oldmyx = x;
+			real_t oldmyy = y;
+			x = (static_cast<int>(x) >> 4) * 16.0 + 8.0; // door positioning isn't centred on tile so adjust
+			y = (static_cast<int>(y) >> 4) * 16.0 + 8.0;
+			for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end() && !somebodyinside; ++it )
+			{
+				list_t* currentList = *it;
+				for ( node = currentList->first; node != nullptr; node = node->next )
+				{
+					Entity* entity = (Entity*)node->element;
+					if ( entity == this || (entity->flags[PASSABLE] && entity->behavior != &actDeathGhost)
+						|| entity->behavior == &actDoorFrame )
+					{
+						continue;
+					}
+
+					bool insideEntity = false;
+					if ( entity->behavior == &actDoor || entity->behavior == &::actIronDoor )
+					{
+						real_t oldx = entity->x;
+						real_t oldy = entity->y;
+						entity->x = (static_cast<int>(entity->x) >> 4) * 16.0 + 8.0; // door positioning isn't centred on tile so adjust
+						entity->y = (static_cast<int>(entity->y) >> 4) * 16.0 + 8.0;
+						insideEntity = entityInsideEntity(this, entity);
+						entity->x = oldx;
+						entity->y = oldy;
+					}
+					else
+					{
+						insideEntity = entityInsideEntity(this, entity);
+					}
+
+					if ( insideEntity )
+					{
+						somebodyinside = true;
+						break;
+					}
+				}
+			}
+			x = oldmyx;
+			y = oldmyy;
+			if ( !somebodyinside )
+			{
+				focaly = 0;
+				if ( doorStartAng == 0 )
+				{
+					y -= 5;
+				}
+				else
+				{
+					x -= 5;
+				}
+				flags[PASSABLE] = false;
+			}
+		}
+		else if ( yaw != doorStartAng && !flags[PASSABLE] )
+		{
+			focaly = -5;
+			if ( doorStartAng == 0 )
+			{
+				y += 5;
+			}
+			else
+			{
+				x += 5;
+			}
+			flags[PASSABLE] = true;
+		}
+
+		// update for clients
+		if ( multiplayer == SERVER )
+		{
+			if ( doorOldStatus != doorStatus )
+			{
+				doorOldStatus = doorStatus;
+				serverUpdateEntitySkill(this, 3);
+			}
+		}
+	}
 }

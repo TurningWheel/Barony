@@ -2165,7 +2165,9 @@ int checkObstacle(long x, long y, Entity* my, Entity* target, bool useTileEntity
 						entity = (Entity*)node->element;
 						//++entCheck;
 						if ( !entity ) { continue; }
-						if ( entity->flags[PASSABLE] || entity == my || entity == target || entity->behavior == &actDoor )
+						if ( entity->flags[PASSABLE] || entity == my || entity == target 
+							|| entity->behavior == &actDoor
+							|| (entity->behavior == &actIronDoor && entity->doorLocked == 0) )
 						{
 							continue;
 						}

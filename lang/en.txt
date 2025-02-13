@@ -6655,5 +6655,31 @@ Host to enable the game setting.
 6400 Activate %s lock#
 6401 Press button#
 6402 (%d held)#
+6403 The iron door's lock is controlled elsewhere!#
+6404 You open the iron door.#
+6405 You close the iron door.#
+6406 The iron door locks as you close it!#
+6407 The iron door is locked!#
+6408 You lock the iron door!#
+6409 You see an iron door.#
+6410 Your spell destroys the iron door!#
+6411 You open the iron door!#
+6412 You hit the iron door!#
+6413 The iron door crashes open!#
+6414 iron door#
+6415 You unlock the iron door.#
+6416 You lock the iron door.#
+6417 You failed to unlock the iron door.#
+6418 This iron door is already unlocked.#
+6419 An arcane protection holds the iron door firmly in place!#
+6420 Close iron door#
+6421 Open iron door#
+6422 You lack the skill to pick this %s lock!#
+6423 There is already a %s key inside this lock.#
+6424 This %s lock can't be picked!#
+6425 The skeleton key doesn't fit!#
+6426 Your %s activates the %s lock!#
+6427 Your %s resets the %s lock.#
+6428 You failed to lockpick the %s lock.#
 
 6599 END#

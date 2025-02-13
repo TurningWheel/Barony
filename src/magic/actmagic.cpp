@@ -1799,7 +1799,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								spawnBloodVialOnMonsterDeath(hit.entity, hitstats, parent);
 							}
 						}
-						else if (hit.entity->behavior == &actDoor)
+						else if (hit.entity->behavior == &actDoor || hit.entity->behavior == &actIronDoor )
 						{
 							int damage = element->damage;
 							damage += (spellbookDamageBonus * damage);
@@ -1978,7 +1978,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								spawnBloodVialOnMonsterDeath(hit.entity, hitstats, parent);
 							}
 						}
-						else if ( hit.entity->behavior == &actDoor )
+						else if ( hit.entity->behavior == &actDoor || hit.entity->behavior == &actIronDoor )
 						{
 							int damage = element->damage;
 							damage += (spellbookDamageBonus * damage);
@@ -2312,7 +2312,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								}
 							}
 						}
-						else if (hit.entity->behavior == &actDoor)
+						else if ( hit.entity->behavior == &actDoor || hit.entity->behavior == &actIronDoor )
 						{
 							int damage = element->damage;
 							damage += (spellbookDamageBonus * damage);
@@ -2905,7 +2905,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								spawnBloodVialOnMonsterDeath(hit.entity, hitstats, parent);
 							}
 						}
-						else if ( hit.entity->behavior == &actDoor )
+						else if ( hit.entity->behavior == &actDoor || hit.entity->behavior == &actIronDoor )
 						{
 							int damage = element->damage;
 							damage += (spellbookDamageBonus * damage);
@@ -3430,7 +3430,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								spawnBloodVialOnMonsterDeath(hit.entity, hitstats, parent);
 							}
 						}
-						else if ( hit.entity->behavior == &actDoor )
+						else if ( hit.entity->behavior == &actDoor || hit.entity->behavior == &actIronDoor )
 						{
 							if ( spell->ID == SPELL_SLIME_FIRE )
 							{
@@ -3670,23 +3670,41 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				{
 					if ( hit.entity )
 					{
-						if (hit.entity->behavior == &actDoor)
+						if (hit.entity->behavior == &actDoor || hit.entity->behavior == &actIronDoor )
 						{
-							if ( parent && parent->behavior == &actPlayer && MFLAG_DISABLEOPENING )
+							if ( MFLAG_DISABLEOPENING || hit.entity->doorDisableOpening == 1 )
 							{
-								Uint32 color = makeColorRGB(255, 0, 255);
-								messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, 0xFFFFFFFF, Language::get(3096), Language::get(3097));
-								messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, color, Language::get(3101)); // disabled locking spell.
+								if ( parent && parent->behavior == &actPlayer )
+								{
+									Uint32 color = makeColorRGB(255, 0, 255);
+									if ( hit.entity->behavior == &actIronDoor )
+									{
+										messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, 0xFFFFFFFF, Language::get(3096), Language::get(6414));
+										messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, color, Language::get(6419)); // disabled locking spell.
+									}
+									else
+									{
+										messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, 0xFFFFFFFF, Language::get(3096), Language::get(3097));
+										messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, color, Language::get(3101)); // disabled locking spell.
+									}
+								}
 							}
 							else
 							{
 								playSoundEntity(hit.entity, 92, 64);
-								hit.entity->skill[5] = 1; //Lock the door.
+								hit.entity->doorLocked = 1; //Lock the door.
 								if ( parent )
 								{
 									if ( parent->behavior == &actPlayer )
 									{
-										messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(399));
+										if ( hit.entity->behavior == &actIronDoor )
+										{
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(6408));
+										}
+										else
+										{
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(399));
+										}
 										magicOnEntityHit(parent, my, hit.entity, hitstats, 0, 0, 0, spell ? spell->ID : SPELL_NONE);
 									}
 								}
@@ -3780,15 +3798,23 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				{
 					if (hit.entity)
 					{
-						if (hit.entity->behavior == &actDoor)
+						if ( hit.entity->behavior == &actDoor || hit.entity->behavior == &actIronDoor )
 						{
 							if ( MFLAG_DISABLEOPENING || hit.entity->doorDisableOpening == 1 )
 							{
 								if ( parent && parent->behavior == &actPlayer )
 								{
 									Uint32 color = makeColorRGB(255, 0, 255);
-									messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, 0xFFFFFFFF, Language::get(3096), Language::get(3097));
-									messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, color, Language::get(3101)); // disabled opening spell.
+									if ( hit.entity->behavior == &actIronDoor )
+									{
+										messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, 0xFFFFFFFF, Language::get(3096), Language::get(6414));
+										messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, color, Language::get(6419)); // disabled opening spell.
+									}
+									else
+									{
+										messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, 0xFFFFFFFF, Language::get(3096), Language::get(3097));
+										messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, color, Language::get(3101)); // disabled opening spell.
+									}
 								}
 							}
 							else
@@ -3799,7 +3825,14 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								{
 									if ( parent && parent->behavior == &actPlayer )
 									{
-										Compendium_t::Events_t::eventUpdateWorld(parent->skill[2], Compendium_t::CPDM_DOOR_UNLOCKED, "door", 1);
+										if ( hit.entity->behavior == &actIronDoor )
+										{
+											Compendium_t::Events_t::eventUpdateWorld(parent->skill[2], Compendium_t::CPDM_DOOR_UNLOCKED, "iron door", 1);
+										}
+										else
+										{
+											Compendium_t::Events_t::eventUpdateWorld(parent->skill[2], Compendium_t::CPDM_DOOR_UNLOCKED, "door", 1);
+										}
 									}
 								}
 								magicOnEntityHit(parent, my, hit.entity, hitstats, 0, 0, 0, spell ? spell->ID : SPELL_NONE);
@@ -3820,7 +3853,14 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								{
 									if ( parent->behavior == &actPlayer)
 									{
-										messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(402));
+										if ( hit.entity->behavior == &actIronDoor )
+										{
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(6411));
+										}
+										else
+										{
+											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(402));
+										}
 									}
 								}
 							}
@@ -7196,6 +7236,7 @@ bool Entity::magicOrbitingCollision()
 			if ( entity->behavior != &actMonster 
 				&& entity->behavior != &actPlayer
 				&& entity->behavior != &actDoor
+				&& entity->behavior != &::actIronDoor
 				&& !(entity->isDamageableCollider() && entity->isColliderDamageableByMagic())
 				&& !entity->isInertMimic()
 				&& entity->behavior != &::actChest 

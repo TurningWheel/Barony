@@ -43,27 +43,86 @@ void Item::applySkeletonKey(int player, Entity& entity)
 			Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_LOCKPICK_CHESTS_LOCK, TOOL_SKELETONKEY, 1);
 		}
 	}
-	else if ( entity.behavior == &actDoor )
+	else if ( entity.behavior == &actWallLock )
 	{
-		playSoundEntity(&entity, 91, 64);
+		if ( entity.wallLockState == Entity::WallLockStates::LOCK_NO_KEY )
+		{
+			if ( entity.wallLockPickableSkeletonKey == 1 )
+			{
+				if ( entity.wallLockPower == 1 )
+				{
+					playSoundEntity(&entity, 57, 64);
+					entity.wallLockPower = 2; // turn off later in actWallLock
+					messagePlayer(player, MESSAGE_INTERACTION, Language::get(6427), items[TOOL_SKELETONKEY].getIdentifiedName(), 
+						Language::get(6383 + entity.wallLockMaterial));
+				}
+				else if ( entity.wallLockPower == 0 )
+				{
+					playSoundEntity(&entity, 91, 64);
+					entity.wallLockPower = 3; // turn on later in actWallLock
+					messagePlayer(player, MESSAGE_INTERACTION, Language::get(6426), items[TOOL_SKELETONKEY].getIdentifiedName(), 
+						Language::get(6383 + entity.wallLockMaterial));
+				}
+			}
+			else
+			{
+				messagePlayer(player, MESSAGE_INTERACTION, Language::get(6425));
+				playSoundEntity(&entity, 92, 64);
+			}
+		}
+		else
+		{
+			messagePlayer(player, MESSAGE_INTERACTION, Language::get(6423), Language::get(6383 + entity.wallLockMaterial));
+			playSoundEntity(&entity, 92, 64);
+		}
+	}
+	else if ( entity.behavior == &actDoor || entity.behavior == &actIronDoor )
+	{
 		if ( entity.doorLocked )
 		{
 			if ( entity.doorDisableLockpicks == 1 )
 			{
-				Uint32 color = makeColorRGB(255, 0, 255);
-				messagePlayerColor(player, MESSAGE_INTERACTION, color, Language::get(3101)); // disabled.
+				if ( entity.behavior == &actIronDoor )
+				{
+					Uint32 color = makeColorRGB(255, 255, 255);
+					playSoundEntity(&entity, 92, 64);
+					messagePlayerColor(player, MESSAGE_INTERACTION, color, Language::get(6403)); // disabled.
+				}
+				else
+				{
+					Uint32 color = makeColorRGB(255, 0, 255);
+					playSoundEntity(&entity, 92, 64);
+					messagePlayerColor(player, MESSAGE_INTERACTION, color, Language::get(3101)); // disabled.
+				}
 			}
 			else
 			{
-				messagePlayer(player, MESSAGE_INTERACTION, Language::get(1099));
+				playSoundEntity(&entity, 91, 64);
+				if ( entity.behavior == &actIronDoor )
+				{
+					messagePlayer(player, MESSAGE_INTERACTION, Language::get(6415));
+					Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_DOOR_UNLOCKED, "iron door", 1);
+				}
+				else
+				{
+					messagePlayer(player, MESSAGE_INTERACTION, Language::get(1099));
+					Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_DOOR_UNLOCKED, "door", 1);
+				}
 				entity.doorLocked = 0;
-				Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_DOOR_UNLOCKED, "door", 1);
 				Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_LOCKPICK_DOOR_UNLOCK, TOOL_SKELETONKEY, 1);
 			}
 		}
 		else
 		{
-			messagePlayer(player, MESSAGE_INTERACTION, Language::get(1100));
+			playSoundEntity(&entity, 91, 64);
+			if ( entity.behavior == &actIronDoor )
+			{
+				messagePlayer(player, MESSAGE_INTERACTION, Language::get(6416));
+			}
+			else
+			{
+				messagePlayer(player, MESSAGE_INTERACTION, Language::get(1100));
+			}
 			entity.doorLocked = 1;
 			Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_LOCKPICK_DOOR_LOCK, TOOL_SKELETONKEY, 1);
 		}
@@ -240,7 +299,10 @@ void Item::applyLockpick(int player, Entity& entity)
 				{
 					if ( stats[player]->getProficiency(PRO_LOCKPICKING) < SKILL_LEVEL_EXPERT )
 					{
-						players[player]->entity->increaseSkill(PRO_LOCKPICKING);
+						if ( players[player]->entity )
+						{
+							players[player]->entity->increaseSkill(PRO_LOCKPICKING);
+						}
 					}
 					else
 					{
@@ -282,7 +344,10 @@ void Item::applyLockpick(int player, Entity& entity)
 					{
 						if ( local_rng.rand() % 10 == 0 )
 						{
-							players[player]->entity->increaseSkill(PRO_LOCKPICKING);
+							if ( players[player]->entity )
+							{
+								players[player]->entity->increaseSkill(PRO_LOCKPICKING);
+							}
 							tryDegradeLockpick = false;
 						}
 					}
@@ -336,7 +401,7 @@ void Item::applyLockpick(int player, Entity& entity)
 			messagePlayer(player, MESSAGE_INTERACTION, Language::get(1105));
 		}
 	}
-	else if ( entity.behavior == &actDoor )
+	else if ( entity.behavior == &actDoor || entity.behavior == &actIronDoor )
 	{
 		if ( entity.doorLocked )
 		{
@@ -352,8 +417,18 @@ void Item::applyLockpick(int player, Entity& entity)
 
 			if ( entity.doorDisableLockpicks == 1 )
 			{
-				Uint32 color = makeColorRGB(255, 0, 255);
-				messagePlayerColor(player, MESSAGE_INTERACTION, color, Language::get(3101)); // disabled.
+				if ( entity.behavior == &actIronDoor )
+				{
+					Uint32 color = makeColorRGB(255, 255, 255);
+					playSoundEntity(&entity, 92, 64);
+					messagePlayerColor(player, MESSAGE_INTERACTION, color, Language::get(6403)); // disabled.
+				}
+				else
+				{
+					Uint32 color = makeColorRGB(255, 0, 255);
+					playSoundEntity(&entity, 92, 64);
+					messagePlayerColor(player, MESSAGE_INTERACTION, color, Language::get(3101)); // disabled.
+				}
 			}
 			else if ( capstoneUnlocked 
 				|| stats[player]->getModifiedProficiency(PRO_LOCKPICKING) > local_rng.rand() % 200
@@ -361,21 +436,33 @@ void Item::applyLockpick(int player, Entity& entity)
 			{
 				//Unlock door.
 				playSoundEntity(&entity, 91, 64);
-				messagePlayer(player, MESSAGE_INTERACTION, Language::get(1099));
-				Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_DOOR_UNLOCKED, "door", 1);
+				if ( entity.behavior == &actIronDoor )
+				{
+					messagePlayer(player, MESSAGE_INTERACTION, Language::get(6415));
+					Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_DOOR_UNLOCKED, "iron door", 1);
+				}
+				else
+				{
+					messagePlayer(player, MESSAGE_INTERACTION, Language::get(1099));
+					Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_DOOR_UNLOCKED, "door", 1);
+				}
 				Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_LOCKPICK_DOOR_UNLOCK, TOOL_LOCKPICK, 1);
 				entity.doorLocked = 0;
 				if ( !entity.doorPreventLockpickExploit )
 				{
 					if ( stats[player]->getProficiency(PRO_LOCKPICKING) < SKILL_LEVEL_SKILLED )
 					{
-						players[player]->entity->increaseSkill(PRO_LOCKPICKING);
+						if ( players[player]->entity )
+						{
+							players[player]->entity->increaseSkill(PRO_LOCKPICKING);
+						}
 					}
 					else
 					{
 						if ( local_rng.rand() % 20 == 0 )
 						{
-							messagePlayer(player, MESSAGE_INTERACTION, Language::get(3689), Language::get(674));
+							messagePlayer(player, MESSAGE_INTERACTION, Language::get(3689), 
+								entity.behavior == &actIronDoor ? Language::get(6414) : Language::get(674));
 						}
 					}
 				}
@@ -385,7 +472,14 @@ void Item::applyLockpick(int player, Entity& entity)
 			{
 				//Failed to unlock door.
 				playSoundEntity(&entity, 92, 64);
-				messagePlayer(player, MESSAGE_INTERACTION, Language::get(1106));
+				if ( entity.behavior == &actIronDoor )
+				{
+					messagePlayer(player, MESSAGE_INTERACTION, Language::get(6417));
+				}
+				else
+				{
+					messagePlayer(player, MESSAGE_INTERACTION, Language::get(1106));
+				}
 				bool tryDegradeLockpick = true;
 				if ( !entity.doorPreventLockpickExploit )
 				{
@@ -393,7 +487,10 @@ void Item::applyLockpick(int player, Entity& entity)
 					{
 						if ( local_rng.rand() % 10 == 0 )
 						{
-							players[player]->entity->increaseSkill(PRO_LOCKPICKING);
+							if ( players[player]->entity )
+							{
+								players[player]->entity->increaseSkill(PRO_LOCKPICKING);
+							}
 							tryDegradeLockpick = false;
 						}
 					}
@@ -401,7 +498,8 @@ void Item::applyLockpick(int player, Entity& entity)
 					{
 						if ( local_rng.rand() % 20 == 0 )
 						{
-							messagePlayer(player, MESSAGE_INTERACTION, Language::get(3689), Language::get(674));
+							messagePlayer(player, MESSAGE_INTERACTION, Language::get(3689), 
+								entity.behavior == &actIronDoor ? Language::get(6414) : Language::get(674));
 							tryDegradeLockpick = false;
 						}
 					}
@@ -444,7 +542,160 @@ void Item::applyLockpick(int player, Entity& entity)
 		}
 		else
 		{
-			messagePlayer(player, MESSAGE_INTERACTION, Language::get(1107));
+			if ( entity.behavior == &actIronDoor )
+			{
+				messagePlayer(player, MESSAGE_INTERACTION, Language::get(6418));
+			}
+			else
+			{
+				messagePlayer(player, MESSAGE_INTERACTION, Language::get(1107));
+			}
+		}
+	}
+	else if ( entity.behavior == &actWallLock )
+	{
+		if ( entity.wallLockState != Entity::WallLockStates::LOCK_NO_KEY )
+		{
+			playSoundEntity(&entity, 92, 64);
+			messagePlayer(player, MESSAGE_INTERACTION, Language::get(6423), Language::get(6383 + entity.wallLockMaterial));
+		}
+		else if ( entity.wallLockPickable == -1 )
+		{
+			// can't be picked
+			playSoundEntity(&entity, 92, 64);
+			messagePlayer(player, MESSAGE_INTERACTION, Language::get(6424), Language::get(6383 + entity.wallLockMaterial));
+		}
+		else if ( entity.wallLockPower == 0 )
+		{
+			// 3-17 damage on lockpick depending on skill
+			// 0 skill is 3 damage
+			// 20 skill is 4-5 damage
+			// 60 skill is 6-11 damage
+			// 100 skill is 8-17 damage
+			bool wasLocked = entity.wallLockPickHealth > 0;
+			int lockpickDamageToLock = 3 + stats[player]->getModifiedProficiency(PRO_LOCKPICKING) / 20
+				+ local_rng.rand() % std::max(1, stats[player]->getModifiedProficiency(PRO_LOCKPICKING) / 10);
+
+			int skillLVL = stats[player]->getModifiedProficiency(PRO_LOCKPICKING) + statGetPER(stats[player], players[player]->entity);
+			if ( wasLocked && (skillLVL < entity.wallLockPickable) )
+			{
+				// unable to lockpick
+				playSoundEntity(&entity, 92, 64);
+				messagePlayer(player, MESSAGE_INTERACTION, Language::get(6422), Language::get(6383 + entity.wallLockMaterial));
+			}
+			else
+			{
+				entity.wallLockPickHealth = std::max(0, entity.wallLockPickHealth - lockpickDamageToLock);
+				bool unlockedFromLockpickHealth = (entity.wallLockPickHealth == 0);
+
+				if ( capstoneUnlocked
+					|| stats[player]->getModifiedProficiency(PRO_LOCKPICKING) > local_rng.rand() % 200
+					|| unlockedFromLockpickHealth )
+				{
+					entity.wallLockPickHealth = 0;
+
+					//Unlock lock.
+					playSoundEntity(&entity, 91, 64);
+
+					if ( !entity.wallLockPreventLockpickExploit )
+					{
+						if ( players[player]->entity )
+						{
+							players[player]->entity->increaseSkill(PRO_LOCKPICKING);
+						}
+					}
+					entity.wallLockPreventLockpickExploit = 1;
+
+					entity.wallLockPower = 3; // turn on later in actWallLock
+					messagePlayer(player, MESSAGE_INTERACTION, Language::get(6426), items[TOOL_LOCKPICK].getIdentifiedName(),
+						Language::get(6383 + entity.wallLockMaterial));
+				}
+				else
+				{
+					//Failed to unlock lock.
+					playSoundEntity(&entity, 92, 64);
+					messagePlayer(player, MESSAGE_INTERACTION, Language::get(6428), Language::get(6383 + entity.wallLockMaterial));
+
+					bool tryDegradeLockpick = true;
+					if ( !entity.wallLockPreventLockpickExploit )
+					{
+						if ( stats[player]->getProficiency(PRO_LOCKPICKING) < SKILL_LEVEL_SKILLED )
+						{
+							if ( local_rng.rand() % 10 == 0 )
+							{
+								if ( players[player]->entity )
+								{
+									players[player]->entity->increaseSkill(PRO_LOCKPICKING);
+								}
+								tryDegradeLockpick = false;
+							}
+						}
+						else
+						{
+							if ( local_rng.rand() % 20 == 0 )
+							{
+								/*messagePlayer(player, MESSAGE_INTERACTION, Language::get(3689),
+									entity.behavior == &actIronDoor ? Language::get(6414) : Language::get(674));*/
+								tryDegradeLockpick = false;
+							}
+						}
+					}
+
+					if ( tryDegradeLockpick )
+					{
+						if ( local_rng.rand() % 5 == 0 )
+						{
+							if ( player >= 0 && players[player]->isLocalPlayer() )
+							{
+								if ( count > 1 )
+								{
+									newItem(type, status, beatitude, count - 1, appearance, identified, &stats[player]->inventory);
+								}
+							}
+							stats[player]->weapon->count = 1;
+							stats[player]->weapon->status = static_cast<Status>(stats[player]->weapon->status - 1);
+							if ( status != BROKEN )
+							{
+								messagePlayer(player, MESSAGE_INTERACTION | MESSAGE_EQUIPMENT, Language::get(1103));
+							}
+							else
+							{
+								messagePlayer(player, MESSAGE_INTERACTION | MESSAGE_EQUIPMENT, Language::get(1104));
+							}
+							if ( player > 0 && multiplayer == SERVER )
+							{
+								strcpy((char*)(net_packet->data), "ARMR");
+								net_packet->data[4] = 5;
+								net_packet->data[5] = stats[player]->weapon->status;
+								net_packet->address.host = net_clients[player - 1].host;
+								net_packet->address.port = net_clients[player - 1].port;
+								net_packet->len = 6;
+								sendPacketSafe(net_sock, -1, net_packet, player - 1);
+							}
+						}
+					}
+				}
+			}
+		}
+		else
+		{
+			if ( entity.wallLockPower == 1 )
+			{
+				int skillLVL = stats[player]->getModifiedProficiency(PRO_LOCKPICKING) + statGetPER(stats[player], players[player]->entity);
+				if ( skillLVL < entity.wallLockPickable )
+				{
+					// unable to lockpick
+					playSoundEntity(&entity, 92, 64);
+					messagePlayer(player, MESSAGE_INTERACTION, Language::get(6422), Language::get(6383 + entity.wallLockMaterial));
+				}
+				else
+				{
+					playSoundEntity(&entity, 57, 64);
+					entity.wallLockPower = 2; // turn off later in actWallLock
+					messagePlayer(player, MESSAGE_INTERACTION, Language::get(6427), items[TOOL_LOCKPICK].getIdentifiedName(),
+						Language::get(6383 + entity.wallLockMaterial));
+				}
+			}
 		}
 	}
 	else if ( entity.behavior == &actMonster )

@@ -371,6 +371,7 @@ bool Player::Ghost_t::allowedInteractEntity(Entity& entity)
 {
 	if ( entity.behavior == &actItem
 		|| entity.behavior == &actDoor
+		|| entity.behavior == &actIronDoor
 		|| entity.behavior == &actSwitch
 		|| entity.behavior == &actSwitchWithTimer
 		|| entity.behavior == &actPowerCrystal

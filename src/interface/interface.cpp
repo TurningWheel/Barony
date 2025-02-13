@@ -11398,7 +11398,7 @@ void EnemyHPDamageBarHandler::EnemyHPDetails::updateWorldCoordinates()
 				}
 			}
 		}
-		if ( entity->behavior == &actDoor && entity->flags[PASSABLE] )
+		if ( (entity->behavior == &actDoor || entity->behavior == &actIronDoor) && entity->flags[PASSABLE] )
 		{
 			if ( entity->doorStartAng == 0 )
 			{

@@ -412,7 +412,7 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 				}
 			}
 		}
-		else if ( hit.entity->behavior == &actDoor )
+		else if ( hit.entity->behavior == &actDoor || hit.entity->behavior == &actIronDoor )
 		{
 			hit.entity->doorHandleDamageMagic(damage, my, parent);
 		}
@@ -556,7 +556,7 @@ void spellEffectPoison(Entity& my, spellElement_t& element, Entity* parent, int 
 				messagePlayerColor(player, MESSAGE_COMBAT, color, Language::get(3428));
 			}
 		}
-		else if ( hit.entity->behavior == &actDoor )
+		else if ( hit.entity->behavior == &actDoor || hit.entity->behavior == &actIronDoor )
 		{
 			hit.entity->doorHandleDamageMagic(damage, my, parent);
 		}

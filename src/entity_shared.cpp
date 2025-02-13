@@ -238,6 +238,10 @@ int checkSpriteType(Sint32 sprite)
 	case 215:
 		// wall buttons
 		return 31;
+	case 217:
+	case 218:
+		// iron doors
+		return 32;
 	default:
 		return 0;
 		break;
@@ -912,7 +916,7 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 	
 };
 
-char spriteEditorNameStrings[NUM_EDITOR_SPRITES][64] =
+std::vector<const char*> spriteEditorNameStrings =
 {
 	"NULL",	
 	"PLAYER START",
@@ -1130,7 +1134,9 @@ char spriteEditorNameStrings[NUM_EDITOR_SPRITES][64] =
 	"WALL BUTTON (South)",
 	"WALL BUTTON (West)",
 	"WALL BUTTON (North)",
-	"NO DIG TILE"
+	"NO DIG TILE",
+	"IRON DOOR (North-South)",
+	"IRON DOOR (East-West)"
 };
 
 char monsterEditorNameStrings[NUMMONSTERS][16] =
@@ -2062,6 +2068,25 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			entityNew->doorDisableOpening = 0;
 		}
 	}
+	else if ( spriteType == 32 ) // iron doors
+	{
+		if ( entityToCopy != nullptr )
+		{
+			// copy old entity attributes to newly created.
+			entityNew->doorUnlockWhenPowered = entityToCopy->doorUnlockWhenPowered;
+			entityNew->doorDisableLockpicks = entityToCopy->doorDisableLockpicks;
+			entityNew->doorForceLockedUnlocked = entityToCopy->doorForceLockedUnlocked;
+			entityNew->doorDisableOpening = entityToCopy->doorDisableOpening;
+		}
+		else
+		{
+			// set default new entity attributes.
+			entityNew->doorUnlockWhenPowered = 1;
+			entityNew->doorDisableLockpicks = 1;
+			entityNew->doorDisableOpening = 1;
+			entityNew->doorForceLockedUnlocked = 1;
+		}
+	}
 	else if ( spriteType == 22 ) // gates
 	{
 		if ( entityToCopy != nullptr )
@@ -2195,6 +2220,8 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			entityNew->wallLockMaterial = entityToCopy->wallLockMaterial;
 			entityNew->wallLockInvertPower = entityToCopy->wallLockInvertPower;
 			entityNew->wallLockTurnable = entityToCopy->wallLockTurnable;
+			entityNew->wallLockPickable = entityToCopy->wallLockPickable;
+			entityNew->wallLockPickableSkeletonKey = entityToCopy->wallLockPickableSkeletonKey;
 		}
 		else
 		{
@@ -2202,6 +2229,8 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			entityNew->wallLockMaterial = 0;
 			entityNew->wallLockInvertPower = 0;
 			entityNew->wallLockTurnable = 0;
+			entityNew->wallLockPickable = -1;
+			entityNew->wallLockPickableSkeletonKey = 0;
 		}
 	}
 	else if ( spriteType == 31 ) // wall buttons

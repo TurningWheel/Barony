@@ -198,6 +198,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	doorDisableOpening(skill[13]),
 	doorLockpickHealth(skill[14]),
 	doorOldHealth(skill[15]),
+	doorUnlockWhenPowered(skill[16]),
 	particleTimerDuration(skill[0]),
 	particleTimerEndAction(skill[1]),
 	particleTimerEndSprite(skill[3]),
@@ -395,6 +396,10 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	wallLockPower(skill[8]),
 	wallLockInit(skill[9]),
 	wallLockTimer(skill[10]),
+	wallLockPickable(skill[11]),
+	wallLockPickHealth(skill[12]),
+	wallLockPickableSkeletonKey(skill[13]),
+	wallLockPreventLockpickExploit(skill[14]),
 	effectPolymorph(skill[50]),
 	effectShapeshift(skill[53]),
 	entityShowOnMap(skill[59]),
@@ -8449,7 +8454,9 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 				}
 			}
-			else if ( hit.entity->behavior == &actDoor || hit.entity->behavior == &::actFurniture || hit.entity->behavior == &::actChest
+			else if ( hit.entity->behavior == &actDoor 
+				|| hit.entity->behavior == &::actIronDoor
+				|| hit.entity->behavior == &::actFurniture || hit.entity->behavior == &::actChest
 				|| mimic
 				|| (hit.entity->isDamageableCollider() && hit.entity->isColliderDamageableByMelee()) )
 			{
@@ -8540,9 +8547,14 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 				}
 
+				if ( hit.entity->behavior == &::actIronDoor )
+				{
+					damage = 0;
+				}
+
 				int& entityHP = hit.entity->behavior == &actColliderDecoration ? hit.entity->colliderCurrentHP :
 					(hit.entity->behavior == &::actChest ? hit.entity->chestHealth :
-					(hit.entity->behavior == &actDoor ? hit.entity->doorHealth : 
+					((hit.entity->behavior == &actDoor || hit.entity->behavior == &::actIronDoor) ? hit.entity->doorHealth :
 					((mimic && hitstats) ? hitstats->HP :
 						hit.entity->furnitureHealth)));
 				int oldHP = entityHP;
@@ -8566,6 +8578,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 					if ( hit.entity->behavior == &actDoor )
 					{
 						messagePlayer(player, MESSAGE_COMBAT_BASIC, Language::get(666));
+					}
+					else if ( hit.entity->behavior == &::actIronDoor )
+					{
+						messagePlayer(player, MESSAGE_COMBAT_BASIC, Language::get(6412));
 					}
 					else if ( hit.entity->behavior == &::actChest )
 					{
@@ -8638,6 +8654,19 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 						Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_DOOR_BROKEN, "door", 1);
 					}
+					else if ( hit.entity->behavior == &::actIronDoor )
+					{
+						messagePlayer(player, MESSAGE_COMBAT, Language::get(6413));
+						if ( !hit.entity->skill[0] )
+						{
+							hit.entity->skill[6] = (x > hit.entity->x);
+						}
+						else
+						{
+							hit.entity->skill[6] = (y < hit.entity->y);
+						}
+						Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_DOOR_BROKEN, "iron door", 1);
+					}
 					else if ( hit.entity->behavior == &::actChest )
 					{
 						messagePlayer(player, MESSAGE_COMBAT, Language::get(671));
@@ -8692,9 +8721,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 					}
 				}
-				if ( hit.entity->behavior == &actDoor )
+				if ( hit.entity->behavior == &actDoor || hit.entity->behavior == &::actIronDoor )
 				{
-					updateEnemyBar(this, hit.entity, Language::get(674), entityHP, hit.entity->skill[9], false,
+					updateEnemyBar(this, hit.entity, hit.entity->behavior == &::actIronDoor ? Language::get(6414) : Language::get(674), 
+						entityHP, hit.entity->doorMaxHealth, false,
 						DamageGib::DMG_DEFAULT);
 				}
 				else if ( hit.entity->behavior == &::actChest )
@@ -22628,7 +22658,7 @@ void Entity::handleKnockbackDamage(Stat& myStats, Entity* knockedInto)
 	if ( knockedInto != NULL && myStats.EFFECTS[EFF_KNOCKBACK] && myStats.HP > 0 )
 	{
 		int damageOnHit = 5 + local_rng.rand() % 6;
-		if ( knockedInto->behavior == &actDoor )
+		if ( knockedInto->behavior == &actDoor || knockedInto->behavior == &::actIronDoor )
 		{
 			playSoundEntity(this, 28, 64);
 			this->modHP(-damageOnHit);
@@ -22640,13 +22670,17 @@ void Entity::handleKnockbackDamage(Stat& myStats, Entity* knockedInto)
 					whoKnockedMe->awardXP(this, true, true);
 				}
 			}
-			if ( whoKnockedMe && whoKnockedMe->behavior == &actPlayer )
+
+			if ( knockedInto->behavior == &actDoor )
 			{
-				steamStatisticUpdateClient(whoKnockedMe->skill[2], STEAM_STAT_TAKE_THIS_OUTSIDE, STEAM_STAT_INT, 1);
-				Compendium_t::Events_t::eventUpdateWorld(whoKnockedMe->skill[2], Compendium_t::CPDM_DOOR_BROKEN, "door", 1);
+				if ( whoKnockedMe && whoKnockedMe->behavior == &actPlayer )
+				{
+					steamStatisticUpdateClient(whoKnockedMe->skill[2], STEAM_STAT_TAKE_THIS_OUTSIDE, STEAM_STAT_INT, 1);
+					Compendium_t::Events_t::eventUpdateWorld(whoKnockedMe->skill[2], Compendium_t::CPDM_DOOR_BROKEN, "door", 1);
+				}
+				knockedInto->doorHealth = 0;    // smash doors instantly
+				playSoundEntity(knockedInto, 28, 64);
 			}
-			knockedInto->doorHealth = 0;    // smash doors instantly
-			playSoundEntity(knockedInto, 28, 64);
 			if ( knockedInto->doorHealth <= 0 )
 			{
 				// set direction of splinters

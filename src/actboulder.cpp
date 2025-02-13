@@ -605,19 +605,19 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 			}
 		}
 	}
-	else if ( entity->behavior == &actDoor )
+	else if ( entity->behavior == &actDoor || entity->behavior == &actIronDoor )
 	{
 		if ( ignoreInsideEntity || entityInsideEntity( my, entity ) )
 		{
 			playSoundEntity(entity, 28, 64);
-			entity->skill[4] = 0;
-			if ( !entity->skill[0] )
+			entity->doorHealth = 0;
+			if ( !entity->doorDir )
 			{
-				entity->skill[6] = (my->x > entity->x);
+				entity->doorSmacked = (my->x > entity->x);
 			}
 			else
 			{
-				entity->skill[6] = (my->y < entity->y);
+				entity->doorSmacked = (my->y < entity->y);
 			}
 			playSoundEntity(my, 181, 128);
 		}

@@ -788,6 +788,10 @@ bool mapSpriteIsDoorway(int sprite)
 		case 114:
 			return true;
 			break;
+		case 217:
+		case 218:
+			return true;
+			break;
 		default:
 			break;
 	}
@@ -2341,14 +2345,15 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			entity = (Entity*)node2->element;
 			if ( entity->x / 16 == door->x && entity->y / 16 == door->y 
 				&& (/*entity->sprite == 2 || entity->sprite == 3 ||*/ entity->sprite == 19 || entity->sprite == 20
-					|| entity->sprite == 113 || entity->sprite == 114) )
+					|| entity->sprite == 113 || entity->sprite == 114
+					|| entity->sprite == 217 || entity->sprite == 218) )
 			{
 				int doordir = door->dir;
 
 				// if door is on a corner, then determine the proper facing based on the entity dir
 				if ( doordir == door_t::DIR_EAST || doordir == door_t::DIR_WEST )
 				{
-					if ( (entity->sprite == 3 || entity->sprite == 19 || entity->sprite == 113) ) // north/south sprites
+					if ( (entity->sprite == 3 || entity->sprite == 19 || entity->sprite == 113 || entity->sprite == 217) ) // north/south sprites
 					{
 						switch ( door->edge )
 						{
@@ -2370,7 +2375,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				}
 				else if ( doordir == door_t::DIR_SOUTH || doordir == door_t::DIR_NORTH )
 				{
-					if ( (entity->sprite == 2 || entity->sprite == 20 || entity->sprite == 114) ) // east/west sprites
+					if ( (entity->sprite == 2 || entity->sprite == 20 || entity->sprite == 114 || entity->sprite == 218) ) // east/west sprites
 					{
 						switch ( door->edge )
 						{
@@ -2402,7 +2407,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 							if ( mapSpriteIsDoorway(entity->sprite) )
 							{
 								if ( (int)(entity->x / 16) == door->x + 2 && (int)(entity->y / 16) == door->y 
-									&& (entity->sprite == 3 || entity->sprite == 19 || entity->sprite == 113) ) // north/south doors 2 tiles away
+									&& (entity->sprite == 3 || entity->sprite == 19 || entity->sprite == 113 || entity->sprite == 217) ) // north/south doors 2 tiles away
 								{
 									list_RemoveNode(entity->mynode);
 								}
@@ -2430,7 +2435,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 							if ( mapSpriteIsDoorway(entity->sprite) )
 							{
 								if ( (int)(entity->x / 16) == door->x && (int)(entity->y / 16) == door->y + 2
-									&& (entity->sprite == 2 || entity->sprite == 20 || entity->sprite == 114) ) // east/west doors 2 tiles away
+									&& (entity->sprite == 2 || entity->sprite == 20 || entity->sprite == 114 || entity->sprite == 218) ) // east/west doors 2 tiles away
 								{
 									list_RemoveNode(entity->mynode);
 								}
@@ -2458,7 +2463,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 							if ( mapSpriteIsDoorway(entity->sprite) )
 							{
 								if ( (int)(entity->x / 16) == door->x - 2 && (int)(entity->y / 16) == door->y
-									&& (entity->sprite == 3 || entity->sprite == 19 || entity->sprite == 113) ) // north/south doors 2 tiles away
+									&& (entity->sprite == 3 || entity->sprite == 19 || entity->sprite == 113 || entity->sprite == 217) ) // north/south doors 2 tiles away
 								{
 									list_RemoveNode(entity->mynode);
 								}
@@ -2486,7 +2491,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 							if ( mapSpriteIsDoorway(entity->sprite) )
 							{
 								if ( (int)(entity->x / 16) == door->x && (int)(entity->y / 16) == door->y - 2
-									&& (entity->sprite == 2 || entity->sprite == 20 || entity->sprite == 114) ) // east/west doors 2 tiles away
+									&& (entity->sprite == 2 || entity->sprite == 20 || entity->sprite == 114 || entity->sprite == 218) ) // east/west doors 2 tiles away
 								{
 									list_RemoveNode(entity->mynode);
 								}
@@ -2526,7 +2531,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				// if door is on a corner, then determine the proper facing based on the entity dir
 				if ( doordir == door_t::DIR_EAST || doordir == door_t::DIR_WEST )
 				{
-					if ( (entity->sprite == 3 || entity->sprite == 19 || entity->sprite == 113) ) // north/south sprites
+					if ( (entity->sprite == 3 || entity->sprite == 19 || entity->sprite == 113 || entity->sprite == 217) ) // north/south sprites
 					{
 						switch ( door->edge )
 						{
@@ -2549,7 +2554,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				}
 				else if ( doordir == door_t::DIR_SOUTH || doordir == door_t::DIR_NORTH )
 				{
-					if ( (entity->sprite == 2 || entity->sprite == 20 || entity->sprite == 114) ) // east/west sprites
+					if ( (entity->sprite == 2 || entity->sprite == 20 || entity->sprite == 114 || entity->sprite == 218) ) // east/west sprites
 					{
 						switch ( door->edge )
 						{
@@ -2582,7 +2587,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 							if ( mapSpriteIsDoorway(entity->sprite) )
 							{
 								if ( (int)(entity->x / 16) == door->x + 2 && (int)(entity->y / 16) == door->y
-									&& (entity->sprite == 3 || entity->sprite == 19 || entity->sprite == 113) ) // north/south doors 2 tiles away
+									&& (entity->sprite == 3 || entity->sprite == 19 || entity->sprite == 113 || entity->sprite == 217) ) // north/south doors 2 tiles away
 								{
 									list_RemoveNode(entity->mynode);
 								}
@@ -2610,7 +2615,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 							if ( mapSpriteIsDoorway(entity->sprite) )
 							{
 								if ( (int)(entity->x / 16) == door->x && (int)(entity->y / 16) == door->y + 2
-									&& (entity->sprite == 2 || entity->sprite == 20 || entity->sprite == 114) ) // east/west doors 2 tiles away
+									&& (entity->sprite == 2 || entity->sprite == 20 || entity->sprite == 114 || entity->sprite == 218) ) // east/west doors 2 tiles away
 								{
 									list_RemoveNode(entity->mynode);
 								}
@@ -2638,7 +2643,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 							if ( mapSpriteIsDoorway(entity->sprite) )
 							{
 								if ( (int)(entity->x / 16) == door->x - 2 && (int)(entity->y / 16) == door->y
-									&& (entity->sprite == 3 || entity->sprite == 19 || entity->sprite == 113) ) // north/south doors 2 tiles away
+									&& (entity->sprite == 3 || entity->sprite == 19 || entity->sprite == 113 || entity->sprite == 217) ) // north/south doors 2 tiles away
 								{
 									list_RemoveNode(entity->mynode);
 								}
@@ -2666,7 +2671,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 							if ( mapSpriteIsDoorway(entity->sprite) )
 							{
 								if ( (int)(entity->x / 16) == door->x && (int)(entity->y / 16) == door->y - 2
-									&& (entity->sprite == 2 || entity->sprite == 20 || entity->sprite == 114) ) // east/west doors 2 tiles away
+									&& (entity->sprite == 2 || entity->sprite == 20 || entity->sprite == 114 || entity->sprite == 218) ) // east/west doors 2 tiles away
 								{
 									list_RemoveNode(entity->mynode);
 								}
@@ -3600,7 +3605,8 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 									if ( (entity2 = (Entity*)node->element) )
 									{
 										if ( entity2->sprite == 19 || entity2->sprite == 20
-											|| entity2->sprite == 113 || entity2->sprite == 114 )
+											|| entity2->sprite == 113 || entity2->sprite == 114
+											/*|| entity2->sprite == 217 || entity2->sprite == 218*/ )
 										{
 											int entx = entity2->x / 16;
 											int enty = entity2->y / 16;
@@ -3701,7 +3707,8 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 							if ( (entity2 = (Entity*)node->element) )
 							{
 								if ( entity2->sprite == 19 || entity2->sprite == 20
-									|| entity2->sprite == 113 || entity2->sprite == 114 )
+									|| entity2->sprite == 113 || entity2->sprite == 114
+									/*|| entity2->sprite == 217 || entity2->sprite == 218*/ )
 								{
 									int entx = entity2->x / 16;
 									int enty = entity2->y / 16;
@@ -8762,6 +8769,112 @@ void assignActions(map_t* map)
 				list_RemoveNode(entity->mynode);
 				entity = nullptr;
 				break;
+			// east/west iron door:
+			case 217:
+			{
+				entity->x += 8;
+				entity->y += 8;
+				entity->yaw -= PI / 2.0;
+				entity->sprite = doorFrameSprite();
+				entity->flags[PASSABLE] = true;
+				entity->behavior = &actDoorFrame;
+				auto childEntity = newEntity(1162, 0, map->entities, nullptr); //Door frame entity.
+				childEntity->x = entity->x;
+				childEntity->y = entity->y;
+				TileEntityList.addEntity(*childEntity);
+				//printlog("19 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
+				childEntity->sizex = 8;
+				childEntity->sizey = 1;
+				childEntity->yaw -= PI / 2.0;
+				childEntity->behavior = &actIronDoor;
+				childEntity->flags[BLOCKSIGHT] = true;
+				childEntity->skill[28] = 1; //It's a mechanism.
+				childEntity->skill[0] = 1; // signify behavior code of DOOR_DIR
+				childEntity->seedEntityRNG(map_server_rng.getU32());
+
+				// copy editor options from frame to door itself.
+				childEntity->doorDisableLockpicks = entity->doorDisableLockpicks;
+				childEntity->doorForceLockedUnlocked = entity->doorForceLockedUnlocked;
+				childEntity->doorDisableOpening = entity->doorDisableOpening;
+				childEntity->doorUnlockWhenPowered = entity->doorUnlockWhenPowered;
+
+				childEntity = newEntity(doorFrameSprite(), 0, map->entities, nullptr); //Door entity.
+				childEntity->flags[INVISIBLE] = true;
+				childEntity->flags[BLOCKSIGHT] = true;
+				childEntity->x = entity->x - 7;
+				childEntity->y = entity->y;
+				childEntity->yaw -= PI / 2.0;
+
+				TileEntityList.addEntity(*childEntity);
+				//printlog("20 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
+				childEntity->sizex = 2;
+				childEntity->sizey = 2;
+				childEntity->behavior = &actDoorFrame;
+
+				childEntity = newEntity(doorFrameSprite(), 0, map->entities, nullptr); //Door frame entity.
+				childEntity->flags[INVISIBLE] = true;
+				childEntity->flags[BLOCKSIGHT] = true;
+				childEntity->x = entity->x + 7;
+				childEntity->y = entity->y;
+				childEntity->yaw -= PI / 2.0;
+
+				TileEntityList.addEntity(*childEntity);
+				//printlog("21 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
+				childEntity->sizex = 2;
+				childEntity->sizey = 2;
+				childEntity->behavior = &actDoorFrame;
+				break;
+			}
+			// north/south door:
+			case 218:
+			{
+				entity->x += 8;
+				entity->y += 8;
+				entity->sprite = doorFrameSprite();
+				entity->flags[PASSABLE] = true;
+				entity->behavior = &actDoorFrame;
+				auto childEntity = newEntity(1162, 0, map->entities, nullptr); //Door frame entity.
+				childEntity->x = entity->x;
+				childEntity->y = entity->y;
+				TileEntityList.addEntity(*childEntity);
+				//printlog("16 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
+				childEntity->sizex = 1;
+				childEntity->sizey = 8;
+				childEntity->behavior = &actIronDoor;
+				childEntity->flags[BLOCKSIGHT] = true;
+				childEntity->skill[28] = 1; //It's a mechanism.
+				childEntity->skill[0] = 0; // signify behavior code of DOOR_DIR
+				childEntity->seedEntityRNG(map_server_rng.getU32());
+
+				// copy editor options from frame to door itself.
+				childEntity->doorDisableLockpicks = entity->doorDisableLockpicks;
+				childEntity->doorForceLockedUnlocked = entity->doorForceLockedUnlocked;
+				childEntity->doorDisableOpening = entity->doorDisableOpening;
+				childEntity->doorUnlockWhenPowered = entity->doorUnlockWhenPowered;
+
+				childEntity = newEntity(doorFrameSprite(), 0, map->entities, nullptr); //Door entity.
+				childEntity->flags[INVISIBLE] = true;
+				childEntity->flags[BLOCKSIGHT] = true;
+				childEntity->x = entity->x;
+				childEntity->y = entity->y - 7;
+				TileEntityList.addEntity(*childEntity);
+
+				//printlog("17 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
+				childEntity->sizex = 2;
+				childEntity->sizey = 2;
+				childEntity->behavior = &actDoorFrame;
+				childEntity = newEntity(doorFrameSprite(), 0, map->entities, nullptr); //Door frame entity.
+				childEntity->flags[INVISIBLE] = true;
+				childEntity->flags[BLOCKSIGHT] = true;
+				childEntity->x = entity->x;
+				childEntity->y = entity->y + 7;
+				TileEntityList.addEntity(*childEntity);
+				//printlog("18 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
+				childEntity->sizex = 2;
+				childEntity->sizey = 2;
+				childEntity->behavior = &actDoorFrame;
+				break;
+			}
             default:
                 break;
 		}

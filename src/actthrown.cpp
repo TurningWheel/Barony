@@ -712,7 +712,7 @@ void actThrown(Entity* my)
 					list_RemoveNode(my->mynode);
 					return;
 				}
-				else if ( hit.entity->behavior == &actDoor )
+				else if ( hit.entity->behavior == &actDoor || hit.entity->behavior == &actIronDoor )
 				{
 					item->applyBomb(parent, item->type, Item::ItemBombPlacement::BOMB_DOOR, Item::ItemBombFacingDirection::BOMB_UP, my, hit.entity);
 					free(item);

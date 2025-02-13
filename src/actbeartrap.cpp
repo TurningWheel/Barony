@@ -884,7 +884,7 @@ void actBomb(Entity* my)
 		}
 		else if ( onEntity )
 		{
-			if ( onEntity->behavior == &actDoor )
+			if ( onEntity->behavior == &actDoor || onEntity->behavior == &actIronDoor )
 			{
 				if ( onEntity->doorHealth < BOMB_ENTITY_ATTACHED_START_HP || onEntity->flags[PASSABLE] || cursedExplode
 					|| BOMB_HIT_BY_PROJECTILE == 1 )

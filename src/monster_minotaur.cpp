@@ -968,7 +968,7 @@ void actMinotaurCeilingBuster(Entity* my)
 								}
 								list_RemoveNode(entity->mynode);
 							}
-							else if ( entity->behavior == &actDoor )
+							else if ( entity->behavior == &actDoor || entity->behavior == &actIronDoor )
 							{
 								if ( multiplayer != CLIENT )
 								{

@@ -621,7 +621,10 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 				continue;
 			}
 		}
-		if ( entity->behavior == &actDoorFrame || entity->behavior == &actDoor || entity->behavior == &actMagicMissile )
+		if ( entity->behavior == &actDoorFrame 
+			|| entity->behavior == &actDoor 
+			|| entity->behavior == &actIronDoor
+			|| entity->behavior == &actMagicMissile )
 		{
 			continue;
 		}

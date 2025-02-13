@@ -111,6 +111,10 @@ void clickDescription(int player, Entity* entity)
 				{
 					messagePlayer(player, MESSAGE_INSPECTION, Language::get(256));
 				}
+				else if ( entity->behavior == &actIronDoor )
+				{
+					messagePlayer(player, MESSAGE_INSPECTION, Language::get(6409));
+				}
 				else if ( entity->isDamageableCollider() )
 				{
 					messagePlayer(player, MESSAGE_INSPECTION, Language::get(254), Language::get(entity->getColliderLangName()));

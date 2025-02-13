@@ -387,6 +387,10 @@ std::string EnemyBarSettings_t::getEnemyBarSpriteName(Entity* entity)
 	{
 		return "door";
 	}
+	else if ( entity->behavior == &actIronDoor )
+	{
+		return "iron_door";
+	}
 	else if ( entity->behavior == &actChest )
 	{
 		return "chest";

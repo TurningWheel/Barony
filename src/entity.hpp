@@ -368,6 +368,7 @@ public:
 	Sint32& doorDisableOpening; //skill[13]
 	Sint32& doorLockpickHealth; //skill[14]
 	Sint32& doorOldHealth; //skill[15]
+	Sint32& doorUnlockWhenPowered; //skill[16]
 
 	//--PUBLIC PEDESTAL SKILLS--
 	Sint32& pedestalHasOrb; //skill[0]
@@ -605,6 +606,10 @@ public:
 	Sint32& wallLockPower; //skill[8]
 	Sint32& wallLockInit; //skill[9]
 	Sint32& wallLockTimer; //skill[10]
+	Sint32& wallLockPickable; //skill[11]
+	Sint32& wallLockPickHealth; //skill[12]
+	Sint32& wallLockPickableSkeletonKey; //skill[13]
+	Sint32& wallLockPreventLockpickExploit; //skill[14]
 
 	//--THROWN PROJECTILE--
 	Sint32& thrownProjectilePower; //skill[19]
@@ -830,6 +835,7 @@ public:
 	void actSignalGateAND();
 	void actWallLock();
 	void actWallButton();
+	void actIronDoor();
 
 	Monster getRace() const
 	{
@@ -1210,6 +1216,7 @@ void actArrowTrap(Entity* my);
 void actTrap(Entity* my);
 void actTrapPermanent(Entity* my);
 void actSwitchWithTimer(Entity* my);
+void actIronDoor(Entity* my);
 
 /*
  * Note: Circuits and mechanisms use skill[28] to signify powered state.
@@ -1259,7 +1266,6 @@ void actTextSource(Entity* my);
 
 static const int NUM_ITEM_STRINGS = 344;
 static const int NUM_ITEM_STRINGS_BY_TYPE = 129;
-static const int NUM_EDITOR_SPRITES = 217;
 static const int NUM_EDITOR_TILES = 350;
 
 // furniture types.
@@ -1271,7 +1277,7 @@ static const int FURNITURE_PODIUM = 4;
 
 int checkSpriteType(Sint32 sprite);
 Monster editorSpriteTypeToMonster(Sint32 sprite);
-extern char spriteEditorNameStrings[NUM_EDITOR_SPRITES][64];
+extern std::vector<const char*>spriteEditorNameStrings;
 extern char tileEditorNameStrings[NUM_EDITOR_TILES][44];
 extern char monsterEditorNameStrings[NUMMONSTERS][16];
 extern char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32];

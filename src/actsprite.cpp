@@ -108,7 +108,7 @@ void actSpriteWorldTooltip(Entity* my)
 		my->x = parent->x;
 		my->y = parent->y;
 
-		if ( parent->behavior == &actDoor )
+		if ( parent->behavior == &actDoor || parent->behavior == &actIronDoor )
 		{
 			if ( parent->flags[PASSABLE] )
 			{

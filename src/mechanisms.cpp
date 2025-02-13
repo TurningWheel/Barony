@@ -1788,19 +1788,6 @@ void Entity::actWallLock()
 	static ConsoleVariable<float> cvar_wall_lock_key_scale("/wall_lock_key_scale", 0.9);
 	const real_t scaleDown = 1.0 - *cvar_wall_lock_key_scale;
 
-	//if ( keystatus[SDLK_g] )
-	//{
-	//	if ( wallLockState != LOCK_NO_KEY )
-	//	{
-	//		wallLockState = LOCK_NO_KEY;
-	//	}
-	//	else
-	//	{
-	//		wallLockState = LOCK_KEY_START;
-	//	}
-	//	//inset = std::min(100.0, inset + 0.01);
-	//}
-
 	if ( wallLockClientInteractDelay > 0 )
 	{
 		--wallLockClientInteractDelay;
@@ -1819,10 +1806,19 @@ void Entity::actWallLock()
 		if ( !wallLockInit )
 		{
 			wallLockInit = 1;
+			wallLockPickHealth = 50;
+			wallLockPreventLockpickExploit = 0;
 			if ( wallLockInvertPower != 0 )
 			{
 				updateNeighbors = true; // once off power the neighbours since needs an external kick
 			}
+		}
+
+		if ( wallLockPower == 2 || wallLockPower == 3 )
+		{
+			// overridden by skeleton key
+			wallLockPower -= 2;
+			updateNeighbors = true;
 		}
 
 		for ( int i = 0; i < MAXPLAYERS; i++ )
@@ -1898,7 +1894,7 @@ void Entity::actWallLock()
 								{
 									if ( wallLockTurnable != 0 )
 									{
-										playSoundEntity(this, 56, 64);
+										playSoundEntity(this, 57, 64);
 										messagePlayer(i, MESSAGE_INTERACTION, Language::get(6374), Language::get(6383 + wallLockMaterial));
 										wallLockState = LOCK_KEY_INACTIVE_START;
 										serverUpdateEntitySkill(this, 0);
@@ -2028,6 +2024,7 @@ void Entity::actWallLock()
 		// comment out power_to_neighbors if we dont want this running all the time
 		// running all the time matches switch behavior so that 1 thing toggling doesnt shut the network
 		// if multiple active mechanisms are also powering it
+
 		if ( updateNeighbors || power_to_neighbors ) 
 		{
 			switch ( wallLockDir )

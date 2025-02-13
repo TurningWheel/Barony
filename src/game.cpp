@@ -314,7 +314,8 @@ void TimerExperiments::updateEntityInterpolationPosition(Entity* entity)
 		|| entity->behavior == &actLeftHandMagic
 		|| entity->behavior == &actRightHandMagic
 		|| entity->behavior == &actCircuit
-		|| entity->behavior == &actDoor )
+		|| entity->behavior == &actDoor
+		|| entity->behavior == &actIronDoor )
 	{
 		entity->bUseRenderInterpolation = false;
 	}

@@ -2283,6 +2283,22 @@ void buttonSpriteProperties(button_t* my)
 				suby2 = yres / 2 + 100;
 				strcpy(subtext, "Door Properties:");
 				break;
+			case 32:
+				snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity[0]->doorUnlockWhenPowered));
+				snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity[0]->doorDisableLockpicks));
+				snprintf(spriteProperties[2], 4, "%d", static_cast<int>(selectedEntity[0]->doorDisableOpening));
+				snprintf(spriteProperties[3], 4, "%d", static_cast<int>(selectedEntity[0]->doorForceLockedUnlocked));
+				inputstr = spriteProperties[0];
+				cursorflash = ticks;
+				menuVisible = 0;
+				subwindow = 1;
+				newwindow = 36;
+				subx1 = xres / 2 - 170;
+				subx2 = xres / 2 + 170;
+				suby1 = yres / 2 - 100;
+				suby2 = yres / 2 + 100;
+				strcpy(subtext, "Iron Door Properties:");
+				break;
 			case 22:
 				snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity[0]->gateDisableOpening));
 				inputstr = spriteProperties[0];
@@ -2414,6 +2430,8 @@ void buttonSpriteProperties(button_t* my)
 				snprintf(spriteProperties[0], 2, "%d", static_cast<int>(selectedEntity[0]->wallLockMaterial));
 				snprintf(spriteProperties[1], 2, "%d", static_cast<int>(selectedEntity[0]->wallLockInvertPower));
 				snprintf(spriteProperties[2], 2, "%d", static_cast<int>(selectedEntity[0]->wallLockTurnable));
+				snprintf(spriteProperties[3], 4, "%d", static_cast<int>(selectedEntity[0]->wallLockPickable));
+				snprintf(spriteProperties[4], 2, "%d", static_cast<int>(selectedEntity[0]->wallLockPickableSkeletonKey));
 				inputstr = spriteProperties[0];
 				cursorflash = ticks;
 				menuVisible = 0;
@@ -2421,8 +2439,8 @@ void buttonSpriteProperties(button_t* my)
 				newwindow = 34;
 				subx1 = xres / 2 - 170;
 				subx2 = xres / 2 + 170;
-				suby1 = yres / 2 - 90;
-				suby2 = yres / 2 + 90;
+				suby1 = yres / 2 - 110;
+				suby2 = yres / 2 + 110;
 				strcpy(subtext, "Wall Lock Properties:");
 				break;
 			case 31:
@@ -3518,6 +3536,12 @@ void buttonSpritePropertiesConfirm(button_t* my)
 				selectedEntity[0]->doorDisableLockpicks = (Sint32)atoi(spriteProperties[1]);
 				selectedEntity[0]->doorDisableOpening = (Sint32)atoi(spriteProperties[2]);
 				break;
+			case 32:
+				selectedEntity[0]->doorUnlockWhenPowered = (Sint32)atoi(spriteProperties[0]);
+				selectedEntity[0]->doorDisableLockpicks = (Sint32)atoi(spriteProperties[1]);
+				selectedEntity[0]->doorDisableOpening = (Sint32)atoi(spriteProperties[2]);
+				selectedEntity[0]->doorForceLockedUnlocked = (Sint32)atoi(spriteProperties[3]);
+				break;
 			case 22: // gates
 				selectedEntity[0]->gateDisableOpening = (Sint32)atoi(spriteProperties[0]);
 				break;
@@ -3566,6 +3590,8 @@ void buttonSpritePropertiesConfirm(button_t* my)
 				selectedEntity[0]->wallLockMaterial = (Sint32)atoi(spriteProperties[0]);
 				selectedEntity[0]->wallLockInvertPower = (Sint32)atoi(spriteProperties[1]);
 				selectedEntity[0]->wallLockTurnable = (Sint32)atoi(spriteProperties[2]);
+				selectedEntity[0]->wallLockPickable = (Sint32)atoi(spriteProperties[3]);
+				selectedEntity[0]->wallLockPickableSkeletonKey = (Sint32)atoi(spriteProperties[4]);
 				break;
 			case 31:
 				selectedEntity[0]->wallLockInvertPower = (Sint32)atoi(spriteProperties[0]);

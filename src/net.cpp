@@ -1823,6 +1823,9 @@ void clientActions(Entity* entity)
 		case 2:
 			entity->behavior = &actDoor;
 			break;
+		case 1162:
+			entity->behavior = &actIronDoor;
+			break;
 		case 3:
 			entity->behavior = &actTorch;
 			entity->flags[NOUPDATE] = 1;

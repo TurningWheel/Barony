@@ -75,7 +75,7 @@ void updateEnemyBar(Entity* source, Entity* target, const char* name, Sint32 hp,
 			}
 		}
 		else if ( source->behavior == &actMonster && source->monsterAllyIndex >= 0/*monsterIsImmobileTurret(source, nullptr)*/
-			&& (target->behavior == &actMonster || target->behavior == &actPlayer || target->behavior == &actDoor) )
+			&& (target->behavior == &actMonster || target->behavior == &actPlayer || target->behavior == &actDoor || target->behavior == &actIronDoor) )
 		{
 			player = source->monsterAllyIndex;
 			if ( source->monsterAllyGetPlayerLeader() && source->monsterAllyGetPlayerLeader() == target )
@@ -123,7 +123,7 @@ void updateEnemyBar(Entity* source, Entity* target, const char* name, Sint32 hp,
 	}
 	else
 	{
-		if ( target->behavior == &actDoor )
+		if ( target->behavior == &actDoor || target->behavior == &actIronDoor )
 		{
 			oldhp = target->doorOldHealth;
 		}

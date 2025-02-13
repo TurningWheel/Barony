@@ -3350,7 +3350,7 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 	{
 		maxDist = TOUCHRANGE;
 	}
-	if ( parent && parent->behavior == &actDoor && parent->doorStatus == 0 ) // min dist 0.0 when door closed, just in case we're stuck inside.
+	if ( parent && (parent->behavior == &actDoor || parent->behavior == &actIronDoor) && parent->doorStatus == 0 ) // min dist 0.0 when door closed, just in case we're stuck inside.
 	{
 		minDist = 0.0;
 	}
@@ -3992,6 +3992,17 @@ void Player::WorldUI_t::setTooltipActive(Entity& tooltip)
 				interactText = Language::get(4016); // "Open door" 
 			}
 		}
+		else if ( parent->behavior == &actIronDoor )
+		{
+			if ( parent->doorStatus != 0 )
+			{
+				interactText = Language::get(6420); // "Close door" 
+			}
+			else
+			{
+				interactText = Language::get(6421); // "Open door" 
+			}
+		}
 		else if ( parent->behavior == &actGate )
 		{
 			interactText = Language::get(4017); // "Inspect gate" 
@@ -4349,7 +4360,9 @@ bool entityBlocksTooltipInteraction(const int player, Entity& entity)
 	{
 		return false;
 	}
-	else if ( entity.behavior == &actDoor || entity.behavior == &actFountain || entity.behavior == &actSink
+	else if ( entity.behavior == &actDoor 
+		|| entity.behavior == &actIronDoor
+		|| entity.behavior == &actFountain || entity.behavior == &actSink
 		|| entity.behavior == &actHeadstone || entity.behavior == &actChest || entity.behavior == &actChestLid
 		|| entity.behavior == &actBoulder || entity.behavior == &actPlayer || entity.behavior == &actPedestalOrb || entity.behavior == &actPowerCrystalBase
 		|| entity.behavior == &actPowerCrystal
@@ -4560,7 +4573,15 @@ void Player::WorldUI_t::handleTooltips()
 
 			if ( bDoingActionHideTooltips )
 			{
-				players[player]->worldUI.gimpDisplayTimer = 10;
+				if ( stats[player]->weapon && (stats[player]->weapon->type == TOOL_LOCKPICK || stats[player]->weapon->type == TOOL_SKELETONKEY) )
+				{
+					// shorter sequence to allow lockpicking bombs/wall locks faster
+					players[player]->worldUI.gimpDisplayTimer = 1;
+				}
+				else
+				{
+					players[player]->worldUI.gimpDisplayTimer = 10;
+				}
 				continue;
 			}
 

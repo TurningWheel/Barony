@@ -1395,7 +1395,7 @@ void actHudWeapon(Entity* my)
 							HUDWEAPON_MOVEX = 5;
 							HUDWEAPON_CHOP = 3;
 							Entity* player = players[HUDWEAPON_PLAYERNUM]->entity;
-							bool foundBomb = false;
+							bool foundPassableObject = false;
 							if ( stats[HUDWEAPON_PLAYERNUM]->weapon )
 							{
 								bool clickedOnGUI = false;
@@ -1411,14 +1411,15 @@ void actHudWeapon(Entity* my)
 
 								inputs.setMouse(HUDWEAPON_PLAYERNUM, Inputs::OX, tmpmousex);
 								inputs.setMouse(HUDWEAPON_PLAYERNUM, Inputs::OX, tmpmousey);
-								if ( clickedOn && clickedOn->behavior == &actBomb && entityDist(clickedOn, players[HUDWEAPON_PLAYERNUM]->entity) < STRIKERANGE )
+								if ( clickedOn && (clickedOn->behavior == &actBomb || clickedOn->behavior == &actWallLock)
+									&& entityDist(clickedOn, players[HUDWEAPON_PLAYERNUM]->entity) < STRIKERANGE )
 								{
 									// found something
 									stats[HUDWEAPON_PLAYERNUM]->weapon->apply(HUDWEAPON_PLAYERNUM, clickedOn);
-									foundBomb = true;
+									foundPassableObject = true;
 								}
 							}
-							if ( !foundBomb )
+							if ( !foundPassableObject )
 							{
 								real_t dist = lineTrace(player, player->x, player->y, player->yaw, STRIKERANGE, 0, false);
 								if ( hit.entity && stats[HUDWEAPON_PLAYERNUM]->weapon )
