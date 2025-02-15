@@ -38777,6 +38777,10 @@ bool SkillUpAnimation_t::soundIndexUsedForNotification(const int index)
 	{
 		return true;
 	}
+	else if ( index >= 488 && index <= 491 )
+	{
+		return true;
+	}
 	else
 	{
 		for ( auto skill : Player::SkillSheet_t::skillSheetData.skillEntries )
