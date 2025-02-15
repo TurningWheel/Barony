@@ -117,6 +117,10 @@ bool doesEntityStopBoulder(Entity* entity)
 	{
 		return true;
 	}
+	else if ( entity->behavior == &actIronDoor )
+	{
+		return true;
+	}
 	else if ( entity->behavior == &actBoulder )
 	{
 		return true;
@@ -605,7 +609,7 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 			}
 		}
 	}
-	else if ( entity->behavior == &actDoor || entity->behavior == &actIronDoor )
+	else if ( entity->behavior == &actDoor )
 	{
 		if ( ignoreInsideEntity || entityInsideEntity( my, entity ) )
 		{

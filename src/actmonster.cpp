@@ -5788,7 +5788,7 @@ timeToGoAgain:
 								}
 								if ( hit.entity != NULL )
 								{
-									if ( hit.entity->behavior == &actDoor )
+									if ( hit.entity->behavior == &actDoor || hit.entity->behavior == &actIronDoor )
 									{
 										// opens the door if unlocked and monster can do it
 										if ( !hit.entity->doorLocked && my->getINT() > -2 )
@@ -5823,8 +5823,8 @@ timeToGoAgain:
 												{
 													hit.entity->doorHealth = 0;    // minotaurs smash doors instantly
 												}
-												updateEnemyBar(my, hit.entity, Language::get(674), hit.entity->skill[4], hit.entity->skill[9],
-													false, DamageGib::DMG_DEFAULT);
+												updateEnemyBar(my, hit.entity, hit.entity->behavior == &actIronDoor ? Language::get(6414) : Language::get(674), 
+													hit.entity->doorHealth, hit.entity->doorMaxHealth, false, DamageGib::DMG_DEFAULT);
 												playSoundEntity(hit.entity, 28, 64);
 												if ( hit.entity->doorHealth <= 0 )
 												{
@@ -6973,7 +6973,7 @@ timeToGoAgain:
 							my->handleKnockbackDamage(*myStats, hit.entity);
 							if ( hit.entity != NULL )
 							{
-								if ( hit.entity->behavior == &actDoor )
+								if ( hit.entity->behavior == &actDoor || hit.entity->behavior == &actIronDoor )
 								{
 									// opens the door if unlocked and monster can do it
 									if ( !hit.entity->doorLocked && my->getINT() > -2 )
@@ -7008,7 +7008,8 @@ timeToGoAgain:
 											{
 												hit.entity->doorHealth = 0;    // minotaurs smash doors instantly
 											}
-											updateEnemyBar(my, hit.entity, Language::get(674), hit.entity->skill[4], hit.entity->skill[9],
+											updateEnemyBar(my, hit.entity, hit.entity->behavior == &actIronDoor ? Language::get(6414) : Language::get(674), 
+												hit.entity->doorHealth, hit.entity->doorMaxHealth,
 												false, DamageGib::DMG_DEFAULT);
 											playSoundEntity(hit.entity, 28, 64);
 											if ( hit.entity->doorHealth <= 0 )
