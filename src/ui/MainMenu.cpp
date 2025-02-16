@@ -2871,12 +2871,14 @@ namespace MainMenu {
             fpsLimit = std::min(std::max(MIN_FPS, *cvar_desiredFps), MAX_FPS);
         }
 		current_audio_device = audio_device;
+#ifdef USE_FMOD
         if (fmod_speakermode != speaker_mode) {
             fmod_speakermode = (FMOD_SPEAKERMODE)speaker_mode;
             if (initialized) {
                 restartPromptRequired = true;
             }
         }
+#endif
 		MainMenu::master_volume = std::min(std::max(0.f, master_volume / 100.f), 1.f);
 		sfxvolume = std::min(std::max(0.f, gameplay_volume / 100.f), 1.f);
 		sfxAmbientVolume = std::min(std::max(0.f, ambient_volume / 100.f), 1.f);
@@ -2976,7 +2978,9 @@ namespace MainMenu {
 		settings.fov = ::fov;
 		settings.fps = *cvar_desiredFps;
 		settings.audio_device = current_audio_device;
+#ifdef USE_FMOD
         settings.speaker_mode = (int)fmod_speakermode;
+#endif
 		settings.master_volume = MainMenu::master_volume * 100.f;
 		settings.gameplay_volume = (float)sfxvolume * 100.f;
 		settings.ambient_volume = (float)sfxAmbientVolume * 100.f;
@@ -4483,16 +4487,18 @@ namespace MainMenu {
 			});
 	}
 
-#if defined(USE_FMOD)
 	struct AudioDriver {
 		char name[64];
+#ifdef USE_FMOD
 		FMOD_GUID guid;
 		int system_rate;
 		FMOD_SPEAKERMODE speaker_mode;
 		int speaker_mode_channels;
+#endif
 	};
 	static std::vector<AudioDriver> audio_drivers;
 
+#ifdef USE_FMOD
 	static void settingsAudioDevice(Button& button) {
 		settingsOpenDropdown(button, "device", DropdownType::Wide, [](Frame::entry_t& entry){
 			soundActivate();
@@ -6361,9 +6367,9 @@ bind_failed:
 		}
 		int y = 0;
 
+		int num_drivers = 0;
 #if !defined(NINTENDO) && defined(USE_FMOD)
 		int selected_device = 0;
-		int num_drivers = 0;
 		(void)fmod_system->getNumDrivers(&num_drivers);
 		audio_drivers.clear();
 		audio_drivers.reserve(num_drivers);
@@ -24904,7 +24910,7 @@ failed:
 
 				// return to title screen
 		        destroyMainMenu();
-#ifdef SOUND
+#ifdef MUSIC
 				const int music = RNG.uniform(0, NUMINTROMUSIC - 2);
 	            playMusic(intromusic[music], true, false, false);
 #endif
@@ -24974,7 +24980,7 @@ failed:
 
 				// return to menu
 				destroyMainMenu();
-#ifdef SOUND
+#ifdef MUSIC
 				const int music = RNG.uniform(0, NUMINTROMUSIC - 2);
 	            playMusic(intromusic[music], true, false, false);
 #endif
@@ -25009,7 +25015,7 @@ failed:
                     // create a highscore as token of remembrance.
                     doEndgame(true, false);
                 }
-#ifdef SOUND
+#ifdef MUSIC
                 const int music = RNG.uniform(0, NUMINTROMUSIC - 2);
                 playMusic(intromusic[music], true, false, false);
 #endif
@@ -25041,7 +25047,7 @@ failed:
 				destroyMainMenu();
 				createDummyMainMenu();
 				createCreditsScreen(true);
-#ifdef SOUND
+#ifdef MUSIC
 	            playMusic(intromusic[0], true, false, false);
 #endif
 

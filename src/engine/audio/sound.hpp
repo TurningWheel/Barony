@@ -11,6 +11,8 @@
 
 #pragma once
 
+#include "../../main.hpp"
+
 #define FMOD_AUDIO_GUID_FMT "%.8x%.16llx"
 
 #include <stdio.h>
@@ -24,6 +26,18 @@
 #else
 #include <AL/al.h>
 #include <AL/alc.h>
+#endif
+#endif
+
+#ifdef USE_FMOD
+#include "fmod_errors.h"
+#elif defined USE_OPENAL
+#ifdef USE_TREMOR
+#include <tremor/ivorbisfile.h>
+#else
+#include <ogg/ogg.h>
+#include <vorbis/vorbisfile.h>
+#include <vorbis/codec.h>
 #endif
 #endif
 
@@ -129,6 +143,37 @@ extern bool sfxUseDynamicAmbientVolume, sfxUseDynamicEnvironmentVolume;
 #define SOUND
 #define MUSIC
 
+struct OPENAL_BUFFER {
+	ALuint id;
+	bool stream;
+	char oggfile[64];
+};
+struct OPENAL_CHANNELGROUP;
+struct OPENAL_SOUND {
+	ALuint id;
+	OPENAL_CHANNELGROUP *group;
+	float volume;
+	OPENAL_BUFFER *buffer;
+	bool active;
+	char* oggdata;
+	int oggdata_length;
+	int ogg_seekoffset;
+	OggVorbis_File oggStream;
+	vorbis_info* vorbisInfo;
+	vorbis_comment* vorbisComment;
+	ALuint streambuff[4];
+	bool loop;
+	bool stream_active;
+	int indice;
+};
+
+struct OPENAL_CHANNELGROUP {
+	float volume;
+	int num;
+	int cap;
+	OPENAL_SOUND **sounds;
+};
+
 extern ALCcontext *openal_context;
 extern ALCdevice  *openal_device;
 
@@ -186,22 +231,29 @@ extern OPENAL_BUFFER* hamletmusic;
 
 extern OPENAL_SOUND* music_channel, *music_channel2, *music_resume; //TODO: List of music, play first one, fade out all the others? Eh, maybe some other day. //music_resume is the music to resume after, say, combat or shops. //TODO: Clear music_resume every biome change. Or otherwise validate it for that level set.
 extern OPENAL_CHANNELGROUP *sound_group, *music_group;
-extern OPENAL_CHANNELGROUP *soundAmbient_group, *soundEnvironment_group, *music_notification_group;
+extern OPENAL_CHANNELGROUP *soundAmbient_group;
+extern OPENAL_CHANNELGROUP *soundEnvironment_group;
+extern OPENAL_CHANNELGROUP *soundNotification_group;
+extern OPENAL_CHANNELGROUP *music_notification_group;
 
 int initOPENAL();
 int closeOPENAL();
+int openalGetNumberOfDevices(const ALCchar *devices);
 
 void sound_update(int player, int index, int numplayers);
 
 OPENAL_SOUND* playSoundPlayer(int player, Uint16 snd, Uint8 vol);
+OPENAL_SOUND* playSoundNotificationPlayer(int player, Uint16 snd, Uint8 vol); //TODO: Write.
 OPENAL_SOUND* playSoundPos(real_t x, real_t y, Uint16 snd, Uint8 vol);
 OPENAL_SOUND* playSoundPosLocal(real_t x, real_t y, Uint16 snd, Uint8 vol);
 OPENAL_SOUND* playSoundEntity(Entity* entity, Uint16 snd, Uint8 vol);
 OPENAL_SOUND* playSoundEntityLocal(Entity* entity, Uint16 snd, Uint8 vol);
 OPENAL_SOUND* playSound(Uint16 snd, Uint8 vol);
+OPENAL_SOUND* playSoundNotification(Uint16 snd, Uint8 vol); //TODO: Write.
 OPENAL_SOUND* playSoundVelocity(); //TODO: Write.
 
-void playmusic(OPENAL_BUFFER* sound, bool loop, bool crossfade, bool resume); //Automatically crossfades. NOTE: Resets fadein and fadeout increments to the defaults every time it is called. You'll have to change the fadein and fadeout increments AFTER calling this function.
+void stopMusic();
+void playMusic(OPENAL_BUFFER* sound, bool loop, bool crossfade, bool resume); //Automatically crossfades. NOTE: Resets fadein and fadeout increments to the defaults every time it is called. You'll have to change the fadein and fadeout increments AFTER calling this function.
 
 void handleLevelMusic(); //Manages and updates the level music.
 
