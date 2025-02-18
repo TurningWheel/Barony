@@ -623,7 +623,7 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 		}
 		if ( entity->behavior == &actDoorFrame 
 			|| entity->behavior == &actDoor 
-			|| entity->behavior == &actIronDoor
+			/*|| entity->behavior == &actIronDoor*/
 			|| entity->behavior == &actMagicMissile )
 		{
 			continue;
@@ -645,14 +645,17 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 		{
 			continue;
 		}
-		if ( lavaIsPassable &&
-			(entity->sprite == 41
-			|| lavatiles[map.tiles[static_cast<int>(entity->y / 16) * MAPLAYERS + static_cast<int>(entity->x / 16) * MAPLAYERS * map.height]]
-			|| swimmingtiles[map.tiles[static_cast<int>(entity->y / 16) * MAPLAYERS + static_cast<int>(entity->x / 16) * MAPLAYERS * map.height]])
-			)
+		if ( lavaIsPassable )
 		{
-			//Fix to make ladders generate in hell.
-			continue;
+			int x = std::min<unsigned int>(std::max<int>(0, entity->x / 16), map.width - 1);
+			int y = std::min<unsigned int>(std::max<int>(0, entity->y / 16), map.height - 1);
+			if ( entity->sprite == 41
+			|| lavatiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]]
+			|| swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] )
+			{
+				//Fix to make ladders generate in hell.
+				continue;
+			}
 		}
 		if (playerCheckAchievement && (entity->behavior == &actMonster || entity->behavior == &actPlayer))
 		{

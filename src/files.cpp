@@ -2544,6 +2544,8 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 		}
 #endif
 
+		map.setMapHDRSettings();
+
 		// create new lightmap
         for (int c = 0; c < MAXPLAYERS + 1; ++c) {
             auto& lightmap = lightmaps[c];
@@ -2556,6 +2558,25 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
                 memset(lightmapSmoothed.data(), 0, sizeof(vec4_t) * (map.width + 2) * (map.height + 2));
 
 #ifndef EDITOR
+				if ( !strncmp(map.filename, "fortress", 8) )
+				{
+					Vector4 ambienceColor = {128.f, 128.f, 152.f, 1.f};
+					ambienceColor.x *= ambienceColor.w;
+					ambienceColor.y *= ambienceColor.w;
+					ambienceColor.z *= ambienceColor.w;
+					for ( int c = 0; c < destmap->width * destmap->height; c++ )
+					{
+						lightmap[c].x = ambienceColor.x;
+						lightmap[c].y = ambienceColor.y;
+						lightmap[c].z = ambienceColor.z;
+					}
+					for ( int c = 0; c < (destmap->width + 2) * (destmap->height + 2); c++ )
+					{
+						lightmapSmoothed[c].x = ambienceColor.x;
+						lightmapSmoothed[c].y = ambienceColor.y;
+						lightmapSmoothed[c].z = ambienceColor.z;
+					}
+				}
 				if ( (svFlags & SV_FLAG_CHEATS) && 
 					(cvar_map_ambience->x > 0.01
 						|| cvar_map_ambience->y > 0.01

@@ -6368,9 +6368,7 @@ void drawAllPlayerCameras() {
             
             // undo ghost fog
             if (players[c]->ghost.isActive()) {
-                *cvar_hdrBrightness = {1.0f, 1.0f, 1.0f, 1.0f};
-                *cvar_fogColor = {0.0f, 0.0f, 0.0f, 1.0f};
-                *cvar_fogDistance = 0.0f;
+				map.setMapHDRSettings();
             }
 
 			if (shaking && players[c] && players[c]->entity && !gamePaused)

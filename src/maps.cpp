@@ -4511,7 +4511,8 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 	}
 	int numOpenAreaBreakables = 0;
 	std::vector<BreakableNode_t> breakableLocations;
-	if ( findBreakables->first == "Underworld" )
+	if ( findBreakables != EditorEntityData_t::colliderRandomGenPool.end()
+		&& findBreakables->first == "Underworld" )
 	{
 		numOpenAreaBreakables = 10;
 
@@ -8159,6 +8160,50 @@ void assignActions(map_t* map)
 				{
 					entity->yaw = entity->floorDecorationRotation * (PI / 4);
 				}
+				bool modifiedFocal = false;
+				if ( entity->x < 0.0 )
+				{
+					while ( entity->x < 0.0 )
+					{
+						entity->x += 16.0;
+						entity->focalx -= 16.0;
+					}
+					modifiedFocal = true;
+				}
+				if ( entity->y < 0 )
+				{
+					while ( entity->y < 0.0 )
+					{
+						entity->y += 16.0;
+						entity->focaly -= 16.0;
+					}
+					modifiedFocal = true;
+				}
+				if ( static_cast<int>(entity->x) >= map->width * 16 )
+				{
+					while ( static_cast<int>(entity->x) >= map->width * 16 )
+					{
+						entity->x -= 16.0;
+						entity->focalx += 16.0;
+					}
+					modifiedFocal = true;
+				}
+				if ( static_cast<int>(entity->y) >= map->height * 16 )
+				{
+					while ( static_cast<int>(entity->y) >= map->height * 16 )
+					{
+						entity->y -= 16.0;
+						entity->focaly += 16.0;
+					}
+					modifiedFocal = true;
+				}
+				if ( modifiedFocal )
+				{
+					real_t fx = entity->focalx;
+					real_t fy = entity->focaly;
+					entity->focalx = fx * cos(entity->yaw) - fy * cos(entity->yaw + PI / 2);
+					entity->focaly = -fx * sin(entity->yaw) + fy * sin(entity->yaw + PI / 2);
+				}
 				entity->flags[BLOCKSIGHT] = false;
 				entity->flags[PASSABLE] = true;
 				if ( entity->floorDecorationInteractText1 == 0 )
@@ -9453,4 +9498,22 @@ bool map_t::tileHasAttribute(int x, int y, int layer, Uint32 attribute)
 		return find->second & attribute;
 	}
 	return false;
+}
+
+void map_t::setMapHDRSettings()
+{
+	if ( !strncmp(map.filename, "fortress", 8) )
+	{
+		*cvar_hdrBrightness = defaultBrightness;
+		*cvar_fogColor = { 1.0f, 1.0f, 1.2f, 1.0f };
+		*cvar_fogDistance = 384.f;
+		*cvar_hdrLimitLow = 1.2f;
+	}
+	else
+	{
+		*cvar_hdrBrightness = defaultBrightness;
+		*cvar_fogColor = { 0.0f, 0.0f, 0.0f, 1.0f };
+		*cvar_fogDistance = 0.0f;
+		*cvar_hdrLimitLow = defaultLimitLow;
+	}
 }

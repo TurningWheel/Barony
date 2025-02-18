@@ -45,7 +45,7 @@ light_t* lightSphereShadow(int index, Sint32 x, Sint32 y, Sint32 radius, float r
 				bool wallhit = true;
 				const int mapindex = v * MAPLAYERS + u * MAPLAYERS * map.height;
 				for (int z = 0; z < MAPLAYERS; z++) {
-					if (!map.tiles[mapindex + z]) {
+					if ( !map.tiles[mapindex + z] || map.tiles[mapindex + z] == TRANSPARENT_TILE ) {
 						wallhit = false;
 						break;
 					}
@@ -64,7 +64,8 @@ light_t* lightSphereShadow(int index, Sint32 x, Sint32 y, Sint32 radius, float r
 							v2 -= sgn(dy);
 						}
 						if (u2 >= 0 && u2 < map.width && v2 >= 0 && v2 < map.height) {
-							if (map.tiles[OBSTACLELAYER + v2 * MAPLAYERS + u2 * MAPLAYERS * map.height]) {
+							if ( map.tiles[OBSTACLELAYER + v2 * MAPLAYERS + u2 * MAPLAYERS * map.height]
+                                && map.tiles[OBSTACLELAYER + v2 * MAPLAYERS + u2 * MAPLAYERS * map.height] != TRANSPARENT_TILE ) {
 								wallhit = true;
 								break;
 							}
@@ -80,7 +81,8 @@ light_t* lightSphereShadow(int index, Sint32 x, Sint32 y, Sint32 radius, float r
 							u2 -= sgn(dx);
 						}
 						if (u2 >= 0 && u2 < map.width && v2 >= 0 && v2 < map.height) {
-							if (map.tiles[OBSTACLELAYER + v2 * MAPLAYERS + u2 * MAPLAYERS * map.height]) {
+							if (map.tiles[OBSTACLELAYER + v2 * MAPLAYERS + u2 * MAPLAYERS * map.height]
+                                && map.tiles[OBSTACLELAYER + v2 * MAPLAYERS + u2 * MAPLAYERS * map.height] != TRANSPARENT_TILE) {
 								wallhit = true;
 								break;
 							}

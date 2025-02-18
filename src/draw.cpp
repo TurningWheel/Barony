@@ -1865,11 +1865,14 @@ void raycast(const view_t& camera, Sint8 (*minimap)[MINIMAP_MAX_DIMENSION], bool
                 // check against tiles in each map layer
                 bool zhit[MAPLAYERS] = { false };
                 for (int z = 0; z < MAPLAYERS; z++) {
-                    if (tiles[z + iny * MAPLAYERS + inx * MAPLAYERS * mh] && d > dstart) { // hit something solid
+                    if (tiles[z + iny * MAPLAYERS + inx * MAPLAYERS * mh]
+						&& tiles[z + iny * MAPLAYERS + inx * MAPLAYERS * mh] != TRANSPARENT_TILE
+						&& d > dstart) { // hit something solid
                         zhit[z] = true;
                         
                         // collect light information
-                        if (tiles[z + iny2 * MAPLAYERS + inx2 * MAPLAYERS * mh]) {
+                        if (tiles[z + iny2 * MAPLAYERS + inx2 * MAPLAYERS * mh]
+							&& tiles[z + iny2 * MAPLAYERS + inx2 * MAPLAYERS * mh] != TRANSPARENT_TILE) {
                             continue;
                         }
                         auto& l = lights[iny2 + inx2 * mh];
@@ -1926,7 +1929,9 @@ void raycast(const view_t& camera, Sint8 (*minimap)[MINIMAP_MAX_DIMENSION], bool
 						}
 
                         if (d < 16) {
-                            if ( visible && tiles[iny * MAPLAYERS + inx * MAPLAYERS * mh]) {
+                            if ( visible && 
+								tiles[iny * MAPLAYERS + inx * MAPLAYERS * mh]
+								&& tiles[iny * MAPLAYERS + inx * MAPLAYERS * mh] != TRANSPARENT_TILE) {
                                 // walkable space
                                 if (WriteOutsSequentially) {
 									if ( ins.fillWithColor )
@@ -1947,7 +1952,8 @@ void raycast(const view_t& camera, Sint8 (*minimap)[MINIMAP_MAX_DIMENSION], bool
 										minimap[iny][inx] = 3;
 									}
                                 }
-                            } else if (tiles[z + iny * MAPLAYERS + inx * MAPLAYERS * mh]) {
+                            } else if (tiles[z + iny * MAPLAYERS + inx * MAPLAYERS * mh]
+								&& tiles[z + iny * MAPLAYERS + inx * MAPLAYERS * mh] != TRANSPARENT_TILE) {
                                 // no floor
                                 /*if (WriteOutsSequentially) {
                                     result.push_back({inx, iny, 0});
@@ -3682,7 +3688,12 @@ static inline bool testTileOccludes(const map_t& map, int index) {
     assert(index >= 0 && index <= map.width * map.height * MAPLAYERS - MAPLAYERS);
     const Uint64& t0 = *(Uint64*)&map.tiles[index];
     const Uint32& t1 = *(Uint32*)&map.tiles[index + 2];
-    return (t0 & 0xffffffff00000000) && (t0 & 0x00000000ffffffff) && t1;
+    return (t0 & 0xffffffff00000000) // is floor != 0
+		&& (t0 & 0x00000000ffffffff) // is obstacle layer != 0
+		&& t1 // is ceiling != 0
+		&& (((t0 & 0xffffffff00000000) >> 32) != TRANSPARENT_TILE)  // is floor != TRANSPARENT_TILE
+		&& ((t0 & 0x00000000ffffffff) != TRANSPARENT_TILE)  // is obstacle layer != TRANSPARENT_TILE
+		&& (t1 != TRANSPARENT_TILE); // is ceiling != TRANSPARENT_TILE
 }
 
 void occlusionCulling(map_t& map, view_t& camera)
