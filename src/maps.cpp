@@ -829,7 +829,7 @@ bool mapTileDiggable(const int x, const int y)
 	{
 		return false;
 	}
-	if ( !strncmp(map.name, "Hell", 4) )
+	if ( !strncmp(map.name, "Hell", 4) || (!strncmp(map.filename, "fortress", 8)) )
 	{
 		if ( x < getMapPossibleLocationX1() || x >= getMapPossibleLocationX2()
 			|| y < getMapPossibleLocationY1() || y >= getMapPossibleLocationY2() )

@@ -2544,7 +2544,9 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 		}
 #endif
 
+#ifndef EDITOR
 		map.setMapHDRSettings();
+#endif
 
 		// create new lightmap
         for (int c = 0; c < MAXPLAYERS + 1; ++c) {
