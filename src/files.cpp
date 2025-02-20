@@ -2528,6 +2528,24 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 
 	FileIO::close(fp);
 
+	std::string mapShortName = filename2;
+	size_t found = mapShortName.rfind("/");
+	if ( found != std::string::npos )
+	{
+		mapShortName = mapShortName.substr(found + 1);
+	}
+	else
+	{
+		found = mapShortName.rfind("\\");
+		if ( found != std::string::npos )
+		{
+			mapShortName = mapShortName.substr(found + 1);
+		}
+	}
+	size_t size = std::min(mapShortName.size(), sizeof(destmap->filename) - 1);
+	memcpy(destmap->filename, mapShortName.c_str(), size);
+	destmap->filename[size] = '\0';
+
 	if ( destmap == &map )
 	{
 		nummonsters = 0;
@@ -2681,20 +2699,6 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 		}
 	}
 
-	std::string mapShortName = filename2;
-	size_t found = mapShortName.rfind("/");
-	if ( found != std::string::npos )
-	{
-		mapShortName = mapShortName.substr(found + 1);
-	}
-	else
-	{
-		found = mapShortName.rfind("\\");
-		if ( found != std::string::npos )
-		{
-			mapShortName = mapShortName.substr(found + 1);
-		}
-	}
 
 	for ( c = 0; c < 512; c++ )
 	{
@@ -2705,11 +2709,6 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 	{
 		*checkMapHash = mapHashData;
 	}
-
-    size_t size = std::min(mapShortName.size(), sizeof(destmap->filename) - 1);
-    memcpy(destmap->filename, mapShortName.c_str(), size);
-    destmap->filename[size] = '\0';
-
 	return numentities;
 }
 
