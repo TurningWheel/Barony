@@ -3550,6 +3550,52 @@ std::string TextSourceScript::getScriptFromEntity(Entity& src)
 	return buf;
 }
 
+Entity* TextSourceScript::createScriptEntityInMapGen(int x, int y, const char* text)
+{
+	Entity* scriptEntity = newEntity(132, 1, map.entities, nullptr); // text script
+	setSpriteAttributes(scriptEntity, nullptr, nullptr);
+	scriptEntity->x = x * 16.0;
+	scriptEntity->y = y * 16.0;
+	scriptEntity->textSourceDelay = 1;
+
+	if ( text )
+	{
+		addScriptToTextSource(*scriptEntity, text);
+	}
+
+	return scriptEntity;
+}
+
+void TextSourceScript::addScriptToTextSource(Entity& src, const char* text)
+{
+	if ( !text ) { return; }
+
+	for ( int skill = 4; skill < 60; ++skill )
+	{
+		if ( skill == 28 ) { continue; }
+		src.skill[skill] = 0;
+	}
+
+	int skillnum = 4;
+	int len = strlen(text);
+	int encodeIndex = 0;
+	for ( int s = 0; s < len; ++s )
+	{
+		src.skill[skillnum] |= ((text[s]) << (encodeIndex * 8));
+		++encodeIndex;
+		if ( encodeIndex == 4 )
+		{
+			encodeIndex = 0;
+			++skillnum;
+			if ( skillnum == 28 ) { ++skillnum; }
+		}
+		if ( skillnum >= 60 )
+		{
+			break;
+		}
+	}
+}
+
 void TextSourceScript::parseScriptInMapGeneration(Entity& src)
 {
 	std::string script = getScriptFromEntity(src);

@@ -1462,6 +1462,8 @@ public:
 	void playerClearInventory(bool clearStats);
 	std::string getScriptFromEntity(Entity& src);
 	void parseScriptInMapGeneration(Entity& src);
+	Entity* createScriptEntityInMapGen(int x, int y, const char* text);
+	void addScriptToTextSource(Entity& src, const char* text);
 	void handleTextSourceScript(Entity& src, std::string input);
 	int textSourceProcessScriptTag(std::string& input, std::string findTag, Entity& src);
 	bool hasClearedInventory = false;

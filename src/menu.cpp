@@ -8739,6 +8739,7 @@ void doNewGame(bool makeHighscore) {
 	// generate mimics
 	{
 		mimic_generator.init();
+		treasure_room_generator.init();
 	}
 
 	Compendium_t::Events_t::clientReceiveData.clear();

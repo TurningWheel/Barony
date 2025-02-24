@@ -4280,3 +4280,13 @@ struct Compendium_t
 };
 
 extern Compendium_t CompendiumEntries;
+
+struct TreasureRoomGenerator
+{
+	BaronyRNG treasure_rng;
+	std::unordered_set<unsigned int> treasure_floors;
+	std::unordered_set<unsigned int> treasure_secret_floors;
+	void init();
+	bool bForceSpawnForCurrentFloor(int secretlevelexit, bool minotaur, BaronyRNG& mapRNG);
+};
+extern TreasureRoomGenerator treasure_room_generator;
