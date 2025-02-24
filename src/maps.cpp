@@ -5384,7 +5384,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 
 		std::vector<Entity*> goodEntities[KEY_GEN_ENUM_END];
 		std::set<int> itemEntityCoords;
-		std::vector<unsigned int> chances = { 10, 10, 10 };
+		std::vector<unsigned int> chances = { 4, 3, 6 };
 		if ( svFlags & SV_FLAG_CHEATS )
 		{
 			if ( cvar_treasure_chances->w > 0.01f )
