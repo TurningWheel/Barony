@@ -250,7 +250,9 @@ void actPortal(Entity* my)
 			node = node->next;
 			if ( entity && entity->behavior == &actMonster 
 				&& entity->getMonsterTypeFromSprite() == COCKATRICE
-				&& !entity->monsterAllyGetPlayerLeader() )
+				&& !entity->monsterAllyGetPlayerLeader()
+				&& static_cast<int>(entity->x / 16) >= 35
+				&& static_cast<int>(entity->y / 16) >= 19 )
 			{
 				bossAlive = true;
 			}
