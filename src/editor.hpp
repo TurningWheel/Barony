@@ -199,6 +199,8 @@ void buttonCloseSpriteSubwindow(button_t* my);
 void buttonMonsterItems(button_t* my);
 void initMonsterPropertiesWindow();
 void buttonOpenDirectory(button_t* my);
+void buttonOpenPrevMap(button_t* my);
+void buttonOpenNextMap(button_t* my);
 
 extern char itemName[128];
 extern int itemSelect;

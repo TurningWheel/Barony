@@ -9831,6 +9831,16 @@ int main(int argc, char** argv)
 					keystatus[SDLK_KP_MULTIPLY] = 0;
 					lockTilePalette[recentUsedTilePalette] = !lockTilePalette[recentUsedTilePalette]; // toggle lock/unlock
 				}
+				if ( keystatus[SDLK_F5] )
+				{
+					keystatus[SDLK_F5] = 0;
+					buttonOpenPrevMap(nullptr);
+				}
+				if ( keystatus[SDLK_F8] )
+				{
+					keystatus[SDLK_F8] = 0;
+					buttonOpenNextMap(nullptr);
+				}
 			}
 			// process and draw buttons
 			handleButtons();

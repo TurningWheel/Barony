@@ -1753,6 +1753,95 @@ void buttonCloseSubwindow(button_t* my)
 	strcpy(filename, oldfilename);
 }
 
+void buttonOpenNextMap(button_t* my)
+{
+	buttonCloseSubwindow(my);
+	
+	updateMapNames();
+
+	std::string searchStr = filename;
+	auto find = searchStr.find(".lmp");
+	if ( find == std::string::npos )
+	{
+		searchStr += ".lmp";
+	}
+
+	for ( auto it = mapNames.begin(); it != mapNames.end(); )
+	{
+		if ( (*it) == searchStr )
+		{
+			++it;
+			if ( it != mapNames.end() )
+			{
+				if ( it->size() > 0 && it->front() != '.' )
+				{
+					std::string f = *it;
+					auto find = f.find(".lmp");
+					if ( find != std::string::npos )
+					{
+						f.erase(find, strlen(".lmp"));
+					}
+					strcpy(filename, f.c_str());
+					buttonOpenConfirm(my);
+					return;
+				}
+			}
+		}
+		else
+		{
+			++it;
+		}
+	}
+
+	strcpy(message, "Unable to open next map, end of list");
+	messagetime = 60; // 60*50 ms = 3000 ms (3 seconds)
+}
+
+void buttonOpenPrevMap(button_t* my)
+{
+	buttonCloseSubwindow(my);
+
+	updateMapNames();
+
+	std::string searchStr = filename;
+	auto find = searchStr.find(".lmp");
+	if ( find == std::string::npos )
+	{
+		searchStr += ".lmp";
+	}
+
+	for ( auto it = mapNames.rbegin(); it != mapNames.rend(); )
+	{
+		if ( (*it) == searchStr )
+		{
+			++it;
+			if ( it != mapNames.rend() )
+			{
+				if ( it->size() > 0 && it->front() != '.' )
+				{
+					std::string f = *it;
+					auto find = f.find(".lmp");
+					if ( find != std::string::npos )
+					{
+						f.erase(find, strlen(".lmp"));
+					}
+					strcpy(filename, f.c_str());
+					buttonOpenConfirm(my);
+					return;
+				}
+			}
+			break;
+		}
+		else
+		{
+			++it;
+		}
+	}
+
+	strcpy(message, "Unable to open prev map, first of list");
+	messagetime = 60; // 60*50 ms = 3000 ms (3 seconds)
+}
+
 void buttonSpriteProperties(button_t* my)
 {
 	button_t* button;
