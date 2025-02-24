@@ -1043,7 +1043,18 @@ void Entity::actAssistShrine()
 		if ( !interacting || (entityDist(interacting, this) > TOUCHRANGE) )
 		{
 			int playernum = -1;
-			if ( interacting->behavior == &actPlayer )
+			if ( !interacting )
+			{
+				for ( int i = 0; i < MAXPLAYERS; ++i )
+				{
+					if ( achievementObserver.playerUids[i] == shrineInteracting )
+					{
+						playernum = i;
+						break;
+					}
+				}
+			}
+			else if ( interacting->behavior == &actPlayer )
 			{
 				playernum = interacting->skill[2];
 			}
