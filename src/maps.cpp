@@ -5307,9 +5307,18 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 	}
 
 	static ConsoleVariable<Vector4> cvar_treasure_chances("/treasure_chances", Vector4{ 0.f, 0.f, 0.f, 0.f });
-
+	static ConsoleVariable<int> cvar_treasure_key_force("/treasure_key_force", 0);
+	if ( *cvar_treasure_key_force > 0 && (svFlags & SV_FLAG_CHEATS) )
+	{
+		for ( int i = 0; i < *cvar_treasure_key_force; ++i )
+		{
+			generateKeyItems.push_back(std::make_pair(static_cast<ItemType>((int)KEY_STONE + map_rng.rand() % 7), 0));
+		}
+	}
 	if ( generateKeyItems.size() > 0 )
 	{
+		int numKeysGenerated = 0;
+
 		//std::vector<int> goodSpots;
 		//std::vector<int> goodDeadEnds;
 		//std::set<int> goodSpotsSet;
@@ -5443,7 +5452,10 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				int x = static_cast<int>(entity2->x / 16);
 				int y = static_cast<int>(entity2->y / 16);
 				int index = (y)*MAPLAYERS + (x)*MAPLAYERS * map.height;
-				if ( map.tiles[index] && !shoparea[y + x * map.height] && !treasureRoomLocations[x + y * map.width] ) // check floor
+				if ( map.tiles[index] && !shoparea[y + x * map.height] 
+					&& !treasureRoomLocations[x + y * map.width]
+					&& !(x >= startRoomInfo.x1 && x <= startRoomInfo.x2
+						&& y >= startRoomInfo.y1 && y <= startRoomInfo.y2) ) // check floor, dont spawn in treasure room, shop, or start area
 				{
 					goodEntities[entityType].push_back(entity2);
 				}
@@ -5475,6 +5487,34 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 
 		if ( playerStart )
 		{
+			bool hellLadderFix = !strncmp(map.name, "Hell", 4);
+			std::vector<Entity*> tempPassableEntities;
+			if ( hellLadderFix )
+			{
+				for ( node = map.entities->first; node != NULL; node = node->next )
+				{
+					if ( (entity2 = (Entity*)node->element) )
+					{
+						if ( entity2->sprite == 19 || entity2->sprite == 20
+							|| entity2->sprite == 113 || entity2->sprite == 114
+							/*|| entity2->sprite == 217 || entity2->sprite == 218*/ )
+						{
+							int entx = entity2->x / 16;
+							int enty = entity2->y / 16;
+							if ( !entity2->flags[PASSABLE] )
+							{
+								if ( entx >= startRoomInfo.x1 && entx <= startRoomInfo.x2
+									&& enty >= startRoomInfo.y1 && enty <= startRoomInfo.y2 )
+								{
+									tempPassableEntities.push_back(entity2);
+									entity2->flags[PASSABLE] = true;
+								}
+							}
+						}
+					}
+				}
+			}
+
 			while ( generateKeyItems.size() > 0 )
 			{
 				bool anychances = false;
@@ -5505,14 +5545,18 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				int x = static_cast<int>(ent->x / 16);
 				int y = static_cast<int>(ent->y / 16);
 
-				list_t* path = generatePath(x, y, playerStart->x / 16, playerStart->y / 16,
-					ent, playerStart, GeneratePathTypes::GENERATE_PATH_CHECK_EXIT, true);
-				if ( path == NULL )
+
+				if ( strncmp(map.name, "Underworld", 10) ) // underworld no check paths
 				{
-					continue; // no path
+					list_t* path = generatePath(x, y, playerStart->x / 16, playerStart->y / 16,
+						ent, playerStart, GeneratePathTypes::GENERATE_PATH_CHECK_EXIT, true);
+					if ( path == NULL )
+					{
+						continue; // no path
+					}
+					list_FreeAll(path);
+					free(path);
 				}
-				list_FreeAll(path);
-				free(path);
 
 				Entity* keyItem = newEntity(8, 1, map.entities, nullptr); // item
 				keyItem->x = x * 16.0;
@@ -5526,7 +5570,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				numGenItems++;
 
 				generateKeyItems.erase(generateKeyItems.begin());
-
+				++numKeysGenerated;
 				if ( pickedGenType == KEY_GEN_CHEST )
 				{
 					ent->chestLocked = 0;
@@ -5535,6 +5579,11 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 					char buf[256] = "";
 					snprintf(buf, sizeof(buf), "@script @attachto=items @attached.addtochest=%d,%d @triggerif=always", x, y);
 					textSourceScript.createScriptEntityInMapGen(x, y, buf);
+
+					if ( *cvar_treasure_key_force > 0 && (svFlags & SV_FLAG_CHEATS) )
+					{
+						messagePlayer(clientnum, MESSAGE_HINT, "Key generated at x:%d, y:%d, type: chest", x, y);
+					}
 				}
 				else if ( pickedGenType == KEY_GEN_BREAKABLE )
 				{
@@ -5542,6 +5591,11 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 					keyItem->flags[INVISIBLE] = true;
 					keyItem->yaw = ent->yaw;
 					ent->colliderContainedEntity = keyItem->getUID();
+
+					if ( *cvar_treasure_key_force > 0 && (svFlags & SV_FLAG_CHEATS) )
+					{
+						messagePlayer(clientnum, MESSAGE_HINT, "Key generated at x:%d, y:%d, type: breakable", x, y);
+					}
 				}
 				else if ( pickedGenType == KEY_GEN_TABLE_PODIUM )
 				{
@@ -5554,6 +5608,11 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 						ent->furnitureTableRandomItemChance = 0;
 					}
 					ent->parent = keyItem->getUID();
+
+					if ( *cvar_treasure_key_force > 0 && (svFlags & SV_FLAG_CHEATS) )
+					{
+						messagePlayer(clientnum, MESSAGE_HINT, "Key generated at x:%d, y:%d, type: table", x, y);
+					}
 				}
 
 				if ( possiblelocations[y + x * map.height] )
@@ -5562,6 +5621,16 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 					numpossiblelocations--;
 				}
 			}
+
+			for ( auto ent : tempPassableEntities )
+			{
+				ent->flags[PASSABLE] = false;
+			}
+		}
+
+		if ( *cvar_treasure_key_force > 0 && (svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_HINT, "Keys generated: %d", numKeysGenerated);
 		}
 
 		//for ( int c = 0; c < std::min(generateKeyItems.size(), goodSpots.size()) && false; ++c )
