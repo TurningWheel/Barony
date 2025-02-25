@@ -5319,61 +5319,6 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 	{
 		int numKeysGenerated = 0;
 
-		//std::vector<int> goodSpots;
-		//std::vector<int> goodDeadEnds;
-		//std::set<int> goodSpotsSet;
-		//for ( int x = 0; x < map.width; ++x )
-		//{
-		//	for ( int y = 0; y < map.height; ++y )
-		//	{
-		//		if ( possiblelocations[y + x * map.height] == true && treasureRoomLocations[x + y * map.width] == false )
-		//		{
-		//			goodSpots.push_back(x + 10000 * y);
-		//			goodSpotsSet.insert(x + 10000 * y);
-
-		//			int walls = 0;
-		//			for ( int x2 = -1; x2 <= 1; x2++ )
-		//			{
-		//				for ( int y2 = -1; y2 <= 1; y2++ )
-		//				{
-		//					if ( x2 == 0 && y2 == 0 )
-		//					{
-		//						continue;
-		//					}
-
-		//					int checkx = x + x2;
-		//					int checky = y + y2;
-		//					if ( checkx >= 0 && checkx < map.width )
-		//					{
-		//						if ( checky >= 0 && checky < map.height )
-		//						{
-		//							int index = (checky)*MAPLAYERS + (checkx)*MAPLAYERS * map.height;
-		//							if ( map.tiles[OBSTACLELAYER + index] )
-		//							{
-		//								if ( (x2 == -1 && y2 == -1) || (x2 == 1 && y2 == 1)
-		//									|| (x2 == -1 && y2 == 1) || (x2 == 1 && y2 == -1) )
-		//								{
-		//									// corners
-		//								}
-		//								else
-		//								{
-		//									// walls
-		//									++walls;
-		//								}
-		//							}
-		//						}
-		//					}
-		//				}
-		//			}
-
-		//			if ( walls == 3 )
-		//			{
-		//				goodDeadEnds.push_back(x + 10000 * y);
-		//			}
-		//		}
-		//	}
-		//}
-
 		enum GenerateKeyPlaces
 		{
 			KEY_GEN_CHEST,
@@ -5545,7 +5490,6 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				int x = static_cast<int>(ent->x / 16);
 				int y = static_cast<int>(ent->y / 16);
 
-
 				if ( strncmp(map.name, "Underworld", 10) ) // underworld no check paths
 				{
 					list_t* path = generatePath(x, y, playerStart->x / 16, playerStart->y / 16,
@@ -5622,6 +5566,125 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				}
 			}
 
+			if ( generateKeyItems.size() > 0 )
+			{
+				// failsafe if no objects available
+				std::vector<int> goodSpots;
+				std::vector<int> goodDeadEnds;
+				for ( int x = 0; x < map.width; ++x )
+				{
+					for ( int y = 0; y < map.height; ++y )
+					{
+						if ( possiblelocations[y + x * map.height] == true && treasureRoomLocations[x + y * map.width] == false
+							&& map.tiles[(y)*MAPLAYERS + (x)*MAPLAYERS * map.height] && !shoparea[y + x * map.height] )
+						{
+							goodSpots.push_back(x + 10000 * y);
+
+							int walls = 0;
+							for ( int x2 = -1; x2 <= 1; x2++ )
+							{
+								for ( int y2 = -1; y2 <= 1; y2++ )
+								{
+									if ( x2 == 0 && y2 == 0 )
+									{
+										continue;
+									}
+
+									int checkx = x + x2;
+									int checky = y + y2;
+									if ( checkx >= 0 && checkx < map.width )
+									{
+										if ( checky >= 0 && checky < map.height )
+										{
+											int index = (checky)*MAPLAYERS + (checkx)*MAPLAYERS * map.height;
+											if ( map.tiles[OBSTACLELAYER + index] )
+											{
+												if ( (x2 == -1 && y2 == -1) || (x2 == 1 && y2 == 1)
+													|| (x2 == -1 && y2 == 1) || (x2 == 1 && y2 == -1) )
+												{
+													// corners
+												}
+												else
+												{
+													// walls
+													++walls;
+												}
+											}
+										}
+									}
+								}
+							}
+
+							if ( walls == 3 )
+							{
+								goodDeadEnds.push_back(x + 10000 * y);
+							}
+						}
+					}
+				}
+				while ( generateKeyItems.size() > 0 )
+				{
+					auto& floorTiles = goodDeadEnds.size() > 0 ? goodDeadEnds : goodSpots;
+					if ( floorTiles.size() == 0 )
+					{
+						break; // no available floor tiles
+					}
+
+					int pick = map_rng.rand() % floorTiles.size();
+					int x = floorTiles[pick] % 10000;
+					int y = floorTiles[pick] / 10000;
+
+					floorTiles.erase(floorTiles.begin() + pick);
+
+					Entity* keyItem = newEntity(8, 1, map.entities, nullptr); // item
+					keyItem->x = x * 16.0;
+					keyItem->y = y * 16.0;
+
+					if ( strncmp(map.name, "Underworld", 10) ) // underworld no check paths
+					{
+						list_t* path = generatePath(x, y, playerStart->x / 16, playerStart->y / 16,
+							keyItem, playerStart, GeneratePathTypes::GENERATE_PATH_CHECK_EXIT, true);
+						if ( path == NULL )
+						{
+							list_RemoveNode(keyItem->mynode);
+							keyItem = nullptr;
+							continue; // no path
+						}
+						list_FreeAll(path);
+						free(path);
+					}
+
+					if ( *cvar_treasure_key_force > 0 && (svFlags & SV_FLAG_CHEATS) )
+					{
+						if ( &floorTiles == &goodSpots )
+						{
+							messagePlayer(clientnum, MESSAGE_HINT, "Key generated at x:%d, y:%d, type: floor", x, y);
+						}
+						else if ( &floorTiles == &goodDeadEnds )
+						{
+							messagePlayer(clientnum, MESSAGE_HINT, "Key generated at x:%d, y:%d, type: deadend", x, y);
+						}
+					}
+
+					setSpriteAttributes(keyItem, nullptr, nullptr);
+					keyItem->skill[10] = generateKeyItems.front().first + 2;
+					keyItem->skill[11] = 3;
+					keyItem->skill[12] = 0;
+					keyItem->skill[13] = 1;
+					itemsGeneratedList.push_back(keyItem->getUID());
+					numGenItems++;
+
+					generateKeyItems.erase(generateKeyItems.begin());
+					++numKeysGenerated;
+
+					if ( possiblelocations[y + x * map.height] )
+					{
+						possiblelocations[y + x * map.height] = false;
+						numpossiblelocations--;
+					}
+				}
+			}
+
 			for ( auto ent : tempPassableEntities )
 			{
 				ent->flags[PASSABLE] = false;
@@ -5632,63 +5695,6 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		{
 			messagePlayer(clientnum, MESSAGE_HINT, "Keys generated: %d", numKeysGenerated);
 		}
-
-		//for ( int c = 0; c < std::min(generateKeyItems.size(), goodSpots.size()) && false; ++c )
-		//{
-		//	// choose a random location from those available
-		//	int pick = map_rng.rand() % goodSpots.size();
-		//	int x = goodSpots[pick] % 10000;
-		//	int y = goodSpots[pick] / 10000;
-
-		//	goodSpots.erase(goodSpots.begin() + pick);
-
-		//	Entity* keyItem = newEntity(8, 1, map.entities, nullptr); // item
-		//	keyItem->x = x * 16.0;
-		//	keyItem->y = y * 16.0;
-		//	bool nopath = false;
-		//	for ( node = map.entities->first; node != NULL; node = node->next )
-		//	{
-		//		entity2 = (Entity*)node->element;
-		//		if ( entity2->sprite == 1 ) // note entity->behavior == nullptr at this point
-		//		{
-		//			list_t* path = generatePath(x, y, entity2->x / 16, entity2->y / 16,
-		//				keyItem, entity2, GeneratePathTypes::GENERATE_PATH_CHECK_EXIT, true);
-		//			if ( path == NULL )
-		//			{
-		//				nopath = true;
-		//			}
-		//			else
-		//			{
-		//				list_FreeAll(path);
-		//				free(path);
-		//			}
-		//			break;
-		//		}
-		//	}
-		//	
-		//	if ( !nopath )
-		//	{
-		//		setSpriteAttributes(keyItem, nullptr, nullptr);
-		//		keyItem->skill[10] = generateKeyItems[c].first + 2;
-		//		keyItem->skill[11] = 3;
-		//		keyItem->skill[12] = 0;
-		//		keyItem->skill[13] = 1;
-
-		//		itemsGeneratedList.push_back(keyItem->getUID());
-		//		numGenItems++;
-
-		//		possiblelocations[y + x * map.height] = false;
-		//		numpossiblelocations--;
-		//	}
-		//	else
-		//	{
-		//		// try again
-		//		list_RemoveNode(keyItem->mynode);
-		//		keyItem = nullptr;
-		//		--c;
-		//		continue;
-		//	}
-		//}
 	}
 
 	// on hell levels, lava doesn't bubble. helps performance
