@@ -6508,7 +6508,7 @@ int SaveGameInfo::populateFromSession(const int playernum)
 	info->players_connected.resize(MAXPLAYERS);
 	info->players.resize(MAXPLAYERS);
 	for ( int c = 0; c < MAXPLAYERS; ++c ) {
-		info->players_connected[c] = client_disconnected[c] ? 0 : 1;
+		info->players_connected[c] = client_disconnected[c] && !::players[c]->was_connected_to_game ? 0 : 1;
 		if ( info->players_connected[c] ) {
 			auto& player = info->players[c];
 			player.char_class = client_classes[c];

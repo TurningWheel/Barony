@@ -8544,6 +8544,14 @@ void doNewGame(bool makeHighscore) {
 	{
 	    client_keepalive[i] = ticks; // this way nobody times out when we reset ticks!
 		players[i]->init();
+		if ( !loadingsavegame )
+		{
+			players[i]->was_connected_to_game = !client_disconnected[i];
+		}
+		else if ( !client_disconnected[i] )
+		{
+			players[i]->was_connected_to_game = true;
+		}
 		players[i]->hud.reset();
 		players[i]->hud.followerBars.clear();
 		players[i]->hud.playerBars.clear();
@@ -8810,7 +8818,7 @@ void doNewGame(bool makeHighscore) {
 			Uint32 oldSvFlags = gameModeManager.currentSession.serverFlags;
 			bool bOldSvFlags = gameModeManager.currentSession.bHasSavedServerFlags;
 			for (int c = 0; c < MAXPLAYERS; ++c) {
-				if (!client_disconnected[c]) {
+				if (!client_disconnected[c] || players[c]->was_connected_to_game ) {
 					stats[c]->clearStats();
 					loadGame(c, saveGameInfo);
 				}

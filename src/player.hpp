@@ -668,6 +668,7 @@ public:
 	bool bSplitscreen = false;
 	SplitScreenTypes splitScreenType = SPLITSCREEN_DEFAULT;
 	bool bControlEnabled = true; // disabled if dead waiting for gameover prompt etc
+	bool was_connected_to_game = false;
 	Player(int playernum = 0, bool local_host = true);
 	~Player();
 
