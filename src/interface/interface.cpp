@@ -23410,6 +23410,10 @@ std::string CalloutRadialMenu::setCalloutText(Field* field, const char* iconName
 		{
 			key = "wall_lock_off";
 		}
+		if ( setType == SET_CALLOUT_ICON_KEY )
+		{
+			return key;
+		}
 		int wallLockMaterial = entity->wallLockMaterial;
 		if ( entity->sprite >= 1585 && entity->sprite <= 1592 )
 		{
