@@ -274,6 +274,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	floorDecorationHeightOffset(skill[3]),
 	floorDecorationXOffset(skill[4]),
 	floorDecorationYOffset(skill[5]),
+	floorDecorationDestroyIfNoWall(skill[6]),
 	floorDecorationInteractText1(skill[8]),
 	floorDecorationInteractText2(skill[9]),
 	floorDecorationInteractText3(skill[10]),

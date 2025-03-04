@@ -232,13 +232,14 @@ char furniturePropertyNames[1][19] =
 	"Direction (-1 - 7)"
 };
 
-char floorDecorationPropertyNames[9][59] =
+char floorDecorationPropertyNames[10][59] =
 {
 	"Model texture to use (0-9999)",
 	"Direction (-1 - 7)",
 	"Height Offset (Qtrs of a voxel, +ive is higher)",
 	"X Offset (L/R, Qtrs of a voxel, +ive is right)",
 	"Y Offset (U/D, Qtrs of a voxel, +ive is down)",
+	"Destroy if no wall (-1 - 8)",
 	"Interact Text",
 	"",
 	"",
@@ -6015,15 +6016,15 @@ int main(int argc, char** argv)
 						Uint32 color = makeColorRGB(0, 255, 0);
 						Uint32 colorRandom = makeColorRGB(0, 168, 255);
 						Uint32 colorError = makeColorRGB(255, 0, 0);
-
+						std::string rotationStr = "";
 						for ( int i = 0; i < numProperties; i++ )
 						{
 							int propertyInt = atoi(spriteProperties[i]);
 
-							if ( i >= 5 && i <= 8 )
+							if ( i >= 6 && i <= 9 )
 							{
 								inputFieldWidth = subx2 - inputField_x; // width of the text field
-								if ( i > 5 )
+								if ( i > 6 )
 								{
 									spacing = 18;
 								}
@@ -6041,9 +6042,9 @@ int main(int argc, char** argv)
 							inputFieldHeader_y = suby1 + 28 + i * spacing;
 							inputField_y = inputFieldHeader_y + 16;
 
-							if ( i > 5 && i <= 8 )
+							if ( i > 6 && i <= 9 )
 							{
-								int offsetBoxes = 2.5 * 36;
+								int offsetBoxes = 3 * 36;
 								inputFieldHeader_y = suby1 + 28 + i * spacing + offsetBoxes;
 								inputField_y = inputFieldHeader_y + 16;
 								// box outlines then text
@@ -6124,6 +6125,7 @@ int main(int argc, char** argv)
 												break;
 										}
 										printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, color, tmpStr);
+										rotationStr = tmpStr;
 									}
 								}
 								else if ( i == 2 || i == 3 || i == 4 )
@@ -6131,6 +6133,53 @@ int main(int argc, char** argv)
 									if ( propertyInt > 999 || propertyInt < -999 )
 									{
 										propertyPageError(i, 0); // reset to default 0.
+									}
+								}
+								else if ( i == 5 )
+								{
+									if ( propertyInt > 8 || propertyInt < -1 )
+									{
+										propertyPageError(i, -1); // reset to default -1
+									}
+									else
+									{
+										char tmpStr[32] = "";
+										switch ( propertyInt )
+										{
+										case -1:
+											strcpy(tmpStr, "n/a");
+											break;
+										case 0:
+											strcpy(tmpStr, "East");
+											break;
+										case 1:
+											strcpy(tmpStr, "Southeast");
+											break;
+										case 2:
+											strcpy(tmpStr, "South");
+											break;
+										case 3:
+											strcpy(tmpStr, "Southwest");
+											break;
+										case 4:
+											strcpy(tmpStr, "West");
+											break;
+										case 5:
+											strcpy(tmpStr, "Northwest");
+											break;
+										case 6:
+											strcpy(tmpStr, "North");
+											break;
+										case 7:
+											strcpy(tmpStr, "Northeast");
+											break;
+										case 8:
+											snprintf(tmpStr, sizeof(tmpStr), "Opposite To Rotation");
+											break;
+										default:
+											break;
+										}
+										printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, color, tmpStr);
 									}
 								}
 								else
@@ -6170,10 +6219,10 @@ int main(int argc, char** argv)
 							for ( int i = 0; i < numProperties; i++ )
 							{
 								inputField_x = subx1 + 8;
-								if ( i > 5 && i <= 8 )
+								if ( i > 6 && i <= 9 )
 								{
 									spacing = 18;
-									int offsetBoxes = 2.5 * 36;
+									int offsetBoxes = 3 * 36;
 									inputFieldWidth = subx2 - inputField_x; // width of the text field
 									if ( mouseInBounds(inputField_x - 4, inputField_x - 4 + inputFieldWidth,
 										suby1 + 40 + i * spacing + offsetBoxes, suby1 + 56 + i * spacing + offsetBoxes) )
@@ -6185,7 +6234,7 @@ int main(int argc, char** argv)
 								}
 								else
 								{
-									if ( i == 5 )
+									if ( i == 6 )
 									{
 										inputFieldWidth = subx2 - inputField_x; // width of the text field
 									}
@@ -6215,7 +6264,7 @@ int main(int argc, char** argv)
 							}
 
 							// set the maximum length allowed for user input
-							if ( editproperty >= 5 && editproperty <= 8 )
+							if ( editproperty >= 6 && editproperty <= 9 )
 							{
 								inputlen = 48;
 							}
@@ -6225,10 +6274,10 @@ int main(int argc, char** argv)
 							}
 							if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
 							{
-								if ( editproperty > 5 && editproperty <= 8 )
+								if ( editproperty > 6 && editproperty <= 9 )
 								{
 									spacing = 18;
-									int offsetBoxes = 2.5 * 36;
+									int offsetBoxes = 3 * 36;
 									if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
 									{
 										printText(font8x8_bmp, subx1 + 8 + strlen(spriteProperties[editproperty]) * 8, suby1 + 44 + editproperty * spacing + offsetBoxes, "\26");

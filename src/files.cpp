@@ -1856,7 +1856,12 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 
 	// read map version number
 	fp->read(valid_data, sizeof(char), strlen("BARONY LMPV2.0"));
-	if ( strncmp(valid_data, "BARONY LMPV3.1", strlen("BARONY LMPV2.0")) == 0 )
+	if ( strncmp(valid_data, "BARONY LMPV3.2", strlen("BARONY LMPV2.0")) == 0 )
+	{
+		// floor deco walls
+		editorVersion = 32;
+	}
+	else if ( strncmp(valid_data, "BARONY LMPV3.1", strlen("BARONY LMPV2.0")) == 0 )
 	{
 		// wall lock fix
 		editorVersion = 31;
@@ -2328,6 +2333,14 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 					{
 						fp->read(&entity->floorDecorationXOffset, sizeof(Sint32), 1);
 						fp->read(&entity->floorDecorationYOffset, sizeof(Sint32), 1);
+						if ( editorVersion >= 32 )
+						{
+							fp->read(&entity->floorDecorationDestroyIfNoWall, sizeof(Sint32), 1);
+						}
+						else
+						{
+							entity->floorDecorationDestroyIfNoWall = -1;
+						}
 						for ( int i = 8; i < 60; ++i )
 						{
 							fp->read(&entity->skill[i], sizeof(Sint32), 1);
@@ -2753,7 +2766,7 @@ int saveMap(const char* filename2)
 			return 1;
 		}
 
-		fp->write("BARONY LMPV3.1", sizeof(char), strlen("BARONY LMPV2.0")); // magic code
+		fp->write("BARONY LMPV3.2", sizeof(char), strlen("BARONY LMPV2.0")); // magic code
 		fp->write(map.name, sizeof(char), 32); // map filename
 		fp->write(map.author, sizeof(char), 32); // map author
 		fp->write(&map.width, sizeof(Uint32), 1); // map width
@@ -2882,6 +2895,7 @@ int saveMap(const char* filename2)
 					fp->write(&entity->floorDecorationHeightOffset, sizeof(Sint32), 1);
 					fp->write(&entity->floorDecorationXOffset, sizeof(Sint32), 1);
 					fp->write(&entity->floorDecorationYOffset, sizeof(Sint32), 1);
+					fp->write(&entity->floorDecorationDestroyIfNoWall, sizeof(Sint32), 1);
 					for ( int i = 8; i < 60; ++i )
 					{
 						fp->write(&entity->skill[i], sizeof(Sint32), 1);

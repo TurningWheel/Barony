@@ -1136,7 +1136,8 @@ std::vector<const char*> spriteEditorNameStrings =
 	"WALL BUTTON (North)",
 	"NO DIG TILE",
 	"IRON DOOR (North-South)",
-	"IRON DOOR (East-West)"
+	"IRON DOOR (East-West)",
+	"SLIPPERY TILE"
 };
 
 char monsterEditorNameStrings[NUMMONSTERS][16] =
@@ -1835,6 +1836,7 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			entityNew->floorDecorationHeightOffset = entityToCopy->floorDecorationHeightOffset;
 			entityNew->floorDecorationXOffset = entityToCopy->floorDecorationXOffset;
 			entityNew->floorDecorationYOffset = entityToCopy->floorDecorationYOffset;
+			entityNew->floorDecorationDestroyIfNoWall = entityToCopy->floorDecorationDestroyIfNoWall;
 			for ( int i = 8; i < 60; ++i )
 			{
 				entityNew->skill[i] = entityToCopy->skill[i];
@@ -1848,6 +1850,7 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			entityNew->floorDecorationHeightOffset = 0;
 			entityNew->floorDecorationXOffset = 0;
 			entityNew->floorDecorationYOffset = 0;
+			entityNew->floorDecorationDestroyIfNoWall = -1;
 			for ( int i = 8; i < 60; ++i )
 			{
 				entityNew->skill[i] = 0;

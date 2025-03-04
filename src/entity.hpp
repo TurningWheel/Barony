@@ -423,6 +423,7 @@ public:
 	Sint32& floorDecorationHeightOffset; //skill[3] positive numbers will lift the model higher
 	Sint32& floorDecorationXOffset; //skill[4]
 	Sint32& floorDecorationYOffset; //skill[5]
+	Sint32& floorDecorationDestroyIfNoWall; //skill[6]
 	Sint32& floorDecorationInteractText1; //skill[8]
 	Sint32& floorDecorationInteractText2; //skill[9]
 	Sint32& floorDecorationInteractText3; //skill[10]

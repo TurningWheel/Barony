@@ -465,6 +465,18 @@ int monsterCurve(int level)
 				return COCKATRICE;
 		}
 	}
+	else if ( !strncmp(map.filename, "fortress", 8) )
+	{
+		switch ( map_rng.rand() % 3 )
+		{
+			case 0:
+				return MONSTER_D;
+			case 1:
+				return MONSTER_M;
+			case 2:
+				return MONSTER_G;
+		}
+	}
 	return SKELETON; // basic monster
 }
 
@@ -8553,13 +8565,27 @@ void assignActions(map_t* map)
 				entity->z = 7.5 - entity->floorDecorationHeightOffset * 0.25;
 				entity->x += entity->floorDecorationXOffset * 0.25;
 				entity->y += entity->floorDecorationYOffset * 0.25;
+				int rotation = entity->floorDecorationRotation;
 				if ( entity->floorDecorationRotation == -1 )
 				{
-					entity->yaw = (map_rng.rand() % 8) * (PI / 4);
+					rotation = map_rng.rand() % 8;
+					entity->yaw = (rotation) * (PI / 4);
 				}
 				else
 				{
 					entity->yaw = entity->floorDecorationRotation * (PI / 4);
+				}
+				if ( entity->floorDecorationDestroyIfNoWall == 8 )
+				{
+					// match rotation
+					if ( rotation >= 4 )
+					{
+						entity->floorDecorationDestroyIfNoWall = rotation - 4;
+					}
+					else
+					{
+						entity->floorDecorationDestroyIfNoWall = rotation + 4;
+					}
 				}
 				bool modifiedFocal = false;
 				if ( entity->x < 0.0 )
@@ -9447,6 +9473,13 @@ void assignActions(map_t* map)
 				childEntity->behavior = &actDoorFrame;
 				break;
 			}
+			case 219: // slippery tile
+				map->tileAttributes[0 + (static_cast<int>(entity->y) >> 4)
+					* MAPLAYERS + (static_cast<int>(entity->x) >> 4)
+					* MAPLAYERS * map->height] |= map_t::TILE_ATTRIBUTE_SLIPPERY;
+				list_RemoveNode(entity->mynode);
+				entity = nullptr;
+				break;
             default:
                 break;
 		}

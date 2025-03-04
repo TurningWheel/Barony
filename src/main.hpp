@@ -465,6 +465,7 @@ typedef struct map_t
 	std::set<int> liquidSfxPlayedTiles;
 	std::map<int, Uint32> tileAttributes;
 	static const Uint32 TILE_ATTRIBUTE_NODIG = 1 << 0;
+	static const Uint32 TILE_ATTRIBUTE_SLIPPERY = 1 << 1;
 	bool tileHasAttribute(int x, int y, int layer, Uint32 attribute);
 	void setMapHDRSettings();
 	char filename[256];

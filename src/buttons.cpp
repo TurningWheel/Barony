@@ -2093,6 +2093,7 @@ void buttonSpriteProperties(button_t* my)
 				snprintf(spriteProperties[2], 5, "%d", static_cast<int>(selectedEntity[0]->floorDecorationHeightOffset));
 				snprintf(spriteProperties[3], 5, "%d", static_cast<int>(selectedEntity[0]->floorDecorationXOffset));
 				snprintf(spriteProperties[4], 5, "%d", static_cast<int>(selectedEntity[0]->floorDecorationYOffset));
+				snprintf(spriteProperties[5], 5, "%d", static_cast<int>(selectedEntity[0]->floorDecorationDestroyIfNoWall));
 				char buf[256] = "";
 				int totalChars = 0;
 				for ( int i = 8; i < 60; ++i )
@@ -2118,10 +2119,10 @@ void buttonSpriteProperties(button_t* my)
 				{
 					buf[totalChars] = '\0';
 				}
-				strncpy(spriteProperties[5], buf, 48);
-				strncpy(spriteProperties[6], buf + 48, 48);
-				strncpy(spriteProperties[7], buf + 96, 48);
-				strncpy(spriteProperties[8], buf + 144, 48);
+				strncpy(spriteProperties[6], buf, 48);
+				strncpy(spriteProperties[7], buf + 48, 48);
+				strncpy(spriteProperties[8], buf + 96, 48);
+				strncpy(spriteProperties[9], buf + 144, 48);
 				inputstr = spriteProperties[0];
 				cursorflash = ticks;
 				menuVisible = 0;
@@ -2129,8 +2130,8 @@ void buttonSpriteProperties(button_t* my)
 				newwindow = 15;
 				subx1 = xres / 2 - 200;
 				subx2 = xres / 2 + 200;
-				suby1 = yres / 2 - 180;
-				suby2 = yres / 2 + 180;
+				suby1 = yres / 2 - 190;
+				suby2 = yres / 2 + 190;
 				strcpy(subtext, "Decoration Model Properties:");
 				break;
 			}
@@ -3410,6 +3411,7 @@ void buttonSpritePropertiesConfirm(button_t* my)
 				selectedEntity[0]->floorDecorationHeightOffset = (Sint32)atoi(spriteProperties[2]);
 				selectedEntity[0]->floorDecorationXOffset = (Sint32)atoi(spriteProperties[3]);
 				selectedEntity[0]->floorDecorationYOffset = (Sint32)atoi(spriteProperties[4]);
+				selectedEntity[0]->floorDecorationDestroyIfNoWall = (Sint32)atoi(spriteProperties[5]);
 
 				int totalChars = 0;
 				char checkChr = 'a';
@@ -3428,23 +3430,23 @@ void buttonSpritePropertiesConfirm(button_t* my)
 					{
 						if ( totalChars >= 144 )
 						{
-							selectedEntity[0]->skill[i] |= (spriteProperties[8][totalChars - 144]) << (c * 8);
-							checkChr = spriteProperties[8][totalChars - 144];
+							selectedEntity[0]->skill[i] |= (spriteProperties[9][totalChars - 144]) << (c * 8);
+							checkChr = spriteProperties[9][totalChars - 144];
 						}
 						else if ( totalChars >= 96 )
 						{
-							selectedEntity[0]->skill[i] |= (spriteProperties[7][totalChars - 96]) << (c * 8);
-							checkChr = spriteProperties[7][totalChars - 96];
+							selectedEntity[0]->skill[i] |= (spriteProperties[8][totalChars - 96]) << (c * 8);
+							checkChr = spriteProperties[8][totalChars - 96];
 						}
 						else if ( totalChars >= 48 )
 						{
-							selectedEntity[0]->skill[i] |= (spriteProperties[6][totalChars - 48]) << (c * 8);
-							checkChr = spriteProperties[6][totalChars - 48];
+							selectedEntity[0]->skill[i] |= (spriteProperties[7][totalChars - 48]) << (c * 8);
+							checkChr = spriteProperties[7][totalChars - 48];
 						}
 						else
 						{
-							selectedEntity[0]->skill[i] |= (spriteProperties[5][totalChars]) << (c * 8);
-							checkChr = spriteProperties[5][totalChars];
+							selectedEntity[0]->skill[i] |= (spriteProperties[6][totalChars]) << (c * 8);
+							checkChr = spriteProperties[6][totalChars];
 						}
 						if ( checkChr == '\0' )
 						{

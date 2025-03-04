@@ -1182,6 +1182,68 @@ void actFloorDecoration(Entity* my)
 		return;
 	}
 
+	if ( my->floorDecorationDestroyIfNoWall >= 0 )
+	{
+		int x = static_cast<int>(my->x) >> 4;
+		int y = static_cast<int>(my->y) >> 4;
+		std::vector<std::pair<int, int>> coords;
+		switch ( my->floorDecorationDestroyIfNoWall )
+		{
+		case 0:
+			// east
+			coords.push_back(std::make_pair(x + 1, y));
+			break;
+		case 1:
+			// southeast
+			coords.push_back(std::make_pair(x + 1, y));
+			coords.push_back(std::make_pair(x, y + 1));
+			break;
+		case 2:
+			// south
+			coords.push_back(std::make_pair(x, y + 1));
+			break;
+		case 3:
+			// southwest
+			coords.push_back(std::make_pair(x, y + 1));
+			coords.push_back(std::make_pair(x - 1, y));
+			break;
+		case 4:
+			// west
+			coords.push_back(std::make_pair(x - 1, y));
+			break;
+		case 5:
+			// northwest
+			coords.push_back(std::make_pair(x, y - 1));
+			coords.push_back(std::make_pair(x - 1, y));
+			break;
+		case 6:
+			// north
+			coords.push_back(std::make_pair(x, y - 1));
+			break;
+		case 7:
+			// northeast
+			coords.push_back(std::make_pair(x, y - 1));
+			coords.push_back(std::make_pair(x + 1, y));
+			break;
+		default:
+			break;
+		}
+
+		for ( auto& pair : coords )
+		{
+			int x = pair.first;
+			int y = pair.second;
+			if ( x >= 0 && x < map.width && y >= 0 && y < map.height )
+			{
+				if ( !map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height] )
+				{
+					list_RemoveNode(my->mynode);
+					return;
+				}
+			}
+		}
+	}
+
 	if ( my->floorDecorationInteractText1 == 0 )
 	{
 		// no text.
