@@ -5183,5 +5183,146 @@ namespace ConsoleCommands {
 		}
 #endif
 		});
+
+	static ConsoleCommand ccmd_shader_test("/shader_test", "", []CCMD{
+		{
+			std::string filePath = "/data/shaders/";
+			filePath.append("sprite");
+			if ( filePath.find(".json") == std::string::npos )
+			{
+				filePath.append(".json");
+			}
+			if ( PHYSFS_getRealDir(filePath.c_str()) )
+			{
+				std::string inputPath = PHYSFS_getRealDir(filePath.c_str());
+				inputPath.append(filePath);
+
+				File* fp = FileIO::open(inputPath.c_str(), "rb");
+				if ( !fp )
+				{
+					printlog("[JSON]: Error: Could not locate json file %s", inputPath.c_str());
+					return;
+				}
+
+				char buf[65536];
+				int count = fp->read(buf, sizeof(buf[0]), sizeof(buf));
+				buf[count] = '\0';
+				rapidjson::StringStream is(buf);
+				FileIO::close(fp);
+
+				rapidjson::Document d;
+				d.ParseStream(is);
+
+				if ( !d.IsObject() || !d.HasMember("version") )
+				{
+					printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
+					return;
+				}
+
+				std::string vertex;
+				std::string fragment;
+
+				for ( auto itr = d["vertex"].Begin(); itr != d["vertex"].End(); ++itr )
+				{
+					if ( vertex.size() != 0 )
+					{
+						vertex += '\n';
+					}
+					vertex += itr->GetString();
+				}
+				for ( auto itr = d["fragment"].Begin(); itr != d["fragment"].End(); ++itr )
+				{
+					if ( fragment.size() != 0 )
+					{
+						fragment += '\n';
+					}
+					fragment += itr->GetString();
+				}
+
+				auto& shader = spriteUIShader;
+				shader.destroy();
+				shader.init("spriteUIShader");
+
+				shader.compile(vertex.c_str(), vertex.size(), Shader::Type::Vertex);
+				shader.compile(fragment.c_str(), fragment.size(), Shader::Type::Fragment);
+				shader.bindAttribLocation("iPosition", 0);
+				shader.bindAttribLocation("iTexCoord", 1);
+				shader.bindAttribLocation("iColor", 2);
+				shader.link();
+				shader.bind();
+				GL_CHECK_ERR(glUniform1i(shader.uniform("uTexture"), 0));
+				GL_CHECK_ERR(glUniform1i(shader.uniform("uLightmap"), 1));
+			}
+		}
+		{
+			std::string filePath = "/data/shaders/";
+			filePath.append("voxel");
+			if ( filePath.find(".json") == std::string::npos )
+			{
+				filePath.append(".json");
+			}
+			if ( PHYSFS_getRealDir(filePath.c_str()) )
+			{
+				std::string inputPath = PHYSFS_getRealDir(filePath.c_str());
+				inputPath.append(filePath);
+
+				File* fp = FileIO::open(inputPath.c_str(), "rb");
+				if ( !fp )
+				{
+					printlog("[JSON]: Error: Could not locate json file %s", inputPath.c_str());
+					return;
+				}
+
+				char buf[65536];
+				int count = fp->read(buf, sizeof(buf[0]), sizeof(buf));
+				buf[count] = '\0';
+				rapidjson::StringStream is(buf);
+				FileIO::close(fp);
+
+				rapidjson::Document d;
+				d.ParseStream(is);
+
+				if ( !d.IsObject() || !d.HasMember("version") )
+				{
+					printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
+					return;
+				}
+
+				std::string vertex;
+				std::string fragment;
+
+				for ( auto itr = d["vertex"].Begin(); itr != d["vertex"].End(); ++itr )
+				{
+					if ( vertex.size() != 0 )
+					{
+						vertex += '\n';
+					}
+					vertex += itr->GetString();
+				}
+				for ( auto itr = d["fragment"].Begin(); itr != d["fragment"].End(); ++itr )
+				{
+					if ( fragment.size() != 0 )
+					{
+						fragment += '\n';
+					}
+					fragment += itr->GetString();
+				}
+
+				auto& shader = voxelShader;
+				shader.destroy();
+				shader.init("voxelShader");
+
+				shader.compile(vertex.c_str(), vertex.size(), Shader::Type::Vertex);
+				shader.compile(fragment.c_str(), fragment.size(), Shader::Type::Fragment);
+				shader.bindAttribLocation("iPosition", 0);
+				shader.bindAttribLocation("iColor", 1);
+				shader.bindAttribLocation("iNormal", 2);
+				shader.link();
+				shader.bind();
+				GL_CHECK_ERR(glUniform1i(shader.uniform("uLightmap"), 1));
+				GL_CHECK_ERR(glUniform1i(shader.uniform("uTexturemap"), 2));
+			}
+		}
+	});
 }
 

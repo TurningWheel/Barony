@@ -1335,7 +1335,19 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
     GL_CHECK_ERR(glDisableVertexAttribArray(1));
     GL_CHECK_ERR(glDisableVertexAttribArray(2));
 #endif
+
+    /*const GLfloat stretch = ticks;
+    GL_CHECK_ERR(glUniform1f(shader.uniform("uStretch"), stretch));
     
+
+    if ( SDL_Surface* sprite = tiles[83] )
+    {
+        GL_CHECK_ERR(glActiveTexture(GL_TEXTURE2));
+        GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, texid[(long int)sprite->userdata]));
+    }
+
+    GL_CHECK_ERR(glActiveTexture(GL_TEXTURE0));*/
+
     // reset GL state
     if (entity->flags[OVERDRAW]) {
         GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uProj"), 1, false, (float*)&camera->proj));
@@ -1475,9 +1487,12 @@ void glDrawEnemyBarSprite(view_t* camera, int mode, int playerViewport, void* en
     const float cameraPos[4] = {(float)camera->x * 32.f, -(float)camera->z, (float)camera->y * 32.f, 1.f};
     GL_CHECK_ERR(glUniform4fv(shader.uniform("uCameraPos"), 1, cameraPos));
 
+    //const GLfloat stretch = ticks;
+    //GL_CHECK_ERR(glUniform1f(shader.uniform("uStretch"), stretch));
+
     // draw
     spriteMesh.draw();
-    
+
     // reset GL state
     GL_CHECK_ERR(glDepthRange(0, 1));
     GL_CHECK_ERR(glDisable(GL_BLEND));
@@ -1716,6 +1731,9 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
     const float cameraPos[4] = {(float)camera->x * 32.f, -(float)camera->z, (float)camera->y * 32.f, 1.f};
     GL_CHECK_ERR(glUniform4fv(shader.uniform("uCameraPos"), 1, cameraPos));
     
+    //const GLfloat stretch = ticks;
+    //GL_CHECK_ERR(glUniform1f(shader.uniform("uStretch"), stretch));
+
     // draw
     spriteMesh.draw();
     
