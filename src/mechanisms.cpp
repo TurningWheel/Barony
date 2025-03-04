@@ -1833,7 +1833,13 @@ void Entity::actWallLock()
 						{
 							if ( !players[i]->isLocalPlayer() )
 							{
-								if ( wallLockPlayerInteracting == players[i]->entity->getUID() )
+								if ( wallLockPower == 1 )
+								{
+									// already been lockpicked
+									messagePlayer(i, MESSAGE_INTERACTION, Language::get(6430), Language::get(6383 + wallLockMaterial));
+									playSoundEntity(this, 152, 64);
+								}
+								else if ( wallLockPlayerInteracting == players[i]->entity->getUID() )
 								{
 									// chosen one, allow them to unlock the door.
 									wallLockClientInteractDelay = TICKS_PER_SECOND * 10;
@@ -1860,7 +1866,13 @@ void Entity::actWallLock()
 							}
 							else // local player
 							{
-								if ( wallLockPlayerInteracting != 0 )
+								if ( wallLockPower == 1 )
+								{
+									// already been lockpicked
+									messagePlayer(i, MESSAGE_INTERACTION, Language::get(6430), Language::get(6383 + wallLockMaterial));
+									playSoundEntity(this, 152, 64);
+								}
+								else if ( wallLockPlayerInteracting != 0 )
 								{
 									// someone else is using that
 									if ( wallLockPlayerInteracting != players[i]->entity->getUID() )

@@ -51,10 +51,19 @@ void Item::applySkeletonKey(int player, Entity& entity)
 			{
 				if ( entity.wallLockPower == 1 )
 				{
-					playSoundEntity(&entity, 57, 64);
-					entity.wallLockPower = 2; // turn off later in actWallLock
-					messagePlayer(player, MESSAGE_INTERACTION, Language::get(6427), items[TOOL_SKELETONKEY].getIdentifiedName(), 
-						Language::get(6383 + entity.wallLockMaterial));
+					if ( entity.wallLockTurnable == 0 )
+					{
+						// untoggleable
+						playSoundEntity(&entity, 92, 64);
+						messagePlayer(player, MESSAGE_INTERACTION, Language::get(6429), Language::get(6383 + entity.wallLockMaterial));
+					}
+					else
+					{
+						playSoundEntity(&entity, 57, 64);
+						entity.wallLockPower = 2; // turn off later in actWallLock
+						messagePlayer(player, MESSAGE_INTERACTION, Language::get(6427), items[TOOL_SKELETONKEY].getIdentifiedName(), 
+							Language::get(6383 + entity.wallLockMaterial));
+					}
 				}
 				else if ( entity.wallLockPower == 0 )
 				{
@@ -619,7 +628,8 @@ void Item::applyLockpick(int player, Entity& entity)
 					bool tryDegradeLockpick = true;
 					if ( !entity.wallLockPreventLockpickExploit )
 					{
-						if ( stats[player]->getProficiency(PRO_LOCKPICKING) < SKILL_LEVEL_SKILLED )
+						int skillIncreaseMinimum = std::min(100, std::max(0, entity.wallLockPickable + 20));
+						if ( stats[player]->getProficiency(PRO_LOCKPICKING) < skillIncreaseMinimum )
 						{
 							if ( local_rng.rand() % 10 == 0 )
 							{
@@ -690,10 +700,19 @@ void Item::applyLockpick(int player, Entity& entity)
 				}
 				else
 				{
-					playSoundEntity(&entity, 57, 64);
-					entity.wallLockPower = 2; // turn off later in actWallLock
-					messagePlayer(player, MESSAGE_INTERACTION, Language::get(6427), items[TOOL_LOCKPICK].getIdentifiedName(),
-						Language::get(6383 + entity.wallLockMaterial));
+					if ( entity.wallLockTurnable == 0 )
+					{
+						// untoggleable
+						playSoundEntity(&entity, 92, 64);
+						messagePlayer(player, MESSAGE_INTERACTION, Language::get(6429), Language::get(6383 + entity.wallLockMaterial));
+					}
+					else
+					{
+						playSoundEntity(&entity, 57, 64);
+						entity.wallLockPower = 2; // turn off later in actWallLock
+						messagePlayer(player, MESSAGE_INTERACTION, Language::get(6427), items[TOOL_LOCKPICK].getIdentifiedName(),
+							Language::get(6383 + entity.wallLockMaterial));
+					}
 				}
 			}
 		}
