@@ -1183,10 +1183,11 @@ bool Entity::entityCheckIfTriggeredWallButton()
 
 	bool foundButton = false;
 
-	real_t height_limit = (behavior == &actThrown) ? 3.0 : 2.0;
+	real_t height_limit_low = (behavior == &actThrown) ? 5.0 : 4.0;
+	real_t height_limit_high = -8.0;
 
 	// check for wall buttons
-	if ( z < height_limit && z > -height_limit )
+	if ( z < height_limit_low && z > height_limit_high )
 	{
 		std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(this, 1);
 		for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
@@ -1199,6 +1200,10 @@ bool Entity::entityCheckIfTriggeredWallButton()
 				{
 					if ( entity->behavior == &::actWallButton )
 					{
+						Sint32 tmpsizex = sizex;
+						Sint32 tmpsizey = sizey;
+						sizex = std::max(sizex, 2);
+						sizey = std::max(sizey, 2);
 						if ( entityInsideEntity(this, entity) )
 						{
 							entity->wallLockPlayerInteracting = MAXPLAYERS + 1;
@@ -1211,6 +1216,8 @@ bool Entity::entityCheckIfTriggeredWallButton()
 								}
 							}
 						}
+						sizex = tmpsizex;
+						sizey = tmpsizey;
 					}
 				}
 			}
