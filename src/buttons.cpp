@@ -2548,6 +2548,19 @@ void buttonSpriteProperties(button_t* my)
 				suby2 = yres / 2 + 90;
 				strcpy(subtext, "Wall Button Properties:");
 				break;
+			case 33:
+				snprintf(spriteProperties[0], 2, "%d", static_cast<int>(selectedEntity[0]->skill[0]));
+				inputstr = spriteProperties[0];
+				cursorflash = ticks;
+				menuVisible = 0;
+				subwindow = 1;
+				newwindow = 37;
+				subx1 = xres / 2 - 170;
+				subx2 = xres / 2 + 170;
+				suby1 = yres / 2 - 90;
+				suby2 = yres / 2 + 90;
+				strcpy(subtext, "Wind Properties:");
+				break;
 			default:
 				strcpy(message, "No properties available for current sprite.");
 				messagetime = 60;
@@ -3689,6 +3702,9 @@ void buttonSpritePropertiesConfirm(button_t* my)
 			case 31:
 				selectedEntity[0]->wallLockInvertPower = (Sint32)atoi(spriteProperties[0]);
 				selectedEntity[0]->wallLockTimer = (Sint32)atoi(spriteProperties[1]);
+				break;
+			case 33:
+				selectedEntity[0]->skill[0] = (Sint32)atoi(spriteProperties[0]);
 				break;
 			default:
 				break;

@@ -18,6 +18,7 @@
 #include "player.hpp"
 #include "scores.hpp"
 #include "mod_tools.hpp"
+#include "collision.hpp"
 
 //Circuits do not overlap. They connect to all their neighbors, allowing for circuits to interfere with eachother.
 static ConsoleVariable<bool> cvar_wire_debug("/wire_debug", false);
@@ -2120,6 +2121,40 @@ void Entity::actWallLock()
 				}
 				list_FreeAll(neighbors); //Free the list.
 				free(neighbors);
+			}
+		}
+	}
+}
+
+void actWind(Entity* my)
+{
+	if ( !my )
+	{
+		return;
+	}
+
+	my->actWind();
+}
+
+static ConsoleVariable<float> cvar_map_tile_wind("/map_tile_wind", 1.0);
+
+void Entity::actWind()
+{
+	std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(this, 2);
+	for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
+	{
+		list_t* currentList = *it;
+		for ( node_t* node = currentList->first; node != nullptr; node = node->next )
+		{
+			Entity* entity = (Entity*)node->element;
+			if ( entity->behavior == &actPlayer && entityInsideEntity(this, entity) )
+			{
+				entity->creatureWindVelocity = *cvar_map_tile_wind;
+				real_t dirx = cos(entity->creatureWindDir);
+				real_t diry = sin(entity->creatureWindDir);
+				dirx += cos(this->yaw);
+				diry += sin(this->yaw);
+				entity->creatureWindDir = atan2(diry, dirx);
 			}
 		}
 	}

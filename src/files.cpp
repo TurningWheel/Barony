@@ -2523,6 +2523,9 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 					fp->read(&entity->wallLockInvertPower, sizeof(Sint32), 1);
 					fp->read(&entity->wallLockTimer, sizeof(Sint32), 1);
 					break;
+				case 33:
+					fp->read(&entity->skill[0], sizeof(Sint32), 1);
+					break;
 				default:
 					break;
 			}
@@ -3030,6 +3033,9 @@ int saveMap(const char* filename2)
 				case 31:
 					fp->write(&entity->wallLockInvertPower, sizeof(Sint32), 1);
 					fp->write(&entity->wallLockTimer, sizeof(Sint32), 1);
+					break;
+				case 33:
+					fp->write(&entity->skill[0], sizeof(Sint32), 1);
 					break;
 				default:
 					break;

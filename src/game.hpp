@@ -306,6 +306,7 @@ void actSignalTimer(Entity* my);
 void actSignalGateAND(Entity* my);
 void actWallLock(Entity* my);
 void actWallButton(Entity* my);
+void actWind(Entity* my);
 
 void startMessages();
 bool frameRateLimit(Uint32 maxFrameRate, bool resetAccumulator = true, bool sleep = false);

@@ -9480,6 +9480,32 @@ void assignActions(map_t* map)
 				list_RemoveNode(entity->mynode);
 				entity = nullptr;
 				break;
+			case 220: // wind
+			{
+				entity->x += 8;
+				entity->y += 8;
+				entity->sprite = -1;
+				entity->flags[INVISIBLE] = true;
+				entity->behavior = &actWind;
+				int dir = entity->skill[0];
+				if ( dir == -1 )
+				{
+					dir = map_rng.rand() % 8;
+				}
+				entity->yaw = dir * PI / 4;
+				entity->skill[0] = 0;
+				entity->sizex = 4;
+				entity->sizey = 4;
+				entity->flags[PASSABLE] = true;
+				break;
+			}
+			case 221: // slow tile
+				map->tileAttributes[0 + (static_cast<int>(entity->y) >> 4)
+					* MAPLAYERS + (static_cast<int>(entity->x) >> 4)
+					* MAPLAYERS * map->height] |= map_t::TILE_ATTRIBUTE_SLOW;
+				list_RemoveNode(entity->mynode);
+				entity = nullptr;
+				break;
             default:
                 break;
 		}

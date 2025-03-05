@@ -3385,7 +3385,51 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 		}
 	}
 
-	if ( ((!player.usingCommand() && player.bControlEnabled && !gamePaused) || pacified) 
+	static ConsoleVariable<float> cvar_map_tile_slippery("/map_tile_slippery", 0.99);
+	static ConsoleVariable<float> cvar_map_tile_slow("/map_tile_slow", 0.25);
+	real_t movementDrag = 0.75;
+	{
+		if ( map.tileHasAttribute(static_cast<int>(my->x / 16), static_cast<int>(my->y / 16), 0, map_t::TILE_ATTRIBUTE_SLIPPERY) )
+		{
+			movementDrag = *cvar_map_tile_slippery;
+		}
+	}
+	static std::map<int, real_t> dragToSpeedFactor =
+	{
+		{99, 33},
+		{98, 16.33333},
+		{97, 10.77778},
+		{96, 8},
+		{95, 6.333333333},
+		{94, 5.222222222},
+		{93, 4.428571429},
+		{92, 3.833333333},
+		{91, 3.37037037},
+		{90, 3},
+		{89, 2.696969697},
+		{88, 2.444444444},
+		{87, 2.230769231},
+		{86, 2.047619048},
+		{85, 1.888888889},
+		{84, 1.75},
+		{83, 1.62745098},
+		{82, 1.518518519},
+		{81, 1.421052632},
+		{80, 1.333333333},
+		{79, 1.253968254},
+		{78, 1.181818182},
+		{77, 1.115942029},
+		{76, 1.055555556},
+		{75,  1}
+	};
+	real_t speedFactorMult = 1.0;
+	auto find = dragToSpeedFactor.find(static_cast<int>(100 * movementDrag));
+	if ( find != dragToSpeedFactor.end() )
+	{
+		speedFactorMult = 1 / find->second;
+	}
+
+	if ( ((!player.usingCommand() && player.bControlEnabled && !gamePaused) || pacified)
 		&& allowMovement )
 	{
 		//x_force and y_force represent the amount of percentage pushed on that respective axis. Given a keyboard, it's binary; either you're pushing "move left" or you aren't. On an analog stick, it can range from whatever value to whatever.
@@ -3536,6 +3580,12 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 			my->playerStrafeVelocity = 0.0f;
 		}
 
+		if ( map.tileHasAttribute(static_cast<int>(my->x / 16), static_cast<int>(my->y / 16), 0, map_t::TILE_ATTRIBUTE_SLOW) )
+		{
+			speedFactor *= *cvar_map_tile_slow;
+		}
+
+		speedFactor *= speedFactorMult;
 		speedFactor *= refreshRateDelta;
 		PLAYER_VELX += y_force * cos(my->yaw) * .045 * speedFactor / (1 + (stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 1));
 		PLAYER_VELY += y_force * sin(my->yaw) * .045 * speedFactor / (1 + (stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 1));
@@ -3543,10 +3593,23 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 		PLAYER_VELY += x_force * sin(my->yaw + PI / 2) * .0225 * speedFactor / (1 + (stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 1));
 
 	}
-	PLAYER_VELX *= pow(0.75, refreshRateDelta);
-	PLAYER_VELY *= pow(0.75, refreshRateDelta);
 
-	/*if ( keystatus[SDLK_g] )
+	if ( fabs(my->creatureWindVelocity) > 0.1 )
+	{
+		PLAYER_VELX += my->creatureWindVelocity * cos(my->creatureWindDir) * refreshRateDelta;
+		PLAYER_VELY += my->creatureWindVelocity * sin(my->creatureWindDir) * refreshRateDelta;
+		my->creatureWindVelocity *= pow(0.9, refreshRateDelta);
+	}
+	else
+	{
+		my->playerStrafeDir = 0.0f;
+		my->creatureWindVelocity = 0.0f;
+	}
+
+	PLAYER_VELX *= pow(movementDrag, refreshRateDelta);
+	PLAYER_VELY *= pow(movementDrag, refreshRateDelta);
+
+	/*if ( keystatus[SDLK_v] )
 	{
 		messagePlayer(0, MESSAGE_DEBUG, "X: %5.5f, Y: %5.5f, Total: %5.5f", PLAYER_VELX, PLAYER_VELY, sqrt(pow(PLAYER_VELX, 2) + pow(PLAYER_VELY, 2)));
 		messagePlayer(0, MESSAGE_DEBUG, "Vel: %5.5f", getCurrentMovementSpeed());

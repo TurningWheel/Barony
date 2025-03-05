@@ -242,6 +242,9 @@ int checkSpriteType(Sint32 sprite)
 	case 218:
 		// iron doors
 		return 32;
+	case 220:
+		// wind
+		return 33;
 	default:
 		return 0;
 		break;
@@ -1137,7 +1140,9 @@ std::vector<const char*> spriteEditorNameStrings =
 	"NO DIG TILE",
 	"IRON DOOR (North-South)",
 	"IRON DOOR (East-West)",
-	"SLIPPERY TILE"
+	"SLIPPERY TILE",
+	"WIND TILE",
+	"SLOW TILE"
 };
 
 char monsterEditorNameStrings[NUMMONSTERS][16] =
@@ -2251,6 +2256,19 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			// set default new entity attributes.
 			entityNew->wallLockInvertPower = 0;
 			entityNew->wallLockTimer = 0;
+		}
+	}
+	else if ( spriteType == 33 ) // wind
+	{
+		if ( entityToCopy != nullptr )
+		{
+			// copy old entity attributes to newly created.
+			entityNew->skill[0] = entityToCopy->skill[0];
+		}
+		else
+		{
+			// set default new entity attributes.
+			entityNew->skill[0] = 0;
 		}
 	}
 

@@ -2612,7 +2612,7 @@ void drawEntities2D(long camx, long camy)
 		pos.h = TEXTURESIZE;
 		//ttfPrintText(ttf8, 100, 100, inputstr); debug any errant text input in editor
 
-		if ( entity->sprite >= 0 && entity->sprite < numsprites )
+		if ( entity->sprite >= 0 && entity->sprite < numsprites && entity->sprite < spriteEditorNameStrings.size() )
 		{
 			if ( sprites[entity->sprite] != nullptr )
 			{
@@ -3086,6 +3086,7 @@ void drawEntities2D(long camx, long camy)
 				else if ( (omousex / TEXTURESIZE) * 32 == pos.x
 						&& (omousey / TEXTURESIZE) * 32 == pos.y
 						&& selectedEntity[0] == NULL
+						&& entity->sprite < spriteEditorNameStrings.size()
 						&& hovertext
 						)
 				{

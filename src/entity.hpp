@@ -262,6 +262,8 @@ public:
 	real_t& playerStrafeVelocity; //fskill[12]
 	real_t& playerStrafeDir; //fskill[13]
 	real_t& monsterSpecialAttackUnequipSafeguard; //fskill[14]
+	real_t& creatureWindDir; //fskill[15]
+	real_t& creatureWindVelocity; //fskill[16]
 
 	//--EFFECTS--
 	Sint32& effectPolymorph; // skill[50]
@@ -838,6 +840,7 @@ public:
 	void actWallLock();
 	void actWallButton();
 	void actIronDoor();
+	void actWind();
 
 	Monster getRace() const
 	{
