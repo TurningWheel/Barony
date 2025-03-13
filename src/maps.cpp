@@ -9254,23 +9254,35 @@ void assignActions(map_t* map)
 				entity->flags[BLOCKSIGHT] = false;
 				entity->yaw = (PI / 2) * entity->wallLockDir;
 				const real_t offsetWallDist = 7.25;
+
+				int nodigtilex = (static_cast<int>(entity->x) >> 4);
+				int nodigtiley = (static_cast<int>(entity->y) >> 4);
+
 				switch ( entity->wallLockDir )
 				{
 				case 0:
 					entity->x -= offsetWallDist;
+					nodigtilex -= 1;
 					break;
 				case 1:
 					entity->y -= offsetWallDist;
+					nodigtiley -= 1;
 					break;
 				case 2:
 					entity->x += offsetWallDist;
+					nodigtilex += 1;
 					break;
 				case 3:
 					entity->y += offsetWallDist;
+					nodigtiley += 1;
 					break;
 				default:
 					break;
 				}
+
+				map->tileAttributes[OBSTACLELAYER + (nodigtiley)
+					*MAPLAYERS + (nodigtilex)
+					*MAPLAYERS * map->height] |= map_t::TILE_ATTRIBUTE_NODIG;
 
 				{
 					Entity* childEntity = newEntity(keySprite, 1, map->entities, nullptr); // lock
@@ -9318,27 +9330,39 @@ void assignActions(map_t* map)
 				entity->flags[BLOCKSIGHT] = false;
 				entity->yaw = (PI / 2) * entity->wallLockDir;
 				const real_t offsetWallDist = 7.25;
+
+				int nodigtilex = (static_cast<int>(entity->x) >> 4);
+				int nodigtiley = (static_cast<int>(entity->y) >> 4);
+
 				switch ( entity->wallLockDir )
 				{
 				case 0:
 					entity->x -= offsetWallDist;
 					entity->sizey = 2;
+					nodigtilex -= 1;
 					break;
 				case 1:
 					entity->y -= offsetWallDist;
 					entity->sizex = 2;
+					nodigtiley -= 1;
 					break;
 				case 2:
 					entity->x += offsetWallDist;
 					entity->sizey = 2;
+					nodigtilex += 1;
 					break;
 				case 3:
 					entity->y += offsetWallDist;
 					entity->sizex = 2;
+					nodigtiley += 1;
 					break;
 				default:
 					break;
 				}
+
+				map->tileAttributes[OBSTACLELAYER + (nodigtiley)
+					* MAPLAYERS + (nodigtilex)
+					* MAPLAYERS * map->height] |= map_t::TILE_ATTRIBUTE_NODIG;
 
 				{
 					Entity* childEntity = newEntity(1152, 1, map->entities, nullptr); // button

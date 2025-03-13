@@ -11953,6 +11953,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								playSoundPos(hit.x, hit.y, 66, 128); // strike wall
 								// bang
 								spawnBang(hit.x - cos(yaw) * 2, hit.y - sin(yaw) * 2, 0);
+								degradePickaxe = false;
 							}
 							else if ( swimmingtiles[map.tiles[OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height]]
 								|| lavatiles[map.tiles[OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height]] )
@@ -11962,6 +11963,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							}
 							else if ( !mapTileDiggable(hit.mapx, hit.mapy) )
 							{
+								degradePickaxe = false;
 								spawnBang(hit.x - cos(yaw) * 2, hit.y - sin(yaw) * 2, 0);
 								messagePlayer(player, MESSAGE_HINT, Language::get(706));
 							}
