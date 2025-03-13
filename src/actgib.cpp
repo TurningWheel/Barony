@@ -33,11 +33,16 @@
 #define GIB_VELY my->vel_y
 #define GIB_VELZ my->vel_z
 #define GIB_GRAVITY my->fskill[3]
+#define GIB_SHRINK my->fskill[4]
 #define GIB_LIFESPAN my->skill[4]
 #define GIB_PLAYER my->skill[11]
 #define GIB_POOF my->skill[5]
 #define GIB_LIGHTING my->skill[6]
 #define GIB_DMG_MISS my->skill[7]
+#define GIB_SWIRL my->fskill[5]
+#define GIB_OSC_H my->fskill[6]
+#define GIB_VEL_DECAY my->fskill[7]
+#define GIB_DELAY_MOVE my->skill[8]
 
 void poof(Entity* my) {
     if (GIB_POOF) {
@@ -58,7 +63,7 @@ void actGib(Entity* my)
 	// don't update gibs that have no velocity
 	if ( my->z == 8 && fabs(GIB_VELX) < .01 && fabs(GIB_VELY) < .01 )
 	{
-	    poof(my);
+		poof(my);
 		my->removeLightField();
 		list_RemoveNode(my->mynode);
 		return;
@@ -67,10 +72,26 @@ void actGib(Entity* my)
 	// remove gibs that have exceeded their life span
 	if ( my->ticks > GIB_LIFESPAN && GIB_LIFESPAN )
 	{
-	    poof(my);
-		my->removeLightField();
-		list_RemoveNode(my->mynode);
-		return;
+		if ( GIB_SHRINK > 0.0001 )
+		{
+			my->scalex -= GIB_SHRINK;
+			my->scaley -= GIB_SHRINK;
+			my->scalez -= GIB_SHRINK;
+			if ( my->scalex < 0.0 )
+			{
+				poof(my);
+				my->removeLightField();
+				list_RemoveNode(my->mynode);
+				return;
+			}
+		}
+		else
+		{
+			poof(my);
+			my->removeLightField();
+			list_RemoveNode(my->mynode);
+			return;
+		}
 	}
 
 	if ( my->flags[OVERDRAW] 
@@ -81,11 +102,63 @@ void actGib(Entity* my)
 	}
 
 	// horizontal motion
-	my->yaw += sqrt(GIB_VELX * GIB_VELX + GIB_VELY * GIB_VELY) * .05;
-	my->x += GIB_VELX;
-	my->y += GIB_VELY;
-	GIB_VELX = GIB_VELX * .95;
-	GIB_VELY = GIB_VELY * .95;
+	if ( GIB_DELAY_MOVE > 0 )
+	{
+		--GIB_DELAY_MOVE;
+		if ( GIB_LIFESPAN )
+		{
+			++GIB_LIFESPAN;
+		}
+	}
+	else
+	{
+		my->focalx = 0.0;
+		my->focaly = 0.0;
+		if ( GIB_SWIRL > 0.00001 )
+		{
+			my->yaw += GIB_SWIRL;
+			Uint32 vortexStart = TICKS_PER_SECOND / 8;
+			if ( my->ticks >= vortexStart )
+			{
+				real_t vortexTime = 0.5 * TICKS_PER_SECOND;
+				real_t ratio = 2.0 + 2.0 * sin((-PI / 2) + (PI)*std::min((Uint32)vortexTime, my->ticks - vortexStart) / vortexTime);
+				my->focalx += ratio * cos(my->yaw);
+				my->focaly += ratio * sin(my->yaw);
+			}
+		}
+		else
+		{
+			my->yaw += sqrt(GIB_VELX * GIB_VELX + GIB_VELY * GIB_VELY) * .05;
+		}
+
+		if ( abs(GIB_OSC_H) > 0.00001 )
+		{
+			Uint32 vortexStart = 0;// TICKS_PER_SECOND / 8;
+			if ( my->ticks >= vortexStart )
+			{
+				//my->yaw = atan2(my->vel_y, my->vel_x);
+				real_t vortexTime = 0.2 * TICKS_PER_SECOND;
+				real_t magnitude = GIB_OSC_H;
+				real_t ratio = magnitude * sin((PI)*((my->ticks - vortexStart) / vortexTime));
+				real_t tangent = 0.0;// my->yaw - atan2(my->vel_y, my->vel_x);
+				my->focalx += ratio * cos(tangent);
+				my->focaly += ratio * sin(tangent);
+			}
+		}
+
+		my->x += GIB_VELX;
+		my->y += GIB_VELY;
+		if ( GIB_VEL_DECAY > 0.001 )
+		{
+			GIB_VELX = GIB_VELX * GIB_VEL_DECAY;
+			GIB_VELY = GIB_VELY * GIB_VEL_DECAY;
+		}
+		else
+		{
+			GIB_VELX = GIB_VELX * .95;
+			GIB_VELY = GIB_VELY * .95;
+		}
+	}
 
 	if ( GIB_LIGHTING )
 	{
@@ -95,9 +168,19 @@ void actGib(Entity* my)
 	// gravity
 	if ( my->z < 8 )
 	{
-		GIB_VELZ += GIB_GRAVITY;
-		my->z += GIB_VELZ;
-		my->roll += 0.1;
+		if ( GIB_DELAY_MOVE == 0 )
+		{
+			GIB_VELZ += GIB_GRAVITY;
+			my->z += GIB_VELZ;
+			if ( GIB_SWIRL > 0.00001 )
+			{
+				// don't roll swirling
+			}
+			else
+			{
+				my->roll += 0.1;
+			}
+		}
 
 		if ( GIB_LIGHTING && my->flags[SPRITE] && my->sprite >= 180 && my->sprite <= 184 )
 		{

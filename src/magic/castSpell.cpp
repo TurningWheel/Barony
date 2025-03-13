@@ -2086,6 +2086,23 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				}
 			}
 		}
+		else if ( !strcmp(element->element_internal_name, spellElementMap[SPELL_ELEMENT_PROPULSION_FOCI_SPRAY].element_internal_name) )
+		{
+			static ConsoleVariable<int> cvar_foci_sprite("/foci_sprite", 13);
+			int particle = *cvar_foci_sprite;
+			if ( particle >= 0 )
+			{
+				Entity* spellTimer = createParticleTimer(caster, 10, -1);
+				spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_FOCI_SPRAY;
+				spellTimer->particleTimerCountdownSprite = particle;
+				result = spellTimer;
+				if ( !(caster && caster->behavior == &actMonster) )
+				{
+					// spawn these if not a monster doing its special attack, client spawns own particles
+					serverSpawnMiscParticles(caster, PARTICLE_EFFECT_FOCI_SPRAY, particle);
+				}
+			}
+		}
 		
 		// intentional separate from else/if chain.
 		// disables propulsion if found a marked target.
@@ -2720,6 +2737,11 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							}
 						}
 					}
+				}
+				else if ( spell->ID == SPELL_FOCI_FIRE )
+				{
+					spellCastChance = 0;
+					magicChance = 0;
 				}
 
 				bool sustainedChance = players[caster->skill[2]]->mechanics.sustainedSpellLevelChance();

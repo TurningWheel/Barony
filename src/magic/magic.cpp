@@ -26,6 +26,7 @@
 #include "../mod_tools.hpp"
 
 std::map<Uint32, std::map<Uint32, ParticleEmitterHit_t>> particleTimerEmitterHitEntities;
+std::map<Uint32, ParticleTimerEffect_t> particleTimerEffects;
 ParticleEmitterHit_t* getParticleEmitterHitProps(Uint32 emitterUid, Entity* hitentity)
 {
 	if ( emitterUid == 0 || !hitentity ) { return nullptr; }

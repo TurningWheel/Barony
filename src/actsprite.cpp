@@ -40,9 +40,20 @@
 #define SPRITE_ALPHA_ANIM_SIZE my->fskill[3]
 #define SPRITE_USE_ALPHA my->skill[6]
 #define SPRITE_NO_BILLBOARD my->skill[7]
+#define SPRITE_CHECK_PARENT_EXISTS my->skill[8]
 
 void actSprite(Entity* my)
 {
+	if ( SPRITE_CHECK_PARENT_EXISTS > 0 )
+	{
+		if ( !uidToEntity(SPRITE_CHECK_PARENT_EXISTS) )
+		{
+			my->removeLightField();
+			list_RemoveNode(my->mynode);
+			return;
+		}
+	}
+
 	if ( !my->skill[6] && SPRITE_LIT )
 	{
 		my->skill[6] = 1;
