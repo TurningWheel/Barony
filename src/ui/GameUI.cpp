@@ -33440,36 +33440,41 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 			}
 			std::string magics = "";
 			std::set<int> inserted;
-			for ( auto it = allGameSpells.begin(); it != allGameSpells.end(); ++it )
+			for ( int i = SPELL_NONE + 1; i < NUM_SPELLS; ++i )
 			{
-				auto spellEntry = *it;
-				if ( !spellEntry )
+				auto find = allGameSpells.find(i);
+				if ( find != allGameSpells.end() )
 				{
-					continue;
-				}
-				if ( spellEntry->ID == SPELL_WEAKNESS 
-					|| spellEntry->ID == SPELL_GHOST_BOLT
-					|| spellEntry->ID == SPELL_SLIME_ACID 
-					|| spellEntry->ID == SPELL_SLIME_FIRE 
-					|| spellEntry->ID == SPELL_SLIME_WATER 
-					|| spellEntry->ID == SPELL_SLIME_TAR
-					|| spellEntry->ID == SPELL_SLIME_METAL )
-				{
-					continue;
-				}
-				if ( spellEntry && spellEntry->difficulty == (skillLVL * 20) )
-				{
-					if ( inserted.find(spellEntry->ID) != inserted.end() )
+					auto spellEntry = find->second;
+					if ( !spellEntry )
 					{
 						continue;
 					}
-					inserted.insert(spellEntry->ID);
-					if ( magics != "" )
+					if ( spellEntry->ID == SPELL_WEAKNESS 
+						|| spellEntry->ID == SPELL_GHOST_BOLT
+						|| spellEntry->ID == SPELL_SLIME_ACID 
+						|| spellEntry->ID == SPELL_SLIME_FIRE 
+						|| spellEntry->ID == SPELL_SLIME_WATER 
+						|| spellEntry->ID == SPELL_SLIME_TAR
+						|| spellEntry->ID == SPELL_SLIME_METAL
+						|| spellEntry->hide_from_ui == true )
 					{
-						magics += '\n';
+						continue;
 					}
-					magics += "\x1E ";
-					magics += spellEntry->getSpellName();
+					if ( spellEntry && spellEntry->difficulty == (skillLVL * 20) )
+					{
+						if ( inserted.find(spellEntry->ID) != inserted.end() )
+						{
+							continue;
+						}
+						inserted.insert(spellEntry->ID);
+						if ( magics != "" )
+						{
+							magics += '\n';
+						}
+						magics += "\x1E ";
+						magics += spellEntry->getSpellName();
+					}
 				}
 			}
 			if ( magics == "" ) { magics = "-"; }

@@ -3553,7 +3553,7 @@ void actHudShield(Entity* my)
 	}
 	if (multiplayer == CLIENT)
 	{
-		if (HUDSHIELD_DEFEND != defending || ticks % 120 == 0)
+		if ((HUDSHIELD_DEFEND > 0 ? true : false) != defending || ticks % 120 == 0)
 		{
 			strcpy((char*)net_packet->data, "SHLD");
 			net_packet->data[4] = HUDSHIELD_PLAYERNUM;
@@ -3574,7 +3574,7 @@ void actHudShield(Entity* my)
 			sendPacketSafe(net_sock, -1, net_packet, 0);
 		}
 	}
-	HUDSHIELD_DEFEND = defending;
+	HUDSHIELD_DEFEND = (defending == false) ? 0 : (HUDSHIELD_DEFEND + 1);
 	HUDSHIELD_SNEAKING = sneaking;
 
 	if ( dropShield )
@@ -3675,7 +3675,9 @@ void actHudShield(Entity* my)
 			}
 			if ( stats[HUDSHIELD_PLAYERNUM]->shield )
 			{
-				if ( stats[HUDSHIELD_PLAYERNUM]->shield->type == TOOL_TORCH || stats[HUDSHIELD_PLAYERNUM]->shield->type == TOOL_CRYSTALSHARD )
+				if ( stats[HUDSHIELD_PLAYERNUM]->shield->type == TOOL_TORCH 
+					|| stats[HUDSHIELD_PLAYERNUM]->shield->type == TOOL_CRYSTALSHARD
+					|| stats[HUDSHIELD_PLAYERNUM]->shield->type == TOOL_FOCI_FIRE )
 				{
 					if ( HUDSHIELD_MOVEX < 1.5 )
 					{
@@ -3976,6 +3978,11 @@ void actHudShield(Entity* my)
 		my->yaw += PI / 2 - HUDSHIELD_YAW / 4;
 		my->focalz -= 0.5;
 	}
+	else if ( my->sprite == items[TOOL_FOCI_FIRE].fpindex && !hideShield )
+	{
+		//my->yaw += PI / 2 - HUDSHIELD_YAW / 4;
+		my->focalz -= 1.5;
+	}
 
 	Entity*& hudarm = players[HUDSHIELD_PLAYERNUM]->hud.arm;
 	if ( playerRace == SPIDER && hudarm && players[HUDSHIELD_PLAYERNUM]->entity->bodyparts.at(0) )
@@ -4011,49 +4018,74 @@ void actHudShield(Entity* my)
 	}
 	if (stats[HUDSHIELD_PLAYERNUM]->shield 
 		&& !swimming 
-		&& players[HUDSHIELD_PLAYERNUM]->entity->skill[3] == 0 
 		&& !cast_animation[HUDSHIELD_PLAYERNUM].active 
 		&& !cast_animation[HUDSHIELD_PLAYERNUM].active_spellbook
 		&& !players[HUDSHIELD_PLAYERNUM]->hud.shieldSwitch)
 	{
 		if (itemCategory(stats[HUDSHIELD_PLAYERNUM]->shield) == TOOL)
 		{
-		    if (stats[HUDSHIELD_PLAYERNUM]->shield->type == TOOL_TORCH)
-		    {
-                if ( flickerLights || my->ticks % TICKS_PER_SECOND == 1 )
-                {
-					if ( Entity* entity = spawnFlame(my, SPRITE_FLAME) )
+			if ( players[HUDSHIELD_PLAYERNUM]->entity->skill[3] == 0 )
+			{
+				if (stats[HUDSHIELD_PLAYERNUM]->shield->type == TOOL_TORCH)
+				{
+					if ( flickerLights || my->ticks % TICKS_PER_SECOND == 1 )
 					{
+						if ( Entity* entity = spawnFlame(my, SPRITE_FLAME) )
+						{
+							entity->flags[OVERDRAW] = true;
+							entity->z -= 2.5 * cos(HUDSHIELD_ROLL);
+							entity->y += 2.5 * sin(HUDSHIELD_ROLL);
+							entity->skill[11] = HUDSHIELD_PLAYERNUM;
+						}
+					}
+				}
+				else if ( stats[HUDSHIELD_PLAYERNUM]->shield->type == TOOL_CRYSTALSHARD )
+				{
+					if ( flickerLights || my->ticks % TICKS_PER_SECOND == 1 )
+					{
+						/*Entity* entity = spawnFlame(my, SPRITE_CRYSTALFLAME);
 						entity->flags[OVERDRAW] = true;
 						entity->z -= 2.5 * cos(HUDSHIELD_ROLL);
 						entity->y += 2.5 * sin(HUDSHIELD_ROLL);
-						entity->skill[11] = HUDSHIELD_PLAYERNUM;
+						entity->skill[11] = HUDSHIELD_PLAYERNUM;*/
 					}
-			    }
-		    }
-		    else if ( stats[HUDSHIELD_PLAYERNUM]->shield->type == TOOL_CRYSTALSHARD )
-		    {
-                if ( flickerLights || my->ticks % TICKS_PER_SECOND == 1 )
-                {
-			        /*Entity* entity = spawnFlame(my, SPRITE_CRYSTALFLAME);
-			        entity->flags[OVERDRAW] = true;
-			        entity->z -= 2.5 * cos(HUDSHIELD_ROLL);
-			        entity->y += 2.5 * sin(HUDSHIELD_ROLL);
-			        entity->skill[11] = HUDSHIELD_PLAYERNUM;*/
-			    }
-		    }
-		    else if (stats[HUDSHIELD_PLAYERNUM]->shield->type == TOOL_LANTERN)
-		    {
-                if ( flickerLights || my->ticks % TICKS_PER_SECOND == 1 )
-                {
-					if ( Entity* entity = spawnFlame(my, SPRITE_FLAME) )
+				}
+				else if (stats[HUDSHIELD_PLAYERNUM]->shield->type == TOOL_LANTERN)
+				{
+					if ( flickerLights || my->ticks % TICKS_PER_SECOND == 1 )
 					{
-						entity->flags[OVERDRAW] = true;
-						entity->skill[11] = HUDSHIELD_PLAYERNUM;
-						entity->z += 1;
+						if ( Entity* entity = spawnFlame(my, SPRITE_FLAME) )
+						{
+							entity->flags[OVERDRAW] = true;
+							entity->skill[11] = HUDSHIELD_PLAYERNUM;
+							entity->z += 1;
+						}
 					}
-			    }
-		    }
+				}
+			}
+
+			if ( stats[HUDSHIELD_PLAYERNUM]->shield->type == TOOL_FOCI_FIRE )
+			{
+				static ConsoleVariable<float> cvar_foci_charge_init("/foci_charge_init", 1.f);
+				int chargeTimeInit = (float)(TICKS_PER_SECOND / 4) * *cvar_foci_charge_init;
+				if ( HUDSHIELD_DEFEND >= chargeTimeInit )
+				{
+					static ConsoleVariable<float> cvar_foci_charge("/foci_charge", 1.f);
+					int chargeTime = (float)(TICKS_PER_SECOND / 4) * *cvar_foci_charge;
+					if ( (HUDSHIELD_DEFEND - chargeTimeInit) % chargeTime == 0 )
+					{
+						auto spell = getSpellFromID(SPELL_FOCI_FIRE);
+						int mpcost = getCostOfSpell(spell, players[HUDSHIELD_PLAYERNUM]->entity);
+						if ( mpcost <= stats[HUDSHIELD_PLAYERNUM]->MP )
+						{
+							if ( players[HUDSHIELD_PLAYERNUM]->entity->safeConsumeMP(mpcost) )
+							{
+  								castSpell(players[HUDSHIELD_PLAYERNUM]->entity->getUID(), spell, false, false);
+							}
+						}
+					}
+				}
+			}
 		}
 	}
 }

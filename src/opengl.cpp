@@ -703,7 +703,7 @@ static void uploadUniforms(Shader& shader, float* proj, float* view, float* mapD
     if (proj) { GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uProj"), 1, false, proj)); }
     if (view) { GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uView"), 1, false, view)); }
     if (mapDims) { GL_CHECK_ERR(glUniform2fv(shader.uniform("uMapDims"), 1, mapDims)); }
-    
+    GL_CHECK_ERR(glUniform1ui(shader.uniform("uTicks"), (GLuint)ticks));
 #ifdef EDITOR
     float fogDistance = 0.f;
     float fogColor[4] = { 1.f, 1.f, 1.f, 1.f };
@@ -1336,10 +1336,7 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
     GL_CHECK_ERR(glDisableVertexAttribArray(2));
 #endif
 
-    /*const GLfloat stretch = ticks;
-    GL_CHECK_ERR(glUniform1f(shader.uniform("uStretch"), stretch));
-    
-
+    /*
     if ( SDL_Surface* sprite = tiles[83] )
     {
         GL_CHECK_ERR(glActiveTexture(GL_TEXTURE2));
@@ -1487,8 +1484,6 @@ void glDrawEnemyBarSprite(view_t* camera, int mode, int playerViewport, void* en
     const float cameraPos[4] = {(float)camera->x * 32.f, -(float)camera->z, (float)camera->y * 32.f, 1.f};
     GL_CHECK_ERR(glUniform4fv(shader.uniform("uCameraPos"), 1, cameraPos));
 
-    //const GLfloat stretch = ticks;
-    //GL_CHECK_ERR(glUniform1f(shader.uniform("uStretch"), stretch));
 
     // draw
     spriteMesh.draw();
@@ -1731,8 +1726,6 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
     const float cameraPos[4] = {(float)camera->x * 32.f, -(float)camera->z, (float)camera->y * 32.f, 1.f};
     GL_CHECK_ERR(glUniform4fv(shader.uniform("uCameraPos"), 1, cameraPos));
     
-    //const GLfloat stretch = ticks;
-    //GL_CHECK_ERR(glUniform1f(shader.uniform("uStretch"), stretch));
 
     // draw
     spriteMesh.draw();
@@ -1814,8 +1807,24 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
     }
     v = vec4(entity->x * 2.f, -entity->z * 2.f - 1, entity->y * 2.f, 0.f);
     (void)translate_mat(&m, &t, &v); t = m;
-    (void)rotate_mat(&m, &t, entity->flags[OVERDRAW] ? -90.f :
-        -90.f - camera->ang * (180.f / PI), &i.y); t = m;
+
+    if ( entity->skill[7] != 0 && entity->behavior == &actSprite )
+    {
+        // dont draw billboard
+        float rotx = entity->roll * 180.0 / PI; // roll
+        float roty = 360.0 - entity->yaw * 180.0 / PI; // yaw
+        float rotz = 360.0 - entity->pitch * 180.0 / PI; // pitch
+        (void)rotate_mat(&m, &t, roty, &i.y); t = m; // yaw
+        (void)rotate_mat(&m, &t, rotz, &i.z); t = m; // pitch
+        (void)rotate_mat(&m, &t, rotx, &i.x); t = m; // roll
+    }
+    else
+    {
+        // billboard
+        (void)rotate_mat(&m, &t, entity->flags[OVERDRAW] ? -90.f :
+            -90.f - camera->ang * (180.f / PI), &i.y); t = m;
+    }
+
     v = vec4(entity->focalx * 2.f, -entity->focalz * 2.f, entity->focaly * 2.f, 0.f);
     (void)translate_mat(&m, &t, &v); t = m;
     v = vec4(entity->scalex * sprite->w, entity->scaley * sprite->h, entity->scalez, 0.f);
@@ -1831,8 +1840,17 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
 #endif
         const GLfloat factor[4] = { 1.f, 1.f, 1.f, 1.f };
         GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, factor));
-        const GLfloat light[4] = { b, b, b, 1.f };
-        GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightColor"), 1, light));
+        if ( entity->skill[6] != 0 && entity->behavior == &actSprite )
+        {
+            // use alpha
+            const GLfloat light[4] = { b, b, b, entity->fskill[1]};
+            GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightColor"), 1, light));
+        }
+        else
+        {
+            const GLfloat light[4] = { b, b, b, 1.f };
+            GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightColor"), 1, light));
+        }
         const GLfloat empty[4] = { 0.f, 0.f, 0.f, 0.f };
         GL_CHECK_ERR(glUniform4fv(shader.uniform("uColorAdd"), 1, empty));
         const float cameraPos[4] = {(float)camera->x * 32.f, -(float)camera->z, (float)camera->y * 32.f, 1.f};

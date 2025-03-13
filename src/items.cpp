@@ -2734,6 +2734,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		case QUIVER_KNOCKBACK:
 		case QUIVER_CRYSTAL:
 		case QUIVER_HUNTING:
+		case TOOL_FOCI_FIRE:
 			equipItemResult = equipItem(item, &stats[player]->shield, player, checkInventorySpaceForPaperDoll);
 			break;
 		case TOOL_BLINDFOLD:
@@ -5861,7 +5862,13 @@ bool isItemEquippableInShieldSlot(const Item* const item)
 		return false;
 	}
 
-	if ( itemTypeIsQuiver(item->type) )
+	if ( item->type < 0 || item->type >= NUMITEMS )
+	{
+		return false;
+	}
+	return (items[item->type].item_slot == EQUIPPABLE_IN_SLOT_SHIELD);
+
+	/*if ( itemTypeIsQuiver(item->type) )
 	{
 		return true;
 	}
@@ -5882,7 +5889,7 @@ bool isItemEquippableInShieldSlot(const Item* const item)
 		default:
 			break;
 	}
-	return false;
+	return false;*/
 }
 
 bool Item::usableWhileShapeshifted(const Stat* const wielder) const

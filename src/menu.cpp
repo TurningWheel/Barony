@@ -8569,6 +8569,7 @@ void doNewGame(bool makeHighscore) {
 	monsterAllyFormations.reset();
 	PingNetworkStatus_t::reset();
 	particleTimerEmitterHitEntities.clear();
+	particleTimerEffects.clear();
 	monsterTrapIgnoreEntities.clear();
 	minimapHighlights.clear();
 
@@ -10055,6 +10056,7 @@ void doEndgame(bool saveHighscore, bool onServerDisconnect) {
 	EnemyHPDamageBarHandler::dumpCache();
 	monsterAllyFormations.reset();
 	particleTimerEmitterHitEntities.clear();
+	particleTimerEffects.clear();
 	monsterTrapIgnoreEntities.clear();
 	minimapHighlights.clear();
 	PingNetworkStatus_t::reset();

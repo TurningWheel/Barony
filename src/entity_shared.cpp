@@ -597,6 +597,7 @@ char itemNameStrings[NUM_ITEM_STRINGS][32] =
 	"key_gold",
 	"key_crystal",
 	"key_machine",
+	"tool_foci_fire",
 	""
 };
 

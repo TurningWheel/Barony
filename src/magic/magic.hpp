@@ -79,8 +79,12 @@ static const int SPELL_SLIME_WATER = 57;
 static const int SPELL_SLIME_FIRE = 58;
 static const int SPELL_SLIME_TAR = 59;
 static const int SPELL_SLIME_METAL = 60;
-static const int NUM_SPELLS = 61;
-
+static const int SPELL_FOCI_FIRE = 61;
+static const int SPELL_FOCI_SNOW = 62;
+static const int SPELL_FOCI_NEEDLES = 63;
+static const int SPELL_FOCI_ARCS = 64;
+static const int SPELL_FOCI_SANDBLAST = 65;
+static const int NUM_SPELLS = 66;
 
 #define SPELLELEMENT_CONFUSE_BASE_DURATION 2//In seconds.
 #define SPELLELEMENT_BLEED_BASE_DURATION 10//In seconds.
@@ -153,6 +157,7 @@ static const int PARTICLE_EFFECT_SHATTERED_GEM = 25;
 static const int PARTICLE_EFFECT_SHRINE_TELEPORT = 26;
 static const int PARTICLE_EFFECT_GHOST_TELEPORT = 27;
 static const int PARTICLE_EFFECT_SLIME_SPRAY = 28;
+static const int PARTICLE_EFFECT_FOCI_SPRAY = 29;
 
 // actmagicIsVertical constants
 static const int MAGIC_ISVERTICAL_NONE = 0;
@@ -166,13 +171,36 @@ static const int PARTICLE_TIMER_ACTION_SUMMON_MONSTER = 3;
 static const int PARTICLE_TIMER_ACTION_SPELL_SUMMON = 4;
 static const int PARTICLE_TIMER_ACTION_DEVIL_SUMMON_MONSTER = 5;
 static const int PARTICLE_TIMER_ACTION_MAGIC_SPRAY = 6;
+static const int PARTICLE_TIMER_ACTION_FOCI_SPRAY = 7;
+static const int PARTICLE_TIMER_ACTION_ICE_WAVE = 8;
+static const int PARTICLE_TIMER_ACTION_TEST_1 = 9;
+static const int PARTICLE_TIMER_ACTION_TEST_2 = 10;
 
 struct ParticleEmitterHit_t
 {
 	Uint32 tick = 0;
 	int hits = 0;
 };
+struct ParticleTimerEffect_t
+{
+	enum EffectType
+	{
+		EFFECT_NONE,
+		EFFECT_ICE_WAVE,
+		EFFECT_TEST_1,
+		EFFECT_TEST_2,
+		EFFECT_TEST_3
+	};
+	struct Effect_t
+	{
+		real_t x = 0.0;
+		real_t y = 0.0;
+		EffectType effectType = EFFECT_NONE;
+	};
+	std::map<Uint32, Effect_t> effectMap;
+};
 extern std::map<Uint32, std::map<Uint32, ParticleEmitterHit_t>> particleTimerEmitterHitEntities;
+extern std::map<Uint32, ParticleTimerEffect_t> particleTimerEffects;
 ParticleEmitterHit_t* getParticleEmitterHitProps(Uint32 emitterUid, Entity* hitentity);
 
 bool addSpell(int spell, int player, bool ignoreSkill = false); //Adds a spell to the client's spell list. Note: Do not use this to add custom spells.
@@ -421,6 +449,16 @@ extern spellElement_t spellElement_slimeFire;
 extern spellElement_t spellElement_slimeTar;
 extern spellElement_t spellElement_slimeMetal;
 extern spellElement_t spellElement_slime_spray;
+extern std::map<int, spellElement_t> spellElementMap;
+
+enum SpellElementIDs_t
+{
+	SPELL_ELEMENT_NONE = 10000,
+	SPELL_ELEMENT_PROPULSION_FOCI_SPRAY,
+	SPELL_ELEMENT_PROPULSION_MISSILE,
+	SPELL_ELEMENT_MAX
+};
+
 /*
  */
 //TODO: Differentiate between touch spells, enchantment spells, personal spells, ranged spells, area of effect spells, close blast/burst spells, and enemy/ally target spells.
@@ -441,6 +479,7 @@ typedef struct spell_t
 	bool magicstaff; // if true the spell was cast from a magicstaff and thus it may have slightly different behavior
 	node_t* sustain_node; //Node in the sustained/channeled spells list.
 	node_t* magic_effects_node;
+	bool hide_from_ui = false; // hide from skillsheet/other UI places
 	Uint32 caster;
 	int channel_duration; //This is the value to reset the timer to when a spell is channeled.
 	list_t elements; //NOTE: This could technically allow a spell to have multiple roots. So you could make a flurry of fireballs, for example.
@@ -451,7 +490,7 @@ typedef struct spell_t
 } spell_t;
 
 extern list_t channeledSpells[MAXPLAYERS]; //Spells the player is currently channeling. //TODO: Universalize it for all entities that can cast spells? //TODO: Cleanup and stuff.
-extern std::vector<spell_t*> allGameSpells; // to iterate over for quickly finding attributes of all spells.
+extern std::map<int, spell_t*> allGameSpells; // to iterate over for quickly finding attributes of all spells.
 
 //TODO: Add stock spells.
 
@@ -563,6 +602,8 @@ void actParticleFollowerCommand(Entity* my);
 void actParticleCharmMonster(Entity* my);
 void actParticleAestheticOrbit(Entity* my);
 void actParticleShadowTag(Entity* my);
+void actParticleFloorMagic(Entity* my);
+void actParticleVortex(Entity* my);
 
 void createParticleDropRising(Entity* parent, int sprite, double scale);
 void createParticleDot(Entity* parent);
@@ -570,25 +611,30 @@ Entity* createParticleAestheticOrbit(Entity* parent, int sprite, int duration, i
 void createParticleRock(Entity* parent, int sprite = -1, bool light = false);
 void createParticleShatteredGem(real_t x, real_t y, real_t z, int sprite, Entity* parent);
 void createParticleErupt(Entity* parent, int sprite);
+void createParticleErupt(real_t x, real_t y, int sprite);
 Entity* createParticleSapCenter(Entity* parent, Entity* target, int spell, int sprite, int endSprite);
 Entity* createParticleTimer(Entity* parent, int duration, int sprite);
 void createParticleSap(Entity* parent);
 void createParticleExplosionCharge(Entity* parent, int sprite, int particleCount, double scale);
 void createParticleFollowerCommand(real_t x, real_t y, real_t z, int sprite, Uint32 uid);
+Entity* createParticleCastingIndicator(Entity* parent, real_t x, real_t y, real_t z, Uint32 lifetime);
 static const int FOLLOWER_SELECTED_PARTICLE = 1229;
 static const int FOLLOWER_TARGET_PARTICLE = 1230;
 void createParticleCharmMonster(Entity* parent);
 void createParticleShadowTag(Entity* parent, Uint32 casterUid, int duration);
+Entity* createFloorMagic(int sprite, real_t x, real_t y, real_t z, real_t dir, Uint32 lifetime);
+Entity* createVortexMagic(int sprite, real_t x, real_t y, real_t z, real_t dir, Uint32 lifetime);
 
 void spawnMagicTower(Entity* parent, real_t x, real_t y, int spellID, Entity* autoHitTarget, bool castedSpell = false); // autoHitTarget is to immediate damage an entity, as all 3 tower magics hitting is unreliable
 bool magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks);
 
 spell_t* copySpell(spell_t* spell);
-void spellConstructor(spell_t* spell);
+void spellConstructor(spell_t* spell, int ID);
+spell_t* spellConstructor(int ID, int difficulty, const char* internal_name, std::vector<int> elements);
 void spellDeconstructor(void* data);
-spellElement_t* newSpellElement();
 spellElement_t* copySpellElement(spellElement_t* spellElement);
 void spellElementConstructor(spellElement_t* element);
+void spellElementConstructor(int elementID, int mana, int base_mana, int overload_mult, int damage, int duration, const char* internal_name);
 void spellElementDeconstructor(void* data);
 
 int getCostOfSpell(spell_t* spell, Entity* caster = nullptr);

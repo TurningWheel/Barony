@@ -11738,9 +11738,9 @@ void Compendium_t::readMagicFromFile(bool forceLoadBaseDirectory)
 				{
 					for ( auto spell : allGameSpells )
 					{
-						if ( item.name == spell->spell_internal_name )
+						if ( item.name == spell.second->spell_internal_name )
 						{
-							item.spellID = spell->ID;
+							item.spellID = spell.second->ID;
 							objSpellsLookup.insert(item.name);
 							break;
 						}
@@ -11750,12 +11750,12 @@ void Compendium_t::readMagicFromFile(bool forceLoadBaseDirectory)
 				{
 					for ( auto spell : allGameSpells )
 					{
-						int book = getSpellbookFromSpellID(spell->ID);
+						int book = getSpellbookFromSpellID(spell.second->ID);
 						if ( book >= WOODEN_SHIELD && book < NUMITEMS && ::items[book].category == SPELLBOOK )
 						{
 							if ( item.name == itemNameStrings[book + 2] )
 							{
-								item.spellID = spell->ID;
+								item.spellID = spell.second->ID;
 								break;
 							}
 						}

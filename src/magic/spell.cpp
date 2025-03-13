@@ -81,6 +81,7 @@ spellElement_t spellElement_slimeFire;
 spellElement_t spellElement_slimeTar;
 spellElement_t spellElement_slimeMetal;
 spellElement_t spellElement_slime_spray;
+std::map<int, spellElement_t> spellElementMap;
 
 spell_t spell_forcebolt;
 spell_t spell_magicmissile;
@@ -141,6 +142,7 @@ spell_t spell_slime_water;
 spell_t spell_slime_fire;
 spell_t spell_slime_tar;
 spell_t spell_slime_metal;
+std::map<int, spell_t> spellMap;
 
 bool addSpell(int spell, int player, bool ignoreSkill)
 {
@@ -154,190 +156,199 @@ bool addSpell(int spell, int player, bool ignoreSkill)
 
 	spell_t* new_spell = nullptr;
 
-	switch ( spell )
+	auto find = allGameSpells.find(spell);
+	assert(find != allGameSpells.end());
+	if ( find != allGameSpells.end() )
 	{
-		case SPELL_FORCEBOLT:
-			new_spell = copySpell(&spell_forcebolt);
-			break;
-		case SPELL_MAGICMISSILE:
-			new_spell = copySpell(&spell_magicmissile);
-			break;
-		case SPELL_COLD:
-			new_spell = copySpell(&spell_cold);
-			break;
-		case SPELL_FIREBALL:
-			new_spell = copySpell(&spell_fireball);
-			break;
-		case SPELL_LIGHTNING:
-			new_spell = copySpell(&spell_lightning);
-			break;
-		case SPELL_REMOVECURSE:
-			new_spell = copySpell(&spell_removecurse);
-			break;
-		case SPELL_LIGHT:
-			new_spell = copySpell(&spell_light);
-			break;
-		case SPELL_IDENTIFY:
-			new_spell = copySpell(&spell_identify);
-			break;
-		case SPELL_MAGICMAPPING:
-			new_spell = copySpell(&spell_magicmapping);
-			break;
-		case SPELL_SLEEP:
-			new_spell = copySpell(&spell_sleep);
-			break;
-		case SPELL_CONFUSE:
-			new_spell = copySpell(&spell_confuse);
-			break;
-		case SPELL_SLOW:
-			new_spell = copySpell(&spell_slow);
-			break;
-		case SPELL_OPENING:
-			new_spell = copySpell(&spell_opening);
-			break;
-		case SPELL_LOCKING:
-			new_spell = copySpell(&spell_locking);
-			break;
-		case SPELL_LEVITATION:
-			new_spell = copySpell(&spell_levitation);
-			break;
-		case SPELL_INVISIBILITY:
-			new_spell = copySpell(&spell_invisibility);
-			break;
-		case SPELL_TELEPORTATION:
-			new_spell = copySpell(&spell_teleportation);
-			break;
-		case SPELL_HEALING:
-			new_spell = copySpell(&spell_healing);
-			break;
-		case SPELL_EXTRAHEALING:
-			new_spell = copySpell(&spell_extrahealing);
-			break;
-		case SPELL_CUREAILMENT:
-			new_spell = copySpell(&spell_cureailment);
-			break;
-		case SPELL_DIG:
-			new_spell = copySpell(&spell_dig);
-			break;
-		case SPELL_STONEBLOOD:
-			new_spell = copySpell(&spell_stoneblood);
-			break;
-		case SPELL_BLEED:
-			new_spell = copySpell(&spell_bleed);
-			break;
-		case SPELL_SUMMON:
-			new_spell = copySpell(&spell_summon);
-			break;
-		case SPELL_DOMINATE:
-			new_spell = copySpell(&spell_dominate);
-			break;
-		case SPELL_REFLECT_MAGIC:
-			new_spell = copySpell(&spell_reflectMagic);
-			break;
-		case SPELL_ACID_SPRAY:
-			new_spell = copySpell(&spell_acidSpray);
-			break;
-		case SPELL_STEAL_WEAPON:
-			new_spell = copySpell(&spell_stealWeapon);
-			break;
-		case SPELL_DRAIN_SOUL:
-			new_spell = copySpell(&spell_drainSoul);
-			break;
-		case SPELL_VAMPIRIC_AURA:
-			new_spell = copySpell(&spell_vampiricAura);
-			break;
-		case SPELL_CHARM_MONSTER:
-			new_spell = copySpell(&spell_charmMonster);
-			break;
-		case SPELL_REVERT_FORM:
-			new_spell = copySpell(&spell_revertForm);
-			break;
-		case SPELL_RAT_FORM:
-			new_spell = copySpell(&spell_ratForm);
-			break;
-		case SPELL_SPIDER_FORM:
-			new_spell = copySpell(&spell_spiderForm);
-			break;
-		case SPELL_TROLL_FORM:
-			new_spell = copySpell(&spell_trollForm);
-			break;
-		case SPELL_IMP_FORM:
-			new_spell = copySpell(&spell_impForm);
-			break;
-		case SPELL_SPRAY_WEB:
-			new_spell = copySpell(&spell_sprayWeb);
-			break;
-		case SPELL_POISON:
-			new_spell = copySpell(&spell_poison);
-			break;
-		case SPELL_SPEED:
-			new_spell = copySpell(&spell_speed);
-			break;
-		case SPELL_FEAR:
-			new_spell = copySpell(&spell_fear);
-			break;
-		case SPELL_STRIKE:
-			new_spell = copySpell(&spell_strike);
-			break;
-		case SPELL_DETECT_FOOD:
-			new_spell = copySpell(&spell_detectFood);
-			break;
-		case SPELL_WEAKNESS:
-			new_spell = copySpell(&spell_weakness);
-			break;
-		case SPELL_AMPLIFY_MAGIC:
-			new_spell = copySpell(&spell_amplifyMagic);
-			break;
-		case SPELL_SHADOW_TAG:
-			new_spell = copySpell(&spell_shadowTag);
-			break;
-		case SPELL_TELEPULL:
-			new_spell = copySpell(&spell_telePull);
-			break;
-		case SPELL_DEMON_ILLUSION:
-			new_spell = copySpell(&spell_demonIllusion);
-			break;
-		case SPELL_TROLLS_BLOOD:
-			new_spell = copySpell(&spell_trollsBlood);
-			break;
-		case SPELL_SALVAGE:
-			new_spell = copySpell(&spell_salvageItem);
-			break;
-		case SPELL_FLUTTER:
-			new_spell = copySpell(&spell_flutter);
-			break;
-		case SPELL_DASH:
-			new_spell = copySpell(&spell_dash);
-			break;
-		case SPELL_SELF_POLYMORPH:
-			new_spell = copySpell(&spell_polymorph);
-			break;
-		case SPELL_CRAB_FORM:
-		    new_spell = copySpell(&spell_spiderForm);
-		    break;
-		case SPELL_CRAB_WEB:
-			new_spell = copySpell(&spell_sprayWeb);
-			break;
-		case SPELL_GHOST_BOLT:
-			new_spell = copySpell(&spell_ghost_bolt);
-			break;
-		case SPELL_SLIME_ACID:
-			new_spell = copySpell(&spell_slime_acid);
-			break;
-		case SPELL_SLIME_WATER:
-			new_spell = copySpell(&spell_slime_water);
-			break;
-		case SPELL_SLIME_FIRE:
-			new_spell = copySpell(&spell_slime_fire);
-			break;
-		case SPELL_SLIME_TAR:
-			new_spell = copySpell(&spell_slime_tar);
-			break;
-		case SPELL_SLIME_METAL:
-			new_spell = copySpell(&spell_slime_metal);
-			break;
-		default:
-			return false;
+		new_spell = copySpell(find->second);
+	}
+	else
+	{
+		switch ( spell )
+		{
+			case SPELL_FORCEBOLT:
+				new_spell = copySpell(&spell_forcebolt);
+				break;
+			case SPELL_MAGICMISSILE:
+				new_spell = copySpell(&spell_magicmissile);
+				break;
+			case SPELL_COLD:
+				new_spell = copySpell(&spell_cold);
+				break;
+			case SPELL_FIREBALL:
+				new_spell = copySpell(&spell_fireball);
+				break;
+			case SPELL_LIGHTNING:
+				new_spell = copySpell(&spell_lightning);
+				break;
+			case SPELL_REMOVECURSE:
+				new_spell = copySpell(&spell_removecurse);
+				break;
+			case SPELL_LIGHT:
+				new_spell = copySpell(&spell_light);
+				break;
+			case SPELL_IDENTIFY:
+				new_spell = copySpell(&spell_identify);
+				break;
+			case SPELL_MAGICMAPPING:
+				new_spell = copySpell(&spell_magicmapping);
+				break;
+			case SPELL_SLEEP:
+				new_spell = copySpell(&spell_sleep);
+				break;
+			case SPELL_CONFUSE:
+				new_spell = copySpell(&spell_confuse);
+				break;
+			case SPELL_SLOW:
+				new_spell = copySpell(&spell_slow);
+				break;
+			case SPELL_OPENING:
+				new_spell = copySpell(&spell_opening);
+				break;
+			case SPELL_LOCKING:
+				new_spell = copySpell(&spell_locking);
+				break;
+			case SPELL_LEVITATION:
+				new_spell = copySpell(&spell_levitation);
+				break;
+			case SPELL_INVISIBILITY:
+				new_spell = copySpell(&spell_invisibility);
+				break;
+			case SPELL_TELEPORTATION:
+				new_spell = copySpell(&spell_teleportation);
+				break;
+			case SPELL_HEALING:
+				new_spell = copySpell(&spell_healing);
+				break;
+			case SPELL_EXTRAHEALING:
+				new_spell = copySpell(&spell_extrahealing);
+				break;
+			case SPELL_CUREAILMENT:
+				new_spell = copySpell(&spell_cureailment);
+				break;
+			case SPELL_DIG:
+				new_spell = copySpell(&spell_dig);
+				break;
+			case SPELL_STONEBLOOD:
+				new_spell = copySpell(&spell_stoneblood);
+				break;
+			case SPELL_BLEED:
+				new_spell = copySpell(&spell_bleed);
+				break;
+			case SPELL_SUMMON:
+				new_spell = copySpell(&spell_summon);
+				break;
+			case SPELL_DOMINATE:
+				new_spell = copySpell(&spell_dominate);
+				break;
+			case SPELL_REFLECT_MAGIC:
+				new_spell = copySpell(&spell_reflectMagic);
+				break;
+			case SPELL_ACID_SPRAY:
+				new_spell = copySpell(&spell_acidSpray);
+				break;
+			case SPELL_STEAL_WEAPON:
+				new_spell = copySpell(&spell_stealWeapon);
+				break;
+			case SPELL_DRAIN_SOUL:
+				new_spell = copySpell(&spell_drainSoul);
+				break;
+			case SPELL_VAMPIRIC_AURA:
+				new_spell = copySpell(&spell_vampiricAura);
+				break;
+			case SPELL_CHARM_MONSTER:
+				new_spell = copySpell(&spell_charmMonster);
+				break;
+			case SPELL_REVERT_FORM:
+				new_spell = copySpell(&spell_revertForm);
+				break;
+			case SPELL_RAT_FORM:
+				new_spell = copySpell(&spell_ratForm);
+				break;
+			case SPELL_SPIDER_FORM:
+				new_spell = copySpell(&spell_spiderForm);
+				break;
+			case SPELL_TROLL_FORM:
+				new_spell = copySpell(&spell_trollForm);
+				break;
+			case SPELL_IMP_FORM:
+				new_spell = copySpell(&spell_impForm);
+				break;
+			case SPELL_SPRAY_WEB:
+				new_spell = copySpell(&spell_sprayWeb);
+				break;
+			case SPELL_POISON:
+				new_spell = copySpell(&spell_poison);
+				break;
+			case SPELL_SPEED:
+				new_spell = copySpell(&spell_speed);
+				break;
+			case SPELL_FEAR:
+				new_spell = copySpell(&spell_fear);
+				break;
+			case SPELL_STRIKE:
+				new_spell = copySpell(&spell_strike);
+				break;
+			case SPELL_DETECT_FOOD:
+				new_spell = copySpell(&spell_detectFood);
+				break;
+			case SPELL_WEAKNESS:
+				new_spell = copySpell(&spell_weakness);
+				break;
+			case SPELL_AMPLIFY_MAGIC:
+				new_spell = copySpell(&spell_amplifyMagic);
+				break;
+			case SPELL_SHADOW_TAG:
+				new_spell = copySpell(&spell_shadowTag);
+				break;
+			case SPELL_TELEPULL:
+				new_spell = copySpell(&spell_telePull);
+				break;
+			case SPELL_DEMON_ILLUSION:
+				new_spell = copySpell(&spell_demonIllusion);
+				break;
+			case SPELL_TROLLS_BLOOD:
+				new_spell = copySpell(&spell_trollsBlood);
+				break;
+			case SPELL_SALVAGE:
+				new_spell = copySpell(&spell_salvageItem);
+				break;
+			case SPELL_FLUTTER:
+				new_spell = copySpell(&spell_flutter);
+				break;
+			case SPELL_DASH:
+				new_spell = copySpell(&spell_dash);
+				break;
+			case SPELL_SELF_POLYMORPH:
+				new_spell = copySpell(&spell_polymorph);
+				break;
+			case SPELL_CRAB_FORM:
+				new_spell = copySpell(&spell_spiderForm);
+				break;
+			case SPELL_CRAB_WEB:
+				new_spell = copySpell(&spell_sprayWeb);
+				break;
+			case SPELL_GHOST_BOLT:
+				new_spell = copySpell(&spell_ghost_bolt);
+				break;
+			case SPELL_SLIME_ACID:
+				new_spell = copySpell(&spell_slime_acid);
+				break;
+			case SPELL_SLIME_WATER:
+				new_spell = copySpell(&spell_slime_water);
+				break;
+			case SPELL_SLIME_FIRE:
+				new_spell = copySpell(&spell_slime_fire);
+				break;
+			case SPELL_SLIME_TAR:
+				new_spell = copySpell(&spell_slime_tar);
+				break;
+			case SPELL_SLIME_METAL:
+				new_spell = copySpell(&spell_slime_metal);
+				break;
+			default:
+				return false;
+		}
 	}
 	if ( spellInList(&players[player]->magic.spellList, new_spell) )
 	{
@@ -458,9 +469,9 @@ bool addSpell(int spell, int player, bool ignoreSkill)
 	return true;
 }
 
-void spellConstructor(spell_t* spell)
+void spellConstructor(spell_t* spell, int ID)
 {
-	spell->ID = -1;
+	spell->ID = ID;
 	strcpy(spell->spell_internal_name, "spell_default");
 	spell->elements.first = NULL;
 	spell->elements.last = NULL;
@@ -471,7 +482,37 @@ void spellConstructor(spell_t* spell)
 	spell->caster = -1;
 	spell->channel_duration = 0;
 	//spell->timer = 0;
-	allGameSpells.push_back(spell);
+	allGameSpells[ID] = spell;
+}
+
+spell_t* spellConstructor(int ID, int difficulty, const char* internal_name, std::vector<int> elements)
+{
+	spell_t* spell = (spell_t*)malloc(sizeof(spell_t));
+	if ( spell )
+	{
+		spellConstructor(spell, ID);
+		strcpy(spell->spell_internal_name, internal_name);
+		spell->difficulty = difficulty;
+
+		list_t* list = &spell->elements;
+		for ( auto elementID : elements )
+		{
+			auto find = spellElementMap.find(elementID);
+			if ( find != spellElementMap.end() )
+			{
+				node_t* node = list_AddNodeLast(list);
+				node->element = copySpellElement(&find->second);
+				node->size = sizeof(spellElement_t);
+				node->deconstructor = &spellElementDeconstructor;
+				spellElement_t* element = (spellElement_t*)node->element;
+				element->node = node; //Tell the element what list it resides in.
+
+				list = &element->elements; // next element will append to the inner list
+			}
+		}
+	}
+
+	return spell;
 }
 
 void spellDeconstructor(void* data)
@@ -510,6 +551,20 @@ void spellElementConstructor(spellElement_t* element)
 	element->channeled = false;
 }
 
+void spellElementConstructor(int elementID, int mana, int base_mana, int overload_mult, int damage, int duration, const char* internal_name)
+{
+	assert(spellElementMap.find(elementID) == spellElementMap.end());
+
+	auto& element = spellElementMap[elementID];
+	spellElementConstructor(&element);
+	element.mana = mana;
+	element.base_mana = base_mana;
+	element.overload_multiplier = overload_mult;
+	element.damage = damage;
+	element.duration = duration;
+	strcpy(element.element_internal_name, internal_name);
+}
+
 void spellElementDeconstructor(void* data)
 {
 	spellElement_t* spellElement;
@@ -520,13 +575,6 @@ void spellElementDeconstructor(void* data)
 		list_FreeAll(&spellElement->elements);
 		free(spellElement);
 	}
-}
-
-spellElement_t* newSpellelement()
-{
-	spellElement_t* element = (spellElement_t*) malloc(sizeof(spellElement_t));
-	spellElementConstructor(element);
-	return element;
 }
 
 spell_t* copySpell(spell_t* spell)
@@ -618,6 +666,11 @@ int getCostOfSpell(spell_t* spell, Entity* caster)
 		{
 			cost /= 2;
 		}
+	}
+	else if ( spell->ID == SPELL_FOCI_FIRE )
+	{
+		static ConsoleVariable<int> cvar_foci_cost("/foci_cost", 2);
+		cost = *cvar_foci_cost;
 	}
 
 	return cost;
@@ -801,6 +854,14 @@ const char* spell_t::getSpellName()
 spell_t* getSpellFromID(int ID)
 {
 	spell_t* spell = nullptr;
+
+	auto find = allGameSpells.find(ID);
+	assert(find != allGameSpells.end());
+	if ( find != allGameSpells.end() )
+	{
+		return find->second;
+	}
+
 
 	switch (ID)
 	{
@@ -1408,9 +1469,9 @@ spell_t* getSpellFromItem(const int player, Item* item, bool usePlayerInventory)
 	{
 		for ( auto spell : allGameSpells )
 		{
-			if ( spell->ID == appearance )
+			if ( spell.second->ID == appearance )
 			{
-				return spell;    //Found the spell.
+				return spell.second;    //Found the spell.
 			}
 		}
 	}

@@ -3102,13 +3102,18 @@ namespace ConsoleCommands {
 			return;
 		}
 
-		for (auto it = allGameSpells.begin(); it != allGameSpells.begin() + 29; ++it)
+		for ( int i = SPELL_NONE + 1; i <= 29 && i < NUM_SPELLS; ++i )
 		{
-			spell_t* spell = *it;
-			bool oldIntro = intro;
-			intro = true;
-			bool learned = addSpell(spell->ID, clientnum, true);
-			intro = oldIntro;
+			if ( allGameSpells.find(i) != allGameSpells.end() )
+			{
+				if ( spell_t* spell = allGameSpells[i] )
+				{
+					bool oldIntro = intro;
+					intro = true;
+					bool learned = addSpell(spell->ID, clientnum, true);
+					intro = oldIntro;
+				}
+			}
 		}
 		return;
 		});
@@ -3858,13 +3863,18 @@ namespace ConsoleCommands {
 			return;
 		}
 
-		for (auto it = allGameSpells.begin() + 29; it != allGameSpells.end(); ++it)
+		for ( int i = 30; i < NUM_SPELLS; ++i )
 		{
-			spell_t* spell = *it;
-			bool oldIntro = intro;
-			intro = true;
-			bool learned = addSpell(spell->ID, clientnum, true);
-			intro = oldIntro;
+			if ( allGameSpells.find(i) != allGameSpells.end() )
+			{
+				if ( spell_t* spell = allGameSpells[i] )
+				{
+					bool oldIntro = intro;
+					intro = true;
+					bool learned = addSpell(spell->ID, clientnum, true);
+					intro = oldIntro;
+				}
+			}
 		}
 		return;
 		});
@@ -3876,13 +3886,18 @@ namespace ConsoleCommands {
 			return;
 		}
 
-		for (auto it = allGameSpells.begin(); it != allGameSpells.end(); ++it)
+		for ( int i = SPELL_NONE + 1; i < NUM_SPELLS; ++i )
 		{
-			spell_t* spell = *it;
-			bool oldIntro = intro;
-			intro = true;
-			bool learned = addSpell(spell->ID, clientnum, true);
-			intro = oldIntro;
+			if ( allGameSpells.find(i) != allGameSpells.end() )
+			{
+				if ( spell_t* spell = allGameSpells[i] )
+				{
+					bool oldIntro = intro;
+					intro = true;
+					bool learned = addSpell(spell->ID, clientnum, true);
+					intro = oldIntro;
+				}
+			}
 		}
 		return;
 		});
@@ -5239,9 +5254,9 @@ namespace ConsoleCommands {
 					fragment += itr->GetString();
 				}
 
-				auto& shader = spriteUIShader;
+				auto& shader = spriteBrightShader;
 				shader.destroy();
-				shader.init("spriteUIShader");
+				shader.init("spriteBrightShader");
 
 				shader.compile(vertex.c_str(), vertex.size(), Shader::Type::Vertex);
 				shader.compile(fragment.c_str(), fragment.size(), Shader::Type::Fragment);

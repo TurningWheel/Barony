@@ -51,7 +51,7 @@ void freeSpells()
 {
 	for ( auto it = allGameSpells.begin(); it != allGameSpells.end(); ++it )
 	{
-		spell_t& spell = **it;
+		spell_t& spell = *it->second;
 		list_FreeAll(&spell.elements);
 	}
 }

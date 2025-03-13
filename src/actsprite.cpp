@@ -34,6 +34,12 @@
 #define SPRITE_FRAMES my->skill[1]
 #define SPRITE_ANIMSPEED my->skill[2]
 #define SPRITE_LIT my->skill[5]
+#define SPRITE_ROTATE my->fskill[0]
+#define SPRITE_CURRENT_ALPHA my->fskill[1]
+#define SPRITE_ALPHA_VAR my->fskill[2]
+#define SPRITE_ALPHA_ANIM_SIZE my->fskill[3]
+#define SPRITE_USE_ALPHA my->skill[6]
+#define SPRITE_NO_BILLBOARD my->skill[7]
 
 void actSprite(Entity* my)
 {
@@ -63,6 +69,15 @@ void actSprite(Entity* my)
 				return;
 			}
 		}
+	}
+
+	if ( SPRITE_ROTATE > 0.0001 )
+	{
+		my->yaw += SPRITE_ROTATE;
+	}
+	if ( SPRITE_ALPHA_VAR > 0.0001 )
+	{
+		SPRITE_CURRENT_ALPHA = SPRITE_ALPHA_VAR + SPRITE_ALPHA_ANIM_SIZE * sin(2 * PI * (my->ticks % TICKS_PER_SECOND) / (real_t)(TICKS_PER_SECOND));
 	}
 }
 

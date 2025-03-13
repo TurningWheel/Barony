@@ -1817,6 +1817,7 @@ void clientActions(Entity* entity)
 	    case 1167:
 	    case 1168:
 	    case 1169:
+		case 1631:
 		case 1:
 			entity->behavior = &actDoorFrame;
 			break;
@@ -2046,6 +2047,10 @@ void clientActions(Entity* entity)
 				case -16:
 					entity->behavior = &actBoulder;
 					break;
+				case -17:
+					entity->behavior = &actParticleFloorMagic;
+					entity->flags[NOUPDATE] = true;
+					break;
 				default:
 					if ( static_cast<Uint8>(c & 0xFF) == 17 )
 					{
@@ -2218,6 +2223,7 @@ static void changeLevel() {
 	EnemyHPDamageBarHandler::dumpCache();
 	monsterAllyFormations.reset();
 	particleTimerEmitterHitEntities.clear();
+	particleTimerEffects.clear();
 	monsterTrapIgnoreEntities.clear();
 	minimapHighlights.clear();
 
