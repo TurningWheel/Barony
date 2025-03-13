@@ -1866,13 +1866,13 @@ void raycast(const view_t& camera, Sint8 (*minimap)[MINIMAP_MAX_DIMENSION], bool
                 bool zhit[MAPLAYERS] = { false };
                 for (int z = 0; z < MAPLAYERS; z++) {
                     if (tiles[z + iny * MAPLAYERS + inx * MAPLAYERS * mh]
-						&& tiles[z + iny * MAPLAYERS + inx * MAPLAYERS * mh] != TRANSPARENT_TILE
+						&& !(z > 0 && tiles[z + iny * MAPLAYERS + inx * MAPLAYERS * mh] == TRANSPARENT_TILE)
 						&& d > dstart) { // hit something solid
                         zhit[z] = true;
                         
                         // collect light information
                         if (tiles[z + iny2 * MAPLAYERS + inx2 * MAPLAYERS * mh]
-							&& tiles[z + iny2 * MAPLAYERS + inx2 * MAPLAYERS * mh] != TRANSPARENT_TILE) {
+							&& !(z > 0 && tiles[z + iny2 * MAPLAYERS + inx2 * MAPLAYERS * mh] == TRANSPARENT_TILE)) {
                             continue;
                         }
                         auto& l = lights[iny2 + inx2 * mh];
@@ -1930,8 +1930,7 @@ void raycast(const view_t& camera, Sint8 (*minimap)[MINIMAP_MAX_DIMENSION], bool
 
                         if (d < 16) {
                             if ( visible && 
-								tiles[iny * MAPLAYERS + inx * MAPLAYERS * mh]
-								&& tiles[iny * MAPLAYERS + inx * MAPLAYERS * mh] != TRANSPARENT_TILE) {
+								tiles[iny * MAPLAYERS + inx * MAPLAYERS * mh] ) {
                                 // walkable space
                                 if (WriteOutsSequentially) {
 									if ( ins.fillWithColor )
