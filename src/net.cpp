@@ -2095,6 +2095,7 @@ static void changeLevel() {
 		players[i]->hud.weapon = nullptr;
 		players[i]->hud.magicLeftHand = nullptr;
 		players[i]->hud.magicRightHand = nullptr;
+		players[i]->hud.magicRangefinder = nullptr;
 		players[i]->ghost.reset();
 		FollowerMenu[i].recentEntity = nullptr;
 		FollowerMenu[i].followerToCommand = nullptr;
@@ -7128,13 +7129,19 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		spell_t* thespell = getSpellFromID(SDLNet_Read32(&net_packet->data[5]));
 		if ( players[player] && players[player]->entity )
 		{
-			if ( net_packet->data[9] == 1 )
+			bool spellbookCast = net_packet->data[9] == 1;
+			if ( net_packet->len > 10 )
 			{
-				castSpell(players[player]->entity->getUID(), thespell, false, false, true);
+				CastSpellProps_t castSpellProps;
+				castSpellProps.caster_x = (SDLNet_Read16(&net_packet->data[10]) / 256.0);
+				castSpellProps.caster_y = (SDLNet_Read16(&net_packet->data[12]) / 256.0);
+				castSpellProps.target_x = (SDLNet_Read16(&net_packet->data[14]) / 256.0);
+				castSpellProps.target_y = (SDLNet_Read16(&net_packet->data[16]) / 256.0);
+				castSpell(players[player]->entity->getUID(), thespell, false, false, spellbookCast, &castSpellProps);
 			}
 			else
 			{
-				castSpell(players[player]->entity->getUID(), thespell, false, false);
+				castSpell(players[player]->entity->getUID(), thespell, false, false, spellbookCast);
 			}
 		}
 	}},

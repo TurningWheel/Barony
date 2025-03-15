@@ -1808,12 +1808,12 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
     v = vec4(entity->x * 2.f, -entity->z * 2.f - 1, entity->y * 2.f, 0.f);
     (void)translate_mat(&m, &t, &v); t = m;
 
-    if ( entity->skill[7] != 0 && entity->behavior == &actSprite )
+    if ( (entity->skill[7] != 0 && entity->behavior == &actSprite) || entity->behavior == &actMagicRangefinder )
     {
         // dont draw billboard
-        float rotx = entity->roll * 180.0 / PI; // roll
-        float roty = 360.0 - entity->yaw * 180.0 / PI; // yaw
-        float rotz = 360.0 - entity->pitch * 180.0 / PI; // pitch
+        const float rotx = entity->roll * 180.0 / PI; // roll
+        const float roty = 360.0 - entity->yaw * 180.0 / PI; // yaw
+        const float rotz = 360.0 - entity->pitch * 180.0 / PI; // pitch
         (void)rotate_mat(&m, &t, roty, &i.y); t = m; // yaw
         (void)rotate_mat(&m, &t, rotz, &i.z); t = m; // pitch
         (void)rotate_mat(&m, &t, rotx, &i.x); t = m; // roll
@@ -1844,6 +1844,12 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
         {
             // use alpha
             const GLfloat light[4] = { b, b, b, entity->fskill[1]};
+            GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightColor"), 1, light));
+        }
+        else if ( entity->behavior == &actMagicRangefinder )
+        {
+            // use alpha
+            const GLfloat light[4] = { b, b, b, entity->fskill[0] };
             GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightColor"), 1, light));
         }
         else

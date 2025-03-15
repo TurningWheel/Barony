@@ -41,6 +41,89 @@ bool overDrawDamageNotify = false;
 #define HANDMAGIC_CIRCLE_RADIUS 0.8
 #define HANDMAGIC_CIRCLE_SPEED 0.3
 
+void spellcasting_animation_manager_t::resetRangefinder()
+{
+	target_x = 0.0;
+	target_y = 0.0;
+	caster_x = 0.0;
+	caster_y = 0.0;
+	rangefinder = false;
+}
+
+void spellcasting_animation_manager_t::setRangeFinderLocation()
+{
+	Entity* caster = uidToEntity(this->caster);
+	rangefinder = false;
+	if ( !caster )
+	{
+		return;
+	}
+
+	if ( !spell )
+	{
+		return;
+	}
+
+	if ( !spell->rangefinder )
+	{
+		return;
+	}
+
+	rangefinder = true;
+
+	static ConsoleVariable<float> cvar_rangefinderStartZ("/rangefinder_start_z", -2.5);
+	static ConsoleVariable<float> cvar_rangefinderMoveTo("/rangefinder_moveto_z", 0.1);
+	static ConsoleVariable<float> cvar_rangefinderStartZLimit("/rangefinder_start_z_limit", 7.5);
+
+	//real_t startx = cameras[player].x * 16.0;
+	//real_t starty = cameras[player].y * 16.0;
+	//real_t startz = cameras[player].z + (4.5 - cameras[player].z) / 2.0 + *cvar_rangefinderStartZ;
+	//real_t pitch = cameras[player].vang;
+	//const real_t yaw = cameras[player].ang;
+	real_t startx = caster->x;
+	real_t starty = caster->y;
+	real_t startz = caster->z;
+	real_t pitch = caster->pitch;
+	const real_t yaw = caster->yaw;
+	if ( pitch < 0 || pitch > PI )
+	{
+		pitch = 0;
+	}
+
+	// draw line from the players height and direction until we hit the ground.
+	real_t previousx = startx;
+	real_t previousy = starty;
+	int index = 0;
+	for ( ; startz < *cvar_rangefinderStartZLimit; startz += abs((*cvar_rangefinderMoveTo) * tan(pitch)) )
+	{
+		startx += 0.1 * cos(yaw);
+		starty += 0.1 * sin(yaw);
+		const int index_x = static_cast<int>(startx) >> 4;
+		const int index_y = static_cast<int>(starty) >> 4;
+		index = (index_y)*MAPLAYERS + (index_x)*MAPLAYERS * map.height;
+		if ( map.tiles[index] && !map.tiles[OBSTACLELAYER + index] )
+		{
+			// store the last known good coordinate
+			previousx = startx;// + 16 * cos(yaw);
+			previousy = starty;// + 16 * sin(yaw);
+		}
+		if ( map.tiles[OBSTACLELAYER + index] )
+		{
+			break;
+		}
+		if ( pow(startx - cameras[player].x * 16.0, 2) + pow(starty - cameras[player].y * 16.0, 2) > (spell->distance * spell->distance) )
+		{
+			// break if distance reached
+			break;
+		}
+	}
+
+	target_x = previousx;
+	target_y = previousy;
+	caster_x = caster->x;
+	caster_y = caster->y;
+}
+
 void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, Uint32 caster_uid, spell_t* spell, bool usingSpellbook)
 {
 	//This function triggers the spellcasting animation and sets up everything.
@@ -154,6 +237,7 @@ void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, 
 	}
 	animation_manager->consume_interval = (animation_manager->times_to_circle * ((2 * PI) / HANDMAGIC_CIRCLE_SPEED)) / spellCost;
 	animation_manager->consume_timer = animation_manager->consume_interval;
+	animation_manager->setRangeFinderLocation();
 }
 
 void spellcastingAnimationManager_deactivate(spellcasting_animation_manager_t* animation_manager)
@@ -163,6 +247,7 @@ void spellcastingAnimationManager_deactivate(spellcasting_animation_manager_t* a
 	animation_manager->active = false;
 	animation_manager->active_spellbook = false;
 	animation_manager->stage = 0;
+	animation_manager->resetRangefinder();
 
 	if ( animation_manager->player == -1 )
 	{
@@ -180,11 +265,28 @@ void spellcastingAnimationManager_deactivate(spellcasting_animation_manager_t* a
 		players[animation_manager->player]->hud.magicRightHand->flags[INVISIBLE] = true;
 		players[animation_manager->player]->hud.magicRightHand->flags[INVISIBLE_DITHER] = false;
 	}
+	if ( players[animation_manager->player]->hud.magicRangefinder )
+	{
+		players[animation_manager->player]->hud.magicRangefinder->flags[INVISIBLE] = true;
+		players[animation_manager->player]->hud.magicRangefinder->flags[INVISIBLE_DITHER] = false;
+	}
 }
 
 void spellcastingAnimationManager_completeSpell(spellcasting_animation_manager_t* animation_manager)
 {
-	castSpell(animation_manager->caster, animation_manager->spell, false, false, animation_manager->active_spellbook); //Actually cast the spell.
+	if ( animation_manager->rangefinder )
+	{
+		CastSpellProps_t castSpellProps;
+		castSpellProps.caster_x = animation_manager->caster_x;
+		castSpellProps.caster_y = animation_manager->caster_y;
+		castSpellProps.target_x = animation_manager->target_x;
+		castSpellProps.target_y = animation_manager->target_y;
+		castSpell(animation_manager->caster, animation_manager->spell, false, false, animation_manager->active_spellbook, &castSpellProps); //Actually cast the spell.
+	}
+	else
+	{
+		castSpell(animation_manager->caster, animation_manager->spell, false, false, animation_manager->active_spellbook); //Actually cast the spell.
+	}
 
 	spellcastingAnimationManager_deactivate(animation_manager);
 }
@@ -429,6 +531,7 @@ void actLeftHandMagic(Entity* my)
 
 	if ( (cast_animation[HANDMAGIC_PLAYERNUM].active || cast_animation[HANDMAGIC_PLAYERNUM].active_spellbook) )
 	{
+		cast_animation[HANDMAGIC_PLAYERNUM].setRangeFinderLocation();
 		switch ( cast_animation[HANDMAGIC_PLAYERNUM].stage)
 		{
 			case CIRCLE:
@@ -868,4 +971,64 @@ void actRightHandMagic(Entity* my)
 
 	my->x += cast_animation[HANDMAGIC_PLAYERNUM].lefthand_movex;
 	my->y -= cast_animation[HANDMAGIC_PLAYERNUM].lefthand_movey;
+}
+
+#define HANDMAGIC_RANGEFINDER_ALPHA my->fskill[0]
+void actMagicRangefinder(Entity* my)
+{
+	my->flags[INVISIBLE_DITHER] = false;
+	if ( intro == true )
+	{
+		my->flags[INVISIBLE] = true;
+		return;
+	}
+
+	//Initialize
+	if ( !HANDMAGIC_INIT )
+	{
+		HANDMAGIC_INIT = 1;
+	}
+
+	if ( players[HANDMAGIC_PLAYERNUM] == nullptr || players[HANDMAGIC_PLAYERNUM]->entity == nullptr
+		|| (players[HANDMAGIC_PLAYERNUM]->entity && players[HANDMAGIC_PLAYERNUM]->entity->playerCreatedDeathCam != 0) )
+	{
+		players[HANDMAGIC_PLAYERNUM]->hud.magicRangefinder = nullptr;
+		list_RemoveNode(my->mynode);
+		return;
+	}
+
+	auto& cast_anim = cast_animation[HANDMAGIC_PLAYERNUM];
+
+	if ( !(cast_anim.active || cast_anim.active_spellbook) || !cast_anim.rangefinder )
+	{
+		my->flags[INVISIBLE] = true;
+		return;
+	}
+	if ( my->flags[INVISIBLE] )
+	{
+		my->bNeedsRenderPositionInit = true;
+	}
+	my->flags[INVISIBLE] = false;
+	my->sprite = 222;
+	my->x = cast_anim.target_x;
+	my->y = cast_anim.target_y;
+	my->z = 7.499;
+	static ConsoleVariable<float> cvar_player_cast_indicator_scale("/player_cast_indicator_scale", 0.025);
+	static ConsoleVariable<float> cvar_player_cast_indicator_rotate("/player_cast_indicator_rotate", 0.025);
+	static ConsoleVariable<float> cvar_player_cast_indicator_alpha("/player_cast_indicator_alpha", 0.5);
+	static ConsoleVariable<float> cvar_player_cast_indicator_alpha_glow("/player_cast_indicator_alpha_glow", 0.0625);
+	my->ditheringDisabled = true;
+	my->flags[SPRITE] = true;
+	my->flags[PASSABLE] = true;
+	my->flags[NOUPDATE] = true;
+	my->flags[UNCLICKABLE] = true;
+	my->flags[BRIGHT] = true;
+	my->scalex = *cvar_player_cast_indicator_scale;
+	my->scaley = *cvar_player_cast_indicator_scale;
+	my->pitch = 0;
+	my->roll = -PI / 2;
+
+	HANDMAGIC_RANGEFINDER_ALPHA = *cvar_player_cast_indicator_alpha + 
+		*cvar_player_cast_indicator_alpha_glow * sin(2 * PI * (my->ticks % TICKS_PER_SECOND) / (real_t)(TICKS_PER_SECOND));
+	my->yaw += *cvar_player_cast_indicator_rotate;
 }

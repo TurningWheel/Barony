@@ -506,8 +506,10 @@ spell_t* spellConstructor(int ID, int difficulty, const char* internal_name, std
 				node->deconstructor = &spellElementDeconstructor;
 				spellElement_t* element = (spellElement_t*)node->element;
 				element->node = node; //Tell the element what list it resides in.
-
-				list = &element->elements; // next element will append to the inner list
+				if ( list == &spell->elements )
+				{
+					list = &element->elements; // next elements beyond the first will append to the inner list
+				}
 			}
 		}
 	}
@@ -577,7 +579,7 @@ void spellElementDeconstructor(void* data)
 	}
 }
 
-spell_t* copySpell(spell_t* spell)
+spell_t* copySpell(spell_t* spell, int subElementIndexToCopy)
 {
 	node_t* node;
 
@@ -600,6 +602,24 @@ spell_t* copySpell(spell_t* spell)
 
 		spellElement_t* newElement = (spellElement_t*)tempNode->element;
 		newElement->node = tempNode;
+
+		if ( subElementIndexToCopy >= 0 ) // only select 1 sub element
+		{
+			if ( list_Size(&newElement->elements) > subElementIndexToCopy )
+			{
+				node_t* nextnode = nullptr;
+				int index = 0;
+				for ( auto node2 = newElement->elements.first; node2; node2 = nextnode )
+				{
+					nextnode = node2->next;
+					if ( index != subElementIndexToCopy )
+					{
+						list_RemoveNode(node2);
+					}
+					++index;
+				}
+			}
+		}
 	}
 
 	return result;

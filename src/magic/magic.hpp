@@ -84,7 +84,10 @@ static const int SPELL_FOCI_SNOW = 62;
 static const int SPELL_FOCI_NEEDLES = 63;
 static const int SPELL_FOCI_ARCS = 64;
 static const int SPELL_FOCI_SANDBLAST = 65;
-static const int NUM_SPELLS = 66;
+static const int SPELL_METEOR = 66;
+static const int SPELL_FLAMES = 67;
+static const int SPELL_ICE_WAVE = 68;
+static const int NUM_SPELLS = 69;
 
 #define SPELLELEMENT_CONFUSE_BASE_DURATION 2//In seconds.
 #define SPELLELEMENT_BLEED_BASE_DURATION 10//In seconds.
@@ -456,6 +459,8 @@ enum SpellElementIDs_t
 	SPELL_ELEMENT_NONE = 10000,
 	SPELL_ELEMENT_PROPULSION_FOCI_SPRAY,
 	SPELL_ELEMENT_PROPULSION_MISSILE,
+	SPELL_ELEMENT_METEOR_FLAMES,
+	SPELL_ELEMENT_PROPULSION_FLOOR_TILE,
 	SPELL_ELEMENT_MAX
 };
 
@@ -480,6 +485,8 @@ typedef struct spell_t
 	node_t* sustain_node; //Node in the sustained/channeled spells list.
 	node_t* magic_effects_node;
 	bool hide_from_ui = false; // hide from skillsheet/other UI places
+	bool rangefinder = false;
+	real_t distance = 0.0;
 	Uint32 caster;
 	int channel_duration; //This is the value to reset the timer to when a spell is channeled.
 	list_t elements; //NOTE: This could technically allow a spell to have multiple roots. So you could make a flurry of fireballs, for example.
@@ -562,9 +569,19 @@ extern spell_t spell_slime_metal;
 //TODO: Armor/protection/warding spells.
 //TODO: Targeting method?
 
+struct CastSpellProps_t
+{
+	real_t caster_x = 0.0;
+	real_t caster_y = 0.0;
+	real_t target_x = 0.0;
+	real_t target_y = 0.0;
+	int elementIndex = 0;
+	real_t distanceOffset = 0.0;
+};
+
 void setupSpells();
 void equipSpell(spell_t* spell, int playernum, Item* spellItem);
-Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool trap, bool usingSpellbook = false);
+Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool trap, bool usingSpellbook = false, CastSpellProps_t* castSpellProps = nullptr);
 void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook); //Initiates the spell animation, then hands off the torch to it, which, when finished, calls castSpell.
 int spellGetCastSound(spell_t* spell);
 #ifndef EDITOR // editor doesn't know about stat*
@@ -628,7 +645,7 @@ Entity* createVortexMagic(int sprite, real_t x, real_t y, real_t z, real_t dir, 
 void spawnMagicTower(Entity* parent, real_t x, real_t y, int spellID, Entity* autoHitTarget, bool castedSpell = false); // autoHitTarget is to immediate damage an entity, as all 3 tower magics hitting is unreliable
 bool magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks);
 
-spell_t* copySpell(spell_t* spell);
+spell_t* copySpell(spell_t* spell, int subElementToCopy = -1);
 void spellConstructor(spell_t* spell, int ID);
 spell_t* spellConstructor(int ID, int difficulty, const char* internal_name, std::vector<int> elements);
 void spellDeconstructor(void* data);
@@ -657,6 +674,7 @@ void spell_changeHealth(Entity* entity, int amount, bool overdrewFromHP = false)
 //The two hand animation functions.
 void actLeftHandMagic(Entity* my);
 void actRightHandMagic(Entity* my);
+void actMagicRangefinder(Entity* my);
 
 typedef struct spellcastingAnimationManager
 {
@@ -680,6 +698,14 @@ typedef struct spellcastingAnimationManager
 	float lefthand_movex;
 	float lefthand_movey;
 	float lefthand_angle;
+
+	real_t target_x = 0.0;
+	real_t target_y = 0.0;
+	real_t caster_x = 0.0;
+	real_t caster_y = 0.0;
+	bool rangefinder = false;
+	void setRangeFinderLocation();
+	void resetRangefinder();
 } spellcasting_animation_manager_t;
 extern spellcasting_animation_manager_t cast_animation[MAXPLAYERS];
 

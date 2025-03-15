@@ -885,6 +885,21 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 
 	Entity* parent = uidToEntity(my->parent);
 
+	if ( !magic_init )
+	{
+		//Any init stuff that needs to happen goes here.
+		magic_init = 1;
+		my->skill[2] = -7; // ordinarily the client won't do anything with this entity
+		if ( my->actmagicIsOrbiting == 1 || my->actmagicIsOrbiting == 2 )
+		{
+			MAGIC_MAXLIFE = my->actmagicOrbitLifetime;
+		}
+		else if ( my->actmagicIsVertical != MAGIC_ISVERTICAL_NONE )
+		{
+			MAGIC_MAXLIFE = 512;
+		}
+	}
+
 	if (magic_init)
 	{
 		my->removeLightField();
@@ -892,7 +907,24 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 		if ( multiplayer != CLIENT )
 		{
 			//Handle the missile's life.
-			MAGIC_LIFE++;
+			if ( my->actmagicDelayMove > 0 )
+			{
+				--my->actmagicDelayMove;
+				my->flags[INVISIBLE] = true;
+				if ( my->actmagicDelayMove == 0 )
+				{
+					my->flags[INVISIBLE] = false;
+					my->flags[UPDATENEEDED] = true;
+					my->vel_x = my->actmagicVelXStore;
+					my->vel_y = my->actmagicVelYStore;
+					my->vel_z = my->actmagicVelZStore;
+				}
+			}
+			
+			if ( my->actmagicDelayMove == 0 )
+			{
+				MAGIC_LIFE++;
+			}
 
 			if (MAGIC_LIFE >= MAGIC_MAXLIFE)
 			{
@@ -925,7 +957,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 			double dist = 0.f;
 			bool hitFromAbove = false;
 			ParticleEmitterHit_t* particleEmitterHitProps = nullptr;
-			if ( my->actmagicSpray == 1 )
+			if ( my->actmagicDelayMove > 0 )
+			{
+				// no movement or collision
+			}
+			else if ( my->actmagicSpray == 1 )
 			{
 				my->vel_z += my->actmagicSprayGravity;
 				my->z += my->vel_z;
@@ -1082,8 +1118,9 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				}
 			}
 
-			if ( hitFromAbove 
-				|| (my->actmagicIsVertical != MAGIC_ISVERTICAL_XYZ && my->actmagicSpray != 1 && dist != sqrt(my->vel_x * my->vel_x + my->vel_y * my->vel_y)) )
+			if ( my->actmagicDelayMove == 0 
+				&& (hitFromAbove
+				|| (my->actmagicIsVertical != MAGIC_ISVERTICAL_XYZ && my->actmagicSpray != 1 && dist != sqrt(my->vel_x * my->vel_x + my->vel_y * my->vel_y))) )
 			{
 				node = element->elements.first;
 				//element = (spellElement_t *) element->elements->first->element;
@@ -1209,8 +1246,9 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							Uint32 color = makeColorRGB(0, 255, 0);
 							if ( strcmp(element->element_internal_name, spellElement_charmMonster.element_internal_name) )
 							{
-								if ( my->actmagicCastByTinkerTrap == 1 )
+								if ( my->actmagicCastByTinkerTrap == 1 || my->actmagicNoHitMessage != 0 )
 								{
+									// no message
 									//messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(3498), Language::get(3499), MSG_COMBAT);
 								}
 								else
@@ -2128,11 +2166,16 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 					}
 				}
-				else if (!strcmp(element->element_internal_name, spellElement_fire.element_internal_name))
+				else if (!strcmp(element->element_internal_name, spellElement_fire.element_internal_name)
+					|| !strcmp(element->element_internal_name, "spell_element_flames") )
 				{
+					bool explode = !strcmp(element->element_internal_name, spellElement_fire.element_internal_name);
 					if ( !(my->actmagicIsOrbiting == 2) )
 					{
-						spawnExplosion(my->x, my->y, my->z);
+						if ( explode )
+						{
+							spawnExplosion(my->x, my->y, my->z);
+						}
 					}
 					if (hit.entity)
 					{
@@ -2157,7 +2200,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 							else
 							{
-								spawnExplosion(my->x, my->y, my->z);
+								if ( explode )
+								{
+									spawnExplosion(my->x, my->y, my->z);
+								}
 							}
 							return;
 						}
@@ -2187,7 +2233,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							if ( my->actmagicIsOrbiting == 2 )
 							{
-								spawnExplosion(my->x, my->y, my->z);
+								if ( explode )
+								{
+									spawnExplosion(my->x, my->y, my->z);
+								}
 								if ( parent && my->actmagicOrbitCastFromSpell == 0 )
 								{
 									if ( parent->behavior == &actParticleDot )
@@ -2331,7 +2380,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 							else
 							{
-								spawnExplosion(my->x, my->y, my->z);
+								if ( explode )
+								{
+									spawnExplosion(my->x, my->y, my->z);
+								}
 							}
 							return;
 						} 
@@ -2354,7 +2406,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 							else
 							{
-								spawnExplosion(my->x, my->y, my->z);
+								if ( explode )
+								{
+									spawnExplosion(my->x, my->y, my->z);
+								}
 							}
 							return;
 						}
@@ -2376,7 +2431,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 							else
 							{
-								spawnExplosion(my->x, my->y, my->z);
+								if ( explode )
+								{
+									spawnExplosion(my->x, my->y, my->z);
+								}
 							}
 							return;
 						}
@@ -2456,7 +2514,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 							else
 							{
-								spawnExplosion(my->x, my->y, my->z);
+								if ( explode )
+								{
+									spawnExplosion(my->x, my->y, my->z);
+								}
 							}
 							return;
 						}
@@ -4834,39 +4895,38 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 		if ( my->actmagicSpray == 1 )
 		{
 		}
-		else if ( *cvar_magic_fx_use_vismap && !intro )
+		else if ( !my->flags[INVISIBLE] || my->flags[INVISIBLE_DITHER] )
 		{
-			int x = my->x / 16.0;
-			int y = my->y / 16.0;
-			if ( x >= 0 && x < map.width && y >= 0 && y < map.height )
+			if ( *cvar_magic_fx_use_vismap && !intro )
 			{
-				for ( int i = 0; i < MAXPLAYERS; ++i )
+				int x = my->x / 16.0;
+				int y = my->y / 16.0;
+				if ( x >= 0 && x < map.width && y >= 0 && y < map.height )
 				{
-					if ( !client_disconnected[i] && players[i]->isLocalPlayer() && cameras[i].vismap[y + x * map.height] )
+					for ( int i = 0; i < MAXPLAYERS; ++i )
 					{
-						spawnMagicParticle(my);
-						break;
+						if ( !client_disconnected[i] && players[i]->isLocalPlayer() && cameras[i].vismap[y + x * map.height] )
+						{
+							if ( Entity* particle = spawnMagicParticle(my) )
+							{
+								particle->flags[SPRITE] = my->flags[SPRITE];
+								particle->flags[INVISIBLE] = my->flags[INVISIBLE];
+								particle->flags[INVISIBLE_DITHER] = my->flags[INVISIBLE_DITHER];
+							}
+							break;
+						}
 					}
 				}
 			}
-		}
-		else
-		{
-			spawnMagicParticle(my);
-		}
-	}
-	else
-	{
-		//Any init stuff that needs to happen goes here.
-		magic_init = 1;
-		my->skill[2] = -7; // ordinarily the client won't do anything with this entity
-		if ( my->actmagicIsOrbiting == 1 || my->actmagicIsOrbiting == 2 )
-		{
-			MAGIC_MAXLIFE = my->actmagicOrbitLifetime;
-		}
-		else if ( my->actmagicIsVertical != MAGIC_ISVERTICAL_NONE )
-		{
-			MAGIC_MAXLIFE = 512;
+			else
+			{
+				if ( Entity* particle = spawnMagicParticle(my) )
+				{
+					particle->flags[SPRITE] = my->flags[SPRITE];
+					particle->flags[INVISIBLE] = my->flags[INVISIBLE];
+					particle->flags[INVISIBLE_DITHER] = my->flags[INVISIBLE_DITHER];
+				}
+			}
 		}
 	}
 }
@@ -4901,50 +4961,76 @@ void actMagicClient(Entity* my)
 	}
 
 	// spawn particles
-	if ( *cvar_magic_fx_use_vismap && !intro )
+	if ( !my->flags[INVISIBLE] || my->flags[INVISIBLE_DITHER] )
 	{
-		int x = my->x / 16.0;
-		int y = my->y / 16.0;
-		if ( x >= 0 && x < map.width && y >= 0 && y < map.height )
+		if ( *cvar_magic_fx_use_vismap && !intro )
 		{
-			for ( int i = 0; i < MAXPLAYERS; ++i )
+			int x = my->x / 16.0;
+			int y = my->y / 16.0;
+			if ( x >= 0 && x < map.width && y >= 0 && y < map.height )
 			{
-				if ( !client_disconnected[i] && players[i]->isLocalPlayer() && cameras[i].vismap[y + x * map.height] )
+				for ( int i = 0; i < MAXPLAYERS; ++i )
 				{
-					spawnMagicParticle(my);
-					break;
+					if ( !client_disconnected[i] && players[i]->isLocalPlayer() && cameras[i].vismap[y + x * map.height] )
+					{
+						if ( Entity* particle = spawnMagicParticle(my) )
+						{
+							particle->flags[SPRITE] = my->flags[SPRITE];
+							particle->flags[INVISIBLE] = my->flags[INVISIBLE];
+							particle->flags[INVISIBLE_DITHER] = my->flags[INVISIBLE_DITHER];
+						}
+						break;
+					}
 				}
 			}
 		}
-	}
-	else
-	{
-		spawnMagicParticle(my);
+		else
+		{
+			if ( Entity* particle = spawnMagicParticle(my) )
+			{
+				particle->flags[SPRITE] = my->flags[SPRITE];
+				particle->flags[INVISIBLE] = my->flags[INVISIBLE];
+				particle->flags[INVISIBLE_DITHER] = my->flags[INVISIBLE_DITHER];
+			}
+		}
 	}
 }
 
 void actMagicClientNoLight(Entity* my)
 {
 	// simply spawn particles
-	if ( *cvar_magic_fx_use_vismap && !intro )
+	if ( !my->flags[INVISIBLE] || my->flags[INVISIBLE_DITHER] )
 	{
-		int x = my->x / 16.0;
-		int y = my->y / 16.0;
-		if ( x >= 0 && x < map.width && y >= 0 && y < map.height )
+		if ( *cvar_magic_fx_use_vismap && !intro )
 		{
-			for ( int i = 0; i < MAXPLAYERS; ++i )
+			int x = my->x / 16.0;
+			int y = my->y / 16.0;
+			if ( x >= 0 && x < map.width && y >= 0 && y < map.height )
 			{
-				if ( !client_disconnected[i] && players[i]->isLocalPlayer() && cameras[i].vismap[y + x * map.height] )
+				for ( int i = 0; i < MAXPLAYERS; ++i )
 				{
-					spawnMagicParticle(my);
-					break;
+					if ( !client_disconnected[i] && players[i]->isLocalPlayer() && cameras[i].vismap[y + x * map.height] )
+					{
+						if ( Entity* particle = spawnMagicParticle(my) )
+						{
+							particle->flags[SPRITE] = my->flags[SPRITE];
+							particle->flags[INVISIBLE] = my->flags[INVISIBLE];
+							particle->flags[INVISIBLE_DITHER] = my->flags[INVISIBLE_DITHER];
+						}
+						break;
+					}
 				}
 			}
 		}
-	}
-	else
-	{
-		spawnMagicParticle(my);
+		else
+		{
+			if ( Entity* particle = spawnMagicParticle(my) )
+			{
+				particle->flags[SPRITE] = my->flags[SPRITE];
+				particle->flags[INVISIBLE] = my->flags[INVISIBLE];
+				particle->flags[INVISIBLE_DITHER] = my->flags[INVISIBLE_DITHER];
+			}
+		}
 	}
 }
 
@@ -8731,7 +8817,21 @@ void actParticleFloorMagic(Entity* my)
 		list_RemoveNode(my->mynode);
 		return;
 	}
-	else
+
+	bool doEffect = my->actmagicDelayMove == 0;
+	if ( my->actmagicDelayMove > 0 )
+	{
+		--my->actmagicDelayMove;
+		my->flags[INVISIBLE] = true;
+		if ( my->actmagicDelayMove == 0 )
+		{
+			spawnGib(my);
+			my->flags[INVISIBLE] = false;
+			my->flags[UPDATENEEDED] = true;
+		}
+	}
+
+	if ( doEffect )
 	{
 		if ( multiplayer != CLIENT )
 		{
@@ -8742,7 +8842,11 @@ void actParticleFloorMagic(Entity* my)
 		my->scalex = std::min(my->scalex * 1.25, 1.0);
 		my->scaley = std::min(my->scaley * 1.25, 1.0);
 		my->scalez = std::min(my->scalez * 1.25, 1.0);
-		/*if ( *cvar_magic_fx_use_vismap && !intro )
+	}
+
+	if ( my->actmagicDelayMove == 0 )
+	{
+		if ( *cvar_magic_fx_use_vismap && !intro )
 		{
 			int x = my->x / 16.0;
 			int y = my->y / 16.0;
@@ -8752,7 +8856,16 @@ void actParticleFloorMagic(Entity* my)
 				{
 					if ( !client_disconnected[i] && players[i]->isLocalPlayer() && cameras[i].vismap[y + x * map.height] )
 					{
-						spawnMagicParticle(my);
+						if ( Entity* particle = spawnMagicParticleCustom(my, my->sprite, my->scalex * 0.7, 1) )
+						{
+							particle->vel_x = cos(my->yaw);
+							particle->vel_y = sin(my->yaw);
+							//particle->flags[INVISIBLE] = true;
+							//particle->flags[INVISIBLE_DITHER] = true;
+						}
+						//if ( my->ticks % 10 == 0 )
+						//{
+						//}
 						break;
 					}
 				}
@@ -8761,6 +8874,6 @@ void actParticleFloorMagic(Entity* my)
 		else
 		{
 			spawnMagicParticle(my);
-		}*/
+		}
 	}
 }

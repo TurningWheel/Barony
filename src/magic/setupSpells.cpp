@@ -1515,4 +1515,56 @@ void setupSpells()   ///TODO: Verify this function.
 		{ SPELL_ELEMENT_PROPULSION_FOCI_SPRAY, SPELL_FOCI_SANDBLAST } 
 	);
 	spell->hide_from_ui = true;
+
+	spellElementConstructor(SPELL_ELEMENT_METEOR_FLAMES,
+		2,		// mana
+		2,		// base mana
+		1,		// overload
+		2,		// damage
+		0,		// duration
+		"spell_element_flames");
+
+	spellElementConstructor(SPELL_METEOR,
+		50,		// mana
+		50,		// base mana
+		1,		// overload
+		5,		// damage
+		0,		// duration
+		"spell_element_fireball");
+	spell = spellConstructor(
+		SPELL_METEOR,										// ID
+		100,												// difficulty
+		"spell_meteor",										// internal name
+		// elements
+		{ SPELL_ELEMENT_PROPULSION_MISSILE, SPELL_METEOR, SPELL_ELEMENT_METEOR_FLAMES, SPELL_ELEMENT_METEOR_FLAMES, SPELL_ELEMENT_METEOR_FLAMES }
+	);
+	spell->hide_from_ui = true;
+	spell->rangefinder = true;
+	spell->distance = 64.0;
+
+	spellElementConstructor(SPELL_ELEMENT_PROPULSION_FLOOR_TILE,
+		1,		// mana
+		1,		// base mana
+		1,		// overload
+		0,		// damage
+		50,	// duration
+		"spell_element_propulsion_floor_tile");
+	spellElementConstructor(SPELL_ICE_WAVE,
+		5,		// mana
+		5,		// base mana
+		1,		// overload
+		0,		// damage
+		50,	// duration
+		"spell_ice_wave");
+
+	spell = spellConstructor(
+		SPELL_ICE_WAVE,										// ID
+		100,												// difficulty
+		"spell_ice_wave",										// internal name
+		// elements
+		{ SPELL_ELEMENT_PROPULSION_FLOOR_TILE, SPELL_ICE_WAVE, SPELL_ICE_WAVE, SPELL_ICE_WAVE, SPELL_ICE_WAVE, SPELL_ICE_WAVE, SPELL_ICE_WAVE, SPELL_ICE_WAVE, SPELL_ICE_WAVE, SPELL_ICE_WAVE }
+	);
+	spell->hide_from_ui = true;
+	spell->rangefinder = true;
+	spell->distance = 16.0;
 }

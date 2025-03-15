@@ -541,6 +541,9 @@ public:
 	real_t& actmagicOrbitStationaryY; // fskill[5]
 	real_t& actmagicOrbitStationaryCurrentDist; // fskill[6]
 	real_t& actmagicSprayGravity; // fskill[7]
+	real_t& actmagicVelXStore; // fskill[8]
+	real_t& actmagicVelYStore; // fskill[9]
+	real_t& actmagicVelZStore; // fskill[10]
 	Sint32& actmagicOrbitStationaryHitTarget; // skill[14]
 	Sint32& actmagicOrbitHitTargetUID1; // skill[15]
 	Sint32& actmagicOrbitHitTargetUID2; // skill[16]
@@ -554,6 +557,8 @@ public:
 	Sint32& actmagicFromSpellbook; // skill[26]
 	Sint32& actmagicSpray; // skill[27]
 	Sint32& actmagicEmitter; // skill[29]
+	Sint32& actmagicDelayMove; // skill[30]
+	Sint32& actmagicNoHitMessage; // skill[31]
 	
 	//--PUBLIC GOLD SKILLS--
 	Sint32& goldAmount; //skill[0]

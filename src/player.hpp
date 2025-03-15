@@ -1483,6 +1483,7 @@ public:
 		Entity* arm = nullptr;
 		Entity* magicLeftHand = nullptr;
 		Entity* magicRightHand = nullptr;
+		Entity* magicRangefinder = nullptr;
 
 		bool weaponSwitch = false;
 		bool shieldSwitch = false;

@@ -2136,7 +2136,8 @@ void drawEntities3D(view_t* camera, int mode)
                          || entity->behavior == &actHudArrowModel
                          || entity->behavior == &actHudShield
                          || entity->behavior == &actLeftHandMagic
-                         || entity->behavior == &actRightHandMagic )
+                         || entity->behavior == &actRightHandMagic
+						 || entity->behavior == &actMagicRangefinder)
                 {
                     if ( entity->skill[2] != currentPlayerViewport )
                     {
