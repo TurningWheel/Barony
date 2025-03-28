@@ -29,18 +29,6 @@
 #endif
 #endif
 
-#ifdef USE_FMOD
-#elif defined USE_OPENAL
-#else
-void setGlobalVolume(real_t master, real_t music, real_t gameplay, real_t ambient, real_t environment, real_t notification)
-{
-	return;
-}
-void setAudioDevice(const std::string& device) 
-{
-	return;
-}
-#endif
 
 #ifdef USE_FMOD
 
@@ -328,36 +316,6 @@ void sound_update(int player, int index, int numplayers)
 
 #elif defined USE_OPENAL
 
-struct OPENAL_BUFFER {
-	ALuint id;
-	bool stream;
-	char oggfile[64];
-};
-struct OPENAL_SOUND {
-	ALuint id;
-	OPENAL_CHANNELGROUP *group;
-	float volume;
-	OPENAL_BUFFER *buffer;
-	bool active;
-	char* oggdata;
-	int oggdata_length;
-	int ogg_seekoffset;
-	OggVorbis_File oggStream;
-	vorbis_info* vorbisInfo;
-	vorbis_comment* vorbisComment;
-	ALuint streambuff[4];
-	bool loop;
-	bool stream_active;
-	int indice;
-};
-
-struct OPENAL_CHANNELGROUP {
-	float volume;
-	int num;
-	int cap;
-	OPENAL_SOUND **sounds;
-};
-
 SDL_mutex *openal_mutex;
 
 static size_t openal_oggread(void* ptr, size_t size, size_t nmemb, void* datasource) {
@@ -513,14 +471,7 @@ ALCdevice  *openal_device = nullptr;
 //#define openal_maxchannels 100
 
 OPENAL_BUFFER** sounds = nullptr;
-Uint32 numsounds = 0;
-OPENAL_BUFFER** minesmusic = NULL;
-OPENAL_BUFFER** swampmusic = NULL;
-OPENAL_BUFFER** labyrinthmusic = NULL;
-OPENAL_BUFFER** ruinsmusic = NULL;
-OPENAL_BUFFER** underworldmusic = NULL;
-OPENAL_BUFFER** hellmusic = NULL;
-OPENAL_BUFFER** intromusic = NULL;
+
 OPENAL_BUFFER* intermissionmusic = NULL;
 OPENAL_BUFFER* minetownmusic = NULL;
 OPENAL_BUFFER* splashmusic = NULL;
@@ -534,7 +485,6 @@ OPENAL_BUFFER* endgamemusic = NULL;
 OPENAL_BUFFER* devilmusic = NULL;
 OPENAL_BUFFER* escapemusic = NULL;
 OPENAL_BUFFER* sanctummusic = NULL;
-OPENAL_BUFFER* introductionmusic = NULL;
 OPENAL_BUFFER** cavesmusic = NULL;
 OPENAL_BUFFER** citadelmusic = NULL;
 OPENAL_BUFFER* gnomishminesmusic = NULL;
@@ -546,17 +496,6 @@ OPENAL_BUFFER* hamletmusic = NULL;
 OPENAL_BUFFER* tutorialmusic = nullptr;
 OPENAL_BUFFER* gameovermusic = nullptr;
 OPENAL_BUFFER* introstorymusic = nullptr;
-bool levelmusicplaying = false;
-
-OPENAL_SOUND* music_channel = nullptr;
-OPENAL_SOUND* music_channel2 = nullptr;
-OPENAL_SOUND* music_resume = nullptr;
-
-OPENAL_CHANNELGROUP *sound_group = NULL;
-OPENAL_CHANNELGROUP *soundAmbient_group = NULL;
-OPENAL_CHANNELGROUP *soundEnvironment_group = NULL;
-OPENAL_CHANNELGROUP *music_group = NULL;
-OPENAL_CHANNELGROUP *music_notification_group = NULL;
 
 float fadein_increment = 0.002f;
 float default_fadein_increment = 0.002f;
@@ -621,16 +560,24 @@ int OPENAL_ThreadFunction(void* data) {
 	return 1;
 }
 
+/**
+ * Initialize OpenAL library
+ * 
+ * - Channel groups are initialized here
+ */
 int initOPENAL()
 {
 	static int initialized = 0;
 	if(initialized)
 		return 1;
 
+	printlog("[OpenAL]: initializing...\n");
+	printlog("[OpenAL]: opening device...\n");
 	openal_device = alcOpenDevice(NULL); // preferred device
 	if(!openal_device)
 		return 0;
 
+	printlog("[OpenAL]: opening context...\n");
 	openal_context = alcCreateContext(openal_device,NULL);
 	if(!openal_context)
 		return 0;
@@ -683,13 +630,15 @@ int initOPENAL()
 
 int closeOPENAL()
 {
-	if(OpenALSoundON) return 0;
-
+	if(OpenALSoundON)
+		return 0;
 	OpenALSoundON = false;
+
+	printlog("[OpenAL]: closing...\n");
 	int i = 0;
 	SDL_WaitThread(openal_soundthread, &i);
 	if(i!=1) {
-		printlog("Warning, unable to stop Openal thread\n");
+		printlog("[OpenAL]: unable to stop openal_soundthread thread\n");
 	}
 
 	if(openal_mutex) {
@@ -714,6 +663,26 @@ int closeOPENAL()
 	return 1;
 }
 
+/**
+ * taken from offical doc but not very "CPP" way
+ */
+int openalGetNumberOfDevices(const ALCchar *devices)
+{
+	const ALCchar *device = devices, *next = devices + 1;
+	size_t len = 0;
+    int num = 0;
+
+	while (device && *device != '\0' && next && *next != '\0') {
+		//printlog("device detected: %s", device);
+        num += 1;
+		//fprintf(stdout, "%s\n", device);
+		len = strlen(device);
+		device += (len + 1);
+		next += (len + 2);
+	}
+
+    return num;
+}
 
 static int get_firstfreechannel()
 {
@@ -734,7 +703,8 @@ static int get_firstfreechannel()
 	return i;
 }
 
-void setGlobalVolume(real_t master, real_t music, real_t gameplay, real_t ambient, real_t environment) {
+void setGlobalVolume(real_t master, real_t music, real_t gameplay, real_t ambient, real_t environment, real_t notification)
+{
     master = std::min(std::max(0.0, master), 1.0);
     music = std::min(std::max(0.0, music / 4.0), 1.0); // music volume cut in half because the music is loud...
     gameplay = std::min(std::max(0.0, gameplay), 1.0);
@@ -745,7 +715,11 @@ void setGlobalVolume(real_t master, real_t music, real_t gameplay, real_t ambien
 	OPENAL_ChannelGroup_SetVolume(sound_group, master * gameplay);
 	OPENAL_ChannelGroup_SetVolume(soundAmbient_group, master * ambient);
 	OPENAL_ChannelGroup_SetVolume(soundEnvironment_group, master * environment);
-	OPENAL_ChannelGroup_SetVolume(music_notification_group, master * gameplay);
+	OPENAL_ChannelGroup_SetVolume(music_notification_group, master * notification);
+}
+
+void setAudioDevice(const std::string& device){
+	// TODO: implement device selection for OpenAL
 }
 
 void sound_update(int player, int index, int numplayers)
@@ -977,7 +951,15 @@ int OPENAL_CreateSound(const char* name, bool b3D, OPENAL_BUFFER **buffer) {
 
 	ov_clear(&oggFile);
 	alGenBuffers(1, &(*buffer)->id);
+	ALenum al_error = alGetError();
+	if (al_error != AL_NO_ERROR) {
+		printlog("OpenAL error: %d\n", al_error);
+	}
 	alBufferData((*buffer)->id, (channels==1)?AL_FORMAT_MONO16:AL_FORMAT_STEREO16, data2, sz, freq);
+	ALenum al_error2 = alGetError();
+	if (al_error2 != AL_NO_ERROR) {
+		printlog("OpenAL error: %d\n", al_error2);
+	}
 	if(data2!=data)
 		free(data2);
 	free(data);
@@ -1113,9 +1095,25 @@ void OPENAL_Sound_GetLength(OPENAL_BUFFER* buffer, unsigned int *length) {
 
 void OPENAL_Sound_Release(OPENAL_BUFFER* buffer) {
 	if(!buffer) return;
-	if(!buffer->stream)
+	if(!buffer->stream) {
 		alDeleteBuffers( 1, &buffer->id );
+		ALenum error = alGetError();
+		if (error != AL_NO_ERROR) {
+			printlog("[OpenAL] error %d in alDeleteBuffers for buffer '%d' '%s'\n", error, buffer->id, buffer->oggfile);
+			return;
+		}
+	}
 	free(buffer);
+}
+
+#else // No FMOD or OpenAL
+
+void setGlobalVolume(real_t master, real_t music, real_t gameplay, real_t ambient, real_t environment, real_t notification)
+{
+}
+
+void setAudioDevice(const std::string& device) 
+{
 }
 
 #endif
@@ -1258,6 +1256,42 @@ FMOD_RESULT physfsReloadMusic_helper_reloadMusicArray(uint32_t numMusic, const c
 
 	return FMOD_OK;
 }
+#elif defined USE_OPENAL
+void physfsReloadMusic_helper_reloadMusicArray(uint32_t numMusic, const char* filenameTemplate, OPENAL_BUFFER** musicArray, bool reloadAll)
+{
+	for ( int c = 0; c < numMusic; c++ )
+	{
+		snprintf(tempstr, 1000, filenameTemplate, c);
+		if ( PHYSFS_exists(tempstr) )
+		{
+			printlog("[PhysFS]: Loading music file %s...", tempstr);
+			if ( musicArray )
+			{
+				OPENAL_Sound_Release(musicArray[c]);
+				//musicArray[c]->release();
+			}
+			if ( musicPreload )
+			{
+				OPENAL_CreateSound(tempstr, false, &musicArray[c]);
+				//fmod_result = fmod_system->createSound(musicDir.c_str(), FMOD_2D, nullptr, &musicArray[c]); //TODO: Any other FMOD_MODEs should be used here? FMOD_SOFTWARE -> what now? FMOD_2D? LOOP?
+			}
+			else
+			{
+				OPENAL_CreateStreamSound(tempstr, &musicArray[c]);
+				//fmod_result = fmod_system->createStream(musicDir.c_str(), FMOD_2D, nullptr, &musicArray[c]); //TODO: Any other FMOD_MODEs should be used here? FMOD_SOFTWARE -> what now? FMOD_2D? LOOP?
+			}
+			ALenum al_error2 = alGetError();
+			/*if (fmod_result != FMOD_OK)
+			{
+				printlog("[PhysFS]: ERROR: Failed reloading music file \"%s\".");
+				return;
+			}*/
+			
+		} else {
+			printlog("[OpenAL]: fail to load music file %s...", tempstr);
+		}
+	}
+}
 #endif
 
 void physfsReloadMusic(bool &introMusicChanged, bool reloadAll) //TODO: This should probably return an error.
@@ -1266,7 +1300,7 @@ void physfsReloadMusic(bool &introMusicChanged, bool reloadAll) //TODO: This sho
 	{
 		return;
 	}
-#ifdef SOUND
+#ifdef MUSIC
 
 	std::vector<std::string> themeMusic;
 	themeMusic.push_back("music/introduction.ogg");
@@ -1292,14 +1326,7 @@ void physfsReloadMusic(bool &introMusicChanged, bool reloadAll) //TODO: This sho
 	themeMusic.push_back("sound/ui/StoryMusicV3.ogg");
 
 	int index = 0;
-#ifdef USE_OPENAL
-#define FMOD_System_CreateStream(A, B, C, D, E) OPENAL_CreateStreamSound(B, E) //TODO: If this is still needed, it's probably now broke!
-#define FMOD_SOUND OPENAL_BUFFER
-#define fmod_system 0
-#define FMOD_SOFTWARE 0
-#define FMOD_Sound_Release OPENAL_Sound_Release
 	int fmod_result;
-#endif
 	for ( std::vector<std::string>::iterator it = themeMusic.begin(); it != themeMusic.end(); ++it )
 	{
 		std::string filename = *it;
@@ -1313,9 +1340,11 @@ void physfsReloadMusic(bool &introMusicChanged, bool reloadAll) //TODO: This sho
 				switch ( index )
 				{
 					case 0:
+#ifdef USE_FMOD
 						if ( introductionmusic )
 						{
 							introductionmusic->release();
+
 						}
                         if ( musicPreload )
                         {
@@ -1325,8 +1354,16 @@ void physfsReloadMusic(bool &introMusicChanged, bool reloadAll) //TODO: This sho
                         {
                             fmod_result = fmod_system->createStream(musicDir.c_str(), FMOD_2D, nullptr, &introductionmusic); //TODO: FMOD_SOFTWARE -> what now? FMOD_2D? FMOD_LOOP_NORMAL? More things? Something else?
                         }
+#elif defined USE_OPENAL
+						if ( introductionmusic ) {
+							OPENAL_Sound_Release(introductionmusic);
+						}
+						OPENAL_CreateStreamSound(musicDir.c_str(), &introductionmusic);
+#endif
 						break;
+
 					case 1:
+#ifdef USE_FMOD
 						if ( intermissionmusic )
 						{
 							intermissionmusic->release();
@@ -1339,8 +1376,15 @@ void physfsReloadMusic(bool &introMusicChanged, bool reloadAll) //TODO: This sho
                         {
                             fmod_result = fmod_system->createStream(musicDir.c_str(), FMOD_2D, nullptr, &intermissionmusic);
                         }
+#elif defined USE_OPENAL
+						if ( intermissionmusic ) {
+							OPENAL_Sound_Release(intermissionmusic);
+						}
+						OPENAL_CreateStreamSound(musicDir.c_str(), &intermissionmusic);
+#endif
 						break;
 					case 2:
+#ifdef USE_FMOD
 						if ( minetownmusic )
 						{
 							minetownmusic->release();
@@ -1353,8 +1397,15 @@ void physfsReloadMusic(bool &introMusicChanged, bool reloadAll) //TODO: This sho
                         {
                             fmod_result = fmod_system->createStream(musicDir.c_str(), FMOD_2D, nullptr, &minetownmusic);
                         }
+#elif defined USE_OPENAL
+						if ( minetownmusic ) {
+							OPENAL_Sound_Release(minetownmusic);
+						}
+						OPENAL_CreateStreamSound(musicDir.c_str(), &minetownmusic);
+#endif
 						break;
 					case 3:
+#ifdef USE_FMOD
 						if ( splashmusic )
 						{
 							splashmusic->release();
@@ -1367,8 +1418,15 @@ void physfsReloadMusic(bool &introMusicChanged, bool reloadAll) //TODO: This sho
                         {
                             fmod_result = fmod_system->createStream(musicDir.c_str(), FMOD_2D, nullptr, &splashmusic);
                         }
+#elif defined USE_OPENAL
+						if ( splashmusic ) {
+							OPENAL_Sound_Release(splashmusic);
+						}
+						OPENAL_CreateStreamSound(musicDir.c_str(), &splashmusic);
+#endif
 						break;
 					case 4:
+#ifdef USE_FMOD
 						if ( librarymusic )
 						{
 							librarymusic->release();
@@ -1381,8 +1439,15 @@ void physfsReloadMusic(bool &introMusicChanged, bool reloadAll) //TODO: This sho
                         {
                             fmod_result = fmod_system->createStream(musicDir.c_str(), FMOD_2D, nullptr, &librarymusic);
                         }
+#elif defined USE_OPENAL
+						if ( librarymusic ) {
+							OPENAL_Sound_Release(librarymusic);
+						}
+						OPENAL_CreateStreamSound(musicDir.c_str(), &librarymusic);
+#endif
 						break;
 					case 5:
+#ifdef USE_FMOD
 						if ( shopmusic )
 						{
 							shopmusic->release();
@@ -1395,8 +1460,15 @@ void physfsReloadMusic(bool &introMusicChanged, bool reloadAll) //TODO: This sho
                         {
                             fmod_result = fmod_system->createStream(musicDir.c_str(), FMOD_2D, nullptr, &shopmusic);
                         }
+#elif defined USE_OPENAL
+						if ( shopmusic ) {
+							OPENAL_Sound_Release(shopmusic);
+						}
+						OPENAL_CreateStreamSound(musicDir.c_str(), &shopmusic);
+#endif
 						break;
 					case 6:
+#ifdef USE_FMOD
 						if ( herxmusic )
 						{
 							herxmusic->release();
@@ -1409,8 +1481,15 @@ void physfsReloadMusic(bool &introMusicChanged, bool reloadAll) //TODO: This sho
                         {
                             fmod_result = fmod_system->createStream(musicDir.c_str(), FMOD_2D, nullptr, &herxmusic);
                         }
+#elif defined USE_OPENAL
+						if ( herxmusic ) {
+							OPENAL_Sound_Release(herxmusic);
+						}
+						OPENAL_CreateStreamSound(musicDir.c_str(), &herxmusic);
+#endif
 						break;
 					case 7:
+#ifdef USE_FMOD
 						if ( templemusic )
 						{
 							templemusic->release();
@@ -1423,8 +1502,15 @@ void physfsReloadMusic(bool &introMusicChanged, bool reloadAll) //TODO: This sho
                         {
                             fmod_result = fmod_system->createStream(musicDir.c_str(), FMOD_2D, nullptr, &templemusic);
                         }
+#elif defined USE_OPENAL
+						if ( templemusic ) {
+							OPENAL_Sound_Release(templemusic);
+						}
+						OPENAL_CreateStreamSound(musicDir.c_str(), &templemusic);
+#endif
 						break;
 					case 8:
+#ifdef USE_FMOD
 						if ( endgamemusic )
 						{
 							endgamemusic->release();
@@ -1437,8 +1523,15 @@ void physfsReloadMusic(bool &introMusicChanged, bool reloadAll) //TODO: This sho
                         {
                             fmod_result = fmod_system->createStream(musicDir.c_str(), FMOD_2D, nullptr, &endgamemusic);
                         }
+#elif defined USE_OPENAL
+						if ( endgamemusic ) {
+							OPENAL_Sound_Release(endgamemusic);
+						}
+						OPENAL_CreateStreamSound(musicDir.c_str(), &endgamemusic);
+#endif
 						break;
 					case 9:
+#ifdef USE_FMOD
 						if ( escapemusic )
 						{
 							escapemusic->release();
@@ -1451,8 +1544,15 @@ void physfsReloadMusic(bool &introMusicChanged, bool reloadAll) //TODO: This sho
                         {
                             fmod_result = fmod_system->createStream(musicDir.c_str(), FMOD_2D, nullptr, &escapemusic);
                         }
+#elif defined USE_OPENAL
+						if ( escapemusic ) {
+							OPENAL_Sound_Release(escapemusic);
+						}
+						OPENAL_CreateStreamSound(musicDir.c_str(), &escapemusic);
+#endif
 						break;
 					case 10:
+#ifdef USE_FMOD
 						if ( devilmusic )
 						{
 							devilmusic->release();
@@ -1465,8 +1565,15 @@ void physfsReloadMusic(bool &introMusicChanged, bool reloadAll) //TODO: This sho
                         {
                             fmod_result = fmod_system->createStream(musicDir.c_str(), FMOD_2D, nullptr, &devilmusic);
                         }
+#elif defined USE_OPENAL
+						if ( devilmusic ) {
+							OPENAL_Sound_Release(devilmusic);
+						}
+						OPENAL_CreateStreamSound(musicDir.c_str(), &devilmusic);
+#endif
 						break;
 					case 11:
+#ifdef USE_FMOD
 						if ( sanctummusic )
 						{
 							sanctummusic->release();
@@ -1479,8 +1586,15 @@ void physfsReloadMusic(bool &introMusicChanged, bool reloadAll) //TODO: This sho
                         {
                             fmod_result = fmod_system->createStream(musicDir.c_str(), FMOD_2D, nullptr, &sanctummusic);
                         }
+#elif defined USE_OPENAL
+						if ( sanctummusic ) {
+							OPENAL_Sound_Release(sanctummusic);
+						}
+						OPENAL_CreateStreamSound(musicDir.c_str(), &sanctummusic);
+#endif
 						break;
 					case 12:
+#ifdef USE_FMOD
 						if ( gnomishminesmusic )
 						{
 							gnomishminesmusic->release();
@@ -1493,8 +1607,15 @@ void physfsReloadMusic(bool &introMusicChanged, bool reloadAll) //TODO: This sho
 						{
 							fmod_result = fmod_system->createStream(musicDir.c_str(), FMOD_2D, nullptr, &gnomishminesmusic);
 						}
+#elif defined USE_OPENAL
+						if ( gnomishminesmusic ) {
+							OPENAL_Sound_Release(gnomishminesmusic);
+						}
+						OPENAL_CreateStreamSound(musicDir.c_str(), &gnomishminesmusic);
+#endif
 						break;
 					case 13:
+#ifdef USE_FMOD
 						if ( greatcastlemusic )
 						{
 							greatcastlemusic->release();
@@ -1507,8 +1628,15 @@ void physfsReloadMusic(bool &introMusicChanged, bool reloadAll) //TODO: This sho
 						{
 							fmod_result = fmod_system->createStream(musicDir.c_str(), FMOD_2D, nullptr, &greatcastlemusic);
 						}
+#elif defined USE_OPENAL
+						if ( greatcastlemusic ) {
+							OPENAL_Sound_Release(greatcastlemusic);
+						}
+						OPENAL_CreateStreamSound(musicDir.c_str(), &greatcastlemusic);
+#endif
 						break;
 					case 14:
+#ifdef USE_FMOD
 						if ( sokobanmusic )
 						{
 							sokobanmusic->release();
@@ -1521,8 +1649,15 @@ void physfsReloadMusic(bool &introMusicChanged, bool reloadAll) //TODO: This sho
 						{
 							fmod_result = fmod_system->createStream(musicDir.c_str(), FMOD_2D, nullptr, &sokobanmusic);
 						}
+#elif defined USE_OPENAL
+						if ( sokobanmusic ) {
+							OPENAL_Sound_Release(sokobanmusic);
+						}
+						OPENAL_CreateStreamSound(musicDir.c_str(), &sokobanmusic);
+#endif
 						break;
 					case 15:
+#ifdef USE_FMOD
 						if ( caveslairmusic )
 						{
 							caveslairmusic->release();
@@ -1535,8 +1670,15 @@ void physfsReloadMusic(bool &introMusicChanged, bool reloadAll) //TODO: This sho
 						{
 							fmod_result = fmod_system->createStream(musicDir.c_str(), FMOD_2D, nullptr, &caveslairmusic);
 						}
+#elif defined USE_OPENAL
+						if ( caveslairmusic ) {
+							OPENAL_Sound_Release(caveslairmusic);
+						}
+						OPENAL_CreateStreamSound(musicDir.c_str(), &caveslairmusic);
+#endif
 						break;
 					case 16:
+#ifdef USE_FMOD
 						if ( bramscastlemusic )
 						{
 							bramscastlemusic->release();
@@ -1549,8 +1691,15 @@ void physfsReloadMusic(bool &introMusicChanged, bool reloadAll) //TODO: This sho
 						{
 							fmod_result = fmod_system->createStream(musicDir.c_str(), FMOD_2D, nullptr, &bramscastlemusic);
 						}
+#elif defined USE_OPENAL
+						if ( bramscastlemusic ) {
+							OPENAL_Sound_Release(bramscastlemusic);
+						}
+						OPENAL_CreateStreamSound(musicDir.c_str(), &bramscastlemusic);
+#endif
 						break;
 					case 17:
+#ifdef USE_FMOD
 						if ( hamletmusic )
 						{
 							hamletmusic->release();
@@ -1563,8 +1712,15 @@ void physfsReloadMusic(bool &introMusicChanged, bool reloadAll) //TODO: This sho
 						{
 							fmod_result = fmod_system->createStream(musicDir.c_str(), FMOD_2D, nullptr, &hamletmusic);
 						}
+#elif defined USE_OPENAL
+						if ( hamletmusic ) {
+							OPENAL_Sound_Release(hamletmusic);
+						}
+						OPENAL_CreateStreamSound(musicDir.c_str(), &hamletmusic);
+#endif
 						break;
 					case 18:
+#ifdef USE_FMOD
 						if ( tutorialmusic )
 						{
 							tutorialmusic->release();
@@ -1577,8 +1733,15 @@ void physfsReloadMusic(bool &introMusicChanged, bool reloadAll) //TODO: This sho
 						{
 							fmod_result = fmod_system->createStream(musicDir.c_str(), FMOD_2D, nullptr, &tutorialmusic);
 						}
+#elif defined USE_OPENAL
+						if ( tutorialmusic ) {
+							OPENAL_Sound_Release(tutorialmusic);
+						}
+						OPENAL_CreateStreamSound(musicDir.c_str(), &tutorialmusic);
+#endif
 						break;
 					case 19:
+#ifdef USE_FMOD
 						if ( gameovermusic )
 						{
 							gameovermusic->release();
@@ -1591,8 +1754,15 @@ void physfsReloadMusic(bool &introMusicChanged, bool reloadAll) //TODO: This sho
 						{
 							fmod_result = fmod_system->createStream(musicDir.c_str(), FMOD_DEFAULT, nullptr, &gameovermusic);
 						}
+#elif defined USE_OPENAL
+						if ( gameovermusic ) {
+							OPENAL_Sound_Release(gameovermusic);
+						}
+						OPENAL_CreateStreamSound(musicDir.c_str(), &gameovermusic);
+#endif
 						break;
 					case 20:
+#ifdef USE_FMOD
 						if ( introstorymusic )
 						{
 							introstorymusic->release();
@@ -1605,64 +1775,45 @@ void physfsReloadMusic(bool &introMusicChanged, bool reloadAll) //TODO: This sho
 						{
 							fmod_result = fmod_system->createStream(musicDir.c_str(), FMOD_DEFAULT, nullptr, &introstorymusic);
 						}
+#elif defined USE_OPENAL
+						if ( introstorymusic ) {
+							OPENAL_Sound_Release(introstorymusic);
+						}
+						OPENAL_CreateStreamSound(musicDir.c_str(), &introstorymusic);
+#endif
 						break;
 					default:
 						break;
 				}
+#ifdef USE_FMOD
 				if ( FMODErrorCheck() )
 				{
 					printlog("[PhysFS]: ERROR: Failed reloading music file \"%s\".", filename.c_str());
 					//TODO: Handle error? Abort? Fling pies at people?
 				}
+#endif
 			}
 		}
 		++index;
 	}
 
-	int c;
-	FMOD::Sound** music = nullptr;
-
-	if (FMOD_OK != (fmod_result = physfsReloadMusic_helper_reloadMusicArray(NUMMINESMUSIC, "music/mines%02d.ogg", minesmusic, reloadAll)) )
-	{
-		printlog("[PhysFS]: Failed to reload mines music array.");
-		//TODO: Handle error? Abort? Fling pies at people?
-	}
-	if (FMOD_OK != (fmod_result = physfsReloadMusic_helper_reloadMusicArray(NUMSWAMPMUSIC, "music/swamp%02d.ogg", swampmusic, reloadAll)) )
-	{
-		printlog("[PhysFS]: Failed to reload swamp music array.");
-	}
-	if (FMOD_OK != (fmod_result = physfsReloadMusic_helper_reloadMusicArray(NUMLABYRINTHMUSIC, "music/labyrinth%02d.ogg", labyrinthmusic, reloadAll)) )
-	{
-		printlog("[PhysFS]: Failed to reload labyrinth music array.");
-	}
-	if (FMOD_OK != (fmod_result = physfsReloadMusic_helper_reloadMusicArray(NUMRUINSMUSIC, "music/ruins%02d.ogg", ruinsmusic, reloadAll)) )
-	{
-		printlog("[PhysFS]: Failed to reload ruins music array.");
-	}
-	if (FMOD_OK != (fmod_result = physfsReloadMusic_helper_reloadMusicArray(NUMUNDERWORLDMUSIC, "music/underworld%02d.ogg", underworldmusic, reloadAll)) )
-	{
-		printlog("[PhysFS]: Failed to reload underworld music array.");
-	}
-	if (FMOD_OK != (fmod_result = physfsReloadMusic_helper_reloadMusicArray(NUMHELLMUSIC, "music/hell%02d.ogg", hellmusic, reloadAll)) )
-	{
-		printlog("[PhysFS]: Failed to reload hell music array.");
-	}
-	if (FMOD_OK != (fmod_result = physfsReloadMusic_helper_reloadMusicArray(NUMMINOTAURMUSIC, "music/minotaur%02d.ogg", minotaurmusic, reloadAll)) )
-	{
-		printlog("[PhysFS]: Failed to reload minotaur music array.");
-	}
-	if (FMOD_OK != (fmod_result = physfsReloadMusic_helper_reloadMusicArray(NUMCAVESMUSIC, "music/caves%02d.ogg", cavesmusic, reloadAll)) )
-	{
-		printlog("[PhysFS]: Failed to reload caves music array.");
-	}
-	if (FMOD_OK != (fmod_result = physfsReloadMusic_helper_reloadMusicArray(NUMCITADELMUSIC, "music/citadel%02d.ogg", citadelmusic, reloadAll)) )
-	{
-		printlog("[PhysFS]: Failed to reload citadel music array.");
-	}
+	physfsReloadMusic_helper_reloadMusicArray(NUMMINESMUSIC, "music/mines%02d.ogg", minesmusic, reloadAll);
+	physfsReloadMusic_helper_reloadMusicArray(NUMSWAMPMUSIC, "music/swamp%02d.ogg", swampmusic, reloadAll);
+	physfsReloadMusic_helper_reloadMusicArray(NUMLABYRINTHMUSIC, "music/labyrinth%02d.ogg", labyrinthmusic, reloadAll);
+	physfsReloadMusic_helper_reloadMusicArray(NUMRUINSMUSIC, "music/ruins%02d.ogg", ruinsmusic, reloadAll);
+	physfsReloadMusic_helper_reloadMusicArray(NUMUNDERWORLDMUSIC, "music/underworld%02d.ogg", underworldmusic, reloadAll);
+	physfsReloadMusic_helper_reloadMusicArray(NUMHELLMUSIC, "music/hell%02d.ogg", hellmusic, reloadAll);
+	physfsReloadMusic_helper_reloadMusicArray(NUMMINOTAURMUSIC, "music/minotaur%02d.ogg", minotaurmusic, reloadAll);
+	physfsReloadMusic_helper_reloadMusicArray(NUMCAVESMUSIC, "music/caves%02d.ogg", cavesmusic, reloadAll);
+	physfsReloadMusic_helper_reloadMusicArray(NUMCITADELMUSIC, "music/citadel%02d.ogg", citadelmusic, reloadAll);
 
 	bool introChanged = false;
-
-	for ( c = 0; c < NUMINTROMUSIC; c++ )
+#ifdef USE_FMOD
+	FMOD::Sound** music = nullptr;
+#else
+	OPENAL_BUFFER** music = nullptr;
+#endif
+	for ( int c = 0; c < NUMINTROMUSIC; c++ )
 	{
 		if ( c == 0 )
 		{
@@ -1682,45 +1833,46 @@ void physfsReloadMusic(bool &introMusicChanged, bool reloadAll) //TODO: This sho
 				music = intromusic;
 				if ( music )
 				{
+#ifdef USE_FMOD
 					music[c]->release();
+#elif defined USE_OPENAL
+					OPENAL_Sound_Release(music[c]);
+#endif
 				}
                 if ( musicPreload )
                 {
-                    fmod_result = fmod_system->createSound(musicDir.c_str(), FMOD_2D, nullptr, &music[c]);
+                    //fmod_result = fmod_system->createSound(musicDir.c_str(), FMOD_2D, nullptr, &music[c]);
+					physfsReloadMusic_helper_reloadMusicArray(NUMINTROMUSIC, "music/intro%02d.ogg", music, reloadAll);
                 }
                 else
                 {
-                    fmod_result = fmod_system->createStream(musicDir.c_str(), FMOD_2D, nullptr, &music[c]);
+                    //fmod_result = fmod_system->createStream(musicDir.c_str(), FMOD_2D, nullptr, &music[c]);
+					physfsReloadMusic_helper_reloadMusicArray(NUMINTROMUSIC, "music/intro%02d.ogg", music, reloadAll);
                 }
                 introChanged = true;
+#ifdef USE_FMOD
                 if (fmod_result != FMOD_OK)
                 {
                     printlog("[PhysFS]: ERROR: Failed reloading music file \"%s\".");
                     break; //TODO: Handle the error?
                 }
+#endif
 			}
 		}
 	}
 
 	introMusicChanged = introChanged; // use this variable outside of this function to start playing a new fresh list of tracks in the main menu.
-#ifdef USE_OPENAL
-#undef FMOD_System_CreateStream
-#undef FMOD_SOUND
-#undef fmod_system
-#undef FMOD_SOFTWARE
-#undef FMOD_Sound_Release
-#endif
 
-#endif // SOUND
+#endif // MUSIC
 }
 
+/**
+ * Free custom music slots, not used by official music assets.
+ */
 void gamemodsUnloadCustomThemeMusic()
 {
 #ifdef SOUND
-#ifdef USE_OPENAL
-#define FMOD_Sound_Release OPENAL_Sound_Release
-#endif
-	// free custom music slots, not used by official music assets.
+#ifdef USE_FMOD
 	if ( gnomishminesmusic )
 	{
 		gnomishminesmusic->release();
@@ -1751,8 +1903,9 @@ void gamemodsUnloadCustomThemeMusic()
 		hamletmusic->release();
 		hamletmusic = nullptr;
 	}
+#endif
 #ifdef USE_OPENAL
-#undef FMOD_Sound_Release
+
 #endif
 #endif // !SOUND
 }
