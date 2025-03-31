@@ -68,6 +68,13 @@ FMOD::ChannelGroup* soundNotification_group = nullptr;
 FMOD::ChannelGroup* music_group = nullptr;
 FMOD::ChannelGroup* music_notification_group = nullptr;
 
+FMOD::Sound* music_ensemble_global_sound[NUMENSEMBLEMUSIC] = { nullptr };
+FMOD::Channel* music_ensemble_global_channel[NUMENSEMBLEMUSIC] = { nullptr };
+FMOD::ChannelGroup* music_ensemble_global_send_group = nullptr;
+FMOD::ChannelGroup* music_ensemble_global_recv_group = nullptr;
+FMOD::ChannelGroup* music_ensemble_local_recv_player[MAXPLAYERS] = { nullptr };
+FMOD::ChannelGroup* music_ensemble_local_recv_group = nullptr;
+
 float fadein_increment = 0.002f;
 float default_fadein_increment = 0.002f;
 float fadeout_increment = 0.005f;

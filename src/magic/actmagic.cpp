@@ -5100,6 +5100,117 @@ void actHUDMagicParticle(Entity* my)
 	}
 }
 
+void createEnsembleTargetParticleCircling(Entity* parent)
+{
+	if ( !parent ) { return; }
+
+	// world particle
+	Entity* entity = newEntity(198, 1, map.entities, nullptr);
+	entity->yaw = (local_rng.rand() % 3) * 2 * PI / 3;
+	entity->x = parent->x;
+	entity->y = parent->y;
+	entity->z = 0.0;
+	double missile_speed = 4;
+	entity->vel_x = 0.0;
+	entity->vel_y = 0.0;
+	entity->actmagicIsOrbiting = 2;
+	entity->actmagicOrbitDist = 4.0;
+	entity->actmagicOrbitStationaryCurrentDist = 0.0;
+	entity->actmagicOrbitStartZ = entity->z;
+	entity->actmagicOrbitVerticalSpeed = -0.025;
+	entity->actmagicOrbitVerticalDirection = 1;
+	entity->actmagicOrbitLifetime = TICKS_PER_SECOND;
+	entity->actmagicOrbitStationaryX = entity->x;
+	entity->actmagicOrbitStationaryY = entity->y;
+	entity->vel_z = -0.1;
+	entity->scalex = 0.3;
+	entity->scaley = 0.3;
+	entity->scalez = 0.3;
+	entity->behavior = &actMagicParticleEnsembleCircling;
+
+	entity->flags[BRIGHT] = true;
+	entity->flags[SPRITE] = true;
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->flags[UNCLICKABLE] = true;
+	entity->flags[UPDATENEEDED] = false;
+	//entity->flags[OVERDRAW] = true;
+	entity->skill[11] = parent->behavior == &actPlayer ? parent->skill[2] : -1;
+	if ( multiplayer != CLIENT )
+	{
+		entity_uids--;
+	}
+	entity->setUID(-3);
+}
+
+void createEnsembleHUDParticleCircling(Entity* parent)
+{
+	if ( !parent ) { return; }
+
+	if ( parent->behavior == &actPlayer && players[parent->skill[2]]->isLocalPlayer() && parent->skill[3] == 0 )
+	{
+		// create overdraw HUD particle
+		Entity* entity = newEntity(198, 1, map.entities, nullptr);
+		float x = 6 * 10;
+		float y = 0.1;
+		float z = 7;
+		entity->yaw = (local_rng.rand() % 3) * 2 * PI / 3;
+		entity->x = x;
+		entity->y = y;
+		entity->z = z;
+		double missile_speed = 4;
+		entity->vel_x = 0.0;
+		entity->vel_y = 0.0;
+		entity->actmagicIsOrbiting = 2;
+		entity->actmagicOrbitDist = 16.0;
+		entity->actmagicOrbitStationaryCurrentDist = 0.0;
+		entity->actmagicOrbitStartZ = entity->z;
+		entity->actmagicOrbitVerticalSpeed = -0.3;
+		entity->actmagicOrbitVerticalDirection = 1;
+		entity->actmagicOrbitLifetime = TICKS_PER_SECOND;
+		entity->actmagicOrbitStationaryX = x;
+		entity->actmagicOrbitStationaryY = y;
+		entity->vel_z = -0.1;
+		entity->behavior = &actHUDMagicParticleCircling;
+
+		entity->flags[BRIGHT] = true;
+		entity->flags[SPRITE] = true;
+		entity->flags[PASSABLE] = true;
+		entity->flags[NOUPDATE] = true;
+		entity->flags[UNCLICKABLE] = true;
+		entity->flags[UPDATENEEDED] = false;
+		entity->flags[OVERDRAW] = true;
+		entity->skill[11] = parent->behavior == &actPlayer ? parent->skill[2] : -1;
+		if ( multiplayer != CLIENT )
+		{
+			entity_uids--;
+		}
+		entity->setUID(-3);
+	}
+}
+
+void actMagicParticleEnsembleCircling(Entity* my)
+{
+	real_t turnRate = 0.25;
+	my->yaw += 0.2;
+	my->x = my->actmagicOrbitStationaryX + my->actmagicOrbitStationaryCurrentDist * cos(my->yaw);
+	my->y = my->actmagicOrbitStationaryY + my->actmagicOrbitStationaryCurrentDist * sin(my->yaw);
+	my->actmagicOrbitStationaryCurrentDist =
+		std::min(my->actmagicOrbitStationaryCurrentDist + 0.5, static_cast<real_t>(my->actmagicOrbitDist));
+	my->z += my->vel_z * my->actmagicOrbitVerticalDirection;
+
+	my->vel_z = std::min(my->actmagicOrbitVerticalSpeed, my->vel_z / 0.95);
+	my->roll += (PI / 8) / (turnRate / my->vel_z) * my->actmagicOrbitVerticalDirection;
+	my->roll = std::max(my->roll, -PI / 4);
+
+	--my->actmagicOrbitLifetime;
+	if ( my->actmagicOrbitLifetime <= 0 )
+	{
+		list_RemoveNode(my->mynode);
+		return;
+	}
+}
+
 void actHUDMagicParticleCircling(Entity* my)
 {
 	int turnRate = 4;
@@ -5122,6 +5233,7 @@ void actHUDMagicParticleCircling(Entity* my)
 		return;
 	}
 
+	if ( !my->flags[SPRITE] )
 	{
 		Entity* entity;
 
@@ -6847,10 +6959,10 @@ void actParticleTimer(Entity* my)
 						entity->scalez = *cvar_foci_scale;
 						real_t gravity = -0.035 - 0.002 * (local_rng.rand() % 6);
 
-						entity->vel_x = 0.0;
-						entity->vel_y = 0.0;
-						entity->x += 32.0 * cos((my->ticks % 10 / 10.0) * 2 * PI);
-						entity->y += 32.0 * sin((my->ticks % 10 / 10.0) * 2 * PI);
+						//entity->vel_x = 0.0;
+						//entity->vel_y = 0.0;
+						//entity->x += 32.0 * cos((my->ticks % 10 / 10.0) * 2 * PI);
+						//entity->y += 32.0 * sin((my->ticks % 10 / 10.0) * 2 * PI);
 
 						if ( *cvar_foci_grid > 0.0001 )
 						{

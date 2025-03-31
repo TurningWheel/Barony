@@ -148,6 +148,155 @@ bool initSoundEngine()
 			no_sound = true;
 			return false;
 		}
+		fmod_result = fmod_system->createChannelGroup(nullptr, &music_ensemble_global_send_group);
+		if ( FMODErrorCheck() )
+		{
+			printlog("[FMOD]: Failed to create music channel group. DISABLING AUDIO.\n");
+			no_sound = true;
+			return false;
+		}
+		music_ensemble_global_send_group->setVolumeRamp(true);
+
+		fmod_result = fmod_system->createChannelGroup(nullptr, &music_ensemble_global_recv_group);
+		if ( FMODErrorCheck() )
+		{
+			printlog("[FMOD]: Failed to create music channel group. DISABLING AUDIO.\n");
+			no_sound = true;
+			return false;
+		}
+
+		fmod_result = fmod_system->createChannelGroup(nullptr, &music_ensemble_local_recv_group);
+		if ( FMODErrorCheck() )
+		{
+			printlog("[FMOD]: Failed to create music channel group. DISABLING AUDIO.\n");
+			no_sound = true;
+			return false;
+		}
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			fmod_result = fmod_system->createChannelGroup(nullptr, &music_ensemble_local_recv_player[i]);
+			if ( FMODErrorCheck() )
+			{
+				printlog("[FMOD]: Failed to create music channel group. DISABLING AUDIO.\n");
+				no_sound = true;
+				return false;
+			}
+			music_ensemble_local_recv_group->addGroup(music_ensemble_local_recv_player[i]);
+			music_ensemble_local_recv_player[i]->setMode(FMOD_3D | FMOD_3D_WORLDRELATIVE);
+		}
+		{
+			// add dsp
+
+			//FMOD::DSP* dspeq = 0;
+			//fmod_result = fmod_system->createDSPByType(FMOD_DSP_TYPE_MULTIBAND_EQ, &dspeq);
+			//FMODErrorCheck();
+			//
+			//fmod_result = music_ensemble_global_group->addDSP(0, dspeq);
+			//FMODErrorCheck();
+			//
+			//dspeq->setParameterInt(FMOD_DSP_MULTIBAND_EQ_A_FILTER, FMOD_DSP_MULTIBAND_EQ_FILTER_NOTCH);
+			//dspeq->setParameterFloat(FMOD_DSP_MULTIBAND_EQ_A_FREQUENCY, 2000);
+			//dspeq->setParameterFloat(FMOD_DSP_MULTIBAND_EQ_A_GAIN, -6);
+			//dspeq->setParameterFloat(FMOD_DSP_MULTIBAND_EQ_A_Q, 1.f);
+
+			// global sends
+			{
+				// send group does not output to master bus
+				FMOD::DSP* fader = nullptr;
+				fmod_result = fmod_system->createDSPByType(FMOD_DSP_TYPE_FADER, &fader);
+				fader->setParameterFloat(FMOD_DSP_FADER_GAIN, -80.f); // inaudible
+				music_ensemble_global_send_group->addDSP(0, fader);
+			}
+
+			// global recv transceivers
+			{
+				for ( int i = 0; i < NUMENSEMBLEMUSIC; ++i )
+				{
+					FMOD::DSP* transceiver = nullptr;
+					fmod_result = fmod_system->createDSPByType(FMOD_DSP_TYPE_TRANSCEIVER, &transceiver);
+					music_ensemble_global_recv_group->addDSP(1, transceiver);
+					transceiver->setParameterInt(FMOD_DSP_TRANSCEIVER_CHANNEL, i + 1); // receive on channel x
+					transceiver->setParameterFloat(FMOD_DSP_TRANSCEIVER_GAIN, -80.f); // inaudible
+				}
+			}
+
+			// player recv transceivers
+			{
+				for ( int c = 0; c < MAXPLAYERS; ++c )
+				{
+					for ( int i = 0; i < NUMENSEMBLEMUSIC; ++i )
+					{
+						FMOD::DSP* transceiver = nullptr;
+						fmod_result = fmod_system->createDSPByType(FMOD_DSP_TYPE_TRANSCEIVER, &transceiver);
+						music_ensemble_local_recv_player[c]->addDSP(1, transceiver);
+						transceiver->setParameterInt(FMOD_DSP_TRANSCEIVER_CHANNEL, i + 1); // receive on channel x
+						transceiver->setParameterFloat(FMOD_DSP_TRANSCEIVER_GAIN, -80.f); // inaudible
+					}
+				}
+			}
+
+			// global recv reverb
+			{
+				FMOD::DSP* dspreverb = 0;
+				fmod_result = fmod_system->createDSPByType(FMOD_DSP_TYPE_SFXREVERB, &dspreverb);
+				FMODErrorCheck();
+
+				fmod_result = music_ensemble_global_recv_group->addDSP(0, dspreverb);
+				FMODErrorCheck();
+
+				FMOD_REVERB_PROPERTIES props = FMOD_PRESET_OFF;
+				dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_DECAYTIME, props.DecayTime);
+				dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_EARLYDELAY, props.EarlyDelay);
+				dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_LATEDELAY, props.LateDelay);
+				dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_HFREFERENCE, props.HFReference);
+				dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_HFDECAYRATIO, props.HFDecayRatio);
+				dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_DIFFUSION, props.Diffusion);
+				dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_DENSITY, props.Density);
+				dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_LOWSHELFFREQUENCY, props.LowShelfFrequency);
+				dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_LOWSHELFGAIN, props.LowShelfGain);
+				dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_HIGHCUT, props.HighCut);
+				dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_EARLYLATEMIX, props.EarlyLateMix);
+				dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_WETLEVEL, props.WetLevel);
+				dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_DRYLEVEL, 0.f);
+			}
+		}
+		//{
+		//	// add dsp
+
+		//	//FMOD::DSP* dspeq = 0;
+		//	//fmod_result = fmod_system->createDSPByType(FMOD_DSP_TYPE_MULTIBAND_EQ, &dspeq);
+		//	//FMODErrorCheck();
+		//	//
+		//	//fmod_result = music_ensemble_local_group->addDSP(0, dspeq);
+		//	//FMODErrorCheck();
+		//	//
+		//	//dspeq->setParameterInt(FMOD_DSP_MULTIBAND_EQ_A_FILTER, FMOD_DSP_MULTIBAND_EQ_FILTER_NOTCH);
+		//	//dspeq->setParameterFloat(FMOD_DSP_MULTIBAND_EQ_A_FREQUENCY, 2000);
+		//	//dspeq->setParameterFloat(FMOD_DSP_MULTIBAND_EQ_A_GAIN, -6);
+		//	//dspeq->setParameterFloat(FMOD_DSP_MULTIBAND_EQ_A_Q, 1.f);
+
+		//	FMOD::DSP* dspreverb = 0;
+		//	fmod_result = fmod_system->createDSPByType(FMOD_DSP_TYPE_SFXREVERB, &dspreverb);
+		//	FMODErrorCheck();
+
+		//	fmod_result = music_ensemble_local_group->addDSP(0, dspreverb);
+		//	FMODErrorCheck();
+
+		//	FMOD_REVERB_PROPERTIES props = FMOD_PRESET_OFF;
+		//	dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_DECAYTIME, props.DecayTime);
+		//	dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_EARLYDELAY, props.EarlyDelay);
+		//	dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_LATEDELAY, props.LateDelay);
+		//	dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_HFREFERENCE, props.HFReference);
+		//	dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_HFDECAYRATIO, props.HFDecayRatio);
+		//	dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_DIFFUSION, props.Diffusion);
+		//	dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_DENSITY, props.Density);
+		//	dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_LOWSHELFFREQUENCY, props.LowShelfFrequency);
+		//	dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_LOWSHELFGAIN, props.LowShelfGain);
+		//	dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_HIGHCUT, props.HighCut);
+		//	dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_EARLYLATEMIX, props.EarlyLateMix);
+		//	dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_WETLEVEL, props.WetLevel);
+		//	dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_DRYLEVEL, 0.f);
+		//}
 	}
 #elif defined USE_OPENAL
 	if (!no_sound)

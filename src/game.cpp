@@ -1969,6 +1969,10 @@ void gameLogic(void)
 					{
 						soundNotification_group->stop();
 					}
+					if ( music_ensemble_global_send_group )
+					{
+						music_ensemble_global_send_group->stop();
+					}
 #elif defined USE_OPENAL
 					if ( sound_group )
 					{
@@ -2777,6 +2781,8 @@ void gameLogic(void)
 				client_selected[j] = NULL;
 			}
 
+			Player::PlayerMechanics_t::ensembleMusicUpdate();
+
 			// world UI
 			Player::WorldUI_t::handleTooltips();
 
@@ -3462,6 +3468,8 @@ void gameLogic(void)
 				entity = (Entity*)node->element;
 				entity->ranbehavior = false;
 			}
+
+			Player::PlayerMechanics_t::ensembleMusicUpdate();
 
 			// world UI
 			Player::WorldUI_t::handleTooltips();

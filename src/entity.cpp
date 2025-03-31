@@ -1036,7 +1036,6 @@ void Entity::effectTimes()
 		player = -1;
 	}
 
-
 	spell_t* invisibility_hijacked = nullptr; //If NULL, function proceeds as normal. If points to something, it ignores the invisibility timer since a spell is doing things. //TODO: Incorporate the spell into isInvisible() instead?
 	spell_t* levitation_hijacked = nullptr; //If NULL, function proceeds as normal. If points to something, it ignore the levitation timer since a spell is doing things.
 	spell_t* reflectMagic_hijacked = nullptr;
@@ -4397,9 +4396,173 @@ void Entity::handleEffects(Stat* myStats)
 		}
 	}
 
-	// torches/lamps burn down
+	if ( behavior == &actPlayer )
+	{
+   		players[player]->mechanics.ensemblePlaying = -1;
+	}
+
 	if ( myStats->shield != NULL )
 	{
+		if ( behavior == &actPlayer && (effectShapeshift == NOTHING || effectShapeshift == CREATURE_IMP) )
+		{
+			if ( myStats->defending && players[player]->mechanics.defendTicks > 0 )
+			{
+				if ( myStats->shield->type == TOOL_FOCI_FIRE )
+				{
+					static ConsoleVariable<float> cvar_foci_charge_init("/foci_charge_init", 1.f);
+					int chargeTimeInit = (float)(TICKS_PER_SECOND / 4) * *cvar_foci_charge_init;
+					Uint32 defendTime = ::ticks - players[player]->mechanics.defendTicks;
+					if ( defendTime >= chargeTimeInit )
+					{
+						static ConsoleVariable<float> cvar_foci_charge("/foci_charge", 1.f);
+						int chargeTime = (float)(TICKS_PER_SECOND / 4) * *cvar_foci_charge;
+						if ( (defendTime - chargeTimeInit) % chargeTime == 0 )
+						{
+							auto spell = getSpellFromID(SPELL_FOCI_FIRE);
+							int mpcost = getCostOfSpell(spell, this);
+							if ( this->safeConsumeMP(mpcost) )
+							{
+								castSpell(this->getUID(), spell, false, false);
+							}
+						}
+					}
+				}
+				else if ( myStats->shield->type == INSTRUMENT_DRUM
+					|| myStats->shield->type == INSTRUMENT_FLUTE
+					|| myStats->shield->type == INSTRUMENT_LUTE
+					|| myStats->shield->type == INSTRUMENT_LYRE
+					|| myStats->shield->type == INSTRUMENT_HORN )
+				{
+					int chargeTimeInit = (float)(TICKS_PER_SECOND / 4);
+					Uint32 defendTime = ::ticks - players[player]->mechanics.defendTicks;
+					if ( defendTime >= chargeTimeInit )
+					{
+						int chargeTime = 4 * TICKS_PER_SECOND; // 4 sec base, -0.1s per CHR
+						chargeTime = std::max(TICKS_PER_SECOND / 2, 
+							chargeTime - (TICKS_PER_SECOND / 10) * statGetCHR(myStats, this));
+
+						int effect = -1;
+						switch ( myStats->shield->type )
+						{
+						case INSTRUMENT_DRUM:
+							effect = EFF_ENSEMBLE_DRUM;
+							break;
+						case INSTRUMENT_FLUTE:
+							effect = EFF_ENSEMBLE_FLUTE;
+							break;
+						case INSTRUMENT_LUTE:
+							effect = EFF_ENSEMBLE_LUTE;
+							break;
+						case INSTRUMENT_LYRE:
+							effect = EFF_ENSEMBLE_LYRE;
+							break;
+						case INSTRUMENT_HORN:
+							effect = EFF_ENSEMBLE_HORN;
+							break;
+						default:
+							break;
+						}
+						players[player]->mechanics.ensemblePlaying = effect;
+
+ 						int duration = 1;
+
+						if ( !myStats->EFFECTS[effect] )
+						{
+							createEnsembleHUDParticleCircling(this);
+							if ( behavior == &actPlayer && !players[skill[2]]->isLocalPlayer() )
+							{
+								serverSpawnMiscParticles(this, PARTICLE_EFFECT_ENSEMBLE_SELF_CAST, 0);
+							}
+						}
+
+						bool guarantee = (ticks % (TICKS_PER_SECOND / 2) == 0);
+						bool doParticle = false;
+						if ( defendTime >= (chargeTime + chargeTimeInit) )
+						{
+							if ( (defendTime - (chargeTime + chargeTimeInit)) % chargeTime == 0 )
+							{
+								int mpcost = 2;
+								if ( this->safeConsumeMP(mpcost) )
+								{
+									int skillLVL = std::max(0, myStats->getModifiedProficiency(PRO_APPRAISAL));
+									duration += skillLVL * (TICKS_PER_SECOND / 25);
+									guarantee = true;
+									createEnsembleHUDParticleCircling(this);
+									doParticle = true;
+									if ( behavior == &actPlayer && !players[skill[2]]->isLocalPlayer() )
+									{
+										serverSpawnMiscParticles(this, PARTICLE_EFFECT_ENSEMBLE_SELF_CAST, 0);
+									}
+								}
+							}
+						}
+
+						for ( node_t* node = map.entities->first; node; node = node->next )
+						{
+							if ( Entity* entity = (Entity*)(node->element) )
+							{
+								if ( entity->behavior != &actPlayer && entity->behavior != &actMonster )
+								{
+									continue;
+								}
+								if ( Stat* entitystats = entity->getStats() )
+								{
+									if ( entity == this || (entityDist(entity, this) <= HEAL_RADIUS && entity->checkFriend(this)) )
+									{
+										bool wasActive = entitystats->EFFECTS[effect];
+
+										if ( entity->behavior == &actPlayer )
+										{
+											if ( guarantee || !wasActive )
+											{
+												entity->setEffect(effect, true, std::max(TICKS_PER_SECOND, entitystats->EFFECTS_TIMERS[effect] + duration), false);
+											}
+											else
+											{
+												// don't update clients all the time with setEffect
+												entitystats->EFFECTS[effect] = true;
+												entitystats->EFFECTS_TIMERS[effect] = entitystats->EFFECTS_TIMERS[effect] + duration;
+											}
+										}
+										else
+										{
+											entity->setEffect(effect, true, std::max(TICKS_PER_SECOND, entitystats->EFFECTS_TIMERS[effect] + duration), false);
+										}
+
+										if ( entitystats->EFFECTS[effect] )
+										{
+											if ( !wasActive )
+											{
+												//spawnMagicEffectParticles(entity->x, entity->y, entity->z, 169);
+												if ( entity->behavior == &actPlayer )
+												{
+													playSoundEntity(entity, 168, 64);
+												}
+												//if ( entity != this )
+												{
+													createEnsembleTargetParticleCircling(entity);
+													serverSpawnMiscParticles(entity, PARTICLE_EFFECT_ENSEMBLE_OTHER_CAST, 0);
+												}
+											}
+											else if ( doParticle )
+											{
+												//if ( entity != this )
+												{
+													createEnsembleTargetParticleCircling(entity);
+													serverSpawnMiscParticles(entity, PARTICLE_EFFECT_ENSEMBLE_OTHER_CAST, 0);
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+		// torches/lamps burn down
 		if ( myStats->shield->type == TOOL_TORCH || myStats->shield->type == TOOL_LANTERN )
 		{
 			this->char_torchtime++;
@@ -17354,6 +17517,9 @@ void Entity::serverUpdateEffectsForEntity(bool guarantee)
 		net_packet->data[10] = 0;
 		net_packet->data[11] = 0;
 		net_packet->data[12] = 0;
+		net_packet->data[13] = 0;
+		net_packet->data[14] = 0;
+		net_packet->data[15] = 0;
 		for ( int i = 0; i < NUMEFFECTS; ++i )
 		{
 			if ( myStats->EFFECTS[i] )
@@ -17363,7 +17529,7 @@ void Entity::serverUpdateEffectsForEntity(bool guarantee)
 		}
 		net_packet->address.host = net_clients[player - 1].host;
 		net_packet->address.port = net_clients[player - 1].port;
-		net_packet->len = 13;
+		net_packet->len = 16;
 		if ( guarantee )
 		{
 			sendPacketSafe(net_sock, -1, net_packet, player - 1);

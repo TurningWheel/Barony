@@ -161,6 +161,8 @@ static const int PARTICLE_EFFECT_SHRINE_TELEPORT = 26;
 static const int PARTICLE_EFFECT_GHOST_TELEPORT = 27;
 static const int PARTICLE_EFFECT_SLIME_SPRAY = 28;
 static const int PARTICLE_EFFECT_FOCI_SPRAY = 29;
+static const int PARTICLE_EFFECT_ENSEMBLE_SELF_CAST = 30;
+static const int PARTICLE_EFFECT_ENSEMBLE_OTHER_CAST = 31;
 
 // actmagicIsVertical constants
 static const int MAGIC_ISVERTICAL_NONE = 0;
@@ -601,6 +603,9 @@ void actMagicClientNoLight(Entity* my);
 void actMagicParticle(Entity* my);
 void actHUDMagicParticle(Entity* my);
 void actHUDMagicParticleCircling(Entity* my);
+void actMagicParticleEnsembleCircling(Entity* my);
+void createEnsembleHUDParticleCircling(Entity* parent);
+void createEnsembleTargetParticleCircling(Entity* parent);
 Entity* spawnMagicParticle(Entity* parentent);
 Entity* spawnMagicParticleCustom(Entity* parentent, int sprite, real_t scale, real_t spreadReduce);
 void spawnMagicEffectParticles(Sint16 x, Sint16 y, Sint16 z, Uint32 sprite);

@@ -2122,6 +2122,10 @@ static void changeLevel() {
 	{
 		soundNotification_group->stop();
 	}
+	if ( music_ensemble_global_send_group )
+	{
+		music_ensemble_global_send_group->stop();
+	}
 #elif defined USE_OPENAL
 	if ( sound_group )
 	{
@@ -3038,6 +3042,12 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 							}
 						}
 					}
+					break;
+				case PARTICLE_EFFECT_ENSEMBLE_OTHER_CAST:
+					createEnsembleTargetParticleCircling(entity);
+					break;
+				case PARTICLE_EFFECT_ENSEMBLE_SELF_CAST:
+					createEnsembleHUDParticleCircling(entity);
 					break;
 				default:
 					break;
@@ -5555,6 +5565,19 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		net_packet->address.host = net_server.host;
 		net_packet->address.port = net_server.port;
 		sendPacketSafe(net_sock, -1, net_packet, 0);
+	} },
+
+	// server ensemble music update
+	{ 'ENSM', []() {
+		for ( int i = 4; i < net_packet->len; i += 4 )
+		{
+			Uint32 data = SDLNet_Read32(&net_packet->data[i]);
+			int player = ((data & 0x7F) - 1);
+			if ( player >= 0 && player < MAXPLAYERS )
+			{
+				players[player]->mechanics.ensembleDataUpdate = data;
+			}
+		}
 	} },
 };
 

@@ -2735,6 +2735,11 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		case QUIVER_CRYSTAL:
 		case QUIVER_HUNTING:
 		case TOOL_FOCI_FIRE:
+		case INSTRUMENT_FLUTE:
+		case INSTRUMENT_LYRE:
+		case INSTRUMENT_DRUM:
+		case INSTRUMENT_LUTE:
+		case INSTRUMENT_HORN:
 			equipItemResult = equipItem(item, &stats[player]->shield, player, checkInventorySpaceForPaperDoll);
 			break;
 		case TOOL_BLINDFOLD:

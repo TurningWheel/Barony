@@ -92,10 +92,14 @@ void setGlobalVolume(real_t master, real_t music, real_t gameplay, real_t ambien
 	soundEnvironment_group->setVolume(master * environment);
 	music_notification_group->setVolume(master * notification);
 	soundNotification_group->setVolume(master * notification);
+	music_ensemble_global_send_group->setVolume(1.f);
+	music_ensemble_global_recv_group->setVolume(master * music);
+	music_ensemble_local_recv_group->setVolume(master * gameplay);
 }
 
 #ifndef EDITOR
 	static ConsoleVariable<float> cvar_sfx_notification_music_fade("/sfx_notification_music_fade", 0.5f);
+	static ConsoleVariable<float> cvar_sfx_ensemble_music_fade("/sfx_ensemble_music_fade", 0.25f);
 #endif // !EDITOR
 
 void sound_update(int player, int index, int numplayers)
@@ -176,6 +180,35 @@ void sound_update(int player, int index, int numplayers)
 		{
 			music_notification_group->isPlaying(&notificationPlaying);
 		}
+		bool ensemblePlaying = false;
+		if ( music_ensemble_global_send_group )
+		{
+			music_ensemble_global_send_group->isPlaying(&ensemblePlaying);
+			if ( ensemblePlaying )
+			{
+				bool ensemblePaused = false;
+				music_ensemble_global_send_group->getPaused(&ensemblePaused); // if playing, then check if paused
+				if ( ensemblePaused )
+				{
+					ensemblePlaying = false;
+				}
+				else
+				{
+					Uint32 globalEnsemblePlaying = 0;
+					for ( int i = 0; i < MAXPLAYERS; ++i )
+					{
+						if ( players[i]->isLocalPlayerAlive() )
+						{
+							globalEnsemblePlaying |= (players[i]->mechanics.ensembleDataUpdate >> 16) & 0xFFFF;
+						}
+					}
+					if ( globalEnsemblePlaying == 0 )
+					{
+						ensemblePlaying = false;
+					}
+				}
+			}
+		}
 
 #ifdef DEBUG_EVENT_TIMERS
 		time2 = std::chrono::high_resolution_clock::now();
@@ -222,6 +255,15 @@ void sound_update(int player, int index, int numplayers)
 					if ( volume < *cvar_sfx_notification_music_fade )
 					{
 						volume = *cvar_sfx_notification_music_fade;
+					}
+					music_channel->setVolume(volume);
+				}
+				else if ( ensemblePlaying && volume > 0.0f )
+				{
+					volume -= fadeout_increment * 5;
+					if ( volume < *cvar_sfx_ensemble_music_fade )
+					{
+						volume = *cvar_sfx_ensemble_music_fade;
 					}
 					music_channel->setVolume(volume);
 				}
@@ -1139,6 +1181,35 @@ bool physfsSearchMusicToUpdate_helper_findModifiedMusic(uint32_t numMusic, const
 	return false;
 }
 
+const std::vector<std::string> themeMusic = {
+	"music/introduction.ogg",
+	"music/intermission.ogg",
+	"music/minetown.ogg",
+	"music/splash.ogg",
+	"music/library.ogg",
+	"music/shop.ogg",
+	"music/herxboss.ogg",
+	"music/temple.ogg",
+	"music/endgame.ogg",
+	"music/escape.ogg",
+	"music/devil.ogg",
+	"music/sanctum.ogg",
+	"music/gnomishmines.ogg",
+	"music/greatcastle.ogg",
+	"music/sokoban.ogg",
+	"music/caveslair.ogg",
+	"music/bramscastle.ogg",
+	"music/hamlet.ogg",
+	"music/tutorial.ogg",
+	"sound/Death.ogg",
+	"sound/ui/StoryMusicV3.ogg",
+	"sound/ensemble/ensemble1_drumV1.ogg",
+	"sound/ensemble/ensemble1_fluteV1.ogg",
+	"sound/ensemble/ensemble1_luteV1.ogg",
+	"sound/ensemble/ensemble1_lyreV1.ogg",
+	"sound/ensemble/ensemble1_hornV1.ogg"
+};
+
 bool physfsSearchMusicToUpdate()
 {
 	if ( no_sound )
@@ -1146,30 +1217,8 @@ bool physfsSearchMusicToUpdate()
 		return false;
 	}
 #ifdef SOUND
-	std::vector<std::string> themeMusic;
-	themeMusic.push_back("music/introduction.ogg");
-	themeMusic.push_back("music/intermission.ogg");
-	themeMusic.push_back("music/minetown.ogg");
-	themeMusic.push_back("music/splash.ogg");
-	themeMusic.push_back("music/library.ogg");
-	themeMusic.push_back("music/shop.ogg");
-	themeMusic.push_back("music/herxboss.ogg");
-	themeMusic.push_back("music/temple.ogg");
-	themeMusic.push_back("music/endgame.ogg");
-	themeMusic.push_back("music/escape.ogg");
-	themeMusic.push_back("music/devil.ogg");
-	themeMusic.push_back("music/sanctum.ogg");
-	themeMusic.push_back("music/gnomishmines.ogg");
-	themeMusic.push_back("music/greatcastle.ogg");
-	themeMusic.push_back("music/sokoban.ogg");
-	themeMusic.push_back("music/caveslair.ogg");
-	themeMusic.push_back("music/bramscastle.ogg");
-	themeMusic.push_back("music/hamlet.ogg");
-	themeMusic.push_back("music/tutorial.ogg");
-	themeMusic.push_back("sound/Death.ogg");
-	themeMusic.push_back("sound/ui/StoryMusicV3.ogg");
 
-	for ( std::vector<std::string>::iterator it = themeMusic.begin(); it != themeMusic.end(); ++it )
+	for ( auto it = themeMusic.begin(); it != themeMusic.end(); ++it )
 	{
 		std::string filename = *it;
 		if ( PHYSFS_getRealDir(filename.c_str()) != nullptr )
@@ -1267,30 +1316,6 @@ void physfsReloadMusic(bool &introMusicChanged, bool reloadAll) //TODO: This sho
 		return;
 	}
 #ifdef SOUND
-
-	std::vector<std::string> themeMusic;
-	themeMusic.push_back("music/introduction.ogg");
-	themeMusic.push_back("music/intermission.ogg");
-	themeMusic.push_back("music/minetown.ogg");
-	themeMusic.push_back("music/splash.ogg");
-	themeMusic.push_back("music/library.ogg");
-	themeMusic.push_back("music/shop.ogg");
-	themeMusic.push_back("music/herxboss.ogg");
-	themeMusic.push_back("music/temple.ogg");
-	themeMusic.push_back("music/endgame.ogg");
-	themeMusic.push_back("music/escape.ogg");
-	themeMusic.push_back("music/devil.ogg");
-	themeMusic.push_back("music/sanctum.ogg");
-	themeMusic.push_back("music/gnomishmines.ogg");
-	themeMusic.push_back("music/greatcastle.ogg");
-	themeMusic.push_back("music/sokoban.ogg");
-	themeMusic.push_back("music/caveslair.ogg");
-	themeMusic.push_back("music/bramscastle.ogg");
-	themeMusic.push_back("music/hamlet.ogg");
-	themeMusic.push_back("music/tutorial.ogg");
-	themeMusic.push_back("sound/Death.ogg");
-	themeMusic.push_back("sound/ui/StoryMusicV3.ogg");
-
 	int index = 0;
 #ifdef USE_OPENAL
 #define FMOD_System_CreateStream(A, B, C, D, E) OPENAL_CreateStreamSound(B, E) //TODO: If this is still needed, it's probably now broke!
@@ -1300,7 +1325,7 @@ void physfsReloadMusic(bool &introMusicChanged, bool reloadAll) //TODO: This sho
 #define FMOD_Sound_Release OPENAL_Sound_Release
 	int fmod_result;
 #endif
-	for ( std::vector<std::string>::iterator it = themeMusic.begin(); it != themeMusic.end(); ++it )
+	for ( auto it = themeMusic.begin(); it != themeMusic.end(); ++it )
 	{
 		std::string filename = *it;
 		if ( PHYSFS_getRealDir(filename.c_str()) != nullptr )
@@ -1606,6 +1631,19 @@ void physfsReloadMusic(bool &introMusicChanged, bool reloadAll) //TODO: This sho
 							fmod_result = fmod_system->createStream(musicDir.c_str(), FMOD_DEFAULT, nullptr, &introstorymusic);
 						}
 						break;
+					case 21:
+					case 22:
+					case 23:
+					case 24:
+					case 25:
+					{
+						// fallthrough
+						int c = index - 21;
+						if ( music_ensemble_global_sound[c] ) { music_ensemble_global_sound[c]->release(); }
+						music_ensemble_global_sound[c] = nullptr;
+						fmod_result = fmod_system->createSound(musicDir.c_str(), FMOD_3D | FMOD_LOOP_NORMAL, nullptr, &music_ensemble_global_sound[c]);
+						break;
+					}
 					default:
 						break;
 				}

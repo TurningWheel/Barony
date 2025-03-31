@@ -6681,5 +6681,7 @@ Host to enable the game setting.
 6426 Your %s activates the %s lock!#
 6427 Your %s resets the %s lock.#
 6428 You failed to lockpick the %s lock.#
+6429 The %s lock seems unable to be reset by lockpicking.#
+6430 This %s lock has already been lockpicked open.#
 
 6599 END#

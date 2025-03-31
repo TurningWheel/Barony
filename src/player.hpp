@@ -2341,6 +2341,10 @@ public:
 		void sustainedSpellIncrementMP(int mpChange);
 		std::map<Uint32, int> enemyRaisedBlockingAgainst;
 		bool allowedRaiseBlockingAgainstEntity(Entity& attacker);
+		int ensemblePlaying = -1;
+		static void ensembleMusicUpdateServer();
+		static void ensembleMusicUpdate();
+		Uint32 ensembleDataUpdate = 0;
 		PlayerMechanics_t(Player& p) : player(p)
 		{};
 		~PlayerMechanics_t() {};

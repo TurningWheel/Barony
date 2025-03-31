@@ -3286,6 +3286,7 @@ void actHudWeapon(Entity* my)
 #define HUDSHIELD_YAW my->fskill[3]
 #define HUDSHIELD_PITCH my->fskill[4]
 #define HUDSHIELD_ROLL my->fskill[5]
+static ConsoleVariable<bool> cvar_hud_toggle_defend("/hud_toggle_defend", false);
 
 void actHudShield(Entity* my)
 {
@@ -3499,6 +3500,10 @@ void actHudShield(Entity* my)
 				if ( (players[HUDSHIELD_PLAYERNUM]->hud.weapon->skill[0] % 3 == 0) )
 				{
 					if (input.binaryToggle("Defend"))
+					{
+						defending = true;
+					}
+					else if ( *cvar_hud_toggle_defend )
 					{
 						defending = true;
 					}
@@ -4064,28 +4069,31 @@ void actHudShield(Entity* my)
 				}
 			}
 
-			if ( stats[HUDSHIELD_PLAYERNUM]->shield->type == TOOL_FOCI_FIRE )
+			/*if ( multiplayer != CLIENT )
 			{
-				static ConsoleVariable<float> cvar_foci_charge_init("/foci_charge_init", 1.f);
-				int chargeTimeInit = (float)(TICKS_PER_SECOND / 4) * *cvar_foci_charge_init;
-				if ( HUDSHIELD_DEFEND >= chargeTimeInit )
+				if ( stats[HUDSHIELD_PLAYERNUM]->shield->type == TOOL_FOCI_FIRE )
 				{
-					static ConsoleVariable<float> cvar_foci_charge("/foci_charge", 1.f);
-					int chargeTime = (float)(TICKS_PER_SECOND / 4) * *cvar_foci_charge;
-					if ( (HUDSHIELD_DEFEND - chargeTimeInit) % chargeTime == 0 )
+					static ConsoleVariable<float> cvar_foci_charge_init("/foci_charge_init", 1.f);
+					int chargeTimeInit = (float)(TICKS_PER_SECOND / 4) * *cvar_foci_charge_init;
+					if ( HUDSHIELD_DEFEND >= chargeTimeInit )
 					{
-						auto spell = getSpellFromID(SPELL_FOCI_FIRE);
-						int mpcost = getCostOfSpell(spell, players[HUDSHIELD_PLAYERNUM]->entity);
-						if ( mpcost <= stats[HUDSHIELD_PLAYERNUM]->MP )
+						static ConsoleVariable<float> cvar_foci_charge("/foci_charge", 1.f);
+						int chargeTime = (float)(TICKS_PER_SECOND / 4) * *cvar_foci_charge;
+						if ( (HUDSHIELD_DEFEND - chargeTimeInit) % chargeTime == 0 )
 						{
-							if ( players[HUDSHIELD_PLAYERNUM]->entity->safeConsumeMP(mpcost) )
+							auto spell = getSpellFromID(SPELL_FOCI_FIRE);
+							int mpcost = getCostOfSpell(spell, players[HUDSHIELD_PLAYERNUM]->entity);
+							if ( mpcost <= stats[HUDSHIELD_PLAYERNUM]->MP )
 							{
-  								castSpell(players[HUDSHIELD_PLAYERNUM]->entity->getUID(), spell, false, false);
+								if ( players[HUDSHIELD_PLAYERNUM]->entity->safeConsumeMP(mpcost) )
+								{
+  									castSpell(players[HUDSHIELD_PLAYERNUM]->entity->getUID(), spell, false, false);
+								}
 							}
 						}
 					}
 				}
-			}
+			}*/
 		}
 	}
 }

@@ -68,6 +68,11 @@ static const int EFF_PWR = 43;
 static const int EFF_AGILITY = 44;
 static const int EFF_RALLY = 45;
 static const int EFF_MARIGOLD = 46;
+static const int EFF_ENSEMBLE_FLUTE = 47;
+static const int EFF_ENSEMBLE_LYRE = 48;
+static const int EFF_ENSEMBLE_DRUM = 49;
+static const int EFF_ENSEMBLE_LUTE = 50;
+static const int EFF_ENSEMBLE_HORN = 51;
 static const int NUMEFFECTS = 64;
 
 // stats

@@ -598,6 +598,11 @@ char itemNameStrings[NUM_ITEM_STRINGS][32] =
 	"key_crystal",
 	"key_machine",
 	"tool_foci_fire",
+	"instrument_flute",
+	"instrument_lyre",
+	"instrument_drum",
+	"instrument_lute",
+	"instrument_horn",
 	""
 };
 
@@ -797,6 +802,12 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"quiver_heavy",
 		"quiver_crystal",
 		"quiver_hunting",
+		"tool_foci_fire",
+		"instrument_flute",
+		"instrument_lyre",
+		"instrument_drum",
+		"instrument_lute",
+		"instrument_horn",
 		""
 	},
 	{

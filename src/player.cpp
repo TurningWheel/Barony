@@ -3153,6 +3153,8 @@ void Player::init() // for use on new/restart game, UI related
 	skillUpAnimation[playernum].skillUps.clear();
 	mechanics.itemDegradeRng.clear();
 	mechanics.sustainedSpellMPUsed = 0;
+	mechanics.ensemblePlaying = -1;
+	mechanics.ensembleDataUpdate = 0;
 }
 
 void Player::cleanUpOnEntityRemoval()
@@ -3164,6 +3166,8 @@ void Player::cleanUpOnEntityRemoval()
 		worldUI.reset();
 	}
 	mechanics.enemyRaisedBlockingAgainst.clear();
+	mechanics.ensemblePlaying = -1;
+	mechanics.ensembleDataUpdate = 0;
 	selectedEntity[playernum] = nullptr;
 	client_selected[playernum] = nullptr;
 }
@@ -7136,4 +7140,508 @@ bool Player::PlayerMechanics_t::allowedRaiseBlockingAgainstEntity(Entity& attack
 		return false;
 	}
 	return enemyRaisedBlockingAgainst[attacker.getUID()] < 1;
+}
+
+void Player::PlayerMechanics_t::ensembleMusicUpdateServer()
+{
+	if ( multiplayer != CLIENT )
+	{
+		bool forceUpdate = false;
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			Uint32 data = (i + 1) & 0x7F;
+			if ( players[i]->entity )
+			{
+				if ( players[i]->mechanics.ensemblePlaying >= 0 )
+				{
+					Uint8 playingData = 0;
+					switch ( players[i]->mechanics.ensemblePlaying )
+					{
+					case EFF_ENSEMBLE_DRUM:
+						playingData = 1;
+						break;
+					case EFF_ENSEMBLE_FLUTE:
+						playingData = 2;
+						break;
+					case EFF_ENSEMBLE_LUTE:
+						playingData = 3;
+						break;
+					case EFF_ENSEMBLE_LYRE:
+						playingData = 4;
+						break;
+					case EFF_ENSEMBLE_HORN:
+						playingData = 5;
+						break;
+					default:
+						break;
+					}
+					data |= (0xFF & playingData) << 8;
+				}
+
+				Uint16 effectData = 0;
+				if ( stats[i]->EFFECTS[EFF_ENSEMBLE_DRUM] )
+				{
+					effectData |= (1 << 0);
+				}
+				if ( stats[i]->EFFECTS[EFF_ENSEMBLE_FLUTE] )
+				{
+					effectData |= (1 << 1);
+				}
+				if ( stats[i]->EFFECTS[EFF_ENSEMBLE_LUTE] )
+				{
+					effectData |= (1 << 2);
+				}
+				if ( stats[i]->EFFECTS[EFF_ENSEMBLE_LYRE] )
+				{
+					effectData |= (1 << 3);
+				}
+				if ( stats[i]->EFFECTS[EFF_ENSEMBLE_HORN] )
+				{
+					effectData |= (1 << 4);
+				}
+				data |= (0xFF & effectData) << 16;
+			}
+			if ( players[i]->mechanics.ensembleDataUpdate != data )
+			{
+				forceUpdate = true;
+			}
+			players[i]->mechanics.ensembleDataUpdate = data;
+		}
+
+		if ( multiplayer == SERVER )
+		{
+			if ( forceUpdate || ((ticks % static_cast<int>(TICKS_PER_SECOND * 5.2) == 0)) )
+			{
+				strcpy((char*)net_packet->data, "ENSM");
+				for ( int i = 0; i < MAXPLAYERS; ++i )
+				{
+					SDLNet_Write32(players[i]->mechanics.ensembleDataUpdate, &net_packet->data[4 + i * 4]);
+				}
+				net_packet->len = 4 + MAXPLAYERS * 4;
+				for ( int i = 1; i < MAXPLAYERS; ++i )
+				{
+					if ( !client_disconnected[i] )
+					{
+						net_packet->address.host = net_clients[i - 1].host;
+						net_packet->address.port = net_clients[i - 1].port;
+						sendPacketSafe(net_sock, -1, net_packet, i - 1);
+					}
+				}
+			}
+		}
+	}
+}
+
+static ConsoleCommand ccmd_ensemble_pitch("/ensemble_pitch", "",
+	[](int argc, const char** argv) {
+		if ( argc < 2 )
+		{
+			return;
+		}
+	music_ensemble_global_send_group->setPitch(atoi(argv[1]) / 100.f);
+	});
+
+static ConsoleCommand ccmd_ensemble_reverb("/ensemble_reverb", "",
+	[](int argc, const char** argv) {
+
+		if ( argc < 3 )
+		{
+			return;
+		}
+	FMOD::DSP* dspreverb = nullptr;
+	music_ensemble_global_recv_group->getDSP(0, &dspreverb);
+
+	int reverbType = atoi(argv[1]);
+	float dryLevel = atoi(argv[2]);
+	if ( reverbType >= 24 )
+	{
+		reverbType = 0;
+	}
+	FMOD_REVERB_PROPERTIES props = FMOD_PRESET_OFF;
+	switch ( reverbType )
+	{
+	case 0:
+		props = FMOD_PRESET_OFF;
+		break;
+	case 1:
+		props = FMOD_PRESET_GENERIC;
+		break;
+	case 2:
+		props = FMOD_PRESET_PADDEDCELL;
+		break;
+	case 3:
+		props = FMOD_PRESET_ROOM;
+		break;
+	case 4:
+		props = FMOD_PRESET_BATHROOM;
+		break;
+	case 5:
+		props = FMOD_PRESET_LIVINGROOM;
+		break;
+	case 6:
+		props = FMOD_PRESET_STONEROOM;
+		break;
+	case 7:
+		props = FMOD_PRESET_AUDITORIUM;
+		break;
+	case 8:
+		props = FMOD_PRESET_CONCERTHALL;
+		break;
+	case 9:
+		props = FMOD_PRESET_CAVE;
+		break;
+	case 10:
+		props = FMOD_PRESET_ARENA;
+		break;
+	case 11:
+		props = FMOD_PRESET_HANGAR;
+		break;
+	case 12:
+		props = FMOD_PRESET_CARPETTEDHALLWAY;
+		break;
+	case 13:
+		props = FMOD_PRESET_HALLWAY;
+		break;
+	case 14:
+		props = FMOD_PRESET_STONECORRIDOR;
+		break;
+	case 15:
+		props = FMOD_PRESET_ALLEY;
+		break;
+	case 16:
+		props = FMOD_PRESET_FOREST;
+		break;
+	case 17:
+		props = FMOD_PRESET_CITY;
+		break;
+	case 18:
+		props = FMOD_PRESET_MOUNTAINS;
+		break;
+	case 19:
+		props = FMOD_PRESET_QUARRY;
+		break;
+	case 20:
+		props = FMOD_PRESET_PLAIN;
+		break;
+	case 21:
+		props = FMOD_PRESET_PARKINGLOT;
+		break;
+	case 22:
+		props = FMOD_PRESET_SEWERPIPE;
+		break;
+	case 23:
+		props = FMOD_PRESET_UNDERWATER;
+		break;
+	}
+
+	dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_DECAYTIME, props.DecayTime);
+	dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_EARLYDELAY, props.EarlyDelay);
+	dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_LATEDELAY, props.LateDelay);
+	dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_HFREFERENCE, props.HFReference);
+	dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_HFDECAYRATIO, props.HFDecayRatio);
+	dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_DIFFUSION, props.Diffusion);
+	dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_DENSITY, props.Density);
+	dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_LOWSHELFFREQUENCY, props.LowShelfFrequency);
+	dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_LOWSHELFGAIN, props.LowShelfGain);
+	dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_HIGHCUT, props.HighCut);
+	dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_EARLYLATEMIX, props.EarlyLateMix);
+	dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_WETLEVEL, props.WetLevel);
+	dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_DRYLEVEL, dryLevel);
+});
+
+
+void Player::PlayerMechanics_t::ensembleMusicUpdate()
+{
+	if ( multiplayer != CLIENT )
+	{
+		ensembleMusicUpdateServer();
+	}
+
+#ifdef USE_FMOD
+	static ConsoleVariable<int> cvar_ensemble_pitch_base("/ensemble_pitch_base", 0);
+	static ConsoleVariable<int> cvar_ensemble_pitch_combat("/ensemble_pitch_combat", 0);
+	if ( *cvar_ensemble_pitch_base > 0 && *cvar_ensemble_pitch_combat > 0 )
+	{
+		if ( combat )
+		{
+			music_ensemble_global_send_group->setPitch(*cvar_ensemble_pitch_combat / 100.f);
+		}
+		else
+		{
+			music_ensemble_global_send_group->setPitch(*cvar_ensemble_pitch_base / 100.f);
+		}
+	}
+
+	// global tracks
+	if ( music_ensemble_global_send_group )
+	{
+		bool isPlaying = false;
+		bool isPaused = false;
+		music_ensemble_global_send_group->isPlaying(&isPlaying);
+		if ( isPlaying )
+		{
+			music_ensemble_global_send_group->getPaused(&isPaused);
+		}
+
+		bool active = !isPaused && isPlaying;
+		float defaultVolume = 0.5f;
+
+		Uint32 trackstatus = 0;
+		Uint32 trackstatusLocal = 0;
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( players[i]->isLocalPlayer() )
+			{
+				trackstatusLocal |= (players[i]->mechanics.ensembleDataUpdate >> 16) & 0xFFFF;
+			}
+			trackstatus |= (players[i]->mechanics.ensembleDataUpdate >> 16) & 0xFFFF;
+		}
+
+		if ( trackstatus == 0 ) // nothing playing
+		{
+			if ( active )
+			{
+				bool allStopped = true;
+				for ( int i = 0; i < NUMENSEMBLEMUSIC; ++i )
+				{
+					if ( music_ensemble_global_channel[i] )
+					{
+						float volume = 0.f;
+						music_ensemble_global_channel[i]->getVolume(&volume);
+						volume = std::max(0.f, volume - fadeout_increment * 5);
+						music_ensemble_global_channel[i]->setVolume(volume);
+						if ( volume < 0.0001f )
+						{
+							fmod_result = music_ensemble_global_channel[i]->stop();
+						}
+						else
+						{
+							allStopped = false;
+						}
+					}
+				}
+				if ( allStopped )
+				{
+					if ( music_ensemble_global_send_group )
+					{
+						music_ensemble_global_send_group->setPaused(true);
+					}
+				}
+			}
+		}
+		else
+		{
+			if ( !active )
+			{
+				for ( int i = 0; i < NUMENSEMBLEMUSIC; ++i )
+				{
+					// restart channels
+					if ( music_ensemble_global_channel[i] )
+					{
+						fmod_result = music_ensemble_global_channel[i]->stop();
+					}
+  					fmod_result = fmod_system->playSound(music_ensemble_global_sound[i], music_ensemble_global_send_group,
+						false, &music_ensemble_global_channel[i]);
+					if ( music_ensemble_global_channel[i] )
+					{
+						music_ensemble_global_channel[i]->setVolume(0.f);
+						music_ensemble_global_channel[i]->setVolumeRamp(true);
+
+						static ConsoleVariable<float> cvar_ensemble_global_x("/ensemble_global_x", 0.f);
+						static ConsoleVariable<float> cvar_ensemble_global_y("/ensemble_global_y", 0.f);
+						static ConsoleVariable<float> cvar_ensemble_global_z("/ensemble_global_z", 0.f);
+						FMOD_VECTOR position;
+						position.x = *cvar_ensemble_global_x;
+						position.y = *cvar_ensemble_global_y;
+						position.z = *cvar_ensemble_global_z;
+						fmod_result = music_ensemble_global_channel[i]->setMode(FMOD_3D_HEADRELATIVE);
+						fmod_result = music_ensemble_global_channel[i]->set3DAttributes(&position, nullptr);
+
+						{
+							FMOD::DSP* tranceiver = nullptr;
+							fmod_result = music_ensemble_global_channel[i]->getDSP(0, &tranceiver);
+							FMOD_DSP_TYPE dspType = FMOD_DSP_TYPE::FMOD_DSP_TYPE_UNKNOWN;
+							if ( tranceiver )
+							{
+								tranceiver->getType(&dspType);
+							}
+							if ( dspType != FMOD_DSP_TYPE_TRANSCEIVER )
+							{
+								fmod_result = fmod_system->createDSPByType(FMOD_DSP_TYPE_TRANSCEIVER, &tranceiver);
+								fmod_result = music_ensemble_global_channel[i]->addDSP(0, tranceiver);
+							}
+							fmod_result = tranceiver->setParameterBool(FMOD_DSP_TRANSCEIVER_TRANSMIT, true); // sending signal
+							fmod_result = tranceiver->setParameterInt(FMOD_DSP_TRANSCEIVER_CHANNEL, 1 + i); // sending on channel x
+						}
+					}
+				}
+				if ( music_ensemble_global_send_group )
+				{
+					music_ensemble_global_send_group->setPaused(false);
+				}
+			}
+
+			static float trackZeroVolumes[NUMENSEMBLEMUSIC] = { 0.f };
+			static ConsoleCommand ccmd_ensemble_zero_vol("/ensemble_zero_vol", "",
+				[](int argc, const char** argv) {
+					if ( argc < 3 )
+					{
+						return;
+					}
+					if ( atoi(argv[1]) < NUMENSEMBLEMUSIC )
+					{
+						trackZeroVolumes[atoi(argv[1])] = atoi(argv[2]) / 100.f;
+					}
+			});
+
+			for ( int i = 0; i < NUMENSEMBLEMUSIC; ++i )
+			{
+				if ( music_ensemble_global_channel[i] )
+				{
+					float targetVolume = defaultVolume;
+					if ( i == 4 )
+					{
+						targetVolume /= 2; // horn quieter
+					}
+					if ( trackstatus & (1 << i) )
+					{
+						if ( !active || true ) 
+						{
+							// no ramp up
+							music_ensemble_global_channel[i]->setVolume(targetVolume);
+						}
+						else
+						{
+							float volume = 0.f;
+							music_ensemble_global_channel[i]->getVolume(&volume);
+							volume = std::min(targetVolume, volume + fadein_increment * 5);
+							music_ensemble_global_channel[i]->setVolume(volume);
+						}
+					}
+					else
+					{
+						// fade out
+						float volume = 0.f;
+						music_ensemble_global_channel[i]->getVolume(&volume);
+						volume = std::max(0.f + trackZeroVolumes[i], volume - fadeout_increment * 5);
+						music_ensemble_global_channel[i]->setVolume(volume);
+					}
+				}
+
+				{
+					// global recv transceivers
+					FMOD::DSP* transceiver = nullptr;
+					fmod_result = music_ensemble_global_recv_group->getDSP(2 + ((NUMENSEMBLEMUSIC - 1) - i), &transceiver);
+					FMOD_DSP_TYPE dspType = FMOD_DSP_TYPE::FMOD_DSP_TYPE_UNKNOWN;
+					int channel = -1;
+					if ( transceiver )
+					{
+						transceiver->getType(&dspType);
+						transceiver->getParameterInt(FMOD_DSP_TRANSCEIVER_CHANNEL, &channel, nullptr, 0);
+					}
+					if ( dspType != FMOD_DSP_TYPE_TRANSCEIVER )
+					{
+						transceiver = nullptr;
+					}
+
+					if ( transceiver )
+					{
+						if ( trackstatusLocal & (1 << i) )
+						{
+							if ( !active || true )
+							{
+								// no ramp up
+								transceiver->setParameterFloat(FMOD_DSP_TRANSCEIVER_GAIN, 0.f);
+							}
+							else
+							{
+								float volume = 0.f;
+								transceiver->getParameterFloat(FMOD_DSP_TRANSCEIVER_GAIN, &volume, nullptr, 0);
+								volume = std::min(0.f, volume + fadein_increment * 50);
+								transceiver->setParameterFloat(FMOD_DSP_TRANSCEIVER_GAIN, volume);
+							}
+						}
+						else
+						{
+							// fade out
+							float volume = 0.f;
+							transceiver->getParameterFloat(FMOD_DSP_TRANSCEIVER_GAIN, &volume, nullptr, 0);
+							volume = std::max(-80.f + trackZeroVolumes[i] * 80.f, volume - fadeout_increment * 50);
+							transceiver->setParameterFloat(FMOD_DSP_TRANSCEIVER_GAIN, volume);
+						}
+					}
+				}
+			}
+
+			for ( int c = 0; c < MAXPLAYERS; ++c )
+			{
+				if ( !music_ensemble_local_recv_player[c] )
+				{
+					continue;
+				}
+				Uint32 trackStatusLocal = (players[c]->mechanics.ensembleDataUpdate >> 8) & 0xFF;
+
+				if ( players[c]->entity )
+				{
+					FMOD_VECTOR position;
+					position.x = (float)(players[c]->entity->x / (real_t)16.0);
+					position.y = (float)(0.0);
+					position.z = (float)(players[c]->entity->y / (real_t)16.0);
+					fmod_result = music_ensemble_local_recv_player[c]->set3DAttributes(&position, nullptr); // update to player position
+				}
+				music_ensemble_local_recv_player[c]->setVolume(defaultVolume);
+
+				FMOD::DSP* transceivers[NUMENSEMBLEMUSIC] = { nullptr };
+				for ( int i = 0; i < NUMENSEMBLEMUSIC; ++i )
+				{
+					fmod_result = music_ensemble_local_recv_player[c]->getDSP(1 + ((NUMENSEMBLEMUSIC - 1) - i), &transceivers[i]);
+					FMOD_DSP_TYPE dspType = FMOD_DSP_TYPE::FMOD_DSP_TYPE_UNKNOWN;
+					int channel = -1;
+					if ( transceivers[i] )
+					{
+						transceivers[i]->getType(&dspType);
+						transceivers[i]->getParameterInt(FMOD_DSP_TRANSCEIVER_CHANNEL, &channel, nullptr, 0);
+					}
+					if ( dspType != FMOD_DSP_TYPE_TRANSCEIVER )
+					{
+						transceivers[i] = nullptr;
+					}
+				}
+
+				for ( int i = 0; i < NUMENSEMBLEMUSIC; ++i )
+				{
+					bool localTrackPlaying = false;
+					if ( trackStatusLocal > 0 && ((trackStatusLocal - 1) == i) )
+					{
+						localTrackPlaying = true;
+					}
+
+					if ( localTrackPlaying )
+					{
+						if ( !active || true )
+						{
+							// no ramp up
+							transceivers[i]->setParameterFloat(FMOD_DSP_TRANSCEIVER_GAIN, 0.f);
+						}
+						else
+						{
+							float volume = 0.f;
+							transceivers[i]->getParameterFloat(FMOD_DSP_TRANSCEIVER_GAIN, &volume, nullptr, 0);
+							volume = std::min(0.f, volume + fadein_increment * 50);
+							transceivers[i]->setParameterFloat(FMOD_DSP_TRANSCEIVER_GAIN, volume);
+						}
+					}
+					else
+					{
+						// fade out
+						float volume = 0.f;
+						transceivers[i]->getParameterFloat(FMOD_DSP_TRANSCEIVER_GAIN, &volume, nullptr, 0);
+						volume = std::max(-80.f, volume - fadeout_increment * 50);
+						transceivers[i]->setParameterFloat(FMOD_DSP_TRANSCEIVER_GAIN, volume);
+					}
+				}
+			}
+		}
+	}
+#endif
 }

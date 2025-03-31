@@ -98,6 +98,15 @@ extern FMOD::Channel* music_channel, *music_channel2, *music_resume; //TODO: Lis
 extern FMOD::ChannelGroup* sound_group, *music_group;
 extern FMOD::ChannelGroup* soundAmbient_group, *soundEnvironment_group, *music_notification_group, *soundNotification_group;
 
+#define NUMENSEMBLEMUSIC 5
+extern FMOD::Sound* music_ensemble_global_sound[NUMENSEMBLEMUSIC];
+extern FMOD::Channel* music_ensemble_global_channel[NUMENSEMBLEMUSIC];
+extern FMOD::ChannelGroup* music_ensemble_global_send_group;
+extern FMOD::ChannelGroup* music_ensemble_global_recv_group;
+extern FMOD::ChannelGroup* music_ensemble_local_recv_player[MAXPLAYERS];
+extern FMOD::ChannelGroup* music_ensemble_local_recv_group;
+
+
 /*
  * Checks for FMOD errors. Store return value of all FMOD functions in fmod_result so that this funtion can access it and check for errors.
  * Returns true on error (and prints an error message), false if everything went fine.
