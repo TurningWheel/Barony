@@ -4862,6 +4862,17 @@ void actPlayer(Entity* my)
 			entity->skill[2] = PLAYER_NUM;
 			entity->behavior = &actHudArrowModel;
 			my->bodyparts.push_back(entity);
+
+			// hud magic rangefinder
+			entity = newEntity(-1, 1, map.entities, nullptr); //HUD entity.
+			entity->flags[PASSABLE] = true;
+			entity->flags[OVERDRAW] = false;
+			entity->flags[NOUPDATE] = true;
+			entity->flags[INVISIBLE] = true;
+			entity->skill[2] = PLAYER_NUM;
+			entity->behavior = &actMagicRangefinder;
+			players[PLAYER_NUM]->hud.magicRangefinder = entity;
+			my->bodyparts.push_back(entity);
 		}
 		else
 		{
