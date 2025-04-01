@@ -7384,6 +7384,17 @@ void Player::PlayerMechanics_t::ensembleMusicUpdate()
 		}
 
 		bool active = !isPaused && isPlaying;
+		/*std::string debugPlaying = "";
+		for ( int i = 0; i < NUMENSEMBLEMUSIC; ++i )
+		{
+			bool channelPlaying = false;
+			music_ensemble_global_channel[i]->isPlaying(&channelPlaying);
+			float volume = 0.f;
+			music_ensemble_global_channel[i]->getVolume(&volume);
+			debugPlaying += channelPlaying ? "(1 " : "(0 ";
+			debugPlaying += "Vol: " + std::to_string(volume) + ") ";
+		}
+		messagePlayer(0, MESSAGE_DEBUG, "%s", debugPlaying.c_str());*/
 		float defaultVolume = 0.5f;
 
 		Uint32 trackstatus = 0;
@@ -7412,7 +7423,7 @@ void Player::PlayerMechanics_t::ensembleMusicUpdate()
 						music_ensemble_global_channel[i]->setVolume(volume);
 						if ( volume < 0.0001f )
 						{
-							fmod_result = music_ensemble_global_channel[i]->stop();
+							// wait until all tracks 0 volume
 						}
 						else
 						{
@@ -7422,6 +7433,10 @@ void Player::PlayerMechanics_t::ensembleMusicUpdate()
 				}
 				if ( allStopped )
 				{
+					for ( int i = 0; i < NUMENSEMBLEMUSIC; ++i )
+					{
+						fmod_result = music_ensemble_global_channel[i]->stop();
+					}
 					if ( music_ensemble_global_send_group )
 					{
 						music_ensemble_global_send_group->setPaused(true);
@@ -7508,23 +7523,23 @@ void Player::PlayerMechanics_t::ensembleMusicUpdate()
 						if ( !active || true ) 
 						{
 							// no ramp up
-							music_ensemble_global_channel[i]->setVolume(targetVolume);
+							fmod_result = music_ensemble_global_channel[i]->setVolume(targetVolume);
 						}
 						else
 						{
 							float volume = 0.f;
-							music_ensemble_global_channel[i]->getVolume(&volume);
+							fmod_result = music_ensemble_global_channel[i]->getVolume(&volume);
 							volume = std::min(targetVolume, volume + fadein_increment * 5);
-							music_ensemble_global_channel[i]->setVolume(volume);
+							fmod_result = music_ensemble_global_channel[i]->setVolume(volume);
 						}
 					}
 					else
 					{
 						// fade out
 						float volume = 0.f;
-						music_ensemble_global_channel[i]->getVolume(&volume);
+						fmod_result = music_ensemble_global_channel[i]->getVolume(&volume);
 						volume = std::max(0.f + trackZeroVolumes[i], volume - fadeout_increment * 5);
-						music_ensemble_global_channel[i]->setVolume(volume);
+						fmod_result = music_ensemble_global_channel[i]->setVolume(volume);
 					}
 				}
 
