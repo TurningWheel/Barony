@@ -5834,6 +5834,10 @@ bool Item::shouldItemStack(const int player, bool ignoreStackLimit) const
 			{
 				return false;
 			}
+			else if ( items[type].hasAttribute("no_stack") )
+			{
+				return false;
+			}
 			return true;
 		}
 	}
