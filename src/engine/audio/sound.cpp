@@ -174,6 +174,7 @@ void sound_update(int player, int index, int numplayers)
 #endif
 
 	if (player == 0) {
+#ifndef EDITOR
 		//Fade in the currently playing music.
 		bool notificationPlaying = false;
 		if ( music_notification_group )
@@ -209,6 +210,7 @@ void sound_update(int player, int index, int numplayers)
 				}
 			}
 		}
+#endif
 
 #ifdef DEBUG_EVENT_TIMERS
 		time2 = std::chrono::high_resolution_clock::now();
