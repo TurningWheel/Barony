@@ -18,7 +18,20 @@ std::map<int, spell_t*> allGameSpells;
 
 void setupSpells()   ///TODO: Verify this function.
 {
+	for ( auto it : allGameSpells )
+	{
+		spell_t* spell = it.second;
+		if ( spell_isChanneled(spell) )
+		{
+			if ( spell->sustain_node )
+			{
+				list_RemoveNode(spell->sustain_node);
+			}
+		}
+		list_FreeAll(&spell->elements);
+	}
 	allGameSpells.clear();
+	spellElementMap.clear();
 
 	node_t* node = NULL;
 	spellElement_t* element = NULL;
