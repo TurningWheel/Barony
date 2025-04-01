@@ -6988,6 +6988,15 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 					effectsToSkipAnim.insert(i);
 				}
 			}
+			else if ( i == EFF_ENSEMBLE_DRUM
+				|| i == EFF_ENSEMBLE_HORN
+				|| i == EFF_ENSEMBLE_LUTE
+				|| i == EFF_ENSEMBLE_FLUTE
+				|| i == EFF_ENSEMBLE_LYRE )
+			{
+				skipAnim = true;
+				effectsToSkipAnim.insert(i);
+			}
 			else if ( i == EFF_DRUNK && stats[player]->type == GOATMAN )
 			{
 				effectActive = false;
