@@ -1240,6 +1240,7 @@ void Entity::effectTimes()
 	bool dissipate = true;
 	bool updateClient = false;
 	spell_t* unsustainSpell = nullptr;
+	bool needServerUpdateEffects = false;
 
 	for ( int c = 0; c < NUMEFFECTS; c++ )
 	{
@@ -1770,14 +1771,14 @@ void Entity::effectTimes()
 				}
 				if ( player > 0 && multiplayer == SERVER )
 				{
-					serverUpdateEffects(player);
+					needServerUpdateEffects = true;
 				}
 			}
 			else if ( myStats->EFFECTS_TIMERS[c] == ((TICKS_PER_SECOND * 5) - 1) )
 			{
 				if ( player > 0 && multiplayer == SERVER )
 				{
-					serverUpdateEffects(player);
+					needServerUpdateEffects = true;
 				}
 			}
 		}
@@ -1796,6 +1797,11 @@ void Entity::effectTimes()
 			}
 		}
 		unsustainSpell = nullptr;
+	}
+
+	if ( needServerUpdateEffects )
+	{
+		serverUpdateEffects(player);
 	}
 
 	if ( updateClient )
