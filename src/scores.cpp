@@ -1626,6 +1626,21 @@ void loadAllScores(const std::string& scoresfilename)
 				}
 			}
 		}
+		else if ( versionNumber <= 431 )
+		{
+			// legacy nummonsters
+			for ( int c = 0; c < NUMMONSTERS; c++ )
+			{
+				if ( c <= 37 )
+				{
+					fp->read(&score->kills[c], sizeof(Sint32), 1);
+				}
+				else
+				{
+					score->kills[c] = 0;
+				}
+			}
+		}
 		else
 		{
 			for ( int c = 0; c < NUMMONSTERS; c++ )
