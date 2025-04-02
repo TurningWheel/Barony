@@ -605,7 +605,7 @@ void daedalusShrineInteract(Entity* my, Entity* touched)
 				if ( touched && touched->getStats() )
 				{
 					Stat* myStats = touched->getStats();
-					if ( myStats->EFFECTS[EFF_SLOW] )
+					if ( myStats->getEffectActive(EFF_SLOW) )
 					{
 						touched->setEffect(EFF_SLOW, false, 0, true);
 					}
@@ -742,7 +742,7 @@ void Entity::actDaedalusShrine()
 					if ( touched && touched->getStats() )
 					{
 						Stat* myStats = touched->getStats();
-						if ( myStats->EFFECTS[EFF_SLOW] )
+						if ( myStats->getEffectActive(EFF_SLOW) )
 						{
 							touched->setEffect(EFF_SLOW, false, 0, true);
 						}

@@ -988,7 +988,7 @@ public:
 			return;
 		}
 
-		if ( myStats->EFFECTS[EFF_FEAR] )
+		if ( myStats->getEffectActive(EFF_FEAR) )
 		{
 			return; // don't change weapons while feared.
 		}

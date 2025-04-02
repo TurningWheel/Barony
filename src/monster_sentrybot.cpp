@@ -298,7 +298,7 @@ void initGyroBot(Entity* my, Stat* myStats)
 			// apply random stat increases if set in stat_shared.cpp or editor
 			setRandomMonsterStats(myStats, rng);
 
-			myStats->EFFECTS[EFF_LEVITATING] = true;
+			myStats->setEffectActive(EFF_LEVITATING, 1);
 			myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
 
 			// generate 6 items max, less if there are any forced items from boss variants
@@ -1326,9 +1326,9 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 				}
 			}
 		}
-		if ( !myStats->EFFECTS[EFF_LEVITATING] )
+		if ( !myStats->getEffectActive(EFF_LEVITATING) )
 		{
-			myStats->EFFECTS[EFF_LEVITATING] = true;
+			myStats->setEffectActive(EFF_LEVITATING, 1);
 			myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
 		}
 	}

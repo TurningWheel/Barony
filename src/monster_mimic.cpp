@@ -885,7 +885,7 @@ bool Entity::disturbMimic(Entity* touched, bool takenDamage, bool doMessage)
 		}
 	}
 
-	if ( myStats && myStats->EFFECTS[EFF_MIMIC_LOCKED] )
+	if ( myStats && myStats->getEffectActive(EFF_MIMIC_LOCKED) )
 	{
 		if ( myStats->EFFECTS_TIMERS[EFF_MIMIC_LOCKED] == -1 )
 		{
@@ -898,7 +898,7 @@ bool Entity::disturbMimic(Entity* touched, bool takenDamage, bool doMessage)
 		}
 	}
 
-	if ( myStats && !myStats->EFFECTS[EFF_MIMIC_LOCKED] )
+	if ( myStats && !myStats->getEffectActive(EFF_MIMIC_LOCKED) )
 	{
 		if ( monsterSpecialState == MIMIC_INERT )
 		{
@@ -942,7 +942,7 @@ bool Entity::disturbMimic(Entity* touched, bool takenDamage, bool doMessage)
 		}
 	}
 
-	if ( !myStats->EFFECTS[EFF_MIMIC_LOCKED] )
+	if ( !myStats->getEffectActive(EFF_MIMIC_LOCKED) )
 	{
 		attack(MONSTER_POSE_MIMIC_DISTURBED, 0, nullptr);
 		playSoundEntity(this, 21, 64);

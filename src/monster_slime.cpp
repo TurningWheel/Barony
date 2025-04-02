@@ -456,7 +456,7 @@ void slimeAnimate(Entity* my, Stat* myStats, double dist)
 				{
 					if ( Stat* myStats = my->getStats() )
 					{
-						myStats->EFFECTS[EFF_STUNNED] = true;
+						myStats->setEffectActive(EFF_STUNNED, 1);
 						myStats->EFFECTS_TIMERS[EFF_STUNNED] = slimeSprayDelay / 2;
 					}
 				}

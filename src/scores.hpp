@@ -402,9 +402,6 @@ enum SaveFileType {
 extern int savegameCurrentFileIndex;
 
 std::string setSaveGameFileName(bool singleplayer, SaveFileType type, int saveIndex = savegameCurrentFileIndex);
-int saveGameOld(int saveIndex = savegameCurrentFileIndex);
-int loadGameOld(int player, int saveIndex = savegameCurrentFileIndex);
-list_t* loadGameFollowersOld(int saveIndex = savegameCurrentFileIndex);
 
 int deleteSaveGame(int gametype, int saveIndex = savegameCurrentFileIndex);
 bool saveGameExists(bool singleplayer, int saveIndex = savegameCurrentFileIndex);

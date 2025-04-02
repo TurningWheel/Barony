@@ -383,7 +383,7 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 	bool wasAsleep = false;
 	if ( stat )
 	{
-		wasAsleep = stat->EFFECTS[EFF_ASLEEP];
+		wasAsleep = stat->getEffectActive(EFF_ASLEEP);
 	}
 	if ( damage > 0 )
 	{
@@ -1370,8 +1370,8 @@ void actDecoyBox(Entity* my)
 							{
 								// ignore pathing to this noisemaker as we're already distracted by it.
 								if ( entityDist(entity, my) < TOUCHRANGE 
-									&& !myStats->EFFECTS[EFF_DISORIENTED]
-									&& !myStats->EFFECTS[EFF_DISTRACTED_COOLDOWN] )
+									&& !myStats->getEffectActive(EFF_DISORIENTED)
+									&& !myStats->getEffectActive(EFF_DISTRACTED_COOLDOWN) )
 								{
 									// if we pathed within range
 									detected = false; // skip the message.
@@ -1404,7 +1404,7 @@ void actDecoyBox(Entity* my)
 							{
 								break;
 							}
-							if ( !myStats->EFFECTS[EFF_DISTRACTED_COOLDOWN] 
+							if ( !myStats->getEffectActive(EFF_DISTRACTED_COOLDOWN) 
 								&& entity->monsterSetPathToLocation(my->x / 16, my->y / 16, 2,
 									GeneratePathTypes::GENERATE_PATH_DEFAULT) && entity->children.first )
 							{
@@ -1417,8 +1417,8 @@ void actDecoyBox(Entity* my)
 								++lured;
 
 								if ( entityDist(entity, my) < TOUCHRANGE 
-									&& !myStats->EFFECTS[EFF_DISORIENTED]
-									&& !myStats->EFFECTS[EFF_DISTRACTED_COOLDOWN] )
+									&& !myStats->getEffectActive(EFF_DISORIENTED)
+									&& !myStats->getEffectActive(EFF_DISTRACTED_COOLDOWN) )
 								{
 									detected = false; // skip the message.
 

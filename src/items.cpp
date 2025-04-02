@@ -1181,7 +1181,7 @@ bool playerGreasyDropItem(const int player, Item* const item)
 	if ( player < 0 || player >= MAXPLAYERS ) { return false; }
 	if ( players[player]->isLocalPlayer() )
 	{
-		if ( !stats[player]->EFFECTS[EFF_GREASY] ) { return false; }
+		if ( !stats[player]->getEffectActive(EFF_GREASY) ) { return false; }
 		if ( itemIsEquipped(item, player) )
 		{
 			Item** slot = itemSlot(stats[player], item);
@@ -2750,7 +2750,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		case TOOL_TOWEL:
 			item_ToolTowel(item, player);
 			if ( multiplayer == CLIENT )
-				if ( stats[player]->EFFECTS[EFF_BLEEDING] )
+				if ( stats[player]->getEffectActive(EFF_BLEEDING) )
 				{
 					consumeItem(item, player);
 				}

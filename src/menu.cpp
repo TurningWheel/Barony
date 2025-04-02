@@ -8981,19 +8981,19 @@ void doNewGame(bool makeHighscore) {
 			{
 				if ( players[c] && players[c]->entity && !client_disconnected[c] )
 				{
-					if ( stats[c] && stats[c]->EFFECTS[EFF_POLYMORPH] && stats[c]->playerPolymorphStorage != NOTHING )
+					if ( stats[c] && stats[c]->getEffectActive(EFF_POLYMORPH) && stats[c]->playerPolymorphStorage != NOTHING )
 					{
 						players[c]->entity->effectPolymorph = stats[c]->playerPolymorphStorage;
 						serverUpdateEntitySkill(players[c]->entity, 50); // update visual polymorph effect for clients.
 						serverUpdateEffects(c);
 					}
-					if ( stats[c] && stats[c]->EFFECTS[EFF_SHAPESHIFT] && stats[c]->playerShapeshiftStorage != NOTHING )
+					if ( stats[c] && stats[c]->getEffectActive(EFF_SHAPESHIFT) && stats[c]->playerShapeshiftStorage != NOTHING )
 					{
 						players[c]->entity->effectShapeshift = stats[c]->playerShapeshiftStorage;
 						serverUpdateEntitySkill(players[c]->entity, 53); // update visual shapeshift effect for clients.
 						serverUpdateEffects(c);
 					}
-					if ( stats[c] && stats[c]->EFFECTS[EFF_VAMPIRICAURA] && stats[c]->EFFECTS_TIMERS[EFF_VAMPIRICAURA] == -2 )
+					if ( stats[c] && stats[c]->getEffectActive(EFF_VAMPIRICAURA) && stats[c]->EFFECTS_TIMERS[EFF_VAMPIRICAURA] == -2 )
 					{
 						players[c]->entity->playerVampireCurse = 1;
 						serverUpdateEntitySkill(players[c]->entity, 51); // update curse progression
@@ -9679,7 +9679,7 @@ void doEndgame(bool saveHighscore, bool onServerDisconnect) {
 		{
 			if ( client_classes[clientnum] == CLASS_ACCURSED )
 			{
-				if ( stats[clientnum]->EFFECTS[EFF_VAMPIRICAURA] && stats[clientnum]->EFFECTS_TIMERS[EFF_VAMPIRICAURA] == -2 )
+				if ( stats[clientnum]->getEffectActive(EFF_VAMPIRICAURA) && stats[clientnum]->EFFECTS_TIMERS[EFF_VAMPIRICAURA] == -2 )
 				{
 					conductGameChallenges[CONDUCT_ACCURSED] = 1;
 				}
@@ -9930,7 +9930,7 @@ void doEndgame(bool saveHighscore, bool onServerDisconnect) {
 						else if ( client_classes[i] == CLASS_ACCURSED )
 						{
 							steamAchievement("BARONY_ACH_POWER_HUNGRY");
-							if ( stats[i]->EFFECTS[EFF_VAMPIRICAURA] && stats[i]->EFFECTS_TIMERS[EFF_VAMPIRICAURA] == -2 )
+							if ( stats[i]->getEffectActive(EFF_VAMPIRICAURA) && stats[i]->EFFECTS_TIMERS[EFF_VAMPIRICAURA] == -2 )
 							{
 								if ( stats[i] && (svFlags & SV_FLAG_HUNGER) )
 								{

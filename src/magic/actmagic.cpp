@@ -584,7 +584,7 @@ void spawnBloodVialOnMonsterDeath(Entity* entity, Stat* hitstats, Entity* killer
 			if ( tryBloodVial )
 			{
 				bool spawnBloodVial = false;
-				if ( hitstats->EFFECTS[EFF_BLEEDING] )
+				if ( hitstats->getEffectActive(EFF_BLEEDING) )
 				{
 					if ( hitstats->EFFECTS_TIMERS[EFF_BLEEDING] >= 250 )
 					{
@@ -2610,7 +2610,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 
 							if ( !warmHat )
 							{
-								hitstats->EFFECTS[EFF_SLOW] = true;
+								hitstats->setEffectActive(EFF_SLOW, 1);
 								hitstats->EFFECTS_TIMERS[EFF_SLOW] = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
 								hitstats->EFFECTS_TIMERS[EFF_SLOW] /= (1 + (int)resistance);
 
@@ -2744,7 +2744,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						if ( (!mimic && hit.entity->behavior == &actMonster) || hit.entity->behavior == &actPlayer)
 						{
 							playSoundEntity(hit.entity, 396 + local_rng.rand() % 3, 64);
-							hitstats->EFFECTS[EFF_SLOW] = true;
+							hitstats->setEffectActive(EFF_SLOW, 1);
 							hitstats->EFFECTS_TIMERS[EFF_SLOW] = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
 							hitstats->EFFECTS_TIMERS[EFF_SLOW] /= (1 + (int)resistance);
 
@@ -2800,7 +2800,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 
 							if ( parent && (parent->behavior == &actMagicTrap || parent->behavior == &actMagicTrapCeiling) )
 							{
-								if ( hitstats && hitstats->EFFECTS[EFF_ASLEEP] )
+								if ( hitstats && hitstats->getEffectActive(EFF_ASLEEP) )
 								{
 									// check to see if we're reapplying the sleep effect.
 									int preventSleepRoll = (local_rng.rand() % 4) - resistance;
@@ -3891,7 +3891,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							const int duration = TICKS_PER_SECOND * 2;
 							if ( hitstats )
 							{
-								if ( hitstats->EFFECTS[EFF_SLOW] || hitstats->EFFECTS_TIMERS[EFF_SLOW] > duration )
+								if ( hitstats->getEffectActive(EFF_SLOW) || hitstats->EFFECTS_TIMERS[EFF_SLOW] > duration )
 								{
 									doSlow = false;
 								}
@@ -4060,7 +4060,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 										}
 										magicOnEntityHit(parent, my, hit.entity, hitstats, 0, 0, 0, spell ? spell->ID : SPELL_NONE);
 									}
-									if ( !hitstats->EFFECTS[EFF_MIMIC_LOCKED] )
+									if ( !hitstats->getEffectActive(EFF_MIMIC_LOCKED) )
 									{
 										if ( hit.entity->setEffect(EFF_MIMIC_LOCKED, true, TICKS_PER_SECOND * 5, false) )
 										{
@@ -4257,7 +4257,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						{
 							if ( hit.entity->isInertMimic() )
 							{
-								if ( hitstats->EFFECTS[EFF_MIMIC_LOCKED] )
+								if ( hitstats->getEffectActive(EFF_MIMIC_LOCKED) )
 								{
 									hit.entity->setEffect(EFF_MIMIC_LOCKED, false, 0, false);
 								}
@@ -4288,7 +4288,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									//}
 									//else
 									{
-										if ( hitstats->EFFECTS[EFF_MIMIC_LOCKED] )
+										if ( hitstats->getEffectActive(EFF_MIMIC_LOCKED) )
 										{
 											if ( hit.entity->setEffect(EFF_MIMIC_LOCKED, false, 0, false) )
 											{
@@ -4369,7 +4369,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						{
 							int effectDuration = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
 							effectDuration /= (1 + (int)resistance);
-							int oldDuration = !hitstats->EFFECTS[EFF_PARALYZED] ? 0 : hitstats->EFFECTS_TIMERS[EFF_PARALYZED];
+							int oldDuration = !hitstats->getEffectActive(EFF_PARALYZED) ? 0 : hitstats->EFFECTS_TIMERS[EFF_PARALYZED];
 							if ( hit.entity->setEffect(EFF_PARALYZED, true, effectDuration, false) )
 							{
 								magicOnEntityHit(parent, my, hit.entity, hitstats, 0, 0, 0, spell ? spell->ID : SPELL_NONE);
@@ -4452,7 +4452,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 
 							int bleedDuration = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
 							bleedDuration /= (1 + (int)resistance);
-							bool wasBleeding = hit.entity->getStats() ? hit.entity->getStats()->EFFECTS[EFF_BLEEDING] : false;
+							bool wasBleeding = hit.entity->getStats() ? hit.entity->getStats()->getEffectActive(EFF_BLEEDING) : false;
 							if ( hit.entity->setEffect(EFF_BLEEDING, true, bleedDuration, true) )
 							{
 								if ( parent )
@@ -4476,7 +4476,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									}
 								}
 							}
-							hitstats->EFFECTS[EFF_SLOW] = true;
+							hitstats->setEffectActive(EFF_SLOW, 1);
 							hitstats->EFFECTS_TIMERS[EFF_SLOW] = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
 							hitstats->EFFECTS_TIMERS[EFF_SLOW] /= 4;
 							hitstats->EFFECTS_TIMERS[EFF_SLOW] /= (1 + (int)resistance);
@@ -5804,7 +5804,7 @@ void actParticleAestheticOrbit(Entity* my)
 		}
 		else if ( my->skill[1] == PARTICLE_EFFECT_SPELL_WEB_ORBIT )
 		{
-			if ( my->sprite == 863 && (!stats || !stats->EFFECTS[EFF_WEBBED]) )
+			if ( my->sprite == 863 && (!stats || !stats->getEffectActive(EFF_WEBBED)) )
 			{
 				list_RemoveNode(my->mynode);
 				return;
@@ -6361,7 +6361,7 @@ void actParticleTimer(Entity* my)
 									{
 										case AUTOMATON:
 											strcpy(monsterStats->name, "corrupted automaton");
-											monsterStats->EFFECTS[EFF_CONFUSED] = true;
+											monsterStats->setEffectActive(EFF_CONFUSED, 1);
 											monsterStats->EFFECTS_TIMERS[EFF_CONFUSED] = -1;
 											break;
 										default:
@@ -8027,16 +8027,16 @@ Entity* castStationaryOrbitingMagicMissile(Entity* parent, int spellID, real_t c
 		parent = entity;
 	}
 	Stat* stats = parent->getStats();
-	bool amplify = false;
+	Uint8 amplify = 0;
 	if ( stats )
 	{
-		amplify = stats->EFFECTS[EFF_MAGICAMPLIFY];
-		stats->EFFECTS[EFF_MAGICAMPLIFY] = false; // temporary skip amplify effects otherwise recursion.
+		amplify = stats->getEffectActive(EFF_MAGICAMPLIFY);
+		stats->clearEffect(EFF_MAGICAMPLIFY); // temporary skip amplify effects otherwise recursion.
 	}
 	Entity* entity = castSpell(parent->getUID(), spell, false, true);
 	if ( stats )
 	{
-		stats->EFFECTS[EFF_MAGICAMPLIFY] = amplify;
+		stats->setEffectValueUnsafe(EFF_MAGICAMPLIFY, amplify);
 	}
 	if ( entity )
 	{
@@ -8276,7 +8276,7 @@ void actParticleShadowTag(Entity* my)
 
 			if ( PARTICLE_LIFE > 0 && PARTICLE_LIFE < TICKS_PER_SECOND )
 			{
-				if ( parent && parent->getStats() && parent->getStats()->EFFECTS[EFF_SHADOW_TAGGED] )
+				if ( parent && parent->getStats() && parent->getStats()->getEffectActive(EFF_SHADOW_TAGGED) )
 				{
 					++PARTICLE_LIFE;
 				}

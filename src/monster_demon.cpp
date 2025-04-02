@@ -278,7 +278,7 @@ void demonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	// set invisibility //TODO: isInvisible()?
 	if ( multiplayer != CLIENT )
 	{
-		if ( myStats->EFFECTS[EFF_INVISIBLE] == true )
+		if ( myStats->getEffectActive(EFF_INVISIBLE) )
 		{
 			my->flags[INVISIBLE] = true;
 			my->flags[BLOCKSIGHT] = false;
@@ -653,7 +653,7 @@ void actDemonCeilingBuster(Entity* my)
 						if ( myStats )
 						{
 							// easy hack to stop the demon while he breaks stuff
-							myStats->EFFECTS[EFF_PARALYZED] = true;
+							myStats->setEffectActive(EFF_PARALYZED, 1);
 							myStats->EFFECTS_TIMERS[EFF_PARALYZED] = TICKS_PER_SECOND / 2;
 						}
 					}

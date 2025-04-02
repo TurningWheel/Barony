@@ -358,7 +358,7 @@ bool ShopkeeperPlayerHostility_t::playerRaceCheckHostility(const int player, con
 	{
 		if ( stats[player] && stats[player]->mask && stats[player]->mask->type == MONOCLE )
 		{
-			if ( !stats[player]->EFFECTS[EFF_SHAPESHIFT] && !(players[player]->entity && players[player]->entity->isInvisible()) )
+			if ( !stats[player]->getEffectActive(EFF_SHAPESHIFT) && !(players[player]->entity && players[player]->entity->isInvisible()) )
 			{
 				return true;
 			}
@@ -1557,7 +1557,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 				{
 					canAlly = true;
 				}
-				else if ( race == HUMAN && (myStats->EFFECTS[EFF_DRUNK] || myStats->EFFECTS[EFF_CONFUSED])
+				else if ( race == HUMAN && (myStats->getEffectActive(EFF_DRUNK) || myStats->getEffectActive(EFF_CONFUSED))
 					&& stats[monsterclicked]->type != INCUBUS )
 				{
 					canAlly = true;
@@ -1565,7 +1565,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 					{
 						steamAchievementClient(monsterclicked, "BARONY_ACH_TEMPTRESS");
 					}
-					if ( myStats->EFFECTS[EFF_CONFUSED] )
+					if ( myStats->getEffectActive(EFF_CONFUSED) )
 					{
 						my->setEffect(EFF_CONFUSED, false, 0, false);
 					}
@@ -1651,7 +1651,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 		bool tryAlly = my->checkFriend(players[monsterclicked]->entity);
 		if ( stats[monsterclicked]->type == SUCCUBUS )
 		{
-			if ( race == HUMAN && (myStats->EFFECTS[EFF_DRUNK] || myStats->EFFECTS[EFF_CONFUSED]) )
+			if ( race == HUMAN && (myStats->getEffectActive(EFF_DRUNK) || myStats->getEffectActive(EFF_CONFUSED)) )
 			{
 				tryAlly = true;
 			}
@@ -1729,7 +1729,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 						{
 							canAlly = true;
 						}
-						else if ( race == HUMAN && (myStats->EFFECTS[EFF_DRUNK] || myStats->EFFECTS[EFF_CONFUSED])
+						else if ( race == HUMAN && (myStats->getEffectActive(EFF_DRUNK) || myStats->getEffectActive(EFF_CONFUSED))
 							&& stats[monsterclicked]->type != INCUBUS )
 						{
 							canAlly = true;
@@ -1737,7 +1737,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 							{
 								steamAchievementClient(monsterclicked, "BARONY_ACH_TEMPTRESS");
 							}
-							if ( myStats->EFFECTS[EFF_CONFUSED] )
+							if ( myStats->getEffectActive(EFF_CONFUSED) )
 							{
 								my->setEffect(EFF_CONFUSED, false, 0, false);
 							}
@@ -2969,7 +2969,7 @@ void actMonster(Entity* my)
 					}
 					if ( myStats->type == LICH_FIRE )
 					{
-						if ( !myStats->EFFECTS[EFF_VAMPIRICAURA] )
+						if ( !myStats->getEffectActive(EFF_VAMPIRICAURA) )
 						{
 							if ( (lichAlly && lichAlly->monsterState != MONSTER_STATE_LICH_CASTSPELLS)
 								|| my->monsterLichAllyStatus == LICH_ALLY_DEAD
@@ -3642,7 +3642,7 @@ void actMonster(Entity* my)
 				serverUpdateEntitySkill(my, 9);
 				for ( c = 0; c < NUMEFFECTS; ++c )
 				{
-					myStats->EFFECTS[c] = false;
+					myStats->clearEffect(c);
 					myStats->EFFECTS_TIMERS[c] = 0;
 				}
 				break;
@@ -3664,7 +3664,7 @@ void actMonster(Entity* my)
 				serverUpdateEntitySkill(my, 10);
 				for ( c = 0; c < NUMEFFECTS; ++c )
 				{
-					myStats->EFFECTS[c] = false;
+					myStats->clearEffect(c);
 					myStats->EFFECTS_TIMERS[c] = 0;
 				}
 				break;
@@ -3709,7 +3709,7 @@ void actMonster(Entity* my)
 				serverUpdateEntitySkill(my, 0);
 				for ( c = 0; c < NUMEFFECTS; ++c )
 				{
-					myStats->EFFECTS[c] = false;
+					myStats->clearEffect(c);
 					myStats->EFFECTS_TIMERS[c] = 0;
 				}
 				break;
@@ -3724,7 +3724,7 @@ void actMonster(Entity* my)
 				serverUpdateEntitySkill(my, 0);
 				for ( c = 0; c < NUMEFFECTS; ++c )
 				{
-					myStats->EFFECTS[c] = false;
+					myStats->clearEffect(c);
 					myStats->EFFECTS_TIMERS[c] = 0;
 				}
 				break;
@@ -4007,7 +4007,7 @@ void actMonster(Entity* my)
 	if ( handleinvisible )
 	{
 		//TODO: Should this use isInvisible()?
-		if ( myStats->EFFECTS[EFF_INVISIBLE] )
+		if ( myStats->getEffectActive(EFF_INVISIBLE) )
 		{
 			my->flags[INVISIBLE] = true;
 			for ( node = list_Node(&my->children, 2); node != NULL; node = node->next )
@@ -4069,7 +4069,7 @@ void actMonster(Entity* my)
 			if ( my->isInertMimic() )
 			{
 				// wake up
-				if ( myStats->EFFECTS[EFF_MIMIC_LOCKED] )
+				if ( myStats->getEffectActive(EFF_MIMIC_LOCKED) )
 				{
 					messagePlayer(monsterclicked, MESSAGE_INTERACTION, Language::get(462));
 					playSoundEntity(my, 152, 64);
@@ -4669,7 +4669,7 @@ void actMonster(Entity* my)
 			}
 		}
 
-		if ( myStats->EFFECTS[EFF_PACIFY] || myStats->EFFECTS[EFF_FEAR] )
+		if ( myStats->getEffectActive(EFF_PACIFY) || myStats->getEffectActive(EFF_FEAR) )
 		{
 			my->monsterHitTime = HITRATE / 2; // stop this incrementing to HITRATE but leave monster ready to strike shortly after.
 		}
@@ -4734,7 +4734,7 @@ void actMonster(Entity* my)
 		{
 			//my->monsterTarget = -1; //TODO: Setting it to -1 = Bug? -1 may not work properly for cases such as: if ( !my->monsterTarget )
 			my->monsterReleaseAttackTarget();
-			if ( !myStats->EFFECTS[EFF_KNOCKBACK] )
+			if ( !myStats->getEffectActive(EFF_KNOCKBACK) )
 			{
 				MONSTER_VELX = 0;
 				MONSTER_VELY = 0;
@@ -4749,9 +4749,9 @@ void actMonster(Entity* my)
 					my->handleKnockbackDamage(*myStats, hit.entity);
 				}
 			}
-			if ( myReflex && !myStats->EFFECTS[EFF_DISORIENTED] && !isIllusionTaunt )
+			if ( myReflex && !myStats->getEffectActive(EFF_DISORIENTED) && !isIllusionTaunt )
 			{
-				if ( myStats->EFFECTS[EFF_FEAR] && my->monsterFearfulOfUid != 0 )
+				if ( myStats->getEffectActive(EFF_FEAR) && my->monsterFearfulOfUid != 0 )
 				{
 					Entity* scaryEntity = uidToEntity(my->monsterFearfulOfUid);
 					if ( scaryEntity )
@@ -5029,9 +5029,9 @@ void actMonster(Entity* my)
 			// follow the leader :)
 			if ( myStats->leader_uid != 0
 				&& my->monsterAllyState == ALLY_STATE_DEFAULT 
-				&& !myStats->EFFECTS[EFF_FEAR]
-				&& !myStats->EFFECTS[EFF_DISORIENTED]
-				&& !myStats->EFFECTS[EFF_ROOTED]
+				&& !myStats->getEffectActive(EFF_FEAR)
+				&& !myStats->getEffectActive(EFF_DISORIENTED)
+				&& !myStats->getEffectActive(EFF_ROOTED)
 				&& !isIllusionTaunt
 				&& !monsterIsImmobileTurret(my, myStats)
 				&& my->getUID() % TICKS_PER_SECOND == ticks % monsterAllyFormations.getFollowerChaseLeaderInterval(*my, *myStats)
@@ -5184,7 +5184,7 @@ void actMonster(Entity* my)
 				my->monsterLookTime = 0;
 				my->monsterMoveTime--;
 				if ( myStats->type != GHOUL && (myStats->type != SPIDER || (myStats->type == SPIDER && my->monsterAllyGetPlayerLeader()))
-					&& !myStats->EFFECTS[EFF_FEAR] && !isIllusionTaunt )
+					&& !myStats->getEffectActive(EFF_FEAR) && !isIllusionTaunt )
 				{
 					if ( monsterIsImmobileTurret(my, myStats) )
 					{
@@ -5206,7 +5206,7 @@ void actMonster(Entity* my)
 						my->monsterLookDir = (local_rng.rand() % 360) * PI / 180;
 					}
 				}
-				if ( !myStats->EFFECTS[EFF_FEAR] && my->monsterTarget == 0 && my->monsterState == MONSTER_STATE_WAIT && my->monsterAllyGetPlayerLeader() )
+				if ( !myStats->getEffectActive(EFF_FEAR) && my->monsterTarget == 0 && my->monsterState == MONSTER_STATE_WAIT && my->monsterAllyGetPlayerLeader() )
 				{
 					// allies should try intelligently scan for enemies in radius.
 					if ( monsterIsImmobileTurret(my, myStats) && myStats->LVL < 5 )
@@ -5308,9 +5308,9 @@ void actMonster(Entity* my)
 			}
 			if ( my->monsterMoveTime == 0 
 				&& (uidToEntity(myStats->leader_uid) == NULL || my->monsterAllyState == ALLY_STATE_DEFEND)
-				&& !myStats->EFFECTS[EFF_FEAR] 
-				&& !myStats->EFFECTS[EFF_DISORIENTED]
-				&& !myStats->EFFECTS[EFF_ROOTED]
+				&& !myStats->getEffectActive(EFF_FEAR) 
+				&& !myStats->getEffectActive(EFF_DISORIENTED)
+				&& !myStats->getEffectActive(EFF_ROOTED)
 				&& !isIllusionTaunt
 				&& !(monsterIsImmobileTurret(my, myStats))
 				&& myStats->type != DEVIL )
@@ -5504,7 +5504,7 @@ void actMonster(Entity* my)
 				{
 					monsterVisionRange = std::max(monsterVisionRange, 96.0);
 				}
-				if ( myStats->EFFECTS[EFF_FEAR] )
+				if ( myStats->getEffectActive(EFF_FEAR) )
 				{
 					targetdist = 0.0; // so we can always see our scary target.
 				}
@@ -5512,7 +5512,7 @@ void actMonster(Entity* my)
 				if ( targetdist > monsterVisionRange )
 				{
 					// if target has left my sight, decide whether or not to path or retreat (stay put).
-					if ( my->shouldRetreat(*myStats) && !myStats->EFFECTS[EFF_FEAR] )
+					if ( my->shouldRetreat(*myStats) && !myStats->getEffectActive(EFF_FEAR) )
 					{
 						my->monsterMoveTime = 0;
 						my->monsterState = MONSTER_STATE_WAIT; // wait state
@@ -5549,7 +5549,7 @@ void actMonster(Entity* my)
 						}
 						// if target is within sight range but light level is too low and out of melee range.
 						// decide whether or not to path or retreat (stay put).
-						if ( my->shouldRetreat(*myStats) && !myStats->EFFECTS[EFF_FEAR] )
+						if ( my->shouldRetreat(*myStats) && !myStats->getEffectActive(EFF_FEAR) )
 						{
 							my->monsterMoveTime = 0;
 							my->monsterState = MONSTER_STATE_WAIT; // wait state
@@ -5561,7 +5561,7 @@ void actMonster(Entity* my)
 					}
 					else
 					{
-						if ( myStats->EFFECTS[EFF_FEAR] )
+						if ( myStats->getEffectActive(EFF_FEAR) )
 						{
 							myReflex = false; // don't determine if you lost sight of the scary monster.
 						}
@@ -5645,7 +5645,7 @@ void actMonster(Entity* my)
 						{
 							// if I currently lost sight of my target in a straight line in front of me
 							// decide whether or not to path or retreat (stay put).
-							if ( my->shouldRetreat(*myStats) && !myStats->EFFECTS[EFF_FEAR] )
+							if ( my->shouldRetreat(*myStats) && !myStats->getEffectActive(EFF_FEAR) )
 							{
 								my->monsterMoveTime = 0;
 								my->monsterState = MONSTER_STATE_WAIT; // wait state
@@ -5715,7 +5715,7 @@ timeToGoAgain:
 							int myDex = my->monsterGetDexterityForMovement();
 							real_t maxVelX = cos(tangent2) * .045 * (myDex + 10) * weightratio;
 							real_t maxVelY = sin(tangent2) * .045 * (myDex + 10) * weightratio;
-							if ( !myStats->EFFECTS[EFF_KNOCKBACK] )
+							if ( !myStats->getEffectActive(EFF_KNOCKBACK) )
 							{
 								MONSTER_VELX = maxVelX;
 								MONSTER_VELY = maxVelY;
@@ -5742,13 +5742,13 @@ timeToGoAgain:
 								chaseRange = 20;
 							}
 
-							if ( monsterIsImmobileTurret(my, myStats) || myStats->EFFECTS[EFF_ROOTED] )
+							if ( monsterIsImmobileTurret(my, myStats) || myStats->getEffectActive(EFF_ROOTED) )
 							{
 								// this is just so that the monster rotates. it doesn't actually move
 								MONSTER_VELX = maxVelX * 0.01;
 								MONSTER_VELY = maxVelY * 0.01;
 							}
-							else if ( !myStats->EFFECTS[EFF_KNOCKBACK] && 
+							else if ( !myStats->getEffectActive(EFF_KNOCKBACK) && 
 								((dist > chaseRange && !hasrangedweapon && !my->shouldRetreat(*myStats))
 									|| (hasrangedweapon && dist > rangedWeaponDistance)) )
 							{
@@ -5909,7 +5909,7 @@ timeToGoAgain:
 									}
 									else
 									{
-										if ( my->shouldRetreat(*myStats) && !myStats->EFFECTS[EFF_FEAR] )
+										if ( my->shouldRetreat(*myStats) && !myStats->getEffectActive(EFF_FEAR) )
 										{
 											my->monsterMoveTime = 0;
 											my->monsterState = MONSTER_STATE_WAIT; // wait state
@@ -5922,7 +5922,7 @@ timeToGoAgain:
 								}
 								else
 								{
-									if ( my->shouldRetreat(*myStats) && !myStats->EFFECTS[EFF_FEAR] )
+									if ( my->shouldRetreat(*myStats) && !myStats->getEffectActive(EFF_FEAR) )
 									{
 										my->monsterMoveTime = 0;
 										my->monsterState = MONSTER_STATE_WAIT; // wait state
@@ -5979,7 +5979,7 @@ timeToGoAgain:
 										int myDex = my->monsterGetDexterityForMovement();
 										real_t maxVelX = cos(tangent2) * .045 * (myDex + 10) * weightratio * -.5;
 										real_t maxVelY = sin(tangent2) * .045 * (myDex + 10) * weightratio * -.5;
-										if ( myStats->EFFECTS[EFF_KNOCKBACK] )
+										if ( myStats->getEffectActive(EFF_KNOCKBACK) )
 										{
 											my->monsterHandleKnockbackVelocity(tangent2, weightratio);
 										}
@@ -6098,7 +6098,7 @@ timeToGoAgain:
 									// override if we're strafing, keep facing the target
 									dir = my->yaw - atan2(-tempVelY, -tempVelX);
 								}
-								else if ( myStats->EFFECTS[EFF_KNOCKBACK] )
+								else if ( myStats->getEffectActive(EFF_KNOCKBACK) )
 								{
 									// in knockback, the velocitys change sign from negative/positive or positive/negative.
 									// this makes monsters moonwalk if the direction to rotate is assumed the same.
@@ -6766,7 +6766,7 @@ timeToGoAgain:
 				&& myStats->leader_uid != 0 
 				&& my->monsterAllyState == ALLY_STATE_DEFAULT 
 				&& !monsterIsImmobileTurret(my, myStats)
-				&& !myStats->EFFECTS[EFF_ROOTED]
+				&& !myStats->getEffectActive(EFF_ROOTED)
 				&& my->getUID() % TICKS_PER_SECOND == ticks % monsterAllyFormations.getFollowerChaseLeaderInterval(*my, *myStats)
 				 )
 			{
@@ -6913,7 +6913,7 @@ timeToGoAgain:
 				if ( my->children.first->element != NULL )
 				{
 					path = (list_t*)my->children.first->element;
-					if ( path->first != NULL && !myStats->EFFECTS[EFF_ROOTED] )
+					if ( path->first != NULL && !myStats->getEffectActive(EFF_ROOTED) )
 					{
 						auto pathnode = (pathnode_t*)path->first->element;
 						dist = sqrt( pow(pathnode->y * 16 + 8 - my->y, 2) + pow(pathnode->x * 16 + 8 - my->x, 2) );
@@ -6960,7 +6960,7 @@ timeToGoAgain:
 							}
 							real_t maxVelX = cos(tangent) * .045 * (myDex + 10) * weightratio;
 							real_t maxVelY = sin(tangent) * .045 * (myDex + 10) * weightratio;
-							if ( myStats->EFFECTS[EFF_KNOCKBACK] )
+							if ( myStats->getEffectActive(EFF_KNOCKBACK) )
 							{
 								my->monsterHandleKnockbackVelocity(tangent, weightratio);
 							}
@@ -7270,7 +7270,7 @@ timeToGoAgain:
 							}
 
 							// rotate monster
-							if ( myStats->EFFECTS[EFF_KNOCKBACK] )
+							if ( myStats->getEffectActive(EFF_KNOCKBACK) )
 							{
 								// in knockback, the velocitys change sign from negative/positive or positive/negative.
 								// this makes monsters moonwalk if the direction to rotate is assumed the same.
@@ -9144,7 +9144,7 @@ timeToGoAgain:
 				}
 			}
 		}
-		else if ( myStats && myStats->type == MIMIC && myStats->EFFECTS[EFF_MIMIC_LOCKED] && !my->isInertMimic() )
+		else if ( myStats && myStats->type == MIMIC && myStats->getEffectActive(EFF_MIMIC_LOCKED) && !my->isInertMimic() )
 		{
 			my->monsterHitTime++;
 			if ( my->monsterHitTime >= HITRATE )
@@ -9163,7 +9163,7 @@ timeToGoAgain:
 		}
 		else if ( myStats && myStats->type == MIMIC && !my->isInertMimic() )
 		{
-			if ( myStats->EFFECTS[EFF_ASLEEP] || myStats->EFFECTS[EFF_PARALYZED] )
+			if ( myStats->getEffectActive(EFF_ASLEEP) || myStats->getEffectActive(EFF_PARALYZED) )
 			{
 				if ( my->monsterSpecialState != MIMIC_STATUS_IMMOBILE )
 				{
@@ -9262,7 +9262,7 @@ timeToGoAgain:
 				}
 			}
 		}
-		if ( myStats->EFFECTS[EFF_KNOCKBACK] )
+		if ( myStats->getEffectActive(EFF_KNOCKBACK) )
 		{
 			my->monsterHandleKnockbackVelocity(my->monsterKnockbackTangentDir, weightratio);
 			if ( abs(MONSTER_VELX) > 0.01 || abs(MONSTER_VELY) > 0.01 )
@@ -11222,13 +11222,13 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 	if ( !isMobile() )
 	{
 		// doesn't respond.
-		if ( monsterAllySpecial == ALLY_SPECIAL_CMD_REST && myStats->EFFECTS[EFF_ASLEEP]
+		if ( monsterAllySpecial == ALLY_SPECIAL_CMD_REST && myStats->getEffectActive(EFF_ASLEEP)
 			&& (command == ALLY_CMD_MOVETO_CONFIRM || command == ALLY_CMD_ATTACK_CONFIRM
 				|| command == ALLY_CMD_MOVEASIDE) )
 		{
-			myStats->EFFECTS[EFF_ASLEEP] = false; // wake up
+			myStats->clearEffect(EFF_ASLEEP); // wake up
 			myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 0;
-			myStats->EFFECTS[EFF_HP_REGEN] = false; // stop regen
+			myStats->clearEffect(EFF_HP_REGEN); // stop regen
 			myStats->EFFECTS_TIMERS[EFF_HP_REGEN] = 0;
 			monsterAllySpecial = ALLY_SPECIAL_CMD_NONE;
 		}
@@ -12739,7 +12739,7 @@ bool Entity::monsterConsumeFoodEntity(Entity* food, Stat* myStats)
 
 	if ( buffDuration > 0 )
 	{
-		myStats->EFFECTS[EFF_HP_REGEN] = true;
+		myStats->setEffectActive(EFF_HP_REGEN, 1);
 		myStats->EFFECTS_TIMERS[EFF_HP_REGEN] = buffDuration;
 	}
 
@@ -13039,7 +13039,7 @@ int Entity::monsterGetDexterityForMovement()
 	Stat* myStats = getStats();
 	if ( myStats )
 	{
-		if ( myStats->EFFECTS[EFF_DASH] )
+		if ( myStats->getEffectActive(EFF_DASH) )
 		{
 			myDex += 30;
 		}
@@ -13499,6 +13499,7 @@ void mimicResetIdle(Entity* my)
 
 bool monsterDebugModels(Entity* my, real_t* dist)
 {
+	return false;
 	static Uint32 thisTick = 0;
 	if ( thisTick == ticks )
 	{
@@ -13523,7 +13524,7 @@ bool monsterDebugModels(Entity* my, real_t* dist)
 	}
 	if ( keystatus[SDLK_KP_6] )
 	{
-		myStats->EFFECTS[EFF_STUNNED] = !myStats->EFFECTS[EFF_STUNNED];
+		myStats->setEffectValueUnsafe(EFF_STUNNED, myStats->getEffectActive(EFF_STUNNED) ? 0 : 1);
 	}
 	if ( keystatus[SDLK_KP_PLUS] )
 	{

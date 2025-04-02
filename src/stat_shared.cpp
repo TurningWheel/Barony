@@ -92,7 +92,7 @@ Stat::Stat(Sint32 sprite) :
 		}
 		if ( c < NUMEFFECTS )
 		{
-			this->EFFECTS[c] = false;
+			this->EFFECTS[c] = 0;
 		}
 		if ( c < NUMEFFECTS )
 		{
@@ -227,7 +227,7 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->LVL = 30;
 			stats->HUNGER = 900;
 
-			stats->EFFECTS[EFF_LEVITATING] = true;
+			stats->setEffectActive(EFF_LEVITATING, 1);
 			stats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
 
 			stats->setProficiency(PRO_MAGIC, 100);

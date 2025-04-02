@@ -175,7 +175,7 @@ void initShopkeeper(Entity* my, Stat* myStats)
 			// random effects
 			if ( rng.rand() % 20 == 0 )
 			{
-				myStats->EFFECTS[EFF_ASLEEP] = true;
+				myStats->setEffectActive(EFF_ASLEEP, 1);
 				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + rng.rand() % 3600;
 			}
 
@@ -1295,7 +1295,7 @@ void shopkeeperMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			{
 				wearingring = true;
 			}
-		if ( myStats->EFFECTS[EFF_INVISIBLE] == true || wearingring == true )
+		if ( myStats->getEffectActive(EFF_INVISIBLE) || wearingring == true )
 		{
 			my->flags[INVISIBLE] = true;
 			my->flags[BLOCKSIGHT] = false;
@@ -1348,7 +1348,7 @@ void shopkeeperMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		}
 
 		// sleeping
-		if ( myStats->EFFECTS[EFF_ASLEEP] )
+		if ( myStats->getEffectActive(EFF_ASLEEP) )
 		{
 			my->z = 1.5;
 			my->pitch = PI / 4;
@@ -1602,7 +1602,7 @@ void shopkeeperMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			case LIMB_HUMANOID_WEAPON:
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->weapon == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					if ( myStats->weapon == nullptr || myStats->getEffectActive(EFF_INVISIBLE) || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -1675,7 +1675,7 @@ void shopkeeperMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							entity->handleQuiverThirdPersonModel(*myStats);
 						}
 					}
-					if ( myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					if ( myStats->getEffectActive(EFF_INVISIBLE) || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -1753,7 +1753,7 @@ void shopkeeperMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			case LIMB_HUMANOID_CLOAK:
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->cloak == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					if ( myStats->cloak == nullptr || myStats->getEffectActive(EFF_INVISIBLE) || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -1811,7 +1811,7 @@ void shopkeeperMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				if ( multiplayer != CLIENT )
 				{
 					entity->sprite = itemModel(myStats->helmet);
-					if ( myStats->helmet == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					if ( myStats->helmet == nullptr || myStats->getEffectActive(EFF_INVISIBLE) || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -1874,7 +1874,7 @@ void shopkeeperMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							hasSteelHelm = true;
 						}
 					}*/
-					if ( myStats->mask == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring || hasSteelHelm ) //TODO: isInvisible()?
+					if ( myStats->mask == nullptr || myStats->getEffectActive(EFF_INVISIBLE) || wearingring || hasSteelHelm ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}

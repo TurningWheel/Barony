@@ -70,14 +70,14 @@ void initMinotaur(Entity* my, Stat* myStats)
 				myStats->STR = 60;
 				myStats->DEX = 20;
 				myStats->CON = 20;
-				myStats->EFFECTS[EFF_VAMPIRICAURA] = true;
+				myStats->setEffectActive(EFF_VAMPIRICAURA, 1);
 				myStats->EFFECTS_TIMERS[EFF_VAMPIRICAURA] = -1;
 			}
 
 
 			// random effects
 			// minotaurs can traverse waters and pits (pits with magic :))
-			myStats->EFFECTS[EFF_LEVITATING] = true;
+			myStats->setEffectActive(EFF_LEVITATING, 1);
 			myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
 
 			// generates equipment and weapons if available from editor
@@ -303,7 +303,7 @@ void minotaurMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	// set invisibility //TODO: isInvisible()?
 	if ( multiplayer != CLIENT )
 	{
-		if ( myStats->EFFECTS[EFF_INVISIBLE] == true )
+		if ( myStats->getEffectActive(EFF_INVISIBLE) )
 		{
 			my->flags[INVISIBLE] = true;
 			my->flags[BLOCKSIGHT] = false;
@@ -883,7 +883,7 @@ void actMinotaurCeilingBuster(Entity* my)
 						if ( myStats )
 						{
 							// easy hack to stop the minotaur while he breaks stuff
-							myStats->EFFECTS[EFF_PARALYZED] = true;
+							myStats->setEffectActive(EFF_PARALYZED, 1);
 							myStats->EFFECTS_TIMERS[EFF_PARALYZED] = 10;
 						}
 					}

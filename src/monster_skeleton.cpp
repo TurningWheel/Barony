@@ -793,7 +793,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			{
 				wearingring = true;
 			}
-		if ( myStats->EFFECTS[EFF_INVISIBLE] == true || wearingring == true )
+		if ( myStats->getEffectActive(EFF_INVISIBLE) || wearingring == true )
 		{
 			my->flags[INVISIBLE] = true;
 			my->flags[BLOCKSIGHT] = false;
@@ -846,7 +846,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		}
 
 		// sleeping
-		if ( myStats->EFFECTS[EFF_ASLEEP] )
+		if ( myStats->getEffectActive(EFF_ASLEEP) )
 		{
 			my->z = 2;
 			my->pitch = PI / 4;
@@ -1225,7 +1225,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			case LIMB_HUMANOID_WEAPON:
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->weapon == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					if ( myStats->weapon == nullptr || myStats->getEffectActive(EFF_INVISIBLE) || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -1298,7 +1298,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							entity->handleQuiverThirdPersonModel(*myStats);
 						}
 					}
-					if ( myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					if ( myStats->getEffectActive(EFF_INVISIBLE) || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -1342,7 +1342,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			case LIMB_HUMANOID_CLOAK:
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->cloak == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					if ( myStats->cloak == nullptr || myStats->getEffectActive(EFF_INVISIBLE) || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -1400,7 +1400,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				if ( multiplayer != CLIENT )
 				{
 					entity->sprite = itemModel(myStats->helmet);
-					if ( myStats->helmet == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					if ( myStats->helmet == nullptr || myStats->getEffectActive(EFF_INVISIBLE) || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -1453,17 +1453,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->roll = PI / 2;
 				if ( multiplayer != CLIENT )
 				{
-					bool hasSteelHelm = false;
-					/*if ( myStats->helmet )
-					{
-						if ( myStats->helmet->type == STEEL_HELM
-							|| myStats->helmet->type == CRYSTAL_HELM
-							|| myStats->helmet->type == ARTIFACT_HELM )
-						{
-							hasSteelHelm = true;
-						}
-					}*/
-					if ( myStats->mask == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring || hasSteelHelm ) //TODO: isInvisible()?
+					if ( myStats->mask == nullptr || myStats->getEffectActive(EFF_INVISIBLE) || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}

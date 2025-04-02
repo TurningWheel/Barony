@@ -295,9 +295,9 @@ void batAnimate(Entity* my, Stat* myStats, double dist)
 	if ( multiplayer != CLIENT )
 	{
 		my->z = limbs[BAT_SMALL][5][2];
-		if ( !myStats->EFFECTS[EFF_LEVITATING] )
+		if ( !myStats->getEffectActive(EFF_LEVITATING) )
 		{
-			myStats->EFFECTS[EFF_LEVITATING] = true;
+			myStats->setEffectActive(EFF_LEVITATING, 1);
 			myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
 		}
 		if ( !my->isMobile() )
@@ -318,12 +318,12 @@ void batAnimate(Entity* my, Stat* myStats, double dist)
 			MONSTER_ATTACK = MONSTER_POSE_MELEE_WINDUP1;
 			MONSTER_ATTACKTIME = 0;
 		}
-		if ( keystatus[SDLK_h] )
+		/*if ( keystatus[SDLK_h] )
 		{
 			keystatus[SDLK_h] = 0;
 			myStats->EFFECTS[EFF_STUNNED] = !myStats->EFFECTS[EFF_STUNNED];
 			myStats->EFFECTS_TIMERS[EFF_STUNNED] = myStats->EFFECTS[EFF_STUNNED] ? -1 : 0;
-		}
+		}*/
 		if ( keystatus[SDLK_j] )
 		{
 			keystatus[SDLK_j] = 0;

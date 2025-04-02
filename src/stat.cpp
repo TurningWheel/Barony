@@ -359,7 +359,7 @@ void Stat::clearStats()
 		}
 		if (x < NUMEFFECTS)
 		{
-			this->EFFECTS[x] = false;
+			this->EFFECTS[x] = 0;
 			this->EFFECTS_TIMERS[x] = 0;
 		}
 	}
@@ -839,13 +839,13 @@ void Stat::printStats()
 	printlog("Effects & timers: ");
 	for (int i = 0; i < NUMEFFECTS; ++i)
 	{
-		printlog("[%d] = %s. timer[%d] = %d", i, (this->EFFECTS[i]) ? "true" : "false", i, this->EFFECTS_TIMERS[i]);
+		printlog("[%d] = %s. timer[%d] = %d", i, (this->getEffectActive(i)) ? "true" : "false", i, this->EFFECTS_TIMERS[i]);
 	}
 }
 
 int Stat::pickRandomEquippedItemToDegradeOnHit(Item** returnItem, bool excludeWeapon, bool excludeShield, bool excludeArmor, bool excludeJewelry)
 {
-	if ( EFFECTS[EFF_SHAPESHIFT] )
+	if ( getEffectActive(EFF_SHAPESHIFT) )
 	{
 		returnItem = nullptr;
 		return -1;

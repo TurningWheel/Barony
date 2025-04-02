@@ -143,7 +143,7 @@ void Item::applySkeletonKey(int player, Entity& entity)
 			if ( entity.isInertMimic() )
 			{
 				playSoundEntity(&entity, 91, 64);
-				if ( myStats->EFFECTS[EFF_MIMIC_LOCKED] )
+				if ( myStats->getEffectActive(EFF_MIMIC_LOCKED) )
 				{
 					messagePlayer(player, MESSAGE_INTERACTION, Language::get(1097));
 					entity.setEffect(EFF_MIMIC_LOCKED, false, 0, false);
@@ -156,7 +156,7 @@ void Item::applySkeletonKey(int player, Entity& entity)
 			}
 			else
 			{
-				if ( myStats->EFFECTS[EFF_MIMIC_LOCKED] )
+				if ( myStats->getEffectActive(EFF_MIMIC_LOCKED) )
 				{
 					playSoundEntity(&entity, 91, 64);
 					messagePlayer(player, MESSAGE_INTERACTION, Language::get(1097));
@@ -722,7 +722,7 @@ void Item::applyLockpick(int player, Entity& entity)
 		Stat* myStats = entity.getStats();
 		if ( myStats && entity.isInertMimic() )
 		{
-			if ( myStats->EFFECTS[EFF_MIMIC_LOCKED] && local_rng.rand() % 4 > 0 )
+			if ( myStats->getEffectActive(EFF_MIMIC_LOCKED) && local_rng.rand() % 4 > 0 )
 			{
 				//Failed to unlock mimic
 				playSoundEntity(&entity, 92, 64);
@@ -736,7 +736,7 @@ void Item::applyLockpick(int player, Entity& entity)
 		}
 		else if ( myStats && myStats->type == AUTOMATON 
 			&& entity.monsterSpecialState == 0
-			&& !myStats->EFFECTS[EFF_CONFUSED] )
+			&& !myStats->getEffectActive(EFF_CONFUSED) )
 		{
 			if ( players[player] && players[player]->entity )
 			{
@@ -755,7 +755,7 @@ void Item::applyLockpick(int player, Entity& entity)
 						entity.monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_AUTOMATON_MALFUNCTION;
 						serverUpdateEntitySkill(&entity, 33);
 
-						myStats->EFFECTS[EFF_PARALYZED] = true;
+						myStats->setEffectActive(EFF_PARALYZED, 1);
 						myStats->EFFECTS_TIMERS[EFF_PARALYZED] = -1;
 						playSoundEntity(&entity, 76, 128);
 						messagePlayer(player, MESSAGE_COMBAT, Language::get(2527), getMonsterLocalizedName(myStats->type).c_str());
@@ -793,9 +793,9 @@ void Item::applyLockpick(int player, Entity& entity)
 					else
 					{
 						messagePlayer(player, MESSAGE_COMBAT, Language::get(2526), getMonsterLocalizedName(myStats->type).c_str());
-						myStats->EFFECTS[EFF_CONFUSED] = true;
+						myStats->setEffectActive(EFF_CONFUSED, 1);
 						myStats->EFFECTS_TIMERS[EFF_CONFUSED] = -1;
-						myStats->EFFECTS[EFF_PARALYZED] = true;
+						myStats->setEffectActive(EFF_PARALYZED, 1);
 						myStats->EFFECTS_TIMERS[EFF_PARALYZED] = 25;
 						playSoundEntity(&entity, 263, 128);
 						spawnMagicEffectParticles(entity.x, entity.y, entity.z, 170);
@@ -1856,7 +1856,7 @@ void Item::applyTinkeringCreation(Entity* parent, Entity* thrown)
 						summon->x = thrown->x;
 						summon->y = thrown->y;
 					}
-					summonedStats->EFFECTS[EFF_STUNNED] = true;
+					summonedStats->setEffectActive(EFF_STUNNED, 1);
 					summonedStats->EFFECTS_TIMERS[EFF_STUNNED] = 30;
 					playSoundEntity(summon, 453 + local_rng.rand() % 2, 192);
 				}

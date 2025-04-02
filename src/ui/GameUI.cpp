@@ -6937,13 +6937,13 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 	    else
 	    {
 			bool skipAnim = false;
-			bool effectActive = stats[player]->EFFECTS[i];
+			bool effectActive = stats[player]->getEffectActive(i) > 0;
 			if ( i == EFF_LEVITATING && !effectActive )
 			{
-				bool tmp = stats[player]->EFFECTS[EFF_FLUTTER];
-				stats[player]->EFFECTS[EFF_FLUTTER] = false;
+				Uint8 tmp = stats[player]->getEffectActive(EFF_FLUTTER);
+				stats[player]->clearEffect(EFF_FLUTTER);
 				effectActive = isLevitating(stats[player]);
-				stats[player]->EFFECTS[EFF_FLUTTER] = tmp;
+				stats[player]->setEffectValueUnsafe(EFF_FLUTTER, tmp);
 			}
 			else if ( i == EFF_MAGICREFLECT && !effectActive )
 			{
@@ -7076,11 +7076,11 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 		{
 			bool cursedItemIsBuff = shouldInvertEquipmentBeatitude(stats[player]);
 			if ( ((stats[player]->mask && stats[player]->mask->type == TOOL_BLINDFOLD_FOCUS)
-				|| (stats[player]->type == GOATMAN && stats[player]->EFFECTS[EFF_DRUNK])) )
+				|| (stats[player]->type == GOATMAN && stats[player]->getEffectActive(EFF_DRUNK))) )
 			{
 				miscEffects[kEffectFreeAction] = true;
 			}
-			if ( stats[player]->type == GOATMAN && stats[player]->EFFECTS[EFF_DRUNK] )
+			if ( stats[player]->type == GOATMAN && stats[player]->getEffectActive(EFF_DRUNK) )
 			{
 				miscEffects[kEffectDrunkGoatman] = true;
 			}
@@ -7156,7 +7156,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 			}
 			if ( (stats[player]->ring && stats[player]->ring->type == RING_STRENGTH)
 				|| (stats[player]->gloves && stats[player]->gloves->type == GAUNTLETS_STRENGTH)
-				|| stats[player]->EFFECTS[EFF_POTION_STR] )
+				|| stats[player]->getEffectActive(EFF_POTION_STR) )
 			{
 				miscEffects[kEffectPush] = true;
 			}

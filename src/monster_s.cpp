@@ -787,7 +787,7 @@ void monsterSMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			{
 				wearingring = true;
 			}
-		if ( myStats->EFFECTS[EFF_INVISIBLE] == true || wearingring == true )
+		if ( myStats->getEffectActive(EFF_INVISIBLE) || wearingring == true )
 		{
 			my->flags[INVISIBLE] = true;
 			my->flags[BLOCKSIGHT] = false;
@@ -840,7 +840,7 @@ void monsterSMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		}
 
 		// sleeping
-		if ( myStats->EFFECTS[EFF_ASLEEP] )
+		if ( myStats->getEffectActive(EFF_ASLEEP) )
 		{
 			my->z = 3.0;
 			my->pitch = PI / 4;
@@ -932,7 +932,7 @@ void monsterSMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							weaponarm->skill[1] = 0;
 							if ( multiplayer != CLIENT )
 							{
-								myStats->EFFECTS[EFF_PARALYZED] = true;
+								myStats->setEffectActive(EFF_PARALYZED, 1);
 								myStats->EFFECTS_TIMERS[EFF_PARALYZED] = 40;
 							}
 						}
@@ -1314,7 +1314,7 @@ void monsterSMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		case LIMB_HUMANOID_WEAPON:
 			if ( multiplayer != CLIENT )
 			{
-				if ( myStats->weapon == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+				if ( myStats->weapon == nullptr || myStats->getEffectActive(EFF_INVISIBLE) || wearingring ) //TODO: isInvisible()?
 				{
 					entity->flags[INVISIBLE] = true;
 				}
@@ -1387,7 +1387,7 @@ void monsterSMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->handleQuiverThirdPersonModel(*myStats);
 					}
 				}
-				if ( myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+				if ( myStats->getEffectActive(EFF_INVISIBLE) || wearingring ) //TODO: isInvisible()?
 				{
 					entity->flags[INVISIBLE] = true;
 				}
@@ -1434,7 +1434,7 @@ void monsterSMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			entity->focalz = limbs[MONSTER_S][8][2];
 			if ( multiplayer != CLIENT )
 			{
-				if ( myStats->cloak == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+				if ( myStats->cloak == nullptr || myStats->getEffectActive(EFF_INVISIBLE) || wearingring ) //TODO: isInvisible()?
 				{
 					entity->flags[INVISIBLE] = true;
 				}
@@ -1492,7 +1492,7 @@ void monsterSMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			if ( multiplayer != CLIENT )
 			{
 				entity->sprite = itemModel(myStats->helmet);
-				if ( myStats->helmet == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+				if ( myStats->helmet == nullptr || myStats->getEffectActive(EFF_INVISIBLE) || wearingring ) //TODO: isInvisible()?
 				{
 					entity->flags[INVISIBLE] = true;
 				}
@@ -1545,7 +1545,7 @@ void monsterSMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			entity->roll = PI / 2;
 			if ( multiplayer != CLIENT )
 			{
-				if ( myStats->mask == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+				if ( myStats->mask == nullptr || myStats->getEffectActive(EFF_INVISIBLE) || wearingring ) //TODO: isInvisible()?
 				{
 					entity->flags[INVISIBLE] = true;
 				}
@@ -1650,7 +1650,7 @@ void monsterSMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				default:
 					break;
 				}
-				if ( myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+				if ( myStats->getEffectActive(EFF_INVISIBLE) || wearingring ) //TODO: isInvisible()?
 				{
 					entity->flags[INVISIBLE] = true;
 				}

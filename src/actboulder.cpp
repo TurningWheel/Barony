@@ -1087,7 +1087,7 @@ void actBoulder(Entity* my)
 							{
 								hasRingOfStr = true;
 							}
-							else if ( stats[i]->EFFECTS[EFF_POTION_STR] )
+							else if ( stats[i]->getEffectActive(EFF_POTION_STR) )
 							{
 								hasRingOfStr = true;
 							}

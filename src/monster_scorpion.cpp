@@ -204,7 +204,7 @@ void scorpionAnimate(Entity* my, double dist)
 	if ( multiplayer != CLIENT )
 	{
 		Stat* myStats = my->getStats();
-		if ( myStats->EFFECTS[EFF_INVISIBLE] == true )
+		if ( myStats->getEffectActive(EFF_INVISIBLE) )
 		{
 			my->flags[INVISIBLE] = true;
 			my->flags[BLOCKSIGHT] = false;

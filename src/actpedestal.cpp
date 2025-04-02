@@ -230,14 +230,14 @@ void Entity::actPedestalBase()
 						switch ( pedestalOrbType )
 						{
 							case 1: // blue
-								if ( stats[i] && !stats[i]->EFFECTS[EFF_SHRINE_BLUE_BUFF] )
+								if ( stats[i] && !stats[i]->getEffectActive(EFF_SHRINE_BLUE_BUFF) )
 								{
 									messagePlayer(i, MESSAGE_INTERACTION, Language::get(2910));
 								}
 								players[i]->entity->setEffect(EFF_SHRINE_BLUE_BUFF, true, 1000, false);
 								break;
 							case 2: // red
-								if ( stats[i] && !stats[i]->EFFECTS[EFF_SHRINE_RED_BUFF] )
+								if ( stats[i] && !stats[i]->getEffectActive(EFF_SHRINE_RED_BUFF) )
 								{
 									messagePlayer(i, MESSAGE_INTERACTION, Language::get(2904));
 								}
@@ -246,7 +246,7 @@ void Entity::actPedestalBase()
 							case 3:
 								break;
 							case 4: // green
-								if ( stats[i] && !stats[i]->EFFECTS[EFF_SHRINE_GREEN_BUFF] )
+								if ( stats[i] && !stats[i]->getEffectActive(EFF_SHRINE_GREEN_BUFF) )
 								{
 									messagePlayer(i, MESSAGE_INTERACTION, Language::get(2909));
 								}

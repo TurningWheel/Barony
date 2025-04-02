@@ -11492,7 +11492,7 @@ EnemyHPDamageBarHandler::EnemyHPDetails* EnemyHPDamageBarHandler::addEnemyToList
 		{
 			for ( int i = 0; i < NUMEFFECTS; ++i )
 			{
-				if ( stat->EFFECTS[i] )
+				if ( stat->getEffectActive(i) > 0 )
 				{
 					if ( i < 32 )
 					{
@@ -23131,7 +23131,7 @@ std::string CalloutRadialMenu::setCalloutText(Field* field, const char* iconName
 						{
 							break;
 						}
-						if ( stats[player]->EFFECTS[i] 
+						if ( stats[player]->getEffectActive(i) > 0 
 							&& (stats[player]->statusEffectRemovedByCureAilment(i, players[player]->entity)
 								|| i == EFF_WITHDRAWAL && stats[player]->EFFECTS_TIMERS[EFF_WITHDRAWAL] == -2) )
 						{

@@ -7179,23 +7179,23 @@ void Player::PlayerMechanics_t::ensembleMusicUpdateServer()
 				}
 
 				Uint16 effectData = 0;
-				if ( stats[i]->EFFECTS[EFF_ENSEMBLE_DRUM] )
+				if ( stats[i]->getEffectActive(EFF_ENSEMBLE_DRUM) )
 				{
 					effectData |= (1 << 0);
 				}
-				if ( stats[i]->EFFECTS[EFF_ENSEMBLE_FLUTE] )
+				if ( stats[i]->getEffectActive(EFF_ENSEMBLE_FLUTE) )
 				{
 					effectData |= (1 << 1);
 				}
-				if ( stats[i]->EFFECTS[EFF_ENSEMBLE_LUTE] )
+				if ( stats[i]->getEffectActive(EFF_ENSEMBLE_LUTE) )
 				{
 					effectData |= (1 << 2);
 				}
-				if ( stats[i]->EFFECTS[EFF_ENSEMBLE_LYRE] )
+				if ( stats[i]->getEffectActive(EFF_ENSEMBLE_LYRE) )
 				{
 					effectData |= (1 << 3);
 				}
-				if ( stats[i]->EFFECTS[EFF_ENSEMBLE_HORN] )
+				if ( stats[i]->getEffectActive(EFF_ENSEMBLE_HORN) )
 				{
 					effectData |= (1 << 4);
 				}

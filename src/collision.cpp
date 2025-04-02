@@ -577,7 +577,7 @@ bool Entity::collisionProjectileMiss(Entity* parent, Entity* projectile)
 		}
 		if ( Stat* myStats = getStats() )
 		{
-			if ( myStats->type == BAT_SMALL || myStats->EFFECTS[EFF_AGILITY] )
+			if ( myStats->type == BAT_SMALL || myStats->getEffectActive(EFF_AGILITY) )
 			{
 				bool miss = false;
 				if ( myStats->type == BAT_SMALL && isUntargetableBat() )
@@ -972,7 +972,7 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 			{
 				continue;
 			}
-			if ( projectileAttack && yourStats && yourStats->EFFECTS[EFF_AGILITY] )
+			if ( projectileAttack && yourStats && yourStats->getEffectActive(EFF_AGILITY) )
 			{
 				entityDodgeChance = true;
 			}

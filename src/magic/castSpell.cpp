@@ -118,7 +118,7 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook)
 				return;
 			}
 			if ( spell->ID == SPELL_VAMPIRIC_AURA && player >= 0 && client_classes[player] == CLASS_ACCURSED &&
-				stats[player]->EFFECTS[EFF_VAMPIRICAURA] && players[player]->entity->playerVampireCurse == 1 )
+				stats[player]->getEffectActive(EFF_VAMPIRICAURA) && players[player]->entity->playerVampireCurse == 1 )
 			{
 				if ( multiplayer == CLIENT )
 				{
@@ -160,7 +160,7 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook)
 	}
 
 	// Entity cannot cast Spells while Paralyzed or Asleep
-	if ( stat->EFFECTS[EFF_PARALYZED] || stat->EFFECTS[EFF_ASLEEP] )
+	if ( stat->getEffectActive(EFF_PARALYZED) || stat->getEffectActive(EFF_ASLEEP) )
 	{
 		return;
 	}
@@ -1430,7 +1430,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					//Duration for flutter.
 					int duration = element->duration;
 
-					if ( caster->getStats() && !caster->getStats()->EFFECTS[EFF_FLUTTER] )
+					if ( caster->getStats() && !caster->getStats()->getEffectActive(EFF_FLUTTER) )
 					{
 						achievementObserver.playerAchievements[i].flutterShyCoordinates = std::make_pair(caster->x, caster->y);
 					}
@@ -1507,7 +1507,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					//	}
 					//}
 
-					if ( stats[i]->EFFECTS[EFF_SLOW] )
+					if ( stats[i]->getEffectActive(EFF_SLOW) )
 					{
 						caster->setEffect(EFF_SLOW, false, 0, true);
 					}
@@ -1541,7 +1541,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			}
 			if ( caster->behavior == &actMonster )
 			{
-				if ( caster->getStats()->EFFECTS[EFF_SLOW] )
+				if ( caster->getStats()->getEffectActive(EFF_SLOW) )
 				{
 					caster->setEffect(EFF_SLOW, false, 0, true);
 				}
@@ -1724,7 +1724,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			{
 				if ( spell->ID == SPELL_REVERT_FORM )
 				{
-					if ( stats[caster->skill[2]]->EFFECTS[EFF_SHAPESHIFT] )
+					if ( stats[caster->skill[2]]->getEffectActive(EFF_SHAPESHIFT) )
 					{
 						int previousShapeshift = caster->effectShapeshift;
 						caster->setEffect(EFF_SHAPESHIFT, false, 0, true);
@@ -1732,11 +1732,11 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						serverUpdateEntitySkill(caster, 53);
 						if ( previousShapeshift == CREATURE_IMP && !isLevitating(stats[caster->skill[2]]) )
 						{
-							stats[caster->skill[2]]->EFFECTS[EFF_LEVITATING] = true;
+							stats[caster->skill[2]]->setEffectActive(EFF_LEVITATING, 1);
 							stats[caster->skill[2]]->EFFECTS_TIMERS[EFF_LEVITATING] = 5;
 						}
 
-						if ( stats[caster->skill[2]]->EFFECTS[EFF_POLYMORPH] )
+						if ( stats[caster->skill[2]]->getEffectActive(EFF_POLYMORPH) )
 						{
 							messagePlayer(caster->skill[2], MESSAGE_STATUS, Language::get(4302)); // return to your 'abnormal' form
 						}
@@ -1748,7 +1748,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						createParticleDropRising(caster, 593, 1.f);
 						serverSpawnMiscParticles(caster, PARTICLE_EFFECT_RISING_DROP, 593);
 					}
-					else if ( stats[caster->skill[2]]->EFFECTS[EFF_POLYMORPH] )
+					else if ( stats[caster->skill[2]]->getEffectActive(EFF_POLYMORPH) )
 					{
 						caster->setEffect(EFF_POLYMORPH, false, 0, true);
 						caster->effectPolymorph = 0;
@@ -1783,9 +1783,9 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					{
 						if ( stats[i] && stats[i]->statusEffectRemovedByCureAilment(c, players[i]->entity) )
 						{
-							if ( stats[i]->EFFECTS[c] )
+							if ( stats[i]->getEffectActive(c) )
 							{
-								stats[i]->EFFECTS[c] = false;
+								stats[i]->clearEffect(c);
 								if ( stats[i]->EFFECTS_TIMERS[c] > 0 )
 								{
 									stats[i]->EFFECTS_TIMERS[c] = 1;
@@ -1794,7 +1794,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							}
 						}
 					}
-					if ( stats[i]->EFFECTS[EFF_WITHDRAWAL] )
+					if ( stats[i]->getEffectActive(EFF_WITHDRAWAL) )
 					{
 						++numEffectsCured;
 						players[i]->entity->setEffect(EFF_WITHDRAWAL, false, EFFECT_WITHDRAWAL_BASE_TIME, true);
@@ -1843,9 +1843,9 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 								{
 									if ( target_stat->statusEffectRemovedByCureAilment(c, entity) )
 									{
-										if ( target_stat->EFFECTS[c] )
+										if ( target_stat->getEffectActive(c) )
 										{
-											target_stat->EFFECTS[c] = false;
+											target_stat->clearEffect(c);
 											if ( target_stat->EFFECTS_TIMERS[c] > 0 )
 											{
 												target_stat->EFFECTS_TIMERS[c] = 1;
@@ -1855,7 +1855,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 										}
 									}
 								}
-								if ( target_stat->EFFECTS[EFF_WITHDRAWAL] )
+								if ( target_stat->getEffectActive(EFF_WITHDRAWAL) )
 								{
 									++numAlliesEffectsCured;
 									++entityEffectsCured;
@@ -2084,7 +2084,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			{
 				createParticleDropRising(caster, 600, 0.7);
 				serverSpawnMiscParticles(caster, PARTICLE_EFFECT_VAMPIRIC_AURA, 600);
-				caster->getStats()->EFFECTS[EFF_VAMPIRICAURA] = true;
+				caster->getStats()->setEffectActive(EFF_VAMPIRICAURA, 1);
 				caster->getStats()->EFFECTS_TIMERS[EFF_VAMPIRICAURA] = 600;
 			}
 			else if ( caster->behavior == &actPlayer )
@@ -2234,7 +2234,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			}
 
 			Stat* casterStats = caster->getStats();
-			if ( !trap && !using_magicstaff && casterStats && casterStats->EFFECTS[EFF_MAGICAMPLIFY] )
+			if ( !trap && !using_magicstaff && casterStats && casterStats->getEffectActive(EFF_MAGICAMPLIFY) )
 			{
 				if ( spell->ID == SPELL_FIREBALL || spell->ID == SPELL_COLD || spell->ID == SPELL_LIGHTNING || spell->ID == SPELL_MAGICMISSILE )
 				{
@@ -3071,7 +3071,7 @@ bool spellIsNaturallyLearnedByRaceOrClass(Entity& caster, Stat& stat, int spellI
 			return true;
 		}
 	}
-	else if ( stat.EFFECTS[EFF_SHAPESHIFT] )
+	else if ( stat.getEffectActive(EFF_SHAPESHIFT) )
 	{
 		switch ( spellID )
 		{

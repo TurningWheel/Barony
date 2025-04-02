@@ -1153,11 +1153,11 @@ void actArrow(Entity* my)
 						else if ( my->arrowQuiverType == QUIVER_HUNTING && !(hitstats->amulet && hitstats->amulet->type == AMULET_POISONRESISTANCE)
 							&& !(hitstats->type == INSECTOID) && procEffect )
 						{
-							if ( !hitstats->EFFECTS[EFF_POISONED] )
+							if ( !hitstats->getEffectActive(EFF_POISONED) )
 							{
 								hitstats->poisonKiller = my->parent;
-								hitstats->EFFECTS[EFF_POISONED] = true;
-								hitstats->EFFECTS[EFF_SLOW] = true;
+								hitstats->setEffectActive(EFF_POISONED, 1);
+								hitstats->setEffectActive(EFF_SLOW, 1);
 								if ( my->arrowPoisonTime > 0 )
 								{
 									hitstats->EFFECTS_TIMERS[EFF_POISONED] = my->arrowPoisonTime;
@@ -1182,7 +1182,7 @@ void actArrow(Entity* my)
 								}
 								if ( hit.entity->behavior == &actPlayer )
 								{
-									if ( local_rng.rand() % 8 == 0 && hit.entity->char_gonnavomit == 0 && !hitstats->EFFECTS[EFF_VOMITING] )
+									if ( local_rng.rand() % 8 == 0 && hit.entity->char_gonnavomit == 0 && !hitstats->getEffectActive(EFF_VOMITING) )
 									{
 										// maybe vomit
 										messagePlayer(hit.entity->skill[2], MESSAGE_STATUS, Language::get(634));
@@ -1363,7 +1363,7 @@ void actArrow(Entity* my)
 											{
 												increaseSkill = false;
 											}
-											else if ( hitstats->EFFECTS[EFF_SHAPESHIFT] )
+											else if ( hitstats->getEffectActive(EFF_SHAPESHIFT) )
 											{
 												increaseSkill = false;
 											}

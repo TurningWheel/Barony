@@ -76,7 +76,7 @@ void initGhoul(Entity* my, Stat* myStats)
 					myStats->PER = 10;
 					if ( rng.rand() % 2 == 0 )
 					{
-						myStats->EFFECTS[EFF_VAMPIRICAURA] = true;
+						myStats->setEffectActive(EFF_VAMPIRICAURA, 1);
 						myStats->EFFECTS_TIMERS[EFF_VAMPIRICAURA] = -1;
 					}
 				}
@@ -133,7 +133,7 @@ void initGhoul(Entity* my, Stat* myStats)
 			{
 				if ( !strncmp(map.name, "Bram's Castle", 13) )
 				{
-					myStats->EFFECTS[EFF_VAMPIRICAURA] = true;
+					myStats->setEffectActive(EFF_VAMPIRICAURA, 1);
 					myStats->EFFECTS_TIMERS[EFF_VAMPIRICAURA] = -1;
 				}
 			}
@@ -321,7 +321,7 @@ void ghoulMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	// set invisibility //TODO: isInvisible()?
 	if ( multiplayer != CLIENT )
 	{
-		if ( myStats->EFFECTS[EFF_INVISIBLE] == true )
+		if ( myStats->getEffectActive(EFF_INVISIBLE) )
 		{
 			my->flags[INVISIBLE] = true;
 			my->flags[BLOCKSIGHT] = false;

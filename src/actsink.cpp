@@ -122,15 +122,15 @@ void actSink(Entity* my)
 						serverUpdateEntityFlag(players[i]->entity, BURNING);
 						steamAchievementClient(i, "BARONY_ACH_HOT_SHOWER");
 					}
-					if ( stats[i] && stats[i]->EFFECTS[EFF_POLYMORPH] && (SINK_DISABLE_POLYMORPH_WASHING == 0) )
+					if ( stats[i] && stats[i]->getEffectActive(EFF_POLYMORPH) && (SINK_DISABLE_POLYMORPH_WASHING == 0) )
 					{
-						if ( stats[i]->EFFECTS[EFF_POLYMORPH] )
+						if ( stats[i]->getEffectActive(EFF_POLYMORPH) )
 						{
 							players[i]->entity->setEffect(EFF_POLYMORPH, false, 0, true);
 							players[i]->entity->effectPolymorph = 0;
 							serverUpdateEntitySkill(players[i]->entity, 50);
 							messagePlayer(i, MESSAGE_INTERACTION, Language::get(3192));
-							if ( !stats[i]->EFFECTS[EFF_SHAPESHIFT] )
+							if ( !stats[i]->getEffectActive(EFF_SHAPESHIFT) )
 							{
 								messagePlayer(i, MESSAGE_INTERACTION, Language::get(3185));
 							}

@@ -962,7 +962,7 @@ void serverUpdateEffects(int player)
 	net_packet->data[19] = 0;
 	for (j = 0; j < NUMEFFECTS; j++)
 	{
-		if ( stats[player]->EFFECTS[j] == true )
+		if ( stats[player]->getEffectActive(j) )
 		{
 			net_packet->data[4 + j / 8] |= power(2, j - (j / 8) * 8);
 		}
@@ -2550,11 +2550,11 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 			{
 				if ( net_packet->data[8 + i / 8] & power(2, i - (i / 8) * 8) )
 				{
-					stats->EFFECTS[i] = true;
+					stats->setEffectValueUnsafe(i, 1);
 				}
 				else
 				{
-					stats->EFFECTS[i] = false;
+					stats->clearEffect(i);
 				}
 			}
 		}
@@ -3327,7 +3327,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 							{
 								if ( effect != EFF_VAMPIRICAURA && effect != EFF_WITHDRAWAL && effect != EFF_SHAPESHIFT )
 								{
-									stats[j]->EFFECTS[effect] = false;
+									stats[j]->clearEffect(effect);
 									stats[j]->EFFECTS_TIMERS[effect] = 0;
 								}
 							}
@@ -4165,7 +4165,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 				if ( !(c == EFF_VAMPIRICAURA && stats[clientnum]->EFFECTS_TIMERS[c] == -2)
 					&& c != EFF_WITHDRAWAL && c != EFF_SHAPESHIFT )
 				{
-					stats[clientnum]->EFFECTS[c] = false;
+					stats[clientnum]->clearEffect(c);
 					stats[clientnum]->EFFECTS_TIMERS[c] = 0;
 				}
 			}
@@ -4205,7 +4205,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		{
 			if ( net_packet->data[4 + c / 8]&power(2, c - (c / 8) * 8) )
 			{
-				stats[clientnum]->EFFECTS[c] = true;
+				stats[clientnum]->setEffectValueUnsafe(c, 1);
 				if ( net_packet->data[12 + c / 8] & power(2, c - (c / 8) * 8) ) // use these bits to denote if duration is low.
 				{
 					stats[clientnum]->EFFECTS_TIMERS[c] = 1;
@@ -4213,7 +4213,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 			}
 			else
 			{
-				stats[clientnum]->EFFECTS[c] = false;
+				stats[clientnum]->clearEffect(c);
 				if ( stats[clientnum]->EFFECTS_TIMERS[c] > 0 )
 				{
 					stats[clientnum]->EFFECTS_TIMERS[c] = 0;
@@ -7534,7 +7534,7 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		if ( players[player] && players[player]->entity && stats[player] )
 		{
 			if ( client_classes[player] == CLASS_ACCURSED &&
-				stats[player]->EFFECTS[EFF_VAMPIRICAURA] && players[player]->entity->playerVampireCurse == 1 )
+				stats[player]->getEffectActive(EFF_VAMPIRICAURA) && players[player]->entity->playerVampireCurse == 1 )
 			{
 				players[player]->entity->setEffect(EFF_VAMPIRICAURA, true, 1, true);
 				messagePlayerColor(player, MESSAGE_STATUS, uint32ColorGreen, Language::get(3241));

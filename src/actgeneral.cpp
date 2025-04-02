@@ -3777,7 +3777,7 @@ void bellAttractMonsters(Entity* my)
 						&& myStats
 						&& entityDist(my, entity) > TOUCHRANGE )
 					{
-						if ( !myStats->EFFECTS[EFF_DISTRACTED_COOLDOWN]
+						if ( !myStats->getEffectActive(EFF_DISTRACTED_COOLDOWN)
 							&& entity->monsterSetPathToLocation(my->x / 16, my->y / 16, 1,
 								GeneratePathTypes::GENERATE_PATH_DEFAULT, true) && entity->children.first )
 						{

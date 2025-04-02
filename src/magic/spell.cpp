@@ -766,7 +766,7 @@ real_t getBonusFromCasterOfSpellElement(Entity* caster, Stat* casterStats, spell
 
 	if ( casterStats )
 	{
-		if ( casterStats->EFFECTS[EFF_PWR] )
+		if ( casterStats->getEffectActive(EFF_PWR) )
 		{
 			bonus += 0.25;
 			int percentMP = static_cast<int>(100.0 * (real_t)casterStats->MP / std::max(1, casterStats->MAXMP));
@@ -1517,7 +1517,7 @@ int canUseShapeshiftSpellInCurrentForm(const int player, Item& item)
 	{
 		return -1;
 	}
-	if ( !stats[player]->EFFECTS[EFF_SHAPESHIFT] )
+	if ( !stats[player]->getEffectActive(EFF_SHAPESHIFT) )
 	{
 		return 0;
 	}

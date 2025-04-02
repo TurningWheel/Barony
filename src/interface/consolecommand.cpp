@@ -1284,7 +1284,7 @@ namespace ConsoleCommands {
 			Stat* tempStats = players[clientnum]->entity->getStats();
 			if (tempStats)
 			{
-				tempStats->EFFECTS[EFF_POISONED] = true;
+				tempStats->setEffectActive(EFF_POISONED, 1);
 				tempStats->EFFECTS_TIMERS[EFF_POISONED] = 600;
 			}
 		}
@@ -1545,11 +1545,11 @@ namespace ConsoleCommands {
 			if (!(c == EFF_VAMPIRICAURA && players[clientnum]->entity->getStats()->EFFECTS_TIMERS[c] == -2)
 				&& c != EFF_WITHDRAWAL && c != EFF_SHAPESHIFT)
 			{
-				players[clientnum]->entity->getStats()->EFFECTS[c] = false;
+				players[clientnum]->entity->getStats()->clearEffect(c);
 				players[clientnum]->entity->getStats()->EFFECTS_TIMERS[c] = 0;
 			}
 		}
-		if (players[clientnum]->entity->getStats()->EFFECTS[EFF_WITHDRAWAL])
+		if (players[clientnum]->entity->getStats()->getEffectActive(EFF_WITHDRAWAL))
 		{
 			players[clientnum]->entity->setEffect(EFF_WITHDRAWAL, false, EFFECT_WITHDRAWAL_BASE_TIME, true);
 		}
@@ -2431,14 +2431,14 @@ namespace ConsoleCommands {
 			return;
 		}
 
-		if (!players[clientnum]->entity->getStats()->EFFECTS[EFF_DRUNK])
+		if (!players[clientnum]->entity->getStats()->getEffectActive(EFF_DRUNK))
 		{
-			players[clientnum]->entity->getStats()->EFFECTS[EFF_DRUNK] = true;
+			players[clientnum]->entity->getStats()->setEffectActive(EFF_DRUNK, 1);
 			players[clientnum]->entity->getStats()->EFFECTS_TIMERS[EFF_DRUNK] = -1;
 		}
 		else
 		{
-			players[clientnum]->entity->getStats()->EFFECTS[EFF_DRUNK] = false;
+			players[clientnum]->entity->getStats()->clearEffect(EFF_DRUNK);
 			players[clientnum]->entity->getStats()->EFFECTS_TIMERS[EFF_DRUNK] = 0;
 		}
 		});
@@ -3062,8 +3062,8 @@ namespace ConsoleCommands {
 		}
 
 		messagePlayer(clientnum, MESSAGE_MISC, "Hungover Active: %d, Time to go: %d, Drunk Active: %d, Drunk time: %d",
-			stats[clientnum]->EFFECTS[EFF_WITHDRAWAL], stats[clientnum]->EFFECTS_TIMERS[EFF_WITHDRAWAL],
-			stats[clientnum]->EFFECTS[EFF_DRUNK], stats[clientnum]->EFFECTS_TIMERS[EFF_DRUNK]);
+			stats[clientnum]->getEffectActive(EFF_WITHDRAWAL), stats[clientnum]->EFFECTS_TIMERS[EFF_WITHDRAWAL],
+			stats[clientnum]->getEffectActive(EFF_DRUNK), stats[clientnum]->EFFECTS_TIMERS[EFF_DRUNK]);
 		return;
 		});
 
@@ -4689,7 +4689,7 @@ namespace ConsoleCommands {
 					stat->CON = 0;
 					stat->RANDOM_CON = 0;
 					stat->LVL = 50;
-					stat->EFFECTS[EFF_STUNNED] = true;
+					stat->setEffectActive(EFF_STUNNED, 1);
 					stat->monsterForceAllegiance = Stat::MONSTER_FORCE_PLAYER_ENEMY;
 					serverUpdateEntityStatFlag(monster, 20);
 					stat->EDITOR_ITEMS[ITEM_SLOT_HELM] = 0;

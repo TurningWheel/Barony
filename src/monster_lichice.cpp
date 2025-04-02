@@ -76,7 +76,7 @@ void initLichIce(Entity* my, Stat* myStats)
 			// boss variants
 
 			// random effects
-			myStats->EFFECTS[EFF_LEVITATING] = true;
+			myStats->setEffectActive(EFF_LEVITATING, 1);
 			myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
 
 			// generates equipment and weapons if available from editor
@@ -315,7 +315,7 @@ void lichIceAnimate(Entity* my, Stat* myStats, double dist)
 			{
 				wearingring = true;
 			}
-		if ( myStats->EFFECTS[EFF_INVISIBLE] == true || wearingring == true )
+		if ( myStats->getEffectActive(EFF_INVISIBLE) || wearingring == true )
 		{
 			my->flags[INVISIBLE] = true;
 			my->flags[BLOCKSIGHT] = false;
@@ -719,7 +719,7 @@ void lichIceAnimate(Entity* my, Stat* myStats, double dist)
 						{
 							my->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_TO_SETPOINT;
 							// lich can't be paralyzed, use EFF_STUNNED instead.
-							myStats->EFFECTS[EFF_STUNNED] = true;
+							myStats->setEffectActive(EFF_STUNNED, 1);
 							myStats->EFFECTS_TIMERS[EFF_STUNNED] = 50;
 						}
 					}
@@ -758,7 +758,7 @@ void lichIceAnimate(Entity* my, Stat* myStats, double dist)
 						{
 							my->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_TO_SETPOINT;
 							//	// lich can't be paralyzed, use EFF_STUNNED instead.
-							myStats->EFFECTS[EFF_STUNNED] = true;
+							myStats->setEffectActive(EFF_STUNNED, 1);
 							myStats->EFFECTS_TIMERS[EFF_STUNNED] = windupDuration;
 						}
 					}
@@ -816,12 +816,12 @@ void lichIceAnimate(Entity* my, Stat* myStats, double dist)
 							{
 								my->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_TO_SETPOINT;
 								// lich can't be paralyzed, use EFF_STUNNED instead.
-								myStats->EFFECTS[EFF_STUNNED] = true;
+								myStats->setEffectActive(EFF_STUNNED, 1);
 								myStats->EFFECTS_TIMERS[EFF_STUNNED] = 50;
 							}
 							else
 							{
-								myStats->EFFECTS[EFF_STUNNED] = true;
+								myStats->setEffectActive(EFF_STUNNED, 1);
 								myStats->EFFECTS_TIMERS[EFF_STUNNED] = 25;
 							}
 						}
@@ -894,7 +894,7 @@ void lichIceAnimate(Entity* my, Stat* myStats, double dist)
 						{
 							my->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_TO_SETPOINT;
 							// lich can't be paralyzed, use EFF_STUNNED instead.
-							myStats->EFFECTS[EFF_STUNNED] = true;
+							myStats->setEffectActive(EFF_STUNNED, 1);
 							myStats->EFFECTS_TIMERS[EFF_STUNNED] = 50;
 						}
 					}
@@ -953,7 +953,7 @@ void lichIceAnimate(Entity* my, Stat* myStats, double dist)
 						{
 							my->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_TO_SETPOINT;
 							// lich can't be paralyzed, use EFF_STUNNED instead.
-							myStats->EFFECTS[EFF_STUNNED] = true;
+							myStats->setEffectActive(EFF_STUNNED, 1);
 							myStats->EFFECTS_TIMERS[EFF_STUNNED] = 80;
 						}
 					}
@@ -1000,7 +1000,7 @@ void lichIceAnimate(Entity* my, Stat* myStats, double dist)
 					playSoundEntityLocal(my, 170, 32);
 					if ( multiplayer != CLIENT )
 					{
-						myStats->EFFECTS[EFF_STUNNED] = true;
+						myStats->setEffectActive(EFF_STUNNED, 1);
 						myStats->EFFECTS_TIMERS[EFF_STUNNED] = 20;
 					}
 				}
@@ -1143,7 +1143,7 @@ void lichIceAnimate(Entity* my, Stat* myStats, double dist)
 				// set sprites, invisibility check etc.
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->weapon == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					if ( myStats->weapon == nullptr || myStats->getEffectActive(EFF_INVISIBLE) || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}

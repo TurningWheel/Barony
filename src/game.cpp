@@ -1093,7 +1093,7 @@ void gameLogic(void)
 	        {
 	            continue;
 	        }
-	        if ( stats[c]->EFFECTS[EFF_DRUNK] )
+	        if ( stats[c]->getEffectActive(EFF_DRUNK) )
 		    {
 			    // goat/drunkards no spin!
 			    if ( stats[c]->type == GOATMAN )
@@ -1122,7 +1122,7 @@ void gameLogic(void)
 		    }
 		    else
 		    {
-			    if ( stats[c]->EFFECTS[EFF_WITHDRAWAL] || stats[c]->EFFECTS[EFF_DISORIENTED] )
+			    if ( stats[c]->getEffectActive(EFF_WITHDRAWAL) || stats[c]->getEffectActive(EFF_DISORIENTED) )
 			    {
 				    // special widthdrawal shakes
 				    if ( drunkextend[c] < 0.2 )
@@ -1525,9 +1525,9 @@ void gameLogic(void)
 						steamAchievementClient(c, "BARONY_ACH_COMEDIAN");
 					}
 
-					if ( stats[c]->EFFECTS[EFF_SHRINE_RED_BUFF]
-						&& stats[c]->EFFECTS[EFF_SHRINE_GREEN_BUFF]
-						&& stats[c]->EFFECTS[EFF_SHRINE_BLUE_BUFF] )
+					if ( stats[c]->getEffectActive(EFF_SHRINE_RED_BUFF)
+						&& stats[c]->getEffectActive(EFF_SHRINE_GREEN_BUFF)
+						&& stats[c]->getEffectActive(EFF_SHRINE_BLUE_BUFF) )
 					{
 						steamAchievementClient(c, "BARONY_ACH_WELL_PREPARED");
 					}
@@ -2394,17 +2394,17 @@ void gameLogic(void)
 					{
 						if (players[c] && players[c]->entity && !client_disconnected[c])
 						{
-							if ( stats[c] && stats[c]->EFFECTS[EFF_POLYMORPH] && stats[c]->playerPolymorphStorage != NOTHING )
+							if ( stats[c] && stats[c]->getEffectActive(EFF_POLYMORPH) && stats[c]->playerPolymorphStorage != NOTHING )
 							{
 								players[c]->entity->effectPolymorph = stats[c]->playerPolymorphStorage;
 								serverUpdateEntitySkill(players[c]->entity, 50); // update visual polymorph effect for clients.
 							}
-							if ( stats[c] && stats[c]->EFFECTS[EFF_SHAPESHIFT] && stats[c]->playerShapeshiftStorage != NOTHING )
+							if ( stats[c] && stats[c]->getEffectActive(EFF_SHAPESHIFT) && stats[c]->playerShapeshiftStorage != NOTHING )
 							{
 								players[c]->entity->effectShapeshift = stats[c]->playerShapeshiftStorage;
 								serverUpdateEntitySkill(players[c]->entity, 53); // update visual polymorph effect for clients.
 							}
-							if ( stats[c] && stats[c]->EFFECTS[EFF_VAMPIRICAURA] && stats[c]->EFFECTS_TIMERS[EFF_VAMPIRICAURA] == -2 )
+							if ( stats[c] && stats[c]->getEffectActive(EFF_VAMPIRICAURA) && stats[c]->EFFECTS_TIMERS[EFF_VAMPIRICAURA] == -2 )
 							{
 								players[c]->entity->playerVampireCurse = 1;
 								serverUpdateEntitySkill(players[c]->entity, 51); // update curse progression
@@ -6287,8 +6287,8 @@ void drawAllPlayerCameras() {
 					}
 
 					int PERModifier = 0;
-					if ( stats[c] && stats[c]->EFFECTS[EFF_BLIND]
-						&& !stats[c]->EFFECTS[EFF_ASLEEP] && !stats[c]->EFFECTS[EFF_MESSY] )
+					if ( stats[c] && stats[c]->getEffectActive(EFF_BLIND)
+						&& !stats[c]->getEffectActive(EFF_ASLEEP) && !stats[c]->getEffectActive(EFF_MESSY) )
 					{
 						// blind but not messy or asleep = allow PER to let you see the world a little.
 						PERModifier = players[c]->entity->getPER() / 5;

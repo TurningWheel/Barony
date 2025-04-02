@@ -37149,7 +37149,7 @@ failed:
 					myStats->setAttribute("monster_portrait", "true");
 					(void)actMonster(monster);
 					monster->yaw = 0.0;
-					myStats->EFFECTS[EFF_ASLEEP] = false;
+					myStats->clearEffect(EFF_ASLEEP);
 					monsterAnimate(compendiumMonster, myStats, 0.0);
 					monsterAnimate(compendiumMonster, myStats, 0.0);
 				}

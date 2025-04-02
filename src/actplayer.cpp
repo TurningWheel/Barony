@@ -2665,7 +2665,7 @@ void Player::PlayerMovement_t::startQuickTurn()
 	}
 
 	quickTurnRotation = PI * players[PLAYER_NUM]->settings.quickTurnDirection;
-	if ( stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] )
+	if ( stats[PLAYER_NUM]->getEffectActive(EFF_CONFUSED) )
 	{
 		quickTurnRotation = -quickTurnRotation;
 	}
@@ -2752,7 +2752,7 @@ void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta
 	if ( !player.usingCommand()
 		&& player.bControlEnabled && !gamePaused && my->isMobile() && !inputs.hasController(PLAYER_NUM) )
 	{
-		if ( !stats[playernum]->EFFECTS[EFF_CONFUSED] )
+		if ( !stats[playernum]->getEffectActive(EFF_CONFUSED) )
 		{
 			if ( noclip )
 			{
@@ -2776,7 +2776,7 @@ void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta
 	}
 	else if ( shootmode && !gamePaused )
 	{
-		if ( !stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] )
+		if ( !stats[PLAYER_NUM]->getEffectActive(EFF_CONFUSED) )
 		{
 			if ( smoothmouse )
 			{
@@ -2867,7 +2867,7 @@ void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta
 	if ( !player.usingCommand()
 		&& player.bControlEnabled && !gamePaused && my->isMobile() && !inputs.hasController(PLAYER_NUM) )
 	{
-		if ( !stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] )
+		if ( !stats[PLAYER_NUM]->getEffectActive(EFF_CONFUSED) )
 		{
 			my->pitch += (Input::inputs[playernum].analog("Look Down") - Input::inputs[playernum].analog("Look Up")) * .05 * refreshRateDelta;
 		}
@@ -2878,7 +2878,7 @@ void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta
 	}
 	if ( shootmode && !gamePaused )
 	{
-		if ( !stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] )
+		if ( !stats[PLAYER_NUM]->getEffectActive(EFF_CONFUSED) )
 		{
 			if ( smoothmouse )
 			{
@@ -3269,7 +3269,7 @@ int Player::PlayerMovement_t::getCharacterModifiedWeight(int* customWeight)
 	{
 		weight = weight * (gameplayCustomManager.playerWeightPercent / 100.f);
 	}
-	if ( stats[player.playernum]->EFFECTS[EFF_FAST] && !stats[player.playernum]->EFFECTS[EFF_SLOW] )
+	if ( stats[player.playernum]->getEffectActive(EFF_FAST) && !stats[player.playernum]->getEffectActive(EFF_SLOW) )
 	{
 		weight = weight * 0.5;
 	}
@@ -3299,12 +3299,12 @@ real_t Player::PlayerMovement_t::getSpeedFactor(real_t weightratio, Sint32 DEX)
 {
 	real_t slowSpeedPenalty = 0.0;
 	real_t maxSpeed = getMaximumSpeed();
-	if ( !stats[player.playernum]->EFFECTS[EFF_FAST] && stats[player.playernum]->EFFECTS[EFF_SLOW] )
+	if ( !stats[player.playernum]->getEffectActive(EFF_FAST) && stats[player.playernum]->getEffectActive(EFF_SLOW) )
 	{
 		DEX = std::min(DEX - 3, -2);
 		slowSpeedPenalty = 2.0;
 	}
-	else if ( stats[player.playernum]->EFFECTS[EFF_FAST] && !stats[player.playernum]->EFFECTS[EFF_SLOW] )
+	else if ( stats[player.playernum]->getEffectActive(EFF_FAST) && !stats[player.playernum]->getEffectActive(EFF_SLOW) )
 	{
 		maxSpeed += 1.0;
 	}
@@ -3314,7 +3314,7 @@ real_t Player::PlayerMovement_t::getSpeedFactor(real_t weightratio, Sint32 DEX)
 		speedFactor = std::min(((DEX * 0.5) + 8.5) * weightratio, maxSpeed);
 	}*/
 
-	if ( !stats[player.playernum]->EFFECTS[EFF_DASH] && stats[player.playernum]->EFFECTS[EFF_KNOCKBACK] )
+	if ( !stats[player.playernum]->getEffectActive(EFF_DASH) && stats[player.playernum]->getEffectActive(EFF_KNOCKBACK) )
 	{
 		speedFactor = std::min(speedFactor, 5.0);
 	}
@@ -3370,16 +3370,16 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 	// calculate movement forces
 
 	bool allowMovement = my->isMobile() && playerAllowedMovement(player.playernum);
-	bool pacified = stats[PLAYER_NUM]->EFFECTS[EFF_PACIFY];
-	bool rooted = stats[PLAYER_NUM]->EFFECTS[EFF_ROOTED];
+	bool pacified = stats[PLAYER_NUM]->getEffectActive(EFF_PACIFY) > 0;
+	bool rooted = stats[PLAYER_NUM]->getEffectActive(EFF_ROOTED) > 0;
 	if ( rooted )
 	{
 		allowMovement = false;
 	}
 	if ( !allowMovement && pacified && !rooted )
 	{
-		if ( !stats[PLAYER_NUM]->EFFECTS[EFF_PARALYZED] && !stats[PLAYER_NUM]->EFFECTS[EFF_STUNNED]
-			&& !stats[PLAYER_NUM]->EFFECTS[EFF_ASLEEP] )
+		if ( !stats[PLAYER_NUM]->getEffectActive(EFF_PARALYZED) && !stats[PLAYER_NUM]->getEffectActive(EFF_STUNNED)
+			&& !stats[PLAYER_NUM]->getEffectActive(EFF_ASLEEP) )
 		{
 			allowMovement = true;
 		}
@@ -3440,7 +3440,7 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 		{
 			x_force = 0.f;
 			y_force = -0.1;
-			if ( stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] )
+			if ( stats[PLAYER_NUM]->getEffectActive(EFF_CONFUSED) )
 			{
 				y_force *= -1;
 			}
@@ -3465,14 +3465,14 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 					lateralMultiplier = 0.0;
 				}
 			}
-			if ( stats[PLAYER_NUM]->EFFECTS[EFF_DASH] )
+			if ( stats[PLAYER_NUM]->getEffectActive(EFF_DASH) )
 			{
 				backpedalMultiplier = 1.25;
 			}
 
 			if ( !inputs.hasController(PLAYER_NUM) )
 			{
-				if ( !stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] )
+				if ( !stats[PLAYER_NUM]->getEffectActive(EFF_CONFUSED) )
 				{
 					//Normal controls.
 					x_force = (input.binary("Move Right") - input.binary("Move Left"));
@@ -3498,7 +3498,7 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 			{
 				x_force = inputs.getController(PLAYER_NUM)->getLeftXPercentForPlayerMovement();
 
-				if ( stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] )
+				if ( stats[PLAYER_NUM]->getEffectActive(EFF_CONFUSED) )
 				{
 					x_force *= -1;
 				}
@@ -3507,7 +3507,7 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 			{
 				y_force = inputs.getController(PLAYER_NUM)->getLeftYPercentForPlayerMovement();
 
-				if ( stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] )
+				if ( stats[PLAYER_NUM]->getEffectActive(EFF_CONFUSED) )
 				{
 					y_force *= -1;
 				}
@@ -3550,13 +3550,13 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 			}
 			messagePlayer(0, MESSAGE_DEBUG, "New: %.3f | Old: %.3f | (%+.3f)", speedFactor, speedFactorOld, 100.0 * ((speedFactor / speedFactorOld) - 1.0));
 		}
-		if ( stats[PLAYER_NUM]->EFFECTS[EFF_DASH] )
+		if ( stats[PLAYER_NUM]->getEffectActive(EFF_DASH) )
 		{
 			PLAYER_VELX += my->monsterKnockbackVelocity * cos(my->monsterKnockbackTangentDir) * refreshRateDelta;
 			PLAYER_VELY += my->monsterKnockbackVelocity * sin(my->monsterKnockbackTangentDir) * refreshRateDelta;
 			my->monsterKnockbackVelocity *= pow(0.95, refreshRateDelta);
 		}
-		else if ( stats[PLAYER_NUM]->EFFECTS[EFF_KNOCKBACK] )
+		else if ( stats[PLAYER_NUM]->getEffectActive(EFF_KNOCKBACK) )
 		{
 			PLAYER_VELX += my->monsterKnockbackVelocity * cos(my->monsterKnockbackTangentDir) * refreshRateDelta;
 			PLAYER_VELY += my->monsterKnockbackVelocity * sin(my->monsterKnockbackTangentDir) * refreshRateDelta;
@@ -4586,6 +4586,287 @@ void actPlayer(Entity* my)
 			consoleCommand("/reloadequipmentoffsets");
 		}
 	}
+	/*if ( my->ticks == 1 )
+	{
+		consoleCommand("/allspells3");
+		consoleCommand("/maxout2");
+		consoleCommand("/god");
+	}*/
+
+	{
+		//float defaultVol = 0.5f;
+		//if ( !command )
+		//{
+		//	/*if ( keystatus[SDLK_1] )
+		//	{
+		//		keystatus[SDLK_1] = 0;
+		//		for ( int c = 0; c < NUMENSEMBLEMUSIC; ++c )
+		//		{
+		//			if ( music_ensemble_global_channel[c] ) { music_ensemble_global_channel[c]->stop(); }
+		//			fmod_result = fmod_system->playSound(music_ensemble_global_sound[c], music_ensemble_global_group,
+		//				true, &music_ensemble_global_channel[c]);
+		//			fmod_result = music_ensemble_global_channel[c]->setPaused(false);
+		//			fmod_result = music_ensemble_global_channel[c]->setVolume(defaultVol);
+
+		//			static ConsoleVariable<float> cvar_ensemble_x("/ensemble_x", 0.f);
+		//			static ConsoleVariable<float> cvar_ensemble_y("/ensemble_y", 0.f);
+		//			static ConsoleVariable<float> cvar_ensemble_z("/ensemble_z", 0.f);
+		//			FMOD_VECTOR position;
+		//			position.x = *cvar_ensemble_x;
+		//			position.y = *cvar_ensemble_y;
+		//			position.z = *cvar_ensemble_z;
+		//			fmod_result = music_ensemble_global_channel[c]->setMode(FMOD_3D_HEADRELATIVE);
+		//			fmod_result = music_ensemble_global_channel[c]->set3DAttributes(&position, nullptr);
+		//		}
+		//		music_ensemble_global_group->setPaused(false);
+		//	}
+		//	if ( keystatus[SDLK_2] )
+		//	{
+		//		keystatus[SDLK_2] = 0;
+		//		bool paused = false;
+		//		music_ensemble_global_group->getPaused(&paused);
+		//		fmod_result = music_ensemble_global_group->setPaused(!paused);
+
+		//	}
+		//	if ( keystatus[SDLK_3] )
+		//	{
+		//		keystatus[SDLK_3] = 0;
+		//		float volume = 0.f;
+		//		music_ensemble_global_channel[0]->getVolume(&volume);
+		//		if ( volume > 0.001f )
+		//		{
+		//			volume = 0.f;
+		//		}
+		//		else
+		//		{
+		//			volume = defaultVol;
+		//		}
+		//		music_ensemble_global_channel[0]->setVolume(volume);
+		//	}
+		//	if ( keystatus[SDLK_4] )
+		//	{
+		//		keystatus[SDLK_4] = 0;
+		//		float volume = 0.f;
+		//		music_ensemble_global_channel[1]->getVolume(&volume);
+		//		if ( volume > 0.001f )
+		//		{
+		//			volume = 0.f;
+		//		}
+		//		else
+		//		{
+		//			volume = defaultVol;
+		//		}
+		//		music_ensemble_global_channel[1]->setVolume(volume);
+		//	}
+		//	if ( keystatus[SDLK_5] )
+		//	{
+		//		keystatus[SDLK_5] = 0;
+		//		float volume = 0.f;
+		//		music_ensemble_global_channel[2]->getVolume(&volume);
+		//		if ( volume > 0.001f )
+		//		{
+		//			volume = 0.f;
+		//		}
+		//		else
+		//		{
+		//			volume = defaultVol;
+		//		}
+		//		music_ensemble_global_channel[2]->setVolume(volume);
+		//	}
+		//	if ( keystatus[SDLK_6] )
+		//	{
+		//		keystatus[SDLK_6] = 0;
+		//		float volume = 0.f;
+		//		music_ensemble_global_channel[3]->getVolume(&volume);
+		//		if ( volume > 0.001f )
+		//		{
+		//			volume = 0.f;
+		//		}
+		//		else
+		//		{
+		//			volume = defaultVol;
+		//		}
+		//		music_ensemble_global_channel[3]->setVolume(volume);
+		//	}
+		//	if ( keystatus[SDLK_7] )
+		//	{
+		//		keystatus[SDLK_7] = 0;
+		//		float volume = 0.f;
+		//		music_ensemble_global_channel[4]->getVolume(&volume);
+		//		if ( volume > 0.001f )
+		//		{
+		//			volume = 0.f;
+		//		}
+		//		else
+		//		{
+		//			volume = defaultVol;
+		//		}
+		//		music_ensemble_global_channel[4]->setVolume(volume);
+		//	}*/
+		//	if ( keystatus[SDLK_8] )
+		//	{
+		//		keystatus[SDLK_8] = 0;
+		//		
+		//		createEnsembleHUDParticleCircling(my);
+		//		//Entity* entity = newEntity(198, 1, map.entities, nullptr);
+		//		//int i = 0;
+		//		//float x = 6 * 10;
+		//		//float y = 0.1;
+		//		//float z = 7;
+		//		//entity->yaw = i * 2 * PI / 3;
+		//		//entity->x = x;
+		//		//entity->y = y;
+		//		//entity->z = z;
+		//		//double missile_speed = 4;
+		//		//entity->vel_x = 0.0;
+		//		//entity->vel_y = 0.0;
+		//		//entity->actmagicIsOrbiting = 2;
+		//		//entity->actmagicOrbitDist = 16.0;
+		//		//entity->actmagicOrbitStationaryCurrentDist = 0.0;
+		//		//entity->actmagicOrbitStartZ = entity->z;
+		//		////entity->roll -= (PI / 8);
+		//		//entity->actmagicOrbitVerticalSpeed = -0.3;
+		//		//entity->actmagicOrbitVerticalDirection = 1;
+		//		//entity->actmagicOrbitLifetime = TICKS_PER_SECOND;
+		//		//entity->actmagicOrbitStationaryX = x;
+		//		//entity->actmagicOrbitStationaryY = y;
+		//		//entity->vel_z = -0.1;
+		//		//entity->behavior = &actHUDMagicParticleCircling;
+
+		//		//entity->flags[BRIGHT] = true;
+		//		//entity->flags[SPRITE] = true;
+		//		//entity->flags[PASSABLE] = true;
+		//		//entity->flags[NOUPDATE] = true;
+		//		//entity->flags[UNCLICKABLE] = true;
+		//		//entity->flags[UPDATENEEDED] = false;
+		//		//entity->flags[OVERDRAW] = true;
+		//		//entity->skill[11] = PLAYER_NUM;
+		//		//if ( multiplayer != CLIENT )
+		//		//{
+		//		//	entity_uids--;
+		//		//}
+		//		//entity->setUID(-3);
+		//	}
+		//}
+	}
+
+	//if ( keystatus[SDLK_v] )
+	//{
+	//	keystatus[SDLK_v] = 0;
+
+	//	static ConsoleVariable<int> cvar_particle_sprite("/particle_sprite", 1718);
+
+	//	int lifetime = TICKS_PER_SECOND * 2;
+	//	Entity* spellTimer = createParticleTimer(my, lifetime + TICKS_PER_SECOND, -1);
+	//	static ConsoleVariable<int> cvar_particle_test("/particle_test", 3);
+	//	spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_ICE_WAVE;
+	//	spellTimer->particleTimerCountdownSprite = *cvar_particle_sprite;
+	//	real_t dist = 64.0 * 1.25;
+	//	if ( *cvar_particle_test == 3 )
+	//	{
+	//		dist = 32.0;
+	//	}
+	//	else if ( *cvar_particle_test == 4 )
+	//	{
+	//		dist = 0.0;
+	//	}
+	//	spellTimer->yaw = my->yaw;
+	//	spellTimer->x = my->x + dist * cos(my->yaw);
+	//	spellTimer->y = my->y + dist * sin(my->yaw);
+	//	int lifetime_tick = 0;
+	//	auto& timerEffects = particleTimerEffects[spellTimer->getUID()];
+	//	std::vector<float> locations = {
+	//		0 * PI / 4,
+	//		1 * PI / 4,
+	//		2 * PI / 4,
+	//		3 * PI / 4,
+	//		4 * PI / 4,
+	//		5 * PI / 4,
+	//		6 * PI / 4,
+	//		7 * PI / 4,
+	//	};
+	//	while ( lifetime_tick <= lifetime )
+	//	{
+	//		auto& effect = timerEffects.effectMap[lifetime_tick == 0 ? 1 : lifetime_tick]; // first behavior tick only occurs at 1
+	//		real_t ratio = lifetime_tick / (real_t)lifetime;
+	//		effect.effectType = (ParticleTimerEffect_t::EffectType)(*cvar_particle_test);
+	//		effect.x = my->x + dist * (0.75 * ratio + 0.25) * cos(my->yaw);
+	//		effect.y = my->y + dist * (0.75 * ratio + 0.25) * sin(my->yaw);
+	//		if ( effect.effectType == ParticleTimerEffect_t::EffectType::EFFECT_TEST_1 )
+	//		{
+	//			lifetime_tick += lifetime / 4;
+	//		}
+	//		else if ( effect.effectType == ParticleTimerEffect_t::EffectType::EFFECT_TEST_2 )
+	//		{
+	//			lifetime_tick += 2;
+	//		}
+	//		else if ( effect.effectType == ParticleTimerEffect_t::EffectType::EFFECT_TEST_3 )
+	//		{
+	//			if ( locations.size() > 0 )
+	//			{
+	//				int pick = local_rng.rand() % locations.size();
+	//				auto coord = locations[local_rng.rand() % locations.size()];
+	//				locations.erase(locations.begin() + pick);
+	//				effect.x = my->x + 16.0 * cos(my->yaw + coord);
+	//				effect.y = my->y + 16.0 * sin(my->yaw + coord);
+	//			}
+	//			else
+	//			{
+	//				timerEffects.effectMap.erase(lifetime_tick);
+	//			}
+	//			lifetime_tick += TICKS_PER_SECOND / 4;
+	//		}
+	//		else
+	//		{
+	//			lifetime_tick += TICKS_PER_SECOND / 4;
+	//		}
+	//	}
+
+	//	//for ( int i = 0; i < 8; ++i )
+	//	//{
+	//	//	Entity* entity = newEntity(i >= 4 ? 224 : 223, 1, map.entities, nullptr); //Sprite entity.
+	//	//	entity->x = my->x + 16.0 * cos(my->yaw);
+	//	//	entity->y = my->y + 16.0 * sin(my->yaw);
+	//	//	entity->z = 7.499;
+	//	//	static ConsoleVariable<float> cvar_sprite_scale("/sprite_scale", 1.0);
+	//	//	static ConsoleVariable<float> cvar_sprite_rotate("/sprite_rotate", 0.0);
+	//	//	static ConsoleVariable<float> cvar_sprite_alpha("/sprite_alpha", 1.0);
+	//	//	static ConsoleVariable<float> cvar_sprite_alpha_glow("/sprite_alpha_glow", 0.0);
+	//	//	static ConsoleVariable<float> cvar_sprite_grouping("/sprite_grouping", 8.0);
+	//	//	entity->ditheringDisabled = true;
+	//	//	entity->flags[SPRITE] = true;
+	//	//	entity->flags[PASSABLE] = true;
+	//	//	entity->flags[NOUPDATE] = true;
+	//	//	entity->flags[UNCLICKABLE] = true;
+	//	//	entity->flags[BRIGHT] = true;
+	//	//	entity->scalex = *cvar_sprite_scale;
+	//	//	entity->scaley = 2.0 * *cvar_sprite_scale;
+	//	//	//entity->scalex = *cvar_sprite_scale;
+	//	//	entity->behavior = &actSprite;
+	//	//	entity->yaw = my->yaw + PI / 2 + (i * PI / 2);
+	//	//	entity->x += *cvar_sprite_grouping * cos(entity->yaw - PI / 2);
+	//	//	entity->y += *cvar_sprite_grouping * sin(entity->yaw - PI / 2);
+	//	//	entity->pitch = 0.0;
+	//	//	entity->roll = 0.0;
+	//	//	if ( i >= 4 )
+	//	//	{
+	//	//		entity->roll = PI;
+	//	//	}
+	//	//	entity->skill[0] = 1;
+	//	//	entity->skill[1] = 1;
+	//	//	entity->skill[2] = 350;
+	//	//	entity->fskill[0] = *cvar_sprite_rotate;
+	//	//	entity->fskill[2] = *cvar_sprite_alpha; // alpha
+	//	//	entity->fskill[3] = *cvar_sprite_alpha_glow;
+	//	//	entity->skill[6] = 1; // use alpha
+	//	//	entity->skill[7] = 1; // no billboard
+	//	//	if ( multiplayer != CLIENT )
+	//	//	{
+	//	//		entity_uids--;
+	//	//	}
+	//	//	entity->setUID(-3);
+	//	//}
+	//}
 
 	Entity* entity;
 	Entity* entity2 = nullptr;
@@ -4619,7 +4900,7 @@ void actPlayer(Entity* my)
 		playerRace = static_cast<Monster>(my->effectShapeshift);
 		stats[PLAYER_NUM]->type = playerRace;
 	}
-	else if ( stats[PLAYER_NUM]->playerRace > 0 || stats[PLAYER_NUM]->EFFECTS[EFF_POLYMORPH] || my->effectPolymorph != NOTHING )
+	else if ( stats[PLAYER_NUM]->playerRace > 0 || stats[PLAYER_NUM]->getEffectActive(EFF_POLYMORPH) || my->effectPolymorph != NOTHING )
 	{
 		playerRace = my->getMonsterFromPlayerRace(stats[PLAYER_NUM]->playerRace);
 		if ( my->effectPolymorph != NOTHING )
@@ -4659,7 +4940,7 @@ void actPlayer(Entity* my)
 
 	if ( multiplayer != CLIENT )
 	{
-		if ( stats[PLAYER_NUM]->EFFECTS[EFF_SHAPESHIFT] )
+		if ( stats[PLAYER_NUM]->getEffectActive(EFF_SHAPESHIFT) )
 		{
 			stats[PLAYER_NUM]->playerShapeshiftStorage = my->effectShapeshift; // keep track of player shapeshift effects
 		}
@@ -4672,7 +4953,7 @@ void actPlayer(Entity* my)
 			}
 		}
 
-		if ( stats[PLAYER_NUM]->EFFECTS[EFF_POLYMORPH] )
+		if ( stats[PLAYER_NUM]->getEffectActive(EFF_POLYMORPH) )
 		{
 			stats[PLAYER_NUM]->playerPolymorphStorage = my->effectPolymorph; // keep track of player polymorph effects
 		}
@@ -4688,7 +4969,7 @@ void actPlayer(Entity* my)
 
 	if ( players[PLAYER_NUM]->isLocalPlayer() ) // TODO: hotbar code splitscreen
 	{
-		if ( stats[PLAYER_NUM]->type != HUMAN && stats[PLAYER_NUM]->EFFECTS[EFF_SHAPESHIFT] )
+		if ( stats[PLAYER_NUM]->type != HUMAN && stats[PLAYER_NUM]->getEffectActive(EFF_SHAPESHIFT) )
 		{
 			if ( players[PLAYER_NUM]->hotbar.swapHotbarOnShapeshift == 0 )
 			{
@@ -4701,7 +4982,7 @@ void actPlayer(Entity* my)
 				initShapeshiftHotbar(PLAYER_NUM);
 			}
 		}
-		else if ( !stats[PLAYER_NUM]->EFFECTS[EFF_SHAPESHIFT] && players[PLAYER_NUM]->hotbar.swapHotbarOnShapeshift > 0 )
+		else if ( !stats[PLAYER_NUM]->getEffectActive(EFF_SHAPESHIFT) && players[PLAYER_NUM]->hotbar.swapHotbarOnShapeshift > 0 )
 		{
 			deinitShapeshiftHotbar(PLAYER_NUM);
 		}
@@ -5519,7 +5800,7 @@ void actPlayer(Entity* my)
 						}
 					}
 				}
-				if ( stats[PLAYER_NUM]->EFFECTS[EFF_WITHDRAWAL] )
+				if ( stats[PLAYER_NUM]->getEffectActive(EFF_WITHDRAWAL) )
 				{
 					if ( PLAYER_ALIVETIME == 500 )
 					{
@@ -6354,7 +6635,7 @@ void actPlayer(Entity* my)
 		}
 
 		// sleeping
-		if ( stats[PLAYER_NUM]->EFFECTS[EFF_ASLEEP] )
+		if ( stats[PLAYER_NUM]->getEffectActive(EFF_ASLEEP) )
 		{
 			switch ( playerRace )
 			{
@@ -6399,7 +6680,7 @@ void actPlayer(Entity* my)
 		if ( levitating )
 		{
 			my->z -= 1; // floating
-			insectoidLevitating = (playerRace == INSECTOID && stats[PLAYER_NUM]->EFFECTS[EFF_FLUTTER]);
+			insectoidLevitating = (playerRace == INSECTOID && stats[PLAYER_NUM]->getEffectActive(EFF_FLUTTER));
 			if ( players[PLAYER_NUM]->isLocalPlayer() )
 			{
 				int x = std::min(std::max<unsigned int>(1, my->x / 16), map.width - 2);
@@ -6540,7 +6821,7 @@ void actPlayer(Entity* my)
 	}
 	else
 	{
-		if ( playerRace == INSECTOID && stats[PLAYER_NUM]->EFFECTS[EFF_FLUTTER] && (my->z >= -2.05 && my->z <= -1.95) )
+		if ( playerRace == INSECTOID && stats[PLAYER_NUM]->getEffectActive(EFF_FLUTTER) && (my->z >= -2.05 && my->z <= -1.95) )
 		{
 			insectoidLevitating = true;
 		}
@@ -6642,16 +6923,16 @@ void actPlayer(Entity* my)
 
 						Compendium_t::Events_t::eventUpdateWorld(PLAYER_NUM, Compendium_t::CPDM_SWIM_BURN_CURED, "murky water", 1);
 					}
-					if ( stats[PLAYER_NUM]->EFFECTS[EFF_POLYMORPH] )
+					if ( stats[PLAYER_NUM]->getEffectActive(EFF_POLYMORPH) )
 					{
-						if ( stats[PLAYER_NUM]->EFFECTS[EFF_POLYMORPH] )
+						if ( stats[PLAYER_NUM]->getEffectActive(EFF_POLYMORPH) )
 						{
 							my->setEffect(EFF_POLYMORPH, false, 0, true);
 							my->effectPolymorph = 0;
 							serverUpdateEntitySkill(my, 50);
 
 							messagePlayer(PLAYER_NUM, MESSAGE_STATUS, Language::get(3192));
-							if ( !stats[PLAYER_NUM]->EFFECTS[EFF_SHAPESHIFT] )
+							if ( !stats[PLAYER_NUM]->getEffectActive(EFF_SHAPESHIFT) )
 							{
 								messagePlayer(PLAYER_NUM, MESSAGE_STATUS, Language::get(3185));
 							}
@@ -7536,7 +7817,7 @@ void actPlayer(Entity* my)
 					messagePlayer(PLAYER_NUM, MESSAGE_INTERACTION, Language::get(576), stats[i]->name);
 					if ( players[PLAYER_NUM]->isLocalPlayer() && players[i] && players[i]->entity)
 					{
-						if ( !stats[PLAYER_NUM]->EFFECTS[EFF_ROOTED] )
+						if ( !stats[PLAYER_NUM]->getEffectActive(EFF_ROOTED) )
 						{
 							double tangent = atan2(my->y - players[i]->entity->y, my->x - players[i]->entity->x);
 							PLAYER_VELX += cos(tangent);
@@ -8268,12 +8549,12 @@ void actPlayer(Entity* my)
 	if ( (players[PLAYER_NUM]->isLocalPlayer()) && intro == false )
 	{
 		// effects of drunkenness
-		if ( (stats[PLAYER_NUM]->EFFECTS[EFF_DRUNK] && (stats[PLAYER_NUM]->type != GOATMAN))
-			|| stats[PLAYER_NUM]->EFFECTS[EFF_WITHDRAWAL] )
+		if ( (stats[PLAYER_NUM]->getEffectActive(EFF_DRUNK) && (stats[PLAYER_NUM]->type != GOATMAN))
+			|| stats[PLAYER_NUM]->getEffectActive(EFF_WITHDRAWAL) )
 		{
 			my->char_drunk++;
 			int drunkInterval = TICKS_PER_SECOND * 6;
-			if ( stats[PLAYER_NUM]->EFFECTS[EFF_WITHDRAWAL] )
+			if ( stats[PLAYER_NUM]->getEffectActive(EFF_WITHDRAWAL) )
 			{
 				if ( PLAYER_ALIVETIME < TICKS_PER_SECOND * 16 )
 				{
@@ -8355,7 +8636,7 @@ void actPlayer(Entity* my)
 						}
 					}
 				}
-				else if ( stats[PLAYER_NUM]->EFFECTS[EFF_DASH] && hit.entity->behavior == &actDoor )
+				else if ( stats[PLAYER_NUM]->getEffectActive(EFF_DASH) && hit.entity->behavior == &actDoor )
 				{
 					hit.entity->doorHealth = 0;
 				}
@@ -8531,7 +8812,7 @@ void actPlayer(Entity* my)
 						}
 					}
 				}
-				else if ( stats[PLAYER_NUM]->EFFECTS[EFF_DASH] && hit.entity->behavior == &actDoor )
+				else if ( stats[PLAYER_NUM]->getEffectActive(EFF_DASH) && hit.entity->behavior == &actDoor )
 				{
 					hit.entity->doorHealth = 0;
 				}
@@ -8550,14 +8831,14 @@ void actPlayer(Entity* my)
 		dist = sqrt(PLAYER_VELX * PLAYER_VELX + PLAYER_VELY * PLAYER_VELY);
 	}
 
-	if ( (players[PLAYER_NUM]->isLocalPlayer()) && ticks % 65 == 0 && stats[PLAYER_NUM]->EFFECTS[EFF_TELEPATH] )
+	if ( (players[PLAYER_NUM]->isLocalPlayer()) && ticks % 65 == 0 && stats[PLAYER_NUM]->getEffectActive(EFF_TELEPATH) )
 	{
 		for ( node_t* mapNode = map.creatures->first; mapNode != nullptr; mapNode = mapNode->next )
 		{
 			Entity* mapCreature = (Entity*)mapNode->element;
 			if ( mapCreature )
 			{
-				if ( stats[PLAYER_NUM]->EFFECTS[EFF_TELEPATH] && !intro )
+				if ( stats[PLAYER_NUM]->getEffectActive(EFF_TELEPATH) && !intro )
 				{
 					// periodically set the telepath rendering flag.
 					mapCreature->monsterEntityRenderAsTelepath = 1;
@@ -8625,7 +8906,7 @@ void actPlayer(Entity* my)
 					limbSpeed = 1 / 12.f;
 					pitchLimit = PI / 8.f;
 				}
-				if ( stats[PLAYER_NUM]->EFFECTS[EFF_DASH] )
+				if ( stats[PLAYER_NUM]->getEffectActive(EFF_DASH) )
 				{
 					limbSpeed = 1 / 12.f;
 				}
@@ -9144,7 +9425,7 @@ void actPlayer(Entity* my)
 						limbSpeed = 1 / 12.f;
 						pitchLimit = PI / 8.f;
 					}
-					if ( stats[PLAYER_NUM]->EFFECTS[EFF_DASH] )
+					if ( stats[PLAYER_NUM]->getEffectActive(EFF_DASH) )
 					{
 						limbSpeed = 1 / 12.f;
 					}
@@ -11112,7 +11393,7 @@ bool playerRequiresBloodToSustain(int player)
 	{
 		return true;
 	}
-	if ( stats[player]->EFFECTS[EFF_VAMPIRICAURA] || client_classes[player] == CLASS_ACCURSED )
+	if ( stats[player]->getEffectActive(EFF_VAMPIRICAURA) || client_classes[player] == CLASS_ACCURSED )
 	{
 		return true;
 	}

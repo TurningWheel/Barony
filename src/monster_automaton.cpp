@@ -578,7 +578,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			{
 				wearingring = true;
 			}
-		if ( myStats->EFFECTS[EFF_INVISIBLE] == true || wearingring == true )
+		if ( myStats->getEffectActive(EFF_INVISIBLE) || wearingring == true )
 		{
 			my->flags[INVISIBLE] = true;
 			my->flags[BLOCKSIGHT] = false;
@@ -631,7 +631,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		}
 
 		// sleeping
-		if ( myStats->EFFECTS[EFF_ASLEEP] 
+		if ( myStats->getEffectActive(EFF_ASLEEP) 
 			&& (my->monsterSpecialState != AUTOMATON_MALFUNCTION_START && my->monsterSpecialState != AUTOMATON_MALFUNCTION_RUN) )
 		{
 			my->z = 2;
@@ -645,7 +645,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			{
 				my->z = -.5;
 				my->pitch = 0;
-				if ( (myStats->HP < 25 && !myStats->EFFECTS[EFF_CONFUSED])
+				if ( (myStats->HP < 25 && !myStats->getEffectActive(EFF_CONFUSED))
 					|| (myStats->HP < 50 && !strncmp(myStats->name, "corrupted automaton", strlen("corrupted automaton")))
 					)
 				{
@@ -656,14 +656,14 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						my->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_AUTOMATON_MALFUNCTION;
 						serverUpdateEntitySkill(my, 33);
 
-						myStats->EFFECTS[EFF_PARALYZED] = true;
+						myStats->setEffectActive(EFF_PARALYZED, 1);
 						myStats->EFFECTS_TIMERS[EFF_PARALYZED] = -1;
 					}
 					else
 					{
-						myStats->EFFECTS[EFF_CONFUSED] = true;
+						myStats->setEffectActive(EFF_CONFUSED, 1);
 						myStats->EFFECTS_TIMERS[EFF_CONFUSED] = -1;
-						myStats->EFFECTS[EFF_PARALYZED] = true;
+						myStats->setEffectActive(EFF_PARALYZED, 1);
 						myStats->EFFECTS_TIMERS[EFF_PARALYZED] = 25;
 						playSoundEntity(my, 263, 128);
 						spawnMagicEffectParticles(my->x, my->y, my->z, 170);
@@ -802,7 +802,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							playSoundEntityLocal(my, 170, 32);
 							if ( multiplayer != CLIENT )
 							{
-								myStats->EFFECTS[EFF_PARALYZED] = true;
+								myStats->setEffectActive(EFF_PARALYZED, 1);
 								myStats->EFFECTS_TIMERS[EFF_PARALYZED] = 30;
 							}
 						}
@@ -1083,7 +1083,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			case LIMB_HUMANOID_WEAPON:
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->weapon == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					if ( myStats->weapon == NULL || myStats->getEffectActive(EFF_INVISIBLE) || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -1156,7 +1156,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							entity->handleQuiverThirdPersonModel(*myStats);
 						}
 					}
-					if ( myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					if ( myStats->getEffectActive(EFF_INVISIBLE) || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -1200,7 +1200,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			case LIMB_HUMANOID_CLOAK:
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->cloak == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					if ( myStats->cloak == NULL || myStats->getEffectActive(EFF_INVISIBLE) || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -1258,7 +1258,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				if ( multiplayer != CLIENT )
 				{
 					entity->sprite = itemModel(myStats->helmet);
-					if ( myStats->helmet == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					if ( myStats->helmet == NULL || myStats->getEffectActive(EFF_INVISIBLE) || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -1321,7 +1321,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							hasSteelHelm = true;
 						}
 					}*/
-					if ( myStats->mask == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring || hasSteelHelm ) //TODO: isInvisible()?
+					if ( myStats->mask == NULL || myStats->getEffectActive(EFF_INVISIBLE) || wearingring || hasSteelHelm ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}

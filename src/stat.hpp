@@ -226,6 +226,7 @@ enum KilledBy {
 class Stat
 {
 	Sint32 PROFICIENCIES[NUMPROFICIENCIES];
+	Uint8 EFFECTS[NUMEFFECTS];
 public:
 	Monster type;
 	sex_t sex;
@@ -283,7 +284,35 @@ public:
 		PROFICIENCIES[skill] = value;
 	}
 	int getGoldWeight() const;
-	bool EFFECTS[NUMEFFECTS];
+	Uint8 getEffectActive(int effect) const
+	{
+		if ( effect >= 0 && effect < NUMEFFECTS )
+		{
+			return EFFECTS[effect];
+		}
+		return 0;
+	}
+	void clearEffect(int effect)
+	{
+		if ( effect >= 0 && effect < NUMEFFECTS )
+		{
+			EFFECTS[effect] = 0;
+		}
+	}
+	void setEffectActive(int effect, Uint8 effectStrength)
+	{
+		if ( effect >= 0 && effect < NUMEFFECTS )
+		{
+			EFFECTS[effect] = std::max(EFFECTS[effect], effectStrength); // strongest value remains
+		}
+	}
+	void setEffectValueUnsafe(int effect, Uint8 effectStrength)
+	{
+		if ( effect >= 0 && effect < NUMEFFECTS )
+		{
+			EFFECTS[effect] = effectStrength;
+		}
+	}
 	Sint32 EFFECTS_TIMERS[NUMEFFECTS];
 	bool defending;
 	Sint32& sneaking; // MISC_FLAGS[1]

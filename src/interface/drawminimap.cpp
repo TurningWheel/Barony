@@ -572,7 +572,7 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 
 							if ( (players[i] && players[i]->entity
 								&& players[i]->entity->creatureShadowTaggedThisUid == entity->getUID())
-								|| (entity->getStats() && entity->getStats()->EFFECTS[EFF_SHADOW_TAGGED]) )
+								|| (entity->getStats() && entity->getStats()->getEffectActive(EFF_SHADOW_TAGGED)) )
 							{
 								warningEffect = true;
 								int x = std::min<int>(std::max<int>(0, entity->x / 16), map.width - 1);
@@ -587,7 +587,7 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 						const int i = player;
 						if ( (players[i] && players[i]->entity
 							&& players[i]->entity->creatureShadowTaggedThisUid == entity->getUID())
-							|| (entity->getStats() && entity->getStats()->EFFECTS[EFF_SHADOW_TAGGED]) )
+							|| (entity->getStats() && entity->getStats()->getEffectActive(EFF_SHADOW_TAGGED)) )
 						{
 							warningEffect = true;
 							int x = std::min<int>(std::max<int>(0, entity->x / 16), map.width - 1);

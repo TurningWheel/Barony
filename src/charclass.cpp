@@ -2769,7 +2769,7 @@ void initClass(const int player)
 
 	if ( stats[player]->stat_appearance == 0 && stats[player]->playerRace == RACE_GOATMAN )
 	{
-		stats[player]->EFFECTS[EFF_ASLEEP] = true;
+		stats[player]->setEffectActive(EFF_ASLEEP, 1);
 		stats[player]->EFFECTS_TIMERS[EFF_ASLEEP] = -1;
 		if ( isLocalPlayer )
 		{
@@ -2781,7 +2781,7 @@ void initClass(const int player)
 	}
 	else
 	{
-		stats[player]->EFFECTS[EFF_ASLEEP] = false;
+		stats[player]->clearEffect(EFF_ASLEEP);
 		stats[player]->EFFECTS_TIMERS[EFF_ASLEEP] = 0;
 	}
 

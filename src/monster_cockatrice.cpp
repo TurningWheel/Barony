@@ -57,13 +57,13 @@ void initCockatrice(Entity* my, Stat* myStats)
 			// boss variants
 
 			// random effects
-			myStats->EFFECTS[EFF_LEVITATING] = true;
+			myStats->setEffectActive(EFF_LEVITATING, 1);
 			myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
 
 			// cockatrices don't sleep!
 			/*if ( rng.rand() % 4 == 0 )
 			{
-				myStats->EFFECTS[EFF_ASLEEP] = true;
+				myStats->setEffectActive(EFF_ASLEEP, 1);
 				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + rng.rand() % 3600;
 			}*/
 
@@ -330,7 +330,7 @@ void cockatriceMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	// set invisibility //TODO: use isInvisible()?
 	if ( multiplayer != CLIENT )
 	{
-		if ( myStats->EFFECTS[EFF_INVISIBLE] == true )
+		if ( myStats->getEffectActive(EFF_INVISIBLE) )
 		{
 			my->flags[INVISIBLE] = true;
 			my->flags[BLOCKSIGHT] = false;
@@ -383,7 +383,7 @@ void cockatriceMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		}
 
 		// sleeping
-		if ( myStats->EFFECTS[EFF_ASLEEP] )
+		if ( myStats->getEffectActive(EFF_ASLEEP) )
 		{
 			my->pitch = PI / 4;
 		}
@@ -396,7 +396,7 @@ void cockatriceMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		}
 
 		// cockatrices are always flying
-		myStats->EFFECTS[EFF_LEVITATING] = true;
+		myStats->setEffectActive(EFF_LEVITATING, 1);
 		myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
 	}
 
@@ -564,7 +564,7 @@ void cockatriceMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						if ( multiplayer != CLIENT )
 						{
 							// cockatrice can't be paralyzed, use EFF_STUNNED instead.
-							myStats->EFFECTS[EFF_STUNNED] = true;
+							myStats->setEffectActive(EFF_STUNNED, 1);
 							myStats->EFFECTS_TIMERS[EFF_STUNNED] = 20;
 						}
 						entity->skill[0] = 0;
@@ -649,7 +649,7 @@ void cockatriceMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						{
 							my->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_TO_SETPOINT;
 							// cockatrice can't be paralyzed, use EFF_STUNNED instead.
-							myStats->EFFECTS[EFF_STUNNED] = true;
+							myStats->setEffectActive(EFF_STUNNED, 1);
 							myStats->EFFECTS_TIMERS[EFF_STUNNED] = 50;
 						}
 					}

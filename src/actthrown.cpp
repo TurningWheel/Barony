@@ -865,7 +865,7 @@ void actThrown(Entity* my)
 				bool ignorePotion = false;
 				bool wasPotion = itemCategory(item) == POTION;
 				ItemType itemType = item->type;
-				bool wasConfused = (hitstats && hitstats->EFFECTS[EFF_CONFUSED]);
+				bool wasConfused = (hitstats && hitstats->getEffectActive(EFF_CONFUSED));
 				bool healingPotion = false;
 
 				if ( hitstats )
@@ -951,7 +951,7 @@ void actThrown(Entity* my)
 								break;
 							case POTION_BOOZE:
 								item_PotionBooze(item, hit.entity, parent);
-								if ( parentStats && parentStats->EFFECTS[EFF_DRUNK] )
+								if ( parentStats && parentStats->getEffectActive(EFF_DRUNK) )
 								{
 									steamAchievementEntity(parent, "BARONY_ACH_CHEERS");
 									if ( hit.entity->behavior == &actMonster && parent && parent->behavior == &actPlayer )
@@ -1387,7 +1387,7 @@ void actThrown(Entity* my)
 
 				bool doAlert = true;
 				// fix for confuse potion aggro'ing monsters on impact.
-				if ( !wasConfused && hitstats && hitstats->EFFECTS[EFF_CONFUSED] && hit.entity->behavior == &actMonster && parent )
+				if ( !wasConfused && hitstats && hitstats->getEffectActive(EFF_CONFUSED) && hit.entity->behavior == &actMonster && parent )
 				{
 					doAlert = false;
 					if ( hit.entity->monsterTarget == parent->getUID() )
@@ -1413,7 +1413,7 @@ void actThrown(Entity* my)
 					if ( disableAlertBlindStatus )
 					{
 						alertTarget = false;
-						if ( hitstats->EFFECTS[EFF_BLIND] )
+						if ( hitstats->getEffectActive(EFF_BLIND) )
 						{
 							hit.entity->monsterReleaseAttackTarget();
 						}
