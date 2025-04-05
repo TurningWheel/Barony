@@ -5513,6 +5513,14 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 					list_FreeAll(path);
 					free(path);
 				}
+				else
+				{
+					if ( !map.tiles[(y)*MAPLAYERS + (x)*MAPLAYERS * map.height] )
+					{
+						// underworld don't spawn over pit
+						continue;
+					}
+				}
 
 				Entity* keyItem = newEntity(8, 1, map.entities, nullptr); // item
 				keyItem->x = x * 16.0;
@@ -5664,6 +5672,14 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 						}
 						list_FreeAll(path);
 						free(path);
+					}
+					else
+					{
+						if ( !map.tiles[(y)*MAPLAYERS + (x)*MAPLAYERS * map.height] )
+						{
+							// underworld don't spawn over pit
+							continue;
+						}
 					}
 
 					if ( *cvar_treasure_key_force > 0 && (svFlags & SV_FLAG_CHEATS) )
