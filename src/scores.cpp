@@ -607,10 +607,13 @@ void loadScore(int scorenum)
 	saves all highscores to the scores data file
 
 -------------------------------------------------------------------------------*/
-
+static ConsoleVariable<bool> cvar_scores_json("/scores_json", false);
 void saveAllScoresJSON(const std::string& scoresfilename)
 {
-	return;
+	if ( !*cvar_scores_json )
+	{
+		return;
+	}
 	char path[PATH_MAX] = "";
 	completePath(path, scoresfilename.c_str(), outputdir);
 
@@ -1175,16 +1178,19 @@ void saveAllScores(const std::string& scoresfilename)
 
 	FileIO::close(fp);
 
-	/*if ( scoresfilename == "scores.dat" )
+	if ( *cvar_scores_json )
 	{
-		std::string scoresjson = "scores.json";
-		saveAllScoresJSON(scoresjson);
+		if ( scoresfilename == "scores.dat" )
+		{
+			std::string scoresjson = "scores.json";
+			saveAllScoresJSON(scoresjson);
+		}
+		else if ( scoresfilename == "scores_multiplayer.dat" )
+		{
+			std::string scoresjson = "scores_multiplayer.json";
+			saveAllScoresJSON(scoresjson);
+		}
 	}
-	else if ( scoresfilename == "scores_multiplayer.dat" )
-	{
-		std::string scoresjson = "scores_multiplayer.json";
-		saveAllScoresJSON(scoresjson);
-	}*/
 }
 
 bool deleteScore(bool multiplayer, int index)

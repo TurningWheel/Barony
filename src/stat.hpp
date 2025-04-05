@@ -301,7 +301,9 @@ public:
 	}
 	void setEffectActive(int effect, Uint8 effectStrength)
 	{
+#ifndef EDITOR
 		assert(effectStrength > 0);
+#endif
 		if ( effect >= 0 && effect < NUMEFFECTS )
 		{
 			EFFECTS[effect] = std::max(EFFECTS[effect], effectStrength); // strongest value remains
