@@ -2342,11 +2342,11 @@ namespace ConsoleCommands {
 			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
-		if (multiplayer != SINGLE)
+		/*if (multiplayer != SINGLE)
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, Language::get(299));
 			return;
-		}
+		}*/
 
 		if (argc < 2)
 		{
@@ -2359,9 +2359,25 @@ namespace ConsoleCommands {
 		}
 		else
 		{
-			for (int i = 0; i < 10; ++i)
+			if ( multiplayer == CLIENT )
 			{
-				players[clientnum]->entity->increaseSkill(skill);
+				for ( int i = 0; i < 10; ++i )
+				{
+					strcpy((char*)net_packet->data, "CSKL");
+					net_packet->data[4] = clientnum;
+					net_packet->data[5] = skill;
+					net_packet->address.host = net_server.host;
+					net_packet->address.port = net_server.port;
+					net_packet->len = 6;
+					sendPacketSafe(net_sock, -1, net_packet, 0);
+				}
+			}
+			else
+			{
+				for (int i = 0; i < 10; ++i)
+				{
+					players[clientnum]->entity->increaseSkill(skill);
+				}
 			}
 		}
 		});
