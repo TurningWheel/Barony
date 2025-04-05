@@ -626,6 +626,7 @@ void actParticleAestheticOrbit(Entity* my);
 void actParticleShadowTag(Entity* my);
 void actParticleFloorMagic(Entity* my);
 void actParticleVortex(Entity* my);
+void actParticleWave(Entity* my);
 
 void createParticleDropRising(Entity* parent, int sprite, double scale);
 void createParticleDot(Entity* parent);
@@ -646,6 +647,7 @@ void createParticleCharmMonster(Entity* parent);
 void createParticleShadowTag(Entity* parent, Uint32 casterUid, int duration);
 Entity* createFloorMagic(int sprite, real_t x, real_t y, real_t z, real_t dir, Uint32 lifetime);
 Entity* createVortexMagic(int sprite, real_t x, real_t y, real_t z, real_t dir, Uint32 lifetime);
+Entity* createParticleWave(int sprite, real_t x, real_t y, real_t z, real_t dir, Uint32 lifetime);
 
 void spawnMagicTower(Entity* parent, real_t x, real_t y, int spellID, Entity* autoHitTarget, bool castedSpell = false); // autoHitTarget is to immediate damage an entity, as all 3 tower magics hitting is unreliable
 bool magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks);

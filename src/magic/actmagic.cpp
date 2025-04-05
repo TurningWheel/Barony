@@ -8989,3 +8989,58 @@ void actParticleFloorMagic(Entity* my)
 		}
 	}
 }
+
+Entity* createParticleWave(int sprite, real_t x, real_t y, real_t z, real_t dir, Uint32 lifetime)
+{
+	Entity* entity = newEntity(sprite, 1, map.entities, nullptr); //Sprite entity.
+	entity->x = x;
+	entity->y = y;
+	entity->z = z;
+	//entity->ditheringDisabled = true;
+	entity->flags[SPRITE] = false;
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->flags[UNCLICKABLE] = true;
+	entity->flags[BRIGHT] = false;
+	entity->scalex = 1.0;
+	entity->scaley = 1.0;
+	entity->scalez = 1.0;
+	entity->behavior = &actParticleWave;
+	entity->yaw = 0.0;
+	entity->pitch = 0;
+	entity->roll = 0.0;
+	entity->skill[0] = lifetime;
+	entity->skill[1] = 12; // frames
+	entity->skill[3] = 0; // current frame
+	entity->skill[4] = entity->sprite; // start frame
+	entity->ditheringOverride = 4;
+	entity->lightBonus = vec4(*cvar_magic_fx_light_bonus + .25, 0.0,
+		*cvar_magic_fx_light_bonus + .25, 0.f);
+	if ( multiplayer != CLIENT )
+	{
+		entity_uids--;
+	}
+	entity->setUID(-3);
+	return entity;
+}
+
+void actParticleWave(Entity* my)
+{
+	if ( PARTICLE_LIFE < 0 )
+	{
+		list_RemoveNode(my->mynode);
+		return;
+	}
+
+	--PARTICLE_LIFE;
+
+	if ( ::ticks % 3 == 0 )
+	{
+		my->sprite = my->skill[4] + my->skill[3];
+		++my->skill[3];
+		if ( my->skill[3] >= my->skill[1] )
+		{
+			my->skill[3] = 0;
+		}
+	}
+}
