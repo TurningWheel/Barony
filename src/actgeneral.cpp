@@ -2212,6 +2212,10 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 						}
 						if ( multiplayer == SERVER )
 						{
+							if ( entity->behavior == &actPlayer && entity->skill[2] > 0 )
+							{
+								serverUpdateEffects(entity->skill[2]);
+							}
 							entity->serverUpdateEffectsForEntity(true);
 						}
 					}
@@ -2239,6 +2243,10 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 						}
 						if ( multiplayer == SERVER )
 						{
+							if ( entity->behavior == &actPlayer && entity->skill[2] > 0 )
+							{
+								serverUpdateEffects(entity->skill[2]);
+							}
 							entity->serverUpdateEffectsForEntity(true);
 						}
 					}
