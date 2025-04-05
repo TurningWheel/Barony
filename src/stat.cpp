@@ -1922,6 +1922,25 @@ real_t Stat::getEnsembleEffectBonus(Stat::EnsembleEffectsBonusType bonusType)
 				result = 20.0;
 			}
 		}
+		if ( bonusType == ENSEMBLE_LYRE_TIER_2 )
+		{
+			if ( effectStrength >= kBreakPointTier4 )
+			{
+				result = 5.0;
+			}
+			else if ( effectStrength >= kBreakPointTier3 )
+			{
+				result = 4.0;
+			}
+			else if ( effectStrength >= kBreakPointTier2 )
+			{
+				result = 3.0;
+			}
+			else if ( effectStrength >= kBreakPointTier1 )
+			{
+				result = 2.0;
+			}
+		}
 	}
 
 	return result;

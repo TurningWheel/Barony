@@ -424,7 +424,8 @@ public:
 		ENSEMBLE_HORN_TIER,
 		ENSEMBLE_LYRE_EFF_1,
 		ENSEMBLE_LYRE_EFF_2,
-		ENSEMBLE_LYRE_TIER
+		ENSEMBLE_LYRE_TIER,
+		ENSEMBLE_LYRE_TIER_2
 	};
 	real_t getEnsembleEffectBonus(EnsembleEffectsBonusType bonusType);
 	static int getMaxAttackCharge(Stat* myStats);

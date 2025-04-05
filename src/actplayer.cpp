@@ -7895,6 +7895,10 @@ void actPlayer(Entity* my)
                 }
                 else if (players[PLAYER_NUM]->isLocalPlayer()) {
                     ambientLight = true;
+					if ( stats[PLAYER_NUM]->getEffectActive(EFF_ENSEMBLE_LYRE) )
+					{
+						range_bonus += static_cast<int>(stats[PLAYER_NUM]->getEnsembleEffectBonus(Stat::ENSEMBLE_LYRE_TIER_2));
+					}
 					if ( stats[PLAYER_NUM]->sneaking ) {
 						light_type = "player_sneaking";
 						range_bonus += equipmentBonus;
@@ -7902,13 +7906,20 @@ void actPlayer(Entity* my)
 					else
 					{
 						light_type = "player_ambient";
+						if ( stats[PLAYER_NUM]->getEffectActive(EFF_ENSEMBLE_LYRE) )
+						{
+							light_type = "player_ambient_ensemble";
+						}
 					}
 
                 }
             }
             else if (players[PLAYER_NUM]->isLocalPlayer()) {
                 ambientLight = true;
-                
+				if ( stats[PLAYER_NUM]->getEffectActive(EFF_ENSEMBLE_LYRE) )
+				{
+					range_bonus += static_cast<int>(stats[PLAYER_NUM]->getEnsembleEffectBonus(Stat::ENSEMBLE_LYRE_TIER_2));
+				}
                 // carrying no light source
                 if (playerRace == RAT) {
 					if ( stats[PLAYER_NUM]->sneaking )
@@ -7956,6 +7967,10 @@ void actPlayer(Entity* my)
                 }
                 else {
                     light_type = "player_ambient";
+					if ( stats[PLAYER_NUM]->getEffectActive(EFF_ENSEMBLE_LYRE) )
+					{
+						light_type = "player_ambient_ensemble";
+					}
                 }
             }
         }
