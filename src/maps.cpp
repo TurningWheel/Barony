@@ -1403,11 +1403,35 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		loadSubRoomData(fullMapPath, &mapList);
 	}
 
+	static ConsoleVariable<std::string> cvar_treasure_room_spawn("/treasure_room_spawn", "");
+	static ConsoleVariable<std::string> cvar_treasure_room_spawn_subroom("/treasure_room_spawn_subroom", "");
+
 	// load treasure rooms
 	for ( int treasureRoomType = TreasureRoomTypes::TREASURE_TYPE_BRONZE;
 		treasureRoomType < TreasureRoomTypes::TREASURE_ROOM_MAX && numlevels > 1; ++treasureRoomType )
 	{
 		char prefix = '\0';
+
+		if ( (svFlags & SV_FLAG_CHEATS) && *cvar_treasure_room_spawn != "" )
+		{
+			if ( (*cvar_treasure_room_spawn).find("lockg") != std::string::npos )
+			{
+				treasureRoomType = TREASURE_TYPE_GOLD;
+			}
+			else if ( (*cvar_treasure_room_spawn).find("lockb") != std::string::npos )
+			{
+				treasureRoomType = TREASURE_TYPE_SILVER;
+			}
+			else if ( (*cvar_treasure_room_spawn).find("locki") != std::string::npos )
+			{
+				treasureRoomType = TREASURE_TYPE_IRON;
+			}
+			else if ( (*cvar_treasure_room_spawn).find("locks") != std::string::npos )
+			{
+				treasureRoomType = TREASURE_TYPE_BRONZE;
+			}
+		}
+
 		switch ( treasureRoomType )
 		{
 			case TREASURE_TYPE_BRONZE:
@@ -1432,8 +1456,21 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		for ( int treasureLevels = 0; treasureLevels < 100; ++treasureLevels )
 		{
 			char treasureRoomName[128] = "";
-			snprintf(treasureRoomName, sizeof(treasureRoomName), "%s_lock%c%02d", levelset, prefix, treasureLevels);
-
+			if ( (svFlags & SV_FLAG_CHEATS) && *cvar_treasure_room_spawn != "" )
+			{
+				if ( treasureLevels == 0 )
+				{
+					snprintf(treasureRoomName, sizeof(treasureRoomName), "%s", (*cvar_treasure_room_spawn).c_str());
+				}
+				else
+				{
+					break;
+				}
+			}
+			else
+			{
+				snprintf(treasureRoomName, sizeof(treasureRoomName), "%s_lock%c%02d", levelset, prefix, treasureLevels);
+			}
 			std::string fullMapPath = physfsFormatMapName(treasureRoomName);
 			if ( fullMapPath.empty() )
 			{
@@ -1450,6 +1487,11 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			// load subrooms if found
 			for ( char letter = 'a'; letter <= 'z'; letter++ )
 			{
+				if ( (svFlags & SV_FLAG_CHEATS) && *cvar_treasure_room_spawn_subroom != "" )
+				{
+					letter = (*cvar_treasure_room_spawn_subroom)[0];
+				}
+
 				char treasureSubRoomName[128] = "";
 				snprintf(treasureSubRoomName, sizeof(treasureSubRoomName), "%s%c", treasureRoomName, letter);
 
@@ -1467,10 +1509,20 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				{
 					++innerSubRooms.count;
 				}
+
+				if ( (svFlags & SV_FLAG_CHEATS) && *cvar_treasure_room_spawn_subroom != "" )
+				{
+					break;
+				}
 			}
 		}
 
 		treasureRooms[treasureRoomType].possibleRooms.resize(treasureRooms[treasureRoomType].count, true);
+
+		if ( (svFlags & SV_FLAG_CHEATS) && *cvar_treasure_room_spawn != "" )
+		{
+			break;
+		}
 	}
 
 	{
@@ -1496,6 +1548,13 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 					break;
 				case TREASURE_TYPE_IRON:
 					weight = 0;
+					if ( (svFlags & SV_FLAG_CHEATS) && *cvar_treasure_room_spawn != "" )
+					{
+						if ( (*cvar_treasure_room_spawn).find("locki") != std::string::npos )
+						{
+							weight = 1;
+						}
+					}
 					break;
 				case TREASURE_TYPE_GOLD:
 					weight = 15;
