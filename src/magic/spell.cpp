@@ -774,6 +774,7 @@ real_t getBonusFromCasterOfSpellElement(Entity* caster, Stat* casterStats, spell
 			percentMP = (100 - percentMP) / 10;
 			bonus += 0.5 * percentMP / 10.0;
 		}
+		bonus += (casterStats->getEnsembleEffectBonus(Stat::ENSEMBLE_LUTE_EFF_1)) / 100.0;
 		if ( casterStats->helmet )
 		{
 			if ( casterStats->helmet->type == HAT_MITER )

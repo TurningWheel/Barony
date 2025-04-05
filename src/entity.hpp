@@ -964,7 +964,7 @@ public:
 	 * @param guarantee: Causes serverUpdateEffectsForEntity() to use sendPacketSafe() rather than just sendPacket().
 	 * Returns true on successfully setting value.
 	 */
-	bool setEffect(int effect, bool value, int duration, bool updateClients, bool guarantee = true);
+	bool setEffect(int effect, std::variant<bool, Uint8> value, int duration, bool updateClients, bool guarantee = true);
 
 	/*
 	 * @param state: required to let the entity know if it should enter MONSTER_STATE_PATH, MONSTER_STATE_ATTACK, etc.

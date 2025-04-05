@@ -960,11 +960,18 @@ void serverUpdateEffects(int player)
 	net_packet->data[17] = 0;
 	net_packet->data[18] = 0;
 	net_packet->data[19] = 0;
+	std::vector<std::pair<Uint8, Uint8>> effectStrengths;
 	for (j = 0; j < NUMEFFECTS; j++)
 	{
-		if ( stats[player]->getEffectActive(j) )
+		Uint8 effectValue = stats[player]->getEffectActive(j);
+		if ( effectValue > 0 )
 		{
 			net_packet->data[4 + j / 8] |= power(2, j - (j / 8) * 8);
+			if ( effectValue > 1 )
+			{
+				// effect index, then value
+				effectStrengths.push_back(std::make_pair(static_cast<Uint8>(j & 0xFF), effectValue));
+			}
 		}
 		if ( stats[player]->EFFECTS_TIMERS[j] < TICKS_PER_SECOND * 5 && stats[player]->EFFECTS_TIMERS[j] > 0 )
 		{
@@ -972,9 +979,23 @@ void serverUpdateEffects(int player)
 			net_packet->data[12 + j / 8] |= power(2, j - (j / 8) * 8);
 		}
 	}
+	
+	net_packet->data[20] = (Uint8)effectStrengths.size();
+	net_packet->len = 21;
+	for ( auto& pair : effectStrengths )
+	{
+		if ( net_packet->len + 1 >= NET_PACKET_SIZE )
+		{
+			// no more room
+			break;
+		}
+		net_packet->data[net_packet->len + 0] = pair.first;
+		net_packet->data[net_packet->len + 1] = pair.second;
+		net_packet->len += 2;
+	}
+
 	net_packet->address.host = net_clients[player - 1].host;
 	net_packet->address.port = net_clients[player - 1].port;
-	net_packet->len = 20;
 	sendPacketSafe(net_sock, -1, net_packet, player - 1);
 }
 
@@ -2520,7 +2541,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		* Packet breakdown:
 		* [0][1][2][3]: "EFFE"
 		* [4][5][6][7]: Entity's UID.
-		* [8][9][10][11]: Entity's effects.
+		* [8][9][10][11][12][13][14][15]: Entity's effects.
 		*/
 
 		Uint32 uid = static_cast<int>(SDLNet_Read32(&net_packet->data[4]));
@@ -2556,6 +2577,23 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 				{
 					stats->clearEffect(i);
 				}
+			}
+
+			int numEffectStrengths = net_packet->data[16];
+			int index = 0;
+			while ( numEffectStrengths > 0 )
+			{
+				int currentIndex = 17 + index;
+				if ( currentIndex + 1 >= NET_PACKET_SIZE )
+				{
+					// too much data to read, abort
+					break;
+				}
+				int effectIndex = net_packet->data[currentIndex + 0];
+				Uint8 effectStrength = net_packet->data[currentIndex + 1];
+				stats->setEffectValueUnsafe(effectIndex, effectStrength);
+				index += 2;
+				--numEffectStrengths;
 			}
 		}
 	}},
@@ -3365,6 +3403,31 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		cameravars[clientnum].shakex += ((Sint8)(net_packet->data[4])) / 100.f;
 		cameravars[clientnum].shakey += ((Sint8)(net_packet->data[5]));
 	}},
+
+	// no mana flash
+	{ 'NOMP', []() {
+		messagePlayer(clientnum, MESSAGE_MISC, Language::get(375));
+		playSound(563, 64);
+		if ( players[clientnum]->magic.noManaProcessedOnTick == 0 )
+		{
+			players[clientnum]->magic.flashNoMana();
+		}
+		if ( net_packet->len >= 8 )
+		{
+			if ( stats[clientnum]->defending && stats[clientnum]->shield )
+			{
+				ItemType itemType = static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4]));
+				if ( stats[clientnum]->shield->type == itemType )
+				{
+					Input& input = Input::inputs[clientnum];
+					if ( input.binaryToggle("Defend") )
+					{
+						input.consumeBinaryToggle("Defend");
+					}
+				}
+			}
+		}
+	} },
 
 	// a torch burns out
 	{'TORC', [](){
@@ -4210,6 +4273,10 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 				{
 					stats[clientnum]->EFFECTS_TIMERS[c] = 1;
 				}
+				else if ( stats[clientnum]->EFFECTS_TIMERS[c] > 0 )
+				{
+					stats[clientnum]->EFFECTS_TIMERS[c] = 0;
+				}
 			}
 			else
 			{
@@ -4219,6 +4286,23 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 					stats[clientnum]->EFFECTS_TIMERS[c] = 0;
 				}
 			}
+		}
+
+		int numEffectStrengths = net_packet->data[20];
+		int index = 0;
+		while ( numEffectStrengths > 0 )
+		{
+			int currentIndex = 21 + index;
+			if ( currentIndex + 1 >= NET_PACKET_SIZE )
+			{
+				// too much data to read, abort
+				break;
+			}
+			int effectIndex = net_packet->data[currentIndex + 0];
+			Uint8 effectStrength = net_packet->data[currentIndex + 1];
+			stats[clientnum]->setEffectValueUnsafe(effectIndex, effectStrength);
+			index += 2;
+			--numEffectStrengths;
 		}
 	}},
 

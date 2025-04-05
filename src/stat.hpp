@@ -301,6 +301,7 @@ public:
 	}
 	void setEffectActive(int effect, Uint8 effectStrength)
 	{
+		assert(effectStrength > 0);
 		if ( effect >= 0 && effect < NUMEFFECTS )
 		{
 			EFFECTS[effect] = std::max(EFFECTS[effect], effectStrength); // strongest value remains
@@ -407,6 +408,26 @@ public:
 	Uint32 getLootingBagKey(const int player);
 	static bool emptyLootingBag(const int player, Uint32 key);
 	static int maxEquipmentBonusToSkill;
+	enum EnsembleEffectsBonusType
+	{
+		ENSEMBLE_FLUTE_EFF_1,
+		ENSEMBLE_FLUTE_EFF_2,
+		ENSEMBLE_FLUTE_TIER,
+		ENSEMBLE_LUTE_EFF_1,
+		ENSEMBLE_LUTE_EFF_2,
+		ENSEMBLE_LUTE_TIER,
+		ENSEMBLE_DRUM_EFF_1,
+		ENSEMBLE_DRUM_EFF_2,
+		ENSEMBLE_DRUM_TIER,
+		ENSEMBLE_HORN_EFF_1,
+		ENSEMBLE_HORN_EFF_2,
+		ENSEMBLE_HORN_TIER,
+		ENSEMBLE_LYRE_EFF_1,
+		ENSEMBLE_LYRE_EFF_2,
+		ENSEMBLE_LYRE_TIER
+	};
+	real_t getEnsembleEffectBonus(EnsembleEffectsBonusType bonusType);
+	static int getMaxAttackCharge(Stat* myStats);
 };
 extern Stat* stats[MAXPLAYERS];
 

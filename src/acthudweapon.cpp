@@ -700,7 +700,7 @@ void actHudWeapon(Entity* my)
 		&& !gamePaused
 		&& players[HUDWEAPON_PLAYERNUM]->entity->isMobile()
 		&& !(input.binaryToggle("Defend") && stats[HUDWEAPON_PLAYERNUM]->defending)
-		&& HUDWEAPON_OVERCHARGE < MAXCHARGE )
+		&& HUDWEAPON_OVERCHARGE < Stat::getMaxAttackCharge(stats[HUDWEAPON_PLAYERNUM]) )
 	{
 		swingweapon = true;
 	}
@@ -1840,7 +1840,7 @@ void actHudWeapon(Entity* my)
 				}
 				else
 				{
-					HUDWEAPON_CHARGE = std::min<real_t>(HUDWEAPON_CHARGE + 1, MAXCHARGE);
+					HUDWEAPON_CHARGE = std::min<real_t>(HUDWEAPON_CHARGE + 1, Stat::getMaxAttackCharge(stats[HUDWEAPON_PLAYERNUM]));
 				}
 			}
 		}
@@ -2139,7 +2139,7 @@ void actHudWeapon(Entity* my)
 				}
 				else
 				{
-					HUDWEAPON_CHARGE = std::min<real_t>(HUDWEAPON_CHARGE + 1, MAXCHARGE);
+					HUDWEAPON_CHARGE = std::min<real_t>(HUDWEAPON_CHARGE + 1, Stat::getMaxAttackCharge(stats[HUDWEAPON_PLAYERNUM]));
 				}
 			}
 		}
@@ -2339,7 +2339,7 @@ void actHudWeapon(Entity* my)
 				}
 				else
 				{
-					HUDWEAPON_CHARGE = std::min<real_t>(HUDWEAPON_CHARGE + 1, MAXCHARGE);
+					HUDWEAPON_CHARGE = std::min<real_t>(HUDWEAPON_CHARGE + 1, Stat::getMaxAttackCharge(stats[HUDWEAPON_PLAYERNUM]));
 				}
 			}
 		}
@@ -2647,7 +2647,7 @@ void actHudWeapon(Entity* my)
 				}
 				else
 				{
-					HUDWEAPON_CHARGE = std::min<real_t>(HUDWEAPON_CHARGE + 1, MAXCHARGE);
+					HUDWEAPON_CHARGE = std::min<real_t>(HUDWEAPON_CHARGE + 1, Stat::getMaxAttackCharge(stats[HUDWEAPON_PLAYERNUM]));
 				}
 			}
 		}
@@ -2994,7 +2994,7 @@ void actHudWeapon(Entity* my)
 				}
 				else
 				{
-					HUDWEAPON_CHARGE = std::min<real_t>(HUDWEAPON_CHARGE + 1, MAXCHARGE);
+					HUDWEAPON_CHARGE = std::min<real_t>(HUDWEAPON_CHARGE + 1, Stat::getMaxAttackCharge(stats[HUDWEAPON_PLAYERNUM]));
 				}
 			}
 		}
@@ -3051,7 +3051,7 @@ void actHudWeapon(Entity* my)
 		}
 	}
 
-	if ( HUDWEAPON_CHARGE == MAXCHARGE || castStrikeAnimation 
+	if ( HUDWEAPON_CHARGE == Stat::getMaxAttackCharge(stats[HUDWEAPON_PLAYERNUM]) || castStrikeAnimation
 		|| players[HUDWEAPON_PLAYERNUM]->entity->skill[9] == MONSTER_POSE_SPECIAL_WINDUP2
 		|| shakeRangedWeapon )
 	{

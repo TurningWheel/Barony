@@ -2342,6 +2342,7 @@ public:
 		std::map<Uint32, int> enemyRaisedBlockingAgainst;
 		bool allowedRaiseBlockingAgainstEntity(Entity& attacker);
 		int ensemblePlaying = -1;
+		bool ensembleRequireRecast = false;
 		static void ensembleMusicUpdateServer();
 		static void ensembleMusicUpdate();
 		Uint32 ensembleDataUpdate = 0;

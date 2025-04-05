@@ -1619,3 +1619,321 @@ bool Stat::emptyLootingBag(const int player, Uint32 key)
 	}
 	return false;
 }
+
+real_t Stat::getEnsembleEffectBonus(Stat::EnsembleEffectsBonusType bonusType)
+{
+	static const Sint32 kBreakPoint4 = 41;
+	static const Sint32 kBreakPoint3 = 20;
+	static const Sint32 kBreakPoint2 = 6;
+	static const Sint32 kBreakPoint1 = 1;
+
+	static const Sint32 kBreakPointTier4 = 40;
+	static const Sint32 kBreakPointTier3 = 20;
+	static const Sint32 kBreakPointTier2 = 5;
+	static const Sint32 kBreakPointTier1 = 0;
+
+	real_t result = 0.0;
+	if ( Uint8 effectStrength = getEffectActive(EFF_ENSEMBLE_FLUTE) )
+	{
+		if ( effectStrength > 0 )
+		{
+			--effectStrength; // offset by 1.
+		}
+		if ( bonusType == ENSEMBLE_FLUTE_EFF_1 )
+		{
+			Sint32 total = 1; // bonus at effect strength 0
+			static const Sint32 mult4 = 1;
+			static const Sint32 mult3 = 1;
+			static const Sint32 mult2 = 1;
+			static const Sint32 mult1 = 1;
+			if ( effectStrength >= kBreakPoint4 )
+			{
+				total += mult4 * (1 + (effectStrength - kBreakPoint4) / 4);
+				effectStrength -= (effectStrength - kBreakPoint4 + 1);
+			}
+			if ( effectStrength >= kBreakPoint3 )
+			{
+				total += mult3 * (1 + (effectStrength - kBreakPoint3) / 3);
+				effectStrength -= (effectStrength - kBreakPoint3 + 1);
+			}
+			if ( effectStrength >= kBreakPoint2 )
+			{
+				total += mult2 * (1 + (effectStrength - kBreakPoint2) / 2);
+				effectStrength -= (effectStrength - kBreakPoint2 + 1);
+			}
+			if ( effectStrength >= kBreakPoint1 )
+			{
+				total += mult1 * (1 + (effectStrength - kBreakPoint1) / 1);
+				effectStrength -= (effectStrength - kBreakPoint1 + 1);
+			}
+			result += total;
+		}
+		if ( bonusType == ENSEMBLE_FLUTE_EFF_2 )
+		{
+		}
+		if ( bonusType == ENSEMBLE_FLUTE_TIER )
+		{
+			if ( effectStrength >= kBreakPointTier4 )
+			{
+				result = 50.0;
+			}
+			else if ( effectStrength >= kBreakPointTier3 )
+			{
+				result = 40.0;
+			}
+			else if ( effectStrength >= kBreakPointTier2 )
+			{
+				result = 30.0;
+			}
+			else if(effectStrength >= kBreakPointTier1 )
+			{
+				result = 20.0;
+			}
+		}
+	}
+	if ( Uint8 effectStrength = getEffectActive(EFF_ENSEMBLE_LUTE) )
+	{
+		if ( effectStrength > 0 )
+		{
+			--effectStrength; // offset by 1.
+		}
+		if ( bonusType == ENSEMBLE_LUTE_EFF_1 )
+		{
+			Sint32 total = 3; // bonus at effect strength 0
+			static const Sint32 mult4 = 3;
+			static const Sint32 mult3 = 3;
+			static const Sint32 mult2 = 3;
+			static const Sint32 mult1 = 3;
+			if ( effectStrength >= kBreakPoint4 )
+			{
+				total += mult4 * (1 + (effectStrength - kBreakPoint4) / 4);
+				effectStrength -= (effectStrength - kBreakPoint4 + 1);
+			}
+			if ( effectStrength >= kBreakPoint3 )
+			{
+				total += mult3 * (1 + (effectStrength - kBreakPoint3) / 3);
+				effectStrength -= (effectStrength - kBreakPoint3 + 1);
+			}
+			if ( effectStrength >= kBreakPoint2 )
+			{
+				total += mult2 * (1 + (effectStrength - kBreakPoint2) / 2);
+				effectStrength -= (effectStrength - kBreakPoint2 + 1);
+			}
+			if ( effectStrength >= kBreakPoint1 )
+			{
+				total += mult1 * (1 + (effectStrength - kBreakPoint1) / 1);
+				effectStrength -= (effectStrength - kBreakPoint1 + 1);
+			}
+			result += total;
+		}
+		if ( bonusType == ENSEMBLE_LUTE_EFF_2 )
+		{
+		}
+		if ( bonusType == ENSEMBLE_LUTE_TIER )
+		{
+			if ( effectStrength >= kBreakPointTier4 )
+			{
+				result = 18.0;
+			}
+			else if ( effectStrength >= kBreakPointTier3 )
+			{
+				result = 15.0;
+			}
+			else if ( effectStrength >= kBreakPointTier2 )
+			{
+				result = 12.0;
+			}
+			else if ( effectStrength >= kBreakPointTier1 )
+			{
+				result = 10.0;
+			}
+		}
+	}
+	if ( Uint8 effectStrength = getEffectActive(EFF_ENSEMBLE_DRUM) )
+	{
+		if ( effectStrength > 0 )
+		{
+			--effectStrength; // offset by 1.
+		}
+		if ( bonusType == ENSEMBLE_DRUM_EFF_1 )
+		{
+			Sint32 total = 1; // bonus at effect strength 0
+			static const Sint32 mult4 = 1;
+			static const Sint32 mult3 = 1;
+			static const Sint32 mult2 = 1;
+			static const Sint32 mult1 = 1;
+			if ( effectStrength >= kBreakPoint4 )
+			{
+				total += mult4 * (1 + (effectStrength - kBreakPoint4) / 4);
+				effectStrength -= (effectStrength - kBreakPoint4 + 1);
+			}
+			if ( effectStrength >= kBreakPoint3 )
+			{
+				total += mult3 * (1 + (effectStrength - kBreakPoint3) / 3);
+				effectStrength -= (effectStrength - kBreakPoint3 + 1);
+			}
+			if ( effectStrength >= kBreakPoint2 )
+			{
+				total += mult2 * (1 + (effectStrength - kBreakPoint2) / 2);
+				effectStrength -= (effectStrength - kBreakPoint2 + 1);
+			}
+			if ( effectStrength >= kBreakPoint1 )
+			{
+				total += mult1 * (1 + (effectStrength - kBreakPoint1) / 1);
+				effectStrength -= (effectStrength - kBreakPoint1 + 1);
+			}
+			result += total;
+		}
+		if ( bonusType == ENSEMBLE_DRUM_EFF_2 )
+		{
+		}
+		if ( bonusType == ENSEMBLE_DRUM_TIER )
+		{
+			if ( effectStrength >= kBreakPointTier4 )
+			{
+				result = 25.0;
+			}
+			else if ( effectStrength >= kBreakPointTier3 )
+			{
+				result = 20.0;
+			}
+			else if ( effectStrength >= kBreakPointTier2 )
+			{
+				result = 15.0;
+			}
+			else if ( effectStrength >= kBreakPointTier1 )
+			{
+				result = 10.0;
+			}
+		}
+	}
+	if ( Uint8 effectStrength = getEffectActive(EFF_ENSEMBLE_HORN) )
+	{
+		if ( effectStrength > 0 )
+		{
+			--effectStrength; // offset by 1.
+		}
+		if ( bonusType == ENSEMBLE_HORN_EFF_1 )
+		{
+			Sint32 total = 1; // bonus at effect strength 0
+			static const Sint32 mult4 = 1;
+			static const Sint32 mult3 = 1;
+			static const Sint32 mult2 = 1;
+			static const Sint32 mult1 = 1;
+			if ( effectStrength >= kBreakPoint4 )
+			{
+				total += mult4 * (1 + (effectStrength - kBreakPoint4) / 4);
+				effectStrength -= (effectStrength - kBreakPoint4 + 1);
+			}
+			if ( effectStrength >= kBreakPoint3 )
+			{
+				total += mult3 * (1 + (effectStrength - kBreakPoint3) / 3);
+				effectStrength -= (effectStrength - kBreakPoint3 + 1);
+			}
+			if ( effectStrength >= kBreakPoint2 )
+			{
+				total += mult2 * (1 + (effectStrength - kBreakPoint2) / 2);
+				effectStrength -= (effectStrength - kBreakPoint2 + 1);
+			}
+			if ( effectStrength >= kBreakPoint1 )
+			{
+				total += mult1 * (1 + (effectStrength - kBreakPoint1) / 1);
+				effectStrength -= (effectStrength - kBreakPoint1 + 1);
+			}
+			result += total;
+		}
+		if ( bonusType == ENSEMBLE_HORN_EFF_2 )
+		{
+		}
+		if ( bonusType == ENSEMBLE_HORN_TIER )
+		{
+			if ( effectStrength >= kBreakPointTier4 )
+			{
+				result = 10.0;
+			}
+			else if ( effectStrength >= kBreakPointTier3 )
+			{
+				result = 8.0;
+			}
+			else if ( effectStrength >= kBreakPointTier2 )
+			{
+				result = 5.0;
+			}
+			else if ( effectStrength >= kBreakPointTier1 )
+			{
+				result = 2.0;
+			}
+		}
+	}
+	if ( Uint8 effectStrength = getEffectActive(EFF_ENSEMBLE_LYRE) )
+	{
+		if ( effectStrength > 0 )
+		{
+			--effectStrength; // offset by 1.
+		}
+		if ( bonusType == ENSEMBLE_LYRE_EFF_1 )
+		{
+			Sint32 total = 1; // bonus at effect strength 0
+			static const Sint32 mult4 = 1;
+			static const Sint32 mult3 = 1;
+			static const Sint32 mult2 = 1;
+			static const Sint32 mult1 = 1;
+			if ( effectStrength >= kBreakPoint4 )
+			{
+				total += mult4 * (1 + (effectStrength - kBreakPoint4) / 4);
+				effectStrength -= (effectStrength - kBreakPoint4 + 1);
+			}
+			if ( effectStrength >= kBreakPoint3 )
+			{
+				total += mult3 * (1 + (effectStrength - kBreakPoint3) / 3);
+				effectStrength -= (effectStrength - kBreakPoint3 + 1);
+			}
+			if ( effectStrength >= kBreakPoint2 )
+			{
+				total += mult2 * (1 + (effectStrength - kBreakPoint2) / 2);
+				effectStrength -= (effectStrength - kBreakPoint2 + 1);
+			}
+			if ( effectStrength >= kBreakPoint1 )
+			{
+				total += mult1 * (1 + (effectStrength - kBreakPoint1) / 1);
+				effectStrength -= (effectStrength - kBreakPoint1 + 1);
+			}
+			result += total;
+		}
+		if ( bonusType == ENSEMBLE_LYRE_EFF_2 )
+		{
+		}
+		if ( bonusType == ENSEMBLE_LYRE_TIER )
+		{
+			if ( effectStrength >= kBreakPointTier4 )
+			{
+				result = 35.0;
+			}
+			else if ( effectStrength >= kBreakPointTier3 )
+			{
+				result = 30.0;
+			}
+			else if ( effectStrength >= kBreakPointTier2 )
+			{
+				result = 25.0;
+			}
+			else if ( effectStrength >= kBreakPointTier1 )
+			{
+				result = 20.0;
+			}
+		}
+	}
+
+	return result;
+}
+
+int Stat::getMaxAttackCharge(Stat* myStats)
+{
+	int charge = MAXCHARGE;
+	if ( myStats && myStats->getEffectActive(EFF_ENSEMBLE_FLUTE) )
+	{
+		real_t mult = (100.0 - myStats->getEnsembleEffectBonus(ENSEMBLE_FLUTE_TIER)) / 100.0;
+		charge *= mult;
+	}
+	return std::max(5, charge); // failsafe min 5
+}

@@ -4402,9 +4402,18 @@ void Entity::handleEffects(Stat* myStats)
 		}
 	}
 
+	int previousEnsemblePlaying = -1;
 	if ( behavior == &actPlayer )
 	{
+		previousEnsemblePlaying = players[player]->mechanics.ensemblePlaying;
    		players[player]->mechanics.ensemblePlaying = -1;
+		if ( !myStats->defending )
+		{
+			if ( players[player]->mechanics.ensembleRequireRecast )
+			{
+				players[player]->mechanics.ensembleRequireRecast = false;
+			}
+		}
 	}
 
 	if ( myStats->shield != NULL )
@@ -4443,52 +4452,107 @@ void Entity::handleEffects(Stat* myStats)
 					Uint32 defendTime = ::ticks - players[player]->mechanics.defendTicks;
 					if ( defendTime >= chargeTimeInit )
 					{
+						Sint32 CHR = statGetCHR(myStats, this);
 						int chargeTime = 4 * TICKS_PER_SECOND; // 4 sec base, -0.1s per CHR
 						chargeTime = std::max(TICKS_PER_SECOND / 2, 
-							chargeTime - (TICKS_PER_SECOND / 10) * statGetCHR(myStats, this));
+							chargeTime - (TICKS_PER_SECOND / 10) * CHR);
 
 						int effect = -1;
+						int mpcost = 2;
 						switch ( myStats->shield->type )
 						{
 						case INSTRUMENT_DRUM:
 							effect = EFF_ENSEMBLE_DRUM;
+							mpcost = 4;
 							break;
 						case INSTRUMENT_FLUTE:
 							effect = EFF_ENSEMBLE_FLUTE;
+							mpcost = 3;
 							break;
 						case INSTRUMENT_LUTE:
 							effect = EFF_ENSEMBLE_LUTE;
+							mpcost = 4;
 							break;
 						case INSTRUMENT_LYRE:
 							effect = EFF_ENSEMBLE_LYRE;
+							mpcost = 2;
 							break;
 						case INSTRUMENT_HORN:
 							effect = EFF_ENSEMBLE_HORN;
+							mpcost = 6;
 							break;
 						default:
 							break;
 						}
-						players[player]->mechanics.ensemblePlaying = effect;
 
- 						int duration = 1;
-
-						if ( !myStats->getEffectActive(effect) )
+						bool failedCast = false;
+						if ( players[player]->mechanics.ensembleRequireRecast )
 						{
-							createEnsembleHUDParticleCircling(this);
-							if ( behavior == &actPlayer && !players[skill[2]]->isLocalPlayer() )
+							if ( (effect >= 0 && previousEnsemblePlaying >= 0 && previousEnsemblePlaying != effect) )
 							{
-								serverSpawnMiscParticles(this, PARTICLE_EFFECT_ENSEMBLE_SELF_CAST, 0);
+								failedCast = true;
+							}
+							effect = -1;
+						}
+						else if ( defendTime == chargeTimeInit || (effect >= 0 && previousEnsemblePlaying >= 0 && previousEnsemblePlaying != effect) )
+						{
+							// initial cast, or swapping equipped shield
+							if ( !this->safeConsumeMP(mpcost) )
+							{
+								effect = -1;
+								players[player]->mechanics.ensembleRequireRecast = true;
+								failedCast = true;
+							}
+						}
+						else if ( defendTime >= (chargeTime + chargeTimeInit)
+							&& ((defendTime - (chargeTime + chargeTimeInit)) % chargeTime == 0) )
+						{
+							if ( !this->safeConsumeMP(mpcost) )
+							{
+								effect = -1;
+								players[player]->mechanics.ensembleRequireRecast = true;
+								failedCast = true;
 							}
 						}
 
-						bool guarantee = (ticks % (TICKS_PER_SECOND / 2) == 0);
-						bool doParticle = false;
-						if ( defendTime >= (chargeTime + chargeTimeInit) )
+						if ( failedCast )
 						{
-							if ( (defendTime - (chargeTime + chargeTimeInit)) % chargeTime == 0 )
+							if ( players[player]->isLocalPlayer() )
 							{
-								int mpcost = 2;
-								if ( this->safeConsumeMP(mpcost) )
+								messagePlayer(player, MESSAGE_MISC, Language::get(375));
+								playSound(563, 64);
+								if ( players[player]->magic.noManaProcessedOnTick == 0 )
+								{
+									players[player]->magic.flashNoMana();
+								}
+
+								Input& input = Input::inputs[clientnum];
+								if ( input.binaryToggle("Defend") )
+								{
+									input.consumeBinaryToggle("Defend");
+								}
+							}
+							else if ( multiplayer == SERVER && !players[player]->isLocalPlayer() )
+							{
+								strcpy((char*)net_packet->data, "NOMP");
+								SDLNet_Write32((Uint32)myStats->shield->type, &net_packet->data[4]); // force stop defending with shield
+								net_packet->address.host = net_clients[player - 1].host;
+								net_packet->address.port = net_clients[player - 1].port;
+								net_packet->len = 8;
+								sendPacketSafe(net_sock, -1, net_packet, player - 1);
+							}
+						}
+						else if ( effect >= 0 )
+						{
+							players[player]->mechanics.ensemblePlaying = effect;
+
+							int duration = 1;
+
+							bool guarantee = (ticks % (TICKS_PER_SECOND / 2) == 0);
+							bool doParticle = false;
+							if ( defendTime >= (chargeTime + chargeTimeInit) )
+							{
+								if ( (defendTime - (chargeTime + chargeTimeInit)) % chargeTime == 0 )
 								{
 									int skillLVL = std::max(0, myStats->getModifiedProficiency(PRO_APPRAISAL));
 									duration += skillLVL * (TICKS_PER_SECOND / 25);
@@ -4501,61 +4565,103 @@ void Entity::handleEffects(Stat* myStats)
 									}
 								}
 							}
-						}
 
-						for ( node_t* node = map.entities->first; node; node = node->next )
-						{
-							if ( Entity* entity = (Entity*)(node->element) )
+							if ( !myStats->getEffectActive(effect) )
 							{
-								if ( entity->behavior != &actPlayer && entity->behavior != &actMonster )
+								createEnsembleHUDParticleCircling(this);
+								if ( behavior == &actPlayer && !players[skill[2]]->isLocalPlayer() )
 								{
-									continue;
+									serverSpawnMiscParticles(this, PARTICLE_EFFECT_ENSEMBLE_SELF_CAST, 0);
 								}
-								if ( Stat* entitystats = entity->getStats() )
-								{
-									if ( entity == this || (entityDist(entity, this) <= HEAL_RADIUS && entity->checkFriend(this)) )
-									{
-										bool wasActive = entitystats->getEffectActive(effect) > 0;
+							}
 
-										if ( entity->behavior == &actPlayer )
+							Uint8 effectStrength = std::max(1, std::min(255, CHR + 1));
+							for ( node_t* node = map.entities->first; node && effect >= 0; node = node->next )
+							{
+								if ( Entity* entity = (Entity*)(node->element) )
+								{
+									if ( entity->behavior != &actPlayer && entity->behavior != &actMonster )
+									{
+										continue;
+									}
+									if ( Stat* entitystats = entity->getStats() )
+									{
+										if ( entity == this || (entityDist(entity, this) <= HEAL_RADIUS && entity->checkFriend(this)) )
 										{
-											if ( guarantee || !wasActive )
+											bool wasActive = entitystats->getEffectActive(effect) > 0;
+											bool effectIncrease = effectStrength > entitystats->getEffectActive(effect);
+
+											int durationTotal = entitystats->EFFECTS_TIMERS[effect] + duration;
+											static ConsoleVariable<int> cvar_ensemble_max_length("/ensemble_max_length", (TICKS_PER_SECOND * 60 * 5));
+											int durationMax = !(svFlags & SV_FLAG_CHEATS) ? (TICKS_PER_SECOND * 60 * 5) : *cvar_ensemble_max_length;
+
+											if ( entity == this && durationTotal > durationMax + 5 )
 											{
-												entity->setEffect(effect, true, std::max(TICKS_PER_SECOND, entitystats->EFFECTS_TIMERS[effect] + duration), false);
+												if ( entity->behavior == &actPlayer )
+												{
+													messagePlayer(skill[2], MESSAGE_INTERACTION, Language::get(6431));
+												}
+											}
+											durationTotal = std::min(durationTotal, durationMax);
+
+											if ( duration > 1 )
+											{
+												if ( entity == this && (svFlags & SV_FLAG_CHEATS) )
+												{
+													static ConsoleVariable<bool> cvar_ensemble_debug_length("/ensemble_debug_length", false);
+													if ( *cvar_ensemble_debug_length )
+													{
+														if ( entity->behavior == &actPlayer )
+														{
+															Uint32 sec = (durationTotal / TICKS_PER_SECOND) % 60;
+															Uint32 min = ((durationTotal / TICKS_PER_SECOND) / 60) % 60;
+															Uint32 hour = ((durationTotal / TICKS_PER_SECOND) / 60) / 60;
+															messagePlayer(skill[2], MESSAGE_INTERACTION, "Song Duration: %02dm:%02ds", min, sec);
+														}
+													}
+												}
+											}
+
+											if ( entity->behavior == &actPlayer )
+											{
+												if ( guarantee || !wasActive || effectIncrease )
+												{
+													entity->setEffect(effect, effectStrength, std::max(TICKS_PER_SECOND, durationTotal), false);
+												}
+												else
+												{
+													// don't update clients all the time with setEffect
+													entitystats->setEffectActive(effect, effectStrength);
+													entitystats->EFFECTS_TIMERS[effect] = durationTotal;
+												}
 											}
 											else
 											{
-												// don't update clients all the time with setEffect
-												entitystats->setEffectActive(effect, 1);
-												entitystats->EFFECTS_TIMERS[effect] = entitystats->EFFECTS_TIMERS[effect] + duration;
+												entity->setEffect(effect, effectStrength, std::max(TICKS_PER_SECOND, durationTotal), false);
 											}
-										}
-										else
-										{
-											entity->setEffect(effect, true, std::max(TICKS_PER_SECOND, entitystats->EFFECTS_TIMERS[effect] + duration), false);
-										}
 
-										if ( entitystats->getEffectActive(effect) )
-										{
-											if ( !wasActive )
+											if ( entitystats->getEffectActive(effect) )
 											{
-												//spawnMagicEffectParticles(entity->x, entity->y, entity->z, 169);
-												if ( entity->behavior == &actPlayer )
+												if ( !wasActive )
 												{
-													playSoundEntity(entity, 168, 64);
+													//spawnMagicEffectParticles(entity->x, entity->y, entity->z, 169);
+													if ( entity->behavior == &actPlayer )
+													{
+														playSoundEntity(entity, 168, 64);
+													}
+													//if ( entity != this )
+													{
+														createEnsembleTargetParticleCircling(entity);
+														serverSpawnMiscParticles(entity, PARTICLE_EFFECT_ENSEMBLE_OTHER_CAST, 0);
+													}
 												}
-												//if ( entity != this )
+												else if ( doParticle )
 												{
-													createEnsembleTargetParticleCircling(entity);
-													serverSpawnMiscParticles(entity, PARTICLE_EFFECT_ENSEMBLE_OTHER_CAST, 0);
-												}
-											}
-											else if ( doParticle )
-											{
-												//if ( entity != this )
-												{
-													createEnsembleTargetParticleCircling(entity);
-													serverSpawnMiscParticles(entity, PARTICLE_EFFECT_ENSEMBLE_OTHER_CAST, 0);
+													//if ( entity != this )
+													{
+														createEnsembleTargetParticleCircling(entity);
+														serverSpawnMiscParticles(entity, PARTICLE_EFFECT_ENSEMBLE_OTHER_CAST, 0);
+													}
 												}
 											}
 										}
@@ -6030,6 +6136,9 @@ Sint32 statGetSTR(Stat* entitystats, Entity* my)
 				break;
 		}
 	}
+
+	STR += (Sint32)entitystats->getEnsembleEffectBonus(Stat::ENSEMBLE_DRUM_EFF_1);
+
 	return STR;
 }
 
@@ -6182,6 +6291,8 @@ Sint32 statGetDEX(Stat* entitystats, Entity* my)
 			DEX--;
 		}
 	}
+
+	DEX += (Sint32)entitystats->getEnsembleEffectBonus(Stat::ENSEMBLE_FLUTE_EFF_1);
 
 	if ( entitystats->getEffectActive(EFF_WEBBED) && !entitystats->getEffectActive(EFF_SLOW) )
 	{
@@ -6377,6 +6488,9 @@ Sint32 statGetCON(Stat* entitystats, Entity* my)
 	{
 		CON += std::max(4, static_cast<int>(CON * 0.25));
 	}
+
+	CON += (Sint32)entitystats->getEnsembleEffectBonus(Stat::ENSEMBLE_HORN_EFF_1);
+
 	if ( entitystats->getEffectActive(EFF_CON_BONUS) )
 	{
 		CON += 3;
@@ -6628,6 +6742,8 @@ Sint32 statGetPER(Stat* entitystats, Entity* my)
 			PER += (cursedItemIsBuff ? abs(entitystats->helmet->beatitude) : entitystats->helmet->beatitude);
 		}
 	}
+
+	PER += (Sint32)entitystats->getEnsembleEffectBonus(Stat::ENSEMBLE_LYRE_EFF_1);
 
 	if ( !(svFlags & SV_FLAG_HUNGER) )
 	{
@@ -7983,7 +8099,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 				if ( itemCategory(myStats->weapon) == THROWN )
 				{
 					real_t speed = 5.f;
-					real_t normalisedCharge = (charge * 1.5 / MAXCHARGE); // 0-1.5
+					real_t normalisedCharge = (charge * 1.5 / Stat::getMaxAttackCharge(myStats)); // 0-1.5
 					if ( myStats->weapon->type == BOOMERANG )
 					{
 						speed = 3.75 + normalisedCharge; //3.75
@@ -8053,7 +8169,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 				else if ( itemIsThrowableTinkerTool(myStats->weapon) )
 				{
 					real_t normalisedCharge = (charge * 0.5);
-					normalisedCharge /= MAXCHARGE;
+					normalisedCharge /= Stat::getMaxAttackCharge(myStats);
 					entity->sizex = 4;
 					entity->sizey = 4;
 					if ( myStats->weapon->type >= TOOL_BOMB && myStats->weapon->type <= TOOL_TELEPORT_BOMB )
@@ -8083,7 +8199,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					real_t speed = 5.f;
 					if ( itemCategory(myStats->weapon) == GEM )
 					{
-						real_t normalisedCharge = (charge * 1.5 / MAXCHARGE); // 0-1.5
+						real_t normalisedCharge = (charge * 1.5 / Stat::getMaxAttackCharge(myStats)); // 0-1.5
 						speed = 3.f + normalisedCharge;
 						if ( behavior == &actPlayer )
 						{
@@ -8156,7 +8272,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 				{
 					miss = false;
 				}
-				else if ( bat || (hitstats && hitstats->getEffectActive(EFF_AGILITY)) )
+				else if ( bat || (hitstats && (hitstats->getEffectActive(EFF_AGILITY) || hitstats->getEffectActive(EFF_ENSEMBLE_LUTE))) )
 				{
 					Sint32 previousMonsterState = hit.entity->monsterState;
 					bool backstab = false;
@@ -8195,12 +8311,31 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 					else
 					{
-						int baseChance = bat ? 6 : 3;
-						if ( flanking )
+						int baseChance = 0;
+						if ( bat )
 						{
-							baseChance = std::max(1, baseChance - 2);
+							baseChance = std::max(baseChance, 60);
 						}
-						miss = local_rng.rand() % 10 < baseChance;
+						if ( hitstats && hitstats->getEffectActive(EFF_AGILITY) )
+						{
+							baseChance = std::max(baseChance, 30);
+						}
+						if ( hitstats && hitstats->getEnsembleEffectBonus(Stat::ENSEMBLE_LUTE_TIER) > 0.001 )
+						{
+							baseChance = std::max(baseChance, static_cast<int>(hitstats->getEnsembleEffectBonus(Stat::ENSEMBLE_LUTE_TIER)));
+						}
+						if ( baseChance <= 0 )
+						{
+							miss = false;
+						}
+						else
+						{
+							if ( flanking )
+							{
+								baseChance = std::max(1, baseChance - 20);
+							}
+							miss = local_rng.rand() % 100 < baseChance;
+						}
 					}
 
 					if ( myStats->weapon )
@@ -8719,7 +8854,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 				else
 				{
 					damage += axe;
-					if ( charge >= MAXCHARGE / 2 )
+					if ( charge >= Stat::getMaxAttackCharge(myStats) / 2 )
 					{
 						damage *= 2;
 					}
@@ -9099,9 +9234,14 @@ void Entity::attack(int pose, int charge, Entity* target)
 						thornsEffect = -2 * (1 + abs(hitstats->mask->beatitude));
 					}
 				}
+				if ( hitstats->getEffectActive(EFF_ENSEMBLE_HORN) )
+				{
+					thornsEffect += static_cast<int>(hitstats->getEnsembleEffectBonus(Stat::ENSEMBLE_HORN_TIER));
+				}
 
 				bool dyrnwynSmite = false;
 				bool gugnirProc = false;
+				bool armorPierceProc = false;
 
 				if ( weaponskill == PRO_SWORD && myStats->weapon && myStats->weapon->type == ARTIFACT_SWORD && !shapeshifted )
 				{
@@ -9177,6 +9317,18 @@ void Entity::attack(int pose, int charge, Entity* target)
 						{
 							enemyAC *= amount;
 							gugnirProc = true;
+						}
+					}
+					else if ( myStats->getEffectActive(EFF_ENSEMBLE_DRUM) )
+					{
+						real_t amount = (100.0 - myStats->getEnsembleEffectBonus(Stat::ENSEMBLE_DRUM_TIER)) / 100.0;
+						if ( (charge >= Stat::getMaxAttackCharge(myStats) - 3) )
+						{
+							if ( /*(local_rng.rand() % 100 < 25)*/true )
+							{
+								enemyAC *= amount;
+								armorPierceProc = true;
+							}
 						}
 					}
 					int numBlessings = 0;
@@ -9342,7 +9494,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 
 					int olddamage = damage;
-					const int chargeMult = std::max(charge, MAXCHARGE / 2) / ((double)(MAXCHARGE / 2));
+					const int chargeMult = std::min(2, std::max(charge, static_cast<int>((Stat::getMaxAttackCharge(myStats) / 2) / ((double)(Stat::getMaxAttackCharge(myStats) / 2)))));
 					damage *= chargeMult;
 					bool parashuProc = false;
 					if ( myStats->weapon && !shapeshifted )
@@ -10088,7 +10240,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 
 					// player weapon skills
-					if ( damage > 0 && weaponskill == PRO_UNARMED && behavior == &actPlayer && (charge >= MAXCHARGE - 3) )
+					if ( damage > 0 && weaponskill == PRO_UNARMED && behavior == &actPlayer && (charge >= Stat::getMaxAttackCharge(myStats) - 3) )
 					{
 						int chance = 0;
 						bool inflictParalyze = false;
@@ -10200,7 +10352,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							knockbackInflicted = true;
 						}
 					}
-					else if ( damage > 0 && behavior == &actPlayer && weaponskill >= PRO_SWORD && weaponskill <= PRO_POLEARM && (charge >= MAXCHARGE - 3) )
+					else if ( damage > 0 && behavior == &actPlayer && weaponskill >= PRO_SWORD && weaponskill <= PRO_POLEARM && (charge >= Stat::getMaxAttackCharge(myStats) - 3) )
 					{
 						// special weapon effects.
 						int capstoneDamage = 5;
@@ -10293,7 +10445,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 									slowStatusInflicted = true;
 									if ( !wasSlowed )
 									{
-									playSoundEntity(hit.entity, 396 + local_rng.rand() % 3, 64);
+										playSoundEntity(hit.entity, 396 + local_rng.rand() % 3, 64);
 									}
 									spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, 171);
 									if ( behavior == &actPlayer )
@@ -10508,7 +10660,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							bool applyPoison = true;
 							if ( behavior == &actPlayer )
 							{
-								if ( charge >= MAXCHARGE - 3 ) // fully charged strike injects venom.
+								if ( charge >= Stat::getMaxAttackCharge(myStats) - 3 ) // fully charged strike injects venom.
 								{
 									applyPoison = true;
 								}
@@ -10709,7 +10861,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 					}
 
-					bool artifactWeaponProc = parashuProc || dyrnwynSmite || dyrnwynBurn || gugnirProc;
+					bool specialWeaponProc = parashuProc || dyrnwynSmite || dyrnwynBurn || gugnirProc || armorPierceProc;
 
 					// send messages
 					if ( !strcmp(hitstats->name, "") || monsterNameIsGeneric(*hitstats) )
@@ -10718,7 +10870,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						Uint32 colorSpecial = color;// makeColorRGB(255, 0, 255);
 						if ( hitstats->HP > 0 )
 						{
-							if ( !artifactWeaponProc )
+							if ( !specialWeaponProc )
 							{
 								if ( damage > olddamage )
 								{
@@ -10747,6 +10899,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 							else if ( gugnirProc )
 							{
 								messagePlayerMonsterEvent(player, colorSpecial, *hitstats, Language::get(3760), Language::get(3761), MSG_COMBAT);
+							}
+							else if ( armorPierceProc )
+							{
+								messagePlayerMonsterEvent(player, colorSpecial, *hitstats, Language::get(6432), Language::get(6433), MSG_COMBAT);
 							}
 
 							if ( damage == 0 )
@@ -10904,7 +11060,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						Uint32 colorSpecial = color;// makeColorRGB(255, 0, 255);
 						if ( hitstats->HP > 0 )
 						{
-							if ( !artifactWeaponProc )
+							if ( !specialWeaponProc )
 							{
 								if ( damage > olddamage )
 								{
@@ -10933,6 +11089,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 							else if ( gugnirProc )
 							{
 								messagePlayerMonsterEvent(player, colorSpecial, *hitstats, Language::get(3760), Language::get(3761), MSG_COMBAT);
+							}
+							else if ( armorPierceProc )
+							{
+								messagePlayerMonsterEvent(player, colorSpecial, *hitstats, Language::get(6432), Language::get(6433), MSG_COMBAT);
 							}
 
 							if ( damage == 0 )
@@ -11444,7 +11604,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 
 					DamageGib dmgGib = DMG_DEFAULT;
-					bool charged = std::max(charge, MAXCHARGE / 2) / ((double)(MAXCHARGE / 2)) > 1;
+					bool charged = std::max(charge, Stat::getMaxAttackCharge(myStats) / 2) / ((double)(Stat::getMaxAttackCharge(myStats) / 2)) > 1;
 					if ( weaponMultipliers >= 1.15 || (weaponskill == PRO_AXE && hitstats->type == MIMIC) )
 					{
 						dmgGib = DMG_STRONGER;
@@ -17536,16 +17696,37 @@ void Entity::serverUpdateEffectsForEntity(bool guarantee)
 		net_packet->data[13] = 0;
 		net_packet->data[14] = 0;
 		net_packet->data[15] = 0;
+		std::vector<std::pair<Uint8, Uint8>> effectStrengths;
 		for ( int i = 0; i < NUMEFFECTS; ++i )
 		{
-			if ( myStats->getEffectActive(i) > 0 )
+			Uint8 effectValue = myStats->getEffectActive(i);
+			if ( effectValue > 0 )
 			{
 				net_packet->data[8 + i / 8] |= power(2, i - (i / 8) * 8);
+				if ( effectValue > 1 )
+				{
+					// effect index, then value
+					effectStrengths.push_back(std::make_pair(static_cast<Uint8>(i & 0xFF), effectValue));
+				}
 			}
 		}
+		net_packet->data[16] = (Uint8)effectStrengths.size();
+		net_packet->len = 17;
+		for ( auto& pair : effectStrengths )
+		{
+			if ( net_packet->len + 1 >= NET_PACKET_SIZE )
+			{
+				// no more room
+				break;
+			}
+			net_packet->data[net_packet->len + 0] = pair.first;
+			net_packet->data[net_packet->len + 1] = pair.second;
+			net_packet->len += 2;
+		}
+
 		net_packet->address.host = net_clients[player - 1].host;
 		net_packet->address.port = net_clients[player - 1].port;
-		net_packet->len = 16;
+
 		if ( guarantee )
 		{
 			sendPacketSafe(net_sock, -1, net_packet, player - 1);
@@ -17558,7 +17739,7 @@ void Entity::serverUpdateEffectsForEntity(bool guarantee)
 	}
 }
 
-bool Entity::setEffect(int effect, bool value, int duration, bool updateClients, bool guarantee)
+bool Entity::setEffect(int effect, std::variant<bool, Uint8> value, int duration, bool updateClients, bool guarantee)
 {
 	Stat* myStats = getStats();
 
@@ -17567,7 +17748,8 @@ bool Entity::setEffect(int effect, bool value, int duration, bool updateClients,
 		return false;
 	}
 
-	if ( value == true )
+	Uint8 effectStrength = std::holds_alternative<bool>(value) ? (std::get<bool>(value) ? 1 : 0) : std::get<Uint8>(value);
+	if ( effectStrength > 0 )
 	{
 		switch ( effect )
 		{
@@ -17661,7 +17843,15 @@ bool Entity::setEffect(int effect, bool value, int duration, bool updateClients,
 			myStats->monsterMimicLockedBy = 0;
 		}
 	}
-	myStats->setEffectActive(effect, value);
+
+	if ( effectStrength > 0 )
+	{
+		myStats->setEffectActive(effect, effectStrength);
+	}
+	else
+	{
+		myStats->clearEffect(effect);
+	}
 	myStats->EFFECTS_TIMERS[effect] = duration;
 
 	int player = -1;
@@ -23290,6 +23480,8 @@ real_t Entity::getDamageTableMultiplier(Entity* my, Stat& myStats, DamageTableTy
 	{
 		bonus += -followerResist / 100.0;
 	}
+
+	bonus -= myStats.getEnsembleEffectBonus(Stat::ENSEMBLE_LYRE_TIER) / 100.0;
 
 	if ( myStats.cloak && myStats.cloak->type == CLOAK_GUARDIAN )
 	{

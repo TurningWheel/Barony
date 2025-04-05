@@ -3154,6 +3154,7 @@ void Player::init() // for use on new/restart game, UI related
 	mechanics.itemDegradeRng.clear();
 	mechanics.sustainedSpellMPUsed = 0;
 	mechanics.ensemblePlaying = -1;
+	mechanics.ensembleRequireRecast = false;
 	mechanics.ensembleDataUpdate = 0;
 }
 
@@ -3167,6 +3168,7 @@ void Player::cleanUpOnEntityRemoval()
 	}
 	mechanics.enemyRaisedBlockingAgainst.clear();
 	mechanics.ensemblePlaying = -1;
+	mechanics.ensembleRequireRecast = false;
 	mechanics.ensembleDataUpdate = 0;
 	selectedEntity[playernum] = nullptr;
 	client_selected[playernum] = nullptr;

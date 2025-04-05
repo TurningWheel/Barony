@@ -6330,6 +6330,73 @@ bool StatusEffectQueue_t::doStatusEffectTooltip(StatusEffectQueueEntry_t& entry,
 						}
 					}
 				}
+				else if ( effectID == EFF_ENSEMBLE_DRUM
+					|| effectID == EFF_ENSEMBLE_FLUTE
+					|| effectID == EFF_ENSEMBLE_LUTE
+					|| effectID == EFF_ENSEMBLE_HORN
+					|| effectID == EFF_ENSEMBLE_LYRE )
+				{
+					int variation = 0;
+					if ( Uint8 effectStrength = stats[player]->getEffectActive(effectID) )
+					{
+						if ( effectStrength >= 40 )
+						{
+							variation = 3;
+						}
+						else if ( effectStrength >= 20 )
+						{
+							variation = 2;
+						}
+						else if ( effectStrength >= 5 )
+						{
+							variation = 1;
+						}
+					}
+
+					std::string newHeader = definition.getName(variation).c_str();
+					uppercaseString(newHeader);
+					tooltipHeader->setText(newHeader.c_str());
+					std::string newDesc = definition.getDesc(variation).c_str();
+					newDesc += '\n';
+					newDesc += "Scaled Stat: ";
+					if ( effectID == EFF_ENSEMBLE_DRUM )
+					{
+						newDesc += std::to_string(stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_DRUM_EFF_1));
+						newDesc += '\n';
+						newDesc += "Tier Stat: ";
+						newDesc += std::to_string(stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_DRUM_TIER));
+					}
+					else if ( effectID == EFF_ENSEMBLE_FLUTE )
+					{
+						newDesc += std::to_string(stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_FLUTE_EFF_1));
+						newDesc += '\n';
+						newDesc += "Tier Stat: ";
+						newDesc += std::to_string(stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_FLUTE_TIER));
+					}
+					else if ( effectID == EFF_ENSEMBLE_LUTE )
+					{
+						newDesc += std::to_string(stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_LUTE_EFF_1));
+						newDesc += '\n';
+						newDesc += "Tier Stat: ";
+						newDesc += std::to_string(stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_LUTE_TIER));
+					}
+					else if ( effectID == EFF_ENSEMBLE_HORN )
+					{
+						newDesc += std::to_string(stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_HORN_EFF_1));
+						newDesc += '\n';
+						newDesc += "Tier Stat: ";
+						newDesc += std::to_string(stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_HORN_TIER));
+					}
+					else if ( effectID == EFF_ENSEMBLE_LYRE )
+					{
+						newDesc += std::to_string(stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_LYRE_EFF_1));
+						newDesc += '\n';
+						newDesc += "Tier Stat: ";
+						newDesc += std::to_string(stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_LYRE_TIER));
+					}
+					tooltipDesc->setText(newDesc.c_str());
+					tooltipInnerWidth = definition.tooltipWidth;
+				}
 				else if ( effectID == EFF_VAMPIRICAURA )
 				{
 					bool sustained = false;
@@ -6508,7 +6575,12 @@ bool StatusEffectQueue_t::doStatusEffectTooltip(StatusEffectQueueEntry_t& entry,
 					&& effectID != StatusEffectQueue_t::kEffectWantedInShop
 					&& effectID != StatusEffectQueue_t::kEffectBountyTarget
 					&& effectID != StatusEffectQueue_t::kEffectDisabledHPRegen
-					&& effectID != StatusEffectQueue_t::kEffectAssistance )
+					&& effectID != StatusEffectQueue_t::kEffectAssistance
+					&& !(effectID == EFF_ENSEMBLE_DRUM
+						|| effectID == EFF_ENSEMBLE_FLUTE
+						|| effectID == EFF_ENSEMBLE_LUTE
+						|| effectID == EFF_ENSEMBLE_HORN
+						|| effectID == EFF_ENSEMBLE_LYRE) )
 				{
 					std::string newHeader = definition.getName(variation).c_str();
 					uppercaseString(newHeader);

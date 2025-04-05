@@ -6636,7 +6636,7 @@ Host to enable the game setting.
 6382 You hit the button!#
 # lock types
 6383 stone#
-6384 bone#
+6384 spirit#
 6385 bronze#
 6386 iron#
 6387 silver#
@@ -6683,5 +6683,8 @@ Host to enable the game setting.
 6428 You failed to lockpick the %s lock.#
 6429 The %s lock seems unable to be reset by lockpicking.#
 6430 This %s lock has already been lockpicked open.#
+6431 Your song's effect cannot be extended any further!#
+6432 Your strike pierced the %s's armor!#
+6433 Your strike pierced %s's armor!#
 
 6599 END#

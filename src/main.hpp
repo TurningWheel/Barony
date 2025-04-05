@@ -50,6 +50,7 @@ char* stringStr(char* str1, const char* str2, size_t str1_size, size_t str2_size
 //using namespace std; //For C++ strings //This breaks messages on certain systems, due to template<class _CharT> class std::__cxx11::messages
 using std::string; //Instead of including an entire namespace, please explicitly include only the parts you need, and check for conflicts as reasonably possible.
 #include <map>
+#include <variant>
 #include <unordered_map>
 #include <unordered_set>
 #include <set>

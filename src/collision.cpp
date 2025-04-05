@@ -577,7 +577,7 @@ bool Entity::collisionProjectileMiss(Entity* parent, Entity* projectile)
 		}
 		if ( Stat* myStats = getStats() )
 		{
-			if ( myStats->type == BAT_SMALL || myStats->getEffectActive(EFF_AGILITY) )
+			if ( myStats->type == BAT_SMALL || myStats->getEffectActive(EFF_AGILITY) || myStats->getEffectActive(EFF_ENSEMBLE_LUTE) )
 			{
 				bool miss = false;
 				if ( myStats->type == BAT_SMALL && isUntargetableBat() )
@@ -626,17 +626,36 @@ bool Entity::collisionProjectileMiss(Entity* parent, Entity* projectile)
 				}
 				else
 				{
-					int baseChance = myStats->type == BAT_SMALL ? 6 : 3;
-					if ( accuracyBonus )
+					int baseChance = 0;
+					if ( myStats->type == BAT_SMALL )
 					{
-						baseChance -= 2;
+						baseChance = std::max(baseChance, 60);
 					}
-					if ( flanking )
+					if ( myStats->getEffectActive(EFF_AGILITY) )
 					{
-						baseChance -= 2;
+						baseChance = std::max(baseChance, 30);
 					}
-					baseChance = std::max(1, baseChance);
-					miss = local_rng.rand() % 10 < baseChance;
+					if ( myStats->getEnsembleEffectBonus(Stat::ENSEMBLE_LUTE_TIER) > 0.001 )
+					{
+						baseChance = std::max(baseChance, static_cast<int>(myStats->getEnsembleEffectBonus(Stat::ENSEMBLE_LUTE_TIER)));
+					}
+					if ( baseChance <= 0 )
+					{
+						miss = false;
+					}
+					else
+					{
+						if ( accuracyBonus )
+						{
+							baseChance -= 20;
+						}
+						if ( flanking )
+						{
+							baseChance -= 20;
+						}
+						baseChance = std::max(10, baseChance);
+						miss = local_rng.rand() % 100 < baseChance;
+					}
 				}
 
 				if ( miss )
@@ -972,7 +991,7 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 			{
 				continue;
 			}
-			if ( projectileAttack && yourStats && yourStats->getEffectActive(EFF_AGILITY) )
+			if ( projectileAttack && yourStats && (yourStats->getEffectActive(EFF_AGILITY) || yourStats->getEffectActive(EFF_ENSEMBLE_LUTE)) )
 			{
 				entityDodgeChance = true;
 			}
