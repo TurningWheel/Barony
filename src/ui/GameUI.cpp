@@ -18399,7 +18399,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		
 		std::string descriptionText = mapDisplayNamesDescriptions[map.name].second.c_str();
 		std::string mapDetailsText = "";
-		auto mapDetails = Player::Minimap_t::mapDetails;
+		auto& mapDetails = Player::Minimap_t::mapDetails;
 		for ( auto& detail : mapDetails )
 		{
 			if ( mapDetailsText != "" )
@@ -38869,7 +38869,7 @@ bool SkillUpAnimation_t::soundIndexUsedForNotification(const int index)
 	}
 	else
 	{
-		for ( auto skill : Player::SkillSheet_t::skillSheetData.skillEntries )
+		for ( auto& skill : Player::SkillSheet_t::skillSheetData.skillEntries )
 		{
 			if ( index == skill.skillSfx )
 			{
@@ -40260,7 +40260,7 @@ void updateSkillUpFrame(const int player)
 			}
 			else
 			{
-				for ( auto skill : Player::SkillSheet_t::skillSheetData.skillEntries )
+				for ( auto& skill : Player::SkillSheet_t::skillSheetData.skillEntries )
 				{
 					if ( skill.skillId == skillUp.whichSkill )
 					{

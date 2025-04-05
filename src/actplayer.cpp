@@ -4594,6 +4594,11 @@ void actPlayer(Entity* my)
 	}*/
 
 	{
+		/*if ( keystatus[SDLK_1] )
+		{
+			keystatus[SDLK_1] = 0;
+			createParticleWave(1721, my->x + 16.0 * cos(my->yaw), my->y + 16.0 * sin(my->yaw), 0.f, 0.f, TICKS_PER_SECOND * 20);
+		}*/
 		//float defaultVol = 0.5f;
 		//if ( !command )
 		//{

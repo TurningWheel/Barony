@@ -2732,7 +2732,7 @@ Sint32 getStatAttributeBonusFromItem(const int player, Item& item, std::string& 
 void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, Item& item, std::string& str, int iconIndex, std::string& conditionalAttribute, Frame* parentFrame)
 {
 #ifndef EDITOR
-	auto itemTooltip = tooltips[tooltipType];
+	//auto itemTooltip = tooltips[tooltipType];
 	static Stat itemDummyStat(0);
 	static char buf[1024];
 	memset(buf, 0, sizeof(buf));
@@ -3512,7 +3512,7 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 				}
 
 				std::string skillName = "";
-				for ( auto s : Player::SkillSheet_t::skillSheetData.skillEntries )
+				for ( auto& s : Player::SkillSheet_t::skillSheetData.skillEntries )
 				{
 					if ( s.skillId == skill )
 					{
@@ -3840,7 +3840,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		}
 	}
 
-	auto itemTooltip = ItemTooltips.tooltips[tooltipType];
+	//auto itemTooltip = ItemTooltips.tooltips[tooltipType];
 
 	memset(buf, 0, sizeof(buf));
 
@@ -3992,7 +3992,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 				//val = ((val * equipmentModifier) * bonusModifier);
 
 				std::string skillName = "";
-				for ( auto s : Player::SkillSheet_t::skillSheetData.skillEntries )
+				for ( auto& s : Player::SkillSheet_t::skillSheetData.skillEntries )
 				{
 					if ( s.skillId == PRO_STEALTH )
 					{
@@ -4029,7 +4029,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 				}
 
 				std::string skillName = "";
-				for ( auto s : Player::SkillSheet_t::skillSheetData.skillEntries )
+				for ( auto& s : Player::SkillSheet_t::skillSheetData.skillEntries )
 				{
 					if ( s.skillId == PRO_LEADERSHIP )
 					{
@@ -5288,7 +5288,7 @@ void StatueManager_t::readAllStatues()
 {
 	std::string baseDir = "data/statues";
 	auto files = physfsGetFileNamesInDirectory(baseDir.c_str());
-	for ( auto file : files )
+	for ( auto& file : files )
 	{
 		std::string checkFile = baseDir + '/' + file;
 		PHYSFS_Stat stat;
@@ -5297,7 +5297,7 @@ void StatueManager_t::readAllStatues()
 		if ( stat.filetype == PHYSFS_FileType::PHYSFS_FILETYPE_DIRECTORY )
 		{
 			auto files2 = physfsGetFileNamesInDirectory(checkFile.c_str());
-			for ( auto file2 : files2 )
+			for ( auto& file2 : files2 )
 			{
 				std::string checkFile2 = checkFile + '/' + file2;
 				if ( PHYSFS_stat(checkFile2.c_str(), &stat) == 0 ) { continue; }
@@ -5765,7 +5765,7 @@ void ScriptTextParser_t::readAllScripts()
 
 	std::string baseDir = "/data/scripts";
 	auto files = physfsGetFileNamesInDirectory(baseDir.c_str());
-	for ( auto file : files )
+	for ( auto& file : files )
 	{
 		std::string checkFile = baseDir + '/' + file;
 		PHYSFS_Stat stat;
@@ -5774,7 +5774,7 @@ void ScriptTextParser_t::readAllScripts()
 		if ( stat.filetype == PHYSFS_FileType::PHYSFS_FILETYPE_DIRECTORY )
 		{
 			auto files2 = physfsGetFileNamesInDirectory(checkFile.c_str());
-			for ( auto file2 : files2 )
+			for ( auto& file2 : files2 )
 			{
 				std::string checkFile2 = checkFile + '/' + file2;
 				if ( PHYSFS_stat(checkFile2.c_str(), &stat) == 0 ) { continue; }
@@ -7927,7 +7927,7 @@ void ClassHotbarConfig_t::writeToFile(HotbarConfigType fileWriteType, HotbarConf
 		CustomHelpers::addMemberToRoot(exportDocument, "classes", allClassesObject);
 
 		int classIndex = -1;
-		for ( auto classname : playerClassInternalNames )
+		for ( auto& classname : playerClassInternalNames )
 		{
 			++classIndex;
 			rapidjson::Value classObj(rapidjson::kObjectType);
@@ -7937,7 +7937,7 @@ void ClassHotbarConfig_t::writeToFile(HotbarConfigType fileWriteType, HotbarConf
 			auto& hotbar_t = players[clientnum]->hotbar;
 
 			std::vector<std::string> layoutTypes = { "classic", "modern" };
-			for ( auto layout : layoutTypes )
+			for ( auto& layout : layoutTypes )
 			{
 				if ( layout == "classic" )
 				{
@@ -8057,7 +8057,7 @@ void ClassHotbarConfig_t::readFromFile(ClassHotbarConfig_t::HotbarConfigType fil
 	for ( auto classes = d["classes"].MemberBegin(); classes != d["classes"].MemberEnd(); ++classes )
 	{
 		int classIndex = -1;
-		for ( auto s : playerClassInternalNames )
+		for ( auto& s : playerClassInternalNames )
 		{
 			++classIndex;
 			if ( s == classes->name.GetString() )
@@ -9331,7 +9331,7 @@ bool Mods::verifyMapFiles(const char* folder, bool ignoreBaseFolder)
 		fullpath += PHYSFS_getDirSeparator();
 		fullpath += "maps/";
 	}
-	for ( auto f : directoryContents(fullpath.c_str(), false, true) )
+	for ( auto& f : directoryContents(fullpath.c_str(), false, true) )
 	{
 		const std::string mapPath = "maps/" + f;
 		auto path = PHYSFS_getRealDir(mapPath.c_str());
@@ -11736,7 +11736,7 @@ void Compendium_t::readMagicFromFile(bool forceLoadBaseDirectory)
 				}
 				if ( item.name.find("spell_") != std::string::npos )
 				{
-					for ( auto spell : allGameSpells )
+					for ( auto& spell : allGameSpells )
 					{
 						if ( item.name == spell.second->spell_internal_name )
 						{
@@ -11748,7 +11748,7 @@ void Compendium_t::readMagicFromFile(bool forceLoadBaseDirectory)
 				}
 				else if ( item.name.find("spellbook_") != std::string::npos )
 				{
-					for ( auto spell : allGameSpells )
+					for ( auto& spell : allGameSpells )
 					{
 						int book = getSpellbookFromSpellID(spell.second->ID);
 						if ( book >= WOODEN_SHIELD && book < NUMITEMS && ::items[book].category == SPELLBOOK )
@@ -13004,7 +13004,7 @@ void Compendium_t::readMonstersFromFile(bool forceLoadBaseDirectory)
 
 		Compendium_t::Events_t::monsterIDToString[type] = monstertypename[i];
 	}
-	for ( auto pair : Compendium_t::Events_t::monsterUniqueIDLookup )
+	for ( auto& pair : Compendium_t::Events_t::monsterUniqueIDLookup )
 	{
 		int type = pair.second + Compendium_t::Events_t::kEventMonsterOffset;
 		Compendium_t::Events_t::monsterIDToString[type] = pair.first;
@@ -13770,7 +13770,7 @@ std::vector<std::pair<std::string, Sint32>> Compendium_t::Events_t::getCustomEve
 										}
 									}
 
-									for ( auto classId : findClassTag->second )
+									for ( auto& classId : findClassTag->second )
 									{
 										if ( startOffsetId >= 0 )
 										{
@@ -13819,7 +13819,7 @@ std::vector<std::pair<std::string, Sint32>> Compendium_t::Events_t::getCustomEve
 								if ( findClassTag != eventClassIds.end() )
 								{
 									// iterate through classes
-									for ( auto classId : findClassTag->second )
+									for ( auto& classId : findClassTag->second )
 									{
 										codexIDs.push_back(classId);
 									}
@@ -14382,7 +14382,7 @@ void Compendium_t::Events_t::createDummyClientData(const int playernum)
 	}
 	for ( auto& pair : eventWorldLookup )
 	{
-		for ( auto world : pair.second )
+		for ( auto& world : pair.second )
 		{
 			eventUpdateWorld(playernum, pair.first, world.c_str(), 1);
 		}
@@ -14395,7 +14395,7 @@ void Compendium_t::Events_t::createDummyClientData(const int playernum)
 			for ( int c = 0; c < NUMCLASSES; ++c )
 			{
 				client_classes[playernum] = c;
-				for ( auto world : pair.second )
+				for ( auto& world : pair.second )
 				{
 					eventUpdateCodex(playernum, pair.first, world.c_str(), 1);
 				}
@@ -14404,7 +14404,7 @@ void Compendium_t::Events_t::createDummyClientData(const int playernum)
 		}
 		else
 		{
-			for ( auto world : pair.second )
+			for ( auto& world : pair.second )
 			{
 				eventUpdateCodex(playernum, pair.first, world.c_str(), 1);
 			}
@@ -16497,7 +16497,7 @@ void Compendium_t::Events_t::sendClientDataOverNet(const int playernum)
 void Compendium_t::readModelLimbsFromFile(std::string section)
 {
 	std::string fullpath = "data/compendium/" + section + "_models/";
-	for ( auto f : directoryContents(fullpath.c_str(), false, true) )
+	for ( auto& f : directoryContents(fullpath.c_str(), false, true) )
 	{
 		std::string inputPath = fullpath + f;
 		std::string path = PHYSFS_getRealDir(inputPath.c_str()) ? PHYSFS_getRealDir(inputPath.c_str()) : "";

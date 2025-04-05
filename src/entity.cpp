@@ -6941,7 +6941,7 @@ bool Entity::isWaterWalking() const
 				{
 					return true;
 				}
-				auto color = MonsterData_t::getKeyFromSprite(sprite, SLIME);
+				auto& color = MonsterData_t::getKeyFromSprite(sprite, SLIME);
 				if ( color == "slime blue"
 					|| color == "slime tar" )
 				{
@@ -6968,7 +6968,7 @@ bool Entity::isLavaWalking() const
 				{
 					return true;
 				}
-				auto color = MonsterData_t::getKeyFromSprite(sprite, SLIME);
+				auto& color = MonsterData_t::getKeyFromSprite(sprite, SLIME);
 				if ( color == "slime red" )
 				{
 					return true;

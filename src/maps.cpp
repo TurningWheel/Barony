@@ -738,7 +738,7 @@ struct StartRoomInfo_t
 		if ( exitPoints.empty() )
 		{
 			printlog("[MAP GENERATOR]: Start map does not have accessibility to any other areas!");
-			for ( auto point : goodTunnelPoints )
+			for ( auto& point : goodTunnelPoints )
 			{
 				std::string dir = "";
 				switch ( point.second )
@@ -760,7 +760,7 @@ struct StartRoomInfo_t
 				}
 				printlog("[MAP GENERATOR]: TunnelPoints1 %s: (x: %d y: %d)", dir.c_str(), point.first.first, point.first.second);
 			}
-			for ( auto point : badTunnelPoints )
+			for ( auto& point : badTunnelPoints )
 			{
 				std::string dir = "";
 				switch ( point.second )
@@ -782,7 +782,7 @@ struct StartRoomInfo_t
 				}
 				printlog("[MAP GENERATOR]: TunnelPoints2 %s: (x: %d y: %d)", dir.c_str(), point.first.first, point.first.second);
 			}
-			for ( auto point : worstTunnelPoints )
+			for ( auto& point : worstTunnelPoints )
 			{
 				std::string dir = "";
 				switch ( point.second )
@@ -806,7 +806,7 @@ struct StartRoomInfo_t
 			}
 			if ( !goodTunnelPoints.empty() )
 			{
-				auto picked = goodTunnelPoints.at(map_rng.rand() % goodTunnelPoints.size());
+				auto& picked = goodTunnelPoints.at(map_rng.rand() % goodTunnelPoints.size());
 				switch ( picked.second )
 				{
 					case WEST:
@@ -829,7 +829,7 @@ struct StartRoomInfo_t
 			}
 			else if ( !badTunnelPoints.empty() )
 			{
-				auto picked = badTunnelPoints.at(map_rng.rand() % badTunnelPoints.size());
+				auto& picked = badTunnelPoints.at(map_rng.rand() % badTunnelPoints.size());
 				switch ( picked.second )
 				{
 					case WEST:
@@ -852,7 +852,7 @@ struct StartRoomInfo_t
 			}
 			else if ( !worstTunnelPoints.empty() )
 			{
-				auto picked = worstTunnelPoints.at(map_rng.rand() % worstTunnelPoints.size());
+				auto& picked = worstTunnelPoints.at(map_rng.rand() % worstTunnelPoints.size());
 				switch ( picked.second )
 				{
 					case WEST:
