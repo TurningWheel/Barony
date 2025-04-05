@@ -9241,6 +9241,12 @@ void Entity::attack(int pose, int charge, Entity* target)
 								stealthCapstoneBonus = 2;
 							}
 
+							bool skillChanceIncrease = true;
+							if ( hit.entity->behavior == &actMonster && hit.entity->monsterAllyGetPlayerLeader() && behavior == &actPlayer )
+							{
+								skillChanceIncrease = false; // no level up on allies
+							}
+
 							if ( previousMonsterState == MONSTER_STATE_WAIT
 								|| previousMonsterState == MONSTER_STATE_PATH
 								|| (previousMonsterState == MONSTER_STATE_HUNT && uidToEntity(monsterTarget) == nullptr) )
@@ -9260,7 +9266,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 									}
 								}
 								damage += bonus;
-								if ( hit.entity->behavior != &actPlayer )
+								if ( hit.entity->behavior != &actPlayer && skillChanceIncrease )
 								{
 									if ( hitstats->type == BAT_SMALL && previousMonsterSpecialState == BAT_REST )
 									{
@@ -9284,7 +9290,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								// 1 in 2 chance to flank defenses.
 								flanking = true;
 								damage += (stats[player]->getModifiedProficiency(PRO_STEALTH) / 20 + 1) * (stealthCapstoneBonus);
-								if ( local_rng.rand() % 20 == 0 && hit.entity->behavior != &actPlayer )
+								if ( local_rng.rand() % 20 == 0 && hit.entity->behavior != &actPlayer && skillChanceIncrease )
 								{
 									this->increaseSkill(PRO_STEALTH);
 								}
@@ -10281,10 +10287,14 @@ void Entity::attack(int pose, int charge, Entity* target)
 							if ( chance > 0 ) // always
 							{
 								int duration = 150; // 3 seconds
+								bool wasSlowed = hitstats->getEffectActive(EFF_SLOW);
 								if ( hitstats->HP > 0 && hit.entity->setEffect(EFF_SLOW, true, duration, true) && !slowStatusInflicted )
 								{
 									slowStatusInflicted = true;
+									if ( !wasSlowed )
+									{
 									playSoundEntity(hit.entity, 396 + local_rng.rand() % 3, 64);
+									}
 									spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, 171);
 									if ( behavior == &actPlayer )
 									{
