@@ -93,6 +93,7 @@ public:
 	~Entity();
     
     bool ditheringDisabled = false;
+	int ditheringOverride = -1;
     struct Dither {
         int value = 0;
         Uint32 lastUpdateTick = 0;

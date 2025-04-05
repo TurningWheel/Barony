@@ -2174,8 +2174,12 @@ void drawEntities3D(view_t* camera, int mode)
                     goto end;
                 }
             }
-            end:
-            if (entity->ditheringDisabled) {
+			end:
+			if ( entity->ditheringOverride >= 0 )
+			{
+				dither.value = std::max(0, std::min(entity->ditheringOverride, Entity::Dither::MAX));
+			}
+            else if (entity->ditheringDisabled) {
                 dither.value = decrease ? 0 : Entity::Dither::MAX;
             } else {
                 if (ditheringDisabled) {
