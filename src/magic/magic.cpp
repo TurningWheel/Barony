@@ -133,6 +133,7 @@ bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, En
 		|| hitstats->type == SHADOW
 		|| hitstats->type == MIMIC
 		|| hitstats->type == BAT_SMALL
+		|| hit.entity->monsterAllySummonRank != 0
 		|| (hitstats->type == VAMPIRE && MonsterData_t::nameMatchesSpecialNPCName(*hitstats, "bram kindly"))
 		|| (hitstats->type == COCKATRICE && !strncmp(map.name, "Cockatrice Lair", 15))
 		)
