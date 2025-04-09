@@ -96,7 +96,7 @@ bool TreasureRoomGenerator::bForceSpawnForCurrentFloor(int secretlevelexit, bool
 	auto& floor = secretlevel ? treasure_secret_floors : treasure_floors;
 	bool pushBackSpawn = false;
 
-	if ( secretlevelexit )
+	if ( secretlevelexit && mapRNG.rand() % 100 < 50 )
 	{
 		pushBackSpawn = true;
 	}
@@ -121,6 +121,10 @@ bool TreasureRoomGenerator::bForceSpawnForCurrentFloor(int secretlevelexit, bool
 		{
 			floor.insert(currentlevel + 1);
 		}
+	}
+	else
+	{
+		return floor.find(currentlevel) != floor.end();
 	}
 	return false;
 }
