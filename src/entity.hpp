@@ -722,7 +722,7 @@ public:
 	void drainMP(int amount, bool notifyOverexpend = true); //Removes this much from MP. Anything over the entity's MP is subtracted from their health. Can be very dangerous.
 	bool safeConsumeMP(int amount); //A function for the magic code. Attempts to remove mana without overdrawing the player. Returns true if success, returns false if didn't have enough mana.
 
-	static Sint32 getAttack(Entity* my, Stat* myStats, bool isPlayer = false);
+	static Sint32 getAttack(Entity* my, Stat* myStats, bool isPlayer = false, int chargeModifier = -1);
 	static real_t getACEffectiveness(Entity* my, Stat* myStats, bool isPlayer, Entity* attacker, Stat* attackerStats, int& outNumBlessings);
 	static void setMeleeDamageSkillModifiers(Entity* my, Stat* myStats, int skill, real_t& baseSkillModifier, real_t& variance, ItemType* itemType);
 	Sint32 getBonusAttackOnTarget(Stat& hitstats);
@@ -1275,8 +1275,8 @@ void actTextSource(Entity* my);
 
 //checks if a sprite falls in certain sprite ranges
 
-static const int NUM_ITEM_STRINGS = 349;
-static const int NUM_ITEM_STRINGS_BY_TYPE = 129;
+static const int NUM_ITEM_STRINGS = 350;
+static const int NUM_ITEM_STRINGS_BY_TYPE = 130;
 static const int NUM_EDITOR_TILES = 350;
 
 // furniture types.

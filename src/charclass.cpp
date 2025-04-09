@@ -496,6 +496,28 @@ void initClassStats(const int classnum, void* myStats)
 		stat->setProficiency(PRO_ALCHEMY, 10);
 		stat->setProficiency(PRO_TRADING, 10);
 	}
+	else if ( classnum == CLASS_21 )
+	{
+		stat->STR += -2;
+		stat->DEX += 1;
+		stat->CON += -2;
+		stat->INT += 0;
+		stat->PER += 0;
+		stat->CHR += 3;
+
+		stat->MAXHP -= 5;
+		stat->HP -= 5;
+
+		stat->MAXMP += 5;
+		stat->MP += 5;
+
+		stat->setProficiency(PRO_SWORD, 25);
+		stat->setProficiency(PRO_APPRAISAL, 50);
+		stat->setProficiency(PRO_MAGIC, 15);
+		stat->setProficiency(PRO_LEADERSHIP, 15);
+		stat->setProficiency(PRO_STEALTH, 15);
+		stat->setProficiency(PRO_TRADING, 15);
+	}
 
 	if ( gameModeManager.currentSession.challengeRun.isActive() )
 	{
@@ -2761,6 +2783,61 @@ void initClass(const int player)
 
 			item = newItem(POTION_EMPTY, SERVICABLE, 0, 2, 0, true, nullptr);
 			item2 = itemPickup(player, item);
+			free(item);
+		}
+	}
+	else if ( client_classes[player] == CLASS_21 )
+	{
+		initClassStats(client_classes[player], stats[player]);
+
+		if ( !isLocalPlayer && multiplayer == CLIENT && intro == false ) {
+			// don't do anything crazy with items on players we don't own
+			return;
+		}
+
+		item = newItem(RAPIER, EXCELLENT, 0, 1, 0, true, nullptr);
+		if ( isLocalPlayer )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			hotbar[0].item = item2->uid;
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
+		if ( isLocalPlayer )
+		{
+			item = newItem(INSTRUMENT_FLUTE, EXCELLENT, 0, 1, 0, true, nullptr);
+			item2 = itemPickup(player, item);
+			hotbar[1].item = item2->uid;
+			free(item);
+
+			item = newItem(INSTRUMENT_DRUM, EXCELLENT, 0, 1, 0, true, nullptr);
+			item2 = itemPickup(player, item);
+			hotbar[2].item = item2->uid;
+			free(item);
+
+			item = newItem(INSTRUMENT_HORN, EXCELLENT, 0, 1, 0, true, nullptr);
+			item2 = itemPickup(player, item);
+			hotbar[3].item = item2->uid;
+			free(item);
+
+			item = newItem(INSTRUMENT_LUTE, EXCELLENT, 0, 1, 0, true, nullptr);
+			item2 = itemPickup(player, item);
+			hotbar[4].item = item2->uid;
+			free(item);
+
+			item = newItem(INSTRUMENT_LYRE, EXCELLENT, 0, 1, 0, true, nullptr);
+			item2 = itemPickup(player, item);
+			hotbar[5].item = item2->uid;
+			free(item);
+
+			item = newItem(POTION_RESTOREMAGIC, EXCELLENT, 0, 1, 1, true, nullptr);
+			item2 = itemPickup(player, item);
+			hotbar[6].item = item2->uid;
 			free(item);
 		}
 	}

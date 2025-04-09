@@ -2762,11 +2762,16 @@ namespace ConsoleCommands {
 		else
 		{
 			int duration = 500;
+			Uint8 strength = 1;
 			if ( argc >= 3 )
 			{
 				duration = atoi(argv[2]);
 			}
-			players[clientnum]->entity->setEffect(effect, true, duration, true);
+			if ( argc >= 4 )
+			{
+				strength = atoi(argv[3]);
+			}
+			players[clientnum]->entity->setEffect(effect, strength, duration, true);
 		}
 		});
 

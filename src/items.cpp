@@ -2280,6 +2280,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		case STEEL_CHAKRAM:
 		case CRYSTAL_SHURIKEN:
 		case BOOMERANG:
+		case RAPIER:
 			equipItemResult = equipItem(item, &stats[player]->weapon, player, checkInventorySpaceForPaperDoll);
 			break;
 		case STEEL_SHIELD:
@@ -3952,6 +3953,10 @@ Sint32 Item::weaponGetAttack(const Stat* const wielder) const
 		attack += 5;
 	}
 	else if ( type == IRON_SWORD )
+	{
+		attack += 5;
+	}
+	else if ( type == RAPIER )
 	{
 		attack += 5;
 	}

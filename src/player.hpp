@@ -2343,6 +2343,7 @@ public:
 		bool allowedRaiseBlockingAgainstEntity(Entity& attacker);
 		int ensemblePlaying = -1;
 		bool ensembleRequireRecast = false;
+		bool ensembleTakenInitialMP = false;
 		static void ensembleMusicUpdateServer();
 		static void ensembleMusicUpdate();
 		Uint32 ensembleDataUpdate = 0;

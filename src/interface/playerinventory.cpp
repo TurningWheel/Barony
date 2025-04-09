@@ -11158,6 +11158,11 @@ bool autoAddHotbarFilter(const Item& item)
 							case TOOL_TORCH:
 							case TOOL_LANTERN:
 							case TOOL_CRYSTALSHARD:
+							case INSTRUMENT_FLUTE:
+							case INSTRUMENT_LYRE:
+							case INSTRUMENT_DRUM:
+							case INSTRUMENT_LUTE:
+							case INSTRUMENT_HORN:
 								return true;
 								break;
 							default:

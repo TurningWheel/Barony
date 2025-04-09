@@ -9086,7 +9086,33 @@ void actPlayer(Entity* my)
 				if ( bodypart == 4 )
 				{
 					weaponarm = entity;
-					if ( PLAYER_ATTACK == 1 || PLAYER_ATTACK == PLAYER_POSE_GOLEM_SMASH )
+					if ( PLAYER_ATTACK == MONSTER_POSE_PARRY )
+					{
+						if ( PLAYER_ATTACKTIME == 0 )
+						{
+							PLAYER_ARMBENDED = 0;
+							PLAYER_WEAPONYAW = 0;
+							entity->pitch = 0;
+							entity->roll = -PI / 4;
+							entity->skill[1] = 0;
+						}
+						else
+						{
+							limbAnimateToLimit(my, ANIMATE_WEAPON_YAW, -0.15, 15 * PI / 8, false, 0.0);
+							limbAnimateToLimit(entity, ANIMATE_PITCH, -0.25, 15 * PI / 8, false, 0.0);
+							if ( PLAYER_ATTACKTIME >= 35 )
+							{
+								entity->skill[0] = rightbody->skill[0];
+								entity->skill[1] = 0;
+								PLAYER_WEAPONYAW = 0;
+								entity->pitch = rightbody->pitch;
+								entity->roll = 0;
+								PLAYER_ARMBENDED = 0;
+								PLAYER_ATTACK = 0;
+							}
+						}
+					}
+					else if ( PLAYER_ATTACK == 1 || PLAYER_ATTACK == PLAYER_POSE_GOLEM_SMASH )
 					{
 						// vertical chop
 						if ( PLAYER_ATTACKTIME == 0 )

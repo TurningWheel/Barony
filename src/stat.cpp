@@ -1434,6 +1434,38 @@ int Stat::getActiveShieldBonus(bool checkShield, bool excludeSkill, Item* shield
 	}
 }
 
+int Stat::getParryingACBonus(bool checkWeapon, bool excludeSkill, int weaponSkill) const
+{
+	if ( !checkWeapon )
+	{
+		if ( excludeSkill )
+		{
+			return 0;
+		}
+		return (getModifiedProficiency(weaponSkill) / 25);
+	}
+
+	if ( weapon )
+	{
+		if ( itemCategory(weapon) != WEAPON )
+		{
+			return 0;
+		}
+		if ( excludeSkill )
+		{
+			return 0;
+		}
+		int bonus = (getModifiedProficiency(weaponSkill) / 25);
+		bonus += weapon->weaponGetAttack(this);
+		bonus += (5 + (excludeSkill ? 0 : std::min(SKILL_LEVEL_SKILLED, getModifiedProficiency(weaponSkill)) / 5));
+		return bonus;
+	}
+	else
+	{
+		return 0;
+	}
+}
+
 int Stat::getPassiveShieldBonus(bool checkShield, bool excludeSkill) const
 {
 	if ( !checkShield )

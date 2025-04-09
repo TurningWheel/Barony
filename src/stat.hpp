@@ -318,6 +318,7 @@ public:
 	}
 	Sint32 EFFECTS_TIMERS[NUMEFFECTS];
 	bool defending;
+	Uint32 parrying = 0;
 	Sint32& sneaking; // MISC_FLAGS[1]
 	Sint32& allyItemPickup; // MISC_FLAGS[2]
 	Sint32& allyClass; // MISC_FLAGS[3]
@@ -393,6 +394,7 @@ public:
 	};
 	int getPassiveShieldBonus(bool checkShield, bool excludeSkill) const;
 	int getActiveShieldBonus(bool checkShield, bool excludeSkill, Item* shieldItem = nullptr, bool checkNonShieldBonus = false) const;
+	int getParryingACBonus(bool checkWeapon, bool excludeSkill, int weaponSkill) const;
 	std::string getAttribute(std::string key) const
 	{ 
 		if ( attributes.find(key) != attributes.end() )

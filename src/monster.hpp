@@ -546,7 +546,12 @@ static std::vector<std::vector<unsigned int>> classStatGrowth =
 	{	2,	5,	2,	4,	7,	4 }, // MACHINIST 17
 	{	4,	3,	2,	3,	4,	4 }, // PUNISHER 18
 	{	4,	4,	4,	4,	4,	4 }, // SHAMAN 19
-	{	1,	7,	1,	4,	7,	4 }  // HUNTER 20
+	{	1,	7,	1,	4,	7,	4 }, // HUNTER 20
+	{	2,	5,	3,	4,	3,	7 },
+	{	0,	0,	0,	0,	0,	0 },
+	{	0,	0,	0,	0,	0,	0 },
+	{	0,	0,	0,	0,	0,	0 },
+	{	0,	0,	0,	0,	0,	0 }
 };
 
 enum AllyNPCCommand : int
@@ -958,6 +963,7 @@ static const int MONSTER_POSE_MIMIC_LOCKED2 = 38;
 static const int MONSTER_POSE_MIMIC_MAGIC1 = 39;
 static const int MONSTER_POSE_MIMIC_MAGIC2 = 40;
 static const int MONSTER_POSE_BUGBEAR_SHIELD = 41;
+static const int MONSTER_POSE_PARRY = 42;
 
 //--monster special cooldowns
 static const int MONSTER_SPECIAL_COOLDOWN_GOLEM = 150;

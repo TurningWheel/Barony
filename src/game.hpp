@@ -99,7 +99,7 @@ extern real_t time_diff;
 extern real_t t, ot, frameval[AVERAGEFRAMES];
 extern Uint32 cycles, pingtime;
 extern real_t fps;
-static const int NUMCLASSES = 21;
+static const int NUMCLASSES = 26;
 #define NUMRACES 13
 #define NUMPLAYABLERACES 9
 extern char address[64];
@@ -155,7 +155,12 @@ enum PlayerClasses : int
 	CLASS_MACHINIST,
 	CLASS_PUNISHER,
 	CLASS_SHAMAN,
-	CLASS_HUNTER
+	CLASS_HUNTER,
+	CLASS_21,
+	CLASS_22,
+	CLASS_23,
+	CLASS_24,
+	CLASS_25
 };
 
 static const std::vector<std::string> playerClassInternalNames = {
@@ -179,7 +184,12 @@ static const std::vector<std::string> playerClassInternalNames = {
 	"class_machinist",
 	"class_punisher",
 	"class_shaman",
-	"class_hunter"
+	"class_hunter",
+	"class_21",
+	"class_22",
+	"class_23",
+	"class_24",
+	"class_25"
 };
 
 static const int CLASS_SHAMAN_NUM_STARTING_SPELLS = 15;
@@ -630,3 +640,4 @@ void loadAchievementData(const char* path);
 void sortAchievementsForDisplay();
 
 real_t getFPSScale(real_t baseFPS);
+extern ConsoleVariable<int> cvar_rapier_toggle;

@@ -342,6 +342,36 @@ namespace MainMenu {
 			"ClassSelect_Icon_HunterOn_00.png",
 			"ClassSelect_Icon_HunterLocked_00.png",
 			}},
+		{ "class_21", {
+			DLC::Base,
+			"ClassSelect_Icon_Hunter_00.png",
+			"ClassSelect_Icon_HunterOn_00.png",
+			"ClassSelect_Icon_HunterLocked_00.png",
+			}},
+		{ "class_22", {
+			DLC::Base,
+			"ClassSelect_Icon_Hunter_00.png",
+			"ClassSelect_Icon_HunterOn_00.png",
+			"ClassSelect_Icon_HunterLocked_00.png",
+			}},
+		{ "class_23", {
+			DLC::Base,
+			"ClassSelect_Icon_Hunter_00.png",
+			"ClassSelect_Icon_HunterOn_00.png",
+			"ClassSelect_Icon_HunterLocked_00.png",
+			}},
+		{ "class_24", {
+			DLC::Base,
+			"ClassSelect_Icon_Hunter_00.png",
+			"ClassSelect_Icon_HunterOn_00.png",
+			"ClassSelect_Icon_HunterLocked_00.png",
+			}},
+		{ "class_25", {
+			DLC::Base,
+			"ClassSelect_Icon_Hunter_00.png",
+			"ClassSelect_Icon_HunterOn_00.png",
+			"ClassSelect_Icon_HunterLocked_00.png",
+			}},
 	};
 
 	static const char* classes_in_order[] = {
@@ -350,6 +380,6 @@ namespace MainMenu {
 		"wizard", "arcanist", "joker", "sexton",
 		"ninja", "monk", "conjurer", "accursed",
 		"mesmer", "brewer", "mechanist", "punisher",
-		"shaman", "hunter"
+		"shaman", "hunter", "class_21", "class_22", "class_23", "class_24", "class_25"
 	};
 }

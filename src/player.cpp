@@ -3155,6 +3155,7 @@ void Player::init() // for use on new/restart game, UI related
 	mechanics.sustainedSpellMPUsed = 0;
 	mechanics.ensemblePlaying = -1;
 	mechanics.ensembleRequireRecast = false;
+	mechanics.ensembleTakenInitialMP = false;
 	mechanics.ensembleDataUpdate = 0;
 }
 
@@ -3169,6 +3170,7 @@ void Player::cleanUpOnEntityRemoval()
 	mechanics.enemyRaisedBlockingAgainst.clear();
 	mechanics.ensemblePlaying = -1;
 	mechanics.ensembleRequireRecast = false;
+	mechanics.ensembleTakenInitialMP = false;
 	mechanics.ensembleDataUpdate = 0;
 	selectedEntity[playernum] = nullptr;
 	client_selected[playernum] = nullptr;
@@ -7606,7 +7608,7 @@ void Player::PlayerMechanics_t::ensembleMusicUpdate()
 					position.z = (float)(players[c]->entity->y / (real_t)16.0);
 					fmod_result = music_ensemble_local_recv_player[c]->set3DAttributes(&position, nullptr); // update to player position
 				}
-				music_ensemble_local_recv_player[c]->setVolume(defaultVolume);
+				music_ensemble_local_recv_player[c]->setVolume(0.5f);
 
 				FMOD::DSP* transceivers[NUMENSEMBLEMUSIC] = { nullptr };
 				for ( int i = 0; i < NUMENSEMBLEMUSIC; ++i )

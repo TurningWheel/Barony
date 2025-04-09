@@ -12981,7 +12981,7 @@ failed:
 	std::vector<const char*> reducedClassList(int index) {
 		std::vector<const char*> result;
 		result.reserve(num_classes);
-		for (int c = CLASS_BARBARIAN; c <= CLASS_HUNTER; ++c) {
+		for (int c = CLASS_BARBARIAN; c <= CLASS_25; ++c) {
 			if (isCharacterValidFromDLC(*stats[index], c) == VALID_OK_CHARACTER) {
 				result.emplace_back(classes_in_order[c]);
 			}
