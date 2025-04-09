@@ -33,6 +33,33 @@
 
 -------------------------------------------------------------------------------*/
 
+static ConsoleVariable<float> cvar_hudweapon_yaw_ang("/hudweapon_yaw_ang", 0.0);
+static ConsoleVariable<float> cvar_hudweapon_yaw_spd("/hudweapon_yaw_spd", 0.0);
+static ConsoleVariable<float> cvar_hudweapon_pitch_ang("/hudweapon_pitch_ang", 0.0);
+static ConsoleVariable<float> cvar_hudweapon_pitch_spd("/hudweapon_pitch_spd", 0.0);
+static ConsoleVariable<float> cvar_hudweapon_roll_ang("/hudweapon_roll_ang", 0.0);
+static ConsoleVariable<float> cvar_hudweapon_roll_spd("/hudweapon_roll_spd", 1.0);
+static ConsoleVariable<float> cvar_hudweapon_x_ang("/hudweapon_x_ang", 2.0);
+static ConsoleVariable<float> cvar_hudweapon_x_spd("/hudweapon_x_spd", 0.5);
+static ConsoleVariable<float> cvar_hudweapon_y_ang("/hudweapon_y_ang", -4.0);
+static ConsoleVariable<float> cvar_hudweapon_y_spd("/hudweapon_y_spd", 1.0);
+static ConsoleVariable<float> cvar_hudweapon_z_ang("/hudweapon_z_ang", 0.0);
+static ConsoleVariable<float> cvar_hudweapon_z_spd("/hudweapon_z_spd", 0.0);
+static ConsoleVariable<float> cvar_hudweapon_timescale("/hudweapon_timescale", 0.5);
+static ConsoleVariable<float> cvar_hudweapon_timescale2("/hudweapon_timescale2", 1.0);
+static ConsoleVariable<float> cvar_hudweapon_timescale3("/hudweapon_timescale3", 1.0);
+void hudWeaponAnimateVariable(real_t& variable, real_t target, real_t speed)
+{
+	if ( variable < target )
+	{
+		variable = std::min(variable + speed * *cvar_hudweapon_timescale, target);
+	}
+	else if ( variable > target )
+	{
+		variable = std::max(variable - speed * *cvar_hudweapon_timescale, target);
+	}
+}
+
 #define HUDARM_PLAYERNUM my->skill[11]
 #define HUD_SHAPESHIFT_HIDE my->skill[12]
 #define HUD_LASTSHAPESHIFT_FORM my->skill[13]
@@ -294,6 +321,7 @@ void actHudArm(Entity* my)
 #define HUDWEAPON_BOW_HAS_QUIVER my->skill[9]
 #define HUDWEAPON_BOW_FORCE_RELOAD my->skill[10]
 #define HUDWEAPON_PLAYERNUM my->skill[11]
+#define HUDWEAPON_DELAY_TICK my->skill[14]
 #define HUDWEAPON_MOVEX my->fskill[0]
 #define HUDWEAPON_MOVEY my->fskill[1]
 #define HUDWEAPON_MOVEZ my->fskill[2]
@@ -303,7 +331,7 @@ void actHudArm(Entity* my)
 #define HUDWEAPON_OLDVIBRATEX my->fskill[6]
 #define HUDWEAPON_OLDVIBRATEY my->fskill[7]
 #define HUDWEAPON_OLDVIBRATEZ my->fskill[8]
-
+ConsoleVariable<int> cvar_rapier_toggle("/rapier_toggle", 0);
 enum CrossbowAnimState : int
 {
 	CROSSBOW_ANIM_NONE,
@@ -367,6 +395,11 @@ void actHudWeapon(Entity* my)
 		my->flags[INVISIBLE] = true;
 		my->flags[INVISIBLE_DITHER] = false;
 		return;
+	}
+
+	if ( HUDWEAPON_DELAY_TICK > 0 )
+	{
+		--HUDWEAPON_DELAY_TICK;
 	}
 
 	if ( multiplayer == CLIENT )
@@ -974,6 +1007,7 @@ void actHudWeapon(Entity* my)
 
 	bool whip = stats[HUDWEAPON_PLAYERNUM]->weapon && stats[HUDWEAPON_PLAYERNUM]->weapon->type == TOOL_WHIP;
 	bool bearTrap = !hideWeapon && stats[HUDWEAPON_PLAYERNUM]->weapon && stats[HUDWEAPON_PLAYERNUM]->weapon->type == TOOL_BEARTRAP;
+	bool rapier = stats[HUDWEAPON_PLAYERNUM]->weapon && !hideWeapon && stats[HUDWEAPON_PLAYERNUM]->weapon->type == RAPIER;
 
 	// main animation
 	if ( HUDWEAPON_CHOP == 0 )
@@ -1077,6 +1111,11 @@ void actHudWeapon(Entity* my)
 					{
 						HUDWEAPON_CHOP = 4;
 						pickaxeGimpTimer = 20;
+					}
+					else if ( rapier )
+					{
+						HUDWEAPON_CHOP = 7; // lunges
+						HUDWEAPON_DELAY_TICK = 0;
 					}
 					else if ( rangedweapon )
 					{
@@ -1924,6 +1963,7 @@ void actHudWeapon(Entity* my)
 					&& item->type != FOOD_CREAMPIE
 					&& !(item->type >= ARTIFACT_ORB_BLUE && item->type <= ARTIFACT_ORB_GREEN)
 					&& !(itemIsThrowableTinkerTool(item))
+					&& item->type != RAPIER
 					&& item->type != TOOL_WHIP )
 				{
 					if ( stats[HUDWEAPON_PLAYERNUM]->weapon->type != TOOL_PICKAXE && itemCategory(item) != THROWN )
@@ -2268,6 +2308,7 @@ void actHudWeapon(Entity* my)
 	}
 	else if ( HUDWEAPON_CHOP == 7 )     // prepare for third swing
 	{
+		real_t pitchLimit = .2;
 		HUDWEAPON_MOVEX -= .35;
 		if ( HUDWEAPON_MOVEX < 0 )
 		{
@@ -2283,13 +2324,7 @@ void actHudWeapon(Entity* my)
 		{
 			HUDWEAPON_MOVEZ = -2;
 		}
-		HUDWEAPON_YAW -= .15;
-		if ( HUDWEAPON_YAW < 2 * PI / 5 )
-		{
-			result = 2 * PI / 5;
-			HUDWEAPON_YAW = result;
-		}
-		real_t pitchLimit = .2;
+
 		if ( playerRace == SPIDER )
 		{
 			pitchLimit = -PI / 2;
@@ -2303,17 +2338,58 @@ void actHudWeapon(Entity* my)
 		{
 			HUDWEAPON_PITCH = pitchLimit;
 		}
+
+		HUDWEAPON_YAW -= .15;
+		if ( HUDWEAPON_YAW < 2 * PI / 5 )
+		{
+			result = 2 * PI / 5;
+			HUDWEAPON_YAW = result;
+		}
 		HUDWEAPON_ROLL -= .15;
+
+		bool parry = false;
+		if ( *cvar_rapier_toggle == 0 )
+		{
+			parry = rapier && input.binaryToggle("Defend");
+		}
+
 		if (HUDWEAPON_ROLL < -2 * PI / 5)
 		{
 			HUDWEAPON_ROLL = -2 * PI / 5;
 			if (HUDWEAPON_PITCH == pitchLimit && HUDWEAPON_YAW == result 
 				&& HUDWEAPON_MOVEX == 0 && HUDWEAPON_MOVEY == -1 && (HUDWEAPON_MOVEZ == -2))
 			{
-				if (!swingweapon)
+				if ( (!swingweapon || parry) && HUDWEAPON_DELAY_TICK == 0)
 				{
 					HUDWEAPON_CHOP++;
-					if ( !bearTrap )
+					if ( rapier )
+					{
+						if ( *cvar_rapier_toggle == 1 || *cvar_rapier_toggle == 3 )
+						{
+							parry = HUDWEAPON_CHARGE < Stat::getMaxAttackCharge(stats[HUDWEAPON_PLAYERNUM]);
+						}
+						if ( parry )
+						{
+							if ( *cvar_rapier_toggle == 0 )
+							{
+								input.consumeBinaryToggle("Defend");
+							}
+							HUDWEAPON_CHOP = 21;
+							if ( *cvar_rapier_toggle == 3 )
+							{
+								players[HUDWEAPON_PLAYERNUM]->entity->attack(MONSTER_POSE_PARRY, HUDWEAPON_CHARGE, nullptr);
+							}
+							else
+							{
+								players[HUDWEAPON_PLAYERNUM]->entity->attack(MONSTER_POSE_PARRY, 35, nullptr);
+							}
+						}
+						else
+						{
+							players[HUDWEAPON_PLAYERNUM]->entity->attack(3, HUDWEAPON_CHARGE, nullptr);
+						}
+					}
+					else if ( !bearTrap )
 					{
 						if ( stats[HUDWEAPON_PLAYERNUM]->weapon && hideWeapon )
 						{
@@ -2405,7 +2481,12 @@ void actHudWeapon(Entity* my)
 				}
 				else if ( !(stats[HUDWEAPON_PLAYERNUM]->weapon && stats[HUDWEAPON_PLAYERNUM]->weapon->type == TOOL_BEARTRAP) )
 				{
-					if ( itemCategory(stats[HUDWEAPON_PLAYERNUM]->weapon) != MAGICSTAFF 
+					if ( rapier )
+					{
+						HUDWEAPON_CHOP = 7;
+					}
+					else if ( stats[HUDWEAPON_PLAYERNUM]->weapon
+						&& itemCategory(stats[HUDWEAPON_PLAYERNUM]->weapon) != MAGICSTAFF
 						&& stats[HUDWEAPON_PLAYERNUM]->weapon->type != CRYSTAL_SPEAR 
 						&& stats[HUDWEAPON_PLAYERNUM]->weapon->type != IRON_SPEAR 
 						&& stats[HUDWEAPON_PLAYERNUM]->weapon->type != ARTIFACT_SPEAR )
@@ -3050,6 +3131,64 @@ void actHudWeapon(Entity* my)
 			}
 		}
 	}
+	else if ( HUDWEAPON_CHOP == 21 )     // parry
+	{
+		//HUDWEAPON_MOVEX = std::min(static_cast<real_t>(1.0), HUDWEAPON_MOVEX + .15); // forward/back
+		//HUDWEAPON_MOVEY = std::min(static_cast<real_t>(1.0), HUDWEAPON_MOVEY + .25); // left/right
+		//HUDWEAPON_MOVEZ = std::min(static_cast<real_t>(0.0), HUDWEAPON_MOVEZ + .05); // up/down
+		hudWeaponAnimateVariable(HUDWEAPON_MOVEX, *cvar_hudweapon_x_ang, *cvar_hudweapon_x_spd);
+		hudWeaponAnimateVariable(HUDWEAPON_MOVEY, *cvar_hudweapon_y_ang, *cvar_hudweapon_y_spd);
+		hudWeaponAnimateVariable(HUDWEAPON_MOVEZ, *cvar_hudweapon_z_ang, *cvar_hudweapon_z_spd);
+		hudWeaponAnimateVariable(HUDWEAPON_PITCH, *cvar_hudweapon_pitch_ang, *cvar_hudweapon_pitch_spd);
+		hudWeaponAnimateVariable(HUDWEAPON_ROLL, *cvar_hudweapon_roll_ang, *cvar_hudweapon_roll_spd);
+		hudWeaponAnimateVariable(HUDWEAPON_YAW, *cvar_hudweapon_yaw_ang, *cvar_hudweapon_yaw_spd);
+		if ( (abs(HUDWEAPON_ROLL - *cvar_hudweapon_roll_ang) < 0.001 || *cvar_hudweapon_roll_spd == 0.f)
+			&& (abs(HUDWEAPON_PITCH - *cvar_hudweapon_pitch_ang) < 0.001 || *cvar_hudweapon_pitch_spd == 0.f)
+			&& (abs(HUDWEAPON_YAW - *cvar_hudweapon_yaw_ang) < 0.001 || *cvar_hudweapon_yaw_spd == 0.f)
+			&& (abs(HUDWEAPON_MOVEX - *cvar_hudweapon_x_ang) < 0.001 || *cvar_hudweapon_x_spd == 0.f)
+			&& (abs(HUDWEAPON_MOVEY - *cvar_hudweapon_y_ang) < 0.001 || *cvar_hudweapon_y_spd == 0.f)
+			&& (abs(HUDWEAPON_MOVEZ - *cvar_hudweapon_z_ang) < 0.001 || *cvar_hudweapon_z_spd == 0.f) )
+		{
+			HUDWEAPON_CHOP = 22;
+		}
+	}
+	else if ( HUDWEAPON_CHOP == 22 )
+	{
+		hudWeaponAnimateVariable(HUDWEAPON_MOVEX, 1.0, 0.15);
+		if ( abs(HUDWEAPON_MOVEX - 1.0) < 0.001 )
+		{
+			HUDWEAPON_CHOP = 23;
+		}
+	}
+	else if ( HUDWEAPON_CHOP == 23 )
+	{
+		/*if ( swingweapon )
+		{
+			HUDWEAPON_CHOP = 7;
+		}
+		else*/
+		{
+			real_t scale = *cvar_hudweapon_timescale2;
+			real_t scaleRoll = *cvar_hudweapon_timescale3;
+			hudWeaponAnimateVariable(HUDWEAPON_MOVEX, 0.0, 0.25 * scale);
+			hudWeaponAnimateVariable(HUDWEAPON_MOVEY, 0.0, 1.0 * scale);
+			hudWeaponAnimateVariable(HUDWEAPON_MOVEZ, 0.0, 0.25 * scale);
+			hudWeaponAnimateVariable(HUDWEAPON_PITCH, 0.0, 0.1 * scale);
+			hudWeaponAnimateVariable(HUDWEAPON_ROLL, 0.0, 0.025 * scaleRoll);
+			hudWeaponAnimateVariable(HUDWEAPON_YAW, -.1, 0.2 * scale);
+			if ( HUDWEAPON_YAW == -.1 && HUDWEAPON_ROLL == 0 && HUDWEAPON_PITCH == 0 && HUDWEAPON_MOVEZ == 0 && HUDWEAPON_MOVEY == 0 && HUDWEAPON_MOVEX == 0 )
+			{
+				if ( swingweapon && rapier )
+				{
+					HUDWEAPON_CHOP = 7;
+				}
+				else
+				{
+					HUDWEAPON_CHOP = 0;
+				}
+			}
+		}
+	}
 
 	if ( HUDWEAPON_CHARGE == Stat::getMaxAttackCharge(stats[HUDWEAPON_PLAYERNUM]) || castStrikeAnimation
 		|| players[HUDWEAPON_PLAYERNUM]->entity->skill[9] == MONSTER_POSE_SPECIAL_WINDUP2
@@ -3482,6 +3621,13 @@ void actHudShield(Entity* my)
 				allowDefend = false;
 			}
 			else if ( !shootmode && input.bindingIsSharedWithKeyboardSystemBinding("Defend") )
+			{
+				allowDefend = false;
+			}
+			else if ( players[HUDSHIELD_PLAYERNUM]->hud.weapon->skill[6] == 0 // hideWeapon == false
+				&& stats[HUDSHIELD_PLAYERNUM]->weapon && stats[HUDSHIELD_PLAYERNUM]->weapon->type == RAPIER
+				&& (players[HUDSHIELD_PLAYERNUM]->hud.weapon->skill[0] == 21
+					|| players[HUDSHIELD_PLAYERNUM]->hud.weapon->skill[0] == 22) )
 			{
 				allowDefend = false;
 			}
