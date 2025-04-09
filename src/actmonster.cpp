@@ -9994,21 +9994,22 @@ int limbAnimateToLimit(Entity* limb, int axis, double rate, double setpoint, boo
 	}
 	else if ( axis == ANIMATE_WEAPON_YAW )
 	{
-		while ( limb->fskill[5] < 0 )
+		real_t& limbSkill = limb->behavior == &actPlayer ? limb->fskill[2] : limb->monsterWeaponYaw;
+		while ( limbSkill < 0 )
 		{
-			limb->fskill[5] += 2 * PI;
+			limbSkill += 2 * PI;
 		}
-		while ( limb->fskill[5] >= 2 * PI )
+		while ( limbSkill >= 2 * PI )
 		{
-			limb->fskill[5] -= 2 * PI;
+			limbSkill -= 2 * PI;
 		}
 
-		if ( limbAngleWithinRange(limb->fskill[5], rate, setpoint) )
+		if ( limbAngleWithinRange(limbSkill, rate, setpoint) )
 		{
-			limb->fskill[5] = setpoint;
+			limbSkill = setpoint;
 			return 1; //reached setpoint
 		}
-		limb->fskill[5] += rate;
+		limbSkill += rate;
 	}
 
 	return 0;
