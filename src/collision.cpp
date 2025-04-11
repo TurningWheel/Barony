@@ -577,7 +577,8 @@ bool Entity::collisionProjectileMiss(Entity* parent, Entity* projectile)
 		}
 		if ( Stat* myStats = getStats() )
 		{
-			if ( myStats->type == BAT_SMALL || myStats->getEffectActive(EFF_AGILITY) || myStats->getEffectActive(EFF_ENSEMBLE_LUTE) )
+			if ( myStats->type == BAT_SMALL || myStats->getEffectActive(EFF_AGILITY) || myStats->getEffectActive(EFF_ENSEMBLE_LUTE) 
+				|| (parent && parent->getStats() && parent->getStats()->getEffectActive(EFF_BLIND)) )
 			{
 				bool miss = false;
 				if ( myStats->type == BAT_SMALL && isUntargetableBat() )
@@ -638,6 +639,10 @@ bool Entity::collisionProjectileMiss(Entity* parent, Entity* projectile)
 					if ( myStats->getEnsembleEffectBonus(Stat::ENSEMBLE_LUTE_TIER) > 0.001 )
 					{
 						baseChance = std::max(baseChance, static_cast<int>(myStats->getEnsembleEffectBonus(Stat::ENSEMBLE_LUTE_TIER)));
+					}
+					if ( parent && parent->getStats() && parent->getStats()->getEffectActive(EFF_BLIND) )
+					{
+						baseChance = std::max(baseChance, 75);
 					}
 					if ( baseChance <= 0 )
 					{
@@ -774,6 +779,7 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 	bool reduceCollisionSize = false;
 	bool tryReduceCollisionSize = false;
 	bool projectileAttack = false;
+	bool parentDodgeChance = false;
 	Entity* parent = nullptr;
 	Stat* parentStats = nullptr;
 	if ( my )
@@ -789,6 +795,10 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 				projectileAttack = true;
 				if ( parent = uidToEntity(my->parent) )
 				{
+					if ( Stat* tmpStats = parent->getStats() )
+					{
+						parentDodgeChance = tmpStats->getEffectActive(EFF_BLIND);
+					}
 					if ( my->behavior == &actThrown )
 					{
 						tryReduceCollisionSize = true;
@@ -991,7 +1001,7 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 			{
 				continue;
 			}
-			if ( projectileAttack && yourStats && (yourStats->getEffectActive(EFF_AGILITY) || yourStats->getEffectActive(EFF_ENSEMBLE_LUTE)) )
+			if ( projectileAttack && yourStats && (parentDodgeChance || yourStats->getEffectActive(EFF_AGILITY) || yourStats->getEffectActive(EFF_ENSEMBLE_LUTE)) )
 			{
 				entityDodgeChance = true;
 			}

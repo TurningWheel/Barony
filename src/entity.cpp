@@ -8352,7 +8352,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 				{
 					miss = false;
 				}
-				else if ( bat || (hitstats && (hitstats->getEffectActive(EFF_AGILITY) || hitstats->getEffectActive(EFF_ENSEMBLE_LUTE))) )
+				else if ( bat || (hitstats && (hitstats->getEffectActive(EFF_AGILITY) || hitstats->getEffectActive(EFF_ENSEMBLE_LUTE))) || myStats->getEffectActive(EFF_BLIND) )
 				{
 					Sint32 previousMonsterState = hit.entity->monsterState;
 					bool backstab = false;
@@ -8403,6 +8403,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 						if ( hitstats && hitstats->getEnsembleEffectBonus(Stat::ENSEMBLE_LUTE_TIER) > 0.001 )
 						{
 							baseChance = std::max(baseChance, static_cast<int>(hitstats->getEnsembleEffectBonus(Stat::ENSEMBLE_LUTE_TIER)));
+						}
+						if ( myStats->getEffectActive(EFF_BLIND) )
+						{
+							baseChance = std::max(baseChance, 75);
 						}
 						if ( baseChance <= 0 )
 						{
