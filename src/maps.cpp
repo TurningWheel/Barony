@@ -1100,7 +1100,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 	//Sint32 x, y, z;
 	door_t* door, *newDoor;
 	bool* possiblelocations, *possiblelocations2;
-	bool* firstroomtile;
+	bool* firstroomtile, *secretlevelexittile;
 	Sint32 numpossiblelocations, pickedlocation, subroomPickRoom;
 	Entity* entity, *entity2, *childEntity;
 	Uint32 levellimit;
@@ -1684,6 +1684,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		}
 		possiblelocations2 = (bool*) malloc(sizeof(bool) * map.width * map.height);
 		firstroomtile = (bool*) malloc(sizeof(bool) * map.width * map.height);
+		secretlevelexittile = (bool*)malloc(sizeof(bool) * map.width * map.height);
 		bool* possiblerooms = (bool*) malloc(sizeof(bool) * numlevels);
 		for ( c = 0; c < numlevels; c++ )
 		{
@@ -1782,7 +1783,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				levelnum2 = -1;
 				tempMap = &secretlevelmap;
 			}
-			else if ( c == 1 && treasureRoomLevel )
+			else if ( ((c == 1 && !secretlevelexit) || (c == 3 && secretlevelexit)) && treasureRoomLevel )
 			{
 				// generate a treasure room
 				levelnum = 0;
@@ -1876,7 +1877,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			}
 
 			// in case no locations are available, remove this room from the selection
-			if ( c == 1 && treasureRoomLevel )
+			if ( ((c == 1 && !secretlevelexit) || (c == 3 && secretlevelexit)) && treasureRoomLevel)
 			{
 				if ( numpossiblelocations <= 0 )
 				{
@@ -1922,6 +1923,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 						map.lootexcludelocations = nullptr;
 					}
 					free(firstroomtile);
+					free(secretlevelexittile);
 					list_FreeAll(&subRoomMapList);
 					list_FreeAll(&mapList);
 					for ( int i = 0; i < TreasureRoomTypes::TREASURE_ROOM_MAX; ++i )
@@ -2112,6 +2114,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				for ( int z = 0; z < map.width * map.height; ++z )
 				{
 					firstroomtile[z] = false;
+					secretlevelexittile[z] = false;
 				}
 			}
 
@@ -2130,7 +2133,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			node_t* subRoomNode = nullptr;
 			int subroomLogCount = 0;
 			static char submapLogMsg[256] = "";
-			if ( c == 1 && treasureRoomLevel 
+			if ( (((c == 1 && !secretlevelexit) || (c == 3 && secretlevelexit)) && treasureRoomLevel)
 				&& treasureRoomLevel->innerSubRooms.find(levelnum2) != treasureRoomLevel->innerSubRooms.end()
 				&& treasureRoomLevel->innerSubRooms[levelnum2].count > 0 )
 			{
@@ -2315,7 +2318,11 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 								}
 							}
 
-							if ( c == 1 && treasureRoomLevel )
+							if ( c == 1 && secretlevelexit )
+							{
+								secretlevelexittile[y0 + x0 * map.height] = true;
+							}
+							if ( ((c == 1 && !secretlevelexit) || (c == 3 && secretlevelexit)) && treasureRoomLevel )
 							{
 								decorationexcludelocations[x0 + y0 * map.width] = true;
 								treasureRoomLocations[x0 + y0 * map.width] = true;
@@ -3568,6 +3575,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 
 	int exit_x = -1;
 	int exit_y = -1;
+	int secretExitLadderTries = 200;
 	//printlog("j: %d\n",j);
 	//printlog("numpossiblelocations: %d\n",numpossiblelocations);
 	for ( c = 0; c < std::min(j, numpossiblelocations); ++c )
@@ -3835,9 +3843,18 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			}
 			else
 			{
-				// normal exits
-				if ( strcmp(map.name, "Hell") )
+
+				if ( secretlevelexittile[y + x * map.height] && secretExitLadderTries > 0 )
 				{
+					// try again, no exits in secret level exits
+					c--;
+					entity = NULL;
+					--secretExitLadderTries;
+					continue;
+				}
+				else if ( strcmp(map.name, "Hell") )
+				{
+					// normal exits
 					entity = newEntity(11, 1, map.entities, nullptr); // ladder
 					entity->behavior = &actLadder;
 				}
@@ -3848,9 +3865,9 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 					entity->skill[3] = 1; // not secret portals though
 				}
 
-				// determine if the ladder generated in a viable location
-				if ( strncmp(map.name, "Underworld", 10) )
+				if ( entity && strncmp(map.name, "Underworld", 10) )
 				{
+					// determine if the ladder generated in a viable location
 					bool nopath = false;
 					bool hellLadderFix = !strncmp(map.name, "Hell", 4);
 					std::vector<Entity*> tempPassableEntities;
@@ -5800,6 +5817,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 
 	free(possiblelocations);
 	free(firstroomtile);
+	free(secretlevelexittile);
 	list_FreeAll(&subRoomMapList);
 	list_FreeAll(&mapList);
 	list_FreeAll(&doorList);
