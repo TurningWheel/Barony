@@ -103,6 +103,7 @@ Global
 		{8D0CEB30-DFEC-462D-B107-1EA02D317151}.Steam Crossplay|Win32.ActiveCfg = Steam Crossplay|Win32
 		{8D0CEB30-DFEC-462D-B107-1EA02D317151}.Steam Crossplay|Win32.Build.0 = Steam Crossplay|Win32
 		{8D0CEB30-DFEC-462D-B107-1EA02D317151}.Steam Crossplay|x64.ActiveCfg = Steam Crossplay|x64
+		{8D0CEB30-DFEC-462D-B107-1EA02D317151}.Steam Crossplay|x64.Build.0 = Steam Crossplay|x64
 		{8D0CEB30-DFEC-462D-B107-1EA02D317151}.Steam Debug|Win32.ActiveCfg = Steam Debug|Win32
 		{8D0CEB30-DFEC-462D-B107-1EA02D317151}.Steam Debug|x64.ActiveCfg = Steam Debug|x64
 	EndGlobalSection
