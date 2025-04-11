@@ -1334,8 +1334,8 @@
 			"name_unidentified": "stone key"
 		},
 		"key_bone": {
-			"name_identified": "bone key",
-			"name_unidentified": "bone key"
+			"name_identified": "spirit key",
+			"name_unidentified": "spirit key"
 		},
 		"key_bronze": {
 			"name_identified": "bronze key",
@@ -1360,6 +1360,34 @@
 		"key_machine": {
 			"name_identified": "machine key",
 			"name_unidentified": "machine key"
+		},
+		"tool_foci_fire": {
+			"name_identified": "fire foci",
+			"name_unidentified": "foci"
+		},
+		"instrument_flute": {
+			"name_identified": "flute",
+			"name_unidentified": "flute"
+		},
+		"instrument_lyre": {
+			"name_identified": "lyre",
+			"name_unidentified": "lyre"
+		},
+		"instrument_drum": {
+			"name_identified": "drum",
+			"name_unidentified": "drum"
+		},
+		"instrument_lute": {
+			"name_identified": "lute",
+			"name_unidentified": "lute"
+		},
+		"instrument_horn": {
+			"name_identified": "horn",
+			"name_unidentified": "horn"
+		},
+		"rapier": {
+			"name_identified": "rapier",
+			"name_unidentified": "rapier"
 		}
     },
 	"spell_names": {
@@ -1542,6 +1570,30 @@
 		},
 		"spell_slime_metal": {
 			"name": "Slime Spray (Metal)"
+		},
+		"spell_foci_fire": {
+			"name": "Foci (Fire)"
+		},
+		"spell_foci_snow": {
+			"name": "Foci (Snow)"
+		},
+		"spell_foci_needles": {
+			"name": "Foci (Needles)"
+		},
+		"spell_foci_arcs": {
+			"name": "Foci (Arcs)"
+		},
+		"spell_foci_sandblast": {
+			"name": "Foci (Sandblast)"
+		},
+		"spell_meteor": {
+			"name": "Meteor"
+		},
+		"spell_flames": {
+			"name": "Flames"
+		},
+		"spell_ice_wave": {
+			"name": "Ice Wave"
 		}
     }
 }

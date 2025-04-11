@@ -6686,5 +6686,9 @@ Host to enable the game setting.
 6431 Your song's effect cannot be extended any further!#
 6432 Your strike pierced the %s's armor!#
 6433 Your strike pierced %s's armor!#
+6434 The %s parries your blow!#
+6435 %s parries your blow!#
+6436 You parry the %s's blow!#
+6437 You parry %s's blow!#
 
 6599 END#
