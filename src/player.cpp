@@ -4451,6 +4451,7 @@ void Player::WorldUI_t::handleTooltips()
 		}
 
 		bool foundTinkeringKit = false;
+		bool foundInstrument = false;
 		bool radialMenuOpen = FollowerMenu[player].followerMenuIsOpen();
 		bool selectInteract = false;
 		if ( radialMenuOpen )
@@ -4512,6 +4513,15 @@ void Player::WorldUI_t::handleTooltips()
 			{
 				// don't ignore
 				foundTinkeringKit = true;
+			}
+			else if ( stats[player]->shield &&
+				(stats[player]->shield->type == INSTRUMENT_FLUTE
+					|| stats[player]->shield->type == INSTRUMENT_DRUM
+					|| stats[player]->shield->type == INSTRUMENT_HORN
+					|| stats[player]->shield->type == INSTRUMENT_LUTE
+					|| stats[player]->shield->type == INSTRUMENT_LYRE) )
+			{
+				foundInstrument = true;
 			}
 			else
 			{
@@ -7364,6 +7374,8 @@ void Player::PlayerMechanics_t::ensembleMusicUpdate()
 #ifdef USE_FMOD
 	static ConsoleVariable<int> cvar_ensemble_pitch_base("/ensemble_pitch_base", 0);
 	static ConsoleVariable<int> cvar_ensemble_pitch_combat("/ensemble_pitch_combat", 0);
+	static ConsoleVariable<float> cvar_ensemble_vol_bg("/ensemble_vol_bg", 1.f);
+	static ConsoleVariable<float> cvar_ensemble_vol_fg("/ensemble_vol_fg", 1.f);
 	if ( *cvar_ensemble_pitch_base > 0 && *cvar_ensemble_pitch_combat > 0 )
 	{
 		if ( combat )
@@ -7399,7 +7411,7 @@ void Player::PlayerMechanics_t::ensembleMusicUpdate()
 			debugPlaying += "Vol: " + std::to_string(volume) + ") ";
 		}
 		messagePlayer(0, MESSAGE_DEBUG, "%s", debugPlaying.c_str());*/
-		float defaultVolume = 0.5f;
+		float defaultVolume = 0.5f * *cvar_ensemble_vol_bg;
 
 		Uint32 trackstatus = 0;
 		Uint32 trackstatusLocal = 0;
@@ -7518,10 +7530,10 @@ void Player::PlayerMechanics_t::ensembleMusicUpdate()
 				if ( music_ensemble_global_channel[i] )
 				{
 					float targetVolume = defaultVolume;
-					if ( i == 4 )
-					{
-						targetVolume /= 2; // horn quieter
-					}
+					//if ( i == 4 )
+					//{
+					//	targetVolume /= 2; // horn quieter
+					//}
 					if ( trackstatus & (1 << i) )
 					{
 						if ( !active || true ) 
@@ -7608,7 +7620,7 @@ void Player::PlayerMechanics_t::ensembleMusicUpdate()
 					position.z = (float)(players[c]->entity->y / (real_t)16.0);
 					fmod_result = music_ensemble_local_recv_player[c]->set3DAttributes(&position, nullptr); // update to player position
 				}
-				music_ensemble_local_recv_player[c]->setVolume(0.5f);
+				music_ensemble_local_recv_player[c]->setVolume(0.5f * *cvar_ensemble_vol_fg);
 
 				FMOD::DSP* transceivers[NUMENSEMBLEMUSIC] = { nullptr };
 				for ( int i = 0; i < NUMENSEMBLEMUSIC; ++i )
