@@ -1659,11 +1659,6 @@ real_t Stat::getEnsembleEffectBonus(Stat::EnsembleEffectsBonusType bonusType)
 	static const Sint32 kBreakPoint2 = 6;
 	static const Sint32 kBreakPoint1 = 1;
 
-	static const Sint32 kBreakPointTier4 = 40;
-	static const Sint32 kBreakPointTier3 = 20;
-	static const Sint32 kBreakPointTier2 = 5;
-	static const Sint32 kBreakPointTier1 = 0;
-
 	real_t result = 0.0;
 	if ( Uint8 effectStrength = getEffectActive(EFF_ENSEMBLE_FLUTE) )
 	{
@@ -1705,19 +1700,19 @@ real_t Stat::getEnsembleEffectBonus(Stat::EnsembleEffectsBonusType bonusType)
 		}
 		if ( bonusType == ENSEMBLE_FLUTE_TIER )
 		{
-			if ( effectStrength >= kBreakPointTier4 )
+			if ( effectStrength >= kEnsembleBreakPointTier4 )
 			{
 				result = 50.0;
 			}
-			else if ( effectStrength >= kBreakPointTier3 )
+			else if ( effectStrength >= kEnsembleBreakPointTier3 )
 			{
 				result = 40.0;
 			}
-			else if ( effectStrength >= kBreakPointTier2 )
+			else if ( effectStrength >= kEnsembleBreakPointTier2 )
 			{
 				result = 30.0;
 			}
-			else if(effectStrength >= kBreakPointTier1 )
+			else if(effectStrength >= kEnsembleBreakPointTier1 )
 			{
 				result = 20.0;
 			}
@@ -1763,19 +1758,19 @@ real_t Stat::getEnsembleEffectBonus(Stat::EnsembleEffectsBonusType bonusType)
 		}
 		if ( bonusType == ENSEMBLE_LUTE_TIER )
 		{
-			if ( effectStrength >= kBreakPointTier4 )
+			if ( effectStrength >= kEnsembleBreakPointTier4 )
 			{
 				result = 18.0;
 			}
-			else if ( effectStrength >= kBreakPointTier3 )
+			else if ( effectStrength >= kEnsembleBreakPointTier3 )
 			{
 				result = 15.0;
 			}
-			else if ( effectStrength >= kBreakPointTier2 )
+			else if ( effectStrength >= kEnsembleBreakPointTier2 )
 			{
 				result = 12.0;
 			}
-			else if ( effectStrength >= kBreakPointTier1 )
+			else if ( effectStrength >= kEnsembleBreakPointTier1 )
 			{
 				result = 10.0;
 			}
@@ -1821,19 +1816,19 @@ real_t Stat::getEnsembleEffectBonus(Stat::EnsembleEffectsBonusType bonusType)
 		}
 		if ( bonusType == ENSEMBLE_DRUM_TIER )
 		{
-			if ( effectStrength >= kBreakPointTier4 )
+			if ( effectStrength >= kEnsembleBreakPointTier4 )
 			{
 				result = 25.0;
 			}
-			else if ( effectStrength >= kBreakPointTier3 )
+			else if ( effectStrength >= kEnsembleBreakPointTier3 )
 			{
 				result = 20.0;
 			}
-			else if ( effectStrength >= kBreakPointTier2 )
+			else if ( effectStrength >= kEnsembleBreakPointTier2 )
 			{
 				result = 15.0;
 			}
-			else if ( effectStrength >= kBreakPointTier1 )
+			else if ( effectStrength >= kEnsembleBreakPointTier1 )
 			{
 				result = 10.0;
 			}
@@ -1879,19 +1874,19 @@ real_t Stat::getEnsembleEffectBonus(Stat::EnsembleEffectsBonusType bonusType)
 		}
 		if ( bonusType == ENSEMBLE_HORN_TIER )
 		{
-			if ( effectStrength >= kBreakPointTier4 )
+			if ( effectStrength >= kEnsembleBreakPointTier4 )
 			{
 				result = 10.0;
 			}
-			else if ( effectStrength >= kBreakPointTier3 )
+			else if ( effectStrength >= kEnsembleBreakPointTier3 )
 			{
 				result = 8.0;
 			}
-			else if ( effectStrength >= kBreakPointTier2 )
+			else if ( effectStrength >= kEnsembleBreakPointTier2 )
 			{
 				result = 5.0;
 			}
-			else if ( effectStrength >= kBreakPointTier1 )
+			else if ( effectStrength >= kEnsembleBreakPointTier1 )
 			{
 				result = 2.0;
 			}
@@ -1937,38 +1932,38 @@ real_t Stat::getEnsembleEffectBonus(Stat::EnsembleEffectsBonusType bonusType)
 		}
 		if ( bonusType == ENSEMBLE_LYRE_TIER )
 		{
-			if ( effectStrength >= kBreakPointTier4 )
+			if ( effectStrength >= kEnsembleBreakPointTier4 )
 			{
 				result = 35.0;
 			}
-			else if ( effectStrength >= kBreakPointTier3 )
+			else if ( effectStrength >= kEnsembleBreakPointTier3 )
 			{
 				result = 30.0;
 			}
-			else if ( effectStrength >= kBreakPointTier2 )
+			else if ( effectStrength >= kEnsembleBreakPointTier2 )
 			{
 				result = 25.0;
 			}
-			else if ( effectStrength >= kBreakPointTier1 )
+			else if ( effectStrength >= kEnsembleBreakPointTier1 )
 			{
 				result = 20.0;
 			}
 		}
 		if ( bonusType == ENSEMBLE_LYRE_TIER_2 )
 		{
-			if ( effectStrength >= kBreakPointTier4 )
+			if ( effectStrength >= kEnsembleBreakPointTier4 )
 			{
 				result = 5.0;
 			}
-			else if ( effectStrength >= kBreakPointTier3 )
+			else if ( effectStrength >= kEnsembleBreakPointTier3 )
 			{
 				result = 4.0;
 			}
-			else if ( effectStrength >= kBreakPointTier2 )
+			else if ( effectStrength >= kEnsembleBreakPointTier2 )
 			{
 				result = 3.0;
 			}
-			else if ( effectStrength >= kBreakPointTier1 )
+			else if ( effectStrength >= kEnsembleBreakPointTier1 )
 			{
 				result = 2.0;
 			}

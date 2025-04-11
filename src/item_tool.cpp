@@ -728,7 +728,7 @@ void Item::applyLockpick(int player, Entity& entity)
 				playSoundEntity(&entity, 92, 64);
 				messagePlayer(player, MESSAGE_INTERACTION, Language::get(1102));
 			}
-			else if ( players[player] && players[player]->entity && entity.disturbMimic(players[player]->entity, false, false) )
+			else if ( players[player] && players[player]->entity && entity.disturbMimic(players[player]->entity, false, true) )
 			{
 				playSoundEntity(&entity, 91, 64);
 				messagePlayer(player, MESSAGE_INTERACTION, Language::get(6081));

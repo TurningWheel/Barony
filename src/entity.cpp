@@ -999,6 +999,11 @@ int Entity::entityLightAfterReductions(Stat& myStats, Entity* observer)
 		light = std::min(light, TOUCHRANGE);
 	}
 
+	if ( player >= 0 && players[player]->mechanics.ensemblePlaying >= 0 )
+	{
+		light = std::max(16 * 5, light + 3 * 16);
+	}
+
 	light = std::max(light, 0);
 	if ( myStats.type == DUMMYBOT )
 	{
@@ -4463,9 +4468,9 @@ void Entity::handleEffects(Stat* myStats)
 					if ( defendTime >= chargeTimeInit )
 					{
 						Sint32 CHR = statGetCHR(myStats, this);
-						int chargeTime = 4 * TICKS_PER_SECOND; // 4 sec base, -0.1s per CHR
+						int chargeTime = 4 * TICKS_PER_SECOND; // 4 sec base, -0.Xs per CHR
 						chargeTime = std::max(TICKS_PER_SECOND / 2, 
-							chargeTime - (TICKS_PER_SECOND / 10) * CHR);
+							chargeTime - (TICKS_PER_SECOND / 20) * CHR);
 
 						int effect = -1;
 						int mpcost = 2;
@@ -4617,6 +4622,14 @@ void Entity::handleEffects(Stat* myStats)
 							static ConsoleVariable<bool> cvar_ensemble_debug_length("/ensemble_debug_length", false);
 
 							Uint8 effectStrength = std::max(1, std::min(255, CHR + 1));
+							if ( castCycle == 1 )
+							{
+								effectStrength = 1; // no accumulated song, or between MP ticks
+							}
+							else
+							{
+								effectStrength = std::max(1, std::min(static_cast<int>(effectStrength), (1 + 5 * (castCycle - 1))));
+							}
 							for ( node_t* node = map.creatures->first; node && effect >= 0; node = node->next )
 							{
 								if ( Entity* entity = (Entity*)(node->element) )
@@ -9914,6 +9927,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 								degradeWeapon = false;
 							}
 							else if ( myStats->weapon && myStats->weapon->type == TOOL_WHIP )
+							{
+								degradeWeapon = false;
+							}
+							else if ( myStats->weapon && myStats->weapon->type == RAPIER )
 							{
 								degradeWeapon = false;
 							}

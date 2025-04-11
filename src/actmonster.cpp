@@ -521,6 +521,10 @@ void ShopkeeperPlayerHostility_t::setWantedLevel(ShopkeeperPlayerHostility_t::Pl
 			}
 
 			real_t monsterVisionRange = sightranges[SHOPKEEPER];
+			if ( players[i]->mechanics.ensemblePlaying >= 0 )
+			{
+				monsterVisionRange = std::max(monsterVisionRange, 5 * 16.0);
+			}
 			int light = players[i]->entity->entityLightAfterReductions(*stats[i], shopkeeper);
 			double targetdist = sqrt(pow(shopkeeper->x - players[i]->entity->x, 2) + pow(shopkeeper->y - players[i]->entity->y, 2));
 
@@ -4074,7 +4078,7 @@ void actMonster(Entity* my)
 					messagePlayer(monsterclicked, MESSAGE_INTERACTION, Language::get(462));
 					playSoundEntity(my, 152, 64);
 				}
-				else if ( my->disturbMimic(players[monsterclicked]->entity, false, false) )
+				else if ( my->disturbMimic(players[monsterclicked]->entity, false, true) )
 				{
 					messagePlayer(monsterclicked, MESSAGE_INTERACTION, Language::get(6081));
 				}
@@ -4807,6 +4811,10 @@ void actMonster(Entity* my)
 							{
 								monsterVisionRange = std::max(monsterVisionRange, 96.0);
 							}
+							if ( entity->behavior == &actPlayer && players[entity->skill[2]]->mechanics.ensemblePlaying >= 0 )
+							{
+								monsterVisionRange = std::max(monsterVisionRange, 5 * 16.0);
+							}
 
 							if ( targetdist > monsterVisionRange )
 							{
@@ -5503,6 +5511,10 @@ void actMonster(Entity* my)
 				if ( hitstats && hitstats->type == DUMMYBOT )
 				{
 					monsterVisionRange = std::max(monsterVisionRange, 96.0);
+				}
+				if ( entity->behavior == &actPlayer && players[entity->skill[2]]->mechanics.ensemblePlaying >= 0 )
+				{
+					monsterVisionRange = std::max(monsterVisionRange, 5 * 16.0);
 				}
 				if ( myStats->getEffectActive(EFF_FEAR) )
 				{
@@ -6495,6 +6507,10 @@ timeToGoAgain:
 							if ( hitstats->type == DUMMYBOT )
 							{
 								monsterVisionRange = std::max(monsterVisionRange, 96.0);
+							}
+							if ( entity->behavior == &actPlayer && players[entity->skill[2]]->mechanics.ensemblePlaying >= 0 )
+							{
+								monsterVisionRange = std::max(monsterVisionRange, 5 * 16.0);
 							}
 
 							if ( targetdist > monsterVisionRange )
@@ -9070,6 +9086,10 @@ timeToGoAgain:
 
 							bool visiontest = false;
 							real_t monsterVisionRange = 40.0; //sightranges[myStats->type];
+							if ( entity->behavior == &actPlayer && players[entity->skill[2]]->mechanics.ensemblePlaying >= 0 )
+							{
+								monsterVisionRange = std::max(monsterVisionRange, 5 * 16.0);
+							}
 							int sizex = my->sizex;
 							int sizey = my->sizey;
 							my->sizex = std::max(my->sizex, 4); // override size temporarily
@@ -9210,6 +9230,10 @@ timeToGoAgain:
 							double targetdist = sqrt(pow(my->x - entity->x, 2) + pow(my->y - entity->y, 2));
 
 							real_t monsterVisionRange = 24.0; //sightranges[myStats->type];
+							if ( entity->behavior == &actPlayer && players[entity->skill[2]]->mechanics.ensemblePlaying >= 0 )
+							{
+								monsterVisionRange = std::max(monsterVisionRange, 3 * 16.0);
+							}
 
 							if ( targetdist > monsterVisionRange )
 							{
@@ -9236,7 +9260,7 @@ timeToGoAgain:
 								{
 									// charge state
 									Entity* attackTarget = hit.entity;
-									if ( my->disturbMimic(attackTarget, false, true) )
+									if ( my->disturbMimic(attackTarget, false, monsterVisionRange <= 25.0 ) )
 									{
 										my->monsterAcquireAttackTarget(*attackTarget, MONSTER_STATE_ATTACK);
 

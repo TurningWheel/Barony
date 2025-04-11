@@ -936,13 +936,16 @@ bool Entity::disturbMimic(Entity* touched, bool takenDamage, bool doMessage)
 			monsterAcquireAttackTarget(*touched, MONSTER_STATE_PATH, true);
 			if ( touched->behavior == &actPlayer )
 			{
-				messagePlayerColor(touched->skill[2], MESSAGE_INTERACTION, 
-					makeColorRGB(255, 0 ,0), Language::get(6082));
+				if ( doMessage )
+				{
+					messagePlayerColor(touched->skill[2], MESSAGE_INTERACTION, 
+						makeColorRGB(255, 0 ,0), Language::get(6082));
+				}
 			}
 		}
 	}
 
-	if ( !myStats->getEffectActive(EFF_MIMIC_LOCKED) )
+	if ( myStats && !myStats->getEffectActive(EFF_MIMIC_LOCKED) )
 	{
 		attack(MONSTER_POSE_MIMIC_DISTURBED, 0, nullptr);
 		playSoundEntity(this, 21, 64);

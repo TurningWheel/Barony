@@ -3958,7 +3958,7 @@ Sint32 Item::weaponGetAttack(const Stat* const wielder) const
 	}
 	else if ( type == RAPIER )
 	{
-		attack += 5;
+		attack += 7;
 	}
 	else if ( type == IRON_MACE )
 	{

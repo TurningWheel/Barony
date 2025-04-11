@@ -431,6 +431,10 @@ public:
 		ENSEMBLE_LYRE_TIER,
 		ENSEMBLE_LYRE_TIER_2
 	};
+	static const Sint32 kEnsembleBreakPointTier4 = 40;
+	static const Sint32 kEnsembleBreakPointTier3 = 20;
+	static const Sint32 kEnsembleBreakPointTier2 = 5;
+	static const Sint32 kEnsembleBreakPointTier1 = 0;
 	real_t getEnsembleEffectBonus(EnsembleEffectsBonusType bonusType);
 	static int getMaxAttackCharge(Stat* myStats);
 };
