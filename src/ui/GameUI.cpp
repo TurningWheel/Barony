@@ -5615,23 +5615,180 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 		int player = parent->getOwner();
 		if ( player >= 0 && player < MAXPLAYERS )
 		{
-			if ( stats[player]->MISC_FLAGS[STAT_FLAG_ASSISTANCE_PLAYER_PTS] > 0 )
+			if ( stats[player]->MISC_FLAGS[STAT_FLAG_ASSISTANCE_PLAYER_PTS] > 0
+				|| stats[player]->getEffectActive(EFF_ENSEMBLE_FLUTE)
+				|| stats[player]->getEffectActive(EFF_ENSEMBLE_LUTE) 
+				|| stats[player]->getEffectActive(EFF_ENSEMBLE_LYRE) 
+				|| stats[player]->getEffectActive(EFF_ENSEMBLE_DRUM) 
+				|| stats[player]->getEffectActive(EFF_ENSEMBLE_HORN) )
 			{
 				for ( auto img : frame->getImages() )
 				{
-					if ( !img->disabled && img->path.find("assistance.png") != std::string::npos )
+					if ( !img->disabled )
 					{
-						if ( auto text = Text::get(std::to_string(stats[player]->MISC_FLAGS[STAT_FLAG_ASSISTANCE_PLAYER_PTS]).c_str(), 
-							"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+						if ( img->path.find("assistance.png") != std::string::npos )
 						{
-							text->drawColor(SDL_Rect{ 0,0,0,0 },
-								SDL_Rect{ pos.x + img->pos.x + img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x,
-								pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
-								0, 0 },
-								SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
-								makeColor(255, 255, 255, 255));
+							if ( auto text = Text::get(std::to_string(stats[player]->MISC_FLAGS[STAT_FLAG_ASSISTANCE_PLAYER_PTS]).c_str(), 
+								"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+							{
+								text->drawColor(SDL_Rect{ 0,0,0,0 },
+									SDL_Rect{ pos.x + img->pos.x + img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x,
+									pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
+									0, 0 },
+									SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+									makeColor(255, 255, 255, 255));
+							}
 						}
-						break;
+						else if ( img->path.find("ensemble_flute.png") != std::string::npos )
+						{
+							std::string val = "I";
+							Uint8 effectStrength = stats[player]->getEffectActive(EFF_ENSEMBLE_FLUTE);
+							if ( effectStrength >= 1 )
+							{
+								if ( effectStrength - 1 >= Stat::kEnsembleBreakPointTier4 )
+								{
+									val = "IV";
+								}
+								else if ( effectStrength - 1 >= Stat::kEnsembleBreakPointTier3 )
+								{
+									val = "III";
+								}
+								else if ( effectStrength - 1 >= Stat::kEnsembleBreakPointTier2 )
+								{
+									val = "II";
+								}
+							}
+							if ( auto text = Text::get(val.c_str(),
+								"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+							{
+								text->drawColor(SDL_Rect{ 0,0,0,0 },
+									SDL_Rect{ pos.x + img->pos.x + img->pos.w - (int)text->getWidth()/* / 2 + *cvar_assist_icon_txt_x*/,
+									pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
+									0, 0 },
+									SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+									makeColor(255, 255, 255, 255));
+							}
+						}
+						else if ( img->path.find("ensemble_lute.png") != std::string::npos )
+						{
+							std::string val = "I";
+							Uint8 effectStrength = stats[player]->getEffectActive(EFF_ENSEMBLE_LUTE);
+							if ( effectStrength >= 1 )
+							{
+								if ( effectStrength - 1 >= Stat::kEnsembleBreakPointTier4 )
+								{
+									val = "IV";
+								}
+								else if ( effectStrength - 1 >= Stat::kEnsembleBreakPointTier3 )
+								{
+									val = "III";
+								}
+								else if ( effectStrength - 1 >= Stat::kEnsembleBreakPointTier2 )
+								{
+									val = "II";
+								}
+							}
+							if ( auto text = Text::get(val.c_str(),
+								"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+							{
+								text->drawColor(SDL_Rect{ 0,0,0,0 },
+									SDL_Rect{ pos.x + img->pos.x + img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x,
+									pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
+									0, 0 },
+									SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+									makeColor(255, 255, 255, 255));
+							}
+						}
+						else if ( img->path.find("ensemble_lyre.png") != std::string::npos )
+						{
+							std::string val = "I";
+							Uint8 effectStrength = stats[player]->getEffectActive(EFF_ENSEMBLE_LYRE);
+							if ( effectStrength >= 1 )
+							{
+								if ( effectStrength - 1 >= Stat::kEnsembleBreakPointTier4 )
+								{
+									val = "IV";
+								}
+								else if ( effectStrength - 1 >= Stat::kEnsembleBreakPointTier3 )
+								{
+									val = "III";
+								}
+								else if ( effectStrength - 1 >= Stat::kEnsembleBreakPointTier2 )
+								{
+									val = "II";
+								}
+							}
+							if ( auto text = Text::get(val.c_str(),
+								"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+							{
+								text->drawColor(SDL_Rect{ 0,0,0,0 },
+									SDL_Rect{ pos.x + img->pos.x + img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x,
+									pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
+									0, 0 },
+									SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+									makeColor(255, 255, 255, 255));
+							}
+						}
+						else if ( img->path.find("ensemble_drum.png") != std::string::npos )
+						{
+							std::string val = "I";
+							Uint8 effectStrength = stats[player]->getEffectActive(EFF_ENSEMBLE_DRUM);
+							if ( effectStrength >= 1 )
+							{
+								if ( effectStrength - 1 >= Stat::kEnsembleBreakPointTier4 )
+								{
+									val = "IV";
+								}
+								else if ( effectStrength - 1 >= Stat::kEnsembleBreakPointTier3 )
+								{
+									val = "III";
+								}
+								else if ( effectStrength - 1 >= Stat::kEnsembleBreakPointTier2 )
+								{
+									val = "II";
+								}
+							}
+							if ( auto text = Text::get(val.c_str(),
+								"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+							{
+								text->drawColor(SDL_Rect{ 0,0,0,0 },
+									SDL_Rect{ pos.x + img->pos.x + img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x,
+									pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
+									0, 0 },
+									SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+									makeColor(255, 255, 255, 255));
+							}
+							}
+						else if ( img->path.find("ensemble_horn.png") != std::string::npos )
+						{
+							std::string val = "I";
+							Uint8 effectStrength = stats[player]->getEffectActive(EFF_ENSEMBLE_HORN);
+							if ( effectStrength >= 1 )
+							{
+								if ( effectStrength - 1 >= Stat::kEnsembleBreakPointTier4 )
+								{
+									val = "IV";
+								}
+								else if ( effectStrength - 1 >= Stat::kEnsembleBreakPointTier3 )
+								{
+									val = "III";
+								}
+								else if ( effectStrength - 1 >= Stat::kEnsembleBreakPointTier2 )
+								{
+									val = "II";
+								}
+							}
+							if ( auto text = Text::get(val.c_str(),
+								"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+							{
+								text->drawColor(SDL_Rect{ 0,0,0,0 },
+									SDL_Rect{ pos.x + img->pos.x + img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x,
+									pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
+									0, 0 },
+									SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+									makeColor(255, 255, 255, 255));
+							}
+						}
 					}
 				}
 			}
