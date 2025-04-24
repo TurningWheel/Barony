@@ -78,6 +78,33 @@ void setAudioDevice(const std::string& device) {
 	fmod_system->setDriver(selected_driver);
 }
 
+void setRecordDevice(const std::string& device)
+{
+#ifndef EDITOR
+	int selected_driver = 0;
+	int numDrivers = 0;
+	fmod_system->getRecordNumDrivers(&numDrivers, nullptr);
+	for ( int i = 0; i < numDrivers; ++i ) {
+		FMOD_GUID guid;
+		constexpr int driverNameLen = 64;
+		char driverName[driverNameLen] = "";
+		fmod_result = fmod_system->getRecordDriverInfo(i, driverName, driverNameLen, &guid, nullptr, nullptr, nullptr, nullptr);
+		if ( strstr(driverName, "[loopback]") )
+		{
+			continue;
+		}
+		uint32_t _1; memcpy(&_1, &guid.Data1, sizeof(_1));
+		uint64_t _2; memcpy(&_2, &guid.Data4, sizeof(_2));
+		char guid_string[25];
+		snprintf(guid_string, sizeof(guid_string), FMOD_AUDIO_GUID_FMT, _1, _2);
+		if ( !selected_driver && device == guid_string ) {
+			selected_driver = i;
+		}
+	}
+	VoiceChat.setRecordingDevice(selected_driver);
+#endif
+}
+
 void setGlobalVolume(real_t master, real_t music, real_t gameplay, real_t ambient, real_t environment, real_t notification) {
     master = std::min(std::max(0.0, master), 1.0);
     music = std::min(std::max(0.0, music / 4.0), 1.0); // music volume cut in half because the music is loud...
@@ -92,6 +119,13 @@ void setGlobalVolume(real_t master, real_t music, real_t gameplay, real_t ambien
 	soundEnvironment_group->setVolume(master * environment);
 	music_notification_group->setVolume(master * notification);
 	soundNotification_group->setVolume(master * notification);
+
+#ifndef EDITOR
+	if ( VoiceChat.outChannelGroup )
+	{
+		VoiceChat.outChannelGroup->setVolume(master);
+	}
+#endif
 }
 
 #ifndef EDITOR
@@ -312,6 +346,9 @@ void sound_update(int player, int index, int numplayers)
 #endif
 
 	if (player == numplayers - 1) {
+#ifndef EDITOR
+		VoiceChat.update();
+#endif
 		fmod_system->update();
 	}
 

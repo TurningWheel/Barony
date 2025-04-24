@@ -2095,6 +2095,7 @@ static void changeLevel() {
 	{
 		soundNotification_group->stop();
 	}
+	VoiceChat.deinitRecording(false);
 #elif defined USE_OPENAL
 	if ( sound_group )
 	{
@@ -5496,6 +5497,12 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 			}
 		}
 	} },
+
+	{ 'VOIP',[]() {
+#ifdef USE_FMOD
+		VoiceChat.receivePacket(net_packet);
+#endif
+	} },
 };
 
 void clientHandlePacket()
@@ -7556,6 +7563,12 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		}
 		GenericGUIMenu::AssistShrineGUI_t::serverUpdateStatFlagsForClients();
 	}
+	} },
+
+	{ 'VOIP',[]() {
+#ifdef USE_FMOD
+		VoiceChat.receivePacket(net_packet);
+#endif
 	} },
 };
 

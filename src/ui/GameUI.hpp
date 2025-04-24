@@ -85,6 +85,7 @@ extern ConsoleVariable<bool> shareMinimap;
 extern Frame::result_t framesProcResult;
 extern ConsoleVariable<bool> framesEatMouse;
 
+void createPauseMenuPlayerBars();
 void openMinimap(int player);
 
 struct StatusEffectQueueEntry_t

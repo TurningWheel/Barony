@@ -8583,6 +8583,11 @@ void GameplayPreferences_t::process()
 		}
 	}
 
+	if ( player < 0 || player >= MAXPLAYERS )
+	{
+		return;
+	}
+
 	if ( players[player]->isLocalPlayer() )
 	{
 		int index = 0;
@@ -8595,6 +8600,35 @@ void GameplayPreferences_t::process()
 					break;
 				case GPREF_COLORBLIND:
 					pref.set(colorblind ? 1 : 0);
+					break;
+				case GPREF_VOICE_NO_RECV:
+					// we don't have voice receive volume set, drop packets
+#ifdef USE_FMOD
+					pref.set(((!VoiceChat.getAudioSettingBool(VoiceChat_t::AudioSettingBool::VOICE_SETTING_ENABLE_VOICE_RECEIVE)) ? 1 : 0) << player);
+#else
+					pref.set(1 << player);
+#endif
+					break;
+				case GPREF_VOICE_NO_SEND:
+					// we don't have voice input device or otherwise don't want to use it
+#ifdef USE_FMOD
+					pref.set(((!VoiceChat.bRecordingInit 
+						|| !VoiceChat.getAudioSettingBool(VoiceChat_t::AudioSettingBool::VOICE_SETTING_ENABLE_VOICE_INPUT) 
+							|| !VoiceChat.getAudioSettingBool(VoiceChat_t::AudioSettingBool::VOICE_SETTING_ENABLE_VOICE_RECEIVE)) ? 1 : 0) << player);
+#elif defined(NINTENDO)
+					pref.set(1 << player);
+#else				
+					pref.set(1 << player);
+#endif
+					break;
+				case GPREF_VOICE_PTT:
+#ifdef USE_FMOD
+					pref.set((VoiceChat.getAudioSettingBool(VoiceChat_t::AudioSettingBool::VOICE_SETTING_PUSHTOTALK) ? 1 : 0) << player);
+#else
+					pref.set(1 << player);
+#endif
+
+					break;
 				default:
 					break;
 			}
@@ -8849,6 +8883,105 @@ void GameplayPreferences_t::serverProcessGameConfig()
 						}
 					}
 				}
+				break;
+			}
+			case GOPT_VOICE_NO_RECV:
+			{
+				int oldValue = getGameConfigValue(GameConfigIndexes(pref));
+
+				for ( int i = 0; i < MAXPLAYERS; ++i )
+				{
+					if ( !client_disconnected[i] && gameplayPreferences[i].isInit )
+					{
+						value |= gameplayPreferences[i].preferences[GPREF_VOICE_NO_RECV].value;
+					}
+				}
+				/*if ( value != oldValue )
+				{
+					if ( multiplayer == SERVER )
+					{
+						for ( int i = 0; i < MAXPLAYERS; ++i )
+						{
+							if ( !client_disconnected[i] )
+							{
+								if ( value != 0 )
+								{
+									messagePlayer(i, MESSAGE_HINT, Language::get(4342));
+								}
+								else
+								{
+									messagePlayer(i, MESSAGE_HINT, Language::get(4343));
+								}
+							}
+						}
+					}
+				}*/
+				break;
+			}
+			case GOPT_VOICE_NO_SEND:
+			{
+				int oldValue = getGameConfigValue(GameConfigIndexes(pref));
+
+				for ( int i = 0; i < MAXPLAYERS; ++i )
+				{
+					if ( !client_disconnected[i] && gameplayPreferences[i].isInit )
+					{
+						value |= gameplayPreferences[i].preferences[GPREF_VOICE_NO_SEND].value;
+					}
+				}
+				/*if ( value != oldValue )
+				{
+					if ( multiplayer == SERVER )
+					{
+						for ( int i = 0; i < MAXPLAYERS; ++i )
+						{
+							if ( !client_disconnected[i] )
+							{
+								if ( value != 0 )
+								{
+									messagePlayer(i, MESSAGE_HINT, Language::get(4342));
+								}
+								else
+								{
+									messagePlayer(i, MESSAGE_HINT, Language::get(4343));
+								}
+							}
+						}
+					}
+				}*/
+				break;
+			}
+			case GOPT_VOICE_PTT:
+			{
+				int oldValue = getGameConfigValue(GameConfigIndexes(pref));
+
+				for ( int i = 0; i < MAXPLAYERS; ++i )
+				{
+					if ( !client_disconnected[i] && gameplayPreferences[i].isInit )
+					{
+						value |= gameplayPreferences[i].preferences[GPREF_VOICE_PTT].value;
+					}
+				}
+				/*if ( value != oldValue )
+				{
+					if ( multiplayer == SERVER )
+					{
+						for ( int i = 0; i < MAXPLAYERS; ++i )
+						{
+							if ( !client_disconnected[i] )
+							{
+								if ( value != 0 )
+								{
+									messagePlayer(i, MESSAGE_HINT, Language::get(4342));
+								}
+								else
+								{
+									messagePlayer(i, MESSAGE_HINT, Language::get(4343));
+								}
+							}
+						}
+					}
+				}*/
 				break;
 			}
 			default:

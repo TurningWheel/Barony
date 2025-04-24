@@ -928,6 +928,27 @@ void createCalloutPromptFrame(const int player)
 	text->setDisabled(true);
 }
 
+void createVoicePromptFrame(const int player)
+{
+	auto& hud_t = players[player]->hud;
+
+	auto frame = hud_t.hudFrame->addFrame("voice prompts");
+	hud_t.voicePromptFrame = frame;
+	frame->setHollow(true);
+	frame->setSize(SDL_Rect{ 0, 0, 300, 0 });
+	frame->setDisabled(true);
+	frame->setScrollBarsEnabled(false);
+	frame->setAllowScrollBinds(false);
+
+	auto glyph = frame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "", "glyph");
+	glyph->disabled = true;
+	auto icon = frame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "", "icon");
+	icon->disabled = true;
+	auto icon2 = frame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "", "icon2");
+	icon2->disabled = true;
+}
+
+
 const int kPlayerBarsEntryFrameWidth = 214;
 
 void updateCalloutPromptFrame(const int player)
@@ -1088,6 +1109,187 @@ void updateCalloutPromptFrame(const int player)
 	}
 }
 
+void updateVoicePromptFrame(const int player)
+{
+	auto& hud_t = players[player]->hud;
+	auto frame = hud_t.voicePromptFrame;
+	if ( !frame )
+	{
+		return;
+	}
+#ifndef USE_FMOD
+	frame->setDisabled(true);
+	return;
+#else
+
+#ifdef NINTENDO
+	frame->setDisabled(true);
+	return;
+#endif
+
+	if ( (multiplayer == SINGLE && !*cvar_voice_debug)
+		|| (intro && !net_packet) )
+	{
+		frame->setDisabled(true);
+		return;
+	}
+
+	int voice_no_send = GameplayPreferences_t::getGameConfigValue(GameplayPreferences_t::GOPT_VOICE_NO_SEND);
+	if ( !players[player]->shootmode && !FollowerMenu[player].followerMenuIsOpen()
+		&& !CalloutMenu[player].calloutMenuIsOpen() )
+	{
+		frame->setDisabled(true);
+		return;
+	}
+
+	int alignX = 8;
+	int alignY = 0;
+	if ( hud_t.allyPlayerFrame && !hud_t.allyPlayerFrame->isDisabled()
+		&& hud_t.allyPlayerFrame->getOpacity() > 0.0 )
+	{
+		if ( hud_t.playerBars.size() > 0 )
+		{
+			alignY += hud_t.playerBars.size() * 36;
+		}
+	}
+
+	frame->setDisabled(false);
+	SDL_Rect framePos;
+	framePos.x = alignX;
+	framePos.y = players[player]->bUseCompactGUIWidth() ? AllyStatusBarSettings_t::FollowerBars_t::entrySettings.baseYSplitscreen : AllyStatusBarSettings_t::FollowerBars_t::entrySettings.baseY;
+	framePos.y -= 4;
+	framePos.y += alignY;
+	framePos.w = 300;
+	framePos.h = 50;
+
+	if ( auto calloutFrame = hud_t.calloutPromptFrame )
+	{
+		if ( !calloutFrame->isDisabled() )
+		{
+			if ( auto icon = calloutFrame->findImage("icon") )
+			{
+				framePos.x = icon->pos.x + icon->pos.w + 16;
+			}
+		}
+	}
+
+	frame->setSize(framePos);
+
+	auto glyph = frame->findImage("glyph");
+	auto glyphPathUnpressed = Input::inputs[player].getGlyphPathForBinding("Voice Chat", false);
+	auto glyphPathPressed = Input::inputs[player].getGlyphPathForBinding("Voice Chat", true);
+	glyph->disabled = true;
+
+	const int nominalGlyphHeight = 26;
+	int unpressedHeight = nominalGlyphHeight;
+	int unpressedY = 8;
+	if ( !(voice_no_send & (1 << player)) )
+	{
+		if ( VoiceChat.PlayerChannels[player].talkingTicks > 0 )
+		{
+			glyph->path = glyphPathPressed;
+			if ( auto imgGet = Image::get(glyph->path.c_str()) )
+			{
+				glyph->disabled = false;
+				SDL_Rect glyphPos{ 0, 8, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
+				glyph->pos = glyphPos;
+				if ( auto imgGetUnpressed = Image::get(glyphPathUnpressed.c_str()) )
+				{
+					unpressedHeight = imgGetUnpressed->getHeight();
+					unpressedY = glyph->pos.y;
+					if ( unpressedHeight != glyph->pos.h )
+					{
+						glyph->pos.y -= (glyph->pos.h - unpressedHeight);
+					}
+
+					if ( unpressedHeight != nominalGlyphHeight )
+					{
+						unpressedY -= (unpressedHeight - nominalGlyphHeight) / 2;
+						glyph->pos.y -= (unpressedHeight - nominalGlyphHeight) / 2;
+					}
+				}
+			}
+		}
+		else
+		{
+			glyph->path = glyphPathUnpressed;
+			if ( auto imgGet = Image::get(glyph->path.c_str()) )
+			{
+				glyph->disabled = false;
+				SDL_Rect glyphPos{ 0, 8, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
+				glyph->pos = glyphPos;
+				unpressedHeight = glyph->pos.h;
+				unpressedY = glyph->pos.y;
+				if ( glyph->pos.h != nominalGlyphHeight )
+				{
+					unpressedY -= (glyph->pos.h - nominalGlyphHeight) / 2;
+					glyph->pos.y -= (glyph->pos.h - nominalGlyphHeight) / 2;
+				}
+			}
+		}
+	}
+
+	int glyphAlignY = unpressedY + (unpressedHeight - nominalGlyphHeight) / 2;
+
+	int voice_no_recv = GameplayPreferences_t::getGameConfigValue(GameplayPreferences_t::GOPT_VOICE_NO_RECV);
+	int voice_pushtotalk = GameplayPreferences_t::getGameConfigValue(GameplayPreferences_t::GOPT_VOICE_PTT);
+
+	auto icon = frame->findImage("icon");
+	icon->disabled = true;
+
+	auto icon2 = frame->findImage("icon2");
+	icon2->disabled = true;
+
+	if ( !glyph->disabled )
+	{
+		std::string imgPath = (voice_pushtotalk & (1 << player)) ? "#*images/ui/HUD/HUD_Mic_live0_00.png" : "#*images/ui/HUD/HUD_Mic_mute_00.png";
+		if ( VoiceChat.PlayerChannels[player].talkingTicks > 0 
+			|| VoiceChat.PlayerChannels[player].monitor_output_volume >= 0.05 )
+		{
+			if ( VoiceChat.PlayerChannels[player].monitor_output_volume < 0.05 )
+			{
+				imgPath = "#*images/ui/HUD/HUD_Mic_00.png";
+			}
+			else
+			{
+				imgPath = (ticks % 50) > 25 ? "#*images/ui/HUD/HUD_Mic_live1_00.png" : "#*images/ui/HUD/HUD_Mic_live2_00.png";
+			}
+		}
+		icon->path = imgPath;
+		if ( auto imgGet = Image::get(icon->path.c_str()) )
+		{
+			icon->disabled = false;
+			icon->pos.w = imgGet->getWidth();
+			icon->pos.h = imgGet->getHeight();
+			icon->pos.x = glyph->pos.x + glyph->pos.w + 8;
+			icon->pos.y = unpressedY + (unpressedHeight) / 2 - icon->pos.h / 2;
+			if ( icon->pos.y % 2 == 1 )
+			{
+				++icon->pos.y;
+			}
+		}
+	}
+	if ( voice_no_recv & (1 << player) )
+	{
+		// deafened
+		const char* imgPath = "#*images/ui/HUD/Voice_Deafen.png";
+		if ( auto imgGet = Image::get(imgPath) )
+		{
+			icon2->path = imgPath;
+			icon2->disabled = false;
+			icon2->pos.w = imgGet->getWidth();
+			icon2->pos.h = imgGet->getHeight();
+			icon2->pos.x = icon->disabled ? 0 : (icon->pos.x + icon->pos.w + 8);
+			icon2->pos.y = unpressedY + (unpressedHeight) / 2 - icon2->pos.h / 2;
+			if ( icon2->pos.y % 2 == 1 )
+			{
+				++icon2->pos.y;
+			}
+		}
+	}
+#endif
+}
+
 void createAllyFollowerTitleFrame(const int player)
 {
 	auto& hud_t = players[player]->hud;
@@ -1107,26 +1309,29 @@ void createAllyFollowerTitleFrame(const int player)
 	glyphSelector->ontop = true;
 }
 
-void createAllyPlayerFrame(const int player)
+Frame* createAllyPlayerFrame(const int player, Frame* baseFrame)
 {
 	auto& hud_t = players[player]->hud;
 
-	auto frame = hud_t.hudFrame->addFrame("player status");
+	auto frame = baseFrame->addFrame("player status");
+	if ( baseFrame == hud_t.hudFrame )
+	{
 	hud_t.allyPlayerFrame = frame;
+	}
 	frame->setHollow(true);
 	frame->setSize(SDL_Rect{ 0, 0, 300, 0 });
 	frame->setDisabled(true);
 	frame->setScrollBarsEnabled(false);
 	frame->setAllowScrollBinds(false);
+	return frame;
 }
 
 static ConsoleVariable<int> cvar_assist_icon_txt_x("/assist_icon_txt_x", 0);
 static ConsoleVariable<int> cvar_assist_icon_txt_y("/assist_icon_txt_y", 8);
 
-Frame* createAllyPlayerEntry(const int player)
+Frame* createAllyPlayerEntry(const int player, Frame* baseFrame)
 {
 	auto& hud_t = players[player]->hud;
-	Frame* baseFrame = hud_t.allyPlayerFrame;
 
 	auto entry = baseFrame->addFrame("entry");
 	const int allyPlayerEntryHeight = 40;
@@ -1339,6 +1544,7 @@ Frame* createAllyPlayerEntry(const int player)
 				}
 			}
 
+			int prevy = pos.y;
 			if ( img )
 			{
 				pos.w = img->getWidth();
@@ -1365,9 +1571,78 @@ Frame* createAllyPlayerEntry(const int player)
 						textGet->drawColor(SDL_Rect{ 0,0,0,0 }, SDL_Rect{ pos.x, pos.y, 0, 0 },
 							SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY }, 
 							makeColor(255, 255, 255, 255 * (frame->getOpacity() / 100.0)));
+						pos.x += textGet->getWidth() + 4;
+						if ( pos.x % 2 == 1 )
+						{
+							++pos.x;
+						}
 					}
 				}
+				else
+				{
+					pos.x += pos.w + 4;
+				}
 			}
+			pos.y = prevy;
+
+#ifdef USE_FMOD
+			auto voiceState = VoiceChat.getVoiceState(player);
+			int voice_no_recv = GameplayPreferences_t::getGameConfigValue(GameplayPreferences_t::GOPT_VOICE_NO_RECV);
+			if ( voiceState != VoiceChat_t::VOICE_STATE_NONE )
+			{
+				std::string imgPath = "";
+
+				switch ( voiceState )
+				{
+				case VoiceChat_t::VOICE_STATE_INACTIVE:
+				case VoiceChat_t::VOICE_STATE_INACTIVE_PTT:
+					imgPath = "#*images/ui/HUD/Voice_Inactive.png";
+					break;
+				case VoiceChat_t::VOICE_STATE_INERT:
+					imgPath = "#*images/ui/HUD/Voice_Inert.png";
+					break;
+				case VoiceChat_t::VOICE_STATE_MUTE:
+					imgPath = "#*images/ui/HUD/Voice_Mute.png";
+					break;
+				case VoiceChat_t::VOICE_STATE_ACTIVE1:
+					imgPath = "#*images/ui/HUD/Voice_Active1.png";
+					break;
+				case VoiceChat_t::VOICE_STATE_ACTIVE2:
+					imgPath = "#*images/ui/HUD/Voice_Active2.png";
+					break;
+				default:
+					break;
+				}
+				if ( imgPath != "" )
+				{
+					if ( auto img = Image::get(imgPath.c_str()) )
+					{
+						pos.w = img->getWidth();
+						pos.h = img->getHeight();
+
+						img->drawColor(nullptr, pos, SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+							makeColor(255, 255, 255, 255 * (frame->getOpacity() / 100.0)));
+
+						pos.x += pos.w + 4;
+					}
+					}
+				}
+			if ( voice_no_recv & (1 << player) )
+			{
+				// deafened
+				const char* imgPath = "#*images/ui/HUD/Voice_Deafen.png";
+				if ( auto img = Image::get(imgPath) )
+				{
+					pos.w = img->getWidth();
+					pos.h = img->getHeight();
+
+					img->drawColor(nullptr, pos, SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+						makeColor(255, 255, 255, 255 * (frame->getOpacity() / 100.0)));
+
+					pos.x += pos.w + 4;
+				}
+			}
+#endif
 		}
 	});
 	return entry;
@@ -1634,7 +1909,7 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 
 	while ( allyFrames.size() < activeBars )
 	{
-		allyFrames.push_back(bPlayerBars ? createAllyPlayerEntry(player) : createAllyFollowerEntry(player, baseFrame));
+		allyFrames.push_back(bPlayerBars ? createAllyPlayerEntry(player, baseFrame) : createAllyFollowerEntry(player, baseFrame));
 	}
 
 	auto& hud_t = players[player]->hud;
@@ -1683,6 +1958,8 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 		}
 	}
 
+	bool audioSliderBars = bPlayerBars && !strcmp(baseFrame->getName(), "player status audio");
+
 	for ( auto it = (bPlayerBars ? hud_t.playerBars.begin() : hud_t.followerBars.begin()); 
 		it != (bPlayerBars ? hud_t.playerBars.end() : hud_t.followerBars.end()); )
 	{
@@ -1706,6 +1983,11 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 				doneTitleFrame = true;
 				doAnimation = false;
 			}
+		}
+		if ( audioSliderBars )
+		{
+			// dummy player bars other than HUD
+			doAnimation = false;
 		}
 
 		auto& HPBar = followerBar.hpBar;
@@ -2251,6 +2533,76 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 			selectorX = bgImgLeft->pos.x;
 		}
 
+		if ( audioSliderBars )
+		{
+#ifdef USE_FMOD
+			// dummy player bars other than HUD
+			hpFrame->setDisabled(true);
+			Slider* slider = entryFrame->findSlider("audio slider");
+			if ( !slider )
+			{
+				slider = entryFrame->addSlider("audio slider");
+				slider->setOrientation(Slider::SLIDER_HORIZONTAL);
+				SDL_Rect pos = hpFrame->getSize();
+				pos.w = hpWidth;
+				slider->setRailSize(pos);
+				slider->setColor(makeColor(0, 224, 224, 128));
+				slider->setHighlightColor(makeColor(0, 255, 255, 128));
+				slider->setHandleSize(SDL_Rect{ 0, 0, 16, 16 });
+				slider->setValue(0.f);
+				slider->setMinValue(-50.f);
+				slider->setMaxValue(10.f);
+				slider->setRailImage("*#images/ui/HUD/allies/HUD_HPBar_Fill_Mid_03.png");
+				slider->setHandleImage("*#images/ui/HUD/allies/HUD_HPBar_Base_00.png");
+				slider->setOntop(true);
+				slider->setCallback([](Slider& slider) {
+					slider.setValue((int)(floor(slider.getValue())));
+					if ( Frame* parent = static_cast<Frame*>(slider.getParent()) )
+					{
+						int player = reinterpret_cast<intptr_t>(parent->getUserData()) - 1;
+						if ( player >= 0 && player < MAXPLAYERS )
+						{
+							VoiceChat.PlayerChannels[player].localChannelGain = slider.getValue() + 100.f;
+						}
+					}
+				});
+			}
+
+
+			if ( slider )
+			{
+				auto img = entryFrame->findImage("audio lvl");
+				if ( !img )
+				{
+					img = entryFrame->addImage(slider->getRailSize(), makeColor(0, 255, 0, 192), "images/system/white.png", "audio lvl");
+				}
+				if ( img )
+				{
+					img->pos.w = slider->getRailSize().w;
+					if ( uid >= 0 && uid < MAXPLAYERS )
+					{
+						img->pos.w = std::max(4.f, img->pos.w * VoiceChat.PlayerChannels[uid].monitor_output_volume);
+						if ( VoiceChat.PlayerChannels[uid].monitor_output_volume >= 1.0 )
+						{
+							img->color = makeColor(255, 0, 0, 192);
+						}
+						else
+						{
+							img->color = makeColor(0, 255, 0, 192);
+						}
+					}
+				}
+
+				char buf[32];
+				snprintf(buf, sizeof(buf), "%+ddB", (int)(floor(slider->getValue())));
+				hpField->setText(buf);
+			}
+
+			levelField->setDisabled(true);
+#endif
+		}
+
+		if ( !hpFrame->isDisabled() )
 		{ // HP
 			int backgroundWidth = hpWidth - 6;
 			real_t progressWidth = hpWidth - 8;
@@ -2501,7 +2853,7 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 			}
 		}
 
-		auto mpFrame = entryFrame->findFrame("mp");
+		auto mpFrame = audioSliderBars ? nullptr : entryFrame->findFrame("mp");
 		if ( mpFrame )
 		{ // MP
 			auto mpMid = mpFrame->findImage("mp img mid");
@@ -2958,6 +3310,21 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 			}
 		}
 	}
+}
+
+void updateAllyPlayerFrame(const int player, Frame* baseFrame);
+
+void createPauseMenuPlayerBars()
+{
+#ifdef USE_FMOD
+	auto frame = createAllyPlayerFrame(clientnum, MainMenu::main_menu_frame);
+	frame->setName("player status audio");
+	frame->setHollow(false);
+	updateAllyPlayerFrame(clientnum, frame);
+	frame->setTickCallback([](Widget& widget) {
+		updateAllyPlayerFrame(clientnum, static_cast<Frame*>(&widget));
+		});
+#endif
 }
 
 void updateAllyFollowerFrame(const int player)
@@ -3478,15 +3845,14 @@ void updateAllyFollowerFrame(const int player)
 	}
 }
 
-void updateAllyPlayerFrame(const int player)
+void updateAllyPlayerFrame(const int player, Frame* baseFrame)
 {
-	if ( !players[player]->hud.allyPlayerFrame )
+	if ( !baseFrame )
 	{
 		return;
 	}
 
 	auto& hud_t = players[player]->hud;
-	Frame* baseFrame = hud_t.allyPlayerFrame;
 
 	static ConsoleVariable<bool> cvar_playerbars("/playerbars", true);
 	static ConsoleVariable<int> cvar_playerbars_debug("/playerbars_debug", -1);
@@ -3497,7 +3863,8 @@ void updateAllyPlayerFrame(const int player)
 		return;
 	}
 
-	if ( !players[player]->shootmode && !FollowerMenu[player].followerMenuIsOpen() 
+	if ( baseFrame == players[player]->hud.allyPlayerFrame
+		&& !players[player]->shootmode && !FollowerMenu[player].followerMenuIsOpen()
 		&& !CalloutMenu[player].calloutMenuIsOpen()
 		&& players[player]->gui_mode != GUI_MODE_NONE )
 	{
@@ -3516,6 +3883,8 @@ void updateAllyPlayerFrame(const int player)
 	baseFramePos.y = players[player]->bUseCompactGUIWidth() ? AllyStatusBarSettings_t::PlayerBars_t::entrySettings.baseYSplitscreen : AllyStatusBarSettings_t::PlayerBars_t::entrySettings.baseY;
 	baseFrame->setSize(baseFramePos);
 
+	if ( baseFrame == players[player]->hud.allyPlayerFrame )
+	{
 	if ( *cvar_playerbars_debug >= 0 )
 	{
 		if ( hud_t.playerBars.size() < *cvar_playerbars_debug )
@@ -3567,6 +3936,7 @@ void updateAllyPlayerFrame(const int player)
 				bar.second.animFadeScrollDummy = 1.0;
 			}
 		}
+	}
 	}
 
 	int activeBars = 0;
@@ -10406,6 +10776,10 @@ void Player::HUD_t::processHUD()
 	{
 		createCalloutPromptFrame(player.playernum);
 	}
+	if ( !voicePromptFrame )
+	{
+		createVoicePromptFrame(player.playernum);
+	}
 	if ( !enemyBarFrame )
 	{
 		createEnemyBar(player.playernum, enemyBarFrame);
@@ -10428,17 +10802,18 @@ void Player::HUD_t::processHUD()
 	}
 	if ( !allyPlayerFrame )
 	{
-		createAllyPlayerFrame(player.playernum);
+		createAllyPlayerFrame(player.playernum, player.hud.hudFrame);
 	}
 
 	updateMinimapPrompts();
 	updateGameTimer();
 	updateAllyFollowerFrame(player.playernum);
-	updateAllyPlayerFrame(player.playernum);
+	updateAllyPlayerFrame(player.playernum, player.hud.allyPlayerFrame);
 	updateXPBar();
 	updateHPBar();
 	updateMPBar();
 	updateCalloutPromptFrame(player.playernum);
+	updateVoicePromptFrame(player.playernum);
 	updateActionPrompts();
 	updateUINavigation();
 	enemyHPDamageBarHandler[player.playernum].cullExpiredHPBars();
@@ -24364,6 +24739,12 @@ void loadHUDSettingsJSON()
 					PingNetworkStatus_t::pingHUDDisplayRed = d["ping_status"]["show_red_always"].GetBool();
 					PingNetworkStatus_t::pingHUDShowOKBriefly = d["ping_status"]["show_green_yellow_briefly"].GetBool();
 					PingNetworkStatus_t::pingHUDShowNumericValue = d["ping_status"]["show_numeric_on_hud"].GetBool();
+				}
+				if ( d.HasMember("voice_record") )
+				{
+#ifdef USE_FMOD
+					VoiceChat.useSystem = d["voice_record"]["enabled"].GetBool();
+#endif
 				}
 				printlog("[JSON]: Successfully read json file %s", inputPath.c_str());
 			}

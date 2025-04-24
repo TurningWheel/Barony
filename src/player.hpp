@@ -1464,6 +1464,7 @@ public:
 		Frame* allyFollowerGlyphFrame = nullptr;
 		Frame* allyPlayerFrame = nullptr;
 		Frame* calloutPromptFrame = nullptr;
+		Frame* voicePromptFrame = nullptr;
 		Frame* enemyBarFrame = nullptr;
 		Frame* enemyBarFrameHUD = nullptr;
 		Frame* actionPromptsFrame = nullptr;

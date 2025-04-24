@@ -1726,6 +1726,28 @@ void actDeathGhost(Entity* my)
 		node->size = sizeof(Entity*);
 		my->bodyparts.push_back(entity);
 
+		// nametag (for voice)
+		Entity* nametag = newEntity(-1, 1, map.entities, nullptr);
+		nametag->x = my->x;
+		nametag->y = my->y;
+		nametag->z = my->z - 6;
+		nametag->sizex = 1;
+		nametag->sizey = 1;
+		nametag->flags[NOUPDATE] = true;
+		nametag->flags[PASSABLE] = true;
+		nametag->flags[SPRITE] = true;
+		nametag->flags[UNCLICKABLE] = true;
+		nametag->flags[BRIGHT] = true;
+		nametag->behavior = &actSpriteNametag;
+		nametag->parent = my->getUID();
+		nametag->scalex = 0.2;
+		nametag->scaley = 0.2;
+		nametag->scalez = 0.2;
+		nametag->ditheringDisabled = true;
+		nametag->skill[0] = GHOSTCAM_PLAYERNUM;
+		nametag->skill[1] = playerColor(GHOSTCAM_PLAYERNUM, colorblind_lobby, false);
+		nametag->skill[3] = 2; // mode 2 doesn't draw but keeps position
+
 		if ( multiplayer == SERVER )
 		{
 			players[playernum]->ghost.initTeleportLocations(my->x / 16, my->y / 16);

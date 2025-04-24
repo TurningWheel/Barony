@@ -1967,6 +1967,7 @@ void gameLogic(void)
 					{
 						soundNotification_group->stop();
 					}
+					VoiceChat.deinitRecording(false);
 #elif defined USE_OPENAL
 					if ( sound_group )
 					{

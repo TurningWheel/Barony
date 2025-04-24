@@ -61,6 +61,7 @@ namespace MainMenu {
 
 	// ALL NEW menu options:
 	std::string current_audio_device;
+	std::string current_recording_audio_device;
 	float master_volume = 1.f;
 	bool arachnophobia_filter = false;
 	bool hidden_roomcode = false;
@@ -144,6 +145,7 @@ namespace MainMenu {
                 {"Expand Inventory Tooltip", "X", hiddenBinding, emptyBinding },
                 {"Quick Turn", emptyBinding, "ButtonRightBumper", emptyBinding },
                 {"Chat", "Return", hiddenBinding, emptyBinding},
+				{"Voice Chat", "V", hiddenBinding, emptyBinding},
                 {"Move Forward", "W", hiddenBinding, emptyBinding},
                 {"Move Left", "A", hiddenBinding, emptyBinding},
                 {"Move Backward", "S", hiddenBinding, emptyBinding},
@@ -209,6 +211,7 @@ namespace MainMenu {
                 {"Expand Inventory Tooltip", "X", hiddenBinding, emptyBinding },
                 {"Quick Turn", emptyBinding, "ButtonLeftStick", emptyBinding },
                 {"Chat", "Return", hiddenBinding, emptyBinding},
+				{"Voice Chat", "V", hiddenBinding, emptyBinding},
                 {"Move Forward", "W", hiddenBinding, emptyBinding},
                 {"Move Left", "A", hiddenBinding, emptyBinding},
                 {"Move Backward", "S", hiddenBinding, emptyBinding},
@@ -266,6 +269,7 @@ namespace MainMenu {
                 {"Expand Inventory Tooltip", "X", hiddenBinding, emptyBinding },
                 {"Quick Turn", emptyBinding, "ButtonRightBumper", emptyBinding },
                 {"Chat", "Return", hiddenBinding, emptyBinding},
+				{"Voice Chat", "V", hiddenBinding, emptyBinding},
                 {"Move Forward", "W", hiddenBinding, emptyBinding},
                 {"Move Left", "A", hiddenBinding, emptyBinding},
                 {"Move Backward", "S", hiddenBinding, emptyBinding},
@@ -327,6 +331,7 @@ namespace MainMenu {
                 {"Expand Inventory Tooltip", "X", hiddenBinding, emptyBinding },
                 {"Quick Turn", emptyBinding, emptyBinding, emptyBinding },
                 {"Chat", "Return", hiddenBinding, emptyBinding},
+				{"Voice Chat", "V", hiddenBinding, emptyBinding},
                 {"Move Forward", "W", hiddenBinding, emptyBinding},
                 {"Move Left", "A", hiddenBinding, emptyBinding},
                 {"Move Backward", "S", hiddenBinding, emptyBinding},
@@ -601,6 +606,18 @@ namespace MainMenu {
 		float fov = 60.f;
 		float fps = AUTO_FPS;
 		std::string audio_device = "";
+		std::string recording_audio_device = "";
+		bool recording_loopback = false;
+#ifdef NINTENDO
+		bool enable_voice_input = false;
+		bool enable_voice_receive = false;
+#else
+		bool enable_voice_input = false;
+		bool enable_voice_receive = true;
+#endif
+		float recording_gain = 100.f;
+		float voice_volume = 100.f;
+		bool push_to_talk = true;
         int speaker_mode = 0;
 		float master_volume = 100.f;
 		float gameplay_volume = 100.f;
@@ -2870,6 +2887,7 @@ namespace MainMenu {
         } else {
             fpsLimit = std::min(std::max(MIN_FPS, *cvar_desiredFps), MAX_FPS);
         }
+		current_recording_audio_device = recording_audio_device;
 		current_audio_device = audio_device;
         if (fmod_speakermode != speaker_mode) {
             fmod_speakermode = (FMOD_SPEAKERMODE)speaker_mode;
@@ -2887,6 +2905,15 @@ namespace MainMenu {
 		mute_player_monster_sounds = !player_monster_sounds_enabled;
 		mute_audio_on_focus_lost = !out_of_focus_audio_enabled;
 		musicPreload = preload_music_files_enabled;
+#ifdef USE_FMOD
+		VoiceChat.activeSettings.loopback_local_record = recording_loopback;
+		VoiceChat.activeSettings.recordingGain = recording_gain;
+		VoiceChat.activeSettings.voice_global_volume = std::min(std::max(0.f, voice_volume / 100.f), 1.f);
+		VoiceChat.activeSettings.pushToTalk = push_to_talk;
+		VoiceChat.activeSettings.enable_voice_input = enable_voice_input;
+		VoiceChat.activeSettings.enable_voice_receive = enable_voice_receive;
+		VoiceChat.mainmenuSettings = VoiceChat.activeSettings;
+#endif
 		bindings.save();
         for (int c = 0; c < MAX_SPLITSCREEN; ++c) {
             controls[c].save(c);
@@ -2976,6 +3003,16 @@ namespace MainMenu {
 		settings.fov = ::fov;
 		settings.fps = *cvar_desiredFps;
 		settings.audio_device = current_audio_device;
+		settings.recording_audio_device = current_recording_audio_device;
+#ifdef USE_FMOD
+		settings.recording_loopback = VoiceChat.activeSettings.loopback_local_record;
+		settings.recording_gain = VoiceChat.activeSettings.recordingGain;
+		settings.voice_volume = VoiceChat.activeSettings.voice_global_volume * 100.f;
+		settings.push_to_talk = VoiceChat.activeSettings.pushToTalk;
+		settings.enable_voice_input = VoiceChat.activeSettings.enable_voice_input;
+		settings.enable_voice_receive = VoiceChat.activeSettings.enable_voice_receive;
+		VoiceChat.mainmenuSettings = VoiceChat.activeSettings;
+#endif
         settings.speaker_mode = (int)fmod_speakermode;
 		settings.master_volume = MainMenu::master_volume * 100.f;
 		settings.gameplay_volume = (float)sfxvolume * 100.f;
@@ -3020,7 +3057,7 @@ namespace MainMenu {
 	}
 
 	bool AllSettings::serialize(FileInterface* file) {
-	    int version = 21;
+	    int version = 22;
 	    file->property("version", version);
 	    file->property("mods", mods);
 		file->property("crossplay_enabled", crossplay_enabled);
@@ -3093,6 +3130,12 @@ namespace MainMenu {
         }
 		file->propertyVersion("use_hdr", version >= 11, hdr_enabled);
 		file->propertyVersion("audio_device", version >= 4, audio_device);
+		file->propertyVersion("recording_audio_device", version >= 22, recording_audio_device);
+		file->propertyVersion("recording_loopback", version >= 22, recording_loopback);
+		file->propertyVersion("enable_voice_input", version >= 22, enable_voice_input);
+		file->propertyVersion("enable_voice_receive", version >= 22, enable_voice_receive);
+		file->propertyVersion("recording_gain", version >= 22, recording_gain);
+		file->propertyVersion("push_to_talk", version >= 22, push_to_talk);
 		file->propertyVersion("speaker_mode", version >= 20, speaker_mode);
 		file->property("master_volume", master_volume);
 		file->property("gameplay_volume", gameplay_volume);
@@ -3848,6 +3891,7 @@ namespace MainMenu {
 		// set volume and sound driver
 		if (initialized) {
 			setAudioDevice(current_audio_device);
+			setRecordDevice(current_recording_audio_device);
 		    setGlobalVolume(master_volume, musvolume, sfxvolume, sfxAmbientVolume, sfxEnvironmentVolume, sfxNotificationVolume);
 		}
 	}
@@ -4492,6 +4536,7 @@ namespace MainMenu {
 		int speaker_mode_channels;
 	};
 	static std::vector<AudioDriver> audio_drivers;
+	static std::vector<AudioDriver> recording_drivers;
 
 	static void settingsAudioDevice(Button& button) {
 		settingsOpenDropdown(button, "device", DropdownType::Wide, [](Frame::entry_t& entry){
@@ -4513,6 +4558,32 @@ namespace MainMenu {
 			auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
 			auto button = settings_subwindow->findButton("setting_device_dropdown_button"); assert(button);
 			auto dropdown = settings_subwindow->findFrame("setting_device_dropdown"); assert(dropdown);
+			button->setText(entry.name.c_str());
+			dropdown->removeSelf();
+			button->select();
+			});
+	}
+
+	static void settingsRecordingDevice(Button& button) {
+		settingsOpenDropdown(button, "recording_device", DropdownType::Wide, [](Frame::entry_t& entry) {
+			soundActivate();
+
+			// store driver
+			unsigned int index; memcpy(&index, &entry.data, sizeof(index));
+			if ( index < recording_drivers.size() ) {
+				const auto& driver = recording_drivers[index];
+				uint32_t _1; memcpy(&_1, &driver.guid.Data1, sizeof(_1));
+				uint64_t _2; memcpy(&_2, &driver.guid.Data4, sizeof(_2));
+				char guid_string[25];
+				snprintf(guid_string, sizeof(guid_string), FMOD_AUDIO_GUID_FMT, _1, _2);
+				allSettings.recording_audio_device = guid_string;
+				setRecordDevice(guid_string);
+			}
+
+			auto settings = main_menu_frame->findFrame("settings"); assert(settings);
+			auto settings_subwindow = settings->findFrame("settings_subwindow"); assert(settings_subwindow);
+			auto button = settings_subwindow->findButton("setting_recording_device_dropdown_button"); assert(button);
+			auto dropdown = settings_subwindow->findFrame("setting_recording_device_dropdown"); assert(dropdown);
 			button->setText(entry.name.c_str());
 			dropdown->removeSelf();
 			button->select();
@@ -4672,6 +4743,10 @@ namespace MainMenu {
 		{
 			return Language::get(6251);
 		}
+		else if ( !strcmp(binding, "Voice Chat") )
+		{
+			return Language::get(6451);
+		}
 
         for (auto& b : defaultBindings[0].bindings) {
             if (b.action == binding) {
@@ -4682,6 +4757,10 @@ namespace MainMenu {
 				continue; // don't increment c, not in the linear language entries
 			}
 			else if ( b.action == "Compendium" )
+			{
+				continue; // don't increment c, not in the linear language entries
+			}
+			else if ( b.action == "Voice Chat" )
 			{
 				continue; // don't increment c, not in the linear language entries
 			}
@@ -5006,6 +5085,12 @@ namespace MainMenu {
 	static const char* sliderFloorInt(float v) {
 		static char buf[8];
 		snprintf(buf, sizeof(buf), "%d", (int)floor(v));
+		return buf;
+	};
+
+	static const char* sliderDecibels(float v) {
+		static char buf[8];
+		snprintf(buf, sizeof(buf), "%.1fdB", v);
 		return buf;
 	};
 
@@ -6398,8 +6483,8 @@ bind_failed:
 		if ( num_drivers > 0 )
 		{
 			y += settingsAddDropdown(*settings_subwindow, y, "device", Language::get(5183), Language::get(5184),
-			    true, drivers_formatted_ptrs, drivers_formatted_ptrs[selected_device],
-			    settingsAudioDevice);
+				true, drivers_formatted_ptrs, drivers_formatted_ptrs[selected_device],
+				settingsAudioDevice);
 		}
 		y += settingsAddDropdown(*settings_subwindow, y, "speaker_mode", Language::get(6140), Language::get(6150),
 			true, modes_ptrs, modes_ptrs[allSettings.speaker_mode], settingsAudioSpeakerMode);
@@ -6430,6 +6515,176 @@ bind_failed:
 			allSettings.music_volume, 0, 100, sliderPercent, [](Slider& slider){soundSliderSetting(slider, true); allSettings.music_volume = slider.getValue();
 				setGlobalVolume(allSettings.master_volume / 100.0, allSettings.music_volume / 100.0, allSettings.gameplay_volume / 100.0,
 				allSettings.ambient_volume / 100.0, allSettings.environment_volume / 100.0, allSettings.notification_volume / 100.0);});
+#ifdef USE_FMOD
+		y += settingsAddSlider(*settings_subwindow, y, "voice_volume", Language::get(6445), Language::get(6446),
+			allSettings.voice_volume, 0, 100, sliderPercent, [](Slider& slider) {
+				soundSliderSetting(slider, true); 
+				allSettings.voice_volume = slider.getValue();
+				VoiceChat.mainmenuSettings.voice_global_volume = allSettings.voice_volume / 100.0;
+				setGlobalVolume(allSettings.master_volume / 100.0, allSettings.music_volume / 100.0, allSettings.gameplay_volume / 100.0,
+					allSettings.ambient_volume / 100.0, allSettings.environment_volume / 100.0, allSettings.notification_volume / 100.0);
+			});
+#endif
+		int num_record_drivers = 0;
+#if !defined(NINTENDO) && defined(USE_FMOD)
+		int selected_recording_device = 0;
+		(void)fmod_system->getRecordNumDrivers(&num_record_drivers, nullptr);
+		recording_drivers.clear();
+		recording_drivers.reserve(num_record_drivers);
+		for ( int c = 0; c < num_record_drivers; ++c ) {
+			AudioDriver d;
+			FMOD_DRIVER_STATE state;
+			(void)fmod_system->getRecordDriverInfo(c, d.name, sizeof(d.name), &d.guid,
+				&d.system_rate, &d.speaker_mode, &d.speaker_mode_channels, &state);
+			if ( strstr(d.name, "[loopback]") )
+			{
+				continue;
+			}
+			memcpy(d.name + 48, "...", 4); // long names get truncated
+			recording_drivers.push_back(d);
+
+			uint32_t _1; memcpy(&_1, &d.guid.Data1, sizeof(_1));
+			uint64_t _2; memcpy(&_2, &d.guid.Data4, sizeof(_2));
+			char guid_string[25];
+			snprintf(guid_string, sizeof(guid_string), FMOD_AUDIO_GUID_FMT, _1, _2);
+			if ( !selected_recording_device && allSettings.recording_audio_device == guid_string ) {
+				selected_recording_device = recording_drivers.size() - 1;
+			}
+		}
+		std::vector<const char*> record_drivers_formatted_ptrs;
+		record_drivers_formatted_ptrs.reserve(num_record_drivers);
+		for ( auto& d : recording_drivers ) {
+			record_drivers_formatted_ptrs.push_back(d.name);
+		}
+
+		y += settingsAddSubHeader(*settings_subwindow, y, "input", Language::get(6440));
+		if ( num_record_drivers > 0 )
+		{
+			y += settingsAddBooleanOption(*settings_subwindow, y, "enable_voice_input", Language::get(6452), Language::get(6453),
+				allSettings.enable_voice_input,
+				[](Button& button) {
+					if ( !VoiceChat.mainmenuSettings.enable_voice_receive )
+					{
+						soundError();
+						button.setPressed(false);
+						allSettings.enable_voice_input = false;
+						VoiceChat.mainmenuSettings.enable_voice_input = allSettings.enable_voice_input;
+					}
+					else
+					{
+						soundToggleSetting(button);
+						allSettings.enable_voice_input = button.isPressed();
+						VoiceChat.mainmenuSettings.enable_voice_input = allSettings.enable_voice_input;
+					}
+				});
+		}
+			y += settingsAddBooleanOption(*settings_subwindow, y, "enable_voice_receive", Language::get(6454), Language::get(6455),
+				allSettings.enable_voice_receive,
+				[](Button& button) {soundToggleSetting(button);
+					allSettings.enable_voice_receive = button.isPressed();
+					VoiceChat.mainmenuSettings.enable_voice_receive = allSettings.enable_voice_receive;
+					if ( !VoiceChat.mainmenuSettings.enable_voice_receive )
+					{
+						if ( auto parent = static_cast<Frame*>(button.getParent()) )
+						{
+							if ( auto btn = parent->findButton("setting_enable_voice_input_button") )
+							{
+								if ( btn->isPressed() )
+								{
+									btn->activate();
+								}
+							}
+						}
+					}
+				});
+		if ( num_record_drivers > 0 )
+		{
+			y += settingsAddDropdown(*settings_subwindow, y, "recording_device", Language::get(6438), Language::get(6439),
+				true, record_drivers_formatted_ptrs, record_drivers_formatted_ptrs[selected_recording_device],
+				settingsRecordingDevice);
+			y += settingsAddSlider(*settings_subwindow, y, "recording_volume", Language::get(6441), Language::get(6442),
+				allSettings.recording_gain - 100.f, -VoiceChat_t::kMaxGain, VoiceChat_t::kMaxGain, sliderDecibels, [](Slider& slider) {
+					allSettings.recording_gain = slider.getValue() + 100.f;
+					VoiceChat.mainmenuSettings.recordingGain = allSettings.recording_gain;
+					});
+			y += settingsAddBooleanOption(*settings_subwindow, y, "recording_loopback", Language::get(6443), Language::get(6444),
+				allSettings.recording_loopback,
+				[](Button& button) {soundToggleSetting(button); 
+				allSettings.recording_loopback = button.isPressed();
+				VoiceChat.mainmenuSettings.loopback_local_record = allSettings.recording_loopback;
+				});
+			y += settingsAddBooleanOption(*settings_subwindow, y, "push_to_talk", Language::get(6447), Language::get(6448),
+				allSettings.push_to_talk, [](Button& button) {soundToggleSetting(button); allSettings.push_to_talk = button.isPressed(); });
+			// audio monitoring levels
+			{
+				if ( auto slider = settings_subwindow->findSlider("setting_recording_volume_slider") )
+				{
+					const char* img = slider->getRailImage();
+
+					settings_subwindow->addImage(slider->getRailSize(), 0xFFFFFFFF, img, "volume_bg");
+
+					auto volumeFrame = settings_subwindow->addFrame("recording_volume_input");
+					SDL_Rect pos = slider->getRailSize();
+					pos.h /= 2;
+					volumeFrame->setSize(pos);
+					volumeFrame->setClickable(false);
+					volumeFrame->setHollow(true);
+					volumeFrame->addImage(SDL_Rect{0, 0, pos.w, slider->getRailSize().h}, makeColor(0, 255, 0, 192), img, "volume_image");
+					volumeFrame->setDrawCallback([](const Widget& widget, SDL_Rect pos) {
+						Frame* frame = const_cast<Frame*>((Frame*)(&widget));
+						if ( auto img = frame->findImage("volume_image") )
+						{
+							SDL_Rect pos = frame->getSize();
+							pos.w = std::max(8, (int)(std::min(1.f, VoiceChat.loopback_input_volume) * img->pos.w));
+							frame->setSize(pos);
+							if ( VoiceChat.loopback_input_volume >= 1.0 )
+							{
+								img->color = makeColor(255, 0, 0, 192);
+							}
+							else
+							{
+								img->color = makeColor(0, 255, 0, 192);
+							}
+						}
+						});
+
+					volumeFrame = settings_subwindow->addFrame("recording_volume_output");
+					pos.y += pos.h;
+					volumeFrame->setSize(pos);
+					volumeFrame->setClickable(false);
+					volumeFrame->setHollow(true);
+					volumeFrame->addImage(SDL_Rect{ 0, -slider->getRailSize().h / 2, pos.w, slider->getRailSize().h }, makeColor(255, 255, 0, 192), img, "volume_image");
+					volumeFrame->setDrawCallback([](const Widget& widget, SDL_Rect pos) {
+						Frame* frame = const_cast<Frame*>((Frame*)(&widget));
+						if ( auto img = frame->findImage("volume_image") )
+						{
+							SDL_Rect pos = frame->getSize();
+							pos.w = std::max(8, (int)(std::min(1.f, VoiceChat.loopback_output_volume) * img->pos.w));
+							if ( VoiceChat.loopback_output_volume >= 1.0 )
+							{
+								img->color = makeColor(255, 0, 0, 192);
+							}
+							else
+							{
+								img->color = makeColor(0, 255, 255, 192);
+							}
+							frame->setSize(pos);
+						}
+						});
+
+					slider->setRailImage("");
+				}
+			}
+		}
+#elif defined(NINTENDO) && defined(USE_FMOD)
+		y += settingsAddSubHeader(*settings_subwindow, y, "input", Language::get(6440));
+		y += settingsAddBooleanOption(*settings_subwindow, y, "enable_voice_receive", Language::get(6454), Language::get(6455),
+			allSettings.enable_voice_receive,
+			[](Button& button) {soundToggleSetting(button);
+		allSettings.enable_voice_receive = button.isPressed();
+		VoiceChat.mainmenuSettings.enable_voice_receive = allSettings.enable_voice_receive;
+		});
+#endif
 
 		y += settingsAddSubHeader(*settings_subwindow, y, "options", Language::get(5198));
 		y += settingsAddBooleanOption(*settings_subwindow, y, "minimap_pings", Language::get(5199), Language::get(5200),
@@ -6446,7 +6701,35 @@ bind_failed:
 #endif
 
 #ifndef NINTENDO
-		if ( num_drivers > 0 )
+		if ( num_drivers > 0 && num_record_drivers > 0 )
+		{
+			hookSettings(*settings_subwindow,
+				{
+	#ifdef USE_FMOD
+				{Setting::Type::Dropdown, "device"},
+				{Setting::Type::Dropdown, "speaker_mode"},
+	#endif
+					{Setting::Type::Slider, "master_volume"},
+					{Setting::Type::Slider, "gameplay_volume"},
+					{Setting::Type::Slider, "ambient_volume"},
+					{Setting::Type::Slider, "environment_volume"},
+					{Setting::Type::Slider, "notification_volume"},
+					{Setting::Type::Slider, "music_volume"},
+#ifdef USE_FMOD
+					{Setting::Type::Slider, "voice_volume"},
+					{Setting::Type::Boolean, "enable_voice_input"},
+					{Setting::Type::Boolean, "enable_voice_receive"},
+					{Setting::Type::Dropdown, "recording_device"},
+					{Setting::Type::Slider, "recording_volume"},					
+					{Setting::Type::Boolean, "recording_loopback"},
+					{Setting::Type::Boolean, "push_to_talk"},
+#endif
+					{Setting::Type::Boolean, "minimap_pings"},
+					{Setting::Type::Boolean, "player_monster_sounds"},
+					{Setting::Type::Boolean, "out_of_focus_audio"},
+					{Setting::Type::Boolean, "music_preload"} });
+		}
+		else if ( num_drivers > 0 )
 		{
 			hookSettings(*settings_subwindow,
 			{
@@ -6460,6 +6743,10 @@ bind_failed:
 				{Setting::Type::Slider, "environment_volume"},
 				{Setting::Type::Slider, "notification_volume"},
 				{Setting::Type::Slider, "music_volume"},
+#ifdef USE_FMOD
+				{Setting::Type::Slider, "voice_volume"},
+				{Setting::Type::Boolean, "enable_voice_receive"},
+#endif
 				{Setting::Type::Boolean, "minimap_pings"},
 				{Setting::Type::Boolean, "player_monster_sounds"},
 				{Setting::Type::Boolean, "out_of_focus_audio"},
@@ -6475,6 +6762,10 @@ bind_failed:
 				{Setting::Type::Slider, "environment_volume"},
 				{Setting::Type::Slider, "notification_volume"},
 				{Setting::Type::Slider, "music_volume"},
+#ifdef USE_FMOD
+				{Setting::Type::Slider, "voice_volume"},
+				{Setting::Type::Boolean, "enable_voice_receive"},
+#endif
 				{Setting::Type::Boolean, "minimap_pings"},
 				{Setting::Type::Boolean, "player_monster_sounds"},
 				{Setting::Type::Boolean, "out_of_focus_audio"},
@@ -6488,6 +6779,10 @@ bind_failed:
 			{Setting::Type::Slider, "environment_volume"},
 			{Setting::Type::Slider, "notification_volume"},
 			{Setting::Type::Slider, "music_volume"},
+#ifdef USE_FMOD
+			{Setting::Type::Slider, "voice_volume"},
+			{Setting::Type::Boolean, "enable_voice_receive"},
+#endif
 			{Setting::Type::Boolean, "minimap_pings"},
 			{Setting::Type::Boolean, "player_monster_sounds"}});
 #endif
@@ -11403,6 +11698,13 @@ bind_failed:
 		{'GPPR', []() {
 			GameplayPreferences_t::receivePacket();
 		}},
+
+		// the client sent a voip packet
+		{ 'VOIP', []() {
+#ifdef USE_FMOD
+			VoiceChat.receivePacket(net_packet);
+#endif
+		}},
     };
 
 	static void handlePacketsAsServer() {
@@ -11824,6 +12126,13 @@ bind_failed:
 		// the server sent a game config update
 		{'GOPT', []() {
 			GameplayPreferences_t::receiveGameConfig();
+		}},
+
+		// the server sent a voip packet
+		{ 'VOIP', []() {
+#ifdef USE_FMOD
+			VoiceChat.receivePacket(net_packet);
+#endif
 		}},
 	};
 
@@ -18455,7 +18764,7 @@ failed:
 						icon->pos.h = 24;
 						icon->disabled = false;
 					}
-					else if ( !strcmp(name, "3") )
+					else if ( !strcmp(name, "3") || !strcmp(name, "4") )
 					{
 						icon->path = "*#images/ui/HUD/warning_glyph.png";
 						icon->pos.y = 10;
@@ -18476,6 +18785,158 @@ failed:
 				}
 			}
 		};
+
+		static auto lobby_float_voice_fn = [](Frame& frame) {
+#ifdef USE_FMOD
+			Frame* lobbyVoice = frame.findFrame("lobby_voice_icons");
+			if ( !lobbyVoice )
+			{
+				lobbyVoice = frame.addFrame("lobby_voice_icons");
+				lobbyVoice->setHollow(true);
+			}
+
+			lobbyVoice->setDisabled(true);
+			if ( frame.findFrame("countdown") )
+			{
+				return;
+			}
+			for ( auto img : lobbyVoice->getImages() )
+			{
+				img->disabled = true;
+			}
+
+			SDL_Rect pos = frame.getSize();
+			pos.y = 60 + 24 + 22;
+			pos.h = 24;
+
+			int voice_no_recv = GameplayPreferences_t::getGameConfigValue(GameplayPreferences_t::GOPT_VOICE_NO_RECV);
+			int voice_pushtotalk = GameplayPreferences_t::getGameConfigValue(GameplayPreferences_t::GOPT_VOICE_PTT);
+			int voice_no_send = GameplayPreferences_t::getGameConfigValue(GameplayPreferences_t::GOPT_VOICE_NO_SEND);
+			while ( lobbyVoice->getImages().size() < MAXPLAYERS * 2)
+			{
+				auto img = lobbyVoice->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "", "voice_icon");
+				img->disabled = true;
+			}
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				const int x = (Frame::virtualScreenX / 8) * (i * 2 + 1);
+				if ( !client_disconnected[i] )
+				{
+					auto& images = lobbyVoice->getImages();
+					Frame::image_t* icon = nullptr;
+					if ( !(voice_no_send & (1 << i)) )
+					{
+						if ( i < images.size() && (i + MAXPLAYERS) < images.size() )
+						{
+							icon = images[i];
+
+							auto voiceState = VoiceChat.getVoiceState(i);
+							std::string imgPath = "";
+
+							if ( i == clientnum )
+							{
+								switch ( voiceState )
+								{
+								case VoiceChat_t::VOICE_STATE_INACTIVE:
+								case VoiceChat_t::VOICE_STATE_INACTIVE_PTT:
+									imgPath = "#*images/ui/HUD/HUD_Mic_00.png";
+									break;
+								case VoiceChat_t::VOICE_STATE_INERT:
+									imgPath = "#*images/ui/HUD/HUD_Mic_live0_00.png";
+									break;
+								case VoiceChat_t::VOICE_STATE_MUTE:
+									imgPath = "#*images/ui/HUD/HUD_Mic_mute_00.png";
+									break;
+								case VoiceChat_t::VOICE_STATE_ACTIVE1:
+									imgPath = "#*images/ui/HUD/HUD_Mic_live1_00.png";
+									break;
+								case VoiceChat_t::VOICE_STATE_ACTIVE2:
+									imgPath = "#*images/ui/HUD/HUD_Mic_live2_00.png";
+									break;
+								default:
+									break;
+								}
+							}
+							else
+							{
+								switch ( voiceState )
+								{
+								case VoiceChat_t::VOICE_STATE_INACTIVE:
+								case VoiceChat_t::VOICE_STATE_INACTIVE_PTT:
+									imgPath = "#*images/ui/HUD/Voice_Inactive.png";
+									break;
+								case VoiceChat_t::VOICE_STATE_INERT:
+									imgPath = "#*images/ui/HUD/Voice_Inert.png";
+									break;
+								case VoiceChat_t::VOICE_STATE_MUTE:
+									imgPath = "#*images/ui/HUD/Voice_Mute.png";
+									break;
+								case VoiceChat_t::VOICE_STATE_ACTIVE1:
+									imgPath = "#*images/ui/HUD/Voice_Active1.png";
+									break;
+								case VoiceChat_t::VOICE_STATE_ACTIVE2:
+									imgPath = "#*images/ui/HUD/Voice_Active2.png";
+									break;
+								default:
+									break;
+								}
+							}
+							if ( imgPath != "" )
+							{
+								icon->path = imgPath;
+								if ( auto imgGet = Image::get(icon->path.c_str()) )
+								{
+									icon->disabled = false;
+									icon->pos.w = imgGet->getWidth();
+									icon->pos.h = imgGet->getHeight();
+									icon->pos.x = x - icon->pos.w / 2;
+									icon->pos.y = 0;
+									pos.h = std::max(pos.h, icon->pos.y + icon->pos.h);
+								}
+							}
+						}
+					}
+
+					if ( voice_no_recv & (1 << i) )
+					{
+						auto icon2 = images[i + MAXPLAYERS];
+						// deafened
+						const char* imgPath = "#*images/ui/HUD/Voice_Deafen.png";
+						if ( auto imgGet = Image::get(imgPath) )
+						{
+							icon2->path = imgPath;
+							icon2->disabled = false;
+							icon2->pos.w = imgGet->getWidth();
+							icon2->pos.h = imgGet->getHeight();
+
+							if ( icon )
+							{
+								icon->pos.x -= (icon2->pos.w + 4) / 2;
+								icon2->pos.x = icon->pos.x + icon->pos.w + 4;
+							}
+							else
+							{
+								icon2->pos.x = x - icon2->pos.w / 2;
+							}
+							icon2->pos.y = 0;
+							if ( icon2->pos.x % 2 == 1 )
+							{
+								++icon2->pos.x;
+							}
+							if ( icon2->pos.y % 2 == 1 )
+							{
+								++icon2->pos.y;
+							}
+							pos.h = std::max(pos.h, icon2->pos.y + icon2->pos.h);
+						}
+					}
+				}
+			}
+			lobbyVoice->setSize(pos);
+			lobbyVoice->setDisabled(false);
+#endif
+		};
+
 		static auto lobby_float_warning_fn = [](Frame& frame) {
 
 			Frame* lobbyWarnings = frame.findFrame("lobby_float_warnings");
@@ -18526,11 +18987,11 @@ failed:
 			}
 			if ( multiplayer == CLIENT && (lobbyWindowSvFlags & SV_FLAG_HARDCORE) )
 			{
-				float_warning_add(lobbyWarnings, "3", "Hardcore Enabled");
+				float_warning_add(lobbyWarnings, "4", "Hardcore Enabled");
 			}
 			else if ( multiplayer != CLIENT && (svFlags & SV_FLAG_HARDCORE) )
 			{
-				float_warning_add(lobbyWarnings, "3", "Hardcore Enabled");
+				float_warning_add(lobbyWarnings, "4", "Hardcore Enabled");
 			}
 			if ( multiplayer == SERVER )
 			{
@@ -18634,6 +19095,7 @@ failed:
             auto lobby = static_cast<Frame*>(widget.getParent()); assert(lobby);
             banner->setSize(SDL_Rect{lobby->getActualSize().x, 0, Frame::virtualScreenX, 66});
 			lobby_float_warning_fn(*lobby);
+			lobby_float_voice_fn(*lobby);
             });
         {
             auto background = banner->addImage(
@@ -24410,6 +24872,7 @@ failed:
 				{
 					soundCancel();
 					setAudioDevice(current_audio_device);
+					setRecordDevice(current_recording_audio_device);
 					setGlobalVolume(master_volume, musvolume, sfxvolume, sfxAmbientVolume, sfxEnvironmentVolume, sfxNotificationVolume);
 					if (main_menu_frame) {
 						auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
@@ -24434,6 +24897,7 @@ failed:
 					soundActivate();
 
 					setAudioDevice(current_audio_device);
+					setRecordDevice(current_recording_audio_device);
 					setGlobalVolume(master_volume, musvolume, sfxvolume, sfxAmbientVolume, sfxEnvironmentVolume, sfxNotificationVolume);
 					if ( main_menu_frame ) {
 						auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
@@ -25770,6 +26234,11 @@ failed:
 			"title"
 		);
 		y += title->pos.h;
+
+		if ( ingame )
+		{
+			createPauseMenuPlayerBars();
+		}
 
 		auto notification = main_menu_frame->addFrame("notification");
 		notification->setSize(SDL_Rect{(Frame::virtualScreenX - 236 * 2) / 2, y, 472, 98});
