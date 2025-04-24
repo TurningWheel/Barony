@@ -6563,6 +6563,7 @@ bind_failed:
 			y += settingsAddBooleanOption(*settings_subwindow, y, "enable_voice_input", Language::get(6452), Language::get(6453),
 				allSettings.enable_voice_input,
 				[](Button& button) {
+					VoiceChat.voiceToggleTalk = false;
 					if ( !VoiceChat.mainmenuSettings.enable_voice_receive )
 					{
 						soundError();
@@ -6614,7 +6615,10 @@ bind_failed:
 				VoiceChat.mainmenuSettings.loopback_local_record = allSettings.recording_loopback;
 				});
 			y += settingsAddBooleanOption(*settings_subwindow, y, "push_to_talk", Language::get(6447), Language::get(6448),
-				allSettings.push_to_talk, [](Button& button) {soundToggleSetting(button); allSettings.push_to_talk = button.isPressed(); });
+				allSettings.push_to_talk, [](Button& button) {soundToggleSetting(button); 
+				VoiceChat.voiceToggleTalk = false;
+				allSettings.push_to_talk = button.isPressed();
+			});
 			// audio monitoring levels
 			{
 				if ( auto slider = settings_subwindow->findSlider("setting_recording_volume_slider") )
