@@ -27,6 +27,7 @@
 #include "../shops.hpp"
 #include "../colors.hpp"
 #include "../book.hpp"
+#include "../ui/MainMenu.hpp"
 
 #include <assert.h>
 
@@ -928,12 +929,15 @@ void createCalloutPromptFrame(const int player)
 	text->setDisabled(true);
 }
 
-void createVoicePromptFrame(const int player)
+Frame* createVoicePromptFrame(const int player, Frame* baseFrame)
 {
+	if ( !baseFrame )
+	{
+		return nullptr;
+	}
 	auto& hud_t = players[player]->hud;
 
-	auto frame = hud_t.hudFrame->addFrame("voice prompts");
-	hud_t.voicePromptFrame = frame;
+	auto frame = baseFrame->addFrame("voice prompts");
 	frame->setHollow(true);
 	frame->setSize(SDL_Rect{ 0, 0, 300, 0 });
 	frame->setDisabled(true);
@@ -946,6 +950,7 @@ void createVoicePromptFrame(const int player)
 	icon->disabled = true;
 	auto icon2 = frame->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "", "icon2");
 	icon2->disabled = true;
+	return frame;
 }
 
 
@@ -1109,12 +1114,18 @@ void updateCalloutPromptFrame(const int player)
 	}
 }
 
-void updateVoicePromptFrame(const int player)
+void updateVoicePromptFrame(const int player, Frame* baseFrame, Frame* allyFrame)
 {
 	auto& hud_t = players[player]->hud;
-	auto frame = hud_t.voicePromptFrame;
+	auto frame = baseFrame;
 	if ( !frame )
 	{
+		return;
+	}
+	auto allyPlayerFrame = allyFrame;
+	if ( !allyPlayerFrame )
+	{
+		frame->setDisabled(true);
 		return;
 	}
 #ifndef USE_FMOD
@@ -1127,14 +1138,14 @@ void updateVoicePromptFrame(const int player)
 	return;
 #endif
 
-	if ( (multiplayer == SINGLE && !*cvar_voice_debug)
-		|| (intro && !net_packet) )
+	if ( !VoiceChat.bRecordingInit )
 	{
 		frame->setDisabled(true);
 		return;
 	}
 
 	int voice_no_send = GameplayPreferences_t::getGameConfigValue(GameplayPreferences_t::GOPT_VOICE_NO_SEND);
+
 	if ( !players[player]->shootmode && !FollowerMenu[player].followerMenuIsOpen()
 		&& !CalloutMenu[player].calloutMenuIsOpen() )
 	{
@@ -1144,8 +1155,8 @@ void updateVoicePromptFrame(const int player)
 
 	int alignX = 8;
 	int alignY = 0;
-	if ( hud_t.allyPlayerFrame && !hud_t.allyPlayerFrame->isDisabled()
-		&& hud_t.allyPlayerFrame->getOpacity() > 0.0 )
+	if ( allyPlayerFrame && !allyPlayerFrame->isDisabled()
+		&& allyPlayerFrame->getOpacity() > 0.0 )
 	{
 		if ( hud_t.playerBars.size() > 0 )
 		{
@@ -1162,13 +1173,16 @@ void updateVoicePromptFrame(const int player)
 	framePos.w = 300;
 	framePos.h = 50;
 
-	if ( auto calloutFrame = hud_t.calloutPromptFrame )
+	if ( allyPlayerFrame == hud_t.allyPlayerFrame )
 	{
-		if ( !calloutFrame->isDisabled() )
+		if ( auto calloutFrame = hud_t.calloutPromptFrame )
 		{
-			if ( auto icon = calloutFrame->findImage("icon") )
+			if ( !calloutFrame->isDisabled() )
 			{
-				framePos.x = icon->pos.x + icon->pos.w + 16;
+				if ( auto icon = calloutFrame->findImage("icon") )
+				{
+					framePos.x = icon->pos.x + icon->pos.w + 16;
+				}
 			}
 		}
 	}
@@ -1176,8 +1190,8 @@ void updateVoicePromptFrame(const int player)
 	frame->setSize(framePos);
 
 	auto glyph = frame->findImage("glyph");
-	auto glyphPathUnpressed = Input::inputs[player].getGlyphPathForBinding("Voice Chat", false);
-	auto glyphPathPressed = Input::inputs[player].getGlyphPathForBinding("Voice Chat", true);
+	auto glyphPathUnpressed = Input::inputs[player].getGlyphPathForBinding(VoiceChat.getVoiceChatBindingName(player), false);
+	auto glyphPathPressed = Input::inputs[player].getGlyphPathForBinding(VoiceChat.getVoiceChatBindingName(player), true);
 	glyph->disabled = true;
 
 	const int nominalGlyphHeight = 26;
@@ -1229,10 +1243,8 @@ void updateVoicePromptFrame(const int player)
 		}
 	}
 
-	int glyphAlignY = unpressedY + (unpressedHeight - nominalGlyphHeight) / 2;
-
-	int voice_no_recv = GameplayPreferences_t::getGameConfigValue(GameplayPreferences_t::GOPT_VOICE_NO_RECV);
 	int voice_pushtotalk = GameplayPreferences_t::getGameConfigValue(GameplayPreferences_t::GOPT_VOICE_PTT);
+	int voice_no_recv = GameplayPreferences_t::getGameConfigValue(GameplayPreferences_t::GOPT_VOICE_NO_RECV);
 
 	auto icon = frame->findImage("icon");
 	icon->disabled = true;
@@ -1242,7 +1254,7 @@ void updateVoicePromptFrame(const int player)
 
 	if ( !glyph->disabled )
 	{
-		std::string imgPath = (voice_pushtotalk & (1 << player)) ? "#*images/ui/HUD/HUD_Mic_live0_00.png" : "#*images/ui/HUD/HUD_Mic_mute_00.png";
+		std::string imgPath = "#*images/ui/HUD/HUD_Mic_mute_00.png"; //(voice_pushtotalk & (1 << player)) ? "#*images/ui/HUD/HUD_Mic_live0_00.png" : "#*images/ui/HUD/HUD_Mic_mute_00.png";
 		if ( VoiceChat.PlayerChannels[player].talkingTicks > 0 
 			|| VoiceChat.PlayerChannels[player].monitor_output_volume >= 0.05 )
 		{
@@ -1316,7 +1328,7 @@ Frame* createAllyPlayerFrame(const int player, Frame* baseFrame)
 	auto frame = baseFrame->addFrame("player status");
 	if ( baseFrame == hud_t.hudFrame )
 	{
-	hud_t.allyPlayerFrame = frame;
+		hud_t.allyPlayerFrame = frame;
 	}
 	frame->setHollow(true);
 	frame->setSize(SDL_Rect{ 0, 0, 300, 0 });
@@ -1588,8 +1600,10 @@ Frame* createAllyPlayerEntry(const int player, Frame* baseFrame)
 #ifdef USE_FMOD
 			auto voiceState = VoiceChat.getVoiceState(player);
 			int voice_no_recv = GameplayPreferences_t::getGameConfigValue(GameplayPreferences_t::GOPT_VOICE_NO_RECV);
-			if ( voiceState != VoiceChat_t::VOICE_STATE_NONE )
+			int voice_no_send = GameplayPreferences_t::getGameConfigValue(GameplayPreferences_t::GOPT_VOICE_NO_SEND);
+			if ( voiceState != VoiceChat_t::VOICE_STATE_NONE && !(voice_no_recv & (1 << clientnum)) )
 			{
+				// icons only if clientnum is receiving and player wants to send
 				std::string imgPath = "";
 
 				switch ( voiceState )
@@ -1625,11 +1639,11 @@ Frame* createAllyPlayerEntry(const int player, Frame* baseFrame)
 
 						pos.x += pos.w + 4;
 					}
-					}
 				}
-			if ( voice_no_recv & (1 << player) )
+			}
+			if ( voice_no_recv & (1 << player) && !(voice_no_send & (1 << clientnum)) )
 			{
-				// deafened
+				// deafened, only if the clientnum wants to send voice
 				const char* imgPath = "#*images/ui/HUD/Voice_Deafen.png";
 				if ( auto img = Image::get(imgPath) )
 				{
@@ -1958,7 +1972,7 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 		}
 	}
 
-	bool audioSliderBars = bPlayerBars && !strcmp(baseFrame->getName(), "player status audio");
+	bool audioSliderBars = bPlayerBars && !strcmp(baseFrame->getName(), "pause player status audio");
 
 	for ( auto it = (bPlayerBars ? hud_t.playerBars.begin() : hud_t.followerBars.begin()); 
 		it != (bPlayerBars ? hud_t.playerBars.end() : hud_t.followerBars.end()); )
@@ -2544,18 +2558,42 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 				slider = entryFrame->addSlider("audio slider");
 				slider->setOrientation(Slider::SLIDER_HORIZONTAL);
 				SDL_Rect pos = hpFrame->getSize();
-				pos.w = hpWidth;
+				pos.x = 36;
+				pos.w = 108;
 				slider->setRailSize(pos);
-				slider->setColor(makeColor(0, 224, 224, 128));
-				slider->setHighlightColor(makeColor(0, 255, 255, 128));
-				slider->setHandleSize(SDL_Rect{ 0, 0, 16, 16 });
-				slider->setValue(0.f);
-				slider->setMinValue(-50.f);
+				slider->setColor(makeColor(192, 192, 192, 128));
+				slider->setHighlightColor(makeColor(255, 255, 255, 192));
+				slider->setHandleSize(SDL_Rect{ 0, 0, 20, 16 });
+				slider->setBorder(10);
+				slider->setValue(std::min(10.f, std::max(-20.f, VoiceChat.PlayerChannels[player].localChannelGain - 100.f)));
+				slider->setMinValue(-20.f);
 				slider->setMaxValue(10.f);
-				slider->setRailImage("*#images/ui/HUD/allies/HUD_HPBar_Fill_Mid_03.png");
-				slider->setHandleImage("*#images/ui/HUD/allies/HUD_HPBar_Base_00.png");
+				slider->setButtonsOffset(SDL_Rect{ 0, 8, 0, 0 });
+				slider->setSelectorOffset(SDL_Rect{ -3, -3, 3, 3 });
+				slider->setHandleImage("*#images/ui/HUD/allies/HUD_Audio_Slider.png");
 				slider->setOntop(true);
+				slider->setWidgetSearchParent(baseFrame->getName());
+				slider->addWidgetMovement("MenuCancel", "Back to Game");
+				slider->addWidgetAction("MenuUp", "audio slider up");
+				slider->addWidgetAction("MenuDown", "audio slider down");
+				/*slider->setTickCallback([](Widget& widget) {
+					if ( inputs.getVirtualMouse(MainMenu::getMenuOwner())->draw_cursor )
+					{
+						if ( !widget.isHighlighted() )
+						{
+							widget.deselect();
+						}
+					}
+					});*/
 				slider->setCallback([](Slider& slider) {
+					static Uint32 timeSinceLastTick = 0;
+					if ( !inputs.getVirtualMouse(MainMenu::getMenuOwner())->draw_cursor )
+					{
+						if ( MainMenu::main_menu_ticks - timeSinceLastTick >= fpsLimit / 10 ) {
+							timeSinceLastTick = MainMenu::main_menu_ticks;
+							playSound(497, 48);
+						}
+					}
 					slider.setValue((int)(floor(slider.getValue())));
 					if ( Frame* parent = static_cast<Frame*>(slider.getParent()) )
 					{
@@ -2563,39 +2601,117 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 						if ( player >= 0 && player < MAXPLAYERS )
 						{
 							VoiceChat.PlayerChannels[player].localChannelGain = slider.getValue() + 100.f;
+							if ( slider.getValue() <= -19.5f )
+							{
+								VoiceChat.PlayerChannels[player].localChannelGain = 100.f - 80.f; // set muted
+							}
 						}
 					}
 				});
 			}
 
+			if ( !entryFrame->getTickCallback() )
+			{
+				entryFrame->setTickCallback([](Widget& widget) {
+					Frame* entryFrame = static_cast<Frame*>(&widget);
+					if ( auto slider = entryFrame->findSlider("audio slider") )
+					{
+						Uint32 color = !slider->isActivated() ? makeColor(192, 192, 192, 128) : slider->getHighlightColor();
+
+						if ( slider->getColor() != color )
+						{
+							if ( slider->isSelected() )
+							{
+								if ( slider->isActivated() ) { playSound(493, 48); }
+								else { playSound(499, 48); }
+							}
+							slider->setColor(color);
+						}
+					}
+				});
+			}
 
 			if ( slider )
 			{
-				auto img = entryFrame->findImage("audio lvl");
-				if ( !img )
+				auto sliderArrowLeft = entryFrame->findImage("audio slider left");
+				if ( !sliderArrowLeft )
 				{
-					img = entryFrame->addImage(slider->getRailSize(), makeColor(0, 255, 0, 192), "images/system/white.png", "audio lvl");
+					sliderArrowLeft = entryFrame->addImage(SDL_Rect{ 0, slider->getRailSize().y, 8, 16 }, makeColor(255, 255, 255, 128),
+						"*#images/ui/HUD/allies/HUD_Audio_Slider_ArrowLeft.png", "audio slider left");
+					sliderArrowLeft->disabled = true;
+					sliderArrowLeft->ontop = true;
 				}
-				if ( img )
+				auto sliderArrowRight = entryFrame->findImage("audio slider right");
+				if ( !sliderArrowRight )
 				{
-					img->pos.w = slider->getRailSize().w;
-					if ( uid >= 0 && uid < MAXPLAYERS )
+					sliderArrowRight = entryFrame->addImage(SDL_Rect{ 0, slider->getRailSize().y, 8, 16 }, makeColor(255, 255, 255, 128),
+						"*#images/ui/HUD/allies/HUD_Audio_Slider_ArrowRight.png", "audio slider right");
+					sliderArrowRight->disabled = true;
+					sliderArrowRight->ontop = true;
+				}
+
+				{
+					auto img = entryFrame->findImage("audio rail");
+					if ( !img )
 					{
-						img->pos.w = std::max(4.f, img->pos.w * VoiceChat.PlayerChannels[uid].monitor_output_volume);
-						if ( VoiceChat.PlayerChannels[uid].monitor_output_volume >= 1.0 )
+						img = entryFrame->addImage(slider->getRailSize(), makeColor(255, 255, 255, 255), "*#images/ui/HUD/allies/HUD_Audio_Rail.png", "audio rail");
+					}
+					img->pos = slider->getRailSize();
+					img->pos.x -= 12;
+					img->pos.w = 126;
+				}
+				{
+					auto imgTip = entryFrame->findImage("audio lvl tip");
+					if ( !imgTip )
+					{
+						imgTip = entryFrame->addImage(SDL_Rect{ 0, 0, 0, 0 }, makeColor(255, 255, 255, 255), "*#images/ui/HUD/allies/HUD_Audio_Fill_End.png", "audio lvl tip");
+					}
+					auto imgBase = entryFrame->findImage("audio lvl base");
+					if ( !imgBase )
+					{
+						imgBase = entryFrame->addImage(SDL_Rect{0, 0, 0, 0}, makeColor(255, 255, 255, 255), "*#images/ui/HUD/allies/HUD_Audio_Fill_Base.png", "audio lvl base");
+					}
+					if ( imgBase && imgTip )
+					{
+						imgTip->disabled = false;
+						imgBase->disabled = false;
+						imgBase->pos.x = slider->getRailSize().x + 2;
+						imgBase->pos.w = 100;
+						imgBase->pos.y = slider->getRailSize().y + 4;
+						imgBase->pos.h = 8;
+
+						if ( uid >= 0 && uid < MAXPLAYERS )
 						{
-							img->color = makeColor(255, 0, 0, 192);
+							imgBase->pos.w = imgBase->pos.w * VoiceChat.PlayerChannels[uid].monitor_output_volume;
+							if ( VoiceChat.PlayerChannels[uid].monitor_output_volume >= 1.0 )
+							{
+								imgTip->path = "*#images/ui/HUD/allies/HUD_Audio_Fill_End_Overload.png";
+								imgBase->path = "*#images/ui/HUD/allies/HUD_Audio_Fill_Base_Overload.png";
+							}
+							else
+							{
+								imgTip->path = "*#images/ui/HUD/allies/HUD_Audio_Fill_End.png";
+								imgBase->path = "*#images/ui/HUD/allies/HUD_Audio_Fill_Base.png";
+							}
 						}
-						else
-						{
-							img->color = makeColor(0, 255, 0, 192);
-						}
+						imgTip->color = imgBase->color;
+						imgTip->disabled = imgBase->disabled;
+						imgTip->pos = imgBase->pos;
+						imgTip->pos.w = 4;
+						imgTip->pos.x = imgBase->pos.x + imgBase->pos.w;
 					}
 				}
 
-				char buf[32];
-				snprintf(buf, sizeof(buf), "%+ddB", (int)(floor(slider->getValue())));
-				hpField->setText(buf);
+				if ( slider->getValue() < -19.5f )
+				{
+					hpField->setText(Language::get(6456));
+				}
+				else
+				{
+					char buf[32];
+					snprintf(buf, sizeof(buf), "%+ddB", (int)(floor(slider->getValue())));
+					hpField->setText(buf);
+				}
 			}
 
 			levelField->setDisabled(true);
@@ -2853,8 +2969,12 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 			}
 		}
 
-		auto mpFrame = audioSliderBars ? nullptr : entryFrame->findFrame("mp");
-		if ( mpFrame )
+		auto mpFrame = entryFrame->findFrame("mp");
+		if ( audioSliderBars )
+		{
+			mpFrame->setDisabled(true);
+		}
+		else if ( mpFrame )
 		{ // MP
 			auto mpMid = mpFrame->findImage("mp img mid");
 			auto mpEndcap = mpFrame->findImage("mp img endcap");
@@ -3314,17 +3434,184 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 
 void updateAllyPlayerFrame(const int player, Frame* baseFrame);
 
-void createPauseMenuPlayerBars()
+Frame* createPauseMenuPlayerBars()
 {
+	Frame* frame = nullptr;
+	if ( clientnum < 0 || players[clientnum]->hud.playerBars.size() == 0 )
+	{
+		return frame;
+	}
 #ifdef USE_FMOD
-	auto frame = createAllyPlayerFrame(clientnum, MainMenu::main_menu_frame);
-	frame->setName("player status audio");
-	frame->setHollow(false);
+	frame = createAllyPlayerFrame(clientnum, MainMenu::main_menu_frame);
+	frame->setName("pause player status audio");
+	frame->setHollow(true);
+	frame->setWidgetBack("Back to Game");
+	frame->setButtonsOffset(SDL_Rect{ 65, 13, 0, 0 });
+
+	auto btn = frame->addButton("audio slider up");
+	btn->setSize(SDL_Rect{ 0, 0, 1, 1 });
+	btn->setInvisible(true);
+	btn->setCallback([](Button& button)
+	{
+		auto frame = static_cast<Frame*>(button.getParent());
+		std::vector<Slider*> sliders;
+		int selected_slider = -1;
+		int index = -1;
+		for ( auto& f : frame->getFrames() )
+		{
+			if ( strcmp(f->getName(), "entry") || f->isToBeDeleted() )
+			{
+				continue;
+			}
+			if ( auto slider = f->findSlider("audio slider") )
+			{
+				sliders.push_back(slider);
+				++index;
+				if ( slider->isSelected() )
+				{
+					selected_slider = index;
+				}
+			}
+		}
+		if ( sliders.size() )
+		{
+			playSound(495, 64);
+			if ( selected_slider > 0 )
+			{
+				--selected_slider;
+			}
+			sliders[selected_slider]->select();
+		}
+	});
+
+	btn = frame->addButton("audio slider down");
+	btn->setSize(SDL_Rect{ 0, 0, 1, 1 });
+	btn->setInvisible(true);
+	btn->setCallback([](Button& button)
+		{
+			auto frame = static_cast<Frame*>(button.getParent());
+			std::vector<Slider*> sliders;
+			int selected_slider = -1;
+			int index = -1;
+			for ( auto& f : frame->getFrames() )
+			{
+				if ( strcmp(f->getName(), "entry") || f->isToBeDeleted() )
+				{
+					continue;
+				}
+				if ( auto slider = f->findSlider("audio slider") )
+				{
+					sliders.push_back(slider);
+					++index;
+					if ( slider->isSelected() )
+					{
+						selected_slider = index;
+					}
+				}
+			}
+			if ( sliders.size() )
+			{
+				playSound(495, 64);
+				if ( selected_slider < sliders.size() - 1 )
+				{
+					++selected_slider;
+				}
+				sliders[selected_slider]->select();
+			}
+		});
+
+	auto voicePromptFrame = createVoicePromptFrame(clientnum, MainMenu::main_menu_frame);
+	voicePromptFrame->setName("pause player voice prompt");
+	updateVoicePromptFrame(clientnum, voicePromptFrame, frame);
 	updateAllyPlayerFrame(clientnum, frame);
+	//frame->setOpacity(0.0);
+	//frame->setInheritParentFrameOpacity(false);
+
+	frame->setDrawCallback([](const Widget& widget, SDL_Rect pos) {
+		auto frame = (Frame*)(&widget);
+		if ( auto textGet = Text::get(Language::get(6457), smallfont_outline, 0xFFFFFFFF, 0) )
+		{
+			textGet->draw(SDL_Rect{ 0,0,0,0 }, SDL_Rect{ pos.x + 198 - (int)textGet->getWidth(), pos.y + frame->getSize().h + 4, 0, 0},
+				SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY });
+		}
+	});
 	frame->setTickCallback([](Widget& widget) {
-		updateAllyPlayerFrame(clientnum, static_cast<Frame*>(&widget));
+		auto frame = static_cast<Frame*>(&widget);
+		int voice_no_recv = GameplayPreferences_t::getGameConfigValue(GameplayPreferences_t::GOPT_VOICE_NO_RECV);
+		int voice_no_send = GameplayPreferences_t::getGameConfigValue(GameplayPreferences_t::GOPT_VOICE_NO_SEND);
+		bool voice_any_send = true;
+		/*for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( !client_disconnected[i] )
+			{
+				if ( !(voice_no_send & (1 << i)) )
+				{
+					voice_any_send = true;
+				}
+			}
+		}*/
+
+		updateAllyPlayerFrame(clientnum, frame);
+		frame->setInvisible(false);
+
+		if ( clientnum < 0 || players[clientnum]->hud.playerBars.size() == 0
+			|| voice_no_recv & (1 << clientnum) || !voice_any_send )
+		{
+			//frame->setOpacity(0.0);
+			//frame->setInheritParentFrameOpacity(false);
+			frame->setInvisible(true);
+		}
+
+		if ( frame->isSelected() && !frame->isInvisible() )
+		{
+			for ( auto& f : frame->getFrames() )
+			{
+				if ( auto slider = f->findSlider("audio slider") )
+				{
+					playSound(493, 48);
+					slider->select();
+					break;
+				}
+			}
+			if ( frame->isSelected() )
+			{
+				frame->deselect();
+			}
+		}
+		if ( auto parent = frame->getParent() )
+		{
+			if ( auto voicePromptFrame = parent->findFrame("pause player voice prompt") )
+			{
+				updateVoicePromptFrame(clientnum, voicePromptFrame, frame);
+				if ( frame->isDisabled() )
+				{
+					voicePromptFrame->setDisabled(frame->isDisabled());
+				}
+				voicePromptFrame->setInvisible(frame->isInvisible());
+			}
+		}
+
+		if ( frame->isDisabled() || frame->isInvisible() )
+		{
+			auto selectedWidget = MainMenu::main_menu_frame->findSelectedWidget(MainMenu::getMenuOwner());
+			if ( selectedWidget )
+			{
+				if ( selectedWidget == frame )
+				{
+					selectedWidget->deselect();
+				}
+				else
+				{
+					if ( !strcmp(selectedWidget->getName(), "audio slider") )
+					{
+						selectedWidget->deselect();
+					}
+				}
+			}
+		}
 		});
 #endif
+	return frame;
 }
 
 void updateAllyFollowerFrame(const int player)
@@ -3885,58 +4172,58 @@ void updateAllyPlayerFrame(const int player, Frame* baseFrame)
 
 	if ( baseFrame == players[player]->hud.allyPlayerFrame )
 	{
-	if ( *cvar_playerbars_debug >= 0 )
-	{
-		if ( hud_t.playerBars.size() < *cvar_playerbars_debug )
+		if ( *cvar_playerbars_debug >= 0 )
 		{
-			while ( hud_t.playerBars.size() < *cvar_playerbars_debug )
+			if ( hud_t.playerBars.size() < *cvar_playerbars_debug )
 			{
-				hud_t.playerBars.push_back(std::make_pair(0, Player::HUD_t::FollowerBar_t()));
+				while ( hud_t.playerBars.size() < *cvar_playerbars_debug )
+				{
+					hud_t.playerBars.push_back(std::make_pair(0, Player::HUD_t::FollowerBar_t()));
+				}
+			}
+			else if ( hud_t.playerBars.size() > *cvar_playerbars_debug )
+			{
+				hud_t.playerBars.clear();
 			}
 		}
-		else if ( hud_t.playerBars.size() > *cvar_playerbars_debug )
+		/*if ( enableDebugKeys && keystatus[SDLK_H] )
 		{
-			hud_t.playerBars.clear();
+			keystatus[SDLK_H] = 0;
+			hud_t.playerBars.push_back(std::make_pair(0, Player::HUD_t::FollowerBar_t()));
 		}
-	}
-	/*if ( enableDebugKeys && keystatus[SDLK_H] )
-	{
-		keystatus[SDLK_H] = 0;
-		hud_t.playerBars.push_back(std::make_pair(0, Player::HUD_t::FollowerBar_t()));
-	}
 
-	if ( enableDebugKeys && keystatus[SDLK_J] )
-	{
-		keystatus[SDLK_J] = 0;
-		if ( hud_t.playerBars.size() > 0 )
+		if ( enableDebugKeys && keystatus[SDLK_J] )
 		{
-			auto it = hud_t.playerBars.begin() + local_rng.rand() % hud_t.playerBars.size();
-			it->second.expired = true;
-		}
-	}*/
+			keystatus[SDLK_J] = 0;
+			if ( hud_t.playerBars.size() > 0 )
+			{
+				auto it = hud_t.playerBars.begin() + local_rng.rand() % hud_t.playerBars.size();
+				it->second.expired = true;
+			}
+		}*/
 
-	for ( int i = 0; i < MAXPLAYERS; ++i )
-	{
-		if ( i == player )
+		for ( int i = 0; i < MAXPLAYERS; ++i )
 		{
-			continue;
-		}
-		if ( !client_disconnected[i] && players[i]->entity && !splitscreen )
-		{
-			auto it = std::find_if(hud_t.playerBars.begin(), hud_t.playerBars.end(),
-				[&i](const std::pair<Uint32, Player::HUD_t::FollowerBar_t>& bar)
+			if ( i == player )
 			{
-				return bar.first == i && !bar.second.expired;
-			});
-			if ( it == hud_t.playerBars.end() )
+				continue;
+			}
+			if ( !client_disconnected[i] && players[i]->entity && !splitscreen )
 			{
-				hud_t.playerBars.push_back(std::make_pair(i, Player::HUD_t::FollowerBar_t()));
-				auto& bar = hud_t.playerBars.at(hud_t.playerBars.size() - 1);
-				bar.second.animFadeScroll = 1.0;
-				bar.second.animFadeScrollDummy = 1.0;
+				auto it = std::find_if(hud_t.playerBars.begin(), hud_t.playerBars.end(),
+					[&i](const std::pair<Uint32, Player::HUD_t::FollowerBar_t>& bar)
+					{
+						return bar.first == i && !bar.second.expired;
+					});
+				if ( it == hud_t.playerBars.end() )
+				{
+					hud_t.playerBars.push_back(std::make_pair(i, Player::HUD_t::FollowerBar_t()));
+					auto& bar = hud_t.playerBars.at(hud_t.playerBars.size() - 1);
+					bar.second.animFadeScroll = 1.0;
+					bar.second.animFadeScrollDummy = 1.0;
+				}
 			}
 		}
-	}
 	}
 
 	int activeBars = 0;
@@ -10778,7 +11065,7 @@ void Player::HUD_t::processHUD()
 	}
 	if ( !voicePromptFrame )
 	{
-		createVoicePromptFrame(player.playernum);
+		voicePromptFrame = createVoicePromptFrame(player.playernum, hudFrame);
 	}
 	if ( !enemyBarFrame )
 	{
@@ -10813,7 +11100,7 @@ void Player::HUD_t::processHUD()
 	updateHPBar();
 	updateMPBar();
 	updateCalloutPromptFrame(player.playernum);
-	updateVoicePromptFrame(player.playernum);
+	updateVoicePromptFrame(player.playernum, player.hud.voicePromptFrame, player.hud.allyPlayerFrame);
 	updateActionPrompts();
 	updateUINavigation();
 	enemyHPDamageBarHandler[player.playernum].cullExpiredHPBars();

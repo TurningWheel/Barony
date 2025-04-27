@@ -150,6 +150,8 @@ class VoiceChat_t
 	Uint32 datagramSequence = 0;
 	UDPpacket* loopbackPacket = nullptr;
 public:
+    bool mainMenuAudioTabOpen();
+    bool allowInputs = false;
     static constexpr float kMaxGain = 12.f;
 	bool useSystem = false;
 	bool bRecordingInit = false;
@@ -235,6 +237,7 @@ public:
 	void initRecording();
 	void deinit();
 	void updateRecording();
+    const char* getVoiceChatBindingName(int player);
     void pushAvailableDatagrams();
 	void update();
 	void receivePacket(UDPpacket* packet);

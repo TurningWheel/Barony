@@ -1279,7 +1279,7 @@ VoiceChat_t::VoicePlayerBarState VoiceChat_t::getVoiceState(const int player)
 	auto result = VOICE_STATE_NONE;
 	if ( !(voice_no_send & (1 << player)) )
 	{
-		result = (voice_pushtotalk & (1 << player)) ? VOICE_STATE_INERT : VOICE_STATE_MUTE;
+		result = VOICE_STATE_INERT; //(voice_pushtotalk & (1 << player)) ? VOICE_STATE_INERT : VOICE_STATE_MUTE;
 		if ( VoiceChat.PlayerChannels[player].talkingTicks > 0 
 			|| VoiceChat.PlayerChannels[player].monitor_output_volume >= 0.05
 			|| VoiceChat.PlayerChannels[player].lastAudibleTick > 0 )
@@ -2005,7 +2005,7 @@ void VoiceChat_t::pushAvailableDatagrams()
 	}
 }
 
-bool mainMenuAudioTabOpen()
+bool VoiceChat_t::mainMenuAudioTabOpen()
 {
 	if ( MainMenu::main_menu_frame )
 	{
@@ -2076,19 +2076,65 @@ float VoiceChat_t::getAudioSettingFloat(VoiceChat_t::AudioSettingFloat option)
 	return 0.f;
 }
 
+const char* VoiceChat_t::getVoiceChatBindingName(int player)
+{
+	return "Voice Chat";
+	//if ( player < 0 || player >= MAXPLAYERS ) { return ""; }
+
+	////bool pauseMenuSlidersAvailable = false;
+	////if ( !intro && gamePaused && MainMenu::main_menu_frame )
+	////{
+	////	auto selectedWidget = MainMenu::main_menu_frame->findSelectedWidget(MainMenu::getMenuOwner());
+	////	if ( selectedWidget )
+	////	{
+	////		if ( !strcmp(selectedWidget->getName(), "pause player status audio") )
+	////		{
+	////			pauseMenuSlidersAvailable = true;
+	////		}
+	////		else if ( !strcmp(selectedWidget->getName(), "audio slider") )
+	////		{
+	////			pauseMenuSlidersAvailable = true;
+	////		}
+	////		else
+	////		{
+	////			auto& actions = selectedWidget->getWidgetActions();
+	////			auto find = actions.find("MenuPageLeft");
+	////			if ( find != actions.end() && find->second == "pause player status audio" )
+	////			{
+	////				if ( auto pauseAudioSliders = MainMenu::main_menu_frame->findFrame("pause player status audio") )
+	////				{
+	////					pauseMenuSlidersAvailable = true;
+	////				}
+	////			}
+	////		}
+	////	}
+	////}
+
+	//const char* voiceBindingName = inputs.bPlayerUsingKeyboardControl(player) && !inputs.hasController(player) ? "Voice Chat" : "Voice Chat Gamepad";
+	///*if ( inputs.hasController(clientnum) && (intro || pauseMenuSlidersAvailable) )
+	//{
+	//	voiceBindingName = "Voice Chat (Pause Menu)";
+	//}*/
+	//return voiceBindingName;
+}
+
 ConsoleVariable<bool> cvar_voice_debug("/voice_debug", false);
 void VoiceChat_t::updateRecording()
 {
+	allowInputs = false;
 #ifdef NINTENDO
 	return;
 #endif
 	pushAvailableDatagrams();
+
 	auto& input = Input::inputs[clientnum];
+	const char* voiceBindingName = getVoiceChatBindingName(clientnum);
 
 	if ( (multiplayer == SINGLE && !*cvar_voice_debug)
 		|| !getAudioSettingBool(AudioSettingBool::VOICE_SETTING_ENABLE_VOICE_INPUT)
-		|| (intro && !net_packet)
-		|| input.input("Voice Chat").type == Input::binding_t::INVALID )
+		|| (intro && (!net_packet 
+			|| (MainMenu::main_menu_frame && MainMenu::main_menu_frame->findFrame("lobby") && !MainMenu::isPlayerSignedIn(clientnum))))
+		|| input.input(voiceBindingName).type == Input::binding_t::INVALID )
 	{
 		// record on the main menu settings tab to view levels
 		if ( !(mainMenuAudioTabOpen()) )
@@ -2107,20 +2153,48 @@ void VoiceChat_t::updateRecording()
 	}
 
 	fmod_result = fmod_system->isRecording(recordDeviceIndex, &bIsRecording);
-	if ( fmod_result != FMOD_ERR_RECORD_DISCONNECTED && fmod_result != FMOD_OK
+	if ( (fmod_result != FMOD_ERR_RECORD_DISCONNECTED && fmod_result != FMOD_OK)
 		|| !bIsRecording )
 	{
 		FMODErrorCheck();
 		return;
 	}
 
-	bool allowInputs = false;
+	bool pauseMenuSlidersAvailable = false;
+	if ( !intro && gamePaused && MainMenu::main_menu_frame )
+	{
+		auto selectedWidget = MainMenu::main_menu_frame->findSelectedWidget(MainMenu::getMenuOwner());
+		if ( selectedWidget )
+		{
+			if ( !strcmp(selectedWidget->getName(), "pause player status audio") )
+			{
+				pauseMenuSlidersAvailable = true;
+			}
+			else if ( !strcmp(selectedWidget->getName(), "audio slider") )
+			{
+				pauseMenuSlidersAvailable = true;
+			}
+			else
+			{
+				auto& actions = selectedWidget->getWidgetActions();
+				auto find = actions.find("MenuPageLeft");
+				if ( find != actions.end() && find->second == "pause player status audio" )
+				{
+					if ( auto pauseAudioSliders = MainMenu::main_menu_frame->findFrame("pause player status audio") )
+					{
+						pauseMenuSlidersAvailable = true;
+					}
+				}
+			}
+		}
+	}
+
 	int voice_no_send = GameplayPreferences_t::getGameConfigValue(GameplayPreferences_t::GOPT_VOICE_NO_SEND);
 	if ( (players[clientnum]->bControlEnabled || intro)
 		&& !players[clientnum]->usingCommand()
 		&& !inputstr
 		&& !(voice_no_send & (1 << clientnum))
-		&& (!gamePaused || (gamePaused && (MainMenu::isCutsceneActive() || movie))) )
+		&& (!gamePaused || (gamePaused && (MainMenu::isCutsceneActive() || movie || pauseMenuSlidersAvailable))) )
 	{
 		allowInputs = true;
 	}
@@ -2134,45 +2208,77 @@ void VoiceChat_t::updateRecording()
 			doRecord = true;
 		}
 	}
+
+	if ( lastRecordTick > 0 )
+	{
+		--lastRecordTick;
+	}
+
 	if ( allowInputs )
 	{
+		if ( lastRecordTick > 0 )
+		{
+			doRecord = true; // give x ms of letting go of record to continue
+		}
 		if ( !getAudioSettingBool(AudioSettingBool::VOICE_SETTING_PUSHTOTALK) )
 		{
-			if ( input.consumeBinaryToggle("Voice Chat") )
+			if ( input.consumeBinaryToggle(voiceBindingName) )
 			{
 				voiceToggleTalk = !voiceToggleTalk;
 				if ( voiceToggleTalk )
 				{
-					messagePlayer(clientnum, MESSAGE_INTERACTION, Language::get(6449));
+					//messagePlayer(clientnum, MESSAGE_INTERACTION, Language::get(6449));
+					Player::soundActivate();
+					//playSound(710, 64);
 					doRecord = true;
 				}
 				else
 				{
-					messagePlayer(clientnum, MESSAGE_INTERACTION, Language::get(6450));
+					//messagePlayer(clientnum, MESSAGE_INTERACTION, Language::get(6450));
+					Player::soundCancel();
+					//playSound(711, 64);
 				}
 			}
 		}
 		else if ( getAudioSettingBool(AudioSettingBool::VOICE_SETTING_PUSHTOTALK) )
 		{
-			if ( !input.binaryToggle("Voice Chat") && bIsRecording )
-			{
-				if ( lastRecordTick > 0 )
-				{
-					doRecord = true; // give x ms of letting go of record to continue
-					--lastRecordTick;
-				}
-			}
-			else if ( input.binaryToggle("Voice Chat") )
+			if ( input.binaryToggle(voiceBindingName) )
 			{
 				doRecord = true;
+				if ( lastRecordTick == 0 )
+				{
+					//playSound(710, 64);
+					//Player::soundActivate();
+				}
 				lastRecordTick = TICKS_PER_SECOND / 4;
+			}
+			else
+			{
+				if ( lastRecordTick == 1 )
+				{
+					//playSound(711, 64);
+				}
+			}
+		}
+	}
+	else
+	{
+		if ( getAudioSettingBool(AudioSettingBool::VOICE_SETTING_PUSHTOTALK) )
+		{
+			if ( input.binaryToggle(voiceBindingName) )
+			{
+				input.consumeBinaryToggle(voiceBindingName);
 			}
 		}
 	}
 
-	if ( voiceToggleTalk && !getAudioSettingBool(AudioSettingBool::VOICE_SETTING_PUSHTOTALK) )
+	if ( !getAudioSettingBool(AudioSettingBool::VOICE_SETTING_PUSHTOTALK) )
 	{
-		doRecord = true;
+		if ( voiceToggleTalk )
+		{
+			doRecord = true;
+			lastRecordTick = TICKS_PER_SECOND / 4;
+		}
 	}
 
 	if ( doRecord )
@@ -2390,8 +2496,15 @@ void VoiceChat_t::update()
 				{
 					PlayerChannels[i].localChannelGain = 100.f;
 				}
-				fmod_result = dsp_fader_local->setParameterFloat(FMOD_DSP_FADER_GAIN,
-					std::min(10.f, (std::max(-80.f, (PlayerChannels[i].localChannelGain - 100.f)))));
+				if ( intro )
+				{
+					fmod_result = dsp_fader_local->setParameterFloat(FMOD_DSP_FADER_GAIN, 0.f);
+				}
+				else
+				{
+					fmod_result = dsp_fader_local->setParameterFloat(FMOD_DSP_FADER_GAIN,
+						std::min(10.f, (std::max(-80.f, (PlayerChannels[i].localChannelGain - 100.f)))));
+				}
 			}
 
 			FMOD::DSP* dsp_limiter_channelGain = nullptr;
@@ -2711,7 +2824,11 @@ void VoiceChat_t::receivePacket(UDPpacket* packet)
 	int player = (packet->data[4]) & 0xF;
 	bool encodedFrame = (packet->data[4] & (1 << 6));
 	const int packetVoiceDataIdx = 12;
+	int voice_no_recv = GameplayPreferences_t::getGameConfigValue(GameplayPreferences_t::GOPT_VOICE_NO_RECV);
+	bool localNoRecv = (voice_no_recv & (1 << clientnum)) && (player != clientnum);
+
 	if ( player >= 0 && player < MAXPLAYERS
+		&& !localNoRecv
 		&& packet->len > packetVoiceDataIdx
 		&& (packet->len - packetVoiceDataIdx == SDLNet_Read16(&packet->data[9])) )
 	{
@@ -2801,7 +2918,6 @@ void VoiceChat_t::receivePacket(UDPpacket* packet)
 	{
 		if ( player != clientnum ) // don't forward the server's loopback
 		{
-			int voice_no_recv = GameplayPreferences_t::getGameConfigValue(GameplayPreferences_t::GOPT_VOICE_NO_RECV);
 			for ( int i = 1; i < MAXPLAYERS; ++i )
 			{
 				if ( i != player && !client_disconnected[i] && !(voice_no_recv & (1 << i)) )

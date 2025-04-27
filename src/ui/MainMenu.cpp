@@ -145,7 +145,9 @@ namespace MainMenu {
                 {"Expand Inventory Tooltip", "X", hiddenBinding, emptyBinding },
                 {"Quick Turn", emptyBinding, "ButtonRightBumper", emptyBinding },
                 {"Chat", "Return", hiddenBinding, emptyBinding},
-				{"Voice Chat", "V", hiddenBinding, emptyBinding},
+#ifndef NINTENDO
+				{"Voice Chat", "V", "V", emptyBinding},
+#endif
                 {"Move Forward", "W", hiddenBinding, emptyBinding},
                 {"Move Left", "A", hiddenBinding, emptyBinding},
                 {"Move Backward", "S", hiddenBinding, emptyBinding},
@@ -211,7 +213,9 @@ namespace MainMenu {
                 {"Expand Inventory Tooltip", "X", hiddenBinding, emptyBinding },
                 {"Quick Turn", emptyBinding, "ButtonLeftStick", emptyBinding },
                 {"Chat", "Return", hiddenBinding, emptyBinding},
-				{"Voice Chat", "V", hiddenBinding, emptyBinding},
+#ifndef NINTENDO
+				{"Voice Chat", "V", "V", emptyBinding},
+#endif
                 {"Move Forward", "W", hiddenBinding, emptyBinding},
                 {"Move Left", "A", hiddenBinding, emptyBinding},
                 {"Move Backward", "S", hiddenBinding, emptyBinding},
@@ -269,7 +273,9 @@ namespace MainMenu {
                 {"Expand Inventory Tooltip", "X", hiddenBinding, emptyBinding },
                 {"Quick Turn", emptyBinding, "ButtonRightBumper", emptyBinding },
                 {"Chat", "Return", hiddenBinding, emptyBinding},
-				{"Voice Chat", "V", hiddenBinding, emptyBinding},
+#ifndef NINTENDO
+				{"Voice Chat", "V", "V", emptyBinding},
+#endif
                 {"Move Forward", "W", hiddenBinding, emptyBinding},
                 {"Move Left", "A", hiddenBinding, emptyBinding},
                 {"Move Backward", "S", hiddenBinding, emptyBinding},
@@ -331,7 +337,9 @@ namespace MainMenu {
                 {"Expand Inventory Tooltip", "X", hiddenBinding, emptyBinding },
                 {"Quick Turn", emptyBinding, emptyBinding, emptyBinding },
                 {"Chat", "Return", hiddenBinding, emptyBinding},
-				{"Voice Chat", "V", hiddenBinding, emptyBinding},
+#ifndef NINTENDO
+				{"Voice Chat", "V", "V", emptyBinding},
+#endif
                 {"Move Forward", "W", hiddenBinding, emptyBinding},
                 {"Move Left", "A", hiddenBinding, emptyBinding},
                 {"Move Backward", "S", hiddenBinding, emptyBinding},
@@ -367,7 +375,7 @@ namespace MainMenu {
     }
 
 	static int main_menu_buttons_height = 0;
-	static Uint32 main_menu_ticks = 0u;
+	Uint32 main_menu_ticks = 0u;
 	static float main_menu_cursor_bob = 0.f;
 	static int main_menu_cursor_x = 0;
 	static int main_menu_cursor_y = 0;
@@ -5090,7 +5098,7 @@ namespace MainMenu {
 
 	static const char* sliderDecibels(float v) {
 		static char buf[8];
-		snprintf(buf, sizeof(buf), "%.1fdB", v);
+		snprintf(buf, sizeof(buf), "%.1fdB", v / 4.f);
 		return buf;
 	};
 
@@ -6604,8 +6612,9 @@ bind_failed:
 				true, record_drivers_formatted_ptrs, record_drivers_formatted_ptrs[selected_recording_device],
 				settingsRecordingDevice);
 			y += settingsAddSlider(*settings_subwindow, y, "recording_volume", Language::get(6441), Language::get(6442),
-				allSettings.recording_gain - 100.f, -VoiceChat_t::kMaxGain, VoiceChat_t::kMaxGain, sliderDecibels, [](Slider& slider) {
-					allSettings.recording_gain = slider.getValue() + 100.f;
+				(allSettings.recording_gain - 100.f) * 4.f, -VoiceChat_t::kMaxGain * 4.f, VoiceChat_t::kMaxGain * 4.f, sliderDecibels, [](Slider& slider) {
+					soundSliderSetting(slider, true);
+					allSettings.recording_gain = slider.getValue() / 4.f + 100.f;
 					VoiceChat.mainmenuSettings.recordingGain = allSettings.recording_gain;
 					});
 			y += settingsAddBooleanOption(*settings_subwindow, y, "recording_loopback", Language::get(6443), Language::get(6444),
@@ -18811,26 +18820,27 @@ failed:
 
 			SDL_Rect pos = frame.getSize();
 			pos.y = 60 + 24 + 22;
-			pos.h = 24;
+			pos.h = 60;
 
 			int voice_no_recv = GameplayPreferences_t::getGameConfigValue(GameplayPreferences_t::GOPT_VOICE_NO_RECV);
 			int voice_pushtotalk = GameplayPreferences_t::getGameConfigValue(GameplayPreferences_t::GOPT_VOICE_PTT);
 			int voice_no_send = GameplayPreferences_t::getGameConfigValue(GameplayPreferences_t::GOPT_VOICE_NO_SEND);
-			while ( lobbyVoice->getImages().size() < MAXPLAYERS * 2)
+			while ( lobbyVoice->getImages().size() < MAXPLAYERS * 3)
 			{
 				auto img = lobbyVoice->addImage(SDL_Rect{ 0, 0, 0, 0 }, 0xFFFFFFFF, "", "voice_icon");
 				img->disabled = true;
 			}
 			for ( int i = 0; i < MAXPLAYERS; ++i )
 			{
-				const int x = (Frame::virtualScreenX / 8) * (i * 2 + 1);
-				if ( !client_disconnected[i] )
+				const int x = i * (Frame::virtualScreenX / 4) + 32; /*(Frame::virtualScreenX / 8) * (i * 2 + 1)*/;
+				if ( !client_disconnected[i] && isPlayerSignedIn(i) )
 				{
 					auto& images = lobbyVoice->getImages();
 					Frame::image_t* icon = nullptr;
-					if ( !(voice_no_send & (1 << i)) )
+					if ( !(voice_no_send & (1 << i)) && !(voice_no_recv & (1 << clientnum)) )
 					{
-						if ( i < images.size() && (i + MAXPLAYERS) < images.size() )
+						// icons only if clientnum is receiving and player wants to send
+						if ( (i + MAXPLAYERS * 2) < images.size() )
 						{
 							icon = images[i];
 
@@ -18846,7 +18856,7 @@ failed:
 									imgPath = "#*images/ui/HUD/HUD_Mic_00.png";
 									break;
 								case VoiceChat_t::VOICE_STATE_INERT:
-									imgPath = "#*images/ui/HUD/HUD_Mic_live0_00.png";
+									imgPath = "#*images/ui/HUD/HUD_Mic_mute_00.png";//"#*images/ui/HUD/HUD_Mic_live0_00.png";
 									break;
 								case VoiceChat_t::VOICE_STATE_MUTE:
 									imgPath = "#*images/ui/HUD/HUD_Mic_mute_00.png";
@@ -18893,18 +18903,76 @@ failed:
 									icon->disabled = false;
 									icon->pos.w = imgGet->getWidth();
 									icon->pos.h = imgGet->getHeight();
-									icon->pos.x = x - icon->pos.w / 2;
+									icon->pos.x = x;// -icon->pos.w / 2;
 									icon->pos.y = 0;
 									pos.h = std::max(pos.h, icon->pos.y + icon->pos.h);
+
+									if ( i == clientnum && VoiceChat.allowInputs )
+									{
+										auto glyphPathUnpressed = Input::inputs[clientnum].getGlyphPathForBinding(VoiceChat.getVoiceChatBindingName(clientnum), false);
+										auto glyphPathPressed = Input::inputs[clientnum].getGlyphPathForBinding(VoiceChat.getVoiceChatBindingName(clientnum), true);
+
+										const int nominalGlyphHeight = 26;
+										int unpressedHeight = nominalGlyphHeight;
+										int unpressedY = 8;
+
+										auto glyph = images[i + MAXPLAYERS * 2];
+										if ( VoiceChat.PlayerChannels[clientnum].talkingTicks > 0 )
+										{
+											glyph->path = glyphPathPressed;
+											if ( auto imgGet = Image::get(glyph->path.c_str()) )
+											{
+												glyph->disabled = false;
+												SDL_Rect glyphPos{ 0, 0, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
+												glyphPos.x = icon->pos.x + icon->pos.w / 2 - glyphPos.w / 2;
+												glyphPos.y = icon->pos.y + icon->pos.h + 4;
+												glyph->pos = glyphPos;
+												if ( auto imgGetUnpressed = Image::get(glyphPathUnpressed.c_str()) )
+												{
+													unpressedHeight = imgGetUnpressed->getHeight();
+													unpressedY = glyph->pos.y;
+													if ( unpressedHeight != glyph->pos.h )
+													{
+														glyph->pos.y -= (glyph->pos.h - unpressedHeight);
+													}
+
+													if ( unpressedHeight != nominalGlyphHeight )
+													{
+														unpressedY -= (unpressedHeight - nominalGlyphHeight) / 2;
+														glyph->pos.y -= (unpressedHeight - nominalGlyphHeight) / 2;
+													}
+												}
+											}
+										}
+										else
+										{
+											glyph->path = glyphPathUnpressed;
+											if ( auto imgGet = Image::get(glyph->path.c_str()) )
+											{
+												glyph->disabled = false;
+												SDL_Rect glyphPos{ 0, 0, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
+												glyphPos.x = icon->pos.x + icon->pos.w / 2 - glyphPos.w / 2;
+												glyphPos.y = icon->pos.y + icon->pos.h + 4;
+												glyph->pos = glyphPos;
+												unpressedHeight = glyph->pos.h;
+												unpressedY = glyph->pos.y;
+												if ( glyph->pos.h != nominalGlyphHeight )
+												{
+													unpressedY -= (glyph->pos.h - nominalGlyphHeight) / 2;
+													glyph->pos.y -= (glyph->pos.h - nominalGlyphHeight) / 2;
+												}
+											}
+										}
+									}
 								}
 							}
 						}
 					}
 
-					if ( voice_no_recv & (1 << i) )
+					if ( (voice_no_recv & (1 << i)) && (!(voice_no_send & (1 << clientnum))) )
 					{
 						auto icon2 = images[i + MAXPLAYERS];
-						// deafened
+						// deafened, only if the clientnum wants to send voice
 						const char* imgPath = "#*images/ui/HUD/Voice_Deafen.png";
 						if ( auto imgGet = Image::get(imgPath) )
 						{
@@ -26239,9 +26307,10 @@ failed:
 		);
 		y += title->pos.h;
 
+		Frame* pauseMenuAudioSliders = nullptr;
 		if ( ingame )
 		{
-			createPauseMenuPlayerBars();
+			pauseMenuAudioSliders = createPauseMenuPlayerBars();
 		}
 
 		auto notification = main_menu_frame->addFrame("notification");
@@ -26464,6 +26533,11 @@ failed:
 			}
 			y += button->getSize().h;
 			//y += 4;
+
+			if ( ingame && pauseMenuAudioSliders )
+			{
+				button->addWidgetAction("MenuPageLeft", pauseMenuAudioSliders->getName());
+			}
 
 			if ( !strcmp(options[c].name, "Dungeon Compendium") )
 			{

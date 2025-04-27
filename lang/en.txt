@@ -6628,5 +6628,7 @@ Host to enable the game setting.
 6453 Toggle the feature to send voice on or off. Receive Voice Chat must be enabled to use.#
 6454 Receive Voice Chat#
 6455 Toggle the feature to receive voice on or off.#
+6456 Muted#
+6457 Voice Levels#
 
 6599 END#
