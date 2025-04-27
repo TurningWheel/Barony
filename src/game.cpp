@@ -7799,6 +7799,10 @@ int main(int argc, char** argv)
 		if ( !load_successful ) {
 			skipintro = true;
 		}
+
+		// if alt+f4 or closing window suddenly this will restore flags to lobby settings
+		gameModeManager.currentSession.restoreSavedServerFlags();
+
 		saveConfig("default.cfg");
 		MainMenu::settingsMount(false);
 		(void)MainMenu::settingsSave();
