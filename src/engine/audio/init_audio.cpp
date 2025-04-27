@@ -188,8 +188,8 @@ bool initSoundEngine()
 			{
 				selected_recording_driver = i;
 			}
-#endif
 		}
+#endif
 
 #ifndef EDITOR
 		VoiceChat.setRecordingDevice(selected_recording_driver);
