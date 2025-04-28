@@ -2565,7 +2565,7 @@ void updateAllyBarFrame(const int player, Frame* baseFrame, int activeBars, int 
 				slider->setHighlightColor(makeColor(255, 255, 255, 192));
 				slider->setHandleSize(SDL_Rect{ 0, 0, 20, 16 });
 				slider->setBorder(10);
-				slider->setValue(std::min(10.f, std::max(-20.f, VoiceChat.PlayerChannels[player].localChannelGain - 100.f)));
+				slider->setValue(std::min(10.f, std::max(-20.f, VoiceChat.PlayerChannels[uid].localChannelGain - 100.f)));
 				slider->setMinValue(-20.f);
 				slider->setMaxValue(10.f);
 				slider->setButtonsOffset(SDL_Rect{ 0, 8, 0, 0 });
