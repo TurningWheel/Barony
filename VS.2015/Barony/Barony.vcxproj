@@ -763,7 +763,7 @@ if %errorlevel% leq 1 exit 0 else exit %errorlevel%</Command>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>OpenGL32.lib;glu32.lib;SDL2.lib;SDL2main.lib;SDL2_net.lib;SDL2_image.lib;fmod_vc.lib;libpng16.lib;zlib.lib;SDL2_ttf.lib;physfs.lib;EOSSDK-Win64-Shipping.lib;libtheoraplayer.lib;glew32.lib;nfd.lib;libcurl.lib;ws2_32.lib;Normaliz.lib;Crypt32.lib;Wldap32.lib;XPlatCppWindows.lib;lib_json.lib;opus.lib%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>OpenGL32.lib;glu32.lib;SDL2.lib;SDL2main.lib;SDL2_net.lib;SDL2_image.lib;fmod_vc.lib;libpng16.lib;zlib.lib;SDL2_ttf.lib;physfs.lib;EOSSDK-Win64-Shipping.lib;libtheoraplayer.lib;glew32.lib;nfd.lib;libcurl.lib;ws2_32.lib;Normaliz.lib;Crypt32.lib;Wldap32.lib;XPlatCppWindows.lib;lib_json.lib;opus.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
       <Profile>true</Profile>
     </Link>
