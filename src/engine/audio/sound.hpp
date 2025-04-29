@@ -175,6 +175,7 @@ public:
 #endif
         float recordingGain = 100.f;
         bool pushToTalk = true;
+        bool use_custom_rolloff = true;
     };
     AudioSettings_t mainmenuSettings;
     AudioSettings_t activeSettings;
@@ -183,7 +184,8 @@ public:
         VOICE_SETTING_LOOPBACK_LOCAL_RECORD,
         VOICE_SETTING_ENABLE_VOICE_INPUT,
         VOICE_SETTING_ENABLE_VOICE_RECEIVE,
-        VOICE_SETTING_PUSHTOTALK
+        VOICE_SETTING_PUSHTOTALK,
+        VOICE_SETTING_USE_CUSTOM_ROLLOFF
     };
     enum AudioSettingFloat
     {
@@ -192,7 +194,7 @@ public:
     };
     bool getAudioSettingBool(AudioSettingBool option);
     float getAudioSettingFloat(AudioSettingFloat option);
-    void updateOnMapChange();
+    void updateOnMapChange3DRolloff();
 #ifdef USE_OPUS
 	bool using_encoding = true;
 #else

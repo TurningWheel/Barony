@@ -623,6 +623,7 @@ namespace MainMenu {
 		bool enable_voice_input = false;
 		bool enable_voice_receive = true;
 #endif
+		bool use_voice_custom_rolloff = true;
 		float recording_gain = 100.f;
 		float voice_volume = 100.f;
 		bool push_to_talk = true;
@@ -2920,6 +2921,7 @@ namespace MainMenu {
 		VoiceChat.activeSettings.pushToTalk = push_to_talk;
 		VoiceChat.activeSettings.enable_voice_input = enable_voice_input;
 		VoiceChat.activeSettings.enable_voice_receive = enable_voice_receive;
+		VoiceChat.activeSettings.use_custom_rolloff = use_voice_custom_rolloff;
 		VoiceChat.mainmenuSettings = VoiceChat.activeSettings;
 #endif
 		bindings.save();
@@ -3019,6 +3021,7 @@ namespace MainMenu {
 		settings.push_to_talk = VoiceChat.activeSettings.pushToTalk;
 		settings.enable_voice_input = VoiceChat.activeSettings.enable_voice_input;
 		settings.enable_voice_receive = VoiceChat.activeSettings.enable_voice_receive;
+		settings.use_voice_custom_rolloff = VoiceChat.activeSettings.use_custom_rolloff;
 		VoiceChat.mainmenuSettings = VoiceChat.activeSettings;
 #endif
         settings.speaker_mode = (int)fmod_speakermode;
@@ -3142,6 +3145,7 @@ namespace MainMenu {
 		file->propertyVersion("recording_loopback", version >= 22, recording_loopback);
 		file->propertyVersion("enable_voice_input", version >= 22, enable_voice_input);
 		file->propertyVersion("enable_voice_receive", version >= 22, enable_voice_receive);
+		file->propertyVersion("use_voice_custom_rolloff", version >= 22, use_voice_custom_rolloff);
 		file->propertyVersion("recording_gain", version >= 22, recording_gain);
 		file->propertyVersion("push_to_talk", version >= 22, push_to_talk);
 		file->propertyVersion("speaker_mode", version >= 20, speaker_mode);
@@ -6606,6 +6610,12 @@ bind_failed:
 						}
 					}
 				});
+		y += settingsAddBooleanOption(*settings_subwindow, y, "use_custom_rolloff", Language::get(6458), Language::get(6459),
+			allSettings.use_voice_custom_rolloff,
+			[](Button& button) {soundToggleSetting(button);
+			allSettings.use_voice_custom_rolloff = button.isPressed();
+			VoiceChat.mainmenuSettings.use_custom_rolloff = allSettings.use_voice_custom_rolloff;
+		});
 		if ( num_record_drivers > 0 )
 		{
 			y += settingsAddDropdown(*settings_subwindow, y, "recording_device", Language::get(6438), Language::get(6439),
@@ -6697,6 +6707,12 @@ bind_failed:
 		allSettings.enable_voice_receive = button.isPressed();
 		VoiceChat.mainmenuSettings.enable_voice_receive = allSettings.enable_voice_receive;
 		});
+		y += settingsAddBooleanOption(*settings_subwindow, y, "use_custom_rolloff", Language::get(6458), Language::get(6459),
+			allSettings.use_voice_custom_rolloff,
+			[](Button& button) {soundToggleSetting(button);
+		allSettings.use_voice_custom_rolloff = button.isPressed();
+		VoiceChat.mainmenuSettings.use_custom_rolloff = allSettings.use_voice_custom_rolloff;
+			});
 #endif
 
 		y += settingsAddSubHeader(*settings_subwindow, y, "options", Language::get(5198));
@@ -6736,6 +6752,7 @@ bind_failed:
 					{Setting::Type::Slider, "recording_volume"},					
 					{Setting::Type::Boolean, "recording_loopback"},
 					{Setting::Type::Boolean, "push_to_talk"},
+					{Setting::Type::Boolean, "use_custom_rolloff"},
 #endif
 					{Setting::Type::Boolean, "minimap_pings"},
 					{Setting::Type::Boolean, "player_monster_sounds"},
@@ -6759,6 +6776,7 @@ bind_failed:
 #ifdef USE_FMOD
 				{Setting::Type::Slider, "voice_volume"},
 				{Setting::Type::Boolean, "enable_voice_receive"},
+				{Setting::Type::Boolean, "use_custom_rolloff"},
 #endif
 				{Setting::Type::Boolean, "minimap_pings"},
 				{Setting::Type::Boolean, "player_monster_sounds"},
@@ -6778,6 +6796,7 @@ bind_failed:
 #ifdef USE_FMOD
 				{Setting::Type::Slider, "voice_volume"},
 				{Setting::Type::Boolean, "enable_voice_receive"},
+				{Setting::Type::Boolean, "use_custom_rolloff"},
 #endif
 				{Setting::Type::Boolean, "minimap_pings"},
 				{Setting::Type::Boolean, "player_monster_sounds"},
@@ -6795,6 +6814,7 @@ bind_failed:
 #ifdef USE_FMOD
 			{Setting::Type::Slider, "voice_volume"},
 			{Setting::Type::Boolean, "enable_voice_receive"},
+			{Setting::Type::Boolean, "use_custom_rolloff"},
 #endif
 			{Setting::Type::Boolean, "minimap_pings"},
 			{Setting::Type::Boolean, "player_monster_sounds"}});

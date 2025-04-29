@@ -6620,7 +6620,7 @@ Host to enable the game setting.
 6445 Voice Volume#
 6446 Adjust volume of incoming player voice chat.#
 6447 Push To Talk#
-6448 When disabled, the voice chat binding toggles input recording on and off.#
+6448 Hold the Voice Chat binding to talk. When disabled, the binding instead toggles sending voice on and off.#
 6449 Voice input enabled.#
 6450 Voice input disabled.#
 6451 Voice Chat#
@@ -6630,5 +6630,7 @@ Host to enable the game setting.
 6455 Toggle the feature to receive voice on or off.#
 6456 Muted#
 6457 Voice Levels#
+6458 Voice Distance Increase#
+6459 Received voice chat can be heard from further away. Disable to increase proximity effect.#
 
 6599 END#

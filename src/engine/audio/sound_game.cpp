@@ -1835,7 +1835,14 @@ static FMOD_VECTOR fmod_rolloff_points_arena[6] = {
 	{64.f, 0.5f, 0.f}
 };
 
-void VoiceChat_t::updateOnMapChange()
+static FMOD_VECTOR fmod_rolloff_null_points[4] = {
+	{0.f, 1.f, 0.f}, // 0 dist = 1.f vol
+	{2.f, 1.f, 0.f},
+	{16.f, 0.1f, 0.f},
+	{20.f, 0.0f, 0.f}
+};
+
+void VoiceChat_t::updateOnMapChange3DRolloff()
 {
 	bool bossMap = false;
 	if ( !strcmp(map.name, "Hell Boss")
@@ -1845,11 +1852,19 @@ void VoiceChat_t::updateOnMapChange()
 		bossMap = true;
 	}
 
+
 	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
 		if ( VoiceChat.PlayerChannels[i].outputChannel )
 		{
-			fmod_result = VoiceChat.PlayerChannels[i].outputChannel->set3DCustomRolloff(bossMap ? fmod_rolloff_points_arena : fmod_rolloff_points, 6);
+			if ( VoiceChat.getAudioSettingBool(VoiceChat_t::AudioSettingBool::VOICE_SETTING_USE_CUSTOM_ROLLOFF) )
+			{
+				fmod_result = VoiceChat.PlayerChannels[i].outputChannel->set3DCustomRolloff(bossMap ? fmod_rolloff_points_arena : fmod_rolloff_points, 6);
+			}
+			else
+			{
+				fmod_result = VoiceChat.PlayerChannels[i].outputChannel->set3DCustomRolloff(bossMap ? fmod_rolloff_points_arena : fmod_rolloff_null_points, 4);
+			}
 		}
 	}
 }
@@ -1908,7 +1923,14 @@ void VoiceChat_t::PlayerChannels_t::setupPlayback()
 				fmod_rolloff_points[4].x, fmod_rolloff_points[4].y, fmod_rolloff_points[5].x, fmod_rolloff_points[5].y);
 		}
 	);
-	fmod_result = outputChannel->set3DCustomRolloff(fmod_rolloff_points, 6);
+	if ( !VoiceChat.getAudioSettingBool(VoiceChat_t::AudioSettingBool::VOICE_SETTING_USE_CUSTOM_ROLLOFF) )
+	{
+		fmod_result = outputChannel->set3DCustomRolloff(fmod_rolloff_null_points, 4);
+	}
+	else
+	{
+		fmod_result = outputChannel->set3DCustomRolloff(fmod_rolloff_points, 6);
+	}
 
 	FMOD::DSP* dsp_reverb = nullptr;
 	fmod_result = fmod_system->createDSPByType(FMOD_DSP_TYPE_SFXREVERB, &dsp_reverb);
@@ -2061,6 +2083,9 @@ bool VoiceChat_t::getAudioSettingBool(VoiceChat_t::AudioSettingBool option)
 		break;
 	case AudioSettingBool::VOICE_SETTING_PUSHTOTALK:
 		return setting->pushToTalk;
+		break;
+	case AudioSettingBool::VOICE_SETTING_USE_CUSTOM_ROLLOFF:
+		return setting->use_custom_rolloff;
 		break;
 	default:
 		break;
@@ -2457,6 +2482,13 @@ void VoiceChat_t::update()
 	FMOD_VECTOR listener_pos;
 	fmod_result = fmod_system->get3DListenerAttributes(0, &listener_pos, nullptr, nullptr, nullptr);
 	bool hasListenerPos = fmod_result == FMOD_OK;
+
+	static bool prevCustomRolloff = true;
+	if ( prevCustomRolloff != getAudioSettingBool(VOICE_SETTING_USE_CUSTOM_ROLLOFF) )
+	{
+		updateOnMapChange3DRolloff();
+	}
+	prevCustomRolloff = getAudioSettingBool(VOICE_SETTING_USE_CUSTOM_ROLLOFF);
 
 	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
