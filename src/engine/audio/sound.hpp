@@ -28,6 +28,7 @@
 #endif
 #include <mutex>
 #ifdef USE_OPUS
+#include <queue>
 #ifdef NINTENDO
 typedef int16_t opus_int16;
 #define opus_strerror(x) ""
