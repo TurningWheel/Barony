@@ -2508,6 +2508,11 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 			}
 		}
 #endif
+#ifdef USE_FMOD
+#ifndef EDITOR
+		VoiceChat.updateOnMapChange3DRolloff();
+#endif
+#endif
 
 		// create new lightmap
         for (int c = 0; c < MAXPLAYERS + 1; ++c) {

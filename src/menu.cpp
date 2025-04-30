@@ -8780,6 +8780,7 @@ void doNewGame(bool makeHighscore) {
 		{
 			soundNotification_group->stop();
 		}
+		VoiceChat.deinitRecording(false);
 #elif defined USE_OPENAL
 		if ( sound_group )
 		{
@@ -9252,6 +9253,7 @@ void doNewGame(bool makeHighscore) {
 		{
 			soundNotification_group->stop();
 		}
+		VoiceChat.deinitRecording(false);
 #elif defined USE_OPENAL
 		if ( sound_group )
 		{
@@ -9758,6 +9760,7 @@ void doEndgame(bool saveHighscore, bool onServerDisconnect) {
 	{
 		soundNotification_group->stop();
 	}
+	VoiceChat.deinitRecording(true);
 #elif defined USE_OPENAL
 	if ( sound_group )
 	{
