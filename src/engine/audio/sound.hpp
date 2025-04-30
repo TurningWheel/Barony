@@ -137,6 +137,7 @@ extern bool sfxUseDynamicAmbientVolume, sfxUseDynamicEnvironmentVolume;
 #ifndef EDITOR
 class VoiceChat_t
 {
+    static int packetVoiceDataIdx; // index start of voice data in VOIP packet
 	int recording_latency_ms = 50;
 	int recordDeviceIndex = 0;
 	bool bInit = false;
@@ -155,9 +156,13 @@ class VoiceChat_t
 	Uint32 datagramSequence = 0;
 	UDPpacket* loopbackPacket = nullptr;
 public:
+    enum DSPOrder : int;
     bool mainMenuAudioTabOpen();
     bool allowInputs = false;
-    static constexpr float kMaxGain = 12.f;
+    static constexpr float kMaxGain = 10.f;
+    static constexpr float kNormalizeFadeTime = 100.f;
+    static constexpr float kMaxNormalizeAmp = 100.f;
+    static constexpr float kMaxNormalizeThreshold = 1.f;
 	bool useSystem = false;
 	bool bRecordingInit = false;
 	float loopback_input_volume = 0.f;
@@ -176,6 +181,8 @@ public:
         float recordingGain = 100.f;
         bool pushToTalk = true;
         bool use_custom_rolloff = true;
+        float recordingNormalizeAmp = 20.f;
+        float recordingNormalizeThreshold = 1.0f;
     };
     AudioSettings_t mainmenuSettings;
     AudioSettings_t activeSettings;
@@ -191,6 +198,8 @@ public:
     {
         VOICE_SETTING_VOICE_GLOBAL_VOLUME,
         VOICE_SETTING_RECORDINGGAIN,
+        VOICE_SETTING_NORMALIZE_AMP,
+        VOICE_SETTING_NORMALIZE_THRESHOLD
     };
     bool getAudioSettingBool(AudioSettingBool option);
     float getAudioSettingFloat(AudioSettingFloat option);
@@ -208,6 +217,8 @@ public:
 		std::mutex audio_queue_mutex;
 		float channelGain = 100.f;
         float localChannelGain = 100.f;
+        float normalize_amp = 20.f;
+        float normalize_threshold = 0.1f;
 		int talkingTicks = 0;
         int lastAudibleTick = 0;
 		int player = -1;

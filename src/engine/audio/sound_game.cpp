@@ -1668,6 +1668,17 @@ void setEQSettings(FMOD::DSP* dsp_eq, float low, float mid, float high)
 	dsp_eq->setParameterFloat(FMOD_DSP_THREE_EQ_HIGHGAIN, high);
 }
 
+enum VoiceChat_t::DSPOrder : int
+{
+	DSPORDER_LIMITER = 1,
+	DSPORDER_REVERB,
+	DSPORDER_EQ,
+	DSPORDER_FADER_LOCALGAIN,
+	DSPORDER_FADER_CHANNELGAIN,
+	DSPORDER_NORMALIZE,
+	DSPORDER_END
+};
+
 static ConsoleCommand ccmd_voice_reverb("/voice_reverb", "",
 	[](int argc, const char* argv[]) {
 		if ( argc > 3 )
@@ -1678,7 +1689,7 @@ static ConsoleCommand ccmd_voice_reverb("/voice_reverb", "",
 				if ( VoiceChat.PlayerChannels[i].outputChannel )
 				{
 					FMOD::DSP* dsp_reverb = nullptr;
-					fmod_result = VoiceChat.PlayerChannels[i].outputChannel->getDSP(1, &dsp_reverb);
+					fmod_result = VoiceChat.PlayerChannels[i].outputChannel->getDSP(VoiceChat_t::DSPORDER_REVERB, &dsp_reverb);
 					if ( dsp_reverb )
 					{
 						FMOD_DSP_TYPE type;
@@ -1714,7 +1725,7 @@ static ConsoleCommand ccmd_voice_eq("/voice_eq", "",
 				if ( VoiceChat.PlayerChannels[i].outputChannel )
 				{
 					FMOD::DSP* dsp_eq = nullptr;
-					fmod_result = VoiceChat.PlayerChannels[i].outputChannel->getDSP(2, &dsp_eq);
+					fmod_result = VoiceChat.PlayerChannels[i].outputChannel->getDSP(VoiceChat_t::DSPORDER_EQ, &dsp_eq);
 					if ( dsp_eq )
 					{
 						FMOD_DSP_TYPE type;
@@ -1738,7 +1749,7 @@ static ConsoleCommand ccmd_voice_limiter_release("/voice_limiter_release", "",
 				if ( VoiceChat.PlayerChannels[i].outputChannel )
 				{
 					FMOD::DSP* dsp_limiter = nullptr;
-					fmod_result = VoiceChat.PlayerChannels[i].outputChannel->getDSP(3, &dsp_limiter);
+					fmod_result = VoiceChat.PlayerChannels[i].outputChannel->getDSP(VoiceChat_t::DSPORDER_LIMITER, &dsp_limiter);
 					if ( dsp_limiter )
 					{
 						FMOD_DSP_TYPE type;
@@ -1932,52 +1943,96 @@ void VoiceChat_t::PlayerChannels_t::setupPlayback()
 		fmod_result = outputChannel->set3DCustomRolloff(fmod_rolloff_points, 6);
 	}
 
-	FMOD::DSP* dsp_reverb = nullptr;
-	fmod_result = fmod_system->createDSPByType(FMOD_DSP_TYPE_SFXREVERB, &dsp_reverb);
-	if ( dsp_reverb )
+	for ( int i = 1; i < DSPORDER_END; ++i )
 	{
-		fmod_result = outputChannel->addDSP(1, dsp_reverb);
-		setReverbSettings(dsp_reverb, cvar_voice_reverb_player->x, cvar_voice_reverb_player->y, cvar_voice_reverb_player->z);
+		if ( i == DSPORDER_REVERB )
+		{
+			FMOD::DSP* dsp_reverb = nullptr;
+			fmod_result = fmod_system->createDSPByType(FMOD_DSP_TYPE_SFXREVERB, &dsp_reverb);
+			if ( dsp_reverb )
+			{
+				fmod_result = outputChannel->addDSP(i, dsp_reverb);
+				setReverbSettings(dsp_reverb, cvar_voice_reverb_player->x, cvar_voice_reverb_player->y, cvar_voice_reverb_player->z);
+				if ( i == 1 || (i == DSPORDER_END - 1) )
+				{
+					dsp_reverb->setMeteringEnabled(true, true);
+				}
+			}
+		}
+		else if ( i == DSPORDER_EQ )
+		{
+			FMOD::DSP* dsp_eq = nullptr;
+			fmod_result = fmod_system->createDSPByType(FMOD_DSP_TYPE_THREE_EQ, &dsp_eq);
+			if ( dsp_eq )
+			{
+				fmod_result = outputChannel->addDSP(i, dsp_eq);
+				setEQSettings(dsp_eq, cvar_voice_eq_player->x, cvar_voice_eq_player->y, cvar_voice_eq_player->z);
+				if ( i == 1 || (i == DSPORDER_END - 1) )
+				{
+					dsp_eq->setMeteringEnabled(true, true);
+				}
+			}
+		}
+		else if ( i == DSPORDER_NORMALIZE )
+		{
+			FMOD::DSP* dsp_normalize = nullptr;
+			fmod_result = fmod_system->createDSPByType(FMOD_DSP_TYPE_NORMALIZE, &dsp_normalize);
+			if ( dsp_normalize )
+			{
+				fmod_result = outputChannel->addDSP(i, dsp_normalize);
+				dsp_normalize->setParameterFloat(FMOD_DSP_NORMALIZE_FADETIME, kNormalizeFadeTime);
+				dsp_normalize->setMeteringEnabled(true, true);
+				if ( i == 1 || (i == DSPORDER_END - 1) )
+				{
+					dsp_normalize->setMeteringEnabled(true, true);
+				}
+			}
+		}
+		else if ( i == DSPORDER_LIMITER )
+		{
+			FMOD::DSP* dsp_limiter = nullptr;
+			fmod_result = fmod_system->createDSPByType(FMOD_DSP_TYPE_LIMITER, &dsp_limiter);
+			if ( dsp_limiter )
+			{
+				fmod_result = outputChannel->addDSP(i, dsp_limiter);
+				fmod_result = dsp_limiter->setParameterFloat(FMOD_DSP_LIMITER_MAXIMIZERGAIN, 0.f);
+				fmod_result = dsp_limiter->setParameterFloat(FMOD_DSP_LIMITER_CEILING, 0.f);
+				fmod_result = dsp_limiter->setParameterFloat(FMOD_DSP_LIMITER_RELEASETIME, 1000.f);
+				if ( i == 1 || (i == DSPORDER_END - 1) )
+				{
+					dsp_limiter->setMeteringEnabled(true, true);
+				}
+			}
+		}
+		else if ( i == DSPORDER_FADER_LOCALGAIN )
+		{
+			FMOD::DSP* dsp_local_fader = nullptr;
+			fmod_result = fmod_system->createDSPByType(FMOD_DSP_TYPE_FADER, &dsp_local_fader);
+			if ( dsp_local_fader )
+			{
+				fmod_result = outputChannel->addDSP(i, dsp_local_fader);
+				fmod_result = dsp_local_fader->setParameterFloat(FMOD_DSP_FADER_GAIN, std::min(kMaxGain, (std::max(-80.f, (localChannelGain - 100.f)))));
+				if ( i == 1 || (i == DSPORDER_END - 1) )
+				{
+					dsp_local_fader->setMeteringEnabled(true, true);
+				}
+			}
+		}
+		else if ( i == DSPORDER_FADER_CHANNELGAIN )
+		{
+			FMOD::DSP* dsp_fader = nullptr;
+			fmod_result = fmod_system->createDSPByType(FMOD_DSP_TYPE_FADER, &dsp_fader);
+			if ( dsp_fader )
+			{
+				fmod_result = outputChannel->addDSP(i, dsp_fader);
+				fmod_result = dsp_fader->setParameterFloat(FMOD_DSP_FADER_GAIN, (std::min(kMaxGain, std::max(-80.f, (channelGain - 100.f)))));
+				if ( i == 1 || (i == DSPORDER_END - 1) )
+				{
+					dsp_fader->setMeteringEnabled(true, true);
+				}
+			}
+		}
 	}
-
-	FMOD::DSP* dsp_eq = nullptr;
-	fmod_result = fmod_system->createDSPByType(FMOD_DSP_TYPE_THREE_EQ, &dsp_eq);
-	if ( dsp_eq )
-	{
-		fmod_result = outputChannel->addDSP(2, dsp_eq);
-		setEQSettings(dsp_eq, cvar_voice_eq_player->x, cvar_voice_eq_player->y, cvar_voice_eq_player->z);
-	}
-
-	FMOD::DSP* dsp_limiter = nullptr;
-	fmod_result = fmod_system->createDSPByType(FMOD_DSP_TYPE_LIMITER, &dsp_limiter);
-	if ( dsp_limiter )
-	{
-		fmod_result = outputChannel->addDSP(3, dsp_limiter);
-		fmod_result = dsp_limiter->setParameterFloat(FMOD_DSP_LIMITER_MAXIMIZERGAIN, (std::max(0.f, (channelGain - 100.f))));
-		fmod_result = dsp_limiter->setParameterFloat(FMOD_DSP_LIMITER_CEILING, 0.f);
-		fmod_result = dsp_limiter->setParameterFloat(FMOD_DSP_LIMITER_RELEASETIME, 1000.f);
-		dsp_limiter->setMeteringEnabled(true, true);
-	}
-
-	FMOD::DSP* dsp_local_fader = nullptr;
-	fmod_result = fmod_system->createDSPByType(FMOD_DSP_TYPE_FADER, &dsp_local_fader);
-	if ( dsp_local_fader )
-	{
-		fmod_result = outputChannel->addDSP(4, dsp_local_fader);
-		fmod_result = dsp_local_fader->setParameterFloat(FMOD_DSP_FADER_GAIN, std::max(10.f, (std::min(-80.f, (localChannelGain - 100.f)))));
-		//dsp_local_fader->setBypass(true);
-	}
-
-	FMOD::DSP* dsp_fader = nullptr;
-	fmod_result = fmod_system->createDSPByType(FMOD_DSP_TYPE_FADER, &dsp_fader);
-	if ( dsp_fader )
-	{
-		fmod_result = outputChannel->addDSP(5, dsp_fader);
-		fmod_result = dsp_fader->setParameterFloat(FMOD_DSP_FADER_GAIN, (std::min(0.f, (channelGain - 100.f))));
-
-		dsp_fader->setMeteringEnabled(true, true);
-	}
-
 
 
 	/*FMOD::DSP* dsp_misc = nullptr;
@@ -2109,6 +2164,12 @@ float VoiceChat_t::getAudioSettingFloat(VoiceChat_t::AudioSettingFloat option)
 		break;
 	case AudioSettingFloat::VOICE_SETTING_VOICE_GLOBAL_VOLUME:
 		return setting->voice_global_volume;
+		break;
+	case AudioSettingFloat::VOICE_SETTING_NORMALIZE_THRESHOLD:
+		return setting->recordingNormalizeThreshold;
+		break;
+	case AudioSettingFloat::VOICE_SETTING_NORMALIZE_AMP:
+		return setting->recordingNormalizeAmp;
 		break;
 	default:
 		break;
@@ -2366,20 +2427,45 @@ void VoiceChat_t::updateRecording()
 
 				FMOD::DSP* dsp_limiter = nullptr;
 				fmod_result = fmod_system->createDSPByType(FMOD_DSP_TYPE_LIMITER, &dsp_limiter);
-				recordingChannel->addDSP(1, dsp_limiter);
 				if ( dsp_limiter )
 				{
-					fmod_result = dsp_limiter->setParameterFloat(FMOD_DSP_LIMITER_MAXIMIZERGAIN, (std::max(0.f, (getAudioSettingFloat(AudioSettingFloat::VOICE_SETTING_RECORDINGGAIN) - 100.f))));
-					dsp_limiter->setMeteringEnabled(true, true);
+					recordingChannel->addDSP(1, dsp_limiter);
+					//fmod_result = dsp_limiter->setParameterFloat(FMOD_DSP_LIMITER_MAXIMIZERGAIN, (std::max(0.f, (getAudioSettingFloat(AudioSettingFloat::VOICE_SETTING_RECORDINGGAIN) - 100.f))));
+					//dsp_limiter->setMeteringEnabled(true, true);
+					fmod_result = dsp_limiter->setParameterFloat(FMOD_DSP_LIMITER_MAXIMIZERGAIN, 0.f);
+					fmod_result = dsp_limiter->setParameterFloat(FMOD_DSP_LIMITER_CEILING, 0.f);
+					fmod_result = dsp_limiter->setParameterFloat(FMOD_DSP_LIMITER_RELEASETIME, 1000.f);
 				}
 
 				fmod_result = fmod_system->createDSPByType(FMOD_DSP_TYPE_FADER, &dsp_fader);
-				recordingChannel->addDSP(2, dsp_fader);
 				if ( dsp_fader )
 				{
+					recordingChannel->addDSP(2, dsp_fader);
 					dsp_fader->setChannelFormat(0, nativeChannels, FMOD_SPEAKERMODE_MONO);
-					fmod_result = dsp_fader->setParameterFloat(FMOD_DSP_FADER_GAIN, std::min(0.f, getAudioSettingFloat(AudioSettingFloat::VOICE_SETTING_RECORDINGGAIN) - 100.f));
+					fmod_result = dsp_fader->setParameterFloat(FMOD_DSP_FADER_GAIN, std::min(kMaxGain, 
+						getAudioSettingFloat(AudioSettingFloat::VOICE_SETTING_RECORDINGGAIN) - 100.f));
 					dsp_fader->setMeteringEnabled(true, true);
+				}
+
+				FMOD::DSP* dsp_normalize = nullptr;
+				fmod_result = fmod_system->createDSPByType(FMOD_DSP_TYPE_NORMALIZE, &dsp_normalize);
+				if ( dsp_normalize )
+				{
+					recordingChannel->addDSP(3, dsp_normalize);
+					dsp_normalize->setParameterFloat(FMOD_DSP_NORMALIZE_FADETIME, kNormalizeFadeTime);
+					if ( getAudioSettingFloat(AudioSettingFloat::VOICE_SETTING_NORMALIZE_AMP) < 1.f )
+					{
+						dsp_normalize->setBypass(true);
+					}
+					else
+					{
+						dsp_normalize->setBypass(false);
+						fmod_result = dsp_normalize->setParameterFloat(FMOD_DSP_NORMALIZE_MAXAMP, 
+							std::min(100.f, std::max(1.f, getAudioSettingFloat(AudioSettingFloat::VOICE_SETTING_NORMALIZE_AMP))));
+						fmod_result = dsp_normalize->setParameterFloat(FMOD_DSP_NORMALIZE_THRESHOLD,
+							std::min(1.f, std::max(0.f, getAudioSettingFloat(AudioSettingFloat::VOICE_SETTING_NORMALIZE_THRESHOLD))));
+					}
+					dsp_normalize->setMeteringEnabled(true, true);
 				}
 			}
 		}
@@ -2408,24 +2494,40 @@ void VoiceChat_t::updateRecording()
 								dsp->setParameterFloat(FMOD_DSP_FADER_GAIN, -79.9);
 							}
 						}
-						if ( type == FMOD_DSP_TYPE_LIMITER )
+						if ( type == FMOD_DSP_TYPE_NORMALIZE )
 						{
-							fmod_result = dsp->setParameterFloat(FMOD_DSP_LIMITER_MAXIMIZERGAIN, (std::max(0.f, (getAudioSettingFloat(AudioSettingFloat::VOICE_SETTING_RECORDINGGAIN) - 100.f))));
+							if ( getAudioSettingFloat(AudioSettingFloat::VOICE_SETTING_NORMALIZE_AMP) < 1.f )
+							{
+								dsp->setBypass(true);
+							}
+							else
+							{
+								dsp->setBypass(false);
+								fmod_result = dsp->setParameterFloat(FMOD_DSP_NORMALIZE_MAXAMP,
+									std::min(kMaxNormalizeAmp, std::max(1.f, getAudioSettingFloat(AudioSettingFloat::VOICE_SETTING_NORMALIZE_AMP))));
+								fmod_result = dsp->setParameterFloat(FMOD_DSP_NORMALIZE_THRESHOLD,
+									std::min(kMaxNormalizeThreshold, std::max(0.f, getAudioSettingFloat(AudioSettingFloat::VOICE_SETTING_NORMALIZE_THRESHOLD))));
+							}
 							if ( in && out )
 							{
 								FMOD_DSP_METERING_INFO input_metering{};
 								FMOD_DSP_METERING_INFO output_metering{};
-								dsp->getMeteringInfo(&input_metering, &output_metering);
-								loopback_output_volume = std::max(output_metering.peaklevel[0], loopback_output_volume - 0.02f);
+								fmod_result = dsp->getMeteringInfo(&input_metering, &output_metering);
+								loopback_input_volume = std::max(input_metering.peaklevel[0], loopback_input_volume - 0.02f);
 							}
 						}
+						/*if ( type == FMOD_DSP_TYPE_LIMITER )
+						{
+							fmod_result = dsp->setParameterFloat(FMOD_DSP_LIMITER_MAXIMIZERGAIN, (std::max(0.f, (getAudioSettingFloat(AudioSettingFloat::VOICE_SETTING_RECORDINGGAIN) - 100.f))));
+						}*/
 						if ( type == FMOD_DSP_TYPE::FMOD_DSP_TYPE_FADER && in && out )
 						{
-							fmod_result = dsp->setParameterFloat(FMOD_DSP_FADER_GAIN, std::min(0.f, getAudioSettingFloat(AudioSettingFloat::VOICE_SETTING_RECORDINGGAIN) - 100.f));
+							fmod_result = dsp->setParameterFloat(FMOD_DSP_FADER_GAIN, std::min(kMaxGain, 
+								std::max(-80.f, getAudioSettingFloat(AudioSettingFloat::VOICE_SETTING_RECORDINGGAIN) - 100.f)));
 							FMOD_DSP_METERING_INFO input_metering{};
 							FMOD_DSP_METERING_INFO output_metering{};
 							dsp->getMeteringInfo(&input_metering, &output_metering);
-							loopback_input_volume = std::max(input_metering.peaklevel[0], loopback_input_volume - 0.02f);
+							loopback_output_volume = std::max(output_metering.peaklevel[0], loopback_output_volume - 0.02f);
 						}
 					}
 				}
@@ -2528,45 +2630,71 @@ void VoiceChat_t::update()
 
 			FMOD::DSP* dsp_reverb = nullptr;
 			FMOD::DSP* dsp_eq = nullptr;
-			fmod_result = PlayerChannels[i].outputChannel->getDSP(1, &dsp_reverb);
-			fmod_result = PlayerChannels[i].outputChannel->getDSP(2, &dsp_eq);
-			if ( dsp_eq )
 			{
-				dsp_eq->setBypass(client_disconnected[i] || (i != clientnum && multiplayer == SINGLE));
-			}
-
-			FMOD::DSP* dsp_fader_local = nullptr;
-			fmod_result = PlayerChannels[i].outputChannel->getDSP(4, &dsp_fader_local);
-			if ( dsp_fader_local )
-			{
-				if ( i == clientnum )
+				fmod_result = PlayerChannels[i].outputChannel->getDSP(DSPORDER_REVERB, &dsp_reverb);
+				fmod_result = PlayerChannels[i].outputChannel->getDSP(DSPORDER_EQ, &dsp_eq);
+				if ( dsp_eq )
 				{
-					PlayerChannels[i].localChannelGain = 100.f;
-				}
-				if ( intro )
-				{
-					fmod_result = dsp_fader_local->setParameterFloat(FMOD_DSP_FADER_GAIN, 0.f);
-				}
-				else
-				{
-					fmod_result = dsp_fader_local->setParameterFloat(FMOD_DSP_FADER_GAIN,
-						std::min(10.f, (std::max(-80.f, (PlayerChannels[i].localChannelGain - 100.f)))));
+					dsp_eq->setBypass(client_disconnected[i] || (i != clientnum && multiplayer == SINGLE));
 				}
 			}
 
-			FMOD::DSP* dsp_limiter_channelGain = nullptr;
-			fmod_result = PlayerChannels[i].outputChannel->getDSP(3, &dsp_limiter_channelGain);
-			if ( dsp_limiter_channelGain )
 			{
-				fmod_result = dsp_limiter_channelGain->setParameterFloat(FMOD_DSP_LIMITER_MAXIMIZERGAIN,
-					std::max(0.f, PlayerChannels[i].channelGain - 100.f));
+				FMOD::DSP* dsp_normalize = nullptr;
+				fmod_result = PlayerChannels[i].outputChannel->getDSP(DSPORDER_NORMALIZE, &dsp_normalize);
+				if ( dsp_normalize )
+				{
+					if ( PlayerChannels[i].normalize_amp < 1.f )
+					{
+						dsp_normalize->setBypass(true);
+					}
+					else
+					{
+						dsp_normalize->setBypass(client_disconnected[i] || (i != clientnum && multiplayer == SINGLE));
+						fmod_result = dsp_normalize->setParameterFloat(FMOD_DSP_NORMALIZE_MAXAMP, PlayerChannels[i].normalize_amp);
+						fmod_result = dsp_normalize->setParameterFloat(FMOD_DSP_NORMALIZE_THRESHOLD, PlayerChannels[i].normalize_threshold);
+					}
+				}
 			}
 
-			FMOD::DSP* dsp_fader = nullptr;
-			fmod_result = PlayerChannels[i].outputChannel->getDSP(5, &dsp_fader);
-			if ( dsp_fader )
 			{
-				fmod_result = dsp_fader->setParameterFloat(FMOD_DSP_FADER_GAIN, std::min(0.f, PlayerChannels[i].channelGain - 100.f));
+				FMOD::DSP* dsp_fader_local = nullptr;
+				fmod_result = PlayerChannels[i].outputChannel->getDSP(DSPORDER_FADER_LOCALGAIN, &dsp_fader_local);
+				if ( dsp_fader_local )
+				{
+					if ( i == clientnum )
+					{
+						PlayerChannels[i].localChannelGain = 100.f;
+					}
+					if ( intro )
+					{
+						fmod_result = dsp_fader_local->setParameterFloat(FMOD_DSP_FADER_GAIN, 0.f);
+					}
+					else
+					{
+						fmod_result = dsp_fader_local->setParameterFloat(FMOD_DSP_FADER_GAIN,
+							std::min(kMaxGain, (std::max(-80.f, (PlayerChannels[i].localChannelGain - 100.f)))));
+					}
+				}
+			}
+
+			{
+				FMOD::DSP* dsp_limiter_channelGain = nullptr;
+				fmod_result = PlayerChannels[i].outputChannel->getDSP(DSPORDER_LIMITER, &dsp_limiter_channelGain);
+				if ( dsp_limiter_channelGain )
+				{
+					/*fmod_result = dsp_limiter_channelGain->setParameterFloat(FMOD_DSP_LIMITER_MAXIMIZERGAIN,
+						std::max(0.f, PlayerChannels[i].channelGain - 100.f));*/
+				}
+			}
+			{
+				FMOD::DSP* dsp_fader = nullptr;
+				fmod_result = PlayerChannels[i].outputChannel->getDSP(DSPORDER_FADER_CHANNELGAIN, &dsp_fader);
+				if ( dsp_fader )
+				{
+					fmod_result = dsp_fader->setParameterFloat(FMOD_DSP_FADER_GAIN, 
+						std::min(kMaxGain, (std::max(-80.f, PlayerChannels[i].channelGain - 100.f))));
+				}
 			}
 
 			if ( i == clientnum 
@@ -2589,15 +2717,20 @@ void VoiceChat_t::update()
 			{
 				FMOD_DSP_METERING_INFO input_metering{};
 				FMOD_DSP_METERING_INFO output_metering{};
-				if ( dsp_fader )
+				FMOD::DSP* dsp_end = nullptr;
+				PlayerChannels[i].outputChannel->getDSP(DSPORDER_END - 1, &dsp_end);
+				FMOD::DSP* dsp_start = nullptr;
+				PlayerChannels[i].outputChannel->getDSP(1, &dsp_start);
+
+				if ( dsp_end )
 				{
-					dsp_fader->getMeteringInfo(&input_metering, &output_metering);
+					fmod_result = dsp_end->getMeteringInfo(&input_metering, &output_metering);
 					PlayerChannels[i].monitor_input_volume = std::max(input_metering.peaklevel[0], PlayerChannels[i].monitor_input_volume - 0.02f);
 				}
 
-				if ( dsp_limiter_channelGain )
+				if ( dsp_start )
 				{
-					dsp_limiter_channelGain->getMeteringInfo(&input_metering, &output_metering);
+					fmod_result = dsp_start->getMeteringInfo(&input_metering, &output_metering);
 					PlayerChannels[i].monitor_output_volume = std::max(output_metering.peaklevel[0], PlayerChannels[i].monitor_output_volume - 0.02f);
 					if ( PlayerChannels[i].monitor_output_volume > 0.05 )
 					{
@@ -2752,6 +2885,7 @@ void VoiceChat_t::deinit()
 	logInfo("VoiceChat_t::deinit()");
 }
 
+int VoiceChat_t::packetVoiceDataIdx = 15;
 void VoiceChat_t::sendPackets()
 {
 	UDPpacket* packet = (net_packet) ? net_packet : (getAudioSettingBool(AudioSettingBool::VOICE_SETTING_LOOPBACK_LOCAL_RECORD) ? loopbackPacket : nullptr);
@@ -2788,11 +2922,15 @@ void VoiceChat_t::sendPackets()
 			SDLNet_Write16(recordingDatagrams.front().size(), &packet->data[9]);
 			Uint8 gain = (std::max(-kMaxGain * 10.f, std::min(kMaxGain * 10.f, (getAudioSettingFloat(AudioSettingFloat::VOICE_SETTING_RECORDINGGAIN) - 100.f) * 10.f))) + 120;
 			packet->data[11] = gain;
+			Uint8 normalizeAmp = std::min(kMaxNormalizeAmp, std::max(0.f, getAudioSettingFloat(AudioSettingFloat::VOICE_SETTING_NORMALIZE_AMP)));
+			packet->data[12] = normalizeAmp;
+			Uint16 normalizeThreshold = 400.f * std::min(kMaxNormalizeThreshold, std::max(0.f, getAudioSettingFloat(AudioSettingFloat::VOICE_SETTING_NORMALIZE_THRESHOLD)));
+			SDLNet_Write16(normalizeThreshold, &packet->data[13]);
 			packet->data[4] = 0;
 			packet->data[4] |= getAudioSettingBool(AudioSettingBool::VOICE_SETTING_PUSHTOTALK) ? (1 << 7) : 0;
 			packet->data[4] |= using_encoding ? (1 << 6) : 0;
-			memcpy(packet->data + 12, (char*)recordingDatagrams.front().data(), recordingDatagrams.front().size());
-			packet->len = 12 + recordingDatagrams.front().size();
+			memcpy(packet->data + packetVoiceDataIdx, (char*)recordingDatagrams.front().data(), recordingDatagrams.front().size());
+			packet->len = packetVoiceDataIdx + recordingDatagrams.front().size();
 			for ( int i = 0; i < MAXPLAYERS; ++i )
 			{
 				if ( loopback && i == clientnum )
@@ -2870,7 +3008,6 @@ void VoiceChat_t::receivePacket(UDPpacket* packet)
 
 	int player = (packet->data[4]) & 0xF;
 	bool encodedFrame = (packet->data[4] & (1 << 6));
-	const int packetVoiceDataIdx = 12;
 	int voice_no_recv = GameplayPreferences_t::getGameConfigValue(GameplayPreferences_t::GOPT_VOICE_NO_RECV);
 	bool localNoRecv = (voice_no_recv & (1 << clientnum)) && (player != clientnum);
 
@@ -2881,6 +3018,8 @@ void VoiceChat_t::receivePacket(UDPpacket* packet)
 	{
 		Uint32 sequence = SDLNet_Read32(&packet->data[5]);
 		PlayerChannels[player].channelGain = (std::min(kMaxGain, std::max(-kMaxGain, ((float)(packet->data[11]) - 120.f) / 10.f))) + 100.f;
+		PlayerChannels[player].normalize_amp = std::max(0.f, std::min(kMaxNormalizeAmp, (float)packet->data[12]));
+		PlayerChannels[player].normalize_threshold = std::max(0.f, std::min(kMaxNormalizeThreshold, (float)SDLNet_Read16(&packet->data[13]) / 400.f));
 		PlayerChannels[player].talkingTicks = TICKS_PER_SECOND / 4;
 		unsigned int readBytes = (packet->len - packetVoiceDataIdx);
 		if ( (readBytes % 2 == 0 && !encodedFrame) || encodedFrame ) // should be even numbered unencoded

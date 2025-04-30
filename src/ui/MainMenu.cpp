@@ -625,6 +625,8 @@ namespace MainMenu {
 #endif
 		bool use_voice_custom_rolloff = true;
 		float recording_gain = 100.f;
+		float recording_normalize_amp = 20.f;
+		float recording_normalize_threshold = 1.f;
 		float voice_volume = 100.f;
 		bool push_to_talk = true;
         int speaker_mode = 0;
@@ -2917,6 +2919,8 @@ namespace MainMenu {
 #ifdef USE_FMOD
 		VoiceChat.activeSettings.loopback_local_record = recording_loopback;
 		VoiceChat.activeSettings.recordingGain = recording_gain;
+		VoiceChat.activeSettings.recordingNormalizeAmp = recording_normalize_amp;
+		VoiceChat.activeSettings.recordingNormalizeThreshold = recording_normalize_threshold;
 		VoiceChat.activeSettings.voice_global_volume = std::min(std::max(0.f, voice_volume / 100.f), 1.f);
 		VoiceChat.activeSettings.pushToTalk = push_to_talk;
 		VoiceChat.activeSettings.enable_voice_input = enable_voice_input;
@@ -3017,6 +3021,8 @@ namespace MainMenu {
 #ifdef USE_FMOD
 		settings.recording_loopback = VoiceChat.activeSettings.loopback_local_record;
 		settings.recording_gain = VoiceChat.activeSettings.recordingGain;
+		settings.recording_normalize_threshold = VoiceChat.activeSettings.recordingNormalizeThreshold;
+		settings.recording_normalize_amp = VoiceChat.activeSettings.recordingNormalizeAmp;
 		settings.voice_volume = VoiceChat.activeSettings.voice_global_volume * 100.f;
 		settings.push_to_talk = VoiceChat.activeSettings.pushToTalk;
 		settings.enable_voice_input = VoiceChat.activeSettings.enable_voice_input;
@@ -3147,6 +3153,8 @@ namespace MainMenu {
 		file->propertyVersion("enable_voice_receive", version >= 22, enable_voice_receive);
 		file->propertyVersion("use_voice_custom_rolloff", version >= 22, use_voice_custom_rolloff);
 		file->propertyVersion("recording_gain", version >= 22, recording_gain);
+		file->propertyVersion("recording_normalize_threshold", version >= 22, recording_normalize_threshold);
+		file->propertyVersion("recording_normalize_amp", version >= 22, recording_normalize_amp);
 		file->propertyVersion("push_to_talk", version >= 22, push_to_talk);
 		file->propertyVersion("speaker_mode", version >= 20, speaker_mode);
 		file->property("master_volume", master_volume);
@@ -5106,6 +5114,18 @@ namespace MainMenu {
 		return buf;
 	};
 
+	static const char* sliderNormalizeAmp(float v) {
+		static char buf[8];
+		snprintf(buf, sizeof(buf), "%dx", (int)floor(v));
+		return buf;
+	};
+
+	static const char* sliderNormalizeThreshold(float v) {
+		static char buf[8];
+		snprintf(buf, sizeof(buf), "%.1f%%", v / 4.f);
+		return buf;
+	};
+
 	static int settingsAddSlider(
 		Frame& frame,
 		int y,
@@ -6618,41 +6638,54 @@ bind_failed:
 		});
 		if ( num_record_drivers > 0 )
 		{
+			y += settingsAddBooleanOption(*settings_subwindow, y, "push_to_talk", Language::get(6447), Language::get(6448),
+				allSettings.push_to_talk, [](Button& button) {soundToggleSetting(button);
+				VoiceChat.voiceToggleTalk = false;
+				allSettings.push_to_talk = button.isPressed();
+			});
 			y += settingsAddDropdown(*settings_subwindow, y, "recording_device", Language::get(6438), Language::get(6439),
 				true, record_drivers_formatted_ptrs, record_drivers_formatted_ptrs[selected_recording_device],
 				settingsRecordingDevice);
+			y += settingsAddBooleanOption(*settings_subwindow, y, "recording_loopback", Language::get(6443), Language::get(6444),
+				allSettings.recording_loopback,
+				[](Button& button) {
+					soundToggleSetting(button);
+					allSettings.recording_loopback = button.isPressed();
+					VoiceChat.mainmenuSettings.loopback_local_record = allSettings.recording_loopback;
+				});
+			y += settingsAddSlider(*settings_subwindow, y, "recording_normalize_threshold", Language::get(6460), Language::get(6461),
+				(1.f - allSettings.recording_normalize_threshold) * 400.f, 0.f, VoiceChat_t::kMaxNormalizeThreshold * 400.f, sliderNormalizeThreshold, [](Slider& slider) {
+					soundSliderSetting(slider, true);
+					allSettings.recording_normalize_threshold = 1.f - (slider.getValue() / 400.f);
+					VoiceChat.mainmenuSettings.recordingNormalizeThreshold = allSettings.recording_normalize_threshold;
+				});
 			y += settingsAddSlider(*settings_subwindow, y, "recording_volume", Language::get(6441), Language::get(6442),
 				(allSettings.recording_gain - 100.f) * 4.f, -VoiceChat_t::kMaxGain * 4.f, VoiceChat_t::kMaxGain * 4.f, sliderDecibels, [](Slider& slider) {
 					soundSliderSetting(slider, true);
 					allSettings.recording_gain = slider.getValue() / 4.f + 100.f;
 					VoiceChat.mainmenuSettings.recordingGain = allSettings.recording_gain;
 					});
-			y += settingsAddBooleanOption(*settings_subwindow, y, "recording_loopback", Language::get(6443), Language::get(6444),
-				allSettings.recording_loopback,
-				[](Button& button) {soundToggleSetting(button); 
-				allSettings.recording_loopback = button.isPressed();
-				VoiceChat.mainmenuSettings.loopback_local_record = allSettings.recording_loopback;
-				});
-			y += settingsAddBooleanOption(*settings_subwindow, y, "push_to_talk", Language::get(6447), Language::get(6448),
-				allSettings.push_to_talk, [](Button& button) {soundToggleSetting(button); 
-				VoiceChat.voiceToggleTalk = false;
-				allSettings.push_to_talk = button.isPressed();
-			});
+
 			// audio monitoring levels
 			{
-				if ( auto slider = settings_subwindow->findSlider("setting_recording_volume_slider") )
+				if ( auto button = settings_subwindow->findButton("setting_recording_loopback_button") )
 				{
-					const char* img = slider->getRailImage();
+					const char* img = "*images/ui/Main Menus/Settings/Settings_AudioMonitor_Backing00.png";
 
-					settings_subwindow->addImage(slider->getRailSize(), 0xFFFFFFFF, img, "volume_bg");
+					SDL_Rect pos_bg{ button->getSize().x + button->getSize().w + 18, button->getSize().y + 4, 342, 18 };
+					settings_subwindow->addImage(pos_bg, 0xFFFFFFFF, img, "volume_bg_input");
+
+					const int txt_x = 16;
+					auto txt = settings_subwindow->addField("volume_txt_input", 64);
+					txt->setSize(SDL_Rect{ pos_bg.x + pos_bg.w + txt_x, pos_bg.y - 1, 122 - txt_x, 24 });
+					txt->setFont(smallfont_outline);
+					txt->setText(Language::get(6462));
 
 					auto volumeFrame = settings_subwindow->addFrame("recording_volume_input");
-					SDL_Rect pos = slider->getRailSize();
-					pos.h /= 2;
-					volumeFrame->setSize(pos);
+					volumeFrame->setSize(pos_bg);
 					volumeFrame->setClickable(false);
 					volumeFrame->setHollow(true);
-					volumeFrame->addImage(SDL_Rect{0, 0, pos.w, slider->getRailSize().h}, makeColor(0, 255, 0, 192), img, "volume_image");
+					volumeFrame->addImage(SDL_Rect{0, 0, pos_bg.w, pos_bg.h}, makeColor(0, 255, 0, 192), img, "volume_image");
 					volumeFrame->setDrawCallback([](const Widget& widget, SDL_Rect pos) {
 						Frame* frame = const_cast<Frame*>((Frame*)(&widget));
 						if ( auto img = frame->findImage("volume_image") )
@@ -6671,12 +6704,19 @@ bind_failed:
 						}
 						});
 
+					pos_bg.y += pos_bg.h + 8;
+
+					txt = settings_subwindow->addField("volume_txt_output", 64);
+					txt->setSize(SDL_Rect{ pos_bg.x + pos_bg.w + txt_x, pos_bg.y - 1, 122 - txt_x, 24 });
+					txt->setFont(smallfont_outline);
+					txt->setText(Language::get(6463));
+
+					settings_subwindow->addImage(pos_bg, 0xFFFFFFFF, img, "volume_bg_output");
 					volumeFrame = settings_subwindow->addFrame("recording_volume_output");
-					pos.y += pos.h;
-					volumeFrame->setSize(pos);
+					volumeFrame->setSize(pos_bg);
 					volumeFrame->setClickable(false);
 					volumeFrame->setHollow(true);
-					volumeFrame->addImage(SDL_Rect{ 0, -slider->getRailSize().h / 2, pos.w, slider->getRailSize().h }, makeColor(255, 255, 0, 192), img, "volume_image");
+					volumeFrame->addImage(SDL_Rect{ 0, 0, pos_bg.w, pos_bg.h }, makeColor(255, 255, 0, 192), img, "volume_image");
 					volumeFrame->setDrawCallback([](const Widget& widget, SDL_Rect pos) {
 						Frame* frame = const_cast<Frame*>((Frame*)(&widget));
 						if ( auto img = frame->findImage("volume_image") )
@@ -6694,8 +6734,6 @@ bind_failed:
 							frame->setSize(pos);
 						}
 						});
-
-					slider->setRailImage("");
 				}
 			}
 		}
@@ -6748,11 +6786,12 @@ bind_failed:
 					{Setting::Type::Slider, "voice_volume"},
 					{Setting::Type::Boolean, "enable_voice_input"},
 					{Setting::Type::Boolean, "enable_voice_receive"},
-					{Setting::Type::Dropdown, "recording_device"},
-					{Setting::Type::Slider, "recording_volume"},					
-					{Setting::Type::Boolean, "recording_loopback"},
-					{Setting::Type::Boolean, "push_to_talk"},
 					{Setting::Type::Boolean, "use_custom_rolloff"},
+					{Setting::Type::Boolean, "push_to_talk"},
+					{Setting::Type::Dropdown, "recording_device"},
+					{Setting::Type::Boolean, "recording_loopback"},
+					{Setting::Type::Slider, "recording_normalize_threshold"},
+					{Setting::Type::Slider, "recording_volume"},
 #endif
 					{Setting::Type::Boolean, "minimap_pings"},
 					{Setting::Type::Boolean, "player_monster_sounds"},
