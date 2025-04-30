@@ -410,7 +410,6 @@ extern VoiceChat_t VoiceChat;
 #ifdef USE_OPUS
 extern VoiceChat_t::OpusAudioCodec_t OpusAudioCodec;
 #endif
-extern ConsoleVariable<bool> cvar_voice_debug;
 #endif
 
 #elif defined USE_OPENAL
