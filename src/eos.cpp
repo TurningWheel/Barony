@@ -3599,7 +3599,7 @@ void EOSFuncs::CrossplayAccounts_t::createNotification()
 #ifdef NINTENDO
 static void nxTokenRequest()
 {
-	char token[1024] = "";
+	char token[4096] = "";
 	nxGetNSAID(token, sizeof(token));
 
 	EOS.ConnectHandle = EOS_Platform_GetConnectInterface(EOS.PlatformHandle);
