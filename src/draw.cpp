@@ -2310,6 +2310,34 @@ void drawEntities3D(view_t* camera, int mode)
                 auto parent = uidToEntity(entity->parent);
                 if (parent) {
                     if (multiplayer == CLIENT) {
+#ifdef USE_FMOD
+#ifndef EDITOR
+						if ( parent->behavior == &actPlayer || parent->behavior == &actDeathGhost )
+						{
+							auto voiceState = VoiceChat.getVoiceState(parent->skill[2]);
+							real_t prevZ = entity->z;
+							if ( entity->skill[3] == 0 )
+							{
+								entity->z -= 1.5;
+							}
+							if ( voiceState == VoiceChat_t::VOICE_STATE_ACTIVE1 )
+							{
+								glDrawSpriteFromImage(camera, entity, "*images/ui/HUD/Voice_Active1.png", mode, true);
+							}
+							else if ( voiceState == VoiceChat_t::VOICE_STATE_ACTIVE2 )
+							{
+								glDrawSpriteFromImage(camera, entity, "*images/ui/HUD/Voice_Active2.png", mode, true);
+							}
+							else if ( voiceState == VoiceChat_t::VOICE_STATE_INACTIVE_PTT )
+							{
+								glDrawSpriteFromImage(camera, entity, "*images/ui/HUD/Voice_Inactive.png", mode, true);
+							}
+							entity->z = prevZ;
+						}
+#endif
+#endif
+						if ( entity->skill[3] != 0 ) { continue; }
+
                         auto stats = parent->behavior == &actPlayer ?
                             parent->getStats() : (parent->clientsHaveItsStats ? parent->clientStats : nullptr);
                         if (stats && stats->name[0]) {
@@ -2339,6 +2367,34 @@ void drawEntities3D(view_t* camera, int mode)
 							}
                         }
                     } else {
+#ifdef USE_FMOD
+#ifndef EDITOR
+						if ( parent->behavior == &actPlayer || parent->behavior == &actDeathGhost )
+						{
+							auto voiceState = VoiceChat.getVoiceState(parent->skill[2]);
+							real_t prevZ = entity->z;
+							if ( entity->skill[3] == 0 )
+							{
+								entity->z -= 1.5;
+							}
+							if ( voiceState == VoiceChat_t::VOICE_STATE_ACTIVE1 )
+							{
+								glDrawSpriteFromImage(camera, entity, "*images/ui/HUD/Voice_Active1.png", mode, true);
+							}
+							else if ( voiceState == VoiceChat_t::VOICE_STATE_ACTIVE2 )
+							{
+								glDrawSpriteFromImage(camera, entity, "*images/ui/HUD/Voice_Active2.png", mode, true);
+							}
+							else if ( voiceState == VoiceChat_t::VOICE_STATE_INACTIVE_PTT )
+							{
+								glDrawSpriteFromImage(camera, entity, "*images/ui/HUD/Voice_Inactive.png", mode, true);
+							}
+							entity->z = prevZ;
+						}
+#endif
+#endif
+						if ( entity->skill[3] != 0 ) { continue; }
+
                         auto stats = parent->getStats();
                         if (stats && stats->name[0]) {
                             auto player = stats->leader_uid ?

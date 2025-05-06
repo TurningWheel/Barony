@@ -5034,7 +5034,7 @@ The next input you activate will be bound to this action.#
 5181 Auto#
 
 5182 Output#
-5183 Device#
+5183 Output Device#
 5184 The output device for all game audio.#
 5185 Volume#
 5186 Master Volume#
@@ -6353,7 +6353,7 @@ allowed in this challenge!#
 6138 ACHIEVEMENTS DISABLED (CHALLENGE EVENT)#
 6139 Challenge Event!#
 # Audio speaker mode settings
-6140 Configuration#
+6140 Output Configuration#
 6141 Default#
 6142 Raw#
 6143 Mono#
@@ -6690,5 +6690,31 @@ Host to enable the game setting.
 6435 %s parries your blow!#
 6436 You parry the %s's blow!#
 6437 You parry %s's blow!#
+6438 Input Device#
+6439 The input device for voice chat.#
+6440 Voice#
+6441 Input Gain#
+6442 Adjust volume after normalization effect.#
+6443 Input Monitoring#
+6444 Listen to your input based on input/output settings. Monitored input levels are shown to the right.#
+6445 Voice Volume#
+6446 Adjust volume of incoming player voice chat.#
+6447 Push To Talk#
+6448 Hold the Voice Chat binding to talk. When disabled, the binding instead toggles sending voice on and off.#
+6449 Voice input enabled.#
+6450 Voice input disabled.#
+6451 Voice Chat#
+6452 Send Voice Chat#
+6453 Toggle the feature to send voice on or off. Receive Voice Chat must be enabled to use.#
+6454 Receive Voice Chat#
+6455 Toggle the feature to receive voice on or off.#
+6456 Muted#
+6457 Voice Levels#
+6458 Increased Voice Distance#
+6459 Received voice chat can be heard from further away. Disable to increase proximity effect.#
+6460 Input Volume Normalization#
+6461 Increase volume of quieter input signals, high values increase background noise. 0% disables effect.#
+6462 Raw Input#
+6463 Modified#
 
 6599 END#

@@ -62,7 +62,7 @@ bool initSoundEngine()
 
 	if (!no_sound)
 	{
-		fmod_result = fmod_system->init(fmod_maxchannels, FMOD_INIT_NORMAL | FMOD_INIT_3D_RIGHTHANDED | FMOD_INIT_VOL0_BECOMES_VIRTUAL | FMOD_INIT_STREAM_FROM_UPDATE| FMOD_INIT_THREAD_UNSAFE/* | FMOD_INIT_PROFILE_ENABLE */ , fmod_extraDriverData);
+		fmod_result = fmod_system->init(fmod_maxchannels, FMOD_INIT_NORMAL | FMOD_INIT_3D_RIGHTHANDED | FMOD_INIT_VOL0_BECOMES_VIRTUAL | FMOD_INIT_STREAM_FROM_UPDATE | FMOD_INIT_THREAD_UNSAFE/* | FMOD_INIT_PROFILE_ENABLE | FMOD_INIT_PROFILE_METER_ALL*/, fmod_extraDriverData);
 		if (FMODErrorCheck())
 		{
 			printlog("[FMOD]: Failed to initialize FMOD. DISABLING AUDIO.\n");
@@ -297,6 +297,52 @@ bool initSoundEngine()
 		//	dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_WETLEVEL, props.WetLevel);
 		//	dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_DRYLEVEL, 0.f);
 		//}
+
+#ifndef EDITOR
+		int selected_recording_driver = 0;
+		int numRecordingDrivers = 0;
+		fmod_system->getRecordNumDrivers(&numRecordingDrivers, nullptr);
+		for ( int i = 0; i < numRecordingDrivers; ++i )
+		{
+			constexpr int driverNameLen = 64;
+			char driverName[driverNameLen] = "";
+			FMOD_GUID guid;
+			int rate{}, channels{};
+			FMOD_SPEAKERMODE mode{};
+			FMOD_DRIVER_STATE state{};
+			fmod_result = fmod_system->getRecordDriverInfo(i, driverName, driverNameLen, &guid, &rate, &mode, &channels, &state);
+			if ( FMODErrorCheck() )
+			{
+				printlog("[FMOD]: Failed to read recording device index: %d", i);
+			}
+			if ( strstr(driverName, "[loopback]") )
+			{
+				continue;
+			}
+
+			mode = (FMOD_SPEAKERMODE)std::clamp((int)mode, (int)0, (int)FMOD_SPEAKERMODE_MAX - 1);
+			printlog("[FMOD] Recording device found: %d %s | %08x %04x %04x | rate: %d | mode: %s | channels: %d",
+				i, driverName, guid.Data1, guid.Data2, guid.Data3, rate, fmod_speakermode_strings[mode], channels);
+
+			uint32_t _1; memcpy(&_1, &guid.Data1, sizeof(_1));
+			uint64_t _2; memcpy(&_2, &guid.Data4, sizeof(_2));
+			char guid_string[25];
+			snprintf(guid_string, sizeof(guid_string), FMOD_AUDIO_GUID_FMT, _1, _2);
+			if ( !selected_recording_driver && MainMenu::current_recording_audio_device == ""
+				&& (state & FMOD_DRIVER_STATE_DEFAULT))
+			{
+				selected_recording_driver = i;
+			}
+			else if ( !selected_recording_driver && MainMenu::current_recording_audio_device == guid_string )
+			{
+				selected_recording_driver = i;
+			}
+		}
+#endif
+
+#ifndef EDITOR
+		VoiceChat.setRecordingDevice(selected_recording_driver);
+#endif
 	}
 #elif defined USE_OPENAL
 	if (!no_sound)

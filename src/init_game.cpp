@@ -407,6 +407,12 @@ int initGame()
 #ifdef LOCAL_ACHIEVEMENTS
 		LocalAchievements.readFromFile();
 #endif
+
+#ifndef EDITOR
+#ifdef USE_FMOD
+		VoiceChat.init();
+#endif
+#endif
 #ifdef NINTENDO
 		nxPostSDLInit();
 #endif
@@ -683,6 +689,15 @@ void deinitGame()
 #ifdef USE_OPENAL
 #undef FMOD_Channel_Stop
 #undef FMOD_Sound_Release
+#endif
+#endif
+
+#ifdef USE_FMOD
+#ifndef EDITOR
+	VoiceChat.deinit();
+#ifdef USE_OPUS
+	OpusAudioCodec.deinit();
+#endif
 #endif
 #endif
 

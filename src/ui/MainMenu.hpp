@@ -14,9 +14,10 @@ namespace MainMenu {
     extern int pause_menu_owner; // which player is driving the pause menu
 	extern bool cursor_delete_mode; // if true, mouse cursor displays an extra glyph to denote delete mode (used to delete save games)
 	extern Frame* main_menu_frame; // root main menu node
-
+	extern Uint32 main_menu_ticks;
 	// Here be new menu options:
 	extern std::string current_audio_device; // guid of the audio device currently in use
+	extern std::string current_recording_audio_device; // guid of the recording audio device currently in use
 	extern float master_volume; // range is [0 - 100]
 	extern bool arachnophobia_filter; // if true, all spiders are crabs'
 	extern ConsoleVariable<bool> vertical_splitscreen; // if true, 2-player splitscreen has a vertical rather than horizontal layout

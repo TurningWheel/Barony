@@ -6882,6 +6882,7 @@ void Player::clearGUIPointers()
 	hud.allyFollowerGlyphFrame = nullptr;
 	hud.allyPlayerFrame = nullptr;
 	hud.calloutPromptFrame = nullptr;
+	hud.voicePromptFrame = nullptr;
 	hud.enemyBarFrame = nullptr;
 	hud.enemyBarFrameHUD = nullptr;
 	hud.actionPromptsFrame = nullptr;
