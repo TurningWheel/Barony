@@ -8790,10 +8790,8 @@ void doNewGame(bool makeHighscore) {
 		{
 			soundNotification_group->stop();
 		}
-		if ( music_ensemble_global_send_group )
-		{
-			music_ensemble_global_send_group->stop();
-		}
+		ensembleSounds.stopPlaying();
+		VoiceChat.deinitRecording(false);
 #elif defined USE_OPENAL
 		if ( sound_group )
 		{
@@ -9268,10 +9266,8 @@ void doNewGame(bool makeHighscore) {
 		{
 			soundNotification_group->stop();
 		}
-		if ( music_ensemble_global_send_group )
-		{
-			music_ensemble_global_send_group->stop();
-		}
+		ensembleSounds.stopPlaying();
+		VoiceChat.deinitRecording(false);
 #elif defined USE_OPENAL
 		if ( sound_group )
 		{
@@ -9778,10 +9774,8 @@ void doEndgame(bool saveHighscore, bool onServerDisconnect) {
 	{
 		soundNotification_group->stop();
 	}
-	if ( music_ensemble_global_send_group )
-	{
-		music_ensemble_global_send_group->stop();
-	}
+	ensembleSounds.stopPlaying();
+	VoiceChat.deinitRecording(true);
 #elif defined USE_OPENAL
 	if ( sound_group )
 	{

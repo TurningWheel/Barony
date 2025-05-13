@@ -2577,6 +2577,11 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 			}
 		}
 #endif
+#ifdef USE_FMOD
+#ifndef EDITOR
+		VoiceChat.updateOnMapChange3DRolloff();
+#endif
+#endif
 
 #ifndef EDITOR
 		map.setMapHDRSettings();

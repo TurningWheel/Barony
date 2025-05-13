@@ -5816,6 +5816,42 @@ timeToGoAgain:
 												playSoundEntity(hit.entity, 21, 96);
 											}
 										}
+										else if ( hit.entity->behavior == &actIronDoor )
+										{
+											if ( myStats->type == MINOTAUR )
+											{
+												hit.entity->doorHealth = 0;    // minotaurs smash doors instantly
+												my->monsterAttack = my->getAttackPose(); // random attack motion
+												my->monsterAttackTime = 0;
+												my->monsterHitTime = 0;
+
+												playSoundEntity(hit.entity, 28, 64);
+												if ( hit.entity->doorHealth <= 0 )
+												{
+													// set direction of splinters
+													if ( !hit.entity->doorDir )
+													{
+														hit.entity->doorSmacked = (my->x > hit.entity->x);
+													}
+													else
+													{
+														hit.entity->doorSmacked = (my->y < hit.entity->y);
+													}
+												}
+											}
+											else
+											{
+												if ( my->shouldRetreat(*myStats) && !myStats->getEffectActive(EFF_FEAR) )
+												{
+													my->monsterMoveTime = 0;
+													my->monsterState = MONSTER_STATE_WAIT; // wait state
+												}
+												else
+												{
+													my->monsterState = MONSTER_STATE_PATH; // path state
+												}
+											}
+										}
 										else
 										{
 											// can't open door, so break it down
@@ -7003,6 +7039,40 @@ timeToGoAgain:
 										{
 											hit.entity->doorStatus = 1 + (my->y < hit.entity->y);
 											playSoundEntity(hit.entity, 21, 96);
+										}
+									}
+									else if ( hit.entity->behavior == &actIronDoor )
+									{
+										if ( myStats->type == MINOTAUR )
+										{
+											hit.entity->doorHealth = 0;    // minotaurs smash doors instantly
+											my->monsterAttack = my->getAttackPose(); // random attack motion
+											my->monsterAttackTime = 0;
+											my->monsterHitTime = 0;
+
+											playSoundEntity(hit.entity, 28, 64);
+											if ( hit.entity->doorHealth <= 0 )
+											{
+												// set direction of splinters
+												if ( !hit.entity->doorDir )
+												{
+													hit.entity->doorSmacked = (my->x > hit.entity->x);
+												}
+												else
+												{
+													hit.entity->doorSmacked = (my->y < hit.entity->y);
+												}
+											}
+										}
+										else
+										{
+											++my->monsterPathCount;
+											if ( my->monsterPathCount > 50 )
+											{
+												my->monsterPathCount = 0;
+												//messagePlayer(0, MESSAGE_DEBUG, "remaking path!");
+												my->monsterMoveBackwardsAndPath(true);
+											}
 										}
 									}
 									else

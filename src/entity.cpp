@@ -9724,6 +9724,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 							doSkillIncrease = false; // no skill for killing/hurting other turrets.
 						}
 					}
+					else if ( hit.entity->behavior == &actMonster && hit.entity->monsterAllyGetPlayerLeader() && behavior == &actPlayer )
+					{
+						doSkillIncrease = false; // no level up on allies
+					}
 					if ( hit.entity->behavior == &actPlayer && behavior == &actPlayer )
 					{
 						doSkillIncrease = false; // no skill for killing/hurting players

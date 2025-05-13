@@ -311,7 +311,7 @@ void PlayfabUser_t::loginEpic()
 
     PlayFab::ClientModels::LoginWithOpenIdConnectRequest request;
     request.CreateAccount = true;
-    request.ConnectionId = "openid_epic";
+    request.ConnectionId = "openid_epic_new";
     request.IdToken = EOS.getAuthToken();
     if ( EOS.getAuthToken() == "" )
     {

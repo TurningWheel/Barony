@@ -3271,6 +3271,9 @@ public:
 	{
 		GPREF_ARACHNOPHOBIA = 0,
 		GPREF_COLORBLIND,
+		GPREF_VOICE_NO_SEND,
+		GPREF_VOICE_NO_RECV,
+		GPREF_VOICE_PTT,
 		GPREF_ENUM_END
 	};
 	struct GameplayPreference_t
@@ -3301,6 +3304,9 @@ public:
 	{
 		GOPT_ARACHNOPHOBIA = 0,
 		GOPT_COLORBLIND,
+		GOPT_VOICE_NO_SEND,
+		GOPT_VOICE_NO_RECV,
+		GOPT_VOICE_PTT,
 		GOPT_ENUM_END
 	};
 	static GameplayPreference_t gameConfig[GOPT_ENUM_END];

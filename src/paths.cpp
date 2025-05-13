@@ -623,7 +623,7 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 		}
 		if ( entity->behavior == &actDoorFrame 
 			|| entity->behavior == &actDoor 
-			/*|| entity->behavior == &actIronDoor*/
+			|| (entity->behavior == &actIronDoor && (entity->doorLocked == 0))
 			|| entity->behavior == &actMagicMissile )
 		{
 			continue;
@@ -661,8 +661,12 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 		{
 			continue;
 		}
-		if (stats && stats->type == MINOTAUR && (entity->behavior == &actBoulder || entity->behavior == &::actDaedalusShrine || (entity->isDamageableCollider()
-			&& (entity->colliderHasCollision & EditorEntityData_t::COLLIDER_COLLISION_FLAG_MINO))))
+		if (stats && stats->type == MINOTAUR 
+			&& (entity->behavior == &actBoulder 
+				|| entity->behavior == &::actDaedalusShrine
+				|| entity->behavior == &actIronDoor
+				|| (entity->isDamageableCollider()
+				&& (entity->colliderHasCollision & EditorEntityData_t::COLLIDER_COLLISION_FLAG_MINO))))
 		{
 			// minotaurs bust through boulders, not an obstacle
 			continue;

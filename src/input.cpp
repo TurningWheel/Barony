@@ -307,7 +307,16 @@ void Input::refresh() {
 					continue;
 				}
 			}
+
 			bind(binding.first.c_str(), (prefix + binding.second).c_str());
+			if ( binding.first == "Voice Chat" ) // special binding can be on gamepad or keyboard
+			{
+				if ( bindings[binding.first].type == binding_t::INVALID )
+				{
+					// try bind to keyboard as fallback
+					bind(binding.first.c_str(), binding.second.c_str());
+				}
+			}
 		}
 	}
 	if ( getPlayerControlType() == playerControlType_t::PLAYER_CONTROLLED_BY_JOYSTICK )

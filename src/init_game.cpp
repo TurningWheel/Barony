@@ -407,6 +407,12 @@ int initGame()
 #ifdef LOCAL_ACHIEVEMENTS
 		LocalAchievements.readFromFile();
 #endif
+
+#ifndef EDITOR
+#ifdef USE_FMOD
+		VoiceChat.init();
+#endif
+#endif
 #ifdef NINTENDO
 		nxPostSDLInit();
 #endif
@@ -593,11 +599,9 @@ void deinitGame()
 		tutorialmusic->release();
 		gameovermusic->release();
 		introstorymusic->release();
-		for ( int c = 0; c < NUMENSEMBLEMUSIC; ++c )
-		{
-			music_ensemble_global_channel[c]->stop();
-			music_ensemble_global_sound[c]->release();
-		}
+#ifdef USE_FMOD
+		ensembleSounds.deinit();
+#endif
 
 		for ( int c = 0; c < NUMMINESMUSIC; c++ )
 		{
@@ -683,6 +687,15 @@ void deinitGame()
 #ifdef USE_OPENAL
 #undef FMOD_Channel_Stop
 #undef FMOD_Sound_Release
+#endif
+#endif
+
+#ifdef USE_FMOD
+#ifndef EDITOR
+	VoiceChat.deinit();
+#ifdef USE_OPUS
+	OpusAudioCodec.deinit();
+#endif
 #endif
 #endif
 
