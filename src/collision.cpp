@@ -2207,7 +2207,8 @@ int checkObstacle(long x, long y, Entity* my, Entity* target, bool useTileEntity
 						if ( isMonster && my->getMonsterTypeFromSprite() == MINOTAUR 
 							&& ((entity->isDamageableCollider()
 									&& (entity->colliderHasCollision & EditorEntityData_t::COLLIDER_COLLISION_FLAG_MINO))
-								|| entity->behavior == &::actDaedalusShrine) )
+								|| entity->behavior == &::actDaedalusShrine
+								|| entity->behavior == &actIronDoor) )
 						{
 							continue;
 						}

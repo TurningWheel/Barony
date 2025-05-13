@@ -432,7 +432,7 @@ void Entity::actIronDoor()
 			// door mortality :p
 			if ( doorHealth <= 0 )
 			{
-				for ( c = 0; c < 5; c++ )
+				for ( c = 0; c < 5 && false; c++ )
 				{
 					entity = spawnGib(this);
 					entity->flags[INVISIBLE] = false;
@@ -475,7 +475,7 @@ void Entity::actIronDoor()
 					entity->fskill[3] = 0.04;
 					serverSpawnGibForClient(entity);
 				}
-				playSoundEntity(this, 177, 64);
+				playSoundEntity(this, 76, 64);
 				list_RemoveNode(mynode);
 				return;
 			}
