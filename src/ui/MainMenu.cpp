@@ -9350,7 +9350,8 @@ bind_failed:
 				}
 				statChecks.clear();
 			});
-
+		static ConsoleVariable<bool> cvar_leaderboard_show_id("/leaderboard_show_id", false);
+		static ConsoleVariable<bool> cvar_leaderboard_copy_id("/leaderboard_copy_id", false);
         static auto add_score = [](score_t* score, const char* name, const char* prev, const char* next, int index,
 			int rank, int selectIndex){
             auto window = main_menu_frame->findFrame("leaderboards"); assert(window);
@@ -9417,6 +9418,13 @@ bind_failed:
                 selectedScore = score;
                 updateStats(button, score);
                 loadScore(score);
+				/*if ( *cvar_leaderboard_copy_id && *cvar_leaderboard_show_id )
+				{
+					if ( score && score->stats )
+					{
+						SDL_SetClipboardText(score->stats->name);
+					}
+				}*/
                 });
             button->setTickCallback([](Widget& widget){
                 auto button = static_cast<Button*>(&widget);
@@ -9671,7 +9679,6 @@ bind_failed:
 
         // poll for downloaded scores
 #ifdef USE_PLAYFAB
-		static ConsoleVariable<bool> cvar_leaderboard_show_id("/leaderboard_show_id", false);
 		list->setTickCallback([](Widget& widget) {
 			bool tryRefresh = false;
 			if ( playfabUser.leaderboardSearch.requiresRefresh )
@@ -13557,6 +13564,11 @@ failed:
 				break;
 			default:
 				break;
+		}
+
+		if ( ClassDescriptions::data.find(classnum) == ClassDescriptions::data.end() )
+		{
+			return;
 		}
 
 		for ( int c = 0; c < num_class_stats; ++c )
