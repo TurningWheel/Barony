@@ -10312,6 +10312,12 @@ void actPlayer(Entity* my)
 						my->setHelmetLimbOffset(entity);
 						my->setHelmetLimbOffsetWithMask(helmet, entity);
 					}
+					else if ( entity->sprite == items[MASK_SHAMAN].index )
+					{
+						entity->roll = 0;
+						my->setHelmetLimbOffset(entity);
+						my->setHelmetLimbOffsetWithMask(helmet, entity);
+					}
 					else if ( entity->sprite == 165 || entity->sprite == 1196 )
 					{
 						entity->focalx = limbs[playerRace][10][0] + .25; // .25
