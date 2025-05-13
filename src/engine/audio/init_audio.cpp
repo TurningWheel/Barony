@@ -242,6 +242,7 @@ bool initSoundEngine()
 				FMODErrorCheck();
 
 				fmod_result = music_ensemble_global_recv_group->addDSP(0, dspreverb);
+				dspreverb->setBypass(true);
 				FMODErrorCheck();
 
 				FMOD_REVERB_PROPERTIES props = FMOD_PRESET_OFF;

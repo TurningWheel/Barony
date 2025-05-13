@@ -109,13 +109,66 @@ extern FMOD::Channel* music_channel, *music_channel2, *music_resume; //TODO: Lis
 extern FMOD::ChannelGroup* sound_group, *music_group;
 extern FMOD::ChannelGroup* soundAmbient_group, *soundEnvironment_group, *music_notification_group, *soundNotification_group;
 
-#define NUMENSEMBLEMUSIC 5
-extern FMOD::Sound* music_ensemble_global_sound[NUMENSEMBLEMUSIC];
-extern FMOD::Channel* music_ensemble_global_channel[NUMENSEMBLEMUSIC];
+#define NUMENSEMBLEMUSIC 6
 extern FMOD::ChannelGroup* music_ensemble_global_send_group;
 extern FMOD::ChannelGroup* music_ensemble_global_recv_group;
 extern FMOD::ChannelGroup* music_ensemble_local_recv_player[MAXPLAYERS];
 extern FMOD::ChannelGroup* music_ensemble_local_recv_group;
+#ifndef EDITOR
+extern ConsoleVariable<float> cvar_ensemble_vol_bg;
+#endif
+struct EnsembleSounds_t
+{
+    static const int NUM_EXPLORE_TRANS = 4;
+    static const int NUM_COMBAT_TRANS = 4;
+    FMOD::Sound* exploreSound[NUMENSEMBLEMUSIC] = { nullptr };
+    FMOD::Channel* exploreChannel[NUMENSEMBLEMUSIC] = { nullptr };
+
+    FMOD::Sound* combatSound[NUMENSEMBLEMUSIC] = { nullptr };
+    FMOD::Channel* combatChannel[NUMENSEMBLEMUSIC] = { nullptr };
+
+    FMOD::Sound* exploreTransSound[NUM_EXPLORE_TRANS][NUMENSEMBLEMUSIC] = { nullptr };
+    FMOD::Channel* exploreTransChannel[NUM_EXPLORE_TRANS][NUMENSEMBLEMUSIC] = { nullptr };
+
+    FMOD::Sound* combatTransSound[NUM_COMBAT_TRANS][NUMENSEMBLEMUSIC] = { nullptr };
+    FMOD::Channel* combatTransChannel[NUM_COMBAT_TRANS][NUMENSEMBLEMUSIC] = { nullptr };
+
+    FMOD::ChannelGroup* transceiver_group[NUMENSEMBLEMUSIC] = { nullptr };
+
+    enum SongTransitionState
+    {
+        TRANSITION_EXPLORE,
+        TRANSITION_COMBAT_START,
+        TRANSITION_COMBAT,
+        TRANSITION_COMBAT_ENDING,
+        TRANSITION_COMBAT_ENDED
+    };
+    SongTransitionState songTransitionState = TRANSITION_EXPLORE;
+    enum TransitionMode
+    {
+        TRANSITION_MODE_FULL,
+        TRANSITION_MODE_FADE,
+        TRANSITION_MODE_FADE_HALF,
+        TRANSITION_MODE_DEFAULT
+    };
+    TransitionMode songTransitionMode = TRANSITION_MODE_DEFAULT;
+    void setup();
+    void playSong();
+    void deinit();
+    void stopPlaying();
+    unsigned int exploreSoundSyncPointInterval = 0;
+    unsigned int combatSoundSyncPointInterval = 0;
+    int exploreSongSeek = 0;
+    int combatSongSeek = 0;
+    std::vector<unsigned int> exploreSyncPoints;
+    std::vector<unsigned int> combatSyncPoints;
+    void updatePlayingChannelVolumes();
+    int combatBeat = 0;
+    Uint32 ticksCombatPlaying = 0;
+    Uint32 combatDelay = 0;
+    Uint32 lastUpdateTick = 0;
+};
+extern EnsembleSounds_t ensembleSounds;
 
 
 /*
