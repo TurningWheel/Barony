@@ -62,7 +62,11 @@ bool initSoundEngine()
 
 	if (!no_sound)
 	{
-		fmod_result = fmod_system->init(fmod_maxchannels, FMOD_INIT_NORMAL | FMOD_INIT_3D_RIGHTHANDED | FMOD_INIT_VOL0_BECOMES_VIRTUAL | FMOD_INIT_STREAM_FROM_UPDATE | FMOD_INIT_THREAD_UNSAFE/* | FMOD_INIT_PROFILE_ENABLE | FMOD_INIT_PROFILE_METER_ALL*/, fmod_extraDriverData);
+		FMOD_INITFLAGS flags = FMOD_INIT_NORMAL | FMOD_INIT_3D_RIGHTHANDED | FMOD_INIT_VOL0_BECOMES_VIRTUAL | FMOD_INIT_STREAM_FROM_UPDATE | FMOD_INIT_THREAD_UNSAFE;
+#ifndef NDEBUG
+		flags |= FMOD_INIT_PROFILE_ENABLE | FMOD_INIT_PROFILE_METER_ALL;
+#endif
+		fmod_result = fmod_system->init(fmod_maxchannels, flags, fmod_extraDriverData);
 		if (FMODErrorCheck())
 		{
 			printlog("[FMOD]: Failed to initialize FMOD. DISABLING AUDIO.\n");
