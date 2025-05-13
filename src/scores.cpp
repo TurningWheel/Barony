@@ -1536,6 +1536,17 @@ void loadAllScores(const std::string& scoresfilename)
 				usedClass[c] = false;
 			}
 		}
+		else if ( versionNumber <= 432 )
+		{
+			if ( c < 21 )
+			{
+				fp->read(&usedClass[c], sizeof(bool), 1);
+			}
+			else
+			{
+				usedClass[c] = false;
+			}
+		}
 		else
 		{
 			fp->read(&usedClass[c], sizeof(bool), 1);
@@ -1548,6 +1559,17 @@ void loadAllScores(const std::string& scoresfilename)
 		{
 			// don't read race info.
 			usedRace[c] = false;
+		}
+		else if ( versionNumber <= 432 )
+		{
+			if ( c < 13 )
+			{
+				fp->read(&usedRace[c], sizeof(bool), 1);
+			}
+			else
+			{
+				usedRace[c] = false;
+			}
 		}
 		else
 		{
@@ -1632,7 +1654,7 @@ void loadAllScores(const std::string& scoresfilename)
 				}
 			}
 		}
-		else if ( versionNumber <= 431 )
+		else if ( versionNumber <= 432 )
 		{
 			// legacy nummonsters
 			for ( int c = 0; c < NUMMONSTERS; c++ )
@@ -1788,7 +1810,7 @@ void loadAllScores(const std::string& scoresfilename)
 				}
 			}
 		}
-		else if ( versionNumber <= 431 )
+		else if ( versionNumber <= 432 )
 		{
 			for ( int c = 0; c < 64; c++ )
 			{
