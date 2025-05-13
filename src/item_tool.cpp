@@ -615,6 +615,35 @@ void Item::applyLockpick(int player, Entity& entity)
 					}
 					entity.wallLockPreventLockpickExploit = 1;
 
+					// consume the lockpick
+					/*if ( player >= 0 && players[player]->isLocalPlayer() )
+					{
+						if ( count > 1 )
+						{
+							newItem(type, status, beatitude, count - 1, appearance, identified, &stats[player]->inventory);
+						}
+					}
+					stats[player]->weapon->count = 1;
+					stats[player]->weapon->status = BROKEN;
+					if ( status != BROKEN )
+					{
+						messagePlayer(player, MESSAGE_INTERACTION | MESSAGE_EQUIPMENT, Language::get(1103));
+					}
+					else
+					{
+						messagePlayer(player, MESSAGE_INTERACTION | MESSAGE_EQUIPMENT, Language::get(1104));
+					}
+					if ( player > 0 && multiplayer == SERVER )
+					{
+						strcpy((char*)(net_packet->data), "ARMR");
+						net_packet->data[4] = 5;
+						net_packet->data[5] = stats[player]->weapon->status;
+						net_packet->address.host = net_clients[player - 1].host;
+						net_packet->address.port = net_clients[player - 1].port;
+						net_packet->len = 6;
+						sendPacketSafe(net_sock, -1, net_packet, player - 1);
+					}*/
+
 					entity.wallLockPower = 3; // turn on later in actWallLock
 					messagePlayer(player, MESSAGE_INTERACTION, Language::get(6426), items[TOOL_LOCKPICK].getIdentifiedName(),
 						Language::get(6383 + entity.wallLockMaterial));
