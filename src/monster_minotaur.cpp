@@ -716,7 +716,7 @@ void actMinotaurTimer(Entity* my)
 
 		if ( spawnedsomebody )
 		{
-			playSoundNotification(175, 128);
+			playSoundNotification(175, 64);
 			for ( c = 0; c < MAXPLAYERS; c++ )
 			{
 				Uint32 color = makeColorRGB(0, 255, 255);
