@@ -2247,6 +2247,17 @@ void actDeathCam(Entity* my)
 
 	Uint32 deathcamGameoverPromptTicks = *MainMenu::cvar_fastRestart ? TICKS_PER_SECOND :
 		(splitscreen ? TICKS_PER_SECOND * 3 : TICKS_PER_SECOND * 6);
+	if ( *MainMenu::cvar_fastRestart )
+	{
+		if ( players[DEATHCAM_PLAYERNUM]->entity && players[DEATHCAM_PLAYERNUM]->entity->playerCreatedDeathCam != 0 )
+		{
+			// automaton deaths, reverse the count while we're still alive
+			if ( DEATHCAM_TIME > 2 )
+			{
+				--DEATHCAM_TIME;
+			}
+		}
+	}
 	if ( gameModeManager.isFastDeathGrave() )
 	{
 		deathcamGameoverPromptTicks = TICKS_PER_SECOND * 3;
@@ -2273,7 +2284,8 @@ void actDeathCam(Entity* my)
 	}
 	else if ( DEATHCAM_TIME < deathcamGameoverPromptTicks )
 	{
-		if ( players[DEATHCAM_PLAYERNUM]->ghost.isActive() || players[DEATHCAM_PLAYERNUM]->entity )
+		if ( players[DEATHCAM_PLAYERNUM]->ghost.isActive() 
+			|| (players[DEATHCAM_PLAYERNUM]->entity && players[DEATHCAM_PLAYERNUM]->entity->playerCreatedDeathCam == 0) )
 		{
 			DEATHCAM_DISABLE_GAMEOVER = 1;
 		}
@@ -2284,7 +2296,8 @@ void actDeathCam(Entity* my)
 		{
 			gameModeManager.Tutorial.openGameoverWindow();
 		}
-		else if ( !(players[DEATHCAM_PLAYERNUM]->ghost.isActive() || players[DEATHCAM_PLAYERNUM]->entity) 
+		else if ( !(players[DEATHCAM_PLAYERNUM]->ghost.isActive() 
+			|| (players[DEATHCAM_PLAYERNUM]->entity && players[DEATHCAM_PLAYERNUM]->entity->playerCreatedDeathCam == 0) )
 			&& DEATHCAM_DISABLE_GAMEOVER == 0 )
 		{
 			MainMenu::openGameoverWindow(DEATHCAM_PLAYERNUM);
@@ -2301,7 +2314,8 @@ void actDeathCam(Entity* my)
 	}
 
 	bool shootmode = players[DEATHCAM_PLAYERNUM]->shootmode;
-	if ( shootmode && !gamePaused && !(players[DEATHCAM_PLAYERNUM]->ghost.isActive() || players[DEATHCAM_PLAYERNUM]->entity) )
+	if ( shootmode && !gamePaused && !(players[DEATHCAM_PLAYERNUM]->ghost.isActive() 
+		|| (players[DEATHCAM_PLAYERNUM]->entity && players[DEATHCAM_PLAYERNUM]->entity->playerCreatedDeathCam == 0)) )
 	{
 		if ( !players[DEATHCAM_PLAYERNUM]->GUI.isGameoverActive() )
 		{
