@@ -9418,13 +9418,15 @@ bind_failed:
                 selectedScore = score;
                 updateStats(button, score);
                 loadScore(score);
-				/*if ( *cvar_leaderboard_copy_id && *cvar_leaderboard_show_id )
+#ifndef NDEBUG
+				if ( *cvar_leaderboard_copy_id && *cvar_leaderboard_show_id )
 				{
 					if ( score && score->stats )
 					{
 						SDL_SetClipboardText(score->stats->name);
 					}
-				}*/
+				}
+#endif
                 });
             button->setTickCallback([](Widget& widget){
                 auto button = static_cast<Button*>(&widget);
