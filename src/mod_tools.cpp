@@ -8317,7 +8317,7 @@ void LocalAchievements_t::readFromFile()
 		return;
 	}
 
-	char buf[65536];
+	static char buf[65536 * 2];
 	int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
 	buf[count] = '\0';
 	rapidjson::StringStream is(buf);
