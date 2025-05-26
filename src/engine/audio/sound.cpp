@@ -120,8 +120,8 @@ void setGlobalVolume(real_t master, real_t music, real_t gameplay, real_t ambien
 	music_notification_group->setVolume(master * notification);
 	soundNotification_group->setVolume(master * notification);
 	music_ensemble_global_send_group->setVolume(1.f);
-	music_ensemble_global_recv_group->setVolume(master * music);
-	music_ensemble_local_recv_group->setVolume(master * gameplay);
+	ensembleSounds.ensemble_recv_global_volume = master * (music * 4);
+	ensembleSounds.ensemble_recv_player_volume = master * gameplay;
 
 #ifndef EDITOR
 	if ( VoiceChat.outChannelGroup )
@@ -133,7 +133,7 @@ void setGlobalVolume(real_t master, real_t music, real_t gameplay, real_t ambien
 
 #ifndef EDITOR
 	static ConsoleVariable<float> cvar_sfx_notification_music_fade("/sfx_notification_music_fade", 0.5f);
-	static ConsoleVariable<float> cvar_sfx_ensemble_music_fade("/sfx_ensemble_music_fade", 0.25f);
+	static ConsoleVariable<float> cvar_sfx_ensemble_music_fade("/sfx_ensemble_music_fade", 0.f);
 #endif // !EDITOR
 
 void sound_update(int player, int index, int numplayers)
@@ -296,7 +296,7 @@ void sound_update(int player, int index, int numplayers)
 					}
 					music_channel->setVolume(volume);
 				}
-				else if ( ensemblePlaying && volume > 0.0f )
+				else if ( ensemblePlaying )
 				{
 					volume -= fadeout_increment * 5;
 					if ( volume < *cvar_sfx_ensemble_music_fade )
@@ -1250,17 +1250,23 @@ const std::vector<std::string> themeMusic = {
 	"sound/ensemble/ensemble1_luteV1.ogg",
 	"sound/ensemble/ensemble1_lyreV1.ogg",
 	"sound/ensemble/ensemble1_tamboV1.ogg",
+	"sound/ensemble/ensemble1_BEB_tier1_V1.ogg",
+	"sound/ensemble/ensemble1_BEB_tier2_V1.ogg",
 	"sound/ensemble/ensemble1_drum_combatV1.ogg",
 	"sound/ensemble/ensemble1_flute_combatV1.ogg",
 	"sound/ensemble/ensemble1_horn_combatV1.ogg",
 	"sound/ensemble/ensemble1_lute_combatV1.ogg",
 	"sound/ensemble/ensemble1_lyre_combatV1.ogg",
 	"sound/ensemble/ensemble1_tambo_combatV1.ogg",
-	"sound/ensemble/Trans1/ensemble1_drum_Trans1_120_4-4_V1.ogg",
+	"sound/ensemble/ensemble1_BEB_tier1_combatV1.ogg",
+	"sound/ensemble/ensemble1_BEB_tier2_combatV1.ogg",
+	/*"sound/ensemble/Trans1/ensemble1_drum_Trans1_120_4-4_V1.ogg",
 	"sound/ensemble/Trans1/ensemble1_flute_Trans1_120_4-4_V1.ogg",
 	"sound/ensemble/Trans1/ensemble1_horn_Trans1_120_4-4_V1.ogg",
 	"sound/ensemble/Trans1/ensemble1_lute_Trans1_120_4-4_V1.ogg",
 	"sound/ensemble/Trans1/ensemble1_lyre_Trans1_120_4-4_V1.ogg",
+	"sound/ensemble/Trans1/ensemble1_tambo_Trans1_120_4-4_V1.ogg",
+	"sound/ensemble/Trans1/ensemble1_tambo_Trans1_120_4-4_V1.ogg",
 	"sound/ensemble/Trans1/ensemble1_tambo_Trans1_120_4-4_V1.ogg",
 	"sound/ensemble/Trans2/ensemble1_drum_Trans2_120_4-4_V1.ogg",
 	"sound/ensemble/Trans2/ensemble1_flute_Trans2_120_4-4_V1.ogg",
@@ -1268,29 +1274,39 @@ const std::vector<std::string> themeMusic = {
 	"sound/ensemble/Trans2/ensemble1_lute_Trans2_120_4-4_V1.ogg",
 	"sound/ensemble/Trans2/ensemble1_lyre_Trans2_120_4-4_V1.ogg",
 	"sound/ensemble/Trans2/ensemble1_tambo_Trans2_120_4-4_V1.ogg",
+	"sound/ensemble/Trans2/ensemble1_tambo_Trans2_120_4-4_V1.ogg",
+	"sound/ensemble/Trans2/ensemble1_tambo_Trans2_120_4-4_V1.ogg",
 	"sound/ensemble/Trans3/ensemble1_drum_Trans3_120_4-4_V1.ogg",
 	"sound/ensemble/Trans3/ensemble1_flute_Trans3_120_4-4_V1.ogg",
 	"sound/ensemble/Trans3/ensemble1_horn_Trans3_120_4-4_V1.ogg",
 	"sound/ensemble/Trans3/ensemble1_lute_Trans3_120_4-4_V1.ogg",
 	"sound/ensemble/Trans3/ensemble1_lyre_Trans3_120_4-4_V1.ogg",
 	"sound/ensemble/Trans3/ensemble1_tambo_Trans3_120_4-4_V1.ogg",
+	"sound/ensemble/Trans3/ensemble1_tambo_Trans3_120_4-4_V1.ogg",
+	"sound/ensemble/Trans3/ensemble1_tambo_Trans3_120_4-4_V1.ogg",*/
 	"sound/ensemble/CombatEnd1/ensemble1_drum_combat_End1_90_7-8.ogg",
 	"sound/ensemble/CombatEnd1/ensemble1_flute_combat_End1_90_7-8.ogg",
 	"sound/ensemble/CombatEnd1/ensemble1_horn_combat_End1_90_7-8.ogg",
 	"sound/ensemble/CombatEnd1/ensemble1_lute_combat_End1_90_7-8.ogg",
 	"sound/ensemble/CombatEnd1/ensemble1_lyre_combat_End1_90_7-8.ogg",
 	"sound/ensemble/CombatEnd1/ensemble1_tambo_combat_End1_90_7-8.ogg",
+	"sound/ensemble/CombatEnd1/ensemble1_BEB_tier1_combat_End1_90_7-8.ogg",
+	"sound/ensemble/CombatEnd1/ensemble1_BEB_tier2_combat_End1_90_7-8.ogg",
 	"sound/ensemble/CombatEnd2/ensemble1_drum_combat_End2_90_7-8.ogg",
 	"sound/ensemble/CombatEnd2/ensemble1_flute_combat_End2_90_7-8.ogg",
 	"sound/ensemble/CombatEnd2/ensemble1_horn_combat_End2_90_7-8.ogg",
 	"sound/ensemble/CombatEnd2/ensemble1_lute_combat_End2_90_7-8.ogg",
 	"sound/ensemble/CombatEnd2/ensemble1_lyre_combat_End2_90_7-8.ogg",
 	"sound/ensemble/CombatEnd2/ensemble1_tambo_combat_End2_90_7-8.ogg",
-	"sound/ensemble/CombatEnd3/ensemble1_drum_combat_End3_90_7-8.ogg",
+	"sound/ensemble/CombatEnd2/ensemble1_BEB_tier1_combat_End2_90_7-8.ogg",
+	"sound/ensemble/CombatEnd2/ensemble1_BEB_tier2_combat_End2_90_7-8.ogg",
+	/*"sound/ensemble/CombatEnd3/ensemble1_drum_combat_End3_90_7-8.ogg",
 	"sound/ensemble/CombatEnd3/ensemble1_flute_combat_End3_90_7-8.ogg",
 	"sound/ensemble/CombatEnd3/ensemble1_horn_combat_End3_90_7-8.ogg",
 	"sound/ensemble/CombatEnd3/ensemble1_lute_combat_End3_90_7-8.ogg",
 	"sound/ensemble/CombatEnd3/ensemble1_lyre_combat_End3_90_7-8.ogg",
+	"sound/ensemble/CombatEnd3/ensemble1_tambo_combat_End3_90_7-8.ogg",
+	"sound/ensemble/CombatEnd3/ensemble1_tambo_combat_End3_90_7-8.ogg",
 	"sound/ensemble/CombatEnd3/ensemble1_tambo_combat_End3_90_7-8.ogg",
 	"sound/ensemble/CombatEnd4/ensemble1_drum_combat_End4_90_7-8.ogg",
 	"sound/ensemble/CombatEnd4/ensemble1_flute_combat_End4_90_7-8.ogg",
@@ -1298,12 +1314,16 @@ const std::vector<std::string> themeMusic = {
 	"sound/ensemble/CombatEnd4/ensemble1_lute_combat_End4_90_7-8.ogg",
 	"sound/ensemble/CombatEnd4/ensemble1_lyre_combat_End4_90_7-8.ogg",
 	"sound/ensemble/CombatEnd4/ensemble1_tambo_combat_End4_90_7-8.ogg",
+	"sound/ensemble/CombatEnd4/ensemble1_tambo_combat_End4_90_7-8.ogg",
+	"sound/ensemble/CombatEnd4/ensemble1_tambo_combat_End4_90_7-8.ogg",*/
 	"sound/ensemble/Trans4/ensemble1_drum_Trans_120_4-4.ogg",
 	"sound/ensemble/Trans4/ensemble1_flute_Trans_120_4-4.ogg",
 	"sound/ensemble/Trans4/ensemble1_horn_Trans_120_4-4.ogg",
 	"sound/ensemble/Trans4/ensemble1_lute_Trans_120_4-4.ogg",
 	"sound/ensemble/Trans4/ensemble1_lyre_Trans_120_4-4.ogg",
-	"sound/ensemble/Trans4/ensemble1_tambo_Trans_120_4-4.ogg"
+	"sound/ensemble/Trans4/ensemble1_tambo_Trans_120_4-4.ogg",
+	"sound/ensemble/Trans4/ensemble1_BEB_tier1_Trans_120_4-4.ogg",
+	"sound/ensemble/Trans4/ensemble1_BEB_tier2_Trans_120_4-4.ogg"
 };
 
 bool physfsSearchMusicToUpdate()
@@ -1731,7 +1751,7 @@ void physfsReloadMusic(bool &introMusicChanged, bool reloadAll) //TODO: This sho
 					default:
 #ifdef USE_FMOD
 #ifndef EDITOR
-						if ( index >= 21 && index <= 80 )
+						if ( index >= 21 && index < 21 + NUMENSEMBLEMUSIC * 5 )
 						{
 							ensembleNeedsUpdate = true;
 							int c = (index - 21) % NUMENSEMBLEMUSIC;
@@ -1748,6 +1768,24 @@ void physfsReloadMusic(bool &introMusicChanged, bool reloadAll) //TODO: This sho
 								fmod_result = fmod_system->createSound(musicDir.c_str(), FMOD_3D | FMOD_LOOP_NORMAL, nullptr, &ensembleSounds.combatSound[c]);
 							}
 							else if ( index >= 21 + NUMENSEMBLEMUSIC * 2 && index < 21 + NUMENSEMBLEMUSIC * 3 )
+							{
+								fmod_result = ensembleSounds.combatTransChannel[0][c] ? ensembleSounds.combatTransChannel[0][c]->stop() : FMOD_OK;
+								fmod_result = ensembleSounds.combatTransSound[0][c] ? ensembleSounds.combatTransSound[0][c]->release() : FMOD_OK;
+								fmod_result = fmod_system->createSound(musicDir.c_str(), FMOD_3D | FMOD_LOOP_NORMAL, nullptr, &ensembleSounds.combatTransSound[0][c]);
+							}
+							else if ( index >= 21 + NUMENSEMBLEMUSIC * 3 && index < 21 + NUMENSEMBLEMUSIC * 4 )
+							{
+								fmod_result = ensembleSounds.combatTransChannel[1][c] ? ensembleSounds.combatTransChannel[1][c]->stop() : FMOD_OK;
+								fmod_result = ensembleSounds.combatTransSound[1][c] ? ensembleSounds.combatTransSound[1][c]->release() : FMOD_OK;
+								fmod_result = fmod_system->createSound(musicDir.c_str(), FMOD_3D | FMOD_LOOP_NORMAL, nullptr, &ensembleSounds.combatTransSound[1][c]);
+							}
+							else if ( index >= 21 + NUMENSEMBLEMUSIC * 4 && index < 21 + NUMENSEMBLEMUSIC * 5 )
+							{
+								fmod_result = ensembleSounds.exploreTransChannel[3][c] ? ensembleSounds.exploreTransChannel[3][c]->stop() : FMOD_OK;
+								fmod_result = ensembleSounds.exploreTransSound[3][c] ? ensembleSounds.exploreTransSound[3][c]->release() : FMOD_OK;
+								fmod_result = fmod_system->createSound(musicDir.c_str(), FMOD_3D | FMOD_LOOP_NORMAL, nullptr, &ensembleSounds.exploreTransSound[3][c]);
+							}
+							/*else if ( index >= 21 + NUMENSEMBLEMUSIC * 2 && index < 21 + NUMENSEMBLEMUSIC * 3 )
 							{
 								fmod_result = ensembleSounds.exploreTransChannel[0][c] ? ensembleSounds.exploreTransChannel[0][c]->stop() : FMOD_OK;
 								fmod_result = ensembleSounds.exploreTransSound[0][c] ? ensembleSounds.exploreTransSound[0][c]->release() : FMOD_OK;
@@ -1794,7 +1832,7 @@ void physfsReloadMusic(bool &introMusicChanged, bool reloadAll) //TODO: This sho
 								fmod_result = ensembleSounds.exploreTransChannel[3][c] ? ensembleSounds.exploreTransChannel[3][c]->stop() : FMOD_OK;
 								fmod_result = ensembleSounds.exploreTransSound[3][c] ? ensembleSounds.exploreTransSound[3][c]->release() : FMOD_OK;
 								fmod_result = fmod_system->createSound(musicDir.c_str(), FMOD_3D | FMOD_LOOP_NORMAL, nullptr, &ensembleSounds.exploreTransSound[3][c]);
-							}
+							}*/
 						}
 #endif
 #endif

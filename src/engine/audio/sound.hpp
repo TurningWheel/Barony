@@ -109,16 +109,20 @@ extern FMOD::Channel* music_channel, *music_channel2, *music_resume; //TODO: Lis
 extern FMOD::ChannelGroup* sound_group, *music_group;
 extern FMOD::ChannelGroup* soundAmbient_group, *soundEnvironment_group, *music_notification_group, *soundNotification_group;
 
-#define NUMENSEMBLEMUSIC 6
+#define NUMENSEMBLEMUSIC 8
 extern FMOD::ChannelGroup* music_ensemble_global_send_group;
 extern FMOD::ChannelGroup* music_ensemble_global_recv_group;
 extern FMOD::ChannelGroup* music_ensemble_local_recv_player[MAXPLAYERS];
 extern FMOD::ChannelGroup* music_ensemble_local_recv_group;
 #ifndef EDITOR
 extern ConsoleVariable<float> cvar_ensemble_vol_bg;
+extern ConsoleVariable<int> cvar_ensemble_explore_seek;
+extern ConsoleVariable<int> cvar_ensemble_combat_seek;
 #endif
 struct EnsembleSounds_t
 {
+    float ensemble_recv_global_volume = 0.f;
+    float ensemble_recv_player_volume = 0.f;
     static const int NUM_EXPLORE_TRANS = 4;
     static const int NUM_COMBAT_TRANS = 4;
     FMOD::Sound* exploreSound[NUMENSEMBLEMUSIC] = { nullptr };
@@ -155,16 +159,19 @@ struct EnsembleSounds_t
     void setup();
     void playSong();
     void deinit();
-    void stopPlaying();
+    void stopPlaying(bool setCombatDelay);
     unsigned int exploreSoundSyncPointInterval = 0;
     unsigned int combatSoundSyncPointInterval = 0;
     int exploreSongSeek = 0;
     int combatSongSeek = 0;
     std::vector<unsigned int> exploreSyncPoints;
+    std::vector<int> exploreSyncPointsToSeek;
+    std::vector<int> exploreSyncPointsUnique;
     std::vector<unsigned int> combatSyncPoints;
     void updatePlayingChannelVolumes();
     int combatBeat = 0;
     Uint32 ticksCombatPlaying = 0;
+    Uint32 lastTickCombatPlaying = 0;
     Uint32 combatDelay = 0;
     Uint32 lastUpdateTick = 0;
 };

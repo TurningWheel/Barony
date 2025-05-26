@@ -1882,6 +1882,10 @@ void VoiceChat_t::updateOnMapChange3DRolloff()
 
 void VoiceChat_t::PlayerChannels_t::setupPlayback()
 {
+	if ( no_sound )
+	{
+		return;
+	}
 	const int windowSize = desiredLatency * sizeof(short) * VoiceChat.nativeChannels;
 	FMOD_CREATESOUNDEXINFO exinfoBuffer = { 0 };
 	exinfoBuffer.cbsize = sizeof(FMOD_CREATESOUNDEXINFO);
@@ -3251,6 +3255,8 @@ FMOD_RESULT F_CALLBACK ensembleCombatCallback(FMOD_CHANNELCONTROL* channelcontro
 	void* commanddata1,
 	void* commanddata2);
 
+FMOD_VECTOR ensemble_global_position {0.f, 0.f, 0.f};
+
 void EnsembleSounds_t::playSong()
 {
 	songTransitionState = TRANSITION_EXPLORE;
@@ -3273,7 +3279,7 @@ void EnsembleSounds_t::playSong()
 
 		unsigned int songPos = 0;
 		FMOD_SYNCPOINT* syncPoint = nullptr;
-		fmod_result = exploreSound[i]->getSyncPoint(0 /*exploreSongSeek*/, &syncPoint);
+		fmod_result = exploreSound[i]->getSyncPoint(exploreSongSeek, &syncPoint);
 		fmod_result = exploreSound[i]->getSyncPointInfo(syncPoint, nullptr, 0, &songPos, FMOD_TIMEUNIT_PCM);
 		fmod_result = exploreChannel[i]->setPosition(songPos, FMOD_TIMEUNIT_PCM);
 
@@ -3312,24 +3318,20 @@ void EnsembleSounds_t::playSong()
 
 		transceiver_group[i]->setVolume(0.f);
 
-		static ConsoleVariable<float> cvar_ensemble_global_x("/ensemble_global_x", 0.f);
-		static ConsoleVariable<float> cvar_ensemble_global_y("/ensemble_global_y", 0.f);
-		static ConsoleVariable<float> cvar_ensemble_global_z("/ensemble_global_z", 0.f);
-		FMOD_VECTOR position;
-		position.x = *cvar_ensemble_global_x;
-		position.y = *cvar_ensemble_global_y;
-		position.z = *cvar_ensemble_global_z;
 		fmod_result = exploreChannel[i]->setMode(FMOD_3D_HEADRELATIVE);
-		fmod_result = exploreChannel[i]->set3DAttributes(&position, nullptr);
+		fmod_result = exploreChannel[i]->set3DAttributes(&ensemble_global_position, nullptr);
 		fmod_result = combatChannel[i]->setMode(FMOD_3D_HEADRELATIVE);
-		fmod_result = combatChannel[i]->set3DAttributes(&position, nullptr);
+		fmod_result = combatChannel[i]->set3DAttributes(&ensemble_global_position, nullptr);
 	}
 }
 
-void EnsembleSounds_t::stopPlaying()
+void EnsembleSounds_t::stopPlaying(bool setCombatDelay)
 {
 	songTransitionState = TRANSITION_EXPLORE;
-	combatDelay = TICKS_PER_SECOND * 5;
+	if ( setCombatDelay )
+	{
+		combatDelay = TICKS_PER_SECOND * 5;
+	}
 	for ( int i = 0; i < NUMENSEMBLEMUSIC; ++i )
 	{
 		fmod_result = exploreChannel[i] ? exploreChannel[i]->stop() : FMOD_OK;
@@ -3352,7 +3354,7 @@ void EnsembleSounds_t::stopPlaying()
 
 void EnsembleSounds_t::deinit()
 {
-	stopPlaying();
+	stopPlaying(true);
 
 	for ( int i = 0; i < NUMENSEMBLEMUSIC; ++i )
 	{
@@ -3390,6 +3392,15 @@ static ConsoleCommand ccmd_ensemble_transition_mode("/ensemble_transition_mode",
 			messagePlayer(clientnum, MESSAGE_HINT, "Set transition mode to: %d", (int)ensembleSounds.songTransitionMode);
 		}
 });
+
+static ConsoleCommand ccmd_ensemble_transition_state("/ensemble_transition_state", "",
+	[](int argc, const char* argv[]) {
+		if ( argc > 1 )
+		{
+			ensembleSounds.songTransitionState = (EnsembleSounds_t::SongTransitionState)atoi(argv[1]);
+			messagePlayer(clientnum, MESSAGE_HINT, "Set transition state to: %d", (int)ensembleSounds.songTransitionState);
+		}
+	});
 
 void EnsembleSounds_t::setup()
 {
@@ -3450,26 +3461,70 @@ void EnsembleSounds_t::setup()
 			int interval = 1;
 			int numBeats = 2;
 			exploreSoundSyncPointInterval = interval * (beatTime * numBeats);
-			unsigned int beat = beatTime; // starting point from beginning of song
+			unsigned int beat = beatTime * 3 / 4; // starting point from beginning of song
+			//exploreSound[i]->setLoopPoints(0, FMOD_TIMEUNIT_PCM, len - beat, FMOD_TIMEUNIT_PCM);
 			int numSyncPoints = ((len - beat) / (interval * beatTime * numBeats)) + 1;
 			int index = -1;
 			if ( i == 0 )
 			{
-				combatSyncPoints.clear();
+				exploreSyncPoints.clear();
+				exploreSyncPointsToSeek.clear();
+				exploreSyncPointsUnique.clear();
 			}
+			int seekBar = -1;
+			int oldSeekBar = -1;
 			while ( beat < len )
 			{
 				++index;
+				if ( i == 0 )
+				{
+					if ( index == 0 )
+					{
+						seekBar = -1; // no action
+					}
+					else if ( index < 166 )
+					{
+						seekBar = (index / 8) * 8;
+					}
+					else if ( index < 310 )
+					{
+						seekBar = 166 + ((index - 166) / 8) * 8;
+					}
+					else if ( index == 310 || index == 311 )
+					{
+						seekBar = 302;
+					}
+					else if ( index < 360 )
+					{
+						seekBar = 312 + ((index - 312) / 8) * 8;
+					}
+					else if ( index == 360 || index == 361 )
+					{
+						seekBar = 352;
+					}
+					else if ( index >= 362 )
+					{
+						seekBar = 362;
+					}
+					if ( oldSeekBar != seekBar )
+					{
+						exploreSyncPointsUnique.push_back(seekBar);
+					}
+					oldSeekBar = seekBar;
+				}
 				fmod_result = exploreSound[i]->addSyncPoint(beat, FMOD_TIMEUNIT_PCM, nullptr, nullptr);
 				if ( i == 0 )
 				{
 					exploreSyncPoints.push_back(beat);
+					exploreSyncPointsToSeek.push_back(seekBar);
 				}
 				FMODErrorCheck();
 				beat += interval * (beatTime * numBeats);
 			}
 
 			fmod_result = fmod_system->playSound(exploreSound[i], transceiver_group[i], true, &exploreChannel[i]);
+			fmod_result = exploreChannel[i]->setMode(FMOD_3D_HEADRELATIVE);
+			fmod_result = exploreChannel[i]->set3DAttributes(&ensemble_global_position, nullptr);
 			FMODErrorCheck();
 			fmod_result = exploreChannel[i]->setCallback(ensembleExplorationCallback);
 		}
@@ -3520,6 +3575,8 @@ void EnsembleSounds_t::setup()
 			}
 
 			fmod_result = fmod_system->playSound(combatSound[i], transceiver_group[i], true, &combatChannel[i]);
+			fmod_result = combatChannel[i]->setMode(FMOD_3D_HEADRELATIVE);
+			fmod_result = combatChannel[i]->set3DAttributes(&ensemble_global_position, nullptr);
 			FMODErrorCheck();
 			combatChannel[i]->setCallback(ensembleCombatCallback);
 		}
@@ -3640,14 +3697,6 @@ FMOD_RESULT F_CALLBACK ensembleCombatCallback(FMOD_CHANNELCONTROL* channelcontro
 					{
 						syncpointNext += syncInterval;
 					}*/
-					if ( currentSyncPoint >= 16 && currentSyncPoint < 22 )
-					{
-						syncpointNext = 22;
-					}
-					else if ( syncpointNext == 28 )
-					{
-						syncpointNext += syncInterval;
-					}
 
 					bool noTransition = false;
 					if ( ensembleSounds.ticksCombatPlaying < *cvar_ensemble_combat_length * TICKS_PER_SECOND )
@@ -3695,18 +3744,10 @@ FMOD_RESULT F_CALLBACK ensembleCombatCallback(FMOD_CHANNELCONTROL* channelcontro
 					ensembleSounds.songTransitionState = EnsembleSounds_t::TRANSITION_COMBAT_ENDED;
 
 					//chan->addFadePoint(clock_now + (unsigned long long)(rate * 2.0), 0.f);
-					int combatTransition = 1;
-					if ( syncpointNext == 22 )
+					int combatTransition = 0;
+					if ( syncpointNext >= 28 && syncpointNext <= 32 )
 					{
-						combatTransition = 3;
-					}
-					else if ( syncpointNext > 32 )
-					{
-						combatTransition = 2;
-					}
-					if ( syncpointNext % (syncInterval * 2) == 0 ) // every second interval
-					{
-						combatTransition = 0;
+						combatTransition = 1;
 					}
 					if ( ensembleSounds.songTransitionMode == EnsembleSounds_t::TRANSITION_MODE_FADE_HALF )
 					{
@@ -3728,15 +3769,20 @@ FMOD_RESULT F_CALLBACK ensembleCombatCallback(FMOD_CHANNELCONTROL* channelcontro
 					fmod_system->getSoftwareFormat(&sampleRate, nullptr, nullptr);
 					float buffer_ms = (buffersize * 1000.f / (float)sampleRate);
 
-					for ( int i = 0; i < 6; ++i )
+					for ( int i = 0; i < NUMENSEMBLEMUSIC; ++i )
 					{
 						unsigned long long clock_now = 0;
 						result = ensembleSounds.combatChannel[i]->getDSPClock(0, &clock_now);
 						result = ensembleSounds.combatChannel[i]->setDelay(0, clock_now + (unsigned long long)(mainChannelDelay), false);
 
-						if ( ensembleSounds.songTransitionMode == EnsembleSounds_t::TRANSITION_MODE_DEFAULT )
+						if ( ensembleSounds.songTransitionMode == EnsembleSounds_t::TRANSITION_MODE_DEFAULT && noTransition )
 						{
 							result = ensembleSounds.combatChannel[i]->addFadePoint(clock_now, 1.f);
+							result = ensembleSounds.combatChannel[i]->addFadePoint(clock_now + (unsigned long long)(mainChannelDelay), 0.f);
+						}
+						else if ( ensembleSounds.songTransitionMode == EnsembleSounds_t::TRANSITION_MODE_DEFAULT && !noTransition )
+						{
+							result = ensembleSounds.combatChannel[i]->addFadePoint(clock_now + (unsigned long long)(mainChannelDelay) - 500.f * buffer_ms, 1.f);
 							result = ensembleSounds.combatChannel[i]->addFadePoint(clock_now + (unsigned long long)(mainChannelDelay), 0.f);
 						}
 
@@ -3750,6 +3796,8 @@ FMOD_RESULT F_CALLBACK ensembleCombatCallback(FMOD_CHANNELCONTROL* channelcontro
 						{
 							result = fmod_system->playSound(ensembleSounds.combatTransSound[combatTransition][i], 
 								ensembleSounds.transceiver_group[i], true, &ensembleSounds.combatTransChannel[combatTransition][i]);
+							result = ensembleSounds.combatTransChannel[combatTransition][i]->setMode(FMOD_3D_HEADRELATIVE);
+							result = ensembleSounds.combatTransChannel[combatTransition][i]->set3DAttributes(&ensemble_global_position, nullptr);
 
 							FMOD_SYNCPOINT* syncPoint3 = nullptr;
 							result = ensembleSounds.combatTransSound[combatTransition][i]->getSyncPoint(1, &syncPoint3);
@@ -3777,8 +3825,15 @@ FMOD_RESULT F_CALLBACK ensembleCombatCallback(FMOD_CHANNELCONTROL* channelcontro
 
 							result = ensembleSounds.combatTransChannel[combatTransition][i]->setDelay(clock_now + (unsigned long long)(delayLength),
 								clock_now + (unsigned long long)(delayLength) + transitionLength, true);
+							{
+								unsigned long long delay = 0;
+								result = ensembleSounds.combatTransChannel[combatTransition][i]->getDelay(&delay, nullptr);
 
-							result = ensembleSounds.combatTransChannel[combatTransition][i]->removeFadePoints(0, (unsigned long long)(-1));
+								result = ensembleSounds.combatTransChannel[combatTransition][i]->removeFadePoints(0, (unsigned long long)(-1));
+								result = ensembleSounds.combatTransChannel[combatTransition][i]->addFadePoint(delay, 0.f);
+								unsigned long long fade_delay = (10.f / buffer_ms) * buffersize;
+								result = ensembleSounds.combatTransChannel[combatTransition][i]->addFadePoint(delay + fade_delay, 1.f);
+							}
 
 							result = ensembleSounds.combatTransChannel[combatTransition][i]->setPaused(false);
 						}
@@ -3790,10 +3845,12 @@ FMOD_RESULT F_CALLBACK ensembleCombatCallback(FMOD_CHANNELCONTROL* channelcontro
 						//ensembleSounds.combatTransChannel[combatTransition][i]->setVolume(0.f);
 
 						// code to seek to position if needed, but have pickup notes at 0:00 currently
-						//unsigned int songPos = 0;
-						//result = ::sound[i]->getSyncPoint(seekBars * 8, &syncPoint);
-						//result = ::sound[i]->getSyncPointInfo(syncPoint, nullptr, 0, &songPos, FMOD_TIMEUNIT_PCM);
-						//result = channel[i]->setPosition(songPos, FMOD_TIMEUNIT_PCM);
+						{
+							unsigned int songPos = 0;
+							result = ensembleSounds.exploreSound[i]->getSyncPoint(ensembleSounds.exploreSongSeek, &syncPoint);
+							result = ensembleSounds.exploreSound[i]->getSyncPointInfo(syncPoint, nullptr, 0, &songPos, FMOD_TIMEUNIT_PCM);
+							result = ensembleSounds.exploreChannel[i]->setPosition(songPos, FMOD_TIMEUNIT_PCM);
+						}
 
 						result = ensembleSounds.exploreChannel[i]->setDelay(clock_now + (unsigned long long)(delayLength + offset3), 0, false);
 
@@ -3859,12 +3916,12 @@ FMOD_RESULT F_CALLBACK ensembleExplorationCallback(FMOD_CHANNELCONTROL* channelc
 		FMOD::Sound* sound = nullptr;
 		chan->getCurrentSound(&sound);
 
-		if ( ensembleSounds.songTransitionState == EnsembleSounds_t::TRANSITION_COMBAT_ENDED )
+		if ( sound == ::ensembleSounds.exploreSound[0] ) // should this be [5] ??
 		{
-			ensembleSounds.songTransitionState = EnsembleSounds_t::TRANSITION_EXPLORE;
-		}
-		if ( sound == ::ensembleSounds.exploreSound[0] )
-		{
+			if ( ensembleSounds.songTransitionState == EnsembleSounds_t::TRANSITION_COMBAT_ENDED )
+			{
+				ensembleSounds.songTransitionState = EnsembleSounds_t::TRANSITION_EXPLORE;
+			}
 			if ( ensembleSounds.songTransitionState == EnsembleSounds_t::TRANSITION_COMBAT_START && currentSyncPoint > 0 )
 			{
 				unsigned int currentPos = 0;
@@ -3956,7 +4013,7 @@ FMOD_RESULT F_CALLBACK ensembleExplorationCallback(FMOD_CHANNELCONTROL* channelc
 					fmod_system->getSoftwareFormat(&sampleRate, nullptr, nullptr);
 					float buffer_ms = (buffersize * 1000.f / (float)sampleRate);
 
-					for ( int i = 0; i < 6; ++i )
+					for ( int i = 0; i < NUMENSEMBLEMUSIC; ++i )
 					{
 						unsigned long long clock_now = 0;
 						result = ensembleSounds.exploreChannel[i]->getDSPClock(0, &clock_now);
@@ -3982,6 +4039,8 @@ FMOD_RESULT F_CALLBACK ensembleExplorationCallback(FMOD_CHANNELCONTROL* channelc
 							}
 							result = fmod_system->playSound(ensembleSounds.exploreTransSound[explorationTransition][i], 
 								ensembleSounds.transceiver_group[i], true, &ensembleSounds.exploreTransChannel[explorationTransition][i]);
+							result = ensembleSounds.exploreTransChannel[explorationTransition][i]->setMode(FMOD_3D_HEADRELATIVE);
+							result = ensembleSounds.exploreTransChannel[explorationTransition][i]->set3DAttributes(&ensemble_global_position, nullptr);
 
 							FMOD_SYNCPOINT* syncPoint3 = nullptr;
 							result = ensembleSounds.exploreTransSound[explorationTransition][i]->getSyncPoint(1, &syncPoint3);
@@ -4046,7 +4105,7 @@ FMOD_RESULT F_CALLBACK ensembleExplorationCallback(FMOD_CHANNELCONTROL* channelc
 			result = sound->getSyncPoint(currentSyncPoint, &syncPoint);
 			result = sound->getSyncPointInfo(syncPoint, nullptr, 0, &currentOffset, FMOD_TIMEUNIT_PCM);
 
-			currentSyncPoint = ensembleSounds.exploreSongSeek * 8;
+			currentSyncPoint = ensembleSounds.exploreSongSeek;
 
 			unsigned int offset = 0;
 			result = sound->getSyncPoint(currentSyncPoint, &syncPoint);
@@ -4070,6 +4129,8 @@ FMOD_RESULT F_CALLBACK ensembleExplorationCallback(FMOD_CHANNELCONTROL* channelc
 	return FMOD_OK;
 }
 
+ConsoleVariable<int> cvar_ensemble_explore_seek("/ensemble_explore_seek", -1);
+ConsoleVariable<int> cvar_ensemble_combat_seek("/ensemble_combat_seek", -1);
 void EnsembleSounds_t::updatePlayingChannelVolumes()
 {
 	bool fade_only_mode = (songTransitionMode == TRANSITION_MODE_FADE);
@@ -4101,7 +4162,7 @@ void EnsembleSounds_t::updatePlayingChannelVolumes()
 				for ( auto& point : exploreSyncPoints )
 				{
 					++index;
-					if ( index == 0 || index % 8 != 0 )
+					if ( index == 0 )
 					{
 						continue;
 					}
@@ -4113,13 +4174,24 @@ void EnsembleSounds_t::updatePlayingChannelVolumes()
 				}
 				if ( lastPoint >= 0 )
 				{
-					if ( lastPoint >= (exploreSyncPoints.size() - 6) )
+					if ( *cvar_ensemble_explore_seek >= 0 )
+					{
+						lastPoint = *cvar_ensemble_explore_seek;
+					}
+					if ( lastPoint >= (exploreSyncPointsToSeek.size() - 4) )
 					{
 						exploreSongSeek = 0; // loop back to beginning
 					}
 					else
 					{
-						exploreSongSeek = lastPoint / 8;
+						if ( lastPoint < exploreSyncPointsToSeek.size() )
+						{
+							exploreSongSeek = exploreSyncPointsToSeek[lastPoint];
+						}
+						else
+						{
+							exploreSongSeek = 0; // loop back to beginning, unknown error?
+						}
 					}
 				}
 			}
@@ -4157,6 +4229,10 @@ void EnsembleSounds_t::updatePlayingChannelVolumes()
 				}
 				if ( lastPoint >= 0 )
 				{
+					if ( *cvar_ensemble_combat_seek >= 0 )
+					{
+						lastPoint = *cvar_ensemble_combat_seek;
+					}
 					combatSongSeek = lastPoint / 8;
 				}
 			}
@@ -4166,6 +4242,7 @@ void EnsembleSounds_t::updatePlayingChannelVolumes()
 			if ( lastUpdateTick != ticks )
 			{
 				++ticksCombatPlaying;
+				lastTickCombatPlaying = ticks;
 			}
 		}
 		else

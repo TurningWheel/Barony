@@ -221,6 +221,7 @@ bool initSoundEngine()
 					music_ensemble_global_recv_group->addDSP(1, transceiver);
 					transceiver->setParameterInt(FMOD_DSP_TRANSCEIVER_CHANNEL, i + 1); // receive on channel x
 					transceiver->setParameterFloat(FMOD_DSP_TRANSCEIVER_GAIN, -80.f); // inaudible
+					transceiver->setChannelFormat(0, 2, FMOD_SPEAKERMODE_STEREO); // force stereo on empty channel, otherwise defaults to mono
 				}
 			}
 
@@ -235,6 +236,7 @@ bool initSoundEngine()
 						music_ensemble_local_recv_player[c]->addDSP(1, transceiver);
 						transceiver->setParameterInt(FMOD_DSP_TRANSCEIVER_CHANNEL, i + 1); // receive on channel x
 						transceiver->setParameterFloat(FMOD_DSP_TRANSCEIVER_GAIN, -80.f); // inaudible
+						transceiver->setChannelFormat(0, 2, FMOD_SPEAKERMODE_STEREO); // force stereo on empty channel, otherwise defaults to mono
 					}
 				}
 			}
@@ -406,7 +408,7 @@ int loadSoundResources(real_t base_load_percent, real_t top_load_percent)
 		fp->gets2(name, 128);
 		completePath(full_path, name);
 		FMOD_MODE flags = FMOD_DEFAULT | FMOD_3D | FMOD_LOWMEM;
-		if ( c == 133 || c == 672 || c == 135 || c == 155 || c == 149 )
+		if ( c == 133 || c == 672 || c == 135 || c == 155 || c == 149 || c == 710 )
 		{
 			flags |= FMOD_LOOP_NORMAL;
 		}

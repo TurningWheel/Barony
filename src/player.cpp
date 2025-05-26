@@ -7194,25 +7194,65 @@ void Player::PlayerMechanics_t::ensembleMusicUpdateServer()
 				}
 
 				Uint16 effectData = 0;
-				if ( stats[i]->getEffectActive(EFF_ENSEMBLE_DRUM) )
+				if ( Uint8 effectStrength = stats[i]->getEffectActive(EFF_ENSEMBLE_DRUM) )
 				{
 					effectData |= (1 << 0);
+					if ( effectStrength >= Stat::kEnsembleBreakPointTier4 )
+					{
+						effectData |= (1 << 7); // beb 2
+					}
+					if ( effectStrength >= Stat::kEnsembleBreakPointTier3 )
+					{
+						effectData |= (1 << 6); // beb 1
+					}
 				}
-				if ( stats[i]->getEffectActive(EFF_ENSEMBLE_FLUTE) )
+				if ( Uint8 effectStrength = stats[i]->getEffectActive(EFF_ENSEMBLE_FLUTE) )
 				{
 					effectData |= (1 << 1);
+					if ( effectStrength >= Stat::kEnsembleBreakPointTier4 )
+					{
+						effectData |= (1 << 7); // beb 2
+					}
+					if ( effectStrength >= Stat::kEnsembleBreakPointTier3 )
+					{
+						effectData |= (1 << 6); // beb 1
+					}
 				}
-				if ( stats[i]->getEffectActive(EFF_ENSEMBLE_LUTE) )
+				if ( Uint8 effectStrength = stats[i]->getEffectActive(EFF_ENSEMBLE_LUTE) )
 				{
 					effectData |= (1 << 3);
+					if ( effectStrength >= Stat::kEnsembleBreakPointTier4 )
+					{
+						effectData |= (1 << 7); // beb 2
+					}
+					if ( effectStrength >= Stat::kEnsembleBreakPointTier3 )
+					{
+						effectData |= (1 << 6); // beb 1
+					}
 				}
-				if ( stats[i]->getEffectActive(EFF_ENSEMBLE_LYRE) )
+				if ( Uint8 effectStrength = stats[i]->getEffectActive(EFF_ENSEMBLE_LYRE) )
 				{
 					effectData |= (1 << 4);
+					if ( effectStrength >= Stat::kEnsembleBreakPointTier4 )
+					{
+						effectData |= (1 << 7); // beb 2
+					}
+					if ( effectStrength >= Stat::kEnsembleBreakPointTier3 )
+					{
+						effectData |= (1 << 6); // beb 1
+					}
 				}
-				if ( stats[i]->getEffectActive(EFF_ENSEMBLE_HORN) )
+				if ( Uint8 effectStrength = stats[i]->getEffectActive(EFF_ENSEMBLE_HORN) )
 				{
 					effectData |= (1 << 2);
+					if ( effectStrength >= Stat::kEnsembleBreakPointTier4 )
+					{
+						effectData |= (1 << 7); // beb 2
+					}
+					if ( effectStrength >= Stat::kEnsembleBreakPointTier3 )
+					{
+						effectData |= (1 << 6); // beb 1
+					}
 				}
 				if ( effectData )
 				{
@@ -7369,7 +7409,7 @@ static ConsoleCommand ccmd_ensemble_reverb("/ensemble_reverb", "",
 });
 
 #ifdef USE_FMOD
-ConsoleVariable<float> cvar_ensemble_vol_bg("/ensemble_vol_bg", -3.f);
+ConsoleVariable<float> cvar_ensemble_vol_bg("/ensemble_vol_bg", -6.f);
 #endif
 
 void Player::PlayerMechanics_t::ensembleMusicUpdate()
@@ -7392,6 +7432,60 @@ void Player::PlayerMechanics_t::ensembleMusicUpdate()
 		else
 		{
 			music_ensemble_global_send_group->setPitch(*cvar_ensemble_pitch_base / 100.f);
+		}
+	}
+
+	bool notificationPlaying = false;
+	if ( music_notification_group )
+	{
+		music_notification_group->isPlaying(&notificationPlaying);
+	}
+
+	if ( music_ensemble_global_recv_group )
+	{
+		float volume = 0.f;
+		music_ensemble_global_recv_group->getVolume(&volume);
+
+		if ( notificationPlaying && volume > 0.0f )
+		{
+			volume -= fadeout_increment * 5;
+			if ( volume < ensembleSounds.ensemble_recv_global_volume * 0.5f )
+			{
+				volume = ensembleSounds.ensemble_recv_global_volume * 0.5f;
+			}
+			music_ensemble_global_recv_group->setVolume(volume);
+		}
+		else
+		{
+			volume += fadein_increment * 2;
+			if ( volume > ensembleSounds.ensemble_recv_global_volume )
+			{
+				volume = ensembleSounds.ensemble_recv_global_volume;
+			}
+			music_ensemble_global_recv_group->setVolume(volume);
+		}
+	}
+	if ( music_ensemble_local_recv_group )
+	{
+		float volume = 0.f;
+		music_ensemble_local_recv_group->getVolume(&volume);
+		if ( notificationPlaying && volume > 0.0f )
+		{
+			volume -= fadeout_increment * 5;
+			if ( volume < ensembleSounds.ensemble_recv_player_volume * 0.5f )
+			{
+				volume = ensembleSounds.ensemble_recv_player_volume * 0.5f;
+			}
+			music_ensemble_local_recv_group->setVolume(volume);
+		}
+		else
+		{
+			volume += fadein_increment * 2;
+			if ( volume > ensembleSounds.ensemble_recv_player_volume )
+			{
+				volume = ensembleSounds.ensemble_recv_player_volume;
+			}
+			music_ensemble_local_recv_group->setVolume(volume);
 		}
 	}
 
@@ -7456,7 +7550,7 @@ void Player::PlayerMechanics_t::ensembleMusicUpdate()
 				}
 				if ( allStopped )
 				{
-					ensembleSounds.stopPlaying();
+					ensembleSounds.stopPlaying(false);
 					if ( music_ensemble_global_send_group )
 					{
 						music_ensemble_global_send_group->setPaused(true);
@@ -7485,7 +7579,7 @@ void Player::PlayerMechanics_t::ensembleMusicUpdate()
 			if ( !active )
 			{
 				// restart channels
-				ensembleSounds.stopPlaying();
+				ensembleSounds.stopPlaying(false);
 				ensembleSounds.playSong();
 				for ( int i = 0; i < NUMENSEMBLEMUSIC; ++i )
 				{
@@ -7561,7 +7655,12 @@ void Player::PlayerMechanics_t::ensembleMusicUpdate()
 				}
 			}*/
 
-			if ( combat && ensembleSounds.combatDelay == 0 )
+			if ( combat && ensembleSounds.songTransitionState == EnsembleSounds_t::TRANSITION_COMBAT_ENDING )
+			{
+				// haven't triggered combat end yet, so continue combat
+				ensembleSounds.songTransitionState = EnsembleSounds_t::TRANSITION_COMBAT;
+			}
+			else if ( combat && ensembleSounds.combatDelay == 0 )
 			{
 				if ( ensembleSounds.songTransitionState == EnsembleSounds_t::TRANSITION_EXPLORE )
 				{
@@ -7583,7 +7682,7 @@ void Player::PlayerMechanics_t::ensembleMusicUpdate()
 					float targetVolume = 1.f;
 					if ( trackstatus & (1 << i) )
 					{
-						if ( !active || true ) 
+						if ( (!active || true) && !(i == 6 || i == 7) ) 
 						{
 							// no ramp up
 							fmod_result = ensembleSounds.transceiver_group[i]->setVolume(targetVolume);
@@ -7627,7 +7726,7 @@ void Player::PlayerMechanics_t::ensembleMusicUpdate()
 					{
 						if ( trackstatusLocal & (1 << i) )
 						{
-							if ( !active || true )
+							if ( (!active || true) && !(i == 6 || i == 7) )
 							{
 								// no ramp up
 								transceiver->setParameterFloat(FMOD_DSP_TRANSCEIVER_GAIN, bg_volume);
@@ -7636,7 +7735,7 @@ void Player::PlayerMechanics_t::ensembleMusicUpdate()
 							{
 								float volume = 0.f;
 								transceiver->getParameterFloat(FMOD_DSP_TRANSCEIVER_GAIN, &volume, nullptr, 0);
-								volume = std::min(bg_volume, volume + fadein_increment * 50);
+								volume = std::min(bg_volume, volume + fadein_increment * 5 * 0.8f * 100.f);
 								transceiver->setParameterFloat(FMOD_DSP_TRANSCEIVER_GAIN, volume);
 							}
 						}
