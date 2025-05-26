@@ -17999,14 +17999,13 @@ void Entity::serverUpdateEffectsForEntity(bool guarantee)
 
 		strcpy((char*)net_packet->data, "EFFE");
 		SDLNet_Write32(static_cast<Uint32>(getUID()), &net_packet->data[4]);
-		net_packet->data[8] = 0;
-		net_packet->data[9] = 0;
-		net_packet->data[10] = 0;
-		net_packet->data[11] = 0;
-		net_packet->data[12] = 0;
-		net_packet->data[13] = 0;
-		net_packet->data[14] = 0;
-		net_packet->data[15] = 0;
+
+		int numBytes = NUMEFFECTS / 8;
+		for ( int i = 0; i < numBytes; ++i )
+		{
+			net_packet->data[8 + i] = 0;
+		}
+
 		std::vector<std::pair<Uint8, Uint8>> effectStrengths;
 		for ( int i = 0; i < NUMEFFECTS; ++i )
 		{
@@ -18021,8 +18020,8 @@ void Entity::serverUpdateEffectsForEntity(bool guarantee)
 				}
 			}
 		}
-		net_packet->data[16] = (Uint8)effectStrengths.size();
-		net_packet->len = 17;
+		net_packet->data[8 + numBytes] = (Uint8)effectStrengths.size();
+		net_packet->len = 8 + numBytes + 1;
 		for ( auto& pair : effectStrengths )
 		{
 			if ( net_packet->len + 1 >= NET_PACKET_SIZE )

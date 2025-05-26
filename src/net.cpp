@@ -943,23 +943,13 @@ void serverUpdateEffects(int player)
 	}
 
 	strcpy((char*)net_packet->data, "UPEF");
-	net_packet->data[4] = 0;
-	net_packet->data[5] = 0;
-	net_packet->data[6] = 0;
-	net_packet->data[7] = 0;
-	net_packet->data[8] = 0;
-	net_packet->data[9] = 0;
-	net_packet->data[10] = 0;
-	net_packet->data[11] = 0;
+	int numBytes = NUMEFFECTS / 8;
+	for ( int i = 0; i < numBytes; ++i )
+	{
+		net_packet->data[4 + i] = 0;
+		net_packet->data[4 + numBytes + i] = 0;
+	}
 
-	net_packet->data[12] = 0;
-	net_packet->data[13] = 0;
-	net_packet->data[14] = 0;
-	net_packet->data[15] = 0;
-	net_packet->data[16] = 0;
-	net_packet->data[17] = 0;
-	net_packet->data[18] = 0;
-	net_packet->data[19] = 0;
 	std::vector<std::pair<Uint8, Uint8>> effectStrengths;
 	for (j = 0; j < NUMEFFECTS; j++)
 	{
@@ -976,12 +966,12 @@ void serverUpdateEffects(int player)
 		if ( stats[player]->EFFECTS_TIMERS[j] < TICKS_PER_SECOND * 5 && stats[player]->EFFECTS_TIMERS[j] > 0 )
 		{
 			// use these bits to denote if duration is low.
-			net_packet->data[12 + j / 8] |= power(2, j - (j / 8) * 8);
+			net_packet->data[4 + numBytes + j / 8] |= power(2, j - (j / 8) * 8);
 		}
 	}
 	
-	net_packet->data[20] = (Uint8)effectStrengths.size();
-	net_packet->len = 21;
+	net_packet->data[4 + numBytes * 2] = (Uint8)effectStrengths.size();
+	net_packet->len = 4 + numBytes * 2 + 1;
 	for ( auto& pair : effectStrengths )
 	{
 		if ( net_packet->len + 1 >= NET_PACKET_SIZE )
@@ -2143,7 +2133,7 @@ static void changeLevel() {
 	{
 		soundNotification_group->stop();
 	}
-	ensembleSounds.stopPlaying();
+	ensembleSounds.stopPlaying(true);
 	VoiceChat.deinitRecording(false);
 #elif defined USE_OPENAL
 	if ( sound_group )
@@ -2577,12 +2567,14 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 				}
 			}
 
-			int numEffectStrengths = net_packet->data[16];
+			int numBytes = NUMEFFECTS / 8;
+
+			int numEffectStrengths = net_packet->data[8 + numBytes];
 			int index = 0;
 			while ( numEffectStrengths > 0 )
 			{
-				int currentIndex = 17 + index;
-				if ( currentIndex + 1 >= NET_PACKET_SIZE )
+				int currentIndex = 8 + numBytes + 1 + index;
+				if ( currentIndex + 1 >= NET_PACKET_SIZE || (currentIndex + 1 >= net_packet->len) )
 				{
 					// too much data to read, abort
 					break;
@@ -4262,12 +4254,13 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 
 	// update effects flags
 	{'UPEF', [](){
+		int numBytes = NUMEFFECTS / 8;
 		for (int c = 0; c < NUMEFFECTS; c++)
 		{
 			if ( net_packet->data[4 + c / 8]&power(2, c - (c / 8) * 8) )
 			{
 				stats[clientnum]->setEffectValueUnsafe(c, 1);
-				if ( net_packet->data[12 + c / 8] & power(2, c - (c / 8) * 8) ) // use these bits to denote if duration is low.
+				if ( net_packet->data[4 + numBytes + c / 8] & power(2, c - (c / 8) * 8) ) // use these bits to denote if duration is low.
 				{
 					stats[clientnum]->EFFECTS_TIMERS[c] = 1;
 				}
@@ -4286,12 +4279,12 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 			}
 		}
 
-		int numEffectStrengths = net_packet->data[20];
+		int numEffectStrengths = net_packet->data[4 + numBytes * 2];
 		int index = 0;
 		while ( numEffectStrengths > 0 )
 		{
-			int currentIndex = 21 + index;
-			if ( currentIndex + 1 >= NET_PACKET_SIZE )
+			int currentIndex = (4 + numBytes * 2 + 1) + index;
+			if ( currentIndex + 1 >= NET_PACKET_SIZE || ((currentIndex + 1) >= net_packet->len) )
 			{
 				// too much data to read, abort
 				break;
