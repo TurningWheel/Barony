@@ -11135,6 +11135,18 @@ void Player::HUD_t::processHUD()
 		hudFrame->setOwner(player.playernum);
 		hudFrame->setDrawCallback([](const Widget& widget, SDL_Rect rect) {
 			HUDDrawGameEndHint(widget.getOwner(), rect);
+
+			//if ( keystatus[SDLK_c] )
+			//{
+			//	// debug stuff
+			//	if ( auto tex = AOEIndicators_t::getTexture(AOEIndicators_t::uids - 1) )
+			//	{
+			//	Image::draw(tex->texid, tex->w, tex->h, nullptr, SDL_Rect{
+			//		Frame::virtualScreenX / 2 - 128 * 2, Frame::virtualScreenY / 2 - 128 * 2, 128 * 4, 128 * 4
+			//		},
+			//		SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY }, 0xffffffff);
+			//	}
+			//}
 		});
 	}
 

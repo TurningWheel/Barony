@@ -127,6 +127,69 @@ void actFurniture(Entity* my)
 	my->actFurniture();
 }
 
+void Entity::furnitureHandleDamageMagic(int damage, Entity& magicProjectile, Entity* caster)
+{
+	int oldHP = this->furnitureHealth;
+	this->furnitureHealth -= damage;
+	if ( caster )
+	{
+		if ( caster->behavior == &actPlayer )
+		{
+			bool destroyed = oldHP > 0 && this->furnitureHealth <= 0;
+			if ( destroyed )
+			{
+				gameModeManager.currentSession.challengeRun.updateKillEvent(this);
+			}
+			switch ( this->furnitureType )
+			{
+			case FURNITURE_CHAIR:
+				if ( destroyed )
+				{
+					messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(388));
+				}
+				updateEnemyBar(caster, this, Language::get(677), this->furnitureHealth, this->furnitureMaxHealth,
+					false, DamageGib::DMG_DEFAULT);
+				break;
+			case FURNITURE_TABLE:
+				if ( destroyed )
+				{
+					messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(389));
+				}
+				updateEnemyBar(caster, this, Language::get(676), this->furnitureHealth, this->furnitureMaxHealth,
+					false, DamageGib::DMG_DEFAULT);
+				break;
+			case FURNITURE_BED:
+				if ( destroyed )
+				{
+					messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2505));
+				}
+				updateEnemyBar(caster, this, Language::get(2505), this->furnitureHealth, this->furnitureMaxHealth,
+					false, DamageGib::DMG_DEFAULT);
+				break;
+			case FURNITURE_BUNKBED:
+				if ( destroyed )
+				{
+					messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2506));
+				}
+				updateEnemyBar(caster, this, Language::get(2506), this->furnitureHealth, this->furnitureMaxHealth,
+					false, DamageGib::DMG_DEFAULT);
+				break;
+			case FURNITURE_PODIUM:
+				if ( destroyed )
+				{
+					messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2507));
+				}
+				updateEnemyBar(caster, this, Language::get(2507), this->furnitureHealth, this->furnitureMaxHealth,
+					false, DamageGib::DMG_DEFAULT);
+				break;
+			default:
+				break;
+			}
+		}
+	}
+	playSoundEntity(this, 28, 128);
+}
+
 void Entity::actFurniture()
 {
 
@@ -674,6 +737,7 @@ bool Entity::isColliderBreakableContainer() const
 
 void Entity::colliderOnDestroy()
 {
+	removeLightField();
 	if ( multiplayer == CLIENT ) { return; }
 	flags[PASSABLE] = true;
 
@@ -937,6 +1001,12 @@ void actColliderDecoration(Entity* my)
 		}
 	}
 
+	my->removeLightField();
+	if ( my->flags[BURNABLE] && my->flags[BURNING] )
+	{
+		my->light = addLight(my->x / 16, my->y / 16, "object_burning");
+	}
+
 	my->flags[PASSABLE] = (my->colliderHasCollision == 0);
 	if ( multiplayer != CLIENT )
 	{
@@ -965,6 +1035,7 @@ void actColliderDecoration(Entity* my)
 			if ( !map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height] )
 			{
 				//messagePlayer(0, MESSAGE_DEBUG, "[Collider]: Destroyed self at x: %d, y: %d", x, y);
+				my->removeLightField();
 				list_RemoveNode(my->mynode);
 				return;
 			}

@@ -3136,12 +3136,13 @@ void actHudWeapon(Entity* my)
 		//HUDWEAPON_MOVEX = std::min(static_cast<real_t>(1.0), HUDWEAPON_MOVEX + .15); // forward/back
 		//HUDWEAPON_MOVEY = std::min(static_cast<real_t>(1.0), HUDWEAPON_MOVEY + .25); // left/right
 		//HUDWEAPON_MOVEZ = std::min(static_cast<real_t>(0.0), HUDWEAPON_MOVEZ + .05); // up/down
-		hudWeaponAnimateVariable(HUDWEAPON_MOVEX, *cvar_hudweapon_x_ang, *cvar_hudweapon_x_spd);
-		hudWeaponAnimateVariable(HUDWEAPON_MOVEY, *cvar_hudweapon_y_ang, *cvar_hudweapon_y_spd);
-		hudWeaponAnimateVariable(HUDWEAPON_MOVEZ, *cvar_hudweapon_z_ang, *cvar_hudweapon_z_spd);
-		hudWeaponAnimateVariable(HUDWEAPON_PITCH, *cvar_hudweapon_pitch_ang, *cvar_hudweapon_pitch_spd);
-		hudWeaponAnimateVariable(HUDWEAPON_ROLL, *cvar_hudweapon_roll_ang, *cvar_hudweapon_roll_spd);
-		hudWeaponAnimateVariable(HUDWEAPON_YAW, *cvar_hudweapon_yaw_ang, *cvar_hudweapon_yaw_spd);
+		real_t spd = 1.0;
+		hudWeaponAnimateVariable(HUDWEAPON_MOVEX, *cvar_hudweapon_x_ang, *cvar_hudweapon_x_spd * spd);
+		hudWeaponAnimateVariable(HUDWEAPON_MOVEY, *cvar_hudweapon_y_ang, *cvar_hudweapon_y_spd * spd);
+		hudWeaponAnimateVariable(HUDWEAPON_MOVEZ, *cvar_hudweapon_z_ang, *cvar_hudweapon_z_spd * spd);
+		hudWeaponAnimateVariable(HUDWEAPON_PITCH, *cvar_hudweapon_pitch_ang, *cvar_hudweapon_pitch_spd * spd);
+		hudWeaponAnimateVariable(HUDWEAPON_ROLL, *cvar_hudweapon_roll_ang, *cvar_hudweapon_roll_spd * spd);
+		hudWeaponAnimateVariable(HUDWEAPON_YAW, *cvar_hudweapon_yaw_ang, *cvar_hudweapon_yaw_spd * spd);
 		if ( (abs(HUDWEAPON_ROLL - *cvar_hudweapon_roll_ang) < 0.001 || *cvar_hudweapon_roll_spd == 0.f)
 			&& (abs(HUDWEAPON_PITCH - *cvar_hudweapon_pitch_ang) < 0.001 || *cvar_hudweapon_pitch_spd == 0.f)
 			&& (abs(HUDWEAPON_YAW - *cvar_hudweapon_yaw_ang) < 0.001 || *cvar_hudweapon_yaw_spd == 0.f)

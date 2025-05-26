@@ -833,6 +833,7 @@ public:
 	bool magicFallingCollision();
 	bool magicOrbitingCollision();
 	void actFurniture();
+	void furnitureHandleDamageMagic(int damage, Entity& magicProjectile, Entity* caster);
 	void actPistonCam();
 	void actStalagCeiling();
 	void actStalagFloor();
