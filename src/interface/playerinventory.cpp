@@ -9975,7 +9975,7 @@ void Player::Inventory_t::updateInventory()
 						if ( guiAllowDefaultRightClick() )
 						{
 							// force equip potion/spellbook
-							playerTryEquipItemAndUpdateServer(player, item, false);
+							playerTryEquipItemAndUpdateServer(player, item, true);
 						}
 					}
 					else if ( !tinkeringSalvageOrRepairMenuActive && !alchemyOpen && !featherInscribeOrRepairActive && !itemfxOpen )

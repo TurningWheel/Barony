@@ -116,6 +116,11 @@ void updateEnemyBar(Entity* source, Entity* target, const char* name, Sint32 hp,
 		}
 	}
 
+	if ( player >= 0 && target == source )
+	{
+		return;
+	}
+
 	int oldhp = 0;
 	if ( stats )
 	{
@@ -2208,7 +2213,7 @@ void drawStatusNew(const int player)
 						{
 							Input::inputs[player].consumeBinaryToggle("MenuRightClick");
 							// force equip potion/spellbook
-							playerTryEquipItemAndUpdateServer(player, item, false);
+							playerTryEquipItemAndUpdateServer(player, item, true);
 						}
 						else
 						{
@@ -3264,7 +3269,7 @@ void drawStatusNew(const int player)
 				}
 				else
 				{
-					playerTryEquipItemAndUpdateServer(player, item, false);
+					playerTryEquipItemAndUpdateServer(player, item, true);
 				}
 			}
 			else
