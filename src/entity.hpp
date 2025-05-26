@@ -124,6 +124,28 @@ public:
 #endif
 	}
 
+	void setEntityString(const char* str)
+	{
+		if ( string )
+		{
+			free(string);
+			string = nullptr;
+		}
+		if ( !str ) { return; }
+		size_t len = sizeof(char) * (strlen(str) + 1);
+		if ( string = (char*)malloc(len) )
+		{
+			memset(string, 0, len);
+			stringCopy(string, str, len, strlen(str));
+		}
+	}
+
+	bool entityHasString(const char* str)
+	{
+		if ( !string ) { return false; }
+		return (!strcmp(string, str) ? true : false);
+	}
+
 	Uint32 getUID() const {return uid;}
 	void setUID(Uint32 new_uid);
 	Uint32 ticks;                  // duration of the entity's existence
