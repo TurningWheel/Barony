@@ -9500,6 +9500,10 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 	}
 
 	int meleeDist = STRIKERANGE;
+	if ( myStats->getEffectActive(EFF_ROOTED) )
+	{
+		meleeDist = TOUCHRANGE - 1;
+	}
 	if ( myStats->type == BUGBEAR && monsterSpecialState == BUGBEAR_DEFENSE )
 	{
 		meleeDist = TOUCHRANGE - 1;
@@ -10284,7 +10288,7 @@ bool forceFollower(Entity& leader, Entity& follower)
 		if ( followerStats->monsterForceAllegiance == Stat::MONSTER_FORCE_PLAYER_ENEMY )
 		{
 			followerStats->monsterForceAllegiance = Stat::MONSTER_FORCE_ALLEGIANCE_NONE;
-	}
+		}
 	}
 
 	if ( player >= 0 )
@@ -10398,7 +10402,7 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 					break;
 				case CRYSTALGOLEM:
 					specialRoll = local_rng.rand() % 20;
-					enemiesNearby = numTargetsAroundEntity(this, STRIKERANGE, PI, MONSTER_TARGET_ENEMY);
+					enemiesNearby = numTargetsAroundEntity(this, TOUCHRANGE, PI, MONSTER_TARGET_ENEMY);
 					if ( enemiesNearby > 1 )
 					{
 						enemiesNearby = std::min(enemiesNearby, 4);
@@ -13608,7 +13612,7 @@ bool monsterDebugModels(Entity* my, real_t* dist)
 #endif
 	if ( !*cvar_monster_debug_models )
 	{
-	return false;
+		return false;
 	}
 	static Uint32 thisTick = 0;
 	if ( thisTick == ticks )
