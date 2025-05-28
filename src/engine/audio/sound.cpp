@@ -120,10 +120,10 @@ void setGlobalVolume(real_t master, real_t music, real_t gameplay, real_t ambien
 	music_notification_group->setVolume(master * notification);
 	soundNotification_group->setVolume(master * notification);
 	music_ensemble_global_send_group->setVolume(1.f);
-	ensembleSounds.ensemble_recv_global_volume = master * (music * 4);
-	ensembleSounds.ensemble_recv_player_volume = master * gameplay;
 
 #ifndef EDITOR
+	ensembleSounds.ensemble_recv_global_volume = master * (music * 4);
+	ensembleSounds.ensemble_recv_player_volume = master * gameplay;
 	if ( VoiceChat.outChannelGroup )
 	{
 		VoiceChat.outChannelGroup->setVolume(master);
