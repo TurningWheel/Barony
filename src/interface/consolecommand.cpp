@@ -1410,6 +1410,16 @@ namespace ConsoleCommands {
 				if (entity->behavior == &actMonster)
 				{
 					entity->setHP(0);
+					if ( argc >= 2 )
+					{
+						if ( atoi(argv[1]) == 1 )
+						{
+							if ( players[clientnum]->entity )
+							{
+								players[clientnum]->entity->awardXP(entity, true, true);
+							}
+						}
+					}
 					c++;
 				}
 			}
