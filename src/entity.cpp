@@ -2664,10 +2664,12 @@ void Entity::handleEffects(Stat* myStats)
 		myStats->EXP = 0;
 	}
 
+	int expToLevel = 100/* + 10 * ((myStats->LVL) / 10)*/;
+
 	// level ups
-	if ( myStats->EXP >= 100 )
+	if ( myStats->EXP >= expToLevel )
 	{
-		myStats->EXP -= 100;
+		myStats->EXP -= expToLevel;
 		if ( player >= 0 )
 		{
 			if ( myStats->LVL < 255 )
@@ -13153,7 +13155,23 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 	{
 		baseXp = 5;
 	}
-	int xpGain = baseXp + local_rng.rand() % std::max(1, baseXp) + std::max(0, srcStats->LVL - destStats->LVL) * baseXp;
+	int baseXpTop = baseXp;
+	if ( srcStats->LVL - destStats->LVL < 0 )
+	{
+		if ( srcStats->LVL - destStats->LVL <= -5 )
+		{
+			baseXpTop += (srcStats->LVL - destStats->LVL) + 5;
+		}
+		if ( srcStats->LVL - destStats->LVL <= -20 )
+		{
+			if ( baseXp > 5 )
+			{
+				baseXp += ((srcStats->LVL - destStats->LVL) + 20) / 5;
+				baseXp = std::max(5, baseXp);
+			}
+		}
+	}
+	int xpGain = baseXp + local_rng.rand() % std::max(1, baseXpTop) + std::max(0, srcStats->LVL - destStats->LVL) * baseXp;
 	if ( srcStats->MISC_FLAGS[STAT_FLAG_XP_PERCENT_AWARD] > 0 )
 	{
 		int value = srcStats->MISC_FLAGS[STAT_FLAG_XP_PERCENT_AWARD] - 1; // offset by 1 since 0 is nothing
