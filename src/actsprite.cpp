@@ -38,8 +38,6 @@
 #define SPRITE_CURRENT_ALPHA my->fskill[1]
 #define SPRITE_ALPHA_VAR my->fskill[2]
 #define SPRITE_ALPHA_ANIM_SIZE my->fskill[3]
-#define SPRITE_USE_ALPHA my->skill[6]
-#define SPRITE_NO_BILLBOARD my->skill[7]
 #define SPRITE_CHECK_PARENT_EXISTS my->skill[8]
 
 void actSprite(Entity* my)
@@ -53,10 +51,18 @@ void actSprite(Entity* my)
 			return;
 		}
 	}
-
-	if ( !my->skill[6] && SPRITE_LIT )
+	if ( my->actSpriteFollowUID > 0 )
 	{
-		my->skill[6] = 1;
+		if ( Entity* parent = uidToEntity(my->actSpriteFollowUID) )
+		{
+			my->x = parent->x;
+			my->y = parent->y;
+		}
+	}
+
+	if ( !my->actSpriteHasLightInit && SPRITE_LIT )
+	{
+		my->actSpriteHasLightInit = 1;
 		my->light = addLight(my->x / 16, my->y / 16, "explosion");
 	}
 	else if ( !SPRITE_LIT )
@@ -89,6 +95,10 @@ void actSprite(Entity* my)
 	if ( SPRITE_ALPHA_VAR > 0.0001 )
 	{
 		SPRITE_CURRENT_ALPHA = SPRITE_ALPHA_VAR + SPRITE_ALPHA_ANIM_SIZE * sin(2 * PI * (my->ticks % TICKS_PER_SECOND) / (real_t)(TICKS_PER_SECOND));
+	}
+	if ( abs(my->vel_z) > 0.001 )
+	{
+		my->z += my->vel_z;
 	}
 }
 

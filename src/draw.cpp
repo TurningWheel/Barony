@@ -2152,7 +2152,7 @@ void drawEntities3D(view_t* camera, int mode)
         if (ticks != dither.lastUpdateTick) {
             dither.lastUpdateTick = ticks;
             bool decrease = false;
-            if ( !entity->flags[OVERDRAW] )
+            if ( !entity->flags[OVERDRAW] && !entity->flags[ENTITY_SKIP_CULLING] )
             {
                 const int x = entity->x / 16;
                 const int y = entity->y / 16;
@@ -2166,13 +2166,14 @@ void drawEntities3D(view_t* camera, int mode)
                         goto end;
                     }
                 }
-                const real_t rx = entity->x / 16.0;
-                const real_t ry = entity->y / 16.0;
-                if ( behindCamera(*camera, rx, ry) )
-                {
-                    decrease = true;
-                    goto end;
-                }
+
+				const real_t rx = entity->x / 16.0;
+				const real_t ry = entity->y / 16.0;
+				if ( behindCamera(*camera, rx, ry) )
+				{
+					decrease = true;
+					goto end;
+				}
             }
 			end:
 			if ( entity->ditheringOverride >= 0 )

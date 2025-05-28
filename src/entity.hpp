@@ -36,6 +36,7 @@
 #define INVISIBLE_DITHER 16
 #define NOCLIP_WALLS 17
 #define NOCLIP_CREATURES 18
+#define ENTITY_SKIP_CULLING 19
 
 // number of entity skills and fskills
 static const int NUMENTITYSKILLS = 60;
@@ -287,6 +288,7 @@ public:
 	real_t& monsterSpecialAttackUnequipSafeguard; //fskill[14]
 	real_t& creatureWindDir; //fskill[15]
 	real_t& creatureWindVelocity; //fskill[16]
+	real_t& creatureHoverZ; //fskill[17]
 
 	//--EFFECTS--
 	Sint32& effectPolymorph; // skill[50]
@@ -375,6 +377,7 @@ public:
 	Sint32& particleTimerPreDelay; //skill[7]
 	Sint32& particleTimerVariable1; //skill[8]
 	Sint32& particleTimerVariable2; //skill[9]
+	Sint32& particleTimerEffectLifetime = skill[10];
 
 	//--PUBLIC DOOR SKILLS--
 	Sint32& doorDir; //skill[0]
@@ -582,6 +585,16 @@ public:
 	Sint32& actmagicEmitter; // skill[29]
 	Sint32& actmagicDelayMove; // skill[30]
 	Sint32& actmagicNoHitMessage; // skill[31]
+	Sint32& actmagicNoParticle; // skill[32]
+	Sint32& actmagicNoLight; // skill[33]
+
+	Sint32& actfloorMagicType = skill[3];
+	Sint32& actfloorMagicClientReceived = skill[4];
+
+	Sint32& actParticleWaveStartFrame = skill[4];
+	Sint32& actParticleWaveLight = skill[7];
+	Sint32& actParticleWaveMagicType = skill[9];
+	Sint32& actParticleWaveClientReceived = skill[10];
 	
 	//--PUBLIC GOLD SKILLS--
 	Sint32& goldAmount; //skill[0]
@@ -690,6 +703,17 @@ public:
 	Sint32& statueInit; //skill[0]
 	Sint32& statueDir; //skill[1]
 	Sint32& statueId; //skill[3]
+
+	// new references, just set the skill here
+
+	// actSprite
+	Sint32& actSpriteUseAlpha = skill[6];
+	Sint32& actSpriteNoBillboard = skill[7];
+	Sint32& actSpriteCheckParentExists = skill[8];
+	//Sint32& actSpriteAlwaysDraw = skill[9];
+	Sint32& actSpriteUseCustomSurface = skill[10];
+	Sint32& actSpriteFollowUID = skill[11];
+	Sint32& actSpriteHasLightInit = skill[12];
 
 	void pedestalOrbInit(); // init orb properties
 

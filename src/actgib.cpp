@@ -633,6 +633,7 @@ Entity* spawnGibClient(Sint16 x, Sint16 y, Sint16 z, Sint16 sprite)
 	entity->vel_z = -.5;
 	entity->fskill[3] = 0.04;
 	entity->behavior = &actGib;
+	entity->ditheringDisabled = true;
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[UNCLICKABLE] = true;
