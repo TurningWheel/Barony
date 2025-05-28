@@ -7291,6 +7291,7 @@ void Player::PlayerMechanics_t::ensembleMusicUpdateServer()
 	}
 }
 
+#ifdef USE_FMOD
 static ConsoleCommand ccmd_ensemble_pitch("/ensemble_pitch", "",
 	[](int argc, const char** argv) {
 		if ( argc < 2 )
@@ -7408,7 +7409,7 @@ static ConsoleCommand ccmd_ensemble_reverb("/ensemble_reverb", "",
 	dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_DRYLEVEL, dryLevel);
 });
 
-#ifdef USE_FMOD
+
 ConsoleVariable<float> cvar_ensemble_vol_bg("/ensemble_vol_bg", -6.f);
 #endif
 
