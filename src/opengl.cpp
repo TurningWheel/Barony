@@ -806,7 +806,18 @@ static void uploadLightUniforms(view_t* camera, Shader& shader, Entity* entity, 
                     //remap.z.z = 0.8f;
                 }
             }
+
 #ifndef EDITOR
+            static ConsoleVariable<Vector4> cvar_colortest("/colortest", Vector4{1.f, 1.f, 1.f, 0.f});
+            if ( cvar_colortest->w > 0.001f )
+            {
+                const auto period = TICKS_PER_SECOND * 3; // 3 seconds
+                const auto time = (ticks % period) / (real_t)period; // [0-1]
+
+                remap.x.x *= (1.0 - 0.5 + 0.5 * sin(2 * PI * time) * cvar_colortest->x);
+                remap.y.y *= (1.0 - 0.5 + 0.5 * sin(2 * PI * time) * cvar_colortest->y);
+                remap.z.z *= (1.0 - 0.5 + 0.5 * sin(2 * PI * time) * cvar_colortest->z);
+            }
             static ConsoleVariable<bool> cvar_rainbowTest("/rainbowtest", false);
             if (*cvar_rainbowTest) {
                 remap = mat4x4_t(0.f);
@@ -1759,7 +1770,29 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
     } else {
         sprite = sprites[0];
     }
-    GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, texid[(long int)sprite->userdata]));
+
+#ifndef EDITOR
+    if ( entity->behavior == &actSprite && entity->actSpriteUseCustomSurface > 0 && (entity->entityHasString("aoe_indicator")) )
+    {
+        sprite = AOEIndicators_t::getSurface(entity->actSpriteUseCustomSurface);
+        if ( !sprite )
+        {
+            return;
+        }
+        if ( auto tex = AOEIndicators_t::getTexture(entity->actSpriteUseCustomSurface) )
+        {
+            GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, tex->texid));
+        }
+        else
+        {
+            return;
+        }
+    }
+    else
+#endif
+    {
+        GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, texid[(long int)sprite->userdata]));
+    }
     
     // set GL state
     if (mode == REALCOLORS) {
@@ -1808,7 +1841,7 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
     v = vec4(entity->x * 2.f, -entity->z * 2.f - 1, entity->y * 2.f, 0.f);
     (void)translate_mat(&m, &t, &v); t = m;
 
-    if ( (entity->skill[7] != 0 && entity->behavior == &actSprite) || entity->behavior == &actMagicRangefinder )
+    if ( (entity->actSpriteNoBillboard != 0 && entity->behavior == &actSprite) || entity->behavior == &actMagicRangefinder )
     {
         // dont draw billboard
         const float rotx = entity->roll * 180.0 / PI; // roll
@@ -1840,7 +1873,7 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
 #endif
         const GLfloat factor[4] = { 1.f, 1.f, 1.f, 1.f };
         GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, factor));
-        if ( entity->skill[6] != 0 && entity->behavior == &actSprite )
+        if ( entity->actSpriteUseAlpha != 0 && entity->behavior == &actSprite )
         {
             // use alpha
             const GLfloat light[4] = { b, b, b, entity->fskill[1]};

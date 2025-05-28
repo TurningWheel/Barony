@@ -747,7 +747,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					real_t tx = castSpellProps->target_x + castSpellProps->distanceOffset * cos(tangent);
 					real_t ty = castSpellProps->target_y + castSpellProps->distanceOffset * sin(tangent);
 					int duration = element->duration + innerElement->duration;
-					Entity* floorMagic = createFloorMagic(sprite, tx, ty, 7.5, tangent, element->duration + innerElement->duration);
+					Entity* floorMagic = createFloorMagic(ParticleTimerEffect_t::EffectType::EFFECT_ICE_WAVE, sprite, tx, ty, 7.5, tangent, element->duration + innerElement->duration);
 					floorMagic->actmagicDelayMove = castSpellProps->elementIndex * 5;
 					if ( floorMagic->actmagicDelayMove > 0 )
 					{

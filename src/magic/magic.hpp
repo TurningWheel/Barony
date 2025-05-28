@@ -163,6 +163,8 @@ static const int PARTICLE_EFFECT_SLIME_SPRAY = 28;
 static const int PARTICLE_EFFECT_FOCI_SPRAY = 29;
 static const int PARTICLE_EFFECT_ENSEMBLE_SELF_CAST = 30;
 static const int PARTICLE_EFFECT_ENSEMBLE_OTHER_CAST = 31;
+static const int PARTICLE_EFFECT_STATIC_ORBIT = 32;
+static const int PARTICLE_EFFECT_LIGHTNING_SEQ = 33;
 
 // actmagicIsVertical constants
 static const int MAGIC_ISVERTICAL_NONE = 0;
@@ -180,6 +182,10 @@ static const int PARTICLE_TIMER_ACTION_FOCI_SPRAY = 7;
 static const int PARTICLE_TIMER_ACTION_ICE_WAVE = 8;
 static const int PARTICLE_TIMER_ACTION_TEST_1 = 9;
 static const int PARTICLE_TIMER_ACTION_TEST_2 = 10;
+static const int PARTICLE_TIMER_ACTION_IGNITE = 11;
+static const int PARTICLE_TIMER_ACTION_SHATTER = 12;
+static const int PARTICLE_TIMER_ACTION_VORTEX = 13;
+static const int PARTICLE_TIMER_ACTION_LIGHTNING = 14;
 
 struct ParticleEmitterHit_t
 {
@@ -194,13 +200,32 @@ struct ParticleTimerEffect_t
 		EFFECT_ICE_WAVE,
 		EFFECT_TEST_1,
 		EFFECT_TEST_2,
-		EFFECT_TEST_3
+		EFFECT_TEST_3,
+		EFFECT_TEST_4,
+		EFFECT_LIGHTNING_BOLT,
+		EFFECT_TEST_6,
+		EFFECT_TEST_7,
+		EFFECT_FIRE_WAVE,
+		EFFECT_KINETIC_FIELD,
+		EFFECT_PULSE
 	};
 	struct Effect_t
 	{
 		real_t x = 0.0;
 		real_t y = 0.0;
 		EffectType effectType = EFFECT_NONE;
+		real_t yaw = 0.0;
+		int sfx = 0;
+		bool firstEffect = false;
+	};
+
+	struct EffectLocations_t
+	{
+		real_t yawOffset = 0.0;
+		real_t xOffset = 0.0;
+		real_t seconds = 0.0;
+		real_t dist = 0.0;
+		int sfx = 0;
 	};
 	std::map<Uint32, Effect_t> effectMap;
 };
@@ -627,6 +652,7 @@ void actParticleShadowTag(Entity* my);
 void actParticleFloorMagic(Entity* my);
 void actParticleVortex(Entity* my);
 void actParticleWave(Entity* my);
+void actParticleRoot(Entity* my);
 
 void createParticleDropRising(Entity* parent, int sprite, double scale);
 void createParticleDot(Entity* parent);
@@ -640,14 +666,20 @@ Entity* createParticleTimer(Entity* parent, int duration, int sprite);
 void createParticleSap(Entity* parent);
 void createParticleExplosionCharge(Entity* parent, int sprite, int particleCount, double scale);
 void createParticleFollowerCommand(real_t x, real_t y, real_t z, int sprite, Uint32 uid);
-Entity* createParticleCastingIndicator(Entity* parent, real_t x, real_t y, real_t z, Uint32 lifetime);
+Entity* createParticleCastingIndicator(Entity* parent, real_t x, real_t y, real_t z, Uint32 lifetime, Uint32 followUid);
+Entity* createParticleAOEIndicator(Entity* parent, real_t x, real_t y, real_t z, Uint32 lifetime, int size);
 static const int FOLLOWER_SELECTED_PARTICLE = 1229;
 static const int FOLLOWER_TARGET_PARTICLE = 1230;
 void createParticleCharmMonster(Entity* parent);
 void createParticleShadowTag(Entity* parent, Uint32 casterUid, int duration);
-Entity* createFloorMagic(int sprite, real_t x, real_t y, real_t z, real_t dir, Uint32 lifetime);
+Entity* createFloorMagic(ParticleTimerEffect_t::EffectType particleType, int sprite, real_t x, real_t y, real_t z, real_t dir, Uint32 lifetime);
+void floorMagicClientReceive(Entity* my);
+void particleWaveClientReceive(Entity* my);
+Entity* floorMagicSetLightningParticle(Entity* my);
+void floorMagicCreateLightningSequence(Entity* spellTimer, int startTickOffset);
 Entity* createVortexMagic(int sprite, real_t x, real_t y, real_t z, real_t dir, Uint32 lifetime);
-Entity* createParticleWave(int sprite, real_t x, real_t y, real_t z, real_t dir, Uint32 lifetime);
+Entity* createParticleWave(ParticleTimerEffect_t::EffectType particleType, int sprite, real_t x, real_t y, real_t z, real_t dir, Uint32 lifetime, bool light);
+Entity* createParticleRoot(int sprite, real_t x, real_t y, real_t z, real_t dir, Uint32 lifetime);
 
 void spawnMagicTower(Entity* parent, real_t x, real_t y, int spellID, Entity* autoHitTarget, bool castedSpell = false); // autoHitTarget is to immediate damage an entity, as all 3 tower magics hitting is unreliable
 bool magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks);
@@ -743,3 +775,80 @@ void spellEffectShadowTag(Entity& my, spellElement_t& element, Entity* parent, i
 bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* parent, Entity* target, int resistance);
 
 void freeSpells();
+
+struct AOEIndicators_t
+{
+	static Uint32 uids;
+	struct Indicator_t
+	{
+		TempTexture* texture = nullptr;
+		SDL_Surface* surfaceOld = nullptr;
+		int radiusMax = 128;
+		int radiusMin = 32;
+		int radius = 32;
+		int size = 132;
+		int lifetime = 1;
+		Uint32 uid = 0;
+		bool loop = true;
+		Uint32 framesPerTick = 1;
+		Uint32 ticksPerUpdate = 1;
+		Uint32 delayTicks = 0;
+		Uint32 indicatorColor = 0xFFFFFFFF;
+		real_t arc = 0.0;
+		bool expired = false;
+		void updateIndicator();
+		Indicator_t(int _radiusMin, int _radiusMax, int _size, int _lifetime, Uint32 _uid)
+		{
+			radiusMax = _radiusMax;
+			radiusMin = _radiusMin;
+			radius = radiusMin;
+			size = _size;
+			lifetime = _lifetime;
+			uid = _uid;
+		}
+		~Indicator_t()
+		{
+			if ( texture )
+			{
+				delete texture;
+				texture = nullptr;
+			}
+			if ( surfaceOld )
+			{
+				SDL_FreeSurface(surfaceOld);
+				surfaceOld = nullptr;
+			}
+		}
+	};
+	static std::map<Uint32, Indicator_t> indicators;
+
+	static TempTexture* getTexture(Uint32 uid)
+	{
+		auto find = indicators.find(uid);
+		if ( find != indicators.end() )
+		{
+			return find->second.texture;
+		}
+		return nullptr;
+	}
+	static SDL_Surface* getSurface(Uint32 uid)
+	{
+		auto find = indicators.find(uid);
+		if ( find != indicators.end() )
+		{
+			return find->second.surfaceOld;
+		}
+		return nullptr;
+	}
+	static Indicator_t* getIndicator(Uint32 uid)
+	{
+		auto find = indicators.find(uid);
+		if ( find != indicators.end() )
+		{
+			return &find->second;
+		}
+		return nullptr;
+	}
+	static void update();
+	static Uint32 createIndicator(int _radiusMin, int _radiusMax, int _size, int _lifetime);
+};

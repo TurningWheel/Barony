@@ -856,6 +856,22 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			my->z = -.5;
 			my->pitch = 0;
 		}
+
+		if ( myStats->getEffectActive(EFF_LIFT) )
+		{
+			my->creatureHoverZ += 0.25;
+		}
+		else
+		{
+			my->creatureHoverZ = 0.0;
+		}
+		real_t height = 2.0 * sin(std::min(my->creatureHoverZ, PI / 2));
+		if ( my->creatureHoverZ >= PI / 2 )
+		{
+			height += 0.5 * cos(my->creatureHoverZ);
+		}
+
+		my->z -= 2 * height;
 	}
 
 	Entity* shieldarm = nullptr;

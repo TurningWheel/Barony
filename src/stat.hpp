@@ -73,6 +73,7 @@ static const int EFF_ENSEMBLE_LYRE = 48;
 static const int EFF_ENSEMBLE_DRUM = 49;
 static const int EFF_ENSEMBLE_LUTE = 50;
 static const int EFF_ENSEMBLE_HORN = 51;
+static const int EFF_LIFT = 52;
 static const int NUMEFFECTS = 64;
 
 // stats

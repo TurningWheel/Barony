@@ -2058,7 +2058,7 @@ void clientActions(Entity* entity)
 				case -16:
 					entity->behavior = &actBoulder;
 					break;
-				case -17:
+				case -18:
 					entity->behavior = &actParticleFloorMagic;
 					entity->flags[NOUPDATE] = true;
 					break;
@@ -2069,6 +2069,32 @@ void clientActions(Entity* entity)
 						int dropOffModifier = (c >> 20) & 0xF;
 						entity->arrowDropOffEquipmentModifier = dropOffModifier - 8;
 						entity->behavior = &actArrow;
+					}
+					else if ( static_cast<Uint8>(c & 0xFF) == 19 )
+					{
+						entity->particleTimerDuration = (c >> 8) & 0xFFF;
+						entity->particleTimerCountdownAction = (c >> 20) & 0xFF;
+						entity->behavior = &actParticleTimer;
+					}
+					else if ( static_cast<Uint8>(c & 0xFF) == 20 )
+					{
+						entity->behavior = &actParticleFloorMagic;
+						entity->skill[2] = c;
+						floorMagicClientReceive(entity);
+					}
+					else if ( static_cast<Uint8>(c & 0xFF) == 21 )
+					{
+						entity->behavior = &actParticleFloorMagic;
+						entity->skill[2] = c;
+						entity->flags[NOUPDATE] = true;
+						floorMagicClientReceive(entity);
+					}
+					else if ( static_cast<Uint8>(c & 0xFF) == 22 )
+					{
+						entity->behavior = &actParticleWave;
+						entity->skill[2] = c;
+						entity->flags[NOUPDATE] = true;
+						particleWaveClientReceive(entity);
 					}
 					break;
 			}
@@ -3077,6 +3103,17 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 				case PARTICLE_EFFECT_ENSEMBLE_SELF_CAST:
 					createEnsembleHUDParticleCircling(entity);
 					break;
+				case PARTICLE_EFFECT_LIGHTNING_SEQ:
+					floorMagicCreateLightningSequence(entity, entity->ticks + 1);
+					break;
+				case PARTICLE_EFFECT_STATIC_ORBIT:
+				{
+					Entity* fx = createParticleAestheticOrbit(entity, sprite, 2 * TICKS_PER_SECOND, PARTICLE_EFFECT_STATIC_ORBIT);
+					fx->z = 7.5;
+					fx->actmagicOrbitDist = 20;
+					fx->actmagicNoLight = 1;
+					break;
+				}
 				default:
 					break;
 			}

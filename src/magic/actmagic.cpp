@@ -5045,8 +5045,21 @@ void actMagicParticle(Entity* my)
 		my->scaley -= 0.05;
 		my->scalez -= 0.05;
 	}
-
-	if ( my->sprite == 1479 )
+	else if ( my->sprite == 1764 ) // lightning impact
+	{
+		if ( my->ticks > 5 )
+		{
+			my->scalex -= 0.1;
+			my->scaley -= 0.1;
+			my->scalez -= 0.1;
+			if ( my->ticks > 10 )
+			{
+				//list_RemoveNode(my->mynode);
+				//return;
+			}
+		}
+	}
+	else if ( my->sprite == 1479 )
 	{
 		my->scalex -= 0.025;
 		my->scaley -= 0.025;
@@ -5773,6 +5786,7 @@ void actParticleAestheticOrbit(Entity* my)
 {
 	if ( PARTICLE_LIFE < 0 )
 	{
+		my->removeLightField();
 		list_RemoveNode(my->mynode);
 	}
 	else
@@ -5780,6 +5794,7 @@ void actParticleAestheticOrbit(Entity* my)
 		Entity* parent = uidToEntity(my->parent);
 		if ( !parent )
 		{
+			my->removeLightField();
 			list_RemoveNode(my->mynode);
 			return;
 		}
@@ -5813,6 +5828,40 @@ void actParticleAestheticOrbit(Entity* my)
 			spawnMagicParticle(my);
 			my->x = parent->x + my->actmagicOrbitDist * cos(my->yaw);
 			my->y = parent->y + my->actmagicOrbitDist * sin(my->yaw);
+		}
+		else if ( my->skill[1] == PARTICLE_EFFECT_STATIC_ORBIT )
+		{
+			//my->yaw += 0.2;
+			my->z -= 0.1;
+			my->actmagicOrbitDist = std::min(80, my->actmagicOrbitDist + 1);
+			my->bNeedsRenderPositionInit = true;
+			my->x = parent->x + (my->actmagicOrbitDist / 10.0) * cos(my->yaw);
+			my->y = parent->y + (my->actmagicOrbitDist / 10.0) * sin(my->yaw);
+			my->flags[INVISIBLE] = true;
+			Uint32 anim = (my->ticks % 50) / 10;
+			my->removeLightField();
+			if ( !my->actmagicNoLight )
+			{
+				my->light = addLight(my->x / 16, my->y / 16, "orb_blue");
+			}
+
+			if ( anim == 0 || anim == 2 || anim >= 4 )
+			{
+				my->flags[INVISIBLE] = false;
+			}
+			if ( my->ticks % 4 == 0 )
+			{
+				my->sprite++;
+				my->yaw += 1 * PI / 3;
+				if ( my->sprite > 1763 )
+				{
+					my->sprite = 1758;
+				}
+			}
+			if ( !my->flags[INVISIBLE] )
+			{
+				spawnMagicParticle(my);
+			}
 		}
 		--PARTICLE_LIFE;
 	}
@@ -6204,6 +6253,154 @@ void actParticleErupt(Entity* my)
 			my->vel_z = std::max<real_t>(my->vel_z, -0.8);
 		}
 	}
+}
+
+void floorMagicClientReceive(Entity* my)
+{
+	if ( !my ) { return; }
+	if ( multiplayer != CLIENT ) { return; }
+
+	if ( my->actfloorMagicClientReceived != 0 ) { return; }
+
+	my->actfloorMagicType = (my->skill[2] >> 20) & 0xFF;
+	/*if ( my->actfloorMagicType == ParticleTimerEffect_t::EFFECT_LIGHTNING_BOLT )
+	{
+		floorMagicSetLightningParticle(my);
+	}*/
+	if ( my->actfloorMagicType == ParticleTimerEffect_t::EFFECT_TEST_1 )
+	{
+		my->sizex = 4;
+		my->sizey = 4;
+		my->scalex = 0.25;
+		my->scaley = 0.25;
+		my->scalez = 0.25;
+	}
+	else if ( my->actfloorMagicType == ParticleTimerEffect_t::EFFECT_TEST_4 )
+	{
+		my->sizex = 4;
+		my->sizey = 4;
+		my->scalex = 0.25;
+		my->scaley = 0.25;
+		my->scalez = 0.25;
+		my->actmagicNoParticle = 1;
+	}
+
+	my->actfloorMagicClientReceived = 1;
+}
+
+void floorMagicParticleSetUID(Entity& fx, bool noupdate)
+{
+	Sint32 val = (1 << 31);
+	val |= (Uint8)(noupdate ? 21 : 20);
+	val |= (((Uint16)(0) & 0xFFF) << 8);
+	val |= (Uint8)(fx.actfloorMagicType & 0xFF) << 20;
+	fx.skill[2] = val;
+}
+
+void floorMagicCreateLightningSequence(Entity* spellTimer, int startTickOffset)
+{
+	if ( !spellTimer ) { return; }
+
+	int lifetime_tick = startTickOffset == 0 ? 2 * TICKS_PER_SECOND : startTickOffset;
+
+	auto& timerEffects = particleTimerEffects[spellTimer->getUID()];
+	std::map<int, std::vector<ParticleTimerEffect_t::EffectLocations_t>> effLocations;
+	auto particleEffectType = ParticleTimerEffect_t::EffectType::EFFECT_LIGHTNING_BOLT;
+	for ( int i = 0; i < 8; ++i )
+	{
+		effLocations[particleEffectType].push_back(ParticleTimerEffect_t::EffectLocations_t());
+		auto& data = effLocations[particleEffectType].back();
+		data.seconds = 1 / 10.0;
+		data.dist = 1.0;
+		data.xOffset = ((local_rng.rand() % 21) / 10.0) + -1.0;
+		switch ( i % 4 )
+		{
+		case 0:
+			data.yawOffset = 0 * (PI / 2);
+			break;
+		case 1:
+			data.yawOffset = 2 * (PI / 2);
+			break;
+		case 2:
+			data.yawOffset = 1 * (PI / 2);
+			break;
+		case 3:
+			data.yawOffset = 3 * (PI / 2);
+			break;
+		default:
+			data.yawOffset = i * (PI / 2);
+			break;
+		}
+	}
+
+	int index = -1;
+	Uint32 lifetime = spellTimer->particleTimerEffectLifetime > 0
+		? std::min(spellTimer->particleTimerDuration, spellTimer->particleTimerEffectLifetime)
+		: spellTimer->particleTimerDuration;
+	while ( lifetime_tick <= lifetime )
+	{
+		++index;
+		auto& effect = timerEffects.effectMap[lifetime_tick == 0 ? 1 : lifetime_tick]; // first behavior tick only occurs at 1
+		effect.effectType = particleEffectType;
+		if ( timerEffects.effectMap.size() == 1 )
+		{
+			effect.firstEffect = true;
+		}
+
+		auto& data = effLocations[effect.effectType][index];
+		effect.sfx = data.sfx;
+		effect.x = data.xOffset * cos(spellTimer->yaw + PI / 2);
+		effect.y = data.xOffset * sin(spellTimer->yaw + PI / 2);
+		effect.yaw = spellTimer->yaw + data.yawOffset;
+
+		lifetime_tick += std::max(1.0, TICKS_PER_SECOND * data.seconds);
+		if ( index + 1 >= effLocations[effect.effectType].size() )
+		{
+			break;
+		}
+	}
+}
+
+Entity* floorMagicSetLightningParticle(Entity* my)
+{
+	if ( !my ) { return nullptr; }
+	my->scalex = 1.0;
+	my->scaley = 1.0;
+	my->scalez = 1.0;
+	my->ditheringDisabled = true;
+	my->actmagicNoParticle = 1;
+	my->sizex = 12;
+	my->sizey = 12;
+
+	my->flags[NOUPDATE] = true;
+	my->flags[UPDATENEEDED] = false;
+	if ( multiplayer != CLIENT )
+	{
+		entity_uids--;
+	}
+	my->setUID(-3);
+
+	if ( multiplayer == CLIENT )
+	{
+		my->actfloorMagicClientReceived = 1;
+	}
+
+	if ( flickerLights )
+	{
+		my->light = addLight(my->x / 16, my->y / 16, "explosion");
+	}
+	else
+	{
+		Entity* parent = uidToEntity(my->parent);
+		if ( parent )
+		{
+			if ( !parent->light )
+			{
+				parent->light = addLight(my->x / 16, my->y / 16, "explosion");
+			}
+		}
+	}
+	return my;
 }
 
 void actParticleTimer(Entity* my)
@@ -6706,7 +6903,10 @@ void actParticleTimer(Entity* my)
 			{
 				if ( my->particleTimerCountdownAction < 100 )
 				{
-					my->light = addLight(my->x / 16, my->y / 16, colorForSprite(my, my->sprite, true));
+					if ( !my->light )
+					{
+						my->light = addLight(my->x / 16, my->y / 16, colorForSprite(my, my->sprite, true));
+					}
 					playSoundEntityLocal(my, 167, 128);
 					createParticleDropRising(my, 680, 1.0);
 					createParticleCircling(my, 70, my->particleTimerCountdownSprite);
@@ -6718,7 +6918,10 @@ void actParticleTimer(Entity* my)
 			{
 				if ( my->particleTimerCountdownAction < 100 )
 				{
-					my->light = addLight(my->x / 16, my->y / 16, colorForSprite(my, my->sprite, true));
+					if ( !my->light )
+					{
+						my->light = addLight(my->x / 16, my->y / 16, colorForSprite(my, my->sprite, true));
+					}
 					playSoundEntityLocal(my, 167, 128);
 					createParticleDropRising(my, 593, 1.0);
 					createParticleCircling(my, 70, my->particleTimerCountdownSprite);
@@ -7048,12 +7251,444 @@ void actParticleTimer(Entity* my)
 					}
 				}
 			}
+			else if ( my->particleTimerCountdownAction == PARTICLE_TIMER_ACTION_IGNITE )
+			{
+				my->removeLightField();
+				if ( Entity* caster = uidToEntity(my->parent) )
+				{
+					my->x = caster->x;
+					my->y = caster->y;
+					if ( PARTICLE_LIFE <= 5 )
+					{
+						my->light = addLight(my->x / 16, my->y / 16, "explosion");
+						if ( PARTICLE_LIFE == 5 )
+						{
+							for ( int i = 0; i < 32; ++i )
+							{
+								/*if ( Entity* particle = spawnMagicParticleCustom(my, 13, 1.0, 4) )
+								{
+									particle->x += 32 * cos(my->yaw + i * 2 * PI / 32.0);
+									particle->y += 32 * sin(my->yaw + i * 2 * PI / 32.0);
+									particle->lightBonus = vec4(0.5f, 0.5f, 0.5f, 0.f);
+									particle->vel_z = -0.05;
+									particle->flags[SPRITE] = true;
+									particle->ditheringDisabled = true;
+								}*/
+								if ( Entity* entity = spawnFlame(my, SPRITE_FLAME) )
+								{
+									//entity->sprite = 16;
+									double vel = local_rng.rand() % 10;
+									entity->x += 64 * cos(my->yaw + i * 2 * PI / 32.0);
+									entity->y += 64 * sin(my->yaw + i * 2 * PI / 32.0);
+									entity->vel_x = vel * cos(entity->yaw) * cos(entity->pitch) * .1;
+									entity->vel_y = vel * sin(entity->yaw) * cos(entity->pitch) * .1;
+									entity->vel_z = vel * sin(entity->pitch) * .2;
+									entity->skill[0] = 5 + local_rng.rand() % 10;
+								}
+							}
+
+							if ( multiplayer != CLIENT )
+							{
+								std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(caster, 3);
+								for ( auto it : entLists )
+								{
+									node_t* node;
+									for ( node = it->first; node != nullptr; node = node->next )
+									{
+										Entity* entity = (Entity*)node->element;
+										if ( !entity->flags[BURNABLE] || entity->flags[BURNING] )
+										{
+											continue;
+										}
+										if ( entityDist(caster, entity) > 64.0 )
+										{
+											continue;
+										}
+										if ( Stat* stats = entity->getStats() )
+										{
+											if ( caster->checkEnemy(entity) )
+											{
+												entity->SetEntityOnFire(caster);
+												stats->burningInflictedBy = caster->getUID();
+											}
+										}
+										else
+										{
+											if ( entity->behavior == &actDoor
+												|| entity->behavior == &::actIronDoor
+												|| entity->behavior == &::actFurniture || entity->behavior == &::actChest
+												|| (entity->isDamageableCollider() && entity->isColliderDamageableByMagic()) )
+											{
+												entity->SetEntityOnFire(caster);
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+					else
+					{
+						my->light = addLight(my->x / 16, my->y / 16, "campfire");
+					}
+				}
+				else
+				{
+					PARTICLE_LIFE = 0;
+				}
+			}
+			else if ( my->particleTimerCountdownAction == PARTICLE_TIMER_ACTION_VORTEX )
+			{
+				my->removeLightField();
+				Entity* parent = uidToEntity(my->parent);
+				if ( my->ticks == 1 )
+				{
+					Entity* fx = createParticleCastingIndicator(my, my->x, my->y, my->z, PARTICLE_LIFE, 0);
+					fx->skill[11] = my->getUID();
+
+					for ( int i = 0; i < 3; ++i )
+					{
+						fx = createParticleAestheticOrbit(my, 174, PARTICLE_LIFE, PARTICLE_EFFECT_SPELL_WEB_ORBIT);
+						fx->yaw += i * 2 * PI / 3;
+						fx->z = 7.5;
+						fx->actmagicOrbitDist = 4;
+					}
+				}
+				if ( Entity* parent = uidToEntity(my->parent) )
+				{
+					//my->x = parent->x;
+					//my->y = parent->y;
+
+					if ( my->ticks % 20 == 0 )
+					{
+						real_t offset = PI * (local_rng.rand() % 360) / 180.0;// -((my->ticks % 50) / 50.0) * 2 * PI;
+						int lifetime = PARTICLE_LIFE / 10;
+
+						constexpr auto color = makeColor(255, 255, 255, 255);
+						for ( int i = 0; i < 24; ++i )
+						{
+							if ( Entity* fx = createParticleAOEIndicator(my, my->x, my->y, -7.5, TICKS_PER_SECOND * 5, 16 + (i / 2) * 2) )
+							{
+								fx->yaw = my->yaw + PI / 2 - (i / 2) * PI / 3;
+								fx->pitch += PI / 32;
+								if ( i % 2 == 1 )
+								{
+									fx->pitch += PI;
+								}
+								fx->z = 8.0;
+								fx->z -= (i / 2) * 0.5;
+								fx->vel_z -= 0.25;
+								fx->fskill[0] = 0.3; // rotate
+								fx->scalex = 0.5;// + (i / 2) * 0.25 / 12;
+								fx->scaley = 0.5;// + (i / 2) * 0.25 / 12;
+								if ( auto indicator = AOEIndicators_t::getIndicator(fx->skill[10]) )
+								{
+									indicator->arc = PI / 4;
+									indicator->indicatorColor = color;
+									indicator->loop = false;
+									indicator->framesPerTick = 1;
+									indicator->ticksPerUpdate = 1;
+									indicator->delayTicks = 0;
+								}
+							}
+						}
+					}
+
+					std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 1);
+					for ( auto it : entLists )
+					{
+						if ( PARTICLE_LIFE <= 0 )
+						{
+							break;
+						}
+						node_t* node;
+						for ( node = it->first; node != nullptr; node = node->next )
+						{
+							Entity* entity = (Entity*)node->element;
+							if ( entityDist(my, entity) > 8.0 )
+							{
+								continue;
+							}
+							Stat* stats = entity->getStats();
+							if ( !stats ) { continue; }
+
+							if ( PARTICLE_LIFE == 1 )
+							{
+								if ( stats->getEffectActive(EFF_LIFT) )
+								{
+									entity->setEffect(EFF_LIFT, false, 0, false);
+									entity->setEffect(EFF_ROOTED, false, 0, false);
+
+									auto poof = spawnPoof(entity->x, entity->y, 4, 1.0);
+									createParticleRock(entity, 78);
+
+									int damage = 20;
+
+									if ( damage > 0 )
+									{
+										entity->modHP(-damage);
+
+										//Entity* fx = createParticleAestheticOrbit(entity, 1758, 2 * TICKS_PER_SECOND, PARTICLE_EFFECT_STATIC_ORBIT);
+										//fx->z = 7.5;
+										//fx->actmagicOrbitDist = 20;
+
+										if ( parent )
+										{
+											// update enemy bar for attacker
+											if ( !strcmp(stats->name, "") )
+											{
+												updateEnemyBar(parent, entity, getMonsterLocalizedName(stats->type).c_str(), stats->HP, stats->MAXHP,
+													false, DamageGib::DMG_DEFAULT);
+											}
+											else
+											{
+												updateEnemyBar(parent, entity, stats->name, stats->HP, stats->MAXHP,
+													false, DamageGib::DMG_DEFAULT);
+											}
+										}
+									}
+								}
+								continue;
+							}
+
+							auto props = getParticleEmitterHitProps(my->getUID(), entity);
+							if ( props->hits > 0 && (ticks - props->tick) < 20 )
+							{
+								continue;
+							}
+							Uint8 strength = std::min(10, 1 + stats->getEffectActive(EFF_LIFT));
+							if ( entity->setEffect(EFF_LIFT, strength, std::max(5, PARTICLE_LIFE + 21), false) )
+							{
+								entity->setEffect(EFF_ROOTED, strength, std::max(5, PARTICLE_LIFE), false);
+								if ( strength == 1 )
+								{
+									auto poof = spawnPoof(entity->x, entity->y, 4, 0.5);
+								}
+							}
+							props->hits++;
+							props->tick = ticks;
+						}
+					}
+				}
+				else
+				{
+					PARTICLE_LIFE = 0;
+				}
+			}
+			else if ( my->particleTimerCountdownAction == PARTICLE_TIMER_ACTION_SHATTER )
+			{
+				my->removeLightField();
+				if ( Entity* caster = uidToEntity(my->parent) )
+				{
+					my->x = caster->x;
+					my->y = caster->y;
+					if ( PARTICLE_LIFE == 5 )
+					{
+						my->light = addLight(my->x / 16, my->y / 16, "magic_purple");
+						if ( PARTICLE_LIFE == 5 )
+						{
+							for ( int i = 0; i < 32; ++i )
+							{
+								/*if ( Entity* particle = spawnMagicParticleCustom(my, 13, 1.0, 4) )
+								{
+									particle->x += 32 * cos(my->yaw + i * 2 * PI / 32.0);
+									particle->y += 32 * sin(my->yaw + i * 2 * PI / 32.0);
+									particle->lightBonus = vec4(0.5f, 0.5f, 0.5f, 0.f);
+									particle->vel_z = -0.05;
+									particle->flags[SPRITE] = true;
+									particle->ditheringDisabled = true;
+								}*/
+								if ( Entity* entity = spawnFlame(my, SPRITE_FLAME) )
+								{
+									//entity->sprite = 16;
+									double vel = local_rng.rand() % 10;
+									entity->x += 64 * cos(my->yaw + i * 2 * PI / 32.0);
+									entity->y += 64 * sin(my->yaw + i * 2 * PI / 32.0);
+									entity->vel_x = vel * cos(entity->yaw) * cos(entity->pitch) * .1;
+									entity->vel_y = vel * sin(entity->yaw) * cos(entity->pitch) * .1;
+									entity->vel_z = vel * sin(entity->pitch) * .2;
+									entity->skill[0] = 5 + local_rng.rand() % 10;
+								}
+							}
+
+							if ( multiplayer != CLIENT )
+							{
+								std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(caster, 3);
+								for ( auto it : entLists )
+								{
+									node_t* node;
+									for ( node = it->first; node != nullptr; node = node->next )
+									{
+										Entity* entity = (Entity*)node->element;
+										if ( !entity->flags[BURNABLE] || entity->flags[BURNING] )
+										{
+											continue;
+										}
+										if ( entityDist(caster, entity) > 64.0 )
+										{
+											continue;
+										}
+										bool mimic = false;
+										if ( Stat* stats = entity->getStats() )
+										{
+											if ( stats->type == MIMIC )
+											{
+												mimic = true;
+											}
+											else
+											{
+												continue;
+											}
+										}
+
+										int damage = 10;
+										if ( entity->behavior == &actDoor
+											|| entity->behavior == &::actIronDoor )
+										{
+											entity->doorHandleDamageMagic(damage, *my, caster);
+										}
+										else if ( entity->behavior == &::actChest || mimic )
+										{
+											entity->chestHandleDamageMagic(damage, *my, caster);
+										}
+										else if ( entity->isDamageableCollider() && entity->isColliderDamageableByMagic() )
+										{
+											entity->colliderHandleDamageMagic(damage, *my, caster);
+										}
+										else if ( entity->behavior == &::actFurniture )
+										{
+											entity->furnitureHandleDamageMagic(damage, *my, caster);
+										}
+									}
+								}
+							}
+						}
+					}
+					else
+					{
+						my->light = addLight(my->x / 16, my->y / 16, "magic_purple_flicker");
+					}
+				}
+				else
+				{
+					PARTICLE_LIFE = 0;
+				}
+			}
+			else if ( my->particleTimerCountdownAction == PARTICLE_TIMER_ACTION_LIGHTNING )
+			{
+				//Entity* parent = uidToEntity(my->parent);
+				if ( my->ticks == 1 )
+				{
+					//createParticleCastingIndicator(my, my->x, my->y, my->z, PARTICLE_LIFE, my->getUID());
+					for ( int i = 0; i < 3; ++i )
+					{
+						Entity* fx = createParticleAestheticOrbit(my, 1758, 2 * TICKS_PER_SECOND, PARTICLE_EFFECT_STATIC_ORBIT);
+						fx->x = my->x + 40.0/*dist * (data.dist)*/ * cos(my->yaw);
+						fx->y = my->y + 40.0/*dist * (data.dist)*/ * sin(my->yaw);
+						fx->z = 7.5 - 2.0 * i;
+						fx->scalex = 1.0;
+						fx->scaley = 1.0;
+						fx->scalez = 1.0;
+						fx->actmagicOrbitDist = 20;
+						fx->yaw += i * 2 * PI / 3;
+						if ( i != 0 )
+						{
+							fx->actmagicNoLight = 1;
+						}
+					}
+				}
+
+				if ( multiplayer != CLIENT )
+				{
+					Entity* closestEntity = nullptr;
+					if ( my->actmagicOrbitHitTargetUID1 != 0 )
+					{
+						closestEntity = uidToEntity(my->actmagicOrbitHitTargetUID1);
+						if ( !closestEntity )
+						{
+							my->actmagicOrbitHitTargetUID1 = 0;
+						}
+					}
+					if ( my->actmagicOrbitHitTargetUID1 == 0 )
+					{
+						std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 2);
+						real_t dist = 10000.0;
+						for ( auto it : entLists )
+						{
+							for ( node_t* node = it->first; node != nullptr; node = node->next )
+							{
+								Entity* entity = (Entity*)node->element;
+								if ( entity->behavior == &actMonster )
+								{
+									real_t newDist = entityDist(my, entity);
+									if ( newDist < dist && newDist < 64.0 )
+									{
+										real_t tangent = atan2(entity->y - my->y, entity->x - my->x);
+										real_t d = lineTraceTarget(my, my->x, my->y, tangent, 64.0, 0, false, entity);
+										if ( hit.entity == entity )
+										{
+											closestEntity = entity;
+											dist = newDist;
+										}
+									}
+								}
+							}
+						}
+
+						if ( closestEntity )
+						{
+							if ( dist < 8.0 )
+							{
+								my->actmagicOrbitHitTargetUID1 = closestEntity->getUID();
+							}
+						}
+					}
+
+					my->vel_x = 0.0;
+					my->vel_y = 0.0;
+					if ( closestEntity )
+					{
+						real_t dist = entityDist(my, closestEntity);
+						real_t tangent = atan2(closestEntity->y - my->y, closestEntity->x - my->x);
+						real_t speed = std::min(dist, std::max(16.0, 64.0 - dist) / 100.0);
+						my->vel_x = speed * cos(tangent);
+						my->vel_y = speed * sin(tangent);
+					}
+
+					my->x += my->vel_x;
+					my->y += my->vel_y;
+				}
+				auto findEffects = particleTimerEffects.find(my->getUID());
+				if ( findEffects != particleTimerEffects.end() )
+				{
+					auto findEffect = findEffects->second.effectMap.find(my->ticks);
+					if ( findEffect != findEffects->second.effectMap.end() )
+					{
+						auto& data = findEffect->second;
+						if ( data.effectType == ParticleTimerEffect_t::EFFECT_LIGHTNING_BOLT )
+						{
+							if ( data.firstEffect )
+							{
+								serverSpawnMiscParticles(my, PARTICLE_EFFECT_LIGHTNING_SEQ, 0);
+							}
+							Entity* fx = createFloorMagic(data.effectType, 1757, my->x + data.x, my->y + data.y, -8.5, data.yaw, TICKS_PER_SECOND / 8);
+							fx->parent = my->getUID();
+							fx->actmagicOrbitHitTargetUID1 = my->actmagicOrbitHitTargetUID1;
+							if ( data.sfx )
+							{
+								playSoundEntityLocal(fx, data.sfx, 64);
+							}
+							floorMagicSetLightningParticle(fx);
+						}
+					}
+				}
+			}
 			else if ( my->particleTimerCountdownAction == PARTICLE_TIMER_ACTION_ICE_WAVE )
 			{
 				Entity* parent = uidToEntity(my->parent);
 				if ( my->ticks == 1 )
 				{
-					createParticleCastingIndicator(my, my->x, my->y, my->z, PARTICLE_LIFE);
+					createParticleCastingIndicator(my, my->x, my->y, my->z, PARTICLE_LIFE, 0);
 				}
 
 				auto findEffects = particleTimerEffects.find(my->getUID());
@@ -7062,19 +7697,93 @@ void actParticleTimer(Entity* my)
 					auto findEffect = findEffects->second.effectMap.find(my->ticks);
 					if ( findEffect != findEffects->second.effectMap.end() )
 					{
-						if ( findEffect->second.effectType == ParticleTimerEffect_t::EFFECT_ICE_WAVE )
+						auto& data = findEffect->second;
+						if ( data.effectType == ParticleTimerEffect_t::EFFECT_ICE_WAVE )
 						{
-							createParticleErupt(findEffect->second.x, findEffect->second.y, 592);
+							createParticleErupt(data.x, data.y, 592);
 						}
-						else if ( findEffect->second.effectType == ParticleTimerEffect_t::EFFECT_TEST_1 )
+						else if ( data.effectType == ParticleTimerEffect_t::EFFECT_TEST_1 )
 						{
-							createFloorMagic(my->particleTimerCountdownSprite, findEffect->second.x, findEffect->second.y, 7.5, my->yaw, PARTICLE_LIFE + 3 * TICKS_PER_SECOND);
+							Entity* fx = createFloorMagic(data.effectType, my->particleTimerCountdownSprite, data.x, data.y, 4.0, data.yaw, PARTICLE_LIFE + 3 * TICKS_PER_SECOND);
+							fx->sizex = 4;
+							fx->sizey = 4;
+							fx->parent = my->getUID();
+							if ( data.sfx )
+							{
+								playSoundEntity(fx, data.sfx, 64);
+							}
+
+							floorMagicParticleSetUID(*fx, true);
 						}
-						else if ( findEffect->second.effectType == ParticleTimerEffect_t::EFFECT_TEST_3 )
+						else if ( data.effectType == ParticleTimerEffect_t::EFFECT_TEST_4 )
 						{
-							createFloorMagic(my->particleTimerCountdownSprite, findEffect->second.x, findEffect->second.y, 7.5, my->yaw, PARTICLE_LIFE + 3 * TICKS_PER_SECOND);
+							Entity* fx = createFloorMagic(data.effectType, my->particleTimerCountdownSprite, data.x, data.y, 7.5, data.yaw, PARTICLE_LIFE + 3 * TICKS_PER_SECOND);
+							fx->parent = my->getUID();
+							fx->sizex = 4;
+							fx->sizey = 4;
+							if ( data.sfx )
+							{
+								playSoundEntity(fx, data.sfx, 64);
+							}
+							fx->actmagicNoParticle = 1;
+							floorMagicParticleSetUID(*fx, true);
 						}
-						else if ( findEffect->second.effectType == ParticleTimerEffect_t::EFFECT_TEST_2 )
+						else if ( data.effectType == ParticleTimerEffect_t::EFFECT_LIGHTNING_BOLT )
+						{
+							Entity* fx = createFloorMagic(data.effectType, my->particleTimerCountdownSprite, data.x, data.y, -8.5, data.yaw, TICKS_PER_SECOND / 8);
+							fx->scalex = 1.0;
+							fx->scaley = 1.0;
+							fx->scalez = 1.0;
+							fx->ditheringDisabled = true;
+							fx->actmagicNoParticle = 1;
+							fx->parent = my->getUID();
+							if ( flickerLights )
+							{
+								fx->light = addLight(fx->x / 16, fx->y / 16, "explosion");
+							}
+							else
+							{
+								if ( !my->light )
+								{
+									my->light = addLight(fx->x / 16, fx->y / 16, "explosion");
+								}
+							}
+							if ( data.sfx )
+							{
+								playSoundEntity(fx, data.sfx, 64);
+							}
+							/*if ( Entity* gib = spawnGib(fx) )
+							{
+								gib->sprite = 670;
+							}*/
+
+							//spawnExplosion(fx->x, fx->y, 7.5);
+
+							//createParticleErupt(my, 670);
+							//fx->flags[INVISIBLE] = true;
+						}
+						else if ( data.effectType == ParticleTimerEffect_t::EFFECT_TEST_3
+							|| data.effectType == ParticleTimerEffect_t::EFFECT_TEST_4 )
+						{
+							Entity* fx = createFloorMagic(data.effectType, my->particleTimerCountdownSprite, data.x, data.y, 7.5, my->yaw, PARTICLE_LIFE + 3 * TICKS_PER_SECOND);
+							if ( data.sfx )
+							{
+								playSoundEntity(fx, data.sfx, 64);
+							}
+							fx->parent = my->getUID();
+							fx->actmagicNoParticle = 1;
+						}
+						else if ( data.effectType == ParticleTimerEffect_t::EFFECT_TEST_6 )
+						{
+							Entity* fx = createFloorMagic(data.effectType, my->particleTimerCountdownSprite, data.x, data.y, 7.5, my->yaw, PARTICLE_LIFE + 3 * TICKS_PER_SECOND);
+							if ( data.sfx )
+							{
+								playSoundEntity(fx, data.sfx, 64);
+							}
+							fx->parent = my->getUID();
+							fx->actmagicNoParticle = 1;
+						}
+						else if ( data.effectType == ParticleTimerEffect_t::EFFECT_TEST_2 )
 						{
 							real_t offset = PI * (local_rng.rand() % 360) / 180.0;// -((my->ticks % 50) / 50.0) * 2 * PI;
 							int lifetime = PARTICLE_LIFE / 10;
@@ -8786,7 +9495,7 @@ bool magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks)
 	return false;
 }
 
-Entity* createParticleCastingIndicator(Entity* parent, real_t x, real_t y, real_t z, Uint32 lifetime)
+Entity* createParticleCastingIndicator(Entity* parent, real_t x, real_t y, real_t z, Uint32 lifetime, Uint32 followUid)
 {
 	Uint32 uid = 0;
 	if ( parent )
@@ -8797,7 +9506,7 @@ Entity* createParticleCastingIndicator(Entity* parent, real_t x, real_t y, real_
 	Entity* entity = newEntity(222, 1, map.entities, nullptr); //Sprite entity.
 	entity->x = x;
 	entity->y = y;
-	entity->z = 7.499;
+	entity->z = 7.490;
 	static ConsoleVariable<float> cvar_sprite_cast_indicator_scale("/sprite_cast_indicator_scale", 0.025);
 	static ConsoleVariable<float> cvar_sprite_cast_indicator_rotate("/sprite_cast_indicator_rotate", 0.025);
 	static ConsoleVariable<float> cvar_sprite_cast_indicator_alpha("/sprite_cast_indicator_alpha", 0.5);
@@ -8820,9 +9529,14 @@ Entity* createParticleCastingIndicator(Entity* parent, real_t x, real_t y, real_
 	entity->fskill[0] = *cvar_sprite_cast_indicator_rotate;
 	entity->fskill[2] = *cvar_sprite_cast_indicator_alpha; // alpha
 	entity->fskill[3] = *cvar_sprite_cast_indicator_alpha_glow;
-	entity->skill[6] = 1; // use alpha
-	entity->skill[7] = 1; // no billboard
-	entity->skill[8] = uid;
+	entity->actSpriteUseAlpha = 1; // use alpha
+	entity->actSpriteNoBillboard = 1; // no billboard
+	entity->actSpriteCheckParentExists = uid;
+	entity->flags[ENTITY_SKIP_CULLING] = true;
+	if ( followUid )
+	{
+		entity->actSpriteFollowUID = followUid;
+	}
 	if ( multiplayer != CLIENT )
 	{
 		entity_uids--;
@@ -8831,7 +9545,294 @@ Entity* createParticleCastingIndicator(Entity* parent, real_t x, real_t y, real_
 	return entity;
 }
 
-Entity* createFloorMagic(int sprite, real_t x, real_t y, real_t z, real_t dir, Uint32 lifetime)
+std::map<Uint32, AOEIndicators_t::Indicator_t> AOEIndicators_t::indicators;
+Uint32 AOEIndicators_t::uids = 1;
+void AOEIndicators_t::update()
+{
+	std::vector<Uint32> toDelete;
+	for ( auto& i : indicators )
+	{
+		i.second.lifetime--;
+		if ( i.second.lifetime <= 0 )
+		{
+			toDelete.push_back(i.second.uid);
+		}
+		else if ( i.second.expired )
+		{
+			Uint8 alpha = 0;
+			getColor(i.second.indicatorColor, nullptr, nullptr, nullptr, &alpha);
+			if ( alpha == 0 )
+			{
+				toDelete.push_back(i.second.uid);
+			}
+			else
+			{
+				i.second.updateIndicator();
+			}
+		}
+		else
+		{
+			i.second.updateIndicator();
+		}
+	}
+
+	for ( auto& uid : toDelete )
+	{
+		indicators.erase(uid);
+	}
+}
+
+Uint32 AOEIndicators_t::createIndicator(int _radiusMin, int _radiusMax, int _size, int _lifetime)
+{
+	Uint32 uid = uids;
+	uids++;
+	indicators.insert(std::make_pair(uid, Indicator_t(_radiusMin, _radiusMax, _size, _lifetime, uid)));
+	return uid;
+}
+
+void AOEIndicators_t::Indicator_t::updateIndicator()
+{
+	if ( !(!gamePaused || (multiplayer && !client_disconnected[0])) )
+	{
+		// paused game
+		return;
+	}
+
+	if ( delayTicks > 0 )
+	{
+		--delayTicks;
+		return;
+	}
+
+	SDL_Surface* surfaceNew = SDL_CreateRGBSurface(0, size, size, 32,
+		0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff);
+	SDL_LockSurface(surfaceNew);
+
+	if ( surfaceOld ) {
+		SDL_LockSurface(surfaceOld);
+	}
+
+	int x = 0;
+	int y = 0;
+
+	const int ringSize = 1;
+	const int gradientSize = 8;
+	int ring = radius - ringSize;
+	int center = size / 2;
+	//for ( int r = std::max(0, radius - gradientSize); r <= radius; r += 1 )
+	//{
+	//	/*real_t minAngle = 0.9 * acos(1.0 - 1.0 / r);
+	//	for ( real_t i = 0; i < 360; i += minAngle )
+	//	{
+	//		x = (size / 2) + r * std::min(0.9999, cos(i));
+	//		y = (size / 2) + r * std::min(0.9999, sin(i));
+	//		assert(x >= 0 && x < size);
+	//		assert(y >= 0 && y < size);
+
+	//		if ( r < ring )
+	//		{
+	//			real_t alphaRatio = std::min(1.0, std::max(0.0, 1.0 + (ringSize + r - radius) / (real_t)gradientSize));
+	//			putPixel(surfaceNew, x, y, makeColor(255, 255, 255, std::min(255.0, 255 * alphaRatio)));
+	//		}
+	//		else if ( r == ring )
+	//		{
+	//			putPixel(surfaceNew, x, y, makeColor(255, 255, 255, 255));
+	//		}
+	//		else
+	//		{
+	//			putPixel(surfaceNew, x, y, makeColor(212, 212, 212, 255));
+	//		}
+	//	}*/
+
+	//	/*x = r;
+	//	y = 0;
+	//	int error = 3 - 2 * radius;
+	//	while ( x >= y )
+	//	{
+	//		putPixel(surfaceNew, center + x, center + y, makeColor(255, 255, 255, 255));
+	//		putPixel(surfaceNew, center + x, center - y, makeColor(255, 255, 255, 255));
+	//		putPixel(surfaceNew, center -x, center + y, makeColor(255, 255, 255, 255));
+	//		putPixel(surfaceNew, center -x, center - y, makeColor(255, 255, 255, 255));
+
+	//		putPixel(surfaceNew, center + y, center + x, makeColor(255, 255, 255, 255));
+	//		putPixel(surfaceNew, center + y, center - x, makeColor(255, 255, 255, 255));
+	//		putPixel(surfaceNew, center - y, center + x, makeColor(255, 255, 255, 255));
+	//		putPixel(surfaceNew, center - y, center - x, makeColor(255, 255, 255, 255));
+
+	//		if (error > 0)
+	//		{
+	//			error -= 4 * (--x);
+	//		}
+	//		error += 4 * (++y) + 2;
+	//	}*/
+
+	//}
+
+	Uint8 red, green, blue, alpha;
+	getColor(indicatorColor, &red, &green, &blue, &alpha);
+	if ( expired )
+	{
+		alpha *= 0.9;
+		indicatorColor = makeColor(red, green, blue, alpha);
+	}
+	for ( real_t rad = std::max(0, radius - gradientSize) + 0.0; rad <= radius; rad += 0.5 )
+	{
+		Uint32 color = 0;
+		if ( rad < ring + 0.5 )
+		{
+			real_t alphaRatio = std::min(1.0, std::max(0.0, 1.0 + (ringSize + rad - (radius + 0.5)) / (real_t)gradientSize));
+			color = makeColor(red, green, blue, std::min(255.0, alpha * alphaRatio));
+		}
+		else if ( rad == ring + 0.5 )
+		{
+			color = makeColor(red, green, blue, alpha);
+		}
+		else
+		{
+			color = makeColor(red * .8, green * .8, blue * .8, alpha);
+		}
+
+		{
+			real_t radius = rad + .5;
+			real_t r2 = radius * radius;
+			int dist = floor(radius * sqrt(0.5));
+			for ( int r = 0; r <= dist; r++ ) {
+				int d = floor(sqrt(r2 - r * r));
+				if ( !(center - d >= 0 && center + d < size) ) 
+				{
+					continue;
+				}
+				if ( !(center - r >= 0 && center + r < size) )
+				{
+					continue;
+				}
+
+				if ( arc > 0.001 )
+				{
+					real_t tangent = atan2(r, d);
+					if ( tangent > arc )
+					{
+						continue;
+					}
+					putPixel(surfaceNew, center + r, center - d, color);
+					putPixel(surfaceNew, center - r, center - d, color);
+				}
+				else
+				{
+					putPixel(surfaceNew, center + d, center + r, color);
+					putPixel(surfaceNew, center + d, center - r, color);
+
+					putPixel(surfaceNew, center - d, center + r, color);
+					putPixel(surfaceNew, center - d, center - r, color);
+
+					putPixel(surfaceNew, center + r, center + d, color);
+					putPixel(surfaceNew, center - r, center + d, color);
+
+					putPixel(surfaceNew, center + r, center - d, color);
+					putPixel(surfaceNew, center - r, center - d, color);
+				}
+			}
+		}
+	}
+
+	auto m1 = surfaceNew;
+	auto m2 = surfaceOld;
+	const auto size1 = m1->w * m1->h * m1->format->BytesPerPixel;
+	const auto size2 = m2 ? (m2->w * m2->h * m2->format->BytesPerPixel) : 0;
+	if ( size1 != size2 || memcmp(m1, m2, size2) ) {
+		if ( !texture ) {
+			texture = new TempTexture();
+		}
+		texture->load(surfaceNew, false, true);
+		if ( surfaceOld ) {
+			SDL_UnlockSurface(surfaceOld);
+			SDL_FreeSurface(surfaceOld);
+		}
+		SDL_UnlockSurface(surfaceNew);
+		surfaceOld = surfaceNew;
+	}
+	else {
+		if ( surfaceOld ) {
+			SDL_UnlockSurface(surfaceOld);
+		}
+		SDL_UnlockSurface(surfaceNew);
+		SDL_FreeSurface(surfaceNew);
+		surfaceNew = nullptr;
+	}
+
+	if ( ticks % ticksPerUpdate == 0 )
+	{
+		if ( radius < radiusMax )
+		{
+			radius += framesPerTick;
+		}
+		if ( radius >= radiusMax )
+		{
+			if ( loop )
+			{
+				radius = radiusMin;
+			}
+			else
+			{
+				expired = true;
+			}
+		}
+	}
+}
+
+Entity* createParticleAOEIndicator(Entity* parent, real_t x, real_t y, real_t z, Uint32 lifetime, int size)
+{
+	Uint32 uid = 0;
+	if ( parent )
+	{
+		uid = parent->getUID();
+	}
+
+	Entity* entity = newEntity(222, 1, map.entities, nullptr); //Sprite entity.
+	entity->x = x;
+	entity->y = y;
+	entity->z = z + 7.48;
+	static ConsoleVariable<float> cvar_sprite_aoe_indicator_scale("/sprite_aoe_indicator_scale", 2.0);
+	static ConsoleVariable<float> cvar_sprite_aoe_indicator_rotate("/sprite_aoe_indicator_rotate", 0.0);
+	static ConsoleVariable<float> cvar_sprite_aoe_indicator_alpha("/sprite_aoe_indicator_alpha", 0.5);
+	static ConsoleVariable<float> cvar_sprite_aoe_indicator_alpha_glow("/sprite_aoe_indicator_alpha_glow", 0.0625);
+	entity->ditheringDisabled = true;
+	entity->flags[SPRITE] = true;
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->flags[UNCLICKABLE] = true;
+	entity->flags[BRIGHT] = true;
+	//entity->lightBonus = vec4(0.5f, 0.5f, 0.5f, 0.f);
+	entity->scalex = *cvar_sprite_aoe_indicator_scale;
+	entity->scaley = *cvar_sprite_aoe_indicator_scale;
+	entity->behavior = &actSprite;
+	entity->yaw = parent ? floor(parent->yaw / (PI / 2)) * PI / 2 : 0.0;
+	entity->pitch = 0;
+	entity->roll = -PI / 2;
+	entity->skill[0] = 1;
+	entity->skill[1] = 1;
+	entity->skill[2] = lifetime;
+	entity->fskill[0] = *cvar_sprite_aoe_indicator_rotate;
+	entity->fskill[1] = *cvar_sprite_aoe_indicator_alpha;
+	entity->fskill[2] = *cvar_sprite_aoe_indicator_alpha; // alpha
+	entity->fskill[3] = *cvar_sprite_aoe_indicator_alpha_glow;
+	entity->actSpriteUseAlpha = 1; // use alpha
+	entity->actSpriteNoBillboard = 1; // no billboard
+	entity->actSpriteCheckParentExists = uid;
+	entity->flags[ENTITY_SKIP_CULLING] = true; // ignore LOS culling
+	entity->actSpriteUseCustomSurface = AOEIndicators_t::createIndicator(4, size, size * 2 + 4, lifetime);
+	entity->actSpriteFollowUID = uid; // follow parent
+	entity->z += (entity->skill[10] % 100 / 10000.0);
+	entity->setEntityString("aoe_indicator");
+	if ( multiplayer != CLIENT )
+	{
+		entity_uids--;
+	}
+	entity->setUID(-3);
+	return entity;
+}
+
+Entity* createFloorMagic(ParticleTimerEffect_t::EffectType particleType, int sprite, real_t x, real_t y, real_t z, real_t dir, Uint32 lifetime)
 {
 	Entity* entity = newEntity(sprite, 1, map.entities, nullptr); //Sprite entity.
 	entity->x = x;
@@ -8842,11 +9843,39 @@ Entity* createFloorMagic(int sprite, real_t x, real_t y, real_t z, real_t dir, U
 	entity->scaley = 0.25;
 	entity->scalez = 0.25;
 	entity->skill[0] = lifetime;
+	entity->actfloorMagicType = particleType;
 	entity->behavior = &actParticleFloorMagic;
+	entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+		*cvar_magic_fx_light_bonus, 0.f);
 	entity->flags[PASSABLE] = true;
 	entity->flags[UNCLICKABLE] = true;
 	entity->flags[UPDATENEEDED] = true;
-	entity->skill[2] = -17;
+	entity->skill[2] = -18;
+	return entity;
+}
+
+Entity* createParticleRoot(int sprite, real_t x, real_t y, real_t z, real_t dir, Uint32 lifetime)
+{
+	Entity* entity = newEntity(sprite, 1, map.entities, nullptr); //Sprite entity.
+	entity->x = x;
+	entity->y = y;
+	entity->z = z;
+	entity->yaw = dir;
+	entity->scalex = 0.25;
+	entity->scaley = 0.25;
+	entity->scalez = 0.25;
+	entity->skill[0] = lifetime;
+	entity->behavior = &actParticleRoot;
+	entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+		*cvar_magic_fx_light_bonus, 0.f);
+	entity->flags[PASSABLE] = true;
+	entity->flags[UNCLICKABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	if ( multiplayer != CLIENT )
+	{
+		entity_uids--;
+	}
+	entity->setUID(-3);
 	return entity;
 }
 
@@ -8866,6 +9895,129 @@ Entity* createVortexMagic(int sprite, real_t x, real_t y, real_t z, real_t dir, 
 	entity->flags[UNCLICKABLE] = true;
 	//entity->flags[UPDATENEEDED] = true;
 	return entity;
+}
+
+void actParticleRoot(Entity* my)
+{
+	if ( my->actmagicDelayMove > 0 )
+	{
+		my->flags[INVISIBLE] = true;
+		--my->actmagicDelayMove;
+		return;
+	}
+
+	my->flags[INVISIBLE] = false;
+
+	if ( PARTICLE_LIFE < 0 )
+	{
+		my->scalex -= 0.1;
+		my->scaley = my->scalex;
+		my->scalez = my->scalex;
+		if ( my->scalex < 0.0 )
+		{
+			list_RemoveNode(my->mynode);
+			return;
+		}
+	}
+	else
+	{
+		--PARTICLE_LIFE;
+		if ( my->fskill[1] < 1.0 )
+		{
+			my->fskill[1] += 0.05;
+			my->fskill[1] = std::min(my->fskill[1], 1.0);
+			if ( my->fskill[1] >= 1.0 )
+			{
+				my->skill[5] = my->ticks; // animation tick start
+			}
+		}
+		my->roll = -PI + PI * sin(my->fskill[1] * PI / 2);
+		if ( my->skill[1] == 0 )
+		{
+			my->scalex = std::min(my->scalex + 0.1, 1.0);
+			my->scaley = my->scalex;
+			my->scalez = my->scalex;
+			if ( my->scalex >= 1.0 )
+			{
+				my->skill[1] = 1;
+			}
+		}
+		else if ( my->skill[1] == 1 )
+		{
+			my->fskill[0] += my->skill[4] == 0 ? 0.5 : 0.05;
+			if ( my->fskill[0] >= 2 * PI )
+			{
+				my->fskill[0] = 0.0;
+				my->skill[3]++;
+				if ( my->skill[3] == 3 )
+				{
+					my->skill[4] = my->skill[4] > 0 ? 0 : 1;
+				}
+			}
+			my->scalex = 1.0 + 0.05 * sin(my->fskill[0]);
+			my->scaley = my->scalex;
+			my->scalez = my->scalex;
+		}
+
+		if ( (my->ticks - my->skill[5]) % 50 == 0 )
+		{
+			if ( false )
+			{
+				Entity* particle = spawnMagicParticleCustom(my, 226, .7, 1.0);
+				particle->flags[SPRITE] = true;
+				particle->vel_z = -0.25;
+				particle->z = 6.0;
+			}
+
+			if ( false )
+			{
+				Entity* entity = newEntity(227, 1, map.entities, nullptr); //Sprite entity.
+				entity->x = my->x;
+				entity->y = my->y;
+				entity->z = 6.0;
+				entity->ditheringDisabled = true;
+				entity->flags[SPRITE] = true;
+				entity->flags[PASSABLE] = true;
+				entity->flags[NOUPDATE] = true;
+				entity->flags[UNCLICKABLE] = true;
+				entity->flags[BRIGHT] = true;
+				entity->behavior = &actSprite;
+				entity->skill[0] = 1;
+				entity->skill[1] = 6;
+				entity->skill[2] = 4;
+				entity->vel_z = -0.25;
+				if ( multiplayer != CLIENT )
+				{
+					entity_uids--;
+				}
+				entity->setUID(-3);
+			}
+
+			if ( true )
+			{
+				Entity* entity = newEntity(233, 1, map.entities, nullptr); //Sprite entity.
+				entity->x = my->x;
+				entity->y = my->y;
+				entity->z = 6.0;
+				entity->ditheringDisabled = true;
+				entity->flags[SPRITE] = true;
+				entity->flags[PASSABLE] = true;
+				entity->flags[NOUPDATE] = true;
+				entity->flags[UNCLICKABLE] = true;
+				entity->flags[BRIGHT] = true;
+				entity->behavior = &actSprite;
+				entity->skill[0] = 1;
+				entity->skill[1] = 12;
+				entity->skill[2] = 4;
+				entity->vel_z = -0.25;
+				if ( multiplayer != CLIENT )
+				{
+					entity_uids--;
+				}
+				entity->setUID(-3);
+			}
+		}
+	}
 }
 
 void actParticleVortex(Entity* my)
@@ -8917,15 +10069,17 @@ void actParticleVortex(Entity* my)
 		my->fskill[2] = std::min(1.0, 0.005 * *cvar_particle_speed + my->fskill[2]); // scale
 		my->fskill[3] = std::min(1.0, 0.01 * *cvar_particle_speed + my->fskill[3]); // dist from center
 
-		//Entity* particle = spawnMagicParticleCustom(my, my->sprite, scale, 10.0);
-		//particle->ditheringDisabled = true;
+		Entity* particle = spawnMagicParticleCustom(my, my->sprite, scale * .7, 10.0);
+		particle->ditheringDisabled = true;
 	}
 }
 
 void actParticleFloorMagic(Entity* my)
 {
-	if ( PARTICLE_LIFE < 0 )
+	Entity* parentTimer = uidToEntity(my->parent);
+	if ( PARTICLE_LIFE < 0 || (multiplayer != CLIENT && !parentTimer) )
 	{
+		my->removeLightField();
 		list_RemoveNode(my->mynode);
 		return;
 	}
@@ -8951,12 +10105,120 @@ void actParticleFloorMagic(Entity* my)
 			my->x += my->vel_x * cos(my->yaw);
 			my->y += my->vel_y * sin(my->yaw);
 		}
+		else
+		{
+			if ( my->actfloorMagicClientReceived == 1 )
+			{
+				if ( my->actfloorMagicType == ParticleTimerEffect_t::EffectType::EFFECT_LIGHTNING_BOLT )
+				{
+					--PARTICLE_LIFE; // client allowed decay
+				}
+			}
+		}
 		my->scalex = std::min(my->scalex * 1.25, 1.0);
 		my->scaley = std::min(my->scaley * 1.25, 1.0);
 		my->scalez = std::min(my->scalez * 1.25, 1.0);
 	}
 
-	if ( my->actmagicDelayMove == 0 )
+	if ( my->ticks == 1 ) // lightning bolt
+	{
+		if ( my->actfloorMagicType == ParticleTimerEffect_t::EffectType::EFFECT_LIGHTNING_BOLT )
+		{
+			if ( Entity* particle = spawnMagicParticleCustom(my, 1764, my->scalex * 1.0, 1) )
+			{
+				particle->z = 6.0;
+				particle->x = my->x;
+				particle->y = my->y;
+				particle->yaw = local_rng.rand() % 360 * PI / 180;
+				particle->vel_x = 0.05 * cos(particle->yaw);
+				particle->vel_y = 0.05 * sin(particle->yaw);
+				particle->ditheringDisabled = true;
+			}
+		}
+		else if ( my->actfloorMagicType == ParticleTimerEffect_t::EffectType::EFFECT_TEST_1 )
+		{
+			//if ( Entity* gib = multiplayer == CLIENT ? spawnGibClient(my,) : spawnGib(my) )
+			//{
+			//	gib->sprite = 1374;
+			//}
+		}
+		else if ( my->actfloorMagicType == ParticleTimerEffect_t::EffectType::EFFECT_TEST_4 )
+		{
+			if ( Entity* gib = multiplayer == CLIENT ? spawnGibClient(my->x, my->y, my->z, -1) : spawnGib(my) )
+			{
+				gib->sprite = 1374;
+			}
+		}
+	}
+	if ( my->sprite == 1765 && my->ticks == 1 )
+	{
+		for ( int i = 0; i < 1; ++i )
+		{
+			std::vector<float> locations = {
+				0 * PI / 8,
+				1 * PI / 8,
+				2 * PI / 8,
+				3 * PI / 8,
+				4 * PI / 8,
+				5 * PI / 8,
+				6 * PI / 8,
+				7 * PI / 8,
+				8 * PI / 8,
+				9 * PI / 8,
+				10 * PI / 8,
+				11 * PI / 8,
+				12 * PI / 8,
+				13 * PI / 8,
+				14 * PI / 8,
+				15 * PI / 8
+			};
+			int numLocations = locations.size();
+
+			real_t dist = 16.0 + 8.0 * i;
+			while ( locations.size() )
+			{
+				int pick = local_rng.rand() % locations.size();
+				float yaw = locations[pick];
+				/*if ( i % 2 == 1 )
+				{
+					yaw += PI / 8;
+				}*/
+				Entity* root = createParticleRoot(1766, my->x + dist * cos(yaw), my->y + dist * sin(yaw),
+					7.5, local_rng.rand() % 360 * (PI / 180.0), PARTICLE_LIFE);
+				root->focalz = -0.5;
+				int roll = local_rng.rand() % 8;
+				real_t angle = (pick / (float)numLocations) * PI + ((roll) / 8.0) * PI;
+				real_t xoffset = 4.0 * sin(angle);
+				xoffset += -2.0 + 4.0 * (local_rng.rand() % 16) / 16.0;
+				root->x += xoffset * cos(root->yaw + PI / 2);
+				root->y += xoffset * sin(root->yaw + PI / 2);
+				root->actmagicDelayMove = (TICKS_PER_SECOND / 8) * (locations.size() + i * 8);
+				root->skill[0] -= root->actmagicDelayMove;
+				locations.erase(locations.begin() + pick);
+			}
+		}
+
+		/*int roll = local_rng.rand() % 8;
+		for ( int i = 0; i < 16; ++i )
+		{
+			real_t angle = (i / 8.0) * PI + ((roll) / 8.0) * PI;
+			real_t yawOffset = cos(angle) + ((local_rng.rand() % 4) / 4.0) * 2 * PI;
+			real_t dist = 40.0 * (0.25 + (0.75 * i / 16.0));
+			Entity* root = createParticleRoot(1766, my->x + dist * cos(yawOffset), my->y + dist * sin(yawOffset),
+				7.5, local_rng.rand() % 360 * (PI / 180.0), PARTICLE_LIFE);
+			root->focalz = -0.5;
+			real_t xoffset = 8.0 * sin(angle);
+			xoffset += 2.0 * (local_rng.rand() % 16) / 16.0;
+			root->x += xoffset * cos(my->yaw + PI / 2);
+			root->y += xoffset * sin(my->yaw + PI / 2);
+
+			root->actmagicDelayMove = (TICKS_PER_SECOND / 4) * i;
+			root->skill[0] -= root->actmagicDelayMove;
+		}*/
+	}
+
+	bool doParticle = false;
+	if ( my->actmagicDelayMove == 0 && my->actmagicNoParticle == 0 )
 	{
 		if ( *cvar_magic_fx_use_vismap && !intro )
 		{
@@ -8968,16 +10230,7 @@ void actParticleFloorMagic(Entity* my)
 				{
 					if ( !client_disconnected[i] && players[i]->isLocalPlayer() && cameras[i].vismap[y + x * map.height] )
 					{
-						if ( Entity* particle = spawnMagicParticleCustom(my, my->sprite, my->scalex * 0.7, 1) )
-						{
-							particle->vel_x = cos(my->yaw);
-							particle->vel_y = sin(my->yaw);
-							//particle->flags[INVISIBLE] = true;
-							//particle->flags[INVISIBLE_DITHER] = true;
-						}
-						//if ( my->ticks % 10 == 0 )
-						//{
-						//}
+						doParticle = true;
 						break;
 					}
 				}
@@ -8985,12 +10238,287 @@ void actParticleFloorMagic(Entity* my)
 		}
 		else
 		{
-			spawnMagicParticle(my);
+			doParticle = true;
+		}
+	}
+
+	if ( doEffect )
+	{
+		if ( multiplayer != CLIENT )
+		{
+			if ( my->actfloorMagicType == ParticleTimerEffect_t::EffectType::EFFECT_LIGHTNING_BOLT )
+			{
+				if ( Entity* target = uidToEntity(my->actmagicOrbitHitTargetUID1) )
+				{
+					my->x = target->x;
+					my->y = target->y;
+				}
+			}
+		}
+
+		if ( multiplayer != CLIENT && my->scalex >= .9 )
+		{
+			my->skill[1]++; // active ticks
+			Entity* caster = uidToEntity(parentTimer->parent);
+			std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 1);
+			for ( auto it : entLists )
+			{
+				node_t* node;
+				for ( node = it->first; node != nullptr; node = node->next )
+				{
+					Entity* entity = (Entity*)node->element;
+					if ( entity->behavior == &actPlayer || entity->behavior == &actMonster )
+					{
+						if ( my->actfloorMagicType == ParticleTimerEffect_t::EffectType::EFFECT_LIGHTNING_BOLT )
+						{
+							auto particleEmitterHitPropsTimer = getParticleEmitterHitProps(my->parent, entity);
+							if ( particleEmitterHitPropsTimer->hits > 0 )
+							{
+								continue;
+							}
+							Stat* stats = entity->getStats();
+							if ( stats && entityInsideEntity(my, entity) )
+							{
+								int damage = 20;
+
+								if ( damage > 0 )
+								{
+									entity->modHP(-damage);
+
+									Entity* fx = createParticleAestheticOrbit(entity, 1758, 2 * TICKS_PER_SECOND, PARTICLE_EFFECT_STATIC_ORBIT);
+									fx->z = 7.5;
+									fx->actmagicOrbitDist = 20;
+									fx->actmagicNoLight = 1;
+									serverSpawnMiscParticles(entity, PARTICLE_EFFECT_STATIC_ORBIT, 1758);
+
+									if ( caster )
+									{
+										// update enemy bar for attacker
+										if ( !strcmp(stats->name, "") )
+										{
+											updateEnemyBar(caster, entity, getMonsterLocalizedName(stats->type).c_str(), stats->HP, stats->MAXHP,
+												false, DamageGib::DMG_DEFAULT);
+										}
+										else
+										{
+											updateEnemyBar(caster, entity, stats->name, stats->HP, stats->MAXHP,
+												false, DamageGib::DMG_DEFAULT);
+										}
+									}
+								}
+
+								particleEmitterHitPropsTimer->hits++;
+								particleEmitterHitPropsTimer->tick = ticks;
+							}
+						}
+						else if ( my->actfloorMagicType == ParticleTimerEffect_t::EffectType::EFFECT_TEST_4 )
+						{
+							auto particleEmitterHitPropsTimer = getParticleEmitterHitProps(my->parent, entity);
+							Stat* stats = entity->getStats();
+							if ( particleEmitterHitPropsTimer->hits > 0 && ((ticks - particleEmitterHitPropsTimer->tick) < 20) )
+							{
+								continue;
+							}
+							if ( stats && entityInsideEntity(my, entity) )
+							{
+								int damage = 0;
+								if ( particleEmitterHitPropsTimer->hits == 0 || particleEmitterHitPropsTimer->hits == 3 )
+								{
+									damage = 5;
+								}
+
+								if ( damage > 0 )
+								{
+									entity->modHP(-damage);
+
+									if ( particleEmitterHitPropsTimer->hits > 0 )
+									{
+										if ( entity->setEffect(EFF_ROOTED, true, TICKS_PER_SECOND * 10, false) )
+										{
+											spawnMagicEffectParticles(entity->x, entity->y, entity->z, 1758);
+										}
+									}
+
+									if ( caster )
+									{
+										// update enemy bar for attacker
+										if ( !strcmp(stats->name, "") )
+										{
+											updateEnemyBar(caster, entity, getMonsterLocalizedName(stats->type).c_str(), stats->HP, stats->MAXHP,
+												false, DamageGib::DMG_DEFAULT);
+										}
+										else
+										{
+											updateEnemyBar(caster, entity, stats->name, stats->HP, stats->MAXHP,
+												false, DamageGib::DMG_DEFAULT);
+										}
+									}
+								}
+
+								particleEmitterHitPropsTimer->hits++;
+								particleEmitterHitPropsTimer->tick = ticks;
+							}
+						}
+						else if ( my->actfloorMagicType == ParticleTimerEffect_t::EffectType::EFFECT_TEST_1 )
+						{
+							auto particleEmitterHitPropsTimer = getParticleEmitterHitProps(my->parent, entity);
+							auto particleEmitterHitPropsFloorMagic = getParticleEmitterHitProps(my->getUID(), entity);
+							if ( particleEmitterHitPropsTimer->hits > 0 && ((ticks - particleEmitterHitPropsTimer->tick) < 30) )
+							{
+								if ( particleEmitterHitPropsFloorMagic->hits == 0 && my->skill[1] < 10 )
+								{
+									// allowed big hit
+								}
+								else
+								{
+									continue;
+								}
+							}
+
+							Stat* stats = entity->getStats();
+							if ( stats && entityInsideEntity(my, entity) )
+							{
+								int damage = 1;
+								int duration = TICKS_PER_SECOND;
+								Uint8 strength = 0;
+								if ( particleEmitterHitPropsFloorMagic->hits == 0 && my->skill[1] < 10 )
+								{
+									strength = 1;
+									damage = 10; // big damage region
+									duration = TICKS_PER_SECOND * 3;
+								}
+								else
+								{
+									strength = std::min(8, stats->getEffectActive(EFF_SLOW) + 1);
+									damage += strength / 2;
+								}
+								if ( damage > 0 )
+								{
+									entity->modHP(-damage);
+
+									if ( stats->getEffectActive(EFF_SLOW) )
+									{
+										duration = std::max(stats->EFFECTS_TIMERS[EFF_SLOW], duration);
+									}
+
+									if ( entity->setEffect(EFF_SLOW, strength, duration, false) )
+									{
+
+									}
+
+									if ( caster )
+									{
+										// update enemy bar for attacker
+										if ( !strcmp(stats->name, "") )
+										{
+											updateEnemyBar(caster, entity, getMonsterLocalizedName(stats->type).c_str(), stats->HP, stats->MAXHP,
+												false, DamageGib::DMG_DEFAULT);
+										}
+										else
+										{
+											updateEnemyBar(caster, entity, stats->name, stats->HP, stats->MAXHP,
+												false, DamageGib::DMG_DEFAULT);
+										}
+									}
+								}
+								particleEmitterHitPropsTimer->hits++;
+								particleEmitterHitPropsTimer->tick = ticks;
+
+								particleEmitterHitPropsFloorMagic->hits++;
+								particleEmitterHitPropsFloorMagic->tick = ticks;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	if ( doParticle )
+	{
+		if ( my->actfloorMagicType == ParticleTimerEffect_t::EffectType::EFFECT_TEST_1 )
+		{
+			Entity* particle = spawnMagicParticleCustom(my, 225, 0.5, 4);
+			if ( particle )
+			{
+				particle->lightBonus = vec4(0.5f, 0.5f, 0.5f, 0.f);
+				particle->flags[SPRITE] = true;
+				particle->ditheringDisabled = true;
+				particle->vel_x = 0.25 * cos(my->yaw);
+				particle->vel_y = 0.25 * sin(my->yaw);
+				particle->vel_z = -0.05;
+
+				real_t forward = 2.0 + local_rng.rand() % 5;
+				particle->z += -4.0 + local_rng.rand() % 7;
+				real_t side = -2.0 + (local_rng.rand() % 5) * 1.0;
+				particle->x += forward * cos(my->yaw) + side * cos(my->yaw + PI / 2);
+				particle->y += forward * sin(my->yaw) + side * sin(my->yaw + PI / 2);
+			}
+		}
+		else if ( Entity* particle = spawnMagicParticleCustom(my, my->sprite, my->scalex * 0.7, 1) )
+		{
+			particle->vel_x = cos(my->yaw);
+			particle->vel_y = sin(my->yaw);
 		}
 	}
 }
 
-Entity* createParticleWave(int sprite, real_t x, real_t y, real_t z, real_t dir, Uint32 lifetime)
+void waveParticleSetUID(Entity& fx, bool noupdate)
+{
+	Sint32 val = (1 << 31);
+	val |= (Uint8)(22);
+	val |= (((Uint16)(fx.actParticleWaveStartFrame) & 0xFFF) << 8);
+	val |= (Uint8)(fx.actParticleWaveMagicType & 0xFF) << 20;
+	val |= (fx.actParticleWaveLight != 0 ? 1 : 0) << 28;
+	fx.skill[2] = val;
+}
+
+void particleWaveClientReceive(Entity* my)
+{
+	if ( !my ) { return; }
+	if ( multiplayer != CLIENT ) { return; }
+
+	if ( my->actParticleWaveClientReceived != 0 ) { return; }
+
+	my->actParticleWaveStartFrame = (my->skill[2] >> 8) & 0xFFF;
+	my->sprite = my->actParticleWaveStartFrame;
+	my->actParticleWaveMagicType = (my->skill[2] >> 20) & 0xFF;
+	my->actParticleWaveLight = (my->skill[2] >> 28) & 1;
+	if ( my->actParticleWaveMagicType == ParticleTimerEffect_t::EFFECT_FIRE_WAVE )
+	{
+		my->skill[1] = 6; // frames
+		my->skill[5] = 4; // frame time
+		my->ditheringOverride = 6;
+		real_t startScale = 0.1;
+		my->scalex = startScale;
+		my->scaley = startScale;
+		my->scalez = startScale;
+		real_t grouping = 13.75;
+		real_t scale = 1.0;
+		my->focaly = startScale * grouping;
+		my->fskill[0] = scale; // final scale
+		my->fskill[1] = grouping; // final grouping
+		my->skill[6] = 1; // grow to scale
+	}
+	else if ( my->actParticleWaveMagicType == ParticleTimerEffect_t::EFFECT_KINETIC_FIELD )
+	{
+		my->skill[1] = 12; // frames
+		my->skill[5] = 4; // frame time
+		my->ditheringOverride = 6;
+	}
+	else if ( my->actParticleWaveMagicType == ParticleTimerEffect_t::EFFECT_PULSE )
+	{
+		my->skill[1] = 6; // frames
+		my->skill[5] = 4; // frame time
+		my->ditheringOverride = 6;
+		my->scalex = 1.0;
+		my->scalez = 1.0;
+	}
+
+	my->actParticleWaveClientReceived = 1;
+}
+
+Entity* createParticleWave(ParticleTimerEffect_t::EffectType particleType, int sprite, real_t x, real_t y, real_t z, real_t dir, Uint32 lifetime, bool light)
 {
 	Entity* entity = newEntity(sprite, 1, map.entities, nullptr); //Sprite entity.
 	entity->x = x;
@@ -8999,42 +10527,311 @@ Entity* createParticleWave(int sprite, real_t x, real_t y, real_t z, real_t dir,
 	//entity->ditheringDisabled = true;
 	entity->flags[SPRITE] = false;
 	entity->flags[PASSABLE] = true;
-	entity->flags[NOUPDATE] = true;
+	//entity->flags[NOUPDATE] = true;
 	entity->flags[UNCLICKABLE] = true;
 	entity->flags[BRIGHT] = false;
 	entity->scalex = 1.0;
 	entity->scaley = 1.0;
 	entity->scalez = 1.0;
 	entity->behavior = &actParticleWave;
-	entity->yaw = 0.0;
+	entity->yaw = dir;
 	entity->pitch = 0;
 	entity->roll = 0.0;
 	entity->skill[0] = lifetime;
 	entity->skill[1] = 12; // frames
 	entity->skill[3] = 0; // current frame
 	entity->skill[4] = entity->sprite; // start frame
+	entity->skill[5] = 5; // frame time
 	entity->ditheringOverride = 4;
-	entity->lightBonus = vec4(*cvar_magic_fx_light_bonus + .25, 0.0,
-		*cvar_magic_fx_light_bonus + .25, 0.f);
-	if ( multiplayer != CLIENT )
+	entity->actParticleWaveMagicType = particleType;
+	entity->actParticleWaveLight = light ? 1 : 0;
+	entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+		*cvar_magic_fx_light_bonus, 0.f);
+	/*if ( multiplayer != CLIENT )
 	{
 		entity_uids--;
 	}
-	entity->setUID(-3);
+	entity->setUID(-3);*/
+	waveParticleSetUID(*entity, true);
 	return entity;
 }
 
 void actParticleWave(Entity* my)
 {
-	if ( PARTICLE_LIFE < 0 )
+	Entity* parentTimer = uidToEntity(my->parent);
+	if ( PARTICLE_LIFE < 0 || (multiplayer != CLIENT && !parentTimer) )
 	{
+		my->removeLightField();
 		list_RemoveNode(my->mynode);
 		return;
 	}
 
-	--PARTICLE_LIFE;
+	if ( multiplayer != CLIENT && my->scalex >= my->fskill[0] * .9 )
+	{
+		Entity* caster = uidToEntity(parentTimer->parent);
 
-	if ( ::ticks % 3 == 0 )
+		if ( my->actParticleWaveMagicType == ParticleTimerEffect_t::EFFECT_FIRE_WAVE )
+		{
+			std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 2);
+			real_t size = 2;
+			for ( auto it : entLists )
+			{
+				node_t* node;
+				for ( node = it->first; node != nullptr; node = node->next )
+				{
+					Entity* entity = (Entity*)node->element;
+					if ( entity->behavior == &actPlayer || entity->behavior == &actMonster )
+					{
+						real_t yaw = my->yaw + PI / 2;
+						real_t x = my->x + my->focaly * cos(yaw) - 8.0 * cos(yaw + PI / 2);
+						real_t y = my->y + my->focaly * sin(yaw) - 8.0 * sin(yaw + PI / 2);
+
+						real_t tangent = yaw + PI / 2;
+						while ( tangent > PI )
+						{
+							tangent -= 2 * PI;
+						}
+						while ( tangent <= -PI )
+						{
+							tangent += 2 * PI;
+						}
+
+						auto particleEmitterHitProps = getParticleEmitterHitProps(my->parent, entity);
+						if ( particleEmitterHitProps->hits >= 3 || (particleEmitterHitProps->hits > 0 && ((ticks - particleEmitterHitProps->tick) < 20)) )
+						{
+							continue;
+						}
+
+						for ( int i = 0; i < 8; ++i )
+						{
+							real_t ix = x + i * 2.0 * cos(tangent);
+							real_t iy = y + i * 2.0 * sin(tangent);
+
+							if ( ix + size > entity->x - entity->sizex )
+							{
+								if ( ix - size < entity->x + entity->sizex )
+								{
+									if ( iy + size > entity->y - entity->sizey )
+									{
+										if ( iy - size < entity->y + entity->sizey )
+										{
+											Entity* particle = spawnMagicParticle(my);
+											particle->sprite = 942;
+											particle->x = ix;
+											particle->y = iy;
+											particle->z = 0;
+
+											real_t tangent2 = atan2(iy - entity->y, ix - entity->x);
+											real_t yawDiff = tangent2 - tangent;
+											while ( yawDiff > PI )
+											{
+												yawDiff -= 2 * PI;
+											}
+											while ( yawDiff <= -PI )
+											{
+												yawDiff += 2 * PI;
+											}
+
+											if ( Stat* stats = entity->getStats() )
+											{
+												int damage = 5;
+												entity->modHP(-damage);
+
+												particleEmitterHitProps->hits++;
+												particleEmitterHitProps->tick = ticks;
+
+												if ( entity->flags[BURNABLE] && !entity->flags[BURNING] )
+												{
+													if ( local_rng.rand() % 10 < (particleEmitterHitProps->hits + 1) )
+													{
+														entity->SetEntityOnFire(caster);
+													}
+												}
+
+												if ( !stats->getEffectActive(EFF_KNOCKBACK) 
+													&& !entity->flags[BURNING]
+													&& entity->setEffect(EFF_KNOCKBACK, true, 20, false) )
+												{
+													real_t pushback = 0.3;
+													if ( entity->behavior == &actPlayer )
+													{
+														entity->monsterKnockbackVelocity = pushback;
+														entity->monsterKnockbackTangentDir = yawDiff >= 0 ? yaw : yaw + PI;
+														if ( !players[entity->skill[2]]->isLocalPlayer() )
+														{
+															serverUpdateEntityFSkill(entity, 11);
+															serverUpdateEntityFSkill(entity, 9);
+														}
+													}
+													else if ( entity->behavior == &actMonster )
+													{
+														entity->vel_x = cos(yawDiff >= 0 ? yaw : yaw + PI) * pushback;
+														entity->vel_y = sin(yawDiff >= 0 ? yaw : yaw + PI) * pushback;
+														entity->monsterKnockbackVelocity = 0.01;
+														entity->monsterKnockbackTangentDir = tangent;
+													}
+												}
+
+												if ( caster )
+												{
+													// update enemy bar for attacker
+													if ( !strcmp(stats->name, "") )
+													{
+														updateEnemyBar(caster, entity, getMonsterLocalizedName(stats->type).c_str(), stats->HP, stats->MAXHP,
+															false, DamageGib::DMG_DEFAULT);
+													}
+													else
+													{
+														updateEnemyBar(caster, entity, stats->name, stats->HP, stats->MAXHP,
+															false, DamageGib::DMG_DEFAULT);
+													}
+												}
+											}
+											break;
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+
+		//real_t dist = lineTraceTarget(my, x, y, tangent, 64, 0, false, entity);
+		/*if ( hit.entity == entity )
+		{
+			messagePlayer(0, MESSAGE_DEBUG, "Hit");
+		}*/
+	}
+
+	//my->yaw += 0.025;
+	if ( my->skill[6] == 1 ) // grow to scale
+	{
+		real_t increment = std::max(.05, (1.0 - my->scalex)) / 3.0;
+		my->scalex = std::min(my->fskill[0], my->scalex + increment);
+		my->scaley = std::min(my->fskill[0], my->scaley + increment);
+		my->scalez = std::min(my->fskill[0], my->scalez + increment);
+		my->focaly = my->fskill[1] * my->scalex;
+		//if ( Entity* particle = spawnMagicParticleCustom(my, my->sprite, my->scalex * 0.7, 1) )
+		//{
+		//	particle->focaly = my->focaly / 2;
+		//	particle->x = my->x;
+		//	particle->y = my->y;
+		//	particle->z = my->z;
+		//	particle->ditheringOverride = my->ditheringOverride;
+		//	//particle->vel_x = cos(my->yaw + PI / 2);
+		//	//particle->vel_y = sin(my->yaw + PI / 2);
+		//}
+
+		if ( my->ticks == 1 )
+		{
+			for ( int i = 0; i < 10; ++i )
+			{
+				Entity* entity = newEntity(16, 1, map.entities, nullptr); //Sprite entity.
+				entity->behavior = &actFlame;
+				entity->x = my->x;
+				entity->y = my->y;
+				entity->z = my->z;
+				entity->ditheringDisabled = true;
+				entity->flags[SPRITE] = true;
+				entity->flags[NOUPDATE] = true;
+				entity->flags[UPDATENEEDED] = false;
+				entity->flags[PASSABLE] = true;
+				//entity->scalex = 0.25f; //MAKE 'EM SMALL PLEASE!
+				//entity->scaley = 0.25f;
+				//entity->scalez = 0.25f;
+				entity->vel_x = (-40 + local_rng.rand() % 81) / 8.f;
+				entity->vel_y = (-40 + local_rng.rand() % 81) / 8.f;
+				entity->vel_z = (-40 + local_rng.rand() % 81) / 8.f;
+				entity->skill[0] = 15 + local_rng.rand() % 10;
+			}
+		}
+
+		if ( my->skill[7] == 1 )
+		{
+			if ( !my->light )
+			{
+				playSoundEntityLocal(my, 164, 128);
+				my->light = addLight(my->x / 16, my->y / 16, "explosion");
+			}
+		}
+
+		if ( my->scalex >= my->fskill[0] )
+		{
+			my->skill[6] = 0;
+			my->removeLightField();
+		}
+	}
+	else
+	{
+		if ( my->skill[7] == 1 )
+		{
+			if ( flickerLights )
+			{
+				if ( my->ticks % 10 < 5 )
+				{
+					my->removeLightField();
+					my->light = addLight(my->x / 16, my->y / 16, "campfire");
+				}
+				else
+				{
+					my->removeLightField();
+					my->light = addLight(my->x / 16, my->y / 16, "campfire_flicker");
+				}
+			}
+			else
+			{
+				if ( !my->light )
+				{
+					my->light = addLight(my->x / 16, my->y / 16, "campfire");
+				}
+			}
+		}
+	}
+
+	if ( my->skill[7] == 1 )
+	{
+#ifdef USE_FMOD
+		if ( my->skill[8] == 0 )
+		{
+			my->skill[8]--;
+			my->stopEntitySound();
+			my->entity_sound = playSoundEntityLocal(my, 710, 64);
+		}
+		if ( my->entity_sound )
+		{
+			bool playing = false;
+			my->entity_sound->isPlaying(&playing);
+			if ( !playing )
+			{
+				my->entity_sound = nullptr;
+			}
+			else
+			{
+				FMOD_VECTOR position;
+				position.x = (float)(my->x / (real_t)16.0);
+				position.y = (float)(0.0);
+				position.z = (float)(my->y / (real_t)16.0);
+				fmod_result = my->entity_sound->set3DAttributes(&position, nullptr);
+			}
+		}
+#else
+		my->skill[8]--;
+		if ( my->skill[8] <= 0 )
+		{
+			my->skill[8] = 480;
+			playSoundEntityLocal(my, 133, 128);
+		}
+#endif
+	}
+
+	if ( multiplayer != CLIENT )
+	{
+		--PARTICLE_LIFE;
+	}
+	if ( ::ticks % my->skill[5] == 0 )
 	{
 		my->sprite = my->skill[4] + my->skill[3];
 		++my->skill[3];
@@ -9042,5 +10839,6 @@ void actParticleWave(Entity* my)
 		{
 			my->skill[3] = 0;
 		}
+
 	}
 }

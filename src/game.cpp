@@ -2784,6 +2784,8 @@ void gameLogic(void)
 			// world UI
 			Player::WorldUI_t::handleTooltips();
 
+			AOEIndicators_t::update();
+
 			int backpack_sizey[MAXPLAYERS];
 
 			for ( int player = 0; player < MAXPLAYERS; ++player )
@@ -3471,6 +3473,8 @@ void gameLogic(void)
 
 			// world UI
 			Player::WorldUI_t::handleTooltips();
+
+			AOEIndicators_t::update();
 
 			auto& playerInventory = players[clientnum]->inventoryUI;
 			const int inventorySizeX = playerInventory.getSizeX();

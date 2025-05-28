@@ -4630,11 +4630,6 @@ void actPlayer(Entity* my)
 	}*/
 
 	{
-		/*if ( keystatus[SDLK_1] )
-		{
-			keystatus[SDLK_1] = 0;
-			createParticleWave(1721, my->x + 16.0 * cos(my->yaw), my->y + 16.0 * sin(my->yaw), 0.f, 0.f, TICKS_PER_SECOND * 20);
-		}*/
 		//float defaultVol = 0.5f;
 		//if ( !command )
 		//{
@@ -4791,123 +4786,523 @@ void actPlayer(Entity* my)
 		//}
 	}
 
-	//if ( keystatus[SDLK_v] )
-	//{
-	//	keystatus[SDLK_v] = 0;
+	static ConsoleVariable<int> cvar_pbaoe("/pbaoe", 6);
+	if ( keystatus[SDLK_x] )
+	{
+		keystatus[SDLK_x] = 0;
+		Uint32 color = makeColorRGB(255, 255, 255);
+		if ( *cvar_pbaoe == 0 )
+		{
+			Entity* spellTimer = createParticleTimer(my, 1.25 * TICKS_PER_SECOND, -1);
+			spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_IGNITE;
+			spellTimer->particleTimerCountdownSprite = -1;
+			color = makeColor(255, 128, 0, 255);
+		}
+		else if ( *cvar_pbaoe == 1 )
+		{
+			Entity* spellTimer = createParticleTimer(my, 1.25 * TICKS_PER_SECOND, -1);
+			spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_SHATTER;
+			spellTimer->particleTimerCountdownSprite = -1;
+			color = makeColor(255, 0, 255, 255);
+		}
 
-	//	static ConsoleVariable<int> cvar_particle_sprite("/particle_sprite", 1718);
+		if ( *cvar_pbaoe == 3 )
+		{
+			color = makeColor(255, 0, 255, 255);
+			if ( Entity* fx = createParticleAOEIndicator(my, my->x, my->y, -7.5, TICKS_PER_SECOND * 5, 8) )
+			{
+				fx->yaw = my->yaw;
+				fx->skill[7] = 0;
+				if ( auto indicator = AOEIndicators_t::getIndicator(fx->skill[10]) )
+				{
+					indicator->indicatorColor = color;
+					indicator->loop = false;
+					indicator->framesPerTick = 4;
+					indicator->ticksPerUpdate = 1;
+					indicator->delayTicks = TICKS_PER_SECOND;
+				}
+			}
+		}
+		else if ( *cvar_pbaoe == 2 )
+		{
+			color = makeColor(255, 0, 255, 255);
+			for ( int i = 0; i < 6; ++i )
+			{
+				if ( Entity* fx = createParticleAOEIndicator(my, my->x, my->y, -7.5, TICKS_PER_SECOND * 5, 16 + (i / 2) * 4) )
+				{
+					fx->yaw = my->yaw + PI / 2;
+					if ( i % 2 == 1 )
+					{
+						fx->pitch += PI;
+					}
+					fx->z += (i / 2) * 2.0;
+					if ( auto indicator = AOEIndicators_t::getIndicator(fx->skill[10]) )
+					{
+						indicator->arc = PI / 4;
+						indicator->indicatorColor = color;
+						indicator->loop = false;
+						indicator->framesPerTick = 4;
+						indicator->ticksPerUpdate = 1;
+						indicator->delayTicks = TICKS_PER_SECOND;
+					}
+				}
+			}
+		}
+		else if ( *cvar_pbaoe == 4 )
+		{
+			color = makeColor(255, 0, 255, 255);
+			for ( int i = 0; i < 6; ++i )
+			{
+				if ( Entity* fx = createParticleAOEIndicator(my, my->x, my->y, -7.5, TICKS_PER_SECOND * 5, 16 + (i / 2) * 4) )
+				{
+					fx->yaw = my->yaw + PI / 2;
+					if ( i % 2 == 1 )
+					{
+						fx->pitch += PI;
+					}
+					fx->z += (i / 2) * 2.0;
+					fx->fskill[0] = 0.2;
+					if ( auto indicator = AOEIndicators_t::getIndicator(fx->skill[10]) )
+					{
+						indicator->arc = PI / 4;
+						indicator->indicatorColor = color;
+						indicator->loop = false;
+						indicator->framesPerTick = 4;
+						indicator->ticksPerUpdate = 1;
+						indicator->delayTicks = TICKS_PER_SECOND;
+					}
+				}
+			}
+		}
+		else if ( *cvar_pbaoe == 6 )
+		{
+			Entity* spellTimer = createParticleTimer(my, 4 * TICKS_PER_SECOND, -1);
+			spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_VORTEX;
+			spellTimer->particleTimerCountdownSprite = -1;
 
-	//	int lifetime = TICKS_PER_SECOND * 2;
-	//	Entity* spellTimer = createParticleTimer(my, lifetime + TICKS_PER_SECOND, -1);
-	//	static ConsoleVariable<int> cvar_particle_test("/particle_test", 3);
-	//	spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_ICE_WAVE;
-	//	spellTimer->particleTimerCountdownSprite = *cvar_particle_sprite;
-	//	real_t dist = 64.0 * 1.25;
-	//	if ( *cvar_particle_test == 3 )
-	//	{
-	//		dist = 32.0;
-	//	}
-	//	else if ( *cvar_particle_test == 4 )
-	//	{
-	//		dist = 0.0;
-	//	}
-	//	spellTimer->yaw = my->yaw;
-	//	spellTimer->x = my->x + dist * cos(my->yaw);
-	//	spellTimer->y = my->y + dist * sin(my->yaw);
-	//	int lifetime_tick = 0;
-	//	auto& timerEffects = particleTimerEffects[spellTimer->getUID()];
-	//	std::vector<float> locations = {
-	//		0 * PI / 4,
-	//		1 * PI / 4,
-	//		2 * PI / 4,
-	//		3 * PI / 4,
-	//		4 * PI / 4,
-	//		5 * PI / 4,
-	//		6 * PI / 4,
-	//		7 * PI / 4,
-	//	};
-	//	while ( lifetime_tick <= lifetime )
-	//	{
-	//		auto& effect = timerEffects.effectMap[lifetime_tick == 0 ? 1 : lifetime_tick]; // first behavior tick only occurs at 1
-	//		real_t ratio = lifetime_tick / (real_t)lifetime;
-	//		effect.effectType = (ParticleTimerEffect_t::EffectType)(*cvar_particle_test);
-	//		effect.x = my->x + dist * (0.75 * ratio + 0.25) * cos(my->yaw);
-	//		effect.y = my->y + dist * (0.75 * ratio + 0.25) * sin(my->yaw);
-	//		if ( effect.effectType == ParticleTimerEffect_t::EffectType::EFFECT_TEST_1 )
-	//		{
-	//			lifetime_tick += lifetime / 4;
-	//		}
-	//		else if ( effect.effectType == ParticleTimerEffect_t::EffectType::EFFECT_TEST_2 )
-	//		{
-	//			lifetime_tick += 2;
-	//		}
-	//		else if ( effect.effectType == ParticleTimerEffect_t::EffectType::EFFECT_TEST_3 )
-	//		{
-	//			if ( locations.size() > 0 )
-	//			{
-	//				int pick = local_rng.rand() % locations.size();
-	//				auto coord = locations[local_rng.rand() % locations.size()];
-	//				locations.erase(locations.begin() + pick);
-	//				effect.x = my->x + 16.0 * cos(my->yaw + coord);
-	//				effect.y = my->y + 16.0 * sin(my->yaw + coord);
-	//			}
-	//			else
-	//			{
-	//				timerEffects.effectMap.erase(lifetime_tick);
-	//			}
-	//			lifetime_tick += TICKS_PER_SECOND / 4;
-	//		}
-	//		else
-	//		{
-	//			lifetime_tick += TICKS_PER_SECOND / 4;
-	//		}
-	//	}
+			spellTimer->yaw = my->yaw;
+			spellTimer->x = my->x + 40.0 * cos(my->yaw);
+			spellTimer->y = my->y + 40.0 * sin(my->yaw);
+		}
+		else if ( *cvar_pbaoe == 5 )
+		{
+			color = makeColor(255, 255, 255, 255);
+			for ( int i = 0; i < 24; ++i )
+			{
+				if ( Entity* fx = createParticleAOEIndicator(my, my->x, my->y, -7.5, TICKS_PER_SECOND * 5, 16 + (i / 2) * 2) )
+				{
+					fx->yaw = my->yaw + PI / 2 - (i / 2) * PI / 3;
+					fx->pitch += PI / 32;
+					if ( i % 2 == 1 )
+					{
+						fx->pitch += PI;
+					}
+					fx->z = 24.0;
+					fx->z -= (i / 2) * 0.5;
+					fx->vel_z -= 0.25;
+					fx->fskill[0] = 0.3; // rotate
+					fx->scalex = 0.5;// + (i / 2) * 0.25 / 12;
+					fx->scaley = 0.5;// + (i / 2) * 0.25 / 12;
+					if ( auto indicator = AOEIndicators_t::getIndicator(fx->skill[10]) )
+					{
+						indicator->arc = PI / 4;
+						indicator->indicatorColor = color;
+						indicator->loop = false;
+						indicator->framesPerTick = 1;
+						indicator->ticksPerUpdate = 1;
+						indicator->delayTicks = TICKS_PER_SECOND;
+					}
+				}
+			}
+		}
+		else
+		{
+			if ( Entity* fx = createParticleAOEIndicator(my, my->x, my->y, 0.0, TICKS_PER_SECOND * 5, 64) )
+			{
+				if ( auto indicator = AOEIndicators_t::getIndicator(fx->skill[10]) )
+				{
+					Uint8 r, g, b, a;
+					getColor(color, &r, &g, &b, &a);
+					a *= 0.25;
+					indicator->indicatorColor = makeColor(r, g, b, a);
+					indicator->loop = false;
+					indicator->framesPerTick = 4;
+					indicator->ticksPerUpdate = 4;
+					indicator->delayTicks = 0;
+				}
+			}
+			for ( int i = 0; i < 2; ++i )
+			{
+				if ( Entity* fx = createParticleAOEIndicator(my, my->x, my->y, -7.5, TICKS_PER_SECOND * 5, 64) )
+				{
+					if ( i == 1 )
+					{
+						fx->pitch = PI;
+					}
+					if ( auto indicator = AOEIndicators_t::getIndicator(fx->skill[10]) )
+					{
+						indicator->indicatorColor = color;
+						indicator->loop = false;
+						indicator->framesPerTick = 4;
+						indicator->ticksPerUpdate = 1;
+						indicator->delayTicks = TICKS_PER_SECOND;
+					}
+				}
+			}
+		}
+	}
+	if ( keystatus[SDLK_v] )
+	{
+		keystatus[SDLK_v] = 0;
 
-	//	//for ( int i = 0; i < 8; ++i )
-	//	//{
-	//	//	Entity* entity = newEntity(i >= 4 ? 224 : 223, 1, map.entities, nullptr); //Sprite entity.
-	//	//	entity->x = my->x + 16.0 * cos(my->yaw);
-	//	//	entity->y = my->y + 16.0 * sin(my->yaw);
-	//	//	entity->z = 7.499;
-	//	//	static ConsoleVariable<float> cvar_sprite_scale("/sprite_scale", 1.0);
-	//	//	static ConsoleVariable<float> cvar_sprite_rotate("/sprite_rotate", 0.0);
-	//	//	static ConsoleVariable<float> cvar_sprite_alpha("/sprite_alpha", 1.0);
-	//	//	static ConsoleVariable<float> cvar_sprite_alpha_glow("/sprite_alpha_glow", 0.0);
-	//	//	static ConsoleVariable<float> cvar_sprite_grouping("/sprite_grouping", 8.0);
-	//	//	entity->ditheringDisabled = true;
-	//	//	entity->flags[SPRITE] = true;
-	//	//	entity->flags[PASSABLE] = true;
-	//	//	entity->flags[NOUPDATE] = true;
-	//	//	entity->flags[UNCLICKABLE] = true;
-	//	//	entity->flags[BRIGHT] = true;
-	//	//	entity->scalex = *cvar_sprite_scale;
-	//	//	entity->scaley = 2.0 * *cvar_sprite_scale;
-	//	//	//entity->scalex = *cvar_sprite_scale;
-	//	//	entity->behavior = &actSprite;
-	//	//	entity->yaw = my->yaw + PI / 2 + (i * PI / 2);
-	//	//	entity->x += *cvar_sprite_grouping * cos(entity->yaw - PI / 2);
-	//	//	entity->y += *cvar_sprite_grouping * sin(entity->yaw - PI / 2);
-	//	//	entity->pitch = 0.0;
-	//	//	entity->roll = 0.0;
-	//	//	if ( i >= 4 )
-	//	//	{
-	//	//		entity->roll = PI;
-	//	//	}
-	//	//	entity->skill[0] = 1;
-	//	//	entity->skill[1] = 1;
-	//	//	entity->skill[2] = 350;
-	//	//	entity->fskill[0] = *cvar_sprite_rotate;
-	//	//	entity->fskill[2] = *cvar_sprite_alpha; // alpha
-	//	//	entity->fskill[3] = *cvar_sprite_alpha_glow;
-	//	//	entity->skill[6] = 1; // use alpha
-	//	//	entity->skill[7] = 1; // no billboard
-	//	//	if ( multiplayer != CLIENT )
-	//	//	{
-	//	//		entity_uids--;
-	//	//	}
-	//	//	entity->setUID(-3);
-	//	//}
-	//}
+		static std::map<int, std::vector<ParticleTimerEffect_t::EffectLocations_t>> effLocations;
+
+		static ConsoleVariable<int> cvar_particle_sprite("/particle_sprite", 1718);
+		static ConsoleVariable<int> cvar_particle_test("/particle_test", 6);
+		int lifetime = TICKS_PER_SECOND * 2;
+		real_t dist = 64.0 * 1.25;
+		if ( *cvar_particle_test == 3 )
+		{
+			dist = 32.0;
+		}
+		else if ( *cvar_particle_test == 4 )
+		{
+			dist = 0.0;
+		}
+		else if ( *cvar_particle_test == ParticleTimerEffect_t::EffectType::EFFECT_LIGHTNING_BOLT )
+		{
+			real_t dist = 40.0;
+			Uint32 lifetime = TICKS_PER_SECOND * 3;
+
+			Entity* spellTimer = createParticleTimer(my, lifetime + TICKS_PER_SECOND, -1);
+			spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_LIGHTNING;
+			spellTimer->particleTimerCountdownSprite = 1757;
+			spellTimer->yaw = my->yaw;
+			spellTimer->x = my->x + dist * cos(my->yaw);
+			spellTimer->y = my->y + dist * sin(my->yaw);
+			spellTimer->flags[NOUPDATE] = false; // spawn for client
+			spellTimer->flags[UPDATENEEDED] = true;
+			spellTimer->skill[2] = -18;
+			Sint32 val = (1 << 31);
+			val |= (Uint8)(19);
+			val |= (((Uint16)(spellTimer->particleTimerDuration) & 0xFFF) << 8);
+			val |= (Uint8)(spellTimer->particleTimerCountdownAction & 0xFF) << 20;
+			spellTimer->skill[2] = val;
+			spellTimer->particleTimerEffectLifetime = lifetime;
+			floorMagicCreateLightningSequence(spellTimer, 0);
+		}
+		else
+		{
+			Entity* spellTimer = createParticleTimer(my, lifetime + TICKS_PER_SECOND, -1);
+			spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_ICE_WAVE;
+			spellTimer->particleTimerCountdownSprite = *cvar_particle_sprite;
+			spellTimer->yaw = my->yaw;
+			spellTimer->x = my->x + dist * cos(my->yaw);
+			spellTimer->y = my->y + dist * sin(my->yaw);
+			int lifetime_tick = 0;
+			auto& timerEffects = particleTimerEffects[spellTimer->getUID()];
+
+
+			std::vector<float> locations = {
+				0 * PI / 4,
+				1 * PI / 4,
+				2 * PI / 4,
+				3 * PI / 4,
+				4 * PI / 4,
+				5 * PI / 4,
+				6 * PI / 4,
+				7 * PI / 4,
+			};
+
+			effLocations[ParticleTimerEffect_t::EffectType::EFFECT_TEST_1] =
+			{
+				{0.0,		0.0, 0.25, 0.75,	172},
+				{PI / 16,	0.0, 0.0,	1.0,	172},
+				{-PI / 16,	0.0, 0.0,	1.0,	0},
+				{0.0,		0.0, 0.25,	1.0,	0},
+				{PI / 16,	0.0, 0.0,	1.25,	172},
+				{-PI / 16,	0.0, 0.0,	1.25,	0}
+			};
+
+			effLocations[ParticleTimerEffect_t::EffectType::EFFECT_TEST_4].clear();
+			int roll = local_rng.rand() % 8;
+			for ( int i = 0; i < 16; ++i )
+			{
+				effLocations[ParticleTimerEffect_t::EffectType::EFFECT_TEST_4].push_back(ParticleTimerEffect_t::EffectLocations_t());
+				auto& data = effLocations[ParticleTimerEffect_t::EffectType::EFFECT_TEST_4].back();
+				if ( i == 0 )
+				{
+					data.sfx = 151;
+				}
+				data.seconds = 1 / 16.0;
+				data.dist = 0.25 + (0.75 * i / 16.0);
+				real_t angle = (i / 8.0) * PI + ((roll) / 8.0) * PI;
+				data.xOffset = 8.0 * sin(angle);
+				data.xOffset += 2.0 * (local_rng.rand() % 16) / 16.0;
+				data.yawOffset = cos(angle) + ((local_rng.rand() % 4) / 4.0) * 2 * PI;
+			}
+
+			{
+				effLocations[ParticleTimerEffect_t::EffectType::EFFECT_TEST_6].clear();
+				{
+					effLocations[ParticleTimerEffect_t::EffectType::EFFECT_TEST_6] =
+					{
+						{ 0.0, 0.0, 0.1,    0.5,	0 },
+						/*{ 0.0, -8.0, 0.1,   0.5,	0 },
+						{ 0.0, 8.0, 0.1,	0.5,	0 },
+						{ 0.0, 0.0, 0.1,	0.25,	0 },
+						{ 0.0, -8.0, 0.1,	0.25,	0 },
+						{ 0.0, 8.0, 0.1,	0.25,	0 }*/
+					};
+				}
+			}
+
+			int index = -1;
+
+			if ( *cvar_particle_test == -1 )
+			{
+				static ConsoleVariable<float> c1("/c1", 1.0);
+				static ConsoleVariable<int> c2("/c2", 4);
+				static ConsoleVariable<float> c3("/c3", 13.75);
+				static ConsoleVariable<int> c4("/c4", 1);
+				real_t grouping = *c3;
+				real_t scale = *c1;
+				if ( *c4 == 3 )
+				{
+					Entity* wave = createParticleWave(ParticleTimerEffect_t::EFFECT_PULSE, 
+						1751, my->x + 16.0 * cos(my->yaw), my->y + 16.0 * sin(my->yaw), 6.25, PI / 2 + my->yaw, TICKS_PER_SECOND * 10, false);
+					wave->skill[1] = 6; // frames
+					wave->skill[5] = *c2; // frame time
+					wave->ditheringOverride = 6;
+					wave->scalex = scale;
+					wave->scalez = scale;
+				}
+				else if ( *c4 == 2 )
+				{
+					Entity* wave = createParticleWave(ParticleTimerEffect_t::EFFECT_KINETIC_FIELD, 
+						1739, my->x + 16.0 * cos(my->yaw), my->y + 16.0 * sin(my->yaw), 6.25, PI / 2 + my->yaw, TICKS_PER_SECOND * 10, false);
+					wave->skill[1] = 12; // frames
+					wave->skill[5] = *c2; // frame time
+					wave->ditheringOverride = 6;
+				}
+				else if ( *c4 == 1 )
+				{
+					spellTimer->particleTimerDuration = TICKS_PER_SECOND * 5;
+					for ( int i = 0; i < 3; ++i )
+					{
+						if ( i == 0 || i == 2 ) { continue; }
+						bool light = false;
+						if ( i == 1 )
+						{
+							light = true;
+						}
+						Entity* wave = createParticleWave(ParticleTimerEffect_t::EFFECT_FIRE_WAVE, 
+							1733, my->x + 16.0 * cos(my->yaw), my->y + 16.0 * sin(my->yaw), 2.75, 
+							-PI / 2 + my->yaw - PI / 3 + i * PI / 3, 
+							spellTimer->particleTimerDuration, light);
+						wave->skill[1] = 6; // frames
+						wave->skill[5] = *c2; // frame time
+						wave->ditheringOverride = 6;
+						wave->parent = spellTimer->getUID();
+						real_t startScale = 0.1;
+						wave->scalex = startScale;
+						wave->scaley = startScale;
+						wave->scalez = startScale;
+						wave->focaly = startScale * grouping;
+						wave->fskill[0] = scale; // final scale
+						wave->fskill[1] = grouping; // final grouping
+						wave->skill[6] = 1; // grow to scale
+						wave->flags[UPDATENEEDED] = true;
+					}
+				}
+				else
+				{
+					for ( int i = 0; i < 4; ++i )
+					{
+						Entity* wave = createParticleWave(ParticleTimerEffect_t::EFFECT_FIRE_WAVE, 1733, my->x + 16.0 * cos(my->yaw), my->y + 16.0 * sin(my->yaw), 2.75, my->yaw + i * PI / 2, TICKS_PER_SECOND * 20, false);
+						wave->skill[1] = 6; // frames
+						wave->skill[5] = *c2; // frame time
+						wave->ditheringOverride = 6;
+						/*if ( i == 4 ) { grouping -= 4.0; }
+						if ( i >= 4 )
+						{
+							static ConsoleVariable<float> c1("/c1", 1.0);
+							static ConsoleVariable<int> c2("/c2", 4);
+							wave->skill[5] = *c2;
+						}*/
+						if ( i >= 4 )
+						{
+							wave->z -= 8.0;
+						}
+						//wave->pitch = PI / 2;
+						wave->scalex = *c1;
+						wave->scaley = *c1;
+						//wave->scaley = *c1;
+						wave->focaly = grouping;
+						//wave->x += grouping * cos(wave->yaw - PI / 2);
+						//wave->y += grouping * sin(wave->yaw - PI / 2);
+					}
+				}
+				lifetime_tick = lifetime + 1;
+			}
+			else if ( *cvar_particle_test == -3 )
+			{
+				Entity* root = createParticleRoot(1766, my->x + 16.0 * cos(my->yaw), my->y + 16.0 * sin(my->yaw),
+					7.5, my->yaw, TICKS_PER_SECOND * 3);
+				root->focalz = -0.5;
+			}
+			//else if ( *cvar_particle_test == -2 )
+			//{
+			//	Entity* wave = createParticleWave(1721, my->x + 16.0 * cos(my->yaw), my->y + 16.0 * sin(my->yaw), 0.f, 0.f, TICKS_PER_SECOND * 20);
+			//	wave->skill[1] = 12; // frames
+			//	lifetime_tick = lifetime + 1;
+			//}
+			while ( lifetime_tick <= lifetime )
+			{
+				++index;
+				auto& effect = timerEffects.effectMap[lifetime_tick == 0 ? 1 : lifetime_tick]; // first behavior tick only occurs at 1
+				real_t ratio = lifetime_tick / (real_t)lifetime;
+				effect.effectType = (ParticleTimerEffect_t::EffectType)(*cvar_particle_test);
+				effect.x = my->x + dist * (0.75 * ratio + 0.25) * cos(my->yaw);
+				effect.y = my->y + dist * (0.75 * ratio + 0.25) * sin(my->yaw);
+				if ( effect.effectType == ParticleTimerEffect_t::EffectType::EFFECT_TEST_1 )
+				{
+					auto& data = effLocations[effect.effectType][index];
+					effect.sfx = data.sfx;
+					effect.yaw = my->yaw + data.yawOffset;
+					real_t dist = 40.0;
+					effect.x = my->x + dist * (data.dist) * cos(effect.yaw);
+					effect.y = my->y + dist * (data.dist) * sin(effect.yaw);
+					lifetime_tick += std::max(1.0, TICKS_PER_SECOND * data.seconds);
+					if ( index + 1 >= effLocations[effect.effectType].size() )
+					{
+						break;
+					}
+				}
+				else if ( effect.effectType == ParticleTimerEffect_t::EffectType::EFFECT_TEST_4 )
+				{
+					auto& data = effLocations[effect.effectType][index];
+					effect.sfx = data.sfx;
+					effect.x = my->x + dist * (data.dist) * cos(my->yaw) + data.xOffset * cos(my->yaw + PI / 2);
+					effect.y = my->y + dist * (data.dist) * sin(my->yaw) + data.xOffset * sin(my->yaw + PI / 2);
+
+					effect.yaw = my->yaw + data.yawOffset;
+
+					lifetime_tick += std::max(1.0, TICKS_PER_SECOND * data.seconds);
+					if ( index + 1 >= effLocations[effect.effectType].size() )
+					{
+						break;
+					}
+				}
+				else if ( effect.effectType == ParticleTimerEffect_t::EffectType::EFFECT_LIGHTNING_BOLT )
+				{
+					auto& data = effLocations[effect.effectType][index];
+					effect.sfx = data.sfx;
+					effect.x = /*my->x + dist * (data.dist) * cos(my->yaw) +*/ data.xOffset * cos(my->yaw + PI / 2);
+					effect.y = /*my->y + dist * (data.dist) * sin(my->yaw) +*/ data.xOffset * sin(my->yaw + PI / 2);
+
+					effect.yaw = my->yaw + data.yawOffset;
+
+					if ( index == 0 )
+					{
+						//createParticleCircling(spellTimer, TICKS_PER_SECOND, 931);
+					}
+
+					lifetime_tick += std::max(1.0, TICKS_PER_SECOND * data.seconds);
+					if ( index + 1 >= effLocations[effect.effectType].size() )
+					{
+						break;
+					}
+				}
+				else if ( effect.effectType == ParticleTimerEffect_t::EffectType::EFFECT_TEST_6 )
+				{
+					spellTimer->particleTimerCountdownSprite = 1765;
+
+					auto& data = effLocations[effect.effectType][index];
+					effect.sfx = data.sfx;
+					effect.x = my->x + dist * (data.dist) * cos(my->yaw) + data.xOffset * cos(my->yaw + PI / 2);
+					effect.y = my->y + dist * (data.dist) * sin(my->yaw) + data.xOffset * sin(my->yaw + PI / 2);
+
+					effect.yaw = my->yaw + data.yawOffset;
+
+					lifetime_tick += std::max(1.0, TICKS_PER_SECOND * data.seconds);
+					if ( index + 1 >= effLocations[effect.effectType].size() )
+					{
+						break;
+					}
+				}
+				else if ( effect.effectType == ParticleTimerEffect_t::EffectType::EFFECT_TEST_2 )
+				{
+					lifetime_tick += 2;
+				}
+				else if ( effect.effectType == ParticleTimerEffect_t::EffectType::EFFECT_TEST_3 )
+				{
+					if ( locations.size() > 0 )
+					{
+						int pick = local_rng.rand() % locations.size();
+						auto coord = locations[local_rng.rand() % locations.size()];
+						locations.erase(locations.begin() + pick);
+						effect.x = my->x + 16.0 * cos(my->yaw + coord);
+						effect.y = my->y + 16.0 * sin(my->yaw + coord);
+					}
+					else
+					{
+						timerEffects.effectMap.erase(lifetime_tick);
+					}
+					lifetime_tick += TICKS_PER_SECOND / 4;
+				}
+				else
+				{
+					lifetime_tick += TICKS_PER_SECOND / 4;
+				}
+			}
+		}
+
+		//for ( int i = 0; i < 8; ++i )
+		//{
+		//	Entity* entity = newEntity(i >= 4 ? 224 : 223, 1, map.entities, nullptr); //Sprite entity.
+		//	entity->x = my->x + 16.0 * cos(my->yaw);
+		//	entity->y = my->y + 16.0 * sin(my->yaw);
+		//	entity->z = 7.499;
+		//	static ConsoleVariable<float> cvar_sprite_scale("/sprite_scale", 1.0);
+		//	static ConsoleVariable<float> cvar_sprite_rotate("/sprite_rotate", 0.0);
+		//	static ConsoleVariable<float> cvar_sprite_alpha("/sprite_alpha", 1.0);
+		//	static ConsoleVariable<float> cvar_sprite_alpha_glow("/sprite_alpha_glow", 0.0);
+		//	static ConsoleVariable<float> cvar_sprite_grouping("/sprite_grouping", 8.0);
+		//	entity->ditheringDisabled = true;
+		//	entity->flags[SPRITE] = true;
+		//	entity->flags[PASSABLE] = true;
+		//	entity->flags[NOUPDATE] = true;
+		//	entity->flags[UNCLICKABLE] = true;
+		//	entity->flags[BRIGHT] = true;
+		//	entity->scalex = *cvar_sprite_scale;
+		//	entity->scaley = 2.0 * *cvar_sprite_scale;
+		//	//entity->scalex = *cvar_sprite_scale;
+		//	entity->behavior = &actSprite;
+		//	entity->yaw = my->yaw + PI / 2 + (i * PI / 2);
+		//	entity->x += *cvar_sprite_grouping * cos(entity->yaw - PI / 2);
+		//	entity->y += *cvar_sprite_grouping * sin(entity->yaw - PI / 2);
+		//	entity->pitch = 0.0;
+		//	entity->roll = 0.0;
+		//	if ( i >= 4 )
+		//	{
+		//		entity->roll = PI;
+		//	}
+		//	entity->skill[0] = 1;
+		//	entity->skill[1] = 1;
+		//	entity->skill[2] = 350;
+		//	entity->fskill[0] = *cvar_sprite_rotate;
+		//	entity->fskill[2] = *cvar_sprite_alpha; // alpha
+		//	entity->fskill[3] = *cvar_sprite_alpha_glow;
+		//	entity->skill[6] = 1; // use alpha
+		//	entity->skill[7] = 1; // no billboard
+		//	if ( multiplayer != CLIENT )
+		//	{
+		//		entity_uids--;
+		//	}
+		//	entity->setUID(-3);
+		//}
+	}
 
 	Entity* entity;
 	Entity* entity2 = nullptr;
@@ -6732,6 +7127,24 @@ void actPlayer(Entity* my)
 				}
 			}
 		}
+		if ( stats[PLAYER_NUM]->getEffectActive(EFF_LIFT) )
+		{
+			my->creatureHoverZ += 0.25;
+		}
+		else
+		{
+			if ( my->creatureHoverZ > 0.1 )
+			{
+			}
+			my->creatureHoverZ = 0.0;
+		}
+		real_t height = 2.0 * sin(std::min(my->creatureHoverZ, PI / 2));
+		if ( my->creatureHoverZ >= PI / 2 )
+		{
+			height += 0.5 * cos(my->creatureHoverZ);
+		}
+
+		my->z -= 2 * height;
 
 		if ( !levitating && prevlevitating )
 		{
