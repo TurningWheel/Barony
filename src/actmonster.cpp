@@ -1932,6 +1932,10 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 	my->monsterState = MONSTER_STATE_WAIT; // be ready to follow
 	myStats->leader_uid = players[monsterclicked]->entity->getUID();
 	my->monsterAllyIndex = monsterclicked;
+	if ( myStats->monsterForceAllegiance == Stat::MONSTER_FORCE_PLAYER_ENEMY )
+	{
+		myStats->monsterForceAllegiance = Stat::MONSTER_FORCE_ALLEGIANCE_NONE;
+	}
 	if ( multiplayer == SERVER )
 	{
 		serverUpdateEntitySkill(my, 42); // update monsterAllyIndex for clients.
@@ -10277,6 +10281,10 @@ bool forceFollower(Entity& leader, Entity& follower)
 		{
 			FollowerMenu[player].recentEntity = &follower;
 		}
+		if ( followerStats->monsterForceAllegiance == Stat::MONSTER_FORCE_PLAYER_ENEMY )
+		{
+			followerStats->monsterForceAllegiance = Stat::MONSTER_FORCE_ALLEGIANCE_NONE;
+	}
 	}
 
 	if ( player >= 0 )
@@ -13592,9 +13600,16 @@ void mimicResetIdle(Entity* my)
 	}
 }
 
+static ConsoleVariable<bool> cvar_monster_debug_models("/monster_debug_models", false);
 bool monsterDebugModels(Entity* my, real_t* dist)
 {
+#ifdef NDEBUG
 	return false;
+#endif
+	if ( !*cvar_monster_debug_models )
+	{
+	return false;
+	}
 	static Uint32 thisTick = 0;
 	if ( thisTick == ticks )
 	{
