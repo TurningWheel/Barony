@@ -20,6 +20,9 @@
 #include "init.hpp"
 #include "mod_tools.hpp"
 #include <sys/stat.h>
+#ifdef LINUX
+#include <filesystem>
+#endif
 #ifndef EDITOR
 #define EDITOR
 #endif
