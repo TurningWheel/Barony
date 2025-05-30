@@ -4624,9 +4624,9 @@ void actPlayer(Entity* my)
 	}
 	/*if ( my->ticks == 1 )
 	{
-		consoleCommand("/allspells3");
-		consoleCommand("/maxout2");
-		consoleCommand("/god");
+		consoleCommand("/allspells4");
+		//consoleCommand("/maxout2");
+		//consoleCommand("/god");
 	}*/
 
 	{
@@ -4787,7 +4787,7 @@ void actPlayer(Entity* my)
 	}
 
 	static ConsoleVariable<int> cvar_pbaoe("/pbaoe", 6);
-	if ( keystatus[SDLK_x] )
+	if ( keystatus[SDLK_x] && enableDebugKeys )
 	{
 		keystatus[SDLK_x] = 0;
 		Uint32 color = makeColorRGB(255, 255, 255);
@@ -4951,7 +4951,7 @@ void actPlayer(Entity* my)
 			}
 		}
 	}
-	if ( keystatus[SDLK_v] )
+	if ( keystatus[SDLK_v] && enableDebugKeys )
 	{
 		keystatus[SDLK_v] = 0;
 
@@ -9307,10 +9307,20 @@ void actPlayer(Entity* my)
 			Entity* mapCreature = (Entity*)mapNode->element;
 			if ( mapCreature )
 			{
-				if ( stats[PLAYER_NUM]->getEffectActive(EFF_TELEPATH) && !intro )
+				if ( (stats[PLAYER_NUM]->getEffectActive(EFF_TELEPATH) 
+					/*|| (mapCreature->getStats() && mapCreature->getStats()->getEffectActive(EFF_DETECT_ENEMY))*/
+					)
+					&& !intro )
 				{
 					// periodically set the telepath rendering flag.
-					mapCreature->monsterEntityRenderAsTelepath = 1;
+					/*if ( (mapCreature->getStats() && mapCreature->getStats()->getEffectActive(EFF_DETECT_ENEMY)) )
+					{
+						mapCreature->monsterEntityRenderAsTelepath = 2;
+					}
+					else*/
+					{
+						mapCreature->monsterEntityRenderAsTelepath = 1;
+					}
 				}
 				else
 				{
@@ -11096,9 +11106,9 @@ void actPlayerLimb(Entity* my)
 		}
 	}
 
-	if ( parent && parent->monsterEntityRenderAsTelepath == 1 )
+	if ( parent && parent->monsterEntityRenderAsTelepath != 0 )
 	{
-		my->monsterEntityRenderAsTelepath = 1;
+		my->monsterEntityRenderAsTelepath = parent->monsterEntityRenderAsTelepath;
 	}
 	else
 	{

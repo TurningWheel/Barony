@@ -3490,6 +3490,8 @@ bool AchievementObserver::updateOnLevelChange()
 			playerAchievements[i].updatedBountyTargets = false;
 			playerAchievements[i].wearingBountyHat = false;
 			playerAchievements[i].totalKillsTickUpdate = false;
+			playerAchievements[i].manifestDestinyChests.clear();
+			playerAchievements[i].manifestDestinyChestSequence = 0;
 		}
 		levelObserved = currentlevel;
 		return true;
@@ -3651,6 +3653,39 @@ void AchievementObserver::updateData()
 				}
 			}
 			monstersGeneratedOnLevel.push_back(mapCreature);
+		}
+	}
+
+
+	if ( multiplayer != CLIENT )
+	{
+		std::vector<Uint32> chestsOnLevel;
+		for ( node_t* node = map.entities->first; node; node = node->next )
+		{
+			Entity* entity = (Entity*)node->element;
+			if ( entity && (entity->behavior == &actChest || (entity->behavior == &actMonster && entity->getStats() && entity->getStats()->type == MIMIC) ) )
+			{
+				chestsOnLevel.push_back(entity->getUID());
+			}
+		}
+		if ( chestsOnLevel.size() )
+		{
+			BaronyRNG chestSeed;
+			chestSeed.seedBytes(&mapseed, sizeof(mapseed));
+
+			std::vector<unsigned int> chances(chestsOnLevel.size());
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				playerAchievements[i].manifestDestinyChests.clear();
+				std::fill(chances.begin(), chances.end(), 1);
+				while ( playerAchievements[i].manifestDestinyChests.size() < chestsOnLevel.size() )
+				{
+					int pick = chestSeed.discrete(chances.data(), chances.size());
+					playerAchievements[i].manifestDestinyChests.push_back(chestsOnLevel[pick]);
+					chances[pick] = 0;
+				}
+				playerAchievements[i].manifestDestinyChestSequence = chestSeed.rand() % playerAchievements[i].manifestDestinyChests.size();
+			}
 		}
 	}
 

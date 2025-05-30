@@ -903,6 +903,8 @@ public:
 		std::unordered_set<Uint32> rat5000secondRule;
 		std::unordered_set<Uint32> phantomMaskFirstStrikes;
 		std::unordered_set<Uint32> bountyTargets;
+		std::vector<Uint32> manifestDestinyChests;
+		Uint32 manifestDestinyChestSequence = 0;
 		bool updatedBountyTargets = false;
 		bool wearingBountyHat = false;
 		static std::set<ItemType> startingClassItems;

@@ -508,6 +508,47 @@ void actArrow(Entity* my)
 						}
 					}
 
+					//if ( hit.entity && hitstats )
+					//{
+					//	if ( hitstats->getEffectActive(EFF_NULL_RANGED) )
+					//	{
+					//		auto effectStrength = hitstats->getEffectActive(EFF_NULL_RANGED);
+					//		int duration = hitstats->EFFECTS_TIMERS[EFF_NULL_RANGED];
+					//		if ( effectStrength == 1 )
+					//		{
+					//			if ( hitstats->EFFECTS_TIMERS[EFF_NULL_RANGED] > 0 )
+					//			{
+					//				hitstats->EFFECTS_TIMERS[EFF_NULL_RANGED] = 1;
+					//			}
+					//		}
+					//		else if ( effectStrength > 1 )
+					//		{
+					//			--effectStrength;
+					//			hitstats->setEffectValueUnsafe(EFF_NULL_RANGED, effectStrength);
+					//			hit.entity->setEffect(EFF_NULL_RANGED, effectStrength, hitstats->EFFECTS_TIMERS[EFF_NULL_RANGED], false);
+					//		}
+					//		if ( (parent && parent->behavior == &actPlayer) || (parent && parent->behavior == &actMonster && parent->monsterAllyGetPlayerLeader())
+					//			|| hit.entity->behavior == &actPlayer || hit.entity->monsterAllyGetPlayerLeader() )
+					//		{
+					//			spawnDamageGib(hit.entity, 0, DamageGib::DMG_GUARD, DamageGibDisplayType::DMG_GIB_GUARD, true);
+					//		}
+
+					//		if ( hit.entity->behavior == &actPlayer )
+					//		{
+					//			messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, makeColorRGB(0, 255, 0), Language::get(6465));
+					//		}
+					//		if ( parent && parent->behavior == &actPlayer )
+					//		{
+					//			messagePlayerMonsterEvent(parent->skill[2], makeColorRGB(255, 255, 255),
+					//				*hitstats, Language::get(6468), Language::get(6469), MSG_COMBAT); // %s guards the attack
+					//		}
+					//		playSoundEntity(hit.entity, 166, 128);
+					//		my->removeLightField();
+					//		list_RemoveNode(my->mynode);
+					//		return;
+					//	}
+					//}
+
 					bool silverDamage = false;
 					bool huntingDamage = false;
 					if ( my->arrowQuiverType == QUIVER_SILVER )
@@ -745,6 +786,16 @@ void actArrow(Entity* my)
 										Compendium_t::Events_t::eventUpdateWorld(hit.entity->monsterAllyIndex, Compendium_t::CPDM_TRAP_FOLLOWERS_KILLED, "arrow trap", 1);
 									}
 								}
+							}
+
+							if ( hit.entity->onEntityTrapHitSacredPath(parent) )
+							{
+								if ( hit.entity->behavior == &actPlayer )
+								{
+									messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, makeColorRGB(0, 255, 0), 
+										Language::get(6472), Language::get(6291));
+								}
+								playSoundEntity(hit.entity, 166, 128);
 							}
 						}
 						else

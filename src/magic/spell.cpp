@@ -475,12 +475,15 @@ void spellConstructor(spell_t* spell, int ID)
 	strcpy(spell->spell_internal_name, "spell_default");
 	spell->elements.first = NULL;
 	spell->elements.last = NULL;
+	spell->difficulty = 100;
 	spell->sustain = true;
 	spell->magicstaff = false;
 	spell->sustain_node = NULL;
 	spell->magic_effects_node = NULL;
 	spell->caster = -1;
 	spell->channel_duration = 0;
+	spell->rangefinder = false;
+	spell->hide_from_ui = false;
 	//spell->timer = 0;
 	allGameSpells[ID] = spell;
 }
@@ -775,6 +778,10 @@ real_t getBonusFromCasterOfSpellElement(Entity* caster, Stat* casterStats, spell
 			bonus += 0.5 * percentMP / 10.0;
 		}
 		bonus += (casterStats->getEnsembleEffectBonus(Stat::ENSEMBLE_LUTE_EFF_1)) / 100.0;
+		if ( casterStats->getEffectActive(EFF_COUNSEL) )
+		{
+			bonus += 0.25;
+		}
 		if ( casterStats->helmet )
 		{
 			if ( casterStats->helmet->type == HAT_MITER )

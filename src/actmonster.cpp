@@ -664,6 +664,19 @@ void Entity::updateEntityOnHit(Entity* attacker, bool alertTarget)
 
 	if ( Stat* myStats = getStats() )
 	{
+		if ( Uint8 effectStrength = myStats->getEffectActive(EFF_PENANCE) )
+		{
+			if ( attacker )
+			{
+				if ( attacker->behavior == &actPlayer || attacker->monsterAllyGetPlayerLeader() )
+				{
+					if ( effectStrength >= 1 && effectStrength < 1 + MAXPLAYERS )
+					{
+						setEffect(EFF_PENANCE, false, 0, true);
+					}
+				}
+			}
+		}
 		if ( myStats->type == SHOPKEEPER )
 		{
 			if ( alertTarget )
@@ -1631,7 +1644,9 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 					canAlly = true; // non-boss imps
 				}
 			}
-			if ( myStats->monsterForceAllegiance == Stat::MONSTER_FORCE_PLAYER_RECRUITABLE )
+			if ( myStats->monsterForceAllegiance == Stat::MONSTER_FORCE_PLAYER_RECRUITABLE
+				|| (myStats->getEffectActive(EFF_PENANCE) >= 1 
+					&& myStats->getEffectActive(EFF_PENANCE) < 1 + MAXPLAYERS) )
 			{
 				canAlly = true;
 			}
@@ -1804,6 +1819,12 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 						}
 					}
 					if ( myStats->monsterForceAllegiance == Stat::MONSTER_FORCE_PLAYER_RECRUITABLE )
+					{
+						canAlly = true;
+					}
+					if ( myStats->monsterForceAllegiance == Stat::MONSTER_FORCE_PLAYER_RECRUITABLE
+						|| (myStats->getEffectActive(EFF_PENANCE) >= 1
+							&& myStats->getEffectActive(EFF_PENANCE) < 1 + MAXPLAYERS) )
 					{
 						canAlly = true;
 					}

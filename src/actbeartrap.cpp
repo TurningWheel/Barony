@@ -1453,9 +1453,11 @@ void actDecoyBox(Entity* my)
 										Entity* gyrobot = uidToEntity(*c);
 										if ( gyrobot && gyrobot->getRace() == GYROBOT )
 										{
-											if ( entity->entityShowOnMap < 250 )
+											if ( entity->getEntityShowOnMapDuration() == 0
+												|| (entity->getEntityShowOnMapSource() == Entity::SHOW_MAP_GYRO
+													&& entity->getEntityShowOnMapDuration() < TICKS_PER_SECOND * 5) )
 											{
-												entity->entityShowOnMap = TICKS_PER_SECOND * 5;
+												entity->setEntityShowOnMap(Entity::SHOW_MAP_GYRO, TICKS_PER_SECOND * 5);
 												if ( parent->skill[2] != 0 )
 												{
 													serverUpdateEntitySkill(entity, 59);

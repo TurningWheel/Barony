@@ -4639,6 +4639,11 @@ void item_Food(Item*& item, int player)
 				players[player]->entity->setEffect(EFF_MARIGOLD, true, stats[player]->EFFECTS_TIMERS[EFF_MARIGOLD] + TICKS_PER_SECOND * 30, false);
 			}
 		}
+
+		if ( stats[player]->getEffectActive(EFF_BLESS_FOOD) )
+		{
+			players[player]->entity->setEffect(EFF_MARIGOLD, true, stats[player]->EFFECTS_TIMERS[EFF_MARIGOLD] + TICKS_PER_SECOND * 30, false);
+		}
 	}
 	else
 	{
@@ -4652,6 +4657,10 @@ void item_Food(Item*& item, int player)
 				{
 					foodMod += 3 * std::min(2, abs(stats[player]->mask->beatitude));
 				}
+			}
+			if ( stats[player]->getEffectActive(EFF_BLESS_FOOD) )
+			{
+				foodMod += 3;
 			}
 
 			players[player]->entity->modHP(std::max(1, (int)(foodMod * foodMult)));
@@ -4937,6 +4946,11 @@ void item_FoodTin(Item*& item, int player)
 			}
 		}
 
+		if ( stats[player]->getEffectActive(EFF_BLESS_FOOD) )
+		{
+			players[player]->entity->setEffect(EFF_MARIGOLD, true, stats[player]->EFFECTS_TIMERS[EFF_MARIGOLD] + TICKS_PER_SECOND * 30, false);
+		}
+
 		if ( hpBuff )
 		{
 			stats[player]->setEffectActive(EFF_HP_REGEN, 1);
@@ -4962,6 +4976,10 @@ void item_FoodTin(Item*& item, int player)
 				{
 					foodMod += 3 * std::min(2, abs(stats[player]->mask->beatitude));
 				}
+			}
+			if ( stats[player]->getEffectActive(EFF_BLESS_FOOD) )
+			{
+				foodMod += 3;
 			}
 
 			players[player]->entity->modHP(std::max(1, (int)(foodMod * foodMult)));

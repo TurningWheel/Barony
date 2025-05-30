@@ -184,7 +184,35 @@ Sint32 Stat::getModifiedProficiency(int skill) const
 		}
 	}
 
-	return std::min(100, std::max(0, base + equipmentBonus));
+	int effectBonus = 0;
+	if ( getEffectActive(EFF_NIMBLENESS)
+		&& (skill == PRO_LOCKPICKING
+			|| skill == PRO_SWORD
+			|| skill == PRO_RANGED
+			|| skill == PRO_STEALTH) )
+	{
+		effectBonus += 10;
+	}
+	if ( getEffectActive(EFF_GREATER_MIGHT)
+		&& (skill == PRO_POLEARM
+			|| skill == PRO_AXE
+			|| skill == PRO_MACE) )
+	{
+		effectBonus += 10;
+	}
+	if ( getEffectActive(EFF_COUNSEL) 
+		&& (skill == PRO_MAGIC
+			|| skill == PRO_SPELLCASTING
+			|| skill == PRO_MACE) )
+	{
+		effectBonus += 10;
+	}
+	if ( getEffectActive(EFF_STURDINESS)
+		&& (skill == PRO_SHIELD) )
+	{
+		effectBonus += 10;
+	}
+	return std::min(100, std::max(0, base + equipmentBonus + effectBonus));
 }
 
 //Destructor

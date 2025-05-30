@@ -268,7 +268,7 @@ void actDamageGib(Entity* my)
 	GIB_VELX = GIB_VELX * .95;
 	GIB_VELY = GIB_VELY * .95;
 
-	if ( my->skill[3] == DMG_WEAKER || my->skill[3] == DMG_WEAKEST || my->skill[3] == DMG_MISS )
+	if ( my->skill[3] == DMG_WEAKER || my->skill[3] == DMG_WEAKEST || my->skill[3] == DMG_MISS || my->skill[3] == DMG_GUARD )
 	{
 		real_t scale = 0.2;
 		if ( my->ticks > 10 )
@@ -281,6 +281,7 @@ void actDamageGib(Entity* my)
 	}
 	else if ( my->skill[3] == DMG_STRONGER
 		|| my->skill[3] == DMG_STRONGEST
+		|| my->skill[3] == DMG_GUARD
 		|| my->skill[3] == DMG_MISS )
 	{
 		real_t scale = 0.2;
@@ -293,7 +294,7 @@ void actDamageGib(Entity* my)
 		{
 			scale *= anim[my->ticks] / 100.0;
 		}
-		if ( my->skill[3] == DMG_MISS )
+		if ( my->skill[3] == DMG_MISS || my->skill[3] == DMG_GUARD )
 		{
 			scale = 0.2;
 		}
@@ -490,6 +491,7 @@ Entity* spawnGib(Entity* parentent, int customGibSprite)
 
 Entity* spawnDamageGib(Entity* parentent, Sint32 dmgAmount, int gibDmgType, int displayType, bool updateClients)
 {
+	if ( gibDmgType == DMG_DETECT_MONSTER ) { return nullptr; }
 	if ( !parentent )
 	{
 		return nullptr;
@@ -508,7 +510,7 @@ Entity* spawnDamageGib(Entity* parentent, Sint32 dmgAmount, int gibDmgType, int 
 	entity->sizey = 1;
 	real_t vel = (local_rng.rand() % 10) / 20.f;
 	entity->vel_z = -.5;
-	if ( gibDmgType == DMG_STRONGER || gibDmgType == DMG_STRONGEST || gibDmgType == DMG_MISS )
+	if ( gibDmgType == DMG_STRONGER || gibDmgType == DMG_STRONGEST || gibDmgType == DMG_MISS || gibDmgType == DMG_GUARD )
 	{
 		vel = 0.25;
 		entity->vel_z = -.4;
@@ -577,6 +579,7 @@ Entity* spawnDamageGib(Entity* parentent, Sint32 dmgAmount, int gibDmgType, int 
 		case DMG_POISON:
 			break;
 		case DMG_MISS:
+		case DMG_GUARD:
 			break;
 		case DMG_HEAL:
 			color = hudColors.characterSheetGreen;

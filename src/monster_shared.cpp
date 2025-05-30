@@ -355,9 +355,9 @@ void Entity::actMonsterLimb(bool processLight)
 		}
 	}
 
-	if ( parentEnt && parentEnt->behavior == &actMonster && parentEnt->monsterEntityRenderAsTelepath == 1 )
+	if ( parentEnt && parentEnt->behavior == &actMonster && parentEnt->monsterEntityRenderAsTelepath != 0 )
 	{
-		monsterEntityRenderAsTelepath = 1;
+		monsterEntityRenderAsTelepath = parentEnt->monsterEntityRenderAsTelepath;
 	}
 	else
 	{

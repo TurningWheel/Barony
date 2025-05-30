@@ -857,7 +857,10 @@ void magicTrapOnHit(Entity* parent, Entity* hitentity, Stat* hitstats, Sint32 ol
 			{
 				if ( auto leader = hitentity->monsterAllyGetPlayerLeader() )
 				{
-					Compendium_t::Events_t::eventUpdateWorld(hitentity->monsterAllyIndex, Compendium_t::CPDM_TRAP_FOLLOWERS_KILLED, category, 1);
+					if ( hitstats->HP <= 0 )
+					{
+						Compendium_t::Events_t::eventUpdateWorld(hitentity->monsterAllyIndex, Compendium_t::CPDM_TRAP_FOLLOWERS_KILLED, category, 1);
+					}
 				}
 			}
 		}
@@ -1130,8 +1133,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				Stat* hitstats = nullptr;
 				int player = -1;
 
-				// count reflection
-				int reflection = 0;
 				if ( hit.entity )
 				{
 					hitstats = hit.entity->getStats();
@@ -1139,7 +1140,67 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					{
 						player = hit.entity->skill[2];
 					}
+					if ( hit.entity && hitstats )
+					{
+						if ( hitstats->getEffectActive(EFF_NULL_MAGIC)
+							&& !(!(svFlags & SV_FLAG_FRIENDLYFIRE) && parent && parent->checkFriend(hit.entity)) )
+						{
+							auto effectStrength = hitstats->getEffectActive(EFF_NULL_MAGIC);
+							int duration = hitstats->EFFECTS_TIMERS[EFF_NULL_MAGIC];
+							if ( effectStrength == 1 )
+							{
+								if ( hitstats->EFFECTS_TIMERS[EFF_NULL_MAGIC] > 0 )
+								{
+									hitstats->EFFECTS_TIMERS[EFF_NULL_MAGIC] = 1;
+								}
+							}
+							else if ( effectStrength > 1 )
+							{
+								--effectStrength;
+								hitstats->setEffectValueUnsafe(EFF_NULL_MAGIC, effectStrength);
+								hit.entity->setEffect(EFF_NULL_MAGIC, effectStrength, hitstats->EFFECTS_TIMERS[EFF_NULL_MAGIC], false);
+							}
+							if ( (parent && parent->behavior == &actPlayer) || (parent && parent->behavior == &actMonster && parent->monsterAllyGetPlayerLeader())
+								|| hit.entity->behavior == &actPlayer || hit.entity->monsterAllyGetPlayerLeader() )
+							{
+								spawnDamageGib(hit.entity, 0, DamageGib::DMG_GUARD, DamageGibDisplayType::DMG_GIB_GUARD, true);
+							}
+
+							if ( hit.entity->behavior == &actPlayer )
+							{
+								messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, makeColorRGB(0, 255, 0), Language::get(6470));
+							}
+							if ( parent && parent->behavior == &actPlayer )
+							{
+								messagePlayerMonsterEvent(parent->skill[2], makeColorRGB(255, 255, 255),
+									*hitstats, Language::get(6466), Language::get(6467), MSG_COMBAT); // %s guards the spell
+							}
+							playSoundEntity(hit.entity, 166, 128);
+							my->removeLightField();
+							list_RemoveNode(my->mynode);
+							return;
+						}
+					}
+
+					if ( parent && (parent->behavior == &actMagicTrap || parent->behavior == &actMagicTrapCeiling) )
+					{
+						if ( hit.entity->onEntityTrapHitSacredPath(parent) )
+						{
+							if ( hit.entity->behavior == &actPlayer )
+							{
+								messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, makeColorRGB(0, 255, 0),
+									Language::get(6470));
+							}
+							playSoundEntity(hit.entity, 166, 128);
+							my->removeLightField();
+							list_RemoveNode(my->mynode);
+							return;
+						}
+					}
 				}
+
+				// count reflection
+				int reflection = 0;
 				if ( hitstats )
 				{
 					if ( parent &&
@@ -6767,6 +6828,28 @@ void actParticleTimer(Entity* my)
 					}
 				}
 			}
+			else if ( my->particleTimerEndAction == PARTICLE_EFFECT_DESTINY_TELEPORT )
+			{
+				// teleport to target spell.
+				Entity* toTeleport = uidToEntity(my->particleTimerVariable2);
+				Entity* target = uidToEntity(static_cast<Uint32>(my->particleTimerTarget));
+				if ( toTeleport && target )
+				{
+					bool teleported = false;
+					createParticleErupt(toTeleport, my->particleTimerEndSprite);
+					serverSpawnMiscParticles(toTeleport, PARTICLE_EFFECT_ERUPT, my->particleTimerEndSprite);
+					teleported = toTeleport->teleportAroundEntity(target, my->particleTimerVariable1);
+					if ( teleported )
+					{
+						createParticleErupt(toTeleport, my->particleTimerEndSprite);
+						// teleport success.
+						if ( multiplayer == SERVER )
+						{
+							serverSpawnMiscParticles(toTeleport, PARTICLE_EFFECT_ERUPT, my->particleTimerEndSprite);
+						}
+					}
+				}
+				}
 			else if ( my->particleTimerEndAction == PARTICLE_EFFECT_GHOST_TELEPORT )
 			{
 				// teleport to target spell.
@@ -9116,6 +9199,323 @@ void createParticleShadowTag(Entity* parent, Uint32 casterUid, int duration)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[UNCLICKABLE] = true;
+	/*entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+		*cvar_magic_fx_light_bonus, 0.f);*/
+	if ( multiplayer != CLIENT )
+	{
+		entity_uids--;
+	}
+	entity->setUID(-3);
+}
+
+void actParticlePinpointTarget(Entity* my)
+{
+	Sint32& spellID = my->skill[4];
+
+	if ( PARTICLE_LIFE < 0 )
+	{
+		// once off, fire some erupt dot particles at end of life.
+		real_t yaw = 0;
+		int numParticles = 8;
+		for ( int c = 0; c < 8; c++ )
+		{
+			Entity* entity = newEntity(my->skill[5], 1, map.entities, nullptr); //Particle entity.
+			entity->sizex = 1;
+			entity->sizey = 1;
+			entity->x = my->x;
+			entity->y = my->y;
+			entity->z = -10 + my->fskill[0];
+			entity->yaw = yaw;
+			entity->vel_x = 0.2;
+			entity->vel_y = 0.2;
+			entity->vel_z = -0.02;
+			entity->skill[0] = 100;
+			entity->skill[1] = 0; // direction.
+			entity->fskill[0] = 0.1;
+			entity->scalex = 0.1;
+			entity->scaley = 0.1;
+			entity->scalez = 0.1;
+			entity->behavior = &actParticleErupt;
+			entity->flags[PASSABLE] = true;
+			entity->flags[NOUPDATE] = true;
+			entity->flags[UNCLICKABLE] = true;
+			entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+				*cvar_magic_fx_light_bonus, 0.f);
+			if ( multiplayer != CLIENT )
+			{
+				entity_uids--;
+			}
+			entity->setUID(-3);
+			yaw += 2 * PI / numParticles;
+		}
+
+		if ( multiplayer != CLIENT )
+		{
+			Uint32 casterUid = static_cast<Uint32>(my->skill[2]);
+			Entity* caster = uidToEntity(casterUid);
+			Entity* parent = uidToEntity(my->parent);
+			if ( caster && caster->behavior == &actPlayer
+				&& parent )
+			{
+				// caster is alive, notify they lost their mark
+				//Uint32 color = makeColorRGB(255, 255, 255);
+				//messagePlayerMonsterEvent(caster->skill[2], color, *(parent->getStats()), Language::get(3466), Language::get(3467), MSG_COMBAT);
+			}
+			if ( parent && parent->getStats() )
+			{
+				if ( spellID == SPELL_PINPOINT )
+				{
+					parent->setEffect(EFF_PINPOINT, false, 0, true);
+				}
+				else if ( spellID == SPELL_PENANCE )
+				{
+					parent->setEffect(EFF_PENANCE, false, 0, true);
+				}
+				else if ( spellID == SPELL_DETECT_ENEMY || spellID == SPELL_DETECT_ENEMIES )
+				{
+					parent->setEffect(EFF_DETECT_ENEMY, false, 0, true);
+				}
+			}
+		}
+		my->removeLightField();
+		list_RemoveNode(my->mynode);
+		return;
+	}
+	else
+	{
+		--PARTICLE_LIFE;
+		my->removeLightField();
+		my->light = addLight(my->x / 16, my->y / 16, colorForSprite(my, my->sprite, true));
+
+		Entity* parent = uidToEntity(my->parent);
+		if ( parent )
+		{
+			my->x = parent->x;
+			my->y = parent->y;
+			if ( parent->getEntityShowOnMapDuration() == 0
+				|| (parent->getEntityShowOnMapSource() == Entity::SHOW_MAP_SCRY) )
+			{
+				parent->setEntityShowOnMap(Entity::SHOW_MAP_SCRY, std::max(parent->getEntityShowOnMapDuration(), 5));
+			}
+		}
+
+		if ( my->skill[1] >= 50 ) // stop changing size
+		{
+			real_t maxspeed = .03;
+			real_t acceleration = 0.95;
+			if ( my->skill[3] == 0 )
+			{
+				// once off, store the normal height of the particle.
+				my->skill[3] = 1;
+				my->vel_z = -maxspeed;
+			}
+			if ( my->skill[1] % 5 == 0 )
+			{
+				Uint32 casterUid = static_cast<Uint32>(my->skill[2]);
+				Entity* caster = uidToEntity(casterUid);
+				if ( caster && parent )
+				{
+					// caster is alive, and they have still marked the parent this particle is following.
+					if ( spellID == SPELL_PENANCE )
+					{
+						if ( parent->monsterAllyGetPlayerLeader() )
+						{
+							PARTICLE_LIFE = 0;
+							if ( multiplayer != CLIENT )
+							{
+								parent->setEffect(SPELL_PENANCE, false, 0, true);
+							}
+						}
+						if ( Stat* parentStats = parent->getStats() )
+						{
+							if ( !parentStats->getEffectActive(EFF_PENANCE) )
+							{
+								PARTICLE_LIFE = 0;
+							}
+						}
+					}
+					else if ( spellID == SPELL_DETECT_ENEMY || spellID == SPELL_DETECT_ENEMIES )
+					{
+						if ( Stat* parentStats = parent->getStats() )
+						{
+							if ( !parentStats->getEffectActive(EFF_DETECT_ENEMY) )
+							{
+								PARTICLE_LIFE = 0;
+							}
+						}
+					}
+				}
+				else
+				{
+					PARTICLE_LIFE = 0;
+				}
+			}
+
+			if ( PARTICLE_LIFE > 0 && PARTICLE_LIFE < TICKS_PER_SECOND )
+			{
+				if ( spellID == SPELL_PINPOINT )
+				{
+					if ( parent && parent->getStats() && parent->getStats()->getEffectActive(EFF_PINPOINT) )
+					{
+						++PARTICLE_LIFE;
+					}
+				}
+				else if ( spellID == SPELL_PENANCE )
+				{
+					if ( parent && parent->getStats() && parent->getStats()->getEffectActive(EFF_PENANCE) )
+					{
+						++PARTICLE_LIFE;
+					}
+				}
+				else if ( spellID == SPELL_DETECT_ENEMY || spellID == SPELL_DETECT_ENEMIES )
+				{
+					if ( parent && parent->getStats() && parent->getStats()->getEffectActive(EFF_DETECT_ENEMY) )
+					{
+						++PARTICLE_LIFE;
+					}
+				}
+				else
+				{
+					/*if ( parent && parent->getStats() && parent->getStats()->getEffectActive(EFF_SHADOW_TAGGED) )
+					{
+						++PARTICLE_LIFE;
+					}*/
+				}
+			}
+			// bob up and down movement.
+			if ( my->skill[3] == 1 )
+			{
+				my->vel_z *= acceleration;
+				if ( my->vel_z > -0.005 )
+				{
+					my->skill[3] = 2;
+					my->vel_z = -0.005;
+				}
+				my->z += my->vel_z;
+			}
+			else if ( my->skill[3] == 2 )
+			{
+				my->vel_z /= acceleration;
+				if ( my->vel_z < -maxspeed )
+				{
+					my->skill[3] = 3;
+					my->vel_z = -maxspeed;
+				}
+				my->z -= my->vel_z;
+			}
+			else if ( my->skill[3] == 3 )
+			{
+				my->vel_z *= acceleration;
+				if ( my->vel_z > -0.005 )
+				{
+					my->skill[3] = 4;
+					my->vel_z = -0.005;
+				}
+				my->z -= my->vel_z;
+			}
+			else if ( my->skill[3] == 4 )
+			{
+				my->vel_z /= acceleration;
+				if ( my->vel_z < -maxspeed )
+				{
+					my->skill[3] = 1;
+					my->vel_z = -maxspeed;
+				}
+				my->z += my->vel_z;
+			}
+			my->yaw += 0.01;
+		}
+		else
+		{
+			my->z += my->vel_z;
+			my->yaw += my->vel_z * 2;
+			if ( my->scalex < 0.35 )
+			{
+				my->scalex += 0.02;
+			}
+			else
+			{
+				my->scalex = 0.35;
+			}
+			my->scaley = my->scalex;
+			my->scalez = my->scalex;
+			if ( my->z < -3 + my->fskill[0] )
+			{
+				my->vel_z *= 0.9;
+			}
+		}
+
+		// once off, fire some erupt dot particles at start.
+		if ( my->skill[1] == 0 )
+		{
+			real_t yaw = 0;
+			int numParticles = 8;
+			for ( int c = 0; c < 8; c++ )
+			{
+				Entity* entity = newEntity(my->skill[5], 1, map.entities, nullptr); //Particle entity.
+				entity->sizex = 1;
+				entity->sizey = 1;
+				entity->x = my->x;
+				entity->y = my->y;
+				entity->z = -10 + my->fskill[0];
+				entity->yaw = yaw;
+				entity->vel_x = 0.2;
+				entity->vel_y = 0.2;
+				entity->vel_z = -0.02;
+				entity->skill[0] = 100;
+				entity->skill[1] = 0; // direction.
+				entity->fskill[0] = 0.1;
+				entity->scalex = 0.1;
+				entity->scaley = 0.1;
+				entity->scalez = 0.1;
+				entity->behavior = &actParticleErupt;
+				entity->flags[PASSABLE] = true;
+				entity->flags[NOUPDATE] = true;
+				entity->flags[UNCLICKABLE] = true;
+				entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+					*cvar_magic_fx_light_bonus, 0.f);
+				if ( multiplayer != CLIENT )
+				{
+					entity_uids--;
+				}
+				entity->setUID(-3);
+				yaw += 2 * PI / numParticles;
+			}
+		}
+		++my->skill[1];
+	}
+}
+
+void createParticleSpellPinpointTarget(Entity* parent, Uint32 casterUid, int sprite, int duration, int spellID)
+{
+	if ( !parent )
+	{
+		return;
+	}
+	Entity* entity = newEntity(sprite, 1, map.entities, nullptr); //Particle entity.
+	entity->parent = parent->getUID();
+	entity->x = parent->x;
+	entity->y = parent->y;
+	entity->z = 7.5;
+	static ConsoleVariable<float> cvar_pinpoint_z("/pinpoint_z", 0.0);
+	entity->fskill[0] = parent->z + *cvar_pinpoint_z;
+	entity->vel_z = -0.8;
+	entity->scalex = 0.1;
+	entity->scaley = 0.1;
+	entity->scalez = 0.1;
+	entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
+	entity->skill[0] = duration;
+	entity->skill[1] = 0;
+	entity->skill[2] = static_cast<Sint32>(casterUid);
+	entity->skill[3] = 0;
+	entity->skill[4] = spellID;
+	entity->skill[5] = sprite + (PINPOINT_PARTICLE_END - PINPOINT_PARTICLE_START); // start/end particle drops
+	entity->behavior = &actParticlePinpointTarget;
+	entity->ditheringOverride = 6;
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->flags[UNCLICKABLE] = true;
+	entity->flags[ENTITY_SKIP_CULLING] = true;
 	/*entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
 		*cvar_magic_fx_light_bonus, 0.f);*/
 	if ( multiplayer != CLIENT )

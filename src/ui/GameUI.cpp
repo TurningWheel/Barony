@@ -6277,7 +6277,11 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 				|| stats[player]->getEffectActive(EFF_ENSEMBLE_LUTE) 
 				|| stats[player]->getEffectActive(EFF_ENSEMBLE_LYRE) 
 				|| stats[player]->getEffectActive(EFF_ENSEMBLE_DRUM) 
-				|| stats[player]->getEffectActive(EFF_ENSEMBLE_HORN) )
+				|| stats[player]->getEffectActive(EFF_ENSEMBLE_HORN)
+				|| stats[player]->getEffectActive(EFF_NULL_MAGIC)
+				|| stats[player]->getEffectActive(EFF_NULL_MELEE)
+				|| stats[player]->getEffectActive(EFF_NULL_RANGED)
+				|| stats[player]->getEffectActive(EFF_SACRED_PATH) )
 			{
 				for ( auto img : frame->getImages() )
 				{
@@ -6436,6 +6440,62 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 								}
 							}
 							if ( auto text = Text::get(val.c_str(),
+								"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+							{
+								text->drawColor(SDL_Rect{ 0,0,0,0 },
+									SDL_Rect{ pos.x + img->pos.x + img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x,
+									pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
+									0, 0 },
+									SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+									makeColor(255, 255, 255, 255));
+							}
+						}
+						else if ( img->path.find("battle_guard.png") != std::string::npos )
+						{
+							Uint8 effectStrength = stats[player]->getEffectActive(EFF_NULL_MELEE);
+							if ( auto text = Text::get(std::to_string(effectStrength).c_str(),
+								"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+							{
+								text->drawColor(SDL_Rect{ 0,0,0,0 },
+									SDL_Rect{ pos.x + img->pos.x + img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x,
+									pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
+									0, 0 },
+									SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+									makeColor(255, 255, 255, 255));
+							}
+						}
+						else if ( img->path.find("missile_guard.png") != std::string::npos )
+						{
+							Uint8 effectStrength = stats[player]->getEffectActive(EFF_NULL_RANGED);
+							if ( auto text = Text::get(std::to_string(effectStrength).c_str(),
+								"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+							{
+								text->drawColor(SDL_Rect{ 0,0,0,0 },
+									SDL_Rect{ pos.x + img->pos.x + img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x,
+									pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
+									0, 0 },
+									SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+									makeColor(255, 255, 255, 255));
+							}
+						}
+						else if ( img->path.find("spell_guard.png") != std::string::npos )
+						{
+							Uint8 effectStrength = stats[player]->getEffectActive(EFF_NULL_MAGIC);
+							if ( auto text = Text::get(std::to_string(effectStrength).c_str(),
+								"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+							{
+								text->drawColor(SDL_Rect{ 0,0,0,0 },
+									SDL_Rect{ pos.x + img->pos.x + img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x,
+									pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
+									0, 0 },
+									SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+									makeColor(255, 255, 255, 255));
+							}
+						}
+						else if ( img->path.find("sacred_path.png") != std::string::npos )
+						{
+							Uint8 effectStrength = stats[player]->getEffectActive(EFF_SACRED_PATH);
+							if ( auto text = Text::get(std::to_string(effectStrength).c_str(),
 								"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
 							{
 								text->drawColor(SDL_Rect{ 0,0,0,0 },
@@ -8042,6 +8102,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 			}
 			if ( (stats[player]->ring && stats[player]->ring->type == RING_STRENGTH)
 				|| (stats[player]->gloves && stats[player]->gloves->type == GAUNTLETS_STRENGTH)
+				|| stats[player]->getEffectActive(EFF_GREATER_MIGHT)
 				|| stats[player]->getEffectActive(EFF_POTION_STR) )
 			{
 				miscEffects[kEffectPush] = true;
@@ -29598,20 +29659,26 @@ struct enemybarMapLowDurationTick_k {
 		}
 	};
 };
-struct enemybarEffectMapFx2_lowDuration_k {
+struct enemybarEffectMapFx3_lowDuration_k {
 	std::map<Uint32, enemybarMapLowDurationTick_k> m;
+};
+struct enemybarEffectMapFx2_lowDuration_k {
+	std::map<Uint32, enemybarEffectMapFx3_lowDuration_k> m;
 };
 struct enemybarEffectMapFx1_lowDuration_k {
 	std::map<Uint32, enemybarEffectMapFx2_lowDuration_k> m;
 };
-struct enemybarEffectMapFx2_k {
+struct enemybarEffectMapFx3_k {
 	std::map<Uint32, enemybarEffectMapFx1_lowDuration_k> m;
+};
+struct enemybarEffectMapFx2_k {
+	std::map<Uint32, enemybarEffectMapFx3_k> m;
 };
 struct enemybarEffectMapFx1_k {
 	std::map<Uint32, enemybarEffectMapFx2_k> m;
 };
 enemybarEffectMapFx1_k enemyBarEffectMap;
-SDL_Surface* enemyBarEffectMapExists(Uint32 fx1, Uint32 fx2, Uint32 fx_lowDuration1, Uint32 fx_lowDuration2, bool lowDurationTicks)
+SDL_Surface* enemyBarEffectMapExists(Uint32 fx1, Uint32 fx2, Uint32 fx3, Uint32 fx_lowDuration1, Uint32 fx_lowDuration2, Uint32 fx_lowDuration3, bool lowDurationTicks)
 {
 	if ( enemyBarEffectMap.m.find(fx1) != enemyBarEffectMap.m.end() )
 	{
@@ -29619,15 +29686,23 @@ SDL_Surface* enemyBarEffectMapExists(Uint32 fx1, Uint32 fx2, Uint32 fx_lowDurati
 		if ( m1.m.find(fx2) != m1.m.end() )
 		{
 			auto& m2 = m1.m[fx2];
-			if ( m2.m.find(fx_lowDuration1) != m2.m.end() )
+			if ( m2.m.find(fx3) != m2.m.end() )
 			{
-				auto& m3 = m2.m[fx_lowDuration1];
-				if ( m3.m.find(fx_lowDuration2) != m3.m.end() )
+				auto& m3 = m2.m[fx3];
+				if ( m3.m.find(fx_lowDuration1) != m3.m.end() )
 				{
-					auto& m4 = m3.m[fx_lowDuration2];
-					if ( m4.m.find(lowDurationTicks) != m4.m.end() )
+					auto& m4 = m3.m[fx_lowDuration1];
+					if ( m4.m.find(fx_lowDuration2) != m4.m.end() )
 					{
-						return m4.m[lowDurationTicks];
+						auto& m5 = m4.m[fx_lowDuration2];
+						if ( m5.m.find(fx_lowDuration3) != m5.m.end() )
+						{
+							auto& m6 = m5.m[fx_lowDuration3];
+							if ( m6.m.find(lowDurationTicks) != m6.m.end() )
+							{
+								return m6.m[lowDurationTicks];
+							}
+						}
 					}
 				}
 			}
@@ -29635,16 +29710,16 @@ SDL_Surface* enemyBarEffectMapExists(Uint32 fx1, Uint32 fx2, Uint32 fx_lowDurati
 	}
 	return nullptr;
 }
-void enemyBarEffectMapInsert(Uint32 fx1, Uint32 fx2, Uint32 fx_lowDuration1, Uint32 fx_lowDuration2, bool lowDurationTicks,
+void enemyBarEffectMapInsert(Uint32 fx1, Uint32 fx2, Uint32 fx3, Uint32 fx_lowDuration1, Uint32 fx_lowDuration2, Uint32 fx_lowDuration3, bool lowDurationTicks,
 	SDL_Surface* surf)
 {
-	enemyBarEffectMap.m[fx1].m[fx2].m[fx_lowDuration1].m[fx_lowDuration2].m[lowDurationTicks] = surf;
+	enemyBarEffectMap.m[fx1].m[fx2].m[fx3].m[fx_lowDuration1].m[fx_lowDuration2].m[fx_lowDuration3].m[lowDurationTicks] = surf;
 }
 
 // to nest deep maps and suppress visual studio warnings
-struct enemybarMapFx2_lowDuration_k {
+struct enemybarMapFx3_lowDuration_k {
 	std::map<Uint32, SDL_Surface*> m;
-	~enemybarMapFx2_lowDuration_k()
+	~enemybarMapFx3_lowDuration_k()
 	{
 		if ( EnemyHPDamageBarHandler::bEnemyBarSimpleBlit )
 		{
@@ -29659,11 +29734,18 @@ struct enemybarMapFx2_lowDuration_k {
 		}
 	};
 };
+
+struct enemybarMapFx2_lowDuration_k {
+	std::map<Uint32, enemybarMapFx3_lowDuration_k> m;
+};
 struct enemybarMapFx1_lowDuration_k {
 	std::map<Uint32, enemybarMapFx2_lowDuration_k> m;
 };
-struct enemybarMapFx2_k {
+struct enemybarMapFx3_k {
 	std::map<Uint32, enemybarMapFx1_lowDuration_k> m;
+};
+struct enemybarMapFx2_k {
+	std::map<Uint32, enemybarMapFx3_k> m;
 };
 struct enemybarMapFx1_k {
 	std::map<Uint32, enemybarMapFx2_k> m;
@@ -29680,7 +29762,7 @@ struct enemybarMapName_k {
 enemybarMapName_k enemyBarMap;
 SDL_Surface* enemyBarMapExists(std::string name, int baseWidth, int baseHeight,
 	int progressWidth, int damageWidth,
-	Uint32 fx1, Uint32 fx2, Uint32 fx_lowDuration1, Uint32 fx_lowDuration2)
+	Uint32 fx1, Uint32 fx2, Uint32 fx3, Uint32 fx_lowDuration1, Uint32 fx_lowDuration2, Uint32 fx_lowDuration3)
 {
 	if ( enemyBarMap.m.find(name) != enemyBarMap.m.end() )
 	{
@@ -29702,12 +29784,20 @@ SDL_Surface* enemyBarMapExists(std::string name, int baseWidth, int baseHeight,
 					if ( m4.m.find(fx2) != m4.m.end() )
 					{
 						auto& m5 = m4.m[fx2];
-						if ( m5.m.find(fx_lowDuration1) != m5.m.end() )
+						if ( m5.m.find(fx3) != m5.m.end() )
 						{
-							auto& m6 = m5.m[fx_lowDuration1];
-							if ( m6.m.find(fx_lowDuration2) != m6.m.end() )
+							auto& m6 = m5.m[fx3];
+							if ( m6.m.find(fx_lowDuration1) != m6.m.end() )
 							{
-								return m6.m[fx_lowDuration2];
+								auto& m7 = m6.m[fx_lowDuration1];
+								if ( m7.m.find(fx_lowDuration2) != m7.m.end() )
+								{
+									auto& m8 = m7.m[fx_lowDuration2];
+									if ( m8.m.find(fx_lowDuration3) != m8.m.end() )
+									{
+										return m8.m[fx_lowDuration3];
+									}
+								}
 							}
 						}
 					}
@@ -29718,8 +29808,8 @@ SDL_Surface* enemyBarMapExists(std::string name, int baseWidth, int baseHeight,
 	return nullptr;
 }
 static void  enemyBarMapInsert(std::string name, int baseWidth, int baseHeight, int progressWidth, int damageWidth,
-	Uint32 statusfx1, Uint32 statusfx2,
-	Uint32 statusfx_lowDuration1, Uint32 statusfx_lowDuration2,
+	Uint32 statusfx1, Uint32 statusfx2, Uint32 statusfx3,
+	Uint32 statusfx_lowDuration1, Uint32 statusfx_lowDuration2, Uint32 statusfx_lowDuration3,
 	SDL_Surface* surf)
 {
 	Uint32 totalSizeKey = baseWidth & 0xFFFF;
@@ -29727,7 +29817,9 @@ static void  enemyBarMapInsert(std::string name, int baseWidth, int baseHeight, 
 	totalSizeKey |= (((ticks % 25) >= 12) << 24) & 0xFF000000;
 	Uint32 progressDamageKey = progressWidth & 0xFFFF;
 	progressDamageKey |= ((damageWidth & 0xFFFF) << 16);
-	enemyBarMap.m[name].m[totalSizeKey].m[progressDamageKey].m[statusfx1].m[statusfx2].m[statusfx_lowDuration1].m[statusfx_lowDuration2] = surf;
+	enemyBarMap.m[name].m[totalSizeKey].m[progressDamageKey]
+		.m[statusfx1].m[statusfx2].m[statusfx3]
+			.m[statusfx_lowDuration1].m[statusfx_lowDuration2].m[statusfx_lowDuration3] = surf;
 }
 
 SDL_Surface* EnemyHPDamageBarHandler::EnemyHPDetails::blitEnemyBar(const int player, SDL_Surface* statusEffectSprite)
@@ -29776,8 +29868,10 @@ SDL_Surface* EnemyHPDamageBarHandler::EnemyHPDetails::blitEnemyBar(const int pla
 			dmgProgress->pos.w, hpProgress->pos.w,
 			enemy_statusEffects1,
 			enemy_statusEffects2,
+			enemy_statusEffects3,
 			enemy_statusEffectsLowDuration1,
-			enemy_statusEffectsLowDuration2);
+			enemy_statusEffectsLowDuration2,
+			enemy_statusEffectsLowDuration3);
 		if ( !hashSurf )
 		{
 			//messagePlayer(0, MESSAGE_DEBUG, "Hash for enemy bar not found!");
@@ -29871,8 +29965,10 @@ SDL_Surface* EnemyHPDamageBarHandler::EnemyHPDetails::blitEnemyBar(const int pla
 			dmgProgress->pos.w, hpProgress->pos.w, 
 			enemy_statusEffects1,
 			enemy_statusEffects2,
+			enemy_statusEffects3,
 			enemy_statusEffectsLowDuration1,
 			enemy_statusEffectsLowDuration2,
+			enemy_statusEffectsLowDuration3,
 			sprite);
 	}
 	return sprite;
@@ -29890,7 +29986,7 @@ SDL_Surface* EnemyHPDamageBarHandler::EnemyHPDetails::blitEnemyBarStatusEffects(
 	{
 		return nullptr;
 	}
-	if ( enemy_statusEffects1 == 0 && enemy_statusEffects2 == 0 )
+	if ( enemy_statusEffects1 == 0 && enemy_statusEffects2 == 0 && enemy_statusEffects3 == 0 )
 	{
 		return nullptr;
 	}
@@ -29906,8 +30002,10 @@ SDL_Surface* EnemyHPDamageBarHandler::EnemyHPDetails::blitEnemyBarStatusEffects(
 		hashSurf = enemyBarEffectMapExists(
 			enemy_statusEffects1,
 			enemy_statusEffects2,
+			enemy_statusEffects3,
 			enemy_statusEffectsLowDuration1,
 			enemy_statusEffectsLowDuration2,
+			enemy_statusEffectsLowDuration3,
 			(ticks % 25) >= 12);
 		if ( !hashSurf )
 		{
@@ -30052,6 +30150,68 @@ SDL_Surface* EnemyHPDamageBarHandler::EnemyHPDetails::blitEnemyBarStatusEffects(
 			}
 		}
 	}
+	if ( enemy_statusEffects3 != 0 )
+	{
+		for ( int i = 0; i < 32; ++i )
+		{
+			if ( (enemy_statusEffects3 & (1 << i)) != 0 )
+			{
+				int effectID = i + 64;
+				if ( StatusEffectQueue_t::StatusEffectDefinitions_t::effectDefinitionExists(effectID) )
+				{
+					int variation = -1;
+					SDL_Surface* srcSurf = nullptr;
+					if ( i == EFF_SHAPESHIFT )
+					{
+						if ( entity && entity->behavior == &actPlayer )
+						{
+							switch ( entity->effectShapeshift )
+							{
+							case RAT:
+								variation = 0;
+								break;
+							case SPIDER:
+								variation = 1;
+								break;
+							case TROLL:
+								variation = 2;
+								break;
+							case CREATURE_IMP:
+								variation = 3;
+								break;
+							default:
+								break;
+							}
+						}
+					}
+					auto& definition = StatusEffectQueue_t::StatusEffectDefinitions_t::getEffect(effectID);
+					if ( !definition.neverDisplay )
+					{
+						std::string imgPath;
+						if ( i == EFF_SHAPESHIFT && variation == -1 )
+						{
+							imgPath = "";
+						}
+						else
+						{
+							imgPath = StatusEffectQueue_t::StatusEffectDefinitions_t::getEffectImgPath(definition, variation);
+						}
+						if ( imgPath != "" )
+						{
+							srcSurf = const_cast<SDL_Surface*>(Image::get(imgPath.c_str())->getSurf());
+
+							bool blinking = false;
+							if ( (enemy_statusEffectsLowDuration3 & (1 << i)) != 0 )
+							{
+								blinking = true;
+							}
+							statusEffectIcons.push_back(std::make_pair(srcSurf, blinking));
+						}
+					}
+				}
+			}
+		}
+	}
 
 	//const int numIcons = statusEffectIcons.size();
 	//const int iconTotalWidth = iconWidth + 2;
@@ -30098,8 +30258,10 @@ SDL_Surface* EnemyHPDamageBarHandler::EnemyHPDetails::blitEnemyBarStatusEffects(
 		enemyBarEffectMapInsert(
 			enemy_statusEffects1,
 			enemy_statusEffects2,
+			enemy_statusEffects3,
 			enemy_statusEffectsLowDuration1,
 			enemy_statusEffectsLowDuration2,
+			enemy_statusEffectsLowDuration3,
 			(ticks % 25) >= 12,
 			sprite);
 	}

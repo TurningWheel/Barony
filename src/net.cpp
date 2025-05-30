@@ -825,7 +825,7 @@ Spawns misc particle effects for all clients
 
 -------------------------------------------------------------------------------*/
 
-void serverSpawnMiscParticles(Entity* entity, int particleType, int particleSprite, Uint32 optionalUid)
+void serverSpawnMiscParticles(Entity* entity, int particleType, int particleSprite, Uint32 optionalUid, Uint32 duration, Uint32 optionalData)
 {
 	int c;
 	if ( multiplayer != SERVER )
@@ -843,9 +843,18 @@ void serverSpawnMiscParticles(Entity* entity, int particleType, int particleSpri
 		net_packet->data[8] = particleType;
 		SDLNet_Write16(particleSprite, &net_packet->data[9]);
 		SDLNet_Write32(optionalUid, &net_packet->data[11]);
+		net_packet->len = 15;
+		if ( duration > 0 )
+		{
+			SDLNet_Write32(duration, &net_packet->data[15]);
+			net_packet->len += 4;
+		}
+		if ( optionalData > 0 )
+		{
+			net_packet->len += 4;
+		}
 		net_packet->address.host = net_clients[c - 1].host;
 		net_packet->address.port = net_clients[c - 1].port;
-		net_packet->len = 16;
 		sendPacketSafe(net_sock, -1, net_packet, c - 1);
 	}
 }
@@ -3018,6 +3027,15 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 					spellTimer->particleTimerPreDelay = 0;
 				}
 				break;
+				case PARTICLE_EFFECT_DESTINY_TELEPORT:
+				{
+					Uint32 duration = SDLNet_Read32(&net_packet->data[11]);
+					Entity* spellTimer = createParticleTimer(entity, duration, sprite);
+					spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_SHOOT_PARTICLES;
+					spellTimer->particleTimerCountdownSprite = sprite;
+					spellTimer->particleTimerPreDelay = 0;
+				}
+				break;
 				case PARTICLE_EFFECT_TELEPORT_PULL:
 				{
 					Entity* spellTimer = createParticleTimer(entity, 40, sprite);
@@ -3041,6 +3059,20 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 				{
 					Uint32 uid = SDLNet_Read32(&net_packet->data[11]);
 					createParticleShadowTag(entity, uid, 60 * TICKS_PER_SECOND);
+					break;
+				}
+				case PARTICLE_EFFECT_PINPOINT:
+				{
+					Uint32 uid = SDLNet_Read32(&net_packet->data[11]);
+					if ( sprite >= PINPOINT_PARTICLE_START && sprite < PINPOINT_PARTICLE_END )
+					{
+						if ( net_packet->len >= 23 )
+						{
+							int duration = SDLNet_Read32(&net_packet->data[15]);
+							int spellID = SDLNet_Read32(&net_packet->data[19]);
+							createParticleSpellPinpointTarget(entity, uid, sprite, duration, spellID);
+						}
+					}
 					break;
 				}
 				case PARTICLE_EFFECT_SPELL_WEB_ORBIT:
@@ -3209,15 +3241,17 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 			}
 		}
 		char enemy_name[128] = "";
-		strcpy(enemy_name, (char*)(&net_packet->data[31]));
+		strcpy(enemy_name, (char*)(&net_packet->data[39]));
 		auto details = enemyHPDamageBarHandler[clientnum].addEnemyToList(static_cast<Sint32>(enemy_hp), 
 			static_cast<Sint32>(enemy_maxhp), static_cast<Sint32>(oldhp), uid, enemy_name, lowPriorityTick, gib);
 		if ( details )
 		{
 			details->enemy_statusEffects1 = SDLNet_Read32(&net_packet->data[15]);
 			details->enemy_statusEffects2 = SDLNet_Read32(&net_packet->data[19]);
-			details->enemy_statusEffectsLowDuration1 = SDLNet_Read32(&net_packet->data[23]);
-			details->enemy_statusEffectsLowDuration2 = SDLNet_Read32(&net_packet->data[27]);
+			details->enemy_statusEffects3 = SDLNet_Read32(&net_packet->data[23]);
+			details->enemy_statusEffectsLowDuration1 = SDLNet_Read32(&net_packet->data[27]);
+			details->enemy_statusEffectsLowDuration2 = SDLNet_Read32(&net_packet->data[31]);
+			details->enemy_statusEffectsLowDuration3 = SDLNet_Read32(&net_packet->data[35]);
 		}
 	}},
 
@@ -3235,6 +3269,10 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		else if ( net_packet->data[11] == 2 )
 		{
 			displayType = DamageGibDisplayType::DMG_GIB_SPRITE;
+		}
+		else if ( net_packet->data[11] == 3 )
+		{
+			displayType = DamageGibDisplayType::DMG_GIB_GUARD;
 		}
 		spawnDamageGib(uidToEntity(uid), dmg, gib, displayType);
 	}},
@@ -4189,7 +4227,10 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 			Entity* mapCreature = (Entity*)mapNode->element;
 			if ( mapCreature )
 			{
-				mapCreature->monsterEntityRenderAsTelepath = 0; // do a final pass to undo any telepath rendering.
+				if ( mapCreature->monsterEntityRenderAsTelepath == 1 )
+				{
+					mapCreature->monsterEntityRenderAsTelepath = 0; // do a final pass to undo any telepath rendering.
+				}
 			}
 		}
 	}},

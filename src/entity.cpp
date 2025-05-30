@@ -996,7 +996,10 @@ void Entity::effectTimes()
 									if ( mapCreature )
 									{
 										// undo telepath rendering.
-										mapCreature->monsterEntityRenderAsTelepath = 0;
+										if ( mapCreature->monsterEntityRenderAsTelepath == 1 )
+										{
+											mapCreature->monsterEntityRenderAsTelepath = 0;
+										}
 									}
 								}
 							}
@@ -1276,6 +1279,9 @@ void Entity::effectTimes()
 					case EFF_PACIFY:
 					case EFF_SHADOW_TAGGED:
 					case EFF_WEBBED:
+					case EFF_PINPOINT:
+					case EFF_PENANCE:
+					case EFF_DETECT_ENEMY:
 						updateClient = true;
 						break;
 					default:
@@ -2593,6 +2599,10 @@ void Entity::handleEffects(Stat* myStats)
 				maxMPMod += 10 * std::min(2, (int)abs(myStats->ring->beatitude));
 			}
 		}
+		if ( myStats->getEffectActive(EFF_STURDINESS) )
+		{
+			maxHPMod += 10;
+		}
 
 		if ( maxHPMod != myStats->MISC_FLAGS[STAT_FLAG_HP_BONUS] )
 		{
@@ -2655,6 +2665,32 @@ void Entity::handleEffects(Stat* myStats)
 			{
 				creatureShadowTaggedThisUid = 0;
 				serverUpdateEntitySkill(this, 54);
+			}
+		}
+	}
+
+
+	if ( auto effectStrength = myStats->getEffectActive(EFF_DETECT_ENEMY) )
+	{
+		if ( ticks % 60 == 0 && behavior == &actMonster )
+		{
+			Entity* caster = nullptr;
+			if ( effectStrength >= 1 && effectStrength < 1 + MAXPLAYERS )
+			{
+				int pnum = effectStrength - 1;
+				if ( players[pnum] && players[pnum]->entity )
+				{
+					if ( !strcmp(myStats->name, "") )
+					{
+						updateEnemyBar(players[pnum]->entity, this, getMonsterLocalizedName(myStats->type).c_str(), myStats->HP, myStats->MAXHP,
+							false, DMG_DETECT_MONSTER);
+					}
+					else
+					{
+						updateEnemyBar(players[pnum]->entity, this, myStats->name, myStats->HP, myStats->MAXHP,
+							false, DMG_DETECT_MONSTER);
+					}
+				}
 			}
 		}
 	}
@@ -5691,6 +5727,10 @@ Sint32 statGetSTR(Stat* entitystats, Entity* my)
 	{
 		STR += (std::max(5, STR / 4));
 	}
+	if ( entitystats->getEffectActive(EFF_GREATER_MIGHT) )
+	{
+		STR += (std::max(5, STR / 4));
+	}
 	if ( entitystats->getEffectActive(EFF_DRUNK) )
 	{
 		switch ( entitystats->type )
@@ -5821,6 +5861,10 @@ Sint32 statGetDEX(Stat* entitystats, Entity* my)
 	}
 
 	if ( entitystats->getEffectActive(EFF_AGILITY) )
+	{
+		DEX += (std::max(5, DEX / 4));
+	}
+	if ( entitystats->getEffectActive(EFF_NIMBLENESS) )
 	{
 		DEX += (std::max(5, DEX / 4));
 	}
@@ -6064,6 +6108,10 @@ Sint32 statGetCON(Stat* entitystats, Entity* my)
 	}
 
 	CON += (Sint32)entitystats->getEnsembleEffectBonus(Stat::ENSEMBLE_HORN_EFF_1);
+	if ( entitystats->getEffectActive(EFF_STURDINESS) )
+	{
+		CON += (std::max(5, CON / 4));
+	}
 
 	if ( entitystats->getEffectActive(EFF_CON_BONUS) )
 	{
@@ -6175,6 +6223,10 @@ Sint32 statGetINT(Stat* entitystats, Entity* my)
 	if ( entitystats->getEffectActive(EFF_SHRINE_BLUE_BUFF) )
 	{
 		INT += 8;
+	}
+	if ( entitystats->getEffectActive(EFF_COUNSEL) )
+	{
+		INT += (std::max(5, INT / 4));
 	}
 	if ( my && entitystats->getEffectActive(EFF_DRUNK) && my->behavior == &actPlayer && entitystats->type == GOATMAN )
 	{
@@ -7835,6 +7887,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 		}
 		bool whip = myStats->weapon && myStats->weapon->type == TOOL_WHIP;
 		bool miss = false;
+		bool guard = false;
 		// normal attacks
 		if ( target == nullptr )
 		{
@@ -7856,6 +7909,26 @@ void Entity::attack(int pose, int charge, Entity* target)
 				if ( bat && hit.entity->isUntargetableBat() )
 				{
 					miss = true;
+				}
+				else if ( hitstats && hitstats->getEffectActive(EFF_NULL_MELEE)
+					&& !(!(svFlags & SV_FLAG_FRIENDLYFIRE) && checkFriend(hit.entity))  /*dont apply to friendly fire */ )
+				{
+					guard = true;
+					auto effectStrength = hitstats->getEffectActive(EFF_NULL_MELEE);
+					int duration = hitstats->EFFECTS_TIMERS[EFF_NULL_MELEE];
+					if ( effectStrength == 1 )
+					{
+						if ( hitstats->EFFECTS_TIMERS[EFF_NULL_MELEE] > 0 )
+						{
+							hitstats->EFFECTS_TIMERS[EFF_NULL_MELEE] = 1;
+						}
+					}
+					else if ( effectStrength > 1 )
+					{
+						--effectStrength;
+						hitstats->setEffectValueUnsafe(EFF_NULL_MELEE, effectStrength);
+						hit.entity->setEffect(EFF_NULL_MELEE, effectStrength, hitstats->EFFECTS_TIMERS[EFF_NULL_MELEE], false);
+					}
 				}
 				else if ( bat && hit.entity->monsterSpecialState == BAT_REST )
 				{
@@ -7940,23 +8013,46 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 				}
 
-				if ( miss )
+				if ( miss || guard )
 				{
 					if ( !hit.entity->isUntargetableBat() )
 					{
 						if ( player >= 0 || (behavior == &actMonster && monsterAllyGetPlayerLeader())
 							|| hit.entity->behavior == &actPlayer || hit.entity->monsterAllyGetPlayerLeader() )
 						{
-							spawnDamageGib(hit.entity, 0, DamageGib::DMG_MISS, DamageGibDisplayType::DMG_GIB_MISS, true);
+							if ( guard )
+							{
+								spawnDamageGib(hit.entity, 0, DamageGib::DMG_GUARD, DamageGibDisplayType::DMG_GIB_GUARD, true);
+							}
+							else if ( miss )
+							{
+								spawnDamageGib(hit.entity, 0, DamageGib::DMG_MISS, DamageGibDisplayType::DMG_GIB_MISS, true);
+							}
 						}
-						if ( player >= 0 && bat )
+						if ( player >= 0 && bat && miss )
 						{
 							steamStatisticUpdateClient(player, STEAM_STAT_PITCH_PERFECT, STEAM_STAT_INT, 1);
 						}
 
+						if ( guard )
+						{
+							playSoundEntity(hit.entity, 166, 128);
+							if ( this->behavior == &actPlayer )
+							{
+								messagePlayerMonsterEvent(this->skill[2], makeColorRGB(255, 255, 255),
+									*hitstats, Language::get(6468), Language::get(6469), MSG_COMBAT); // %s guards the attack
+							}
+						}
 						if ( hit.entity->behavior == &actPlayer )
 						{
-							messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, makeColorRGB(0, 255, 0), Language::get(6286));
+							if ( miss )
+							{
+								messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, makeColorRGB(0, 255, 0), Language::get(6286));
+							}
+							else if ( guard )
+							{
+								messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, makeColorRGB(0, 255, 0), Language::get(6465));
+							}
 						}
 						else if ( hit.entity->behavior == &actMonster )
 						{
@@ -12034,7 +12130,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 		}
 		else
 		{
-			if ( !miss && ((dist != STRIKERANGE && !whip) || (dist != STRIKERANGE * 1.5 && whip)) )
+			if ( !guard && !miss && ((dist != STRIKERANGE && !whip) || (dist != STRIKERANGE * 1.5 && whip)) )
 			{
 				// hit a wall
 				if ( pose == PLAYER_POSE_GOLEM_SMASH )
@@ -13858,6 +13954,16 @@ bool Entity::checkEnemy(Entity* your)
 			return true;
 		}
 	}
+	else if ( yourStats->getEffectActive(EFF_PENANCE) >= 1 && yourStats->getEffectActive(EFF_PENANCE) < 1 + MAXPLAYERS
+		&& behavior == &actPlayer && your->behavior == &actMonster )
+	{
+		return false;
+	}
+	else if ( myStats->getEffectActive(EFF_PENANCE) >= 1 && myStats->getEffectActive(EFF_PENANCE) < 1 + MAXPLAYERS
+		&& your->behavior == &actPlayer && behavior == &actMonster )
+	{
+		return false;
+	}
 
 	if ( myStats->type == GYROBOT )
 	{
@@ -14312,6 +14418,16 @@ bool Entity::checkFriend(Entity* your)
 		{
 			return false;
 		}
+	}
+	else if ( yourStats->getEffectActive(EFF_PENANCE) >= 1 && yourStats->getEffectActive(EFF_PENANCE) < 1 + MAXPLAYERS
+		&& behavior == &actPlayer && your->behavior == &actMonster )
+	{
+		return true;
+	}
+	else if ( myStats->getEffectActive(EFF_PENANCE) >= 1 && myStats->getEffectActive(EFF_PENANCE) < 1 + MAXPLAYERS
+		&& your->behavior == &actPlayer && behavior == &actMonster )
+	{
+		return true;
 	}
 
 
@@ -17574,7 +17690,7 @@ void Entity::serverUpdateEffectsForEntity(bool guarantee)
 	}
 }
 
-bool Entity::setEffect(int effect, std::variant<bool, Uint8> value, int duration, bool updateClients, bool guarantee)
+bool Entity::setEffect(int effect, std::variant<bool, Uint8> value, int duration, bool updateClients, bool guarantee, bool overrideEffectStrength)
 {
 	Stat* myStats = getStats();
 
@@ -17681,7 +17797,9 @@ bool Entity::setEffect(int effect, std::variant<bool, Uint8> value, int duration
 
 	if ( effectStrength > 0 )
 	{
-		myStats->setEffectActive(effect, effectStrength);
+		overrideEffectStrength 
+			? myStats->setEffectValueUnsafe(effect, effectStrength) 
+			: myStats->setEffectActive(effect, effectStrength);
 	}
 	else
 	{
@@ -23807,6 +23925,32 @@ int Entity::getFollowerBonusHPRegen()
 	return regen;
 }
 
+bool Entity::onEntityTrapHitSacredPath(Entity* trap)
+{
+	if ( Stat* myStats = getStats() )
+	{
+		if ( auto effectStrength = myStats->getEffectActive(EFF_SACRED_PATH) )
+		{
+			int duration = myStats->EFFECTS_TIMERS[EFF_SACRED_PATH];
+			if ( effectStrength == 1 )
+			{
+				if ( myStats->EFFECTS_TIMERS[EFF_SACRED_PATH] > 0 )
+				{
+					myStats->EFFECTS_TIMERS[EFF_SACRED_PATH] = 1;
+				}
+			}
+			else if ( effectStrength > 1 )
+			{
+				--effectStrength;
+				myStats->setEffectValueUnsafe(EFF_SACRED_PATH, effectStrength);
+				setEffect(EFF_SACRED_PATH, effectStrength, myStats->EFFECTS_TIMERS[EFF_SACRED_PATH], false);
+			}
+			return true;
+		}
+	}
+	return false;
+}
+
 int Entity::getEntityBonusTrapResist()
 {
 	int resist = 0;
@@ -23851,6 +23995,10 @@ int Entity::getEntityBonusTrapResist()
 			{
 				resist += 50;
 			}
+		}
+		if ( myStats->getEffectActive(EFF_SACRED_PATH) )
+		{
+			resist = 100;
 		}
 	}
 	return std::min(100, std::max(-100, resist));

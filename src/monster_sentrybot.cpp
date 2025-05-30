@@ -1081,9 +1081,11 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 							{
 								++foundBadSound;
 							}
-							if ( ent->entityShowOnMap < detectDuration )
+							if ( ent->getEntityShowOnMapDuration() == 0
+								|| (ent->getEntityShowOnMapSource() == Entity::SHOW_MAP_GYRO
+								&& ent->getEntityShowOnMapDuration() < detectDuration) )
 							{
-								ent->entityShowOnMap = detectDuration;
+								ent->setEntityShowOnMap(Entity::SHOW_MAP_GYRO, detectDuration);
 							}
 						}
 					}
@@ -1102,9 +1104,11 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 							{
 								foundBadSound = 3;
 							}
-							if ( ent->entityShowOnMap < detectDuration )
+							if ( ent->getEntityShowOnMapDuration() == 0
+								|| (ent->getEntityShowOnMapSource() == Entity::SHOW_MAP_GYRO
+									&& ent->getEntityShowOnMapDuration() < detectDuration) )
 							{
-								ent->entityShowOnMap = detectDuration;
+								ent->setEntityShowOnMap(Entity::SHOW_MAP_GYRO, detectDuration);
 							}
 						}
 					}
@@ -1119,9 +1123,11 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 							{
 								foundGoodSound = 5;
 							}
-							if ( ent->entityShowOnMap < detectDuration )
+							if ( ent->getEntityShowOnMapDuration() == 0
+								|| (ent->getEntityShowOnMapSource() == Entity::SHOW_MAP_GYRO
+									&& ent->getEntityShowOnMapDuration() < detectDuration) )
 							{
-								ent->entityShowOnMap = detectDuration;
+								ent->setEntityShowOnMap(Entity::SHOW_MAP_GYRO, detectDuration);
 							}
 						}
 					}
@@ -1147,9 +1153,11 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 									{
 										++foundGoodSound;
 									}
-									if ( ent->entityShowOnMap < detectDuration )
+									if ( ent->getEntityShowOnMapDuration() == 0
+										|| (ent->getEntityShowOnMapSource() == Entity::SHOW_MAP_GYRO
+											&& ent->getEntityShowOnMapDuration() < detectDuration) )
 									{
-										ent->entityShowOnMap = detectDuration;
+										ent->setEntityShowOnMap(Entity::SHOW_MAP_GYRO, detectDuration);
 									}
 								}
 								else if ( my->monsterAllyPickupItems == ALLY_GYRO_DETECT_ITEMS_MAGIC
@@ -1159,21 +1167,26 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 									{
 										++foundGoodSound;
 									}
-									if ( ent->entityShowOnMap < detectDuration )
+									if ( ent->getEntityShowOnMapDuration() == 0
+										|| (ent->getEntityShowOnMapSource() == Entity::SHOW_MAP_GYRO
+											&& ent->getEntityShowOnMapDuration() < detectDuration) )
 									{
-										ent->entityShowOnMap = detectDuration;
+										ent->setEntityShowOnMap(Entity::SHOW_MAP_GYRO, detectDuration);
 									}
 								}
 								else if ( my->monsterAllyPickupItems == ALLY_GYRO_DETECT_ITEMS_VALUABLE
-									&& items[itemOnGround->type].value >= 400 )
+									&& (items[itemOnGround->type].value >= 400
+										|| (itemOnGround->type >= KEY_STONE && itemOnGround->type <= KEY_MACHINE)) )
 								{
 									if ( gyroBotFoundNewEntity(*ent) )
 									{
 										foundGoodSound = 5;
 									}
-									if ( ent->entityShowOnMap < detectDuration )
+									if ( ent->getEntityShowOnMapDuration() == 0
+										|| (ent->getEntityShowOnMapSource() == Entity::SHOW_MAP_GYRO
+											&& ent->getEntityShowOnMapDuration() < detectDuration) )
 									{
-										ent->entityShowOnMap = detectDuration;
+										ent->setEntityShowOnMap(Entity::SHOW_MAP_GYRO, detectDuration);
 									}
 								}
 								free(itemOnGround);
@@ -1182,7 +1195,8 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 					}
 				}
 			}
-			if ( ent->entityShowOnMap > 0 )
+			if ( ent->getEntityShowOnMapSource() == Entity::SHOW_MAP_GYRO
+				&& ent->getEntityShowOnMapDuration() > 0 )
 			{
 				doPing = true;
 			}

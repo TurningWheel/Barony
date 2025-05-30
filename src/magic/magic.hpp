@@ -87,7 +87,28 @@ static const int SPELL_FOCI_SANDBLAST = 65;
 static const int SPELL_METEOR = 66;
 static const int SPELL_FLAMES = 67;
 static const int SPELL_ICE_WAVE = 68;
-static const int NUM_SPELLS = 69;
+static const int SPELL_CONJURE_FOOD = 69;
+static const int SPELL_NULL_MELEE = 70;
+static const int SPELL_NULL_MAGIC = 71;
+static const int SPELL_NULL_RANGED = 72;
+static const int SPELL_PROF_NIMBLENESS = 73;
+static const int SPELL_PROF_GREATER_MIGHT = 74;
+static const int SPELL_PROF_COUNSEL = 75;
+static const int SPELL_PROF_STURDINESS = 76;
+static const int SPELL_BLESS_FOOD = 77;
+static const int SPELL_PINPOINT = 78;
+static const int SPELL_DONATION = 79;
+static const int SPELL_SCRY_ALLIES = 80;
+static const int SPELL_SCRY_SHRINES = 81;
+static const int SPELL_SCRY_TRAPS = 82;
+static const int SPELL_SCRY_TREASURES = 83;
+static const int SPELL_PENANCE = 84;
+static const int SPELL_CALL_ALLIES = 85;
+static const int SPELL_SACRED_PATH = 86;
+static const int SPELL_MANIFEST_DESTINY = 87;
+static const int SPELL_DETECT_ENEMY = 88;
+static const int SPELL_DETECT_ENEMIES = 89;
+static const int NUM_SPELLS = 89;
 
 #define SPELLELEMENT_CONFUSE_BASE_DURATION 2//In seconds.
 #define SPELLELEMENT_BLEED_BASE_DURATION 10//In seconds.
@@ -165,6 +186,8 @@ static const int PARTICLE_EFFECT_ENSEMBLE_SELF_CAST = 30;
 static const int PARTICLE_EFFECT_ENSEMBLE_OTHER_CAST = 31;
 static const int PARTICLE_EFFECT_STATIC_ORBIT = 32;
 static const int PARTICLE_EFFECT_LIGHTNING_SEQ = 33;
+static const int PARTICLE_EFFECT_PINPOINT = 34;
+static const int PARTICLE_EFFECT_DESTINY_TELEPORT = 35;
 
 // actmagicIsVertical constants
 static const int MAGIC_ISVERTICAL_NONE = 0;
@@ -649,6 +672,7 @@ void actParticleFollowerCommand(Entity* my);
 void actParticleCharmMonster(Entity* my);
 void actParticleAestheticOrbit(Entity* my);
 void actParticleShadowTag(Entity* my);
+void actParticlePinpointTarget(Entity* my);
 void actParticleFloorMagic(Entity* my);
 void actParticleVortex(Entity* my);
 void actParticleWave(Entity* my);
@@ -672,6 +696,9 @@ static const int FOLLOWER_SELECTED_PARTICLE = 1229;
 static const int FOLLOWER_TARGET_PARTICLE = 1230;
 void createParticleCharmMonster(Entity* parent);
 void createParticleShadowTag(Entity* parent, Uint32 casterUid, int duration);
+static const int PINPOINT_PARTICLE_START = 1767;
+static const int PINPOINT_PARTICLE_END = 1775;
+void createParticleSpellPinpointTarget(Entity* parent, Uint32 casterUid, int sprite, int duration, int spellID);
 Entity* createFloorMagic(ParticleTimerEffect_t::EffectType particleType, int sprite, real_t x, real_t y, real_t z, real_t dir, Uint32 lifetime);
 void floorMagicClientReceive(Entity* my);
 void particleWaveClientReceive(Entity* my);

@@ -74,7 +74,19 @@ static const int EFF_ENSEMBLE_DRUM = 49;
 static const int EFF_ENSEMBLE_LUTE = 50;
 static const int EFF_ENSEMBLE_HORN = 51;
 static const int EFF_LIFT = 52;
-static const int NUMEFFECTS = 64;
+static const int EFF_NULL_MAGIC = 53;
+static const int EFF_NULL_MELEE = 54;
+static const int EFF_NULL_RANGED = 55;
+static const int EFF_NIMBLENESS = 56;
+static const int EFF_GREATER_MIGHT = 57;
+static const int EFF_COUNSEL = 58;
+static const int EFF_STURDINESS = 59;
+static const int EFF_BLESS_FOOD = 60;
+static const int EFF_PINPOINT = 61;
+static const int EFF_PENANCE = 62;
+static const int EFF_SACRED_PATH = 63;
+static const int EFF_DETECT_ENEMY = 64;
+static const int NUMEFFECTS = 96;
 
 // stats
 static const int STAT_STR = 0;

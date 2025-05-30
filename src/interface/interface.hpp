@@ -72,12 +72,15 @@ enum DamageGib {
 	DMG_POISON,
 	DMG_HEAL,
 	DMG_MISS,
-	DMG_TODO
+	DMG_GUARD,
+	DMG_TODO,
+	DMG_DETECT_MONSTER
 };
 enum DamageGibDisplayType {
 	DMG_GIB_NUMBER,
 	DMG_GIB_MISS,
-	DMG_GIB_SPRITE
+	DMG_GIB_SPRITE,
+	DMG_GIB_GUARD
 };
 class EnemyHPDamageBarHandler
 {
@@ -131,13 +134,16 @@ public:
 		Uint32 enemy_uid = 0;
 		Uint32 enemy_statusEffects1 = 0;
 		Uint32 enemy_statusEffects2 = 0;
+		Uint32 enemy_statusEffects3 = 0;
 		Uint32 enemy_statusEffectsLowDuration1 = 0;
 		Uint32 enemy_statusEffectsLowDuration2 = 0;
+		Uint32 enemy_statusEffectsLowDuration3 = 0;
 		bool lowPriorityTick = false;
 		bool shouldDisplay = true;
 		bool hasDistanceCheck = false;
 		bool displayOnHUD = false;
 		bool expired = false;
+		bool detectMonsterCheckStatus = false;
 		real_t depletionAnimationPercent = 100.0;
 		EnemyHPDetails() {};
 		EnemyHPDetails(Uint32 uid, Sint32 HP, Sint32 maxHP, Sint32 oldHP, const char* name, bool isLowPriority)

@@ -6275,14 +6275,28 @@ void drawAllPlayerCameras() {
 						globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_INUSE;
 						globalLightModifier = 0.f;
 						globalLightModifierEntities = 0.f;
-						if ( stats[c]->mask && stats[c]->mask->type == TOOL_BLINDFOLD_TELEPATHY )
+						if ( !intro )
 						{
-							for ( node_t* mapNode = map.creatures->first; mapNode != nullptr; mapNode = mapNode->next )
+							bool selfTelepath = stats[c]->mask && stats[c]->mask->type == TOOL_BLINDFOLD_TELEPATHY;
+							if ( selfTelepath )
 							{
-								Entity* mapCreature = (Entity*)mapNode->element;
-								if ( mapCreature && !intro )
+								for ( node_t* mapNode = map.creatures->first; mapNode != nullptr; mapNode = mapNode->next )
 								{
-									mapCreature->monsterEntityRenderAsTelepath = 1;
+									Entity* mapCreature = (Entity*)mapNode->element;
+									if ( mapCreature &&
+										(selfTelepath
+											/*|| (mapCreature->getStats() && mapCreature->getStats()->getEffectActive(EFF_DETECT_ENEMY))*/
+											) )
+									{
+										/*if ( mapCreature->getStats() && mapCreature->getStats()->getEffectActive(EFF_DETECT_ENEMY) )
+										{
+											mapCreature->monsterEntityRenderAsTelepath = 2;
+										}
+										else*/
+										{
+											mapCreature->monsterEntityRenderAsTelepath = 1;
+										}
+									}
 								}
 							}
 						}

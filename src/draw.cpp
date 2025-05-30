@@ -2159,7 +2159,7 @@ void drawEntities3D(view_t* camera, int mode)
                 if (x >= 0 && y >= 0 && x < map.width && y < map.height)
                 {
                     if ( !camera->vismap[y + x * map.height] 
-						&& entity->monsterEntityRenderAsTelepath != 1
+						&& entity->monsterEntityRenderAsTelepath == 0
 						&& !(entity->behavior == &actSpriteNametag && entity->ditheringDisabled) )
                     {
                         decrease = true;
@@ -2450,6 +2450,10 @@ void drawEntities3D(view_t* camera, int mode)
 					else if ( entity->skill[7] == 2 )
 					{
 						glDrawSprite(camera, entity, mode);
+					}
+					else if ( entity->skill[7] == 3 )
+					{
+						glDrawSpriteFromImage(camera, entity, Language::get(6464), mode);
 					}
 					else
 					{

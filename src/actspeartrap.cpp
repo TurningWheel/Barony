@@ -182,7 +182,16 @@ void actSpearTrap(Entity* my)
 									damage *= mult;
 								}
 
-								if ( damage > 0 )
+								if ( entity->onEntityTrapHitSacredPath(my) )
+								{
+									if ( entity->behavior == &actPlayer )
+									{
+										messagePlayerColor(entity->skill[2], MESSAGE_COMBAT, makeColorRGB(0, 255, 0),
+											Language::get(6492));
+									}
+									playSoundEntity(entity, 166, 128);
+								}
+								else if ( damage > 0 )
 								{
 									playSoundEntity(entity, 28, 64);
 									spawnGib(entity);

@@ -3244,6 +3244,13 @@ bool monsterIsFriendlyForTooltip(const int player, Entity& entity)
 	{
 		return true; // this is my follower
 	}
+	if ( entity.getStats() )
+	{
+		if ( entity.getStats()->getEffectActive(EFF_PENANCE) >= 1 && entity.getStats()->getEffectActive(EFF_PENANCE) < 1 + MAXPLAYERS )
+		{
+			return true;
+		}
+	}
 
 	Monster playerRace = stats[player]->type;
 	Monster targetEntityType = entity.getMonsterTypeFromSprite();

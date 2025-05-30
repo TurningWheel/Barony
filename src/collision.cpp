@@ -577,6 +577,79 @@ bool Entity::collisionProjectileMiss(Entity* parent, Entity* projectile)
 		}
 		if ( Stat* myStats = getStats() )
 		{
+			if ( (projectile->behavior == &actThrown || projectile->behavior == &actArrow) && myStats->getEffectActive(EFF_NULL_RANGED) )
+			{
+				auto effectStrength = myStats->getEffectActive(EFF_NULL_RANGED);
+				int duration = myStats->EFFECTS_TIMERS[EFF_NULL_RANGED];
+				if ( effectStrength == 1 )
+				{
+					if ( myStats->EFFECTS_TIMERS[EFF_NULL_RANGED] > 0 )
+					{
+						myStats->EFFECTS_TIMERS[EFF_NULL_RANGED] = 1;
+					}
+				}
+				else if ( effectStrength > 1 )
+				{
+					--effectStrength;
+					myStats->setEffectValueUnsafe(EFF_NULL_RANGED, effectStrength);
+					this->setEffect(EFF_NULL_RANGED, effectStrength, myStats->EFFECTS_TIMERS[EFF_NULL_RANGED], false);
+				}
+				if ( projectile->collisionIgnoreTargets.find(getUID()) == projectile->collisionIgnoreTargets.end() )
+				{
+					projectile->collisionIgnoreTargets.insert(getUID());
+					if ( (parent && parent->behavior == &actPlayer) || (parent && parent->behavior == &actMonster && parent->monsterAllyGetPlayerLeader())
+						|| this->behavior == &actPlayer || this->monsterAllyGetPlayerLeader() )
+					{
+						spawnDamageGib(this, 0, DamageGib::DMG_GUARD, DamageGibDisplayType::DMG_GIB_GUARD, true);
+					}
+
+					if ( this->behavior == &actPlayer )
+					{
+						if ( projectile->behavior == &actArrow )
+						{
+							if ( projectile->sprite == 167 )
+							{
+								// bolt
+								messagePlayerColor(skill[2], MESSAGE_COMBAT, makeColorRGB(0, 255, 0), Language::get(6472), Language::get(6292));
+							}
+							else if ( projectile->sprite == 78 )
+							{
+								// rock
+								messagePlayerColor(skill[2], MESSAGE_COMBAT, makeColorRGB(0, 255, 0), Language::get(6472), Language::get(6293));
+							}
+							else
+							{
+								// arrow
+								messagePlayerColor(skill[2], MESSAGE_COMBAT, makeColorRGB(0, 255, 0), Language::get(6472), Language::get(6291));
+							}
+						}
+						else if ( projectile->behavior == &actThrown )
+						{
+							if ( projectile->skill[10] >= 0 && projectile->skill[10] < NUMITEMS )
+							{
+								messagePlayerColor(skill[2], MESSAGE_COMBAT, makeColorRGB(0, 255, 0), Language::get(6471), items[projectile->skill[10]].getUnidentifiedName());
+							}
+							else
+							{
+								// generic "projectile"
+								messagePlayerColor(skill[2], MESSAGE_COMBAT, makeColorRGB(0, 255, 0), Language::get(6471), Language::get(6296));
+							}
+						}
+						else
+						{
+							messagePlayerColor(skill[2], MESSAGE_COMBAT, makeColorRGB(0, 255, 0), Language::get(6465));
+						}
+					}
+					if ( parent && parent->behavior == &actPlayer )
+					{
+						messagePlayerMonsterEvent(parent->skill[2], makeColorRGB(255, 255, 255),
+							*myStats, Language::get(6468), Language::get(6469), MSG_COMBAT); // %s guards the attack
+					}
+					playSoundEntity(this, 166, 128);
+				}
+				return true;
+			}
+
 			if ( myStats->type == BAT_SMALL || myStats->getEffectActive(EFF_AGILITY) || myStats->getEffectActive(EFF_ENSEMBLE_LUTE) 
 				|| (parent && parent->getStats() && parent->getStats()->getEffectActive(EFF_BLIND)) )
 			{
@@ -1001,7 +1074,10 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 			{
 				continue;
 			}
-			if ( projectileAttack && yourStats && (parentDodgeChance || yourStats->getEffectActive(EFF_AGILITY) || yourStats->getEffectActive(EFF_ENSEMBLE_LUTE)) )
+			if ( projectileAttack && yourStats && (parentDodgeChance 
+				|| yourStats->getEffectActive(EFF_AGILITY) 
+				|| yourStats->getEffectActive(EFF_ENSEMBLE_LUTE)
+				|| (yourStats->getEffectActive(EFF_NULL_RANGED) && (my->behavior == &actThrown || my->behavior == &actArrow))) )
 			{
 				entityDodgeChance = true;
 			}

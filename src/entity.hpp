@@ -65,6 +65,8 @@ class Entity
 	Sint32& orbHoverDirection; // animation, waiting/up/down floating state skill[7]
 	Sint32& orbHoverWaitTimer; // animation, if waiting state, then wait this many ticks before moving to next state skill[8]
 
+	Sint32& entityShowOnMap; //skill[59]
+
 	//### Begin - Private Entity Constants for BURNING Status Effect
 	static const Sint32 MIN_TICKS_ON_FIRE		= TICKS_TO_PROCESS_FIRE *  4; // Minimum time an Entity can be on fire is  4 cycles (120 ticks)
 	static const Sint32 MAX_TICKS_ON_FIRE		= TICKS_TO_PROCESS_FIRE * 20; // Maximum time an Entity can be on fire is 20 cycles (600 ticks)
@@ -280,7 +282,6 @@ public:
 	Sint32& monsterIllusionTauntingThisUid; //skill[55]
 	Sint32& monsterLastDistractedByNoisemaker;//skill[55] shared with above as above only is for inner demons.
 	Sint32& monsterExtraReflexTick; //skill[56]
-	Sint32& entityShowOnMap; //skill[59]
 	real_t& monsterSentrybotLookDir; //fskill[10]
 	real_t& monsterKnockbackTangentDir; //fskill[11]
 	real_t& playerStrafeVelocity; //fskill[12]
@@ -689,6 +690,44 @@ public:
 		LOCK_KEY_INACTIVE
 	};
 
+	enum EntityShowMapSource
+	{
+		SHOW_MAP_DEFAULT = 1,
+		SHOW_MAP_GYRO = 2,
+		SHOW_MAP_SCRY = 3
+	};
+	void setEntityShowOnMap(EntityShowMapSource source, int duration)
+	{
+		entityShowOnMap = 0;
+		entityShowOnMap |= ((int)source & 0xFF) << 24;
+		entityShowOnMap |= duration & 0xFFFFFF;
+	}
+	void entityShowOnMapTickDuration()
+	{
+		auto duration = getEntityShowOnMapDuration();
+		auto source = getEntityShowOnMapSource();
+		if ( duration > 0 )
+		{
+			--duration;
+		}
+		if ( duration == 0 )
+		{
+			entityShowOnMap = 0;
+		}
+		else
+		{
+			setEntityShowOnMap(source, duration);
+		}
+	}
+	int getEntityShowOnMapDuration()
+	{
+		return (EntityShowMapSource)(entityShowOnMap & 0xFFFFFF);
+	}
+	EntityShowMapSource getEntityShowOnMapSource()
+	{
+		return (EntityShowMapSource)((entityShowOnMap >> 24) & 0xFF);
+	}
+
 	//--WORLDTOOLTIP--
 	real_t& worldTooltipAlpha; //fskill[0]
 	real_t& worldTooltipZ; //fskill[1]
@@ -1012,7 +1051,7 @@ public:
 	 * @param guarantee: Causes serverUpdateEffectsForEntity() to use sendPacketSafe() rather than just sendPacket().
 	 * Returns true on successfully setting value.
 	 */
-	bool setEffect(int effect, std::variant<bool, Uint8> value, int duration, bool updateClients, bool guarantee = true);
+	bool setEffect(int effect, std::variant<bool, Uint8> value, int duration, bool updateClients, bool guarantee = true, bool overrideEffectStrength = false);
 
 	/*
 	 * @param state: required to let the entity know if it should enter MONSTER_STATE_PATH, MONSTER_STATE_ATTACK, etc.
@@ -1147,6 +1186,7 @@ public:
 	int getEntityInspirationFromAllies();
 	int getFollowerBonusDamageResist();
 	int getEntityBonusTrapResist();
+	bool onEntityTrapHitSacredPath(Entity* trap);
 	int getFollowerBonusHPRegen();
 	int getHPRestoreOnLevelUp();
 	void monsterMoveBackwardsAndPath(bool trySidesFirst = false); // monster tries to move backwards in a cross shaped area if stuck against an entity.

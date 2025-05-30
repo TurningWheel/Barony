@@ -3933,6 +3933,29 @@ namespace ConsoleCommands {
 		return;
 		});
 
+	static ConsoleCommand ccmd_allspells4("/allspells4", "teach the player some spells (cheat)", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+
+		for ( int i = SPELL_NONE + 50; i < NUM_SPELLS; ++i )
+		{
+			if ( allGameSpells.find(i) != allGameSpells.end() )
+			{
+				if ( spell_t* spell = allGameSpells[i] )
+				{
+					bool oldIntro = intro;
+					intro = true;
+					bool learned = addSpell(spell->ID, clientnum, true);
+					intro = oldIntro;
+				}
+			}
+		}
+		return;
+		});
+
 	static ConsoleCommand ccmd_gimmexp("/gimmexp", "give the player some XP (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
@@ -4614,6 +4637,11 @@ namespace ConsoleCommands {
 
 	static ConsoleCommand ccmd_map_debug_door("/map_debug_door", "", []CCMD{
 #ifndef NINTENDO
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
 		for ( auto f : directoryContents(".\\maps\\", false, true) )
 		{
 			std::string mapPath = "maps/";
@@ -4637,6 +4665,153 @@ namespace ConsoleCommands {
 					}
 				}
 				// will crash the game but will show results of every map load :)
+			}
+		}
+#endif
+		});
+
+	static ConsoleCommand ccmd_map_debug_treasure("/map_debug_treasure", "", []CCMD{
+#ifndef NINTENDO
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+		std::map<std::string, std::vector<std::string>> treasureLoot;
+		for ( auto f : directoryContents(".\\maps\\", false, true) )
+		{
+			std::string mapPath = "maps/";
+			mapPath += f;
+			if ( mapPath.find("_lock") != std::string::npos && PHYSFS_getRealDir(mapPath.c_str()) )
+			{
+				int maphash = 0;
+				std::string fullMapPath = PHYSFS_getRealDir(mapPath.c_str());
+				fullMapPath += PHYSFS_getDirSeparator();
+				fullMapPath += mapPath;
+				loadMap(fullMapPath.c_str(), &map, map.entities, map.creatures, nullptr);
+				auto& loot = treasureLoot[mapPath];
+				for ( node_t* node = map.entities->first; node; node = node->next )
+				{
+					if ( Entity* entity = (Entity*)node->element )
+					{
+						int x = entity->x / 16;
+						int y = entity->y / 16;
+						std::string coord = "@[x:";
+						coord += (std::to_string(x));
+						coord += (",y:");
+						coord += (std::to_string(y));
+						coord += ("], ");
+
+						if ( entity->sprite == 9 )
+						{
+							loot.push_back(coord + "gold");
+						}
+						else if ( entity->sprite == 8 )
+						{
+							{
+								std::string item = "item, [x";
+								item += std::to_string(std::max(1, entity->skill[13]));
+								item += "], ";
+								item += "(";
+								if ( entity->skill[12] == 10 )
+								{
+									item += "+?";
+								}
+								else
+								{
+									item += entity->skill[12] >= 0 ? "+" : "";
+									item += std::to_string(entity->skill[12]);
+								}
+								item += "), ";
+								if ( entity->skill[11] == 0 )
+								{
+									item += "[rand]";
+								}
+								else
+								{
+									switch ( (Status)(entity->skill[11]) )
+									{
+									case BROKEN:
+										item += "[broken]";
+										break;
+									case DECREPIT:
+										item += "[decrepit]";
+										break;
+									case WORN:
+										item += "[worn]";
+										break;
+									case SERVICABLE:
+										item += "[serviceable]";
+										break;
+									case EXCELLENT:
+										item += "[excellent]";
+										break;
+									default:
+										item += "[?]";
+									}
+								}
+								item += ", ";
+								if ( entity->skill[10] == 0 )
+								{
+									item += "\"random item\"";
+								}
+								else if ( entity->skill[10] == 1 )
+								{
+									if ( entity->skill[16] > 0 && entity->skill[16] <= 13 )
+									{
+										static char itemCategoryNames[17][32] =
+										{
+											"random",
+											"weapon",
+											"armor",
+											"amulet",
+											"potion",
+											"scroll",
+											"magicstaff",
+											"ring",
+											"spellbook",
+											"gem",
+											"thrown",
+											"tool",
+											"food",
+											"book",
+											"equipment",
+											"jewelry",
+											"magical"
+										};
+										item += std::string("\"category: ") + std::string(itemCategoryNames[entity->skill[16]]) + "\"";
+									}
+									else
+									{
+										item += std::string("\"random category\"");
+									}
+								}
+								else
+								{
+									item += "\"";
+									item += items[entity->skill[10] - 2].getIdentifiedName();
+									item += "\"";
+								}
+								item += ", (";
+								item += entity->skill[15] == 1 ? "id'd)" : "unid'd)";
+								if ( entity->skill[10] > 1 )
+								{
+									item += ", [value: " + std::to_string(items[entity->skill[10] - 2].value) + "G]";
+								}
+								else
+								{
+									item += ", [value: ?G]";
+								}
+								loot.push_back(coord + item);
+							}
+						}
+					}
+				}
+				// will crash the game but will show results of every map load :)
+				for ( auto& s : loot )
+				{
+					printlog("[%s], %s", mapPath.c_str(), s.c_str());
+				}
 			}
 		}
 #endif
@@ -4771,6 +4946,11 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_mesh_collider_debug("/mesh_collider_debug", "", []CCMD{
 		node_t* tmpNode = NULL;
 		Entity* tmpEnt = NULL;
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
 		for ( tmpNode = map.entities->first; tmpNode != NULL; tmpNode = tmpNode->next )
 		{
 			tmpEnt = (Entity*)tmpNode->element;
@@ -4787,6 +4967,11 @@ namespace ConsoleCommands {
 
 	static ConsoleCommand ccmd_mesh_collider_verify_and_crash_game("/mesh_collider_verify_and_crash_game", "", []CCMD{
 #ifndef NINTENDO
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
 		for ( auto f : directoryContents(".\\maps\\", false, true) )
 		{
 			std::string mapPath = "maps/";

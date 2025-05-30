@@ -3908,7 +3908,16 @@ int getBellDmgOnEntity(Entity* entity)
 		damage *= mult;
 	}
 
-	if ( stats->helmet )
+	if ( entity->onEntityTrapHitSacredPath(nullptr) )
+	{
+		if ( entity->behavior == &actPlayer )
+		{
+			messagePlayerColor(entity->skill[2], MESSAGE_COMBAT, makeColorRGB(0, 255, 0),
+				Language::get(6491));
+		}
+		playSoundEntity(entity, 166, 128);
+	}
+	else if ( stats->helmet )
 	{
 		bool shapeshifted = (entity->behavior == &actPlayer && entity->effectShapeshift != NOTHING);
 

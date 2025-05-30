@@ -16,6 +16,7 @@
 
 std::map<int, spell_t*> allGameSpells;
 
+spell_t* createSimpleSpell(int spellID, int difficulty, int mana, int base_mana, int overload_mult, int damage, int duration, const char* internal_name);
 void setupSpells()   ///TODO: Verify this function.
 {
 	for ( auto it : allGameSpells )
@@ -1568,7 +1569,7 @@ void setupSpells()   ///TODO: Verify this function.
 		1,		// overload
 		0,		// damage
 		50,	// duration
-		"spell_ice_wave");
+		"spell_element_ice_wave");
 
 	spell = spellConstructor(
 		SPELL_ICE_WAVE,										// ID
@@ -1580,4 +1581,235 @@ void setupSpells()   ///TODO: Verify this function.
 	spell->hide_from_ui = true;
 	spell->rangefinder = true;
 	spell->distance = 16.0;
+
+	spell = createSimpleSpell(
+		SPELL_CONJURE_FOOD,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_conjure_food");
+
+	spell = createSimpleSpell(
+		SPELL_NULL_MELEE,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_null_melee");
+
+	spell = createSimpleSpell(
+		SPELL_NULL_MAGIC,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_null_magic");
+
+	spell = createSimpleSpell(
+		SPELL_NULL_RANGED,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_null_ranged");
+
+	spell = createSimpleSpell(
+		SPELL_PROF_NIMBLENESS,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_prof_nimbleness");
+
+	spell = createSimpleSpell(
+		SPELL_PROF_GREATER_MIGHT,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_prof_greater_might");
+
+	spell = createSimpleSpell(
+		SPELL_PROF_COUNSEL,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_prof_counsel");
+
+	spell = createSimpleSpell(
+		SPELL_PROF_STURDINESS,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_prof_sturdiness");
+
+	spell = createSimpleSpell(
+		SPELL_BLESS_FOOD,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_bless_food");
+
+	spell = createSimpleSpell(
+		SPELL_PINPOINT,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_pinpoint");
+
+	spell = createSimpleSpell(
+		SPELL_DONATION,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_donation");
+
+	spell = createSimpleSpell(
+		SPELL_SCRY_ALLIES,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_scry_allies");
+
+	spell = createSimpleSpell(
+		SPELL_SCRY_SHRINES,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_scry_shrines");
+
+	spell = createSimpleSpell(
+		SPELL_SCRY_TRAPS,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_scry_traps");
+
+	spell = createSimpleSpell(
+		SPELL_SCRY_TREASURES,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_scry_treasures");
+
+	spell = createSimpleSpell(
+		SPELL_PENANCE,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_penance");
+
+	spell = createSimpleSpell(
+		SPELL_CALL_ALLIES,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_call_allies");
+
+	spell = createSimpleSpell(
+		SPELL_SACRED_PATH,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_sacred_path");
+
+	spell = createSimpleSpell(
+		SPELL_MANIFEST_DESTINY,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_manifest_destiny");
+
+	spell = createSimpleSpell(
+		SPELL_DETECT_ENEMY,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_detect_enemy");
+}
+
+spell_t* createSimpleSpell(int spellID, int difficulty, int mana, int base_mana, int overload_mult, int damage, int duration, const char* internal_name)
+{
+	std::string elementName = internal_name;
+	if ( elementName.find("element_") == std::string::npos )
+	{
+		auto find = elementName.find("spell_");
+		if ( find != std::string::npos )
+		{
+			elementName.insert(find + strlen("spell_"), "element_");
+		}
+	}
+	spellElementConstructor(spellID,
+		mana,		// mana
+		base_mana,		// base mana
+		overload_mult,		// overload
+		damage,		// damage
+		duration,		// duration
+		elementName.c_str());
+	spell_t* spell = spellConstructor(
+		// ID
+		spellID,
+		// difficulty
+		difficulty,
+		// internal name
+		internal_name,
+		// elements
+		{ spellID }
+	);
+	return spell;
 }

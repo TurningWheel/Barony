@@ -855,9 +855,11 @@ static void uploadLightUniforms(view_t* camera, Shader& shader, Entity* entity, 
 #ifdef EDITOR
             false;
 #else
-            entity->monsterEntityRenderAsTelepath && player >= 0 && player < MAXPLAYERS
+            /*(entity->monsterEntityRenderAsTelepath == 2 && player >= 0 && player < MAXPLAYERS)
+            || */
+            (entity->monsterEntityRenderAsTelepath && player >= 0 && player < MAXPLAYERS
             && players[player] && players[player]->entity
-            && stats[player]->mask&& stats[player]->mask->type == TOOL_BLINDFOLD_TELEPATHY;
+            && stats[player]->mask && stats[player]->mask->type == TOOL_BLINDFOLD_TELEPATHY);
 #endif
         if ( telepathy ) {
             const GLfloat factor[4] = { 1.f, 1.f, 1.f, 1.f, };
@@ -1246,16 +1248,19 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
 #ifdef EDITOR
         false;
 #else
-        (entity->monsterEntityRenderAsTelepath == 1 && !intro 
+        /*(entity->monsterEntityRenderAsTelepath == 2 && !intro)
+        || */
+        ((entity->monsterEntityRenderAsTelepath == 1 && !intro 
             && player >= 0 && player < MAXPLAYERS && players[player] && players[player]->entity
-            && stats[player]->mask && stats[player]->mask->type == TOOL_BLINDFOLD_TELEPATHY);
+            && stats[player]->mask && stats[player]->mask->type == TOOL_BLINDFOLD_TELEPATHY));
 #endif
 
     bool changedDepthRange = false;
 	if (entity->flags[OVERDRAW] 
         || telepath
 		|| modelindex == FOLLOWER_SELECTED_PARTICLE
-		|| modelindex == FOLLOWER_TARGET_PARTICLE ) {
+		|| modelindex == FOLLOWER_TARGET_PARTICLE
+        || (modelindex >= PINPOINT_PARTICLE_START && modelindex < PINPOINT_PARTICLE_END)) {
         changedDepthRange = true;
         GL_CHECK_ERR(glDepthRange(0, 0.1));
 	}

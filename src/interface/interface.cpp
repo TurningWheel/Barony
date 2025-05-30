@@ -11139,10 +11139,33 @@ void EnemyHPDamageBarHandler::cullExpiredHPBars()
 		}
 		if ( ticks - (*it).second.enemy_timer >= tickLifetime )
 		{
-			(*it).second.expired = true;
-			if ( (*it).second.animator.fadeOut <= 0.01 )
+			bool expire = true;
+			if ( (*it).second.detectMonsterCheckStatus )
 			{
-				it = HPBars.erase(it); // no need to show this bar, delete it
+				if ( Entity* parent = uidToEntity((*it).first) )
+				{
+					if ( Stat* stats = parent->getStats() )
+					{
+						if ( stats->getEffectActive(EFF_DETECT_ENEMY) )
+						{
+							(*it).second.enemy_timer += tickLifetime / 2; // extend lifetime of bar while effect active
+							expire = false;
+						}
+					}
+				}
+			}
+
+			if ( expire )
+			{
+				(*it).second.expired = true;
+				if ( (*it).second.animator.fadeOut <= 0.01 )
+				{
+					it = HPBars.erase(it); // no need to show this bar, delete it
+				}
+				else
+				{
+					++it;
+				}
 			}
 			else
 			{
@@ -11456,6 +11479,10 @@ EnemyHPDamageBarHandler::EnemyHPDetails* EnemyHPDamageBarHandler::addEnemyToList
 		details->displayOnHUD = false;
 		details->hasDistanceCheck = false;
 		details->expired = false;
+		if ( gibDmgType == DMG_DETECT_MONSTER )
+		{
+			details->detectMonsterCheckStatus = true;
+		}
 	}
 	else
 	{
@@ -11464,6 +11491,10 @@ EnemyHPDamageBarHandler::EnemyHPDetails* EnemyHPDamageBarHandler::addEnemyToList
 		details = &(*find).second;
 		details->animator.previousSetpoint = details->enemy_oldhp;
 		details->animator.backgroundValue = details->enemy_oldhp;
+		if ( gibDmgType == DMG_DETECT_MONSTER )
+		{
+			details->detectMonsterCheckStatus = true;
+		}
 	}
 
 	details->animator.maxValue = details->enemy_maxhp;
@@ -11483,8 +11514,10 @@ EnemyHPDamageBarHandler::EnemyHPDetails* EnemyHPDamageBarHandler::addEnemyToList
 
 	details->enemy_statusEffects1 = 0;
 	details->enemy_statusEffects2 = 0;
+	details->enemy_statusEffects3 = 0;
 	details->enemy_statusEffectsLowDuration1 = 0;
 	details->enemy_statusEffectsLowDuration2 = 0;
+	details->enemy_statusEffectsLowDuration3 = 0;
 
 	if ( entity && (entity->behavior == &actPlayer || entity->behavior == &actMonster) && multiplayer != CLIENT )
 	{
@@ -11507,7 +11540,15 @@ EnemyHPDamageBarHandler::EnemyHPDetails* EnemyHPDamageBarHandler::addEnemyToList
 						details->enemy_statusEffects2 |= (1 << (i - 32));
 						if ( stat->EFFECTS_TIMERS[i] > 0 && stat->EFFECTS_TIMERS[i] < 5 * TICKS_PER_SECOND )
 						{
-							details->enemy_statusEffectsLowDuration2 |= (1 << i);
+							details->enemy_statusEffectsLowDuration2 |= (1 << (i - 32));
+						}
+					}
+					else if ( i < 96 )
+					{
+						details->enemy_statusEffects3 |= (1 << (i - 64));
+						if ( stat->EFFECTS_TIMERS[i] > 0 && stat->EFFECTS_TIMERS[i] < 5 * TICKS_PER_SECOND )
+						{
+							details->enemy_statusEffectsLowDuration3 |= (1 << (i - 64));
 						}
 					}
 				}
