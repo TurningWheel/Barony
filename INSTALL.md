@@ -84,7 +84,13 @@ If you'd rather debug the editor, instead of hitting the green play button up to
 ## Acquire Dependencies
 
 For Debian/Ubuntu, you should be able to install most of these dependencies with: //TODO: Add OpenAL to the list.
+```
 sudo apt-get install libsdl2-dev libsdl2-image-dev libsdl2-net-dev libsdl2-ttf-dev libpng-dev libz-dev libphysfs-dev rapidjson-dev
+```
+For Arch:
+```
+yay -S --needed sdl2-compat sdl2_image sdl2_net sdl2_ttf libpng physfs rapidjson openal cmake3
+```
 
 You will also need PhysFS v3.0.1 for Barony v3.1.5+ if not available in your distro's package repository.
 Linux Install (Navigate to somewhere to drop install files first):
@@ -103,7 +109,7 @@ You can do something along the following lines:
 mkdir build
 cd build
 cmake ..
-make -j
+make -j$(nproc)
 ```
 
 # Build Flags
