@@ -6717,4 +6717,38 @@ Host to enable the game setting.
 6462 Raw Input#
 6463 Modified#
 
+6464 Guard!#
+6465 Your protection stops an attack!#
+6466 The %s guards your spell!#
+6467 %s guards your spell!#
+6468 The %s guards your attack!#
+6469 %s guards your attack!#
+6470 Your protection stops a spell!#
+6471 Your protection stops a flying %s!#
+6472 Your protection stops a %s!#
+6473 You set null melee#
+6474 You set null ranged#
+6475 You set null magic#
+6476 You set nimble#
+6477 You set might#
+6478 You set counsel#
+6479 You set studiness#
+6480 You set pinpoint#
+6481 You set scry ally#
+6482 You set scry shrine#
+6483 You set scry trap#
+6484 You set scry traps#
+6485 You set scry treasure#
+6486 You set bless food#
+6487 You set penance#
+6488 You set donation#
+6489 You set call allies#
+6490 Your protection saves you from the boulder!#
+6491 Your protection saves you from the falling bell!#
+6492 Your protection saves you from the spikes!#
+6493 You set sacred path#
+6494 You set manifest destiny#
+6495 You set detect enemy#
+
+
 6599 END#
