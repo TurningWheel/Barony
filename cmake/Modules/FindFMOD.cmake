@@ -23,6 +23,7 @@ FIND_PATH(FMOD_INCLUDE_DIR
   /opt/local/include/fmodstudio/
   /opt/include/
   /opt/include/fmodstudio/
+  /opt/fmodengine/api/core/inc/
 )
 
 FIND_LIBRARY(FMOD_LIBRARY
@@ -42,6 +43,7 @@ FIND_LIBRARY(FMOD_LIBRARY
   /opt/lib64
   /opt/lib
   /usr/freeware/lib64
+  /usr/lib/fmodengine
 )
 
 if (FMOD_LIBRARY)
