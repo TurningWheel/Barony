@@ -65,6 +65,7 @@
 #include <string.h>
 #include <execinfo.h>
 #include <sys/stat.h>
+#include <filesystem>
 
 static SDL_bool SDL_MouseModeBeforeSignal = SDL_FALSE;
 static int SDL_MouseShowBeforeSignal = SDL_ENABLE;
@@ -6755,29 +6756,32 @@ int main(int argc, char** argv)
 		strcpy(outputdir, "./");
 #else
  #ifndef NINTENDO
-		char *basepath = getenv("HOME");
+		std::string basepath;
+		if (strlen(getenv("XDG_DATA_HOME")) > 0)
+		{
+			printlog("Picked up XDG_DATA_HOME: %s", getenv("XDG_DATA_HOME"));
+			basepath = getenv("XDG_DATA_HOME");
+			basepath += "/barony";
+		}
+		else 
+		{
+			printlog("XDG_DATA_HOME does not exit, using HOME");
+			basepath = getenv("HOME");
+			basepath += "/.local/share/barony";
+		}
   #ifdef USE_EOS
    #ifdef STEAMWORKS
 		//Steam + EOS
-		snprintf(outputdir, sizeof(outputdir), "%s/.local/share/barony", basepath);
+		snprintf(outputdir, sizeof(outputdir), "%s", basepath.c_str());
    #else
 		//Just EOS.
-		std::string firstDotdir(basepath);
-		firstDotdir += "/.local/share/barony/";
-		if (access(firstDotdir.c_str(), F_OK) == -1)
-		{
-			mkdir(firstDotdir.c_str(), 0777); //Since this mkdir is not equivalent to mkdir -p, have to create each part of the path manually.
-		}
-		snprintf(outputdir, sizeof(outputdir), "%s/epicgames", firstDotdir.c_str());
+		snprintf(outputdir, sizeof(outputdir), "%s/epicgames", basepath.c_str());
    #endif
   #else //USE_EOS
 		//No EOS. Could be Steam though. Or could also not.
-		snprintf(outputdir, sizeof(outputdir), "%s/.local/share/barony", basepath);
+		snprintf(outputdir, sizeof(outputdir), "%s", basepath.c_str());
   #endif
-		if (access(outputdir, F_OK) == -1)
-		{
-			mkdir(outputdir, 0777);
-		}
+		std::filesystem::create_directories(outputdir); // mkdir -p from C++ 17 https://en.cppreference.com/w/cpp/filesystem/create_directory.html
  #else // !NINTENDO
 		strcpy(outputdir, "save:");
  #endif // NINTENDO
