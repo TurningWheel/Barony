@@ -6759,13 +6759,13 @@ int main(int argc, char** argv)
 		std::string basepath;
 		if (strlen(getenv("XDG_DATA_HOME")) > 0)
 		{
-			printlog("Picked up XDG_DATA_HOME: %s", getenv("XDG_DATA_HOME"));
+			printlog("Picked up $XDG_DATA_HOME: %s", getenv("XDG_DATA_HOME"));
 			basepath = getenv("XDG_DATA_HOME");
 			basepath += "/barony";
 		}
 		else 
 		{
-			printlog("XDG_DATA_HOME does not exit, using HOME");
+			printlog("XDG_DATA_HOME does not exit, using ~/.local/share/barony");
 			basepath = getenv("HOME");
 			basepath += "/.local/share/barony";
 		}
