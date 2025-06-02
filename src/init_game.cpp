@@ -970,7 +970,7 @@ void sortAchievementsForDisplay()
 #ifdef STEAMWORKS
 	if ( Compendium_t::AchievementData_t::achievementsNeedFirstData )
 	{
-		if ( SteamUser()->BLoggedOn() )
+		//if ( SteamUser()->BLoggedOn() )
 		{
 			Compendium_t::AchievementData_t::achievementsNeedFirstData = false;
 
