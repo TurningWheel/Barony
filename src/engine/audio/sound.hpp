@@ -36,6 +36,7 @@ typedef int16_t opus_int16;
 #include <opus/opus.h>
 #endif
 #endif
+#include "../../interface/consolecommand.hpp"
 
 extern Uint32 numsounds;
 bool initSoundEngine(); //If it fails to initialize the sound engine, it'll just disable audio.
