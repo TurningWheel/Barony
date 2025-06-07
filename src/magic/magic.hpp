@@ -108,7 +108,25 @@ static const int SPELL_SACRED_PATH = 86;
 static const int SPELL_MANIFEST_DESTINY = 87;
 static const int SPELL_DETECT_ENEMY = 88;
 static const int SPELL_DETECT_ENEMIES = 89;
-static const int NUM_SPELLS = 89;
+static const int SPELL_TURN_UNDEAD = 90;
+static const int SPELL_HEAL_OTHER = 91;
+static const int SPELL_BLOOD_WARD = 92;
+static const int SPELL_TRUE_BLOOD = 93;
+static const int SPELL_DIVINE_ZEAL = 94;
+static const int SPELL_ALTER_INSTRUMENT = 95;
+static const int SPELL_MAXIMISE = 96;
+static const int SPELL_MINIMISE = 97;
+static const int SPELL_JUMP = 98;
+static const int SPELL_INCOHERENCE = 99;
+static const int SPELL_OVERCHARGE = 100;
+static const int SPELL_ENVENOM_WEAPON = 101;
+static const int SPELL_HUMILIATE = 102;
+static const int SPELL_LVL_DEATH = 103;
+static const int SPELL_GREASE_SPRAY = 104;
+static const int SPELL_MANA_BURST = 105;
+static const int SPELL_BOOBY_TRAP = 106;
+static const int SPELL_COMMAND = 107;
+static const int NUM_SPELLS = 115;
 
 #define SPELLELEMENT_CONFUSE_BASE_DURATION 2//In seconds.
 #define SPELLELEMENT_BLEED_BASE_DURATION 10//In seconds.
@@ -188,6 +206,7 @@ static const int PARTICLE_EFFECT_STATIC_ORBIT = 32;
 static const int PARTICLE_EFFECT_LIGHTNING_SEQ = 33;
 static const int PARTICLE_EFFECT_PINPOINT = 34;
 static const int PARTICLE_EFFECT_DESTINY_TELEPORT = 35;
+static const int PARTICLE_EFFECT_BOOBY_TRAP = 36;
 
 // actmagicIsVertical constants
 static const int MAGIC_ISVERTICAL_NONE = 0;
@@ -209,6 +228,7 @@ static const int PARTICLE_TIMER_ACTION_IGNITE = 11;
 static const int PARTICLE_TIMER_ACTION_SHATTER = 12;
 static const int PARTICLE_TIMER_ACTION_VORTEX = 13;
 static const int PARTICLE_TIMER_ACTION_LIGHTNING = 14;
+static const int PARTICLE_TIMER_ACTION_BOOBY_TRAP = 15;
 
 struct ParticleEmitterHit_t
 {
@@ -511,7 +531,16 @@ enum SpellElementIDs_t
 	SPELL_ELEMENT_PROPULSION_MISSILE,
 	SPELL_ELEMENT_METEOR_FLAMES,
 	SPELL_ELEMENT_PROPULSION_FLOOR_TILE,
+	SPELL_ELEMENT_PROPULSION_MAGIC_SPRAY,
 	SPELL_ELEMENT_MAX
+};
+
+enum SpellRangefinderType
+{
+	RANGEFINDER_NONE,
+	RANGEFINDER_TARGET,
+	RANGEFINDER_TOUCH,
+	RANGEFINDER_TOUCH_FLOOR_TILE
 };
 
 /*
@@ -535,7 +564,7 @@ typedef struct spell_t
 	node_t* sustain_node; //Node in the sustained/channeled spells list.
 	node_t* magic_effects_node;
 	bool hide_from_ui = false; // hide from skillsheet/other UI places
-	bool rangefinder = false;
+	SpellRangefinderType rangefinder = SpellRangefinderType::RANGEFINDER_NONE;
 	real_t distance = 0.0;
 	Uint32 caster;
 	int channel_duration; //This is the value to reset the timer to when a spell is channeled.
@@ -625,6 +654,7 @@ struct CastSpellProps_t
 	real_t caster_y = 0.0;
 	real_t target_x = 0.0;
 	real_t target_y = 0.0;
+	Uint32 targetUID = 0;
 	int elementIndex = 0;
 	real_t distanceOffset = 0.0;
 };
@@ -685,6 +715,7 @@ void createParticleRock(Entity* parent, int sprite = -1, bool light = false);
 void createParticleShatteredGem(real_t x, real_t y, real_t z, int sprite, Entity* parent);
 void createParticleErupt(Entity* parent, int sprite);
 void createParticleErupt(real_t x, real_t y, int sprite);
+Entity* createParticleBoobyTrapExplode(Entity* caster, real_t x, real_t y);
 Entity* createParticleSapCenter(Entity* parent, Entity* target, int spell, int sprite, int endSprite);
 Entity* createParticleTimer(Entity* parent, int duration, int sprite);
 void createParticleSap(Entity* parent);
@@ -754,30 +785,38 @@ typedef struct spellcastingAnimationManager
 	int stage; //The current stage of the animation.
 	int circle_count; //How many times it's circled around in the circle stage.
 	int times_to_circle; //How many times to circle around in the circle stage.
-
+	int throw_count = 0;
+	int active_count = 0;
 
 	int consume_interval; //Every consume_interval ticks, eat a mana.
 	int consume_timer; //How many ticks left till next mana consume.
 	int mana_left; //How much mana is left to consume.
+	int mana_cost; //Tracking cost of spell
 	bool consumeMana; //If false, goes through the motions, even casts the spell -- just doesn't consume any mana.
 
 	float lefthand_movex;
 	float lefthand_movey;
 	float lefthand_angle;
+	float vibrate_x = 0.f;
+	float vibrate_y = 0.f;
 
 	real_t target_x = 0.0;
 	real_t target_y = 0.0;
 	real_t caster_x = 0.0;
 	real_t caster_y = 0.0;
-	bool rangefinder = false;
+	Uint32 targetUid = 0;
+	SpellRangefinderType rangefinder = RANGEFINDER_NONE;
 	void setRangeFinderLocation();
 	void resetRangefinder();
+	bool hideShieldFromBasicCast();
+	void executeAttackSpell(bool swingweapon);
+	bool spellWaitingAttackInput();
+	bool spellIgnoreAttack();
 } spellcasting_animation_manager_t;
 extern spellcasting_animation_manager_t cast_animation[MAXPLAYERS];
 
 void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, Uint32 caster_uid, spell_t* spell, bool usingSpellbook);
 void spellcastingAnimationManager_deactivate(spellcasting_animation_manager_t* animation_manager);
-void spellcastingAnimationManager_completeSpell(spellcasting_animation_manager_t* animation_manager);
 
 class Item;
 
@@ -815,8 +854,10 @@ struct AOEIndicators_t
 		int radius = 32;
 		int size = 132;
 		int lifetime = 1;
+		int gradient = 8;
 		Uint32 uid = 0;
 		bool loop = true;
+		bool castingTarget = false;
 		Uint32 framesPerTick = 1;
 		Uint32 ticksPerUpdate = 1;
 		Uint32 delayTicks = 0;

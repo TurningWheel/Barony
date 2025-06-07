@@ -666,6 +666,7 @@ public:
 
 	//--ACTTRAP/PERMANENT
 	Sint32 pressurePlateTriggerType; //skill[3]
+
 	enum PressurePlateTriggerTypes : int
 	{
 		PRESSURE_PLATE_DEFAULT_ALL,
@@ -753,6 +754,9 @@ public:
 	Sint32& actSpriteUseCustomSurface = skill[10];
 	Sint32& actSpriteFollowUID = skill[11];
 	Sint32& actSpriteHasLightInit = skill[12];
+
+	// actGib
+	Sint32& actGibHitGroundEvent = skill[10];
 
 	void pedestalOrbInit(); // init orb properties
 
@@ -1362,8 +1366,8 @@ void actTextSource(Entity* my);
 
 //checks if a sprite falls in certain sprite ranges
 
-static const int NUM_ITEM_STRINGS = 350;
-static const int NUM_ITEM_STRINGS_BY_TYPE = 130;
+static const int NUM_ITEM_STRINGS = 352;
+static const int NUM_ITEM_STRINGS_BY_TYPE = 131;
 static const int NUM_EDITOR_TILES = 350;
 
 // furniture types.

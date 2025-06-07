@@ -3559,7 +3559,11 @@ Frame* createPauseMenuPlayerBars()
 		frame->setInvisible(false);
 
 		if ( clientnum < 0 || players[clientnum]->hud.playerBars.size() == 0
-			|| voice_no_recv & (1 << clientnum) || !voice_any_send )
+			|| voice_no_recv & (1 << clientnum) || !voice_any_send 
+#ifdef NINTENDO
+			|| directConnect
+#endif
+			)
 		{
 			//frame->setOpacity(0.0);
 			//frame->setInheritParentFrameOpacity(false);
@@ -8071,6 +8075,10 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 			{
 				miscEffects[kEffectResistBurning] = true;
 			}
+			if ( stats[player]->amulet && stats[player]->amulet->type == AMULET_BURNINGRESIST )
+			{
+				miscEffects[kEffectResistBurning] = true;
+			}
 			if ( stats[player]->amulet && stats[player]->amulet->type == AMULET_POISONRESISTANCE )
 			{
 				miscEffects[kEffectResistPoison] = true;
@@ -9462,6 +9470,28 @@ void createWorldTooltipPrompts(const int player)
 		0xFFFFFFFF, "images/system/white.png", "glyph img 4");
 	glyphAdditional3->disabled = true;
 
+	{
+		auto glyphSpellTarget = worldTooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+			0xFFFFFFFF, "images/system/white.png", "glyph img spell");
+		glyphSpellTarget->disabled = true;
+		auto glyphSpellCancel = worldTooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+			0xFFFFFFFF, "images/system/white.png", "glyph img spell cancel");
+		glyphSpellCancel->disabled = true;
+		auto iconSpellTarget = worldTooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+			0xFFFFFFFF, "images/system/white.png", "spell icon img");
+		iconSpellTarget->disabled = true;
+		auto textSpellTarget = worldTooltipFrame->addField("prompt spell target text", 256);
+		textSpellTarget->setFont(promptFont);
+		textSpellTarget->setText("");
+		textSpellTarget->setDisabled(true);
+		textSpellTarget->setSize(SDL_Rect{ 0, 0, 0, 0 });
+		auto textSpellCancelTarget = worldTooltipFrame->addField("prompt spell cancel text", 256);
+		textSpellCancelTarget->setFont(promptFont);
+		textSpellCancelTarget->setText("");
+		textSpellCancelTarget->setDisabled(true);
+		textSpellCancelTarget->setSize(SDL_Rect{ 0, 0, 0, 0 });
+	}
+
 	auto cursor = worldTooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
 		0xFFFFFFFF, "images/system/white.png", "cursor img");
 	cursor->disabled = true;
@@ -9558,6 +9588,17 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 	auto glyphCallout = worldTooltipFrame->findImage("glyph img 4");
 	glyphCallout->disabled = true;
 
+	auto textSpellTarget = worldTooltipFrame->findField("prompt spell target text");
+	textSpellTarget->setDisabled(true);
+	auto textSpellCancelTarget = worldTooltipFrame->findField("prompt spell cancel text");
+	textSpellCancelTarget->setDisabled(true);
+	auto glyphSpellTarget = worldTooltipFrame->findImage("glyph img spell");
+	glyphSpellTarget->disabled = true;
+	auto iconSpellTarget = worldTooltipFrame->findImage("spell icon img");
+	iconSpellTarget->disabled = true;
+	auto glyphSpellCancel = worldTooltipFrame->findImage("glyph img spell cancel");
+	glyphSpellCancel->disabled = true;
+
 	SDL_Rect textPos{ 0, 0, 0, 0 };
 	const int skillIconToGlyphPadding = 4;
 	const int nominalGlyphHeight = 26;
@@ -9586,6 +9627,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 		}
 	}
 
+	bool spellTarget = cast_animation[player.playernum].spellWaitingAttackInput();
 	bool followerInteract = followerMenu.selectMoveTo && (followerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT
 		|| followerMenu.optionSelected == ALLY_CMD_ATTACK_SELECT);
 	bool calloutInteract = calloutMenu.selectMoveTo && (calloutMenu.optionSelected == CalloutRadialMenu::CALLOUT_CMD_SELECT);
@@ -9902,6 +9944,220 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 			}
 		}
 	}
+	else if ( spellTarget )
+	{
+		cursor->path = getCrosshairPath();
+		Entity* target = uidToEntity(cast_animation[player.playernum].targetUid);
+		if ( target )
+		{
+			cursor->path = "images/system/selectedcursor.png";
+		}
+		if ( auto imgGet = Image::get(cursor->path.c_str()) )
+		{
+			cursor->disabled = false;
+			promptPos.x -= (int)imgGet->getWidth() / 2;
+			promptPos.y -= (int)imgGet->getHeight() / 2;
+			SDL_Rect cursorPos{ 0, 0, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
+			cursor->pos = cursorPos;
+			cursor->color = makeColor(255, 255, 255, 255 * playerSettings[multiplayer ? 0 : player.playernum].shootmodeCrosshairOpacity / 100.f);
+		}
+
+		textPos.x = cursor->pos.x + cursor->pos.w / 2;
+		textPos.y = cursor->pos.y + cursor->pos.h / 2;
+		if ( auto imgGet = Image::get("images/system/selectedcursor.png") )
+		{
+			textPos.x -= (int)imgGet->getWidth() / 2;
+			textPos.y -= (int)imgGet->getHeight() / 2;
+		}
+
+		textPos.x += 40;
+		textPos.y += 20;
+		auto glyphPathPressed = Input::inputs[player.playernum].getGlyphPathForBinding("Attack", true);
+		auto glyphPathUnpressed = Input::inputs[player.playernum].getGlyphPathForBinding("Attack", false);
+		if ( ticks % 50 < 25 )
+		{
+			glyphSpellTarget->path = glyphPathPressed;
+			if ( auto imgGet = Image::get(glyphSpellTarget->path.c_str()) )
+			{
+				glyphSpellTarget->disabled = false;
+				SDL_Rect glyphPos{ textPos.x, textPos.y, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
+				glyphSpellTarget->pos = glyphPos;
+				if ( auto imgGetUnpressed = Image::get(glyphPathUnpressed.c_str()) )
+				{
+					const int unpressedHeight = imgGetUnpressed->getHeight();
+					if ( unpressedHeight != glyphSpellTarget->pos.h )
+					{
+						glyphSpellTarget->pos.y -= (glyphSpellTarget->pos.h - unpressedHeight);
+					}
+
+					if ( unpressedHeight != nominalGlyphHeight )
+					{
+						glyphSpellTarget->pos.y -= (unpressedHeight - nominalGlyphHeight) / 2;
+					}
+				}
+				textPos.x += glyphSpellTarget->pos.w;
+			}
+		}
+		else
+		{
+			glyphSpellTarget->path = glyphPathUnpressed;
+			if ( auto imgGet = Image::get(glyphSpellTarget->path.c_str()) )
+			{
+				glyphSpellTarget->disabled = false;
+				SDL_Rect glyphPos{ textPos.x, textPos.y, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
+				glyphSpellTarget->pos = glyphPos;
+				textPos.x += glyphSpellTarget->pos.w;
+
+				if ( glyphSpellTarget->pos.h != nominalGlyphHeight )
+				{
+					glyphSpellTarget->pos.y -= (glyphSpellTarget->pos.h - nominalGlyphHeight) / 2;
+				}
+			}
+		}
+		textPos.x += skillIconToGlyphPadding;
+
+		if ( true || target )
+		{
+			for ( auto& skill : player.skillSheet.skillSheetData.skillEntries )
+			{
+				if ( skill.skillId == PRO_SPELLCASTING )
+				{
+					if ( skillCapstoneUnlocked(player.playernum, skill.skillId) )
+					{
+						iconSpellTarget->path = skill.skillIconPathLegend;
+					}
+					else
+					{
+						iconSpellTarget->path = skill.skillIconPath;
+					}
+					break;
+				}
+			}
+
+			if ( auto imgGet = Image::get(iconSpellTarget->path.c_str()) )
+			{
+				iconSpellTarget->disabled = false;
+				SDL_Rect iconPos{ textPos.x, textPos.y, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
+				iconSpellTarget->pos = iconPos;
+				textPos.x += iconSpellTarget->pos.w + skillIconToGlyphPadding;
+			}
+		}
+
+		textSpellTarget->setDisabled(false);
+		if ( target )
+		{
+			std::string interactText = Language::get(6500);
+			if ( target->behavior == &actMonster )
+			{
+				int monsterType = target->getMonsterTypeFromSprite();
+				interactText += getMonsterLocalizedName((Monster)monsterType).c_str();
+			}
+			else if ( target->isDamageableCollider() )
+			{
+				interactText += Language::get(target->getColliderLangName());
+			}
+			else if ( target->behavior == &actPlayer || target->behavior == &actDeathGhost )
+			{
+				int playernum = target->skill[2];
+				if ( playernum >= 0 && playernum < MAXPLAYERS )
+				{
+					char shortname[32];
+					stringCopy(shortname, stats[playernum]->name, sizeof(shortname), 22);
+					std::string nameStr = shortname;
+					nameStr = messageSanitizePercentSign(nameStr, nullptr);
+					interactText += nameStr;
+				}
+			}
+			textSpellTarget->setText(interactText.c_str());
+		}
+		else
+		{
+			textSpellTarget->setText(Language::get(6499));
+		}
+
+		textPos.w = textSpellTarget->getTextObject()->getWidth();
+		textPos.h = Font::get(textSpellTarget->getFont())->height() + 8;
+		textPos.y -= 1;
+		textSpellTarget->setVJustify(Field::justify_t::CENTER);
+		textSpellTarget->setSize(textPos);
+
+		if ( false )
+		{
+			auto glyphPathUnpressed = Input::inputs[player.playernum].getGlyphPathForBinding("Cast Spell", false);
+			auto glyphPathPressed = Input::inputs[player.playernum].getGlyphPathForBinding("Cast Spell", true);
+			auto prevGlyphPos = glyphSpellTarget->pos;
+			if ( ticks % 50 < 25 )
+			{
+				glyphSpellCancel->path = glyphPathPressed;
+				if ( auto imgGet = Image::get(glyphSpellCancel->path.c_str()) )
+				{
+					glyphSpellCancel->disabled = false;
+					glyphSpellCancel->pos = SDL_Rect{ 0, 0, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
+					glyphSpellCancel->pos.y = prevGlyphPos.y + prevGlyphPos.h + 4;
+					glyphSpellCancel->pos.x = prevGlyphPos.x + prevGlyphPos.w / 2 - glyphSpellCancel->pos.w / 2;
+					if ( glyphSpellCancel->pos.x % 2 == 1 )
+					{
+						++glyphSpellCancel->pos.x;
+					}
+					if ( auto imgGetUnpressed = Image::get(glyphPathUnpressed.c_str()) )
+					{
+						const int unpressedHeight = imgGetUnpressed->getHeight();
+						if ( unpressedHeight != glyphSpellCancel->pos.h )
+						{
+							glyphSpellCancel->pos.y -= (glyphSpellCancel->pos.h - unpressedHeight);
+						}
+					}
+					textPos.x += prevGlyphPos.w;
+				}
+			}
+			else
+			{
+				glyphSpellCancel->path = glyphPathUnpressed;
+				if ( auto imgGet = Image::get(glyphSpellCancel->path.c_str()) )
+				{
+					glyphSpellCancel->disabled = false;
+					glyphSpellCancel->pos = SDL_Rect{ 0, 0, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
+					glyphSpellCancel->pos.y = prevGlyphPos.y + prevGlyphPos.h + 4;
+					glyphSpellCancel->pos.x = prevGlyphPos.x + prevGlyphPos.w / 2 - glyphSpellCancel->pos.w / 2;
+					if ( glyphSpellCancel->pos.x % 2 == 1 )
+					{
+						++glyphSpellCancel->pos.x;
+					}
+				}
+			}
+
+			if ( !glyphSpellCancel->disabled )
+			{
+				glyphSpellCancel->color = makeColor(255, 255, 255, 255);
+				textSpellCancelTarget->setText(Language::get(6501));
+				textSpellCancelTarget->setColor(makeColor(255, 255, 255, 255));
+				SDL_Rect textPos = textSpellCancelTarget->getSize();
+				textPos.x = glyphSpellCancel->pos.x + glyphSpellCancel->pos.w + 4;
+				textPos.y = glyphSpellCancel->pos.y + 2;
+				textPos.h = textSpellTarget->getSize().h;
+
+				if ( auto imgGet = Image::get(glyphPathPressed.c_str()) )
+				{
+					if ( imgGet->getHeight() != glyphSpellCancel->pos.h )
+					{
+						textPos.y += (glyphSpellCancel->pos.h - imgGet->getHeight()) / 2;
+					}
+				}
+				if ( glyphSpellCancel->pos.h != nominalGlyphHeight )
+				{
+					textPos.y += (glyphSpellCancel->pos.h - nominalGlyphHeight) / 2;
+				}
+				textPos.w = textSpellCancelTarget->getTextObject()->getWidth();
+				textSpellCancelTarget->setSize(textPos);
+				textSpellCancelTarget->setDisabled(false);
+
+				promptPos.w = std::max(textPos.x + textPos.w, promptPos.w);
+				promptPos.h = std::max(textPos.y + textPos.h, promptPos.h);
+				promptPos.w = std::max(glyphSpellCancel->pos.x + glyphSpellCancel->pos.w, promptPos.w);
+				promptPos.h = std::max(glyphSpellCancel->pos.y + glyphSpellCancel->pos.h, promptPos.h);
+			}
+		}
+	}
 	else
 	{
 		if ( !player.entity && !player.ghost.isActive() )
@@ -10124,9 +10380,9 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 				}
 				else
 				{
-					textPos.x = cursor->pos.x + 15;
-					textPos.y = cursor->pos.y + 11;
-
+					textPos.x += 40;
+					textPos.y += 20;
+					
 					text->setDisabled(false);
 					text->setText(Language::get(3663));
 				}
@@ -10134,6 +10390,21 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 		}
 	}
 
+	if ( !textSpellTarget->isDisabled() )
+	{
+		promptPos.w = std::max(textSpellTarget->getSize().x + textSpellTarget->getSize().w, promptPos.w);
+		promptPos.h = std::max(textSpellTarget->getSize().y + textSpellTarget->getSize().h, promptPos.h);
+	}
+	if ( !glyphSpellTarget->disabled )
+	{
+		promptPos.w = std::max(glyphSpellTarget->pos.x + glyphSpellTarget->pos.w, promptPos.w);
+		promptPos.h = std::max(glyphSpellTarget->pos.y + glyphSpellTarget->pos.h, promptPos.h);
+	}
+	if ( !iconSpellTarget->disabled )
+	{
+		promptPos.w = std::max(iconSpellTarget->pos.x + iconSpellTarget->pos.w, promptPos.w);
+		promptPos.h = std::max(iconSpellTarget->pos.y + iconSpellTarget->pos.h, promptPos.h);
+	}
 	if ( !text->isDisabled() )
 	{
 		textPos.w = text->getTextObject()->getWidth();
@@ -10142,8 +10413,8 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 		text->setVJustify(Field::justify_t::CENTER);
 		text->setSize(textPos);
 
-		promptPos.w = text->getSize().x + text->getSize().w;
-		promptPos.h = text->getSize().y + text->getSize().h;
+		promptPos.w = std::max(text->getSize().x + text->getSize().w, promptPos.w);
+		promptPos.h = std::max(text->getSize().y + text->getSize().h, promptPos.h);
 	}
 	if ( !glyph->disabled )
 	{
@@ -25417,7 +25688,7 @@ void createPlayerSpellList(const int player)
 				snprintf(slotname, sizeof(slotname), "spell %d %d", x, y);
 
 				auto slotFrame = spellSlotsFrame->addFrame(slotname);
-				players[player]->inventoryUI.spellSlotFrames[x + y * 100] = slotFrame;
+				players[player]->inventoryUI.spellSlotFrames[x + y * 1000] = slotFrame;
 				SDL_Rect slotPos{ currentSlotPos.x, currentSlotPos.y, inventorySlotSize, inventorySlotSize };
 				slotFrame->setSize(slotPos);
 

@@ -2248,8 +2248,10 @@ void gameLogic(void)
 							CalloutMenu[i].closeCalloutMenuGUI();
 						}
 						players[i]->hud.followerBars.clear();
+						spellcastingAnimationManager_deactivate(&cast_animation[i]);
 					}
 					EnemyHPDamageBarHandler::dumpCache();
+					AOEIndicators_t::indicators.clear();
 					monsterAllyFormations.reset();
 					particleTimerEmitterHitEntities.clear();
 					particleTimerEffects.clear();

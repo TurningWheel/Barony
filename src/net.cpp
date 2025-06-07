@@ -925,6 +925,32 @@ void serverUpdateEntityFlag(Entity* entity, int flag)
 	}
 }
 
+void serverUpdateMapTileFlag(Sint16 x, Sint16 y, int layer, Uint32 flagSet, Uint32 flagRemove)
+{
+	int c;
+	if ( multiplayer != SERVER )
+	{
+		return;
+	}
+	for ( c = 1; c < MAXPLAYERS; c++ )
+	{
+		if ( client_disconnected[c] || players[c]->isLocalPlayer() )
+		{
+			continue;
+		}
+		strcpy((char*)net_packet->data, "MAPT");
+		SDLNet_Write16(x, &net_packet->data[4]);
+		SDLNet_Write16(y, &net_packet->data[6]);
+		SDLNet_Write32(flagSet, &net_packet->data[8]);
+		SDLNet_Write32(flagRemove, &net_packet->data[12]);
+		net_packet->data[16] = layer;
+		net_packet->address.host = net_clients[c - 1].host;
+		net_packet->address.port = net_clients[c - 1].port;
+		net_packet->len = 17;
+		sendPacketSafe(net_sock, -1, net_packet, c - 1);
+	}
+}
+
 /*-------------------------------------------------------------------------------
 
 	serverUpdateEffects
@@ -1961,6 +1987,10 @@ void clientActions(Entity* entity)
 			entity->behavior = &actEmpty;
 			entity->flags[NOUPDATE] = true;
 			break;
+		case 1786:
+			entity->behavior = &actGreasePuddleSpawner;
+			entity->flags[NOUPDATE] = true;
+			break;
 		case 1151:
 		case 1152:
 			// wall buttons
@@ -2268,8 +2298,10 @@ static void changeLevel() {
         camera.globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
         camera.luminance = defaultLuminance;
 		players[i]->hud.followerBars.clear();
+		spellcastingAnimationManager_deactivate(&cast_animation[i]);
 	}
 	EnemyHPDamageBarHandler::dumpCache();
+	AOEIndicators_t::indicators.clear();
 	monsterAllyFormations.reset();
 	particleTimerEmitterHitEntities.clear();
 	particleTimerEffects.clear();
@@ -3211,6 +3243,12 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 			break;
 			case PARTICLE_EFFECT_SHATTERED_GEM:
 				createParticleShatteredGem(particle_x, particle_y, 7.5, sprite, nullptr);
+				break;
+			case PARTICLE_EFFECT_ERUPT:
+				createParticleErupt(particle_x, particle_y, sprite);
+				break;
+			case PARTICLE_EFFECT_BOOBY_TRAP:
+				createParticleBoobyTrapExplode(nullptr, particle_x, particle_y);
 				break;
 			default:
 				break;
@@ -5013,6 +5051,18 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		}
 	}},
 
+	{'SPAI', []() {
+		if ( net_packet->data[4] == 1 ) // spellbook
+		{
+			int beatitude = static_cast<Sint8>(net_packet->data[5]);
+			GenericGUI[clientnum].openGUI(GUI_TYPE_ITEMFX, nullptr, beatitude, getSpellbookFromSpellID(SPELL_ALTER_INSTRUMENT), SPELL_ALTER_INSTRUMENT);
+		}
+		else
+		{
+			GenericGUI[clientnum].openGUI(GUI_TYPE_ITEMFX, nullptr, 0, SPELL_ITEM, SPELL_ALTER_INSTRUMENT);
+		}
+	}},
+
 	//Add a spell to the channeled spells list.
 	{'CHAN', [](){
 		spell_t* thespell = getSpellFromID(SDLNet_Read32(&net_packet->data[5]));
@@ -5737,6 +5787,45 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 #ifdef USE_FMOD
 		VoiceChat.receivePacket(net_packet);
 #endif
+	} },
+
+	{ 'MAPT',[]() {
+		int x = SDLNet_Read16(&net_packet->data[4]);
+		int y = SDLNet_Read16(&net_packet->data[6]);
+		Uint32 flagSet = SDLNet_Read32(&net_packet->data[8]);
+		Uint32 flagRemove = SDLNet_Read32(&net_packet->data[12]);
+		int layer = net_packet->data[16];
+		if ( x >= 0 && x < map.width && y >= 0 && y < map.height && layer >= 0 && layer < MAPLAYERS )
+		{
+			if ( flagSet )
+			{
+				if ( !map.tileHasAttribute(x, y, layer, flagSet) )
+				{
+					map.tileAttributes[layer + (y * MAPLAYERS) + (x * MAPLAYERS * map.height)] |= flagSet;
+				}
+			}
+			if ( flagRemove )
+			{
+				if ( map.tileHasAttribute(x, y, layer, flagRemove) )
+				{
+					map.tileAttributes[layer + (y * MAPLAYERS) + (x * MAPLAYERS * map.height)] &= ~flagRemove;
+				}
+			}
+		}
+	}},
+
+	// command spell
+	{ 'COMD',[]() {
+		Uint32 uid = SDLNet_Read32(&net_packet->data[4]);
+		if ( Entity* target = uidToEntity(uid) )
+		{
+			if ( !target->clientsHaveItsStats )
+			{
+				target->giveClientStats();
+			}
+			FollowerMenu[clientnum].followerToCommand = target;
+			FollowerMenu[clientnum].initfollowerMenuGUICursor(true); // set gui_mode to follower menu
+		}
 	} },
 };
 
@@ -7217,6 +7306,70 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		item = nullptr;
 	} },
 
+	// update itemType of item
+	{ 'EQUT', []() {
+		const int client = std::min(net_packet->data[25], (Uint8)(MAXPLAYERS - 1));
+		auto item = newItem(
+			static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])),
+			static_cast<Status>(SDLNet_Read32(&net_packet->data[8])),
+			SDLNet_Read32(&net_packet->data[12]),
+			SDLNet_Read32(&net_packet->data[16]),
+			SDLNet_Read32(&net_packet->data[20]),
+			net_packet->data[24],
+			nullptr);
+
+		Item* slot = nullptr;
+		ItemType newType = static_cast<ItemType>(SDLNet_Read32(&net_packet->data[27]));
+
+		switch ( net_packet->data[26] )
+		{
+			case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_WEAPON:
+				slot = stats[client]->weapon;
+				break;
+			case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_SHIELD:
+				slot = stats[client]->shield;
+				break;
+			case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_MASK:
+				slot = stats[client]->mask;
+				break;
+			case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_HELM:
+				slot = stats[client]->helmet;
+				break;
+			case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_GLOVES:
+				slot = stats[client]->gloves;
+				break;
+			case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_BOOTS:
+				slot = stats[client]->shoes;
+				break;
+			case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_BREASTPLATE:
+				slot = stats[client]->breastplate;
+				break;
+			case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_CLOAK:
+				slot = stats[client]->cloak;
+				break;
+			case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_AMULET:
+				slot = stats[client]->amulet;
+				break;
+			case ItemEquippableSlot::EQUIPPABLE_IN_SLOT_RING:
+				slot = stats[client]->ring;
+				break;
+			default:
+				break;
+		}
+
+		if ( slot )
+		{
+			if ( !itemCompare(item, slot, false, false) )
+			{
+				slot->type = newType;
+				slot->appearance = item->appearance;
+			}
+		}
+
+		free(item);
+		item = nullptr;
+	} },
+
 	// apply item to entity
 	{'APIT', [](){
 		const int client = std::min(net_packet->data[25], (Uint8)(MAXPLAYERS - 1));
@@ -7319,6 +7472,7 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 				castSpellProps.caster_y = (SDLNet_Read16(&net_packet->data[12]) / 256.0);
 				castSpellProps.target_x = (SDLNet_Read16(&net_packet->data[14]) / 256.0);
 				castSpellProps.target_y = (SDLNet_Read16(&net_packet->data[16]) / 256.0);
+				castSpellProps.targetUID = (SDLNet_Read32(&net_packet->data[18]));
 				castSpell(players[player]->entity->getUID(), thespell, false, false, spellbookCast, &castSpellProps);
 			}
 			else

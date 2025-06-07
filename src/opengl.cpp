@@ -1777,7 +1777,8 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
     }
 
 #ifndef EDITOR
-    if ( entity->behavior == &actSprite && entity->actSpriteUseCustomSurface > 0 && (entity->entityHasString("aoe_indicator")) )
+    if ( entity->behavior == &actMagicRangefinder || 
+        (entity->behavior == &actSprite && entity->actSpriteUseCustomSurface > 0 && (entity->entityHasString("aoe_indicator"))) )
     {
         sprite = AOEIndicators_t::getSurface(entity->actSpriteUseCustomSurface);
         if ( !sprite )
@@ -1887,7 +1888,7 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
         else if ( entity->behavior == &actMagicRangefinder )
         {
             // use alpha
-            const GLfloat light[4] = { b, b, b, entity->fskill[0] };
+            const GLfloat light[4] = { b * entity->fskill[1], b * entity->fskill[2], b * entity->fskill[3], entity->fskill[0]};
             GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightColor"), 1, light));
         }
         else

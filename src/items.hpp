@@ -366,9 +366,11 @@ typedef enum ItemType
 	INSTRUMENT_DRUM,
 	INSTRUMENT_LUTE,
 	INSTRUMENT_HORN,
-	RAPIER
+	RAPIER,
+	AMULET_BURNINGRESIST,
+	POTION_GREASE
 } ItemType;
-const int NUMITEMS = 347;
+const int NUMITEMS = 349;
 
 //NOTE: If you change this, make sure to update NUMCATEGORIES in game.h to reflect the total number of categories. Not doing that will make bad things happen.
 typedef enum Category
@@ -619,6 +621,7 @@ bool item_PotionBooze(Item*& item, Entity* entity, Entity* usedBy, bool shouldCo
 bool item_PotionJuice(Item*& item, Entity* entity, Entity* usedBy);
 bool item_PotionSickness(Item*& item, Entity* entity, Entity* usedBy);
 bool item_PotionConfusion(Item*& item, Entity* entity, Entity* usedBy);
+bool item_PotionGrease(Item*& item, Entity* entity, Entity* usedBy);
 bool item_PotionCureAilment(Item*& item, Entity* entity, Entity* usedBy);
 bool item_PotionBlindness(Item*& item, Entity* entity, Entity* usedBy);
 bool item_PotionHealing(Item*& item, Entity* entity, Entity* usedBy, bool shouldConsumeItem = true);
@@ -701,6 +704,7 @@ void clientSendEquipUpdateToServer(EquipItemSendToServerSlot slot, EquipItemResu
 	ItemType type, Status status, Sint16 beatitude, int count, Uint32 appearance, bool identified);
 void clientUnequipSlotAndUpdateServer(const int player, EquipItemSendToServerSlot slot, Item* item);
 void clientSendAppearanceUpdateToServer(const int player, Item* item, const bool onIdentify);
+void clientSendItemTypeUpdateToServer(const int player, Item* item, ItemType prevItemType);
 EquipItemResult equipItem(Item* item, Item** slot, int player, bool checkInventorySpaceForPaperDoll);
 enum ItemStackResults : int
 {

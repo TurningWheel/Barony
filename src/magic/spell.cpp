@@ -482,8 +482,9 @@ void spellConstructor(spell_t* spell, int ID)
 	spell->magic_effects_node = NULL;
 	spell->caster = -1;
 	spell->channel_duration = 0;
-	spell->rangefinder = false;
+	spell->rangefinder = SpellRangefinderType::RANGEFINDER_NONE;
 	spell->hide_from_ui = false;
+	spell->distance = 0.0;
 	//spell->timer = 0;
 	allGameSpells[ID] = spell;
 }

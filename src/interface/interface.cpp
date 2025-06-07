@@ -2257,12 +2257,19 @@ void FollowerRadialMenu::drawFollowerMenu()
 		if ( players[gui_player] && players[gui_player]->entity
 			&& followerToCommand->monsterTarget == players[gui_player]->entity->getUID() )
 		{
-			players[gui_player]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_DONT_CLOSE_FOLLOWERGUI);
+			players[gui_player]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
 			return;
 		}
 
 		Stat* followerStats = followerToCommand->getStats();
 		if ( !followerStats )
+		{
+			closeFollowerMenuGUI();
+			return;
+		}
+		if ( followerToCommand->monsterAllyIndex < 0 && 
+			(!followerStats->getEffectActive(EFF_COMMAND)
+				|| followerStats->getEffectActive(EFF_COMMAND) - 1 != gui_player))
 		{
 			closeFollowerMenuGUI();
 			return;
@@ -3646,6 +3653,13 @@ void FollowerRadialMenu::drawFollowerMenu()
 					textMap.second, textMap.first.c_str(),
 					getMonsterLocalizedName(followerStats->type).c_str());
 			}
+			else if ( disableOption == -4 ) // disabled due to command spell type
+			{
+				auto& textMap = FollowerMenu[gui_player].iconEntries["invalid_action"].text_map["command_unavailable_spell"];
+				setFollowerBannerTextFormatted(gui_player, bannerTxt, hudColors.characterSheetRed,
+					textMap.second, textMap.first.c_str(),
+					getMonsterLocalizedName(followerStats->type).c_str());
+			}
 			else if ( disableOption == -3 ) // disabled due to tinkerbot quality
 			{
 				auto& textMap = FollowerMenu[gui_player].iconEntries["invalid_action"].text_map["tinker_quality_low"];
@@ -4516,6 +4530,10 @@ int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monste
 			{
 				return 0;
 			}
+			if ( followerStats && followerStats->getEffectActive(EFF_COMMAND) >= 1 && followerStats->getEffectActive(EFF_COMMAND) < MAXPLAYERS + 1 )
+			{
+				return -4; // unavailable due to spell
+			}
 			if ( creatureTier > 0 )
 			{
 				requirement = 20 * creatureTier; // 20, 40, 60.
@@ -4633,6 +4651,10 @@ int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monste
 			{
 				return -1; // disabled due to creature.
 			}
+			if ( followerStats && followerStats->getEffectActive(EFF_COMMAND) >= 1 && followerStats->getEffectActive(EFF_COMMAND) < MAXPLAYERS + 1 )
+			{
+				return -4; // unavailable due to spell
+			}
 			if ( playerSkillLVL < requirement )
 			{
 				return requirement; // disabled due to basic skill requirements.
@@ -4648,6 +4670,10 @@ int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monste
 			if ( monsterType == GYROBOT )
 			{
 				return 0;
+			}
+			if ( followerStats && followerStats->getEffectActive(EFF_COMMAND) >= 1 && followerStats->getEffectActive(EFF_COMMAND) < MAXPLAYERS + 1 )
+			{
+				return -4; // unavailable due to spell
 			}
 			if ( playerSkillLVL < requirement )
 			{
@@ -4815,7 +4841,23 @@ bool FollowerRadialMenu::allowedInteractItems(int monsterType)
 
 bool FollowerRadialMenu::attackCommandOnly(int monsterType)
 {
-	return !(allowedInteractItems(monsterType) || allowedInteractWorld(monsterType) || allowedInteractFood(monsterType));
+	bool result = !(allowedInteractItems(monsterType) || allowedInteractWorld(monsterType) || allowedInteractFood(monsterType));
+
+	if ( !result )
+	{
+		if ( followerToCommand )
+		{
+			if ( Stat* followerStats = followerToCommand->getStats() )
+			{
+				if ( followerStats->getEffectActive(EFF_COMMAND) >= 1 && followerStats->getEffectActive(EFF_COMMAND) < MAXPLAYERS + 1 )
+				{
+					return true;
+				}
+			}
+		}
+	}
+
+	return result;
 }
 
 void FollowerRadialMenu::monsterGyroBotConvertCommand(int* option)
@@ -4948,6 +4990,29 @@ bool GenericGUIMenu::isItemEnchantWeaponable(const Item* item)
 	else if ( item->type == BRASS_KNUCKLES
 		|| item->type == IRON_KNUCKLES
 		|| item->type == SPIKED_GAUNTLETS )
+	{
+		return true;
+	}
+
+	return false;
+}
+
+bool GenericGUIMenu::isItemAlterInstrumentable(const Item* item)
+{
+	if ( !item )
+	{
+		return false;
+	}
+	if ( !item->identified )
+	{
+		return false;
+	}
+
+	if ( item->type == INSTRUMENT_FLUTE
+		|| item->type == INSTRUMENT_LYRE
+		|| item->type == INSTRUMENT_DRUM
+		|| item->type == INSTRUMENT_LUTE
+		|| item->type == INSTRUMENT_HORN )
 	{
 		return true;
 	}
@@ -6114,6 +6179,10 @@ bool GenericGUIMenu::shouldDisplayItemInGUI(Item* item)
 		{
 			return isItemRemoveCursable(item);
 		}
+		else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_ALTER_INSTRUMENT )
+		{
+			return isItemAlterInstrumentable(item);
+		}
 		return false;
 	}
 	else if ( guiType == GUI_TYPE_ALCHEMY )
@@ -6263,6 +6332,79 @@ void GenericGUIMenu::identifyItem(Item* item)
 	}
 	item->identified = true;
 	messagePlayer(gui_player, MESSAGE_MISC, Language::get(320), item->description());
+	closeGUI();
+}
+
+void GenericGUIMenu::alterInstrument(Item* item)
+{
+	if ( !item || gui_player < 0 )
+	{
+		return;
+	}
+	if ( !shouldDisplayItemInGUI(item) )
+	{
+		messagePlayer(gui_player, MESSAGE_MISC, Language::get(6514), item->getName());
+		return;
+	}
+
+	bool isEquipped = itemIsEquipped(item, gui_player);
+
+	ItemType prevType = item->type;
+	std::string prevItem = item->getName();
+	ItemType newType = ItemType(((int)item->type) + 1);
+	if ( newType > INSTRUMENT_HORN )
+	{
+		newType = INSTRUMENT_FLUTE;
+	}
+	item->type = newType;
+	messagePlayer(gui_player, MESSAGE_HINT, Language::get(6515), prevItem.c_str(), item->getName());
+
+	std::unordered_set<Uint32> appearancesOfSimilarItems;
+	// reroll any other conflicting items
+	for ( node_t* node = stats[gui_player]->inventory.first; node != nullptr; node = node->next )
+	{
+		Item* item2 = static_cast<Item*>(node->element);
+		if ( !itemCompare(item, item2, true) )
+		{
+			// items are the same (incl. appearance!)
+			// if they shouldn't stack, we need to change appearance of the new item.
+			appearancesOfSimilarItems.insert(item2->appearance);
+		}
+	}
+
+	if ( !appearancesOfSimilarItems.empty() )
+	{
+		Uint32 originalAppearance = item->appearance;
+		int originalVariation = originalAppearance % items[item->type].variations;
+		int tries = 100;
+
+		while ( appearancesOfSimilarItems.find(item->appearance) != appearancesOfSimilarItems.end() && tries > 0 )
+		{
+			item->appearance = local_rng.rand();
+			if ( item->appearance % items[item->type].variations != originalVariation )
+			{
+				// we need to match the variation for the new appearance, take the difference so new varation matches
+				int change = (item->appearance % items[item->type].variations - originalVariation);
+				if ( item->appearance < change ) // underflow protection
+				{
+					item->appearance += items[item->type].variations;
+				}
+				item->appearance -= change;
+				int newVariation = item->appearance % items[item->type].variations;
+				assert(newVariation == originalVariation);
+			}
+			--tries;
+		}
+	}
+
+	if ( multiplayer == CLIENT )
+	{
+		if ( isEquipped )
+		{
+			clientSendItemTypeUpdateToServer(gui_player, item, prevType);
+		}
+	}
+
 	closeGUI();
 }
 
@@ -6705,6 +6847,10 @@ void GenericGUIMenu::openGUI(int type, Item* effectItem, int effectBeatitude, in
 		{
 			itemfxGUI.currentMode = ItemEffectGUI_t::ITEMFX_MODE_SPELL_IDENTIFY;
 		}
+		else if ( usingSpellID == SPELL_ALTER_INSTRUMENT )
+		{
+			itemfxGUI.currentMode = ItemEffectGUI_t::ITEMFX_MODE_ALTER_INSTRUMENT;
+		}
 		else if ( itemEffectItemType == SCROLL_CHARGING )
 		{
 			itemfxGUI.currentMode = ItemEffectGUI_t::ITEMFX_MODE_SCROLL_CHARGING;
@@ -6922,6 +7068,11 @@ bool GenericGUIMenu::executeOnItemClick(Item* item)
 				consumeItem(itemEffectScrollItem, gui_player);
 			}
 			identifyItem(item);
+			return true;
+		}
+		else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_ALTER_INSTRUMENT )
+		{
+			alterInstrument(item);
 			return true;
 		}
 		else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_SCROLL_ENCHANT_WEAPON
@@ -21020,6 +21171,28 @@ GenericGUIMenu::ItemEffectGUI_t::ItemEffectActions_t GenericGUIMenu::ItemEffectG
 				}
 			}
 		}
+		else if ( currentMode == ITEMFX_MODE_ALTER_INSTRUMENT )
+		{
+			if ( itemCategory(item) == SPELL_CAT )
+			{
+				result = ITEMFX_ACTION_INVALID_ITEM;
+			}
+			else if ( !item->identified )
+			{
+				result = ITEMFX_ACTION_NOT_IDENTIFIED_YET;
+			}
+			else
+			{
+				if ( parentGUI.isItemAlterInstrumentable(item) )
+				{
+					result = ITEMFX_ACTION_OK;
+				}
+				else
+				{
+					result = ITEMFX_ACTION_INVALID_ITEM;
+				}
+			}
+			}
 		else if ( currentMode == ITEMFX_MODE_SCROLL_REPAIR )
 		{
 			if ( itemCategory(item) == SPELL_CAT )
@@ -21945,6 +22118,9 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 					case ITEMFX_MODE_SPELL_IDENTIFY:
 						actionPromptTxt->setText(Language::get(4208));
 						break;
+					case ITEMFX_MODE_ALTER_INSTRUMENT:
+						actionPromptTxt->setText(Language::get(6512));
+						break;
 					case ITEMFX_MODE_SCROLL_REMOVECURSE:
 						actionPromptTxt->setText(Language::get(4204));
 						break;
@@ -22099,6 +22275,9 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 				break;
 			case ITEMFX_MODE_SPELL_IDENTIFY:
 				actionPromptUnselectedTxt->setText(Language::get(4209));
+				break;
+			case ITEMFX_MODE_ALTER_INSTRUMENT:
+				actionPromptUnselectedTxt->setText(Language::get(6513));
 				break;
 			case ITEMFX_MODE_SPELL_REMOVECURSE:
 				actionPromptUnselectedTxt->setText(Language::get(4205));

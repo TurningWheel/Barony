@@ -527,6 +527,43 @@ Counts down effect timers and toggles effects whose timers reach zero - server o
 
 -------------------------------------------------------------------------------*/
 
+void sustainedSpellProcess(Entity& entity, Stat& myStats, int effectID, std::map<int, spell_t*>& sustainedSpell_hijacked, 
+	bool& bOutDissipated, spell_t*& outUnsustainSpell)
+{
+	if ( sustainedSpell_hijacked.find(effectID) != sustainedSpell_hijacked.end() )
+	{
+		bool sustained = false;
+		Entity* caster = uidToEntity(sustainedSpell_hijacked[effectID]->caster);
+		if ( caster == &entity )
+		{
+			//Deduct mana from caster. Cancel spell if not enough mana (simply leave sustained at false).
+			int oldMP = caster->getMP();
+			bool deducted = caster->safeConsumeMP(1); //Consume 1 mana ever duration / mana seconds
+			if ( deducted )
+			{
+				sustained = true;
+				myStats.setEffectActive(effectID, 1);
+				myStats.EFFECTS_TIMERS[effectID] = sustainedSpell_hijacked[effectID]->channel_duration;
+
+				if ( caster->behavior == &actPlayer )
+				{
+					players[caster->skill[2]]->mechanics.sustainedSpellIncrementMP(oldMP - caster->getMP());
+				}
+			}
+			else
+			{
+				messagePlayer(caster->isEntityPlayer(), MESSAGE_STATUS, Language::get(6504), sustainedSpell_hijacked[effectID]->getSpellName());
+				outUnsustainSpell = sustainedSpell_hijacked[effectID];
+				list_RemoveNode(sustainedSpell_hijacked[effectID]->magic_effects_node); //Remove it from the entity's magic effects. This has the side effect of removing it from the sustained spells list too.
+			}
+		}
+		if ( sustained )
+		{
+			bOutDissipated = false; //Sustained the spell, so do not stop being invisible.
+		}
+	}
+}
+
 void Entity::effectTimes()
 {
 	Stat* myStats = this->getStats();
@@ -553,6 +590,7 @@ void Entity::effectTimes()
 	spell_t* reflectMagic_hijacked = nullptr;
 	spell_t* amplifyMagic_hijacked = nullptr;
 	spell_t* vampiricAura_hijacked = nullptr;
+	std::map<int, spell_t*> sustainedSpell_hijacked;
 	//Handle magic effects (like invisibility)
 	for ( node = myStats->magic_effects.first; node; node = node->next, ++count )
 	{
@@ -593,6 +631,131 @@ void Entity::effectTimes()
 		bool unsustain = false;
 		switch ( spell->ID )
 		{
+			case SPELL_BLOOD_WARD:
+				sustainedSpell_hijacked[EFF_BLOOD_WARD] = spell;
+				if ( !myStats->getEffectActive(EFF_BLOOD_WARD) )
+				{
+					for ( int c = 0; c < MAXPLAYERS; ++c )
+					{
+						if ( players[c] && players[c]->entity && players[c]->entity == uidToEntity(spell->caster) )
+						{
+							messagePlayer(c, MESSAGE_COMBAT, Language::get(6503), spell->getSpellName());    //If cure ailments or somesuch bombs the status effects.
+						}
+					}
+					node_t* temp = nullptr;
+					if ( node->prev )
+					{
+						temp = node->prev;
+					}
+					else if ( node->next )
+					{
+						temp = node->next;
+					}
+					unsustain = true;
+					list_RemoveNode(node); //Remove this here node.
+					node = temp;
+				}
+				break;
+			case SPELL_TRUE_BLOOD:
+				sustainedSpell_hijacked[EFF_TRUE_BLOOD] = spell;
+				if ( !myStats->getEffectActive(EFF_TRUE_BLOOD) )
+				{
+					for ( int c = 0; c < MAXPLAYERS; ++c )
+					{
+						if ( players[c] && players[c]->entity && players[c]->entity == uidToEntity(spell->caster) )
+						{
+							messagePlayer(c, MESSAGE_COMBAT, Language::get(6503), spell->getSpellName());    //If cure ailments or somesuch bombs the status effects.
+						}
+					}
+					node_t* temp = nullptr;
+					if ( node->prev )
+					{
+						temp = node->prev;
+					}
+					else if ( node->next )
+					{
+						temp = node->next;
+					}
+					unsustain = true;
+					list_RemoveNode(node); //Remove this here node.
+					node = temp;
+				}
+				break;
+			case SPELL_DIVINE_ZEAL:
+				sustainedSpell_hijacked[EFF_DIVINE_ZEAL] = spell;
+				if ( !myStats->getEffectActive(EFF_DIVINE_ZEAL) )
+				{
+					for ( int c = 0; c < MAXPLAYERS; ++c )
+					{
+						if ( players[c] && players[c]->entity && players[c]->entity == uidToEntity(spell->caster) )
+						{
+							messagePlayer(c, MESSAGE_COMBAT, Language::get(6503), spell->getSpellName());    //If cure ailments or somesuch bombs the status effects.
+						}
+					}
+					node_t* temp = nullptr;
+					if ( node->prev )
+					{
+						temp = node->prev;
+					}
+					else if ( node->next )
+					{
+						temp = node->next;
+					}
+					unsustain = true;
+					list_RemoveNode(node); //Remove this here node.
+					node = temp;
+				}
+				break;
+			case SPELL_ENVENOM_WEAPON:
+				sustainedSpell_hijacked[EFF_ENVENOM_WEAPON] = spell;
+				if ( !myStats->getEffectActive(EFF_ENVENOM_WEAPON) )
+				{
+					for ( int c = 0; c < MAXPLAYERS; ++c )
+					{
+						if ( players[c] && players[c]->entity && players[c]->entity == uidToEntity(spell->caster) )
+						{
+							messagePlayer(c, MESSAGE_COMBAT, Language::get(6503), spell->getSpellName());    //If cure ailments or somesuch bombs the status effects.
+						}
+					}
+					node_t* temp = nullptr;
+					if ( node->prev )
+					{
+						temp = node->prev;
+					}
+					else if ( node->next )
+					{
+						temp = node->next;
+					}
+					unsustain = true;
+					list_RemoveNode(node); //Remove this here node.
+					node = temp;
+				}
+				break;
+			case SPELL_OVERCHARGE:
+				sustainedSpell_hijacked[EFF_OVERCHARGE] = spell;
+				if ( !myStats->getEffectActive(EFF_OVERCHARGE) )
+				{
+					for ( int c = 0; c < MAXPLAYERS; ++c )
+					{
+						if ( players[c] && players[c]->entity && players[c]->entity == uidToEntity(spell->caster) )
+						{
+							messagePlayer(c, MESSAGE_COMBAT, Language::get(6503), spell->getSpellName());    //If cure ailments or somesuch bombs the status effects.
+						}
+					}
+					node_t* temp = nullptr;
+					if ( node->prev )
+					{
+						temp = node->prev;
+					}
+					else if ( node->next )
+					{
+						temp = node->next;
+					}
+					unsustain = true;
+					list_RemoveNode(node); //Remove this here node.
+					node = temp;
+				}
+				break;
 			case SPELL_INVISIBILITY:
 				invisibility_hijacked = spell;
 				if ( !myStats->getEffectActive(EFF_INVISIBLE) )
@@ -1147,6 +1310,51 @@ void Entity::effectTimes()
 						if ( dissipate )
 						{
 							messagePlayer(player, MESSAGE_STATUS, Language::get(3441));
+							updateClient = true;
+						}
+						break;
+					case EFF_BLOOD_WARD:
+						dissipate = true; //Remove the effect by default.
+						sustainedSpellProcess(*this, *myStats, c, sustainedSpell_hijacked, dissipate, unsustainSpell);
+						if ( dissipate )
+						{
+							messagePlayer(player, MESSAGE_STATUS, Language::get(6505));
+							updateClient = true;
+						}
+						break;
+					case EFF_TRUE_BLOOD:
+						dissipate = true; //Remove the effect by default.
+						sustainedSpellProcess(*this, *myStats, c, sustainedSpell_hijacked, dissipate, unsustainSpell);
+						if ( dissipate )
+						{
+							messagePlayer(player, MESSAGE_STATUS, Language::get(6507));
+							updateClient = true;
+						}
+						break;
+					case EFF_DIVINE_ZEAL:
+						dissipate = true; //Remove the effect by default.
+						sustainedSpellProcess(*this, *myStats, c, sustainedSpell_hijacked, dissipate, unsustainSpell);
+						if ( dissipate )
+						{
+							messagePlayer(player, MESSAGE_STATUS, Language::get(6509));
+							updateClient = true;
+						}
+						break;
+					case EFF_ENVENOM_WEAPON:
+						dissipate = true; //Remove the effect by default.
+						sustainedSpellProcess(*this, *myStats, c, sustainedSpell_hijacked, dissipate, unsustainSpell);
+						if ( dissipate )
+						{
+							messagePlayer(player, MESSAGE_STATUS, Language::get(6529));
+							updateClient = true;
+						}
+						break;
+					case EFF_OVERCHARGE:
+						dissipate = true; //Remove the effect by default.
+						sustainedSpellProcess(*this, *myStats, c, sustainedSpell_hijacked, dissipate, unsustainSpell);
+						if ( dissipate )
+						{
+							messagePlayer(player, MESSAGE_STATUS, Language::get(6530));
 							updateClient = true;
 						}
 						break;
@@ -4615,6 +4823,28 @@ void Entity::handleEffects(Stat* myStats)
 		}
 	}
 
+	if ( myStats->getEffectActive(EFF_MAGIC_GREASE) )
+	{
+		if ( ticks % 25 == 0 )
+		{
+			if ( Entity* fx = spawnMagicParticleCustom(this, 245, 1.0, 0.5) )
+			{
+				fx->ditheringDisabled = true;
+				real_t dir = atan2(this->vel_y, this->vel_x);
+				//dir += local_rng.rand() % 2 == 0 ? PI / 32 : -PI / 32;
+				real_t spd = sqrt(this->vel_x * this->vel_x + this->vel_y * this->vel_y);
+				fx->vel_x = spd * 0.05 * cos(dir);
+				fx->vel_y = spd * 0.05 * sin(dir);
+				fx->flags[BRIGHT] = true;
+				fx->pitch = PI / 2;
+				fx->roll = 0.0;
+				fx->yaw = dir;
+				fx->vel_z = 0.0;
+				fx->flags[SPRITE] = true;
+			}
+		}
+	}
+
 	if ( player >= 0 && (myStats->getEffectActive(EFF_LEVITATING) || myStats->getEffectActive(EFF_FLUTTER)) && MFLAG_DISABLELEVITATION)
 	{
 		Uint32 color = makeColorRGB(255, 0, 255);
@@ -7847,6 +8077,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 							entity->thrownProjectileCharge = normalisedCharge * 10;
 						}
 					}
+					if ( myStats->weapon && myStats->weapon->type == POTION_GREASE )
+					{
+						speed = 3.f;
+					}
 					entity->thrownProjectilePower = this->getThrownAttack();
 					if ( this->behavior == &actPlayer )
 					{
@@ -8929,10 +9163,13 @@ void Entity::attack(int pose, int charge, Entity* target)
 				}
 
 				bool dyrnwynSmite = false;
+				bool zealSmite = false;
 				bool gugnirProc = false;
 				bool armorPierceProc = false;
 
-				if ( weaponskill == PRO_SWORD && myStats->weapon && myStats->weapon->type == ARTIFACT_SWORD && !shapeshifted )
+				if ( (weaponskill == PRO_SWORD && myStats->weapon && myStats->weapon->type == ARTIFACT_SWORD 
+					|| (myStats->weapon && myStats->getEffectActive(EFF_DIVINE_ZEAL)) )
+					&& !shapeshifted)
 				{
 					switch ( hitstats->type )
 					{
@@ -8948,15 +9185,28 @@ void Entity::attack(int pose, int charge, Entity* target)
 						case LICH_FIRE:
 						case DEVIL:
 						{
+							bool particle = false;
 							// smite these creatures
-							real_t amount = 0.0;
-							real_t percent = getArtifactWeaponEffectChance(myStats->weapon->type, *myStats, &amount);
-							if ( local_rng.rand() % 100 < static_cast<int>(percent) )
+							if ( myStats->weapon->type == ARTIFACT_SWORD )
 							{
-								weaponMultipliers += amount;
-								dyrnwynSmite = true;
+								real_t amount = 0.0;
+								real_t percent = getArtifactWeaponEffectChance(myStats->weapon->type, *myStats, &amount);
+								if ( local_rng.rand() % 100 < static_cast<int>(percent) )
+								{
+									weaponMultipliers += amount;
+									dyrnwynSmite = true;
+									particle = true;
+									//playSoundEntity(hit.entity, 249, 64);
+								}
+							}
+							if ( myStats->getEffectActive(EFF_DIVINE_ZEAL) )
+							{
+								zealSmite = true;
+								weaponMultipliers += 0.5;
+							}
+							if ( particle )
+							{
 								spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, 981);
-								//playSoundEntity(hit.entity, 249, 64);
 							}
 							break;
 						}
@@ -10229,6 +10479,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 
 					bool playerPoisonedTarget = false;
+					bool envenomWeapon = false;
 
 					// special monster effects
 					if ( myStats->type == CRYSTALGOLEM && pose == MONSTER_POSE_GOLEM_SMASH )
@@ -10526,6 +10777,27 @@ void Entity::attack(int pose, int charge, Entity* target)
 						default:
 							break;
 						}
+
+						if ( myStats->getEffectActive(EFF_ENVENOM_WEAPON) )
+						{
+							if ( !hitstats->getEffectActive(EFF_POISONED) )
+							{
+								envenomWeapon = true;
+								hitstats->setEffectActive(EFF_POISONED, 1);
+								hitstats->EFFECTS_TIMERS[EFF_POISONED] = std::max(200, 600 - hit.entity->getCON() * 20);
+								hitstats->poisonKiller = getUID();
+								if ( playerhit >= 0 )
+								{
+									messagePlayerMonsterEvent(playerhit, makeColorRGB(255, 0, 0), *myStats, Language::get(6531), Language::get(6532), MSG_COMBAT);
+								}
+								serverUpdateEffects(playerhit);
+								for ( int tmp = 0; tmp < 3; ++tmp )
+								{
+									Entity* gib = spawnGib(hit.entity, 211);
+									serverSpawnGibForClient(gib);
+								}
+							}
+						}
 					}
 					else if ( damage == 0 && !hitstats->defending && parriedDamage == 0 )
 					{
@@ -10601,7 +10873,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 					}
 
-					bool specialWeaponProc = parashuProc || dyrnwynSmite || dyrnwynBurn || gugnirProc || armorPierceProc;
+					bool specialWeaponProc = parashuProc || dyrnwynSmite || dyrnwynBurn || gugnirProc || armorPierceProc || zealSmite;
 
 					// send messages
 					if ( !strcmp(hitstats->name, "") || monsterNameIsGeneric(*hitstats) )
@@ -10643,6 +10915,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 							else if ( armorPierceProc )
 							{
 								messagePlayerMonsterEvent(player, colorSpecial, *hitstats, Language::get(6432), Language::get(6433), MSG_COMBAT);
+							}
+							else if ( zealSmite )
+							{
+								messagePlayerMonsterEvent(player, colorSpecial, *hitstats, Language::get(6510), Language::get(6511), MSG_COMBAT);
 							}
 
 							if ( damage == 0 )
@@ -10687,6 +10963,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 							else if ( knockbackInflicted )
 							{
 								messagePlayerMonsterEvent(player, color, *hitstats, Language::get(3215), Language::get(3214), MSG_COMBAT);
+							}
+							else if ( envenomWeapon )
+							{
+								messagePlayerMonsterEvent(player, color, *hitstats, Language::get(6533), Language::get(6534), MSG_COMBAT);
 							}
 						}
 						else
@@ -10834,6 +11114,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 							{
 								messagePlayerMonsterEvent(player, colorSpecial, *hitstats, Language::get(6432), Language::get(6433), MSG_COMBAT);
 							}
+							else if ( zealSmite )
+							{
+								messagePlayerMonsterEvent(player, colorSpecial, *hitstats, Language::get(6510), Language::get(6511), MSG_COMBAT);
+							}
 
 							if ( damage == 0 )
 							{
@@ -10884,6 +11168,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 							else if ( knockbackInflicted )
 							{
 								messagePlayerMonsterEvent(player, color, *hitstats, Language::get(3215), Language::get(3214), MSG_COMBAT);
+							}
+							else if ( envenomWeapon )
+							{
+								messagePlayerMonsterEvent(player, color, *hitstats, Language::get(6533), Language::get(6534), MSG_COMBAT);
 							}
 						}
 						else
@@ -12887,7 +13175,7 @@ bool Entity::teleportAroundEntity(Entity* target, int dist, int effectType)
 				}
 				else
 				{
-					if ( target->behavior == &actBomb && target->skill[22] == 1 && ix == tx && iy == ty ) // teleport receiver.
+					if ( target->behavior == &actBomb && target->skill[22] == 1 && ix == tx && iy == ty ) // teleport receiver
 					{
 						// directly on top, let's go there.
 						real_t tmpx = x;
@@ -12918,7 +13206,7 @@ bool Entity::teleportAroundEntity(Entity* target, int dist, int effectType)
 						x = tmpx;
 						y = tmpy;
 					}
-					else if ( target->behavior == &::actTeleportShrine && ix == tx && iy == ty )
+					else if ( (target->behavior == &::actTeleportShrine || effectType == SPELL_JUMP) && ix == tx && iy == ty )
 					{
 						// directly on top, let's go there.
 						real_t tmpx = x;
@@ -13070,7 +13358,10 @@ bool Entity::teleportAroundEntity(Entity* target, int dist, int effectType)
 		// restore coordinates.
 		x = tmpx;
 		y = tmpy;
-		this->yaw = tangent;
+		if ( target != this )
+		{
+			this->yaw = tangent;
+		}
 		if ( target->behavior == &actMonster && target->monsterTarget == getUID() )
 		{
 			target->monsterReleaseAttackTarget();
@@ -13932,7 +14223,27 @@ bool Entity::checkEnemy(Entity* your)
 		return false;
 	}
 
-	if ( behavior == &actPlayer && your->behavior == &actMonster && yourStats->monsterForceAllegiance != Stat::MONSTER_FORCE_ALLEGIANCE_NONE )
+	if ( yourStats->getEffectActive(EFF_PENANCE) >= 1 && yourStats->getEffectActive(EFF_PENANCE) < 1 + MAXPLAYERS
+		&& behavior == &actPlayer && your->behavior == &actMonster )
+	{
+		return false;
+	}
+	else if ( myStats->getEffectActive(EFF_PENANCE) >= 1 && myStats->getEffectActive(EFF_PENANCE) < 1 + MAXPLAYERS
+		&& your->behavior == &actPlayer && behavior == &actMonster )
+	{
+		return false;
+	}
+	else if ( yourStats->getEffectActive(EFF_COMMAND) >= 1 && yourStats->getEffectActive(EFF_COMMAND) < 1 + MAXPLAYERS
+		&& behavior == &actPlayer && your->behavior == &actMonster )
+	{
+		return false;
+	}
+	else if ( myStats->getEffectActive(EFF_COMMAND) >= 1 && myStats->getEffectActive(EFF_COMMAND) < 1 + MAXPLAYERS
+		&& your->behavior == &actPlayer && behavior == &actMonster )
+	{
+		return false;
+	}
+	else if ( behavior == &actPlayer && your->behavior == &actMonster && yourStats->monsterForceAllegiance != Stat::MONSTER_FORCE_ALLEGIANCE_NONE )
 	{
 		if ( yourStats->monsterForceAllegiance == Stat::MONSTER_FORCE_PLAYER_ALLY || yourStats->monsterForceAllegiance == Stat::MONSTER_FORCE_PLAYER_RECRUITABLE )
 		{
@@ -13953,16 +14264,6 @@ bool Entity::checkEnemy(Entity* your)
 		{
 			return true;
 		}
-	}
-	else if ( yourStats->getEffectActive(EFF_PENANCE) >= 1 && yourStats->getEffectActive(EFF_PENANCE) < 1 + MAXPLAYERS
-		&& behavior == &actPlayer && your->behavior == &actMonster )
-	{
-		return false;
-	}
-	else if ( myStats->getEffectActive(EFF_PENANCE) >= 1 && myStats->getEffectActive(EFF_PENANCE) < 1 + MAXPLAYERS
-		&& your->behavior == &actPlayer && behavior == &actMonster )
-	{
-		return false;
 	}
 
 	if ( myStats->type == GYROBOT )
@@ -17596,6 +17897,28 @@ void Entity::handleEffectsClient()
 		}
 	}
 
+	if ( myStats->getEffectActive(EFF_MAGIC_GREASE) )
+	{
+		if ( ticks % 25 == 0 )
+		{
+			if ( Entity* fx = spawnMagicParticleCustom(this, 245, 1.0, 0.5) )
+			{
+				fx->ditheringDisabled = true;
+				real_t dir = atan2(this->vel_y, this->vel_x);
+				//dir += local_rng.rand() % 2 == 0 ? PI / 32 : -PI / 32;
+				real_t spd = sqrt(this->vel_x * this->vel_x + this->vel_y * this->vel_y);
+				fx->vel_x = spd * 0.05 * cos(dir);
+				fx->vel_y = spd * 0.05 * sin(dir);
+				fx->flags[BRIGHT] = true;
+				fx->pitch = PI / 2;
+				fx->roll = 0.0;
+				fx->yaw = dir;
+				fx->vel_z = 0.0;
+				fx->flags[SPRITE] = true;
+			}
+		}
+	}
+
 	if ( myStats->getEffectActive(EFF_POLYMORPH) )
 	{
 		if ( ticks % 25 == 0 || ticks % 40 == 0 )
@@ -18095,7 +18418,8 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool
 	}
 
 
-	if ( monsterAllyIndex > 0 && monsterAllyIndex < MAXPLAYERS )
+	if ( (monsterAllyIndex > 0 && monsterAllyIndex < MAXPLAYERS) 
+		|| ((myStats->getEffectActive(EFF_COMMAND) >= 2 && myStats->getEffectActive(EFF_COMMAND) < MAXPLAYERS + 1)) )
 	{
 		serverUpdateEntitySkill(this, 1); // update monsterTarget for player leaders.
 	}
@@ -18137,7 +18461,8 @@ bool Entity::monsterReleaseAttackTarget(bool force)
 
 	monsterTarget = 0;
 
-	if ( monsterAllyIndex > 0 && monsterAllyIndex < MAXPLAYERS )
+	if ( (monsterAllyIndex > 0 && monsterAllyIndex < MAXPLAYERS) 
+		|| ((myStats->getEffectActive(EFF_COMMAND) >= 2 && myStats->getEffectActive(EFF_COMMAND) < MAXPLAYERS + 1)) )
 	{
 		serverUpdateEntitySkill(this, 1); // update monsterTarget for player leaders.
 	}
@@ -18365,7 +18690,7 @@ bool Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 						{
 							if ( players[c]->entity->getUID() == entity->itemOriginalOwner )
 							{
-								if ( players[c]->entity->checkFriend(this) )
+								if ( players[c]->entity->checkFriend(this) || (myStats->getEffectActive(EFF_COMMAND) >= 1 && myStats->getEffectActive(EFF_COMMAND) < MAXPLAYERS + 1) )
 								{
 									// player owned.
 									playerOwned = c;
@@ -18380,7 +18705,8 @@ bool Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 					}
 					else if ( (playerOwned >= 0 
 						&& (entity->ticks < 5 * TICKS_PER_SECOND 
-							|| (monsterAllyPickupItems != ALLY_PICKUP_ALL && monsterAllyIndex >= 0)) 
+							|| (monsterAllyPickupItems != ALLY_PICKUP_ALL 
+								&& (monsterAllyIndex >= 0 || (myStats->getEffectActive(EFF_COMMAND) >= 1 && myStats->getEffectActive(EFF_COMMAND) < MAXPLAYERS + 1) ) ))
 							) 
 						)
 					{
@@ -18489,11 +18815,22 @@ bool Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 						Entity* dropped = dropItemMonster((*shouldWield), this, myStats); //And I threw it on the ground!
 						if ( dropped && item && item->interactNPCUid == getUID() )
 						{
-							if ( monsterAllyIndex >= 0 && monsterAllyIndex < MAXPLAYERS )
+							if ( monsterAllyIndex >= 0 && monsterAllyIndex < MAXPLAYERS
+								|| (myStats->getEffectActive(EFF_COMMAND) >= 1 && myStats->getEffectActive(EFF_COMMAND) < MAXPLAYERS + 1) )
 							{
-								if ( players[monsterAllyIndex] && players[monsterAllyIndex]->entity )
+								if ( (myStats->getEffectActive(EFF_COMMAND) >= 1 && myStats->getEffectActive(EFF_COMMAND) < MAXPLAYERS + 1) )
 								{
-									dropped->itemOriginalOwner = players[monsterAllyIndex]->entity->getUID();
+									if ( players[myStats->getEffectActive(EFF_COMMAND) - 1] && players[myStats->getEffectActive(EFF_COMMAND) - 1]->entity )
+									{
+										dropped->itemOriginalOwner = players[myStats->getEffectActive(EFF_COMMAND) - 1]->entity->getUID();
+									}
+								}
+								else
+								{
+									if ( players[monsterAllyIndex] && players[monsterAllyIndex]->entity )
+									{
+										dropped->itemOriginalOwner = players[monsterAllyIndex]->entity->getUID();
+									}
 								}
 							}
 						}
@@ -20525,6 +20862,10 @@ void Entity::SetEntityOnFire(Entity* sourceOfFire)
 					return;
 				}
 				if ( myStats->breastplate && myStats->breastplate->type == MACHINIST_APRON )
+				{
+					return;
+				}
+				if ( myStats->amulet && myStats->amulet->type == AMULET_BURNINGRESIST )
 				{
 					return;
 				}

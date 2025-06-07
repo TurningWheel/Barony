@@ -591,6 +591,10 @@ char* Item::description() const
 					//No fancy descriptives for empty potions.
 					snprintf(tempstr, 1024, Language::get(982 + status), beatitude);
 				}
+				else if ( type == POTION_GREASE )
+				{
+					snprintf(tempstr, 1024, Language::get(992 + status), Language::get(975), beatitude);
+				}
 				else
 				{
 					snprintf(tempstr, 1024, Language::get(992 + status), Language::get(974 + items[type].index + appearance % items[type].variations - 50), beatitude);
@@ -660,6 +664,10 @@ char* Item::description() const
 				{
 					//No fancy descriptives for empty potions.
 					snprintf(tempstr, 1024, Language::get(1008 + status), count, beatitude);
+				}
+				else if ( type == POTION_GREASE )
+				{
+					snprintf(tempstr, 1024, Language::get(1018 + status), count, Language::get(975), beatitude);
 				}
 				else
 				{
@@ -733,6 +741,10 @@ char* Item::description() const
 				{
 					//No fancy descriptives for empty potions.
 					snprintf(tempstr, 1024, Language::get(1034 + status), beatitude);
+				}
+				else if ( type == POTION_GREASE )
+				{
+					snprintf(tempstr, 1024, Language::get(1044 + status), Language::get(975), beatitude);
 				}
 				else
 				{
@@ -810,6 +822,10 @@ char* Item::description() const
 				{
 					//No fancy descriptives for empty potions.
 					snprintf(tempstr, 1024, Language::get(1060 + status), count);
+				}
+				else if ( type == POTION_GREASE )
+				{
+					snprintf(tempstr, 1024, Language::get(1070 + status), count, Language::get(975), beatitude);
 				}
 				else
 				{
@@ -2411,6 +2427,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		}
 			break;
 		case AMULET_POISONRESISTANCE:
+		case AMULET_BURNINGRESIST:
 			equipItemResult = equipItem(item, &stats[player]->amulet, player, checkInventorySpaceForPaperDoll);
 			break;
 		case POTION_WATER:
@@ -2457,6 +2474,9 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 			break;
 		case POTION_PARALYSIS:
 			drankPotion = item_PotionParalysis(item, players[player]->entity, usedBy);
+			break;
+		case POTION_GREASE:
+			drankPotion = item_PotionGrease(item, players[player]->entity, usedBy);
 			break;
 		case POTION_EMPTY:
 			messagePlayer(player, MESSAGE_HINT, Language::get(2359));
@@ -3063,6 +3083,9 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 				break;
 			case AMULET_POISONRESISTANCE:
 				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2492));
+				break;
+			case AMULET_BURNINGRESIST:
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(6535));
 				break;
 			case RING_ADORNMENT:
 				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2384));
@@ -4292,6 +4315,9 @@ Sint32 Item::potionGetEffectDurationMinimum(Entity* my, Stat* myStats) const
 		case POTION_BLINDNESS:
 			duration = 500;
 			break;
+		case POTION_GREASE:
+			duration = 500;
+			break;
 		case POTION_RESTOREMAGIC:
 			break;
 		case POTION_INVISIBILITY:
@@ -4363,6 +4389,9 @@ Sint32 Item::potionGetEffectDurationMaximum(Entity* my, Stat* myStats) const
 			duration = 4 * beatitude * TICKS_PER_SECOND;
 			break;
 		case POTION_BLINDNESS:
+			duration = 750;
+			break;
+		case POTION_GREASE:
 			duration = 750;
 			break;
 		case POTION_RESTOREMAGIC:
@@ -4437,6 +4466,8 @@ Sint32 Item::potionGetCursedEffectDurationMinimum(Entity* my, Stat* myStats) con
 			break;
 		case POTION_BLINDNESS:
 			break;
+		case POTION_GREASE:
+			break;
 		case POTION_RESTOREMAGIC:
 			duration = 1000;
 			break;
@@ -4500,6 +4531,8 @@ Sint32 Item::potionGetCursedEffectDurationMaximum(Entity* my, Stat* myStats) con
 			duration = 750;
 			break;
 		case POTION_BLINDNESS:
+			break;
+		case POTION_GREASE:
 			break;
 		case POTION_RESTOREMAGIC:
 			duration = 1500;
@@ -5213,6 +5246,7 @@ bool isPotionBad(const Item& potion)
 		(potion.type == POTION_SICKNESS 
 		|| potion.type == POTION_CONFUSION 
 		|| potion.type == POTION_BLINDNESS 
+		|| potion.type == POTION_GREASE
 		|| potion.type == POTION_ACID 
 		|| potion.type == POTION_PARALYSIS
 		|| potion.type == POTION_FIRESTORM 
@@ -6371,6 +6405,29 @@ void clientSendAppearanceUpdateToServer(const int player, Item* item, const bool
 	net_packet->address.host = net_server.host;
 	net_packet->address.port = net_server.port;
 	net_packet->len = 28;
+	sendPacketSafe(net_sock, -1, net_packet, 0);
+}
+
+void clientSendItemTypeUpdateToServer(const int player, Item* item, ItemType prevItemType)
+{
+	if ( multiplayer != CLIENT ) { return; }
+	if ( !item || !itemIsEquipped(item, player) || items[item->type].item_slot == NO_EQUIP )
+	{
+		return;
+	}
+	strcpy((char*)net_packet->data, "EQUT");
+	SDLNet_Write32(static_cast<Uint32>(prevItemType), &net_packet->data[4]);
+	SDLNet_Write32(static_cast<Uint32>(item->status), &net_packet->data[8]);
+	SDLNet_Write32(static_cast<Uint32>(item->beatitude), &net_packet->data[12]);
+	SDLNet_Write32(static_cast<Uint32>(item->count), &net_packet->data[16]);
+	SDLNet_Write32(static_cast<Uint32>(item->appearance), &net_packet->data[20]);
+	net_packet->data[24] = item->identified;
+	net_packet->data[25] = player;
+	net_packet->data[26] = items[item->type].item_slot;
+	SDLNet_Write32(static_cast<Uint32>(item->type), &net_packet->data[27]);
+	net_packet->address.host = net_server.host;
+	net_packet->address.port = net_server.port;
+	net_packet->len = 31;
 	sendPacketSafe(net_sock, -1, net_packet, 0);
 }
 

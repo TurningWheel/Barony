@@ -732,7 +732,7 @@ void actHudWeapon(Entity* my)
 		&& shootmode 
 		&& !gamePaused
 		&& players[HUDWEAPON_PLAYERNUM]->entity->isMobile()
-		&& !(input.binaryToggle("Defend") && stats[HUDWEAPON_PLAYERNUM]->defending)
+		&& (!(input.binaryToggle("Defend") && stats[HUDWEAPON_PLAYERNUM]->defending) || cast_animation[HUDWEAPON_PLAYERNUM].spellWaitingAttackInput() )
 		&& HUDWEAPON_OVERCHARGE < Stat::getMaxAttackCharge(stats[HUDWEAPON_PLAYERNUM]) )
 	{
 		swingweapon = true;
@@ -1019,7 +1019,19 @@ void actHudWeapon(Entity* my)
 			HUDWEAPON_CROSSBOW_RELOAD_ANIMATION = CROSSBOW_ANIM_NONE;
 		}
 		bool ignoreAttack = false;
-		if ( swingweapon && throwGimpTimer > 0 && stats[HUDWEAPON_PLAYERNUM]->weapon &&
+		if ( !castStrikeAnimation && (cast_animation[HUDWEAPON_PLAYERNUM].spellWaitingAttackInput()
+			|| cast_animation[HUDWEAPON_PLAYERNUM].spellIgnoreAttack()
+			|| cast_animation[HUDWEAPON_PLAYERNUM].active
+			|| cast_animation[HUDWEAPON_PLAYERNUM].active_spellbook )
+			)
+		{
+			ignoreAttack = true;
+			if ( cast_animation[HUDWEAPON_PLAYERNUM].spellWaitingAttackInput() )
+			{
+				cast_animation[HUDWEAPON_PLAYERNUM].executeAttackSpell(swingweapon);
+			}
+		}
+		else if ( swingweapon && throwGimpTimer > 0 && stats[HUDWEAPON_PLAYERNUM]->weapon &&
 			( stats[HUDWEAPON_PLAYERNUM]->weapon->type == CROSSBOW
 				|| itemCategory(stats[HUDWEAPON_PLAYERNUM]->weapon) == POTION
 				|| itemCategory(stats[HUDWEAPON_PLAYERNUM]->weapon) == GEM
@@ -3593,7 +3605,7 @@ void actHudShield(Entity* my)
 		my->flags[INVISIBLE] = true;
 		my->flags[INVISIBLE_DITHER] = false;
 	}
-	else if ( cast_animation[HUDSHIELD_PLAYERNUM].active )
+	else if ( cast_animation[HUDSHIELD_PLAYERNUM].hideShieldFromBasicCast() )
 	{
 		my->flags[INVISIBLE] = true;
 		my->flags[INVISIBLE_DITHER] = false;
@@ -3638,7 +3650,7 @@ void actHudShield(Entity* my)
 		if ( players[HUDSHIELD_PLAYERNUM] && players[HUDSHIELD_PLAYERNUM]->entity 
 			&& allowDefend
 			&& players[HUDSHIELD_PLAYERNUM]->entity->isMobile() 
-			&& !cast_animation[HUDSHIELD_PLAYERNUM].active
+			&& !cast_animation[HUDSHIELD_PLAYERNUM].hideShieldFromBasicCast()
 			&& !cast_animation[HUDSHIELD_PLAYERNUM].active_spellbook
 			&& (!spellbook || (spellbook && hideShield)) )
 		{
@@ -4170,7 +4182,7 @@ void actHudShield(Entity* my)
 	}
 	if (stats[HUDSHIELD_PLAYERNUM]->shield 
 		&& !swimming 
-		&& !cast_animation[HUDSHIELD_PLAYERNUM].active 
+		&& !cast_animation[HUDSHIELD_PLAYERNUM].hideShieldFromBasicCast()
 		&& !cast_animation[HUDSHIELD_PLAYERNUM].active_spellbook
 		&& !players[HUDSHIELD_PLAYERNUM]->hud.shieldSwitch)
 	{
@@ -4349,7 +4361,7 @@ void actHudAdditional(Entity* my)
 		return;
 	}
 
-	if ( cast_animation[HUDSHIELD_PLAYERNUM].active )
+	if ( cast_animation[HUDSHIELD_PLAYERNUM].hideShieldFromBasicCast() )
 	{
 		my->flags[INVISIBLE] = true;
 		my->flags[INVISIBLE_DITHER] = false;
@@ -4537,7 +4549,7 @@ void actHudArrowModel(Entity* my)
 		return;
 	}
 
-	if ( (!crossbow && !bow) || cast_animation[HUDSHIELD_PLAYERNUM].active || cast_animation[HUDSHIELD_PLAYERNUM].active_spellbook )
+	if ( (!crossbow && !bow) || cast_animation[HUDSHIELD_PLAYERNUM].hideShieldFromBasicCast() || cast_animation[HUDSHIELD_PLAYERNUM].active_spellbook )
 	{
 		my->flags[INVISIBLE] = true;
 		return;

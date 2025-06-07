@@ -14,7 +14,7 @@
 #ifdef USE_FMOD
 #include <fmod.hpp>
 #endif
-
+#include <cassert>
 #include "items.hpp"
 
 enum Monster : int;
@@ -86,6 +86,17 @@ static const int EFF_PINPOINT = 61;
 static const int EFF_PENANCE = 62;
 static const int EFF_SACRED_PATH = 63;
 static const int EFF_DETECT_ENEMY = 64;
+static const int EFF_BLOOD_WARD = 65;
+static const int EFF_TRUE_BLOOD = 66;
+static const int EFF_DIVINE_ZEAL = 67;
+static const int EFF_MAXIMISE = 68;
+static const int EFF_MINIMISE = 69;
+static const int EFF_WEAKNESS = 70;
+static const int EFF_INCOHERENCE = 71;
+static const int EFF_OVERCHARGE = 72;
+static const int EFF_ENVENOM_WEAPON = 73;
+static const int EFF_MAGIC_GREASE = 74;
+static const int EFF_COMMAND = 75;
 static const int NUMEFFECTS = 96;
 
 // stats

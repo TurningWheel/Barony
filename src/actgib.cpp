@@ -43,6 +43,8 @@
 #define GIB_OSC_H my->fskill[6]
 #define GIB_VEL_DECAY my->fskill[7]
 #define GIB_DELAY_MOVE my->skill[8]
+#define GIB_HIT_GROUND my->skill[9]
+#define GIB_HIT_GROUND_EVENT my->skill[10]
 
 void poof(Entity* my) {
     if (GIB_POOF) {
@@ -165,6 +167,35 @@ void actGib(Entity* my)
 		my->removeLightField();
 	}
 
+	if ( my->actGibHitGroundEvent == 1 )
+	{
+		if ( my->sprite == 245 && my->flags[SPRITE] )
+		{
+			if ( my->ticks % 5 == 0 )
+			{
+				spawnGreasePuddleSpawner(my->parent == 0 ? nullptr : uidToEntity(my->parent), my->x, my->y, 30 * TICKS_PER_SECOND);
+			}
+			if ( GIB_HIT_GROUND == 0 )
+			{
+				if ( Entity* fx = spawnMagicParticleCustom(my, 245, 1.0, 1.0) )
+				{
+					fx->ditheringDisabled = true;
+					real_t dir = atan2(GIB_VELY, GIB_VELX);
+					//dir += local_rng.rand() % 2 == 0 ? PI / 32 : -PI / 32;
+					real_t spd = sqrt(GIB_VELX * GIB_VELX + GIB_VELY * GIB_VELY);
+					fx->vel_x = spd * 0.05 * cos(dir);
+					fx->vel_y = spd * 0.05 * sin(dir);
+					fx->flags[BRIGHT] = true;
+					fx->pitch = PI / 2;
+					fx->roll = 0.0;
+					fx->yaw = dir;
+					fx->vel_z = 0.0;
+					fx->flags[SPRITE] = true;
+				}
+			}
+		}
+	}
+
 	// gravity
 	if ( my->z < 8 )
 	{
@@ -220,6 +251,10 @@ void actGib(Entity* my)
 			}
 			else
 			{
+				if ( GIB_HIT_GROUND == 0 )
+				{
+					GIB_HIT_GROUND = 1;
+				}
 				GIB_VELZ = 0;
 				my->z = 8;
 				my->roll = PI / 2.0;
@@ -670,6 +705,326 @@ void serverSpawnGibForClient(Entity* gib)
 			net_packet->address.port = net_clients[c - 1].port;
 			net_packet->len = 13;
 			sendPacketSafe(net_sock, -1, net_packet, c - 1);
+		}
+	}
+}
+
+void spawnGreasePuddleSpawner(Entity* caster, real_t x, real_t y, int duration)
+{
+	if ( multiplayer == CLIENT ) { return; }
+	int ox = x / 16;
+	int oy = y / 16;
+
+	if ( ox >= 0 && ox < map.width && oy >= 0 && oy < map.height )
+	{
+		int mapIndex = oy * MAPLAYERS + ox * MAPLAYERS * map.height;
+		if ( !map.tiles[mapIndex] )
+		{
+			return;
+		}
+		auto entLists = TileEntityList.getEntitiesWithinRadius(ox, oy, 0);
+		for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
+		{
+			list_t* currentList = *it;
+			for ( node_t* node = currentList->first; node != nullptr; node = node->next )
+			{
+				Entity* entity = (Entity*)node->element;
+				if ( entity->behavior == &actGreasePuddleSpawner && entity->skill[0] > 0 )
+				{
+					entity->skill[0] = std::max(entity->skill[0], duration);
+					return;
+				}
+			}
+		}
+		Entity* entity = newEntity(1786, 1, map.entities, nullptr); //Blood/gib entity.
+		real_t x = ox * 16.0 + 8.0;
+		real_t y = oy * 16.0 + 8.0;
+		entity->x = x;
+		entity->y = y;
+		entity->z = 7.5;
+		entity->parent = caster ? caster->getUID() : 0;
+		entity->behavior = &actGreasePuddleSpawner;
+		entity->sizex = 4;
+		entity->sizey = 4;
+		entity->skill[0] = duration;
+		entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
+		entity->flags[UPDATENEEDED] = true;
+		entity->flags[PASSABLE] = true;
+		entity->flags[SPRITE] = true;
+		entity->flags[UNCLICKABLE] = true;
+		entity->flags[INVISIBLE] = true;
+		entity->flags[BURNABLE] = true;
+		TileEntityList.addEntity(*entity);
+	}
+}
+
+void spawnGreasePuddle(Entity* parent, real_t x, real_t y, int duration, int location)
+{
+	if ( !parent ) { return; }
+	int ox = x / 16;
+	int oy = y / 16;
+	if ( ox >= 0 && ox < map.width && oy >= 0 && oy < map.height )
+	{
+		Entity* entity = newEntity(1784, 1, map.entities, nullptr); //Blood/gib entity.
+		real_t x = ox * 16.0 + 8.0;
+		real_t y = oy * 16.0 + 8.0;
+
+		static const std::vector<float> locations = {
+			0 * PI / 4,
+			5 * PI / 4,
+			2 * PI / 4,
+			3 * PI / 4,
+			4 * PI / 4,
+			7 * PI / 4,
+			1 * PI / 4,
+			6 * PI / 4,
+		};
+
+		x += 4.0 * cos(locations[location]) + 2.0 * (local_rng.rand() % 10) / 10.0;
+		y += 4.0 * sin(locations[location]) + 2.0 * (local_rng.rand() % 10) / 10.0;
+
+		entity->x = x;
+		entity->y = y;
+		entity->z = 8 + (local_rng.rand() % 20) / 100.0;
+		entity->parent = 0;
+		entity->sizex = 2;
+		entity->sizey = 2;
+		entity->behavior = &actGreasePuddle;
+		entity->parent = parent->getUID();
+		entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
+		entity->flags[UPDATENEEDED] = false;
+		entity->flags[NOUPDATE] = true;
+		entity->flags[PASSABLE] = true;
+		entity->flags[UNCLICKABLE] = true;
+		if ( multiplayer != CLIENT )
+		{
+			--entity_uids;
+		}
+		entity->setUID(-3);
+	}
+}
+
+void actGreasePuddle(Entity* my)
+{
+	if ( my->ticks % 10 == 0 )
+	{
+		if ( my->parent == 0 || !uidToEntity(my->parent) )
+		{
+			list_RemoveNode(my->mynode);
+			return;
+		}
+	}
+}
+
+void actGreasePuddleSpawner(Entity* my)
+{
+	my->flags[INVISIBLE] = true;
+	int x = my->x / 16;
+	int y = my->y / 16;
+	if ( multiplayer != CLIENT )
+	{
+		--my->skill[0];
+		if ( my->skill[0] <= 0 )
+		{
+			if ( x >= 0 && x < map.width && y >= 0 && y < map.height )
+			{
+				bool foundGrease = false;
+				auto entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 0);
+				for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end() && !foundGrease; ++it )
+				{
+					list_t* currentList = *it;
+					for ( node_t* node = currentList->first; node != nullptr; node = node->next )
+					{
+						Entity* entity = (Entity*)node->element;
+						if ( entity && entity->behavior == &actGreasePuddleSpawner && entity != my )
+						{
+							int x2 = entity->x / 16;
+							int y2 = entity->y / 16;
+							if ( x2 == x && y2 == y )
+							{
+								foundGrease = true;
+								break;
+							}
+						}
+					}
+				}
+
+				if ( !foundGrease )
+				{
+					if ( map.tileHasAttribute(x, y, 0, map_t::TILE_ATTRIBUTE_GREASE) )
+					{
+						map.tileAttributes[0 + (y * MAPLAYERS) + (x * MAPLAYERS * map.height)] &= ~map_t::TILE_ATTRIBUTE_GREASE;
+						serverUpdateMapTileFlag(x, y, 0, 0, map_t::TILE_ATTRIBUTE_GREASE);
+					}
+				}
+			}
+			my->removeLightField();
+			list_RemoveNode(my->mynode);
+			return;
+		}
+		if ( x >= 0 && x < map.width && y >= 0 && y < map.height )
+		{
+			if ( !map.tileHasAttribute(x, y, 0, map_t::TILE_ATTRIBUTE_GREASE) )
+			{
+				map.tileAttributes[0 + (y * MAPLAYERS) + (x * MAPLAYERS * map.height)] |= map_t::TILE_ATTRIBUTE_GREASE;
+				serverUpdateMapTileFlag(x, y, 0, map_t::TILE_ATTRIBUTE_GREASE, 0);
+			}
+
+			int mapIndex = y * MAPLAYERS + x * MAPLAYERS * map.height;
+			if ( lavatiles[map.tiles[mapIndex]] )
+			{
+				if ( !my->flags[BURNING] )
+				{
+					my->SetEntityOnFire();
+				}
+			}
+
+			auto entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 0);
+			Entity* parent = my->parent == 0 ? nullptr : uidToEntity(my->parent);
+			for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
+			{
+				list_t* currentList = *it;
+				for ( node_t* node = currentList->first; node != nullptr; node = node->next )
+				{
+					if ( Entity* entity = (Entity*)node->element )
+					{
+						if ( Stat* stats = entity->getStats() )
+						{
+							if ( !entity->isInertMimic() )
+							{
+								entity->setEffect(EFF_MAGIC_GREASE, true, std::max(5 * TICKS_PER_SECOND, stats->EFFECTS_TIMERS[EFF_MAGIC_GREASE]),
+									true);
+							}
+						}
+						if ( entity->behavior == &actCampfire && my->skill[3] )
+						{
+							my->SetEntityOnFire();
+						}
+						if ( my->flags[BURNING] )
+						{
+							if ( entity->flags[BURNABLE] && !entity->flags[BURNING] )
+							{
+								if ( Stat* stats = entity->getStats() )
+								{
+									if ( swimmingtiles[map.tiles[mapIndex]] && entity->behavior == &actPlayer && players[entity->skill[2]]->movement.isPlayerSwimming() )
+									{
+										continue;
+									}
+									entity->SetEntityOnFire(parent);
+									if ( parent && parent->getStats() )
+									{
+										if ( entity->flags[BURNING] )
+										{
+											stats->burningInflictedBy = parent->getUID();
+
+											bool alertTarget = true;
+											if ( parent->behavior == &actMonster && parent->monsterAllyIndex != -1 && entity->monsterAllyIndex != -1 )
+											{
+												// if we're both allies of players, don't alert the hit target.
+												alertTarget = false;
+											}
+
+											// alert the monster!
+											if ( entity->monsterState != MONSTER_STATE_ATTACK && (stats->type < LICH || stats->type >= SHOPKEEPER) )
+											{
+												if ( alertTarget )
+												{
+													entity->monsterAcquireAttackTarget(*parent, MONSTER_STATE_PATH, true);
+												}
+											}
+
+											// alert other monsters too
+											if ( alertTarget )
+											{
+												entity->alertAlliesOnBeingHit(parent);
+											}
+											entity->updateEntityOnHit(parent, alertTarget);
+										}
+									}
+								}
+								else
+								{
+									if ( entity->behavior == &actDoor
+										|| entity->behavior == &::actIronDoor
+										|| entity->behavior == &actBell
+										|| entity->behavior == &::actFurniture || entity->behavior == &::actChest
+										|| (entity->isDamageableCollider() && entity->isColliderDamageableByMagic()) )
+									{
+										entity->SetEntityOnFire(parent);
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+
+			if ( my->flags[BURNING] )
+			{
+				++my->skill[6]; // burning spread counter
+				if ( my->skill[6] >= TICKS_PER_SECOND )
+				{
+					my->skill[6] = 0;
+
+					auto entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 1);
+					for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
+					{
+						list_t* currentList = *it;
+						for ( node_t* node = currentList->first; node != nullptr; node = node->next )
+						{
+							Entity* entity = (Entity*)node->element;
+							if ( entity && entity->behavior == &actGreasePuddleSpawner && entity != my )
+							{
+								int x2 = entity->x / 16;
+								int y2 = entity->y / 16;
+								//if ( x2 == x || y2 == y ) // axis aligned only
+								{
+									if ( !entity->flags[BURNING] )
+									{
+										entity->flags[BURNING] = true;
+										entity->skill[5] = TICKS_PER_SECOND * 5;
+										serverUpdateEntityFlag(entity, BURNING);
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	if ( x >= 0 && x < map.width && y >= 0 && y < map.height )
+	{
+		if ( my->flags[BURNING] )
+		{
+			if ( !my->light )
+			{
+				my->light = addLight(my->x / 16, my->y / 16, "campfire");
+			}
+		}
+		else
+		{
+			my->removeLightField();
+		}
+		if ( my->skill[1] < 4 )
+		{
+			if ( map.tileHasAttribute(x, y, 0, map_t::TILE_ATTRIBUTE_GREASE) )
+			{
+				++my->skill[1];
+				std::vector<unsigned int> chances(8);
+				std::fill(chances.begin(), chances.end(), 1);
+				for ( int i = 0; i < 8; ++i )
+				{
+					if ( (my->skill[3] >> i) & 1 )
+					{
+						chances[i] = 0;
+					}
+				}
+				int pick = local_rng.discrete(chances.data(), chances.size());
+				my->skill[3] |= (1 << pick);
+				spawnGreasePuddle(my, my->x, my->y, 10 * TICKS_PER_SECOND, pick);
+			}
 		}
 	}
 }

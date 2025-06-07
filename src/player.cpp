@@ -54,7 +54,7 @@ bool gamepad_menux_invert = false;
 bool gamepad_menuy_invert = false;
 
 const int Player::Inventory_t::MAX_SPELLS_X = 4;
-const int Player::Inventory_t::MAX_SPELLS_Y = 20;
+const int Player::Inventory_t::MAX_SPELLS_Y = 30;
 const int Player::Inventory_t::MAX_CHEST_X = 4;
 const int Player::Inventory_t::MAX_CHEST_Y = 3;
 
@@ -4509,7 +4509,8 @@ void Player::WorldUI_t::handleTooltips()
 		{
 			bDoingActionHideTooltips = true;
 		}
-		else if ( (cast_animation[player].active || cast_animation[player].active_spellbook) && !selectInteract && players[player]->entity )
+		else if ( ((cast_animation[player].active /*&& !cast_animation[player].spellWaitingAttackInput()*/) 
+			|| cast_animation[player].active_spellbook) && !selectInteract && players[player]->entity )
 		{
 			// spells
 			bDoingActionHideTooltips = true;
@@ -5488,7 +5489,7 @@ Frame* Player::Inventory_t::getSpellSlotFrame(int x, int y) const
 	{
 		if ( x >= 0 && y >= 0 && x < MAX_SPELLS_X && y < MAX_SPELLS_Y )
 		{
-			return spellSlotFrames.at(x + y * 100);
+			return spellSlotFrames.at(x + y * 1000);
 		}
 	}
 	return nullptr;

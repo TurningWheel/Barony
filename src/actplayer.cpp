@@ -3422,6 +3422,7 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 	}
 
 	static ConsoleVariable<float> cvar_map_tile_slippery("/map_tile_slippery", 0.99);
+	static ConsoleVariable<float> cvar_map_tile_greasy("/map_tile_greasy", 0.99);
 	static ConsoleVariable<float> cvar_map_tile_slow("/map_tile_slow", 0.25);
 	real_t movementDrag = 0.75;
 	{
@@ -3429,6 +3430,10 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 		{
 			movementDrag = *cvar_map_tile_slippery;
 		}
+		else if ( map.tileHasAttribute(static_cast<int>(my->x / 16), static_cast<int>(my->y / 16), 0, map_t::TILE_ATTRIBUTE_GREASE) )
+		{
+			movementDrag = *cvar_map_tile_greasy;
+	}
 	}
 	static std::map<int, real_t> dragToSpeedFactor =
 	{
@@ -4806,7 +4811,54 @@ void actPlayer(Entity* my)
 			color = makeColor(255, 0, 255, 255);
 		}
 
-		if ( *cvar_pbaoe == 3 )
+		if ( *cvar_pbaoe == 7 )
+		{
+			Entity* spellTimer = createParticleTimer(my, 25, -1);
+			spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_BOOBY_TRAP;
+			spellTimer->particleTimerCountdownSprite = -1;
+			spellTimer->particleTimerVariable1 = 20;
+			spellTimer->particleTimerVariable2 = SPELL_BOOBY_TRAP;
+			color = makeColor(255, 0, 255, 255);
+			spellTimer->yaw = my->yaw;
+			spellTimer->x = my->x + 40.0 * cos(my->yaw);
+			spellTimer->y = my->y + 40.0 * sin(my->yaw);
+
+			if ( Entity* fx = createParticleAOEIndicator(spellTimer, spellTimer->x, spellTimer->y, 0.0, TICKS_PER_SECOND, 24) )
+			{
+				fx->actSpriteCheckParentExists = 0;
+				if ( auto indicator = AOEIndicators_t::getIndicator(fx->skill[10]) )
+				{
+					Uint8 r, g, b, a;
+					getColor(color, &r, &g, &b, &a);
+					a *= 0.5;
+					indicator->indicatorColor = makeColor(r, g, b, a);
+					indicator->loop = false;
+					indicator->framesPerTick = 4;
+					indicator->ticksPerUpdate = 1;
+					indicator->delayTicks = 0;
+				}
+			}
+			for ( int i = 0; i < 2; ++i )
+			{
+				if ( Entity* fx = createParticleAOEIndicator(spellTimer, spellTimer->x, spellTimer->y, -7.5, TICKS_PER_SECOND, 24) )
+				{
+					fx->actSpriteCheckParentExists = 0;
+					if ( i == 1 )
+					{
+						fx->pitch = PI;
+					}
+					if ( auto indicator = AOEIndicators_t::getIndicator(fx->skill[10]) )
+					{
+						indicator->indicatorColor = color;
+						indicator->loop = false;
+						indicator->framesPerTick = 4;
+						indicator->ticksPerUpdate = 1;
+						indicator->delayTicks = 15;
+					}
+				}
+			}
+		}
+		else if ( *cvar_pbaoe == 3 )
 		{
 			color = makeColor(255, 0, 255, 255);
 			if ( Entity* fx = createParticleAOEIndicator(my, my->x, my->y, -7.5, TICKS_PER_SECOND * 5, 8) )

@@ -16,7 +16,7 @@
 
 std::map<int, spell_t*> allGameSpells;
 
-spell_t* createSimpleSpell(int spellID, int difficulty, int mana, int base_mana, int overload_mult, int damage, int duration, const char* internal_name);
+spell_t* createSimpleSpell(int spellID, int difficulty, int mana, int base_mana, int overload_mult, int damage, int duration, const char* internal_name, bool sustained = false);
 void setupSpells()   ///TODO: Verify this function.
 {
 	for ( auto it : allGameSpells )
@@ -381,7 +381,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spellElement_weakness.base_mana = 1;
 	spellElement_weakness.overload_multiplier = 1;
 	spellElement_weakness.damage = 0;
-	spellElement_weakness.duration = 0;
+	spellElement_weakness.duration = 50;
 	strcpy(spellElement_weakness.element_internal_name, "spell_element_weakness");
 
 	spellElementConstructor(&spellElement_detectFood);
@@ -1553,7 +1553,7 @@ void setupSpells()   ///TODO: Verify this function.
 		{ SPELL_ELEMENT_PROPULSION_MISSILE, SPELL_METEOR, SPELL_ELEMENT_METEOR_FLAMES, SPELL_ELEMENT_METEOR_FLAMES, SPELL_ELEMENT_METEOR_FLAMES }
 	);
 	spell->hide_from_ui = true;
-	spell->rangefinder = true;
+	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TARGET;
 	spell->distance = 64.0;
 
 	spellElementConstructor(SPELL_ELEMENT_PROPULSION_FLOOR_TILE,
@@ -1579,7 +1579,7 @@ void setupSpells()   ///TODO: Verify this function.
 		{ SPELL_ELEMENT_PROPULSION_FLOOR_TILE, SPELL_ICE_WAVE, SPELL_ICE_WAVE, SPELL_ICE_WAVE, SPELL_ICE_WAVE, SPELL_ICE_WAVE, SPELL_ICE_WAVE, SPELL_ICE_WAVE, SPELL_ICE_WAVE, SPELL_ICE_WAVE }
 	);
 	spell->hide_from_ui = true;
-	spell->rangefinder = true;
+	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TARGET;
 	spell->distance = 16.0;
 
 	spell = createSimpleSpell(
@@ -1781,9 +1781,239 @@ void setupSpells()   ///TODO: Verify this function.
 		0, // damage
 		1, // duration
 		"spell_detect_enemy");
+
+	spell = createSimpleSpell(
+		SPELL_TURN_UNDEAD,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_turn_undead");
+	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH;
+	spell->distance = 64.0;
+
+	spell = createSimpleSpell(
+		SPELL_HEAL_OTHER,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		5, // damage
+		1, // duration
+		"spell_heal_other");
+	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH;
+	spell->distance = 64.0;
+
+	spell = createSimpleSpell(
+		SPELL_BLOOD_WARD,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		50, // duration
+		"spell_blood_ward",
+		true);
+
+	spell = createSimpleSpell(
+		SPELL_TRUE_BLOOD,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		50, // duration
+		"spell_true_blood",
+		true);
+
+	spell = createSimpleSpell(
+		SPELL_DIVINE_ZEAL,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		50, // duration
+		"spell_divine_zeal",
+		true);
+
+	spell = createSimpleSpell(
+		SPELL_ALTER_INSTRUMENT,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_alter_instrument",
+		true);
+
+	spell = createSimpleSpell(
+		SPELL_MAXIMISE,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_maximise");
+	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH;
+	spell->distance = 64.0;
+
+	spell = createSimpleSpell(
+		SPELL_MINIMISE,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		50, // duration
+		"spell_minimise");
+	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH;
+	spell->distance = 64.0;
+
+	spell = createSimpleSpell(
+		SPELL_JUMP,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_jump");
+	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH_FLOOR_TILE;
+	spell->distance = 64.0;
+
+	spell = createSimpleSpell(
+		SPELL_INCOHERENCE,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		50, // duration
+		"spell_incoherence");
+	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH;
+	spell->distance = 64.0;
+
+	spell = createSimpleSpell(
+		SPELL_OVERCHARGE,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		50, // duration
+		"spell_overcharge",
+		true);
+
+	spell = createSimpleSpell(
+		SPELL_ENVENOM_WEAPON,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		50, // duration
+		"spell_envenom_weapon",
+		true);
+
+	spellElementConstructor(SPELL_HUMILIATE,
+		1,		// mana
+		1,		// base mana
+		1,		// overload
+		50,		// damage
+		0,		// duration
+		"spell_element_humiliate");
+	spell = spellConstructor(
+		SPELL_HUMILIATE,										// ID
+		100,												// difficulty
+		"spell_humiliate",										// internal name
+		// elements
+		{ SPELL_ELEMENT_PROPULSION_MISSILE, SPELL_HUMILIATE }
+	);
+
+	spellElementConstructor(SPELL_LVL_DEATH,
+		1,		// mana
+		1,		// base mana
+		1,		// overload
+		5,		// damage
+		0,		// duration
+		"spell_element_lvl_death");
+	spell = spellConstructor(
+		SPELL_LVL_DEATH,										// ID
+		100,												// difficulty
+		"spell_lvl_death",										// internal name
+		// elements
+		{ SPELL_ELEMENT_PROPULSION_MISSILE, SPELL_LVL_DEATH }
+	);
+
+	spellElementConstructor(SPELL_ELEMENT_PROPULSION_MAGIC_SPRAY,
+		1,		// mana
+		1,		// base mana
+		1,		// overload
+		0,		// damage
+		100,	// duration
+		"spell_element_propulsion_magic_spray");
+	spellElementConstructor(SPELL_GREASE_SPRAY,
+		1,		// mana
+		1,		// base mana
+		1,		// overload
+		0,		// damage
+		50,	// duration
+		"spell_element_grease_spray");
+	spell = spellConstructor(
+		SPELL_GREASE_SPRAY,										// ID
+		100,												// difficulty
+		"spell_grease_spray",										// internal name
+		// elements
+		{ SPELL_ELEMENT_PROPULSION_MAGIC_SPRAY, SPELL_GREASE_SPRAY }
+	);
+
+	spellElementConstructor(SPELL_MANA_BURST,
+		1,		// mana
+		1,		// base mana
+		1,		// overload
+		0,		// damage
+		0,		// duration
+		"spell_element_mana_burst");
+	spell = spellConstructor(
+		SPELL_MANA_BURST,										// ID
+		100,												// difficulty
+		"spell_mana_burst",										// internal name
+		// elements
+		{ SPELL_ELEMENT_PROPULSION_MISSILE, SPELL_MANA_BURST }
+	);
+
+	spell = createSimpleSpell(
+		SPELL_BOOBY_TRAP,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		25, // damage
+		50, // duration
+		"spell_booby_trap");
+	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH;
+	spell->distance = 64.0;
+
+	spell = createSimpleSpell(
+		SPELL_COMMAND,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		25, // damage
+		50, // duration
+		"spell_command");
+	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH;
+	spell->distance = 64.0;
 }
 
-spell_t* createSimpleSpell(int spellID, int difficulty, int mana, int base_mana, int overload_mult, int damage, int duration, const char* internal_name)
+spell_t* createSimpleSpell(int spellID, int difficulty, int mana, int base_mana, int overload_mult, int damage, 
+	int duration, const char* internal_name, bool sustained)
 {
 	std::string elementName = internal_name;
 	if ( elementName.find("element_") == std::string::npos )
@@ -1801,6 +2031,7 @@ spell_t* createSimpleSpell(int spellID, int difficulty, int mana, int base_mana,
 		damage,		// damage
 		duration,		// duration
 		elementName.c_str());
+	spellElementMap[spellID].channeled = sustained;
 	spell_t* spell = spellConstructor(
 		// ID
 		spellID,

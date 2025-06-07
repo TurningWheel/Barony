@@ -867,6 +867,48 @@ void magicTrapOnHit(Entity* parent, Entity* hitentity, Stat* hitstats, Sint32 ol
 	}
 }
 
+void magicSetResistance(Entity* entity, Entity* parent, int& resistance, real_t& damageMultiplier, DamageGib& dmgGib, int& trapResist)
+{
+	if ( entity )
+	{
+		resistance = Entity::getMagicResistance(entity->getStats());
+		if ( (entity->behavior == &actMonster || entity->behavior == &actPlayer) && entity->getStats() )
+		{
+			damageMultiplier = Entity::getDamageTableMultiplier(entity, *entity->getStats(), DAMAGE_TABLE_MAGIC);
+			if ( damageMultiplier <= 0.75 )
+			{
+				dmgGib = DMG_WEAKEST;
+			}
+			else if ( damageMultiplier <= 0.85 )
+			{
+				dmgGib = DMG_WEAKER;
+			}
+			else if ( damageMultiplier >= 1.25 )
+			{
+				dmgGib = resistance == 0 ? DMG_STRONGEST : DMG_WEAKER;
+			}
+			else if ( damageMultiplier >= 1.15 )
+			{
+				dmgGib = resistance == 0 ? DMG_STRONGER : DMG_WEAKER;
+			}
+			else if ( resistance > 0 )
+			{
+				dmgGib = DMG_WEAKEST;
+			}
+		}
+
+		if ( parent && (parent->behavior == &actMagicTrap || parent->behavior == &actMagicTrapCeiling) )
+		{
+			trapResist = entity ? entity->getEntityBonusTrapResist() : 0;
+			if ( trapResist != 0 )
+			{
+				damageMultiplier += -(trapResist / 100.0);
+				damageMultiplier = std::max(0.0, damageMultiplier);
+			}
+		}
+	}
+}
+
 void actMagicMissile(Entity* my)   //TODO: Verify this function.
 {
 	if (!my || !my->children.first || !my->children.first->element)
@@ -1618,11 +1660,13 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					}
 				}
 
+				// check for magic resistance...
+				// resistance stacks diminishingly
 				int trapResist = 0;
-				if ( parent && (parent->behavior == &actMagicTrap || parent->behavior == &actMagicTrapCeiling) )
-				{
-					trapResist = hit.entity ? hit.entity->getEntityBonusTrapResist() : 0;
-				}
+				int resistance = 0;
+				DamageGib dmgGib = DMG_DEFAULT;
+				real_t damageMultiplier = 1.0;
+				magicSetResistance(hit.entity, parent, resistance, damageMultiplier, dmgGib, trapResist);
 
 				bool alertTarget = false;
 				bool alertAllies = false;
@@ -1766,52 +1810,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							{
 								hit.entity->alertAlliesOnBeingHit(parent);
 							}
-						}
-					}
-				}
-
-				// check for magic resistance...
-				// resistance stacks diminishingly
-				int resistance = 0;
-				DamageGib dmgGib = DMG_DEFAULT;
-				real_t damageMultiplier = 1.0;
-				if ( hit.entity )
-				{
-					resistance = Entity::getMagicResistance(hit.entity->getStats());
-					if ( (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer) && hitstats )
-					{
-						damageMultiplier = Entity::getDamageTableMultiplier(hit.entity, *hitstats, DAMAGE_TABLE_MAGIC);
-						if ( damageMultiplier <= 0.75 )
-						{
-							dmgGib = DMG_WEAKEST;
-						}
-						else if ( damageMultiplier <= 0.85 )
-						{
-							dmgGib = DMG_WEAKER;
-						}
-						else if ( damageMultiplier >= 1.25 )
-						{
-							dmgGib = resistance == 0 ? DMG_STRONGEST : DMG_WEAKER;
-						}
-						else if ( damageMultiplier >= 1.15 )
-						{
-							dmgGib = resistance == 0 ? DMG_STRONGER : DMG_WEAKER;
-						}
-						else if ( resistance > 0 )
-						{
-							dmgGib = DMG_WEAKEST;
-						}
-					}
-				}
-
-				if ( hit.entity )
-				{
-					if ( parent && (parent->behavior == &actMagicTrap || parent->behavior == &actMagicTrapCeiling) )
-					{
-						if ( trapResist != 0 )
-						{
-							damageMultiplier += -(trapResist / 100.0);
-							damageMultiplier = std::max(0.0, damageMultiplier);
 						}
 					}
 				}
@@ -2836,6 +2834,44 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 					}
 				}
+				else if ( !strcmp(element->element_internal_name, spellElement_weakness.element_internal_name) )
+				{
+					if ( hit.entity )
+					{
+						if ( (!mimic && hit.entity->behavior == &actMonster) || hit.entity->behavior == &actPlayer )
+						{
+							//playSoundEntity(hit.entity, 396 + local_rng.rand() % 3, 64);
+							hitstats->setEffectActive(EFF_WEAKNESS, 1);
+							hitstats->EFFECTS_TIMERS[EFF_WEAKNESS] = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
+							hitstats->EFFECTS_TIMERS[EFF_WEAKNESS] /= (1 + (int)resistance);
+
+							magicOnEntityHit(parent, my, hit.entity, hitstats, 0, 0, 0, spell ? spell->ID : SPELL_NONE);
+							magicTrapOnHit(parent, hit.entity, hitstats, 0, spell ? spell->ID : SPELL_NONE);
+
+							// If the Entity hit is a Player, update their status to be Slowed
+							if ( hit.entity->behavior == &actPlayer )
+							{
+								serverUpdateEffects(hit.entity->skill[2]);
+							}
+
+							// update enemy bar for attacker
+							if ( parent )
+							{
+								Uint32 color = makeColorRGB(0, 255, 0);
+								if ( parent->behavior == &actPlayer )
+								{
+									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(6527), Language::get(6526), MSG_COMBAT);
+								}
+							}
+							Uint32 color = makeColorRGB(255, 0, 0);
+							if ( player >= 0 )
+							{
+								messagePlayerColor(player, MESSAGE_COMBAT, color, Language::get(6528));
+							}
+							spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my->sprite);
+						}
+					}
+				}
 				else if (!strcmp(element->element_internal_name, spellElement_sleep.element_internal_name))
 				{
 					if (hit.entity)
@@ -2918,6 +2954,122 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								}
 							}
 							spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my->sprite);
+						}
+					}
+				}
+				else if ( !strcmp(element->element_internal_name, spellElementMap[SPELL_HUMILIATE].element_internal_name)
+					|| !strcmp(element->element_internal_name, spellElementMap[SPELL_MANA_BURST].element_internal_name)
+					|| !strcmp(element->element_internal_name, spellElementMap[SPELL_LVL_DEATH].element_internal_name) )
+				{
+					playSoundEntity(my, 173, 128);
+					if ( hit.entity )
+					{
+						int damage = element->damage;
+						damage += (spellbookDamageBonus * damage);
+						//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
+						if ( (!mimic && hit.entity->behavior == &actMonster) || hit.entity->behavior == &actPlayer )
+						{
+							Entity* parent = uidToEntity(my->parent);
+							playSoundEntity(my, 173, 64);
+							playSoundEntity(hit.entity, 28, 128);
+							int oldHP = hitstats->HP;
+
+							if ( spell->ID == SPELL_HUMILIATE )
+							{
+								int percentHP = static_cast<int>(100.0 * hitstats->HP / hitstats->MAXHP);
+								if ( percentHP < 33 )
+								{
+									damage = 0.1;
+								}
+								else if ( percentHP < 66 )
+								{
+									damage *= 0.2;
+								}
+								else if ( percentHP < 100 )
+								{
+									damage *= 0.3;
+								}
+							}
+							else if ( spell->ID == SPELL_LVL_DEATH )
+							{
+								if ( parent && parent->getStats() )
+								{
+									damage *= std::max(0, (hitstats->LVL - parent->getStats()->LVL));
+								}
+								else
+								{
+									damage = 0;
+								}
+							}
+							else if ( spell->ID == SPELL_MANA_BURST )
+							{
+								if ( parent )
+								{
+									Stat* parentStats = parent->getStats();
+									if ( parentStats )
+									{
+										damage += parentStats->MP / 4;
+
+										if ( parent->behavior == &actPlayer )
+										{
+											Uint32 color = makeColorRGB(255, 255, 0);
+											messagePlayerColor(parent->skill[2], MESSAGE_STATUS, color, Language::get(621));
+										}
+										parent->modMP(-parentStats->MP);
+										parent->modHP(-(parentStats->MAXHP / 4));
+										if ( parentStats->sex == MALE )
+										{
+											parent->setObituary(Language::get(1528));
+											parentStats->killer = KilledBy::FAILED_INVOCATION;
+										}
+										else
+										{
+											parent->setObituary(Language::get(1529));
+											parentStats->killer = KilledBy::FAILED_INVOCATION;
+										}
+									}
+								}
+							}
+
+							Sint32 preResistanceDamage = damage;
+							damage *= damageMultiplier;
+							damage /= (1 + (int)resistance);
+							hit.entity->modHP(-damage);
+							magicOnEntityHit(parent, my, hit.entity, hitstats, preResistanceDamage, damage, oldHP, spell ? spell->ID : SPELL_NONE);
+							magicTrapOnHit(parent, hit.entity, hitstats, oldHP, spell ? spell->ID : SPELL_NONE);
+
+							// write the obituary
+							if ( parent )
+							{
+								parent->killedByMonsterObituary(hit.entity);
+							}
+
+							// update enemy bar for attacker
+							if ( !strcmp(hitstats->name, "") )
+							{
+								updateEnemyBar(parent, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP,
+									false, dmgGib);
+							}
+							else
+							{
+								updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP,
+									false, dmgGib);
+							}
+							if ( oldHP > 0 && hitstats->HP <= 0 && parent )
+							{
+								parent->awardXP(hit.entity, true, true);
+								spawnBloodVialOnMonsterDeath(hit.entity, hitstats, parent);
+							}
+						}
+						else
+						{
+							if ( parent )
+							{
+								if ( parent->behavior == &actPlayer )
+								{
+									messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(401));
+								}
+							}
 						}
 					}
 				}
@@ -3157,7 +3309,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 					}
 				}
-				else if ( spell->ID >= SPELL_SLIME_ACID && spell->ID <= SPELL_SLIME_METAL )
+				else if ( (spell->ID >= SPELL_SLIME_ACID && spell->ID <= SPELL_SLIME_METAL) || spell->ID == SPELL_GREASE_SPRAY )
 				{
 					if ( hit.entity )
 					{
@@ -3165,7 +3317,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						static ConsoleVariable cvar_slimehit_sfx("/slimehit_sfx", 173);
 						int hitsfx = *cvar_slimehit_sfx;
 						int hitvolume = (particleEmitterHitProps && particleEmitterHitProps->hits == 1) ? 128 : 64;
-						if ( spell->ID == SPELL_SLIME_WATER || spell->ID == SPELL_SLIME_TAR )
+						if ( spell->ID == SPELL_SLIME_WATER || spell->ID == SPELL_SLIME_TAR || spell->ID == SPELL_GREASE_SPRAY )
 						{
 							hitsfx = 665;
 						}
@@ -3256,6 +3408,46 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								{
 									hit.entity->SetEntityOnFire();
 								}
+							}
+							if ( spell->ID == SPELL_GREASE_SPRAY )
+							{
+								if ( particleEmitterHitProps && particleEmitterHitProps->hits == 1 )
+								{
+									if ( parent && parent->behavior == &actPlayer )
+									{
+										Uint32 color = makeColorRGB(0, 255, 0);
+										messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(6244), Language::get(6243), MSG_COMBAT);
+									}
+									if ( hit.entity->behavior == &actPlayer )
+									{
+										Uint32 color = makeColorRGB(255, 0, 0);
+										messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, color, Language::get(6236));
+									}
+								}
+
+								if ( particleEmitterHitProps && particleEmitterHitProps->hits == 1 )
+								{
+									int duration = 10 * TICKS_PER_SECOND;
+									duration /= (1 + (int)resistance);
+
+									if ( hasgoggles )
+									{
+										if ( hit.entity->behavior == &actPlayer )
+										{
+											messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, makeColorRGB(0, 255, 0), Language::get(6088));
+										}
+									}
+									else if ( hit.entity->setEffect(EFF_MAGIC_GREASE, true, duration, false) )
+									{
+										Uint32 color = makeColorRGB(255, 0, 0);
+										if ( hit.entity->behavior == &actPlayer )
+										{
+											messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, color, Language::get(6245));
+										}
+									}
+								}
+
+								hit.entity->updateEntityOnHit(parent, alertTarget);
 							}
 							if ( spell->ID == SPELL_SLIME_TAR )
 							{
@@ -3524,7 +3716,13 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								}
 							}
 
-							damage = std::max(2, damage);
+							if ( spell->ID == SPELL_GREASE_SPRAY )
+							{
+							}
+							else
+							{
+								damage = std::max(2, damage);
+							}
 							hit.entity->modHP(-damage);
 							magicOnEntityHit(parent, my, hit.entity, hitstats, preResistanceDamage, damage, oldHP, spell ? spell->ID : SPELL_NONE);
 							magicTrapOnHit(parent, hit.entity, hitstats, oldHP, spell ? spell->ID : SPELL_NONE);
@@ -3535,21 +3733,24 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								parent->killedByMonsterObituary(hit.entity);
 							}
 
-							// update enemy bar for attacker
-							if ( !strcmp(hitstats->name, "") )
+							if ( damage > 0 )
 							{
-								updateEnemyBar(parent, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP,
-									false, dmgGib);
-							}
-							else
-							{
-								updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP,
-									false, dmgGib);
-							}
-							if ( oldHP > 0 && hitstats->HP <= 0 && parent )
-							{
-								parent->awardXP(hit.entity, true, true);
-								spawnBloodVialOnMonsterDeath(hit.entity, hitstats, parent);
+								// update enemy bar for attacker
+								if ( !strcmp(hitstats->name, "") )
+								{
+									updateEnemyBar(parent, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP,
+										false, dmgGib);
+								}
+								else
+								{
+									updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP,
+										false, dmgGib);
+								}
+								if ( oldHP > 0 && hitstats->HP <= 0 && parent )
+								{
+									parent->awardXP(hit.entity, true, true);
+									spawnBloodVialOnMonsterDeath(hit.entity, hitstats, parent);
+								}
 							}
 						}
 						else if ( hit.entity->behavior == &actDoor || hit.entity->behavior == &actIronDoor )
@@ -5118,6 +5319,19 @@ void actMagicParticle(Entity* my)
 				//list_RemoveNode(my->mynode);
 				//return;
 			}
+		}
+	}
+	else if ( my->sprite == 1787 || (my->sprite == 245 && my->flags[SPRITE]) )
+	{
+		// grease droplet
+		my->vel_z += 0.04;
+		my->scalex -= std::max(0.01, my->scalex * 0.05);
+		my->scaley -= std::max(0.01, my->scaley * 0.05);
+		my->scalez -= std::max(0.01, my->scalez * 0.05);
+		if ( my->z >= 8.0 )
+		{
+			list_RemoveNode(my->mynode);
+			return;
 		}
 	}
 	else if ( my->sprite == 1479 )
@@ -7064,6 +7278,10 @@ void actParticleTimer(Entity* my)
 						sound = 169;
 						spellID = SPELL_SLIME_METAL;
 						break;
+					case 245:
+						sound = 169;
+						spellID = SPELL_GREASE_SPRAY;
+						break;
 					default:
 						break;
 					}
@@ -7124,6 +7342,17 @@ void actParticleTimer(Entity* my)
 						entity->vel_x = vel * cos(entity->yaw) + parent->vel_x;
 						entity->vel_y = vel * sin(entity->yaw) + parent->vel_y;
 						entity->vel_z = -.5;
+
+						if ( entity->behavior == &actGib && spellID == SPELL_GREASE_SPRAY )
+						{
+							if ( multiplayer != CLIENT )
+							{
+								if ( my->ticks % 5 == 0 )
+								{
+									entity->actGibHitGroundEvent = 1;
+								}
+							}
+						}
 						if ( entity->behavior == &actGib )
 						{
 							if ( my->ticks % 5 == 0 )
@@ -7148,10 +7377,17 @@ void actParticleTimer(Entity* my)
 							{
 								elementNode = element->elements.first;
 								element = (spellElement_t*)elementNode->element;
-								element->damage = 2;
-								if ( Stat* stats = parent->getStats() )
+								if ( spellID == SPELL_GREASE_SPRAY )
 								{
-									element->damage += stats->getProficiency(PRO_MAGIC) / 10;
+									element->damage = 0;
+								}
+								else
+								{
+									element->damage = 2;
+									if ( Stat* stats = parent->getStats() )
+									{
+										element->damage += stats->getProficiency(PRO_MAGIC) / 10;
+									}
 								}
 								element->mana = 5;
 							}
@@ -7399,6 +7635,8 @@ void actParticleTimer(Entity* my)
 										{
 											if ( entity->behavior == &actDoor
 												|| entity->behavior == &::actIronDoor
+												|| entity->behavior == &actBell
+												|| entity->behavior == &actGreasePuddleSpawner
 												|| entity->behavior == &::actFurniture || entity->behavior == &::actChest
 												|| (entity->isDamageableCollider() && entity->isColliderDamageableByMagic()) )
 											{
@@ -7611,14 +7849,10 @@ void actParticleTimer(Entity* my)
 										{
 											continue;
 										}
-										bool mimic = false;
+										bool mimic = entity->isInertMimic();
 										if ( Stat* stats = entity->getStats() )
 										{
-											if ( stats->type == MIMIC )
-											{
-												mimic = true;
-											}
-											else
+											if ( !mimic )
 											{
 												continue;
 											}
@@ -7655,6 +7889,226 @@ void actParticleTimer(Entity* my)
 				else
 				{
 					PARTICLE_LIFE = 0;
+				}
+			}
+			else if ( my->particleTimerCountdownAction == PARTICLE_TIMER_ACTION_BOOBY_TRAP )
+			{
+				if ( !my->light )
+				{
+					my->light = addLight(my->x / 16, my->y / 16, "magic_purple");
+				}
+				if ( PARTICLE_LIFE == 7 )
+				{
+					if ( multiplayer != CLIENT )
+					{
+						Entity* target = uidToEntity(my->particleTimerTarget);
+						if ( target )
+						{
+							Entity* caster = uidToEntity(my->parent);
+							if ( !caster )
+							{
+								caster = my;
+							}
+
+							if ( target->behavior == &actDoor )
+							{
+								target->doorHandleDamageMagic(target->doorHealth, *my, caster);
+							}
+							else if ( target->behavior == &::actChest || target->getMonsterTypeFromSprite() == MIMIC )
+							{
+								target->chestHandleDamageMagic(my->particleTimerVariable1, *my, caster);
+							}
+							else if ( target->isDamageableCollider() )
+							{
+								target->colliderHandleDamageMagic(target->colliderCurrentHP, *my, caster);
+							}
+							else if ( target->behavior == &::actFurniture )
+							{
+								target->furnitureHandleDamageMagic(target->furnitureHealth, *my, caster);
+							}
+						}
+					}
+				}
+				if ( PARTICLE_LIFE == 5 )
+				{
+					if ( multiplayer != CLIENT )
+					{
+						spawnExplosion(my->x, my->y, my->z);
+						int trapResist = 0;
+						int resistance = 0;
+						DamageGib dmgGib = DMG_DEFAULT;
+						real_t damageMultiplier = 1.0;
+						Entity* caster = uidToEntity(my->parent);
+						if ( !caster )
+						{
+							caster = my;
+						}
+
+						Entity* target = uidToEntity(my->particleTimerTarget);
+
+						std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 2);
+						for ( auto it : entLists )
+						{
+							node_t* node;
+							for ( node = it->first; node != nullptr; node = node->next )
+							{
+								Entity* entity = (Entity*)node->element;
+								if ( entityDist(my, entity) > 32.0 )
+								{
+									continue;
+								}
+								if ( entity == target || entity == my )
+								{
+									continue;
+								}
+								bool mimic = entity->isInertMimic();
+								if ( caster->getStats() )
+								{
+									if ( svFlags & SV_FLAG_FRIENDLYFIRE )
+									{
+										if ( caster->checkFriend(entity) )
+										{
+											continue;
+										}
+									}
+								}
+
+								real_t tangent = atan2(entity->y - my->y, entity->x - my->x);
+								bool oldPassable = entity->flags[PASSABLE];
+								if ( entity->behavior == &actGreasePuddleSpawner )
+								{
+									entity->flags[PASSABLE] = false;
+								}
+								real_t d = lineTraceTarget(my, my->x, my->y, tangent, 32.0, 0, false, entity);
+								entity->flags[PASSABLE] = oldPassable;
+								if ( hit.entity != entity )
+								{
+									continue;
+								}
+
+								int damage = my->particleTimerVariable1;
+								if ( (entity->behavior == &actMonster && !mimic) || entity->behavior == &actPlayer )
+								{
+									if ( Stat* stats = entity->getStats() )
+									{
+										if ( caster && caster->getStats() )
+										{
+											if ( entity->flags[BURNING] )
+											{
+												stats->burningInflictedBy = caster->getUID();
+
+												bool alertTarget = true;
+												if ( caster->behavior == &actMonster && caster->monsterAllyIndex != -1 && entity->monsterAllyIndex != -1 )
+												{
+													// if we're both allies of players, don't alert the hit target.
+													alertTarget = false;
+												}
+
+												// alert the monster!
+												if ( entity->monsterState != MONSTER_STATE_ATTACK && (stats->type < LICH || stats->type >= SHOPKEEPER) )
+												{
+													if ( alertTarget )
+													{
+														entity->monsterAcquireAttackTarget(*caster, MONSTER_STATE_PATH, true);
+													}
+												}
+
+												// alert other monsters too
+												if ( alertTarget )
+												{
+													entity->alertAlliesOnBeingHit(caster);
+												}
+												entity->updateEntityOnHit(caster, alertTarget);
+											}
+										}
+
+										magicSetResistance(entity, caster, resistance, damageMultiplier, dmgGib, trapResist);
+
+										playSoundEntity(entity, 28, 128);
+										int oldHP = stats->HP;
+
+										if ( stats->getEffectActive(EFF_MAGIC_GREASE) )
+										{
+											damage *= 2;
+										}
+										Sint32 preResistanceDamage = damage;
+										damage *= damageMultiplier;
+										damage /= (1 + (int)resistance);
+										entity->modHP(-damage);
+										if ( damage > 0 )
+										{
+											Entity* gib = spawnGib(entity);
+											serverSpawnGibForClient(gib);
+										}
+										magicOnEntityHit(caster, my, entity, stats, preResistanceDamage, damage, oldHP, my->particleTimerVariable2);
+										magicTrapOnHit(caster, entity, stats, oldHP, my->particleTimerVariable2);
+
+										// write the obituary
+										if ( caster )
+										{
+											caster->killedByMonsterObituary(entity);
+										}
+
+										// update enemy bar for attacker
+										if ( !strcmp(stats->name, "") )
+										{
+											updateEnemyBar(caster, entity, getMonsterLocalizedName(stats->type).c_str(), stats->HP, stats->MAXHP,
+												false, dmgGib);
+										}
+										else
+										{
+											updateEnemyBar(caster, entity, stats->name, stats->HP, stats->MAXHP,
+												false, dmgGib);
+										}
+										if ( oldHP > 0 && stats->HP <= 0 && caster )
+										{
+											caster->awardXP(entity, true, true);
+											spawnBloodVialOnMonsterDeath(entity, stats, caster);
+										}
+
+										entity->SetEntityOnFire(caster);
+										if ( caster )
+										{
+											stats->burningInflictedBy = caster->getUID();
+										}
+									}
+								}
+								else if ( entity->behavior == &actDoor
+									|| entity->behavior == &::actIronDoor )
+								{
+									magicSetResistance(entity, caster, resistance, damageMultiplier, dmgGib, trapResist);
+									entity->doorHandleDamageMagic(damage, *my, caster);
+
+									entity->SetEntityOnFire(caster);
+								}
+								else if ( entity->behavior == &::actChest || mimic )
+								{
+									magicSetResistance(entity, caster, resistance, damageMultiplier, dmgGib, trapResist);
+									entity->chestHandleDamageMagic(damage, *my, caster);
+
+									entity->SetEntityOnFire(caster);
+								}
+								else if ( entity->isDamageableCollider() && entity->isColliderDamageableByMagic() )
+								{
+									magicSetResistance(entity, caster, resistance, damageMultiplier, dmgGib, trapResist);
+									entity->colliderHandleDamageMagic(damage, *my, caster);
+
+									entity->SetEntityOnFire(caster);
+								}
+								else if ( entity->behavior == &::actFurniture )
+								{
+									magicSetResistance(entity, caster, resistance, damageMultiplier, dmgGib, trapResist);
+									entity->furnitureHandleDamageMagic(damage, *my, caster);
+
+									entity->SetEntityOnFire(caster);
+								}
+								else if ( entity->behavior == &actGreasePuddleSpawner )
+								{
+									entity->SetEntityOnFire(caster);
+								}
+							}
+						}
+					}
 				}
 			}
 			else if ( my->particleTimerCountdownAction == PARTICLE_TIMER_ACTION_LIGHTNING )
@@ -9953,6 +10407,9 @@ void AOEIndicators_t::update()
 	for ( auto& i : indicators )
 	{
 		i.second.lifetime--;
+
+		if ( i.second.castingTarget ) { i.second.lifetime = 1; } // never expire
+
 		if ( i.second.lifetime <= 0 )
 		{
 			toDelete.push_back(i.second.uid);
@@ -10016,7 +10473,7 @@ void AOEIndicators_t::Indicator_t::updateIndicator()
 	int y = 0;
 
 	const int ringSize = 1;
-	const int gradientSize = 8;
+	const int gradientSize = gradient;
 	int ring = radius - ringSize;
 	int center = size / 2;
 	//for ( int r = std::max(0, radius - gradientSize); r <= radius; r += 1 )
@@ -10075,6 +10532,8 @@ void AOEIndicators_t::Indicator_t::updateIndicator()
 		alpha *= 0.9;
 		indicatorColor = makeColor(red, green, blue, alpha);
 	}
+
+	bool circle = !castingTarget;
 	for ( real_t rad = std::max(0, radius - gradientSize) + 0.0; rad <= radius; rad += 0.5 )
 	{
 		Uint32 color = 0;
@@ -10092,6 +10551,81 @@ void AOEIndicators_t::Indicator_t::updateIndicator()
 			color = makeColor(red * .8, green * .8, blue * .8, alpha);
 		}
 
+		if ( !circle )
+		{
+			real_t radius = rad + .5;
+			real_t r2 = radius * radius;
+			int dist = radius;// floor(radius * sqrt(0.5));
+			for ( int r = 0; r <= dist; r++ ) {
+				int d = radius;//floor(sqrt(r2 - r * r));
+				if ( !(center - d >= 0 && center + d < size) )
+				{
+					continue;
+				}
+				if ( !(center - r >= 0 && center + r < size) )
+				{
+					continue;
+				}
+				if ( d < 8 )
+				{
+					Uint8 red, green, blue, alpha;
+					getColor(color, &red, &green, &blue, &alpha);
+					Uint8 prevAlpha = alpha;
+					alpha *= d / 8.0;
+					color = makeColor(red, green, blue, alpha);
+
+					putPixel(surfaceNew, center + d, center + r, color);
+					putPixel(surfaceNew, center + d, center - r, color);
+
+					putPixel(surfaceNew, center - d, center + r, color);
+					putPixel(surfaceNew, center - d, center - r, color);
+
+					putPixel(surfaceNew, center + r, center + d, color);
+					putPixel(surfaceNew, center - r, center + d, color);
+
+					putPixel(surfaceNew, center + r, center - d, color);
+					putPixel(surfaceNew, center - r, center - d, color);
+
+					color = makeColor(red, green, blue, prevAlpha);
+					continue;
+				}
+				if ( r < 8 )
+				{
+					Uint8 red, green, blue, alpha;
+					getColor(color, &red, &green, &blue, &alpha);
+					Uint8 prevAlpha = alpha;
+					alpha *= r / 8.0;
+					color = makeColor(red, green, blue, alpha);
+
+					putPixel(surfaceNew, center + d, center + r, color);
+					putPixel(surfaceNew, center + d, center - r, color);
+
+					putPixel(surfaceNew, center - d, center + r, color);
+					putPixel(surfaceNew, center - d, center - r, color);
+
+					putPixel(surfaceNew, center + r, center + d, color);
+					putPixel(surfaceNew, center - r, center + d, color);
+
+					putPixel(surfaceNew, center + r, center - d, color);
+					putPixel(surfaceNew, center - r, center - d, color);
+
+					color = makeColor(red, green, blue, prevAlpha);
+					continue;
+				}
+				putPixel(surfaceNew, center + d, center + r, color);
+				putPixel(surfaceNew, center + d, center - r, color);
+
+				putPixel(surfaceNew, center - d, center + r, color);
+				putPixel(surfaceNew, center - d, center - r, color);
+
+				putPixel(surfaceNew, center + r, center + d, color);
+				putPixel(surfaceNew, center - r, center + d, color);
+
+				putPixel(surfaceNew, center + r, center - d, color);
+				putPixel(surfaceNew, center - r, center - d, color);
+			}
+		}
+		else if ( circle )
 		{
 			real_t radius = rad + .5;
 			real_t r2 = radius * radius;
@@ -10222,7 +10756,7 @@ Entity* createParticleAOEIndicator(Entity* parent, real_t x, real_t y, real_t z,
 	entity->flags[ENTITY_SKIP_CULLING] = true; // ignore LOS culling
 	entity->actSpriteUseCustomSurface = AOEIndicators_t::createIndicator(4, size, size * 2 + 4, lifetime);
 	entity->actSpriteFollowUID = uid; // follow parent
-	entity->z += (entity->skill[10] % 100 / 10000.0);
+	entity->z += (entity->actSpriteUseCustomSurface % 100 / 10000.0);
 	entity->setEntityString("aoe_indicator");
 	if ( multiplayer != CLIENT )
 	{
@@ -10667,7 +11201,7 @@ void actParticleFloorMagic(Entity* my)
 				for ( node = it->first; node != nullptr; node = node->next )
 				{
 					Entity* entity = (Entity*)node->element;
-					if ( entity->behavior == &actPlayer || entity->behavior == &actMonster )
+					if ( entity->behavior == &actPlayer || (entity->behavior == &actMonster && !entity->isInertMimic()) )
 					{
 						if ( my->actfloorMagicType == ParticleTimerEffect_t::EffectType::EFFECT_LIGHTNING_BOLT )
 						{
@@ -10980,7 +11514,7 @@ void actParticleWave(Entity* my)
 				for ( node = it->first; node != nullptr; node = node->next )
 				{
 					Entity* entity = (Entity*)node->element;
-					if ( entity->behavior == &actPlayer || entity->behavior == &actMonster )
+					if ( entity->behavior == &actPlayer || (entity->behavior == &actMonster && !entity->isInertMimic()) )
 					{
 						real_t yaw = my->yaw + PI / 2;
 						real_t x = my->x + my->focaly * cos(yaw) - 8.0 * cos(yaw + PI / 2);
@@ -11239,6 +11773,51 @@ void actParticleWave(Entity* my)
 		{
 			my->skill[3] = 0;
 		}
-
 	}
+}
+
+Entity* createParticleBoobyTrapExplode(Entity* caster, real_t x, real_t y)
+{
+	Entity* spellTimer = createParticleTimer(caster, 25, -1);
+	spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_BOOBY_TRAP;
+	spellTimer->particleTimerCountdownSprite = -1;
+	spellTimer->x = x;
+	spellTimer->y = y;
+
+	Uint32 color = makeColor(255, 0, 255, 255);
+	if ( Entity* fx = createParticleAOEIndicator(spellTimer, spellTimer->x, spellTimer->y, 0.0, TICKS_PER_SECOND, 32) )
+	{
+		fx->actSpriteCheckParentExists = 0;
+		if ( auto indicator = AOEIndicators_t::getIndicator(fx->skill[10]) )
+		{
+			Uint8 r, g, b, a;
+			getColor(color, &r, &g, &b, &a);
+			a *= 0.5;
+			indicator->indicatorColor = makeColor(r, g, b, a);
+			indicator->loop = false;
+			indicator->framesPerTick = 4;
+			indicator->ticksPerUpdate = 1;
+			indicator->delayTicks = 0;
+		}
+	}
+	for ( int i = 0; i < 2; ++i )
+	{
+		if ( Entity* fx = createParticleAOEIndicator(spellTimer, spellTimer->x, spellTimer->y, -7.5, TICKS_PER_SECOND, 32) )
+		{
+			fx->actSpriteCheckParentExists = 0;
+			if ( i == 1 )
+			{
+				fx->pitch = PI;
+			}
+			if ( auto indicator = AOEIndicators_t::getIndicator(fx->skill[10]) )
+			{
+				indicator->indicatorColor = color;
+				indicator->loop = false;
+				indicator->framesPerTick = 4;
+				indicator->ticksPerUpdate = 1;
+				indicator->delayTicks = 15;
+			}
+		}
+	}
+	return spellTimer;
 }

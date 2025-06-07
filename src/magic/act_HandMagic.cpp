@@ -23,10 +23,16 @@
 #include "../ui/MainMenu.hpp"
 #include "../prng.hpp"
 #include "../mod_tools.hpp"
+#include "../collision.hpp"
 
 //The spellcasting animation stages:
-#define CIRCLE 0 //One circle
-#define THROW 1 //Throw spell!
+#define ANIM_SPELL_CIRCLE 0 //One circle
+#define ANIM_SPELL_THROW 1 //Throw spell!
+#define ANIM_SPELL_TOUCH 2
+#define ANIM_SPELL_COMPLETE_SPELL 3
+#define ANIM_SPELL_TOUCH_THROW 4
+#define ANIM_SPELL_COMPLETE_NOCAST 5
+#define ANIM_SPELL_TOUCH_CHARGE 6
 
 spellcasting_animation_manager_t cast_animation[MAXPLAYERS];
 bool overDrawDamageNotify = false;
@@ -47,13 +53,105 @@ void spellcasting_animation_manager_t::resetRangefinder()
 	target_y = 0.0;
 	caster_x = 0.0;
 	caster_y = 0.0;
-	rangefinder = false;
+	targetUid = 0;
+	rangefinder = RANGEFINDER_NONE;
+}
+
+bool spellcasting_animation_manager_t::hideShieldFromBasicCast()
+{
+	if ( player < 0 || player >= MAXPLAYERS ) { return false; }
+	if ( active )
+	{
+		if ( stage == ANIM_SPELL_TOUCH || stage == ANIM_SPELL_TOUCH_THROW || stage == ANIM_SPELL_TOUCH_CHARGE )
+		{
+			return false;
+		}
+		return true;
+	}
+	return false;
+}
+
+void spellcasting_animation_manager_t::executeAttackSpell(bool swingweapon)
+{
+	if ( player < 0 || player >= MAXPLAYERS ) { return; }
+	if ( !spellWaitingAttackInput() )
+	{
+		return;
+	}
+
+	if ( stage == ANIM_SPELL_TOUCH )
+	{
+		if ( swingweapon )
+		{
+			stage = ANIM_SPELL_TOUCH_CHARGE;
+			throw_count = 0;
+		}
+	}
+	else
+	{
+		if ( !swingweapon )
+		{
+			if ( rangefinder == RANGEFINDER_TOUCH_FLOOR_TILE )
+			{
+				stage = ANIM_SPELL_TOUCH_THROW;
+				throw_count = 0;
+			}
+			else if ( rangefinder == RANGEFINDER_TOUCH && uidToEntity(targetUid) )
+			{
+				stage = ANIM_SPELL_TOUCH_THROW;
+				throw_count = 0;
+			}
+			else
+			{
+				stage = ANIM_SPELL_TOUCH;
+				throw_count = 0;
+			}
+			/*else
+			{
+				spellcastingAnimationManager_deactivate(this);
+				messagePlayer(player, MESSAGE_COMBAT, Language::get(6496));
+				playSoundEntityLocal(players[player]->entity, 163, 64);
+			}*/
+		}
+	}
+}
+
+bool spellcasting_animation_manager_t::spellWaitingAttackInput()
+{
+	if ( active && !active_spellbook && (stage == ANIM_SPELL_TOUCH || stage == ANIM_SPELL_TOUCH_CHARGE) )
+	{
+		return true;
+	}
+	return false;
+}
+
+bool spellcasting_animation_manager_t::spellIgnoreAttack()
+{
+	if ( active && !active_spellbook 
+		&& (stage == ANIM_SPELL_COMPLETE_NOCAST	|| stage == ANIM_SPELL_COMPLETE_SPELL || stage == ANIM_SPELL_TOUCH_THROW) )
+	{
+		return true;
+	}
+	return false;
+}
+
+bool rangefinderTargetEnemyType(spell_t& spell, Entity& entity)
+{
+	if ( spell.ID == SPELL_BOOBY_TRAP )
+	{
+		return entity.isDamageableCollider() || entity.behavior == &actFurniture
+			|| entity.behavior == &actChest || entity.behavior == &actDoor || entity.getMonsterTypeFromSprite() == MIMIC;
+	}
+	else
+	{
+		return (entity.behavior == &actMonster && !entity.isInertMimic()) || entity.behavior == &actPlayer;
+	}
 }
 
 void spellcasting_animation_manager_t::setRangeFinderLocation()
 {
 	Entity* caster = uidToEntity(this->caster);
-	rangefinder = false;
+	rangefinder = RANGEFINDER_NONE;
 	if ( !caster )
 	{
 		return;
@@ -69,22 +167,34 @@ void spellcasting_animation_manager_t::setRangeFinderLocation()
 		return;
 	}
 
-	rangefinder = true;
+	rangefinder = spell->rangefinder;
+
+	if ( stage == ANIM_SPELL_TOUCH_THROW )
+	{
+		return;
+	}
+	if ( stage == ANIM_SPELL_TOUCH_CHARGE && targetUid != 0 && uidToEntity(targetUid) )
+	{
+		return;
+	}
 
 	static ConsoleVariable<float> cvar_rangefinderStartZ("/rangefinder_start_z", -2.5);
 	static ConsoleVariable<float> cvar_rangefinderMoveTo("/rangefinder_moveto_z", 0.1);
 	static ConsoleVariable<float> cvar_rangefinderStartZLimit("/rangefinder_start_z_limit", 7.5);
-
-	//real_t startx = cameras[player].x * 16.0;
-	//real_t starty = cameras[player].y * 16.0;
-	//real_t startz = cameras[player].z + (4.5 - cameras[player].z) / 2.0 + *cvar_rangefinderStartZ;
-	//real_t pitch = cameras[player].vang;
-	//const real_t yaw = cameras[player].ang;
+	static ConsoleVariable<bool> cvar_rangefinder_cam("/rangefinder_cam", false);
 	real_t startx = caster->x;
 	real_t starty = caster->y;
 	real_t startz = caster->z;
 	real_t pitch = caster->pitch;
-	const real_t yaw = caster->yaw;
+	real_t yaw = caster->yaw;
+	if ( *cvar_rangefinder_cam )
+	{
+		startx = cameras[player].x * 16.0;
+		starty = cameras[player].y * 16.0;
+		startz = cameras[player].z + (4.5 - cameras[player].z) / 2.0 + *cvar_rangefinderStartZ;
+		pitch = cameras[player].vang;
+		yaw = cameras[player].ang;
+	}
 	if ( pitch < 0 || pitch > PI )
 	{
 		pitch = 0;
@@ -101,7 +211,13 @@ void spellcasting_animation_manager_t::setRangeFinderLocation()
 		const int index_x = static_cast<int>(startx) >> 4;
 		const int index_y = static_cast<int>(starty) >> 4;
 		index = (index_y)*MAPLAYERS + (index_x)*MAPLAYERS * map.height;
-		if ( map.tiles[index] && !map.tiles[OBSTACLELAYER + index] )
+
+		if ( index_x < 0 || index_x >= map.width || index_y < 0 || index_y >= map.height )
+		{
+			break;
+		}
+
+		if ( (map.tiles[index] || rangefinder != RANGEFINDER_TARGET) && !map.tiles[OBSTACLELAYER + index] )
 		{
 			// store the last known good coordinate
 			previousx = startx;// + 16 * cos(yaw);
@@ -111,7 +227,7 @@ void spellcasting_animation_manager_t::setRangeFinderLocation()
 		{
 			break;
 		}
-		if ( pow(startx - cameras[player].x * 16.0, 2) + pow(starty - cameras[player].y * 16.0, 2) > (spell->distance * spell->distance) )
+		if ( pow(startx - caster->x, 2) + pow(starty - caster->y, 2) > (spell->distance * spell->distance) )
 		{
 			// break if distance reached
 			break;
@@ -122,6 +238,141 @@ void spellcasting_animation_manager_t::setRangeFinderLocation()
 	target_y = previousy;
 	caster_x = caster->x;
 	caster_y = caster->y;
+
+	if ( rangefinder == RANGEFINDER_TOUCH )
+	{
+		real_t maxDist = spell->distance + 8.0;
+		real_t minDist = 4.0;
+		real_t rangeFinderDist = std::max(0.0, sqrt(pow(startx - caster->x, 2) + pow(starty - caster->y, 2)) - 8.0);
+
+		targetUid = 0;
+
+		bool interactBonusWidthEnemies = true;
+		bool interactBonusWidthAllies = false;
+		list_t* entityList = map.creatures;
+		if ( spell->ID == SPELL_BOOBY_TRAP )
+		{
+			entityList = map.entities;
+		}
+		else if ( spell->ID == SPELL_HEAL_OTHER )
+		{
+			interactBonusWidthAllies = true;
+			interactBonusWidthEnemies = false;
+		}
+
+		struct EntitySpellTargetLocation
+		{
+			Entity* entity = nullptr;
+			real_t dist = 0.0;
+			real_t crossDist = 0.0;
+		};
+
+		auto compFunc = [](EntitySpellTargetLocation& lhs, EntitySpellTargetLocation& rhs)
+		{
+			if ( abs(lhs.crossDist - rhs.crossDist) <= 0.00001 )
+			{
+				return lhs.dist > rhs.dist;
+			}
+			return lhs.crossDist > rhs.crossDist;
+		};
+		std::priority_queue<EntitySpellTargetLocation, std::vector<EntitySpellTargetLocation>, decltype(compFunc)> entitiesInRange(compFunc);
+		for ( auto node = entityList->first; node; node = node->next ) // TODO - grab a shortened list from somewhere else iterating entities
+		{
+			if ( Entity* entity = (Entity*)node->element )
+			{
+				if ( rangefinderTargetEnemyType(*spell, *entity) )
+				{
+					real_t dist = entityDist(caster, entity);
+					if ( dist > minDist && dist < maxDist 
+						/*&& rangeFinderDist >= dist*/
+						)
+					{
+						real_t tangent = atan2(entity->y - caster->y, entity->x - caster->x);
+						while ( tangent >= 2 * PI )
+						{
+							tangent -= 2 * PI;
+						}
+						while ( tangent < 0 )
+						{
+							tangent += 2 * PI;
+						}
+						real_t playerYaw = caster->yaw;
+						while ( playerYaw >= 2 * PI )
+						{
+							playerYaw -= 2 * PI;
+						}
+						while ( playerYaw < 0 )
+						{
+							playerYaw += 2 * PI;
+						}
+
+						real_t interactAngle = PI / 8;
+						bool bonusRange = false;
+						if ( spell->ID == SPELL_BOOBY_TRAP )
+						{
+							bonusRange = true;
+						}
+						else if ( interactBonusWidthAllies && (entity->behavior == &actPlayer
+							|| (entity->behavior == &actMonster && entity->monsterAllyGetPlayerLeader())) )
+						{
+							// monsters have wider interact angle for aim assist
+							bonusRange = true;
+							
+						}
+						else if ( interactBonusWidthEnemies && entity->behavior == &actMonster
+							&& !(entity->isInertMimic())
+							&& ((multiplayer != CLIENT && entity->checkEnemy(caster))
+								|| (multiplayer == CLIENT
+									&& !entity->monsterAllyGetPlayerLeader() && !monsterally[entity->getMonsterTypeFromSprite()][caster->getStats()->type])) )
+						{
+							// monsters have wider interact angle for aim assist
+							bonusRange = true;
+						}
+						
+						if ( bonusRange )
+						{
+							interactAngle = (PI / 6);
+							if ( dist > STRIKERANGE )
+							{
+								// for every x units, shrink the selection angle
+								int units = static_cast<int>(dist / 16);
+								interactAngle -= (units * PI / 64);
+								interactAngle = std::max(interactAngle, PI / 32);
+							}
+						}
+						else
+						{
+							if ( dist > STRIKERANGE )
+							{
+								// for every x units, shrink the selection angle
+								int units = static_cast<int>(dist / 8);
+								interactAngle -= (units * PI / 64);
+								interactAngle = std::max(interactAngle, PI / 64);
+							}
+						}
+
+						if ( (abs(tangent - playerYaw) < (interactAngle)) || (abs(tangent - playerYaw) > (2 * PI - interactAngle)) )
+						{
+							Entity* ohit = hit.entity;
+							lineTraceTarget(caster, caster->x, caster->y, tangent, dist, 0, false, entity);
+							if ( hit.entity == entity )
+							{
+								real_t crossDist = abs(dist * sin(tangent - playerYaw));
+								entitiesInRange.push(EntitySpellTargetLocation{entity, dist, crossDist});
+							}
+							hit.entity = ohit;
+						}
+					}
+				}
+			}
+		}
+
+		if ( entitiesInRange.size() )
+		{
+			targetUid = entitiesInRange.top().entity->getUID();
+			//messagePlayer(0, MESSAGE_DEBUG, "Dist: %.2f, Cross: %.2f", entitiesInRange.top().dist, entitiesInRange.top().crossDist);
+		}
+	}
 }
 
 void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, Uint32 caster_uid, spell_t* spell, bool usingSpellbook)
@@ -167,7 +418,7 @@ void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, 
 	{
 		animation_manager->active_spellbook = true;
 	}
-	animation_manager->stage = CIRCLE;
+	animation_manager->stage = ANIM_SPELL_CIRCLE;
 
 	//Make the HUDWEAPON disappear, or somesuch?
 	players[player]->hud.magicLeftHand->flags[INVISIBLE_DITHER] = false;
@@ -196,8 +447,11 @@ void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, 
 	animation_manager->lefthand_movey = 0;
 	int spellCost = getCostOfSpell(spell, caster);
 	animation_manager->circle_count = 0;
+	animation_manager->throw_count = 0;
+	animation_manager->active_count = 0;
 	animation_manager->times_to_circle = (spellCost / 10) + 1; //Circle once for every 10 mana the spell costs.
 	animation_manager->mana_left = spellCost;
+	animation_manager->mana_cost = spellCost;
 	animation_manager->consumeMana = true;
 	if ( spell->ID == SPELL_FORCEBOLT && caster->skillCapstoneUnlockedEntity(PRO_SPELLCASTING) )
 	{
@@ -247,6 +501,8 @@ void spellcastingAnimationManager_deactivate(spellcasting_animation_manager_t* a
 	animation_manager->active = false;
 	animation_manager->active_spellbook = false;
 	animation_manager->stage = 0;
+	animation_manager->circle_count = 0;
+	animation_manager->active_count = 0;
 	animation_manager->resetRangefinder();
 
 	if ( animation_manager->player == -1 )
@@ -272,9 +528,10 @@ void spellcastingAnimationManager_deactivate(spellcasting_animation_manager_t* a
 	}
 }
 
-void spellcastingAnimationManager_completeSpell(spellcasting_animation_manager_t* animation_manager)
+void spellcastingAnimationManager_completeSpell(spellcasting_animation_manager_t* animation_manager, bool deactivate)
 {
-	if ( animation_manager->rangefinder )
+	if ( animation_manager->rangefinder == SpellRangefinderType::RANGEFINDER_TARGET
+		|| animation_manager->rangefinder == SpellRangefinderType::RANGEFINDER_TOUCH_FLOOR_TILE )
 	{
 		CastSpellProps_t castSpellProps;
 		castSpellProps.caster_x = animation_manager->caster_x;
@@ -283,12 +540,21 @@ void spellcastingAnimationManager_completeSpell(spellcasting_animation_manager_t
 		castSpellProps.target_y = animation_manager->target_y;
 		castSpell(animation_manager->caster, animation_manager->spell, false, false, animation_manager->active_spellbook, &castSpellProps); //Actually cast the spell.
 	}
+	else if ( animation_manager->rangefinder == SpellRangefinderType::RANGEFINDER_TOUCH )
+	{
+		CastSpellProps_t castSpellProps;
+		castSpellProps.targetUID = animation_manager->targetUid;
+		castSpell(animation_manager->caster, animation_manager->spell, false, false, animation_manager->active_spellbook, &castSpellProps); //Actually cast the spell.
+	}
 	else
 	{
 		castSpell(animation_manager->caster, animation_manager->spell, false, false, animation_manager->active_spellbook); //Actually cast the spell.
 	}
 
-	spellcastingAnimationManager_deactivate(animation_manager);
+	if ( deactivate )
+	{
+		spellcastingAnimationManager_deactivate(animation_manager);
+	}
 }
 
 /*
@@ -534,7 +800,7 @@ void actLeftHandMagic(Entity* my)
 		cast_animation[HANDMAGIC_PLAYERNUM].setRangeFinderLocation();
 		switch ( cast_animation[HANDMAGIC_PLAYERNUM].stage)
 		{
-			case CIRCLE:
+			case ANIM_SPELL_CIRCLE:
 				if ( ticks % 5 == 0 && !(players[HANDMAGIC_PLAYERNUM]->entity->skill[3] == 1) )
 				{
 					Entity* entity = spawnGib(my);
@@ -611,18 +877,156 @@ void actLeftHandMagic(Entity* my)
 					if ( cast_animation[HANDMAGIC_PLAYERNUM].circle_count >= cast_animation[HANDMAGIC_PLAYERNUM].times_to_circle)
 						//Finished circling. Time to move on!
 					{
-						cast_animation[HANDMAGIC_PLAYERNUM].stage++;
+						if ( cast_animation[HANDMAGIC_PLAYERNUM].rangefinder == SpellRangefinderType::RANGEFINDER_TOUCH
+							|| cast_animation[HANDMAGIC_PLAYERNUM].rangefinder == SpellRangefinderType::RANGEFINDER_TOUCH_FLOOR_TILE )
+						{
+							cast_animation[HANDMAGIC_PLAYERNUM].stage = ANIM_SPELL_TOUCH;
+						}
+						else
+						{
+							cast_animation[HANDMAGIC_PLAYERNUM].stage = ANIM_SPELL_THROW;
+						}
 					}
 				}
 				break;
-			case THROW:
+			case ANIM_SPELL_THROW:
 				//messagePlayer(HANDMAGIC_PLAYERNUM, "IN THROW");
 				//TODO: Throw animation! Or something.
-				cast_animation[HANDMAGIC_PLAYERNUM].stage++;
+				cast_animation[HANDMAGIC_PLAYERNUM].stage = ANIM_SPELL_COMPLETE_SPELL;
 				break;
+			case ANIM_SPELL_TOUCH_CHARGE:
+			{
+				my->flags[INVISIBLE] = true;
+				my->flags[INVISIBLE_DITHER] = false;
+
+				auto& anim = cast_animation[HANDMAGIC_PLAYERNUM];
+				if ( anim.throw_count == 0 )
+				{
+					anim.lefthand_movex = 0.f;
+					anim.lefthand_movey = 0.f;
+					anim.lefthand_angle = 0.0;
+					anim.vibrate_x = 0.f;
+					anim.vibrate_y = 0.f;
+				}
+				if ( ticks % 2 == 0 )
+				{
+					anim.lefthand_movex -= anim.vibrate_x;
+					anim.lefthand_movey -= anim.vibrate_y;
+					anim.vibrate_x = (local_rng.rand() % 30 - 10) / 150.f;
+					anim.vibrate_y = (local_rng.rand() % 30 - 10) / 150.f;
+					anim.lefthand_movex += anim.vibrate_x;
+					anim.lefthand_movey += anim.vibrate_y;
+				}
+				anim.lefthand_movex = std::max(-1.f, anim.lefthand_movex - 0.1f);
+				anim.throw_count++;
+				break;
+			}
+			case ANIM_SPELL_TOUCH_THROW:
+			{
+				my->flags[INVISIBLE] = true;
+				my->flags[INVISIBLE_DITHER] = false;
+
+				auto& anim = cast_animation[HANDMAGIC_PLAYERNUM];
+				if ( anim.throw_count == 0 )
+				{
+					spellcastingAnimationManager_completeSpell(&cast_animation[HANDMAGIC_PLAYERNUM], false);
+					anim.lefthand_movex = 5.f;
+					anim.lefthand_angle = 0.0;
+				}
+				else if ( anim.throw_count < 5 )
+				{
+					anim.lefthand_angle = std::min(anim.lefthand_angle + 0.025f, 1.f);
+				}
+				else
+				{
+					float setpointDiff = std::max(.05f, (1.f - anim.lefthand_angle) / 10.f);
+					anim.lefthand_angle += setpointDiff;
+					anim.lefthand_angle = std::min(1.f, anim.lefthand_angle);
+
+				}
+
+				if ( anim.throw_count > 0 )
+				{
+					if ( anim.lefthand_angle >= 1.f )
+					{
+						anim.lefthand_movex = std::max(-2.5f, anim.lefthand_movex - 0.75f);
+					}
+					else
+					{
+						anim.lefthand_movex = std::max(0.0, 2.5f + -2.5f * sin((-PI / 2) + (anim.lefthand_angle) * PI));
+					}
+				}
+
+
+				if ( /*anim.throw_count >= 20 ||*/ anim.lefthand_movex <= -2.5f )
+				{
+					if ( stats[HANDMAGIC_PLAYERNUM]->weapon )
+					{
+						players[HANDMAGIC_PLAYERNUM]->hud.weaponSwitch = true;
+					}
+					spellcastingAnimationManager_deactivate(&cast_animation[HANDMAGIC_PLAYERNUM]);
+				}
+				anim.throw_count++;
+				break;
+			}
+			case ANIM_SPELL_TOUCH:
+			{
+				my->flags[INVISIBLE] = true;
+				my->flags[INVISIBLE_DITHER] = false;
+
+				cast_animation[HANDMAGIC_PLAYERNUM].lefthand_angle += HANDMAGIC_CIRCLE_SPEED / 4;
+				cast_animation[HANDMAGIC_PLAYERNUM].lefthand_movex = cos(cast_animation[HANDMAGIC_PLAYERNUM].lefthand_angle) * HANDMAGIC_CIRCLE_RADIUS * 0.25;
+				cast_animation[HANDMAGIC_PLAYERNUM].lefthand_movey = sin(cast_animation[HANDMAGIC_PLAYERNUM].lefthand_angle) * HANDMAGIC_CIRCLE_RADIUS * 0.25;
+				if ( cast_animation[HANDMAGIC_PLAYERNUM].lefthand_angle >= 2 * PI )   //Completed one loop.
+				{
+					cast_animation[HANDMAGIC_PLAYERNUM].lefthand_angle = 0;
+					cast_animation[HANDMAGIC_PLAYERNUM].circle_count++;
+				}
+
+				bool levitating = isLevitating(stats[HANDMAGIC_PLAYERNUM]);
+
+				//Water walking boots
+				bool waterwalkingboots = false;
+				if ( skillCapstoneUnlocked(HANDMAGIC_PLAYERNUM, PRO_SWIMMING) )
+				{
+					waterwalkingboots = true;
+				}
+				if ( stats[HANDMAGIC_PLAYERNUM]->shoes != NULL )
+				{
+					if ( stats[HANDMAGIC_PLAYERNUM]->shoes->type == IRON_BOOTS_WATERWALKING )
+					{
+						waterwalkingboots = true;
+					}
+				}
+
+				//Check if swimming.
+				if ( !waterwalkingboots && !levitating )
+				{
+					bool swimming = false;
+					int x = std::min<int>(std::max<int>(0, floor(players[HANDMAGIC_PLAYERNUM]->entity->x / 16)), map.width - 1);
+					int y = std::min<int>(std::max<int>(0, floor(players[HANDMAGIC_PLAYERNUM]->entity->y / 16)), map.height - 1);
+					if ( swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] || lavatiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] )
+					{
+						swimming = true;
+					}
+					if ( swimming )
+					{
+						//Can't cast spells while swimming if not levitating or water walking.
+						messagePlayer(HANDMAGIC_PLAYERNUM, MESSAGE_MISC, Language::get(410));
+
+						playSoundEntityLocal(players[HANDMAGIC_PLAYERNUM]->entity, 163, 64);
+						spellcastingAnimationManager_deactivate(&cast_animation[HANDMAGIC_PLAYERNUM]);
+					}
+				}
+			}
+				break;
+			case ANIM_SPELL_COMPLETE_NOCAST:
+				spellcastingAnimationManager_deactivate(&cast_animation[HANDMAGIC_PLAYERNUM]);
+				break;
+			case ANIM_SPELL_COMPLETE_SPELL:
 			default:
 				//messagePlayer(HANDMAGIC_PLAYERNUM, "DEFAULT CASE");
-				spellcastingAnimationManager_completeSpell(&cast_animation[HANDMAGIC_PLAYERNUM]);
+				spellcastingAnimationManager_completeSpell(&cast_animation[HANDMAGIC_PLAYERNUM], true);
 				break;
 		}
 	}
@@ -670,6 +1074,77 @@ void actLeftHandMagic(Entity* my)
 	//my->z = (camera.z*.5-players[HANDMAGIC_PLAYERNUM]->z)+7+HUDWEAPON_MOVEZ; //TODO: NOT a PLAYERSWAP
 	my->x += cast_animation[HANDMAGIC_PLAYERNUM].lefthand_movex;
 	my->y += cast_animation[HANDMAGIC_PLAYERNUM].lefthand_movey;
+
+	if ( cast_animation[HANDMAGIC_PLAYERNUM].active )
+	{
+		if ( cast_animation[HANDMAGIC_PLAYERNUM].stage == ANIM_SPELL_TOUCH
+			|| cast_animation[HANDMAGIC_PLAYERNUM].stage == ANIM_SPELL_TOUCH_CHARGE )
+		{
+			float x = my->x + 2.5;
+			float y = -my->y;
+			float z = my->z - 0.0;
+			// boosty boost
+			Uint32 castLoopDuration = 4 * TICKS_PER_SECOND / 10;
+			for ( int i = 1; i < 3 && !(players[HANDMAGIC_PLAYERNUM]->entity->skill[3] == 1); ++i )
+			{
+				//if ( i == 1 || i == 3 ) { continue; }
+				Uint32 animTick = cast_animation[HANDMAGIC_PLAYERNUM].active_count >= castLoopDuration
+					? castLoopDuration
+					: cast_animation[HANDMAGIC_PLAYERNUM].active_count;
+
+				Entity* entity = newEntity(1243, 1, map.entities, nullptr); //Particle entity.
+				entity->x = x - 0.01 * (5 + local_rng.rand() % 11);
+				entity->y = y - 0.01 * (5 + local_rng.rand() % 11);
+				entity->z = z - 0.01 * (10 + local_rng.rand() % 21);
+				if ( i == 1 )
+				{
+					entity->y += -2;
+					entity->y += -2 * sin(2 * PI * (animTick % 40) / 40.f);
+				}
+				else
+				{
+					entity->y += -(-2);
+					entity->y -= -2 * sin(2 * PI * (animTick % 40) / 40.f);
+				}
+
+				entity->focalz = -2;
+
+				real_t scale = 0.05f;
+				scale += (animTick) * 0.025f;
+				scale = std::min(scale, 0.5);
+
+				entity->scalex = scale;
+				entity->scaley = scale;
+				entity->scalez = scale;
+				entity->sizex = 1;
+				entity->sizey = 1;
+				entity->yaw = 0;
+				entity->roll = i * 2 * PI / 3;
+				entity->pitch = PI + ((animTick % 40) / 40.f) * 2 * PI;
+				entity->ditheringDisabled = true;
+				entity->flags[PASSABLE] = true;
+				entity->flags[NOUPDATE] = true;
+				entity->flags[UNCLICKABLE] = true;
+				entity->flags[UPDATENEEDED] = false;
+				entity->flags[OVERDRAW] = true;
+				entity->lightBonus = vec4(0.25f, 0.25f,
+					0.25f, 0.f);
+				entity->behavior = &actHUDMagicParticle;
+				entity->vel_z = 0;
+				entity->skill[11] = HANDMAGIC_PLAYERNUM;
+				if ( multiplayer != CLIENT )
+				{
+					entity_uids--;
+				}
+				entity->setUID(-3);
+			}
+			++cast_animation[HANDMAGIC_PLAYERNUM].active_count;
+		}
+	}
+	else
+	{
+		cast_animation[HANDMAGIC_PLAYERNUM].active_count = 0;
+	}
 }
 
 void actRightHandMagic(Entity* my)
@@ -903,7 +1378,7 @@ void actRightHandMagic(Entity* my)
 	{
 		switch ( cast_animation[HANDMAGIC_PLAYERNUM].stage)
 		{
-			case CIRCLE:
+			case ANIM_SPELL_CIRCLE:
 				if ( ticks % 5 == 0 && !(players[HANDMAGIC_PLAYERNUM]->entity->skill[3] == 1) )
 				{
 					//messagePlayer(0, "Pingas!");
@@ -931,7 +1406,9 @@ void actRightHandMagic(Entity* my)
 					entity->skill[11] = HANDMAGIC_PLAYERNUM;
 				}
 				break;
-			case THROW:
+			case ANIM_SPELL_THROW:
+				break;
+			case ANIM_SPELL_TOUCH:
 				break;
 			default:
 				break;
@@ -974,6 +1451,9 @@ void actRightHandMagic(Entity* my)
 }
 
 #define HANDMAGIC_RANGEFINDER_ALPHA my->fskill[0]
+#define HANDMAGIC_RANGEFINDER_COLOR_R my->fskill[1]
+#define HANDMAGIC_RANGEFINDER_COLOR_G my->fskill[2]
+#define HANDMAGIC_RANGEFINDER_COLOR_B my->fskill[3]
 void actMagicRangefinder(Entity* my)
 {
 	my->flags[INVISIBLE_DITHER] = false;
@@ -992,6 +1472,10 @@ void actMagicRangefinder(Entity* my)
 	if ( players[HANDMAGIC_PLAYERNUM] == nullptr || players[HANDMAGIC_PLAYERNUM]->entity == nullptr
 		|| (players[HANDMAGIC_PLAYERNUM]->entity && players[HANDMAGIC_PLAYERNUM]->entity->playerCreatedDeathCam != 0) )
 	{
+		if ( auto indicator = AOEIndicators_t::getIndicator(my->actSpriteUseCustomSurface) )
+		{
+			indicator->expired = true;
+		}
 		players[HANDMAGIC_PLAYERNUM]->hud.magicRangefinder = nullptr;
 		list_RemoveNode(my->mynode);
 		return;
@@ -999,7 +1483,7 @@ void actMagicRangefinder(Entity* my)
 
 	auto& cast_anim = cast_animation[HANDMAGIC_PLAYERNUM];
 
-	if ( !(cast_anim.active || cast_anim.active_spellbook) || !cast_anim.rangefinder )
+	if ( !(cast_anim.active || cast_anim.active_spellbook) || !cast_anim.rangefinder || cast_anim.stage == ANIM_SPELL_TOUCH_THROW )
 	{
 		my->flags[INVISIBLE] = true;
 		return;
@@ -1012,11 +1496,22 @@ void actMagicRangefinder(Entity* my)
 	my->sprite = 222;
 	my->x = cast_anim.target_x;
 	my->y = cast_anim.target_y;
+	if ( cast_anim.targetUid != 0 && cast_anim.rangefinder == RANGEFINDER_TOUCH )
+	{
+		if ( Entity* target = uidToEntity(cast_anim.targetUid) )
+		{
+			my->x = target->x;
+			my->y = target->y;
+		}
+	}
 	my->z = 7.499;
-	static ConsoleVariable<float> cvar_player_cast_indicator_scale("/player_cast_indicator_scale", 0.025);
-	static ConsoleVariable<float> cvar_player_cast_indicator_rotate("/player_cast_indicator_rotate", 0.025);
+	static ConsoleVariable<float> cvar_player_cast_indicator_scale("/player_cast_indicator_scale", 1.0);
+	static ConsoleVariable<float> cvar_player_cast_indicator_rotate("/player_cast_indicator_rotate", 0.0);
 	static ConsoleVariable<float> cvar_player_cast_indicator_alpha("/player_cast_indicator_alpha", 0.5);
 	static ConsoleVariable<float> cvar_player_cast_indicator_alpha_glow("/player_cast_indicator_alpha_glow", 0.0625);
+	static ConsoleVariable<float> cvar_player_cast_indicator_r("/player_cast_indicator_r", 1.0);
+	static ConsoleVariable<float> cvar_player_cast_indicator_g("/player_cast_indicator_g", 1.0);
+	static ConsoleVariable<float> cvar_player_cast_indicator_b("/player_cast_indicator_b", 1.0);
 	my->ditheringDisabled = true;
 	my->flags[SPRITE] = true;
 	my->flags[PASSABLE] = true;
@@ -1027,8 +1522,28 @@ void actMagicRangefinder(Entity* my)
 	my->scaley = *cvar_player_cast_indicator_scale;
 	my->pitch = 0;
 	my->roll = -PI / 2;
+	my->flags[ENTITY_SKIP_CULLING] = true;
 
+	HANDMAGIC_RANGEFINDER_COLOR_R = *cvar_player_cast_indicator_r;
+	HANDMAGIC_RANGEFINDER_COLOR_G = *cvar_player_cast_indicator_g;
+	HANDMAGIC_RANGEFINDER_COLOR_B = *cvar_player_cast_indicator_b;
 	HANDMAGIC_RANGEFINDER_ALPHA = *cvar_player_cast_indicator_alpha + 
 		*cvar_player_cast_indicator_alpha_glow * sin(2 * PI * (my->ticks % TICKS_PER_SECOND) / (real_t)(TICKS_PER_SECOND));
 	my->yaw += *cvar_player_cast_indicator_rotate;
+
+	if ( !AOEIndicators_t::getIndicator(my->actSpriteUseCustomSurface) )
+	{
+		int size = 20;
+		my->actSpriteUseCustomSurface = AOEIndicators_t::createIndicator(4, size, size * 2 + 4, -1);
+	}
+	if ( auto indicator = AOEIndicators_t::getIndicator(my->actSpriteUseCustomSurface) )
+	{
+		indicator->gradient = 6;
+		indicator->radiusMin = 8;
+		indicator->castingTarget = true;
+		indicator->loop = true;
+		indicator->framesPerTick = 2;
+		indicator->ticksPerUpdate = 4;
+		indicator->delayTicks = 0;
+	}
 }

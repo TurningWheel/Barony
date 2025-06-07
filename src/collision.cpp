@@ -516,7 +516,7 @@ bool Entity::collisionProjectileMiss(Entity* parent, Entity* projectile)
 		}
 	}
 
-	if ( behavior == &actBell )
+	if ( behavior == &actBell || behavior == &actGreasePuddleSpawner )
 	{
 		if ( !flags[BURNING] )
 		{
@@ -531,10 +531,13 @@ bool Entity::collisionProjectileMiss(Entity* parent, Entity* projectile)
 							SetEntityOnFire();
 							if ( parent && flags[BURNING] )
 							{
-								skill[13] = parent->getUID(); // burning inflicted by for bell
-								if ( parent->behavior == &actPlayer )
+								if ( behavior == &actBell )
 								{
-									messagePlayer(parent->skill[2], MESSAGE_INTERACTION, Language::get(6297));
+									skill[13] = parent->getUID(); // burning inflicted by for bell
+									if ( parent->behavior == &actPlayer )
+									{
+										messagePlayer(parent->skill[2], MESSAGE_INTERACTION, Language::get(6297));
+									}
 								}
 							}
 						}
@@ -546,10 +549,13 @@ bool Entity::collisionProjectileMiss(Entity* parent, Entity* projectile)
 				SetEntityOnFire(parent);
 				if ( parent && flags[BURNING] )
 				{
-					skill[13] = parent->getUID(); // burning inflicted by for bell
-					if ( parent->behavior == &actPlayer )
+					if ( behavior == &actBell )
 					{
-						messagePlayer(parent->skill[2], MESSAGE_INTERACTION, Language::get(6297));
+						skill[13] = parent->getUID(); // burning inflicted by for bell
+						if ( parent->behavior == &actPlayer )
+						{
+							messagePlayer(parent->skill[2], MESSAGE_INTERACTION, Language::get(6297));
+						}
 					}
 				}
 			}
@@ -558,10 +564,13 @@ bool Entity::collisionProjectileMiss(Entity* parent, Entity* projectile)
 				SetEntityOnFire(projectile);
 				if ( flags[BURNING] )
 				{
-					skill[13] = projectile->getUID(); // burning inflicted by for bell
-					if ( projectile->behavior == &actPlayer )
+					if ( behavior == &actBell )
 					{
-						messagePlayer(projectile->skill[2], MESSAGE_INTERACTION, Language::get(6297));
+						skill[13] = projectile->getUID(); // burning inflicted by for bell
+						if ( projectile->behavior == &actPlayer )
+						{
+							messagePlayer(projectile->skill[2], MESSAGE_INTERACTION, Language::get(6297));
+						}
 					}
 				}
 			}
@@ -999,7 +1008,7 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 				{
 					// 886 is gyrobot, as they are passable, force collision here.
 				}
-				else if ( entity->sprite == 1478 
+				else if ( (entity->sprite == 1478 || entity->sprite == 1786)
 					&& (projectileAttack 
 						|| (my && my->flags[BURNING] && (my->behavior == &actMonster || my->behavior == &actPlayer))) && multiplayer != CLIENT )
 				{

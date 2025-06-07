@@ -1107,6 +1107,8 @@ char itemNameStrings[NUM_ITEM_STRINGS][32] =
 	"instrument_lute",
 	"instrument_horn",
 	"rapier",
+	"amulet_burningresist",
+	"potion_grease",
 	""
 };
 
@@ -1285,6 +1287,7 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"artifact_orb_purple",
 		"artifact_orb_green",
 		"rapier",
+		"potion_grease",
 		""
 	},
 	{
@@ -1373,6 +1376,7 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"amulet_magicreflection",
 		"amulet_strangulation",
 		"amulet_poisonresistance",
+		"amulet_burningresist",
 		""
 	},
 	{

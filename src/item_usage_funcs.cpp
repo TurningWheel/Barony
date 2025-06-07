@@ -854,6 +854,97 @@ bool item_PotionSickness(Item*& item, Entity* entity, Entity* usedBy)
 	return true;
 }
 
+bool item_PotionGrease(Item*& item, Entity* entity, Entity* usedBy)
+{
+	if ( !entity )
+	{
+		return false;
+	}
+
+	int skillLVL = 0;
+	if ( multiplayer != CLIENT && usedBy && usedBy->behavior == &actPlayer )
+	{
+		Stat* usedByStats = usedBy->getStats();
+		if ( usedByStats )
+		{
+			skillLVL = usedByStats->getModifiedProficiency(PRO_ALCHEMY) / 20;
+		}
+	}
+
+	int player = -1;
+	Stat* stats;
+
+	if ( entity->behavior == &actPlayer )
+	{
+		player = entity->skill[2];
+	}
+	stats = entity->getStats();
+	if ( !stats )
+	{
+		return false;
+	}
+
+	if ( stats->amulet != NULL )
+	{
+		if ( stats->amulet->type == AMULET_STRANGULATION
+			&& stats->type != SKELETON )
+		{
+			if ( player >= 0 && players[player]->isLocalPlayer() )
+			{
+				messagePlayer(player, MESSAGE_HINT, Language::get(750));
+				playSoundPlayer(player, 90, 64);
+			}
+			return false;
+		}
+	}
+	if ( stats->getEffectActive(EFF_VOMITING) )
+	{
+		if ( player >= 0 && players[player]->isLocalPlayer() )
+		{
+			messagePlayer(player, MESSAGE_HINT, Language::get(751));
+			playSoundPlayer(player, 90, 64);
+		}
+		return false;
+	}
+	if ( multiplayer == CLIENT )
+	{
+		consumeItem(item, player);
+		return true;
+	}
+
+	messagePlayer(player, MESSAGE_HINT, Language::get(6536));
+	int duration = 0;
+	if ( player >= 0 )
+	{
+		duration = std::max(300, item->potionGetEffectDurationRandom(entity, stats));
+	}
+	else
+	{
+		duration = item->potionGetEffectDurationRandom(entity, stats);
+	}
+	if ( entity->setEffect(EFF_MAGIC_GREASE, true, duration, true) )
+	{
+		if ( usedBy && entity != usedBy && usedBy->behavior == &actPlayer )
+		{
+			Uint32 color = makeColorRGB(0, 255, 0);
+			messagePlayerMonsterEvent(usedBy->skill[2], color, *stats, Language::get(6244), Language::get(6243), MSG_COMBAT);
+		}
+	}
+	else
+	{
+		if ( usedBy && entity != usedBy && usedBy->behavior == &actPlayer )
+		{
+			Uint32 color = makeColorRGB(255, 0, 0);
+			messagePlayerMonsterEvent(usedBy->skill[2], color, *stats, Language::get(4320), Language::get(4321), MSG_COMBAT);
+		}
+	}
+
+	// play drink sound
+	playSoundEntity(entity, 52, 64);
+	consumeItem(item, player);
+	return true;
+}
+
 bool item_PotionConfusion(Item*& item, Entity* entity, Entity* usedBy)
 {
 	if (!entity)

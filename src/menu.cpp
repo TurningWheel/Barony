@@ -8562,10 +8562,12 @@ void doNewGame(bool makeHighscore) {
 		}
 		players[i]->shootmode = true;
 		players[i]->magic.clearSelectedSpells();
+		spellcastingAnimationManager_deactivate(&cast_animation[i]);
 		players[i]->paperDoll.resetPortrait(); // reset paper doll camera view.
 		players[i]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
 	}
 	EnemyHPDamageBarHandler::dumpCache();
+	AOEIndicators_t::indicators.clear();
 	monsterAllyFormations.reset();
 	PingNetworkStatus_t::reset();
 	particleTimerEmitterHitEntities.clear();
@@ -10062,6 +10064,7 @@ void doEndgame(bool saveHighscore, bool onServerDisconnect) {
 		players[i]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
 	}
 	EnemyHPDamageBarHandler::dumpCache();
+	AOEIndicators_t::indicators.clear();
 	monsterAllyFormations.reset();
 	particleTimerEmitterHitEntities.clear();
 	particleTimerEffects.clear();

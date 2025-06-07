@@ -126,6 +126,25 @@ void actThrown(Entity* my)
 				playSoundEntityLocal(my, 434 + local_rng.rand() % 10, 64);
 			}
 		}
+
+		if ( my->sprite == items[POTION_GREASE].index )
+		{
+			if ( Entity* fx = spawnMagicParticleCustom(my, 245, 1.0, 1.0) )
+			{
+				fx->ditheringDisabled = true;
+				real_t dir = atan2(my->vel_y, my->vel_x);
+				//dir += local_rng.rand() % 2 == 0 ? PI / 32 : -PI / 32;
+				real_t spd = sqrt(my->vel_x * my->vel_x + my->vel_y * my->vel_y);
+				fx->vel_x = spd * 0.05 * cos(dir);
+				fx->vel_y = spd * 0.05 * sin(dir);
+				fx->flags[BRIGHT] = true;
+				fx->pitch = PI / 2;
+				fx->roll = 0.0;
+				fx->yaw = dir;
+				fx->vel_z = 0.0;
+				fx->flags[SPRITE] = true;
+			}
+		}
 	}
 	else
 	{
@@ -289,11 +308,39 @@ void actThrown(Entity* my)
 			my->z += THROWN_VELZ;
 			my->roll += 0.04;
 		}
+
+		if ( my->sprite == items[POTION_GREASE].index )
+		{
+			if ( my->ticks % 5 == 0 )
+			{
+				spawnGreasePuddleSpawner(my->parent == 0 ? nullptr : uidToEntity(my->parent), my->x, my->y, 30 * TICKS_PER_SECOND);
+			}
+			if ( Entity* fx = spawnMagicParticleCustom(my, 245, 1.0, 1.0) )
+			{
+				fx->ditheringDisabled = true;
+				real_t dir = atan2(my->vel_y, my->vel_x);
+				//dir += local_rng.rand() % 2 == 0 ? PI / 32 : -PI / 32;
+				real_t spd = sqrt(my->vel_x * my->vel_x + my->vel_y * my->vel_y);
+				fx->vel_x = spd * 0.05 * cos(dir);
+				fx->vel_y = spd * 0.05 * sin(dir);
+				fx->flags[BRIGHT] = true;
+				fx->pitch = PI / 2;
+				fx->roll = 0.0;
+				fx->yaw = dir;
+				fx->vel_z = 0.0;
+				fx->flags[SPRITE] = true;
+			}
+		}
 	}
 	else
 	{
 		if ( my->x >= 0 && my->y >= 0 && my->x < map.width << 4 && my->y < map.height << 4 )
 		{
+			if ( my->sprite == items[POTION_GREASE].index )
+			{
+				spawnGreasePuddleSpawner(my->parent == 0 ? nullptr : uidToEntity(my->parent), my->x, my->y, 30 * TICKS_PER_SECOND);
+			}
+
 			// landing on the ground.
 			int index = (int)(my->y / 16)*MAPLAYERS + (int)(my->x / 16)*MAPLAYERS * map.height;
 			if ( map.tiles[index] )
@@ -685,6 +732,15 @@ void actThrown(Entity* my)
 			tryHitEntity = false;
 		}
 
+		if ( my->sprite == items[POTION_GREASE].index )
+		{
+			spawnGreasePuddleSpawner(my->parent == 0 ? nullptr : uidToEntity(my->parent), my->x, my->y, 30 * TICKS_PER_SECOND);
+			if ( hit.entity != nullptr && tryHitEntity )
+			{
+				spawnGreasePuddleSpawner(my->parent == 0 ? nullptr : uidToEntity(my->parent), hit.entity->x, hit.entity->y, 30 * TICKS_PER_SECOND);
+			}
+		}
+
 		if ( hit.entity != nullptr && tryHitEntity )
 		{
 			Entity* parent = uidToEntity(my->parent);
@@ -883,6 +939,7 @@ void actThrown(Entity* my)
 							case POTION_ICESTORM:
 							case POTION_THUNDERSTORM:
 							case POTION_POLYMORPH:
+							case POTION_GREASE:
 								ignorePotion = false;
 								break;
 							case POTION_EXTRAHEALING:
@@ -1110,6 +1167,10 @@ void actThrown(Entity* my)
 								break;
 							case POTION_PARALYSIS:
 								item_PotionParalysis(item, hit.entity, parent);
+								usedpotion = true;
+								break;
+							case POTION_GREASE:
+								item_PotionGrease(item, hit.entity, parent);
 								usedpotion = true;
 								break;
 							case FOOD_CREAMPIE:

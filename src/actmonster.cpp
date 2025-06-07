@@ -11323,27 +11323,39 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 	{
 		return;
 	}
-	if ( command == -1 || command == ALLY_CMD_CANCEL || monsterAllyIndex == -1 || monsterAllyIndex > MAXPLAYERS )
-	{
-		return;
-	}
-	if ( !players[monsterAllyIndex] )
-	{
-		return;
-	}
-	if ( !players[monsterAllyIndex]->entity )
-	{
-		return;
-	}
-	if ( monsterTarget == players[monsterAllyIndex]->entity->getUID() )
-	{
-		// angry at owner.
-		return;
-	}
-
 	Stat* myStats = getStats();
 	if ( !myStats )
 	{
+		return;
+	}
+
+	if ( command == -1 || command == ALLY_CMD_CANCEL )
+	{
+		return;
+	}
+
+	int playerLeader = monsterAllyIndex;
+	if ( myStats->getEffectActive(EFF_COMMAND) >= 1 && myStats->getEffectActive(EFF_COMMAND) < MAXPLAYERS + 1 )
+	{
+		playerLeader = myStats->getEffectActive(EFF_COMMAND) - 1;
+	}
+
+	if ( playerLeader <= -1 || monsterAllyIndex >= MAXPLAYERS )
+	{
+		return;
+	}
+
+	if ( !players[playerLeader] )
+	{
+		return;
+	}
+	if ( !players[playerLeader]->entity )
+	{
+		return;
+	}
+	if ( monsterTarget == players[playerLeader]->entity->getUID() )
+	{
+		// angry at owner.
 		return;
 	}
 
@@ -11362,18 +11374,18 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 		}
 		else
 		{
-			messagePlayerMonsterEvent(monsterAllyIndex, 0xFFFFFFFF, *myStats, Language::get(514), Language::get(515), MSG_COMBAT);
+			messagePlayerMonsterEvent(playerLeader, 0xFFFFFFFF, *myStats, Language::get(514), Language::get(515), MSG_COMBAT);
 		}
 		return;
 	}
 
-	bool isTinkeringFollower = FollowerMenu[monsterAllyIndex].isTinkeringFollower(myStats->type);
+	bool isTinkeringFollower = FollowerMenu[playerLeader].isTinkeringFollower(myStats->type);
 	int tinkeringLVL = 0;
 	int skillLVL = 0;
-	if ( stats[monsterAllyIndex] )
+	if ( stats[playerLeader] )
 	{
-		tinkeringLVL = stats[monsterAllyIndex]->getModifiedProficiency(PRO_LOCKPICKING) + statGetPER(stats[monsterAllyIndex], players[monsterAllyIndex]->entity);
-		skillLVL = stats[monsterAllyIndex]->getModifiedProficiency(PRO_LEADERSHIP) + statGetCHR(stats[monsterAllyIndex], players[monsterAllyIndex]->entity);
+		tinkeringLVL = stats[playerLeader]->getModifiedProficiency(PRO_LOCKPICKING) + statGetPER(stats[playerLeader], players[playerLeader]->entity);
+		skillLVL = stats[playerLeader]->getModifiedProficiency(PRO_LEADERSHIP) + statGetCHR(stats[playerLeader], players[playerLeader]->entity);
 		if ( isTinkeringFollower )
 		{
 			skillLVL = tinkeringLVL;
@@ -11382,14 +11394,14 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 
 	if ( myStats->type != GYROBOT )
 	{
-		if ( FollowerMenu[monsterAllyIndex].monsterGyroBotOnlyCommand(command) )
+		if ( FollowerMenu[playerLeader].monsterGyroBotOnlyCommand(command) )
 		{
 			return;
 		}
 	}
 	else if ( myStats->type == GYROBOT )
 	{
-		if ( FollowerMenu[monsterAllyIndex].monsterGyroBotDisallowedCommands(command) )
+		if ( FollowerMenu[playerLeader].monsterGyroBotDisallowedCommands(command) )
 		{
 			return;
 		}
@@ -11398,7 +11410,7 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 	// do a final check if player can use this command.
 	/*if ( FollowerMenu.optionDisabledForCreature(skillLVL, myStats->type, command) != 0 )
 	{
-		messagePlayerMonsterEvent(monsterAllyIndex, 0xFFFFFFFF,
+		messagePlayerMonsterEvent(playerLeader, 0xFFFFFFFF,
 			*myStats, Language::get(3638), Language::get(3639), MSG_COMBAT);
 		return;
 	}*/
@@ -11411,9 +11423,9 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 				float manaToRefund = myStats->MAXMP * (myStats->HP / static_cast<float>(myStats->MAXHP));
 				setMP(static_cast<int>(manaToRefund));
 				setHP(0);
-				if ( stats[monsterAllyIndex] && stats[monsterAllyIndex]->MP == 0 )
+				if ( stats[playerLeader] && stats[playerLeader]->MP == 0 )
 				{
-					steamAchievementClient(monsterAllyIndex, "BARONY_ACH_EXTERNAL_BATTERY");
+					steamAchievementClient(playerLeader, "BARONY_ACH_EXTERNAL_BATTERY");
 				}
 			}
 			break;
@@ -11425,7 +11437,7 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 				{
 					if ( target->behavior == &actMonster || target->behavior == &actPlayer )
 					{
-						if ( stats[monsterAllyIndex] ) // check owner's proficiency.
+						if ( stats[playerLeader] ) // check owner's proficiency.
 						{
 							if ( skillLVL >= SKILL_LEVEL_MASTER || myStats->type != HUMAN )
 							{
@@ -11473,7 +11485,7 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 			}
 			break;
 		case ALLY_CMD_MOVEASIDE:
-			monsterMoveAside(this, players[monsterAllyIndex]->entity);
+			monsterMoveAside(this, players[playerLeader]->entity);
 			handleNPCInteractDialogue(*myStats, ALLY_EVENT_MOVEASIDE);
 			break;
 		case ALLY_CMD_DEFEND:
@@ -11590,11 +11602,11 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 			{
 				if ( skillLVL < SKILL_LEVEL_BASIC )
 				{
-					messagePlayerColor(monsterAllyIndex, MESSAGE_STATUS, 0xFFFFFFFF, Language::get(3680));
+					messagePlayerColor(playerLeader, MESSAGE_STATUS, 0xFFFFFFFF, Language::get(3680));
 				}
 				else
 				{
-					messagePlayerColor(monsterAllyIndex, MESSAGE_STATUS, 0xFFFFFFFF, Language::get(3679));
+					messagePlayerColor(playerLeader, MESSAGE_STATUS, 0xFFFFFFFF, Language::get(3679));
 				}
 				monsterAllyPickupItems = ALLY_GYRO_DETECT_NONE;
 			}
@@ -11649,16 +11661,16 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 
 				if ( !droppedSomething )
 				{
-					messagePlayer(monsterAllyIndex, MESSAGE_HINT, Language::get(3868));
+					messagePlayer(playerLeader, MESSAGE_HINT, Language::get(3868));
 				}
 			}
-			else if ( stats[monsterAllyIndex] )
+			else if ( stats[playerLeader] )
 			{
 				Entity* dropped = nullptr;
 				bool confirmDropped = false;
 				bool dropWeaponOnly = false;
 				bool unableToDrop = false;
-				Uint32 owner = players[monsterAllyIndex]->entity->getUID();
+				Uint32 owner = players[playerLeader]->entity->getUID();
 				if ( skillLVL >= SKILL_LEVEL_MASTER )
 				{
 					if ( myStats->helmet )
@@ -11855,10 +11867,10 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 		}
 		case ALLY_CMD_GYRO_RETURN:
 		{
-			if ( players[monsterAllyIndex]->entity )
+			if ( players[playerLeader]->entity )
 			{
-				destX = static_cast<int>(players[monsterAllyIndex]->entity->x) >> 4;
-				destY = static_cast<int>(players[monsterAllyIndex]->entity->y) >> 4;
+				destX = static_cast<int>(players[playerLeader]->entity->x) >> 4;
+				destY = static_cast<int>(players[playerLeader]->entity->y) >> 4;
 
 				bool noground = false;
 				const int monsterX = static_cast<int>(x) >> 4;
@@ -11872,7 +11884,7 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 					}
 				}
 
-				if ( entityDist(this, players[monsterAllyIndex]->entity) < STRIKERANGE
+				if ( entityDist(this, players[playerLeader]->entity) < STRIKERANGE
 					&& !noground )
 				{
 					monsterSpecialState = GYRO_RETURN_LANDING;
@@ -11900,7 +11912,7 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 				else
 				{
 					//messagePlayer(0, "no path to destination");
-					messagePlayerMonsterEvent(monsterAllyIndex, 0xFFFFFF, *myStats, Language::get(4317), Language::get(4317), MSG_GENERIC);
+					messagePlayerMonsterEvent(playerLeader, 0xFFFFFF, *myStats, Language::get(4317), Language::get(4317), MSG_GENERIC);
 				}
 			}
 			break;
@@ -11916,16 +11928,16 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 					monsterAllySpecial = ALLY_SPECIAL_CMD_REST;
 					monsterAllySpecialCooldown = -1; // locked out until next floor.
 					serverUpdateEntitySkill(this, 49);
-					messagePlayerMonsterEvent(monsterAllyIndex, 0xFFFFFF, *myStats, Language::get(398), Language::get(397), MSG_COMBAT);
-					if ( players[monsterAllyIndex] && players[monsterAllyIndex]->entity 
+					messagePlayerMonsterEvent(playerLeader, 0xFFFFFF, *myStats, Language::get(398), Language::get(397), MSG_COMBAT);
+					if ( players[playerLeader] && players[playerLeader]->entity 
 						&& myStats->HP < myStats->MAXHP && local_rng.rand() % 3 == 0 )
 					{
-						players[monsterAllyIndex]->entity->increaseSkill(PRO_LEADERSHIP);
+						players[playerLeader]->entity->increaseSkill(PRO_LEADERSHIP);
 					}
 				}
 				else
 				{
-					messagePlayerMonsterEvent(monsterAllyIndex, 0xFFFFFF, *myStats, Language::get(3880), Language::get(3880), MSG_GENERIC);
+					messagePlayerMonsterEvent(playerLeader, 0xFFFFFF, *myStats, Language::get(3880), Language::get(3880), MSG_GENERIC);
 				}
 			}
 			break;
