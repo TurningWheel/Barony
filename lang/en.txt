@@ -6749,6 +6749,49 @@ Host to enable the game setting.
 6493 You set sacred path#
 6494 You set manifest destiny#
 6495 You set detect enemy#
-
+6496 You recall your spell without a target.#
+6497 You set turn undead#
+6498 Your spell had no target!#
+6499 Cast spell...#
+6500 Cast spell on #
+6501 Cancel#
+6502 You set blood ward#
+6503 Your spell (%s) was interrupted!#
+6504 Failed to sustain spell (%s).#
+6505 Blood ward removed#
+6506 You set true blood#
+6507 True blood removed#
+6508 You set divine zeal#
+6509 Divine zeal removed#
+6510 Your attack smites the %s!#
+6511 Your attack smites %s!#
+6512 Alter Instrument#
+6513 Select an instrument:#
+6514 This %s
+ is unable to be altered.#
+6515 Your %s transforms into
+ a %s!#
+6516 You set maximise#
+6517 You set minimise#
+6518 You set weakness#
+6519 You set incoherence#
+6520 You set overcharge#
+6521 You set envenom#
+6522 You set humiliate#
+6523 You set level death#
+6524 You set grease#
+6525 You set mana burst#
+6526 %s is weakened!#
+6527 The %s is weakened!#
+6528 You feel weak!#
+6529 Envenom removed#
+6530 Overcharge removed#
+6531 The %s poisons you with it's attack!#
+6532 %s poisons you with their attack!#
+6533 The %s is poisoned!#
+6534 %s is poisoned!#
+6535 The amulet feels warm against your neck.#
+6536 You feel greasy!#
+6537 You set command#
 
 6599 END#

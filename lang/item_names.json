@@ -1388,6 +1388,14 @@
 		"rapier": {
 			"name_identified": "rapier",
 			"name_unidentified": "rapier"
+		},
+		"amulet_burningresist": {
+            "name_identified": "amulet of burning resistance",
+            "name_unidentified": "amulet"
+        },
+		"potion_grease": {
+			"name_identified": "bottle of grease",
+			"name_unidentified": "potion"
 		}
     },
 	"spell_names": {
