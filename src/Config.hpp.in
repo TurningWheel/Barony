@@ -52,6 +52,10 @@
     #define USE_THEORA_VIDEO
 #endif
 
+#if @OPUS_ENABLED@
+    #define USE_OPUS
+#endif
+
 #if @FMOD@
 	#define USE_FMOD
 #endif
