@@ -6588,11 +6588,11 @@ bind_failed:
 			}
 		}
 		std::vector<const char*> record_drivers_formatted_ptrs;
-		record_drivers_formatted_ptrs.reserve(num_record_drivers);
+		record_drivers_formatted_ptrs.reserve(recording_drivers.size());
 		for ( auto& d : recording_drivers ) {
 			record_drivers_formatted_ptrs.push_back(d.name);
 		}
-
+		num_record_drivers = recording_drivers.size();
 		y += settingsAddSubHeader(*settings_subwindow, y, "input", Language::get(6440));
 		if ( num_record_drivers > 0 )
 		{
