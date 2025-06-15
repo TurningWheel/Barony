@@ -563,6 +563,8 @@ Monster editorSpriteTypeToMonster(Sint32 sprite)
 	case 205: monsterType = MONSTER_M; break;
 	case 206: monsterType = MONSTER_S; break;
 	case 207: monsterType = MONSTER_G; break;
+	case 246: monsterType = REVENANT_SKULL; break;
+	case 247: monsterType = MONSTER_ADORCISED_WEAPON; break;
 	default:
 		break;
 	}
@@ -620,6 +622,8 @@ int checkSpriteType(Sint32 sprite)
 	case 205:
 	case 206:
 	case 207:
+	case 246:
+	case 247:
 		//monsters
 		return 1;
 		break;
@@ -1663,10 +1667,36 @@ std::vector<const char*> spriteEditorNameStrings =
 	"IRON DOOR (East-West)",
 	"SLIPPERY TILE",
 	"WIND TILE",
-	"SLOW TILE"
+	"SLOW TILE",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"REVENANT_SKULL",
+	"ADORCISED_WEAPON"
 };
 
-char monsterEditorNameStrings[NUMMONSTERS][16] =
+char monsterEditorNameStrings[NUMMONSTERS][32] =
 {
 	"nothing",
 	"human",
@@ -1709,7 +1739,18 @@ char monsterEditorNameStrings[NUMMONSTERS][16] =
 	"monster_d",
 	"monster_m",
 	"monster_s",
-	"monster_g"
+	"monster_g",
+	"revenant_skull",
+	"minimimic",
+	"monster_adorcised_weapon",
+	"monster_unused_1",
+	"monster_unused_2",
+	"monster_unused_3",
+	"monster_unused_4",
+	"monster_unused_5",
+	"monster_unused_6",
+	"monster_unused_7",
+	"monster_unused_8"
 };
 
 char tileEditorNameStrings[NUM_EDITOR_TILES][44] =
@@ -2001,6 +2042,8 @@ int canWearEquip(Entity* entity, int category)
 				case CRYSTALGOLEM:
 				case COCKATRICE:
 				case MIMIC:
+				case MINIMIMIC:
+				case REVENANT_SKULL:
 					equipType = 0;
 					break;
 
@@ -2008,6 +2051,7 @@ int canWearEquip(Entity* entity, int category)
 				case LICH:
 				case CREATURE_IMP:
 				case DEMON:
+				case MONSTER_ADORCISED_WEAPON:
 					equipType = 1;
 					break;
 

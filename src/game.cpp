@@ -7510,8 +7510,14 @@ int main(int argc, char** argv)
 					auto& camera = cameras[c];
 					auto& cvars = cameravars[c];
 					TimerExperiments::renderCameras(camera, c);
-					camera.ang += cvars.shakex2;
-					camera.vang += cvars.shakey2 / 200.0;
+
+					real_t mult = 1.0;
+					if ( !intro && stats[c]->getEffectActive(EFF_DELAY_PAIN) )
+					{
+						mult = 0.25;
+					}
+					camera.ang += mult * cvars.shakex2;
+					camera.vang += mult * cvars.shakey2 / 200.0;
 
 					for ( auto& HPBar : enemyHPDamageBarHandler[c].HPBars )
 					{

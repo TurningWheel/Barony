@@ -5430,6 +5430,8 @@ namespace ConsoleCommands {
 						case 205: monsterType = MONSTER_M; break;
 						case 206: monsterType = MONSTER_S; break;
 						case 207: monsterType = MONSTER_G; break;
+						case 246: monsterType = REVENANT_SKULL; break;
+						case 247: monsterType = MONSTER_ADORCISED_WEAPON; break;
 						default:
 							break;
 						}

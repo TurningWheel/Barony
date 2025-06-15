@@ -350,6 +350,7 @@ Stat::~Stat()
 	}
 	list_FreeAll(&this->magic_effects);
 	list_FreeAll(&this->inventory);
+	list_FreeAll(&this->void_chest_inventory);
 }
 
 void Stat::clearStats()
@@ -435,6 +436,7 @@ void Stat::clearStats()
 
 	freePlayerEquipment();
 	list_FreeAll(&this->inventory);
+	list_FreeAll(&this->void_chest_inventory);
 }
 
 /*-------------------------------------------------------------------------------
@@ -650,6 +652,14 @@ Stat* Stat::copyStats()
 	newStat->inventory.last = NULL;
 	list_Copy(&newStat->inventory, &this->inventory);
 	for (node = newStat->inventory.first; node != NULL; node = node->next)
+	{
+		Item* item = (Item*)node->element;
+		item->node = node;
+	}
+	newStat->void_chest_inventory.first = nullptr;
+	newStat->void_chest_inventory.last = nullptr;
+	list_Copy(&newStat->void_chest_inventory, &this->void_chest_inventory);
+	for ( node = newStat->void_chest_inventory.first; node != NULL; node = node->next )
 	{
 		Item* item = (Item*)node->element;
 		item->node = node;

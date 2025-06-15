@@ -614,6 +614,7 @@ struct SaveGameInfo {
 			std::vector<std::pair<std::string, Uint32>> player_equipment;
 			std::vector<std::pair<std::string, item_t>> npc_equipment;
 			std::vector<item_t> inventory;
+			std::vector<item_t> void_chest_inventory;
 			std::vector<std::pair<Uint32, lootbag_t>> player_lootbags;
 
 			bool serialize(FileInterface* fp) {
@@ -642,6 +643,7 @@ struct SaveGameInfo {
 				fp->property("player_equipment", player_equipment);
 				fp->property("npc_equipment", npc_equipment);
 				fp->property("inventory", inventory);
+				fp->property("void_chest_inventory", void_chest_inventory);
 				fp->property("attributes", attributes);
 				fp->property("lootbags", player_lootbags);
 				return true;

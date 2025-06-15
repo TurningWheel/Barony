@@ -6285,6 +6285,7 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 				|| stats[player]->getEffectActive(EFF_NULL_MAGIC)
 				|| stats[player]->getEffectActive(EFF_NULL_MELEE)
 				|| stats[player]->getEffectActive(EFF_NULL_RANGED)
+				|| stats[player]->getEffectActive(EFF_DELAY_PAIN)
 				|| stats[player]->getEffectActive(EFF_SACRED_PATH) )
 			{
 				for ( auto img : frame->getImages() )
@@ -6508,6 +6509,23 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 									0, 0 },
 									SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
 									makeColor(255, 255, 255, 255));
+							}
+						}
+						else if ( img->path.find("delay_pain.png") != std::string::npos )
+						{
+							Uint8 effectStrength = stats[player]->getEffectActive(EFF_DELAY_PAIN);
+							if ( effectStrength > 1 )
+							{
+								if ( auto text = Text::get(std::to_string(effectStrength - 1).c_str(),
+									"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+								{
+									text->drawColor(SDL_Rect{ 0,0,0,0 },
+										SDL_Rect{ pos.x + img->pos.x + img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x,
+										pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
+										0, 0 },
+										SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+										makeColor(255, 255, 255, 255));
+								}
 							}
 						}
 					}
@@ -10049,12 +10067,54 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 			std::string interactText = Language::get(6500);
 			if ( target->behavior == &actMonster )
 			{
-				int monsterType = target->getMonsterTypeFromSprite();
-				interactText += getMonsterLocalizedName((Monster)monsterType).c_str();
+				if ( target->isInertMimic() )
+				{
+					interactText += Language::get(675);
+				}
+				else
+				{
+					int monsterType = target->getMonsterTypeFromSprite();
+					interactText += getMonsterLocalizedName((Monster)monsterType).c_str();
+				}
 			}
 			else if ( target->isDamageableCollider() )
 			{
 				interactText += Language::get(target->getColliderLangName());
+			}
+			else if ( target->behavior == &actDoor )
+			{
+				interactText += Language::get(674);
+			}
+			else if ( target->behavior == &actIronDoor )
+			{
+				interactText += Language::get(6414);
+			}
+			else if ( target->behavior == &::actFurniture )
+			{
+				switch ( target->furnitureType )
+				{
+				case FURNITURE_CHAIR:
+					interactText += Language::get(677);
+					break;
+				case FURNITURE_TABLE:
+					interactText += Language::get(676);
+					break;
+				case FURNITURE_BED:
+					interactText += Language::get(2505);
+					break;
+				case FURNITURE_BUNKBED:
+					interactText += Language::get(2506);
+					break;
+				case FURNITURE_PODIUM:
+					interactText += Language::get(2507);
+					break;
+				default:
+					break;
+				}
+			}
+			else if ( target->behavior == &actChest )
+			{
+				interactText += Language::get(675);
 			}
 			else if ( target->behavior == &actPlayer || target->behavior == &actDeathGhost )
 			{
@@ -15080,9 +15140,9 @@ void Player::GUIDropdown_t::process()
 			{
 				chest_inventory = &chestInv[player.playernum];
 			}
-			else if ( openedChest[player.playernum]->children.first && openedChest[player.playernum]->children.first->element )
+			else if ( openedChest[player.playernum] )
 			{
-				chest_inventory = (list_t*)openedChest[player.playernum]->children.first->element;
+				chest_inventory = openedChest[player.playernum]->getChestInventoryList();
 			}
 		}
 
@@ -21565,6 +21625,7 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 		{
 			drawQty = true;
 		}
+
 		Uint32 qtyColor = 0xFFFFFFFF;
 		bool stackable = false;
 		Item*& selectedItem = inputs.getUIInteraction(player)->selectedItem;
@@ -21616,6 +21677,31 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 					qtyText->setText(qtybuf);
 				}
 				qtyText->setColor(qtyColor);
+			}
+		}
+		else
+		{
+			if ( item->type == SPELL_ITEM && (item->appearance == SPELL_LEAD_BOLT || item->appearance == SPELL_MERCURY_BOLT) )
+			{
+				if ( spell_t* spell = getSpellFromItem(player, item, true) )
+				{
+					qtyFrame->setDisabled(false);
+					if ( auto qtyText = qtyFrame->getFields()[SLOTFRAME_QTY_TEXT]/*qtyFrame->findField("quantity text")*/ )
+					{
+						char qtybuf[32] = "";
+						int cost = getGoldCostOfSpell(spell, player);
+						if ( cost > stats[player]->GOLD )
+						{
+							qtyColor = hudColors.characterSheetRed;
+						}
+						snprintf(qtybuf, sizeof(qtybuf), "%d", cost);
+						if ( strcmp(qtyText->getText(), qtybuf) )
+						{
+							qtyText->setText(qtybuf);
+						}
+						qtyText->setColor(qtyColor);
+					}
+				}
 			}
 		}
 	}
@@ -25829,9 +25915,9 @@ bool takeAllChestGUIAction(const int player)
 	{
 		chest_inventory = &chestInv[player];
 	}
-	else if ( openedChest[player]->children.first && openedChest[player]->children.first->element )
+	else if ( openedChest[player] )
 	{
-		chest_inventory = (list_t*)openedChest[player]->children.first->element;
+		chest_inventory = openedChest[player]->getChestInventoryList();
 	}
 	if ( !chest_inventory )
 	{
@@ -27050,9 +27136,9 @@ void Player::Inventory_t::updateItemContextMenu()
 			{
 				chest_inventory = &chestInv[player.playernum];
 			}
-			else if ( openedChest[player.playernum]->children.first && openedChest[player.playernum]->children.first->element )
+			else if ( openedChest[player.playernum] )
 			{
-				chest_inventory = (list_t*)openedChest[player.playernum]->children.first->element;
+				chest_inventory = openedChest[player.playernum]->getChestInventoryList();
 			}
 			if ( chest_inventory )
 			{
@@ -37378,7 +37464,7 @@ void Player::Inventory_t::SpellPanel_t::scrollToSlot(int x, int y, bool instantl
 	}
 }
 
-void Player::Inventory_t::ChestGUI_t::openChest()
+void Player::Inventory_t::ChestGUI_t::openChest(bool _voidChest)
 {
 	if ( player.inventoryUI.chestFrame )
 	{
@@ -37401,6 +37487,7 @@ void Player::Inventory_t::ChestGUI_t::openChest()
 		player.hud.compactLayoutMode = Player::HUD_t::COMPACT_LAYOUT_INVENTORY;
 		player.inventory_mode = INVENTORY_MODE_ITEM;
 		bOpen = true;
+		voidChest = _voidChest;
 	}
 	if ( inputs.getUIInteraction(player.playernum)->selectedItem )
 	{
@@ -37442,6 +37529,7 @@ void Player::Inventory_t::ChestGUI_t::closeChest()
 	scrollInertia = 0.0;
 	scrollAnimateX = scrollSetpoint;
 	bOpen = false;
+	voidChest = false;
 	bFirstTimeSnapCursor = false;
 	if ( inputs.getUIInteraction(player.playernum)->selectedItemFromChest > 0 )
 	{
@@ -37494,9 +37582,9 @@ const bool Player::Inventory_t::isItemFromChest(Item* item) const
 	{
 		chest_inventory = &chestInv[player.playernum];
 	}
-	else if ( openedChest[player.playernum]->children.first && openedChest[player.playernum]->children.first->element )
+	else if ( openedChest[player.playernum] )
 	{
-		chest_inventory = (list_t*)openedChest[player.playernum]->children.first->element;
+		chest_inventory = openedChest[player.playernum]->getChestInventoryList();
 	}
 
 	if ( item->node && item->node->list == chest_inventory )
@@ -37547,6 +37635,16 @@ void Player::Inventory_t::ChestGUI_t::updateChest()
 	auto chestFramePos = chestFrame->getSize();
 	auto baseBackgroundImg = baseFrame->findImage("chest base img");
 	auto lidBackgroundImg = baseFrame->findImage("chest lid img");
+	if ( voidChest )
+	{
+		baseBackgroundImg->path = "*#images/ui/Inventory/chests/Chest_Main_Void_00.png";
+		lidBackgroundImg->path = "*#images/ui/Inventory/chests/Chest_Top_Void_00.png";
+	}
+	else
+	{
+		baseBackgroundImg->path = "*#images/ui/Inventory/chests/Chest_Main_00.png";
+		lidBackgroundImg->path = "*#images/ui/Inventory/chests/Chest_Top_00.png";
+	}
 
 	int playercount = 0;
 	for ( int c = 0; c < MAXPLAYERS; ++c ) {

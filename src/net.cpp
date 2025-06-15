@@ -1910,6 +1910,7 @@ void clientActions(Entity* entity)
 			entity->behavior = &actGate;
 			break;
 		case 216:
+		case 1790:
 			entity->behavior = &actChestLid;
 			break;
 		case 254:
@@ -4992,7 +4993,8 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 			chestInv[clientnum].last = nullptr;
 			players[clientnum]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM);
 			players[clientnum]->GUI.activateModule(Player::GUI_t::MODULE_CHEST);
-			players[clientnum]->inventoryUI.chestGUI.openChest();
+			bool voidChest = net_packet->data[8] == 0 ? false : true;
+			players[clientnum]->inventoryUI.chestGUI.openChest(voidChest);
 		}
 	}},
 
@@ -5051,15 +5053,16 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		}
 	}},
 
-	{'SPAI', []() {
+	{'FXSP', []() {
+		int spellID = SDLNet_Read32(&net_packet->data[6]);
 		if ( net_packet->data[4] == 1 ) // spellbook
 		{
 			int beatitude = static_cast<Sint8>(net_packet->data[5]);
-			GenericGUI[clientnum].openGUI(GUI_TYPE_ITEMFX, nullptr, beatitude, getSpellbookFromSpellID(SPELL_ALTER_INSTRUMENT), SPELL_ALTER_INSTRUMENT);
+			GenericGUI[clientnum].openGUI(GUI_TYPE_ITEMFX, nullptr, beatitude, getSpellbookFromSpellID(spellID), spellID);
 		}
 		else
 		{
-			GenericGUI[clientnum].openGUI(GUI_TYPE_ITEMFX, nullptr, 0, SPELL_ITEM, SPELL_ALTER_INSTRUMENT);
+			GenericGUI[clientnum].openGUI(GUI_TYPE_ITEMFX, nullptr, 0, SPELL_ITEM, spellID);
 		}
 	}},
 
@@ -7496,7 +7499,7 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 	//The client added an item to the chest.
 	{'CITM', [](){
 	    const int player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
-		if (!openedChest[player])
+		if ( net_packet->data[27] == 0 && !openedChest[player])
 		{
 			return;
 		}
@@ -7509,13 +7512,28 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		newitem->appearance = SDLNet_Read32(&net_packet->data[21]);
 		newitem->identified = net_packet->data[25];
 		bool forceNewStack = net_packet->data[26] ? true : false;
-		openedChest[player]->addItemToChestServer(newitem, forceNewStack, nullptr);
+		if ( net_packet->data[27] == 0 )
+		{
+			Item* chestItem = openedChest[player]->addItemToChestServer(newitem, forceNewStack, nullptr);
+			if ( chestItem != newitem )
+			{
+				free(newitem);
+			}
+		}
+		else
+		{
+			Item* chestItem = Entity::addItemToVoidChestServer(player, newitem, forceNewStack, nullptr);
+			if ( chestItem != newitem )
+			{
+				free(newitem);
+			}
+		}
 	}},
 
 	//The client removed an item from the chest.
 	{'RCIT', [](){
 	    const int player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
-		if (!openedChest[player])
+		if ( net_packet->data[27] == 0 && !openedChest[player])
 		{
 			return;
 		}
@@ -7528,7 +7546,15 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		item->appearance = SDLNet_Read32(&net_packet->data[21]);
 		item->identified = net_packet->data[25];
 
-		openedChest[player]->removeItemFromChestServer(item, item->count);
+		if ( net_packet->data[27] == 0 )
+		{
+			openedChest[player]->removeItemFromChestServer(item, item->count);
+		}
+		else
+		{
+			Entity::removeItemFromVoidChestServer(player, item, item->count);
+		}
+		free(item);
 	}},
 
 	// the client removed a curse on his equipment
@@ -7910,6 +7936,80 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		item_FoodAutomaton(item, player);
 	}},
 
+	// adorcise item
+	{ 'ADOR', []() {
+		const int player = std::min(net_packet->data[25], (Uint8)(MAXPLAYERS - 1));
+		auto item = newItem(
+			static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])),
+			static_cast<Status>(SDLNet_Read32(&net_packet->data[8])),
+			SDLNet_Read32(&net_packet->data[12]),
+			SDLNet_Read32(&net_packet->data[16]),
+			SDLNet_Read32(&net_packet->data[20]),
+			net_packet->data[24], nullptr);
+		
+		real_t spawn_x = SDLNet_Read16(&net_packet->data[26]) * 16.0 + 8.0;
+		real_t spawn_y = SDLNet_Read16(&net_packet->data[28]) * 16.0 + 8.0;
+		bool spawned = false;
+		if ( players[player]->entity )
+		{
+			if ( Entity* monster = spellEffectAdorcise(*players[player]->entity, spellElementMap[SPELL_ADORCISM],
+				spawn_x, spawn_y, item) )
+			{
+				spawned = true;
+			}
+		}
+		
+		if ( !spawned )
+		{
+			messagePlayer(player, MESSAGE_MISC, Language::get(6578));
+
+			// refund the item at the player, or spawn location if dead
+			bool dropped = false;
+			if ( players[player]->entity )
+			{
+				// no room to spawn!
+				auto item2 = newItem(item->type,
+					item->status,
+					item->beatitude,
+					item->count,
+					item->appearance,
+					item->identified,
+					&stats[player]->inventory);
+				dropped = dropItem(item2, player, true, true);
+			}
+			
+			if ( !dropped )
+			{
+				Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
+				entity->flags[INVISIBLE] = true;
+				entity->flags[UPDATENEEDED] = true;
+				entity->x = players[player]->player_last_x;
+				entity->y = players[player]->player_last_y;
+				entity->sizex = 4;
+				entity->sizey = 4;
+				entity->yaw = local_rng.rand() % 360 * (PI / 180.0);
+				entity->vel_x = 0.0;
+				entity->vel_y = 0.0;
+				entity->vel_z = (-10 - local_rng.rand() % 20) * .01;
+				entity->flags[PASSABLE] = true;
+				entity->behavior = &actItem;
+				entity->skill[10] = item->type;
+				entity->skill[11] = item->status;
+				entity->skill[12] = item->beatitude;
+				entity->skill[13] = item->count;
+				entity->skill[14] = item->appearance;
+				entity->skill[15] = item->identified;
+				entity->parent = 0;
+				entity->itemOriginalOwner = 0;
+
+				playSoundPos(players[player]->player_last_x, players[player]->player_last_y, 47 + local_rng.rand() % 3, 64);
+			}
+			messagePlayer(player, MESSAGE_MISC, Language::get(6621), item->getName());
+		}
+
+		free(item);
+	} },
+
 	// broke a mirror
 	{ 'MIRR', []() {
 		const int player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
@@ -8047,6 +8147,41 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		VoiceChat.receivePacket(net_packet);
 #endif
 	} },
+
+	{ 'FXGD',[]() {
+		int player = net_packet->data[4];
+		if ( player >= 1 && player < MAXPLAYERS && !players[player]->isLocalPlayer() )
+		{
+			Sint32 goldSpent = (Sint32)SDLNet_Read32(&net_packet->data[5]);
+			stats[player]->GOLD -= goldSpent;
+			stats[player]->GOLD = std::max(0, stats[player]->GOLD);
+
+			Sint32 magiccost = std::max(0, (Sint32)SDLNet_Read32(&net_packet->data[9]));
+			if ( players[player] && players[player]->entity )
+			{
+				if ( magiccost > stats[player]->MP )
+				{
+					// damage sound/effect due to overdraw.
+					strcpy((char*)net_packet->data, "SHAK");
+					net_packet->data[4] = 10; // turns into .1
+					net_packet->data[5] = 10;
+					net_packet->address.host = net_clients[player - 1].host;
+					net_packet->address.port = net_clients[player - 1].port;
+					net_packet->len = 6;
+					sendPacketSafe(net_sock, -1, net_packet, player - 1);
+					playSoundPlayer(player, 28, 92);
+				}
+				players[player]->entity->drainMP(magiccost);
+			}
+
+			strcpy((char*)net_packet->data, "GOLD");
+			SDLNet_Write32(stats[player]->GOLD, &net_packet->data[4]);
+			net_packet->address.host = net_clients[player - 1].host;
+			net_packet->address.port = net_clients[player - 1].port;
+			net_packet->len = 8;
+			sendPacketSafe(net_sock, -1, net_packet, player - 1);
+		}
+	}},
 };
 
 void serverHandlePacket()

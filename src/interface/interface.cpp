@@ -2391,7 +2391,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 					optionSelected = ALLY_CMD_DUMMYBOT_RETURN;
 				}
 			}
-			else if ( followerToCommand->monsterAllySummonRank != 0 && optionSelected == ALLY_CMD_CLASS_TOGGLE )
+			else if ( (followerToCommand->monsterAllySummonRank != 0 || followerStats->type == MONSTER_ADORCISED_WEAPON) && optionSelected == ALLY_CMD_CLASS_TOGGLE )
 			{
 				optionSelected = ALLY_CMD_RETURN_SOUL;
 			}
@@ -4351,6 +4351,9 @@ int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monste
 		case GYROBOT:
 		case SENTRYBOT:
 		case SPELLBOT:
+		case REVENANT_SKULL:
+		case MINIMIMIC:
+		case MONSTER_ADORCISED_WEAPON:
 			creatureTier = 0;
 			break;
 		case GOBLIN:
@@ -4373,6 +4376,7 @@ int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monste
 		case MONSTER_M:
 		case MONSTER_S:
 		case MONSTER_G:
+		case MIMIC:
 			creatureTier = 2;
 			break;
 		case CRYSTALGOLEM:
@@ -4997,7 +5001,7 @@ bool GenericGUIMenu::isItemEnchantWeaponable(const Item* item)
 	return false;
 }
 
-bool GenericGUIMenu::isItemAlterInstrumentable(const Item* item)
+bool GenericGUIMenu::isItemVoidable(const Item* item)
 {
 	if ( !item )
 	{
@@ -5008,13 +5012,170 @@ bool GenericGUIMenu::isItemAlterInstrumentable(const Item* item)
 		return false;
 	}
 
-	if ( item->type == INSTRUMENT_FLUTE
-		|| item->type == INSTRUMENT_LYRE
-		|| item->type == INSTRUMENT_DRUM
-		|| item->type == INSTRUMENT_LUTE
-		|| item->type == INSTRUMENT_HORN )
+	if ( items[item->type].hasAttribute("UNVOIDABLE") )
+	{
+		return false;
+	}
+	return true;
+}
+
+bool GenericGUIMenu::isItemAdorcisable(const Item* item)
+{
+	if ( !item )
+	{
+		return false;
+	}
+	if ( !item->identified )
+	{
+		return false;
+	}
+
+	if ( getWeaponSkill(item) >= PRO_SWORD && getWeaponSkill(item) <= PRO_POLEARM )
 	{
 		return true;
+	}
+	return false;
+}
+
+
+bool GenericGUIMenu::isItemAlterable(const Item* item)
+{
+	if ( !item )
+	{
+		return false;
+	}
+	if ( !item->identified )
+	{
+		return false;
+	}
+
+	if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_ALTER_INSTRUMENT )
+	{
+		if ( item->type == INSTRUMENT_FLUTE
+			|| item->type == INSTRUMENT_LYRE
+			|| item->type == INSTRUMENT_DRUM
+			|| item->type == INSTRUMENT_LUTE
+			|| item->type == INSTRUMENT_HORN )
+		{
+			return true;
+		}
+	}
+	else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_METALLURGY )
+	{
+		int metal = 0;
+		int magic = 0;
+		GenericGUIMenu::tinkeringGetItemValue(item, &metal, &magic);
+		if ( metal > 0 && itemCategory(item) != GEM )
+		{
+			if ( items[item->type].value > 0 )
+			{
+				int value = item->sellValue(gui_player) / 4;
+				return value > 0;
+			}
+		}
+	}
+	else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_GEOMANCY )
+	{
+		int metal = 0;
+		int magic = 0;
+		GenericGUIMenu::tinkeringGetItemValue(item, &metal, &magic);
+		if ( metal > 0 )
+		{
+			if ( items[item->type].value > 0 )
+			{
+				int value = item->sellValue(gui_player) / 2;
+				return value > 0;
+			}
+		}
+	}
+	else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_FORGE_KEY )
+	{
+		if ( item->type == KEY_IRON
+			|| item->type == KEY_BRONZE
+			|| item->type == KEY_SILVER
+			|| item->type == KEY_GOLD
+			|| (itemCategory(item) == GEM && item->type != GEM_ROCK && item->type != GEM_LUCK) )
+		{
+			return true;
+		}
+	}
+	else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_FORGE_JEWEL )
+	{
+		if ( item->type == GEM_GLASS )
+		{
+			return true;
+		}
+		else if ( (itemCategory(item) == GEM && item->type != GEM_ROCK && item->type != GEM_LUCK) )
+		{
+			return true;
+		}
+	}
+	else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_ENHANCE_WEAPON )
+	{
+		if ( item->type == BRONZE_AXE
+			|| item->type == BRONZE_MACE
+			|| item->type == BRONZE_SWORD
+			|| item->type == BRONZE_TOMAHAWK )
+		{
+			return true;
+		}
+		else if ( item->type == IRON_AXE
+			|| item->type == IRON_MACE
+			|| item->type == IRON_SWORD
+			|| item->type == IRON_SPEAR
+			|| item->type == IRON_DAGGER )
+		{
+			return true;
+		}
+		else if ( item->type == STEEL_AXE
+			|| item->type == STEEL_MACE
+			|| item->type == STEEL_SWORD
+			|| item->type == STEEL_HALBERD
+			|| item->type == STEEL_CHAKRAM )
+		{
+			return true;
+		}
+	}
+	else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_RESHAPE_WEAPON )
+	{
+		if ( item->type == BRONZE_AXE
+			|| item->type == BRONZE_MACE
+			|| item->type == BRONZE_SWORD )
+		{
+			return true;
+		}
+		else if ( item->type == IRON_AXE
+			|| item->type == IRON_MACE
+			|| item->type == IRON_SWORD
+			|| item->type == IRON_SPEAR )
+		{
+			return true;
+		}
+		else if ( item->type == STEEL_AXE
+			|| item->type == STEEL_MACE
+			|| item->type == STEEL_SWORD
+			|| item->type == STEEL_HALBERD )
+		{
+			return true;
+		}
+		else if ( item->type == CRYSTAL_BATTLEAXE
+			|| item->type == CRYSTAL_MACE
+			|| item->type == CRYSTAL_SWORD
+			|| item->type == CRYSTAL_SPEAR )
+		{
+			return true;
+		}
+	}
+	else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_ALTER_ARROW )
+	{
+		if ( item->type == GEM_ROCK )
+		{
+			return true;
+		}
+		else if ( itemTypeIsQuiver(item->type) )
+		{
+			return true;
+		}
 	}
 
 	return false;
@@ -6179,9 +6340,24 @@ bool GenericGUIMenu::shouldDisplayItemInGUI(Item* item)
 		{
 			return isItemRemoveCursable(item);
 		}
-		else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_ALTER_INSTRUMENT )
+		else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_ALTER_INSTRUMENT
+			|| itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_METALLURGY
+			|| itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_GEOMANCY
+			|| itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_FORGE_KEY
+			|| itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_FORGE_JEWEL
+			|| itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_ENHANCE_WEAPON
+			|| itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_RESHAPE_WEAPON
+			|| itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_ALTER_ARROW )
 		{
-			return isItemAlterInstrumentable(item);
+			return isItemAlterable(item);
+		}
+		else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_PUNCTURE_VOID )
+		{
+			return isItemVoidable(item);
+		}
+		else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_ADORCISE_WEAPON )
+		{
+			return isItemAdorcisable(item);
 		}
 		return false;
 	}
@@ -6335,7 +6511,73 @@ void GenericGUIMenu::identifyItem(Item* item)
 	closeGUI();
 }
 
-void GenericGUIMenu::alterInstrument(Item* item)
+bool GenericGUIMenu::ItemEffectGUI_t::consumeResourcesForTransmute()
+{
+	if ( modeHasCostEffect != COST_EFFECT_NONE && players[parentGUI.gui_player] && players[parentGUI.gui_player]->entity )
+	{
+		bool hasGold = costEffectGoldAmount <= 0 || stats[parentGUI.gui_player]->GOLD >= costEffectGoldAmount;
+		bool hasMana = costEffectMPAmount == 0 || (stats[parentGUI.gui_player]->MP >= costEffectMPAmount || stats[parentGUI.gui_player]->type == VAMPIRE);
+		if ( hasGold && hasMana )
+		{
+			if ( costEffectGoldAmount != 0 )
+			{
+				stats[parentGUI.gui_player]->GOLD -= costEffectGoldAmount;
+				stats[parentGUI.gui_player]->GOLD = std::max(0, stats[parentGUI.gui_player]->GOLD);
+				if ( costEffectGoldAmount < 0 )
+				{
+					playSound(89, 64); // earned money
+				}
+			}
+			if ( multiplayer != CLIENT )
+			{
+				if ( costEffectMPAmount > 0 )
+				{
+					if ( players[parentGUI.gui_player]->isLocalPlayer() )
+					{
+						if ( costEffectMPAmount > stats[parentGUI.gui_player]->MP )
+						{
+							cameravars[parentGUI.gui_player].shakex += 0.1;
+							cameravars[parentGUI.gui_player].shakey += 10;
+							playSoundPlayer(parentGUI.gui_player, 28, 92);
+						}
+						players[parentGUI.gui_player]->entity->drainMP(costEffectMPAmount);
+					}
+				}
+			}
+			if ( multiplayer == CLIENT )
+			{
+				strcpy((char*)net_packet->data, "FXGD");
+				net_packet->data[4] = parentGUI.gui_player;
+				SDLNet_Write32((Uint32)costEffectGoldAmount, &net_packet->data[5]);
+				SDLNet_Write32((Uint32)costEffectMPAmount, &net_packet->data[9]);
+				net_packet->address.host = net_server.host;
+				net_packet->address.port = net_server.port;
+				net_packet->len = 13;
+				sendPacketSafe(net_sock, -1, net_packet, 0);
+			}
+			return true;
+		}
+		else if ( !hasMana )
+		{
+			messagePlayer(parentGUI.gui_player, MESSAGE_MISC, Language::get(375));
+			if ( players[parentGUI.gui_player]->isLocalPlayer() )
+			{
+				playSound(563, 64);
+				if ( players[parentGUI.gui_player]->magic.noManaProcessedOnTick == 0 )
+				{
+					players[parentGUI.gui_player]->magic.flashNoMana();
+				}
+			}
+		}
+		else if ( !hasGold )
+		{
+			messagePlayer(parentGUI.gui_player, MESSAGE_MISC, Language::get(6540));
+		}
+	}
+	return false;
+}
+
+void GenericGUIMenu::alterItem(Item* item)
 {
 	if ( !item || gui_player < 0 )
 	{
@@ -6344,6 +6586,12 @@ void GenericGUIMenu::alterInstrument(Item* item)
 	if ( !shouldDisplayItemInGUI(item) )
 	{
 		messagePlayer(gui_player, MESSAGE_MISC, Language::get(6514), item->getName());
+		closeGUI();
+		return;
+	}
+	if ( !itemfxGUI.consumeResourcesForTransmute() )
+	{
+		closeGUI();
 		return;
 	}
 
@@ -6351,13 +6599,247 @@ void GenericGUIMenu::alterInstrument(Item* item)
 
 	ItemType prevType = item->type;
 	std::string prevItem = item->getName();
-	ItemType newType = ItemType(((int)item->type) + 1);
-	if ( newType > INSTRUMENT_HORN )
+	if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_ALTER_INSTRUMENT )
 	{
-		newType = INSTRUMENT_FLUTE;
+		ItemType newType = ItemType(((int)item->type) + 1);
+		if ( newType > INSTRUMENT_HORN )
+		{
+			newType = INSTRUMENT_FLUTE;
+		}
+		item->type = newType;
 	}
-	item->type = newType;
-	messagePlayer(gui_player, MESSAGE_HINT, Language::get(6515), prevItem.c_str(), item->getName());
+	else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_ENHANCE_WEAPON )
+	{
+		switch ( item->type )
+		{
+			case BRONZE_AXE:
+				item->type = IRON_AXE;
+				break;
+			case BRONZE_MACE:
+				item->type = IRON_MACE;
+				break;
+			case BRONZE_SWORD:
+				item->type = IRON_SWORD;
+				break;
+			case BRONZE_TOMAHAWK:
+				item->type = IRON_DAGGER;
+				break;
+			case IRON_AXE:
+				item->type = STEEL_AXE;
+				break;
+			case IRON_MACE:
+				item->type = STEEL_MACE;
+				break;
+			case IRON_SWORD:
+				item->type = STEEL_SWORD;
+				break;
+			case IRON_SPEAR:
+				item->type = STEEL_HALBERD;
+				break;
+			case IRON_DAGGER:
+				item->type = STEEL_CHAKRAM;
+				break;
+			case STEEL_AXE:
+				item->type = CRYSTAL_BATTLEAXE;
+				break;
+			case STEEL_MACE:
+				item->type = CRYSTAL_MACE;
+				break;
+			case STEEL_SWORD:
+				item->type = CRYSTAL_SWORD;
+				break;
+			case STEEL_HALBERD:
+				item->type = CRYSTAL_SPEAR;
+				break;
+			case STEEL_CHAKRAM:
+				item->type = CRYSTAL_SHURIKEN;
+				break;
+			default:
+				messagePlayer(gui_player, MESSAGE_MISC, Language::get(6514), item->description());
+				closeGUI();
+				return;
+		}
+	}
+	else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_RESHAPE_WEAPON )
+	{
+		switch ( item->type )
+		{
+		case BRONZE_AXE:
+			item->type = BRONZE_MACE;
+			break;
+		case BRONZE_MACE:
+			item->type = BRONZE_SWORD;
+			break;
+		case BRONZE_SWORD:
+			item->type = BRONZE_AXE;
+			break;
+		case IRON_AXE:
+			item->type = IRON_MACE;
+			break;
+		case IRON_MACE:
+			item->type = IRON_SWORD;
+			break;
+		case IRON_SWORD:
+			item->type = IRON_SPEAR;
+			break;
+		case IRON_SPEAR:
+			item->type = IRON_AXE;
+			break;
+		case STEEL_AXE:
+			item->type = STEEL_MACE;
+			break;
+		case STEEL_MACE:
+			item->type = STEEL_SWORD;
+			break;
+		case STEEL_SWORD:
+			item->type = STEEL_HALBERD;
+			break;
+		case STEEL_HALBERD:
+			item->type = STEEL_AXE;
+			break;
+		case CRYSTAL_BATTLEAXE:
+			item->type = CRYSTAL_MACE;
+			break;
+		case CRYSTAL_MACE:
+			item->type = CRYSTAL_SWORD;
+			break;
+		case CRYSTAL_SWORD:
+			item->type = CRYSTAL_SPEAR;
+			break;
+		case CRYSTAL_SPEAR:
+			item->type = CRYSTAL_BATTLEAXE;
+			break;
+		default:
+			messagePlayer(gui_player, MESSAGE_MISC, Language::get(6514), item->description());
+			closeGUI();
+			return;
+		}
+	}
+	else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_FORGE_KEY )
+	{
+		ItemType newType = GEM_ROCK;
+		switch ( item->type )
+		{
+		case KEY_IRON:
+			newType = KEY_BRONZE;
+			break;
+		case KEY_BRONZE:
+			newType = KEY_SILVER;
+			break;
+		case KEY_SILVER:
+			newType = KEY_GOLD;
+			break;
+		case KEY_GOLD:
+			newType = TOOL_SKELETONKEY;
+			break;
+		default:
+			if ( itemCategory(item) == GEM && item->type != GEM_ROCK && item->type != GEM_LUCK )
+			{
+				newType = KEY_IRON;
+			}
+			break;
+		}
+
+		if ( newType == GEM_ROCK )
+		{
+			messagePlayer(gui_player, MESSAGE_MISC, Language::get(6514), item->getName());
+		}
+		else
+		{
+			Item* itemToPickup = newItem(newType, item->status, item->beatitude, 1, item->appearance, true, nullptr);
+			Item* pickedUp = itemPickup(gui_player, itemToPickup);
+			int oldCount = item->count;
+			item->count = 1;
+			std::string desc = itemToPickup->description();
+			messagePlayer(gui_player, MESSAGE_MISC, Language::get(6553), desc.c_str(), item->description());
+			item->count = oldCount;
+			free(itemToPickup);
+			consumeItem(item, gui_player);
+		}
+		closeGUI();
+		return;
+	}
+	else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_FORGE_JEWEL )
+	{
+		if ( item->type == GEM_GLASS || (itemCategory(item) == GEM && item->type != GEM_ROCK && item->type != GEM_LUCK) )
+		{
+			Item* itemToPickup = newItem(GEM_DIAMOND, EXCELLENT, 0, 1, 0, true, nullptr);
+			Item* pickedUp = itemPickup(gui_player, itemToPickup);
+			int oldCount = item->count;
+			item->count = 1;
+			std::string desc = itemToPickup->description();
+			messagePlayer(gui_player, MESSAGE_MISC, Language::get(6553), desc.c_str(), item->description());
+			item->count = oldCount;
+			free(itemToPickup);
+			consumeItem(item, gui_player);
+		}
+		else
+		{
+			messagePlayer(gui_player, MESSAGE_MISC, Language::get(6514), item->description());
+		}
+		closeGUI();
+		return;
+	}
+	else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_METALLURGY )
+	{
+		int oldCount = item->count;
+		item->count = 1;
+		messagePlayer(gui_player, MESSAGE_MISC, Language::get(6554), -itemfxGUI.costEffectGoldAmount, item->description());
+		item->count = oldCount;
+		consumeItem(item, gui_player);
+		closeGUI();
+		return;
+	}
+	else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_GEOMANCY )
+	{
+		int oldCount = item->count;
+		item->count = 1;
+		messagePlayer(gui_player, MESSAGE_MISC, Language::get(6554), -itemfxGUI.costEffectGoldAmount, item->description());
+		item->count = oldCount;
+		consumeItem(item, gui_player);
+		closeGUI();
+		return;
+	}
+	else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_ALTER_ARROW )
+	{
+		switch ( item->type )
+		{
+		case QUIVER_LIGHTWEIGHT:
+			item->type = QUIVER_FIRE;
+			break;
+		case QUIVER_FIRE:
+			item->type = QUIVER_KNOCKBACK;
+			break;
+		case QUIVER_KNOCKBACK:
+			item->type = QUIVER_PIERCE;
+			break;
+		case QUIVER_PIERCE:
+			item->type = QUIVER_SILVER;
+			break;
+		case QUIVER_SILVER:
+			item->type = QUIVER_CRYSTAL;
+			break;
+		case QUIVER_CRYSTAL:
+			item->type = QUIVER_HUNTING;
+			break;
+		case QUIVER_HUNTING:
+			item->type = QUIVER_LIGHTWEIGHT;
+			break;
+		default:
+			if ( itemCategory(item) == GEM )
+			{
+				item->type = QUIVER_LIGHTWEIGHT;
+				break;
+			}
+			else
+			{
+				messagePlayer(gui_player, MESSAGE_MISC, Language::get(6514), item->description());
+				closeGUI();
+				return;
+			}
+		}
+	}
+	messagePlayer(gui_player, MESSAGE_HINT, Language::get(6515), prevItem.c_str(), item->description());
 
 	std::unordered_set<Uint32> appearancesOfSimilarItems;
 	// reroll any other conflicting items
@@ -6851,6 +7333,42 @@ void GenericGUIMenu::openGUI(int type, Item* effectItem, int effectBeatitude, in
 		{
 			itemfxGUI.currentMode = ItemEffectGUI_t::ITEMFX_MODE_ALTER_INSTRUMENT;
 		}
+		else if ( usingSpellID == SPELL_METALLURGY )
+		{
+			itemfxGUI.currentMode = ItemEffectGUI_t::ITEMFX_MODE_METALLURGY;
+		}
+		else if ( usingSpellID == SPELL_GEOMANCY )
+		{
+			itemfxGUI.currentMode = ItemEffectGUI_t::ITEMFX_MODE_GEOMANCY;
+		}
+		else if ( usingSpellID == SPELL_FORGE_KEY )
+		{
+			itemfxGUI.currentMode = ItemEffectGUI_t::ITEMFX_MODE_FORGE_KEY;
+		}
+		else if ( usingSpellID == SPELL_FORGE_JEWEL )
+		{
+			itemfxGUI.currentMode = ItemEffectGUI_t::ITEMFX_MODE_FORGE_JEWEL;
+		}
+		else if ( usingSpellID == SPELL_ENHANCE_WEAPON )
+		{
+			itemfxGUI.currentMode = ItemEffectGUI_t::ITEMFX_MODE_ENHANCE_WEAPON;
+		}
+		else if ( usingSpellID == SPELL_RESHAPE_WEAPON )
+		{
+			itemfxGUI.currentMode = ItemEffectGUI_t::ITEMFX_MODE_RESHAPE_WEAPON;
+		}
+		else if ( usingSpellID == SPELL_ALTER_ARROW )
+		{
+			itemfxGUI.currentMode = ItemEffectGUI_t::ITEMFX_MODE_ALTER_ARROW;
+		}
+		else if ( usingSpellID == SPELL_PUNCTURE_VOID )
+		{
+			itemfxGUI.currentMode = ItemEffectGUI_t::ITEMFX_MODE_PUNCTURE_VOID;
+		}
+		else if ( usingSpellID == SPELL_ADORCISM )
+		{
+			itemfxGUI.currentMode = ItemEffectGUI_t::ITEMFX_MODE_ADORCISE_WEAPON;
+		}
 		else if ( itemEffectItemType == SCROLL_CHARGING )
 		{
 			itemfxGUI.currentMode = ItemEffectGUI_t::ITEMFX_MODE_SCROLL_CHARGING;
@@ -7027,6 +7545,105 @@ void GenericGUIMenu::openGUI(int type, Entity* shrine)
 
 bool hideRecipeFromList(int type);
 void onFeatherChangeTabAction(const int playernum, bool changingToNewTab = true);
+void GenericGUIMenu::sendItemToVoid(Item* item)
+{
+	if ( !item || gui_player < 0 )
+	{
+		return;
+	}
+	if ( !shouldDisplayItemInGUI(item) )
+	{
+		messagePlayer(gui_player, MESSAGE_MISC, Language::get(6564), item->getName());
+		closeGUI();
+		return;
+	}
+
+	Item* newitem = newItem(item->type, item->status, item->beatitude, item->count, item->appearance, item->identified, nullptr);
+	if ( Item* insertedItem = Entity::addItemToVoidChest(gui_player, newitem, false, nullptr) )
+	{
+		if ( insertedItem != newitem )
+		{
+			free(newitem);
+		}
+
+		messagePlayer(gui_player, MESSAGE_INVENTORY, Language::get(6562), item->description());
+
+		if ( item->node )
+		{
+			list_RemoveNode(item->node);
+		}
+		else
+		{
+			free(item);
+		}
+	}
+	else
+	{
+		if ( multiplayer != CLIENT )
+		{
+			if ( item->count < newitem->count )
+			{
+				messagePlayer(gui_player, MESSAGE_INVENTORY, Language::get(6562), newitem->description());
+			}
+			item->count = newitem->count; // update quantity as some may have went in
+		}
+		free(newitem);
+	}
+	closeGUI();
+}
+
+void GenericGUIMenu::adorciseItem(Item* item)
+{
+	if ( !item || gui_player < 0 )
+	{
+		return;
+	}
+	if ( !shouldDisplayItemInGUI(item) )
+	{
+		messagePlayer(gui_player, MESSAGE_MISC, Language::get(6518), item->getName());
+		closeGUI();
+		return;
+	}
+
+	if ( players[gui_player]->entity )
+	{
+		int x = floor(players[gui_player]->entity->x / 16) * 16 + 8.0 + 16.0 * cos(players[gui_player]->entity->yaw);
+		int y = floor(players[gui_player]->entity->y / 16) * 16 + 8.0 + 16.0 * sin(players[gui_player]->entity->yaw);
+		if ( multiplayer != CLIENT )
+		{
+			if ( Entity* monster = spellEffectAdorcise(*players[gui_player]->entity, spellElementMap[SPELL_ADORCISM], 
+				x, y, item) )
+			{
+				consumeItem(item, gui_player);
+			}
+			else
+			{
+				// no room to spawn!
+				messagePlayer(gui_player, MESSAGE_MISC, Language::get(6578));
+			}
+		}
+		else
+		{
+			strcpy((char*)net_packet->data, "ADOR");
+			SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
+			SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
+			SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
+			SDLNet_Write32((Uint32)1, &net_packet->data[16]);
+			SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
+			net_packet->data[24] = item->identified;
+			net_packet->data[25] = gui_player;
+			SDLNet_Write16((Sint16)(x / 16), &net_packet->data[26]);
+			SDLNet_Write16((Sint16)(y / 16), &net_packet->data[28]);
+			net_packet->address.host = net_server.host;
+			net_packet->address.port = net_server.port;
+			net_packet->len = 30;
+			sendPacketSafe(net_sock, -1, net_packet, 0);
+
+			consumeItem(item, gui_player);
+		}
+	}
+	closeGUI();
+}
 
 bool GenericGUIMenu::executeOnItemClick(Item* item)
 {
@@ -7070,9 +7687,26 @@ bool GenericGUIMenu::executeOnItemClick(Item* item)
 			identifyItem(item);
 			return true;
 		}
-		else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_ALTER_INSTRUMENT )
+		else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_ALTER_INSTRUMENT
+			|| itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_METALLURGY
+			|| itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_GEOMANCY
+			|| itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_FORGE_KEY
+			|| itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_FORGE_JEWEL
+			|| itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_ENHANCE_WEAPON
+			|| itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_RESHAPE_WEAPON
+			|| itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_ALTER_ARROW )
 		{
-			alterInstrument(item);
+			alterItem(item);
+			return true;
+		}
+		else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_PUNCTURE_VOID )
+		{
+			sendItemToVoid(item);
+			return true;
+		}
+		else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_ADORCISE_WEAPON )
+		{
+			adorciseItem(item);
 			return true;
 		}
 		else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_SCROLL_ENCHANT_WEAPON
@@ -21049,13 +21683,148 @@ bool GenericGUIMenu::FeatherGUI_t::isInscribeOrRepairActive() const
 void GenericGUIMenu::ItemEffectGUI_t::clearItemDisplayed()
 {
 	itemType = -1;
+	costEffectGoldAmount = 0;
+	costEffectMPAmount = 0;
 	itemActionType = ITEMFX_ACTION_NONE;
+}
+
+void GenericGUIMenu::ItemEffectGUI_t::getItemEffectCost(Item* itemUsedWith, int& goldCost, int& manaCost)
+{
+	goldCost = 0;
+	manaCost = 0;
+	if ( !itemUsedWith || modeHasCostEffect == COST_EFFECT_NONE )
+	{
+		return;
+	}
+
+	if ( parentGUI.isItemAlterable(itemUsedWith) )
+	{
+		if ( currentMode == ITEMFX_MODE_ALTER_INSTRUMENT )
+		{
+			goldCost = 200;
+		}
+		else if ( currentMode == ITEMFX_MODE_METALLURGY )
+		{
+			manaCost = std::max(10, items[itemUsedWith->type].value / 100);
+			goldCost = -items[itemUsedWith->type].value / 4;
+		}
+		else if ( currentMode == ITEMFX_MODE_GEOMANCY )
+		{
+			manaCost = std::max(50, items[itemUsedWith->type].value / 100);
+			goldCost = -items[itemUsedWith->type].value / 4;
+		}
+		else if ( currentMode == ITEMFX_MODE_FORGE_KEY )
+		{
+			if ( itemUsedWith->type == KEY_IRON )
+			{
+				goldCost = 100;
+			}
+			else if ( itemUsedWith->type == KEY_BRONZE )
+			{
+				goldCost = 300;
+			}
+			else if ( itemUsedWith->type == KEY_SILVER )
+			{
+				goldCost = 900;
+			}
+			else if ( itemUsedWith->type == KEY_GOLD )
+			{
+				goldCost = 1200;
+			}
+			else if ( (itemCategory(itemUsedWith) == GEM && itemUsedWith->type != GEM_ROCK && itemUsedWith->type != GEM_LUCK) )
+			{
+				goldCost = 100;
+			}
+		}
+		else if ( currentMode == ITEMFX_MODE_FORGE_JEWEL )
+		{
+			if ( itemUsedWith->type == GEM_GLASS )
+			{
+				goldCost = 2000;
+			}
+			else if ( (itemCategory(itemUsedWith) == GEM && itemUsedWith->type != GEM_ROCK && itemUsedWith->type != GEM_LUCK) )
+			{
+				goldCost = 1000;
+			}
+		}
+		else if ( currentMode == ITEMFX_MODE_ENHANCE_WEAPON )
+		{
+			if ( itemUsedWith->type == BRONZE_AXE
+				|| itemUsedWith->type == BRONZE_MACE
+				|| itemUsedWith->type == BRONZE_SWORD
+				|| itemUsedWith->type == BRONZE_TOMAHAWK )
+			{
+				goldCost = 200;
+			}
+			else if ( itemUsedWith->type == IRON_AXE
+				|| itemUsedWith->type == IRON_MACE
+				|| itemUsedWith->type == IRON_SWORD
+				|| itemUsedWith->type == IRON_SPEAR
+				|| itemUsedWith->type == IRON_DAGGER )
+			{
+				goldCost = 400;
+			}
+			else if ( itemUsedWith->type == STEEL_AXE
+				|| itemUsedWith->type == STEEL_MACE
+				|| itemUsedWith->type == STEEL_SWORD
+				|| itemUsedWith->type == STEEL_HALBERD
+				|| itemUsedWith->type == STEEL_CHAKRAM )
+			{
+				goldCost = 1600;
+			}
+		}
+		else if ( currentMode == ITEMFX_MODE_RESHAPE_WEAPON )
+		{
+			if ( itemUsedWith->type == BRONZE_AXE
+				|| itemUsedWith->type == BRONZE_MACE
+				|| itemUsedWith->type == BRONZE_SWORD )
+			{
+				goldCost = 100;
+			}
+			else if ( itemUsedWith->type == IRON_AXE
+				|| itemUsedWith->type == IRON_MACE
+				|| itemUsedWith->type == IRON_SWORD
+				|| itemUsedWith->type == IRON_SPEAR )
+			{
+				goldCost = 200;
+			}
+			else if ( itemUsedWith->type == STEEL_AXE
+				|| itemUsedWith->type == STEEL_MACE
+				|| itemUsedWith->type == STEEL_SWORD
+				|| itemUsedWith->type == STEEL_HALBERD )
+			{
+				goldCost = 300;
+			}
+			else if ( itemUsedWith->type == CRYSTAL_BATTLEAXE
+				|| itemUsedWith->type == CRYSTAL_MACE
+				|| itemUsedWith->type == CRYSTAL_SWORD
+				|| itemUsedWith->type == CRYSTAL_SPEAR )
+			{
+				goldCost = 400;
+			}
+		}
+		else if ( currentMode == ITEMFX_MODE_ALTER_ARROW )
+		{
+			if ( itemUsedWith->type == GEM_ROCK )
+			{
+				goldCost = 200;
+			}
+			else if ( itemTypeIsQuiver(itemUsedWith->type) )
+			{
+				goldCost = 100;
+			}
+		}
+	}
 }
 
 GenericGUIMenu::ItemEffectGUI_t::ItemEffectActions_t GenericGUIMenu::ItemEffectGUI_t::setItemDisplayNameAndPrice(Item* item, bool checkResultOnly)
 {
 	auto result = ITEMFX_ACTION_NONE;
-
+	if ( !checkResultOnly )
+	{
+		costEffectMPAmount = 0;
+		costEffectGoldAmount = 0;
+	}
 	if ( item )
 	{
 		if ( currentMode == ITEMFX_MODE_SCROLL_IDENTIFY 
@@ -21171,7 +21940,14 @@ GenericGUIMenu::ItemEffectGUI_t::ItemEffectActions_t GenericGUIMenu::ItemEffectG
 				}
 			}
 		}
-		else if ( currentMode == ITEMFX_MODE_ALTER_INSTRUMENT )
+		else if ( currentMode == ITEMFX_MODE_ALTER_INSTRUMENT
+			|| currentMode == ITEMFX_MODE_METALLURGY
+			|| currentMode == ITEMFX_MODE_GEOMANCY
+			|| currentMode == ITEMFX_MODE_FORGE_KEY
+			|| currentMode == ITEMFX_MODE_FORGE_JEWEL
+			|| currentMode == ITEMFX_MODE_ENHANCE_WEAPON
+			|| currentMode == ITEMFX_MODE_RESHAPE_WEAPON
+			|| currentMode == ITEMFX_MODE_ALTER_ARROW )
 		{
 			if ( itemCategory(item) == SPELL_CAT )
 			{
@@ -21183,13 +21959,89 @@ GenericGUIMenu::ItemEffectGUI_t::ItemEffectActions_t GenericGUIMenu::ItemEffectG
 			}
 			else
 			{
-				if ( parentGUI.isItemAlterInstrumentable(item) )
+				int goldCost = 0;
+				int manaCost = 0;
+				getItemEffectCost(item, goldCost, manaCost);
+				if ( !checkResultOnly )
 				{
-					result = ITEMFX_ACTION_OK;
+					costEffectGoldAmount = goldCost;
+					costEffectMPAmount = manaCost;
+				}
+
+				if ( parentGUI.isItemAlterable(item) )
+				{
+					if ( goldCost > 0 && goldCost > stats[parentGUI.gui_player]->GOLD )
+					{
+						result = ITEMFX_ACTION_CANT_AFFORD_GOLD;
+					}
+					else if ( manaCost > 0 && manaCost > stats[parentGUI.gui_player]->MP && stats[parentGUI.gui_player]->type != VAMPIRE )
+					{
+						result = ITEMFX_ACTION_CANT_AFFORD_MANA;
+					}
+					else if ( itemIsEquipped(item, parentGUI.gui_player) )
+					{
+						result = ITEMFX_ACTION_MUST_BE_UNEQUIPPED;
+					}
+					else
+					{
+						result = ITEMFX_ACTION_OK;
+					}
 				}
 				else
 				{
 					result = ITEMFX_ACTION_INVALID_ITEM;
+				}
+			}
+		}
+		else if ( currentMode == ITEMFX_MODE_PUNCTURE_VOID )
+		{
+			if ( itemCategory(item) == SPELL_CAT )
+			{
+				result = ITEMFX_ACTION_INVALID_ITEM;
+			}
+			else if ( !item->identified )
+			{
+				result = ITEMFX_ACTION_NOT_IDENTIFIED_YET;
+			}
+			else
+			{
+				if ( !parentGUI.isItemVoidable(item) )
+				{
+					result = ITEMFX_ACTION_UNVOIDABLE;
+				}
+				else if ( itemIsEquipped(item, parentGUI.gui_player) )
+				{
+					result = ITEMFX_ACTION_MUST_BE_UNEQUIPPED;
+				}
+				else
+				{
+					result = ITEMFX_ACTION_OK;
+				}
+			}
+		}
+		else if ( currentMode == ITEMFX_MODE_ADORCISE_WEAPON )
+		{
+			if ( itemCategory(item) == SPELL_CAT )
+			{
+				result = ITEMFX_ACTION_INVALID_ITEM;
+			}
+			else if ( !item->identified )
+			{
+				result = ITEMFX_ACTION_NOT_IDENTIFIED_YET;
+			}
+			else
+			{
+				if ( !parentGUI.isItemAdorcisable(item) )
+				{
+					result = ITEMFX_ACTION_INVALID_ITEM;
+				}
+				else if ( itemIsEquipped(item, parentGUI.gui_player) )
+				{
+					result = ITEMFX_ACTION_MUST_BE_UNEQUIPPED;
+				}
+				else
+				{
+					result = ITEMFX_ACTION_OK;
 				}
 			}
 			}
@@ -21402,6 +22254,26 @@ void GenericGUIMenu::ItemEffectGUI_t::openItemEffectMenu(GenericGUIMenu::ItemEff
 	auto player = players[playernum];
 
 	currentMode = mode;
+	modeHasCostEffect = COST_EFFECT_NONE;
+	switch ( currentMode )
+	{
+	case ITEMFX_MODE_METALLURGY:
+	case ITEMFX_MODE_GEOMANCY:
+		modeHasCostEffect = COST_EFFECT_MANA_RETURN_GOLD;
+		break;
+	case ITEMFX_MODE_ALTER_INSTRUMENT:
+	case ITEMFX_MODE_FORGE_KEY:
+	case ITEMFX_MODE_FORGE_JEWEL:
+	case ITEMFX_MODE_ENHANCE_WEAPON:
+	case ITEMFX_MODE_RESHAPE_WEAPON:
+		modeHasCostEffect = COST_EFFECT_GOLD;
+		break;
+	case ITEMFX_MODE_ALTER_ARROW:
+		modeHasCostEffect = COST_EFFECT_MANA_AND_GOLD;
+		break;
+	default:
+		break;
+	}
 	if ( itemEffectFrame )
 	{
 		bool wasDisabled = itemEffectFrame->isDisabled();
@@ -21444,6 +22316,7 @@ void GenericGUIMenu::ItemEffectGUI_t::closeItemEffectMenu()
 	animInvalidAction = 0.0;
 	animInvalidActionTicks = 0;
 	panelJustifyInverted = false;
+	modeHasCostEffect = COST_EFFECT_NONE;
 	currentMode = ITEMFX_MODE_NONE;
 	invalidActionType = INVALID_ACTION_NONE;
 	isInteractable = false;
@@ -22010,6 +22883,8 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 	auto displayItemName = itemDisplayTooltip->findField("item display name");
 	auto displayItemTextImg = itemDisplayTooltip->findImage("item text img");
 	auto itemSlotBg = itemDisplayTooltip->findImage("item bg img");
+	auto costEffectGoldText = itemDisplayTooltip->findField("item gold value");
+	auto costEffectManaText = itemDisplayTooltip->findField("item mp value");
 	itemSlotBg->pos.x = 12;
 	itemSlotBg->pos.y = 12;
 	const int displayItemTextImgBaseX = itemSlotBg->pos.x + itemSlotBg->pos.w;
@@ -22020,6 +22895,16 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 	displayItemName->setSize(displayItemNamePos);
 	static ConsoleVariable<int> cvar_itemfxPromptY("/itemfx_action_prompt_y", -2);
 	SDL_Rect actionPromptTxtPos{ 0, 205 + *cvar_itemfxPromptY + heightOffsetCompact, baseFrame->getSize().w - 18 - 8, 24 };
+	if ( modeHasCostEffect == COST_EFFECT_GOLD
+		|| modeHasCostEffect == COST_EFFECT_MANA )
+	{
+		actionPromptTxtPos.y += 26;
+	}
+	else if ( modeHasCostEffect == COST_EFFECT_MANA_RETURN_GOLD
+		|| modeHasCostEffect == COST_EFFECT_MANA_AND_GOLD )
+	{
+		actionPromptTxtPos.y += 52;
+	}
 	actionPromptTxt->setSize(actionPromptTxtPos);
 
 	SDL_Rect tooltipPos = itemDisplayTooltip->getSize();
@@ -22028,6 +22913,78 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 	tooltipPos.y = 118 + heightOffsetCompact;
 	tooltipPos.x = 18 - (tooltipPos.w + 18) * (0.0/*1.0 - animTooltip*/);
 	itemDisplayTooltip->setSize(tooltipPos);
+
+	auto costBg = itemDisplayTooltip->findImage("item cost img");
+	auto costLabel = itemDisplayTooltip->findField("item cost label");
+	auto costBg2 = itemDisplayTooltip->findImage("item cost img 2");
+	auto costLabel2 = itemDisplayTooltip->findField("item cost label 2");
+	if ( modeHasCostEffect == COST_EFFECT_NONE )
+	{
+		costBg->disabled = true;
+		costLabel->setDisabled(true);
+		costEffectGoldText->setDisabled(true);
+		costEffectManaText->setDisabled(true);
+	}
+	else
+	{
+		int align_x = displayItemTextImgBaseX + displayItemTextImg->pos.w - costBg->pos.w;
+		int align_y = displayItemTextImg->pos.y + displayItemTextImg->pos.h + 4;
+
+		if ( modeHasCostEffect == COST_EFFECT_MANA
+			|| modeHasCostEffect == COST_EFFECT_MANA_RETURN_GOLD
+			|| modeHasCostEffect == COST_EFFECT_MANA_AND_GOLD )
+		{
+			costBg2->pos.x = align_x;
+			costBg2->pos.y = align_y;
+			costBg2->disabled = false;
+
+			SDL_Rect goldPos{ costBg2->pos.x + 28, costBg2->pos.y + 9, 66, 24 };
+			costEffectManaText->setSize(goldPos);
+			costEffectManaText->setDisabled(false);
+
+			SDL_Rect costLabelTxtPos = costLabel2->getSize();
+			costLabelTxtPos.w = costBg2->pos.x - 4;
+			costLabelTxtPos.x = 0;
+			costLabelTxtPos.y = goldPos.y;
+			costLabelTxtPos.h = 24;
+			costLabel2->setSize(costLabelTxtPos);
+			costLabel2->setDisabled(false);
+			align_y += 28;
+
+			costLabel2->setText(Language::get(6555));
+		}
+
+		if ( modeHasCostEffect == COST_EFFECT_GOLD
+			|| modeHasCostEffect == COST_EFFECT_MANA_RETURN_GOLD
+			|| modeHasCostEffect == COST_EFFECT_MANA_AND_GOLD )
+		{
+			costBg->pos.x = align_x;
+			costBg->pos.y = align_y;
+			costBg->disabled = false;
+
+			SDL_Rect goldPos{ costBg->pos.x + 28, costBg->pos.y + 9, 66, 24 };
+			costEffectGoldText->setSize(goldPos);
+			costEffectGoldText->setDisabled(false);
+
+			SDL_Rect costLabelTxtPos = costLabel->getSize();
+			costLabelTxtPos.w = costBg->pos.x - 4;
+			costLabelTxtPos.x = 0;
+			costLabelTxtPos.y = goldPos.y;
+			costLabelTxtPos.h = 24;
+			costLabel->setSize(costLabelTxtPos);
+			costLabel->setDisabled(false);
+
+			if ( modeHasCostEffect == COST_EFFECT_MANA_RETURN_GOLD )
+			{
+				costLabel->setText(Language::get(6544));
+			}
+			else
+			{
+				costLabel->setText(Language::get(6538));
+			}
+		}
+
+	}
 
 	auto itemSlotFrame = itemDisplayTooltip->findFrame("item slot frame");
 	bool modifierPressed = false;
@@ -22127,6 +23084,33 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 					case ITEMFX_MODE_SPELL_REMOVECURSE:
 						actionPromptTxt->setText(Language::get(4204));
 						break;
+					case ITEMFX_MODE_METALLURGY:
+						actionPromptTxt->setText(Language::get(6545));
+						break;
+					case ITEMFX_MODE_GEOMANCY:
+						actionPromptTxt->setText(Language::get(6546));
+						break;
+					case ITEMFX_MODE_FORGE_KEY:
+						actionPromptTxt->setText(Language::get(6547));
+						break;
+					case ITEMFX_MODE_FORGE_JEWEL:
+						actionPromptTxt->setText(Language::get(6548));
+						break;
+					case ITEMFX_MODE_ENHANCE_WEAPON:
+						actionPromptTxt->setText(Language::get(6549));
+						break;
+					case ITEMFX_MODE_RESHAPE_WEAPON:
+						actionPromptTxt->setText(Language::get(6550));
+						break;
+					case ITEMFX_MODE_ALTER_ARROW:
+						actionPromptTxt->setText(Language::get(6551));
+						break;
+					case ITEMFX_MODE_PUNCTURE_VOID:
+						actionPromptTxt->setText(Language::get(6561));
+						break;
+					case ITEMFX_MODE_ADORCISE_WEAPON:
+						actionPromptTxt->setText(Language::get(6616));
+						break;
 					default:
 						actionPromptTxt->setText("");
 						break;
@@ -22155,13 +23139,22 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 							actionPromptTxt->setText(Language::get(4212));
 							break;
 						case ITEMFX_ACTION_MUST_BE_UNEQUIPPED:
-							actionPromptTxt->setText(Language::get(4136));
+							actionPromptTxt->setText(Language::get(4132));
 							break;
 						case ITEMFX_ACTION_NOT_IDENTIFIED_YET:
 							actionPromptTxt->setText(Language::get(4153));
 							break;
 						case ITEMFX_ACTION_NOT_CURSED:
 							actionPromptTxt->setText(Language::get(4213));
+							break;
+						case ITEMFX_ACTION_CANT_AFFORD_GOLD:
+							actionPromptTxt->setText(Language::get(6539));
+							break;
+						case ITEMFX_ACTION_CANT_AFFORD_MANA:
+							actionPromptTxt->setText(Language::get(6552));
+							break;
+						case ITEMFX_ACTION_UNVOIDABLE:
+							actionPromptTxt->setText(Language::get(6563));
 							break;
 						default:
 							actionPromptTxt->setText("-");
@@ -22225,6 +23218,41 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 				itemRequiresTitleReflow = false;
 			}
 		}
+
+		{
+			// charge costs
+			costEffectGoldText->setColor(neutralColor);
+			costEffectManaText->setColor(neutralColor);
+			costEffectGoldText->setText("");
+			if ( itemActionType == ITEMFX_ACTION_OK 
+				|| itemActionType == ITEMFX_ACTION_CANT_AFFORD_GOLD
+				|| itemActionType == ITEMFX_ACTION_CANT_AFFORD_MANA
+				|| itemActionType == ITEMFX_ACTION_MUST_BE_UNEQUIPPED )
+			{
+				char buf[32];
+				if ( modeHasCostEffect == COST_EFFECT_MANA_RETURN_GOLD )
+				{
+					snprintf(buf, sizeof(buf), "+%dG", -costEffectGoldAmount);
+					costEffectGoldText->setColor(hudColors.characterSheetLightNeutral);
+				}
+				else
+				{
+					snprintf(buf, sizeof(buf), "%dG", costEffectGoldAmount);
+					if ( itemActionType == ITEMFX_ACTION_CANT_AFFORD_GOLD )
+					{
+						costEffectGoldText->setColor(negativeColor);
+					}
+				}
+				costEffectGoldText->setText(buf);
+
+				snprintf(buf, sizeof(buf), "%dMP", costEffectMPAmount);
+				if ( itemActionType == ITEMFX_ACTION_CANT_AFFORD_MANA )
+				{
+					costEffectManaText->setColor(negativeColor);
+				}
+				costEffectManaText->setText(buf);
+			}
+		}
 	}
 	else
 	{
@@ -22241,7 +23269,9 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 
 	auto actionPromptUnselectedTxt = baseFrame->findField("action prompt unselected txt");
 	auto actionPromptCoverLeftImg = baseFrame->findImage("action prompt lcover");
+	actionPromptCoverLeftImg->disabled = true;
 	auto actionPromptCoverRightImg = baseFrame->findImage("action prompt rcover");
+	actionPromptCoverRightImg->disabled = true;
 	actionPromptCoverLeftImg->pos.x = 0;
 	actionPromptCoverRightImg->pos.x = baseFrame->getSize().w - actionPromptCoverLeftImg->pos.w;
 	actionPromptCoverLeftImg->pos.y = 90 + heightOffsetCompact;
@@ -22281,6 +23311,33 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 				break;
 			case ITEMFX_MODE_SPELL_REMOVECURSE:
 				actionPromptUnselectedTxt->setText(Language::get(4205));
+				break;
+			case ITEMFX_MODE_METALLURGY:
+				actionPromptUnselectedTxt->setText(Language::get(6542));
+				break;
+			case ITEMFX_MODE_GEOMANCY:
+				actionPromptUnselectedTxt->setText(Language::get(6543));
+				break;
+			case ITEMFX_MODE_FORGE_KEY:
+				actionPromptUnselectedTxt->setText(Language::get(6542));
+				break;
+			case ITEMFX_MODE_FORGE_JEWEL:
+				actionPromptUnselectedTxt->setText(Language::get(6543));
+				break;
+			case ITEMFX_MODE_RESHAPE_WEAPON:
+				actionPromptUnselectedTxt->setText(Language::get(6541));
+				break;
+			case ITEMFX_MODE_ENHANCE_WEAPON:
+				actionPromptUnselectedTxt->setText(Language::get(6541));
+				break;
+			case ITEMFX_MODE_ALTER_ARROW:
+				actionPromptUnselectedTxt->setText(Language::get(6542));
+				break;
+			case ITEMFX_MODE_PUNCTURE_VOID:
+				actionPromptUnselectedTxt->setText(Language::get(6560));
+				break;
+			case ITEMFX_MODE_ADORCISE_WEAPON:
+				actionPromptUnselectedTxt->setText(Language::get(6617));
 				break;
 			default:
 				actionPromptUnselectedTxt->setText("");
@@ -22335,6 +23392,18 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 		getColor(displayItemName->getColor(), &color.r, &color.g, &color.b, &color.a);
 		color.a = (Uint8)(255 * animTooltip);
 		displayItemName->setColor(makeColor(color.r, color.g, color.b, color.a));
+	}
+	{
+		SDL_Color color;
+		getColor(costEffectGoldText->getColor(), &color.r, &color.g, &color.b, &color.a);
+		color.a = (Uint8)(255 * animTooltip);
+		costEffectGoldText->setColor(makeColor(color.r, color.g, color.b, color.a));
+	}
+	{
+		SDL_Color color;
+		getColor(costEffectManaText->getColor(), &color.r, &color.g, &color.b, &color.a);
+		color.a = (Uint8)(255 * animTooltip);
+		costEffectManaText->setColor(makeColor(color.r, color.g, color.b, color.a));
 	}
 
 	//itemDisplayTooltip->setOpacity(100.0 * animTooltip);
@@ -22457,6 +23526,20 @@ void GenericGUIMenu::ItemEffectGUI_t::createItemEffectMenu()
 	}
 
 	SDL_Rect basePos{ 0, 0, itemEffectBaseWidth, 242 };
+	const char* baseWindow = "*images/ui/ScrollSpells/Scroll_Window_00.png";
+	if ( modeHasCostEffect == COST_EFFECT_GOLD
+		|| modeHasCostEffect == COST_EFFECT_MANA )
+	{
+		baseWindow = "*images/ui/ScrollSpells/Scroll_Window_GoldCost_00.png";
+		basePos.h = 268;
+	}
+	else if ( modeHasCostEffect == COST_EFFECT_MANA_RETURN_GOLD
+		|| modeHasCostEffect == COST_EFFECT_MANA_AND_GOLD )
+	{
+		baseWindow = "*images/ui/ScrollSpells/Scroll_Window_GoldManaCost_00.png";
+		basePos.h = 296;
+	}
+
 	{
 		auto bgFrame = itemEffectFrame->addFrame("itemfx base");
 		bgFrame->setSize(basePos);
@@ -22464,7 +23547,7 @@ void GenericGUIMenu::ItemEffectGUI_t::createItemEffectMenu()
 		bgFrame->setDisabled(true);
 		auto bg = bgFrame->addImage(SDL_Rect{ 0, 0, basePos.w, basePos.h },
 			makeColor(255, 255, 255, 255),
-			"*images/ui/ScrollSpells/Scroll_Window_00.png", "itemfx base img");
+			baseWindow, "itemfx base img");
 
 		auto skillIcon = bgFrame->addImage(SDL_Rect{ 270, 36, 24, 24 },
 			makeColor(255, 255, 255, 255),
@@ -22513,6 +23596,52 @@ void GenericGUIMenu::ItemEffectGUI_t::createItemEffectMenu()
 
 			auto itemBgImg = itemDisplayTooltip->addImage(SDL_Rect{ 0, 0, 54, 54 }, 0xFFFFFFFF,
 				"*images/ui/ScrollSpells/Scroll_ItemBGSurround_00.png", "item bg img");
+
+			{
+				auto itemCostBg = itemDisplayTooltip->addImage(SDL_Rect{ 0, 0, 104, 34 },
+					0xFFFFFFFF, "*images/ui/ScrollSpells/Scroll_CostBacking_00.png", "item cost img");
+				itemCostBg->disabled = true;
+
+				auto itemCostBg2 = itemDisplayTooltip->addImage(SDL_Rect{ 0, 0, 104, 34 },
+					0xFFFFFFFF, "*images/ui/ScrollSpells/Scroll_MPBacking_00.png", "item cost img 2");
+				itemCostBg2->disabled = true;
+
+				auto costEffectGoldText = itemDisplayTooltip->addField("item gold value", 32);
+				costEffectGoldText->setFont(itemFont);
+				costEffectGoldText->setText("");
+				costEffectGoldText->setHJustify(Field::justify_t::RIGHT);
+				costEffectGoldText->setVJustify(Field::justify_t::TOP);
+				costEffectGoldText->setSize(SDL_Rect{ 0, 0, 0, 0 });
+				costEffectGoldText->setColor(hudColors.characterSheetLightNeutral);
+				costEffectGoldText->setDisabled(true);
+
+				auto costEffectMPText = itemDisplayTooltip->addField("item mp value", 32);
+				costEffectMPText->setFont(itemFont);
+				costEffectMPText->setText("");
+				costEffectMPText->setHJustify(Field::justify_t::RIGHT);
+				costEffectMPText->setVJustify(Field::justify_t::TOP);
+				costEffectMPText->setSize(SDL_Rect{ 0, 0, 0, 0 });
+				costEffectMPText->setColor(hudColors.characterSheetLightNeutral);
+				costEffectMPText->setDisabled(true);
+
+				auto costLabel = itemDisplayTooltip->addField("item cost label", 64);
+				costLabel->setFont(itemFont);
+				costLabel->setText("");
+				costLabel->setHJustify(Field::justify_t::RIGHT);
+				costLabel->setVJustify(Field::justify_t::TOP);
+				costLabel->setSize(SDL_Rect{ 0, 0, 90, 0 });
+				costLabel->setColor(hudColors.characterSheetLightNeutral);
+				costLabel->setDisabled(true);
+
+				auto costLabel2 = itemDisplayTooltip->addField("item cost label 2", 64);
+				costLabel2->setFont(itemFont);
+				costLabel2->setText("");
+				costLabel2->setHJustify(Field::justify_t::RIGHT);
+				costLabel2->setVJustify(Field::justify_t::TOP);
+				costLabel2->setSize(SDL_Rect{ 0, 0, 90, 0 });
+				costLabel2->setColor(hudColors.characterSheetLightNeutral);
+				costLabel2->setDisabled(true);
+			}
 
 			auto slotFrame = itemDisplayTooltip->addFrame("item slot frame");
 			SDL_Rect slotPos{ 0, 0, players[player]->inventoryUI.getSlotSize(), players[player]->inventoryUI.getSlotSize() };

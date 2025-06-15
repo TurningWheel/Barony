@@ -85,6 +85,10 @@ void Entity::initMonster(int mySprite)
 		{
 			z = limbs[MIMIC][5][2];
 		}
+		if ( monsterType == MINIMIMIC )
+		{
+			z = limbs[MINIMIMIC][5][2];
+		}
 	} else {
 		if (arachnophobia_filter)
 		{
@@ -165,6 +169,7 @@ void Entity::initMonster(int mySprite)
 			monsterSpellAnimation = MONSTER_SPELLCAST_HUMANOID;
 			break;
 		case MIMIC:
+		case MINIMIMIC:
 			monsterFootstepType = MONSTER_FOOTSTEP_NONE;
 			monsterSpellAnimation = MONSTER_SPELLCAST_NONE;
 			break;
@@ -254,6 +259,18 @@ void Entity::initMonster(int mySprite)
 		case MONSTER_G:
 			monsterFootstepType = MONSTER_FOOTSTEP_USE_BOOTS;
 			monsterSpellAnimation = MONSTER_SPELLCAST_HUMANOID;
+			break;
+		case REVENANT_SKULL:
+		case MONSTER_ADORCISED_WEAPON:
+		case MONSTER_UNUSED_1:
+		case MONSTER_UNUSED_2:
+		case MONSTER_UNUSED_3:
+		case MONSTER_UNUSED_4:
+		case MONSTER_UNUSED_5:
+		case MONSTER_UNUSED_6:
+		case MONSTER_UNUSED_7:
+		case MONSTER_UNUSED_8:
+			// unused
 			break;
 		default:
 			monsterFootstepType = MONSTER_FOOTSTEP_NONE;

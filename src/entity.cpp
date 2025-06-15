@@ -479,6 +479,10 @@ int Entity::entityLightAfterReductions(Stat& myStats, Entity* observer)
 			{
 				light = TOUCHRANGE;
 			}
+			if ( observerStats && observerStats->getEffectActive(EFF_SEEK_CREATURE) )
+			{
+				light = 16;
+			}
 			if ( observer->behavior == &actMonster
 				&& observer->monsterLastDistractedByNoisemaker > 0 
 				&& uidToEntity(observer->monsterLastDistractedByNoisemaker) )
@@ -940,6 +944,7 @@ void Entity::effectTimes()
 			}
 			if ( myStats->EFFECTS_TIMERS[c] == 0 )
 			{
+				Uint8 effectStrength = myStats->getEffectActive(c);
 				myStats->clearEffect(c);
 				switch ( c )
 				{
@@ -1460,6 +1465,44 @@ void Entity::effectTimes()
 						updateClient = true;
 						break;
 					case EFF_KNOCKBACK:
+						break;
+					case EFF_DELAY_PAIN:
+						if ( effectStrength > 1 )
+						{
+							messagePlayer(player, MESSAGE_STATUS, Language::get(6629));
+							modHP(-((Sint32)effectStrength - 1));
+							setObituary(Language::get(6626));
+
+							// Give the Player feedback on being hurt
+							playSoundEntity(this, 28, 64); // "Damage.ogg"
+
+							// Shake the Host's screen
+							if ( player >= 0 )
+							{
+								auto& camera_shakex = cameravars[player].shakex;
+								auto& camera_shakey = cameravars[player].shakey;
+								if ( player >= 0 && players[player]->isLocalPlayer() )
+								{
+									camera_shakex += .3;
+									camera_shakey += 30;
+								}
+								else if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
+								{
+									// Shake the Client's screen
+									strcpy((char*)net_packet->data, "SHAK");
+									net_packet->data[4] = 30; // turns into .1
+									net_packet->data[5] = 30;
+									net_packet->address.host = net_clients[player - 1].host;
+									net_packet->address.port = net_clients[player - 1].port;
+									net_packet->len = 6;
+									sendPacketSafe(net_sock, -1, net_packet, player - 1);
+								}
+							}
+						}
+						else
+						{
+							messagePlayer(player, MESSAGE_STATUS, Language::get(6628));
+						}
 						break;
 					case EFF_WITHDRAWAL:
 						if ( player >= 0 && player < MAXPLAYERS )
@@ -2274,6 +2317,22 @@ void Entity::modHP(int amount)
 			inputs.addRumbleForPlayerHPLoss(skill[2], amount);
 		}
 		return;
+	}
+
+	if ( amount < 0 )
+	{
+		if ( int effectStrength = entitystats->getEffectActive(EFF_DELAY_PAIN) )
+		{
+			while ( amount < 0 && effectStrength < 251 )
+			{
+				effectStrength++;
+				++amount;
+			}
+			if ( effectStrength != entitystats->getEffectActive(EFF_DELAY_PAIN) )
+			{
+				setEffect(EFF_DELAY_PAIN, (Uint8)effectStrength, entitystats->EFFECTS_TIMERS[EFF_DELAY_PAIN], false);
+			}
+		}
 	}
 
 	Sint32 oldHP = entitystats->HP;
@@ -5942,6 +6001,14 @@ Sint32 statGetSTR(Stat* entitystats, Entity* my)
 	{
 		STR += 8;
 	}
+	if ( entitystats->getEffectActive(EFF_COWARDICE) )
+	{
+		STR -= entitystats->getEffectActive(EFF_COWARDICE);
+	}
+	if ( entitystats->getEffectActive(EFF_COURAGE) )
+	{
+		STR += entitystats->getEffectActive(EFF_COURAGE);
+	}
 	if ( entitystats->getEffectActive(EFF_VAMPIRICAURA) && my && my->behavior == &actPlayer )
 	{
 		if ( entitystats->EFFECTS_TIMERS[EFF_VAMPIRICAURA] == -2 )
@@ -5982,6 +6049,14 @@ Sint32 statGetSTR(Stat* entitystats, Entity* my)
 	}
 
 	STR += (Sint32)entitystats->getEnsembleEffectBonus(Stat::ENSEMBLE_DRUM_EFF_1);
+
+	if ( entitystats->type == MIMIC )
+	{
+		if ( entitystats->getEffectActive(EFF_MIMIC_VOID) )
+		{
+			STR += 15;
+		}
+	}
 
 	return STR;
 }
@@ -6237,6 +6312,14 @@ Sint32 statGetDEX(Stat* entitystats, Entity* my)
 	{
 		DEX += 8;
 	}
+
+	if ( entitystats->type == MIMIC )
+	{
+		if ( entitystats->getEffectActive(EFF_MIMIC_VOID) )
+		{
+			DEX += 3;
+		}
+	}
 	return DEX;
 }
 
@@ -6332,6 +6415,14 @@ Sint32 statGetCON(Stat* entitystats, Entity* my)
 	{
 		CON += 8;
 	}
+	if ( entitystats->getEffectActive(EFF_COWARDICE) )
+	{
+		CON -= entitystats->getEffectActive(EFF_COWARDICE);
+	}
+	if ( entitystats->getEffectActive(EFF_COURAGE) )
+	{
+		CON += entitystats->getEffectActive(EFF_COURAGE);
+	}
 	if ( my && entitystats->getEffectActive(EFF_DRUNK) && entitystats->type == GOATMAN )
 	{
 		CON += std::max(4, static_cast<int>(CON * 0.25));
@@ -6351,6 +6442,15 @@ Sint32 statGetCON(Stat* entitystats, Entity* my)
 		percentHP = 100 - percentHP;
 		CON += percentHP / 10;
 	}
+
+	if ( entitystats->type == MIMIC )
+	{
+		if ( entitystats->getEffectActive(EFF_MIMIC_VOID) )
+		{
+			CON += 10;
+		}
+	}
+
 	return CON;
 }
 
@@ -7230,7 +7330,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 			}
 			else if ( (myStats->type == INCUBUS && (pose == MONSTER_POSE_INCUBUS_TELEPORT || pose == MONSTER_POSE_INCUBUS_TAUNT))
 				|| (myStats->type == VAMPIRE && (pose == MONSTER_POSE_VAMPIRE_DRAIN || pose == MONSTER_POSE_VAMPIRE_AURA_CHARGE))
-				|| (myStats->type == MIMIC 
+				|| ( (myStats->type == MIMIC || myStats->type == MINIMIMIC)
 					&& (pose == MONSTER_POSE_MIMIC_DISTURBED || pose == MONSTER_POSE_MIMIC_DISTURBED2
 						|| pose == MONSTER_POSE_MIMIC_LOCKED || pose == MONSTER_POSE_MIMIC_LOCKED2
 						|| pose == MONSTER_POSE_MIMIC_MAGIC1 || pose == MONSTER_POSE_MIMIC_MAGIC2))
@@ -7295,6 +7395,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 			else if ( myStats->type == VAMPIRE && pose == MONSTER_POSE_VAMPIRE_AURA_CAST )
 			{
 				monsterAttack = 0;
+			}
+			else if ( (myStats->type == REVENANT_SKULL || myStats->type == MONSTER_ADORCISED_WEAPON) && pose == MONSTER_POSE_MAGIC_CAST1 )
+			{
+				monsterAttack = pose;
 			}
 			else if ( myStats->weapon != nullptr 
 				|| myStats->type == CRYSTALGOLEM || myStats->type == COCKATRICE
@@ -7373,7 +7477,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 			else
 			{
 				serverUpdateEntitySkill(this, 8);
-				if (myStats->type != SLIME && myStats->type != RAT && myStats->type != SCARAB && myStats->type != BAT_SMALL) {
+				if (myStats->type != SLIME && myStats->type != RAT && myStats->type != SCARAB 
+					&& myStats->type != BAT_SMALL
+					&& myStats->type != REVENANT_SKULL
+					&& myStats->type != MONSTER_ADORCISED_WEAPON ) {
 				    serverUpdateEntitySkill(this, 9);
 				}
 			}
@@ -7425,6 +7532,16 @@ void Entity::attack(int pose, int charge, Entity* target)
 			&& !strncmp(myStats->name, "inner demon", strlen("inner demon")) )
 		{
 			isIllusion = true;
+		}
+		else if ( myStats->type == MONSTER_ADORCISED_WEAPON )
+		{
+			isIllusion = true;
+		}
+
+		if ( myStats->type == REVENANT_SKULL && pose == MONSTER_POSE_MAGIC_CAST1 )
+		{
+			castSpell(uid, &spell_ghost_bolt, true, false);
+			return;
 		}
 
 		if ( myStats->weapon != nullptr && !(myStats->type == BUGBEAR && pose == MONSTER_POSE_BUGBEAR_SHIELD)
@@ -8305,12 +8422,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								Stat* hitstats = hit.entity->getStats();
 								if ( hitstats )
 								{
-									bool alertTarget = true;
-									if ( behavior == &actMonster && monsterAllyIndex != -1 && hit.entity->monsterAllyIndex != -1 )
-									{
-										// if we're both allies of players, don't alert the hit target.
-										alertTarget = false;
-									}
+									bool alertTarget = hit.entity->monsterAlertBeforeHit(this);
 
 									// alert the monster!
 									if ( hit.entity->monsterState != MONSTER_STATE_ATTACK )
@@ -8562,12 +8674,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 				hitstats = hit.entity->getStats();
 				if ( hitstats )
 				{
-					bool alertTarget = true;
-					if ( behavior == &actMonster && monsterAllyIndex != -1 && hit.entity->monsterAllyIndex != -1 )
-					{
-						// if we're both allies of players, don't alert the hit target.
-						alertTarget = false;
-					}
+					bool alertTarget = hit.entity->monsterAlertBeforeHit(this);
 
 					// alert the monster!
 					if ( hit.entity->monsterState != MONSTER_STATE_ATTACK && (hitstats->type < LICH || hitstats->type >= SHOPKEEPER) )
@@ -8827,12 +8934,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						messagePlayer(player, MESSAGE_COMBAT_BASIC, Language::get(667));
 						previousMonsterState = hit.entity->monsterState;
-						bool alertTarget = true;
-						if ( behavior == &actMonster && monsterAllyIndex != -1 && hit.entity->monsterAllyIndex != -1 )
-						{
-							// if we're both allies of players, don't alert the hit target.
-							alertTarget = false;
-						}
+						bool alertTarget = hit.entity->monsterAlertBeforeHit(this);
 
 						// alert the monster!
 						if ( hit.entity->monsterState != MONSTER_STATE_ATTACK )
@@ -10560,7 +10662,9 @@ void Entity::attack(int pose, int charge, Entity* target)
 						if ( behavior == &actPlayer 
 							|| (hit.entity->behavior == &actMonster
 								&& ((hit.entity->monsterAllySummonRank != 0 && hitstats->type == SKELETON)
-									|| hit.entity->monsterIsTinkeringCreation())) )
+									|| hit.entity->monsterIsTinkeringCreation()
+									|| hitstats->type == MONSTER_ADORCISED_WEAPON
+									|| hitstats->type == REVENANT_SKULL)) )
 						{
 							armor = nullptr;
 						}
@@ -10582,60 +10686,100 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 						if ( armor != nullptr )
 						{
-							int qty = 1;
-							int startCount = armor->count;
-							if ( itemTypeIsQuiver(armor->type) )
+							bool mimicSentToVoid = false;
+							if ( myStats->getEffectActive(EFF_MIMIC_VOID) )
 							{
-								qty = armor->count;
-								armor->count = 0;
-							}
-							else
-							{
-								armor->count--;
-							}
-							if ( hit.entity->behavior == &actPlayer && playerhit >= 0 )
-							{
-								steamStatisticUpdateClient(playerhit, STEAM_STAT_I_NEEDED_THAT, STEAM_STAT_INT, 1);
-							}
-							messagePlayer(playerhit, MESSAGE_COMBAT, Language::get(6085), armor->getName());
-							Item* stolenArmor = newItem(armor->type, armor->status, armor->beatitude, qty, armor->appearance, armor->identified, &myStats->inventory);
-							stolenArmor->ownerUid = hit.entity->getUID();
-							stolenArmor->isDroppable = armor->isDroppable;
-							if ( playerhit > 0 && multiplayer == SERVER && !players[playerhit]->isLocalPlayer() )
-							{
-								strcpy((char*)net_packet->data, "STLA");
-								net_packet->data[4] = armornum;
-								SDLNet_Write32(static_cast<Uint32>(armor->type), &net_packet->data[5]);
-								SDLNet_Write32(static_cast<Uint32>(armor->status), &net_packet->data[9]);
-								SDLNet_Write32(static_cast<Uint32>(armor->beatitude), &net_packet->data[13]);
-								SDLNet_Write32(static_cast<Uint32>(startCount), &net_packet->data[17]);
-								SDLNet_Write32(static_cast<Uint32>(armor->appearance), &net_packet->data[21]);
-								net_packet->data[25] = armor->identified;
-								net_packet->address.host = net_clients[playerhit - 1].host;
-								net_packet->address.port = net_clients[playerhit - 1].port;
-								net_packet->len = 26;
-								sendPacketSafe(net_sock, -1, net_packet, playerhit - 1);
-							}
-
-							if ( armor->count <= 0 )
-							{
-								Item** slot = itemSlot(hitstats, armor);
-								if ( slot )
+								int qty = 1;
+								if ( itemTypeIsQuiver(armor->type) )
 								{
-									*slot = NULL;
+									qty = armor->count;
 								}
-								if ( armor->node )
+
+								Item* stolenArmor = newItem(armor->type, armor->status, armor->beatitude, qty, armor->appearance, armor->identified, nullptr);
+								if ( Item* chestItem = Entity::addItemToVoidChestServer(-1, stolenArmor, true, nullptr) )
 								{
-									list_RemoveNode(armor->node);
+									if ( chestItem != stolenArmor )
+									{
+										free(stolenArmor);
+									}
+									mimicSentToVoid = true;
 								}
 								else
 								{
-									free(armor);
+									free(stolenArmor);
+								}
+							}
+
+							if ( armor )
+							{
+								int qty = 1;
+								int startCount = armor->count;
+								if ( itemTypeIsQuiver(armor->type) )
+								{
+									qty = armor->count;
+									armor->count = 0;
+								}
+								else
+								{
+									armor->count--;
+								}
+								if ( hit.entity->behavior == &actPlayer && playerhit >= 0 )
+								{
+									steamStatisticUpdateClient(playerhit, STEAM_STAT_I_NEEDED_THAT, STEAM_STAT_INT, 1);
+								}
+								if ( !mimicSentToVoid )
+								{
+									messagePlayer(playerhit, MESSAGE_COMBAT, Language::get(6085), armor->getName());
+									Item* stolenArmor = newItem(armor->type, armor->status, armor->beatitude, qty, armor->appearance, armor->identified, &myStats->inventory);
+									stolenArmor->ownerUid = hit.entity->getUID();
+									stolenArmor->isDroppable = armor->isDroppable;
+									if ( myStats->getEffectActive(EFF_MIMIC_VOID) )
+									{
+										dropItemMonster(stolenArmor, this, myStats, stolenArmor->count);
+									}
+								}
+								else
+								{
+									messagePlayer(playerhit, MESSAGE_COMBAT, Language::get(6567), armor->getName());
+								}
+								if ( playerhit > 0 && multiplayer == SERVER && !players[playerhit]->isLocalPlayer() )
+								{
+									strcpy((char*)net_packet->data, "STLA");
+									net_packet->data[4] = armornum;
+									SDLNet_Write32(static_cast<Uint32>(armor->type), &net_packet->data[5]);
+									SDLNet_Write32(static_cast<Uint32>(armor->status), &net_packet->data[9]);
+									SDLNet_Write32(static_cast<Uint32>(armor->beatitude), &net_packet->data[13]);
+									SDLNet_Write32(static_cast<Uint32>(startCount), &net_packet->data[17]);
+									SDLNet_Write32(static_cast<Uint32>(armor->appearance), &net_packet->data[21]);
+									net_packet->data[25] = armor->identified;
+									net_packet->address.host = net_clients[playerhit - 1].host;
+									net_packet->address.port = net_clients[playerhit - 1].port;
+									net_packet->len = 26;
+									sendPacketSafe(net_sock, -1, net_packet, playerhit - 1);
+								}
+
+								if ( armor->count <= 0 )
+								{
+									Item** slot = itemSlot(hitstats, armor);
+									if ( slot )
+									{
+										*slot = NULL;
+									}
+									if ( armor->node )
+									{
+										list_RemoveNode(armor->node);
+									}
+									else
+									{
+										free(armor);
+									}
 								}
 							}
 						}
 					}
-					else if ( (damage > 0 || hitstats->getEffectActive(EFF_PACIFY) || hitstats->getEffectActive(EFF_FEAR)) && local_rng.rand() % 4 == 0 )
+					else if ( (damage > 0 || hitstats->getEffectActive(EFF_PACIFY) 
+						|| hitstats->getEffectActive(EFF_FEAR) 
+						|| hitstats->getEffectActive(EFF_COWARDICE) ) && local_rng.rand() % 4 == 0 )
 					{
 						switch ( myStats->type )
 						{
@@ -11285,12 +11429,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							// secondary alert to nerf the disorient time, second hit will aggro
 							if ( myStats->mask && myStats->mask->type == MASK_PHANTOM && hit.entity->behavior == &actMonster )
 							{
-								bool alertTarget = true;
-								if ( behavior == &actMonster && monsterAllyIndex != -1 && hit.entity->monsterAllyIndex != -1 )
-								{
-									// if we're both allies of players, don't alert the hit target.
-									alertTarget = false;
-								}
+								bool alertTarget = hit.entity->monsterAlertBeforeHit(this);
 
 								// alert the monster!
 								if ( hit.entity->monsterState != MONSTER_STATE_ATTACK && (hitstats->type < LICH || hitstats->type >= SHOPKEEPER) )
@@ -13473,11 +13612,13 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 
 	if ( src->behavior == &actMonster 
 		&& (src->monsterAllySummonRank != 0
+			|| srcStats->type == REVENANT_SKULL
+			|| srcStats->type == MONSTER_ADORCISED_WEAPON
 			|| src->monsterIsTinkeringCreation()) )
 	{
 		if ( root )
 		{
-			if ( src->monsterIsTinkeringCreation() )
+			if ( !(src->monsterAllySummonRank != 0) )
 			{
 				int compendiumPlayer = behavior == &actPlayer ? skill[2] : -1;
 				if ( behavior == &actMonster )
@@ -13653,7 +13794,9 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 						}
 						if ( follower && entityDist(this, follower) < shareRange && follower != src )
 						{
-							if ( follower->monsterIsTinkeringCreation() )
+							if ( follower->monsterIsTinkeringCreation()
+								|| (follower->getStats() && follower->getStats()->type == REVENANT_SKULL)
+								|| (follower->getStats() && follower->getStats()->type == MONSTER_ADORCISED_WEAPON) )
 							{
 								--numFollowers; // tinkering creation don't penalise XP.
 								continue;
@@ -13716,7 +13859,11 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 	}
 
 	// award XP to main victor
-	if ( !this->monsterIsTinkeringCreation() )
+	if ( !(this->monsterIsTinkeringCreation()
+		|| destStats->type == REVENANT_SKULL
+		|| destStats->type == MONSTER_ADORCISED_WEAPON
+		)
+		)
 	{
 		int inspiration = getEntityInspirationFromAllies();
 		real_t inspirationMult = (1.0 + (inspiration / 100.0));
@@ -14048,28 +14195,54 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 		Entity* leader = nullptr;
 
 		// NPCs with leaders award equal XP to their master (so NPCs don't steal XP gainz)
+		leader = uidToEntity(destStats->leader_uid);
 
-		if ( (leader = uidToEntity(destStats->leader_uid)) != NULL )
+		bool spellEffectLeader = false;
+		if ( !leader || (leader && !leader->monsterAllyGetPlayerLeader()) )
+		{
+			// target is taboo'd, then award xp to the inflicter
+			if ( srcStats->getEffectActive(EFF_TABOO) >= 1 && srcStats->getEffectActive(EFF_TABOO) < MAXPLAYERS + 1 )
+			{
+				if ( players[srcStats->getEffectActive(EFF_TABOO) - 1]->entity )
+				{
+					spellEffectLeader = true;
+					leader = players[srcStats->getEffectActive(EFF_TABOO) - 1]->entity;
+				}
+			}
+		}
+		if ( destStats->getEffectActive(EFF_CONFUSED) >= 1 && destStats->getEffectActive(EFF_CONFUSED) < MAXPLAYERS + 1 )
+		{
+			if ( players[destStats->getEffectActive(EFF_CONFUSED) - 1]->entity )
+			{
+				spellEffectLeader = true;
+				leader = players[destStats->getEffectActive(EFF_CONFUSED) - 1]->entity;
+			}
+		}
+
+		if ( leader )
 		{
 			if ( this->monsterIsTinkeringCreation() )
 			{
-				if ( local_rng.rand() % 10 == 0 )
+				if ( !spellEffectLeader )
 				{
-					leader->increaseSkill(PRO_LOCKPICKING);
-				}
-				if ( root && leader->behavior == &actPlayer && srcStats->type == MINOTAUR )
-				{
-					steamAchievementClient(leader->skill[2], "BARONY_ACH_TIME_TO_PLAN");
-				}
-
-				if ( root )
-				{
-					if ( destStats && (destStats->type == SENTRYBOT || destStats->type == SPELLBOT) )
+					if ( local_rng.rand() % 10 == 0 )
 					{
-						if ( leader->behavior == &actPlayer )
+						leader->increaseSkill(PRO_LOCKPICKING);
+					}
+					if ( root && leader->behavior == &actPlayer && srcStats->type == MINOTAUR )
+					{
+						steamAchievementClient(leader->skill[2], "BARONY_ACH_TIME_TO_PLAN");
+					}
+
+					if ( root )
+					{
+						if ( destStats && (destStats->type == SENTRYBOT || destStats->type == SPELLBOT) )
 						{
-							Compendium_t::Events_t::eventUpdate(leader->skill[2],
-								Compendium_t::CPDM_SENTRY_DEPLOY_KILLS, destStats->type == SENTRYBOT ? TOOL_SENTRYBOT : TOOL_SPELLBOT, 1);
+							if ( leader->behavior == &actPlayer )
+							{
+								Compendium_t::Events_t::eventUpdate(leader->skill[2],
+									Compendium_t::CPDM_SENTRY_DEPLOY_KILLS, destStats->type == SENTRYBOT ? TOOL_SENTRYBOT : TOOL_SPELLBOT, 1);
+							}
 						}
 					}
 				}
@@ -14078,7 +14251,10 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 			{
 				if ( srcStats->type != BAT_SMALL )
 				{
-					leader->increaseSkill(PRO_LEADERSHIP);
+					if ( !spellEffectLeader )
+					{
+						leader->increaseSkill(PRO_LEADERSHIP);
+					}
 				}
 			}
 			leader->awardXP(src, true, false);
@@ -14122,7 +14298,10 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 					}
 				}
 
-				Compendium_t::Events_t::eventUpdateWorld(leader->skill[2], Compendium_t::CPDM_FOLLOWER_KILLS, "masons guild", 1);
+				if ( !spellEffectLeader )
+				{
+					Compendium_t::Events_t::eventUpdateWorld(leader->skill[2], Compendium_t::CPDM_FOLLOWER_KILLS, "masons guild", 1);
+				}
 			}
 		}
 
@@ -14242,6 +14421,18 @@ bool Entity::checkEnemy(Entity* your)
 		&& your->behavior == &actPlayer && behavior == &actMonster )
 	{
 		return false;
+	}
+	else if ( (yourStats->getEffectActive(EFF_TABOO) >= 1 && yourStats->getEffectActive(EFF_TABOO) < 1 + MAXPLAYERS
+		&& behavior != &actPlayer && !monsterAllyGetPlayerLeader())
+		|| yourStats->getEffectActive(EFF_TABOO) >= 1 + MAXPLAYERS )
+	{
+		return true;
+	}
+	else if ( (myStats->getEffectActive(EFF_TABOO) >= 1 && myStats->getEffectActive(EFF_TABOO) < 1 + MAXPLAYERS
+		&& your->behavior != &actPlayer && !your->monsterAllyGetPlayerLeader())
+		|| myStats->getEffectActive(EFF_TABOO) >= 1 + MAXPLAYERS )
+	{
+		return true;
 	}
 	else if ( behavior == &actPlayer && your->behavior == &actMonster && yourStats->monsterForceAllegiance != Stat::MONSTER_FORCE_ALLEGIANCE_NONE )
 	{
@@ -14730,7 +14921,18 @@ bool Entity::checkFriend(Entity* your)
 	{
 		return true;
 	}
-
+	else if ( (yourStats->getEffectActive(EFF_TABOO) >= 1 && yourStats->getEffectActive(EFF_TABOO) < 1 + MAXPLAYERS
+		&& behavior != &actPlayer && !monsterAllyGetPlayerLeader())
+		|| yourStats->getEffectActive(EFF_TABOO) >= 1 + MAXPLAYERS )
+	{
+		return false;
+	}
+	else if ( (myStats->getEffectActive(EFF_TABOO) >= 1 && myStats->getEffectActive(EFF_TABOO) < 1 + MAXPLAYERS
+		&& your->behavior != &actPlayer && !your->monsterAllyGetPlayerLeader())
+		|| myStats->getEffectActive(EFF_TABOO) >= 1 + MAXPLAYERS )
+	{
+		return false;
+	}
 
 	if ( (myStats->type == SHOPKEEPER && myStats->MISC_FLAGS[STAT_FLAG_MYSTERIOUS_SHOPKEEP] > 0)
 		|| (yourStats->type == SHOPKEEPER && yourStats->MISC_FLAGS[STAT_FLAG_MYSTERIOUS_SHOPKEEP] > 0) )
@@ -15820,7 +16022,7 @@ returns the proficiency for the weapon equipped.
 
 -------------------------------------------------------------------------------*/
 
-int getWeaponSkill(Item* weapon)
+int getWeaponSkill(const Item* weapon)
 {
 	if ( weapon == NULL )
 	{
@@ -16098,7 +16300,11 @@ int Entity::getAttackPose() const
 		{
 			pose = MONSTER_POSE_MAGIC_WINDUP1;
 		}
-		else if ( myStats->type == MIMIC )
+		else if ( myStats->type == REVENANT_SKULL || myStats->type == MONSTER_ADORCISED_WEAPON )
+		{
+			pose = MONSTER_POSE_MELEE_WINDUP1;
+		}
+		else if ( myStats->type == MIMIC || myStats->type == MINIMIMIC )
 		{
 			pose = MONSTER_POSE_MELEE_WINDUP1;
 			if ( monsterSpecialState == MIMIC_MAGIC )
@@ -16289,6 +16495,10 @@ int Entity::getAttackPose() const
 		{
 			pose = MONSTER_POSE_MAGIC_WINDUP2;
 		}
+		else if ( (myStats->type == REVENANT_SKULL || myStats->type == MONSTER_ADORCISED_WEAPON) && this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_SKULL_CAST )
+		{
+			pose = MONSTER_POSE_MAGIC_WINDUP1;
+		}
 		else if (type == KOBOLD || type == AUTOMATON ||
 			type == GOATMAN || type == INSECTOID ||
 			type == INCUBUS || type == VAMPIRE ||
@@ -16298,13 +16508,15 @@ int Entity::getAttackPose() const
 			type == CREATURE_IMP || type == SUCCUBUS ||
 			type == SHOPKEEPER || type == MINOTAUR ||
 			type == SHADOW || type == RAT || type == SPIDER || type == CRAB ||
-			type == MIMIC || type == BAT_SMALL ||
+			type == MIMIC || type == MINIMIMIC ||
+			type == BAT_SMALL ||
 			type == MONSTER_D || type == MONSTER_M ||
 			type == MONSTER_S || type == MONSTER_G ||
+			type == REVENANT_SKULL || type == MONSTER_ADORCISED_WEAPON ||
 			type == SLIME || (type == SCARAB && sprite != 1078 && sprite != 1079))
 		{
 			pose = MONSTER_POSE_MELEE_WINDUP1;
-			if ( type == MIMIC && monsterSpecialState == MIMIC_MAGIC )
+			if ( (type == MIMIC || type == MINIMIMIC) && monsterSpecialState == MIMIC_MAGIC )
 			{
 				pose = MONSTER_POSE_MIMIC_MAGIC1;
 			}
@@ -18013,7 +18225,9 @@ void Entity::serverUpdateEffectsForEntity(bool guarantee)
 	}
 }
 
-bool Entity::setEffect(int effect, std::variant<bool, Uint8> value, int duration, bool updateClients, bool guarantee, bool overrideEffectStrength)
+bool Entity::setEffect(int effect, std::variant<bool, Uint8> value, int duration, 
+	bool updateClients, bool guarantee, bool overrideEffectStrength,
+	bool overrideDuration)
 {
 	Stat* myStats = getStats();
 
@@ -18094,6 +18308,20 @@ bool Entity::setEffect(int effect, std::variant<bool, Uint8> value, int duration
 					return false;
 				}
 				break;
+			case EFF_CURSE_FLESH:
+				if ( myStats->type == LICH || myStats->type == DEVIL
+					|| myStats->type == SKELETON
+					|| myStats->type == REVENANT_SKULL
+					|| myStats->type == MONSTER_ADORCISED_WEAPON
+					|| monsterIsTinkeringCreation()
+					|| myStats->type == MIMIC
+					|| myStats->type == CRYSTALGOLEM
+					|| myStats->type == LICH_FIRE || myStats->type == LICH_ICE
+					|| myStats->type == SHADOW )
+				{
+					return false;
+				}
+				break;
 			case EFF_POLYMORPH:
 				//if ( myStats->getEffectActive(EFF_POLYMORPH) || effectPolymorph != 0 )
 				//{
@@ -18128,7 +18356,15 @@ bool Entity::setEffect(int effect, std::variant<bool, Uint8> value, int duration
 	{
 		myStats->clearEffect(effect);
 	}
-	myStats->EFFECTS_TIMERS[effect] = duration;
+
+	if ( overrideDuration || effectStrength == 0 )
+	{
+		myStats->EFFECTS_TIMERS[effect] = duration;
+	}
+	else
+	{
+		myStats->EFFECTS_TIMERS[effect] = std::max(myStats->EFFECTS_TIMERS[effect], duration);
+	}
 
 	int player = -1;
 	for ( int i = 0; i < MAXPLAYERS; ++i )
@@ -18277,6 +18513,20 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool
 			}
 		}
 	}
+	if ( target.getRace() == MONSTER_ADORCISED_WEAPON )
+	{
+		if ( Stat* targetStats = target.getStats() )
+		{
+			if ( targetStats->getAttribute("spirit_weapon") != "" )
+			{
+				if ( Entity* caster = uidToEntity(target.parent) )
+				{
+					monsterAcquireAttackTarget(*caster, state, false);
+				}
+				return;
+			}
+		}
+	}
 
 	if ( myStats->getEffectActive(EFF_DISORIENTED) )
 	{
@@ -18292,7 +18542,11 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool
 		{
 			// check to see if holding ranged weapon, set hittime to be ready to attack.
 			// set melee hittime close to max in hardcore mode...
-			if ( ((svFlags & SV_FLAG_HARDCORE) || hasRangedWeapon()) && monsterSpecialTimer <= 0 )
+			if ( myStats->type == MONSTER_ADORCISED_WEAPON && myStats->getAttribute("spirit_weapon") != "" )
+			{
+				monsterHitTime = HITRATE * 1.5 - 10;
+			}
+			else if ( ((svFlags & SV_FLAG_HARDCORE) || hasRangedWeapon()) && monsterSpecialTimer <= 0 )
 			{
 				if ( hasRangedWeapon() )
 				{
@@ -18419,7 +18673,7 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool
 
 
 	if ( (monsterAllyIndex > 0 && monsterAllyIndex < MAXPLAYERS) 
-		|| ((myStats->getEffectActive(EFF_COMMAND) >= 2 && myStats->getEffectActive(EFF_COMMAND) < MAXPLAYERS + 1)) )
+		|| ((myStats->getEffectActive(EFF_COMMAND) >= 1 && myStats->getEffectActive(EFF_COMMAND) < MAXPLAYERS + 1)) )
 	{
 		serverUpdateEntitySkill(this, 1); // update monsterTarget for player leaders.
 	}
@@ -18462,7 +18716,7 @@ bool Entity::monsterReleaseAttackTarget(bool force)
 	monsterTarget = 0;
 
 	if ( (monsterAllyIndex > 0 && monsterAllyIndex < MAXPLAYERS) 
-		|| ((myStats->getEffectActive(EFF_COMMAND) >= 2 && myStats->getEffectActive(EFF_COMMAND) < MAXPLAYERS + 1)) )
+		|| ((myStats->getEffectActive(EFF_COMMAND) >= 1 && myStats->getEffectActive(EFF_COMMAND) < MAXPLAYERS + 1)) )
 	{
 		serverUpdateEntitySkill(this, 1); // update monsterTarget for player leaders.
 	}
@@ -19677,11 +19931,15 @@ bool Entity::shouldRetreat(Stat& myStats)
 
 	// retreating monsters will not try path when losing sight of target
 
-	if ( myStats.getEffectActive(EFF_PACIFY) || myStats.getEffectActive(EFF_FEAR) )
+	if ( myStats.getEffectActive(EFF_PACIFY) || myStats.getEffectActive(EFF_FEAR) || myStats.getEffectActive(EFF_COWARDICE) )
 	{
 		return true;
 	}
 	if ( myStats.getEffectActive(EFF_KNOCKBACK) )
+	{
+		return true;
+	}
+	if ( myStats.type == MINIMIMIC )
 	{
 		return true;
 	}
@@ -19706,6 +19964,10 @@ bool Entity::shouldRetreat(Stat& myStats)
 		return false;
 	}
 	else if ( myStats.type == MIMIC )
+	{
+		return false;
+	}
+	else if ( myStats.type == MONSTER_ADORCISED_WEAPON || myStats.type == REVENANT_SKULL )
 	{
 		return false;
 	}
@@ -19782,6 +20044,11 @@ bool Entity::shouldRetreat(Stat& myStats)
 		return false;
 	}
 
+	if ( myStats.getEffectActive(EFF_COURAGE) )
+	{
+		return false;
+	}
+
 	if ( myStats.MAXHP >= 100 )
 	{
 		if ( myStats.HP <= myStats.MAXHP / 8 && this->getCHR() >= -2 )
@@ -19833,6 +20100,10 @@ bool Entity::backupWithRangedWeapon(Stat& myStats, int dist, int hasrangedweapon
 		return false;
 	}
 	if ( myStats.type == VAMPIRE && (monsterSpecialState > 0 || MonsterData_t::nameMatchesSpecialNPCName(myStats, "bram kindly")) )
+	{
+		return false;
+	}
+	if ( myStats.getEffectActive(EFF_COURAGE) )
 	{
 		return false;
 	}
@@ -23332,7 +23603,7 @@ bool Entity::isBossMonster()
 
 void Entity::handleKnockbackDamage(Stat& myStats, Entity* knockedInto)
 {
-	if ( knockedInto != NULL && myStats.getEffectActive(EFF_KNOCKBACK) && myStats.HP > 0 )
+	if ( knockedInto != NULL && myStats.getEffectActive(EFF_KNOCKBACK) && myStats.HP > 0 && myStats.type != MONSTER_ADORCISED_WEAPON )
 	{
 		int damageOnHit = 5 + local_rng.rand() % 6;
 		if ( knockedInto->behavior == &actDoor || knockedInto->behavior == &::actIronDoor )
@@ -23869,6 +24140,13 @@ bool Entity::bEntityHighlightedForPlayer(const int player) const
 	}
 	if ( (behavior == &actPlayer || behavior == &actPlayerLimb) 
 		&& StatueManager.activeEditing && highlightForUI > 0.001 )
+	{
+		return true;
+	}
+	if ( cast_animation[player].active && cast_animation[player].targetUid != 0
+		&& cast_animation[player].targetUid == getUID()
+		&& players[player] && players[player]->hud.magicRangefinder
+		&& !players[player]->hud.magicRangefinder->flags[INVISIBLE] )
 	{
 		return true;
 	}

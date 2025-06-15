@@ -10092,6 +10092,7 @@ void doEndgame(bool saveHighscore, bool onServerDisconnect) {
 	{
 		stats[c]->freePlayerEquipment();
 		list_FreeAll(&stats[c]->inventory);
+		list_FreeAll(&stats[c]->void_chest_inventory);
 		list_FreeAll(&stats[c]->FOLLOWERS);
 	}
 	list_FreeAll(&removedEntities);

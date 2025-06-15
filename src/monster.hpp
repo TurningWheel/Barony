@@ -63,6 +63,17 @@ enum Monster : int
 	MONSTER_M,
 	MONSTER_S,
 	MONSTER_G,
+	REVENANT_SKULL,
+	MINIMIMIC,
+	MONSTER_ADORCISED_WEAPON,
+	MONSTER_UNUSED_1,
+	MONSTER_UNUSED_2,
+	MONSTER_UNUSED_3,
+	MONSTER_UNUSED_4,
+	MONSTER_UNUSED_5,
+	MONSTER_UNUSED_6,
+	MONSTER_UNUSED_7,
+	MONSTER_UNUSED_8,
 	MAX_MONSTER
 };
 const int NUMMONSTERS = MAX_MONSTER;
@@ -182,7 +193,8 @@ static std::vector<Sint32> monsterSprites[NUMMONSTERS] = {
 
     // MIMIC
     {
-		1247
+		1247,
+		1792
     },
 
     // LICH
@@ -314,9 +326,43 @@ static std::vector<Sint32> monsterSprites[NUMMONSTERS] = {
 	{
 		1569, 1570
 	},
+	//REVENANT_SKULL
+	{
+		1796
+	},
+	//MINIMIMIC
+	{
+		1794
+	},
+	//MONSTER_ADORCISED_WEAPON
+	{
+		1797
+	},
+	//MONSTER_UNUSED_1
+	{
+	},
+	//MONSTER_UNUSED_2
+	{
+	},
+	//MONSTER_UNUSED_3
+	{
+	},
+	//MONSTER_UNUSED_4
+	{
+	},
+	//MONSTER_UNUSED_5
+	{
+	},
+	//MONSTER_UNUSED_6
+	{
+	},
+	//MONSTER_UNUSED_7
+	{
+	},
+	//MONSTER_UNUSED_8
 };
 
-static char monstertypename[][15] =
+static char monstertypename[][32] =
 {
 	"nothing",
 	"human",
@@ -359,53 +405,18 @@ static char monstertypename[][15] =
 	"monster_d",
 	"monster_m",
 	"monster_s",
-	"monster_g"
-};
-
-static char monstertypenamecapitalized[][15] =
-{
-	"Nothing",
-	"Human",
-	"Rat",
-	"Goblin",
-	"Slime",
-	"Troll",
-	"Bat",
-	"Spider",
-	"Ghoul",
-	"Skeleton",
-	"Scorpion",
-	"Imp",
-	"Crab",
-	"Gnome",
-	"Demon",
-	"Succubus",
-	"Mimic",
-	"Lich",
-	"Minotaur",
-	"Devil",
-	"Shopkeeper",
-	"Kobold",
-	"Scarab",
-	"Crystalgolem",
-	"Incubus",
-	"Vampire",
-	"Shadow",
-	"Cockatrice",
-	"Insectoid",
-	"Goatman",
-	"Automaton",
-	"Lichice",
-	"Lichfire",
-	"Sentrybot",
-	"Spellbot",
-	"Gyrobot",
-	"Dummybot",
-	"Bugbear",
-	"Monster_D",
-	"Monster_M",
-	"Monster_S",
-	"Monster_G"
+	"monster_g",
+	"revenant_skull",
+	"minimimic",
+	"monster_adorcised_weapon",
+	"monster_unused_1",
+	"monster_unused_2",
+	"monster_unused_3",
+	"monster_unused_4",
+	"monster_unused_5",
+	"monster_unused_6",
+	"monster_unused_7",
+	"monster_unused_8"
 };
 
 // body part focal points
@@ -458,7 +469,18 @@ static char gibtype[NUMMONSTERS] =
 	1,	//MONSTER_D
 	1,	//MONSTER_M
 	1,	//MONSTER_S
-	1	//MONSTER_G
+	1,	//MONSTER_G
+	5,  //REVENANT_SKULL
+	1,  //MINIMIMIC
+	0,  //MONSTER_ADORCISED_WEAPON
+	1,  //MONSTER_UNUSED_1
+	1,  //MONSTER_UNUSED_2
+	1,  //MONSTER_UNUSED_3
+	1,  //MONSTER_UNUSED_4
+	1,  //MONSTER_UNUSED_5
+	1,  //MONSTER_UNUSED_6
+	1,  //MONSTER_UNUSED_7
+	1   //MONSTER_UNUSED_8
 };
 
 // columns go like this:
@@ -507,7 +529,18 @@ static double damagetables[NUMMONSTERS][7] =
 	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // monster_d
 	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // monster_m
 	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // monster_s
-	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }  // monster_g
+	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // monster_g
+	{ 0.5, 1.4, 0.8, 1.3, 0.5, 0.8, 1.1 }, // revenant_skull
+	{ 0.5, 0.5, 1.0, 0.5, 0.5, 1.3, 0.5 }, // minimimic
+	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // monster_adorcised_weapon
+	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // monster_unused_1
+	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // monster_unused_2
+	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // monster_unused_3
+	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // monster_unused_4
+	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // monster_unused_5
+	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // monster_unused_6
+	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // monster_unused_7
+	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }  // monster_unused_8
 };
 
 enum DamageTableType : int
@@ -756,6 +789,9 @@ void initMonsterD(Entity* my, Stat* myStats);
 void initMonsterM(Entity* my, Stat* myStats);
 void initMonsterS(Entity* my, Stat* myStats);
 void initMonsterG(Entity* my, Stat* myStats);
+void initRevenantSkull(Entity* my, Stat* myStats);
+void initAdorcisedWeapon(Entity* my, Stat* myStats);
+void initMiniMimic(Entity* my, Stat* myStats);
 
 //--act*Limb functions--
 void actHumanLimb(Entity* my);
@@ -795,6 +831,9 @@ void actMonsterDLimb(Entity* my);
 void actMonsterMLimb(Entity* my);
 void actMonsterSLimb(Entity* my);
 void actMonsterGLimb(Entity* my);
+void actRevenantSkullLimb(Entity* my);
+void actMiniMimicLimb(Entity* my);
+void actAdorcisedWeaponLimb(Entity* my);
 
 //--*Die functions--
 void humanDie(Entity* my);
@@ -836,6 +875,9 @@ void monsterDDie(Entity* my);
 void monsterMDie(Entity* my);
 void monsterSDie(Entity* my);
 void monsterGDie(Entity* my);
+void revenantSkullDie(Entity* my);
+void miniMimicDie(Entity* my);
+void adorcisedWeaponDie(Entity* my);
 
 void monsterAnimate(Entity* my, Stat* myStats, double dist);
 //--*MoveBodyparts functions--
@@ -880,6 +922,7 @@ void monsterDMoveBodyparts(Entity* my, Stat* myStats, double dist);
 void monsterMMoveBodyparts(Entity* my, Stat* myStats, double dist);
 void monsterSMoveBodyparts(Entity* my, Stat* myStats, double dist);
 void monsterGMoveBodyparts(Entity* my, Stat* myStats, double dist);
+void revenantSkullAnimate(Entity* my, Stat* myStats, double dist);
 
 //--misc functions--
 void actMinotaurTrap(Entity* my);
@@ -991,6 +1034,7 @@ static const int MONSTER_SPECIAL_COOLDOWN_VAMPIRE_DRAIN = 300;
 static const int MONSTER_SPECIAL_COOLDOWN_SUCCUBUS_CHARM = 400;
 static const int MONSTER_SPECIAL_COOLDOWN_MIMIC_EAT = 500;
 static const int MONSTER_SPECIAL_COOLDOWN_SLIME_SPRAY = 250;
+static const int MONSTER_SPECIAL_COOLDOWN_SKULL_CAST = 250;
 static const int MONSTER_SPECIAL_COOLDOWN_BUGBEAR = 500;
 
 //--monster target search types
@@ -1104,6 +1148,9 @@ static const int SPIDER_CAST = 1;
 
 //--Slime--
 static const int SLIME_CAST = 1;
+
+//--Skull
+static const int SKULL_CAST = 1;
 
 //--Shadow--
 static const int SHADOW_SPELLCAST = 1;

@@ -70,8 +70,16 @@ void updateEnemyBar(Entity* source, Entity* target, const char* name, Sint32 hp,
 				}
 			}
 		}
-
-		if ( source->behavior == &actMonster && source->monsterAllySummonRank != 0
+		if ( source->behavior == &actMonster && source->getStats() && source->getStats()->type == MONSTER_ADORCISED_WEAPON  
+			&& source->getStats()->getAttribute("spirit_weapon") != "" )
+		{
+			Entity* parent = uidToEntity(source->parent);
+			if ( parent && parent->behavior == &actPlayer && parent != target )
+			{
+				player = parent->skill[2]; // don't update enemy bar if attacking leader.
+			}
+		}
+		else if ( source->behavior == &actMonster && source->monsterAllySummonRank != 0
 			&& (target->behavior == &actMonster || target->behavior == &actPlayer) )
 		{
 			player = source->monsterAllyIndex;

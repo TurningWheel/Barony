@@ -140,6 +140,8 @@ score_t* scoreConstructor(int player)
 	score->stats->FOLLOWERS.last = NULL;
 	score->stats->inventory.first = NULL;
 	score->stats->inventory.last = NULL;
+	score->stats->void_chest_inventory.first = NULL;
+	score->stats->void_chest_inventory.last = NULL;
 	score->stats->helmet = NULL;
 	score->stats->breastplate = NULL;
 	score->stats->gloves = NULL;
@@ -152,6 +154,12 @@ score_t* scoreConstructor(int player)
 	score->stats->mask = NULL;
 	list_Copy(&score->stats->inventory, &stats[player]->inventory);
 	for ( node = score->stats->inventory.first; node != NULL; node = node->next )
+	{
+		Item* item = (Item*)node->element;
+		item->node = node;
+	}
+	list_Copy(&score->stats->void_chest_inventory, &stats[player]->void_chest_inventory);
+	for ( node = score->stats->void_chest_inventory.first; node != NULL; node = node->next )
 	{
 		Item* item = (Item*)node->element;
 		item->node = node;
@@ -496,8 +504,14 @@ void loadScore(score_t* score)
 	}
 	list_FreeAll(&stats[0]->inventory);
 	list_Copy(&stats[0]->inventory, &score->stats->inventory);
-
 	for ( node_t* node = stats[0]->inventory.first; node != NULL; node = node->next )
+	{
+		Item* item = (Item*)node->element;
+		item->node = node;
+	}
+	list_FreeAll(&stats[0]->void_chest_inventory);
+	list_Copy(&stats[0]->void_chest_inventory, &score->stats->void_chest_inventory);
+	for ( node_t* node = stats[0]->void_chest_inventory.first; node != NULL; node = node->next )
 	{
 		Item* item = (Item*)node->element;
 		item->node = node;
@@ -1874,6 +1888,8 @@ void loadAllScores(const std::string& scoresfilename)
 			fp->read(&identified, sizeof(bool), 1);
 			newItem(type, status, beatitude, count, appearance, identified, &score->stats->inventory);
 		}
+		score->stats->void_chest_inventory.first = NULL;
+		score->stats->void_chest_inventory.last = NULL;
 		fp->read(&c, sizeof(Uint32), 1);
 		node = list_Node(&score->stats->inventory, c);
 		if ( node )
@@ -4701,6 +4717,10 @@ void SaveGameInfo::computeHash(const int playernum, Uint32& hash)
 		{
 			item.computeHash(hash, shift);
 		}
+		for ( auto& item : stats->void_chest_inventory )
+		{
+			item.computeHash(hash, shift);
+		}
 		for ( auto& bag : stats->player_lootbags )
 		{
 			hash += (Uint32)((Uint32)bag.first << (shift % 32)); ++shift;
@@ -5050,6 +5070,23 @@ int SaveGameInfo::populateFromSession(const int playernum)
 				node != nullptr; node = node->next ) {
 				auto item = (Item*)node->element;
 				player.stats.inventory.push_back(
+					SaveGameInfo::Player::stat_t::item_t{
+					(Uint32)item->type,
+					(Uint32)item->status,
+					item->appearance,
+					item->beatitude,
+					item->count,
+					item->identified,
+					item->x,
+					item->y,
+					});
+			}
+
+			// void chest inventory
+			for ( node_t* node = stats[c]->void_chest_inventory.first;
+				node != nullptr; node = node->next ) {
+				auto item = (Item*)node->element;
+				player.stats.void_chest_inventory.push_back(
 					SaveGameInfo::Player::stat_t::item_t{
 					(Uint32)item->type,
 					(Uint32)item->status,
@@ -5678,6 +5715,20 @@ int loadGame(int player, const SaveGameInfo& info) {
 		bool identified = item.identified;
 		Item* i = newItem(type, status, beatitude, count,
 			appearance, identified, &stats[statsPlayer]->inventory);
+		i->x = item.x;
+		i->y = item.y;
+	}
+
+	// void chest inventory
+	for ( auto& item : p.void_chest_inventory ) {
+		ItemType type = static_cast<ItemType>(item.type);
+		Status status = static_cast<Status>(item.status);
+		Sint16 beatitude = item.beatitude;
+		Sint16 count = item.count;
+		Uint32 appearance = item.appearance;
+		bool identified = item.identified;
+		Item* i = newItem(type, status, beatitude, count,
+			appearance, identified, &stats[statsPlayer]->void_chest_inventory);
 		i->x = item.x;
 		i->y = item.y;
 	}

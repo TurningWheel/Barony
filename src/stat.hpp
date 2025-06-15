@@ -97,6 +97,14 @@ static const int EFF_OVERCHARGE = 72;
 static const int EFF_ENVENOM_WEAPON = 73;
 static const int EFF_MAGIC_GREASE = 74;
 static const int EFF_COMMAND = 75;
+static const int EFF_MIMIC_VOID = 76;
+static const int EFF_CURSE_FLESH = 77;
+static const int EFF_NUMBING_BOLT = 78;
+static const int EFF_DELAY_PAIN = 79;
+static const int EFF_SEEK_CREATURE = 80;
+static const int EFF_TABOO = 81;
+static const int EFF_COURAGE = 82;
+static const int EFF_COWARDICE = 83;
 static const int NUMEFFECTS = 96;
 
 // stats
@@ -398,6 +406,7 @@ public:
 		std::vector<Item> items;
 	};
 	std::map<Uint32, Lootbag_t> player_lootbags;
+	list_t void_chest_inventory;
 	list_t magic_effects; //Makes things like the invisibility spell work.
 	Stat(Sint32 sprite);
 	~Stat();

@@ -4088,13 +4088,13 @@ any gyrobot findings.#
 3717 DEPRECATED#
 3718 Inscribe#
 3719 Repair#
-3720 Select a blank scroll to inscribe#
+3720 Select a blank scroll to inscribe:#
 3721 DEPRECATED#
 3722 DEPRECATED#
 3723 Clear Slot#
 3724 Inscribed %s!#
 3725 You trace over some of the faded text...#
-3726 Select a spellbook to repair#
+3726 Select a spellbook to repair:#
 3727 Your %s is depleted!#
 3728 Your %s depletes before you can complete 
  the inscription!#
@@ -6766,11 +6766,11 @@ Host to enable the game setting.
 6510 Your attack smites the %s!#
 6511 Your attack smites %s!#
 6512 Alter Instrument#
-6513 Select an instrument:#
+6513 Select instrument to transmute:#
 6514 This %s
  is unable to be altered.#
 6515 Your %s transforms into
- a %s!#
+ %s!#
 6516 You set maximise#
 6517 You set minimise#
 6518 You set weakness#
@@ -6793,5 +6793,115 @@ Host to enable the game setting.
 6535 The amulet feels warm against your neck.#
 6536 You feel greasy!#
 6537 You set command#
+6538 Gold Cost:#
+6539 Not enough gold#
+6540 Insufficient gold!#
+6541 Select a weapon to transmute:#
+6542 Select an item to transmute:#
+6543 Select a jewel to transmute:#
+6544 Transmutes Into:#
+6545 Metallurgy#
+6546 Geomancy#
+6547 Forge Key#
+6548 Forge Jewel#
+6549 Enhance Weapon#
+6550 Reshape Weapon#
+6551 Alter Arrow#
+6552 Not enough mana#
+6553 Transmuted %s using
+ %s.#
+6554 Transmuted %dG
+ using %s.#
+6555 Mana Cost:#
+6556 Change Focus#
+6557 You awaken a void chest!#
+6558 Your spell does nothing while the chest is open.#
+6559 Wait! That's a void mimic!#
+6560 Select an item to send to the void:#
+6561 Send To Void#
+6562 Sent %s
+ to the void.#
+6563 This is too important to void#
+6564 This %s
+ is too important to void.#
+6565 The void is already being accessed by somebody else.#
+6566 The void cannot accept any more items.#
+6567 The mimic voids your %s!#
+6568 revenant skull#
+6569 minimimic#
+6570 revenant skulls#
+6571 minimimics#
+6572 hits#
+6573 bites#
+6574 *rattle*#
+6575 *creak*#
+6576 You set curse flesh#
+6577 You summon a spirited %s!#
+6578 There is no room here to summon!#
+6579 spirit weapon#
+6580 adorcised weapon#
+6581 monster_unused_1#
+6582 monster_unused_2#
+6583 monster_unused_3#
+6584 monster_unused_4#
+6585 monster_unused_5#
+6586 monster_unused_6#
+6587 monster_unused_7#
+6588 monster_unused_8#
+6589 adorcised weapons#
+6590 monster_unused_1s#
+6591 monster_unused_2s#
+6592 monster_unused_3s#
+6593 monster_unused_4s#
+6594 monster_unused_5s#
+6595 monster_unused_6s#
+6596 monster_unused_7s#
+6597 monster_unused_8s#
+6598 hits#
+6599 hits#
+6600 hits#
+6601 hits#
+6602 hits#
+6603 hits#
+6604 hits#
+6605 hits#
+6606 hits#
+6607 ...#
+6608 ...#
+6609 ...#
+6610 ...#
+6611 ...#
+6612 ...#
+6613 ...#
+6614 ...#
+6615 ...#
+6616 Adorcise#
+6617 Select a weapon to summon:#
+6618 This %s
+ cannot be adorcised.#
+6619 returns to the floor.#
+6620 breaks!#
+6621 Your %s 
+ returns to the floor.#
+6622 Insufficient gold!#
+6623 The %s is numbed!#
+6624 %s is numbed!#
+6625 You feel numbed!#
+6626 dies from delayed pain.#
+6627 you set delay pain#
+6628 You feel pain again!#
+6629 You are hurt by your previous pain!#
+6630 The %s could not reach any allies!#
+6631 %s could not reach any allies!#
+6632 you set cowardice#
+6633 The %s wanders in search of an ally!#
+6634 %s wanders in search of an ally!#
+6635 The %s could not reach any foes!#
+6636 %s could not reach any foes!#
+6637 you set courage#
+6638 The %s wanders in search of a foe!#
+6639 %s wanders in search of a foe!#
+6640 you set taboo#
+6641 You are taboo!#
 
-6599 END#
+6999 END#

@@ -3584,9 +3584,9 @@ ItemStackResult getItemStackingBehaviorIntoChest(const int player, Item* itemToC
 	{
 		chest_inventory = &chestInv[player];
 	}
-	else if ( openedChest[player]->children.first && openedChest[player]->children.first->element )
+	else if ( openedChest[player] )
 	{
-		chest_inventory = (list_t*)openedChest[player]->children.first->element;
+		chest_inventory = openedChest[player]->getChestInventoryList();
 	}
 	if ( !chest_inventory )
 	{

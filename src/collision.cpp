@@ -369,7 +369,12 @@ bool entityInsideTile(Entity* entity, int x, int y, int z, bool checkSafeTiles)
 					{
 						if ( !checkSafeTiles && !map.tiles[z + y * MAPLAYERS + x * MAPLAYERS * map.height] )
 						{
-							if ( entity->behavior != &actDeathGhost && !(entity->behavior == &actMonster && entity->getStats() && entity->getStats()->type == BAT_SMALL) )
+							if ( entity->behavior != &actDeathGhost 
+								&& !(entity->behavior == &actMonster 
+									&& entity->getStats() 
+									&& (entity->getStats()->type == BAT_SMALL 
+										|| entity->getStats()->type == REVENANT_SKULL
+										|| entity->getStats()->type == MONSTER_ADORCISED_WEAPON)) )
 							{
 								return true;
 							}
@@ -462,7 +467,10 @@ bool entityInsideSomething(Entity* entity)
 			{
 				continue;
 			}
-			if ( entity->behavior == &actDeathGhost || entity->getMonsterTypeFromSprite() == BAT_SMALL )
+			if ( entity->behavior == &actDeathGhost 
+				|| entity->getMonsterTypeFromSprite() == BAT_SMALL
+				|| entity->getMonsterTypeFromSprite() == REVENANT_SKULL
+				|| entity->getMonsterTypeFromSprite() == MONSTER_ADORCISED_WEAPON )
 			{
 				if ( testEntity->behavior == &actMonster || testEntity->behavior == &actPlayer 
 					|| (testEntity->isDamageableCollider() && (testEntity->colliderHasCollision & EditorEntityData_t::COLLIDER_COLLISION_FLAG_NPC)) )
@@ -1031,11 +1039,12 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 				continue;
 			}
 			if ( entity->isDamageableCollider() && (entity->colliderHasCollision & EditorEntityData_t::COLLIDER_COLLISION_FLAG_NPC)
-				&& ((my->behavior == &actMonster && (type == GYROBOT || type == BAT_SMALL)) || my->behavior == &actDeathGhost) )
+				&& ((my->behavior == &actMonster 
+					&& (type == GYROBOT || type == BAT_SMALL || type == REVENANT_SKULL || type == MONSTER_ADORCISED_WEAPON)) || my->behavior == &actDeathGhost) )
 			{
 				continue;
 			}
-			if ( entity->behavior == &actFurniture && type == BAT_SMALL )
+			if ( entity->behavior == &actFurniture && (type == BAT_SMALL || type == REVENANT_SKULL || type == MONSTER_ADORCISED_WEAPON) )
 			{
 				continue;
 			}
@@ -1056,6 +1065,20 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 				{
 					// calculate later if hit
 					entityDodgeChance = true;
+				}
+				else
+				{
+					continue;
+				}
+			}
+			if ( entity->getMonsterTypeFromSprite() == REVENANT_SKULL || entity->getMonsterTypeFromSprite() == MONSTER_ADORCISED_WEAPON )
+			{
+				if ( my->behavior == &actBoulder )
+				{
+					// force collision here.
+				}
+				else if ( projectileAttack )
+				{
 				}
 				else
 				{
@@ -1509,7 +1532,9 @@ Entity* findEntityInLine( Entity* my, real_t x1, real_t y1, real_t angle, int en
 	bool ignoreFurniture = my && my->behavior == &actMonster && myStats
 		&& (myStats->type == SHOPKEEPER
 			|| myStats->type == MINOTAUR
-			|| myStats->type == BAT_SMALL);
+			|| myStats->type == BAT_SMALL
+			|| myStats->type == REVENANT_SKULL
+			|| myStats->type == MONSTER_ADORCISED_WEAPON);
 
 	for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
 	{
@@ -1521,14 +1546,20 @@ Entity* findEntityInLine( Entity* my, real_t x1, real_t y1, real_t angle, int en
 				|| ((entities == LINETRACE_IGNORE_ENTITIES) && 
 						( (!entity->flags[BLOCKSIGHT] && entity->behavior != &actMonster) 
 							|| (entity->behavior == &actMonster && (entity->flags[INVISIBLE] 
-								&& entity->sprite != 889 && entity->sprite != 1247 && entity->sprite != 1408) )
+								&& entity->sprite != 889 
+									&& entity->sprite != 1247 
+									&& entity->sprite != 1792
+									&& entity->sprite != 1794
+									&& entity->sprite != 1408
+									&& entity->sprite != 1796
+									&& entity->sprite != 1797) )
 						)
 					) 
 				)
 			{
 				// if entities == LINETRACE_IGNORE_ENTITIES, then ignore entities that block sight.
 				// 16/11/19 - added exception to monsters. if monster, use the INVISIBLE flag to skip checking.
-				// 889/1247/1408 is dummybot/mimic/bat "invisible" AI entity. so it's invisible, need to make it shown here.
+				// 889/1247/1408 is dummybot/mimic/bat/revenant_skull/adorcised weapon "invisible" AI entity. so it's invisible, need to make it shown here.
 				if ( entity->behavior == &actMonster && entity->sprite == 1408 )
 				{
 					if ( (entity != target && target != nullptr) || entity == my || entity->flags[PASSABLE] )
@@ -1843,7 +1874,9 @@ real_t lineTrace( Entity* my, real_t x1, real_t y1, real_t angle, real_t range, 
 				{
 					ground = false;
 				}
-				else if ( stats->type == SENTRYBOT || stats->type == SPELLBOT || stats->type == BAT_SMALL )
+				else if ( stats->type == SENTRYBOT || stats->type == SPELLBOT || stats->type == BAT_SMALL 
+					|| stats->type == REVENANT_SKULL
+					|| stats->type == MONSTER_ADORCISED_WEAPON )
 				{
 					ground = false;
 				}
@@ -2186,7 +2219,7 @@ real_t lineTraceTarget(Entity* my, real_t x1, real_t y1, real_t angle, real_t ra
 
 -------------------------------------------------------------------------------*/
 
-int checkObstacle(long x, long y, Entity* my, Entity* target, bool useTileEntityList, bool checkWalls, bool checkFloor)
+int checkObstacle(long x, long y, Entity* my, Entity* target, bool useTileEntityList, bool checkWalls, bool checkFloor, bool checkEnemies)
 {
 	node_t* node = nullptr;
 	Entity* entity = nullptr;
@@ -2302,11 +2335,14 @@ int checkObstacle(long x, long y, Entity* my, Entity* target, bool useTileEntity
 						{
 							continue;
 						}
-						if ( my && my->behavior == &actDeathGhost && (entity->behavior == &actPlayer || entity->behavior == &actMonster) )
+						if ( my && (my->behavior == &actDeathGhost || !checkEnemies) && (entity->behavior == &actPlayer || entity->behavior == &actMonster) )
 						{
 							continue;
 						}
-						if ( entity->behavior == &actMonster && entity->getMonsterTypeFromSprite() == BAT_SMALL )
+						if ( entity->behavior == &actMonster 
+							&& (entity->getMonsterTypeFromSprite() == BAT_SMALL 
+								|| entity->getMonsterTypeFromSprite() == REVENANT_SKULL
+								|| entity->getMonsterTypeFromSprite() == MONSTER_ADORCISED_WEAPON) )
 						{
 							continue;
 						}

@@ -6738,6 +6738,8 @@ void assignActions(map_t* map)
 			case 205:
 			case 206:
 			case 207:
+			case 246:
+			case 247:
 			{
 				entity->sizex = 4;
 				entity->sizey = 4;

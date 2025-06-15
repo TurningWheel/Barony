@@ -2258,9 +2258,9 @@ Item* takeItemFromChest(int player, Item* item, int amount, Item* addToSpecificI
 	{
 		chest_inventory = &chestInv[player];
 	}
-	else if ( openedChest[player]->children.first && openedChest[player]->children.first->element )
+	else if ( openedChest[player] )
 	{
-		chest_inventory = (list_t*)openedChest[player]->children.first->element;
+		chest_inventory = openedChest[player]->getChestInventoryList();
 	}
 
 	if ( !chest_inventory || !item->node || item->node->list != chest_inventory )
@@ -2304,9 +2304,9 @@ bool dragDropStackChestItems(const int player, Item*& selectedItem, Item* tempIt
 	{
 		chest_inventory = &chestInv[player];
 	}
-	else if ( openedChest[player]->children.first && openedChest[player]->children.first->element )
+	else if ( openedChest[player] )
 	{
-		chest_inventory = (list_t*)openedChest[player]->children.first->element;
+		chest_inventory = openedChest[player]->getChestInventoryList();
 	}
 
 	if ( !chest_inventory || !selectedItem->node || selectedItem->node->list != chest_inventory
@@ -2820,9 +2820,9 @@ void releaseChestItem(const int player)
 		{
 			chest_inventory = &chestInv[player];
 		}
-		else if ( openedChest[player]->children.first && openedChest[player]->children.first->element )
+		else if ( openedChest[player] )
 		{
-			chest_inventory = (list_t*)openedChest[player]->children.first->element;
+			chest_inventory = openedChest[player]->getChestInventoryList();
 		}
 
 		if ( chest_inventory )
@@ -3606,9 +3606,9 @@ void releaseItem(const int player)
 				{
 					chest_inventory = &chestInv[player];
 				}
-				else if ( openedChest[player]->children.first && openedChest[player]->children.first->element )
+				else if ( openedChest[player] )
 				{
-					chest_inventory = (list_t*)openedChest[player]->children.first->element;
+					chest_inventory = openedChest[player]->getChestInventoryList();
 				}
 
 				if ( chest_inventory )
@@ -8684,9 +8684,9 @@ void Player::Inventory_t::updateInventory()
 		{
 			chest_inventory = &chestInv[player];
 		}
-		else if ( openedChest[player]->children.first && openedChest[player]->children.first->element )
+		else if ( openedChest[player] )
 		{
-			chest_inventory = (list_t*)openedChest[player]->children.first->element;
+			chest_inventory = openedChest[player]->getChestInventoryList();
 		}
 
 		if ( chest_inventory )
@@ -9197,9 +9197,9 @@ void Player::Inventory_t::updateInventory()
 		{
 			chest_inventory = &chestInv[player];
 		}
-		else if ( openedChest[player]->children.first && openedChest[player]->children.first->element )
+		else if ( openedChest[player] )
 		{
-			chest_inventory = (list_t*)openedChest[player]->children.first->element;
+			chest_inventory = openedChest[player]->getChestInventoryList();
 		}
 
 		if ( chest_inventory )
@@ -10407,9 +10407,9 @@ void Player::Inventory_t::updateInventory()
 				{
 					chest_inventory = &chestInv[player];
 				}
-				else if ( openedChest[player]->children.first && openedChest[player]->children.first->element )
+				else if ( openedChest[player] )
 				{
-					chest_inventory = (list_t*)openedChest[player]->children.first->element;
+					chest_inventory = openedChest[player]->getChestInventoryList();
 				}
 
 				if ( chest_inventory )
@@ -10614,6 +10614,7 @@ std::string getContextMenuOptionBindingName(const int player, const ItemContextM
 		case PROMPT_INTERACT_SPELLBOOK_HOTBAR:
 		case PROMPT_EAT:
 		case PROMPT_SPELL_QUICKCAST:
+		case PROMPT_SPELL_CHANGE_FOCUS:
 		case PROMPT_CONSUME:
 		case PROMPT_SELL:
 		case PROMPT_BUY:
@@ -10652,6 +10653,8 @@ const char* getContextMenuLangEntry(const int player, const ItemContextMenuPromp
 			return itemUseString(player, item);
 		case PROMPT_SPELL_QUICKCAST:
 			return Language::get(4049);
+		case PROMPT_SPELL_CHANGE_FOCUS:
+			return Language::get(6556);
 		case PROMPT_TINKER:
 			return Language::get(3670);
 		case PROMPT_CLEAR_HOTBAR_SLOT:
@@ -10785,6 +10788,13 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 	{
 		options.push_back(PROMPT_SPELL_EQUIP);
 		options.push_back(PROMPT_SPELL_QUICKCAST);
+		/*if ( spell_t* spell = getSpellFromItem(player, item, true) )
+		{
+			if ( spell->ID == SPELL_RESHAPE_WEAPON )
+			{
+				options.push_back(PROMPT_SPELL_CHANGE_FOCUS);
+			}
+		}*/
 		return options;
 	}
 

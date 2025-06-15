@@ -2376,6 +2376,21 @@ std::string ItemTooltips_t::getCostOfSpellString(const int player, Item& item)
 		}
 		snprintf(buf, sizeof(buf), str.c_str(), getCostOfSpell(spell));
 	}
+	else if ( spell->ID == SPELL_LEAD_BOLT || spell->ID == SPELL_MERCURY_BOLT )
+	{
+		std::string templateName = "template_spell_cost_gold";
+		std::string str;
+		for ( auto it = templates[templateName].begin();
+			it != templates[templateName].end(); ++it )
+		{
+			str += *it;
+			if ( std::next(it) != ItemTooltips.templates[templateName].end() )
+			{
+				str += '\n';
+			}
+		}
+		snprintf(buf, sizeof(buf), str.c_str(), getCostOfSpell(spell), getGoldCostOfSpell(spell, player));
+	}
 	else
 	{
 		std::string templateName = "template_spell_cost";

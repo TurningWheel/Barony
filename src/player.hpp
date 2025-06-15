@@ -658,7 +658,8 @@ class Player
 
 public:
 	Entity* entity;
-
+	real_t player_last_x = 0.0;
+	real_t player_last_y = 0.0;
 	enum SplitScreenTypes : int
 	{
 		SPLITSCREEN_DEFAULT,
@@ -950,9 +951,10 @@ public:
 			bool bOpen = false;
 			bool bFirstTimeSnapCursor = false;
 			int currentScrollRow = 0;
+			bool voidChest = false;
 			const int kNumItemsToDisplayVertical = 3;
 			int getNumItemsToDisplayVertical() const;
-			void openChest();
+			void openChest(bool _voidChest);
 			void closeChest();
 			void updateChest();
 			void scrollToSlot(int x, int y, bool instantly);

@@ -320,11 +320,13 @@ int initGame()
 			stats[c]->FOLLOWERS.last = nullptr;
 			stats[c]->inventory.first = nullptr;
 			stats[c]->inventory.last = nullptr;
+			stats[c]->void_chest_inventory.first = nullptr;
+			stats[c]->void_chest_inventory.last = nullptr;
 			stats[c]->clearStats();
 			entitiesToDelete[c].first = nullptr;
 			entitiesToDelete[c].last = nullptr;
-			initClass(c);
 			GenericGUI[c].setPlayer(c);
+			initClass(c);
 			FollowerMenu[c].setPlayer(c);
 			CalloutMenu[c].setPlayer(c);
 			cameras[c].winx = 0;
@@ -522,6 +524,7 @@ void deinitGame()
 		players[c]->inventoryUI.appraisal.timer = 0;
 		players[c]->inventoryUI.appraisal.current_item = 0;
 		list_FreeAll(&stats[c]->inventory);
+		list_FreeAll(&stats[c]->void_chest_inventory);
 		list_FreeAll(&stats[c]->FOLLOWERS);
 		if ( multiplayer == CLIENT )
 		{

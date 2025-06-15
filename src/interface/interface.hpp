@@ -440,8 +440,24 @@ public:
 	bool isItemEnchantArmorable(const Item* item);
 	void enchantItem(Item* item);
 
-	bool isItemAlterInstrumentable(const Item* item);
-	void alterInstrument(Item* item);
+	// transmute
+	bool isItemAlterable(const Item* item);
+	void alterItem(Item* item);
+	void doMetallurgyEffect(Item* item);
+	void doGeomancyEffect(Item* item);
+	void doForgeKeyEffect(Item* item);
+	void doForgeJewelEffect(Item* item);
+	void doEnhanceWeaponEffect(Item* item);
+	void doReshapeWeaponEffect(Item* item);
+	void doAlterArrowEffect(Item* item);
+
+	// void
+	bool isItemVoidable(const Item* item);
+	void sendItemToVoid(Item* item);
+
+	// adorcise
+	bool isItemAdorcisable(const Item* item);
+	void adorciseItem(Item* item);
 
 	//alchemy menu funcs
 	bool isItemMixable(const Item* item);
@@ -653,6 +669,17 @@ public:
 		bool isInteractable = true;
 		bool bOpen = false;
 		bool bFirstTimeSnapCursor = false;
+		enum CostEffectTypes
+		{
+			COST_EFFECT_NONE,
+			COST_EFFECT_GOLD,
+			COST_EFFECT_MANA,
+			COST_EFFECT_MANA_RETURN_GOLD,
+			COST_EFFECT_MANA_AND_GOLD
+		};
+		CostEffectTypes modeHasCostEffect = COST_EFFECT_NONE;
+		int costEffectGoldAmount = 0;
+		int costEffectMPAmount = 0;
 		enum ItemEffectModes : int
 		{
 			ITEMFX_MODE_NONE,
@@ -664,7 +691,16 @@ public:
 			ITEMFX_MODE_SPELL_REMOVECURSE,
 			ITEMFX_MODE_SCROLL_ENCHANT_WEAPON,
 			ITEMFX_MODE_SCROLL_ENCHANT_ARMOR,
-			ITEMFX_MODE_ALTER_INSTRUMENT
+			ITEMFX_MODE_ALTER_INSTRUMENT,
+			ITEMFX_MODE_METALLURGY,
+			ITEMFX_MODE_GEOMANCY,
+			ITEMFX_MODE_FORGE_KEY,
+			ITEMFX_MODE_FORGE_JEWEL,
+			ITEMFX_MODE_ENHANCE_WEAPON,
+			ITEMFX_MODE_RESHAPE_WEAPON,
+			ITEMFX_MODE_ALTER_ARROW,
+			ITEMFX_MODE_PUNCTURE_VOID,
+			ITEMFX_MODE_ADORCISE_WEAPON
 		};
 		void openItemEffectMenu(ItemEffectModes mode);
 		ItemEffectModes currentMode = ITEMFX_MODE_NONE;
@@ -687,7 +723,10 @@ public:
 			ITEMFX_ACTION_ITEM_IDENTIFIED,
 			ITEMFX_ACTION_MUST_BE_UNEQUIPPED,
 			ITEMFX_ACTION_NOT_IDENTIFIED_YET,
-			ITEMFX_ACTION_NOT_CURSED
+			ITEMFX_ACTION_CANT_AFFORD_GOLD,
+			ITEMFX_ACTION_CANT_AFFORD_MANA,
+			ITEMFX_ACTION_NOT_CURSED,
+			ITEMFX_ACTION_UNVOIDABLE
 		};
 		ItemEffectActions_t itemActionType = ITEMFX_ACTION_NONE;
 		bool itemRequiresTitleReflow = true;
@@ -709,7 +748,8 @@ public:
 
 		ItemEffectActions_t setItemDisplayNameAndPrice(Item* item, bool checkResultOnly = false);
 		void clearItemDisplayed();
-
+		bool consumeResourcesForTransmute();
+		void getItemEffectCost(Item* itemUsedWith, int& goldCost, int& manaCost);
 		static int heightOffsetWhenNotCompact;
 	};
 	ItemEffectGUI_t itemfxGUI;
@@ -1808,6 +1848,7 @@ enum ItemContextMenuPrompts {
 	PROMPT_UNEQUIP,
 	PROMPT_SPELL_EQUIP,
 	PROMPT_SPELL_QUICKCAST,
+	PROMPT_SPELL_CHANGE_FOCUS,
 	PROMPT_APPRAISE,
 	PROMPT_DROPDOWN,
 	PROMPT_INTERACT,

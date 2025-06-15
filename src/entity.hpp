@@ -229,6 +229,7 @@ public:
 	Sint32& chestLockpickHealth; // skill[12]
 	Sint32& chestOldHealth; //skill[15]
 	Sint32& chestMimicChance; //skill[16]
+	Sint32& chestVoidState = skill[17];
 
 	Sint32& char_gonnavomit; // skill[26]
 	Sint32& char_heal; // skill[22]
@@ -886,12 +887,16 @@ public:
 	void closeChest();
 	void closeChestServer(); //Close the chest serverside, silently. Called when the chest is closed somewhere else for that client, but the server end stuff needs to be tied up.
 	Item* addItemToChest(Item* item, bool forceNewStack, Item* specificDestinationStack); //Adds an item to the chest. If server, notifies the client. If client, notifies the server.
+	static Item* addItemToVoidChest(int player, Item* item, bool forceNewStack, Item* specificDestinationStack); //Adds an item to the chest. If client, notifies the server.
+	static Item* addItemToVoidChestServer(int player, Item* item, bool forceNewStack, Item* specificDestinationStack);
 	Item* getItemFromChest(Item* item, int amount, bool getInfoOnly = false); //Removes an item from the chest and returns a pointer to it.
 	Item* addItemToChestFromInventory(int player, Item* item, int amount, bool forceNewStack, Item* specificDestinationStack);
 	Item* addItemToChestServer(Item* item, bool forceNewStack, Item* specificDestinationStack); //Adds an item to the chest. Called when the server receives a notification from the client that an item was added to the chest.
 	bool removeItemFromChestServer(Item* item, int count); //Called when the server learns that a client removed an item from the chest.
+	static bool removeItemFromVoidChestServer(int player, Item* item, int count); //Called when the server learns that a client removed an item from the chest.
 	void unlockChest();
 	void lockChest();
+	list_t* getChestInventoryList();
 	void chestHandleDamageMagic(int damage, Entity &magicProjectile, Entity *caster);
 
 	//Power Crystal functions.
@@ -1055,13 +1060,14 @@ public:
 	 * @param guarantee: Causes serverUpdateEffectsForEntity() to use sendPacketSafe() rather than just sendPacket().
 	 * Returns true on successfully setting value.
 	 */
-	bool setEffect(int effect, std::variant<bool, Uint8> value, int duration, bool updateClients, bool guarantee = true, bool overrideEffectStrength = false);
+	bool setEffect(int effect, std::variant<bool, Uint8> value, int duration, bool updateClients, bool guarantee = true, bool overrideEffectStrength = false, bool overrideDuration = true);
 
 	/*
 	 * @param state: required to let the entity know if it should enter MONSTER_STATE_PATH, MONSTER_STATE_ATTACK, etc.
 	 * @param monsterWasHit: monster is retaliating to an attack as opposed to finding an enemy. to set reaction time accordingly in hardcore
 	 */
 	void monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool monsterWasHit = false);
+	bool monsterAlertBeforeHit(Entity* attacker);
 
 	/*
 	 * Attempts to set the target to 0.
@@ -1381,7 +1387,7 @@ int checkSpriteType(Sint32 sprite);
 Monster editorSpriteTypeToMonster(Sint32 sprite);
 extern std::vector<const char*>spriteEditorNameStrings;
 extern char tileEditorNameStrings[NUM_EDITOR_TILES][44];
-extern char monsterEditorNameStrings[NUMMONSTERS][16];
+extern char monsterEditorNameStrings[NUMMONSTERS][32];
 extern char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32];
 extern char itemNameStrings[NUM_ITEM_STRINGS][32];
 int canWearEquip(Entity* entity, int category);
@@ -1400,7 +1406,7 @@ static const int SPRITE_BOOT_LEFT_OFFSET = 2;
 
 int setGloveSprite(Stat * myStats, Entity* ent, int spriteOffset);
 bool isLevitating(Stat * myStats);
-int getWeaponSkill(Item* weapon);
+int getWeaponSkill(const Item* weapon);
 int getStatForProficiency(int skill);
 void setSpriteAttributes(Entity* entityToSet, Entity* entityToCopy, Entity* entityStatToCopy);
 bool monsterIsImmobileTurret(Entity* my, Stat* myStats);
@@ -1512,7 +1518,18 @@ public:
 		TO_MONSTER_D,
 		TO_MONSTER_M,
 		TO_MONSTER_S,
-		TO_MONSTER_G
+		TO_MONSTER_G,
+		TO_REVENANT_SKULL,
+		TO_MINIMIMIC,
+		TO_ADORCISED_WEAPON,
+		TO_MONSTER_UNUSED_1,
+		TO_MONSTER_UNUSED_2,
+		TO_MONSTER_UNUSED_3,
+		TO_MONSTER_UNUSED_4,
+		TO_MONSTER_UNUSED_5,
+		TO_MONSTER_UNUSED_6,
+		TO_MONSTER_UNUSED_7,
+		TO_MONSTER_UNUSED_8
 	};
 	enum ScriptType : int
 	{

@@ -661,7 +661,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 					else
 					{
-						myStats->setEffectActive(EFF_CONFUSED, 1);
+						myStats->setEffectActive(EFF_CONFUSED, MAXPLAYERS + 1);
 						myStats->EFFECTS_TIMERS[EFF_CONFUSED] = -1;
 						myStats->setEffectActive(EFF_PARALYZED, 1);
 						myStats->EFFECTS_TIMERS[EFF_PARALYZED] = 25;
