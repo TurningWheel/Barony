@@ -3635,6 +3635,7 @@ void TextSourceScript::playerClearInventory(bool clearStats)
 	spellcastingAnimationManager_deactivate(&cast_animation[clientnum]);
 	stats[clientnum]->freePlayerEquipment();
 	list_FreeAll(&stats[clientnum]->inventory);
+	list_FreeAll(&stats[clientnum]->void_chest_inventory);
 	players[clientnum]->shootmode = true;
 	players[clientnum]->inventoryUI.appraisal.timer = 0;
 	players[clientnum]->inventoryUI.appraisal.current_item = 0;

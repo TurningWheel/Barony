@@ -964,15 +964,7 @@ void actArrow(Entity* my)
 					// alert the monster
 					if ( hit.entity->behavior == &actMonster && parent != nullptr )
 					{
-						bool alertTarget = true;
-						if ( parent->behavior == &actMonster && parent->monsterAllyIndex != -1 )
-						{
-							if ( hit.entity->behavior == &actMonster && hit.entity->monsterAllyIndex != -1 )
-							{
-								// if a player ally + hit another ally, don't aggro back
-								alertTarget = false;
-							}
-						}
+						bool alertTarget = hit.entity->monsterAlertBeforeHit(parent);
 
 						if ( alertTarget && hit.entity->monsterState != MONSTER_STATE_ATTACK && (hitstats->type < LICH || hitstats->type >= SHOPKEEPER) )
 						{

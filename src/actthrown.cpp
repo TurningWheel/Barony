@@ -1460,16 +1460,8 @@ void actThrown(Entity* my)
 				// alert the monster
 				if ( hit.entity->behavior == &actMonster && hitstats && parent != nullptr && doAlert )
 				{
-					bool alertTarget = true;
+					bool alertTarget = hit.entity->monsterAlertBeforeHit(parent);
 					bool targetHealed = false;
-					if ( parent->behavior == &actMonster && parent->monsterAllyIndex != -1 )
-					{
-						if ( hit.entity->behavior == &actMonster && hit.entity->monsterAllyIndex != -1 )
-						{
-							// if a player ally + hit another ally, don't aggro back
-							alertTarget = false;
-						}
-					}
 
 					if ( disableAlertBlindStatus )
 					{

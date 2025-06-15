@@ -326,9 +326,8 @@ void Item::applyLockpick(int player, Entity& entity)
 					{
 						int metalscrap = 5 + local_rng.rand() % 6;
 						int magicscrap = 5 + local_rng.rand() % 11;
-						if ( entity.children.first )
 						{
-							list_t* inventory = static_cast<list_t* >(entity.children.first->element);
+							list_t* inventory = entity.getChestInventoryList();
 							if ( inventory )
 							{
 								newItem(TOOL_METAL_SCRAP, DECREPIT, 0, metalscrap, 0, true, inventory);
@@ -822,7 +821,7 @@ void Item::applyLockpick(int player, Entity& entity)
 					else
 					{
 						messagePlayer(player, MESSAGE_COMBAT, Language::get(2526), getMonsterLocalizedName(myStats->type).c_str());
-						myStats->setEffectActive(EFF_CONFUSED, 1);
+						myStats->setEffectActive(EFF_CONFUSED, MAXPLAYERS + 1);
 						myStats->EFFECTS_TIMERS[EFF_CONFUSED] = -1;
 						myStats->setEffectActive(EFF_PARALYZED, 1);
 						myStats->EFFECTS_TIMERS[EFF_PARALYZED] = 25;

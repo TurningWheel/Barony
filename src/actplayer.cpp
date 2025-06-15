@@ -2965,13 +2965,14 @@ void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta
 	}
 	my->pitch -= PLAYER_ROTY * refreshRateDelta;
 
-	if ( my->pitch > PI / 3 )
+	static ConsoleVariable<float> cvar_player_cam_pitch("/player_cam_pitch", PI / 3);
+	if ( my->pitch > *cvar_player_cam_pitch )
 	{
-		my->pitch = PI / 3;
+		my->pitch = *cvar_player_cam_pitch;
 	}
-	if ( my->pitch < -PI / 3 )
+	if ( my->pitch < -*cvar_player_cam_pitch )
 	{
-		my->pitch = -PI / 3;
+		my->pitch = -*cvar_player_cam_pitch;
 	}
 
 	if ( smoothmouse )
@@ -5955,6 +5956,9 @@ void actPlayer(Entity* my)
 		{
 			my->createWorldUITooltip();
 		}
+
+		players[PLAYER_NUM]->player_last_x = my->x;
+		players[PLAYER_NUM]->player_last_y = my->y;
 
 		PLAYER_ALIVETIME++;
 		if ( PLAYER_NUM == clientnum ) // specifically the host - in splitscreen we only process this once for all players.
