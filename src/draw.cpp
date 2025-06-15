@@ -2552,6 +2552,35 @@ void drawEntities2D(long camx, long camy)
 					drawImageScaled(itemSprite(tmpItem), nullptr, &pos);
 					free(tmpItem);
 				}
+				else if ( entity->sprite == 21 )
+				{
+					pos.y += sprites[entity->sprite]->h / 2;
+					pos.x += sprites[entity->sprite]->w / 2;
+					// chest
+					switch ( (int)entity->yaw )
+					{
+					case 0:
+						pos.y += pos.h;
+						drawImageRotatedAlpha(sprites[entity->sprite], nullptr, &pos, 3 * PI / 2, 255);
+						break;
+					case 1:
+						pos.x -= pos.w;
+						drawImageRotatedAlpha(sprites[entity->sprite], nullptr, &pos, 0.f, 255);
+						break;
+					case 2:
+						pos.y -= pos.h;
+						drawImageRotatedAlpha(sprites[entity->sprite], nullptr, &pos, PI / 2, 255);
+						break;
+					case 3:
+						pos.x += pos.w;
+						drawImageRotatedAlpha(sprites[entity->sprite], nullptr, &pos, PI, 255);
+						break;
+					default:
+						// draw sprite normally from sprites list
+						drawImageScaled(sprites[entity->sprite], nullptr, &pos);
+						break;
+					}
+				}
 				else if ( entity->sprite == 133 )
 				{
 					pos.y += sprites[entity->sprite]->h / 2;
