@@ -606,12 +606,19 @@ static void fillSmoothLightmap(int which, map_t& map) {
         
         auto& d = lightmapSmoothed[smoothindex];
         const auto& s = lightmap[index];
-        for (int c = 0; c < 4; ++c) {
+        for (int c = 0; c < 3; ++c) { // r,g,b of lightmap
             auto& dc = *(&d.x + c);
             const auto& sc = *(&s.x + c);
             const auto diff = sc - dc;
             if (fabsf(diff) < epsilon) { dc += diff; }
             else { dc += diff * rate; }
+        }
+        {
+            // alpha/"shade" of lightmap
+            auto& dc = *(&d.x + 3);
+            const auto& sc = *(&s.x + 3);
+            const auto diff = sc - dc;
+            dc += diff * rate;
         }
     }
 }
@@ -644,6 +651,8 @@ static void loadLightmapTexture(int which, map_t& map) {
     const bool fullbright = (&map == &CompendiumEntries.compendiumMap) ? true :// compendium virtual map is always fullbright
         (conductGameChallenges[CONDUCT_CHEATS_ENABLED] ? *cvar_fullBright : false);
 #endif
+
+    static ConsoleVariable<Vector4> cvar_shade_factor("/light_shade_factor", {0.8f, 0.8f, 0.63f, 0.f });
     
     // build lightmap texture data
     const float div = 1.f / 255.f;
@@ -668,6 +677,13 @@ static void loadLightmapTexture(int which, map_t& map) {
                     total.x = (total.x / count) * div;
                     total.y = (total.y / count) * div;
                     total.z = (total.z / count) * div;
+                    if ( total.w > 0.01 )
+                    {
+                        float shade = std::min(1.f, (total.w / count) * div);
+                        total.x -= total.x * shade * cvar_shade_factor->x;
+                        total.y -= total.y * shade * cvar_shade_factor->y;
+                        total.z -= total.z * shade * cvar_shade_factor->z;
+                    }
                     total.w = 1.f;
                     pixels.insert(pixels.end(), {total.x, total.y, total.z, total.w});
                 } else {

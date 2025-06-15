@@ -21,8 +21,8 @@ typedef struct light_t
 	node_t* node;
 } light_t;
 
-light_t* lightSphereShadow(int index, Sint32 x, Sint32 y, Sint32 radius, float r, float g, float b, float exp);
-light_t* lightSphere(int index, Sint32 x, Sint32 y, Sint32 radius, float r, float g, float b, float exp);
+light_t* lightSphereShadow(int index, Sint32 x, Sint32 y, Sint32 radius, float r, float g, float b, float a, float exp);
+light_t* lightSphere(int index, Sint32 x, Sint32 y, Sint32 radius, float r, float g, float b, float a, float exp);
 light_t* newLight(int index, Sint32 x, Sint32 y, Sint32 radius);
 light_t* addLight(Sint32 x, Sint32 y, const char* name, int range_bonus = 0, int index = 0);
 bool loadLights(bool forceLoadBaseDirectory = false);
@@ -32,6 +32,7 @@ struct LightDef {
     float r = 0.f;
     float g = 0.f;
     float b = 0.f;
+	float a = 0.f;
     float falloff_exp = 1.f;
     bool shadows = false;
 };
