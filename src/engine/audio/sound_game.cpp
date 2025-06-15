@@ -1922,8 +1922,8 @@ void VoiceChat_t::PlayerChannels_t::setupPlayback()
 						int index = atoi(argv[1]);
 						if ( index >= 0 && index < 6 )
 						{
-							fmod_rolloff_points[index].x = atoi(argv[1]) / 100.f;
-							fmod_rolloff_points[index].y = atoi(argv[2]) / 100.f;
+							fmod_rolloff_points[index].x = atoi(argv[2]) / 100.f;
+							fmod_rolloff_points[index].y = atoi(argv[3]) / 100.f;
 						}
 						VoiceChat.PlayerChannels[i].outputChannel->set3DCustomRolloff(fmod_rolloff_points, 6);
 					}
