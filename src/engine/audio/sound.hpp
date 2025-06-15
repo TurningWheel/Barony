@@ -273,8 +273,8 @@ public:
     };
     VoicePlayerBarState getVoiceState(const int player);
 
-    static const int FRAME_SIZE = 480;
-    static const int BITRATE = 24000;
+    static constexpr int FRAME_SIZE = 480;
+    static constexpr int BITRATE = 24000;
     static void logError(const char* str, ...)
     {
         char newstr[1024] = { 0 };
@@ -385,7 +385,7 @@ public:
             int numBytes = 0;
             int encoder_id = -1;
         };
-        static const int MAX_FRAME_SIZE = 6 * FRAME_SIZE;
+        static constexpr int MAX_FRAME_SIZE = 6 * FRAME_SIZE;
         unsigned int encoded_samples = 0;
         double encoding_time = 0.0;
         unsigned int decoded_samples;
