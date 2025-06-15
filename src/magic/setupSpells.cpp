@@ -55,6 +55,9 @@ void setupSpells()   ///TODO: Verify this function.
 	//spellElement_missile.name = "Missile";
 	strcpy(spellElement_missile.element_internal_name, "spell_element_missile");
 	spellElementMap[SPELL_ELEMENT_PROPULSION_MISSILE] = *copySpellElement(&spellElement_missile);
+	spellElementMap[SPELL_ELEMENT_PROPULSION_MISSILE_NOCOST] = *copySpellElement(&spellElement_missile);
+	spellElementMap[SPELL_ELEMENT_PROPULSION_MISSILE_NOCOST].mana = 0;
+	spellElementMap[SPELL_ELEMENT_PROPULSION_MISSILE_NOCOST].base_mana = 0;
 
 	spellElementConstructor(&spellElement_force);
 	spellElement_force.mana = 4;
@@ -2010,6 +2013,270 @@ void setupSpells()   ///TODO: Verify this function.
 		"spell_command");
 	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH;
 	spell->distance = 64.0;
+
+	spell = createSimpleSpell(
+		SPELL_METALLURGY,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_metallurgy");
+
+	spell = createSimpleSpell(
+		SPELL_GEOMANCY,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_geomancy");
+
+	spell = createSimpleSpell(
+		SPELL_FORGE_KEY,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_forge_key");
+
+	spell = createSimpleSpell(
+		SPELL_FORGE_JEWEL,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_forge_jewel");
+
+	spell = createSimpleSpell(
+		SPELL_ENHANCE_WEAPON,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_enhance_weapon");
+
+	spell = createSimpleSpell(
+		SPELL_RESHAPE_WEAPON,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_reshape_weapon");
+
+	spell = createSimpleSpell(
+		SPELL_ALTER_ARROW,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_alter_arrow");
+
+	spell = createSimpleSpell(
+		SPELL_VOID_CHEST,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		25, // damage
+		50, // duration
+		"spell_void_chest");
+	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH;
+	spell->distance = 64.0;
+
+	spell = createSimpleSpell(
+		SPELL_PUNCTURE_VOID,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_puncture_void");
+
+	spell = createSimpleSpell(
+		SPELL_CURSE_FLESH,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_curse_flesh");
+	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH;
+	spell->distance = 64.0;
+
+	spell = createSimpleSpell(
+		SPELL_REVENANT_CURSE,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_revenant_curse");
+	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH;
+	spell->distance = 64.0;
+
+	spell = createSimpleSpell(
+		SPELL_SPIRIT_WEAPON,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		2, // damage
+		1, // duration
+		"spell_spirit_weapon");
+	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH_FLOOR_TILE;
+	spell->distance = 64.0;
+
+	spell = createSimpleSpell(
+		SPELL_ADORCISM,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_adorcism");
+
+	spellElementConstructor(SPELL_LEAD_BOLT,
+		0,		// mana
+		0,		// base mana
+		1,		// overload
+		5,		// damage
+		0,		// duration
+		"spell_element_lead_bolt");
+	spell = spellConstructor(
+		SPELL_LEAD_BOLT,										// ID
+		100,												// difficulty
+		"spell_lead_bolt",										// internal name
+		// elements
+		{ SPELL_ELEMENT_PROPULSION_MISSILE_NOCOST, SPELL_LEAD_BOLT }
+	);
+
+	spellElementConstructor(SPELL_MERCURY_BOLT,
+		10,		// mana
+		10,		// base mana
+		1,		// overload
+		10,		// damage
+		0,		// duration
+		"spell_element_mercury_bolt");
+	spell = spellConstructor(
+		SPELL_MERCURY_BOLT,										// ID
+		100,												// difficulty
+		"spell_mercury_bolt",										// internal name
+		// elements
+		{ SPELL_ELEMENT_PROPULSION_MISSILE_NOCOST, SPELL_MERCURY_BOLT }
+	);
+
+	spellElementConstructor(SPELL_NUMBING_BOLT,
+		1,		// mana
+		1,		// base mana
+		1,		// overload
+		0,		// damage
+		0,		// duration
+		"spell_numbing_bolt");
+	spell = spellConstructor(
+		SPELL_NUMBING_BOLT,										// ID
+		100,												// difficulty
+		"spell_numbing_bolt",										// internal name
+		// elements
+		{ SPELL_ELEMENT_PROPULSION_MISSILE, SPELL_NUMBING_BOLT }
+	);
+
+	spell = createSimpleSpell(
+		SPELL_DELAY_PAIN,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_delay_pain");
+
+	spell = createSimpleSpell(
+		SPELL_SEEK_ALLY,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_seek_ally");
+	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH;
+	spell->distance = 64.0;
+
+	spell = createSimpleSpell(
+		SPELL_SEEK_FOE,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_seek_foe");
+	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH;
+	spell->distance = 64.0;
+
+	spell = createSimpleSpell(
+		SPELL_TABOO,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_taboo");
+	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH;
+	spell->distance = 64.0;
+
+	spell = createSimpleSpell(
+		SPELL_COURAGE,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_courage");
+	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH;
+	spell->distance = 64.0;
+
+	spell = createSimpleSpell(
+		SPELL_COWARDICE,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_cowardice");
+	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH;
+	spell->distance = 64.0;
+
+	spell = createSimpleSpell(
+		SPELL_DEEP_SHADE,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		750, // duration
+		"spell_deep_shade",
+		true);
 }
 
 spell_t* createSimpleSpell(int spellID, int difficulty, int mana, int base_mana, int overload_mult, int damage, 

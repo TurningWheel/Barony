@@ -126,7 +126,31 @@ static const int SPELL_GREASE_SPRAY = 104;
 static const int SPELL_MANA_BURST = 105;
 static const int SPELL_BOOBY_TRAP = 106;
 static const int SPELL_COMMAND = 107;
-static const int NUM_SPELLS = 115;
+static const int SPELL_METALLURGY = 108;
+static const int SPELL_GEOMANCY = 109;
+static const int SPELL_FORGE_KEY = 110;
+static const int SPELL_FORGE_JEWEL = 111;
+static const int SPELL_ENHANCE_WEAPON = 112;
+static const int SPELL_RESHAPE_WEAPON = 113;
+static const int SPELL_ALTER_ARROW = 114;
+static const int SPELL_VOID_CHEST = 115;
+static const int SPELL_PUNCTURE_VOID = 116;
+static const int SPELL_LEAD_BOLT = 117;
+static const int SPELL_MERCURY_BOLT = 118;
+static const int SPELL_NUMBING_BOLT = 119;
+static const int SPELL_DELAY_PAIN = 120;
+static const int SPELL_CURSE_FLESH = 121;
+static const int SPELL_REVENANT_CURSE = 122;
+static const int SPELL_COWARDICE = 123;
+static const int SPELL_COURAGE = 124;
+static const int SPELL_SEEK_ALLY = 125;
+static const int SPELL_SEEK_FOE = 126;
+static const int SPELL_DEEP_SHADE = 127;
+static const int SPELL_SHADE_BOLT = 128;
+static const int SPELL_SPIRIT_WEAPON = 129;
+static const int SPELL_ADORCISM = 130;
+static const int SPELL_TABOO = 131;
+static const int NUM_SPELLS = 132;
 
 #define SPELLELEMENT_CONFUSE_BASE_DURATION 2//In seconds.
 #define SPELLELEMENT_BLEED_BASE_DURATION 10//In seconds.
@@ -532,6 +556,7 @@ enum SpellElementIDs_t
 	SPELL_ELEMENT_METEOR_FLAMES,
 	SPELL_ELEMENT_PROPULSION_FLOOR_TILE,
 	SPELL_ELEMENT_PROPULSION_MAGIC_SPRAY,
+	SPELL_ELEMENT_PROPULSION_MISSILE_NOCOST,
 	SPELL_ELEMENT_MAX
 };
 
@@ -752,6 +777,7 @@ void spellElementConstructor(int elementID, int mana, int base_mana, int overloa
 void spellElementDeconstructor(void* data);
 
 int getCostOfSpell(spell_t* spell, Entity* caster = nullptr);
+int getGoldCostOfSpell(spell_t* spell, int player);
 int getCostOfSpellElement(spellElement_t* spellElement);
 bool spell_isChanneled(spell_t* spell);
 bool spellElement_isChanneled(spellElement_t* spellElement);
@@ -839,6 +865,7 @@ bool spellEffectFear(Entity* my, spellElement_t& element, Entity* forceParent, E
 bool spellEffectTeleportPull(Entity* my, spellElement_t& element, Entity* parent, Entity* target, int resistance);
 void spellEffectShadowTag(Entity& my, spellElement_t& element, Entity* parent, int resistance);
 bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* parent, Entity* target, int resistance);
+Entity* spellEffectAdorcise(Entity& caster, spellElement_t& element, real_t x, real_t y, Item* itemToAdorcise);
 
 void freeSpells();
 

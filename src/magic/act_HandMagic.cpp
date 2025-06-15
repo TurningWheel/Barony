@@ -137,7 +137,11 @@ bool spellcasting_animation_manager_t::spellIgnoreAttack()
 
 bool rangefinderTargetEnemyType(spell_t& spell, Entity& entity)
 {
-	if ( spell.ID == SPELL_BOOBY_TRAP )
+	if ( spell.ID == SPELL_VOID_CHEST )
+	{
+		return entity.getMonsterTypeFromSprite() == MIMIC || entity.behavior == &actChest;
+	}
+	else if ( spell.ID == SPELL_BOOBY_TRAP )
 	{
 		return entity.isDamageableCollider() || entity.behavior == &actFurniture
 			|| entity.behavior == &actChest || entity.behavior == &actDoor || entity.getMonsterTypeFromSprite() == MIMIC;
@@ -250,7 +254,7 @@ void spellcasting_animation_manager_t::setRangeFinderLocation()
 		bool interactBonusWidthEnemies = true;
 		bool interactBonusWidthAllies = false;
 		list_t* entityList = map.creatures;
-		if ( spell->ID == SPELL_BOOBY_TRAP )
+		if ( spell->ID == SPELL_BOOBY_TRAP || spell->ID == SPELL_VOID_CHEST )
 		{
 			entityList = map.entities;
 		}
@@ -1476,7 +1480,10 @@ void actMagicRangefinder(Entity* my)
 		{
 			indicator->expired = true;
 		}
-		players[HANDMAGIC_PLAYERNUM]->hud.magicRangefinder = nullptr;
+		if ( players[HANDMAGIC_PLAYERNUM] )
+		{
+			players[HANDMAGIC_PLAYERNUM]->hud.magicRangefinder = nullptr;
+		}
 		list_RemoveNode(my->mynode);
 		return;
 	}

@@ -799,6 +799,7 @@ void spellEffectStealWeapon(Entity& my, spellElement_t& element, Entity* parent,
 
 			if ( hit.entity->behavior == &actMonster 
 				&& (hit.entity->monsterAllySummonRank != 0 
+					|| hitstats->type == MONSTER_ADORCISED_WEAPON
 					|| (hitstats->type == INCUBUS && !strncmp(hitstats->name, "inner demon", strlen("inner demon"))))
 				)
 			{
@@ -1315,6 +1316,7 @@ int getCharmMonsterDifficulty(Entity& my, Stat& myStats)
 	case INSECTOID:
 	case GOATMAN:
 	case BUGBEAR:
+	case MONSTER_ADORCISED_WEAPON:
 		difficulty = 2;
 		break;
 	case CRYSTALGOLEM:
@@ -1330,6 +1332,7 @@ int getCharmMonsterDifficulty(Entity& my, Stat& myStats)
 	case MINOTAUR:
 	case MIMIC:
 	case BAT_SMALL:
+	case MINIMIMIC:
 		difficulty = 666;
 		break;
 	}
@@ -1734,6 +1737,9 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 		|| targetStats->type == MINOTAUR || targetStats->type == LICH_FIRE || targetStats->type == LICH_ICE
 		|| (target->behavior == &actMonster && target->monsterAllySummonRank != 0)
 		|| targetStats->type == MIMIC || targetStats->type == BAT_SMALL
+		|| targetStats->type == MONSTER_ADORCISED_WEAPON
+		|| targetStats->type == MINIMIMIC
+		|| targetStats->type == REVENANT_SKULL
 		|| (targetStats->type == INCUBUS && !strncmp(targetStats->name, "inner demon", strlen("inner demon")))
 		|| targetStats->type == SENTRYBOT || targetStats->type == SPELLBOT || targetStats->type == GYROBOT
 		|| targetStats->type == DUMMYBOT
@@ -2719,6 +2725,9 @@ bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* paren
 				|| hitstats->type == AUTOMATON || hitstats->type == DEVIL || hitstats->type == DEMON || hitstats->type == CREATURE_IMP
 				|| hitstats->type == SHADOW
 				|| hitstats->type == MIMIC
+				|| hitstats->type == MINIMIMIC
+				|| hitstats->type == MONSTER_ADORCISED_WEAPON
+				|| hitstats->type == REVENANT_SKULL
 				|| (hitstats->type == INCUBUS && !strncmp(hitstats->name, "inner demon", strlen("inner demon"))) )
 			{
 				if ( parent && parent->behavior == &actPlayer )
@@ -2897,4 +2906,200 @@ bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* paren
 		spawnMagicEffectParticles(my.x, my.y, my.z, my.sprite);
 	}
 	return false;
+}
+
+Entity* spellEffectAdorcise(Entity& caster, spellElement_t& element, real_t x, real_t y, Item* itemToAdorcise)
+{
+	Entity* monster = nullptr;
+	{
+		// try find a summon location around the entity.
+		int tx = static_cast<int>(std::floor(x)) >> 4;
+		int ty = static_cast<int>(std::floor(y)) >> 4;
+		int dist = 1;
+		std::vector<std::pair<int, int>> goodspots;
+		for ( int iy = std::max(1, ty - dist); iy < std::min(ty + dist, static_cast<int>(map.height)); ++iy )
+		{
+			for ( int ix = std::max(1, tx - dist); ix < std::min(tx + dist, static_cast<int>(map.width)); ++ix )
+			{
+				if ( !checkObstacle((ix << 4) + 8, (iy << 4) + 8, &caster, NULL, true, true, false) )
+				{
+					goodspots.push_back(std::make_pair(ix, iy));
+				}
+			}
+		}
+		if ( goodspots.size() == 0 )
+		{
+			return nullptr;
+		}
+		else
+		{
+			if ( !checkObstacle((tx << 4) + 8, (ty << 4) + 8, &caster, NULL, true, true, false, false) )
+			{
+				monster = summonMonster(MONSTER_ADORCISED_WEAPON, tx * 16.0 + 8, ty * 16.0 + 8, true);
+			}
+			while ( !monster && goodspots.size() )
+			{
+				int pick = local_rng.rand() % goodspots.size();
+				std::pair<int, int> tmpPair = goodspots[pick];
+				tx = tmpPair.first;
+				ty = tmpPair.second;
+				goodspots.erase(goodspots.begin() + pick);
+				monster = summonMonster(MONSTER_ADORCISED_WEAPON, tx * 16.0 + 8, ty * 16.0 + 8, true);
+			}
+
+			if ( monster )
+			{
+				playSoundEntity(monster, 171, 128);
+				//playSoundEntity(&my, 178, 128);
+				createParticleErupt(monster, 983);
+				serverSpawnMiscParticles(monster, PARTICLE_EFFECT_ERUPT, 983);
+
+
+				Stat* monsterStats = monster->getStats();
+				if ( monsterStats )
+				{
+					if ( &element == &spellElementMap[SPELL_SPIRIT_WEAPON] )
+					{
+						monsterStats->setAttribute("spirit_weapon", "250");
+						monster->setEffect(EFF_ROOTED, true, -1, false);
+
+						ItemType type = IRON_SWORD;
+						switch ( local_rng.rand() % 4 )
+						{
+						case 1:
+							type = IRON_SPEAR;
+							break;
+						case 2:
+							type = IRON_MACE;
+							break;
+						case 3:
+							type = IRON_AXE;
+							break;
+						case 0:
+						default:
+							type = IRON_SWORD;
+							break;
+						}
+
+						if ( monsterStats->weapon = newItem(type, EXCELLENT, 0, 1, local_rng.rand(), true, nullptr) )
+						{
+							monsterStats->weapon->isDroppable = false;
+						}
+						monsterStats->monsterNoDropItems = 1;
+						monsterStats->leader_uid = caster.getUID();
+						monster->parent = caster.getUID();
+
+						monster->monsterHitTime = HITRATE * 1.5 - 10;
+						const real_t lookDist = 40.0;
+						real_t dist = lookDist;
+						Entity* newTarget = nullptr;
+						for ( node_t* node = map.creatures->first; node != nullptr; node = node->next )
+						{
+							Entity* target = (Entity*)node->element;
+							if ( target->behavior == &actMonster && monster->checkEnemy(target) )
+							{
+								real_t oldDist = dist;
+								dist = sqrt(pow(monster->x - target->x, 2) + pow(monster->y - target->y, 2));
+								if ( dist < lookDist && dist <= oldDist )
+								{
+									double tangent = atan2(target->y - monster->y, target->x - monster->x);
+									lineTrace(monster, monster->x, monster->y, tangent, lookDist, 0, false);
+									if ( hit.entity == target )
+									{
+										newTarget = target;
+									}
+								}
+							}
+						}
+
+						if ( newTarget )
+						{
+							monster->lookAtEntity(*newTarget);
+							if ( entityDist(monster, newTarget) < TOUCHRANGE )
+							{
+								monster->monsterAcquireAttackTarget(*newTarget, MONSTER_STATE_ATTACK);
+							}
+						}
+
+					}
+					else if ( &element == &spellElementMap[SPELL_ADORCISM] )
+					{
+						monsterStats->setAttribute("adorcised_weapon", "1000");
+						if ( itemToAdorcise )
+						{
+							monsterStats->weapon = newItem(itemToAdorcise->type, itemToAdorcise->status,
+								itemToAdorcise->beatitude, 1, itemToAdorcise->appearance, itemToAdorcise->identified, nullptr);
+							if ( caster.behavior == &actPlayer )
+							{
+								messagePlayer(caster.skill[2], MESSAGE_INVENTORY, Language::get(6577), itemToAdorcise->getName());
+							}
+						}
+						else
+						{
+							ItemType type = IRON_SWORD;
+							switch ( local_rng.rand() % 4 )
+							{
+							case 1:
+								type = IRON_SPEAR;
+								break;
+							case 2:
+								type = IRON_MACE;
+								break;
+							case 3:
+								type = IRON_AXE;
+								break;
+							case 0:
+							default:
+								type = IRON_SWORD;
+								break;
+							}
+
+							if ( monsterStats->weapon = newItem(type, EXCELLENT, 0, 1, local_rng.rand(), true, nullptr) )
+							{
+								monsterStats->weapon->isDroppable = false;
+							}
+							monsterStats->monsterNoDropItems = 1;
+						}
+						if ( forceFollower(caster, *monster) )
+						{
+							if ( caster.behavior == &actPlayer )
+							{
+								Compendium_t::Events_t::eventUpdateMonster(caster.skill[2], Compendium_t::CPDM_RECRUITED, monster, 1);
+								monster->monsterAllyIndex = caster.skill[2];
+								if ( multiplayer == SERVER )
+								{
+									serverUpdateEntitySkill(monster, 42); // update monsterAllyIndex for clients.
+								}
+							}
+						}
+					}
+
+					if ( caster.behavior == &actPlayer )
+					{
+						monster->flags[USERFLAG2] = true;
+						serverUpdateEntityFlag(monster, USERFLAG2);
+						if ( monsterChangesColorWhenAlly(monsterStats) )
+						{
+							int bodypart = 0;
+							for ( node_t* node = (monster)->children.first; node != nullptr; node = node->next )
+							{
+								if ( bodypart >= LIMB_HUMANOID_TORSO )
+								{
+									Entity* tmp = (Entity*)node->element;
+									if ( tmp )
+									{
+										tmp->flags[USERFLAG2] = true;
+										serverUpdateEntityFlag(tmp, USERFLAG2);
+									}
+								}
+								++bodypart;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return monster;
 }

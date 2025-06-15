@@ -656,6 +656,28 @@ spellElement_t* copySpellElement(spellElement_t* spellElement)
 	return result;
 }
 
+int getGoldCostOfSpell(spell_t* spell, int player)
+{
+	if ( player < 0 || player >= MAXPLAYERS ) { return 0; }
+	if ( !spell )
+	{
+		return 0;
+	}
+
+	int cost = 0;
+	if ( spell->ID == SPELL_LEAD_BOLT )
+	{
+		cost = 200 - stats[player]->getModifiedProficiency(PRO_MAGIC);
+		cost = std::max(25, cost);
+	}
+	else if ( spell->ID == SPELL_MERCURY_BOLT )
+	{
+		cost = 100 - stats[player]->getModifiedProficiency(PRO_MAGIC);
+		cost = std::max(25, cost);
+	}
+	return cost;
+}
+
 int getCostOfSpell(spell_t* spell, Entity* caster)
 {
 	int cost = 0;

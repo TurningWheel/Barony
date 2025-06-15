@@ -917,12 +917,7 @@ void actGreasePuddleSpawner(Entity* my)
 										{
 											stats->burningInflictedBy = parent->getUID();
 
-											bool alertTarget = true;
-											if ( parent->behavior == &actMonster && parent->monsterAllyIndex != -1 && entity->monsterAllyIndex != -1 )
-											{
-												// if we're both allies of players, don't alert the hit target.
-												alertTarget = false;
-											}
+											bool alertTarget = entity->monsterAlertBeforeHit(parent);
 
 											// alert the monster!
 											if ( entity->monsterState != MONSTER_STATE_ATTACK && (stats->type < LICH || stats->type >= SHOPKEEPER) )
@@ -934,10 +929,10 @@ void actGreasePuddleSpawner(Entity* my)
 											}
 
 											// alert other monsters too
-											if ( alertTarget )
+											/*if ( alertTarget )
 											{
 												entity->alertAlliesOnBeingHit(parent);
-											}
+											}*/
 											entity->updateEntityOnHit(parent, alertTarget);
 										}
 									}

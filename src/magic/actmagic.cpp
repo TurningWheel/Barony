@@ -149,13 +149,15 @@ void actMagiclightBall(Entity* my)
 	}
 
 	my->skill[2] = -10; // so the client sets the behavior of this entity
+	const char* light = my->sprite == 1800 ? "magic_shade" : "magic_light";
+	const char* light_flicker = my->sprite == 1800 ? "magic_shade_flicker" : "magic_light_flicker";
 
 	if (clientnum != 0 && multiplayer == CLIENT)
 	{
 		my->removeLightField();
 
 		//Light up the area.
-		my->light = addLight(my->x / 16, my->y / 16, "magic_light");
+		my->light = addLight(my->x / 16, my->y / 16, light);
 
 
 		if ( flickerLights )
@@ -171,12 +173,12 @@ void actMagiclightBall(Entity* my)
 			if (lightball_lighting == 1)
 			{
 				my->removeLightField();
-				my->light = addLight(my->x / 16, my->y / 16, "magic_light");
+				my->light = addLight(my->x / 16, my->y / 16, light);
 			}
 			else
 			{
 				my->removeLightField();
-				my->light = addLight(my->x / 16, my->y / 16, "magic_light_flicker");
+				my->light = addLight(my->x / 16, my->y / 16, light_flicker);
 			}
 			lightball_flicker = 0;
 		}
@@ -518,7 +520,7 @@ void actMagiclightBall(Entity* my)
 		}
 
 		//Light up the area.
-		my->light = addLight(my->x / 16, my->y / 16, "magic_light");
+		my->light = addLight(my->x / 16, my->y / 16, light);
 
 		if ( flickerLights )
 		{
@@ -533,12 +535,12 @@ void actMagiclightBall(Entity* my)
 			if (lightball_lighting == 1)
 			{
 				my->removeLightField();
-				my->light = addLight(my->x / 16, my->y / 16, "magic_light");
+				my->light = addLight(my->x / 16, my->y / 16, light);
 			}
 			else
 			{
 				my->removeLightField();
-				my->light = addLight(my->x / 16, my->y / 16, "magic_light_flicker");
+				my->light = addLight(my->x / 16, my->y / 16, light_flicker);
 			}
 			lightball_flicker = 0;
 		}
@@ -558,7 +560,7 @@ void actMagiclightBall(Entity* my)
 		if (distance > MAGICLIGHT_BALL_FOLLOW_DISTANCE * 2 || dist != sqrt(my->vel_x * my->vel_x + my->vel_y * my->vel_y))
 		{
 			magic_init = 1;
-			my->sprite = 174; //Go from black ball to white ball.
+			//my->sprite = 174; //Go from black ball to white ball.
 			lightball_lighting = 1;
 			lightball_movement_timer = 0; //Start off at 0 so that it moves towards the player as soon as it's created (since it's created farther away from the player).
 		}
@@ -1749,18 +1751,15 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 						else
 						{
-							alertTarget = true;
+							alertTarget = hit.entity->monsterAlertBeforeHit(parent);
 							alertAllies = true;
-							if ( parent->behavior == &actMonster && parent->monsterAllyIndex != -1 )
-							{
-								if ( hit.entity->behavior == &actMonster && hit.entity->monsterAllyIndex != -1 )
-								{
-									// if a player ally + hit another ally, don't aggro back
-									alertTarget = false;
-								}
-							}
 							if ( !strcmp(element->element_internal_name, spellElement_telePull.element_internal_name) 
 								|| !strcmp(element->element_internal_name, spellElement_shadowTag.element_internal_name) )
+							{
+								alertTarget = false;
+								alertAllies = false;
+							}
+							if ( !strcmp(element->element_internal_name, spellElementMap[SPELL_NUMBING_BOLT].element_internal_name) )
 							{
 								alertTarget = false;
 								alertAllies = false;
@@ -1839,7 +1838,9 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					}
 				}
 
-				if (!strcmp(element->element_internal_name, spellElement_force.element_internal_name))
+				if (!strcmp(element->element_internal_name, spellElement_force.element_internal_name)
+					|| !strcmp(element->element_internal_name, spellElementMap[SPELL_MERCURY_BOLT].element_internal_name)
+					|| !strcmp(element->element_internal_name, spellElementMap[SPELL_LEAD_BOLT].element_internal_name) )
 				{
 					if (hit.entity)
 					{
@@ -1876,6 +1877,62 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if (parent)
 							{
 								parent->killedByMonsterObituary(hit.entity);
+							}
+
+							if ( !strcmp(element->element_internal_name, spellElementMap[SPELL_MERCURY_BOLT].element_internal_name)
+								|| !strcmp(element->element_internal_name, spellElementMap[SPELL_LEAD_BOLT].element_internal_name) )
+							{
+								if ( hit.entity->setEffect(EFF_KNOCKBACK, true, 30, false) )
+								{
+									real_t pushbackMultiplier = 0.6;
+									if ( parent )
+									{
+										real_t dist = entityDist(parent, hit.entity);
+										if ( dist < TOUCHRANGE )
+										{
+											pushbackMultiplier += 0.5;
+										}
+									}
+									if ( hit.entity->behavior == &actMonster )
+									{
+										real_t tangent = atan2(hit.entity->y - my->y, hit.entity->x - my->x);
+										hit.entity->vel_x = cos(tangent) * pushbackMultiplier;
+										hit.entity->vel_y = sin(tangent) * pushbackMultiplier;
+										hit.entity->monsterKnockbackVelocity = 0.01;
+										hit.entity->monsterKnockbackTangentDir = tangent;
+									}
+									else if ( hit.entity->behavior == &actPlayer )
+									{
+										if ( !players[hit.entity->skill[2]]->isLocalPlayer() )
+										{
+											hit.entity->monsterKnockbackVelocity = pushbackMultiplier;
+											hit.entity->monsterKnockbackTangentDir = my->yaw;
+											serverUpdateEntityFSkill(hit.entity, 11);
+											serverUpdateEntityFSkill(hit.entity, 9);
+										}
+										else
+										{
+											hit.entity->monsterKnockbackVelocity = pushbackMultiplier;
+											hit.entity->monsterKnockbackTangentDir = my->yaw;
+										}
+									}
+								}
+
+								if ( !strcmp(element->element_internal_name, spellElementMap[SPELL_MERCURY_BOLT].element_internal_name) )
+								{
+									Sint32 duration = 5 * TICKS_PER_SECOND;
+									damage /= (1 + (int)resistance);
+									if ( hit.entity->setEffect(EFF_SLOW, true, duration, false, true, false, false) )
+									{
+										playSoundEntity(hit.entity, 396 + local_rng.rand() % 3, 64);
+									}
+
+									duration = 5 * TICKS_PER_SECOND;
+									damage /= (1 + (int)resistance);
+									if ( hit.entity->setEffect(EFF_POISONED, true, duration, false, true, false, false) )
+									{
+									}
+								}
 							}
 
 							// update enemy bar for attacker
@@ -2602,7 +2659,16 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								}
 							}
 
-							if ( duration > 0 && hit.entity->setEffect(EFF_CONFUSED, true, duration, false) )
+							Uint8 effectStrength = MAXPLAYERS + 1;
+							if ( parent && parent->behavior == &actPlayer )
+							{
+								effectStrength = parent->skill[2] + 1;
+							}
+							else if ( parent && parent->monsterAllyGetPlayerLeader() )
+							{
+								effectStrength = parent->monsterAllyGetPlayerLeader()->skill[2] + 1;
+							}
+							if ( duration > 0 && hit.entity->setEffect(EFF_CONFUSED, effectStrength, duration, false) )
 							{
 								magicOnEntityHit(parent, my, hit.entity, hitstats, 0, 0, 0, spell ? spell->ID : SPELL_NONE);
 								magicTrapOnHit(parent, hit.entity, hitstats, 0, spell ? spell->ID : SPELL_NONE);
@@ -2834,6 +2900,50 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 					}
 				}
+				else if ( !strcmp(element->element_internal_name, spellElementMap[SPELL_NUMBING_BOLT].element_internal_name) )
+				{
+					if ( hit.entity )
+					{
+						if ( (!mimic && hit.entity->behavior == &actMonster) || hit.entity->behavior == &actPlayer )
+						{
+							if ( hit.entity->setEffect(EFF_NUMBING_BOLT, true, 5 * TICKS_PER_SECOND, false) )
+							{
+								spawnFloatingSpriteMisc(134, hit.entity->x + (-4 + local_rng.rand() % 9) + cos(hit.entity->yaw) * 2,
+									hit.entity->y + (-4 + local_rng.rand() % 9) + sin(hit.entity->yaw) * 2, hit.entity->z + local_rng.rand() % 4);
+
+								magicOnEntityHit(parent, my, hit.entity, hitstats, 0, 0, 0, spell ? spell->ID : SPELL_NONE);
+								magicTrapOnHit(parent, hit.entity, hitstats, 0, spell ? spell->ID : SPELL_NONE);
+
+								// update enemy bar for attacker
+								if ( parent )
+								{
+									Uint32 color = makeColorRGB(0, 255, 0);
+									if ( parent->behavior == &actPlayer )
+									{
+										messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(6623), Language::get(6624), MSG_COMBAT);
+									}
+								}
+								Uint32 color = makeColorRGB(255, 0, 0);
+								if ( player >= 0 )
+								{
+									messagePlayerColor(player, MESSAGE_COMBAT, color, Language::get(6625));
+								}
+							}
+							else
+							{
+								if ( parent )
+								{
+									Uint32 color = makeColorRGB(255, 0, 0);
+									if ( parent->behavior == &actPlayer )
+									{
+										messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(2905), Language::get(2906), MSG_COMBAT);
+									}
+								}
+							}
+							spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my->sprite);
+						}
+					}
+				}
 				else if ( !strcmp(element->element_internal_name, spellElement_weakness.element_internal_name) )
 				{
 					if ( hit.entity )
@@ -3037,6 +3147,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							hit.entity->modHP(-damage);
 							magicOnEntityHit(parent, my, hit.entity, hitstats, preResistanceDamage, damage, oldHP, spell ? spell->ID : SPELL_NONE);
 							magicTrapOnHit(parent, hit.entity, hitstats, oldHP, spell ? spell->ID : SPELL_NONE);
+							for ( i = 0; i < damage && i < 15; i += 2 )   //Spawn a gib for every two points of damage.
+							{
+								Entity* gib = spawnGib(hit.entity);
+								serverSpawnGibForClient(gib);
+							}
 
 							// write the obituary
 							if ( parent )
@@ -6833,7 +6948,7 @@ void actParticleTimer(Entity* my)
 									{
 										case AUTOMATON:
 											strcpy(monsterStats->name, "corrupted automaton");
-											monsterStats->setEffectActive(EFF_CONFUSED, 1);
+											monsterStats->setEffectActive(EFF_CONFUSED, MAXPLAYERS + 1);
 											monsterStats->EFFECTS_TIMERS[EFF_CONFUSED] = -1;
 											break;
 										default:
@@ -7997,12 +8112,7 @@ void actParticleTimer(Entity* my)
 											{
 												stats->burningInflictedBy = caster->getUID();
 
-												bool alertTarget = true;
-												if ( caster->behavior == &actMonster && caster->monsterAllyIndex != -1 && entity->monsterAllyIndex != -1 )
-												{
-													// if we're both allies of players, don't alert the hit target.
-													alertTarget = false;
-												}
+												bool alertTarget = entity->monsterAlertBeforeHit(caster);
 
 												// alert the monster!
 												if ( entity->monsterState != MONSTER_STATE_ATTACK && (stats->type < LICH || stats->type >= SHOPKEEPER) )
@@ -9725,6 +9835,10 @@ void actParticlePinpointTarget(Entity* my)
 				{
 					parent->setEffect(EFF_PENANCE, false, 0, true);
 				}
+				else if ( spellID == SPELL_TABOO )
+				{
+					parent->setEffect(EFF_TABOO, false, 0, true);
+				}
 				else if ( spellID == SPELL_DETECT_ENEMY || spellID == SPELL_DETECT_ENEMIES )
 				{
 					parent->setEffect(EFF_DETECT_ENEMY, false, 0, true);
@@ -9798,6 +9912,16 @@ void actParticlePinpointTarget(Entity* my)
 							}
 						}
 					}
+					else if ( spellID == SPELL_TABOO )
+					{
+						if ( Stat* parentStats = parent->getStats() )
+						{
+							if ( !parentStats->getEffectActive(EFF_TABOO) )
+							{
+								PARTICLE_LIFE = 0;
+							}
+						}
+					}
 				}
 				else
 				{
@@ -9817,6 +9941,13 @@ void actParticlePinpointTarget(Entity* my)
 				else if ( spellID == SPELL_PENANCE )
 				{
 					if ( parent && parent->getStats() && parent->getStats()->getEffectActive(EFF_PENANCE) )
+					{
+						++PARTICLE_LIFE;
+					}
+				}
+				else if ( spellID == SPELL_TABOO )
+				{
+					if ( parent && parent->getStats() && parent->getStats()->getEffectActive(EFF_TABOO) )
 					{
 						++PARTICLE_LIFE;
 					}
