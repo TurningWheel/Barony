@@ -9732,8 +9732,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 							}
 							if ( local_rng.rand() % chance == 0 )
 							{
-								this->increaseSkill(weaponskill, notify);
-								skillIncreased = true;
+								if ( hitstats->type != DUMMYBOT || (hitstats->type == DUMMYBOT && myStats->getProficiency(weaponskill) < SKILL_LEVEL_BASIC) )
+								{
+									this->increaseSkill(weaponskill, notify);
+									skillIncreased = true;
+								}
 							}
 						}
 						else
