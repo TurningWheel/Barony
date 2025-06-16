@@ -6264,7 +6264,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
             framePromptPos.h = imgBottomBackground->pos.h;
             
             if ( (!item->identified
-                  && (!isItemFromInventory || (isItemFromInventory && inputs.getVirtualMouse(player)->draw_cursor && appraisal.current_item != item->uid)))
+                  && (!isItemFromInventory || (isItemFromInventory && false/*&& inputs.getVirtualMouse(player)->draw_cursor*/ && appraisal.current_item != item->uid)))
                 || doShortTooltip
                 || (frameDesc->isDisabled() && item->identified) )
             {
