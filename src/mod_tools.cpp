@@ -85,6 +85,8 @@ void GameModeManager_t::Tutorial_t::startTutorial(std::string mapToSet)
 		setTutorialMap(mapToSet);
 	}
 	gameModeManager.setMode(gameModeManager.GameModes::GAME_MODE_TUTORIAL);
+	GameplayPreferences_t::reset();
+	gameplayPreferences[0].process();
 	stats[0]->clearStats();
 	strcpy(stats[0]->name, "Player");
 	stats[0]->sex = static_cast<sex_t>(local_rng.rand() % 2);
