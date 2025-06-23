@@ -2188,7 +2188,7 @@ void setupSpells()   ///TODO: Verify this function.
 		1,		// overload
 		0,		// damage
 		0,		// duration
-		"spell_numbing_bolt");
+		"spell_element_numbing_bolt");
 	spell = spellConstructor(
 		SPELL_NUMBING_BOLT,										// ID
 		100,												// difficulty
@@ -2277,6 +2277,308 @@ void setupSpells()   ///TODO: Verify this function.
 		750, // duration
 		"spell_deep_shade",
 		true);
+
+	spellElementConstructor(SPELL_SHADE_BOLT,
+		1,		// mana
+		1,		// base mana
+		1,		// overload
+		0,		// damage
+		0,		// duration
+		"spell_element_shade_bolt");
+	spell = spellConstructor(
+		SPELL_SHADE_BOLT,										// ID
+		100,												// difficulty
+		"spell_shade_bolt",										// internal name
+		// elements
+		{ SPELL_ELEMENT_PROPULSION_MISSILE, SPELL_SHADE_BOLT }
+	);
+
+	spellElementConstructor(SPELL_WONDERLIGHT,
+		1,		// mana
+		1,		// base mana
+		1,		// overload
+		0,		// damage
+		0,		// duration
+		"spell_element_wonderlight");
+	spell = spellConstructor(
+		SPELL_WONDERLIGHT,										// ID
+		100,												// difficulty
+		"spell_wonderlight",										// internal name
+		// elements
+		{ SPELL_ELEMENT_PROPULSION_MISSILE, SPELL_WONDERLIGHT }
+	);
+
+	spell = createSimpleSpell(
+		SPELL_SPORES,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		750, // duration
+		"spell_spores",
+		true);
+
+	spellElementConstructor(SPELL_SPORE_BOMB,
+		1,		// mana
+		1,		// base mana
+		1,		// overload
+		5,		// damage
+		0,		// duration
+		"spell_element_spore_bomb");
+	spell = spellConstructor(
+		SPELL_SPORE_BOMB,										// ID
+		100,												// difficulty
+		"spell_spore_bomb",										// internal name
+		// elements
+		{ SPELL_ELEMENT_PROPULSION_MISSILE, SPELL_SPORE_BOMB }
+	);
+
+	spell = createSimpleSpell(
+		SPELL_WINDGATE,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_windgate");
+	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH_WALL_TILE;
+	spell->distance = 64.0;
+
+	spell = createSimpleSpell(
+		SPELL_TELEKINESIS,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_telekinesis");
+	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH_INTERACT;
+	spell->distance = 64.0;
+
+	spell = createSimpleSpell(
+		SPELL_KINETIC_PUSH,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_kinetic_push");
+	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH;
+	spell->distance = 64.0;
+
+	spell = createSimpleSpell(
+		SPELL_DISARM,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_disarm");
+	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH;
+	spell->distance = 64.0;
+
+	spell = createSimpleSpell(
+		SPELL_STRIP,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_strip");
+	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH;
+	spell->distance = 64.0;
+
+	spell = createSimpleSpell(
+		SPELL_ABUNDANCE,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		750, // duration
+		"spell_abundance",
+		true);
+
+	spell = createSimpleSpell(
+		SPELL_GREATER_ABUNDANCE,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		750, // duration
+		"spell_greater_abundance",
+		true);
+
+	spell = createSimpleSpell(
+		SPELL_PRESERVE,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		750, // duration
+		"spell_preserve",
+		true);
+	spell->sustainEffectDissipate = EFF_PRESERVE;
+
+	spell = createSimpleSpell(
+		SPELL_RESTORE,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		750, // duration
+		"spell_restore");
+
+	spell = createSimpleSpell(
+		SPELL_SABOTAGE,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		50, // damage
+		1, // duration
+		"spell_sabotage");
+	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH;
+	spell->distance = 64.0;
+
+	spell = createSimpleSpell(
+		SPELL_HARVEST_TRAP,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_harvest_trap");
+	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH;
+	spell->distance = 64.0;
+
+	spell = createSimpleSpell(
+		SPELL_MIST_FORM,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		750, // duration
+		"spell_mist_form",
+		true);
+	spell->sustainEffectDissipate = EFF_MIST_FORM;
+
+	spell = createSimpleSpell(
+		SPELL_HOLOGRAM,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_hologram");
+	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH_FLOOR_TILE;
+	spell->distance = 64.0;
+
+	spell = createSimpleSpell(
+		SPELL_FORCE_SHIELD,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		750, // duration
+		"spell_force_shield");
+
+	spell = createSimpleSpell(
+		SPELL_SPLINTER_GEAR,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		25, // damage
+		1, // duration
+		"spell_splinter_gear");
+	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH;
+	spell->distance = 64.0;
+
+	spell = createSimpleSpell(
+		SPELL_LIGHTEN_LOAD,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		750, // duration
+		"spell_lighten_load",
+		true);
+	spell->sustainEffectDissipate = EFF_LIGHTEN_LOAD;
+
+	spell = createSimpleSpell(
+		SPELL_ATTRACT_ITEMS,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		750, // duration
+		"spell_attract_items",
+		true);
+	spell->sustainEffectDissipate = EFF_ATTRACT_ITEMS;
+
+	spell = createSimpleSpell(
+		SPELL_RETURN_ITEMS,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		750, // duration
+		"spell_return_items",
+		true);
+	spell->sustainEffectDissipate = EFF_RETURN_ITEM;
+
+	spell = createSimpleSpell(
+		SPELL_DEFACE,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_deface");
+	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH;
+	spell->distance = 64.0;
+
+	spell = createSimpleSpell(
+		SPELL_DEMESNE_DOOR,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		25, // damage
+		1, // duration
+		"spell_demesne_door");
+	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH;
+	spell->distance = 64.0;
+
+	spell = createSimpleSpell(
+		SPELL_TUNNEL,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_tunnel");
+	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH_WALL_TILE;
+	spell->distance = 64.0;
 }
 
 spell_t* createSimpleSpell(int spellID, int difficulty, int mana, int base_mana, int overload_mult, int damage, 

@@ -133,6 +133,7 @@ bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, En
 		|| hitstats->type == SHADOW
 		|| hitstats->type == MIMIC
 		|| hitstats->type == BAT_SMALL
+		|| hitstats->type == HOLOGRAM
 		|| hit.entity->monsterAllySummonRank != 0
 		|| (hitstats->type == VAMPIRE && MonsterData_t::nameMatchesSpecialNPCName(*hitstats, "bram kindly"))
 		|| (hitstats->type == COCKATRICE && !strncmp(map.name, "Cockatrice Lair", 15))
@@ -1317,6 +1318,7 @@ int getCharmMonsterDifficulty(Entity& my, Stat& myStats)
 	case GOATMAN:
 	case BUGBEAR:
 	case MONSTER_ADORCISED_WEAPON:
+	case FLAME_ELEMENTAL:
 		difficulty = 2;
 		break;
 	case CRYSTALGOLEM:
@@ -1333,6 +1335,7 @@ int getCharmMonsterDifficulty(Entity& my, Stat& myStats)
 	case MIMIC:
 	case BAT_SMALL:
 	case MINIMIMIC:
+	case HOLOGRAM:
 		difficulty = 666;
 		break;
 	}
@@ -1740,6 +1743,7 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 		|| targetStats->type == MONSTER_ADORCISED_WEAPON
 		|| targetStats->type == MINIMIMIC
 		|| targetStats->type == REVENANT_SKULL
+		|| targetStats->type == FLAME_ELEMENTAL
 		|| (targetStats->type == INCUBUS && !strncmp(targetStats->name, "inner demon", strlen("inner demon")))
 		|| targetStats->type == SENTRYBOT || targetStats->type == SPELLBOT || targetStats->type == GYROBOT
 		|| targetStats->type == DUMMYBOT
@@ -2728,6 +2732,7 @@ bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* paren
 				|| hitstats->type == MINIMIMIC
 				|| hitstats->type == MONSTER_ADORCISED_WEAPON
 				|| hitstats->type == REVENANT_SKULL
+				|| hitstats->type == FLAME_ELEMENTAL
 				|| (hitstats->type == INCUBUS && !strncmp(hitstats->name, "inner demon", strlen("inner demon"))) )
 			{
 				if ( parent && parent->behavior == &actPlayer )
@@ -2906,6 +2911,65 @@ bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* paren
 		spawnMagicEffectParticles(my.x, my.y, my.z, my.sprite);
 	}
 	return false;
+}
+
+Entity* spellEffectHologram(Entity& caster, spellElement_t& element, real_t x, real_t y)
+{
+	Entity* monster = nullptr;
+	{
+		// try find a summon location around the entity.
+		int tx = static_cast<int>(std::floor(x)) >> 4;
+		int ty = static_cast<int>(std::floor(y)) >> 4;
+		int dist = 1;
+		std::vector<std::pair<int, int>> goodspots;
+		for ( int iy = std::max(1, ty - dist); iy < std::min(ty + dist, static_cast<int>(map.height)); ++iy )
+		{
+			for ( int ix = std::max(1, tx - dist); ix < std::min(tx + dist, static_cast<int>(map.width)); ++ix )
+			{
+				if ( !checkObstacle((ix << 4) + 8, (iy << 4) + 8, &caster, NULL, true, true, false) )
+				{
+					goodspots.push_back(std::make_pair(ix, iy));
+				}
+			}
+		}
+		if ( goodspots.size() == 0 )
+		{
+			return nullptr;
+		}
+		else
+		{
+			if ( !checkObstacle((tx << 4) + 8, (ty << 4) + 8, &caster, NULL, true, true, false, false) )
+			{
+				monster = summonMonster(HOLOGRAM, tx * 16.0 + 8, ty * 16.0 + 8, true);
+			}
+			while ( !monster && goodspots.size() )
+			{
+				int pick = local_rng.rand() % goodspots.size();
+				std::pair<int, int> tmpPair = goodspots[pick];
+				tx = tmpPair.first;
+				ty = tmpPair.second;
+				goodspots.erase(goodspots.begin() + pick);
+				monster = summonMonster(HOLOGRAM, tx * 16.0 + 8, ty * 16.0 + 8, true);
+			}
+
+			if ( monster )
+			{
+				playSoundEntity(monster, 166, 128);
+				//playSoundEntity(&my, 178, 128);
+				createParticleErupt(monster, 983);
+				serverSpawnMiscParticles(monster, PARTICLE_EFFECT_ERUPT, 983);
+
+				if ( Stat* monsterStats = monster->getStats() )
+				{
+					monsterStats->monsterNoDropItems = 1;
+					monsterStats->leader_uid = caster.getUID();
+					monster->parent = caster.getUID();
+					monster->setEffect(EFF_STUNNED, true, -1, false);
+				}
+			}
+		}
+	}
+	return monster;
 }
 
 Entity* spellEffectAdorcise(Entity& caster, spellElement_t& element, real_t x, real_t y, Item* itemToAdorcise)
@@ -3102,4 +3166,352 @@ Entity* spellEffectAdorcise(Entity& caster, spellElement_t& element, real_t x, r
 	}
 
 	return monster;
+}
+
+bool Entity::spellEffectPreserveItem(Item* item)
+{
+	if ( !item ) { return false; }
+	if ( Stat* myStats = getStats() )
+	{
+		if ( behavior != &actPlayer )
+		{
+			return false;
+		}
+		if ( !itemIsEquipped(item, skill[2]) )
+		{
+			return false;
+		}
+		if ( myStats->getEffectActive(EFF_PRESERVE) )
+		{
+			if ( spell_t* preserveSpell = getActiveMagicEffect(SPELL_PRESERVE) )
+			{
+				int cost = 10;
+				if ( !safeConsumeMP(cost) )
+				{
+					if ( myStats->MP > 0 )
+					{
+						modMP(-myStats->MP);
+					}
+					preserveSpell->sustain = false;
+					if ( behavior == &actPlayer )
+					{
+						playSoundEntity(this, 163, 128);
+						messagePlayerColor(skill[2], MESSAGE_COMBAT, makeColorRGB(255, 0, 0), Language::get(6657), item->getName());
+					}
+					return false;
+				}
+				else
+				{
+					if ( behavior == &actPlayer )
+					{
+						spawnMagicEffectParticles(this->x, this->y, this->z / 2, 174);
+						playSoundEntity(this, 166, 128);
+						messagePlayerColor(skill[2], MESSAGE_COMBAT, makeColorRGB(0, 255, 0), Language::get(6654), item->getName());
+					}
+					return true;
+				}
+			}
+		}
+	}
+	return false;
+}
+
+bool Entity::mistFormDodge(bool checkEffectActiveOnly)
+{
+	if ( Stat* myStats = getStats() )
+	{
+		if ( myStats->getEffectActive(EFF_MIST_FORM) )
+		{
+			if ( checkEffectActiveOnly )
+			{
+				return true;
+			}
+
+			if ( behavior == &actPlayer )
+			{
+				if ( spell_t* spell = getActiveMagicEffect(SPELL_MIST_FORM) )
+				{
+					int cost = 10;
+					if ( !safeConsumeMP(cost) )
+					{
+						if ( myStats->MP > 0 )
+						{
+							modMP(-myStats->MP);
+						}
+						spell->sustain = false;
+						if ( behavior == &actPlayer )
+						{
+							playSoundEntity(this, 163, 128);
+							messagePlayerColor(skill[2], MESSAGE_COMBAT, makeColorRGB(255, 0, 0), Language::get(6665));
+						}
+						return false;
+					}
+					else
+					{
+						if ( behavior == &actPlayer )
+						{
+							spawnPoof(this->x, this->y, this->z / 2, 1.0, true);
+							playSoundEntity(this, 166, 128);
+							messagePlayerColor(skill[2], MESSAGE_COMBAT, makeColorRGB(0, 255, 0), Language::get(6666));
+						}
+						return true;
+					}
+				}
+			}
+			else
+			{
+				if ( behavior == &actMonster && myStats->type == HOLOGRAM )
+				{
+					myStats->EFFECTS_TIMERS[EFF_MIST_FORM] = std::max(1, myStats->EFFECTS_TIMERS[EFF_MIST_FORM] - TICKS_PER_SECOND);
+				}
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+bool applyGenericMagicDamage(Entity* caster, Entity* hitentity, Entity& damageSourceProjectile, int spellID, int damage, bool alertMonsters)
+{
+	if ( !hitentity )
+	{
+		return false;
+	}
+
+	int trapResist = 0;
+	int resistance = 0;
+	DamageGib dmgGib = DMG_DEFAULT;
+	real_t damageMultiplier = 1.0;
+	magicSetResistance(hitentity, caster, resistance, damageMultiplier, dmgGib, trapResist);
+	Stat* targetStats = hitentity->getStats();
+	if ( hitentity->behavior == &actChest || hitentity->isInertMimic() )
+	{
+		damage *= damageMultiplier;
+		damage /= (1 + (int)resistance);
+		hitentity->chestHandleDamageMagic(damage, damageSourceProjectile, caster);
+		return true;
+	}
+	else if ( (hitentity->behavior == &actMonster || hitentity->behavior == &actPlayer) && targetStats )
+	{
+		bool alertTarget = false;
+		if ( alertMonsters )
+		{
+			bool alertTarget = hitentity->monsterAlertBeforeHit(caster);
+
+			// alert the monster!
+			if ( hitentity->monsterState != MONSTER_STATE_ATTACK && (targetStats->type < LICH || targetStats->type >= SHOPKEEPER) )
+			{
+				if ( alertTarget )
+				{
+					hitentity->monsterAcquireAttackTarget(*caster, MONSTER_STATE_PATH, true);
+				}
+			}
+
+			// alert other monsters too
+			if ( alertTarget )
+			{
+				hitentity->alertAlliesOnBeingHit(caster);
+			}
+		}
+		hitentity->updateEntityOnHit(caster, alertTarget);
+
+		playSoundEntity(hitentity, 28, 128);
+		int oldHP = targetStats->HP;
+
+		Sint32 preResistanceDamage = damage;
+		damage *= damageMultiplier;
+		damage /= (1 + (int)resistance);
+		hitentity->modHP(-damage);
+		if ( damage > 0 )
+		{
+			Entity* gib = spawnGib(hitentity);
+			serverSpawnGibForClient(gib);
+		}
+		magicOnEntityHit(caster, &damageSourceProjectile, hitentity, targetStats, preResistanceDamage, damage, oldHP, damage);
+		magicTrapOnHit(caster, hitentity, targetStats, oldHP, spellID);
+
+		// write the obituary
+		if ( caster )
+		{
+			caster->killedByMonsterObituary(hitentity);
+		}
+
+		// update enemy bar for attacker
+		if ( !strcmp(targetStats->name, "") )
+		{
+			updateEnemyBar(caster, hitentity, getMonsterLocalizedName(targetStats->type).c_str(), targetStats->HP, targetStats->MAXHP,
+				false, dmgGib);
+		}
+		else
+		{
+			updateEnemyBar(caster, hitentity, targetStats->name, targetStats->HP, targetStats->MAXHP,
+				false, dmgGib);
+		}
+		if ( oldHP > 0 && targetStats->HP <= 0 && caster )
+		{
+			caster->awardXP(hitentity, true, true);
+			spawnBloodVialOnMonsterDeath(hitentity, targetStats, caster);
+		}
+		return true;
+	}
+	else if ( hitentity->behavior == &actDoor
+		|| hitentity->behavior == &::actIronDoor )
+	{
+		hitentity->doorHandleDamageMagic(damage, damageSourceProjectile, caster);
+		return true;
+	}
+	else if ( hitentity->isDamageableCollider() && hitentity->isColliderDamageableByMagic() )
+	{
+		hitentity->colliderHandleDamageMagic(damage, damageSourceProjectile, caster);
+		return true;
+	}
+	else if ( hitentity->behavior == &::actFurniture )
+	{
+		hitentity->furnitureHandleDamageMagic(damage, damageSourceProjectile, caster);
+		return true;
+	}
+
+	return false;
+}
+
+Item* spellEffectForceShield(Entity& caster, int spellID, spellElement_t* element)
+{
+	if ( caster.behavior == &actPlayer )
+	{
+		int player = caster.skill[2];
+		if ( players[player]->isLocalPlayer() )
+		{
+			if ( stats[player]->HP > 0 )
+			{
+				ItemType itemType = spellID == SPELL_FORCE_SHIELD ? FORCE_SHIELD : REFLECTOR_SHIELD;
+				if ( spellID == SPELL_FORCE_SHIELD )
+				{
+					if ( stats[player]->shield && stats[player]->shield->type == itemType )
+					{
+						messagePlayer(player, MESSAGE_INTERACTION, Language::get(6676), items[itemType].getIdentifiedName());
+						return nullptr;
+					}
+				}
+
+				Item* item = newItem(itemType, EXCELLENT, 0, 1, local_rng.rand(), true, nullptr);
+				if ( stats[player]->shield )
+				{
+					if ( !players[player]->inventoryUI.bItemInventoryHasFreeSlot() )
+					{
+						if ( players[player]->paperDoll.isItemOnDoll(*stats[player]->shield) )
+						{
+							// need to unequip
+							Item* shield = stats[player]->shield;
+							bool oldIntro = intro;
+							intro = true;
+							players[player]->inventoryUI.activateItemContextMenuOption(shield, ItemContextMenuPrompts::PROMPT_UNEQUIP_FOR_DROP);
+							intro = oldIntro;
+							players[player]->paperDoll.updateSlots();
+							if ( players[player]->paperDoll.isItemOnDoll(*shield) )
+							{
+								// couldn't unequip, no more actions
+								messagePlayerColor(player, MESSAGE_INTERACTION, makeColorRGB(255, 0, 0), Language::get(6675), item->getName());
+								free(item);
+								return nullptr;
+							}
+
+							bool droppedAll = dropItem(shield, player, true, true);
+							if ( !droppedAll )
+							{
+								messagePlayerColor(player, MESSAGE_INTERACTION, makeColorRGB(255, 0, 0), Language::get(6675), item->getName());
+								free(item);
+								return nullptr;
+							}
+						}
+					}
+				}
+				bool oldIntro = intro;
+				intro = true;
+				Item* pickedUp = itemPickup(player, item, nullptr, true);
+				intro = oldIntro;
+				if ( pickedUp )
+				{
+					// item is the new inventory stack for server, free the picked up items
+					free(item);
+
+					oldIntro = intro;
+					intro = true;
+					players[player]->inventoryUI.activateItemContextMenuOption(pickedUp, ItemContextMenuPrompts::PROMPT_EQUIP);
+					intro = oldIntro;
+					if ( !(stats[player]->shield == pickedUp) )
+					{
+						messagePlayerColor(player, MESSAGE_INTERACTION, makeColorRGB(255, 0, 0), Language::get(6675), pickedUp->getName());
+						free(pickedUp);
+						return nullptr;
+					}
+					else
+					{
+						messagePlayerColor(player, MESSAGE_INTERACTION, makeColorRGB(0, 255, 0), Language::get(6674), pickedUp->getName());
+						return pickedUp;
+					}
+				}
+			}
+		}
+		/*else
+		{
+			todo
+			if ( multiplayer == SERVER )
+			{
+
+			}
+		}*/
+	}
+	return nullptr;
+}
+
+Entity* spellEffectDemesneDoor(Entity& caster, Entity& target)
+{
+	auto entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(&target, 1);
+	int mapx = target.x / 16;
+	int mapy = target.y / 16;
+	for ( auto it : entLists )
+	{
+		node_t* node;
+		for ( node = it->first; node != nullptr; node = node->next )
+		{
+			if ( Entity* entity = (Entity*)node->element )
+			{
+				if ( static_cast<int>(entity->x / 16) == mapx && static_cast<int>(entity->y / 16) == mapy )
+				{
+					if ( entity->behavior == &actDoor )
+					{
+						entity->doorHealth = 0;
+					}
+					if ( entity->behavior == &actGate && entity->gateStatus == 0 )
+					{
+						return nullptr; // no room
+					}
+					if ( entity->behavior == &actIronDoor && entity->doorStatus == 0 )
+					{
+						return nullptr; // no room
+					}
+					if ( entity->behavior == &actParticleDemesneDoor )
+					{
+						return nullptr;
+					}
+				}
+			}
+		}
+	}
+
+	Entity* door = newEntity(1809, 1, map.entities, nullptr);
+	door->x = target.x;
+	door->y = target.y;
+	door->parent = caster.getUID();
+	door->z = 0.0;
+	door->flags[UNCLICKABLE] = true;
+	door->flags[BLOCKSIGHT] = false;
+	door->flags[PASSABLE] = true;
+	door->flags[UPDATENEEDED] = true;
+	/*door->lightBonus = vec4(0.25, 0.25,
+		0.25, 0.f);*/
+	door->ditheringOverride = 4;
+	door->yaw = target.yaw;
+	door->behavior = &actParticleDemesneDoor;
+	return door;
 }

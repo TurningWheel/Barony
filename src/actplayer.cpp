@@ -3310,6 +3310,10 @@ int Player::PlayerMovement_t::getCharacterModifiedWeight(int* customWeight)
 	{
 		weight = weight * 0.5;
 	}
+	if ( stats[player.playernum]->getEffectActive(EFF_LIGHTEN_LOAD) > 0 )
+	{
+		weight = weight * (100 - std::min(100, std::max(0, (int)stats[player.playernum]->getEffectActive(EFF_LIGHTEN_LOAD)))) / 100.0;
+	}
 	return weight;
 }
 
@@ -3636,17 +3640,7 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 
 	}
 
-	if ( fabs(my->creatureWindVelocity) > 0.1 )
-	{
-		PLAYER_VELX += my->creatureWindVelocity * cos(my->creatureWindDir) * refreshRateDelta;
-		PLAYER_VELY += my->creatureWindVelocity * sin(my->creatureWindDir) * refreshRateDelta;
-		my->creatureWindVelocity *= pow(0.9, refreshRateDelta);
-	}
-	else
-	{
-		my->playerStrafeDir = 0.0f;
-		my->creatureWindVelocity = 0.0f;
-	}
+	my->processEntityWind();
 
 	PLAYER_VELX *= pow(movementDrag, refreshRateDelta);
 	PLAYER_VELY *= pow(movementDrag, refreshRateDelta);
@@ -7079,7 +7073,29 @@ void actPlayer(Entity* my)
 					}
 				}
 			}
+
+			if ( stats[PLAYER_NUM]->getEffectActive(EFF_MIST_FORM) )
+			{
+				if ( my->mistformGLRender < 0.5 )
+				{
+					my->mistformGLRender = 1.0;
+					serverUpdateEntityFSkill(my, 22);
+			}
 		}
+			else
+			{
+				if ( my->mistformGLRender > 0.5 )
+				{
+					my->mistformGLRender = 0.0;
+					serverUpdateEntityFSkill(my, 22);
+				}
+			}
+		}
+	}
+
+	if ( my->mistformGLRender > 0.01 )
+	{
+		my->mistformGLRender = 0.875 + 0.125 * sin(PI * (my->ticks % 100) / 50.0);
 	}
 
 	real_t zOffset = 0;
@@ -8150,10 +8166,24 @@ void actPlayer(Entity* my)
 					}
 				}
 			}
+
+			Entity* telekinesisTarget = nullptr;
+			if ( selectedEntity[PLAYER_NUM] == nullptr )
+			{
+				if ( players[PLAYER_NUM]->magic.telekinesisTarget != 0 )
+				{
+					telekinesisTarget = uidToEntity(players[PLAYER_NUM]->magic.telekinesisTarget);
+					selectedEntity[PLAYER_NUM] = telekinesisTarget;
+					players[PLAYER_NUM]->magic.telekinesisTarget = 0;
+				}
+			}
+
 			if ( selectedEntity[PLAYER_NUM] != NULL )
 			{
 				followerMenu.followerToCommand = nullptr;
 				Entity* parent = uidToEntity(selectedEntity[PLAYER_NUM]->skill[2]);
+				if ( !telekinesisTarget )
+				{
 				if ( selectedEntity[PLAYER_NUM]->behavior == &actMonster || (parent && parent->behavior == &actMonster) )
 				{
 					// see if we selected a follower to process right click menu.
@@ -8187,6 +8217,8 @@ void actPlayer(Entity* my)
 						}
 					}
 				}
+				}
+
 				if ( selectedEntity[PLAYER_NUM] )
 				{
 					input.consumeBinaryToggle("Use");
@@ -8194,10 +8226,9 @@ void actPlayer(Entity* my)
 					bool foundTinkeringKit = false;
 					bool wallLockInteract = false;
 					Item* foundWallLockKey = nullptr;
-					if ( entityDist(my, selectedEntity[PLAYER_NUM]) <= TOUCHRANGE )
+					if ( telekinesisTarget || entityDist(my, selectedEntity[PLAYER_NUM]) <= TOUCHRANGE )
 					{
 						inrange[PLAYER_NUM] = true;
-
 						if ( selectedEntity[PLAYER_NUM]->sprite >= 1585 && selectedEntity[PLAYER_NUM]->sprite <= 1592 )
 						{
 							// wall lock keys, overwrite selection to base
@@ -8489,6 +8520,10 @@ void actPlayer(Entity* my)
         if (my->flags[BURNING]) {
             my->light = addLight(my->x / 16, my->y / 16, "player_burning");
         }
+		else if ( my->mistformGLRender > 0.01 )
+		{
+			my->light = addLight(my->x / 16, my->y / 16, "mistform_glow", range_bonus);
+		}
         else if (!my->light) {
             my->light = addLight(my->x / 16, my->y / 16, light_type, range_bonus, ambientLight ? PLAYER_NUM + 1 : 0);
         }
@@ -8619,6 +8654,16 @@ void actPlayer(Entity* my)
 							spellnode = spellnode->next;
 							spell_t* spell = (spell_t*)oldnode->element;
 							spell->magic_effects_node = NULL;
+							if ( spell->sustainEffectDissipate >= 0 )
+							{
+								if ( stats[PLAYER_NUM]->getEffectActive(spell->sustainEffectDissipate) )
+								{
+									if ( stats[PLAYER_NUM]->EFFECTS_TIMERS[spell->sustainEffectDissipate] > 0 )
+									{
+										stats[PLAYER_NUM]->EFFECTS_TIMERS[spell->sustainEffectDissipate] = 1;
+									}
+								}
+							}
 							list_RemoveNode(oldnode);
 						}
 						int c;
@@ -11170,6 +11215,16 @@ void actPlayerLimb(Entity* my)
 	{
 		my->monsterEntityRenderAsTelepath = 0;
 	}
+
+	if ( parent && parent->mistformGLRender )
+	{
+		my->mistformGLRender = parent->mistformGLRender;
+	}
+	else
+	{
+		my->mistformGLRender = 0.0;
+	}
+
 
 	if (multiplayer != CLIENT)
 	{

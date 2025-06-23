@@ -12,6 +12,7 @@
 //TODO: Spell icons: http://game-icons.net/
 
 #pragma once
+#include "../interface/interface.hpp"
 
 class Stat;
 
@@ -150,7 +151,36 @@ static const int SPELL_SHADE_BOLT = 128;
 static const int SPELL_SPIRIT_WEAPON = 129;
 static const int SPELL_ADORCISM = 130;
 static const int SPELL_TABOO = 131;
-static const int NUM_SPELLS = 132;
+static const int SPELL_WONDERLIGHT = 132;
+static const int SPELL_SPORES = 133;
+static const int SPELL_SPORE_BOMB = 134;
+static const int SPELL_WINDGATE = 135;
+static const int SPELL_VORTEX = 136;
+static const int SPELL_TELEKINESIS = 137;
+static const int SPELL_KINETIC_PUSH = 138;
+static const int SPELL_DISARM = 139;
+static const int SPELL_STRIP = 140;
+static const int SPELL_ABUNDANCE = 141;
+static const int SPELL_GREATER_ABUNDANCE = 142;
+static const int SPELL_PRESERVE = 143;
+static const int SPELL_RESTORE = 144;
+static const int SPELL_SABOTAGE = 145;
+static const int SPELL_HARVEST_TRAP = 146;
+static const int SPELL_MIST_FORM = 147;
+static const int SPELL_HOLOGRAM = 148;
+static const int SPELL_FORCE_SHIELD = 149;
+static const int SPELL_REFLECTOR = 150;
+static const int SPELL_SPLINTER_GEAR = 151;
+static const int SPELL_LIGHTEN_LOAD = 152;
+static const int SPELL_ATTRACT_ITEMS = 153;
+static const int SPELL_RETURN_ITEMS = 154;
+static const int SPELL_ABSORB_MAGIC = 155;
+static const int SPELL_SEIZE_MAGIC = 156;
+static const int SPELL_DEFACE = 157;
+static const int SPELL_SUNDER_MONUMENT = 158;
+static const int SPELL_DEMESNE_DOOR = 159;
+static const int SPELL_TUNNEL = 160;
+static const int NUM_SPELLS = 180;
 
 #define SPELLELEMENT_CONFUSE_BASE_DURATION 2//In seconds.
 #define SPELLELEMENT_BLEED_BASE_DURATION 10//In seconds.
@@ -231,6 +261,9 @@ static const int PARTICLE_EFFECT_LIGHTNING_SEQ = 33;
 static const int PARTICLE_EFFECT_PINPOINT = 34;
 static const int PARTICLE_EFFECT_DESTINY_TELEPORT = 35;
 static const int PARTICLE_EFFECT_BOOBY_TRAP = 36;
+static const int PARTICLE_EFFECT_SPORE_BOMB = 37;
+static const int PARTICLE_EFFECT_WINDGATE = 38;
+static const int PARTICLE_EFFECT_DEMESNE_DOOR = 39;
 
 // actmagicIsVertical constants
 static const int MAGIC_ISVERTICAL_NONE = 0;
@@ -253,6 +286,7 @@ static const int PARTICLE_TIMER_ACTION_SHATTER = 12;
 static const int PARTICLE_TIMER_ACTION_VORTEX = 13;
 static const int PARTICLE_TIMER_ACTION_LIGHTNING = 14;
 static const int PARTICLE_TIMER_ACTION_BOOBY_TRAP = 15;
+static const int PARTICLE_TIMER_ACTION_SPORES = 16;
 
 struct ParticleEmitterHit_t
 {
@@ -274,7 +308,9 @@ struct ParticleTimerEffect_t
 		EFFECT_TEST_7,
 		EFFECT_FIRE_WAVE,
 		EFFECT_KINETIC_FIELD,
-		EFFECT_PULSE
+		EFFECT_PULSE,
+		EFFECT_SPORES,
+		EFFECT_TUNNEL
 	};
 	struct Effect_t
 	{
@@ -565,7 +601,10 @@ enum SpellRangefinderType
 	RANGEFINDER_NONE,
 	RANGEFINDER_TARGET,
 	RANGEFINDER_TOUCH,
-	RANGEFINDER_TOUCH_FLOOR_TILE
+	RANGEFINDER_TOUCH_FLOOR_TILE,
+	RANGEFINDER_TOUCH_WALL_TILE,
+	RANGEFINDER_TOUCH_INTERACT,
+	RANGEFINDER_TOUCH_INTERACT_TEST
 };
 
 /*
@@ -592,6 +631,7 @@ typedef struct spell_t
 	SpellRangefinderType rangefinder = SpellRangefinderType::RANGEFINDER_NONE;
 	real_t distance = 0.0;
 	Uint32 caster;
+	int sustainEffectDissipate = -1; // when the spell is unsustained, clear this effect from the player (unique spell effects)
 	int channel_duration; //This is the value to reset the timer to when a spell is channeled.
 	list_t elements; //NOTE: This could technically allow a spell to have multiple roots. So you could make a flurry of fireballs, for example.
 	//TODO: Some way to make spells work with "need to cast more to get better at casting the spell." A sort of spell learning curve. The first time you cast it, prone to failure. Less the more you cast it.
@@ -682,6 +722,7 @@ struct CastSpellProps_t
 	Uint32 targetUID = 0;
 	int elementIndex = 0;
 	real_t distanceOffset = 0.0;
+	int wallDir = 0;
 };
 
 void setupSpells();
@@ -695,7 +736,9 @@ bool isSpellcasterBeginnerFromSpellbook(int player, Entity* caster, Stat* stat, 
 int getSpellbookBonusPercent(Entity* caster, Stat* stat, Item* spellbookItem);
 real_t getBonusFromCasterOfSpellElement(Entity* caster, Stat* casterStats, spellElement_t* spellElement, int spellID);
 real_t getSpellBonusFromCasterINT(Entity* caster, Stat* casterStats);
-void magicOnEntityHit(Entity* parent, Entity* particle, Entity* hitentity, Stat* hitstats, Sint32 preResistanceDamage, Sint32 damage, Sint32 oldHP, int spellID);
+void magicOnEntityHit(Entity* parent, Entity* particle, Entity* hitentity, Stat* hitstats, Sint32 preResistanceDamage, Sint32 damage, Sint32 oldHP, int spellID, int selfCastUsingItem = 0);
+void magicTrapOnHit(Entity* parent, Entity* hitentity, Stat* hitstats, Sint32 oldHP, int spellID);
+bool applyGenericMagicDamage(Entity* caster, Entity* hitentity, Entity& damageSourceProjectile, int spellID, int damage, bool alertMonsters);
 #endif
 bool isSpellcasterBeginner(int player, Entity* caster);
 void actMagicTrap(Entity* my);
@@ -732,6 +775,7 @@ void actParticleFloorMagic(Entity* my);
 void actParticleVortex(Entity* my);
 void actParticleWave(Entity* my);
 void actParticleRoot(Entity* my);
+void actParticleDemesneDoor(Entity* my);
 
 void createParticleDropRising(Entity* parent, int sprite, double scale);
 void createParticleDot(Entity* parent);
@@ -760,9 +804,13 @@ void floorMagicClientReceive(Entity* my);
 void particleWaveClientReceive(Entity* my);
 Entity* floorMagicSetLightningParticle(Entity* my);
 void floorMagicCreateLightningSequence(Entity* spellTimer, int startTickOffset);
+void floorMagicCreateSpores(Entity* spawnOnEntity, real_t x, real_t y, Entity* caster, int damage, int spellID);
 Entity* createVortexMagic(int sprite, real_t x, real_t y, real_t z, real_t dir, Uint32 lifetime);
 Entity* createParticleWave(ParticleTimerEffect_t::EffectType particleType, int sprite, real_t x, real_t y, real_t z, real_t dir, Uint32 lifetime, bool light);
 Entity* createParticleRoot(int sprite, real_t x, real_t y, real_t z, real_t dir, Uint32 lifetime);
+Entity* createWindMagic(Uint32 casterUID, int x, int y, int duration, int dir, int length);
+void createParticleDemesneDoor(real_t x, real_t y, real_t dir);
+Entity* createTunnelPortal(real_t x, real_t y, int duration, int dir);
 
 void spawnMagicTower(Entity* parent, real_t x, real_t y, int spellID, Entity* autoHitTarget, bool castedSpell = false); // autoHitTarget is to immediate damage an entity, as all 3 tower magics hitting is unreliable
 bool magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks);
@@ -831,6 +879,7 @@ typedef struct spellcastingAnimationManager
 	real_t caster_x = 0.0;
 	real_t caster_y = 0.0;
 	Uint32 targetUid = 0;
+	int wallDir = 0;
 	SpellRangefinderType rangefinder = RANGEFINDER_NONE;
 	void setRangeFinderLocation();
 	void resetRangefinder();
@@ -866,6 +915,10 @@ bool spellEffectTeleportPull(Entity* my, spellElement_t& element, Entity* parent
 void spellEffectShadowTag(Entity& my, spellElement_t& element, Entity* parent, int resistance);
 bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* parent, Entity* target, int resistance);
 Entity* spellEffectAdorcise(Entity& caster, spellElement_t& element, real_t x, real_t y, Item* itemToAdorcise);
+Entity* spellEffectHologram(Entity& caster, spellElement_t& element, real_t x, real_t y);
+Item* spellEffectForceShield(Entity& caster, int spellID, spellElement_t* element);
+Entity* spellEffectDemesneDoor(Entity& caster, Entity& doorFrame);
+void magicSetResistance(Entity* entity, Entity* parent, int& resistance, real_t& damageMultiplier, DamageGib& dmgGib, int& trapResist);
 
 void freeSpells();
 

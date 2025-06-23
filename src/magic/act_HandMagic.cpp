@@ -96,7 +96,14 @@ void spellcasting_animation_manager_t::executeAttackSpell(bool swingweapon)
 				stage = ANIM_SPELL_TOUCH_THROW;
 				throw_count = 0;
 			}
-			else if ( rangefinder == RANGEFINDER_TOUCH && uidToEntity(targetUid) )
+			else if ( (rangefinder == RANGEFINDER_TOUCH 
+				|| rangefinder == RANGEFINDER_TOUCH_INTERACT
+				|| rangefinder == RANGEFINDER_TOUCH_INTERACT_TEST) && uidToEntity(targetUid) )
+			{
+				stage = ANIM_SPELL_TOUCH_THROW;
+				throw_count = 0;
+			}
+			else if ( rangefinder == RANGEFINDER_TOUCH_WALL_TILE && wallDir >= 1 )
 			{
 				stage = ANIM_SPELL_TOUCH_THROW;
 				throw_count = 0;
@@ -137,7 +144,107 @@ bool spellcasting_animation_manager_t::spellIgnoreAttack()
 
 bool rangefinderTargetEnemyType(spell_t& spell, Entity& entity)
 {
-	if ( spell.ID == SPELL_VOID_CHEST )
+	if ( spell.ID == SPELL_TELEKINESIS )
+	{
+		if ( entity.behavior == &actBoulder && !entity.flags[PASSABLE] && entity.z >= -8 )
+		{
+			return true;
+		}
+		else if ( entity.behavior == &actItem && !entity.flags[INVISIBLE] )
+		{
+			return true;
+		}
+		else if ( entity.behavior == &actGoldBag && !entity.flags[INVISIBLE] )
+		{
+			return true;
+		}
+		else if ( entity.behavior == &actSwitch ||
+			entity.behavior == &actSwitchWithTimer 
+			/*|| entity.sprite == 184*/
+			)
+		{
+			return true;
+		}
+		else if ( entity.behavior == &::actWallButton
+			/*|| entity.sprite == 1151
+			|| entity.sprite == 1152*/
+			)
+		{
+			return true;
+		}
+		/*else if ( (entity.behavior == &::actWallLock
+			|| (entity.sprite >= 1585 && entity.sprite <= 1592)) )
+		{
+			return true;
+		}*/
+		else if ( entity.behavior == &actBell )
+		{
+			return true;
+		}
+		return false;
+	}
+	else if ( spell.ID == SPELL_SABOTAGE
+		|| spell.ID == SPELL_HARVEST_TRAP )
+	{
+		if ( entity.behavior == &actArrowTrap )
+		{
+			return true;
+		}
+		else if ( entity.behavior == &actBoulderTrapHole )
+		{
+			return true;
+		}
+		else if ( entity.behavior == &actMagicTrapCeiling )
+		{
+			return true;
+		}
+		else if ( entity.behavior == &actMagicTrap )
+		{
+			return true;
+		}
+		else if ( entity.behavior == &actSpearTrap )
+		{
+			return true;
+		}
+		else if ( entity.behavior == &actMonster )
+		{
+			if ( spell.ID == SPELL_HARVEST_TRAP )
+			{
+			}
+			else
+			{
+				Monster type = entity.getMonsterTypeFromSprite();
+				if ( type == MIMIC || type == AUTOMATON || type == CRYSTALGOLEM || type == MINIMIMIC )
+				{
+					return true;
+				}
+			}
+		}
+		else if ( entity.behavior == &actChest )
+		{
+			if ( spell.ID == SPELL_HARVEST_TRAP )
+			{
+			}
+			else
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+	else if ( spell.ID == SPELL_KINETIC_PUSH )
+	{
+		if ( entity.behavior == &actBoulder && !entity.flags[PASSABLE] && entity.z >= -8 )
+		{
+			return true;
+		}
+		else if ( (entity.behavior == &actMonster && !entity.isInertMimic()) || entity.behavior == &actPlayer )
+		{
+			return true;
+		}
+		return false;
+	}
+	else if ( spell.ID == SPELL_VOID_CHEST )
 	{
 		return entity.getMonsterTypeFromSprite() == MIMIC || entity.behavior == &actChest;
 	}
@@ -146,10 +253,23 @@ bool rangefinderTargetEnemyType(spell_t& spell, Entity& entity)
 		return entity.isDamageableCollider() || entity.behavior == &actFurniture
 			|| entity.behavior == &actChest || entity.behavior == &actDoor || entity.getMonsterTypeFromSprite() == MIMIC;
 	}
+	else if ( spell.ID == SPELL_SPLINTER_GEAR )
+	{
+		return entity.behavior == &actMonster || entity.behavior == &actPlayer || entity.behavior == &actChest;
+	}
+	else if ( spell.ID == SPELL_DEFACE )
+	{
+		return (!entity.flags[INVISIBLE] && entity.behavior == &actHeadstone) || entity.behavior == &actSink;
+	}
+	else if ( spell.ID == SPELL_DEMESNE_DOOR )
+	{
+		return (entity.behavior == &actDoorFrame && !entity.flags[INVISIBLE]) /*|| entity.behavior == &actDoor*/;
+	}
 	else
 	{
 		return (entity.behavior == &actMonster && !entity.isInertMimic()) || entity.behavior == &actPlayer;
 	}
+	return false;
 }
 
 void spellcasting_animation_manager_t::setRangeFinderLocation()
@@ -182,6 +302,30 @@ void spellcasting_animation_manager_t::setRangeFinderLocation()
 		return;
 	}
 
+	if ( rangefinder == RANGEFINDER_TOUCH_INTERACT_TEST )
+	{
+		targetUid = 0;
+		if ( players[player]->worldUI.isEnabled() )
+		{
+			if ( players[player]->worldUI.tooltipsInRange.size() > 0 )
+			{
+				for ( node_t* node = map.worldUI->first; node; node = node->next )
+				{
+					Entity* tooltip = (Entity*)node->element;
+					if ( !tooltip || tooltip->behavior != &actSpriteWorldTooltip )
+					{
+						continue;
+					}
+					if ( players[player]->worldUI.bTooltipActiveForPlayer(*tooltip) )
+					{
+						targetUid = tooltip->parent;
+						break;
+					}
+				}
+			}
+		}
+	}
+
 	static ConsoleVariable<float> cvar_rangefinderStartZ("/rangefinder_start_z", -2.5);
 	static ConsoleVariable<float> cvar_rangefinderMoveTo("/rangefinder_moveto_z", 0.1);
 	static ConsoleVariable<float> cvar_rangefinderStartZLimit("/rangefinder_start_z_limit", 7.5);
@@ -208,33 +352,82 @@ void spellcasting_animation_manager_t::setRangeFinderLocation()
 	real_t previousx = startx;
 	real_t previousy = starty;
 	int index = 0;
-	for ( ; startz < *cvar_rangefinderStartZLimit; startz += abs((*cvar_rangefinderMoveTo) * tan(pitch)) )
+	wallDir = 0;
+
+	if ( rangefinder == RANGEFINDER_TOUCH_WALL_TILE )
 	{
-		startx += 0.1 * cos(yaw);
-		starty += 0.1 * sin(yaw);
-		const int index_x = static_cast<int>(startx) >> 4;
-		const int index_y = static_cast<int>(starty) >> 4;
-		index = (index_y)*MAPLAYERS + (index_x)*MAPLAYERS * map.height;
+		real_t dist = lineTrace(nullptr, startx, starty, yaw, spell->distance, 0, false);
+		if ( dist < spell->distance )
+		{
+			previousx = hit.x;
+			previousy = hit.y;
+			if ( hit.side == HORIZONTAL )
+			{
+				if ( yaw >= 3 * PI / 2 || yaw <= PI / 2 )
+				{
+					wallDir = 3;
+					previousx = static_cast<int>((hit.x + 8.0) / 16);
+					previousy = static_cast<int>(hit.y / 16);
+				}
+				else
+				{
+					wallDir = 1;
+					previousx = static_cast<int>((hit.x - 8.0) / 16);
+					previousy = static_cast<int>(hit.y / 16);
+				}
+			}
+			else if ( hit.side == VERTICAL )
+			{
+				if ( yaw >= 0 && yaw < PI )
+				{
+					wallDir = 4;
+					previousx = static_cast<int>(hit.x / 16);
+					previousy = static_cast<int>((hit.y + 8.0) / 16);
+				}
+				else
+				{
+					wallDir = 2;
+					previousx = static_cast<int>(hit.x / 16);
+					previousy = static_cast<int>((hit.y - 8.0) / 16);
+				}
+			}
+			else
+			{
+				wallDir = 0;
+				//messagePlayer(0, MESSAGE_DEBUG, "??");
+			}
+		}
+	}
+	else
+	{
+		for ( ; startz < *cvar_rangefinderStartZLimit; startz += abs((*cvar_rangefinderMoveTo) * tan(pitch)) )
+		{
+			startx += 0.1 * cos(yaw);
+			starty += 0.1 * sin(yaw);
+			const int index_x = static_cast<int>(startx) >> 4;
+			const int index_y = static_cast<int>(starty) >> 4;
+			index = (index_y)*MAPLAYERS + (index_x)*MAPLAYERS * map.height;
 
-		if ( index_x < 0 || index_x >= map.width || index_y < 0 || index_y >= map.height )
-		{
-			break;
-		}
+			if ( index_x < 0 || index_x >= map.width || index_y < 0 || index_y >= map.height )
+			{
+				break;
+			}
 
-		if ( (map.tiles[index] || rangefinder != RANGEFINDER_TARGET) && !map.tiles[OBSTACLELAYER + index] )
-		{
-			// store the last known good coordinate
-			previousx = startx;// + 16 * cos(yaw);
-			previousy = starty;// + 16 * sin(yaw);
-		}
-		if ( map.tiles[OBSTACLELAYER + index] )
-		{
-			break;
-		}
-		if ( pow(startx - caster->x, 2) + pow(starty - caster->y, 2) > (spell->distance * spell->distance) )
-		{
-			// break if distance reached
-			break;
+			if ( (map.tiles[index] || rangefinder != RANGEFINDER_TARGET) && !map.tiles[OBSTACLELAYER + index] )
+			{
+				// store the last known good coordinate
+				previousx = startx;// + 16 * cos(yaw);
+				previousy = starty;// + 16 * sin(yaw);
+			}
+			if ( map.tiles[OBSTACLELAYER + index] )
+			{
+				break;
+			}
+			if ( pow(startx - caster->x, 2) + pow(starty - caster->y, 2) > (spell->distance * spell->distance) )
+			{
+				// break if distance reached
+				break;
+			}
 		}
 	}
 
@@ -243,7 +436,8 @@ void spellcasting_animation_manager_t::setRangeFinderLocation()
 	caster_x = caster->x;
 	caster_y = caster->y;
 
-	if ( rangefinder == RANGEFINDER_TOUCH )
+	if ( rangefinder == RANGEFINDER_TOUCH
+		|| rangefinder == RANGEFINDER_TOUCH_INTERACT )
 	{
 		real_t maxDist = spell->distance + 8.0;
 		real_t minDist = 4.0;
@@ -254,7 +448,15 @@ void spellcasting_animation_manager_t::setRangeFinderLocation()
 		bool interactBonusWidthEnemies = true;
 		bool interactBonusWidthAllies = false;
 		list_t* entityList = map.creatures;
-		if ( spell->ID == SPELL_BOOBY_TRAP || spell->ID == SPELL_VOID_CHEST )
+		if ( spell->ID == SPELL_TELEKINESIS )
+		{
+			minDist = 16.0;
+		}
+
+		if ( spell->ID == SPELL_BOOBY_TRAP || spell->ID == SPELL_VOID_CHEST || spell->ID == SPELL_TELEKINESIS
+			|| spell->ID == SPELL_KINETIC_PUSH || spell->ID == SPELL_SABOTAGE || spell->ID == SPELL_HARVEST_TRAP
+			|| spell->ID == SPELL_SPLINTER_GEAR || spell->ID == SPELL_DEFACE || spell->ID == SPELL_SUNDER_MONUMENT
+			|| spell->ID == SPELL_DEMESNE_DOOR )
 		{
 			entityList = map.entities;
 		}
@@ -269,6 +471,7 @@ void spellcasting_animation_manager_t::setRangeFinderLocation()
 			Entity* entity = nullptr;
 			real_t dist = 0.0;
 			real_t crossDist = 0.0;
+			int wallDir = 0;
 		};
 
 		auto compFunc = [](EntitySpellTargetLocation& lhs, EntitySpellTargetLocation& rhs)
@@ -357,14 +560,76 @@ void spellcasting_animation_manager_t::setRangeFinderLocation()
 
 						if ( (abs(tangent - playerYaw) < (interactAngle)) || (abs(tangent - playerYaw) > (2 * PI - interactAngle)) )
 						{
-							Entity* ohit = hit.entity;
-							lineTraceTarget(caster, caster->x, caster->y, tangent, dist, 0, false, entity);
-							if ( hit.entity == entity )
+							if ( entity->behavior == &actArrowTrap || entity->behavior == &actMagicTrap )
 							{
-								real_t crossDist = abs(dist * sin(tangent - playerYaw));
-								entitiesInRange.push(EntitySpellTargetLocation{entity, dist, crossDist});
+								Entity* ohit = hit.entity;
+								real_t dist2 = lineTrace(nullptr, caster->x, caster->y, yaw, dist, 0, false);
+								if ( dist2 < dist )
+								{
+									int tempx = hit.x;
+									int tempy = hit.y;
+									int wallDir = 0;
+									if ( hit.side == HORIZONTAL )
+									{
+										if ( yaw >= 3 * PI / 2 || yaw <= PI / 2 )
+										{
+											wallDir = 3;
+											tempx = static_cast<int>((hit.x + 8.0) / 16);
+											tempy = static_cast<int>(hit.y / 16);
+										}
+										else
+										{
+											wallDir = 1;
+											tempx = static_cast<int>((hit.x - 8.0) / 16);
+											tempy = static_cast<int>(hit.y / 16);
+										}
+									}
+									else if ( hit.side == VERTICAL )
+									{
+										if ( yaw >= 0 && yaw < PI )
+										{
+											wallDir = 4;
+											tempx = static_cast<int>(hit.x / 16);
+											tempy = static_cast<int>((hit.y + 8.0) / 16);
+										}
+										else
+										{
+											wallDir = 2;
+											tempx = static_cast<int>(hit.x / 16);
+											tempy = static_cast<int>((hit.y - 8.0) / 16);
+										}
+									}
+									else
+									{
+										wallDir = 0;
+										//messagePlayer(0, MESSAGE_DEBUG, "??");
+									}
+
+									if ( wallDir > 0 )
+									{
+										if ( tempx == static_cast<int>(entity->x / 16)
+											&& tempy == static_cast<int>(entity->y / 16) )
+										{
+											real_t crossDist = abs(dist2 * sin(tangent - playerYaw));
+											entitiesInRange.push(EntitySpellTargetLocation{ entity, dist2, crossDist, wallDir });
+										}
+										//messagePlayer(0, MESSAGE_DEBUG, "x: %d y: %d | entity: x: %d y: %d",
+										//	tempx, tempy, (int)(entity->x / 16), (int)(entity->y / 16));
+									}
+								}
+								hit.entity = ohit;
 							}
-							hit.entity = ohit;
+							else
+							{
+								Entity* ohit = hit.entity;
+								lineTraceTarget(entity, entity->x, entity->y, tangent + PI, dist, 0, false, caster);
+								if ( hit.entity == caster )
+								{
+									real_t crossDist = abs(dist * sin(tangent - playerYaw));
+									entitiesInRange.push(EntitySpellTargetLocation{entity, dist, crossDist, 0});
+								}
+								hit.entity = ohit;
+							}
 						}
 					}
 				}
@@ -374,6 +639,7 @@ void spellcasting_animation_manager_t::setRangeFinderLocation()
 		if ( entitiesInRange.size() )
 		{
 			targetUid = entitiesInRange.top().entity->getUID();
+			wallDir = entitiesInRange.top().wallDir;
 			//messagePlayer(0, MESSAGE_DEBUG, "Dist: %.2f, Cross: %.2f", entitiesInRange.top().dist, entitiesInRange.top().crossDist);
 		}
 	}
@@ -535,19 +801,24 @@ void spellcastingAnimationManager_deactivate(spellcasting_animation_manager_t* a
 void spellcastingAnimationManager_completeSpell(spellcasting_animation_manager_t* animation_manager, bool deactivate)
 {
 	if ( animation_manager->rangefinder == SpellRangefinderType::RANGEFINDER_TARGET
-		|| animation_manager->rangefinder == SpellRangefinderType::RANGEFINDER_TOUCH_FLOOR_TILE )
+		|| animation_manager->rangefinder == SpellRangefinderType::RANGEFINDER_TOUCH_FLOOR_TILE
+		|| animation_manager->rangefinder == SpellRangefinderType::RANGEFINDER_TOUCH_INTERACT_TEST
+		|| animation_manager->rangefinder == SpellRangefinderType::RANGEFINDER_TOUCH_WALL_TILE )
 	{
 		CastSpellProps_t castSpellProps;
 		castSpellProps.caster_x = animation_manager->caster_x;
 		castSpellProps.caster_y = animation_manager->caster_y;
 		castSpellProps.target_x = animation_manager->target_x;
 		castSpellProps.target_y = animation_manager->target_y;
+		castSpellProps.wallDir = animation_manager->wallDir;
 		castSpell(animation_manager->caster, animation_manager->spell, false, false, animation_manager->active_spellbook, &castSpellProps); //Actually cast the spell.
 	}
-	else if ( animation_manager->rangefinder == SpellRangefinderType::RANGEFINDER_TOUCH )
+	else if ( animation_manager->rangefinder == SpellRangefinderType::RANGEFINDER_TOUCH
+		|| animation_manager->rangefinder == SpellRangefinderType::RANGEFINDER_TOUCH_INTERACT )
 	{
 		CastSpellProps_t castSpellProps;
 		castSpellProps.targetUID = animation_manager->targetUid;
+		castSpellProps.wallDir = animation_manager->wallDir;
 		castSpell(animation_manager->caster, animation_manager->spell, false, false, animation_manager->active_spellbook, &castSpellProps); //Actually cast the spell.
 	}
 	else
@@ -594,6 +865,8 @@ void actLeftHandMagic(Entity* my)
 		list_RemoveNode(my->mynode);
 		return;
 	}
+
+	my->mistformGLRender = players[HANDMAGIC_PLAYERNUM]->entity->mistformGLRender;
 
 	//Set the initial values. (For the particle spray)
 	my->x = 8;
@@ -882,7 +1155,10 @@ void actLeftHandMagic(Entity* my)
 						//Finished circling. Time to move on!
 					{
 						if ( cast_animation[HANDMAGIC_PLAYERNUM].rangefinder == SpellRangefinderType::RANGEFINDER_TOUCH
-							|| cast_animation[HANDMAGIC_PLAYERNUM].rangefinder == SpellRangefinderType::RANGEFINDER_TOUCH_FLOOR_TILE )
+							|| cast_animation[HANDMAGIC_PLAYERNUM].rangefinder == SpellRangefinderType::RANGEFINDER_TOUCH_INTERACT
+							|| cast_animation[HANDMAGIC_PLAYERNUM].rangefinder == SpellRangefinderType::RANGEFINDER_TOUCH_INTERACT_TEST
+							|| cast_animation[HANDMAGIC_PLAYERNUM].rangefinder == SpellRangefinderType::RANGEFINDER_TOUCH_FLOOR_TILE
+							|| cast_animation[HANDMAGIC_PLAYERNUM].rangefinder == SpellRangefinderType::RANGEFINDER_TOUCH_WALL_TILE )
 						{
 							cast_animation[HANDMAGIC_PLAYERNUM].stage = ANIM_SPELL_TOUCH;
 						}
@@ -1174,6 +1450,8 @@ void actRightHandMagic(Entity* my)
 		list_RemoveNode(my->mynode);
 		return;
 	}
+
+	my->mistformGLRender = players[HANDMAGIC_PLAYERNUM]->entity->mistformGLRender;
 
 	my->x = 8;
 	my->y = 3;
@@ -1503,12 +1781,22 @@ void actMagicRangefinder(Entity* my)
 	my->sprite = 222;
 	my->x = cast_anim.target_x;
 	my->y = cast_anim.target_y;
-	if ( cast_anim.targetUid != 0 && cast_anim.rangefinder == RANGEFINDER_TOUCH )
+	Entity* target = nullptr;
+	if ( cast_anim.targetUid != 0 
+		&& (cast_anim.rangefinder == RANGEFINDER_TOUCH 
+			|| cast_anim.rangefinder == RANGEFINDER_TOUCH_INTERACT_TEST
+			|| cast_anim.rangefinder == RANGEFINDER_TOUCH_INTERACT) )
 	{
-		if ( Entity* target = uidToEntity(cast_anim.targetUid) )
+		if ( target = uidToEntity(cast_anim.targetUid) )
 		{
 			my->x = target->x;
 			my->y = target->y;
+			if ( target->behavior == &actArrowTrap
+				|| target->behavior == &actMagicTrap )
+			{
+				my->x = static_cast<int>(my->x / 16);
+				my->y = static_cast<int>(my->y / 16);
+			}
 		}
 	}
 	my->z = 7.499;
@@ -1529,6 +1817,46 @@ void actMagicRangefinder(Entity* my)
 	my->scaley = *cvar_player_cast_indicator_scale;
 	my->pitch = 0;
 	my->roll = -PI / 2;
+	if ( cast_anim.rangefinder == RANGEFINDER_TOUCH_WALL_TILE )
+	{
+		if ( cast_anim.wallDir == 0 )
+		{
+			my->flags[INVISIBLE] = true;
+		}
+	}
+
+	if ( (cast_anim.rangefinder == RANGEFINDER_TOUCH && target)
+		|| cast_anim.rangefinder == RANGEFINDER_TOUCH_WALL_TILE )
+	{
+		if ( cast_anim.wallDir > 0 )
+		{
+			my->roll = PI;
+			my->yaw = cast_anim.wallDir * PI / 2;
+			my->z = 0.0;
+
+			if ( cast_anim.wallDir == 1 )
+			{
+				my->x = my->x * 16.0 + 16.001;
+				my->y = my->y * 16.0 + 8.0;
+			}
+			else if ( cast_anim.wallDir == 3 )
+			{
+				my->x = my->x * 16.0 - 0.001;
+				my->y = my->y * 16.0 + 8.0;
+			}
+			else if ( cast_anim.wallDir == 2 )
+			{
+				my->x = my->x * 16.0 + 8.0;
+				my->y = my->y * 16.0 + 16.001;
+			}
+			else if ( cast_anim.wallDir == 4 )
+			{
+				my->x = my->x * 16.0 + 8.0;
+				my->y = my->y * 16.0 - 0.001;
+			}
+		}
+	}
+
 	my->flags[ENTITY_SKIP_CULLING] = true;
 
 	HANDMAGIC_RANGEFINDER_COLOR_R = *cvar_player_cast_indicator_r;

@@ -485,6 +485,7 @@ void spellConstructor(spell_t* spell, int ID)
 	spell->rangefinder = SpellRangefinderType::RANGEFINDER_NONE;
 	spell->hide_from_ui = false;
 	spell->distance = 0.0;
+	spell->sustainEffectDissipate = -1;
 	//spell->timer = 0;
 	allGameSpells[ID] = spell;
 }
