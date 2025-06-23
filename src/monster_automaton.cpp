@@ -686,7 +686,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			{
 				my->attack(MONSTER_POSE_AUTOMATON_MALFUNCTION, 0, my);
 				spawnExplosion(my->x, my->y, my->z);
-				my->modHP(-1000);
+				my->setHP(0);
 			}
 		}
 	}

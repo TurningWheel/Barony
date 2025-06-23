@@ -2335,6 +2335,15 @@ void Entity::modHP(int amount)
 		}
 	}
 
+	if ( behavior == &actMonster && entitystats->type == AUTOMATON
+		&& (monsterSpecialState == AUTOMATON_MALFUNCTION_START || monsterSpecialState == AUTOMATON_MALFUNCTION_RUN) )
+	{
+		if ( amount > 0 )
+		{
+			return;
+		}
+	}
+
 	Sint32 oldHP = entitystats->HP;
 	this->setHP(entitystats->HP + amount);
 	if ( oldHP > entitystats->HP )
@@ -13661,6 +13670,10 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 	{
 		return;
 	}
+	if ( src == this )
+	{
+		return;
+	}
 
 	int player = -1;
 	if ( behavior == &actPlayer )
@@ -18746,7 +18759,7 @@ void Entity::checkGroundForItems()
 		{
 			case GOBLIN:
 			case HUMAN:
-				if ( !strcmp(myStats->name, "") )
+				if ( myStats->getAttribute("special_npc") == "" )
 				{
 					//checkBetterEquipment(myStats);
 					monsterAddNearbyItemToInventory(myStats, 16, 9);
