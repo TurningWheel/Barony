@@ -438,6 +438,8 @@ void actHudWeapon(Entity* my)
 		return;
 	}
 
+	my->mistformGLRender = players[HUDWEAPON_PLAYERNUM]->entity->mistformGLRender;
+
 	// reduce throwGimpTimer (allows player to throw items again)
 	if ( throwGimpTimer > 0 )
 	{
@@ -3475,6 +3477,8 @@ void actHudShield(Entity* my)
 		return;
 	}
 
+	my->mistformGLRender = players[HUDSHIELD_PLAYERNUM]->entity->mistformGLRender;
+
 	Monster playerRace = players[HUDSHIELD_PLAYERNUM]->entity->getMonsterFromPlayerRace(stats[HUDSHIELD_PLAYERNUM]->playerRace);
 	if ( players[HUDSHIELD_PLAYERNUM]->entity->effectShapeshift != NOTHING )
 	{
@@ -4296,6 +4300,8 @@ void actHudAdditional(Entity* my)
 		return;
 	}
 
+	my->mistformGLRender = players[HUDSHIELD_PLAYERNUM]->entity->mistformGLRender;
+
 	if ( !spellbook )
 	{
 		my->flags[INVISIBLE] = true;
@@ -4548,6 +4554,8 @@ void actHudArrowModel(Entity* my)
 		list_RemoveNode(my->mynode);
 		return;
 	}
+
+	my->mistformGLRender = players[HUDSHIELD_PLAYERNUM]->entity->mistformGLRender;
 
 	if ( (!crossbow && !bow) || cast_animation[HUDSHIELD_PLAYERNUM].hideShieldFromBasicCast() || cast_animation[HUDSHIELD_PLAYERNUM].active_spellbook )
 	{

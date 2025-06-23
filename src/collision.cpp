@@ -374,7 +374,9 @@ bool entityInsideTile(Entity* entity, int x, int y, int z, bool checkSafeTiles)
 									&& entity->getStats() 
 									&& (entity->getStats()->type == BAT_SMALL 
 										|| entity->getStats()->type == REVENANT_SKULL
-										|| entity->getStats()->type == MONSTER_ADORCISED_WEAPON)) )
+										|| entity->getStats()->type == MONSTER_ADORCISED_WEAPON
+										|| entity->getStats()->type == HOLOGRAM
+										|| entity->getStats()->type == FLAME_ELEMENTAL)) )
 							{
 								return true;
 							}
@@ -470,7 +472,9 @@ bool entityInsideSomething(Entity* entity)
 			if ( entity->behavior == &actDeathGhost 
 				|| entity->getMonsterTypeFromSprite() == BAT_SMALL
 				|| entity->getMonsterTypeFromSprite() == REVENANT_SKULL
-				|| entity->getMonsterTypeFromSprite() == MONSTER_ADORCISED_WEAPON )
+				|| entity->getMonsterTypeFromSprite() == MONSTER_ADORCISED_WEAPON
+				|| entity->getMonsterTypeFromSprite() == HOLOGRAM
+				|| entity->getMonsterTypeFromSprite() == FLAME_ELEMENTAL )
 			{
 				if ( testEntity->behavior == &actMonster || testEntity->behavior == &actPlayer 
 					|| (testEntity->isDamageableCollider() && (testEntity->colliderHasCollision & EditorEntityData_t::COLLIDER_COLLISION_FLAG_NPC)) )
@@ -498,8 +502,8 @@ bool useSmallCollision(Entity& my, Stat& myStats, Entity& your, Stat& yourStats)
 			|| your.getUID() == myStats.leader_uid
 			|| (myStats.leader_uid != 0 && myStats.leader_uid == yourStats.leader_uid)
 			|| (my.behavior == &actPlayer && your.behavior == &actPlayer)
-			|| (my.behavior == &actPlayer && your.monsterAllyGetPlayerLeader())
-			|| (your.behavior == &actPlayer && my.monsterAllyGetPlayerLeader()) )
+			|| (my.behavior == &actPlayer && (your.monsterAllyGetPlayerLeader() || achievementObserver.checkUidIsFromPlayer(yourStats.leader_uid) >= 0))
+			|| (your.behavior == &actPlayer && (my.monsterAllyGetPlayerLeader() || achievementObserver.checkUidIsFromPlayer(myStats.leader_uid) >= 0)) )
 		{
 			return true;
 		}
@@ -615,7 +619,8 @@ bool Entity::collisionProjectileMiss(Entity* parent, Entity* projectile)
 				{
 					projectile->collisionIgnoreTargets.insert(getUID());
 					if ( (parent && parent->behavior == &actPlayer) || (parent && parent->behavior == &actMonster && parent->monsterAllyGetPlayerLeader())
-						|| this->behavior == &actPlayer || this->monsterAllyGetPlayerLeader() )
+						|| this->behavior == &actPlayer || this->monsterAllyGetPlayerLeader()
+						|| achievementObserver.checkUidIsFromPlayer(myStats->leader_uid) >= 0 )
 					{
 						spawnDamageGib(this, 0, DamageGib::DMG_GUARD, DamageGibDisplayType::DMG_GIB_GUARD, true);
 					}
@@ -668,6 +673,7 @@ bool Entity::collisionProjectileMiss(Entity* parent, Entity* projectile)
 			}
 
 			if ( myStats->type == BAT_SMALL || myStats->getEffectActive(EFF_AGILITY) || myStats->getEffectActive(EFF_ENSEMBLE_LUTE) 
+				|| mistFormDodge(true)
 				|| (parent && parent->getStats() && parent->getStats()->getEffectActive(EFF_BLIND)) )
 			{
 				bool miss = false;
@@ -711,7 +717,11 @@ bool Entity::collisionProjectileMiss(Entity* parent, Entity* projectile)
 				}
 
 				bool accuracyBonus = projectile->behavior == &actMagicMissile && myStats->type == BAT_SMALL;
-				if ( backstab )
+				if ( mistFormDodge(false) )
+				{
+					miss = true;
+				}
+				else if ( backstab )
 				{
 					miss = false;
 				}
@@ -761,7 +771,8 @@ bool Entity::collisionProjectileMiss(Entity* parent, Entity* projectile)
 						if ( (parent && parent->behavior == &actPlayer) 
 							|| (parent && parent->behavior == &actMonster && parent->monsterAllyGetPlayerLeader())
 							|| (behavior == &actPlayer)
-							|| (behavior == &actMonster && monsterAllyGetPlayerLeader()) )
+							|| (behavior == &actMonster && monsterAllyGetPlayerLeader())
+							|| achievementObserver.checkUidIsFromPlayer(myStats->leader_uid) >= 0 )
 						{
 							spawnDamageGib(this, 0, DamageGib::DMG_MISS, DamageGibDisplayType::DMG_GIB_MISS, true);
 						}
@@ -1040,11 +1051,17 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 			}
 			if ( entity->isDamageableCollider() && (entity->colliderHasCollision & EditorEntityData_t::COLLIDER_COLLISION_FLAG_NPC)
 				&& ((my->behavior == &actMonster 
-					&& (type == GYROBOT || type == BAT_SMALL || type == REVENANT_SKULL || type == MONSTER_ADORCISED_WEAPON)) || my->behavior == &actDeathGhost) )
+					&& (type == GYROBOT 
+						|| type == BAT_SMALL 
+						|| type == REVENANT_SKULL 
+						|| type == MONSTER_ADORCISED_WEAPON 
+						|| type == HOLOGRAM
+						|| type == FLAME_ELEMENTAL
+						)) || my->behavior == &actDeathGhost) )
 			{
 				continue;
 			}
-			if ( entity->behavior == &actFurniture && (type == BAT_SMALL || type == REVENANT_SKULL || type == MONSTER_ADORCISED_WEAPON) )
+			if ( entity->behavior == &actFurniture && (type == BAT_SMALL || type == REVENANT_SKULL || type == MONSTER_ADORCISED_WEAPON || type == FLAME_ELEMENTAL) )
 			{
 				continue;
 			}
@@ -1071,7 +1088,8 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 					continue;
 				}
 			}
-			if ( entity->getMonsterTypeFromSprite() == REVENANT_SKULL || entity->getMonsterTypeFromSprite() == MONSTER_ADORCISED_WEAPON )
+			if ( entity->getMonsterTypeFromSprite() == REVENANT_SKULL || entity->getMonsterTypeFromSprite() == MONSTER_ADORCISED_WEAPON
+				|| entity->getMonsterTypeFromSprite() == FLAME_ELEMENTAL )
 			{
 				if ( my->behavior == &actBoulder )
 				{
@@ -1109,6 +1127,7 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 			if ( projectileAttack && yourStats && (parentDodgeChance 
 				|| yourStats->getEffectActive(EFF_AGILITY) 
 				|| yourStats->getEffectActive(EFF_ENSEMBLE_LUTE)
+				|| entity->mistFormDodge(true)
 				|| (yourStats->getEffectActive(EFF_NULL_RANGED) && (my->behavior == &actThrown || my->behavior == &actArrow))) )
 			{
 				entityDodgeChance = true;
@@ -1534,7 +1553,9 @@ Entity* findEntityInLine( Entity* my, real_t x1, real_t y1, real_t angle, int en
 			|| myStats->type == MINOTAUR
 			|| myStats->type == BAT_SMALL
 			|| myStats->type == REVENANT_SKULL
-			|| myStats->type == MONSTER_ADORCISED_WEAPON);
+			|| myStats->type == MONSTER_ADORCISED_WEAPON
+			|| myStats->type == FLAME_ELEMENTAL
+			);
 
 	for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
 	{
@@ -1552,7 +1573,9 @@ Entity* findEntityInLine( Entity* my, real_t x1, real_t y1, real_t angle, int en
 									&& entity->sprite != 1794
 									&& entity->sprite != 1408
 									&& entity->sprite != 1796
-									&& entity->sprite != 1797) )
+									&& entity->sprite != 1797
+									&& entity->sprite != 1803
+									&& entity->sprite != 1804) )
 						)
 					) 
 				)
@@ -1876,7 +1899,8 @@ real_t lineTrace( Entity* my, real_t x1, real_t y1, real_t angle, real_t range, 
 				}
 				else if ( stats->type == SENTRYBOT || stats->type == SPELLBOT || stats->type == BAT_SMALL 
 					|| stats->type == REVENANT_SKULL
-					|| stats->type == MONSTER_ADORCISED_WEAPON )
+					|| stats->type == MONSTER_ADORCISED_WEAPON
+					|| stats->type == FLAME_ELEMENTAL)
 				{
 					ground = false;
 				}
@@ -2342,7 +2366,9 @@ int checkObstacle(long x, long y, Entity* my, Entity* target, bool useTileEntity
 						if ( entity->behavior == &actMonster 
 							&& (entity->getMonsterTypeFromSprite() == BAT_SMALL 
 								|| entity->getMonsterTypeFromSprite() == REVENANT_SKULL
-								|| entity->getMonsterTypeFromSprite() == MONSTER_ADORCISED_WEAPON) )
+								|| entity->getMonsterTypeFromSprite() == MONSTER_ADORCISED_WEAPON
+								|| entity->getMonsterTypeFromSprite() == HOLOGRAM
+								|| entity->getMonsterTypeFromSprite() == FLAME_ELEMENTAL) )
 						{
 							continue;
 						}

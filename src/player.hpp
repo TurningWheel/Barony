@@ -1729,6 +1729,7 @@ public:
 		Uint32 noManaFeedbackTicks = 0;
 		Uint32 noManaProcessedOnTick = 0;
 		Uint32 spellbookUidFromHotbarSlot = 0;
+		Uint32 telekinesisTarget = 0;
 		void flashNoMana()
 		{
 			noManaFeedbackTicks = 0;

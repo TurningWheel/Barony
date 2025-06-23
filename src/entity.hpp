@@ -302,6 +302,7 @@ public:
 	real_t& highlightForUIGlow; //fskill[28] for highlighting animation
 	real_t& grayscaleGLRender; //fskill[27] for grayscale rendering
 	real_t& noColorChangeAllyLimb; // fskill[26] for ignoring recolor of follower limbs
+	real_t& mistformGLRender = fskill[22];
 
 	//--PUBLIC PLAYER SKILLS--
 	Sint32& playerLevelEntrySpeech; //skill[18]
@@ -440,6 +441,9 @@ public:
 	Sint32& teleporterY; //skill[1]
 	Sint32& teleporterType; //skill[3]
 	Sint32& teleporterAmbience; //skill[4]
+	Sint32& teleporterStartFrame = skill[5];
+	Sint32& teleporterCurrentFrame = skill[6];
+	Sint32& teleporterNumFrames = skill[7];
 
 	//--PUBLIC CEILING TILE SKILLS--
 	Sint32& ceilingTileModel; //skill[0]
@@ -551,7 +555,11 @@ public:
 	Sint32& itemAutoSalvageByPlayer; //skill[26]
 	Sint32& itemSplooshed; //skill[27]
 	Sint32& itemContainer; //skill[29]
+	Sint32& itemFollowUID = skill[30];
+	Sint32& itemReturnUID = skill[31];
 	real_t& itemWaterBob; //fskill[2]
+	real_t& itemLevitate = fskill[3];
+	real_t& itemLevitateStartZ = fskill[4];
 
 	//--PUBLIC ACTMAGIC SKILLS (Standard projectiles)--
 	Sint32& actmagicIsVertical; //skill[6]
@@ -666,7 +674,7 @@ public:
 	Sint32& playerStartDir; //skill[1]
 
 	//--ACTTRAP/PERMANENT
-	Sint32 pressurePlateTriggerType; //skill[3]
+	Sint32& pressurePlateTriggerType; //skill[3]
 
 	enum PressurePlateTriggerTypes : int
 	{
@@ -755,9 +763,19 @@ public:
 	Sint32& actSpriteUseCustomSurface = skill[10];
 	Sint32& actSpriteFollowUID = skill[11];
 	Sint32& actSpriteHasLightInit = skill[12];
+	real_t& actSpritePitchRotate = fskill[4];
 
 	// actGib
 	Sint32& actGibHitGroundEvent = skill[10];
+
+	// actWind
+	Sint32& actWindParticleEffect = skill[1];
+	Sint32& actWindEffectsProjectiles = skill[3];
+	Sint32& actWindLifetime = skill[4];
+	real_t& actWindStrength = fskill[0];
+	Sint32& actWindTileBonusLength = skill[5];
+
+	Sint32& actTrapSabotaged = skill[30];
 
 	void pedestalOrbInit(); // init orb properties
 
@@ -1027,7 +1045,7 @@ public:
 	// check for nearby items to add to monster's inventory, returns true if picked up item
 	bool monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int maxInventoryItems, Entity* forcePickupItem = nullptr);
 	// degrade chosen armor piece by 1 on entity, update clients.
-	void degradeArmor(Stat& hitstats, Item& armor, int armornum);
+	bool degradeArmor(Stat& hitstats, Item& armor, int armornum);
 	// check stats if monster should "retreat" in actMonster
 	bool shouldRetreat(Stat& myStats);
 	// check if monster should retreat or stand still when less than given distance
@@ -1253,6 +1271,12 @@ public:
 	bool entityCanVomit() const;
 	bool doSilkenBowOnAttack(Entity* attacker);
 	void setBugbearStrafeDir(bool forceDirection);
+	void processEntityWind();
+	bool windEffectsEntity(Entity* entity);
+	real_t monsterGetWeightRatio();
+	bool spellEffectPreserveItem(Item* item);
+	bool mistFormDodge(bool checkEffectActiveOnly);
+	void attractItem(Entity& itemEntity);
 };
 
 Monster getMonsterFromPlayerRace(int playerRace); // convert playerRace into the relevant monster type
@@ -1372,7 +1396,7 @@ void actTextSource(Entity* my);
 
 //checks if a sprite falls in certain sprite ranges
 
-static const int NUM_ITEM_STRINGS = 352;
+static const int NUM_ITEM_STRINGS = 354;
 static const int NUM_ITEM_STRINGS_BY_TYPE = 131;
 static const int NUM_EDITOR_TILES = 350;
 
@@ -1522,8 +1546,8 @@ public:
 		TO_REVENANT_SKULL,
 		TO_MINIMIMIC,
 		TO_ADORCISED_WEAPON,
-		TO_MONSTER_UNUSED_1,
-		TO_MONSTER_UNUSED_2,
+		TO_FLAME_ELEMENTAL,
+		TO_HOLOGRAM,
 		TO_MONSTER_UNUSED_3,
 		TO_MONSTER_UNUSED_4,
 		TO_MONSTER_UNUSED_5,

@@ -40,7 +40,7 @@ void serverUpdateEntitySkill(Entity* entity, int skill);
 void serverUpdateEntityFSkill(Entity* entity, int fskill);
 void serverUpdateEntityStatFlag(Entity* entity, int flag);
 void serverSpawnMiscParticles(Entity* entity, int particleType, int particleSprite, Uint32 optionalUid = 0, Uint32 duration = 0, Uint32 optionalData = 0);
-void serverSpawnMiscParticlesAtLocation(Sint16 x, Sint16 y, Sint16 z, int particleType, int particleSprite);
+void serverSpawnMiscParticlesAtLocation(Sint16 x, Sint16 y, Sint16 z, int particleType, int particleSprite, Uint32 duration = 0, Uint32 optionalData = 0, Uint32 optionalUid = 0);
 void serverUpdateEntityFlag(Entity* entity, int flag);
 void serverUpdateMapTileFlag(Sint16 x, Sint16 y, int layer, Uint32 flagSet, Uint32 flagRemove);
 void serverUpdateBodypartIDs(Entity* entity);

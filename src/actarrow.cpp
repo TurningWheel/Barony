@@ -309,6 +309,8 @@ void actArrow(Entity* my)
 			ARROW_VELY = sin(my->yaw) * my->arrowSpeed;
 			ARROW_OLDX = my->x;
 			ARROW_OLDY = my->y;
+
+			my->processEntityWind();
 			dist = clipMove(&my->x, &my->y, ARROW_VELX, ARROW_VELY, my);
 		}
 
@@ -909,6 +911,12 @@ void actArrow(Entity* my)
 							{
 								doSkillIncrease = false; // no skill for killing/hurting other turrets.
 							}
+						}
+						else if ( hit.entity->behavior == &actMonster 
+							&& (hit.entity->monsterAllyGetPlayerLeader() || (hitstats && achievementObserver.checkUidIsFromPlayer(hitstats->leader_uid) >= 0))
+							&& parent && parent->behavior == &actPlayer )
+						{
+							doSkillIncrease = false; // no level up on allies
 						}
 						if ( hit.entity->behavior == &actPlayer && parent && parent->behavior == &actPlayer )
 						{

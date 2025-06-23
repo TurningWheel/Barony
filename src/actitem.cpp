@@ -270,6 +270,46 @@ void actItem(Entity* my)
 			}
 			my->clearMonsterInteract();
 		}
+
+		Entity* returnToParent = nullptr;
+		if ( my->itemReturnUID != 0 && my->ticks >= 3 * TICKS_PER_SECOND )
+		{
+			if ( returnToParent = uidToEntity(my->itemReturnUID) )
+			{
+				if ( returnToParent->behavior == &actPlayer )
+				{
+					i = returnToParent->skill[2];
+					Item* item2 = newItemFromEntity(my);
+					if ( item2 )
+					{
+						int pickedUpCount = item2->count;
+						item = itemPickup(i, item2);
+						if ( item )
+						{
+							if ( players[i]->isLocalPlayer() )
+							{
+								// item is the new inventory stack for server, free the picked up items
+								free(item2);
+								int oldcount = item->count;
+								item->count = pickedUpCount;
+								messagePlayer(i, MESSAGE_INTERACTION | MESSAGE_INVENTORY, Language::get(3746), item->getName());
+								item->count = oldcount;
+							}
+							else
+							{
+								messagePlayer(i, MESSAGE_INTERACTION | MESSAGE_INVENTORY, Language::get(3746), item->getName());
+								free(item); // item is the picked up items (item == item2)
+							}
+							spawnMagicEffectParticles(my->x, my->y, my->z, 170);
+							my->removeLightField();
+							list_RemoveNode(my->mynode);
+							return;
+						}
+					}
+				}
+			}
+		}
+
 		for ( i = 0; i < MAXPLAYERS; i++)
 		{
 			if ( selectedEntity[i] == my || client_selected[i] == my )
@@ -468,6 +508,49 @@ void actItem(Entity* my)
 		break;
 	}
 
+	bool levitating = false;
+	if ( my->itemFollowUID != 0 )
+	{
+		if ( multiplayer != CLIENT )
+		{
+			if ( Entity* leader = uidToEntity(my->itemFollowUID) )
+			{
+				Stat* leaderStats = leader->getStats();
+				real_t dist = entityDist(leader, my);
+				if ( dist > 2 * TOUCHRANGE + 4.0 || (leaderStats && !leaderStats->getEffectActive(EFF_ATTRACT_ITEMS)) )
+				{
+					my->itemFollowUID = 0;
+					serverUpdateEntitySkill(my, 30);
+					leader = nullptr;
+				}
+
+				if ( leader )
+				{
+					levitating = true;
+					const real_t followDist = 12.0;
+					if ( dist > 12.0 )
+					{
+						real_t tangent = atan2(leader->y - my->y, leader->x - my->x);
+						my->vel_x = cos(tangent) * ((dist - followDist) / MAGICLIGHTBALL_DIVIDE_CONSTANT);
+						my->vel_y = sin(tangent) * ((dist - followDist) / MAGICLIGHTBALL_DIVIDE_CONSTANT);
+						my->vel_x = (my->vel_x < MAGIC_LIGHTBALL_SPEEDLIMIT) ? my->vel_x : MAGIC_LIGHTBALL_SPEEDLIMIT;
+						my->vel_y = (my->vel_y < MAGIC_LIGHTBALL_SPEEDLIMIT) ? my->vel_y : MAGIC_LIGHTBALL_SPEEDLIMIT;
+					}
+					my->flags[UPDATENEEDED] = true;
+					my->flags[NOUPDATE] = false;
+				}
+			}
+		}
+		else
+		{
+			levitating = true;
+			my->itemNotMoving = 0;
+			my->itemNotMovingClient = 0;
+			my->flags[UPDATENEEDED] = true;
+			my->flags[NOUPDATE] = false;
+		}
+	}
+
 	if ( my->itemNotMoving )
 	{
 		switch ( my->sprite )
@@ -541,7 +624,26 @@ void actItem(Entity* my)
 
 	my->flags[BURNING] = false;
 
-	if ( my->z < groundheight )
+	if ( levitating )
+	{
+		/*ITEM_VELZ += 0.04;
+		ITEM_VELZ = std::min(0.0, ITEM_VELZ);
+		my->z += ITEM_VELZ;*/
+		my->z = my->itemLevitateStartZ * my->itemLevitate;
+		my->z = std::min(groundheight - 0.1, my->z);
+		my->z = std::max(my->z, -7.5);
+		my->vel_z = 0.0;
+		
+		real_t diff = std::max(0.025, my->itemLevitate / 10.0);
+		my->itemLevitate = std::max(0.0, my->itemLevitate - diff);
+
+		my->yaw += PI / (TICKS_PER_SECOND * 10);
+		my->new_yaw = my->yaw;
+		ITEM_WATERBOB = sin(((ticks % (TICKS_PER_SECOND * 2)) / ((real_t)TICKS_PER_SECOND * 2.0)) * (2.0 * PI)) * 0.5;
+		my->z += ITEM_WATERBOB;
+		my->new_z = my->z;
+	}
+	else if ( my->z < groundheight )
 	{
 		// fall
 		// chakram and shuriken lie flat, needs to use sprites for client
@@ -736,7 +838,7 @@ void actItem(Entity* my)
 	}
 
 	// don't perform unneeded computations on items that have basically no velocity
-	if (!overWater && onground &&
+	if (!overWater && onground && !levitating &&
 		my->z > groundheight - .0001 && my->z < groundheight + .0001 &&
 		fabs(ITEM_VELX) < 0.02 && fabs(ITEM_VELY) < 0.02)
 	{
@@ -786,6 +888,54 @@ void actItem(Entity* my)
 			}
 		}
 	}
+
 	ITEM_VELX = ITEM_VELX * .925;
 	ITEM_VELY = ITEM_VELY * .925;
+}
+
+static Uint32 lastAttractTick = 0;
+void Entity::attractItem(Entity& itemEntity)
+{
+	if ( itemEntity.itemFollowUID != getUID() && itemEntity.z < 16.0 && itemEntity.ticks > TICKS_PER_SECOND )
+	{
+		if ( lastAttractTick != ::ticks )
+		{
+			spawnMagicEffectParticles(itemEntity.x, itemEntity.y, itemEntity.z, 170);
+			lastAttractTick = ::ticks;
+		}
+		itemEntity.itemFollowUID = getUID();
+
+		itemEntity.flags[USERFLAG1] = false;
+		itemEntity.itemNotMoving = 0;
+		itemEntity.itemNotMovingClient = 0;
+		itemEntity.z = std::max(itemEntity.z - 0.1, 0.0);
+		itemEntity.vel_z = -0.75;
+		itemEntity.itemLevitate = 1.0;
+		itemEntity.itemLevitateStartZ = itemEntity.z;
+		itemEntity.flags[UPDATENEEDED] = true;
+		itemEntity.flags[NOUPDATE] = false;
+		if ( multiplayer == SERVER )
+		{
+			for ( int c = 1; c < MAXPLAYERS; c++ )
+			{
+				if ( client_disconnected[c] || players[c]->isLocalPlayer() )
+				{
+					continue;
+				}
+				strcpy((char*)net_packet->data, "ATTI");
+				SDLNet_Write32(itemEntity.getUID(), &net_packet->data[4]);
+				SDLNet_Write16((Sint16)(itemEntity.x * 32), &net_packet->data[8]);
+				SDLNet_Write16((Sint16)(itemEntity.y * 32), &net_packet->data[10]);
+				SDLNet_Write16((Sint16)(itemEntity.z * 32), &net_packet->data[12]);
+				SDLNet_Write16((Sint16)(itemEntity.vel_x * 32), &net_packet->data[14]);
+				SDLNet_Write16((Sint16)(itemEntity.vel_y * 32), &net_packet->data[16]);
+				SDLNet_Write16((Sint16)(itemEntity.vel_z * 32), &net_packet->data[18]);
+				SDLNet_Write32(getUID(), & net_packet->data[20]);
+				net_packet->address.host = net_clients[c - 1].host;
+				net_packet->address.port = net_clients[c - 1].port;
+				net_packet->len = 24;
+				sendPacketSafe(net_sock, -1, net_packet, c - 1);
+			}
+		}
+	}
 }

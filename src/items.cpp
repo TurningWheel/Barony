@@ -2303,6 +2303,8 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		case STEEL_SHIELD_RESISTANCE:
 		case MIRROR_SHIELD:
 		case CRYSTAL_SHIELD:
+		case FORCE_SHIELD:
+		case REFLECTOR_SHIELD:
 			equipItemResult = equipItem(item, &stats[player]->shield, player, checkInventorySpaceForPaperDoll);
 			break;
 		case CROSSBOW:
@@ -4839,6 +4841,28 @@ Sint32 Item::armorGetAC(const Stat* const wielder) const
 	{
 		armor += 3;
 	}
+	else if ( type == FORCE_SHIELD
+		|| type == REFLECTOR_SHIELD )
+	{
+		armor += 0;
+		if ( wielder )
+		{
+			if ( type == FORCE_SHIELD )
+			{
+				if ( wielder->getEffectActive(EFF_FORCE_SHIELD) > 0 )
+				{
+					armor += wielder->getEffectActive(EFF_FORCE_SHIELD) % 50;
+				}
+			}
+			else if ( type == REFLECTOR_SHIELD )
+			{
+				if ( wielder->getEffectActive(EFF_FORCE_SHIELD) > 50 )
+				{
+					armor += (wielder->getEffectActive(EFF_FORCE_SHIELD) - 50) % 50;
+				}
+			}
+		}
+	}
 	//armor *= (double)(item->status/5.0);
 
 	if ( wielder )
@@ -5150,16 +5174,19 @@ void Item::applyLockpickToWall(const int player, const int x, const int y) const
 				{
 					const int skill = std::max(1, stats[player]->getModifiedProficiency(PRO_LOCKPICKING) / 10);
 					bool failed = false;
-					if ( skill < 2 || local_rng.rand() % skill == 0 ) // 20 skill requirement.
+					if ( entity->actTrapSabotaged == 0 )
 					{
-						// failed.
-						const Uint32 color = makeColorRGB(255, 0, 0);
-						messagePlayerColor(player, MESSAGE_INTERACTION, color, Language::get(3871)); // trap fires.
-						if ( skill < 2 )
+						if ( skill < 2 || local_rng.rand() % skill == 0 ) // 20 skill requirement.
 						{
-							messagePlayer(player, MESSAGE_INTERACTION, Language::get(3887)); // not skilled enough.
+							// failed.
+							const Uint32 color = makeColorRGB(255, 0, 0);
+							messagePlayerColor(player, MESSAGE_INTERACTION, color, Language::get(3871)); // trap fires.
+							if ( skill < 2 )
+							{
+								messagePlayer(player, MESSAGE_INTERACTION, Language::get(3887)); // not skilled enough.
+							}
+							failed = true;
 						}
-						failed = true;
 					}
 
 					if ( failed )
@@ -5178,7 +5205,8 @@ void Item::applyLockpickToWall(const int player, const int x, const int y) const
 					}
 
 					// degrade lockpick.
-					if ( !(stats[player]->weapon->type == TOOL_SKELETONKEY) && (local_rng.rand() % 10 == 0 || (failed && local_rng.rand() % 4 == 0)) )
+					if ( !(stats[player]->weapon->type == TOOL_SKELETONKEY) && (local_rng.rand() % 10 == 0 || (failed && local_rng.rand() % 4 == 0))
+						&& !(players[player]->entity && players[player]->entity->spellEffectPreserveItem(stats[player]->weapon)) )
 					{
 						if ( players[player]->isLocalPlayer() )
 						{
@@ -5915,29 +5943,6 @@ bool isItemEquippableInShieldSlot(const Item* const item)
 		return false;
 	}
 	return (items[item->type].item_slot == EQUIPPABLE_IN_SLOT_SHIELD);
-
-	/*if ( itemTypeIsQuiver(item->type) )
-	{
-		return true;
-	}
-
-	switch ( item->type )
-	{
-		case WOODEN_SHIELD:
-		case BRONZE_SHIELD:
-		case IRON_SHIELD:
-		case STEEL_SHIELD:
-		case STEEL_SHIELD_RESISTANCE:
-		case MIRROR_SHIELD:
-		case CRYSTAL_SHIELD:
-		case TOOL_TORCH:
-		case TOOL_LANTERN:
-		case TOOL_CRYSTALSHARD:
-			return true;
-		default:
-			break;
-	}
-	return false;*/
 }
 
 bool Item::usableWhileShapeshifted(const Stat* const wielder) const

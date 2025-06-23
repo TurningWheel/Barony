@@ -10116,6 +10116,22 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 			{
 				interactText += Language::get(675);
 			}
+			else if ( target->behavior == &actSpearTrap )
+			{
+				interactText += Language::get(4350);
+			}
+			else if ( target->behavior == &actArrowTrap )
+			{
+				interactText += Language::get(4351);
+			}
+			else if ( target->behavior == &actDoorFrame )
+			{
+				interactText += Language::get(6693);
+			}
+			else if ( target->behavior == &actMagicTrap || target->behavior == &actMagicTrapCeiling )
+			{
+				interactText += Language::get(4352);
+			}
 			else if ( target->behavior == &actPlayer || target->behavior == &actDeathGhost )
 			{
 				int playernum = target->skill[2];
@@ -10127,6 +10143,23 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 					nameStr = messageSanitizePercentSign(nameStr, nullptr);
 					interactText += nameStr;
 				}
+			}
+			else
+			{
+				std::string txt = CalloutMenu[player.playernum].interactText;
+				auto prevCmd = CalloutMenu[player.playernum].optionSelected;
+				CalloutMenu[player.playernum].optionSelected = CalloutRadialMenu::CALLOUT_CMD_SELECT;
+				if ( CalloutMenu[player.playernum].allowedInteractEntity(*target) )
+				{
+					std::string str = CalloutMenu[player.playernum].interactText;
+					if ( str.length() > strlen(Language::get(4347)) )
+					{
+						str.erase(str.begin(), str.begin() + strlen(Language::get(4347)));
+					}
+					interactText += str;
+				}
+				strcpy(CalloutMenu[player.playernum].interactText, txt.c_str());
+				CalloutMenu[player.playernum].optionSelected = prevCmd;
 			}
 			textSpellTarget->setText(interactText.c_str());
 		}

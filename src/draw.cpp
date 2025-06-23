@@ -2197,6 +2197,17 @@ void drawEntities3D(view_t* camera, int mode)
 							dither.value + 1;
 #endif
 					}
+					else if ( entity->mistformGLRender > 0.01 )
+					{
+#ifndef EDITOR
+						static ConsoleVariable<int> cvar_dither_mistform("/dither_mistform", 6);
+						dither.value = decrease ? std::max(0, dither.value - 2) :
+							std::min(*cvar_dither_mistform, dither.value + 1);
+#else
+						dither.value = decrease ? std::max(0, dither.value - 2) :
+							dither.value + 1;
+#endif
+					}
 					else
 					{
 						dither.value = decrease ? std::max(0, dither.value - 2) :

@@ -44,33 +44,44 @@ void actMagicTrapCeiling(Entity* my)
 
 void Entity::actMagicTrapCeiling()
 {
+	if ( actTrapSabotaged == 0 )
+	{
 #ifdef USE_FMOD
-	if ( spellTrapAmbience == 0 )
-	{
-		spellTrapAmbience--;
-		stopEntitySound();
-		entity_sound = playSoundEntityLocal(this, 149, 16);
-	}
-	if ( entity_sound )
-	{
-		bool playing = false;
-		entity_sound->isPlaying(&playing);
-		if ( !playing )
+		if ( spellTrapAmbience == 0 )
 		{
-			entity_sound = nullptr;
+			spellTrapAmbience--;
+			stopEntitySound();
+			entity_sound = playSoundEntityLocal(this, 149, 16);
 		}
-	}
+		if ( entity_sound )
+		{
+			bool playing = false;
+			entity_sound->isPlaying(&playing);
+			if ( !playing )
+			{
+				entity_sound = nullptr;
+			}
+		}
 #else
-	spellTrapAmbience--;
-	if ( spellTrapAmbience <= 0 )
-	{
-		spellTrapAmbience = TICKS_PER_SECOND * 30;
-		playSoundEntityLocal(this, 149, 16);
-	}
+		spellTrapAmbience--;
+		if ( spellTrapAmbience <= 0 )
+		{
+			spellTrapAmbience = TICKS_PER_SECOND * 30;
+			playSoundEntityLocal(this, 149, 16);
+		}
 #endif
+	}
+	else
+	{
+#ifdef USE_FMOD
+		stopEntitySound();
+#endif
+		return;
+	}
 
 	if ( multiplayer == CLIENT )
 	{
+		flags[NOUPDATE] = true;
 		return;
 	}
 	if ( circuit_status != CIRCUIT_ON )
@@ -239,8 +250,15 @@ void actMagicTrap(Entity* my)
 		return;
 	}
 
+	if ( my->actTrapSabotaged > 0 )
+	{
+		my->removeLightField();
+		return;
+	}
+
 	if ( multiplayer == CLIENT )
 	{
+		my->flags[NOUPDATE] = true;
 		return;
 	}
 

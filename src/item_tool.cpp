@@ -369,9 +369,9 @@ void Item::applyLockpick(int player, Entity& entity)
 					}
 				}
 				
-				if ( tryDegradeLockpick )
+				if ( tryDegradeLockpick && stats[player]->weapon && stats[player]->weapon->type == TOOL_LOCKPICK )
 				{
-					if ( local_rng.rand() % 5 == 0 )
+					if ( local_rng.rand() % 5 == 0 && !(players[player]->entity && players[player]->entity->spellEffectPreserveItem(stats[player]->weapon)) )
 					{
 						if ( player >= 0 && players[player]->isLocalPlayer() )
 						{
@@ -513,9 +513,9 @@ void Item::applyLockpick(int player, Entity& entity)
 					}
 				}
 				
-				if ( tryDegradeLockpick )
+				if ( tryDegradeLockpick && stats[player]->weapon && stats[player]->weapon->type == TOOL_LOCKPICK )
 				{
-					if ( local_rng.rand() % 5 == 0 )
+					if ( local_rng.rand() % 5 == 0 && !(players[player]->entity && players[player]->entity->spellEffectPreserveItem(stats[player]->weapon)) )
 					{
 						if ( player >= 0 && players[player]->isLocalPlayer() )
 						{
@@ -679,9 +679,9 @@ void Item::applyLockpick(int player, Entity& entity)
 						}
 					}
 
-					if ( tryDegradeLockpick )
+					if ( tryDegradeLockpick && stats[player]->weapon && stats[player]->weapon->type == TOOL_LOCKPICK )
 					{
-						if ( local_rng.rand() % 5 == 0 )
+						if ( local_rng.rand() % 5 == 0 && !(players[player]->entity && players[player]->entity->spellEffectPreserveItem(stats[player]->weapon)) )
 						{
 							if ( player >= 0 && players[player]->isLocalPlayer() )
 							{
@@ -834,7 +834,8 @@ void Item::applyLockpick(int player, Entity& entity)
 							players[player]->entity->increaseSkill(PRO_LOCKPICKING);
 						}
 					}
-					if ( local_rng.rand() % 2 == 0 )
+					if ( local_rng.rand() % 2 == 0 && stats[player]->weapon && stats[player]->weapon->type == TOOL_LOCKPICK
+						&& !(players[player]->entity && players[player]->entity->spellEffectPreserveItem(stats[player]->weapon)) )
 					{
 						if ( player >= 0 && players[player]->isLocalPlayer() )
 						{

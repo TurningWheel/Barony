@@ -275,7 +275,7 @@ void clickDescription(int player, Entity* entity)
 						(entity->sprite >= 278 && entity->sprite < 282) ||
 						(entity->sprite >= 614 && entity->sprite < 618) ||
 						(entity->sprite >= 992 && entity->sprite < 995) ||
-						(entity->sprite == 620))
+						(entity->sprite == 620) || entity->teleporterType == 3)
 					{
 						messagePlayer(player, MESSAGE_INSPECTION, Language::get(272));
 					}

@@ -92,6 +92,10 @@ void actSprite(Entity* my)
 	{
 		my->yaw += SPRITE_ROTATE;
 	}
+	if ( my->actSpritePitchRotate > 0.0001 )
+	{
+		my->pitch += my->actSpritePitchRotate;
+	}
 	if ( SPRITE_ALPHA_VAR > 0.0001 )
 	{
 		SPRITE_CURRENT_ALPHA = SPRITE_ALPHA_VAR + SPRITE_ALPHA_ANIM_SIZE * sin(2 * PI * (my->ticks % TICKS_PER_SECOND) / (real_t)(TICKS_PER_SECOND));

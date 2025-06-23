@@ -80,7 +80,14 @@ void Entity::actTeleporter()
 			Entity* monsterInteracting = uidToEntity(this->interactedByMonster);
 			if ( monsterInteracting )
 			{
-				monsterInteracting->teleporterMove(teleporterX, teleporterY, teleporterType);
+				if ( teleporterType == 3 )
+				{
+					monsterInteracting->teleport(teleporterX, teleporterY);
+				}
+				else
+				{
+					monsterInteracting->teleporterMove(teleporterX, teleporterY, teleporterType);
+				}
 				this->clearMonsterInteract();
 				return;
 			}
@@ -103,10 +110,20 @@ void Entity::actTeleporter()
 						case 2:
 							messagePlayer(i, MESSAGE_INTERACTION, Language::get(510));
 							break;
+						case 3:
+							messagePlayer(i, MESSAGE_INTERACTION, Language::get(6696));
+							break;
 						default:
 							break;
 					}
-					Player::getPlayerInteractEntity(i)->teleporterMove(teleporterX, teleporterY, teleporterType);
+					if ( teleporterType == 3 )
+					{
+						Player::getPlayerInteractEntity(i)->teleport(teleporterX, teleporterY);
+					}
+					else
+					{
+						Player::getPlayerInteractEntity(i)->teleporterMove(teleporterX, teleporterY, teleporterType);
+					}
 					return;
 				}
 			}
@@ -125,5 +142,27 @@ void Entity::actTeleporter()
 		{
 			sprite = 992 + ((this->ticks / 20) % 4) - 1; // animate through 992, 993, 994
 		}
+	}
+	else if ( teleporterType == 3 )
+	{
+		if ( !light )
+		{
+			light = addLight(x / 16, y / 16, "portal_purple");
+		}
+
+		if ( ::ticks % 4 == 0 )
+		{
+			sprite = teleporterStartFrame + teleporterCurrentFrame;
+			++teleporterCurrentFrame;
+			if ( teleporterCurrentFrame >= teleporterNumFrames )
+			{
+				teleporterCurrentFrame = 0;
+			}
+		}
+
+		real_t increment = std::max(.05, (1.0 - scalex)) / 3.0;
+		scalex = std::min(1.0, scalex + increment);
+		scaley = std::min(1.0, scaley + increment);
+		scalez = std::min(1.0, scalez + increment);
 	}
 }

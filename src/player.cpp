@@ -3174,6 +3174,7 @@ void Player::cleanUpOnEntityRemoval()
 	mechanics.ensembleDataUpdate = 0;
 	selectedEntity[playernum] = nullptr;
 	client_selected[playernum] = nullptr;
+	magic.telekinesisTarget = 0;
 }
 
 const bool Player::isLocalPlayer() const
@@ -3345,6 +3346,7 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 
 	bool selectInteract = false;
 	bool callout = false;
+	bool spellInteract = false;
 	if ( FollowerMenu[player.playernum].followerMenuIsOpen() && FollowerMenu[player.playernum].selectMoveTo )
 	{
 		selectInteract = (FollowerMenu[player.playernum].optionSelected == ALLY_CMD_ATTACK_SELECT);
@@ -3355,6 +3357,12 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 		selectInteract = (CalloutMenu[player.playernum].optionSelected == CalloutRadialMenu::CALLOUT_CMD_SELECT);
 		callout = true;
 		maxDist = 256;
+	}
+	else if ( cast_animation[player.playernum].active && cast_animation[player.playernum].rangefinder == RANGEFINDER_TOUCH_INTERACT_TEST )
+	{
+		selectInteract = true;
+		spellInteract = true;
+		maxDist = 64.0;
 	}
 	else if ( parent 
 		&& (parent->getMonsterTypeFromSprite() == SHOPKEEPER 
@@ -3504,6 +3512,10 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 			{
 				return 0.0;
 			}
+			if ( parent->getMonsterTypeFromSprite() == HOLOGRAM && !selectInteract )
+			{
+				return 0.0;
+			}
 			if ( parent->behavior == &actPlayer 
 				|| (parent->behavior == &actMonster && !(parent->isInertMimic())) )
 			{
@@ -3549,7 +3561,7 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 			}
 			else if ( (parent->behavior == &actTorch || parent->behavior == &actCrystalShard) )
 			{
-				if ( callout )
+				if ( callout || spellInteract )
 				{
 					dist += 8.0; // distance penalty when calling out
 				}
@@ -3764,7 +3776,7 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 					}
 
 					real_t lookDist = sqrt(pow(previousx - playerEntity->x, 2) + pow(previousy - playerEntity->y, 2));
-					if ( callout )
+					if ( callout || spellInteract )
 					{
 						if ( parent )
 						{
@@ -4164,7 +4176,7 @@ void Player::WorldUI_t::setTooltipActive(Entity& tooltip)
 		}
 		else if ( parent->behavior == &actTeleporter )
 		{
-			if ( parent->teleporterType == 2 ) // portal
+			if ( parent->teleporterType == 2 || parent->teleporterType == 3 ) // portal
 			{
 				interactText += Language::get(4035); // "Enter portal";
 			}
@@ -4484,6 +4496,13 @@ void Player::WorldUI_t::handleTooltips()
 				radialMenuOpen = false;
 				selectInteract = (CalloutMenu[player].optionSelected == CalloutRadialMenu::CALLOUT_CMD_SELECT);
 			}
+			else
+			{
+				if ( cast_animation[player].active && cast_animation[player].rangefinder == RANGEFINDER_TOUCH_INTERACT_TEST )
+				{
+					selectInteract = true;
+				}
+			}
 		}
 
 		bool bDoingActionHideTooltips = false;
@@ -4634,7 +4653,13 @@ void Player::WorldUI_t::handleTooltips()
 				parent = uidToEntity(tooltip->parent);
 				if ( parent && parent->flags[INVISIBLE] 
 					&& !(parent->behavior == &actMonster && 
-						(parent->getMonsterTypeFromSprite() == DUMMYBOT || parent->getMonsterTypeFromSprite() == MIMIC || parent->getMonsterTypeFromSprite() == BAT_SMALL)) )
+						(parent->getMonsterTypeFromSprite() == DUMMYBOT 
+							|| parent->getMonsterTypeFromSprite() == MIMIC 
+							|| parent->getMonsterTypeFromSprite() == REVENANT_SKULL
+							|| parent->getMonsterTypeFromSprite() == MINIMIMIC
+							|| parent->getMonsterTypeFromSprite() == FLAME_ELEMENTAL
+							|| parent->getMonsterTypeFromSprite() == MONSTER_ADORCISED_WEAPON
+							|| parent->getMonsterTypeFromSprite() == BAT_SMALL)) )
 				{
 					continue;
 				}
@@ -7093,6 +7118,9 @@ bool Player::PlayerMechanics_t::itemDegradeRoll(Item* item, int* checkInterval)
 			break;
 		case CRYSTAL_SHIELD:
 			interval = 20;
+			break;
+		case FORCE_SHIELD:
+			interval = 10 + (stats[player.playernum] ? stats[player.playernum]->getEffectActive(EFF_FORCE_SHIELD) % 50 : 0);
 			break;
 		default:
 			break;

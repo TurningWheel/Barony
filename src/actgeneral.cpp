@@ -3937,7 +3937,10 @@ int getBellDmgOnEntity(Entity* entity)
 					}
 					damage = 0;
 				}
-				stats->helmet->status = BROKEN;
+				if ( !entity->spellEffectPreserveItem(stats->helmet) )
+				{
+					stats->helmet->status = BROKEN;
+				}
 			}
 			else if ( stats->helmet->type == HELM_MINING )
 			{
@@ -3963,9 +3966,12 @@ int getBellDmgOnEntity(Entity* entity)
 					}
 				}
 				damage *= mult;
-				if ( stats->helmet->status > BROKEN )
+				if ( !entity->spellEffectPreserveItem(stats->helmet) )
 				{
-					stats->helmet->status = (Status)((int)stats->helmet->status - 1);
+					if ( stats->helmet->status > BROKEN )
+					{
+						stats->helmet->status = (Status)((int)stats->helmet->status - 1);
+					}
 				}
 			}
 

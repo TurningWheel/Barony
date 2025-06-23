@@ -784,6 +784,8 @@ static vec4_t* HSVtoRGB(vec4_t* result, const vec4_t* hsv){
     return result;
 }
 
+static ConsoleVariable<Vector4> cvar_color_mist_form("/color_mist_form", Vector4{ 0.6, 0.75, 0.0, 0.f });
+
 static void uploadLightUniforms(view_t* camera, Shader& shader, Entity* entity, int mode, bool remap) {
     const float cameraPos[4] = {(float)camera->x * 32.f, -(float)camera->z, (float)camera->y * 32.f, 1.f};
     GL_CHECK_ERR(glUniform4fv(shader.uniform("uCameraPos"), 1, cameraPos));
@@ -821,6 +823,27 @@ static void uploadLightUniforms(view_t* camera, Shader& shader, Entity* entity, 
                     //remap.y.y = 0.8f;
                     //remap.z.z = 0.8f;
                 }
+            }
+
+            if ( entity->mistformGLRender > 0.01 )
+            {
+                vec4_t hsv;
+                hsv.y = 100.f; // saturation
+                hsv.z = 100.f; // value
+                hsv.w = 0.f;   // unused
+
+                const auto amp = 360.0;
+                hsv.x = cvar_color_mist_form->x * amp;
+                HSVtoRGB(&remap.x, &hsv); // red
+
+                hsv.x = cvar_color_mist_form->y * amp + 120;
+                HSVtoRGB(&remap.y, &hsv); // green
+
+                hsv.x = cvar_color_mist_form->z * amp + 240;
+                HSVtoRGB(&remap.z, &hsv); // blue
+                //remap.x.x *= cvar_color_mist_form->x * entity->mistformGLRender;
+                //remap.y.y *= cvar_color_mist_form->y * entity->mistformGLRender;
+                //remap.z.z *= cvar_color_mist_form->z * entity->mistformGLRender;
             }
 
 #ifndef EDITOR
@@ -1285,7 +1308,10 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
     auto& dither = entity->dithering[camera];
     auto& shader = !entity->flags[BRIGHT] && !telepath ?
         (dither.value < Entity::Dither::MAX ? voxelDitheredShader : voxelShader) :
-        ((entity->flags[INVISIBLE] && entity->flags[INVISIBLE_DITHER] && dither.value < Entity::Dither::MAX) ? voxelBrightDitheredShader : voxelBrightShader);
+        ((((entity->flags[INVISIBLE] && entity->flags[INVISIBLE_DITHER])
+            || entity->mistformGLRender > 0.01)
+            && dither.value < Entity::Dither::MAX) 
+                ? voxelBrightDitheredShader : voxelBrightShader);
     shader.bind();
     
     // upload dither amount, if necessary
@@ -1327,6 +1353,26 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
     // upload light variables
     if (entity->flags[BRIGHT]) {
         mat4x4_t remap(1.f);
+        if ( entity->mistformGLRender > 0.01 )
+        {
+            vec4_t hsv;
+            hsv.y = 100.f; // saturation
+            hsv.z = 100.f; // value
+            hsv.w = 0.f;   // unused
+
+            const auto amp = 360.0;
+            hsv.x = cvar_color_mist_form->x * amp;
+            HSVtoRGB(&remap.x, &hsv); // red
+
+            hsv.x = cvar_color_mist_form->y * amp + 120;
+            HSVtoRGB(&remap.y, &hsv); // green
+
+            hsv.x = cvar_color_mist_form->z * amp + 240;
+            HSVtoRGB(&remap.z, &hsv); // blue
+            //remap.x.x *= cvar_color_mist_form->x * entity->mistformGLRender;
+            //remap.y.y *= cvar_color_mist_form->y * entity->mistformGLRender;
+            //remap.z.z *= cvar_color_mist_form->z * entity->mistformGLRender;
+        }
         GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uColorRemap"), 1, false, (float*)&remap));
         const float b = std::max(0.5f, camera->luminance * 4.f);
         const GLfloat factor[4] = { 1.f, 1.f, 1.f, 1.f };

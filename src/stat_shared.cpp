@@ -1542,9 +1542,13 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->LVL = 10;
 			stats->GOLD = 0;
 			stats->RANDOM_GOLD = 0;
+			stats->setProficiency(PRO_SWORD, 60);
+			stats->setProficiency(PRO_AXE, 60);
+			stats->setProficiency(PRO_POLEARM, 60);
+			stats->setProficiency(PRO_MACE, 60);
 			break;
-		case (1000 + MONSTER_UNUSED_1):
-			stats->type = MONSTER_UNUSED_1;
+		case (1000 + FLAME_ELEMENTAL):
+			stats->type = FLAME_ELEMENTAL;
 			stats->stat_appearance = local_rng.rand();
 			stats->inventory.first = NULL;
 			stats->inventory.last = NULL;
@@ -1563,23 +1567,23 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->GOLD = 0;
 			stats->RANDOM_GOLD = 0;
 			break;
-		case (1000 + MONSTER_UNUSED_2):
-			stats->type = MONSTER_UNUSED_2;
+		case (1000 + HOLOGRAM):
+			stats->type = HOLOGRAM;
 			stats->stat_appearance = local_rng.rand();
 			stats->inventory.first = NULL;
 			stats->inventory.last = NULL;
-			stats->MAXHP = 10;
+			stats->MAXHP = 1;
 			stats->HP = stats->MAXHP;
 			stats->OLDHP = stats->HP;
-			stats->RANDOM_MAXHP = 20;
+			stats->RANDOM_MAXHP = 0;
 			stats->RANDOM_HP = stats->RANDOM_MAXHP;
 			stats->STR = 0;
 			stats->DEX = 0;
 			stats->CON = 0;
-			stats->PER = 5;
+			stats->PER = 0;
 			stats->CHR = 0;
 			stats->EXP = 0;
-			stats->LVL = 10;
+			stats->LVL = 1;
 			stats->GOLD = 0;
 			stats->RANDOM_GOLD = 0;
 			break;

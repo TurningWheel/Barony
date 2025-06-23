@@ -37,6 +37,8 @@
 #define BOULDER_INIT my->skill[11]
 #define BOULDER_LAVA_EXPLODE my->skill[12]
 #define BOULDER_SOUND_ON_PUSH my->skill[13]
+#define BOULDER_TELEKINESIS_PULL my->skill[14]
+#define BOULDER_TELEKINESIS_PUSH my->skill[15]
 
 const int BOULDER_LAVA_SPRITE = 989;
 const int BOULDER_ARCANE_SPRITE = 990;
@@ -292,7 +294,10 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 								}
 								damage = 0;
 							}
-							stats->helmet->status = BROKEN;
+							if ( !entity->spellEffectPreserveItem(stats->helmet) )
+							{
+								stats->helmet->status = BROKEN;
+							}
 						}
 						else if ( stats->helmet->type == HELM_MINING )
 						{
@@ -318,9 +323,12 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 								}
 							}
 							damage *= mult;
-							if ( stats->helmet->status > BROKEN )
+							if ( !entity->spellEffectPreserveItem(stats->helmet) )
 							{
-								stats->helmet->status = (Status)((int)stats->helmet->status - 1);
+								if ( stats->helmet->status > BROKEN )
+								{
+									stats->helmet->status = (Status)((int)stats->helmet->status - 1);
+								}
 							}
 						}
 
@@ -1077,16 +1085,23 @@ void actBoulder(Entity* my)
 		if ( !BOULDER_ROLLING )
 		{
 			BOULDER_PLAYERPUSHED = -1;
+			int playerTelekinesis = BOULDER_TELEKINESIS_PULL - 1;
+			int playerKineticPush = BOULDER_TELEKINESIS_PUSH - 1;
+
 			for (i = 0; i < MAXPLAYERS; i++)
 			{
-				if ( selectedEntity[i] == my || client_selected[i] == my )
+				if ( selectedEntity[i] == my || client_selected[i] == my || playerTelekinesis == i || playerKineticPush == i )
 				{
-					if (inrange[i])
+					if (inrange[i] || playerTelekinesis == i || playerKineticPush == i )
 					{
                         bool hasRingOfStr = false;
 						if ( players[i] && players[i]->entity ) 
 						{
-                            if ( stats[i]->ring 
+							if ( playerTelekinesis == i || playerKineticPush == i )
+							{
+								hasRingOfStr = true;
+							}
+							else if ( stats[i]->ring 
 								&& stats[i]->ring->type == ItemType::RING_STRENGTH) 
 							{
                                 hasRingOfStr = true;
@@ -1111,7 +1126,16 @@ void actBoulder(Entity* my)
 							if (players[i] && players[i]->entity)
 							{
 								BOULDER_SOUND_ON_PUSH = i + 1;
-								BOULDER_ROLLING = 1;
+								if ( playerKineticPush == i )
+								{
+									BOULDER_STOPPED = 0;
+									my->vel_x = 0.0;
+									my->vel_y = 0.0;
+								}
+								else
+								{
+									BOULDER_ROLLING = 1;
+								}
 								/*my->x = floor(my->x / 16) * 16 + 8;
 								my->y = floor(my->y / 16) * 16 + 8;*/
 
@@ -1119,6 +1143,10 @@ void actBoulder(Entity* my)
 								BOULDER_DESTY = (int)(my->y / 16) * 16 + 8;
 
 								real_t tangent = atan2(players[i]->entity->y - my->y, players[i]->entity->x - my->x);
+								if ( BOULDER_TELEKINESIS_PULL > 0 && (BOULDER_TELEKINESIS_PULL - 1 == i) )
+								{
+									tangent += PI;
+								}
 								while ( tangent >= 2 * PI )
 								{
 									tangent -= 2 * PI;
@@ -1128,6 +1156,8 @@ void actBoulder(Entity* my)
 									tangent += 2 * PI;
 								}
 								real_t angle = tangent * 180.0 / PI;
+
+
 								if ( (tangent >= PI - PI / 4) && tangent < (PI + PI / 4) )
 								{
 									BOULDER_ROLLDIR = 0; // east
@@ -1147,6 +1177,11 @@ void actBoulder(Entity* my)
 								{
 									BOULDER_ROLLDIR = 3; // north
 									//messagePlayer(0, MESSAGE_DEBUG, "GO NORTH %.2f", angle);
+								}
+
+								if ( playerKineticPush == i )
+								{
+									my->yaw = BOULDER_ROLLDIR * PI / 2;
 								}
 								//if ( (int)(players[i]->entity->x / 16) < (int)(my->x / 16) )
 								//{
@@ -1460,6 +1495,8 @@ void actBoulder(Entity* my)
 	{
 		--BOULDER_BLOODTIME;
 	}
+	BOULDER_TELEKINESIS_PULL = 0;
+	BOULDER_TELEKINESIS_PUSH = 0;
 }
 
 #define BOULDERTRAP_FIRED my->skill[0]
@@ -1503,6 +1540,8 @@ void actBoulderTrap(Entity* my)
 	int x, y;
 	int c;
 
+	if ( my->actTrapSabotaged == 0 )
+	{
 #ifdef USE_FMOD
 		if ( BOULDERTRAP_AMBIENCE == 0 )
 		{
@@ -1527,6 +1566,14 @@ void actBoulderTrap(Entity* my)
 			playSoundEntityLocal(my, 149, 64);
 		}
 #endif
+	}
+	else
+	{
+#ifdef USE_FMOD
+		my->stopEntitySound();
+#endif
+		return;
+	}
 
 	if ( !my->skill[28] )
 	{
@@ -1635,6 +1682,8 @@ void actBoulderTrapEast(Entity* my)
 	int x, y;
 	int c;
 
+	if ( my->actTrapSabotaged == 0 )
+	{
 #ifdef USE_FMOD
 		if ( my->boulderTrapAmbience == 0 )
 		{
@@ -1659,6 +1708,14 @@ void actBoulderTrapEast(Entity* my)
 			playSoundEntityLocal(my, 149, 64);
 		}
 #endif
+	}
+	else
+	{
+#ifdef USE_FMOD
+		my->stopEntitySound();
+#endif
+		return;
+	}
 
 	if ( my->boulderTrapRefireCounter > 0 )
 	{
@@ -1745,6 +1802,8 @@ void actBoulderTrapSouth(Entity* my)
 	int x, y;
 	int c;
 
+	if ( my->actTrapSabotaged == 0 )
+	{
 #ifdef USE_FMOD
 		if ( my->boulderTrapAmbience == 0 )
 		{
@@ -1769,6 +1828,14 @@ void actBoulderTrapSouth(Entity* my)
 			playSoundEntityLocal(my, 149, 64);
 		}
 #endif
+	}
+	else
+	{
+#ifdef USE_FMOD
+		my->stopEntitySound();
+#endif
+		return;
+	}
 
 	if ( my->boulderTrapRefireCounter > 0 )
 	{
@@ -1855,6 +1922,8 @@ void actBoulderTrapWest(Entity* my)
 	int x, y;
 	int c;
 
+	if ( my->actTrapSabotaged == 0 )
+	{
 #ifdef USE_FMOD
 		if ( my->boulderTrapAmbience == 0 )
 		{
@@ -1879,6 +1948,14 @@ void actBoulderTrapWest(Entity* my)
 			playSoundEntityLocal(my, 149, 64);
 		}
 #endif
+	}
+	else
+	{
+#ifdef USE_FMOD
+		my->stopEntitySound();
+#endif
+		return;
+	}
 
 	if ( my->boulderTrapRefireCounter > 0 )
 	{
@@ -1965,6 +2042,8 @@ void actBoulderTrapNorth(Entity* my)
 	int x, y;
 	int c;
 
+	if ( my->actTrapSabotaged == 0 )
+	{
 #ifdef USE_FMOD
 		if ( my->boulderTrapAmbience == 0 )
 		{
@@ -1989,6 +2068,14 @@ void actBoulderTrapNorth(Entity* my)
 			playSoundEntityLocal(my, 149, 64);
 		}
 #endif
+	}
+	else
+	{
+#ifdef USE_FMOD
+		my->stopEntitySound();
+#endif
+		return;
+	}
 
 	if ( my->boulderTrapRefireCounter > 0 )
 	{

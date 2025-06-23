@@ -508,6 +508,16 @@ void actThrown(Entity* my)
 					{
 						//Hack to make monsters stop catching your shurikens and chakrams.
 						entity->parent = my->parent;
+						if ( parent )
+						{
+							if ( Stat* parentStats = parent->getStats() )
+							{
+								if ( parentStats->getEffectActive(EFF_RETURN_ITEM) )
+								{
+									entity->itemReturnUID = parent->getUID();
+								}
+							}
+						}
 					}
 					free(item);
 					list_RemoveNode(my->mynode);
@@ -665,6 +675,7 @@ void actThrown(Entity* my)
 	{
 		return;
 	}
+	my->processEntityWind();
 	double result = clipMove(&my->x, &my->y, THROWN_VELX, THROWN_VELY, my);
 	if ( processXYCollision && result != sqrt(THROWN_VELX * THROWN_VELX + THROWN_VELY * THROWN_VELY) )
 	{
@@ -1338,6 +1349,16 @@ void actThrown(Entity* my)
 						{
 							//Hack to make monsters stop catching your shurikens and chakrams.
 							entity->parent = my->parent;
+							if ( parent )
+							{
+								if ( Stat* parentStats = parent->getStats() )
+								{
+									if ( parentStats->getEffectActive(EFF_RETURN_ITEM) )
+									{
+										entity->itemReturnUID = parent->getUID();
+									}
+								}
+							}
 						}
 					}
 					free(item);
@@ -1380,6 +1401,12 @@ void actThrown(Entity* my)
 						{
 							doSkillIncrease = false; // no skill for killing/hurting other turrets.
 						}
+					}
+					else if ( hit.entity->behavior == &actMonster
+						&& (hit.entity->monsterAllyGetPlayerLeader() || (hitstats && achievementObserver.checkUidIsFromPlayer(hitstats->leader_uid) >= 0))
+						&& parent && parent->behavior == &actPlayer )
+					{
+						doSkillIncrease = false; // no level up on allies
 					}
 					if ( hit.entity->behavior == &actPlayer && parent && parent->behavior == &actPlayer )
 					{
@@ -1864,6 +1891,16 @@ void actThrown(Entity* my)
 				{
 					//Hack to make monsters stop catching your shurikens and chakrams.
 					entity->parent = my->parent;
+					if ( parent )
+					{
+						if ( Stat* parentStats = parent->getStats() )
+						{
+							if ( parentStats->getEffectActive(EFF_RETURN_ITEM) )
+							{
+								entity->itemReturnUID = parent->getUID();
+							}
+						}
+					}
 				}
 			}
 			free(item);

@@ -105,6 +105,16 @@ static const int EFF_SEEK_CREATURE = 80;
 static const int EFF_TABOO = 81;
 static const int EFF_COURAGE = 82;
 static const int EFF_COWARDICE = 83;
+static const int EFF_SPORES = 84;
+static const int EFF_ABUNDANCE = 85;
+static const int EFF_GREATER_ABUNDANCE = 86;
+static const int EFF_PRESERVE = 87;
+static const int EFF_MIST_FORM = 88;
+static const int EFF_FORCE_SHIELD = 89;
+static const int EFF_LIGHTEN_LOAD = 90;
+static const int EFF_ATTRACT_ITEMS = 91;
+static const int EFF_RETURN_ITEM = 92;
+static const int EFF_DEMESNE_DOOR = 93;
 static const int NUMEFFECTS = 96;
 
 // stats

@@ -3029,7 +3029,10 @@ void FollowerRadialMenu::drawFollowerMenu()
 								break;
 						}
 					}
-					else if ( followerToCommand && followerToCommand->monsterAllySummonRank != 0 )
+					else if ( followerToCommand 
+						&& (followerToCommand->monsterAllySummonRank != 0 
+							|| followerStats->type == MONSTER_ADORCISED_WEAPON
+							|| followerStats->type == FLAME_ELEMENTAL) )
 					{
 						getSizeOfText(ttf12, "Relinquish ", &width, nullptr);
 						(*cvar_showoldwheel) ? ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, Language::get(3196)) : SDL_Rect{};
@@ -4270,6 +4273,7 @@ bool FollowerRadialMenu::allowedInteractEntity(Entity& selectedEntity, bool upda
 					strcat(interactText, Language::get(4310)); // "ladder"
 					break;
 				case 2:
+				case 3:
 					strcat(interactText, Language::get(4311)); // "portal"
 					break;
 				default:
@@ -4354,6 +4358,7 @@ int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monste
 		case REVENANT_SKULL:
 		case MINIMIMIC:
 		case MONSTER_ADORCISED_WEAPON:
+		case FLAME_ELEMENTAL:
 			creatureTier = 0;
 			break;
 		case GOBLIN:
@@ -4643,7 +4648,9 @@ int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monste
 			break;
 
 		case ALLY_CMD_CLASS_TOGGLE:
-			if ( follower && follower->monsterAllySummonRank != 0 )
+			if ( follower && (follower->monsterAllySummonRank != 0 
+				|| monsterType == MONSTER_ADORCISED_WEAPON
+				|| monsterType == FLAME_ELEMENTAL) )
 			{
 				return 0;
 			}
@@ -5177,7 +5184,6 @@ bool GenericGUIMenu::isItemAlterable(const Item* item)
 			return true;
 		}
 	}
-
 	return false;
 }
 
@@ -6335,6 +6341,10 @@ bool GenericGUIMenu::shouldDisplayItemInGUI(Item* item)
 		{
 			return isItemRepairable(item, itemEffectItemType);
 		}
+		else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_RESTORE )
+		{
+			return isItemRepairable(item, SCROLL_REPAIR);
+		}
 		else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_SCROLL_REMOVECURSE 
 			|| itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_SPELL_REMOVECURSE )
 		{
@@ -6991,6 +7001,15 @@ void GenericGUIMenu::repairItem(Item* item)
 		return;
 	}
 
+	if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_RESTORE )
+	{
+		if ( !itemfxGUI.consumeResourcesForTransmute() )
+		{
+			closeGUI();
+			return;
+		}
+	}
+
 	bool isEquipped = itemIsEquipped(item, gui_player);
 
 	if ( itemEffectItemType == SCROLL_CHARGING )
@@ -7038,7 +7057,11 @@ void GenericGUIMenu::repairItem(Item* item)
 		}
 		else
 		{
-			if ( (item->type >= ARTIFACT_SWORD && item->type <= ARTIFACT_GLOVES) || item->type == BOOMERANG )
+			if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_RESTORE )
+			{
+				item->status = static_cast<Status>(std::min(item->status + 1, static_cast<int>(EXCELLENT)));
+			}
+			else if ( (item->type >= ARTIFACT_SWORD && item->type <= ARTIFACT_GLOVES) || item->type == BOOMERANG )
 			{
 				item->status = static_cast<Status>(std::min(item->status + 1, static_cast<int>(EXCELLENT)));
 			}
@@ -7361,6 +7384,10 @@ void GenericGUIMenu::openGUI(int type, Item* effectItem, int effectBeatitude, in
 		{
 			itemfxGUI.currentMode = ItemEffectGUI_t::ITEMFX_MODE_ALTER_ARROW;
 		}
+		else if ( usingSpellID == SPELL_RESTORE )
+		{
+			itemfxGUI.currentMode = ItemEffectGUI_t::ITEMFX_MODE_RESTORE;
+		}
 		else if ( usingSpellID == SPELL_PUNCTURE_VOID )
 		{
 			itemfxGUI.currentMode = ItemEffectGUI_t::ITEMFX_MODE_PUNCTURE_VOID;
@@ -7662,6 +7689,11 @@ bool GenericGUIMenu::executeOnItemClick(Item* item)
 				messagePlayer(gui_player, MESSAGE_INVENTORY, Language::get(848)); // as you read the scroll it disappears...
 				consumeItem(itemEffectScrollItem, gui_player);
 			}
+			repairItem(item);
+			return true;
+		}
+		else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_RESTORE )
+		{
 			repairItem(item);
 			return true;
 		}
@@ -10903,7 +10935,10 @@ bool GenericGUIMenu::tinkeringKitDegradeOnUse(int player)
 		}
 
 		bool isEquipped = itemIsEquipped(toDegrade, gui_player);
-
+		if ( isEquipped && players[player]->entity && players[player]->entity->spellEffectPreserveItem(toDegrade) )
+		{
+			return false;
+		}
 		toDegrade->status = std::max(BROKEN, static_cast<Status>(toDegrade->status - 1));
 		if ( toDegrade->status > BROKEN )
 		{
@@ -21697,7 +21732,15 @@ void GenericGUIMenu::ItemEffectGUI_t::getItemEffectCost(Item* itemUsedWith, int&
 		return;
 	}
 
-	if ( parentGUI.isItemAlterable(itemUsedWith) )
+	if ( currentMode == ITEMFX_MODE_RESTORE )
+	{
+		if ( parentGUI.isItemRepairable(itemUsedWith, SCROLL_REPAIR) )
+		{
+			goldCost = items[itemUsedWith->type].value;
+			manaCost = items[itemUsedWith->type].value / 4;
+		}
+	}
+	else if ( parentGUI.isItemAlterable(itemUsedWith) )
 	{
 		if ( currentMode == ITEMFX_MODE_ALTER_INSTRUMENT )
 		{
@@ -22045,7 +22088,8 @@ GenericGUIMenu::ItemEffectGUI_t::ItemEffectActions_t GenericGUIMenu::ItemEffectG
 				}
 			}
 			}
-		else if ( currentMode == ITEMFX_MODE_SCROLL_REPAIR )
+		else if ( currentMode == ITEMFX_MODE_SCROLL_REPAIR
+			|| currentMode == ITEMFX_MODE_RESTORE )
 		{
 			if ( itemCategory(item) == SPELL_CAT )
 			{
@@ -22057,65 +22101,37 @@ GenericGUIMenu::ItemEffectGUI_t::ItemEffectActions_t GenericGUIMenu::ItemEffectG
 			}
 			else 
 			{
-				switch ( itemCategory(item) )
+				if ( parentGUI.isItemRepairable(item, SCROLL_REPAIR) )
 				{
-					case WEAPON:
-						result = ITEMFX_ACTION_OK;
-						break;
-					case ARMOR:
-						result = ITEMFX_ACTION_OK;
-						break;
-					case MAGICSTAFF:
-						result = ITEMFX_ACTION_INVALID_ITEM;
-						break;
-					case THROWN:
-						if ( item->type == BOOMERANG )
+					result = ITEMFX_ACTION_OK;
+				}
+				else
+				{
+					result = ITEMFX_ACTION_INVALID_ITEM;
+				}
+
+				if ( currentMode == ITEMFX_MODE_RESTORE )
+				{
+					if ( result == ITEMFX_ACTION_OK )
+					{
+						int goldCost = 0;
+						int manaCost = 0;
+						getItemEffectCost(item, goldCost, manaCost);
+						if ( !checkResultOnly )
 						{
-							result = ITEMFX_ACTION_OK;
+							costEffectGoldAmount = goldCost;
+							costEffectMPAmount = manaCost;
 						}
-						else
+
+						if ( goldCost > 0 && goldCost > stats[parentGUI.gui_player]->GOLD )
 						{
-							result = ITEMFX_ACTION_INVALID_ITEM;
+							result = ITEMFX_ACTION_CANT_AFFORD_GOLD;
 						}
-						break;
-					case TOOL:
-						switch ( item->type )
+						else if ( manaCost > 0 && manaCost > stats[parentGUI.gui_player]->MP && stats[parentGUI.gui_player]->type != VAMPIRE )
 						{
-							case TOOL_TOWEL:
-							case TOOL_MIRROR:
-							case TOOL_SKELETONKEY:
-							case TOOL_TINOPENER:
-							case TOOL_METAL_SCRAP:
-							case TOOL_MAGIC_SCRAP:
-							case TOOL_TINKERING_KIT:
-							case TOOL_SENTRYBOT:
-							case TOOL_DETONATOR_CHARGE:
-							case TOOL_BOMB:
-							case TOOL_SLEEP_BOMB:
-							case TOOL_FREEZE_BOMB:
-							case TOOL_TELEPORT_BOMB:
-							case TOOL_GYROBOT:
-							case TOOL_SPELLBOT:
-							case TOOL_DECOY:
-							case TOOL_DUMMYBOT:
-							case ENCHANTED_FEATHER:
-								result = ITEMFX_ACTION_INVALID_ITEM;
-								break;
-							default:
-								if ( itemTypeIsQuiver(item->type) )
-								{
-									result = ITEMFX_ACTION_INVALID_ITEM;
-								}
-								else
-								{
-									result = ITEMFX_ACTION_OK;
-								}
-								break;
+							result = ITEMFX_ACTION_CANT_AFFORD_MANA;
 						}
-						break;
-					default:
-						result = ITEMFX_ACTION_INVALID_ITEM;
-						break;
+					}
 				}
 
 				if ( result == ITEMFX_ACTION_OK )
@@ -22267,6 +22283,9 @@ void GenericGUIMenu::ItemEffectGUI_t::openItemEffectMenu(GenericGUIMenu::ItemEff
 	case ITEMFX_MODE_ENHANCE_WEAPON:
 	case ITEMFX_MODE_RESHAPE_WEAPON:
 		modeHasCostEffect = COST_EFFECT_GOLD;
+		break;
+	case ITEMFX_MODE_RESTORE:
+		modeHasCostEffect = COST_EFFECT_MANA_AND_GOLD;
 		break;
 	case ITEMFX_MODE_ALTER_ARROW:
 		modeHasCostEffect = COST_EFFECT_MANA_AND_GOLD;
@@ -23058,6 +23077,7 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 						actionPromptTxt->setText("");
 						break;
 					case ITEMFX_MODE_SCROLL_REPAIR:
+					case ITEMFX_MODE_RESTORE:
 						actionPromptTxt->setText(Language::get(4202));
 						break;
 					case ITEMFX_MODE_SCROLL_CHARGING:
@@ -23286,6 +23306,7 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 				actionPromptUnselectedTxt->setText("");
 				break;
 			case ITEMFX_MODE_SCROLL_REPAIR:
+			case ITEMFX_MODE_RESTORE:
 				actionPromptUnselectedTxt->setText(Language::get(4151));
 				break;
 			case ITEMFX_MODE_SCROLL_CHARGING:
@@ -25723,7 +25744,7 @@ CalloutRadialMenu::CalloutType CalloutRadialMenu::getCalloutTypeForEntity(const 
 	}
 	else if ( parent->behavior == &actTeleporter )
 	{
-		if ( parent->teleporterType == 2 ) // portal
+		if ( parent->teleporterType == 2 || parent->teleporterType == 3 ) // portal
 		{
 			type = CALLOUT_TYPE_TELEPORTER_PORTAL;
 		}
@@ -27979,6 +28000,7 @@ bool CalloutRadialMenu::allowedInteractEntity(Entity& selectedEntity, bool updat
 				strcat(interactText, Language::get(4310)); // "ladder"
 				break;
 			case 2:
+			case 3:
 				strcat(interactText, Language::get(4311)); // "portal"
 				break;
 			default:

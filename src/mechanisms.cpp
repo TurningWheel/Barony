@@ -2138,24 +2138,133 @@ void actWind(Entity* my)
 
 static ConsoleVariable<float> cvar_map_tile_wind("/map_tile_wind", 1.0);
 
+bool entityInsideWind(Entity* entity1, Entity* wind)
+{
+	if ( !entity1 || !wind ) { return false; }
+	real_t startx = wind->x;
+	real_t starty = wind->y;
+	int numTiles = wind->actWindTileBonusLength;
+	bool result = false;
+	while ( numTiles >= 0 )
+	{
+		int map_x = wind->x / 16;
+		int map_y = wind->y / 16;
+		if ( map_x > 0 && map_x < map.width - 1 && map_y > 0 && map_y < map.height - 1 )
+		{
+			if ( map.tiles[OBSTACLELAYER + map_y * MAPLAYERS + map_x * MAPLAYERS * map.height] )
+			{
+				break; // no blow through walls
+			}
+			if ( entityInsideEntity(entity1, wind) )
+			{
+				result = true;
+				break;
+			}
+		}
+		--numTiles;
+		wind->x += 16.0 * cos(wind->yaw);
+		wind->y += 16.0 * sin(wind->yaw);
+	}
+
+	wind->x = startx;
+	wind->y = starty;
+	return result;
+}
+
 void Entity::actWind()
 {
-	std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(this, 2);
-	for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
+	if ( actWindLifetime > 0 )
 	{
-		list_t* currentList = *it;
-		for ( node_t* node = currentList->first; node != nullptr; node = node->next )
+		--actWindLifetime;
+		if ( actWindLifetime <= 0 )
 		{
-			Entity* entity = (Entity*)node->element;
-			if ( entity->behavior == &actPlayer && entityInsideEntity(this, entity) )
+			list_RemoveNode(this->mynode);
+			return;
+		}
+	}
+
+	if ( multiplayer == CLIENT )
+	{
+		Entity* entity = players[clientnum]->entity;
+		if ( entity )
+		{
+			if ( windEffectsEntity(entity) && entityInsideWind(entity, this) )
 			{
+				real_t dirx = entity->creatureWindVelocity * cos(entity->creatureWindDir);
+				real_t diry = entity->creatureWindVelocity * sin(entity->creatureWindDir);
 				entity->creatureWindVelocity = *cvar_map_tile_wind;
-				real_t dirx = cos(entity->creatureWindDir);
-				real_t diry = sin(entity->creatureWindDir);
 				dirx += cos(this->yaw);
 				diry += sin(this->yaw);
 				entity->creatureWindDir = atan2(diry, dirx);
 			}
+		}
+	}
+	else
+	{
+		int map_x = static_cast<int>(x / 16);
+		int map_y = static_cast<int>(y / 16);
+		std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadius(map_x, map_y, actWindTileBonusLength + 2);
+		for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
+		{
+			list_t* currentList = *it;
+			for ( node_t* node = currentList->first; node != nullptr; node = node->next )
+			{
+				Entity* entity = (Entity*)node->element;
+				if ( windEffectsEntity(entity) && entityInsideWind(entity, this) )
+				{
+					if ( entity->behavior != &actPlayer && entity->behavior != &actMonster )
+					{
+						auto hitProps = getParticleEmitterHitProps(getUID(), entity);
+						if ( hitProps->hits > 0 )
+						{
+							continue;
+						}
+						hitProps->hits++;
+						hitProps->tick = ::ticks;
+					}
+					real_t dirx = entity->creatureWindVelocity * cos(entity->creatureWindDir);
+					real_t diry = entity->creatureWindVelocity * sin(entity->creatureWindDir);
+					entity->creatureWindVelocity = *cvar_map_tile_wind;
+					dirx += cos(this->yaw);
+					diry += sin(this->yaw);
+					entity->creatureWindDir = atan2(diry, dirx);
+				}
+			}
+		}
+	}
+
+	if ( actWindParticleEffect == 1 )
+	{
+		real_t eff_x = static_cast<int>(x / 16) * 16.0 + 8.0;
+		real_t eff_y = static_cast<int>(y / 16) * 16.0 + 8.0;
+
+		if ( ticks % 10 == 0 )
+		{
+			Entity* fx = newEntity(982, 1, map.entities, nullptr);
+			fx->x = eff_x - 8.0 * cos(yaw) + (-4.0 + local_rng.rand() % 9) * cos(yaw + PI / 2);
+			fx->y = eff_y - 8.0 * sin(yaw) + (-4.0 + local_rng.rand() % 9) * sin(yaw + PI / 2);
+			fx->z = 4.0 - local_rng.rand() % 9;
+			fx->vel_x = 1.5 * cos(yaw);
+			fx->vel_y = 1.5 * sin(yaw);
+			fx->scalex = 0.5;
+			fx->scaley = fx->scalex;
+			fx->scalez = fx->scalex;
+			fx->yaw = yaw;
+			fx->parent = getUID();
+			fx->behavior = &actMagiclightMoving;
+			fx->skill[0] = 20;
+			fx->skill[3] = 1;
+			fx->flags[NOUPDATE] = true;
+			fx->flags[PASSABLE] = true;
+			fx->flags[UNCLICKABLE] = true;
+			fx->flags[NOCLIP_WALLS] = true;
+			fx->flags[INVISIBLE] = true;
+			fx->flags[INVISIBLE_DITHER] = true;
+			if ( multiplayer != CLIENT )
+			{
+				entity_uids--;
+			}
+			fx->setUID(-3);
 		}
 	}
 }

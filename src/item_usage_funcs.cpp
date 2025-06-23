@@ -28,6 +28,73 @@
 #include "mod_tools.hpp"
 #include "scrolls.hpp"
 
+bool potionUseAbundanceEffect(Item* item, Entity* entity, Entity* usedBy)
+{
+	bool result = false;
+	if ( item && itemCategory(item) == POTION )
+	{
+		if ( entity == usedBy && entity->behavior == &actPlayer )
+		{
+			int player = entity->skill[2];
+			if ( players[player]->isLocalPlayer() )
+			{
+				if ( stats[player]->getEffectActive(EFF_GREATER_ABUNDANCE) )
+				{
+					if ( !itemIsEquipped(item, player) )
+					{
+						if ( local_rng.rand() % 2 == 0 )
+						{
+							item->count++;
+							messagePlayerColor(player, MESSAGE_INTERACTION, makeColorRGB(0, 255, 0), Language::get(6652), item->getName());
+							result = true;
+						}
+					}
+				}
+			}
+		}
+	}
+	return result;
+}
+
+bool foodUseAbundanceEffect(Item* item, int player)
+{
+	bool result = false;
+	if ( player >= 0 )
+	{
+		if ( players[player]->isLocalPlayer() )
+		{
+			bool effect = false;
+			if ( stats[player]->getEffectActive(EFF_GREATER_ABUNDANCE) )
+			{
+				if ( !itemIsEquipped(item, player) )
+				{
+					if ( local_rng.rand() % 2 == 0 )
+					{
+						item->count++;
+						effect = true;
+						messagePlayerColor(player, MESSAGE_INTERACTION, makeColorRGB(0, 255, 0), Language::get(6652), item->getName());
+						result = true;
+					}
+				}
+			}
+			if ( !effect && stats[player]->getEffectActive(EFF_ABUNDANCE) )
+			{
+				if ( !itemIsEquipped(item, player) )
+				{
+					if ( local_rng.rand() % 2 == 0 )
+					{
+						item->count++;
+						effect = true;
+						messagePlayerColor(player, MESSAGE_INTERACTION, makeColorRGB(0, 255, 0), Language::get(6653), item->getName());
+						result = true;
+					}
+				}
+			}
+		}
+	}
+	return result;
+}
+
 bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 {
 	if ( !entity )
@@ -175,6 +242,7 @@ bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 		}
 		if ( player >= 0 && !players[player]->isLocalPlayer() )
 		{
+			potionUseAbundanceEffect(item, entity, usedBy);
 			consumeItem(item, player);
 			return true;
 		}
@@ -352,6 +420,7 @@ bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 				sendPacketSafe(net_sock, -1, net_packet, 0);
 				//messagePlayer(player, "sent server: %d, %d, %d", net_packet->data[4], net_packet->data[5], net_packet->data[6]);
 			}
+			potionUseAbundanceEffect(item, entity, usedBy);
 			consumeItem(item, player);
 			return true;
 		}
@@ -368,6 +437,7 @@ bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 		}
 		if ( items == 0 )
 		{
+			potionUseAbundanceEffect(item, entity, usedBy);
 			consumeItem(item, player);
 			return true;
 		}
@@ -399,6 +469,7 @@ bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 			}
 		}
 	}
+	potionUseAbundanceEffect(item, entity, usedBy);
 	consumeItem(item, player);
 	return true;
 }
@@ -455,8 +526,10 @@ bool item_PotionBooze(Item*& item, Entity* entity, Entity* usedBy, bool shouldCo
 		}
 		return false;
 	}
+
 	if ( multiplayer == CLIENT )
 	{
+		potionUseAbundanceEffect(item, entity, usedBy);
 		consumeItem(item, player);
 		return true;
 	}
@@ -548,6 +621,7 @@ bool item_PotionBooze(Item*& item, Entity* entity, Entity* usedBy, bool shouldCo
 	spawnMagicEffectParticles(entity->x, entity->y, entity->z, 169);
 	if ( shouldConsumeItem )
 	{
+		potionUseAbundanceEffect(item, entity, usedBy);
 		consumeItem(item, player);
 		return true;
 	}
@@ -608,6 +682,7 @@ bool item_PotionJuice(Item*& item, Entity* entity, Entity* usedBy)
 	}
 	if ( multiplayer == CLIENT )
 	{
+		potionUseAbundanceEffect(item, entity, usedBy);
 		consumeItem(item, player);
 		return true;
 	}
@@ -735,6 +810,7 @@ bool item_PotionJuice(Item*& item, Entity* entity, Entity* usedBy)
 	playSoundEntity(entity, 52, 64);
 	playSoundEntity(entity, 168, 128);
 	spawnMagicEffectParticles(entity->x, entity->y, entity->z, 169);
+	potionUseAbundanceEffect(item, entity, usedBy);
 	consumeItem(item, player);
 	return true;
 }
@@ -798,12 +874,13 @@ bool item_PotionSickness(Item*& item, Entity* entity, Entity* usedBy)
 		}
 		return false;
 	}
-	if ( multiplayer == CLIENT || player == 0 )
+	if ( multiplayer == CLIENT || (player >= 0 && players[player]->isLocalPlayer()) )
 	{
 		camera_shakex += .1;
 		camera_shakey += 10;
 		if ( multiplayer == CLIENT )
 		{
+			potionUseAbundanceEffect(item, entity, usedBy);
 			consumeItem(item, player);
 			return true;
 		}
@@ -850,6 +927,7 @@ bool item_PotionSickness(Item*& item, Entity* entity, Entity* usedBy)
 
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
+	potionUseAbundanceEffect(item, entity, usedBy);
 	consumeItem(item, player);
 	return true;
 }
@@ -908,6 +986,7 @@ bool item_PotionGrease(Item*& item, Entity* entity, Entity* usedBy)
 	}
 	if ( multiplayer == CLIENT )
 	{
+		potionUseAbundanceEffect(item, entity, usedBy);
 		consumeItem(item, player);
 		return true;
 	}
@@ -941,6 +1020,7 @@ bool item_PotionGrease(Item*& item, Entity* entity, Entity* usedBy)
 
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
+	potionUseAbundanceEffect(item, entity, usedBy);
 	consumeItem(item, player);
 	return true;
 }
@@ -999,6 +1079,7 @@ bool item_PotionConfusion(Item*& item, Entity* entity, Entity* usedBy)
 	}
 	if ( multiplayer == CLIENT )
 	{
+		potionUseAbundanceEffect(item, entity, usedBy);
 		consumeItem(item, player);
 		return true;
 	}
@@ -1048,6 +1129,7 @@ bool item_PotionConfusion(Item*& item, Entity* entity, Entity* usedBy)
 
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
+	potionUseAbundanceEffect(item, entity, usedBy);
 	consumeItem(item, player);
 	return true;
 }
@@ -1116,6 +1198,7 @@ bool item_PotionCureAilment(Item*& item, Entity* entity, Entity* usedBy)
 	}
 	if ( multiplayer == CLIENT )
 	{
+		potionUseAbundanceEffect(item, entity, usedBy);
 		consumeItem(item, player);
 		return true;
 	}
@@ -1178,6 +1261,7 @@ bool item_PotionCureAilment(Item*& item, Entity* entity, Entity* usedBy)
 
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
+	potionUseAbundanceEffect(item, entity, usedBy);
 	consumeItem(item, player);
 	return true;
 }
@@ -1236,6 +1320,7 @@ bool item_PotionBlindness(Item*& item, Entity* entity, Entity* usedBy)
 	}
 	if ( multiplayer == CLIENT )
 	{
+		potionUseAbundanceEffect(item, entity, usedBy);
 		consumeItem(item, player);
 		return true;
 	}
@@ -1257,6 +1342,7 @@ bool item_PotionBlindness(Item*& item, Entity* entity, Entity* usedBy)
 
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
+	potionUseAbundanceEffect(item, entity, usedBy);
 	consumeItem(item, player);
 	return true;
 }
@@ -1313,8 +1399,10 @@ bool item_PotionInvisibility(Item*& item, Entity* entity, Entity* usedBy)
 		}
 		return false;
 	}
+
 	if ( multiplayer == CLIENT )
 	{
+		potionUseAbundanceEffect(item, entity, usedBy);
 		consumeItem(item, player);
 		return true;
 	}
@@ -1348,6 +1436,7 @@ bool item_PotionInvisibility(Item*& item, Entity* entity, Entity* usedBy)
 
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
+	potionUseAbundanceEffect(item, entity, usedBy);
 	consumeItem(item, player);
 	return true;
 }
@@ -1406,6 +1495,7 @@ bool item_PotionLevitation(Item*& item, Entity* entity, Entity* usedBy)
 	}
 	if ( multiplayer == CLIENT )
 	{
+		potionUseAbundanceEffect(item, entity, usedBy);
 		consumeItem(item, player);
 		return true;
 	}
@@ -1428,6 +1518,7 @@ bool item_PotionLevitation(Item*& item, Entity* entity, Entity* usedBy)
 
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
+	potionUseAbundanceEffect(item, entity, usedBy);
 	consumeItem(item, player);
 	return true;
 }
@@ -1486,6 +1577,7 @@ bool item_PotionSpeed(Item*& item, Entity* entity, Entity* usedBy)
 	}
 	if ( multiplayer == CLIENT )
 	{
+		potionUseAbundanceEffect(item, entity, usedBy);
 		consumeItem(item, player);
 		return true;
 	}
@@ -1527,6 +1619,7 @@ bool item_PotionSpeed(Item*& item, Entity* entity, Entity* usedBy)
 
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
+	potionUseAbundanceEffect(item, entity, usedBy);
 	consumeItem(item, player);
 	return true;
 }
@@ -1585,6 +1678,7 @@ bool item_PotionStrength(Item*& item, Entity* entity, Entity* usedBy)
 	}
 	if ( multiplayer == CLIENT )
 	{
+		potionUseAbundanceEffect(item, entity, usedBy);
 		consumeItem(item, player);
 		return true;
 	}
@@ -1614,6 +1708,7 @@ bool item_PotionStrength(Item*& item, Entity* entity, Entity* usedBy)
 
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
+	potionUseAbundanceEffect(item, entity, usedBy);
 	consumeItem(item, player);
 	return true;
 }
@@ -1677,12 +1772,13 @@ bool item_PotionAcid(Item*& item, Entity* entity, Entity* usedBy)
 		}
 		return false;
 	}
-	if ( multiplayer == CLIENT || player == 0 )
+	if ( multiplayer == CLIENT || (player >= 0 && players[player]->isLocalPlayer()) )
 	{
 		camera_shakex += .1;
 		camera_shakey += 10;
 		if ( multiplayer == CLIENT )
 		{
+			potionUseAbundanceEffect(item, entity, usedBy);
 			consumeItem(item, player);
 			return true;
 		}
@@ -1717,6 +1813,7 @@ bool item_PotionAcid(Item*& item, Entity* entity, Entity* usedBy)
 
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
+	potionUseAbundanceEffect(item, entity, usedBy);
 	consumeItem(item, player);
 	return true;
 }
@@ -1789,6 +1886,7 @@ bool item_PotionUnstableStorm(Item*& item, Entity* entity, Entity* usedBy, Entit
 		}
 		if ( multiplayer == CLIENT )
 		{
+			potionUseAbundanceEffect(item, entity, usedBy);
 			consumeItem(item, player);
 			return true;
 		}
@@ -1882,6 +1980,7 @@ bool item_PotionUnstableStorm(Item*& item, Entity* entity, Entity* usedBy, Entit
 
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
+	potionUseAbundanceEffect(item, entity, usedBy);
 	consumeItem(item, player);
 	return true;
 }
@@ -1940,6 +2039,7 @@ bool item_PotionParalysis(Item*& item, Entity* entity, Entity* usedBy)
 	}
 	if ( multiplayer == CLIENT )
 	{
+		potionUseAbundanceEffect(item, entity, usedBy);
 		consumeItem(item, player);
 		return true;
 	}
@@ -1965,6 +2065,7 @@ bool item_PotionParalysis(Item*& item, Entity* entity, Entity* usedBy)
 
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
+	potionUseAbundanceEffect(item, entity, usedBy);
 	consumeItem(item, player);
 	return true;
 }
@@ -2023,6 +2124,7 @@ bool item_PotionHealing(Item*& item, Entity* entity, Entity* usedBy, bool should
 	}
 	if ( multiplayer == CLIENT )
 	{
+		potionUseAbundanceEffect(item, entity, usedBy);
 		consumeItem(item, player);
 		return true;
 	}
@@ -2050,6 +2152,7 @@ bool item_PotionHealing(Item*& item, Entity* entity, Entity* usedBy, bool should
 		serverUpdateEffects(player);
 		if ( shouldConsumeItem )
 		{
+			potionUseAbundanceEffect(item, entity, usedBy);
 			consumeItem(item, player);
 			return true;
 		}
@@ -2111,6 +2214,7 @@ bool item_PotionHealing(Item*& item, Entity* entity, Entity* usedBy, bool should
 	serverUpdateEffects(player);
 	if ( shouldConsumeItem )
 	{
+		potionUseAbundanceEffect(item, entity, usedBy);
 		consumeItem(item, player);
 		return true;
 	}
@@ -2171,6 +2275,7 @@ bool item_PotionExtraHealing(Item*& item, Entity* entity, Entity* usedBy, bool s
 	}
 	if ( multiplayer == CLIENT )
 	{
+		potionUseAbundanceEffect(item, entity, usedBy);
 		consumeItem(item, player);
 		return true;
 	}
@@ -2198,6 +2303,7 @@ bool item_PotionExtraHealing(Item*& item, Entity* entity, Entity* usedBy, bool s
 		serverUpdateEffects(player);
 		if ( shouldConsumeItem )
 		{
+			potionUseAbundanceEffect(item, entity, usedBy);
 			consumeItem(item, player);
 			return true;
 		}
@@ -2258,6 +2364,7 @@ bool item_PotionExtraHealing(Item*& item, Entity* entity, Entity* usedBy, bool s
 	serverUpdateEffects(player);
 	if ( shouldConsumeItem )
 	{
+		potionUseAbundanceEffect(item, entity, usedBy);
 		consumeItem(item, player);
 		return true;
 	}
@@ -2322,6 +2429,7 @@ bool item_PotionRestoreMagic(Item*& item, Entity* entity, Entity* usedBy)
 	}
 	if ( multiplayer == CLIENT )
 	{
+		potionUseAbundanceEffect(item, entity, usedBy);
 		consumeItem(item, player);
 		return true;
 	}
@@ -2339,6 +2447,7 @@ bool item_PotionRestoreMagic(Item*& item, Entity* entity, Entity* usedBy)
 		{
 			messagePlayer(player, MESSAGE_HINT, Language::get(772));
 		}
+		potionUseAbundanceEffect(item, entity, usedBy);
 		consumeItem(item, player);
 		return true;
 	}
@@ -2385,6 +2494,7 @@ bool item_PotionRestoreMagic(Item*& item, Entity* entity, Entity* usedBy)
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
 
+	potionUseAbundanceEffect(item, entity, usedBy);
 	consumeItem(item, player);
 	return true;
 }
@@ -2443,6 +2553,7 @@ Entity* item_PotionPolymorph(Item*& item, Entity* entity, Entity* usedBy)
 	}
 	if ( multiplayer == CLIENT )
 	{
+		potionUseAbundanceEffect(item, entity, usedBy);
 		consumeItem(item, player);
 		return nullptr;
 	}
@@ -2463,6 +2574,7 @@ Entity* item_PotionPolymorph(Item*& item, Entity* entity, Entity* usedBy)
 		transformedEntity = spellEffectPolymorph(entity, usedBy, false);
 	}
 
+	potionUseAbundanceEffect(item, entity, usedBy);
 	consumeItem(item, player);
 
 	return transformedEntity;
@@ -3565,7 +3677,8 @@ void item_ScrollRepair(Item* item, int player)
 		{
 			messagePlayer(player, MESSAGE_HINT, Language::get(870)); // you feel a tingling sensation
 		}
-		else if ( armor != nullptr )
+		else if ( armor != nullptr 
+			&& !players[player]->entity->spellEffectPreserveItem(armor) )
 		{
 			messagePlayer(player, MESSAGE_HINT, Language::get(871), armor->getName());
 			if ( item->type == SCROLL_CHARGING )
@@ -3746,7 +3859,8 @@ void item_ScrollDestroyArmor(Item* item, int player)
 	{
 		messagePlayer(player, MESSAGE_HINT, Language::get(873));
 	}
-	else if ( armor != nullptr )
+	else if ( armor != nullptr 
+		&& !players[player]->entity->spellEffectPreserveItem(armor) )
 	{
 		if ( item->beatitude < 0 )
 		{
@@ -3784,12 +3898,12 @@ void item_ScrollDestroyArmor(Item* item, int player)
 				if ( armor->type == TOOL_CRYSTALSHARD )
 				{
 					playSoundPlayer(player, 162, 64);
-					messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(2351), armor->getName());
+					//messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(2351), armor->getName());
 				}
 				else
 				{
 					playSoundPlayer(player, 76, 64);
-					messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(682), armor->getName());
+					//messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(682), armor->getName());
 				}
 			}
 		}
@@ -4255,7 +4369,8 @@ void item_ToolMirror(Item*& item, int player)
 		}
 		else if ( beatitude > 0 )
 		{
-			if ( local_rng.rand() % 4 == 0 )
+			if ( local_rng.rand() % 4 == 0 
+				&& !players[player]->entity->spellEffectPreserveItem(item) )
 			{
 				if ( item->status > DECREPIT )
 				{
@@ -4548,6 +4663,7 @@ void item_Food(Item*& item, int player)
 
 	if ( multiplayer == CLIENT )
 	{
+		foodUseAbundanceEffect(item, player);
 		consumeItem(item, player);
 		return;
 	}
@@ -4622,6 +4738,7 @@ void item_Food(Item*& item, int player)
 				}
 			}
 		}
+		foodUseAbundanceEffect(item, player);
 		consumeItem(item, player);
 		return;
 	}
@@ -4654,6 +4771,7 @@ void item_Food(Item*& item, int player)
 				players[player]->entity->char_gonnavomit = 40 + local_rng.rand() % 10;
 			}
 		}
+		foodUseAbundanceEffect(item, player);
 		consumeItem(item, player);
 		return;
 	}
@@ -4823,6 +4941,7 @@ void item_Food(Item*& item, int player)
 	{
 		updateHungerMessages(players[player]->entity, stats[player], item);
 	}
+	foodUseAbundanceEffect(item, player);
 	consumeItem(item, player);
 }
 
@@ -4903,6 +5022,7 @@ void item_FoodTin(Item*& item, int player)
 
 	if ( multiplayer == CLIENT )
 	{
+		foodUseAbundanceEffect(item, player);
 		consumeItem(item, player);
 		return;
 	}
@@ -4999,6 +5119,7 @@ void item_FoodTin(Item*& item, int player)
 				players[player]->entity->char_gonnavomit = 40 + local_rng.rand() % 10;
 			}
 		}
+		foodUseAbundanceEffect(item, player);
 		consumeItem(item, player);
 		return;
 	}
@@ -5129,7 +5250,7 @@ void item_FoodTin(Item*& item, int player)
 	{
 		messagePlayer(player, MESSAGE_WORLD, Language::get(911));
 	}
-
+	foodUseAbundanceEffect(item, player);
 	consumeItem(item, player);
 }
 
@@ -5606,6 +5727,7 @@ void item_FoodAutomaton(Item*& item, int player)
 
 	if ( multiplayer == CLIENT )
 	{
+		foodUseAbundanceEffect(item, player);
 		consumeItem(item, player);
 		return;
 	}
@@ -5637,6 +5759,7 @@ void item_FoodAutomaton(Item*& item, int player)
 		{
 			messagePlayer(player, MESSAGE_COMBAT | MESSAGE_STATUS, Language::get(910));
 		}
+		foodUseAbundanceEffect(item, player);
 		consumeItem(item, player);
 		return;
 	}
@@ -5669,6 +5792,7 @@ void item_FoodAutomaton(Item*& item, int player)
 			if ( svFlags & SV_FLAG_HUNGER )
 			{
 				messagePlayer(player, MESSAGE_STATUS, Language::get(3697)); // no effect.
+				foodUseAbundanceEffect(item, player);
 				consumeItem(item, player);
 				return;
 			}
@@ -5759,6 +5883,7 @@ void item_FoodAutomaton(Item*& item, int player)
 			if ( stats[player]->HUNGER > 500 )
 			{
 				messagePlayer(player, MESSAGE_STATUS, Language::get(3707)); // fails to add any more heat.
+				foodUseAbundanceEffect(item, player);
 				consumeItem(item, player);
 				return;
 			}
@@ -5776,6 +5901,7 @@ void item_FoodAutomaton(Item*& item, int player)
 			if ( stats[player]->HUNGER > 1100 )
 			{
 				messagePlayer(player, MESSAGE_STATUS, Language::get(3707)); // fails to add any more heat.
+				foodUseAbundanceEffect(item, player);
 				consumeItem(item, player);
 				return;
 			}
@@ -5812,6 +5938,7 @@ void item_FoodAutomaton(Item*& item, int player)
 				playSoundEntity(players[player]->entity, 28, 64);
 				players[player]->entity->modHP(-5);
 				messagePlayer(player, MESSAGE_WORLD, Language::get(908)); // blecch! rotten food!
+				foodUseAbundanceEffect(item, player);
 				consumeItem(item, player);
 				return;
 			}
@@ -5849,6 +5976,7 @@ void item_FoodAutomaton(Item*& item, int player)
 	}
 
 	serverUpdateHunger(player);
+	foodUseAbundanceEffect(item, player);
 	consumeItem(item, player);
 }
 

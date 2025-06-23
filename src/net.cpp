@@ -843,16 +843,9 @@ void serverSpawnMiscParticles(Entity* entity, int particleType, int particleSpri
 		net_packet->data[8] = particleType;
 		SDLNet_Write16(particleSprite, &net_packet->data[9]);
 		SDLNet_Write32(optionalUid, &net_packet->data[11]);
-		net_packet->len = 15;
-		if ( duration > 0 )
-		{
-			SDLNet_Write32(duration, &net_packet->data[15]);
-			net_packet->len += 4;
-		}
-		if ( optionalData > 0 )
-		{
-			net_packet->len += 4;
-		}
+		SDLNet_Write32(duration, &net_packet->data[15]);
+		SDLNet_Write32(optionalData, &net_packet->data[19]);
+		net_packet->len = 23;
 		net_packet->address.host = net_clients[c - 1].host;
 		net_packet->address.port = net_clients[c - 1].port;
 		sendPacketSafe(net_sock, -1, net_packet, c - 1);
@@ -867,7 +860,8 @@ Spawns misc particle effects for all clients at given coordinates.
 
 -------------------------------------------------------------------------------*/
 
-void serverSpawnMiscParticlesAtLocation(Sint16 x, Sint16 y, Sint16 z, int particleType, int particleSprite)
+void serverSpawnMiscParticlesAtLocation(Sint16 x, Sint16 y, Sint16 z, int particleType, 
+	int particleSprite, Uint32 duration, Uint32 optionalData, Uint32 optionalUID)
 {
 	int c;
 	if ( multiplayer != SERVER )
@@ -886,9 +880,12 @@ void serverSpawnMiscParticlesAtLocation(Sint16 x, Sint16 y, Sint16 z, int partic
 		SDLNet_Write16(z, &net_packet->data[8]);
 		net_packet->data[10] = particleType;
 		SDLNet_Write16(particleSprite, &net_packet->data[11]);
+		SDLNet_Write32(duration, &net_packet->data[13]);
+		SDLNet_Write32(optionalData, &net_packet->data[17]);
+		SDLNet_Write32(optionalUID, &net_packet->data[21]);
+		net_packet->len = 25;
 		net_packet->address.host = net_clients[c - 1].host;
 		net_packet->address.port = net_clients[c - 1].port;
-		net_packet->len = 14;
 		sendPacketSafe(net_sock, -1, net_packet, c - 1);
 	}
 }
@@ -1730,7 +1727,7 @@ Entity* receiveEntity(Entity* entity)
     // because voxel-animated creatures (like rats and slimes)
     // need to move vertically for their animation.
 	const auto monsterType = entity->getMonsterTypeFromSprite();
-	const bool excludeForAnimation =
+	bool excludeForAnimation =
 	    !newentity &&
 	    entity->behavior == &actMonster &&
 		(monsterType == SLIME || ((monsterType == RAT || monsterType == SCARAB) &&
@@ -1785,6 +1782,14 @@ Entity* receiveEntity(Entity* entity)
 		}
 	}
 
+	if ( entity->behavior == &actItem && entity->itemFollowUID != 0 )
+	{
+		excludeForAnimation = true;
+	}
+	const bool excludeYaw =
+		entity->behavior == &actMagiclightBall
+		|| (entity->behavior == &actItem && entity->itemFollowUID != 0);
+
 	entity->lastupdate = ticks;
 	entity->lastupdateserver = (Uint32)SDLNet_Read32(&net_packet->data[36]);
 	entity->setUID((int)SDLNet_Read32(&net_packet->data[4])); // remember who I am
@@ -1800,7 +1805,7 @@ Entity* receiveEntity(Entity* entity)
 	    entity->scaley = ((Uint8)net_packet->data[19]) / 128.f;
 	    entity->scalez = ((Uint8)net_packet->data[20]) / 128.f;
 	}
-	if ( newentity || entity->behavior != &actMagiclightBall )
+	if ( newentity || !excludeYaw )
 	{
 		entity->new_yaw = ((Sint16)SDLNet_Read16(&net_packet->data[21])) / 256.0;
 	}
@@ -1998,6 +2003,10 @@ void clientActions(Entity* entity)
 			entity->behavior = &actEmpty;
 			entity->flags[NOUPDATE] = true;
 			break;
+		case 1809:
+			entity->behavior = &actParticleDemesneDoor;
+			entity->flags[NOUPDATE] = true;
+			break;
 		case Player::Ghost_t::GHOST_MODEL_P1:
 		case Player::Ghost_t::GHOST_MODEL_P2:
 		case Player::Ghost_t::GHOST_MODEL_P3:
@@ -2132,6 +2141,13 @@ void clientActions(Entity* entity)
 					else if ( static_cast<Uint8>(c & 0xFF) == 22 )
 					{
 						entity->behavior = &actParticleWave;
+						entity->skill[2] = c;
+						entity->flags[NOUPDATE] = true;
+						particleWaveClientReceive(entity);
+					}
+					else if ( static_cast<Uint8>(c & 0xFF) == 23 )
+					{
+						entity->behavior = &actWind;
 						entity->skill[2] = c;
 						entity->flags[NOUPDATE] = true;
 						particleWaveClientReceive(entity);
@@ -2925,6 +2941,33 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		}
 	}},
 
+	// attract item
+	{ 'ATTI', []() {
+		Uint32 uid = SDLNet_Read32(&net_packet->data[4]);
+		Entity* entity = uidToEntity(uid);
+		if ( entity )
+		{
+			entity->itemNotMoving = 0;
+			entity->itemNotMovingClient = 0;
+			entity->flags[USERFLAG1] = false; // enable collision
+			entity->flags[UPDATENEEDED] = true;
+			entity->flags[NOUPDATE] = false;
+
+			entity->itemFollowUID = ((Uint32)SDLNet_Read32(&net_packet->data[20]));
+
+			entity->x = ((Sint16)SDLNet_Read16(&net_packet->data[8])) / 32.0;
+			entity->y = ((Sint16)SDLNet_Read16(&net_packet->data[10])) / 32.0;
+			entity->z = ((Sint16)SDLNet_Read16(&net_packet->data[12])) / 32.0;
+			entity->new_z = entity->z;
+			entity->itemLevitate = 1.0;
+			entity->itemLevitateStartZ = entity->z;
+
+			entity->vel_x = ((Sint16)SDLNet_Read16(&net_packet->data[14])) / 32.0;
+			entity->vel_y = ((Sint16)SDLNet_Read16(&net_packet->data[16])) / 32.0;
+			entity->vel_z = ((Sint16)SDLNet_Read16(&net_packet->data[18])) / 32.0;
+		}
+	} },
+
 	// spawn an explosion
 	{'EXPL', [](){
 		Sint16 x = (Sint16)SDLNet_Read16(&net_packet->data[4]);
@@ -3250,6 +3293,35 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 				break;
 			case PARTICLE_EFFECT_BOOBY_TRAP:
 				createParticleBoobyTrapExplode(nullptr, particle_x, particle_y);
+				break;
+			case PARTICLE_EFFECT_SPORE_BOMB:
+				for ( int i = 0; i < 16; ++i )
+				{
+					Entity* gib = spawnGibClient(particle_x, particle_y, particle_z, sprite);
+					gib->sprite = sprite;
+					gib->yaw = i * PI / 4 + (-2 + local_rng.rand() % 5) * PI / 64;
+					gib->vel_x = 1.75 * cos(gib->yaw);
+					gib->vel_y = 1.75 * sin(gib->yaw);
+					gib->scalex = 0.5;
+					gib->scaley = 0.5;
+					gib->scalez = 0.5;
+					gib->z = local_rng.uniform(8, particle_z - 4);
+					gib->lightBonus = vec4(0.25, 0.25, 0.25, 0.f);
+				}
+				break;
+			case PARTICLE_EFFECT_WINDGATE:
+			{
+				int duration = static_cast<int>(SDLNet_Read32(&net_packet->data[13]));
+				Uint32 data = SDLNet_Read32(&net_packet->data[17]);
+
+				int wallDir = (data & 0xF);
+				int length = (data >> 4) & 0xF;
+				Uint32 casterUid = SDLNet_Read32(&net_packet->data[21]);
+				createWindMagic(casterUid, particle_x, particle_y, duration, wallDir, length);
+				break;
+			}
+			case PARTICLE_EFFECT_DEMESNE_DOOR:
+				createParticleDemesneDoor(particle_x, particle_y, particle_z / 256.0);
 				break;
 			default:
 				break;
@@ -7472,10 +7544,11 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 			{
 				CastSpellProps_t castSpellProps;
 				castSpellProps.caster_x = (SDLNet_Read16(&net_packet->data[10]) / 256.0);
-				castSpellProps.caster_y = (SDLNet_Read16(&net_packet->data[12]) / 256.0);
-				castSpellProps.target_x = (SDLNet_Read16(&net_packet->data[14]) / 256.0);
-				castSpellProps.target_y = (SDLNet_Read16(&net_packet->data[16]) / 256.0);
-				castSpellProps.targetUID = (SDLNet_Read32(&net_packet->data[18]));
+				castSpellProps.caster_y = (SDLNet_Read16(&net_packet->data[14]) / 256.0);
+				castSpellProps.target_x = (SDLNet_Read16(&net_packet->data[18]) / 256.0);
+				castSpellProps.target_y = (SDLNet_Read16(&net_packet->data[22]) / 256.0);
+				castSpellProps.targetUID = (SDLNet_Read32(&net_packet->data[26]));
+				castSpellProps.wallDir = net_packet->data[30];
 				castSpell(players[player]->entity->getUID(), thespell, false, false, spellbookCast, &castSpellProps);
 			}
 			else

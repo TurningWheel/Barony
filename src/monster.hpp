@@ -66,8 +66,8 @@ enum Monster : int
 	REVENANT_SKULL,
 	MINIMIMIC,
 	MONSTER_ADORCISED_WEAPON,
-	MONSTER_UNUSED_1,
-	MONSTER_UNUSED_2,
+	FLAME_ELEMENTAL,
+	HOLOGRAM,
 	MONSTER_UNUSED_3,
 	MONSTER_UNUSED_4,
 	MONSTER_UNUSED_5,
@@ -338,11 +338,13 @@ static std::vector<Sint32> monsterSprites[NUMMONSTERS] = {
 	{
 		1797
 	},
-	//MONSTER_UNUSED_1
+	//FLAME_ELEMENTAL
 	{
+		1804
 	},
-	//MONSTER_UNUSED_2
+	//HOLOGRAM
 	{
+		1803
 	},
 	//MONSTER_UNUSED_3
 	{
@@ -409,8 +411,8 @@ static char monstertypename[][32] =
 	"revenant_skull",
 	"minimimic",
 	"monster_adorcised_weapon",
-	"monster_unused_1",
-	"monster_unused_2",
+	"flame_elemental",
+	"hologram",
 	"monster_unused_3",
 	"monster_unused_4",
 	"monster_unused_5",
@@ -473,8 +475,8 @@ static char gibtype[NUMMONSTERS] =
 	5,  //REVENANT_SKULL
 	1,  //MINIMIMIC
 	0,  //MONSTER_ADORCISED_WEAPON
-	1,  //MONSTER_UNUSED_1
-	1,  //MONSTER_UNUSED_2
+	0,  //FLAME_ELEMENTAL
+	0,  //HOLOGRAM
 	1,  //MONSTER_UNUSED_3
 	1,  //MONSTER_UNUSED_4
 	1,  //MONSTER_UNUSED_5
@@ -533,8 +535,8 @@ static double damagetables[NUMMONSTERS][7] =
 	{ 0.5, 1.4, 0.8, 1.3, 0.5, 0.8, 1.1 }, // revenant_skull
 	{ 0.5, 0.5, 1.0, 0.5, 0.5, 1.3, 0.5 }, // minimimic
 	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // monster_adorcised_weapon
-	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // monster_unused_1
-	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // monster_unused_2
+	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // flame_elemental
+	{ 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f }, // hologram
 	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // monster_unused_3
 	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // monster_unused_4
 	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // monster_unused_5
@@ -792,6 +794,8 @@ void initMonsterG(Entity* my, Stat* myStats);
 void initRevenantSkull(Entity* my, Stat* myStats);
 void initAdorcisedWeapon(Entity* my, Stat* myStats);
 void initMiniMimic(Entity* my, Stat* myStats);
+void initFlameElemental(Entity* my, Stat* myStats);
+void initHologram(Entity* my, Stat* myStats);
 
 //--act*Limb functions--
 void actHumanLimb(Entity* my);
@@ -834,6 +838,8 @@ void actMonsterGLimb(Entity* my);
 void actRevenantSkullLimb(Entity* my);
 void actMiniMimicLimb(Entity* my);
 void actAdorcisedWeaponLimb(Entity* my);
+void actFlameElementalLimb(Entity* my);
+void actHologramLimb(Entity* my);
 
 //--*Die functions--
 void humanDie(Entity* my);
@@ -878,6 +884,8 @@ void monsterGDie(Entity* my);
 void revenantSkullDie(Entity* my);
 void miniMimicDie(Entity* my);
 void adorcisedWeaponDie(Entity* my);
+void flameElementalDie(Entity* my);
+void hologramDie(Entity* my);
 
 void monsterAnimate(Entity* my, Stat* myStats, double dist);
 //--*MoveBodyparts functions--
@@ -923,6 +931,7 @@ void monsterMMoveBodyparts(Entity* my, Stat* myStats, double dist);
 void monsterSMoveBodyparts(Entity* my, Stat* myStats, double dist);
 void monsterGMoveBodyparts(Entity* my, Stat* myStats, double dist);
 void revenantSkullAnimate(Entity* my, Stat* myStats, double dist);
+void hologramAnimate(Entity* my, Stat* myStats, double dist);
 
 //--misc functions--
 void actMinotaurTrap(Entity* my);

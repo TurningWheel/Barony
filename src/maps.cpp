@@ -7245,7 +7245,7 @@ void assignActions(map_t* map)
 				entity->flags[SPRITE] = true;
 				entity->flags[INVISIBLE] = true;
 				entity->flags[PASSABLE] = true;
-				entity->flags[NOUPDATE] = true;
+				//entity->flags[NOUPDATE] = true;
 				entity->skill[28] = 1; // is a mechanism
 				entity->skill[1] = QUIVER_SILVER + map_rng.rand() % 7; // random arrow type.
 				if ( currentlevel <= 15 )
@@ -7395,6 +7395,7 @@ void assignActions(map_t* map)
 							{
 								childEntity->z = -10.99;
 							}
+							childEntity->parent = entity->getUID();
 							childEntity->behavior = &actBoulderTrapHole;
 							TileEntityList.addEntity(*childEntity);
 							entity->boulderTrapRocksToSpawn |= (1 << c); // add this location to spawn a boulder below the trapdoor model.
@@ -7865,6 +7866,7 @@ void assignActions(map_t* map)
 						{
 							childEntity->z = -10.99;
 						}
+						childEntity->parent = entity->getUID();
 						childEntity->behavior = &actBoulderTrapHole;
 						TileEntityList.addEntity(*childEntity);
 					}
@@ -7906,6 +7908,7 @@ void assignActions(map_t* map)
 						{
 							childEntity->z = -10.99;
 						}
+						childEntity->parent = entity->getUID();
 						childEntity->behavior = &actBoulderTrapHole;
 						TileEntityList.addEntity(*childEntity);
 					}
@@ -7947,6 +7950,7 @@ void assignActions(map_t* map)
 						{
 							childEntity->z = -10.99;
 						}
+						childEntity->parent = entity->getUID();
 						childEntity->behavior = &actBoulderTrapHole;
 						TileEntityList.addEntity(*childEntity);
 					}
@@ -7988,6 +7992,7 @@ void assignActions(map_t* map)
 						{
 							childEntity->z = -10.99;
 						}
+						childEntity->parent = entity->getUID();
 						childEntity->behavior = &actBoulderTrapHole;
 						TileEntityList.addEntity(*childEntity);
 					}
@@ -8425,7 +8430,7 @@ void assignActions(map_t* map)
 				entity->flags[SPRITE] = true;
 				entity->flags[INVISIBLE] = true;
 				entity->flags[PASSABLE] = true;
-				entity->flags[NOUPDATE] = true;
+				//entity->flags[NOUPDATE] = true;
 				entity->skill[28] = 1; // is a mechanism
 				entity->spellTrapRefireRate = entity->spellTrapRefireRate * TICKS_PER_SECOND; // convert seconds to ticks from editor
 				entity->seedEntityRNG(map_server_rng.getU32());
@@ -9617,9 +9622,11 @@ void assignActions(map_t* map)
 				}
 				entity->yaw = dir * PI / 4;
 				entity->skill[0] = 0;
-				entity->sizex = 4;
-				entity->sizey = 4;
+				entity->sizex = 6;
+				entity->sizey = 6;
 				entity->flags[PASSABLE] = true;
+				entity->flags[NOUPDATE] = true;
+				entity->flags[UPDATENEEDED] = false;
 				break;
 			}
 			case 221: // slow tile

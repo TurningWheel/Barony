@@ -83,8 +83,8 @@ bool swornenemies[NUMMONSTERS][NUMMONSTERS] =
 	{ 0, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // REVENANT_SKULL
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MINIMIMIC
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MONSTER_ADORCISED_WEAPON
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MONSTER_UNUSED_1
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MONSTER_UNUSED_2
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // FLAME_ELEMENTAL
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // HOLOGRAM
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MONSTER_UNUSED_3
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MONSTER_UNUSED_4
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MONSTER_UNUSED_5
@@ -147,8 +147,8 @@ bool monsterally[NUMMONSTERS][NUMMONSTERS] =
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // REVENANT_SKULL
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MINIMIMIC
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MONSTER_ADORCISED_WEAPON
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MONSTER_UNUSED_1
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MONSTER_UNUSED_2
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // FLAME_ELEMENTAL
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // HOLOGRAM
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MONSTER_UNUSED_3
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MONSTER_UNUSED_4
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MONSTER_UNUSED_5
@@ -207,9 +207,9 @@ double sightranges[NUMMONSTERS] =
 	256,  // MONSTER_G
 	192,  // REVENANT_SKULL
 	256,  // MINIMIMIC
-	32,  // ADORCISED_WEAPON
-	256, // MONSTER_UNUSED_1
-	256, // MONSTER_UNUSED_2
+	64,  // ADORCISED_WEAPON
+	64, // FLAME_ELEMENTAL
+	256, // HOLOGRAM
 	256, // MONSTER_UNUSED_3
 	256, // MONSTER_UNUSED_4
 	256, // MONSTER_UNUSED_5
@@ -2518,8 +2518,8 @@ void monsterAnimate(Entity* my, Stat* myStats, double dist)
 	case REVENANT_SKULL: revenantSkullAnimate(my, myStats, dist); break;
 	case MINIMIMIC: mimicAnimate(my, myStats, dist); break;
 	case MONSTER_ADORCISED_WEAPON: revenantSkullAnimate(my, myStats, dist); break;
-	case MONSTER_UNUSED_1: break;
-	case MONSTER_UNUSED_2: break;
+	case FLAME_ELEMENTAL: revenantSkullAnimate(my, myStats, dist); break;
+	case HOLOGRAM: hologramAnimate(my, myStats, dist); break;
 	case MONSTER_UNUSED_3: break;
 	case MONSTER_UNUSED_4: break;
 	case MONSTER_UNUSED_5: break;
@@ -2628,8 +2628,8 @@ void actMonster(Entity* my)
 			case REVENANT_SKULL: initRevenantSkull(my, nullptr); break;
 			case MINIMIMIC: initMiniMimic(my, nullptr); break;
 			case MONSTER_ADORCISED_WEAPON: initAdorcisedWeapon(my, nullptr); break;
-			case MONSTER_UNUSED_1: break;
-			case MONSTER_UNUSED_2: break;
+			case FLAME_ELEMENTAL: initFlameElemental(my, nullptr); break;
+			case HOLOGRAM: initHologram(my, nullptr); break;
 			case MONSTER_UNUSED_3: break;
 			case MONSTER_UNUSED_4: break;
 			case MONSTER_UNUSED_5: break;
@@ -2737,8 +2737,8 @@ void actMonster(Entity* my)
 				case MONSTER_G: initMonsterG(my, myStats); break;
 				case REVENANT_SKULL: initRevenantSkull(my, myStats); break;
 				case MONSTER_ADORCISED_WEAPON: initAdorcisedWeapon(my, myStats); break;
-				case MONSTER_UNUSED_1: break;
-				case MONSTER_UNUSED_2: break;
+				case FLAME_ELEMENTAL: initFlameElemental(my, myStats); break;
+				case HOLOGRAM: initHologram(my, myStats); break;
 				case MONSTER_UNUSED_3: break;
 				case MONSTER_UNUSED_4: break;
 				case MONSTER_UNUSED_5: break;
@@ -3715,6 +3715,10 @@ void actMonster(Entity* my)
 		{
 			skipObituary = true;
 		}
+		else if ( myStats->type == HOLOGRAM )
+		{
+			skipObituary = true;
+		}
 
 		if ( playerFollower < MAXPLAYERS && !skipObituary )
 		{
@@ -3943,9 +3947,11 @@ void actMonster(Entity* my)
 			case MONSTER_ADORCISED_WEAPON:
 				adorcisedWeaponDie(my);
 				break;
-			case MONSTER_UNUSED_1:
+			case FLAME_ELEMENTAL:
+				flameElementalDie(my);
 				break;
-			case MONSTER_UNUSED_2:
+			case HOLOGRAM:
+				hologramDie(my);
 				break;
 			case MONSTER_UNUSED_3:
 				break;
@@ -4142,51 +4148,7 @@ void actMonster(Entity* my)
 	}
 
 	// calculate weight
-	Sint32 weight = 0;
-	if ( myStats->helmet != NULL )
-	{
-		weight += myStats->helmet->getWeight();
-	}
-	if ( myStats->breastplate != NULL )
-	{
-		weight += myStats->breastplate->getWeight();
-	}
-	if ( myStats->gloves != NULL )
-	{
-		weight += myStats->gloves->getWeight();
-	}
-	if ( myStats->shoes != NULL )
-	{
-		weight += myStats->shoes->getWeight();
-	}
-	if ( myStats->shield != NULL )
-	{
-		weight += myStats->shield->getWeight();
-	}
-	if ( myStats->weapon != NULL )
-	{
-		weight += myStats->weapon->getWeight();
-	}
-	if ( myStats->cloak != NULL )
-	{
-		weight += myStats->cloak->getWeight();
-	}
-	if ( myStats->amulet != NULL )
-	{
-		weight += myStats->amulet->getWeight();
-	}
-	if ( myStats->ring != NULL )
-	{
-		weight += myStats->ring->getWeight();
-	}
-	if ( myStats->mask != NULL )
-	{
-		weight += myStats->mask->getWeight();
-	}
-	weight += myStats->getGoldWeight();
-	weight /= 2; // on monsters weight shouldn't matter so much
-	double weightratio = (1000 + std::max((Sint32)0, my->getSTR()) * 100 - weight) / (double)(1000 + std::max((Sint32)0, my->getSTR()) * 100);
-	weightratio = fmin(fmax(0, weightratio), 1);
+	real_t weightratio = my->monsterGetWeightRatio();
 	// determine if I have a ranged weapon or not
 	hasrangedweapon = my->hasRangedWeapon();
 
@@ -4252,6 +4214,8 @@ void actMonster(Entity* my)
 		case REVENANT_SKULL:
 		case MONSTER_ADORCISED_WEAPON:
 		case MINIMIMIC:
+		case COCKATRICE:
+		case HOLOGRAM:
 			handleinvisible = false;
 			break;
 		default:
@@ -5080,7 +5044,7 @@ void actMonster(Entity* my)
 							double targetdist = sqrt( pow(my->x - entity->x, 2) + pow(my->y - entity->y, 2) );
 
 							real_t monsterVisionRange = sightranges[myStats->type];
-							if ( hitstats->type == DUMMYBOT )
+							if ( hitstats->type == DUMMYBOT || hitstats->type == HOLOGRAM )
 							{
 								monsterVisionRange = std::max(monsterVisionRange, 96.0);
 							}
@@ -5116,7 +5080,7 @@ void actMonster(Entity* my)
 								continue;
 							}
 							bool visiontest = false;
-							if ( hitstats->type == DUMMYBOT || myStats->type == SENTRYBOT || myStats->type == SPELLBOT
+							if ( hitstats->type == DUMMYBOT || hitstats->type == HOLOGRAM || myStats->type == SENTRYBOT || myStats->type == SPELLBOT
 								|| (ringConflictHolder && ringConflictHolder == entity) )
 							{
 								if ( dir >= -13 * PI / 16 && dir <= 13 * PI / 16 )
@@ -5789,7 +5753,7 @@ void actMonster(Entity* my)
 				double targetdist = sqrt( pow(my->x - entity->x, 2) + pow(my->y - entity->y, 2) );
 
 				real_t monsterVisionRange = sightranges[myStats->type];
-				if ( hitstats && hitstats->type == DUMMYBOT )
+				if ( hitstats && (hitstats->type == DUMMYBOT || hitstats->type == HOLOGRAM) )
 				{
 					monsterVisionRange = std::max(monsterVisionRange, 96.0);
 				}
@@ -6684,6 +6648,12 @@ timeToGoAgain:
 				my->monsterMoveTime = 0;
 				return;
 			}
+			else if ( myStats->type == HOLOGRAM )
+			{
+				my->monsterState = MONSTER_STATE_WAIT;
+				my->monsterMoveTime = 0;
+				return;
+			}
 			else if ( monsterIsImmobileTurret(my, myStats) )
 			{
 				my->monsterState = MONSTER_STATE_WAIT;
@@ -6837,7 +6807,7 @@ timeToGoAgain:
 							double targetdist = sqrt( pow(my->x - entity->x, 2) + pow(my->y - entity->y, 2) );
 
 							real_t monsterVisionRange = sightranges[myStats->type];
-							if ( hitstats->type == DUMMYBOT )
+							if ( hitstats->type == DUMMYBOT || hitstats->type == HOLOGRAM )
 							{
 								monsterVisionRange = std::max(monsterVisionRange, 96.0);
 							}
@@ -6875,7 +6845,7 @@ timeToGoAgain:
 								continue;
 							}
 							bool visiontest = false;
-							if ( hitstats->type == DUMMYBOT || myStats->type == SENTRYBOT || myStats->type == SPELLBOT )
+							if ( hitstats->type == DUMMYBOT || hitstats->type == HOLOGRAM || myStats->type == SENTRYBOT || myStats->type == SPELLBOT )
 							{
 								if ( dir >= -13 * PI / 16 && dir <= 13 * PI / 16 )
 								{
@@ -9669,6 +9639,8 @@ timeToGoAgain:
 		}
 	}
 
+	my->processEntityWind();
+
 	if ( previousMonsterState != my->monsterState )
 	{
 		serverUpdateEntitySkill(my, 0);
@@ -9740,7 +9712,7 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 			lichRangeCheckOverride = true;
 		}
 	}
-	if ( myStats->type == REVENANT_SKULL || myStats->type == MONSTER_ADORCISED_WEAPON )
+	if ( myStats->type == REVENANT_SKULL || myStats->type == MONSTER_ADORCISED_WEAPON || myStats->type == FLAME_ELEMENTAL )
 	{
 		if ( monsterSpecialState == SKULL_CAST )
 		{
@@ -9770,7 +9742,7 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 			monsterStrafeDirection = -1 + ((local_rng.rand() % 2 == 0) ? 2 : 0);
 		}
 	}
-	else if ( myStats->type == DUMMYBOT )
+	else if ( myStats->type == DUMMYBOT || myStats->type == HOLOGRAM )
 	{
 		return;
 	}
@@ -9855,7 +9827,7 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 		{
 			bow = 1.5;
 		}
-		else if ( myStats->type == REVENANT_SKULL || myStats->type == MONSTER_ADORCISED_WEAPON )
+		else if ( myStats->type == REVENANT_SKULL || myStats->type == MONSTER_ADORCISED_WEAPON || myStats->type == FLAME_ELEMENTAL )
 		{
 			bow = 1.5;
 		}
@@ -10830,6 +10802,14 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_SKULL_CAST;
 					}
 					break;
+				case FLAME_ELEMENTAL:
+					// magic
+					specialRoll = local_rng.rand() % 10;
+					if ( specialRoll == 0 )
+					{
+						monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_SKULL_CAST;
+					}
+					break;
 				case SPIDER:
 					// spray web
 					if ( dist < STRIKERANGE * 2 )
@@ -11073,6 +11053,7 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 					}
 					break;
 				case REVENANT_SKULL:
+				case FLAME_ELEMENTAL:
 					if ( monsterSpecialState == SKULL_CAST || forceDeinit )
 					{
 						monsterSpecialState = 0;
@@ -11730,6 +11711,12 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 			else if ( myStats->type == MONSTER_ADORCISED_WEAPON && myStats->getAttribute("adorcised_weapon") != "" )
 			{
 				setHP(0);
+				setObituary(Language::get(6619));
+			}
+			else if ( myStats->type == FLAME_ELEMENTAL )
+			{
+				setHP(0);
+				setObituary(Language::get(6673));
 			}
 			break;
 		case ALLY_CMD_ATTACK_CONFIRM:
