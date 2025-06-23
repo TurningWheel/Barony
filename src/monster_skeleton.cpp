@@ -753,6 +753,76 @@ void initAdorcisedWeapon(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 }
 
+void initFlameElemental(Entity* my, Stat* myStats)
+{
+	node_t* node;
+
+	my->z = 0;
+	my->initMonster(1804);
+	my->flags[INVISIBLE] = true; // hide the "AI" bodypart
+	if ( multiplayer != CLIENT )
+	{
+		MONSTER_SPOTSND = -1;
+		MONSTER_SPOTVAR = 1;
+		MONSTER_IDLESND = -1;
+		MONSTER_IDLEVAR = 3;
+	}
+
+	if ( multiplayer != CLIENT && !MONSTER_INIT )
+	{
+		auto& rng = my->entity_rng ? *my->entity_rng : local_rng;
+
+		if ( myStats != nullptr )
+		{
+			if ( !myStats->leader_uid )
+			{
+				myStats->leader_uid = 0;
+			}
+
+			// apply random stat increases if set in stat_shared.cpp or editor
+			setRandomMonsterStats(myStats, rng);
+
+			// generate 6 items max, less if there are any forced items from boss variants
+			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
+
+			// generates equipment and weapons if available from editor
+			createMonsterEquipment(myStats, rng);
+
+			// create any custom inventory items from editor if available
+			createCustomInventory(myStats, customItemsToGenerate, rng);
+
+			// count if any custom inventory items from editor
+			int customItems = countCustomItems(myStats); //max limit of 6 custom items per entity.
+
+			// count any inventory items set to default in edtior
+			int defaultItems = countDefaultItems(myStats);
+
+			my->setHardcoreStats(*myStats);
+		}
+	}
+
+	// body
+	Entity* entity = newEntity(1804, 1, map.entities, nullptr); //Limb entity.
+	entity->sizex = 2;
+	entity->sizey = 2;
+	entity->skill[2] = my->getUID();
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->yaw = my->yaw;
+	entity->z = 6;
+	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->focalx = limbs[FLAME_ELEMENTAL][1][0];
+	entity->focaly = limbs[FLAME_ELEMENTAL][1][1];
+	entity->focalz = limbs[FLAME_ELEMENTAL][1][2];
+	entity->behavior = &actFlameElementalLimb;
+	entity->parent = my->getUID();
+	node = list_AddNodeLast(&my->children);
+	node->element = entity;
+	node->deconstructor = &emptyDeconstructor;
+	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
+}
+
 void actSkeletonLimb(Entity* my)
 {
 	Entity* parent = uidToEntity(my->skill[2]);
@@ -809,6 +879,30 @@ void actAdorcisedWeaponLimb(Entity* my)
 	}
 
 	my->light = addLight(my->x / 16, my->y / 16, "adorcised_weapon_glow");
+	my->actMonsterLimb(false);
+}
+
+void actHologramLimb(Entity* my)
+{
+	if ( my->light )
+	{
+		list_RemoveNode(my->light->node);
+		my->light = nullptr;
+	}
+
+	my->light = addLight(my->x / 16, my->y / 16, "summoned_skeleton_glow");
+	my->actMonsterLimb(false);
+}
+
+void actFlameElementalLimb(Entity* my)
+{
+	if ( my->light )
+	{
+		list_RemoveNode(my->light->node);
+		my->light = nullptr;
+	}
+
+	my->light = addLight(my->x / 16, my->y / 16, "flame_elemental_glow");
 	my->actMonsterLimb(false);
 }
 
@@ -974,6 +1068,14 @@ void revenantSkullDie(Entity* my)
 }
 
 void adorcisedWeaponDie(Entity* my)
+{
+	my->removeMonsterDeathNodes();
+	spawnPoof(my->x, my->y, my->z, 1.0, true);
+	list_RemoveNode(my->mynode);
+	return;
+}
+
+void flameElementalDie(Entity* my)
 {
 	my->removeMonsterDeathNodes();
 	spawnPoof(my->x, my->y, my->z, 1.0, true);
@@ -2345,7 +2447,7 @@ void revenantSkullAnimate(Entity* my, Stat* myStats, double dist)
 	my->sizex = 2;
 	my->sizey = 2;
 
-	Monster monsterType = my->sprite == 1797 ? MONSTER_ADORCISED_WEAPON : REVENANT_SKULL;
+	Monster monsterType = my->sprite == 1804 ? FLAME_ELEMENTAL : (my->sprite == 1797 ? MONSTER_ADORCISED_WEAPON : REVENANT_SKULL);
 
 	my->focalx = limbs[monsterType][0][0];
 	my->focaly = limbs[monsterType][0][1];
@@ -2368,9 +2470,9 @@ void revenantSkullAnimate(Entity* my, Stat* myStats, double dist)
 
 			if ( !myStats->weapon )
 			{
-				myStats->HP = 0;
+				my->setHP(0);
 				char buf[120];
-				snprintf(buf, sizeof(buf), Language::get(6620), myStats->weapon->getName());
+				snprintf(buf, sizeof(buf), Language::get(6620));
 				my->setObituary(buf);
 			}
 			else
@@ -2382,23 +2484,19 @@ void revenantSkullAnimate(Entity* my, Stat* myStats, double dist)
 						Entity* parent = uidToEntity(my->parent);
 						if ( !parent )
 						{
-							myStats->HP = 0;
+							my->setHP(0);
 							if ( myStats->weapon )
 							{
-								char buf[120];
-								snprintf(buf, sizeof(buf), Language::get(6619));
-								my->setObituary(buf);
+								my->setObituary(Language::get(6619));
 							}
 						}
 					}
 					if ( my->ticks > std::stoi(myStats->getAttribute("spirit_weapon")) )
 					{
-						myStats->HP = 0;
+						my->setHP(0);
 						if ( myStats->weapon )
 						{
-							char buf[120];
-							snprintf(buf, sizeof(buf), Language::get(6619));
-							my->setObituary(buf);
+							my->setObituary(Language::get(6619));
 						}
 					}
 				}
@@ -2406,12 +2504,10 @@ void revenantSkullAnimate(Entity* my, Stat* myStats, double dist)
 				{
 					if ( my->ticks > std::stoi(myStats->getAttribute("adorcised_weapon")) )
 					{
-						myStats->HP = 0;
+						my->setHP(0);
 						if ( myStats->weapon )
 						{
-							char buf[120];
-							snprintf(buf, sizeof(buf), Language::get(6619));
-							my->setObituary(buf);
+							my->setObituary(Language::get(6619));
 						}
 					}
 				}
@@ -3045,7 +3141,12 @@ void revenantSkullAnimate(Entity* my, Stat* myStats, double dist)
 				entity->y += SKULL_FLOAT_Y;
 				entity->z += SKULL_FLOAT_Z;
 
-				if ( adorcisedWeapon )
+				if ( monsterType == FLAME_ELEMENTAL )
+				{
+					entity->roll = (PI / 32) * sin(entity->fskill[1] * limbs[monsterType][11][0]);
+					entity->yaw += (PI / 32) * sin(entity->fskill[1] * limbs[monsterType][11][0]);
+				}
+				else if ( adorcisedWeapon )
 				{
 					entity->roll = (PI / 32) * sin(entity->fskill[1] * limbs[monsterType][11][0]);
 					entity->yaw += (PI / 32) * sin(entity->fskill[1] * limbs[monsterType][11][0]);
@@ -3076,12 +3177,24 @@ void revenantSkullAnimate(Entity* my, Stat* myStats, double dist)
 					}
 				}
 
-				Entity* fx = spawnMagicParticleCustom(entity, 96, 0.5, 1.0);
-				fx->vel_x = 0.25 * cos(entity->yaw + PI);
-				fx->vel_y = 0.25 * sin(entity->yaw + PI);
-				fx->vel_z = 0.3;
-				fx->flags[SPRITE] = true;
-				fx->ditheringDisabled = true;
+				if ( monsterType == FLAME_ELEMENTAL )
+				{
+					Entity* fx = spawnMagicParticleCustom(entity, 13, 1.0, 1.0);
+					fx->vel_x = 0.25 * cos(entity->yaw + PI);
+					fx->vel_y = 0.25 * sin(entity->yaw + PI);
+					fx->vel_z = -0.3;
+					fx->flags[SPRITE] = true;
+					fx->ditheringDisabled = true;
+				}
+				else
+				{
+					Entity* fx = spawnMagicParticleCustom(entity, 96, 0.5, 1.0);
+					fx->vel_x = 0.25 * cos(entity->yaw + PI);
+					fx->vel_y = 0.25 * sin(entity->yaw + PI);
+					fx->vel_z = 0.3;
+					fx->flags[SPRITE] = true;
+					fx->ditheringDisabled = true;
+				}
 				break;
 			}
 			default:
@@ -3100,5 +3213,207 @@ void revenantSkullAnimate(Entity* my, Stat* myStats, double dist)
 	else
 	{
 		// do nothing, don't reset attacktime or increment it.
+	}
+}
+
+void hologramDie(Entity* my)
+{
+	my->removeMonsterDeathNodes();
+	spawnPoof(my->x, my->y, my->z, 1.0, true);
+	list_RemoveNode(my->mynode);
+	return;
+}
+
+void initHologram(Entity* my, Stat* myStats)
+{
+	node_t* node;
+
+	my->z = 0;
+	my->initMonster(1803);
+	my->flags[INVISIBLE] = true; // hide the "AI" bodypart
+	if ( multiplayer != CLIENT )
+	{
+		MONSTER_SPOTSND = -1;
+		MONSTER_SPOTVAR = 1;
+		MONSTER_IDLESND = -1;
+		MONSTER_IDLEVAR = 3;
+	}
+
+	if ( multiplayer != CLIENT && !MONSTER_INIT )
+	{
+		auto& rng = my->entity_rng ? *my->entity_rng : local_rng;
+
+		if ( myStats != nullptr )
+		{
+			if ( !myStats->leader_uid )
+			{
+				myStats->leader_uid = 0;
+			}
+
+			// apply random stat increases if set in stat_shared.cpp or editor
+			setRandomMonsterStats(myStats, rng);
+
+			// generate 6 items max, less if there are any forced items from boss variants
+			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
+
+			// generates equipment and weapons if available from editor
+			createMonsterEquipment(myStats, rng);
+
+			// create any custom inventory items from editor if available
+			createCustomInventory(myStats, customItemsToGenerate, rng);
+
+			// count if any custom inventory items from editor
+			int customItems = countCustomItems(myStats); //max limit of 6 custom items per entity.
+
+			// count any inventory items set to default in edtior
+			int defaultItems = countDefaultItems(myStats);
+
+			my->setHardcoreStats(*myStats);
+		}
+	}
+
+	// body
+	for ( int i = 0; i < 30; ++i )
+	{
+		Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
+		entity->sizex = 2;
+		entity->sizey = 2;
+		entity->skill[2] = my->getUID();
+		entity->flags[PASSABLE] = true;
+		entity->flags[NOUPDATE] = true;
+		entity->flags[INVISIBLE] = true;
+		entity->flags[INVISIBLE_DITHER] = false;
+		entity->yaw = my->yaw;
+		entity->z = 6;
+		entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+		entity->focalx = 0.0;
+		entity->focaly = 0.0;
+		entity->focalz = 0.0;
+		entity->behavior = &actHologramLimb;
+		entity->parent = my->getUID();
+		node = list_AddNodeLast(&my->children);
+		node->element = entity;
+		node->deconstructor = &emptyDeconstructor;
+		node->size = sizeof(Entity*);
+		my->bodyparts.push_back(entity);
+	}
+
+	my->mistformGLRender = 1.0;
+}
+
+void hologramAnimate(Entity* my, Stat* myStats, double dist)
+{
+	my->flags[INVISIBLE] = true; // hide the "AI" bodypart
+	my->sizex = 4;
+	my->sizey = 4;
+	my->mistformGLRender = 0.875 + 0.125 * sin(PI * (my->ticks % 100) / 50.0);
+
+	Entity* hologramParent = nullptr;
+	if ( my->monsterSpecialState != 0 )
+	{
+		hologramParent = uidToEntity(my->monsterSpecialState);
+	}
+	if ( multiplayer != CLIENT )
+	{
+		if ( !hologramParent || (myStats && !myStats->getEffectActive(EFF_MIST_FORM)) )
+		{
+			my->setHP(0);
+			my->setObituary(Language::get(6668));
+		}
+	}
+
+	int bodypart = 0;
+	node_t* node = nullptr;
+	std::vector<Entity*> myLimbs;
+	for ( bodypart = 0, node = my->children.first; node != nullptr; node = node->next, ++bodypart )
+	{
+		if ( bodypart < LIMB_HUMANOID_TORSO )
+		{
+			continue;
+		}
+
+		if ( Entity* entity = (Entity*)node->element )
+		{
+			entity->flags[INVISIBLE] = true;
+			entity->flags[INVISIBLE_DITHER] = false;
+			entity->mistformGLRender = my->mistformGLRender;
+			myLimbs.push_back(entity);
+		}
+	}
+
+	if ( hologramParent && (hologramParent->behavior == &actMonster || hologramParent->behavior == &actPlayer) )
+	{
+		int parentOffset = 0;
+		if ( hologramParent->behavior == &actPlayer )
+		{
+			parentOffset = -1;
+		}
+		std::vector<Entity*> limbsCopy;
+		limbsCopy.push_back(hologramParent);
+		
+		int listSize = list_Size(&hologramParent->children);
+		for ( int i = LIMB_HUMANOID_TORSO + parentOffset; i < listSize; ++i )
+		{
+			if ( node_t* nodeCopy = list_Node(&hologramParent->children, i) )
+			{
+				if ( Entity* limb = (Entity*)nodeCopy->element )
+				{
+					limbsCopy.push_back(limb);
+				}
+			}
+		}
+
+		int index = -1;
+		Entity* firstLimb = nullptr;
+		for ( auto entity : myLimbs )
+		{
+			++index;
+			if ( index == 0 )
+			{
+				firstLimb = entity;
+				firstLimb->fskill[0] += 0.05;
+			}
+			if ( index < limbsCopy.size() )
+			{
+				Entity* limb = limbsCopy.at(index);
+				entity->sprite = limb->sprite;
+				entity->flags[INVISIBLE] = limb->flags[INVISIBLE];
+				entity->flags[INVISIBLE_DITHER] = limb->flags[INVISIBLE_DITHER];
+				entity->yaw = limb->yaw + firstLimb->fskill[0];
+				entity->pitch = limb->pitch;
+				entity->roll = limb->roll;
+				if ( index == 0 )
+				{
+					entity->x = my->x;
+					entity->y = my->y;
+				}
+				else
+				{
+					real_t x = (hologramParent->x - limb->x);
+					real_t y = (hologramParent->y - limb->y);
+					real_t tangent = atan2(y, x);
+					real_t length = sqrt(x * x + y * y);
+					tangent += firstLimb->fskill[0];
+					x = length * cos(tangent);
+					y = length * sin(tangent);
+
+					entity->x = my->x - (hologramParent->x - limb->x);
+					entity->y = my->y - (hologramParent->y - limb->y);
+					entity->x = my->x - x;
+					entity->y = my->y - y;
+				}
+				entity->z = limb->z;
+				entity->focalx = limb->focalx;
+				entity->focaly = limb->focaly;
+				entity->focalz = limb->focalz;
+				entity->scalex = limb->scalex;
+				entity->scaley = limb->scaley;
+				entity->scalez = limb->scalez;
+				entity->sizex = limb->sizex;
+				entity->sizey = limb->sizey;
+
+
+			}
+		}
 	}
 }

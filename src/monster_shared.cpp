@@ -262,8 +262,8 @@ void Entity::initMonster(int mySprite)
 			break;
 		case REVENANT_SKULL:
 		case MONSTER_ADORCISED_WEAPON:
-		case MONSTER_UNUSED_1:
-		case MONSTER_UNUSED_2:
+		case FLAME_ELEMENTAL:
+		case HOLOGRAM:
 		case MONSTER_UNUSED_3:
 		case MONSTER_UNUSED_4:
 		case MONSTER_UNUSED_5:
