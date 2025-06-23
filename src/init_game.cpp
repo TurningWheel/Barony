@@ -830,7 +830,7 @@ void loadAchievementData(const char* path) {
 		return;
 	}
 
-	char buf[120000];
+	static char buf[120000];
 	int count = (int)fp->read(buf, sizeof(buf[0]), sizeof(buf));
 	buf[count] = '\0';
 	rapidjson::StringStream is(buf);

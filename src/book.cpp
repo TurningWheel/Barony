@@ -122,7 +122,7 @@ bool BookParser_t::readCompiledBooks()
 		File* fp = FileIO::open(compiledBooksPath.c_str(), "rb");
 		if ( fp )
 		{
-			char buf[MAX_FILE_LENGTH];
+			static char buf[MAX_FILE_LENGTH];
 			int count = fp->read(buf, sizeof(buf[0]), sizeof(buf));
 			buf[count] = '\0';
 			rapidjson::StringStream is(buf);
@@ -170,7 +170,7 @@ bool BookParser_t::booksRequireCompiling()
 		File* fp = FileIO::open(compiledBooksPath.c_str(), "rb");
 		if ( fp )
 		{
-			char buf[MAX_FILE_LENGTH];
+			static char buf[MAX_FILE_LENGTH];
 			int count = fp->read(buf, sizeof(buf[0]), sizeof(buf));
 			buf[count] = '\0';
 			rapidjson::StringStream is(buf);
