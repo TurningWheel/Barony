@@ -342,7 +342,7 @@ void cockatriceMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					bodypart++;
 					continue;
 				}
-				if ( bodypart >= 7 )
+				if ( bodypart >= 9 )
 				{
 					break;
 				}
@@ -367,7 +367,7 @@ void cockatriceMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					bodypart++;
 					continue;
 				}
-				if ( bodypart >= 7 )
+				if ( bodypart >= 9 )
 				{
 					break;
 				}
