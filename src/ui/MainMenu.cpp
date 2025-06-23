@@ -5663,7 +5663,7 @@ namespace MainMenu {
 					}
 				}
 
-				auto prompt = binaryPrompt(Language::get(5052),
+				auto prompt = binaryPrompt(Language::get(5029),
 					Language::get(5030), Language::get(5008),
 					[](Button& button) {
 						closeBinary();
