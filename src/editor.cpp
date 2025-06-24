@@ -4180,7 +4180,7 @@ int main(int argc, char** argv)
 								SDL_StartTextInput();
 								inputstr = spriteProperties[0];
 							}
-							if ( editproperty == 2 )
+							if ( editproperty == 2 || editproperty == 3 )
 							{
 								inputlen = 3;
 							}
