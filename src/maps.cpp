@@ -3865,7 +3865,36 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 					entity->skill[3] = 1; // not secret portals though
 				}
 
-				if ( entity && strncmp(map.name, "Underworld", 10) )
+				if ( entity && !strncmp(map.name, "Underworld", 10) )
+				{
+					// determine if ladder is blocked off by walls
+					int obstacles = 0;
+					if ( checkObstacle((x + 1) * 16, (y) * 16, entity, NULL, false) )
+					{
+						obstacles++;
+					}
+					if ( checkObstacle((x - 1) * 16, (y) * 16, NULL, NULL, false) )
+					{
+						obstacles++;
+					}
+					if ( checkObstacle((x) * 16, (y + 1) * 16, entity, NULL, false) )
+					{
+						obstacles++;
+					}
+					if ( checkObstacle((x) * 16, (y - 1) * 16, NULL, NULL, false) )
+					{
+						obstacles++;
+					}
+					if ( obstacles >= 4 )
+					{
+						// try again, enclosed area
+						c--;
+						list_RemoveNode(entity->mynode);
+						entity = NULL;
+						continue;
+					}
+				}
+				else if ( entity && strncmp(map.name, "Underworld", 10) )
 				{
 					// determine if the ladder generated in a viable location
 					bool nopath = false;
