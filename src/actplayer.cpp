@@ -4786,7 +4786,7 @@ void actPlayer(Entity* my)
 		//}
 	}
 
-	static ConsoleVariable<int> cvar_pbaoe("/pbaoe", 6);
+	static ConsoleVariable<int> cvar_pbaoe("/pbaoe", 8);
 	if ( keystatus[SDLK_x] && enableDebugKeys )
 	{
 		keystatus[SDLK_x] = 0;
@@ -5005,7 +5005,7 @@ void actPlayer(Entity* my)
 		static std::map<int, std::vector<ParticleTimerEffect_t::EffectLocations_t>> effLocations;
 
 		static ConsoleVariable<int> cvar_particle_sprite("/particle_sprite", 1718);
-		static ConsoleVariable<int> cvar_particle_test("/particle_test", 6);
+		static ConsoleVariable<int> cvar_particle_test("/particle_test", -1);
 		int lifetime = TICKS_PER_SECOND * 2;
 		real_t dist = 64.0 * 1.25;
 		if ( *cvar_particle_test == 3 )
@@ -5015,6 +5015,10 @@ void actPlayer(Entity* my)
 		else if ( *cvar_particle_test == 4 )
 		{
 			dist = 0.0;
+		}
+		else if ( *cvar_particle_test == ParticleTimerEffect_t::EffectType::EFFECT_SPORES )
+		{
+			floorMagicCreateSpores(my, 0.0, 0.0, my, 0, SPELL_SPORES);
 		}
 		else if ( *cvar_particle_test == ParticleTimerEffect_t::EffectType::EFFECT_LIGHTNING_BOLT )
 		{
@@ -5111,7 +5115,7 @@ void actPlayer(Entity* my)
 				static ConsoleVariable<float> c1("/c1", 1.0);
 				static ConsoleVariable<int> c2("/c2", 4);
 				static ConsoleVariable<float> c3("/c3", 13.75);
-				static ConsoleVariable<int> c4("/c4", 1);
+				static ConsoleVariable<int> c4("/c4", 5);
 				real_t grouping = *c3;
 				real_t scale = *c1;
 				if ( *c4 == 3 )
@@ -5131,6 +5135,50 @@ void actPlayer(Entity* my)
 					wave->skill[1] = 12; // frames
 					wave->skill[5] = *c2; // frame time
 					wave->ditheringOverride = 6;
+				}
+				else if ( *c4 == 5 )
+				{
+					createRadiusMagic(SPELL_NULL_AREA, my, my->x + 32.0 * cos(my->yaw), my->y + 32.0 * sin(my->yaw), 24, 5 * TICKS_PER_SECOND, nullptr);
+				}
+				else if ( *c4 == 6 )
+				{
+					createRadiusMagic(SPELL_SPHERE_SILENCE, my, my->x + 32.0 * cos(my->yaw), my->y + 32.0 * sin(my->yaw), 24, 5 * TICKS_PER_SECOND, my);
+				}
+				else if ( *c4 == 7 )
+				{
+					for ( int i = 0; i < 3; ++i )
+					{
+						Entity* entity = newEntity(576, 1, map.entities, nullptr);
+						entity->yaw = i * 2 * PI / 3;
+						entity->x = my->x;
+						entity->y = my->y;
+						entity->z = 7.5;
+						double missile_speed = 4;
+						entity->vel_x = 0.0;
+						entity->vel_y = 0.0;
+						entity->actmagicIsOrbiting = 2;
+						entity->actmagicOrbitDist = 8.0;
+						entity->actmagicOrbitStationaryCurrentDist = 0.0;
+						entity->actmagicOrbitStartZ = entity->z;
+						//entity->roll -= (PI / 8);
+						entity->actmagicOrbitVerticalSpeed = -0.3;
+						entity->actmagicOrbitVerticalDirection = 1;
+						entity->actmagicOrbitLifetime = TICKS_PER_SECOND / 2;
+						entity->actmagicOrbitStationaryX = my->x;
+						entity->actmagicOrbitStationaryY = my->y;
+						entity->vel_z = -0.1;
+						entity->behavior = &actMagicParticleCircling2;
+
+						entity->flags[PASSABLE] = true;
+						entity->flags[NOUPDATE] = true;
+						entity->flags[UNCLICKABLE] = true;
+						entity->flags[UPDATENEEDED] = false;
+						if ( multiplayer != CLIENT )
+						{
+							entity_uids--;
+						}
+						entity->setUID(-3);
+					}
 				}
 				else if ( *c4 == 1 )
 				{
@@ -5161,6 +5209,27 @@ void actPlayer(Entity* my)
 						wave->skill[6] = 1; // grow to scale
 						wave->flags[UPDATENEEDED] = true;
 					}
+				}
+				else if ( *c4 == 4 )
+				{
+					spellTimer->particleTimerDuration = TICKS_PER_SECOND * 5;
+					bool light = true;
+					Entity* wave = createParticleWave(ParticleTimerEffect_t::EFFECT_TUNNEL,
+						1810, my->x + 16.0 * cos(my->yaw), my->y + 16.0 * sin(my->yaw), 2.75, my->yaw + PI / 2,
+						spellTimer->particleTimerDuration, light);
+					wave->skill[1] = 4; // frames
+					wave->skill[5] = *c2; // frame time
+					wave->ditheringOverride = 6;
+					wave->parent = spellTimer->getUID();
+					real_t startScale = 0.1;
+					wave->scalex = startScale;
+					wave->scaley = startScale;
+					wave->scalez = startScale;
+					wave->focaly = 0.0;
+					wave->fskill[0] = scale; // final scale
+					wave->fskill[1] = 0.0; // final grouping
+					wave->skill[6] = 1; // grow to scale
+					wave->flags[UPDATENEEDED] = true;
 				}
 				else
 				{
