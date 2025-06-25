@@ -134,6 +134,7 @@ bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, En
 		|| hitstats->type == MIMIC
 		|| hitstats->type == BAT_SMALL
 		|| hitstats->type == HOLOGRAM
+		|| hit.entity->monsterIsTinkeringCreation()
 		|| hit.entity->monsterAllySummonRank != 0
 		|| (hitstats->type == VAMPIRE && MonsterData_t::nameMatchesSpecialNPCName(*hitstats, "bram kindly"))
 		|| (hitstats->type == COCKATRICE && !strncmp(map.name, "Cockatrice Lair", 15))
@@ -1319,6 +1320,7 @@ int getCharmMonsterDifficulty(Entity& my, Stat& myStats)
 	case BUGBEAR:
 	case MONSTER_ADORCISED_WEAPON:
 	case FLAME_ELEMENTAL:
+	case MOTH_SMALL:
 		difficulty = 2;
 		break;
 	case CRYSTALGOLEM:
@@ -1741,6 +1743,7 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 		|| (target->behavior == &actMonster && target->monsterAllySummonRank != 0)
 		|| targetStats->type == MIMIC || targetStats->type == BAT_SMALL
 		|| targetStats->type == MONSTER_ADORCISED_WEAPON
+		|| targetStats->type == MOTH_SMALL
 		|| targetStats->type == MINIMIMIC
 		|| targetStats->type == REVENANT_SKULL
 		|| targetStats->type == FLAME_ELEMENTAL
@@ -2731,6 +2734,7 @@ bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* paren
 				|| hitstats->type == MIMIC
 				|| hitstats->type == MINIMIMIC
 				|| hitstats->type == MONSTER_ADORCISED_WEAPON
+				|| hitstats->type == MOTH_SMALL
 				|| hitstats->type == REVENANT_SKULL
 				|| hitstats->type == FLAME_ELEMENTAL
 				|| (hitstats->type == INCUBUS && !strncmp(hitstats->name, "inner demon", strlen("inner demon"))) )
@@ -3372,96 +3376,6 @@ bool applyGenericMagicDamage(Entity* caster, Entity* hitentity, Entity& damageSo
 	}
 
 	return false;
-}
-
-Item* spellEffectForceShield(Entity& caster, int spellID, spellElement_t* element)
-{
-	if ( caster.behavior == &actPlayer )
-	{
-		int player = caster.skill[2];
-		if ( players[player]->isLocalPlayer() )
-		{
-			if ( stats[player]->HP > 0 )
-			{
-				ItemType itemType = spellID == SPELL_FORCE_SHIELD ? FORCE_SHIELD : REFLECTOR_SHIELD;
-				if ( spellID == SPELL_FORCE_SHIELD )
-				{
-					if ( stats[player]->shield && stats[player]->shield->type == itemType )
-					{
-						messagePlayer(player, MESSAGE_INTERACTION, Language::get(6676), items[itemType].getIdentifiedName());
-						return nullptr;
-					}
-				}
-
-				Item* item = newItem(itemType, EXCELLENT, 0, 1, local_rng.rand(), true, nullptr);
-				if ( stats[player]->shield )
-				{
-					if ( !players[player]->inventoryUI.bItemInventoryHasFreeSlot() )
-					{
-						if ( players[player]->paperDoll.isItemOnDoll(*stats[player]->shield) )
-						{
-							// need to unequip
-							Item* shield = stats[player]->shield;
-							bool oldIntro = intro;
-							intro = true;
-							players[player]->inventoryUI.activateItemContextMenuOption(shield, ItemContextMenuPrompts::PROMPT_UNEQUIP_FOR_DROP);
-							intro = oldIntro;
-							players[player]->paperDoll.updateSlots();
-							if ( players[player]->paperDoll.isItemOnDoll(*shield) )
-							{
-								// couldn't unequip, no more actions
-								messagePlayerColor(player, MESSAGE_INTERACTION, makeColorRGB(255, 0, 0), Language::get(6675), item->getName());
-								free(item);
-								return nullptr;
-							}
-
-							bool droppedAll = dropItem(shield, player, true, true);
-							if ( !droppedAll )
-							{
-								messagePlayerColor(player, MESSAGE_INTERACTION, makeColorRGB(255, 0, 0), Language::get(6675), item->getName());
-								free(item);
-								return nullptr;
-							}
-						}
-					}
-				}
-				bool oldIntro = intro;
-				intro = true;
-				Item* pickedUp = itemPickup(player, item, nullptr, true);
-				intro = oldIntro;
-				if ( pickedUp )
-				{
-					// item is the new inventory stack for server, free the picked up items
-					free(item);
-
-					oldIntro = intro;
-					intro = true;
-					players[player]->inventoryUI.activateItemContextMenuOption(pickedUp, ItemContextMenuPrompts::PROMPT_EQUIP);
-					intro = oldIntro;
-					if ( !(stats[player]->shield == pickedUp) )
-					{
-						messagePlayerColor(player, MESSAGE_INTERACTION, makeColorRGB(255, 0, 0), Language::get(6675), pickedUp->getName());
-						free(pickedUp);
-						return nullptr;
-					}
-					else
-					{
-						messagePlayerColor(player, MESSAGE_INTERACTION, makeColorRGB(0, 255, 0), Language::get(6674), pickedUp->getName());
-						return pickedUp;
-					}
-				}
-			}
-		}
-		/*else
-		{
-			todo
-			if ( multiplayer == SERVER )
-			{
-
-			}
-		}*/
-	}
-	return nullptr;
 }
 
 Entity* spellEffectDemesneDoor(Entity& caster, Entity& target)

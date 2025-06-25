@@ -676,6 +676,14 @@ int getGoldCostOfSpell(spell_t* spell, int player)
 		cost = 100 - stats[player]->getModifiedProficiency(PRO_MAGIC);
 		cost = std::max(25, cost);
 	}
+	else if ( spell->ID == SPELL_FORGE_MAGIC_SCRAP )
+	{
+		cost = 400;
+	}
+	else if ( spell->ID == SPELL_FORGE_METAL_SCRAP )
+	{
+		cost = 200;
+	}
 	return cost;
 }
 

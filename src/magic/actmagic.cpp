@@ -43,6 +43,8 @@ static const char* colorForSprite(Entity* my, int sprite, bool darker) {
         case 592:
 		case 1244:
         case 172: return "magic_blue_flicker";
+		case 1801: return "magic_blue_flicker";
+		case 1818: return "magic_blue_flicker";
         case 625:
         case 173: return "magic_purple_flicker";
         default:
@@ -52,6 +54,8 @@ static const char* colorForSprite(Entity* my, int sprite, bool darker) {
         case 593:
         case 175: return "magic_black_flicker";
         case 678: return "magic_pink_flicker";
+		case 1817: return "magic_pink_flicker";
+		case 1816: return "magic_green_flicker";
         }
     } else {
         switch (sprite) {
@@ -65,6 +69,8 @@ static const char* colorForSprite(Entity* my, int sprite, bool darker) {
         case 592:
 		case 1244:
         case 172: return "magic_blue";
+		case 1801: return "magic_blue";
+		case 1818: return "magic_blue";
         case 625:
         case 173: return "magic_purple";
         default:
@@ -74,6 +80,8 @@ static const char* colorForSprite(Entity* my, int sprite, bool darker) {
         case 593:
         case 175: return "magic_black";
         case 678: return "magic_pink";
+		case 1817: return "magic_pink";
+		case 1816: return "magic_green";
         }
     }
 }
@@ -1282,7 +1290,8 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					{
 						reflection = 0;
 					}
-					if ( reflection == 3 && hitstats->shield && hitstats->shield->type == MIRROR_SHIELD && hitstats->defending )
+					if ( reflection == 3 && hitstats->shield 
+						&& (hitstats->shield->type == MIRROR_SHIELD || hitstats->getEffectActive(EFF_FORCE_SHIELD) > 50) && hitstats->defending )
 					{
 						if ( my->actmagicIsVertical == MAGIC_ISVERTICAL_Z )
 						{
@@ -1299,12 +1308,15 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							else
 							{
 								reflection = 3;
-								if ( parent && (parent->behavior == &actMonster || parent->behavior == &actPlayer) )
+								if ( hitstats->shield->type == MIRROR_SHIELD )
 								{
-									my->actmagicMirrorReflected = 1;
-									my->actmagicMirrorReflectedCaster = parent->getUID();
+									if ( parent && (parent->behavior == &actMonster || parent->behavior == &actPlayer) )
+									{
+										my->actmagicMirrorReflected = 1;
+										my->actmagicMirrorReflectedCaster = parent->getUID();
+									}
+									Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_SHIELD_REFLECT, hitstats->shield->type, 1);
 								}
-								Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_SHIELD_REFLECT, hitstats->shield->type, 1);
 							}
 						}
 					}
@@ -5200,7 +5212,46 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 					}
 				}
-				if ( !strcmp(element->element_internal_name, spellElementMap[SPELL_SHADE_BOLT].element_internal_name)
+
+				if ( !strcmp(element->element_internal_name, spellElementMap[SPELL_SPHERE_SILENCE].element_internal_name) )
+				{
+					real_t spawnx = my->x;
+					real_t spawny = my->y;
+					Entity* follow = nullptr;
+					if ( !hit.entity )
+					{
+						if ( hit.mapx >= 0 && hit.mapx < map.width - 1 && hit.mapy >= 1 && hit.mapy < map.height - 1 )
+						{
+							real_t x = my->x - 4.0 * cos(my->yaw);
+							real_t y = my->y - 4.0 * sin(my->yaw);
+							int mapx = x / 16;
+							int mapy = y / 16;
+							if ( mapx >= 1 && mapx < map.width - 2 && mapy >= 1 && mapy < map.height - 2 )
+							{
+								spawnx = x;
+								spawny = y;
+							}
+						}
+					}
+					else
+					{
+						if ( (hit.entity->behavior == &actMonster && !mimic) || hit.entity->behavior == &actPlayer )
+						{
+							spawnx = hit.entity->x;
+							spawny = hit.entity->y;
+							follow = hit.entity;
+						}
+						else if ( hit.entity->behavior == &actChest || mimic )
+						{
+							spawnx = hit.entity->x;
+							spawny = hit.entity->y;
+							follow = hit.entity;
+						}
+					}
+
+					createRadiusMagic(spell->ID, uidToEntity(spell->caster), spawnx, spawny, 24, 5 * TICKS_PER_SECOND, follow);
+				}
+				else if ( !strcmp(element->element_internal_name, spellElementMap[SPELL_SHADE_BOLT].element_internal_name)
 					|| !strcmp(element->element_internal_name, spellElementMap[SPELL_WONDERLIGHT].element_internal_name) )
 				{
 					real_t spawnx = my->x;
@@ -5826,6 +5877,61 @@ void actHUDMagicParticleCircling(Entity* my)
 	}
 }
 
+void actMagicParticleCircling2(Entity* my)
+{
+	int turnRate = 4;
+	my->yaw += 0.2;
+	turnRate = 4;
+	my->x = my->actmagicOrbitStationaryX + my->actmagicOrbitStationaryCurrentDist * cos(my->yaw);
+	my->y = my->actmagicOrbitStationaryY + my->actmagicOrbitStationaryCurrentDist * sin(my->yaw);
+	my->actmagicOrbitStationaryCurrentDist =
+		std::min(my->actmagicOrbitStationaryCurrentDist + 0.5, static_cast<real_t>(my->actmagicOrbitDist));
+	my->z += my->vel_z * my->actmagicOrbitVerticalDirection;
+
+	my->vel_z = std::min(my->actmagicOrbitVerticalSpeed, my->vel_z / 0.95);
+	my->roll += (PI / 8) / (turnRate / my->vel_z) * my->actmagicOrbitVerticalDirection;
+	my->roll = std::max(my->roll, -PI / 4);
+
+	--my->actmagicOrbitLifetime;
+	if ( my->actmagicOrbitLifetime <= 0 )
+	{
+		list_RemoveNode(my->mynode);
+		return;
+	}
+
+	if ( !my->flags[SPRITE] )
+	{
+		Entity* entity;
+
+		entity = newEntity(my->sprite, 1, map.entities, nullptr); //Particle entity.
+
+		entity->x = my->x + (local_rng.rand() % 50 - 25) / 200.f;
+		entity->y = my->y + (local_rng.rand() % 50 - 25) / 200.f;
+		entity->z = my->z + (local_rng.rand() % 50 - 25) / 200.f;
+		entity->scalex = 0.7;
+		entity->scaley = 0.7;
+		entity->scalez = 0.7;
+		entity->sizex = 1;
+		entity->sizey = 1;
+		entity->yaw = my->yaw;
+		entity->pitch = my->pitch;
+		entity->roll = my->roll;
+		entity->flags[NOUPDATE] = true;
+		entity->flags[PASSABLE] = true;
+		entity->flags[UNCLICKABLE] = true;
+		entity->flags[NOUPDATE] = true;
+		entity->flags[UPDATENEEDED] = false;
+		entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+			*cvar_magic_fx_light_bonus, 0.f);
+		entity->behavior = &actHUDMagicParticle;
+		if ( multiplayer != CLIENT )
+		{
+			entity_uids--;
+		}
+		entity->setUID(-3);
+	}
+}
+
 Entity* spawnMagicParticle(Entity* parentent)
 {
 	if ( !parentent )
@@ -6153,20 +6259,27 @@ void createParticleDot(Entity* parent)
 
 Entity* createParticleAestheticOrbit(Entity* parent, int sprite, int duration, int effectType)
 {
-	if ( !parent )
+	if ( effectType == PARTICLE_EFFECT_NULL_PARTICLE )
 	{
-		return nullptr;
+		// no need parent
+	}
+	else
+	{
+		if ( !parent )
+		{
+			return nullptr;
+		}
 	}
 	Entity* entity = newEntity(sprite, 1, map.entities, nullptr); //Particle entity.
 	entity->sizex = 1;
 	entity->sizey = 1;
 	entity->actmagicOrbitDist = 6;
-	entity->yaw = parent->yaw;
-	entity->x = parent->x + entity->actmagicOrbitDist * cos(entity->yaw);
-	entity->y = parent->y + entity->actmagicOrbitDist * sin(entity->yaw);
-	entity->z = parent->z;
+	entity->yaw = parent ? parent->yaw : 0.0;
+	entity->x = parent ? parent->x + entity->actmagicOrbitDist * cos(entity->yaw) : 0.0;
+	entity->y = parent ? parent->y + entity->actmagicOrbitDist * sin(entity->yaw) : 0.0;
+	entity->z = parent ? parent->z : 0.0;
 	entity->skill[1] = effectType;
-	entity->parent = parent->getUID();
+	entity->parent = parent ? parent->getUID() : 0;
 	//entity->vel_z = -1;
 	//entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
 	entity->skill[0] = duration;
@@ -6327,6 +6440,7 @@ void actParticleDot(Entity* my)
 	return;
 }
 
+Uint32 nullParticleSfxTick = 0;
 void actParticleAestheticOrbit(Entity* my)
 {
 	if ( PARTICLE_LIFE < 0 )
@@ -6339,11 +6453,17 @@ void actParticleAestheticOrbit(Entity* my)
 		Entity* parent = uidToEntity(my->parent);
 		if ( !parent )
 		{
-			my->removeLightField();
-			list_RemoveNode(my->mynode);
-			return;
+			if ( my->skill[1] == PARTICLE_EFFECT_NULL_PARTICLE )
+			{
+				// no need for parent
+			}
+			else
+			{
+				my->removeLightField();
+				list_RemoveNode(my->mynode);
+				return;
+			}
 		}
-		Stat* stats = parent->getStats();
 		if ( my->skill[1] == PARTICLE_EFFECT_SPELLBOT_ORBIT )
 		{
 			my->yaw = parent->yaw;
@@ -6364,6 +6484,7 @@ void actParticleAestheticOrbit(Entity* my)
 		}
 		else if ( my->skill[1] == PARTICLE_EFFECT_SPELL_WEB_ORBIT )
 		{
+			Stat* stats = parent->getStats();
 			if ( my->sprite == 863 && (!stats || !stats->getEffectActive(EFF_WEBBED)) )
 			{
 				list_RemoveNode(my->mynode);
@@ -6403,6 +6524,48 @@ void actParticleAestheticOrbit(Entity* my)
 					my->sprite = 1758;
 				}
 			}
+			if ( !my->flags[INVISIBLE] )
+			{
+				spawnMagicParticle(my);
+			}
+		}
+		else if ( my->skill[1] == PARTICLE_EFFECT_NULL_PARTICLE )
+		{
+			if ( my->ticks == 1 )
+			{
+				if ( nullParticleSfxTick == 0 || (ticks - nullParticleSfxTick) > 5 )
+				{
+					playSoundEntityLocal(my, 166, 128);
+					nullParticleSfxTick = ticks;
+				}
+			}
+			//my->yaw += 0.2;
+			my->z -= 0.1;
+			//my->actmagicOrbitDist = std::min(80, my->actmagicOrbitDist + 1);
+			my->bNeedsRenderPositionInit = true;
+			//my->x = parent->x + (my->actmagicOrbitDist / 10.0) * cos(my->yaw);
+			//my->y = parent->y + (my->actmagicOrbitDist / 10.0) * sin(my->yaw);
+			my->flags[INVISIBLE] = true;
+			Uint32 anim = (my->ticks % 50) / 10;
+			/*my->removeLightField();
+			if ( !my->actmagicNoLight )
+			{
+				my->light = addLight(my->x / 16, my->y / 16, "orb_blue");
+			}*/
+
+			if ( anim == 0 || anim == 2 || anim >= 4 )
+			{
+				my->flags[INVISIBLE] = false;
+			}
+			/*if ( my->ticks % 4 == 0 )
+			{
+				my->sprite++;
+				my->yaw += 1 * PI / 3;
+				if ( my->sprite > 1763 )
+				{
+					my->sprite = 1758;
+				}
+			}*/
 			if ( !my->flags[INVISIBLE] )
 			{
 				spawnMagicParticle(my);
@@ -7808,7 +7971,7 @@ void actParticleTimer(Entity* my)
 
 							node->deconstructor = &spellDeconstructor;
 							node->size = sizeof(spell_t);
-
+							TileEntityList.addEntity(*entity);
 							--entity_uids;
 							entity->setUID(-3);
 						}
@@ -10850,7 +11013,7 @@ Entity* createParticleCastingIndicator(Entity* parent, real_t x, real_t y, real_
 	Entity* entity = newEntity(222, 1, map.entities, nullptr); //Sprite entity.
 	entity->x = x;
 	entity->y = y;
-	entity->z = 7.490;
+	entity->z = 7.470;
 	static ConsoleVariable<float> cvar_sprite_cast_indicator_scale("/sprite_cast_indicator_scale", 0.025);
 	static ConsoleVariable<float> cvar_sprite_cast_indicator_rotate("/sprite_cast_indicator_rotate", 0.025);
 	static ConsoleVariable<float> cvar_sprite_cast_indicator_alpha("/sprite_cast_indicator_alpha", 0.5);
@@ -11021,6 +11184,16 @@ void AOEIndicators_t::Indicator_t::updateIndicator()
 	{
 		alpha *= 0.9;
 		indicatorColor = makeColor(red, green, blue, alpha);
+	}
+	if ( loopType == 1 )
+	{
+		if ( radius >= radiusMax )
+		{
+			if ( loopTimer > 0 )
+			{
+				alpha *= (loopTimer - loopTicks) / (real_t)loopTimer;
+			}
+		}
 	}
 
 	bool circle = !castingTarget;
@@ -11194,7 +11367,20 @@ void AOEIndicators_t::Indicator_t::updateIndicator()
 		{
 			if ( loop )
 			{
-				radius = radiusMin;
+				if ( loopType == 1 ) // linger on max radius
+				{
+					radius = radiusMax;
+					++loopTicks;
+					if ( loopTicks >= loopTimer )
+					{
+						radius = radiusMin;
+						loopTicks = 0;
+					}
+				}
+				else
+				{
+					radius = radiusMin;
+				}
 			}
 			else
 			{
@@ -11215,7 +11401,7 @@ Entity* createParticleAOEIndicator(Entity* parent, real_t x, real_t y, real_t z,
 	Entity* entity = newEntity(222, 1, map.entities, nullptr); //Sprite entity.
 	entity->x = x;
 	entity->y = y;
-	entity->z = z + 7.48;
+	entity->z = z + 7.49;
 	static ConsoleVariable<float> cvar_sprite_aoe_indicator_scale("/sprite_aoe_indicator_scale", 2.0);
 	static ConsoleVariable<float> cvar_sprite_aoe_indicator_rotate("/sprite_aoe_indicator_rotate", 0.0);
 	static ConsoleVariable<float> cvar_sprite_aoe_indicator_alpha("/sprite_aoe_indicator_alpha", 0.5);
@@ -11246,7 +11432,7 @@ Entity* createParticleAOEIndicator(Entity* parent, real_t x, real_t y, real_t z,
 	entity->flags[ENTITY_SKIP_CULLING] = true; // ignore LOS culling
 	entity->actSpriteUseCustomSurface = AOEIndicators_t::createIndicator(4, size, size * 2 + 4, lifetime);
 	entity->actSpriteFollowUID = uid; // follow parent
-	entity->z += (entity->actSpriteUseCustomSurface % 100 / 10000.0);
+	entity->z -= 2 * (entity->actSpriteUseCustomSurface % 50 / 10000.0);
 	entity->setEntityString("aoe_indicator");
 	if ( multiplayer != CLIENT )
 	{
@@ -12772,4 +12958,409 @@ Entity* createWindMagic(Uint32 casterUID, int x, int y, int duration, int dir, i
 	}
 	wind->setUID(-3);
 	return wind;
+}
+
+void actRadiusMagicBadge(Entity* my)
+{
+	Entity* parent = uidToEntity(my->parent);
+	if ( !parent )
+	{
+		for ( int i = 0; i < 4; ++i )
+		{
+			Entity* fx = spawnMagicParticle(my);
+			fx->vel_x = 0.5 * cos(my->yaw + i * PI / 2);
+			fx->vel_y = 0.5 * sin(my->yaw + i * PI / 2);
+		}
+		list_RemoveNode(my->mynode);
+		return;
+	}
+
+	my->x = parent->x;
+	my->y = parent->y;
+
+	if ( my->skill[1] >= 50 ) // stop changing size
+	{
+		real_t maxspeed = .03;
+		real_t acceleration = 0.95;
+		if ( my->skill[3] == 0 )
+		{
+			// once off, store the normal height of the particle.
+			my->skill[3] = 1;
+			my->vel_z = -maxspeed;
+		}
+
+		// bob up and down movement.
+		if ( my->skill[3] == 1 )
+		{
+			my->vel_z *= acceleration;
+			if ( my->vel_z > -0.005 )
+			{
+				my->skill[3] = 2;
+				my->vel_z = -0.005;
+			}
+			my->z += my->vel_z;
+		}
+		else if ( my->skill[3] == 2 )
+		{
+			my->vel_z /= acceleration;
+			if ( my->vel_z < -maxspeed )
+			{
+				my->skill[3] = 3;
+				my->vel_z = -maxspeed;
+			}
+			my->z -= my->vel_z;
+		}
+		else if ( my->skill[3] == 3 )
+		{
+			my->vel_z *= acceleration;
+			if ( my->vel_z > -0.005 )
+			{
+				my->skill[3] = 4;
+				my->vel_z = -0.005;
+			}
+			my->z -= my->vel_z;
+		}
+		else if ( my->skill[3] == 4 )
+		{
+			my->vel_z /= acceleration;
+			if ( my->vel_z < -maxspeed )
+			{
+				my->skill[3] = 1;
+				my->vel_z = -maxspeed;
+			}
+			my->z += my->vel_z;
+		}
+		my->yaw += 0.01;
+	}
+	else
+	{
+		my->z += my->vel_z;
+		my->yaw += my->vel_z * 2;
+		if ( my->scalex < 1.0 )
+		{
+			my->scalex += 0.04;
+		}
+		else
+		{
+			my->scalex = 1.0;
+		}
+		my->scaley = my->scalex;
+		my->scalez = my->scalex;
+		if ( my->z < -3 + my->fskill[0] )
+		{
+			my->vel_z *= 0.9;
+		}
+	}
+	++my->skill[1];
+}
+
+void radiusMagicClientReceive(Entity* entity)
+{
+	if ( entity )
+	{
+		entity->flags[NOUPDATE] = (entity->skill[2] >> 30) & 1;
+		entity->actRadiusMagicDist = (entity->skill[2] >> 20) & 0xFF;
+		entity->actRadiusMagicID = (entity->skill[2] >> 8) & 0xFFF;
+		entity->flags[PASSABLE] = true;
+		entity->flags[UNCLICKABLE] = true;
+		entity->flags[UPDATENEEDED] = true;
+		entity->flags[INVISIBLE] = true;
+	}
+}
+
+void radiusMagicSetUID(Entity& fx, bool noupdate)
+{
+	Sint32 val = (1 << 31);
+	if ( noupdate )
+	{
+		val |= (1 << 30);
+	}
+	val |= (Uint8)(24);
+	val |= (((Uint16)(fx.actRadiusMagicID) & 0xFFF) << 8);
+	val |= (((Uint8)(fx.actRadiusMagicDist) & 0xFF) << 20);
+	fx.skill[2] = val;
+}
+
+Entity* createRadiusMagic(int spellID, Entity* caster, real_t x, real_t y, real_t radius, Uint32 lifetime, Entity* follow)
+{
+	if ( !caster )
+	{
+		return nullptr;
+	}
+
+	int sprite = -1;
+	switch ( spellID )
+	{
+	case SPELL_NULL_AREA:
+		sprite = 1817;
+		break;
+	case SPELL_SPHERE_SILENCE:
+		sprite = 1818;
+		break;
+	default:
+		break;
+	}
+
+	if ( sprite == -1 )
+	{
+		return nullptr;
+	}
+
+	Entity* entity = newEntity(sprite, 1, map.entities, nullptr); //Sprite entity.
+	entity->x = x;
+	entity->y = y;
+	entity->z = 7.5;
+	entity->yaw = 0.0;
+	entity->skill[0] = lifetime;
+	entity->parent = caster->getUID();
+	entity->actRadiusMagicID = spellID;
+	entity->actRadiusMagicDist = radius;
+	if ( follow )
+	{
+		entity->actRadiusMagicFollowUID = follow->getUID();
+	}
+	entity->behavior = &actRadiusMagic;
+	entity->flags[PASSABLE] = true;
+	entity->flags[UNCLICKABLE] = true;
+	entity->flags[UPDATENEEDED] = true;
+	entity->flags[INVISIBLE] = true;
+	bool noupdate = !follow;
+	radiusMagicSetUID(*entity, noupdate);
+	return entity;
+}
+
+void createMagicRadiusBadge(Entity& parent)
+{
+	Entity* entity = newEntity(parent.sprite, 1, map.entities, nullptr); //Particle entity.
+	entity->parent = parent.getUID();
+	entity->x = parent.x;
+	entity->y = parent.y;
+	static ConsoleVariable<float> cvar_magic_radius_badge1("/magic_radius_badge1", 4.0);
+	static ConsoleVariable<float> cvar_magic_radius_badge2("/magic_radius_badge2", 0.0);
+	entity->z = 4.0;
+	int mapx = entity->x / 16;
+	int mapy = entity->y / 16;
+	if ( mapx >= 0 && mapx < map.width && mapy >= 0 && mapy < map.height )
+	{
+		if ( !map.tiles[(MAPLAYERS - 1) + mapy * MAPLAYERS + mapx * MAPLAYERS * map.height] )
+		{
+			// no ceiling
+			entity->fskill[0] = *cvar_magic_radius_badge2;
+		}
+		else
+		{
+			entity->fskill[0] = *cvar_magic_radius_badge1;
+		}
+	}
+	else
+	{
+		entity->fskill[0] = *cvar_magic_radius_badge2;
+	}
+	entity->vel_z = -0.8;
+	entity->scalex = 0.1;
+	entity->scaley = 0.1;
+	entity->scalez = 0.1;
+	entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
+	entity->behavior = &actRadiusMagicBadge;
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->flags[UNCLICKABLE] = true;
+	entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+		*cvar_magic_fx_light_bonus, 0.f);
+	if ( multiplayer != CLIENT )
+	{
+		entity_uids--;
+	}
+	entity->setUID(-3);
+}
+
+void actRadiusMagic(Entity* my)
+{
+	Entity* caster = nullptr;
+	if ( multiplayer != CLIENT )
+	{
+		caster = uidToEntity(my->parent);
+	}
+	if ( PARTICLE_LIFE < 0 || (!caster && multiplayer != CLIENT) )
+	{
+		my->removeLightField();
+		list_RemoveNode(my->mynode);
+		return;
+	}
+
+	if ( multiplayer != CLIENT )
+	{
+		if ( my->actRadiusMagicFollowUID != 0 )
+		{
+			Entity* follow = uidToEntity(my->actRadiusMagicFollowUID);
+			if ( !follow )
+			{
+				my->removeLightField();
+				list_RemoveNode(my->mynode);
+				return;
+			}
+			else
+			{
+				my->x = follow->x;
+				my->y = follow->y;
+			}
+		}
+	}
+	else
+	{
+		if ( my->actRadiusMagicFollowUID != 0 )
+		{
+			if ( Entity* follow = uidToEntity(my->actRadiusMagicFollowUID) )
+			{
+				my->x = follow->x;
+				my->y = follow->y;
+				my->new_x = my->x; // skip dead reckoning interpolation since we know the follow target
+				my->new_y = my->y;
+			}
+		}
+	}
+
+	my->removeLightField();
+	my->light = addLight(my->x / 16, my->y / 16, colorForSprite(my, my->sprite, false));
+
+	my->flags[INVISIBLE] = true;
+
+	if ( my->actRadiusMagicInit == 0 )
+	{
+		if ( Entity* fx = createParticleAOEIndicator(my, my->x, my->y, 0.0, TICKS_PER_SECOND * 99, my->actRadiusMagicDist) )
+		{
+			//fx->actSpriteCheckParentExists = 0;
+			if ( auto indicator = AOEIndicators_t::getIndicator(fx->skill[10]) )
+			{
+				Uint32 color = 0xFFFFFFFF;
+				switch ( my->sprite )
+				{
+				case 1817:
+					color = makeColorRGB(195, 48, 165);
+					break;
+				case 1818:
+					color = makeColorRGB(124, 107, 209);
+					break;
+				default:
+					break;
+				}
+				Uint8 r, g, b, a;
+				getColor(color, &r, &g, &b, &a);
+				a *= 0.8;
+				indicator->indicatorColor = makeColor(r, g, b, a);
+				indicator->loop = true;
+				indicator->framesPerTick = 1;
+				indicator->ticksPerUpdate = 1;
+				indicator->gradient = 4;
+				indicator->delayTicks = 0;
+				indicator->radiusMin = 4;
+				indicator->radius = 4;
+				indicator->loopType = 1;
+				indicator->loopTimer = 50;
+			}
+		}
+		spawnMagicEffectParticles(my->x, my->y, my->z, my->sprite);
+		createMagicRadiusBadge(*my);
+		my->actRadiusMagicInit = 1;
+
+	}
+
+	if ( multiplayer == SERVER )
+	{
+		if ( my->ticks >= *cvar_entity_bodypart_sync_tick )
+		{
+			if ( (my->ticks - *cvar_entity_bodypart_sync_tick) % (2 * TICKS_PER_SECOND) == 0 )
+			{
+				if ( my->actRadiusMagicFollowUID != 0 )
+				{
+					serverUpdateEntitySkill(my, 5); // update follow UID
+				}
+			}
+		}
+	}
+
+	if ( multiplayer != CLIENT )
+	{
+		--PARTICLE_LIFE;
+
+		auto entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 1 + my->actRadiusMagicDist / 16);
+		std::vector<Entity*> applyEffects;
+		for ( auto it : entLists )
+		{
+			node_t* node;
+			for ( node = it->first; node != nullptr; node = node->next )
+			{
+				if ( Entity* entity = (Entity*)node->element )
+				{
+					if ( my->actRadiusMagicID == SPELL_NULL_AREA )
+					{
+						if ( entity->behavior == &actMagicMissile )
+						{
+							if ( entityDist(my, entity) <= (real_t)my->actRadiusMagicDist )
+							{
+								auto props = getParticleEmitterHitProps(my->getUID(), entity);
+								if ( props->hits > 0 )
+								{
+									continue;
+								}
+								props->hits++;
+								applyEffects.push_back(entity);
+							}
+						}
+					}
+					else if ( my->actRadiusMagicID == SPELL_SPHERE_SILENCE )
+					{
+						if ( entity->behavior == &actMagicMissile )
+						{
+							if ( entityDist(my, entity) <= (real_t)my->actRadiusMagicDist )
+							{
+								auto props = getParticleEmitterHitProps(my->getUID(), entity);
+								if ( props->hits > 0 )
+								{
+									continue;
+								}
+								props->hits++;
+								Entity* parent = uidToEntity(entity->parent);
+								if ( parent && entityDist(my, parent) < (real_t)my->actRadiusMagicDist )
+								{
+									applyEffects.push_back(entity);
+								}
+							}
+						}
+					}
+					else
+					{
+						if ( entity->behavior == &actPlayer || (entity->behavior == &actMonster && !entity->isInertMimic()) )
+						{
+							if ( entityDist(my, entity) <= (real_t)my->actRadiusMagicDist )
+							{
+								if ( caster->checkFriend(entity) || caster == entity )
+								{
+									entity->setEffect(EFF_SLOW, true, 15, false);
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+		for ( auto ent : applyEffects )
+		{
+			if ( my->actRadiusMagicID == SPELL_NULL_AREA || my->actRadiusMagicID == SPELL_SPHERE_SILENCE )
+			{
+				Entity* fx = createParticleAestheticOrbit(my, my->sprite, TICKS_PER_SECOND / 4, PARTICLE_EFFECT_NULL_PARTICLE);
+				fx->x = ent->x;
+				fx->y = ent->y;
+				fx->z = ent->z;
+				real_t tangent = atan2(ent->y - my->y, ent->x - my->x);
+				fx->yaw = tangent;
+				fx->actmagicOrbitDist = 0;
+				fx->actmagicNoLight = 0;
+				serverSpawnMiscParticlesAtLocation(fx->x, fx->y, fx->z, PARTICLE_EFFECT_NULL_PARTICLE, my->sprite, 0, fx->yaw * 256.0);
+				ent->removeLightField();
+				list_RemoveNode(ent->mynode);
+			}
+		}
+	}
 }

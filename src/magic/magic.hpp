@@ -180,6 +180,10 @@ static const int SPELL_DEFACE = 157;
 static const int SPELL_SUNDER_MONUMENT = 158;
 static const int SPELL_DEMESNE_DOOR = 159;
 static const int SPELL_TUNNEL = 160;
+static const int SPELL_NULL_AREA = 161;
+static const int SPELL_SPHERE_SILENCE = 162;
+static const int SPELL_FORGE_METAL_SCRAP = 163;
+static const int SPELL_FORGE_MAGIC_SCRAP = 164;
 static const int NUM_SPELLS = 180;
 
 #define SPELLELEMENT_CONFUSE_BASE_DURATION 2//In seconds.
@@ -264,6 +268,7 @@ static const int PARTICLE_EFFECT_BOOBY_TRAP = 36;
 static const int PARTICLE_EFFECT_SPORE_BOMB = 37;
 static const int PARTICLE_EFFECT_WINDGATE = 38;
 static const int PARTICLE_EFFECT_DEMESNE_DOOR = 39;
+static const int PARTICLE_EFFECT_NULL_PARTICLE = 40;
 
 // actmagicIsVertical constants
 static const int MAGIC_ISVERTICAL_NONE = 0;
@@ -749,6 +754,7 @@ void actMagicClientNoLight(Entity* my);
 void actMagicParticle(Entity* my);
 void actHUDMagicParticle(Entity* my);
 void actHUDMagicParticleCircling(Entity* my);
+void actMagicParticleCircling2(Entity* my);
 void actMagicParticleEnsembleCircling(Entity* my);
 void createEnsembleHUDParticleCircling(Entity* parent);
 void createEnsembleTargetParticleCircling(Entity* parent);
@@ -776,6 +782,8 @@ void actParticleVortex(Entity* my);
 void actParticleWave(Entity* my);
 void actParticleRoot(Entity* my);
 void actParticleDemesneDoor(Entity* my);
+void actRadiusMagic(Entity* my);
+void actRadiusMagicBadge(Entity* my);
 
 void createParticleDropRising(Entity* parent, int sprite, double scale);
 void createParticleDot(Entity* parent);
@@ -800,8 +808,10 @@ static const int PINPOINT_PARTICLE_START = 1767;
 static const int PINPOINT_PARTICLE_END = 1775;
 void createParticleSpellPinpointTarget(Entity* parent, Uint32 casterUid, int sprite, int duration, int spellID);
 Entity* createFloorMagic(ParticleTimerEffect_t::EffectType particleType, int sprite, real_t x, real_t y, real_t z, real_t dir, Uint32 lifetime);
+Entity* createRadiusMagic(int spellID, Entity* caster, real_t x, real_t y, real_t radius, Uint32 lifetime, Entity* follow);
 void floorMagicClientReceive(Entity* my);
 void particleWaveClientReceive(Entity* my);
+void radiusMagicClientReceive(Entity* entity);
 Entity* floorMagicSetLightningParticle(Entity* my);
 void floorMagicCreateLightningSequence(Entity* spellTimer, int startTickOffset);
 void floorMagicCreateSpores(Entity* spawnOnEntity, real_t x, real_t y, Entity* caster, int damage, int spellID);
@@ -916,7 +926,6 @@ void spellEffectShadowTag(Entity& my, spellElement_t& element, Entity* parent, i
 bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* parent, Entity* target, int resistance);
 Entity* spellEffectAdorcise(Entity& caster, spellElement_t& element, real_t x, real_t y, Item* itemToAdorcise);
 Entity* spellEffectHologram(Entity& caster, spellElement_t& element, real_t x, real_t y);
-Item* spellEffectForceShield(Entity& caster, int spellID, spellElement_t* element);
 Entity* spellEffectDemesneDoor(Entity& caster, Entity& doorFrame);
 void magicSetResistance(Entity* entity, Entity* parent, int& resistance, real_t& damageMultiplier, DamageGib& dmgGib, int& trapResist);
 
@@ -944,6 +953,9 @@ struct AOEIndicators_t
 		Uint32 indicatorColor = 0xFFFFFFFF;
 		real_t arc = 0.0;
 		bool expired = false;
+		int loopType = 0;
+		Uint32 loopTicks = 0;
+		Uint32 loopTimer = 0;
 		void updateIndicator();
 		Indicator_t(int _radiusMin, int _radiusMax, int _size, int _lifetime, Uint32 _uid)
 		{

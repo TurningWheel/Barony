@@ -2497,6 +2497,16 @@ void setupSpells()   ///TODO: Verify this function.
 		"spell_force_shield");
 
 	spell = createSimpleSpell(
+		SPELL_REFLECTOR,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		750, // duration
+		"spell_reflector");
+
+	spell = createSimpleSpell(
 		SPELL_SPLINTER_GEAR,
 		100, // difficulty
 		1, // mana
@@ -2579,6 +2589,53 @@ void setupSpells()   ///TODO: Verify this function.
 		"spell_tunnel");
 	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH_WALL_TILE;
 	spell->distance = 64.0;
+
+	spell = createSimpleSpell(
+		SPELL_NULL_AREA,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_null_area");
+	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH_FLOOR_TILE;
+	spell->distance = 64.0;
+
+	spellElementConstructor(SPELL_SPHERE_SILENCE,
+		1,		// mana
+		1,		// base mana
+		1,		// overload
+		0,		// damage
+		0,		// duration
+		"spell_element_sphere_silence");
+	spell = spellConstructor(
+		SPELL_SPHERE_SILENCE,										// ID
+		100,												// difficulty
+		"spell_sphere_silence",										// internal name
+		// elements
+		{ SPELL_ELEMENT_PROPULSION_MISSILE, SPELL_SPHERE_SILENCE }
+	);
+
+	spell = createSimpleSpell(
+		SPELL_FORGE_METAL_SCRAP,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_forge_metal_scrap");
+
+	spell = createSimpleSpell(
+		SPELL_FORGE_MAGIC_SCRAP,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_forge_magic_scrap");
 }
 
 spell_t* createSimpleSpell(int spellID, int difficulty, int mana, int base_mana, int overload_mult, int damage, 

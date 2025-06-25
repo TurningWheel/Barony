@@ -431,10 +431,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			}
 			if ( castSpellProps )
 			{
-				SDLNet_Write16(static_cast<Sint32>(castSpellProps->caster_x * 256.0), &net_packet->data[10]);
-				SDLNet_Write16(static_cast<Sint32>(castSpellProps->caster_y * 256.0), &net_packet->data[14]);
-				SDLNet_Write16(static_cast<Sint32>(castSpellProps->target_x * 256.0), &net_packet->data[18]);
-				SDLNet_Write16(static_cast<Sint32>(castSpellProps->target_y * 256.0), &net_packet->data[22]);
+				SDLNet_Write32(static_cast<Sint32>(castSpellProps->caster_x * 256.0), &net_packet->data[10]);
+				SDLNet_Write32(static_cast<Sint32>(castSpellProps->caster_y * 256.0), &net_packet->data[14]);
+				SDLNet_Write32(static_cast<Sint32>(castSpellProps->target_x * 256.0), &net_packet->data[18]);
+				SDLNet_Write32(static_cast<Sint32>(castSpellProps->target_y * 256.0), &net_packet->data[22]);
 				SDLNet_Write32(castSpellProps->targetUID, &net_packet->data[26]);
 				net_packet->data[30] = castSpellProps->wallDir;
 				net_packet->len = 31;
@@ -1716,17 +1716,23 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			{
 				if ( Stat* casterStats = caster->getStats() )
 				{
-					if ( caster->behavior == &actPlayer )
-					{
-						spellEffectForceShield(*caster, spell->ID, element);
-					}
-					else
-					{
-						if ( !casterStats->shield )
-						{
-							casterStats->shield = newItem(FORCE_SHIELD, EXCELLENT, 0, 1, local_rng.rand(), true, nullptr);
-						}
-					}
+					caster->setEffect(EFF_FORCE_SHIELD, (Uint8)50, 5 * TICKS_PER_SECOND, true);
+					messagePlayerColor(caster->isEntityPlayer(),
+						MESSAGE_HINT, makeColorRGB(0, 255, 0), Language::get(6699));
+				}
+				playSoundEntity(caster, 166, 128);
+				spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
+			}
+		}
+		else if ( spell->ID == SPELL_REFLECTOR )
+		{
+			if ( caster )
+			{
+				if ( Stat* casterStats = caster->getStats() )
+				{
+					caster->setEffect(EFF_FORCE_SHIELD, (Uint8)100, 5 * TICKS_PER_SECOND, true);
+					messagePlayerColor(caster->isEntityPlayer(),
+						MESSAGE_HINT, makeColorRGB(0, 255, 0), Language::get(6700));
 				}
 				playSoundEntity(caster, 166, 128);
 				spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
@@ -2725,6 +2731,23 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							messagePlayer(caster->skill[2], MESSAGE_MISC, Language::get(6578));
 						}
 					}
+				}
+				spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
+				playSoundEntity(caster, 171, 128);
+			}
+		}
+		else if ( spell->ID == SPELL_NULL_AREA )
+		{
+			if ( caster )
+			{
+				bool found = false;
+				bool effect = false;
+				if ( castSpellProps )
+				{
+					found = true;
+					createRadiusMagic(SPELL_NULL_AREA, caster, 
+						castSpellProps->target_x, castSpellProps->target_y, 24, 5 * TICKS_PER_SECOND, nullptr);
+
 				}
 				spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
 				playSoundEntity(caster, 171, 128);
@@ -4947,6 +4970,43 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			}
 			//Also refactor the duration determining code.
 		}
+		else if ( !strcmp(element->element_internal_name, spellElementMap[SPELL_FORGE_METAL_SCRAP].element_internal_name)
+			|| !strcmp(element->element_internal_name, spellElementMap[SPELL_FORGE_MAGIC_SCRAP].element_internal_name) )
+		{
+			if ( caster )
+			{
+				Item* item = nullptr;
+				if ( spell->ID == SPELL_FORGE_METAL_SCRAP )
+				{
+					item = newItem(TOOL_METAL_SCRAP, DECREPIT, 0, 50, 0, true, nullptr);
+				}
+				else if ( spell->ID == SPELL_FORGE_MAGIC_SCRAP )
+				{
+					item = newItem(TOOL_MAGIC_SCRAP, DECREPIT, 0, 50, 0, true, nullptr);
+				}
+				if ( item )
+				{
+					std::string itemName = item->getName();
+					int qty = item->count;
+					Entity* dropped = dropItemMonster(item, caster, nullptr, item->count);
+					if ( dropped )
+					{
+						dropped->yaw = caster->yaw;
+						dropped->vel_x = (1.5 + .025 * (local_rng.rand() % 11)) * cos(caster->yaw);
+						dropped->vel_y = (1.5 + .025 * (local_rng.rand() % 11)) * sin(caster->yaw);
+						dropped->flags[USERFLAG1] = false;
+
+						messagePlayerColor(caster->isEntityPlayer(), MESSAGE_INVENTORY, makeColorRGB(0, 255, 0), Language::get(6697), qty, itemName.c_str());
+						playSoundEntity(caster, 167, 128);
+						spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
+					}
+					else
+					{
+						free(item);
+					}
+				}
+			}
+		}
 		else if ( !strcmp(element->element_internal_name, spellElement_slime_spray.element_internal_name)
 			|| !strcmp(element->element_internal_name, spellElementMap[SPELL_ELEMENT_PROPULSION_MAGIC_SPRAY].element_internal_name) )
 		{
@@ -5517,6 +5577,13 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				if ( propulsion == PROPULSION_MISSILE )
 				{
 					missileEntity->sprite = 1801;
+				}
+			}
+			else if ( !strcmp(innerElement->element_internal_name, spellElementMap[SPELL_SPHERE_SILENCE].element_internal_name) )
+			{
+				if ( propulsion == PROPULSION_MISSILE )
+				{
+					missileEntity->sprite = 1818;
 				}
 			}
 			else if ( !strcmp(innerElement->element_internal_name, spellElementMap[SPELL_WONDERLIGHT].element_internal_name) )
