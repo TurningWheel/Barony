@@ -115,6 +115,7 @@ static const int EFF_LIGHTEN_LOAD = 90;
 static const int EFF_ATTRACT_ITEMS = 91;
 static const int EFF_RETURN_ITEM = 92;
 static const int EFF_DEMESNE_DOOR = 93;
+static const int EFF_REFLECTOR_SHIELD = 94;
 static const int NUMEFFECTS = 96;
 
 // stats

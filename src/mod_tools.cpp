@@ -84,9 +84,11 @@ void GameModeManager_t::Tutorial_t::startTutorial(std::string mapToSet)
 		}
 		setTutorialMap(mapToSet);
 	}
+#ifndef EDITOR
 	gameModeManager.setMode(gameModeManager.GameModes::GAME_MODE_TUTORIAL);
 	GameplayPreferences_t::reset();
 	gameplayPreferences[0].process();
+#endif
 	stats[0]->clearStats();
 	strcpy(stats[0]->name, "Player");
 	stats[0]->sex = static_cast<sex_t>(local_rng.rand() % 2);
@@ -2378,7 +2380,8 @@ std::string ItemTooltips_t::getCostOfSpellString(const int player, Item& item)
 		}
 		snprintf(buf, sizeof(buf), str.c_str(), getCostOfSpell(spell));
 	}
-	else if ( spell->ID == SPELL_LEAD_BOLT || spell->ID == SPELL_MERCURY_BOLT )
+	else if ( spell->ID == SPELL_LEAD_BOLT || spell->ID == SPELL_MERCURY_BOLT
+		|| spell->ID == SPELL_FORGE_METAL_SCRAP || spell->ID == SPELL_FORGE_MAGIC_SCRAP )
 	{
 		std::string templateName = "template_spell_cost_gold";
 		std::string str;
@@ -8105,6 +8108,10 @@ void ClassHotbarConfig_t::readFromFile(ClassHotbarConfig_t::HotbarConfigType fil
 			for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
 			{
 				std::string slotnum = std::to_string(i);
+				if ( !layout->value.HasMember(slotnum.c_str()) )
+				{
+					continue;
+				}
 				auto& slot = layout->value[slotnum.c_str()];
 				if ( slot.HasMember("items") )
 				{

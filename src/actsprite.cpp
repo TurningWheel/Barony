@@ -46,6 +46,14 @@ void actSprite(Entity* my)
 	{
 		if ( !uidToEntity(SPRITE_CHECK_PARENT_EXISTS) )
 		{
+			if ( my->actSpriteUseCustomSurface != 0 )
+			{
+				if ( auto fx = AOEIndicators_t::getIndicator(my->actSpriteUseCustomSurface) )
+				{
+					fx->expired = true;
+				}
+			}
+
 			my->removeLightField();
 			list_RemoveNode(my->mynode);
 			return;

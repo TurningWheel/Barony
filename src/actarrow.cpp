@@ -1445,6 +1445,7 @@ void actArrow(Entity* my)
 								{
 									shieldDegradeChance += 10;
 								}
+
 								if ( hit.entity->behavior == &actPlayer )
 								{
 									if ( itemCategory(hitstats->shield) == ARMOR )
@@ -1476,8 +1477,10 @@ void actArrow(Entity* my)
 
 						if ( armor != NULL && armor->status > BROKEN )
 						{
-							hit.entity->degradeArmor(*hitstats, *armor, armornum);
-							armorDegraded = true;
+							if ( hit.entity->degradeArmor(*hitstats, *armor, armornum) )
+							{
+								armorDegraded = true;
+							}
 							if ( armor->status == BROKEN )
 							{
 								if ( parent && parent->behavior == &actPlayer && hit.entity->behavior == &actMonster )

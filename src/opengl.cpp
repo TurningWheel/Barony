@@ -650,9 +650,8 @@ static void loadLightmapTexture(int which, map_t& map) {
 #else
     const bool fullbright = (&map == &CompendiumEntries.compendiumMap) ? true :// compendium virtual map is always fullbright
         (conductGameChallenges[CONDUCT_CHEATS_ENABLED] ? *cvar_fullBright : false);
-#endif
-
     static ConsoleVariable<Vector4> cvar_shade_factor("/light_shade_factor", {0.8f, 0.8f, 0.63f, 0.f });
+#endif
     
     // build lightmap texture data
     const float div = 1.f / 255.f;
@@ -679,10 +678,12 @@ static void loadLightmapTexture(int which, map_t& map) {
                     total.z = (total.z / count) * div;
                     if ( total.w > 0.01 )
                     {
+#ifndef EDITOR
                         float shade = std::min(1.f, (total.w / count) * div);
                         total.x -= total.x * shade * cvar_shade_factor->x;
                         total.y -= total.y * shade * cvar_shade_factor->y;
                         total.z -= total.z * shade * cvar_shade_factor->z;
+#endif
                     }
                     total.w = 1.f;
                     pixels.insert(pixels.end(), {total.x, total.y, total.z, total.w});
@@ -784,7 +785,12 @@ static vec4_t* HSVtoRGB(vec4_t* result, const vec4_t* hsv){
     return result;
 }
 
+#ifndef EDITOR
 static ConsoleVariable<Vector4> cvar_color_mist_form("/color_mist_form", Vector4{ 0.6, 0.75, 0.0, 0.f });
+static ConsoleVariable<Vector4> cvar_color_hologram("/color_hologram", Vector4{ 0.9, 0.2, 0.5, 0.f });
+static ConsoleVariable<Vector4> cvar_color_force_shield("/color_force_shield", Vector4{ 0.8, 0.8, 0.0, 0.f });
+static ConsoleVariable<Vector4> cvar_color_reflector_shield("/color_reflector_shield", Vector4{ 0.8, 0.8, 0.0, 0.f });
+#endif
 
 static void uploadLightUniforms(view_t* camera, Shader& shader, Entity* entity, int mode, bool remap) {
     const float cameraPos[4] = {(float)camera->x * 32.f, -(float)camera->z, (float)camera->y * 32.f, 1.f};
@@ -825,26 +831,30 @@ static void uploadLightUniforms(view_t* camera, Shader& shader, Entity* entity, 
                 }
             }
 
-            if ( entity->mistformGLRender > 0.01 )
+#ifndef EDITOR
+            if ( entity->mistformGLRender >= 0.45 )
             {
+                auto& whichColor = (entity->mistformGLRender > 1.9) ? cvar_color_hologram
+                    : (entity->mistformGLRender > 0.9) ? cvar_color_mist_form
+                    : ((entity->mistformGLRender >= 0.4 && entity->mistformGLRender <= 0.6) ? cvar_color_reflector_shield
+                    : (entity->mistformGLRender >= 0.2 && entity->mistformGLRender <= 0.4) ? cvar_color_force_shield
+                    : cvar_color_mist_form);
                 vec4_t hsv;
                 hsv.y = 100.f; // saturation
                 hsv.z = 100.f; // value
                 hsv.w = 0.f;   // unused
 
                 const auto amp = 360.0;
-                hsv.x = cvar_color_mist_form->x * amp;
+                hsv.x = whichColor->x * amp;
                 HSVtoRGB(&remap.x, &hsv); // red
 
-                hsv.x = cvar_color_mist_form->y * amp + 120;
+                hsv.x = whichColor->y * amp + 120;
                 HSVtoRGB(&remap.y, &hsv); // green
 
-                hsv.x = cvar_color_mist_form->z * amp + 240;
+                hsv.x = whichColor->z * amp + 240;
                 HSVtoRGB(&remap.z, &hsv); // blue
-                //remap.x.x *= cvar_color_mist_form->x * entity->mistformGLRender;
-                //remap.y.y *= cvar_color_mist_form->y * entity->mistformGLRender;
-                //remap.z.z *= cvar_color_mist_form->z * entity->mistformGLRender;
             }
+#endif
 
 #ifndef EDITOR
             static ConsoleVariable<Vector4> cvar_colortest("/colortest", Vector4{1.f, 1.f, 1.f, 0.f});
@@ -1309,7 +1319,7 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
     auto& shader = !entity->flags[BRIGHT] && !telepath ?
         (dither.value < Entity::Dither::MAX ? voxelDitheredShader : voxelShader) :
         ((((entity->flags[INVISIBLE] && entity->flags[INVISIBLE_DITHER])
-            || entity->mistformGLRender > 0.01)
+            || entity->mistformGLRender >= 0.45)
             && dither.value < Entity::Dither::MAX) 
                 ? voxelBrightDitheredShader : voxelBrightShader);
     shader.bind();
@@ -1353,25 +1363,29 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
     // upload light variables
     if (entity->flags[BRIGHT]) {
         mat4x4_t remap(1.f);
-        if ( entity->mistformGLRender > 0.01 )
+        if ( entity->mistformGLRender >= 0.45 )
         {
+#ifndef EDITOR
+            auto& whichColor = (entity->mistformGLRender > 1.9) ? cvar_color_hologram
+                : (entity->mistformGLRender > 0.9) ? cvar_color_mist_form
+                : ((entity->mistformGLRender >= 0.4 && entity->mistformGLRender <= 0.6) ? cvar_color_reflector_shield
+                    : (entity->mistformGLRender >= 0.2 && entity->mistformGLRender <= 0.4) ? cvar_color_force_shield
+                    : cvar_color_mist_form);
             vec4_t hsv;
             hsv.y = 100.f; // saturation
             hsv.z = 100.f; // value
             hsv.w = 0.f;   // unused
 
             const auto amp = 360.0;
-            hsv.x = cvar_color_mist_form->x * amp;
+            hsv.x = whichColor->x * amp;
             HSVtoRGB(&remap.x, &hsv); // red
 
-            hsv.x = cvar_color_mist_form->y * amp + 120;
+            hsv.x = whichColor->y * amp + 120;
             HSVtoRGB(&remap.y, &hsv); // green
 
-            hsv.x = cvar_color_mist_form->z * amp + 240;
+            hsv.x = whichColor->z * amp + 240;
             HSVtoRGB(&remap.z, &hsv); // blue
-            //remap.x.x *= cvar_color_mist_form->x * entity->mistformGLRender;
-            //remap.y.y *= cvar_color_mist_form->y * entity->mistformGLRender;
-            //remap.z.z *= cvar_color_mist_form->z * entity->mistformGLRender;
+#endif
         }
         GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uColorRemap"), 1, false, (float*)&remap));
         const float b = std::max(0.5f, camera->luminance * 4.f);

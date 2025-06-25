@@ -2152,6 +2152,12 @@ void clientActions(Entity* entity)
 						entity->flags[NOUPDATE] = true;
 						particleWaveClientReceive(entity);
 					}
+					else if ( static_cast<Uint8>(c & 0xFF) == 24 )
+					{
+						entity->behavior = &actRadiusMagic;
+						entity->skill[2] = c;
+						radiusMagicClientReceive(entity);
+					}
 					break;
 			}
 		}
@@ -3323,6 +3329,18 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 			case PARTICLE_EFFECT_DEMESNE_DOOR:
 				createParticleDemesneDoor(particle_x, particle_y, particle_z / 256.0);
 				break;
+			case PARTICLE_EFFECT_NULL_PARTICLE:
+			{
+				Entity* fx = createParticleAestheticOrbit(nullptr, sprite, TICKS_PER_SECOND / 4, PARTICLE_EFFECT_NULL_PARTICLE);
+				fx->x = particle_x;
+				fx->y = particle_y;
+				fx->z = particle_z;
+				Sint32 dir = SDLNet_Read32(&net_packet->data[17]);
+				fx->yaw = dir / 256.0;
+				fx->actmagicOrbitDist = 0;
+				fx->actmagicNoLight = 0;
+				break;
+			}
 			default:
 				break;
 		}
@@ -7543,10 +7561,10 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 			if ( net_packet->len > 10 )
 			{
 				CastSpellProps_t castSpellProps;
-				castSpellProps.caster_x = (SDLNet_Read16(&net_packet->data[10]) / 256.0);
-				castSpellProps.caster_y = (SDLNet_Read16(&net_packet->data[14]) / 256.0);
-				castSpellProps.target_x = (SDLNet_Read16(&net_packet->data[18]) / 256.0);
-				castSpellProps.target_y = (SDLNet_Read16(&net_packet->data[22]) / 256.0);
+				castSpellProps.caster_x = (SDLNet_Read32(&net_packet->data[10]) / 256.0);
+				castSpellProps.caster_y = (SDLNet_Read32(&net_packet->data[14]) / 256.0);
+				castSpellProps.target_x = (SDLNet_Read32(&net_packet->data[18]) / 256.0);
+				castSpellProps.target_y = (SDLNet_Read32(&net_packet->data[22]) / 256.0);
 				castSpellProps.targetUID = (SDLNet_Read32(&net_packet->data[26]));
 				castSpellProps.wallDir = net_packet->data[30];
 				castSpell(players[player]->entity->getUID(), thespell, false, false, spellbookCast, &castSpellProps);

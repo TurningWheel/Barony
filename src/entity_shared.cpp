@@ -1113,8 +1113,6 @@ char itemNameStrings[NUM_ITEM_STRINGS][32] =
 	"rapier",
 	"amulet_burningresist",
 	"potion_grease",
-	"force_shield",
-	"reflector_shield",
 	""
 };
 
@@ -1322,8 +1320,6 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"instrument_drum",
 		"instrument_lute",
 		"instrument_horn",
-		"force_shield",
-		"reflector_shield",
 		""
 	},
 	{
@@ -1749,7 +1745,7 @@ char monsterEditorNameStrings[NUMMONSTERS][32] =
 	"monster_adorcised_weapon",
 	"flame_elemental",
 	"hologram",
-	"monster_unused_3",
+	"moth",
 	"monster_unused_4",
 	"monster_unused_5",
 	"monster_unused_6",
@@ -2050,6 +2046,7 @@ int canWearEquip(Entity* entity, int category)
 				case REVENANT_SKULL:
 				case FLAME_ELEMENTAL:
 				case HOLOGRAM:
+				case MOTH_SMALL:
 					equipType = 0;
 					break;
 

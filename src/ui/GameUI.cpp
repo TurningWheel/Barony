@@ -21714,7 +21714,9 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 		}
 		else
 		{
-			if ( item->type == SPELL_ITEM && (item->appearance == SPELL_LEAD_BOLT || item->appearance == SPELL_MERCURY_BOLT) )
+			if ( item->type == SPELL_ITEM 
+				&& (item->appearance == SPELL_LEAD_BOLT || item->appearance == SPELL_MERCURY_BOLT
+					|| item->appearance == SPELL_FORGE_METAL_SCRAP || item->appearance == SPELL_FORGE_MAGIC_SCRAP) )
 			{
 				if ( spell_t* spell = getSpellFromItem(player, item, true) )
 				{

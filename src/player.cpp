@@ -4659,6 +4659,7 @@ void Player::WorldUI_t::handleTooltips()
 							|| parent->getMonsterTypeFromSprite() == MINIMIMIC
 							|| parent->getMonsterTypeFromSprite() == FLAME_ELEMENTAL
 							|| parent->getMonsterTypeFromSprite() == MONSTER_ADORCISED_WEAPON
+							|| parent->getMonsterTypeFromSprite() == MOTH_SMALL
 							|| parent->getMonsterTypeFromSprite() == BAT_SMALL)) )
 				{
 					continue;
@@ -7118,9 +7119,6 @@ bool Player::PlayerMechanics_t::itemDegradeRoll(Item* item, int* checkInterval)
 			break;
 		case CRYSTAL_SHIELD:
 			interval = 20;
-			break;
-		case FORCE_SHIELD:
-			interval = 10 + (stats[player.playernum] ? stats[player.playernum]->getEffectActive(EFF_FORCE_SHIELD) % 50 : 0);
 			break;
 		default:
 			break;

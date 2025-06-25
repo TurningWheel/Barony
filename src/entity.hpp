@@ -601,6 +601,11 @@ public:
 	Sint32& actfloorMagicType = skill[3];
 	Sint32& actfloorMagicClientReceived = skill[4];
 
+	Sint32& actRadiusMagicID = skill[1];
+	Sint32& actRadiusMagicInit = skill[3];
+	Sint32& actRadiusMagicDist = skill[4];
+	Sint32& actRadiusMagicFollowUID = skill[5];
+
 	Sint32& actParticleWaveStartFrame = skill[4];
 	Sint32& actParticleWaveLight = skill[7];
 	Sint32& actParticleWaveMagicType = skill[9];
@@ -1548,7 +1553,7 @@ public:
 		TO_ADORCISED_WEAPON,
 		TO_FLAME_ELEMENTAL,
 		TO_HOLOGRAM,
-		TO_MONSTER_UNUSED_3,
+		TO_MOTH_SMALL,
 		TO_MONSTER_UNUSED_4,
 		TO_MONSTER_UNUSED_5,
 		TO_MONSTER_UNUSED_6,

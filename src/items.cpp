@@ -2303,8 +2303,6 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		case STEEL_SHIELD_RESISTANCE:
 		case MIRROR_SHIELD:
 		case CRYSTAL_SHIELD:
-		case FORCE_SHIELD:
-		case REFLECTOR_SHIELD:
 			equipItemResult = equipItem(item, &stats[player]->shield, player, checkInventorySpaceForPaperDoll);
 			break;
 		case CROSSBOW:
@@ -4840,28 +4838,6 @@ Sint32 Item::armorGetAC(const Stat* const wielder) const
 	else if ( type == SPIKED_GAUNTLETS )
 	{
 		armor += 3;
-	}
-	else if ( type == FORCE_SHIELD
-		|| type == REFLECTOR_SHIELD )
-	{
-		armor += 0;
-		if ( wielder )
-		{
-			if ( type == FORCE_SHIELD )
-			{
-				if ( wielder->getEffectActive(EFF_FORCE_SHIELD) > 0 )
-				{
-					armor += wielder->getEffectActive(EFF_FORCE_SHIELD) % 50;
-				}
-			}
-			else if ( type == REFLECTOR_SHIELD )
-			{
-				if ( wielder->getEffectActive(EFF_FORCE_SHIELD) > 50 )
-				{
-					armor += (wielder->getEffectActive(EFF_FORCE_SHIELD) - 50) % 50;
-				}
-			}
-		}
 	}
 	//armor *= (double)(item->status/5.0);
 

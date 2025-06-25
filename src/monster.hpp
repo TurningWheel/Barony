@@ -68,7 +68,7 @@ enum Monster : int
 	MONSTER_ADORCISED_WEAPON,
 	FLAME_ELEMENTAL,
 	HOLOGRAM,
-	MONSTER_UNUSED_3,
+	MOTH_SMALL,
 	MONSTER_UNUSED_4,
 	MONSTER_UNUSED_5,
 	MONSTER_UNUSED_6,
@@ -346,8 +346,9 @@ static std::vector<Sint32> monsterSprites[NUMMONSTERS] = {
 	{
 		1803
 	},
-	//MONSTER_UNUSED_3
+	//MOTH__SMALL
 	{
+		1819, 1822
 	},
 	//MONSTER_UNUSED_4
 	{
@@ -413,7 +414,7 @@ static char monstertypename[][32] =
 	"monster_adorcised_weapon",
 	"flame_elemental",
 	"hologram",
-	"monster_unused_3",
+	"moth",
 	"monster_unused_4",
 	"monster_unused_5",
 	"monster_unused_6",
@@ -477,7 +478,7 @@ static char gibtype[NUMMONSTERS] =
 	0,  //MONSTER_ADORCISED_WEAPON
 	0,  //FLAME_ELEMENTAL
 	0,  //HOLOGRAM
-	1,  //MONSTER_UNUSED_3
+	2,  //MOTH_SMALL
 	1,  //MONSTER_UNUSED_4
 	1,  //MONSTER_UNUSED_5
 	1,  //MONSTER_UNUSED_6
@@ -537,7 +538,7 @@ static double damagetables[NUMMONSTERS][7] =
 	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // monster_adorcised_weapon
 	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // flame_elemental
 	{ 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f }, // hologram
-	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // monster_unused_3
+	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // moth_small
 	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // monster_unused_4
 	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // monster_unused_5
 	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // monster_unused_6
@@ -796,6 +797,7 @@ void initAdorcisedWeapon(Entity* my, Stat* myStats);
 void initMiniMimic(Entity* my, Stat* myStats);
 void initFlameElemental(Entity* my, Stat* myStats);
 void initHologram(Entity* my, Stat* myStats);
+void initMoth(Entity* my, Stat* myStats);
 
 //--act*Limb functions--
 void actHumanLimb(Entity* my);
@@ -840,6 +842,7 @@ void actMiniMimicLimb(Entity* my);
 void actAdorcisedWeaponLimb(Entity* my);
 void actFlameElementalLimb(Entity* my);
 void actHologramLimb(Entity* my);
+void actMothLimb(Entity* my);
 
 //--*Die functions--
 void humanDie(Entity* my);
@@ -886,6 +889,7 @@ void miniMimicDie(Entity* my);
 void adorcisedWeaponDie(Entity* my);
 void flameElementalDie(Entity* my);
 void hologramDie(Entity* my);
+void mothDie(Entity* my);
 
 void monsterAnimate(Entity* my, Stat* myStats, double dist);
 //--*MoveBodyparts functions--
@@ -932,6 +936,8 @@ void monsterSMoveBodyparts(Entity* my, Stat* myStats, double dist);
 void monsterGMoveBodyparts(Entity* my, Stat* myStats, double dist);
 void revenantSkullAnimate(Entity* my, Stat* myStats, double dist);
 void hologramAnimate(Entity* my, Stat* myStats, double dist);
+int mothGetAttackPose(Entity* my, int basePose);
+void mothAnimate(Entity* my, Stat* myStats, double dist);
 
 //--misc functions--
 void actMinotaurTrap(Entity* my);

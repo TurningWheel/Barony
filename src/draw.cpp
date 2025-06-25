@@ -2133,6 +2133,7 @@ void drawEntities3D(view_t* camera, int mode)
                     }
                 }
                 else if ( entity->behavior == &actHudAdditional
+						 /*|| entity->behavior == &actHudAdditional2*/
                          || entity->behavior == &actHudArrowModel
                          || entity->behavior == &actHudShield
                          || entity->behavior == &actLeftHandMagic
@@ -2197,7 +2198,7 @@ void drawEntities3D(view_t* camera, int mode)
 							dither.value + 1;
 #endif
 					}
-					else if ( entity->mistformGLRender > 0.01 )
+					else if ( entity->mistformGLRender >= 0.45 )
 					{
 #ifndef EDITOR
 						static ConsoleVariable<int> cvar_dither_mistform("/dither_mistform", 6);

@@ -310,6 +310,7 @@ void TimerExperiments::updateEntityInterpolationPosition(Entity* entity)
 		|| entity->behavior == &actHudShield
 		|| entity->behavior == &actHudArm
 		|| entity->behavior == &actHudAdditional
+		/*|| entity->behavior == &actHudAdditional2*/
 		|| entity->behavior == &actHudArrowModel
 		|| entity->behavior == &actLeftHandMagic
 		|| entity->behavior == &actRightHandMagic
@@ -1726,6 +1727,7 @@ void gameLogic(void)
 							&& entity->behavior != &actHudWeapon
 							&& entity->behavior != &actHudShield
 							&& entity->behavior != &actHudAdditional
+							/*&& entity->behavior != &actHudAdditional2*/
 							&& entity->behavior != &actHudArrowModel
 							&& entity->behavior != &actLeftHandMagic
 							&& entity->behavior != &actRightHandMagic
@@ -3250,6 +3252,7 @@ void gameLogic(void)
 							&& entity->behavior != &actHudWeapon
 							&& entity->behavior != &actHudShield
 							&& entity->behavior != &actHudAdditional
+							/*&& entity->behavior != &actHudAdditional2*/
 							&& entity->behavior != &actHudArrowModel
 							&& entity->behavior != &actLeftHandMagic
 							&& entity->behavior != &actRightHandMagic

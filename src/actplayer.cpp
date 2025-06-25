@@ -5637,6 +5637,16 @@ void actPlayer(Entity* my)
 			entity->behavior = &actMagicRangefinder;
 			players[PLAYER_NUM]->hud.magicRangefinder = entity;
 			my->bodyparts.push_back(entity);
+
+			// hud additional 2 limb
+			//entity = newEntity(-1, 1, map.entities, nullptr); //HUD entity.
+			//entity->flags[PASSABLE] = true;
+			//entity->flags[OVERDRAW] = true;
+			//entity->flags[NOUPDATE] = true;
+			//entity->flags[INVISIBLE] = true;
+			//entity->skill[2] = PLAYER_NUM;
+			//entity->behavior = &actHudAdditional2;
+			//my->bodyparts.push_back(entity);
 		}
 		else
 		{
@@ -5779,6 +5789,7 @@ void actPlayer(Entity* my)
 		entity->focaly = limbs[playerRace][7][1];
 		entity->focalz = limbs[playerRace][7][2];
 		entity->behavior = &actPlayerLimb;
+		entity->skill[4] = 1; // shield denote
 		entity->parent = my->getUID();
 		entity->focalx = 2;
 		node = list_AddNodeLast(&my->children);
@@ -7074,29 +7085,28 @@ void actPlayer(Entity* my)
 				}
 			}
 
+			real_t renderSetpoint = 0.0;
 			if ( stats[PLAYER_NUM]->getEffectActive(EFF_MIST_FORM) )
 			{
-				if ( my->mistformGLRender < 0.5 )
-				{
-					my->mistformGLRender = 1.0;
-					serverUpdateEntityFSkill(my, 22);
+				renderSetpoint = 1.0;
 			}
-		}
-			else
-			{
-				if ( my->mistformGLRender > 0.5 )
+			if ( stats[PLAYER_NUM]->getEffectActive(EFF_FORCE_SHIELD) > 0 && stats[PLAYER_NUM]->getEffectActive(EFF_FORCE_SHIELD) <= 50 )
 				{
-					my->mistformGLRender = 0.0;
+				renderSetpoint += 0.1;
+		}
+			else if ( stats[PLAYER_NUM]->getEffectActive(EFF_FORCE_SHIELD) > 0 && stats[PLAYER_NUM]->getEffectActive(EFF_FORCE_SHIELD) <= 50 )
+			{
+				renderSetpoint += 0.2;
+			}
+
+			if ( abs(my->mistformGLRender - renderSetpoint) > 0.05
+				|| (my->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10)) )
+				{
+				my->mistformGLRender = renderSetpoint;
 					serverUpdateEntityFSkill(my, 22);
 				}
 			}
 		}
-	}
-
-	if ( my->mistformGLRender > 0.01 )
-	{
-		my->mistformGLRender = 0.875 + 0.125 * sin(PI * (my->ticks % 100) / 50.0);
-	}
 
 	real_t zOffset = 0;
 	bool oldInsectoidLevitate = players[PLAYER_NUM]->movement.insectoidLevitating;
@@ -8520,7 +8530,7 @@ void actPlayer(Entity* my)
         if (my->flags[BURNING]) {
             my->light = addLight(my->x / 16, my->y / 16, "player_burning");
         }
-		else if ( my->mistformGLRender > 0.01 )
+		else if ( my->mistformGLRender > 0.9 )
 		{
 			my->light = addLight(my->x / 16, my->y / 16, "mistform_glow", range_bonus);
 		}
@@ -11216,9 +11226,35 @@ void actPlayerLimb(Entity* my)
 		my->monsterEntityRenderAsTelepath = 0;
 	}
 
-	if ( parent && parent->mistformGLRender )
+	if ( parent && parent->mistformGLRender > 0.05 )
+	{
+		if ( my->skill[4] == 1 ) // shields
+		{
+			real_t modulus = fmod(parent->mistformGLRender, 1.0);
+			if ( modulus >= 0.05 && modulus < 0.15 ) // force shield
+			{
+				my->mistformGLRender = 0.5;
+			}
+			else if ( modulus >= 0.15 && modulus < 0.25 ) // reflector shield
+			{
+				my->mistformGLRender = 0.6;
+			}
+			else
+			{
+				my->mistformGLRender = parent->mistformGLRender;
+			}
+		}
+		else
+		{
+			if ( parent->mistformGLRender > 0.9 )
 	{
 		my->mistformGLRender = parent->mistformGLRender;
+	}
+	else
+	{
+		my->mistformGLRender = 0.0;
+	}
+		}
 	}
 	else
 	{

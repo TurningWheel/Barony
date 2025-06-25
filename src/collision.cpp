@@ -376,6 +376,7 @@ bool entityInsideTile(Entity* entity, int x, int y, int z, bool checkSafeTiles)
 										|| entity->getStats()->type == REVENANT_SKULL
 										|| entity->getStats()->type == MONSTER_ADORCISED_WEAPON
 										|| entity->getStats()->type == HOLOGRAM
+										|| entity->getStats()->type == MOTH_SMALL
 										|| entity->getStats()->type == FLAME_ELEMENTAL)) )
 							{
 								return true;
@@ -473,6 +474,7 @@ bool entityInsideSomething(Entity* entity)
 				|| entity->getMonsterTypeFromSprite() == BAT_SMALL
 				|| entity->getMonsterTypeFromSprite() == REVENANT_SKULL
 				|| entity->getMonsterTypeFromSprite() == MONSTER_ADORCISED_WEAPON
+				|| entity->getMonsterTypeFromSprite() == MOTH_SMALL
 				|| entity->getMonsterTypeFromSprite() == HOLOGRAM
 				|| entity->getMonsterTypeFromSprite() == FLAME_ELEMENTAL )
 			{
@@ -1055,13 +1057,19 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 						|| type == BAT_SMALL 
 						|| type == REVENANT_SKULL 
 						|| type == MONSTER_ADORCISED_WEAPON 
+						|| type == MOTH_SMALL
 						|| type == HOLOGRAM
 						|| type == FLAME_ELEMENTAL
 						)) || my->behavior == &actDeathGhost) )
 			{
 				continue;
 			}
-			if ( entity->behavior == &actFurniture && (type == BAT_SMALL || type == REVENANT_SKULL || type == MONSTER_ADORCISED_WEAPON || type == FLAME_ELEMENTAL) )
+			if ( entity->behavior == &actFurniture 
+				&& (type == BAT_SMALL 
+					|| type == REVENANT_SKULL 
+					|| type == MONSTER_ADORCISED_WEAPON 
+					|| type == MOTH_SMALL
+					|| type == FLAME_ELEMENTAL) )
 			{
 				continue;
 			}
@@ -1089,7 +1097,7 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 				}
 			}
 			if ( entity->getMonsterTypeFromSprite() == REVENANT_SKULL || entity->getMonsterTypeFromSprite() == MONSTER_ADORCISED_WEAPON
-				|| entity->getMonsterTypeFromSprite() == FLAME_ELEMENTAL )
+				|| entity->getMonsterTypeFromSprite() == FLAME_ELEMENTAL || entity->getMonsterTypeFromSprite() == MOTH_SMALL )
 			{
 				if ( my->behavior == &actBoulder )
 				{
@@ -1554,6 +1562,7 @@ Entity* findEntityInLine( Entity* my, real_t x1, real_t y1, real_t angle, int en
 			|| myStats->type == BAT_SMALL
 			|| myStats->type == REVENANT_SKULL
 			|| myStats->type == MONSTER_ADORCISED_WEAPON
+			|| myStats->type == MOTH_SMALL
 			|| myStats->type == FLAME_ELEMENTAL
 			);
 
@@ -1575,14 +1584,16 @@ Entity* findEntityInLine( Entity* my, real_t x1, real_t y1, real_t angle, int en
 									&& entity->sprite != 1796
 									&& entity->sprite != 1797
 									&& entity->sprite != 1803
-									&& entity->sprite != 1804) )
+									&& entity->sprite != 1804
+									&& entity->sprite != 1819
+									&& entity->sprite != 1822) )
 						)
 					) 
 				)
 			{
 				// if entities == LINETRACE_IGNORE_ENTITIES, then ignore entities that block sight.
 				// 16/11/19 - added exception to monsters. if monster, use the INVISIBLE flag to skip checking.
-				// 889/1247/1408 is dummybot/mimic/bat/revenant_skull/adorcised weapon "invisible" AI entity. so it's invisible, need to make it shown here.
+				// 889/1247/1408 is dummybot/mimic/bat/revenant_skull/adorcised weapon/elemental/moth "invisible" AI entity. so it's invisible, need to make it shown here.
 				if ( entity->behavior == &actMonster && entity->sprite == 1408 )
 				{
 					if ( (entity != target && target != nullptr) || entity == my || entity->flags[PASSABLE] )
@@ -1900,6 +1911,7 @@ real_t lineTrace( Entity* my, real_t x1, real_t y1, real_t angle, real_t range, 
 				else if ( stats->type == SENTRYBOT || stats->type == SPELLBOT || stats->type == BAT_SMALL 
 					|| stats->type == REVENANT_SKULL
 					|| stats->type == MONSTER_ADORCISED_WEAPON
+					|| stats->type == MOTH_SMALL
 					|| stats->type == FLAME_ELEMENTAL)
 				{
 					ground = false;
@@ -2368,6 +2380,7 @@ int checkObstacle(long x, long y, Entity* my, Entity* target, bool useTileEntity
 								|| entity->getMonsterTypeFromSprite() == REVENANT_SKULL
 								|| entity->getMonsterTypeFromSprite() == MONSTER_ADORCISED_WEAPON
 								|| entity->getMonsterTypeFromSprite() == HOLOGRAM
+								|| entity->getMonsterTypeFromSprite() == MOTH_SMALL
 								|| entity->getMonsterTypeFromSprite() == FLAME_ELEMENTAL) )
 						{
 							continue;

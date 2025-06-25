@@ -417,6 +417,9 @@ void Entity::killedByMonsterObituary(Entity* victim)
 			case FLAME_ELEMENTAL:
 				victim->setObituary(Language::get(6671));
 				break;
+			case MOTH_SMALL:
+				victim->setObituary(Language::get(6698));
+				break;
 			default:
 				victim->setObituary(Language::get(1500));
 				break;
@@ -7739,7 +7742,15 @@ void Entity::attack(int pose, int charge, Entity* target)
 			{
 				monsterAttack = 0;
 			}
-			else if ( (myStats->type == REVENANT_SKULL || myStats->type == MONSTER_ADORCISED_WEAPON || myStats->type == FLAME_ELEMENTAL) && pose == MONSTER_POSE_MAGIC_CAST1 )
+			else if ( (myStats->type == REVENANT_SKULL 
+				|| myStats->type == MONSTER_ADORCISED_WEAPON 
+				|| myStats->type == FLAME_ELEMENTAL
+				|| myStats->type == MOTH_SMALL
+				) && pose == MONSTER_POSE_MAGIC_CAST1 )
+			{
+				monsterAttack = pose;
+			}
+			else if ( myStats->type == MOTH_SMALL )
 			{
 				monsterAttack = pose;
 			}
@@ -7824,6 +7835,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					&& myStats->type != BAT_SMALL
 					&& myStats->type != REVENANT_SKULL
 					&& myStats->type != MONSTER_ADORCISED_WEAPON
+					&& myStats->type != MOTH_SMALL
 					&& myStats->type != FLAME_ELEMENTAL) {
 				    serverUpdateEntitySkill(this, 9);
 				}
@@ -13330,10 +13342,18 @@ int AC(Stat* stat)
 	{
 		int shieldskill = stat->getPassiveShieldBonus(true, false);
 		armor += shieldskill;
+		if ( stat->getEffectActive(EFF_FORCE_SHIELD) > 0 && stat->getEffectActive(EFF_FORCE_SHIELD) <= 50 )
+		{
+			armor += 5;
+		}
 		if ( stat->defending )
 		{
 			//messagePlayer(0, "shield up! +%d", 5 + stat->PROFICIENCIES[PRO_SHIELD] / 5);
 			armor += stat->getActiveShieldBonus(true, false);
+			if ( stat->getEffectActive(EFF_FORCE_SHIELD) > 0 && stat->getEffectActive(EFF_FORCE_SHIELD) <= 50 )
+			{
+				armor += 5;
+			}
 		}
 	}
 	if ( stat->type == MIMIC && stat->getEffectActive(EFF_MIMIC_LOCKED) )
@@ -13985,6 +14005,7 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 		&& (src->monsterAllySummonRank != 0
 			|| srcStats->type == REVENANT_SKULL
 			|| srcStats->type == MONSTER_ADORCISED_WEAPON
+			|| (srcStats->type == MOTH_SMALL && srcStats->getAttribute("fire_sprite") != "")
 			|| srcStats->type == FLAME_ELEMENTAL
 			|| srcStats->type == HOLOGRAM
 			|| src->monsterIsTinkeringCreation()) )
@@ -14161,7 +14182,6 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 				if ( stats[this->skill[2]] )
 				{
 					// award XP to player's followers.
-					int numFollowers = list_Size(&stats[this->skill[2]]->FOLLOWERS);
 					for ( node = stats[this->skill[2]]->FOLLOWERS.first; node != nullptr; node = node->next )
 					{
 						Entity* follower = nullptr;
@@ -14174,10 +14194,10 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 							if ( follower->monsterIsTinkeringCreation()
 								|| (follower->getStats() && follower->getStats()->type == REVENANT_SKULL)
 								|| (follower->getStats() && follower->getStats()->type == MONSTER_ADORCISED_WEAPON)
+								|| (follower->getStats() && follower->getStats()->type == MOTH_SMALL && follower->getStats()->getAttribute("fire_sprite") != "")
 								|| (follower->getStats() && follower->getStats()->type == FLAME_ELEMENTAL) )
 							{
-								--numFollowers; // tinkering creation don't penalise XP.
-								continue;
+								continue; // no award xp
 							}
 							Stat* followerStats = follower->getStats();
 							if ( followerStats )
@@ -14240,6 +14260,7 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 	if ( !(this->monsterIsTinkeringCreation()
 		|| destStats->type == REVENANT_SKULL
 		|| destStats->type == MONSTER_ADORCISED_WEAPON
+		|| (destStats->type == MOTH_SMALL && destStats->getAttribute("fire_sprite") != "" )
 		|| destStats->type == FLAME_ELEMENTAL
 		|| destStats->type == HOLOGRAM
 		)
@@ -16021,8 +16042,6 @@ int checkEquipType(const Item *item)
 		case STEEL_SHIELD:
 		case STEEL_SHIELD_RESISTANCE:
 		case MIRROR_SHIELD:
-		case FORCE_SHIELD:
-		case REFLECTOR_SHIELD:
 			return TYPE_SHIELD;
 			break;
 
@@ -16564,7 +16583,8 @@ int Entity::getReflection() const
 
 	if ( stats->shield )
 	{
-		if ( stats->shield->type == MIRROR_SHIELD && stats->defending )
+		if ( (stats->shield->type == MIRROR_SHIELD 
+			|| stats->getEffectActive(EFF_FORCE_SHIELD) > 50) && stats->defending )
 		{
 			return 3;
 		}
@@ -16682,7 +16702,10 @@ int Entity::getAttackPose() const
 		{
 			pose = MONSTER_POSE_MAGIC_WINDUP1;
 		}
-		else if ( myStats->type == REVENANT_SKULL || myStats->type == MONSTER_ADORCISED_WEAPON || myStats->type == FLAME_ELEMENTAL )
+		else if ( myStats->type == REVENANT_SKULL 
+			|| myStats->type == MONSTER_ADORCISED_WEAPON 
+			|| myStats->type == FLAME_ELEMENTAL
+			|| myStats->type == MOTH_SMALL )
 		{
 			pose = MONSTER_POSE_MELEE_WINDUP1;
 		}
@@ -16877,7 +16900,9 @@ int Entity::getAttackPose() const
 		{
 			pose = MONSTER_POSE_MAGIC_WINDUP2;
 		}
-		else if ( (myStats->type == REVENANT_SKULL || myStats->type == MONSTER_ADORCISED_WEAPON || myStats->type == FLAME_ELEMENTAL) && this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_SKULL_CAST )
+		else if ( (myStats->type == REVENANT_SKULL 
+			|| myStats->type == MONSTER_ADORCISED_WEAPON 
+			|| myStats->type == FLAME_ELEMENTAL) && this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_SKULL_CAST )
 		{
 			pose = MONSTER_POSE_MAGIC_WINDUP1;
 		}
@@ -16933,6 +16958,17 @@ int Entity::getAttackPose() const
 		else if ( myStats->type == BUGBEAR )
 		{
 			pose = MONSTER_POSE_MELEE_WINDUP1;
+		}
+		else if ( myStats->type == MOTH_SMALL )
+		{
+			if ( this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_SKULL_CAST )
+			{
+				pose = mothGetAttackPose(const_cast<Entity*>(this), MONSTER_POSE_MAGIC_WINDUP1);
+			}
+			else
+			{
+				pose = mothGetAttackPose(const_cast<Entity*>(this), MONSTER_POSE_MELEE_WINDUP1);
+			}
 		}
 		else
 		{
@@ -18697,6 +18733,7 @@ bool Entity::setEffect(int effect, std::variant<bool, Uint8> value, int duration
 					|| myStats->type == REVENANT_SKULL
 					|| myStats->type == MONSTER_ADORCISED_WEAPON
 					|| myStats->type == HOLOGRAM
+					|| myStats->type == MOTH_SMALL
 					|| myStats->type == FLAME_ELEMENTAL
 					|| monsterIsTinkeringCreation()
 					|| myStats->type == MIMIC
@@ -18907,6 +18944,21 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool
 		if ( Stat* targetStats = target.getStats() )
 		{
 			if ( targetStats->getAttribute("spirit_weapon") != "" )
+			{
+				if ( Entity* caster = uidToEntity(target.parent) )
+				{
+					monsterAcquireAttackTarget(*caster, state, false);
+				}
+				return;
+			}
+		}
+	}
+
+	if ( target.getRace() == MOTH_SMALL )
+	{
+		if ( Stat* targetStats = target.getStats() )
+		{
+			if ( targetStats->getAttribute("fire_sprite") != "" )
 			{
 				if ( Entity* caster = uidToEntity(target.parent) )
 				{
@@ -20058,6 +20110,10 @@ double Entity::monsterRotate()
 		}
 		yaw -= dir / ratio;
 	}
+	else if ( race == MOTH_SMALL )
+	{
+		yaw -= dir / 16;
+	}
 	else if ( race == DUMMYBOT )
 	{
 		yaw -= dir / 4;
@@ -20190,6 +20246,18 @@ bool Entity::degradeArmor(Stat& hitstats, Item& armor, int armornum)
 	if ( this->behavior == &actPlayer )
 	{
 		playerhit = this->skill[2];
+	}
+
+	if ( hitstats.shield == &armor && itemCategory(&armor) != SPELLBOOK
+		&& hitstats.getEffectActive(EFF_FORCE_SHIELD) > 0
+		&& hitstats.getEffectActive(EFF_FORCE_SHIELD) <= 50 )
+	{
+		/*hitstats.setEffectActive(EFF_FORCE_SHIELD, hitstats.getEffectActive(EFF_FORCE_SHIELD) - (Uint8)1);
+		if ( !hitstats.getEffectActive(EFF_FORCE_SHIELD) )
+		{
+			setEffect(EFF_FORCE_SHIELD, false, 0, true);
+		}*/
+		return false;
 	}
 
 	if ( spellEffectPreserveItem(&armor) )
@@ -20362,7 +20430,10 @@ bool Entity::shouldRetreat(Stat& myStats)
 	{
 		return false;
 	}
-	else if ( myStats.type == MONSTER_ADORCISED_WEAPON || myStats.type == REVENANT_SKULL || myStats.type == FLAME_ELEMENTAL )
+	else if ( myStats.type == MONSTER_ADORCISED_WEAPON 
+		|| myStats.type == REVENANT_SKULL 
+		|| myStats.type == FLAME_ELEMENTAL
+		|| myStats.type == MOTH_SMALL )
 	{
 		return false;
 	}
