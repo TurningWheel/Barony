@@ -13342,7 +13342,7 @@ int AC(Stat* stat)
 	{
 		int shieldskill = stat->getPassiveShieldBonus(true, false);
 		armor += shieldskill;
-		if ( stat->getEffectActive(EFF_FORCE_SHIELD) > 0 && stat->getEffectActive(EFF_FORCE_SHIELD) <= 50 )
+		if ( stat->getEffectActive(EFF_FORCE_SHIELD) > 0 )
 		{
 			armor += 5;
 		}
@@ -13350,7 +13350,7 @@ int AC(Stat* stat)
 		{
 			//messagePlayer(0, "shield up! +%d", 5 + stat->PROFICIENCIES[PRO_SHIELD] / 5);
 			armor += stat->getActiveShieldBonus(true, false);
-			if ( stat->getEffectActive(EFF_FORCE_SHIELD) > 0 && stat->getEffectActive(EFF_FORCE_SHIELD) <= 50 )
+			if ( stat->getEffectActive(EFF_FORCE_SHIELD) > 0 )
 			{
 				armor += 5;
 			}
@@ -16584,7 +16584,7 @@ int Entity::getReflection() const
 	if ( stats->shield )
 	{
 		if ( (stats->shield->type == MIRROR_SHIELD 
-			|| stats->getEffectActive(EFF_FORCE_SHIELD) > 50) && stats->defending )
+			|| stats->getEffectActive(EFF_REFLECTOR_SHIELD) > 0) && stats->defending )
 		{
 			return 3;
 		}
@@ -20249,8 +20249,7 @@ bool Entity::degradeArmor(Stat& hitstats, Item& armor, int armornum)
 	}
 
 	if ( hitstats.shield == &armor && itemCategory(&armor) != SPELLBOOK
-		&& hitstats.getEffectActive(EFF_FORCE_SHIELD) > 0
-		&& hitstats.getEffectActive(EFF_FORCE_SHIELD) <= 50 )
+		&& hitstats.getEffectActive(EFF_FORCE_SHIELD) > 0 )
 	{
 		/*hitstats.setEffectActive(EFF_FORCE_SHIELD, hitstats.getEffectActive(EFF_FORCE_SHIELD) - (Uint8)1);
 		if ( !hitstats.getEffectActive(EFF_FORCE_SHIELD) )

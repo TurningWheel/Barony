@@ -1291,7 +1291,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						reflection = 0;
 					}
 					if ( reflection == 3 && hitstats->shield 
-						&& (hitstats->shield->type == MIRROR_SHIELD || hitstats->getEffectActive(EFF_FORCE_SHIELD) > 50) && hitstats->defending )
+						&& (hitstats->shield->type == MIRROR_SHIELD || hitstats->getEffectActive(EFF_REFLECTOR_SHIELD) > 0) && hitstats->defending )
 					{
 						if ( my->actmagicIsVertical == MAGIC_ISVERTICAL_Z )
 						{

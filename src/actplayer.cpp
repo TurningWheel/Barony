@@ -7159,11 +7159,11 @@ void actPlayer(Entity* my)
 			{
 				renderSetpoint = 1.0;
 			}
-			if ( stats[PLAYER_NUM]->getEffectActive(EFF_FORCE_SHIELD) > 0 && stats[PLAYER_NUM]->getEffectActive(EFF_FORCE_SHIELD) <= 50 )
+			if ( stats[PLAYER_NUM]->getEffectActive(EFF_FORCE_SHIELD) > 0 )
 				{
 				renderSetpoint += 0.1;
 		}
-			else if ( stats[PLAYER_NUM]->getEffectActive(EFF_FORCE_SHIELD) > 0 && stats[PLAYER_NUM]->getEffectActive(EFF_FORCE_SHIELD) <= 50 )
+			else if ( stats[PLAYER_NUM]->getEffectActive(EFF_REFLECTOR_SHIELD) > 0 )
 			{
 				renderSetpoint += 0.2;
 			}

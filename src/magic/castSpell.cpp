@@ -1716,7 +1716,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			{
 				if ( Stat* casterStats = caster->getStats() )
 				{
-					caster->setEffect(EFF_FORCE_SHIELD, (Uint8)50, 5 * TICKS_PER_SECOND, true);
+					caster->setEffect(EFF_FORCE_SHIELD, true, 5 * TICKS_PER_SECOND, true);
 					messagePlayerColor(caster->isEntityPlayer(),
 						MESSAGE_HINT, makeColorRGB(0, 255, 0), Language::get(6699));
 				}
@@ -1730,7 +1730,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			{
 				if ( Stat* casterStats = caster->getStats() )
 				{
-					caster->setEffect(EFF_FORCE_SHIELD, (Uint8)100, 5 * TICKS_PER_SECOND, true);
+					caster->setEffect(EFF_REFLECTOR_SHIELD, true, 5 * TICKS_PER_SECOND, true);
 					messagePlayerColor(caster->isEntityPlayer(),
 						MESSAGE_HINT, makeColorRGB(0, 255, 0), Language::get(6700));
 				}
