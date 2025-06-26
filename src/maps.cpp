@@ -6889,6 +6889,11 @@ void assignActions(map_t* map)
 							monsterCurveCustomManager.createMonsterFromFile(entity, myStats, variantName, monsterType);
 						}
 					}
+					else if ( checkName.find("$npc=") != std::string::npos )
+					{
+						myStats->setAttribute("special_npc", checkName.substr(strlen("$npc=")));
+						strcpy(myStats->name, MonsterData_t::getSpecialNPCName(*myStats).c_str());
+					}
 				}
 				if ( multiplayer != CLIENT )
 				{
