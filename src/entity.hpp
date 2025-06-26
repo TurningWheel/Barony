@@ -1562,7 +1562,12 @@ public:
 		TO_MONSTER_UNUSED_5,
 		TO_MONSTER_UNUSED_6,
 		TO_MONSTER_UNUSED_7,
-		TO_MONSTER_UNUSED_8
+		TO_MONSTER_UNUSED_8,
+		TO_MONSTER_MAX,
+		TO_BREAKABLE,
+		TO_COLLIDER,
+		TO_GOLD,
+		TO_BELL
 	};
 	enum ScriptType : int
 	{
@@ -1579,7 +1584,8 @@ public:
 		TRIGGER_ATTACHED_INVIS,
 		TRIGGER_ATTACHED_VISIBLE,
 		TRIGGER_ATTACHED_ALWAYS,
-		TRIGGER_ON_VARIABLE
+		TRIGGER_ON_VARIABLE,
+		TRIGGER_ATTACHED_INTERACTED
 	};
 	/*enum TagAvailableToEntity : int
 	{
@@ -1624,11 +1630,11 @@ public:
 	}
 	int getAttachedToEntityType(Sint32 skill)
 	{
-		return ((skill & 0xF0) >> 4);
+		return ((skill & 0xFF0) >> 4);
 	}
 	int getTriggerType(Sint32 skill)
 	{
-		return ((skill & 0xF00) >> 8);
+		return ((skill & 0xF000) >> 12);
 	}
 	void setScriptType(Sint32& skill, int setValue)
 	{
@@ -1637,13 +1643,13 @@ public:
 	}
 	void setAttachedToEntityType(Sint32& skill, int setValue)
 	{
-		skill &= 0xFFFFFF0F;
-		skill |= ((setValue << 4) & 0xF0);
+		skill &= 0xFFFFF00F;
+		skill |= ((setValue << 4) & 0xFF0);
 	}
 	void setTriggerType(Sint32& skill, int setValue)
 	{
-		skill &= 0xFFFFF0FF;
-		skill |= ((setValue << 8) & 0xF00);
+		skill &= 0xFFFF0FFF;
+		skill |= ((setValue << 12) & 0xF000);
 	}
 	std::vector<Entity*> getScriptAttachedEntities(Entity& script)
 	{

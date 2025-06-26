@@ -1628,9 +1628,25 @@ int TextSourceScript::textSourceProcessScriptTag(std::string& input, std::string
 			{
 				return TO_ITEMS;
 			}
+			else if ( !tagValue.compare("gold") )
+			{
+				return TO_GOLD;
+			}
+			else if ( !tagValue.compare("bell") )
+			{
+				return TO_BELL;
+			}
 			else if ( !tagValue.compare("players") )
 			{
 				return TO_PLAYERS;
+			}
+			else if ( !tagValue.compare("breakable") )
+			{
+				return TO_BREAKABLE;
+			}
+			else if ( !tagValue.compare("collider") )
+			{
+				return TO_COLLIDER;
 			}
 			else
 			{
@@ -1662,6 +1678,10 @@ int TextSourceScript::textSourceProcessScriptTag(std::string& input, std::string
 			{
 				return TRIGGER_ATTACHED_VISIBLE;
 			}
+			else if ( !tagValue.compare("attached#interacted") )
+			{
+				return TRIGGER_ATTACHED_INTERACTED;
+			}
 			else if ( !tagValue.compare("always") )
 			{
 				return TRIGGER_ATTACHED_ALWAYS;
@@ -1670,6 +1690,17 @@ int TextSourceScript::textSourceProcessScriptTag(std::string& input, std::string
 			{
 				return k_ScriptError;
 			}
+		}
+		else if ( findTag.compare("@breakablespawn=") == 0 || findTag.compare("@breakablejumpspawn=") == 0 )
+		{
+			for ( int i = 0; i < NUMMONSTERS; ++i )
+			{
+				if ( !tagValue.compare(monstertypename[i]) )
+				{
+					return TO_NOTHING + i;
+				}
+			}
+			return k_ScriptError;
 		}
 
 		return std::stoi(tagValue);
@@ -1766,8 +1797,12 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 					if ( (entity->behavior == &actMonster && attachTo == TO_MONSTERS)
 						|| (entity->behavior == &actPlayer && attachTo == TO_PLAYERS)
 						|| (entity->behavior == &actItem && attachTo == TO_ITEMS)
+						|| (entity->behavior == &actGoldBag && attachTo == TO_GOLD)
+						|| (entity->behavior == &actBell && attachTo == TO_BELL)
+						|| (entity->isColliderBreakableContainer() && attachTo == TO_BREAKABLE)
+						|| (entity->isDamageableCollider() && attachTo == TO_COLLIDER)
 						|| (entity->behavior == &actMonster
-							&& attachTo >= TO_NOTHING && attachTo <= TO_DUMMYBOT
+							&& attachTo >= TO_NOTHING && attachTo < TO_MONSTER_MAX
 							&& entity->getRace() == (attachTo - TO_NOTHING)) )
 					{
 						// found our entity.
@@ -3048,6 +3083,149 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 				}
 			}
 		}
+		else if ( (*it).find("@addtobreakable=") != std::string::npos )
+		{
+			int result = textSourceProcessScriptTag(input, "@addtobreakable=", src);
+			if ( result != k_ScriptError )
+			{
+				int x1 = result & 0xFF;
+				int x2 = (result >> 8) & 0xFF;
+				int y1 = (result >> 16) & 0xFF;
+				int y2 = (result >> 24) & 0xFF;
+				std::vector<Entity*> applyToEntities;
+				if ( processOnAttachedEntity 
+					&& (textSourceScript.getAttachedToEntityType(src.textSourceIsScript) == textSourceScript.TO_ITEMS
+						|| textSourceScript.getAttachedToEntityType(src.textSourceIsScript) == textSourceScript.TO_GOLD) )
+				{
+					for ( auto entity : attachedEntities )
+					{
+						if ( textSourceScript.getAttachedToEntityType(src.textSourceIsScript) == textSourceScript.TO_ITEMS )
+						{
+							if ( entity->behavior == &actItem )
+							{
+								applyToEntities.push_back(entity);
+							}
+						}
+						else if ( textSourceScript.getAttachedToEntityType(src.textSourceIsScript) == textSourceScript.TO_GOLD )
+						{
+							if ( entity->behavior == &actGoldBag )
+							{
+								applyToEntities.push_back(entity);
+							}
+						}
+					}
+					Entity* breakable = nullptr;
+					for ( node_t* node = map.entities->first; node; node = node->next )
+					{
+						Entity* entity = (Entity*)node->element;
+						if ( entity && entity->isColliderBreakableContainer() )
+						{
+							int findx = static_cast<int>(entity->x) >> 4;
+							int findy = static_cast<int>(entity->y) >> 4;
+							if ( findx >= x1 && findx <= x2 && findy >= y1 && findy <= y2 )
+							{
+								breakable = entity;
+							}
+						}
+					}
+					if ( breakable )
+					{
+						for ( auto entity : applyToEntities )
+						{
+							if ( entity->behavior == &actItem )
+							{
+								if ( breakable->colliderContainedEntity != 0 )
+								{
+									break; // only 1 item
+								}
+								entity->itemContainer = breakable->getUID();
+							}
+							else
+							{
+								entity->goldInContainer = breakable->getUID();
+							}
+							entity->flags[INVISIBLE] = true;
+							serverUpdateEntityFlag(entity, INVISIBLE);
+							breakable->colliderContainedEntity = entity->getUID();
+						}
+					}
+				}
+				else
+				{
+					// not implemented, needs to be attached to items.
+				}
+			}
+		}
+		else if ( (*it).find("@breakablespawn=") != std::string::npos )
+		{
+			int result = textSourceProcessScriptTag(input, "@breakablespawn=", src);
+			if ( result != k_ScriptError )
+			{
+				std::vector<Entity*> applyToEntities;
+				if ( processOnAttachedEntity && textSourceScript.getAttachedToEntityType(src.textSourceIsScript) == textSourceScript.TO_BREAKABLE )
+				{
+					for ( auto entity : attachedEntities )
+					{
+						if ( entity->isColliderBreakableContainer() )
+						{
+							applyToEntities.push_back(entity);
+						}
+					}
+
+					if ( result >= TO_NOTHING && result < TO_MONSTER_MAX )
+					{
+						int monsterType = NOTHING + (result - TO_NOTHING);
+						for ( auto entity : applyToEntities )
+						{
+							if ( entity->colliderHideMonster != 0 )
+							{
+								continue;
+							}
+							entity->colliderHideMonster = monsterType;
+						}
+					}
+				}
+				else
+				{
+					// not implemented, needs to be attached to breakables.
+				}
+			}
+		}
+		else if ( (*it).find("@breakablejumpspawn=") != std::string::npos )
+		{
+			int result = textSourceProcessScriptTag(input, "@breakablejumpspawn=", src);
+			if ( result != k_ScriptError )
+			{
+				std::vector<Entity*> applyToEntities;
+				if ( processOnAttachedEntity && textSourceScript.getAttachedToEntityType(src.textSourceIsScript) == textSourceScript.TO_BREAKABLE )
+				{
+					for ( auto entity : attachedEntities )
+					{
+						if ( entity->isColliderBreakableContainer() )
+						{
+							applyToEntities.push_back(entity);
+						}
+					}
+
+					if ( result >= TO_NOTHING && result < TO_MONSTER_MAX )
+					{
+						int monsterType = NOTHING + (result - TO_NOTHING);
+						for ( auto entity : applyToEntities )
+						{
+							if ( entity->colliderHideMonster != 0 )
+							{
+								continue;
+							}
+							entity->colliderHideMonster = 1000 + monsterType;
+						}
+					}
+				}
+				else
+				{
+					// not implemented, needs to be attached to breakables.
+				}
+			}
+		}
 		else
 		{
 			for ( int i = 0; i < NUMSTATS; ++i )
@@ -3391,6 +3569,35 @@ void Entity::actTextSource()
 		}
 		else
 		{
+			if ( textSourceScript.getTriggerType(textSourceIsScript) == textSourceScript.TRIGGER_ATTACHED_INTERACTED )
+			{
+				if ( textSourceScript.getAttachedToEntityType(textSourceIsScript) == textSourceScript.TO_BELL )
+				{
+					bool doEffect = false;
+					for ( node_t* node = children.first; node; node = node->next )
+					{
+						Uint32 entityUid = *((Uint32*)node->element);
+						Entity* child = uidToEntity(entityUid);
+						if ( child )
+						{
+							if ( child->behavior == &actBell )
+							{
+								if ( (child->skill[0] & 0xFF) // BELL_ACTIVE_TIMER countdown
+									|| child->skill[10] > 0 )  // BELL_BULB_BROKEN
+								{
+									doEffect = true;
+								}
+							}
+						}
+					}
+					if ( doEffect )
+					{
+						textSourceScript.setScriptType(textSourceIsScript, textSourceScript.SCRIPT_ATTACHED_FIRED);
+						powered = true;
+					}
+				}
+			}
+
 			if ( textSourceScript.getTriggerType(textSourceIsScript) == textSourceScript.TRIGGER_ATTACHED_EXISTS )
 			{
 				textSourceScript.setScriptType(textSourceIsScript, textSourceScript.SCRIPT_ATTACHED_FIRED);
@@ -3808,8 +4015,12 @@ void TextSourceScript::parseScriptInMapGeneration(Entity& src)
 				if ( (entity->behavior == &actMonster && attachTo == TO_MONSTERS)
 					|| (entity->behavior == &actPlayer && attachTo == TO_PLAYERS)
 					|| (entity->behavior == &actItem && attachTo == TO_ITEMS)
+					|| (entity->behavior == &actGoldBag && attachTo == TO_GOLD)
+					|| (entity->behavior == &actBell && attachTo == TO_BELL)
+					|| (entity->isColliderBreakableContainer() && attachTo == TO_BREAKABLE)
+					|| (entity->isDamageableCollider() && attachTo == TO_COLLIDER)
 					|| (entity->behavior == &actMonster 
-						&& attachTo >= TO_NOTHING && attachTo <= TO_DUMMYBOT 
+						&& attachTo >= TO_NOTHING && attachTo < TO_MONSTER_MAX
 						&& entity->getRace() == (attachTo - TO_NOTHING)) )
 				{
 					// found our entity.
