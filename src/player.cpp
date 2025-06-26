@@ -54,7 +54,7 @@ bool gamepad_menux_invert = false;
 bool gamepad_menuy_invert = false;
 
 const int Player::Inventory_t::MAX_SPELLS_X = 4;
-const int Player::Inventory_t::MAX_SPELLS_Y = 30;
+const int Player::Inventory_t::MAX_SPELLS_Y = 50;
 const int Player::Inventory_t::MAX_CHEST_X = 4;
 const int Player::Inventory_t::MAX_CHEST_Y = 3;
 
