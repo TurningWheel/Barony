@@ -1050,6 +1050,7 @@ static const int MONSTER_SPECIAL_COOLDOWN_SUCCUBUS_CHARM = 400;
 static const int MONSTER_SPECIAL_COOLDOWN_MIMIC_EAT = 500;
 static const int MONSTER_SPECIAL_COOLDOWN_SLIME_SPRAY = 250;
 static const int MONSTER_SPECIAL_COOLDOWN_SKULL_CAST = 250;
+static const int MONSTER_SPECIAL_COOLDOWN_MOTH_CAST = 250;
 static const int MONSTER_SPECIAL_COOLDOWN_BUGBEAR = 500;
 
 //--monster target search types
@@ -1166,6 +1167,9 @@ static const int SLIME_CAST = 1;
 
 //--Skull
 static const int SKULL_CAST = 1;
+
+//--Moth
+static const int MOTH_CAST = 1;
 
 //--Shadow--
 static const int SHADOW_SPELLCAST = 1;

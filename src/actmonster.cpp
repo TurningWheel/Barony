@@ -85,7 +85,7 @@ bool swornenemies[NUMMONSTERS][NUMMONSTERS] =
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MONSTER_ADORCISED_WEAPON
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // FLAME_ELEMENTAL
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // HOLOGRAM
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MOTH_SMALL
+	{ 0, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MOTH_SMALL
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MONSTER_UNUSED_4
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MONSTER_UNUSED_5
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MONSTER_UNUSED_6
@@ -149,7 +149,7 @@ bool monsterally[NUMMONSTERS][NUMMONSTERS] =
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MONSTER_ADORCISED_WEAPON
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // FLAME_ELEMENTAL
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // HOLOGRAM
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MOTH_SMALL
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0 }, // MOTH_SMALL
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MONSTER_UNUSED_4
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MONSTER_UNUSED_5
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MONSTER_UNUSED_6
@@ -9716,10 +9716,16 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 			lichRangeCheckOverride = true;
 		}
 	}
-	if ( myStats->type == REVENANT_SKULL || myStats->type == MONSTER_ADORCISED_WEAPON || myStats->type == FLAME_ELEMENTAL
-		|| myStats->type == MOTH_SMALL )
+	if ( myStats->type == REVENANT_SKULL || myStats->type == MONSTER_ADORCISED_WEAPON || myStats->type == FLAME_ELEMENTAL )
 	{
 		if ( monsterSpecialState == SKULL_CAST )
+		{
+			lichRangeCheckOverride = true;
+		}
+	}
+	else if ( myStats->type == MOTH_SMALL )
+	{
+		if ( monsterSpecialState == MOTH_CAST )
 		{
 			lichRangeCheckOverride = true;
 		}
@@ -9976,7 +9982,11 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 						}
 					}
 					
-					if ( myStats->type == BUGBEAR && monsterSpecialState == BUGBEAR_DEFENSE )
+					if ( myStats->type == MOTH_SMALL && pose == 0 )
+					{
+						// couldn't find a body to execute attack
+					}
+					else if ( myStats->type == BUGBEAR && monsterSpecialState == BUGBEAR_DEFENSE )
 					{
 						if ( myStats->shield && myStats->shield->type == STEEL_SHIELD && local_rng.rand() % 3 == 0 && dist <= meleeDist )
 						{
@@ -10801,7 +10811,6 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 					{
 						// special handled in slimeChooseWeapon()
 						monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_SLIME_SPRAY;
-						break;
 					}
 					break;
 				case REVENANT_SKULL:
@@ -10818,6 +10827,14 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 					if ( specialRoll == 0 )
 					{
 						monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_SKULL_CAST;
+					}
+					break;
+				case MOTH_SMALL:
+					// magic
+					if ( monsterSpecialState == MOTH_CAST )
+					{
+						// special handled in mothChooseWeapon()
+						monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_MOTH_CAST;
 					}
 					break;
 				case SPIDER:
@@ -11065,6 +11082,14 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 				case REVENANT_SKULL:
 				case FLAME_ELEMENTAL:
 					if ( monsterSpecialState == SKULL_CAST || forceDeinit )
+					{
+						monsterSpecialState = 0;
+						shouldAttack = false;
+						deinitSuccess = true;
+					}
+					break;
+				case MOTH_SMALL:
+					if ( monsterSpecialState == MOTH_CAST || forceDeinit )
 					{
 						monsterSpecialState = 0;
 						shouldAttack = false;

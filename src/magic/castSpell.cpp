@@ -1716,7 +1716,8 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			{
 				if ( Stat* casterStats = caster->getStats() )
 				{
-					caster->setEffect(EFF_FORCE_SHIELD, true, 5 * TICKS_PER_SECOND, true);
+					caster->setEffect(EFF_REFLECTOR_SHIELD, false, 0, false);
+					caster->setEffect(EFF_FORCE_SHIELD, true, 5 * TICKS_PER_SECOND, false);
 					messagePlayerColor(caster->isEntityPlayer(),
 						MESSAGE_HINT, makeColorRGB(0, 255, 0), Language::get(6699));
 				}
@@ -1730,7 +1731,8 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			{
 				if ( Stat* casterStats = caster->getStats() )
 				{
-					caster->setEffect(EFF_REFLECTOR_SHIELD, true, 5 * TICKS_PER_SECOND, true);
+					caster->setEffect(EFF_FORCE_SHIELD, false, 0, false);
+					caster->setEffect(EFF_REFLECTOR_SHIELD, true, 5 * TICKS_PER_SECOND, false);
 					messagePlayerColor(caster->isEntityPlayer(),
 						MESSAGE_HINT, makeColorRGB(0, 255, 0), Language::get(6700));
 				}
@@ -4162,7 +4164,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				{
 					duration = element->duration;
 				}
-				if ( caster->setEffect(EFF_MIST_FORM, true, duration, false) )
+				if ( caster->setEffect(EFF_MIST_FORM, true, duration, true) )
 				{
 					messagePlayerColor(caster->isEntityPlayer(), MESSAGE_STATUS, uint32ColorGreen, Language::get(6663));
 					playSoundEntity(caster, 178, 128);

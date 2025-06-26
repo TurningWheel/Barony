@@ -11921,6 +11921,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 					}
 
+					real_t shakeScale = 1.0;
+					if ( myStats->type == MOTH_SMALL )
+					{
+						shakeScale = 0.4;
+					}
 					if ( playerhit > 0 && multiplayer == SERVER && !players[playerhit]->isLocalPlayer() )
 					{
 						if ( pose == MONSTER_POSE_GOLEM_SMASH )
@@ -11929,8 +11934,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 							{
 								// primary target
 								strcpy((char*)net_packet->data, "SHAK");
-								net_packet->data[4] = 20; // turns into .2
-								net_packet->data[5] = 20;
+								net_packet->data[4] = 20 * shakeScale; // turns into .2
+								net_packet->data[5] = 20 * shakeScale;
 								net_packet->address.host = net_clients[playerhit - 1].host;
 								net_packet->address.port = net_clients[playerhit - 1].port;
 								net_packet->len = 6;
@@ -11940,8 +11945,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 							{
 								// secondary target
 								strcpy((char*)net_packet->data, "SHAK");
-								net_packet->data[4] = 10; // turns into .1
-								net_packet->data[5] = 10;
+								net_packet->data[4] = 10 * shakeScale; // turns into .1
+								net_packet->data[5] = 10 * shakeScale;
 								net_packet->address.host = net_clients[playerhit - 1].host;
 								net_packet->address.port = net_clients[playerhit - 1].port;
 								net_packet->len = 6;
@@ -11961,13 +11966,13 @@ void Entity::attack(int pose, int charge, Entity* target)
 							strcpy((char*)net_packet->data, "SHAK");
 							if ( damage > 0 )
 							{
-								net_packet->data[4] = 10; // turns into .1
-								net_packet->data[5] = 10;
+								net_packet->data[4] = 10 * shakeScale; // turns into .1
+								net_packet->data[5] = 10 * shakeScale;
 							}
 							else
 							{
-								net_packet->data[4] = 5; // turns into .05
-								net_packet->data[5] = 5;
+								net_packet->data[4] = 5 * shakeScale; // turns into .05
+								net_packet->data[5] = 5 * shakeScale;
 							}
 							net_packet->address.host = net_clients[playerhit - 1].host;
 							net_packet->address.port = net_clients[playerhit - 1].port;
@@ -11982,25 +11987,25 @@ void Entity::attack(int pose, int charge, Entity* target)
 							if ( target == nullptr )
 							{
 								// primary target
-								cameravars[playerhit].shakex += .2;
-								cameravars[playerhit].shakey += 20;
+								cameravars[playerhit].shakex += .2 * shakeScale;
+								cameravars[playerhit].shakey += 20 * shakeScale;
 							}
 							else
 							{
 								// secondary target
-								cameravars[playerhit].shakex += .1;
-								cameravars[playerhit].shakey += 10;
+								cameravars[playerhit].shakex += .1 * shakeScale;
+								cameravars[playerhit].shakey += 10 * shakeScale;
 							}
 						}
 						else if ( damage > 0 )
 						{
-							cameravars[playerhit].shakex += .1;
-							cameravars[playerhit].shakey += 10;
+							cameravars[playerhit].shakex += .1 * shakeScale;
+							cameravars[playerhit].shakey += 10 * shakeScale;
 						}
 						else
 						{
-							cameravars[playerhit].shakex += .05;
-							cameravars[playerhit].shakey += 5;
+							cameravars[playerhit].shakex += .05 * shakeScale;
+							cameravars[playerhit].shakey += 5 * shakeScale;
 						}
 					}
 
@@ -16961,7 +16966,7 @@ int Entity::getAttackPose() const
 		}
 		else if ( myStats->type == MOTH_SMALL )
 		{
-			if ( this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_SKULL_CAST )
+			if ( this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_MOTH_CAST )
 			{
 				pose = mothGetAttackPose(const_cast<Entity*>(this), MONSTER_POSE_MAGIC_WINDUP1);
 			}

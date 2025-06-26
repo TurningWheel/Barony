@@ -471,7 +471,7 @@ int monsterCurve(int level)
 	}
 	else if ( !strncmp(map.filename, "fortress", 8) )
 	{
-		switch ( map_rng.rand() % 3 )
+		switch ( map_rng.rand() % 4 )
 		{
 			case 0:
 				return MONSTER_D;
@@ -479,6 +479,8 @@ int monsterCurve(int level)
 				return MONSTER_M;
 			case 2:
 				return MONSTER_G;
+			case 3:
+				return MOTH_SMALL;
 		}
 	}
 	return SKELETON; // basic monster

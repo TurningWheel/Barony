@@ -365,6 +365,12 @@ void mothAnimate(Entity* my, Stat* myStats, double dist)
 		}
 	}
 
+	my->mistformGLRender = 0.0;
+	if ( myStats && myStats->getEffectActive(EFF_MIST_FORM) )
+	{
+		my->mistformGLRender = 1.0;
+	}
+
 	if ( multiplayer != CLIENT && myStats )
 	{
 		real_t percentHP = myStats->HP / (real_t)std::max(1, myStats->MAXHP);
@@ -463,6 +469,10 @@ void mothAnimate(Entity* my, Stat* myStats, double dist)
 					BODY_INIT = 1;
 					body->flags[INVISIBLE] = false;
 				}
+				else
+				{
+					body->flags[INVISIBLE] = false;
+				}
 			}
 		}
 	}
@@ -491,20 +501,20 @@ void mothAnimate(Entity* my, Stat* myStats, double dist)
 	else if ( MONSTER_ATTACK >= MONSTER_POSE_MAGIC_WINDUP1 && MONSTER_ATTACK <= MONSTER_POSE_MAGIC_WINDUP2
 		&& MONSTER_ATTACKTIME == 0 )
 	{
-		/*int bodypart = 3 * 4 + ((MONSTER_ATTACK - MONSTER_POSE_MAGIC_WINDUP1) * 3);
-		if ( bodypart < my->bodyparts.size() )
-		{
-			Entity* body = my->bodyparts.at(bodypart);
-			BODY_ATTACK = MONSTER_POSE_MAGIC_WINDUP1;
-			BODY_ATTACKTIME = 0;
-		}*/
-		int bodypart = (local_rng.rand() % 6) * 3;
+		int bodypart = 3 * 4 + ((MONSTER_ATTACK - MONSTER_POSE_MAGIC_WINDUP1) * 3);
 		if ( bodypart < my->bodyparts.size() )
 		{
 			Entity* body = my->bodyparts.at(bodypart);
 			BODY_ATTACK = MONSTER_POSE_MAGIC_WINDUP1;
 			BODY_ATTACKTIME = 0;
 		}
+		/*int bodypart = (local_rng.rand() % 6) * 3;
+		if ( bodypart < my->bodyparts.size() )
+		{
+			Entity* body = my->bodyparts.at(bodypart);
+			BODY_ATTACK = MONSTER_POSE_MAGIC_WINDUP1;
+			BODY_ATTACKTIME = 0;
+		}*/
 	}
 
 	//Move bodyparts
@@ -521,6 +531,7 @@ void mothAnimate(Entity* my, Stat* myStats, double dist)
 		entity->x = my->x;
 		entity->y = my->y;
 		entity->z = my->z;
+		entity->mistformGLRender = my->mistformGLRender;
 		if ( (bodypart - MOTH_BODY) % 3 == 0 ) // bodies
 		{
 			body = entity;
@@ -593,6 +604,28 @@ void mothAnimate(Entity* my, Stat* myStats, double dist)
 				{
 					if ( BODY_ATTACKTIME >= 2 * TICKS_PER_SECOND )
 					{
+						if ( multiplayer != CLIENT )
+						{
+							real_t prevYaw = my->yaw;
+							if ( Entity* target = uidToEntity(my->monsterTarget) )
+							{
+								my->yaw = atan2(target->y - my->y, target->x - my->x);
+							}
+							int spell = local_rng.rand() % 3;
+							if ( spell == 0 )
+							{
+								castSpell(my->getUID(), getSpellFromID(SPELL_TELEPULL), true, false);
+							}
+							else if ( spell == 1 )
+							{
+								castSpell(my->getUID(), getSpellFromID(SPELL_MIST_FORM), true, false);
+							}
+							else
+							{
+								castSpell(my->getUID(), getSpellFromID(SPELL_CONFUSE), true, false);
+							}
+							my->yaw = prevYaw;
+						}
 						BODY_ATTACK = 0;
 						BODY_CIRCLING_ATTACK_SETPOINT = 0.0;
 					}
@@ -917,7 +950,7 @@ void mothAnimate(Entity* my, Stat* myStats, double dist)
 			entity->x += BODY_FLOAT_X;
 			entity->y += BODY_FLOAT_Y;
 			entity->z += BODY_FLOAT_Z;
-			if ( BODY_ATTACK == MONSTER_POSE_MAGIC_WINDUP1 )
+			if ( BODY_ATTACK == MONSTER_POSE_MAGIC_WINDUP1 && !body->flags[INVISIBLE] )
 			{
 				Entity* fx = spawnMagicParticleCustom(entity, 576, 1.0, 10.0);
 				fx->z += 0.5;
@@ -1040,6 +1073,57 @@ void mothAnimate(Entity* my, Stat* myStats, double dist)
 		else
 		{
 			// do nothing, don't reset attacktime or increment it.
+		}
+	}
+}
+
+void Entity::mothChooseWeapon(const Entity* target, double dist)
+{
+	Stat* myStats = getStats();
+	if ( !myStats )
+	{
+		return;
+	}
+
+	if ( monsterSpecialState != 0 && monsterSpecialTimer != 0 )
+	{
+		return;
+	}
+
+	if ( monsterSpecialTimer == 0
+		&& (ticks % 10 == 0)
+		&& (monsterAttack == 0 || ((monsterAttack == 1) && monsterAttackTime >= 25))
+		&& dist < 128 )
+	{
+		Stat* targetStats = target->getStats();
+		if ( !targetStats )
+		{
+			return;
+		}
+
+		// try to charm enemy.
+		int specialRoll = -1;
+		int bonusFromHP = 0;
+		specialRoll = local_rng.rand() % 40;
+		if ( myStats->HP <= myStats->MAXHP * 0.8 )
+		{
+			bonusFromHP += 2; // +% chance if on low health
+		}
+		if ( myStats->HP <= myStats->MAXHP * 0.4 )
+		{
+			bonusFromHP += 3; // +extra % chance if on lower health
+		}
+
+		int requiredRoll = (2 + bonusFromHP);
+
+		if ( dist < STRIKERANGE )
+		{
+			requiredRoll += 5;
+		}
+
+		if ( specialRoll < requiredRoll )
+		{
+			monsterSpecialState = MOTH_CAST;
 		}
 	}
 }

@@ -1136,6 +1136,9 @@ public:
 			case SLIME:
 				slimeChooseWeapon(target, dist);
 				break;
+			case MOTH_SMALL:
+				mothChooseWeapon(target, dist);
+				break;
 			case BUGBEAR:
 				bugbearChooseWeapon(target, dist);
 				break;
@@ -1163,6 +1166,7 @@ public:
 	void shadowChooseWeapon(const Entity* target, double dist);
 	void succubusChooseWeapon(const Entity* target, double dist);
 	void slimeChooseWeapon(const Entity* target, double dist);
+	void mothChooseWeapon(const Entity* target, double dist);
 	void bugbearChooseWeapon(const Entity* target, double dist);
 	void skeletonSummonSetEquipment(Stat* myStats, int rank);
 	static void tinkerBotSetStats(Stat* myStats, int rank);
