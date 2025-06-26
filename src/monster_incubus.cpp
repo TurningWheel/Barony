@@ -258,7 +258,7 @@ void initIncubus(Entity* my, Stat* myStats)
 	}
 
 	// torso
-	Entity* entity = newEntity(446, 1, map.entities, nullptr); //Limb entity.
+	Entity* entity = newEntity(my->sprite == 445 ? 446 : 1827, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -277,7 +277,7 @@ void initIncubus(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right leg
-	entity = newEntity(450, 1, map.entities, nullptr); //Limb entity.
+	entity = newEntity(my->sprite == 445 ? 450 : 1831, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -296,7 +296,7 @@ void initIncubus(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left leg
-	entity = newEntity(449, 1, map.entities, nullptr); //Limb entity.
+	entity = newEntity(my->sprite == 445 ? 449 : 1830, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -315,7 +315,7 @@ void initIncubus(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right arm
-	entity = newEntity(448, 1, map.entities, nullptr); //595 //Limb entity.
+	entity = newEntity(my->sprite == 445 ? 448 : 1829, 1, map.entities, nullptr); //595 //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -334,7 +334,7 @@ void initIncubus(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// left arm
-	entity = newEntity(447, 1, map.entities, nullptr); //447 //Limb entity.
+	entity = newEntity(my->sprite == 445 ? 447 : 1828, 1, map.entities, nullptr); //447 //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -488,8 +488,8 @@ void incubusDie(Entity* my)
 	{
 		Entity* gib = spawnGib(my);
 		if (c < 6) {
-		    gib->sprite = 445 + c;
-		    gib->skill[5] = 1; // poof
+			gib->sprite = my->sprite + c;
+			gib->skill[5] = 1; // poof
 		}
 		serverSpawnGibForClient(gib);
 	}
@@ -889,7 +889,11 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		{
 			// torso
 			case LIMB_HUMANOID_TORSO:
+				entity->sprite = my->sprite == 445 ? 446 : 1827;
 				my->setHumanoidLimbOffset(entity, INCUBUS, LIMB_HUMANOID_TORSO);
+				entity->scalex = 0.975;
+				entity->scaley = 0.975;
+				entity->scalez = 0.975;
 				break;
 			// right leg
 			case LIMB_HUMANOID_RIGHTLEG:
@@ -897,7 +901,7 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					if ( myStats->shoes == nullptr )
 					{
-						entity->sprite = 450;
+						entity->sprite = my->sprite == 445 ? 450 : 1831;
 					}
 					else
 					{
@@ -933,7 +937,7 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					if ( myStats->shoes == nullptr )
 					{
-						entity->sprite = 449;
+						entity->sprite = my->sprite == 445 ? 449 : 1830;
 					}
 					else
 					{
@@ -976,7 +980,7 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->focalx = limbs[INCUBUS][4][0] - 0.25; // 0
 						entity->focaly = limbs[INCUBUS][4][1] - 0.25; // 0
 						entity->focalz = limbs[INCUBUS][4][2]; // 2
-						entity->sprite = 448;
+						entity->sprite = my->sprite == 445 ? 448 : 1829;
 						if ( my->monsterAttack == 0 )
 						{
 							entity->roll = -PI / 32;
@@ -988,7 +992,7 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->focalx = limbs[INCUBUS][4][0];
 						entity->focaly = limbs[INCUBUS][4][1];
 						entity->focalz = limbs[INCUBUS][4][2];
-						entity->sprite = 595;
+						entity->sprite = my->sprite == 445 ? 595 : 1833;
 					}
 				}
 				my->setHumanoidLimbOffset(entity, INCUBUS, LIMB_HUMANOID_RIGHTARM);
@@ -1009,7 +1013,7 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->focalx = limbs[INCUBUS][5][0] - 0.25; // 0
 						entity->focaly = limbs[INCUBUS][5][1] + 0.25; // 0
 						entity->focalz = limbs[INCUBUS][5][2]; // 2
-						entity->sprite = 447;
+						entity->sprite = my->sprite == 445 ? 447 : 1828;
 						if ( my->monsterAttack == 0 )
 						{
 							entity->roll = PI / 32;
@@ -1021,7 +1025,7 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->focalx = limbs[INCUBUS][5][0];
 						entity->focaly = limbs[INCUBUS][5][1];
 						entity->focalz = limbs[INCUBUS][5][2];
-						entity->sprite = 594;
+						entity->sprite = my->sprite == 445 ? 594 : 1832;
 						if ( my->monsterSpecialState == INCUBUS_STEAL )
 						{
 							entity->yaw -= MONSTER_WEAPONYAW;

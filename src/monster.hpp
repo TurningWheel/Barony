@@ -236,7 +236,7 @@ static std::vector<Sint32> monsterSprites[NUMMONSTERS] = {
 
     // INCUBUS
     {
-        445, 702,
+        445, 702, 1826
     },
 
     // VAMPIRE
