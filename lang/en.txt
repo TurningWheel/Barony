@@ -6962,5 +6962,8 @@ Host to enable the game setting.
 6698 gets mothballed.#
 6699 Your off-hand defense is imbued with force!#
 6700 Your off-hand defense is imbued with reflection!#
+6701 ASSIST ITEM SELECTION#
+6702 CLASS SELECTION#
+6703 RACE SELECTION#
 
 6999 END#

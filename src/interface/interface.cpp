@@ -29543,15 +29543,45 @@ void GenericGUIMenu::AssistShrineGUI_t::createAssistShrine()
 		assistItemFrame->setHollow(true);
 		assistItemFrame->setDisabled(true);
 
+		{
+			auto titleText = assistItemFrame->addField("title txt", 64);
+			titleText->setFont("fonts/pixel_maz_multiline.ttf#16");
+			titleText->setText(Language::get(6701));
+			titleText->setHJustify(Field::justify_t::CENTER);
+			titleText->setVJustify(Field::justify_t::TOP);
+			titleText->setSize(SDL_Rect{ 0, 59, basePos.w - 8, 24 });
+			titleText->setColor(makeColor(221, 206, 189, 255));
+		}
+
 		auto classFrame = assistShrineFrame->addFrame("assist classes");
 		classFrame->setSize(basePos);
 		classFrame->setHollow(true);
 		classFrame->setDisabled(true);
 
+		{
+			auto titleText = classFrame->addField("title txt", 64);
+			titleText->setFont("fonts/pixel_maz_multiline.ttf#16");
+			titleText->setText(Language::get(6702));
+			titleText->setHJustify(Field::justify_t::CENTER);
+			titleText->setVJustify(Field::justify_t::TOP);
+			titleText->setSize(SDL_Rect{ 0, 59, basePos.w - 8, 24 });
+			titleText->setColor(makeColor(221, 206, 189, 255));
+		}
+
 		auto raceFrame = assistShrineFrame->addFrame("assist races");
 		raceFrame->setSize(basePos);
 		raceFrame->setHollow(true);
 		raceFrame->setDisabled(true);
+
+		{
+			auto titleText = raceFrame->addField("title txt", 64);
+			titleText->setFont("fonts/pixel_maz_multiline.ttf#16");
+			titleText->setText(Language::get(6703));
+			titleText->setHJustify(Field::justify_t::CENTER);
+			titleText->setVJustify(Field::justify_t::TOP);
+			titleText->setSize(SDL_Rect{ 0, 59, basePos.w - 8, 24 });
+			titleText->setColor(makeColor(221, 206, 189, 255));
+		}
 
 		{
 			int numGrids = (MAX_ASSISTSHRINE_Y / kNumClassesToDisplayVertical) + 1;
