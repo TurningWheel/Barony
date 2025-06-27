@@ -26294,6 +26294,79 @@ failed:
         }
     };
     static GetPlayersOnline getPlayersOnline;
+
+	void MainMenu::RichPresence::process()
+	{
+		if ( loading )
+		{
+			return;
+		}
+		if ( !init )
+		{
+			needsUpdate = true;
+		}
+		if ( ticks - lastUpdate >= 10 * TICKS_PER_SECOND )
+		{
+			needsUpdate = true;
+			lastUpdate = ticks;
+		}
+		if ( _intro != intro )
+		{
+			_intro = intro;
+			needsUpdate = true;
+		}
+		if ( levelStr != map.name )
+		{
+			levelStr = map.name;
+			needsUpdate = true;
+		}
+		if ( clientnum >= 0 && clientnum < MAXPLAYERS && stats )
+		{
+			if ( _classnum != client_classes[clientnum] )
+			{
+				_classnum = client_classes[clientnum];
+				needsUpdate = true;
+			}
+			if ( _level != stats[clientnum]->LVL )
+			{
+				_level = stats[clientnum]->LVL;
+				needsUpdate = true;
+			}
+		}
+
+		if ( needsUpdate )
+		{
+			bool result = false;
+			if ( intro == true )
+			{
+				result = SteamFriends()->SetRichPresence("steam_display", "#Status_AtMainMenu");
+			}
+			else if ( clientnum >= 0 && clientnum < MAXPLAYERS && stats )
+			{
+				auto find = Player::CharacterSheet_t::mapDisplayNamesDescriptions.find(map.name);
+				if ( find == Player::CharacterSheet_t::mapDisplayNamesDescriptions.end()
+					|| client_classes[clientnum] > CLASS_HUNTER )
+				{
+					result = SteamFriends()->SetRichPresence("steam_display", "#Status_Nolocation");
+				}
+				else
+				{
+					trimmedLevelStr = map.name;
+					trimmedLevelStr.erase(std::remove(trimmedLevelStr.begin(), trimmedLevelStr.end(), ' '), trimmedLevelStr.end()); // trim whitespace
+					result = SteamFriends()->SetRichPresence("location", trimmedLevelStr.c_str());
+					result = SteamFriends()->SetRichPresence("class", std::to_string(client_classes[clientnum]).c_str());
+					result = SteamFriends()->SetRichPresence("level", std::to_string(stats[clientnum]->LVL).c_str());
+					result = SteamFriends()->SetRichPresence("steam_display", "#Status_Ingame");
+				}
+			}
+			else
+			{
+				SteamFriends()->ClearRichPresence();
+			}
+			needsUpdate = false;
+		}
+		init = true;
+	}
 #endif
 
 	std::string MainMenuBanners_t::updateBannerImg = "";
@@ -26969,6 +27042,7 @@ failed:
 			    auto online_players = static_cast<Field*>(&widget);
                 if (ticks % (TICKS_PER_SECOND * 5) == 0) {
                     getPlayersOnline();
+					richPresence.process();
                 }
                 int players = getPlayersOnline.current();
                 if (players == 0) {

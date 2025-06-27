@@ -1226,6 +1226,9 @@ void gameLogic(void)
 
 	// damage indicator timers
 	handleDamageIndicatorTicks();
+#ifdef STEAMWORKS
+	MainMenu::richPresence.process();
+#endif
 
 	if ( intro == true )
 	{

@@ -383,4 +383,24 @@ namespace MainMenu {
 		"mesmer", "brewer", "mechanist", "punisher",
 		"shaman", "hunter", "class_21", "class_22", "class_23", "class_24", "class_25"
 	};
+
+#ifdef STEAMWORKS
+	class RichPresence
+	{
+		int _currentlevel = 0;
+		int _secretlevel = 0;
+		int _classnum = 0;
+		int _level = 0;
+		bool _intro = false;
+		Uint32 lastUpdate = 0;
+		std::string levelStr = "";
+		std::string trimmedLevelStr = "";
+		bool init = false;
+		bool needsUpdate = true;
+		bool enabled = true;
+	public:
+		void process();
+	};
+	static RichPresence richPresence;
+#endif
 }
