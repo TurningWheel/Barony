@@ -12336,9 +12336,11 @@ EnemyHPDamageBarHandler::EnemyHPDetails* EnemyHPDamageBarHandler::addEnemyToList
 	details->enemy_statusEffects1 = 0;
 	details->enemy_statusEffects2 = 0;
 	details->enemy_statusEffects3 = 0;
+	details->enemy_statusEffects4 = 0;
 	details->enemy_statusEffectsLowDuration1 = 0;
 	details->enemy_statusEffectsLowDuration2 = 0;
 	details->enemy_statusEffectsLowDuration3 = 0;
+	details->enemy_statusEffectsLowDuration4 = 0;
 
 	if ( entity && (entity->behavior == &actPlayer || entity->behavior == &actMonster) && multiplayer != CLIENT )
 	{
@@ -12370,6 +12372,14 @@ EnemyHPDamageBarHandler::EnemyHPDetails* EnemyHPDamageBarHandler::addEnemyToList
 						if ( stat->EFFECTS_TIMERS[i] > 0 && stat->EFFECTS_TIMERS[i] < 5 * TICKS_PER_SECOND )
 						{
 							details->enemy_statusEffectsLowDuration3 |= (1 << (i - 64));
+						}
+					}
+					else if ( i < 128 )
+					{
+						details->enemy_statusEffects4 |= (1 << (i - 96));
+						if ( stat->EFFECTS_TIMERS[i] > 0 && stat->EFFECTS_TIMERS[i] < 5 * TICKS_PER_SECOND )
+						{
+							details->enemy_statusEffectsLowDuration4 |= (1 << (i - 96));
 						}
 					}
 				}

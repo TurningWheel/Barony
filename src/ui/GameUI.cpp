@@ -30051,8 +30051,11 @@ struct enemybarMapLowDurationTick_k {
 		}
 	};
 };
-struct enemybarEffectMapFx3_lowDuration_k {
+struct enemybarEffectMapFx4_lowDuration_k {
 	std::map<Uint32, enemybarMapLowDurationTick_k> m;
+};
+struct enemybarEffectMapFx3_lowDuration_k {
+	std::map<Uint32, enemybarEffectMapFx4_lowDuration_k> m;
 };
 struct enemybarEffectMapFx2_lowDuration_k {
 	std::map<Uint32, enemybarEffectMapFx3_lowDuration_k> m;
@@ -30060,8 +30063,11 @@ struct enemybarEffectMapFx2_lowDuration_k {
 struct enemybarEffectMapFx1_lowDuration_k {
 	std::map<Uint32, enemybarEffectMapFx2_lowDuration_k> m;
 };
-struct enemybarEffectMapFx3_k {
+struct enemybarEffectMapFx4_k {
 	std::map<Uint32, enemybarEffectMapFx1_lowDuration_k> m;
+};
+struct enemybarEffectMapFx3_k {
+	std::map<Uint32, enemybarEffectMapFx4_k> m;
 };
 struct enemybarEffectMapFx2_k {
 	std::map<Uint32, enemybarEffectMapFx3_k> m;
@@ -30070,7 +30076,9 @@ struct enemybarEffectMapFx1_k {
 	std::map<Uint32, enemybarEffectMapFx2_k> m;
 };
 enemybarEffectMapFx1_k enemyBarEffectMap;
-SDL_Surface* enemyBarEffectMapExists(Uint32 fx1, Uint32 fx2, Uint32 fx3, Uint32 fx_lowDuration1, Uint32 fx_lowDuration2, Uint32 fx_lowDuration3, bool lowDurationTicks)
+SDL_Surface* enemyBarEffectMapExists(Uint32 fx1, Uint32 fx2, Uint32 fx3, Uint32 fx4, 
+	Uint32 fx_lowDuration1, Uint32 fx_lowDuration2, Uint32 fx_lowDuration3, Uint32 fx_lowDuration4,
+	bool lowDurationTicks)
 {
 	if ( enemyBarEffectMap.m.find(fx1) != enemyBarEffectMap.m.end() )
 	{
@@ -30081,18 +30089,26 @@ SDL_Surface* enemyBarEffectMapExists(Uint32 fx1, Uint32 fx2, Uint32 fx3, Uint32 
 			if ( m2.m.find(fx3) != m2.m.end() )
 			{
 				auto& m3 = m2.m[fx3];
-				if ( m3.m.find(fx_lowDuration1) != m3.m.end() )
+				if ( m3.m.find(fx4) != m3.m.end() )
 				{
-					auto& m4 = m3.m[fx_lowDuration1];
-					if ( m4.m.find(fx_lowDuration2) != m4.m.end() )
+					auto& m4 = m3.m[fx4];
+					if ( m4.m.find(fx_lowDuration1) != m4.m.end() )
 					{
-						auto& m5 = m4.m[fx_lowDuration2];
-						if ( m5.m.find(fx_lowDuration3) != m5.m.end() )
+						auto& m5 = m4.m[fx_lowDuration1];
+						if ( m5.m.find(fx_lowDuration2) != m5.m.end() )
 						{
-							auto& m6 = m5.m[fx_lowDuration3];
-							if ( m6.m.find(lowDurationTicks) != m6.m.end() )
+							auto& m6 = m5.m[fx_lowDuration2];
+							if ( m6.m.find(fx_lowDuration3) != m6.m.end() )
 							{
-								return m6.m[lowDurationTicks];
+								auto& m7 = m6.m[fx_lowDuration3];
+								if ( m7.m.find(fx_lowDuration4) != m7.m.end() )
+								{
+									auto& m8 = m7.m[fx_lowDuration4];
+									if ( m8.m.find(lowDurationTicks) != m8.m.end() )
+									{
+										return m8.m[lowDurationTicks];
+									}
+								}
 							}
 						}
 					}
@@ -30102,16 +30118,20 @@ SDL_Surface* enemyBarEffectMapExists(Uint32 fx1, Uint32 fx2, Uint32 fx3, Uint32 
 	}
 	return nullptr;
 }
-void enemyBarEffectMapInsert(Uint32 fx1, Uint32 fx2, Uint32 fx3, Uint32 fx_lowDuration1, Uint32 fx_lowDuration2, Uint32 fx_lowDuration3, bool lowDurationTicks,
+void enemyBarEffectMapInsert(Uint32 fx1, Uint32 fx2, Uint32 fx3, Uint32 fx4,
+	Uint32 fx_lowDuration1, Uint32 fx_lowDuration2, Uint32 fx_lowDuration3, Uint32 fx_lowDuration4,
+	bool lowDurationTicks,
 	SDL_Surface* surf)
 {
-	enemyBarEffectMap.m[fx1].m[fx2].m[fx3].m[fx_lowDuration1].m[fx_lowDuration2].m[fx_lowDuration3].m[lowDurationTicks] = surf;
+	enemyBarEffectMap.m[fx1].m[fx2].m[fx3].m[fx4].m[fx_lowDuration1]
+		.m[fx_lowDuration2].m[fx_lowDuration3].m[fx_lowDuration4]
+			.m[lowDurationTicks] = surf;
 }
 
 // to nest deep maps and suppress visual studio warnings
-struct enemybarMapFx3_lowDuration_k {
+struct enemybarMapFx4_lowDuration_k {
 	std::map<Uint32, SDL_Surface*> m;
-	~enemybarMapFx3_lowDuration_k()
+	~enemybarMapFx4_lowDuration_k()
 	{
 		if ( EnemyHPDamageBarHandler::bEnemyBarSimpleBlit )
 		{
@@ -30127,14 +30147,20 @@ struct enemybarMapFx3_lowDuration_k {
 	};
 };
 
+struct enemybarMapFx3_lowDuration_k {
+	std::map<Uint32, enemybarMapFx4_lowDuration_k> m;
+};
 struct enemybarMapFx2_lowDuration_k {
 	std::map<Uint32, enemybarMapFx3_lowDuration_k> m;
 };
 struct enemybarMapFx1_lowDuration_k {
 	std::map<Uint32, enemybarMapFx2_lowDuration_k> m;
 };
-struct enemybarMapFx3_k {
+struct enemybarMapFx4_k {
 	std::map<Uint32, enemybarMapFx1_lowDuration_k> m;
+};
+struct enemybarMapFx3_k {
+	std::map<Uint32, enemybarMapFx4_k> m;
 };
 struct enemybarMapFx2_k {
 	std::map<Uint32, enemybarMapFx3_k> m;
@@ -30154,7 +30180,8 @@ struct enemybarMapName_k {
 enemybarMapName_k enemyBarMap;
 SDL_Surface* enemyBarMapExists(std::string name, int baseWidth, int baseHeight,
 	int progressWidth, int damageWidth,
-	Uint32 fx1, Uint32 fx2, Uint32 fx3, Uint32 fx_lowDuration1, Uint32 fx_lowDuration2, Uint32 fx_lowDuration3)
+	Uint32 fx1, Uint32 fx2, Uint32 fx3, Uint32 fx4,
+	Uint32 fx_lowDuration1, Uint32 fx_lowDuration2, Uint32 fx_lowDuration3, Uint32 fx_lowDuration4)
 {
 	if ( enemyBarMap.m.find(name) != enemyBarMap.m.end() )
 	{
@@ -30179,15 +30206,23 @@ SDL_Surface* enemyBarMapExists(std::string name, int baseWidth, int baseHeight,
 						if ( m5.m.find(fx3) != m5.m.end() )
 						{
 							auto& m6 = m5.m[fx3];
-							if ( m6.m.find(fx_lowDuration1) != m6.m.end() )
+							if ( m6.m.find(fx4) != m6.m.end() )
 							{
-								auto& m7 = m6.m[fx_lowDuration1];
-								if ( m7.m.find(fx_lowDuration2) != m7.m.end() )
+								auto& m7 = m6.m[fx4];
+								if ( m7.m.find(fx_lowDuration1) != m7.m.end() )
 								{
-									auto& m8 = m7.m[fx_lowDuration2];
-									if ( m8.m.find(fx_lowDuration3) != m8.m.end() )
+									auto& m8 = m7.m[fx_lowDuration1];
+									if ( m8.m.find(fx_lowDuration2) != m8.m.end() )
 									{
-										return m8.m[fx_lowDuration3];
+										auto& m9 = m8.m[fx_lowDuration2];
+										if ( m9.m.find(fx_lowDuration3) != m9.m.end() )
+										{
+											auto& m10 = m9.m[fx_lowDuration3];
+											if ( m10.m.find(fx_lowDuration4) != m10.m.end() )
+											{
+												return m10.m[fx_lowDuration4];
+											}
+										}
 									}
 								}
 							}
@@ -30200,8 +30235,8 @@ SDL_Surface* enemyBarMapExists(std::string name, int baseWidth, int baseHeight,
 	return nullptr;
 }
 static void  enemyBarMapInsert(std::string name, int baseWidth, int baseHeight, int progressWidth, int damageWidth,
-	Uint32 statusfx1, Uint32 statusfx2, Uint32 statusfx3,
-	Uint32 statusfx_lowDuration1, Uint32 statusfx_lowDuration2, Uint32 statusfx_lowDuration3,
+	Uint32 statusfx1, Uint32 statusfx2, Uint32 statusfx3, Uint32 statusfx4,
+	Uint32 statusfx_lowDuration1, Uint32 statusfx_lowDuration2, Uint32 statusfx_lowDuration3, Uint32 statusfx_lowDuration4,
 	SDL_Surface* surf)
 {
 	Uint32 totalSizeKey = baseWidth & 0xFFFF;
@@ -30210,8 +30245,8 @@ static void  enemyBarMapInsert(std::string name, int baseWidth, int baseHeight, 
 	Uint32 progressDamageKey = progressWidth & 0xFFFF;
 	progressDamageKey |= ((damageWidth & 0xFFFF) << 16);
 	enemyBarMap.m[name].m[totalSizeKey].m[progressDamageKey]
-		.m[statusfx1].m[statusfx2].m[statusfx3]
-			.m[statusfx_lowDuration1].m[statusfx_lowDuration2].m[statusfx_lowDuration3] = surf;
+		.m[statusfx1].m[statusfx2].m[statusfx3].m[statusfx4]
+			.m[statusfx_lowDuration1].m[statusfx_lowDuration2].m[statusfx_lowDuration3].m[statusfx_lowDuration4] = surf;
 }
 
 SDL_Surface* EnemyHPDamageBarHandler::EnemyHPDetails::blitEnemyBar(const int player, SDL_Surface* statusEffectSprite)
@@ -30261,9 +30296,11 @@ SDL_Surface* EnemyHPDamageBarHandler::EnemyHPDetails::blitEnemyBar(const int pla
 			enemy_statusEffects1,
 			enemy_statusEffects2,
 			enemy_statusEffects3,
+			enemy_statusEffects4,
 			enemy_statusEffectsLowDuration1,
 			enemy_statusEffectsLowDuration2,
-			enemy_statusEffectsLowDuration3);
+			enemy_statusEffectsLowDuration3,
+			enemy_statusEffectsLowDuration4);
 		if ( !hashSurf )
 		{
 			//messagePlayer(0, MESSAGE_DEBUG, "Hash for enemy bar not found!");
@@ -30358,9 +30395,11 @@ SDL_Surface* EnemyHPDamageBarHandler::EnemyHPDetails::blitEnemyBar(const int pla
 			enemy_statusEffects1,
 			enemy_statusEffects2,
 			enemy_statusEffects3,
+			enemy_statusEffects4,
 			enemy_statusEffectsLowDuration1,
 			enemy_statusEffectsLowDuration2,
 			enemy_statusEffectsLowDuration3,
+			enemy_statusEffectsLowDuration4,
 			sprite);
 	}
 	return sprite;
@@ -30378,7 +30417,10 @@ SDL_Surface* EnemyHPDamageBarHandler::EnemyHPDetails::blitEnemyBarStatusEffects(
 	{
 		return nullptr;
 	}
-	if ( enemy_statusEffects1 == 0 && enemy_statusEffects2 == 0 && enemy_statusEffects3 == 0 )
+	if ( enemy_statusEffects1 == 0 
+		&& enemy_statusEffects2 == 0 
+		&& enemy_statusEffects3 == 0
+		&& enemy_statusEffects4 == 0 )
 	{
 		return nullptr;
 	}
@@ -30395,9 +30437,11 @@ SDL_Surface* EnemyHPDamageBarHandler::EnemyHPDetails::blitEnemyBarStatusEffects(
 			enemy_statusEffects1,
 			enemy_statusEffects2,
 			enemy_statusEffects3,
+			enemy_statusEffects4,
 			enemy_statusEffectsLowDuration1,
 			enemy_statusEffectsLowDuration2,
 			enemy_statusEffectsLowDuration3,
+			enemy_statusEffectsLowDuration4,
 			(ticks % 25) >= 12);
 		if ( !hashSurf )
 		{
@@ -30604,6 +30648,68 @@ SDL_Surface* EnemyHPDamageBarHandler::EnemyHPDetails::blitEnemyBarStatusEffects(
 			}
 		}
 	}
+	if ( enemy_statusEffects4 != 0 )
+	{
+		for ( int i = 0; i < 32; ++i )
+		{
+			if ( (enemy_statusEffects4 & (1 << i)) != 0 )
+			{
+				int effectID = i + 96;
+				if ( StatusEffectQueue_t::StatusEffectDefinitions_t::effectDefinitionExists(effectID) )
+				{
+					int variation = -1;
+					SDL_Surface* srcSurf = nullptr;
+					if ( i == EFF_SHAPESHIFT )
+					{
+						if ( entity && entity->behavior == &actPlayer )
+						{
+							switch ( entity->effectShapeshift )
+							{
+							case RAT:
+								variation = 0;
+								break;
+							case SPIDER:
+								variation = 1;
+								break;
+							case TROLL:
+								variation = 2;
+								break;
+							case CREATURE_IMP:
+								variation = 3;
+								break;
+							default:
+								break;
+							}
+						}
+					}
+					auto& definition = StatusEffectQueue_t::StatusEffectDefinitions_t::getEffect(effectID);
+					if ( !definition.neverDisplay )
+					{
+						std::string imgPath;
+						if ( i == EFF_SHAPESHIFT && variation == -1 )
+						{
+							imgPath = "";
+						}
+						else
+						{
+							imgPath = StatusEffectQueue_t::StatusEffectDefinitions_t::getEffectImgPath(definition, variation);
+						}
+						if ( imgPath != "" )
+						{
+							srcSurf = const_cast<SDL_Surface*>(Image::get(imgPath.c_str())->getSurf());
+
+							bool blinking = false;
+							if ( (enemy_statusEffectsLowDuration4 & (1 << i)) != 0 )
+							{
+								blinking = true;
+							}
+							statusEffectIcons.push_back(std::make_pair(srcSurf, blinking));
+						}
+					}
+				}
+			}
+		}
+	}
 
 	//const int numIcons = statusEffectIcons.size();
 	//const int iconTotalWidth = iconWidth + 2;
@@ -30651,9 +30757,11 @@ SDL_Surface* EnemyHPDamageBarHandler::EnemyHPDetails::blitEnemyBarStatusEffects(
 			enemy_statusEffects1,
 			enemy_statusEffects2,
 			enemy_statusEffects3,
+			enemy_statusEffects4,
 			enemy_statusEffectsLowDuration1,
 			enemy_statusEffectsLowDuration2,
 			enemy_statusEffectsLowDuration3,
+			enemy_statusEffectsLowDuration4,
 			(ticks % 25) >= 12,
 			sprite);
 	}
