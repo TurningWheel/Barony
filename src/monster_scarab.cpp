@@ -575,6 +575,7 @@ void scarabAnimate(Entity* my, Stat* myStats, double dist)
 	        }
 	    }
         my->new_z = my->z = 6.0 - sin(scarabFly) * 6.0;
+		my->creatureHandleLiftZ();
 	}
 }
 

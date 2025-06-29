@@ -372,6 +372,12 @@ void ghoulMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				bodypart++;
 			}
 		}
+
+		if ( my->z <= -0.25 )
+		{
+			my->z = -0.25;
+			my->creatureHandleLiftZ();
+		}
 	}
 
 	//Move bodyparts

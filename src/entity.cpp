@@ -7831,7 +7831,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 			else
 			{
 				serverUpdateEntitySkill(this, 8);
-				if (myStats->type != SLIME && myStats->type != RAT && myStats->type != SCARAB 
+				if (myStats->type != SLIME && myStats->type != RAT /*&& myStats->type != SCARAB*/ 
 					&& myStats->type != BAT_SMALL
 					&& myStats->type != REVENANT_SKULL
 					&& myStats->type != MONSTER_ADORCISED_WEAPON
@@ -25461,4 +25461,124 @@ real_t Entity::monsterGetWeightRatio()
 	double weightratio = (1000 + std::max((Sint32)0, getSTR()) * 100 - weight) / (double)(1000 + std::max((Sint32)0, getSTR()) * 100);
 	weightratio = fmin(fmax(0, weightratio), 1);
 	return weightratio;
+}
+
+void Entity::creatureHandleLiftZ()
+{
+	Stat* myStats = getStats();
+	if ( myStats && myStats->getEffectActive(EFF_LIFT) )
+	{
+		creatureHoverZ += 0.25;
+	}
+	else
+	{
+		creatureHoverZ = 0.0;
+	}
+
+	real_t height = 2.0 * sin(std::min(creatureHoverZ, PI / 2));
+	if ( creatureHoverZ >= PI / 2 )
+	{
+		height += 0.5 * cos(creatureHoverZ);
+	}
+	
+	real_t shift = 2 * height;
+	Monster type = getMonsterTypeFromSprite();
+
+	if ( multiplayer == CLIENT )
+	{
+		switch ( type )
+		{
+		case RAT:
+			focalz = 0.0;
+			focalz -= shift;
+			break;
+		case SLIME:
+			focalz -= shift;
+			break;
+		case SCARAB:
+			z -= shift;
+			new_z = z;
+			break;
+		default:
+			break;
+		}
+		return;
+	}
+
+	switch ( type )
+	{
+		case RAT:
+			focalz = 0.0;
+			focalz -= shift;
+			break;
+		case SLIME:
+			focalz -= shift;
+			break;
+		case SCARAB:
+			z -= shift;
+			new_z = z;
+			break;
+		case SPIDER:
+		case SCORPION:
+		case GNOME:
+		case KOBOLD:
+		case MINIMIMIC:
+			z -= shift;
+			break;
+		case HUMAN:
+		case GOBLIN:
+		case TROLL:
+		case SKELETON:
+		case SUCCUBUS:
+		case SHOPKEEPER:
+		case INCUBUS:
+		case INSECTOID:
+		case VAMPIRE:
+		case MONSTER_D:
+		case MONSTER_M:
+		case MONSTER_S:
+		case MONSTER_G:
+		case GOATMAN:
+		case GHOUL:
+		case AUTOMATON:
+		case MIMIC:
+		case HOLOGRAM:
+		case SENTRYBOT:
+		case SPELLBOT:
+		case DUMMYBOT:
+			z -= shift * 0.75;
+			break;
+		case BAT_SMALL:
+		case REVENANT_SKULL:
+		case MONSTER_ADORCISED_WEAPON:
+		case FLAME_ELEMENTAL:
+		case MOTH_SMALL:
+			z -= shift / 2;
+			break;
+		case BUGBEAR:
+		case SHADOW:
+		case CRYSTALGOLEM:
+		case DEMON:
+			z -= shift / 2;
+			break;
+		case CREATURE_IMP:
+		case COCKATRICE:
+		case MINOTAUR: 
+			z -= shift / 4;
+			break;
+		case LICH: 
+		case DEVIL:
+		case LICH_ICE:
+		case LICH_FIRE:
+			break;
+		case GYROBOT:
+			break;
+		case MONSTER_UNUSED_4: 
+		case MONSTER_UNUSED_5: 
+		case MONSTER_UNUSED_6: 
+		case MONSTER_UNUSED_7: 
+		case MONSTER_UNUSED_8: 
+		default:
+			break;
+	}
 }

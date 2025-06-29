@@ -810,6 +810,7 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				my->pitch = 0;
 			}
 		}
+		my->creatureHandleLiftZ();
 	}
 
 	Entity* shieldarm = nullptr;

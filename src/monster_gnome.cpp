@@ -1004,6 +1004,7 @@ void gnomeMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			my->z = 2.75;
 			my->pitch = 0;
 		}
+		my->creatureHandleLiftZ();
 	}
 
 	Entity* shieldarm = nullptr;

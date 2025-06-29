@@ -1286,6 +1286,7 @@ public:
 	bool spellEffectPreserveItem(Item* item);
 	bool mistFormDodge(bool checkEffectActiveOnly);
 	void attractItem(Entity& itemEntity);
+	void creatureHandleLiftZ();
 };
 
 Monster getMonsterFromPlayerRace(int playerRace); // convert playerRace into the relevant monster type

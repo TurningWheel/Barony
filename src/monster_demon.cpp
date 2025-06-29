@@ -329,6 +329,9 @@ void demonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				bodypart++;
 			}
 		}
+
+		my->z = -8.5;
+		my->creatureHandleLiftZ();
 	}
 
 	//Move bodyparts

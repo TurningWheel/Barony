@@ -804,6 +804,7 @@ void monsterGMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				}
 			}
 		}
+		my->creatureHandleLiftZ();
 	}
 
 	Entity* shieldarm = nullptr;

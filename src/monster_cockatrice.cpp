@@ -412,14 +412,34 @@ void cockatriceMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					if ( my->monsterAnimationLimbOvershoot >= ANIMATE_OVERSHOOT_TO_SETPOINT )
 					{
 						// handle z movement on windup
+						if ( abs(my->creatureHoverZ) > 0.01 )
+						{
+							my->z = -4.5;
+							my->creatureHoverZ = 0.0;
+						}
 						limbAnimateWithOvershoot(my, ANIMATE_Z, 0.2, -3.5, 0.05, -5.5, ANIMATE_DIR_POSITIVE); // default z is -4.5 in actmonster.cpp
 					}
 				}
-				else if(MONSTER_ATTACK != MONSTER_POSE_MELEE_WINDUP3 )
+				else if ( MONSTER_ATTACK != MONSTER_POSE_MELEE_WINDUP3 )
 				{
 					// post-swing head animation. client doesn't need to adjust the entity pitch, server will handle.
 					limbAnimateWithOvershoot(my, ANIMATE_PITCH, 0.2, PI / 4, 0.1, 0, ANIMATE_DIR_POSITIVE);
-					limbAnimateToLimit(my, ANIMATE_Z, 0.2, -4.5, false, 0);
+
+					if ( myStats->getEffectActive(EFF_LIFT) )
+					{
+						my->z = -4.5;
+						my->creatureHandleLiftZ();
+					}
+					else
+					{
+						if ( abs(my->creatureHoverZ) > 0.01 )
+						{
+							my->z = -4.5;
+							my->creatureHoverZ = 0.0;
+						}
+						my->z = std::min(my->z, -4.5);
+						limbAnimateToLimit(my, ANIMATE_Z, 0.2, -4.5, false, 0);
+					}
 				}
 			}
 			

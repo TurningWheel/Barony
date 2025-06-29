@@ -572,6 +572,7 @@ void vampireMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		{
 			my->z -= 1; // floating
 		}
+		my->creatureHandleLiftZ();
 	}
 
 	Entity* shieldarm = nullptr;

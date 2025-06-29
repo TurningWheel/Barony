@@ -542,6 +542,7 @@ void sentryBotAnimate(Entity* my, Stat* myStats, double dist)
 	if ( multiplayer != CLIENT )
 	{
 		my->z = limbs[race][11][2];
+		my->creatureHandleLiftZ();
 	}
 
 	if ( ticks % (3 * TICKS_PER_SECOND) == 0 && local_rng.rand() % 5 > 0 )
@@ -1889,6 +1890,7 @@ void dummyBotAnimate(Entity* my, Stat* myStats, double dist)
 	if ( multiplayer != CLIENT )
 	{
 		my->z = 0;
+		my->creatureHandleLiftZ();
 	}
 
 	//Move bodyparts
@@ -2164,7 +2166,7 @@ void dummyBotAnimate(Entity* my, Stat* myStats, double dist)
 			case DUMMY_BOX:
 				entity->x += limbs[DUMMYBOT][9][0] * cos(entity->yaw);
 				entity->y += limbs[DUMMYBOT][9][1] * sin(entity->yaw);
-				entity->z = limbs[DUMMYBOT][9][2];
+				entity->z = my->z + limbs[DUMMYBOT][9][2];
 				entity->focalx = limbs[DUMMYBOT][4][0];
 				entity->focaly = limbs[DUMMYBOT][4][1];
 				entity->focalz = limbs[DUMMYBOT][4][2];
@@ -2172,7 +2174,7 @@ void dummyBotAnimate(Entity* my, Stat* myStats, double dist)
 			case DUMMY_LID:
 				entity->x += limbs[DUMMYBOT][10][0] * cos(entity->yaw);
 				entity->y += limbs[DUMMYBOT][10][1] * sin(entity->yaw);
-				entity->z = limbs[DUMMYBOT][10][2];
+				entity->z = my->z + limbs[DUMMYBOT][10][2];
 				entity->focalx = limbs[DUMMYBOT][5][0];
 				entity->focaly = limbs[DUMMYBOT][5][1];
 				entity->focalz = limbs[DUMMYBOT][5][2];
@@ -2180,7 +2182,7 @@ void dummyBotAnimate(Entity* my, Stat* myStats, double dist)
 			case DUMMY_CRANK:
 				entity->x += limbs[DUMMYBOT][12][0] * cos(entity->yaw) + limbs[DUMMYBOT][12][1] * cos(entity->yaw + PI / 2);
 				entity->y += limbs[DUMMYBOT][12][0] * sin(entity->yaw) + limbs[DUMMYBOT][12][1] * sin(entity->yaw + PI / 2);
-				entity->z = limbs[DUMMYBOT][12][2];
+				entity->z = my->z + limbs[DUMMYBOT][12][2];
 				entity->focalx = limbs[DUMMYBOT][11][0];
 				entity->focaly = limbs[DUMMYBOT][11][1];
 				entity->focalz = limbs[DUMMYBOT][11][2];

@@ -640,36 +640,44 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		else
 		{
 			if ( my->monsterSpecialState != AUTOMATON_MALFUNCTION_START 
-				&& my->monsterSpecialState != AUTOMATON_MALFUNCTION_RUN
-				&& !(myStats->amulet && myStats->amulet->type == AMULET_LIFESAVING && myStats->amulet->beatitude >= 0) )
+				&& my->monsterSpecialState != AUTOMATON_MALFUNCTION_RUN )
 			{
 				my->z = -.5;
 				my->pitch = 0;
-				if ( (myStats->HP < 25 && !myStats->getEffectActive(EFF_CONFUSED))
-					|| (myStats->HP < 50 && !strncmp(myStats->name, "corrupted automaton", strlen("corrupted automaton")))
-					)
+				if ( !(myStats->amulet && myStats->amulet->type == AMULET_LIFESAVING && myStats->amulet->beatitude >= 0) )
 				{
-					// threshold for boom boom
-					if ( local_rng.rand() % 4 > 0 ) // 3/4
+					if ( (myStats->HP < 25 && !myStats->getEffectActive(EFF_CONFUSED))
+						|| (myStats->HP < 50 && !strncmp(myStats->name, "corrupted automaton", strlen("corrupted automaton")))
+						)
 					{
-						my->monsterSpecialState = AUTOMATON_MALFUNCTION_START;
-						my->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_AUTOMATON_MALFUNCTION;
-						serverUpdateEntitySkill(my, 33);
+						// threshold for boom boom
+						if ( local_rng.rand() % 4 > 0 ) // 3/4
+						{
+							my->monsterSpecialState = AUTOMATON_MALFUNCTION_START;
+							my->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_AUTOMATON_MALFUNCTION;
+							serverUpdateEntitySkill(my, 33);
 
-						myStats->setEffectActive(EFF_PARALYZED, 1);
-						myStats->EFFECTS_TIMERS[EFF_PARALYZED] = -1;
-					}
-					else
-					{
-						myStats->setEffectActive(EFF_CONFUSED, MAXPLAYERS + 1);
-						myStats->EFFECTS_TIMERS[EFF_CONFUSED] = -1;
-						myStats->setEffectActive(EFF_PARALYZED, 1);
-						myStats->EFFECTS_TIMERS[EFF_PARALYZED] = 25;
-						playSoundEntity(my, 263, 128);
-						spawnMagicEffectParticles(my->x, my->y, my->z, 170);
+							myStats->setEffectActive(EFF_PARALYZED, 1);
+							myStats->EFFECTS_TIMERS[EFF_PARALYZED] = -1;
+						}
+						else
+						{
+							myStats->setEffectActive(EFF_CONFUSED, MAXPLAYERS + 1);
+							myStats->EFFECTS_TIMERS[EFF_CONFUSED] = -1;
+							myStats->setEffectActive(EFF_PARALYZED, 1);
+							myStats->EFFECTS_TIMERS[EFF_PARALYZED] = 25;
+							playSoundEntity(my, 263, 128);
+							spawnMagicEffectParticles(my->x, my->y, my->z, 170);
+						}
 					}
 				}
 			}
+		}
+
+		if ( my->monsterSpecialState != AUTOMATON_MALFUNCTION_START
+			&& my->monsterSpecialState != AUTOMATON_MALFUNCTION_RUN )
+		{
+			my->creatureHandleLiftZ();
 		}
 	}
 

@@ -462,6 +462,7 @@ void bugbearMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		{
 			my->z = limbs[BUGBEAR][11][2];
 		}
+		my->creatureHandleLiftZ();
 	}
 
 	Entity* weaponarm = nullptr;

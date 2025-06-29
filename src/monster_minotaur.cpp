@@ -354,6 +354,9 @@ void minotaurMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				bodypart++;
 			}
 		}
+
+		my->z = -6;
+		my->creatureHandleLiftZ();
 	}
 
 	//Move bodyparts

@@ -364,6 +364,7 @@ void mimicAnimate(Entity* my, Stat* myStats, double dist)
 	if ( multiplayer != CLIENT )
 	{
 		my->z = limbs[monsterType][5][2];
+		my->creatureHandleLiftZ();
 	}
 
 	if ( multiplayer != CLIENT )

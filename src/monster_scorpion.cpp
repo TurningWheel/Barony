@@ -247,6 +247,9 @@ void scorpionAnimate(Entity* my, double dist)
 				bodypart++;
 			}
 		}
+
+		my->z = 6.0;
+		my->creatureHandleLiftZ();
 	}
 
 	bool skrabblag = false;

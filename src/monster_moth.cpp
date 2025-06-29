@@ -338,6 +338,7 @@ void mothAnimate(Entity* my, Stat* myStats, double dist)
 			myStats->setEffectActive(EFF_LEVITATING, 1);
 			myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
 		}
+		my->creatureHandleLiftZ();
 	}
 
 	//my->setEffect(EFF_STUNNED, true, -1, false);

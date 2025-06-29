@@ -469,6 +469,7 @@ void succubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		{
 			my->z = -1;
 		}
+		my->creatureHandleLiftZ();
 	}
 
 	Entity* shieldarm = nullptr;

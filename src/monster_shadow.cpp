@@ -468,15 +468,25 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 
 		if ( multiplayer != CLIENT )
 		{
-			if ( my->monsterAnimationLimbOvershoot == ANIMATE_OVERSHOOT_NONE )
+			if ( myStats->getEffectActive(EFF_LIFT) )
 			{
 				my->z = -1.2;
-				my->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_TO_SETPOINT;
+				my->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_NONE;
+				my->creatureHandleLiftZ();
 			}
-			if ( dist < 0.1 )
+			else
 			{
-				// not moving, float.
-				limbAnimateWithOvershoot(my, ANIMATE_Z, 0.005, -2, 0.005, -1.2, ANIMATE_DIR_NEGATIVE);
+				my->creatureHoverZ = 0.0;
+				if ( my->monsterAnimationLimbOvershoot == ANIMATE_OVERSHOOT_NONE )
+				{
+					my->z = -1.2;
+					my->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_TO_SETPOINT;
+				}
+				if ( dist < 0.1 )
+				{
+					// not moving, float.
+					limbAnimateWithOvershoot(my, ANIMATE_Z, 0.005, -2, 0.005, -1.2, ANIMATE_DIR_NEGATIVE);
+				}
 			}
 		}
 	}

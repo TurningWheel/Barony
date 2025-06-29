@@ -1358,6 +1358,7 @@ void shopkeeperMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			my->z = -1;
 			my->pitch = 0;
 		}
+		my->creatureHandleLiftZ();
 	}
 
 	Entity* helmet = nullptr;

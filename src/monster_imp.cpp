@@ -346,6 +346,9 @@ void impMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			my->pitch = 0;
 		}
 
+		my->z = -4.5;
+		my->creatureHandleLiftZ();
+
 		// imps are always flying
 		myStats->setEffectActive(EFF_LEVITATING, 1);
 		myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;

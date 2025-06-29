@@ -373,6 +373,9 @@ void spiderMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				bodypart++;
 			}
 		}
+
+		my->z = 4.5;
+		my->creatureHandleLiftZ();
 	}
 
 	// animate limbs

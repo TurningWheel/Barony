@@ -662,6 +662,7 @@ void slimeAnimate(Entity* my, Stat* myStats, double dist)
 		slimeWaterBob = 0.0;
 	}
 	my->focalz += (swimming && MONSTER_ATTACK == 0) ? (1.0 + slimeWaterBob) : 0.0;
+	my->creatureHandleLiftZ();
 }
 
 void slimeDie(Entity* my)

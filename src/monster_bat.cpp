@@ -304,6 +304,11 @@ void batAnimate(Entity* my, Stat* myStats, double dist)
 		{
 			my->monsterRotate();
 		}
+
+		if ( !my->isUntargetableBat() )
+		{
+			my->creatureHandleLiftZ();
+		}
 	}
 
 	if ( enableDebugKeys && (svFlags & SV_FLAG_CHEATS) )

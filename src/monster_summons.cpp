@@ -379,6 +379,8 @@ void revenantSkullAnimate(Entity* my, Stat* myStats, double dist)
 			myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
 		}
 
+		my->creatureHandleLiftZ();
+
 		if ( monsterType == MONSTER_ADORCISED_WEAPON )
 		{
 			if ( myStats->getAttribute("spirit_weapon") != "" )
@@ -1238,6 +1240,9 @@ void hologramAnimate(Entity* my, Stat* myStats, double dist)
 			my->setHP(0);
 			my->setObituary(Language::get(6668));
 		}
+
+		my->z = 0.0;
+		my->creatureHandleLiftZ();
 	}
 
 	int bodypart = 0;

@@ -325,6 +325,7 @@ void crystalgolemMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		{
 			my->z = -1.5;
 		}
+		my->creatureHandleLiftZ();
 	}
 
 	//Move bodyparts
