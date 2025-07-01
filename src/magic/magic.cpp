@@ -3168,7 +3168,123 @@ Entity* spellEffectAdorcise(Entity& caster, spellElement_t& element, real_t x, r
 			}
 		}
 	}
+	return monster;
+}
 
+Entity* spellEffectFlameSprite(Entity& caster, spellElement_t& element, real_t x, real_t y)
+{
+	Entity* monster = nullptr;
+	{
+		// try find a summon location around the entity.
+		int tx = static_cast<int>(std::floor(x)) >> 4;
+		int ty = static_cast<int>(std::floor(y)) >> 4;
+		int dist = 1;
+		std::vector<std::pair<int, int>> goodspots;
+		for ( int iy = std::max(1, ty - dist); iy < std::min(ty + dist, static_cast<int>(map.height)); ++iy )
+		{
+			for ( int ix = std::max(1, tx - dist); ix < std::min(tx + dist, static_cast<int>(map.width)); ++ix )
+			{
+				if ( !checkObstacle((ix << 4) + 8, (iy << 4) + 8, &caster, NULL, true, true, false) )
+				{
+					goodspots.push_back(std::make_pair(ix, iy));
+				}
+			}
+		}
+		if ( goodspots.size() == 0 )
+		{
+			return nullptr;
+		}
+		else
+		{
+			Monster type = &element == &spellElementMap[SPELL_FIRE_SPRITE] ? MOTH_SMALL : FLAME_ELEMENTAL;
+			if ( !checkObstacle((tx << 4) + 8, (ty << 4) + 8, &caster, NULL, true, true, false, false) )
+			{
+				monster = summonMonster(type, tx * 16.0 + 8, ty * 16.0 + 8, true);
+			}
+			while ( !monster && goodspots.size() )
+			{
+				int pick = local_rng.rand() % goodspots.size();
+				std::pair<int, int> tmpPair = goodspots[pick];
+				tx = tmpPair.first;
+				ty = tmpPair.second;
+				goodspots.erase(goodspots.begin() + pick);
+				monster = summonMonster(type, tx * 16.0 + 8, ty * 16.0 + 8, true);
+			}
+
+			if ( monster )
+			{
+				playSoundEntity(monster, 171, 128);
+				//playSoundEntity(&my, 178, 128);
+				createParticleErupt(monster, 983);
+				serverSpawnMiscParticles(monster, PARTICLE_EFFECT_ERUPT, 983);
+
+
+				Stat* monsterStats = monster->getStats();
+				if ( monsterStats )
+				{
+					if ( &element == &spellElementMap[SPELL_FIRE_SPRITE] )
+					{
+						monsterStats->setAttribute("fire_sprite", "2000");
+						monsterStats->monsterNoDropItems = 1;
+						//monsterStats->leader_uid = caster.getUID();
+						//monster->parent = caster.getUID();
+						if ( forceFollower(caster, *monster) )
+						{
+							if ( caster.behavior == &actPlayer )
+							{
+								Compendium_t::Events_t::eventUpdateMonster(caster.skill[2], Compendium_t::CPDM_RECRUITED, monster, 1);
+								monster->monsterAllyIndex = caster.skill[2];
+								if ( multiplayer == SERVER )
+								{
+									serverUpdateEntitySkill(monster, 42); // update monsterAllyIndex for clients.
+								}
+							}
+						}
+					}
+					else if ( &element == &spellElementMap[SPELL_FLAME_ELEMENTAL] )
+					{
+						monsterStats->setAttribute("flame_elemental", "250");
+						monsterStats->monsterNoDropItems = 1;
+						if ( forceFollower(caster, *monster) )
+						{
+							if ( caster.behavior == &actPlayer )
+							{
+								Compendium_t::Events_t::eventUpdateMonster(caster.skill[2], Compendium_t::CPDM_RECRUITED, monster, 1);
+								monster->monsterAllyIndex = caster.skill[2];
+								if ( multiplayer == SERVER )
+								{
+									serverUpdateEntitySkill(monster, 42); // update monsterAllyIndex for clients.
+								}
+							}
+						}
+					}
+
+					if ( caster.behavior == &actPlayer )
+					{
+						monster->flags[USERFLAG2] = true;
+						serverUpdateEntityFlag(monster, USERFLAG2);
+						if ( monsterChangesColorWhenAlly(monsterStats) )
+						{
+							int bodypart = 0;
+							for ( node_t* node = (monster)->children.first; node != nullptr; node = node->next )
+							{
+								if ( bodypart >= LIMB_HUMANOID_TORSO )
+								{
+									Entity* tmp = (Entity*)node->element;
+									if ( tmp )
+									{
+										tmp->flags[USERFLAG2] = true;
+										serverUpdateEntityFlag(tmp, USERFLAG2);
+									}
+								}
+								++bodypart;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
 	return monster;
 }
 

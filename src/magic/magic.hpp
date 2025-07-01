@@ -184,6 +184,16 @@ static const int SPELL_NULL_AREA = 161;
 static const int SPELL_SPHERE_SILENCE = 162;
 static const int SPELL_FORGE_METAL_SCRAP = 163;
 static const int SPELL_FORGE_MAGIC_SCRAP = 164;
+static const int SPELL_FIRE_SPRITE = 165;
+static const int SPELL_FLAME_ELEMENTAL = 166;
+static const int SPELL_SPIN = 167;
+static const int SPELL_DIZZY = 168;
+static const int SPELL_VANDALISE = 169;
+static const int SPELL_DESECRATE = 170;
+static const int SPELL_SANCTIFY = 171;
+static const int SPELL_SANCTIFY_WATER = 172;
+static const int SPELL_CLEANSE_FOOD = 173;
+static const int SPELL_ADORCISE_INSTRUMENT = 174;
 static const int NUM_SPELLS = 180;
 
 #define SPELLELEMENT_CONFUSE_BASE_DURATION 2//In seconds.
@@ -269,6 +279,8 @@ static const int PARTICLE_EFFECT_SPORE_BOMB = 37;
 static const int PARTICLE_EFFECT_WINDGATE = 38;
 static const int PARTICLE_EFFECT_DEMESNE_DOOR = 39;
 static const int PARTICLE_EFFECT_NULL_PARTICLE = 40;
+static const int PARTICLE_EFFECT_VORTEX_ORBIT = 41;
+static const int PARTICLE_EFFECT_SPIN = 42;
 
 // actmagicIsVertical constants
 static const int MAGIC_ISVERTICAL_NONE = 0;
@@ -292,6 +304,7 @@ static const int PARTICLE_TIMER_ACTION_VORTEX = 13;
 static const int PARTICLE_TIMER_ACTION_LIGHTNING = 14;
 static const int PARTICLE_TIMER_ACTION_BOOBY_TRAP = 15;
 static const int PARTICLE_TIMER_ACTION_SPORES = 16;
+static const int PARTICLE_TIMER_ACTION_DAMAGE_LOS_AREA = 17;
 
 struct ParticleEmitterHit_t
 {
@@ -598,6 +611,7 @@ enum SpellElementIDs_t
 	SPELL_ELEMENT_PROPULSION_FLOOR_TILE,
 	SPELL_ELEMENT_PROPULSION_MAGIC_SPRAY,
 	SPELL_ELEMENT_PROPULSION_MISSILE_NOCOST,
+	SPELL_ELEMENT_SPRITE_FLAMES,
 	SPELL_ELEMENT_MAX
 };
 
@@ -821,6 +835,9 @@ Entity* createParticleRoot(int sprite, real_t x, real_t y, real_t z, real_t dir,
 Entity* createWindMagic(Uint32 casterUID, int x, int y, int duration, int dir, int length);
 void createParticleDemesneDoor(real_t x, real_t y, real_t dir);
 Entity* createTunnelPortal(real_t x, real_t y, int duration, int dir);
+Entity* createSpellExplosionArea(int spellID, Entity* caster, real_t x, real_t y, real_t z, real_t radius);
+void doSpellExplosionArea(int spellID, Entity* my, Entity* caster, real_t x, real_t y, real_t z, real_t radius);
+void createParticleSpin(Entity* entity);
 
 void spawnMagicTower(Entity* parent, real_t x, real_t y, int spellID, Entity* autoHitTarget, bool castedSpell = false); // autoHitTarget is to immediate damage an entity, as all 3 tower magics hitting is unreliable
 bool magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks);
@@ -925,6 +942,7 @@ bool spellEffectTeleportPull(Entity* my, spellElement_t& element, Entity* parent
 void spellEffectShadowTag(Entity& my, spellElement_t& element, Entity* parent, int resistance);
 bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* parent, Entity* target, int resistance);
 Entity* spellEffectAdorcise(Entity& caster, spellElement_t& element, real_t x, real_t y, Item* itemToAdorcise);
+Entity* spellEffectFlameSprite(Entity& caster, spellElement_t& element, real_t x, real_t y);
 Entity* spellEffectHologram(Entity& caster, spellElement_t& element, real_t x, real_t y);
 Entity* spellEffectDemesneDoor(Entity& caster, Entity& doorFrame);
 void magicSetResistance(Entity* entity, Entity* parent, int& resistance, real_t& damageMultiplier, DamageGib& dmgGib, int& trapResist);
@@ -956,6 +974,7 @@ struct AOEIndicators_t
 		int loopType = 0;
 		Uint32 loopTicks = 0;
 		Uint32 loopTimer = 0;
+		real_t expireAlphaRate = 0.9;
 		void updateIndicator();
 		Indicator_t(int _radiusMin, int _radiusMax, int _size, int _lifetime, Uint32 _uid)
 		{

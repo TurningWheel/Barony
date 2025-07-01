@@ -2391,7 +2391,9 @@ void FollowerRadialMenu::drawFollowerMenu()
 					optionSelected = ALLY_CMD_DUMMYBOT_RETURN;
 				}
 			}
-			else if ( (followerToCommand->monsterAllySummonRank != 0 || followerStats->type == MONSTER_ADORCISED_WEAPON) && optionSelected == ALLY_CMD_CLASS_TOGGLE )
+			else if ( (followerToCommand->monsterAllySummonRank != 0 
+				|| followerStats->type == MONSTER_ADORCISED_WEAPON
+				|| followerStats->type == FLAME_ELEMENTAL) && optionSelected == ALLY_CMD_CLASS_TOGGLE )
 			{
 				optionSelected = ALLY_CMD_RETURN_SOUL;
 			}
@@ -5009,6 +5011,288 @@ bool GenericGUIMenu::isItemEnchantWeaponable(const Item* item)
 	return false;
 }
 
+bool GenericGUIMenu::isItemDesecratable(const Item* item)
+{
+	if ( !item )
+	{
+		return false;
+	}
+	if ( !item->identified )
+	{
+		return false;
+	}
+
+	if ( item->beatitude > 0 )
+	{
+		return true;
+	}
+
+
+	return false;
+}
+
+void GenericGUIMenu::desecrateItem(Item* item)
+{
+	if ( !item )
+	{
+		return;
+	}
+	if ( !shouldDisplayItemInGUI(item) )
+	{
+		messagePlayer(gui_player, MESSAGE_MISC, Language::get(6720), item->getName());
+		return;
+	}
+
+	item->beatitude = -item->beatitude;
+	messagePlayer(gui_player, MESSAGE_HINT, Language::get(858), item->getName()); // glows black
+
+	if ( multiplayer == CLIENT )
+	{
+		Item** slot = itemSlot(stats[gui_player], item);
+		int armornum = -1;
+		if ( slot )
+		{
+			if ( slot == &stats[gui_player]->weapon )
+			{
+				armornum = 0;
+			}
+			else if ( slot == &stats[gui_player]->helmet )
+			{
+				armornum = 1;
+			}
+			else if ( slot == &stats[gui_player]->breastplate )
+			{
+				armornum = 2;
+			}
+			else if ( slot == &stats[gui_player]->gloves )
+			{
+				armornum = 3;
+			}
+			else if ( slot == &stats[gui_player]->shoes )
+			{
+				armornum = 4;
+			}
+			else if ( slot == &stats[gui_player]->shield )
+			{
+				armornum = 5;
+			}
+			else if ( slot == &stats[gui_player]->cloak )
+			{
+				armornum = 6;
+			}
+			else if ( slot == &stats[gui_player]->mask )
+			{
+				armornum = 7;
+			}
+			else if ( slot == &stats[gui_player]->mask )
+			{
+				armornum = 7;
+			}
+		}
+		if ( armornum >= 0 )
+		{
+			strcpy((char*)net_packet->data, "BEAT");
+			net_packet->data[4] = gui_player;
+			net_packet->data[5] = armornum;
+			net_packet->data[6] = item->beatitude + 100;
+			SDLNet_Write16((Sint16)item->type, &net_packet->data[7]);
+			net_packet->address.host = net_server.host;
+			net_packet->address.port = net_server.port;
+			net_packet->len = 9;
+			sendPacketSafe(net_sock, -1, net_packet, 0);
+			//messagePlayer(player, "sent server: %d, %d, %d", net_packet->data[4], net_packet->data[5], net_packet->data[6]);
+		}
+	}
+	closeGUI();
+}
+
+bool GenericGUIMenu::isItemBlessWaterable(const Item* item)
+{
+	if ( !item )
+	{
+		return false;
+	}
+	if ( !item->identified )
+	{
+		return false;
+	}
+
+	if ( item->type == POTION_WATER )
+	{
+		return true;
+	}
+
+	return false;
+}
+
+void GenericGUIMenu::blessWater(Item* item)
+{
+	if ( !item )
+	{
+		return;
+	}
+	if ( !shouldDisplayItemInGUI(item) )
+	{
+		messagePlayer(gui_player, MESSAGE_MISC, Language::get(6721), item->getName());
+		return;
+	}
+
+	item->beatitude = item->beatitude + 1;
+	item->status = SERVICABLE;
+	messagePlayer(gui_player, MESSAGE_HINT, Language::get(859), item->getName()); // glows blue
+
+	closeGUI();
+}
+
+bool GenericGUIMenu::isItemSanctifiable(const Item* item)
+{
+	if ( !item )
+	{
+		return false;
+	}
+	if ( !item->identified )
+	{
+		return false;
+	}
+
+	if ( item->beatitude < 0 )
+	{
+		return true;
+	}
+
+	return false;
+}
+
+void GenericGUIMenu::sanctifyItem(Item* item)
+{
+	if ( !item )
+	{
+		return;
+	}
+	if ( !shouldDisplayItemInGUI(item) )
+	{
+		messagePlayer(gui_player, MESSAGE_MISC, Language::get(6721), item->getName());
+		return;
+	}
+
+	item->beatitude = -item->beatitude;
+	messagePlayer(gui_player, MESSAGE_HINT, Language::get(859), item->getName()); // glows blue
+
+	if ( multiplayer == CLIENT )
+	{
+		Item** slot = itemSlot(stats[gui_player], item);
+		int armornum = -1;
+		if ( slot )
+		{
+			if ( slot == &stats[gui_player]->weapon )
+			{
+				armornum = 0;
+			}
+			else if ( slot == &stats[gui_player]->helmet )
+			{
+				armornum = 1;
+			}
+			else if ( slot == &stats[gui_player]->breastplate )
+			{
+				armornum = 2;
+			}
+			else if ( slot == &stats[gui_player]->gloves )
+			{
+				armornum = 3;
+			}
+			else if ( slot == &stats[gui_player]->shoes )
+			{
+				armornum = 4;
+			}
+			else if ( slot == &stats[gui_player]->shield )
+			{
+				armornum = 5;
+			}
+			else if ( slot == &stats[gui_player]->cloak )
+			{
+				armornum = 6;
+			}
+			else if ( slot == &stats[gui_player]->mask )
+			{
+				armornum = 7;
+			}
+			else if ( slot == &stats[gui_player]->mask )
+			{
+				armornum = 7;
+			}
+		}
+		if ( armornum >= 0 )
+		{
+			strcpy((char*)net_packet->data, "BEAT");
+			net_packet->data[4] = gui_player;
+			net_packet->data[5] = armornum;
+			net_packet->data[6] = item->beatitude + 100;
+			SDLNet_Write16((Sint16)item->type, &net_packet->data[7]);
+			net_packet->address.host = net_server.host;
+			net_packet->address.port = net_server.port;
+			net_packet->len = 9;
+			sendPacketSafe(net_sock, -1, net_packet, 0);
+			//messagePlayer(player, "sent server: %d, %d, %d", net_packet->data[4], net_packet->data[5], net_packet->data[6]);
+		}
+	}
+	closeGUI();
+}
+
+bool GenericGUIMenu::isItemCleaseFoodable(const Item* item)
+{
+	if ( !item )
+	{
+		return false;
+	}
+	if ( !item->identified )
+	{
+		return false;
+	}
+
+	if ( itemCategory(item) == FOOD )
+	{
+		return true;
+	}
+
+	return false;
+}
+
+void GenericGUIMenu::cleanseFood(Item* item)
+{
+	if ( !item )
+	{
+		return;
+	}
+	if ( !shouldDisplayItemInGUI(item) )
+	{
+		messagePlayer(gui_player, MESSAGE_MISC, Language::get(6723), item->getName());
+		return;
+	}
+
+	bool statusModified = false;
+	if ( item->status < EXCELLENT )
+	{
+		item->status = EXCELLENT;
+		statusModified = true;
+	}
+
+	if ( item->beatitude < 0 )
+	{
+		item->beatitude = 0;
+		statusModified = true;
+	}
+	else if ( item->beatitude == 0 )
+	{
+		item->beatitude = 1;
+		statusModified = true;
+	}
+	if ( statusModified )
+	{
+		messagePlayer(gui_player, MESSAGE_HINT, Language::get(6725), item->getName()); // looks fresher
+	}
+	closeGUI();
+}
+
 bool GenericGUIMenu::isItemVoidable(const Item* item)
 {
 	if ( !item )
@@ -5038,9 +5322,19 @@ bool GenericGUIMenu::isItemAdorcisable(const Item* item)
 		return false;
 	}
 
-	if ( getWeaponSkill(item) >= PRO_SWORD && getWeaponSkill(item) <= PRO_POLEARM )
+	if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_ADORCISE_WEAPON )
 	{
-		return true;
+		if ( getWeaponSkill(item) >= PRO_SWORD && getWeaponSkill(item) <= PRO_POLEARM )
+		{
+			return true;
+		}
+	}
+	else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_ADORCISE_INSTRUMENT )
+	{
+		if ( item->type >= INSTRUMENT_FLUTE && item->type <= INSTRUMENT_HORN )
+		{
+			return true;
+		}
 	}
 	return false;
 }
@@ -5081,6 +5375,25 @@ bool GenericGUIMenu::isItemAlterable(const Item* item)
 				return value > 0;
 			}
 		}
+	}
+	else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_VANDALISE )
+	{
+		if ( item->status == BROKEN )
+		{
+			return false;
+		}
+
+		if ( items[item->type].hasAttribute("UNVANDALISABLE") )
+		{
+			return false;
+		}
+
+		if ( items[item->type].value > 0 )
+		{
+			int value = item->sellValue(gui_player) / 20;
+			return value > 0;
+		}
+		return true;
 	}
 	else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_GEOMANCY )
 	{
@@ -6358,15 +6671,29 @@ bool GenericGUIMenu::shouldDisplayItemInGUI(Item* item)
 			|| itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_FORGE_JEWEL
 			|| itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_ENHANCE_WEAPON
 			|| itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_RESHAPE_WEAPON
-			|| itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_ALTER_ARROW )
+			|| itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_ALTER_ARROW
+			|| itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_VANDALISE )
 		{
 			return isItemAlterable(item);
 		}
-		else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_PUNCTURE_VOID )
+		else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_DESECRATE )
 		{
-			return isItemVoidable(item);
+			return isItemDesecratable(item);
 		}
-		else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_ADORCISE_WEAPON )
+		else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_SANCTIFY_WATER )
+		{
+			return isItemBlessWaterable(item);
+		}
+		else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_SANCTIFY )
+		{
+			return isItemSanctifiable(item);
+		}
+		else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_CLEANSE_FOOD )
+		{
+			return isItemCleaseFoodable(item);
+		}
+		else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_ADORCISE_WEAPON
+			|| itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_ADORCISE_INSTRUMENT )
 		{
 			return isItemAdorcisable(item);
 		}
@@ -6806,6 +7133,16 @@ void GenericGUIMenu::alterItem(Item* item)
 		int oldCount = item->count;
 		item->count = 1;
 		messagePlayer(gui_player, MESSAGE_MISC, Language::get(6554), -itemfxGUI.costEffectGoldAmount, item->description());
+		item->count = oldCount;
+		consumeItem(item, gui_player);
+		closeGUI();
+		return;
+	}
+	else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_VANDALISE )
+	{
+		int oldCount = item->count;
+		item->count = 1;
+		messagePlayer(gui_player, MESSAGE_MISC, Language::get(6724), -itemfxGUI.costEffectGoldAmount, item->description());
 		item->count = oldCount;
 		consumeItem(item, gui_player);
 		closeGUI();
@@ -7397,6 +7734,30 @@ void GenericGUIMenu::openGUI(int type, Item* effectItem, int effectBeatitude, in
 		{
 			itemfxGUI.currentMode = ItemEffectGUI_t::ITEMFX_MODE_ADORCISE_WEAPON;
 		}
+		else if ( usingSpellID == SPELL_VANDALISE )
+		{
+			itemfxGUI.currentMode = ItemEffectGUI_t::ITEMFX_MODE_VANDALISE;
+		}
+		else if ( usingSpellID == SPELL_DESECRATE )
+		{
+			itemfxGUI.currentMode = ItemEffectGUI_t::ITEMFX_MODE_DESECRATE;
+		}
+		else if ( usingSpellID == SPELL_SANCTIFY )
+		{
+			itemfxGUI.currentMode = ItemEffectGUI_t::ITEMFX_MODE_SANCTIFY;
+		}
+		else if ( usingSpellID == SPELL_SANCTIFY_WATER )
+		{
+			itemfxGUI.currentMode = ItemEffectGUI_t::ITEMFX_MODE_SANCTIFY_WATER;
+		}
+		else if ( usingSpellID == SPELL_CLEANSE_FOOD )
+		{
+			itemfxGUI.currentMode = ItemEffectGUI_t::ITEMFX_MODE_CLEANSE_FOOD;
+		}
+		else if ( usingSpellID == SPELL_ADORCISE_INSTRUMENT )
+		{
+			itemfxGUI.currentMode = ItemEffectGUI_t::ITEMFX_MODE_ADORCISE_INSTRUMENT;
+		}
 		else if ( itemEffectItemType == SCROLL_CHARGING )
 		{
 			itemfxGUI.currentMode = ItemEffectGUI_t::ITEMFX_MODE_SCROLL_CHARGING;
@@ -7727,7 +8088,8 @@ bool GenericGUIMenu::executeOnItemClick(Item* item)
 			|| itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_FORGE_JEWEL
 			|| itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_ENHANCE_WEAPON
 			|| itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_RESHAPE_WEAPON
-			|| itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_ALTER_ARROW )
+			|| itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_ALTER_ARROW
+			|| itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_VANDALISE )
 		{
 			alterItem(item);
 			return true;
@@ -7737,7 +8099,28 @@ bool GenericGUIMenu::executeOnItemClick(Item* item)
 			sendItemToVoid(item);
 			return true;
 		}
-		else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_ADORCISE_WEAPON )
+		else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_DESECRATE )
+		{
+			desecrateItem(item);
+			return true;
+		}
+		else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_SANCTIFY_WATER )
+		{
+			blessWater(item);
+			return true;
+		}
+		else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_SANCTIFY )
+		{
+			sanctifyItem(item);
+			return true;
+		}
+		else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_CLEANSE_FOOD )
+		{
+			cleanseFood(item);
+			return true;
+		}
+		else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_ADORCISE_WEAPON
+			|| itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_ADORCISE_INSTRUMENT )
 		{
 			adorciseItem(item);
 			return true;
@@ -21751,6 +22134,14 @@ void GenericGUIMenu::ItemEffectGUI_t::getItemEffectCost(Item* itemUsedWith, int&
 			manaCost = items[itemUsedWith->type].value / 4;
 		}
 	}
+	else if ( currentMode == ITEMFX_MODE_SANCTIFY_WATER )
+	{
+		if ( parentGUI.isItemBlessWaterable(itemUsedWith) )
+		{
+			manaCost = 2 * itemUsedWith->count;
+			manaCost += 2 * itemUsedWith->count * std::max(0, (int)itemUsedWith->beatitude);
+		}
+	}
 	else if ( parentGUI.isItemAlterable(itemUsedWith) )
 	{
 		if ( currentMode == ITEMFX_MODE_ALTER_INSTRUMENT )
@@ -21760,12 +22151,17 @@ void GenericGUIMenu::ItemEffectGUI_t::getItemEffectCost(Item* itemUsedWith, int&
 		else if ( currentMode == ITEMFX_MODE_METALLURGY )
 		{
 			manaCost = std::max(10, items[itemUsedWith->type].value / 100);
-			goldCost = -items[itemUsedWith->type].value / 4;
+			goldCost = -itemUsedWith->sellValue(parentGUI.gui_player) / 4;
 		}
 		else if ( currentMode == ITEMFX_MODE_GEOMANCY )
 		{
 			manaCost = std::max(50, items[itemUsedWith->type].value / 100);
-			goldCost = -items[itemUsedWith->type].value / 4;
+			goldCost = -itemUsedWith->sellValue(parentGUI.gui_player) / 4;
+		}
+		else if ( currentMode == ITEMFX_MODE_VANDALISE )
+		{
+			manaCost = std::max(20, items[itemUsedWith->type].value / 100);
+			goldCost = -itemUsedWith->sellValue(parentGUI.gui_player) / 20;
 		}
 		else if ( currentMode == ITEMFX_MODE_FORGE_KEY )
 		{
@@ -22001,7 +22397,8 @@ GenericGUIMenu::ItemEffectGUI_t::ItemEffectActions_t GenericGUIMenu::ItemEffectG
 			|| currentMode == ITEMFX_MODE_FORGE_JEWEL
 			|| currentMode == ITEMFX_MODE_ENHANCE_WEAPON
 			|| currentMode == ITEMFX_MODE_RESHAPE_WEAPON
-			|| currentMode == ITEMFX_MODE_ALTER_ARROW )
+			|| currentMode == ITEMFX_MODE_ALTER_ARROW
+			|| currentMode == ITEMFX_MODE_VANDALISE )
 		{
 			if ( itemCategory(item) == SPELL_CAT )
 			{
@@ -22073,7 +22470,127 @@ GenericGUIMenu::ItemEffectGUI_t::ItemEffectActions_t GenericGUIMenu::ItemEffectG
 				}
 			}
 		}
-		else if ( currentMode == ITEMFX_MODE_ADORCISE_WEAPON )
+		else if ( currentMode == ITEMFX_MODE_SANCTIFY_WATER )
+		{
+			if ( itemCategory(item) == SPELL_CAT )
+			{
+				result = ITEMFX_ACTION_INVALID_ITEM;
+			}
+			else if ( !item->identified )
+			{
+				result = ITEMFX_ACTION_NOT_IDENTIFIED_YET;
+			}
+			else
+			{
+				if ( parentGUI.isItemBlessWaterable(item) )
+				{
+					int goldCost = 0;
+					int manaCost = 0;
+					getItemEffectCost(item, goldCost, manaCost);
+					if ( !checkResultOnly )
+					{
+						costEffectGoldAmount = goldCost;
+						costEffectMPAmount = manaCost;
+					}
+
+					if ( manaCost > 0 && manaCost > stats[parentGUI.gui_player]->MP && stats[parentGUI.gui_player]->type != VAMPIRE )
+					{
+						result = ITEMFX_ACTION_CANT_AFFORD_MANA;
+					}
+					if ( itemIsEquipped(item, parentGUI.gui_player) )
+					{
+						result = ITEMFX_ACTION_MUST_BE_UNEQUIPPED;
+					}
+					else
+					{
+						result = ITEMFX_ACTION_OK;
+					}
+				}
+				else
+				{
+					result = ITEMFX_ACTION_INVALID_ITEM;
+				}
+			}
+		}
+		else if ( currentMode == ITEMFX_MODE_CLEANSE_FOOD )
+		{
+			if ( itemCategory(item) == SPELL_CAT )
+			{
+				result = ITEMFX_ACTION_INVALID_ITEM;
+			}
+			else if ( !item->identified )
+			{
+				result = ITEMFX_ACTION_NOT_IDENTIFIED_YET;
+			}
+			else
+			{
+				if ( parentGUI.isItemCleaseFoodable(item) )
+				{
+					if ( item->status == EXCELLENT && item->beatitude >= 1 )
+					{
+						result = ITEMFX_ACTION_AT_MAX_BLESSING;
+					}
+					else if ( itemIsEquipped(item, parentGUI.gui_player) )
+					{
+						result = ITEMFX_ACTION_MUST_BE_UNEQUIPPED;
+					}
+					else
+					{
+						result = ITEMFX_ACTION_OK;
+					}
+				}
+				else
+				{
+					result = ITEMFX_ACTION_INVALID_ITEM;
+				}
+			}
+		}
+		else if ( currentMode == ITEMFX_MODE_SANCTIFY )
+		{
+			if ( itemCategory(item) == SPELL_CAT )
+			{
+				result = ITEMFX_ACTION_INVALID_ITEM;
+			}
+			else if ( !item->identified )
+			{
+				result = ITEMFX_ACTION_NOT_IDENTIFIED_YET;
+			}
+			else
+			{
+				if ( parentGUI.isItemSanctifiable(item) )
+				{
+					result = ITEMFX_ACTION_OK;
+				}
+				else
+				{
+					result = ITEMFX_ACTION_INVALID_ITEM;
+				}
+			}
+		}
+		else if ( currentMode == ITEMFX_MODE_DESECRATE )
+		{
+			if ( itemCategory(item) == SPELL_CAT )
+			{
+				result = ITEMFX_ACTION_INVALID_ITEM;
+			}
+			else if ( !item->identified )
+			{
+				result = ITEMFX_ACTION_NOT_IDENTIFIED_YET;
+			}
+			else
+			{
+				if ( parentGUI.isItemDesecratable(item) )
+				{
+					result = ITEMFX_ACTION_OK;
+				}
+				else
+				{
+					result = ITEMFX_ACTION_INVALID_ITEM;
+				}
+			}
+		}
+		else if ( currentMode == ITEMFX_MODE_ADORCISE_WEAPON 
+			|| currentMode == ITEMFX_MODE_ADORCISE_INSTRUMENT )
 		{
 			if ( itemCategory(item) == SPELL_CAT )
 			{
@@ -22287,6 +22804,12 @@ void GenericGUIMenu::ItemEffectGUI_t::openItemEffectMenu(GenericGUIMenu::ItemEff
 	case ITEMFX_MODE_METALLURGY:
 	case ITEMFX_MODE_GEOMANCY:
 		modeHasCostEffect = COST_EFFECT_MANA_RETURN_GOLD;
+		break;
+	case ITEMFX_MODE_VANDALISE:
+		modeHasCostEffect = COST_EFFECT_MANA_RETURN_GOLD;
+		break;
+	case ITEMFX_MODE_SANCTIFY_WATER:
+		modeHasCostEffect = COST_EFFECT_MANA;
 		break;
 	case ITEMFX_MODE_ALTER_INSTRUMENT:
 	case ITEMFX_MODE_FORGE_KEY:
@@ -23142,6 +23665,24 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 					case ITEMFX_MODE_ADORCISE_WEAPON:
 						actionPromptTxt->setText(Language::get(6616));
 						break;
+					case ITEMFX_MODE_VANDALISE:
+						actionPromptTxt->setText(Language::get(6708));
+						break;
+					case ITEMFX_MODE_DESECRATE:
+						actionPromptTxt->setText(Language::get(6709));
+						break;
+					case ITEMFX_MODE_SANCTIFY:
+						actionPromptTxt->setText(Language::get(6710));
+						break;
+					case ITEMFX_MODE_SANCTIFY_WATER:
+						actionPromptTxt->setText(Language::get(6711));
+						break;
+					case ITEMFX_MODE_CLEANSE_FOOD:
+						actionPromptTxt->setText(Language::get(6712));
+						break;
+					case ITEMFX_MODE_ADORCISE_INSTRUMENT:
+						actionPromptTxt->setText(Language::get(6616));
+						break;
 					default:
 						actionPromptTxt->setText("");
 						break;
@@ -23186,6 +23727,9 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 							break;
 						case ITEMFX_ACTION_UNVOIDABLE:
 							actionPromptTxt->setText(Language::get(6563));
+							break;
+						case ITEMFX_ACTION_AT_MAX_BLESSING:
+							actionPromptTxt->setText(Language::get(6726));
 							break;
 						default:
 							actionPromptTxt->setText("-");
@@ -23370,6 +23914,24 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 				break;
 			case ITEMFX_MODE_ADORCISE_WEAPON:
 				actionPromptUnselectedTxt->setText(Language::get(6617));
+				break;
+			case ITEMFX_MODE_VANDALISE:
+				actionPromptUnselectedTxt->setText(Language::get(6714));
+				break;
+			case ITEMFX_MODE_DESECRATE:
+				actionPromptUnselectedTxt->setText(Language::get(6715));
+				break;
+			case ITEMFX_MODE_SANCTIFY:
+				actionPromptUnselectedTxt->setText(Language::get(6717));
+				break;
+			case ITEMFX_MODE_SANCTIFY_WATER:
+				actionPromptUnselectedTxt->setText(Language::get(6716));
+				break;
+			case ITEMFX_MODE_CLEANSE_FOOD:
+				actionPromptUnselectedTxt->setText(Language::get(6718));
+				break;
+			case ITEMFX_MODE_ADORCISE_INSTRUMENT:
+				actionPromptUnselectedTxt->setText(Language::get(6713));
 				break;
 			default:
 				actionPromptUnselectedTxt->setText("");

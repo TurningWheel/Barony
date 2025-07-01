@@ -1559,6 +1559,21 @@ void setupSpells()   ///TODO: Verify this function.
 	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TARGET;
 	spell->distance = 64.0;
 
+	spellElementConstructor(SPELL_ELEMENT_SPRITE_FLAMES,
+		2,		// mana
+		2,		// base mana
+		1,		// overload
+		2,		// damage
+		0,		// duration
+		"spell_element_flames");
+	spell = spellConstructor(
+		SPELL_FLAMES,										// ID
+		100,												// difficulty
+		"spell_flames",										// internal name
+		// elements
+		{ SPELL_ELEMENT_PROPULSION_MISSILE, SPELL_ELEMENT_SPRITE_FLAMES }
+	);
+
 	spellElementConstructor(SPELL_ELEMENT_PROPULSION_FLOOR_TILE,
 		1,		// mana
 		1,		// base mana
@@ -2636,6 +2651,120 @@ void setupSpells()   ///TODO: Verify this function.
 		0, // damage
 		1, // duration
 		"spell_forge_magic_scrap");
+
+	spell = createSimpleSpell(
+		SPELL_FIRE_SPRITE,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_fire_sprite");
+	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH_FLOOR_TILE;
+	spell->distance = 64.0;
+
+	spell = createSimpleSpell(
+		SPELL_FLAME_ELEMENTAL,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_flame_elemental");
+	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH_FLOOR_TILE;
+	spell->distance = 64.0;
+
+	spellElementConstructor(SPELL_SPIN,
+		1,		// mana
+		1,		// base mana
+		1,		// overload
+		0,		// damage
+		0,		// duration
+		"spell_element_spin");
+	spell = spellConstructor(
+		SPELL_SPIN,										// ID
+		100,												// difficulty
+		"spell_spin",										// internal name
+		// elements
+		{ SPELL_ELEMENT_PROPULSION_MISSILE, SPELL_SPIN }
+	);
+
+	spellElementConstructor(SPELL_DIZZY,
+		1,		// mana
+		1,		// base mana
+		1,		// overload
+		0,		// damage
+		0,		// duration
+		"spell_element_dizzy");
+	spell = spellConstructor(
+		SPELL_DIZZY,										// ID
+		100,												// difficulty
+		"spell_dizzy",										// internal name
+		// elements
+		{ SPELL_ELEMENT_PROPULSION_MISSILE, SPELL_DIZZY }
+	);
+
+	spell = createSimpleSpell(
+		SPELL_VANDALISE,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_vandalise");
+
+	spell = createSimpleSpell(
+		SPELL_DESECRATE,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_desecrate");
+
+	spell = createSimpleSpell(
+		SPELL_SANCTIFY,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_sanctify");
+
+	spell = createSimpleSpell(
+		SPELL_SANCTIFY_WATER,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_sanctify_water");
+
+	spell = createSimpleSpell(
+		SPELL_CLEANSE_FOOD,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_cleanse_food");
+
+	spell = createSimpleSpell(
+		SPELL_ADORCISE_INSTRUMENT,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_adorcise_instrument");
 }
 
 spell_t* createSimpleSpell(int spellID, int difficulty, int mana, int base_mana, int overload_mult, int damage, 

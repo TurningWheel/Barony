@@ -461,6 +461,16 @@ public:
 	bool isItemAdorcisable(const Item* item);
 	void adorciseItem(Item* item);
 
+	// misc
+	bool isItemDesecratable(const Item* item);
+	void desecrateItem(Item* item);
+	bool isItemBlessWaterable(const Item* item);
+	void blessWater(Item* item);
+	bool isItemSanctifiable(const Item* item);
+	void sanctifyItem(Item* item);
+	bool isItemCleaseFoodable(const Item* item);
+	void cleanseFood(Item* item);
+
 	//alchemy menu funcs
 	bool isItemMixable(const Item* item);
 	void alchemyCombinePotions();
@@ -703,7 +713,13 @@ public:
 			ITEMFX_MODE_ALTER_ARROW,
 			ITEMFX_MODE_PUNCTURE_VOID,
 			ITEMFX_MODE_ADORCISE_WEAPON,
-			ITEMFX_MODE_RESTORE
+			ITEMFX_MODE_RESTORE,
+			ITEMFX_MODE_VANDALISE,
+			ITEMFX_MODE_DESECRATE,
+			ITEMFX_MODE_SANCTIFY,
+			ITEMFX_MODE_SANCTIFY_WATER,
+			ITEMFX_MODE_CLEANSE_FOOD,
+			ITEMFX_MODE_ADORCISE_INSTRUMENT
 		};
 		void openItemEffectMenu(ItemEffectModes mode);
 		ItemEffectModes currentMode = ITEMFX_MODE_NONE;
@@ -729,7 +745,8 @@ public:
 			ITEMFX_ACTION_CANT_AFFORD_GOLD,
 			ITEMFX_ACTION_CANT_AFFORD_MANA,
 			ITEMFX_ACTION_NOT_CURSED,
-			ITEMFX_ACTION_UNVOIDABLE
+			ITEMFX_ACTION_UNVOIDABLE,
+			ITEMFX_ACTION_AT_MAX_BLESSING
 		};
 		ItemEffectActions_t itemActionType = ITEMFX_ACTION_NONE;
 		bool itemRequiresTitleReflow = true;

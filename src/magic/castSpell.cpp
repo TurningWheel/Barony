@@ -1412,7 +1412,13 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			|| spell->ID == SPELL_ALTER_ARROW
 			|| spell->ID == SPELL_PUNCTURE_VOID
 			|| spell->ID == SPELL_ADORCISM
-			|| spell->ID == SPELL_RESTORE )
+			|| spell->ID == SPELL_RESTORE
+			|| spell->ID == SPELL_VANDALISE
+			|| spell->ID == SPELL_DESECRATE
+			|| spell->ID == SPELL_SANCTIFY
+			|| spell->ID == SPELL_SANCTIFY_WATER
+			|| spell->ID == SPELL_CLEANSE_FOOD
+			|| spell->ID == SPELL_ADORCISE_INSTRUMENT )
 		{
 			for ( int i = 0; i < MAXPLAYERS; ++i )
 			{
@@ -2724,6 +2730,62 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					if ( Entity* monster = spellEffectAdorcise(*caster, spellElementMap[SPELL_SPIRIT_WEAPON], x, y, nullptr) )
 					{
 						
+					}
+					else
+					{
+						if ( caster->behavior == &actPlayer )
+						{
+							// no room to spawn!
+							messagePlayer(caster->skill[2], MESSAGE_MISC, Language::get(6578));
+						}
+					}
+				}
+				spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
+				playSoundEntity(caster, 171, 128);
+			}
+		}
+		else if ( spell->ID == SPELL_FIRE_SPRITE )
+		{
+			if ( caster )
+			{
+				bool found = false;
+				bool effect = false;
+				if ( castSpellProps )
+				{
+					found = true;
+					real_t x = floor(castSpellProps->target_x / 16) * 16 + 8.0;
+					real_t y = floor(castSpellProps->target_y / 16) * 16 + 8.0;
+					if ( Entity* monster = spellEffectFlameSprite(*caster, spellElementMap[SPELL_FIRE_SPRITE], x, y) )
+					{
+
+					}
+					else
+					{
+						if ( caster->behavior == &actPlayer )
+						{
+							// no room to spawn!
+							messagePlayer(caster->skill[2], MESSAGE_MISC, Language::get(6578));
+						}
+					}
+				}
+				spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
+				playSoundEntity(caster, 171, 128);
+			}
+		}
+		else if ( spell->ID == SPELL_FLAME_ELEMENTAL )
+		{
+			if ( caster )
+			{
+				bool found = false;
+				bool effect = false;
+				if ( castSpellProps )
+				{
+					found = true;
+					real_t x = floor(castSpellProps->target_x / 16) * 16 + 8.0;
+					real_t y = floor(castSpellProps->target_y / 16) * 16 + 8.0;
+					if ( Entity* monster = spellEffectFlameSprite(*caster, spellElementMap[SPELL_FLAME_ELEMENTAL], x, y) )
+					{
+
 					}
 					else
 					{
@@ -5220,6 +5282,22 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				traveltime = 10;
 				missileEntity->skill[5] = traveltime;
 			}
+			if ( caster && caster->getStats() && caster->getStats()->type == FLAME_ELEMENTAL )
+			{
+				traveltime = 15;
+				missileEntity->skill[5] = traveltime;
+				if ( node_t* elementNode = ((spell_t*)node->element)->elements.first )
+				{
+					if ( auto element = (spellElement_t*)elementNode->element )
+					{
+						if ( elementNode = element->elements.first )
+						{
+							element = (spellElement_t*)elementNode->element;
+							element->damage /= 2;
+						}
+					}
+				}
+			}
 
 			int sound = spellGetCastSound(spell);
 			if ( volume > 0 && sound > 0 )
@@ -5600,6 +5678,14 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				if ( propulsion == PROPULSION_MISSILE )
 				{
 					missileEntity->sprite = 1816;
+				}
+			}
+			else if ( !strcmp(innerElement->element_internal_name, spellElementMap[SPELL_SPIN].element_internal_name) 
+				|| !strcmp(innerElement->element_internal_name, spellElementMap[SPELL_DIZZY].element_internal_name) )
+			{
+				if ( propulsion == PROPULSION_MISSILE )
+				{
+					missileEntity->sprite = 1856;
 				}
 			}
 			else if ( !strcmp(innerElement->element_internal_name, "spell_element_flames") )
