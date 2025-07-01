@@ -1852,6 +1852,7 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
         sprite = sprites[0];
     }
 
+    bool transparentDisableDepthBuffer = false;
 #ifndef EDITOR
     if ( entity->behavior == &actMagicRangefinder || 
         (entity->behavior == &actSprite && entity->actSpriteUseCustomSurface > 0 && (entity->entityHasString("aoe_indicator"))) )
@@ -1864,6 +1865,7 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
         if ( auto tex = AOEIndicators_t::getTexture(entity->actSpriteUseCustomSurface) )
         {
             GL_CHECK_ERR(glBindTexture(GL_TEXTURE_2D, tex->texid));
+            transparentDisableDepthBuffer = true;
         }
         else
         {
@@ -1980,6 +1982,11 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
         uploadLightUniforms(camera, shader, entity, mode, false);
     }
 
+    if ( transparentDisableDepthBuffer )
+    {
+        GL_CHECK_ERR(glDepthMask(GL_FALSE));
+    }
+
 	// draw
     spriteMesh.draw();
     
@@ -1992,6 +1999,11 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
     }
     if (entity->flags[OVERDRAW] || entity->behavior == &actDamageGib) {
         GL_CHECK_ERR(glDepthRange(0.f, 1.f));
+    }
+
+    if ( transparentDisableDepthBuffer )
+    {
+        GL_CHECK_ERR(glDepthMask(GL_TRUE));
     }
 }
 
