@@ -7276,26 +7276,10 @@ void actPlayer(Entity* my)
 				{
 					Compendium_t::Events_t::eventUpdateWorld(PLAYER_NUM, Compendium_t::CPDM_PITS_LEVITATED, "pits", 1);
 				}
-			}
 		}
-		if ( stats[PLAYER_NUM]->getEffectActive(EFF_LIFT) )
-		{
-			my->creatureHoverZ += 0.25;
-		}
-		else
-		{
-			if ( my->creatureHoverZ > 0.1 )
-			{
-			}
-			my->creatureHoverZ = 0.0;
-		}
-		real_t height = 2.0 * sin(std::min(my->creatureHoverZ, PI / 2));
-		if ( my->creatureHoverZ >= PI / 2 )
-		{
-			height += 0.5 * cos(my->creatureHoverZ);
 		}
 
-		my->z -= 2 * height;
+		my->creatureHandleLiftZ();
 
 		if ( !levitating && prevlevitating )
 		{
