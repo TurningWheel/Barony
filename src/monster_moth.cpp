@@ -29,7 +29,7 @@ void initMoth(Entity* my, Stat* myStats)
 	node_t* node;
 
 	my->z = 0;
-	my->initMonster(1819);
+	my->initMonster(myStats && myStats->getAttribute("fire_sprite") != "" ? 1822 : 1819);
 	my->flags[INVISIBLE] = true; // hide the "AI" bodypart
 	if ( multiplayer != CLIENT )
 	{
@@ -75,8 +75,13 @@ void initMoth(Entity* my, Stat* myStats)
 
 	for ( int i = 0; i < 6; ++i )
 	{
+		if ( i >= 1 && my->sprite == 1822 )
+		{
+			continue;
+		}
+
 		// body
-		Entity* entity = newEntity(1819, 1, map.entities, nullptr); //Limb entity.
+		Entity* entity = newEntity(my->sprite, 1, map.entities, nullptr); //Limb entity.
 		entity->sizex = 2;
 		entity->sizey = 2;
 		entity->skill[2] = my->getUID();
@@ -85,7 +90,7 @@ void initMoth(Entity* my, Stat* myStats)
 		entity->flags[INVISIBLE] = true;
 		entity->yaw = my->yaw;
 		entity->z = 6;
-		entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+		entity->flags[USERFLAG2] = monsterChangesColorWhenAlly(myStats, my) ? my->flags[USERFLAG2] : false;
 		entity->focalx = limbs[MOTH_SMALL][1][0];
 		entity->focaly = limbs[MOTH_SMALL][1][1];
 		entity->focalz = limbs[MOTH_SMALL][1][2];
@@ -122,7 +127,7 @@ void initMoth(Entity* my, Stat* myStats)
 		my->bodyparts.push_back(entity);
 
 		// wingleft
-		entity = newEntity(1820, 1, map.entities, nullptr); //Limb entity.
+		entity = newEntity(my->sprite + 1, 1, map.entities, nullptr); //Limb entity.
 		entity->sizex = 2;
 		entity->sizey = 2;
 		entity->skill[2] = my->getUID();
@@ -131,7 +136,7 @@ void initMoth(Entity* my, Stat* myStats)
 		entity->flags[INVISIBLE] = true;
 		entity->yaw = my->yaw;
 		entity->z = 6;
-		entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+		entity->flags[USERFLAG2] = monsterChangesColorWhenAlly(myStats, my) ? my->flags[USERFLAG2] : false;
 		entity->focalx = limbs[MOTH_SMALL][3][0];
 		entity->focaly = limbs[MOTH_SMALL][3][1];
 		entity->focalz = limbs[MOTH_SMALL][3][2];
@@ -144,7 +149,7 @@ void initMoth(Entity* my, Stat* myStats)
 		my->bodyparts.push_back(entity);
 
 		// wingright
-		entity = newEntity(1821, 1, map.entities, nullptr); //Limb entity.
+		entity = newEntity(my->sprite + 2, 1, map.entities, nullptr); //Limb entity.
 		entity->sizex = 2;
 		entity->sizey = 2;
 		entity->skill[2] = my->getUID();
@@ -153,7 +158,7 @@ void initMoth(Entity* my, Stat* myStats)
 		entity->flags[INVISIBLE] = true;
 		entity->yaw = my->yaw;
 		entity->z = 6;
-		entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+		entity->flags[USERFLAG2] = monsterChangesColorWhenAlly(myStats, my) ? my->flags[USERFLAG2] : false;
 		entity->focalx = limbs[MOTH_SMALL][4][0];
 		entity->focaly = limbs[MOTH_SMALL][4][1];
 		entity->focalz = limbs[MOTH_SMALL][4][2];
@@ -170,40 +175,52 @@ void initMoth(Entity* my, Stat* myStats)
 void actMothLimb(Entity* my)
 {
 	my->actMonsterLimb(false);
+	if ( my->sprite == 1822 || my->sprite == 1822 + 1 || my->sprite == 1822 + 2 )
+	{
+		my->lightBonus = vec4_t{ 0.25, 0.25, 0.25, 0.0 };
+	}
 }
 
 void mothDie(Entity* my)
 {
-	int c;
-	for ( c = 0; c < 3; c++ )
+	Stat* myStats = my->getStats();
+	if ( myStats && myStats->getAttribute("fire_sprite") != "" )
 	{
-		Entity* entity = spawnGib(my);
-		if ( entity )
-		{
-			entity->skill[5] = 1; // poof
-
-			switch ( c )
-			{
-			case 0:
-				entity->sprite = my->sprite;
-				break;
-			case 1:
-				entity->sprite = my->sprite + 1;
-				break;
-			case 2:
-				entity->sprite = my->sprite + 2;
-				break;
-			default:
-				break;
-			}
-
-			serverSpawnGibForClient(entity);
-		}
+		spawnPoof(my->x, my->y, my->z, 0.25, true);
 	}
+	else
+	{
+		int c;
+		for ( c = 0; c < 3; c++ )
+		{
+			Entity* entity = spawnGib(my);
+			if ( entity )
+			{
+				entity->skill[5] = 1; // poof
 
-	my->spawnBlood();
+				switch ( c )
+				{
+				case 0:
+					entity->sprite = my->sprite;
+					break;
+				case 1:
+					entity->sprite = my->sprite + 1;
+					break;
+				case 2:
+					entity->sprite = my->sprite + 2;
+					break;
+				default:
+					break;
+				}
 
-	playSoundEntity(my, 670 + local_rng.rand() % 2, 128);
+				serverSpawnGibForClient(entity);
+			}
+		}
+
+		my->spawnBlood();
+
+		playSoundEntity(my, 670 + local_rng.rand() % 2, 128);
+	}
 
 	my->removeMonsterDeathNodes();
 
@@ -276,6 +293,20 @@ int mothGetAttackPose(Entity* my, int basePose)
 	}
 	else if ( basePose == MONSTER_POSE_MAGIC_WINDUP1 )
 	{
+		Stat* myStats = my->getStats();
+		if ( myStats && myStats->getAttribute("fire_sprite") != "" )
+		{
+			if ( my->bodyparts.size() > 0 )
+			{
+				Entity* body = my->bodyparts.at(0);
+				if ( BODY_ATTACK == 0 && !body->flags[INVISIBLE] )
+				{
+					return MONSTER_POSE_MAGIC_WINDUP1;
+				}
+			}
+			return 0;
+		}
+
 		// find a body available to attack
 		std::vector<int> available;
 		for ( int i = 0; i < my->bodyparts.size(); i += 3 )
@@ -372,8 +403,28 @@ void mothAnimate(Entity* my, Stat* myStats, double dist)
 		my->mistformGLRender = 1.0;
 	}
 
+	bool fireSprite = my->sprite == 1822;
+
+	if ( fireSprite )
+	{
+		my->removeLightField();
+		my->light = addLight(my->x / 16, my->y / 16, "fire_sprite_glow");
+	}
+
 	if ( multiplayer != CLIENT && myStats )
 	{
+		if ( fireSprite )
+		{
+			if ( myStats->getAttribute("fire_sprite") != "" )
+			{
+				if ( my->ticks > std::stoi(myStats->getAttribute("fire_sprite")) )
+				{
+					my->setHP(0);
+					my->setObituary(Language::get(6620));
+				}
+			}
+		}
+
 		real_t percentHP = myStats->HP / (real_t)std::max(1, myStats->MAXHP);
 		if ( percentHP < 0.1 )
 		{
@@ -503,6 +554,10 @@ void mothAnimate(Entity* my, Stat* myStats, double dist)
 		&& MONSTER_ATTACKTIME == 0 )
 	{
 		int bodypart = 3 * 4 + ((MONSTER_ATTACK - MONSTER_POSE_MAGIC_WINDUP1) * 3);
+		if ( fireSprite )
+		{
+			bodypart = 0;
+		}
 		if ( bodypart < my->bodyparts.size() )
 		{
 			Entity* body = my->bodyparts.at(bodypart);
@@ -549,6 +604,7 @@ void mothAnimate(Entity* my, Stat* myStats, double dist)
 
 		if ( (bodypart - MOTH_BODY) % 3 == 0 ) // bodies
 		{
+			entity->sprite = my->sprite;
 			body = entity;
 
 			if ( multiplayer == SERVER )
@@ -612,18 +668,25 @@ void mothAnimate(Entity* my, Stat* myStats, double dist)
 							{
 								my->yaw = atan2(target->y - my->y, target->x - my->x);
 							}
-							int spell = local_rng.rand() % 3;
-							if ( spell == 0 )
+							if ( fireSprite )
 							{
-								castSpell(my->getUID(), getSpellFromID(SPELL_TELEPULL), true, false);
-							}
-							else if ( spell == 1 )
-							{
-								castSpell(my->getUID(), getSpellFromID(SPELL_MIST_FORM), true, false);
+								castSpell(my->getUID(), getSpellFromID(SPELL_FLAMES), true, false);
 							}
 							else
 							{
-								castSpell(my->getUID(), getSpellFromID(SPELL_CONFUSE), true, false);
+								int spell = local_rng.rand() % 3;
+								if ( spell == 0 )
+								{
+									castSpell(my->getUID(), getSpellFromID(SPELL_TELEPULL), true, false);
+								}
+								else if ( spell == 1 )
+								{
+									castSpell(my->getUID(), getSpellFromID(SPELL_MIST_FORM), true, false);
+								}
+								else
+								{
+									castSpell(my->getUID(), getSpellFromID(SPELL_CONFUSE), true, false);
+								}
 							}
 							my->yaw = prevYaw;
 						}
@@ -715,6 +778,7 @@ void mothAnimate(Entity* my, Stat* myStats, double dist)
 		}
 		if ( (bodypart - MOTH_BODY) % 3 == 1 ) // leftwings
 		{
+			entity->sprite = my->sprite + 1;
 			entity->fskill[1] = fmod(entity->fskill[1], 2 * PI);
 			while ( entity->fskill[1] >= PI )
 			{
@@ -815,6 +879,10 @@ void mothAnimate(Entity* my, Stat* myStats, double dist)
 					}
 				}
 			}
+		}
+		else if ( (bodypart - MOTH_BODY) % 3 == 1 ) // rightwings
+		{
+			entity->sprite = my->sprite + 2;
 		}
 
 		switch ( bodypart )
@@ -956,6 +1024,19 @@ void mothAnimate(Entity* my, Stat* myStats, double dist)
 				Entity* fx = spawnMagicParticleCustom(entity, 576, 1.0, 10.0);
 				fx->z += 0.5;
 				fx->vel_z = 0.04;
+			}
+
+			if ( !body->flags[INVISIBLE] )
+			{
+				if ( fireSprite )
+				{
+					Entity* fx = spawnMagicParticleCustom(entity, 13, 0.5, 1.0);
+					fx->vel_x = 0.25 * cos(entity->yaw + PI);
+					fx->vel_y = 0.25 * sin(entity->yaw + PI);
+					//fx->vel_z = -0.3;
+					fx->flags[SPRITE] = true;
+					fx->ditheringDisabled = true;
+				}
 			}
 			break;
 		}
@@ -1106,6 +1187,10 @@ void Entity::mothChooseWeapon(const Entity* target, double dist)
 		int specialRoll = -1;
 		int bonusFromHP = 0;
 		specialRoll = local_rng.rand() % 40;
+		if ( myStats && myStats->getAttribute("fire_sprite") != "" )
+		{
+			specialRoll = 0;
+		}
 		if ( myStats->HP <= myStats->MAXHP * 0.8 )
 		{
 			bonusFromHP += 2; // +% chance if on low health
@@ -1121,6 +1206,7 @@ void Entity::mothChooseWeapon(const Entity* target, double dist)
 		{
 			requiredRoll += 5;
 		}
+
 
 		if ( specialRoll < requiredRoll )
 		{

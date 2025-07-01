@@ -112,6 +112,11 @@ void actSprite(Entity* my)
 	{
 		my->z += my->vel_z;
 	}
+	if ( my->actSpriteVelXY != 0 )
+	{
+		my->x += my->vel_x;
+		my->y += my->vel_y;
+	}
 }
 
 void actSpriteNametag(Entity* my)

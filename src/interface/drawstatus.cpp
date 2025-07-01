@@ -79,15 +79,6 @@ void updateEnemyBar(Entity* source, Entity* target, const char* name, Sint32 hp,
 				player = parent->skill[2]; // don't update enemy bar if attacking leader.
 			}
 		}
-		else if ( source->behavior == &actMonster && source->getStats() && source->getStats()->type == MOTH_SMALL
-			&& source->getStats()->getAttribute("fire_sprite") != "" )
-		{
-			Entity* parent = uidToEntity(source->parent);
-			if ( parent && parent->behavior == &actPlayer && parent != target )
-			{
-				player = parent->skill[2]; // don't update enemy bar if attacking leader.
-			}
-		}
 		else if ( source->behavior == &actMonster && source->monsterAllySummonRank != 0
 			&& (target->behavior == &actMonster || target->behavior == &actPlayer) )
 		{

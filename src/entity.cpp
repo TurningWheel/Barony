@@ -16987,6 +16987,14 @@ int Entity::getAttackPose() const
 bool Entity::hasRangedWeapon() const
 {
 	Stat *myStats = getStats();
+	/*if ( myStats && myStats->type == MOTH_SMALL && myStats->getAttribute("fire_sprite") != "" )
+	{
+		if ( monsterSpecialTimer > 0 )
+		{
+			return false;
+		}
+		return true;
+	}*/
 	if ( myStats == nullptr || myStats->weapon == nullptr )
 	{
 		return false;
@@ -18944,6 +18952,12 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool
 			}
 		}
 	}
+
+	if ( myStats->getEffectActive(EFF_DISORIENTED) )
+	{
+		return;
+	}
+
 	if ( target.getRace() == MONSTER_ADORCISED_WEAPON )
 	{
 		if ( Stat* targetStats = target.getStats() )
@@ -18969,14 +18983,13 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool
 				{
 					monsterAcquireAttackTarget(*caster, state, false);
 				}
+				if ( Entity* caster = uidToEntity(targetStats->leader_uid) )
+				{
+					monsterAcquireAttackTarget(*caster, state, false);
+				}
 				return;
 			}
 		}
-	}
-
-	if ( myStats->getEffectActive(EFF_DISORIENTED) )
-	{
-		return;
 	}
 
 	if ( monsterState != MONSTER_STATE_ATTACK && !hadOldTarget )
@@ -24370,6 +24383,16 @@ bool monsterChangesColorWhenAlly(Stat* myStats, Entity* entity)
 	{
 		return false;
 	}
+	if ( race == MOTH_SMALL && (entity 
+		&& ((entity->sprite == 1822 || entity->sprite == 1822 + 1 || entity->sprite == 1822 + 2) 
+		|| (myStats && myStats->getAttribute("fire_sprite") != ""))) )
+	{
+		return false;
+	}
+	if ( race == FLAME_ELEMENTAL )
+	{
+		return false;
+	}
 	return true;
 }
 
@@ -25484,7 +25507,7 @@ void Entity::creatureHandleLiftZ()
 	real_t shift = 2 * height;
 	Monster type = getMonsterTypeFromSprite();
 
-	if ( multiplayer == CLIENT )
+	if ( multiplayer == CLIENT && behavior == &actMonster )
 	{
 		switch ( type )
 		{

@@ -4935,6 +4935,12 @@ void actMonster(Entity* my)
 			myStats->defending = false;
 		}
 
+		if ( myStats->getEffectActive(EFF_SPIN) )
+		{
+			my->monsterLookTime = 1;
+			my->monsterLookDir += PI / 16;
+		}
+
 		/*if ( myStats->defending )
 		{
 			messagePlayer(0, "defending!");
@@ -4991,6 +4997,7 @@ void actMonster(Entity* my)
 					my->handleKnockbackDamage(*myStats, hit.entity);
 				}
 			}
+
 			if ( myReflex && !myStats->getEffectActive(EFF_DISORIENTED) && !isIllusionTaunt )
 			{
 				if ( myStats->getEffectActive(EFF_FEAR) && my->monsterFearfulOfUid != 0 )
@@ -5457,8 +5464,7 @@ void actMonster(Entity* my)
 					&& my->monsterTarget == 0 
 					&& my->monsterState == MONSTER_STATE_WAIT 
 					&& (my->monsterAllyGetPlayerLeader() 
-						|| (myStats->type == MONSTER_ADORCISED_WEAPON && myStats->getAttribute("spirit_weapon") != "")
-						|| (myStats->type == MOTH_SMALL && myStats->getAttribute("fire_sprite") != "")) )
+						|| (myStats->type == MONSTER_ADORCISED_WEAPON && myStats->getAttribute("spirit_weapon") != "")) )
 				{
 					// allies should try intelligently scan for enemies in radius.
 					if ( monsterIsImmobileTurret(my, myStats) && myStats->LVL < 5 )
@@ -6449,6 +6455,12 @@ timeToGoAgain:
 							{
 								dir = my->yaw - atan2( MONSTER_VELY, MONSTER_VELX );
 							}
+
+							if ( myStats->getEffectActive(EFF_SPIN) )
+							{
+								dir += my->monsterLookDir;
+							}
+
 							while ( dir >= PI )
 							{
 								dir -= PI * 2;
@@ -7661,6 +7673,11 @@ timeToGoAgain:
 							{
 								dir = my->yaw - atan2(MONSTER_VELY, MONSTER_VELX);
 							}
+
+							if ( myStats->getEffectActive(EFF_SPIN) )
+							{
+								dir += my->monsterLookDir;
+							}
 							while ( dir >= PI )
 							{
 								dir -= PI * 2;
@@ -7963,6 +7980,11 @@ timeToGoAgain:
 				while ( dir < -PI )
 				{
 					dir += PI * 2;
+				}
+
+				if ( myStats->getEffectActive(EFF_SPIN) )
+				{
+					dir += my->monsterLookDir;
 				}
 				my->yaw -= dir / 2;
 				while ( my->yaw < 0 )
@@ -8998,6 +9020,11 @@ timeToGoAgain:
 			{
 				dir += PI * 2;
 			}
+
+			if ( myStats->getEffectActive(EFF_SPIN) )
+			{
+				dir += my->monsterLookDir;
+			}
 			my->yaw -= dir / 64;
 			while ( my->yaw < 0 )
 			{
@@ -9627,6 +9654,7 @@ timeToGoAgain:
 				}
 			}
 		}
+
 		if ( myStats->getEffectActive(EFF_KNOCKBACK) )
 		{
 			my->monsterHandleKnockbackVelocity(my->monsterKnockbackTangentDir, weightratio);
@@ -9845,7 +9873,14 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 		}
 		else if ( myStats->type == MOTH_SMALL )
 		{
-			bow = 0.5;
+			if ( myStats->getAttribute("fire_sprite") != "" )
+			{
+				bow = 3.0;
+			}
+			else
+			{
+				bow = 0.5;
+			}
 		}
 		else if ( monsterIsImmobileTurret(this, myStats) )
 		{

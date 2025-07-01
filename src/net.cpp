@@ -3073,6 +3073,9 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 				case PARTICLE_EFFECT_ABILITY_ROCK:
 					createParticleRock(entity, sprite);
 					break;
+				case PARTICLE_EFFECT_SPIN:
+					createParticleSpin(entity);
+					break;
 				case PARTICLE_EFFECT_SHATTERED_GEM:
 					createParticleShatteredGem(entity->x, entity->y, 7.5, sprite, entity);
 					break;

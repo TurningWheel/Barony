@@ -221,12 +221,13 @@ void initFlameElemental(Entity* my, Stat* myStats)
 	entity->flags[NOUPDATE] = true;
 	entity->yaw = my->yaw;
 	entity->z = 6;
-	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	//entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[FLAME_ELEMENTAL][1][0];
 	entity->focaly = limbs[FLAME_ELEMENTAL][1][1];
 	entity->focalz = limbs[FLAME_ELEMENTAL][1][2];
 	entity->behavior = &actFlameElementalLimb;
 	entity->parent = my->getUID();
+	entity->lightBonus = vec4_t{ 0.25, 0.25, 0.25, 0.0 };
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -332,6 +333,9 @@ void adorcisedWeaponDie(Entity* my)
 
 void flameElementalDie(Entity* my)
 {
+	Stat* myStats = my->getStats();
+	createSpellExplosionArea(SPELL_FIREBALL, myStats ? uidToEntity(myStats->leader_uid) : nullptr, my->x, my->y, 0.0, 16.0);
+
 	my->removeMonsterDeathNodes();
 	spawnPoof(my->x, my->y, my->z, 1.0, true);
 	list_RemoveNode(my->mynode);
@@ -1099,12 +1103,31 @@ void revenantSkullAnimate(Entity* my, Stat* myStats, double dist)
 
 				if ( monsterType == FLAME_ELEMENTAL )
 				{
-					Entity* fx = spawnMagicParticleCustom(entity, 13, 1.0, 1.0);
-					fx->vel_x = 0.25 * cos(entity->yaw + PI);
-					fx->vel_y = 0.25 * sin(entity->yaw + PI);
-					fx->vel_z = -0.3;
-					fx->flags[SPRITE] = true;
-					fx->ditheringDisabled = true;
+					if ( my->ticks % 5 == 0 )
+					{
+						Entity* fx = spawnMagicParticleCustom(entity, 233, 0.5, 1.0);
+						fx->x -= 2.0 * cos(entity->yaw);
+						fx->y -= 2.0 * cos(entity->yaw);
+						fx->vel_x = 0.1 * cos(entity->yaw + PI);
+						fx->vel_y = 0.1 * sin(entity->yaw + PI);
+						fx->vel_z = -0.15;
+						fx->behavior = &actSprite;
+						fx->flags[SPRITE] = true;
+						fx->ditheringDisabled = true;
+						fx->skill[0] = 1;
+						fx->skill[1] = 12;
+						fx->skill[2] = 4;
+						fx->actSpriteVelXY = 1;
+					}
+
+					const real_t squishRate = dist < 0.1 ? 1.5 : 3.0;
+					const real_t squishFactor = 0.1;// dist < 0.1 ? 0.05 : 0.3;
+					const real_t inc = squishRate * (PI / TICKS_PER_SECOND);
+					real_t& slimeBob = entity->fskill[24];
+					slimeBob = fmod(slimeBob + inc, PI * 2);
+					entity->scalex = 0.9 - sin(slimeBob) * squishFactor;
+					entity->scaley = 0.9 - sin(slimeBob) * squishFactor;
+					entity->scalez = 0.9 + sin(slimeBob) * squishFactor;
 				}
 				else
 				{

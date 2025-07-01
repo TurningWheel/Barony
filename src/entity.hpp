@@ -381,6 +381,8 @@ public:
 	Sint32& particleTimerVariable1; //skill[8]
 	Sint32& particleTimerVariable2; //skill[9]
 	Sint32& particleTimerEffectLifetime = skill[10];
+	Sint32& particleTimerVariable3 = skill[11];
+	Sint32& particleTimerVariable4 = skill[12];
 
 	//--PUBLIC DOOR SKILLS--
 	Sint32& doorDir; //skill[0]
@@ -768,6 +770,7 @@ public:
 	Sint32& actSpriteUseCustomSurface = skill[10];
 	Sint32& actSpriteFollowUID = skill[11];
 	Sint32& actSpriteHasLightInit = skill[12];
+	Sint32& actSpriteVelXY = skill[13];
 	real_t& actSpritePitchRotate = fskill[4];
 
 	// actGib
