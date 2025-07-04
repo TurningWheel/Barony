@@ -1210,6 +1210,11 @@ void actLeftHandMagic(Entity* my)
 				if ( anim.throw_count == 0 )
 				{
 					spellcastingAnimationManager_completeSpell(&cast_animation[HANDMAGIC_PLAYERNUM], false);
+					if ( players[HANDMAGIC_PLAYERNUM]->entity->skill[3] == 0 )   // debug cam OFF
+					{
+						cameravars[HANDMAGIC_PLAYERNUM].shakex += .03;
+						cameravars[HANDMAGIC_PLAYERNUM].shakey += 4;
+					}
 					anim.lefthand_movex = 5.f;
 					anim.lefthand_angle = 0.0;
 				}
