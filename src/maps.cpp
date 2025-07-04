@@ -9829,7 +9829,7 @@ void assignActions(map_t* map)
 		numMimics = 0;
 	}
 
-	static ConsoleVariable<int> cvar_mimic_chance("/mimic_chance", 10);
+	static ConsoleVariable<int> cvar_mimic_chance("/mimic_chance", 5);
 	static ConsoleVariable<bool> cvar_mimic_debug("/mimic_debug", false);
 
 	std::vector<Entity*> mimics;
@@ -9854,7 +9854,7 @@ void assignActions(map_t* map)
 			Entity* chest = *it;
 			if ( allowedGenerateMimicOnChest(chest->x / 16, chest->y / 16, *map) )
 			{
-				int chance = 10;
+				int chance = 5;
 				if ( svFlags & SV_FLAG_CHEATS )
 				{
 					chance = std::min(100, std::max(0, *cvar_mimic_chance));
