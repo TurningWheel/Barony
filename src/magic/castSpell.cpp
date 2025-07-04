@@ -835,7 +835,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			}
 			traveltime += (((element->mana + extramagic_to_use) - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->duration;
 		}
-		else if ( !strcmp(element->element_internal_name, "spell_element_propulsion_floor_tile") )
+		/*else if ( !strcmp(element->element_internal_name, "spell_element_propulsion_floor_tile") )
 		{
 			if ( castSpellProps )
 			{
@@ -866,7 +866,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					castSpellProps->distanceOffset += 4.0;
 				}
 			}
-		}
+		}*/
 		else if (!strcmp(element->element_internal_name, spellElement_light.element_internal_name))
 		{
             if (using_magicstaff) {
@@ -1561,6 +1561,116 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 								MESSAGE_HINT, makeColorRGB(0, 255, 0), Language::get(6486));
 						}
 					}
+				}
+				spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
+			}
+			playSoundEntity(caster, 166, 128);
+		}
+		else if ( !strcmp(element->element_internal_name, spellElementMap[SPELL_MAGIC_WELL].element_internal_name) )
+		{
+			if ( caster )
+			{
+				if ( Stat* casterStats = caster->getStats() )
+				{
+					Uint8 effectStrength = casterStats->getEffectActive(EFF_MAGIC_WELL);
+					if ( effectStrength == 0 )
+					{
+						if ( caster->setEffect(EFF_MAGIC_WELL, (Uint8)1, 30 * TICKS_PER_SECOND, false) )
+						{
+							messagePlayerColor(caster->isEntityPlayer(),
+								MESSAGE_HINT, makeColorRGB(0, 255, 0), Language::get(6728));
+						}
+					}
+					else
+					{
+						messagePlayerColor(caster->isEntityPlayer(),
+							MESSAGE_HINT, makeColorRGB(255, 255, 255), Language::get(6727), spell->getSpellName());
+					}
+				}
+				spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
+			}
+			playSoundEntity(caster, 166, 128);
+		}
+		else if ( !strcmp(element->element_internal_name, spellElementMap[SPELL_CRITICAL_SPELL].element_internal_name) )
+		{
+			if ( caster )
+			{
+				if ( Stat* casterStats = caster->getStats() )
+				{
+					Uint8 effectStrength = casterStats->getEffectActive(EFF_CRITICAL_SPELL);
+					if ( effectStrength == 0 )
+					{
+						if ( caster->setEffect(EFF_CRITICAL_SPELL, (Uint8)1, 30 * TICKS_PER_SECOND, false) )
+						{
+							messagePlayerColor(caster->isEntityPlayer(),
+								MESSAGE_HINT, makeColorRGB(0, 255, 0), Language::get(6729));
+						}
+					}
+					else
+					{
+						messagePlayerColor(caster->isEntityPlayer(),
+							MESSAGE_HINT, makeColorRGB(255, 255, 255), Language::get(6727), spell->getSpellName());
+					}
+				}
+				spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
+			}
+			playSoundEntity(caster, 166, 128);
+		}
+		else if ( !strcmp(element->element_internal_name, spellElementMap[SPELL_ABSORB_MAGIC].element_internal_name) )
+		{
+			if ( caster )
+			{
+				if ( Stat* casterStats = caster->getStats() )
+				{
+					Uint8 effectStrength = casterStats->getEffectActive(EFF_ABSORB_MAGIC);
+					if ( effectStrength == 0 )
+					{
+						if ( caster->setEffect(EFF_ABSORB_MAGIC, (Uint8)1, 30 * TICKS_PER_SECOND, false) )
+						{
+							messagePlayerColor(caster->isEntityPlayer(),
+								MESSAGE_HINT, makeColorRGB(0, 255, 0), Language::get(6735));
+						}
+					}
+					else
+					{
+						messagePlayerColor(caster->isEntityPlayer(),
+							MESSAGE_HINT, makeColorRGB(255, 255, 255), Language::get(6727), spell->getSpellName());
+					}
+				}
+				spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
+			}
+			playSoundEntity(caster, 166, 128);
+		}
+		else if ( !strcmp(element->element_internal_name, spellElementMap[SPELL_FLAME_CLOAK].element_internal_name) )
+		{
+			if ( caster )
+			{
+				if ( Stat* casterStats = caster->getStats() )
+				{
+					if ( caster->setEffect(EFF_FLAME_CLOAK, (Uint8)1, 30 * TICKS_PER_SECOND, false) )
+					{
+						messagePlayerColor(caster->isEntityPlayer(),
+							MESSAGE_HINT, makeColorRGB(0, 255, 0), Language::get(6730));
+					}
+				}
+				spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
+			}
+			playSoundEntity(caster, 166, 128);
+		}
+		else if ( !strcmp(element->element_internal_name, spellElementMap[SPELL_FLAME_SHIELD].element_internal_name) )
+		{
+			if ( caster )
+			{
+				if ( Stat* casterStats = caster->getStats() )
+				{
+					if ( caster->setEffect(EFF_FLAME_CLOAK, (Uint8)1, 30 * TICKS_PER_SECOND, false) )
+					{
+						messagePlayerColor(caster->isEntityPlayer(),
+							MESSAGE_HINT, makeColorRGB(0, 255, 0), Language::get(6731));
+					}
+					caster->castOrbitingMagicMissile(SPELL_FIREBALL, 16.0, caster->yaw + 0 * PI / 3, 5 * TICKS_PER_SECOND);
+					caster->castOrbitingMagicMissile(SPELL_FIREBALL, 16.0, caster->yaw + 2 * PI / 3, 5 * TICKS_PER_SECOND);
+					caster->castOrbitingMagicMissile(SPELL_FIREBALL, 16.0, caster->yaw + 4 * PI / 3, 5 * TICKS_PER_SECOND);
 				}
 				spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
 			}
@@ -2817,6 +2927,425 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				playSoundEntity(caster, 171, 128);
 			}
 		}
+		else if ( spell->ID == SPELL_LIGHTNING_BOLT )
+		{
+			if ( caster )
+			{
+				bool found = false;
+				bool effect = false;
+				if ( castSpellProps )
+				{
+					found = true;
+					
+					Uint32 lifetime = TICKS_PER_SECOND * 3;
+
+					Entity* spellTimer = createParticleTimer(caster, lifetime + TICKS_PER_SECOND, -1);
+					spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_LIGHTNING;
+					spellTimer->particleTimerCountdownSprite = 1757;
+					spellTimer->yaw = caster->yaw;
+					spellTimer->x = castSpellProps->target_x;
+					spellTimer->y = castSpellProps->target_y;
+					spellTimer->flags[NOUPDATE] = false; // spawn for client
+					spellTimer->flags[UPDATENEEDED] = true;
+					Sint32 val = (1 << 31);
+					val |= (Uint8)(19);
+					val |= (((Uint16)(spellTimer->particleTimerDuration) & 0xFFF) << 8);
+					val |= (Uint8)(spellTimer->particleTimerCountdownAction & 0xFF) << 20;
+					spellTimer->skill[2] = val;
+					spellTimer->particleTimerEffectLifetime = lifetime;
+					floorMagicCreateLightningSequence(spellTimer, 0);
+				}
+				spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
+				playSoundEntity(caster, 171, 128);
+			}
+		}
+		else if ( spell->ID == SPELL_ETERNALS_GAZE )
+		{
+			if ( caster )
+			{
+				bool found = false;
+				bool effect = false;
+				if ( castSpellProps )
+				{
+					found = true;
+
+					Entity* spellTimer = createParticleTimer(caster, 3 * TICKS_PER_SECOND + 10, -1);
+					spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_ETERNALS_GAZE;
+					spellTimer->particleTimerCountdownSprite = -1;
+					spellTimer->yaw = caster->yaw;
+					spellTimer->x = castSpellProps->target_x;
+					spellTimer->y = castSpellProps->target_y;
+					spellTimer->flags[NOUPDATE] = false; // spawn for client
+					spellTimer->flags[UPDATENEEDED] = true;
+					Sint32 val = (1 << 31);
+					val |= (Uint8)(19);
+					val |= (((Uint16)(spellTimer->particleTimerDuration) & 0xFFF) << 8);
+					val |= (Uint8)(spellTimer->particleTimerCountdownAction & 0xFF) << 20;
+					spellTimer->skill[2] = val;
+				}
+				spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
+				playSoundEntity(caster, 171, 128);
+			}
+		}
+		else if ( spell->ID == SPELL_SHATTER_EARTH )
+		{
+			if ( caster )
+			{
+				bool found = false;
+				bool effect = false;
+				if ( castSpellProps )
+				{
+					int x = castSpellProps->target_x / 16;
+					int y = castSpellProps->target_y / 16;
+					bool noroom = false;
+					if ( x < 0 || x >= map.width || y < 0 || y >= map.height )
+					{
+						noroom = true;
+					}
+					else
+					{
+						int mapIndex = (y)*MAPLAYERS + (x)*MAPLAYERS * map.height;
+						if ( map.tiles[OBSTACLELAYER + mapIndex] )
+						{
+							noroom = true;
+						}
+						else if ( map.skybox != 0 )
+						{
+							if ( !map.tiles[(MAPLAYERS - 1) + mapIndex] )
+							{
+								noroom = true;
+							}
+						}
+					}
+
+					if ( !noroom )
+					{
+						found = true;
+						Entity* spellTimer = createParticleTimer(caster, 5 * TICKS_PER_SECOND, -1);
+						spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_SHATTER_EARTH;
+						spellTimer->particleTimerCountdownSprite = -1;
+						spellTimer->yaw = caster->yaw;
+						spellTimer->x = x * 16.0 + 8.0;
+						spellTimer->y = y * 16.0 + 8.0;
+						spellTimer->flags[NOUPDATE] = false; // spawn for client
+						spellTimer->flags[UPDATENEEDED] = true;
+						Sint32 val = (1 << 31);
+						val |= (Uint8)(19);
+						val |= (((Uint16)(spellTimer->particleTimerDuration) & 0xFFF) << 8);
+						val |= (Uint8)(spellTimer->particleTimerCountdownAction & 0xFF) << 20;
+						spellTimer->skill[2] = val;
+
+						spawnMagicEffectParticles(spellTimer->x, spellTimer->y, 7.5, 171);
+					}
+				}
+
+				if ( found )
+				{
+					spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
+					playSoundEntity(caster, 171, 128);
+				}
+				else
+				{
+					playSoundEntity(caster, 163, 128);
+					messagePlayer(caster->isEntityPlayer(), MESSAGE_HINT, Language::get(6736));
+				}
+			}
+		}
+		else if ( spell->ID == SPELL_FIRE_WALL )
+		{
+			if ( caster )
+			{
+				bool found = false;
+				bool effect = false;
+				if ( castSpellProps )
+				{
+					found = true;
+
+					for ( int i = 0; i < 3; ++i )
+					{
+						if ( i == 0 || i == 2 ) { continue; }
+						bool light = false;
+						if ( i == 1 )
+						{
+							light = true;
+						}
+
+						int duration = TICKS_PER_SECOND * 5;
+						Entity* spellTimer = createParticleTimer(caster, duration, -1);
+						spellTimer->x = castSpellProps->target_x;
+						spellTimer->y = castSpellProps->target_y;
+
+						real_t tangent = atan2(castSpellProps->target_y - castSpellProps->caster_y,
+							castSpellProps->target_x - castSpellProps->caster_x);
+
+						Entity* wave = createParticleWave(ParticleTimerEffect_t::EFFECT_FIRE_WAVE,
+							1733, castSpellProps->target_x, castSpellProps->target_y, 2.75,
+							-PI / 2 + tangent - PI / 3 + i * PI / 3,
+							duration, light);
+						real_t grouping = 13.75;
+						wave->x -= grouping * cos(tangent);
+						wave->y -= grouping * sin(tangent);
+						real_t scale = 1.0;
+						wave->skill[1] = 6; // frames
+						wave->skill[5] = 4; // frame time
+						wave->ditheringOverride = 6;
+						wave->parent = spellTimer->getUID();
+						real_t startScale = 0.1;
+						wave->scalex = startScale;
+						wave->scaley = startScale;
+						wave->scalez = startScale;
+						wave->focaly = startScale * grouping;
+						wave->fskill[0] = scale; // final scale
+						wave->fskill[1] = grouping; // final grouping
+						wave->skill[6] = 1; // grow to scale
+						wave->flags[UPDATENEEDED] = true;
+					}
+				}
+				spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
+				playSoundEntity(caster, 171, 128);
+			}
+		}
+		else if ( spell->ID == SPELL_KINETIC_FIELD )
+		{
+			if ( caster )
+			{
+				bool found = false;
+				bool effect = false;
+				if ( castSpellProps )
+				{
+					found = true;
+
+					int duration = TICKS_PER_SECOND * 5;
+					Entity* spellTimer = createParticleTimer(caster, duration, -1);
+					spellTimer->x = castSpellProps->target_x;
+					spellTimer->y = castSpellProps->target_y;
+
+					real_t tangent = atan2(castSpellProps->target_y - castSpellProps->caster_y,
+						castSpellProps->target_x - castSpellProps->caster_x);
+
+					Entity* wave = createParticleWave(ParticleTimerEffect_t::EFFECT_KINETIC_FIELD,
+						1739, castSpellProps->target_x, castSpellProps->target_y, 6.25,
+						PI / 2 + tangent, duration, true);
+					wave->skill[1] = 12; // frames
+					wave->skill[5] = 4; // frame time
+					wave->ditheringOverride = 6;
+					wave->sizex = 8;
+					wave->sizey = 8;
+					wave->parent = spellTimer->getUID();
+					real_t startScale = 0.1;
+					real_t scale = 1.0;
+					wave->scalex = startScale;
+					wave->scaley = startScale;
+					wave->scalez = startScale;
+					wave->fskill[0] = scale; // final scale
+					wave->skill[6] = 1; // grow to scale
+					wave->flags[UPDATENEEDED] = true;
+					spawnMagicEffectParticles(wave->x, wave->y, wave->z, 171);
+				}
+				spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
+				playSoundEntity(caster, 171, 128);
+			}
+		}
+		else if ( spell->ID == SPELL_CHRONOMIC_FIELD )
+		{
+			if ( caster )
+			{
+				bool found = false;
+				bool effect = false;
+				if ( castSpellProps )
+				{
+					found = true;
+
+					int duration = TICKS_PER_SECOND * 5;
+					Entity* spellTimer = createParticleTimer(caster, duration, -1);
+					spellTimer->x = castSpellProps->target_x;
+					spellTimer->y = castSpellProps->target_y;
+
+					real_t tangent = atan2(castSpellProps->target_y - castSpellProps->caster_y,
+						castSpellProps->target_x - castSpellProps->caster_x);
+
+					Entity* wave = createParticleWave(ParticleTimerEffect_t::EFFECT_CHRONOMIC_FIELD,
+						1857, castSpellProps->target_x, castSpellProps->target_y, 5.25,
+						PI / 2 + tangent, duration, true);
+					wave->skill[1] = 8; // frames
+					wave->skill[5] = 4; // frame time
+					wave->ditheringOverride = 6;
+					wave->sizex = 8;
+					wave->sizey = 8;
+					wave->parent = spellTimer->getUID();
+					real_t startScale = 0.1;
+					real_t scale = 1.0;
+					wave->scalex = startScale;
+					wave->scaley = startScale;
+					wave->scalez = startScale;
+					wave->fskill[0] = scale; // final scale
+					wave->skill[6] = 1; // grow to scale
+					wave->flags[UPDATENEEDED] = true;
+					spawnMagicEffectParticles(wave->x, wave->y, wave->z, 171);
+				}
+				spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
+				playSoundEntity(caster, 171, 128);
+			}
+		}
+		else if ( spell->ID == SPELL_ICE_WAVE )
+		{
+			if ( caster )
+			{
+				bool found = false;
+				bool effect = false;
+				if ( castSpellProps )
+				{
+					found = true;
+
+					real_t tangent = atan2(castSpellProps->target_y - castSpellProps->caster_y,
+						castSpellProps->target_x - castSpellProps->caster_x);
+
+					int lifetime = TICKS_PER_SECOND * 2;
+					Entity* spellTimer = createParticleTimer(caster, lifetime + TICKS_PER_SECOND, -1);
+					spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_MAGIC_WAVE;
+					spellTimer->particleTimerCountdownSprite = 1718;
+					spellTimer->yaw = tangent;
+					spellTimer->x = castSpellProps->target_x;
+					spellTimer->y = castSpellProps->target_y;
+					int lifetime_tick = 0;
+					auto& timerEffects = particleTimerEffects[spellTimer->getUID()];
+
+					static std::vector<ParticleTimerEffect_t::EffectLocations_t> effLocations = {
+						{0.0,		0.0, 0.25, -10.0,	172},
+						{PI / 16,	8.0, 0.0,	0.0,	172},
+						{-PI / 16,	-8.0, 0.0,	0.0,	0},
+						{0.0,		0.0, 0.25,	0.0,	0},
+						{PI / 16,	10.0, 0.0,	10.0,	0},
+						{-PI / 16,	-10.0, 0.0,	10.0,	172}
+					};
+
+					int index = -1;
+					while ( lifetime_tick <= lifetime )
+					{
+						++index;
+						auto& effect = timerEffects.effectMap[lifetime_tick == 0 ? 1 : lifetime_tick]; // first behavior tick only occurs at 1
+						effect.effectType = ParticleTimerEffect_t::EffectType::EFFECT_ICE_WAVE;
+						auto& data = effLocations[index];
+						effect.sfx = data.sfx;
+						effect.yaw = tangent + data.yawOffset;
+						effect.x = spellTimer->x + (data.dist) * cos(tangent);
+						effect.y = spellTimer->y + (data.dist) * sin(tangent);
+						effect.x += data.xOffset * cos(tangent + PI / 2);
+						effect.y += data.xOffset * sin(tangent + PI / 2);
+						lifetime_tick += std::max(1.0, TICKS_PER_SECOND * data.seconds);
+						if ( index + 1 >= effLocations.size() )
+						{
+							break;
+						}
+					}
+				}
+				spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
+				playSoundEntity(caster, 171, 128);
+			}
+		}
+		else if ( spell->ID == SPELL_DISRUPT_EARTH
+			|| spell->ID == SPELL_EARTH_SPINES )
+		{
+			if ( caster )
+			{
+				bool found = false;
+				bool effect = false;
+				if ( castSpellProps )
+				{
+					found = true;
+
+					real_t tangent = atan2(castSpellProps->target_y - castSpellProps->caster_y,
+						castSpellProps->target_x - castSpellProps->caster_x);
+
+					int lifetime = TICKS_PER_SECOND * 2;
+					Entity* spellTimer = createParticleTimer(caster, lifetime + TICKS_PER_SECOND, -1);
+					spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_MAGIC_WAVE;
+					spellTimer->particleTimerCountdownSprite = spell->ID == SPELL_DISRUPT_EARTH ? 1814 : 1815;
+					spellTimer->yaw = tangent;
+					spellTimer->x = castSpellProps->target_x;
+					spellTimer->y = castSpellProps->target_y;
+					int lifetime_tick = 0;
+					auto& timerEffects = particleTimerEffects[spellTimer->getUID()];
+
+					std::vector<ParticleTimerEffect_t::EffectLocations_t> effLocations;
+					int roll = local_rng.rand() % 8;
+					int numSprites = 4;
+					for ( int i = 0; i < numSprites; ++i )
+					{
+						effLocations.push_back(ParticleTimerEffect_t::EffectLocations_t());
+						auto& data = effLocations.back();
+						if ( i == 0 )
+						{
+							data.sfx = 151;
+						}
+						data.seconds = 1 / (real_t)numSprites;
+						data.dist = 0.25 + (0.75 * i / (real_t)numSprites);
+						real_t angle = (i / ((real_t)numSprites / 2)) * PI + ((roll) / ((real_t)numSprites / 2)) * PI;
+						data.xOffset = 8.0 * sin(angle);
+						data.xOffset += 2.0 * (local_rng.rand() % 16) / 16.0;
+						data.yawOffset = cos(angle) + ((local_rng.rand() % 4) / 4.0) * 2 * PI;
+					}
+
+					int index = -1;
+					real_t dist = sqrt(pow(castSpellProps->target_x - castSpellProps->caster_x, 2)
+						+ pow(castSpellProps->target_y - castSpellProps->caster_y, 2));
+					dist = std::min(80.0, dist + 16.0);
+					real_t minDist = 20.0;
+					while ( lifetime_tick <= lifetime )
+					{
+						++index;
+						auto& effect = timerEffects.effectMap[lifetime_tick == 0 ? 1 : lifetime_tick]; // first behavior tick only occurs at 1
+						effect.effectType = ParticleTimerEffect_t::EffectType::EFFECT_DISRUPT_EARTH;
+						auto& data = effLocations[index];
+						effect.sfx = data.sfx;
+						effect.yaw = tangent + data.yawOffset;
+						effect.x = castSpellProps->caster_x + std::max(minDist, dist * (data.dist)) * cos(tangent);
+						effect.y = castSpellProps->caster_y + std::max(minDist, dist * (data.dist)) * sin(tangent);
+						effect.x += data.xOffset * cos(tangent + PI / 2);
+						effect.y += data.xOffset * sin(tangent + PI / 2);
+						lifetime_tick += std::max(1.0, TICKS_PER_SECOND * data.seconds);
+						if ( index + 1 >= effLocations.size() )
+						{
+							break;
+						}
+					}
+				}
+				spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
+				playSoundEntity(caster, 171, 128);
+			}
+		}
+		else if ( spell->ID == SPELL_SLAM )
+		{
+			if ( caster )
+			{
+				bool found = false;
+				bool effect = false;
+				if ( castSpellProps )
+				{
+					found = true;
+
+					real_t tangent = atan2(castSpellProps->target_y - castSpellProps->caster_y,
+						castSpellProps->target_x - castSpellProps->caster_x);
+					Entity* spellTimer = createParticleTimer(caster, 4 * TICKS_PER_SECOND, -1);
+					spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_VORTEX;
+					spellTimer->particleTimerCountdownSprite = -1;
+					spellTimer->particleTimerVariable2 = spell->ID;
+					spellTimer->flags[UPDATENEEDED] = true;
+					spellTimer->flags[NOUPDATE] = false;
+					spellTimer->yaw = tangent;
+					spellTimer->x = castSpellProps->target_x;
+					spellTimer->y = castSpellProps->target_y;
+					Sint32 val = (1 << 31);
+					val |= (Uint8)(19);
+					val |= (((Uint16)(spellTimer->particleTimerDuration) & 0xFFF) << 8);
+					val |= (Uint8)(spellTimer->particleTimerCountdownAction & 0xFF) << 20;
+					spellTimer->skill[2] = val;
+				}
+
+				spawnMagicEffectParticles(caster->x, caster->y, caster->z, 1719);
+				playSoundEntity(caster, 171, 128);
+			}
+		}
 		else if ( spell->ID == SPELL_VOID_CHEST )
 		{
 			if ( caster )
@@ -3449,6 +3978,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 									target->vel_y = sin(tangent) * pushbackMultiplier;
 									target->monsterKnockbackVelocity = 0.01;
 									target->monsterKnockbackTangentDir = tangent;
+									target->monsterKnockbackUID = caster->getUID();
 								}
 								else if ( target->behavior == &actPlayer )
 								{
@@ -5189,6 +5719,48 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					yaw += ((spread - (local_rng.rand() % (spread * 2 + 1))) / 5.0) * PI / 64;
 					missileEntity->actmagicNoHitMessage = 1;
 					delayMove = std::max(0, 10 * (castSpellProps->elementIndex - 1));
+				}
+				missileEntity->vel_x = cos(yaw) * (missile_speed);
+				missileEntity->vel_y = sin(yaw) * (missile_speed);
+				real_t spellDistance = sqrt(pow(castSpellProps->caster_x - castSpellProps->target_x, 2)
+					+ pow(castSpellProps->caster_y - castSpellProps->target_y, 2));
+				spellDistance += 4.0; // add a little distance
+				real_t startZ = -16.0;
+				missileEntity->vel_z = -(startZ - 7.5) / (spellDistance / missile_speed);
+				missileEntity->actmagicIsVertical = MAGIC_ISVERTICAL_XYZ;
+				missileEntity->z = startZ;
+				missileEntity->pitch = atan2(missileEntity->vel_z, missile_speed);
+
+				if ( delayMove > 0 )
+				{
+					missileEntity->flags[INVISIBLE] = true;
+					missileEntity->flags[UPDATENEEDED] = false;
+					missileEntity->actmagicDelayMove = delayMove;
+					missileEntity->actmagicVelXStore = missileEntity->vel_x;
+					missileEntity->actmagicVelYStore = missileEntity->vel_y;
+					missileEntity->actmagicVelZStore = missileEntity->vel_z;
+					missileEntity->vel_x = 0.0;
+					missileEntity->vel_y = 0.0;
+					missileEntity->vel_z = 0.0;
+				}
+			}
+			else if ( spell->ID == SPELL_METEOR_SHOWER && castSpellProps )
+			{
+				missile_speed = 3.0;
+				real_t yaw = missileEntity->yaw;
+				if ( innerElement && !strcmp(innerElement->element_internal_name, "spell_element_flames") )
+				{
+					int spread = 5;
+					missile_speed = 3.0 + ((spread - (local_rng.rand() % (spread * 2 + 1))) / 5.0);
+					yaw += ((spread - (local_rng.rand() % (spread * 2 + 1))) / 5.0) * PI / 64;
+					missileEntity->actmagicNoHitMessage = 1;
+				}
+
+				int delayMove = 0;
+				delayMove += (TICKS_PER_SECOND) * (castSpellProps->elementIndex / 2);
+				if ( castSpellProps->elementIndex % 2 == 1 )
+				{
+					delayMove += 30;
 				}
 				missileEntity->vel_x = cos(yaw) * (missile_speed);
 				missileEntity->vel_y = sin(yaw) * (missile_speed);

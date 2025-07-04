@@ -258,6 +258,10 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 				{
 					damage = 50;
 				}
+				if ( my->boulderShatterEarthSpell > 0 )
+				{
+					damage = my->boulderShatterEarthDamage;
+				}
 
 				int trapResist = entity->getEntityBonusTrapResist();
 				if ( trapResist != 0 )
@@ -383,10 +387,41 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 				}
 				else
 				{
-					entity->modHP(-damage);
-					if ( entity->behavior == &actPlayer && stats->HP < oldHP )
+					if ( my->boulderShatterEarthSpell > 0 )
 					{
-						Compendium_t::Events_t::eventUpdateWorld(entity->skill[2], Compendium_t::CPDM_TRAP_DAMAGE, "boulder trap", oldHP - stats->HP);
+						Entity* caster = uidToEntity(my->boulderShatterEarthSpell);
+						applyGenericMagicDamage(caster, entity, *my, SPELL_SHATTER_EARTH, damage, true);
+					}
+					else if ( BOULDER_PLAYERPUSHED >= MAXPLAYERS )
+					{
+						int spellID = SPELL_TELEKINESIS;
+						if ( (BOULDER_PLAYERPUSHED / MAXPLAYERS) == 2 )
+						{
+							spellID = SPELL_KINETIC_PUSH;
+						}
+						applyGenericMagicDamage(players[BOULDER_PLAYERPUSHED % MAXPLAYERS]->entity, 
+							entity, *my, spellID, damage, true);
+						if ( entity->behavior == &actPlayer && stats->HP < oldHP )
+						{
+							Compendium_t::Events_t::eventUpdateWorld(entity->skill[2], Compendium_t::CPDM_TRAP_DAMAGE, "boulder trap", oldHP - stats->HP);
+						}
+					}
+					else if ( BOULDER_PLAYERPUSHED >= 0 )
+					{
+						applyGenericMagicDamage(players[BOULDER_PLAYERPUSHED]->entity,
+							entity, *my, SPELL_NONE, damage, true);
+						if ( entity->behavior == &actPlayer && stats->HP < oldHP )
+						{
+							Compendium_t::Events_t::eventUpdateWorld(entity->skill[2], Compendium_t::CPDM_TRAP_DAMAGE, "boulder trap", oldHP - stats->HP);
+						}
+					}
+					else
+					{
+						entity->modHP(-damage);
+						if ( entity->behavior == &actPlayer && stats->HP < oldHP )
+						{
+							Compendium_t::Events_t::eventUpdateWorld(entity->skill[2], Compendium_t::CPDM_TRAP_DAMAGE, "boulder trap", oldHP - stats->HP);
+						}
 					}
 					entity->setObituary(Language::get(1505));
 					stats->killer = KilledBy::BOULDER;
@@ -402,9 +437,9 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 							entity->playerAutomatonDeathCounter = TICKS_PER_SECOND * 5; // set the death timer to immediately pop for players.
 						}
 						steamAchievementClient(entity->skill[2], "BARONY_ACH_THROW_ME_THE_WHIP");
-						if ( BOULDER_PLAYERPUSHED >= 0 && entity->skill[2] != BOULDER_PLAYERPUSHED )
+						if ( BOULDER_PLAYERPUSHED >= 0 && entity->skill[2] != (BOULDER_PLAYERPUSHED % MAXPLAYERS) )
 						{
-							steamAchievementClient(BOULDER_PLAYERPUSHED, "BARONY_ACH_MOVED_ITSELF");
+							steamAchievementClient(BOULDER_PLAYERPUSHED % MAXPLAYERS, "BARONY_ACH_MOVED_ITSELF");
 						}
 
 						if ( my->sprite == BOULDER_LAVA_SPRITE )
@@ -420,7 +455,7 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 				}
 				if ( BOULDER_PLAYERPUSHED >= 0 && oldHP > 0 && stats->HP <= 0 )
 				{
-					Compendium_t::Events_t::eventUpdateWorld(BOULDER_PLAYERPUSHED, Compendium_t::CPDM_COMBAT_MASONRY_BOULDERS, "masons guild", 1);
+					Compendium_t::Events_t::eventUpdateWorld(BOULDER_PLAYERPUSHED % MAXPLAYERS, Compendium_t::CPDM_COMBAT_MASONRY_BOULDERS, "masons guild", 1);
 				}
 
 				if ( !lifeSaving )
@@ -490,6 +525,15 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 					if ( my->sprite == BOULDER_LAVA_SPRITE || my->sprite == BOULDER_ARCANE_SPRITE )
 					{
 						i = 0;
+					}
+					if ( my->boulderShatterEarthSpell > 0 )
+					{
+						i = 0;
+						createParticleRock(entity, 78);
+						if ( multiplayer == SERVER )
+						{
+							serverSpawnMiscParticles(entity, PARTICLE_EFFECT_ABILITY_ROCK, 78);
+						}
 					}
 					int c;
 					for ( c = 0; c < i; c++ )
@@ -609,6 +653,20 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 		{
 			if ( ignoreInsideEntity || entityInsideEntity( my, entity ) )
 			{
+				if ( my->boulderShatterEarthSpell > 0 )
+				{
+					createParticleRock(entity, 78);
+					if ( multiplayer == SERVER )
+					{
+						serverSpawnMiscParticles(entity, PARTICLE_EFFECT_ABILITY_ROCK, 78);
+					}
+
+					// destroy the boulder
+					playSoundEntity(my, 67, 128);
+					list_RemoveNode(my->mynode);
+					return 1;
+				}
+
 				// stop the boulder
 				BOULDER_STOPPED = 1;
 				my->vel_x = 0.0; // TODOR: Anywhere this is could possible be changed to be a static 'if( BOULDER_ROLLING == 0 ) { vel = 0 }' instead of duplicating code everywhere
@@ -745,9 +803,12 @@ void actBoulder(Entity* my)
 	}
 
 	real_t boulderModifier = 1.0;
-	if ( gameModeManager.currentSession.challengeRun.isActive(GameModeManager_t::CurrentSession_t::ChallengeRun_t::CHEVENT_STRONG_TRAPS) )
+	if ( my->boulderShatterEarthSpell == 0 )
 	{
-		boulderModifier = 2.0;
+		if ( gameModeManager.currentSession.challengeRun.isActive(GameModeManager_t::CurrentSession_t::ChallengeRun_t::CHEVENT_STRONG_TRAPS) )
+		{
+			boulderModifier = 2.0;
+		}
 	}
 
 	// gravity
@@ -759,6 +820,14 @@ void actBoulder(Entity* my)
 			BOULDER_NOGROUND = true;
 		}
 	}
+	if ( my->boulderShatterEarthSpell > 0 )
+	{
+		if ( my->z >= 0 && fabs(my->vel_z) > 1 && fabs(my->vel_z) < 2 )
+		{
+			BOULDER_NOGROUND = true; // 2nd bounce
+		}
+	}
+
 	if ( my->z < 0 || BOULDER_NOGROUND )
 	{
 		my->vel_z = std::min<real_t>(my->vel_z + .1, 3.0);
@@ -774,9 +843,24 @@ void actBoulder(Entity* my)
 			}
 			return;
 		}
-		if ( !BOULDER_NOGROUND )
+
+		if ( !noground && my->boulderShatterEarthSpell > 0 && my->z >= 4.0 )
 		{
-			if ( my->z >= -8 && fabs(my->vel_z) > 2 )
+			createParticleRock(my, 78);
+			if ( multiplayer == SERVER )
+			{
+				serverSpawnMiscParticles(my, PARTICLE_EFFECT_ABILITY_ROCK, 78);
+			}
+
+			// destroy the boulder
+			playSoundEntity(my, 67, 128);
+			list_RemoveNode(my->mynode);
+			return;
+		}
+
+		//if ( !BOULDER_NOGROUND ) -- make it so falling boulders over pits does damage
+		{
+			if ( my->z >= -8 && my->z < 0.0 && fabs(my->vel_z) > 2 )
 			{
 				std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 2);
 				for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
@@ -1215,6 +1299,14 @@ void actBoulder(Entity* my)
 										break;
 								}
 								BOULDER_PLAYERPUSHED = i;
+								if ( playerTelekinesis == i )
+								{
+									BOULDER_PLAYERPUSHED = i + MAXPLAYERS;
+								}
+								else if ( playerKineticPush == i )
+								{
+									BOULDER_PLAYERPUSHED = i + 2 * MAXPLAYERS;
+								}
 							}
 						}
 					}

@@ -597,7 +597,7 @@ void magicOnEntityHit(Entity* parent, Entity* particle, Entity* hitentity, Stat*
 {
 	if ( !hitentity  ) { return; }
 
- 	if ( hitentity->behavior == &actPlayer )
+ 	if ( hitentity->behavior == &actPlayer && spellID > SPELL_NONE )
 	{
 		Compendium_t::Events_t::eventUpdateCodex(hitentity->skill[2], Compendium_t::CPDM_RES_SPELLS_HIT, "res", 1);
 

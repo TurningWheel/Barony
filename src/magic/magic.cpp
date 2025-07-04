@@ -2560,7 +2560,7 @@ bool spellEffectTeleportPull(Entity* my, spellElement_t& element, Entity* parent
 				locationTimer->x = tx * 16.0 + 8;
 				locationTimer->y = ty * 16.0 + 8;
 				locationTimer->z = 0;
-				locationTimer->particleTimerCountdownAction = PARTICLE_EFFECT_TELEPORT_PULL_TARGET_LOCATION;
+				locationTimer->particleTimerCountdownAction = PARTICLE_TIMER_TELEPORT_PULL_TARGET_LOCATION;
 				locationTimer->particleTimerCountdownSprite = 593;
 				locationTimer->particleTimerTarget = static_cast<Sint32>(target->getUID()); // get the target to teleport around.
 				locationTimer->particleTimerEndAction = PARTICLE_EFFECT_TELEPORT_PULL; // teleport behavior of timer.
@@ -3391,7 +3391,8 @@ bool Entity::mistFormDodge(bool checkEffectActiveOnly)
 	return false;
 }
 
-bool applyGenericMagicDamage(Entity* caster, Entity* hitentity, Entity& damageSourceProjectile, int spellID, int damage, bool alertMonsters)
+bool applyGenericMagicDamage(Entity* caster, Entity* hitentity, Entity& damageSourceProjectile, int spellID, 
+	int damage, bool alertMonsters, bool monsterCollisionOnly)
 {
 	if ( !hitentity )
 	{
@@ -3404,6 +3405,28 @@ bool applyGenericMagicDamage(Entity* caster, Entity* hitentity, Entity& damageSo
 	real_t damageMultiplier = 1.0;
 	magicSetResistance(hitentity, caster, resistance, damageMultiplier, dmgGib, trapResist);
 	Stat* targetStats = hitentity->getStats();
+
+	if ( damageSourceProjectile.behavior == &actBoulder )
+	{
+		// pure dmg
+		dmgGib = DMG_STRONGEST;
+		damageMultiplier = 1.0;
+		resistance = 0;
+		trapResist = 0;
+	}
+
+	if ( monsterCollisionOnly )
+	{
+		if ( !targetStats )
+		{
+			return false;
+		}
+		if ( hitentity->isInertMimic() )
+		{
+			return false;
+		}
+	}
+
 	if ( hitentity->behavior == &actChest || hitentity->isInertMimic() )
 	{
 		damage *= damageMultiplier;
@@ -3414,7 +3437,7 @@ bool applyGenericMagicDamage(Entity* caster, Entity* hitentity, Entity& damageSo
 	else if ( (hitentity->behavior == &actMonster || hitentity->behavior == &actPlayer) && targetStats )
 	{
 		bool alertTarget = false;
-		if ( alertMonsters )
+		if ( alertMonsters && caster )
 		{
 			bool alertTarget = hitentity->monsterAlertBeforeHit(caster);
 
@@ -3469,7 +3492,18 @@ bool applyGenericMagicDamage(Entity* caster, Entity* hitentity, Entity& damageSo
 		}
 		if ( oldHP > 0 && targetStats->HP <= 0 && caster )
 		{
-			caster->awardXP(hitentity, true, true);
+			bool xp = true;
+			if ( damageSourceProjectile.behavior == &actBoulder )
+			{
+				if ( spellID == SPELL_NONE )
+				{
+					xp = false;
+				}
+			}
+			if ( xp )
+			{
+				caster->awardXP(hitentity, true, true);
+			}
 			spawnBloodVialOnMonsterDeath(hitentity, targetStats, caster);
 		}
 		return true;
@@ -3544,4 +3578,29 @@ Entity* spellEffectDemesneDoor(Entity& caster, Entity& target)
 	door->yaw = target.yaw;
 	door->behavior = &actParticleDemesneDoor;
 	return door;
+}
+
+int getSpellDamageFromID(int spellID, Entity* parent)
+{
+	int damage = 0;
+	spellElement_t* element = nullptr;
+	if ( auto spell = getSpellFromID(spellID) )
+	{
+		if ( spell->elements.first )
+		{
+			if ( element = (spellElement_t*)spell->elements.first->element )
+			{
+				if ( element->elements.first && element->elements.first->element )
+				{
+					element = (spellElement_t*)spell->elements.first->element;
+				}
+			}
+		}
+	}
+	if ( element )
+	{
+		damage = element->damage;
+		damage += damage * (getBonusFromCasterOfSpellElement(parent, parent ? parent->getStats() : nullptr, element, spellID));
+	}
+	return damage;
 }

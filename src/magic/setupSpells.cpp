@@ -1542,8 +1542,8 @@ void setupSpells()   ///TODO: Verify this function.
 		"spell_element_flames");
 
 	spellElementConstructor(SPELL_METEOR,
-		50,		// mana
-		50,		// base mana
+		1,		// mana
+		1,		// base mana
 		1,		// overload
 		5,		// damage
 		0,		// duration
@@ -1555,8 +1555,24 @@ void setupSpells()   ///TODO: Verify this function.
 		// elements
 		{ SPELL_ELEMENT_PROPULSION_MISSILE, SPELL_METEOR, SPELL_ELEMENT_METEOR_FLAMES, SPELL_ELEMENT_METEOR_FLAMES, SPELL_ELEMENT_METEOR_FLAMES }
 	);
-	spell->hide_from_ui = true;
-	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TARGET;
+	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH_FLOOR_TILE;
+	spell->distance = 64.0;
+
+	spellElementConstructor(SPELL_METEOR_SHOWER,
+		1,		// mana
+		1,		// base mana
+		1,		// overload
+		10,		// damage
+		0,		// duration
+		"spell_element_fireball");
+	spell = spellConstructor(
+		SPELL_METEOR_SHOWER,										// ID
+		100,												// difficulty
+		"spell_meteor_shower",										// internal name
+		// elements
+		{ SPELL_ELEMENT_PROPULSION_MISSILE, SPELL_ELEMENT_METEOR_FLAMES, SPELL_METEOR, SPELL_ELEMENT_METEOR_FLAMES, SPELL_METEOR, SPELL_ELEMENT_METEOR_FLAMES, SPELL_METEOR_SHOWER }
+	);
+	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH_FLOOR_TILE;
 	spell->distance = 64.0;
 
 	spellElementConstructor(SPELL_ELEMENT_SPRITE_FLAMES,
@@ -1581,24 +1597,24 @@ void setupSpells()   ///TODO: Verify this function.
 		0,		// damage
 		50,	// duration
 		"spell_element_propulsion_floor_tile");
-	spellElementConstructor(SPELL_ICE_WAVE,
-		5,		// mana
-		5,		// base mana
-		1,		// overload
-		0,		// damage
-		50,	// duration
-		"spell_element_ice_wave");
+	//spellElementConstructor(SPELL_ICE_WAVE,
+	//	5,		// mana
+	//	5,		// base mana
+	//	1,		// overload
+	//	0,		// damage
+	//	50,	// duration
+	//	"spell_element_ice_wave");
 
-	spell = spellConstructor(
-		SPELL_ICE_WAVE,										// ID
-		100,												// difficulty
-		"spell_ice_wave",										// internal name
-		// elements
-		{ SPELL_ELEMENT_PROPULSION_FLOOR_TILE, SPELL_ICE_WAVE, SPELL_ICE_WAVE, SPELL_ICE_WAVE, SPELL_ICE_WAVE, SPELL_ICE_WAVE, SPELL_ICE_WAVE, SPELL_ICE_WAVE, SPELL_ICE_WAVE, SPELL_ICE_WAVE }
-	);
-	spell->hide_from_ui = true;
-	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TARGET;
-	spell->distance = 16.0;
+	//spell = spellConstructor(
+	//	SPELL_ICE_WAVE,										// ID
+	//	100,												// difficulty
+	//	"spell_ice_wave",										// internal name
+	//	// elements
+	//	{ SPELL_ELEMENT_PROPULSION_FLOOR_TILE, SPELL_ICE_WAVE, SPELL_ICE_WAVE, SPELL_ICE_WAVE, SPELL_ICE_WAVE, SPELL_ICE_WAVE, SPELL_ICE_WAVE, SPELL_ICE_WAVE, SPELL_ICE_WAVE, SPELL_ICE_WAVE }
+	//);
+	//spell->hide_from_ui = true;
+	//spell->rangefinder = SpellRangefinderType::RANGEFINDER_TARGET;
+	//spell->distance = 16.0;
 
 	spell = createSimpleSpell(
 		SPELL_CONJURE_FOOD,
@@ -2765,6 +2781,184 @@ void setupSpells()   ///TODO: Verify this function.
 		0, // damage
 		1, // duration
 		"spell_adorcise_instrument");
+
+	spell = createSimpleSpell(
+		SPELL_CRITICAL_SPELL,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_critical_spell");
+
+	spell = createSimpleSpell(
+		SPELL_MAGIC_WELL,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_magic_well");
+
+	spell = createSimpleSpell(
+		SPELL_FLAME_CLOAK,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_flame_cloak");
+
+	spell = createSimpleSpell(
+		SPELL_FLAME_SHIELD,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_flame_shield");
+
+	spell = createSimpleSpell(
+		SPELL_ABSORB_MAGIC,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_absorb_magic");
+
+	spell = createSimpleSpell(
+		SPELL_LIGHTNING_BOLT,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		20, // damage
+		1, // duration
+		"spell_lightning_bolt");
+	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH_FLOOR_TILE;
+	spell->distance = 64.0;
+
+	spell = createSimpleSpell(
+		SPELL_DISRUPT_EARTH,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		5, // damage
+		1, // duration
+		"spell_disrupt_earth");
+	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH_FLOOR_TILE;
+	spell->distance = 64.0;
+
+	spell = createSimpleSpell(
+		SPELL_EARTH_SPINES,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_earth_spines");
+	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH_FLOOR_TILE;
+	spell->distance = 64.0;
+
+	spell = createSimpleSpell(
+		SPELL_FIRE_WALL,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		5, // damage
+		1, // duration
+		"spell_fire_wall");
+	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH_FLOOR_TILE;
+	spell->distance = 64.0;
+
+	spell = createSimpleSpell(
+		SPELL_ICE_WAVE,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		5, // damage
+		1, // duration
+		"spell_ice_wave");
+	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH_FLOOR_TILE;
+	spell->distance = 64.0;
+
+	spell = createSimpleSpell(
+		SPELL_SLAM,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		5, // damage
+		1, // duration
+		"spell_slam");
+	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH_FLOOR_TILE;
+	spell->distance = 64.0;
+
+	spell = createSimpleSpell(
+		SPELL_KINETIC_FIELD,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		5, // damage
+		1, // duration
+		"spell_kinetic_field");
+	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH_FLOOR_TILE;
+	spell->distance = 64.0;
+
+	spell = createSimpleSpell(
+		SPELL_CHRONOMIC_FIELD,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		5, // damage
+		1, // duration
+		"spell_chronomic_field");
+	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH_FLOOR_TILE;
+	spell->distance = 64.0;
+
+	spell = createSimpleSpell(
+		SPELL_ETERNALS_GAZE,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		12, // damage
+		1, // duration
+		"spell_eternals_gaze");
+	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH_FLOOR_TILE;
+	spell->distance = 64.0;
+
+	spell = createSimpleSpell(
+		SPELL_SHATTER_EARTH,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		20, // damage
+		1, // duration
+		"spell_shatter_earth");
+	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH_FLOOR_TILE;
+	spell->distance = 64.0;
+
+	//static const int SPELL_LIGHTNING_NEXUS = 182;
+	//static const int SPELL_LIFT = 184;
+	//static const int SPELL_SLAM = 185;
+	//static const int SPELL_IGNITE = 186;
+	//static const int SPELL_SHATTER_OBJECTS = 187;
+	//static const int SPELL_KINETIC_FIELD = 188;
+	//static const int SPELL_ICE_BLOCK = 189;
 }
 
 spell_t* createSimpleSpell(int spellID, int difficulty, int mana, int base_mana, int overload_mult, int damage, 
