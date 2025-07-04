@@ -121,6 +121,8 @@ static const int EFF_SPIN = 96;
 static const int EFF_CRITICAL_SPELL = 97;
 static const int EFF_MAGIC_WELL = 98;
 static const int EFF_STATIC = 99;
+static const int EFF_ABSORB_MAGIC = 100;
+static const int EFF_FLAME_CLOAK = 101;
 static const int NUMEFFECTS = 128;
 
 // stats

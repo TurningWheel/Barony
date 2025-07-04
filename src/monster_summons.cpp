@@ -334,7 +334,7 @@ void adorcisedWeaponDie(Entity* my)
 void flameElementalDie(Entity* my)
 {
 	Stat* myStats = my->getStats();
-	createSpellExplosionArea(SPELL_FIREBALL, myStats ? uidToEntity(myStats->leader_uid) : nullptr, my->x, my->y, 0.0, 16.0);
+	createSpellExplosionArea(SPELL_FIREBALL, myStats ? uidToEntity(myStats->leader_uid) : nullptr, my->x, my->y, 0.0, 16.0, 0, my);
 
 	my->removeMonsterDeathNodes();
 	spawnPoof(my->x, my->y, my->z, 1.0, true);

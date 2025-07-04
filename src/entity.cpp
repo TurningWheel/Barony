@@ -2871,6 +2871,14 @@ void Entity::drainMP(int amount, bool notifyOverexpend)
 			tempStats->killer = KilledBy::FAILED_INVOCATION;
 		}
 	}
+
+	if ( (oldMP - entitystats->MP) > 0 )
+	{
+		if ( entitystats->getEffectActive(EFF_MAGIC_WELL) )
+		{
+			entitystats->setEffectActive(EFF_MAGIC_WELL, std::min((Uint8)101, (Uint8)(entitystats->getEffectActive(EFF_MAGIC_WELL) + 1)));
+		}
+	}
 }
 
 /*-------------------------------------------------------------------------------
@@ -5298,6 +5306,27 @@ void Entity::handleEffects(Stat* myStats)
 	{
 		this->char_fire--; // Decrease the fire counter
 		
+		if ( myStats->type == SKELETON )
+		{
+			this->char_fire = 0;
+		}
+		if ( myStats->type == AUTOMATON )
+		{
+			this->char_fire = 0;
+		}
+		if ( myStats->breastplate && myStats->breastplate->type == MACHINIST_APRON )
+		{
+			this->char_fire = 0;
+		}
+		if ( myStats->amulet && myStats->amulet->type == AMULET_BURNINGRESIST )
+		{
+			this->char_fire = 0;
+		}
+		if ( myStats->getEffectActive(EFF_FLAME_CLOAK) )
+		{
+			this->char_fire = 0;
+		}
+
 		// Check to see if time has run out
 		if ( this->char_fire <= 0 )
 		{
@@ -10632,7 +10661,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 									}
 
 									// If a Player was hit, and they are now on fire, tell them what set them on fire
-									if ( playerhit > 0 && hit.entity->flags[BURNING] )
+									if ( playerhit >= 0 && hit.entity->flags[BURNING] )
 									{
 										messagePlayer(playerhit, MESSAGE_COMBAT, Language::get(683)); // "Dyrnwyn sets you on fire!"
 									}
@@ -12395,6 +12424,32 @@ void Entity::attack(int pose, int charge, Entity* target)
 								DamageGib::DMG_DEFAULT);
 						}
 					}
+
+					if ( hitstats->getEffectActive(EFF_FLAME_CLOAK) )
+					{
+						if ( this->flags[BURNABLE] )
+						{
+							bool wasBurning = this->flags[BURNING];
+							this->SetEntityOnFire();
+							if ( !wasBurning && this->flags[BURNING] )
+							{
+								// 6 ticks maximum burning.
+								this->char_fire = std::min(this->char_fire, static_cast<int>(TICKS_TO_PROCESS_FIRE * (6)));
+								myStats->burningInflictedBy = static_cast<Sint32>(hit.entity->getUID());
+								// If a Player was hit, and they are now on fire, tell them what set them on fire
+								if ( player >= 0 && this->flags[BURNING] )
+								{
+									messagePlayer(player, MESSAGE_COMBAT, Language::get(6734));
+								}
+								if ( playerhit >= 0 && this->flags[BURNING] )
+								{
+									messagePlayerMonsterEvent(playerhit, makeColorRGB(0, 255, 0), *myStats,
+										Language::get(6732), Language::get(6733), MSG_COMBAT);
+								}
+							}
+						}
+					}
+
 					if ( hitstats->type == INCUBUS 
 						&& !strncmp(hitstats->name, "inner demon", strlen("inner demon")) )
 					{
@@ -18731,6 +18786,13 @@ bool Entity::setEffect(int effect, std::variant<bool, Uint8> value, int duration
 				{
 					return false;
 				}
+				if ( myStats->type == MONSTER_ADORCISED_WEAPON )
+				{
+					if ( myStats->getEffectActive(EFF_ROOTED) && myStats->EFFECTS_TIMERS[EFF_ROOTED] < 0 )
+					{
+						return false;
+					}
+				}
 				break;
 			case EFF_FEAR:
 				if ( myStats->type == LICH || myStats->type == DEVIL 
@@ -18843,9 +18905,12 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool
 	bool hadOldTarget = (uidToEntity(monsterTarget) != nullptr);
 	Sint32 oldMonsterState = monsterState;
 
-	if ( target.getRace() == GYROBOT || target.isInertMimic() || target.isUntargetableBat() )
+	if ( target.behavior == &actMonster || target.behavior == &actPlayer )
 	{
-		return;
+		if ( !target.monsterIsTargetable() )
+		{
+			return;
+		}
 	}
 	else if ( myStats->type == GYROBOT )
 	{
@@ -21620,6 +21685,10 @@ void Entity::SetEntityOnFire(Entity* sourceOfFire)
 					return;
 				}
 				if ( myStats->amulet && myStats->amulet->type == AMULET_BURNINGRESIST )
+				{
+					return;
+				}
+				if ( myStats->getEffectActive(EFF_FLAME_CLOAK) )
 				{
 					return;
 				}

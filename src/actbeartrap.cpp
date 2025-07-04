@@ -133,7 +133,7 @@ void actBeartrap(Entity* my)
 				{
 					continue;
 				}
-				if ( stat->type == GYROBOT || entity->isUntargetableBat() )
+				if ( !entity->monsterIsTargetable() )
 				{
 					continue;
 				}
@@ -1005,7 +1005,7 @@ void actBomb(Entity* my)
 				{
 					continue;
 				}
-				if ( stat->type == GYROBOT || entity->isUntargetableBat() )
+				if ( !entity->monsterIsTargetable() )
 				{
 					continue;
 				}

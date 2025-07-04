@@ -1025,9 +1025,11 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 			entityDodgeChance = false;
 			if ( entity->flags[PASSABLE] )
 			{
-				if ( my->behavior == &actBoulder && (entity->behavior == &actMonster && entity->sprite == 886) )
+				if ( my->behavior == &actBoulder && (entity->behavior == &actMonster 
+					&& (entity->sprite == 886
+						|| entity->sprite == 1797)) )
 				{
-					// 886 is gyrobot, as they are passable, force collision here.
+					// 886/1797 is gyrobot/spirit weapon, as they are passable, force collision here.
 				}
 				else if ( (entity->sprite == 1478 || entity->sprite == 1786)
 					&& (projectileAttack 
@@ -1331,7 +1333,7 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 								// If the Entity is now on fire, tell them
 								if ( hit.entity->flags[BURNING] && !previouslyOnFire )
 								{
-									messagePlayer(hit.entity->skill[2], MESSAGE_STATUS, Language::get(590)); // "You suddenly catch fire!"
+									messagePlayer(hit.entity->isEntityPlayer(), MESSAGE_STATUS, Language::get(590)); // "You suddenly catch fire!"
 								}
 							}
 						}
@@ -1351,15 +1353,15 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 							}
 							if ( !dyrnwyn )
 							{
-								bool previouslyOnFire = hit.entity->flags[BURNING];
+								bool previouslyOnFire = my->flags[BURNING];
 
 								// Attempt to set the Entity on fire
-								hit.entity->SetEntityOnFire();
+								my->SetEntityOnFire();
 
 								// If the Entity is now on fire, tell them
-								if ( hit.entity->flags[BURNING] && !previouslyOnFire )
+								if ( my->flags[BURNING] && !previouslyOnFire )
 								{
-									messagePlayer(hit.entity->skill[2], MESSAGE_STATUS, Language::get(590)); // "You suddenly catch fire!"
+									messagePlayer(my->isEntityPlayer(), MESSAGE_STATUS, Language::get(590)); // "You suddenly catch fire!"
 								}
 							}
 						}

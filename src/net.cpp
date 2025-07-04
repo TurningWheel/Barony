@@ -3284,7 +3284,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 			case PARTICLE_EFFECT_TELEPORT_PULL_TARGET_LOCATION:
 			{
 				Entity* spellTimer = createParticleTimer(nullptr, 40, 593);
-				spellTimer->particleTimerCountdownAction = PARTICLE_EFFECT_TELEPORT_PULL_TARGET_LOCATION;
+				spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_TELEPORT_PULL_TARGET_LOCATION;
 				spellTimer->particleTimerCountdownSprite = 593;
 				spellTimer->x = particle_x * 16.0 + 8;
 				spellTimer->y = particle_y * 16.0 + 8;
@@ -3342,6 +3342,12 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 				fx->yaw = dir / 256.0;
 				fx->actmagicOrbitDist = 0;
 				fx->actmagicNoLight = 0;
+				break;
+			}
+			case PARTICLE_EFFECT_AREA_EFFECT:
+			{
+				int duration = SDLNet_Read32(&net_packet->data[13]);
+				createSpellExplosionArea(sprite, nullptr, particle_x, particle_y, particle_z, duration, 0, nullptr);
 				break;
 			}
 			default:
@@ -5477,6 +5483,17 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 			}
 		}
 	}},
+
+	{ 'KINE', []() {
+	if ( players[clientnum] && players[clientnum]->entity && stats[clientnum] )
+	{
+		real_t vel = sqrt(pow(players[clientnum]->entity->vel_y, 2) + pow(players[clientnum]->entity->vel_x, 2));
+		players[clientnum]->entity->monsterKnockbackVelocity = std::min(2.25, std::max(1.0, vel));
+
+		real_t dir = (SDLNet_Read32(&net_packet->data[4]) / 256.0);
+		players[clientnum]->entity->monsterKnockbackTangentDir = dir;
+	}
+} },
 
 	// get item
 	{'ITEQ', [](){

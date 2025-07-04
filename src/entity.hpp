@@ -366,6 +366,9 @@ public:
 	Sint32& boulderTrapPreDelay; //skill[5]
 	Sint32& boulderTrapRocksToSpawn; //skill[7] bitwise storage. 
 
+	Sint32& boulderShatterEarthSpell = skill[16];
+	Sint32& boulderShatterEarthDamage = skill[17];
+
 	//--PUBLIC AMBIENT PARTICLE EFFECT SKILLS--
 	Sint32& particleDuration; //skill[0]
 	Sint32& particleShrink; //skill[1]
@@ -612,6 +615,7 @@ public:
 	Sint32& actParticleWaveLight = skill[7];
 	Sint32& actParticleWaveMagicType = skill[9];
 	Sint32& actParticleWaveClientReceived = skill[10];
+	Sint32& actParticleWaveVariable1 = skill[11];
 	
 	//--PUBLIC GOLD SKILLS--
 	Sint32& goldAmount; //skill[0]
@@ -1290,6 +1294,7 @@ public:
 	bool mistFormDodge(bool checkEffectActiveOnly);
 	void attractItem(Entity& itemEntity);
 	void creatureHandleLiftZ();
+	bool monsterIsTargetable(bool targetInertMimics = false) const;
 };
 
 Monster getMonsterFromPlayerRace(int playerRace); // convert playerRace into the relevant monster type

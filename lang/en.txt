@@ -1301,11 +1301,11 @@ Thank you!#
 851 A field of light surrounds you!#
 852 This scroll is blank.#
 853 Your hand feels warm for a moment.#
-854 Your weapon glows black.#
+854 Your weapon glows ominously.#
 855 Your weapon glows blue.#
 856 Your weapon violently glows blue.#
 857 Your skin feels warm for a moment.#
-858 Your %s glows black.#
+858 Your %s glows ominously.#
 859 Your %s glows blue.#
 860 Your %s violently glows blue.#
 861 You feel like someone is helping you.#
@@ -6839,7 +6839,7 @@ Host to enable the game setting.
 6577 You summon a spirited %s!#
 6578 There is no room here to summon!#
 6579 spirit weapon#
-6580 adorcised weapon#
+6580 adorcised possession#
 6581 flame elemental#
 6582 hologram#
 6583 moth#
@@ -6848,7 +6848,7 @@ Host to enable the game setting.
 6586 monster_unused_6#
 6587 monster_unused_7#
 6588 monster_unused_8#
-6589 adorcised weapons#
+6589 adorcised possessions#
 6590 flame elementals#
 6591 holograms#
 6592 moths#
@@ -6965,5 +6965,44 @@ Host to enable the game setting.
 6701 ASSIST ITEM SELECTION#
 6702 CLASS SELECTION#
 6703 RACE SELECTION#
+6704 The %s spins around!#
+6705 %s spins around!#
+6706 The %s gets dizzied!#
+6707 %s gets dizzied!#
+6708 Vandalize#
+6709 Desecrate#
+6710 Sanctify#
+6711 Bless#
+6712 Cleanse#
+6713 Select an instrument to summon:#
+6714 Select an item to vandalize:#
+6715 Select an item to desecrate:#
+6716 Select a bottle of water to bless:#
+6717 Select an item to sanctify:#
+6718 Select food to cleanse:#
+6719 This %s
+ is unable to be vandalized.#
+6720 This %s
+ is unable to be desecrated.#
+6721 This %s
+ is unable to be blessed.#
+6722 This %s
+ is unable to be sanctified.#
+6723 This %s
+ is unable to be cleansed.#
+6724 Vandalized %dG using
+ %s.#
+6725 Your %s looks more edible.#
+6726 Unable to bless further#
+6727 You are already under the effects of %s.#
+6728 You set magic well#
+6729 You set critical spell#
+6730 You set flame cloak#
+6731 You set flame shield#
+6732 Your flame cloak ignites the %s!#
+6733 Your flame cloak ignites %s!#
+6734 A flame cloak sets you on fire!#
+6735 You set absorb magic#
+6736 There is no ceiling to shatter!#
 
 6999 END#

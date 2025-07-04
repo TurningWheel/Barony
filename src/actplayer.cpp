@@ -3438,7 +3438,7 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 		else if ( map.tileHasAttribute(static_cast<int>(my->x / 16), static_cast<int>(my->y / 16), 0, map_t::TILE_ATTRIBUTE_GREASE) )
 		{
 			movementDrag = *cvar_map_tile_greasy;
-	}
+		}
 	}
 	static std::map<int, real_t> dragToSpeedFactor =
 	{
@@ -4622,12 +4622,15 @@ void actPlayer(Entity* my)
 			consoleCommand("/reloadequipmentoffsets");
 		}
 	}
+
+#ifndef NDEBUG
 	/*if ( my->ticks == 1 )
 	{
 		consoleCommand("/allspells4");
 		//consoleCommand("/maxout2");
 		//consoleCommand("/god");
 	}*/
+#endif
 
 	{
 		//float defaultVol = 0.5f;
@@ -4786,7 +4789,7 @@ void actPlayer(Entity* my)
 		//}
 	}
 
-	static ConsoleVariable<int> cvar_pbaoe("/pbaoe", 8);
+	static ConsoleVariable<int> cvar_pbaoe("/pbaoe", 10);
 	if ( keystatus[SDLK_x] && enableDebugKeys )
 	{
 		keystatus[SDLK_x] = 0;
@@ -4926,10 +4929,102 @@ void actPlayer(Entity* my)
 			Entity* spellTimer = createParticleTimer(my, 4 * TICKS_PER_SECOND, -1);
 			spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_VORTEX;
 			spellTimer->particleTimerCountdownSprite = -1;
-
+			spellTimer->particleTimerVariable2 = SPELL_LIFT;
+			spellTimer->flags[UPDATENEEDED] = true;
+			spellTimer->flags[NOUPDATE] = false;
 			spellTimer->yaw = my->yaw;
-			spellTimer->x = my->x + 40.0 * cos(my->yaw);
-			spellTimer->y = my->y + 40.0 * sin(my->yaw);
+			spellTimer->x = my->x + 16.0 * cos(my->yaw);
+			spellTimer->y = my->y + 16.0 * sin(my->yaw);
+			Sint32 val = (1 << 31);
+			val |= (Uint8)(19);
+			val |= (((Uint16)(spellTimer->particleTimerDuration) & 0xFFF) << 8);
+			val |= (Uint8)(spellTimer->particleTimerCountdownAction & 0xFF) << 20;
+			spellTimer->skill[2] = val;
+		}
+		else if ( *cvar_pbaoe == 8 )
+		{
+			color = makeColor(255, 128, 0, 255);
+			for ( int i = 0; i < 4; ++i )
+			{
+				real_t x = my->x + 16.0 * cos(my->yaw);
+				real_t y = my->y + 16.0 * sin(my->yaw);
+				if ( Entity* fx = createParticleAOEIndicator(my, x, y, -7.5, TICKS_PER_SECOND, 16) )
+				{
+					//fx->yaw = my->yaw + PI / 2;
+					if ( i == 0 )
+					{
+						spawnExplosion(fx->x, fx->y, 0.0);
+					}
+					if ( i >= 2 )
+					{
+						fx->pitch -= PI / 8;
+					}
+					else
+					{
+						fx->pitch += PI / 8;
+					}
+					static ConsoleVariable<float> cvar_pbaoe8_var1("/pbaoe8_var1", 0.25);
+					static ConsoleVariable<float> cvar_pbaoe8_var2("/pbaoe8_var2", 0.8);
+					/*if ( i >= 2 )
+					{
+						fx->yaw += PI;
+					}*/
+					if ( i % 2 == 1 )
+					{
+						fx->pitch += PI;
+					}
+					fx->z = 0.0;
+					fx->actSpriteFollowUID = 0;
+					//fx->vel_z -= *cvar_pbaoe5_velz;
+					fx->fskill[0] = *cvar_pbaoe8_var1; // rotate
+					if ( auto indicator = AOEIndicators_t::getIndicator(fx->skill[10]) )
+					{
+						//indicator->arc = PI / 2;
+						indicator->indicatorColor = color;
+						indicator->loop = false;
+						indicator->framesPerTick = 1;
+						indicator->ticksPerUpdate = 1;
+						indicator->delayTicks = 5;
+						indicator->expireAlphaRate = *cvar_pbaoe8_var2;
+					}
+				}
+			}
+		}
+		else if ( *cvar_pbaoe == 9 )
+		{
+			createParticleSpin(my);
+		}
+		else if ( *cvar_pbaoe == 10 )
+		{
+			Entity* spellTimer = createParticleTimer(my, 5 * TICKS_PER_SECOND + 10, -1);
+			spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_SHATTER_EARTH;
+			spellTimer->particleTimerCountdownSprite = -1;
+			spellTimer->flags[UPDATENEEDED] = true;
+			spellTimer->flags[NOUPDATE] = false;
+			spellTimer->yaw = my->yaw;
+			spellTimer->x = my->x + 16.0 * cos(my->yaw);
+			spellTimer->y = my->y + 16.0 * sin(my->yaw);
+			Sint32 val = (1 << 31);
+			val |= (Uint8)(19);
+			val |= (((Uint16)(spellTimer->particleTimerDuration) & 0xFFF) << 8);
+			val |= (Uint8)(spellTimer->particleTimerCountdownAction & 0xFF) << 20;
+			spellTimer->skill[2] = val;
+			}
+		else if ( *cvar_pbaoe == 11 )
+		{
+			Entity* spellTimer = createParticleTimer(my, 3 * TICKS_PER_SECOND + 10, -1);
+			spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_ETERNALS_GAZE;
+			spellTimer->particleTimerCountdownSprite = -1;
+			spellTimer->flags[UPDATENEEDED] = true;
+			spellTimer->flags[NOUPDATE] = false;
+			spellTimer->yaw = my->yaw;
+			spellTimer->x = my->x + 16.0 * cos(my->yaw);
+			spellTimer->y = my->y + 16.0 * sin(my->yaw);
+			Sint32 val = (1 << 31);
+			val |= (Uint8)(19);
+			val |= (((Uint16)(spellTimer->particleTimerDuration) & 0xFFF) << 8);
+			val |= (Uint8)(spellTimer->particleTimerCountdownAction & 0xFF) << 20;
+			spellTimer->skill[2] = val;
 		}
 		else if ( *cvar_pbaoe == 5 )
 		{
@@ -4944,10 +5039,12 @@ void actPlayer(Entity* my)
 					{
 						fx->pitch += PI;
 					}
-					fx->z = 24.0;
+					fx->z = 8.0;
 					fx->z -= (i / 2) * 0.5;
-					fx->vel_z -= 0.25;
-					fx->fskill[0] = 0.3; // rotate
+					static ConsoleVariable<float> cvar_pbaoe5_velz("/pbaoe5_velz", 0.25);
+					static ConsoleVariable<float> cvar_pbaoe5_yaw("/pbaoe5_yaw", 0.3);
+					fx->vel_z -= *cvar_pbaoe5_velz;
+					fx->fskill[0] = *cvar_pbaoe5_yaw; // rotate
 					fx->scalex = 0.5;// + (i / 2) * 0.25 / 12;
 					fx->scaley = 0.5;// + (i / 2) * 0.25 / 12;
 					if ( auto indicator = AOEIndicators_t::getIndicator(fx->skill[10]) )
@@ -4957,7 +5054,7 @@ void actPlayer(Entity* my)
 						indicator->loop = false;
 						indicator->framesPerTick = 1;
 						indicator->ticksPerUpdate = 1;
-						indicator->delayTicks = TICKS_PER_SECOND;
+						indicator->delayTicks = 0;
 					}
 				}
 			}
@@ -5045,7 +5142,7 @@ void actPlayer(Entity* my)
 		else
 		{
 			Entity* spellTimer = createParticleTimer(my, lifetime + TICKS_PER_SECOND, -1);
-			spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_ICE_WAVE;
+			spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_MAGIC_WAVE;
 			spellTimer->particleTimerCountdownSprite = *cvar_particle_sprite;
 			spellTimer->yaw = my->yaw;
 			spellTimer->x = my->x + dist * cos(my->yaw);
@@ -5065,7 +5162,7 @@ void actPlayer(Entity* my)
 				7 * PI / 4,
 			};
 
-			effLocations[ParticleTimerEffect_t::EffectType::EFFECT_TEST_1] =
+			effLocations[ParticleTimerEffect_t::EffectType::EFFECT_ICE_WAVE] =
 			{
 				{0.0,		0.0, 0.25, 0.75,	172},
 				{PI / 16,	0.0, 0.0,	1.0,	172},
@@ -5075,12 +5172,12 @@ void actPlayer(Entity* my)
 				{-PI / 16,	0.0, 0.0,	1.25,	0}
 			};
 
-			effLocations[ParticleTimerEffect_t::EffectType::EFFECT_TEST_4].clear();
+			effLocations[ParticleTimerEffect_t::EffectType::EFFECT_DISRUPT_EARTH].clear();
 			int roll = local_rng.rand() % 8;
 			for ( int i = 0; i < 16; ++i )
 			{
-				effLocations[ParticleTimerEffect_t::EffectType::EFFECT_TEST_4].push_back(ParticleTimerEffect_t::EffectLocations_t());
-				auto& data = effLocations[ParticleTimerEffect_t::EffectType::EFFECT_TEST_4].back();
+				effLocations[ParticleTimerEffect_t::EffectType::EFFECT_DISRUPT_EARTH].push_back(ParticleTimerEffect_t::EffectLocations_t());
+				auto& data = effLocations[ParticleTimerEffect_t::EffectType::EFFECT_DISRUPT_EARTH].back();
 				if ( i == 0 )
 				{
 					data.sfx = 151;
@@ -5127,6 +5224,7 @@ void actPlayer(Entity* my)
 					wave->ditheringOverride = 6;
 					wave->scalex = scale;
 					wave->scalez = scale;
+					wave->parent = spellTimer->getUID();
 				}
 				else if ( *c4 == 2 )
 				{
@@ -5135,6 +5233,16 @@ void actPlayer(Entity* my)
 					wave->skill[1] = 12; // frames
 					wave->skill[5] = *c2; // frame time
 					wave->ditheringOverride = 6;
+					wave->parent = spellTimer->getUID();
+				}
+				else if ( *c4 == 9 )
+				{
+					Entity* wave = createParticleWave(ParticleTimerEffect_t::EFFECT_KINETIC_FIELD,
+						1857, my->x + 16.0 * cos(my->yaw), my->y + 16.0 * sin(my->yaw), 5.25, PI / 2 + my->yaw, TICKS_PER_SECOND * 10, false);
+					wave->skill[1] = 8; // frames
+					wave->skill[5] = *c2; // frame time
+					wave->ditheringOverride = 6;
+					wave->parent = spellTimer->getUID();
 				}
 				else if ( *c4 == 5 )
 				{
@@ -5281,7 +5389,7 @@ void actPlayer(Entity* my)
 				effect.effectType = (ParticleTimerEffect_t::EffectType)(*cvar_particle_test);
 				effect.x = my->x + dist * (0.75 * ratio + 0.25) * cos(my->yaw);
 				effect.y = my->y + dist * (0.75 * ratio + 0.25) * sin(my->yaw);
-				if ( effect.effectType == ParticleTimerEffect_t::EffectType::EFFECT_TEST_1 )
+				if ( effect.effectType == ParticleTimerEffect_t::EffectType::EFFECT_ICE_WAVE )
 				{
 					auto& data = effLocations[effect.effectType][index];
 					effect.sfx = data.sfx;
@@ -5295,7 +5403,7 @@ void actPlayer(Entity* my)
 						break;
 					}
 				}
-				else if ( effect.effectType == ParticleTimerEffect_t::EffectType::EFFECT_TEST_4 )
+				else if ( effect.effectType == ParticleTimerEffect_t::EffectType::EFFECT_DISRUPT_EARTH )
 				{
 					auto& data = effLocations[effect.effectType][index];
 					effect.sfx = data.sfx;
@@ -7160,9 +7268,9 @@ void actPlayer(Entity* my)
 				renderSetpoint = 1.0;
 			}
 			if ( stats[PLAYER_NUM]->getEffectActive(EFF_FORCE_SHIELD) > 0 )
-				{
+			{
 				renderSetpoint += 0.1;
-		}
+			}
 			else if ( stats[PLAYER_NUM]->getEffectActive(EFF_REFLECTOR_SHIELD) > 0 )
 			{
 				renderSetpoint += 0.2;
@@ -7170,12 +7278,12 @@ void actPlayer(Entity* my)
 
 			if ( abs(my->mistformGLRender - renderSetpoint) > 0.05
 				|| (my->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10)) )
-				{
+			{
 				my->mistformGLRender = renderSetpoint;
-					serverUpdateEntityFSkill(my, 22);
-				}
+				serverUpdateEntityFSkill(my, 22);
 			}
 		}
+	}
 
 	real_t zOffset = 0;
 	bool oldInsectoidLevitate = players[PLAYER_NUM]->movement.insectoidLevitating;
@@ -7276,7 +7384,7 @@ void actPlayer(Entity* my)
 				{
 					Compendium_t::Events_t::eventUpdateWorld(PLAYER_NUM, Compendium_t::CPDM_PITS_LEVITATED, "pits", 1);
 				}
-		}
+			}
 		}
 
 		my->creatureHandleLiftZ();
@@ -8247,39 +8355,39 @@ void actPlayer(Entity* my)
 				Entity* parent = uidToEntity(selectedEntity[PLAYER_NUM]->skill[2]);
 				if ( !telekinesisTarget )
 				{
-				if ( selectedEntity[PLAYER_NUM]->behavior == &actMonster || (parent && parent->behavior == &actMonster) )
-				{
-					// see if we selected a follower to process right click menu.
-					if ( parent && parent->monsterAllyIndex == PLAYER_NUM )
+					if ( selectedEntity[PLAYER_NUM]->behavior == &actMonster || (parent && parent->behavior == &actMonster) )
 					{
-						followerMenu.followerToCommand = parent;
-						//messagePlayer(0, "limb");
-					}
-					else if ( selectedEntity[PLAYER_NUM]->monsterAllyIndex == PLAYER_NUM )
-					{
-						followerMenu.followerToCommand = selectedEntity[PLAYER_NUM];
-						//messagePlayer(0, "head");
-					}
+						// see if we selected a follower to process right click menu.
+						if ( parent && parent->monsterAllyIndex == PLAYER_NUM )
+						{
+							followerMenu.followerToCommand = parent;
+							//messagePlayer(0, "limb");
+						}
+						else if ( selectedEntity[PLAYER_NUM]->monsterAllyIndex == PLAYER_NUM )
+						{
+							followerMenu.followerToCommand = selectedEntity[PLAYER_NUM];
+							//messagePlayer(0, "head");
+						}
 
-					if ( followerMenu.followerToCommand )
-					{
-						if ( players[PLAYER_NUM] && players[PLAYER_NUM]->entity
-							&& followerMenu.followerToCommand->monsterTarget == players[PLAYER_NUM]->entity->getUID() )
+						if ( followerMenu.followerToCommand )
 						{
-							// your ally is angry at you!
-							followerMenu.followerToCommand = nullptr;
-							followerMenu.optionPrevious = -1;
-						}
-						else
-						{
-							followerMenu.recentEntity = followerMenu.followerToCommand;
-							followerMenu.initfollowerMenuGUICursor(true);
-							followerMenu.updateScrollPartySheet();
-							selectedEntity[PLAYER_NUM] = NULL;
-							Player::soundActivate();
+							if ( players[PLAYER_NUM] && players[PLAYER_NUM]->entity
+								&& followerMenu.followerToCommand->monsterTarget == players[PLAYER_NUM]->entity->getUID() )
+							{
+								// your ally is angry at you!
+								followerMenu.followerToCommand = nullptr;
+								followerMenu.optionPrevious = -1;
+							}
+							else
+							{
+								followerMenu.recentEntity = followerMenu.followerToCommand;
+								followerMenu.initfollowerMenuGUICursor(true);
+								followerMenu.updateScrollPartySheet();
+								selectedEntity[PLAYER_NUM] = NULL;
+								Player::soundActivate();
+							}
 						}
 					}
-				}
 				}
 
 				if ( selectedEntity[PLAYER_NUM] )
@@ -11300,13 +11408,13 @@ void actPlayerLimb(Entity* my)
 		else
 		{
 			if ( parent->mistformGLRender > 0.9 )
-	{
-		my->mistformGLRender = parent->mistformGLRender;
-	}
-	else
-	{
-		my->mistformGLRender = 0.0;
-	}
+			{
+				my->mistformGLRender = parent->mistformGLRender;
+			}
+			else
+			{
+				my->mistformGLRender = 0.0;
+			}
 		}
 	}
 	else

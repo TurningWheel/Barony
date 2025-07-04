@@ -9811,6 +9811,7 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 	}
 
 	int meleeDist = STRIKERANGE;
+	int strikeRange = STRIKERANGE;
 	if ( myStats->getEffectActive(EFF_ROOTED) || (shouldRetreat(*myStats) && myStats->getEffectActive(EFF_COWARDICE)) )
 	{
 		meleeDist = TOUCHRANGE - 1; // so you can't melee range-cheese
@@ -9818,6 +9819,11 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 	if ( myStats->type == BUGBEAR && monsterSpecialState == BUGBEAR_DEFENSE )
 	{
 		meleeDist = TOUCHRANGE - 1;
+	}
+	if ( myStats->weapon && myStats->weapon->type == TOOL_WHIP )
+	{
+		meleeDist = std::max(meleeDist, (int)(STRIKERANGE * 1.5));
+		strikeRange = (int)(STRIKERANGE * 1.5);
 	}
 
 	// check the range to the target, depending on ranged weapon or melee.
@@ -9950,7 +9956,7 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 			}
 			else
 			{
-				tracedist = STRIKERANGE;
+				tracedist = strikeRange;
 			}
 
 			// check again for the target in attack range. return the result into hit.entity.
@@ -13876,6 +13882,39 @@ bool Entity::isUntargetableBat(real_t* outDist) const
 		}
 	}
 	return false;
+}
+
+bool Entity::monsterIsTargetable(bool targetInertMimics) const
+{
+	if ( flags[PASSABLE] )
+	{
+		return false;
+	}
+	if ( behavior == &actPlayer )
+	{
+		return true;
+	}
+	else if ( behavior == &actMonster ) 
+	{ 
+		Monster type = getMonsterTypeFromSprite();
+		if ( type == GYROBOT )
+		{
+			return false;
+		}
+		else if ( type == BAT_SMALL && isUntargetableBat() )
+		{
+			return false;
+		}
+		else if ( type == MOTH_SMALL && getStats() && getStats()->getAttribute("fire_sprite") != "" )
+		{
+			return false;
+		}
+		else if ( type == MIMIC && !targetInertMimics && isInertMimic() )
+		{
+			return false;
+		}
+	}
+	return true;
 }
 
 void batResetIdle(Entity* my)
