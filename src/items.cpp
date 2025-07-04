@@ -5384,7 +5384,7 @@ void createCustomInventory(Stat* const stats, const int itemLimit, BaronyRNG& rn
 	}
 }
 
-node_t* itemNodeInInventory(const Stat* const myStats, Sint32 itemToFind, const Category cat)
+node_t* itemNodeInInventory(const Stat* const myStats, Sint32 itemToFind, const Category cat, bool randomSlot)
 {
 	if ( myStats == nullptr )
 	{
@@ -5393,7 +5393,7 @@ node_t* itemNodeInInventory(const Stat* const myStats, Sint32 itemToFind, const 
 
 	node_t* node = nullptr;
 	node_t* nextnode = nullptr;
-
+	std::vector<node_t*> allNodes;
 	for ( node = myStats->inventory.first; node != nullptr; node = nextnode )
 	{
 		nextnode = node->next;
@@ -5402,12 +5402,34 @@ node_t* itemNodeInInventory(const Stat* const myStats, Sint32 itemToFind, const 
 		{
 			if ( cat >= WEAPON && itemCategory(item) == cat )
 			{
-				return node;
+				if ( randomSlot )
+				{
+					allNodes.push_back(node);
+				}
+				else
+				{
+					return node;
+				}
 			}
 			else if ( itemToFind >= 0 && item->type == static_cast<ItemType>(itemToFind) )
 			{
-				return node;
+				if ( randomSlot )
+				{
+					allNodes.push_back(node);
+				}
+				else
+				{
+					return node;
+				}
 			}
+		}
+	}
+
+	if ( randomSlot )
+	{
+		if ( allNodes.size() > 0 )
+		{
+			return allNodes.at(local_rng.rand() % allNodes.size());
 		}
 	}
 

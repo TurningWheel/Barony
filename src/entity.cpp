@@ -13565,7 +13565,7 @@ Teleports the given entity to a random location on the map.
 
 -------------------------------------------------------------------------------*/
 
-bool Entity::teleportRandom()
+bool Entity::teleportRandom(int x1, int x2, int y1, int y2)
 {
 	int numlocations = 0;
 	int pickedlocation;
@@ -13583,9 +13583,26 @@ bool Entity::teleportRandom()
 		}
 	}
 
-	for ( int iy = 1; iy < map.height; ++iy )
+	if ( x1 == 0 )
 	{
-		for ( int ix = 1; ix < map.width; ++ix )
+		x1 = 1;
+	}
+	if ( x2 == 0 )
+	{
+		x2 = map.width;
+	}
+	if ( y1 == 0 )
+	{
+		y1 = 1;
+	}
+	if ( y2 == 0 )
+	{
+		y2 = map.height;
+	}
+
+	for ( int iy = y1; iy < y2; ++iy )
+	{
+		for ( int ix = x1; ix < x2; ++ix )
 		{
 			if ( !checkObstacle((ix << 4) + 8, (iy << 4) + 8, this, NULL) )
 			{
@@ -13600,9 +13617,9 @@ bool Entity::teleportRandom()
 	}
 	pickedlocation = local_rng.rand() % numlocations;
 	numlocations = 0;
-	for ( int iy = 1; iy < map.height; iy++ )
+	for ( int iy = y1; iy < y2; ++iy )
 	{
-		for ( int ix = 1; ix < map.width; ix++ )
+		for ( int ix = x1; ix < x2; ++ix )
 		{
 			if ( !checkObstacle((ix << 4) + 8, (iy << 4) + 8, this, NULL) )
 			{
@@ -14955,11 +14972,19 @@ bool Entity::checkEnemy(Entity* your)
 		}
 		return true;
 	}
-	else if ( your->behavior == &actPlayer && myStats->type == VAMPIRE && MonsterData_t::nameMatchesSpecialNPCName(*myStats, "bram kindly") )
+	else if ( your->behavior == &actPlayer && myStats->type == VAMPIRE && (myStats->getAttribute("special_npc") == "bram kindly") )
 	{
 		return true;
 	}
-	else if ( behavior == &actPlayer && yourStats->type == VAMPIRE && MonsterData_t::nameMatchesSpecialNPCName(*yourStats, "bram kindly") )
+	else if ( behavior == &actPlayer && yourStats->type == VAMPIRE && (yourStats->getAttribute("special_npc") == "bram kindly") )
+	{
+		return true;
+	}
+	else if ( your->behavior == &actPlayer && myStats->type == INCUBUS && (myStats->getAttribute("special_npc") == "johann") )
+	{
+		return true;
+	}
+	else if ( behavior == &actPlayer && yourStats->type == INCUBUS && (yourStats->getAttribute("special_npc") == "johann") )
 	{
 		return true;
 	}
@@ -15432,11 +15457,19 @@ bool Entity::checkFriend(Entity* your)
 		}
 		return false;
 	}
-	else if ( your->behavior == &actPlayer && myStats->type == VAMPIRE && MonsterData_t::nameMatchesSpecialNPCName(*myStats, "bram kindly") )
+	else if ( your->behavior == &actPlayer && myStats->type == VAMPIRE && (myStats->getAttribute("special_npc") == "bram kindly") )
 	{
 		return false;
 	}
-	else if ( behavior == &actPlayer && yourStats->type == VAMPIRE && MonsterData_t::nameMatchesSpecialNPCName(*yourStats, "bram kindly") )
+	else if ( behavior == &actPlayer && yourStats->type == VAMPIRE && (yourStats->getAttribute("special_npc") == "bram kindly") )
+	{
+		return false;
+	}
+	else if ( your->behavior == &actPlayer && myStats->type == INCUBUS && (myStats->getAttribute("special_npc") == "johann") )
+	{
+		return false;
+	}
+	else if ( behavior == &actPlayer && yourStats->type == INCUBUS && (yourStats->getAttribute("special_npc") == "johann") )
 	{
 		return false;
 	}
@@ -20647,7 +20680,7 @@ bool Entity::backupWithRangedWeapon(Stat& myStats, int dist, int hasrangedweapon
 	{
 		return false;
 	}
-	if ( myStats.type == VAMPIRE && (monsterSpecialState > 0 || MonsterData_t::nameMatchesSpecialNPCName(myStats, "bram kindly")) )
+	if ( myStats.type == VAMPIRE && (monsterSpecialState > 0 || (myStats.getAttribute("special_npc") == "bram kindly")) )
 	{
 		return false;
 	}
@@ -24139,7 +24172,8 @@ bool Entity::isBossMonster()
 			|| myStats->type == LICH_FIRE
 			|| myStats->type == LICH_ICE
 			|| myStats->type == DEVIL
-			|| (myStats->type == VAMPIRE && MonsterData_t::nameMatchesSpecialNPCName(*myStats, "bram kindly"))
+			|| (myStats->type == VAMPIRE && (myStats->getAttribute("special_npc") == "bram kindly"))
+			|| (myStats->type == INCUBUS && (myStats->getAttribute("special_npc") == "johann"))
 			|| (myStats->type == COCKATRICE && !strncmp(map.name, "Cockatrice Lair", 15))
 			)
 		{
@@ -25342,9 +25376,7 @@ bool Entity::doSilkenBowOnAttack(Entity* attacker)
 		chance -= difficulty * 30;
 
 		// special cases:
-		if ( (attackerStats->type == VAMPIRE && MonsterData_t::nameMatchesSpecialNPCName(*attackerStats, "bram kindly"))
-			|| (attackerStats->type == COCKATRICE && !strncmp(map.name, "Cockatrice Lair", 15))
-			)
+		if ( attacker->isBossMonster() )
 		{
 			chance = 0;
 		}

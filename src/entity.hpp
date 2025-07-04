@@ -859,7 +859,7 @@ public:
 	void attack(int pose, int charge, Entity* target);
 
 	bool teleport(int x, int y);
-	bool teleportRandom();
+	bool teleportRandom(int x1 = 0, int x2 = 0, int y1 = 0, int y2 = 0); // arbitrary map limits variables
 	// teleport entity to a target, within a radius dist (range in whole tile lengths)
 	bool teleportAroundEntity(Entity* target, int dist, int effectType = 0);
 	// teleport entity to fixed position with appropriate sounds, for actTeleporter.

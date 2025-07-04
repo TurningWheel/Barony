@@ -1612,6 +1612,11 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 		return false;
 	}
 
+	if ( race == INCUBUS && myStats->getAttribute("special_npc") == "johann" )
+	{
+		return false;
+	}
+
 	bool canAlly = false;
 	bool roseEvent = false;
 	if ( skillCapstoneUnlocked(monsterclicked, PRO_LEADERSHIP) )
@@ -1663,7 +1668,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 			}
 			else if ( stats[monsterclicked]->type == VAMPIRE )
 			{
-				if ( race == VAMPIRE && !MonsterData_t::nameMatchesSpecialNPCName(*myStats, "bram kindly") )
+				if ( race == VAMPIRE && !(myStats->getAttribute("special_npc") == "bram kindly") )
 				{
 					canAlly = true;
 				}
@@ -1837,7 +1842,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 					}
 					else if ( stats[monsterclicked]->type == VAMPIRE )
 					{
-						if ( race == VAMPIRE && !MonsterData_t::nameMatchesSpecialNPCName(*myStats, "bram kindly") )
+						if ( race == VAMPIRE && !(myStats->getAttribute("special_npc") == "bram kindly") )
 						{
 							canAlly = true;
 						}
@@ -6007,6 +6012,10 @@ timeToGoAgain:
 							if ( myStats->type == BUGBEAR )
 							{
 								chaseRange = 20;
+							}
+							if ( myStats->weapon && myStats->weapon->type == TOOL_WHIP )
+							{
+								chaseRange = TOUCHRANGE;
 							}
 
 							if ( monsterIsImmobileTurret(my, myStats) || myStats->getEffectActive(EFF_ROOTED) )

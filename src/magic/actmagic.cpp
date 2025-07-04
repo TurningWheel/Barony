@@ -7606,7 +7606,25 @@ void actParticleTimer(Entity* my)
 				if ( parent )
 				{
 					createParticleErupt(parent, my->particleTimerEndSprite);
-					if ( parent->teleportRandom() )
+
+					int x1 = 0;
+					int x2 = 0;
+					int y1 = 0;
+					int y2 = 0;
+					if ( Stat* stats = parent->getStats() )
+					{
+						if ( stats->type == INCUBUS && stats->getAttribute("special_npc") == "johann" )
+						{
+							if ( !strcmp(map.filename, "fraternity.lmp") )
+							{
+								x1 = 17;
+								y1 = 1;
+								x2 = 30;
+								y2 = 12;
+							}
+						}
+					}
+					if ( parent->teleportRandom(x1, x2, y1, y2) )
 					{
 						// teleport success.
 						if ( multiplayer == SERVER )
@@ -9708,18 +9726,31 @@ void actParticleSapCenter(Entity* my)
 					}
 					else if ( parent->behavior == &actMonster )
 					{
-						parent->addItemToMonsterInventory(item);
-						Stat *myStats = parent->getStats();
-						if ( myStats )
+						Stat* myStats = parent->getStats();
+						if ( myStats && myStats->type == INCUBUS && myStats->getAttribute("special_npc") == "johann" )
 						{
-							node_t* weaponNode = itemNodeInInventory(myStats, -1, WEAPON);
-							if ( weaponNode )
+							if ( dropItemMonster(item, parent, parent->getStats(), item->count) )
 							{
-								swapMonsterWeaponWithInventoryItem(parent, myStats, weaponNode, false, true);
-								if ( myStats->type == INCUBUS )
+								parent->monsterSpecialState = INCUBUS_TELEPORT_STEAL;
+								parent->monsterSpecialTimer = 100 + local_rng.rand() % MONSTER_SPECIAL_COOLDOWN_INCUBUS_TELEPORT_RANDOM;
+								item = nullptr;
+							}
+						}
+
+						if ( item )
+						{
+							parent->addItemToMonsterInventory(item);
+							if ( myStats )
+							{
+								node_t* weaponNode = itemNodeInInventory(myStats, -1, WEAPON);
+								if ( weaponNode )
 								{
-									parent->monsterSpecialState = INCUBUS_TELEPORT_STEAL;
-									parent->monsterSpecialTimer = 100 + local_rng.rand() % MONSTER_SPECIAL_COOLDOWN_INCUBUS_TELEPORT_RANDOM;
+									swapMonsterWeaponWithInventoryItem(parent, myStats, weaponNode, false, true);
+									if ( myStats->type == INCUBUS )
+									{
+										parent->monsterSpecialState = INCUBUS_TELEPORT_STEAL;
+										parent->monsterSpecialTimer = 100 + local_rng.rand() % MONSTER_SPECIAL_COOLDOWN_INCUBUS_TELEPORT_RANDOM;
+									}
 								}
 							}
 						}

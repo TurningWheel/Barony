@@ -124,20 +124,12 @@ bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, En
 	}
 
 	//Abort if invalid creature (boss, shopkeep, etc).
-	if ( hitstats->type ==  MINOTAUR 
-		|| hitstats->type == LICH 
-		|| hitstats->type == DEVIL 
-		|| hitstats->type == SHOPKEEPER 
-		|| hitstats->type == LICH_ICE 
-		|| hitstats->type == LICH_FIRE 
-		|| hitstats->type == SHADOW
+	if ( hit.entity->isBossMonster()
 		|| hitstats->type == MIMIC
 		|| hitstats->type == BAT_SMALL
 		|| hitstats->type == HOLOGRAM
 		|| hit.entity->monsterIsTinkeringCreation()
 		|| hit.entity->monsterAllySummonRank != 0
-		|| (hitstats->type == VAMPIRE && MonsterData_t::nameMatchesSpecialNPCName(*hitstats, "bram kindly"))
-		|| (hitstats->type == COCKATRICE && !strncmp(map.name, "Cockatrice Lair", 15))
 		)
 	{
 		Uint32 color = makeColorRGB(255, 0, 0);
@@ -1460,9 +1452,7 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 			/************** END CHANCE CALCULATION ***********/
 
 			// special cases:
-			if ( (hitstats->type == VAMPIRE && MonsterData_t::nameMatchesSpecialNPCName(*hitstats, "bram kindly"))
-				|| (hitstats->type == COCKATRICE && !strncmp(map.name, "Cockatrice Lair", 15))
-				)
+			if ( hit.entity->isBossMonster() && hitstats->type != SHOPKEEPER )
 			{
 				chance = 0;
 			}
@@ -1747,6 +1737,8 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 		|| targetStats->type == MINIMIMIC
 		|| targetStats->type == REVENANT_SKULL
 		|| targetStats->type == FLAME_ELEMENTAL
+		|| (targetStats->type == VAMPIRE && (targetStats->getAttribute("special_npc") == "bram kindly"))
+		|| (targetStats->type == INCUBUS && (targetStats->getAttribute("special_npc") == "johann"))
 		|| (targetStats->type == INCUBUS && !strncmp(targetStats->name, "inner demon", strlen("inner demon")))
 		|| targetStats->type == SENTRYBOT || targetStats->type == SPELLBOT || targetStats->type == GYROBOT
 		|| targetStats->type == DUMMYBOT
@@ -1775,7 +1767,17 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 	            LICH, SHOPKEEPER, DEVIL, MIMIC, CRAB, BAT_SMALL,
 	            MINOTAUR, LICH_FIRE, LICH_ICE, NOTHING,
 	            HUMAN, SENTRYBOT, SPELLBOT, GYROBOT,
-	            DUMMYBOT
+	            DUMMYBOT, REVENANT_SKULL,
+				MINIMIMIC,
+				MONSTER_ADORCISED_WEAPON,
+				FLAME_ELEMENTAL,
+				HOLOGRAM,
+				MONSTER_UNUSED_4,
+				MONSTER_UNUSED_5,
+				MONSTER_UNUSED_6,
+				MONSTER_UNUSED_7,
+				MONSTER_UNUSED_8,
+				MOTH_SMALL
 	        };
 			typesToSkip.insert(targetStats->type);
 			if ( target->monsterAllyGetPlayerLeader() )

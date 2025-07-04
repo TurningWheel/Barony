@@ -132,13 +132,21 @@ void initIncubus(Entity* my, Stat* myStats)
 				newItem(SPELLBOOK_STEAL_WEAPON, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
 				newItem(SPELLBOOK_CHARM_MONSTER, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
 
-				if ( rng.rand() % 4 == 0 ) // 1 in 4
+				if ( myStats->getAttribute("special_npc") == "johann" )
 				{
-					newItem(POTION_CONFUSION, SERVICABLE, 0, 0 + rng.rand() % 3, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
+					//newItem(POTION_CONFUSION, SERVICABLE, 0, 10 + rng.rand() % 3, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
+					//newItem(POTION_THUNDERSTORM, SERVICABLE, 0, 10 + rng.rand() % 3, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
 				}
-				else // 3 in 4
+				else
 				{
-					newItem(POTION_BOOZE, SERVICABLE, 0, 1 + rng.rand() % 3, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
+					if ( rng.rand() % 4 == 0 ) // 1 in 4
+					{
+						newItem(POTION_CONFUSION, SERVICABLE, 0, 0 + rng.rand() % 3, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
+					}
+					else // 3 in 4
+					{
+						newItem(POTION_BOOZE, SERVICABLE, 0, 1 + rng.rand() % 3, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
+					}
 				}
 
 
@@ -1550,7 +1558,14 @@ void Entity::incubusChooseWeapon(const Entity* target, double dist)
 		if ( specialRoll < (2 + bonusFromHP) ) // +5% base
 		{
 			node_t* node = nullptr;
-			node = itemNodeInInventory(myStats, -1, POTION);
+			if ( myStats->getAttribute("special_npc") == "johann" )
+			{
+				node = itemNodeInInventory(myStats, -1, POTION, true);
+			}
+			else
+			{
+				node = itemNodeInInventory(myStats, -1, POTION);
+			}
 			if ( node != nullptr )
 			{
 				swapMonsterWeaponWithInventoryItem(this, myStats, node, true, true);
