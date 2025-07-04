@@ -5994,7 +5994,7 @@ void debugMap(map_t* map)
 	configures a map to be playable from a default state
 
 -------------------------------------------------------------------------------*/
-
+std::map<int, int> generatedSpellbooks;
 void assignActions(map_t* map)
 {
 	bool itemsdonebefore = false;
@@ -9786,6 +9786,12 @@ void assignActions(map_t* map)
 	}
 
 	std::vector<Entity*> chests;
+	std::vector<Entity*> textScripts;
+	static ConsoleVariable<bool> cvar_spellbookdebug("/spellbook_debug", false);
+	if ( currentlevel == 0 )
+	{
+		generatedSpellbooks.clear();
+	}
 	for ( auto node = map->entities->first; node != nullptr; )
 	{
 		Entity* postProcessEntity = (Entity*)node->element;
@@ -9794,12 +9800,24 @@ void assignActions(map_t* map)
 		{
 			if ( postProcessEntity->behavior == &actTextSource )
 			{
-				textSourceScript.parseScriptInMapGeneration(*postProcessEntity);
+				textScripts.push_back(postProcessEntity);
 			}
 			if ( postProcessEntity->behavior == &actChest )
 			{
 				chests.push_back(postProcessEntity);
 			}
+#ifndef NDEBUG
+			if ( *cvar_spellbookdebug )
+			{
+				if ( postProcessEntity->behavior == &actItem )
+				{
+					if ( items[postProcessEntity->skill[10]].category == SPELLBOOK )
+					{
+						generatedSpellbooks[postProcessEntity->skill[10]] += 1;
+					}
+				}
+			}
+#endif
 		}
 	}
 
@@ -9939,6 +9957,56 @@ void assignActions(map_t* map)
 	{
 		monsterCurveCustomManager.generateFollowersForLeaders();
 	}
+
+	for ( auto postProcessEntity : textScripts )
+	{
+		textSourceScript.parseScriptInMapGeneration(*postProcessEntity);
+	}
+
+#ifndef NDEBUG
+	if ( *cvar_spellbookdebug )
+	{
+		for ( auto node = map->entities->first; node != nullptr; )
+		{
+			Entity* postProcessEntity = (Entity*)node->element;
+			node = node->next;
+
+			list_t* inventory = nullptr;
+			if ( postProcessEntity->behavior == &actMonster )
+			{
+				if ( Stat* myStats = postProcessEntity->getStats() )
+				{
+					inventory = &myStats->inventory;
+				}
+			}
+			else if ( postProcessEntity->behavior == &actChest )
+			{
+				if ( postProcessEntity->children.first )
+				{
+					inventory = (list_t*)postProcessEntity->children.first->element;
+				}
+			}
+
+			if ( inventory )
+			{
+				for ( auto node2 = inventory->first; node2; node2 = node2->next )
+				{
+					if ( Item* item = static_cast<Item*>(node2->element) )
+					{
+						if ( items[item->type].category == SPELLBOOK )
+						{
+							generatedSpellbooks[item->type] += 1;
+						}
+					}
+				}
+			}
+		}
+		for ( auto spellbook : generatedSpellbooks )
+		{
+			printlog("spellbook %s: %d", items[spellbook.first].getIdentifiedName(), spellbook.second);
+		}
+	}
+#endif
 
     keepInventoryGlobal = svFlags & SV_FLAG_KEEPINVENTORY;
 }
