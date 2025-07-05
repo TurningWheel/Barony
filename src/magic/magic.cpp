@@ -1312,6 +1312,7 @@ int getCharmMonsterDifficulty(Entity& my, Stat& myStats)
 	case BUGBEAR:
 	case MONSTER_ADORCISED_WEAPON:
 	case FLAME_ELEMENTAL:
+	case EARTH_ELEMENTAL:
 	case MOTH_SMALL:
 		difficulty = 2;
 		break;
@@ -1737,6 +1738,7 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 		|| targetStats->type == MINIMIMIC
 		|| targetStats->type == REVENANT_SKULL
 		|| targetStats->type == FLAME_ELEMENTAL
+		|| targetStats->type == EARTH_ELEMENTAL
 		|| (targetStats->type == VAMPIRE && (targetStats->getAttribute("special_npc") == "bram kindly"))
 		|| (targetStats->type == INCUBUS && (targetStats->getAttribute("special_npc") == "johann"))
 		|| (targetStats->type == INCUBUS && !strncmp(targetStats->name, "inner demon", strlen("inner demon")))
@@ -1772,7 +1774,7 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 				MONSTER_ADORCISED_WEAPON,
 				FLAME_ELEMENTAL,
 				HOLOGRAM,
-				MONSTER_UNUSED_4,
+				EARTH_ELEMENTAL,
 				MONSTER_UNUSED_5,
 				MONSTER_UNUSED_6,
 				MONSTER_UNUSED_7,
@@ -2739,6 +2741,7 @@ bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* paren
 				|| hitstats->type == MOTH_SMALL
 				|| hitstats->type == REVENANT_SKULL
 				|| hitstats->type == FLAME_ELEMENTAL
+				|| hitstats->type == EARTH_ELEMENTAL
 				|| (hitstats->type == INCUBUS && !strncmp(hitstats->name, "inner demon", strlen("inner demon"))) )
 			{
 				if ( parent && parent->behavior == &actPlayer )

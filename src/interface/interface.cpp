@@ -4361,6 +4361,7 @@ int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monste
 		case MINIMIMIC:
 		case MONSTER_ADORCISED_WEAPON:
 		case FLAME_ELEMENTAL:
+		case EARTH_ELEMENTAL:
 		case MOTH_SMALL:
 			creatureTier = 0;
 			break;

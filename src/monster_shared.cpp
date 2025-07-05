@@ -265,7 +265,7 @@ void Entity::initMonster(int mySprite)
 		case FLAME_ELEMENTAL:
 		case HOLOGRAM:
 		case MOTH_SMALL:
-		case MONSTER_UNUSED_4:
+		case EARTH_ELEMENTAL:
 		case MONSTER_UNUSED_5:
 		case MONSTER_UNUSED_6:
 		case MONSTER_UNUSED_7:

@@ -1606,8 +1606,8 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->GOLD = 0;
 			stats->RANDOM_GOLD = 0;
 			break;
-		case (1000 + MONSTER_UNUSED_4):
-			stats->type = MONSTER_UNUSED_4;
+		case (1000 + EARTH_ELEMENTAL):
+			stats->type = EARTH_ELEMENTAL;
 			stats->stat_appearance = local_rng.rand();
 			stats->inventory.first = NULL;
 			stats->inventory.last = NULL;

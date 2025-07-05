@@ -213,6 +213,7 @@ static const int SPELL_METEOR_SHOWER = 190;
 static const int SPELL_CHRONOMIC_FIELD = 191;
 static const int SPELL_ETERNALS_GAZE = 192;
 static const int SPELL_SHATTER_EARTH = 193;
+static const int SPELL_EARTH_ELEMENTAL = 194;
 static const int NUM_SPELLS = 200;
 
 #define SPELLELEMENT_CONFUSE_BASE_DURATION 2//In seconds.

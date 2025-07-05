@@ -1746,7 +1746,7 @@ char monsterEditorNameStrings[NUMMONSTERS][32] =
 	"flame_elemental",
 	"hologram",
 	"moth",
-	"monster_unused_4",
+	"earth_elemental",
 	"monster_unused_5",
 	"monster_unused_6",
 	"monster_unused_7",
@@ -2045,6 +2045,7 @@ int canWearEquip(Entity* entity, int category)
 				case MINIMIMIC:
 				case REVENANT_SKULL:
 				case FLAME_ELEMENTAL:
+				case EARTH_ELEMENTAL:
 				case HOLOGRAM:
 				case MOTH_SMALL:
 					equipType = 0;

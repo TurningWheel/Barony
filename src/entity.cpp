@@ -420,6 +420,9 @@ void Entity::killedByMonsterObituary(Entity* victim)
 			case MOTH_SMALL:
 				victim->setObituary(Language::get(6698));
 				break;
+			case EARTH_ELEMENTAL:
+				victim->setObituary(Language::get(6737));
+				break;
 			default:
 				victim->setObituary(Language::get(1500));
 				break;
@@ -7783,6 +7786,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 			{
 				monsterAttack = pose;
 			}
+			else if ( myStats->type == EARTH_ELEMENTAL )
+			{
+				monsterAttack = pose;
+			}
 			else if ( myStats->weapon != nullptr 
 				|| myStats->type == CRYSTALGOLEM || myStats->type == COCKATRICE
 				|| myStats->type == MIMIC )
@@ -7865,7 +7872,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 					&& myStats->type != REVENANT_SKULL
 					&& myStats->type != MONSTER_ADORCISED_WEAPON
 					&& myStats->type != MOTH_SMALL
-					&& myStats->type != FLAME_ELEMENTAL) {
+					&& myStats->type != FLAME_ELEMENTAL
+					&& myStats->type != EARTH_ELEMENTAL) {
 				    serverUpdateEntitySkill(this, 9);
 				}
 			}
@@ -14084,6 +14092,7 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 			|| srcStats->type == MONSTER_ADORCISED_WEAPON
 			|| (srcStats->type == MOTH_SMALL && srcStats->getAttribute("fire_sprite") != "")
 			|| srcStats->type == FLAME_ELEMENTAL
+			|| (srcStats->type == EARTH_ELEMENTAL && src->monsterAllyGetPlayerLeader())
 			|| srcStats->type == HOLOGRAM
 			|| src->monsterIsTinkeringCreation()) )
 	{
@@ -14272,6 +14281,7 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 								|| (follower->getStats() && follower->getStats()->type == REVENANT_SKULL)
 								|| (follower->getStats() && follower->getStats()->type == MONSTER_ADORCISED_WEAPON)
 								|| (follower->getStats() && follower->getStats()->type == MOTH_SMALL && follower->getStats()->getAttribute("fire_sprite") != "")
+								|| (follower->getStats() && follower->getStats()->type == EARTH_ELEMENTAL && follower->monsterAllyGetPlayerLeader())
 								|| (follower->getStats() && follower->getStats()->type == FLAME_ELEMENTAL) )
 							{
 								continue; // no award xp
@@ -14339,6 +14349,7 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 		|| destStats->type == MONSTER_ADORCISED_WEAPON
 		|| (destStats->type == MOTH_SMALL && destStats->getAttribute("fire_sprite") != "" )
 		|| destStats->type == FLAME_ELEMENTAL
+		|| (destStats->type == EARTH_ELEMENTAL && monsterAllyGetPlayerLeader())
 		|| destStats->type == HOLOGRAM
 		)
 		)
@@ -16798,6 +16809,7 @@ int Entity::getAttackPose() const
 		else if ( myStats->type == REVENANT_SKULL 
 			|| myStats->type == MONSTER_ADORCISED_WEAPON 
 			|| myStats->type == FLAME_ELEMENTAL
+			|| myStats->type == EARTH_ELEMENTAL
 			|| myStats->type == MOTH_SMALL )
 		{
 			pose = MONSTER_POSE_MELEE_WINDUP1;
@@ -17013,7 +17025,7 @@ int Entity::getAttackPose() const
 			type == MONSTER_D || type == MONSTER_M ||
 			type == MONSTER_S || type == MONSTER_G ||
 			type == REVENANT_SKULL || type == MONSTER_ADORCISED_WEAPON ||
-			type == FLAME_ELEMENTAL ||
+			type == FLAME_ELEMENTAL || type == EARTH_ELEMENTAL ||
 			type == SLIME || (type == SCARAB && sprite != 1078 && sprite != 1079))
 		{
 			pose = MONSTER_POSE_MELEE_WINDUP1;
@@ -18843,6 +18855,7 @@ bool Entity::setEffect(int effect, std::variant<bool, Uint8> value, int duration
 					|| myStats->type == HOLOGRAM
 					|| myStats->type == MOTH_SMALL
 					|| myStats->type == FLAME_ELEMENTAL
+					|| myStats->type == EARTH_ELEMENTAL
 					|| monsterIsTinkeringCreation()
 					|| myStats->type == MIMIC
 					|| myStats->type == CRYSTALGOLEM
@@ -20548,6 +20561,7 @@ bool Entity::shouldRetreat(Stat& myStats)
 	else if ( myStats.type == MONSTER_ADORCISED_WEAPON 
 		|| myStats.type == REVENANT_SKULL 
 		|| myStats.type == FLAME_ELEMENTAL
+		|| myStats.type == EARTH_ELEMENTAL
 		|| myStats.type == MOTH_SMALL )
 	{
 		return false;
@@ -24492,7 +24506,7 @@ bool monsterChangesColorWhenAlly(Stat* myStats, Entity* entity)
 	{
 		return false;
 	}
-	if ( race == FLAME_ELEMENTAL )
+	if ( race == FLAME_ELEMENTAL || race == EARTH_ELEMENTAL )
 	{
 		return false;
 	}
@@ -25677,6 +25691,7 @@ void Entity::creatureHandleLiftZ()
 		case MONSTER_ADORCISED_WEAPON:
 		case FLAME_ELEMENTAL:
 		case MOTH_SMALL:
+		case EARTH_ELEMENTAL:
 			z -= shift / 2;
 			break;
 		case BUGBEAR:
@@ -25697,7 +25712,6 @@ void Entity::creatureHandleLiftZ()
 			break;
 		case GYROBOT:
 			break;
-		case MONSTER_UNUSED_4: 
 		case MONSTER_UNUSED_5: 
 		case MONSTER_UNUSED_6: 
 		case MONSTER_UNUSED_7: 

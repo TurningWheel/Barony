@@ -377,7 +377,8 @@ bool entityInsideTile(Entity* entity, int x, int y, int z, bool checkSafeTiles)
 										|| entity->getStats()->type == MONSTER_ADORCISED_WEAPON
 										|| entity->getStats()->type == HOLOGRAM
 										|| entity->getStats()->type == MOTH_SMALL
-										|| entity->getStats()->type == FLAME_ELEMENTAL)) )
+										|| entity->getStats()->type == FLAME_ELEMENTAL
+										|| entity->getStats()->type == EARTH_ELEMENTAL)) )
 							{
 								return true;
 							}
@@ -476,7 +477,8 @@ bool entityInsideSomething(Entity* entity)
 				|| entity->getMonsterTypeFromSprite() == MONSTER_ADORCISED_WEAPON
 				|| entity->getMonsterTypeFromSprite() == MOTH_SMALL
 				|| entity->getMonsterTypeFromSprite() == HOLOGRAM
-				|| entity->getMonsterTypeFromSprite() == FLAME_ELEMENTAL )
+				|| entity->getMonsterTypeFromSprite() == FLAME_ELEMENTAL
+				|| entity->getMonsterTypeFromSprite() == EARTH_ELEMENTAL )
 			{
 				if ( testEntity->behavior == &actMonster || testEntity->behavior == &actPlayer 
 					|| (testEntity->isDamageableCollider() && (testEntity->colliderHasCollision & EditorEntityData_t::COLLIDER_COLLISION_FLAG_NPC)) )
@@ -1588,7 +1590,8 @@ Entity* findEntityInLine( Entity* my, real_t x1, real_t y1, real_t angle, int en
 									&& entity->sprite != 1803
 									&& entity->sprite != 1804
 									&& entity->sprite != 1819
-									&& entity->sprite != 1822) )
+									&& entity->sprite != 1822
+									&& entity->sprite != 1871) )
 						)
 					) 
 				)
@@ -1914,7 +1917,8 @@ real_t lineTrace( Entity* my, real_t x1, real_t y1, real_t angle, real_t range, 
 					|| stats->type == REVENANT_SKULL
 					|| stats->type == MONSTER_ADORCISED_WEAPON
 					|| stats->type == MOTH_SMALL
-					|| stats->type == FLAME_ELEMENTAL)
+					|| stats->type == FLAME_ELEMENTAL
+					|| stats->type == EARTH_ELEMENTAL )
 				{
 					ground = false;
 				}
@@ -2383,7 +2387,8 @@ int checkObstacle(long x, long y, Entity* my, Entity* target, bool useTileEntity
 								|| entity->getMonsterTypeFromSprite() == MONSTER_ADORCISED_WEAPON
 								|| entity->getMonsterTypeFromSprite() == HOLOGRAM
 								|| entity->getMonsterTypeFromSprite() == MOTH_SMALL
-								|| entity->getMonsterTypeFromSprite() == FLAME_ELEMENTAL) )
+								|| entity->getMonsterTypeFromSprite() == FLAME_ELEMENTAL
+								|| entity->getMonsterTypeFromSprite() == EARTH_ELEMENTAL) )
 						{
 							continue;
 						}
