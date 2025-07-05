@@ -26,9 +26,14 @@
 
 std::vector<Item*> generateShopkeeperConsumables(Entity& my, Stat& myStats, int storetype)
 {
+
 	auto& rng = my.entity_rng ? *my.entity_rng : local_rng;
 
 	std::vector<Item*> itemsGenerated;
+	/*if ( !strcmp(map.name, "Mages Guild") )
+	{
+		return itemsGenerated;
+	}*/
 	if ( ShopkeeperConsumables_t::entries.find(storetype) == ShopkeeperConsumables_t::entries.end() )
 	{
 		return itemsGenerated;
@@ -616,7 +621,7 @@ void initShopkeeper(Entity* my, Stat* myStats)
 									tmpItem->status = static_cast<Status>(SERVICABLE + rng.rand() % 2);
 								}
 							}
-							if ( rng.rand() % 2 == 0 )
+							else if ( rng.rand() % 2 == 0 )
 							{
 								tmpItem = newItem(TOOL_ALEMBIC, static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), true, &myStats->inventory);
 								if ( rng.rand() % blessedShopkeeper > 0 )

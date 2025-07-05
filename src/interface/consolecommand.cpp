@@ -4965,6 +4965,221 @@ namespace ConsoleCommands {
 		}
 	});
 
+	static ConsoleCommand ccmd_debug_claim_items("/debug_claim_items", "", []CCMD{
+		node_t * tmpNode = NULL;
+		Entity* tmpEnt = NULL;
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+
+		if ( multiplayer != CLIENT )
+		{
+			node_t* nextnode = nullptr;
+			for ( tmpNode = map.entities->first; tmpNode != NULL; tmpNode = nextnode )
+			{
+				nextnode = tmpNode->next;
+				tmpEnt = (Entity*)tmpNode->element;
+				if ( tmpEnt->behavior == &actItem )
+				{
+					Item* item2 = newItemFromEntity(tmpEnt);
+					int pickedUpCount = item2->count;
+					Item* item = itemPickup(clientnum, item2);
+					if ( item )
+					{
+						if ( players[clientnum]->isLocalPlayer() )
+						{
+							// item is the new inventory stack for server, free the picked up items
+							free(item2);
+						}
+						list_RemoveNode(tmpEnt->mynode);
+					}
+				}
+			}
+		}
+	});
+
+	static ConsoleCommand ccmd_debug_heal_items("/debug_heal_items", "", []CCMD{
+		node_t * tmpNode = NULL;
+		Entity* tmpEnt = NULL;
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+		int healing = 0;
+		int mana = 0;
+		int items = 0;
+		int monsterinv = 0;
+		int monsterinvheal = 0;
+		int monsterinvmana = 0;
+		int chestinv = 0;
+		int chestheal = 0;
+		int chestmana = 0;
+		int monsterShopPrivStock = 0;
+		int monsterShopPrivStockHeal = 0;
+		int monsterShopPrivStockMana = 0;
+		std::map<int, int> allitems;
+		for ( tmpNode = map.entities->first; tmpNode != NULL; tmpNode = tmpNode->next )
+		{
+			tmpEnt = (Entity*)tmpNode->element;
+			if ( tmpEnt->behavior == &actItem )
+			{
+				if ( Item* item = newItemFromEntity(tmpEnt) )
+				{
+					allitems[item->type] += item->count;
+					if ( int heal = item->potionGetEffectHealth(players[clientnum]->entity, stats[clientnum]) )
+					{
+						if ( item->type == POTION_EXTRAHEALING )
+						{
+							if ( statGetCON(stats[clientnum], players[clientnum]->entity) > 0 )
+							{
+								heal += 4 * statGetCON(stats[clientnum], players[clientnum]->entity);
+							}
+						}
+						if ( item->type == POTION_HEALING )
+						{
+							if ( statGetCON(stats[clientnum], players[clientnum]->entity) > 0 )
+							{
+								heal += 2 * statGetCON(stats[clientnum], players[clientnum]->entity);
+							}
+						}
+
+						if ( item->type == POTION_RESTOREMAGIC )
+						{
+							if ( statGetINT(stats[clientnum], players[clientnum]->entity) > 0 )
+							{
+								heal += std::min(30, 2 * statGetINT(stats[clientnum], players[clientnum]->entity)); // extra mana scaling from 1 to 15 INT, capped at +30 MP
+							}
+							mana += heal * item->count;
+						}
+						else
+						{
+							healing += heal * item->count;
+						}
+						items += item->count;
+					}
+					free(item);
+				}
+			}
+			else if ( tmpEnt->behavior == &actMonster )
+			{
+				list_t* inventory = &tmpEnt->getStats()->inventory;
+				if ( inventory )
+				{
+					for ( node_t* node = inventory->first; node; node = node->next )
+					{
+						if ( Item* item = (Item*)node->element )
+						{
+							allitems[item->type] += item->count;
+							if ( int heal = item->potionGetEffectHealth(players[clientnum]->entity, stats[clientnum]) )
+							{
+								if ( item->type == POTION_EXTRAHEALING )
+								{
+									if ( statGetCON(stats[clientnum], players[clientnum]->entity) > 0 )
+									{
+										heal += 4 * statGetCON(stats[clientnum], players[clientnum]->entity);
+									}
+								}
+								if ( item->type == POTION_HEALING )
+								{
+									if ( statGetCON(stats[clientnum], players[clientnum]->entity) > 0 )
+									{
+										heal += 2 * statGetCON(stats[clientnum], players[clientnum]->entity);
+									}
+								}
+
+								if ( item->type == POTION_RESTOREMAGIC )
+								{
+									if ( statGetINT(stats[clientnum], players[clientnum]->entity) > 0 )
+									{
+										heal += std::min(30, 2 * statGetINT(stats[clientnum], players[clientnum]->entity)); // extra mana scaling from 1 to 15 INT, capped at +30 MP
+									}
+									mana += heal * item->count;
+									monsterinvmana = heal * item->count;
+									if ( item->itemSpecialShopConsumable )
+									{
+										monsterShopPrivStockMana += heal * item->count;
+										monsterShopPrivStock += item->count;
+									}
+								}
+								else
+								{
+									healing += heal * item->count;
+									monsterinvheal += heal * item->count;
+									if ( item->itemSpecialShopConsumable )
+									{
+										monsterShopPrivStockHeal += heal * item->count;
+										monsterShopPrivStock += item->count;
+									}
+								}
+								items += item->count;
+								monsterinv += item->count;
+							}
+						}
+					}
+				}
+			}
+			else if ( tmpEnt->behavior == &actChest )
+			{
+				list_t* inventory = tmpEnt->getChestInventoryList();
+				if ( inventory )
+				{
+					for ( node_t* node = inventory->first; node; node = node->next )
+					{
+						if ( Item* item = (Item*)node->element )
+						{
+							allitems[item->type] += item->count;
+							if ( int heal = item->potionGetEffectHealth(players[clientnum]->entity, stats[clientnum]) )
+							{
+								if ( item->type == POTION_EXTRAHEALING )
+								{
+									if ( statGetCON(stats[clientnum], players[clientnum]->entity) > 0 )
+									{
+										heal += 4 * statGetCON(stats[clientnum], players[clientnum]->entity);
+									}
+								}
+								if ( item->type == POTION_HEALING )
+								{
+									if ( statGetCON(stats[clientnum], players[clientnum]->entity) > 0 )
+									{
+										heal += 2 * statGetCON(stats[clientnum], players[clientnum]->entity);
+									}
+								}
+
+								if ( item->type == POTION_RESTOREMAGIC )
+								{
+									if ( statGetINT(stats[clientnum], players[clientnum]->entity) > 0 )
+									{
+										heal += std::min(30, 2 * statGetINT(stats[clientnum], players[clientnum]->entity)); // extra mana scaling from 1 to 15 INT, capped at +30 MP
+									}
+									mana += heal * item->count;
+									chestmana += heal * item->count;
+								}
+								else
+								{
+									healing += heal * item->count;
+									chestheal += heal * item->count;
+								}
+								items += item->count;
+								chestinv += item->count;
+							}
+						}
+					}
+				}
+			}
+		}
+		messagePlayer(clientnum, MESSAGE_MISC, "Total Items: %d | heal: %d | mana: %d", items, healing, mana);
+		messagePlayer(clientnum, MESSAGE_MISC, "Monsters: %d | heal: %d | mana: %d", monsterinv, monsterinvheal, monsterinvmana);
+		messagePlayer(clientnum, MESSAGE_MISC, "Shop Specials: %d | heal: %d | mana: %d", monsterShopPrivStock, monsterShopPrivStockHeal, monsterShopPrivStockMana);
+		messagePlayer(clientnum, MESSAGE_MISC, "Chests: %d | heal: %d | mana: %d", chestinv, chestheal, chestmana);
+		for ( auto& i : allitems )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, "[Gen]: %s : %d", ::items[i.first].getIdentifiedName(), i.second);
+		}
+	});
+
 	static ConsoleCommand ccmd_mesh_collider_verify_and_crash_game("/mesh_collider_verify_and_crash_game", "", []CCMD{
 #ifndef NINTENDO
 		if ( !(svFlags & SV_FLAG_CHEATS) )
