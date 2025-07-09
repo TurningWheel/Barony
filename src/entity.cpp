@@ -13444,6 +13444,10 @@ int AC(Stat* stat)
 			}
 		}
 	}
+	if ( stat->type == EARTH_ELEMENTAL && stat->defending )
+	{
+		armor *= 2;
+	}
 	if ( stat->type == MIMIC && stat->getEffectActive(EFF_MIMIC_LOCKED) )
 	{
 		armor *= 2;
