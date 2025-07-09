@@ -933,8 +933,8 @@ public:
 	void powerCrystalCreateElectricityNodes();
 
 	//Door functions.
-	void doorHandleDamageMagic(int damage, Entity &magicProjectile, Entity *caster);
-	void colliderHandleDamageMagic(int damage, Entity &magicProjectile, Entity *caster);
+	void doorHandleDamageMagic(int damage, Entity &magicProjectile, Entity *caster, bool messages = true);
+	void colliderHandleDamageMagic(int damage, Entity &magicProjectile, Entity *caster, bool messages = true);
 
 	bool checkEnemy(Entity* your);
 	bool checkFriend(Entity* your);
@@ -957,7 +957,7 @@ public:
 	bool magicFallingCollision();
 	bool magicOrbitingCollision();
 	void actFurniture();
-	void furnitureHandleDamageMagic(int damage, Entity& magicProjectile, Entity* caster);
+	void furnitureHandleDamageMagic(int damage, Entity& magicProjectile, Entity* caster, bool messages = true);
 	void actPistonCam();
 	void actStalagCeiling();
 	void actStalagFloor();

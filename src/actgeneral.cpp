@@ -127,7 +127,7 @@ void actFurniture(Entity* my)
 	my->actFurniture();
 }
 
-void Entity::furnitureHandleDamageMagic(int damage, Entity& magicProjectile, Entity* caster)
+void Entity::furnitureHandleDamageMagic(int damage, Entity& magicProjectile, Entity* caster, bool messages)
 {
 	int oldHP = this->furnitureHealth;
 	this->furnitureHealth -= damage;
@@ -143,7 +143,7 @@ void Entity::furnitureHandleDamageMagic(int damage, Entity& magicProjectile, Ent
 			switch ( this->furnitureType )
 			{
 			case FURNITURE_CHAIR:
-				if ( destroyed )
+				if ( destroyed && messages )
 				{
 					messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(388));
 				}
@@ -151,7 +151,7 @@ void Entity::furnitureHandleDamageMagic(int damage, Entity& magicProjectile, Ent
 					false, DamageGib::DMG_DEFAULT);
 				break;
 			case FURNITURE_TABLE:
-				if ( destroyed )
+				if ( destroyed && messages )
 				{
 					messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(389));
 				}
@@ -159,7 +159,7 @@ void Entity::furnitureHandleDamageMagic(int damage, Entity& magicProjectile, Ent
 					false, DamageGib::DMG_DEFAULT);
 				break;
 			case FURNITURE_BED:
-				if ( destroyed )
+				if ( destroyed && messages )
 				{
 					messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2505));
 				}
@@ -167,7 +167,7 @@ void Entity::furnitureHandleDamageMagic(int damage, Entity& magicProjectile, Ent
 					false, DamageGib::DMG_DEFAULT);
 				break;
 			case FURNITURE_BUNKBED:
-				if ( destroyed )
+				if ( destroyed && messages )
 				{
 					messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2506));
 				}
@@ -175,7 +175,7 @@ void Entity::furnitureHandleDamageMagic(int damage, Entity& magicProjectile, Ent
 					false, DamageGib::DMG_DEFAULT);
 				break;
 			case FURNITURE_PODIUM:
-				if ( destroyed )
+				if ( destroyed && messages )
 				{
 					messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2507));
 				}
@@ -1179,7 +1179,7 @@ void actColliderDecoration(Entity* my)
 	}
 }
 
-void Entity::colliderHandleDamageMagic(int damage, Entity &magicProjectile, Entity *caster)
+void Entity::colliderHandleDamageMagic(int damage, Entity &magicProjectile, Entity *caster, bool messages)
 {
 	auto oldHP = colliderCurrentHP;
 	colliderCurrentHP -= damage; //Decrease object health.
@@ -1195,13 +1195,16 @@ void Entity::colliderHandleDamageMagic(int damage, Entity &magicProjectile, Enti
 			{
 				if ( oldHP > 0 )
 				{
-					if ( magicProjectile.behavior == &actBomb )
+					if ( messages )
 					{
-						messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(3617), items[magicProjectile.skill[21]].getIdentifiedName(), Language::get(getColliderLangName()));
-					}
-					else
-					{
-						messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(getColliderLangName()));
+						if ( magicProjectile.behavior == &actBomb )
+						{
+							messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(3617), items[magicProjectile.skill[21]].getIdentifiedName(), Language::get(getColliderLangName()));
+						}
+						else
+						{
+							messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(getColliderLangName()));
+						}
 					}
 					if ( isColliderWall() )
 					{
@@ -1211,13 +1214,16 @@ void Entity::colliderHandleDamageMagic(int damage, Entity &magicProjectile, Enti
 			}
 			else
 			{
-				if ( magicProjectile.behavior == &actBomb )
+				if ( messages )
 				{
-					messagePlayer(caster->skill[2], MESSAGE_COMBAT_BASIC, Language::get(3618), items[magicProjectile.skill[21]].getIdentifiedName(), Language::get(getColliderLangName()));
-				}
-				else
-				{
-					messagePlayer(caster->skill[2], MESSAGE_COMBAT_BASIC, Language::get(378), Language::get(getColliderLangName()));
+					if ( magicProjectile.behavior == &actBomb )
+					{
+						messagePlayer(caster->skill[2], MESSAGE_COMBAT_BASIC, Language::get(3618), items[magicProjectile.skill[21]].getIdentifiedName(), Language::get(getColliderLangName()));
+					}
+					else
+					{
+						messagePlayer(caster->skill[2], MESSAGE_COMBAT_BASIC, Language::get(378), Language::get(getColliderLangName()));
+					}
 				}
 			}
 			updateEnemyBar(caster, this, Language::get(getColliderLangName()), colliderCurrentHP, colliderMaxHP,

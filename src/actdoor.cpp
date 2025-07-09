@@ -329,7 +329,7 @@ void actDoorFrame(Entity* my)
 	}
 }
 
-void Entity::doorHandleDamageMagic(int damage, Entity &magicProjectile, Entity *caster)
+void Entity::doorHandleDamageMagic(int damage, Entity &magicProjectile, Entity *caster, bool messages)
 {
 	if ( behavior == &::actIronDoor )
 	{
@@ -342,28 +342,34 @@ void Entity::doorHandleDamageMagic(int damage, Entity &magicProjectile, Entity *
 		{
 			if ( doorHealth <= 0 )
 			{
-				if ( magicProjectile.behavior == &actBomb )
+				if ( messages )
 				{
-					messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(3617), items[magicProjectile.skill[21]].getIdentifiedName(), 
-						behavior == &::actIronDoor ? Language::get(6414) : Language::get(674));
-				}
-				else
-				{
-					messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(387));
+					if ( magicProjectile.behavior == &actBomb )
+					{
+						messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(3617), items[magicProjectile.skill[21]].getIdentifiedName(), 
+							behavior == &::actIronDoor ? Language::get(6414) : Language::get(674));
+					}
+					else
+					{
+						messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(387));
+					}
 				}
 				Compendium_t::Events_t::eventUpdateWorld(caster->skill[2], Compendium_t::CPDM_DOOR_BROKEN, "door", 1);
 			}
-			else
+			else if ( damage > 0 )
 			{
-				if ( magicProjectile.behavior == &actBomb )
+				if ( messages )
 				{
-					messagePlayer(caster->skill[2], MESSAGE_COMBAT_BASIC, Language::get(3618), items[magicProjectile.skill[21]].getIdentifiedName(), 
-						behavior == &::actIronDoor ? Language::get(6414) : Language::get(674));
-				}
-				else
-				{
-					messagePlayer(caster->skill[2], MESSAGE_COMBAT_BASIC, Language::get(378), 
-						behavior == &::actIronDoor ? Language::get(6414) : Language::get(674));
+					if ( magicProjectile.behavior == &actBomb )
+					{
+						messagePlayer(caster->skill[2], MESSAGE_COMBAT_BASIC, Language::get(3618), items[magicProjectile.skill[21]].getIdentifiedName(), 
+							behavior == &::actIronDoor ? Language::get(6414) : Language::get(674));
+					}
+					else
+					{
+						messagePlayer(caster->skill[2], MESSAGE_COMBAT_BASIC, Language::get(378), 
+							behavior == &::actIronDoor ? Language::get(6414) : Language::get(674));
+					}
 				}
 			}
 			updateEnemyBar(caster, this, behavior == &::actIronDoor ? Language::get(6414) : Language::get(674), doorHealth, doorMaxHealth,
