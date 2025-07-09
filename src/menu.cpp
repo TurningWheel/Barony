@@ -9640,6 +9640,7 @@ void doEndgame(bool saveHighscore, bool onServerDisconnect) {
 	bool localScores = gameModeManager.allowsHiscores();
 	bool onlineScores = gameModeManager.allowsGlobalHiscores();
 	bool allowedSavegames = gameModeManager.allowsSaves();
+	bool customRun = gameModeManager.getMode() == GameModeManager_t::GAME_MODE_CUSTOM_RUN;
 	if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
 	{
 		victory = 0;
@@ -9839,8 +9840,13 @@ void doEndgame(bool saveHighscore, bool onServerDisconnect) {
 		}
 	}
 
+
 	if ( victory )
 	{
+		if ( customRun )
+		{
+			gameModeManager.setMode(GameModeManager_t::GAME_MODE_CUSTOM_RUN); // for the achievement checks
+		}
 		// conduct achievements
 		if ( (victory == 1 && currentlevel >= 20)
 			|| (victory == 2 && currentlevel >= 24)
@@ -9995,6 +10001,8 @@ void doEndgame(bool saveHighscore, bool onServerDisconnect) {
 				}
 			}
 		}
+
+		gameModeManager.setMode(GameModeManager_t::GAME_MODE_DEFAULT);
 	}
 
 	if ( !endTutorial && victory > 0 && allowedSavegames )
