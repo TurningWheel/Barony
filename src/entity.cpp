@@ -7277,6 +7277,10 @@ bool Entity::isWaterWalking() const
 					return true;
 				}
 			}
+			else if ( stats->type == EARTH_ELEMENTAL )
+			{
+				return true;
+			}
 		}
 	}
 	return false;
@@ -7303,7 +7307,11 @@ bool Entity::isLavaWalking() const
 					return true;
 				}
 			}
+			else if ( stats->type == EARTH_ELEMENTAL )
+			{
+				return true;
 		}
+	}
 	}
 	return false;
 }
@@ -17025,7 +17033,7 @@ int Entity::getAttackPose() const
 			type == MONSTER_D || type == MONSTER_M ||
 			type == MONSTER_S || type == MONSTER_G ||
 			type == REVENANT_SKULL || type == MONSTER_ADORCISED_WEAPON ||
-			type == FLAME_ELEMENTAL || type == EARTH_ELEMENTAL ||
+			type == FLAME_ELEMENTAL ||
 			type == SLIME || (type == SCARAB && sprite != 1078 && sprite != 1079))
 		{
 			pose = MONSTER_POSE_MELEE_WINDUP1;
@@ -17073,6 +17081,27 @@ int Entity::getAttackPose() const
 			else
 			{
 				pose = mothGetAttackPose(const_cast<Entity*>(this), MONSTER_POSE_MELEE_WINDUP1);
+			}
+		}
+		else if ( myStats->type == EARTH_ELEMENTAL )
+		{
+			switch ( local_rng.rand() % 4 )
+			{
+			case 0:
+				pose = MONSTER_POSE_MELEE_WINDUP1;
+				break;
+			case 1:
+				pose = MONSTER_POSE_MELEE_WINDUP2;
+				break;
+			case 2:
+				pose = MONSTER_POSE_MELEE_WINDUP3;
+				break;
+			case 3:
+				pose = MONSTER_POSE_RANGED_WINDUP1;
+				break;
+			default:
+				pose = MONSTER_POSE_MELEE_WINDUP1;
+				break;
 			}
 		}
 		else

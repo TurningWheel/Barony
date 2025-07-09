@@ -352,7 +352,7 @@ static std::vector<Sint32> monsterSprites[NUMMONSTERS] = {
 	},
 	//EARTH_ELEMENTAL
 	{
-		1871
+		1871, 1876
 	},
 	//MONSTER_UNUSED_5
 	{
@@ -424,7 +424,7 @@ static char monstertypename[][32] =
 };
 
 // body part focal points
-extern float limbs[NUMMONSTERS][20][3];
+extern float limbs[NUMMONSTERS][30][3];
 
 // 0: nothing
 // 1: red blood
@@ -1027,6 +1027,7 @@ static const int MONSTER_POSE_MIMIC_MAGIC1 = 39;
 static const int MONSTER_POSE_MIMIC_MAGIC2 = 40;
 static const int MONSTER_POSE_BUGBEAR_SHIELD = 41;
 static const int MONSTER_POSE_PARRY = 42;
+static const int MONSTER_POSE_EARTH_ELEMENTAL_ROLL = 43;
 
 //--monster special cooldowns
 static const int MONSTER_SPECIAL_COOLDOWN_GOLEM = 150;

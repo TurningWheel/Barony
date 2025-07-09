@@ -1611,14 +1611,14 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->stat_appearance = local_rng.rand();
 			stats->inventory.first = NULL;
 			stats->inventory.last = NULL;
-			stats->MAXHP = 10;
+			stats->MAXHP = 100;
 			stats->HP = stats->MAXHP;
 			stats->OLDHP = stats->HP;
 			stats->RANDOM_MAXHP = 20;
 			stats->RANDOM_HP = stats->RANDOM_MAXHP;
 			stats->STR = 0;
 			stats->DEX = 0;
-			stats->CON = 0;
+			stats->CON = 8;
 			stats->PER = 5;
 			stats->CHR = 0;
 			stats->EXP = 0;

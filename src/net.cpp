@@ -3351,6 +3351,15 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 				createSpellExplosionArea(sprite, nullptr, particle_x, particle_y, particle_z, duration, 0, nullptr);
 				break;
 			}
+			case PARTICLE_EFFECT_EARTH_ELEMENTAL_DIE:
+			{
+				Entity* spellTimer = createParticleTimer(nullptr, TICKS_PER_SECOND, -1);
+				spellTimer->x = particle_x;
+				spellTimer->y = particle_y;
+				spellTimer->z = particle_z;
+				spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_EARTH_ELEMENTAL_DIE;
+				break;
+			}
 			default:
 				break;
 		}

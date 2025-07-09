@@ -1363,3 +1363,1275 @@ void hologramAnimate(Entity* my, Stat* myStats, double dist)
 		}
 	}
 }
+
+void actEarthElementalDeathGib(Entity* my)
+{
+	if ( my->skill[0] <= 0 )
+	{
+		my->z += 0.05;
+		if ( my->z >= 7.5 )
+		{
+			my->scalex -= 0.05;
+			my->scaley -= 0.05;
+			my->scalez -= 0.05;
+			if ( my->scalex <= 0.0 )
+			{
+				list_RemoveNode(my->mynode);
+				return;
+			}
+		}
+	}
+	else
+	{
+		--my->skill[0];
+
+		my->scalex = std::min(my->scalex + 0.0125, 0.5);
+		my->scaley = std::min(my->scaley + 0.0125, 0.5);
+		my->scalez = std::min(my->scalez + 0.0125, 0.5);
+	}
+}
+
+void earthElementalDie(Entity* my)
+{
+	int index = -1;
+	for ( auto bodypart : my->bodyparts )
+	{
+		++index;
+		if ( index == 1 ) // eyes
+		{
+			continue;
+		}
+		Entity* entity = spawnGib(my, bodypart->sprite);
+		entity->x = bodypart->x;
+		entity->y = bodypart->y;
+		entity->z = bodypart->z;
+		if ( index == 0 )
+		{
+			entity->skill[5] = 1; // poof
+		}
+		entity->vel_x *= 0.1;
+		entity->vel_y *= 0.1;
+		serverSpawnGibForClient(entity);
+	}
+
+	Entity* spellTimer = createParticleTimer(nullptr, TICKS_PER_SECOND, -1);
+	spellTimer->x = my->x;
+	spellTimer->y = my->y;
+	spellTimer->z = my->z;
+	spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_EARTH_ELEMENTAL_DIE;
+	serverSpawnMiscParticlesAtLocation(spellTimer->x, spellTimer->y, spellTimer->z, PARTICLE_EFFECT_EARTH_ELEMENTAL_DIE, 0);
+
+	my->removeMonsterDeathNodes();
+	//spawnPoof(my->x, my->y, my->z, 1.0, true);
+	list_RemoveNode(my->mynode);
+	return;
+}
+
+void actEarthElementalLimb(Entity* my)
+{
+	my->actMonsterLimb(false);
+}
+
+void initEarthElemental(Entity* my, Stat* myStats)
+{
+	node_t* node;
+
+	my->z = 0;
+
+	int sprite = 1871; // default sprite, summon anim
+	if ( multiplayer != CLIENT )
+	{
+		if ( MONSTER_INIT )
+		{
+			sprite = 1876; // no summon anim
+		}
+	}
+	my->initMonster(sprite);
+	my->flags[INVISIBLE] = true; // hide the "AI" bodypart
+	my->flags[PASSABLE] = true;
+	if ( multiplayer != CLIENT )
+	{
+		MONSTER_SPOTSND = -1;
+		MONSTER_SPOTVAR = 1;
+		MONSTER_IDLESND = -1;
+		MONSTER_IDLEVAR = 3;
+	}
+
+	if ( multiplayer != CLIENT && !MONSTER_INIT )
+	{
+		auto& rng = my->entity_rng ? *my->entity_rng : local_rng;
+
+		if ( myStats != nullptr )
+		{
+			if ( !myStats->leader_uid )
+			{
+				myStats->leader_uid = 0;
+			}
+
+			// apply random stat increases if set in stat_shared.cpp or editor
+			setRandomMonsterStats(myStats, rng);
+
+			// generate 6 items max, less if there are any forced items from boss variants
+			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
+
+			// generates equipment and weapons if available from editor
+			createMonsterEquipment(myStats, rng);
+
+			// create any custom inventory items from editor if available
+			createCustomInventory(myStats, customItemsToGenerate, rng);
+
+			// count if any custom inventory items from editor
+			int customItems = countCustomItems(myStats); //max limit of 6 custom items per entity.
+
+			// count any inventory items set to default in edtior
+			int defaultItems = countDefaultItems(myStats);
+
+			my->setHardcoreStats(*myStats);
+		}
+	}
+
+	// body
+	Entity* entity = newEntity(1872, 1, map.entities, nullptr); //Limb entity.
+	entity->sizex = 2;
+	entity->sizey = 2;
+	entity->skill[2] = my->getUID();
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->yaw = my->yaw;
+	entity->z = 6;
+	entity->flags[USERFLAG2] = monsterChangesColorWhenAlly(myStats, my) ? my->flags[USERFLAG2] : false;
+	entity->focalx = limbs[EARTH_ELEMENTAL][3][0];
+	entity->focaly = limbs[EARTH_ELEMENTAL][3][1];
+	entity->focalz = limbs[EARTH_ELEMENTAL][3][2];
+	entity->behavior = &actEarthElementalLimb;
+	entity->parent = my->getUID();
+	node = list_AddNodeLast(&my->children);
+	node->element = entity;
+	node->deconstructor = &emptyDeconstructor;
+	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
+
+	// eyes
+	entity = newEntity(1873, 1, map.entities, nullptr); //Limb entity.
+	entity->sizex = 2;
+	entity->sizey = 2;
+	entity->skill[2] = my->getUID();
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->yaw = my->yaw;
+	entity->z = 6;
+	entity->flags[USERFLAG2] = monsterChangesColorWhenAlly(myStats, my) ? my->flags[USERFLAG2] : false;
+	entity->focalx = limbs[EARTH_ELEMENTAL][1][0];
+	entity->focaly = limbs[EARTH_ELEMENTAL][1][1];
+	entity->focalz = limbs[EARTH_ELEMENTAL][1][2];
+	entity->behavior = &actEarthElementalLimb;
+	entity->parent = my->getUID();
+	node = list_AddNodeLast(&my->children);
+	node->element = entity;
+	node->deconstructor = &emptyDeconstructor;
+	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
+
+	//fistleft
+	entity = newEntity(1875, 1, map.entities, nullptr); //Limb entity.
+	entity->sizex = 2;
+	entity->sizey = 2;
+	entity->skill[2] = my->getUID();
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->yaw = my->yaw;
+	entity->z = 6;
+	entity->flags[USERFLAG2] = monsterChangesColorWhenAlly(myStats, my) ? my->flags[USERFLAG2] : false;
+	entity->focalx = limbs[EARTH_ELEMENTAL][6][0];
+	entity->focaly = limbs[EARTH_ELEMENTAL][6][1];
+	entity->focalz = limbs[EARTH_ELEMENTAL][6][2];
+	entity->behavior = &actEarthElementalLimb;
+	entity->parent = my->getUID();
+	node = list_AddNodeLast(&my->children);
+	node->element = entity;
+	node->deconstructor = &emptyDeconstructor;
+	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
+
+	//fistright
+	entity = newEntity(1875, 1, map.entities, nullptr); //Limb entity.
+	entity->sizex = 2;
+	entity->sizey = 2;
+	entity->skill[2] = my->getUID();
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->yaw = my->yaw;
+	entity->z = 6;
+	entity->flags[USERFLAG2] = monsterChangesColorWhenAlly(myStats, my) ? my->flags[USERFLAG2] : false;
+	entity->focalx = limbs[EARTH_ELEMENTAL][6][0];
+	entity->focaly = limbs[EARTH_ELEMENTAL][6][1];
+	entity->focalz = limbs[EARTH_ELEMENTAL][6][2];
+	entity->behavior = &actEarthElementalLimb;
+	entity->parent = my->getUID();
+	node = list_AddNodeLast(&my->children);
+	node->element = entity;
+	node->deconstructor = &emptyDeconstructor;
+	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
+
+	//pebble1
+	entity = newEntity(1874, 1, map.entities, nullptr); //Limb entity.
+	entity->sizex = 2;
+	entity->sizey = 2;
+	entity->skill[2] = my->getUID();
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->yaw = my->yaw;
+	entity->z = 6;
+	entity->flags[USERFLAG2] = monsterChangesColorWhenAlly(myStats, my) ? my->flags[USERFLAG2] : false;
+	entity->focalx = limbs[EARTH_ELEMENTAL][9][0];
+	entity->focaly = limbs[EARTH_ELEMENTAL][9][1];
+	entity->focalz = limbs[EARTH_ELEMENTAL][9][2];
+	entity->behavior = &actEarthElementalLimb;
+	entity->parent = my->getUID();
+	node = list_AddNodeLast(&my->children);
+	node->element = entity;
+	node->deconstructor = &emptyDeconstructor;
+	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
+
+	//pebble1
+	entity = newEntity(1874, 1, map.entities, nullptr); //Limb entity.
+	entity->sizex = 2;
+	entity->sizey = 2;
+	entity->skill[2] = my->getUID();
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->yaw = my->yaw;
+	entity->z = 6;
+	entity->flags[USERFLAG2] = monsterChangesColorWhenAlly(myStats, my) ? my->flags[USERFLAG2] : false;
+	entity->focalx = limbs[EARTH_ELEMENTAL][9][0];
+	entity->focaly = limbs[EARTH_ELEMENTAL][9][1];
+	entity->focalz = limbs[EARTH_ELEMENTAL][9][2];
+	entity->behavior = &actEarthElementalLimb;
+	entity->parent = my->getUID();
+	node = list_AddNodeLast(&my->children);
+	node->element = entity;
+	node->deconstructor = &emptyDeconstructor;
+	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
+
+	//pebble1
+	entity = newEntity(1874, 1, map.entities, nullptr); //Limb entity.
+	entity->sizex = 2;
+	entity->sizey = 2;
+	entity->skill[2] = my->getUID();
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->yaw = my->yaw;
+	entity->z = 6;
+	entity->flags[USERFLAG2] = monsterChangesColorWhenAlly(myStats, my) ? my->flags[USERFLAG2] : false;
+	entity->focalx = limbs[EARTH_ELEMENTAL][9][0];
+	entity->focaly = limbs[EARTH_ELEMENTAL][9][1];
+	entity->focalz = limbs[EARTH_ELEMENTAL][9][2];
+	entity->behavior = &actEarthElementalLimb;
+	entity->parent = my->getUID();
+	node = list_AddNodeLast(&my->children);
+	node->element = entity;
+	node->deconstructor = &emptyDeconstructor;
+	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
+}
+
+#define EARTH_BODY 2
+#define EARTH_EYES 3
+#define EARTH_LEFTARM 4
+#define EARTH_RIGHTARM 5
+#define EARTH_PEBBLE1 6
+#define EARTH_PEBBLE2 7
+#define EARTH_PEBBLE3 8
+#define EARTH_LIMB_FSKILL_YAW entity->fskill[0]
+#define EARTH_LIMB_FSKILL_PITCH entity->fskill[1]
+#define EARTH_LIMB_FSKILL_ROLL entity->fskill[2]
+#define EARTH_FLOAT_X body->fskill[3]
+#define EARTH_FLOAT_Y body->fskill[4]
+#define EARTH_FLOAT_Z body->fskill[5]
+#define EARTH_FLOAT_ANIM body->fskill[6]
+#define EARTH_PEBBLE_IDLE_ANIM entity->fskill[3]
+#define EARTH_ATTACK_1 body->fskill[7]
+#define EARTH_ATTACK_FLOAT body->fskill[8]
+#define EARTH_ATTACK_2 body->fskill[9]
+#define EARTH_ATTACK_3 body->fskill[10]
+#define EARTH_DEFEND body->fskill[11]
+#define EARTH_SPAWN_STATE body->skill[0]
+#define EARTH_SPAWN_ANIM body->fskill[12]
+#define EARTH_SPAWN_ANIM2 body->fskill[13]
+
+void earthElementalAnimate(Entity* my, Stat* myStats, double dist)
+{
+	node_t* node;
+	Entity* entity = nullptr;
+	Entity* head = nullptr;
+	int bodypart;
+
+	my->flags[INVISIBLE] = true; // hide the "AI" bodypart
+	//my->flags[PASSABLE] = true;
+
+	my->sizex = 4;
+	my->sizey = 4;
+
+	my->focalx = limbs[EARTH_ELEMENTAL][0][0];
+	my->focaly = limbs[EARTH_ELEMENTAL][0][1];
+	my->focalz = limbs[EARTH_ELEMENTAL][0][2];
+	if ( multiplayer != CLIENT )
+	{
+		my->z = limbs[EARTH_ELEMENTAL][5][2];
+		if ( !myStats->getEffectActive(EFF_LEVITATING) )
+		{
+			myStats->setEffectActive(EFF_LEVITATING, 1);
+			myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
+		}
+
+		my->creatureHandleLiftZ();
+	}
+
+	//my->setEffect(EFF_STUNNED, true, -1, false);
+	//my->monsterLookDir = 0.0;
+	//my->yaw = 0.0;
+	//static ConsoleVariable<int> cvar_ee_yaw("/ee_yaw", 0);
+	//static ConsoleVariable<int> cvar_ee_pitch("/ee_pitch", 0);
+	//static ConsoleVariable<int> cvar_ee_roll("/ee_roll", 0);
+	if ( enableDebugKeys && (svFlags & SV_FLAG_CHEATS) )
+	{
+		if ( keystatus[SDLK_KP_5] )
+		{
+			my->yaw += 0.05;
+			my->monsterLookDir = my->yaw;
+		}
+		if ( keystatus[SDLK_KP_4] )
+		{
+			my->setEffect(EFF_STUNNED, true, -1, false);
+		}
+	}
+	if ( keystatus[SDLK_g] )
+	{
+		keystatus[SDLK_g] = 0;
+		//MONSTER_ATTACK = mothGetAttackPose(my, MONSTER_POSE_MELEE_WINDUP1);
+		MONSTER_ATTACK = MONSTER_POSE_MELEE_WINDUP1;// mothGetAttackPose(my, MONSTER_POSE_MAGIC_WINDUP1);
+		MONSTER_ATTACKTIME = 0;
+	}
+	if ( keystatus[SDLK_h] )
+	{
+		keystatus[SDLK_h] = 0;
+		//MONSTER_ATTACK = mothGetAttackPose(my, MONSTER_POSE_MELEE_WINDUP1);
+		MONSTER_ATTACK = MONSTER_POSE_MELEE_WINDUP3;// mothGetAttackPose(my, MONSTER_POSE_MAGIC_WINDUP1);
+		MONSTER_ATTACKTIME = 0;
+	}
+	if ( keystatus[SDLK_n] )
+	{
+		keystatus[SDLK_n] = 0;
+		//MONSTER_ATTACK = mothGetAttackPose(my, MONSTER_POSE_MELEE_WINDUP1);
+		MONSTER_ATTACK = MONSTER_POSE_RANGED_WINDUP1;// mothGetAttackPose(my, MONSTER_POSE_MAGIC_WINDUP1);
+		MONSTER_ATTACKTIME = 0;
+	}
+	if ( keystatus[SDLK_y] )
+	{
+		keystatus[SDLK_y] = 0;
+		//MONSTER_ATTACK = mothGetAttackPose(my, MONSTER_POSE_MELEE_WINDUP1);
+		MONSTER_ATTACK = MONSTER_POSE_MELEE_WINDUP2;// mothGetAttackPose(my, MONSTER_POSE_MAGIC_WINDUP1);
+		MONSTER_ATTACKTIME = 0;
+	}
+
+	//	if ( keystatus[SDLK_h] )
+	//	{
+	//		keystatus[SDLK_h] = 0;
+	//		myStats->setEffectValueUnsafe(EFF_STUNNED, myStats->getEffectActive(EFF_STUNNED) ? 0 : 1);
+	//		myStats->EFFECTS_TIMERS[EFF_STUNNED] = myStats->getEffectActive(EFF_STUNNED) ? -1 : 0;
+	//	}
+	//}
+
+	//Move bodyparts
+	Entity* body = nullptr;
+	for ( bodypart = 0, node = my->children.first; node != nullptr; node = node->next, ++bodypart )
+	{
+		if ( bodypart < EARTH_BODY )
+		{
+			continue;
+		}
+
+		entity = (Entity*)node->element;
+
+		if ( bodypart == EARTH_BODY )
+		{
+			body = entity;
+
+			if ( my->sprite == 1876 )
+			{
+				// skip spawn anim
+				EARTH_SPAWN_ANIM = 0.0;
+				EARTH_SPAWN_STATE = 2;
+				EARTH_SPAWN_ANIM2 = 0.0;
+			}
+			if ( multiplayer != CLIENT )
+			{
+				if ( EARTH_SPAWN_STATE < 2 )
+				{
+					my->flags[PASSABLE] = true;
+					my->setEffect(EFF_STUNNED, true, 25, false);
+				}
+				else
+				{
+					my->flags[PASSABLE] = false;
+				}
+			}
+			//if ( keystatus[SDLK_u] )
+			//{
+			//	keystatus[SDLK_u] = 0;
+			//	//MONSTER_ATTACK = mothGetAttackPose(my, MONSTER_POSE_MELEE_WINDUP1);
+			//	my->monsterDefend = my->monsterDefend ? 0 : 1;
+			//	//EARTH_SPAWN_ANIM = 0.0;
+			//	//EARTH_SPAWN_STATE = 0;
+			//	//EARTH_SPAWN_ANIM2 = 0.0;
+			//}
+		}
+
+		entity->x = my->x;
+		entity->y = my->y;
+		entity->z = my->z;
+		entity->yaw = my->yaw;
+
+		entity->pitch = 0.0;
+		entity->roll = 0.0;
+		/*if ( *cvar_ee_yaw == bodypart )
+		{
+			EARTH_LIMB_FSKILL_YAW += 0.05;
+		}*/
+		entity->yaw += EARTH_LIMB_FSKILL_YAW;
+		/*if ( *cvar_ee_pitch == bodypart )
+		{
+			EARTH_LIMB_FSKILL_PITCH += 0.05;
+		}*/
+		entity->pitch = EARTH_LIMB_FSKILL_PITCH;
+		/*if ( *cvar_ee_roll == bodypart )
+		{
+			EARTH_LIMB_FSKILL_ROLL += 0.05;
+		}*/
+		entity->roll = EARTH_LIMB_FSKILL_ROLL;
+
+		if ( bodypart == EARTH_BODY )
+		{
+			if ( MONSTER_ATTACK == 0 || MONSTER_ATTACK == MONSTER_POSE_EARTH_ELEMENTAL_ROLL )
+			{
+				{
+					real_t setpoint = 0.0;
+					if ( EARTH_DEFEND > 0.01 )
+					{
+						setpoint = EARTH_DEFEND * PI / 16;
+					}
+					else
+					{
+						setpoint = -PI / 8;
+					}
+
+					if ( EARTH_ATTACK_1 > setpoint )
+					{
+						EARTH_ATTACK_1 -= limbs[EARTH_ELEMENTAL][16][0] / 2;
+						EARTH_ATTACK_1 = std::max(setpoint, EARTH_ATTACK_1);
+					}
+					else if ( EARTH_ATTACK_1 < setpoint )
+					{
+						EARTH_ATTACK_1 += limbs[EARTH_ELEMENTAL][16][0] / 2;
+						EARTH_ATTACK_1 = std::min(setpoint, EARTH_ATTACK_1);
+					}
+				}
+
+				if ( EARTH_ATTACK_2 > 0.0 )
+				{
+					EARTH_ATTACK_2 -= limbs[EARTH_ELEMENTAL][16][0];
+					EARTH_ATTACK_2 = std::max(0.0, EARTH_ATTACK_2);
+				}
+				else if ( EARTH_ATTACK_2 < 0.0 )
+				{
+					EARTH_ATTACK_2 += limbs[EARTH_ELEMENTAL][16][0];
+					EARTH_ATTACK_2 = std::min(0.0, EARTH_ATTACK_2);
+				}
+
+				if ( EARTH_ATTACK_3 > 0.0 )
+				{
+					EARTH_ATTACK_3 -= limbs[EARTH_ELEMENTAL][16][0];
+					EARTH_ATTACK_3 = std::max(0.0, EARTH_ATTACK_3);
+				}
+				else if ( EARTH_ATTACK_3 < 0.0 )
+				{
+					EARTH_ATTACK_3 += limbs[EARTH_ELEMENTAL][16][0];
+					EARTH_ATTACK_3 = std::min(0.0, EARTH_ATTACK_3);
+				}
+			}
+
+			if ( MONSTER_ATTACK == MONSTER_POSE_EARTH_ELEMENTAL_ROLL )
+			{
+				if ( MONSTER_ATTACKTIME == 0 )
+				{
+					EARTH_LIMB_FSKILL_YAW = 0.0;
+					if ( multiplayer != CLIENT )
+					{
+						Entity* spellTimer = createParticleTimer(my, 35, -1);
+						spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_EARTH_ELEMENTAL_ROLL;
+					}
+				}
+				else 
+				{
+					EARTH_LIMB_FSKILL_YAW += -0.3;
+					EARTH_LIMB_FSKILL_YAW = std::max(EARTH_LIMB_FSKILL_YAW, -4 * PI);
+
+					if ( MONSTER_ATTACKTIME >= 40 )
+					{
+						EARTH_LIMB_FSKILL_YAW = 0.0;
+						MONSTER_ATTACK = 0;
+					}
+				}
+			}
+
+			if ( !my->monsterDefend || MONSTER_ATTACK != 0 )
+			{
+				if ( EARTH_DEFEND > 0.0 )
+				{
+					EARTH_DEFEND -= limbs[EARTH_ELEMENTAL][16][0] * 3;
+					EARTH_DEFEND = std::max(0.0, EARTH_DEFEND);
+				}
+				else if ( EARTH_DEFEND < 0.0 )
+				{
+					EARTH_DEFEND += limbs[EARTH_ELEMENTAL][16][0] * 3;
+					EARTH_DEFEND = std::min(0.0, EARTH_DEFEND);
+				}
+			}
+			else
+			{
+				EARTH_DEFEND += limbs[EARTH_ELEMENTAL][16][0];
+				EARTH_DEFEND = std::min(1.0, EARTH_DEFEND);
+			}
+
+			if ( MONSTER_ATTACK == MONSTER_POSE_MELEE_WINDUP1 )
+			{
+				if ( MONSTER_ATTACKTIME == 0 )
+				{
+					EARTH_ATTACK_1 = 0.0;
+					EARTH_ATTACK_2 = 0.0;
+					EARTH_ATTACK_3 = 0.0;
+					EARTH_LIMB_FSKILL_YAW = 0.0;
+				}
+				else
+				{
+					if ( MONSTER_ATTACKTIME >= limbs[EARTH_ELEMENTAL][15][0] )
+					{
+						//EARTH_ATTACK_1 += limbs[EARTH_ELEMENTAL][16][2];
+						EARTH_LIMB_FSKILL_YAW += limbs[EARTH_ELEMENTAL][16][2];
+						EARTH_LIMB_FSKILL_YAW = std::max(EARTH_LIMB_FSKILL_YAW, -4 * PI);
+
+						EARTH_ATTACK_1 -= limbs[EARTH_ELEMENTAL][16][0];
+						EARTH_ATTACK_1 = std::max(EARTH_ATTACK_1, -(real_t)limbs[EARTH_ELEMENTAL][16][1]);
+					}
+					else
+					{
+						EARTH_ATTACK_1 += limbs[EARTH_ELEMENTAL][16][0];
+						EARTH_ATTACK_1 = std::min(EARTH_ATTACK_1, (real_t)limbs[EARTH_ELEMENTAL][16][1]);
+					}
+
+					if ( MONSTER_ATTACKTIME >= 55 )
+					{
+						MONSTER_ATTACK = 0;
+						EARTH_LIMB_FSKILL_YAW = 0.0;
+					}
+					else
+					{
+						if ( MONSTER_ATTACKTIME == 20 
+							|| MONSTER_ATTACKTIME == 35
+							|| MONSTER_ATTACKTIME == 50 )
+						{
+							if ( multiplayer != CLIENT )
+							{
+								const Sint32 temp = MONSTER_ATTACKTIME;
+								const Sint32 temp2 = MONSTER_ATTACK;
+								my->attack(1, 0, nullptr); // slop
+								MONSTER_ATTACKTIME = temp;
+								MONSTER_ATTACK = temp2;
+							}
+						}
+					}
+				}
+			}
+			else if ( MONSTER_ATTACK == MONSTER_POSE_MELEE_WINDUP2 )
+			{
+				if ( MONSTER_ATTACKTIME == 0 )
+				{
+					EARTH_ATTACK_1 = 0.0;
+					EARTH_ATTACK_2 = 0.0;
+					EARTH_ATTACK_3 = 0.0;
+					EARTH_LIMB_FSKILL_YAW = 0.0;
+				}
+				else
+				{
+					if ( MONSTER_ATTACKTIME >= limbs[EARTH_ELEMENTAL][18][2] )
+					{
+						EARTH_ATTACK_3 = std::min(1.0, EARTH_ATTACK_3 + limbs[EARTH_ELEMENTAL][13][1]);
+						EARTH_ATTACK_2 = std::max(0.0, EARTH_ATTACK_2 - limbs[EARTH_ELEMENTAL][16][0]);
+						EARTH_ATTACK_1 -= limbs[EARTH_ELEMENTAL][16][0] * 4;
+						EARTH_ATTACK_1 = std::max(EARTH_ATTACK_1, -(real_t)limbs[EARTH_ELEMENTAL][16][1]);
+					}
+					else if ( MONSTER_ATTACKTIME >= limbs[EARTH_ELEMENTAL][18][0] )
+					{
+						EARTH_ATTACK_2 = std::min(1.0, EARTH_ATTACK_2 + limbs[EARTH_ELEMENTAL][13][1]);
+						EARTH_ATTACK_3 = std::max(-1.0, EARTH_ATTACK_3 - 0.1);
+						EARTH_ATTACK_1 += limbs[EARTH_ELEMENTAL][16][0] * 3;
+						EARTH_ATTACK_1 = std::min(EARTH_ATTACK_1, (real_t)limbs[EARTH_ELEMENTAL][16][1]);
+					}
+					else
+					{
+						EARTH_ATTACK_2 = std::max(-1.0, EARTH_ATTACK_2 - 0.1);
+						EARTH_ATTACK_1 -= limbs[EARTH_ELEMENTAL][16][0];
+						EARTH_ATTACK_1 = std::max(EARTH_ATTACK_1, -(real_t)limbs[EARTH_ELEMENTAL][16][1]);
+					}
+
+					if ( MONSTER_ATTACKTIME >= 55 )
+					{
+						MONSTER_ATTACK = 0;
+						EARTH_LIMB_FSKILL_YAW = 0.0;
+					}
+					else
+					{
+						if ( MONSTER_ATTACKTIME == 20 || MONSTER_ATTACKTIME == 35 )
+						{
+							if ( multiplayer != CLIENT )
+							{
+								const Sint32 temp = MONSTER_ATTACKTIME;
+								const Sint32 temp2 = MONSTER_ATTACK;
+								my->attack(1, 0, nullptr); // slop
+								MONSTER_ATTACKTIME = temp;
+								MONSTER_ATTACK = temp2;
+							}
+						}
+					}
+				}
+			}
+			else if ( MONSTER_ATTACK == MONSTER_POSE_MELEE_WINDUP3 )
+			{
+				if ( MONSTER_ATTACKTIME == 0 )
+				{
+					EARTH_ATTACK_1 = 0.0;
+					EARTH_ATTACK_2 = 0.0;
+					EARTH_ATTACK_3 = 0.0;
+					EARTH_LIMB_FSKILL_YAW = 0.0;
+				}
+				else
+				{
+					if ( MONSTER_ATTACKTIME >= limbs[EARTH_ELEMENTAL][18][2] )
+					{
+						//EARTH_ATTACK_3 = std::min(1.0, EARTH_ATTACK_3 + limbs[EARTH_ELEMENTAL][13][1]);
+						EARTH_ATTACK_2 = std::max(0.0, EARTH_ATTACK_2 - limbs[EARTH_ELEMENTAL][16][0]);
+						EARTH_ATTACK_1 -= limbs[EARTH_ELEMENTAL][16][0] * 1;
+						EARTH_ATTACK_1 = std::max(EARTH_ATTACK_1, -(real_t)limbs[EARTH_ELEMENTAL][16][1] / 3);
+					}
+					else if ( MONSTER_ATTACKTIME >= limbs[EARTH_ELEMENTAL][18][0] )
+					{
+						EARTH_ATTACK_2 = std::min(1.0, EARTH_ATTACK_2 + limbs[EARTH_ELEMENTAL][13][1]);
+						EARTH_ATTACK_1 += limbs[EARTH_ELEMENTAL][16][0] * 3;
+						EARTH_ATTACK_1 = std::min(EARTH_ATTACK_1, (real_t)limbs[EARTH_ELEMENTAL][16][1]);
+					}
+					else
+					{
+						EARTH_ATTACK_2 = std::max(-1.0, EARTH_ATTACK_2 - 0.1);
+						EARTH_ATTACK_1 -= limbs[EARTH_ELEMENTAL][16][0];
+						EARTH_ATTACK_1 = std::max(EARTH_ATTACK_1, -(real_t)limbs[EARTH_ELEMENTAL][16][1]);
+					}
+
+					if ( MONSTER_ATTACKTIME >= 40 )
+					{
+						MONSTER_ATTACK = 0;
+						EARTH_LIMB_FSKILL_YAW = 0.0;
+					}
+					else
+					{
+						if ( MONSTER_ATTACKTIME == 20 )
+						{
+							if ( multiplayer != CLIENT )
+							{
+								const Sint32 temp = MONSTER_ATTACKTIME;
+								const Sint32 temp2 = MONSTER_ATTACK;
+								my->attack(1, 0, nullptr); // slop
+								MONSTER_ATTACKTIME = temp;
+								MONSTER_ATTACK = temp2;
+							}
+						}
+					}
+				}
+			}
+			else if ( MONSTER_ATTACK == MONSTER_POSE_RANGED_WINDUP1 )
+			{
+				if ( MONSTER_ATTACKTIME == 0 )
+				{
+					EARTH_ATTACK_1 = 0.0;
+					EARTH_ATTACK_2 = 0.0;
+					EARTH_ATTACK_3 = 0.0;
+					EARTH_LIMB_FSKILL_YAW = 0.0;
+				}
+				else
+				{
+					if ( MONSTER_ATTACKTIME >= limbs[EARTH_ELEMENTAL][18][2] )
+					{
+						//EARTH_ATTACK_3 = std::min(1.0, EARTH_ATTACK_3 + limbs[EARTH_ELEMENTAL][13][1]);
+						EARTH_ATTACK_3 = std::max(0.0, EARTH_ATTACK_3 - limbs[EARTH_ELEMENTAL][16][0]);
+						EARTH_ATTACK_1 += limbs[EARTH_ELEMENTAL][16][0] * 1;
+						EARTH_ATTACK_1 = std::min(EARTH_ATTACK_1, (real_t)limbs[EARTH_ELEMENTAL][16][1] / 3);
+					}
+					else if ( MONSTER_ATTACKTIME >= limbs[EARTH_ELEMENTAL][18][0] )
+					{
+						EARTH_ATTACK_3 = std::min(1.0, EARTH_ATTACK_3 + limbs[EARTH_ELEMENTAL][13][1]);
+						EARTH_ATTACK_1 -= limbs[EARTH_ELEMENTAL][16][0] * 3;
+						EARTH_ATTACK_1 = std::max(EARTH_ATTACK_1, -(real_t)limbs[EARTH_ELEMENTAL][16][1]);
+					}
+					else
+					{
+						EARTH_ATTACK_3 = std::max(-1.0, EARTH_ATTACK_3 - 0.1);
+						EARTH_ATTACK_1 += limbs[EARTH_ELEMENTAL][16][0];
+						EARTH_ATTACK_1 = std::min(EARTH_ATTACK_1, (real_t)limbs[EARTH_ELEMENTAL][16][1]);
+					}
+
+					if ( MONSTER_ATTACKTIME >= 40 )
+					{
+						MONSTER_ATTACK = 0;
+						EARTH_LIMB_FSKILL_YAW = 0.0;
+					}
+					else
+					{
+						if ( MONSTER_ATTACKTIME == 20 )
+						{
+							if ( multiplayer != CLIENT )
+							{
+								const Sint32 temp = MONSTER_ATTACKTIME;
+								const Sint32 temp2 = MONSTER_ATTACK;
+								my->attack(1, 0, nullptr); // slop
+								MONSTER_ATTACKTIME = temp;
+								MONSTER_ATTACK = temp2;
+							}
+						}
+					}
+				}
+			}
+		}
+
+		switch ( bodypart )
+		{
+		case EARTH_BODY:
+		{
+			entity->x += limbs[EARTH_ELEMENTAL][4][0] * cos(my->yaw) + limbs[EARTH_ELEMENTAL][4][1] * cos(my->yaw + PI / 2);
+			entity->y += limbs[EARTH_ELEMENTAL][4][0] * sin(my->yaw) + limbs[EARTH_ELEMENTAL][4][1] * sin(my->yaw + PI / 2);
+			entity->z += limbs[EARTH_ELEMENTAL][4][2];
+			entity->focalx = limbs[EARTH_ELEMENTAL][3][0];
+			entity->focaly = limbs[EARTH_ELEMENTAL][3][1];
+			entity->focalz = limbs[EARTH_ELEMENTAL][3][2];
+
+			if ( EARTH_SPAWN_STATE >= 0 && EARTH_SPAWN_STATE <= 1 )
+			{
+				EARTH_FLOAT_X = 0.0;
+				EARTH_FLOAT_Y = 0.0;
+
+				real_t targetZ = 8.0;
+				real_t startZ = 64.0;
+				EARTH_FLOAT_Z = (targetZ - startZ) + EARTH_SPAWN_ANIM;
+				if ( EARTH_SPAWN_STATE == 0 )
+				{
+					EARTH_SPAWN_ANIM2 = std::min(EARTH_SPAWN_ANIM2 + .1, 3.0);
+				}
+				else
+				{
+					EARTH_SPAWN_ANIM2 = std::min(EARTH_SPAWN_ANIM2 + .04, 3.0);
+				}
+				EARTH_SPAWN_ANIM = std::min(startZ, EARTH_SPAWN_ANIM + EARTH_SPAWN_ANIM2);
+
+				EARTH_LIMB_FSKILL_PITCH += 0.04;
+				EARTH_LIMB_FSKILL_ROLL += 0.04;
+
+				if ( EARTH_SPAWN_ANIM >= startZ )
+				{
+					EARTH_SPAWN_STATE += 1; // bounce
+					EARTH_SPAWN_ANIM2 = -(EARTH_SPAWN_ANIM2 / 4);
+					if ( EARTH_SPAWN_STATE == 1 )
+					{
+						if ( multiplayer != CLIENT && myStats )
+						{
+							createSpellExplosionArea(SPELL_EARTH_ELEMENTAL, my, my->x, my->y, my->z, 8.0, 20, my);
+						}
+					}
+					else if ( EARTH_SPAWN_STATE == 2 )
+					{
+						EARTH_SPAWN_ANIM = 1.0;
+						EARTH_SPAWN_ANIM2 = 0.0;
+
+						EARTH_LIMB_FSKILL_PITCH = fmod(EARTH_LIMB_FSKILL_PITCH, 2 * PI);
+						while ( EARTH_LIMB_FSKILL_PITCH >= 2 * PI )
+						{
+							EARTH_LIMB_FSKILL_PITCH -= 2 * PI;
+						}
+						while ( EARTH_LIMB_FSKILL_PITCH < 0 )
+						{
+							EARTH_LIMB_FSKILL_PITCH += 2 * PI;
+						}
+						EARTH_LIMB_FSKILL_ROLL = fmod(EARTH_LIMB_FSKILL_ROLL, 2 * PI);
+						while ( EARTH_LIMB_FSKILL_ROLL >= 2 * PI )
+						{
+							EARTH_LIMB_FSKILL_ROLL -= 2 * PI;
+						}
+						while ( EARTH_LIMB_FSKILL_ROLL < 0 )
+						{
+							EARTH_LIMB_FSKILL_ROLL += 2 * PI;
+						}
+					}
+				}
+
+				entity->x += 2.0 * cos(my->yaw);
+				entity->y += 2.0 * sin(my->yaw);
+			}
+			else
+			{
+				EARTH_SPAWN_ANIM = std::max(0.0, EARTH_SPAWN_ANIM - 0.05);
+				entity->x += EARTH_SPAWN_ANIM * 2.0 * cos(my->yaw);
+				entity->y += EARTH_SPAWN_ANIM * 2.0 * sin(my->yaw);
+				if ( EARTH_LIMB_FSKILL_ROLL > PI )
+				{
+					real_t diff = std::max(0.05, (2 * PI - EARTH_LIMB_FSKILL_ROLL) / 10);
+					EARTH_LIMB_FSKILL_ROLL = std::min(2 * PI, EARTH_LIMB_FSKILL_ROLL + diff);
+				}
+				else
+				{
+					real_t diff = std::max(0.05, (EARTH_LIMB_FSKILL_ROLL) / 10);
+					EARTH_LIMB_FSKILL_ROLL = std::max(0.0, EARTH_LIMB_FSKILL_ROLL - diff);
+				}
+
+				EARTH_LIMB_FSKILL_PITCH = fmod(EARTH_LIMB_FSKILL_PITCH, 2 * PI);
+				while ( EARTH_LIMB_FSKILL_PITCH >= 2 * PI )
+				{
+					EARTH_LIMB_FSKILL_PITCH -= 2 * PI;
+				}
+				while ( EARTH_LIMB_FSKILL_PITCH < 0 )
+				{
+					EARTH_LIMB_FSKILL_PITCH += 2 * PI;
+				}
+				if ( EARTH_LIMB_FSKILL_PITCH > PI )
+				{
+					real_t diff = std::max(0.05, (2 * PI - EARTH_LIMB_FSKILL_PITCH) / 10);
+					EARTH_LIMB_FSKILL_PITCH = std::min(2 * PI, EARTH_LIMB_FSKILL_PITCH + diff);
+				}
+				else
+				{
+					real_t diff = std::max(0.05, (EARTH_LIMB_FSKILL_PITCH) / 10);
+					EARTH_LIMB_FSKILL_PITCH = std::max(0.0, EARTH_LIMB_FSKILL_PITCH - diff);
+				}
+
+				real_t spawnRate = std::max(0.0, (1.0 - EARTH_SPAWN_ANIM));
+
+				real_t zAngle = EARTH_FLOAT_ANIM * limbs[EARTH_ELEMENTAL][11][2];
+				zAngle = fmod(zAngle, 2 * PI);
+				while ( zAngle >= 2 * PI )
+				{
+					zAngle -= 2 * PI;
+				}
+				while ( zAngle < 0 )
+				{
+					zAngle += 2 * PI;
+				}
+				if ( zAngle >= PI / 2 )
+				{
+					EARTH_FLOAT_ANIM += spawnRate * 0.2;
+				}
+				else
+				{
+					EARTH_FLOAT_ANIM += spawnRate * 0.1;
+				}
+				EARTH_FLOAT_X = spawnRate * limbs[EARTH_ELEMENTAL][12][0] * sin(EARTH_FLOAT_ANIM * limbs[EARTH_ELEMENTAL][11][0]) * cos(my->yaw);
+				EARTH_FLOAT_Y = spawnRate * limbs[EARTH_ELEMENTAL][12][1] * sin(EARTH_FLOAT_ANIM * limbs[EARTH_ELEMENTAL][11][0]) * sin(my->yaw);
+
+				EARTH_FLOAT_Z = EARTH_SPAWN_ANIM * 8.0;
+				EARTH_FLOAT_Z += spawnRate * limbs[EARTH_ELEMENTAL][12][2] * sin(zAngle);
+			}
+
+			real_t pitchAngle = EARTH_FLOAT_ANIM * 1.0 * limbs[EARTH_ELEMENTAL][11][2] + PI / 4;
+			while ( pitchAngle >= 2 * PI )
+			{
+				pitchAngle -= 2 * PI;
+			}
+			while ( pitchAngle < 0 )
+			{
+				pitchAngle += 2 * PI;
+			}
+			entity->yaw += sin(EARTH_ATTACK_1);
+			entity->pitch += limbs[EARTH_ELEMENTAL][13][0] * sin(pitchAngle);
+
+			entity->x += EARTH_FLOAT_X;
+			entity->y += EARTH_FLOAT_Y;
+			entity->z += EARTH_FLOAT_Z;
+
+			if ( EARTH_DEFEND > 0.0 )
+			{
+				entity->x -= EARTH_DEFEND * cos(my->yaw);
+				entity->y -= EARTH_DEFEND * sin(my->yaw);
+				entity->pitch += 0.25 * sin(EARTH_DEFEND * PI / 2);
+			}
+
+
+			if ( MONSTER_ATTACK == MONSTER_POSE_MELEE_WINDUP1 || MONSTER_ATTACK == MONSTER_POSE_EARTH_ELEMENTAL_ROLL )
+			{
+				if ( EARTH_LIMB_FSKILL_YAW > -3 * PI )
+				{
+					EARTH_ATTACK_FLOAT = sin((PI / 2) * EARTH_LIMB_FSKILL_YAW / (-3 * PI));
+				}
+				else
+				{
+					EARTH_ATTACK_FLOAT = sin((PI / 2) * (-4 * PI - EARTH_LIMB_FSKILL_YAW) / -PI);
+				}
+			}
+			EARTH_ATTACK_FLOAT = -2.0 * sin(EARTH_ATTACK_1 / 2);
+			entity->z -= EARTH_ATTACK_FLOAT;
+			break;
+		}
+		case EARTH_EYES:
+		{
+			entity->x += limbs[EARTH_ELEMENTAL][2][0] * cos(my->yaw) + limbs[EARTH_ELEMENTAL][2][1] * cos(my->yaw + PI / 2);
+			entity->y += limbs[EARTH_ELEMENTAL][2][0] * sin(my->yaw) + limbs[EARTH_ELEMENTAL][2][1] * sin(my->yaw + PI / 2);
+			entity->z += limbs[EARTH_ELEMENTAL][2][2];
+			entity->focalx = limbs[EARTH_ELEMENTAL][1][0];
+			entity->focaly = limbs[EARTH_ELEMENTAL][1][1];
+			entity->focalz = limbs[EARTH_ELEMENTAL][1][2];
+
+			if ( body )
+			{
+				entity->x += EARTH_FLOAT_X;
+				entity->y += EARTH_FLOAT_Y;
+
+				if ( EARTH_SPAWN_STATE <= 1 )
+				{
+					entity->z += EARTH_FLOAT_Z;
+					entity->z = std::min(7.5, entity->z);
+					entity->x += 4.0 * cos(my->yaw);
+					entity->y += 4.0 * sin(my->yaw);
+				}
+				else
+				{
+					entity->z += 7.5 * EARTH_SPAWN_ANIM;
+					entity->x += 4.0 * EARTH_SPAWN_ANIM * cos(my->yaw);
+					entity->y += 4.0 * EARTH_SPAWN_ANIM * sin(my->yaw);
+
+					//entity->roll = sin(EARTH_SPAWN_ANIM * PI);
+				}
+
+				real_t zAngle = EARTH_FLOAT_ANIM * limbs[EARTH_ELEMENTAL][11][2] + 3 * PI / 4;
+				zAngle = fmod(zAngle, 2 * PI);
+				while ( zAngle >= 2 * PI )
+				{
+					zAngle -= 2 * PI;
+				}
+				while ( zAngle < 0 )
+				{
+					zAngle += 2 * PI;
+				}
+				real_t zMag = 0.5 * sin(zAngle);
+				entity->z -= zMag;
+
+				if ( MONSTER_ATTACK == MONSTER_POSE_MELEE_WINDUP1 || MONSTER_ATTACK == MONSTER_POSE_EARTH_ELEMENTAL_ROLL )
+				{
+					if ( MONSTER_ATTACKTIME >= limbs[EARTH_ELEMENTAL][15][0] )
+					{
+						entity->fskill[7] = std::min(1.0, entity->fskill[7] + 0.1); // extra raise
+					}
+				}
+				else
+				{
+					entity->fskill[7] = std::max(0.0, entity->fskill[7] - 0.1);
+				}
+				entity->z -= EARTH_ATTACK_FLOAT;
+				entity->z -= 1.0 * sin(entity->fskill[7] * PI / 2);
+			}
+			break;
+		}
+		case EARTH_LEFTARM:
+		{
+			real_t yaw = my->yaw;
+			if ( body )
+			{
+				yaw = body->yaw;
+				if ( MONSTER_ATTACK == MONSTER_POSE_MELEE_WINDUP1 )
+				{
+					real_t bodyRotate = fmod(body->fskill[0], 2 * PI);
+					while ( bodyRotate >= 2 * PI )
+					{
+						bodyRotate -= 2 * PI;
+					}
+					while ( bodyRotate < 0 )
+					{
+						bodyRotate += 2 * PI;
+					}
+					if ( bodyRotate < PI )
+					{
+						entity->x += 4.0 * sin(bodyRotate) * cos(my->yaw);
+						entity->y += 4.0 * sin(bodyRotate) * sin(my->yaw);
+					}
+				}
+				if ( EARTH_ATTACK_2 < 0.0 )
+				{
+					entity->x += 2.0 * sin(EARTH_ATTACK_2 * PI / 2) * cos(my->yaw);
+					entity->y += 2.0 * sin(EARTH_ATTACK_2 * PI / 2) * sin(my->yaw);
+				}
+				else
+				{
+					entity->x += 4.0 * std::max(0.0, sin(EARTH_ATTACK_2 * PI / 2)) * cos(my->yaw);
+					entity->y += 4.0 * std::max(0.0, sin(EARTH_ATTACK_2 * PI / 2)) * sin(my->yaw);
+				}
+			}
+
+			real_t sideDist = (1.0 - 0.5 * std::max(0.0, EARTH_ATTACK_2));
+			sideDist = std::max(0.25, sideDist - EARTH_DEFEND);
+			sideDist *= limbs[EARTH_ELEMENTAL][7][1];
+			entity->x += 2.0 * EARTH_DEFEND * cos(yaw);
+			entity->y += 2.0 * EARTH_DEFEND * sin(yaw);
+
+			if ( EARTH_SPAWN_STATE <= 1 )
+			{
+				entity->x += 2.0 * cos(my->yaw + 1 * PI / 6);
+				entity->y += 2.0 * sin(my->yaw + 1 * PI / 6);
+			}
+			else
+			{
+				entity->x += EARTH_SPAWN_ANIM * cos(my->yaw + 1 * PI / 6);
+				entity->y += EARTH_SPAWN_ANIM * sin(my->yaw + 1 * PI / 6);
+			}
+
+			entity->x += limbs[EARTH_ELEMENTAL][7][0] * cos(yaw) + sideDist * cos(yaw + PI / 2);
+			entity->y += limbs[EARTH_ELEMENTAL][7][0] * sin(yaw) + sideDist * sin(yaw + PI / 2);
+			entity->z += limbs[EARTH_ELEMENTAL][7][2];
+			entity->focalx = limbs[EARTH_ELEMENTAL][6][0];
+			entity->focaly = limbs[EARTH_ELEMENTAL][6][1];
+			entity->focalz = limbs[EARTH_ELEMENTAL][6][2];
+
+			if ( body )
+			{
+				entity->x += EARTH_FLOAT_X;
+				entity->y += EARTH_FLOAT_Y;
+				entity->z += EARTH_FLOAT_Z;
+				entity->pitch = body->pitch;
+
+				real_t pitchAngle = EARTH_FLOAT_ANIM * 1.0 * limbs[EARTH_ELEMENTAL][11][2] + PI / 2;
+				while ( pitchAngle >= 2 * PI )
+				{
+					pitchAngle -= 2 * PI;
+				}
+				while ( pitchAngle < 0 )
+				{
+					pitchAngle += 2 * PI;
+				}
+				entity->x += 1.0 * sin(-pitchAngle) * cos(my->yaw);
+				entity->y += 1.0 * sin(-pitchAngle) * sin(my->yaw);
+				entity->z += 0.5 * cos(-pitchAngle);
+
+				entity->z -= EARTH_ATTACK_FLOAT;
+			}
+			break;
+		}
+		case EARTH_RIGHTARM:
+		{
+			real_t yaw = my->yaw;
+			if ( body )
+			{
+				yaw = body->yaw;
+				if ( MONSTER_ATTACK == MONSTER_POSE_MELEE_WINDUP1 )
+				{
+					real_t bodyRotate = fmod(body->fskill[0], 2 * PI);
+					while ( bodyRotate >= 2 * PI )
+					{
+						bodyRotate -= 2 * PI;
+					}
+					while ( bodyRotate < 0 )
+					{
+						bodyRotate += 2 * PI;
+					}
+					if ( bodyRotate >= PI )
+					{
+						entity->x -= 4.0 * sin(bodyRotate) * cos(my->yaw);
+						entity->y -= 4.0 * sin(bodyRotate) * sin(my->yaw);
+					}
+				}
+
+				if ( EARTH_ATTACK_3 < 0.0 )
+				{
+					entity->x += 2.0 * sin(EARTH_ATTACK_3 * PI / 2) * cos(my->yaw);
+					entity->y += 2.0 * sin(EARTH_ATTACK_3 * PI / 2) * sin(my->yaw);
+				}
+				else
+				{
+					entity->x += 4.0 * std::max(0.0, sin(EARTH_ATTACK_3 * PI / 2)) * cos(my->yaw);
+					entity->y += 4.0 * std::max(0.0, sin(EARTH_ATTACK_3 * PI / 2)) * sin(my->yaw);
+				}
+			}
+
+			real_t sideDist = (1.0 - 0.5 * std::max(0.0, EARTH_ATTACK_3));
+			sideDist = std::max(0.25, sideDist - EARTH_DEFEND);
+			sideDist *= limbs[EARTH_ELEMENTAL][8][1];
+			entity->x += 2.0 * EARTH_DEFEND * cos(yaw);
+			entity->y += 2.0 * EARTH_DEFEND * sin(yaw);
+
+			if ( EARTH_SPAWN_STATE <= 1 )
+			{
+				entity->x += 2.0 * cos(my->yaw + 4 * PI / 6);
+				entity->y += 2.0 * sin(my->yaw + 4 * PI / 6);
+			}
+			else
+			{
+				entity->x += EARTH_SPAWN_ANIM * cos(my->yaw + 4 * PI / 6);
+				entity->y += EARTH_SPAWN_ANIM * sin(my->yaw + 4 * PI / 6);
+			}
+
+			entity->x += limbs[EARTH_ELEMENTAL][8][0] * cos(yaw) + sideDist * cos(yaw + PI / 2);
+			entity->y += limbs[EARTH_ELEMENTAL][8][0] * sin(yaw) + sideDist * sin(yaw + PI / 2);
+			entity->z += limbs[EARTH_ELEMENTAL][8][2];
+			entity->focalx = limbs[EARTH_ELEMENTAL][6][0];
+			entity->focaly = limbs[EARTH_ELEMENTAL][6][1];
+			entity->focalz = limbs[EARTH_ELEMENTAL][6][2];
+
+			if ( body )
+			{
+				entity->x += EARTH_FLOAT_X;
+				entity->y += EARTH_FLOAT_Y;
+				entity->z += EARTH_FLOAT_Z;
+				entity->pitch = body->pitch;
+
+				real_t pitchAngle = EARTH_FLOAT_ANIM * 1.0 * limbs[EARTH_ELEMENTAL][11][2] + PI / 8 + PI / 2;
+				while ( pitchAngle >= 2 * PI )
+				{
+					pitchAngle -= 2 * PI;
+				}
+				while ( pitchAngle < 0 )
+				{
+					pitchAngle += 2 * PI;
+				}
+				entity->x += 1.0 * sin(-pitchAngle) * cos(my->yaw);
+				entity->y += 1.0 * sin(-pitchAngle) * sin(my->yaw);
+				entity->z += 0.75 * cos(-pitchAngle);
+
+				entity->z -= EARTH_ATTACK_FLOAT;
+			}
+			break;
+		}
+		case EARTH_PEBBLE1:
+		{
+			entity->x += limbs[EARTH_ELEMENTAL][10][0] * cos(my->yaw) + limbs[EARTH_ELEMENTAL][10][1] * cos(my->yaw + PI / 2);
+			entity->y += limbs[EARTH_ELEMENTAL][10][0] * sin(my->yaw) + limbs[EARTH_ELEMENTAL][10][1] * sin(my->yaw + PI / 2);
+			entity->z += limbs[EARTH_ELEMENTAL][10][2];
+			entity->focalx = limbs[EARTH_ELEMENTAL][9][0];
+			entity->focaly = limbs[EARTH_ELEMENTAL][9][1];
+			entity->focalz = limbs[EARTH_ELEMENTAL][9][2];
+
+			if ( body )
+			{
+				entity->x += EARTH_FLOAT_X;
+				entity->y += EARTH_FLOAT_Y;
+				entity->z += EARTH_FLOAT_Z;
+				entity->pitch = body->pitch;
+			}
+
+			if ( EARTH_SPAWN_STATE <= 1 )
+			{
+				entity->x += 2.0 * cos(my->yaw + 3 * PI / 6);
+				entity->y += 2.0 * sin(my->yaw + 3 * PI / 6);
+				entity->z = std::min(7.5, entity->z);
+			}
+			else
+			{
+				EARTH_PEBBLE_IDLE_ANIM += MONSTER_ATTACK > 0 ? 0.2 : 0.1;
+				entity->x += EARTH_SPAWN_ANIM * cos(my->yaw + 3 * PI / 6);
+				entity->y += EARTH_SPAWN_ANIM * sin(my->yaw + 3 * PI / 6);
+				entity->z += 2.0;
+			}
+			entity->x += 1.0 * cos(EARTH_PEBBLE_IDLE_ANIM);
+			entity->y += 1.0 * sin(EARTH_PEBBLE_IDLE_ANIM);
+			break;
+		}
+		case EARTH_PEBBLE2:
+		{
+			entity->x += limbs[EARTH_ELEMENTAL][10][0] * cos(my->yaw) + limbs[EARTH_ELEMENTAL][10][1] * cos(my->yaw + PI / 2);
+			entity->y += limbs[EARTH_ELEMENTAL][10][0] * sin(my->yaw) + limbs[EARTH_ELEMENTAL][10][1] * sin(my->yaw + PI / 2);
+			entity->z += limbs[EARTH_ELEMENTAL][10][2];
+			entity->focalx = limbs[EARTH_ELEMENTAL][9][0];
+			entity->focaly = limbs[EARTH_ELEMENTAL][9][1];
+			entity->focalz = limbs[EARTH_ELEMENTAL][9][2];
+
+			if ( body )
+			{
+				entity->x += EARTH_FLOAT_X;
+				entity->y += EARTH_FLOAT_Y;
+				entity->z += EARTH_FLOAT_Z;
+				entity->pitch = body->pitch + PI / 32;
+			}
+
+			if ( EARTH_SPAWN_STATE <= 1 )
+			{
+				entity->x += 2.0 * cos(my->yaw + 5 * PI / 6);
+				entity->y += 2.0 * sin(my->yaw + 5 * PI / 6);
+				entity->z = std::min(7.5, entity->z);
+			}
+			else
+			{
+				EARTH_PEBBLE_IDLE_ANIM += MONSTER_ATTACK > 0 ? 0.4 : 0.2;
+				entity->z += 1.0;
+				entity->x += EARTH_SPAWN_ANIM * cos(my->yaw + 5 * PI / 6);
+				entity->y += EARTH_SPAWN_ANIM * sin(my->yaw + 5 * PI / 6);
+			}
+			entity->x += 1.5 * (cos(my->yaw + PI / 2 + EARTH_PEBBLE_IDLE_ANIM));
+			entity->y += 1.5 * (sin(my->yaw + PI / 2 + EARTH_PEBBLE_IDLE_ANIM));
+			break;
+		}
+		case EARTH_PEBBLE3:
+		{
+			entity->x += limbs[EARTH_ELEMENTAL][10][0] * cos(my->yaw) + limbs[EARTH_ELEMENTAL][10][1] * cos(my->yaw + PI / 2);
+			entity->y += limbs[EARTH_ELEMENTAL][10][0] * sin(my->yaw) + limbs[EARTH_ELEMENTAL][10][1] * sin(my->yaw + PI / 2);
+			entity->z += limbs[EARTH_ELEMENTAL][10][2];
+			entity->focalx = limbs[EARTH_ELEMENTAL][9][0];
+			entity->focaly = limbs[EARTH_ELEMENTAL][9][1];
+			entity->focalz = limbs[EARTH_ELEMENTAL][9][2];
+
+			if ( body )
+			{
+				entity->x += EARTH_FLOAT_X;
+				entity->y += EARTH_FLOAT_Y;
+				entity->z += EARTH_FLOAT_Z;
+				entity->pitch = body->pitch - PI / 32;
+			}
+
+			if ( EARTH_SPAWN_STATE <= 1 )
+			{
+				entity->z = std::min(7.5, entity->z);
+				entity->x += 2.0 * cos(my->yaw + 2 * PI / 6);
+				entity->y += 2.0 * sin(my->yaw + 2 * PI / 6);
+			}
+			else
+			{
+				EARTH_PEBBLE_IDLE_ANIM += MONSTER_ATTACK > 0 ? 0.3 : 0.15;
+				entity->x += EARTH_SPAWN_ANIM * cos(my->yaw + 2 * PI / 6);
+				entity->y += EARTH_SPAWN_ANIM * sin(my->yaw + 2 * PI / 6);
+			}
+			entity->x += 1.0 * (cos(my->yaw + EARTH_PEBBLE_IDLE_ANIM));
+			entity->y += 1.0 * (sin(my->yaw + EARTH_PEBBLE_IDLE_ANIM));
+			entity->x += 2.0 * (cos(my->yaw + PI / 2 + EARTH_PEBBLE_IDLE_ANIM));
+			entity->y += 2.0 * (sin(my->yaw + PI / 2 + EARTH_PEBBLE_IDLE_ANIM));
+			break;
+		}
+		default:
+			break;
+		}
+	}
+
+	if ( MONSTER_ATTACK > 0 )
+	{
+		MONSTER_ATTACKTIME++;
+	}
+	else if ( MONSTER_ATTACK == 0 )
+	{
+		MONSTER_ATTACKTIME = 0;
+	}
+	else
+	{
+		// do nothing, don't reset attacktime or increment it.
+	}
+}
