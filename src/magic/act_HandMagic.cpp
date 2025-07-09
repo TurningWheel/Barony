@@ -158,6 +158,10 @@ bool rangefinderTargetEnemyType(spell_t& spell, Entity& entity)
 		{
 			return true;
 		}
+		else if ( entity.behavior == &actMonster && entity.getMonsterTypeFromSprite() == EARTH_ELEMENTAL )
+		{
+			return true;
+		}
 		else if ( entity.behavior == &actSwitch ||
 			entity.behavior == &actSwitchWithTimer 
 			/*|| entity.sprite == 184*/
@@ -626,6 +630,15 @@ void spellcasting_animation_manager_t::setRangeFinderLocation()
 								if ( hit.entity == caster )
 								{
 									real_t crossDist = abs(dist * sin(tangent - playerYaw));
+									if ( spell->ID == SPELL_TELEKINESIS 
+										&& (entity->behavior == &actItem 
+											|| entity->behavior == &actGoldBag
+											|| entity->behavior == &actSwitch 
+											|| entity->behavior == &actSwitchWithTimer) )
+									{
+										real_t targetTileDist = 4.0 + sqrt(pow(target_x - entity->x, 2) + pow(target_y - entity->y, 2));
+										crossDist = sqrt(pow(targetTileDist, 2) + pow(crossDist, 2));
+									}
 									entitiesInRange.push(EntitySpellTargetLocation{entity, dist, crossDist, 0});
 								}
 								hit.entity = ohit;
