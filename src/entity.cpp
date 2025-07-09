@@ -19967,7 +19967,9 @@ bool Entity::monsterWantsItem(const Item& item, Item**& shouldEquip, node_t*& re
 					if ( item.type == ARTIFACT_ORB_BLUE
 						|| item.type == ARTIFACT_ORB_GREEN
 						|| item.type == ARTIFACT_ORB_RED
-						|| item.type == ARTIFACT_ORB_PURPLE )
+						|| item.type == ARTIFACT_ORB_PURPLE
+						|| items[item.type].hasAttribute("UNBURNABLE")
+						|| items[item.type].hasAttribute("UNVOIDABLE") )
 					{
 						return false;
 					}
