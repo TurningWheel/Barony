@@ -7310,8 +7310,8 @@ bool Entity::isLavaWalking() const
 			else if ( stats->type == EARTH_ELEMENTAL )
 			{
 				return true;
+			}
 		}
-	}
 	}
 	return false;
 }
@@ -7883,7 +7883,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 				}
 				else
 				{
-				serverUpdateEntitySkill(this, 8);
+					serverUpdateEntitySkill(this, 8);
 				}
 				if (myStats->type != SLIME && myStats->type != RAT /*&& myStats->type != SCARAB*/ 
 					&& myStats->type != BAT_SMALL
@@ -24248,11 +24248,13 @@ void Entity::handleKnockbackDamage(Stat& myStats, Entity* knockedInto)
 {
 	if ( knockedInto != NULL && myStats.getEffectActive(EFF_KNOCKBACK) && myStats.HP > 0 && myStats.type != MONSTER_ADORCISED_WEAPON )
 	{
-		int damageOnHit = 5 + local_rng.rand() % 6;
+		int damageOnHit = 0;
 		if ( knockedInto->behavior == &actDoor || knockedInto->behavior == &::actIronDoor )
 		{
+			damageOnHit = 5 + local_rng.rand() % 6;
 			playSoundEntity(this, 28, 64);
 			this->modHP(-damageOnHit);
+
 			Entity* whoKnockedMe = uidToEntity(this->monsterKnockbackUID);
 			if ( myStats.HP <= 0 )
 			{
@@ -24269,37 +24271,68 @@ void Entity::handleKnockbackDamage(Stat& myStats, Entity* knockedInto)
 					steamStatisticUpdateClient(whoKnockedMe->skill[2], STEAM_STAT_TAKE_THIS_OUTSIDE, STEAM_STAT_INT, 1);
 					Compendium_t::Events_t::eventUpdateWorld(whoKnockedMe->skill[2], Compendium_t::CPDM_DOOR_BROKEN, "door", 1);
 				}
-				knockedInto->doorHealth = 0;    // smash doors instantly
 				playSoundEntity(knockedInto, 28, 64);
 			}
-			if ( knockedInto->doorHealth <= 0 )
+			else if ( knockedInto->behavior == &::actIronDoor )
 			{
-				// set direction of splinters
-				if ( !knockedInto->doorDir )
-				{
-					knockedInto->doorSmacked = (this->x > knockedInto->x);
-				}
-				else
-				{
-					knockedInto->doorSmacked = (this->y < knockedInto->y);
-				}
+				setEffect(EFF_KNOCKBACK, false, 0, false);
 			}
+			knockedInto->doorHandleDamageMagic(knockedInto->doorHealth, *this, whoKnockedMe);
 		}
-		else if ( knockedInto->behavior == &::actFurniture )
+		else if ( knockedInto->isDamageableCollider() )
 		{
-			// break it down!
+			damageOnHit = 5 + local_rng.rand() % 6;
 			playSoundEntity(this, 28, 64);
 			this->modHP(-damageOnHit);
+
+			Entity* whoKnockedMe = uidToEntity(this->monsterKnockbackUID);
 			if ( myStats.HP <= 0 )
 			{
-				Entity* whoKnockedMe = uidToEntity(this->monsterKnockbackUID);
 				if ( whoKnockedMe )
 				{
 					whoKnockedMe->awardXP(this, true, true);
 				}
 			}
-			knockedInto->furnitureHealth = 0;    // smash furniture instantly
-			playSoundEntity(knockedInto, 28, 64);
+			knockedInto->colliderHandleDamageMagic(20, *this, whoKnockedMe);
+			if ( knockedInto->colliderCurrentHP > 0 )
+			{
+				setEffect(EFF_KNOCKBACK, false, 0, false);
+			}
+		}
+		else if ( knockedInto->behavior == &::actFurniture )
+		{
+			// break it down!
+			damageOnHit = 5 + local_rng.rand() % 6;
+			playSoundEntity(this, 28, 64);
+			this->modHP(-damageOnHit);
+			Entity* whoKnockedMe = uidToEntity(this->monsterKnockbackUID);
+			if ( myStats.HP <= 0 )
+			{
+				if ( whoKnockedMe )
+				{
+					whoKnockedMe->awardXP(this, true, true);
+				}
+			}
+			knockedInto->furnitureHandleDamageMagic(knockedInto->furnitureHealth, *this, whoKnockedMe);
+		}
+
+		if ( damageOnHit > 0 )
+		{
+			Entity* whoKnockedMe = uidToEntity(this->monsterKnockbackUID);
+			if ( getStats() )
+			{
+				// update enemy bar for attacker
+				if ( !strcmp(getStats()->name, "") )
+				{
+					updateEnemyBar(whoKnockedMe, this, getMonsterLocalizedName(getStats()->type).c_str(), getStats()->HP, getStats()->MAXHP,
+						false, DamageGib::DMG_DEFAULT);
+				}
+				else
+				{
+					updateEnemyBar(whoKnockedMe, this, getStats()->name, getStats()->HP, getStats()->MAXHP,
+						false, DamageGib::DMG_DEFAULT);
+				}
+			}
 		}
 	}
 }
