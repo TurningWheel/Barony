@@ -9987,7 +9987,9 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 
 					int olddamage = damage;
-					real_t chargeMult = (real_t)std::min(2, std::max(charge, static_cast<int>((Stat::getMaxAttackCharge(myStats) / 2) / ((double)(Stat::getMaxAttackCharge(myStats) / 2)))));
+					real_t chargeMult = (real_t)std::min(2, 
+						static_cast<int>(std::max(charge, static_cast<int>(Stat::getMaxAttackCharge(myStats) / 2)) 
+														/ ((double)(Stat::getMaxAttackCharge(myStats) / 2))));
 					if ( myStats->weapon && myStats->weapon->type == RAPIER && !shapeshifted )
 					{
 						if ( charge >= Stat::getMaxAttackCharge(myStats) )
@@ -12198,7 +12200,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 
 					DamageGib dmgGib = DMG_DEFAULT;
-					bool charged = std::max(charge, Stat::getMaxAttackCharge(myStats) / 2) / ((double)(Stat::getMaxAttackCharge(myStats) / 2)) > 1;
+					bool charged = static_cast<int>(std::max(charge, Stat::getMaxAttackCharge(myStats) / 2) / ((double)(Stat::getMaxAttackCharge(myStats) / 2))) > 1;
 					if ( weaponMultipliers >= 1.15 || (weaponskill == PRO_AXE && hitstats->type == MIMIC) )
 					{
 						dmgGib = DMG_STRONGER;
