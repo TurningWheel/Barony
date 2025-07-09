@@ -7874,7 +7874,17 @@ void Entity::attack(int pose, int charge, Entity* target)
 			}
 			else
 			{
+				if ( myStats->type == EARTH_ELEMENTAL )
+				{
+					if ( pose != 1 )
+					{
+						serverUpdateEntitySkill(this, 8); // don't update basic hits
+					}
+				}
+				else
+				{
 				serverUpdateEntitySkill(this, 8);
+				}
 				if (myStats->type != SLIME && myStats->type != RAT /*&& myStats->type != SCARAB*/ 
 					&& myStats->type != BAT_SMALL
 					&& myStats->type != REVENANT_SKULL
