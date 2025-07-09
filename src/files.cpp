@@ -5404,7 +5404,7 @@ void physfsReloadMonsterLimbFiles()
 	for ( int c = 1; c < NUMMONSTERS; c++ )
 	{
 		// initialize all offsets to zero
-		for ( int x = 0; x < 20; x++ )
+		for ( int x = 0; x < 30; x++ )
 		{
 			limbs[c][x][0] = 0;
 			limbs[c][x][1] = 0;
