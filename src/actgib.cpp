@@ -700,7 +700,8 @@ void serverSpawnGibForClient(Entity* gib)
 			SDLNet_Write16((Sint16)gib->y, &net_packet->data[6]);
 			SDLNet_Write16((Sint16)gib->z, &net_packet->data[8]);
 			SDLNet_Write16((Sint16)gib->sprite, &net_packet->data[10]);
-			net_packet->data[12] = gib->flags[SPRITE];
+			net_packet->data[12] = gib->flags[SPRITE] ? 1 << 0 : 0;
+			net_packet->data[12] |= (gib->skill[5] == 1) ? 1 << 1 : 0; // poof
 			net_packet->address.host = net_clients[c - 1].host;
 			net_packet->address.port = net_clients[c - 1].port;
 			net_packet->len = 13;
