@@ -8837,6 +8837,78 @@ void actParticleTimer(Entity* my)
 					doSpellExplosionArea(my->particleTimerVariable2, my, caster, my->x, my->y, my->z, my->particleTimerVariable3);
 				}
 			}
+			else if ( my->particleTimerCountdownAction == PARTICLE_TIMER_ACTION_EARTH_ELEMENTAL_ROLL )
+			{
+				Entity* parent = uidToEntity(my->parent);
+				Stat* parentStats = parent ? parent->getStats() : nullptr;
+				if ( parent && parentStats && parent->monsterAttack == MONSTER_POSE_EARTH_ELEMENTAL_ROLL && parentStats->getEffectActive(EFF_KNOCKBACK) )
+				{
+					std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadius(parent->x / 16, parent->y / 16, 1);
+					for ( auto it : entLists )
+					{
+						node_t* node;
+						for ( node = it->first; node != nullptr; node = node->next )
+						{
+							Entity* entity = (Entity*)node->element;
+							if ( entity == parent )
+							{
+								continue;
+							}
+							if ( !entity->getStats() )
+							{
+								continue;
+							}
+							if ( !entityInsideEntity(parent, entity) )
+							{
+								continue;
+							}
+							if ( parent && parent->getStats() )
+							{
+								if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
+								{
+									if ( parent->checkFriend(entity) )
+									{
+										continue;
+									}
+								}
+							}
+
+							auto hitProps = getParticleEmitterHitProps(my->getUID(), entity);
+							if ( hitProps->hits > 0 )
+							{
+								continue;
+							}
+							if ( !entity->monsterIsTargetable() ) { continue; }
+
+							real_t tangent = atan2(entity->y - parent->y, entity->x - parent->x);
+							bool oldPassable = entity->flags[PASSABLE];
+							entity->flags[PASSABLE] = false;
+							real_t d = lineTraceTarget(parent, parent->x, parent->y, tangent, 8.0, 0, false, entity);
+							entity->flags[PASSABLE] = oldPassable;
+							if ( hit.entity != entity )
+							{
+								continue;
+							}
+
+							{
+								int damage = std::min(30, std::max(5, statGetCON(parentStats, parent)));
+								if ( entity->getStats() )
+								{
+									if ( applyGenericMagicDamage(parent, entity, *parent, SPELL_NONE, damage, true, true) )
+									{
+										++hitProps->hits;
+										hitProps->tick = ticks;
+									}
+								}
+							}
+						}
+					}
+				}
+				else
+				{
+					PARTICLE_LIFE = 0;
+				}
+			}
 			else if ( my->particleTimerCountdownAction == PARTICLE_TIMER_ACTION_BOOBY_TRAP )
 			{
 				if ( !my->light )
@@ -9298,7 +9370,8 @@ void actParticleTimer(Entity* my)
 					//}
 				}
 			}
-			else if ( my->particleTimerCountdownAction == PARTICLE_TIMER_ACTION_SHATTER_EARTH )
+			else if ( my->particleTimerCountdownAction == PARTICLE_TIMER_ACTION_SHATTER_EARTH
+				|| my->particleTimerCountdownAction == PARTICLE_TIMER_ACTION_EARTH_ELEMENTAL )
 			{
 				int x = static_cast<int>(my->x / 16);
 				int y = static_cast<int>(my->y / 16);
@@ -9306,7 +9379,9 @@ void actParticleTimer(Entity* my)
 				{
 					if ( my->ticks == 1 )
 					{
-						createParticleShatterEarth(my, uidToEntity(my->parent), my->x, my->y);
+						createParticleShatterEarth(my, uidToEntity(my->parent), my->x, my->y, 
+							my->particleTimerCountdownAction == PARTICLE_TIMER_ACTION_SHATTER_EARTH ? SPELL_SHATTER_EARTH
+						: SPELL_EARTH_ELEMENTAL);
 					}
 					if ( my->ticks < TICKS_PER_SECOND )
 					{
@@ -9331,6 +9406,67 @@ void actParticleTimer(Entity* my)
 							fx->y = fx->actmagicOrbitStationaryY + fx->actmagicOrbitDist * sin(fx->yaw);
 						}
 					}
+				}
+			}
+			else if ( my->particleTimerCountdownAction == PARTICLE_TIMER_ACTION_EARTH_ELEMENTAL_DIE )
+			{
+				if ( my->ticks == 1 )
+				{
+					int x = static_cast<int>(my->x) >> 4;
+					int y = static_cast<int>(my->y) >> 4;
+					int mapIndex = (y)*MAPLAYERS + (x + 1) * MAPLAYERS * map.height;
+					if ( x > 0 && y > 0 && x < map.width - 1 && y < map.width - 1 )
+					{
+						if ( map.tiles[mapIndex] )
+						{
+							Entity* entity = newEntity(1869, 1, map.entities, nullptr); //Gib entity.
+							entity->x = my->x;
+							entity->y = my->y;
+							entity->z = 7.0;
+							entity->sizex = 2;
+							entity->sizey = 2;
+							entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
+							entity->behavior = &actEarthElementalDeathGib;
+							entity->ditheringDisabled = true;
+							entity->flags[PASSABLE] = true;
+							entity->flags[NOUPDATE] = true;
+							entity->flags[UPDATENEEDED] = false;
+							entity->flags[UNCLICKABLE] = true;
+							entity->scalex = 0.05;
+							entity->scaley = 0.05;
+							entity->scalez = 0.05;
+							entity->skill[0] = 5 * TICKS_PER_SECOND;
+							if ( multiplayer != CLIENT )
+							{
+								entity_uids--;
+							}
+							entity->setUID(-3);
+
+						}
+					}
+				}
+				my->scalex -= 0.05;
+				my->scaley -= 0.05;
+				my->scalez -= 0.05;
+				my->vel_z = -0.05;
+				my->z += my->vel_z;
+				if ( my->ticks % 4 == 0 )
+				{
+					int i = local_rng.rand() % 8;
+					Entity* fx = createParticleAestheticOrbit(my, 1870, 30, PARTICLE_EFFECT_SHATTER_EARTH_ORBIT);
+					fx->parent = 0;
+					fx->z = my->z;
+					fx->actmagicOrbitDist = 2;
+					fx->actmagicOrbitStationaryX = my->x;
+					fx->actmagicOrbitStationaryY = my->y;
+					fx->yaw = i * PI / 8;
+					fx->x = fx->actmagicOrbitStationaryX + fx->actmagicOrbitDist * cos(fx->yaw);
+					fx->y = fx->actmagicOrbitStationaryY + fx->actmagicOrbitDist * sin(fx->yaw);
+				}
+
+				if ( my->scalex <= 0.0 )
+				{
+					list_RemoveNode(my->mynode);
 				}
 			}
 			else if ( my->particleTimerCountdownAction == PARTICLE_TIMER_ACTION_SPORES )
@@ -14096,6 +14232,11 @@ Entity* createSpellExplosionArea(int spellID, Entity* caster, real_t x, real_t y
 		spellTimer->z = z;
 	}
 
+	if ( spellID == SPELL_EARTH_ELEMENTAL )
+	{
+		spellTimer->particleTimerDuration = 2;
+		return spellTimer;
+	}
 	if ( spellID == SPELL_ETERNALS_GAZE )
 	{
 		spawnExplosionFromSprite(135,
@@ -14229,23 +14370,30 @@ void doSpellExplosionArea(int spellID, Entity* my, Entity* caster, real_t x, rea
 
 			if ( entity->behavior == &actGreasePuddleSpawner )
 			{
-				++hitProps->hits;
-				entity->SetEntityOnFire(caster);
+				if ( spellID != SPELL_EARTH_ELEMENTAL )
+				{
+					++hitProps->hits;
+					entity->SetEntityOnFire(caster);
+				}
 			}
 			else
 			{
 				int damage = my->particleTimerVariable1;
 				if ( entity->getStats() )
 				{
-					if ( spellID != SPELL_ETERNALS_GAZE )
+					if ( spellID != SPELL_ETERNALS_GAZE && spellID != SPELL_EARTH_ELEMENTAL )
 					{
 						if ( !entity->monsterIsTargetable(true) ) { continue; }
+					}
+					else if ( entity->flags[PASSABLE] )
+					{
+						continue;
 					}
 				}
 				if ( applyGenericMagicDamage(caster, entity, caster ? *caster : *my, spellID, damage, true) )
 				{
 					++hitProps->hits;
-					if ( spellID == SPELL_ETERNALS_GAZE )
+					if ( spellID != SPELL_EARTH_ELEMENTAL )
 					{
 						entity->SetEntityOnFire(caster);
 						if ( entity->getStats() )
@@ -14371,32 +14519,58 @@ void actParticleShatterEarth(Entity* my)
 		{
 			if ( multiplayer != CLIENT )
 			{
-				Entity* entity = newEntity(245, 1, map.entities, nullptr); // boulder
-				entity->parent = my->getUID();
-				entity->x = static_cast<int>(my->x / 16) * 16.0 + 8.0;
-				entity->y = static_cast<int>(my->y / 16) * 16.0 + 8.0;
-				entity->z = -64;
-				entity->yaw = 0.0;
-				entity->sizex = 7;
-				entity->sizey = 7;
-				entity->behavior = &actBoulder;
-				entity->boulderShatterEarthSpell = my->parent;
-				entity->boulderShatterEarthDamage = getSpellDamageFromID(SPELL_SHATTER_EARTH, uidToEntity(my->parent));
-				entity->flags[UPDATENEEDED] = true;
-				entity->flags[PASSABLE] = true;
-
-				playSoundEntity(entity, 150, 128);
-				playSoundPlayer(clientnum, 150, 64);
-				for ( int c = 0; c < MAXPLAYERS; c++ )
+				if ( my->skill[1] == SPELL_SHATTER_EARTH )
 				{
-					if ( players[c]->isLocalPlayer() )
+					Entity* entity = newEntity(245, 1, map.entities, nullptr); // boulder
+					entity->parent = my->getUID();
+					entity->x = static_cast<int>(my->x / 16) * 16.0 + 8.0;
+					entity->y = static_cast<int>(my->y / 16) * 16.0 + 8.0;
+					entity->z = -64;
+					entity->yaw = 0.0;
+					entity->sizex = 7;
+					entity->sizey = 7;
+					entity->behavior = &actBoulder;
+					entity->boulderShatterEarthSpell = my->parent;
+					entity->boulderShatterEarthDamage = getSpellDamageFromID(SPELL_SHATTER_EARTH, uidToEntity(my->parent));
+					entity->flags[UPDATENEEDED] = true;
+					entity->flags[PASSABLE] = true;
+
+					playSoundEntity(entity, 150, 128);
+					playSoundPlayer(clientnum, 150, 64);
+					for ( int c = 0; c < MAXPLAYERS; c++ )
 					{
-						inputs.addRumbleForHapticType(c, Inputs::HAPTIC_SFX_BOULDER_LAUNCH_VOL, entity->getUID());
+						if ( players[c]->isLocalPlayer() )
+						{
+							inputs.addRumbleForHapticType(c, Inputs::HAPTIC_SFX_BOULDER_LAUNCH_VOL, entity->getUID());
+						}
+						else
+						{
+							playSoundPlayer(c, 150, 64);
+							inputs.addRumbleRemotePlayer(c, Inputs::HAPTIC_SFX_BOULDER_LAUNCH_VOL, entity->getUID());
+						}
 					}
-					else
+				}
+				else if ( my->skill[1] == SPELL_EARTH_ELEMENTAL )
+				{
+					Entity* caster = uidToEntity(my->parent);
+					if ( auto monster = summonMonsterNoSmoke(EARTH_ELEMENTAL, static_cast<int>(my->x / 16) * 16.0 + 8.0,
+						static_cast<int>(my->y / 16) * 16.0 + 8.0) )
 					{
-						playSoundPlayer(c, 150, 64);
-						inputs.addRumbleRemotePlayer(c, Inputs::HAPTIC_SFX_BOULDER_LAUNCH_VOL, entity->getUID());
+						if ( caster )
+						{
+							if ( forceFollower(*caster, *monster) )
+							{
+								if ( caster->behavior == &actPlayer )
+								{
+									Compendium_t::Events_t::eventUpdateMonster(caster->skill[2], Compendium_t::CPDM_RECRUITED, monster, 1);
+									monster->monsterAllyIndex = caster->skill[2];
+									if ( multiplayer == SERVER )
+									{
+										serverUpdateEntitySkill(monster, 42); // update monsterAllyIndex for clients.
+									}
+								}
+							}
+						}
 					}
 				}
 			}
@@ -14596,7 +14770,7 @@ void actParticleShatterEarthRock(Entity* my)
 	}
 }
 
-void createParticleShatterEarth(Entity* my, Entity* caster, real_t _x, real_t _y)
+void createParticleShatterEarth(Entity* my, Entity* caster, real_t _x, real_t _y, int spellID)
 {
 	int x = static_cast<int>(_x / 16);
 	int y = static_cast<int>(_y / 16);
@@ -14629,6 +14803,7 @@ void createParticleShatterEarth(Entity* my, Entity* caster, real_t _x, real_t _y
 		entity->scaley = 0.25;
 		entity->scalez = 0.25;
 		entity->skill[0] = 5 * TICKS_PER_SECOND;
+		entity->skill[1] = spellID;
 		entity->behavior = &actParticleShatterEarth;
 		entity->parent = caster ? caster->getUID() : 0;
 		entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,

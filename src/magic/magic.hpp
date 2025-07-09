@@ -306,6 +306,7 @@ static const int PARTICLE_EFFECT_ETERNALS_GAZE1 = 44;
 static const int PARTICLE_EFFECT_ETERNALS_GAZE2 = 45;
 static const int PARTICLE_EFFECT_ETERNALS_GAZE_STATIC = 46;
 static const int PARTICLE_EFFECT_SHATTER_EARTH_ORBIT = 47;
+static const int PARTICLE_EFFECT_EARTH_ELEMENTAL_DIE = 48;
 
 // actmagicIsVertical constants
 static const int MAGIC_ISVERTICAL_NONE = 0;
@@ -335,6 +336,9 @@ static const int PARTICLE_TIMER_ACTION_ETERNALS_GAZE = 19;
 static const int PARTICLE_TIMER_TELEPORT_PULL_TARGET_LOCATION = 20;
 static const int PARTICLE_TIMER_ACTION_ETERNALS_GAZE2 = 21;
 static const int PARTICLE_TIMER_ACTION_SHATTER_EARTH = 22;
+static const int PARTICLE_TIMER_ACTION_EARTH_ELEMENTAL = 23;
+static const int PARTICLE_TIMER_ACTION_EARTH_ELEMENTAL_ROLL = 24;
+static const int PARTICLE_TIMER_ACTION_EARTH_ELEMENTAL_DIE = 25;
 
 struct ParticleEmitterHit_t
 {
@@ -873,7 +877,8 @@ Entity* createTunnelPortal(real_t x, real_t y, int duration, int dir);
 Entity* createSpellExplosionArea(int spellID, Entity* caster, real_t x, real_t y, real_t z, real_t radius, int damage, Entity* ohitentity);
 void doSpellExplosionArea(int spellID, Entity* my, Entity* caster, real_t x, real_t y, real_t z, real_t radius);
 void createParticleSpin(Entity* entity);
-void createParticleShatterEarth(Entity* my, Entity* caster, real_t _x, real_t _y);
+void createParticleShatterEarth(Entity* my, Entity* caster, real_t _x, real_t _y, int spellID);
+void actEarthElementalDeathGib(Entity* my);
 
 void spawnMagicTower(Entity* parent, real_t x, real_t y, int spellID, Entity* autoHitTarget, bool castedSpell = false); // autoHitTarget is to immediate damage an entity, as all 3 tower magics hitting is unreliable
 bool magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks);

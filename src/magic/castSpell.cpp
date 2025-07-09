@@ -3051,6 +3051,70 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				}
 			}
 		}
+		else if ( spell->ID == SPELL_EARTH_ELEMENTAL )
+		{
+			if ( caster )
+			{
+				bool found = false;
+				bool effect = false;
+				if ( castSpellProps )
+				{
+					int x = castSpellProps->target_x / 16;
+					int y = castSpellProps->target_y / 16;
+					bool noroom = false;
+					if ( x < 0 || x >= map.width || y < 0 || y >= map.height )
+					{
+						noroom = true;
+					}
+					else
+					{
+						int mapIndex = (y)*MAPLAYERS + (x)*MAPLAYERS * map.height;
+						if ( map.tiles[OBSTACLELAYER + mapIndex] )
+						{
+							noroom = true;
+						}
+						else if ( map.skybox != 0 )
+						{
+							if ( !map.tiles[(MAPLAYERS - 1) + mapIndex] )
+							{
+								noroom = true;
+							}
+						}
+					}
+
+					if ( !noroom )
+					{
+						found = true;
+						Entity* spellTimer = createParticleTimer(caster, 5 * TICKS_PER_SECOND, -1);
+						spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_EARTH_ELEMENTAL;
+						spellTimer->particleTimerCountdownSprite = -1;
+						spellTimer->yaw = caster->yaw;
+						spellTimer->x = x * 16.0 + 8.0;
+						spellTimer->y = y * 16.0 + 8.0;
+						spellTimer->flags[NOUPDATE] = false; // spawn for client
+						spellTimer->flags[UPDATENEEDED] = true;
+						Sint32 val = (1 << 31);
+						val |= (Uint8)(19);
+						val |= (((Uint16)(spellTimer->particleTimerDuration) & 0xFFF) << 8);
+						val |= (Uint8)(spellTimer->particleTimerCountdownAction & 0xFF) << 20;
+						spellTimer->skill[2] = val;
+
+						spawnMagicEffectParticles(spellTimer->x, spellTimer->y, 7.5, 171);
+					}
+				}
+
+				if ( found )
+				{
+					spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
+					playSoundEntity(caster, 171, 128);
+				}
+				else
+				{
+					playSoundEntity(caster, 163, 128);
+					messagePlayer(caster->isEntityPlayer(), MESSAGE_HINT, Language::get(6736));
+				}
+			}
+		}
 		else if ( spell->ID == SPELL_FIRE_WALL )
 		{
 			if ( caster )
@@ -3959,7 +4023,25 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						}
 						else if ( Stat* targetStats = target->getStats() )
 						{
-							if ( target->setEffect(EFF_KNOCKBACK, true, 30, false) )
+							if ( targetStats->type == EARTH_ELEMENTAL )
+							{
+								if ( target->setEffect(EFF_KNOCKBACK, true, 40, false) )
+								{
+									target->setEffect(EFF_DASH, true, 40, false);
+									target->setEffect(EFF_STUNNED, true, 40, false);
+									target->attack(MONSTER_POSE_EARTH_ELEMENTAL_ROLL, 0, nullptr);
+									effect = true;
+									real_t pushbackMultiplier = 2.0;
+
+									real_t tangent = atan2(target->y - caster->y, target->x - caster->x);
+									target->vel_x = cos(tangent) * pushbackMultiplier;
+									target->vel_y = sin(tangent) * pushbackMultiplier;
+									target->monsterKnockbackVelocity = 0.005;
+									target->monsterKnockbackTangentDir = tangent;
+									target->monsterKnockbackUID = caster->getUID();
+								}
+							}
+							else if ( target->setEffect(EFF_KNOCKBACK, true, 30, false) )
 							{
 								effect = true;
 								real_t pushbackMultiplier = 0.6;
@@ -4027,6 +4109,31 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						if ( target->behavior == &actBoulder )
 						{
 							target->skill[14] = player + 1;
+						}
+						else if ( target->behavior == &actMonster && target->getMonsterTypeFromSprite() == EARTH_ELEMENTAL )
+						{
+							if ( target->setEffect(EFF_KNOCKBACK, true, 40, false) )
+							{
+								target->setEffect(EFF_DASH, true, 40, false);
+								target->setEffect(EFF_STUNNED, true, 40, false);
+								target->attack(MONSTER_POSE_EARTH_ELEMENTAL_ROLL, 0, nullptr);
+								effect = true;
+								real_t pushbackMultiplier = 2.0;
+								/*if ( caster )
+								{
+									real_t dist = entityDist(caster, target);
+									if ( dist < TOUCHRANGE )
+									{
+										pushbackMultiplier += 0.5;
+									}
+								}*/
+								real_t tangent = atan2(target->y - caster->y, target->x - caster->x) + PI;
+								target->vel_x = cos(tangent) * pushbackMultiplier;
+								target->vel_y = sin(tangent) * pushbackMultiplier;
+								target->monsterKnockbackVelocity = 0.005;
+								target->monsterKnockbackTangentDir = tangent;
+								target->monsterKnockbackUID = caster->getUID();
+							}
 						}
 						else
 						{

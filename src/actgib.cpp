@@ -666,6 +666,10 @@ Entity* spawnGibClient(Sint16 x, Sint16 y, Sint16 z, Sint16 sprite)
 	entity->pitch = (local_rng.rand() % 360) * PI / 180.0;
 	entity->roll = (local_rng.rand() % 360) * PI / 180.0;
 	vel = (local_rng.rand() % 10) / 10.f;
+	if ( sprite >= 1871 && sprite <= 1876 ) // earth sprite
+	{
+		vel *= 0.1;
+	}
 	entity->vel_x = vel * cos(entity->yaw);
 	entity->vel_y = vel * sin(entity->yaw);
 	entity->vel_z = -.5;

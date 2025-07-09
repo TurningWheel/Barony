@@ -2952,6 +2952,18 @@ void setupSpells()   ///TODO: Verify this function.
 	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH_FLOOR_TILE;
 	spell->distance = 64.0;
 
+	spell = createSimpleSpell(
+		SPELL_EARTH_ELEMENTAL,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		20, // damage
+		1, // duration
+		"spell_earth_elemental");
+	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH_FLOOR_TILE;
+	spell->distance = 64.0;
+
 	//static const int SPELL_LIGHTNING_NEXUS = 182;
 	//static const int SPELL_LIFT = 184;
 	//static const int SPELL_SLAM = 185;
