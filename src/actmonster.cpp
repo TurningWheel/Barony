@@ -30,7 +30,7 @@
 #include "ui/MainMenu.hpp"
 #include "menu.hpp"
 
-float limbs[NUMMONSTERS][20][3];
+float limbs[NUMMONSTERS][30][3];
 
 // determines which monsters fight which
 bool swornenemies[NUMMONSTERS][NUMMONSTERS] =
@@ -1242,6 +1242,10 @@ Entity* summonMonster(Monster creature, long x, long y, bool forceLocation)
             // small poof
             auto poof = spawnPoof(entity->x, entity->y, 4, 0.5);
         }
+		else if ( creature == EARTH_ELEMENTAL )
+		{
+			// no poof
+		}
         else {
             (void)spawnPoof(entity->x, entity->y, 0, 1.0);
         }
@@ -4224,6 +4228,11 @@ void actMonster(Entity* my)
 		case COCKATRICE:
 		case HOLOGRAM:
 		case MOTH_SMALL:
+		case EARTH_ELEMENTAL:
+		case MONSTER_UNUSED_5:
+		case MONSTER_UNUSED_6:
+		case MONSTER_UNUSED_7:
+		case MONSTER_UNUSED_8:
 			handleinvisible = false;
 			break;
 		default:
@@ -4738,6 +4747,11 @@ void actMonster(Entity* my)
 								skip = true;
 							}
 						}
+						if ( (myStats->type == EARTH_ELEMENTAL && (my->flags[PASSABLE] || myStats->getEffectActive(EFF_KNOCKBACK)) )
+							|| (entity->flags[PASSABLE] && entity->getRace() == EARTH_ELEMENTAL) )
+						{
+							skip = true;
+						}
 						if ( !skip )
 						{
 							double tangent = atan2(my->y - entity->y, my->x - entity->x);
@@ -4924,16 +4938,26 @@ void actMonster(Entity* my)
 
 		if ( my->monsterDefend != MONSTER_DEFEND_NONE )
 		{
-			if ( my->monsterState != MONSTER_STATE_ATTACK
-				|| myStats->shield == nullptr )
+			if ( myStats->type == EARTH_ELEMENTAL )
 			{
-				myStats->defending = false;
-				my->monsterDefend = 0;
-				serverUpdateEntitySkill(my, 47);
+				if ( my->monsterAttack == 0 )
+				{
+					myStats->defending = true;
+				}
 			}
-			else if ( my->monsterAttack == 0 )
+			else
 			{
-				myStats->defending = true;
+				if ( my->monsterState != MONSTER_STATE_ATTACK
+					|| myStats->shield == nullptr )
+				{
+					myStats->defending = false;
+					my->monsterDefend = 0;
+					serverUpdateEntitySkill(my, 47);
+				}
+				else if ( my->monsterAttack == 0 )
+				{
+					myStats->defending = true;
+				}
 			}
 		}
 		else
@@ -4996,7 +5020,7 @@ void actMonster(Entity* my)
 			else
 			{
 				// do knockback movement
-				my->monsterHandleKnockbackVelocity(my->monsterKnockbackTangentDir, weightratio);
+				my->monsterHandleKnockbackVelocity(my->monsterKnockbackTangentDir + PI, weightratio);
 				if ( abs(MONSTER_VELX) > 0.01 || abs(MONSTER_VELY) > 0.01 )
 				{
 					dist2 = clipMove(&my->x, &my->y, MONSTER_VELX, MONSTER_VELY, my);
@@ -6029,9 +6053,9 @@ timeToGoAgain:
 								}
 								else
 								{
-									my->monsterHandleKnockbackVelocity(my->monsterKnockbackTangentDir, weightratio);
+									my->monsterHandleKnockbackVelocity(my->monsterKnockbackTangentDir + PI, weightratio);
 									bool flag = my->flags[PASSABLE];
-									if ( myStats->type == MONSTER_ADORCISED_WEAPON && myStats->getAttribute("spirit_weapon") != "" )
+									if ( (myStats->type == MONSTER_ADORCISED_WEAPON && myStats->getAttribute("spirit_weapon") != "") )
 									{
 										my->flags[PASSABLE] = true; // hack to zoom through stuff
 									}
@@ -9667,7 +9691,7 @@ timeToGoAgain:
 
 		if ( myStats->getEffectActive(EFF_KNOCKBACK) )
 		{
-			my->monsterHandleKnockbackVelocity(my->monsterKnockbackTangentDir, weightratio);
+			my->monsterHandleKnockbackVelocity(my->monsterKnockbackTangentDir + PI, weightratio);
 			if ( abs(MONSTER_VELX) > 0.01 || abs(MONSTER_VELY) > 0.01 )
 			{
 				dist2 = clipMove(&my->x, &my->y, MONSTER_VELX, MONSTER_VELY, my);
@@ -10059,7 +10083,14 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 					else if ( monsterDefend == MONSTER_DEFEND_HOLD )
 					{
 						// skip attack, continue defending. offset the hit time to allow for timing variation.
-						monsterHitTime = HITRATE / 4;
+						if ( myStats->type == EARTH_ELEMENTAL )
+						{
+							monsterHitTime = HITRATE / 2;
+						}
+						else
+						{
+							monsterHitTime = HITRATE / 4;
+						}
 					}
 					else
 					{
@@ -12964,6 +12995,14 @@ int Entity::shouldMonsterDefend(Stat& myStats, const Entity& target, const Stat&
 		return MONSTER_DEFEND_NONE;
 	}
 
+	if ( myStats.type == EARTH_ELEMENTAL )
+	{
+		if ( local_rng.rand() % 20 < 8 )
+		{
+			return MONSTER_DEFEND_HOLD;
+		}
+	}
+
 	if ( !myStats.shield )
 	{
 		return MONSTER_DEFEND_NONE;
@@ -13525,8 +13564,8 @@ void Entity::monsterHandleKnockbackVelocity(real_t monsterFacingTangent, real_t 
 {
 	// this function makes the monster accelerate to running forwards or 0 movement speed after being knocked back.
 	// vel_x, vel_y are set on knockback impact and this slowly accumulates speed from the knocked back movement by a factor of monsterKnockbackVelocity.
-	real_t maxVelX = cos(monsterFacingTangent) * .045 * (monsterGetDexterityForMovement() + 10) * weightratio;
-	real_t maxVelY = sin(monsterFacingTangent) * .045 * (monsterGetDexterityForMovement() + 10) * weightratio;
+	real_t maxVelX = cos(monsterFacingTangent) * .045 * (std::max(0, monsterGetDexterityForMovement()) + 10) * weightratio;
+	real_t maxVelY = sin(monsterFacingTangent) * .045 * (std::max(0, monsterGetDexterityForMovement()) + 10) * weightratio;
 	bool mobile = ((monsterState == MONSTER_STATE_WAIT) || isMobile()); // if immobile, the intended max speed is 0 (stopped).
 	
 	if ( maxVelX > 0 )

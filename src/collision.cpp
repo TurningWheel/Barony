@@ -459,6 +459,19 @@ bool entityInsideSomething(Entity* entity)
 		}
 	}
 
+	Monster type = NOTHING;
+	if ( entity->behavior == &actMonster )
+	{
+		type = entity->getMonsterTypeFromSprite();
+		if ( type == NOTHING )
+		{
+			if ( entity->getStats() )
+			{
+				type = entity->getStats()->type;
+			}
+		}
+	}
+
 	// test against entities
 	std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(entity, 2);
 	for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
@@ -472,13 +485,14 @@ bool entityInsideSomething(Entity* entity)
 				continue;
 			}
 			if ( entity->behavior == &actDeathGhost 
-				|| entity->getMonsterTypeFromSprite() == BAT_SMALL
-				|| entity->getMonsterTypeFromSprite() == REVENANT_SKULL
-				|| entity->getMonsterTypeFromSprite() == MONSTER_ADORCISED_WEAPON
-				|| entity->getMonsterTypeFromSprite() == MOTH_SMALL
-				|| entity->getMonsterTypeFromSprite() == HOLOGRAM
-				|| entity->getMonsterTypeFromSprite() == FLAME_ELEMENTAL
-				|| entity->getMonsterTypeFromSprite() == EARTH_ELEMENTAL )
+				|| (entity->behavior == &actMonster &&
+					(type == BAT_SMALL
+					|| type == REVENANT_SKULL
+					|| type == MONSTER_ADORCISED_WEAPON
+					|| type == MOTH_SMALL
+					|| type == HOLOGRAM
+					|| type == FLAME_ELEMENTAL
+					|| type == EARTH_ELEMENTAL)) )
 			{
 				if ( testEntity->behavior == &actMonster || testEntity->behavior == &actPlayer 
 					|| (testEntity->isDamageableCollider() && (testEntity->colliderHasCollision & EditorEntityData_t::COLLIDER_COLLISION_FLAG_NPC)) )
@@ -1077,7 +1091,7 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 			{
 				continue;
 			}
-			if ( entity->getMonsterTypeFromSprite() == BAT_SMALL )
+			if ( entity->behavior == &actMonster && entity->getMonsterTypeFromSprite() == BAT_SMALL )
 			{
 				if ( my->behavior == &actBoulder )
 				{
@@ -1100,8 +1114,9 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 					continue;
 				}
 			}
-			if ( entity->getMonsterTypeFromSprite() == REVENANT_SKULL || entity->getMonsterTypeFromSprite() == MONSTER_ADORCISED_WEAPON
-				|| entity->getMonsterTypeFromSprite() == FLAME_ELEMENTAL || entity->getMonsterTypeFromSprite() == MOTH_SMALL )
+			if ( entity->behavior == &actMonster && 
+				(entity->getMonsterTypeFromSprite() == REVENANT_SKULL || entity->getMonsterTypeFromSprite() == MONSTER_ADORCISED_WEAPON
+				|| entity->getMonsterTypeFromSprite() == FLAME_ELEMENTAL || entity->getMonsterTypeFromSprite() == MOTH_SMALL) )
 			{
 				if ( my->behavior == &actBoulder )
 				{
@@ -1126,6 +1141,11 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 				continue;
 			}
 			if ( my->flags[NOCLIP_CREATURES]
+				&& (entity->behavior == &actMonster || entity->behavior == &actPlayer) )
+			{
+				continue;
+			}
+			if ( type == EARTH_ELEMENTAL && stats && stats->getEffectActive(EFF_KNOCKBACK)
 				&& (entity->behavior == &actMonster || entity->behavior == &actPlayer) )
 			{
 				continue;
@@ -1191,6 +1211,10 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 				else if ( my->behavior == &actPlayer )
 				{
 					if ( my->checkFriend(entity) )
+					{
+						continue;
+					}
+					if ( yourStats->type == EARTH_ELEMENTAL && entityInsideEntity(my, entity) )
 					{
 						continue;
 					}
@@ -1591,7 +1615,8 @@ Entity* findEntityInLine( Entity* my, real_t x1, real_t y1, real_t angle, int en
 									&& entity->sprite != 1804
 									&& entity->sprite != 1819
 									&& entity->sprite != 1822
-									&& entity->sprite != 1871) )
+									&& entity->sprite != 1871
+									&& entity->sprite != 1876) )
 						)
 					) 
 				)
