@@ -25506,6 +25506,10 @@ bool Entity::windEffectsEntity(Entity* entity)
 	}
 	if ( entity->behavior == &actMonster )
 	{
+		if ( entity->flags[PASSABLE] )
+		{
+			return false;
+		}
 		if ( !entity->isUntargetableBat() && !entity->isInertMimic() )
 		{
 			return true;
