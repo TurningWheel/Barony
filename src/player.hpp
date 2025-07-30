@@ -1382,9 +1382,31 @@ public:
 			Uint32 legendTextColor = 0xFFFFFFFF;
 			struct SkillEntry_t
 			{
+			private:
+				std::string skillName = "";
+				std::string skillShortName = "";
+			public:
+				void setSkillName(std::string name)
+				{
+					skillName = name;
+				}
+				void setSkillShortName(std::string name)
+				{
+					skillShortName = name;
+				}
+				std::string getSkillName(bool shortName = false)
+				{
+					if ( shortName )
+					{
+						if ( skillShortName != "" )
+						{
+							return skillShortName;
+						}
+					}
+					return skillName;
+				}
 				SkillEntry_t() {};
 				~SkillEntry_t() {};
-				std::string name;
 				int skillId = -1;
 				std::string skillIconPath;
 				std::string skillIconPathLegend;
