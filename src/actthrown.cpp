@@ -951,11 +951,11 @@ void actThrown(Entity* my)
 							case POTION_THUNDERSTORM:
 							case POTION_POLYMORPH:
 							case POTION_GREASE:
+							case POTION_WATER:
 								ignorePotion = false;
 								break;
 							case POTION_EXTRAHEALING:
 							case POTION_HEALING:
-							case POTION_WATER:
 							case POTION_BOOZE:
 							case POTION_JUICE:
 							case POTION_CONFUSION:

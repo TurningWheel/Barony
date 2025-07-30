@@ -246,6 +246,13 @@ bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 			consumeItem(item, player);
 			return true;
 		}
+
+		if ( entity->behavior == &actMonster )
+		{
+			potionUseAbundanceEffect(item, entity, usedBy);
+			consumeItem(item, player);
+			return true;
+		}
 	}
 
 	auto& camera_shakex = cameravars[player >= 0 ? player : 0].shakex;
