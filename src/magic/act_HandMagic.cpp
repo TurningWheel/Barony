@@ -1786,7 +1786,9 @@ void actMagicRangefinder(Entity* my)
 
 	auto& cast_anim = cast_animation[HANDMAGIC_PLAYERNUM];
 
-	if ( !(cast_anim.active || cast_anim.active_spellbook) || !cast_anim.rangefinder || cast_anim.stage == ANIM_SPELL_TOUCH_THROW )
+	if ( !(cast_anim.active || cast_anim.active_spellbook) || !cast_anim.rangefinder 
+		|| cast_anim.stage == ANIM_SPELL_TOUCH_THROW
+		|| cast_anim.stage == ANIM_SPELL_CIRCLE )
 	{
 		my->flags[INVISIBLE] = true;
 		return;
