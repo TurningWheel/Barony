@@ -4997,6 +4997,22 @@ void actPlayer(Entity* my)
 		else if ( *cvar_pbaoe == 10 )
 		{
 			Entity* spellTimer = createParticleTimer(my, 5 * TICKS_PER_SECOND + 10, -1);
+			spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_EARTH_ELEMENTAL;
+			spellTimer->particleTimerCountdownSprite = -1;
+			spellTimer->flags[UPDATENEEDED] = true;
+			spellTimer->flags[NOUPDATE] = false;
+			spellTimer->yaw = my->yaw;
+			spellTimer->x = my->x + 16.0 * cos(my->yaw);
+			spellTimer->y = my->y + 16.0 * sin(my->yaw);
+			Sint32 val = (1 << 31);
+			val |= (Uint8)(19);
+			val |= (((Uint16)(spellTimer->particleTimerDuration) & 0xFFF) << 8);
+			val |= (Uint8)(spellTimer->particleTimerCountdownAction & 0xFF) << 20;
+			spellTimer->skill[2] = val;
+		}
+		else if ( *cvar_pbaoe == 12 )
+		{
+			Entity* spellTimer = createParticleTimer(my, 5 * TICKS_PER_SECOND + 10, -1);
 			spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_SHATTER_EARTH;
 			spellTimer->particleTimerCountdownSprite = -1;
 			spellTimer->flags[UPDATENEEDED] = true;
@@ -5102,7 +5118,7 @@ void actPlayer(Entity* my)
 		static std::map<int, std::vector<ParticleTimerEffect_t::EffectLocations_t>> effLocations;
 
 		static ConsoleVariable<int> cvar_particle_sprite("/particle_sprite", 1718);
-		static ConsoleVariable<int> cvar_particle_test("/particle_test", -1);
+		static ConsoleVariable<int> cvar_particle_test("/particle_test", 7);
 		int lifetime = TICKS_PER_SECOND * 2;
 		real_t dist = 64.0 * 1.25;
 		if ( *cvar_particle_test == 3 )
@@ -5116,6 +5132,54 @@ void actPlayer(Entity* my)
 		else if ( *cvar_particle_test == ParticleTimerEffect_t::EffectType::EFFECT_SPORES )
 		{
 			floorMagicCreateSpores(my, 0.0, 0.0, my, 0, SPELL_SPORES);
+		}
+		else if ( *cvar_particle_test == ParticleTimerEffect_t::EffectType::EFFECT_ROOTS_SELF )
+		{
+			Entity* spellTimer = createParticleTimer(my, 5 * TICKS_PER_SECOND + 10, -1);
+			spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_ROOTS1;
+			spellTimer->particleTimerCountdownSprite = -1;
+			spellTimer->flags[UPDATENEEDED] = true;
+			spellTimer->flags[NOUPDATE] = false;
+			spellTimer->yaw = my->yaw;
+			spellTimer->x = my->x + 16.0 * cos(my->yaw);
+			spellTimer->y = my->y + 16.0 * sin(my->yaw);
+			Sint32 val = (1 << 31);
+			val |= (Uint8)(19);
+			val |= (((Uint16)(spellTimer->particleTimerDuration) & 0xFFF) << 8);
+			val |= (Uint8)(spellTimer->particleTimerCountdownAction & 0xFF) << 20;
+			spellTimer->skill[2] = val;
+		}
+		else if ( *cvar_particle_test == ParticleTimerEffect_t::EffectType::EFFECT_ROOTS_TILE )
+		{
+			Entity* spellTimer = createParticleTimer(my, 5 * TICKS_PER_SECOND + 10, -1);
+			spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_ROOTS_SINGLE_TILE;
+			spellTimer->particleTimerCountdownSprite = -1;
+			spellTimer->flags[UPDATENEEDED] = true;
+			spellTimer->flags[NOUPDATE] = false;
+			spellTimer->yaw = my->yaw;
+			spellTimer->x = my->x + 16.0 * cos(my->yaw);
+			spellTimer->y = my->y + 16.0 * sin(my->yaw);
+			Sint32 val = (1 << 31);
+			val |= (Uint8)(19);
+			val |= (((Uint16)(spellTimer->particleTimerDuration) & 0xFFF) << 8);
+			val |= (Uint8)(spellTimer->particleTimerCountdownAction & 0xFF) << 20;
+			spellTimer->skill[2] = val;
+		}
+		else if ( *cvar_particle_test == ParticleTimerEffect_t::EffectType::EFFECT_ROOTS_PATH )
+		{
+			Entity* spellTimer = createParticleTimer(my, 5 * TICKS_PER_SECOND + 10, -1);
+			spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_ROOTS_PATH;
+			spellTimer->particleTimerCountdownSprite = -1;
+			spellTimer->flags[UPDATENEEDED] = true;
+			spellTimer->flags[NOUPDATE] = false;
+			spellTimer->yaw = my->yaw;
+			spellTimer->x = my->x + 16.0 * cos(my->yaw);
+			spellTimer->y = my->y + 16.0 * sin(my->yaw);
+			Sint32 val = (1 << 31);
+			val |= (Uint8)(19);
+			val |= (((Uint16)(spellTimer->particleTimerDuration) & 0xFFF) << 8);
+			val |= (Uint8)(spellTimer->particleTimerCountdownAction & 0xFF) << 20;
+			spellTimer->skill[2] = val;
 		}
 		else if ( *cvar_particle_test == ParticleTimerEffect_t::EffectType::EFFECT_LIGHTNING_BOLT )
 		{
@@ -5191,9 +5255,9 @@ void actPlayer(Entity* my)
 			}
 
 			{
-				effLocations[ParticleTimerEffect_t::EffectType::EFFECT_TEST_6].clear();
+				effLocations[ParticleTimerEffect_t::EffectType::EFFECT_ROOTS_SELF].clear();
 				{
-					effLocations[ParticleTimerEffect_t::EffectType::EFFECT_TEST_6] =
+					effLocations[ParticleTimerEffect_t::EffectType::EFFECT_ROOTS_SELF] =
 					{
 						{ 0.0, 0.0, 0.1,    0.5,	0 },
 						/*{ 0.0, -8.0, 0.1,   0.5,	0 },
@@ -5438,7 +5502,7 @@ void actPlayer(Entity* my)
 						break;
 					}
 				}
-				else if ( effect.effectType == ParticleTimerEffect_t::EffectType::EFFECT_TEST_6 )
+				else if ( effect.effectType == ParticleTimerEffect_t::EffectType::EFFECT_ROOTS_SELF )
 				{
 					spellTimer->particleTimerCountdownSprite = 1765;
 
