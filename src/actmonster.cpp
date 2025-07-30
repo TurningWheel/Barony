@@ -76,7 +76,7 @@ bool swornenemies[NUMMONSTERS][NUMMONSTERS] =
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // GYROBOT
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // DUMMYBOT
 	{ 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // BUGBEAR
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MONSTER_D
+	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MONSTER_D
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MONSTER_M
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MONSTER_S
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MONSTER_G
@@ -4971,6 +4971,11 @@ void actMonster(Entity* my)
 			my->monsterLookDir += PI / 16;
 		}
 
+		if ( my->monsterState == MONSTER_STATE_WAIT )
+		{
+			myStats->monsterRangedAccuracy.accuracy = 0.0;
+		}
+
 		/*if ( myStats->defending )
 		{
 			messagePlayer(0, "defending!");
@@ -9769,7 +9774,8 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 
 	//TODO: I don't like this function getting called every frame. Find a better place to put it.
 	chooseWeapon(target, dist);
-	bool hasrangedweapon = this->hasRangedWeapon();
+	bool hasrangedweapon = this->hasRangedWeapon(true);
+
 	bool lichRangeCheckOverride = false;
 	if ( myStats->type == SLIME )
 	{
@@ -9795,7 +9801,15 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 			lichRangeCheckOverride = true;
 		}
 	}
-	if ( myStats->type == LICH_FIRE)
+	else if ( myStats->type == MONSTER_D )
+	{
+		if ( (monsterSpecialState >= MONSTER_D_SPECIAL_CAST1
+			&& monsterSpecialState <= MONSTER_D_SPECIAL_CAST3) )
+		{
+			lichRangeCheckOverride = true;
+		}
+	}
+	else if ( myStats->type == LICH_FIRE)
 	{
 		if ( monsterLichFireMeleeSeq == LICH_ATK_BASICSPELL_SINGLE )
 		{
@@ -9875,6 +9889,8 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 					|| myStats->weapon->type == SHORTBOW 
 					|| myStats->weapon->type == ARTIFACT_BOW
 					|| myStats->weapon->type == LONGBOW
+					|| myStats->weapon->type == BRANCH_BOW
+					|| myStats->weapon->type == BRANCH_BOW_INFECTED
 					|| myStats->weapon->type == COMPOUND_BOW) )
 			{
 				bow = 2;
@@ -10922,6 +10938,22 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_MOTH_CAST;
 					}
 					break;
+				case MONSTER_D:
+					// magic
+					if ( (monsterSpecialState >= MONSTER_D_SPECIAL_CAST1
+						&& monsterSpecialState <= MONSTER_D_SPECIAL_CAST3) )
+					{
+						// special handled in monsterDChooseWeapon()
+						if ( monsterSpecialState == MONSTER_D_SPECIAL_CAST2 )
+						{
+							monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_MONSTER_D_PUSH;
+						}
+						else
+						{
+							monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_MONSTER_D;
+						}
+					}
+					break;
 				case SPIDER:
 					// spray web
 					if ( dist < STRIKERANGE * 2 )
@@ -11175,6 +11207,16 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 					break;
 				case MOTH_SMALL:
 					if ( monsterSpecialState == MOTH_CAST || forceDeinit )
+					{
+						monsterSpecialState = 0;
+						shouldAttack = false;
+						deinitSuccess = true;
+					}
+					break;
+				case MONSTER_D:
+					if ( (monsterSpecialState >= MONSTER_D_SPECIAL_CAST1 
+						&& monsterSpecialState <= MONSTER_D_SPECIAL_CAST3)
+						|| forceDeinit )
 					{
 						monsterSpecialState = 0;
 						shouldAttack = false;
@@ -13854,9 +13896,26 @@ void Entity::monsterGenerateQuiverItem(Stat* myStats, bool lesserMonster)
 
 int Entity::getMonsterEffectiveDistanceOfRangedWeapon(Item* weapon)
 {
+	int distance = 160;
+	if ( Stat* myStats = getStats() )
+	{
+		if ( myStats->type == MONSTER_D )
+		{
+			if ( myStats->getAttribute("monster_d_type") == "watcher" )
+			{
+				distance = 64;
+				if ( monsterStrafeDirection > 0 && monsterSpecialState == 0 )
+				{
+					distance = STRIKERANGE;
+				}
+				return distance;
+			}
+		}
+	}
+
 	if ( !weapon )
 	{
-		return 160;
+		return distance;
 	}
 
 	if ( getMonsterTypeFromSprite() == SENTRYBOT )
@@ -13868,7 +13927,6 @@ int Entity::getMonsterEffectiveDistanceOfRangedWeapon(Item* weapon)
 		return sightranges[SPELLBOT];
 	}
 
-	int distance = 160;
 	switch ( weapon->type )
 	{
 		case SLING:
@@ -13877,6 +13935,8 @@ int Entity::getMonsterEffectiveDistanceOfRangedWeapon(Item* weapon)
 			distance = 100;
 			break;
 		case LONGBOW:
+		case BRANCH_BOW:
+		case BRANCH_BOW_INFECTED:
 			distance = 200;
 			break;
 		default:
@@ -14122,6 +14182,7 @@ bool monsterDebugModels(Entity* my, real_t* dist)
 	}
 	if ( keystatus[SDLK_KP_6] )
 	{
+		keystatus[SDLK_KP_6] = 0;
 		myStats->setEffectValueUnsafe(EFF_STUNNED, myStats->getEffectActive(EFF_STUNNED) ? 0 : 1);
 	}
 	if ( keystatus[SDLK_KP_PLUS] )

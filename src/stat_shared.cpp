@@ -1395,6 +1395,10 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 
 			stats->GOLD = 0;
 			stats->HUNGER = 900;
+			stats->setProficiency(PRO_RANGED, 80);
+
+			stats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] = 1;
 			break;
 		case 205:
 		case (1000 + MONSTER_M):

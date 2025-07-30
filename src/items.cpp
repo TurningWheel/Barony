@@ -2309,6 +2309,8 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		case LONGBOW:
 		case COMPOUND_BOW:
 		case HEAVY_CROSSBOW:
+		case BRANCH_BOW:
+		case BRANCH_BOW_INFECTED:
 			equipItemResult = equipItem(item, &stats[player]->weapon, player, checkInventorySpaceForPaperDoll);
 			break;
 		case GLOVES:
@@ -2631,6 +2633,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		case MAGICSTAFF_SUMMON:
 		case MAGICSTAFF_CHARM:
 		case MAGICSTAFF_POISON:
+		case BRANCH_STAFF:
 			equipItemResult = equipItem(item, &stats[player]->weapon, player, checkInventorySpaceForPaperDoll);
 			break;
 		case RING_ADORNMENT:
@@ -4038,6 +4041,14 @@ Sint32 Item::weaponGetAttack(const Stat* const wielder) const
 	else if ( type == LONGBOW )
 	{
 		attack += 10;
+	}
+	else if ( type == BRANCH_BOW )
+	{
+		attack += 6;
+	}
+	else if ( type == BRANCH_BOW_INFECTED )
+	{
+		attack += 8;
 	}
 	else if ( type == HEAVY_CROSSBOW )
 	{
@@ -5534,6 +5545,8 @@ bool isRangedWeapon(const ItemType type)
 	case LONGBOW:
 	case COMPOUND_BOW:
 	case HEAVY_CROSSBOW:
+	case BRANCH_BOW:
+	case BRANCH_BOW_INFECTED:
 		return true;
 	default:
 		return false;
@@ -6088,6 +6101,10 @@ real_t rangedAttackGetSpeedModifier(const Stat* const myStats)
 	if ( myStats->weapon->type == LONGBOW )
 	{
 		bowModifier = 1.25;
+	}
+	else if ( myStats->weapon->type == BRANCH_BOW || myStats->weapon->type == BRANCH_BOW_INFECTED )
+	{
+		bowModifier = 1.0;
 	}
 	else if ( myStats->weapon->type == ARTIFACT_BOW )
 	{

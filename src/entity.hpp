@@ -1019,7 +1019,7 @@ public:
 	// monster attack pose, return the animation to use based on weapon.
 	int getAttackPose() const;
 	// if monster holding ranged weapon.
-	bool hasRangedWeapon() const;
+	bool hasRangedWeapon(bool ignoreMonsterNPCType = false) const;
 	// weapon arm animation attacks
 	void handleWeaponArmAttack(Entity* weaponarm);
 	// handle walking movement for arms and legs
@@ -1149,6 +1149,9 @@ public:
 			case BUGBEAR:
 				bugbearChooseWeapon(target, dist);
 				break;
+			case MONSTER_D:
+				monsterDChooseWeapon(target, dist);
+				break;
 			case SHOPKEEPER:
 				if ( target )
 				{
@@ -1175,6 +1178,7 @@ public:
 	void slimeChooseWeapon(const Entity* target, double dist);
 	void mothChooseWeapon(const Entity* target, double dist);
 	void bugbearChooseWeapon(const Entity* target, double dist);
+	void monsterDChooseWeapon(const Entity* target, double dist);
 	void skeletonSummonSetEquipment(Stat* myStats, int rank);
 	static void tinkerBotSetStats(Stat* myStats, int rank);
 	static void mimicSetStats(Stat* myStats);
@@ -1414,8 +1418,8 @@ void actTextSource(Entity* my);
 
 //checks if a sprite falls in certain sprite ranges
 
-static const int NUM_ITEM_STRINGS = 354;
-static const int NUM_ITEM_STRINGS_BY_TYPE = 131;
+static const int NUM_ITEM_STRINGS = 356;
+static const int NUM_ITEM_STRINGS_BY_TYPE = 134;
 static const int NUM_EDITOR_TILES = 350;
 
 // furniture types.

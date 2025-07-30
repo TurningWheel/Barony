@@ -1113,6 +1113,9 @@ char itemNameStrings[NUM_ITEM_STRINGS][32] =
 	"rapier",
 	"amulet_burningresist",
 	"potion_grease",
+	"branch_staff",
+	"branch_bow",
+	"branch_bow_infected",
 	""
 };
 
@@ -1292,6 +1295,9 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"artifact_orb_green",
 		"rapier",
 		"potion_grease",
+		"branch_staff",
+		"branch_bow",
+		"branch_bow_infected",
 		""
 	},
 	{

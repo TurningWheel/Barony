@@ -2580,7 +2580,8 @@ void updateGameplayStatisticsInMainLoop()
 					{
 						bowList.insert(CROSSBOW);
 					}
-					else if ( item->type == SHORTBOW || item->type == LONGBOW || item->type == COMPOUND_BOW )
+					else if ( item->type == SHORTBOW || item->type == LONGBOW || item->type == COMPOUND_BOW
+						|| item->type == BRANCH_BOW || item->type == BRANCH_BOW_INFECTED )
 					{
 						bowList.insert(SHORTBOW);
 					}

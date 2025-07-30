@@ -1141,6 +1141,8 @@ void actHudWeapon(Entity* my)
 							|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == SHORTBOW
 							|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == ARTIFACT_BOW
 							|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == LONGBOW
+							|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == BRANCH_BOW
+							|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == BRANCH_BOW_INFECTED
 							|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == COMPOUND_BOW )
 						{
 							if ( !stats[HUDWEAPON_PLAYERNUM]->defending && !throwGimpTimer )
@@ -1591,6 +1593,8 @@ void actHudWeapon(Entity* my)
 							|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == SHORTBOW
 							|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == ARTIFACT_BOW
 							|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == LONGBOW
+							|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == BRANCH_BOW
+							|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == BRANCH_BOW_INFECTED
 							|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == COMPOUND_BOW) )
 					{
 						// not drawing bow anymore, reset.
@@ -2015,6 +2019,8 @@ void actHudWeapon(Entity* my)
 					|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == SHORTBOW
 					|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == ARTIFACT_BOW
 					|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == LONGBOW
+					|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == BRANCH_BOW
+					|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == BRANCH_BOW_INFECTED
 					|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == COMPOUND_BOW )
 				{
 					if (bowFire)
@@ -3366,6 +3372,8 @@ void actHudWeapon(Entity* my)
 				|| item->type == SHORTBOW
 				|| item->type == ARTIFACT_BOW
 				|| item->type == LONGBOW
+				|| item->type == BRANCH_BOW
+				|| item->type == BRANCH_BOW_INFECTED
 				|| item->type == COMPOUND_BOW )
 			{
 				my->x = 6 + HUDWEAPON_MOVEX;
@@ -4749,6 +4757,8 @@ void actHudArrowModel(Entity* my)
 	if ( stats[HUDSHIELD_PLAYERNUM]->weapon
 		&& (stats[HUDSHIELD_PLAYERNUM]->weapon->type == SHORTBOW
 			|| stats[HUDSHIELD_PLAYERNUM]->weapon->type == LONGBOW
+			|| stats[HUDSHIELD_PLAYERNUM]->weapon->type == BRANCH_BOW
+			|| stats[HUDSHIELD_PLAYERNUM]->weapon->type == BRANCH_BOW_INFECTED
 			|| stats[HUDSHIELD_PLAYERNUM]->weapon->type == ARTIFACT_BOW
 			|| stats[HUDSHIELD_PLAYERNUM]->weapon->type == COMPOUND_BOW )
 		)

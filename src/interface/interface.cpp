@@ -10769,6 +10769,13 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 			*magic = 2;
 			break;
 
+		case BRANCH_BOW:
+		case BRANCH_BOW_INFECTED:
+		case BRANCH_STAFF:
+			*metal = 0;
+			*magic = 3;
+			break;
+
 		case SCROLL_IDENTIFY:
 		case SCROLL_REMOVECURSE:
 		case SCROLL_FOOD:

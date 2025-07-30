@@ -1058,6 +1058,8 @@ static const int MONSTER_SPECIAL_COOLDOWN_SLIME_SPRAY = 250;
 static const int MONSTER_SPECIAL_COOLDOWN_SKULL_CAST = 250;
 static const int MONSTER_SPECIAL_COOLDOWN_MOTH_CAST = 250;
 static const int MONSTER_SPECIAL_COOLDOWN_BUGBEAR = 500;
+static const int MONSTER_SPECIAL_COOLDOWN_MONSTER_D = 250;
+static const int MONSTER_SPECIAL_COOLDOWN_MONSTER_D_PUSH = 75;
 
 //--monster target search types
 static const int MONSTER_TARGET_ENEMY = 0;
@@ -1230,6 +1232,10 @@ static const int BAT_REST_DISTURBED = 2;
 
 //-Bugbear--
 static const int BUGBEAR_DEFENSE = 1;
+
+static const int MONSTER_D_SPECIAL_CAST1 = 1;
+static const int MONSTER_D_SPECIAL_CAST2 = 2;
+static const int MONSTER_D_SPECIAL_CAST3 = 3;
 
 struct MonsterData_t
 {
@@ -1405,3 +1411,5 @@ struct MimicGenerator
 extern MimicGenerator mimic_generator;
 
 bool monsterDebugModels(Entity* my, real_t* dist);
+
+extern double sightranges[NUMMONSTERS];

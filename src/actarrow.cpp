@@ -58,7 +58,9 @@ enum ArrowSpriteTypes : int
 	PROJECTILE_FIRE_SPRITE,
 	PROJECTILE_HEAVY_SPRITE,
 	PROJECTILE_CRYSTAL_SPRITE,
-	PROJECTILE_HUNTING_SPRITE
+	PROJECTILE_HUNTING_SPRITE,
+	PROJECTILE_SEED_ROOT_SPRITE = 1881,
+	PROJECTILE_SEED_POISON_SPRITE = 1882
 };
 
 void actArrow(Entity* my)
@@ -83,7 +85,51 @@ void actArrow(Entity* my)
 		return;
 	}
 
-	if ( my->arrowQuiverType == QUIVER_FIRE || my->sprite == PROJECTILE_FIRE_SPRITE )
+	if ( my->sprite == PROJECTILE_SEED_ROOT_SPRITE
+		|| my->sprite == PROJECTILE_SEED_POISON_SPRITE )
+	{
+		if ( ARROW_LIFE > 1 )
+		{
+			if ( ARROW_STUCK == 0 )
+			{
+				my->light = addLight(my->x / 16, my->y / 16, "magic_green");
+				if ( flickerLights )
+				{
+					//Torches will never flicker if this setting is disabled.
+					ARROW_FLICKER++;
+				}
+				if ( ARROW_FLICKER > 5 )
+				{
+					ARROW_LIGHTING = (ARROW_LIGHTING == 1) + 1;
+
+					if ( ARROW_LIGHTING == 1 )
+					{
+						my->removeLightField();
+						my->light = addLight(my->x / 16, my->y / 16, "magic_green");
+					}
+					else
+					{
+						my->removeLightField();
+						my->light = addLight(my->x / 16, my->y / 16, "magic_green_flicker");
+					}
+					ARROW_FLICKER = 0;
+				}
+			}
+
+			if ( ARROW_STUCK == 0 )
+			{
+				my->removeLightField();
+				Entity* particle = spawnMagicParticleCustom(my, 1816, 0.5, 4);
+				if ( particle )
+				{
+					particle->lightBonus = vec4(0.5f, 0.5f, 0.5f, 0.f);
+					//particle->flags[SPRITE] = true;
+					particle->ditheringDisabled = true;
+				}
+			}
+		}
+	}
+	else if ( my->arrowQuiverType == QUIVER_FIRE || my->sprite == PROJECTILE_FIRE_SPRITE )
 	{
 		if ( ARROW_LIFE > 1 )
 		{
@@ -260,7 +306,8 @@ void actArrow(Entity* my)
 		if ( my->arrowFallSpeed > 0 )
 		{
 			real_t pitchChange = 0.02;
-			if ( my->arrowShotByWeapon == LONGBOW )
+			if ( my->arrowShotByWeapon == LONGBOW || my->arrowShotByWeapon == BRANCH_BOW 
+				|| my->arrowShotByWeapon == BRANCH_BOW_INFECTED )
 			{
 				pitchChange = 0.005;
 			}
@@ -1080,6 +1127,15 @@ void actArrow(Entity* my)
 						}
 					}
 
+					if ( my->sprite == PROJECTILE_SEED_POISON_SPRITE )
+					{
+						floorMagicCreateSpores(nullptr, hit.entity->x, hit.entity->y, parent, 15, SPELL_SPORES);
+					}
+					else if ( my->sprite == PROJECTILE_SEED_ROOT_SPRITE )
+					{
+						floorMagicCreateRoots(hit.entity->x, hit.entity->y, parent, 3, SPELL_ROOTS, 3 * TICKS_PER_SECOND, PARTICLE_TIMER_ACTION_ROOTS_SINGLE_TILE);
+					}
+
 					bool statusEffectApplied = false;
 					if ( hitstats->HP > 0 )
 					{
@@ -1091,7 +1147,39 @@ void actArrow(Entity* my)
 								procEffect = false;
 							}
 						}
-						if ( my->arrowQuiverType == QUIVER_FIRE && procEffect )
+
+						if ( my->sprite == PROJECTILE_SEED_ROOT_SPRITE )
+						{
+							if ( hit.entity->setEffect(EFF_ROOTED, true, TICKS_PER_SECOND, false) )
+							{
+								statusEffectApplied = true;
+							}
+							if ( parent && parent->behavior == &actPlayer )
+							{
+								Uint32 color = makeColorRGB(0, 255, 0);
+								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(6743), Language::get(6742), MSG_COMBAT);
+							}
+							if ( hit.entity->behavior == &actPlayer )
+							{
+								Uint32 color = makeColorRGB(255, 0, 0);
+								messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, color, Language::get(6744));
+							}
+						}
+						else if ( my->sprite == PROJECTILE_SEED_POISON_SPRITE )
+						{
+							statusEffectApplied = true;
+							if ( parent && parent->behavior == &actPlayer )
+							{
+								Uint32 color = makeColorRGB(0, 255, 0);
+								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(6746), Language::get(6745), MSG_COMBAT);
+							}
+							if ( hit.entity->behavior == &actPlayer )
+							{
+								Uint32 color = makeColorRGB(255, 0, 0);
+								messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, color, Language::get(6747));
+							}
+						}
+						else if ( my->arrowQuiverType == QUIVER_FIRE && procEffect )
 						{
 							bool burning = hit.entity->flags[BURNING];
 							hit.entity->SetEntityOnFire(my);
@@ -1555,13 +1643,40 @@ void actArrow(Entity* my)
 						updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP,
 							false, dmgGib);
 					}
-
 				}
+
+				if ( my->sprite == PROJECTILE_SEED_POISON_SPRITE )
+				{
+					if ( !hitstats || hit.entity->isInertMimic() )
+					{
+						floorMagicCreateSpores(nullptr, hit.entity->x, hit.entity->y, parent, 15, SPELL_SPORES);
+					}
+				}
+				else if ( my->sprite == PROJECTILE_SEED_ROOT_SPRITE )
+				{
+					if ( !hitstats || hit.entity->isInertMimic() )
+					{
+						floorMagicCreateRoots(hit.entity->x, hit.entity->y, parent, 3, SPELL_ROOTS, 3 * TICKS_PER_SECOND, PARTICLE_TIMER_ACTION_ROOTS_SINGLE_TILE);
+					}
+				}
+
 				my->removeLightField();
 				list_RemoveNode(my->mynode);
 			}
 			else if ( my->sprite == PROJECTILE_ROCK_SPRITE )
 			{
+				my->removeLightField();
+				list_RemoveNode(my->mynode); // rocks don't stick to walls...
+			}
+			else if ( my->sprite == PROJECTILE_SEED_POISON_SPRITE )
+			{
+				floorMagicCreateSpores(nullptr, my->x, my->y, uidToEntity(my->parent), 15, SPELL_SPORES);
+				my->removeLightField();
+				list_RemoveNode(my->mynode); // rocks don't stick to walls...
+			}
+			else if ( my->sprite == PROJECTILE_SEED_ROOT_SPRITE )
+			{
+				floorMagicCreateRoots(my->x, my->y, uidToEntity(my->parent), 3, SPELL_ROOTS, 3 * TICKS_PER_SECOND, PARTICLE_TIMER_ACTION_ROOTS_SINGLE_TILE);
 				my->removeLightField();
 				list_RemoveNode(my->mynode); // rocks don't stick to walls...
 			}

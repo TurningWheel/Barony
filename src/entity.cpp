@@ -423,6 +423,18 @@ void Entity::killedByMonsterObituary(Entity* victim)
 			case EARTH_ELEMENTAL:
 				victim->setObituary(Language::get(6737));
 				break;
+			case MONSTER_D:
+				victim->setObituary(Language::get(6738));
+				break;
+			case MONSTER_G:
+				victim->setObituary(Language::get(6739));
+				break;
+			case MONSTER_M:
+				victim->setObituary(Language::get(6740));
+				break;
+			case MONSTER_S:
+				victim->setObituary(Language::get(6741));
+				break;
 			default:
 				victim->setObituary(Language::get(1500));
 				break;
@@ -11402,6 +11414,27 @@ void Entity::attack(int pose, int charge, Entity* target)
 								}
 							}
 						}
+
+						if ( myStats->weapon && myStats->weapon->type == BRANCH_STAFF && !shapeshifted )
+						{
+							if ( !hitstats->getEffectActive(EFF_POISONED) )
+							{
+								envenomWeapon = true;
+								hitstats->setEffectActive(EFF_POISONED, 1);
+								hitstats->EFFECTS_TIMERS[EFF_POISONED] = std::max(200, 600 - hit.entity->getCON() * 20);
+								hitstats->poisonKiller = getUID();
+								if ( playerhit >= 0 )
+								{
+									messagePlayerMonsterEvent(playerhit, makeColorRGB(255, 0, 0), *myStats, Language::get(6531), Language::get(6532), MSG_COMBAT);
+					}
+								serverUpdateEffects(playerhit);
+								for ( int tmp = 0; tmp < 3; ++tmp )
+								{
+									Entity* gib = spawnGib(hit.entity, 211);
+									serverSpawnGibForClient(gib);
+								}
+							}
+						}
 					}
 					else if ( damage == 0 && !hitstats->defending && parriedDamage == 0 )
 					{
@@ -16872,6 +16905,19 @@ int Entity::getAttackPose() const
 				pose = MONSTER_POSE_MIMIC_MAGIC1;
 			}
 		}
+		else if ( myStats->type == MONSTER_D 
+			&& (this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_MONSTER_D
+			|| this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_MONSTER_D_PUSH) )
+		{
+			if ( this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_MONSTER_D )
+			{
+				pose = MONSTER_POSE_RANGED_WINDUP3;
+			}
+			else
+			{
+				pose = MONSTER_POSE_MAGIC_WINDUP1;
+			}
+		}
 		else if ( itemCategory(myStats->weapon) == MAGICSTAFF )
 		{
 			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON 
@@ -16971,7 +17017,7 @@ int Entity::getAttackPose() const
 				pose = MONSTER_POSE_MELEE_WINDUP1;
 			}
 		}
-		else if ( this->hasRangedWeapon() )
+		else if ( this->hasRangedWeapon(true) && myStats->weapon )
 		{
 			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON 
 				|| myStats->type == GOATMAN || myStats->type == INSECTOID 
@@ -17060,6 +17106,18 @@ int Entity::getAttackPose() const
 			|| myStats->type == FLAME_ELEMENTAL) && this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_SKULL_CAST )
 		{
 			pose = MONSTER_POSE_MAGIC_WINDUP1;
+		}
+		else if ( myStats->type == MONSTER_D && (this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_MONSTER_D
+			|| this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_MONSTER_D_PUSH) )
+		{
+			if ( this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_MONSTER_D )
+			{
+				pose = MONSTER_POSE_RANGED_WINDUP3;
+			}
+			else
+			{
+				pose = MONSTER_POSE_MAGIC_WINDUP1;
+			}
 		}
 		else if (type == KOBOLD || type == AUTOMATON ||
 			type == GOATMAN || type == INSECTOID ||
@@ -17155,7 +17213,7 @@ int Entity::getAttackPose() const
 	return pose;
 }
 
-bool Entity::hasRangedWeapon() const
+bool Entity::hasRangedWeapon(bool ignoreMonsterNPCType) const
 {
 	Stat *myStats = getStats();
 	/*if ( myStats && myStats->type == MOTH_SMALL && myStats->getAttribute("fire_sprite") != "" )
@@ -17166,6 +17224,15 @@ bool Entity::hasRangedWeapon() const
 		}
 		return true;
 	}*/
+
+	if ( !ignoreMonsterNPCType )
+	{
+		if ( myStats && myStats->type == MONSTER_D && myStats->getAttribute("monster_d_type") == "watcher" )
+		{
+			return true;
+		}
+	}
+
 	if ( myStats == nullptr || myStats->weapon == nullptr )
 	{
 		return false;
@@ -17631,6 +17698,11 @@ void Entity::handleWeaponArmAttack(Entity* weaponarm)
 				{
 					this->attack(MONSTER_POSE_MAGIC_CAST1, 0, nullptr);
 				}
+				else if ( stats && stats->type == MONSTER_D 
+					&& (monsterSpecialState >= MONSTER_D_SPECIAL_CAST1 && monsterSpecialState <= MONSTER_D_SPECIAL_CAST3) )
+				{
+					this->attack(MONSTER_POSE_MAGIC_WINDUP3, 0, nullptr);
+				}
 				else
 				{
 					this->attack(1, 0, nullptr);
@@ -17879,6 +17951,8 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 		}
 		else if ( weaponLimb->sprite == items[ARTIFACT_BOW].index 
 			|| weaponLimb->sprite == items[LONGBOW].index
+			|| weaponLimb->sprite == items[BRANCH_BOW].index
+			|| weaponLimb->sprite == items[BRANCH_BOW_INFECTED].index
 			|| weaponLimb->sprite == items[COMPOUND_BOW].index )
 		{
 			if ( isPlayer && monsterType == HUMAN )
@@ -17897,6 +17971,12 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 			}
 
 			if ( weaponLimb->sprite == items[LONGBOW].index )
+			{
+				weaponLimb->x -= .5 * cos(weaponArmLimb->yaw);
+				weaponLimb->y -= .5 * sin(weaponArmLimb->yaw);
+			}
+			else if ( weaponLimb->sprite == items[BRANCH_BOW].index 
+				|| weaponLimb->sprite == items[BRANCH_BOW_INFECTED].index )
 			{
 				weaponLimb->x -= .5 * cos(weaponArmLimb->yaw);
 				weaponLimb->y -= .5 * sin(weaponArmLimb->yaw);
@@ -18195,7 +18275,9 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 			weaponLimb->focaly -= 0.1;
 		}
 		else if ( weaponLimb->sprite == items[SHORTBOW].index || weaponLimb->sprite == items[ARTIFACT_BOW].index
-			|| weaponLimb->sprite == items[LONGBOW].index || weaponLimb->sprite == items[COMPOUND_BOW].index )
+			|| weaponLimb->sprite == items[LONGBOW].index || weaponLimb->sprite == items[BRANCH_BOW].index
+			|| weaponLimb->sprite == items[BRANCH_BOW_INFECTED].index
+			|| weaponLimb->sprite == items[COMPOUND_BOW].index )
 		{
 			if ( weaponLimb->sprite == items[SHORTBOW].index )
 			{
@@ -18241,7 +18323,9 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 				}
 			}
 			else if ( weaponLimb->sprite == items[ARTIFACT_BOW].index
-				|| weaponLimb->sprite == items[LONGBOW].index )
+				|| weaponLimb->sprite == items[LONGBOW].index
+				|| weaponLimb->sprite == items[BRANCH_BOW].index
+				|| weaponLimb->sprite == items[BRANCH_BOW_INFECTED].index )
 			{
 				switch ( monsterType )
 				{
@@ -18254,7 +18338,9 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 						weaponLimb->focalx += -0.5;
 						weaponLimb->focaly += 0;
 						weaponLimb->focalz += 1.75;
-						if ( weaponLimb->sprite == items[LONGBOW].index )
+						if ( weaponLimb->sprite == items[LONGBOW].index
+							|| weaponLimb->sprite == items[BRANCH_BOW].index
+							|| weaponLimb->sprite == items[BRANCH_BOW_INFECTED].index )
 						{
 							weaponLimb->x += -0.25 * cos(weaponArmLimb->yaw);
 							weaponLimb->y += -0.25 * sin(weaponArmLimb->yaw);
@@ -18299,7 +18385,9 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 					default:
 						break;
 				}
-				if ( weaponLimb->sprite == items[LONGBOW].index )
+				if ( weaponLimb->sprite == items[LONGBOW].index
+					|| weaponLimb->sprite == items[BRANCH_BOW].index
+					|| weaponLimb->sprite == items[BRANCH_BOW_INFECTED].index )
 				{
 					// this applies to all offsets for all monsters.
 					weaponLimb->x += -.1 * cos(weaponArmLimb->yaw + PI / 2) + 0.75 * cos(weaponArmLimb->yaw);
@@ -21694,6 +21782,26 @@ void Entity::setRangedProjectileAttack(Entity& marksman, Stat& myStats, int opti
 		}
 	}
 
+	if ( myStats.weapon )
+	{
+		if ( myStats.weapon->type == BRANCH_BOW )
+		{
+			if ( local_rng.rand() % 20 < 3 )
+			{
+				sprite = 1881; // root seed
+				this->arrowQuiverType = 0;
+			}
+		}
+		else if ( myStats.weapon->type == BRANCH_BOW_INFECTED )
+		{
+			if ( local_rng.rand() % 20 < 6 )
+			{
+				sprite = 1882; // poison seed
+				this->arrowQuiverType = 0;
+			}
+		}
+	}
+
 	// get arrow power.
 	attack += marksman.getRangedAttack();
 	real_t variance = 20;
@@ -21712,6 +21820,7 @@ bool Entity::setArrowProjectileProperties(int weaponType)
 	{
 		return false;
 	}
+
 	if ( multiplayer == CLIENT && weaponType == TOOL_SENTRYBOT )
 	{
 		// hack for arrow traps.
@@ -21752,7 +21861,7 @@ bool Entity::setArrowProjectileProperties(int weaponType)
 			this->vel_z = -0.6;
 			this->arrowFallSpeed = 0.08;
 		}
-		else if ( weaponType == LONGBOW )
+		else if ( weaponType == LONGBOW || weaponType == BRANCH_BOW || weaponType == BRANCH_BOW_INFECTED )
 		{
 			this->arrowSpeed = 8;
 			this->vel_z = -0.4;

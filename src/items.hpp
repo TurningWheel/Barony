@@ -368,9 +368,12 @@ typedef enum ItemType
 	INSTRUMENT_HORN,
 	RAPIER,
 	AMULET_BURNINGRESIST,
-	POTION_GREASE
+	POTION_GREASE,
+	BRANCH_STAFF,
+	BRANCH_BOW,
+	BRANCH_BOW_INFECTED
 } ItemType;
-const int NUMITEMS = 349;
+const int NUMITEMS = 352;
 
 //NOTE: If you change this, make sure to update NUMCATEGORIES in game.h to reflect the total number of categories. Not doing that will make bad things happen.
 typedef enum Category
