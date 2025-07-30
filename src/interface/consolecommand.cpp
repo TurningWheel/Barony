@@ -320,6 +320,14 @@ namespace ConsoleCommands {
 		messagePlayer(clientnum, MESSAGE_MISC, "Type \"/listcmds %d\" for more", pagenum + 1);
 		});
 
+	static ConsoleCommand ccmd_listcmds_all("/listcmds_all", "list all console commands", []CCMD{
+		auto & map = getConsoleCommands();
+		for ( auto& pair : map ) {
+			auto& cmd = pair.second;
+			messagePlayer(clientnum, MESSAGE_MISC, "%s", cmd.name);
+		}
+		});
+
 	static ConsoleCommand ccmd_mousecapture("/mousecapture", "toggle mouse capture enabled", []CCMD{
 		if (EnableMouseCapture == SDL_TRUE) {
 			EnableMouseCapture = SDL_FALSE;
