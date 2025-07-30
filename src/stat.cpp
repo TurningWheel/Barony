@@ -20,6 +20,7 @@
 #include "player.hpp"
 #include "prng.hpp"
 #include "mod_tools.hpp"
+#include "collision.hpp"
 
 Stat* stats[MAXPLAYERS];
 
@@ -2020,4 +2021,117 @@ int Stat::getMaxAttackCharge(Stat* myStats)
 		charge *= mult;
 	}
 	return std::max(5, charge); // failsafe min 5
+}
+
+real_t Stat::MonsterRangedAccuracy::getAccuracy(Uint32 target)
+{
+	if ( lastTarget != target )
+	{
+		accuracy = 0.0;
+	}
+	if ( ::ticks - lastTick > 5 * TICKS_PER_SECOND )
+	{
+		accuracy /= 2;
+	}
+	lastTarget = target;
+	lastTick = ::ticks;
+	return accuracy;
+}
+
+void Stat::MonsterRangedAccuracy::incrementAccuracy()
+{
+	accuracy += 10.0;
+	if ( local_rng.rand() % 4 == 0 )
+	{
+		accuracy += 20.0;
+	}
+	accuracy = std::min(100.0, accuracy);
+}
+void Stat::MonsterRangedAccuracy::modifyProjectile(Entity& my, Entity& projectile)
+{
+	Stat* myStats = my.getStats();
+	if ( !myStats ) { return; }
+	if ( myStats->type == LICH
+		|| myStats->type == LICH_FIRE
+		|| myStats->type == LICH_ICE
+		|| myStats->type == DEVIL )
+	{
+		return;
+	}
+	int accuracy = this->accuracy;
+	if ( accuracy == 0 ) { return; }
+	if ( Entity* target = uidToEntity(this->lastTarget) )
+	{
+		real_t velocity = sqrt(pow(projectile.vel_x, 2) + pow(projectile.vel_y, 2));
+
+		if ( velocity > 0.01 )
+		{
+			const real_t dist = entityDist(&my, target);
+			const real_t ticksToHit = (dist / std::max(0.01, velocity));
+			const real_t predictx = target->x + (target->vel_x * ticksToHit);
+			const real_t predicty = target->y + (target->vel_y * ticksToHit);
+			const real_t tangent = atan2(predicty - projectile.y, predictx - projectile.x); // assume target will be here when attack lands.
+
+			real_t projectileYaw = atan2(projectile.vel_y, projectile.vel_x);
+			int diff = static_cast<int>((projectileYaw - tangent) * 180.0 / PI) % 360;
+			if ( diff < 0 )
+			{
+				diff += 360;
+			}
+			if ( diff > 180 )
+			{
+				diff -= 360;
+			}
+			static ConsoleVariable<int> cvar_monster_ranged_accuracy("/monster_ranged_accuracy", 0);
+			int maxDiff = std::min(15, currentlevel / 2);
+			if ( myStats->type == SHOPKEEPER )
+			{
+				maxDiff = 15;
+			}
+			if ( svFlags & SV_FLAG_CHEATS )
+			{
+				maxDiff = std::max(maxDiff, *cvar_monster_ranged_accuracy);
+			}
+
+			if ( diff > 0 )
+			{
+				diff = std::min(maxDiff, diff);
+			}
+			else if ( diff < 0 )
+			{
+				diff = std::max(-maxDiff, diff);
+			}
+			const real_t yawChange = (diff * PI / 180.0);
+			const real_t testYaw = projectileYaw - yawChange;
+			//messagePlayer(0, MESSAGE_DEBUG, "acc %d, changed: %.2f", accuracy, yawChange);
+			Entity* ohitentity = hit.entity;
+			const real_t oldx = target->x;
+			const real_t oldy = target->y;
+			target->x = predictx;
+			target->y = predicty;
+			lineTraceTarget(&my, my.x, my.y, testYaw, 256.0, 0, false, target);
+			target->x = oldx;
+			target->y = oldy;
+			if ( hit.entity == target )
+			{
+				real_t factor = (accuracy / 2.0) + (local_rng.rand() % ((accuracy / 2) + 1));
+				if ( accuracy > 50 && local_rng.rand() % 5 == 0 )
+				{
+					factor = (local_rng.rand() % (accuracy + 1)); // full range
+				}
+				projectileYaw -= yawChange * factor / 100.0;
+				if ( projectile.behavior == &actArrow || projectile.behavior == &actMagicMissile )
+				{
+					projectile.yaw = projectileYaw;
+				}
+				projectile.vel_x = cos(projectileYaw) * velocity;
+				projectile.vel_y = sin(projectileYaw) * velocity;
+			}
+			else
+			{
+				//messagePlayer(0, MESSAGE_DEBUG, "can't see");
+			}
+			hit.entity = ohitentity;
+		}
+	}
 }

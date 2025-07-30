@@ -214,6 +214,7 @@ static const int SPELL_CHRONOMIC_FIELD = 191;
 static const int SPELL_ETERNALS_GAZE = 192;
 static const int SPELL_SHATTER_EARTH = 193;
 static const int SPELL_EARTH_ELEMENTAL = 194;
+static const int SPELL_ROOTS = 195;
 static const int NUM_SPELLS = 200;
 
 #define SPELLELEMENT_CONFUSE_BASE_DURATION 2//In seconds.
@@ -339,6 +340,9 @@ static const int PARTICLE_TIMER_ACTION_SHATTER_EARTH = 22;
 static const int PARTICLE_TIMER_ACTION_EARTH_ELEMENTAL = 23;
 static const int PARTICLE_TIMER_ACTION_EARTH_ELEMENTAL_ROLL = 24;
 static const int PARTICLE_TIMER_ACTION_EARTH_ELEMENTAL_DIE = 25;
+static const int PARTICLE_TIMER_ACTION_ROOTS1 = 26;
+static const int PARTICLE_TIMER_ACTION_ROOTS_SINGLE_TILE = 27;
+static const int PARTICLE_TIMER_ACTION_ROOTS_PATH = 28;
 
 struct ParticleEmitterHit_t
 {
@@ -356,14 +360,16 @@ struct ParticleTimerEffect_t
 		EFFECT_TEST_3,
 		EFFECT_DISRUPT_EARTH,
 		EFFECT_LIGHTNING_BOLT,
-		EFFECT_TEST_6,
+		EFFECT_ROOTS_SELF,
 		EFFECT_TEST_7,
 		EFFECT_FIRE_WAVE,
 		EFFECT_KINETIC_FIELD,
 		EFFECT_PULSE,
 		EFFECT_SPORES,
 		EFFECT_TUNNEL,
-		EFFECT_CHRONOMIC_FIELD
+		EFFECT_CHRONOMIC_FIELD,
+		EFFECT_ROOTS_TILE,
+		EFFECT_ROOTS_PATH
 	};
 	struct Effect_t
 	{
@@ -778,6 +784,7 @@ struct CastSpellProps_t
 	int elementIndex = 0;
 	real_t distanceOffset = 0.0;
 	int wallDir = 0;
+	bool setToMonsterCast(Entity* monster, int spellID);
 };
 
 void setupSpells();
@@ -868,6 +875,7 @@ void radiusMagicClientReceive(Entity* entity);
 Entity* floorMagicSetLightningParticle(Entity* my);
 void floorMagicCreateLightningSequence(Entity* spellTimer, int startTickOffset);
 void floorMagicCreateSpores(Entity* spawnOnEntity, real_t x, real_t y, Entity* caster, int damage, int spellID);
+bool floorMagicCreateRoots(real_t x, real_t y, Entity* caster, int damage, int spellID, int duration, int particleTimerAction);
 Entity* createVortexMagic(int sprite, real_t x, real_t y, real_t z, real_t dir, Uint32 lifetime);
 Entity* createParticleWave(ParticleTimerEffect_t::EffectType particleType, int sprite, real_t x, real_t y, real_t z, real_t dir, Uint32 lifetime, bool light);
 Entity* createParticleRoot(int sprite, real_t x, real_t y, real_t z, real_t dir, Uint32 lifetime);

@@ -2215,6 +2215,10 @@ void Entity::actWind()
 					if ( entity->behavior != &actPlayer && entity->behavior != &actMonster )
 					{
 						auto hitProps = getParticleEmitterHitProps(getUID(), entity);
+						if ( !hitProps )
+						{
+							continue;
+						}
 						if ( hitProps->hits > 0 )
 						{
 							continue;

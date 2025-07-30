@@ -488,6 +488,16 @@ public:
 	static const Sint32 kEnsembleBreakPointTier1 = 0;
 	real_t getEnsembleEffectBonus(EnsembleEffectsBonusType bonusType);
 	static int getMaxAttackCharge(Stat* myStats);
+	struct MonsterRangedAccuracy
+	{
+		Uint32 lastTarget = 0;
+		real_t accuracy = 0.0;
+		Uint32 lastTick = 0;
+		real_t getAccuracy(Uint32 target);
+		void incrementAccuracy();
+		void modifyProjectile(Entity& my, Entity& projectile);
+	};
+	MonsterRangedAccuracy monsterRangedAccuracy;
 };
 extern Stat* stats[MAXPLAYERS];
 

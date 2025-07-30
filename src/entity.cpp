@@ -8418,6 +8418,16 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 					}
 				}
+
+				if ( behavior == &actMonster && entity )
+				{
+					int accuracy = myStats->monsterRangedAccuracy.getAccuracy(monsterTarget);
+					if ( accuracy > 0 )
+					{
+						myStats->monsterRangedAccuracy.modifyProjectile(*this, *entity);
+					}
+					myStats->monsterRangedAccuracy.incrementAccuracy();
+				}
 				return;
 			}
 
@@ -8629,6 +8639,16 @@ void Entity::attack(int pose, int charge, Entity* target)
 						entity->vel_y = speed * sin(this->yaw);
 						entity->vel_z = -.5;
 					}
+				}
+
+				if ( behavior == &actMonster && entity )
+				{
+					int accuracy = myStats->monsterRangedAccuracy.getAccuracy(monsterTarget);
+					if ( accuracy > 0 )
+					{
+						myStats->monsterRangedAccuracy.modifyProjectile(*this, *entity);
+					}
+					myStats->monsterRangedAccuracy.incrementAccuracy();
 				}
 
 				if ( behavior == &actPlayer )
@@ -10395,6 +10415,12 @@ void Entity::attack(int pose, int charge, Entity* target)
 					bool shieldIncreased = false;
 					if ( damage > 0 || (damage == 0 && !(hitstats->shield && hitstats->defending) && parriedDamage == 0) )
 					{
+						if ( behavior == &actMonster )
+						{
+							int accuracy = myStats->monsterRangedAccuracy.getAccuracy(monsterTarget);
+							myStats->monsterRangedAccuracy.incrementAccuracy();
+						}
+
 						// choose random piece of equipment to target
 						armornum = hitstats->pickRandomEquippedItemToDegradeOnHit(&armor, true, false, false, true);
 						if ( armor != NULL && armor->status > BROKEN )

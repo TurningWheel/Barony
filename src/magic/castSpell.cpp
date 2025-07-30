@@ -394,6 +394,51 @@ Entity* getSpellTarget(node_t* node, int radius, Entity* caster, bool targetCast
 	return nullptr;
 }
 
+bool CastSpellProps_t::setToMonsterCast(Entity* monster, int spellID)
+{
+	if ( !monster ) { return false; }
+	if ( monster->behavior != &actMonster ) { return false; }
+	caster_x = monster->x;
+	caster_y = monster->y;
+
+	real_t spellDist = 64.0;
+	spell_t* spell = getSpellFromID(spellID);
+	if ( spell )
+	{
+		spellDist = spell->distance;
+	}
+	spellDist += 16.0;
+
+	if ( Entity* target = uidToEntity(monster->monsterTarget) )
+	{
+		Entity* ohit = hit.entity;
+		real_t tangent = atan2(target->y - monster->y, target->x - monster->x);
+		real_t dist = lineTraceTarget(monster, monster->x, monster->y, tangent, spellDist, 0, false, target);
+		if ( hit.entity == target )
+		{
+			target_x = target->x;
+			target_y = target->y;
+			if ( spell && spell->rangefinder == RANGEFINDER_TOUCH )
+			{
+				targetUID = target->getUID();
+			}
+		}
+		else
+		{
+			if ( spell && spell->rangefinder == RANGEFINDER_TOUCH )
+			{
+				hit.entity = ohit;
+				return false;
+			}
+			target_x = caster_x + dist * cos(tangent);
+			target_y = caster_y + dist * sin(tangent);
+		}
+		hit.entity = ohit;
+		return true;
+	}
+	return false;
+}
+
 Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool trap, bool usingSpellbook, CastSpellProps_t* castSpellProps)
 {
 	Entity* caster = uidToEntity(caster_uid);
@@ -3333,7 +3378,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 
 					std::vector<ParticleTimerEffect_t::EffectLocations_t> effLocations;
 					int roll = local_rng.rand() % 8;
-					int numSprites = 4;
+					int numSprites = 8;
 					for ( int i = 0; i < numSprites; ++i )
 					{
 						effLocations.push_back(ParticleTimerEffect_t::EffectLocations_t());
@@ -3399,6 +3444,15 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					spellTimer->yaw = tangent;
 					spellTimer->x = castSpellProps->target_x;
 					spellTimer->y = castSpellProps->target_y;
+
+					if ( caster->behavior == &actMonster )
+					{
+						spellTimer->x = castSpellProps->caster_x + 8.0 * cos(tangent);
+						spellTimer->y = castSpellProps->caster_y + 8.0 * sin(tangent);
+						spellTimer->vel_x = 3.0 * cos(spellTimer->yaw);
+						spellTimer->vel_y = 3.0 * sin(spellTimer->yaw);
+					}
+
 					Sint32 val = (1 << 31);
 					val |= (Uint8)(19);
 					val |= (((Uint16)(spellTimer->particleTimerDuration) & 0xFFF) << 8);
@@ -3408,6 +3462,37 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 
 				spawnMagicEffectParticles(caster->x, caster->y, caster->z, 1719);
 				playSoundEntity(caster, 171, 128);
+			}
+		}
+		else if ( spell->ID == SPELL_ROOTS )
+		{
+			if ( caster )
+			{
+				/*Entity* spellTimer = createParticleTimer(caster, 5 * TICKS_PER_SECOND + 10, -1);
+				spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_ROOTS1;
+				spellTimer->particleTimerCountdownSprite = -1;
+				spellTimer->flags[UPDATENEEDED] = true;
+				spellTimer->flags[NOUPDATE] = false;
+				spellTimer->yaw = caster->yaw;
+				spellTimer->x = caster->x;
+				spellTimer->y = caster->y;
+				Sint32 val = (1 << 31);
+				val |= (Uint8)(19);
+				val |= (((Uint16)(spellTimer->particleTimerDuration) & 0xFFF) << 8);
+				val |= (Uint8)(spellTimer->particleTimerCountdownAction & 0xFF) << 20;
+				spellTimer->skill[2] = val;*/
+
+				if ( floorMagicCreateRoots(caster->x, caster->y, caster, 0, SPELL_ROOTS, 5 * TICKS_PER_SECOND, PARTICLE_TIMER_ACTION_ROOTS1) )
+				{
+					spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
+					playSoundEntity(caster, 171, 128);
+				}
+				else
+				{
+					// no room
+					playSoundEntity(caster, 163, 128);
+					messagePlayer(caster->isEntityPlayer(), MESSAGE_HINT, Language::get(6748));
+				}
 			}
 		}
 		else if ( spell->ID == SPELL_VOID_CHEST )
@@ -4008,7 +4093,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		}
 		else if ( spell->ID == SPELL_KINETIC_PUSH )
 		{
-			if ( caster && caster->behavior == &actPlayer )
+			if ( caster && (caster->behavior == &actPlayer || caster->behavior == &actMonster) )
 			{
 				bool found = false;
 				bool effect = false;
@@ -4017,7 +4102,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					if ( Entity* target = uidToEntity(castSpellProps->targetUID) )
 					{
 						found = true;
-						if ( target->behavior == &actBoulder )
+						if ( target->behavior == &actBoulder && caster->behavior == &actPlayer )
 						{
 							target->skill[15] = player + 1;
 						}
@@ -5994,6 +6079,19 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					missileEntity->z = ceilingModel->z;
 				}
 			}
+
+			if ( caster->behavior == &actMonster && missileEntity && !trap )
+			{
+				if ( Stat* casterStats = caster->getStats() )
+				{
+					int accuracy = casterStats->monsterRangedAccuracy.getAccuracy(caster->monsterTarget);
+					if ( accuracy > 0 )
+					{
+						casterStats->monsterRangedAccuracy.modifyProjectile(*caster, *missileEntity);
+					}
+					casterStats->monsterRangedAccuracy.incrementAccuracy();
+				}
+			}
 		}
 		else if ( propulsion == PROPULSION_MISSILE_TRIO )
 		{
@@ -6137,6 +6235,19 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			((spell_t*)node->element)->caster = caster->getUID();
 			node->deconstructor = &spellDeconstructor;
 			node->size = sizeof(spell_t);
+
+			if ( caster->behavior == &actMonster && missileEntity && !trap )
+			{
+				if ( Stat* casterStats = caster->getStats() )
+				{
+					int accuracy = casterStats->monsterRangedAccuracy.getAccuracy(caster->monsterTarget);
+					if ( accuracy > 0 )
+					{
+						casterStats->monsterRangedAccuracy.modifyProjectile(*caster, *missileEntity);
+					}
+					casterStats->monsterRangedAccuracy.incrementAccuracy();
+				}
+			}
 		}
 
 		extramagic_to_use = 0;
