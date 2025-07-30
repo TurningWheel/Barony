@@ -398,10 +398,10 @@ thou makest use of them.#
 237 Stealth#
 238 Trading#
 239 Appraise#
-240 Swimming#
+240 Thaumaturgy#
 241 Leader#
-242 Casting#
-243 Magic#
+242 Mysticism#
+243 Sorcery#
 244 Ranged#
 245 Sword#
 246 Mace#
@@ -6786,8 +6786,8 @@ Host to enable the game setting.
 6528 You feel weak!#
 6529 Envenom removed#
 6530 Overcharge removed#
-6531 The %s poisons you with it's attack!#
-6532 %s poisons you with their attack!#
+6531 The %s poisons you!#
+6532 %s poisons you!#
 6533 The %s is poisoned!#
 6534 %s is poisoned!#
 6535 The amulet feels warm against your neck.#
@@ -6843,7 +6843,7 @@ Host to enable the game setting.
 6581 flame elemental#
 6582 hologram#
 6583 moth#
-6584 monster_unused_4#
+6584 earth sprite#
 6585 monster_unused_5#
 6586 monster_unused_6#
 6587 monster_unused_7#
@@ -6852,7 +6852,7 @@ Host to enable the game setting.
 6590 flame elementals#
 6591 holograms#
 6592 moths#
-6593 monster_unused_4s#
+6593 earth sprites#
 6594 monster_unused_5s#
 6595 monster_unused_6s#
 6596 monster_unused_7s#
@@ -7003,6 +7003,18 @@ Host to enable the game setting.
 6733 Your flame cloak ignites %s!#
 6734 A flame cloak sets you on fire!#
 6735 You set absorb magic#
-6736 There is no ceiling to shatter!#
+6736 There is no ceiling to complete the spell!#
+6737 gets rocked by an earth sprite.#
+6738 gets killed by a monster.#
+6739 gets killed by a monster.#
+6740 gets killed by a monster.#
+6741 gets killed by a monster.#
+6742 %s is hit with a rooting seed!#
+6743 The %s is hit with a rooting seed!#
+6744 You are hit by a rooting seed!#
+6745 %s is hit with a poison seed!#
+6746 The %s is hit with a poison seed!#
+6747 You are hit by a poison seed!#
+6748 There is no ground to complete the spell!#
 
 6999 END#

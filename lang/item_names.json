@@ -1396,6 +1396,18 @@
 		"potion_grease": {
 			"name_identified": "bottle of grease",
 			"name_unidentified": "potion"
+		},
+		"branch_staff": {
+			"name_identified": "branch staff",
+			"name_unidentified": "branch staff"
+		},
+		"branch_bow": {
+			"name_identified": "branch bow",
+			"name_unidentified": "branch bow"
+		},
+		"branch_bow_infected": {
+			"name_identified": "infected branch bow",
+			"name_unidentified": "infected branch bow"
 		}
     },
 	"spell_names": {
