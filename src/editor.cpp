@@ -56,7 +56,7 @@ std::vector<std::string> mapNames;
 std::list<std::string> modFolderNames;
 std::string physfs_saveDirectory = BASE_DATA_DIR;
 std::string physfs_openDirectory = BASE_DATA_DIR;
-float limbs[NUMMONSTERS][20][3]; // dummy variable for files.cpp limbs reloading in Barony.
+float limbs[NUMMONSTERS][30][3]; // dummy variable for files.cpp limbs reloading in Barony.
 void buttonStartSingleplayer(button_t* my) {} // dummy function for mod_tools.cpp
 void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value) {} // dummy function for mod_tools.cpp
 //AchievementObserver achievementObserver; // dummy function for mod_tools.cpp
