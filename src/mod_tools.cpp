@@ -3536,7 +3536,7 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 				{
 					if ( s.skillId == skill )
 					{
-						skillName = s.name;
+						skillName = s.getSkillName();
 						break;
 					}
 				}
@@ -4016,7 +4016,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 				{
 					if ( s.skillId == PRO_STEALTH )
 					{
-						skillName = s.name;
+						skillName = s.getSkillName();
 						break;
 					}
 				}
@@ -4053,7 +4053,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 				{
 					if ( s.skillId == PRO_LEADERSHIP )
 					{
-						skillName = s.name;
+						skillName = s.getSkillName();
 						break;
 					}
 				}
@@ -16670,7 +16670,7 @@ void Compendium_t::readModelLimbsFromFile(std::string section)
 				printlog("[JSON]: Error: Could not locate json file %s", inputPath.c_str());
 				return;
 			}
-			char buf[65536];
+			static char buf[65536];
 			int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
 			buf[count] = '\0';
 			rapidjson::StringStream is(buf);

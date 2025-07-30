@@ -16158,7 +16158,7 @@ bool getAttackTooltipLines(int playernum, AttackHoverText_t& attackHoverTextInfo
 	{
 		if ( skill.skillId == attackHoverTextInfo.proficiency )
 		{
-			skillName = skill.name;
+			skillName = skill.getSkillName();
 			skillLVL = stats[playernum]->getModifiedProficiency(attackHoverTextInfo.proficiency);
 			break;
 		}
@@ -17765,7 +17765,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 				{
 					if ( skill.skillId == attackHoverTextInfo.proficiency )
 					{
-						skillName = skill.name;
+						skillName = skill.getSkillName();
 						break;
 					}
 				}
@@ -18268,7 +18268,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 					{
 						if ( skill.skillId == PRO_SHIELD )
 						{
-							skillName = skill.name;
+							skillName = skill.getSkillName();
 							skillLVL = stats[player.playernum]->getModifiedProficiency(skill.skillId);
 							break;
 						}
@@ -24144,9 +24144,15 @@ void Player::SkillSheet_t::loadSkillSheetJSON()
 					{
 						allEntries.push_back(SkillSheetData_t::SkillEntry_t());
 						auto& entry = allEntries[allEntries.size() - 1];
+						entry.setSkillName("");
+						entry.setSkillShortName("");
 						if ( (*itr).HasMember("name") )
 						{
-							entry.name = (*itr)["name"].GetString();
+							entry.setSkillName((*itr)["name"].GetString());
+						}
+						if ( (*itr).HasMember("shortname") )
+						{
+							entry.setSkillShortName((*itr)["shortname"].GetString());
 						}
 						if ( (*itr).HasMember("id") )
 						{
@@ -33398,7 +33404,7 @@ void Player::SkillSheet_t::createSkillSheet()
 		profName->setTextColor(skillSheetData.defaultTextColor);
 		if ( i < skillSheetData.skillEntries.size() )
 		{
-			profName->setText(skillSheetData.skillEntries[i].name.c_str());
+			profName->setText(skillSheetData.skillEntries[i].getSkillName(true).c_str());
 		}
 		else
 		{
@@ -33449,7 +33455,7 @@ void Player::SkillSheet_t::createSkillSheet()
 		profName->setTextColor(skillSheetData.defaultTextColor);
 		if ( i < skillSheetData.skillEntries.size() )
 		{
-			profName->setText(skillSheetData.skillEntries[i].name.c_str());
+			profName->setText(skillSheetData.skillEntries[i].getSkillName(true).c_str());
 		}
 		else
 		{
@@ -36296,7 +36302,7 @@ void Player::SkillSheet_t::processSkillSheet()
 				if ( !bSkillSheetEntryLoaded )
 				{
 					auto skillTitleTxt = innerFrame->findField("skill title txt");
-					skillTitleTxt->setText(skillSheetData.skillEntries[selectedSkill].name.c_str());
+					skillTitleTxt->setText(skillSheetData.skillEntries[selectedSkill].getSkillName().c_str());
 
 					auto statTypeTxt = scrollArea->findField("stat type txt");
 					auto statIcon = scrollArea->findImage("stat icon");
@@ -41745,7 +41751,7 @@ void updateSkillUpFrame(const int player)
 			else
 			{
 				char buf[128];
-				snprintf(buf, sizeof(buf), Language::get(4327), Player::SkillSheet_t::skillSheetData.skillEntries[skillsheetIndex].name.c_str());
+				snprintf(buf, sizeof(buf), Language::get(4327), Player::SkillSheet_t::skillSheetData.skillEntries[skillsheetIndex].getSkillName().c_str());
 				skillNameTxt->setText(buf);
 			}
 			if ( auto textGet = skillNameTxt->getTextObject() )

@@ -8818,7 +8818,7 @@ bind_failed:
 						}
 						int c = Player::SkillSheet_t::skillSheetData.skillEntries[index + loops * (NUMPROFICIENCIES / 2)].skillId;
 						int val = score->stats->getProficiency(c);
-						snprintf(buf, sizeof(buf), "%3d %s", val, Player::SkillSheet_t::skillSheetData.skillEntries[index + loops * (NUMPROFICIENCIES / 2)].name.c_str());
+						snprintf(buf, sizeof(buf), "%3d %s", val, Player::SkillSheet_t::skillSheetData.skillEntries[index + loops * (NUMPROFICIENCIES / 2)].getSkillName(true).c_str());
 						auto skill = kills->addEntry(buf, true);
 						//skill->color = makeColor(203, 171, 101, 255);
 						if ( val >= SKILL_LEVEL_LEGENDARY )
