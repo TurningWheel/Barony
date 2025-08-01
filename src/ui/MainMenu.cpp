@@ -3910,6 +3910,12 @@ namespace MainMenu {
 			messagePlayer(clientnum, MESSAGE_MISC, Language::get(276));
 		}
 
+		// update map HDR
+		if ( initialized )
+		{
+			map.setMapHDRSettings();
+		}
+
 		// set volume and sound driver
 		if (initialized) {
 			setAudioDevice(current_audio_device);
