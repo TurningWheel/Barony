@@ -48,6 +48,7 @@ Construct an Entity
 ConsoleVariable<int> cvar_entity_bodypart_sync_tick("/entity_bodypart_sync_tick", TICKS_PER_SECOND / 4);
 void Entity::setUID(Uint32 new_uid)
 {
+	if ( !mynode ) { return; }
 	if ( mynode->list == map.entities )
 	{
 		map.entities_map.erase(uid);
@@ -474,14 +475,21 @@ int Entity::entityLight()
 	int light_y = (int)this->y / 16;
     const auto& light = lightmaps[0][light_y + light_x * map.height];
     //return (light.x + light.y + light.z) / 3.f;
+	float level = (light.x + light.y + light.z) / 3.f;
+	if ( !strncmp(map.filename, "fortress", 8) )
+	{
+		// reduce the ambient light a bit
+		level = (std::max(0.f, light.x - 32.f)
+			+ std::max(0.f, light.y - 32.f) 
+			+ std::max(0.f, light.z - 40.f)) / 3.f;
+	}
 	if ( light.w > 0.f )
 	{
 		float shade = std::min(std::max(0.f, light.w), 255.f) / 255.f;
-		float level = (light.x + light.y + light.z) / 3.f;
 		level -= (level * shade * 0.8);
 		return std::min(std::max(0, (int)(level)), 255);
 	}
-	return std::min(std::max(0, (int)((light.x + light.y + light.z) / 3.f)), 255);
+	return std::min(std::max(0, (int)(level)), 255);
 	//return std::min(std::max(0, (int)((light.x + light.y + light.z) / 3.f * 255.f)), 255);
 }
 
@@ -6258,7 +6266,9 @@ Sint32 Entity::getThrownAttack()
 
 	if ( entitystats->weapon )
 	{
-		if ( itemCategory(entitystats->weapon) == THROWN )
+		if ( itemCategory(entitystats->weapon) == THROWN 
+			&& !(entitystats->weapon->type == DUST_BALL
+				|| entitystats->weapon->type == GREASE_BALL) )
 		{
 			int dex = getDEX() / 4;
 			attack += dex;
@@ -8593,8 +8603,26 @@ void Entity::attack(int pose, int charge, Entity* target)
 						speed = 5.f + normalisedCharge;
 					}
 
+
+					if ( myStats->weapon->type == GREASE_BALL
+						|| myStats->weapon->type == DUST_BALL )
+					{
+						speed = 2.f + normalisedCharge;
+						if ( this->behavior == &actPlayer )
+						{
+							entity->vel_x = speed * cos(players[player]->entity->yaw);
+							entity->vel_y = speed * sin(players[player]->entity->yaw);
+							entity->vel_z = -.5;
+						}
+						else if ( this->behavior == &actMonster )
+						{
+							entity->vel_x = 4.0 * cos(this->yaw);
+							entity->vel_y = 4.0 * sin(this->yaw);
+							entity->vel_z = -.3;
+						}
+					}
 					// thrown items have slightly faster velocities
-					if ( (myStats->weapon->type == STEEL_CHAKRAM || myStats->weapon->type == CRYSTAL_SHURIKEN) )
+					else if ( (myStats->weapon->type == STEEL_CHAKRAM || myStats->weapon->type == CRYSTAL_SHURIKEN) )
 					{
 						if ( this->behavior == &actPlayer )
 						{
@@ -8689,10 +8717,6 @@ void Entity::attack(int pose, int charge, Entity* target)
 						{
 							entity->thrownProjectileCharge = normalisedCharge * 10;
 						}
-					}
-					if ( myStats->weapon && myStats->weapon->type == POTION_GREASE )
-					{
-						speed = 3.f;
 					}
 					entity->thrownProjectilePower = this->getThrownAttack();
 					if ( this->behavior == &actPlayer )
@@ -11482,7 +11506,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								if ( playerhit >= 0 )
 								{
 									messagePlayerMonsterEvent(playerhit, makeColorRGB(255, 0, 0), *myStats, Language::get(6531), Language::get(6532), MSG_COMBAT);
-					}
+								}
 								serverUpdateEffects(playerhit);
 								for ( int tmp = 0; tmp < 3; ++tmp )
 								{
@@ -17102,6 +17126,13 @@ int Entity::getAttackPose() const
 						else
 						{
 							pose = MONSTER_POSE_MELEE_WINDUP1;
+						}
+					}
+					else if ( myStats->type == MONSTER_M )
+					{
+						if ( this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_MONSTER_M_THROW )
+						{
+							pose = MONSTER_POSE_RANGED_WINDUP3;
 						}
 					}
 					else
