@@ -48,10 +48,10 @@ void initMonsterD(Entity* my, Stat* myStats)
 
 	if ( multiplayer != CLIENT )
 	{
-		MONSTER_SPOTSND = 335;
-		MONSTER_SPOTVAR = 3;
-		MONSTER_IDLESND = 332;
-		MONSTER_IDLEVAR = 2;
+		MONSTER_SPOTSND = 725;
+		MONSTER_SPOTVAR = 2;
+		MONSTER_IDLESND = 720;
+		MONSTER_IDLEVAR = 3;
 	}
 
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
@@ -817,7 +817,7 @@ void monsterDDie(Entity* my)
 
 	my->spawnBlood();
 
-	playSoundEntity(my, 338 + local_rng.rand() % 2, 128);
+	playSoundEntity(my, 723 + local_rng.rand() % 2, 128);
 
 	my->removeMonsterDeathNodes();
 
@@ -1026,6 +1026,7 @@ void monsterDMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							my->monsterWeaponYaw = 0;
 							weaponarm->roll = 0;
 							weaponarm->skill[1] = 0;
+							playSoundEntityLocal(my, 170, 32);
 							createParticleDot(my);
 							if ( multiplayer != CLIENT )
 							{

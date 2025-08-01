@@ -39,9 +39,9 @@ void initMonsterG(Entity* my, Stat* myStats)
 
 	if ( multiplayer != CLIENT )
 	{
-		MONSTER_SPOTSND = 220;
-		MONSTER_SPOTVAR = 5;
-		MONSTER_IDLESND = 217;
+		MONSTER_SPOTSND = 736;
+		MONSTER_SPOTVAR = 3;
+		MONSTER_IDLESND = 730;
 		MONSTER_IDLEVAR = 3;
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
@@ -676,7 +676,7 @@ void monsterGDie(Entity* my)
 		}
 	}
 
-	playSoundEntity(my, 225 + local_rng.rand() % 4, 128);
+	playSoundEntity(my, 733 + local_rng.rand() % 3, 128);
 
 	my->spawnBlood();
 
