@@ -215,6 +215,9 @@ static const int SPELL_ETERNALS_GAZE = 192;
 static const int SPELL_SHATTER_EARTH = 193;
 static const int SPELL_EARTH_ELEMENTAL = 194;
 static const int SPELL_ROOTS = 195;
+static const int SPELL_MUSHROOM = 196;
+static const int SPELL_MYCELIUM_BOMB = 197;
+static const int SPELL_MYCELIUM_SPORES = 198;
 static const int NUM_SPELLS = 200;
 
 #define SPELLELEMENT_CONFUSE_BASE_DURATION 2//In seconds.
@@ -308,6 +311,8 @@ static const int PARTICLE_EFFECT_ETERNALS_GAZE2 = 45;
 static const int PARTICLE_EFFECT_ETERNALS_GAZE_STATIC = 46;
 static const int PARTICLE_EFFECT_SHATTER_EARTH_ORBIT = 47;
 static const int PARTICLE_EFFECT_EARTH_ELEMENTAL_DIE = 48;
+static const int PARTICLE_EFFECT_MUSHROOM_SPELL = 49;
+static const int PARTICLE_EFFECT_MISC_PUDDLE = 50;
 
 // actmagicIsVertical constants
 static const int MAGIC_ISVERTICAL_NONE = 0;
@@ -343,6 +348,7 @@ static const int PARTICLE_TIMER_ACTION_EARTH_ELEMENTAL_DIE = 25;
 static const int PARTICLE_TIMER_ACTION_ROOTS1 = 26;
 static const int PARTICLE_TIMER_ACTION_ROOTS_SINGLE_TILE = 27;
 static const int PARTICLE_TIMER_ACTION_ROOTS_PATH = 28;
+static const int PARTICLE_TIMER_ACTION_SPORES_TRAIL = 29;
 
 struct ParticleEmitterHit_t
 {
@@ -369,7 +375,8 @@ struct ParticleTimerEffect_t
 		EFFECT_TUNNEL,
 		EFFECT_CHRONOMIC_FIELD,
 		EFFECT_ROOTS_TILE,
-		EFFECT_ROOTS_PATH
+		EFFECT_ROOTS_PATH,
+		EFFECT_MYCELIUM
 	};
 	struct Effect_t
 	{
@@ -996,6 +1003,7 @@ Entity* spellEffectHologram(Entity& caster, spellElement_t& element, real_t x, r
 Entity* spellEffectDemesneDoor(Entity& caster, Entity& doorFrame);
 void magicSetResistance(Entity* entity, Entity* parent, int& resistance, real_t& damageMultiplier, DamageGib& dmgGib, int& trapResist);
 int getSpellDamageFromID(int spellID, Entity* parent);
+void thrownItemUpdateSpellTrail(Entity& my, real_t _x, real_t _y);
 
 void freeSpells();
 

@@ -2974,6 +2974,44 @@ void setupSpells()   ///TODO: Verify this function.
 		1, // duration
 		"spell_roots");
 
+	spell = createSimpleSpell(
+		SPELL_MUSHROOM,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_mushroom");
+	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH_FLOOR_TILE;
+	spell->distance = 64.0;
+
+	spellElementConstructor(SPELL_MYCELIUM_BOMB,
+		1,		// mana
+		1,		// base mana
+		1,		// overload
+		5,		// damage
+		0,		// duration
+		"spell_element_mycelium_bomb");
+	spell = spellConstructor(
+		SPELL_MYCELIUM_BOMB,										// ID
+		100,												// difficulty
+		"spell_mycelium_bomb",										// internal name
+		// elements
+		{ SPELL_ELEMENT_PROPULSION_MISSILE, SPELL_MYCELIUM_BOMB }
+	);
+
+	spell = createSimpleSpell(
+		SPELL_MYCELIUM_SPORES,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		750, // duration
+		"spell_mycelium_spores",
+		true);
+
 	//static const int SPELL_LIGHTNING_NEXUS = 182;
 	//static const int SPELL_LIFT = 184;
 	//static const int SPELL_SLAM = 185;

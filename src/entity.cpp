@@ -563,6 +563,21 @@ int Entity::entityLightAfterReductions(Stat& myStats, Entity* observer)
 	{
 		light = std::max(16 * 5, light + 3 * 16);
 	}
+	if ( myStats.getEffectActive(EFF_DUSTED) )
+	{
+		int increment = 16 * 3;
+		if ( observer && observer->behavior == &actMonster )
+		{
+			if ( Stat* observerStats = observer->getStats() )
+			{
+				if ( observerStats->type == MONSTER_M )
+				{
+					light = std::max(light, 5 * 16);
+				}
+			}
+		}
+		light = std::max(increment, light + increment);
+	}
 
 	light = std::max(light, 0);
 	if ( myStats.type == DUMMYBOT || myStats.type == HOLOGRAM )
@@ -1864,6 +1879,10 @@ void Entity::effectTimes()
 					case EFF_PINPOINT:
 					case EFF_PENANCE:
 					case EFF_DETECT_ENEMY:
+						updateClient = true;
+						break;
+					case EFF_DUSTED:
+						messagePlayer(player, MESSAGE_STATUS, Language::get(6751));
 						updateClient = true;
 						break;
 					default:
@@ -5323,6 +5342,22 @@ void Entity::handleEffects(Stat* myStats)
 		spawnAmbientParticles(20, 175, 20 + local_rng.rand() % 30, 0.5, true);
 	}
 
+	if ( myStats->getEffectActive(EFF_DUSTED) )
+	{
+		if ( ticks % 25 == 0 || ticks % 40 == 0 )
+		{
+			if ( Entity* fx = spawnAmbientParticles(1, local_rng.rand() % 2 ? 156 : 155, 20 + local_rng.rand() % 10, 1.0, true) )
+			{
+				fx->flags[SPRITE] = true;
+				fx->x = this->x + (-4 + local_rng.rand() % 9);
+				fx->y = this->y + (-4 + local_rng.rand() % 9);
+				fx->vel_z = -0.25;
+				fx->z = 4.0;
+				fx->flags[BRIGHT] = true;
+			}
+		}
+	}
+
 	//if ( myStats->getEffectActive(EFF_BLIND) )
 	//{
 	//	spawnAmbientParticles2(2, 175, 20, 0.5, true); // maybe some black clouds
@@ -7127,6 +7162,10 @@ Sint32 statGetPER(Stat* entitystats, Entity* my)
 	{
 		PER -= std::max(5, PER / 2);
 	}
+	if ( entitystats->getEffectActive(EFF_DUSTED) )
+	{
+		PER = 0;
+	}
 	return PER;
 }
 
@@ -7358,6 +7397,11 @@ bool Entity::isInvisible() const
 	}
 	Stat* entitystats;
 	if ( (entitystats = getStats()) == NULL )
+	{
+		return false;
+	}
+
+	if ( entitystats->getEffectActive(EFF_DUSTED) )
 	{
 		return false;
 	}
@@ -18709,7 +18753,7 @@ void actAmbientParticleEffectIdle2(Entity* my)
 	return;
 }
 
-void Entity::spawnAmbientParticles2(int chance, int particleSprite, int duration, double particleScale, bool shrink)
+Entity* Entity::spawnAmbientParticles2(int chance, int particleSprite, int duration, double particleScale, bool shrink)
 {
 	if ( local_rng.rand() % chance == 0 )
 	{
@@ -18735,10 +18779,12 @@ void Entity::spawnAmbientParticles2(int chance, int particleSprite, int duration
 		spawnParticle->behavior = &actAmbientParticleEffectIdle2;
 		spawnParticle->flags[PASSABLE] = true;
 		spawnParticle->setUID(-3);
+		return spawnParticle;
 	}
+	return nullptr;
 }
 
-void Entity::spawnAmbientParticles(int chance, int particleSprite, int duration, double particleScale, bool shrink)
+Entity* Entity::spawnAmbientParticles(int chance, int particleSprite, int duration, double particleScale, bool shrink)
 {
 	if ( local_rng.rand() % chance == 0 )
 	{
@@ -18764,7 +18810,9 @@ void Entity::spawnAmbientParticles(int chance, int particleSprite, int duration,
 		spawnParticle->behavior = &actAmbientParticleEffectIdle;
 		spawnParticle->flags[PASSABLE] = true;
 		spawnParticle->setUID(-3);
+		return spawnParticle;
 	}
+	return nullptr;
 }
 
 void Entity::handleEffectsClient()
@@ -18845,6 +18893,22 @@ void Entity::handleEffectsClient()
 	if ( myStats->getEffectActive(EFF_INVISIBLE) && getMonsterTypeFromSprite() == SHADOW )
 	{
 		spawnAmbientParticles(20, 175, 20 + local_rng.rand() % 30, 0.5, true);
+	}
+
+	if ( myStats->getEffectActive(EFF_DUSTED) )
+	{
+		if ( ticks % 25 == 0 || ticks % 40 == 0 )
+		{
+			if ( Entity* fx = spawnAmbientParticles(1, local_rng.rand() % 2 ? 156 : 155, 20 + local_rng.rand() % 10, 1.0, true) )
+			{
+				fx->flags[SPRITE] = true;
+				fx->x = this->x + (-4 + local_rng.rand() % 9);
+				fx->y = this->y + (-4 + local_rng.rand() % 9);
+				fx->vel_z = -0.25;
+				fx->z = 4.0;
+				fx->flags[BRIGHT] = true;
+			}
+		}
 	}
 }
 

@@ -3495,6 +3495,27 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				}
 			}
 		}
+		else if ( spell->ID == SPELL_MUSHROOM )
+		{
+			if ( caster )
+			{
+				if ( castSpellProps )
+				{
+					if ( Entity* breakable = Entity::createBreakableCollider(EditorEntityData_t::getColliderIndexFromName("mushroom_spell_common"), 
+						castSpellProps->target_x, castSpellProps->target_y, caster) )
+					{
+						spawnPoof(breakable->x, breakable->y, 7.5, 1.0, true);
+						spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
+					}
+					else
+					{
+						// no room
+						playSoundEntity(caster, 163, 128);
+						messagePlayer(caster->isEntityPlayer(), MESSAGE_HINT, Language::get(6750));
+					}
+				}
+			}
+		}
 		else if ( spell->ID == SPELL_VOID_CHEST )
 		{
 			if ( caster )
@@ -5994,7 +6015,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				}
 			}
 
-			if ( spell->ID == SPELL_SPORE_BOMB )
+			if ( spell->ID == SPELL_SPORE_BOMB || spell->ID == SPELL_MYCELIUM_BOMB )
 			{
 				missile_speed *= 0.5;
 				missileEntity->vel_x = cos(missileEntity->yaw) * (missile_speed);
@@ -6468,6 +6489,13 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				if ( propulsion == PROPULSION_MISSILE )
 				{
 					missileEntity->sprite = 1816;
+				}
+			}
+			else if ( !strcmp(innerElement->element_internal_name, spellElementMap[SPELL_MYCELIUM_BOMB].element_internal_name) )
+			{
+				if ( propulsion == PROPULSION_MISSILE )
+				{
+					missileEntity->sprite = 1886;
 				}
 			}
 			else if ( !strcmp(innerElement->element_internal_name, spellElementMap[SPELL_SPIN].element_internal_name) 

@@ -213,7 +213,12 @@ Sint32 Stat::getModifiedProficiency(int skill) const
 	{
 		effectBonus += 10;
 	}
-	return std::min(100, std::max(0, base + equipmentBonus + effectBonus));
+	int result = std::min(100, std::max(0, base + equipmentBonus + effectBonus));
+	if ( skill == PRO_STEALTH && getEffectActive(EFF_DUSTED) )
+	{
+		result *= 0.3;
+	}
+	return result;
 }
 
 //Destructor

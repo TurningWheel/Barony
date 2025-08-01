@@ -123,6 +123,7 @@ static const int EFF_MAGIC_WELL = 98;
 static const int EFF_STATIC = 99;
 static const int EFF_ABSORB_MAGIC = 100;
 static const int EFF_FLAME_CLOAK = 101;
+static const int EFF_DUSTED = 102;
 static const int NUMEFFECTS = 128;
 
 // stats
@@ -270,7 +271,8 @@ enum KilledBy {
     SINK,
     FAILED_ALCHEMY,
 	FAILED_CHALLENGE,
-	BELL
+	BELL,
+	MUSHROOM
 };
 
 class Stat

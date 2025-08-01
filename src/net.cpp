@@ -3313,6 +3313,9 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 			case PARTICLE_EFFECT_BOOBY_TRAP:
 				createParticleBoobyTrapExplode(nullptr, particle_x, particle_y);
 				break;
+			case PARTICLE_EFFECT_MISC_PUDDLE:
+				spawnMiscPuddle(nullptr, particle_x, particle_y, sprite);
+				break;
 			case PARTICLE_EFFECT_SPORE_BOMB:
 				for ( int i = 0; i < 16; ++i )
 				{
