@@ -689,6 +689,7 @@ public:
 	//--THROWN PROJECTILE--
 	Sint32& thrownProjectilePower; //skill[19]
 	Sint32& thrownProjectileCharge; //skill[20]
+	Sint32& thrownProjectileParticleTimerUID = skill[9];
 
 	//--PLAYER SPAWN POINT--
 	Sint32& playerStartDir; //skill[1]
@@ -1088,8 +1089,8 @@ public:
 	/*
 	 * 1 in @chance chance in spawning a particle with the given sprite and duration.
 	 */
-	void spawnAmbientParticles(int chance, int particleSprite, int duration, double particleScale, bool shrink);
-	void spawnAmbientParticles2(int chance, int particleSprite, int duration, double particleScale, bool shrink);
+	Entity* spawnAmbientParticles(int chance, int particleSprite, int duration, double particleScale, bool shrink);
+	Entity* spawnAmbientParticles2(int chance, int particleSprite, int duration, double particleScale, bool shrink);
 
 	//Updates the EFFECTS variable for all clients for this entity.
 	void serverUpdateEffectsForEntity(bool guarantee);
@@ -1427,8 +1428,8 @@ void actTextSource(Entity* my);
 
 //checks if a sprite falls in certain sprite ranges
 
-static const int NUM_ITEM_STRINGS = 356;
-static const int NUM_ITEM_STRINGS_BY_TYPE = 134;
+static const int NUM_ITEM_STRINGS = 357;
+static const int NUM_ITEM_STRINGS_BY_TYPE = 135;
 static const int NUM_EDITOR_TILES = 350;
 
 // furniture types.

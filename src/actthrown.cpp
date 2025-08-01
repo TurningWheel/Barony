@@ -50,6 +50,81 @@
 
 #define BOOMERANG_PARTICLE 977
 
+void onThrownLandingParticle(Entity* my)
+{
+	if ( my )
+	{
+		int itemType = THROWN_TYPE;
+		if ( itemType >= WOODEN_SHIELD && itemType < NUMITEMS )
+		{
+			if ( items[itemType].category == POTION )
+			{
+				int gibsprite = -1;
+				if ( my->sprite >= 50 && my->sprite <= 58 )
+				{
+					gibsprite = 1895 + my->sprite - 50;
+				}
+				if ( itemType == POTION_EMPTY )
+				{
+					gibsprite = 1911;
+				}
+				if ( gibsprite >= 0 )
+				{
+					for ( int i = 0; i < 5; ++i )
+					{
+						if ( Entity* gib = spawnGib(hit.entity ? hit.entity : my, gibsprite) )
+						{
+							gib->sprite = gibsprite;
+							if ( !hit.entity )
+							{
+								gib->z = my->z;
+							}
+							serverSpawnGibForClient(gib);
+						}
+					}
+				}
+			}
+			else
+			{
+				switch ( itemType )
+				{
+				case GREASE_BALL:
+					for ( int i = 0; i < 5; ++i )
+					{
+						if ( Entity* gib = spawnGib(hit.entity ? hit.entity : my, 245) )
+						{
+							gib->sprite = 245;
+							gib->flags[SPRITE] = true;
+							if ( !hit.entity )
+							{
+								gib->z = my->z;
+							}
+							serverSpawnGibForClient(gib);
+						}
+					}
+					break;
+				case DUST_BALL:
+					for ( int i = 0; i < 5; ++i )
+					{
+						if ( Entity* gib = spawnGib(hit.entity ? hit.entity : my, 1886) )
+						{
+							gib->sprite = 1886;
+							if ( !hit.entity )
+							{
+								gib->z = my->z;
+							}
+							serverSpawnGibForClient(gib);
+						}
+					}
+					break;
+				default:
+					break;
+				}
+			}
+		}
+	}
+}
+
 void actThrown(Entity* my)
 {
 	Item* item = nullptr;
@@ -127,7 +202,7 @@ void actThrown(Entity* my)
 			}
 		}
 
-		if ( my->sprite == items[POTION_GREASE].index )
+		if ( my->sprite == items[GREASE_BALL].index )
 		{
 			if ( Entity* fx = spawnMagicParticleCustom(my, 245, 1.0, 1.0) )
 			{
@@ -143,6 +218,23 @@ void actThrown(Entity* my)
 				fx->yaw = dir;
 				fx->vel_z = 0.0;
 				fx->flags[SPRITE] = true;
+			}
+		}
+		else if ( my->sprite == items[DUST_BALL].index )
+		{
+			if ( Entity* fx = spawnMagicParticleCustom(my, 1886, 1.0, 1.0) )
+			{
+				fx->ditheringDisabled = true;
+				real_t dir = atan2(my->vel_y, my->vel_x);
+				//dir += local_rng.rand() % 2 == 0 ? PI / 32 : -PI / 32;
+				real_t spd = sqrt(my->vel_x * my->vel_x + my->vel_y * my->vel_y);
+				fx->vel_x = spd * 0.05 * cos(dir);
+				fx->vel_y = spd * 0.05 * sin(dir);
+				fx->lightBonus = vec4{ 0.25f, 0.25f, 0.25f, 0.f };
+				fx->pitch = PI / 2;
+				fx->roll = 0.0;
+				fx->yaw = dir;
+				fx->vel_z = 0.0;
 			}
 		}
 	}
@@ -309,7 +401,7 @@ void actThrown(Entity* my)
 			my->roll += 0.04;
 		}
 
-		if ( my->sprite == items[POTION_GREASE].index )
+		if ( my->sprite == items[GREASE_BALL].index )
 		{
 			if ( my->ticks % 5 == 0 )
 			{
@@ -331,14 +423,51 @@ void actThrown(Entity* my)
 				fx->flags[SPRITE] = true;
 			}
 		}
+		else if ( my->sprite == items[DUST_BALL].index )
+		{
+			if ( my->ticks == 1 )
+			{
+				Uint32 lifetime = TICKS_PER_SECOND * 3;
+				Entity* spellTimer = createParticleTimer(my->parent == 0 ? nullptr : uidToEntity(my->parent), lifetime + TICKS_PER_SECOND, -1);
+				spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_SPORES_TRAIL;
+				spellTimer->particleTimerCountdownSprite = 248;
+				spellTimer->yaw = 0.0;
+				spellTimer->x = my->x;
+				spellTimer->y = my->y;
+				spellTimer->particleTimerVariable1 = 0;
+				spellTimer->particleTimerVariable2 = SPELL_MYCELIUM_SPORES;
+				spellTimer->particleTimerVariable4 = my->getUID();
+
+				my->thrownProjectileParticleTimerUID = spellTimer->getUID();
+				particleTimerEffects.emplace(std::pair<Uint32, ParticleTimerEffect_t>(spellTimer->getUID(), ParticleTimerEffect_t()));
+			}
+			if ( Entity* fx = spawnMagicParticleCustom(my, 1886, 1.0, 1.0) )
+			{
+				fx->ditheringDisabled = true;
+				real_t dir = atan2(my->vel_y, my->vel_x);
+				//dir += local_rng.rand() % 2 == 0 ? PI / 32 : -PI / 32;
+				real_t spd = sqrt(my->vel_x * my->vel_x + my->vel_y * my->vel_y);
+				fx->vel_x = spd * 0.05 * cos(dir);
+				fx->vel_y = spd * 0.05 * sin(dir);
+				fx->lightBonus = vec4{ 0.25f, 0.25f, 0.25f, 0.f };
+				fx->roll = 0.0;
+				fx->yaw = dir;
+				fx->vel_z = 0.0;
+			}
+			thrownItemUpdateSpellTrail(*my, my->x, my->y);
+		}
 	}
 	else
 	{
 		if ( my->x >= 0 && my->y >= 0 && my->x < map.width << 4 && my->y < map.height << 4 )
 		{
-			if ( my->sprite == items[POTION_GREASE].index )
+			if ( my->sprite == items[GREASE_BALL].index )
 			{
 				spawnGreasePuddleSpawner(my->parent == 0 ? nullptr : uidToEntity(my->parent), my->x, my->y, 30 * TICKS_PER_SECOND);
+			}
+			if ( my->sprite == items[DUST_BALL].index )
+			{
+				thrownItemUpdateSpellTrail(*my, my->x, my->y);
 			}
 
 			// landing on the ground.
@@ -391,12 +520,20 @@ void actThrown(Entity* my)
 					}
 					playSoundEntity(my, 162, 64);
 					free(item);
+					onThrownLandingParticle(my);
 					list_RemoveNode(my->mynode);
 					return;
 				}
 				else if ( specialMonster )
 				{
 					free(item);
+					list_RemoveNode(my->mynode);
+					return;
+				}
+				else if ( item && (item->type == DUST_BALL || item->type == GREASE_BALL) )
+				{
+					free(item);
+					onThrownLandingParticle(my);
 					list_RemoveNode(my->mynode);
 					return;
 				}
@@ -743,12 +880,20 @@ void actThrown(Entity* my)
 			tryHitEntity = false;
 		}
 
-		if ( my->sprite == items[POTION_GREASE].index )
+		if ( my->sprite == items[GREASE_BALL].index )
 		{
 			spawnGreasePuddleSpawner(my->parent == 0 ? nullptr : uidToEntity(my->parent), my->x, my->y, 30 * TICKS_PER_SECOND);
 			if ( hit.entity != nullptr && tryHitEntity )
 			{
 				spawnGreasePuddleSpawner(my->parent == 0 ? nullptr : uidToEntity(my->parent), hit.entity->x, hit.entity->y, 30 * TICKS_PER_SECOND);
+			}
+		}
+		if ( my->sprite == items[DUST_BALL].index )
+		{
+			thrownItemUpdateSpellTrail(*my, my->x, my->y);
+			if ( hit.entity != nullptr && tryHitEntity )
+			{
+				thrownItemUpdateSpellTrail(*my, hit.entity->x, hit.entity->y);
 			}
 		}
 
@@ -813,7 +958,9 @@ void actThrown(Entity* my)
 					}
 					else
 					{
-						if ( itemCategory(item) == THROWN )
+						if ( itemCategory(item) == THROWN 
+							&& !(item->type == DUST_BALL
+							|| item->type == GREASE_BALL) )
 						{
 							int enemyAC = AC(hitstats);
 							damage = my->thrownProjectilePower;
@@ -950,7 +1097,6 @@ void actThrown(Entity* my)
 							case POTION_ICESTORM:
 							case POTION_THUNDERSTORM:
 							case POTION_POLYMORPH:
-							case POTION_GREASE:
 							case POTION_WATER:
 								ignorePotion = false;
 								break;
@@ -1180,9 +1326,9 @@ void actThrown(Entity* my)
 								item_PotionParalysis(item, hit.entity, parent);
 								usedpotion = true;
 								break;
-							case POTION_GREASE:
+							case GREASE_BALL:
 								item_PotionGrease(item, hit.entity, parent);
-								usedpotion = true;
+								//usedpotion = true;
 								break;
 							case FOOD_CREAMPIE:
 							{
@@ -1321,7 +1467,8 @@ void actThrown(Entity* my)
 
 				if ( friendlyHit && !usedpotion )
 				{
-					if ( item && itemCategory(item) != POTION && item->type != BOOMERANG )
+					if ( item && itemCategory(item) != POTION && item->type != BOOMERANG
+						&& item->type != GREASE_BALL && item->type != DUST_BALL )
 					{
 						Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
 						entity->flags[INVISIBLE] = true;
@@ -1424,7 +1571,7 @@ void actThrown(Entity* my)
 				}
 				else
 				{
-					if ( cat == THROWN )
+					if ( cat == THROWN && !(item && (item->type == GREASE_BALL || item->type == DUST_BALL)) )
 					{
 						playSoundEntity(hit.entity, 66, 64); //*tink*
 					}
@@ -1800,10 +1947,11 @@ void actThrown(Entity* my)
 			{
 				free(item);
 			}
+			onThrownLandingParticle(my);
 			list_RemoveNode(my->mynode);
 			return;
 		}
-		else if ( item->type == FOOD_CREAMPIE )
+		else if ( item && item->type == FOOD_CREAMPIE )
 		{
 			if ( !usedpotion )
 			{
@@ -1815,6 +1963,14 @@ void actThrown(Entity* my)
 			}
 			free(item);
 			item = nullptr;
+			list_RemoveNode(my->mynode);
+			return;
+		}
+		else if ( item && (item->type == DUST_BALL || item->type == GREASE_BALL) )
+		{
+			free(item);
+			item = nullptr;
+			onThrownLandingParticle(my);
 			list_RemoveNode(my->mynode);
 			return;
 		}
@@ -1948,6 +2104,49 @@ void actThrown(Entity* my)
 		else
 		{
 			my->pitch += result * .01;
+		}
+	}
+}
+
+void thrownItemUpdateSpellTrail(Entity& my, real_t _x, real_t _y)
+{
+	if ( my.sprite == items[DUST_BALL].index )
+	{
+		auto findEffects = particleTimerEffects.find(my.thrownProjectileParticleTimerUID);
+		if ( findEffects != particleTimerEffects.end() )
+		{
+			if ( auto spellTimer = uidToEntity(my.thrownProjectileParticleTimerUID) )
+			{
+				int x = static_cast<int>(_x) / 16;
+				int y = static_cast<int>(_y) / 16;
+				bool freeSpot = true;
+				Uint32 lastTick = 1;
+				for ( auto& eff : findEffects->second.effectMap )
+				{
+					if ( static_cast<int>(eff.second.x) / 16 == x
+						&& static_cast<int>(eff.second.x) / 16 == y )
+					{
+						freeSpot = false;
+					}
+					lastTick = std::max(eff.first, lastTick);
+				}
+				if ( freeSpot )
+				{
+					auto& effect = findEffects->second.effectMap[std::max(spellTimer->ticks + 1, lastTick + 2)]; // insert x ticks beyond last effect
+					if ( findEffects->second.effectMap.size() == 1 )
+					{
+						effect.firstEffect = true;
+					}
+					int spellID = spellTimer->particleTimerVariable2;
+					auto particleEffectType = (spellID == SPELL_SPORES || spellID == SPELL_MYCELIUM_SPORES)
+						? ParticleTimerEffect_t::EffectType::EFFECT_MYCELIUM
+						: ParticleTimerEffect_t::EffectType::EFFECT_SPORES;
+					effect.effectType = particleEffectType;
+					effect.x = x * 16.0 + 8.0;
+					effect.y = y * 16.0 + 8.0;
+					effect.yaw = 0.0;
+				}
+			}
 		}
 	}
 }

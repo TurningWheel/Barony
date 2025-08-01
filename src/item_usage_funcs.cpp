@@ -946,7 +946,7 @@ bool item_PotionGrease(Item*& item, Entity* entity, Entity* usedBy)
 		return false;
 	}
 
-	int skillLVL = 0;
+	/*int skillLVL = 0;
 	if ( multiplayer != CLIENT && usedBy && usedBy->behavior == &actPlayer )
 	{
 		Stat* usedByStats = usedBy->getStats();
@@ -954,7 +954,7 @@ bool item_PotionGrease(Item*& item, Entity* entity, Entity* usedBy)
 		{
 			skillLVL = usedByStats->getModifiedProficiency(PRO_ALCHEMY) / 20;
 		}
-	}
+	}*/
 
 	int player = -1;
 	Stat* stats;
@@ -969,7 +969,7 @@ bool item_PotionGrease(Item*& item, Entity* entity, Entity* usedBy)
 		return false;
 	}
 
-	if ( stats->amulet != NULL )
+	/*if ( stats->amulet != NULL )
 	{
 		if ( stats->amulet->type == AMULET_STRANGULATION
 			&& stats->type != SKELETON )
@@ -990,15 +990,15 @@ bool item_PotionGrease(Item*& item, Entity* entity, Entity* usedBy)
 			playSoundPlayer(player, 90, 64);
 		}
 		return false;
-	}
-	if ( multiplayer == CLIENT )
-	{
-		potionUseAbundanceEffect(item, entity, usedBy);
-		consumeItem(item, player);
-		return true;
-	}
+	}*/
+	//if ( multiplayer == CLIENT )
+	//{
+	//	//potionUseAbundanceEffect(item, entity, usedBy);
+	//	consumeItem(item, player);
+	//	return true;
+	//}
 
-	messagePlayer(player, MESSAGE_HINT, Language::get(6536));
+	//messagePlayer(player, MESSAGE_HINT, Language::get(6536));
 	int duration = 0;
 	if ( player >= 0 )
 	{
@@ -1018,17 +1018,17 @@ bool item_PotionGrease(Item*& item, Entity* entity, Entity* usedBy)
 	}
 	else
 	{
-		if ( usedBy && entity != usedBy && usedBy->behavior == &actPlayer )
+		/*if ( usedBy && entity != usedBy && usedBy->behavior == &actPlayer )
 		{
 			Uint32 color = makeColorRGB(255, 0, 0);
 			messagePlayerMonsterEvent(usedBy->skill[2], color, *stats, Language::get(4320), Language::get(4321), MSG_COMBAT);
-		}
+		}*/
 	}
 
 	// play drink sound
-	playSoundEntity(entity, 52, 64);
-	potionUseAbundanceEffect(item, entity, usedBy);
-	consumeItem(item, player);
+	//playSoundEntity(entity, 52, 64);
+	//potionUseAbundanceEffect(item, entity, usedBy);
+	/*consumeItem(item, player);*/
 	return true;
 }
 

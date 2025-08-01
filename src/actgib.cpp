@@ -254,6 +254,13 @@ void actGib(Entity* my)
 				if ( GIB_HIT_GROUND == 0 )
 				{
 					GIB_HIT_GROUND = 1;
+					if ( my->sprite >= 1895 && my->sprite <= 1903 )
+					{
+						spawnMiscPuddle(my, my->x, my->y, my->sprite + 8);
+						my->removeLightField();
+						list_RemoveNode(my->mynode);
+						return;
+					}
 				}
 				GIB_VELZ = 0;
 				my->z = 8;
@@ -1027,4 +1034,91 @@ void actGreasePuddleSpawner(Entity* my)
 			}
 		}
 	}
+}
+
+void actMiscPuddle(Entity* my)
+{
+	if ( !my ) { return; }
+
+	if ( my->skill[0] <= 0 )
+	{
+		if ( my->scalex <= 0.0 )
+		{
+			list_RemoveNode(my->mynode);
+			return;
+		}
+
+		my->scalex -= 0.05;
+		my->scalez = my->scalex;
+	}
+	else
+	{
+		--my->skill[0];
+
+		if ( my->scalex < my->fskill[0] )
+		{
+			real_t diff = std::max(0.01, (my->fskill[0] - my->scalex) / 10.0);
+			my->scalex = std::min(my->scalex + diff, my->fskill[0]);
+		}
+		my->scalez = my->scalex;
+	}
+}
+
+Entity* spawnMiscPuddle(Entity* parentent, real_t x, real_t y, int sprite, bool updateClients)
+{
+	if ( sprite == 0 )
+	{
+		return nullptr;
+	}
+	if ( parentent )
+	{
+		x = parentent->x;
+		y = parentent->y;
+	}
+
+	int mapx = static_cast<int>(x) / 16;
+	int mapy = static_cast<int>(y) / 16;
+	int mapIndex = mapy * MAPLAYERS + mapx * MAPLAYERS * map.height;
+	if ( mapx > 0 && mapx < map.width && mapy > 0 && mapy < map.height )
+	{
+		if ( !map.tiles[mapIndex] || map.tiles[OBSTACLELAYER + mapIndex] )
+		{
+			return nullptr;
+		}
+
+		Entity* puddle = newEntity(sprite, 1, map.entities, nullptr); //Gib entity.
+		if ( puddle != NULL )
+		{
+			puddle->x = x;
+			puddle->y = y;
+			puddle->z = 8.0 + (local_rng.rand() % 20) / 100.0;
+			puddle->sizex = 2;
+			puddle->sizey = 2;
+			puddle->behavior = &actMiscPuddle;
+			int randomScale = local_rng.rand() % 10;
+			puddle->fskill[0] = (100 - randomScale) / 100.f; // end scale
+
+			puddle->scalex = 0.0;
+			puddle->scalez = puddle->scalex;
+			puddle->skill[0] = TICKS_PER_SECOND * 3 + local_rng.rand() % (2 * TICKS_PER_SECOND);
+			puddle->yaw = (local_rng.rand() % 360) * PI / 180.0;
+			puddle->flags[UPDATENEEDED] = false;
+			puddle->flags[NOUPDATE] = true;
+			puddle->flags[PASSABLE] = true;
+			puddle->flags[UNCLICKABLE] = true;
+			if ( multiplayer != CLIENT )
+			{
+				--entity_uids;
+			}
+			puddle->setUID(-3);
+
+			if ( updateClients && multiplayer == SERVER )
+			{
+				serverSpawnMiscParticlesAtLocation(x, y, 0, PARTICLE_EFFECT_MISC_PUDDLE, sprite);
+			}
+		}
+		return puddle;
+	}
+
+	return nullptr;
 }
