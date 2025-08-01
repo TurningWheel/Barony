@@ -3385,7 +3385,7 @@ bool Entity::mistFormDodge(bool checkEffectActiveOnly)
 			}
 			else
 			{
-				if ( behavior == &actMonster && myStats->type == HOLOGRAM )
+				if ( behavior == &actMonster )
 				{
 					myStats->EFFECTS_TIMERS[EFF_MIST_FORM] = std::max(1, myStats->EFFECTS_TIMERS[EFF_MIST_FORM] - TICKS_PER_SECOND);
 				}
