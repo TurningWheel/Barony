@@ -941,7 +941,7 @@ void monsterMMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				if ( debugModel )
 				{
 					my->pitch = my->fskill[0];
-					if ( my->fskill[1] > 0.0 )
+					if ( my->fskill[1] > 0.0 ) // jumpy
 					{
 						my->fskill[1] = std::max(0.0, my->fskill[1] - 0.05);
 						my->z += -3.0 * sqrt(sin(PI * my->fskill[1]));

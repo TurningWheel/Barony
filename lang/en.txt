@@ -7016,5 +7016,11 @@ Host to enable the game setting.
 6746 The %s is hit with a poison seed!#
 6747 You are hit by a poison seed!#
 6748 There is no ground to complete the spell!#
+6749 mushroom#
+6750 There is no room to complete the spell!#
+6751 You stop shimmering.#
+6752 You are blinded by shimmering dust!#
+6753 gets capped by a mushroom.#
+6754 Mushroom#
 
 6999 END#

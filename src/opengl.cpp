@@ -1063,11 +1063,13 @@ void glBeginCamera(view_t* camera, bool useHDR, map_t& map)
         GL_CHECK_ERR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
         GL_CHECK_ERR(glScissor(0, 0, camera->winw, camera->winh));
     } else {
+#ifndef EDITOR
         if ( *cvar_fogDistance > 0.f && player == 0 )
         {
             GL_CHECK_ERR(glClearColor(fog_color.x, fog_color.y, fog_color.z, fog_color.w));
             GL_CHECK_ERR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
         }
+#endif
         GL_CHECK_ERR(glGetIntegerv(GL_VIEWPORT, oldViewport));
         GL_CHECK_ERR(glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh));
         GL_CHECK_ERR(glScissor(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh));

@@ -1393,9 +1393,9 @@
             "name_identified": "amulet of burning resistance",
             "name_unidentified": "amulet"
         },
-		"potion_grease": {
-			"name_identified": "bottle of grease",
-			"name_unidentified": "potion"
+		"grease_ball": {
+			"name_identified": "grease ball",
+			"name_unidentified": "grease ball"
 		},
 		"branch_staff": {
 			"name_identified": "branch staff",
@@ -1408,6 +1408,10 @@
 		"branch_bow_infected": {
 			"name_identified": "infected branch bow",
 			"name_unidentified": "infected branch bow"
+		},
+		"dust_ball": {
+			"name_identified": "dust ball",
+			"name_unidentified": "dust ball"
 		}
     },
 	"spell_names": {
