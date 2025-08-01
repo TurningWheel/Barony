@@ -47,10 +47,10 @@ void initMonsterM(Entity* my, Stat* myStats)
 
 	if ( multiplayer != CLIENT )
 	{
-		MONSTER_SPOTSND = 335;
-		MONSTER_SPOTVAR = 3;
-		MONSTER_IDLESND = 332;
-		MONSTER_IDLEVAR = 2;
+		MONSTER_SPOTSND = 747;
+		MONSTER_SPOTVAR = 2;
+		MONSTER_IDLESND = 742;
+		MONSTER_IDLEVAR = 3;
 	}
 
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
@@ -143,6 +143,44 @@ void initMonsterM(Entity* my, Stat* myStats)
 			int defaultItems = countDefaultItems(myStats);
 
 			my->setHardcoreStats(*myStats);
+
+			if ( rng.rand() % 2 == 0 )
+			{
+				myStats->setAttribute("monster_m_type", "duster");
+			}
+			else
+			{
+				myStats->setAttribute("monster_m_type", "duster");
+			}
+
+			if ( myStats->getAttribute("monster_m_type") == "duster" )
+			{
+				newItem(DUST_BALL, SERVICABLE, 0, rng.rand() % 2 + 2, rng.rand(), false, &myStats->inventory);
+			}
+
+			// give weapon
+			if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
+			{
+				switch ( rng.rand() % 10 )
+				{
+				case 0:
+				case 1:
+				case 2:
+				case 3:
+				case 4:
+					myStats->weapon = newItem(IRON_AXE, static_cast<Status>(rng.rand() % 3 + WORN), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+					break;
+				case 5:
+				case 6:
+				case 7:
+				case 8:
+				case 9:
+					myStats->weapon = newItem(IRON_MACE, static_cast<Status>(rng.rand() % 3 + WORN), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+					break;
+				default:
+					break;
+				}
+			}
 
 			//bool isShaman = false;
 			//if ( rng.rand() % 2 && !spawnedBoss && !minion )
@@ -778,7 +816,7 @@ void monsterMDie(Entity* my)
 
 	my->spawnBlood();
 
-	playSoundEntity(my, 338 + local_rng.rand() % 2, 128);
+	playSoundEntity(my, 745 + local_rng.rand() % 2, 128);
 
 	my->removeMonsterDeathNodes();
 
@@ -980,6 +1018,8 @@ void monsterMMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							my->monsterWeaponYaw = 0;
 							weaponarm->roll = 0;
 							weaponarm->skill[1] = 0;
+							playSoundEntityLocal(my, 747, 128);
+							createParticleDot(my);
 							if ( multiplayer != CLIENT )
 							{
 								myStats->setEffectActive(EFF_PARALYZED, 1);
@@ -989,8 +1029,8 @@ void monsterMMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						if ( multiplayer != CLIENT )
 						{
 							// move the head and weapon yaw
-							limbAnimateToLimit(my, ANIMATE_PITCH, -0.1, 11 * PI / 6, true, 0.05);
-							limbAnimateToLimit(my, ANIMATE_WEAPON_YAW, -0.25, 14 * PI / 8, false, 0.0);
+							limbAnimateToLimit(my, ANIMATE_PITCH, -0.1, 11 * PI / 6, false, 0.0);
+							limbAnimateToLimit(my, ANIMATE_WEAPON_YAW, 0.05, 2 * PI / 8, false, 0.0);
 						}
 						limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.25, 7 * PI / 4, true, 0.0);
 						//limbAnimateToLimit(weaponarm, ANIMATE_ROLL, -0.25, 7 * PI / 4, false, 0.0);
@@ -1944,278 +1984,112 @@ void monsterMMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	}
 }
 
-//void Entity::goatmanChooseWeapon(const Entity* target, double dist)
-//{
-//	if ( monsterSpecialState != 0 )
-//	{
-//		//Holding a weapon assigned from the special attack. Don't switch weapons.
-//		//messagePlayer()
-//		return;
-//	}
-//
-//	//TODO: I don't like this function getting called every frame. Find a better place to put it.
-//	//Although if I do that, can't do this dirty little hack for the goatman's special...
-//
-//	//TODO: If applying attack animations that will involve holding a potion for several frames while this code has a chance to run, do a check here to cancel the function if holding a potion.
-//
-//	Stat *myStats = getStats();
-//	if ( !myStats )
-//	{
-//		return;
-//	}
-//
-//	if ( myStats->weapon && (itemCategory(myStats->weapon) == SPELLBOOK) )
-//	{
-//		return;
-//	}
-//
-//	int specialRoll = -1;
-//	bool usePotionSpecial = false;
-//
-//	/*
-//	 * For the goatman's special:
-//	 * * If specialRoll == 0, want to use a booze or healing potion (prioritize healing potion if damaged enough).
-//	 * * If no have potion, try to use THROWN in melee.
-//	 * * If in melee, if potion is not a healing potion, check if have any THROWN and then 50% chance to use those instead.
-//	 */
-//
-//	node_t* hasPotion = nullptr;
-//	bool isHealingPotion = false;
-//
-//	if ( monsterSpecialTimer == 0 && (ticks % 10 == 0) && monsterAttack == 0 )
-//	{
-//		//messagePlayer(clientnum, "Cooldown done!");
-//		specialRoll = local_rng.rand()%10;
-//
-//		if ( specialRoll == 0 )
-//		{
-//			if ( myStats->HP <= myStats->MAXHP / 3 * 2 )
-//			{
-//				//Try to get a health potion.
-//				hasPotion = itemNodeInInventory(myStats, POTION_EXTRAHEALING, static_cast<Category>(-1));
-//				if ( !hasPotion )
-//				{
-//					hasPotion = itemNodeInInventory(myStats, POTION_HEALING, static_cast<Category>(-1));
-//					if ( hasPotion )
-//					{
-//						//Equip and chuck it now.
-//						bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, hasPotion, false, false);
-//						if ( !swapped )
-//						{
-//							//printlog("Error in Entity::goatmanChooseWeapon(): failed to swap healing potion into hand!");
-//							//Don't return, want to try equipping either a potion of booze, or one of the other weapon routes (e.h. a THROWN special if in melee or just an axe if worst comes to worst).
-//						}
-//						else
-//						{
-//							monsterSpecialState = GOATMAN_POTION;
-//							//monsterHitTime = 2 * HITRATE;
-//							return;
-//						}
-//					}
-//				}
-//				else
-//				{
-//					//Equip and chuck it now.
-//					bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, hasPotion, false, false);
-//					if ( !swapped )
-//					{
-//						//printlog("Error in Entity::goatmanChooseWeapon(): failed to swap healing potion into hand!");
-//						//Don't return, want to try equipping either a potion of booze, or one of the other weapon routes (e.h. a THROWN special if in melee or just an axe if worst comes to worst).
-//					}
-//					else
-//					{
-//						monsterSpecialState = GOATMAN_POTION;
-//						//monsterHitTime = 2 * HITRATE;
-//						return;
-//					}
-//				}
-//			}
-//
-//			if ( !hasPotion )
-//			{
-//				//Couldn't find a healing potion? Try for a potion of booze.
-//				hasPotion = itemNodeInInventory(myStats, POTION_BOOZE, static_cast<Category>(-1));
-//				if ( hasPotion )
-//				{
-//					//Equip and chuck it now.
-//					bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, hasPotion, false, false);
-//					if ( !swapped )
-//					{
-//						//printlog("Error in Entity::goatmanChooseWeapon(): failed to swap healing potion into hand!");
-//						//Don't return, want to try equipping either a potion of booze, or one of the other weapon routes (e.h. a THROWN special if in melee or just an axe if worst comes to worst).
-//					}
-//					else
-//					{
-//						monsterSpecialState = GOATMAN_POTION;
-//						//monsterHitTime = 2 * HITRATE;
-//						return;
-//					}
-//				}
-//			}
-//		}
-//	}
-//
-//	bool inMeleeRange = monsterInMeleeRange(target, dist);
-//
-//	if ( inMeleeRange )
-//	{
-//		if ( monsterSpecialTimer == 0 && (ticks % 10 == 0) && monsterAttack == 0 && specialRoll == 0 )
-//		{
-//			bool tryChakram = true;
-//			if ( hasPotion && local_rng.rand()%10 )
-//			{
-//				tryChakram = false;
-//			}
-//
-//			if ( tryChakram )
-//			{
-//				//Grab a chakram instead.
-//				node_t* thrownNode = itemNodeInInventory(myStats, -1, THROWN);
-//				if ( thrownNode )
-//				{
-//					bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, thrownNode, false, false);
-//					if ( !swapped )
-//					{
-//						//printlog("Error in Entity::goatmanChooseWeapon(): failed to swap THROWN into hand! Cursed? (%d)", myStats->weapon->beatitude);
-//						//Don't return, make sure holding a melee weapon at least.
-//					}
-//					else
-//					{
-//						monsterSpecialState = GOATMAN_THROW;
-//						return;
-//					}
-//				}
-//			}
-//		}
-//
-//		//Switch to a melee weapon if not already wielding one. Unless monster special state is overriding the AI.
-//		if ( !myStats->weapon || !isMeleeWeapon(*myStats->weapon) )
-//		{
-//			node_t* weaponNode = getMeleeWeaponItemNodeInInventory(myStats);
-//			if ( !weaponNode )
-//			{
-//				if ( myStats->weapon && myStats->weapon->type == MAGICSTAFF_SLOW )
-//				{
-//					monsterUnequipSlotFromCategory(myStats, &myStats->weapon, MAGICSTAFF);
-//				}
-//				return; //Resort to fists.
-//			}
-//
-//			bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, weaponNode, false, false);
-//			if ( !swapped )
-//			{
-//				//printlog("Error in Entity::goatmanChooseWeapon(): failed to swap melee weapon into hand! Cursed? (%d)", myStats->weapon->beatitude);
-//				//Don't return so that monsters will at least equip ranged weapons in melee range if they don't have anything else.
-//			}
-//			else
-//			{
-//				return;
-//			}
-//		}
-//		else
-//		{
-//			return;
-//		}
-//	}
-//
-//	//if ( hasPotion )
-//	//{
-//	//	//Try to equip the potion first. If fails, then equip normal ranged.
-//	//	bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, hasPotion, false, false);
-//	//	if ( !swapped )
-//	//	{
-//	//		printlog("Error in Entity::goatmanChooseWeapon(): failed to swap non-healing potion into hand! (non-melee block) Cursed? (%d)", myStats->weapon->beatitude);
-//	//	}
-//	//	else
-//	//	{
-//	//		monsterSpecialState = GOATMAN_POTION;
-//	//		return;
-//	//	}
-//	//}
-//
-//	//Switch to a thrown weapon or a ranged weapon. Potions are reserved as a special attack.
-//	if ( !myStats->weapon || isMeleeWeapon(*myStats->weapon) )
-//	{
-//		//First search the inventory for a THROWN weapon.
-//		node_t *weaponNode = nullptr;
-//		if ( monsterSpecialTimer == 0 && (ticks % 10 == 0) && monsterAttack == 0 && local_rng.rand() % 10 == 0 )
-//		{
-//			weaponNode = itemNodeInInventory(myStats, -1, THROWN);
-//			if ( weaponNode )
-//			{
-//				if ( swapMonsterWeaponWithInventoryItem(this, myStats, weaponNode, false, false) )
-//				{
-//					monsterSpecialState = GOATMAN_THROW;
-//					return;
-//				}
-//			}
-//		}
-//		if ( !weaponNode )
-//		{
-//			//If couldn't find any, search the inventory for a ranged weapon.
-//			weaponNode = getRangedWeaponItemNodeInInventory(myStats, true);
-//		}
-//
-//		bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, weaponNode, false, false);
-//		return;
-//	}
-//
-//	return;
-//}
-//
-//bool Entity::goatmanCanWieldItem(const Item& item) const
-//{
-//	Stat* myStats = getStats();
-//	if ( !myStats )
-//	{
-//		return false;
-//	}
-//
-//	if ( monsterAllyIndex >= 0 && (monsterAllyClass != ALLY_CLASS_MIXED || item.interactNPCUid == getUID()) )
-//	{
-//		return monsterAllyEquipmentInClass(item);
-//	}
-//
-//	switch ( itemCategory(&item) )
-//	{
-//		case WEAPON:
-//			return true;
-//		case POTION:
-//			switch ( item.type )
-//			{
-//				case POTION_BOOZE:
-//					return true;
-//				case POTION_HEALING:
-//					return true;
-//				default:
-//					return false;
-//			}
-//			break;
-//		case TOOL:
-//			if ( itemTypeIsQuiver(item.type) )
-//			{
-//				return true;
-//			}
-//			break;
-//		case THROWN:
-//			return true;
-//		case ARMOR:
-//			{ //Little baby compiler stop whining, wah wah.
-//				int equipType = checkEquipType(&item);
-//				if ( equipType == TYPE_HAT || equipType == TYPE_HELM )
-//				{
-//					return false; //No can wear hats, because horns.
-//				}
-//				return true; //Can wear all other armor.
-//			}
-//		default:
-//			return false;
-//	}
-//
-//	return false;
-//}
-//
+void Entity::monsterMChooseWeapon(const Entity* target, double dist)
+{
+	if ( monsterSpecialState != 0 )
+	{
+		//Holding a weapon assigned from the special attack. Don't switch weapons.
+		//messagePlayer()
+		return;
+	}
 
+	Stat *myStats = getStats();
+	if ( !myStats )
+	{
+		return;
+	}
+
+	if ( myStats->weapon && (itemCategory(myStats->weapon) == SPELLBOOK) )
+	{
+		return;
+	}
+
+	bool inMeleeRange = monsterInMeleeRange(target, dist);
+
+	if ( inMeleeRange )
+	{
+		//if ( monsterSpecialTimer == 0 && (ticks % 10 == 0) && monsterAttack == 0 && local_rng.rand() % 10 == 0 )
+		//{
+		//	bool tryThrow = true;
+		//	if ( tryThrow )
+		//	{
+		//		node_t* thrownNode = itemNodeInInventory(myStats, -1, THROWN);
+		//		if ( thrownNode )
+		//		{
+		//			bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, thrownNode, false, true);
+		//			if ( !swapped )
+		//			{
+		//				//Don't return, make sure holding a melee weapon at least.
+		//			}
+		//			else
+		//			{
+		//				monsterSpecialState = MONSTER_M_SPECIAL_THROW;
+		//				return;
+		//			}
+		//		}
+		//	}
+		//}
+
+		//Switch to a melee weapon if not already wielding one. Unless monster special state is overriding the AI.
+		if ( !myStats->weapon || !isMeleeWeapon(*myStats->weapon) )
+		{
+			node_t* weaponNode = getMeleeWeaponItemNodeInInventory(myStats);
+			if ( !weaponNode )
+			{
+				/*if ( myStats->weapon && myStats->weapon->type == MAGICSTAFF_SLOW )
+				{
+					monsterUnequipSlotFromCategory(myStats, &myStats->weapon, MAGICSTAFF);
+				}*/
+				return; //Resort to fists.
+			}
+
+			bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, weaponNode, false, true);
+			if ( !swapped )
+			{
+				//Don't return so that monsters will at least equip ranged weapons in melee range if they don't have anything else.
+			}
+			else
+			{
+				return;
+			}
+		}
+		else
+		{
+			return;
+		}
+	}
+
+	//Switch to a thrown weapon or a ranged weapon. Potions are reserved as a special attack.
+	if ( !myStats->weapon || isMeleeWeapon(*myStats->weapon) )
+	{
+		//First search the inventory for a THROWN weapon.
+		node_t *weaponNode = nullptr;
+		if ( monsterSpecialTimer == 0 && (ticks % 10 == 0) && monsterAttack == 0 
+			&& dist >= TOUCHRANGE
+			&& local_rng.rand() % 10 == 0 )
+		{
+			weaponNode = itemNodeInInventory(myStats, -1, THROWN);
+			if ( weaponNode )
+			{
+				if ( swapMonsterWeaponWithInventoryItem(this, myStats, weaponNode, false, false) )
+				{
+					monsterSpecialState = MONSTER_M_SPECIAL_THROW;
+					return;
+				}
+			}
+		}
+		if ( !weaponNode )
+		{
+			//If couldn't find any, search the inventory for a ranged weapon.
+			weaponNode = getRangedWeaponItemNodeInInventory(myStats, true);
+		}
+
+		bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, weaponNode, false, false);
+		return;
+	}
+
+	return;
+}
 
 
 

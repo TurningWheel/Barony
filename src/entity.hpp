@@ -1162,6 +1162,9 @@ public:
 			case MONSTER_D:
 				monsterDChooseWeapon(target, dist);
 				break;
+			case MONSTER_M:
+				monsterMChooseWeapon(target, dist);
+				break;
 			case SHOPKEEPER:
 				if ( target )
 				{
@@ -1189,6 +1192,7 @@ public:
 	void mothChooseWeapon(const Entity* target, double dist);
 	void bugbearChooseWeapon(const Entity* target, double dist);
 	void monsterDChooseWeapon(const Entity* target, double dist);
+	void monsterMChooseWeapon(const Entity* target, double dist);
 	void skeletonSummonSetEquipment(Stat* myStats, int rank);
 	static void tinkerBotSetStats(Stat* myStats, int rank);
 	static void mimicSetStats(Stat* myStats);

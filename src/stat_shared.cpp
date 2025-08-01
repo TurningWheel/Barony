@@ -1418,7 +1418,7 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 
 			stats->STR = 8;
 			stats->RANDOM_STR = 0;
-			stats->DEX = 6;
+			stats->DEX = 3;
 			stats->CON = 7;
 			stats->INT = -2;
 			stats->PER = 5;
@@ -1428,6 +1428,9 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 
 			stats->GOLD = 0;
 			stats->HUNGER = 900;
+
+			stats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] = 1;
 			break;
 		case 206:
 		case (1000 + MONSTER_S):
