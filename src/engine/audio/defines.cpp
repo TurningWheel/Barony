@@ -30,6 +30,7 @@ FMOD::Sound** ruinsmusic = nullptr;
 FMOD::Sound** underworldmusic = nullptr;
 FMOD::Sound** hellmusic = nullptr;
 FMOD::Sound** intromusic = nullptr;
+FMOD::Sound** fortressmusic = nullptr;
 FMOD::Sound* intermissionmusic = nullptr;
 FMOD::Sound* minetownmusic = nullptr;
 FMOD::Sound* splashmusic = nullptr;

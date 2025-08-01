@@ -687,6 +687,14 @@ void deinitGame()
 		{
 			free(intromusic);
 		}
+		for ( int c = 0; c < NUMFORTRESSMUSIC; c++ )
+		{
+			fortressmusic[c]->release();
+		}
+		if ( fortressmusic )
+		{
+			free(fortressmusic);
+		}
 	}
 #ifdef USE_OPENAL
 #undef FMOD_Channel_Stop
