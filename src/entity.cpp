@@ -251,6 +251,18 @@ void Entity::killedByMonsterObituary(Entity* victim)
 		}
 		return;
 	}
+	if ( behavior == &actColliderDecoration )
+	{
+		auto find = EditorEntityData_t::colliderData.find(colliderDamageTypes);
+		if ( find != EditorEntityData_t::colliderData.end() )
+		{
+			if ( find->second.name.find("mushroom") != std::string::npos )
+			{
+				hitstats->killer = KilledBy::MUSHROOM;
+				victim->setObituary(Language::get(6753));
+			}
+		}
+	}
 
 	Stat* myStats = this->getStats();
 	if ( !myStats )

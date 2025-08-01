@@ -3343,6 +3343,7 @@ struct EditorEntityData_t
 		int hitMessageLangEntry = 2509;
 		int breakMessageLangEntry = 2510;
 		std::map<std::string, std::vector<int>> hideMonsters;
+		std::vector<int> spellTriggers;
 		std::map<std::string, int> overrideProperties;
 		bool hasOverride(std::string key)
 		{
@@ -3384,6 +3385,16 @@ struct EditorEntityData_t
 	static std::map<std::string, ColliderDmgProperties_t> colliderDmgTypes;
 	static std::map<int, EntityColliderData_t> colliderData;
 	static std::map<std::string, std::map<int, int>> colliderRandomGenPool;
+	static std::map<std::string, int> colliderNameIndexes;
+	static int getColliderIndexFromName(std::string name)
+	{
+		auto find = colliderNameIndexes.find(name);
+		if ( find != colliderNameIndexes.end() )
+		{
+			return find->second;
+		}
+		return 0;
+	}
 	static void readFromFile();
 };
 extern EditorEntityData_t editorEntityData;

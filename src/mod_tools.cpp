@@ -9042,6 +9042,7 @@ EditorEntityData_t editorEntityData;
 std::map<int, EditorEntityData_t::EntityColliderData_t> EditorEntityData_t::colliderData;
 std::map<std::string, EditorEntityData_t::ColliderDmgProperties_t> EditorEntityData_t::colliderDmgTypes;
 std::map<std::string, std::map<int, int>> EditorEntityData_t::colliderRandomGenPool;
+std::map<std::string, int> EditorEntityData_t::colliderNameIndexes;
 void EditorEntityData_t::readFromFile()
 {
 	const std::string filename = "data/entity_data.json";
@@ -9079,6 +9080,7 @@ void EditorEntityData_t::readFromFile()
 	colliderData.clear();
 	colliderDmgTypes.clear();
 	colliderRandomGenPool.clear();
+	colliderNameIndexes.clear();
 	auto& entityTypes = d["entities"];
 	if ( entityTypes.HasMember("collider_dmg_calcs") )
 	{
@@ -9178,6 +9180,8 @@ void EditorEntityData_t::readFromFile()
 			int index = std::stoi(indexStr);
 			auto& collider = colliderData[index];
 			collider.name = itr->value["name"].GetString();
+			assert(colliderNameIndexes.find(collider.name) == colliderNameIndexes.end());
+			colliderNameIndexes[collider.name] = index;
 			collider.gib = itr->value["gib_model"].GetInt();
 			collider.gib_hit.clear();
 			if ( itr->value.HasMember("gib_hit_model") )
@@ -9240,6 +9244,21 @@ void EditorEntityData_t::readFromFile()
 				for ( auto itr2 = itr->value["events"].MemberBegin();
 					itr2 != itr->value["events"].MemberEnd(); ++itr2 )
 				{
+					if ( !strcmp(itr2->name.GetString(), "spell_trigger") )
+					{
+						auto& data = collider.spellTriggers;
+						if ( itr2->value.IsArray() )
+						{
+							for ( auto val = itr2->value.Begin(); val != itr2->value.End(); ++val )
+							{
+								if ( val->IsInt() )
+								{
+									data.push_back(val->GetInt());
+								}
+							}
+						}
+						continue;
+					}
 					std::string mapname = itr2->name.GetString();
 					for ( auto itr3 = itr2->value.MemberBegin();
 						itr3 != itr2->value.MemberEnd(); ++itr3 )

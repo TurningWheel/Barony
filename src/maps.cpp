@@ -4708,6 +4708,85 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 	int numOpenAreaBreakables = 0;
 	std::vector<BreakableNode_t> breakableLocations;
 	if ( findBreakables != EditorEntityData_t::colliderRandomGenPool.end()
+		&& findBreakables->first == "The Fortress" )
+	{
+		numOpenAreaBreakables = 10;
+
+		std::vector<int> goodSpots;
+		for ( int x = 0; x < map.width; ++x )
+		{
+			for ( int y = 0; y < map.height; ++y )
+			{
+				if ( possiblelocations[y + x * map.height] == true )
+				{
+					goodSpots.push_back(x + 10000 * y);
+				}
+			}
+		}
+
+		for ( int c = 0; c < (int)goodSpots.size() && numOpenAreaBreakables > 0; ++c )
+		{
+			// choose a random location from those available
+			int pick = map_rng.rand() % goodSpots.size();
+			int x = goodSpots[pick] % 10000;
+			int y = goodSpots[pick] / 10000;
+
+			goodSpots.erase(goodSpots.begin() + pick);
+
+			int obstacles = 0;
+			// add some mushrooms
+			for ( int x2 = -1; x2 <= 1; x2++ )
+			{
+				for ( int y2 = -1; y2 <= 1; y2++ )
+				{
+					if ( x2 == 0 && y2 == 0 ) { continue; }
+					int checkx = x + x2;
+					int checky = y + y2;
+					if ( checkx >= 0 && checkx < map.width )
+					{
+						if ( checky >= 0 && checky < map.height )
+						{
+							int index = (checky)*MAPLAYERS + (checkx)*MAPLAYERS * map.height;
+							if ( !map.tiles[index] || swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]] )
+							{
+								++obstacles;
+								break;
+							}
+							if ( checkObstacle((checkx) * 16, (checky) * 16, NULL, NULL, false, true, false) )
+							{
+								++obstacles;
+								break;
+							}
+						}
+					}
+				}
+			}
+
+			if ( obstacles == 0 )
+			{
+				int id = EditorEntityData_t::colliderNameIndexes["mushroom_spell_common"];
+				if ( map_rng.rand() % 5 == 0 )
+				{
+					id = EditorEntityData_t::colliderNameIndexes["mushroom_spell_fragile"];
+				}
+				else if ( map_rng.rand() % 5 == 0 )
+				{
+					id = EditorEntityData_t::colliderNameIndexes["mushroom_nospell"];
+				}
+
+				breakableLocations.push_back(BreakableNode_t(1, x, y, map_rng.rand() % 4,
+					id)); // random dir, mushroom ids
+				--numOpenAreaBreakables;
+
+				if ( possiblelocations[y + x * map.height] )
+				{
+					possiblelocations[y + x * map.height] = false;
+					--numpossiblelocations;
+				}
+			}
+		}
+	}
+	if ( findBreakables != EditorEntityData_t::colliderRandomGenPool.end()
 		&& findBreakables->first == "Underworld" )
 	{
 		numOpenAreaBreakables = 10;
@@ -5058,6 +5137,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			chances.push_back(pair.second);
 		}
 		Monster lastMonsterEvent = NOTHING;
+		int lastSpellEvent = 0;
 		while ( !breakableLocations.empty() )
 		{
 			int maxNumWalls = 0;
@@ -5082,6 +5162,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			breakable->x = x * 16.0;
 			breakable->y = y * 16.0;
 			breakable->colliderDecorationRotation = top.dir;
+			breakable->colliderIsMapGenerated = 1;
 			generatedBreakables.insert(breakable->getUID());
 
 			if ( top.id >= 0 )
@@ -5095,6 +5176,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			}
 
 			bool monsterEventExists = false;
+			bool spellEventExists = false;
 			auto findData = EditorEntityData_t::colliderData.find(breakable->colliderDamageTypes);
 			if ( findData != EditorEntityData_t::colliderData.end() )
 			{
@@ -5112,6 +5194,11 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 						}
 					}
 				}
+
+				if ( findData->second.spellTriggers.size() > 0 )
+				{
+					spellEventExists = true;
+				}
 			}
 
 			if ( breakableGoodies > 0 )
@@ -5121,6 +5208,54 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				int index = (y) * MAPLAYERS + (x) * MAPLAYERS * map.height;
 
 				static ConsoleVariable<int> cvar_breakableMonsterChance("/breakable_monster_chance", 10);
+
+				if ( spellEventExists )
+				{
+					std::vector<unsigned int> chances;
+					bool avoidLastSpell = false;
+					for ( auto s : findData->second.spellTriggers )
+					{
+						chances.push_back(1);
+						if ( lastSpellEvent != 0 && s != lastSpellEvent )
+						{
+							avoidLastSpell = true;
+						}
+					}
+
+					if ( avoidLastSpell )
+					{
+						int unusedChances = 0;
+						for ( size_t i = 0; i < chances.size(); ++i )
+						{
+							if ( chances[i] != lastSpellEvent )
+							{
+								++unusedChances;
+							}
+						}
+						if ( unusedChances > 0 )
+						{
+							for ( size_t i = 0; i < chances.size(); ++i )
+							{
+								if ( findData->second.spellTriggers[i] == lastSpellEvent )
+								{
+									chances[i] = 0;
+								}
+							}
+						}
+					}
+
+					int pickIndex = map_rng.discrete(chances.data(), chances.size());
+					int picked = findData->second.spellTriggers[pickIndex];
+					if ( picked > 0 )
+					{
+						if ( map_rng.rand() % 5 > 0 )
+						{
+							picked += 1000;
+						}
+						breakable->colliderSpellEvent = picked;
+						lastSpellEvent = picked % 1000;
+					}
+				}
 
 				if ( !map.tiles[index] && map_rng.rand() % 2 == 1 )
 				{
@@ -9052,166 +9187,7 @@ void assignActions(map_t* map)
 				// collider decoration
 				entity->x += 8;
 				entity->y += 8;
-				int dir = entity->colliderDecorationRotation;
-				if ( dir == -1 )
-				{
-					dir = map_rng.rand() % 8;
-					entity->colliderDecorationRotation = dir;
-				}
-				entity->yaw = dir * (PI / 4);
-				/*static ConsoleVariable<int> debugColliderType("/collider_type", 14);
-				entity->colliderDamageTypes = *debugColliderType;*/
-				auto find = EditorEntityData_t::colliderData.find(entity->colliderDamageTypes);
-				if ( find != EditorEntityData_t::colliderData.end() )
-				{
-					auto& data = find->second;
-					if ( data.hasOverride("dir_offset") )
-					{
-						entity->yaw = ((dir + data.getOverride("dir_offset")) * (PI / 4));
-					}
-					if ( data.hasOverride("model") )
-					{
-						entity->colliderDecorationModel = data.getOverride("model");
-					}
-					if ( data.hasOverride("height") )
-					{
-						entity->colliderDecorationHeightOffset = data.getOverride("height");
-					}
-					if ( dir == 0 )
-					{
-						if ( data.hasOverride("east_x") )
-						{
-							entity->colliderDecorationXOffset = data.getOverride("east_x");
-						}
-						if ( data.hasOverride("east_y") )
-						{
-							entity->colliderDecorationYOffset = data.getOverride("east_y");
-						}
-					}
-					else if ( dir == 2 )
-					{
-						if ( data.hasOverride("south_x") )
-						{
-							entity->colliderDecorationXOffset = data.getOverride("south_x");
-						}
-						if ( data.hasOverride("south_y") )
-						{
-							entity->colliderDecorationYOffset = data.getOverride("south_y");
-						}
-					}
-					else if ( dir == 4 )
-					{
-						if ( data.hasOverride("west_x") )
-						{
-							entity->colliderDecorationXOffset = data.getOverride("west_x");
-						}
-						if ( data.hasOverride("west_y") )
-						{
-							entity->colliderDecorationYOffset = data.getOverride("west_y");
-						}
-					}
-					else if ( dir == 6 )
-					{
-						if ( data.hasOverride("north_x") )
-						{
-							entity->colliderDecorationXOffset = data.getOverride("north_x");
-						}
-						if ( data.hasOverride("north_y") )
-						{
-							entity->colliderDecorationYOffset = data.getOverride("north_y");
-						}
-					}
-					if ( data.hasOverride("collision") )
-					{
-						entity->colliderHasCollision = data.getOverride("collision");
-					}
-					if ( data.hasOverride("collision_x") )
-					{
-						entity->colliderSizeX = data.getOverride("collision_x");
-					}
-					if ( data.hasOverride("collision_y") )
-					{
-						entity->colliderSizeY = data.getOverride("collision_y");
-					}
-					if ( data.hasOverride("hp") )
-					{
-						entity->colliderMaxHP = data.getOverride("hp");
-					}
-					if ( data.hasOverride("diggable") )
-					{
-						entity->colliderDiggable = data.getOverride("diggable");
-					}
-				}
-
-				entity->sprite = entity->colliderDecorationModel;
-				entity->sizex = entity->colliderSizeX;
-				entity->sizey = entity->colliderSizeY;
-				entity->x += entity->colliderDecorationXOffset * 0.25;
-				entity->y += entity->colliderDecorationYOffset * 0.25;
-				entity->z = 7.5 - entity->colliderDecorationHeightOffset * 0.25;
-				bool modifiedFocal = false;
-				if ( entity->x < 0.0 )
-				{
-					while ( entity->x < 0.0 )
-					{
-						entity->x += 16.0;
-						entity->focalx -= 16.0;
-					}
-					modifiedFocal = true;
-				}
-				if ( entity->y < 0 )
-				{
-					while ( entity->y < 0.0 )
-					{
-						entity->y += 16.0;
-						entity->focaly -= 16.0;
-					}
-					modifiedFocal = true;
-				}
-				if ( static_cast<int>(entity->x) >= map->width * 16 )
-				{
-					while ( static_cast<int>(entity->x) >= map->width * 16 )
-					{
-						entity->x -= 16.0;
-						entity->focalx += 16.0;
-					}
-					modifiedFocal = true;
-				}
-				if ( static_cast<int>(entity->y) >= map->height * 16 )
-				{
-					while ( static_cast<int>(entity->y) >= map->height * 16 )
-					{
-						entity->y -= 16.0;
-						entity->focaly += 16.0;
-					}
-					modifiedFocal = true;
-				}
-				if ( modifiedFocal )
-				{
-					real_t fx = entity->focalx;
-					real_t fy = entity->focaly;
-					entity->focalx = fx * cos(entity->yaw) - fy * cos(entity->yaw + PI / 2);
-					entity->focaly = -fx * sin(entity->yaw) + fy * sin(entity->yaw + PI / 2);
-				}
-
-				entity->flags[PASSABLE] = entity->colliderHasCollision == 0;
-				entity->flags[BLOCKSIGHT] = false;
-				entity->behavior = &actColliderDecoration;
-				entity->colliderCurrentHP = entity->colliderMaxHP;
-				entity->colliderOldHP = entity->colliderMaxHP;
-				if ( entity->isDamageableCollider() )
-				{
-					entity->flags[UNCLICKABLE] = false;
-				}
-				else
-				{
-					entity->flags[UNCLICKABLE] = true;
-				}
-				/*if ( multiplayer != CLIENT )
-				{
-				entity_uids--;
-				}
-				entity->setUID(-3);*/
+				Entity::colliderAssignProperties(entity, true, map);
 				break;
 			}
 			//AND gate
@@ -10249,7 +10225,7 @@ void map_t::setMapHDRSettings()
 		}
 		else
 		{
-		*cvar_fogColor = { 1.0f, 1.0f, 1.2f, 1.0f };
+			*cvar_fogColor = { 1.0f, 1.0f, 1.2f, 1.0f };
 		}
 		*cvar_fogDistance = 384.f;
 		*cvar_hdrLimitLow = 1.2f;

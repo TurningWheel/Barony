@@ -652,6 +652,398 @@ void Entity::actPistonCam()
 	}
 }
 
+int colliderGetSpellRange(Entity* my)
+{
+	if ( my->colliderSpellEvent % 1000 == 0 ) { return 0; }
+	int range = 32;
+	int effectType = my->colliderSpellEvent % 1000;
+	switch ( effectType )
+	{
+	case 3:
+	case 4:
+		range = 128;
+		break;
+	default:
+		break;
+	}
+	return range;
+}
+
+void actColliderMushroomCap(Entity* my)
+{
+	Entity* parent = uidToEntity(my->parent);
+	if ( !parent )
+	{
+		Entity* gib = spawnGib(my);
+		gib->sprite = my->sprite;
+		gib->z = my->z;
+		gib->skill[5] = 1; // poof
+		list_RemoveNode(my->mynode);
+		return;
+	}
+
+	my->z = parent->z - 7.0 + 1.5;
+	my->pitch = (my->fskill[2]) * (PI / 24) * sin(my->fskill[1]);
+	my->roll =  (my->fskill[2]) * (PI / 24) * sin(my->fskill[1] + PI / 2);
+
+	real_t bobScale = 0.08 * my->skill[0];
+	my->scalex = 1.0 + bobScale * sin(my->fskill[0]);
+	my->scaley = 1.0 + bobScale * sin(my->fskill[0]);
+	my->scalez = 1.0 - bobScale * sin(my->fskill[0]);
+
+	parent->scalex = 1.0 - bobScale * 0.25 * sin(my->fskill[0]);
+	parent->scaley = 1.0 - bobScale * 0.25 * sin(my->fskill[0]);
+	parent->scalez = 1.0 + bobScale * 0.25 * sin(my->fskill[0]);
+
+	int trigger = 0;
+	if ( parent->colliderSpellEventTrigger != 0 )
+	{
+		trigger = parent->colliderSpellEventTrigger;
+		parent->colliderSpellEventTrigger = 0;
+	}
+
+	auto& friendlyFire = my->skill[1];
+
+	if ( trigger > 0 )
+	{
+		real_t percent = (trigger % 100) / 100.0;
+		my->skill[0] = 4;
+
+		if ( percent < 0.5 )
+		{
+			playSoundEntityLocal(parent, 711 + local_rng.rand() % 3, 128);
+		}
+		else
+		{
+			playSoundEntityLocal(parent, 714 + local_rng.rand() % 3, 128);
+		}
+		my->fskill[0] = 0.0;
+		my->fskill[1] = 2 * PI * percent;
+		my->fskill[2] = 0.0;
+
+		if ( trigger >= 100 )
+		{
+			friendlyFire = 1;
+			if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
+			{
+				friendlyFire = 0;
+			}
+		}
+		else
+		{
+			friendlyFire = 0;
+		}
+	}
+
+	if ( my->skill[0] > 0 )
+	{
+		int range = colliderGetSpellRange(parent);
+		int effectType = parent->colliderSpellEvent % 1000;
+		if ( effectType == 3 || effectType == 4 )
+		{
+			range = 32;
+		}
+
+		Uint32 color = makeColorRGB(0, 145, 16);
+		int gibSprite = 1885;
+		switch ( effectType )
+		{
+		case 4:
+			color = makeColorRGB(206, 162, 146);
+			gibSprite = 1887;
+			break;
+		case 5:
+			color = makeColorRGB(116, 128, 180);
+			gibSprite = 1888;
+			break;
+		case 2:
+			color = makeColorRGB(180, 116, 160);
+			gibSprite = 1889;
+			break;
+		default:
+			break;
+		}
+
+		my->fskill[2] = std::min(1.0, std::max(0.05, my->fskill[2] * 1.15));
+		if ( my->skill[0] == 4 ) // circle first
+		{
+			if ( my->fskill[1] >= 2 * PI )
+			{
+				my->skill[0]--;
+
+				if ( (effectType == 3 || effectType == 4) && multiplayer != CLIENT )
+				{
+					if ( Entity* target = uidToEntity(parent->colliderSpellTarget) )
+					{
+						real_t tangent = atan2(target->y - parent->y, target->x - parent->x);
+
+						Entity* caster = parent;
+						if ( parent->colliderCreatedParent != 0 )
+						{
+							if ( Entity* ent = uidToEntity(parent->colliderCreatedParent) )
+							{
+								caster = ent;
+							}
+						}
+						if ( Entity* missile = castSpell(
+							caster ? caster->getUID() : 0,
+							getSpellFromID(
+								effectType == 3 ? SPELL_SPORE_BOMB : SPELL_MYCELIUM_BOMB
+							), false, true) )
+						{
+							missile->collisionIgnoreTargets.insert(parent->getUID());
+							missile->x = parent->x;
+							missile->y = parent->y;
+							missile->z = 6.0;
+							real_t vel = sqrt(pow(missile->vel_x, 2) + pow(missile->vel_y, 2));
+							missile->vel_z = -1.2;
+							missile->vel_x = vel * cos(tangent);
+							missile->vel_y = vel * sin(tangent);
+						}
+					}
+				}
+
+				for ( int i = 0; i < 8; ++i )
+				{
+					Entity* fx = createParticleAestheticOrbit(parent, gibSprite, 3 * TICKS_PER_SECOND, PARTICLE_EFFECT_MUSHROOM_SPELL);
+					fx->x = parent->x;
+					fx->y = parent->y;
+					fx->actmagicOrbitDist = range;
+					fx->yaw = parent->yaw + (i * PI / 4.0);
+					fx->pitch = -PI;
+					fx->fskill[4] = fx->yaw;
+
+					Entity* gib = spawnGib(parent);
+					gib->sprite = gibSprite;
+					gib->vel_x = 1.5 * cos(fx->yaw);
+					gib->vel_y = 1.5 * sin(fx->yaw);
+					gib->lightBonus = vec4{ 0.25f, 0.25f, 0.25f, 0.f };
+				}
+
+				if ( Entity* fx = createParticleAOEIndicator(parent, parent->x, parent->y, 0.0, TICKS_PER_SECOND * 2, range) )
+				{
+					//fx->actSpriteFollowUID = 0;
+					fx->actSpriteCheckParentExists = 0;
+					//fx->scalex = 0.8;
+					//fx->scaley = 0.8;
+					if ( auto indicator = AOEIndicators_t::getIndicator(fx->skill[10]) )
+					{
+						//indicator->arc = PI / 2;
+						indicator->indicatorColor = color;
+						indicator->loop = false;
+						indicator->gradient = 4;
+						indicator->framesPerTick = 2;
+						indicator->ticksPerUpdate = 1;
+						indicator->delayTicks = 0;
+						indicator->expireAlphaRate = 0.95;
+					}
+				}
+				playSoundEntityLocal(parent, 169, 128);
+				playSoundEntityLocal(parent, 717 + local_rng.rand() % 3, 128);
+			}
+		}
+		else
+		{
+			my->fskill[0] += 0.25;
+			if ( my->fskill[0] >= 2 * PI )
+			{
+				my->fskill[0] -= 2 * PI;
+				my->skill[0]--;
+				if ( my->skill[0] == 1 )
+				{
+					auto& colliderData = EditorEntityData_t::colliderData[parent->colliderDamageTypes];
+					if ( (effectType == 3 || effectType == 4) &&
+						colliderData.name.find("_fragile") != std::string::npos )
+					{
+						if ( multiplayer != CLIENT )
+						{
+							parent->colliderCurrentHP = 0;
+							parent->colliderKillerUid = 0;
+						}
+					}
+					else
+					{
+						playSoundEntityLocal(parent, 717 + local_rng.rand() % 3, 128);
+						for ( int i = 0; i < 8; ++i )
+						{
+							Entity* fx = createParticleAestheticOrbit(parent, gibSprite, 3 * TICKS_PER_SECOND, PARTICLE_EFFECT_MUSHROOM_SPELL);
+							fx->x = parent->x;
+							fx->y = parent->y;
+							fx->actmagicOrbitDist = range;
+							fx->yaw = parent->yaw + (i * PI / 4.0) + PI / 8;
+							fx->pitch = -PI;
+							fx->fskill[4] = fx->yaw;
+
+							Entity* gib = spawnGib(parent);
+							gib->sprite = gibSprite;
+							gib->vel_x = 1.0 * cos(fx->yaw);
+							gib->vel_y = 1.0 * sin(fx->yaw);
+							gib->lightBonus = vec4{ 0.25f, 0.25f, 0.25f, 0.f };
+						}
+					}
+				}
+				else if ( my->skill[1] == 0 )
+				{
+					auto& colliderData = EditorEntityData_t::colliderData[parent->colliderDamageTypes];
+					if ( !(effectType == 3 || effectType == 4) &&
+						colliderData.name.find("_fragile") != std::string::npos )
+					{
+						if ( multiplayer != CLIENT )
+						{
+							parent->colliderCurrentHP = 0;
+							parent->colliderKillerUid = 0;
+						}
+					}
+				}
+			}
+
+			if ( multiplayer != CLIENT )
+			{
+				Entity* caster = uidToEntity(parent->colliderCreatedParent);
+				std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 1 + (range / 16));
+				for ( auto it : entLists )
+				{
+					node_t* node;
+					for ( node = it->first; node != nullptr; node = node->next )
+					{
+						Entity* entity = (Entity*)node->element;
+						if ( !(entity->behavior == &actPlayer || entity->behavior == &actMonster) )
+						{
+							continue;
+						}
+						if ( !entity->monsterIsTargetable() )
+						{
+							continue;
+						}
+						if ( entityDist(my, entity) > (real_t)(range + 4.0) )
+						{
+							continue;
+						}
+						Stat* stats = entity->getStats();
+						if ( !stats ) { continue; }
+
+						if ( caster && caster->behavior == &actMonster )
+						{
+							if ( caster == entity )
+							{
+								continue;
+							}
+						}
+
+						if ( entity->behavior == &actMonster 
+							&& stats->type == MONSTER_M )
+						{
+							continue;
+						}
+
+						auto props = getParticleEmitterHitProps(parent->getUID(), entity);
+						if ( !props )
+						{
+							continue;
+						}
+						if ( props->hits > 0 && (ticks - props->tick) < 50 )
+						{
+							continue;
+						}
+
+						real_t tangent = atan2(entity->y - parent->y, entity->x - parent->x);
+						bool oldPassable = entity->flags[PASSABLE];
+						entity->flags[PASSABLE] = false;
+						real_t d = lineTraceTarget(parent, parent->x, parent->y, tangent, (real_t)(range + 4.0), 0, false, entity);
+						entity->flags[PASSABLE] = oldPassable;
+						if ( hit.entity != entity )
+						{
+							continue;
+						}
+
+						if ( applyGenericMagicDamage(caster ? caster : parent, entity, caster ? *caster : *parent, SPELL_MUSHROOM, 5, true, true) )
+						{
+							stats->killer = KilledBy::MUSHROOM;
+							entity->setObituary(Language::get(6753));
+
+							props->hits++;
+							props->tick = ticks;
+							if ( effectType == 1 )
+							{
+								bool wasEffected = stats->getEffectActive(EFF_POISONED);
+								if ( entity->setEffect(EFF_POISONED, true, 3 * TICKS_PER_SECOND + 10, false) )
+								{
+									spawnMagicEffectParticles(entity->x, entity->y, entity->z, 944);
+									if ( caster )
+									{
+										stats->poisonKiller = caster->getUID();
+									}
+								}
+							}
+							else if ( effectType == 5 )
+							{
+								bool wasEffected = stats->getEffectActive(EFF_DUSTED);
+								if ( entity->setEffect(EFF_DUSTED, true, 10 * TICKS_PER_SECOND + 10, true) )
+								{
+									spawnMagicEffectParticles(entity->x, entity->y, entity->z, 944);
+									if ( !wasEffected )
+									{
+										messagePlayerColor(entity->isEntityPlayer(), MESSAGE_STATUS, makeColorRGB(255, 0, 0), Language::get(6752));
+									}
+								}
+							}
+							else if ( effectType == 2 || effectType == 3 || effectType == 4 )
+							{
+								spawnMagicEffectParticles(entity->x, entity->y, entity->z, 944);
+
+								if ( effectType == 3 )
+								{
+									bool wasEffected = stats->getEffectActive(EFF_POISONED);
+									if ( entity->setEffect(EFF_POISONED, true, 3 * TICKS_PER_SECOND + 10, false) )
+									{
+										spawnMagicEffectParticles(entity->x, entity->y, entity->z, 944);
+									}
+								}
+
+								if ( entity->setEffect(EFF_KNOCKBACK, true, 30, false) )
+								{
+									real_t pushbackMultiplier = 0.9;
+									real_t tangent = atan2(entity->y - parent->y, entity->x - parent->x);
+									if ( entity->behavior == &actPlayer )
+									{
+										if ( !players[entity->skill[2]]->isLocalPlayer() )
+										{
+											entity->monsterKnockbackVelocity = pushbackMultiplier;
+											entity->monsterKnockbackTangentDir = tangent;
+											serverUpdateEntityFSkill(entity, 11);
+											serverUpdateEntityFSkill(entity, 9);
+										}
+										else
+										{
+											entity->monsterKnockbackVelocity = pushbackMultiplier;
+											entity->monsterKnockbackTangentDir = tangent;
+										}
+									}
+									else if ( entity->behavior == &actMonster )
+									{
+										entity->vel_x = cos(tangent) * pushbackMultiplier;
+										entity->vel_y = sin(tangent) * pushbackMultiplier;
+										entity->monsterKnockbackVelocity = 0.01;
+										entity->monsterKnockbackUID = parent->colliderCreatedParent;
+										entity->monsterKnockbackTangentDir = tangent;
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	else
+	{
+		my->fskill[2] *= 0.95;
+	}
+
+	my->fskill[1] += 0.125;
+	my->focalz = -1.5;
+}
+
 bool Entity::isColliderShownAsWallOnMinimap() const
 {
 	if ( !isDamageableCollider() ) { return false; }
@@ -968,6 +1360,331 @@ int Entity::getColliderSfxOnBreak() const
 	return colliderData.sfxBreak[local_rng.rand() % colliderData.sfxBreak.size()];
 }
 
+Entity* Entity::createBreakableCollider(int colliderDamageType, real_t _x, real_t _y, Entity* parent)
+{
+	if ( colliderDamageType == 0 )
+	{
+		return nullptr;
+	}
+	int x = static_cast<int>(_x) >> 4;
+	int y = static_cast<int>(_y) >> 4;
+	if ( !(x > 0 && x < map.width - 1 && y > 0 && y < map.height - 1) )
+	{
+		return nullptr;
+	}
+	int mapIndex = (y)*MAPLAYERS + (x)*MAPLAYERS * map.height;
+	if ( !map.tiles[mapIndex] || swimmingtiles[map.tiles[mapIndex]] || lavatiles[map.tiles[mapIndex]] )
+	{
+		return nullptr;
+	}
+
+	auto find = EditorEntityData_t::colliderData.find(colliderDamageType);
+	if ( find == EditorEntityData_t::colliderData.end() )
+	{
+		return nullptr;
+	}
+
+
+	Entity* breakable = newEntity(-1, 1, map.entities, nullptr);
+	breakable->x = x * 16.0 + 8.0;
+	breakable->y = y * 16.0 + 8.0;
+	std::vector<std::pair<int, int>> coords =
+	{
+		{0, 1},
+		{0, -1},
+		{1, 0},
+		{1, 1},
+		{1, -1},
+		{-1, 0},
+		{-1, 1},
+		{-1, -1}
+	};
+
+	bool goodspot = false;
+	if ( checkObstacle(breakable->x, breakable->y, breakable, nullptr, true, true, true, false) )
+	{
+		while ( coords.size() > 0 )
+		{
+			int pick = local_rng.rand() % coords.size();
+			if ( checkObstacle(breakable->x + coords[pick].first * 16, breakable->y + coords[pick].second * 16, breakable, nullptr, true, true, true, false) )
+			{
+				coords.erase(coords.begin() + pick);
+			}
+			else
+			{
+				goodspot = true;
+				breakable->x += coords[pick].first * 16;
+				breakable->y += coords[pick].second * 16;
+				break;
+			}
+		}
+
+		if ( !goodspot )
+		{
+			list_RemoveNode(breakable->mynode);
+			return nullptr;
+		}
+	}
+
+	breakable->colliderDamageTypes = colliderDamageType;
+	breakable->colliderCreatedParent = parent ? parent->getUID() : 0;
+	breakable->colliderDecorationRotation = 2 * (local_rng.rand() % 3);
+	Entity::colliderAssignProperties(breakable, false, &map);
+
+	breakable->colliderSetServerSkillOnSpawned();
+	breakable->flags[UPDATENEEDED] = true;
+	breakable->flags[NOUPDATE] = false;
+	return breakable;
+}
+
+void Entity::colliderSetServerSkillOnSpawned()
+{
+	Sint32 val = (1 << 31);
+	val |= (Uint8)(25);
+	val |= (Uint8)(colliderDamageTypes) << 8;
+	val |= (Uint8)(colliderSpellEvent % 1000) << 16;
+	skill[2] = val;
+}
+
+void Entity::colliderAssignProperties(Entity* entity, bool mapGeneration, map_t* whichMap)
+{
+	auto& rng = mapGeneration ? map_rng : local_rng;
+
+	entity->seedEntityRNG(rng.getU32());
+
+	if ( mapGeneration || multiplayer != CLIENT )
+	{
+		int dir = entity->colliderDecorationRotation;
+		if ( dir == -1 )
+		{
+			dir = rng.rand() % 8;
+			entity->colliderDecorationRotation = dir;
+		}
+		entity->yaw = dir * (PI / 4);
+	}
+	/*static ConsoleVariable<int> debugColliderType("/collider_type", 14);
+	entity->colliderDamageTypes = *debugColliderType;*/
+	auto find = EditorEntityData_t::colliderData.find(entity->colliderDamageTypes);
+	if ( find != EditorEntityData_t::colliderData.end() )
+	{
+		auto& data = find->second;
+		if ( data.hasOverride("dir_offset") )
+		{
+			if ( mapGeneration || multiplayer != CLIENT )
+			{
+				entity->yaw = ((entity->colliderDecorationRotation + data.getOverride("dir_offset")) * (PI / 4));
+			}
+		}
+		if ( data.hasOverride("model") )
+		{
+			entity->colliderDecorationModel = data.getOverride("model");
+		}
+		if ( data.hasOverride("height") )
+		{
+			entity->colliderDecorationHeightOffset = data.getOverride("height");
+		}
+		if ( entity->colliderDecorationRotation == 0 )
+		{
+			if ( data.hasOverride("east_x") )
+			{
+				entity->colliderDecorationXOffset = data.getOverride("east_x");
+			}
+			if ( data.hasOverride("east_y") )
+			{
+				entity->colliderDecorationYOffset = data.getOverride("east_y");
+			}
+		}
+		else if ( entity->colliderDecorationRotation == 2 )
+		{
+			if ( data.hasOverride("south_x") )
+			{
+				entity->colliderDecorationXOffset = data.getOverride("south_x");
+			}
+			if ( data.hasOverride("south_y") )
+			{
+				entity->colliderDecorationYOffset = data.getOverride("south_y");
+			}
+		}
+		else if ( entity->colliderDecorationRotation == 4 )
+		{
+			if ( data.hasOverride("west_x") )
+			{
+				entity->colliderDecorationXOffset = data.getOverride("west_x");
+			}
+			if ( data.hasOverride("west_y") )
+			{
+				entity->colliderDecorationYOffset = data.getOverride("west_y");
+			}
+		}
+		else if ( entity->colliderDecorationRotation == 6 )
+		{
+			if ( data.hasOverride("north_x") )
+			{
+				entity->colliderDecorationXOffset = data.getOverride("north_x");
+			}
+			if ( data.hasOverride("north_y") )
+			{
+				entity->colliderDecorationYOffset = data.getOverride("north_y");
+			}
+		}
+		if ( data.hasOverride("collision") )
+		{
+			entity->colliderHasCollision = data.getOverride("collision");
+		}
+		if ( data.hasOverride("collision_x") )
+		{
+			entity->colliderSizeX = data.getOverride("collision_x");
+		}
+		if ( data.hasOverride("collision_y") )
+		{
+			entity->colliderSizeY = data.getOverride("collision_y");
+		}
+		if ( data.hasOverride("hp") )
+		{
+			entity->colliderMaxHP = data.getOverride("hp");
+		}
+		if ( data.hasOverride("diggable") )
+		{
+			entity->colliderDiggable = data.getOverride("diggable");
+		}
+
+		if ( entity->colliderIsMapGenerated == 0 && (mapGeneration || multiplayer != CLIENT)
+			&& entity->entity_rng )
+		{
+			static int lastSpellEvent = 0;
+			if ( data.spellTriggers.size() > 0 )
+			{
+				std::vector<unsigned int> chances;
+				bool avoidLastSpell = false;
+				for ( auto s : data.spellTriggers )
+				{
+					chances.push_back(1);
+					if ( lastSpellEvent != 0 && s != lastSpellEvent )
+					{
+						avoidLastSpell = true;
+					}
+				}
+
+				if ( avoidLastSpell )
+				{
+					int unusedChances = 0;
+					for ( size_t i = 0; i < chances.size(); ++i )
+					{
+						if ( chances[i] != lastSpellEvent )
+						{
+							++unusedChances;
+						}
+					}
+					if ( unusedChances > 0 )
+					{
+						for ( size_t i = 0; i < chances.size(); ++i )
+						{
+							if ( data.spellTriggers[i] == lastSpellEvent )
+							{
+								chances[i] = 0;
+							}
+						}
+					}
+				}
+
+				int pickIndex = entity->entity_rng->discrete(chances.data(), chances.size());
+				int picked = data.spellTriggers[pickIndex];
+				if ( picked > 0 )
+				{
+					if ( entity->entity_rng->rand() % 5 > 0 )
+					{
+						picked += 1000;
+					}
+					entity->colliderSpellEvent = picked;
+					lastSpellEvent = picked % 1000;
+				}
+			}
+		}
+	}
+
+	entity->sprite = entity->colliderDecorationModel;
+	entity->sizex = entity->colliderSizeX;
+	entity->sizey = entity->colliderSizeY;
+
+	if ( mapGeneration || multiplayer != CLIENT )
+	{
+		entity->x += entity->colliderDecorationXOffset * 0.25;
+		entity->y += entity->colliderDecorationYOffset * 0.25;
+		entity->z = 7.5 - entity->colliderDecorationHeightOffset * 0.25;
+		bool modifiedFocal = false;
+		if ( entity->x < 0.0 )
+		{
+			while ( entity->x < 0.0 )
+			{
+				entity->x += 16.0;
+				entity->focalx -= 16.0;
+			}
+			modifiedFocal = true;
+		}
+		if ( entity->y < 0 )
+		{
+			while ( entity->y < 0.0 )
+			{
+				entity->y += 16.0;
+				entity->focaly -= 16.0;
+			}
+			modifiedFocal = true;
+		}
+		if ( static_cast<int>(entity->x) >= whichMap->width * 16 )
+		{
+			while ( static_cast<int>(entity->x) >= whichMap->width * 16 )
+			{
+				entity->x -= 16.0;
+				entity->focalx += 16.0;
+			}
+			modifiedFocal = true;
+		}
+		if ( static_cast<int>(entity->y) >= whichMap->height * 16 )
+		{
+			while ( static_cast<int>(entity->y) >= whichMap->height * 16 )
+			{
+				entity->y -= 16.0;
+				entity->focaly += 16.0;
+			}
+			modifiedFocal = true;
+		}
+		if ( modifiedFocal )
+		{
+			real_t fx = entity->focalx;
+			real_t fy = entity->focaly;
+			entity->focalx = fx * cos(entity->yaw) - fy * cos(entity->yaw + PI / 2);
+			entity->focaly = -fx * sin(entity->yaw) + fy * sin(entity->yaw + PI / 2);
+		}
+	}
+
+	if ( mapGeneration )
+	{
+		entity->flags[PASSABLE] = entity->colliderHasCollision == 0;
+	}
+	else
+	{
+		entity->flags[PASSABLE] = true; // set later in act()
+	}
+	entity->flags[BLOCKSIGHT] = false;
+	entity->behavior = &actColliderDecoration;
+	entity->colliderCurrentHP = entity->colliderMaxHP;
+	entity->colliderOldHP = entity->colliderMaxHP;
+	if ( entity->isDamageableCollider() )
+	{
+		entity->flags[UNCLICKABLE] = false;
+	}
+	else
+	{
+		entity->flags[UNCLICKABLE] = true;
+	}
+	/*if ( multiplayer != CLIENT )
+	{
+	entity_uids--;
+	}
+	entity->setUID(-3);*/
+}
+
+std::set<Uint32> collidersToRaiseToHeight;
 void actColliderDecoration(Entity* my)
 {
 	if ( !my )
@@ -998,6 +1715,46 @@ void actColliderDecoration(Entity* my)
 			{
 				my->colliderHasCollision |= EditorEntityData_t::COLLIDER_COLLISION_FLAG_NPC;
 			}
+
+			if ( colliderData.name.find("mushroom_spell") != std::string::npos )
+			{
+				collidersToRaiseToHeight.insert(my->getUID());
+				my->z = 16.0;
+				Entity* entity = newEntity(my->sprite + 1, 1, map.entities, nullptr); //Sprite entity.
+				entity->x = my->x;
+				entity->y = my->y;
+				entity->z = my->z - 7.0;
+				entity->behavior = &actColliderMushroomCap;
+				entity->flags[PASSABLE] = true;
+				entity->flags[NOUPDATE] = true;
+				entity->flags[UPDATENEEDED] = false;
+				entity->flags[UNCLICKABLE] = true;
+				entity->yaw = my->yaw;
+				entity->parent = my->getUID();
+				if ( multiplayer != CLIENT )
+				{
+					entity_uids--;
+				}
+				entity->setUID(-3);
+			}
+		}
+	}
+
+	if ( collidersToRaiseToHeight.find(my->getUID()) != collidersToRaiseToHeight.end() )
+	{
+		// mushroom_spell
+		my->z = std::max(8.0, my->z - 0.25);
+		if ( my->z <= 8.0 )
+		{
+			collidersToRaiseToHeight.erase(my->getUID());
+		}
+		if ( my->z > 8.5 )
+		{
+			if ( my->ticks % 2 == 0 ) {
+				const int x = my->x + local_rng.uniform(-3, 3);
+				const int y = my->y + local_rng.uniform(-3, 3);
+				auto poof = spawnPoof(x, y, 6, 0.33);
+			}
 		}
 	}
 
@@ -1007,7 +1764,46 @@ void actColliderDecoration(Entity* my)
 		my->light = addLight(my->x / 16, my->y / 16, "object_burning");
 	}
 
-	my->flags[PASSABLE] = (my->colliderHasCollision == 0);
+	if ( (my->colliderHasCollision == 0) )
+	{
+		my->flags[PASSABLE] = true;
+	}
+	else if ( my->flags[PASSABLE] )
+	{
+		// check inside
+		std::vector<list_t*> entLists;
+		if ( multiplayer == CLIENT )
+		{
+			entLists.push_back(map.entities); // clients use old map.entities method
+		}
+		else
+		{
+			entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 1);
+		}
+		bool somebodyinside = false;
+		for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end() && !somebodyinside; ++it )
+		{
+			list_t* currentList = *it;
+			for ( node_t* node = currentList->first; node != nullptr; node = node->next )
+			{
+				Entity* entity = (Entity*)node->element;
+				if ( !(entity->behavior == &actPlayer || entity->behavior == &actMonster) )
+				{
+					continue;
+				}
+				if ( entityInsideEntity(my, entity) )
+				{
+					somebodyinside = true;
+					break;
+				}
+			}
+		}
+		if ( !somebodyinside )
+		{
+			my->flags[PASSABLE] = false;
+		}
+	}
+
 	if ( multiplayer != CLIENT )
 	{
 		bool checkWallDeletion = false;
@@ -1066,10 +1862,134 @@ void actColliderDecoration(Entity* my)
 				}
 			}
 
+			auto prevOldHP = my->colliderOldHP;
 			my->colliderOldHP = my->colliderCurrentHP;
 
 			if ( my->colliderCurrentHP > 0 )
 			{
+				if ( my->colliderSpellEvent > 0 )
+				{
+					if ( my->colliderCreatedParent != 0 && my->ticks >= 10 * TICKS_PER_SECOND )
+					{
+						// destroy self
+						my->colliderCurrentHP = 0;
+						my->colliderKillerUid = 0;
+					}
+					else if ( my->colliderSpellEventCooldown > 0 )
+					{
+						my->colliderSpellEventCooldown--;
+					}
+					else
+					{
+						Entity* found = nullptr;
+						bool rescan = false;
+						int effectType = my->colliderSpellEvent % 1000;
+						if ( prevOldHP != my->colliderCurrentHP )
+						{
+							my->colliderSpellEventCooldown = 4 * TICKS_PER_SECOND;
+							my->colliderSpellEventTrigger = 100 + 75 + local_rng.rand() % 21;
+							serverUpdateEntitySkill(my, 21);
+							if ( effectType == 3 || effectType == 4 )
+							{
+								rescan = true; // look for a random target
+							}
+						}
+
+						if ( (my->colliderSpellEventCooldown == 0 && (my->ticks % TICKS_PER_SECOND == 0 && my->colliderSpellEvent >= 1000) 
+							|| rescan) )
+						{
+							Entity* caster = (my->colliderCreatedParent != 0 ? uidToEntity(my->colliderCreatedParent) : nullptr);
+							int range = colliderGetSpellRange(my);
+							auto entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 1 + (range / 16));
+							std::vector<Entity*> entitiesInRange;
+							for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end() && !found; ++it )
+							{
+								list_t* currentList = *it;
+								node_t* node;
+								for ( node = currentList->first; node != nullptr; node = node->next )
+								{
+									Entity* entity = (Entity*)node->element;
+									if ( !entity || !(entity->behavior == &actPlayer || entity->behavior == &actMonster) ) { continue; }
+									if ( caster )
+									{
+										if ( caster == entity 
+											|| (caster->checkFriend(entity) 
+												&& !(caster->behavior == &actMonster && 
+													(caster->monsterTarget == entity->getUID() // caster targeting this
+														|| (entity->behavior == &actMonster && entity->monsterTarget == caster->getUID())))) ) // entity targeting caster
+										{
+											continue;
+										}
+									}
+									else
+									{
+										if ( !(entity->behavior == &actPlayer || (entity->behavior == &actMonster && entity->monsterAllyGetPlayerLeader())) )
+										{
+											continue;
+										}
+									}
+									real_t tangent = atan2(entity->y - my->y, entity->x - my->x);
+									lineTraceTarget(my, my->x, my->y, tangent, (real_t)range, 0, false, entity);
+									if ( hit.entity == entity )
+									{
+										if ( effectType == 3 || effectType == 4 )
+										{
+											entitiesInRange.push_back(entity);
+										}
+										else
+										{
+											found = entity;
+											break;
+										}
+									}
+								}
+							}
+
+							if ( effectType == 3 || effectType == 4 )
+							{
+								if ( entitiesInRange.size() > 0 )
+								{
+									if ( caster && caster->behavior == &actMonster && caster->monsterTarget != 0 )
+									{
+										for ( auto ent : entitiesInRange )
+										{
+											if ( ent->getUID() == caster->monsterTarget )
+											{
+												found = ent;
+												break;
+											}
+										}
+									}
+									if ( !found )
+									{
+										if ( caster )
+										{
+											for ( auto ent : entitiesInRange )
+											{
+												if ( ent->behavior == &actMonster && ent->monsterTarget == caster->getUID() )
+												{
+													found = ent;
+													break;
+												}
+											}
+										}
+									}
+									if ( !found )
+									{
+										found = entitiesInRange[local_rng.rand() % entitiesInRange.size()];
+									}
+									my->colliderSpellTarget = found->getUID();
+								}
+							}
+						}
+						if ( found )
+						{
+							my->colliderSpellEventCooldown = 4 * TICKS_PER_SECOND;
+							my->colliderSpellEventTrigger = 1 + local_rng.rand() % 75;
+							serverUpdateEntitySkill(my, 21);
+						}
+					}
+				}
 				if ( my->colliderHideMonster >= 1000 ) // summon a monster when player is near
 				{
 					Entity* found = nullptr;

@@ -2158,6 +2158,15 @@ void clientActions(Entity* entity)
 						entity->skill[2] = c;
 						radiusMagicClientReceive(entity);
 					}
+					else if ( static_cast<Uint8>(c & 0xFF) == 25 )
+					{
+						entity->behavior = &actColliderDecoration;
+						entity->skill[2] = c;
+						entity->flags[NOUPDATE] = true;
+						entity->colliderDamageTypes = (c >> 8) & 0xFF;
+						entity->colliderSpellEvent = (c >> 16) & 0xFF;
+						Entity::colliderAssignProperties(entity, false, &map);
+					}
 					break;
 			}
 		}

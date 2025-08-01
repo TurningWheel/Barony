@@ -9154,6 +9154,9 @@ bind_failed:
 					case KilledBy::BELL:
 						cause_of_death = Language::get(6278);
 						break;
+					case KilledBy::MUSHROOM:
+						cause_of_death = Language::get(6754);
+						break;
 					default: 
 					{
 						cause_of_death = Language::get(5794 + (int)score->stats->killer);
@@ -27285,6 +27288,9 @@ failed:
 			break;
 		case KilledBy::BELL:
 			cause_of_death = Language::get(6278);
+			break;
+		case KilledBy::MUSHROOM:
+			cause_of_death = Language::get(6754);
 			break;
         default: {
             cause_of_death = Language::get(5794 + (int)stats[player]->killer);

@@ -490,6 +490,15 @@ public:
 	Sint32& colliderContainedEntity; //skill[15]
 	Sint32& colliderHideMonster; //skill[16]
 	Sint32& colliderKillerUid; //skill[17]
+	Sint32& colliderSpellEvent = skill[18];
+	Sint32& colliderSpellEventCooldown = skill[19];
+	Sint32& colliderCreatedParent = skill[20];
+	Sint32& colliderSpellEventTrigger = skill[21];
+	Sint32& colliderIsMapGenerated = skill[22];
+	Sint32& colliderSpellTarget = skill[23];
+	static void colliderAssignProperties(Entity* entity, bool mapGeneration, map_t* whichMap);
+	static Entity* createBreakableCollider(int colliderDamageType, real_t _x, real_t _y, Entity* parent);
+	void colliderSetServerSkillOnSpawned();
 
 	//--PUBLIC SPELL TRAP SKILLS--
 	Sint32& spellTrapType; //skill[0]

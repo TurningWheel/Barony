@@ -1078,9 +1078,14 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 						|| type == MOTH_SMALL
 						|| type == HOLOGRAM
 						|| type == FLAME_ELEMENTAL
+						|| (type == MONSTER_M && entity->colliderSpellEvent > 0)
 						)) || my->behavior == &actDeathGhost) )
 			{
 				continue;
+			}
+			if ( projectileAttack && entity->isDamageableCollider() && entity->colliderSpellEvent > 0 )
+			{
+				entityDodgeChance = true;
 			}
 			if ( entity->behavior == &actFurniture 
 				&& (type == BAT_SMALL 

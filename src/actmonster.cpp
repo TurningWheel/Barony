@@ -4716,7 +4716,10 @@ void actMonster(Entity* my)
 				{
 					continue;
 				}
-				if ( entity->behavior != &actMonster && entity->behavior != &actPlayer && entity->behavior != &actDoorFrame )
+				if ( entity->behavior != &actMonster && entity->behavior != &actPlayer && entity->behavior != &actDoorFrame
+					&& !(entity->behavior == &actColliderDecoration 
+						&& ((entity->flags[PASSABLE] && entity->colliderHasCollision != 0)
+							|| (myStats->type == MONSTER_M && entity->colliderSpellEvent > 0)) ))
 				{
 					continue;
 				}
@@ -4733,7 +4736,13 @@ void actMonster(Entity* my)
 				my->sizey = sizey;
 				if ( entityInside && entity->getRace() != GYROBOT )
 				{
-					if ( entity->behavior != &actDoorFrame )
+					if ( entity->behavior == &actColliderDecoration )
+					{
+						double tangent = atan2(my->y - entity->y, my->x - entity->x);
+						MONSTER_VELX = cos(tangent) * .1;
+						MONSTER_VELY = sin(tangent) * .1;
+					}
+					else if ( entity->behavior != &actDoorFrame )
 					{
 						bool skip = false;
 						if ( myStats->type == MONSTER_ADORCISED_WEAPON || entity->getRace() == MONSTER_ADORCISED_WEAPON )
