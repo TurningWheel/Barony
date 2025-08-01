@@ -2701,7 +2701,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		Entity *entity = uidToEntity((int)SDLNet_Read32(&net_packet->data[4]));
 		if ( entity )
 		{
-			entity->fskill[net_packet->data[8]] = (SDLNet_Read16(&net_packet->data[9]) / 256.0);
+			entity->fskill[net_packet->data[8]] = static_cast<Sint16>(SDLNet_Read16(&net_packet->data[9])) / 256.0;
 		}
 	}},
 
