@@ -10243,7 +10243,14 @@ void map_t::setMapHDRSettings()
 	if ( !strncmp(map.filename, "fortress", 8) )
 	{
 		*cvar_hdrBrightness = defaultBrightness;
+		if ( !*MainMenu::cvar_hdrEnabled )
+		{
+			*cvar_fogColor = { 0.7, 0.7f, 0.7f, 1.0f };
+		}
+		else
+		{
 		*cvar_fogColor = { 1.0f, 1.0f, 1.2f, 1.0f };
+		}
 		*cvar_fogDistance = 384.f;
 		*cvar_hdrLimitLow = 1.2f;
 	}

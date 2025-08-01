@@ -6235,6 +6235,10 @@ void drawAllPlayerCameras() {
             if (players[c]->ghost.isActive()) {
                 *cvar_hdrBrightness = {0.9f, 0.9f, 1.2f, 1.0f};
                 *cvar_fogColor = {0.7f, 0.7f, 1.1f, 0.25f};
+				if ( !strncmp(map.filename, "fortress", 8) )
+				{
+					cvar_fogColor->w = 1.f;
+				}
                 *cvar_fogDistance = 350.f;
             }
 

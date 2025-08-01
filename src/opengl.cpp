@@ -1024,7 +1024,7 @@ bool hdrEnabled = true;
 #endif
 
 static int oldViewport[4];
-
+static float fogFadeAmount[MAXPLAYERS] = { 0.5f };
 void glBeginCamera(view_t* camera, bool useHDR, map_t& map)
 {
     if (!camera) {
@@ -1044,6 +1044,16 @@ void glBeginCamera(view_t* camera, bool useHDR, map_t& map)
     fog_color.w = 1.f;
 #endif
     
+    int lightmapIndex = 0;
+    int player = -1;
+    for ( int c = 0; c < MAXPLAYERS; ++c ) {
+        if ( camera == &cameras[c] ) {
+            lightmapIndex = c + 1;
+            player = c;
+            break;
+        }
+    }
+
     if (hdr) {
         const int numFbs = sizeof(view_t::fb) / sizeof(view_t::fb[0]);
         const int fbIndex = camera->drawnFrames % numFbs;
@@ -1053,6 +1063,11 @@ void glBeginCamera(view_t* camera, bool useHDR, map_t& map)
         GL_CHECK_ERR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
         GL_CHECK_ERR(glScissor(0, 0, camera->winw, camera->winh));
     } else {
+        if ( *cvar_fogDistance > 0.f && player == 0 )
+        {
+            GL_CHECK_ERR(glClearColor(fog_color.x, fog_color.y, fog_color.z, fog_color.w));
+            GL_CHECK_ERR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
+        }
         GL_CHECK_ERR(glGetIntegerv(GL_VIEWPORT, oldViewport));
         GL_CHECK_ERR(glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh));
         GL_CHECK_ERR(glScissor(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh));
@@ -1093,16 +1108,34 @@ void glBeginCamera(view_t* camera, bool useHDR, map_t& map)
     mapDims.y = map.height;
     
     // upload lightmap
-    int lightmapIndex = 0;
-    for (int c = 0; c < MAXPLAYERS; ++c) {
-        if (camera == &cameras[c]) {
-            lightmapIndex = c + 1;
-            break;
-        }
-    }
     fillSmoothLightmap(lightmapIndex, map);
     loadLightmapTexture(lightmapIndex, map);
     
+#ifndef EDITOR
+    float fogDistance = *cvar_fogDistance;
+    if ( *cvar_fogDistance > 0.f )
+    {
+        if ( player >= 0 )
+        {
+            if ( players[player]->entity )
+            {
+                Sint32 PER = std::min(50, std::max(0, statGetPER(stats[player], players[player]->entity)));
+                float mult = 0.5 + 0.5 * sin(pow((PER / 50.0), 0.5) * PI / 2);
+                const float fpsScale = getFPSScale(144.0);
+                if ( mult > fogFadeAmount[player] )
+                {
+                    fogFadeAmount[player] = std::min(mult, fogFadeAmount[player] + 0.001f * fpsScale);
+                }
+                else
+                {
+                    fogFadeAmount[player] = std::max(mult, fogFadeAmount[player] - 0.001f * fpsScale);
+                }
+                *cvar_fogDistance *= fogFadeAmount[player];
+            }
+        }
+    }
+#endif
+
 	// upload uniforms
     uploadUniforms(voxelShader, (float*)&proj, (float*)&view, (float*)&mapDims);
     uploadUniforms(voxelBrightShader, (float*)&proj, (float*)&view, nullptr);
@@ -1116,6 +1149,10 @@ void glBeginCamera(view_t* camera, bool useHDR, map_t& map)
     uploadUniforms(spriteDitheredShader, (float*)&proj, (float*)&view, (float*)&mapDims);
     uploadUniforms(spriteBrightShader, (float*)&proj, (float*)&view, nullptr);
     uploadUniforms(spriteUIShader, (float*)&proj, (float*)&view, nullptr);
+
+#ifndef EDITOR
+    *cvar_fogDistance = fogDistance;
+#endif
 }
 
 #include <thread>
@@ -1480,6 +1517,7 @@ Mesh spriteMesh = {
 #ifndef EDITOR
 static ConsoleVariable<GLfloat> cvar_enemybarDepthRange("/enemybar_depth_range", 0.5);
 static ConsoleVariable<float> cvar_ulight_factor_min("/sprite_ulight_factor_min", 0.5f);
+static ConsoleVariable<float> cvar_ulight_factor_max("/sprite_ulight_factor_max", 1.7f);
 static ConsoleVariable<float> cvar_ulight_factor_mult("/sprite_ulight_factor_mult", 4.f);
 #endif
 
@@ -1566,7 +1604,13 @@ void glDrawEnemyBarSprite(view_t* camera, int mode, int playerViewport, void* en
     GL_CHECK_ERR(glEnable(GL_BLEND));
     
     // upload light variables
-    const float b = std::max(*MainMenu::cvar_hdrEnabled ? *cvar_ulight_factor_min : 1.f, camera->luminance * *cvar_ulight_factor_mult);
+    const float b = *cvar_hdrLimitLow > 1.f ?
+        // fortress fog, limit the high compensation
+        std::max(*MainMenu::cvar_hdrEnabled ? *cvar_ulight_factor_min : 1.f,
+            std::min(camera->luminance * *cvar_ulight_factor_mult, *cvar_ulight_factor_max))
+        :
+        // standard levels
+        std::max(*MainMenu::cvar_hdrEnabled ? *cvar_ulight_factor_min : 1.f, camera->luminance * *cvar_ulight_factor_mult);
     const GLfloat factor[4] = { 1.f, 1.f, 1.f, (float)enemybar->animator.fadeOut / 100.f };
     GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, factor));
     const GLfloat light[4] = { b, b, b, 1.f };
@@ -1669,7 +1713,13 @@ void glDrawWorldDialogueSprite(view_t* camera, void* worldDialogue, int mode)
     GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uModel"), 1, false, (float*)&m)); // model matrix
     
     // upload light variables
-    const float b = std::max(*MainMenu::cvar_hdrEnabled ? *cvar_ulight_factor_min : 1.f, camera->luminance * *cvar_ulight_factor_mult);
+    const float b = *cvar_hdrLimitLow > 1.f ?
+        // fortress fog, limit the high compensation
+        std::max(*MainMenu::cvar_hdrEnabled ? *cvar_ulight_factor_min : 1.f,
+            std::min(camera->luminance * *cvar_ulight_factor_mult, *cvar_ulight_factor_max))
+        :
+        // standard levels
+        std::max(*MainMenu::cvar_hdrEnabled ? *cvar_ulight_factor_min : 1.f, camera->luminance * *cvar_ulight_factor_mult);
     const GLfloat factor[4] = { 1.f, 1.f, 1.f, (float)dialogue->alpha };
     GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, factor));
     const GLfloat light[4] = { b, b, b, 1.f };
@@ -1808,7 +1858,14 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
     GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uModel"), 1, false, (float*)&m)); // model matrix
     
     // upload light variables
-    const float b = std::max(*MainMenu::cvar_hdrEnabled ? *cvar_ulight_factor_min : 1.f, camera->luminance * *cvar_ulight_factor_mult);
+    const float b = *cvar_hdrLimitLow > 1.f ? 
+        // fortress fog, limit the high compensation
+        std::max(*MainMenu::cvar_hdrEnabled ? *cvar_ulight_factor_min : 1.f,
+            std::min(camera->luminance * *cvar_ulight_factor_mult, *cvar_ulight_factor_max))
+        : 
+        // standard levels
+        std::max(*MainMenu::cvar_hdrEnabled ? *cvar_ulight_factor_min : 1.f, camera->luminance * *cvar_ulight_factor_mult);
+
     const GLfloat factor[4] = { 1.f, 1.f, 1.f, (float)entity->worldTooltipAlpha };
     GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightFactor"), 1, factor));
     const GLfloat light[4] = { b, b, b, 1.f };
@@ -1951,7 +2008,13 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
     // upload light variables
     if (entity->flags[BRIGHT]) {
 #ifndef EDITOR
-        const float b = std::max(*MainMenu::cvar_hdrEnabled ? *cvar_ulight_factor_min : 1.f, camera->luminance * *cvar_ulight_factor_mult);
+        const float b = *cvar_hdrLimitLow > 1.f ?
+            // fortress fog, limit the high compensation
+            std::max(*MainMenu::cvar_hdrEnabled ? *cvar_ulight_factor_min : 1.f,
+                std::min(camera->luminance * *cvar_ulight_factor_mult, *cvar_ulight_factor_max))
+            :
+            // standard levels
+            std::max(*MainMenu::cvar_hdrEnabled ? *cvar_ulight_factor_min : 1.f, camera->luminance * *cvar_ulight_factor_mult);
 #else
         const float b = std::max(0.5f, camera->luminance * 4.f);
 #endif
@@ -2127,7 +2190,13 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
     
     // upload light variables
 #ifndef EDITOR
-    const float b = std::max(*MainMenu::cvar_hdrEnabled ? *cvar_ulight_factor_min : 1.f, camera->luminance * *cvar_ulight_factor_mult);
+    const float b = *cvar_hdrLimitLow > 1.f ?
+        // fortress fog, limit the high compensation
+        std::max(*MainMenu::cvar_hdrEnabled ? *cvar_ulight_factor_min : 1.f,
+            std::min(camera->luminance * *cvar_ulight_factor_mult, *cvar_ulight_factor_max))
+        :
+        // standard levels
+        std::max(*MainMenu::cvar_hdrEnabled ? *cvar_ulight_factor_min : 1.f, camera->luminance * *cvar_ulight_factor_mult);
 #else
     const float b = std::max(0.5f, camera->luminance * 4.f);
 #endif
@@ -2431,6 +2500,10 @@ unsigned int GO_GetPixelU32(int x, int y, view_t& camera)
         main_framebuffer.unbindForWriting();
     }
     
+#ifndef EDITOR
+    float fogDistance = *cvar_fogDistance;
+    *cvar_fogDistance = 0.f;
+#endif
 	if (dirty) {
         GL_CHECK_ERR(glClearColor(0.f, 0.f, 0.f, 0.f));
         GL_CHECK_ERR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
@@ -2439,6 +2512,9 @@ unsigned int GO_GetPixelU32(int x, int y, view_t& camera)
 		drawEntities3D(&camera, ENTITYUIDS);
 		glEndCamera(&camera, false, map);
 	}
+#ifndef EDITOR
+    *cvar_fogDistance = fogDistance;
+#endif
 
 	GLubyte pixel[4];
     GL_CHECK_ERR(glReadPixels(x, y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, (void*)pixel));
