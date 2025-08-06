@@ -1122,6 +1122,10 @@ void glBeginCamera(view_t* camera, bool useHDR, map_t& map)
             if ( players[player]->entity )
             {
                 Sint32 PER = std::min(50, std::max(0, statGetPER(stats[player], players[player]->entity)));
+                if ( darkmap )
+                {
+                    PER = std::min(3, PER);
+                }
                 float mult = 0.5 + 0.5 * sin(pow((PER / 50.0), 0.5) * PI / 2);
                 const float fpsScale = getFPSScale(144.0);
                 if ( mult > fogFadeAmount[player] )

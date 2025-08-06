@@ -1196,7 +1196,9 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 	{
 		// function sets shop level for us.
 	}
-	else if ( map_rng.rand() % 2 && currentlevel > 1 && strncmp(map.name, "Underworld", 10) && strncmp(map.name, "Hell", 4) )
+	else if ( map_rng.rand() % 2 && currentlevel > 1 
+		&& strncmp(map.name, "Underworld", 10) && strncmp(map.name, "Hell", 4)
+		&& strncmp(map.filename, "fortress", 8) )
 	{
 		shoplevel = true;
 	}
@@ -1222,13 +1224,25 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		}
 	}
 
+	if ( !strncmp(map.filename, "fortress", 8) )
+	{
+		minotaurlevel = false;
+	}
+
 	// dark level
 	if ( gameplayCustomManager.processedDarkFloor(currentlevel, secretlevel, map.name) )
 	{
 		// function sets dark level for us.
 		if ( darkmap )
 		{
-			messageLocalPlayers(MESSAGE_HINT, Language::get(1108));
+			if ( !strncmp(map.filename, "fortress", 8) )
+			{
+				messageLocalPlayers(MESSAGE_HINT, Language::get(6755));
+			}
+			else
+			{
+				messageLocalPlayers(MESSAGE_HINT, Language::get(1108));
+			}
 		}
 	}
 	else if ( !secretlevel )
@@ -1238,7 +1252,14 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			if ( map_rng.rand() % 100 < std::get<LEVELPARAM_CHANCE_DARKNESS>(mapParameters) )
 			{
 				darkmap = true;
-				messageLocalPlayers(MESSAGE_HINT, Language::get(1108));
+				if ( !strncmp(map.filename, "fortress", 8) )
+				{
+					messageLocalPlayers(MESSAGE_HINT, Language::get(6755));
+				}
+				else
+				{
+					messageLocalPlayers(MESSAGE_HINT, Language::get(1108));
+				}
 			}
 			else
 			{
@@ -1247,10 +1268,21 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		}
 		else if ( currentlevel % LENGTH_OF_LEVEL_REGION >= 2 )
 		{
-			if ( map_rng.rand() % 4 == 0 )
+			if ( !strncmp(map.filename, "fortress", 8) )
 			{
-				darkmap = true;
-				messageLocalPlayers(MESSAGE_HINT, Language::get(1108));
+				if ( map_rng.rand() % 4 == 0 )
+				{
+					darkmap = true;
+					messageLocalPlayers(MESSAGE_HINT, Language::get(6755));
+				}
+			}
+			else
+			{
+				if ( map_rng.rand() % 4 == 0 )
+				{
+					darkmap = true;
+					messageLocalPlayers(MESSAGE_HINT, Language::get(1108));
+				}
 			}
 		}
 	}
@@ -4261,8 +4293,10 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 					// decorations
 					if ( (map_rng.rand() % 4 == 0 || (currentlevel <= 10 && !customTrapsForMapInUse)) && strcmp(map.name, "Hell") )
 					{
-						switch ( map_rng.rand() % 7 )
+						if ( !strncmp(map.filename, "fortress", 8) )
 						{
+							switch ( map_rng.rand() % 4 )
+							{
 							case 0:
 								entity = newEntity(12, 1, map.entities, nullptr); //Firecamp.
 								break; //Firecamp
@@ -4277,17 +4311,38 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 								setSpriteAttributes(entity, nullptr, nullptr);
 								entity->chestLocked = -1;
 								break; //Chest
-							case 4:
-								entity = newEntity(39, 1, map.entities, nullptr); //Tomb.
-								break; //Tomb
-							case 5:
-								entity = newEntity(59, 1, map.entities, nullptr); //Table.
-								setSpriteAttributes(entity, nullptr, nullptr);
-								break; //Table
-							case 6:
-								entity = newEntity(60, 1, map.entities, nullptr); //Chair.
-								setSpriteAttributes(entity, nullptr, nullptr);
-								break; //Chair
+							}
+						}
+						else
+						{
+							switch ( map_rng.rand() % 7 )
+							{
+								case 0:
+									entity = newEntity(12, 1, map.entities, nullptr); //Firecamp.
+									break; //Firecamp
+								case 1:
+									entity = newEntity(14, 1, map.entities, nullptr); //Fountain.
+									break; //Fountain
+								case 2:
+									entity = newEntity(15, 1, map.entities, nullptr); //Sink.
+									break; //Sink
+								case 3:
+									entity = newEntity(21, 1, map.entities, nullptr); //Chest.
+									setSpriteAttributes(entity, nullptr, nullptr);
+									entity->chestLocked = -1;
+									break; //Chest
+								case 4:
+									entity = newEntity(39, 1, map.entities, nullptr); //Tomb.
+									break; //Tomb
+								case 5:
+									entity = newEntity(59, 1, map.entities, nullptr); //Table.
+									setSpriteAttributes(entity, nullptr, nullptr);
+									break; //Table
+								case 6:
+									entity = newEntity(60, 1, map.entities, nullptr); //Chair.
+									setSpriteAttributes(entity, nullptr, nullptr);
+									break; //Chair
+							}
 						}
 					}
 					else
@@ -4438,33 +4493,56 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 					// decorations
 					if ( (map_rng.rand() % 4 == 0 || (currentlevel <= 10 && !customTrapsForMapInUse)) && strcmp(map.name, "Hell") )
 					{
-						switch ( map_rng.rand() % 7 )
+						if ( !strncmp(map.filename, "fortress", 8) )
 						{
+							switch ( map_rng.rand() % 4 )
+							{
 							case 0:
-								entity = newEntity(12, 1, map.entities, nullptr); //Firecamp entity.
+								entity = newEntity(12, 1, map.entities, nullptr); //Firecamp.
 								break; //Firecamp
 							case 1:
-								entity = newEntity(14, 1, map.entities, nullptr); //Fountain entity.
+								entity = newEntity(14, 1, map.entities, nullptr); //Fountain.
 								break; //Fountain
 							case 2:
-								entity = newEntity(15, 1, map.entities, nullptr); //Sink entity.
+								entity = newEntity(15, 1, map.entities, nullptr); //Sink.
 								break; //Sink
 							case 3:
-								entity = newEntity(21, 1, map.entities, nullptr); //Chest entity.
+								entity = newEntity(21, 1, map.entities, nullptr); //Chest.
 								setSpriteAttributes(entity, nullptr, nullptr);
 								entity->chestLocked = -1;
 								break; //Chest
-							case 4:
-								entity = newEntity(39, 1, map.entities, nullptr); //Tomb entity.
-								break; //Tomb
-							case 5:
-								entity = newEntity(59, 1, map.entities, nullptr); //Table entity.
-								setSpriteAttributes(entity, nullptr, nullptr);
-								break; //Table
-							case 6:
-								entity = newEntity(60, 1, map.entities, nullptr); //Chair entity.
-								setSpriteAttributes(entity, nullptr, nullptr);
-								break; //Chair
+							}
+						}
+						else
+						{
+							switch ( map_rng.rand() % 7 )
+							{
+								case 0:
+									entity = newEntity(12, 1, map.entities, nullptr); //Firecamp entity.
+									break; //Firecamp
+								case 1:
+									entity = newEntity(14, 1, map.entities, nullptr); //Fountain entity.
+									break; //Fountain
+								case 2:
+									entity = newEntity(15, 1, map.entities, nullptr); //Sink entity.
+									break; //Sink
+								case 3:
+									entity = newEntity(21, 1, map.entities, nullptr); //Chest entity.
+									setSpriteAttributes(entity, nullptr, nullptr);
+									entity->chestLocked = -1;
+									break; //Chest
+								case 4:
+									entity = newEntity(39, 1, map.entities, nullptr); //Tomb entity.
+									break; //Tomb
+								case 5:
+									entity = newEntity(59, 1, map.entities, nullptr); //Table entity.
+									setSpriteAttributes(entity, nullptr, nullptr);
+									break; //Table
+								case 6:
+									entity = newEntity(60, 1, map.entities, nullptr); //Chair entity.
+									setSpriteAttributes(entity, nullptr, nullptr);
+									break; //Chair
+							}
 						}
 					}
 					else
@@ -4767,19 +4845,19 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				if ( numOpenAreaBreakables > 0 )
 				{
 					// add some mushrooms
-				int id = EditorEntityData_t::colliderNameIndexes["mushroom_spell_common"];
-				if ( map_rng.rand() % 5 == 0 )
-				{
-					id = EditorEntityData_t::colliderNameIndexes["mushroom_spell_fragile"];
-				}
-				else if ( map_rng.rand() % 5 == 0 )
-				{
-					id = EditorEntityData_t::colliderNameIndexes["mushroom_nospell"];
-				}
+					int id = EditorEntityData_t::colliderNameIndexes["mushroom_spell_common"];
+					if ( map_rng.rand() % 5 == 0 )
+					{
+						id = EditorEntityData_t::colliderNameIndexes["mushroom_spell_fragile"];
+					}
+					else if ( map_rng.rand() % 5 == 0 )
+					{
+						id = EditorEntityData_t::colliderNameIndexes["mushroom_nospell"];
+					}
 
-				breakableLocations.push_back(BreakableNode_t(1, x, y, map_rng.rand() % 4,
-					id)); // random dir, mushroom ids
-				--numOpenAreaBreakables;
+					breakableLocations.push_back(BreakableNode_t(1, x, y, map_rng.rand() % 4,
+						id)); // random dir, mushroom ids
+					--numOpenAreaBreakables;
 					if ( possiblelocations[y + x * map.height] )
 					{
 						possiblelocations[y + x * map.height] = false;
