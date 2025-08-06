@@ -1657,7 +1657,7 @@ void gameLogic(void)
 
 			//if( TICKS_PER_SECOND )
 			//generatePathMaps();
-			bool debugMonsterTimer = false && !gamePaused && keystatus[SDLK_g];
+			bool debugMonsterTimer = false && !gamePaused && keystatus[SDLK_F1];
 			if ( debugMonsterTimer )
 			{
 				printlog("loop start");
@@ -6241,6 +6241,10 @@ void drawAllPlayerCameras() {
 				}
                 *cvar_fogDistance = 350.f;
             }
+			else if ( players[c] && players[c]->entity && players[c]->entity->isBlind() )
+			{
+				*cvar_fogDistance = 0.f; // no fog when blind to ensure black
+			}
 
 			// do occlusion culling from the perspective of this camera
 			DebugStats.drawWorldT2 = std::chrono::high_resolution_clock::now();
@@ -6405,7 +6409,7 @@ void drawAllPlayerCameras() {
 			glEndCamera(&camera, true, map);
             
             // undo ghost fog
-            if (players[c]->ghost.isActive()) {
+            if (players[c]->ghost.isActive() || (players[c]->entity && players[c]->entity->isBlind()) ) {
 				map.setMapHDRSettings();
             }
 
