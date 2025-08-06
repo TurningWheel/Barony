@@ -1765,6 +1765,7 @@ void raycast(const view_t& camera, Sint8 (*minimap)[MINIMAP_MAX_DIMENSION], bool
         TimeTest = true;
     });
 #endif
+	static real_t raycastMaxDist = 16.0;
     
     // ray shooting functor
     struct outs_t {
@@ -1889,7 +1890,7 @@ void raycast(const view_t& camera, Sint8 (*minimap)[MINIMAP_MAX_DIMENSION], bool
 						}
                         
                         // update minimap
-                        if (d < 16 && z == OBSTACLELAYER) {
+                        if (d < raycastMaxDist && z == OBSTACLELAYER) {
                             if ( visible ) {
                                 // wall space
                                 if (WriteOutsSequentially) {
@@ -1928,7 +1929,7 @@ void raycast(const view_t& camera, Sint8 (*minimap)[MINIMAP_MAX_DIMENSION], bool
 							}
 						}
 
-                        if (d < 16) {
+                        if (d < raycastMaxDist ) {
                             if ( visible && 
 								tiles[iny * MAPLAYERS + inx * MAPLAYERS * mh] ) {
                                 // walkable space
@@ -1984,12 +1985,30 @@ void raycast(const view_t& camera, Sint8 (*minimap)[MINIMAP_MAX_DIMENSION], bool
 
     // shoot the rays
     const vec4_t* lightmap = lightmaps[0].data();
+	int player = -1;
     for (int c = 0; c < MAXPLAYERS; ++c) {
         if (&camera == &cameras[c]) {
             lightmap = lightmaps[c + 1].data();
+			player = c;
             break;
         }
     }
+
+#ifndef EDITOR
+	raycastMaxDist = 16.0;
+	if ( player >= 0 )
+	{
+		if ( !strncmp(map.filename, "fortress", 8) )
+		{
+			raycastMaxDist = 6.0;
+		}
+		else if ( !strncmp(map.name, "Caves", 5) )
+		{
+			raycastMaxDist = 8.0;
+		}
+	}
+#endif
+
     if (DoRaysInParallel) {
         std::vector<std::future<std::vector<outs_t>>> tasks;
         for (int x = 0; x < NumRays; x += NumRaysPerJob) {

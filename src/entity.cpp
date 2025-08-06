@@ -523,14 +523,27 @@ int Entity::entityLightAfterReductions(Stat& myStats, Entity* observer)
 			}
 		}
 
+		real_t sneakEffectiveness = 1.0;
+		if ( !strncmp(map.filename, "fortress", 8) )
+		{
+			sneakEffectiveness = 0.25;
+		}
+
 		if ( observer )
 		{
-			light += observer->getPER() * 4; // add light level for PER x 4
+			if ( observer->behavior == &actColliderDecoration && observer->colliderSpellEvent > 0 )
+			{
+				light += 8 * 4;
+			}
+			else
+			{
+				light += observer->getPER() * 4; // add light level for PER x 4
+			}
 			if ( sneaking )
 			{
-				light /= 2; // halve for sneaking
+				light *= (0.5 + (1.0 - sneakEffectiveness) * 0.3); // halve for sneaking, sneak effectiveness at 0.25 is 72.5%
 			}
-			light -= (std::max(0, light - TOUCHRANGE)) * (1.0 * (myStats.getModifiedProficiency(PRO_STEALTH) / 100.0)); // reduce to 32 as sneak approaches 100
+			light -= (std::max(0, light - TOUCHRANGE)) * (sneakEffectiveness * (myStats.getModifiedProficiency(PRO_STEALTH) / 100.0)); // reduce to 32 as sneak approaches 100
 			Stat* observerStats = observer->getStats();
 			if ( observerStats && observerStats->getEffectActive(EFF_BLIND) )
 			{
@@ -556,9 +569,9 @@ int Entity::entityLightAfterReductions(Stat& myStats, Entity* observer)
 		{
 			if ( sneaking )
 			{
-				light /= 2; // halve for sneaking
+				light *= (0.5 + (1.0 - sneakEffectiveness) * 0.5); // halve for sneaking
 			}
-			light -= (std::max(0, light - TOUCHRANGE)) * (1.0 * (myStats.getModifiedProficiency(PRO_STEALTH) / 100.0)); // reduce to 32 as sneak approaches 100
+			light -= (std::max(0, light - TOUCHRANGE)) * (sneakEffectiveness * (myStats.getModifiedProficiency(PRO_STEALTH) / 100.0)); // reduce to 32 as sneak approaches 100
 		}
 	}
 	
@@ -571,6 +584,7 @@ int Entity::entityLightAfterReductions(Stat& myStats, Entity* observer)
 	{
 		light = std::max(16 * 5, light + 3 * 16);
 	}
+
 	if ( myStats.getEffectActive(EFF_DUSTED) )
 	{
 		int increment = 16 * 3;
@@ -586,11 +600,20 @@ int Entity::entityLightAfterReductions(Stat& myStats, Entity* observer)
 		}
 		light = std::max(increment, light + increment);
 	}
+	if ( Uint8 effectStrength = myStats.getEffectActive(EFF_NOISE_VISIBILITY) )
+	{
+		int increment = 16 * effectStrength;
+		light = std::max(increment, light + increment);
+	}
 
 	light = std::max(light, 0);
 	if ( myStats.type == DUMMYBOT || myStats.type == HOLOGRAM )
 	{
 		light = std::max(light, 256); // dummybots can always be seen at least 16 tiles away.
+	}
+	if ( observer && observer->behavior == &actColliderDecoration && observer->colliderSpellEvent > 0 )
+	{
+		light = std::max(light, TOUCHRANGE * 2);
 	}
 	return light;
 }
@@ -16998,6 +17021,19 @@ int Entity::getAttackPose() const
 				pose = MONSTER_POSE_MAGIC_WINDUP1;
 			}
 		}
+		else if ( myStats->type == MONSTER_M
+			&& (this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_MONSTER_M_CAST_SHORT
+			|| this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_MONSTER_M_CAST_LONG) )
+		{
+			if ( this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_MONSTER_M_CAST_SHORT )
+			{
+				pose = MONSTER_POSE_MAGIC_WINDUP1;
+			}
+			else if ( this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_MONSTER_M_CAST_LONG )
+			{
+				pose = MONSTER_POSE_SPECIAL_WINDUP1;
+			}
+		}
 		else if ( itemCategory(myStats->weapon) == MAGICSTAFF )
 		{
 			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON 
@@ -17204,6 +17240,18 @@ int Entity::getAttackPose() const
 			else
 			{
 				pose = MONSTER_POSE_MAGIC_WINDUP1;
+			}
+		}
+		else if ( myStats->type == MONSTER_M && (this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_MONSTER_M_CAST_SHORT
+			|| this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_MONSTER_M_CAST_LONG) )
+		{
+			if ( this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_MONSTER_M_CAST_SHORT )
+			{
+				pose = MONSTER_POSE_MAGIC_WINDUP1;
+			}
+			else if ( this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_MONSTER_M_CAST_LONG )
+			{
+				pose = MONSTER_POSE_SPECIAL_WINDUP1;
 			}
 		}
 		else if (type == KOBOLD || type == AUTOMATON ||
@@ -17766,7 +17814,7 @@ void Entity::handleWeaponArmAttack(Entity* weaponarm)
 	// swing arm to cast spell
 	else if ( monsterAttack == MONSTER_POSE_MAGIC_WINDUP2 )
 	{
-		if ( monsterAttackTime == 0 )
+		if ( monsterAttackTime <= 1 )
 		{
 			// init rotations
 			weaponarm->pitch = 0;
@@ -17787,6 +17835,11 @@ void Entity::handleWeaponArmAttack(Entity* weaponarm)
 				}
 				else if ( stats && stats->type == MONSTER_D 
 					&& (monsterSpecialState >= MONSTER_D_SPECIAL_CAST1 && monsterSpecialState <= MONSTER_D_SPECIAL_CAST3) )
+				{
+					this->attack(MONSTER_POSE_MAGIC_WINDUP3, 0, nullptr);
+				}
+				else if ( stats && stats->type == MONSTER_M
+					&& (monsterSpecialState >= MONSTER_M_SPECIAL_CAST1 && monsterSpecialState <= MONSTER_M_SPECIAL_CAST3) )
 				{
 					this->attack(MONSTER_POSE_MAGIC_WINDUP3, 0, nullptr);
 				}
@@ -20826,6 +20879,10 @@ bool Entity::shouldRetreat(Stat& myStats)
 	{
 		return false;
 	}
+	else if ( myStats.type == MONSTER_M )
+	{
+		return false;
+	}
 	else if ( myStats.type == MONSTER_ADORCISED_WEAPON 
 		|| myStats.type == REVENANT_SKULL 
 		|| myStats.type == FLAME_ELEMENTAL
@@ -20937,6 +20994,7 @@ bool Entity::backupWithRangedWeapon(Stat& myStats, int dist, int hasrangedweapon
 			distanceLimit = getMonsterEffectiveDistanceOfRangedWeapon(myStats.weapon) - 20;
 		}
 	}
+
 	if ( dist >= distanceLimit || !hasrangedweapon )
 	{
 		return false;

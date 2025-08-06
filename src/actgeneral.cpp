@@ -1928,8 +1928,22 @@ void actColliderDecoration(Entity* my)
 											continue;
 										}
 									}
+									real_t targetDist = entityDist(entity, my);
+									if ( targetDist >= (range + 4.0) )
+									{
+										continue;
+									}
 									real_t tangent = atan2(entity->y - my->y, entity->x - my->x);
-									lineTraceTarget(my, my->x, my->y, tangent, (real_t)range, 0, false, entity);
+									real_t traceDist = range;
+									if ( Stat* entitystats = entity->getStats() )
+									{
+										int light = entity->entityLightAfterReductions(*entitystats, my);
+										if ( targetDist > light )
+										{
+											continue;
+										}
+									}
+									lineTraceTarget(my, my->x, my->y, tangent, traceDist, 0, false, entity);
 									if ( hit.entity == entity )
 									{
 										if ( effectType == 3 || effectType == 4 )
@@ -2006,11 +2020,14 @@ void actColliderDecoration(Entity* my)
 								if ( entity && (entity->behavior == &actPlayer || (entity->behavior == &actMonster && entity->monsterAllyGetPlayerLeader())) )
 								{
 									real_t tangent = atan2(entity->y - my->y, entity->x - my->x);
-									lineTraceTarget(my, my->x, my->y, tangent, 32.0, 0, false, entity);
-									if ( hit.entity == entity )
+									if ( entityDist(entity, my) < 40.0 )
 									{
-										found = entity;
-										break;
+										lineTraceTarget(my, my->x, my->y, tangent, 32.0, 0, false, entity);
+										if ( hit.entity == entity )
+										{
+											found = entity;
+											break;
+										}
 									}
 								}
 							}
