@@ -418,14 +418,14 @@ bool CastSpellProps_t::setToMonsterCast(Entity* monster, int spellID)
 		{
 			target_x = target->x;
 			target_y = target->y;
-			if ( spell && spell->rangefinder == RANGEFINDER_TOUCH )
+			if ( spell && (spell->rangefinder == RANGEFINDER_TOUCH || spell->rangefinder == RANGEFINDER_TOUCH_INTERACT) )
 			{
 				targetUID = target->getUID();
 			}
 		}
 		else
 		{
-			if ( spell && spell->rangefinder == RANGEFINDER_TOUCH )
+			if ( spell && (spell->rangefinder == RANGEFINDER_TOUCH || spell->rangefinder == RANGEFINDER_TOUCH_INTERACT) )
 			{
 				hit.entity = ohit;
 				return false;
@@ -3460,8 +3460,8 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					spellTimer->skill[2] = val;
 				}
 
+				//playSoundEntity(caster, 178, 128);
 				spawnMagicEffectParticles(caster->x, caster->y, caster->z, 1719);
-				playSoundEntity(caster, 171, 128);
 			}
 		}
 		else if ( spell->ID == SPELL_ROOTS )
@@ -4204,7 +4204,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		}
 		else if ( spell->ID == SPELL_TELEKINESIS )
 		{
-			if ( caster && caster->behavior == &actPlayer )
+			if ( caster )
 			{
 				bool found = false;
 				bool effect = false;
@@ -4212,12 +4212,14 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				{
 					if ( Entity* target = uidToEntity(castSpellProps->targetUID) )
 					{
-						if ( target->behavior == &actBoulder )
+						if ( target->behavior == &actBoulder && caster->behavior == &actPlayer )
 						{
+							found = true;
 							target->skill[14] = player + 1;
 						}
 						else if ( target->behavior == &actMonster && target->getMonsterTypeFromSprite() == EARTH_ELEMENTAL )
 						{
+							found = true;
 							if ( target->setEffect(EFF_KNOCKBACK, true, 40, false) )
 							{
 								target->setEffect(EFF_DASH, true, 40, false);
@@ -4241,8 +4243,45 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 								target->monsterKnockbackUID = caster->getUID();
 							}
 						}
-						else
+						else if ( caster->behavior == &actMonster
+							&& (target->behavior == &actMonster || target->behavior == &actPlayer) )
 						{
+							found = true;
+							if ( target->setEffect(EFF_KNOCKBACK, true, 30, false) )
+							{
+								real_t pushbackMultiplier = 1.2;
+								real_t tangent = atan2(target->y - caster->y, target->x - caster->x) + PI;
+
+								if ( target->behavior == &actMonster )
+								{
+									target->vel_x = cos(tangent) * pushbackMultiplier;
+									target->vel_y = sin(tangent) * pushbackMultiplier;
+									target->monsterKnockbackVelocity = 0.01;
+									target->monsterKnockbackTangentDir = tangent;
+									target->monsterKnockbackUID = caster->getUID();
+								}
+								else if ( target->behavior == &actPlayer )
+								{
+									if ( !players[target->skill[2]]->isLocalPlayer() )
+									{
+										target->monsterKnockbackVelocity = pushbackMultiplier;
+										target->monsterKnockbackTangentDir = tangent;
+										serverUpdateEntityFSkill(target, 11);
+										serverUpdateEntityFSkill(target, 9);
+									}
+									else
+									{
+										target->monsterKnockbackVelocity = pushbackMultiplier;
+										target->monsterKnockbackTangentDir = tangent;
+									}
+								}
+
+								messagePlayer(target->isEntityPlayer(), MESSAGE_HINT, Language::get(6756));
+							}
+						}
+						else if ( caster->behavior == &actPlayer )
+						{
+							found = true;
 							if ( players[player]->isLocalPlayer() )
 							{
 								players[player]->magic.telekinesisTarget = castSpellProps->targetUID;
@@ -4253,7 +4292,6 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 								inrange[player] = true;
 							}
 						}
-						found = true;
 						spawnMagicEffectParticles(target->x, target->y, target->z, 171);
 					}
 				}
@@ -5100,6 +5138,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				else
 				{
 					duration = element->duration;
+					floorMagicCreateSpores(caster, caster->x, caster->y, caster, 0, SPELL_SPORES);
 				}
 				if ( caster->setEffect(EFF_SPORES, true, duration, false) )
 				{

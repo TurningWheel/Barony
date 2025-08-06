@@ -144,13 +144,16 @@ void initMonsterM(Entity* my, Stat* myStats)
 
 			my->setHardcoreStats(*myStats);
 
-			if ( rng.rand() % 2 == 0 )
+			if ( myStats->getAttribute("monster_m_type") == "" )
 			{
-				myStats->setAttribute("monster_m_type", "duster");
-			}
-			else
-			{
-				myStats->setAttribute("monster_m_type", "duster");
+				if ( rng.rand() % 2 == 0 )
+				{
+					myStats->setAttribute("monster_m_type", "duster");
+				}
+				else
+				{
+					myStats->setAttribute("monster_m_type", "discanter");
+				}
 			}
 
 			if ( myStats->getAttribute("monster_m_type") == "duster" )
@@ -159,26 +162,54 @@ void initMonsterM(Entity* my, Stat* myStats)
 			}
 
 			// give weapon
-			if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
+			if ( myStats->getAttribute("monster_m_type") == "duster" )
 			{
-				switch ( rng.rand() % 10 )
+				if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
 				{
-				case 0:
-				case 1:
-				case 2:
-				case 3:
-				case 4:
-					myStats->weapon = newItem(IRON_AXE, static_cast<Status>(rng.rand() % 3 + WORN), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
-					break;
-				case 5:
-				case 6:
-				case 7:
-				case 8:
-				case 9:
-					myStats->weapon = newItem(IRON_MACE, static_cast<Status>(rng.rand() % 3 + WORN), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
-					break;
-				default:
-					break;
+					switch ( rng.rand() % 10 )
+					{
+					case 0:
+					case 1:
+					case 2:
+					case 3:
+					case 4:
+						myStats->weapon = newItem(IRON_AXE, static_cast<Status>(rng.rand() % 3 + WORN), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+						break;
+					case 5:
+					case 6:
+					case 7:
+					case 8:
+					case 9:
+						myStats->weapon = newItem(IRON_MACE, static_cast<Status>(rng.rand() % 3 + WORN), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+						break;
+					default:
+						break;
+					}
+				}
+			}
+			else if ( myStats->getAttribute("monster_m_type") == "discanter" )
+			{
+				if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
+				{
+					switch ( rng.rand() % 10 )
+					{
+					case 0:
+					case 1:
+					case 2:
+					case 3:
+					case 4:
+						myStats->weapon = newItem(QUARTERSTAFF, static_cast<Status>(rng.rand() % 3 + WORN), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+						break;
+					case 5:
+					case 6:
+					case 7:
+					case 8:
+					case 9:
+						myStats->weapon = newItem(QUARTERSTAFF, static_cast<Status>(rng.rand() % 3 + WORN), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+						break;
+					default:
+						break;
+					}
 				}
 			}
 
@@ -840,11 +871,13 @@ void monsterMMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	my->focaly = limbs[MONSTER_M][0][1];
 	my->focalz = limbs[MONSTER_M][0][2];
 
-	if ( keystatus[SDLK_j] )
+	/*if ( keystatus[SDLK_j] )
 	{
 		keystatus[SDLK_j] = 0;
 		my->fskill[1] = 1.0;
-	}
+
+		my->monsterAttack = MONSTER_POSE_MAGIC_WINDUP3;
+	}*/
 
 	if ( my->sprite == 1520 )
 	{
@@ -965,7 +998,8 @@ void monsterMMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		if ( bodypart < LIMB_HUMANOID_TORSO )
 		{
 			// post-swing head animation. client doesn't need to adjust the entity pitch, server will handle.
-			if ( my->monsterAttack != MONSTER_POSE_RANGED_WINDUP3 && bodypart == 1 && multiplayer != CLIENT )
+			if ( my->monsterAttack != MONSTER_POSE_RANGED_WINDUP3 && my->monsterAttack != MONSTER_POSE_SPECIAL_WINDUP1
+				&& bodypart == 1 && multiplayer != CLIENT )
 			{
 				limbAnimateToLimit(my, ANIMATE_PITCH, 0.1, 0, false, 0.0);
 			}
@@ -996,7 +1030,8 @@ void monsterMMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				weaponarm = entity;
 				if ( MONSTER_ATTACK > 0 )
 				{
-					if ( my->monsterAttack == MONSTER_POSE_RANGED_WINDUP3 )
+					if ( my->monsterAttack == MONSTER_POSE_RANGED_WINDUP3 
+						|| my->monsterAttack == MONSTER_POSE_SPECIAL_WINDUP1 )
 					{
 						Entity* rightbody = nullptr;
 						// set rightbody to left leg.
@@ -1039,12 +1074,132 @@ void monsterMMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						{
 							if ( multiplayer != CLIENT )
 							{
-								my->attack(MONSTER_POSE_MELEE_WINDUP1, 0, nullptr);
+								if ( my->monsterAttack == MONSTER_POSE_SPECIAL_WINDUP1 )
+								{
+									my->attack(MONSTER_POSE_MAGIC_WINDUP3, 0, nullptr);
+								}
+								else
+								{
+									my->attack(MONSTER_POSE_MELEE_WINDUP1, 0, nullptr);
+								}
+							}
+						}
+					}
+					else if ( my->monsterAttack == MONSTER_POSE_MAGIC_WINDUP3 )
+					{
+						if ( multiplayer != CLIENT )
+						{
+							if ( my->monsterAttackTime == 1 )
+							{
+								int spellID = SPELL_SPORE_BOMB;
+								if ( my->monsterSpecialState == MONSTER_M_SPECIAL_CAST3 )
+								{
+									real_t oldYaw = my->yaw;
+									real_t dist = 100.0;
+									if ( Entity* target = uidToEntity(my->monsterTarget) )
+									{
+										real_t tangent = atan2(target->y - my->y,
+											target->x - my->x);
+										my->yaw = tangent;
+										dist = entityDist(my, target);
+									}
+
+									castSpell(my->getUID(), getSpellFromID(spellID), true, false);
+									
+									playSoundEntity(my, 171, 128);
+									my->yaw = oldYaw;
+								}
+								else
+								{
+									real_t dist = 100.0;
+									real_t yawDiff = 0.0;
+									if ( Entity* target = uidToEntity(my->monsterTarget) )
+									{
+										yawDiff = my->yawDifferenceFromEntity(target);
+										dist = entityDist(my, target);
+									}
+									bool setProps = false;
+									CastSpellProps_t props;
+									if ( my->monsterSpecialState == MONSTER_M_SPECIAL_CAST1
+										&& (dist > TOUCHRANGE || (yawDiff >= 0 && yawDiff < PI)) )
+									{
+										spellID = SPELL_TELEKINESIS;
+										setProps = props.setToMonsterCast(my, spellID);
+									}
+									if ( !setProps )
+									{
+										spellID = SPELL_SPORES;
+									}
+
+									if ( setProps )
+									{
+										castSpell(my->getUID(), getSpellFromID(spellID), true, false, false, &props);
+									}
+									else
+									{
+										castSpell(my->getUID(), getSpellFromID(spellID), true, false);
+
+										if ( spellID == SPELL_SPORES )
+										{
+											for ( int x = -1; x <= 1; ++x )
+											{
+												for ( int y = -1; y <= 1; ++y )
+												{
+													floorMagicCreateSpores(my, my->x + x * 16.0, my->y + y * 16.0, my, 0, SPELL_SPORES);
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+						if ( weaponarm->pitch >= 3 * PI / 2 )
+						{
+							my->monsterArmbended = 1;
+						}
+
+						if ( weaponarm->skill[1] == 0 )
+						{
+							// chop forwards
+							if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, 0.4, PI / 3, false, 0.0) )
+							{
+								weaponarm->skill[1] = 1;
+							}
+						}
+						else if ( weaponarm->skill[1] >= 1 )
+						{
+							if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.25, 7 * PI / 4, false, 0.0) )
+							{
+								Entity* rightbody = nullptr;
+								// set rightbody to left leg.
+								node_t* rightbodyNode = list_Node(&my->children, LIMB_HUMANOID_LEFTLEG);
+								if ( rightbodyNode )
+								{
+									rightbody = (Entity*)rightbodyNode->element;
+								}
+								if ( rightbody )
+								{
+									weaponarm->skill[0] = rightbody->skill[0];
+									weaponarm->pitch = rightbody->pitch;
+								}
+								my->monsterWeaponYaw = 0;
+								weaponarm->roll = 0;
+								my->monsterArmbended = 0;
+								my->monsterAttack = 0;
 							}
 						}
 					}
 					else
 					{
+						if ( multiplayer != CLIENT )
+						{
+							if ( my->monsterAttack == MONSTER_POSE_MAGIC_WINDUP1 &&
+								my->monsterSpecialState == MONSTER_M_SPECIAL_CAST1
+								&& my->monsterAttackTime == 0 )
+							{
+								my->setEffect(EFF_ROOTED, true, 50, false, true, false, false);
+							}
+						}
 						my->handleWeaponArmAttack(entity);
 					}
 				}
@@ -1887,33 +2042,95 @@ void monsterMMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			{
 				entity->focalz -= .25;
 			}
-			//entity->scalex = 1.008 + std::max(0.0, 0.05 * sin(entity->fskill[0]));
-			//entity->scaley = 1.008 + std::max(0.0, 0.05 * sin(entity->fskill[0]));
-			entity->scalez = 1.008 + 0.05 * sin(entity->fskill[0]);
-			if ( multiplayer != CLIENT )
+
+			entity->pitch += (entity->fskill[2]) * (PI / 64) * sin(entity->fskill[1]);
+			entity->roll = (entity->fskill[2]) * (PI / 64) * sin(entity->fskill[1] + PI / 2);
+
+			real_t bobScale = 0.08 * entity->skill[0];
+			entity->scalex = 1.0 + bobScale * sin(entity->fskill[3]);
+			entity->scaley = 1.0 + bobScale * sin(entity->fskill[3]);
+			entity->scalez = 1.0 - bobScale * sin(entity->fskill[3]);
+
+			if ( my->monsterAttack == MONSTER_POSE_SPECIAL_WINDUP1
+				&& my->monsterAttackTime == 1 )
 			{
-				static int stage = 0;
-				if ( keystatus[SDLK_g] )
+				entity->skill[0] = 4;
+
+				entity->fskill[3] = 0.0;
+				entity->fskill[1] = 2 * PI * 0.0;
+				entity->fskill[2] = 0.0;
+			}
+
+			if ( entity->skill[0] > 0 )
+			{
+				entity->fskill[2] = std::min(1.0, std::max(0.05, entity->fskill[2] * 1.15));
+				if ( entity->skill[0] == 4 ) // circle first
 				{
-					keystatus[SDLK_g] = 0;
-					stage += 1;
-					if ( stage > 2 )
+					if ( entity->fskill[1] >= 2 * PI )
 					{
-						stage = 0;
+						entity->skill[0]--;
 					}
 				}
-				if ( stage == 0 )
+				else
+				{
+					entity->fskill[3] += 0.25;
+					if ( entity->fskill[3] >= 2 * PI )
+					{
+						entity->fskill[3] -= 2 * PI;
+						entity->skill[0]--;
+					}
+				}
+			}
+			else
+			{
+				entity->fskill[2] *= 0.95;
+			}
+			entity->fskill[1] += 0.125;
+
+			//entity->scalex = 1.008 + std::max(0.0, 0.05 * sin(entity->fskill[0]));
+			//entity->scaley = 1.008 + std::max(0.0, 0.05 * sin(entity->fskill[0]));
+			//entity->scalez = 1.008 + 0.05 * sin(entity->fskill[0]);
+			if ( multiplayer != CLIENT )
+			{
+				if ( debugModel )
+				{
+					static int stage = 0;
+					if ( keystatus[SDLK_g] )
+					{
+						keystatus[SDLK_g] = 0;
+						stage += 1;
+						if ( stage > 2 )
+						{
+							stage = 0;
+						}
+					}
+					entity->sprite = 1525;
+					if ( stage == 0 )
+					{
+						entity->sprite = 1525;
+					}
+					else if ( stage == 1 )
+					{
+						entity->sprite = 1526;
+					}
+					else if ( stage == 2 )
+					{
+						entity->sprite = 1527;
+					}
+				}
+				else
 				{
 					entity->sprite = 1525;
+					if ( myStats->getAttribute("monster_m_type") == "duster" )
+					{
+						entity->sprite = 1526;
+					}
+					else if ( myStats->getAttribute("monster_m_type") == "discanter" )
+					{
+						entity->sprite = 1527;
+					}
 				}
-				else if ( stage == 1 )
-				{
-					entity->sprite = 1526;
-				}
-				else if ( stage == 2 )
-				{
-					entity->sprite = 1527;
-				}
+
 				if ( myStats->getEffectActive(EFF_INVISIBLE) || wearingring
 					|| (helmet && helmet->sprite > 0 && !helmet->flags[INVISIBLE]) ) //TODO: isInvisible()?
 				{
@@ -2006,72 +2223,96 @@ void Entity::monsterMChooseWeapon(const Entity* target, double dist)
 
 	bool inMeleeRange = monsterInMeleeRange(target, dist);
 
-	if ( inMeleeRange )
+	//if ( inMeleeRange )
+	//{
+	//	//if ( monsterSpecialTimer == 0 && (ticks % 10 == 0) && monsterAttack == 0 && local_rng.rand() % 10 == 0 )
+	//	//{
+	//	//	bool tryThrow = true;
+	//	//	if ( tryThrow )
+	//	//	{
+	//	//		node_t* thrownNode = itemNodeInInventory(myStats, -1, THROWN);
+	//	//		if ( thrownNode )
+	//	//		{
+	//	//			bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, thrownNode, false, true);
+	//	//			if ( !swapped )
+	//	//			{
+	//	//				//Don't return, make sure holding a melee weapon at least.
+	//	//			}
+	//	//			else
+	//	//			{
+	//	//				monsterSpecialState = MONSTER_M_SPECIAL_THROW;
+	//	//				return;
+	//	//			}
+	//	//		}
+	//	//	}
+	//	//}
+
+	//	//Switch to a melee weapon if not already wielding one. Unless monster special state is overriding the AI.
+	//	if ( !myStats->weapon || !isMeleeWeapon(*myStats->weapon) )
+	//	{
+	//		node_t* weaponNode = getMeleeWeaponItemNodeInInventory(myStats);
+	//		if ( !weaponNode )
+	//		{
+	//			/*if ( myStats->weapon && myStats->weapon->type == MAGICSTAFF_SLOW )
+	//			{
+	//				monsterUnequipSlotFromCategory(myStats, &myStats->weapon, MAGICSTAFF);
+	//			}*/
+	//			return; //Resort to fists.
+	//		}
+
+	//		bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, weaponNode, false, true);
+	//		if ( !swapped )
+	//		{
+	//			//Don't return so that monsters will at least equip ranged weapons in melee range if they don't have anything else.
+	//		}
+	//		else
+	//		{
+	//			return;
+	//		}
+	//	}
+	//	else
+	//	{
+	//		return;
+	//	}
+	//}
+
+	if ( myStats->getAttribute("monster_m_type") == "discanter" )
 	{
-		//if ( monsterSpecialTimer == 0 && (ticks % 10 == 0) && monsterAttack == 0 && local_rng.rand() % 10 == 0 )
-		//{
-		//	bool tryThrow = true;
-		//	if ( tryThrow )
-		//	{
-		//		node_t* thrownNode = itemNodeInInventory(myStats, -1, THROWN);
-		//		if ( thrownNode )
-		//		{
-		//			bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, thrownNode, false, true);
-		//			if ( !swapped )
-		//			{
-		//				//Don't return, make sure holding a melee weapon at least.
-		//			}
-		//			else
-		//			{
-		//				monsterSpecialState = MONSTER_M_SPECIAL_THROW;
-		//				return;
-		//			}
-		//		}
-		//	}
-		//}
-
-		//Switch to a melee weapon if not already wielding one. Unless monster special state is overriding the AI.
-		if ( !myStats->weapon || !isMeleeWeapon(*myStats->weapon) )
+		if ( monsterSpecialTimer == 0 && (ticks % 10 == 0) && monsterAttack == 0
+			&& local_rng.rand() % 3 == 0 )
 		{
-			node_t* weaponNode = getMeleeWeaponItemNodeInInventory(myStats);
-			if ( !weaponNode )
+			if ( (dist >= TOUCHRANGE && local_rng.rand() % 3 == 0) || dist > 80.0 )
 			{
-				/*if ( myStats->weapon && myStats->weapon->type == MAGICSTAFF_SLOW )
-				{
-					monsterUnequipSlotFromCategory(myStats, &myStats->weapon, MAGICSTAFF);
-				}*/
-				return; //Resort to fists.
-			}
-
-			bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, weaponNode, false, true);
-			if ( !swapped )
-			{
-				//Don't return so that monsters will at least equip ranged weapons in melee range if they don't have anything else.
+				monsterSpecialState = MONSTER_M_SPECIAL_CAST3;
 			}
 			else
 			{
-				return;
+				if ( dist <= TOUCHRANGE && myStats->getEffectActive(EFF_SPORES) )
+				{
+					// inside melee and currently sporing
+				}
+				else
+				{
+					monsterSpecialState = MONSTER_M_SPECIAL_CAST1;
+				}
 			}
 		}
-		else
-		{
-			return;
-		}
+		return;
 	}
 
-	//Switch to a thrown weapon or a ranged weapon. Potions are reserved as a special attack.
-	if ( !myStats->weapon || isMeleeWeapon(*myStats->weapon) )
+	//Switch to a thrown weapon or a ranged weapon
+	/*if ( !myStats->weapon || isMeleeWeapon(*myStats->weapon) )*/
 	{
 		//First search the inventory for a THROWN weapon.
 		node_t *weaponNode = nullptr;
-		if ( monsterSpecialTimer == 0 && (ticks % 10 == 0) && monsterAttack == 0 
-			&& dist >= TOUCHRANGE
-			&& local_rng.rand() % 10 == 0 )
+		if ( monsterSpecialTimer == 0 && (ticks % 10 == 0) && monsterAttack == 0
+			&& (dist > STRIKERANGE)
+			&& local_rng.rand() % 3 == 0 )
 		{
 			weaponNode = itemNodeInInventory(myStats, -1, THROWN);
 			if ( weaponNode )
 			{
-				if ( swapMonsterWeaponWithInventoryItem(this, myStats, weaponNode, false, false) )
+				if ( swapMonsterWeaponWithInventoryItem(this, myStats, weaponNode, false, true) )
 				{
 					monsterSpecialState = MONSTER_M_SPECIAL_THROW;
 					return;
@@ -2084,7 +2325,7 @@ void Entity::monsterMChooseWeapon(const Entity* target, double dist)
 			weaponNode = getRangedWeaponItemNodeInInventory(myStats, true);
 		}
 
-		bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, weaponNode, false, false);
+		bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, weaponNode, false, true);
 		return;
 	}
 

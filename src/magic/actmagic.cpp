@@ -7493,6 +7493,19 @@ void floorMagicCreateSpores(Entity* spawnOnEntity, real_t x, real_t y, Entity* c
 
 	int mapx = static_cast<int>(x) >> 4;
 	int mapy = static_cast<int>(y) >> 4;
+
+	int mapIndex = (mapy)*MAPLAYERS + (mapx)*MAPLAYERS * map.height;
+	if ( mapx > 0 && mapy > 0 && mapx < map.width - 1 && mapy < map.width - 1 )
+	{
+		if ( map.tiles[OBSTACLELAYER + mapIndex] )
+		{
+			return;
+		}
+	}
+	else
+	{
+		return;
+	}
 	bool freeSpot = true;
 	if ( spellID == SPELL_SPORE_BOMB || spellID == SPELL_MYCELIUM_BOMB )
 	{
@@ -8748,20 +8761,55 @@ void actParticleTimer(Entity* my)
 
 					auto poof = spawnPoof(my->x, my->y, 6, 0.5);
 					my->particleTimerVariable1 = 1;
+					my->entity_sound = playSoundEntity(my, 757, 128);
 				}
+
+#ifdef USE_FMOD
+				bool isPlaying = false;
+				if ( my->entity_sound )
+				{
+					my->entity_sound->isPlaying(&isPlaying);
+					if ( isPlaying )
+					{
+						FMOD_VECTOR position;
+						position.x = (float)(my->x / (real_t)16.0);
+						position.y = (float)(0.0);
+						position.z = (float)(my->y / (real_t)16.0);
+						my->entity_sound->set3DAttributes(&position, nullptr);
+					}
+				}
+#endif
+
+				Entity* parent = nullptr;
 				if ( multiplayer != CLIENT )
 				{
+					parent = uidToEntity(my->parent);
 					if ( PARTICLE_LIFE == 1 )
 					{
 						auto poof = spawnPoof(my->x, my->y, 6, 0.5, true);
+						playSoundEntity(my, 512, 128);
 					}
-					my->vel_x *= .95;
-					my->vel_y *= .95;
-					my->flags[NOCLIP_CREATURES] = true;
-					clipMove(&my->x, &my->y, my->vel_x, my->vel_y, my);
+
+					if ( parent && parent->behavior == &actLeafPile )
+					{
+						my->x = parent->x;
+						my->y = parent->y;
+					}
+					else
+					{
+						my->vel_x *= .95;
+						my->vel_y *= .95;
+						my->flags[NOCLIP_CREATURES] = true;
+						if ( abs(my->vel_x) > 0.01 || abs(my->vel_y) > 0.01 )
+						{
+							clipMove(&my->x, &my->y, my->vel_x, my->vel_y, my);
+						}
+					}
 				}
 
-				if ( my->particleTimerVariable1 == 1 || my->particleTimerVariable1 % 20 == 0 )
+				static ConsoleVariable<int> cvar_vortex_particle_interval("/vortex_particle_interval", 30);
+				static ConsoleVariable<float> cvar_vortex_particle_decay("/vortex_particle_decay", 0.9);
+				if ( my->particleTimerVariable1 == 1 || my->particleTimerVariable1 % *cvar_vortex_particle_interval == 0 )
 				{
 					real_t offset = PI * (local_rng.rand() % 360) / 180.0;// -((my->ticks % 50) / 50.0) * 2 * PI;
 					int lifetime = PARTICLE_LIFE / 10;
@@ -8783,8 +8831,11 @@ void actParticleTimer(Entity* my)
 							fx->fskill[0] = 0.3; // rotate
 							fx->scalex = 0.5;// + (i / 2) * 0.25 / 12;
 							fx->scaley = 0.5;// + (i / 2) * 0.25 / 12;
+							fx->flags[ENTITY_SKIP_CULLING] = false;
 							if ( auto indicator = AOEIndicators_t::getIndicator(fx->skill[10]) )
 							{
+								indicator->expireAlphaRate = *cvar_vortex_particle_decay;
+								indicator->cacheType = AOEIndicators_t::CACHE_VORTEX;
 								indicator->arc = PI / 4;
 								indicator->indicatorColor = color;
 								indicator->loop = false;
@@ -8799,7 +8850,6 @@ void actParticleTimer(Entity* my)
 
 				if ( multiplayer != CLIENT )
 				{
-					if ( Entity* parent = uidToEntity(my->parent) )
 					{
 						//my->x = parent->x;
 						//my->y = parent->y;
@@ -8842,13 +8892,14 @@ void actParticleTimer(Entity* my)
 
 										auto poof = spawnPoof(entity->x, entity->y, 4, 1.0, true);
 										createParticleRock(entity, 78);
+										playSoundEntity(entity, 181, 128);
 										if ( multiplayer == SERVER )
 										{
 											serverSpawnMiscParticles(entity, PARTICLE_EFFECT_ABILITY_ROCK, 78);
 										}
 
-										int damage = getSpellDamageFromID(my->particleTimerVariable2, parent);
-										applyGenericMagicDamage(parent, entity, *parent, SPELL_SLAM, damage, true);
+										int damage = getSpellDamageFromID(my->particleTimerVariable2, parent ? parent : my);
+										applyGenericMagicDamage(parent, entity, parent ? *parent : *my, SPELL_SLAM, damage, true);
 									}
 									continue;
 								}
@@ -8876,20 +8927,23 @@ void actParticleTimer(Entity* my)
 									my->vel_x = 0.0;
 									my->vel_y = 0.0;
 
+									if ( parent && parent->behavior == &actLeafPile )
+									{
+										parent->vel_x = 0.0;
+										parent->vel_y = 0.0;
+									}
+
 									entity->setEffect(EFF_ROOTED, strength, std::max(5, PARTICLE_LIFE), false);
 									if ( strength == 1 )
 									{
 										auto poof = spawnPoof(entity->x, entity->y, 4, 0.5, true);
+										playSoundEntity(entity, 178, 128);
 									}
 								}
 								props->hits++;
 								props->tick = ticks;
 							}
 						}
-					}
-					else
-					{
-						PARTICLE_LIFE = 0;
 					}
 				}
 			}
@@ -12319,156 +12373,156 @@ void AOEIndicators_t::Indicator_t::updateIndicator()
 				0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff);
 			SDL_LockSurface(surfaceNew);
 
-	for ( real_t rad = std::max(0, radius - gradientSize) + 0.0; rad <= radius; rad += 0.5 )
-	{
-		Uint32 color = 0;
+			for ( real_t rad = std::max(0, radius - gradientSize) + 0.0; rad <= radius; rad += 0.5 )
+			{
+				Uint32 color = 0;
 				Uint8 alphaUsed = alpha;
-		if ( rad < ring + 0.5 )
-		{
-			real_t alphaRatio = std::min(1.0, std::max(0.0, 1.0 + (ringSize + rad - (radius + 0.5)) / (real_t)gradientSize));
+				if ( rad < ring + 0.5 )
+				{
+					real_t alphaRatio = std::min(1.0, std::max(0.0, 1.0 + (ringSize + rad - (radius + 0.5)) / (real_t)gradientSize));
 					alphaUsed = std::min(255.0, alpha * alphaRatio);
 					color = makeColor(red, green, blue, alphaUsed);
-		}
-		else if ( rad == ring + 0.5 )
-		{
-			color = makeColor(red, green, blue, alpha);
-		}
-		else
-		{
-			color = makeColor(red * .8, green * .8, blue * .8, alpha);
-		}
+				}
+				else if ( rad == ring + 0.5 )
+				{
+					color = makeColor(red, green, blue, alpha);
+				}
+				else
+				{
+					color = makeColor(red * .8, green * .8, blue * .8, alpha);
+				}
 
-		if ( !circle )
-		{
-			real_t radius = rad + .5;
-			real_t r2 = radius * radius;
+				if ( !circle )
+				{
+					real_t radius = rad + .5;
+					real_t r2 = radius * radius;
 					const int dist = radius;// floor(radius * sqrt(0.5));
 					const int d = radius;//floor(sqrt(r2 - r * r));
-			for ( int r = 0; r <= dist; r++ ) {
-				if ( !(center - d >= 0 && center + d < size) )
-				{
-					continue;
-				}
-				if ( !(center - r >= 0 && center + r < size) )
-				{
-					continue;
-				}
-				if ( d < 8 )
-				{
-					Uint8 red, green, blue, alpha;
-					getColor(color, &red, &green, &blue, &alpha);
-					Uint8 prevAlpha = alpha;
-					alpha *= d / 8.0;
+					for ( int r = 0; r <= dist; r++ ) {
+						if ( !(center - d >= 0 && center + d < size) )
+						{
+							continue;
+						}
+						if ( !(center - r >= 0 && center + r < size) )
+						{
+							continue;
+						}
+						if ( d < 8 )
+						{
+							Uint8 red, green, blue, alpha;
+							getColor(color, &red, &green, &blue, &alpha);
+							Uint8 prevAlpha = alpha;
+							alpha *= d / 8.0;
 							if ( alpha == 0 )
 							{
 								continue;
 							}
-					color = makeColor(red, green, blue, alpha);
+							color = makeColor(red, green, blue, alpha);
 
-					putPixel(surfaceNew, center + d, center + r, color);
-					putPixel(surfaceNew, center + d, center - r, color);
+							putPixel(surfaceNew, center + d, center + r, color);
+							putPixel(surfaceNew, center + d, center - r, color);
 
-					putPixel(surfaceNew, center - d, center + r, color);
-					putPixel(surfaceNew, center - d, center - r, color);
+							putPixel(surfaceNew, center - d, center + r, color);
+							putPixel(surfaceNew, center - d, center - r, color);
 
-					putPixel(surfaceNew, center + r, center + d, color);
-					putPixel(surfaceNew, center - r, center + d, color);
+							putPixel(surfaceNew, center + r, center + d, color);
+							putPixel(surfaceNew, center - r, center + d, color);
 
-					putPixel(surfaceNew, center + r, center - d, color);
-					putPixel(surfaceNew, center - r, center - d, color);
+							putPixel(surfaceNew, center + r, center - d, color);
+							putPixel(surfaceNew, center - r, center - d, color);
 
-					color = makeColor(red, green, blue, prevAlpha);
-					continue;
-				}
-				if ( r < 8 )
-				{
-					Uint8 red, green, blue, alpha;
-					getColor(color, &red, &green, &blue, &alpha);
-					Uint8 prevAlpha = alpha;
-					alpha *= r / 8.0;
+							color = makeColor(red, green, blue, prevAlpha);
+							continue;
+						}
+						if ( r < 8 )
+						{
+							Uint8 red, green, blue, alpha;
+							getColor(color, &red, &green, &blue, &alpha);
+							Uint8 prevAlpha = alpha;
+							alpha *= r / 8.0;
 							if ( alpha == 0 )
 							{
 								continue;
 							}
-					color = makeColor(red, green, blue, alpha);
-					putPixel(surfaceNew, center + d, center + r, color);
-					putPixel(surfaceNew, center + d, center - r, color);
+							color = makeColor(red, green, blue, alpha);
+							putPixel(surfaceNew, center + d, center + r, color);
+							putPixel(surfaceNew, center + d, center - r, color);
 
-					putPixel(surfaceNew, center - d, center + r, color);
-					putPixel(surfaceNew, center - d, center - r, color);
+							putPixel(surfaceNew, center - d, center + r, color);
+							putPixel(surfaceNew, center - d, center - r, color);
 
-					putPixel(surfaceNew, center + r, center + d, color);
-					putPixel(surfaceNew, center - r, center + d, color);
+							putPixel(surfaceNew, center + r, center + d, color);
+							putPixel(surfaceNew, center - r, center + d, color);
 
-					putPixel(surfaceNew, center + r, center - d, color);
-					putPixel(surfaceNew, center - r, center - d, color);
+							putPixel(surfaceNew, center + r, center - d, color);
+							putPixel(surfaceNew, center - r, center - d, color);
 
-					color = makeColor(red, green, blue, prevAlpha);
-					continue;
-				}
+							color = makeColor(red, green, blue, prevAlpha);
+							continue;
+						}
 						if ( alphaUsed == 0 )
 						{
 							continue;
 						}
-				putPixel(surfaceNew, center + d, center + r, color);
-				putPixel(surfaceNew, center + d, center - r, color);
+						putPixel(surfaceNew, center + d, center + r, color);
+						putPixel(surfaceNew, center + d, center - r, color);
 
-				putPixel(surfaceNew, center - d, center + r, color);
-				putPixel(surfaceNew, center - d, center - r, color);
+						putPixel(surfaceNew, center - d, center + r, color);
+						putPixel(surfaceNew, center - d, center - r, color);
 
-				putPixel(surfaceNew, center + r, center + d, color);
-				putPixel(surfaceNew, center - r, center + d, color);
+						putPixel(surfaceNew, center + r, center + d, color);
+						putPixel(surfaceNew, center - r, center + d, color);
 
-				putPixel(surfaceNew, center + r, center - d, color);
-				putPixel(surfaceNew, center - r, center - d, color);
-			}
-		}
-		else if ( circle )
-		{
+						putPixel(surfaceNew, center + r, center - d, color);
+						putPixel(surfaceNew, center - r, center - d, color);
+					}
+				}
+				else if ( circle )
+				{
 					const real_t radius = rad + .5;
 					const real_t r2 = radius * radius;
 					const int dist = floor(radius * sqrt(0.5));
 
-			for ( int r = 0; r <= dist; r++ ) {
+					for ( int r = 0; r <= dist; r++ ) {
 						if ( alphaUsed == 0 )
 						{
 							break;
 						}
-				int d = floor(sqrt(r2 - r * r));
-				if ( !(center - d >= 0 && center + d < size) ) 
-				{
-					continue;
-				}
-				if ( !(center - r >= 0 && center + r < size) )
-				{
-					continue;
-				}
+						int d = floor(sqrt(r2 - r * r));
+						if ( !(center - d >= 0 && center + d < size) )
+						{
+							continue;
+						}
+						if ( !(center - r >= 0 && center + r < size) )
+						{
+							continue;
+						}
 
-				if ( arc > 0.001 )
-				{
-					real_t tangent = atan2(r, d);
-					if ( tangent > arc )
-					{
-						continue;
-					}
+						if ( arc > 0.001 )
+						{
+							real_t tangent = atan2(r, d);
+							if ( tangent > arc )
+							{
+								continue;
+							}
 
-					putPixel(surfaceNew, center + r, center - d, color);
-					putPixel(surfaceNew, center - r, center - d, color);
-				}
-				else
-				{
-					putPixel(surfaceNew, center + d, center + r, color);
-					putPixel(surfaceNew, center + d, center - r, color);
+							putPixel(surfaceNew, center + r, center - d, color);
+							putPixel(surfaceNew, center - r, center - d, color);
+						}
+						else
+						{
+							putPixel(surfaceNew, center + d, center + r, color);
+							putPixel(surfaceNew, center + d, center - r, color);
 
-					putPixel(surfaceNew, center - d, center + r, color);
-					putPixel(surfaceNew, center - d, center - r, color);
+							putPixel(surfaceNew, center - d, center + r, color);
+							putPixel(surfaceNew, center - d, center - r, color);
 
-					putPixel(surfaceNew, center + r, center + d, color);
-					putPixel(surfaceNew, center - r, center + d, color);
+							putPixel(surfaceNew, center + r, center + d, color);
+							putPixel(surfaceNew, center - r, center + d, color);
 
-					putPixel(surfaceNew, center + r, center - d, color);
-					putPixel(surfaceNew, center - r, center - d, color);
-				}
+							putPixel(surfaceNew, center + r, center - d, color);
+							putPixel(surfaceNew, center - r, center - d, color);
+						}
 					}
 				}
 			}
@@ -12505,25 +12559,25 @@ void AOEIndicators_t::Indicator_t::updateIndicator()
 		}
 
 		//new2 = std::chrono::high_resolution_clock::now();
-	const auto size1 = m1->w * m1->h * m1->format->BytesPerPixel;
-	const auto size2 = m2 ? (m2->w * m2->h * m2->format->BytesPerPixel) : 0;
-	if ( size1 != size2 || memcmp(m1, m2, size2) ) {
-		if ( !texture ) {
-			texture = new TempTexture();
-		}
+		const auto size1 = m1->w * m1->h * m1->format->BytesPerPixel;
+		const auto size2 = m2 ? (m2->w * m2->h * m2->format->BytesPerPixel) : 0;
+		if ( size1 != size2 || memcmp(m1, m2, size2) ) {
+			if ( !texture ) {
+				texture = new TempTexture();
+			}
 			//new3 = std::chrono::high_resolution_clock::now();
-		texture->load(surfaceNew, false, true);
+			texture->load(surfaceNew, false, true);
 			//new4 = std::chrono::high_resolution_clock::now();
-		if ( surfaceOld ) {
-			SDL_UnlockSurface(surfaceOld);
+			if ( surfaceOld ) {
+				SDL_UnlockSurface(surfaceOld);
 				if ( cacheType == CACHE_NONE )
 				{
-			SDL_FreeSurface(surfaceOld);
-		}
+					SDL_FreeSurface(surfaceOld);
+				}
 			}
 			//new5 = std::chrono::high_resolution_clock::now();
-		SDL_UnlockSurface(surfaceNew);
-		surfaceOld = surfaceNew;
+			SDL_UnlockSurface(surfaceNew);
+			surfaceOld = surfaceNew;
 
 			//new6 = std::chrono::high_resolution_clock::now();
 
@@ -12535,17 +12589,17 @@ void AOEIndicators_t::Indicator_t::updateIndicator()
 			prevData.radMin = std::max(0, radius - gradientSize) + 0.0;
 			prevData.size = size;
 			//t3 = std::chrono::high_resolution_clock::now();
-	}
-	else {
-		if ( surfaceOld ) {
-			SDL_UnlockSurface(surfaceOld);
 		}
-		SDL_UnlockSurface(surfaceNew);
+		else {
+			if ( surfaceOld ) {
+				SDL_UnlockSurface(surfaceOld);
+			}
+			SDL_UnlockSurface(surfaceNew);
 			if ( cacheType == CACHE_NONE )
 			{
-		SDL_FreeSurface(surfaceNew);
+				SDL_FreeSurface(surfaceNew);
 			}
-		surfaceNew = nullptr;
+			surfaceNew = nullptr;
 			//t4 = std::chrono::high_resolution_clock::now();
 		}
 	}

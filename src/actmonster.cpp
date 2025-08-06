@@ -9818,6 +9818,14 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 			lichRangeCheckOverride = true;
 		}
 	}
+	else if ( myStats->type == MONSTER_M )
+	{
+		if ( (monsterSpecialState >= MONSTER_M_SPECIAL_CAST1
+			&& monsterSpecialState <= MONSTER_M_SPECIAL_CAST3) )
+		{
+			lichRangeCheckOverride = true;
+		}
+	}
 	else if ( myStats->type == LICH_FIRE)
 	{
 		if ( monsterLichFireMeleeSeq == LICH_ATK_BASICSPELL_SINGLE )
@@ -10969,6 +10977,18 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 					{
 						monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_MONSTER_M_THROW;
 					}
+					else if ( (monsterSpecialState >= MONSTER_M_SPECIAL_CAST1
+						&& monsterSpecialState <= MONSTER_M_SPECIAL_CAST3) )
+					{
+						if ( monsterSpecialState == MONSTER_M_SPECIAL_CAST1 )
+						{
+							monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_MONSTER_M_CAST_SHORT;
+						}
+						else
+						{
+							monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_MONSTER_M_CAST_LONG;
+						}
+					}
 					break;
 				case SPIDER:
 					// spray web
@@ -11438,7 +11458,14 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 					}
 					break;
 				case MONSTER_M:
-					if ( monsterSpecialState == MONSTER_M_SPECIAL_THROW || forceDeinit )
+					if ( (monsterSpecialState >= MONSTER_M_SPECIAL_CAST1
+						&& monsterSpecialState <= MONSTER_M_SPECIAL_CAST3) )
+					{
+						monsterSpecialState = 0;
+						shouldAttack = false;
+						deinitSuccess = true;
+					}
+					else if ( monsterSpecialState == MONSTER_M_SPECIAL_THROW || forceDeinit )
 					{
 						node = itemNodeInInventory(myStats, -1, WEAPON); // find weapon to re-equip
 						if ( node != nullptr )

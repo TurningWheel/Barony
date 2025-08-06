@@ -1120,10 +1120,10 @@ void monsterDMoveBodyparts(Entity* my, Stat* myStats, double dist)
 									if ( setProps )
 									{
 										castSpell(my->getUID(), getSpellFromID(spellID), true, false, false, &props);
-										if ( spellID == SPELL_ROOTS )
+										/*if ( spellID == SPELL_ROOTS )
 										{
 											my->setEffect(EFF_ROOTED, true, 5 * TICKS_PER_SECOND, false);
-										}
+										}*/
 									}
 								}
 							}
@@ -2153,7 +2153,7 @@ void Entity::monsterDChooseWeapon(const Entity* target, double dist)
 		}
 	}
 
-	if ( monsterSpecialState != 0 || monsterSpecialTimer != 0 )
+	if ( monsterSpecialState != 0 || monsterSpecialTimer != 0 || monsterAttack != 0 )
 	{
 		return;
 	}
