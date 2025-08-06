@@ -2333,7 +2333,7 @@ static void changeLevel() {
 		spellcastingAnimationManager_deactivate(&cast_animation[i]);
 	}
 	EnemyHPDamageBarHandler::dumpCache();
-	AOEIndicators_t::indicators.clear();
+	AOEIndicators_t::cleanup();
 	monsterAllyFormations.reset();
 	particleTimerEmitterHitEntities.clear();
 	particleTimerEffects.clear();

@@ -449,7 +449,7 @@ void deinitGame()
 
 	// destroy enemy hp bar textures
 	EnemyHPDamageBarHandler::dumpCache();
-	AOEIndicators_t::indicators.clear();
+	AOEIndicators_t::cleanup();
 
 	// send disconnect messages
 	if (multiplayer != SINGLE) {

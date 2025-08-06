@@ -8567,7 +8567,7 @@ void doNewGame(bool makeHighscore) {
 		players[i]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
 	}
 	EnemyHPDamageBarHandler::dumpCache();
-	AOEIndicators_t::indicators.clear();
+	AOEIndicators_t::cleanup();
 	monsterAllyFormations.reset();
 	PingNetworkStatus_t::reset();
 	particleTimerEmitterHitEntities.clear();
@@ -10072,7 +10072,7 @@ void doEndgame(bool saveHighscore, bool onServerDisconnect) {
 		players[i]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
 	}
 	EnemyHPDamageBarHandler::dumpCache();
-	AOEIndicators_t::indicators.clear();
+	AOEIndicators_t::cleanup();
 	monsterAllyFormations.reset();
 	particleTimerEmitterHitEntities.clear();
 	particleTimerEffects.clear();

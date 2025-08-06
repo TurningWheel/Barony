@@ -1010,6 +1010,12 @@ void freeSpells();
 struct AOEIndicators_t
 {
 	static Uint32 uids;
+	enum SurfaceCacheTypes : int
+	{
+		CACHE_NONE,
+		CACHE_VORTEX,
+		CACHE_CASTING
+	};
 	struct Indicator_t
 	{
 		TempTexture* texture = nullptr;
@@ -1033,6 +1039,20 @@ struct AOEIndicators_t
 		Uint32 loopTicks = 0;
 		Uint32 loopTimer = 0;
 		real_t expireAlphaRate = 0.9;
+		SurfaceCacheTypes cacheType = CACHE_NONE;
+
+		struct PrevData_t
+		{
+			Uint8 r = 0;
+			Uint8 g = 0;
+			Uint8 b = 0;
+			Uint8 a = 0;
+			real_t radMin = 0.0;
+			real_t radMax = 0.0;
+			int size = 0;
+		};
+		PrevData_t prevData;
+
 		void updateIndicator();
 		Indicator_t(int _radiusMin, int _radiusMax, int _size, int _lifetime, Uint32 _uid)
 		{
@@ -1052,11 +1072,16 @@ struct AOEIndicators_t
 			}
 			if ( surfaceOld )
 			{
+				if ( cacheType == CACHE_NONE )
+				{
 				SDL_FreeSurface(surfaceOld);
+				}
 				surfaceOld = nullptr;
 			}
 		}
 	};
+	static std::map<int, std::map<std::tuple<Uint8, Uint8, Uint8, Uint8, real_t, real_t, int>, SDL_Surface*>> surfaceCache;
+	static void cleanup();
 	static std::map<Uint32, Indicator_t> indicators;
 
 	static TempTexture* getTexture(Uint32 uid)

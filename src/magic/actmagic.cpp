@@ -12125,6 +12125,20 @@ Entity* createParticleCastingIndicator(Entity* parent, real_t x, real_t y, real_
 	return entity;
 }
 
+void AOEIndicators_t::cleanup()
+{
+	indicators.clear();
+	
+	for ( auto& m1 : surfaceCache )
+	{
+		for ( auto& m2 : m1.second )
+		{
+			SDL_FreeSurface(m2.second);
+			m2.second = nullptr;
+		}
+	}
+	surfaceCache.clear();
+}
 std::map<Uint32, AOEIndicators_t::Indicator_t> AOEIndicators_t::indicators;
 Uint32 AOEIndicators_t::uids = 1;
 void AOEIndicators_t::update()
@@ -12173,6 +12187,7 @@ Uint32 AOEIndicators_t::createIndicator(int _radiusMin, int _radiusMax, int _siz
 	return uid;
 }
 
+std::map<int, std::map<std::tuple<Uint8, Uint8, Uint8, Uint8, real_t, real_t, int>, SDL_Surface*>> AOEIndicators_t::surfaceCache;
 void AOEIndicators_t::Indicator_t::updateIndicator()
 {
 	if ( !(!gamePaused || (multiplayer && !client_disconnected[0])) )
@@ -12187,16 +12202,7 @@ void AOEIndicators_t::Indicator_t::updateIndicator()
 		return;
 	}
 
-	SDL_Surface* surfaceNew = SDL_CreateRGBSurface(0, size, size, 32,
-		0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff);
-	SDL_LockSurface(surfaceNew);
-
-	if ( surfaceOld ) {
-		SDL_LockSurface(surfaceOld);
-	}
-
-	int x = 0;
-	int y = 0;
+	//auto t1 = std::chrono::high_resolution_clock::now();
 
 	const int ringSize = 1;
 	const int gradientSize = gradient;
@@ -12269,14 +12275,59 @@ void AOEIndicators_t::Indicator_t::updateIndicator()
 		}
 	}
 
+	//auto t5 = std::chrono::high_resolution_clock::now();
 	bool circle = !castingTarget;
+
+	static ConsoleVariable<bool> cvar_aoe_indicator_cache("/aoe_indicator_cache", true);
+	if ( !*cvar_aoe_indicator_cache )
+	{
+		cacheType = CACHE_NONE;
+	}
+
+	bool needsUpdate = true;
+	if ( prevData.r == red &&
+		prevData.g == green &&
+		prevData.b == blue &&
+		prevData.a == alpha &&
+		prevData.radMax == radius &&
+		prevData.radMin == std::max(0, radius - gradientSize) + 0.0 &&
+		prevData.size == size )
+	{
+		needsUpdate = false;
+	}
+
+	SDL_Surface* surfaceNew = nullptr;
+	if ( needsUpdate )
+	{
+		auto tup = std::make_tuple(
+			red, green, blue, alpha, radius, std::max(0, radius - gradientSize) + 0.0, size);
+
+		if ( cacheType != CACHE_NONE )
+		{
+			auto& cache = AOEIndicators_t::surfaceCache[cacheType];
+			auto find = cache.find(tup);
+			if ( find != cache.end() )
+			{
+				surfaceNew = find->second;
+				needsUpdate = false;
+			}
+		}
+
+		if ( needsUpdate )
+		{
+			surfaceNew = SDL_CreateRGBSurface(0, size, size, 32,
+				0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff);
+			SDL_LockSurface(surfaceNew);
+
 	for ( real_t rad = std::max(0, radius - gradientSize) + 0.0; rad <= radius; rad += 0.5 )
 	{
 		Uint32 color = 0;
+				Uint8 alphaUsed = alpha;
 		if ( rad < ring + 0.5 )
 		{
 			real_t alphaRatio = std::min(1.0, std::max(0.0, 1.0 + (ringSize + rad - (radius + 0.5)) / (real_t)gradientSize));
-			color = makeColor(red, green, blue, std::min(255.0, alpha * alphaRatio));
+					alphaUsed = std::min(255.0, alpha * alphaRatio);
+					color = makeColor(red, green, blue, alphaUsed);
 		}
 		else if ( rad == ring + 0.5 )
 		{
@@ -12291,9 +12342,9 @@ void AOEIndicators_t::Indicator_t::updateIndicator()
 		{
 			real_t radius = rad + .5;
 			real_t r2 = radius * radius;
-			int dist = radius;// floor(radius * sqrt(0.5));
+					const int dist = radius;// floor(radius * sqrt(0.5));
+					const int d = radius;//floor(sqrt(r2 - r * r));
 			for ( int r = 0; r <= dist; r++ ) {
-				int d = radius;//floor(sqrt(r2 - r * r));
 				if ( !(center - d >= 0 && center + d < size) )
 				{
 					continue;
@@ -12308,6 +12359,10 @@ void AOEIndicators_t::Indicator_t::updateIndicator()
 					getColor(color, &red, &green, &blue, &alpha);
 					Uint8 prevAlpha = alpha;
 					alpha *= d / 8.0;
+							if ( alpha == 0 )
+							{
+								continue;
+							}
 					color = makeColor(red, green, blue, alpha);
 
 					putPixel(surfaceNew, center + d, center + r, color);
@@ -12331,8 +12386,11 @@ void AOEIndicators_t::Indicator_t::updateIndicator()
 					getColor(color, &red, &green, &blue, &alpha);
 					Uint8 prevAlpha = alpha;
 					alpha *= r / 8.0;
+							if ( alpha == 0 )
+							{
+								continue;
+							}
 					color = makeColor(red, green, blue, alpha);
-
 					putPixel(surfaceNew, center + d, center + r, color);
 					putPixel(surfaceNew, center + d, center - r, color);
 
@@ -12348,6 +12406,10 @@ void AOEIndicators_t::Indicator_t::updateIndicator()
 					color = makeColor(red, green, blue, prevAlpha);
 					continue;
 				}
+						if ( alphaUsed == 0 )
+						{
+							continue;
+						}
 				putPixel(surfaceNew, center + d, center + r, color);
 				putPixel(surfaceNew, center + d, center - r, color);
 
@@ -12363,10 +12425,15 @@ void AOEIndicators_t::Indicator_t::updateIndicator()
 		}
 		else if ( circle )
 		{
-			real_t radius = rad + .5;
-			real_t r2 = radius * radius;
-			int dist = floor(radius * sqrt(0.5));
+					const real_t radius = rad + .5;
+					const real_t r2 = radius * radius;
+					const int dist = floor(radius * sqrt(0.5));
+
 			for ( int r = 0; r <= dist; r++ ) {
+						if ( alphaUsed == 0 )
+						{
+							break;
+						}
 				int d = floor(sqrt(r2 - r * r));
 				if ( !(center - d >= 0 && center + d < size) ) 
 				{
@@ -12384,6 +12451,7 @@ void AOEIndicators_t::Indicator_t::updateIndicator()
 					{
 						continue;
 					}
+
 					putPixel(surfaceNew, center + r, center - d, color);
 					putPixel(surfaceNew, center - r, center - d, color);
 				}
@@ -12401,34 +12469,87 @@ void AOEIndicators_t::Indicator_t::updateIndicator()
 					putPixel(surfaceNew, center + r, center - d, color);
 					putPixel(surfaceNew, center - r, center - d, color);
 				}
+					}
+				}
+			}
+
+			if ( cacheType > CACHE_NONE )
+			{
+				surfaceCache[cacheType][tup] = surfaceNew;
 			}
 		}
 	}
 
+	//auto t6 = std::chrono::high_resolution_clock::now();
+	//std::chrono::steady_clock::time_point t2;
+	//std::chrono::steady_clock::time_point t3;
+	//std::chrono::steady_clock::time_point t4;
+	//t2 = std::chrono::high_resolution_clock::now();
+	//t3 = t2;
+	//t4 = t2;
+
+	//std::chrono::steady_clock::time_point new1 = t2;
+	//std::chrono::steady_clock::time_point new2 = t2;
+	//std::chrono::steady_clock::time_point new3 = t2;
+	//std::chrono::steady_clock::time_point new4 = t2;
+	//std::chrono::steady_clock::time_point new5 = t2;
+	//std::chrono::steady_clock::time_point new6 = t2;
+
 	auto m1 = surfaceNew;
 	auto m2 = surfaceOld;
+	if ( surfaceNew )
+	{
+		//new1 = std::chrono::high_resolution_clock::now();
+		if ( surfaceOld ) {
+			SDL_LockSurface(surfaceOld);
+		}
+
+		//new2 = std::chrono::high_resolution_clock::now();
 	const auto size1 = m1->w * m1->h * m1->format->BytesPerPixel;
 	const auto size2 = m2 ? (m2->w * m2->h * m2->format->BytesPerPixel) : 0;
 	if ( size1 != size2 || memcmp(m1, m2, size2) ) {
 		if ( !texture ) {
 			texture = new TempTexture();
 		}
+			//new3 = std::chrono::high_resolution_clock::now();
 		texture->load(surfaceNew, false, true);
+			//new4 = std::chrono::high_resolution_clock::now();
 		if ( surfaceOld ) {
 			SDL_UnlockSurface(surfaceOld);
+				if ( cacheType == CACHE_NONE )
+				{
 			SDL_FreeSurface(surfaceOld);
 		}
+			}
+			//new5 = std::chrono::high_resolution_clock::now();
 		SDL_UnlockSurface(surfaceNew);
 		surfaceOld = surfaceNew;
+
+			//new6 = std::chrono::high_resolution_clock::now();
+
+			prevData.r = red;
+			prevData.g = green;
+			prevData.b = blue;
+			prevData.a = alpha;
+			prevData.radMax = radius;
+			prevData.radMin = std::max(0, radius - gradientSize) + 0.0;
+			prevData.size = size;
+			//t3 = std::chrono::high_resolution_clock::now();
 	}
 	else {
 		if ( surfaceOld ) {
 			SDL_UnlockSurface(surfaceOld);
 		}
 		SDL_UnlockSurface(surfaceNew);
+			if ( cacheType == CACHE_NONE )
+			{
 		SDL_FreeSurface(surfaceNew);
+			}
 		surfaceNew = nullptr;
+			//t4 = std::chrono::high_resolution_clock::now();
+		}
 	}
+	//auto t7 = std::chrono::high_resolution_clock::now();
 
 	if ( ticks % ticksPerUpdate == 0 )
 	{
@@ -12461,6 +12582,48 @@ void AOEIndicators_t::Indicator_t::updateIndicator()
 			}
 		}
 	}
+
+	//auto t8 = std::chrono::high_resolution_clock::now();
+	//static double maxTotal;
+	//if ( keystatus[SDLK_t] )
+	//{
+	//	static double out1 = 0.0;
+	//	static double out2 = 0.0;
+	//	static double out3 = 0.0;
+	//	static double out4 = 0.0;
+	//	static double out5 = 0.0;
+	//	static double out6 = 0.0;
+	//	static double out7 = 0.0;
+	//	out1 += 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(new1 - t2).count();
+	//	out2 += 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(new2 - new1).count();
+	//	out3 += 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(new3 - new2).count();
+	//	out4 += 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(new4 - new3).count();
+	//	out5 += 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(new5 - new4).count();
+	//	out6 += 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(new6 - new5).count();
+
+	//	//out1 += 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(t5 - t1).count();
+	//	//out2 += std::max(0.0, 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(t3 - t2).count());
+	//	//out3 += std::max(0.0, 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(t4 - t2).count());
+	//	//out4 += 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(t5 - t5).count();
+	//	//out5 += 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(t6 - t5).count();
+	//	//out6 += 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(t7 - t6).count();
+	//	//out7 += 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(t8 - t7).count();
+	//	double newMax = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(t8 - t1).count();
+	//	if ( newMax > maxTotal )
+	//	{
+	//		printlog("new max: %4.5fms, old: %4.5fms | rad: %.2f", newMax, maxTotal, radius);
+	//	}
+	//	maxTotal = std::max(maxTotal, newMax);
+	//	char debugOutput[1024];
+	//	snprintf(debugOutput, 1023,
+	//		"t1: %4.5fms t2: %4.5fms t3: %4.5fms t4: %4.5fms t5: %4.5fms t6: %4.5fms t7: %4.5fms max: %4.5fms",
+	//		out1, out2, out3, out4, out5, out6, out7, maxTotal);
+	//	messagePlayer(0, MESSAGE_DEBUG, "%s", debugOutput);
+	//}
+	//else
+	//{
+	//	maxTotal = 0.0;
+	//}
 }
 
 Entity* createParticleAOEIndicator(Entity* parent, real_t x, real_t y, real_t z, Uint32 lifetime, int size)

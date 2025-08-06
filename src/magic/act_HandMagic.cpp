@@ -1174,6 +1174,7 @@ void actLeftHandMagic(Entity* my)
 							|| cast_animation[HANDMAGIC_PLAYERNUM].rangefinder == SpellRangefinderType::RANGEFINDER_TOUCH_WALL_TILE )
 						{
 							cast_animation[HANDMAGIC_PLAYERNUM].stage = ANIM_SPELL_TOUCH;
+							playSoundEntityLocal(players[HANDMAGIC_PLAYERNUM]->entity, 759 + local_rng.rand() % 4, 92);
 						}
 						else
 						{
@@ -1893,6 +1894,7 @@ void actMagicRangefinder(Entity* my)
 	}
 	if ( auto indicator = AOEIndicators_t::getIndicator(my->actSpriteUseCustomSurface) )
 	{
+		indicator->cacheType = AOEIndicators_t::CACHE_CASTING;
 		indicator->gradient = 6;
 		indicator->radiusMin = 8;
 		indicator->castingTarget = true;
