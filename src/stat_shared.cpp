@@ -1416,15 +1416,21 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->MAXMP = 30;
 			stats->OLDHP = stats->HP;
 
-			stats->STR = 8;
-			stats->RANDOM_STR = 0;
-			stats->DEX = 3;
-			stats->CON = 7;
-			stats->INT = -2;
+			stats->HP = 100;
+			stats->RANDOM_HP = 20;
+			stats->MAXHP = stats->HP;
+			stats->RANDOM_MAXHP = stats->RANDOM_HP;
+			stats->MP = 30;
+			stats->MAXMP = 30;
+			stats->OLDHP = stats->HP;
+			stats->STR = 10;
+			stats->DEX = -2;
+			stats->CON = 5;
+			stats->INT = -4;
 			stats->PER = 5;
-			stats->CHR = 5;
+			stats->CHR = -1;
 			stats->EXP = 0;
-			stats->LVL = 10;
+			stats->LVL = 12;
 
 			stats->GOLD = 0;
 			stats->HUNGER = 900;

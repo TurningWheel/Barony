@@ -4712,6 +4712,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 	{
 		numOpenAreaBreakables = 10;
 
+		int numLeaves = 10;
 		std::vector<int> goodSpots;
 		for ( int x = 0; x < map.width; ++x )
 		{
@@ -4724,7 +4725,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			}
 		}
 
-		for ( int c = 0; c < (int)goodSpots.size() && numOpenAreaBreakables > 0; ++c )
+		for ( int c = 0; c < (int)goodSpots.size() && numOpenAreaBreakables > 0 && numLeaves > 0; ++c )
 		{
 			// choose a random location from those available
 			int pick = map_rng.rand() % goodSpots.size();
@@ -4734,7 +4735,6 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			goodSpots.erase(goodSpots.begin() + pick);
 
 			int obstacles = 0;
-			// add some mushrooms
 			for ( int x2 = -1; x2 <= 1; x2++ )
 			{
 				for ( int y2 = -1; y2 <= 1; y2++ )
@@ -4764,6 +4764,9 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 
 			if ( obstacles == 0 )
 			{
+				if ( numOpenAreaBreakables > 0 )
+				{
+					// add some mushrooms
 				int id = EditorEntityData_t::colliderNameIndexes["mushroom_spell_common"];
 				if ( map_rng.rand() % 5 == 0 )
 				{
@@ -4777,7 +4780,31 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				breakableLocations.push_back(BreakableNode_t(1, x, y, map_rng.rand() % 4,
 					id)); // random dir, mushroom ids
 				--numOpenAreaBreakables;
-
+					if ( possiblelocations[y + x * map.height] )
+					{
+						possiblelocations[y + x * map.height] = false;
+						--numpossiblelocations;
+					}
+				}
+				else if ( numLeaves > 0 )
+				{
+					--numLeaves;
+					Entity* leaf = newEntity(254, 1, map.entities, nullptr);
+					leaf->x = x * 16.0;
+					leaf->y = y * 16.0;
+					if ( possiblelocations[y + x * map.height] )
+					{
+						possiblelocations[y + x * map.height] = false;
+						--numpossiblelocations;
+					}
+				}
+			}
+			else if ( obstacles == 1 )
+			{
+				--numLeaves;
+				Entity* leaf = newEntity(254, 1, map.entities, nullptr);
+				leaf->x = x * 16.0;
+				leaf->y = y * 16.0;
 				if ( possiblelocations[y + x * map.height] )
 				{
 					possiblelocations[y + x * map.height] = false;
@@ -9647,6 +9674,23 @@ void assignActions(map_t* map)
 					* MAPLAYERS * map->height] |= map_t::TILE_ATTRIBUTE_SLOW;
 				list_RemoveNode(entity->mynode);
 				entity = nullptr;
+				break;
+			case 254: // leaves
+				entity->x += 8;
+				entity->y += 8;
+				entity->sprite = 1913;
+				entity->z = 0.0;
+				entity->yaw = map_rng.rand() % 360 * (PI / 180.0);
+				entity->sizex = 4;
+				entity->sizey = 4;
+				entity->behavior = &actLeafPile;
+				entity->skill[0] = 0;
+				entity->skill[10] = 1; // denote map gen
+				entity->flags[NOCLIP_CREATURES] = true;
+				entity->flags[UPDATENEEDED] = true;
+				entity->flags[NOUPDATE] = false;
+				entity->flags[PASSABLE] = true;
+				entity->flags[UNCLICKABLE] = true;
 				break;
             default:
                 break;

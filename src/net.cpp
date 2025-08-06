@@ -2007,6 +2007,9 @@ void clientActions(Entity* entity)
 			entity->behavior = &actParticleDemesneDoor;
 			entity->flags[NOUPDATE] = true;
 			break;
+		case 1913:
+			entity->behavior = &actLeafPile;
+			break;
 		case Player::Ghost_t::GHOST_MODEL_P1:
 		case Player::Ghost_t::GHOST_MODEL_P2:
 		case Player::Ghost_t::GHOST_MODEL_P3:
@@ -5231,6 +5234,25 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 	{'TKIT', [](){
 		GenericGUI[clientnum].tinkeringKitDegradeOnUse(clientnum);
 	}},
+
+	// leaf pile
+	{ 'LEAF', []() {
+		Uint32 uid = SDLNet_Read32(&net_packet->data[4]);
+		if ( Entity* entity = uidToEntity(uid) )
+		{
+			if ( net_packet->data[8] == 1 )
+			{
+				entity->skill[3] = (Sint32)net_packet->data[9];
+				entity->skill[4] = (Sint32)net_packet->data[10];
+				playSoundEntityLocal(entity, 754 + local_rng.rand() % 2, 64);
+			}
+			else if ( net_packet->data[8] == 2 )
+			{
+				entity->skill[7] = (Sint32)net_packet->data[9];
+				entity->skill[8] = (Sint32)net_packet->data[10];
+			}
+		}
+	} },
 
 	// boss death
 	{'BDTH', [](){

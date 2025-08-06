@@ -906,6 +906,10 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 		if ( my->behavior != &actPlayer && my->behavior != &actMonster )
 		{
 			levitating = true;
+			if ( my->behavior == &actLeafPile || my->behavior == &actLeafParticle )
+			{
+				levitating = false;
+			}
 		}
 		if ( multiplayer != CLIENT )
 		{

@@ -1064,6 +1064,607 @@ void actMiscPuddle(Entity* my)
 	}
 }
 
+#define LEAF_IDLE_BOUNCE_TIME 50
+void actLeafParticle(Entity* my)
+{
+	Entity* parent = nullptr;
+
+	auto& particle_life = my->skill[0];
+	auto& anim_bounce = my->skill[1];
+	auto& anim_bounce_timer = my->skill[3];
+	auto& float_oscillate_dir = my->skill[4];
+	auto& anim_spin = my->skill[5];
+
+	auto& float_oscillate_amt = my->fskill[0];
+	auto& anim_bounce_fall = my->fskill[1];
+	auto& pos_x_center = my->fskill[4];
+	auto& pos_y_center = my->fskill[5];
+	auto& pos_z_start = my->fskill[6];
+	auto& pos_z_end = my->fskill[7];
+	auto& anim_bounce_rise_amt = my->fskill[8];
+	auto& rotation_offset = my->fskill[9];
+
+	if ( my->parent != 0 )
+	{
+		parent = uidToEntity(my->parent);
+		if ( !parent )
+		{
+			list_RemoveNode(my->mynode);
+			return;
+		}
+	}
+	else
+	{
+		if ( particle_life <= 0 )
+		{
+			list_RemoveNode(my->mynode);
+			return;
+		}
+		--particle_life;
+	}
+
+	my->focalz = 2.0;
+
+	bool grounded = false;
+	if ( my->z >= 5.5 )
+	{
+		grounded = true;
+
+		// reset to 0
+		if ( float_oscillate_amt < 0.0 )
+		{
+			float_oscillate_amt += 0.025;
+			float_oscillate_amt = std::min(float_oscillate_amt, 0.0);
+		}
+		else if ( float_oscillate_amt > 0.0 )
+		{
+			float_oscillate_amt -= 0.025;
+			float_oscillate_amt = std::max(float_oscillate_amt, 0.0);
+		}
+	}
+	else if ( float_oscillate_dir == 1 )
+	{
+		float_oscillate_amt += 0.025;
+		if ( float_oscillate_amt >= 1.0 )
+		{
+			float_oscillate_amt = 1.0;
+			if ( parent && parent->fskill[10] > 0.05 && (parent->skill[7] == 100 || parent->skill[8] >= 20) )
+			{
+				// spinning with at least 20 ticks left / strong spin, lock to 1 angle
+			}
+			else
+			{
+				float_oscillate_dir = 2;
+			}
+		}
+	}
+	else
+	{
+		float_oscillate_amt -= 0.025;
+		if ( float_oscillate_amt <= -1.0 )
+		{
+			float_oscillate_amt = -1.0;
+			if ( parent && parent->fskill[10] > 0.05 && (parent->skill[7] == 100 || parent->skill[8] >= 20) )
+			{
+				// spinning with at least 20 ticks left / strong spin, lock to 1 angle
+			}
+			else
+			{
+				float_oscillate_dir = 1;
+			}
+		}
+	}
+
+	if ( anim_bounce == 0 )
+	{
+		// rise up
+		anim_bounce_fall += std::max(0.01, (1.0 - anim_bounce_fall) / std::max(12.0, anim_bounce_rise_amt));
+		if ( anim_bounce_fall >= 1.0 )
+		{
+			anim_bounce_fall = 1.0;
+			if ( anim_spin != 0 )
+			{
+				// don't fall down
+			}
+			else
+			{
+				anim_bounce = 1;
+			}
+		}
+	}
+	else
+	{
+		anim_bounce_fall -= std::max(0.01, (anim_bounce_fall) / 10.0);
+		anim_bounce_fall = std::max(0.0, anim_bounce_fall);
+	}
+
+	real_t rate = (sin(float_oscillate_amt * PI / 2));
+	my->roll = (PI / 4) * rate;
+	/*if ( keystatus[SDLK_g] )
+	{
+		my->yaw += 0.05;
+	}*/
+	if ( parent )
+	{
+		pos_x_center = parent->x;
+		pos_y_center = parent->y;
+		my->yaw = parent->yaw + rotation_offset;
+
+		if ( parent->fskill[10] > 0.25 )
+		{
+			if ( anim_spin == 0 )
+			{
+				anim_spin = 1;
+
+				anim_bounce = 0;
+				anim_bounce_fall = 0.0;
+				pos_z_start = my->z;
+				
+				real_t boost = 4.0 + 0.25 * (local_rng.rand() % 9); // 4-6
+				if ( parent->skill[7] != 100 )
+				{
+					anim_bounce_rise_amt = 12.0 + 0.25 * (local_rng.rand() % 13); // 12-15.0 random rise
+					boost /= 3;
+					pos_z_end = std::max(my->z - boost, -7.5) - pos_z_start;
+				}
+				else
+				{
+					anim_bounce_rise_amt = 12.0 + 0.25 * (local_rng.rand() % 13); // 12-15.0 random rise
+					anim_bounce_rise_amt *= 10.0;
+					real_t maxHeight = 0.0 + 5.0 * rotation_offset / (2 * PI);
+					if ( my->z - boost > maxHeight )
+					{
+						pos_z_end = std::min(my->z - boost, maxHeight) - pos_z_start;
+					}
+					else
+					{
+						pos_z_end = std::max(my->z - boost, maxHeight) - pos_z_start;
+					}
+				}
+			}
+		}
+		else
+		{
+			if ( anim_spin == 1 )
+			{
+				anim_spin = 0;
+			}
+		}
+	}
+	real_t faceDir = my->yaw;
+	my->x = pos_x_center + 4.0 * cos(faceDir) - 2.0 * rate * cos(faceDir + PI / 2);
+	my->y = pos_y_center + 4.0 * sin(faceDir) - 2.0 * rate * sin(faceDir + PI / 2);
+	if ( anim_bounce == 0 )
+	{
+		// rise up
+		my->z = pos_z_start + pos_z_end * sin(anim_bounce_fall * PI / 2);
+	}
+	else
+	{
+		// fall down faster as anim_bounce_fall 1 - 0
+		my->vel_z = 0.1 * (1.0 - anim_bounce_fall) * abs(cos(float_oscillate_amt));
+		my->z += my->vel_z;
+	}
+	my->z = std::min(my->z, 5.5);
+
+	if ( !parent )
+	{
+		if ( multiplayer != CLIENT )
+		{
+			my->vel_x *= 0.8;
+			my->vel_y *= 0.8;
+			if ( abs(my->vel_x) > 0.01 || abs(my->vel_y) > 0.01 )
+			{
+				clipMove(&pos_x_center, &pos_y_center, my->vel_x, my->vel_y, my);
+			}
+			if ( anim_bounce_timer == 0 )
+			{
+				for ( int i = 0; i < MAXPLAYERS; ++i )
+				{
+					if ( players[i]->entity && entityInsideEntity(players[i]->entity, my) )
+					{
+						if ( abs(players[i]->entity->vel_x > 0.1) || abs(players[i]->entity->vel_y) > 0.1 )
+						{
+							anim_bounce_timer = LEAF_IDLE_BOUNCE_TIME;
+							real_t tangent = atan2(my->y - players[i]->entity->y, my->x - players[i]->entity->x);
+							my->vel_x = 1.5 * cos(tangent);
+							my->vel_y = 1.5 * sin(tangent);
+							float_oscillate_dir = 1 + local_rng.rand() % 2;
+							anim_bounce = 0;
+							anim_bounce_fall = 0.0;
+							pos_z_start = my->z;
+							anim_bounce_rise_amt = 12.0 + 0.25 * (local_rng.rand() % 13); // 12-15.0 random rise
+							real_t boost = 4.0 + 0.25 * (local_rng.rand() % 9); // 4-6
+							pos_z_end = std::max(my->z - boost, -7.5) - pos_z_start;
+							break;
+						}
+					}
+				}
+			}
+			else
+			{
+				--anim_bounce_timer;
+			}
+		}
+	}
+	else
+	{
+		if ( parent->skill[3] == LEAF_IDLE_BOUNCE_TIME - 1 )
+		{
+			anim_bounce = 0;
+			float_oscillate_dir = 1 + local_rng.rand() % 2;
+			anim_bounce_fall = 0.0;
+			pos_z_start = my->z;
+			real_t boost = 4.0 + 0.25 * (local_rng.rand() % 9); // 4-6
+			anim_bounce_rise_amt = 12.0 + 0.25 * (local_rng.rand() % 13); // 12-15.0
+			pos_z_end = std::max(my->z - boost, -7.5) - pos_z_start;
+		}
+	}
+}
+
+void actLeafPile(Entity* my)
+{
+	if ( multiplayer != CLIENT )
+	{
+		if ( my->skill[0] > 0 )
+		{
+			--my->skill[0];
+			if ( my->skill[0] <= 0 )
+			{
+				list_RemoveNode(my->mynode);
+				return;
+			}
+		}
+	}
+
+	my->flags[INVISIBLE] = true;
+
+	if ( my->skill[1] == 0 )
+	{
+		my->skill[1] = 1;
+
+		real_t leafEndZ = -7.5;
+		if ( my->skill[10] == 1 )
+		{
+			// map gen
+			leafEndZ = 0.0 + local_rng.rand() % 3;
+		}
+		for ( int i = 0; i < 3; ++i )
+		{
+			Entity* leaf = newEntity(1912, 1, map.entities, nullptr); //Gib entity.
+			if ( leaf != NULL )
+			{
+				leaf->x = my->x;
+				leaf->y = my->y;
+				leaf->z = 5.0 - i * 0.5;
+				leaf->fskill[6] = leaf->z;
+				leaf->fskill[7] = leafEndZ - leaf->fskill[6];
+				leaf->vel_z = 0.0;
+				leaf->yaw = my->yaw + i * 2 * PI / 3;
+				leaf->sizex = 2;
+				leaf->sizey = 2;
+				leaf->scalex = 0.5;
+				leaf->scaley = 0.5;
+				leaf->scalez = 0.5;
+				leaf->fskill[4] = my->x;
+				leaf->fskill[5] = my->y;
+				leaf->fskill[9] = i * 2 * PI / 3;
+				leaf->parent = my->getUID();
+				leaf->behavior = &actLeafParticle;
+				leaf->flags[NOCLIP_CREATURES] = true;
+				leaf->flags[UPDATENEEDED] = false;
+				leaf->flags[NOUPDATE] = true;
+				leaf->flags[PASSABLE] = true;
+				leaf->flags[UNCLICKABLE] = true;
+				if ( multiplayer != CLIENT )
+				{
+					--entity_uids;
+				}
+				leaf->setUID(-3);
+			}
+		}
+	}
+
+	auto& spinStrength = my->skill[7];
+	auto& spinTimer = my->skill[8];
+
+	if ( multiplayer != CLIENT )
+	{
+		if ( my->skill[3] == 0 )
+		{
+			std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 1);
+			for ( auto it : entLists )
+			{
+				if ( my->skill[3] != 0 )
+				{
+					break;
+				}
+				for ( node_t* node = it->first; node != nullptr; node = node->next )
+				{
+					Entity* entity = (Entity*)node->element;
+					if ( entity->behavior == &actMonster || entity->behavior == &actPlayer )
+					{
+						if ( !entity->monsterIsTargetable() ) { continue; }
+						if ( abs(entity->vel_x > 0.1) || abs(entity->vel_y) > 0.1 )
+						{
+							if ( entityInsideEntity(entity, my) )
+							{
+								my->skill[3] = LEAF_IDLE_BOUNCE_TIME;
+								my->skill[4] = 100;
+								playSoundEntityLocal(my, 754 + local_rng.rand() % 2, 64);
+								entity->setEffect(EFF_NOISE_VISIBILITY, (Uint8)2, 2 * TICKS_PER_SECOND, false);
+								if ( multiplayer == SERVER )
+								{
+									for ( int c = 1; c < MAXPLAYERS; ++c ) // send to other players
+									{
+										if ( client_disconnected[c] || players[c]->isLocalPlayer() )
+										{
+											continue;
+										}
+										strcpy((char*)net_packet->data, "LEAF");
+										SDLNet_Write32(my->getUID(), &net_packet->data[4]);
+										net_packet->data[8] = 1;
+										net_packet->data[9] = (Uint8)my->skill[3];
+										net_packet->data[10] = (Uint8)my->skill[4];
+										net_packet->address.host = net_clients[c - 1].host;
+										net_packet->address.port = net_clients[c - 1].port;
+										net_packet->len = 11;
+										sendPacketSafe(net_sock, -1, net_packet, c - 1);
+									}
+								}
+								break;
+							}
+						}
+					}
+				}
+			}
+		}
+
+		if ( my->fskill[10] < 0.05 )
+		{
+			my->vel_x *= 0.95;
+			my->vel_y *= 0.95;
+		}
+		else
+		{
+			my->vel_x *= 0.995;
+			my->vel_y *= 0.995;
+		}
+		if ( abs(my->vel_x) > 0.01 || abs(my->vel_y) > 0.01 )
+		{
+			real_t result = clipMove(&my->x, &my->y, my->vel_x, my->vel_y, my);
+			if ( result != sqrt(my->vel_x * my->vel_x + my->vel_y * my->vel_y) )
+			{
+				if ( spinStrength == 100 )
+				{
+					real_t bouncePenalty = 1.0;
+					if ( hit.side == HORIZONTAL )
+					{
+						my->vel_x = -my->vel_x * bouncePenalty;
+					}
+					else if ( hit.side == VERTICAL )
+					{
+						my->vel_y = -my->vel_y * bouncePenalty;
+					}
+					else if ( hit.side == 0 )
+					{
+						my->vel_x = -my->vel_y * bouncePenalty;
+						my->vel_y = -my->vel_x * bouncePenalty;
+					}
+				}
+				else
+				{
+					my->vel_x = 0.f;
+					my->vel_y = 0.f;
+				}
+			}
+		}
+	}
+
+	if ( my->skill[3] > 0 )
+	{
+		--my->skill[3];
+	}
+
+	if ( spinStrength > 0 )
+	{
+		real_t amt = spinStrength / 100.0;
+
+		my->fskill[10] += std::max(0.01, (amt - my->fskill[10]) / 10.0);
+		my->fskill[10] = std::min(amt, my->fskill[10]);
+		my->yaw = normaliseAngle2PI(my->yaw);
+
+		if ( spinStrength == 100 )
+		{
+			my->skill[5]++;
+			if ( my->skill[5] == 2 * TICKS_PER_SECOND && multiplayer != CLIENT )
+			{
+				CastSpellProps_t spellProps;
+				spellProps.caster_x = my->x;
+				spellProps.caster_y = my->y;
+				spellProps.target_x = my->x;
+				spellProps.target_y = my->y;
+				castSpell(my->getUID(), getSpellFromID(SPELL_SLAM), false, true, false, &spellProps);
+
+				std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 2);
+				real_t dist = 10000.0;
+				Entity* closestEntity = nullptr;
+				for ( auto it : entLists )
+				{
+					for ( node_t* node = it->first; node != nullptr; node = node->next )
+					{
+						Entity* entity = (Entity*)node->element;
+						if ( entity->behavior == &actMonster || entity->behavior == &actPlayer )
+						{
+							if ( !entity->monsterIsTargetable() ) { continue; }
+							if ( Stat* entityStats = entity->getStats() )
+							{
+								if ( entityStats->type == MONSTER_M || entityStats->type == MONSTER_D )
+								{
+									continue;
+								}
+							}
+							real_t newDist = entityDist(my, entity);
+							if ( newDist < dist && newDist < 64.0 )
+							{
+								real_t tangent = atan2(entity->y - my->y, entity->x - my->x);
+								real_t d = lineTraceTarget(my, my->x, my->y, tangent, 64.0, 0, false, entity);
+								if ( hit.entity == entity )
+								{
+									closestEntity = entity;
+									dist = newDist;
+								}
+							}
+						}
+					}
+				}
+
+				if ( closestEntity )
+				{
+					real_t tangent = atan2(closestEntity->y - my->y, closestEntity->x - my->x);
+					my->vel_x = 0.75 * cos(tangent);
+					my->vel_y = 0.75 * sin(tangent);
+				}
+			}
+		}
+	}
+	else
+	{
+		my->skill[5] = 0;
+		my->fskill[10] -= std::max(0.01, my->fskill[10] / 100.0);
+		my->fskill[10] = std::max(0.0, my->fskill[10]);
+	}
+
+	my->yaw += 0.2 * (1 + sin(-PI / 2 + my->fskill[10] * PI / 2));
+	my->yaw = normaliseAngle2PI(my->yaw);
+
+	if ( my->skill[4] > 0 )
+	{
+		my->yaw += 0.025 * (my->skill[4]) / 100.0;
+		my->yaw = normaliseAngle2PI(my->yaw);
+		--my->skill[4];
+	}
+
+	if ( spinTimer > 0 )
+	{
+		--spinTimer;
+		if ( spinTimer == 0 )
+		{
+			spinStrength = 0;
+		}
+	}
+
+#ifdef USE_FMOD
+	bool isPlaying = false;
+	if ( my->entity_sound )
+	{
+		my->entity_sound->isPlaying(&isPlaying);
+		if ( isPlaying )
+		{
+			FMOD_VECTOR position;
+			position.x = (float)(my->x / (real_t)16.0);
+			position.y = (float)(0.0);
+			position.z = (float)(my->y / (real_t)16.0);
+			my->entity_sound->set3DAttributes(&position, nullptr);
+		}
+	}
+#endif
+
+	if ( multiplayer != CLIENT )
+	{
+		int spinEvent = 0;
+		if ( my->skill[6] == 0 )
+		{
+			my->skill[6] = TICKS_PER_SECOND * 5 + local_rng.rand() % (TICKS_PER_SECOND * 10);
+		}
+		else
+		{
+			if ( spinTimer == 0 )
+			{
+				--my->skill[6];
+				if ( my->skill[6] == 0 )
+				{
+					spinEvent = local_rng.rand() % 8 == 0 ? 2 : 1;
+#ifdef USE_FMOD
+					bool isPlaying = false;
+					if ( my->entity_sound )
+					{
+						my->entity_sound->isPlaying(&isPlaying);
+					}
+					if ( !isPlaying )
+					{
+						my->entity_sound = playSoundEntityLocal(my, 752 + local_rng.rand() % 2, 128);
+					}
+#endif
+				}
+			}
+		}
+
+		if ( /*keystatus[SDLK_g] ||*/ spinEvent == 2 )
+		{
+			spinStrength = 100;
+			spinTimer = 225;
+
+			if ( local_rng.rand() % 2 == 0 )
+			{
+				real_t newDir = (local_rng.rand() % 4) * PI / 2;
+				my->vel_x = 0.5 * cos(newDir);
+				my->vel_y = 0.5 * sin(newDir);
+			}
+
+			if ( multiplayer == SERVER )
+			{
+				for ( int c = 1; c < MAXPLAYERS; ++c ) // send to other players
+				{
+					if ( client_disconnected[c] || players[c]->isLocalPlayer() )
+					{
+						continue;
+					}
+					strcpy((char*)net_packet->data, "LEAF");
+					SDLNet_Write32(my->getUID(), &net_packet->data[4]);
+					net_packet->data[8] = 2;
+					net_packet->data[9] = (Uint8)spinStrength;
+					net_packet->data[10] = (Uint8)spinTimer;
+					net_packet->address.host = net_clients[c - 1].host;
+					net_packet->address.port = net_clients[c - 1].port;
+					net_packet->len = 11;
+					sendPacketSafe(net_sock, -1, net_packet, c - 1);
+				}
+			}
+		}
+		if ( /*keystatus[SDLK_h] ||*/ spinEvent == 1 )
+		{
+			//keystatus[SDLK_h] = 0;
+			spinStrength = 75;
+			spinTimer = 50;
+
+			real_t newDir = (local_rng.rand() % 4) * PI / 2;
+			my->vel_x = 0.5 * cos(newDir);
+			my->vel_y = 0.5 * sin(newDir);
+
+			if ( multiplayer == SERVER )
+			{
+				for ( int c = 1; c < MAXPLAYERS; ++c ) // send to other players
+				{
+					if ( client_disconnected[c] || players[c]->isLocalPlayer() )
+					{
+						continue;
+					}
+					strcpy((char*)net_packet->data, "LEAF");
+					SDLNet_Write32(my->getUID(), &net_packet->data[4]);
+					net_packet->data[8] = 2;
+					net_packet->data[9] = (Uint8)spinStrength;
+					net_packet->data[10] = (Uint8)spinTimer;
+					net_packet->address.host = net_clients[c - 1].host;
+					net_packet->address.port = net_clients[c - 1].port;
+					net_packet->len = 11;
+					sendPacketSafe(net_sock, -1, net_packet, c - 1);
+				}
+			}
+		}
+	}
+}
+
 Entity* spawnMiscPuddle(Entity* parentent, real_t x, real_t y, int sprite, bool updateClients)
 {
 	if ( sprite == 0 )

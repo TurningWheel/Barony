@@ -894,6 +894,8 @@ void doSpellExplosionArea(int spellID, Entity* my, Entity* caster, real_t x, rea
 void createParticleSpin(Entity* entity);
 void createParticleShatterEarth(Entity* my, Entity* caster, real_t _x, real_t _y, int spellID);
 void actEarthElementalDeathGib(Entity* my);
+void actLeafParticle(Entity* my);
+void actLeafPile(Entity* my);
 
 void spawnMagicTower(Entity* parent, real_t x, real_t y, int spellID, Entity* autoHitTarget, bool castedSpell = false); // autoHitTarget is to immediate damage an entity, as all 3 tower magics hitting is unreliable
 bool magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks);
@@ -1074,7 +1076,7 @@ struct AOEIndicators_t
 			{
 				if ( cacheType == CACHE_NONE )
 				{
-				SDL_FreeSurface(surfaceOld);
+					SDL_FreeSurface(surfaceOld);
 				}
 				surfaceOld = nullptr;
 			}
