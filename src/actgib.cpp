@@ -1089,6 +1089,7 @@ void actLeafParticle(Entity* my)
 		parent = uidToEntity(my->parent);
 		if ( !parent )
 		{
+			spawnPoof(my->x, my->y, my->z, 0.25);
 			list_RemoveNode(my->mynode);
 			return;
 		}
@@ -1097,6 +1098,7 @@ void actLeafParticle(Entity* my)
 	{
 		if ( particle_life <= 0 )
 		{
+			spawnPoof(my->x, my->y, my->z, 0.25);
 			list_RemoveNode(my->mynode);
 			return;
 		}
@@ -1300,6 +1302,47 @@ void actLeafParticle(Entity* my)
 			pos_z_end = std::max(my->z - boost, -7.5) - pos_z_start;
 		}
 	}
+}
+
+Entity* spawnLeafPile(real_t x, real_t y, bool trap)
+{
+	if ( multiplayer == CLIENT ) { return nullptr; }
+	if ( Entity* leaf = newEntity(1913, 1, map.entities, nullptr) )
+	{
+		leaf->x = x;
+		leaf->y = y;
+		leaf->z = 0.0;
+		leaf->yaw = map_rng.rand() % 360 * (PI / 180.0);
+		leaf->sizex = 4;
+		leaf->sizey = 4;
+		leaf->behavior = &actLeafPile;
+		leaf->skill[0] = 0;
+		leaf->skill[10] = 0; // not map gen
+		leaf->skill[11] = trap ? 0 : 1;
+		leaf->flags[NOCLIP_CREATURES] = true;
+		leaf->flags[UPDATENEEDED] = true;
+		leaf->flags[NOUPDATE] = false;
+		leaf->flags[PASSABLE] = true;
+		leaf->flags[UNCLICKABLE] = true;
+
+		int mapx = static_cast<int>(x) / 16;
+		int mapy = static_cast<int>(y) / 16;
+		int mapIndex = mapy * MAPLAYERS + mapx * MAPLAYERS * map.height;
+		if ( mapx > 0 && mapx < map.width && mapy > 0 && mapy < map.height )
+		{
+			if ( !map.tiles[mapIndex] || swimmingtiles[map.tiles[mapIndex]] || lavatiles[map.tiles[mapIndex]]
+				|| map.tiles[OBSTACLELAYER + mapIndex] )
+			{
+				leaf->skill[0] = 4.0 * TICKS_PER_SECOND; // lifetime on wrong terrain
+			}
+		}
+		else
+		{
+			leaf->skill[0] = 4.0 * TICKS_PER_SECOND; // lifetime on wrong terrain
+		}
+		return leaf;
+	}
+	return nullptr;
 }
 
 void actLeafPile(Entity* my)
@@ -1584,7 +1627,14 @@ void actLeafPile(Entity* my)
 				--my->skill[6];
 				if ( my->skill[6] == 0 )
 				{
-					spinEvent = local_rng.rand() % 8 == 0 ? 2 : 1;
+					if ( my->skill[11] == 0 ) // trapped
+					{
+						spinEvent = local_rng.rand() % 8 == 0 ? 2 : 1;
+					}
+					else
+					{
+						spinEvent = 1;
+					}
 #ifdef USE_FMOD
 					bool isPlaying = false;
 					if ( my->entity_sound )
@@ -1607,9 +1657,26 @@ void actLeafPile(Entity* my)
 
 			if ( local_rng.rand() % 2 == 0 )
 			{
-				real_t newDir = (local_rng.rand() % 4) * PI / 2;
-				my->vel_x = 0.5 * cos(newDir);
-				my->vel_y = 0.5 * sin(newDir);
+				std::vector<real_t> dirs;
+				for ( int i = 0; i < 4; ++i )
+				{
+					if ( !checkObstacle(my->x + 16.0 * cos(i * PI / 2), my->y + 16.0 * sin(i * PI / 2), my, nullptr) )
+					{
+						dirs.push_back(i * PI / 2);
+					}
+				}
+				if ( dirs.size() > 0 )
+				{
+					real_t newDir = dirs[local_rng.rand() % dirs.size()];
+					my->vel_x = 0.5 * cos(newDir);
+					my->vel_y = 0.5 * sin(newDir);
+				}
+				else
+				{
+					real_t newDir = (local_rng.rand() % 4) * PI / 2;
+					my->vel_x = 0.5 * cos(newDir);
+					my->vel_y = 0.5 * sin(newDir);
+				}
 			}
 
 			if ( multiplayer == SERVER )
@@ -1638,9 +1705,26 @@ void actLeafPile(Entity* my)
 			spinStrength = 75;
 			spinTimer = 50;
 
-			real_t newDir = (local_rng.rand() % 4) * PI / 2;
-			my->vel_x = 0.5 * cos(newDir);
-			my->vel_y = 0.5 * sin(newDir);
+			std::vector<real_t> dirs;
+			for ( int i = 0; i < 4; ++i )
+			{
+				if ( !checkObstacle(my->x + 16.0 * cos(i * PI / 2), my->y + 16.0 * sin(i * PI / 2), my, nullptr) )
+				{
+					dirs.push_back(i * PI / 2);
+				}
+			}
+			if ( dirs.size() > 0 )
+			{
+				real_t newDir = dirs[local_rng.rand() % dirs.size()];
+				my->vel_x = 0.5 * cos(newDir);
+				my->vel_y = 0.5 * sin(newDir);
+			}
+			else
+			{
+				real_t newDir = (local_rng.rand() % 4) * PI / 2;
+				my->vel_x = 0.5 * cos(newDir);
+				my->vel_y = 0.5 * sin(newDir);
+			}
 
 			if ( multiplayer == SERVER )
 			{

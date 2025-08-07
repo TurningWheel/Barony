@@ -273,7 +273,8 @@ enum KilledBy {
     FAILED_ALCHEMY,
 	FAILED_CHALLENGE,
 	BELL,
-	MUSHROOM
+	MUSHROOM,
+	LEAVES
 };
 
 class Stat

@@ -9163,6 +9163,9 @@ bind_failed:
 					case KilledBy::MUSHROOM:
 						cause_of_death = Language::get(6754);
 						break;
+					case KilledBy::LEAVES:
+						cause_of_death = Language::get(6759);
+						break;
 					default: 
 					{
 						cause_of_death = Language::get(5794 + (int)score->stats->killer);
@@ -27297,6 +27300,9 @@ failed:
 			break;
 		case KilledBy::MUSHROOM:
 			cause_of_death = Language::get(6754);
+			break;
+		case KilledBy::LEAVES:
+			cause_of_death = Language::get(6759);
 			break;
         default: {
             cause_of_death = Language::get(5794 + (int)stats[player]->killer);

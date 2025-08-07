@@ -816,6 +816,7 @@ void monsterDDie(Entity* my)
 	}
 
 	my->spawnBlood();
+	spawnLeafPile(my->x, my->y, local_rng.rand() % 4);
 
 	playSoundEntity(my, 723 + local_rng.rand() % 2, 128);
 

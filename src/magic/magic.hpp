@@ -896,6 +896,7 @@ void createParticleShatterEarth(Entity* my, Entity* caster, real_t _x, real_t _y
 void actEarthElementalDeathGib(Entity* my);
 void actLeafParticle(Entity* my);
 void actLeafPile(Entity* my);
+Entity* spawnLeafPile(real_t x, real_t y, bool trap);
 
 void spawnMagicTower(Entity* parent, real_t x, real_t y, int spellID, Entity* autoHitTarget, bool castedSpell = false); // autoHitTarget is to immediate damage an entity, as all 3 tower magics hitting is unreliable
 bool magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks);

@@ -7022,5 +7022,11 @@ Host to enable the game setting.
 6752 You are blinded by shimmering dust!#
 6753 gets capped by a mushroom.#
 6754 Mushroom#
+6755 The air is filled with a deep fog.#
+6756 You are pulled by telekinetic force!#
+6757 A vortex suddenly lifts you!#
+6758 You are slammed back down!#
+6759 Leaves#
+6760 becomes dust in the wind.#
 
 6999 END#

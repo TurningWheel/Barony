@@ -8882,7 +8882,7 @@ void actParticleTimer(Entity* my)
 
 								if ( PARTICLE_LIFE == 1 )
 								{
-									if ( stats->getEffectActive(EFF_LIFT) )
+									if ( Uint8 effectStrength = stats->getEffectActive(EFF_LIFT) )
 									{
 										stats->EFFECTS_TIMERS[EFF_LIFT] = 1;
 										if ( stats->getEffectActive(EFF_ROOTED) )
@@ -8891,15 +8891,30 @@ void actParticleTimer(Entity* my)
 										}
 
 										auto poof = spawnPoof(entity->x, entity->y, 4, 1.0, true);
-										createParticleRock(entity, 78);
-										playSoundEntity(entity, 181, 128);
-										if ( multiplayer == SERVER )
-										{
-											serverSpawnMiscParticles(entity, PARTICLE_EFFECT_ABILITY_ROCK, 78);
-										}
 
-										int damage = getSpellDamageFromID(my->particleTimerVariable2, parent ? parent : my);
-										applyGenericMagicDamage(parent, entity, parent ? *parent : *my, SPELL_SLAM, damage, true);
+										if ( effectStrength >= 3 )
+										{
+											createParticleRock(entity, 78);
+											playSoundEntity(entity, 181, 128);
+											if ( multiplayer == SERVER )
+											{
+												serverSpawnMiscParticles(entity, PARTICLE_EFFECT_ABILITY_ROCK, 78);
+											}
+
+											int damage = getSpellDamageFromID(my->particleTimerVariable2, parent ? parent : my);
+											real_t mult = 0.5 + 0.1 * (std::min((Uint8)10, effectStrength));
+											damage *= mult;
+											if ( applyGenericMagicDamage(parent, entity, parent ? *parent : *my, SPELL_SLAM, damage, true) )
+											{
+												messagePlayerColor(entity->isEntityPlayer(), MESSAGE_STATUS, 
+													makeColorRGB(255, 0, 0), Language::get(6758));
+												if ( parent && parent->behavior == &actLeafPile )
+												{
+													stats->killer = KilledBy::LEAVES;
+													entity->setObituary(Language::get(6760));
+												}
+											}
+										}
 									}
 									continue;
 								}
@@ -8924,6 +8939,7 @@ void actParticleTimer(Entity* my)
 								Uint8 strength = std::min(10, 1 + stats->getEffectActive(EFF_LIFT));
 								if ( entity->setEffect(EFF_LIFT, strength, std::max(5, PARTICLE_LIFE + 21), true) )
 								{
+
 									my->vel_x = 0.0;
 									my->vel_y = 0.0;
 
@@ -8936,6 +8952,7 @@ void actParticleTimer(Entity* my)
 									entity->setEffect(EFF_ROOTED, strength, std::max(5, PARTICLE_LIFE), false);
 									if ( strength == 1 )
 									{
+										messagePlayer(entity->isEntityPlayer(), MESSAGE_STATUS, Language::get(6757));
 										auto poof = spawnPoof(entity->x, entity->y, 4, 0.5, true);
 										playSoundEntity(entity, 178, 128);
 									}
