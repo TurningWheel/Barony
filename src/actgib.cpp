@@ -902,10 +902,13 @@ void actGreasePuddleSpawner(Entity* my)
 					{
 						if ( Stat* stats = entity->getStats() )
 						{
-							if ( !entity->isInertMimic() )
+							if ( entity->monsterIsTargetable() )
 							{
-								entity->setEffect(EFF_MAGIC_GREASE, true, std::max(5 * TICKS_PER_SECOND, stats->EFFECTS_TIMERS[EFF_MAGIC_GREASE]),
-									true);
+								if ( !stats->getEffectActive(EFF_MAGIC_GREASE) || stats->EFFECTS_TIMERS[EFF_MAGIC_GREASE] < 1 * TICKS_PER_SECOND )
+								{
+									entity->setEffect(EFF_MAGIC_GREASE, true, std::max(5 * TICKS_PER_SECOND, stats->EFFECTS_TIMERS[EFF_MAGIC_GREASE]),
+										true);
+								}
 							}
 						}
 						if ( entity->behavior == &actCampfire && my->skill[3] )

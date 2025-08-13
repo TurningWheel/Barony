@@ -3678,8 +3678,9 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 											messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, makeColorRGB(0, 255, 0), Language::get(6088));
 										}
 									}
-									else if ( hit.entity->setEffect(EFF_MAGIC_GREASE, true, duration, false) )
+									else if ( hit.entity->setEffect(EFF_MAGIC_GREASE, true, duration, true) )
 									{
+										hit.entity->setEffect(EFF_GREASY, true, 5 * TICKS_PER_SECOND, false);
 										Uint32 color = makeColorRGB(255, 0, 0);
 										if ( hit.entity->behavior == &actPlayer )
 										{
@@ -6436,6 +6437,40 @@ void createParticleDot(Entity* parent)
 	}
 }
 
+Entity* createParticleBolas(Entity* parent, int sprite, int duration, Item* item)
+{
+	if ( !parent ) { return nullptr; }
+	Entity* entity = newEntity(sprite, 1, map.entities, nullptr); //Particle entity.
+	entity->sizex = 1;
+	entity->sizey = 1;
+	entity->parent = parent->getUID();
+	entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
+	entity->skill[0] = duration;
+	entity->behavior = &actParticleBolas;
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->flags[UNCLICKABLE] = true;
+	entity->lightBonus = vec4(*cvar_magic_fx_light_bonus, *cvar_magic_fx_light_bonus,
+		*cvar_magic_fx_light_bonus, 0.f);
+	if ( multiplayer != CLIENT )
+	{
+		entity_uids--;
+	}
+	entity->setUID(-3);
+
+	if ( multiplayer != CLIENT && item )
+	{
+		entity->skill[10] = item->type;
+		entity->skill[11] = item->status;
+		entity->skill[12] = item->beatitude;
+		entity->skill[13] = item->count;
+		entity->skill[14] = item->appearance;
+		entity->skill[15] = item->identified;
+		entity->skill[16] = item->ownerUid;
+	}
+	return entity;
+}
+
 Entity* createParticleAestheticOrbit(Entity* parent, int sprite, int duration, int effectType)
 {
 	if ( effectType == PARTICLE_EFFECT_NULL_PARTICLE )
@@ -6617,6 +6652,86 @@ void actParticleDot(Entity* my)
 		//my->z -= 0.01;
 	}
 	return;
+}
+
+void actParticleBolas(Entity* my)
+{
+	Entity* parent = uidToEntity(my->parent);
+	bool destroy = false;
+	if ( !parent )
+	{
+		destroy = true;
+	}
+	if ( PARTICLE_LIFE < 0 )
+	{
+		destroy = true;
+	}
+
+	if ( parent )
+	{
+		my->x = parent->x;
+		my->y = parent->y;
+		my->z = parent->z + 1.0;
+	}
+
+	if ( my->skill[1] == 0 )
+	{
+		my->skill[1] = 1;
+		my->fskill[1] = 1.0;
+	}
+
+	my->z = std::min(6.0, my->z);
+	my->fskill[0] += 0.25;
+	my->yaw += 0.25 * sin(my->fskill[1]);
+	my->fskill[1] *= 0.9;
+	my->scalex = 1.1 + 0.1 * sin(my->fskill[0]);
+	my->scaley = 1.1 + 0.1 * sin(my->fskill[0]);
+	my->scalez = 1.1 - 0.1 * sin(my->fskill[0]);
+
+	if ( destroy )
+	{
+		if ( multiplayer != CLIENT && my->skill[10] > 0 )
+		{
+			Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
+			entity->flags[INVISIBLE] = true;
+			entity->flags[UPDATENEEDED] = true;
+			entity->flags[PASSABLE] = true;
+			entity->x = my->x;
+			entity->y = my->y;
+			entity->z = my->z;
+			entity->sizex = 2;
+			entity->sizey = 2;
+			entity->yaw = my->yaw;
+			entity->pitch = my->pitch;
+			entity->roll = my->roll;
+			entity->vel_x = 0.25;
+			entity->vel_y = 0.25;
+			entity->vel_z = -0.5;
+			entity->behavior = &actItem;
+			entity->skill[10] = my->skill[10];
+			entity->skill[11] = my->skill[11];
+			entity->skill[12] = my->skill[12];
+			entity->skill[13] = my->skill[13];
+			entity->skill[14] = my->skill[14];
+			entity->skill[15] = my->skill[15];
+			entity->parent = my->skill[16]; // owner UID
+			if ( Entity* owner = uidToEntity(entity->parent) )
+			{
+				if ( Stat* stats = owner->getStats() )
+				{
+					if ( stats->getEffectActive(EFF_RETURN_ITEM) )
+					{
+						entity->itemReturnUID = owner->getUID();
+					}
+				}
+			}
+		}
+
+		list_RemoveNode(my->mynode);
+		return;
+	}
+
+	--PARTICLE_LIFE;
 }
 
 Uint32 nullParticleSfxTick = 0;

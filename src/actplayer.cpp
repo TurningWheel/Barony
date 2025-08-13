@@ -3437,8 +3437,12 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 		}
 		else if ( map.tileHasAttribute(static_cast<int>(my->x / 16), static_cast<int>(my->y / 16), 0, map_t::TILE_ATTRIBUTE_GREASE) )
 		{
-			movementDrag = *cvar_map_tile_greasy;
+			movementDrag = 0.99;
 		}
+		else if ( stats[PLAYER_NUM]->getEffectActive(EFF_MAGIC_GREASE) )
+		{
+			movementDrag = 0.95;
+	}
 	}
 	static std::map<int, real_t> dragToSpeedFactor =
 	{
@@ -3606,7 +3610,12 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 		{
 			PLAYER_VELX += my->monsterKnockbackVelocity * cos(my->monsterKnockbackTangentDir) * refreshRateDelta;
 			PLAYER_VELY += my->monsterKnockbackVelocity * sin(my->monsterKnockbackTangentDir) * refreshRateDelta;
-			my->monsterKnockbackVelocity *= pow(0.95, refreshRateDelta);
+			real_t rate = 0.95;
+			if ( stats[PLAYER_NUM]->getEffectActive(EFF_MAGIC_GREASE) )
+			{
+				rate = 0.975;
+		}
+			my->monsterKnockbackVelocity *= pow(rate, refreshRateDelta);
 		}
 		else
 		{

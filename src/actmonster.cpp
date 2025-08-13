@@ -13687,7 +13687,14 @@ void Entity::monsterHandleKnockbackVelocity(real_t monsterFacingTangent, real_t 
 	{
 		this->vel_y = std::max(this->vel_y + (this->monsterKnockbackVelocity * maxVelY), mobile ? maxVelY : 0.0);
 	}
+	if ( getStats() && getStats()->getEffectActive(EFF_MAGIC_GREASE) )
+	{
+		//this->monsterKnockbackVelocity *= 1.005;
+	}
+	else
+	{
 	this->monsterKnockbackVelocity *= 1.1;
+}
 }
 
 int Entity::monsterGetDexterityForMovement()

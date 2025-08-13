@@ -313,6 +313,7 @@ static const int PARTICLE_EFFECT_SHATTER_EARTH_ORBIT = 47;
 static const int PARTICLE_EFFECT_EARTH_ELEMENTAL_DIE = 48;
 static const int PARTICLE_EFFECT_MUSHROOM_SPELL = 49;
 static const int PARTICLE_EFFECT_MISC_PUDDLE = 50;
+static const int PARTICLE_EFFECT_BOLAS = 51;
 
 // actmagicIsVertical constants
 static const int MAGIC_ISVERTICAL_NONE = 0;
@@ -840,6 +841,7 @@ void actParticleExplosionCharge(Entity* my);
 void actParticleFollowerCommand(Entity* my);
 void actParticleCharmMonster(Entity* my);
 void actParticleAestheticOrbit(Entity* my);
+void actParticleBolas(Entity* my);
 void actParticleShadowTag(Entity* my);
 void actParticlePinpointTarget(Entity* my);
 void actParticleFloorMagic(Entity* my);
@@ -854,6 +856,7 @@ void actParticleShatterEarthRock(Entity* my);
 
 void createParticleDropRising(Entity* parent, int sprite, double scale);
 void createParticleDot(Entity* parent);
+Entity* createParticleBolas(Entity* parent, int sprite, int duration, Item* item);
 Entity* createParticleAestheticOrbit(Entity* parent, int sprite, int duration, int particleType);
 void createParticleRock(Entity* parent, int sprite = -1, bool light = false);
 void createParticleShatteredGem(real_t x, real_t y, real_t z, int sprite, Entity* parent);

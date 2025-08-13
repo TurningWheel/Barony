@@ -3244,6 +3244,12 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 					fx->actmagicNoLight = 1;
 					break;
 				}
+				case PARTICLE_EFFECT_BOLAS:
+				{
+					Uint32 duration = SDLNet_Read32(&net_packet->data[15]);
+					createParticleBolas(entity, sprite, duration, nullptr);
+				}
+				break;
 				default:
 					break;
 			}
