@@ -3611,9 +3611,9 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 			PLAYER_VELX += my->monsterKnockbackVelocity * cos(my->monsterKnockbackTangentDir) * refreshRateDelta;
 			PLAYER_VELY += my->monsterKnockbackVelocity * sin(my->monsterKnockbackTangentDir) * refreshRateDelta;
 			real_t rate = 0.95;
-			if ( stats[PLAYER_NUM]->getEffectActive(EFF_MAGIC_GREASE) )
+			if ( movementDrag > 0.8 )
 			{
-				rate = 0.975;
+				rate = 0.8;
 		}
 			my->monsterKnockbackVelocity *= pow(rate, refreshRateDelta);
 		}

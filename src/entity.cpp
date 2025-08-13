@@ -12649,10 +12649,26 @@ void Entity::attack(int pose, int charge, Entity* target)
 					if ( flail && !hitstats->getEffectActive(EFF_KNOCKBACK) && pose == MONSTER_POSE_FLAIL_SWING )
 					{
 						real_t dist = entityDist(hit.entity, this);
-						real_t ratio = std::max(0.0, std::min(1.0, (32.0 - dist) / (32.0)));
-						real_t pushbackMultiplier = ratio;
-						if ( pushbackMultiplier >= 0.5 && hit.entity->setEffect(EFF_KNOCKBACK, true, 30, false) )
+						real_t ratio = 0.0;
+						if ( behavior == &actMonster )
 						{
+							if ( dist <= 24.0 )
+							{
+								ratio = 0.5;
+							}
+						}
+						else
+						{
+							ratio = std::max(0.0, std::min(1.0, (40.0 - dist) / (40.0)));
+						}
+						if ( ratio >= 0.5 && hit.entity->setEffect(EFF_KNOCKBACK, true, 30, false) )
+						{
+							real_t pushbackMultiplier = ratio;
+							if ( hit.entity->behavior == &actPlayer )
+							{
+								pushbackMultiplier = 0.5;
+							}
+
 							knockbackInflicted = true;
 
 							real_t tangent = atan2(hit.entity->y - this->y, hit.entity->x - this->x);
