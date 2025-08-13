@@ -465,6 +465,17 @@ int isCharacterValidFromDLC(Stat& myStats, int characterClass)
 		}
 	}
 
+	if ( myStats.playerRace == RACE_RAT 
+		|| myStats.playerRace == RACE_TROLL
+		|| myStats.playerRace == RACE_IMP
+		|| myStats.playerRace == RACE_SPIDER )
+	{
+		if ( !enabledDLCPack2 )
+		{
+			return INVALID_REQUIREDLC2;
+		}
+	}
+
 	switch ( characterClass )
 	{
 		case CLASS_CONJURER:

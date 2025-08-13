@@ -6064,6 +6064,14 @@ list_t* loadGameFollowers(const SaveGameInfo& info) {
 
 int SaveGameInfo::Player::isCharacterValidFromDLC()
 {
+	if ( this->race == RACE_RAT || this->race == RACE_TROLL || this->race == RACE_IMP || this->race == RACE_SPIDER )
+	{
+		if ( !enabledDLCPack2 )
+		{
+			return INVALID_REQUIREDLC2;
+		}
+	}
+
 	switch ( this->char_class )
 	{
 	case CLASS_CONJURER:
