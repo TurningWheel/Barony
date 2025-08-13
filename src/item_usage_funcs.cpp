@@ -1010,10 +1010,19 @@ bool item_PotionGrease(Item*& item, Entity* entity, Entity* usedBy)
 	}
 	if ( entity->setEffect(EFF_MAGIC_GREASE, true, duration, true) )
 	{
-		if ( usedBy && entity != usedBy && usedBy->behavior == &actPlayer )
+		entity->setEffect(EFF_GREASY, true, 5 * TICKS_PER_SECOND, false);
+		if ( usedBy && entity != usedBy )
 		{
-			Uint32 color = makeColorRGB(0, 255, 0);
-			messagePlayerMonsterEvent(usedBy->skill[2], color, *stats, Language::get(6244), Language::get(6243), MSG_COMBAT);
+			if ( usedBy->behavior == &actPlayer )
+			{
+				Uint32 color = makeColorRGB(0, 255, 0);
+				messagePlayerMonsterEvent(usedBy->skill[2], color, *stats, Language::get(6244), Language::get(6243), MSG_COMBAT);
+			}
+			if ( entity->behavior == &actPlayer )
+			{
+				Uint32 color = makeColorRGB(255, 0, 0);
+				messagePlayerColor(entity->skill[2], MESSAGE_COMBAT, color, Language::get(6236));
+			}
 		}
 	}
 	else
@@ -4188,11 +4197,12 @@ void item_ToolTowel(Item*& item, int player)
 	if ( multiplayer != CLIENT )
 	{
 		if ( stats[player]->getEffectActive(EFF_GREASY)
+			|| stats[player]->getEffectActive(EFF_MAGIC_GREASE)
 			|| stats[player]->getEffectActive(EFF_MESSY)
 			|| stats[player]->getEffectActive(EFF_BLEEDING) )
 		{
 			steamAchievementClient(player, "BARONY_ACH_BRING_A_TOWEL");
-			if ( stats[player]->getEffectActive(EFF_GREASY) )
+			if ( stats[player]->getEffectActive(EFF_GREASY) || stats[player]->getEffectActive(EFF_MAGIC_GREASE) )
 			{
 				Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_TOWEL_GREASY, item->type, 1);
 			}
@@ -4206,6 +4216,7 @@ void item_ToolTowel(Item*& item, int player)
 			}
 			Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_TOWEL_USES, item->type, 1);
 		}
+		stats[player]->clearEffect(EFF_MAGIC_GREASE);
 		stats[player]->clearEffect(EFF_GREASY);
 		stats[player]->clearEffect(EFF_MESSY);
 	}
