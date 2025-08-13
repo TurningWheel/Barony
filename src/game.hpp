@@ -219,7 +219,6 @@ void steamAchievementEntity(Entity* my, const char* achName); // give steam achi
 void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value);
 void steamStatisticUpdateClient(int player, int statisticNum, ESteamStatTypes type, int value);
 void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type);
-void freePlayerEquipment(int x);
 void pauseGame(int mode, int ignoreplayer);
 int initGame();
 void initGameDatafiles(bool moddedReload);
@@ -250,7 +249,7 @@ void actHudArm(Entity* my);
 void actHudShield(Entity* my);
 void actHudAdditional(Entity* my);
 void actHudArrowModel(Entity* my);
-//void actHudAdditional2(Entity* my);
+void actHudAdditional2(Entity* my);
 void actItem(Entity* my);
 void actGoldBag(Entity* my);
 void actGib(Entity* my);

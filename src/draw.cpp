@@ -2152,7 +2152,7 @@ void drawEntities3D(view_t* camera, int mode)
                     }
                 }
                 else if ( entity->behavior == &actHudAdditional
-						 /*|| entity->behavior == &actHudAdditional2*/
+						 || entity->behavior == &actHudAdditional2
                          || entity->behavior == &actHudArrowModel
                          || entity->behavior == &actHudShield
                          || entity->behavior == &actLeftHandMagic

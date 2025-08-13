@@ -74,6 +74,7 @@ void actHUDMagicParticle(Entity* my) {} // dummy for draw.cpp
 void actHUDMagicParticleCircling(Entity* my) {} // dummy for draw.cpp
 void actHudShield(Entity* my) {} // dummy for draw.cpp
 void actHudAdditional(Entity* my) {} // dummy for draw.cpp
+void actHudAdditional2(Entity* my) {} // dummy for draw.cpp
 void actHudArrowModel(Entity* my) {} // dummy for draw.cpp
 void actLeftHandMagic(Entity* my) {} // dummy for draw.cpp
 void actRightHandMagic(Entity* my) {} // dummy for draw.cpp

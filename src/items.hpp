@@ -372,9 +372,11 @@ typedef enum ItemType
 	BRANCH_STAFF,
 	BRANCH_BOW,
 	BRANCH_BOW_INFECTED,
-	DUST_BALL
+	DUST_BALL,
+	BOLAS,
+	STEEL_FLAIL
 } ItemType;
-const int NUMITEMS = 353;
+const int NUMITEMS = 355;
 
 //NOTE: If you change this, make sure to update NUMCATEGORIES in game.h to reflect the total number of categories. Not doing that will make bad things happen.
 typedef enum Category

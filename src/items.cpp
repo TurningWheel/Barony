@@ -2299,6 +2299,8 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		case RAPIER:
 		case GREASE_BALL:
 		case DUST_BALL:
+		case BOLAS:
+		case STEEL_FLAIL:
 			equipItemResult = equipItem(item, &stats[player]->weapon, player, checkInventorySpaceForPaperDoll);
 			break;
 		case STEEL_SHIELD:
@@ -4009,6 +4011,10 @@ Sint32 Item::weaponGetAttack(const Stat* const wielder) const
 	{
 		attack += 6;
 	}
+	else if ( type == STEEL_FLAIL )
+	{
+		attack += 6;
+	}
 	else if ( type == ARTIFACT_SWORD )
 	{
 		return (attack + 2 + status * 2);
@@ -4076,6 +4082,10 @@ Sint32 Item::weaponGetAttack(const Stat* const wielder) const
 	else if ( type == BRONZE_TOMAHAWK )
 	{
 		attack += 6;
+	}
+	else if ( type == BOLAS )
+	{
+		attack += 1;
 	}
 	else if ( type == IRON_DAGGER )
 	{

@@ -5889,14 +5889,14 @@ void actPlayer(Entity* my)
 			my->bodyparts.push_back(entity);
 
 			// hud additional 2 limb
-			//entity = newEntity(-1, 1, map.entities, nullptr); //HUD entity.
-			//entity->flags[PASSABLE] = true;
-			//entity->flags[OVERDRAW] = true;
-			//entity->flags[NOUPDATE] = true;
-			//entity->flags[INVISIBLE] = true;
-			//entity->skill[2] = PLAYER_NUM;
-			//entity->behavior = &actHudAdditional2;
-			//my->bodyparts.push_back(entity);
+			entity = newEntity(-1, 1, map.entities, nullptr); //HUD entity.
+			entity->flags[PASSABLE] = true;
+			entity->flags[OVERDRAW] = true;
+			entity->flags[NOUPDATE] = true;
+			entity->flags[INVISIBLE] = true;
+			entity->skill[2] = PLAYER_NUM;
+			entity->behavior = &actHudAdditional2;
+			my->bodyparts.push_back(entity);
 		}
 		else
 		{

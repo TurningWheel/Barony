@@ -1116,7 +1116,9 @@ char itemNameStrings[NUM_ITEM_STRINGS][32] =
 	"branch_staff",
 	"branch_bow",
 	"branch_bow_infected",
-	"dust_ball"
+	"dust_ball",
+	"bolas",
+	"steel_flail",
 	""
 };
 
@@ -1300,6 +1302,8 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"branch_bow",
 		"branch_bow_infected",
 		"dust_ball",
+		"bolas",
+		"steel_flail",
 		""
 	},
 	{
