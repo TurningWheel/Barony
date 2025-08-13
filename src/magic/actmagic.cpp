@@ -14684,6 +14684,7 @@ Entity* createParticleBoobyTrapExplode(Entity* caster, real_t x, real_t y)
 			indicator->framesPerTick = 4;
 			indicator->ticksPerUpdate = 1;
 			indicator->delayTicks = 0;
+			indicator->cacheType = AOEIndicators_t::CACHE_BOOBY_TRAP;
 		}
 	}
 	for ( int i = 0; i < 2; ++i )
@@ -14702,6 +14703,7 @@ Entity* createParticleBoobyTrapExplode(Entity* caster, real_t x, real_t y)
 				indicator->framesPerTick = 4;
 				indicator->ticksPerUpdate = 1;
 				indicator->delayTicks = 15;
+				indicator->cacheType = AOEIndicators_t::CACHE_BOOBY_TRAP2;
 			}
 		}
 	}

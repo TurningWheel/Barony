@@ -1020,7 +1020,9 @@ struct AOEIndicators_t
 	{
 		CACHE_NONE,
 		CACHE_VORTEX,
-		CACHE_CASTING
+		CACHE_CASTING,
+		CACHE_BOOBY_TRAP,
+		CACHE_BOOBY_TRAP2
 	};
 	struct Indicator_t
 	{
