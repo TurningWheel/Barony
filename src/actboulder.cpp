@@ -2362,7 +2362,7 @@ void boulderSokobanOnDestroy(bool pushedOffLedge)
 
 bool Entity::isBoulderSprite()
 {
-	if ( sprite == 245 || sprite == 989 || sprite == 990 )
+	if ( !flags[SPRITE] && (sprite == 245 || sprite == 989 || sprite == 990) )
 	{
 		return true;
 	}
