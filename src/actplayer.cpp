@@ -3442,7 +3442,7 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 		else if ( stats[PLAYER_NUM]->getEffectActive(EFF_MAGIC_GREASE) )
 		{
 			movementDrag = 0.95;
-	}
+		}
 	}
 	static std::map<int, real_t> dragToSpeedFactor =
 	{
@@ -3614,7 +3614,7 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 			if ( movementDrag > 0.8 )
 			{
 				rate = 0.8;
-		}
+			}
 			my->monsterKnockbackVelocity *= pow(rate, refreshRateDelta);
 		}
 		else
@@ -4636,8 +4636,10 @@ void actPlayer(Entity* my)
 	/*if ( my->ticks == 1 )
 	{
 		consoleCommand("/allspells4");
-		//consoleCommand("/maxout2");
-		//consoleCommand("/god");
+		if ( PLAYER_NUM == 0 )
+		{
+			consoleCommand("/god");
+		}
 	}*/
 #endif
 
@@ -4798,7 +4800,7 @@ void actPlayer(Entity* my)
 		//}
 	}
 
-	static ConsoleVariable<int> cvar_pbaoe("/pbaoe", 10);
+	static ConsoleVariable<int> cvar_pbaoe("/pbaoe", 15);
 	if ( keystatus[SDLK_x] && enableDebugKeys )
 	{
 		keystatus[SDLK_x] = 0;
@@ -4818,7 +4820,67 @@ void actPlayer(Entity* my)
 			color = makeColor(255, 0, 255, 255);
 		}
 
-		if ( *cvar_pbaoe == 7 )
+		if ( *cvar_pbaoe == 13 )
+		{
+			Entity* leaf = newEntity(1912, 1, map.entities, nullptr); //Gib entity.
+			if ( leaf != NULL )
+			{
+				leaf->x = my->x + 40.0 * cos(my->yaw);
+				leaf->y = my->y + 40.0 * sin(my->yaw);
+				leaf->z = 5.0;
+				leaf->fskill[6] = leaf->z;
+				leaf->fskill[7] = -7.5 - leaf->fskill[6];
+				leaf->vel_z = 0.0;
+				leaf->sizex = 2;
+				leaf->sizey = 2;
+				leaf->scalex = 0.5;
+				leaf->scaley = 0.5;
+				leaf->scalez = 0.5;
+				leaf->yaw = local_rng.rand() % 360 * (PI / 180.0);
+				leaf->skill[0] = 30 * TICKS_PER_SECOND;
+				leaf->fskill[4] = leaf->x;
+				leaf->fskill[5] = leaf->y;
+				leaf->fskill[8] = 12.0 + 0.25 * (local_rng.rand() % 13); // 12-15.0
+				leaf->parent = 0;
+				leaf->behavior = &actLeafParticle;
+				leaf->flags[NOCLIP_CREATURES] = true;
+				leaf->flags[UPDATENEEDED] = false;
+				leaf->flags[NOUPDATE] = true;
+				leaf->flags[PASSABLE] = true;
+				leaf->flags[UNCLICKABLE] = true;
+				if ( multiplayer != CLIENT )
+				{
+					--entity_uids;
+				}
+				leaf->setUID(-3);
+			}
+		}
+		else if ( *cvar_pbaoe == 14 )
+		{
+			spawnLeafPile(my->x + 40.0 * cos(my->yaw), my->y + 40.0 * sin(my->yaw), true);
+			//Entity* leaf = newEntity(1913, 1, map.entities, nullptr); //Gib entity.
+			//if ( leaf != NULL )
+			//{
+			//	leaf->x = my->x + 40.0 * cos(my->yaw);
+			//	leaf->y = my->y + 40.0 * sin(my->yaw);
+			//	leaf->z = 0.0;
+			//	leaf->yaw = local_rng.rand() % 360 * (PI / 180.0);
+			//	leaf->sizex = 4;
+			//	leaf->sizey = 4;
+			//	leaf->behavior = &actLeafPile;
+			//	leaf->skill[0] = 30 * TICKS_PER_SECOND;
+			//	leaf->flags[NOCLIP_CREATURES] = true;
+			//	leaf->flags[UPDATENEEDED] = true;
+			//	leaf->flags[NOUPDATE] = false;
+			//	leaf->flags[PASSABLE] = true;
+			//	leaf->flags[UNCLICKABLE] = true;
+			//}
+		}
+		else if ( *cvar_pbaoe == 15 )
+		{
+			createParticleBolas(my, 1917, 2 * TICKS_PER_SECOND, nullptr);
+		}
+		else if ( *cvar_pbaoe == 7 )
 		{
 			Entity* spellTimer = createParticleTimer(my, 25, -1);
 			spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_BOOBY_TRAP;
@@ -5034,7 +5096,7 @@ void actPlayer(Entity* my)
 			val |= (((Uint16)(spellTimer->particleTimerDuration) & 0xFFF) << 8);
 			val |= (Uint8)(spellTimer->particleTimerCountdownAction & 0xFF) << 20;
 			spellTimer->skill[2] = val;
-			}
+		}
 		else if ( *cvar_pbaoe == 11 )
 		{
 			Entity* spellTimer = createParticleTimer(my, 3 * TICKS_PER_SECOND + 10, -1);
@@ -5051,7 +5113,7 @@ void actPlayer(Entity* my)
 			val |= (Uint8)(spellTimer->particleTimerCountdownAction & 0xFF) << 20;
 			spellTimer->skill[2] = val;
 		}
-		else if ( *cvar_pbaoe == 5 )
+		else if ( *cvar_pbaoe == 5 || *cvar_pbaoe == 16 )
 		{
 			color = makeColor(255, 255, 255, 255);
 			for ( int i = 0; i < 24; ++i )
@@ -5074,6 +5136,10 @@ void actPlayer(Entity* my)
 					fx->scaley = 0.5;// + (i / 2) * 0.25 / 12;
 					if ( auto indicator = AOEIndicators_t::getIndicator(fx->skill[10]) )
 					{
+						if ( *cvar_pbaoe == 16 )
+						{
+							indicator->cacheType = AOEIndicators_t::CACHE_CASTING;
+						}
 						indicator->arc = PI / 4;
 						indicator->indicatorColor = color;
 						indicator->loop = false;
