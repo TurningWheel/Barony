@@ -1488,6 +1488,24 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->LVL = 10;
 			stats->GOLD = 0;
 			stats->HUNGER = 900;
+
+			stats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] = 1;
+
+			stats->EDITOR_ITEMS[ITEM_SLOT_HELM] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_ARMOR] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_GLOVES] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_BOOTS] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_AMULET] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_RING] = 1;
+
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1 + ITEM_CHANCE] = 100;
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_2] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_2 + ITEM_CHANCE] = 100;
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_3] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_3 + ITEM_CHANCE] = 33;
 			break;
 		case 246:
 		case (1000 + REVENANT_SKULL):

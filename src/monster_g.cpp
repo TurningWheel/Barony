@@ -28,6 +28,14 @@ real_t getNormalHeightMonsterG(Entity& my)
 	return 1.5;
 }
 
+enum MonsterGVariant
+{
+	NONE,
+	SAPPER,
+	SKIRMISHER,
+	BERSERKER
+};
+
 void initMonsterG(Entity* my, Stat* myStats)
 {
 	int c;
@@ -88,359 +96,210 @@ void initMonsterG(Entity* my, Stat* myStats)
 
 			my->setHardcoreStats(*myStats);
 
-			// generate the default inventory items for the monster, provided the editor sprite allowed enough default slots
-			//if ( gnomeVariant == GNOME_DEFAULT )
-			//{
-			//	switch ( defaultItems )
-			//	{
-			//		case 6:
-			//		case 5:
-			//		case 4:
-			//		case 3:
-			//			if ( rng.rand() % 50 == 0 )
-			//			{
-			//				if ( rng.rand() % 2 == 0 )
-			//				{
-			//					newItem(ENCHANTED_FEATHER, WORN, 0, 1, (2 * (ENCHANTED_FEATHER_MAX_DURABILITY - 1)) / 4, false, &myStats->inventory);
-			//				}
-			//				else
-			//				{
-			//					newItem(READABLE_BOOK, EXCELLENT, 0, 1, getBook("Winny's Report"), false, &myStats->inventory);
-			//				}
-			//			}
-			//		case 2:
-			//			if ( rng.rand() % 10 == 0 )
-			//			{
-			//				if ( rng.rand() % 2 == 0 )
-			//				{
-			//					newItem(MASK_PIPE, SERVICABLE, -1 + rng.rand() % 3, 1, rng.rand(), false, &myStats->inventory);
-			//				}
-			//				else
-			//				{
-			//					int i = 1 + rng.rand() % 4;
-			//					for ( c = 0; c < i; c++ )
-			//					{
-			//						newItem(static_cast<ItemType>(GEM_GARNET + rng.rand() % 15), static_cast<Status>(1 + rng.rand() % 4), 0, 1, rng.rand(), false, &myStats->inventory);
-			//					}
-			//				}
-			//			}
-			//		case 1:
-			//			if ( rng.rand() % 3 == 0 )
-			//			{
-			//				newItem(FOOD_FISH, EXCELLENT, 0, 1, rng.rand(), false, &myStats->inventory);
-			//			}
-			//			break;
-			//		default:
-			//			break;
-			//	}
-			//}
-			//else
-			//{
-			//	switch ( defaultItems )
-			//	{
-			//	case 6:
-			//	case 5:
-			//	case 4:
-			//	case 3:
-			//		if ( rng.rand() % 100 == 0 )
-			//		{
-			//			newItem(ENCHANTED_FEATHER, WORN, 0, 1, (2 * (ENCHANTED_FEATHER_MAX_DURABILITY - 1)) / 4, false, &myStats->inventory);
-			//		}
-			//		else
-			//		{
-			//			if ( (rng.rand() % 4 > 0 && gnomeVariant == GNOME_THIEF_RANGED)
-			//				|| (rng.rand() % 2 == 0 && gnomeVariant == GNOME_THIEF_MELEE) )
-			//			{
-			//				if ( rng.rand() % 2 == 0 )
-			//				{
-			//					auto item = newItem(TOOL_BEARTRAP, DECREPIT, -1, 1, rng.rand(), false, &myStats->inventory);
-			//					if ( item )
-			//					{
-			//						item->isDroppable = false;
-			//					}
-			//				}
-			//				else
-			//				{
-			//					auto item = newItem(static_cast<ItemType>(TOOL_BOMB + rng.rand() % 3), EXCELLENT, -1, 1, rng.rand(), false, &myStats->inventory);
-			//					if ( item )
-			//					{
-			//						item->isDroppable = false;
-			//					}
-			//				}
-			//			}
-			//		}
-			//	case 2:
-			//		if ( rng.rand() % 20 == 0 )
-			//		{
-			//			if ( rng.rand() % 2 == 0 )
-			//			{
-			//				newItem(static_cast<ItemType>(GEM_GLASS), static_cast<Status>(1 + rng.rand() % 4), 0, 1, rng.rand(), false, &myStats->inventory);
-			//			}
-			//			else
-			//			{
-			//				newItem(static_cast<ItemType>(GEM_GARNET + rng.rand() % 15), static_cast<Status>(1 + rng.rand() % 4), 0, 1, rng.rand(), false, &myStats->inventory);
-			//			}
-			//		}
-			//	case 1:
-			//		if ( rng.rand() % 10 == 0 )
-			//		{
-			//			if ( rng.rand() % 4 == 0 )
-			//			{
-			//				newItem(FOOD_CREAMPIE, static_cast<Status>(3 + rng.rand() % 2), -1 + rng.rand() % 3, 1, rng.rand(), false, &myStats->inventory);
-			//			}
-			//			else
-			//			{
-			//				newItem(TOOL_LOCKPICK, EXCELLENT, 0, 1, rng.rand(), false, &myStats->inventory);
-			//			}
-			//		}
-			//		break;
-			//	default:
-			//		break;
-			//	}
-			//}
+			MonsterGVariant variant = NONE;
 
-			////give weapon
-			//if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
-			//{
-			//	if ( gnomeVariant == GNOME_DEFAULT )
-			//	{
-			//		switch ( rng.rand() % 10 )
-			//		{
-			//			case 0:
-			//			case 1:
-			//			case 2:
-			//			case 3:
-			//			case 4:
-			//				myStats->weapon = newItem(TOOL_PICKAXE, EXCELLENT, -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
-			//				break;
-			//			case 5:
-			//			case 6:
-			//			case 7:
-			//			case 8:
-			//			case 9:
-			//				myStats->weapon = newItem(MAGICSTAFF_LIGHTNING, EXCELLENT, -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
-			//				break;
-			//		}
-			//	}
-			//	else if ( gnomeVariant == GNOME_THIEF_RANGED )
-			//	{
-			//		if ( rng.rand() % 2 == 0 )
-			//		{
-			//			myStats->weapon = newItem(SHORTBOW, SERVICABLE, -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
-			//		}
-			//		else
-			//		{
-			//			myStats->weapon = newItem(CROSSBOW, SERVICABLE, -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
-			//		}
-			//	}
-			//	else if ( gnomeVariant == GNOME_THIEF_MELEE )
-			//	{
-			//		if ( rng.rand() % 2 == 0 )
-			//		{
-			//			myStats->weapon = newItem(STEEL_SWORD, SERVICABLE, -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
-			//		}
-			//		else
-			//		{
-			//			myStats->weapon = newItem(STEEL_MACE, SERVICABLE, -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
-			//		}
-			//	}
-			//}
+			Item* item = nullptr;
+			if ( myStats->getAttribute("monster_g_type") == "" )
+			{
+				switch ( rng.rand() % 3 )
+				{
+				case 0:
+					myStats->setAttribute("monster_g_type", "sapper");
+					variant = SAPPER;
+					if ( defaultItems >= 1 )
+					{
+						item = newItem(GREASE_BALL, SERVICABLE, 0, rng.rand() % 2 + 2, rng.rand(), false, &myStats->inventory);
+						item->isDroppable = rng.rand() % 5 == 0;
+					}
+					if ( defaultItems >= 2 )
+					{
+						if ( rng.rand() % 4 == 0 )
+						{
+							item = newItem(POTION_FIRESTORM, SERVICABLE, 0, rng.rand() % 2 + 1, rng.rand(), false, &myStats->inventory);
+							item->isDroppable = rng.rand() % 5 == 0;
+						}
+						item = newItem(POTION_SICKNESS, SERVICABLE, -2, rng.rand() % 2 + 1, rng.rand(), false, &myStats->inventory);
+						item->isDroppable = rng.rand() % 5 == 0;
+					}
+					break;
+				case 1:
+					myStats->setAttribute("monster_g_type", "skirmisher");
+					variant = SKIRMISHER;
+					if ( defaultItems >= 1 )
+					{
+						item = newItem(BOLAS, SERVICABLE, 0, rng.rand() % 2 + 2, rng.rand(), false, &myStats->inventory);
+						item->isDroppable = rng.rand() % 5 == 0;
+					}
+					if ( defaultItems >= 2 )
+					{
+						item = newItem(GREASE_BALL, SERVICABLE, 0, rng.rand() % 2 + 2, rng.rand(), false, &myStats->inventory);
+						item->isDroppable = rng.rand() % 5 == 0;
+					}
+					break;
+				case 2:
+					myStats->setAttribute("monster_g_type", "berserker");
+					variant = BERSERKER;
+					break;
+				default:
+					break;
+				}
+			}
 
-			////give shield
-			//if ( myStats->shield == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
-			//{
-			//	if ( gnomeVariant == GNOME_DEFAULT )
-			//	{
-			//		switch ( rng.rand() % 10 )
-			//		{
-			//		case 0:
-			//		case 1:
-			//			myStats->shield = newItem(TOOL_LANTERN, EXCELLENT, -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
-			//			break;
-			//		case 2:
-			//		case 3:
-			//		case 4:
-			//		case 5:
-			//		case 6:
-			//			break;
-			//		case 7:
-			//		case 8:
-			//		case 9:
-			//			myStats->shield = newItem(WOODEN_SHIELD, static_cast<Status>(WORN + rng.rand() % 2), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
-			//			break;
-			//		}
-			//	}
-			//	else if ( gnomeVariant == GNOME_THIEF_RANGED )
-			//	{
-			//		if ( myStats->weapon && isRangedWeapon(*myStats->weapon) )
-			//		{
-			//			my->monsterGenerateQuiverItem(myStats);
-			//			if ( myStats->shield )
-			//			{
-			//				myStats->shield->isDroppable = (rng.rand() % 2 == 0) ? true : false;
-			//			}
-			//		}
-			//		else
-			//		{
-			//			/*if ( rng.rand() % 10 <= 4 )
-			//			{
-			//				myStats->shield = newItem(WOODEN_SHIELD, static_cast<Status>(WORN + rng.rand() % 2), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
-			//			}*/
-			//		}
-			//	}
-			//	/*else if ( gnomeVariant == GNOME_THIEF_MELEE )
-			//	{
-			//		if ( rng.rand() % 10 <= 3 )
-			//		{
-			//			if ( rng.rand() % 2 == 0 )
-			//			{
-			//				myStats->shield = newItem(IRON_SHIELD, static_cast<Status>(WORN + rng.rand() % 2), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
-			//			}
-			//			else
-			//			{
-			//				myStats->shield = newItem(WOODEN_SHIELD, static_cast<Status>(WORN + rng.rand() % 2), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
-			//			}
-			//		}
-			//	}*/
-			//}
+			if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
+			{
+				if ( variant == SKIRMISHER )
+				{
+					if ( rng.rand() % 2 )
+					{
+						myStats->weapon = newItem(STEEL_SWORD, static_cast<Status>(WORN + rng.rand() % 2), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+					}
+					else
+					{
+						myStats->weapon = newItem(STEEL_AXE, static_cast<Status>(WORN + rng.rand() % 2), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+					}
+				}
+				else if ( variant == SAPPER )
+				{
+					if ( rng.rand() % 5 == 0 )
+					{
+						myStats->weapon = newItem(STEEL_FLAIL, static_cast<Status>(WORN + rng.rand() % 2), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+					}
+					else
+					{
+						myStats->weapon = newItem(STEEL_MACE, static_cast<Status>(WORN + rng.rand() % 2), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+					}
+					
+				}
+				else if ( variant == BERSERKER )
+				{
+					if ( rng.rand() % 2 )
+					{
+						myStats->weapon = newItem(STEEL_AXE, static_cast<Status>(WORN + rng.rand() % 2), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+					}
+				}
+			}
 
-			//// give cloak
-			//if ( myStats->cloak == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] == 1 )
-			//{
-			//	switch ( rng.rand() % 10 )
-			//	{
-			//		case 0:
-			//		case 1:
-			//		case 2:
-			//		case 3:
-			//		case 4:
-			//		case 5:
-			//			break;
-			//		case 6:
-			//		case 7:
-			//		case 8:
-			//		case 9:
-			//			myStats->cloak = newItem(CLOAK, SERVICABLE, -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
-			//			if ( gnomeVariant == GNOME_THIEF_MELEE || gnomeVariant == GNOME_THIEF_RANGED )
-			//			{
-			//				myStats->cloak->isDroppable = (rng.rand() % 4 == 0) ? true : false;
-			//			}
-			//			break;
-			//	}
-			//}
+			if ( myStats->shield == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
+			{
+				if ( variant == SAPPER )
+				{
+					if ( rng.rand() % 2 )
+					{
+					}
+					else
+					{
+						if ( rng.rand() % 2 )
+						{
+							myStats->shield = newItem(IRON_SHIELD, static_cast<Status>(WORN + rng.rand() % 2), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+						}
+						else
+						{
+							myStats->shield = newItem(WOODEN_SHIELD, static_cast<Status>(WORN + rng.rand() % 2), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+						}
+					}
+				}
+			}
 
-			//if ( myStats->shoes == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_BOOTS] == 1 )
-			//{
-			//	if ( gnomeVariant == GNOME_THIEF_MELEE )
-			//	{
-			//		myStats->shoes = newItem(SUEDE_BOOTS, static_cast<Status>(WORN + rng.rand() % 2), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
-			//		myStats->shoes->isDroppable = (rng.rand() % 8 == 0) ? true : false;
-			//	}
-			//}
+			if ( myStats->helmet == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_HELM] == 1 )
+			{
+				if ( variant == SKIRMISHER )
+				{
+					myStats->helmet = newItem(HAT_HOOD, static_cast<Status>(WORN + rng.rand() % 2), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+				}
+			}
 
-			//if ( myStats->gloves == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_GLOVES] == 1 )
-			//{
-			//	if ( gnomeVariant == GNOME_THIEF_RANGED )
-			//	{
-			//		myStats->gloves = newItem(SUEDE_GLOVES, static_cast<Status>(WORN + rng.rand() % 2), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
-			//		myStats->gloves->isDroppable = (rng.rand() % 8 == 0) ? true : false;
-			//	}
-			//}
+			if ( myStats->shoes == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_BOOTS] == 1 )
+			{
+				if ( variant == SKIRMISHER )
+				{
+					if ( rng.rand() % 2 )
+					{
+						myStats->shoes = newItem(LEATHER_BOOTS, static_cast<Status>(WORN + rng.rand() % 2), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+					}
+				}
+				else if ( variant == SAPPER )
+				{
+					if ( rng.rand() % 2 )
+					{
+						myStats->shoes = newItem(LEATHER_BOOTS, static_cast<Status>(WORN + rng.rand() % 2), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+					}
+				}
+			}
 
-			//if ( myStats->helmet == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_HELM] == 1 )
-			//{
-			//	if ( gnomeVariant == GNOME_THIEF_RANGED )
-			//	{
-			//		if ( myStats->leader_uid != 0 )
-			//		{
-			//			myStats->helmet = newItem(HAT_HOOD_WHISPERS, static_cast<Status>(WORN + rng.rand() % 2), -1 + rng.rand() % 3, 1, 0, false, nullptr);
-			//			myStats->helmet->isDroppable = (rng.rand() % 2 == 0) ? true : false;
-			//		}
-			//		else
-			//		{
-			//			// leader has the bycocket
-			//			myStats->helmet = newItem(HAT_BYCOCKET, static_cast<Status>(WORN + rng.rand() % 2), -1 + rng.rand() % 3, 1, 0, false, nullptr);
-			//			myStats->helmet->isDroppable = (rng.rand() % 2 == 0) ? true : false;
-			//		}
-			//	}
-			//	else if ( gnomeVariant == GNOME_THIEF_MELEE )
-			//	{
-			//		if ( rng.rand() % 4 == 0 )
-			//		{
-			//			myStats->helmet = newItem(HAT_BANDANA, static_cast<Status>(WORN + rng.rand() % 2), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
-			//			myStats->helmet->isDroppable = (rng.rand() % 2 == 0) ? true : false;
-			//		}
-			//		else
-			//		{
-			//			if ( rng.rand() % 2 == 0 )
-			//			{
-			//				myStats->helmet = newItem(HAT_HOOD, static_cast<Status>(WORN + rng.rand() % 2), -1 + rng.rand() % 3, 1, 2, false, nullptr);
-			//				myStats->helmet->isDroppable = (rng.rand() % 8 == 0) ? true : false;
-			//			}
-			//			else
-			//			{
-			//				myStats->helmet = newItem(HAT_HOOD_ASSASSIN, static_cast<Status>(WORN + rng.rand() % 2), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
-			//				myStats->helmet->isDroppable = (rng.rand() % 2 == 0) ? true : false;
-			//			}
-			//		}
-			//	}
-			//}
+			if ( myStats->gloves == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_GLOVES] == 1 )
+			{
+				if ( variant == SKIRMISHER )
+				{
+					if ( rng.rand() % 2 )
+					{
+						myStats->gloves = newItem(GLOVES, static_cast<Status>(WORN + rng.rand() % 2), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+					}
+				}
+				else if ( variant == SAPPER )
+				{
+					if ( rng.rand() % 2 )
+					{
+						myStats->gloves = newItem(GLOVES, static_cast<Status>(WORN + rng.rand() % 2), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+					}
+				}
+				else if ( variant == BERSERKER )
+				{
+					if ( !myStats->weapon )
+					{
+						if ( rng.rand() % 2 )
+						{
+							myStats->gloves = newItem(IRON_KNUCKLES, static_cast<Status>(WORN + rng.rand() % 2), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+						}
+						else if ( rng.rand() % 3 > 0 )
+						{
+							myStats->gloves = newItem(BRASS_KNUCKLES, static_cast<Status>(WORN + rng.rand() % 2), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+						}
+						else
+						{
+							myStats->gloves = newItem(SPIKED_GAUNTLETS, static_cast<Status>(WORN + rng.rand() % 2), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+						}
+					}
+				}
+			}
 
-			//if ( myStats->mask == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_MASK] == 1 )
-			//{
-			//	if ( gnomeVariant == GNOME_THIEF_RANGED )
-			//	{
-			//		switch ( rng.rand() % 10 )
-			//		{
-			//			case 0:
-			//				myStats->mask = newItem(MASK_PIPE, SERVICABLE, -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
-			//				break;
-			//			case 1:
-			//			case 2:
-			//				myStats->mask = newItem(TOOL_GLASSES, SERVICABLE, -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
-			//				break;
-			//			case 3:
-			//			case 4:
-			//			case 5:
-			//				myStats->mask = newItem(MASK_EYEPATCH, SERVICABLE, -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
-			//				break;
-			//			case 6:
-			//			case 7:
-			//			case 8:
-			//			case 9:
-			//				myStats->mask = newItem(MASK_BANDIT, SERVICABLE, -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
-			//				myStats->mask->isDroppable = (rng.rand() % 8 == 0) ? true : false;
-			//				break;
-			//			default:
-			//				break;
-			//		}
-			//	}
-			//	else if ( gnomeVariant == GNOME_THIEF_MELEE )
-			//	{
-			//		switch ( rng.rand() % 10 )
-			//		{
-			//		case 0:
-			//			myStats->mask = newItem(MASK_PIPE, SERVICABLE, -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
-			//			break;
-			//		case 1:
-			//		case 2:
-			//		case 3:
-			//			myStats->mask = newItem(MASK_MOUTHKNIFE, SERVICABLE, 0, 1, rng.rand(), false, nullptr);
-			//			break;
-			//		case 4:
-			//		case 5:
-			//		case 6:
-			//		case 7:
-			//		case 8:
-			//		case 9:
-			//			myStats->mask = newItem(MASK_BANDIT, SERVICABLE, -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
-			//			myStats->mask->isDroppable = (rng.rand() % 8 == 0) ? true : false;
-			//			break;
-			//		default:
-			//			break;
-			//		}
-			//	}
-			//}
+			if ( myStats->cloak == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] == 1 )
+			{
+				if ( variant == SKIRMISHER )
+				{
+					if ( rng.rand() % 2 )
+					{
+						myStats->cloak = newItem(CLOAK, static_cast<Status>(WORN + rng.rand() % 2), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+					}
+				}
+			}
+
+			if ( myStats->breastplate == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_ARMOR] == 1 )
+			{
+				if ( variant == BERSERKER )
+				{
+					if ( rng.rand() % 2 )
+					{
+						myStats->breastplate = newItem(TUNIC, static_cast<Status>(WORN + rng.rand() % 2), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+					}
+				}
+			}
+
+			if ( myStats->amulet == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_AMULET] == 1 )
+			{
+				if ( variant == SAPPER )
+				{
+					if ( rng.rand() % 10 == 0 )
+					{
+						myStats->amulet = newItem(AMULET_BURNINGRESIST, static_cast<Status>(WORN + rng.rand() % 2), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+						myStats->amulet->isDroppable = rng.rand() % 5 == 0;
+					}
+					else
+					{
+						myStats->amulet = newItem(AMULET_BURNINGRESIST, static_cast<Status>(WORN + rng.rand() % 2), -1, 1, rng.rand(), false, nullptr);
+						myStats->amulet->isDroppable = rng.rand() % 10 == 0;
+					}
+				}
+			}
 		}
 	}
 
@@ -815,6 +674,12 @@ void monsterGMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	{
 		if ( bodypart < LIMB_HUMANOID_TORSO )
 		{
+			// post-swing head animation. client doesn't need to adjust the entity pitch, server will handle.
+			if ( my->monsterAttack != MONSTER_POSE_RANGED_WINDUP3 && my->monsterAttack != MONSTER_POSE_SPECIAL_WINDUP1
+				&& bodypart == 1 && multiplayer != CLIENT )
+			{
+				limbAnimateToLimit(my, ANIMATE_PITCH, 0.1, 0, false, 0.0);
+			}
 			continue;
 		}
 		entity = (Entity*)node->element;
@@ -841,7 +706,122 @@ void monsterGMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				weaponarm = entity;
 				if ( my->monsterAttack > 0 )
 				{
-					my->handleWeaponArmAttack(entity);
+					if ( my->monsterAttack == MONSTER_POSE_RANGED_WINDUP3
+						|| my->monsterAttack == MONSTER_POSE_SPECIAL_WINDUP1 )
+					{
+						Entity* rightbody = nullptr;
+						// set rightbody to left leg.
+						node_t* rightbodyNode = list_Node(&my->children, LIMB_HUMANOID_LEFTLEG);
+						if ( rightbodyNode )
+						{
+							rightbody = (Entity*)rightbodyNode->element;
+						}
+						else
+						{
+							return;
+						}
+
+						if ( my->monsterAttackTime == 0 )
+						{
+							// init rotations
+							weaponarm->pitch = 0;
+							my->monsterArmbended = 0;
+							my->monsterWeaponYaw = 0;
+							weaponarm->roll = 0;
+							weaponarm->skill[1] = 0;
+							playSoundEntityLocal(my, 736 + local_rng.rand() % 3, 128);
+							createParticleDot(my);
+							if ( multiplayer != CLIENT )
+							{
+								my->setEffect(EFF_STUNNED, true, 40, false);
+							}
+						}
+						if ( multiplayer != CLIENT )
+						{
+							// move the head and weapon yaw
+							limbAnimateToLimit(my, ANIMATE_PITCH, -0.1, 11 * PI / 6, false, 0.0);
+							limbAnimateToLimit(my, ANIMATE_WEAPON_YAW, 0.05, 2 * PI / 8, false, 0.0);
+						}
+						limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.25, 7 * PI / 4, true, 0.0);
+						//limbAnimateToLimit(weaponarm, ANIMATE_ROLL, -0.25, 7 * PI / 4, false, 0.0);
+
+						if ( my->monsterAttackTime >= 4 * ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
+						{
+							if ( multiplayer != CLIENT )
+							{
+								if ( my->monsterAttack == MONSTER_POSE_SPECIAL_WINDUP1 )
+								{
+									my->attack(MONSTER_POSE_MAGIC_WINDUP3, 0, nullptr);
+								}
+								else
+								{
+									my->attack(MONSTER_POSE_MELEE_WINDUP1, 0, nullptr);
+								}
+							}
+						}
+					}
+					else if ( my->monsterAttack == MONSTER_POSE_MAGIC_WINDUP3 )
+					{
+						if ( multiplayer != CLIENT )
+						{
+							if ( my->monsterAttackTime == 1 )
+							{
+								int spellID = SPELL_SPEED;
+								if ( my->monsterSpecialState == MONSTER_G_SPECIAL_CAST1 )
+								{
+									castSpell(my->getUID(), getSpellFromID(spellID), true, false);
+								}
+							}
+						}
+						if ( weaponarm->pitch >= 3 * PI / 2 )
+						{
+							my->monsterArmbended = 1;
+						}
+
+						if ( weaponarm->skill[1] == 0 )
+						{
+							// chop forwards
+							if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, 0.4, PI / 3, false, 0.0) )
+							{
+								weaponarm->skill[1] = 1;
+							}
+						}
+						else if ( weaponarm->skill[1] >= 1 )
+						{
+							if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.25, 7 * PI / 4, false, 0.0) )
+							{
+								Entity* rightbody = nullptr;
+								// set rightbody to left leg.
+								node_t* rightbodyNode = list_Node(&my->children, LIMB_HUMANOID_LEFTLEG);
+								if ( rightbodyNode )
+								{
+									rightbody = (Entity*)rightbodyNode->element;
+								}
+								if ( rightbody )
+								{
+									weaponarm->skill[0] = rightbody->skill[0];
+									weaponarm->pitch = rightbody->pitch;
+								}
+								my->monsterWeaponYaw = 0;
+								weaponarm->roll = 0;
+								my->monsterArmbended = 0;
+								my->monsterAttack = 0;
+							}
+						}
+					}
+					else
+					{
+						if ( multiplayer != CLIENT )
+						{
+							if ( my->monsterAttack == MONSTER_POSE_MAGIC_WINDUP1 &&
+								my->monsterSpecialState == MONSTER_G_SPECIAL_CAST1
+								&& my->monsterAttackTime == 0 )
+							{
+								my->setEffect(EFF_STUNNED, true, 50, false);
+							}
+						}
+						my->handleWeaponArmAttack(entity);
+					}
 				}
 			}
 			else if ( bodypart == LIMB_HUMANOID_CLOAK )
@@ -1348,7 +1328,7 @@ void monsterGMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					entity->x -= cos(my->yaw) * 1.0;
 					entity->y -= sin(my->yaw) * 1.0;
 				}
-				my->setHumanoidLimbOffset(entity, MONSTER_G, LIMB_HUMANOID_TORSO);
+				my->setHumanoidLimbOffset(entity, MONSTER_G, LIMB_HUMANOID_CLOAK);
 				break;
 				// helm
 			case LIMB_HUMANOID_HELMET:
@@ -1516,4 +1496,150 @@ void monsterGMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	{
 		// do nothing, don't reset attacktime or increment it.
 	}
+}
+
+void Entity::monsterGChooseWeapon(const Entity* target, double dist)
+{
+	if ( monsterSpecialState != 0 )
+	{
+		//Holding a weapon assigned from the special attack. Don't switch weapons.
+		//messagePlayer()
+		return;
+	}
+
+	Stat* myStats = getStats();
+	if ( !myStats )
+	{
+		return;
+	}
+
+	if ( myStats->weapon && (itemCategory(myStats->weapon) == SPELLBOOK) )
+	{
+		return;
+	}
+
+	bool inMeleeRange = monsterInMeleeRange(target, dist);
+
+	//if ( inMeleeRange )
+	//{
+	//	//if ( monsterSpecialTimer == 0 && (ticks % 10 == 0) && monsterAttack == 0 && local_rng.rand() % 10 == 0 )
+	//	//{
+	//	//	bool tryThrow = true;
+	//	//	if ( tryThrow )
+	//	//	{
+	//	//		node_t* thrownNode = itemNodeInInventory(myStats, -1, THROWN);
+	//	//		if ( thrownNode )
+	//	//		{
+	//	//			bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, thrownNode, false, true);
+	//	//			if ( !swapped )
+	//	//			{
+	//	//				//Don't return, make sure holding a melee weapon at least.
+	//	//			}
+	//	//			else
+	//	//			{
+	//	//				monsterSpecialState = MONSTER_M_SPECIAL_THROW;
+	//	//				return;
+	//	//			}
+	//	//		}
+	//	//	}
+	//	//}
+
+	//	//Switch to a melee weapon if not already wielding one. Unless monster special state is overriding the AI.
+	//	if ( !myStats->weapon || !isMeleeWeapon(*myStats->weapon) )
+	//	{
+	//		node_t* weaponNode = getMeleeWeaponItemNodeInInventory(myStats);
+	//		if ( !weaponNode )
+	//		{
+	//			/*if ( myStats->weapon && myStats->weapon->type == MAGICSTAFF_SLOW )
+	//			{
+	//				monsterUnequipSlotFromCategory(myStats, &myStats->weapon, MAGICSTAFF);
+	//			}*/
+	//			return; //Resort to fists.
+	//		}
+
+	//		bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, weaponNode, false, true);
+	//		if ( !swapped )
+	//		{
+	//			//Don't return so that monsters will at least equip ranged weapons in melee range if they don't have anything else.
+	//		}
+	//		else
+	//		{
+	//			return;
+	//		}
+	//	}
+	//	else
+	//	{
+	//		return;
+	//	}
+	//}
+
+	if ( myStats->getAttribute("monster_g_type") == "berserker" )
+	{
+		int roll = 10;
+		if ( myStats->getEffectActive(EFF_SLOW) || myStats->HP <= myStats->MAXHP / 2 )
+		{
+			roll = 3;
+		}
+		if ( monsterSpecialTimer == 0 && (ticks % 10 == 0) && monsterAttack == 0
+			&& local_rng.rand() % roll == 0 && !myStats->getEffectActive(EFF_FAST) )
+		{
+			if ( dist >= TOUCHRANGE )
+			{
+				monsterSpecialState = MONSTER_G_SPECIAL_CAST1;
+			}
+		}
+		return;
+	}
+
+	//Switch to a thrown weapon or a ranged weapon
+	if ( dist < 80.0 )
+	{
+		int tiles = dist / 16;
+		//First search the inventory for a THROWN weapon.
+		node_t* weaponNode = nullptr;
+		int roll = 10;
+		if ( tiles <= 3 )
+		{
+			roll = 5;
+		}
+		if ( monsterSpecialTimer == 0 && (ticks % 10 == 0) && monsterAttack == 0
+			&& local_rng.rand() % roll == 0 )
+		{
+			Stat* targetStats = target ? target->getStats() : nullptr;
+			if ( (dist > STRIKERANGE) || (targetStats && targetStats->getEffectActive(EFF_MAGIC_GREASE)) )
+			{
+				if ( (targetStats && targetStats->getEffectActive(EFF_MAGIC_GREASE)) )
+				{
+					// first item
+					weaponNode = itemNodeInInventory(myStats, -1, POTION);
+				}
+				else
+				{
+					weaponNode = itemNodeInInventory(myStats, -1, POTION, true); // random
+				}
+			}
+			if ( !weaponNode || local_rng.rand() % 4 == 0 )
+			{
+				weaponNode = itemNodeInInventory(myStats, -1, THROWN, true);
+			}
+			if ( weaponNode )
+			{
+				if ( swapMonsterWeaponWithInventoryItem(this, myStats, weaponNode, false, true) )
+				{
+					monsterSpecialState = MONSTER_G_SPECIAL_THROW;
+					return;
+				}
+			}
+		}
+		//if ( !weaponNode )
+		//{
+		//	//If couldn't find any, search the inventory for a ranged weapon.
+		//	weaponNode = getRangedWeaponItemNodeInInventory(myStats, true);
+		//}
+
+		bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, weaponNode, false, true);
+		return;
+	}
+
+	return;
 }

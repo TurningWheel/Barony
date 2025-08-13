@@ -2319,11 +2319,11 @@ void Entity::monsterMChooseWeapon(const Entity* target, double dist)
 				}
 			}
 		}
-		if ( !weaponNode )
-		{
-			//If couldn't find any, search the inventory for a ranged weapon.
-			weaponNode = getRangedWeaponItemNodeInInventory(myStats, true);
-		}
+		//if ( !weaponNode )
+		//{
+		//	//If couldn't find any, search the inventory for a ranged weapon.
+		//	weaponNode = getRangedWeaponItemNodeInInventory(myStats, true);
+		//}
 
 		bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, weaponNode, false, true);
 		return;

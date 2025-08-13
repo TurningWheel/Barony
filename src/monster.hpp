@@ -1028,6 +1028,9 @@ static const int MONSTER_POSE_MIMIC_MAGIC2 = 40;
 static const int MONSTER_POSE_BUGBEAR_SHIELD = 41;
 static const int MONSTER_POSE_PARRY = 42;
 static const int MONSTER_POSE_EARTH_ELEMENTAL_ROLL = 43;
+static const int MONSTER_POSE_FLAIL_SWING = 44;
+static const int MONSTER_POSE_FLAIL_SWING_RETURN = 45;
+static const int MONSTER_POSE_FLAIL_SWING_WINDUP = 46;
 
 //--monster special cooldowns
 static const int MONSTER_SPECIAL_COOLDOWN_GOLEM = 150;
@@ -1063,6 +1066,8 @@ static const int MONSTER_SPECIAL_COOLDOWN_MONSTER_D_PUSH = 75;
 static const int MONSTER_SPECIAL_COOLDOWN_MONSTER_M_THROW = 500;
 static const int MONSTER_SPECIAL_COOLDOWN_MONSTER_M_CAST_SHORT = 300;
 static const int MONSTER_SPECIAL_COOLDOWN_MONSTER_M_CAST_LONG = 550;
+static const int MONSTER_SPECIAL_COOLDOWN_MONSTER_G_THROW = 500;
+static const int MONSTER_SPECIAL_COOLDOWN_MONSTER_G_CAST = 550;
 
 //--monster target search types
 static const int MONSTER_TARGET_ENEMY = 0;
@@ -1244,6 +1249,9 @@ static const int MONSTER_M_SPECIAL_THROW = 1;
 static const int MONSTER_M_SPECIAL_CAST1 = 2;
 static const int MONSTER_M_SPECIAL_CAST2 = 3;
 static const int MONSTER_M_SPECIAL_CAST3 = 4;
+
+static const int MONSTER_G_SPECIAL_THROW = 1;
+static const int MONSTER_G_SPECIAL_CAST1 = 2;
 
 struct MonsterData_t
 {
