@@ -8836,13 +8836,13 @@ void Entity::attack(int pose, int charge, Entity* target)
 			{
 				strikeRange = STRIKERANGE * 1.5;
 				dist = lineTrace(this, x, y, yaw, strikeRange, LINETRACE_ATK_CHECK_FRIENDLYFIRE, false);
-				if ( charge >= Stat::getMaxAttackCharge(myStats) / 2 )
+				if ( behavior == &actMonster || charge >= Stat::getMaxAttackCharge(myStats) / 2 )
 				{
 					playSoundEntity(this, 23 + local_rng.rand() % 5, 128); // whoosh noise
 				}
 				else
 				{
-					playSoundEntity(this, 770 + local_rng.rand() % 4, 92); // whoosh noise
+					playSoundEntity(this, 770 + local_rng.rand() % 4, 108); // whoosh noise
 				}
 			}
 			else if ( whip )
