@@ -49,6 +49,7 @@
 #define THROWN_BOOMERANG_STOP_Z my->skill[21]
 
 #define BOOMERANG_PARTICLE 977
+#define BOLAS_PARTICLE 1916
 
 void onThrownLandingParticle(Entity* my)
 {
@@ -254,6 +255,10 @@ void actThrown(Entity* my)
 				{
 					playSoundEntityLocal(my, 434 + local_rng.rand() % 10, 64);
 				}
+			}
+			else if ( item->type == BOLAS )
+			{
+				my->sprite = BOLAS_PARTICLE;
 			}
 			free(item);
 			item = nullptr;
@@ -534,6 +539,7 @@ void actThrown(Entity* my)
 				{
 					free(item);
 					onThrownLandingParticle(my);
+					playSoundEntity(my, 764, 64);
 					list_RemoveNode(my->mynode);
 					return;
 				}
@@ -1330,6 +1336,63 @@ void actThrown(Entity* my)
 								item_PotionGrease(item, hit.entity, parent);
 								//usedpotion = true;
 								break;
+							case DUST_BALL:
+								if ( hit.entity->setEffect(EFF_DUSTED, true, 5 * TICKS_PER_SECOND + 10, true) )
+								{
+									if ( hit.entity->behavior == &actPlayer )
+									{
+										messagePlayerColor(hit.entity->skill[2], MESSAGE_STATUS, makeColorRGB(255, 0, 0), Language::get(6752));
+									}
+									if ( parent && parent->behavior == &actPlayer )
+									{
+										Uint32 color = makeColorRGB(0, 255, 0);
+										messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(6762), Language::get(6761), MSG_COMBAT);
+									}
+									if ( hit.entity->behavior == &actMonster )
+									{
+										disableAlertBlindStatus = true; // don't aggro target.
+									}
+								}
+								break;
+							case BOLAS:
+							{
+								int duration = 3 * TICKS_PER_SECOND;
+								if ( parent && parentStats )
+								{
+									duration += statGetPER(parentStats, parent) * 5;
+									duration += statGetDEX(parentStats, parent) * 5;
+									duration -= statGetSTR(hitstats, hit.entity) * 5;
+									duration -= statGetDEX(hitstats, hit.entity) * 5;
+									duration = std::max(1 * TICKS_PER_SECOND, duration);
+									if ( parent->behavior == &actPlayer )
+									{
+										real_t charge = my->thrownProjectileCharge / 15.0; // 0-1
+										duration *= (0.25 + 1.25 * charge); // 0.25-1.5
+									}
+								}
+								if ( hit.entity->setEffect(EFF_ROOTED, true, duration, false) )
+								{
+									if ( hit.entity->behavior == &actPlayer )
+									{
+										messagePlayerColor(hit.entity->skill[2], MESSAGE_STATUS, makeColorRGB(255, 0, 0), Language::get(6763));
+									}
+									if ( parent && parent->behavior == &actPlayer )
+									{
+										Uint32 color = makeColorRGB(0, 255, 0);
+										messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(6764), Language::get(6765), MSG_COMBAT);
+									}
+									playSoundEntity(hit.entity, 763, 128);
+								}
+								else
+								{
+									if ( parent && parent->behavior == &actPlayer )
+									{
+										Uint32 color = makeColorRGB(255, 0, 0);
+										messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(6766), Language::get(6767), MSG_COMBAT);
+									}
+								}
+								break;
+							}
 							case FOOD_CREAMPIE:
 							{
 								skipMessage = true;
@@ -1640,7 +1703,7 @@ void actThrown(Entity* my)
 					if ( disableAlertBlindStatus )
 					{
 						alertTarget = false;
-						if ( hitstats->getEffectActive(EFF_BLIND) )
+						if ( hitstats->getEffectActive(EFF_BLIND) || hitstats->getEffectActive(EFF_DUSTED) )
 						{
 							hit.entity->monsterReleaseAttackTarget();
 						}
@@ -1971,6 +2034,7 @@ void actThrown(Entity* my)
 			free(item);
 			item = nullptr;
 			onThrownLandingParticle(my);
+			playSoundEntity(my, 764, 64);
 			list_RemoveNode(my->mynode);
 			return;
 		}
@@ -2017,6 +2081,20 @@ void actThrown(Entity* my)
 						createParticleShatteredGem(my->x, my->y, my->z, my->sprite, nullptr);
 						serverSpawnMiscParticlesAtLocation(my->x, my->y, my->z, PARTICLE_EFFECT_SHATTERED_GEM, my->sprite);
 					}
+				}
+			}
+			else if ( item && item->type == BOLAS )
+			{
+				if ( hit.entity && !hit.entity->isInertMimic() && hit.entity->getStats() )
+				{
+					dropItem = false;
+					int duration = 3 * TICKS_PER_SECOND;
+					if ( hit.entity->getStats()->getEffectActive(EFF_ROOTED) )
+					{
+						duration = hit.entity->getStats()->EFFECTS_TIMERS[EFF_ROOTED];
+					}
+					createParticleBolas(hit.entity, 1917, duration, item);
+					serverSpawnMiscParticles(hit.entity, PARTICLE_EFFECT_BOLAS, 1917, 0, duration, 0);
 				}
 			}
 			if ( dropItem )
