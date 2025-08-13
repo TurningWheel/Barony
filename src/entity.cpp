@@ -4620,7 +4620,10 @@ void Entity::handleEffects(Stat* myStats)
 				if ( myStats->weapon != NULL && itemCategory(myStats->weapon) != SPELLBOOK )
 				{
 					//messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(636));
-					dropItemMonster(myStats->weapon, this, myStats);
+					if ( Entity* dropped = dropItemMonster(myStats->weapon, this, myStats) )
+					{
+						dropped->itemDelayMonsterPickingUp = TICKS_PER_SECOND * 2;
+					}
 				}
 			}
 		}
@@ -5296,6 +5299,8 @@ void Entity::handleEffects(Stat* myStats)
 				real_t spd = sqrt(this->vel_x * this->vel_x + this->vel_y * this->vel_y);
 				fx->vel_x = spd * 0.05 * cos(dir);
 				fx->vel_y = spd * 0.05 * sin(dir);
+				fx->x += 2.0 * cos(dir);
+				fx->y += 2.0 * sin(dir);
 				fx->flags[BRIGHT] = true;
 				fx->pitch = PI / 2;
 				fx->roll = 0.0;
@@ -6225,6 +6230,20 @@ Sint32 Entity::getAttack(Entity* my, Stat* myStats, bool isPlayer, int chargeMod
 	else
 	{
 		attack += statGetSTR(myStats, my);
+		if ( !shapeshifted && myStats->weapon && myStats->weapon->type == STEEL_FLAIL )
+		{
+			if ( (my && my->behavior == &actMonster) )
+			{
+				if ( my->monsterAttack == MONSTER_POSE_FLAIL_SWING )
+				{
+					attack /= 2;
+				}
+			}
+			else if ( chargeModifier >= 0 && chargeModifier < Stat::getMaxAttackCharge(myStats) / 2 )
+			{
+				attack /= 2;
+			}
+		}
 	}
 
 	return attack;
@@ -6289,7 +6308,11 @@ Sint32 Entity::getThrownAttack()
 
 	if ( entitystats->weapon )
 	{
-		if ( itemCategory(entitystats->weapon) == THROWN 
+		if ( entitystats->weapon->type == BOLAS )
+		{
+			attack = entitystats->weapon->weaponGetAttack(entitystats);
+		}
+		else if ( itemCategory(entitystats->weapon) == THROWN 
 			&& !(entitystats->weapon->type == DUST_BALL
 				|| entitystats->weapon->type == GREASE_BALL) )
 		{
@@ -7791,7 +7814,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 		else
 		{
 			if ( (pose >= MONSTER_POSE_MELEE_WINDUP1 && pose <= MONSTER_POSE_SPECIAL_WINDUP3)
-				|| pose == MONSTER_POSE_PARRY )
+				|| pose == MONSTER_POSE_PARRY || pose == MONSTER_POSE_FLAIL_SWING_WINDUP || pose == MONSTER_POSE_FLAIL_SWING_RETURN )
 			{
 				// calls animation, but doesn't actually attack
 				// this branch executes for most monsters
@@ -7909,7 +7932,15 @@ void Entity::attack(int pose, int charge, Entity* target)
 			{
 				monsterAttack = 1;    // punching
 			}
-			monsterAttackTime = 0;
+
+			if ( monsterAttack == MONSTER_POSE_FLAIL_SWING )
+			{
+				// don't increment attack time
+			}
+			else
+			{
+				monsterAttackTime = 0;
+			}
 		}
 
 		// special AoE attack.
@@ -8564,7 +8595,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 				{
 					playSoundEntity(this, 75, 64);
 					//playSoundEntity(this, 427 + local_rng.rand() % 4, 128);
-
+				}
+				else if ( myStats->weapon->type == BOLAS )
+				{
+					playSoundEntity(this, 23 + local_rng.rand() % 5, 128);
+					playSoundEntity(this, 767 + local_rng.rand() % 3, 128);
 				}
 				else
 				{
@@ -8789,21 +8824,37 @@ void Entity::attack(int pose, int charge, Entity* target)
 				return;
 			}
 		}
-		bool whip = myStats->weapon && myStats->weapon->type == TOOL_WHIP;
+		bool whip = myStats->weapon && myStats->weapon->type == TOOL_WHIP && !shapeshifted;
+		bool flail = myStats->weapon && myStats->weapon->type == STEEL_FLAIL && !shapeshifted;
 		bool miss = false;
 		bool guard = false;
+		int strikeRange = STRIKERANGE;
 		// normal attacks
 		if ( target == nullptr )
 		{
-			if ( whip )
+			if ( flail )
 			{
-				dist = lineTrace(this, x, y, yaw, STRIKERANGE * 1.5, LINETRACE_ATK_CHECK_FRIENDLYFIRE, false);
+				strikeRange = STRIKERANGE * 1.5;
+				dist = lineTrace(this, x, y, yaw, strikeRange, LINETRACE_ATK_CHECK_FRIENDLYFIRE, false);
+				if ( charge >= Stat::getMaxAttackCharge(myStats) / 2 )
+				{
+					playSoundEntity(this, 23 + local_rng.rand() % 5, 128); // whoosh noise
+				}
+				else
+				{
+					playSoundEntity(this, 770 + local_rng.rand() % 4, 92); // whoosh noise
+				}
+			}
+			else if ( whip )
+			{
+				strikeRange = STRIKERANGE * 1.5;
+				dist = lineTrace(this, x, y, yaw, strikeRange, LINETRACE_ATK_CHECK_FRIENDLYFIRE, false);
 				playSoundEntity(this, 23 + local_rng.rand() % 5, 128); // whoosh noise
 			}
 			else
 			{
 				playSoundEntity(this, 23 + local_rng.rand() % 5, 128); // whoosh noise
-				dist = lineTrace(this, x, y, yaw, STRIKERANGE, LINETRACE_ATK_CHECK_FRIENDLYFIRE, false);
+				dist = lineTrace(this, x, y, yaw, strikeRange, LINETRACE_ATK_CHECK_FRIENDLYFIRE, false);
 			}
 
 			if ( hit.entity && (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer) )
@@ -8840,6 +8891,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 				}
 				else if ( bat || (hitstats && (hitstats->getEffectActive(EFF_AGILITY) 
 					|| hit.entity->mistFormDodge(true)
+					|| (hitstats->getEffectActive(EFF_MAGIC_GREASE) && hitstats->type == MONSTER_G)
 					|| hitstats->getEffectActive(EFF_ENSEMBLE_LUTE))) || myStats->getEffectActive(EFF_BLIND) )
 				{
 					Sint32 previousMonsterState = hit.entity->monsterState;
@@ -8891,6 +8943,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 						if ( hitstats && hitstats->getEffectActive(EFF_AGILITY) )
 						{
 							baseChance = std::max(baseChance, 30);
+						}
+						if ( hitstats && hitstats->getEffectActive(EFF_MAGIC_GREASE) && hitstats->type == MONSTER_G )
+						{
+							baseChance = std::max(baseChance, 20);
 						}
 						if ( hitstats && hitstats->getEnsembleEffectBonus(Stat::ENSEMBLE_LUTE_TIER) > 0.001 )
 						{
@@ -10296,6 +10352,12 @@ void Entity::attack(int pose, int charge, Entity* target)
 								chance = 12;
 								notify = true;
 							}
+
+							if ( flail && pose == MONSTER_POSE_FLAIL_SWING )
+							{
+								chance *= 4;
+							}
+
 							if ( local_rng.rand() % chance == 0 )
 							{
 								if ( hitstats->type != DUMMYBOT || (hitstats->type == DUMMYBOT && myStats->getProficiency(weaponskill) < SKILL_LEVEL_BASIC) )
@@ -10314,6 +10376,12 @@ void Entity::attack(int pose, int charge, Entity* target)
 								chance = 14;
 								notify = true;
 							}
+
+							if ( flail && pose == MONSTER_POSE_FLAIL_SWING )
+							{
+								chance *= 4;
+							}
+
 							if ( local_rng.rand() % chance == 0 )
 							{
 								if ( hitstats->type != DUMMYBOT || (hitstats->type == DUMMYBOT && myStats->getProficiency(weaponskill) < SKILL_LEVEL_BASIC) )
@@ -10436,6 +10504,13 @@ void Entity::attack(int pose, int charge, Entity* target)
 								degradeOnNormalDMG *= 2;
 							}
 
+							if ( flail && pose == MONSTER_POSE_FLAIL_SWING )
+							{
+								// double durability.
+								degradeOnZeroDMG *= 2;
+								degradeOnNormalDMG *= 2;
+							}
+
 							if	( (local_rng.rand() % degradeOnZeroDMG == 0 && damage == 0)
 									|| (local_rng.rand() % degradeOnNormalDMG == 0 && damage > 0)
 								)
@@ -10465,6 +10540,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 								degradeWeapon = false;
 							}
 							else if ( myStats->weapon && myStats->weapon->type == RAPIER )
+							{
+								degradeWeapon = false;
+							}
+							else if ( flail	&& pose == MONSTER_POSE_FLAIL_SWING && local_rng.rand() % 4 > 0 )
 							{
 								degradeWeapon = false;
 							}
@@ -10561,14 +10640,20 @@ void Entity::attack(int pose, int charge, Entity* target)
 							armorDegradeChance = 15;
 							if ( weaponskill == PRO_MACE )
 							{
-								armorDegradeChance = 5;
+								if ( !(flail && pose == MONSTER_POSE_FLAIL_SWING) )
+								{
+									armorDegradeChance = 5;
+								}
 							}
 						}
 						else
 						{
 							if ( weaponskill == PRO_MACE )
 							{
-								armorDegradeChance = 10;
+								if ( !(flail && pose == MONSTER_POSE_FLAIL_SWING) )
+								{
+									armorDegradeChance = 10;
+								}
 							}
 						}
 
@@ -11078,7 +11163,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								hit.entity->modHP(-capstoneDamage); // do the damage
 							}
 						}
-						else if ( weaponskill == PRO_MACE && hitstats->HP > 0 )
+						else if ( weaponskill == PRO_MACE && hitstats->HP > 0 && !(flail && pose == MONSTER_POSE_FLAIL_SWING) )
 						{
 							// paralyze.
 							if ( chance > 0 ) // chance based paralyze
@@ -12560,6 +12645,44 @@ void Entity::attack(int pose, int charge, Entity* target)
 							}
 						}
 					}
+
+					if ( flail && !hitstats->getEffectActive(EFF_KNOCKBACK) && pose == MONSTER_POSE_FLAIL_SWING )
+					{
+						real_t dist = entityDist(hit.entity, this);
+						real_t ratio = std::max(0.0, std::min(1.0, (32.0 - dist) / (32.0)));
+						real_t pushbackMultiplier = ratio;
+						if ( pushbackMultiplier >= 0.5 && hit.entity->setEffect(EFF_KNOCKBACK, true, 30, false) )
+						{
+							knockbackInflicted = true;
+
+							real_t tangent = atan2(hit.entity->y - this->y, hit.entity->x - this->x);
+							if ( hit.entity->behavior == &actMonster )
+							{
+								hit.entity->vel_x = cos(tangent) * pushbackMultiplier;
+								hit.entity->vel_y = sin(tangent) * pushbackMultiplier;
+								hit.entity->monsterKnockbackVelocity = 0.01;
+								hit.entity->monsterKnockbackUID = this->getUID();
+								hit.entity->monsterKnockbackTangentDir = tangent;
+								//enemyHit->lookAtEntity(*parent);
+							}
+							else if ( hit.entity->behavior == &actPlayer )
+							{
+								if ( !players[hit.entity->skill[2]]->isLocalPlayer() )
+								{
+									hit.entity->monsterKnockbackVelocity = pushbackMultiplier;
+									hit.entity->monsterKnockbackTangentDir = tangent;
+									serverUpdateEntityFSkill(hit.entity, 11);
+									serverUpdateEntityFSkill(hit.entity, 9);
+								}
+								else
+								{
+									hit.entity->monsterKnockbackVelocity = pushbackMultiplier;
+									hit.entity->monsterKnockbackTangentDir = tangent;
+								}
+							}
+						}
+					}
+
 					if ( thornsEffect != 0 && damage > 0 )
 					{
 						this->modHP(-abs(thornsEffect));
@@ -13189,7 +13312,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 		}
 		else
 		{
-			if ( !guard && !miss && ((dist != STRIKERANGE && !whip) || (dist != STRIKERANGE * 1.5 && whip)) )
+			if ( !guard && !miss && (dist != strikeRange) )
 			{
 				// hit a wall
 				if ( pose == PLAYER_POSE_GOLEM_SMASH )
@@ -13336,7 +13459,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								generatePathMaps();
 							}
 							int chance = 2 + (myStats->type == GOBLIN ? 2 : 0);
-							if ( local_rng.rand() % chance && degradePickaxe && myStats->weapon
+							if ( local_rng.rand() % chance == 0 && degradePickaxe && myStats->weapon
 								&& !spellEffectPreserveItem(myStats->weapon) )
 							{
 								if ( myStats->weapon->status > BROKEN )
@@ -16730,7 +16853,9 @@ int getWeaponSkill(const Item* weapon)
 	{
 		return PRO_SWORD;
 	}
-	if ( weapon->type == BRONZE_MACE || weapon->type == IRON_MACE || weapon->type == STEEL_MACE || weapon->type == ARTIFACT_MACE || weapon->type == CRYSTAL_MACE )
+	if ( weapon->type == BRONZE_MACE || weapon->type == IRON_MACE || weapon->type == STEEL_MACE 
+		|| weapon->type == STEEL_FLAIL
+		|| weapon->type == ARTIFACT_MACE || weapon->type == CRYSTAL_MACE )
 	{
 		return PRO_MACE;
 	}
@@ -17034,6 +17159,11 @@ int Entity::getAttackPose() const
 				pose = MONSTER_POSE_SPECIAL_WINDUP1;
 			}
 		}
+		else if ( myStats->type == MONSTER_G
+			&& this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_MONSTER_G_CAST )
+		{
+			pose = MONSTER_POSE_MAGIC_WINDUP1;
+		}
 		else if ( itemCategory(myStats->weapon) == MAGICSTAFF )
 		{
 			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON 
@@ -17121,6 +17251,13 @@ int Entity::getAttackPose() const
 				}
 
 			}
+			else if ( myStats->type == MONSTER_G )
+			{
+				if ( this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_MONSTER_G_THROW )
+				{
+					pose = MONSTER_POSE_RANGED_WINDUP3;
+				}
+			}
 			else if ( myStats->type == INCUBUS )
 			{
 				if ( this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_INCUBUS_CONFUSION )
@@ -17171,6 +17308,13 @@ int Entity::getAttackPose() const
 							pose = MONSTER_POSE_RANGED_WINDUP3;
 						}
 					}
+					else if ( myStats->type == MONSTER_G )
+					{
+						if ( this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_MONSTER_G_THROW )
+						{
+							pose = MONSTER_POSE_RANGED_WINDUP3;
+						}
+					}
 					else
 					{
 						pose = MONSTER_POSE_MELEE_WINDUP1;
@@ -17202,8 +17346,22 @@ int Entity::getAttackPose() const
 				if ( getWeaponSkill(myStats->weapon) == PRO_AXE || getWeaponSkill(myStats->weapon) == PRO_MACE
 					|| myStats->weapon->type == TOOL_WHIP )
 				{
-					// axes and maces don't stab
-					pose = MONSTER_POSE_MELEE_WINDUP1 + local_rng.rand() % 2;
+					if ( myStats->weapon->type == STEEL_FLAIL )
+					{
+						if ( local_rng.rand() % 5 == 0 )
+						{
+							pose = MONSTER_POSE_FLAIL_SWING_WINDUP;
+						}
+						else
+						{
+							pose = MONSTER_POSE_MELEE_WINDUP1;
+						}
+					}
+					else
+					{
+						// axes and maces don't stab
+						pose = MONSTER_POSE_MELEE_WINDUP1 + local_rng.rand() % 2;
+					}
 				}
 				else
 				{
@@ -17253,6 +17411,10 @@ int Entity::getAttackPose() const
 			{
 				pose = MONSTER_POSE_SPECIAL_WINDUP1;
 			}
+		}
+		else if ( myStats->type == MONSTER_G && this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_MONSTER_G_CAST )
+		{
+			pose = MONSTER_POSE_MAGIC_WINDUP1;
 		}
 		else if (type == KOBOLD || type == AUTOMATON ||
 			type == GOATMAN || type == INSECTOID ||
@@ -17843,12 +18005,106 @@ void Entity::handleWeaponArmAttack(Entity* weaponarm)
 				{
 					this->attack(MONSTER_POSE_MAGIC_WINDUP3, 0, nullptr);
 				}
+				else if ( stats && stats->type == MONSTER_G
+					&& monsterSpecialState == MONSTER_G_SPECIAL_CAST1 )
+				{
+					this->attack(MONSTER_POSE_MAGIC_WINDUP3, 0, nullptr);
+				}
 				else
 				{
 					this->attack(1, 0, nullptr);
 				}
 			}
 		}
+	}
+	else if ( monsterAttack == MONSTER_POSE_FLAIL_SWING_WINDUP )
+	{
+		if ( monsterAttackTime == 0 )
+		{
+			// init rotations
+			weaponarm->pitch = 0;
+			this->monsterArmbended = 1;
+			this->monsterWeaponYaw = 0.0;
+			weaponarm->roll = 0;
+			weaponarm->skill[1] = 0;
+			weaponarm->monsterAnimationLimbDirection = ANIMATE_DIR_NONE;
+		}
+
+		++monsterAttackTime; // manually increment counter
+
+		if ( weaponarm->skill[1] == 0 )
+		{
+			limbAnimateToLimit(this, ANIMATE_WEAPON_YAW, 0.15, PI / 4, false, 0.0);
+			if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.15, 5 * PI / 4, true, 0.05) )
+			{
+				if ( monsterAttackTime >= TICKS_PER_SECOND )
+				{
+					weaponarm->skill[1] = 1;
+					weaponarm->monsterAnimationLimbDirection = ANIMATE_DIR_NONE;
+				}
+			}
+		}
+		else if ( weaponarm->skill[1] == 1 )
+		{
+			limbAnimateToLimit(this, ANIMATE_WEAPON_YAW, -0.15, 0.0, false, 0.0);
+			if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, 0.3, 7 * PI / 4, false, 0.0) )
+			{
+				if ( multiplayer != CLIENT )
+				{
+					monsterAttackTime = 0;
+					this->attack(MONSTER_POSE_FLAIL_SWING, 0, nullptr);
+				}
+			}
+		}
+	}
+	else if ( monsterAttack == MONSTER_POSE_FLAIL_SWING )
+	{
+		if ( monsterAttackTime == 0 )
+		{
+			// init rotations
+			this->monsterArmbended = 1;
+			this->monsterWeaponYaw = 0;
+			weaponarm->pitch = 13 * PI / 8;
+			weaponarm->roll = 0;
+			weaponarm->skill[1] = 0;
+		}
+
+		++monsterAttackTime; // manually increment counter
+		weaponarm->skill[1]++;
+
+		if ( multiplayer != CLIENT )
+		{
+			if ( monsterAttackTime >= 3 * TICKS_PER_SECOND )
+			{
+				this->attack(MONSTER_POSE_FLAIL_SWING_RETURN, 0, nullptr);
+			}
+			else if ( monsterAttackTime % 25 == 0 )
+			{
+				this->attack(MONSTER_POSE_FLAIL_SWING, 0, nullptr);
+			}
+		}
+	}
+	else if ( monsterAttack == MONSTER_POSE_FLAIL_SWING_RETURN )
+	{
+		if ( monsterAttackTime == 0 )
+		{
+			// init rotations
+			this->monsterArmbended = 1;
+			this->monsterWeaponYaw = 0;
+			weaponarm->pitch = 13 * PI / 8;
+			weaponarm->roll = 0;
+		}
+		if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, 0.15, 7 * PI / 4, false, 0.0) )
+		{
+			weaponarm->skill[0] = rightbody->skill[0];
+			weaponarm->skill[1] = 0;
+			this->monsterWeaponYaw = 0;
+			weaponarm->pitch = rightbody->pitch;
+			weaponarm->roll = 0;
+			this->monsterArmbended = 0;
+			monsterAttack = 0;
+		}
+		++monsterAttackTime; // manually increment counter
 	}
 
 	return;
@@ -18321,6 +18577,28 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 			weaponLimb->sprite = items[TOOL_WHIP].index;
 		}
 	}
+	else if ( weaponLimb->sprite >= items[STEEL_FLAIL].index && weaponLimb->sprite <= items[STEEL_FLAIL].index + 2 )
+	{
+		if ( myAttack == MONSTER_POSE_FLAIL_SWING )
+		{
+			real_t spin = weaponArmLimb->skill[1] * -0.35;
+			weaponLimb->roll += spin;
+			weaponLimb->pitch += 0.1 * cos(spin + 0.5 * PI); // wobbly
+			weaponLimb->yaw += 0.1 * sin(spin + 0.5 * PI); // wobbly
+			weaponLimb->sprite = items[STEEL_FLAIL].index + 1;
+		}
+		else
+		{
+			if ( myAttack > 0 && myAttack != MONSTER_POSE_FLAIL_SWING_RETURN )
+			{
+				weaponLimb->sprite = items[STEEL_FLAIL].index + 2;
+			}
+			else
+			{
+				weaponLimb->sprite = items[STEEL_FLAIL].index;
+			}
+		}
+	}
 	else if ( weaponLimb->sprite == items[TOOL_DECOY].index || weaponLimb->sprite == items[TOOL_DUMMYBOT].index )
 	{
 		weaponLimb->scalex = 0.8;
@@ -18717,6 +18995,53 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 
 		weaponLimb->yaw -= sin(weaponArmLimb->roll) * PI / 2;
 		weaponLimb->pitch += cos(weaponArmLimb->roll) * PI / 2;
+
+		if ( weaponLimb->sprite == items[STEEL_FLAIL].index + 1 )
+		{
+			weaponLimb->x += 3.25 * cos(weaponArmLimb->yaw);
+			weaponLimb->y += 3.25 * sin(weaponArmLimb->yaw);
+
+			// overwrite the focals since this animation is fixed positioned
+			weaponLimb->focalx = -2;
+			weaponLimb->focaly = 2.25;
+			weaponLimb->focalz = 0.5;
+
+			weaponLimb->pitch += 4.75 * PI / 8;
+			//weaponLimb->roll += 0.0 * PI / 8;
+			weaponLimb->yaw += -1.5 * PI / 8;
+
+			switch ( monsterType )
+			{
+			case SKELETON:
+				weaponLimb->x += -0.25 * cos(weaponArmLimb->yaw + PI / 2) + 0.25 * cos(weaponArmLimb->yaw);
+				weaponLimb->y += -0.25 * sin(weaponArmLimb->yaw + PI / 2) + 0.25 * sin(weaponArmLimb->yaw);
+				break;
+			case SUCCUBUS:
+			case INCUBUS:
+				weaponLimb->x += -0.25 * cos(weaponArmLimb->yaw + PI / 2) + 0.5 * cos(weaponArmLimb->yaw);
+				weaponLimb->y += -0.25 * sin(weaponArmLimb->yaw + PI / 2) + 0.5 * sin(weaponArmLimb->yaw);
+				weaponLimb->z += 0.5;
+				break;
+			default:
+				break;
+			}
+		}
+	}
+
+
+	if ( weaponLimb->sprite == items[BOLAS].index )
+	{
+		weaponLimb->focalx += 0.25;
+		weaponLimb->focalz += 2.75;
+		weaponLimb->focaly += -0.5;
+	}
+	else if ( weaponLimb->sprite == items[GREASE_BALL].index )
+	{
+		weaponLimb->focalz += 1;
+	}
+	else if ( weaponLimb->sprite == items[DUST_BALL].index )
+	{
+		weaponLimb->focalz += 1;
 	}
 
 	if ( monsterType == MONSTER_D )
@@ -18956,6 +19281,8 @@ void Entity::handleEffectsClient()
 				real_t spd = sqrt(this->vel_x * this->vel_x + this->vel_y * this->vel_y);
 				fx->vel_x = spd * 0.05 * cos(dir);
 				fx->vel_y = spd * 0.05 * sin(dir);
+				fx->x += 2.0 * cos(dir);
+				fx->y += 2.0 * sin(dir);
 				fx->flags[BRIGHT] = true;
 				fx->pitch = PI / 2;
 				fx->roll = 0.0;
@@ -19110,6 +19437,18 @@ bool Entity::setEffect(int effect, std::variant<bool, Uint8> value, int duration
 				}
 				break;
 			case EFF_GREASY:
+				if ( myStats->type == GOATMAN )
+				{
+					return false;
+				}
+				if ( myStats->type == LICH || myStats->type == DEVIL
+					|| myStats->type == LICH_FIRE || myStats->type == LICH_ICE
+					|| myStats->type == MINOTAUR || myStats->type == MIMIC )
+				{
+					return false;
+				}
+				break;
+			case EFF_MAGIC_GREASE:
 				if ( myStats->type == GOATMAN )
 				{
 					return false;

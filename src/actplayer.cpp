@@ -10201,6 +10201,36 @@ void actPlayer(Entity* my)
 							}
 						}
 					}
+					else if ( PLAYER_ATTACK == MONSTER_POSE_FLAIL_SWING )
+					{
+						if ( PLAYER_ATTACKTIME == 0 )
+						{
+							// init rotations
+							PLAYER_ARMBENDED = 1;
+							PLAYER_WEAPONYAW = 0;
+							entity->pitch = 13 * PI / 8;
+							entity->roll = 0;
+						}
+
+						entity->skill[1]++;
+						if ( PLAYER_ATTACKTIME >= TICKS_PER_SECOND * .75 )
+						{
+							PLAYER_ATTACK = MONSTER_POSE_FLAIL_SWING_RETURN;
+						}
+					}
+					else if ( PLAYER_ATTACK == MONSTER_POSE_FLAIL_SWING_RETURN )
+					{
+						if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, 0.15, 7 * PI / 4, false, 0.0) )
+						{
+							entity->skill[0] = rightbody->skill[0];
+							entity->skill[1] = 0;
+							PLAYER_WEAPONYAW = 0;
+							entity->pitch = rightbody->pitch;
+							entity->roll = 0;
+							PLAYER_ARMBENDED = 0;
+							PLAYER_ATTACK = 0;
+						}
+					}
 				}
 				else if ( bodypart == 8 )
 				{
