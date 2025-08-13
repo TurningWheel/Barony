@@ -5453,7 +5453,7 @@ void physfsReloadMonsterLimbFiles()
 			}
 
 			// process line
-			if ( sscanf(data, "%d", &limb) != 1 || limb >= 20 || limb < 0 )
+			if ( sscanf(data, "%d", &limb) != 1 || limb >= 30 || limb < 0 )
 			{
 				printlog("warning: syntax error in '%s':%d\n invalid limb index!\n", filename, line);
 				continue;
