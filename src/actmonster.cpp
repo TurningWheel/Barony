@@ -6052,7 +6052,7 @@ timeToGoAgain:
 							{
 								chaseRange = 20;
 							}
-							if ( myStats->weapon && myStats->weapon->type == TOOL_WHIP )
+							if ( myStats->weapon && (myStats->weapon->type == TOOL_WHIP || myStats->weapon->type == STEEL_FLAIL) )
 							{
 								chaseRange = TOUCHRANGE;
 							}
@@ -9826,6 +9826,13 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 			lichRangeCheckOverride = true;
 		}
 	}
+	else if ( myStats->type == MONSTER_G )
+	{
+		if ( monsterSpecialState == MONSTER_G_SPECIAL_CAST1 )
+		{
+			lichRangeCheckOverride = true;
+		}
+	}
 	else if ( myStats->type == LICH_FIRE)
 	{
 		if ( monsterLichFireMeleeSeq == LICH_ATK_BASICSPELL_SINGLE )
@@ -9889,6 +9896,11 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 		meleeDist = TOUCHRANGE - 1;
 	}
 	if ( myStats->weapon && myStats->weapon->type == TOOL_WHIP )
+	{
+		meleeDist = std::max(meleeDist, (int)(STRIKERANGE * 1.5));
+		strikeRange = (int)(STRIKERANGE * 1.5);
+	}
+	else if ( myStats->weapon && myStats->weapon->type == STEEL_FLAIL )
 	{
 		meleeDist = std::max(meleeDist, (int)(STRIKERANGE * 1.5));
 		strikeRange = (int)(STRIKERANGE * 1.5);
@@ -9981,6 +9993,18 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 				}
 			}
 		}
+		else if ( myStats->weapon && myStats->weapon->type == STEEL_FLAIL )
+		{
+			if ( this->monsterAttack == MONSTER_POSE_FLAIL_SWING )
+			{
+				bow = 6;
+			}
+			else if ( this->monsterAttack == MONSTER_POSE_FLAIL_SWING_WINDUP )
+			{
+				bow = 1.5;
+			}
+		}
+
 		// check if ready to attack
 		if ( (this->monsterHitTime >= static_cast<int>(HITRATE * monsterGlobalAttackTimeMultiplier * bow) 
 				&& (myStats->type != LICH && myStats->type != LICH_ICE))
@@ -10990,6 +11014,17 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						}
 					}
 					break;
+				case MONSTER_G:
+					// special handled in monsterGChooseWeapon()
+					if ( monsterSpecialState == MONSTER_G_SPECIAL_THROW )
+					{
+						monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_MONSTER_G_THROW;
+					}
+					else if ( monsterSpecialState == MONSTER_G_SPECIAL_CAST1 )
+					{
+						monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_MONSTER_G_CAST;
+					}
+					break;
 				case SPIDER:
 					// spray web
 					if ( dist < STRIKERANGE * 2 )
@@ -11475,6 +11510,31 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						else
 						{
 							monsterUnequipSlotFromCategory(myStats, &myStats->weapon, THROWN);
+						}
+						shouldAttack = false;
+						monsterSpecialState = 0;
+						serverUpdateEntitySkill(this, 33); // for clients to keep track of animation
+						deinitSuccess = true;
+					}
+					break;
+				case MONSTER_G:
+					if ( monsterSpecialState == MONSTER_G_SPECIAL_CAST1 )
+					{
+						monsterSpecialState = 0;
+						shouldAttack = false;
+						deinitSuccess = true;
+					}
+					else if ( monsterSpecialState == MONSTER_G_SPECIAL_THROW || forceDeinit )
+					{
+						node = itemNodeInInventory(myStats, -1, WEAPON); // find weapon to re-equip
+						if ( node != nullptr )
+						{
+							swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
+						}
+						else
+						{
+							monsterUnequipSlotFromCategory(myStats, &myStats->weapon, THROWN);
+							monsterUnequipSlotFromCategory(myStats, &myStats->weapon, POTION);
 						}
 						shouldAttack = false;
 						monsterSpecialState = 0;
@@ -13133,7 +13193,7 @@ int Entity::shouldMonsterDefend(Stat& myStats, const Entity& target, const Stat&
 
 	bool isPlayerAlly = (monsterAllyIndex >= 0 && monsterAllyIndex < MAXPLAYERS);
 	
-	if ( !(isPlayerAlly || myStats.type == HUMAN || myStats.type == BUGBEAR) )
+	if ( !(isPlayerAlly || myStats.type == HUMAN || myStats.type == BUGBEAR || myStats.type == MONSTER_G || myStats.type == GOATMAN) )
 	{
 		return MONSTER_DEFEND_NONE;
 	}
@@ -13693,8 +13753,8 @@ void Entity::monsterHandleKnockbackVelocity(real_t monsterFacingTangent, real_t 
 	}
 	else
 	{
-	this->monsterKnockbackVelocity *= 1.1;
-}
+		this->monsterKnockbackVelocity *= 1.1;
+	}
 }
 
 int Entity::monsterGetDexterityForMovement()
