@@ -6039,7 +6039,7 @@ timeToGoAgain:
 								if ( effectiveDistance < rangedWeaponDistance )
 								{
 									// shorter range xbows etc should advance at a little less than the extremity.
-									rangedWeaponDistance = effectiveDistance - 10; 
+									rangedWeaponDistance = std::max(STRIKERANGE, effectiveDistance - 10); 
 								}
 								if ( myStats->weapon && myStats->weapon->type == SPELLBOOK_DASH )
 								{

@@ -21342,11 +21342,14 @@ bool Entity::shouldRetreat(Stat& myStats)
 bool Entity::backupWithRangedWeapon(Stat& myStats, int dist, int hasrangedweapon)
 {
 	int distanceLimit = 100;
-	if ( hasrangedweapon && myStats.weapon )
+	if ( hasrangedweapon )
 	{
-		if ( distanceLimit >= getMonsterEffectiveDistanceOfRangedWeapon(myStats.weapon) )
+		if ( myStats.weapon || (myStats.type == MONSTER_D && myStats.getAttribute("monster_d_type") == "watcher") )
 		{
-			distanceLimit = getMonsterEffectiveDistanceOfRangedWeapon(myStats.weapon) - 20;
+			if ( distanceLimit >= getMonsterEffectiveDistanceOfRangedWeapon(myStats.weapon) )
+			{
+				distanceLimit = getMonsterEffectiveDistanceOfRangedWeapon(myStats.weapon) - 20;
+			}
 		}
 	}
 
