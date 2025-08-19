@@ -1738,9 +1738,17 @@ voxel_t* loadVoxel(char* filename)
 		{
 			return nullptr;
 		}
+		Sint32 header = 0;
+		file->read(&header, sizeof(Sint32), 1);
+		if ( header == 542658390 )
+		{
+			FileIO::close(file);
+			assert(false && "incorrect .vox file format, check log.txt");
+			printlog("error: loadVoxel file: %s is using magicavoxel .vox file format, export as slab .vox instead!", filename);
+			return nullptr;
+		}
 		model = (voxel_t*)malloc(sizeof(voxel_t));
-		model->sizex = 0;
-		file->read(&model->sizex, sizeof(Sint32), 1);
+		model->sizex = header;
 		model->sizey = 0;
 		file->read(&model->sizey, sizeof(Sint32), 1);
 		model->sizez = 0;
