@@ -518,6 +518,27 @@ void initClassStats(const int classnum, void* myStats)
 		stat->setProficiency(PRO_STEALTH, 15);
 		stat->setProficiency(PRO_TRADING, 15);
 	}
+	else if ( classnum == CLASS_22 )
+	{
+		stat->STR += 1;
+		stat->DEX += 1;
+		stat->CON += -2;
+		stat->INT += -2;
+		stat->PER += 0;
+		stat->CHR += -3;
+
+		stat->MAXHP += 10;
+		stat->HP += 10;
+
+		stat->MAXMP += 0;
+		stat->MP += 0;
+
+		stat->setProficiency(PRO_MACE, 50);
+		stat->setProficiency(PRO_MAGIC, 15);
+		stat->setProficiency(PRO_RANGED, 15);
+		stat->setProficiency(PRO_STEALTH, 25);
+		stat->setProficiency(PRO_ALCHEMY, 25);
+	}
 
 	if ( gameModeManager.currentSession.challengeRun.isActive() )
 	{
@@ -2841,6 +2862,123 @@ void initClass(const int player)
 			free(item);
 		}
 	}
+	else if ( client_classes[player] == CLASS_22 )
+	{
+		initClassStats(client_classes[player], stats[player]);
+
+		if ( !isLocalPlayer && multiplayer == CLIENT && intro == false ) {
+			// don't do anything crazy with items on players we don't own
+			return;
+		}
+
+		item = newItem(STEEL_FLAIL, EXCELLENT, 0, 1, 0, true, nullptr);
+		if ( isLocalPlayer )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			hotbar[0].item = item2->uid;
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
+		item = newItem(AMULET_BURNINGRESIST, EXCELLENT, 0, 1, 0, true, nullptr);
+		if ( isLocalPlayer )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			hotbar[0].item = item2->uid;
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
+		item = newItem(TOOL_FRYING_PAN, EXCELLENT, 0, 1, 0, true, nullptr);
+		if ( isLocalPlayer )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			hotbar[4].item = item2->uid;
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
+		/*item = newItem(HAT_HOOD, WORN, 0, 1, 0, true, nullptr);
+		if ( isLocalPlayer )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}*/
+
+		item = newItem(IRON_BOOTS, WORN, 0, 1, 0, true, nullptr);
+		if ( isLocalPlayer )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
+		item = newItem(GLOVES, WORN, 0, 1, 0, true, nullptr);
+		if ( isLocalPlayer )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
+		item = newItem(MASK_EYEPATCH, WORN, 0, 1, 0, true, nullptr);
+		if ( isLocalPlayer )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
+		if ( isLocalPlayer )
+		{
+			item = newItem(BOLAS, SERVICABLE, 0, 3, 0, true, nullptr);
+			item2 = itemPickup(player, item);
+			hotbar[2].item = item2->uid;
+			free(item);
+
+			item = newItem(TOOL_TOWEL, SERVICABLE, 0, 3, 0, true, nullptr);
+			item2 = itemPickup(player, item);
+			hotbar[5].item = item2->uid;
+			free(item);
+
+			item = newItem(FOOD_MEAT, DECREPIT, 0, 1, 0, true, nullptr);
+			item2 = itemPickup(player, item);
+			free(item);
+
+			item = newItem(FOOD_BREAD, DECREPIT, 0, 1, 0, true, nullptr);
+			item2 = itemPickup(player, item);
+			free(item);
+		}
+	}
 
 	stats[player]->OLDHP = stats[player]->HP;
 
@@ -3005,6 +3143,11 @@ void initClass(const int player)
 		else if ( client_classes[player] == CLASS_CONJURER )
 		{
 			addSpell(SPELL_SUMMON, player, true);
+		}
+		else if ( client_classes[player] == CLASS_22 )
+		{
+			addSpell(SPELL_BOOBY_TRAP, player, true);
+			addSpell(SPELL_DEFACE, player, true);
 		}
 
 		//printlog("spell size: %d", list_Size(&spellList));

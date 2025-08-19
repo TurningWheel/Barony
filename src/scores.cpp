@@ -3924,7 +3924,8 @@ std::set<ItemType> AchievementObserver::PlayerAchievements::startingClassItems =
 	PUNISHER_HOOD,
 	MASK_SHAMAN,
 	TOOL_BLINDFOLD_TELEPATHY,
-	TOOL_BLINDFOLD
+	TOOL_BLINDFOLD,
+	MASK_EYEPATCH
 };
 
 int AchievementObserver::PlayerAchievements::getItemIndexForDapperAchievement(Item* item)
