@@ -1988,7 +1988,7 @@ void Entity::chestHandleDamageMagic(int damage, Entity &magicProjectile, Entity 
 			}
 			if ( caster && oldHP > 0 )
 			{
-				awardXP(caster, true, true);
+				caster->awardXP(this, true, true);
 			}
 		}
 		else
