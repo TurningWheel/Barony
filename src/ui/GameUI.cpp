@@ -300,6 +300,7 @@ int GAMEUI_FRAMEDATA_ALCHEMY_RECIPE_SLOT = 3;
 int GAMEUI_FRAMEDATA_ALCHEMY_RECIPE_ENTRY = 4;
 int GAMEUI_FRAMEDATA_WORLDTOOLTIP_ITEM = 5;
 int GAMEUI_FRAMEDATA_SHOP_ITEM = 6;
+int GAMEUI_FRAMEDATA_ALCHEMY_MISSING_QTY = 7;
 
 MinotaurWarning_t minotaurWarning[MAXPLAYERS];
 
@@ -1473,7 +1474,6 @@ Frame* createAllyPlayerEntry(const int player, Frame* baseFrame)
 			Image* warningImg = nullptr;
 			if ( value > 0 )
 			{
-				char buf[32];
 				if ( value < PingNetworkStatus_t::pingLimitGreen )
 				{
 					if ( PingNetworkStatus[player].hudDisplayOKTicks == 0 )
@@ -19840,7 +19840,6 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			}
 		}
 
-		char titleBuf[64];
 		std::string titleText = getHoverTextString("race_title_normal");
 		if ( players[player.playernum]->entity )
 		{
@@ -19997,7 +19996,6 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			}
 		}
 
-		char titleBuf[64];
 		if ( player.entity && player.entity->effectShapeshift != 0 )
 		{
 			txt->setText(getHoverTextString("class_title_shapeshift").c_str());
@@ -21668,6 +21666,7 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 	{
 		qtyFrame->setDisabled(true);
 		bool drawQty = (item->count > 1) ? true : false;
+		Uint32 qtyColor = 0xFFFFFFFF;
 		if ( !drawQty && GenericGUI[player].isNodeTinkeringCraftableItem(item->node) )
 		{
 			drawQty = true;
@@ -21676,8 +21675,12 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 		{
 			drawQty = true;
 		}
+		else if ( slotType && *slotType == GAMEUI_FRAMEDATA_ALCHEMY_MISSING_QTY )
+		{
+			drawQty = true;
+			qtyColor = hudColors.characterSheetRed;
+		}
 
-		Uint32 qtyColor = 0xFFFFFFFF;
 		bool stackable = false;
 		Item*& selectedItem = inputs.getUIInteraction(player)->selectedItem;
 		if ( selectedItem && !isHotbarIcon && !alchemyResultIcon 
@@ -28082,7 +28085,8 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 		|| prompt == PROMPT_INTERACT_SPELLBOOK_HOTBAR
 		|| prompt == PROMPT_INSPECT 
 		|| prompt == PROMPT_INSPECT_ALTERNATE 
-		|| prompt == PROMPT_TINKER )
+		|| prompt == PROMPT_TINKER
+		|| prompt == PROMPT_COOK )
 	{
 		if ( item->type == TOOL_PLAYER_LOOT_BAG )
 		{
@@ -28103,6 +28107,26 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 				GenericGUI[player].closeGUI();
 			}
 			else if ( !disableItemUsage )
+			{
+				if ( item->status > BROKEN )
+				{
+					GenericGUI[player].openGUI(GUI_TYPE_ALCHEMY, true, item);
+				}
+				else
+				{
+					messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(1092), item->getName()); // this is useless!
+					playSoundPlayer(player, 90, 64);
+				}
+			}
+			else
+			{
+				messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(3432)); // unable to use in current form message.
+				playSoundPlayer(player, 90, 64);
+			}
+		}
+		else if ( item->type == TOOL_FRYING_PAN )
+		{
+			if ( !disableItemUsage )
 			{
 				if ( item->status > BROKEN )
 				{
@@ -33643,7 +33667,6 @@ void Player::SkillSheet_t::createSkillSheet()
 		char effectFrameName[64] = "";
 		char effectFieldName[64] = "";
 		char effectFieldVal[64] = "";
-		char effectBgName[64];
 		int effectXOffset = 72; // tmp paramters - configured in skillsheet json
 		int effectBackgroundXOffset = 8;
 		int effectBackgroundWidth = 80;

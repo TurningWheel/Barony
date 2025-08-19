@@ -474,9 +474,12 @@ public:
 	//alchemy menu funcs
 	bool isItemMixable(const Item* item);
 	void alchemyCombinePotions();
+	void alchemyCookCombination();
 	bool alchemyLearnRecipe(int type, bool increaseskill, bool notify = true);
 	bool isItemBaseIngredient(int type);
 	bool isItemSecondaryIngredient(int type);
+	static int isItemRationSeasoning(int type);
+	static bool isItemRation(int type);
 	void alchemyLearnRecipeOnLevelUp(int skill);
 
 	// tinkering menu foncs
@@ -1207,7 +1210,9 @@ public:
 		enum AlchemyView_t : int
 		{
 			ALCHEMY_VIEW_BREW,
-			ALCHEMY_VIEW_RECIPES
+			ALCHEMY_VIEW_RECIPES,
+			ALCHEMY_VIEW_COOK,
+			ALCHEMY_VIEW_RECIPES_COOK
 		};
 		struct AlchNotification_t
 		{
@@ -1225,6 +1230,7 @@ public:
 		};
 		std::vector<std::pair<Uint32, AlchNotification_t>> notifications;
 		AlchemyView_t currentView = ALCHEMY_VIEW_BREW;
+		bool hasTinOpener = false;
 		Frame* alchFrame = nullptr;
 		real_t animx = 0.0;
 		real_t animTooltip = 0.0;
@@ -1256,7 +1262,8 @@ public:
 		bool isInteractable = true;
 		bool bOpen = false;
 		bool bFirstTimeSnapCursor = false;
-		void openAlchemyMenu();
+		void openAlchemyMenu(AlchemyView_t view);
+		void changeCurrentView(AlchemyView_t view);
 		void closeAlchemyMenu();
 		void updateAlchemyMenu();
 		void createAlchemyMenu();
@@ -1278,9 +1285,13 @@ public:
 		const int getSelectedAlchemySlotX() const { return selectedAlchemySlotX; }
 		const int getSelectedAlchemySlotY() const { return selectedAlchemySlotY; }
 		Frame* getAlchemySlotFrame(int x, int y) const;
-		void setItemDisplayNameAndPrice(Item* item, bool isTooltipForResultPotion, bool isTooltipForRecipe);
+		void setItemDisplayNameAndPrice(Item* item, const bool isTooltipForResultPotion, const bool isTooltipForRecipe);
+		void setItemDisplayNameAndPriceBrew(Item* item, const bool isTooltipForResultPotion, const bool isTooltipForRecipe);
+		void setItemDisplayNameAndPriceCook(Item* item, const bool isTooltipForResultPotion, const bool isTooltipForRecipe);
+		bool inventoryItemAllowedInGUI(Item* item);
 		bool warpMouseToSelectedAlchemyItem(Item* snapToItem, Uint32 flags);
 		void clearItemDisplayed();
+		bool alchemyMissingIngredientQty(Item* item);
 		static int heightOffsetWhenNotCompact;
 	};
 	AlchemyGUI_t alchemyGUI;
@@ -1888,7 +1899,8 @@ enum ItemContextMenuPrompts {
 	PROMPT_TINKER,
 	PROMPT_GRAB,
 	PROMPT_UNEQUIP_FOR_DROP,
-	PROMPT_CLEAR_HOTBAR_SLOT
+	PROMPT_CLEAR_HOTBAR_SLOT,
+	PROMPT_COOK
 };
 
 std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int player, Item* item);

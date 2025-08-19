@@ -76,6 +76,7 @@ extern int GAMEUI_FRAMEDATA_ALCHEMY_RECIPE_SLOT; // displaying in main alchemy g
 extern int GAMEUI_FRAMEDATA_ALCHEMY_RECIPE_ENTRY; // the recipe icon
 extern int GAMEUI_FRAMEDATA_WORLDTOOLTIP_ITEM;
 extern int GAMEUI_FRAMEDATA_SHOP_ITEM;
+extern int GAMEUI_FRAMEDATA_ALCHEMY_MISSING_QTY; // alchemy ingredient missing quantity
 
 // if true, use the new user interface
 extern bool newui;

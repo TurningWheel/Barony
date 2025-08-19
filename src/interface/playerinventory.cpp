@@ -2468,7 +2468,7 @@ bool dragDropStackInventoryItems(const int player, Item*& selectedItem, Item* te
 bool releaseInventoryItemIntoAlchemy(const int player)
 {
 	return false; // disable for now
-	Item*& selectedItem = inputs.getUIInteraction(player)->selectedItem;
+	/*Item*& selectedItem = inputs.getUIInteraction(player)->selectedItem;
 	if ( !selectedItem )
 	{
 		return false;
@@ -2519,7 +2519,7 @@ bool releaseInventoryItemIntoAlchemy(const int player)
 			return true;
 		}
 	}
-	return false;
+	return false;*/
 }
 
 void releaseChestItem(const int player)
@@ -8912,8 +8912,8 @@ void Player::Inventory_t::updateInventory()
 				}
 				else if ( alchemyGUI.bOpen )
 				{
-					if ( !(itemCategory(item) == POTION && item->type != POTION_EMPTY /*&& item != GenericGUI[player].alembicItem*/
-						&& item->identified && !itemIsEquipped(item, player)) )
+					if ( !(alchemyGUI.inventoryItemAllowedInGUI(item) /*&& item != GenericGUI[player].alembicItem*/
+						&& item->identified && !itemIsEquipped(item, player) && !(item->type == FOOD_TIN && !alchemyGUI.hasTinOpener)) )
 					{
 						updateSlotFrameFromItem(slotFrame, item, true);
 					}
@@ -9735,7 +9735,7 @@ void Player::Inventory_t::updateInventory()
 				else if ( alchemyGUI.bOpen )
 				{
 					alchemyOpen = true;
-					if ( itemCategory(item) == POTION && item->type != POTION_EMPTY )
+					if ( alchemyGUI.inventoryItemAllowedInGUI(item) )
 					{
 						alchemyGUI.setItemDisplayNameAndPrice(item, false, false);
 					}
@@ -10363,8 +10363,8 @@ void Player::Inventory_t::updateInventory()
 						}
 						else if ( alchemyGUI.bOpen )
 						{
-							if ( !(itemCategory(item) == POTION && item->type != POTION_EMPTY /*&& item != GenericGUI[player].alembicItem*/
-								&& item->identified && !itemIsEquipped(item, player)) )
+							if ( !(alchemyGUI.inventoryItemAllowedInGUI(item) /*&& item != GenericGUI[player].alembicItem*/
+								&& item->identified && !itemIsEquipped(item, player) && !(item->type == FOOD_TIN && !alchemyGUI.hasTinOpener)) )
 							{
 								updateSlotFrameFromItem(slotFrame, item, true);
 							}
@@ -10610,6 +10610,7 @@ std::string getContextMenuOptionBindingName(const int player, const ItemContextM
 		case PROMPT_GRAB:
 			return "MenuAlt1";
 		case PROMPT_TINKER:
+		case PROMPT_COOK:
 		case PROMPT_INTERACT:
 		case PROMPT_INTERACT_SPELLBOOK_HOTBAR:
 		case PROMPT_EAT:
@@ -10657,6 +10658,8 @@ const char* getContextMenuLangEntry(const int player, const ItemContextMenuPromp
 			return Language::get(6556);
 		case PROMPT_TINKER:
 			return Language::get(3670);
+		case PROMPT_COOK:
+			return Language::get(6773);
 		case PROMPT_CLEAR_HOTBAR_SLOT:
 			return Language::get(3723);
 		case PROMPT_APPRAISE:
@@ -10838,6 +10841,13 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 	else if ( item->type == TOOL_TINKERING_KIT )
 	{
 		options.push_back(PROMPT_TINKER);
+		options.push_back(PROMPT_EQUIP);
+		options.push_back(PROMPT_APPRAISE);
+		options.push_back(PROMPT_DROP);
+	}
+	else if ( item->type == TOOL_FRYING_PAN )
+	{
+		options.push_back(PROMPT_COOK);
 		options.push_back(PROMPT_EQUIP);
 		options.push_back(PROMPT_APPRAISE);
 		options.push_back(PROMPT_DROP);
@@ -11041,80 +11051,6 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 #endif // NDEBUG
 
 	return options;
-}
-
-inline bool itemMenuSkipRow1ForShopsAndChests(const int player, const Item& item)
-{
-	if ( (openedChest[player] || players[player]->gui_mode == GUI_MODE_SHOP)
-		&& (itemCategory(&item) == POTION || item.type == TOOL_ALEMBIC || item.type == TOOL_TINKERING_KIT || itemCategory(&item) == SPELLBOOK) )
-	{
-		return true;
-	}
-	return false;
-}
-
-inline void drawItemMenuOptionAutomaton(const int player, const Item& item, int x, int y, int height, bool is_potion_bad)
-{
-	return;
-	int width = 0;
-
-	//Option 0.
-	if ( openedChest[player] )
-	{
-		//drawOptionStoreInChest(x, y);
-	}
-	else if ( players[player]->gui_mode == GUI_MODE_SHOP )
-	{
-		//drawOptionSell(x, y);
-	}
-	else
-	{
-		if ( !is_potion_bad )
-		{
-			if ( !itemIsConsumableByAutomaton(item) || (itemCategory(&item) != FOOD && item.type != TOOL_METAL_SCRAP && item.type != TOOL_MAGIC_SCRAP) )
-			{
-				//drawOptionUse(player, item, x, y);
-			}
-			else
-			{
-				getSizeOfText(ttf12, Language::get(3487), &width, nullptr);
-				ttfPrintText(ttf12, x + 50 - width / 2, y + 4, Language::get(3487));
-			}
-		}
-		else
-		{
-			if ( itemIsEquipped(&item, player) )
-			{
-				//drawOptionUnwield(x, y);
-			}
-			else
-			{
-				//drawOptionWield(x, y);
-			}
-		}
-	}
-	y += height;
-
-	//Option 1.
-	if ( item.type == TOOL_METAL_SCRAP || item.type == TOOL_MAGIC_SCRAP )
-	{
-		getSizeOfText(ttf12, Language::get(1881), &width, nullptr);
-		ttfPrintText(ttf12, x + 50 - width / 2, y + 4, Language::get(1881));
-		y += height;
-	}
-	else if ( itemCategory(&item) != FOOD )
-	{
-		getSizeOfText(ttf12, Language::get(3487), &width, nullptr);
-		ttfPrintText(ttf12, x + 50 - width / 2, y + 4, Language::get(3487));
-		y += height;
-	}
-
-	//Option 1.
-	//drawOptionAppraise(x, y);
-	y += height;
-
-	//Option 2.
-	//drawOptionDrop(x, y);
 }
 
 // filters out items excluded by auto_hotbar_categories
