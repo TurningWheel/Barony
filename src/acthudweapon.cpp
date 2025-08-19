@@ -4659,7 +4659,7 @@ void actHudAdditional2(Entity* my)
 	my->flags[INVISIBLE_DITHER] = players[HUDADDITIONAL_PLAYERNUM]->hud.weapon->flags[INVISIBLE_DITHER];
 
 	auto& weaponLimb = players[HUDADDITIONAL_PLAYERNUM]->hud.weapon;
-	if ( (my->flags[INVISIBLE] && my->flags[INVISIBLE_DITHER]) || weaponLimb->skill[6] != 0 ) // HUDWEAPON_HIDEWEAPON
+	if ( (my->flags[INVISIBLE] && !my->flags[INVISIBLE_DITHER]) || weaponLimb->skill[6] != 0 ) // HUDWEAPON_HIDEWEAPON
 	{
 		hudFlail.needsInit = true;
 		return;
