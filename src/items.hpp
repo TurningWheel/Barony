@@ -374,9 +374,20 @@ typedef enum ItemType
 	BRANCH_BOW_INFECTED,
 	DUST_BALL,
 	BOLAS,
-	STEEL_FLAIL
+	STEEL_FLAIL,
+	FOOD_RATION,
+	FOOD_RATION_SPICY,
+	FOOD_RATION_SOUR,
+	FOOD_RATION_BITTER,
+	FOOD_RATION_HEARTY,
+	FOOD_RATION_HERBAL,
+	FOOD_RATION_SWEET,
+	SLOP_BALL,
+	TOOL_FRYING_PAN,
+	CLEAT_BOOTS,
+	ITEM_ENUM_MAX
 } ItemType;
-const int NUMITEMS = 355;
+const int NUMITEMS = ITEM_ENUM_MAX;
 
 //NOTE: If you change this, make sure to update NUMCATEGORIES in game.h to reflect the total number of categories. Not doing that will make bad things happen.
 typedef enum Category
@@ -540,6 +551,7 @@ public:
 	Sint32 potionGetCursedEffectDurationMinimum(Entity* my, Stat* myStats) const;
 	Sint32 potionGetCursedEffectDurationMaximum(Entity* my, Stat* myStats) const;
 	Sint32 potionGetCursedEffectDurationRandom(Entity* my, Stat* myStats) const;
+	static int getBaseFoodSatiation(ItemType type);
 
 	Sint32 getWeight() const;
 
@@ -665,7 +677,6 @@ Entity* item_ToolBeartrap(Item*& item, Entity* usedBy);
 void item_Food(Item*& item, int player);
 void item_FoodTin(Item*& item, int player);
 void item_FoodAutomaton(Item*& item, int player);
-void item_Gem(Item* item, int player);
 void item_Spellbook(Item*& item, int player);
 void item_ToolLootBag(Item*& item, int player);
 
@@ -803,6 +814,7 @@ ItemType itemTypeWithinGoldValue(int cat, int minValue, int maxValue, BaronyRNG&
 bool itemSpriteIsQuiverThirdPersonModel(int sprite);
 bool itemSpriteIsQuiverBaseThirdPersonModel(int sprite);
 bool itemTypeIsQuiver(ItemType type);
+bool itemTypeIsThrownBall(ItemType type);
 real_t rangedAttackGetSpeedModifier(const Stat* myStats);
 bool rangedWeaponUseQuiverOnAttack(const Stat* myStats);
 real_t getArtifactWeaponEffectChance(ItemType type, Stat& wielder, real_t* effectAmount);

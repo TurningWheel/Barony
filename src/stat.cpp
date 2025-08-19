@@ -896,7 +896,8 @@ int Stat::pickRandomEquippedItemToDegradeOnHit(Item** returnItem, bool excludeWe
 	}
 	if ( shield && (itemTypeIsQuiver(shield->type)
 		|| itemCategory(shield) == SPELLBOOK
-		|| shield->type == TOOL_TINKERING_KIT) )
+		|| shield->type == TOOL_TINKERING_KIT
+		|| shield->type == TOOL_FRYING_PAN) )
 	{
 		excludeShield = true;
 	}

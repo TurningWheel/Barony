@@ -118,6 +118,20 @@ void onThrownLandingParticle(Entity* my)
 						}
 					}
 					break;
+				case SLOP_BALL:
+					for ( int i = 0; i < 5; ++i )
+					{
+						if ( Entity* gib = spawnGib(hit.entity ? hit.entity : my, 1926) )
+						{
+							gib->sprite = 1926;
+							if ( !hit.entity )
+							{
+								gib->z = my->z;
+							}
+							serverSpawnGibForClient(gib);
+						}
+					}
+					break;
 				default:
 					break;
 				}
@@ -224,6 +238,23 @@ void actThrown(Entity* my)
 		else if ( my->sprite == items[DUST_BALL].index )
 		{
 			if ( Entity* fx = spawnMagicParticleCustom(my, 1886, 1.0, 1.0) )
+			{
+				fx->ditheringDisabled = true;
+				real_t dir = atan2(my->vel_y, my->vel_x);
+				//dir += local_rng.rand() % 2 == 0 ? PI / 32 : -PI / 32;
+				real_t spd = sqrt(my->vel_x * my->vel_x + my->vel_y * my->vel_y);
+				fx->vel_x = spd * 0.05 * cos(dir);
+				fx->vel_y = spd * 0.05 * sin(dir);
+				fx->lightBonus = vec4{ 0.25f, 0.25f, 0.25f, 0.f };
+				fx->pitch = PI / 2;
+				fx->roll = 0.0;
+				fx->yaw = dir;
+				fx->vel_z = 0.0;
+			}
+		}
+		else if ( my->sprite == items[SLOP_BALL].index )
+		{
+			if ( Entity* fx = spawnMagicParticleCustom(my, 1926, 1.0, 1.0) )
 			{
 				fx->ditheringDisabled = true;
 				real_t dir = atan2(my->vel_y, my->vel_x);
@@ -461,6 +492,22 @@ void actThrown(Entity* my)
 			}
 			thrownItemUpdateSpellTrail(*my, my->x, my->y);
 		}
+		else if ( my->sprite == items[SLOP_BALL].index )
+		{
+			if ( Entity* fx = spawnMagicParticleCustom(my, 1926, 1.0, 1.0) )
+			{
+				fx->ditheringDisabled = true;
+				real_t dir = atan2(my->vel_y, my->vel_x);
+				//dir += local_rng.rand() % 2 == 0 ? PI / 32 : -PI / 32;
+				real_t spd = sqrt(my->vel_x * my->vel_x + my->vel_y * my->vel_y);
+				fx->vel_x = spd * 0.05 * cos(dir);
+				fx->vel_y = spd * 0.05 * sin(dir);
+				fx->lightBonus = vec4{ 0.25f, 0.25f, 0.25f, 0.f };
+				fx->roll = 0.0;
+				fx->yaw = dir;
+				fx->vel_z = 0.0;
+			}
+		}
 	}
 	else
 	{
@@ -535,7 +582,9 @@ void actThrown(Entity* my)
 					list_RemoveNode(my->mynode);
 					return;
 				}
-				else if ( item && (item->type == DUST_BALL || item->type == GREASE_BALL) )
+				else if ( item && (item->type == DUST_BALL 
+					|| item->type == GREASE_BALL
+					|| item->type == SLOP_BALL) )
 				{
 					free(item);
 					onThrownLandingParticle(my);
@@ -966,6 +1015,7 @@ void actThrown(Entity* my)
 					{
 						if ( itemCategory(item) == THROWN 
 							&& !(item->type == DUST_BALL
+							|| item->type == SLOP_BALL
 							|| item->type == GREASE_BALL) )
 						{
 							int enemyAC = AC(hitstats);
@@ -1531,7 +1581,8 @@ void actThrown(Entity* my)
 				if ( friendlyHit && !usedpotion )
 				{
 					if ( item && itemCategory(item) != POTION && item->type != BOOMERANG
-						&& item->type != GREASE_BALL && item->type != DUST_BALL )
+						&& item->type != GREASE_BALL && item->type != DUST_BALL 
+						&& item->type != SLOP_BALL )
 					{
 						Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
 						entity->flags[INVISIBLE] = true;
@@ -1634,7 +1685,10 @@ void actThrown(Entity* my)
 				}
 				else
 				{
-					if ( cat == THROWN && !(item && (item->type == GREASE_BALL || item->type == DUST_BALL)) )
+					if ( cat == THROWN 
+						&& !(item && (item->type == GREASE_BALL 
+							|| item->type == DUST_BALL
+							|| item->type == SLOP_BALL)) )
 					{
 						playSoundEntity(hit.entity, 66, 64); //*tink*
 					}
@@ -2029,14 +2083,25 @@ void actThrown(Entity* my)
 			list_RemoveNode(my->mynode);
 			return;
 		}
-		else if ( item && (item->type == DUST_BALL || item->type == GREASE_BALL) )
+		else if ( item && (item->type == DUST_BALL 
+			|| item->type == GREASE_BALL
+			|| item->type == SLOP_BALL) )
 		{
 			free(item);
 			item = nullptr;
 			onThrownLandingParticle(my);
 			playSoundEntity(my, 764, 64);
-			list_RemoveNode(my->mynode);
-			return;
+			if ( hit.entity &&
+				(hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer) )
+			{
+				// become passable, go through creatures
+				my->flags[NOCLIP_CREATURES] = true;
+			}
+			else
+			{
+				list_RemoveNode(my->mynode);
+				return;
+			}
 		}
 		else if ( itemCategory(item) == THROWN && (item->type == STEEL_CHAKRAM 
 			|| item->type == CRYSTAL_SHURIKEN || (item->type == BOOMERANG && uidToEntity(my->parent))) 

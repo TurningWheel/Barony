@@ -1934,7 +1934,7 @@ EquipItemResult equipItem(Item* const item, Item** const slot, const int player,
 					{
 						playSoundEntity(players[player]->entity, 33 + local_rng.rand() % 2, 64);
 					}
-					else if ( item->type == BOOMERANG )
+					else if ( item->type == BOOMERANG || itemTypeIsThrownBall(item->type) )
 					{
 					}
 					else if ( itemCategory(item) == WEAPON || itemCategory(item) == THROWN )
@@ -1943,6 +1943,7 @@ EquipItemResult equipItem(Item* const item, Item** const slot, const int player,
 					}
 					else if ( itemCategory(item) == ARMOR 
 						|| item->type == TOOL_TINKERING_KIT 
+						|| item->type == TOOL_FRYING_PAN
 						|| itemTypeIsQuiver(item->type) )
 					{
 						playSoundEntity(players[player]->entity, 44 + local_rng.rand() % 3, 64);
@@ -2301,6 +2302,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		case DUST_BALL:
 		case BOLAS:
 		case STEEL_FLAIL:
+		case SLOP_BALL:
 			equipItemResult = equipItem(item, &stats[player]->weapon, player, checkInventorySpaceForPaperDoll);
 			break;
 		case STEEL_SHIELD:
@@ -2352,6 +2354,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		case ARTIFACT_BOOTS:
 		case CRYSTAL_BOOTS:
 		case SUEDE_BOOTS:
+		case CLEAT_BOOTS:
 			equipItemResult = equipItem(item, &stats[player]->shoes, player, checkInventorySpaceForPaperDoll);
 			break;
 		case LEATHER_BREASTPIECE:
@@ -2765,6 +2768,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		case INSTRUMENT_DRUM:
 		case INSTRUMENT_LUTE:
 		case INSTRUMENT_HORN:
+		case TOOL_FRYING_PAN:
 			equipItemResult = equipItem(item, &stats[player]->shield, player, checkInventorySpaceForPaperDoll);
 			break;
 		case TOOL_BLINDFOLD:
@@ -2847,6 +2851,13 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		case FOOD_FISH:
 		case FOOD_TOMALLEY:
 		case FOOD_BLOOD:
+		case FOOD_RATION:
+		case FOOD_RATION_SPICY:
+		case FOOD_RATION_SOUR:
+		case FOOD_RATION_BITTER:
+		case FOOD_RATION_HEARTY:
+		case FOOD_RATION_HERBAL:
+		case FOOD_RATION_SWEET:
 			item_Food(item, player);
 			break;
 		case FOOD_TIN:
@@ -3276,7 +3287,7 @@ Item* itemPickup(const int player, Item* const item, Item* addToSpecificInventor
 
 			if (!itemCompare(item, item2, false))
 			{
-				if ( (itemTypeIsQuiver(item2->type) && (item->count + item2->count) >= QUIVER_MAX_AMMO_QTY)
+				if ( ((itemTypeIsQuiver(item2->type) || itemTypeIsThrownBall(item2->type)) && (item->count + item2->count) >= QUIVER_MAX_AMMO_QTY)
 					|| ((item2->type == TOOL_MAGIC_SCRAP || item2->type == TOOL_METAL_SCRAP)
 						&& (item->count + item2->count) >= SCRAP_MAX_STACK_QTY) )
 				{
@@ -3445,7 +3456,11 @@ int Item::getMaxStackLimit(int player) const
 	}
 
 	int maxStack = 100;
-	if ( itemCategory(this) == THROWN || itemCategory(this) == GEM )
+	if ( itemTypeIsThrownBall(this->type) )
+	{
+		maxStack = QUIVER_MAX_AMMO_QTY - 1;
+	}
+	else if ( itemCategory(this) == THROWN || itemCategory(this) == GEM )
 	{
 		maxStack = THROWN_GEM_MAX_STACK_QTY;
 	}
@@ -3473,7 +3488,7 @@ ItemStackResult getItemStackingBehaviorIndividualItemCheck(const int player, Ite
 
 	if ( !itemCompare(itemToCheck, itemDestinationStack, false) )
 	{
-		if ( (itemTypeIsQuiver(itemDestinationStack->type) && (itemToCheck->count + itemDestinationStack->count) >= QUIVER_MAX_AMMO_QTY)
+		if ( ((itemTypeIsQuiver(itemDestinationStack->type) || itemTypeIsThrownBall(itemDestinationStack->type)) && (itemToCheck->count + itemDestinationStack->count) >= QUIVER_MAX_AMMO_QTY)
 			|| ((itemDestinationStack->type == TOOL_MAGIC_SCRAP || itemDestinationStack->type == TOOL_METAL_SCRAP)
 				&& (itemToCheck->count + itemDestinationStack->count) >= SCRAP_MAX_STACK_QTY) )
 		{
@@ -4085,7 +4100,15 @@ Sint32 Item::weaponGetAttack(const Stat* const wielder) const
 	}
 	else if ( type == BOLAS )
 	{
-		attack += 1;
+		attack += 3;
+	}
+	else if ( type == GREASE_BALL || type == DUST_BALL )
+	{
+		attack += 3;
+	}
+	else if ( type == SLOP_BALL )
+	{
+		attack += 3;
 	}
 	else if ( type == IRON_DAGGER )
 	{
@@ -4767,7 +4790,7 @@ Sint32 Item::armorGetAC(const Stat* const wielder) const
 	{
 		armor += 3;
 	}
-	else if ( type == LEATHER_BOOTS || type == LEATHER_BOOTS_SPEED )
+	else if ( type == LEATHER_BOOTS || type == LEATHER_BOOTS_SPEED || type == CLEAT_BOOTS )
 	{
 		armor += 1;
 	}
@@ -5868,6 +5891,7 @@ bool Item::shouldItemStack(const int player, bool ignoreStackLimit) const
 				&& this->type != TOOL_PICKAXE
 				&& this->type != TOOL_ALEMBIC
 				&& this->type != TOOL_TINKERING_KIT
+				&& this->type != TOOL_FRYING_PAN
 				&& this->type != ENCHANTED_FEATHER
 				&& this->type != TOOL_LANTERN
 				&& this->type != TOOL_GLASSES
@@ -5882,6 +5906,7 @@ bool Item::shouldItemStack(const int player, bool ignoreStackLimit) const
 				&& this->type != TOOL_PICKAXE 
 				&& this->type != TOOL_ALEMBIC 
 				&& this->type != TOOL_TINKERING_KIT
+				&& this->type != TOOL_FRYING_PAN
 				&& this->type != ENCHANTED_FEATHER
 				&& this->type != TOOL_LANTERN
 				&& this->type != TOOL_GLASSES
@@ -5893,6 +5918,14 @@ bool Item::shouldItemStack(const int player, bool ignoreStackLimit) const
 		{
 			// THROWN, GEM, TOOLS, POTIONS should stack when equipped.
 			// otherwise most equippables should not stack.
+			if ( itemTypeIsThrownBall(this->type) )
+			{
+				if ( !ignoreStackLimit && count >= QUIVER_MAX_AMMO_QTY - 1 )
+				{
+					return false;
+				}
+				return true;
+			}
 			if ( itemCategory(this) == THROWN || itemCategory(this) == GEM )
 			{
 				if ( !ignoreStackLimit && count >= THROWN_GEM_MAX_STACK_QTY )
@@ -6073,6 +6106,11 @@ bool itemSpriteIsQuiverBaseThirdPersonModel(const int sprite)
 bool itemTypeIsQuiver(const ItemType type)
 {
 	return (type >= QUIVER_SILVER && type <= QUIVER_HUNTING);
+}
+
+bool itemTypeIsThrownBall(const ItemType type)
+{
+	return type == DUST_BALL || type == GREASE_BALL || type == SLOP_BALL;
 }
 
 real_t rangedAttackGetSpeedModifier(const Stat* const myStats)

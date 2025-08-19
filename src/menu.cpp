@@ -544,7 +544,7 @@ int isCharacterValidFromDLC(Stat& myStats, int characterClass)
 	{
 		return VALID_OK_CHARACTER; // aesthetic only option.
 	}
-	if ( characterClass <= CLASS_MONK || characterClass == CLASS_21 )
+	if ( characterClass <= CLASS_MONK || characterClass == CLASS_21 || characterClass == CLASS_22 )
 	{
 		return VALID_OK_CHARACTER;
 	}

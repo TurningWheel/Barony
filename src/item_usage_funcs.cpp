@@ -4601,6 +4601,50 @@ Entity* item_ToolBeartrap(Item*& item, Entity* usedBy)
 	return entity;
 }
 
+int Item::getBaseFoodSatiation(ItemType type)
+{
+	int hungerIncrease = 0;
+	switch ( type )
+	{
+		case FOOD_BREAD:
+			hungerIncrease = 400;
+			break;
+		case FOOD_CREAMPIE:
+			hungerIncrease = 200;
+			break;
+		case FOOD_CHEESE:
+			hungerIncrease = 100;
+			break;
+		case FOOD_APPLE:
+			hungerIncrease = 200;
+			break;
+		case FOOD_MEAT:
+			hungerIncrease = 600;
+			break;
+		case FOOD_FISH:
+			hungerIncrease = 500;
+			break;
+		case FOOD_TOMALLEY:
+			hungerIncrease = 400;
+			break;
+		case FOOD_TIN:
+			hungerIncrease = 600;
+			break;
+		case FOOD_RATION:
+		case FOOD_RATION_SPICY:
+		case FOOD_RATION_SOUR:
+		case FOOD_RATION_BITTER:
+		case FOOD_RATION_HEARTY:
+		case FOOD_RATION_HERBAL:
+		case FOOD_RATION_SWEET:
+			hungerIncrease = 200;
+			break;
+		default:
+			break;
+	}
+	return hungerIncrease;
+}
+
 void item_Food(Item*& item, int player)
 {
 	if ( !item )
@@ -4823,25 +4867,20 @@ void item_Food(Item*& item, int player)
 		switch ( item->type )
 		{
 			case FOOD_BREAD:
-				hungerIncrease = 400;
-				break;
 			case FOOD_CREAMPIE:
-				hungerIncrease = 200;
-				break;
 			case FOOD_CHEESE:
-				hungerIncrease = 100;
-				break;
 			case FOOD_APPLE:
-				hungerIncrease = 200;
-				break;
 			case FOOD_MEAT:
-				hungerIncrease = 600;
-				break;
 			case FOOD_FISH:
-				hungerIncrease = 500;
-				break;
 			case FOOD_TOMALLEY:
-				hungerIncrease = 400;
+			case FOOD_RATION:
+			case FOOD_RATION_SPICY:
+			case FOOD_RATION_SOUR:
+			case FOOD_RATION_BITTER:
+			case FOOD_RATION_HEARTY:
+			case FOOD_RATION_HERBAL:
+			case FOOD_RATION_SWEET:
+				hungerIncrease = Item::getBaseFoodSatiation(item->type);
 				break;
 			case FOOD_BLOOD:
 				if ( players[player] && players[player]->entity 
@@ -4881,7 +4920,10 @@ void item_Food(Item*& item, int player)
 
 		if ( stats[player]->getEffectActive(EFF_BLESS_FOOD) )
 		{
-			players[player]->entity->setEffect(EFF_MARIGOLD, true, stats[player]->EFFECTS_TIMERS[EFF_MARIGOLD] + TICKS_PER_SECOND * 30, false);
+			if ( players[player] && players[player]->entity )
+			{
+				players[player]->entity->setEffect(EFF_MARIGOLD, true, stats[player]->EFFECTS_TIMERS[EFF_MARIGOLD] + TICKS_PER_SECOND * 30, false);
+			}
 		}
 	}
 	else
@@ -4928,6 +4970,15 @@ void item_Food(Item*& item, int player)
 					case FOOD_FISH:
 						manaRegenPercent = 0.5;
 						break;
+					case FOOD_RATION:
+					case FOOD_RATION_SPICY:
+					case FOOD_RATION_SOUR:
+					case FOOD_RATION_BITTER:
+					case FOOD_RATION_HEARTY:
+					case FOOD_RATION_HERBAL:
+					case FOOD_RATION_SWEET:
+						manaRegenPercent = 0.2;
+						break;
 					case FOOD_BLOOD:
 						if ( players[player] && players[player]->entity
 							&& playerRequiresBloodToSustain(player) )
@@ -4952,6 +5003,41 @@ void item_Food(Item*& item, int player)
 	if ( item->type == FOOD_TOMALLEY )
 	{
 		serverUpdatePlayerGameplayStats(player, STATISTICS_TEMPT_FATE, 1);
+	}
+	else
+	{
+		int effectID = -1;
+		switch ( item->type )
+		{
+		case FOOD_RATION_SPICY:
+			effectID = EFF_RATION_SPICY;
+			break;
+		case FOOD_RATION_SOUR:
+			effectID = EFF_RATION_SOUR;
+			break;
+		case FOOD_RATION_BITTER:
+			effectID = EFF_RATION_BITTER;
+			break;
+		case FOOD_RATION_HEARTY:
+			effectID = EFF_RATION_HEARTY;
+			break;
+		case FOOD_RATION_HERBAL:
+			effectID = EFF_RATION_HERBAL;
+			break;
+		case FOOD_RATION_SWEET:
+			effectID = EFF_RATION_SWEET;
+			break;
+		default:
+			break;
+		}
+
+		if ( effectID >= 0 )
+		{
+			if ( players[player] && players[player]->entity )
+			{
+				players[player]->entity->setEffect(effectID, true, stats[player]->EFFECTS_TIMERS[effectID] + TICKS_PER_SECOND * 60, false);
+			}
+		}
 	}
 
 	// results of eating
@@ -5178,7 +5264,7 @@ void item_FoodTin(Item*& item, int player)
 	// replenish nutrition points
 	if (svFlags & SV_FLAG_HUNGER)
 	{
-		stats[player]->HUNGER += 600 * foodMult;
+		stats[player]->HUNGER += Item::getBaseFoodSatiation(item->type) * foodMult;
 
 		if ( stats[player]->mask && stats[player]->mask->type == MASK_MARIGOLD )
 		{
@@ -5807,6 +5893,13 @@ void item_FoodAutomaton(Item*& item, int player)
 		case FOOD_MEAT:
 		case FOOD_FISH:
 		case FOOD_TIN:
+		case FOOD_RATION:
+		case FOOD_RATION_SPICY:
+		case FOOD_RATION_SOUR:
+		case FOOD_RATION_BITTER:
+		case FOOD_RATION_HEARTY:
+		case FOOD_RATION_HERBAL:
+		case FOOD_RATION_SWEET:
 			if ( svFlags & SV_FLAG_HUNGER )
 			{
 				messagePlayer(player, MESSAGE_STATUS, Language::get(3697)); // no effect.
@@ -6011,6 +6104,13 @@ bool itemIsConsumableByAutomaton(const Item& item)
 		case FOOD_MEAT:
 		case FOOD_FISH:
 		case FOOD_TIN:
+		case FOOD_RATION:
+		case FOOD_RATION_SPICY:
+		case FOOD_RATION_SOUR:
+		case FOOD_RATION_BITTER:
+		case FOOD_RATION_HEARTY:
+		case FOOD_RATION_HERBAL:
+		case FOOD_RATION_SWEET:
 
 		case GEM_ROCK:
 		case GEM_GLASS:
