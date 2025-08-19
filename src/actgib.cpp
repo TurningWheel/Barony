@@ -911,7 +911,7 @@ void actGreasePuddleSpawner(Entity* my)
 								}
 							}
 						}
-						if ( entity->behavior == &actCampfire && my->skill[3] )
+						if ( (entity->behavior == &actCampfire && my->skill[3]) || entity->behavior == &actTorch )
 						{
 							my->SetEntityOnFire();
 						}
@@ -922,6 +922,10 @@ void actGreasePuddleSpawner(Entity* my)
 								if ( Stat* stats = entity->getStats() )
 								{
 									if ( swimmingtiles[map.tiles[mapIndex]] && entity->behavior == &actPlayer && players[entity->skill[2]]->movement.isPlayerSwimming() )
+									{
+										continue;
+									}
+									if ( !entity->monsterIsTargetable(false) )
 									{
 										continue;
 									}
