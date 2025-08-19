@@ -232,7 +232,7 @@ void actSink(Entity* my)
 									stats[i]->HUNGER += 50; //Less nutrition than the refreshing fountain.
 									serverUpdateHunger(i);
 								}
-								players[i]->entity->modHP(1);
+								players[i]->entity->modHP(2 + local_rng.rand() % 2);
 								Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_SINKS_HEALTH_RESTORED, "sink", 1);
 							}
 							else
