@@ -1100,6 +1100,13 @@ bool Entity::isColliderAttachableToBombs() const
 	return colliderDmgType.bombsAttach;
 }
 
+bool Entity::isColliderPathableMonster(Monster type) const
+{
+	if ( !isDamageableCollider() ) { return false; }
+	auto& colliderData = EditorEntityData_t::colliderData[colliderDamageTypes];
+	return colliderData.pathableMonsters.find(type) != colliderData.pathableMonsters.end();
+}
+
 bool Entity::isDamageableCollider() const 
 { 
 	return behavior == &actColliderDecoration && colliderMaxHP > 0;

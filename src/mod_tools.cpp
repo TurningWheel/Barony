@@ -9224,6 +9224,8 @@ void EditorEntityData_t::readFromFile()
 			collider.breakMessageLangEntry = itr->value["break_message"].GetInt();
 			collider.hpbarLookupName = itr->value["hp_bar_lookup_name"].GetString();
 			collider.hideMonsters.clear();
+			collider.spellTriggers.clear();
+			collider.pathableMonsters.clear();
 			if ( itr->value.HasMember("random_gen_pool") )
 			{
 				if ( itr->value["random_gen_pool"].IsObject() )
@@ -9254,6 +9256,28 @@ void EditorEntityData_t::readFromFile()
 								if ( val->IsInt() )
 								{
 									data.push_back(val->GetInt());
+								}
+							}
+						}
+						continue;
+					}
+					if ( !strcmp(itr2->name.GetString(), "pathable") )
+					{
+						auto& data = collider.pathableMonsters;
+						if ( itr2->value.IsArray() )
+						{
+							for ( auto val = itr2->value.Begin(); val != itr2->value.End(); ++val )
+							{
+								if ( val->IsString() )
+								{
+									for ( int i = 0; i < NUMMONSTERS; ++i )
+									{
+										if ( !strcmp(val->GetString(), monstertypename[i]) )
+										{
+											data.insert(i);
+											break;
+										}
+									}
 								}
 							}
 						}

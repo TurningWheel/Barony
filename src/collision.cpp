@@ -1082,7 +1082,7 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 						|| type == MOTH_SMALL
 						|| type == HOLOGRAM
 						|| type == FLAME_ELEMENTAL
-						|| (type == MONSTER_M && entity->colliderSpellEvent > 0)
+						|| entity->isColliderPathableMonster(type)
 						)) || my->behavior == &actDeathGhost) )
 			{
 				continue;

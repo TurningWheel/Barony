@@ -4719,7 +4719,7 @@ void actMonster(Entity* my)
 				if ( entity->behavior != &actMonster && entity->behavior != &actPlayer && entity->behavior != &actDoorFrame
 					&& !(entity->behavior == &actColliderDecoration 
 						&& ((entity->flags[PASSABLE] && entity->colliderHasCollision != 0)
-							|| (myStats->type == MONSTER_M && entity->colliderSpellEvent > 0)) ))
+							|| (entity->isColliderPathableMonster(myStats->type))) ))
 				{
 					continue;
 				}

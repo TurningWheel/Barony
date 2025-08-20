@@ -3344,6 +3344,7 @@ struct EditorEntityData_t
 		int breakMessageLangEntry = 2510;
 		std::map<std::string, std::vector<int>> hideMonsters;
 		std::vector<int> spellTriggers;
+		std::set<int> pathableMonsters;
 		std::map<std::string, int> overrideProperties;
 		bool hasOverride(std::string key)
 		{

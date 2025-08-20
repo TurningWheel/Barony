@@ -1292,6 +1292,7 @@ public:
 	bool isColliderWeakToBoulders() const;
 	bool isColliderShownAsWallOnMinimap() const;
 	bool isColliderDamageableByMagic() const;
+	bool isColliderPathableMonster(Monster type) const;
 	bool isColliderAttachableToBombs() const;
 	bool isColliderWall() const;
 	bool isColliderBreakableContainer() const;
