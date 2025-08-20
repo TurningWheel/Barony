@@ -814,6 +814,10 @@ real_t getBonusFromCasterOfSpellElement(Entity* caster, Stat* casterStats, spell
 		{
 			bonus += 0.25;
 		}
+		if ( casterStats->getEffectActive(EFF_RATION_SOUR) )
+		{
+			bonus += 0.25;
+		}
 		if ( casterStats->helmet )
 		{
 			if ( casterStats->helmet->type == HAT_MITER )
