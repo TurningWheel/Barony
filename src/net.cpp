@@ -7351,6 +7351,50 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		equipItem(item, &stats[client]->shield, client, false);
 	}},
 
+	// consume torch item shield slot
+	{ 'COOK', []() {
+		const int client = std::min(net_packet->data[25], (Uint8)(MAXPLAYERS - 1));
+		auto item = newItem(
+			static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])),
+			static_cast<Status>(SDLNet_Read32(&net_packet->data[8])),
+			SDLNet_Read32(&net_packet->data[12]),
+			SDLNet_Read32(&net_packet->data[16]),
+			SDLNet_Read32(&net_packet->data[20]),
+			net_packet->data[24],
+			&stats[client]->inventory);
+		if ( stats[client]->shield )
+		{
+			// deselect shield
+			if ( stats[client]->shield->node )
+			{
+				list_RemoveNode(stats[client]->shield->node);
+			}
+			else
+			{
+				free(stats[client]->shield);
+			}
+			stats[client]->shield = nullptr;
+		}
+		if ( item->count > 0 )
+		{
+			bool oldIntro = intro;
+			intro = true;
+			equipItem(item, &stats[client]->shield, client, false);
+			intro = oldIntro;
+		}
+		else
+		{
+			if ( item->node )
+			{
+				list_RemoveNode(item->node);
+			}
+			else
+			{
+				free(item);
+			}
+		}
+	} },
+
 	// equip item (any other slot)
 	{'EQUM', [](){
 		const int client = std::min(net_packet->data[25], (Uint8)(MAXPLAYERS - 1));

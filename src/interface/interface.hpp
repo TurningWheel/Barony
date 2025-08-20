@@ -1169,6 +1169,7 @@ public:
 
 		Item alchemyResultPotion;
 		Item emptyBottleCount;
+		Item torchCount;
 		AlchemyGUI_t(GenericGUIMenu& g) :
 			parentGUI(g),
 			recipes(*this)
@@ -1198,6 +1199,19 @@ public:
 			emptyBottleCount.isDroppable = false;
 			emptyBottleCount.x = 0;
 			emptyBottleCount.y = 0;
+
+			torchCount.appearance = 0;
+			torchCount.type = TOOL_TORCH;
+			torchCount.node = nullptr;
+			torchCount.status = SERVICABLE;
+			torchCount.beatitude = 0;
+			torchCount.count = 0;
+			torchCount.appearance = 0;
+			torchCount.identified = true;
+			torchCount.uid = 0;
+			torchCount.isDroppable = false;
+			torchCount.x = 0;
+			torchCount.y = 0;
 		}
 		enum AlchemyActions_t : int
 		{

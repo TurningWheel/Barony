@@ -8406,6 +8406,10 @@ bool GenericGUIMenu::AlchemyGUI_t::alchemyMissingIngredientQty(Item* item)
 		{
 			if ( !item )
 			{
+				if ( torchCount.count >= 0 && torchCount.count < 4 )
+				{
+					return true;
+				}
 				if ( alchemyResultPotion.appearance != 0 )
 				{
 					return true;
@@ -9055,6 +9059,78 @@ void GenericGUIMenu::alchemyCookCombination()
 				break;
 			}
 			--consume2;
+		}
+
+		if ( alchemyGUI.torchCount.count >= 0 )
+		{
+			std::vector<Item*> torches;
+			Item* torchesEquipped;
+			for ( node_t* invnode = stats[gui_player]->inventory.first; invnode != NULL; invnode = invnode->next )
+			{
+				Item* item = (Item*)invnode->element;
+				if ( item && item->type == TOOL_TORCH )
+				{
+					if ( itemIsEquipped(item, gui_player) )
+					{
+						torchesEquipped = item;
+					}
+					else
+					{
+						torches.push_back(item);
+					}
+				}
+			}
+			int consumeTorch = 4;
+			bool updateEquipSlot = false;
+			while ( consumeTorch > 0 )
+			{
+				if ( torches.size() == 0 && !torchesEquipped )
+				{
+					break;
+				}
+
+				Item* torch = nullptr;
+				if ( torches.size() > 0 )
+				{
+					torch = torches[0];
+					torches.erase(torches.begin());
+
+					while ( torch && consumeTorch > 0 )
+					{
+						consumeItem(torch, gui_player);
+						--consumeTorch;
+					}
+					continue;
+				}
+				if ( torchesEquipped )
+				{
+					while ( torchesEquipped && consumeTorch > 0 )
+					{
+						consumeItem(torchesEquipped, gui_player);
+						updateEquipSlot = true;
+						--consumeTorch;
+					}
+					continue;
+				}
+			}
+
+			if ( updateEquipSlot && multiplayer == CLIENT )
+			{
+				// if decrementing qty and holding item, then send "equip" for server to update their count of your held item.
+				strcpy((char*)net_packet->data, "COOK");
+				Item* shield = stats[gui_player]->shield;
+				SDLNet_Write32(static_cast<Uint32>(shield ? shield->type : TOOL_TORCH), &net_packet->data[4]);
+				SDLNet_Write32(static_cast<Uint32>(shield ? shield->status : BROKEN), &net_packet->data[8]);
+				SDLNet_Write32(static_cast<Uint32>(shield ? shield->beatitude : 0), &net_packet->data[12]);
+				SDLNet_Write32(static_cast<Uint32>(shield ? shield->count : 0), &net_packet->data[16]);
+				SDLNet_Write32(static_cast<Uint32>(shield ? shield->appearance : 0), &net_packet->data[20]);
+				net_packet->data[24] = shield ? shield->identified : false;
+				net_packet->data[25] = gui_player;
+				net_packet->address.host = net_server.host;
+				net_packet->address.port = net_server.port;
+				net_packet->len = 26;
+				sendPacketSafe(net_sock, -1, net_packet, 0);
+			}
 		}
 
 		if ( items[basePotionType].category == POTION || items[secondaryPotionType].category == POTION )
@@ -16552,7 +16628,20 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 	if ( auto emptyBottleFrame = baseFrame->findFrame("empty bottles") )
 	{
 		emptyBottleFrame->setUserData(&GAMEUI_FRAMEDATA_ALCHEMY_RECIPE_ENTRY);
-		updateSlotFrameFromItem(emptyBottleFrame, &emptyBottleCount);
+		if ( currentView == ALCHEMY_VIEW_BREW || currentView == ALCHEMY_VIEW_RECIPES_COOK )
+		{
+			updateSlotFrameFromItem(emptyBottleFrame, &emptyBottleCount);
+		}
+		else
+		{
+			updateSlotFrameFromItem(emptyBottleFrame, &torchCount);
+			if ( torchCount.count < 0 )
+			{
+				auto spriteImageFrame = emptyBottleFrame->findFrame("item sprite frame");
+				auto spriteImage = spriteImageFrame->findImage("item sprite img");
+				spriteImage->path = "*#images/ui/Alchemy/Campfire.png";
+			}
+		}
 	}
 
 	static ConsoleVariable<int> cvar_alchemy_potion1_destx1("/alchemy_potion1_destx1", 36);
@@ -17589,6 +17678,7 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 								|| toCompare == Language::get(4165) 
 								|| toCompare == Language::get(6772)
 								|| toCompare == Language::get(6768)
+								|| toCompare == Language::get(6774)
 								|| toCompare == Language::get(4168) )
 							{
 								color = hudColors.characterSheetRed;
@@ -19109,8 +19199,18 @@ void GenericGUIMenu::AlchemyGUI_t::setItemDisplayNameAndPriceCook(Item* item, co
 			if ( alchemyMissingIngredientQty(nullptr) )
 			{
 				itemActionType = ALCHEMY_ACTION_UNIDENTIFIED_POTION;
-				strcat(buf, "\n");
-				strcat(buf, Language::get(6768));
+				if ( alchemyResultPotion.appearance != 0 )
+				{
+					// missing ingredient
+					strcat(buf, "\n");
+					strcat(buf, Language::get(6768));
+				}
+				else
+				{
+					// missing fuel
+					strcat(buf, "\n");
+					strcat(buf, Language::get(6774));
+				}
 			}
 			else
 			{
@@ -19304,10 +19404,15 @@ void buildRecipeList(const int player)
 
 	std::unordered_map<int, std::pair<std::vector<Item*>, int>> inventoryPotions;
 	bool hasEmptyBottle = false;
+	alchemy.torchCount.count = 0;
 	for ( node_t* node = stats[player]->inventory.first; node; node = node->next )
 	{
 		Item* item = (Item*)node->element;
 		if ( !item ) { continue; }
+		if ( item->type == TOOL_TORCH )
+		{
+			alchemy.torchCount.count += item->count;
+		}
 		if ( itemCategory(item) == POTION )
 		{
 			if ( item->type == POTION_EMPTY )
@@ -19327,6 +19432,30 @@ void buildRecipeList(const int player)
 				inventoryPotions[item->type].first.push_back(item);
 			}
 			inventoryPotions[item->type].second += item->count;
+		}
+	}
+
+	if ( alchemy.currentView == alchemy.ALCHEMY_VIEW_COOK || alchemy.currentView == alchemy.ALCHEMY_VIEW_RECIPES_COOK )
+	{
+		if ( players[player] && players[player]->entity )
+		{
+			auto entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(players[player]->entity, 2);
+			for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
+			{
+				list_t* currentList = *it;
+				node_t* node;
+				for ( node = currentList->first; node != nullptr; node = node->next )
+				{
+					if ( Entity* entity = ((Entity*)node->element) )
+					{
+						if ( entity->behavior == &actCampfire && entity->skill[3] > 0 /*fire health */ && entityDist(entity, players[player]->entity) < 32.0 )
+						{
+							alchemy.torchCount.count = -1;
+							break;
+						}
+					}
+				}
+			}
 		}
 	}
 
