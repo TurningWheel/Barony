@@ -5480,6 +5480,7 @@ void ingameHud()
 
 			players[player]->hotbar.faceMenuQuickCast = false;
 			bool allowCasting = false;
+			bool castAnimationTouch = false;
 			if ( tryInventoryQuickCast )
 			{
 				allowCasting = true;
@@ -5491,7 +5492,27 @@ void ingameHud()
 				bool castMemorizedSpell = input.binaryToggle("Cast Spell");
 				bool castSpellbook = (hasSpellbook && input.binaryToggle("Defend"));
 
-			    if (tryHotbarQuickCast || castMemorizedSpell || castSpellbook )
+				if ( inputs.hasController(player) && cast_animation[player].spellWaitingAttackInput() )
+				{
+					allowCasting = false;
+					castAnimationTouch = true;
+
+					if ( FollowerMenu[player].followerMenuIsOpen() || CalloutMenu[player].calloutMenuIsOpen() )
+					{
+						// nothing, let menucancel close them
+					}
+					else if ( input.binaryToggle("MenuCancel") )
+					{
+						input.consumeBinaryToggle("MenuCancel");
+						input.consumeBindingsSharedWithBinding("MenuCancel");
+						input.consumeBinaryToggle("Hotbar Left");
+						input.consumeBinaryToggle("Hotbar Up / Select");
+						input.consumeBinaryToggle("Hotbar Right");
+
+						castSpellInit(players[player]->entity->getUID(), players[player]->magic.selectedSpell(), false);
+					}
+				}
+			    else if (tryHotbarQuickCast || castMemorizedSpell || castSpellbook )
 			    {
 				    allowCasting = true;
 				    if ( tryHotbarQuickCast == false )
@@ -5629,7 +5650,10 @@ void ingameHud()
 				}
 				input.consumeBinaryToggle("Defend");
 			}
-			input.consumeBinaryToggle("Cast Spell");
+			if ( !castAnimationTouch )
+			{
+				input.consumeBinaryToggle("Cast Spell");
+			}
 		}
 		players[player]->magic.resetQuickCastSpell();
 

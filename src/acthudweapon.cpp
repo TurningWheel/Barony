@@ -754,7 +754,9 @@ void actHudWeapon(Entity* my)
 
 	bool swingweapon = false;
 	if ( players[HUDWEAPON_PLAYERNUM]->entity
-		&& input.binaryToggle("Attack")
+		&& (input.binaryToggle("Attack") 
+			|| (cast_animation[HUDWEAPON_PLAYERNUM].spellWaitingAttackInput() 
+				&& inputs.hasController(HUDWEAPON_PLAYERNUM) && input.binaryToggle("Cast Spell")) )
 		&& shootmode 
 		&& !gamePaused
 		&& players[HUDWEAPON_PLAYERNUM]->entity->isMobile()

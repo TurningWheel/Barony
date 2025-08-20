@@ -109,7 +109,8 @@ public:
 			RUMBLE_BOULDER_BOUNCE,
 			RUMBLE_BOULDER_ROLLING,
 			RUMBLE_DEATH,
-			RUMBLE_TMP
+			RUMBLE_TMP,
+			RUMBLE_SPELL
 		};
 		int hapticEffectId = -1;
 		struct HapticEffect

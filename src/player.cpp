@@ -2812,7 +2812,8 @@ GameController::Haptic_t::HapticEffect* GameController::handleRumble()
 			|| rumbleToPlay->second.pattern == Haptic_t::RUMBLE_BOULDER 
 			|| rumbleToPlay->second.pattern == Haptic_t::RUMBLE_BOULDER_BOUNCE
 			|| rumbleToPlay->second.pattern == Haptic_t::RUMBLE_DEATH
-			|| rumbleToPlay->second.pattern == Haptic_t::RUMBLE_TMP))
+			|| rumbleToPlay->second.pattern == Haptic_t::RUMBLE_TMP
+			|| rumbleToPlay->second.pattern == Haptic_t::RUMBLE_SPELL))
 #endif
 	{
 		Uint32 newStartTime = (haptics.hapticTick - rumbleToPlay->second.startTick);
@@ -2851,6 +2852,10 @@ void GameController::addRumble(Haptic_t::RumblePattern pattern, Uint16 smallMagn
 		priority = 1;
 	}
 	else if ( pattern == Haptic_t::RumblePattern::RUMBLE_TMP )
+	{
+		priority = 5;
+	}
+	else if ( pattern == Haptic_t::RumblePattern::RUMBLE_SPELL )
 	{
 		priority = 5;
 	}
@@ -3042,6 +3047,13 @@ GameController::Haptic_t::HapticEffect* GameController::doRumble(Haptic_t::Rumbl
 		{
 			r->customEffect = std::max(0.1, (currentPlayheadPercent - .66) / .165);
 		}
+		haptics.hapticEffect.large_magnitude = r->largeMagnitude * r->customEffect;
+		haptics.hapticEffect.small_magnitude = r->smallMagnitude * r->customEffect;
+	}
+	else if ( r->pattern == Haptic_t::RUMBLE_SPELL )
+	{
+		real_t currentPlayheadPercent = r->startTime / static_cast<real_t>(r->length);
+		r->customEffect = sin(currentPlayheadPercent * PI);
 		haptics.hapticEffect.large_magnitude = r->largeMagnitude * r->customEffect;
 		haptics.hapticEffect.small_magnitude = r->smallMagnitude * r->customEffect;
 	}

@@ -10013,8 +10013,13 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 
 		textPos.x += 40;
 		textPos.y += 20;
-		auto glyphPathPressed = Input::inputs[player.playernum].getGlyphPathForBinding("Attack", true);
-		auto glyphPathUnpressed = Input::inputs[player.playernum].getGlyphPathForBinding("Attack", false);
+		const char* inputstr = "Attack";
+		if ( inputs.hasController(player.playernum) )
+		{
+			inputstr = "Cast Spell";
+		}
+		auto glyphPathPressed = Input::inputs[player.playernum].getGlyphPathForBinding(inputstr, true);
+		auto glyphPathUnpressed = Input::inputs[player.playernum].getGlyphPathForBinding(inputstr, false);
 		if ( ticks % 50 < 25 )
 		{
 			glyphSpellTarget->path = glyphPathPressed;
@@ -10059,21 +10064,9 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 
 		if ( true || target )
 		{
-			for ( auto& skill : player.skillSheet.skillSheetData.skillEntries )
-			{
-				if ( skill.skillId == PRO_SPELLCASTING )
-				{
-					if ( skillCapstoneUnlocked(player.playernum, skill.skillId) )
-					{
-						iconSpellTarget->path = skill.skillIconPathLegend;
-					}
-					else
-					{
-						iconSpellTarget->path = skill.skillIconPath;
-					}
-					break;
-				}
-			}
+			char buf[128] = "";
+			snprintf(buf, sizeof(buf), "#*images/ui/HUD/Casting%02d.png", ticks % 50 < 25 ? 1 : 2);
+			iconSpellTarget->path = buf;
 
 			if ( auto imgGet = Image::get(iconSpellTarget->path.c_str()) )
 			{

@@ -71,6 +71,9 @@ bool spellcasting_animation_manager_t::hideShieldFromBasicCast()
 	return false;
 }
 
+static ConsoleVariable<int> cvar_vibe_spell_x("/vibe_spell_x", 4000);
+static ConsoleVariable<int> cvar_vibe_spell_y("/vibe_spell_y", 0);
+static ConsoleVariable<int> cvar_vibe_spell_s("/vibe_spell_s", 0);
 void spellcasting_animation_manager_t::executeAttackSpell(bool swingweapon)
 {
 	if ( player < 0 || player >= MAXPLAYERS ) { return; }
@@ -1175,6 +1178,12 @@ void actLeftHandMagic(Entity* my)
 							|| cast_animation[HANDMAGIC_PLAYERNUM].rangefinder == SpellRangefinderType::RANGEFINDER_TOUCH_WALL_TILE )
 						{
 							cast_animation[HANDMAGIC_PLAYERNUM].stage = ANIM_SPELL_TOUCH;
+							if ( *cvar_vibe_spell_s > 0 )
+							{
+								inputs.rumble(HANDMAGIC_PLAYERNUM, GameController::Haptic_t::RUMBLE_SPELL, *cvar_vibe_spell_x,
+									*cvar_vibe_spell_y, *cvar_vibe_spell_s, 0);
+							}
+
 							playSoundEntityLocal(players[HANDMAGIC_PLAYERNUM]->entity, 759 + local_rng.rand() % 4, 92);
 						}
 						else
