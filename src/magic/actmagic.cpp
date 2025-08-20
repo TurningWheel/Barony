@@ -6690,7 +6690,7 @@ void actParticleBolas(Entity* my)
 
 	if ( destroy )
 	{
-		if ( multiplayer != CLIENT && my->skill[10] > 0 )
+		if ( multiplayer != CLIENT && my->skill[10] > 0 && my->skill[12] >= 0 ) // not cursed
 		{
 			Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
 			entity->flags[INVISIBLE] = true;
