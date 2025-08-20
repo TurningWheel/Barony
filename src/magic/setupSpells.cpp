@@ -2024,8 +2024,8 @@ void setupSpells()   ///TODO: Verify this function.
 	spell = createSimpleSpell(
 		SPELL_BOOBY_TRAP,
 		100, // difficulty
-		1, // mana
-		1, // base mana
+		5, // mana
+		5, // base mana
 		1, // overload
 		25, // damage
 		50, // duration
@@ -2588,8 +2588,8 @@ void setupSpells()   ///TODO: Verify this function.
 	spell = createSimpleSpell(
 		SPELL_DEFACE,
 		100, // difficulty
-		1, // mana
-		1, // base mana
+		10, // mana
+		10, // base mana
 		1, // overload
 		0, // damage
 		1, // duration

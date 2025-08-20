@@ -6988,6 +6988,13 @@ bool spellIsNaturallyLearnedByRaceOrClass(Entity& caster, Stat& stat, int spellI
 			return true;
 		}
 	}
+	else if ( client_classes[playernum] == CLASS_22 )
+	{
+		if ( spellID == SPELL_BOOBY_TRAP )
+		{
+			return true;
+		}
+	}
 	else if ( stat.getEffectActive(EFF_SHAPESHIFT) )
 	{
 		switch ( spellID )
