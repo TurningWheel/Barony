@@ -522,7 +522,7 @@ void initClassStats(const int classnum, void* myStats)
 	{
 		stat->STR += 1;
 		stat->DEX += 1;
-		stat->CON += -2;
+		stat->CON += -3;
 		stat->INT += -2;
 		stat->PER += 0;
 		stat->CHR += -3;
