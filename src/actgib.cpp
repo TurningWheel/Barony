@@ -911,7 +911,7 @@ void actGreasePuddleSpawner(Entity* my)
 								}
 							}
 						}
-						if ( (entity->behavior == &actCampfire && my->skill[3]) || entity->behavior == &actTorch )
+						if ( (entity->behavior == &actCampfire && entity->skill[3] > 0 ) || entity->behavior == &actTorch )
 						{
 							my->SetEntityOnFire();
 						}
