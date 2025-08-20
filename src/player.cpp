@@ -4540,7 +4540,7 @@ void Player::WorldUI_t::handleTooltips()
 		{
 			bDoingActionHideTooltips = true;
 		}
-		else if ( ((cast_animation[player].active /*&& !cast_animation[player].spellWaitingAttackInput()*/) 
+		else if ( ((cast_animation[player].active && !cast_animation[player].spellWaitingAttackInput()) 
 			|| cast_animation[player].active_spellbook) && !selectInteract && players[player]->entity )
 		{
 			// spells
