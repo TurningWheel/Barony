@@ -7024,9 +7024,22 @@ Host to enable the game setting.
 6754 Mushroom#
 6755 The air is filled with a deep fog.#
 6756 You are pulled by telekinetic force!#
-6757 A vortex suddenly lifts you!#
+6757 You are caught in a vortex!#
 6758 You are slammed back down!#
 6759 Leaves#
 6760 becomes dust in the wind.#
+6761 %s is blinded with shimmering dust!#
+6762 The %s is blinded with shimmering dust!#
+6763 You are ensnared!#
+6764 The %s is ensnared!#
+6765 %s is ensnared!#
+6766 The %s was unaffected by the bolas!#
+6767 %s was unaffected by the bolas!#
+6768 [4 rations needed]#
+6769 You combine the %s with some %s...#
+6770 You dissolve the %s and collect it with a %s...#
+6771 Created %s.#
+6772 [No tin opener]#
+6773 Cook#
 
 6999 END#

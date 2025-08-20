@@ -1412,6 +1412,54 @@
 		"dust_ball": {
 			"name_identified": "dust ball",
 			"name_unidentified": "dust ball"
+		},
+		"bolas": {
+			"name_identified": "bolas",
+			"name_unidentified": "bolas"
+		},
+		"steel_flail": {
+			"name_identified": "steel flail",
+			"name_unidentified": "steel flail"
+		},
+		"food_ration": {
+			"name_identified": "ration",
+			"name_unidentified": "ration"
+		},
+		"food_ration_spicy": {
+			"name_identified": "spicy ration",
+			"name_unidentified": "ration"
+		},
+		"food_ration_sour": {
+			"name_identified": "sour ration",
+			"name_unidentified": "ration"
+		},
+		"food_ration_bitter": {
+			"name_identified": "bitter ration",
+			"name_unidentified": "ration"
+		},
+		"food_ration_hearty": {
+			"name_identified": "hearty ration",
+			"name_unidentified": "ration"
+		},
+		"food_ration_herbal": {
+			"name_identified": "herbal ration",
+			"name_unidentified": "ration"
+		},
+		"food_ration_sweet": {
+			"name_identified": "sweet ration",
+			"name_unidentified": "ration"
+		},
+		"slop_ball": {
+			"name_identified": "slop ball",
+			"name_unidentified": "slop ball"
+		},
+		"tool_frying_pan": {
+			"name_identified": "frypan",
+			"name_unidentified": "frypan"
+		},
+		"cleat_boots": {
+			"name_identified": "cleats",
+			"name_unidentified": "cleats"
 		}
     },
 	"spell_names": {
