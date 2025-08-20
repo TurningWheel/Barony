@@ -2321,11 +2321,7 @@ void glDrawWorld(view_t* camera, int mode)
         return;
     }
 #endif
-
-    // determine whether we should draw clouds, and their texture
-    int cloudtile;
-    const bool clouds = shouldDrawClouds(map, &cloudtile, false);
-    
+   
     // select texture atlas
     constexpr int numTileAtlases = sizeof(AnimatedTile::indices) / sizeof(AnimatedTile::indices[0]);
     const int atlasIndex = (ticks % (numTileAtlases * 10)) / 10;
@@ -2427,11 +2423,19 @@ void glDrawWorld(view_t* camera, int mode)
     const bool allowChunkRebuild = *cvar_allowChunkRebuild;
 #endif
     
+    // determine whether we should draw clouds, and their texture
+    int cloudtile;
+    const bool clouds = shouldDrawClouds(map, &cloudtile, false);
+
     // build chunks
     if (allowChunkRebuild) {
-        for (auto& pair : chunksToBuild) {
-            auto& chunk = *pair.second;
-            chunk.build(map, !clouds, chunk.x, chunk.y, chunk.w, chunk.h);
+        if ( chunksToBuild.size() > 0 )
+        {
+            bool rebuildClouds = shouldDrawClouds(map); // force check for clouds regardless of fog so we don't rebuild the map wrong
+            for (auto& pair : chunksToBuild) {
+                auto& chunk = *pair.second;
+                chunk.build(map, !rebuildClouds, chunk.x, chunk.y, chunk.w, chunk.h);
+            }
         }
     }
     
