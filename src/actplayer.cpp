@@ -3662,7 +3662,10 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 
 		if ( map.tileHasAttribute(static_cast<int>(my->x / 16), static_cast<int>(my->y / 16), 0, map_t::TILE_ATTRIBUTE_SLOW) )
 		{
-			speedFactor *= *cvar_map_tile_slow;
+			if ( !isLevitating(stats[PLAYER_NUM]) )
+			{
+				speedFactor *= *cvar_map_tile_slow;
+			}
 		}
 
 		speedFactor *= speedFactorMult;
@@ -7550,6 +7553,22 @@ void actPlayer(Entity* my)
 				}
 			}
 		}
+		else
+		{
+			//if ( players[PLAYER_NUM]->isLocalPlayer() || multiplayer == SERVER )
+			//{
+			//	int x = std::min(std::max<unsigned int>(0, floor(my->x / 16)), map.width - 1);
+			//	int y = std::min(std::max<unsigned int>(0, floor(my->y / 16)), map.height - 1);
+			//	int mapTile = map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height];
+			//	if ( animatedtiles[mapTile] )
+			//	{
+			//		if ( mapTile >= 447 && mapTile <= 454 )
+			//		{
+			//			my->z += 1.0; // float a little lower in bog.
+			//		}
+			//	}
+			//}
+		}
 
 		my->creatureHandleLiftZ();
 
@@ -7697,6 +7716,7 @@ void actPlayer(Entity* my)
 			waterwalkingboots = true;
 		}
 	}
+
 	bool swimming = players[PLAYER_NUM]->movement.isPlayerSwimming();
 	if ( players[PLAYER_NUM]->isLocalPlayer() || multiplayer == SERVER )
 	{
