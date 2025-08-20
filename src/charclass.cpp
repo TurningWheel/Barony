@@ -2922,7 +2922,7 @@ void initClass(const int player)
 			useItem(item, player);
 		}*/
 
-		item = newItem(IRON_BOOTS, WORN, 0, 1, 0, true, nullptr);
+		item = newItem(CLEAT_BOOTS, WORN, 0, 1, 0, true, nullptr);
 		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
