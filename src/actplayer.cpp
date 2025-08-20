@@ -3444,6 +3444,18 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 			movementDrag = 0.95;
 		}
 	}
+
+	bool cleats = false;
+	if ( stats[PLAYER_NUM]->shoes && stats[PLAYER_NUM]->shoes->type == CLEAT_BOOTS
+		&& players[PLAYER_NUM]->entity && players[PLAYER_NUM]->entity->effectShapeshift == NOTHING )
+	{
+		cleats = true;
+		if ( movementDrag >= 0.85 )
+		{
+			movementDrag = 0.85;
+		}
+	}
+
 	static std::map<int, real_t> dragToSpeedFactor =
 	{
 		{99, 33},
@@ -3604,7 +3616,16 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 		{
 			PLAYER_VELX += my->monsterKnockbackVelocity * cos(my->monsterKnockbackTangentDir) * refreshRateDelta;
 			PLAYER_VELY += my->monsterKnockbackVelocity * sin(my->monsterKnockbackTangentDir) * refreshRateDelta;
-			my->monsterKnockbackVelocity *= pow(0.95, refreshRateDelta);
+			real_t rate = 0.95;
+			if ( movementDrag > 0.8 )
+			{
+				rate = 0.8;
+			}
+			if ( cleats )
+			{
+				rate *= 0.5;
+			}
+			my->monsterKnockbackVelocity *= pow(rate, refreshRateDelta);
 		}
 		else if ( stats[PLAYER_NUM]->getEffectActive(EFF_KNOCKBACK) )
 		{
@@ -3614,6 +3635,10 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 			if ( movementDrag > 0.8 )
 			{
 				rate = 0.8;
+			}
+			if ( cleats )
+			{
+				rate *= 0.5;
 			}
 			my->monsterKnockbackVelocity *= pow(rate, refreshRateDelta);
 		}
@@ -3654,7 +3679,7 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 	PLAYER_VELX *= pow(movementDrag, refreshRateDelta);
 	PLAYER_VELY *= pow(movementDrag, refreshRateDelta);
 
-	/*if ( keystatus[SDLK_v] )
+	/*if ( keystatus[SDLK_g] )
 	{
 		messagePlayer(0, MESSAGE_DEBUG, "X: %5.5f, Y: %5.5f, Total: %5.5f", PLAYER_VELX, PLAYER_VELY, sqrt(pow(PLAYER_VELX, 2) + pow(PLAYER_VELY, 2)));
 		messagePlayer(0, MESSAGE_DEBUG, "Vel: %5.5f", getCurrentMovementSpeed());
@@ -7016,7 +7041,7 @@ void actPlayer(Entity* my)
 							Item* item2 = (Item*)node->element;
 							if ( item2 && item2 != tempItem && !itemCompare(tempItem, item2, false) )
 							{
-								if ( (itemTypeIsQuiver(item2->type) && (tempItem->count + item2->count) >= QUIVER_MAX_AMMO_QTY)
+								if ( ((itemTypeIsQuiver(item2->type) || itemTypeIsThrownBall(item2->type)) && (tempItem->count + item2->count) >= QUIVER_MAX_AMMO_QTY)
 									|| ((item2->type == TOOL_MAGIC_SCRAP || item2->type == TOOL_METAL_SCRAP)
 										&& (tempItem->count + item2->count) >= SCRAP_MAX_STACK_QTY) )
 								{

@@ -4227,6 +4227,16 @@ void Entity::handleEffects(Stat* myStats)
 			messagePlayer(player, MESSAGE_STATUS, Language::get(635));
 			myStats->setEffectActive(EFF_VOMITING, 1);
 			myStats->EFFECTS_TIMERS[EFF_VOMITING] = 50 + local_rng.rand() % 20;
+
+			for ( int i = EFF_RATION_SPICY; i <= EFF_RATION_SWEET; ++i )
+			{
+				if ( myStats->getEffectActive(i) )
+				{
+					myStats->clearEffect(i);
+					myStats->EFFECTS_TIMERS[i] = 0;
+				}
+			}
+
 			serverUpdateEffects(player);
 			if ( player >= 0 && players[player]->isLocalPlayer() )
 			{
@@ -6236,12 +6246,12 @@ Sint32 Entity::getAttack(Entity* my, Stat* myStats, bool isPlayer, int chargeMod
 			{
 				if ( my->monsterAttack == MONSTER_POSE_FLAIL_SWING )
 				{
-					attack /= 2;
+					attack *= (0.5 + (myStats->getModifiedProficiency(PRO_MACE) * 0.25 / 100.0));
 				}
 			}
 			else if ( chargeModifier >= 0 && chargeModifier < Stat::getMaxAttackCharge(myStats) / 2 )
 			{
-				attack /= 2;
+				attack *= (0.5 + (myStats->getModifiedProficiency(PRO_MACE) * 0.25 / 100.0));
 			}
 		}
 	}
@@ -6312,9 +6322,13 @@ Sint32 Entity::getThrownAttack()
 		{
 			attack = entitystats->weapon->weaponGetAttack(entitystats);
 		}
-		else if ( itemCategory(entitystats->weapon) == THROWN 
-			&& !(entitystats->weapon->type == DUST_BALL
-				|| entitystats->weapon->type == GREASE_BALL) )
+		else if ( entitystats->weapon->type == DUST_BALL
+			|| entitystats->weapon->type == SLOP_BALL
+			|| entitystats->weapon->type == GREASE_BALL )
+		{
+			attack = entitystats->weapon->weaponGetAttack(entitystats);
+		}
+		else if ( itemCategory(entitystats->weapon) == THROWN  )
 		{
 			int dex = getDEX() / 4;
 			attack += dex;
@@ -6488,6 +6502,14 @@ Sint32 statGetSTR(Stat* entitystats, Entity* my)
 	if ( entitystats->getEffectActive(EFF_SHRINE_RED_BUFF) )
 	{
 		STR += 8;
+	}
+	if ( entitystats->getEffectActive(EFF_RATION_HEARTY) )
+	{
+		STR += 4;
+	}
+	if ( entitystats->getEffectActive(EFF_RATION_SPICY) )
+	{
+		STR += 4;
 	}
 	if ( entitystats->getEffectActive(EFF_COWARDICE) )
 	{
@@ -6753,6 +6775,10 @@ Sint32 statGetDEX(Stat* entitystats, Entity* my)
 			DEX += (cursedItemIsBuff ? abs(entitystats->gloves->beatitude) : entitystats->gloves->beatitude);
 		}
 	}
+	if ( entitystats->getEffectActive(EFF_RATION_SPICY) )
+	{
+		DEX += 4;
+	}
 	if ( entitystats->getEffectActive(EFF_DRUNK) )
 	{
 		switch ( entitystats->type )
@@ -6903,6 +6929,11 @@ Sint32 statGetCON(Stat* entitystats, Entity* my)
 	{
 		CON += 8;
 	}
+	if ( entitystats->getEffectActive(EFF_RATION_HEARTY)
+		|| entitystats->getEffectActive(EFF_RATION_BITTER) )
+	{
+		CON += 4;
+	}
 	if ( entitystats->getEffectActive(EFF_COWARDICE) )
 	{
 		CON -= entitystats->getEffectActive(EFF_COWARDICE);
@@ -7041,6 +7072,10 @@ Sint32 statGetINT(Stat* entitystats, Entity* my)
 	if ( entitystats->getEffectActive(EFF_SHRINE_BLUE_BUFF) )
 	{
 		INT += 8;
+	}
+	if ( entitystats->getEffectActive(EFF_RATION_SOUR) )
+	{
+		INT += 4;
 	}
 	if ( entitystats->getEffectActive(EFF_COUNSEL) )
 	{
@@ -7187,6 +7222,11 @@ Sint32 statGetPER(Stat* entitystats, Entity* my)
 		}
 	}
 
+	if ( entitystats->getEffectActive(EFF_RATION_BITTER) )
+	{
+		PER += 4;
+	}
+
 	PER += (Sint32)entitystats->getEnsembleEffectBonus(Stat::ENSEMBLE_LYRE_EFF_1);
 
 	if ( !(svFlags & SV_FLAG_HUNGER) )
@@ -7305,6 +7345,12 @@ Sint32 statGetCHR(Stat* entitystats, Entity* my)
 			CHR += (cursedItemIsBuff ? abs(entitystats->ring->beatitude) : entitystats->ring->beatitude);
 		}
 	}
+
+	if ( entitystats->getEffectActive(EFF_RATION_HERBAL) )
+	{
+		CHR += 4;
+	}
+
 	if ( entitystats->monsterDemonHasBeenExorcised >= 3 )
 	{
 		CHR += 5;
@@ -8663,7 +8709,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 
 					if ( myStats->weapon->type == GREASE_BALL
-						|| myStats->weapon->type == DUST_BALL )
+						|| myStats->weapon->type == DUST_BALL
+						|| myStats->weapon->type == SLOP_BALL )
 					{
 						speed = 2.f + normalisedCharge;
 						if ( this->behavior == &actPlayer )
@@ -10723,7 +10770,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 					if ( hitstats->shield != NULL && hitstats->shield->status > BROKEN && armor == NULL
 						&& !itemTypeIsQuiver(hitstats->shield->type) && itemCategory(hitstats->shield) != SPELLBOOK
 						&& parriedDamage == 0
-						&& hitstats->shield->type != TOOL_TINKERING_KIT )
+						&& hitstats->shield->type != TOOL_TINKERING_KIT
+						&& hitstats->shield->type != TOOL_FRYING_PAN )
 					{
 						if ( hitstats->shield->type == TOOL_CRYSTALSHARD && hitstats->defending )
 						{
@@ -10934,7 +10982,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 					}
 
-					if ( (hitstats->getEffectActive(EFF_WEBBED) || pose == PLAYER_POSE_GOLEM_SMASH) 
+					if ( (hitstats->getEffectActive(EFF_WEBBED) || hitstats->getEffectActive(EFF_MAGIC_GREASE) 
+						|| pose == PLAYER_POSE_GOLEM_SMASH)
 						&& !hitstats->getEffectActive(EFF_KNOCKBACK) && hit.entity->setEffect(EFF_KNOCKBACK, true, 30, false) )
 					{
 						real_t baseMultiplier = 0.7;
@@ -12313,6 +12362,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 					}
 
+					bool blowBouncesOff = false;
+
 					if ( damage > 0 )
 					{
 						Entity* gib = spawnGib(hit.entity);
@@ -12349,6 +12400,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						// display 'blow bounces off' message
 						if ( !statusInflicted )
 						{
+							blowBouncesOff = true;
 							messagePlayerMonsterEvent(playerhit, 0xFFFFFFFF, *myStats, Language::get(2457), Language::get(2458), MSG_COMBAT_BASIC);
 						}
 						if ( myStats->type == COCKATRICE && hitstats->defending )
@@ -12843,7 +12895,15 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 						else
 						{
-							playSoundEntity(hit.entity, 28, 64);
+							if ( blowBouncesOff && hitstats && hitstats->shield && hitstats->shield->type == TOOL_FRYING_PAN
+								&& hitstats->defending && !(hit.entity->behavior == &actPlayer && hit.entity->effectShapeshift != NOTHING) )
+							{
+								playSoundEntity(hit.entity, 776, 64);
+							}
+							else
+							{
+								playSoundEntity(hit.entity, 28, 64);
+							}
 						}
 					}
 
@@ -16919,19 +16979,19 @@ int getStatForProficiency(int skill)
 		case PRO_RANGED:        // base attribute: dex
 			statForProficiency = STAT_DEX;
 			break;
-		case PRO_SWIMMING:      // base attribute: con
 		case PRO_SHIELD:		// base attribute: con
 			statForProficiency = STAT_CON;
 			break;
 		case PRO_SPELLCASTING:  // base attribute: int
 		case PRO_MAGIC:         // base attribute: int
-		case PRO_ALCHEMY:       // base attribute: int
 			statForProficiency = STAT_INT;
 			break;
+		case PRO_ALCHEMY:       // base attribute: per
 		case PRO_LOCKPICKING:	// base attribute: per
 		case PRO_APPRAISAL:		// base attribute: per
 			statForProficiency = STAT_PER;
 			break;
+		case PRO_SWIMMING:      // base attribute: chr
 		case PRO_TRADING:       // base attribute: chr
 		case PRO_LEADERSHIP:    // base attribute: chr
 			statForProficiency = STAT_CHR;
@@ -19051,11 +19111,9 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 		weaponLimb->focalz += 2.75;
 		weaponLimb->focaly += -0.5;
 	}
-	else if ( weaponLimb->sprite == items[GREASE_BALL].index )
-	{
-		weaponLimb->focalz += 1;
-	}
-	else if ( weaponLimb->sprite == items[DUST_BALL].index )
+	else if ( weaponLimb->sprite == items[GREASE_BALL].index
+		|| weaponLimb->sprite == items[DUST_BALL].index 
+		|| weaponLimb->sprite == items[SLOP_BALL].index )
 	{
 		weaponLimb->focalz += 1;
 	}
@@ -21800,6 +21858,10 @@ int Entity::getManaringFromEffects(Entity* my, Stat& myStats)
 	{
 		manaring += 2;
 	}
+	if ( myStats.getEffectActive(EFF_RATION_SWEET) )
+	{
+		manaring += 1;
+	}
 	return manaring;
 }
 
@@ -21960,6 +22022,10 @@ int Entity::getHealringFromEffects(Entity* my, Stat& myStats)
 		}
 	}
 	if ( myStats.getEffectActive(EFF_TROLLS_BLOOD) )
+	{
+		healring += 1;
+	}
+	if ( myStats.getEffectActive(EFF_RATION_SWEET) )
 	{
 		healring += 1;
 	}
@@ -25392,6 +25458,14 @@ real_t Entity::getDamageTableMultiplier(Entity* my, Stat& myStats, DamageTableTy
 	if ( followerResist != 0 )
 	{
 		bonus += -followerResist / 100.0;
+	}
+
+	if ( myStats.getEffectActive(EFF_RATION_HERBAL) )
+	{
+		if ( damageType == DAMAGE_TABLE_MAGIC )
+		{
+			bonus += -0.2;
+		}
 	}
 
 	bonus -= myStats.getEnsembleEffectBonus(Stat::ENSEMBLE_LYRE_TIER) / 100.0;

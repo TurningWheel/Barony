@@ -179,6 +179,7 @@ struct StatusEffectQueue_t
 	static const int kEffectInspiration;
 	static const int kEffectRetaliation;
 	static const int kEffectAssistance;
+	static const int kEffectStability;
 	
 	Frame* statusEffectFrame = nullptr;
 	Frame* statusEffectTooltipFrame = nullptr;

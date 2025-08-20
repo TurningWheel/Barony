@@ -1119,6 +1119,16 @@ char itemNameStrings[NUM_ITEM_STRINGS][32] =
 	"dust_ball",
 	"bolas",
 	"steel_flail",
+	"food_ration",
+	"food_ration_spicy",
+	"food_ration_sour",
+	"food_ration_bitter",
+	"food_ration_hearty",
+	"food_ration_herbal",
+	"food_ration_sweet",
+	"slop_ball",
+	"tool_frying_pan",
+	"cleat_boots",
 	""
 };
 
@@ -1304,6 +1314,7 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"dust_ball",
 		"bolas",
 		"steel_flail",
+		"slop_ball",
 		""
 	},
 	{
@@ -1332,6 +1343,7 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"instrument_drum",
 		"instrument_lute",
 		"instrument_horn",
+		"tool_frying_pan",
 		""
 	},
 	{
@@ -1363,6 +1375,7 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"crystal_boots",
 		"artifact_boots",
 		"suede_boots",
+		"cleat_boots",
 		""
 	},
 	{

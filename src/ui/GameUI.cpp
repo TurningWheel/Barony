@@ -7586,6 +7586,7 @@ const int StatusEffectQueue_t::kEffectBountyTarget = -23;
 const int StatusEffectQueue_t::kEffectInspiration = -24;
 const int StatusEffectQueue_t::kEffectRetaliation = -25;
 const int StatusEffectQueue_t::kEffectAssistance = -26;
+const int StatusEffectQueue_t::kEffectStability = -27;
 const int StatusEffectQueue_t::kSpellEffectOffset = 10000;
 
 Frame* StatusEffectQueue_t::getStatusEffectFrame()
@@ -8037,7 +8038,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 	bool inshop = false;
 
 	std::map<int, bool> miscEffects;
-	for ( int i = kEffectBurning; i >= kEffectAssistance; --i )
+	for ( int i = kEffectBurning; i >= kEffectStability; --i )
 	{
 		miscEffects[i] = false;
 	}
@@ -8099,6 +8100,10 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 			if ( stats[player]->shoes && stats[player]->shoes->type == ARTIFACT_BOOTS )
 			{
 				miscEffects[kEffectLesserWarning] = true;
+			}
+			if ( stats[player]->shoes && stats[player]->shoes->type == CLEAT_BOOTS )
+			{
+				miscEffects[kEffectStability] = true;
 			}
 			if ( stats[player]->breastplate && stats[player]->breastplate->type == VAMPIRE_DOUBLET )
 			{
@@ -8217,7 +8222,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 		}
 	}
 
-	for ( int i = kEffectBurning; i >= kEffectAssistance; --i )
+	for ( int i = kEffectBurning; i >= kEffectStability; --i )
 	{
 		if ( miscEffects[i] == false )
 		{
