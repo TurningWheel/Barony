@@ -4790,11 +4790,11 @@ Sint32 Item::armorGetAC(const Stat* const wielder) const
 	{
 		armor += 3;
 	}
-	else if ( type == LEATHER_BOOTS || type == LEATHER_BOOTS_SPEED || type == CLEAT_BOOTS )
+	else if ( type == LEATHER_BOOTS || type == LEATHER_BOOTS_SPEED )
 	{
 		armor += 1;
 	}
-	else if ( type == IRON_BOOTS || type == IRON_BOOTS_WATERWALKING )
+	else if ( type == IRON_BOOTS || type == IRON_BOOTS_WATERWALKING || type == CLEAT_BOOTS || type == TOOL_FRYING_PAN )
 	{
 		armor += 2;
 	}

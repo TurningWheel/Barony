@@ -21678,7 +21678,21 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 		}
 		else if ( slotType && *slotType == GAMEUI_FRAMEDATA_ALCHEMY_RECIPE_ENTRY )
 		{
-			drawQty = true;
+			if ( item == &GenericGUI[player].alchemyGUI.torchCount )
+			{
+				if ( item->count >= 0 )
+				{
+					drawQty = true;
+					if ( item->count < 4 )
+					{
+						qtyColor = hudColors.characterSheetRed;
+					}
+				}
+			}
+			else
+			{
+				drawQty = true;
+			}
 		}
 		else if ( slotType && *slotType == GAMEUI_FRAMEDATA_ALCHEMY_MISSING_QTY )
 		{
