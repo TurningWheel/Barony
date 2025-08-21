@@ -7041,5 +7041,9 @@ Host to enable the game setting.
 6771 Created %s.#
 6772 [No tin opener]#
 6773 Cook#
+6774 [Insufficient fuel]#
+6775 shrub#
+6776 footlocker#
+6777 weapon rack#
 
 6999 END#
