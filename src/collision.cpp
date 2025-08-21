@@ -2351,6 +2351,7 @@ int checkObstacle(long x, long y, Entity* my, Entity* target, bool useTileEntity
 			{
 				// for map generation to detect if decorations have obstacles without entities being assigned actions
 				std::vector<list_t*> entLists{ map.entities };
+				bool ceilingTilesAllowed = !strncmp(map.filename, "fortress", 8);
 				for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
 				{
 					list_t* currentList = *it;
@@ -2363,6 +2364,7 @@ int checkObstacle(long x, long y, Entity* my, Entity* target, bool useTileEntity
 							|| entity == target
 							|| entity->sprite == 8 // items
 							|| entity->sprite == 9 // gold
+							|| (entity->sprite == 119 && ceilingTilesAllowed) // ceiling tiles
 							|| entity->behavior == &actDoor )
 						{
 							continue;

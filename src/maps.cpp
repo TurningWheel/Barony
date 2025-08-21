@@ -3517,6 +3517,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 	}
 
 	std::vector<std::pair<ItemType, int>> generateKeyItems;
+	bool ceilingTilesAllowed = !strncmp(map.filename, "fortress", 8);
 	for ( node = map.entities->first; node != nullptr; node = node->next )
 	{
 		entity = (Entity*)node->element;
@@ -3529,6 +3530,10 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			{
 				generateKeyItems.push_back(std::make_pair(static_cast<ItemType>((int)KEY_STONE + entity->wallLockMaterial), x + y * 10000));
 			}
+		}
+		if ( entity->sprite == 119 && ceilingTilesAllowed ) // ceiling tile no block stuff
+		{
+			continue;
 		}
 		if ( x >= 0 && x < map.width && y >= 0 && y < map.height )
 		{
@@ -4791,6 +4796,9 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		numOpenAreaBreakables = 10;
 
 		int numLeaves = 10;
+		int numShrubs = 10;
+		int numMushrooms = 5;
+		int numClosedAreaBreakables = 0;
 		std::vector<int> goodSpots;
 		for ( int x = 0; x < map.width; ++x )
 		{
@@ -4803,7 +4811,27 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			}
 		}
 
-		for ( int c = 0; c < (int)goodSpots.size() && numOpenAreaBreakables > 0 && numLeaves > 0; ++c )
+		std::set<int> allTrees;
+		std::set<int> allMushrooms;
+		for ( auto node = map.entities->first; node; node = node->next )
+		{
+			if ( Entity* entity = (Entity*)node->element )
+			{
+				if ( entity->sprite == 179 && (entity->colliderDecorationModel == 1607 || entity->colliderDecorationModel == 1610) )
+				{
+					int coord = ((int)(entity->x / 16)) + ((int)(entity->y / 16)) * 10000;
+					allTrees.insert(coord);
+				}
+				else if ( entity->sprite == 179 && (entity->colliderDecorationModel == 1611 || entity->colliderDecorationModel == 1612) )
+				{
+					int coord = ((int)(entity->x / 16)) + ((int)(entity->y / 16)) * 10000;
+					allMushrooms.insert(coord);
+				}
+			}
+		}
+
+		for ( int c = 0; c < (int)goodSpots.size() 
+			&& (numOpenAreaBreakables > 0 || numLeaves > 0 || numShrubs > 0 || numMushrooms > 0 || numClosedAreaBreakables > 0); ++c )
 		{
 			// choose a random location from those available
 			int pick = map_rng.rand() % goodSpots.size();
@@ -4812,7 +4840,10 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 
 			goodSpots.erase(goodSpots.begin() + pick);
 
+			int treesNearby = 0;
+			int mushroomsNearby = 0;
 			int obstacles = 0;
+			int numWalls = 0;
 			for ( int x2 = -1; x2 <= 1; x2++ )
 			{
 				for ( int y2 = -1; y2 <= 1; y2++ )
@@ -4828,12 +4859,22 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 							if ( !map.tiles[index] || swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]] )
 							{
 								++obstacles;
-								break;
+							}
+							if ( map.tiles[OBSTACLELAYER + index] )
+							{
+								++numWalls;
 							}
 							if ( checkObstacle((checkx) * 16, (checky) * 16, NULL, NULL, false, true, false) )
 							{
+								if ( allTrees.find(checkx + checky * 10000) != allTrees.end() )
+								{
+									++treesNearby;
+								}
+								if ( allMushrooms.find(checkx + checky * 10000) != allMushrooms.end() )
+								{
+									++mushroomsNearby;
+								}
 								++obstacles;
-								break;
 							}
 						}
 					}
@@ -4856,7 +4897,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 					}
 
 					breakableLocations.push_back(BreakableNode_t(1, x, y, map_rng.rand() % 4,
-						id)); // random dir, mushroom ids
+						id)); // random dir
 					--numOpenAreaBreakables;
 					if ( possiblelocations[y + x * map.height] )
 					{
@@ -4877,7 +4918,41 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 					}
 				}
 			}
-			else if ( obstacles == 1 )
+			else if ( ((treesNearby > 0 && numShrubs > 0) || (mushroomsNearby > 0 && numMushrooms > 0)) && obstacles <= 3 )
+			{
+				if ( treesNearby > 0 )
+				{
+					breakableLocations.push_back(BreakableNode_t(1, x, y, map_rng.rand() % 4,
+						EditorEntityData_t::colliderNameIndexes["shrub"]));
+					--numShrubs;
+					if ( possiblelocations[y + x * map.height] )
+					{
+						possiblelocations[y + x * map.height] = false;
+						--numpossiblelocations;
+					}
+				}
+				else if ( mushroomsNearby > 0 )
+				{
+					int id = EditorEntityData_t::colliderNameIndexes["mushroom_spell_common"];
+					if ( map_rng.rand() % 5 == 0 )
+					{
+						id = EditorEntityData_t::colliderNameIndexes["mushroom_spell_fragile"];
+					}
+					else if ( map_rng.rand() % 5 == 0 )
+					{
+						id = EditorEntityData_t::colliderNameIndexes["mushroom_nospell"];
+					}
+					breakableLocations.push_back(BreakableNode_t(1, x, y, map_rng.rand() % 4,
+						id));
+					--numMushrooms;
+					if ( possiblelocations[y + x * map.height] )
+					{
+						possiblelocations[y + x * map.height] = false;
+						--numpossiblelocations;
+					}
+				}
+			}
+			else if ( obstacles == 1 && numLeaves > 0 )
 			{
 				--numLeaves;
 				Entity* leaf = newEntity(254, 1, map.entities, nullptr);
@@ -4889,6 +4964,17 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 					--numpossiblelocations;
 				}
 			}
+			/*else if ( numClosedAreaBreakables > 0 && obstacles > 3 && (numWalls >= 2) )
+			{
+				breakableLocations.push_back(BreakableNode_t(1, x, y, map_rng.rand() % 4,
+					EditorEntityData_t::colliderNameIndexes["stump"]));
+				--numClosedAreaBreakables;
+				if ( possiblelocations[y + x * map.height] )
+				{
+					possiblelocations[y + x * map.height] = false;
+					--numpossiblelocations;
+				}
+			}*/
 		}
 	}
 	if ( findBreakables != EditorEntityData_t::colliderRandomGenPool.end()
