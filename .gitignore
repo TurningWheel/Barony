@@ -77,3 +77,5 @@ xcode/Barony/Barony.xcodeproj/xcuserdata/*
 *.ps1
 !LICENSE.nativefiledialog.txt
 /VS.2015/Barony/x64/Debug
+*.sarif
+*.i
