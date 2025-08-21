@@ -4494,6 +4494,10 @@ void actHudShield(Entity* my)
 		my->yaw += PI / 2 - HUDSHIELD_YAW / 4;
 		my->focalz -= 0.5;
 	}
+	else if ( my->sprite == items[TOOL_FRYING_PAN].fpindex && !hideShield )
+	{
+		my->roll += PI / 8;
+	}
 	else if ( my->sprite == items[TOOL_FOCI_FIRE].fpindex && !hideShield )
 	{
 		//my->yaw += PI / 2 - HUDSHIELD_YAW / 4;

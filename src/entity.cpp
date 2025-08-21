@@ -24891,7 +24891,41 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 			break;
 	}
 
-	if ( shieldLimb->sprite == items[TOOL_TINKERING_KIT].index )
+	if ( shieldLimb->sprite == items[TOOL_FRYING_PAN].index )
+	{
+		if ( this->fskill[8] > PI / 32 )
+		{
+			shieldLimb->yaw += -0.7;
+			shieldLimb->roll += 0.5;
+			shieldLimb->pitch += 0.25;
+			shieldLimb->focalz += -3;
+			shieldLimb->focalx += -0.5;
+			shieldLimb->focaly += 1.25;
+		}
+		else
+		{
+			shieldLimb->yaw += -1.1;
+			shieldLimb->roll += 0.5;
+			shieldLimb->pitch += 0.0;
+			shieldLimb->focalx += -1.75;
+			shieldLimb->focaly += 1.75;
+			shieldLimb->focalz += -2.25;
+		}
+
+		if ( race == AUTOMATON )
+		{
+			shieldLimb->x += 0.6 * cos(this->yaw + PI / 2) + -0.5 * cos(this->yaw);
+			shieldLimb->y += 0.6 * sin(this->yaw + PI / 2) + -0.5 * sin(this->yaw);
+			shieldLimb->z += -1.75;
+		}
+		else if ( race == SKELETON )
+		{
+			shieldLimb->x += 0.75 * cos(this->yaw + PI / 2) + -0.5 * cos(this->yaw);
+			shieldLimb->y += 0.75 * sin(this->yaw + PI / 2) + -0.5 * sin(this->yaw);
+			shieldLimb->z += -0.5;
+		}
+	}
+	else if ( shieldLimb->sprite == items[TOOL_TINKERING_KIT].index )
 	{
 		//shieldLimb->pitch = 0;
 		shieldLimb->yaw += PI / 6;
