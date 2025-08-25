@@ -1853,9 +1853,12 @@ void glDrawWorldUISprite(view_t* camera, Entity* entity, int mode)
     } else {
         scale += (0.05f * ((*MainMenu::cvar_worldtooltip_scale / 100.f) - 1.f));
     }
-    
+
+    const real_t zOffset = (entity->behavior == &actSpriteWorldTooltip 
+        && player >= 0 && players[player]->entity) ? players[player]->worldUI.modifiedTooltipDrawHeight : 0.0;
+
     // model matrix
-    v = vec4(entity->x * 2, -entity->z * 2 - 1, entity->y * 2, 0.f);
+    v = vec4(entity->x * 2, -(entity->z + zOffset) * 2 - 1, entity->y * 2, 0.f);
     (void)translate_mat(&m, &t, &v); t = m;
     (void)rotate_mat(&m, &t, -90.f - camera->ang * (180.f / PI), &i.y); t = m;
     (void)rotate_mat(&m, &t, -camera->vang * (180.f / PI), &i.x); t = m;

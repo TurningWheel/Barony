@@ -1009,6 +1009,7 @@ void gnomeMoveBodyparts(Entity* my, Stat* myStats, double dist)
 
 	Entity* shieldarm = nullptr;
 	Entity* helmet = nullptr;
+	Entity* torso = nullptr;
 
 	std::string gnome_type = my->sprite == 1426 ? "gnome2" : my->sprite == 1430 ? "gnome2F" : "";
 
@@ -1064,9 +1065,13 @@ void gnomeMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		{
 			// torso
 			case LIMB_HUMANOID_TORSO:
+				entity->scalex = 1.0;
+				entity->scaley = 1.0;
+				entity->scalez = 1.0;
 				entity->focalx = limbs[GNOME][1][0];
 				entity->focaly = limbs[GNOME][1][1];
 				entity->focalz = limbs[GNOME][1][2];
+				torso = entity;
 				if ( multiplayer != CLIENT )
 				{
 					if ( myStats->breastplate == nullptr )
@@ -1569,11 +1574,12 @@ void gnomeMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->flags[INVISIBLE] = true;
 					}
 				}
-				if ( my->sprite != 1427 && my->sprite != 1431 && my->sprite != 296 )
+				if ( torso->sprite != 1427 && torso->sprite != 1431 && torso->sprite != 296 )
 				{
 					// push back for larger armors
 					entity->x -= cos(my->yaw) * 1.0;
 					entity->y -= sin(my->yaw) * 1.0;
+					entity->yaw += PI / 2;
 				}
 				my->setHumanoidLimbOffset(entity, GNOME, LIMB_HUMANOID_CLOAK);
 				break;

@@ -3495,6 +3495,25 @@ void actHudWeapon(Entity* my)
 		{
 			my->z -= -2 * .5;
 		}
+		else if ( playerRace == MONSTER_G )
+		{
+			my->z -= -1 * .5;
+		}
+		else if ( playerRace == MONSTER_D )
+		{
+			if ( players[HUDWEAPON_PLAYERNUM]->entity->z >= 1.5 )
+			{
+				my->z -= -3.0 * .5;
+			}
+			else
+			{
+				my->z -= -2.0 * .5;
+			}
+		}
+		else if ( playerRace == MONSTER_M )
+		{
+			my->z -= -1.0 * .5;
+		}
 	}
 	else
 	{
@@ -3657,6 +3676,26 @@ void actHudWeapon(Entity* my)
 		{
 			my->z -= -2 * .5;
 		}
+		else if ( playerRace == MONSTER_G )
+		{
+			my->z -= -1 * .5;
+		}
+		else if ( playerRace == MONSTER_D )
+		{
+			if ( players[HUDWEAPON_PLAYERNUM]->entity->z >= 1.5 )
+			{
+				my->z -= -3.0 * .5;
+			}
+			else
+			{
+				my->z -= -2.0 * .5;
+			}
+		}
+		else if ( playerRace == MONSTER_M )
+		{
+			my->z -= -1.0 * .5;
+		}
+
 	}
 	if ( !my->flags[OVERDRAW] )
 	{
@@ -4529,6 +4568,25 @@ void actHudShield(Entity* my)
 	{
 		my->z -= -2 * .5;
 	}
+	else if ( playerRace == MONSTER_G )
+	{
+		my->z -= -1 * .5;
+	}
+	else if ( playerRace == MONSTER_D )
+	{
+		if ( players[HUDSHIELD_PLAYERNUM]->entity->z >= 1.5 )
+		{
+			my->z -= -3.0 * .5;
+		}
+		else
+		{
+			my->z -= -2.0 * .5;
+		}
+	}
+	else if ( playerRace == MONSTER_M )
+	{
+		my->z -= -1.0 * .5;
+	}
 
 	// torch/lantern flames
 	if ( playerRace == TROLL || playerRace == SPIDER || playerRace == CREATURE_IMP || playerRace == RAT )
@@ -5118,198 +5176,19 @@ void actHudAdditional(Entity* my)
 	{
 		my->z -= -2 * .5;
 	}
+	else if ( stats[HUDSHIELD_PLAYERNUM]->type == MONSTER_G )
+	{
+		my->z -= -1 * .5;
+	}
+	else if ( stats[HUDSHIELD_PLAYERNUM]->type == MONSTER_D && players[HUDSHIELD_PLAYERNUM]->entity->z >= 1.5 )
+	{
+		my->z -= -3.0 * .5;
+	}
+	else if ( stats[HUDSHIELD_PLAYERNUM]->type == MONSTER_M && players[HUDSHIELD_PLAYERNUM]->entity->z >= 0.5 )
+	{
+		my->z -= -1.0 * .5;
+	}
 }
-
-//void actHudAdditional2(Entity* my)
-//{
-//	return;
-//	my->flags[UNCLICKABLE] = true;
-//
-//	auto& camera_shakex2 = cameravars[HUDSHIELD_PLAYERNUM].shakex2;
-//	auto& camera_shakey2 = cameravars[HUDSHIELD_PLAYERNUM].shakey2;
-//
-//	my->flags[INVISIBLE_DITHER] = false;
-//
-//	// isn't active during intro/menu sequence
-//	if ( intro == true )
-//	{
-//		my->flags[INVISIBLE] = true;
-//		return;
-//	}
-//
-//	if ( multiplayer == CLIENT )
-//	{
-//		if ( stats[HUDSHIELD_PLAYERNUM]->HP <= 0 )
-//		{
-//			my->flags[INVISIBLE] = true;
-//			my->flags[INVISIBLE_DITHER] = false;
-//			return;
-//		}
-//	}
-//
-//	// this entity only exists so long as the player exists
-//	if ( players[HUDSHIELD_PLAYERNUM] == nullptr || players[HUDSHIELD_PLAYERNUM]->entity == nullptr || !players[HUDSHIELD_PLAYERNUM]->hud.weapon )
-//	{
-//		list_RemoveNode(my->mynode);
-//		return;
-//	}
-//
-//	my->mistformGLRender = players[HUDSHIELD_PLAYERNUM]->entity->mistformGLRender;
-//
-//	bool forceShield = stats[HUDSHIELD_PLAYERNUM]->getEffectActive(EFF_FORCE_SHIELD);
-//
-//	if ( !forceShield )
-//	{
-//		my->flags[INVISIBLE] = true;
-//		return;
-//	}
-//
-//	if ( players[HUDSHIELD_PLAYERNUM]->entity->skill[3] == 1 )   // debug cam or player invisible
-//	{
-//		my->flags[INVISIBLE] = true;
-//	}
-//	else
-//	{
-//		my->sprite = items[FORCE_SHIELD].fpindex;
-//		my->scalex = 0.6f;
-//		my->scaley = 0.6f;
-//		my->scalez = 0.6f;
-//		my->flags[INVISIBLE] = false;
-//		if ( players[HUDSHIELD_PLAYERNUM]->entity->isInvisible() )
-//		{
-//			my->flags[INVISIBLE] = true;
-//			my->flags[INVISIBLE_DITHER] = true;
-//		}
-//	}
-//
-//	if ( !my->flags[INVISIBLE_DITHER] )
-//	{
-//		my->ditheringOverride = 4;
-//	}
-//	else
-//	{
-//		my->ditheringOverride = -1;
-//	}
-//
-//	if ( stats[HUDSHIELD_PLAYERNUM]->defending )
-//	{
-//		if ( HUDSHIELD_MOVEY < 3 )
-//		{
-//			HUDSHIELD_MOVEY += .5;
-//			if ( HUDSHIELD_MOVEY > 3 )
-//			{
-//				HUDSHIELD_MOVEY = 3;
-//			}
-//		}
-//		if ( HUDSHIELD_MOVEZ > -1 )
-//		{
-//			HUDSHIELD_MOVEZ -= .2;
-//			if ( HUDSHIELD_MOVEZ < -1 )
-//			{
-//				HUDSHIELD_MOVEZ = -1;
-//			}
-//		}
-//		if ( HUDSHIELD_YAW < PI / 3 )
-//		{
-//			HUDSHIELD_YAW += .15;
-//			if ( HUDSHIELD_YAW > PI / 3 )
-//			{
-//				HUDSHIELD_YAW = PI / 3;
-//			}
-//		}
-//	}
-//	else
-//	{
-//		if ( HUDSHIELD_MOVEX > 0 )
-//		{
-//			HUDSHIELD_MOVEX = std::max<real_t>(HUDSHIELD_MOVEX - .5, 0.0);
-//		}
-//		else if ( HUDSHIELD_MOVEX < 0 )
-//		{
-//			HUDSHIELD_MOVEX = std::min<real_t>(HUDSHIELD_MOVEX + .5, 0.0);
-//		}
-//		if ( HUDSHIELD_MOVEY > 0 )
-//		{
-//			HUDSHIELD_MOVEY = std::max<real_t>(HUDSHIELD_MOVEY - .5, 0.0);
-//		}
-//		else if ( HUDSHIELD_MOVEY < 0 )
-//		{
-//			HUDSHIELD_MOVEY = std::min<real_t>(HUDSHIELD_MOVEY + .5, 0.0);
-//		}
-//		if ( HUDSHIELD_MOVEZ > 0 )
-//		{
-//			HUDSHIELD_MOVEZ = std::max<real_t>(HUDSHIELD_MOVEZ - .2, 0.0);
-//		}
-//		else if ( HUDSHIELD_MOVEZ < 0 )
-//		{
-//			HUDSHIELD_MOVEZ = std::min<real_t>(HUDSHIELD_MOVEZ + .2, 0.0);
-//		}
-//		if ( HUDSHIELD_YAW > 0 )
-//		{
-//			HUDSHIELD_YAW = std::max<real_t>(HUDSHIELD_YAW - .15, 0.0);
-//		}
-//		else if ( HUDSHIELD_YAW < 0 )
-//		{
-//			HUDSHIELD_YAW = std::min<real_t>(HUDSHIELD_YAW + .15, 0.0);
-//		}
-//		if ( HUDSHIELD_PITCH > 0 )
-//		{
-//			HUDSHIELD_PITCH = std::max<real_t>(HUDSHIELD_PITCH - .15, 0.0);
-//		}
-//		else if ( HUDSHIELD_PITCH < 0 )
-//		{
-//			HUDSHIELD_PITCH = std::min<real_t>(HUDSHIELD_PITCH + .15, 0.0);
-//		}
-//		if ( HUDSHIELD_ROLL > 0 )
-//		{
-//			HUDSHIELD_ROLL = std::max<real_t>(HUDSHIELD_ROLL - .15, 0);
-//		}
-//		else if ( HUDSHIELD_ROLL < 0 )
-//		{
-//			HUDSHIELD_ROLL = std::min<real_t>(HUDSHIELD_ROLL + .15, 0);
-//		}
-//	}
-//
-//	Monster playerRace = players[HUDSHIELD_PLAYERNUM]->entity->getMonsterFromPlayerRace(stats[HUDSHIELD_PLAYERNUM]->playerRace);
-//	if ( players[HUDSHIELD_PLAYERNUM]->entity->effectShapeshift != NOTHING )
-//	{
-//		playerRace = static_cast<Monster>(players[HUDSHIELD_PLAYERNUM]->entity->effectShapeshift);
-//	}
-//	else if ( players[HUDSHIELD_PLAYERNUM]->entity->effectPolymorph != NOTHING )
-//	{
-//		if ( players[HUDSHIELD_PLAYERNUM]->entity->effectPolymorph > NUMMONSTERS )
-//		{
-//			playerRace = HUMAN;
-//		}
-//		else
-//		{
-//			playerRace = static_cast<Monster>(players[HUDSHIELD_PLAYERNUM]->entity->effectPolymorph);
-//		}
-//	}
-//
-//	// set entity position
-//	my->x = 7 + HUDSHIELD_MOVEX + 2;
-//	my->y = -3.5 + HUDSHIELD_MOVEY;
-//	my->z = 6 + HUDSHIELD_MOVEZ + (cameras[HUDSHIELD_PLAYERNUM].z * .5 - players[HUDSHIELD_PLAYERNUM]->entity->z);
-//
-//	my->yaw = HUDSHIELD_YAW - camera_shakex2 - PI / 3;
-//	my->pitch = HUDSHIELD_PITCH - camera_shakey2 / 200.f;
-//	my->roll = HUDSHIELD_ROLL;
-//
-//	my->focalx = 0;
-//	my->focaly = 0;
-//	my->focalz = 0;
-//
-//	// dirty hack because we altered the camera height in actPlayer(). adjusts HUD to match new height.
-//	if ( playerRace == CREATURE_IMP && players[HUDSHIELD_PLAYERNUM]->entity->z == -4.5 )
-//	{
-//		my->z -= .5;
-//	}
-//	else if ( playerRace == TROLL && players[HUDSHIELD_PLAYERNUM]->entity->z <= -1.5 )
-//	{
-//		my->z -= -2 * .5;
-//	}
-//}
 
 void actHudArrowModel(Entity* my)
 {

@@ -668,6 +668,7 @@ void monsterGMoveBodyparts(Entity* my, Stat* myStats, double dist)
 
 	Entity* shieldarm = nullptr;
 	Entity* helmet = nullptr;
+	Entity* torso = nullptr;
 
 	//Move bodyparts
 	for (bodypart = 0, node = my->children.first; node != nullptr; node = node->next, bodypart++)
@@ -842,9 +843,13 @@ void monsterGMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		{
 			// torso
 			case LIMB_HUMANOID_TORSO:
+				entity->scalex = 1.0;
+				entity->scaley = 1.0;
+				entity->scalez = 1.0;
 				entity->focalx = limbs[MONSTER_G][1][0];
 				entity->focaly = limbs[MONSTER_G][1][1];
 				entity->focalz = limbs[MONSTER_G][1][2];
+				torso = entity;
 				if ( multiplayer != CLIENT )
 				{
 					if ( myStats->breastplate == nullptr )
@@ -1322,12 +1327,13 @@ void monsterGMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->flags[INVISIBLE] = true;
 					}
 				}
-				if ( entity->sprite != 1583 && entity->sprite != 1584 )
-				{
-					// push back for larger armors
-					entity->x -= cos(my->yaw) * 1.0;
-					entity->y -= sin(my->yaw) * 1.0;
-				}
+				//if ( torso->sprite != 1583 && torso->sprite != 1584 )
+				//{
+				//	// push back for larger armors
+				//}
+				entity->x -= cos(my->yaw) * 1.0;
+				entity->y -= sin(my->yaw) * 1.0;
+				entity->yaw += PI / 2;
 				my->setHumanoidLimbOffset(entity, MONSTER_G, LIMB_HUMANOID_CLOAK);
 				break;
 				// helm

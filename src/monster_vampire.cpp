@@ -789,6 +789,12 @@ void vampireMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		{
 			// torso
 			case LIMB_HUMANOID_TORSO:
+				entity->scalex = 1.0;
+				entity->scaley = 1.0;
+				entity->scalez = 1.0;
+				entity->focalx = limbs[VAMPIRE][1][0];
+				entity->focaly = limbs[VAMPIRE][1][1];
+				entity->focalz = limbs[VAMPIRE][1][2];
 				if ( multiplayer != CLIENT )
 				{
 					if ( myStats->breastplate == nullptr )

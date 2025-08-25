@@ -532,6 +532,12 @@ void succubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		{
 			// torso
 			case LIMB_HUMANOID_TORSO:
+				entity->scalex = 1.0;
+				entity->scaley = 1.0;
+				entity->scalez = 1.0;
+				entity->focalx = limbs[SUCCUBUS][1][0];
+				entity->focaly = limbs[SUCCUBUS][1][1];
+				entity->focalz = limbs[SUCCUBUS][1][2];
 				my->setHumanoidLimbOffset(entity, SUCCUBUS, LIMB_HUMANOID_TORSO);
 				break;
 				// right leg

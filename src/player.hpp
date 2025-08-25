@@ -2091,6 +2091,7 @@ public:
 		TooltipView tooltipView = TOOLTIP_VIEW_FREE;
 		std::vector<std::pair<Entity*, real_t>> tooltipsInRange;
 		static real_t tooltipHeightOffsetZ;
+		real_t modifiedTooltipDrawHeight = 0.0;
 		real_t playerLastYaw = 0.0;
 		real_t playerLastPitch = 0.0;
 		int gimpDisplayTimer = 0;

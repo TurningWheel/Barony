@@ -14716,6 +14716,52 @@ bool monsterDebugModels(Entity* my, real_t* dist)
 		}
 	}
 
+	if ( keystatus[SDLK_MINUS] )
+	{
+		keystatus[SDLK_MINUS] = 0;
+		if ( myStats->cloak )
+		{
+			if ( keystatus[SDLK_LSHIFT] )
+			{
+				while ( true )
+				{
+					int type = myStats->cloak->type;
+					type--;
+					if ( type < 0 )
+					{
+						type = NUMITEMS - 1;
+					}
+					myStats->cloak->type = (ItemType)type;
+					if ( items[myStats->cloak->type].item_slot == ItemEquippableSlot::EQUIPPABLE_IN_SLOT_CLOAK )
+					{
+						break;
+					}
+				}
+			}
+			else
+			{
+				while ( true )
+				{
+					int type = myStats->cloak->type;
+					type++;
+					if ( type >= NUMITEMS )
+					{
+						type = 0;
+					}
+					myStats->cloak->type = (ItemType)type;
+					if ( items[myStats->cloak->type].item_slot == ItemEquippableSlot::EQUIPPABLE_IN_SLOT_CLOAK )
+					{
+						break;
+					}
+				}
+			}
+		}
+		else
+		{
+			myStats->cloak = newItem(CLOAK, EXCELLENT, 0, 1, 0, true, nullptr);
+		}
+	}
+
 #endif	
 	return true;
 }

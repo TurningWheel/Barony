@@ -3739,6 +3739,7 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 
 void Player::PlayerMovement_t::handlePlayerCameraPosition(bool useRefreshRateDelta)
 {
+	players[player.playernum]->worldUI.modifiedTooltipDrawHeight = 0.0;
 	if ( !players[player.playernum]->isLocalPlayer() )
 	{
 		return;
@@ -3786,6 +3787,35 @@ void Player::PlayerMovement_t::handlePlayerCameraPosition(bool useRefreshRateDel
 		else if ( playerRace == TROLL && my->z <= -1.5 )
 		{
 			cameraSetpointZ -= 2;
+		}
+		else if ( playerRace == MONSTER_G )
+		{
+			cameraSetpointZ -= 1.0;
+			players[player.playernum]->worldUI.modifiedTooltipDrawHeight = 3.0;
+		}
+		else if ( playerRace == MONSTER_D )
+		{
+			if ( my->z >= 1.5 )
+			{
+				cameraSetpointZ -= 3.0;
+				players[player.playernum]->worldUI.modifiedTooltipDrawHeight = 3.0;
+			}
+			else
+			{
+				cameraSetpointZ -= 2.0;
+			}
+		}
+		else if ( playerRace == MONSTER_M )
+		{
+			if ( my->z >= 0.5 )
+			{
+				cameraSetpointZ -= 1.0;
+				players[player.playernum]->worldUI.modifiedTooltipDrawHeight = 3.0;
+			}
+			else
+			{
+				cameraSetpointZ -= 1.0;
+			}
 		}
 
 		real_t diff = abs(PLAYER_CAMERAZ_ACCEL - cameraSetpointZ);
@@ -4609,6 +4639,18 @@ int playerHeadSprite(Monster race, sex_t sex, int appearance, int frame) {
     else if (race == AUTOMATON) {
         return sex == FEMALE ? 770 : 742;
     }
+	else if ( race == MONSTER_D ) {
+		return sex == FEMALE ? 1993 : 1963;
+	}
+	else if ( race == MONSTER_M ) {
+		return sex == FEMALE ? 1998 : 1997;
+	}
+	else if ( race == MONSTER_G ) {
+		return sex == FEMALE ? 2048 : 2047;
+	}
+	else if ( race == MONSTER_S ) {
+		return sex == FEMALE ? 2015 : 2014;
+	}
     else {
         return 481; // shadow head due to unknown creature
     }
@@ -5831,6 +5873,26 @@ void actPlayer(Entity* my)
 		my->scaley = 1.01;
 		my->scalez = 1.01;
 	}
+	else if ( playerRace == MONSTER_D )
+	{
+		if ( my->sprite == 1992 || my->sprite == 1993 )
+		{
+			my->focalz += 0.5;
+		}
+		my->scalex = 1.f;
+		my->scaley = 1.f;
+		my->scalez = 1.f;
+	}
+	else if ( playerRace == MONSTER_M )
+	{
+		if ( my->sprite == 1998 )
+		{
+			my->focalz += 0.5;
+		}
+		my->scalex = 1.f;
+		my->scaley = 1.f;
+		my->scalez = 1.f;
+	}
 	else
 	{
 		my->scalex = 1.f;
@@ -6018,7 +6080,7 @@ void actPlayer(Entity* my)
 		node->deconstructor = &emptyDeconstructor;
 		node->size = sizeof(Entity*);
 		my->bodyparts.push_back(entity);
-		entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_TORSO);
+		entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_TORSO, my->sprite);
 
 		// right leg
 		entity = newEntity(spriteLegRight, 1, map.entities, nullptr); //Limb entity.
@@ -6038,7 +6100,7 @@ void actPlayer(Entity* my)
 		node->deconstructor = &emptyDeconstructor;
 		node->size = sizeof(Entity*);
 		my->bodyparts.push_back(entity);
-		entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_RIGHTLEG);
+		entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_RIGHTLEG, my->sprite);
 
 		// left leg
 		entity = newEntity(spriteLegLeft, 1, map.entities, nullptr); //Limb entity.
@@ -6058,7 +6120,7 @@ void actPlayer(Entity* my)
 		node->deconstructor = &emptyDeconstructor;
 		node->size = sizeof(Entity*);
 		my->bodyparts.push_back(entity);
-		entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_LEFTLEG);
+		entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_LEFTLEG, my->sprite);
 
 		// right arm
 		entity = newEntity(spriteArmRight, 1, map.entities, nullptr); //Limb entity.
@@ -6078,7 +6140,7 @@ void actPlayer(Entity* my)
 		node->deconstructor = &emptyDeconstructor;
 		node->size = sizeof(Entity*);
 		my->bodyparts.push_back(entity);
-		entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_RIGHTARM);
+		entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_RIGHTARM, my->sprite);
 
 		// left arm
 		entity = newEntity(spriteArmLeft, 1, map.entities, nullptr); //Limb entity.
@@ -6098,7 +6160,7 @@ void actPlayer(Entity* my)
 		node->deconstructor = &emptyDeconstructor;
 		node->size = sizeof(Entity*);
 		my->bodyparts.push_back(entity);
-		entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_LEFTARM);
+		entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_LEFTARM, my->sprite);
 
 		// world weapon
 		entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
@@ -7456,6 +7518,7 @@ void actPlayer(Entity* my)
 	bool oldInsectoidLevitate = players[PLAYER_NUM]->movement.insectoidLevitating;
 	bool& insectoidLevitating = players[PLAYER_NUM]->movement.insectoidLevitating;
 	insectoidLevitating = false;
+	bool shortModel = false;
 
 	if ( players[PLAYER_NUM]->isLocalPlayer() || multiplayer == SERVER )
 	{
@@ -7472,6 +7535,35 @@ void actPlayer(Entity* my)
 				break;
 			case CREATURE_IMP:
 				zOffset = -3.5;
+				break;
+			case MONSTER_D:
+				if ( my->sprite == 1992 || my->sprite == 1993 )
+				{
+					zOffset = 2.5;
+					shortModel = true;
+				}
+				else
+				{
+					zOffset = 0.06;
+				}
+				break;
+			case MONSTER_M:
+				if ( my->sprite == 1998 )
+				{
+					zOffset = 1.5;
+					shortModel = true;
+				}
+				else
+				{
+					zOffset = -0.5;
+				}
+				break;
+			case MONSTER_G:
+				zOffset = 1.5;
+				shortModel = true;
+				break;
+			case MONSTER_S:
+				zOffset = -1.25;
 				break;
 			default:
 				break;
@@ -7516,6 +7608,32 @@ void actPlayer(Entity* my)
 				case SUCCUBUS:
 				case TROLL:
 					my->z = 1.5;
+					break;
+				case MONSTER_D:
+					if ( my->sprite == 1992 || my->sprite == 1993 )
+					{
+						my->z = 3.75;
+					}
+					else
+					{
+						my->z = 3.0;
+					}
+					break;
+				case MONSTER_M:
+					if ( my->sprite == 1998 )
+					{
+						my->z = 3.75;
+					}
+					else
+					{
+						my->z = 3.0;
+					}
+					break;
+				case MONSTER_G:
+					my->z = 4.0;
+					break;
+				case MONSTER_S:
+					my->z = 3.0;
 					break;
 				default:
 					my->z = 1.5;
@@ -10477,6 +10595,9 @@ void actPlayer(Entity* my)
 				// torso
 				case 1:
 					torso = entity;
+					entity->scalex = 1.0;
+					entity->scaley = 1.0;
+					entity->scalez = 1.0;
 					entity->focalx = limbs[playerRace][1][0];
 					entity->focaly = limbs[playerRace][1][1];
 					entity->focalz = limbs[playerRace][1][2];
@@ -10485,11 +10606,11 @@ void actPlayer(Entity* my)
 					{
 						if ( stats[PLAYER_NUM]->breastplate == NULL || !showEquipment )
 						{
-							entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_TORSO);
+							entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_TORSO, my->sprite);
 						}
 						else
 						{
-							entity->sprite = itemModel(stats[PLAYER_NUM]->breastplate);
+							entity->sprite = itemModel(stats[PLAYER_NUM]->breastplate, shortModel);
 						}
 						if ( multiplayer == SERVER )
 						{
@@ -10525,7 +10646,7 @@ void actPlayer(Entity* my)
 					{
 						if ( stats[PLAYER_NUM]->shoes == NULL || !showEquipment )
 						{
-							entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_RIGHTLEG);
+							entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_RIGHTLEG, my->sprite);
 						}
 						else
 						{
@@ -10565,7 +10686,7 @@ void actPlayer(Entity* my)
 					{
 						if ( stats[PLAYER_NUM]->shoes == NULL || !showEquipment )
 						{
-							entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_LEFTLEG);
+							entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_LEFTLEG, my->sprite);
 						}
 						else
 						{
@@ -10603,7 +10724,7 @@ void actPlayer(Entity* my)
 					{
 						if ( stats[PLAYER_NUM]->gloves == NULL || !showEquipment )
 						{
-							entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_RIGHTARM);
+							entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_RIGHTARM, my->sprite);
 						}
 						else
 						{
@@ -10644,7 +10765,6 @@ void actPlayer(Entity* my)
 							}
 						}
 					}
-					my->setHumanoidLimbOffset(entity, playerRace, LIMB_HUMANOID_RIGHTARM);
 					node_t* tempNode = list_Node(&my->children, 6);
 					if ( tempNode )
 					{
@@ -10656,6 +10776,29 @@ void actPlayer(Entity* my)
 								entity->focalx = limbs[playerRace][4][0] - 0.25;
 								entity->focaly = limbs[playerRace][4][1] - 0.25;
 								entity->focalz = limbs[playerRace][4][2];
+							}
+							else if ( playerRace == MONSTER_D )
+							{
+								entity->focalx = limbs[playerRace][4][0];
+								entity->focaly = limbs[playerRace][4][1] - 0.25;
+								entity->focalz = limbs[playerRace][4][2];
+
+								if ( entity->sprite == 1966
+									|| entity->sprite == 1970 )
+								{
+									entity->focaly += 0.25;
+								}
+							}
+							else if ( playerRace == MONSTER_M )
+							{
+								entity->focalx = limbs[playerRace][4][0];
+								entity->focaly = limbs[playerRace][4][1];
+								entity->focalz = limbs[playerRace][4][2];
+
+								if ( entity->sprite == 2000 )
+								{
+									entity->focaly += 0.25;
+								}
 							}
 							else
 							{
@@ -10678,6 +10821,18 @@ void actPlayer(Entity* my)
 								entity->focaly = limbs[playerRace][4][1] + 0.25; // 0
 								entity->focalz = limbs[playerRace][4][2] - 1; // 1
 							}
+							else if ( playerRace == MONSTER_M || playerRace == MONSTER_S )
+							{
+								entity->focalx = limbs[playerRace][4][0] + 0.75;
+								entity->focaly = limbs[playerRace][4][1] + 0.25;
+								entity->focalz = limbs[playerRace][4][2] - 0.75;
+							}
+							else if ( playerRace == MONSTER_G )
+							{
+								entity->focalx = limbs[playerRace][4][0] + 1;
+								entity->focaly = limbs[playerRace][4][1] + 0.25;
+								entity->focalz = limbs[playerRace][4][2] - 0.75;
+							}
 							else
 							{
 								entity->focalx = limbs[playerRace][4][0] + 0.75;
@@ -10686,6 +10841,7 @@ void actPlayer(Entity* my)
 							}
 						}
 					}
+					my->setHumanoidLimbOffset(entity, playerRace, LIMB_HUMANOID_RIGHTARM);
 					entity->yaw += PLAYER_WEAPONYAW;
 					break;
 				}
@@ -10697,7 +10853,7 @@ void actPlayer(Entity* my)
 					{
 						if ( stats[PLAYER_NUM]->gloves == NULL || !showEquipment )
 						{
-							entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_LEFTARM);
+							entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_LEFTARM, my->sprite);
 						}
 						else
 						{
@@ -10748,8 +10904,6 @@ void actPlayer(Entity* my)
 							}
 						}
 					}
-					my->setHumanoidLimbOffset(entity, playerRace, LIMB_HUMANOID_LEFTARM);
-
 					if ( weaponarm && !showEquipment &&
 						(PLAYER_ATTACK == MONSTER_POSE_SPECIAL_WINDUP1 
 							|| PLAYER_ATTACK == MONSTER_POSE_SPECIAL_WINDUP2
@@ -10795,6 +10949,29 @@ void actPlayer(Entity* my)
 								entity->focaly = limbs[playerRace][5][1] + 0.25;
 								entity->focalz = limbs[playerRace][5][2];
 							}
+							else if ( playerRace == MONSTER_D )
+							{
+								entity->focalx = limbs[playerRace][5][0]; // 0
+								entity->focaly = limbs[playerRace][5][1] + .25; // 0
+								entity->focalz = limbs[playerRace][5][2]; // 2
+
+								if ( entity->sprite == 1965
+									|| entity->sprite == 1969 )
+								{
+									entity->focaly -= 0.25;
+								}
+							}
+							else if ( playerRace == MONSTER_M )
+							{
+								entity->focalx = limbs[playerRace][5][0];
+								entity->focaly = limbs[playerRace][5][1];
+								entity->focalz = limbs[playerRace][5][2];
+
+								if ( entity->sprite == 1999 )
+								{
+									entity->focaly -= 0.25;
+								}
+							}
 							else
 							{
 								entity->focalx = limbs[playerRace][5][0]; // 0
@@ -10816,6 +10993,18 @@ void actPlayer(Entity* my)
 								entity->focaly = limbs[playerRace][5][1] - 0.25; // 0
 								entity->focalz = limbs[playerRace][5][2] - 1; // 1
 							}
+							else if ( playerRace == MONSTER_M || playerRace == MONSTER_S )
+							{
+								entity->focalx = limbs[playerRace][5][0] + 0.75;
+								entity->focaly = limbs[playerRace][5][1] - 0.25;
+								entity->focalz = limbs[playerRace][5][2] - 0.75;
+							}
+							else if ( playerRace == MONSTER_G )
+							{
+								entity->focalx = limbs[playerRace][5][0] + 1;
+								entity->focaly = limbs[playerRace][5][1] - 0.25;
+								entity->focalz = limbs[playerRace][5][2] - 0.75;
+							}
 							else
 							{
 								entity->focalx = limbs[playerRace][5][0] + 0.75;
@@ -10824,6 +11013,7 @@ void actPlayer(Entity* my)
 							}
 						}
 					}
+					my->setHumanoidLimbOffset(entity, playerRace, LIMB_HUMANOID_LEFTARM);
 					if ( multiplayer != CLIENT )
 					{
 						real_t prevYaw = PLAYER_SHIELDYAW;
@@ -11086,6 +11276,7 @@ void actPlayer(Entity* my)
 					entity->x -= cos(my->yaw);
 					entity->y -= sin(my->yaw);
 					entity->yaw += PI / 2;
+					my->setHumanoidLimbOffset(entity, playerRace, LIMB_HUMANOID_CLOAK);
 					break;
 					// helm
 				case 9:
@@ -11964,6 +12155,20 @@ bool Entity::isPlayerHeadSprite(const int sprite)
 		case 1043:
 		case 1044:
 		case 1049:
+		case 1963:
+		case 1964:
+		case 1992:
+		case 1993:
+		case 1997:
+		case 1998:
+		case 2014:
+		case 2015:
+		case 2016:
+		case 2017:
+		case 2018:
+		case 2019:
+		case 2047:
+		case 2048:
 			return true;
 			break;
 		default:
@@ -12032,7 +12237,7 @@ Monster Entity::getMonsterFromPlayerRace(int playerRace)
     return ::getMonsterFromPlayerRace(playerRace);
 }
 
-void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbType)
+void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbType, int headSprite)
 {
 	if ( !players[playernum] || !players[playernum]->entity )
 	{
@@ -12124,6 +12329,30 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 				case TROLL:
 					this->sprite = 818;
 					break;
+				case MONSTER_D:
+					this->sprite = stats[playernum]->sex == FEMALE ? 1991 : 1989;
+					if ( headSprite == 1964 || headSprite == 1993 )
+					{
+						this->sprite = stats[playernum]->sex == FEMALE ? 1994 : 1990;
+					}
+					break;
+				case MONSTER_M:
+					this->sprite = stats[playernum]->sex == FEMALE ? 2013 : 2012;
+					break;
+				case MONSTER_S:
+					this->sprite = 2038;
+					if ( headSprite == 2016 || headSprite == 2017 )
+					{
+						this->sprite = 2039;
+					}
+					else if ( headSprite == 2018 || headSprite == 2019 )
+					{
+						this->sprite = 2024;
+					}
+					break;
+				case MONSTER_G:
+					this->sprite = stats[playernum]->sex == FEMALE ? 2062 : 2061;
+					break;
 				default:
 					break;
 			}
@@ -12200,6 +12429,30 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 					break;
 				case TROLL:
 					this->sprite = 822;
+					break;
+				case MONSTER_D:
+					this->sprite = stats[playernum]->sex == FEMALE ? 1988 : 1986;
+					if ( headSprite == 1964 || headSprite == 1993 )
+					{
+						this->sprite = stats[playernum]->sex == FEMALE ? 1996 : 1987;
+					}
+					break;
+				case MONSTER_M:
+					this->sprite = stats[playernum]->sex == FEMALE ? 2011 : 2010;
+					break;
+				case MONSTER_S:
+					this->sprite = 2033;
+					if ( headSprite == 2016 || headSprite == 2017 )
+					{
+						this->sprite = 2035;
+					}
+					else if ( headSprite == 2018 || headSprite == 2019 )
+					{
+						this->sprite = 2037;
+					}
+					break;
+				case MONSTER_G:
+					this->sprite = stats[playernum]->sex == FEMALE ? 2060 : 2058;
 					break;
 				default:
 					break;
@@ -12278,6 +12531,30 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 				case TROLL:
 					this->sprite = 821;
 					break;
+				case MONSTER_D:
+					this->sprite = stats[playernum]->sex == FEMALE ? 1985 : 1983;
+					if ( headSprite == 1964 || headSprite == 1993 )
+					{
+						this->sprite = stats[playernum]->sex == FEMALE ? 1995 : 1984;
+					}
+					break;
+				case MONSTER_M:
+					this->sprite = stats[playernum]->sex == FEMALE ? 2009 : 2008;
+					break;
+				case MONSTER_S:
+					this->sprite = 2032;
+					if ( headSprite == 2016 || headSprite == 2017 )
+					{
+						this->sprite = 2034;
+					}
+					else if ( headSprite == 2018 || headSprite == 2019 )
+					{
+						this->sprite = 2036;
+					}
+					break;
+				case MONSTER_G:
+					this->sprite = stats[playernum]->sex == FEMALE ? 2059 : 2057;
+					break;
 				default:
 					break;
 			}
@@ -12341,6 +12618,30 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 				case TROLL:
 					this->sprite = 820;
 					break;
+				case MONSTER_D:
+					this->sprite = 1966;
+					if ( headSprite == 1964 || headSprite == 1993 )
+					{
+						this->sprite = 1970;
+					}
+					break;
+				case MONSTER_M:
+					this->sprite = 2000;
+					break;
+				case MONSTER_S:
+					this->sprite = 2021;
+					if ( headSprite == 2016 || headSprite == 2017 )
+					{
+						this->sprite = 2025;
+					}
+					else if ( headSprite == 2018 || headSprite == 2019 )
+					{
+						this->sprite = 2029;
+					}
+					break;
+				case MONSTER_G:
+					this->sprite = stats[playernum]->sex == FEMALE ? 2054 : 2050;
+					break;
 				default:
 					break;
 			}
@@ -12403,6 +12704,30 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 					break;
 				case TROLL:
 					this->sprite = 819;
+					break;
+				case MONSTER_D:
+					this->sprite = 1965;
+					if ( headSprite == 1964 || headSprite == 1993 )
+					{
+						this->sprite = 1969;
+					}
+					break;
+				case MONSTER_M:
+					this->sprite = 1999;
+					break;
+				case MONSTER_S:
+					this->sprite = 2020;
+					if ( headSprite == 2016 || headSprite == 2017 )
+					{
+						this->sprite = 2024;
+					}
+					else if ( headSprite == 2018 || headSprite == 2019 )
+					{
+						this->sprite = 2028;
+					}
+					break;
+				case MONSTER_G:
+					this->sprite = stats[playernum]->sex == FEMALE ? 2053 : 2049;
 					break;
 				default:
 					break;

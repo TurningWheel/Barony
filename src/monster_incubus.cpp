@@ -898,6 +898,9 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		{
 			// torso
 			case LIMB_HUMANOID_TORSO:
+				entity->focalx = limbs[INCUBUS][1][0];
+				entity->focaly = limbs[INCUBUS][1][1];
+				entity->focalz = limbs[INCUBUS][1][2];
 				entity->sprite = my->sprite == 445 ? 446 : 1827;
 				my->setHumanoidLimbOffset(entity, INCUBUS, LIMB_HUMANOID_TORSO);
 				entity->scalex = 0.975;
