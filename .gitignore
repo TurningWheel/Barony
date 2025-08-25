@@ -79,3 +79,5 @@ xcode/Barony/Barony.xcodeproj/xcuserdata/*
 /VS.2015/Barony/x64/Debug
 *.sarif
 *.i
+*.enc
+*.ilk
