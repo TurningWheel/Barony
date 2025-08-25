@@ -91,6 +91,7 @@ void initGameDatafiles(bool moddedReload)
 	{
 		EquipmentModelOffsets.readFromFile(monstertypename[c], c);
 	}
+	EquipmentModelOffsets.readBaseItemsFromFile();
 	setupSpells();
 	CompendiumEntries.readMonstersFromFile();
 	Compendium_t::Events_t::itemDisplayedEventsList.clear();

@@ -3500,6 +3500,9 @@ struct EquipmentModelOffsets_t
 		real_t scalez = 0.0;
 		real_t rotation = 0.0;
 		real_t pitch = 0.0;
+		real_t x = 0.0;
+		real_t y = 0.0;
+		real_t z = 0.0;
 		int limbsIndex = 0;
 		bool oversizedMask = false;
 		bool expandToFitMask = false;
@@ -3517,6 +3520,8 @@ struct EquipmentModelOffsets_t
 		std::map<int, AdditionalOffset_t> adjustToExpandedHelm;
 	};
 	std::map<int, std::map<int, ModelOffset_t>> monsterModelsMap;
+	std::map<int, ModelOffset_t> miscItemsBaseOffsets;
+	void readBaseItemsFromFile();
 	void readFromFile(std::string monsterName, int monsterType = NOTHING);
 	int modelOffsetExists(int monster, int sprite, int monsterSprite);
 	int expandHelmToFitMask(int monster, int helmSprite, int maskSprite, int monsterSprite);

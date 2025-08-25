@@ -4029,6 +4029,11 @@ namespace ConsoleCommands {
 		if (players[clientnum]->entity)
 		{
 			spellEffectPolymorph(players[clientnum]->entity, players[clientnum]->entity, true, TICKS_PER_SECOND * 60 * 2);
+			if ( argc > 1 )
+			{
+				int type = std::min(NUMMONSTERS - 1, std::max((int)HUMAN, atoi(argv[1])));
+				players[clientnum]->entity->effectPolymorph = type;
+			}
 		}
 		});
 
@@ -5470,6 +5475,7 @@ namespace ConsoleCommands {
 
 	static ConsoleCommand ccmd_reloadequipmentoffsets("/reloadequipmentoffsets", "reloads equipment model offsets", []CCMD{
 		EquipmentModelOffsets.readFromFile(monstertypename[stats[clientnum]->type]);
+		EquipmentModelOffsets.readBaseItemsFromFile();
 	});
 
 	static ConsoleCommand ccmd_classstatrolls("/classstatrolls", "debug class stats", []CCMD{

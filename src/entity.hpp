@@ -1017,6 +1017,7 @@ public:
 	static Monster getMonsterTypeFromSprite(const int sprite);
 	//--monster limb offsets
 	void setHelmetLimbOffset(Entity* helm);
+	void setTorsoLimbOffset(Entity* torso);
 	void setHumanoidLimbOffset(Entity* limb, Monster race, int limbType);
 	void actMonsterLimb(bool processLight = false);
 
@@ -1267,7 +1268,7 @@ public:
 	void playerLevelEntrySpeechSecond(); // handle secondary voice lines for post-herx content
 	bool isPlayerHeadSprite() const; // determines if model of entity is a human head.
 	static bool isPlayerHeadSprite(const int sprite);
-	void setDefaultPlayerModel(int playernum, Monster playerRace, int limbType); // sets correct base color/model of limbs for player characters.
+	void setDefaultPlayerModel(int playernum, Monster playerRace, int limbType, int headSprite); // sets correct base color/model of limbs for player characters.
 	Monster getMonsterFromPlayerRace(int playerRace); // convert playerRace into the relevant monster type
 	void setHardcoreStats(Stat& stats); // set monster stats for hardcore mode.
 	void handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event); // monster text for interactions.

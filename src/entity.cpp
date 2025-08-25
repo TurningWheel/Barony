@@ -16521,6 +16521,19 @@ int checkEquipType(const Item *item)
 		case HEALER_DOUBLET:
 		case VAMPIRE_DOUBLET:
 		case ARTIFACT_BREASTPIECE:
+		case BANDIT_BREASTPIECE:
+		case TUNIC_BLOUSE:
+		case BONE_BREASTPIECE:
+		case BLACKIRON_BREASTPIECE:
+		case SILVER_BREASTPIECE:
+		case IRON_PAULDRONS:
+		case QUILTED_GAMBESON:
+		case ROBE_CULTIST:
+		case ROBE_HEALER:
+		case ROBE_MONK:
+		case ROBE_WIZARD:
+		case SHAWL:
+		case CHAIN_HAUBERK:
 			return TYPE_BREASTPIECE;
 			break;
 
@@ -16733,11 +16746,11 @@ bool Entity::setBootSprite(Entity* leg, int spriteOffset)
 		case MONSTER_M:
 		case MONSTER_S:
 			shortSprite = false;
-			if ( myStats->type == MONSTER_D && (sprite == 1514 || sprite == 1515) )
+			if ( myStats->type == MONSTER_D && (sprite == 1514 || sprite == 1515 || sprite == 1992 || sprite == 1993) )
 			{
 				shortSprite = true;
 			}
-			if ( myStats->type == MONSTER_M && sprite == 1520 )
+			if ( myStats->type == MONSTER_M && (sprite == 1520 || sprite == 1998) )
 			{
 				shortSprite = true;
 			}
@@ -19120,7 +19133,7 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 
 	if ( monsterType == MONSTER_D )
 	{
-		if ( sprite == 1514 || sprite == 1515 )
+		if ( sprite == 1514 || sprite == 1515 || sprite == 1992 || sprite == 1993 )
 		{
 			// short arm move weapon closer
 			weaponLimb->x += -0.5 * cos(weaponArmLimb->yaw + PI / 2);
@@ -19129,7 +19142,7 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 	}
 	else if ( monsterType == MONSTER_M )
 	{
-		if ( sprite == 1520 )
+		if ( sprite == 1520 || sprite == 1998 )
 		{
 			// short arm move weapon closer
 			weaponLimb->x += -0.5 * cos(weaponArmLimb->yaw + PI / 2);
@@ -22817,6 +22830,21 @@ char const * playerClassLangEntry(int classnum, int playernum)
 	}
 }
 
+void Entity::setTorsoLimbOffset(Entity* torso)
+{
+	int monster = getMonsterTypeFromSprite();
+	if ( int resultMonsterSprite = EquipmentModelOffsets.modelOffsetExists(monster, torso->sprite, sprite) )
+	{
+		auto& entry = EquipmentModelOffsets.getModelOffset(resultMonsterSprite, torso->sprite);
+		torso->focalx += entry.focalx;
+		torso->focaly += entry.focaly;
+		torso->focalz += entry.focalz;
+		torso->scalex += entry.scalex;
+		torso->scaley += entry.scaley;
+		torso->scalez += entry.scalez;
+	}
+}
+
 /*-------------------------------------------------------------------------------
 
 setHelmetLimbOffset
@@ -23622,9 +23650,13 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 		case MONSTER_G:
 			if ( limbType == LIMB_HUMANOID_CLOAK )
 			{
-				limb->x -= cos(this->yaw) * 1.5;
-				limb->y -= sin(this->yaw) * 1.5;
-				limb->yaw += PI / 2;
+				limb->x -= cos(this->yaw) * 1.25;
+				limb->y -= sin(this->yaw) * 1.25;
+				limb->z += 0.75;
+				if ( limb->sprite == items[CLOAK_BACKPACK].index )
+				{
+					limb->z -= 0.75;
+				}
 			}
 			else if ( limbType == LIMB_HUMANOID_TORSO )
 			{
@@ -23640,13 +23672,13 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 					limb->focalx += 0.5;
 				}*/
 
-				if ( limb->sprite == 1583 || limb->sprite == 1584 )
+				if ( limb->sprite == 1583 || limb->sprite == 1584 || limb->sprite == 2061 || limb->sprite == 2062 )
 				{
 					limb->focalz += 0.5; // default torsos
 				}
-				else if ( limb->sprite != 1583 && limb->sprite != 1584 )
+				else
 				{
-					limb->focalz -= 0.25; // armor torsos
+					limb->focalz -= 0.0; // armor torsos
 					limb->focalx += 1.0;
 				}
 				if ( limb->sprite == items[MACHINIST_APRON].indexShort )
@@ -23664,7 +23696,7 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 				limb->x += 1.15 * cos(this->yaw + PI / 2);
 				limb->y += 1.15 * sin(this->yaw + PI / 2);
 				limb->z += 3.25;
-				if ( limb->sprite == 1469 || limb->sprite == 1470 )
+				if ( limb->sprite == 1469 || limb->sprite == 1470 ) // loafer
 				{
 					limb->focalx += 0.5;
 				}
@@ -23679,7 +23711,7 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 				limb->x -= 1.15 * cos(this->yaw + PI / 2);
 				limb->y -= 1.15 * sin(this->yaw + PI / 2);
 				limb->z += 3.25;
-				if ( limb->sprite == 1469 || limb->sprite == 1470 )
+				if ( limb->sprite == 1469 || limb->sprite == 1470 ) // loafer
 				{
 					limb->focalx += 0.5;
 				}
@@ -23700,7 +23732,9 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 				}
 
 				if ( limb->sprite != 1573
-					&& limb->sprite != 1577 ) // non default arms
+					&& limb->sprite != 1577
+					&& limb->sprite != 2050 
+					&& limb->sprite != 2054 ) // non default arms
 				{
 					limb->x -= 0.25 * cos(this->yaw + PI / 2);
 					limb->y -= 0.25 * sin(this->yaw + PI / 2);
@@ -23726,7 +23760,9 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 				}
 
 				if ( limb->sprite != 1571
-					&& limb->sprite != 1575 ) // non default arms
+					&& limb->sprite != 1575
+					&& limb->sprite != 2049 
+					&& limb->sprite != 2053 ) // non default arms
 				{
 					limb->x += 0.25 * cos(this->yaw + PI / 2);
 					limb->y += 0.25 * sin(this->yaw + PI / 2);
@@ -23782,7 +23818,7 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 				limb->x += 1.25 * cos(this->yaw + PI / 2);
 				limb->y += 1.25 * sin(this->yaw + PI / 2);
 				limb->z += 2.25;
-				if ( limb->sprite == 1469 || limb->sprite == 1470 )
+				if ( limb->sprite == 1469 || limb->sprite == 1470 )  // loafer
 				{
 					limb->focalx += 0.5;
 				}
@@ -23797,7 +23833,7 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 				limb->x -= 1.25 * cos(this->yaw + PI / 2);
 				limb->y -= 1.25 * sin(this->yaw + PI / 2);
 				limb->z += 2.25;
-				if ( limb->sprite == 1469 || limb->sprite == 1470 )
+				if ( limb->sprite == 1469 || limb->sprite == 1470 )  // loafer
 				{
 					limb->focalx += 0.5;
 				}
@@ -24103,7 +24139,7 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 			if ( race == MONSTER_D )
 			{
 				sleepHeight = 3.0;
-				if ( sprite == 1514 || sprite == 1515 )
+				if ( sprite == 1514 || sprite == 1515 || sprite == 1992 || sprite == 1993 )
 				{
 					sleepHeight = 3.75;
 					if ( limbType == LIMB_HUMANOID_LEFTLEG || limbType == LIMB_HUMANOID_RIGHTLEG )
@@ -24118,12 +24154,27 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 					{
 						limb->focaly -= 0.5; // short torso move arms to body
 					}
+					else if ( limbType == LIMB_HUMANOID_CLOAK )
+					{
+						limb->z += 0.5;
+						if ( limb->sprite == items[CLOAK_BACKPACK].index )
+						{
+							limb->z -= 0.75;
+						}
+					}
+				}
+				else
+				{
+					if ( limbType == LIMB_HUMANOID_TORSO )
+					{
+						limb->focalz += 0.25;
+					}
 				}
 			}
 			else if ( race == MONSTER_M )
 			{
 				sleepHeight = 3.0;
-				if ( sprite == 1520 )
+				if ( sprite == 1520 || sprite == 1998 )
 				{
 					sleepHeight = 3.75;
 					if ( limbType == LIMB_HUMANOID_LEFTLEG || limbType == LIMB_HUMANOID_RIGHTLEG )
@@ -24139,6 +24190,14 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 					{
 						limb->focaly -= 0.5; // short torso move arms to body
 					}
+					else if ( limbType == LIMB_HUMANOID_CLOAK )
+					{
+						limb->z += 0.75;
+						if ( limb->sprite == items[CLOAK_BACKPACK].index )
+						{
+							limb->z -= 0.75;
+						}
+					}
 				}
 
 				if ( limbType == LIMB_HUMANOID_LEFTLEG || limbType == LIMB_HUMANOID_RIGHTLEG )
@@ -24152,7 +24211,8 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 				if ( limbType == LIMB_HUMANOID_LEFTLEG || limbType == LIMB_HUMANOID_RIGHTLEG )
 				{
 					limb->z += 0.75;
-					if ( (limb->sprite >= 1554 && limb->sprite <= 1559) )
+					if ( (limb->sprite >= 1554 && limb->sprite <= 1559)
+						|| (limb->sprite >= 2032 && limb->sprite <= 2037) )
 					{
 						// base feet, push backward
 						limb->focalx -= .5;
@@ -24189,7 +24249,7 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 					limb->scaley = 1.01;
 					limb->scalez = 1.01;
 
-					if ( sprite == 1520 )
+					if ( sprite == 1520 || sprite == 1998 )
 					{
 						//if ( limb->sprite != 1535 )
 						//{
@@ -24204,19 +24264,20 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 					limb->scaley = 1.01;
 					limb->scalez = 1.01;
 
-					if ( sprite == 1514 || sprite == 1515 )
+					if ( sprite == 1514 || sprite == 1515 || sprite == 1992 || sprite == 1993 )
 					{
-						if ( limb->sprite != 1513 && limb->sprite != 1516 )
+						if ( limb->sprite != 1513 && limb->sprite != 1516
+							&& limb->sprite != 1991 && limb->sprite != 1994 )
 						{
 							// wearing armor, offset
 							//limb->z -= 0.5;
 						}
 					}
-					if ( limb->sprite == 1511 || limb->sprite == 1512 )
+					if ( limb->sprite == 1511 || limb->sprite == 1512 || limb->sprite == 1989 || limb->sprite == 1990 )
 					{
 						limb->focaly += 0.25; // center the torso
 					}
-					else if ( limb->sprite == 1513 || limb->sprite == 1516 )
+					else if ( limb->sprite == 1513 || limb->sprite == 1516 || limb->sprite == 1991 || limb->sprite == 1994 )
 					{
 						limb->focalz -= 0.25;
 					}
@@ -24227,7 +24288,8 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 					limb->scaley = 1.01;
 					limb->scalez = 1.01;
 
-					if ( limb->sprite != 1560 && limb->sprite != 1561 && limb->sprite != 1562 )
+					if ( limb->sprite != 1560 && limb->sprite != 1561 && limb->sprite != 1562
+						&& limb->sprite != 2038 && limb->sprite != 2039 && limb->sprite != 2040 )
 					{
 						// wearing armor, offset
 						limb->focalx += 1.0;
@@ -24367,6 +24429,19 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 		default:
 			break;
 	}
+	if ( limbType == LIMB_HUMANOID_TORSO )
+	{
+		auto find = EquipmentModelOffsets.miscItemsBaseOffsets.find(limb->sprite);
+		if ( find != EquipmentModelOffsets.miscItemsBaseOffsets.end() )
+		{
+			limb->focalx += find->second.focalx;
+			limb->focaly += find->second.focaly;
+			limb->focalz += find->second.focalz;
+			limb->scalex += find->second.scalex;
+			limb->scaley += find->second.scaley;
+			limb->scalez += find->second.scalez;
+		}
+	}
 }
 
 void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
@@ -24451,6 +24526,10 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 						flameEntity->x += 2 * cos(shieldArmLimb->yaw);
 						flameEntity->y += 2 * sin(shieldArmLimb->yaw);
 						flameEntity->z -= 2;
+						if ( race == MONSTER_G )
+						{
+							flameEntity->z += 1;
+						}
 					}
 				}
 				else if ( shieldLimb->sprite == items[TOOL_CRYSTALSHARD].index )
@@ -24467,6 +24546,10 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 						flameEntity->x += 2 * cos(shieldArmLimb->yaw);
 						flameEntity->y += 2 * sin(shieldArmLimb->yaw);
 						flameEntity->z += 1;
+						if ( race == MONSTER_G )
+						{
+							flameEntity->z += 1;
+						}
 					}
 				}
 			}
@@ -24901,6 +24984,11 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 			shieldLimb->focalz += -3;
 			shieldLimb->focalx += -0.5;
 			shieldLimb->focaly += 1.25;
+			if ( race == MONSTER_G )
+			{
+				shieldLimb->x += 0.25 * cos(this->yaw);
+				shieldLimb->y += 0.25 * sin(this->yaw);
+			}
 		}
 		else
 		{
@@ -24923,6 +25011,10 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 			shieldLimb->x += 0.75 * cos(this->yaw + PI / 2) + -0.5 * cos(this->yaw);
 			shieldLimb->y += 0.75 * sin(this->yaw + PI / 2) + -0.5 * sin(this->yaw);
 			shieldLimb->z += -0.5;
+		}
+		else if ( race == MONSTER_G )
+		{
+			shieldLimb->focaly += 0.75;
 		}
 	}
 	else if ( shieldLimb->sprite == items[TOOL_TINKERING_KIT].index )

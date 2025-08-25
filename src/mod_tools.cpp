@@ -10451,6 +10451,118 @@ EquipmentModelOffsets_t::ModelOffset_t::AdditionalOffset_t EquipmentModelOffsets
 	return EquipmentModelOffsets_t::ModelOffset_t::AdditionalOffset_t();
 }
 
+void EquipmentModelOffsets_t::readBaseItemsFromFile()
+{
+	std::string filename = "models/creatures/";
+	filename += "item_model_positions.json";
+
+	if ( !PHYSFS_getRealDir(filename.c_str()) )
+	{
+		//printlog("[JSON]: Error: Could not locate json file %s", filename.c_str());
+		return;
+	}
+
+	std::string inputPath = PHYSFS_getRealDir(filename.c_str());
+	inputPath.append(PHYSFS_getDirSeparator());
+	inputPath.append(filename.c_str());
+
+	File* fp = FileIO::open(inputPath.c_str(), "rb");
+	if ( !fp )
+	{
+		printlog("[JSON]: Error: Could not locate json file %s", inputPath.c_str());
+		return;
+	}
+
+	static char buf[32000];
+	int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
+	buf[count] = '\0';
+	rapidjson::StringStream is(buf);
+	FileIO::close(fp);
+
+	rapidjson::Document d;
+	d.ParseStream(is);
+	if ( !d.IsObject() )
+	{
+		return;
+	}
+	if ( !d.HasMember("version") || !d.HasMember("items") )
+	{
+		printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
+		return;
+	}
+
+	int version = d["version"].GetInt();
+
+	miscItemsBaseOffsets.clear();
+
+	auto& itemsArr = d["items"];
+	for ( auto it = itemsArr.Begin(); it != itemsArr.End(); ++it )
+	{
+		for ( auto it2 = it->MemberBegin(); it2 != it->MemberEnd(); ++it2 )
+		{
+			std::string itemName = it2->name.GetString();
+			if ( ItemTooltips.itemNameStringToItemID.find(itemName) == ItemTooltips.itemNameStringToItemID.end() )
+			{
+				continue;
+			}
+			ItemType itemType = (ItemType)ItemTooltips.itemNameStringToItemID[itemName];
+			std::vector<int> models;
+			if ( it2->value.HasMember("models") )
+			{
+				if ( it2->value["models"].IsArray() )
+				{
+					if ( it2->value["models"].Size() == 0 )
+					{
+						for ( int i = items[itemType].index; i < items[itemType].index + items[itemType].variations; ++i )
+						{
+							models.push_back(i);
+						}
+					}
+					else
+					{
+						for ( auto itArr = it2->value["models"].Begin(); itArr != it2->value["models"].End(); ++itArr )
+						{
+							if ( itArr->IsInt() )
+							{
+								models.push_back(itArr->GetInt());
+							}
+						}
+					}
+				}
+			}
+
+			real_t focalx = it2->value.HasMember("focalx") ? it2->value["focalx"].GetDouble() : 0.0;
+			real_t focaly = it2->value.HasMember("focaly") ? it2->value["focaly"].GetDouble() : 0.0;
+			real_t focalz = it2->value.HasMember("focalz") ? it2->value["focalz"].GetDouble() : 0.0;
+			real_t scalex = 0.0;
+			if ( it2->value.HasMember("scalex") )
+			{
+				scalex = it2->value["scalex"].GetDouble();
+			}
+			real_t scaley = 0.0;
+			if ( it2->value.HasMember("scaley") )
+			{
+				scaley = it2->value["scaley"].GetDouble();
+			}
+			real_t scalez = 0.0;
+			if ( it2->value.HasMember("scalez") )
+			{
+				scalez = it2->value["scalez"].GetDouble();
+			}
+			for ( auto index : models )
+			{
+				auto& entry = miscItemsBaseOffsets[index];
+				entry.focalx = focalx;
+				entry.focaly = focaly;
+				entry.focalz = focalz;
+				entry.scalex = scalex;
+				entry.scaley = scaley;
+				entry.scalez = scalez;
+			}
+		}
+	}
+}
+
 void EquipmentModelOffsets_t::readFromFile(std::string monsterName, int monsterType)
 {
 	if ( monsterType == NOTHING )
@@ -10616,7 +10728,10 @@ void EquipmentModelOffsets_t::readFromFile(std::string monsterName, int monsterT
 				entry.focalx = focalx;
 				entry.focaly = focaly;
 				entry.focalz = focalz;
-				if ( static_cast<int>(entry.rotation) == 1 && version >= 2 )
+				if ( items[itemType].item_slot == EQUIPPABLE_IN_SLOT_BREASTPLATE )
+				{
+				}
+				else if ( static_cast<int>(entry.rotation) == 1 && version >= 2 )
 				{
 					entry.focalx += baseFocalX_rot1;
 					entry.focaly += baseFocalY_rot1;

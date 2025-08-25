@@ -2368,6 +2368,19 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		case ARTIFACT_BREASTPIECE:
 		case TUNIC:
 		case MACHINIST_APRON:
+		case BANDIT_BREASTPIECE:
+		case TUNIC_BLOUSE:
+		case BONE_BREASTPIECE:
+		case BLACKIRON_BREASTPIECE:
+		case SILVER_BREASTPIECE:
+		case IRON_PAULDRONS:
+		case QUILTED_GAMBESON:
+		case ROBE_CULTIST:
+		case ROBE_HEALER:
+		case ROBE_MONK:
+		case ROBE_WIZARD:
+		case SHAWL:
+		case CHAIN_HAUBERK:
 			equipItemResult = equipItem(item, &stats[player]->breastplate, player, checkInventorySpaceForPaperDoll);
 			break;
 		case HAT_PHRYGIAN:
@@ -4879,6 +4892,58 @@ Sint32 Item::armorGetAC(const Stat* const wielder) const
 		armor += 2;
 	}
 	else if ( type == SPIKED_GAUNTLETS )
+	{
+		armor += 3;
+	}
+	else if ( type == BANDIT_BREASTPIECE )
+	{
+		armor += 3;
+	}
+	else if ( type == TUNIC_BLOUSE)
+	{
+		armor += 0;
+	}
+	else if ( type == BONE_BREASTPIECE)
+	{
+		armor += 3;
+	}
+	else if ( type == BLACKIRON_BREASTPIECE)
+	{
+		armor += 5;
+	}
+	else if ( type == SILVER_BREASTPIECE)
+	{
+		armor += 4;
+	}
+	else if ( type == IRON_PAULDRONS)
+	{
+		armor += 3;
+	}
+	else if ( type == QUILTED_GAMBESON)
+	{
+		armor += 2;
+	}
+	else if ( type == ROBE_CULTIST)
+	{
+		armor += 0;
+	}
+	else if ( type == ROBE_HEALER)
+	{
+		armor += 0;
+	}
+	else if ( type == ROBE_MONK)
+	{
+		armor += 0;
+	}
+	else if ( type == ROBE_WIZARD)
+	{
+		armor += 0;
+	}
+	else if ( type == SHAWL)
+	{
+		armor += 1;
+	}
+	else if ( type == CHAIN_HAUBERK)
 	{
 		armor += 3;
 	}
