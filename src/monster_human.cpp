@@ -80,7 +80,7 @@ void initHuman(Entity* my, Stat* myStats)
 							specialMonsterType = rng.rand() % 10;
 						}
 					}
-					switch ( rng.rand() % 10 )
+					switch ( specialMonsterType )
 					{
 						case 0:
 							// red riding hood
