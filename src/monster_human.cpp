@@ -1131,6 +1131,12 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		{
 			// torso
 			case LIMB_HUMANOID_TORSO:
+				entity->scalex = 1.0;
+				entity->scaley = 1.0;
+				entity->scalez = 1.0;
+				entity->focalx = limbs[HUMAN][1][0];
+				entity->focaly = limbs[HUMAN][1][1];
+				entity->focalz = limbs[HUMAN][1][2];
 				if ( multiplayer != CLIENT )
 				{
 					if ( myStats->breastplate == nullptr )
@@ -1201,9 +1207,10 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 				}
 
-				entity->x -= .25 * cos(my->yaw);
+				/*entity->x -= .25 * cos(my->yaw);
 				entity->y -= .25 * sin(my->yaw);
-				entity->z += 2.5;
+				entity->z += 2.5;*/
+				my->setHumanoidLimbOffset(entity, HUMAN, LIMB_HUMANOID_TORSO);
 				break;
 			// right leg
 			case LIMB_HUMANOID_RIGHTLEG:
@@ -1464,14 +1471,8 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 				}
 
-				entity->x += 2.5 * cos(my->yaw + PI / 2) - .20 * cos(my->yaw);
-				entity->y += 2.5 * sin(my->yaw + PI / 2) - .20 * sin(my->yaw);
-				entity->z += 1.5;
+				my->setHumanoidLimbOffset(entity, HUMAN, LIMB_HUMANOID_RIGHTARM);
 				entity->yaw += MONSTER_WEAPONYAW;
-				if ( my->z >= 1.4 && my->z <= 1.6 )
-				{
-					entity->pitch = 0;
-				}
 				break;
 			}
 			// left arm
@@ -1571,13 +1572,7 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->sprite += 2;
 					}
 				}
-				entity->x -= 2.5 * cos(my->yaw + PI / 2) + .20 * cos(my->yaw);
-				entity->y -= 2.5 * sin(my->yaw + PI / 2) + .20 * sin(my->yaw);
-				entity->z += 1.5;
-				if ( my->z >= 1.4 && my->z <= 1.6 )
-				{
-					entity->pitch = 0;
-				}
+				my->setHumanoidLimbOffset(entity, HUMAN, LIMB_HUMANOID_LEFTARM);
 				if ( my->monsterDefend && my->monsterAttack == 0 )
 				{
 					MONSTER_SHIELDYAW = PI / 5;
@@ -1821,17 +1816,7 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->roll = PI / 2;
 				if ( multiplayer != CLIENT )
 				{
-					bool hasSteelHelm = false;
-					/*if ( myStats->helmet )
-					{
-						if ( myStats->helmet->type == STEEL_HELM
-							|| myStats->helmet->type == CRYSTAL_HELM
-							|| myStats->helmet->type == ARTIFACT_HELM )
-						{
-							hasSteelHelm = true;
-						}
-					}*/
-					if ( myStats->mask == nullptr || myStats->getEffectActive(EFF_INVISIBLE) || wearingring || hasSteelHelm ) //TODO: isInvisible()?
+					if ( myStats->mask == nullptr || myStats->getEffectActive(EFF_INVISIBLE) || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
