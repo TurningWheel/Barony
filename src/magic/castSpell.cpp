@@ -4032,7 +4032,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 
 							itemPool.emplace_back(
 								NOTHING,
-								newItem(TUNIC, DECREPIT, -1, 1 + rng.rand() % 2, rng.rand(), false, nullptr),
+								newItem(TUNIC, DECREPIT, -1, 1, rng.rand(), false, nullptr),
 								10);
 
 							itemPool.emplace_back(
