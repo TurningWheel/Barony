@@ -1142,6 +1142,29 @@ char itemNameStrings[NUM_ITEM_STRINGS][32] =
 	"robe_wizard",
 	"shawl",
 	"chain_hauberk",
+	"bone_bracers",
+	"blackiron_gauntlets",
+	"silver_gauntlets",
+	"quilted_gloves",
+	"chain_gloves",
+	"bone_boots",
+	"blackiron_boots",
+	"silver_boots",
+	"quilted_boots",
+	"loafers",
+	"chain_boots",
+	"scutum",
+	"bone_shield",
+	"blackiron_shield",
+	"silver_shield",
+	"cloak_dendrite",
+	"bone_helm",
+	"blackiron_helm",
+	"silver_helm",
+	"hat_felt",
+	"quilted_cap",
+	"hood_teal",
+	"chain_coif",
 	""
 };
 
@@ -1188,6 +1211,13 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"hat_hood_apprentice",
 		"hat_hood_assassin",
 		"hat_hood_whispers",
+		"bone_helm",
+		"blackiron_helm",
+		"silver_helm",
+		"hat_felt",
+		"quilted_cap",
+		"hood_teal",
+		"chain_coif",
 		""
 	},
 	{
@@ -1357,6 +1387,10 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"instrument_lute",
 		"instrument_horn",
 		"tool_frying_pan",
+		"scutum",
+		"bone_shield",
+		"blackiron_shield",
+		"silver_shield",
 		""
 	},
 	{
@@ -1402,6 +1436,12 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"artifact_boots",
 		"suede_boots",
 		"cleat_boots",
+		"bone_boots",
+		"blackiron_boots",
+		"silver_boots",
+		"quilted_boots",
+		"loafers",
+		"chain_boots",
 		""
 	},
 	{
@@ -1446,6 +1486,7 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"artifact_cloak",
 		"cloak_backpack",
 		"cloak_guardian",
+		"cloak_dendrite",
 		""
 	},
 	{
@@ -1490,6 +1531,11 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"iron_knuckles",
 		"spiked_gauntlets",
 		"suede_gloves",
+		"bone_bracers",
+		"blackiron_gauntlets",
+		"silver_gauntlets",
+		"quilted_gloves",
+		"chain_gloves",
 		""
 	}
 	

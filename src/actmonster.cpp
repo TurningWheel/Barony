@@ -13628,6 +13628,12 @@ bool Entity::monsterAllyEquipmentInClass(const Item& item) const
 						case BONE_BREASTPIECE:
 						case BLACKIRON_BREASTPIECE:
 						case SILVER_BREASTPIECE:
+						case SCUTUM:
+						case BLACKIRON_SHIELD:
+						case SILVER_SHIELD:
+						case BONE_HELM:
+						case BLACKIRON_HELM:
+						case SILVER_HELM:
 							return false;
 							break;
 						default:

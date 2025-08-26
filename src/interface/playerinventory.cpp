@@ -180,6 +180,10 @@ const char* itemEquipString(int player, const Item& item)
 			case STEEL_SHIELD_RESISTANCE:
 			case CRYSTAL_SHIELD:
 			case MIRROR_SHIELD:
+			case SCUTUM:
+			case BONE_SHIELD:
+			case BLACKIRON_SHIELD:
+			case SILVER_SHIELD:
 				if ( itemIsEquipped(&item, player) )
 				{
 					return Language::get(325);

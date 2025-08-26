@@ -11598,6 +11598,69 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 			*magic = 4;
 			break;
 
+		case TOOL_FOCI_FIRE:
+		case INSTRUMENT_FLUTE:
+		case INSTRUMENT_LYRE:
+		case INSTRUMENT_DRUM:
+		case INSTRUMENT_LUTE:
+		case INSTRUMENT_HORN:
+		case RAPIER:
+		case AMULET_BURNINGRESIST:
+		case GREASE_BALL:
+		case DUST_BALL:
+		case BOLAS:
+		case STEEL_FLAIL:
+		case FOOD_RATION:
+		case FOOD_RATION_SPICY:
+		case FOOD_RATION_SOUR:
+		case FOOD_RATION_BITTER:
+		case FOOD_RATION_HEARTY:
+		case FOOD_RATION_HERBAL:
+		case FOOD_RATION_SWEET:
+		case SLOP_BALL:
+		case TOOL_FRYING_PAN:
+		case CLEAT_BOOTS:
+		case BANDIT_BREASTPIECE:
+		case TUNIC_BLOUSE:
+		case BONE_BREASTPIECE:
+		case BLACKIRON_BREASTPIECE:
+		case SILVER_BREASTPIECE:
+		case IRON_PAULDRONS:
+		case QUILTED_GAMBESON:
+		case ROBE_CULTIST:
+		case ROBE_HEALER:
+		case ROBE_MONK:
+		case ROBE_WIZARD:
+		case SHAWL:
+		case CHAIN_HAUBERK:
+		case BONE_BRACERS:
+		case BLACKIRON_GAUNTLETS:
+		case SILVER_GAUNTLETS:
+		case QUILTED_GLOVES:
+		case CHAIN_GLOVES:
+		case BONE_BOOTS:
+		case BLACKIRON_BOOTS:
+		case SILVER_BOOTS:
+		case QUILTED_BOOTS:
+		case LOAFERS:
+		case CHAIN_BOOTS:
+		case SCUTUM:
+		case BONE_SHIELD:
+		case BLACKIRON_SHIELD:
+		case SILVER_SHIELD:
+		case CLOAK_DENDRITE:
+		case BONE_HELM:
+		case BLACKIRON_HELM:
+		case SILVER_HELM:
+		case HAT_FELT:
+		case QUILTED_CAP:
+		case HOOD_TEAL:
+		case CHAIN_COIF:
+			// TODOS
+			*metal = 0;
+			*magic = 0;
+			break;
+
 		default:
 			*metal = 0;
 			*magic = 0;

@@ -919,6 +919,26 @@ void actLeftHandMagic(Entity* my)
 		}
 	}
 
+	if ( playerRace == MONSTER_G )
+	{
+		my->z -= -1 * .5;
+	}
+	else if ( playerRace == MONSTER_D )
+	{
+		if ( players[HANDMAGIC_PLAYERNUM]->entity->z >= 1.5 )
+		{
+			my->z -= -3.0 * .5;
+		}
+		else
+		{
+			my->z -= -2.0 * .5;
+		}
+	}
+	else if ( playerRace == MONSTER_M )
+	{
+		my->z -= -1.0 * .5;
+	}
+
 	bool noGloves = false;
 	if ( stats[HANDMAGIC_PLAYERNUM]->gloves == NULL
 		|| playerRace == SPIDER
@@ -965,6 +985,26 @@ void actLeftHandMagic(Entity* my)
 		else if ( stats[HANDMAGIC_PLAYERNUM]->gloves->type == SUEDE_GLOVES )
 		{
 			my->sprite = 803;
+		}
+		else if ( stats[HANDMAGIC_PLAYERNUM]->gloves->type == BONE_BRACERS )
+		{
+			my->sprite = 2108;
+		}
+		else if ( stats[HANDMAGIC_PLAYERNUM]->gloves->type == BLACKIRON_GAUNTLETS )
+		{
+			my->sprite = 2110;
+		}
+		else if ( stats[HANDMAGIC_PLAYERNUM]->gloves->type == SILVER_GAUNTLETS )
+		{
+			my->sprite = 2112;
+		}
+		else if ( stats[HANDMAGIC_PLAYERNUM]->gloves->type == QUILTED_GLOVES )
+		{
+			my->sprite = 2114;
+		}
+		else if ( stats[HANDMAGIC_PLAYERNUM]->gloves->type == CHAIN_GLOVES )
+		{
+			my->sprite = 2116;
 		}
 	}
 
@@ -1377,6 +1417,26 @@ void actLeftHandMagic(Entity* my)
 		my->pitch = defaultpitch + HANDMAGIC_PITCH - cameravars[HANDMAGIC_PLAYERNUM].shakey2 / 200.f;
 		my->roll = HANDMAGIC_ROLL;
 		my->focalz = -1.5;
+
+		if ( playerRace == MONSTER_G )
+		{
+			my->z -= -1 * .5;
+		}
+		else if ( playerRace == MONSTER_D )
+		{
+			if ( players[HANDMAGIC_PLAYERNUM]->entity->z >= 1.5 )
+			{
+				my->z -= -3.0 * .5;
+			}
+			else
+			{
+				my->z -= -2.0 * .5;
+			}
+		}
+		else if ( playerRace == MONSTER_M )
+		{
+			my->z -= -1.0 * .5;
+		}
 	}
 
 	//my->y = 3 + HUDWEAPON_MOVEY;
@@ -1515,6 +1575,26 @@ void actRightHandMagic(Entity* my)
 		}
 	}
 
+	if ( playerRace == MONSTER_G )
+	{
+		my->z -= -1 * .5;
+	}
+	else if ( playerRace == MONSTER_D )
+	{
+		if ( players[HANDMAGIC_PLAYERNUM]->entity->z >= 1.5 )
+		{
+			my->z -= -3.0 * .5;
+		}
+		else
+		{
+			my->z -= -2.0 * .5;
+		}
+	}
+	else if ( playerRace == MONSTER_M )
+	{
+		my->z -= -1.0 * .5;
+	}
+
 	bool noGloves = false;
 	if ( stats[HANDMAGIC_PLAYERNUM]->gloves == NULL
 		|| playerRace == SPIDER 
@@ -1561,6 +1641,26 @@ void actRightHandMagic(Entity* my)
 		else if ( stats[HANDMAGIC_PLAYERNUM]->gloves->type == SUEDE_GLOVES )
 		{
 			my->sprite = 802;
+		}
+		else if ( stats[HANDMAGIC_PLAYERNUM]->gloves->type == BONE_BRACERS )
+		{
+			my->sprite = 2107;
+		}
+		else if ( stats[HANDMAGIC_PLAYERNUM]->gloves->type == BLACKIRON_GAUNTLETS )
+		{
+			my->sprite = 2109;
+		}
+		else if ( stats[HANDMAGIC_PLAYERNUM]->gloves->type == SILVER_GAUNTLETS )
+		{
+			my->sprite = 2111;
+		}
+		else if ( stats[HANDMAGIC_PLAYERNUM]->gloves->type == QUILTED_GLOVES )
+		{
+			my->sprite = 2113;
+		}
+		else if ( stats[HANDMAGIC_PLAYERNUM]->gloves->type == CHAIN_GLOVES )
+		{
+			my->sprite = 2115;
 		}
 	}
 
@@ -1755,6 +1855,26 @@ void actRightHandMagic(Entity* my)
 		my->pitch = defaultpitch + HANDMAGIC_PITCH - cameravars[HANDMAGIC_PLAYERNUM].shakey2 / 200.f;
 		my->roll = HANDMAGIC_ROLL;
 		my->focalz = -1.5;
+
+		if ( playerRace == MONSTER_G )
+		{
+			my->z -= -1 * .5;
+		}
+		else if ( playerRace == MONSTER_D )
+		{
+			if ( players[HANDMAGIC_PLAYERNUM]->entity->z >= 1.5 )
+			{
+				my->z -= -3.0 * .5;
+			}
+			else
+			{
+				my->z -= -2.0 * .5;
+			}
+		}
+		else if ( playerRace == MONSTER_M )
+		{
+			my->z -= -1.0 * .5;
+		}
 	}
 
 	my->x += cast_animation[HANDMAGIC_PLAYERNUM].lefthand_movex;

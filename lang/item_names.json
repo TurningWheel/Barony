@@ -1460,7 +1460,151 @@
 		"cleat_boots": {
 			"name_identified": "cleats",
 			"name_unidentified": "cleats"
-		}
+		},
+		"bandit_breastpiece": {
+            "name_identified": "bandit leather",
+            "name_unidentified": "bandit leather"
+        },
+		"tunic_blouse": {
+            "name_identified": "blouse",
+            "name_unidentified": "blouse"
+        },
+		"bone_breastpiece": {
+            "name_identified": "bone breastpiece",
+            "name_unidentified": "bone breastpiece"
+        },
+		"blackiron_breastpiece": {
+            "name_identified": "blackiron breastpiece",
+            "name_unidentified": "blackiron breastpiece"
+        },
+		"silver_breastpiece": {
+            "name_identified": "silver breastpiece",
+            "name_unidentified": "silver breastpiece"
+        },
+		"iron_pauldrons": {
+            "name_identified": "iron pauldrons",
+            "name_unidentified": "iron pauldrons"
+        },
+		"quilted_gambeson": {
+            "name_identified": "quilted gambeson",
+            "name_unidentified": "quilted gambeson"
+        },
+		"robe_cultist": {
+            "name_identified": "cultist robe",
+            "name_unidentified": "cultist robe"
+        },
+		"robe_healer": {
+            "name_identified": "healer robe",
+            "name_unidentified": "healer robe"
+        },
+		"robe_monk": {
+            "name_identified": "monk robe",
+            "name_unidentified": "monk robe"
+        },
+		"robe_wizard": {
+            "name_identified": "wizard robe",
+            "name_unidentified": "wizard robe"
+        },
+		"shawl": {
+            "name_identified": "shawl",
+            "name_unidentified": "shawl"
+        },
+		"chain_hauberk": {
+            "name_identified": "chain hauberk",
+            "name_unidentified": "chain hauberk"
+        },
+		"bone_bracers": {
+            "name_identified": "bone bracers",
+            "name_unidentified": "bone bracers"
+        },
+		"blackiron_gauntlets": {
+            "name_identified": "blackiron gauntlets",
+            "name_unidentified": "blackiron gauntlets"
+        },
+		"silver_gauntlets": {
+            "name_identified": "silver gauntlets",
+            "name_unidentified": "silver gauntlets"
+        },
+		"quilted_gloves": {
+            "name_identified": "quilted gloves",
+            "name_unidentified": "quilted gloves"
+        },
+		"chain_gloves": {
+            "name_identified": "chain gloves",
+            "name_unidentified": "chain gloves"
+        },
+		"bone_boots": {
+            "name_identified": "bone boots",
+            "name_unidentified": "bone boots"
+        },
+		"blackiron_boots": {
+            "name_identified": "blackiron boots",
+            "name_unidentified": "blackiron boots"
+        },
+		"silver_boots": {
+            "name_identified": "silver boots",
+            "name_unidentified": "silver boots"
+        },
+		"quilted_boots": {
+            "name_identified": "quilted boots",
+            "name_unidentified": "quilted boots"
+        },
+		"loafers": {
+            "name_identified": "loafers",
+            "name_unidentified": "loafers"
+        },
+		"chain_boots": {
+            "name_identified": "chain boots",
+            "name_unidentified": "chain boots"
+        },
+		"scutum": {
+            "name_identified": "scutum",
+            "name_unidentified": "scutum"
+        },
+		"bone_shield": {
+            "name_identified": "bone shield",
+            "name_unidentified": "bone shield"
+        },
+		"blackiron_shield": {
+            "name_identified": "blackiron shield",
+            "name_unidentified": "blackiron shield"
+        },
+		"silver_shield": {
+            "name_identified": "silver shield",
+            "name_unidentified": "silver shield"
+        },
+		"cloak_dendrite": {
+            "name_identified": "dendrite cloak",
+            "name_unidentified": "dendrite cloak"
+        },
+		"bone_helm": {
+            "name_identified": "bone helm",
+            "name_unidentified": "bone helm"
+        },
+		"blackiron_helm": {
+            "name_identified": "blackiron helm",
+            "name_unidentified": "blackiron helm"
+        },
+		"silver_helm": {
+            "name_identified": "silver helm",
+            "name_unidentified": "silver helm"
+        },
+		"hat_felt": {
+            "name_identified": "felt hat",
+            "name_unidentified": "felt hat"
+        },
+		"quilted_cap": {
+            "name_identified": "quilted cap",
+            "name_unidentified": "quilted cap"
+        },
+		"hood_teal": {
+            "name_identified": "teal hood",
+            "name_unidentified": "teal hood"
+        },
+		"chain_coif": {
+            "name_identified": "chain coif",
+            "name_unidentified": "chain coif"
+        }
     },
 	"spell_names": {
         "spell_forcebolt": {

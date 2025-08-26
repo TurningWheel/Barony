@@ -7122,12 +7122,18 @@ bool Player::PlayerMechanics_t::itemDegradeRoll(Item* item, int* checkInterval)
 			interval = 20;
 			break;
 		case IRON_SHIELD:
+		case BONE_SHIELD:
 			interval = 20;
 			break;
 		case STEEL_SHIELD:
 			interval = 30;
 			break;
 		case STEEL_SHIELD_RESISTANCE:
+			interval = 30;
+			break;
+		case SILVER_SHIELD:
+		case BLACKIRON_SHIELD:
+		case SCUTUM:
 			interval = 30;
 			break;
 		case CRYSTAL_SHIELD:

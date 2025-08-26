@@ -207,6 +207,26 @@ void actHudArm(Entity* my)
 		{
 			my->sprite = 802;
 		}
+		else if ( stats[HUDARM_PLAYERNUM]->gloves->type == BONE_BRACERS )
+		{
+			my->sprite = 2107;
+		}
+		else if ( stats[HUDARM_PLAYERNUM]->gloves->type == BLACKIRON_GAUNTLETS )
+		{
+			my->sprite = 2109;
+		}
+		else if ( stats[HUDARM_PLAYERNUM]->gloves->type == SILVER_GAUNTLETS )
+		{
+			my->sprite = 2111;
+		}
+		else if ( stats[HUDARM_PLAYERNUM]->gloves->type == QUILTED_GLOVES )
+		{
+			my->sprite = 2113;
+		}
+		else if ( stats[HUDARM_PLAYERNUM]->gloves->type == CHAIN_GLOVES )
+		{
+			my->sprite = 2115;
+		}
 		if ( stats[HUDARM_PLAYERNUM]->weapon == nullptr )
 		{
 			my->scalex = 0.5f;

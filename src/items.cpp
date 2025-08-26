@@ -390,6 +390,8 @@ bool isHatShopItem(ItemType hat)
 	case HAT_HOOD_APPRENTICE:
 	case HAT_HOOD_ASSASSIN:
 	case HAT_HOOD_WHISPERS:
+	case HAT_FELT:
+	case HOOD_TEAL:
 		return true;
 		default:
 			break;
@@ -2281,6 +2283,10 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 			equipItemResult = equipItem(item, &stats[player]->weapon, player, checkInventorySpaceForPaperDoll);
 			break;
 		case IRON_SHIELD:
+		case SCUTUM:
+		case BONE_SHIELD:
+		case BLACKIRON_SHIELD:
+		case SILVER_SHIELD:
 			equipItemResult = equipItem(item, &stats[player]->shield, player, checkInventorySpaceForPaperDoll);
 			break;
 		case SHORTBOW:
@@ -2331,6 +2337,11 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		case IRON_KNUCKLES:
 		case SPIKED_GAUNTLETS:
 		case SUEDE_GLOVES:
+		case BONE_BRACERS:
+		case BLACKIRON_GAUNTLETS:
+		case SILVER_GAUNTLETS:
+		case QUILTED_GLOVES:
+		case CHAIN_GLOVES:
 			equipItemResult = equipItem(item, &stats[player]->gloves, player, checkInventorySpaceForPaperDoll);
 			break;
 		case CLOAK:
@@ -2342,6 +2353,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		case CLOAK_BACKPACK:
 		case CLOAK_SILVER:
 		case CLOAK_GUARDIAN:
+		case CLOAK_DENDRITE:
 			equipItemResult = equipItem(item, &stats[player]->cloak, player, checkInventorySpaceForPaperDoll);
 			break;
 		case LEATHER_BOOTS:
@@ -2355,6 +2367,12 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		case CRYSTAL_BOOTS:
 		case SUEDE_BOOTS:
 		case CLEAT_BOOTS:
+		case BONE_BOOTS:
+		case BLACKIRON_BOOTS:
+		case SILVER_BOOTS:
+		case QUILTED_BOOTS:
+		case LOAFERS:
+		case CHAIN_BOOTS:
 			equipItemResult = equipItem(item, &stats[player]->shoes, player, checkInventorySpaceForPaperDoll);
 			break;
 		case LEATHER_BREASTPIECE:
@@ -2420,6 +2438,13 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		case HAT_HOOD_APPRENTICE:
 		case HAT_HOOD_ASSASSIN:
 		case HAT_HOOD_WHISPERS:
+		case BONE_HELM:
+		case BLACKIRON_HELM:
+		case SILVER_HELM:
+		case QUILTED_CAP:
+		case CHAIN_COIF:
+		case HAT_FELT:
+		case HOOD_TEAL:
 			equipItemResult = equipItem(item, &stats[player]->helmet, player, checkInventorySpaceForPaperDoll);
 			break;
 		case AMULET_SEXCHANGE:
@@ -4742,6 +4767,34 @@ Sint32 Item::armorGetAC(const Stat* const wielder) const
 	{
 		armor += 3;
 	}
+	else if ( type == BONE_HELM )
+	{
+		armor += 2;
+	}
+	else if ( type == BLACKIRON_HELM )
+	{
+		armor += 4;
+	}
+	else if ( type == SILVER_HELM )
+	{
+		armor += 3;
+	}
+	else if ( type == QUILTED_CAP )
+	{
+		armor += 2;
+	}
+	else if ( type == CHAIN_COIF )
+	{
+		armor += 3;
+	}
+	else if ( type == HAT_FELT )
+	{
+		armor += 0;
+	}
+	else if ( type == HOOD_TEAL )
+	{
+		armor += 0;
+	}
 	else if ( type == LEATHER_BREASTPIECE )
 	{
 		armor += 2;
@@ -4815,6 +4868,50 @@ Sint32 Item::armorGetAC(const Stat* const wielder) const
 	{
 		armor += 3;
 	}
+	else if ( type == BONE_BRACERS )
+	{
+		armor += 2;
+	}
+	else if ( type == BLACKIRON_GAUNTLETS )
+	{
+		armor += 4;
+	}
+	else if ( type == SILVER_GAUNTLETS )
+	{
+		armor += 3;
+	}
+	else if ( type == QUILTED_GLOVES )
+	{
+		armor += 1;
+	}
+	else if ( type == CHAIN_GLOVES )
+	{
+		armor += 2;
+	}
+	else if ( type == BONE_BOOTS )
+	{
+		armor += 2;
+	}
+	else if ( type == BLACKIRON_BOOTS )
+	{
+		armor += 4;
+	}
+	else if ( type == SILVER_BOOTS )
+	{
+		armor += 3;
+	}
+	else if ( type == QUILTED_BOOTS )
+	{
+		armor += 1;
+	}
+	else if ( type == LOAFERS )
+	{
+		armor += 0;
+	}
+	else if ( type == CHAIN_BOOTS )
+	{
+		armor += 2;
+	}
 	else if ( type == WOODEN_SHIELD )
 	{
 		armor += 1;
@@ -4828,6 +4925,22 @@ Sint32 Item::armorGetAC(const Stat* const wielder) const
 		armor += 3;
 	}
 	else if ( type == STEEL_SHIELD || type == STEEL_SHIELD_RESISTANCE )
+	{
+		armor += 4;
+	}
+	else if ( type == SCUTUM )
+	{
+		armor += 6;
+	}
+	else if ( type == BONE_SHIELD )
+	{
+		armor += 3;
+	}
+	else if ( type == BLACKIRON_SHIELD )
+	{
+		armor += 5;
+	}
+	else if ( type == SILVER_SHIELD )
 	{
 		armor += 4;
 	}
@@ -4878,6 +4991,10 @@ Sint32 Item::armorGetAC(const Stat* const wielder) const
 	else if ( type == ARTIFACT_CLOAK )
 	{
 		armor += 0;
+	}
+	else if ( type == CLOAK_DENDRITE )
+	{
+		armor += 1;
 	}
 	else if ( type == MIRROR_SHIELD )
 	{
