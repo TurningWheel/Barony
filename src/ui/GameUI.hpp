@@ -67,6 +67,7 @@ struct CustomColors_t
 	Uint32 characterBaseClassText = 0xFFFFFFFF;
 	Uint32 characterDLC1ClassText = 0xFFFFFFFF;
 	Uint32 characterDLC2ClassText = 0xFFFFFFFF;
+	Uint32 characterDLC3ClassText = makeColorRGB(0, 255, 0);
 };
 extern CustomColors_t hudColors;
 

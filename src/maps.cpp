@@ -9138,6 +9138,11 @@ void assignActions(map_t* map)
 	            case RACE_TROLL: victoryType = 3; break;
 	            case RACE_SPIDER: victoryType = 3; break;
 	            case RACE_IMP: victoryType = 5; break;
+				case RACE_D: victoryType = 4; break;
+				case RACE_M: victoryType = 4; break;
+				case RACE_G: victoryType = 4; break;
+				case RACE_S: victoryType = 4; break;
+				case RACE_X: victoryType = 4; break;
 				}
 				entity->portalVictoryType = victoryType;
 				entity->skill[28] = 1; // is a mechanism

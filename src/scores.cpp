@@ -6093,6 +6093,16 @@ int SaveGameInfo::Player::isCharacterValidFromDLC()
 			return INVALID_REQUIREDLC2;
 		}
 		break;
+	case CLASS_21:
+	case CLASS_22:
+	case CLASS_23:
+	case CLASS_24:
+	case CLASS_25:
+		if ( !enabledDLCPack3 )
+		{
+			return INVALID_REQUIREDLC3;
+		}
+		break;
 	default:
 		break;
 	}
@@ -6115,6 +6125,16 @@ int SaveGameInfo::Player::isCharacterValidFromDLC()
 		if ( !enabledDLCPack2 )
 		{
 			return INVALID_REQUIREDLC2;
+		}
+		break;
+	case RACE_D:
+	case RACE_M:
+	case RACE_G:
+	case RACE_S:
+	case RACE_X:
+		if ( !enabledDLCPack3 )
+		{
+			return INVALID_REQUIREDLC3;
 		}
 		break;
 	default:
@@ -6191,6 +6211,41 @@ int SaveGameInfo::Player::isCharacterValidFromDLC()
 			return VALID_OK_CHARACTER;
 		}
 		return isAchievementUnlockedForClassUnlock(RACE_INSECTOID) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
+		break;
+	case CLASS_21:
+		if ( this->race == RACE_X )
+		{
+			return VALID_OK_CHARACTER;
+		}
+		return isAchievementUnlockedForClassUnlock(RACE_X) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
+		break;
+	case CLASS_22:
+		if ( this->race == RACE_G )
+		{
+			return VALID_OK_CHARACTER;
+		}
+		return isAchievementUnlockedForClassUnlock(RACE_G) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
+		break;
+	case CLASS_23:
+		if ( this->race == RACE_D )
+		{
+			return VALID_OK_CHARACTER;
+		}
+		return isAchievementUnlockedForClassUnlock(RACE_D) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
+		break;
+	case CLASS_24:
+		if ( this->race == RACE_M )
+		{
+			return VALID_OK_CHARACTER;
+		}
+		return isAchievementUnlockedForClassUnlock(RACE_M) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
+		break;
+	case CLASS_25:
+		if ( this->race == RACE_S )
+		{
+			return VALID_OK_CHARACTER;
+		}
+		return isAchievementUnlockedForClassUnlock(RACE_S) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
 		break;
 	default:
 		break;

@@ -20230,6 +20230,10 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 		{
 			className->setTextColor(hudColors.characterDLC2ClassText);
 		}
+		else if ( client_classes[player.playernum] >= CLASS_21 && client_classes[player.playernum] <= CLASS_25 )
+		{
+			className->setTextColor(hudColors.characterDLC3ClassText);
+		}
 		else
 		{
 			className->setTextColor(hudColors.characterBaseClassText);
@@ -25674,6 +25678,14 @@ void loadHUDSettingsJSON()
 							d["colors"]["charsheet_dlc2_text"]["b"].GetInt(),
 							d["colors"]["charsheet_dlc2_text"]["a"].GetInt());
 					}
+					if ( d["colors"].HasMember("charsheet_dlc3_text") )
+					{
+						hudColors.characterDLC3ClassText = makeColor(
+							d["colors"]["charsheet_dlc3_text"]["r"].GetInt(),
+							d["colors"]["charsheet_dlc3_text"]["g"].GetInt(),
+							d["colors"]["charsheet_dlc3_text"]["b"].GetInt(),
+							d["colors"]["charsheet_dlc3_text"]["a"].GetInt());
+					}
 				}
 				if ( d.HasMember("dropdowns") )
 				{
@@ -29991,6 +30003,10 @@ void Player::HUD_t::updateXPBar()
 			else if ( client_classes[player.playernum] >= CLASS_MACHINIST && client_classes[player.playernum] <= CLASS_HUNTER )
 			{
 				textClass->setColor(hudColors.characterDLC2ClassText);
+			}
+			else if ( client_classes[player.playernum] >= CLASS_21 && client_classes[player.playernum] <= CLASS_25 )
+			{
+				textClass->setColor(hudColors.characterDLC3ClassText);
 			}
 			else
 			{

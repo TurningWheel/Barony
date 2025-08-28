@@ -8486,7 +8486,35 @@ bind_failed:
 		}
 #endif
 	}
+
+	// number of player selectable races
+	constexpr int num_races = 14;
+
 /******************************************************************************/
+	int getLangEntryForMainMenuRaceName(int race)
+	{
+		if ( race >= 9 && race < num_races )
+		{
+			return (race - 9) + 6779;
+		}
+		else if ( race >= 0 && race < 9 )
+		{
+			return 5369 + race;
+		}
+		return 5369;
+	}
+	int getLangEntryForPlayerRaceName(int race)
+	{
+		if ( race > RACE_IMP && race < NUMRACES )
+		{
+			return (race - RACE_IMP - 1) + 6779;
+		}
+		else if ( race >= 0 && race < 9 )
+		{
+			return 5369 + race;
+		}
+		return 5369;
+	}
 
     static void createLeaderboards(std::string leaderboard_type) {
         assert(main_menu_frame);
@@ -9278,7 +9306,7 @@ bind_failed:
             assert(character_title);
             snprintf(buf, sizeof(buf), Language::get(5298),
                 score->stats->LVL,
-                Language::get(5369 + score->stats->playerRace),
+                Language::get(getLangEntryForPlayerRaceName(score->stats->playerRace)),
                 playerClassLangEntry(score->classnum, 0));
             character_title->setText(buf);
 
@@ -13036,9 +13064,6 @@ failed:
 
 /******************************************************************************/
 
-    // number of player selectable races
-	constexpr int num_races = 9;
-
 	bool ClassDescriptions::init = false;
 	std::unordered_map<int, ClassDescriptions::DescData_t> ClassDescriptions::data;
 
@@ -13659,6 +13684,9 @@ failed:
 	    else if (race >= RACE_AUTOMATON && race <= RACE_INSECTOID) {
 	        color_race = color_dlc2;
 	    }
+		else if ( race > RACE_IMP && race < RACE_ENUM_END ) {
+			color_race = hudColors.characterDLC3ClassText;
+		}
 	    else {
 	        color_race = color_dlc0;
 	    }
@@ -13737,6 +13765,21 @@ failed:
 		case CLASS_HUNTER:
 			achName = Compendium_t::achievements["BARONY_ACH_BUGGAR_BARON"].name;
 			break;
+		case CLASS_21:
+			achName = Compendium_t::achievements["BARONY_ACH_XXX"].name;
+			break;
+		case CLASS_22:
+			achName = Compendium_t::achievements["BARONY_ACH_XXX"].name;
+			break;
+		case CLASS_23:
+			achName = Compendium_t::achievements["BARONY_ACH_XXX"].name;
+			break;
+		case CLASS_24:
+			achName = Compendium_t::achievements["BARONY_ACH_XXX"].name;
+			break;
+		case CLASS_25:
+			achName = Compendium_t::achievements["BARONY_ACH_XXX"].name;
+			break;
 		default:
 			break;
 		}
@@ -13798,6 +13841,26 @@ failed:
 		{
 			allowPick = isAchievementUnlockedForClassUnlock(RACE_INSECTOID);
 		}
+		else if ( race != RACE_X && challengeClass == CLASS_21 )
+		{
+			allowPick = isAchievementUnlockedForClassUnlock(RACE_X);
+		}
+		else if ( race != RACE_G && challengeClass == CLASS_22 )
+		{
+			allowPick = isAchievementUnlockedForClassUnlock(RACE_G);
+		}
+		else if ( race != RACE_D && challengeClass == CLASS_23 )
+		{
+			allowPick = isAchievementUnlockedForClassUnlock(RACE_D);
+		}
+		else if ( race != RACE_M && challengeClass == CLASS_24 )
+		{
+			allowPick = isAchievementUnlockedForClassUnlock(RACE_M);
+		}
+		else if ( race != RACE_S && challengeClass == CLASS_25 )
+		{
+			allowPick = isAchievementUnlockedForClassUnlock(RACE_S);
+		}
 		return allowPick;
 	}
 
@@ -13812,7 +13875,7 @@ failed:
 			&& gameModeManager.currentSession.challengeRun.classnum >= 0 && gameModeManager.currentSession.challengeRun.classnum <= NUMCLASSES;
 
 		for (int c = 0; c < num_races; ++c) {
-			auto race = Language::get(5369 + c);
+			auto race = Language::get(getLangEntryForMainMenuRaceName(c));
 			if (strcmp(button.getName(), race) == 0) {
 				if ( fixedRace && !override_dlc && gameModeManager.currentSession.challengeRun.race != c )
 				{
@@ -13827,10 +13890,11 @@ failed:
 				}
 				else if ( !override_dlc && !fixedRace &&
 					((!enabledDLCPack1 && c >= 1 && c <= 4) ||
-						(!enabledDLCPack2 && c >= 5 && c <= 8)) ) {
+						(!enabledDLCPack2 && c >= 5 && c <= 8) || 
+						(!enabledDLCPack3 && c >= 9 && c <= 13)) ) {
 					// this class is not available to the player
 					button.setPressed(false);
-					openDLCPrompt(c >= 5 ? 1 : 0);
+					openDLCPrompt(c >= 9 ? 2 : (c >= 5 ? 1 : 0));
 					return;
 				}
 				else if ( fixedClass && !override_dlc && c >= 1
@@ -13843,8 +13907,14 @@ failed:
 				else 
 				{
                     success = true;
-                    if (stats[index]->playerRace != c) {
-                        stats[index]->playerRace = c;
+
+					int pickedRace = RACE_HUMAN + c;
+					if ( pickedRace > RACE_INSECTOID )
+					{
+						pickedRace += 4;
+					}
+                    if (stats[index]->playerRace != pickedRace ) {
+                        stats[index]->playerRace = pickedRace;
                         if (!inputs.hasController(index)) {
                             soundToggle();
                         }
@@ -13914,7 +13984,7 @@ failed:
 		}
 		for (int c = 0; c < num_races; ++c) {
 			// clear other buttons
-			auto race = Language::get(5369 + c);
+			auto race = Language::get(getLangEntryForMainMenuRaceName(c));
 			auto other_button = frame->findButton(race);
 			if (other_button != &button) {
 				other_button->setPressed(false);
@@ -15767,7 +15837,7 @@ failed:
 		gradient->ontop = true;
 
         for (int c = 0; c < num_races; ++c) {
-		    auto race = subframe->addButton(Language::get(5369 + c));
+		    auto race = subframe->addButton(Language::get(getLangEntryForMainMenuRaceName(c)));
 		    race->setSize(SDL_Rect{0, c * 36 + 2, 30, 30});
 
 			bool fixedRace = gameModeManager.currentSession.challengeRun.isActive()
@@ -15793,6 +15863,9 @@ failed:
 		    else if (!enabledDLCPack2 && c >= 5 && c <= 8) {
 		        race->setBackground("*#images/ui/Main Menus/sublist_item-locked.png");
 		    }
+			else if ( !enabledDLCPack3 && c >= 9 && c <= 13 ) {
+				race->setBackground("*#images/ui/Main Menus/sublist_item-locked.png");
+			}
 			else if ( fixedClass && c >= 1 && !race_button_challenge_check_fn(c, gameModeManager.currentSession.challengeRun.classnum) )
 			{
 				race->setBackground("*#images/ui/Main Menus/sublist_item-locked.png");
@@ -15821,13 +15894,13 @@ failed:
 		    race->addWidgetAction("MenuPageLeftAlt", "privacy");
 		    race->setWidgetBack("back_button");
 		    if (c < num_races - 1) {
-		        race->setWidgetDown(Language::get(5369 + c + 1));
+		        race->setWidgetDown(Language::get(getLangEntryForMainMenuRaceName(c + 1)));
 		    }
 		    /*else {
 		        race->setWidgetDown("disable_abilities");
 		    }*/
 		    if (c > 0) {
-		        race->setWidgetUp(Language::get(5369 + c - 1));
+		        race->setWidgetUp(Language::get(getLangEntryForMainMenuRaceName(c - 1)));
 		    }
 		    race->setGlyphPosition(Widget::glyph_position_t::CENTERED);
 		    race->addWidgetAction("MenuPageLeft", "male");
@@ -15837,10 +15910,16 @@ failed:
             race->setCallback([](Button& button){
                 race_button_fn(button, false);
                 });
-		    if (stats[index]->playerRace == c) {
+
+			int pickedRace = RACE_HUMAN + c;
+			if ( pickedRace > RACE_INSECTOID )
+			{
+				pickedRace += 4;
+			}
+		    if (stats[index]->playerRace == pickedRace ) {
 			    race->setPressed(true);
 		    }
-		    if ((stats[index]->playerRace == c && selection == -1) ||
+		    if ((stats[index]->playerRace == pickedRace && selection == -1) ||
 		        (selection >= 0 && selection == c)) {
 			    race->select();
 			    race->scrollParent();
@@ -15872,15 +15951,24 @@ failed:
                 }
 		        });
 
-		    auto label = subframe->addField((std::string(Language::get(5369 + c)) + "_label").c_str(), 64);
-		    if (c >= 1 && c <= 4) {
+		    auto label = subframe->addField((std::string(Language::get(getLangEntryForMainMenuRaceName(c))) + "_label").c_str(), 64);
+		    if (c >= 1 && c <= 4) 
+			{
 		        label->setColor(color_dlc1);
-		    } else if (c >= 5 && c <= 8) {
+		    } 
+			else if (c >= 5 && c <= 8) 
+			{
 		        label->setColor(color_dlc2);
-		    } else {
+			}
+			else if ( c >= 9 && c <= 13 )
+			{
+				label->setColor(hudColors.characterDLC3ClassText);
+		    } 
+			else 
+			{
 		        label->setColor(color_dlc0);
 		    }
-		    label->setText(Language::get(5369 + c));
+		    label->setText(Language::get(getLangEntryForMainMenuRaceName(c)));
 		    label->setFont(smallfont_outline);
 		    label->setSize(SDL_Rect{32, c * 36, 96, 36});
 		    label->setHJustify(Field::justify_t::LEFT);
@@ -16150,7 +16238,7 @@ failed:
 		disable_abilities->addWidgetAction("MenuPageLeftAlt", "privacy");
 		disable_abilities->setWidgetBack("back_button");
 		disable_abilities->setWidgetDown("show_race_info");
-		disable_abilities->setWidgetUp(Language::get(5369 + num_races - 1));
+		disable_abilities->setWidgetUp(Language::get(getLangEntryForMainMenuRaceName(num_races - 1)));
 		if (stats[index]->playerRace != RACE_HUMAN) {
 			disable_abilities->setPressed(stats[index]->stat_appearance != 0);
 		}
@@ -16351,6 +16439,19 @@ failed:
 		confirm->setCallback([](Button& button){soundActivate(); back_fn(button.getOwner());});*/
 	}
 
+	int playerClassLangEntryCapitalized(int classnum)
+	{
+		if ( classnum >= CLASS_BARBARIAN && classnum <= CLASS_HUNTER )
+		{
+			return 5348 + classnum;
+		}
+		else if ( classnum >= CLASS_21 && classnum <= CLASS_25 )
+		{
+			return 6789 + (classnum - CLASS_21);
+		}
+		return 5348;
+	}
+
 	static void characterCardClassMenu(int index, bool details, int selection) {
         static int class_selection[MAXPLAYERS];
         
@@ -16400,9 +16501,13 @@ failed:
 			        field.addColorToLine(0, color_dlc0);
 			    } else if (i < CLASS_MACHINIST) {
 			        field.addColorToLine(0, color_dlc1);
-			    } else {
+			    } else if (i <= CLASS_HUNTER ) {
 			        field.addColorToLine(0, color_dlc2);
 			    }
+				else
+				{
+					field.addColorToLine(0, hudColors.characterDLC3ClassText);
+				}
 
 				field.clearIndividualLinePadding();
 				for ( auto line = 0; line < ClassDescriptions::data[i].linePaddings.size(); ++line )
@@ -16597,14 +16702,18 @@ failed:
         } else {
 		    static auto class_name_fn = [](Field& field, int index){
 			    const int i = std::min(std::max(0, client_classes[index]), num_classes - 1);
-			    field.setText(Language::get(5348 + i));
+			    field.setText(Language::get(playerClassLangEntryCapitalized(i)));
 			    if (i < CLASS_CONJURER) {
 			        field.setColor(color_dlc0);
 			    } else if (i < CLASS_MACHINIST) {
 			        field.setColor(color_dlc1);
-			    } else {
+			    } else if (i <= CLASS_HUNTER ){
 			        field.setColor(color_dlc2);
 			    }
+				else
+				{
+					field.setColor(hudColors.characterDLC3ClassText);
+				}
 		    };
 
 		    auto class_name = card->addField("class_name", 64);
@@ -16908,6 +17017,9 @@ failed:
 								break;
 							case INVALID_REQUIREDLC2:
 								openDLCPrompt(1);
+								break;
+							case INVALID_REQUIREDLC3:
+								openDLCPrompt(2);
 								break;
 							}
 						} else {
@@ -17395,7 +17507,7 @@ failed:
 		race_button->setColor(makeColor(255, 255, 255, 255));
 		race_button->setHighlightColor(makeColor(255, 255, 255, 255));
 		race_button->setSize(SDL_Rect{166, 166, 108, 52});
-		race_button->setText(Language::get(5369 + stats[index]->playerRace));
+		race_button->setText(Language::get(getLangEntryForPlayerRaceName(stats[index]->playerRace)));
 		race_button->setFont(smallfont_outline);
 		race_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/Finalize_Button_RaceBase_00.png");
 		race_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/Finalize_Button_RaceBaseHigh_00.png");
@@ -17444,14 +17556,19 @@ failed:
 				if ( forcedClass )
 				{
 					std::vector<unsigned int> chances;
-					chances.resize(RACE_INSECTOID + 1);
+					chances.resize(NUMRACES);
 					auto oldRace = stats[index]->playerRace;
 					Uint32 oldAppearance = stats[index]->stat_appearance;
 					stats[index]->stat_appearance = 0;
 
 					bool chanceFound = false;
-					for ( int race = RACE_HUMAN; race <= RACE_INSECTOID; ++race )
+					for ( int race = RACE_HUMAN; race < RACE_ENUM_END; ++race )
 					{
+						if ( race > RACE_INSECTOID && race <= RACE_IMP )
+						{
+							chances[race] = 0;
+							continue;
+						}
 						stats[index]->playerRace = race;
 						chances[race] = 0;
 						if ( isCharacterValidFromDLC(*stats[index], index) == VALID_OK_CHARACTER )
@@ -17473,24 +17590,38 @@ failed:
 				else
 				{
 					// select a random race
-					// there are 9 legal races that the player can select from the start.
-					if (enabledDLCPack1 && enabledDLCPack2) {
-						stats[index]->playerRace = RNG.uniform(0, NUMPLAYABLERACES - 1);
-					} else if (enabledDLCPack1) {
-						stats[index]->playerRace = RNG.uniform(0, 4);
-					} else if (enabledDLCPack2) {
-						stats[index]->playerRace = RNG.uniform(0, 4);
-						if (stats[index]->playerRace > 0) {
-							stats[index]->playerRace += 4;
-						}
-					} else {
-						stats[index]->playerRace = RACE_HUMAN;
+					// there are x legal races that the player can select from the start.
+					std::vector<unsigned int> chances;
+					chances.resize(NUMRACES);
+					chances[RACE_HUMAN] = 1;
+					if ( enabledDLCPack1 )
+					{
+						chances[RACE_SKELETON] = 1;
+						chances[RACE_VAMPIRE] = 1;
+						chances[RACE_GOATMAN] = 1;
+						chances[RACE_SUCCUBUS] = 1;
 					}
+					if ( enabledDLCPack2 )
+					{
+						chances[RACE_INSECTOID] = 1;
+						chances[RACE_INCUBUS] = 1;
+						chances[RACE_INSECTOID] = 1;
+						chances[RACE_AUTOMATON] = 1;
+					}
+					if ( enabledDLCPack3 )
+					{
+						chances[RACE_G] = 1;
+						chances[RACE_M] = 1;
+						chances[RACE_D] = 1;
+						chances[RACE_X] = 1;
+						chances[RACE_S] = 1;
+					}
+					stats[index]->playerRace = RNG.discrete(chances.data(), chances.size());
 				}
 			}
 
 			auto race_button = card->findButton("race");
-			race_button->setText(Language::get(5369 + stats[index]->playerRace));
+			race_button->setText(Language::get(getLangEntryForPlayerRaceName(stats[index]->playerRace)));
 
 			// choose a random appearance
 			const int appearance_choice = RNG.uniform(0, NUMAPPEARANCES - 1);
@@ -17573,7 +17704,7 @@ failed:
 		class_text->setSize(SDL_Rect{96, 236, 138, 32});
 		static auto class_text_fn = [](Field& field, int index){
 			int i = std::min(std::max(0, client_classes[index]), num_classes - 1);
-            field.setText(Language::get(5348 + i));
+            field.setText(Language::get(playerClassLangEntryCapitalized(i)));
 		};
 		class_text->setFont(smallfont_outline);
 		class_text->setJustify(Field::justify_t::CENTER);
@@ -25989,10 +26120,12 @@ failed:
 #ifdef NINTENDO
 		enabledDLCPack1 = nxCheckDLC(0);
 		enabledDLCPack2 = nxCheckDLC(1);
+		enabledDLCPack3 = nxCheckDLC(2);
 #endif
 #ifdef STEAMWORKS
 		enabledDLCPack1 = SteamApps()->BIsDlcInstalled(1010820);
 		enabledDLCPack2 = SteamApps()->BIsDlcInstalled(1010821);
+		enabledDLCPack3 = SteamApps()->BIsDlcInstalled(1010822);
 #endif
 
         if (!ingame) {
@@ -26678,7 +26811,7 @@ failed:
                 button->setWidgetUp(options[back].name);
             }
 #ifdef NINTENDO
-            if (ingame || c + 1 < num_options || (enabledDLCPack1 && enabledDLCPack2)) {
+            if (ingame || c + 1 < num_options || (enabledDLCPack1 && enabledDLCPack2 && enabledDLCPack3)) {
                 button->setWidgetDown(options[forward].name);
             } else {
                 button->setWidgetDown("banner1");
@@ -26858,9 +26991,21 @@ failed:
             // customize DLC banner.
             {
                 if (!enabledDLCPack1 && !enabledDLCPack2) {
-                    banner_images[0][0] = "*#images/ui/Main Menus/Banners/UI_MainMenu_ComboBanner1_base.png";
-                    banner_images[0][1] = "*#images/ui/Main Menus/Banners/UI_MainMenu_ComboBanner1_high.png";
+					if ( !enabledDLCPack3 )
+					{
+						banner_images[0][0] = "*#images/ui/Main Menus/Banners/UI_MainMenu_DnDBanner1_base.png";
+						banner_images[0][1] = "*#images/ui/Main Menus/Banners/UI_MainMenu_DnDBanner1_high.png";
+					}
+					else
+					{
+						banner_images[0][0] = "*#images/ui/Main Menus/Banners/UI_MainMenu_ComboBanner1_base.png";
+						banner_images[0][1] = "*#images/ui/Main Menus/Banners/UI_MainMenu_ComboBanner1_high.png";
+					}
                 }
+				else if ( !enabledDLCPack3 ) {
+					banner_images[0][0] = "*#images/ui/Main Menus/Banners/UI_MainMenu_DnDBanner1_base.png";
+					banner_images[0][1] = "*#images/ui/Main Menus/Banners/UI_MainMenu_DnDBanner1_high.png";
+				}
                 else if (!enabledDLCPack1) {
                     banner_images[0][0] = "*#images/ui/Main Menus/Banners/UI_MainMenu_MnOBanner1_base.png";
                     banner_images[0][1] = "*#images/ui/Main Menus/Banners/UI_MainMenu_MnOBanner1_high.png";
@@ -26877,7 +27022,7 @@ failed:
 		        }
 		    };
             
-			const int num_banners = (enabledDLCPack1 && enabledDLCPack2) ?
+			const int num_banners = (enabledDLCPack1 && enabledDLCPack2 && enabledDLCPack3) ?
                 0 : 1;
 #else
 			const char* banner_images[][2] = {
@@ -26902,9 +27047,21 @@ failed:
             // customize DLC banner.
             {
                 if (!enabledDLCPack1 && !enabledDLCPack2) {
-                    banner_images[1][0] = "*#images/ui/Main Menus/Banners/UI_MainMenu_ComboBanner1_base.png";
-                    banner_images[1][1] = "*#images/ui/Main Menus/Banners/UI_MainMenu_ComboBanner1_high.png";
+					if ( !enabledDLCPack3 )
+					{
+						banner_images[1][0] = "*#images/ui/Main Menus/Banners/UI_MainMenu_DnDBanner1_base.png";
+						banner_images[1][1] = "*#images/ui/Main Menus/Banners/UI_MainMenu_DnDBanner1_high.png";
+					}
+					else
+					{
+						banner_images[1][0] = "*#images/ui/Main Menus/Banners/UI_MainMenu_ComboBanner1_base.png";
+						banner_images[1][1] = "*#images/ui/Main Menus/Banners/UI_MainMenu_ComboBanner1_high.png";
+					}
                 }
+				else if ( !enabledDLCPack3 ) {
+					banner_images[1][0] = "*#images/ui/Main Menus/Banners/UI_MainMenu_DnDBanner1_base.png";
+					banner_images[1][1] = "*#images/ui/Main Menus/Banners/UI_MainMenu_DnDBanner1_high.png";
+				}
                 else if (!enabledDLCPack1) {
                     banner_images[1][0] = "*#images/ui/Main Menus/Banners/UI_MainMenu_MnOBanner1_base.png";
                     banner_images[1][1] = "*#images/ui/Main Menus/Banners/UI_MainMenu_MnOBanner1_high.png";
@@ -26924,7 +27081,7 @@ failed:
 				},
 			};
             
-		    const int num_banners = (enabledDLCPack1 && enabledDLCPack2) ? 1 : sizeof(banner_funcs) / sizeof(banner_funcs[0]);
+		    const int num_banners = (enabledDLCPack1 && enabledDLCPack2 && enabledDLCPack3) ? 1 : sizeof(banner_funcs) / sizeof(banner_funcs[0]);
 #endif
 		    auto banners = main_menu_frame->addFrame("banners");
 		    banners->setSize(SDL_Rect{(Frame::virtualScreenX - 472) / 2, y, 472, Frame::virtualScreenY - y});
@@ -31959,6 +32116,16 @@ failed:
 							check = INVALID_REQUIREDLC2;
 						}
 						break;
+					case CLASS_21:
+					case CLASS_22:
+					case CLASS_23:
+					case CLASS_24:
+					case CLASS_25:
+						if ( !enabledDLCPack3 )
+						{
+							check = INVALID_REQUIREDLC3;
+						}
+						break;
 					default:
 						break;
 					}
@@ -31982,6 +32149,16 @@ failed:
 							check = INVALID_REQUIREDLC2;
 						}
 						break;
+					case RACE_G:
+					case RACE_D:
+					case RACE_M:
+					case RACE_S:
+					case RACE_X:
+						if ( !enabledDLCPack3 )
+						{
+							check = INVALID_REQUIREDLC3;
+						}
+						break;
 					default:
 						break;
 					}
@@ -32001,12 +32178,17 @@ failed:
 			txt = Language::get(6127);
 			txt += Language::get(5002);
 		}
+		else if ( check == INVALID_REQUIREDLC3 )
+		{
+			txt = Language::get(6778);
+			txt += Language::get(5002);
+		}
 		else
 		{
 			txt = Language::get(6125);
 		}
 
-		if ( check == INVALID_REQUIREDLC1 || check == INVALID_REQUIREDLC2 )
+		if ( check == INVALID_REQUIREDLC1 || check == INVALID_REQUIREDLC2 || check == INVALID_REQUIREDLC3 )
 		{
 			auto prompt = binaryPromptXL(
 				txt.c_str(),
@@ -38347,6 +38529,18 @@ failed:
 			},
 			{
 				Compendium_t::AchievementData_t::AchievementDLCType::ACH_TYPE_DLC2,
+				{
+					"*#images/ui/Main Menus/AdventureArchives/A_AchBox_Locked_00.png",
+					"*#images/ui/Main Menus/AdventureArchives/A_AchBox_DLCCompleted_00.png",
+					"*#images/ui/Main Menus/AdventureArchives/A_AchBox_Locked_Legends_Badge_00.png",
+					"*#images/ui/Main Menus/AdventureArchives/A_AchBox_Locked_Badge_00.png",
+					"*#images/ui/Main Menus/AdventureArchives/A_Icon_Legends_Colored_00.png",
+					"*#images/ui/Main Menus/AdventureArchives/A_Icon_Legends_Gold_00.png",
+					"*#images/ui/Main Menus/AdventureArchives/A_Icon_Legends_Grey_00.png"
+				}
+			},
+			{
+				Compendium_t::AchievementData_t::AchievementDLCType::ACH_TYPE_DLC3,
 				{
 					"*#images/ui/Main Menus/AdventureArchives/A_AchBox_Locked_00.png",
 					"*#images/ui/Main Menus/AdventureArchives/A_AchBox_DLCCompleted_00.png",

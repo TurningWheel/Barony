@@ -22943,6 +22943,10 @@ char const * playerClassLangEntry(int classnum, int playernum)
 	{
 		return Language::get(1900 + classnum);
 	}
+	else if ( classnum >= CLASS_21 && classnum <= CLASS_25 )
+	{
+		return Language::get(6784 + classnum - CLASS_21);
+	}
 	else if ( classnum >= CLASS_CONJURER )
 	{
 		return Language::get(3223 + classnum - CLASS_CONJURER);
@@ -23817,6 +23821,8 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 				limb->scalex = limbs[MONSTER_G][11][0];
 				limb->scaley = limbs[MONSTER_G][11][1];
 				limb->scalez = limbs[MONSTER_G][11][2];
+
+				this->setTorsoLimbOffset(limb);
 			}
 			else if ( limbType == LIMB_HUMANOID_RIGHTLEG )
 			{
@@ -23939,6 +23945,8 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 				limb->scalex = limbs[GNOME][11][0];
 				limb->scaley = limbs[GNOME][11][1];
 				limb->scalez = limbs[GNOME][11][2];
+
+				this->setTorsoLimbOffset(limb);
 			}
 			else if ( limbType == LIMB_HUMANOID_RIGHTLEG )
 			{
@@ -24053,6 +24061,8 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 				limb->x -= .25 * cos(this->yaw);
 				limb->y -= .25 * sin(this->yaw);
 				limb->z += 2.5;
+
+				this->setTorsoLimbOffset(limb);
 			}
 			else if ( limbType == LIMB_HUMANOID_RIGHTLEG )
 			{
@@ -24177,6 +24187,7 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 				{
 					limb->scalez = 1.f;
 				}
+				this->setTorsoLimbOffset(limb);
 			}
 			else if ( limbType == LIMB_HUMANOID_RIGHTLEG )
 			{
@@ -24217,8 +24228,8 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 					&& limb->sprite != 471 && limb->sprite != 472 )
 				{
 					// wearing gloves (not default arms), position tighter to body.
-					limb->x += 1.75 * cos(this->yaw + PI / 2) - .20 * cos(this->yaw);
-					limb->y += 1.75 * sin(this->yaw + PI / 2) - .20 * sin(this->yaw);
+					limb->x += 1.75 * cos(this->yaw + PI / 2) + (-.20) * cos(this->yaw);
+					limb->y += 1.75 * sin(this->yaw + PI / 2) + (-.20) * sin(this->yaw);
 				}
 				else
 				{
@@ -24431,6 +24442,7 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 				{
 					limb->z += 0.25;
 				}*/
+				this->setTorsoLimbOffset(limb);
 			}
 			else if ( limbType == LIMB_HUMANOID_RIGHTLEG )
 			{
@@ -24501,6 +24513,8 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 				{
 					limb->z += 0.5;
 				}
+
+				this->setTorsoLimbOffset(limb);
 			}
 			else if ( limbType == LIMB_HUMANOID_RIGHTLEG )
 			{

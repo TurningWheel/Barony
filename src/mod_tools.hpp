@@ -3592,7 +3592,8 @@ struct Compendium_t
 			ACH_TYPE_NORMAL,
 			ACH_TYPE_DLC1,
 			ACH_TYPE_DLC2,
-			ACH_TYPE_DLC1_DLC2
+			ACH_TYPE_DLC1_DLC2,
+			ACH_TYPE_DLC3
 		};
 		std::string name;
 		std::string desc;

@@ -2834,6 +2834,10 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 				{
 					result = CLASS_BARBARIAN;
 				}
+				if ( !enabledDLCPack3 && result >= CLASS_21 && result <= CLASS_25 )
+				{
+					result = CLASS_BARBARIAN;
+				}
 
 				std::vector<Entity*> applyToEntities;
 				if ( processOnAttachedEntity )

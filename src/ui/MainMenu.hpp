@@ -182,6 +182,16 @@ namespace MainMenu {
 				return "goblin";
 			case RACE_INSECTOID:
 				return "insectoid";
+			case RACE_G:
+				return "monster_g";
+			case RACE_D:
+				return "monster_d";
+			case RACE_M:
+				return "monster_m";
+			case RACE_S:
+				return "monster_s";
+			case RACE_X:
+				return "human";
 			default:
 				break;
 			}
@@ -206,7 +216,8 @@ namespace MainMenu {
 	enum class DLC {
 		Base,
 		MythsAndOutcasts,
-		LegendsAndPariahs
+		LegendsAndPariahs,
+		DesertersAndDisciples
 	};
 
 	struct Class {

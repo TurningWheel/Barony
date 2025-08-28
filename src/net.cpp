@@ -5342,12 +5342,22 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		case RACE_TROLL: victoryType = 3; break;
 		case RACE_SPIDER: victoryType = 3; break;
 		case RACE_IMP: victoryType = 5; break;
+		case RACE_D: victoryType = 4; break;
+		case RACE_M: victoryType = 4; break;
+		case RACE_S: victoryType = 4; break;
+		case RACE_G: victoryType = 4; break;
+		case RACE_X: victoryType = 4; break;
 		}
 		victory = victoryType;
 	    if (net_packet->data[5] == 0) { // full ending
 	        switch ( race ) {
 	        default:
 	        case RACE_HUMAN:
+			case RACE_D:
+			case RACE_M:
+			case RACE_S:
+			case RACE_G:
+			case RACE_X:
 	            MainMenu::beginFade(MainMenu::FadeDestination::EndingHuman);
 	            break;
 	        case RACE_AUTOMATON:
@@ -5371,6 +5381,11 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 	        switch ( race ) {
 	        default:
 	        case RACE_HUMAN:
+			case RACE_D:
+			case RACE_M:
+			case RACE_S:
+			case RACE_G:
+			case RACE_X:
 	            MainMenu::beginFade(MainMenu::FadeDestination::ClassicEndingHuman);
 	            break;
 	        case RACE_AUTOMATON:
@@ -5394,6 +5409,11 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 	        switch ( race ) {
 	        default:
 	        case RACE_HUMAN:
+			case RACE_D:
+			case RACE_M:
+			case RACE_S:
+			case RACE_G:
+			case RACE_X:
 	            MainMenu::beginFade(MainMenu::FadeDestination::ClassicBaphometEndingHuman);
 	            break;
 	        case RACE_AUTOMATON:
@@ -5445,6 +5465,11 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 	        switch ( race ) {
 	        default:
 	        case RACE_HUMAN:
+			case RACE_D:
+			case RACE_M:
+			case RACE_S:
+			case RACE_G:
+			case RACE_X:
 	            MainMenu::beginFade(MainMenu::FadeDestination::HerxMidpointHuman);
 	            break;
 	        case RACE_AUTOMATON:
@@ -5467,6 +5492,11 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 	        switch ( race ) {
 	        default:
 	        case RACE_HUMAN:
+			case RACE_D:
+			case RACE_M:
+			case RACE_S:
+			case RACE_G:
+			case RACE_X:
 	            MainMenu::beginFade(MainMenu::FadeDestination::BaphometMidpointHuman);
 	            break;
 	        case RACE_AUTOMATON:

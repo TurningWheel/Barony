@@ -157,6 +157,7 @@ PlayerRaces lastRace = RACE_HUMAN;
 int lastAppearance = 0;
 bool enabledDLCPack1 = false;
 bool enabledDLCPack2 = false;
+bool enabledDLCPack3 = false;
 bool showRaceInfo = false;
 #ifdef STEAMWORKS
 std::vector<SteamUGCDetails_t *> workshopSubscribedItemList;
@@ -392,6 +393,26 @@ bool isAchievementUnlockedForClassUnlock(int race)
 	{
 		return unlocked;
 	}
+	else if ( enabledDLCPack3 && race == RACE_D && SteamUserStats()->GetAchievement("BARONY_ACH_XXX", &unlocked) )
+	{
+		return unlocked;
+	}
+	else if ( enabledDLCPack3 && race == RACE_M && SteamUserStats()->GetAchievement("BARONY_ACH_XXX", &unlocked) )
+	{
+		return unlocked;
+	}
+	else if ( enabledDLCPack3 && race == RACE_G && SteamUserStats()->GetAchievement("BARONY_ACH_XXX", &unlocked) )
+	{
+		return unlocked;
+	}
+	else if ( enabledDLCPack3 && race == RACE_S && SteamUserStats()->GetAchievement("BARONY_ACH_XXX", &unlocked) )
+	{
+		return unlocked;
+	}
+	else if ( enabledDLCPack3 && race == RACE_X && SteamUserStats()->GetAchievement("BARONY_ACH_XXX", &unlocked) )
+	{
+		return unlocked;
+	}
 #elif (defined USE_EOS || defined LOCAL_ACHIEVEMENTS)
 	if ( enabledDLCPack1 && race == RACE_SKELETON && achievementUnlocked("BARONY_ACH_BONY_BARON") )
 	{
@@ -422,6 +443,26 @@ bool isAchievementUnlockedForClassUnlock(int race)
 		return true;
 	}
 	else if ( enabledDLCPack2 && race == RACE_INSECTOID && achievementUnlocked("BARONY_ACH_BUGGAR_BARON") )
+	{
+		return true;
+	}
+	else if ( enabledDLCPack3 && race == RACE_D && achievementUnlocked("BARONY_ACH_XXX") )
+	{
+		return true;
+	}
+	else if ( enabledDLCPack3 && race == RACE_M && achievementUnlocked("BARONY_ACH_XXX") )
+	{
+		return true;
+	}
+	else if ( enabledDLCPack3 && race == RACE_G && achievementUnlocked("BARONY_ACH_XXX") )
+	{
+		return true;
+	}
+	else if ( enabledDLCPack3 && race == RACE_S && achievementUnlocked("BARONY_ACH_XXX") )
+	{
+		return true;
+	}
+	else if ( enabledDLCPack3 && race == RACE_X && achievementUnlocked("BARONY_ACH_XXX") )
 	{
 		return true;
 	}
@@ -502,6 +543,19 @@ int isCharacterValidFromDLC(Stat& myStats, int characterClass)
 				}
 			}
 			break;
+		case CLASS_21:
+		case CLASS_22:
+		case CLASS_23:
+		case CLASS_24:
+		case CLASS_25:
+			if ( !enabledDLCPack3 )
+			{
+				if ( !challengeClass )
+				{
+					return INVALID_REQUIREDLC3;
+				}
+			}
+			break;
 		default:
 			break;
 	}
@@ -532,6 +586,19 @@ int isCharacterValidFromDLC(Stat& myStats, int characterClass)
 				}
 			}
 			break;
+		case RACE_D:
+		case RACE_M:
+		case RACE_G:
+		case RACE_S:
+		case RACE_X:
+			if ( !enabledDLCPack3 )
+			{
+				if ( !challengeRace )
+				{
+					return INVALID_REQUIREDLC3;
+				}
+			}
+			break;
 		default:
 			break;
 	}
@@ -544,7 +611,7 @@ int isCharacterValidFromDLC(Stat& myStats, int characterClass)
 	{
 		return VALID_OK_CHARACTER; // aesthetic only option.
 	}
-	if ( characterClass <= CLASS_MONK || characterClass == CLASS_21 || characterClass == CLASS_22 )
+	if ( characterClass <= CLASS_MONK )
 	{
 		return VALID_OK_CHARACTER;
 	}
@@ -606,6 +673,41 @@ int isCharacterValidFromDLC(Stat& myStats, int characterClass)
 				return VALID_OK_CHARACTER;
 			}
 			return isAchievementUnlockedForClassUnlock(RACE_INSECTOID) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
+			break;
+		case CLASS_21:
+			if ( myStats.playerRace == RACE_X )
+			{
+				return VALID_OK_CHARACTER;
+			}
+			return isAchievementUnlockedForClassUnlock(RACE_X) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
+			break;
+		case CLASS_22:
+			if ( myStats.playerRace == RACE_G )
+			{
+				return VALID_OK_CHARACTER;
+			}
+			return isAchievementUnlockedForClassUnlock(RACE_G) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
+			break;
+		case CLASS_23:
+			if ( myStats.playerRace == RACE_D )
+			{
+				return VALID_OK_CHARACTER;
+			}
+			return isAchievementUnlockedForClassUnlock(RACE_D) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
+			break;
+		case CLASS_24:
+			if ( myStats.playerRace == RACE_M )
+			{
+				return VALID_OK_CHARACTER;
+			}
+			return isAchievementUnlockedForClassUnlock(RACE_M) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
+			break;
+		case CLASS_25:
+			if ( myStats.playerRace == RACE_S )
+			{
+				return VALID_OK_CHARACTER;
+			}
+			return isAchievementUnlockedForClassUnlock(RACE_S) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
 			break;
 		default:
 			break;
@@ -9384,13 +9486,14 @@ void doNewGame(bool makeHighscore) {
 		steamAchievement("BARONY_ACH_SPICE_OF_LIFE");
 	}
 
-	if ( stats[clientnum]->playerRace >= 0 && stats[clientnum]->playerRace <= RACE_INSECTOID )
+	if ( (stats[clientnum]->playerRace >= 0 && stats[clientnum]->playerRace <= RACE_INSECTOID)
+		|| (stats[clientnum]->playerRace > RACE_IMP && stats[clientnum]->playerRace < RACE_ENUM_END) )
 	{
 		usedRace[stats[clientnum]->playerRace] = true;
 	}
 	// new achievement
 	usedAllClasses = true;
-	for ( int c = CLASS_CONJURER; c <= CLASS_HUNTER; ++c )
+	for ( int c = CLASS_CONJURER; c <= CLASS_25; ++c )
 	{
 		if ( !usedClass[c] )
 		{
@@ -9398,8 +9501,12 @@ void doNewGame(bool makeHighscore) {
 		}
 	}
 	bool usedAllRaces = true;
-	for ( int c = RACE_SKELETON; c <= RACE_INSECTOID; ++c )
+	for ( int c = RACE_SKELETON; c < RACE_ENUM_END; ++c )
 	{
+		if ( c > RACE_INSECTOID && c <= RACE_IMP )
+		{
+			continue;
+		}
 		if ( !usedRace[c] )
 		{
 			usedAllRaces = false;
@@ -10003,6 +10110,21 @@ void doEndgame(bool saveHighscore, bool onServerDisconnect) {
 								break;
 							case RACE_GOBLIN:
 								steamAchievement("BARONY_ACH_BAYOU_BARON");
+								break;
+							case RACE_D:
+								steamAchievement("BARONY_ACH_XXX");
+								break;
+							case RACE_M:
+								steamAchievement("BARONY_ACH_XXX");
+								break;
+							case RACE_G:
+								steamAchievement("BARONY_ACH_XXX");
+								break;
+							case RACE_S:
+								steamAchievement("BARONY_ACH_XXX");
+								break;
+							case RACE_X:
+								steamAchievement("BARONY_ACH_XXX");
 								break;
 							default:
 								break;
@@ -11558,77 +11680,79 @@ void buttonLoadMultiplayerGame(button_t* button)
 
 void buttonRandomCharacter(button_t* my)
 {
-	playing_random_char = true;
-	charcreation_step = 4;
-	camera_charsheet_offsetyaw = (330) * PI / 180;
-	stats[0]->sex = static_cast<sex_t>(local_rng.rand() % 2);
-	client_classes[0] = local_rng.rand() % (CLASS_MONK + 1);//NUMCLASSES;
-	stats[0]->clearStats();
-	if ( enabledDLCPack1 || enabledDLCPack2 )
-	{
-		stats[0]->playerRace = local_rng.rand() % NUMPLAYABLERACES;
-		if ( !enabledDLCPack1 )
-		{
-			while ( stats[0]->playerRace == RACE_SKELETON || stats[0]->playerRace == RACE_VAMPIRE
-				|| stats[0]->playerRace == RACE_SUCCUBUS || stats[0]->playerRace == RACE_GOATMAN )
-			{
-				stats[0]->playerRace = local_rng.rand() % NUMPLAYABLERACES;
-			}
-		}
-		else if ( !enabledDLCPack2 )
-		{
-			while ( stats[0]->playerRace == RACE_AUTOMATON || stats[0]->playerRace == RACE_GOBLIN
-				|| stats[0]->playerRace == RACE_INCUBUS || stats[0]->playerRace == RACE_INSECTOID )
-			{
-				stats[0]->playerRace = local_rng.rand() % NUMPLAYABLERACES;
-			}
-		}
-		if ( stats[0]->playerRace == RACE_INCUBUS )
-		{
-			stats[0]->sex = MALE;
-		}
-		else if ( stats[0]->playerRace == RACE_SUCCUBUS )
-		{
-			stats[0]->sex = FEMALE;
-		}
+	return;
 
-		if ( stats[0]->playerRace == RACE_HUMAN )
-		{
-			client_classes[0] = local_rng.rand() % (NUMCLASSES);
-			if ( !enabledDLCPack1 )
-			{
-				while ( client_classes[0] == CLASS_CONJURER || client_classes[0] == CLASS_ACCURSED
-					|| client_classes[0] == CLASS_MESMER || client_classes[0] == CLASS_BREWER )
-				{
-					client_classes[0] = local_rng.rand() % (NUMCLASSES);
-				}
-			}
-			else if ( !enabledDLCPack2 )
-			{
-				while ( client_classes[0] == CLASS_HUNTER || client_classes[0] == CLASS_SHAMAN
-					|| client_classes[0] == CLASS_PUNISHER || client_classes[0] == CLASS_MACHINIST )
-				{
-					client_classes[0] = local_rng.rand() % (NUMCLASSES);
-				}
-			}
-			stats[0]->stat_appearance = local_rng.rand() % NUMAPPEARANCES;
-		}
-		else
-		{
-			client_classes[0] = local_rng.rand() % (CLASS_MONK + 2);
-			if ( client_classes[0] > CLASS_MONK )
-			{
-				client_classes[0] = CLASS_MONK + stats[0]->playerRace; // monster specific classes.
-			}
-			stats[0]->stat_appearance = 0;
-		}
-	}
-	else
-	{
-		stats[0]->playerRace = RACE_HUMAN;
-		stats[0]->stat_appearance = local_rng.rand() % NUMAPPEARANCES;
-	}
-	initClass(0);
+	//playing_random_char = true;
+	//charcreation_step = 4;
+	//camera_charsheet_offsetyaw = (330) * PI / 180;
+	//stats[0]->sex = static_cast<sex_t>(local_rng.rand() % 2);
+	//client_classes[0] = local_rng.rand() % (CLASS_MONK + 1);//NUMCLASSES;
+	//stats[0]->clearStats();
+	//if ( enabledDLCPack1 || enabledDLCPack2 )
+	//{
+	//	stats[0]->playerRace = local_rng.rand() % NUMPLAYABLERACES;
+	//	if ( !enabledDLCPack1 )
+	//	{
+	//		while ( stats[0]->playerRace == RACE_SKELETON || stats[0]->playerRace == RACE_VAMPIRE
+	//			|| stats[0]->playerRace == RACE_SUCCUBUS || stats[0]->playerRace == RACE_GOATMAN )
+	//		{
+	//			stats[0]->playerRace = local_rng.rand() % NUMPLAYABLERACES;
+	//		}
+	//	}
+	//	else if ( !enabledDLCPack2 )
+	//	{
+	//		while ( stats[0]->playerRace == RACE_AUTOMATON || stats[0]->playerRace == RACE_GOBLIN
+	//			|| stats[0]->playerRace == RACE_INCUBUS || stats[0]->playerRace == RACE_INSECTOID )
+	//		{
+	//			stats[0]->playerRace = local_rng.rand() % NUMPLAYABLERACES;
+	//		}
+	//	}
+	//	if ( stats[0]->playerRace == RACE_INCUBUS )
+	//	{
+	//		stats[0]->sex = MALE;
+	//	}
+	//	else if ( stats[0]->playerRace == RACE_SUCCUBUS )
+	//	{
+	//		stats[0]->sex = FEMALE;
+	//	}
+
+	//	if ( stats[0]->playerRace == RACE_HUMAN )
+	//	{
+	//		client_classes[0] = local_rng.rand() % (NUMCLASSES);
+	//		if ( !enabledDLCPack1 )
+	//		{
+	//			while ( client_classes[0] == CLASS_CONJURER || client_classes[0] == CLASS_ACCURSED
+	//				|| client_classes[0] == CLASS_MESMER || client_classes[0] == CLASS_BREWER )
+	//			{
+	//				client_classes[0] = local_rng.rand() % (NUMCLASSES);
+	//			}
+	//		}
+	//		else if ( !enabledDLCPack2 )
+	//		{
+	//			while ( client_classes[0] == CLASS_HUNTER || client_classes[0] == CLASS_SHAMAN
+	//				|| client_classes[0] == CLASS_PUNISHER || client_classes[0] == CLASS_MACHINIST )
+	//			{
+	//				client_classes[0] = local_rng.rand() % (NUMCLASSES);
+	//			}
+	//		}
+	//		stats[0]->stat_appearance = local_rng.rand() % NUMAPPEARANCES;
+	//	}
+	//	else
+	//	{
+	//		client_classes[0] = local_rng.rand() % (CLASS_MONK + 2);
+	//		if ( client_classes[0] > CLASS_MONK )
+	//		{
+	//			client_classes[0] = CLASS_MONK + stats[0]->playerRace; // monster specific classes.
+	//		}
+	//		stats[0]->stat_appearance = 0;
+	//	}
+	//}
+	//else
+	//{
+	//	stats[0]->playerRace = RACE_HUMAN;
+	//	stats[0]->stat_appearance = local_rng.rand() % NUMAPPEARANCES;
+	//}
+	//initClass(0);
 }
 
 bool replayLastCharacter(const int index, int multiplayer)
@@ -11672,9 +11796,9 @@ bool replayLastCharacter(const int index, int multiplayer)
 	if ( lastClass >= 0 && lastSex >= 0 && lastRace >= 0 && lastAppearance >= 0 && lastName != "" )
 	{
 		stats[index]->sex = static_cast<sex_t>(std::min(lastSex, (int)sex_t::FEMALE));
-		stats[index]->playerRace = std::min(std::max(static_cast<int>(RACE_HUMAN), lastRace), static_cast<int>(NUMPLAYABLERACES));
+		stats[index]->playerRace = std::min(std::max(static_cast<int>(RACE_HUMAN), lastRace), static_cast<int>(RACE_ENUM_END - 1));
 		stats[index]->stat_appearance = lastAppearance;
-		client_classes[index] = std::min(std::max(0, lastClass), static_cast<int>(CLASS_HUNTER));
+		client_classes[index] = std::min(std::max(0, lastClass), static_cast<int>(NUMCLASSES - 1));
 
 		switch ( isCharacterValidFromDLC(*stats[index], lastClass) )
 		{
@@ -11683,6 +11807,7 @@ bool replayLastCharacter(const int index, int multiplayer)
 				break;
 			case INVALID_REQUIREDLC1:
 			case INVALID_REQUIREDLC2:
+			case INVALID_REQUIREDLC3:
 				// class or race invalid.
 				if ( stats[index]->playerRace > RACE_HUMAN )
 				{

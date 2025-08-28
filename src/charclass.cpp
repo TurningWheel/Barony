@@ -3018,8 +3018,8 @@ void initClass(const int player)
 		}
 	}
 	if ( stats[player]->stat_appearance == 0 
-		&& client_classes[player] >= CLASS_CONJURER 
-		&& client_classes[player] <= CLASS_HUNTER 
+		&& (client_classes[player] >= CLASS_CONJURER 
+			&& client_classes[player] <= CLASS_25)
 		&& stats[player]->playerRace != RACE_HUMAN )
 	{
 		if ( isLocalPlayer )

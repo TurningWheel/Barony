@@ -30127,6 +30127,14 @@ void GenericGUIMenu::AssistShrineGUI_t::changeCurrentView(GenericGUIMenu::Assist
 		raceSlots.push_back(RACE_GOBLIN);
 		raceSlots.push_back(RACE_INSECTOID);
 	}
+	if ( enabledDLCPack3 )
+	{
+		raceSlots.push_back(RACE_D);
+		raceSlots.push_back(RACE_M);
+		raceSlots.push_back(RACE_S);
+		raceSlots.push_back(RACE_G);
+		raceSlots.push_back(RACE_X);
+	}
 
 	if ( currentView == ASSIST_SHRINE_VIEW_RACE )
 	{
@@ -30316,10 +30324,16 @@ void GenericGUIMenu::AssistShrineGUI_t::updateRaceSlots()
 					{
 						dlcType = MainMenu::DLC::LegendsAndPariahs;
 					}
+					if ( race > RACE_IMP
+						&& race < RACE_ENUM_END )
+					{
+						dlcType = MainMenu::DLC::DesertersAndDisciples;
+					}
 					std::string str = getMonsterLocalizedName(getMonsterFromPlayerRace(race)).c_str();
 					uppercaseString(str);
 					slotTxt->setText(str.c_str());
 					switch ( dlcType ) {
+					default:
 					case MainMenu::DLC::Base:
 						slotTxt->setColor(hudColors.characterBaseClassText);
 						break;
@@ -30328,6 +30342,9 @@ void GenericGUIMenu::AssistShrineGUI_t::updateRaceSlots()
 						break;
 					case MainMenu::DLC::LegendsAndPariahs:
 						slotTxt->setColor(hudColors.characterDLC2ClassText);
+						break;
+					case MainMenu::DLC::DesertersAndDisciples:
+						slotTxt->setColor(hudColors.characterDLC3ClassText);
 						break;
 					}
 					if ( selected )
@@ -33390,6 +33407,10 @@ void GenericGUIMenu::AssistShrineGUI_t::updateAssistShrine()
 				{
 					color = hudColors.characterDLC2ClassText;
 				}
+				else if ( classnum >= CLASS_21 && classnum <= CLASS_25 )
+				{
+					color = hudColors.characterDLC3ClassText;
+				}
 			}
 			std::string classname = playerClassLangEntry(classnum, parentGUI.gui_player);
 			uppercaseString(classname);
@@ -33419,6 +33440,10 @@ void GenericGUIMenu::AssistShrineGUI_t::updateAssistShrine()
 				else if ( selectedClass >= CLASS_MACHINIST && selectedClass <= CLASS_HUNTER )
 				{
 					classNewText->addColorToLine(1, hudColors.characterDLC2ClassText);
+				}
+				else if ( selectedClass >= CLASS_21 && selectedClass <= CLASS_25 )
+				{
+					classNewText->addColorToLine(1, hudColors.characterDLC3ClassText);
 				}
 			}
 			classNewText->setText(txt.c_str());
@@ -33612,6 +33637,11 @@ void GenericGUIMenu::AssistShrineGUI_t::updateAssistShrine()
 					&& race <= RACE_INSECTOID )
 				{
 					color = hudColors.characterDLC2ClassText;
+				}
+				if ( race > RACE_IMP
+					&& race < RACE_ENUM_END )
+				{
+					color = hudColors.characterDLC3ClassText;
 				}
 			}
 			std::string racename = getMonsterLocalizedName(getMonsterFromPlayerRace(race)).c_str();
@@ -35562,6 +35592,10 @@ void GenericGUIMenu::AssistShrineGUI_t::updateAssistShrine()
 							{
 								txt->setColor(hudColors.characterDLC2ClassText);
 							}
+							else if ( itemType >= CLASS_21 && itemType <= CLASS_25 )
+							{
+								txt->setColor(hudColors.characterDLC3ClassText);
+							}
 							else
 							{
 								txt->setColor(hudColors.characterBaseClassText);
@@ -35754,6 +35788,11 @@ void GenericGUIMenu::AssistShrineGUI_t::updateAssistShrine()
 								&& itemType <= RACE_INSECTOID )
 							{
 								txt->setColor(hudColors.characterDLC2ClassText);
+							}
+							else if ( itemType > RACE_IMP
+								&& itemType < RACE_ENUM_END )
+							{
+								txt->setColor(hudColors.characterDLC3ClassText);
 							}
 							else
 							{

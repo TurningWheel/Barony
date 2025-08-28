@@ -100,8 +100,8 @@ extern real_t t, ot, frameval[AVERAGEFRAMES];
 extern Uint32 cycles, pingtime;
 extern real_t fps;
 static const int NUMCLASSES = 26;
-#define NUMRACES 13
-#define NUMPLAYABLERACES 9
+#define NUMRACES 18
+#define NUMPLAYABLERACES 14
 extern char address[64];
 extern bool loadnextlevel;
 extern int skipLevelsOnLoad;
@@ -208,7 +208,13 @@ enum PlayerRaces : int
 	RACE_RAT,
 	RACE_TROLL,
 	RACE_SPIDER,
-	RACE_IMP
+	RACE_IMP,
+	RACE_D,
+	RACE_M,
+	RACE_S,
+	RACE_G,
+	RACE_X,
+	RACE_ENUM_END
 };
 
 bool achievementUnlocked(const char* achName);
@@ -386,6 +392,7 @@ extern std::vector<std::string> randomNPCNamesMale;
 extern std::vector<std::string> randomNPCNamesFemale;
 extern bool enabledDLCPack1;
 extern bool enabledDLCPack2;
+extern bool enabledDLCPack3;
 extern std::vector<std::string> physFSFilesInDirectory;
 void loadRandomNames();
 void mapLevel(int player);

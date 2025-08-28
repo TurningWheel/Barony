@@ -1996,25 +1996,35 @@ namespace ConsoleCommands {
 				stats[i]->clearStats();
 				client_classes[i] = local_rng.rand() % (CLASS_MONK + 1);//NUMCLASSES;
 				stats[i]->playerRace = RACE_HUMAN;
-				if (enabledDLCPack1 || enabledDLCPack2)
+				if (enabledDLCPack1 || enabledDLCPack2 || enabledDLCPack3)
 				{
-					stats[i]->playerRace = local_rng.rand() % NUMPLAYABLERACES;
-					if (!enabledDLCPack1)
+					std::vector<unsigned int> chances;
+					chances.resize(NUMRACES);
+					chances[RACE_HUMAN] = 1;
+					if ( enabledDLCPack1 )
 					{
-						while (stats[i]->playerRace == RACE_SKELETON || stats[i]->playerRace == RACE_VAMPIRE
-							|| stats[i]->playerRace == RACE_SUCCUBUS || stats[i]->playerRace == RACE_GOATMAN)
-						{
-							stats[i]->playerRace = local_rng.rand() % NUMPLAYABLERACES;
-						}
+						chances[RACE_SKELETON] = 1;
+						chances[RACE_VAMPIRE] = 1;
+						chances[RACE_GOATMAN] = 1;
+						chances[RACE_SUCCUBUS] = 1;
 					}
-					else if (!enabledDLCPack2)
+					if ( enabledDLCPack2 )
 					{
-						while (stats[i]->playerRace == RACE_AUTOMATON || stats[i]->playerRace == RACE_GOBLIN
-							|| stats[i]->playerRace == RACE_INCUBUS || stats[i]->playerRace == RACE_INSECTOID)
-						{
-							stats[i]->playerRace = local_rng.rand() % NUMPLAYABLERACES;
-						}
+						chances[RACE_INSECTOID] = 1;
+						chances[RACE_INCUBUS] = 1;
+						chances[RACE_INSECTOID] = 1;
+						chances[RACE_AUTOMATON] = 1;
 					}
+					if ( enabledDLCPack3 )
+					{
+						chances[RACE_G] = 1;
+						chances[RACE_M] = 1;
+						chances[RACE_D] = 1;
+						chances[RACE_X] = 1;
+						chances[RACE_S] = 1;
+					}
+
+					stats[i]->playerRace = local_rng.discrete(chances.data(), chances.size());
 					if (stats[i]->playerRace == RACE_INCUBUS)
 					{
 						stats[i]->sex = MALE;
@@ -2027,21 +2037,15 @@ namespace ConsoleCommands {
 					if (stats[i]->playerRace == RACE_HUMAN)
 					{
 						client_classes[i] = local_rng.rand() % (NUMCLASSES);
-						if (!enabledDLCPack1)
+						while ( 
+							(!enabledDLCPack1 && (client_classes[i] == CLASS_CONJURER || client_classes[i] == CLASS_ACCURSED
+								|| client_classes[i] == CLASS_MESMER || client_classes[i] == CLASS_BREWER))
+							|| (!enabledDLCPack2 && (client_classes[i] == CLASS_HUNTER || client_classes[i] == CLASS_SHAMAN
+								|| client_classes[i] == CLASS_PUNISHER || client_classes[i] == CLASS_MACHINIST))
+							|| (!enabledDLCPack3 && (client_classes[i] == CLASS_21 || client_classes[i] == CLASS_22
+								|| client_classes[i] == CLASS_23 || client_classes[i] == CLASS_24 || client_classes[i] == CLASS_25)) )
 						{
-							while (client_classes[i] == CLASS_CONJURER || client_classes[i] == CLASS_ACCURSED
-								|| client_classes[i] == CLASS_MESMER || client_classes[i] == CLASS_BREWER)
-							{
-								client_classes[i] = local_rng.rand() % (NUMCLASSES);
-							}
-						}
-						else if (!enabledDLCPack2)
-						{
-							while (client_classes[i] == CLASS_HUNTER || client_classes[i] == CLASS_SHAMAN
-								|| client_classes[i] == CLASS_PUNISHER || client_classes[i] == CLASS_MACHINIST)
-							{
-								client_classes[i] = local_rng.rand() % (NUMCLASSES);
-							}
+							client_classes[i] = local_rng.rand() % (NUMCLASSES);
 						}
 						stats[i]->stat_appearance = local_rng.rand() % 18;
 					}
