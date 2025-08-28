@@ -1247,7 +1247,34 @@ void Entity::effectTimes()
 					messagePlayer(player, MESSAGE_STATUS, Language::get(3475));
 				}
 			}
-			if ( myStats->EFFECTS_TIMERS[c] == 0 )
+
+			if ( c == EFF_GROWTH && behavior == &actPlayer )
+			{
+				if ( !(myStats->type == MONSTER_M || myStats->type == MONSTER_D) || myStats->helmet )
+				{
+					setEffect(EFF_GROWTH, false, 0, false);
+				}
+				else if ( myStats->getEffectActive(c) >= 4 )
+				{
+					myStats->EFFECTS_TIMERS[c] = std::max(10 * TICKS_PER_SECOND, myStats->EFFECTS_TIMERS[c]);
+				}
+				else if ( myStats->EFFECTS_TIMERS[c] == 0 )
+				{
+					Uint8 effectStrength = myStats->getEffectActive(c);
+					if ( effectStrength < 4 )
+					{
+						setEffect(EFF_GROWTH, (Uint8)(effectStrength + 1), 15 * TICKS_PER_SECOND, false);
+					}
+				}
+				else if ( myStats->EFFECTS_TIMERS[c] == ((TICKS_PER_SECOND * 5) - 1) )
+				{
+					if ( player > 0 && multiplayer == SERVER )
+					{
+						needServerUpdateEffects = true;
+					}
+				}
+			}
+			else if ( myStats->EFFECTS_TIMERS[c] == 0 )
 			{
 				Uint8 effectStrength = myStats->getEffectActive(c);
 				myStats->clearEffect(c);
@@ -3237,6 +3264,17 @@ void Entity::handleEffects(Stat* myStats)
 		else
 		{
 			players[player]->mechanics.defendTicks = 0;
+		}
+
+		if ( myStats->type == MONSTER_M || myStats->type == MONSTER_D )
+		{
+			if ( !myStats->helmet )
+			{
+				if ( !stats[player]->getEffectActive(EFF_GROWTH) || stats[player]->EFFECTS_TIMERS[EFF_GROWTH] == -1 )
+				{
+					setEffect(EFF_GROWTH, (Uint8)1, 15 * TICKS_PER_SECOND, false);
+				}
+			}
 		}
 	}
 
@@ -16712,7 +16750,46 @@ int setGloveSprite(Stat* myStats, Entity* ent, int spriteOffset)
 	return 1;
 }
 
-bool Entity::setBootSprite(Entity* leg, int spriteOffset)
+bool Entity::isBootSpriteShortArmor(Entity* leg)
+{
+	if ( !leg ) { return false; }
+
+	switch ( leg->sprite )
+	{
+	case 1463: // LEATHER_BOOTS
+	case 1464:
+	case 1467: // IRON_BOOTS
+	case 1468:
+	case 1471: // STEEL_BOOTS
+	case 1472:
+	case 1465: // CRYSTAL_BOOTS
+	case 1466:
+	case 1461: // ARTIFACT_BOOTS
+	case 1462:
+	case 1473: // SUEDE_BOOTS
+	case 1474:
+	case 2079: // BONE_BOOTS
+	case 2080:
+	case 2077: // BLACKIRON_BOOTS
+	case 2078:
+	case 2081: // SILVER_BOOTS
+	case 2082:
+	case 2085: // QUILTED_BOOTS
+	case 2086:
+	case 1469: // LOAFERS
+	case 1470:
+	case 2083: // CHAIN_BOOTS
+	case 2084:
+	case 2075: // CLEAT_BOOTS
+	case 2076:
+		return true;
+	default:
+		break;
+	}
+	return false;
+}
+
+bool Entity::setBootSprite(Entity* leg, int spriteOffset, bool forceShort)
 {
 	if ( multiplayer == CLIENT )
 	{
@@ -16739,67 +16816,70 @@ bool Entity::setBootSprite(Entity* leg, int spriteOffset)
 		return false;
 	}
 
-	bool shortSprite = false;
+	bool shortSprite = forceShort;
 	switch ( myStats->type )
 	{
 		case HUMAN:
-			if ( myStats->shoes->type == LEATHER_BOOTS || myStats->shoes->type == LEATHER_BOOTS_SPEED )
+			if ( !shortSprite )
 			{
-				leg->sprite = 148 + myStats->sex + spriteOffset;
+				if ( myStats->shoes->type == LEATHER_BOOTS || myStats->shoes->type == LEATHER_BOOTS_SPEED )
+				{
+					leg->sprite = 148 + myStats->sex + spriteOffset;
+				}
+				else if ( myStats->shoes->type == IRON_BOOTS || myStats->shoes->type == IRON_BOOTS_WATERWALKING )
+				{
+					leg->sprite = 152 + myStats->sex + spriteOffset;
+				}
+				else if ( myStats->shoes->type >= STEEL_BOOTS && myStats->shoes->type <= STEEL_BOOTS_FEATHER )
+				{
+					leg->sprite = 156 + myStats->sex + spriteOffset;
+				}
+				else if ( myStats->shoes->type == CRYSTAL_BOOTS )
+				{
+					leg->sprite = 499 + myStats->sex + spriteOffset;
+				}
+				else if ( myStats->shoes->type == ARTIFACT_BOOTS )
+				{
+					leg->sprite = 521 + myStats->sex + spriteOffset;
+				}
+				else if ( myStats->shoes->type == SUEDE_BOOTS )
+				{
+					leg->sprite = 808 + (spriteOffset > 0 ? 1 : 0);
+				}
+				else if ( myStats->shoes->type == BONE_BOOTS )
+				{
+					leg->sprite = 2067 + (spriteOffset > 0 ? 1 : 0);
+				}
+				else if ( myStats->shoes->type == BLACKIRON_BOOTS )
+				{
+					leg->sprite = 2065 + (spriteOffset > 0 ? 1 : 0);
+				}
+				else if ( myStats->shoes->type == SILVER_BOOTS )
+				{
+					leg->sprite = 2069 + (spriteOffset > 0 ? 1 : 0);
+				}
+				else if ( myStats->shoes->type == QUILTED_BOOTS )
+				{
+					leg->sprite = 2073 + (spriteOffset > 0 ? 1 : 0);
+				}
+				else if ( myStats->shoes->type == LOAFERS )
+				{
+					leg->sprite = 1439 + (spriteOffset > 0 ? -1 : 0);
+				}
+				else if ( myStats->shoes->type == CHAIN_BOOTS )
+				{
+					leg->sprite = 2071 + (spriteOffset > 0 ? 1 : 0);
+				}
+				else if ( myStats->shoes->type == CLEAT_BOOTS )
+				{
+					leg->sprite = 2063 + (spriteOffset > 0 ? 1 : 0);
+				}
+				else
+				{
+					return false;
+				}
+				return true;
 			}
-			else if ( myStats->shoes->type == IRON_BOOTS || myStats->shoes->type == IRON_BOOTS_WATERWALKING )
-			{
-				leg->sprite = 152 + myStats->sex + spriteOffset;
-			}
-			else if ( myStats->shoes->type >= STEEL_BOOTS && myStats->shoes->type <= STEEL_BOOTS_FEATHER )
-			{
-				leg->sprite = 156 + myStats->sex + spriteOffset;
-			}
-			else if ( myStats->shoes->type == CRYSTAL_BOOTS )
-			{
-				leg->sprite = 499 + myStats->sex + spriteOffset;
-			}
-			else if ( myStats->shoes->type == ARTIFACT_BOOTS )
-			{
-				leg->sprite = 521 + myStats->sex + spriteOffset;
-			}
-			else if ( myStats->shoes->type == SUEDE_BOOTS )
-			{
-				leg->sprite = 808 + (spriteOffset > 0 ? 1 : 0);
-			}
-			else if ( myStats->shoes->type == BONE_BOOTS )
-			{
-				leg->sprite = 2067 + (spriteOffset > 0 ? 1 : 0);
-			}
-			else if ( myStats->shoes->type == BLACKIRON_BOOTS )
-			{
-				leg->sprite = 2065 + (spriteOffset > 0 ? 1 : 0);
-			}
-			else if ( myStats->shoes->type == SILVER_BOOTS )
-			{
-				leg->sprite = 2069 + (spriteOffset > 0 ? 1 : 0);
-			}
-			else if ( myStats->shoes->type == QUILTED_BOOTS )
-			{
-				leg->sprite = 2073 + (spriteOffset > 0 ? 1 : 0);
-			}
-			else if ( myStats->shoes->type == LOAFERS )
-			{
-				leg->sprite = 1439 + (spriteOffset > 0 ? -1 : 0);
-			}
-			else if ( myStats->shoes->type == CHAIN_BOOTS )
-			{
-				leg->sprite = 2071 + (spriteOffset > 0 ? 1 : 0);
-			}
-			else if ( myStats->shoes->type == CLEAT_BOOTS )
-			{
-				leg->sprite = 2063 + (spriteOffset > 0 ? 1 : 0);
-			}
-			else
-			{
-				return false;
-			}
-			return true;
 			break;
 			// fall throughs below
 		case AUTOMATON:
@@ -16816,7 +16896,6 @@ bool Entity::setBootSprite(Entity* leg, int spriteOffset)
 		case MONSTER_D:
 		case MONSTER_M:
 		case MONSTER_S:
-			shortSprite = false;
 			if ( myStats->type == MONSTER_D && (sprite == 1514 || sprite == 1515 || sprite == 1992 || sprite == 1993) )
 			{
 				shortSprite = true;
@@ -24283,6 +24362,23 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 					if ( limbType == LIMB_HUMANOID_LEFTLEG || limbType == LIMB_HUMANOID_RIGHTLEG )
 					{
 						limb->z -= 1.5;
+						if ( !(limb->sprite == 1507 || limb->sprite == 1510
+							|| limb->sprite == 1517 || limb->sprite == 1518
+							|| limb->sprite == 1985 || limb->sprite == 1988
+							|| limb->sprite == 1995 || limb->sprite == 1996) )
+						{
+							// non-default boots
+							if ( limbType == LIMB_HUMANOID_LEFTLEG )
+							{
+								limb->focaly += 0.25;
+							}
+							if ( limbType == LIMB_HUMANOID_RIGHTLEG )
+							{
+								limb->focaly -= 0.25;
+								limb->focalx -= 0.4;
+							}
+							//limb->focalx += 0.3;
+						}
 					}
 					else if ( limbType == LIMB_HUMANOID_LEFTARM )
 					{
@@ -24319,6 +24415,21 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 					{
 						limb->z -= 1;
 						limb->focalz -= 0.5;
+
+						if ( !(limb->sprite == 1531 || limb->sprite == 1533
+							|| limb->sprite == 2009 || limb->sprite == 2011) )
+						{
+							limb->z += 0.25;
+							// non-default boots
+							if ( limbType == LIMB_HUMANOID_LEFTLEG )
+							{
+								limb->focaly += 0.25;
+							}
+							if ( limbType == LIMB_HUMANOID_RIGHTLEG )
+							{
+								limb->focaly -= 0.25;
+							}
+						}
 					}
 					else if ( limbType == LIMB_HUMANOID_LEFTARM )
 					{
@@ -24458,6 +24569,18 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 				{
 					limb->pitch = 0;
 				}
+
+				if ( race == INSECTOID )
+				{
+					if ( limb->sprite == 456 || limb->sprite == 457
+						|| limb->sprite == 732 || limb->sprite == 733
+						|| limb->sprite == 766 || limb->sprite == 767
+						|| limb->sprite == 1058 || limb->sprite == 1059 )
+					{
+						// default legs offset rotation a bit
+						limb->focalx -= 0.6;
+					}
+				}
 			}
 			else if ( limbType == LIMB_HUMANOID_LEFTLEG )
 			{
@@ -24472,6 +24595,18 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 				else if ( limb->pitch <= -PI / 3 )
 				{
 					limb->pitch = 0;
+				}
+
+				if ( race == INSECTOID )
+				{
+					if ( limb->sprite == 456 || limb->sprite == 457
+						|| limb->sprite == 732 || limb->sprite == 733
+						|| limb->sprite == 766 || limb->sprite == 767
+						|| limb->sprite == 1058 || limb->sprite == 1059 )
+					{
+						// default legs offset rotation a bit
+						limb->focalx -= 0.6;
+					}
 				}
 			}
 			else if ( limbType == LIMB_HUMANOID_RIGHTARM )
@@ -25380,6 +25515,7 @@ void Entity::setHelmetLimbOffsetWithMask(Entity* helm, Entity* mask)
 		|| (helm->sprite >= items[HAT_HOOD].index && helm->sprite < items[HAT_HOOD].index + items[HAT_HOOD].variations)
 		|| helm->sprite == items[HAT_HOOD_RED].index
 		|| helm->sprite == items[HAT_HOOD_SILVER].index
+		|| helm->sprite == 2004 || helm->sprite == 1526
 		|| (helm->sprite >= items[HAT_HOOD_APPRENTICE].index && helm->sprite < items[HAT_HOOD_APPRENTICE].index + items[HAT_HOOD_APPRENTICE].variations)
 		|| (helm->sprite >= items[HAT_HOOD_ASSASSIN].index && helm->sprite < items[HAT_HOOD_ASSASSIN].index + items[HAT_HOOD_ASSASSIN].variations)
 		|| (helm->sprite >= items[HAT_HOOD_WHISPERS].index && helm->sprite < items[HAT_HOOD_WHISPERS].index + items[HAT_HOOD_WHISPERS].variations)

@@ -7967,6 +7967,35 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 				skipAnim = true;
 				effectsToSkipAnim.insert(i);
 			}
+			else if ( i == EFF_GROWTH )
+			{
+				if ( !(stats[player]->type == MONSTER_M || stats[player]->type == MONSTER_D)
+					|| stats[player]->helmet )
+				{
+					effectActive = false;
+				}
+				else
+				{
+					if ( stats[player]->getEffectActive(i) <= 1 )
+					{
+						effectActive = false;
+					}
+					else
+					{
+						for ( auto it = effectQueue.rbegin(); it != effectQueue.rend(); ++it )
+						{
+							if ( (*it).effect == EFF_GROWTH )
+							{
+								if ( (*it).customVariable != stats[player]->getEffectActive(i) )
+								{
+									deleteEffect(EFF_GROWTH);
+									break;
+								}
+							}
+						}
+					}
+				}
+			}
 			else if ( i == EFF_BLIND )
 			{
 				if ( stats[player]->mask && stats[player]->mask->type == TOOL_BLINDFOLD_TELEPATHY )
@@ -8003,6 +8032,14 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 						if ( players[player] && players[player]->entity )
 						{
 							insertEffect(i, -1);
+						}
+					}
+					else if ( i == EFF_GROWTH )
+					{
+						if ( insertEffect(i, -1) )
+						{
+							effectQueue.back().customVariable = stats[player]->getEffectActive(EFF_GROWTH);
+							notificationQueue.back().customVariable = stats[player]->getEffectActive(EFF_GROWTH);
 						}
 					}
 					else

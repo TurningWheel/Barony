@@ -131,6 +131,7 @@ static const int EFF_RATION_BITTER = 106;
 static const int EFF_RATION_HEARTY = 107;
 static const int EFF_RATION_HERBAL = 108;
 static const int EFF_RATION_SWEET = 109;
+static const int EFF_GROWTH = 110;
 static const int NUMEFFECTS = 128;
 
 // stats

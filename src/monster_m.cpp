@@ -2035,7 +2035,7 @@ void monsterMMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			entity->focalz = limbs[MONSTER_M][15][2];
 			entity->x += limbs[MONSTER_M][16][0] * cos(my->yaw + PI / 2) + limbs[MONSTER_M][16][1] * cos(my->yaw);
 			entity->y += limbs[MONSTER_M][16][0] * sin(my->yaw + PI / 2) + limbs[MONSTER_M][16][1] * sin(my->yaw);
-			entity->z += limbs[MONSTER_M][16][2];
+			entity->z += limbs[MONSTER_M][16][2] - 0.01;
 			entity->pitch = my->pitch;
 			if ( keystatus[SDLK_h] )
 			{
@@ -2050,9 +2050,9 @@ void monsterMMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			entity->roll = (entity->fskill[2]) * (PI / 64) * sin(entity->fskill[1] + PI / 2);
 
 			real_t bobScale = 0.08 * entity->skill[0];
-			entity->scalex = 1.0 + bobScale * sin(entity->fskill[3]);
-			entity->scaley = 1.0 + bobScale * sin(entity->fskill[3]);
-			entity->scalez = 1.0 - bobScale * sin(entity->fskill[3]);
+			entity->scalex = 1.01 + bobScale * sin(entity->fskill[3]);
+			entity->scaley = 1.01 + bobScale * sin(entity->fskill[3]);
+			entity->scalez = 1.01 - bobScale * sin(entity->fskill[3]);
 
 			if ( my->monsterAttack == MONSTER_POSE_SPECIAL_WINDUP1
 				&& my->monsterAttackTime == 1 )

@@ -1042,7 +1042,8 @@ public:
 	void handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb);
 	void handleQuiverThirdPersonModel(Stat& myStats);
 	// server only function to set boot sprites on monsters.
-	bool setBootSprite(Entity* leg, int spriteOffset);
+	bool setBootSprite(Entity* leg, int spriteOffset, bool forceShort = false);
+	static bool isBootSpriteShortArmor(Entity* leg);
 	// monster special attack handler, returns true if monster should attack after calling this function.
 	bool handleMonsterSpecialAttack(Stat* myStats, Entity* target, double dist, bool forceDeinit);
 	// monster attack handler

@@ -3000,6 +3000,19 @@ void initClass(const int player)
 		stats[player]->EFFECTS_TIMERS[EFF_ASLEEP] = 0;
 	}
 
+	if ( stats[player]->stat_appearance == 0 
+		&& (stats[player]->playerRace == RACE_D || stats[player]->playerRace == RACE_M)
+		&& !stats[player]->helmet )
+	{
+		stats[player]->setEffectActive(EFF_GROWTH, 3);
+		stats[player]->EFFECTS_TIMERS[EFF_GROWTH] = -1;
+	}
+	else
+	{
+		stats[player]->clearEffect(EFF_GROWTH);
+		stats[player]->EFFECTS_TIMERS[EFF_GROWTH] = 0;
+	}
+
 	if ( stats[player]->stat_appearance == 0 && stats[player]->playerRace == RACE_AUTOMATON )
 	{
 		//stats[player]->HUNGER = 150;
