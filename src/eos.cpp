@@ -3905,18 +3905,31 @@ void EOSFuncs::queryDLCOwnership()
 {
 	EcomHandle = EOS_Platform_GetEcomInterface(PlatformHandle);
 
-	EOS_Ecom_QueryEntitlementsOptions options{};
-	options.ApiVersion = EOS_ECOM_QUERYENTITLEMENTS_API_LATEST;
-	options.bIncludeRedeemed = true;
-	std::vector<EOS_Ecom_EntitlementName> entitlements;
-	entitlements.push_back("fced51d547714291869b8847fdd770e8");
-	entitlements.push_back("7ea3754f8bfa4069938fd0bee3e7197b");
+	// Deprecated in newest SDK
+	//EOS_Ecom_QueryEntitlementsOptions options{};
+	//options.ApiVersion = EOS_ECOM_QUERYENTITLEMENTS_API_LATEST;
+	//options.bIncludeRedeemed = true;
+	//std::vector<EOS_Ecom_EntitlementName> entitlements;
+	//entitlements.push_back("fced51d547714291869b8847fdd770e8");
+	//entitlements.push_back("7ea3754f8bfa4069938fd0bee3e7197b");
+	//entitlements.push_back("8f68cbe981e346afaaeddebcd9447e9b");
+	//
+	//options.EntitlementNames = entitlements.data();
+	//options.EntitlementNameCount = entitlements.size();
+	//options.LocalUserId = EOSFuncs::Helpers_t::epicIdFromString(CurrentUserInfo.epicAccountId.c_str());
+	//
+	//EOS_Ecom_QueryEntitlements(EcomHandle, &options, nullptr, OnEcomQueryEntitlementsCallback);
 
-	options.EntitlementNames = entitlements.data();
-	options.EntitlementNameCount = entitlements.size();
-	options.LocalUserId = EOSFuncs::Helpers_t::epicIdFromString(CurrentUserInfo.epicAccountId.c_str());
-
-	EOS_Ecom_QueryEntitlements(EcomHandle, &options, nullptr, OnEcomQueryEntitlementsCallback);
+	EOS_Ecom_QueryOwnershipOptions ownershipOptions{};
+	ownershipOptions.ApiVersion = EOS_ECOM_QUERYOWNERSHIP_API_LATEST;
+	ownershipOptions.LocalUserId = EOSFuncs::Helpers_t::epicIdFromString(CurrentUserInfo.epicAccountId.c_str());
+	std::vector<EOS_Ecom_CatalogItemId> catalogItems;
+	catalogItems.push_back("fced51d547714291869b8847fdd770e8");
+	catalogItems.push_back("7ea3754f8bfa4069938fd0bee3e7197b");
+	catalogItems.push_back("8f68cbe981e346afaaeddebcd9447e9b");
+	ownershipOptions.CatalogItemIds = catalogItems.data();
+	ownershipOptions.CatalogItemIdCount = catalogItems.size();
+	EOS_Ecom_QueryOwnership(EcomHandle, &ownershipOptions, nullptr, OnEcomQueryOwnershipCallback);
 }
 
 void EOS_CALL EOSFuncs::OnEcomQueryEntitlementsCallback(const EOS_Ecom_QueryEntitlementsCallbackInfo* data)
@@ -3960,6 +3973,11 @@ void EOS_CALL EOSFuncs::OnEcomQueryEntitlementsCallback(const EOS_Ecom_QueryEnti
 					enabledDLCPack2 = true;
 					EOSFuncs::logInfo("Legends & Pariahs DLC Enabled");
 				}
+				else if ( id.compare("8f68cbe981e346afaaeddebcd9447e9b") == 0 )
+				{
+					enabledDLCPack3 = true;
+					EOSFuncs::logInfo("Deserters & Disciples DLC Enabled");
+				}
 				//EOSFuncs::logInfo("Index: %d | Id %s: | Entitlement Name: %s | CatalogItemId: %s | Redeemed: %d", i, e->EntitlementId, e->EntitlementName, e->CatalogItemId, (e->bRedeemed == EOS_TRUE) ? 1 : 0);
 			}
 			EOS_Ecom_Entitlement_Release(e);
@@ -3983,7 +4001,25 @@ void EOS_CALL EOSFuncs::OnEcomQueryOwnershipCallback(const EOS_Ecom_QueryOwnersh
 	{
 		for (int i = 0; i < data->ItemOwnershipCount; ++i)
 		{
-			EOSFuncs::logInfo("OnEcomQueryOwnershipCallback: Ownership status: %d, %d", static_cast<int>(data->ItemOwnership[i].OwnershipStatus), data->ItemOwnershipCount);
+			if ( data->ItemOwnership[i].OwnershipStatus == EOS_EOwnershipStatus::EOS_OS_Owned )
+			{
+				std::string itemName = data->ItemOwnership[i].Id;
+				if ( itemName.compare("8f68cbe981e346afaaeddebcd9447e9b") == 0 || !strcmp(EOS.CurrentUserInfo.getProductUserIdStr(), "0002053004004440a14d950edabc0fe2") )
+				{
+					enabledDLCPack3 = true;
+					EOSFuncs::logInfo("Deserters & Disciples DLC Enabled");
+				}
+				if ( itemName.compare("fced51d547714291869b8847fdd770e8") == 0 )
+				{
+					enabledDLCPack1 = true;
+					EOSFuncs::logInfo("Myths & Outcasts DLC Enabled");
+				}
+				else if ( itemName.compare("7ea3754f8bfa4069938fd0bee3e7197b") == 0 )
+				{
+					enabledDLCPack2 = true;
+					EOSFuncs::logInfo("Legends & Pariahs DLC Enabled");
+				}
+			}
 		}
 	}
 	else
