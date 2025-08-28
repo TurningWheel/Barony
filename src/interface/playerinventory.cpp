@@ -4508,34 +4508,114 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
         if ( keystatus[SDLK_KP_5] )
         {
             keystatus[SDLK_KP_5] = 0;
-            if ( item->type == WOODEN_SHIELD )
-            {
-                item->type = static_cast<ItemType>(NUMITEMS - 1);
-            }
-            else
-            {
-                item->type = static_cast<ItemType>(item->type - 1);
-                if ( item->type == SPELL_ITEM )
-                {
-                    item->type = static_cast<ItemType>(item->type - 1);
-                }
-            }
+			if ( itemIsEquipped(item, player) )
+			{
+				ItemType prevType = item->type;
+				if ( item->type == WOODEN_SHIELD )
+				{
+					item->type = static_cast<ItemType>(NUMITEMS - 1);
+				}
+				else
+				{
+					item->type = static_cast<ItemType>(item->type - 1);
+					if ( item->type == SPELL_ITEM )
+					{
+						item->type = static_cast<ItemType>(item->type - 1);
+					}
+				}
+				bool found = false;
+				if ( items[prevType].item_slot == items[item->type].item_slot )
+				{
+					found = true;
+				}
+				while ( !found && item->type != prevType )
+				{
+					item->type = static_cast<ItemType>(item->type - 1);
+					if ( item->type == WOODEN_SHIELD )
+					{
+						item->type = static_cast<ItemType>(NUMITEMS - 1);
+					}
+					if ( item->type == SPELL_ITEM )
+					{
+						item->type = static_cast<ItemType>(item->type - 1);
+					}
+					if ( items[prevType].item_slot == items[item->type].item_slot )
+					{
+						break;
+					}
+				}
+			}
+			else
+			{
+				if ( item->type == WOODEN_SHIELD )
+				{
+					item->type = static_cast<ItemType>(NUMITEMS - 1);
+				}
+				else
+				{
+					item->type = static_cast<ItemType>(item->type - 1);
+					if ( item->type == SPELL_ITEM )
+					{
+						item->type = static_cast<ItemType>(item->type - 1);
+					}
+				}
+			}
         }
         if ( keystatus[SDLK_KP_8] )
         {
             keystatus[SDLK_KP_8] = 0;
-            if ( item->type == NUMITEMS - 1 )
-            {
-                item->type = WOODEN_SHIELD;
-            }
-            else
-            {
-                item->type = static_cast<ItemType>(item->type + 1);
-                if ( item->type == SPELL_ITEM )
-                {
-                    item->type = static_cast<ItemType>(item->type + 1);
-                }
-            }
+			if ( itemIsEquipped(item, player) )
+			{
+				ItemType prevType = item->type;
+				if ( item->type == NUMITEMS - 1 )
+				{
+					item->type = WOODEN_SHIELD;
+				}
+				else
+				{
+					item->type = static_cast<ItemType>(item->type + 1);
+					if ( item->type == SPELL_ITEM )
+					{
+						item->type = static_cast<ItemType>(item->type + 1);
+					}
+				}
+				bool found = false;
+				if ( items[prevType].item_slot == items[item->type].item_slot )
+				{
+					found = true;
+				}
+				while ( !found && item->type != prevType )
+				{
+					item->type = static_cast<ItemType>(item->type + 1);
+					if ( item->type == NUMITEMS - 1 )
+					{
+						item->type = WOODEN_SHIELD;
+					}
+					else if ( item->type == SPELL_ITEM )
+					{
+						item->type = static_cast<ItemType>(item->type + 1);
+					}
+					if ( items[prevType].item_slot == items[item->type].item_slot )
+					{
+						break;
+					}
+				}
+			}
+			else
+			{
+				if ( item->type == NUMITEMS - 1 )
+				{
+					item->type = WOODEN_SHIELD;
+				}
+				else
+				{
+					item->type = static_cast<ItemType>(item->type + 1);
+					if ( item->type == SPELL_ITEM )
+					{
+						item->type = static_cast<ItemType>(item->type + 1);
+					}
+				}
+			}
         }
     }
     
