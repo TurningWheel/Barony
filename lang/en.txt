@@ -7045,5 +7045,26 @@ Host to enable the game setting.
 6775 shrub#
 6776 footlocker#
 6777 weapon rack#
+6778 Deserters & Disciples DLC is required
+to replay this challenge!
+
+
+#
+6779 monster_d#
+6780 monster_m#
+6781 monster_s#
+6782 monster_g#
+6783 monster_x#
+6784 class_21#
+6785 class_22#
+6786 class_23#
+6787 class_24#
+6788 class_25#
+# main menu capitalized
+6789 Class_21#
+6790 Class_22#
+6791 Class_23#
+6792 Class_24#
+6793 Class_25#
 
 6999 END#
