@@ -1836,8 +1836,12 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_mapseed("/mapseed", "display map seed", []CCMD{
-		messagePlayer(clientnum, MESSAGE_MISC, "Mapseed: %d | Gamekey: %lu | Lobby: %lu", mapseed, uniqueGameKey, uniqueLobbyKey);
+	static ConsoleCommand ccmd_mapseed("/mapseed", "display game seed", []CCMD{
+		messagePlayer(clientnum, MESSAGE_MISC, "Game seed: %lu", uniqueGameKey);
+		});
+
+	static ConsoleCommand ccmd_gameseeds("/mapseed2", "display game seeds", []CCMD{
+		messagePlayer(clientnum, MESSAGE_MISC, "Mapseed: %d | Game seed: %lu | Lobby: %lu", mapseed, uniqueGameKey, uniqueLobbyKey);
 		});
 
 	static ConsoleCommand ccmd_seedgame("/seedgame", "set custom seed", []CCMD{
