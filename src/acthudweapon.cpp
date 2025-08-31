@@ -2940,7 +2940,12 @@ void actHudWeapon(Entity* my)
 		}
 		else if ( HUDWEAPON_MOVEX < 0 )
 		{
-			HUDWEAPON_MOVEX = std::min<real_t>(HUDWEAPON_MOVEX + .15, 0.0);
+			real_t reloadSpeed = 1.0;
+			if ( stats[HUDWEAPON_PLAYERNUM]->weapon && stats[HUDWEAPON_PLAYERNUM]->weapon->type == CROSSBOW )
+			{
+				reloadSpeed += 5 * std::max(0.0, 1.0 - rangedAttackGetSpeedModifier(stats[HUDWEAPON_PLAYERNUM]));
+			}
+			HUDWEAPON_MOVEX = std::min<real_t>(HUDWEAPON_MOVEX + .15 * reloadSpeed, 0.0);
 			if ( HUDWEAPON_MOVEX > -1 )
 			{
 				if ( HUDWEAPON_CROSSBOW_RELOAD_ANIMATION == CROSSBOW_ANIM_SHOOT
