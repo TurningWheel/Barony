@@ -1256,7 +1256,10 @@ void Entity::effectTimes()
 				}
 				else if ( myStats->getEffectActive(c) >= 4 )
 				{
-					myStats->EFFECTS_TIMERS[c] = std::max(10 * TICKS_PER_SECOND, myStats->EFFECTS_TIMERS[c]);
+					if ( myStats->EFFECTS_TIMERS[c] < 10 * TICKS_PER_SECOND )
+					{
+						setEffect(EFF_GROWTH, (Uint8)4, 30 * TICKS_PER_SECOND, false);
+					}
 				}
 				else if ( myStats->EFFECTS_TIMERS[c] == 0 )
 				{
@@ -23912,6 +23915,33 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 				{
 					limb->focalx += 0.25;
 				}
+				if ( !(limb->sprite >= 1579 && limb->sprite <= 1582)
+					&& !(limb->sprite >= 2057 && limb->sprite <= 2060) ) // non-default boots
+				{
+					Entity* torso = nullptr;
+					if ( behavior == &actMonster )
+					{
+						if ( auto node = list_Node(&children, 2) )
+						{
+							torso = (Entity*)node->element;
+						}
+					}
+					else if ( behavior == &actPlayer )
+					{
+						if ( auto node = list_Node(&children, 1) )
+						{
+							torso = (Entity*)node->element;
+						}
+					}
+					if ( !torso || (torso // non-default torsos
+						&& !(torso->sprite == 1583
+							|| torso->sprite == 1584
+							|| torso->sprite == 2061
+							|| torso->sprite == 2062)) )
+					{
+						limb->z -= 0.2;
+					}
+				}
 				if ( this->z >= 3.9 && this->z <= 4.1 )
 				{
 					limb->yaw += PI / 8;
@@ -23926,6 +23956,33 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 				if ( limb->sprite == 1469 || limb->sprite == 1470 ) // loafer
 				{
 					limb->focalx += 0.25;
+				}
+				if ( !(limb->sprite >= 1579 && limb->sprite <= 1582)
+					&& !(limb->sprite >= 2057 && limb->sprite <= 2060) ) // non-default boots
+				{
+					Entity* torso = nullptr;
+					if ( behavior == &actMonster )
+					{
+						if ( auto node = list_Node(&children, 2) )
+						{
+							torso = (Entity*)node->element;
+						}
+					}
+					else if ( behavior == &actPlayer )
+					{
+						if ( auto node = list_Node(&children, 1) )
+						{
+							torso = (Entity*)node->element;
+						}
+					}
+					if ( !torso || (torso // non-default torsos
+						&& !(torso->sprite == 1583
+							|| torso->sprite == 1584
+							|| torso->sprite == 2061
+							|| torso->sprite == 2062)) )
+					{
+						limb->z -= 0.2;
+					}
 				}
 				if ( this->z >= 3.9 && this->z <= 4.1 )
 				{
