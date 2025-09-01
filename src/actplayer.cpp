@@ -9907,6 +9907,7 @@ void actPlayer(Entity* my)
 	}
 
 	Entity* helmet = nullptr;
+	bool ignoreHelmetOffsetFromMask = false;
 	Entity* legleft = nullptr;
 	Entity* legright = nullptr;
 	int torsoCovering = 0;
@@ -11449,7 +11450,14 @@ void actPlayer(Entity* my)
 					real_t bobScale = 0.08 * entity->skill[0];
 					entity->scalex = 1.01 + bobScale * sin(entity->fskill[3]);
 					entity->scaley = 1.01 + bobScale * sin(entity->fskill[3]);
-					entity->scalez = 1.01 - bobScale * sin(entity->fskill[3]);
+					if ( additionalLimb )
+					{
+						entity->scalez = 1.008 + 0.05 * sin(additionalLimb->fskill[0]) - bobScale * sin(entity->fskill[3]);
+					}
+					else
+					{
+						entity->scalez = 1.01 - bobScale * sin(entity->fskill[3]);
+					}
 
 					if ( lastHelmSprite[PLAYER_NUM] != entity->sprite )
 					{
@@ -11459,6 +11467,7 @@ void actPlayer(Entity* my)
 						entity->fskill[1] = 2 * PI * 0.0;
 						entity->fskill[2] = 0.0;
 					}
+					ignoreHelmetOffsetFromMask = true;
 
 					if ( entity->skill[0] > 0 )
 					{
@@ -11516,6 +11525,7 @@ void actPlayer(Entity* my)
 						entity->fskill[1] = 2 * PI * 0.0;
 						entity->fskill[2] = 0.0;
 					}
+					ignoreHelmetOffsetFromMask = true;
 
 					if ( entity->skill[0] > 0 )
 					{
@@ -11554,158 +11564,192 @@ void actPlayer(Entity* my)
 				break;
 				}
 					// mask
-				case 10:
-					entity->focalx = limbs[playerRace][10][0]; // 0
-					entity->focaly = limbs[playerRace][10][1]; // 0
-					entity->focalz = limbs[playerRace][10][2]; // .5
-					entity->pitch = my->pitch;
-					entity->roll = PI / 2;
-					if ( multiplayer != CLIENT )
+			case 10:
+			{
+				entity->focalx = limbs[playerRace][10][0]; // 0
+				entity->focaly = limbs[playerRace][10][1]; // 0
+				entity->focalz = limbs[playerRace][10][2]; // .5
+				entity->pitch = my->pitch;
+				entity->roll = PI / 2;
+				if ( multiplayer != CLIENT )
+				{
+					entity->flags[INVISIBLE_DITHER] = false;
+					if ( stats[PLAYER_NUM]->mask == NULL )
 					{
-						entity->flags[INVISIBLE_DITHER] = false;
-						if ( stats[PLAYER_NUM]->mask == NULL )
+						entity->flags[INVISIBLE] = true;
+					}
+					else
+					{
+						entity->flags[INVISIBLE] = false;
+					}
+
+					if ( my->isInvisible() && stats[PLAYER_NUM]->mask )
+					{
+						entity->flags[INVISIBLE] = true;
+						entity->flags[INVISIBLE_DITHER] = true;
+					}
+
+					if ( stats[PLAYER_NUM]->mask != NULL )
+					{
+						if ( stats[PLAYER_NUM]->mask->type == TOOL_GLASSES )
 						{
-							entity->flags[INVISIBLE] = true;
+							entity->sprite = 165; // GlassesWorn.vox
+						}
+						else if ( stats[PLAYER_NUM]->mask->type == MONOCLE )
+						{
+							entity->sprite = 1196; // MonocleWorn.vox
 						}
 						else
 						{
-							entity->flags[INVISIBLE] = false;
+							entity->sprite = itemModel(stats[PLAYER_NUM]->mask);
 						}
+					}
+					if ( multiplayer == SERVER )
+					{
+						// update sprites for clients
+						if ( entity->ticks >= *cvar_entity_bodypart_sync_tick )
+						{
+							bool updateBodypart = false;
+							if ( entity->skill[10] != entity->sprite )
+							{
+								entity->skill[10] = entity->sprite;
+								updateBodypart = true;
+							}
+							if ( entity->skill[11] != ((entity->flags[INVISIBLE] ? 1 : 0) + (entity->flags[INVISIBLE_DITHER] ? 2 : 0)) )
+							{
+								entity->skill[11] = ((entity->flags[INVISIBLE] ? 1 : 0) + (entity->flags[INVISIBLE_DITHER] ? 2 : 0));
+								updateBodypart = true;
+							}
+							if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
+							{
+								updateBodypart = true;
+							}
+							if ( updateBodypart )
+							{
+								serverUpdateEntityBodypart(my, bodypart);
+							}
+						}
+					}
+				}
+				else
+				{
+					if ( entity->sprite <= 0 )
+					{
+						entity->flags[INVISIBLE] = true;
+						entity->flags[INVISIBLE_DITHER] = false;
+					}
+				}
+				entity->scalex = 0.99;
+				entity->scaley = 0.99;
+				entity->scalez = 0.99;
 
-						if ( my->isInvisible() && stats[PLAYER_NUM]->mask )
-						{
-							entity->flags[INVISIBLE] = true;
-							entity->flags[INVISIBLE_DITHER] = true;
-						}
+				real_t helmscalex = 0.0;
+				real_t helmscaley = 0.0;
+				real_t helmscalez = 0.0;
+				if ( ignoreHelmetOffsetFromMask && helmet )
+				{
+					helmscalex = helmet->scalex;
+					helmscaley = helmet->scaley;
+					helmscalez = helmet->scalez;
+				}
 
-						if ( stats[PLAYER_NUM]->mask != NULL )
+				if ( EquipmentModelOffsets.modelOffsetExists(playerRace, entity->sprite, my->sprite) )
+				{
+					my->setHelmetLimbOffset(entity);
+					my->setHelmetLimbOffsetWithMask(helmet, entity);
+				}
+				else if ( entity->sprite == items[MASK_SHAMAN].index )
+				{
+					entity->roll = 0;
+					my->setHelmetLimbOffset(entity);
+					my->setHelmetLimbOffsetWithMask(helmet, entity);
+				}
+				else if ( entity->sprite == 165 || entity->sprite == 1196 )
+				{
+					entity->focalx = limbs[playerRace][10][0] + .25; // .25
+					entity->focaly = limbs[playerRace][10][1] - 2.5; // -2.25
+					entity->focalz = limbs[playerRace][10][2]; // .5
+					if ( entity->sprite == 1196 ) // MonocleWorn.vox
+					{
+						switch ( playerRace )
 						{
-							if ( stats[PLAYER_NUM]->mask->type == TOOL_GLASSES )
-							{
-								entity->sprite = 165; // GlassesWorn.vox
-							}
-							else if ( stats[PLAYER_NUM]->mask->type == MONOCLE )
-							{
-								entity->sprite = 1196; // MonocleWorn.vox
-							}
-							else
-							{
-								entity->sprite = itemModel(stats[PLAYER_NUM]->mask);
-							}
-						}
-						if ( multiplayer == SERVER )
-						{
-							// update sprites for clients
-							if ( entity->ticks >= *cvar_entity_bodypart_sync_tick )
-							{
-								bool updateBodypart = false;
-								if ( entity->skill[10] != entity->sprite )
-								{
-									entity->skill[10] = entity->sprite;
-									updateBodypart = true;
-								}
-								if ( entity->skill[11] != ((entity->flags[INVISIBLE] ? 1 : 0) + (entity->flags[INVISIBLE_DITHER] ? 2 : 0)) )
-								{
-									entity->skill[11] = ((entity->flags[INVISIBLE] ? 1 : 0) + (entity->flags[INVISIBLE_DITHER] ? 2 : 0));
-									updateBodypart = true;
-								}
-								if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
-								{
-									updateBodypart = true;
-								}
-								if ( updateBodypart )
-								{
-									serverUpdateEntityBodypart(my, bodypart);
-								}
-							}
+						case INCUBUS:
+							entity->focalx -= .4;
+							break;
+						case SUCCUBUS:
+							entity->focalx -= .25;
+							break;
+						case GOBLIN:
+							entity->focalx -= .5;
+							entity->focalz -= .05;
+							break;
+						default:
+							break;
 						}
 					}
-					else
+					if ( helmet && !helmet->flags[INVISIBLE] && 
+						(helmet->sprite == items[PUNISHER_HOOD].index
+							|| helmet->sprite == 201 // hood purple
+							|| helmet->sprite == items[HAT_HOOD_APPRENTICE].index) )
 					{
-						if ( entity->sprite <= 0 )
+						switch ( playerRace )
 						{
-							entity->flags[INVISIBLE] = true;
-							entity->flags[INVISIBLE_DITHER] = false;
+						case HUMAN:
+						case VAMPIRE:
+						case SHOPKEEPER:
+						case INSECTOID:
+							entity->focaly += 0.25; // lower glasses a bit.
+							break;
+						case INCUBUS:
+						case SUCCUBUS:
+						case AUTOMATON:
+						case GOBLIN:
+						case GOATMAN:
+						case SKELETON:
+							// no change.
+							break;
+						default:
+							break;
 						}
-					}
-					entity->scalex = 0.99;
-					entity->scaley = 0.99;
-					entity->scalez = 0.99;
-					
-					if ( EquipmentModelOffsets.modelOffsetExists(playerRace, entity->sprite, my->sprite) )
-					{
-						my->setHelmetLimbOffset(entity);
-						my->setHelmetLimbOffsetWithMask(helmet, entity);
-					}
-					else if ( entity->sprite == items[MASK_SHAMAN].index )
-					{
-						entity->roll = 0;
-						my->setHelmetLimbOffset(entity);
-						my->setHelmetLimbOffsetWithMask(helmet, entity);
-					}
-					else if ( entity->sprite == 165 || entity->sprite == 1196 )
-					{
-						entity->focalx = limbs[playerRace][10][0] + .25; // .25
-						entity->focaly = limbs[playerRace][10][1] - 2.5; // -2.25
-						entity->focalz = limbs[playerRace][10][2]; // .5
-						if ( entity->sprite == 1196 ) // MonocleWorn.vox
-						{
-							switch ( playerRace )
-							{
-							case INCUBUS:
-								entity->focalx -= .4;
-								break;
-							case SUCCUBUS:
-								entity->focalx -= .25;
-								break;
-							case GOBLIN:
-								entity->focalx -= .5;
-								entity->focalz -= .05;
-								break;
-							default:
-								break;
-							}
-						}
-						if ( helmet && !helmet->flags[INVISIBLE] && helmet->sprite == items[PUNISHER_HOOD].index )
-						{
-							switch ( playerRace )
-							{
-							case HUMAN:
-							case VAMPIRE:
-							case SHOPKEEPER:
-							case INSECTOID:
-								entity->focaly += 0.25; // lower glasses a bit.
-								break;
-							case INCUBUS:
-							case SUCCUBUS:
-							case AUTOMATON:
-							case GOBLIN:
-							case GOATMAN:
-							case SKELETON:
-								// no change.
-								break;
-							default:
-								break;
-							}
-						}
-					}
-					else if ( playerRace == INCUBUS
-						&& (entity->sprite == items[TOOL_BLINDFOLD].index
-							|| entity->sprite == items[TOOL_BLINDFOLD_FOCUS].index
-							|| entity->sprite == items[TOOL_BLINDFOLD_TELEPATHY].index) )
-					{
-						entity->focalx = limbs[playerRace][10][0] + .35; // .35
-						entity->focaly = limbs[playerRace][10][1] - 2.5; // -2
-						entity->focalz = limbs[playerRace][10][2]; // .5
-					}
-					else
-					{
-						entity->focalx = limbs[playerRace][10][0] + .35; // .35
-						entity->focaly = limbs[playerRace][10][1] - 2; // -2
-						entity->focalz = limbs[playerRace][10][2]; // .5
 					}
 
-					break;
+					if ( entity->sprite == 165 )
+					{
+						switch ( playerRace )
+						{
+						case HUMAN:
+						case VAMPIRE:
+							entity->focalx += 0.15;
+							break;
+						default:
+							break;
+						}
+					}
+				}
+				else if ( playerRace == INCUBUS
+					&& (entity->sprite == items[TOOL_BLINDFOLD].index
+						|| entity->sprite == items[TOOL_BLINDFOLD_FOCUS].index
+						|| entity->sprite == items[TOOL_BLINDFOLD_TELEPATHY].index) )
+				{
+					entity->focalx = limbs[playerRace][10][0] + .35; // .35
+					entity->focaly = limbs[playerRace][10][1] - 2.5; // -2
+					entity->focalz = limbs[playerRace][10][2]; // .5
+				}
+				else
+				{
+					entity->focalx = limbs[playerRace][10][0] + .35; // .35
+					entity->focaly = limbs[playerRace][10][1] - 2; // -2
+					entity->focalz = limbs[playerRace][10][2]; // .5
+				}
+
+				if ( ignoreHelmetOffsetFromMask && helmet )
+				{
+					helmet->scalex = helmscalex;
+					helmet->scaley = helmscaley;
+					helmet->scalez = helmscalez;
+				}
+				break;
+				}
 				case 11:
 					additionalLimb = entity;
 					entity->focalx = limbs[playerRace][11][0];
@@ -11738,9 +11782,9 @@ void actPlayer(Entity* my)
 						{
 							if ( moving )
 							{
-								entity->fskill[0] += std::min(dist * PLAYERWALKSPEED, 0.5 * PLAYERWALKSPEED); // move proportional to move speed
+								entity->fskill[0] += std::min(dist * PLAYERWALKSPEED, 0.35 * PLAYERWALKSPEED); // move proportional to move speed
 							}
-							else if ( my->monsterAttack != 0 )
+							else if ( PLAYER_ATTACK != 0 )
 							{
 								entity->fskill[0] += 0.5 * PLAYERWALKSPEED; // move fixed speed when attacking if stationary
 							}
@@ -11759,7 +11803,7 @@ void actPlayer(Entity* my)
 						{
 							if ( moving )
 							{
-								entity->fskill[0] -= std::min(dist * PLAYERWALKSPEED, 2.f * PLAYERWALKSPEED);
+								entity->fskill[0] -= std::min(dist * PLAYERWALKSPEED, 0.35 * PLAYERWALKSPEED);
 							}
 							else if ( PLAYER_ATTACK != 0 )
 							{
@@ -11948,6 +11992,8 @@ void actPlayer(Entity* my)
 							}
 						}
 						entity->yaw += entity->fskill[0];
+						entity->pitch = 0.0;
+						entity->roll = 0.0;
 					}
 					break;
 				case 12:
@@ -12042,6 +12088,8 @@ void actPlayer(Entity* my)
 						{
 							entity->yaw -= additionalLimb->fskill[0];
 						}
+						entity->pitch = 0.0;
+						entity->roll = 0.0;
 					}
 					break;
 				case 13:
