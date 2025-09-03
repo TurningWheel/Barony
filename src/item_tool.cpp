@@ -1189,6 +1189,7 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 			{
 				if ( player > 0 && !splitscreen )
 				{
+					Entity* oldSelected = client_selected[player];
 					client_selected[player] = &entity;
 					bool oldInRange = inrange[player];
 					inrange[player] = true;
@@ -1196,9 +1197,11 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 					actSink(&entity);
 					entity.skill[8] = 0;
 					inrange[player] = oldInRange;
+					client_selected[player] = oldSelected;
 				}
 				else if ( player == 0 || (player > 0 && splitscreen) )
 				{
+					Entity* oldSelected = selectedEntity[player];
 					selectedEntity[player] = &entity;
 					bool oldInRange = inrange[player];
 					inrange[player] = true;
@@ -1206,6 +1209,7 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 					actSink(&entity);
 					entity.skill[8] = 0;
 					inrange[player] = oldInRange;
+					selectedEntity[player] = oldSelected;
 				}
 			}
 			else if ( entity.skill[0] > 1 )
