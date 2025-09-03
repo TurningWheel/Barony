@@ -922,13 +922,13 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->focalz = limbs[SKELETON][1][2];
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->breastplate == nullptr )
+					if ( myStats->breastplate == nullptr || !itemModel(myStats->breastplate, false, my) )
 					{
 						entity->sprite = my->sprite == 1103 ? 1106 : 230;
 					}
 					else
 					{
-						entity->sprite = itemModel(myStats->breastplate);
+						entity->sprite = itemModel(myStats->breastplate, false, my);
 					}
 					if ( multiplayer == SERVER )
 					{

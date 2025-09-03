@@ -1417,13 +1417,13 @@ void shopkeeperMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			case 2:
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->breastplate == nullptr )
+					if ( myStats->breastplate == nullptr || !itemModel(myStats->breastplate, false, my) )
 					{
 						entity->sprite = 218;
 					}
 					else
 					{
-						entity->sprite = itemModel(myStats->breastplate);
+						entity->sprite = itemModel(myStats->breastplate, false, my);
 					}
 					if ( multiplayer == SERVER )
 					{

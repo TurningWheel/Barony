@@ -726,7 +726,7 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 
 Item** itemSlot(Stat* myStats, Item* item);
 
 enum Category itemCategory(const Item* item);
-Sint32 itemModel(const Item* item, bool shortModel = false);
+Sint32 itemModel(const Item* item, bool shortModel = false, Entity* creature = nullptr);
 Sint32 itemModelFirstperson(const Item* item);
 SDL_Surface* itemSprite(Item* item);
 void consumeItem(Item*& item, int player); //NOTE: Items have to be unequipped before calling this function on them. NOTE: THIS CAN FREE THE ITEM POINTER. Sets item to nullptr if it does.

@@ -882,14 +882,14 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			case LIMB_HUMANOID_TORSO:
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->breastplate == NULL )
+					if ( myStats->breastplate == NULL || !itemModel(myStats->breastplate, false, my) )
 					{
 						entity->sprite = my->sprite == 1087 ? 1090 :
 						    (my->sprite == 1095 ? 1098 : 482);
 					}
 					else
 					{
-						entity->sprite = itemModel(myStats->breastplate);
+						entity->sprite = itemModel(myStats->breastplate, false, my);
 					}
 					if ( multiplayer == SERVER )
 					{

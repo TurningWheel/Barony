@@ -852,13 +852,13 @@ void monsterGMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				torso = entity;
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->breastplate == nullptr )
+					if ( myStats->breastplate == nullptr || !itemModel(myStats->breastplate, true, my) )
 					{
 						entity->sprite = my->sprite == 1569 ? 1583 : 1584;
 					}
 					else
 					{
-						entity->sprite = itemModel(myStats->breastplate, true);
+						entity->sprite = itemModel(myStats->breastplate, true, my);
 					}
 					if ( multiplayer == SERVER )
 					{

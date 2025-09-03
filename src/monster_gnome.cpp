@@ -1074,7 +1074,7 @@ void gnomeMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				torso = entity;
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->breastplate == nullptr )
+					if ( myStats->breastplate == nullptr || !itemModel(myStats->breastplate, true, my) )
 					{
 						if ( gnomeVariant == GNOME_THIEF_MELEE )
 						{
@@ -1091,7 +1091,7 @@ void gnomeMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 					else
 					{
-						entity->sprite = itemModel(myStats->breastplate, true);
+						entity->sprite = itemModel(myStats->breastplate, true, my);
 					}
 					if ( multiplayer == SERVER )
 					{

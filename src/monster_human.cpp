@@ -1139,7 +1139,7 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->focalz = limbs[HUMAN][1][2];
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->breastplate == nullptr )
+					if ( myStats->breastplate == nullptr || !itemModel(myStats->breastplate, false, my) )
 					{
 						switch ( myStats->stat_appearance / 6 )
 						{
@@ -1156,7 +1156,7 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 					else
 					{
-						entity->sprite = itemModel(myStats->breastplate);
+						entity->sprite = itemModel(myStats->breastplate, false, my);
 					}
 					if ( multiplayer == SERVER )
 					{

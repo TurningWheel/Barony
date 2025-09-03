@@ -959,7 +959,7 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->focalz = limbs[GOATMAN][1][2];
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->breastplate == nullptr )
+					if ( myStats->breastplate == nullptr || !itemModel(myStats->breastplate, false, my) )
 					{
 						entity->sprite =
 						    my->sprite == 1025 ? 1028 :
@@ -967,7 +967,7 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 					else
 					{
-						entity->sprite = itemModel(myStats->breastplate);
+						entity->sprite = itemModel(myStats->breastplate, false, my);
 					}
 					if ( multiplayer == SERVER )
 					{

@@ -949,11 +949,68 @@ char* Item::getName() const
 
 -------------------------------------------------------------------------------*/
 
-Sint32 itemModel(const Item* const item, bool shortModel)
+Sint32 itemModel(const Item* const item, bool shortModel, Entity* creature)
 {
 	if ( !item || item->type < 0 || item->type >= NUMITEMS )
 	{
 		return 0;
+	}
+
+	if ( creature && creature->behavior == &actMonster )
+	{
+		if ( item->type == IRON_PAULDRONS )
+		{
+			if ( creature->sprite == 1569 )
+			{
+				return 2142;
+			}
+			else if ( creature->sprite == 1570 )
+			{
+				return 2143;
+			}
+			return 0;
+		}
+		else if ( item->type == SHAWL )
+		{
+			if ( creature->sprite == 1569 )
+			{
+				if ( item->appearance % items[item->type].variations < 2 )
+				{
+					return 2144 + item->appearance % items[item->type].variations;
+				}
+			}
+			else if ( creature->sprite == 1570 )
+			{
+				if ( item->appearance % items[item->type].variations < 2 )
+				{
+					return 2146 + item->appearance % items[item->type].variations;
+				}
+			}
+			return 0;
+		}
+		else if ( !shortModel &&
+			(item->type == ROBE_WIZARD
+				|| item->type == ROBE_MONK
+				|| item->type == ROBE_CULTIST
+				|| item->type == ROBE_HEALER) )
+		{
+			if ( item->type == ROBE_WIZARD )
+			{
+				return 2148;
+			}
+			else if ( item->type == ROBE_MONK )
+			{
+				return 2151;
+			}
+			else if ( item->type == ROBE_CULTIST )
+			{
+				return 2149;
+			}
+			else if ( item->type == ROBE_HEALER )
+			{
+				return 2150;
+			}
+		}
 	}
 
 	int index = shortModel ? items[item->type].indexShort : items[item->type].index;

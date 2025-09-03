@@ -1019,13 +1019,13 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->focalz = limbs[INSECTOID][1][2];
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->breastplate == nullptr )
+					if ( myStats->breastplate == nullptr || !itemModel(myStats->breastplate, false, my) )
 					{
 						entity->sprite = my->sprite == 1057 ? 1060 : 458;
 					}
 					else
 					{
-						entity->sprite = itemModel(myStats->breastplate);
+						entity->sprite = itemModel(myStats->breastplate, false, my);
 						entity->scalex = 0.9;
 						// shrink the width of the breastplate
 						entity->scaley = 0.9;

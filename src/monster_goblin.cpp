@@ -697,7 +697,7 @@ void goblinMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->focalz = limbs[GOBLIN][1][2];
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->breastplate == nullptr )
+					if ( myStats->breastplate == nullptr || !itemModel(myStats->breastplate, false, my) )
 					{
 	                    const int torso_sprite = my->sprite == 1035 ? 1038 :
 	                        (my->sprite == 1039 ? 1042 : 183);
@@ -705,7 +705,7 @@ void goblinMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 					else
 					{
-						entity->sprite = itemModel(myStats->breastplate);
+						entity->sprite = itemModel(myStats->breastplate, false, my);
 					}
 					if ( multiplayer == SERVER )
 					{

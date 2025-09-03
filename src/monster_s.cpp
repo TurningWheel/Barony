@@ -986,7 +986,7 @@ void monsterSMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			entity->focalz = limbs[MONSTER_S][1][2];
 			if ( multiplayer != CLIENT )
 			{
-				if ( myStats->breastplate == nullptr )
+				if ( myStats->breastplate == nullptr || !itemModel(myStats->breastplate, false, my) )
 				{
 					entity->sprite =
 						(my->sprite == 1536 || my->sprite == 1537) ? 1560 :
@@ -994,7 +994,7 @@ void monsterSMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				}
 				else
 				{
-					entity->sprite = itemModel(myStats->breastplate);
+					entity->sprite = itemModel(myStats->breastplate, false, my);
 				}
 				if ( multiplayer == SERVER )
 				{
