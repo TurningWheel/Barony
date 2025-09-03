@@ -23915,8 +23915,8 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 				{
 					limb->focalx += 0.25;
 				}
-				if ( !(limb->sprite >= 1579 && limb->sprite <= 1582)
-					&& !(limb->sprite >= 2057 && limb->sprite <= 2060) ) // non-default boots
+				if ( true /*|| !(limb->sprite >= 1579 && limb->sprite <= 1582)
+					&& !(limb->sprite >= 2057 && limb->sprite <= 2060)*/ ) // non-default boots
 				{
 					Entity* torso = nullptr;
 					if ( behavior == &actMonster )
@@ -23957,8 +23957,8 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 				{
 					limb->focalx += 0.25;
 				}
-				if ( !(limb->sprite >= 1579 && limb->sprite <= 1582)
-					&& !(limb->sprite >= 2057 && limb->sprite <= 2060) ) // non-default boots
+				if ( true /*|| !(limb->sprite >= 1579 && limb->sprite <= 1582)
+					&& !(limb->sprite >= 2057 && limb->sprite <= 2060)*/ ) // non-default boots
 				{
 					Entity* torso = nullptr;
 					if ( behavior == &actMonster )
