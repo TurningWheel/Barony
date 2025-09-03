@@ -15574,10 +15574,10 @@ failed:
 				(svFlags & SV_FLAG_LIFESAVING) ||
 				Mods::disableSteamAchievements ) {
 				achievements->setColor(makeColor(180, 37, 37, 255));
-				achievements->setText("ACHIEVEMENTS DISABLED");
+				achievements->setText(Language::get(5389));
 			} else {
 				achievements->setColor(makeColor(37, 90, 255, 255));
-				achievements->setText("ACHIEVEMENTS ENABLED");
+				achievements->setText(Language::get(5390));
 			}
 			});
 		(*achievements->getTickCallback())(*achievements);
