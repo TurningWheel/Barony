@@ -166,6 +166,9 @@ Sint32 doorFrameSprite() {
 	if ( !strncmp(map.filename, "fortress", 8) ) {
 		return 1631;
 	}
+	if ( !strncmp(map.filename, "keep", 4) ) {
+		return 1699;
+	}
     return 1; // default door frame
 }
 

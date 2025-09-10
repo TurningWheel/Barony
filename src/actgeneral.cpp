@@ -661,6 +661,7 @@ int colliderGetSpellRange(Entity* my)
 	{
 	case 3:
 	case 4:
+	case 7:
 		range = 128;
 		break;
 	default:
@@ -739,7 +740,7 @@ void actColliderMushroomCap(Entity* my)
 	{
 		int range = colliderGetSpellRange(parent);
 		int effectType = parent->colliderSpellEvent % 1000;
-		if ( effectType == 3 || effectType == 4 )
+		if ( effectType == 3 || effectType == 4 || effectType == 7 )
 		{
 			range = 32;
 		}
@@ -771,7 +772,7 @@ void actColliderMushroomCap(Entity* my)
 			{
 				my->skill[0]--;
 
-				if ( (effectType == 3 || effectType == 4) && multiplayer != CLIENT )
+				if ( (effectType == 3 || effectType == 4 || effectType == 7) && multiplayer != CLIENT )
 				{
 					if ( Entity* target = uidToEntity(parent->colliderSpellTarget) )
 					{
@@ -788,7 +789,7 @@ void actColliderMushroomCap(Entity* my)
 						if ( Entity* missile = castSpell(
 							caster ? caster->getUID() : 0,
 							getSpellFromID(
-								effectType == 3 ? SPELL_SPORE_BOMB : SPELL_MYCELIUM_BOMB
+								(effectType == 3 || effectType == 7) ? SPELL_SPORE_BOMB : SPELL_MYCELIUM_BOMB
 							), false, true) )
 						{
 							missile->collisionIgnoreTargets.insert(parent->getUID());
@@ -956,7 +957,13 @@ void actColliderMushroomCap(Entity* my)
 							continue;
 						}
 
-						if ( applyGenericMagicDamage(caster ? caster : parent, entity, caster ? *caster : *parent, SPELL_MUSHROOM, 5, true, true) )
+						int damage = 5;
+						if ( effectType == 6 || effectType == 7 ) // player casted
+						{
+							damage = getSpellDamageFromID(SPELL_MUSHROOM, caster);
+						}
+
+						if ( applyGenericMagicDamage(caster ? caster : parent, entity, caster ? *caster : *parent, SPELL_MUSHROOM, damage, true, true) )
 						{
 							stats->killer = KilledBy::MUSHROOM;
 							entity->setObituary(Language::get(6753));
@@ -987,16 +994,20 @@ void actColliderMushroomCap(Entity* my)
 									}
 								}
 							}
-							else if ( effectType == 2 || effectType == 3 || effectType == 4 )
+							else if ( effectType == 2 || effectType == 3 || effectType == 4 || effectType == 6 || effectType == 7 )
 							{
 								spawnMagicEffectParticles(entity->x, entity->y, entity->z, 944);
 
-								if ( effectType == 3 )
+								if ( effectType == 3 || effectType == 6 || effectType == 7 )
 								{
 									bool wasEffected = stats->getEffectActive(EFF_POISONED);
 									if ( entity->setEffect(EFF_POISONED, true, 3 * TICKS_PER_SECOND + 10, false) )
 									{
 										spawnMagicEffectParticles(entity->x, entity->y, entity->z, 944);
+										if ( caster )
+										{
+											stats->poisonKiller = caster->getUID();
+										}
 									}
 								}
 
@@ -1149,6 +1160,25 @@ void Entity::colliderOnDestroy()
 			if ( isColliderBreakableContainer() )
 			{
 				Compendium_t::Events_t::eventUpdateWorld(killer->skill[2], Compendium_t::CPDM_CONTAINER_BROKEN, "containers", 1);
+			}
+		}
+	}
+
+	auto find = EditorEntityData_t::colliderData.find(colliderDamageTypes);
+	if ( find != EditorEntityData_t::colliderData.end() )
+	{
+		if ( find->second.name == "mushroom_spell_casted" )
+		{
+			for ( int i = 0; i < 3; ++i )
+			{
+				dropItemMonster(newItem(FOOD_SHROOM, SERVICABLE, 0, 1, 0, true, nullptr), this, nullptr);
+			}
+		}
+		else if ( find->second.name == "germinate_spell_casted" )
+		{
+			for ( int i = 0; i < 3; ++i )
+			{
+				dropItemMonster(newItem(FOOD_NUT, SERVICABLE, 0, 1, 0, true, nullptr), this, nullptr);
 			}
 		}
 	}
@@ -1744,6 +1774,11 @@ void actColliderDecoration(Entity* my)
 				}
 				entity->setUID(-3);
 			}
+			else if ( colliderData.name.find("germinate_spell") != std::string::npos )
+			{
+				collidersToRaiseToHeight.insert(my->getUID());
+				my->z = 16.0;
+			}
 		}
 	}
 
@@ -1754,6 +1789,17 @@ void actColliderDecoration(Entity* my)
 		if ( my->z <= 8.0 )
 		{
 			collidersToRaiseToHeight.erase(my->getUID());
+
+			if ( multiplayer != CLIENT )
+			{
+				auto& colliderData = EditorEntityData_t::colliderData[my->colliderDamageTypes];
+				if ( colliderData.name.find("germinate_spell") != std::string::npos )
+				{
+					Entity* caster = my->colliderCreatedParent != 0 ? uidToEntity(my->colliderCreatedParent) : my;
+					createRadiusMagic(SPELL_HEAL_PULSE, caster,
+						my->x, my->y, 24, 10 * TICKS_PER_SECOND, nullptr);
+				}
+			}
 		}
 		if ( my->z > 8.5 )
 		{
@@ -1886,7 +1932,7 @@ void actColliderDecoration(Entity* my)
 					{
 						my->colliderSpellEventCooldown--;
 					}
-					else
+					else if ( (my->colliderSpellEvent % 1000) != 8 && (my->colliderSpellEvent % 1000) != 9 )
 					{
 						Entity* found = nullptr;
 						bool rescan = false;
@@ -1896,7 +1942,7 @@ void actColliderDecoration(Entity* my)
 							my->colliderSpellEventCooldown = 4 * TICKS_PER_SECOND;
 							my->colliderSpellEventTrigger = 100 + 75 + local_rng.rand() % 21;
 							serverUpdateEntitySkill(my, 21);
-							if ( effectType == 3 || effectType == 4 )
+							if ( effectType == 3 || effectType == 4 || effectType == 7 )
 							{
 								rescan = true; // look for a random target
 							}
@@ -1953,7 +1999,7 @@ void actColliderDecoration(Entity* my)
 									lineTraceTarget(my, my->x, my->y, tangent, traceDist, 0, false, entity);
 									if ( hit.entity == entity )
 									{
-										if ( effectType == 3 || effectType == 4 )
+										if ( effectType == 3 || effectType == 4 || effectType == 7 )
 										{
 											entitiesInRange.push_back(entity);
 										}
@@ -1966,7 +2012,7 @@ void actColliderDecoration(Entity* my)
 								}
 							}
 
-							if ( effectType == 3 || effectType == 4 )
+							if ( effectType == 3 || effectType == 4 || effectType == 7 )
 							{
 								if ( entitiesInRange.size() > 0 )
 								{

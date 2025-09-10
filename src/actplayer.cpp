@@ -3359,7 +3359,11 @@ real_t Player::PlayerMovement_t::getSpeedFactor(real_t weightratio, Sint32 DEX)
 	{
 		speedFactor = std::min(speedFactor, 5.0);
 	}
-
+	if ( stats[player.playernum]->getEffectActive(EFF_BASTION_MUSHROOM)
+		|| stats[player.playernum]->getEffectActive(EFF_BASTION_ROOTS) )
+	{
+		speedFactor *= 0.3;
+	}
 
 	for ( node_t* node = stats[player.playernum]->inventory.first; node != NULL; node = node->next )
 	{
@@ -4947,6 +4951,53 @@ void actPlayer(Entity* my)
 			//}
 		}
 		else if ( *cvar_pbaoe == 15 )
+		{
+			/*Entity* spellTimer = createParticleTimer(my, TICKS_PER_SECOND, -1);
+			spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_BASTION_MUSHROOM;
+			spellTimer->particleTimerCountdownSprite = -1;
+
+			spellTimer->yaw = my->yaw;
+			spellTimer->x = my->x + 40.0 * cos(my->yaw);
+			spellTimer->y = my->y + 40.0 * sin(my->yaw);*/
+
+			//for ( int i = 0; i < 8; ++i )
+			//{
+			//	Entity* fx = createParticleAestheticOrbit(my, 1885, 3 * TICKS_PER_SECOND, PARTICLE_EFFECT_MUSHROOM_SPELL);
+			//	fx->x = my->x;
+			//	fx->y = my->y;
+			//	fx->actmagicOrbitDist = 32;
+			//	fx->yaw = my->yaw + (i * PI / 4.0);
+			//	fx->pitch = -PI;
+			//	fx->fskill[4] = fx->yaw;
+
+			//	Entity* gib = spawnGib(my, 1885);
+			//	gib->vel_x = 1.5 * cos(fx->yaw);
+			//	gib->vel_y = 1.5 * sin(fx->yaw);
+			//	gib->lightBonus = vec4{ 0.25f, 0.25f, 0.25f, 0.f };
+			//}
+
+			//if ( Entity* fx = createParticleAOEIndicator(my, my->x, my->y, 0.0, TICKS_PER_SECOND * 2, 32) )
+			//{
+			//	fx->actSpriteFollowUID = my->getUID();
+			//	fx->actSpriteCheckParentExists = 0;
+			//	//fx->scalex = 0.8;
+			//	//fx->scaley = 0.8;
+			//	if ( auto indicator = AOEIndicators_t::getIndicator(fx->skill[10]) )
+			//	{
+			//		//indicator->arc = PI / 2;
+			//		indicator->indicatorColor = makeColorRGB(0, 145, 16);
+			//		indicator->loop = false;
+			//		indicator->gradient = 4;
+			//		indicator->framesPerTick = 2;
+			//		indicator->ticksPerUpdate = 1;
+			//		indicator->delayTicks = 0;
+			//		indicator->expireAlphaRate = 0.95;
+			//	}
+			//}
+			//playSoundEntityLocal(my, 169, 128);
+			//playSoundEntityLocal(my, 717 + local_rng.rand() % 3, 128);
+		}
+		else if ( *cvar_pbaoe == 16 )
 		{
 			createParticleBolas(my, 1917, 2 * TICKS_PER_SECOND, nullptr);
 		}
@@ -9946,6 +9997,12 @@ void actPlayer(Entity* my)
 				}
 			}
 
+			if ( bodypart > 11 )
+			{
+				// for GENIUS flag to not draw into the camera
+				entity->sizex = 4;
+				entity->sizey = 4;
+			}
 			if ( bodypart > 13 )
 			{
 				entity->flags[INVISIBLE] = true;
@@ -12191,6 +12248,7 @@ void actPlayer(Entity* my)
 						entity->flags[INVISIBLE_DITHER] = false;
 					}
 					entity->roll = 0.5 * abs(legleft->pitch);
+					entity->pitch = 0.0;
 					//entity->roll = 0.0;
 					//entity->pitch = legleft->pitch;
 					break;
@@ -12235,6 +12293,7 @@ void actPlayer(Entity* my)
 						entity->flags[INVISIBLE_DITHER] = false;
 					}
 					entity->roll = -0.5 * abs(legright->pitch);
+					entity->pitch = 0.0;
 					//entity->roll = 0.0;
 					//entity->pitch = legright->pitch;
 					break;
@@ -13492,6 +13551,9 @@ void playerAnimateSpider(Entity* my)
 		if ( bodypart > 11 )
 		{
 			previous = (Entity*)node->prev->element;
+			// for GENIUS flag to draw into the camera
+			entity->sizex = 1;
+			entity->sizey = 1;
 		}
 		entity->x = my->x;
 		entity->y = my->y;

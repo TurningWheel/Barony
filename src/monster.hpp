@@ -589,9 +589,9 @@ static std::vector<std::vector<unsigned int>> classStatGrowth =
 	{	1,	7,	1,	4,	7,	4 }, // HUNTER 20
 	{	2,	5,	3,	4,	3,	7 },
 	{	6,	5,	5,	3,	4,	2 },
-	{	0,	0,	0,	0,	0,	0 },
-	{	0,	0,	0,	0,	0,	0 },
-	{	0,	0,	0,	0,	0,	0 }
+	{	2,	2,	3,	8,	4,	5 },
+	{	1,	1,	1,	1,	1,	1 },
+	{	1,	1,	1,	1,	1,	1 }
 };
 
 enum AllyNPCCommand : int

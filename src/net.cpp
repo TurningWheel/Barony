@@ -3381,6 +3381,12 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 				spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_EARTH_ELEMENTAL_DIE;
 				break;
 			}
+			case PARTICLE_EFFECT_BASTION_MUSHROOM:
+			{
+				Uint32 casterUid = SDLNet_Read32(&net_packet->data[21]);
+				createMushroomSpellEffect(uidToEntity(casterUid), particle_x, particle_y);
+				break;
+			}
 			default:
 				break;
 		}
@@ -7713,6 +7719,7 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 				castSpellProps.target_y = (SDLNet_Read32(&net_packet->data[22]) / 256.0);
 				castSpellProps.targetUID = (SDLNet_Read32(&net_packet->data[26]));
 				castSpellProps.wallDir = net_packet->data[30];
+				castSpellProps.optionalData = net_packet->data[31];
 				castSpell(players[player]->entity->getUID(), thespell, false, false, spellbookCast, &castSpellProps);
 			}
 			else

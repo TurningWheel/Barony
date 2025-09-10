@@ -637,11 +637,11 @@ void sustainedSpellProcess(Entity& entity, Stat& myStats, int effectID, std::map
 		{
 			//Deduct mana from caster. Cancel spell if not enough mana (simply leave sustained at false).
 			int oldMP = caster->getMP();
-			bool deducted = caster->safeConsumeMP(1); //Consume 1 mana ever duration / mana seconds
+			bool deducted = caster->safeConsumeMP(getSustainCostOfSpell(sustainedSpell_hijacked[effectID], &entity)); //Consume X mana ever duration / mana seconds
 			if ( deducted )
 			{
 				sustained = true;
-				myStats.setEffectActive(effectID, 1);
+				myStats.setEffectActive(effectID, sustainedSpell_hijacked[effectID]->channel_effectStrength);
 				myStats.EFFECTS_TIMERS[effectID] = sustainedSpell_hijacked[effectID]->channel_duration;
 
 				if ( caster->behavior == &actPlayer )
@@ -738,7 +738,8 @@ void Entity::effectTimes()
 		}
 
 		bool unsustain = false;
-		switch ( spell->ID )
+		int spellID = spell->ID;
+		switch ( spellID )
 		{
 			case SPELL_BLOOD_WARD:
 				sustainedSpell_hijacked[EFF_BLOOD_WARD] = spell;
@@ -818,6 +819,106 @@ void Entity::effectTimes()
 			case SPELL_ENVENOM_WEAPON:
 				sustainedSpell_hijacked[EFF_ENVENOM_WEAPON] = spell;
 				if ( !myStats->getEffectActive(EFF_ENVENOM_WEAPON) )
+				{
+					for ( int c = 0; c < MAXPLAYERS; ++c )
+					{
+						if ( players[c] && players[c]->entity && players[c]->entity == uidToEntity(spell->caster) )
+						{
+							messagePlayer(c, MESSAGE_COMBAT, Language::get(6503), spell->getSpellName());    //If cure ailments or somesuch bombs the status effects.
+						}
+					}
+					node_t* temp = nullptr;
+					if ( node->prev )
+					{
+						temp = node->prev;
+					}
+					else if ( node->next )
+					{
+						temp = node->next;
+					}
+					unsustain = true;
+					list_RemoveNode(node); //Remove this here node.
+					node = temp;
+				}
+				break;
+			case SPELL_THORNS:
+				sustainedSpell_hijacked[EFF_THORNS] = spell;
+				if ( !myStats->getEffectActive(EFF_THORNS) )
+				{
+					for ( int c = 0; c < MAXPLAYERS; ++c )
+					{
+						if ( players[c] && players[c]->entity && players[c]->entity == uidToEntity(spell->caster) )
+						{
+							messagePlayer(c, MESSAGE_COMBAT, Language::get(6503), spell->getSpellName());    //If cure ailments or somesuch bombs the status effects.
+						}
+					}
+					node_t* temp = nullptr;
+					if ( node->prev )
+					{
+						temp = node->prev;
+					}
+					else if ( node->next )
+					{
+						temp = node->next;
+					}
+					unsustain = true;
+					list_RemoveNode(node); //Remove this here node.
+					node = temp;
+				}
+				break;
+			case SPELL_BLADEVINES:
+				sustainedSpell_hijacked[EFF_BLADEVINES] = spell;
+				if ( !myStats->getEffectActive(EFF_BLADEVINES) )
+				{
+					for ( int c = 0; c < MAXPLAYERS; ++c )
+					{
+						if ( players[c] && players[c]->entity && players[c]->entity == uidToEntity(spell->caster) )
+						{
+							messagePlayer(c, MESSAGE_COMBAT, Language::get(6503), spell->getSpellName());    //If cure ailments or somesuch bombs the status effects.
+						}
+					}
+					node_t* temp = nullptr;
+					if ( node->prev )
+					{
+						temp = node->prev;
+					}
+					else if ( node->next )
+					{
+						temp = node->next;
+					}
+					unsustain = true;
+					list_RemoveNode(node); //Remove this here node.
+					node = temp;
+				}
+				break;
+			case SPELL_BASTION_MUSHROOM:
+				sustainedSpell_hijacked[EFF_BASTION_MUSHROOM] = spell;
+				if ( !myStats->getEffectActive(EFF_BASTION_MUSHROOM) )
+				{
+					for ( int c = 0; c < MAXPLAYERS; ++c )
+					{
+						if ( players[c] && players[c]->entity && players[c]->entity == uidToEntity(spell->caster) )
+						{
+							messagePlayer(c, MESSAGE_COMBAT, Language::get(6503), spell->getSpellName());    //If cure ailments or somesuch bombs the status effects.
+						}
+					}
+					node_t* temp = nullptr;
+					if ( node->prev )
+					{
+						temp = node->prev;
+					}
+					else if ( node->next )
+					{
+						temp = node->next;
+					}
+					unsustain = true;
+					list_RemoveNode(node); //Remove this here node.
+					node = temp;
+				}
+				break;
+			case SPELL_BASTION_ROOTS:
+				sustainedSpell_hijacked[EFF_BASTION_ROOTS] = spell;
+				if ( !myStats->getEffectActive(EFF_BASTION_ROOTS) )
 				{
 					for ( int c = 0; c < MAXPLAYERS; ++c )
 					{
@@ -1203,7 +1304,7 @@ void Entity::effectTimes()
 			{
 				strcpy((char*)net_packet->data, "UNCH");
 				net_packet->data[4] = player;
-				SDLNet_Write32(spell->ID, &net_packet->data[5]);
+				SDLNet_Write32(spellID, &net_packet->data[5]);
 				net_packet->address.host = net_clients[player - 1].host;
 				net_packet->address.port = net_clients[player - 1].port;
 				net_packet->len = 9;
@@ -1686,6 +1787,42 @@ void Entity::effectTimes()
 						if ( dissipate )
 						{
 							messagePlayer(player, MESSAGE_STATUS, Language::get(6529));
+							updateClient = true;
+						}
+						break;
+					case EFF_THORNS:
+						dissipate = true; //Remove the effect by default.
+						sustainedSpellProcess(*this, *myStats, c, sustainedSpell_hijacked, dissipate, unsustainSpell);
+						if ( dissipate )
+						{
+							messagePlayer(player, MESSAGE_STATUS, Language::get(6797));
+							updateClient = true;
+						}
+						break;
+					case EFF_BLADEVINES:
+						dissipate = true; //Remove the effect by default.
+						sustainedSpellProcess(*this, *myStats, c, sustainedSpell_hijacked, dissipate, unsustainSpell);
+						if ( dissipate )
+						{
+							messagePlayer(player, MESSAGE_STATUS, Language::get(6798));
+							updateClient = true;
+						}
+						break;
+					case EFF_BASTION_MUSHROOM:
+						dissipate = true; //Remove the effect by default.
+						sustainedSpellProcess(*this, *myStats, c, sustainedSpell_hijacked, dissipate, unsustainSpell);
+						if ( dissipate )
+						{
+							messagePlayer(player, MESSAGE_STATUS, Language::get(6801));
+							updateClient = true;
+						}
+						break;
+					case EFF_BASTION_ROOTS:
+						dissipate = true; //Remove the effect by default.
+						sustainedSpellProcess(*this, *myStats, c, sustainedSpell_hijacked, dissipate, unsustainSpell);
+						if ( dissipate )
+						{
+							messagePlayer(player, MESSAGE_STATUS, Language::get(6802));
 							updateClient = true;
 						}
 						break;
@@ -9780,6 +9917,82 @@ void Entity::attack(int pose, int charge, Entity* target)
 				{
 					updateEnemyBar(this, hit.entity, Language::get(hit.entity->getColliderLangName()), entityHP, hit.entity->colliderMaxHP, false,
 						DamageGib::DMG_DEFAULT);
+					
+					int thornsEffect = 0;
+					Entity* colliderParent = hit.entity->colliderCreatedParent != 0 ? uidToEntity(hit.entity->colliderCreatedParent) : nullptr;
+					if ( hit.entity->colliderSpellEvent % 1000 == 8 )
+					{
+						thornsEffect += getSpellDamageFromID(SPELL_THORNS, colliderParent);
+					}
+					else if ( hit.entity->colliderSpellEvent % 1000 == 9 )
+					{
+						thornsEffect += getSpellDamageFromID(SPELL_BLADEVINES, colliderParent);
+					}
+
+					if ( thornsEffect != 0 )
+					{
+						if ( hit.entity->colliderSpellEvent % 1000 == 9 )
+						{
+							if ( !myStats->getEffectActive(EFF_BLEEDING) )
+							{
+								if ( setEffect(EFF_BLEEDING, true, 3 * TICKS_PER_SECOND, false) )
+								{
+									if ( colliderParent != this )
+									{
+										myStats->bleedInflictedBy = colliderParent ? colliderParent->getUID() : 0;
+									}
+									for ( int gibs = 0; gibs < 3; ++gibs )
+									{
+										Entity* gib = spawnGib(this);
+										serverSpawnGibForClient(gib);
+									}
+								}
+							}
+						}
+
+						this->modHP(-abs(thornsEffect));
+						if ( myStats->HP <= 0 && myStats->OLDHP > myStats->HP )
+						{
+							if ( colliderParent && (colliderParent->behavior == &actMonster || colliderParent->behavior == &actPlayer) )
+							{
+								colliderParent->awardXP(this, true, true);
+							}
+						}
+						if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
+						{
+							strcpy((char*)net_packet->data, "SHAK");
+							net_packet->data[4] = 10; // turns into .1
+							net_packet->data[5] = 10;
+							net_packet->address.host = net_clients[player - 1].host;
+							net_packet->address.port = net_clients[player - 1].port;
+							net_packet->len = 6;
+							sendPacketSafe(net_sock, -1, net_packet, player - 1);
+						}
+						else if ( player >= 0 && players[player]->isLocalPlayer() )
+						{
+							cameravars[player].shakex += 0.1;
+							cameravars[player].shakey += 10;
+						}
+
+						if ( player >= 0 )
+						{
+							Uint32 color = makeColorRGB(255, 0, 0);
+							messagePlayerColor(player, MESSAGE_COMBAT, color, Language::get(6263), 
+								Language::get(hit.entity->getColliderLangName())); // you were hurt attacking the %s
+						}
+
+						// update enemy bar for attacker
+						if ( !strcmp(myStats->name, "") )
+						{
+							updateEnemyBar(colliderParent, this, getMonsterLocalizedName(myStats->type).c_str(), myStats->HP, myStats->MAXHP, false,
+								DamageGib::DMG_DEFAULT);
+						}
+						else
+						{
+							updateEnemyBar(colliderParent, this, myStats->name, myStats->HP, myStats->MAXHP, false,
+								DamageGib::DMG_DEFAULT);
+						}
+					}
 				}
 				else if ( hit.entity->behavior == &::actFurniture )
 				{
@@ -10161,6 +10374,15 @@ void Entity::attack(int pose, int charge, Entity* target)
 					if ( behavior == &actMonster && myStats->getEffectActive(EFF_VAMPIRICAURA) )
 					{
 						damage += 5; // 5 bonus damage after reductions.
+					}
+
+					if ( hitstats->getEffectActive(EFF_THORNS) )
+					{
+						thornsEffect += getSpellDamageFromID(SPELL_THORNS, hit.entity);
+					}
+					if ( hitstats->getEffectActive(EFF_BLADEVINES) )
+					{
+						thornsEffect += getSpellDamageFromID(SPELL_BLADEVINES, hit.entity);
 					}
 
 					bool backstab = false;
@@ -12794,6 +13016,22 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 					if ( thornsEffect != 0 && damage > 0 )
 					{
+						if ( hitstats->getEffectActive(EFF_BLADEVINES) )
+						{
+							if ( !myStats->getEffectActive(EFF_BLEEDING) )
+							{
+								if ( setEffect(EFF_BLEEDING, true, 3 * TICKS_PER_SECOND, false) )
+								{
+									myStats->bleedInflictedBy = hit.entity->getUID();
+									for ( int gibs = 0; gibs < 3; ++gibs )
+									{
+										Entity* gib = spawnGib(this);
+										serverSpawnGibForClient(gib);
+									}
+								}
+							}
+						}
+
 						this->modHP(-abs(thornsEffect));
 						if ( myStats->HP <= 0 && myStats->OLDHP > myStats->HP )
 						{
