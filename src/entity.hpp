@@ -789,6 +789,7 @@ public:
 
 	// actGib
 	Sint32& actGibHitGroundEvent = skill[10];
+	Sint32& actGibMagicParticle = skill[11];
 
 	// actWind
 	Sint32& actWindParticleEffect = skill[1];

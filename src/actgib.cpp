@@ -44,7 +44,6 @@
 #define GIB_VEL_DECAY my->fskill[7]
 #define GIB_DELAY_MOVE my->skill[8]
 #define GIB_HIT_GROUND my->skill[9]
-#define GIB_HIT_GROUND_EVENT my->skill[10]
 
 void poof(Entity* my) {
     if (GIB_POOF) {
@@ -130,7 +129,14 @@ void actGib(Entity* my)
 		}
 		else
 		{
-			my->yaw += sqrt(GIB_VELX * GIB_VELX + GIB_VELY * GIB_VELY) * .05;
+			if ( my->actGibMagicParticle > 0 )
+			{
+				my->pitch = atan(my->vel_z / std::max(1.0, sqrt(GIB_VELX * GIB_VELX + GIB_VELY * GIB_VELY)));
+			}
+			else
+			{
+				my->yaw += sqrt(GIB_VELX * GIB_VELX + GIB_VELY * GIB_VELY) * .05;
+			}
 		}
 
 		if ( abs(GIB_OSC_H) > 0.00001 )
@@ -165,6 +171,20 @@ void actGib(Entity* my)
 	if ( GIB_LIGHTING )
 	{
 		my->removeLightField();
+	}
+
+	if ( my->actGibMagicParticle > 0 && ticks % 2 == 0 )
+	{
+		if ( Entity* fx = spawnMagicParticleCustom(my, my->actGibMagicParticle, 1.0, 1.0) )
+		{
+			fx->flags[SPRITE] = true;// my->flags[SPRITE];
+			fx->ditheringDisabled = true;
+			//fx->lightBonus = my->lightBonus;
+			//fx->flags[BRIGHT] = my->flags[BRIGHT];
+			//fx->scalex = my->scalex;
+			//fx->scaley = my->scaley;
+			//fx->scalez = my->scalez;
+		}
 	}
 
 	if ( my->actGibHitGroundEvent == 1 )
@@ -203,7 +223,7 @@ void actGib(Entity* my)
 		{
 			GIB_VELZ += GIB_GRAVITY;
 			my->z += GIB_VELZ;
-			if ( GIB_SWIRL > 0.00001 )
+			if ( GIB_SWIRL > 0.00001 || my->actGibMagicParticle > 0 )
 			{
 				// don't roll swirling
 			}
