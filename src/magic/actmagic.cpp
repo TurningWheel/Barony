@@ -15691,8 +15691,13 @@ void actParticleShatterEarth(Entity* my)
 							{
 								if ( caster->behavior == &actPlayer )
 								{
-									Compendium_t::Events_t::eventUpdateMonster(caster->skill[2], Compendium_t::CPDM_RECRUITED, monster, 1);
+									//Compendium_t::Events_t::eventUpdateMonster(caster->skill[2], Compendium_t::CPDM_RECRUITED, monster, 1);
 									monster->monsterAllyIndex = caster->skill[2];
+									monster->monsterAllySummonRank = 1;
+									if ( Stat* monsterStats = monster->getStats() )
+									{
+										monsterStats->setAttribute("SUMMONED_CREATURE", "1");
+									}
 									if ( multiplayer == SERVER )
 									{
 										serverUpdateEntitySkill(monster, 42); // update monsterAllyIndex for clients.

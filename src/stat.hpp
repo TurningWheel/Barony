@@ -132,6 +132,10 @@ static const int EFF_RATION_HEARTY = 107;
 static const int EFF_RATION_HERBAL = 108;
 static const int EFF_RATION_SWEET = 109;
 static const int EFF_GROWTH = 110;
+static const int EFF_THORNS = 111;
+static const int EFF_BLADEVINES = 112;
+static const int EFF_BASTION_MUSHROOM = 113;
+static const int EFF_BASTION_ROOTS = 114;
 static const int NUMEFFECTS = 128;
 
 // stats

@@ -4616,6 +4616,8 @@ int Item::getBaseFoodSatiation(ItemType type)
 			hungerIncrease = 100;
 			break;
 		case FOOD_APPLE:
+		case FOOD_SHROOM:
+		case FOOD_NUT:
 			hungerIncrease = 200;
 			break;
 		case FOOD_MEAT:
@@ -4880,6 +4882,8 @@ void item_Food(Item*& item, int player)
 			case FOOD_RATION_HEARTY:
 			case FOOD_RATION_HERBAL:
 			case FOOD_RATION_SWEET:
+			case FOOD_SHROOM:
+			case FOOD_NUT:
 				hungerIncrease = Item::getBaseFoodSatiation(item->type);
 				break;
 			case FOOD_BLOOD:
@@ -4964,6 +4968,8 @@ void item_Food(Item*& item, int player)
 						manaRegenPercent = 0.1;
 						break;
 					case FOOD_APPLE:
+					case FOOD_SHROOM:
+					case FOOD_NUT:
 						manaRegenPercent = 0.2;
 						break;
 					case FOOD_MEAT:
@@ -5900,6 +5906,8 @@ void item_FoodAutomaton(Item*& item, int player)
 		case FOOD_RATION_HEARTY:
 		case FOOD_RATION_HERBAL:
 		case FOOD_RATION_SWEET:
+		case FOOD_SHROOM:
+		case FOOD_NUT:
 			if ( svFlags & SV_FLAG_HUNGER )
 			{
 				messagePlayer(player, MESSAGE_STATUS, Language::get(3697)); // no effect.
@@ -6111,6 +6119,8 @@ bool itemIsConsumableByAutomaton(const Item& item)
 		case FOOD_RATION_HEARTY:
 		case FOOD_RATION_HERBAL:
 		case FOOD_RATION_SWEET:
+		case FOOD_SHROOM:
+		case FOOD_NUT:
 
 		case GEM_ROCK:
 		case GEM_GLASS:

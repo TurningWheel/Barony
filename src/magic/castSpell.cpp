@@ -3145,6 +3145,28 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						spellTimer->skill[2] = val;
 
 						spawnMagicEffectParticles(spellTimer->x, spellTimer->y, 7.5, 171);
+
+						// kill old summons.
+						if ( caster->behavior == &actPlayer )
+						{
+							for ( node = stats[caster->skill[2]]->FOLLOWERS.first; node != nullptr; node = node->next )
+							{
+								Entity* follower = nullptr;
+								if ( (Uint32*)(node)->element )
+								{
+									follower = uidToEntity(*((Uint32*)(node)->element));
+								}
+								if ( follower && follower->monsterAllySummonRank != 0 )
+								{
+									Stat* followerStats = follower->getStats();
+									if ( followerStats )
+									{
+										follower->setMP(followerStats->MAXMP * (followerStats->HP / static_cast<float>(followerStats->MAXHP)));
+										follower->setHP(0);
+									}
+								}
+							}
+						}
 					}
 				}
 
@@ -6995,6 +7017,13 @@ bool spellIsNaturallyLearnedByRaceOrClass(Entity& caster, Stat& stat, int spellI
 	else if ( client_classes[playernum] == CLASS_22 )
 	{
 		if ( spellID == SPELL_BOOBY_TRAP )
+		{
+			return true;
+		}
+	}
+	else if ( client_classes[playernum] == CLASS_23 )
+	{
+		if ( spellID == SPELL_BLESS_FOOD || spellID == SPELL_EARTH_ELEMENTAL || spellID == SPELL_TELEKINESIS )
 		{
 			return true;
 		}

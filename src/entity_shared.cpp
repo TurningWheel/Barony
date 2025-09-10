@@ -1165,6 +1165,8 @@ char itemNameStrings[NUM_ITEM_STRINGS][32] =
 	"quilted_cap",
 	"hood_teal",
 	"chain_coif",
+	"food_shroom",
+	"food_nut",
 	""
 };
 

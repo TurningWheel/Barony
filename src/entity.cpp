@@ -3466,7 +3466,7 @@ void Entity::handleEffects(Stat* myStats)
 			Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_LVL_GAINED, "leveling up", 1);
 			Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_LVL_MAX, "leveling up", myStats->LVL);
 		}
-		else if ( behavior == &actMonster && monsterAllySummonRank != 0 )
+		else if ( behavior == &actMonster && monsterAllySummonRank != 0 && myStats->type == SKELETON )
 		{
 			bool secondSummon = false;
 			if ( MonsterData_t::nameMatchesSpecialNPCName(*myStats, "skeleton knight") )
@@ -5672,7 +5672,7 @@ void Entity::handleEffects(Stat* myStats)
 				if ( mySummon && mySummon->monsterAllySummonRank != 0 )
 				{
 					Stat* mySummonStats = mySummon->getStats();
-					if ( mySummonStats )
+					if ( mySummonStats && mySummonStats->type == SKELETON )
 					{
 						if ( numSummonedAllies == 0 )
 						{

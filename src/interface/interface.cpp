@@ -4516,6 +4516,11 @@ int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monste
 		}
 	}
 
+	if ( option == ALLY_CMD_SPECIAL && monsterType == EARTH_ELEMENTAL )
+	{
+		return -1; // disabled due to monster.
+	}
+
 	if ( option == ALLY_CMD_SPECIAL
 		&& follower->monsterAllySpecialCooldown != 0 )
 	{
@@ -6697,6 +6702,10 @@ bool GenericGUIMenu::shouldDisplayItemInGUI(Item* item)
 			|| itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_ADORCISE_INSTRUMENT )
 		{
 			return isItemAdorcisable(item);
+		}
+		else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_PUNCTURE_VOID )
+		{
+			return isItemVoidable(item);
 		}
 		return false;
 	}

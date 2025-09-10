@@ -2953,6 +2953,8 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		case FOOD_RATION_HEARTY:
 		case FOOD_RATION_HERBAL:
 		case FOOD_RATION_SWEET:
+		case FOOD_SHROOM:
+		case FOOD_NUT:
 			item_Food(item, player);
 			break;
 		case FOOD_TIN:

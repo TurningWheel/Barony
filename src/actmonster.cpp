@@ -11981,7 +11981,7 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 	switch ( command )
 	{
 		case ALLY_CMD_RETURN_SOUL:
-			if ( monsterAllySummonRank != 0 )
+			if ( monsterAllySummonRank != 0 && myStats->type == SKELETON )
 			{
 				float manaToRefund = myStats->MAXMP * (myStats->HP / static_cast<float>(myStats->MAXHP));
 				setMP(static_cast<int>(manaToRefund));
@@ -11990,6 +11990,11 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 				{
 					steamAchievementClient(playerLeader, "BARONY_ACH_EXTERNAL_BATTERY");
 				}
+			}
+			else if ( monsterAllySummonRank != 0 && myStats->type == EARTH_ELEMENTAL )
+			{
+				setHP(0);
+				setObituary(Language::get(6803));
 			}
 			else if ( myStats->type == MONSTER_ADORCISED_WEAPON && myStats->getAttribute("adorcised_weapon") != "" )
 			{
@@ -13397,6 +13402,15 @@ bool Entity::monsterConsumeFoodEntity(Entity* food, Stat* myStats)
 	switch ( item->type )
 	{
 		case FOOD_APPLE:
+		case FOOD_NUT:
+		case FOOD_SHROOM:
+		case FOOD_RATION:
+		case FOOD_RATION_SPICY:
+		case FOOD_RATION_SOUR:
+		case FOOD_RATION_BITTER:
+		case FOOD_RATION_HEARTY:
+		case FOOD_RATION_HERBAL:
+		case FOOD_RATION_SWEET:
 			heal = 5 + item->beatitude;
 			buffDuration = std::min(buffDuration, 2 * TICKS_PER_SECOND);
 			myStats->HUNGER += 200;

@@ -484,7 +484,7 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 								if ( mySummon && mySummon->monsterAllySummonRank != 0 )
 								{
 									Stat* mySummonStats = mySummon->getStats();
-									if ( mySummonStats )
+									if ( mySummonStats && mySummonStats->type == SKELETON )
 									{
 										int mp = (mySummonStats->MAXMP * (mySummonStats->HP / static_cast<float>(mySummonStats->MAXHP)));
 										if ( numSummonedAllies == 0 )

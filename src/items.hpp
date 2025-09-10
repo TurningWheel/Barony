@@ -421,6 +421,8 @@ typedef enum ItemType
 	QUILTED_CAP,
 	HOOD_TEAL,
 	CHAIN_COIF,
+	FOOD_SHROOM,
+	FOOD_NUT,
 	ITEM_ENUM_MAX
 } ItemType;
 const int NUMITEMS = ITEM_ENUM_MAX;
