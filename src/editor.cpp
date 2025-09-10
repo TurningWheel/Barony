@@ -2162,6 +2162,8 @@ int main(int argc, char** argv)
 			textInsertCaratPosition = -1;
 		}
 
+		GL_CHECK_ERR(glViewport(0, 0, xres, yres)); // fix for resizing editor with hdr enabled.
+
 		if ( !spritepalette && !tilepalette )
 		{
 			allowediting = 1;
