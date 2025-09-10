@@ -3142,6 +3142,30 @@ namespace ConsoleCommands {
 		disableFPSLimitOnNetworkMessages = !disableFPSLimitOnNetworkMessages;
 		});
 
+	static ConsoleCommand ccmd_addspell("/addspell", "teach player some spells (cheat)", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+
+		if ( argc < 2 )
+		{
+			return;
+		}
+		int spellID = atoi(argv[1]);
+		if ( allGameSpells.find(spellID) != allGameSpells.end() )
+		{
+			if ( spell_t* spell = allGameSpells[spellID] )
+			{
+				bool oldIntro = intro;
+				intro = true;
+				bool learned = addSpell(spell->ID, clientnum, true);
+				intro = oldIntro;
+			}
+		}
+	});
+
 	static ConsoleCommand ccmd_allspells1("/allspells1", "teach player some spells (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
