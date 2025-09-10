@@ -815,7 +815,7 @@ void spellcastingAnimationManager_deactivate(spellcasting_animation_manager_t* a
 	}
 }
 
-void spellcastingAnimationManager_completeSpell(spellcasting_animation_manager_t* animation_manager, bool deactivate)
+void spellcastingAnimationManager_completeSpell(int player, spellcasting_animation_manager_t* animation_manager, bool deactivate)
 {
 	if ( animation_manager->rangefinder == SpellRangefinderType::RANGEFINDER_TARGET
 		|| animation_manager->rangefinder == SpellRangefinderType::RANGEFINDER_TOUCH_FLOOR_TILE
@@ -828,6 +828,31 @@ void spellcastingAnimationManager_completeSpell(spellcasting_animation_manager_t
 		castSpellProps.target_x = animation_manager->target_x;
 		castSpellProps.target_y = animation_manager->target_y;
 		castSpellProps.wallDir = animation_manager->wallDir;
+		if ( animation_manager->spell )
+		{
+			if ( animation_manager->spell->ID == SPELL_MUSHROOM )
+			{
+				if ( spellInList(&players[player]->magic.spellList, getSpellFromID(SPELL_SPORES)) )
+				{
+					castSpellProps.optionalData = 1;
+				}
+				if ( spellInList(&players[player]->magic.spellList, getSpellFromID(SPELL_SPORE_BOMB)) )
+				{
+					castSpellProps.optionalData = 2;
+				}
+			}
+			else if ( animation_manager->spell->ID == SPELL_SHRUB )
+			{
+				if ( spellInList(&players[player]->magic.spellList, getSpellFromID(SPELL_THORNS)) )
+				{
+					castSpellProps.optionalData = 1;
+				}
+				if ( spellInList(&players[player]->magic.spellList, getSpellFromID(SPELL_BLADEVINES)) )
+				{
+					castSpellProps.optionalData = 2;
+				}
+			}
+		}
 		castSpell(animation_manager->caster, animation_manager->spell, false, false, animation_manager->active_spellbook, &castSpellProps); //Actually cast the spell.
 	}
 	else if ( animation_manager->rangefinder == SpellRangefinderType::RANGEFINDER_TOUCH
@@ -836,6 +861,33 @@ void spellcastingAnimationManager_completeSpell(spellcasting_animation_manager_t
 		CastSpellProps_t castSpellProps;
 		castSpellProps.targetUID = animation_manager->targetUid;
 		castSpellProps.wallDir = animation_manager->wallDir;
+		castSpell(animation_manager->caster, animation_manager->spell, false, false, animation_manager->active_spellbook, &castSpellProps); //Actually cast the spell.
+	}
+	else if ( animation_manager->spell && (animation_manager->spell->ID == SPELL_BASTION_MUSHROOM || animation_manager->spell->ID == SPELL_BASTION_ROOTS) )
+	{
+		CastSpellProps_t castSpellProps;
+		if ( animation_manager->spell->ID == SPELL_BASTION_MUSHROOM )
+		{
+			if ( spellInList(&players[player]->magic.spellList, getSpellFromID(SPELL_SPORES)) )
+			{
+				castSpellProps.optionalData = 1;
+			}
+			if ( spellInList(&players[player]->magic.spellList, getSpellFromID(SPELL_SPORE_BOMB)) )
+			{
+				castSpellProps.optionalData = 2;
+			}
+		}
+		else if ( animation_manager->spell->ID == SPELL_BASTION_ROOTS )
+		{
+			if ( spellInList(&players[player]->magic.spellList, getSpellFromID(SPELL_THORNS)) )
+			{
+				castSpellProps.optionalData = 1;
+			}
+			if ( spellInList(&players[player]->magic.spellList, getSpellFromID(SPELL_BLADEVINES)) )
+			{
+				castSpellProps.optionalData = 2;
+			}
+		}
 		castSpell(animation_manager->caster, animation_manager->spell, false, false, animation_manager->active_spellbook, &castSpellProps); //Actually cast the spell.
 	}
 	else
@@ -1273,7 +1325,7 @@ void actLeftHandMagic(Entity* my)
 				auto& anim = cast_animation[HANDMAGIC_PLAYERNUM];
 				if ( anim.throw_count == 0 )
 				{
-					spellcastingAnimationManager_completeSpell(&cast_animation[HANDMAGIC_PLAYERNUM], false);
+					spellcastingAnimationManager_completeSpell(HANDMAGIC_PLAYERNUM, &cast_animation[HANDMAGIC_PLAYERNUM], false);
 					if ( players[HANDMAGIC_PLAYERNUM]->entity->skill[3] == 0 )   // debug cam OFF
 					{
 						cameravars[HANDMAGIC_PLAYERNUM].shakex += .03;
@@ -1375,7 +1427,7 @@ void actLeftHandMagic(Entity* my)
 			case ANIM_SPELL_COMPLETE_SPELL:
 			default:
 				//messagePlayer(HANDMAGIC_PLAYERNUM, "DEFAULT CASE");
-				spellcastingAnimationManager_completeSpell(&cast_animation[HANDMAGIC_PLAYERNUM], true);
+				spellcastingAnimationManager_completeSpell(HANDMAGIC_PLAYERNUM, &cast_animation[HANDMAGIC_PLAYERNUM], true);
 				break;
 		}
 	}

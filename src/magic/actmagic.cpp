@@ -7510,6 +7510,7 @@ void floorMagicClientReceive(Entity* my)
 	}
 	else if ( my->actfloorMagicType == ParticleTimerEffect_t::EFFECT_ROOTS_PATH
 		|| my->actfloorMagicType == ParticleTimerEffect_t::EFFECT_ROOTS_SELF
+		|| my->actfloorMagicType == ParticleTimerEffect_t::EFFECT_ROOTS_SELF_SUSTAIN
 		|| my->actfloorMagicType == ParticleTimerEffect_t::EFFECT_ROOTS_TILE )
 	{
 		my->scalex = 0.25;
@@ -7534,6 +7535,7 @@ void floorMagicParticleSetUID(Entity& fx, bool noupdate)
 	val |= (((Uint16)(0) & 0xFFF) << 8);
 	if ( fx.actfloorMagicType == ParticleTimerEffect_t::EFFECT_ROOTS_PATH
 		|| fx.actfloorMagicType == ParticleTimerEffect_t::EFFECT_ROOTS_SELF
+		|| fx.actfloorMagicType == ParticleTimerEffect_t::EFFECT_ROOTS_SELF_SUSTAIN
 		|| fx.actfloorMagicType == ParticleTimerEffect_t::EFFECT_ROOTS_TILE )
 	{
 		val |= (((Uint16)(fx.skill[0]) & 0xFFF) << 8);
@@ -7543,7 +7545,7 @@ void floorMagicParticleSetUID(Entity& fx, bool noupdate)
 	fx.skill[2] = val;
 }
 
-bool floorMagicCreateRoots(real_t x, real_t y, Entity* caster, int damage, int spellID, int duration, int particleTimerAction)
+Entity* floorMagicCreateRoots(real_t x, real_t y, Entity* caster, int damage, int spellID, int duration, int particleTimerAction)
 {
 	int mapx = static_cast<int>(x) >> 4;
 	int mapy = static_cast<int>(y) >> 4;
@@ -7554,12 +7556,12 @@ bool floorMagicCreateRoots(real_t x, real_t y, Entity* caster, int damage, int s
 			|| swimmingtiles[map.tiles[mapIndex]]
 				|| lavatiles[map.tiles[mapIndex]] )
 		{
-			return false;
+			return nullptr;
 		}
 	}
 	else
 	{
-		return false;
+		return nullptr;
 	}
 
 	Entity* spellTimer = createParticleTimer(caster, duration + 10, -1);
@@ -7585,7 +7587,7 @@ bool floorMagicCreateRoots(real_t x, real_t y, Entity* caster, int damage, int s
 
 	spellTimer->particleTimerVariable1 = damage;
 	spellTimer->particleTimerVariable2 = spellID;
-	return true;
+	return spellTimer;
 }
 
 void floorMagicCreateSpores(Entity* spawnOnEntity, real_t x, real_t y, Entity* caster, int damage, int spellID)
@@ -9804,6 +9806,125 @@ void actParticleTimer(Entity* my)
 					}
 				}
 			}
+			else if ( my->particleTimerCountdownAction == PARTICLE_TIMER_ACTION_BASTION_MUSHROOM )
+			{
+				if ( multiplayer != CLIENT )
+				{
+					Entity* parent = uidToEntity(my->parent);
+					if ( parent )
+					{
+						my->x = parent->x;
+						my->y = parent->y;
+					}
+					if ( my->ticks == 1 )
+					{
+						createMushroomSpellEffect(parent, my->x, my->y);
+						serverSpawnMiscParticlesAtLocation(my->x, my->y, 0, PARTICLE_EFFECT_BASTION_MUSHROOM, 0, 0, 0, my->parent);
+
+						if ( my->particleTimerVariable3 == SPELL_SPORE_BOMB )
+						{
+							floorMagicCreateSpores(parent ? parent : my, my->x, my->y, parent, 0, SPELL_SPORES);
+						}
+					}
+
+					if ( my->ticks <= 50 && parent )
+					{
+						real_t range = 32.0;
+						std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 1 + (range / 16));
+						for ( auto it : entLists )
+						{
+							node_t* node;
+							for ( node = it->first; node != nullptr; node = node->next )
+							{
+								Entity* entity = (Entity*)node->element;
+								if ( !(entity->behavior == &actPlayer || entity->behavior == &actMonster) )
+								{
+									continue;
+								}
+								if ( !entity->monsterIsTargetable() )
+								{
+									continue;
+								}
+								if ( entityDist(my, entity) > (real_t)(range + 4.0) )
+								{
+									continue;
+								}
+
+								Stat* stats = entity->getStats();
+								if ( !stats ) { continue; }
+
+								if ( parent == entity || parent->checkFriend(entity) )
+								{
+									continue;
+								}
+
+								auto props = getParticleEmitterHitProps(my->getUID(), entity);
+								if ( !props )
+								{
+									continue;
+								}
+								if ( props->hits > 0 )
+								{
+									continue;
+								}
+
+								real_t tangent = atan2(entity->y - parent->y, entity->x - parent->x);
+								bool oldPassable = entity->flags[PASSABLE];
+								entity->flags[PASSABLE] = false;
+								real_t d = lineTraceTarget(parent, parent->x, parent->y, tangent, (real_t)(range + 4.0), 0, false, entity);
+								entity->flags[PASSABLE] = oldPassable;
+								if ( hit.entity != entity )
+								{
+									continue;
+								}
+
+								int damage = getSpellDamageFromID(SPELL_BASTION_MUSHROOM, parent);
+								if ( applyGenericMagicDamage(parent, entity, *parent, SPELL_BASTION_MUSHROOM, damage, true, true) )
+								{
+									props->hits++;
+									props->tick = ticks;
+
+									bool wasEffected = stats->getEffectActive(EFF_POISONED);
+									if ( entity->setEffect(EFF_POISONED, true, 3 * TICKS_PER_SECOND + 10, false) )
+									{
+										spawnMagicEffectParticles(entity->x, entity->y, entity->z, 944);
+										stats->poisonKiller = parent->getUID();
+									}
+
+									if ( entity->setEffect(EFF_KNOCKBACK, true, 30, false) )
+									{
+										real_t pushbackMultiplier = 0.9;
+										real_t tangent = atan2(entity->y - parent->y, entity->x - parent->x);
+										if ( entity->behavior == &actPlayer )
+										{
+											if ( !players[entity->skill[2]]->isLocalPlayer() )
+											{
+												entity->monsterKnockbackVelocity = pushbackMultiplier;
+												entity->monsterKnockbackTangentDir = tangent;
+												serverUpdateEntityFSkill(entity, 11);
+												serverUpdateEntityFSkill(entity, 9);
+											}
+											else
+											{
+												entity->monsterKnockbackVelocity = pushbackMultiplier;
+												entity->monsterKnockbackTangentDir = tangent;
+											}
+										}
+										else if ( entity->behavior == &actMonster )
+										{
+											entity->vel_x = cos(tangent) * pushbackMultiplier;
+											entity->vel_y = sin(tangent) * pushbackMultiplier;
+											entity->monsterKnockbackVelocity = 0.01;
+											entity->monsterKnockbackUID = parent->colliderCreatedParent;
+											entity->monsterKnockbackTangentDir = tangent;
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
 			else if ( my->particleTimerCountdownAction == PARTICLE_TIMER_ACTION_ROOTS1 )
 			{
 				if ( my->ticks == 1 && multiplayer != CLIENT )
@@ -9816,6 +9937,52 @@ void actParticleTimer(Entity* my)
 					fx->sizex = 6;
 					fx->sizey = 6;
 					floorMagicParticleSetUID(*fx, true);
+				}
+			}
+			else if ( my->particleTimerCountdownAction == PARTICLE_TIMER_ACTION_ROOTS_SUSTAIN )
+			{
+				if ( my->ticks == 1 && multiplayer != CLIENT )
+				{
+					Entity* fx = createFloorMagic(ParticleTimerEffect_t::EffectType::EFFECT_ROOTS_SELF_SUSTAIN,
+						1765, my->x, my->y, 7.5, my->yaw, PARTICLE_LIFE);
+					//playSoundEntity(fx, data.sfx, 64);
+					fx->parent = my->getUID();
+					fx->actmagicNoParticle = 1;
+					fx->sizex = 6;
+					fx->sizey = 6;
+					floorMagicParticleSetUID(*fx, true);
+				}
+
+				if ( multiplayer != CLIENT )
+				{
+					Entity* parent = uidToEntity(my->parent);
+					bool sustain = false;
+					if ( parent && parent->behavior == &actPlayer )
+					{
+						if ( Stat* stats = parent->getStats() )
+						{
+							for ( node_t* node = stats->magic_effects.first; node; node = node->next )
+							{
+								if ( spell_t* spell = (spell_t*)node->element )
+								{
+									if ( spell->ID == SPELL_BASTION_ROOTS && spell->sustain )
+									{
+										sustain = true;
+										break;
+									}
+								}
+							}
+						}
+					}
+
+					if ( !sustain )
+					{
+						PARTICLE_LIFE = -1;
+					}
+					else
+					{
+						PARTICLE_LIFE = std::max(PARTICLE_LIFE, TICKS_PER_SECOND);
+					}
 				}
 			}
 			else if ( my->particleTimerCountdownAction == PARTICLE_TIMER_ACTION_ROOTS_SINGLE_TILE )
@@ -10181,6 +10348,7 @@ void actParticleTimer(Entity* my)
 							fx->actmagicNoParticle = 1;
 						}
 						else if ( data.effectType == ParticleTimerEffect_t::EFFECT_ROOTS_SELF
+							|| data.effectType == ParticleTimerEffect_t::EFFECT_ROOTS_SELF_SUSTAIN
 							|| data.effectType == ParticleTimerEffect_t::EFFECT_ROOTS_TILE
 							|| data.effectType == ParticleTimerEffect_t::EFFECT_ROOTS_PATH )
 						{
@@ -12914,6 +13082,62 @@ Entity* createParticleRoot(int sprite, real_t x, real_t y, real_t z, real_t dir,
 	return entity;
 }
 
+void createMushroomSpellEffect(Entity* caster, real_t x, real_t y)
+{
+	for ( int i = 0; i < 8; ++i )
+	{
+		Entity* fx = createParticleAestheticOrbit(caster, 1885, 3 * TICKS_PER_SECOND, PARTICLE_EFFECT_MUSHROOM_SPELL);
+		fx->x = caster ? caster->x : x;
+		fx->y = caster ? caster->y : y;
+		fx->actmagicOrbitDist = 32;
+		fx->yaw = (caster ? caster->yaw : 0.0) + (i * PI / 4.0);
+		fx->pitch = -PI;
+		fx->fskill[4] = fx->yaw;
+
+		Entity* gib = nullptr;
+		if ( multiplayer == CLIENT )
+		{
+			gib = spawnGibClient(x, y, caster ? caster->z : 0, 1885);
+		}
+		else
+		{
+			gib = spawnGib(caster, 1885);
+		}
+
+		if ( gib )
+		{
+			if ( caster )
+			{
+				gib->z = caster->z;
+			}
+			gib->vel_x = 1.5 * cos(fx->yaw);
+			gib->vel_y = 1.5 * sin(fx->yaw);
+			gib->lightBonus = vec4{ 0.25f, 0.25f, 0.25f, 0.f };
+		}
+	}
+
+	if ( Entity* fx = createParticleAOEIndicator(caster, caster ? caster->x : x, caster ? caster->y : y, 0.0, TICKS_PER_SECOND * 2, 32) )
+	{
+		fx->actSpriteFollowUID = caster ? caster->getUID() : 0;
+		fx->actSpriteCheckParentExists = 0;
+		//fx->scalex = 0.8;
+		//fx->scaley = 0.8;
+		if ( auto indicator = AOEIndicators_t::getIndicator(fx->skill[10]) )
+		{
+			//indicator->arc = PI / 2;
+			indicator->indicatorColor = makeColorRGB(0, 145, 16);
+			indicator->loop = false;
+			indicator->gradient = 4;
+			indicator->framesPerTick = 2;
+			indicator->ticksPerUpdate = 1;
+			indicator->delayTicks = 0;
+			indicator->expireAlphaRate = 0.95;
+		}
+	}
+	playSoundPosLocal(x, y, 169, 128);
+	playSoundPosLocal(x, y, 717 + local_rng.rand() % 3, 128);
+}
+
 Entity* createVortexMagic(int sprite, real_t x, real_t y, real_t z, real_t dir, Uint32 lifetime)
 {
 	Entity* entity = newEntity(sprite, 1, map.entities, nullptr); //Sprite entity.
@@ -12973,7 +13197,17 @@ void actParticleRoot(Entity* my)
 	}
 	else
 	{
+		if ( my->skill[6] == 1 ) // check parent exists instead of countdown 
+		{
+			if ( !uidToEntity(my->parent) )
+			{
+				PARTICLE_LIFE = -1;
+			}
+		}
+		else
+		{
 		--PARTICLE_LIFE;
+		}
 		if ( my->fskill[1] < 1.0 )
 		{
 			my->fskill[1] += 0.05;
@@ -13156,6 +13390,11 @@ void actParticleFloorMagic(Entity* my)
 			--PARTICLE_LIFE;
 			my->x += my->vel_x * cos(my->yaw);
 			my->y += my->vel_y * sin(my->yaw);
+
+			if ( my->actfloorMagicType == ParticleTimerEffect_t::EffectType::EFFECT_ROOTS_SELF_SUSTAIN )
+			{
+				PARTICLE_LIFE = std::max(TICKS_PER_SECOND, PARTICLE_LIFE); // wait for parent timer to expire
+			}
 		}
 		else
 		{
@@ -13170,6 +13409,7 @@ void actParticleFloorMagic(Entity* my)
 
 		if ( my->actfloorMagicType == ParticleTimerEffect_t::EffectType::EFFECT_ROOTS_SELF
 			|| my->actfloorMagicType == ParticleTimerEffect_t::EffectType::EFFECT_ROOTS_TILE
+			|| my->actfloorMagicType == ParticleTimerEffect_t::EffectType::EFFECT_ROOTS_SELF_SUSTAIN
 			|| my->actfloorMagicType == ParticleTimerEffect_t::EffectType::EFFECT_ROOTS_PATH )
 		{
 			if ( my->scalex < 1.0 )
@@ -13345,7 +13585,8 @@ void actParticleFloorMagic(Entity* my)
 				root->skill[0] -= root->actmagicDelayMove;
 			}*/
 		}
-		else if ( my->actfloorMagicType == ParticleTimerEffect_t::EffectType::EFFECT_ROOTS_SELF )
+		else if ( my->actfloorMagicType == ParticleTimerEffect_t::EffectType::EFFECT_ROOTS_SELF
+			|| my->actfloorMagicType == ParticleTimerEffect_t::EffectType::EFFECT_ROOTS_SELF_SUSTAIN )
 		{
 			BaronyRNG rng;
 			Uint32 rootSeed = my->getUID();
@@ -13406,6 +13647,10 @@ void actParticleFloorMagic(Entity* my)
 					root->skill[0] -= root->actmagicDelayMove;
 					root->parent = my->getUID();
 					locations.erase(locations.begin() + pick);
+					if ( my->actfloorMagicType == ParticleTimerEffect_t::EffectType::EFFECT_ROOTS_SELF_SUSTAIN )
+					{
+						root->skill[6] = 1; // check parent exists instead of countdown
+					}
 				}
 			}
 		}
@@ -13457,6 +13702,7 @@ void actParticleFloorMagic(Entity* my)
 
 			int radius = 1;
 			if ( my->actfloorMagicType == ParticleTimerEffect_t::EffectType::EFFECT_ROOTS_SELF
+				|| my->actfloorMagicType == ParticleTimerEffect_t::EffectType::EFFECT_ROOTS_SELF_SUSTAIN
 				|| my->actfloorMagicType == ParticleTimerEffect_t::EffectType::EFFECT_ROOTS_TILE )
 			{
 				radius = 2;
@@ -13684,6 +13930,7 @@ void actParticleFloorMagic(Entity* my)
 							}
 						}
 						else if ( my->actfloorMagicType == ParticleTimerEffect_t::EffectType::EFFECT_ROOTS_SELF
+							|| my->actfloorMagicType == ParticleTimerEffect_t::EffectType::EFFECT_ROOTS_SELF_SUSTAIN
 							|| my->actfloorMagicType == ParticleTimerEffect_t::EffectType::EFFECT_ROOTS_TILE
 							|| my->actfloorMagicType == ParticleTimerEffect_t::EffectType::EFFECT_ROOTS_PATH )
 						{
@@ -13692,7 +13939,7 @@ void actParticleFloorMagic(Entity* my)
 							{
 								continue;
 							}
-							if ( particleEmitterHitPropsTimer->hits > 0 && (ticks - particleEmitterHitPropsTimer->tick) < 1.25 * TICKS_PER_SECOND )
+							if ( particleEmitterHitPropsTimer->hits > 0 && (ticks - particleEmitterHitPropsTimer->tick) < 1.5 * TICKS_PER_SECOND )
 							{
 								continue;
 							}
@@ -13744,16 +13991,37 @@ void actParticleFloorMagic(Entity* my)
 										}
 										else
 										{
+											if ( parentTimer && parentTimer->particleTimerVariable2 == 0 )
+											{
 											damage = getSpellDamageFromID(SPELL_ROOTS, caster);
+										}
+											else
+											{
+												damage = getSpellDamageFromID(parentTimer ? parentTimer->particleTimerVariable2 : SPELL_ROOTS, caster);
+											}
 										}
 
 										if ( applyGenericMagicDamage(caster, entity, caster ? *caster : *my, parentTimer->particleTimerVariable1, damage, true, true) )
 										{
-
-										}
 										if ( entity->setEffect(EFF_ROOTED, true, TICKS_PER_SECOND, false) )
 										{
 											spawnMagicEffectParticles(entity->x, entity->y, entity->z, 1758);
+										}
+											if ( parentTimer && parentTimer->particleTimerVariable3 == SPELL_BLADEVINES )
+											{
+												if ( !stats->getEffectActive(EFF_BLEEDING) )
+												{
+													if ( entity->setEffect(EFF_BLEEDING, true, 3 * TICKS_PER_SECOND, false) )
+													{
+														stats->bleedInflictedBy = caster ? caster->getUID() : 0;
+														for ( int gibs = 0; gibs < 3; ++gibs )
+														{
+															Entity* gib = spawnGib(entity);
+															serverSpawnGibForClient(gib);
+														}
+													}
+												}
+											}
 										}
 										particleEmitterHitPropsTimer->hits++;
 										particleEmitterHitPropsTimer->tick = ticks;
@@ -15055,6 +15323,9 @@ Entity* createRadiusMagic(int spellID, Entity* caster, real_t x, real_t y, real_
 	case SPELL_SPHERE_SILENCE:
 		sprite = 1818;
 		break;
+	case SPELL_HEAL_PULSE:
+		sprite = 1686;
+		break;
 	default:
 		break;
 	}
@@ -15199,6 +15470,9 @@ void actRadiusMagic(Entity* my)
 				case 1818:
 					color = makeColorRGB(124, 107, 209);
 					break;
+				case 1686:
+					color = makeColorRGB(252, 107, 35);
+					break;
 				default:
 					break;
 				}
@@ -15215,12 +15489,26 @@ void actRadiusMagic(Entity* my)
 				indicator->radius = 4;
 				indicator->loopType = 1;
 				indicator->loopTimer = 50;
+
+				if ( my->actRadiusMagicID == SPELL_HEAL_PULSE )
+				{
+					indicator->loopTimer = 3.5 * TICKS_PER_SECOND;
 			}
+		}
 		}
 		spawnMagicEffectParticles(my->x, my->y, my->z, my->sprite);
 		createMagicRadiusBadge(*my);
 		my->actRadiusMagicInit = 1;
+	}
 
+	bool checkArea = true;
+	if ( my->actRadiusMagicID == SPELL_HEAL_PULSE )
+	{
+		checkArea = false;
+		if ( my->ticks % (4 * TICKS_PER_SECOND) == 1 )
+		{
+			checkArea = true;
+		}
 	}
 
 	if ( multiplayer == SERVER )
@@ -15241,6 +15529,8 @@ void actRadiusMagic(Entity* my)
 	{
 		--PARTICLE_LIFE;
 
+		if ( checkArea )
+		{
 		auto entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 1 + my->actRadiusMagicDist / 16);
 		std::vector<Entity*> applyEffects;
 		for ( auto it : entLists )
@@ -15250,7 +15540,33 @@ void actRadiusMagic(Entity* my)
 			{
 				if ( Entity* entity = (Entity*)node->element )
 				{
-					if ( my->actRadiusMagicID == SPELL_NULL_AREA )
+						if ( my->actRadiusMagicID == SPELL_HEAL_PULSE )
+						{
+							if ( entity->behavior == &actPlayer || (entity->behavior == &actMonster && !entity->isInertMimic()) )
+							{
+								if ( entity->monsterIsTargetable() )
+								{
+									if ( entityDist(my, entity) <= (real_t)my->actRadiusMagicDist )
+									{
+										if ( caster && caster->checkFriend(entity) )
+										{
+											auto props = getParticleEmitterHitProps(my->getUID(), entity);
+											if ( !props )
+											{
+												continue;
+											}
+											/*if ( props->hits > 5 )
+											{
+												continue;
+											}*/
+											props->hits++;
+											applyEffects.push_back(entity);
+										}
+									}
+								}
+							}
+						}
+						else if ( my->actRadiusMagicID == SPELL_NULL_AREA )
 					{
 						if ( entity->behavior == &actMagicMissile )
 						{
@@ -15298,6 +15614,8 @@ void actRadiusMagic(Entity* my)
 					{
 						if ( entity->behavior == &actPlayer || (entity->behavior == &actMonster && !entity->isInertMimic()) )
 						{
+								if ( entity->monsterIsTargetable() )
+								{
 							if ( entityDist(my, entity) <= (real_t)my->actRadiusMagicDist )
 							{
 								if ( caster->checkFriend(entity) || caster == entity )
@@ -15310,10 +15628,32 @@ void actRadiusMagic(Entity* my)
 				}
 			}
 		}
+			}
 
+			bool firstEffect = true;
+			int totalHeal = 0;
 		for ( auto ent : applyEffects )
 		{
-			if ( my->actRadiusMagicID == SPELL_NULL_AREA || my->actRadiusMagicID == SPELL_SPHERE_SILENCE )
+				if ( my->actRadiusMagicID == SPELL_HEAL_PULSE )
+				{
+					int amount = getSpellDamageFromID(SPELL_HEAL_PULSE, caster);
+					if ( firstEffect )
+					{
+						playSoundEntity(my, 168, 128);
+						spawnMagicEffectParticles(my->x, my->y, my->z, 169);
+					}
+
+					int oldHP = ent->getHP();
+					spell_changeHealth(ent, amount);
+					int heal = std::max(ent->getHP() - oldHP, 0);
+					totalHeal += heal;
+					if ( heal > 0 )
+					{
+						spawnDamageGib(ent, -heal, DamageGib::DMG_HEAL, DamageGibDisplayType::DMG_GIB_NUMBER, true);
+					}
+					spawnMagicEffectParticles(ent->x, ent->y, ent->z, 169);
+				}
+				else if ( my->actRadiusMagicID == SPELL_NULL_AREA || my->actRadiusMagicID == SPELL_SPHERE_SILENCE )
 			{
 				Entity* fx = createParticleAestheticOrbit(my, my->sprite, TICKS_PER_SECOND / 4, PARTICLE_EFFECT_NULL_PARTICLE);
 				fx->x = ent->x;
@@ -15326,6 +15666,15 @@ void actRadiusMagic(Entity* my)
 				serverSpawnMiscParticlesAtLocation(fx->x, fx->y, fx->z, PARTICLE_EFFECT_NULL_PARTICLE, my->sprite, 0, fx->yaw * 256.0);
 				ent->removeLightField();
 				list_RemoveNode(ent->mynode);
+			}
+				firstEffect = true;
+			}
+
+			if ( totalHeal > 0 )
+			{
+				int player = caster ? caster->isEntityPlayer() : -1;
+				serverUpdatePlayerGameplayStats(player, STATISTICS_HEAL_BOT, totalHeal);
+				Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_SPELL_HEAL, SPELL_ITEM, totalHeal, false, my->actRadiusMagicID);
 			}
 		}
 	}

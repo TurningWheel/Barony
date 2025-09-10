@@ -218,7 +218,13 @@ static const int SPELL_ROOTS = 195;
 static const int SPELL_MUSHROOM = 196;
 static const int SPELL_MYCELIUM_BOMB = 197;
 static const int SPELL_MYCELIUM_SPORES = 198;
-static const int NUM_SPELLS = 200;
+static const int SPELL_HEAL_PULSE = 199;
+static const int SPELL_SHRUB = 200;
+static const int SPELL_THORNS = 201;
+static const int SPELL_BLADEVINES = 202;
+static const int SPELL_BASTION_MUSHROOM = 203;
+static const int SPELL_BASTION_ROOTS = 204;
+static const int NUM_SPELLS = 225;
 
 #define SPELLELEMENT_CONFUSE_BASE_DURATION 2//In seconds.
 #define SPELLELEMENT_BLEED_BASE_DURATION 10//In seconds.
@@ -314,6 +320,7 @@ static const int PARTICLE_EFFECT_EARTH_ELEMENTAL_DIE = 48;
 static const int PARTICLE_EFFECT_MUSHROOM_SPELL = 49;
 static const int PARTICLE_EFFECT_MISC_PUDDLE = 50;
 static const int PARTICLE_EFFECT_BOLAS = 51;
+static const int PARTICLE_EFFECT_BASTION_MUSHROOM = 52;
 
 // actmagicIsVertical constants
 static const int MAGIC_ISVERTICAL_NONE = 0;
@@ -350,6 +357,8 @@ static const int PARTICLE_TIMER_ACTION_ROOTS1 = 26;
 static const int PARTICLE_TIMER_ACTION_ROOTS_SINGLE_TILE = 27;
 static const int PARTICLE_TIMER_ACTION_ROOTS_PATH = 28;
 static const int PARTICLE_TIMER_ACTION_SPORES_TRAIL = 29;
+static const int PARTICLE_TIMER_ACTION_ROOTS_SUSTAIN = 30;
+static const int PARTICLE_TIMER_ACTION_BASTION_MUSHROOM = 31;
 
 struct ParticleEmitterHit_t
 {
@@ -377,7 +386,8 @@ struct ParticleTimerEffect_t
 		EFFECT_CHRONOMIC_FIELD,
 		EFFECT_ROOTS_TILE,
 		EFFECT_ROOTS_PATH,
-		EFFECT_MYCELIUM
+		EFFECT_MYCELIUM,
+		EFFECT_ROOTS_SELF_SUSTAIN
 	};
 	struct Effect_t
 	{
@@ -420,7 +430,7 @@ typedef struct spellElement_t
 	int duration; // travel time if it's a missile element, duration for a light spell, duration for curses/enchants/traps/beams/rays/effects/what have you.
 	char element_internal_name[64];
 	bool can_be_learned; // if a spellElement can't be learned, a player won't be able to build spells with it.
-	bool channeled; // false by default. Specific spells can set this to true. Channeling it sustains the effect in some fashion. It reconsumes the casting mana after every duration has expired.
+	int channeledMana = 0; // sustained spell if channeled cost > 0
 	/*
 	I've been thinking about mana consumption. I think it should drain mana 1 by 1 regardless of how much the spell initially cost to cast.
 	So:
@@ -701,7 +711,8 @@ typedef struct spell_t
 	real_t distance = 0.0;
 	Uint32 caster;
 	int sustainEffectDissipate = -1; // when the spell is unsustained, clear this effect from the player (unique spell effects)
-	int channel_duration; //This is the value to reset the timer to when a spell is channeled.
+	int channel_duration = 0; //This is the value to reset the timer to when a spell is channeled.
+	int channel_effectStrength = 1; // how strong to reapply the effect each duration tick
 	list_t elements; //NOTE: This could technically allow a spell to have multiple roots. So you could make a flurry of fireballs, for example.
 	//TODO: Some way to make spells work with "need to cast more to get better at casting the spell." A sort of spell learning curve. The first time you cast it, prone to failure. Less the more you cast it.
 	
@@ -792,6 +803,7 @@ struct CastSpellProps_t
 	int elementIndex = 0;
 	real_t distanceOffset = 0.0;
 	int wallDir = 0;
+	Uint8 optionalData = 0;
 	bool setToMonsterCast(Entity* monster, int spellID);
 };
 
@@ -885,10 +897,11 @@ void radiusMagicClientReceive(Entity* entity);
 Entity* floorMagicSetLightningParticle(Entity* my);
 void floorMagicCreateLightningSequence(Entity* spellTimer, int startTickOffset);
 void floorMagicCreateSpores(Entity* spawnOnEntity, real_t x, real_t y, Entity* caster, int damage, int spellID);
-bool floorMagicCreateRoots(real_t x, real_t y, Entity* caster, int damage, int spellID, int duration, int particleTimerAction);
+Entity* floorMagicCreateRoots(real_t x, real_t y, Entity* caster, int damage, int spellID, int duration, int particleTimerAction);
 Entity* createVortexMagic(int sprite, real_t x, real_t y, real_t z, real_t dir, Uint32 lifetime);
 Entity* createParticleWave(ParticleTimerEffect_t::EffectType particleType, int sprite, real_t x, real_t y, real_t z, real_t dir, Uint32 lifetime, bool light);
 Entity* createParticleRoot(int sprite, real_t x, real_t y, real_t z, real_t dir, Uint32 lifetime);
+void createMushroomSpellEffect(Entity* caster, real_t x, real_t y);
 Entity* createWindMagic(Uint32 casterUID, int x, int y, int duration, int dir, int length);
 void createParticleDemesneDoor(real_t x, real_t y, real_t dir);
 Entity* createTunnelPortal(real_t x, real_t y, int duration, int dir);
@@ -916,6 +929,7 @@ void spellElementDeconstructor(void* data);
 int getCostOfSpell(spell_t* spell, Entity* caster = nullptr);
 int getGoldCostOfSpell(spell_t* spell, int player);
 int getCostOfSpellElement(spellElement_t* spellElement);
+int getSustainCostOfSpell(spell_t* spell, Entity* caster);
 bool spell_isChanneled(spell_t* spell);
 bool spellElement_isChanneled(spellElement_t* spellElement);
 
@@ -1008,7 +1022,7 @@ Entity* spellEffectFlameSprite(Entity& caster, spellElement_t& element, real_t x
 Entity* spellEffectHologram(Entity& caster, spellElement_t& element, real_t x, real_t y);
 Entity* spellEffectDemesneDoor(Entity& caster, Entity& doorFrame);
 void magicSetResistance(Entity* entity, Entity* parent, int& resistance, real_t& damageMultiplier, DamageGib& dmgGib, int& trapResist);
-int getSpellDamageFromID(int spellID, Entity* parent);
+int getSpellDamageFromID(int spellID, Entity* parent, bool checkValueOnly = false);
 void thrownItemUpdateSpellTrail(Entity& my, real_t _x, real_t _y);
 
 void freeSpells();

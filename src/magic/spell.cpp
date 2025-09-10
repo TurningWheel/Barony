@@ -555,7 +555,7 @@ void spellElementConstructor(spellElement_t* element)
 	element->elements.first = NULL;
 	element->elements.last = NULL;
 	element->node = NULL;
-	element->channeled = false;
+	element->channeledMana = 0;
 }
 
 void spellElementConstructor(int elementID, int mana, int base_mana, int overload_mult, int damage, int duration, const char* internal_name)
@@ -687,6 +687,23 @@ int getGoldCostOfSpell(spell_t* spell, int player)
 	return cost;
 }
 
+int getSustainCostOfSpell(spell_t* spell, Entity* caster)
+{
+	int cost = 0;
+	if ( !spell )
+	{
+		return 0;
+	}
+
+	node_t* node;
+	for ( node = spell->elements.first; node != NULL; node = node->next )
+	{
+		spellElement_t* spellElement = (spellElement_t*)node->element;
+		cost += spellElement->channeledMana;
+	}
+	return cost;
+}
+
 int getCostOfSpell(spell_t* spell, Entity* caster)
 {
 	int cost = 0;
@@ -809,6 +826,13 @@ real_t getBonusFromCasterOfSpellElement(Entity* caster, Stat* casterStats, spell
 			percentMP = (100 - percentMP) / 10;
 			bonus += 0.5 * percentMP / 10.0;
 		}
+		if ( casterStats->getEffectActive(EFF_BASTION_ROOTS) )
+		{
+			if ( casterStats->getEffectActive(EFF_GROWTH) >= 2 )
+			{
+				bonus += (casterStats->getEffectActive(EFF_GROWTH) - 1) * 0.1;
+			}
+		}
 		bonus += (casterStats->getEnsembleEffectBonus(Stat::ENSEMBLE_LUTE_EFF_1)) / 100.0;
 		if ( casterStats->getEffectActive(EFF_COUNSEL) )
 		{
@@ -880,7 +904,7 @@ bool spellElement_isChanneled(spellElement_t* spellElement)
 {
 	node_t* node = NULL;
 
-	if ( spellElement->channeled )
+	if ( spellElement->channeledMana > 0 )
 	{
 		return true;
 	}

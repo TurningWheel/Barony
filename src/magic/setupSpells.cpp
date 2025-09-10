@@ -16,7 +16,7 @@
 
 std::map<int, spell_t*> allGameSpells;
 
-spell_t* createSimpleSpell(int spellID, int difficulty, int mana, int base_mana, int overload_mult, int damage, int duration, const char* internal_name, bool sustained = false);
+spell_t* createSimpleSpell(int spellID, int difficulty, int mana, int base_mana, int overload_mult, int damage, int duration, const char* internal_name, int sustainedMP = 0);
 void setupSpells()   ///TODO: Verify this function.
 {
 	for ( auto it : allGameSpells )
@@ -621,7 +621,7 @@ void setupSpells()   ///TODO: Verify this function.
 	node->deconstructor = &spellElementDeconstructor;
 	element = (spellElement_t*) node->element;
 	element->node = node; //Tell the element what list it resides in.
-	element->channeled = true;
+	element->channeledMana = 1;
 
 	spellConstructor(&spell_identify, SPELL_IDENTIFY);
 	strcpy(spell_identify.spell_internal_name, "spell_identify");
@@ -754,7 +754,7 @@ void setupSpells()   ///TODO: Verify this function.
 	node->deconstructor = &spellElementDeconstructor;
 	element = (spellElement_t*) node->element;
 	element->node = node; //Tell the element what list it resides in.
-	element->channeled = true;
+	element->channeledMana = 1;
 
 	spellConstructor(&spell_invisibility, SPELL_INVISIBILITY);
 	strcpy(spell_invisibility.spell_internal_name, "spell_invisibility");
@@ -767,7 +767,7 @@ void setupSpells()   ///TODO: Verify this function.
 	node->deconstructor = &spellElementDeconstructor;
 	element = (spellElement_t*) node->element;
 	element->node = node; //Tell the element what list it resides in.
-	element->channeled = true;
+	element->channeledMana = 1;
 
 	spellConstructor(&spell_teleportation, SPELL_TELEPORTATION);
 	strcpy(spell_teleportation.spell_internal_name, "spell_teleportation");
@@ -938,7 +938,7 @@ void setupSpells()   ///TODO: Verify this function.
 	node->deconstructor = &spellElementDeconstructor;
 	element = (spellElement_t*) node->element;
 	element->node = node; //Tell the element what list it resides in.
-	element->channeled = true;
+	element->channeledMana = 1;
 
 	spellConstructor(&spell_acidSpray, SPELL_ACID_SPRAY);
 	strcpy(spell_acidSpray.spell_internal_name, "spell_acid_spray");
@@ -1008,7 +1008,7 @@ void setupSpells()   ///TODO: Verify this function.
 	node->deconstructor = &spellElementDeconstructor;
 	element = (spellElement_t*)node->element;
 	element->node = node; //Tell the element what list it resides in.
-	element->channeled = true;
+	element->channeledMana = 1;
 
 	spellConstructor(&spell_amplifyMagic, SPELL_AMPLIFY_MAGIC);
 	strcpy(spell_amplifyMagic.spell_internal_name, "spell_amplify_magic");
@@ -1021,7 +1021,7 @@ void setupSpells()   ///TODO: Verify this function.
 	node->deconstructor = &spellElementDeconstructor;
 	element = (spellElement_t*)node->element;
 	element->node = node; //Tell the element what list it resides in.
-	element->channeled = true;
+	element->channeledMana = 1;
 
 	spellConstructor(&spell_charmMonster, SPELL_CHARM_MONSTER);
 	strcpy(spell_charmMonster.spell_internal_name, "spell_charm");
@@ -1849,7 +1849,8 @@ void setupSpells()   ///TODO: Verify this function.
 		0, // damage
 		50, // duration
 		"spell_blood_ward",
-		true);
+		1);
+	spell->sustainEffectDissipate = EFF_BLOOD_WARD;
 
 	spell = createSimpleSpell(
 		SPELL_TRUE_BLOOD,
@@ -1860,7 +1861,8 @@ void setupSpells()   ///TODO: Verify this function.
 		0, // damage
 		50, // duration
 		"spell_true_blood",
-		true);
+		1);
+	spell->sustainEffectDissipate = EFF_TRUE_BLOOD;
 
 	spell = createSimpleSpell(
 		SPELL_DIVINE_ZEAL,
@@ -1871,7 +1873,8 @@ void setupSpells()   ///TODO: Verify this function.
 		0, // damage
 		50, // duration
 		"spell_divine_zeal",
-		true);
+		1);
+	spell->sustainEffectDissipate = EFF_DIVINE_ZEAL;
 
 	spell = createSimpleSpell(
 		SPELL_ALTER_INSTRUMENT,
@@ -1881,8 +1884,7 @@ void setupSpells()   ///TODO: Verify this function.
 		1, // overload
 		0, // damage
 		1, // duration
-		"spell_alter_instrument",
-		true);
+		"spell_alter_instrument");
 
 	spell = createSimpleSpell(
 		SPELL_MAXIMISE,
@@ -1941,7 +1943,8 @@ void setupSpells()   ///TODO: Verify this function.
 		0, // damage
 		50, // duration
 		"spell_overcharge",
-		true);
+		1);
+	spell->sustainEffectDissipate = EFF_OVERCHARGE;
 
 	spell = createSimpleSpell(
 		SPELL_ENVENOM_WEAPON,
@@ -1952,7 +1955,8 @@ void setupSpells()   ///TODO: Verify this function.
 		0, // damage
 		50, // duration
 		"spell_envenom_weapon",
-		true);
+		1);
+	spell->sustainEffectDissipate = EFF_ENVENOM_WEAPON;
 
 	spellElementConstructor(SPELL_HUMILIATE,
 		1,		// mana
@@ -2307,7 +2311,7 @@ void setupSpells()   ///TODO: Verify this function.
 		0, // damage
 		750, // duration
 		"spell_deep_shade",
-		true);
+		1);
 
 	spellElementConstructor(SPELL_SHADE_BOLT,
 		1,		// mana
@@ -2348,7 +2352,8 @@ void setupSpells()   ///TODO: Verify this function.
 		0, // damage
 		750, // duration
 		"spell_spores",
-		true);
+		1);
+	spell->sustainEffectDissipate = EFF_SPORES;
 
 	spellElementConstructor(SPELL_SPORE_BOMB,
 		1,		// mana
@@ -2434,7 +2439,8 @@ void setupSpells()   ///TODO: Verify this function.
 		0, // damage
 		750, // duration
 		"spell_abundance",
-		true);
+		1);
+	spell->sustainEffectDissipate = EFF_ABUNDANCE;
 
 	spell = createSimpleSpell(
 		SPELL_GREATER_ABUNDANCE,
@@ -2445,7 +2451,8 @@ void setupSpells()   ///TODO: Verify this function.
 		0, // damage
 		750, // duration
 		"spell_greater_abundance",
-		true);
+		1);
+	spell->sustainEffectDissipate = EFF_GREATER_ABUNDANCE;
 
 	spell = createSimpleSpell(
 		SPELL_PRESERVE,
@@ -2456,7 +2463,7 @@ void setupSpells()   ///TODO: Verify this function.
 		0, // damage
 		750, // duration
 		"spell_preserve",
-		true);
+		1);
 	spell->sustainEffectDissipate = EFF_PRESERVE;
 
 	spell = createSimpleSpell(
@@ -2502,7 +2509,7 @@ void setupSpells()   ///TODO: Verify this function.
 		0, // damage
 		750, // duration
 		"spell_mist_form",
-		true);
+		1);
 	spell->sustainEffectDissipate = EFF_MIST_FORM;
 
 	spell = createSimpleSpell(
@@ -2558,7 +2565,7 @@ void setupSpells()   ///TODO: Verify this function.
 		0, // damage
 		750, // duration
 		"spell_lighten_load",
-		true);
+		1);
 	spell->sustainEffectDissipate = EFF_LIGHTEN_LOAD;
 
 	spell = createSimpleSpell(
@@ -2570,7 +2577,7 @@ void setupSpells()   ///TODO: Verify this function.
 		0, // damage
 		750, // duration
 		"spell_attract_items",
-		true);
+		1);
 	spell->sustainEffectDissipate = EFF_ATTRACT_ITEMS;
 
 	spell = createSimpleSpell(
@@ -2582,7 +2589,7 @@ void setupSpells()   ///TODO: Verify this function.
 		0, // damage
 		750, // duration
 		"spell_return_items",
-		true);
+		1);
 	spell->sustainEffectDissipate = EFF_RETURN_ITEM;
 
 	spell = createSimpleSpell(
@@ -2980,7 +2987,7 @@ void setupSpells()   ///TODO: Verify this function.
 		1, // mana
 		1, // base mana
 		1, // overload
-		0, // damage
+		5, // damage
 		1, // duration
 		"spell_mushroom");
 	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH_FLOOR_TILE;
@@ -3010,7 +3017,79 @@ void setupSpells()   ///TODO: Verify this function.
 		0, // damage
 		750, // duration
 		"spell_mycelium_spores",
-		true);
+		1);
+
+	spell = createSimpleSpell(
+		SPELL_HEAL_PULSE,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		5, // damage
+		1, // duration
+		"spell_heal_pulse");
+	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH_FLOOR_TILE;
+	spell->distance = 64.0;
+
+	spell = createSimpleSpell(
+		SPELL_SHRUB,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		5, // damage
+		1, // duration
+		"spell_shrub");
+	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH_FLOOR_TILE;
+	spell->distance = 64.0;
+
+	spell = createSimpleSpell(
+		SPELL_THORNS,
+		100, // difficulty
+		5, // mana
+		1, // base mana
+		1, // overload
+		4, // damage
+		200, // duration
+		"spell_thorns",
+		1);
+	spell->sustainEffectDissipate = EFF_THORNS;
+
+	spell = createSimpleSpell(
+		SPELL_BLADEVINES,
+		100, // difficulty
+		10, // mana
+		1, // base mana
+		1, // overload
+		6, // damage
+		200, // duration
+		"spell_bladevines",
+		4);
+	spell->sustainEffectDissipate = EFF_BLADEVINES;
+
+	spell = createSimpleSpell(
+		SPELL_BASTION_MUSHROOM,
+		100, // difficulty
+		10, // mana
+		1, // base mana
+		1, // overload
+		6, // damage
+		200, // duration
+		"spell_bastion_mushroom",
+		4);
+	spell->sustainEffectDissipate = EFF_BASTION_MUSHROOM;
+
+	spell = createSimpleSpell(
+		SPELL_BASTION_ROOTS,
+		100, // difficulty
+		10, // mana
+		1, // base mana
+		1, // overload
+		6, // damage
+		200, // duration
+		"spell_bastion_roots",
+		4);
+	spell->sustainEffectDissipate = EFF_BASTION_ROOTS;
 
 	//static const int SPELL_LIGHTNING_NEXUS = 182;
 	//static const int SPELL_LIFT = 184;
@@ -3022,7 +3101,7 @@ void setupSpells()   ///TODO: Verify this function.
 }
 
 spell_t* createSimpleSpell(int spellID, int difficulty, int mana, int base_mana, int overload_mult, int damage, 
-	int duration, const char* internal_name, bool sustained)
+	int duration, const char* internal_name, int sustainedMP)
 {
 	std::string elementName = internal_name;
 	if ( elementName.find("element_") == std::string::npos )
@@ -3040,7 +3119,7 @@ spell_t* createSimpleSpell(int spellID, int difficulty, int mana, int base_mana,
 		damage,		// damage
 		duration,		// duration
 		elementName.c_str());
-	spellElementMap[spellID].channeled = sustained;
+	spellElementMap[spellID].channeledMana = sustainedMP;
 	spell_t* spell = spellConstructor(
 		// ID
 		spellID,

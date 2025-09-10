@@ -2413,8 +2413,6 @@ bool spellEffectTeleportPull(Entity* my, spellElement_t& element, Entity* parent
 	if ( target )
 	{
 		playSoundEntity(target, 173, 128);
-		//int damage = element.damage;
-		//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 
 		if ( (target->behavior == &actMonster && !target->isInertMimic()) || target->behavior == &actPlayer
 			/*|| target->behavior == &actDoor || target->behavior == &actChest*/ )
@@ -2630,9 +2628,6 @@ void spellEffectShadowTag(Entity& my, spellElement_t& element, Entity* parent, i
 {
 	if ( hit.entity )
 	{
-		//int damage = element.damage;
-		//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
-
 		if ( (hit.entity->behavior == &actMonster && !hit.entity->isInertMimic()) || hit.entity->behavior == &actPlayer )
 		{
 			playSoundEntity(&my, 174, 128);
@@ -3585,7 +3580,7 @@ Entity* spellEffectDemesneDoor(Entity& caster, Entity& target)
 	return door;
 }
 
-int getSpellDamageFromID(int spellID, Entity* parent)
+int getSpellDamageFromID(int spellID, Entity* parent, bool checkValueOnly)
 {
 	int damage = 0;
 	spellElement_t* element = nullptr;
@@ -3597,7 +3592,7 @@ int getSpellDamageFromID(int spellID, Entity* parent)
 			{
 				if ( element->elements.first && element->elements.first->element )
 				{
-					element = (spellElement_t*)spell->elements.first->element;
+					element = (spellElement_t*)element->elements.first->element;
 				}
 			}
 		}
@@ -3605,7 +3600,16 @@ int getSpellDamageFromID(int spellID, Entity* parent)
 	if ( element )
 	{
 		damage = element->damage;
-		damage += damage * (getBonusFromCasterOfSpellElement(parent, parent ? parent->getStats() : nullptr, element, spellID));
+		real_t bonus = (getBonusFromCasterOfSpellElement(parent, parent ? parent->getStats() : nullptr, element, spellID));
+		if ( !checkValueOnly )
+		{
+			if ( parent && parent->behavior == &actPlayer )
+			{
+				Compendium_t::Events_t::eventUpdateCodex(parent->skill[2], Compendium_t::CPDM_CLASS_PWR_MAX_CASTED, "pwr",
+					(Sint32)(bonus * 100.0));
+			}
+		}
+		damage += damage * bonus;
 	}
 	return damage;
 }

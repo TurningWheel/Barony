@@ -212,6 +212,20 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook)
 				stat->GOLD = std::max(0, stat->GOLD);
 			}
 		}
+
+		if ( spell->ID == SPELL_MUSHROOM || spell->ID == SPELL_SHRUB )
+		{
+			if ( stats[player]->getEffectActive(EFF_GROWTH) <= (Uint8)1 )
+			{
+				if ( players[player]->isLocalPlayer() )
+				{
+					playSound(563, 64);
+				}
+				messagePlayer(player, MESSAGE_HINT, Language::get(6794));
+				return;
+			}
+		}
+
 	}
 
 	if ( caster->behavior == &actPlayer && stat->type == VAMPIRE )
@@ -482,7 +496,8 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				SDLNet_Write32(static_cast<Sint32>(castSpellProps->target_y * 256.0), &net_packet->data[22]);
 				SDLNet_Write32(castSpellProps->targetUID, &net_packet->data[26]);
 				net_packet->data[30] = castSpellProps->wallDir;
-				net_packet->len = 31;
+				net_packet->data[31] = castSpellProps->optionalData;
+				net_packet->len = 32;
 			}
 			else
 			{
@@ -2972,6 +2987,22 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				playSoundEntity(caster, 171, 128);
 			}
 		}
+		else if ( spell->ID == SPELL_HEAL_PULSE )
+		{
+			if ( caster )
+			{
+				bool found = false;
+				bool effect = false;
+				if ( castSpellProps )
+				{
+					found = true;
+					createRadiusMagic(SPELL_HEAL_PULSE, caster,
+						castSpellProps->target_x, castSpellProps->target_y, 24, 10 * TICKS_PER_SECOND, nullptr);
+				}
+				spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
+				playSoundEntity(caster, 171, 128);
+			}
+		}
 		else if ( spell->ID == SPELL_LIGHTNING_BOLT )
 		{
 			if ( caster )
@@ -3490,24 +3521,111 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		{
 			if ( caster )
 			{
-				/*Entity* spellTimer = createParticleTimer(caster, 5 * TICKS_PER_SECOND + 10, -1);
-				spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_ROOTS1;
-				spellTimer->particleTimerCountdownSprite = -1;
-				spellTimer->flags[UPDATENEEDED] = true;
-				spellTimer->flags[NOUPDATE] = false;
-				spellTimer->yaw = caster->yaw;
-				spellTimer->x = caster->x;
-				spellTimer->y = caster->y;
-				Sint32 val = (1 << 31);
-				val |= (Uint8)(19);
-				val |= (((Uint16)(spellTimer->particleTimerDuration) & 0xFFF) << 8);
-				val |= (Uint8)(spellTimer->particleTimerCountdownAction & 0xFF) << 20;
-				spellTimer->skill[2] = val;*/
+				int damage = 0; // calculate later monsters
+				if ( caster->behavior == &actPlayer )
+				{
+					damage = getSpellDamageFromID(SPELL_ROOTS, caster);
+				}
 
-				if ( floorMagicCreateRoots(caster->x, caster->y, caster, 0, SPELL_ROOTS, 5 * TICKS_PER_SECOND, PARTICLE_TIMER_ACTION_ROOTS1) )
+				if ( floorMagicCreateRoots(caster->x, caster->y, caster, damage, SPELL_ROOTS, 5 * TICKS_PER_SECOND, PARTICLE_TIMER_ACTION_ROOTS1) )
 				{
 					spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
 					playSoundEntity(caster, 171, 128);
+				}
+				else
+				{
+					// no room
+					playSoundEntity(caster, 163, 128);
+					messagePlayer(caster->isEntityPlayer(), MESSAGE_HINT, Language::get(6748));
+				}
+			}
+		}
+		else if ( spell->ID == SPELL_BASTION_MUSHROOM )
+		{
+			if ( caster && caster->behavior == &actPlayer )
+			{
+				int duration = element->duration;
+				node_t* spellnode = list_AddNodeLast(&caster->getStats()->magic_effects);
+				spellnode->element = copySpell(spell); //We need to save the spell since this is a channeled spell.
+				channeled_spell = (spell_t*)(spellnode->element);
+				channeled_spell->magic_effects_node = spellnode;
+				spellnode->size = sizeof(spell_t);
+				((spell_t*)spellnode->element)->caster = caster->getUID();
+				spellnode->deconstructor = &spellDeconstructor;
+				channeled_spell->channel_duration = duration; //Tell the spell how long it's supposed to last so that it knows what to reset its timer to.
+				if ( caster->setEffect(EFF_BASTION_MUSHROOM, true, duration, false) )
+				{
+					messagePlayerColor(caster->isEntityPlayer(), MESSAGE_STATUS, uint32ColorGreen, Language::get(6799));
+					playSoundEntity(caster, 178, 128);
+					spawnMagicEffectParticles(caster->x, caster->y, caster->z, 170);
+
+					Entity* spellTimer = createParticleTimer(caster, 3 * TICKS_PER_SECOND, -1);
+					spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_BASTION_MUSHROOM;
+					spellTimer->particleTimerCountdownSprite = -1;
+					spellTimer->yaw = caster->yaw;
+					spellTimer->x = caster->x;
+					spellTimer->y = caster->y;
+					spellTimer->flags[NOUPDATE] = true;
+					spellTimer->flags[UPDATENEEDED] = false;
+
+					spellTimer->particleTimerVariable3 = SPELL_SPORES;
+					if ( castSpellProps )
+					{
+						if ( castSpellProps->optionalData == 2 )
+						{
+							spellTimer->particleTimerVariable3 = SPELL_SPORE_BOMB;
+						}
+					}
+				}
+			}
+		}
+		else if ( spell->ID == SPELL_BASTION_ROOTS )
+		{
+			if ( caster && caster->behavior == &actPlayer )
+			{
+				int damage = 0;
+				if ( caster->behavior == &actPlayer )
+				{
+					damage = getSpellDamageFromID(SPELL_BASTION_ROOTS, caster);
+					if ( castSpellProps )
+					{
+						if ( castSpellProps->optionalData == 1 )
+						{
+							damage = getSpellDamageFromID(SPELL_THORNS, caster);
+						}
+						else if ( castSpellProps->optionalData == 2 )
+						{
+							damage = getSpellDamageFromID(SPELL_BLADEVINES, caster);
+						}
+					}
+				}
+
+				if ( Entity* spellTimer = floorMagicCreateRoots(caster->x, caster->y, caster, damage, SPELL_BASTION_ROOTS, 5 * TICKS_PER_SECOND, PARTICLE_TIMER_ACTION_ROOTS_SUSTAIN) )
+				{
+					spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
+					playSoundEntity(caster, 171, 128);
+
+					spellTimer->particleTimerVariable3 = SPELL_THORNS;
+					if ( castSpellProps->optionalData == 2 )
+					{
+						spellTimer->particleTimerVariable3 = SPELL_BLADEVINES;
+					}
+
+					int duration = element->duration;
+					node_t* spellnode = list_AddNodeLast(&caster->getStats()->magic_effects);
+					spellnode->element = copySpell(spell); //We need to save the spell since this is a channeled spell.
+					channeled_spell = (spell_t*)(spellnode->element);
+					channeled_spell->magic_effects_node = spellnode;
+					spellnode->size = sizeof(spell_t);
+					((spell_t*)spellnode->element)->caster = caster->getUID();
+					spellnode->deconstructor = &spellDeconstructor;
+					channeled_spell->channel_duration = duration; //Tell the spell how long it's supposed to last so that it knows what to reset its timer to.
+					if ( caster->setEffect(EFF_BASTION_ROOTS, true, duration, false) )
+					{
+						messagePlayerColor(caster->isEntityPlayer(), MESSAGE_STATUS, uint32ColorGreen, Language::get(6800));
+						playSoundEntity(caster, 178, 128);
+						spawnMagicEffectParticles(caster->x, caster->y, caster->z, 170);
+					}
 				}
 				else
 				{
@@ -3523,17 +3641,119 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			{
 				if ( castSpellProps )
 				{
-					if ( Entity* breakable = Entity::createBreakableCollider(EditorEntityData_t::getColliderIndexFromName("mushroom_spell_common"), 
-						castSpellProps->target_x, castSpellProps->target_y, caster) )
+					bool hasGrowth = true;
+					if ( caster->behavior == &actPlayer )
 					{
-						spawnPoof(breakable->x, breakable->y, 7.5, 1.0, true);
-						spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
+						if ( Stat* casterStats = caster->getStats() )
+						{
+							if ( casterStats->getEffectActive(EFF_GROWTH) <= (Uint8)1 )
+							{
+								hasGrowth = false;
+								playSoundEntity(caster, 163, 128);
+								messagePlayer(caster->isEntityPlayer(), MESSAGE_HINT, Language::get(6794));
+							}
+						}
 					}
-					else
+
+					if ( hasGrowth )
 					{
-						// no room
-						playSoundEntity(caster, 163, 128);
-						messagePlayer(caster->isEntityPlayer(), MESSAGE_HINT, Language::get(6750));
+						if ( Entity* breakable = Entity::createBreakableCollider(EditorEntityData_t::getColliderIndexFromName("mushroom_spell_casted"), 
+							castSpellProps->target_x, castSpellProps->target_y, caster) )
+						{
+							spawnPoof(breakable->x, breakable->y, 7.5, 1.0, true);
+							spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
+
+							if ( castSpellProps->optionalData == 2 )
+							{
+								breakable->colliderSpellEvent = 1007;
+							}
+							else
+							{
+								breakable->colliderSpellEvent = 1006;
+							}
+							breakable->colliderSetServerSkillOnSpawned(); // to update the variables modified from create()
+
+							if ( caster->behavior == &actPlayer )
+							{
+								if ( Stat* casterStats = caster->getStats() )
+								{
+									if ( Uint8 effectStrength = casterStats->getEffectActive(EFF_GROWTH) )
+									{
+										casterStats->setEffectValueUnsafe(EFF_GROWTH, effectStrength - 1);
+										serverUpdateEffects(caster->isEntityPlayer());
+									}
+								}
+							}
+						}
+						else
+						{
+							// no room
+							playSoundEntity(caster, 163, 128);
+							messagePlayer(caster->isEntityPlayer(), MESSAGE_HINT, Language::get(6750));
+						}
+					}
+				}
+			}
+		}
+		else if ( spell->ID == SPELL_SHRUB )
+		{
+			if ( caster )
+			{
+				if ( castSpellProps )
+				{
+					bool hasGrowth = true;
+					if ( caster->behavior == &actPlayer )
+					{
+						if ( Stat* casterStats = caster->getStats() )
+						{
+							if ( casterStats->getEffectActive(EFF_GROWTH) <= (Uint8)1 )
+							{
+								hasGrowth = false;
+								playSoundEntity(caster, 163, 128);
+								messagePlayer(caster->isEntityPlayer(), MESSAGE_HINT, Language::get(6794));
+							}
+						}
+					}
+
+					if ( hasGrowth )
+					{
+						if ( Entity* breakable = Entity::createBreakableCollider(EditorEntityData_t::getColliderIndexFromName("germinate_spell_casted"),
+							castSpellProps->target_x, castSpellProps->target_y, caster) )
+						{
+							spawnPoof(breakable->x, breakable->y, 7.5, 1.0, true);
+							spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
+
+							if ( castSpellProps->optionalData == 2 )
+							{
+								breakable->colliderSpellEvent = 1009;
+								breakable->colliderMaxHP *= 2;
+								breakable->colliderCurrentHP = breakable->colliderMaxHP;
+								breakable->colliderOldHP = breakable->colliderMaxHP;
+							}
+							else
+							{
+								breakable->colliderSpellEvent = 1008;
+							}
+							breakable->colliderSetServerSkillOnSpawned(); // to update the variables modified from create()
+
+							if ( caster->behavior == &actPlayer )
+							{
+								if ( Stat* casterStats = caster->getStats() )
+								{
+									if ( Uint8 effectStrength = casterStats->getEffectActive(EFF_GROWTH) )
+									{
+										casterStats->setEffectValueUnsafe(EFF_GROWTH, effectStrength - 1);
+										serverUpdateEffects(caster->isEntityPlayer());
+									}
+								}
+							}
+						}
+						else
+						{
+							// no room
+							playSoundEntity(caster, 163, 128);
+							messagePlayer(caster->isEntityPlayer(), MESSAGE_HINT, Language::get(6750));
+						}
 					}
 				}
 			}
@@ -4925,6 +5145,64 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				}
 			}
 		}
+		else if ( spell->ID == SPELL_THORNS )
+		{
+			if ( caster )
+			{
+				int duration = element->duration;
+				if ( caster->behavior == &actPlayer )
+				{
+					node_t* spellnode = list_AddNodeLast(&caster->getStats()->magic_effects);
+					spellnode->element = copySpell(spell); //We need to save the spell since this is a channeled spell.
+					channeled_spell = (spell_t*)(spellnode->element);
+					channeled_spell->magic_effects_node = spellnode;
+					spellnode->size = sizeof(spell_t);
+					((spell_t*)spellnode->element)->caster = caster->getUID();
+					spellnode->deconstructor = &spellDeconstructor;
+					channeled_spell->channel_duration = duration; //Tell the spell how long it's supposed to last so that it knows what to reset its timer to.
+				}
+				else
+				{
+					duration = element->duration;
+				}
+				if ( caster->setEffect(EFF_THORNS, true, duration, false) )
+				{
+					caster->setEffect(EFF_BLADEVINES, false, 0, false);
+					messagePlayerColor(caster->isEntityPlayer(), MESSAGE_STATUS, uint32ColorGreen, Language::get(6795));
+					playSoundEntity(caster, 178, 128);
+					spawnMagicEffectParticles(caster->x, caster->y, caster->z, 170);
+				}
+			}
+		}
+		else if ( spell->ID == SPELL_BLADEVINES )
+		{
+			if ( caster )
+			{
+				int duration = element->duration;
+				if ( caster->behavior == &actPlayer )
+				{
+					node_t* spellnode = list_AddNodeLast(&caster->getStats()->magic_effects);
+					spellnode->element = copySpell(spell); //We need to save the spell since this is a channeled spell.
+					channeled_spell = (spell_t*)(spellnode->element);
+					channeled_spell->magic_effects_node = spellnode;
+					spellnode->size = sizeof(spell_t);
+					((spell_t*)spellnode->element)->caster = caster->getUID();
+					spellnode->deconstructor = &spellDeconstructor;
+					channeled_spell->channel_duration = duration; //Tell the spell how long it's supposed to last so that it knows what to reset its timer to.
+				}
+				else
+				{
+					duration = element->duration;
+				}
+				if ( caster->setEffect(EFF_BLADEVINES, true, duration, false) )
+				{
+					caster->setEffect(EFF_THORNS, false, 0, false);
+					messagePlayerColor(caster->isEntityPlayer(), MESSAGE_STATUS, uint32ColorGreen, Language::get(6796));
+					playSoundEntity(caster, 178, 128);
+					spawnMagicEffectParticles(caster->x, caster->y, caster->z, 170);
+				}
+			}
+		}
 		else if ( spell->ID == SPELL_ABUNDANCE )
 		{
 			if ( caster )
@@ -5052,6 +5330,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					((spell_t*)spellnode->element)->caster = caster->getUID();
 					spellnode->deconstructor = &spellDeconstructor;
 					channeled_spell->channel_duration = duration; //Tell the spell how long it's supposed to last so that it knows what to reset its timer to.
+					channeled_spell->channel_effectStrength = 50;
 				}
 				else
 				{
