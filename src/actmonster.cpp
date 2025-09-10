@@ -7756,7 +7756,15 @@ timeToGoAgain:
 								messagePlayer(0, "[SHADOW] No path #1: Resetting to wait state.");
 							}*/
 						}
-						my->monsterState = MONSTER_STATE_WAIT; // no path, return to wait state
+
+						if ( path->first != NULL && myStats->getEffectActive(EFF_ROOTED) )
+						{
+							// keep path while rooted
+						}
+						else
+						{
+							my->monsterState = MONSTER_STATE_WAIT; // no path, return to wait state
+						}
 						if ( !target && myStats->type == MIMIC )
 						{
 							mimicResetIdle(my);
