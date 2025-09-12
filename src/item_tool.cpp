@@ -123,17 +123,26 @@ void Item::applySkeletonKey(int player, Entity& entity)
 		}
 		else
 		{
-			playSoundEntity(&entity, 91, 64);
-			if ( entity.behavior == &actIronDoor )
+			if ( entity.doorDisableLockpicks == 1 && entity.behavior == &actIronDoor )
 			{
-				messagePlayer(player, MESSAGE_INTERACTION, Language::get(6416));
+				Uint32 color = makeColorRGB(255, 255, 255);
+				playSoundEntity(&entity, 92, 64);
+				messagePlayerColor(player, MESSAGE_INTERACTION, color, Language::get(6403)); // disabled.
 			}
 			else
 			{
-				messagePlayer(player, MESSAGE_INTERACTION, Language::get(1100));
+				playSoundEntity(&entity, 91, 64);
+				if ( entity.behavior == &actIronDoor )
+				{
+					messagePlayer(player, MESSAGE_INTERACTION, Language::get(6416));
+				}
+				else
+				{
+					messagePlayer(player, MESSAGE_INTERACTION, Language::get(1100));
+				}
+				entity.doorLocked = 1;
+				Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_LOCKPICK_DOOR_LOCK, TOOL_SKELETONKEY, 1);
 			}
-			entity.doorLocked = 1;
-			Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_LOCKPICK_DOOR_LOCK, TOOL_SKELETONKEY, 1);
 		}
 	}
 	else if ( entity.behavior == &actMonster && entity.getMonsterTypeFromSprite() == MIMIC )
