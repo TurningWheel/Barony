@@ -424,9 +424,13 @@ typedef struct spellElement_t spellElement_t;
 //TODO: Don't re-invent the wheel with lists here.
 typedef struct spellElement_t
 {
+private:
+	int damage;
+public:
+	void setDamage(int _damage) { damage = _damage; }
+	int getDamage() { return damage; }
 	int mana, base_mana;
 	int overload_multiplier; // what does this do?
-	int damage;
 	int duration; // travel time if it's a missile element, duration for a light spell, duration for curses/enchants/traps/beams/rays/effects/what have you.
 	char element_internal_name[64];
 	bool can_be_learned; // if a spellElement can't be learned, a player won't be able to build spells with it.
@@ -1004,14 +1008,14 @@ int canUseShapeshiftSpellInCurrentForm(const int player, Item& item);
 
 //Spell implementation stuff.
 bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, Entity* parent);
-void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int resistance);
+void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int damage, int resistance);
 void spellEffectStealWeapon(Entity& my, spellElement_t& element, Entity* parent, int resistance);
-void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, int resistance);
+void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, int damage, int resistance);
 spell_t* spellEffectVampiricAura(Entity* caster, spell_t* spell, int extramagic_to_use);
 int getCharmMonsterDifficulty(Entity& my, Stat& myStats);
 void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent, int resistance, bool magicstaff);
 Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell, int customDuration = 0); // returns nullptr if target was monster, otherwise returns pointer to new creature
-void spellEffectPoison(Entity& my, spellElement_t& element, Entity* parent, int resistance);
+void spellEffectPoison(Entity& my, spellElement_t& element, Entity* parent, int damage, int resistance);
 void spellEffectSprayWeb(Entity& my, spellElement_t& element, Entity* parent, int resistance);
 bool spellEffectFear(Entity* my, spellElement_t& element, Entity* forceParent, Entity* target, int resistance);
 bool spellEffectTeleportPull(Entity* my, spellElement_t& element, Entity* parent, Entity* target, int resistance);
@@ -1022,7 +1026,7 @@ Entity* spellEffectFlameSprite(Entity& caster, spellElement_t& element, real_t x
 Entity* spellEffectHologram(Entity& caster, spellElement_t& element, real_t x, real_t y);
 Entity* spellEffectDemesneDoor(Entity& caster, Entity& doorFrame);
 void magicSetResistance(Entity* entity, Entity* parent, int& resistance, real_t& damageMultiplier, DamageGib& dmgGib, int& trapResist);
-int getSpellDamageFromID(int spellID, Entity* parent, bool checkValueOnly = false);
+int getSpellDamageFromID(int spellID, Entity* parent, Entity* magicSourceParticle, real_t addSpellBonus = 0.0, bool applyingDamageOnCast = true);
 void thrownItemUpdateSpellTrail(Entity& my, real_t _x, real_t _y);
 
 void freeSpells();

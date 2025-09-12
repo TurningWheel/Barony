@@ -207,16 +207,12 @@ bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, En
 	return true;
 }
 
-void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int resistance)
+void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int damage, int resistance)
 {
 	playSoundEntity(&my, 173, 128);
 		
 	if ( hit.entity )
 	{
-		int damage = element.damage;
-		damage += damage * ((my.actmagicSpellbookBonus / 100.f) + getBonusFromCasterOfSpellElement(parent, nullptr, &element, SPELL_ACID_SPRAY));
-		//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
-
 		if ( (hit.entity->behavior == &actMonster && !hit.entity->isInertMimic()) || hit.entity->behavior == &actPlayer )
 		{
 			Entity* parent = uidToEntity(my.parent);
@@ -296,7 +292,7 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 			}
 
 			int previousDuration = hitstats->EFFECTS_TIMERS[EFF_POISONED];
-			int duration = 6 * TICKS_PER_SECOND;
+			int duration = element.duration;
 			duration /= (1 + (int)resistance);
 			bool recentlyHitBySameSpell = false;
 			if ( !hasamulet && !hasgoggles )
@@ -318,9 +314,6 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 			{
 				playSoundEntity(hit.entity, 249, 64);
 			}
-			/*hitstats->setEffectActive(EFF_SLOW, 1);
-			hitstats->EFFECTS_TIMERS[EFF_SLOW] = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
-			hitstats->EFFECTS_TIMERS[EFF_SLOW] /= (1 + (int)resistance);*/
 			if ( hit.entity->behavior == &actPlayer )
 			{
 				serverUpdateEffects(hit.entity->skill[2]);
@@ -424,15 +417,11 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 	}
 }
 
-void spellEffectPoison(Entity& my, spellElement_t& element, Entity* parent, int resistance)
+void spellEffectPoison(Entity& my, spellElement_t& element, Entity* parent, int damage, int resistance)
 {
 	playSoundEntity(&my, 173, 128);
 	if ( hit.entity )
 	{
-		int damage = element.damage;
-		damage += damage * ((my.actmagicSpellbookBonus / 100.f) + getBonusFromCasterOfSpellElement(parent, nullptr, &element, SPELL_POISON));
-		//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
-
 		if ( (hit.entity->behavior == &actMonster && !hit.entity->isInertMimic()) || hit.entity->behavior == &actPlayer )
 		{
 			Entity* parent = uidToEntity(my.parent);
@@ -503,7 +492,7 @@ void spellEffectPoison(Entity& my, spellElement_t& element, Entity* parent, int 
 				}
 				else
 				{
-					hit.entity->setEffect(EFF_POISONED, true, std::max(200, 350 - hit.entity->getCON() * 5), true); // 4-7 seconds.
+					hit.entity->setEffect(EFF_POISONED, true, std::max(200, element.duration - hit.entity->getCON() * 5), true); // 4-7 seconds.
 				}
 				hitstats->poisonKiller = my.parent;
 			}
@@ -695,7 +684,7 @@ void spellEffectSprayWeb(Entity& my, spellElement_t& element, Entity* parent, in
 			int previousDuration = hitstats->EFFECTS_TIMERS[EFF_WEBBED];
 			int duration = 400;
 			duration /= (1 + resistance);
-			if ( hit.entity->setEffect(EFF_WEBBED, true, 400, true) ) // 8 seconds.
+			if ( hit.entity->setEffect(EFF_WEBBED, true, duration, true) ) // 8 seconds.
 			{
 				magicOnEntityHit(parent, &my, hit.entity, hitstats, 0, 0, 0, SPELL_SPRAY_WEB);
 				if ( abs(duration - previousDuration) > 10 )
@@ -930,7 +919,7 @@ void spellEffectStealWeapon(Entity& my, spellElement_t& element, Entity* parent,
 	return;
 }
 
-void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, int resistance)
+void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, int damage, int resistance)
 {
 	if ( hit.entity )
 	{
@@ -974,10 +963,6 @@ void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, i
 			{
 				dmgGib = DMG_WEAKEST;
 			}
-
-			int damage = element.damage;
-			damage += damage * ((my.actmagicSpellbookBonus / 100.f) + getBonusFromCasterOfSpellElement(parent, nullptr, &element, SPELL_DRAIN_SOUL));
-			//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 
 			Sint32 preResistanceDamage = damage;
 			damage *= damageMultiplier;
@@ -1105,88 +1090,20 @@ void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, i
 
 			if ( forceFurnitureDamage )
 			{
+				damage /= (1 + (int)resistance);
 				if ( hit.entity->isDamageableCollider() && hit.entity->isColliderDamageableByMagic() )
 				{
-					int damage = element.damage;
-					damage += (my.actmagicSpellbookBonus * damage);
-					//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
-					damage /= (1 + (int)resistance);
-
 					hit.entity->colliderHandleDamageMagic(damage, my, parent);
 					return;
 				}
 				else if ( hit.entity->behavior == &actChest || hit.entity->isInertMimic() )
 				{
-					int damage = element.damage;
-					damage += (my.actmagicSpellbookBonus * damage);
-					damage /= (1 + (int)resistance);
 					hit.entity->chestHandleDamageMagic(damage, my, parent);
 					return;
 				}
 				else if ( hit.entity->behavior == &actFurniture )
 				{
-					int damage = element.damage;
-					damage += (my.actmagicSpellbookBonus * damage);
-					damage /= (1 + (int)resistance);
-					int oldHP = hit.entity->furnitureHealth;
-					hit.entity->furnitureHealth -= damage;
-					if ( parent )
-					{
-						if ( parent->behavior == &actPlayer )
-						{
-							bool destroyed = oldHP > 0 && hit.entity->furnitureHealth <= 0;
-							if ( destroyed )
-							{
-								gameModeManager.currentSession.challengeRun.updateKillEvent(hit.entity);
-							}
-							switch ( hit.entity->furnitureType )
-							{
-							case FURNITURE_CHAIR:
-								if ( destroyed )
-								{
-									messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(388));
-								}
-								updateEnemyBar(parent, hit.entity, Language::get(677), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
-									false, DamageGib::DMG_DEFAULT);
-								break;
-							case FURNITURE_TABLE:
-								if ( destroyed )
-								{
-									messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(389));
-								}
-								updateEnemyBar(parent, hit.entity, Language::get(676), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
-									false, DamageGib::DMG_DEFAULT);
-								break;
-							case FURNITURE_BED:
-								if ( destroyed )
-								{
-									messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2505));
-								}
-								updateEnemyBar(parent, hit.entity, Language::get(2505), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
-									false, DamageGib::DMG_DEFAULT);
-								break;
-							case FURNITURE_BUNKBED:
-								if ( destroyed )
-								{
-									messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2506));
-								}
-								updateEnemyBar(parent, hit.entity, Language::get(2506), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
-									false, DamageGib::DMG_DEFAULT);
-								break;
-							case FURNITURE_PODIUM:
-								if ( destroyed )
-								{
-									messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2507));
-								}
-								updateEnemyBar(parent, hit.entity, Language::get(2507), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
-									false, DamageGib::DMG_DEFAULT);
-								break;
-							default:
-								break;
-							}
-						}
-					}
-					playSoundEntity(hit.entity, 28, 128);
+					hit.entity->furnitureHandleDamageMagic(damage, my, parent);
 				}
 			}
 		}
@@ -1232,8 +1149,6 @@ spell_t* spellEffectVampiricAura(Entity* caster, spell_t* spell, int extramagic_
 		newbie = isSpellcasterBeginner(-1, caster);
 	}
 
-	int duration = element->duration; // duration in ticks.
-	//duration += (((element->mana + extramagic_to_use) - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->duration;
 	node_t* spellnode = list_AddNodeLast(&myStats->magic_effects);
 	spellnode->element = copySpell(spell); //We need to save the spell since this is a channeled spell.
 	spell_t* channeled_spell = (spell_t*)(spellnode->element);
@@ -1241,22 +1156,8 @@ spell_t* spellEffectVampiricAura(Entity* caster, spell_t* spell, int extramagic_
 	spellnode->size = sizeof(spell_t);
 	((spell_t*)spellnode->element)->caster = caster->getUID();
 	spellnode->deconstructor = &spellDeconstructor;
-	//if ( newbie )
-	//{
-	//	//This guy's a newbie. There's a chance they've screwed up and negatively impacted the efficiency of the spell.
-	//	int chance = local_rng.rand() % 10;
-	//	// spellcasting power is 0 to 100, based on spellcasting and intelligence.
-	//	int spellcastingPower = std::min(std::max(0, myStats->PROFICIENCIES[PRO_SPELLCASTING] + statGetINT(myStats, caster)), 100);
-	//	if ( chance >= spellcastingPower / 10 )
-	//	{
-	//		duration -= local_rng.rand() % (1000 / (spellcastingPower + 1)); // reduce the duration by 0-20 seconds
-	//	}
-	//	if ( duration < 50 )
-	//	{
-	//		duration = 50;    //Range checking.
-	//	}
-	//}
-	duration /= getCostOfSpell((spell_t*)spellnode->element);
+	
+	int duration = element->duration; // duration in ticks.
 	channeled_spell->channel_duration = duration; //Tell the spell how long it's supposed to last so that it knows what to reset its timer to.
 	caster->setEffect(EFF_VAMPIRICAURA, true, duration, true);
 	for ( int i = 0; i < MAXPLAYERS; ++i )
@@ -2661,7 +2562,7 @@ void spellEffectShadowTag(Entity& my, spellElement_t& element, Entity* parent, i
 				}
 				else
 				{
-					hit.entity->setEffect(EFF_SHADOW_TAGGED, true, 10 * TICKS_PER_SECOND, true);
+					hit.entity->setEffect(EFF_SHADOW_TAGGED, true, element.duration * TICKS_PER_SECOND, true);
 				}
 				magicOnEntityHit(parent, &my, hit.entity, hitstats, 0, 0, 0, SPELL_SHADOW_TAG);
 				parent->creatureShadowTaggedThisUid = hit.entity->getUID();
@@ -2716,9 +2617,6 @@ bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* paren
 {
 	if ( target )
 	{
-		//int damage = element.damage;
-		//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
-
 		if ( (target->behavior == &actMonster && !target->isInertMimic()) || target->behavior == &actPlayer )
 		{
 			Stat* hitstats = target->getStats();
@@ -3580,7 +3478,7 @@ Entity* spellEffectDemesneDoor(Entity& caster, Entity& target)
 	return door;
 }
 
-int getSpellDamageFromID(int spellID, Entity* parent, bool checkValueOnly)
+int getSpellDamageFromID(int spellID, Entity* parent, Entity* magicSourceParticle, real_t addSpellBonus, bool applyingDamageOnCast)
 {
 	int damage = 0;
 	spellElement_t* element = nullptr;
@@ -3599,9 +3497,10 @@ int getSpellDamageFromID(int spellID, Entity* parent, bool checkValueOnly)
 	}
 	if ( element )
 	{
-		damage = element->damage;
+		damage = element->getDamage();
 		real_t bonus = (getBonusFromCasterOfSpellElement(parent, parent ? parent->getStats() : nullptr, element, spellID));
-		if ( !checkValueOnly )
+		bonus += addSpellBonus;
+		if ( applyingDamageOnCast )
 		{
 			if ( parent && parent->behavior == &actPlayer )
 			{

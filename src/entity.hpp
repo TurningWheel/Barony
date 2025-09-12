@@ -1235,7 +1235,7 @@ public:
 	 * Entities with Stats will have their fire time (char_fire) and chance to stop being on fire (chanceToPutOutFire) reduced by their CON
 	 * Calculations for reductions is outlined in this function
 	 */
-	void SetEntityOnFire(Entity* sourceOfFire = nullptr);
+	bool SetEntityOnFire(Entity* sourceOfFire = nullptr);
 
 	void addToCreatureList(list_t* list);
 	void addToWorldUIList(list_t *list);

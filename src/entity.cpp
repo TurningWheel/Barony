@@ -9922,11 +9922,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 					Entity* colliderParent = hit.entity->colliderCreatedParent != 0 ? uidToEntity(hit.entity->colliderCreatedParent) : nullptr;
 					if ( hit.entity->colliderSpellEvent % 1000 == 8 )
 					{
-						thornsEffect += getSpellDamageFromID(SPELL_THORNS, colliderParent);
+						thornsEffect += getSpellDamageFromID(SPELL_THORNS, colliderParent, hit.entity);
 					}
 					else if ( hit.entity->colliderSpellEvent % 1000 == 9 )
 					{
-						thornsEffect += getSpellDamageFromID(SPELL_BLADEVINES, colliderParent);
+						thornsEffect += getSpellDamageFromID(SPELL_BLADEVINES, colliderParent, hit.entity);
 					}
 
 					if ( thornsEffect != 0 )
@@ -10378,11 +10378,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 					if ( hitstats->getEffectActive(EFF_THORNS) )
 					{
-						thornsEffect += getSpellDamageFromID(SPELL_THORNS, hit.entity);
+						thornsEffect += getSpellDamageFromID(SPELL_THORNS, hit.entity, hit.entity);
 					}
 					if ( hitstats->getEffectActive(EFF_BLADEVINES) )
 					{
-						thornsEffect += getSpellDamageFromID(SPELL_BLADEVINES, hit.entity);
+						thornsEffect += getSpellDamageFromID(SPELL_BLADEVINES, hit.entity, hit.entity);
 					}
 
 					bool backstab = false;
@@ -22940,7 +22940,7 @@ bool Entity::setArrowProjectileProperties(int weaponType)
  * Entities with Stats will have their fire time (char_fire) and chance to stop being on fire (chanceToPutOutFire) reduced by their CON
  * Calculations for reductions is outlined in this function
  */
-void Entity::SetEntityOnFire(Entity* sourceOfFire)
+bool Entity::SetEntityOnFire(Entity* sourceOfFire)
 {
 	// Check if the Entity can be set on fire
 	if ( this->flags[BURNABLE] )
@@ -22952,23 +22952,23 @@ void Entity::SetEntityOnFire(Entity* sourceOfFire)
 			{
 				if ( myStats->type == SKELETON )
 				{
-					return;
+					return false;
 				}
 				if ( myStats->type == AUTOMATON )
 				{
-					return;
+					return false;
 				}
 				if ( myStats->breastplate && myStats->breastplate->type == MACHINIST_APRON )
 				{
-					return;
+					return false;
 				}
 				if ( myStats->amulet && myStats->amulet->type == AMULET_BURNINGRESIST )
 				{
-					return;
+					return false;
 				}
 				if ( myStats->getEffectActive(EFF_FLAME_CLOAK) )
 				{
-					return;
+					return false;
 				}
 			}
 		}
@@ -22997,7 +22997,7 @@ void Entity::SetEntityOnFire(Entity* sourceOfFire)
 			// If the Entity is not a Monster, it wont have Stats, end here
 			if ( this->getStats() == nullptr )
 			{
-				return; // The Entity was set on fire, it does not have Stats, so it is on fire for maximum duration
+				return true; // The Entity was set on fire, it does not have Stats, so it is on fire for maximum duration
 			}
 
 			if ( this->behavior == &actPlayer )
@@ -23011,7 +23011,7 @@ void Entity::SetEntityOnFire(Entity* sourceOfFire)
 			// If the Entity's CON is <= 1 then their time is just MAX_TICKS_ON_FIRE
 			if ( entityCON <= 1 )
 			{
-				return; // The Entity was set on fire, with maximum duration and chance
+				return true; // The Entity was set on fire, with maximum duration and chance
 			}
 
 			// If the Entity's CON is <= 4 then their chance is just MAX_CHANCE_STOP_FIRE
@@ -23047,11 +23047,11 @@ void Entity::SetEntityOnFire(Entity* sourceOfFire)
 				}
 			}
 
-			return; // The Entity was set on fire, with a reduced duration
+			return true; // The Entity was set on fire, with a reduced duration
 		}
 	}
 
-	return; // The Entity can/should not be set on fire
+	return false; // The Entity can/should not be set on fire
 }
 
 /*-------------------------------------------------------------------------------

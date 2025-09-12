@@ -1873,6 +1873,232 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					}
 				}
 
+				int damageTmp = 0;
+				Sint32 preResistanceDamageTmp = 0;
+				{
+					int magicDmg = element->getDamage();
+					magicDmg += (spellbookDamageBonus * magicDmg);
+					if ( hit.entity && !mimic && (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer) )
+					{
+						if ( my->actmagicIsOrbiting == 2 )
+						{
+							if ( !strcmp(element->element_internal_name, spellElement_magicmissile.element_internal_name) )
+							{
+								if ( parent && my->actmagicOrbitCastFromSpell == 1 )
+								{
+									// cast through amplify magic effect
+									magicDmg /= 2;
+								}
+								magicDmg = magicDmg - local_rng.rand() % ((magicDmg / 8) + 1);
+							}
+							else if ( !strcmp(element->element_internal_name, spellElement_fire.element_internal_name) )
+							{
+								if ( my->actmagicIsOrbiting == 2 )
+								{
+									if ( parent && my->actmagicOrbitCastFromSpell == 0 )
+									{
+										if ( parent->behavior == &actParticleDot )
+										{
+											magicDmg = parent->skill[1];
+										}
+										else if ( parent->behavior == &actPlayer )
+										{
+											Stat* playerStats = parent->getStats();
+											if ( playerStats )
+											{
+												int skillLVL = playerStats->getModifiedProficiency(PRO_ALCHEMY) / 20;
+												magicDmg = (14 + skillLVL * 1.5);
+											}
+										}
+										else
+										{
+											magicDmg = 14;
+										}
+									}
+									else if ( parent && my->actmagicOrbitCastFromSpell == 1 )
+									{
+										// cast through amplify magic effect
+										magicDmg /= 2;
+									}
+									else
+									{
+										magicDmg = 14;
+									}
+									magicDmg = magicDmg - local_rng.rand() % ((magicDmg / 8) + 1);
+								}
+							}
+							else if ( !strcmp(element->element_internal_name, spellElement_cold.element_internal_name) )
+							{
+								if ( my->actmagicIsOrbiting == 2 )
+								{
+									if ( parent && my->actmagicOrbitCastFromSpell == 0 )
+									{
+										if ( parent->behavior == &actParticleDot )
+										{
+											magicDmg = parent->skill[1];
+										}
+										else if ( parent->behavior == &actPlayer )
+										{
+											Stat* playerStats = parent->getStats();
+											if ( playerStats )
+											{
+												int skillLVL = playerStats->getModifiedProficiency(PRO_ALCHEMY) / 20;
+												magicDmg = (18 + skillLVL * 1.5);
+											}
+										}
+										else
+										{
+											magicDmg = 18;
+										}
+									}
+									else if ( parent && my->actmagicOrbitCastFromSpell == 1 )
+									{
+										// cast through amplify magic effect
+										magicDmg /= 2;
+									}
+									else
+									{
+										magicDmg = 18;
+									}
+									magicDmg = magicDmg - local_rng.rand() % ((magicDmg / 8) + 1);
+								}
+							}
+							else if ( !strcmp(element->element_internal_name, spellElement_lightning.element_internal_name) )
+							{
+								if ( my->actmagicIsOrbiting == 2 )
+								{
+									if ( parent && my->actmagicOrbitCastFromSpell == 0 )
+									{
+										if ( parent->behavior == &actParticleDot )
+										{
+											magicDmg = parent->skill[1];
+										}
+										else if ( parent->behavior == &actPlayer )
+										{
+											Stat* playerStats = parent->getStats();
+											if ( playerStats )
+											{
+												int skillLVL = playerStats->getModifiedProficiency(PRO_ALCHEMY) / 20;
+												magicDmg = (22 + skillLVL * 1.5);
+											}
+										}
+										else
+										{
+											magicDmg = 22;
+										}
+									}
+									else if ( parent && my->actmagicOrbitCastFromSpell == 1 )
+									{
+										// cast through amplify magic effect
+										magicDmg /= 2;
+									}
+									else
+									{
+										magicDmg = 22;
+									}
+									magicDmg = magicDmg - local_rng.rand() % ((magicDmg / 8) + 1);
+								}
+							}
+						}
+
+						if ( Stat* hitstats = hit.entity->getStats() )
+						{
+							if ( spell->ID == SPELL_SLIME_WATER )
+							{
+								if ( hitstats->type == VAMPIRE )
+								{
+									magicDmg *= 2;
+								}
+							}
+						}
+					}
+
+					Sint32 preResistanceDamage = magicDmg;
+					if ( hit.entity && (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer) )
+					{
+						if ( mimic )
+						{
+							magicDmg /= (1 + (int)resistance);
+						}
+						else
+						{
+							magicDmg *= damageMultiplier;
+
+							if ( parent )
+							{
+								if ( Stat* casterStats = parent->getStats() )
+								{
+									if ( casterStats && casterStats->type == LICH_FIRE && parent->monsterLichAllyStatus == LICH_ALLY_DEAD )
+									{
+										if ( !strcmp(element->element_internal_name, spellElement_bleed.element_internal_name)
+											|| !strcmp(element->element_internal_name, spellElement_fire.element_internal_name) )
+										{
+											magicDmg *= 2;
+										}
+									}
+								}
+							}
+
+							if ( !strcmp(element->element_internal_name, spellElement_cold.element_internal_name) )
+							{
+								real_t coldMultiplier = 1.0;
+								if ( hitstats->helmet && hitstats->helmet->type == HAT_WARM )
+								{
+									if ( !(hit.entity->behavior == &actPlayer && hit.entity->effectShapeshift != NOTHING) )
+									{
+										if ( hitstats->helmet->beatitude >= 0 || shouldInvertEquipmentBeatitude(hitstats) )
+										{
+											coldMultiplier = std::max(0.0, 0.5 - 0.25 * (abs(hitstats->helmet->beatitude)));
+										}
+										else
+										{
+											coldMultiplier = 0.50;
+										}
+									}
+								}
+								magicDmg *= coldMultiplier;
+							}
+							if ( !strcmp(element->element_internal_name, spellElement_fire.element_internal_name)
+								|| !strcmp(element->element_internal_name, "spell_element_flames") )
+							{
+								real_t fireMultiplier = 1.0;
+								//if ( hitstats->helmet && hitstats->helmet->type == HAT_WARM )
+								//{
+								//	if ( !(hit.entity->behavior == &actPlayer && hit.entity->effectShapeshift != NOTHING) )
+								//	{
+								//		if ( hitstats->helmet->beatitude >= 0 || shouldInvertEquipmentBeatitude(hitstats) )
+								//		{
+								//			fireMultiplier += 0.5;
+								//		}
+								//		else
+								//		{
+								//			fireMultiplier += 0.5 + 0.5 * abs(hitstats->helmet->beatitude); // cursed, extra fire damage
+								//		}
+								//	}
+								//}
+								magicDmg *= fireMultiplier;
+							}
+
+							magicDmg /= (1 + (int)resistance);
+						}
+					}
+
+					if ( spell->ID >= SPELL_SLIME_ACID && spell->ID <= SPELL_SLIME_METAL )
+					{
+						preResistanceDamage = std::max(2, preResistanceDamage);
+						magicDmg = std::max(2, magicDmg);
+					}
+					else if ( spell->ID == SPELL_FOCI_FIRE )
+					{
+						preResistanceDamage = std::max(2, preResistanceDamage);
+						magicDmg = std::max(2, magicDmg);
+					}
+					damageTmp = magicDmg;
+					preResistanceDamageTmp = preResistanceDamage;
+				}
+				const Sint32 preResistanceDamage = preResistanceDamageTmp;
+				const int damage = damageTmp;
+
 				if (!strcmp(element->element_internal_name, spellElement_force.element_internal_name)
 					|| !strcmp(element->element_internal_name, spellElementMap[SPELL_MERCURY_BOLT].element_internal_name)
 					|| !strcmp(element->element_internal_name, spellElementMap[SPELL_LEAD_BOLT].element_internal_name)
@@ -1883,9 +2109,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					{
 						if ( mimic )
 						{
-							int damage = element->damage;
-							damage += (spellbookDamageBonus * damage);
-							damage /= (1 + (int)resistance);
 							hit.entity->chestHandleDamageMagic(damage, *my, parent);
 							if ( spell->ID == SPELL_SPORE_BOMB || spell->ID == SPELL_MYCELIUM_BOMB )
 							{
@@ -1900,12 +2123,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						{
 							Entity* parent = uidToEntity(my->parent);
 							playSoundEntity(hit.entity, 28, 128);
-							int damage = element->damage;
-							damage += (spellbookDamageBonus * damage);
-							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
-							Sint32 preResistanceDamage = damage;
-							damage *= damageMultiplier;
-							damage /= (1 + (int)resistance);
+
 							Sint32 oldHP = hitstats->HP;
 							hit.entity->modHP(-damage);
 							magicOnEntityHit(parent, my, hit.entity, hitstats, preResistanceDamage, damage, oldHP, spell ? spell->ID : SPELL_NONE);
@@ -1964,14 +2182,14 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								if ( !strcmp(element->element_internal_name, spellElementMap[SPELL_MERCURY_BOLT].element_internal_name) )
 								{
 									Sint32 duration = 5 * TICKS_PER_SECOND;
-									damage /= (1 + (int)resistance);
+									duration /= (1 + (int)resistance);
 									if ( hit.entity->setEffect(EFF_SLOW, true, duration, false, true, false, false) )
 									{
 										playSoundEntity(hit.entity, 396 + local_rng.rand() % 3, 64);
 									}
 
 									duration = 5 * TICKS_PER_SECOND;
-									damage /= (1 + (int)resistance);
+									duration /= (1 + (int)resistance);
 									if ( hit.entity->setEffect(EFF_POISONED, true, duration, false, true, false, false) )
 									{
 										hitstats->poisonKiller = my->parent;
@@ -1983,14 +2201,14 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( !strcmp(element->element_internal_name, spellElementMap[SPELL_SPORE_BOMB].element_internal_name) )
 							{
 								Sint32 duration = 6 * TICKS_PER_SECOND + 10;
-								damage /= (1 + (int)resistance);
+								duration /= (1 + (int)resistance);
 								if ( hit.entity->setEffect(EFF_SLOW, true, duration, false, true, false, false) )
 								{
 									playSoundEntity(hit.entity, 396 + local_rng.rand() % 3, 64);
 								}
 
 								duration = 6 * TICKS_PER_SECOND + 10;
-								damage /= (1 + (int)resistance);
+								duration /= (1 + (int)resistance);
 								if ( hit.entity->setEffect(EFF_POISONED, true, duration, false, true, false, false) )
 								{
 									hitstats->poisonKiller = my->parent;
@@ -1999,7 +2217,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							else if ( !strcmp(element->element_internal_name, spellElementMap[SPELL_MYCELIUM_BOMB].element_internal_name) )
 							{
 								Sint32 duration = 6 * TICKS_PER_SECOND + 10;
-								damage /= (1 + (int)resistance);
+								duration /= (1 + (int)resistance);
 								if ( hit.entity->setEffect(EFF_SLOW, true, duration, false, true, false, false) )
 								{
 									playSoundEntity(hit.entity, 396 + local_rng.rand() % 3, 64);
@@ -2026,9 +2244,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 						else if (hit.entity->behavior == &actDoor || hit.entity->behavior == &actIronDoor )
 						{
-							int damage = element->damage;
-							damage += (spellbookDamageBonus * damage);
-							damage /= (1 + (int)resistance);
 							hit.entity->doorHandleDamageMagic(damage, *my, parent);
 							if ( spell->ID == SPELL_SPORE_BOMB || spell->ID == SPELL_MYCELIUM_BOMB )
 							{
@@ -2041,9 +2256,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 						else if ( hit.entity->isDamageableCollider() && hit.entity->isColliderDamageableByMagic() )
 						{
-							int damage = element->damage;
-							damage += (spellbookDamageBonus * damage);
-							damage /= (1 + (int)resistance);
 							hit.entity->colliderHandleDamageMagic(damage, *my, parent);
 							if ( spell->ID == SPELL_SPORE_BOMB || spell->ID == SPELL_MYCELIUM_BOMB )
 							{
@@ -2056,9 +2268,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 						else if ( hit.entity->behavior == &actChest )
 						{
-							int damage = element->damage;
-							damage += (spellbookDamageBonus * damage);
-							damage /= (1 + (int)resistance);
 							hit.entity->chestHandleDamageMagic(damage, *my, parent);
 							if ( spell->ID == SPELL_SPORE_BOMB || spell->ID == SPELL_MYCELIUM_BOMB )
 							{
@@ -2071,68 +2280,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 						else if (hit.entity->behavior == &actFurniture )
 						{
-							int damage = element->damage;
-							damage += (spellbookDamageBonus * damage);
-							damage /= (1 + (int)resistance);
-							int oldHP = hit.entity->furnitureHealth;
-							hit.entity->furnitureHealth -= damage;
-							if ( parent )
-							{
-								if ( parent->behavior == &actPlayer )
-								{
-									bool destroyed = oldHP > 0 && hit.entity->furnitureHealth <= 0;
-									if ( destroyed )
-									{
-										gameModeManager.currentSession.challengeRun.updateKillEvent(hit.entity);
-									}
-									switch ( hit.entity->furnitureType )
-									{
-										case FURNITURE_CHAIR:
-											if ( destroyed )
-											{
-												messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(388));
-											}
-											updateEnemyBar(parent, hit.entity, Language::get(677), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
-												false, DamageGib::DMG_DEFAULT);
-											break;
-										case FURNITURE_TABLE:
-											if ( destroyed )
-											{
-												messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(389));
-											}
-											updateEnemyBar(parent, hit.entity, Language::get(676), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
-												false, DamageGib::DMG_DEFAULT);
-											break;
-										case FURNITURE_BED:
-											if ( destroyed )
-											{
-												messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2505));
-											}
-											updateEnemyBar(parent, hit.entity, Language::get(2505), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
-												false, DamageGib::DMG_DEFAULT);
-											break;
-										case FURNITURE_BUNKBED:
-											if ( destroyed )
-											{
-												messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2506));
-											}
-											updateEnemyBar(parent, hit.entity, Language::get(2506), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
-												false, DamageGib::DMG_DEFAULT);
-											break;
-										case FURNITURE_PODIUM:
-											if ( destroyed )
-											{
-												messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2507));
-											}
-											updateEnemyBar(parent, hit.entity, Language::get(2507), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
-												false, DamageGib::DMG_DEFAULT);
-											break;
-										default:
-											break;
-									}
-								}
-							}
-							playSoundEntity(hit.entity, 28, 128);
+							hit.entity->furnitureHandleDamageMagic(damage, *my, parent);
 						}
 					}
 				}
@@ -2143,9 +2291,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					{
 						if ( mimic )
 						{
-							int damage = element->damage;
-							damage += (spellbookDamageBonus * damage);
-							damage /= (1 + (int)resistance);
 							hit.entity->chestHandleDamageMagic(damage, *my, parent);
 							if ( my->actmagicProjectileArc > 0 )
 							{
@@ -2167,23 +2312,12 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						{
 							Entity* parent = uidToEntity(my->parent);
 							playSoundEntity(hit.entity, 28, 128);
-							int damage = element->damage;
-							damage += (spellbookDamageBonus * damage);
-							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
+
 							if ( my->actmagicIsOrbiting == 2 )
 							{
 								spawnExplosion(my->x, my->y, my->z);
-								if ( parent && my->actmagicOrbitCastFromSpell == 1 )
-								{
-									// cast through amplify magic effect
-									damage /= 2;
-								}
-								damage = damage - local_rng.rand() % ((damage / 8) + 1);
 							}
 
-							Sint32 preResistanceDamage = damage;
-							damage *= damageMultiplier;
-							damage /= (1 + (int)resistance);
 							Sint32 oldHP = hitstats->HP;
 							hit.entity->modHP(-damage);
 							magicTrapOnHit(parent, hit.entity, hitstats, oldHP, spell ? spell->ID : SPELL_NONE);
@@ -2220,10 +2354,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 						else if ( hit.entity->behavior == &actDoor || hit.entity->behavior == &actIronDoor )
 						{
-							int damage = element->damage;
-							damage += (spellbookDamageBonus * damage);
-							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
-							damage /= (1 + (int)resistance);
 							hit.entity->doorHandleDamageMagic(damage, *my, parent);
 							if ( my->actmagicProjectileArc > 0 )
 							{
@@ -2243,10 +2373,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 						else if ( hit.entity->isDamageableCollider() && hit.entity->isColliderDamageableByMagic() )
 						{
-							int damage = element->damage;
-							damage += (spellbookDamageBonus * damage);
-							damage /= (1 + (int)resistance);
-
 							hit.entity->colliderHandleDamageMagic(damage, *my, parent);
 							if ( my->actmagicProjectileArc > 0 )
 							{
@@ -2266,9 +2392,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 						else if ( hit.entity->behavior == &actChest )
 						{
-							int damage = element->damage;
-							damage += (spellbookDamageBonus * damage);
-							damage /= (1 + (int)resistance);
 							hit.entity->chestHandleDamageMagic(damage, *my, parent);
 							if ( my->actmagicProjectileArc > 0 )
 							{
@@ -2288,68 +2411,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 						else if (hit.entity->behavior == &actFurniture )
 						{
-							int damage = element->damage;
-							damage += (spellbookDamageBonus * damage);
-							damage /= (1 + (int)resistance);
-							int oldHP = hit.entity->furnitureHealth;
-							hit.entity->furnitureHealth -= damage;
-							if ( parent )
-							{
-								if ( parent->behavior == &actPlayer )
-								{
-									bool destroyed = oldHP > 0 && hit.entity->furnitureHealth <= 0;
-									if ( destroyed )
-									{
-										gameModeManager.currentSession.challengeRun.updateKillEvent(hit.entity);
-									}
-									switch ( hit.entity->furnitureType )
-									{
-									case FURNITURE_CHAIR:
-										if ( destroyed )
-										{
-											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(388));
-										}
-										updateEnemyBar(parent, hit.entity, Language::get(677), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
-											false, DamageGib::DMG_DEFAULT);
-										break;
-									case FURNITURE_TABLE:
-										if ( destroyed )
-										{
-											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(389));
-										}
-										updateEnemyBar(parent, hit.entity, Language::get(676), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
-											false, DamageGib::DMG_DEFAULT);
-										break;
-									case FURNITURE_BED:
-										if ( destroyed )
-										{
-											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2505));
-										}
-										updateEnemyBar(parent, hit.entity, Language::get(2505), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
-											false, DamageGib::DMG_DEFAULT);
-										break;
-									case FURNITURE_BUNKBED:
-										if ( destroyed )
-										{
-											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2506));
-										}
-										updateEnemyBar(parent, hit.entity, Language::get(2506), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
-											false, DamageGib::DMG_DEFAULT);
-										break;
-									case FURNITURE_PODIUM:
-										if ( destroyed )
-										{
-											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2507));
-										}
-										updateEnemyBar(parent, hit.entity, Language::get(2507), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
-											false, DamageGib::DMG_DEFAULT);
-										break;
-									default:
-										break;
-									}
-								}
-							}
-							playSoundEntity(hit.entity, 28, 128);
+							hit.entity->furnitureHandleDamageMagic(damage, *my, parent);
 							if ( my->actmagicProjectileArc > 0 )
 							{
 								Entity* caster = uidToEntity(spell->caster);
@@ -2382,13 +2444,16 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					if (hit.entity)
 					{
 						// Attempt to set the Entity on fire
-						hit.entity->SetEntityOnFire();
+						if ( hit.entity->SetEntityOnFire() )
+						{
+							if ( parent && parent->behavior == &actPlayer )
+							{
+								hit.entity->char_fire = std::min(hit.entity->char_fire, element->duration);
+							}
+						}
 
 						if ( mimic )
 						{
-							int damage = element->damage;
-							damage += (spellbookDamageBonus * damage);
-							damage /= (1 + (int)resistance);
 							hit.entity->chestHandleDamageMagic(damage, *my, parent);
 							if ( my->actmagicProjectileArc > 0 )
 							{
@@ -2398,10 +2463,8 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( (spell->ID == SPELL_METEOR || spell->ID == SPELL_METEOR_SHOWER)
 								&& !strcmp(element->element_internal_name, spellElement_fire.element_internal_name) )
 							{
-								int damage = element->damage;
-								damage += (spellbookDamageBonus * damage);
 								Entity* caster = uidToEntity(spell->caster);
-								createSpellExplosionArea(spell->ID, caster, my->x, my->y, my->z, 16.0, damage, hit.entity);
+								createSpellExplosionArea(spell->ID, caster, my->x, my->y, my->z, 16.0, preResistanceDamage, hit.entity);
 							}
 							if ( !(my->actmagicIsOrbiting == 2) )
 							{
@@ -2419,78 +2482,17 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 						else if (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer)
 						{
-							real_t fireMultiplier = 1.0;
-							//if ( hitstats->helmet && hitstats->helmet->type == HAT_WARM )
-							//{
-							//	if ( !(hit.entity->behavior == &actPlayer && hit.entity->effectShapeshift != NOTHING) )
-							//	{
-							//		if ( hitstats->helmet->beatitude >= 0 || shouldInvertEquipmentBeatitude(hitstats) )
-							//		{
-							//			fireMultiplier += 0.5;
-							//		}
-							//		else
-							//		{
-							//			fireMultiplier += 0.5 + 0.5 * abs(hitstats->helmet->beatitude); // cursed, extra fire damage
-							//		}
-							//	}
-							//}
-
 							//playSoundEntity(my, 153, 64);
 							playSoundEntity(hit.entity, 28, 128);
 							//TODO: Apply fire resistances/weaknesses.
-							int damage = element->damage;
-							damage += (spellbookDamageBonus * damage);
-							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							if ( my->actmagicIsOrbiting == 2 )
 							{
 								if ( explode )
 								{
 									spawnExplosion(my->x, my->y, my->z);
 								}
-								if ( parent && my->actmagicOrbitCastFromSpell == 0 )
-								{
-									if ( parent->behavior == &actParticleDot )
-									{
-										damage = parent->skill[1];
-									}
-									else if ( parent->behavior == &actPlayer )
-									{
-										Stat* playerStats = parent->getStats();
-										if ( playerStats )
-										{
-											int skillLVL = playerStats->getModifiedProficiency(PRO_ALCHEMY) / 20;
-											damage = (14 + skillLVL * 1.5);
-										}
-									}
-									else
-									{
-										damage = 14;
-									}
-								}
-								else if ( parent && my->actmagicOrbitCastFromSpell == 1 )
-								{
-									// cast through amplify magic effect
-									damage /= 2;
-								}
-								else
-								{
-									damage = 14;
-								}
-								damage = damage - local_rng.rand() % ((damage / 8) + 1);
-							}
-							Sint32 preResistanceDamage = damage;
-							damage *= damageMultiplier;
-							if ( parent )
-							{
-								Stat* casterStats = parent->getStats();
-								if ( casterStats && casterStats->type == LICH_FIRE && parent->monsterLichAllyStatus == LICH_ALLY_DEAD )
-								{
-									damage *= 2;
-								}
 							}
 							int oldHP = hitstats->HP;
-							damage *= fireMultiplier;
-							damage /= (1 + (int)resistance);
 							hit.entity->modHP(-damage);
 							magicOnEntityHit(parent, my, hit.entity, hitstats, preResistanceDamage, damage, oldHP, spell ? spell->ID : SPELL_NONE);
 							magicTrapOnHit(parent, hit.entity, hitstats, oldHP, spell ? spell->ID : SPELL_NONE);
@@ -2573,10 +2575,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 						else if ( hit.entity->behavior == &actDoor || hit.entity->behavior == &actIronDoor )
 						{
-							int damage = element->damage;
-							damage += (spellbookDamageBonus * damage);
-							damage /= (1 + (int)resistance);
-
 							hit.entity->doorHandleDamageMagic(damage, *my, parent);
 							if ( my->actmagicProjectileArc > 0 )
 							{
@@ -2586,10 +2584,8 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( (spell->ID == SPELL_METEOR || spell->ID == SPELL_METEOR_SHOWER)
 								&& !strcmp(element->element_internal_name, spellElement_fire.element_internal_name) )
 							{
-								int damage = element->damage;
-								damage += (spellbookDamageBonus * damage);
 								Entity* caster = uidToEntity(spell->caster);
-								createSpellExplosionArea(spell->ID, caster, my->x, my->y, my->z, 16.0, damage, hit.entity);
+								createSpellExplosionArea(spell->ID, caster, my->x, my->y, my->z, 16.0, preResistanceDamage, hit.entity);
 							}
 							if ( !(my->actmagicIsOrbiting == 2) )
 							{
@@ -2607,10 +2603,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						} 
 						else if ( hit.entity->isDamageableCollider() && hit.entity->isColliderDamageableByMagic() )
 						{
-							int damage = element->damage;
-							damage += (spellbookDamageBonus * damage);
-							damage /= (1 + (int)resistance);
-
 							hit.entity->colliderHandleDamageMagic(damage, *my, parent);
 							if ( my->actmagicProjectileArc > 0 )
 							{
@@ -2620,10 +2612,8 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( (spell->ID == SPELL_METEOR || spell->ID == SPELL_METEOR_SHOWER)
 								&& !strcmp(element->element_internal_name, spellElement_fire.element_internal_name) )
 							{
-								int damage = element->damage;
-								damage += (spellbookDamageBonus * damage);
 								Entity* caster = uidToEntity(spell->caster);
-								createSpellExplosionArea(spell->ID, caster, my->x, my->y, my->z, 16.0, damage, hit.entity);
+								createSpellExplosionArea(spell->ID, caster, my->x, my->y, my->z, 16.0, preResistanceDamage, hit.entity);
 							}
 							if ( !(my->actmagicIsOrbiting == 2) )
 							{
@@ -2641,9 +2631,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 						else if (hit.entity->behavior == &actChest) 
 						{
-							int damage = element->damage;
-							damage += (spellbookDamageBonus * damage);
-							damage /= (1 + (int)resistance);
 							hit.entity->chestHandleDamageMagic(damage, *my, parent);
 							if ( my->actmagicProjectileArc > 0 )
 							{
@@ -2653,10 +2640,8 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( (spell->ID == SPELL_METEOR || spell->ID == SPELL_METEOR_SHOWER)
 								&& !strcmp(element->element_internal_name, spellElement_fire.element_internal_name) )
 							{
-								int damage = element->damage;
-								damage += (spellbookDamageBonus * damage);
 								Entity* caster = uidToEntity(spell->caster);
-								createSpellExplosionArea(spell->ID, caster, my->x, my->y, my->z, 16.0, damage, hit.entity);
+								createSpellExplosionArea(spell->ID, caster, my->x, my->y, my->z, 16.0, preResistanceDamage, hit.entity);
 							}
 							if ( !(my->actmagicIsOrbiting == 2) )
 							{
@@ -2674,68 +2659,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 						else if (hit.entity->behavior == &actFurniture )
 						{
-							int damage = element->damage;
-							damage += (spellbookDamageBonus * damage);
-							damage /= (1 + (int)resistance);
-							int oldHP = hit.entity->furnitureHealth;
-							hit.entity->furnitureHealth -= damage;
-							if ( parent )
-							{
-								if ( parent->behavior == &actPlayer )
-								{
-									bool destroyed = oldHP > 0 && hit.entity->furnitureHealth <= 0;
-									if ( destroyed )
-									{
-										gameModeManager.currentSession.challengeRun.updateKillEvent(hit.entity);
-									}
-									switch ( hit.entity->furnitureType )
-									{
-									case FURNITURE_CHAIR:
-										if ( destroyed )
-										{
-											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(388));
-										}
-										updateEnemyBar(parent, hit.entity, Language::get(677), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
-											false, DamageGib::DMG_DEFAULT);
-										break;
-									case FURNITURE_TABLE:
-										if ( destroyed )
-										{
-											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(389));
-										}
-										updateEnemyBar(parent, hit.entity, Language::get(676), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
-											false, DamageGib::DMG_DEFAULT);
-										break;
-									case FURNITURE_BED:
-										if ( destroyed )
-										{
-											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2505));
-										}
-										updateEnemyBar(parent, hit.entity, Language::get(2505), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
-											false, DamageGib::DMG_DEFAULT);
-										break;
-									case FURNITURE_BUNKBED:
-										if ( destroyed )
-										{
-											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2506));
-										}
-										updateEnemyBar(parent, hit.entity, Language::get(2506), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
-											false, DamageGib::DMG_DEFAULT);
-										break;
-									case FURNITURE_PODIUM:
-										if ( destroyed )
-										{
-											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2507));
-										}
-										updateEnemyBar(parent, hit.entity, Language::get(2507), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
-											false, DamageGib::DMG_DEFAULT);
-										break;
-									default:
-										break;
-									}
-								}
-							}
-							playSoundEntity(hit.entity, 28, 128);
+							hit.entity->furnitureHandleDamageMagic(damage, *my, parent);
 							if ( my->actmagicProjectileArc > 0 )
 							{
 								Entity* caster = uidToEntity(spell->caster);
@@ -2744,10 +2668,8 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( (spell->ID == SPELL_METEOR || spell->ID == SPELL_METEOR_SHOWER)
 								&& !strcmp(element->element_internal_name, spellElement_fire.element_internal_name) )
 							{
-								int damage = element->damage;
-								damage += (spellbookDamageBonus * damage);
 								Entity* caster = uidToEntity(spell->caster);
-								createSpellExplosionArea(spell->ID, caster, my->x, my->y, my->z, 16.0, damage, hit.entity);
+								createSpellExplosionArea(spell->ID, caster, my->x, my->y, my->z, 16.0, preResistanceDamage, hit.entity);
 							}
 							if ( !(my->actmagicIsOrbiting == 2) )
 							{
@@ -2771,7 +2693,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					{
 						if ( (!mimic && hit.entity->behavior == &actMonster) || hit.entity->behavior == &actPlayer)
 						{
-							int duration = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
+							int duration = element->duration;
 							duration /= (1 + (int)resistance);
 
 							if ( parent && (parent->behavior == &actMagicTrap || parent->behavior == &actMagicTrapCeiling) )
@@ -2839,20 +2761,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					{
 						if ( (!mimic && hit.entity->behavior == &actMonster) || hit.entity->behavior == &actPlayer)
 						{
-							real_t coldMultiplier = 1.0;
 							bool warmHat = false;
 							if ( hitstats->helmet && hitstats->helmet->type == HAT_WARM )
 							{
 								if ( !(hit.entity->behavior == &actPlayer && hit.entity->effectShapeshift != NOTHING) )
 								{
-									if ( hitstats->helmet->beatitude >= 0 || shouldInvertEquipmentBeatitude(hitstats) )
-									{
-										coldMultiplier = std::max(0.0, 0.5 - 0.25 * (abs(hitstats->helmet->beatitude)));
-									}
-									else
-									{
-										coldMultiplier = 0.50;
-									}
 									warmHat = true;
 								}
 							}
@@ -2862,7 +2775,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( !warmHat )
 							{
 								hitstats->setEffectActive(EFF_SLOW, 1);
-								hitstats->EFFECTS_TIMERS[EFF_SLOW] = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
+								hitstats->EFFECTS_TIMERS[EFF_SLOW] = element->duration;
 								hitstats->EFFECTS_TIMERS[EFF_SLOW] /= (1 + (int)resistance);
 
 								// If the Entity hit is a Player, update their status to be Slowed
@@ -2872,49 +2785,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								}
 							}
 
-							int damage = element->damage;
-							damage += (spellbookDamageBonus * damage);
-							//messagePlayer(0, "damage: %d", damage);
-							if ( my->actmagicIsOrbiting == 2 )
-							{
-								if ( parent && my->actmagicOrbitCastFromSpell == 0 )
-								{
-									if ( parent->behavior == &actParticleDot )
-									{
-										damage = parent->skill[1];
-									}
-									else if ( parent->behavior == &actPlayer )
-									{
-										Stat* playerStats = parent->getStats();
-										if ( playerStats )
-										{
-											int skillLVL = playerStats->getModifiedProficiency(PRO_ALCHEMY) / 20;
-											damage = (18 + skillLVL * 1.5);
-										}
-									}
-									else
-									{
-										damage = 18;
-									}
-								}
-								else if ( parent && my->actmagicOrbitCastFromSpell == 1 )
-								{
-									// cast through amplify magic effect
-									damage /= 2;
-								}
-								else
-								{
-									damage = 18;
-								}
-								damage = damage - local_rng.rand() % ((damage / 8) + 1);
-							}
-							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							int oldHP = hitstats->HP;
-							Sint32 preResistanceDamage = damage;
-							damage *= damageMultiplier;
-							damage *= coldMultiplier;
-							damage /= (1 + (int)resistance);
-
 							if ( damage > 0 )
 							{
 								hit.entity->modHP(-damage);
@@ -2996,7 +2867,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						{
 							playSoundEntity(hit.entity, 396 + local_rng.rand() % 3, 64);
 							hitstats->setEffectActive(EFF_SLOW, 1);
-							hitstats->EFFECTS_TIMERS[EFF_SLOW] = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
+							hitstats->EFFECTS_TIMERS[EFF_SLOW] = element->duration;
 							hitstats->EFFECTS_TIMERS[EFF_SLOW] /= (1 + (int)resistance);
 
 							magicOnEntityHit(parent, my, hit.entity, hitstats, 0, 0, 0, spell ? spell->ID : SPELL_NONE);
@@ -3078,7 +2949,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						{
 							//playSoundEntity(hit.entity, 396 + local_rng.rand() % 3, 64);
 							hitstats->setEffectActive(EFF_WEAKNESS, 1);
-							hitstats->EFFECTS_TIMERS[EFF_WEAKNESS] = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
+							hitstats->EFFECTS_TIMERS[EFF_WEAKNESS] = element->duration;
 							hitstats->EFFECTS_TIMERS[EFF_WEAKNESS] /= (1 + (int)resistance);
 
 							magicOnEntityHit(parent, my, hit.entity, hitstats, 0, 0, 0, spell ? spell->ID : SPELL_NONE);
@@ -3121,10 +2992,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 							else
 							{
-								effectDuration = 600 + local_rng.rand() % 300; // 12 seconds + 0 to 6 seconds.
+								effectDuration = element->duration;
 								if ( hitstats )
 								{
-									effectDuration = std::max(0, effectDuration - ((hitstats->CON % 10) * 50)); // reduce 1 sec every 10 CON.
+									effectDuration = std::max(50, effectDuration - ((hitstats->CON % 10) * 50)); // reduce 1 sec every 10 CON.
 								}
 							}
 							effectDuration /= (1 + (int)resistance);
@@ -3200,9 +3071,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					playSoundEntity(my, 173, 128);
 					if ( hit.entity )
 					{
-						int damage = element->damage;
-						damage += (spellbookDamageBonus * damage);
-						//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
+						int damage = preResistanceDamage;
 						if ( (!mimic && hit.entity->behavior == &actMonster) || hit.entity->behavior == &actPlayer )
 						{
 							Entity* parent = uidToEntity(my->parent);
@@ -3321,9 +3190,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					{
 						if ( mimic )
 						{
-							int damage = element->damage;
-							damage += (spellbookDamageBonus * damage);
-							damage /= (1 + (int)resistance);
 							hit.entity->chestHandleDamageMagic(damage, *my, parent);
 							if ( my->actmagicProjectileArc > 0 )
 							{
@@ -3342,46 +3208,8 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							Entity* parent = uidToEntity(my->parent);
 							playSoundEntity(my, 173, 64);
 							playSoundEntity(hit.entity, 28, 128);
-							int damage = element->damage;
-							damage += (spellbookDamageBonus * damage);
-							if ( my->actmagicIsOrbiting == 2 )
-							{
-								if ( parent && my->actmagicOrbitCastFromSpell == 0 )
-								{
-									if ( parent->behavior == &actParticleDot )
-									{
-										damage = parent->skill[1];
-									}
-									else if ( parent->behavior == &actPlayer )
-									{
-										Stat* playerStats = parent->getStats();
-										if ( playerStats )
-										{
-											int skillLVL = playerStats->getModifiedProficiency(PRO_ALCHEMY) / 20;
-											damage = (22 + skillLVL * 1.5);
-										}
-									}
-									else
-									{
-										damage = 22;
-									}
-								}
-								else if ( parent && my->actmagicOrbitCastFromSpell == 1 )
-								{
-									// cast through amplify magic effect
-									damage /= 2;
-								}
-								else
-								{
-									damage = 22;
-								}
-								damage = damage - local_rng.rand() % ((damage / 8) + 1);
-							}
-							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
+
 							int oldHP = hitstats->HP;
-							Sint32 preResistanceDamage = damage;
-							damage *= damageMultiplier;
-							damage /= (1 + (int)resistance);
 							hit.entity->modHP(-damage);
 							magicOnEntityHit(parent, my, hit.entity, hitstats, preResistanceDamage, damage, oldHP, spell ? spell->ID : SPELL_NONE);
 							magicTrapOnHit(parent, hit.entity, hitstats, oldHP, spell ? spell->ID : SPELL_NONE);
@@ -3422,11 +3250,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 						else if ( hit.entity->behavior == &actDoor || hit.entity->behavior == &actIronDoor )
 						{
-							int damage = element->damage;
-							damage += (spellbookDamageBonus * damage);
-							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
-							damage /= (1 + (int)resistance);
-
 							hit.entity->doorHandleDamageMagic(damage, *my, parent);
 							if ( my->actmagicProjectileArc > 0 )
 							{
@@ -3442,11 +3265,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 						else if ( hit.entity->isDamageableCollider() && hit.entity->isColliderDamageableByMagic() )
 						{
-							int damage = element->damage;
-							damage += (spellbookDamageBonus * damage);
-							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
-							damage /= (1 + (int)resistance);
-
 							hit.entity->colliderHandleDamageMagic(damage, *my, parent);
 							if ( my->actmagicProjectileArc > 0 )
 							{
@@ -3462,9 +3280,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 						else if ( hit.entity->behavior == &actChest )
 						{
-							int damage = element->damage;
-							damage += (spellbookDamageBonus * damage);
-							damage /= (1 + (int)resistance);
 							hit.entity->chestHandleDamageMagic(damage, *my, parent);
 							if ( my->actmagicProjectileArc > 0 )
 							{
@@ -3480,68 +3295,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 						else if (hit.entity->behavior == &actFurniture )
 						{
-							int damage = element->damage;
-							damage += (spellbookDamageBonus * damage);
-							damage /= (1 + (int)resistance);
-							int oldHP = hit.entity->furnitureHealth;
-							hit.entity->furnitureHealth -= damage;
-							if ( parent )
-							{
-								if ( parent->behavior == &actPlayer )
-								{
-									bool destroyed = oldHP > 0 && hit.entity->furnitureHealth <= 0;
-									if ( destroyed )
-									{
-										gameModeManager.currentSession.challengeRun.updateKillEvent(hit.entity);
-									}
-									switch ( hit.entity->furnitureType )
-									{
-									case FURNITURE_CHAIR:
-										if ( destroyed )
-										{
-											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(388));
-										}
-										updateEnemyBar(parent, hit.entity, Language::get(677), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
-											false, DamageGib::DMG_DEFAULT);
-										break;
-									case FURNITURE_TABLE:
-										if ( destroyed )
-										{
-											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(389));
-										}
-										updateEnemyBar(parent, hit.entity, Language::get(676), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
-											false, DamageGib::DMG_DEFAULT);
-										break;
-									case FURNITURE_BED:
-										if ( destroyed )
-										{
-											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2505));
-										}
-										updateEnemyBar(parent, hit.entity, Language::get(2505), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
-											false, DamageGib::DMG_DEFAULT);
-										break;
-									case FURNITURE_BUNKBED:
-										if ( destroyed )
-										{
-											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2506));
-										}
-										updateEnemyBar(parent, hit.entity, Language::get(2506), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
-											false, DamageGib::DMG_DEFAULT);
-										break;
-									case FURNITURE_PODIUM:
-										if ( destroyed )
-										{
-											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2507));
-										}
-										updateEnemyBar(parent, hit.entity, Language::get(2507), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
-											false, DamageGib::DMG_DEFAULT);
-										break;
-									default:
-										break;
-									}
-								}
-							}
-							playSoundEntity(hit.entity, 28, 128);
+							hit.entity->furnitureHandleDamageMagic(damage, *my, parent);
 							if ( my->actmagicProjectileArc > 0 )
 							{
 								Entity* caster = uidToEntity(spell->caster);
@@ -3583,10 +3337,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						if ( mimic )
 						{
 							playSoundEntity(hit.entity, hitsfx, hitvolume);
-							int damage = element->damage;
-							damage += (spellbookDamageBonus * damage);
-							damage /= (1 + (int)resistance);
-							damage = std::max(2, damage);
 							hit.entity->chestHandleDamageMagic(damage, *my, parent);
 							if ( my->actmagicProjectileArc > 0 )
 							{
@@ -3609,18 +3359,8 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							playSoundEntity(hit.entity, hitsfx, hitvolume);
 							Entity* parent = uidToEntity(my->parent);
 							playSoundEntity(hit.entity, 28, volume);
-							int damage = element->damage;
-							damage += (spellbookDamageBonus * damage);
-							if ( spell->ID == SPELL_SLIME_WATER && hitstats->type == VAMPIRE )
-							{
-								damage *= 2;
-							}
 
-							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							int oldHP = hitstats->HP;
-							Sint32 preResistanceDamage = damage;
-							damage *= damageMultiplier;
-							damage /= (1 + (int)resistance);
 
 							if ( spell->ID == SPELL_SLIME_FIRE )
 							{
@@ -3958,13 +3698,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								}
 							}
 
-							if ( spell->ID == SPELL_GREASE_SPRAY )
-							{
-							}
-							else
-							{
-								damage = std::max(2, damage);
-							}
 							hit.entity->modHP(-damage);
 							magicOnEntityHit(parent, my, hit.entity, hitstats, preResistanceDamage, damage, oldHP, spell ? spell->ID : SPELL_NONE);
 							magicTrapOnHit(parent, hit.entity, hitstats, oldHP, spell ? spell->ID : SPELL_NONE);
@@ -4002,10 +3735,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								hit.entity->SetEntityOnFire();
 							}
 							playSoundEntity(hit.entity, hitsfx, hitvolume);
-							int damage = element->damage;
-							damage += (spellbookDamageBonus * damage);
-							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
-							damage /= (1 + (int)resistance);
 
 							hit.entity->doorHandleDamageMagic(damage, *my, parent);
 							if ( my->actmagicProjectileArc > 0 )
@@ -4027,10 +3756,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								hit.entity->SetEntityOnFire();
 							}
 							playSoundEntity(hit.entity, hitsfx, hitvolume);
-							int damage = element->damage;
-							damage += (spellbookDamageBonus * damage);
-							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
-							damage /= (1 + (int)resistance);
 
 							hit.entity->colliderHandleDamageMagic(damage, *my, parent);
 							if ( my->actmagicProjectileArc > 0 )
@@ -4052,9 +3777,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								hit.entity->SetEntityOnFire();
 							}
 							playSoundEntity(hit.entity, hitsfx, hitvolume);
-							int damage = element->damage;
-							damage += (spellbookDamageBonus * damage);
-							damage /= (1 + (int)resistance);
 							hit.entity->chestHandleDamageMagic(damage, *my, parent);
 							if ( my->actmagicProjectileArc > 0 )
 							{
@@ -4075,68 +3797,8 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								hit.entity->SetEntityOnFire();
 							}
 							playSoundEntity(hit.entity, hitsfx, hitvolume);
-							int damage = element->damage;
-							damage += (spellbookDamageBonus * damage);
-							damage /= (1 + (int)resistance);
-							int oldHP = hit.entity->furnitureHealth;
-							hit.entity->furnitureHealth -= damage;
-							if ( parent )
-							{
-								if ( parent->behavior == &actPlayer )
-								{
-									bool destroyed = oldHP > 0 && hit.entity->furnitureHealth <= 0;
-									if ( destroyed )
-									{
-										gameModeManager.currentSession.challengeRun.updateKillEvent(hit.entity);
-									}
-									switch ( hit.entity->furnitureType )
-									{
-									case FURNITURE_CHAIR:
-										if ( destroyed )
-										{
-											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(388));
-										}
-										updateEnemyBar(parent, hit.entity, Language::get(677), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
-											false, DamageGib::DMG_DEFAULT);
-										break;
-									case FURNITURE_TABLE:
-										if ( destroyed )
-										{
-											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(389));
-										}
-										updateEnemyBar(parent, hit.entity, Language::get(676), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
-											false, DamageGib::DMG_DEFAULT);
-										break;
-									case FURNITURE_BED:
-										if ( destroyed )
-										{
-											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2505));
-										}
-										updateEnemyBar(parent, hit.entity, Language::get(2505), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
-											false, DamageGib::DMG_DEFAULT);
-										break;
-									case FURNITURE_BUNKBED:
-										if ( destroyed )
-										{
-											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2506));
-										}
-										updateEnemyBar(parent, hit.entity, Language::get(2506), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
-											false, DamageGib::DMG_DEFAULT);
-										break;
-									case FURNITURE_PODIUM:
-										if ( destroyed )
-										{
-											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2507));
-										}
-										updateEnemyBar(parent, hit.entity, Language::get(2507), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
-											false, DamageGib::DMG_DEFAULT);
-										break;
-									default:
-										break;
-									}
-								}
-							}
-							playSoundEntity(hit.entity, 28, volume);
+							
+							hit.entity->furnitureHandleDamageMagic(damage, *my, parent);
 							if ( my->actmagicProjectileArc > 0 )
 							{
 								Entity* caster = uidToEntity(spell->caster);
@@ -4160,10 +3822,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						if ( mimic )
 						{
 							playSoundEntity(hit.entity, hitsfx, hitvolume);
-							int damage = element->damage;
-							damage += (spellbookDamageBonus * damage);
-							damage /= (1 + (int)resistance);
-							damage = std::max(2, damage);
 							hit.entity->chestHandleDamageMagic(damage, *my, parent);
 							if ( my->actmagicProjectileArc > 0 )
 							{
@@ -4186,14 +3844,8 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							playSoundEntity(hit.entity, hitsfx, hitvolume);
 							Entity* parent = uidToEntity(my->parent);
 							playSoundEntity(hit.entity, 28, volume);
-							int damage = element->damage;
-							damage += (spellbookDamageBonus * damage);
 
-							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							int oldHP = hitstats->HP;
-							Sint32 preResistanceDamage = damage;
-							damage *= damageMultiplier;
-							damage /= (1 + (int)resistance);
 
 							if ( spell->ID == SPELL_FOCI_FIRE )
 							{
@@ -4212,7 +3864,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								}
 							}
 
-							damage = std::max(2, damage);
 							hit.entity->modHP(-damage);
 							magicOnEntityHit(parent, my, hit.entity, hitstats, preResistanceDamage, damage, oldHP, spell ? spell->ID : SPELL_NONE);
 							magicTrapOnHit(parent, hit.entity, hitstats, oldHP, spell ? spell->ID : SPELL_NONE);
@@ -4244,10 +3895,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						{
 							hit.entity->SetEntityOnFire();
 							playSoundEntity(hit.entity, hitsfx, hitvolume);
-							int damage = element->damage;
-							damage += (spellbookDamageBonus * damage);
-							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
-							damage /= (1 + (int)resistance);
 
 							hit.entity->doorHandleDamageMagic(damage, *my, parent);
 							if ( my->actmagicProjectileArc > 0 )
@@ -4266,10 +3913,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						{
 							hit.entity->SetEntityOnFire();
 							playSoundEntity(hit.entity, hitsfx, hitvolume);
-							int damage = element->damage;
-							damage += (spellbookDamageBonus * damage);
-							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
-							damage /= (1 + (int)resistance);
 
 							hit.entity->colliderHandleDamageMagic(damage, *my, parent);
 							if ( my->actmagicProjectileArc > 0 )
@@ -4288,9 +3931,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						{
 							hit.entity->SetEntityOnFire();
 							playSoundEntity(hit.entity, hitsfx, hitvolume);
-							int damage = element->damage;
-							damage += (spellbookDamageBonus * damage);
-							damage /= (1 + (int)resistance);
 							hit.entity->chestHandleDamageMagic(damage, *my, parent);
 							if ( my->actmagicProjectileArc > 0 )
 							{
@@ -4308,68 +3948,8 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						{
 							hit.entity->SetEntityOnFire();
 							playSoundEntity(hit.entity, hitsfx, hitvolume);
-							int damage = element->damage;
-							damage += (spellbookDamageBonus * damage);
-							damage /= (1 + (int)resistance);
-							int oldHP = hit.entity->furnitureHealth;
-							hit.entity->furnitureHealth -= damage;
-							if ( parent )
-							{
-								if ( parent->behavior == &actPlayer )
-								{
-									bool destroyed = oldHP > 0 && hit.entity->furnitureHealth <= 0;
-									if ( destroyed )
-									{
-										gameModeManager.currentSession.challengeRun.updateKillEvent(hit.entity);
-									}
-									switch ( hit.entity->furnitureType )
-									{
-									case FURNITURE_CHAIR:
-										if ( destroyed )
-										{
-											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(388));
-										}
-										updateEnemyBar(parent, hit.entity, Language::get(677), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
-											false, DamageGib::DMG_DEFAULT);
-										break;
-									case FURNITURE_TABLE:
-										if ( destroyed )
-										{
-											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(389));
-										}
-										updateEnemyBar(parent, hit.entity, Language::get(676), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
-											false, DamageGib::DMG_DEFAULT);
-										break;
-									case FURNITURE_BED:
-										if ( destroyed )
-										{
-											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2505));
-										}
-										updateEnemyBar(parent, hit.entity, Language::get(2505), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
-											false, DamageGib::DMG_DEFAULT);
-										break;
-									case FURNITURE_BUNKBED:
-										if ( destroyed )
-										{
-											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2506));
-										}
-										updateEnemyBar(parent, hit.entity, Language::get(2506), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
-											false, DamageGib::DMG_DEFAULT);
-										break;
-									case FURNITURE_PODIUM:
-										if ( destroyed )
-										{
-											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2507));
-										}
-										updateEnemyBar(parent, hit.entity, Language::get(2507), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
-											false, DamageGib::DMG_DEFAULT);
-										break;
-									default:
-										break;
-									}
-								}
-							}
-							playSoundEntity(hit.entity, 28, volume);
+
+							hit.entity->furnitureHandleDamageMagic(damage, *my, parent);
 							if ( my->actmagicProjectileArc > 0 )
 							{
 								Entity* caster = uidToEntity(spell->caster);
@@ -4964,7 +4544,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					{
 						if ( (!mimic && hit.entity->behavior == &actMonster) || hit.entity->behavior == &actPlayer )
 						{
-							int effectDuration = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
+							int effectDuration = element->duration;
 							effectDuration /= (1 + (int)resistance);
 							int oldDuration = !hitstats->getEffectActive(EFF_PARALYZED) ? 0 : hitstats->EFFECTS_TIMERS[EFF_PARALYZED];
 							if ( hit.entity->setEffect(EFF_PARALYZED, true, effectDuration, false) )
@@ -5020,21 +4600,12 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							Entity* parent = uidToEntity(my->parent);
 							playSoundEntity(my, 173, 64);
 							playSoundEntity(hit.entity, 28, 128);
-							int damage = element->damage;
-							damage += (spellbookDamageBonus * damage);
-							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
-							Sint32 preResistanceDamage = damage;
-							damage *= damageMultiplier;
+
 							Stat* casterStats = nullptr;
 							if ( parent )
 							{
 								casterStats = parent->getStats();
-								if ( casterStats && casterStats->type == LICH_FIRE && parent->monsterLichAllyStatus == LICH_ALLY_DEAD )
-								{
-									damage *= 2;
-								}
 							}
-							damage /= (1 + (int)resistance);
 							
 							Sint32 oldHP = hitstats->HP;
 							hit.entity->modHP(-damage);
@@ -5047,10 +4618,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								parent->killedByMonsterObituary(hit.entity);
 							}
 
-							int bleedDuration = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
+							int bleedDuration = element->duration;
 							bleedDuration /= (1 + (int)resistance);
 							bool wasBleeding = hit.entity->getStats() ? hit.entity->getStats()->getEffectActive(EFF_BLEEDING) : false;
-							if ( hit.entity->setEffect(EFF_BLEEDING, true, bleedDuration, true) )
+							if ( bleedDuration > 0 && hit.entity->setEffect(EFF_BLEEDING, true, bleedDuration, false) )
 							{
 								if ( parent )
 								{
@@ -5073,10 +4644,13 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									}
 								}
 							}
-							hitstats->setEffectActive(EFF_SLOW, 1);
-							hitstats->EFFECTS_TIMERS[EFF_SLOW] = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
-							hitstats->EFFECTS_TIMERS[EFF_SLOW] /= 4;
-							hitstats->EFFECTS_TIMERS[EFF_SLOW] /= (1 + (int)resistance);
+
+							int slowDuration = element->duration / 4;
+							slowDuration /= (1 + (int)resistance);
+							if ( slowDuration > 0 && hit.entity->setEffect(EFF_SLOW, true, slowDuration, false) )
+							{
+
+							}
 							if ( hit.entity->behavior == &actPlayer )
 							{
 								serverUpdateEffects(hit.entity->skill[2]);
@@ -5159,11 +4733,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							{
 								if ( hit.entity->isDamageableCollider() && hit.entity->isColliderDamageableByMagic() )
 								{
-									int damage = element->damage;
-									damage += (spellbookDamageBonus * damage);
-									//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
-									damage /= (1 + (int)resistance);
-
 									hit.entity->colliderHandleDamageMagic(damage, *my, parent);
 									if ( my->actmagicProjectileArc > 0 )
 									{
@@ -5179,9 +4748,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								}
 								else if ( hit.entity->behavior == &actChest || mimic )
 								{
-									int damage = element->damage;
-									damage += (spellbookDamageBonus * damage);
-									damage /= (1 + (int)resistance);
 									hit.entity->chestHandleDamageMagic(damage, *my, parent);
 									if ( my->actmagicProjectileArc > 0 )
 									{
@@ -5197,68 +4763,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								}
 								else if ( hit.entity->behavior == &actFurniture )
 								{
-									int damage = element->damage;
-									damage += (spellbookDamageBonus * damage);
-									damage /= (1 + (int)resistance);
-									int oldHP = hit.entity->furnitureHealth;
-									hit.entity->furnitureHealth -= damage;
-									if ( parent )
-									{
-										if ( parent->behavior == &actPlayer )
-										{
-											bool destroyed = oldHP > 0 && hit.entity->furnitureHealth <= 0;
-											if ( destroyed )
-											{
-												gameModeManager.currentSession.challengeRun.updateKillEvent(hit.entity);
-											}
-											switch ( hit.entity->furnitureType )
-											{
-											case FURNITURE_CHAIR:
-												if ( destroyed )
-												{
-													messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(388));
-												}
-												updateEnemyBar(parent, hit.entity, Language::get(677), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
-													false, DamageGib::DMG_DEFAULT);
-												break;
-											case FURNITURE_TABLE:
-												if ( destroyed )
-												{
-													messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(389));
-												}
-												updateEnemyBar(parent, hit.entity, Language::get(676), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
-													false, DamageGib::DMG_DEFAULT);
-												break;
-											case FURNITURE_BED:
-												if ( destroyed )
-												{
-													messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2505));
-												}
-												updateEnemyBar(parent, hit.entity, Language::get(2505), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
-													false, DamageGib::DMG_DEFAULT);
-												break;
-											case FURNITURE_BUNKBED:
-												if ( destroyed )
-												{
-													messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2506));
-												}
-												updateEnemyBar(parent, hit.entity, Language::get(2506), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
-													false, DamageGib::DMG_DEFAULT);
-												break;
-											case FURNITURE_PODIUM:
-												if ( destroyed )
-												{
-													messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2507));
-												}
-												updateEnemyBar(parent, hit.entity, Language::get(2507), hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth,
-													false, DamageGib::DMG_DEFAULT);
-												break;
-											default:
-												break;
-											}
-										}
-									}
-									playSoundEntity(hit.entity, 28, 128);
+									hit.entity->furnitureHandleDamageMagic(damage, *my, parent);
 									if ( my->actmagicProjectileArc > 0 )
 									{
 										Entity* caster = uidToEntity(spell->caster);
@@ -5286,7 +4791,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					Entity* caster = uidToEntity(spell->caster);
 					if ( caster )
 					{
-						spellEffectAcid(*my, *element, parent, resistance);
+						spellEffectAcid(*my, *element, parent, preResistanceDamage, resistance);
 					}
 				}
 				else if ( !strcmp(element->element_internal_name, spellElement_poison.element_internal_name) )
@@ -5294,7 +4799,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					Entity* caster = uidToEntity(spell->caster);
 					if ( caster )
 					{
-						spellEffectPoison(*my, *element, parent, resistance);
+						spellEffectPoison(*my, *element, parent, preResistanceDamage, resistance);
 					}
 				}
 				else if ( !strcmp(element->element_internal_name, spellElement_sprayWeb.element_internal_name) )
@@ -5318,7 +4823,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					Entity* caster = uidToEntity(spell->caster);
 					if ( caster )
 					{
-						spellEffectDrainSoul(*my, *element, parent, resistance);
+						spellEffectDrainSoul(*my, *element, parent, preResistanceDamage, resistance);
 					}
 				}
 				else if ( !strcmp(element->element_internal_name, spellElement_charmMonster.element_internal_name) )
@@ -5550,9 +5055,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					Entity* caster = uidToEntity(spell->caster);
 					if ( spell->ID == SPELL_SPORE_BOMB || spell->ID == SPELL_MYCELIUM_BOMB )
 					{
-						int damage = element->damage;
-						damage += (spellbookDamageBonus * damage);
-						floorMagicCreateSpores(hit.entity, my->x, my->y, parent, damage, spell->ID);
+						floorMagicCreateSpores(hit.entity, my->x, my->y, parent, preResistanceDamage, spell->ID);
 					}
 					else
 					{
@@ -5563,10 +5066,8 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				if ( (spell->ID == SPELL_METEOR || spell->ID == SPELL_METEOR_SHOWER)
 					&& !strcmp(element->element_internal_name, spellElement_fire.element_internal_name) )
 				{
-					int damage = element->damage;
-					damage += (spellbookDamageBonus * damage);
 					Entity* caster = uidToEntity(spell->caster);
-					createSpellExplosionArea(spell->ID, caster, my->x, my->y, my->z, 16.0, damage, hit.entity);
+					createSpellExplosionArea(spell->ID, caster, my->x, my->y, my->z, 16.0, preResistanceDamage, hit.entity);
 				}
 
 				if ( !(my->actmagicIsOrbiting == 2) )
@@ -8576,14 +8077,14 @@ void actParticleTimer(Entity* my)
 								element = (spellElement_t*)elementNode->element;
 								if ( spellID == SPELL_GREASE_SPRAY )
 								{
-									element->damage = 0;
+									element->setDamage(0);
 								}
 								else
 								{
-									element->damage = 2;
+									element->setDamage(2);
 									if ( Stat* stats = parent->getStats() )
 									{
-										element->damage += stats->getProficiency(PRO_MAGIC) / 10;
+										element->setDamage(element->getDamage() + stats->getProficiency(PRO_MAGIC) / 10);
 									}
 								}
 								element->mana = 5;
@@ -8762,7 +8263,7 @@ void actParticleTimer(Entity* my)
 								elementNode = element->elements.first;
 								element = (spellElement_t*)elementNode->element;
 								static ConsoleVariable<int> cvar_foci_dmg("/foci_dmg", 2);
-								element->damage = *cvar_foci_dmg;
+								element->setDamage(*cvar_foci_dmg);
 								/*if ( Stat* stats = parent->getStats() )
 								{
 									element->damage += stats->getProficiency(PRO_MAGIC) / 10;
@@ -9030,7 +8531,7 @@ void actParticleTimer(Entity* my)
 												serverSpawnMiscParticles(entity, PARTICLE_EFFECT_ABILITY_ROCK, 78);
 											}
 
-											int damage = getSpellDamageFromID(my->particleTimerVariable2, parent ? parent : my);
+											int damage = getSpellDamageFromID(my->particleTimerVariable2, parent ? parent : my, my);
 											real_t mult = 0.5 + 0.1 * (std::min((Uint8)10, effectStrength));
 											damage *= mult;
 											if ( applyGenericMagicDamage(parent, entity, parent ? *parent : *my, SPELL_SLAM, damage, true) )
@@ -9890,7 +9391,7 @@ void actParticleTimer(Entity* my)
 									continue;
 								}
 
-								int damage = getSpellDamageFromID(SPELL_BASTION_MUSHROOM, parent);
+								int damage = getSpellDamageFromID(SPELL_BASTION_MUSHROOM, parent, my);
 								if ( applyGenericMagicDamage(parent, entity, *parent, SPELL_BASTION_MUSHROOM, damage, true, true) )
 								{
 									props->hits++;
@@ -13881,7 +13382,7 @@ void actParticleFloorMagic(Entity* my)
 							Stat* stats = entity->getStats();
 							if ( stats && entityDist(my, entity) <= 16.0 )
 							{
-								int damage = getSpellDamageFromID(SPELL_LIGHTNING_BOLT, caster);
+								int damage = getSpellDamageFromID(SPELL_LIGHTNING_BOLT, caster, my);
 								if ( applyGenericMagicDamage(caster, entity, caster ? *caster : *my, SPELL_LIGHTNING_BOLT, damage, true, true) )
 								{
 									Entity* fx = createParticleAestheticOrbit(entity, 1758, 2 * TICKS_PER_SECOND, PARTICLE_EFFECT_STATIC_ORBIT);
@@ -14005,11 +13506,11 @@ void actParticleFloorMagic(Entity* my)
 										{
 											if ( parentTimer && parentTimer->particleTimerVariable2 == 0 )
 											{
-												damage = getSpellDamageFromID(SPELL_ROOTS, caster);
+												damage = getSpellDamageFromID(SPELL_ROOTS, caster, my);
 											}
 											else
 											{
-												damage = getSpellDamageFromID(parentTimer ? parentTimer->particleTimerVariable2 : SPELL_ROOTS, caster);
+												damage = getSpellDamageFromID(parentTimer ? parentTimer->particleTimerVariable2 : SPELL_ROOTS, caster, my);
 											}
 										}
 
@@ -15648,7 +15149,7 @@ void actRadiusMagic(Entity* my)
 			{
 				if ( my->actRadiusMagicID == SPELL_HEAL_PULSE )
 				{
-					int amount = getSpellDamageFromID(SPELL_HEAL_PULSE, caster);
+					int amount = getSpellDamageFromID(SPELL_HEAL_PULSE, caster, my);
 					if ( firstEffect )
 					{
 						playSoundEntity(my, 168, 128);
@@ -15703,7 +15204,7 @@ Entity* createSpellExplosionArea(int spellID, Entity* caster, real_t x, real_t y
 
 		if ( damage == 0 )
 		{
-			damage = getSpellDamageFromID(spellID, caster);
+			damage = getSpellDamageFromID(spellID, caster, caster);
 		}
 
 		spellTimer->particleTimerVariable1 = damage; // damage
@@ -16021,7 +15522,7 @@ void actParticleShatterEarth(Entity* my)
 					entity->sizey = 7;
 					entity->behavior = &actBoulder;
 					entity->boulderShatterEarthSpell = my->parent;
-					entity->boulderShatterEarthDamage = getSpellDamageFromID(SPELL_SHATTER_EARTH, uidToEntity(my->parent));
+					entity->boulderShatterEarthDamage = getSpellDamageFromID(SPELL_SHATTER_EARTH, uidToEntity(my->parent), uidToEntity(my->parent));
 					entity->flags[UPDATENEEDED] = true;
 					entity->flags[PASSABLE] = true;
 

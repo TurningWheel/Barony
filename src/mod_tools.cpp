@@ -2119,7 +2119,7 @@ int ItemTooltips_t::getSpellDamageOrHealAmount(const int player, spell_t* spell,
 			primaryElement = (spellElement_t*)(primaryNode->element);
 			if ( primaryElement )
 			{
-				damage = primaryElement->damage;
+				damage = primaryElement->getDamage();
 			}
 		}
 		if ( player >= 0 && players[player] )

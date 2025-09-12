@@ -177,7 +177,7 @@ void Entity::actMagicTrapCeiling()
 			entity->x = x;
 			entity->y = y;
 			entity->z = ceilingModel->z - 2;
-			double missile_speed = 4 * ((double)(((spellElement_t*)(getSpellFromID(spellTrapType)->elements.first->element))->mana) / ((spellElement_t*)(getSpellFromID(spellTrapType)->elements.first->element))->overload_multiplier);
+			double missile_speed = 4.0;
 			entity->vel_x = 0.0;
 			entity->vel_y = 0.0;
 			entity->vel_z = 0.5 * (missile_speed);
@@ -302,7 +302,7 @@ void actMagicTrap(Entity* my)
 			entity->y = my->y + y;
 			entity->z = my->z;
 			entity->yaw = oldir * (PI / 2.f);
-			double missile_speed = 4 * ((double)(((spellElement_t*)(getSpellFromID(MAGICTRAP_SPELL)->elements.first->element))->mana) / ((spellElement_t*)(getSpellFromID(MAGICTRAP_SPELL)->elements.first->element))->overload_multiplier);
+			double missile_speed = 4.0;
 			entity->vel_x = cos(entity->yaw) * (missile_speed);
 			entity->vel_y = sin(entity->yaw) * (missile_speed);
 		}

@@ -548,7 +548,7 @@ void spellElementConstructor(spellElement_t* element)
 	element->mana = 0;
 	element->base_mana = 0;
 	element->overload_multiplier = 1;
-	element->damage = 0;
+	element->setDamage(0);
 	element->duration = 0;
 	element->can_be_learned = true;
 	strcpy(element->element_internal_name, "element_default");
@@ -567,7 +567,7 @@ void spellElementConstructor(int elementID, int mana, int base_mana, int overloa
 	element.mana = mana;
 	element.base_mana = base_mana;
 	element.overload_multiplier = overload_mult;
-	element.damage = damage;
+	element.setDamage(damage);
 	element.duration = duration;
 	strcpy(element.element_internal_name, internal_name);
 }
