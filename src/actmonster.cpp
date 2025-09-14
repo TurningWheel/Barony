@@ -5021,6 +5021,8 @@ void actMonster(Entity* my)
 		//		my->getUID(), ticks, state_string.c_str(), my->monsterAttack, my->monsterHitTime, MONSTER_ATTACKTIME, devilstate, devilacted, my->monsterSpecialTimer); //Debug message.
 		//}
 
+		int linetraceTargetEnemyFlags = LINETRACE_ATK_CHECK_FRIENDLYFIRE;
+
 		//Begin state machine
 		if ( my->monsterState == MONSTER_STATE_WAIT ) //Begin wait state
 		{
@@ -5165,11 +5167,11 @@ void actMonster(Entity* my)
 								}
 								else
 								{
-									lineTrace(my, my->x, my->y, tangent, monsterVisionRange, LINETRACE_IGNORE_ENTITIES, false);
+									lineTrace(my, my->x, my->y, tangent, monsterVisionRange, LINETRACE_IGNORE_ENTITIES | linetraceTargetEnemyFlags, false);
 								}
 								if ( !hit.entity )
 								{
-									lineTrace(my, my->x, my->y, tangent, TOUCHRANGE, 0, false);
+									lineTrace(my, my->x, my->y, tangent, TOUCHRANGE, linetraceTargetEnemyFlags, false);
 								}
 								if ( hit.entity == entity )
 								{
@@ -5232,7 +5234,7 @@ void actMonster(Entity* my)
 														if ( !entity->checkFriend(attackTarget) )
 														{
 															tangent = atan2( entity->y - my->y, entity->x - my->x );
-															lineTrace(my, my->x, my->y, tangent, monsterVisionRange, 0, false);
+															lineTrace(my, my->x, my->y, tangent, monsterVisionRange, linetraceTargetEnemyFlags, false);
 															if ( hit.entity == entity )
 															{
 																entity->monsterAcquireAttackTarget(*attackTarget, MONSTER_STATE_PATH);
@@ -5532,7 +5534,7 @@ void actMonster(Entity* my)
 								if ( dist < sightranges[myStats->type] && dist <= oldDist )
 								{
 									double tangent = atan2(target->y - my->y, target->x - my->x);
-									lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, false);
+									lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], linetraceTargetEnemyFlags, false);
 									if ( hit.entity == target )
 									{
 										//my->monsterLookTime = 1;
@@ -5904,7 +5906,7 @@ void actMonster(Entity* my)
 							{
 								if ( hasrangedweapon )
 								{
-									dist = lineTrace(my, my->x, my->y, tangent, monsterVisionRange, 0, false);
+									dist = lineTrace(my, my->x, my->y, tangent, monsterVisionRange, linetraceTargetEnemyFlags, false);
 									if ( hit.entity == entity )
 									{
 										Entity* ohitentity = hit.entity;
@@ -5915,7 +5917,7 @@ void actMonster(Entity* my)
 											real_t my1 = my->y + 2.5 * sin(tangent + PI / 2);
 											real_t mx1 = my->x + 2.5 * cos(tangent + PI / 2);
 											real_t tangent1 = atan2(my->monsterTargetY - my1, my->monsterTargetX - mx1);
-											dist = lineTraceTarget(my, mx1, my1, tangent1, monsterVisionRange, 0, false, entity);
+											dist = lineTraceTarget(my, mx1, my1, tangent1, monsterVisionRange, linetraceTargetEnemyFlags, false, entity);
 											hitentity1 = hit.entity;
 										}
 										Entity* hitentity2 = nullptr;
@@ -5923,7 +5925,7 @@ void actMonster(Entity* my)
 											real_t my2 = my->y - 2.5 * sin(tangent + PI / 2);
 											real_t mx2 = my->x - 2.5 * cos(tangent + PI / 2);
 											real_t tangent2 = atan2(my->monsterTargetY - my2, my->monsterTargetX - mx2);
-											dist = lineTraceTarget(my, mx2, my2, tangent2, monsterVisionRange, 0, false, entity);
+											dist = lineTraceTarget(my, mx2, my2, tangent2, monsterVisionRange, linetraceTargetEnemyFlags, false, entity);
 											hitentity2 = hit.entity;
 										}
 										if ( hitentity1 && hitentity2 )
@@ -5939,12 +5941,12 @@ void actMonster(Entity* my)
 								}
 								else
 								{
-									dist = lineTrace(my, my->x, my->y, tangent, monsterVisionRange, 0, true);
+									dist = lineTrace(my, my->x, my->y, tangent, monsterVisionRange, linetraceTargetEnemyFlags, true);
 								}
 							}
 							else
 							{
-								dist = lineTrace(my, my->x, my->y, tangent, monsterVisionRange, 0, false);
+								dist = lineTrace(my, my->x, my->y, tangent, monsterVisionRange, linetraceTargetEnemyFlags, false);
 							}
 						}
 						else
@@ -6002,7 +6004,7 @@ timeToGoAgain:
 								}
 
 								Entity* tempHitEntity = hit.entity;
-								if ( lineTrace(my, my->x, my->y, tangent2, TOUCHRANGE, 1, false) < TOUCHRANGE )
+								if ( lineTrace(my, my->x, my->y, tangent2, TOUCHRANGE, LINETRACE_IGNORE_ENTITIES | linetraceTargetEnemyFlags, false) < TOUCHRANGE )
 								{
 									MONSTER_FLIPPEDANGLE = (MONSTER_FLIPPEDANGLE < 5) * 10;
 									goAgain++;
@@ -6942,16 +6944,16 @@ timeToGoAgain:
 							}
 							if ( visiontest )   // vision cone
 							{
-								lineTrace(my, my->x + 1, my->y, tangent, monsterVisionRange, 0, (levitating == false));
+								lineTrace(my, my->x + 1, my->y, tangent, monsterVisionRange, linetraceTargetEnemyFlags, (levitating == false));
 								if ( hit.entity == entity )
 								{
-									lineTrace(my, my->x - 1, my->y, tangent, monsterVisionRange, 0, (levitating == false));
+									lineTrace(my, my->x - 1, my->y, tangent, monsterVisionRange, linetraceTargetEnemyFlags, (levitating == false));
 									if ( hit.entity == entity )
 									{
-										lineTrace(my, my->x, my->y + 1, tangent, monsterVisionRange, 0, (levitating == false));
+										lineTrace(my, my->x, my->y + 1, tangent, monsterVisionRange, linetraceTargetEnemyFlags, (levitating == false));
 										if ( hit.entity == entity )
 										{
-											lineTrace(my, my->x, my->y - 1, tangent, monsterVisionRange, 0, (levitating == false));
+											lineTrace(my, my->x, my->y - 1, tangent, monsterVisionRange, linetraceTargetEnemyFlags, (levitating == false));
 											if ( hit.entity == entity )
 											{
 												Entity& attackTarget = *hit.entity;
@@ -7826,7 +7828,7 @@ timeToGoAgain:
 										if ( dist < sightranges[myStats->type] && dist <= oldDist )
 										{
 											double tangent = atan2(target->y - my->y, target->x - my->x);
-											lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, false);
+											lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], linetraceTargetEnemyFlags, false);
 											if ( hit.entity == target )
 											{
 												my->monsterLookTime = 1;
@@ -7867,7 +7869,7 @@ timeToGoAgain:
 									if ( dist < sightranges[myStats->type] && dist <= oldDist )
 									{
 										double tangent = atan2(target->y - my->y, target->x - my->x);
-										lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, false);
+										lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], linetraceTargetEnemyFlags, false);
 										if ( hit.entity == target )
 										{
 											my->monsterLookTime = 1;
@@ -7979,7 +7981,7 @@ timeToGoAgain:
 									if ( dist < sightranges[myStats->type] && dist <= oldDist )
 									{
 										double tangent = atan2(target->y - my->y, target->x - my->x);
-										lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, false);
+										lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], linetraceTargetEnemyFlags, false);
 										if ( hit.entity == target )
 										{
 											my->monsterLookTime = 1;
@@ -10069,7 +10071,7 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 			}
 			else
 			{
-				lineTrace(this, this->x, this->y, newTangent, tracedist, 0, false);
+				lineTrace(this, this->x, this->y, newTangent, tracedist, LINETRACE_ATK_CHECK_FRIENDLYFIRE, false);
 			}
 			if ( hit.entity != nullptr && hit.entity == target )
 			{

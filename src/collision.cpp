@@ -1610,7 +1610,7 @@ Entity* findEntityInLine( Entity* my, real_t x1, real_t y1, real_t angle, int en
 		{
 			Entity* entity = (Entity*)node->element;
 			if ( (entity != target && target != nullptr) || entity->flags[PASSABLE] || entity == my
-				|| ((entities == LINETRACE_IGNORE_ENTITIES) && 
+				|| ((entities & LINETRACE_IGNORE_ENTITIES) && 
 						( (!entity->flags[BLOCKSIGHT] && entity->behavior != &actMonster) 
 							|| (entity->behavior == &actMonster && (entity->flags[INVISIBLE] 
 								&& entity->sprite != 889 
@@ -1630,7 +1630,7 @@ Entity* findEntityInLine( Entity* my, real_t x1, real_t y1, real_t angle, int en
 					) 
 				)
 			{
-				// if entities == LINETRACE_IGNORE_ENTITIES, then ignore entities that block sight.
+				// if entities & LINETRACE_IGNORE_ENTITIES, then ignore entities that block sight.
 				// 16/11/19 - added exception to monsters. if monster, use the INVISIBLE flag to skip checking.
 				// 889/1247/1408 is dummybot/mimic/bat/revenant_skull/adorcised weapon/elemental/moth "invisible" AI entity. so it's invisible, need to make it shown here.
 				if ( entity->behavior == &actMonster && entity->sprite == 1408 )
@@ -1669,7 +1669,7 @@ Entity* findEntityInLine( Entity* my, real_t x1, real_t y1, real_t angle, int en
 			int entitymapy = static_cast<int>(entity->y) >> 4;
 			real_t sizex = entity->sizex;
 			real_t sizey = entity->sizey;
-			if ( entities == LINETRACE_ATK_CHECK_FRIENDLYFIRE && multiplayer != CLIENT )
+			if ( (entities & LINETRACE_ATK_CHECK_FRIENDLYFIRE) && multiplayer != CLIENT )
 			{
 				if ( (my->behavior == &actMonster || my->behavior == &actPlayer) 
 					&& (entity->behavior == &actMonster || entity->behavior == &actPlayer) )
@@ -1972,7 +1972,7 @@ real_t lineTrace( Entity* my, real_t x1, real_t y1, real_t angle, real_t range, 
 		sizey = entity->sizey;
 
 		yourStats = entity->getStats();
-		if ( entities == LINETRACE_ATK_CHECK_FRIENDLYFIRE )
+		if ( entities & LINETRACE_ATK_CHECK_FRIENDLYFIRE )
 		{
 			if ( my && stats && (my->behavior == &actMonster || my->behavior == &actPlayer) &&
 				entity && (entity->behavior == &actMonster || entity->behavior == &actPlayer) && yourStats )
@@ -2042,7 +2042,7 @@ real_t lineTrace( Entity* my, real_t x1, real_t y1, real_t angle, real_t range, 
 		if ( entity )
 		{
 			// debug particles.
-			if ( my && my->behavior == &actPlayer && entities == LINETRACE_ATK_CHECK_FRIENDLYFIRE )
+			if ( my && my->behavior == &actPlayer && (entities & LINETRACE_ATK_CHECK_FRIENDLYFIRE) )
 			{
 				static ConsoleVariable<bool> cvar_linetracedebug("/linetracedebug", false);
 				if ( *cvar_linetracedebug )
@@ -2226,7 +2226,7 @@ real_t lineTraceTarget(Entity* my, real_t x1, real_t y1, real_t angle, real_t ra
 		if ( entity )
 		{
 			// debug particles.
-			if ( my && my->behavior == &actMonster && entities == 0 )
+			if ( my && my->behavior == &actMonster && (entities == 0 || (entities & LINETRACE_ATK_CHECK_FRIENDLYFIRE)) )
 			{
 				static ConsoleVariable<bool> cvar_linetracetargetdebug("/linetracetargetdebug", false);
 				if ( *cvar_linetracetargetdebug )
