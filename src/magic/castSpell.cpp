@@ -5515,6 +5515,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			spawnMagicEffectParticles(caster->x, caster->y, caster->z, 174);
 		}
 		else if (!strcmp(element->element_internal_name, spellElement_heal.element_internal_name)
+			|| (spell->ID == SPELL_EXTRAHEALING)
 			|| (spell->ID == SPELL_HEAL_OTHER && castSpellProps) )
 		{
 			for ( int i = 0; i < MAXPLAYERS; ++i )

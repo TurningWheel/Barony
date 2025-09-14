@@ -124,10 +124,10 @@ void setupSpells()   ///TODO: Verify this function.
 	strcpy(spellElement_magicmapping.element_internal_name, "spell_element_magicmapping");
 
 	spellElementConstructor(&spellElement_heal);
-	spellElement_heal.mana = 1;
-	spellElement_heal.base_mana = 1;
+	spellElement_heal.mana = 10;
+	spellElement_heal.base_mana = 10;
 	spellElement_heal.overload_multiplier = 1;
-	spellElement_heal.setDamage(1);
+	spellElement_heal.setDamage(10);
 	spellElement_heal.duration = 0;
 	strcpy(spellElement_heal.element_internal_name, "spell_element_healing");
 
@@ -804,9 +804,8 @@ void setupSpells()   ///TODO: Verify this function.
 	node->deconstructor = &spellElementDeconstructor;
 	element = (spellElement_t*) node->element;
 	element->node = node;
-	element->mana = 10;
 
-	spellConstructor(&spell_extrahealing, SPELL_EXTRAHEALING);
+	/*spellConstructor(&spell_extrahealing, SPELL_EXTRAHEALING);
 	strcpy(spell_extrahealing.spell_internal_name, "spell_extrahealing");
 	spell_extrahealing.difficulty = 60;
 	spell_extrahealing.elements.first = NULL;
@@ -817,7 +816,17 @@ void setupSpells()   ///TODO: Verify this function.
 	node->deconstructor = &spellElementDeconstructor;
 	element = (spellElement_t*) node->element;
 	element->node = node;
-	element->mana = 40;
+	element->mana = 40;*/
+
+	createSimpleSpell(
+		SPELL_EXTRAHEALING,
+		60,
+		40,
+		40,
+		1,
+		40,
+		0,
+		"spell_extrahealing");
 
 	/*spellConstructor(&spell_restoreability);
 	//spell_restoreability.mana = 1;
