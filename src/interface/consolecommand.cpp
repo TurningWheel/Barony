@@ -845,8 +845,8 @@ namespace ConsoleCommands {
 			// this is definitely considered a cheat.
 			// otherwise it's a major gameplay exploit.
 			// do not disable this code block.
-			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
-			return;
+			//messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			//return;
 		}
 		if (players[clientnum] != nullptr && players[clientnum]->entity != nullptr)
 		{
@@ -3866,6 +3866,7 @@ namespace ConsoleCommands {
 
 	static ConsoleCommand ccmd_loaditems("/loaditems", "", []CCMD{
 		ItemTooltips.readItemsFromFile();
+		setupSpells();
 		messagePlayer(clientnum, MESSAGE_MISC, "Reloaded items.json");
 		});
 
@@ -5073,6 +5074,7 @@ namespace ConsoleCommands {
 		int monsterShopPrivStock = 0;
 		int monsterShopPrivStockHeal = 0;
 		int monsterShopPrivStockMana = 0;
+		int magicScrap = 0;
 		std::map<int, int> allitems;
 		for ( tmpNode = map.entities->first; tmpNode != NULL; tmpNode = tmpNode->next )
 		{
@@ -5081,6 +5083,10 @@ namespace ConsoleCommands {
 			{
 				if ( Item* item = newItemFromEntity(tmpEnt) )
 				{
+					int metal = 0;
+					int magic = 0;
+					GenericGUIMenu::tinkeringGetItemValue(item, &metal, &magic);
+					magicScrap += magic;
 					allitems[item->type] += item->count;
 					if ( int heal = item->potionGetEffectHealth(players[clientnum]->entity, stats[clientnum]) )
 					{
@@ -5125,6 +5131,10 @@ namespace ConsoleCommands {
 					{
 						if ( Item* item = (Item*)node->element )
 						{
+							int metal = 0;
+							int magic = 0;
+							GenericGUIMenu::tinkeringGetItemValue(item, &metal, &magic);
+							magicScrap += magic;
 							allitems[item->type] += item->count;
 							if ( int heal = item->potionGetEffectHealth(players[clientnum]->entity, stats[clientnum]) )
 							{
@@ -5183,6 +5193,10 @@ namespace ConsoleCommands {
 					{
 						if ( Item* item = (Item*)node->element )
 						{
+							int metal = 0;
+							int magic = 0;
+							GenericGUIMenu::tinkeringGetItemValue(item, &metal, &magic);
+							magicScrap += magic;
 							allitems[item->type] += item->count;
 							if ( int heal = item->potionGetEffectHealth(players[clientnum]->entity, stats[clientnum]) )
 							{
