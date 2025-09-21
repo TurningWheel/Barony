@@ -334,7 +334,15 @@ void adorcisedWeaponDie(Entity* my)
 void flameElementalDie(Entity* my)
 {
 	Stat* myStats = my->getStats();
-	createSpellExplosionArea(SPELL_FIREBALL, myStats ? uidToEntity(myStats->leader_uid) : nullptr, my->x, my->y, 0.0, 16.0, 0, my);
+
+	if ( myStats && myStats->MP > 0 )
+	{
+		int damage = myStats->LVL;
+		Entity* caster = uidToEntity(myStats->leader_uid);
+		damage += getSpellDamageFromID(SPELL_FIREBALL, caster, nullptr, caster);
+		real_t radius = getSpellEffectDurationFromID(SPELL_FLAME_ELEMENTAL, caster, nullptr, caster);
+		createSpellExplosionArea(SPELL_FIREBALL, caster, my->x, my->y, 0.0, radius, damage, my);
+	}
 
 	my->removeMonsterDeathNodes();
 	spawnPoof(my->x, my->y, my->z, 1.0, true);
@@ -385,7 +393,34 @@ void revenantSkullAnimate(Entity* my, Stat* myStats, double dist)
 
 		my->creatureHandleLiftZ();
 
-		if ( monsterType == MONSTER_ADORCISED_WEAPON )
+		if ( monsterType == REVENANT_SKULL && myStats )
+		{
+			if ( myStats->getAttribute("revenant_skull") != "" )
+			{
+				if ( my->parent != 0 )
+				{
+					Entity* parent = uidToEntity(my->parent);
+					if ( !parent )
+					{
+						my->setHP(0);
+						my->setObituary(Language::get(6806));
+					}
+				}
+
+				int lifetime = std::stoi(myStats->getAttribute("revenant_skull"));
+				--lifetime;
+				if ( lifetime <= 0 )
+				{
+					my->setHP(0);
+					my->setObituary(Language::get(6806));
+				}
+				else
+				{
+					myStats->setAttribute("revenant_skull", std::to_string(lifetime));
+				}
+			}
+		}
+		else if ( monsterType == MONSTER_ADORCISED_WEAPON && myStats )
 		{
 			if ( myStats->getAttribute("spirit_weapon") != "" )
 			{

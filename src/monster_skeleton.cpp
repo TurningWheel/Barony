@@ -858,6 +858,31 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		}
 
 		my->creatureHandleLiftZ();
+
+		if ( myStats->getAttribute("revenant_skeleton") != "" )
+		{
+			if ( my->parent != 0 )
+			{
+				Entity* parent = uidToEntity(my->parent);
+				if ( !parent )
+				{
+					my->setHP(0);
+					my->setObituary(Language::get(6806));
+				}
+			}
+
+			int lifetime = std::stoi(myStats->getAttribute("revenant_skeleton"));
+			--lifetime;
+			if ( lifetime <= 0 )
+			{
+				my->setHP(0);
+				my->setObituary(Language::get(6806));
+			}
+			else
+			{
+				myStats->setAttribute("revenant_skeleton", std::to_string(lifetime));
+			}
+		}
 	}
 
 	Entity* shieldarm = nullptr;

@@ -47,6 +47,17 @@ void Entity::actTeleporter()
 		createWorldUITooltip();
 	}
 
+	if ( teleporterDuration > 0 && multiplayer != CLIENT )
+	{
+		--teleporterDuration;
+		if ( teleporterDuration <= 0 )
+		{
+			this->removeLightField();
+			list_RemoveNode(this->mynode);
+			return;
+		}
+	}
+
 #ifdef USE_FMOD
 	if ( teleporterAmbience == 0 )
 	{

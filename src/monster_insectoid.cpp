@@ -1102,6 +1102,9 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						}
 					}
 				}
+				entity->focalx = limbs[INSECTOID][2][0];
+				entity->focaly = limbs[INSECTOID][2][1];
+				entity->focalz = limbs[INSECTOID][2][2];
 				my->setHumanoidLimbOffset(entity, INSECTOID, LIMB_HUMANOID_RIGHTLEG);
 				break;
 			// left leg
@@ -1138,6 +1141,9 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						}
 					}
 				}
+				entity->focalx = limbs[INSECTOID][3][0];
+				entity->focaly = limbs[INSECTOID][3][1];
+				entity->focalz = limbs[INSECTOID][3][2];
 				my->setHumanoidLimbOffset(entity, INSECTOID, LIMB_HUMANOID_LEFTLEG);
 				break;
 			// right arm

@@ -692,10 +692,11 @@ bool Entity::collisionProjectileMiss(Entity* parent, Entity* projectile)
 
 			if ( myStats->type == BAT_SMALL || myStats->getEffectActive(EFF_AGILITY) || myStats->getEffectActive(EFF_ENSEMBLE_LUTE) 
 				|| mistFormDodge(true)
+				|| !monsterIsTargetable(true)
 				|| (parent && parent->getStats() && parent->getStats()->getEffectActive(EFF_BLIND)) )
 			{
 				bool miss = false;
-				if ( myStats->type == BAT_SMALL && isUntargetableBat() )
+				if ( !monsterIsTargetable(true) )
 				{
 					projectile->collisionIgnoreTargets.insert(getUID());
 					return true;
@@ -1100,7 +1101,7 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 			{
 				continue;
 			}
-			if ( entity->behavior == &actMonster && entity->getMonsterTypeFromSprite() == BAT_SMALL )
+			if ( entity->behavior == &actMonster && !entity->monsterIsTargetable(true) )
 			{
 				if ( my->behavior == &actBoulder )
 				{
@@ -1660,7 +1661,7 @@ Entity* findEntityInLine( Entity* my, real_t x1, real_t y1, real_t angle, int en
 			{
 				continue; // see through furniture cause we'll bust it down
 			}
-			if ( entity->isUntargetableBat() )
+			if ( !entity->monsterIsTargetable(true) )
 			{
 				continue;
 			}

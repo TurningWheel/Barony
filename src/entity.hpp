@@ -449,6 +449,7 @@ public:
 	Sint32& teleporterStartFrame = skill[5];
 	Sint32& teleporterCurrentFrame = skill[6];
 	Sint32& teleporterNumFrames = skill[7];
+	Sint32& teleporterDuration = skill[8];
 
 	//--PUBLIC CEILING TILE SKILLS--
 	Sint32& ceilingTileModel; //skill[0]

@@ -1788,6 +1788,7 @@ Entity* receiveEntity(Entity* entity)
 	}
 	const bool excludeYaw =
 		entity->behavior == &actMagiclightBall
+		|| (entity->behavior == &actLeafPile)
 		|| (entity->behavior == &actItem && entity->itemFollowUID != 0);
 
 	entity->lastupdate = ticks;
@@ -2169,6 +2170,15 @@ void clientActions(Entity* entity)
 						entity->colliderDamageTypes = (c >> 8) & 0xFF;
 						entity->colliderSpellEvent = (c >> 16) & 0xFF;
 						Entity::colliderAssignProperties(entity, false, &map);
+					}
+					else if ( static_cast<Uint8>(c & 0xFF) == 26 )
+					{
+						entity->behavior = &actTeleporter;
+						entity->skill[2] = c;
+						entity->flags[NOUPDATE] = true;
+						int duration = (c >> 8) & 0xFFFF;
+						int dir = (c >> 24) & 0xF;
+						tunnelPortalSetAttributes(entity, duration, dir);
 					}
 					break;
 			}

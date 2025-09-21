@@ -1441,7 +1441,7 @@ void Entity::effectTimes()
 							{
 								//Deduct mana from caster. Cancel spell if not enough mana (simply leave sustained at false).
 								int oldMP = caster->getMP();
-								bool deducted = caster->safeConsumeMP(1); //Consume 1 mana ever duration / mana seconds
+								bool deducted = caster->safeConsumeMP(getSustainCostOfSpell(invisibility_hijacked, this)); //Consume 1 mana ever duration / mana seconds
 								if ( deducted )
 								{
 									sustained = true;
@@ -1526,7 +1526,7 @@ void Entity::effectTimes()
 							{
 								//Deduct mana from caster. Cancel spell if not enough mana (simply leave sustained at false).
 								int oldMP = caster->getMP();
-								bool deducted = caster->safeConsumeMP(1); //Consume 1 mana ever duration / mana seconds
+								bool deducted = caster->safeConsumeMP(getSustainCostOfSpell(levitation_hijacked, this)); //Consume 1 mana ever duration / mana seconds
 								if ( deducted )
 								{
 									sustained = true;
@@ -1669,7 +1669,7 @@ void Entity::effectTimes()
 							{
 								//Deduct mana from caster. Cancel spell if not enough mana (simply leave sustained at false).
 								int oldMP = caster->getMP();
-								bool deducted = caster->safeConsumeMP(1); //Consume 1 mana ever duration / mana seconds
+								bool deducted = caster->safeConsumeMP(getSustainCostOfSpell(reflectMagic_hijacked, this)); //Consume 1 mana ever duration / mana seconds
 								if ( deducted )
 								{
 									sustained = true;
@@ -1717,7 +1717,7 @@ void Entity::effectTimes()
 							{
 								//Deduct mana from caster. Cancel spell if not enough mana (simply leave sustained at false).
 								int oldMP = caster->getMP();
-								bool deducted = caster->safeConsumeMP(1); //Consume 1 mana ever duration / mana seconds
+								bool deducted = caster->safeConsumeMP(getSustainCostOfSpell(amplifyMagic_hijacked, this)); //Consume 1 mana ever duration / mana seconds
 								if ( deducted )
 								{
 									sustained = true;
@@ -1917,7 +1917,7 @@ void Entity::effectTimes()
 							{
 								//Deduct mana from caster. Cancel spell if not enough mana (simply leave sustained at false).
 								int oldMP = caster->getMP();
-								bool deducted = caster->safeConsumeMP(1); //Consume 3 mana ever duration / mana seconds
+								bool deducted = caster->safeConsumeMP(getSustainCostOfSpell(vampiricAura_hijacked, this)); //Consume 3 mana ever duration / mana seconds
 								if ( deducted )
 								{
 									sustained = true;
@@ -5272,7 +5272,7 @@ void Entity::handleEffects(Stat* myStats)
 					}
 				}
 			}
-			if ( killer && killer->behavior == &actPlayer )
+			if ( killer /*&& killer->behavior == &actPlayer*/ )
 			{
 				bool lowPriority = true;
 				// update enemy bar for attacker
@@ -5416,7 +5416,7 @@ void Entity::handleEffects(Stat* myStats)
 				}
 
 				Entity* killer = uidToEntity(static_cast<Uint32>(myStats->bleedInflictedBy));
-				if ( killer && killer->behavior == &actPlayer )
+				if ( killer /*&& killer->behavior == &actPlayer*/ )
 				{
 					bool lowPriority = true;
 					// update enemy bar for attacker
@@ -5687,7 +5687,7 @@ void Entity::handleEffects(Stat* myStats)
 						}
 					}
 
-					if ( killer && killer->behavior == &actPlayer )
+					if ( killer /*&& killer->behavior == &actPlayer*/ )
 					{
 						bool lowPriority = true;
 						// update enemy bar for attacker
@@ -6234,7 +6234,10 @@ void Entity::handleEffects(Stat* myStats)
 
 	if ( myStats->getEffectActive(EFF_ATTRACT_ITEMS) )
 	{
-		std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(this, 2);
+		real_t dist = std::max(16, std::min(getSpellDamageSecondaryFromID(SPELL_ATTRACT_ITEMS, this, nullptr, this, 0.0, false),
+			getSpellDamageFromID(SPELL_ATTRACT_ITEMS, this, nullptr, this, 0.0, false)));
+		int tiles = 1 + (dist / 16.0);
+		std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(this, tiles);
 		for ( auto it = entLists.begin(); it != entLists.end(); ++it )
 		{
 			list_t* currentList = *it;
@@ -6243,7 +6246,7 @@ void Entity::handleEffects(Stat* myStats)
 			{
 				Entity* entity = (Entity*)node->element;
 				if ( !entity ) { continue; }
-				if ( entity && !entity->flags[INVISIBLE] && entity->behavior == &actItem && entityDist(entity, this) < 2 * TOUCHRANGE )
+				if ( entity && !entity->flags[INVISIBLE] && entity->behavior == &actItem && entityDist(entity, this) < dist )
 				{
 					this->attractItem(*entity);
 				}
@@ -9922,11 +9925,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 					Entity* colliderParent = hit.entity->colliderCreatedParent != 0 ? uidToEntity(hit.entity->colliderCreatedParent) : nullptr;
 					if ( hit.entity->colliderSpellEvent % 1000 == 8 )
 					{
-						thornsEffect += getSpellDamageFromID(SPELL_THORNS, colliderParent, hit.entity);
+						thornsEffect += getSpellDamageFromID(SPELL_THORNS, colliderParent, nullptr, hit.entity);
 					}
 					else if ( hit.entity->colliderSpellEvent % 1000 == 9 )
 					{
-						thornsEffect += getSpellDamageFromID(SPELL_BLADEVINES, colliderParent, hit.entity);
+						thornsEffect += getSpellDamageFromID(SPELL_BLADEVINES, colliderParent, nullptr, hit.entity);
 					}
 
 					if ( thornsEffect != 0 )
@@ -10378,11 +10381,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 					if ( hitstats->getEffectActive(EFF_THORNS) )
 					{
-						thornsEffect += getSpellDamageFromID(SPELL_THORNS, hit.entity, hit.entity);
+						thornsEffect += getSpellDamageFromID(SPELL_THORNS, hit.entity, nullptr, hit.entity);
 					}
 					if ( hitstats->getEffectActive(EFF_BLADEVINES) )
 					{
-						thornsEffect += getSpellDamageFromID(SPELL_BLADEVINES, hit.entity, hit.entity);
+						thornsEffect += getSpellDamageFromID(SPELL_BLADEVINES, hit.entity, nullptr, hit.entity);
 					}
 
 					bool backstab = false;
@@ -14072,7 +14075,7 @@ int AC(Stat* stat)
 		armor += shieldskill;
 		if ( stat->getEffectActive(EFF_FORCE_SHIELD) > 0 )
 		{
-			armor += 5;
+			armor += stat->getEffectActive(EFF_FORCE_SHIELD);
 		}
 		if ( stat->defending )
 		{
@@ -14080,7 +14083,7 @@ int AC(Stat* stat)
 			armor += stat->getActiveShieldBonus(true, false);
 			if ( stat->getEffectActive(EFF_FORCE_SHIELD) > 0 )
 			{
-				armor += 5;
+				armor += stat->getEffectActive(EFF_FORCE_SHIELD);
 			}
 		}
 	}
@@ -14153,13 +14156,20 @@ bool Entity::teleport(int tele_x, int tele_y)
 	y = (tele_y << 4) + 8;
 	if ( entityInsideSomething(this) && getRace() != LICH_FIRE && getRace() != LICH_ICE )
 	{
-		x = oldx;
-		y = oldy;
-		if ( multiplayer == SERVER && player > 0 )
+		if ( behavior == &actPlayer && barony_clear(x, y, this) )
 		{
-			messagePlayer(player, MESSAGE_HINT, Language::get(707));
+			// it's fine
 		}
-		return false;
+		else
+		{
+			x = oldx;
+			y = oldy;
+			if ( multiplayer == SERVER && player > 0 )
+			{
+				messagePlayer(player, MESSAGE_HINT, Language::get(707));
+			}
+			return false;
+		}
 	}
 	updateAchievementBaitAndSwitch(player, true);
 	if ( multiplayer != CLIENT )
@@ -14755,6 +14765,7 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 			|| srcStats->type == REVENANT_SKULL
 			|| srcStats->type == MONSTER_ADORCISED_WEAPON
 			|| (srcStats->type == MOTH_SMALL && srcStats->getAttribute("fire_sprite") != "")
+			|| (srcStats->type == SKELETON && srcStats->getAttribute("revenant_skeleton") != "")
 			|| srcStats->type == FLAME_ELEMENTAL
 			|| (srcStats->type == EARTH_ELEMENTAL && src->monsterAllyGetPlayerLeader())
 			|| srcStats->type == HOLOGRAM
@@ -14944,6 +14955,7 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 							if ( follower->monsterIsTinkeringCreation()
 								|| (follower->getStats() && follower->getStats()->type == REVENANT_SKULL)
 								|| (follower->getStats() && follower->getStats()->type == MONSTER_ADORCISED_WEAPON)
+								|| (follower->getStats() && follower->getStats()->type == SKELETON && follower->getStats()->getAttribute("revenant_skeleton") != "")
 								|| (follower->getStats() && follower->getStats()->type == MOTH_SMALL && follower->getStats()->getAttribute("fire_sprite") != "")
 								|| (follower->getStats() && follower->getStats()->type == EARTH_ELEMENTAL && follower->monsterAllyGetPlayerLeader())
 								|| (follower->getStats() && follower->getStats()->type == FLAME_ELEMENTAL) )
@@ -15012,6 +15024,7 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 		|| destStats->type == REVENANT_SKULL
 		|| destStats->type == MONSTER_ADORCISED_WEAPON
 		|| (destStats->type == MOTH_SMALL && destStats->getAttribute("fire_sprite") != "" )
+		|| (destStats->type == SKELETON && destStats->getAttribute("revenant_skeleton") != "")
 		|| destStats->type == FLAME_ELEMENTAL
 		|| (destStats->type == EARTH_ELEMENTAL && monsterAllyGetPlayerLeader())
 		|| destStats->type == HOLOGRAM
@@ -20143,6 +20156,40 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool
 	bool hadOldTarget = (uidToEntity(monsterTarget) != nullptr);
 	Sint32 oldMonsterState = monsterState;
 
+	if ( target.getRace() == MONSTER_ADORCISED_WEAPON )
+	{
+		if ( Stat* targetStats = target.getStats() )
+		{
+			if ( targetStats->getAttribute("spirit_weapon") != "" )
+			{
+				if ( Entity* caster = uidToEntity(target.parent) )
+				{
+					monsterAcquireAttackTarget(*caster, state, false);
+				}
+				return;
+			}
+		}
+	}
+
+	if ( target.getRace() == MOTH_SMALL )
+	{
+		if ( Stat* targetStats = target.getStats() )
+		{
+			if ( targetStats->getAttribute("fire_sprite") != "" )
+			{
+				if ( Entity* caster = uidToEntity(target.parent) )
+				{
+					monsterAcquireAttackTarget(*caster, state, false);
+				}
+				if ( Entity* caster = uidToEntity(targetStats->leader_uid) )
+				{
+					monsterAcquireAttackTarget(*caster, state, false);
+				}
+				return;
+			}
+		}
+	}
+
 	if ( target.behavior == &actMonster || target.behavior == &actPlayer )
 	{
 		if ( !target.monsterIsTargetable() )
@@ -20259,40 +20306,6 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool
 	if ( myStats->getEffectActive(EFF_DISORIENTED) )
 	{
 		return;
-	}
-
-	if ( target.getRace() == MONSTER_ADORCISED_WEAPON )
-	{
-		if ( Stat* targetStats = target.getStats() )
-		{
-			if ( targetStats->getAttribute("spirit_weapon") != "" )
-			{
-				if ( Entity* caster = uidToEntity(target.parent) )
-				{
-					monsterAcquireAttackTarget(*caster, state, false);
-				}
-				return;
-			}
-		}
-	}
-
-	if ( target.getRace() == MOTH_SMALL )
-	{
-		if ( Stat* targetStats = target.getStats() )
-		{
-			if ( targetStats->getAttribute("fire_sprite") != "" )
-			{
-				if ( Entity* caster = uidToEntity(target.parent) )
-				{
-					monsterAcquireAttackTarget(*caster, state, false);
-				}
-				if ( Entity* caster = uidToEntity(targetStats->leader_uid) )
-				{
-					monsterAcquireAttackTarget(*caster, state, false);
-				}
-				return;
-			}
-		}
 	}
 
 	if ( monsterState != MONSTER_STATE_ATTACK && !hadOldTarget )
@@ -21534,6 +21547,37 @@ Item* Entity::getBestShieldIHave() const
 
 	return currentBest;
 }
+
+//static int broken = 0;
+//static ConsoleCommand ccmd_hiteverything("/hiteverything", "", [](int argc, const char** argv) {
+//	for ( node_t* node = map.entities->first; node; node = node->next )
+//	{
+//		if ( Entity* entity = (Entity*)node->element )
+//		{
+//			if ( entity != players[0]->entity )
+//			{
+//				if ( entity->behavior == &actMonster )
+//				{
+//					if ( players[0]->entity )
+//					{
+//						if ( Stat* myStats = entity->getStats() )
+//						{
+//							while ( myStats->HP > 0 )
+//							{
+//								int prevHP = myStats->HP;
+//								players[0]->entity->attack(0, 0, entity);
+//								if ( prevHP == myStats->HP )
+//								{
+//									break;
+//								}
+//							}
+//						}
+//					}
+//				}
+//			}
+//		}
+//	}
+//});
 
 bool Entity::degradeArmor(Stat& hitstats, Item& armor, int armornum)
 {
@@ -23974,6 +24018,7 @@ bool monsterNameIsGeneric(Stat& monsterStats)
 		|| strstr(monsterStats.name, "Training")
 		|| strstr(monsterStats.name, "Mysterious")
 		|| strstr(monsterStats.name, "shaman")
+		|| !strcmp(monsterStats.name, Language::get(6807)) // revenant skeleton
 		|| !strcmp(monsterStats.name, Language::get(6302)) // gnome thief
 		|| !strcmp(monsterStats.name, Language::get(6303)) // gnome thief leader
 		|| strstr(monsterStats.name, getMonsterLocalizedName(SLIME).c_str()) )
