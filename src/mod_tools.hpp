@@ -2787,6 +2787,28 @@ private:
 		Sint32 magicstaffId;
 		std::vector<std::string> spellTagsStr;
 		std::set<SpellTagTypes> spellTags;
+
+		bool hasExpandedJSON = false;
+		int damage = 0;
+		int damage2 = 0;
+		real_t damage_mult = 1.0;
+		real_t damage2_mult = 1.0;
+		int duration = 0;
+		real_t duration_mult = 1.0;
+		int duration2 = 0;
+		real_t duration2_mult = 1.0;
+		int mana = 1;
+		real_t distance = 0.0;
+		real_t distance_mult = 1.0;
+		int life_time = 0;
+		real_t life_mult = 1.0;
+		real_t cast_time = 1.0;
+		real_t cast_time_mult = 1.0;
+		int skillID = PRO_MAGIC;
+		int difficulty = 100;
+		int sustain_mana = 0;
+		int sustain_duration = 0;
+		real_t sustain_mult = 1.0;
 	};
 
 	struct ItemTooltipIcons_t
@@ -2838,6 +2860,8 @@ public:
 		void setColorStatus(Uint32 color) { statusEffectTextColor = color; }
 		void setColorFaintText(Uint32 color) { faintTextColor = color; }
 	};
+	void setSpellValueIfKeyPresent(spellItem_t& t, rapidjson::Value::ConstMemberIterator item_itr, Uint32& hash, Uint32& hashShift, const char* key, int& toSet);
+	void setSpellValueIfKeyPresent(spellItem_t& t, rapidjson::Value::ConstMemberIterator item_itr, Uint32& hash, Uint32& hashShift, const char* key, real_t& toSet);
 	void readItemsFromFile();
 	static const Uint32 kItemsJsonHash;
 	static Uint32 itemsJsonHashRead;

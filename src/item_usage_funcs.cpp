@@ -42,7 +42,10 @@ bool potionUseAbundanceEffect(Item* item, Entity* entity, Entity* usedBy)
 				{
 					if ( !itemIsEquipped(item, player) )
 					{
-						if ( local_rng.rand() % 2 == 0 )
+						int chance = getSpellDamageFromID(SPELL_GREATER_ABUNDANCE, entity, nullptr, entity);
+						int maxchance = getSpellDamageSecondaryFromID(SPELL_GREATER_ABUNDANCE, entity, nullptr, entity);
+						chance = std::min(chance, maxchance);
+						if ( local_rng.rand() % 100 < chance )
 						{
 							item->count++;
 							messagePlayerColor(player, MESSAGE_INTERACTION, makeColorRGB(0, 255, 0), Language::get(6652), item->getName());
@@ -68,7 +71,10 @@ bool foodUseAbundanceEffect(Item* item, int player)
 			{
 				if ( !itemIsEquipped(item, player) )
 				{
-					if ( local_rng.rand() % 2 == 0 )
+					int chance = getSpellDamageFromID(SPELL_GREATER_ABUNDANCE, players[player]->entity, stats[player], players[player]->entity);
+					int maxchance = getSpellDamageSecondaryFromID(SPELL_GREATER_ABUNDANCE, players[player]->entity, stats[player], players[player]->entity);
+					chance = std::min(chance, maxchance);
+					if ( local_rng.rand() % 100 < chance )
 					{
 						item->count++;
 						effect = true;
@@ -81,7 +87,10 @@ bool foodUseAbundanceEffect(Item* item, int player)
 			{
 				if ( !itemIsEquipped(item, player) )
 				{
-					if ( local_rng.rand() % 2 == 0 )
+					int chance = getSpellDamageFromID(SPELL_ABUNDANCE, players[player]->entity, stats[player], players[player]->entity);
+					int maxchance = getSpellDamageSecondaryFromID(SPELL_ABUNDANCE, players[player]->entity, stats[player], players[player]->entity);
+					chance = std::min(chance, maxchance);
+					if ( local_rng.rand() % 100 < chance )
 					{
 						item->count++;
 						effect = true;

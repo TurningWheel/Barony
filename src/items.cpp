@@ -5316,11 +5316,14 @@ int Item::sellValue(const int player) const
 	value *= 1.f + beatitude / 20.f;
 	value *= (static_cast<int>(status) + 5) / 10.f;
 
-	// trading bonus
-	value *= (50 + stats[player]->getModifiedProficiency(PRO_TRADING)) / 150.f;
+	if ( player >= 0 )
+	{
+		// trading bonus
+		value *= (50 + stats[player]->getModifiedProficiency(PRO_TRADING)) / 150.f;
 
-	// charisma bonus
-	value *= 1.f + statGetCHR(stats[player], players[player]->entity) / 20.f;
+		// charisma bonus
+		value *= 1.f + statGetCHR(stats[player], players[player]->entity) / 20.f;
+	}
 
 	// result
 	value = std::max(1, value);

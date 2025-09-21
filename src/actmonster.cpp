@@ -3519,6 +3519,57 @@ void actMonster(Entity* my)
 		&& my->monsterState != MONSTER_STATE_LICHFIRE_DIE 
 		&& my->monsterState != MONSTER_STATE_LICHICE_DIE )
 	{
+		Uint8 cursedFlesh = myStats->getEffectActive(EFF_CURSE_FLESH);
+		if ( cursedFlesh & (1 << 7) )
+		{
+			int player = -1;
+			if ( (cursedFlesh & 0x7F) > 0 && (cursedFlesh & 0x7F) < MAXPLAYERS + 1 )
+			{
+				player = (cursedFlesh & 0x7F) - 1;
+			}
+			if ( Entity* monster = spellEffectPolymorph(my, player >= 0 ? players[player]->entity : nullptr, true, 0, SKELETON) )
+			{
+				// old entity was removed
+				if ( Stat* monsterStats = monster->getStats() )
+				{
+					monster->setEffect(EFF_STUNNED, true, 20, false);
+
+					Entity* commanderEntity = player >= 0 ? players[player]->entity : nullptr;
+
+					int duration = getSpellEffectDurationSecondaryFromID(SPELL_REVENANT_CURSE, commanderEntity, nullptr, commanderEntity);
+					monsterStats->setAttribute("revenant_skeleton", std::to_string(duration));
+					strcpy(monsterStats->name, Language::get(6807));
+					real_t ratio = getSpellDamageFromID(SPELL_REVENANT_CURSE, commanderEntity, nullptr, commanderEntity) / 100.0;
+					real_t maxratio = getSpellDamageSecondaryFromID(SPELL_REVENANT_CURSE, commanderEntity, nullptr, commanderEntity) / 100.0;
+					ratio = std::min(ratio, maxratio);
+
+					monsterStats->MP *= ratio;
+					monsterStats->MAXHP *= ratio;
+					monsterStats->MAXMP *= ratio;
+					monsterStats->STR *= ratio;
+					monsterStats->DEX *= ratio;
+					monsterStats->CON *= ratio;
+					monsterStats->INT *= ratio;
+					monsterStats->PER *= ratio;
+					monsterStats->LVL *= ratio;
+					monsterStats->GOLD *= ratio;
+
+					monsterStats->HP = monsterStats->MAXHP * ratio;
+					monsterStats->OLDHP = monsterStats->HP;
+
+					if ( player >= 0 )
+					{
+						messagePlayer(player, MESSAGE_STATUS, Language::get(6808), Language::get(6807));
+					}
+				}
+				return;
+			}
+			else
+			{
+				cursedFlesh &= ~(1 << 7); // revert to revenant skull
+			}
+		}
+
 		//TODO: Refactor die function.
 		// drop all equipment
 		entity = dropItemMonster(myStats->helmet, my, myStats);
@@ -3716,7 +3767,11 @@ void actMonster(Entity* my)
 		}
 
 		bool skipObituary = false;
-		if ( my->monsterAllySummonRank != 0 && myStats->MP > 0 )
+		if ( myStats->getAttribute("skip_obituary") != "" )
+		{
+			skipObituary = true;
+		}
+		else if ( my->monsterAllySummonRank != 0 && myStats->MP > 0 )
 		{
 			skipObituary = true;
 		}
@@ -3773,7 +3828,6 @@ void actMonster(Entity* my)
 
 		real_t deathLocationX = my->x;
 		real_t deathLocationY = my->y;
-		int cursedFlesh = myStats->getEffectActive(EFF_CURSE_FLESH);
 		if ( cursedFlesh > 0 )
 		{
 			my->flags[PASSABLE] = true;
@@ -3984,6 +4038,8 @@ void actMonster(Entity* my)
 		{
 			real_t x = floor(deathLocationX / 16) * 16 + 8.0;
 			real_t y = floor(deathLocationY / 16) * 16 + 8.0;
+
+
 			Entity* monster = summonMonster(REVENANT_SKULL, x, y, false);
 			if ( monster )
 			{
@@ -3995,9 +4051,18 @@ void actMonster(Entity* my)
 					{
 						player = cursedFlesh - 1;
 					}
+
+					Entity* commanderEntity = player >= 0 ? players[player]->entity : nullptr;
+
+					int duration = getSpellEffectDurationSecondaryFromID(SPELL_CURSE_FLESH, commanderEntity, nullptr, commanderEntity);
+					monsterStats->setAttribute("revenant_skull", std::to_string(duration));
+					int lvl = getSpellDamageFromID(SPELL_CURSE_FLESH, commanderEntity, nullptr, commanderEntity);
+					int maxlvl = getSpellDamageSecondaryFromID(SPELL_CURSE_FLESH, commanderEntity, nullptr, commanderEntity);
+					lvl = std::min(lvl, maxlvl);
+					monsterStats->LVL = lvl;
 					if ( player >= 0 && players[player]->entity && forceFollower(*players[player]->entity, *monster) )
 					{
-						messagePlayer(player, MESSAGE_STATUS, Language::get(6577), getMonsterLocalizedName(myStats->type).c_str());
+						messagePlayer(player, MESSAGE_STATUS, Language::get(6808), getMonsterLocalizedName(monsterStats->type).c_str());
 						monster->monsterAllyIndex = player;
 						if ( multiplayer == SERVER )
 						{
@@ -4026,6 +4091,8 @@ void actMonster(Entity* my)
 							}
 						}
 					}
+					createParticleDropRising(monster, 593, 1.f);
+					serverSpawnMiscParticles(monster, PARTICLE_EFFECT_RISING_DROP, 593);
 				}
 			}
 		}
