@@ -471,6 +471,7 @@ bool addSpell(int spell, int player, bool ignoreSkill)
 
 void spellConstructor(spell_t* spell, int ID)
 {
+	*spell = spell_t();
 	spell->ID = ID;
 	strcpy(spell->spell_internal_name, "spell_default");
 	spell->elements.first = NULL;
@@ -545,9 +546,9 @@ void spellDeconstructor(void* data)
 
 void spellElementConstructor(spellElement_t* element)
 {
-	element->mana = 0;
-	element->base_mana = 0;
-	element->overload_multiplier = 1;
+	//element->mana = 0;
+	//element->base_mana = 0;
+	//element->overload_multiplier = 1;
 	element->setDamage(0);
 	element->duration = 0;
 	element->can_be_learned = true;
@@ -564,9 +565,9 @@ void spellElementConstructor(int elementID, int mana, int base_mana, int overloa
 
 	auto& element = spellElementMap[elementID];
 	spellElementConstructor(&element);
-	element.mana = mana;
-	element.base_mana = base_mana;
-	element.overload_multiplier = overload_mult;
+	//element.mana = mana;
+	//element.base_mana = base_mana;
+	//element.overload_multiplier = overload_mult;
 	element.setDamage(damage);
 	element.duration = duration;
 	strcpy(element.element_internal_name, internal_name);
@@ -668,13 +669,15 @@ int getGoldCostOfSpell(spell_t* spell, int player)
 	int cost = 0;
 	if ( spell->ID == SPELL_LEAD_BOLT )
 	{
-		cost = 200 - stats[player]->getModifiedProficiency(PRO_MAGIC);
-		cost = std::max(25, cost);
+		cost = getSpellDamageSecondaryFromID(SPELL_LEAD_BOLT, players[player]->entity, stats[player], players[player]->entity);
+		int minCost = getSpellEffectDurationSecondaryFromID(SPELL_LEAD_BOLT, players[player]->entity, stats[player], players[player]->entity);
+		cost = std::max(minCost, cost);
 	}
 	else if ( spell->ID == SPELL_MERCURY_BOLT )
 	{
-		cost = 100 - stats[player]->getModifiedProficiency(PRO_MAGIC);
-		cost = std::max(25, cost);
+		cost = getSpellDamageSecondaryFromID(SPELL_MERCURY_BOLT, players[player]->entity, stats[player], players[player]->entity);
+		int minCost = getSpellEffectDurationSecondaryFromID(SPELL_MERCURY_BOLT, players[player]->entity, stats[player], players[player]->entity);
+		cost = std::max(minCost, cost);
 	}
 	else if ( spell->ID == SPELL_FORGE_MAGIC_SCRAP )
 	{
@@ -712,12 +715,7 @@ int getCostOfSpell(spell_t* spell, Entity* caster)
 		return 0;
 	}
 
-	node_t* node;
-	for ( node = spell->elements.first; node != NULL; node = node->next )
-	{
-		spellElement_t* spellElement = (spellElement_t*)node->element;
-		cost += getCostOfSpellElement(spellElement);
-	}
+	cost = spell->mana;
 
 	if ( spell->ID == SPELL_FORCEBOLT && caster && caster->skillCapstoneUnlockedEntity(PRO_SPELLCASTING) )
 	{
@@ -738,25 +736,6 @@ int getCostOfSpell(spell_t* spell, Entity* caster)
 		{
 			cost /= 2;
 		}
-	}
-	else if ( spell->ID == SPELL_FOCI_FIRE )
-	{
-		static ConsoleVariable<int> cvar_foci_cost("/foci_cost", 2);
-		cost = *cvar_foci_cost;
-	}
-
-	return cost;
-}
-
-int getCostOfSpellElement(spellElement_t* spellElement)
-{
-	int cost = spellElement->mana;
-
-	node_t* node;
-	for ( node = spellElement->elements.first; node != NULL; node = node->next )
-	{
-		spellElement_t* spellElement2 = (spellElement_t*)node->element;
-		cost += getCostOfSpellElement(spellElement2);
 	}
 
 	return cost;

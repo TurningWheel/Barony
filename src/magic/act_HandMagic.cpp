@@ -46,6 +46,7 @@ bool overDrawDamageNotify = false;
 #define HANDMAGIC_PARTICLESPRAY1 my->skill[3]
 #define HANDMAGIC_CIRCLE_RADIUS 0.8
 #define HANDMAGIC_CIRCLE_SPEED 0.3
+#define HANDMAGIC_TICKS_PER_CIRCLE 20
 
 void spellcasting_animation_manager_t::resetRangefinder()
 {
@@ -736,7 +737,7 @@ void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, 
 	animation_manager->circle_count = 0;
 	animation_manager->throw_count = 0;
 	animation_manager->active_count = 0;
-	animation_manager->times_to_circle = (spellCost / 10) + 1; //Circle once for every 10 mana the spell costs.
+	animation_manager->times_to_circle = spell->cast_time * HANDMAGIC_TICKS_PER_CIRCLE;// (spellCost / 10) + 1; //Circle once for every 10 mana the spell costs.
 	animation_manager->mana_left = spellCost;
 	animation_manager->mana_cost = spellCost;
 	animation_manager->consumeMana = true;
@@ -752,7 +753,7 @@ void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, 
 		{
 			int amount = (local_rng.rand() % 50) / std::max(stat->getModifiedProficiency(PRO_SPELLCASTING) + statGetINT(stat, caster), 1);
 			amount = std::min(amount, CASTING_EXTRA_TIMES_CAP);
-			animation_manager->times_to_circle += amount;
+			animation_manager->times_to_circle += amount * HANDMAGIC_TICKS_PER_CIRCLE;
 		}
 	}
 	if ( usingSpellbook && stat->shield && itemCategory(stat->shield) == SPELLBOOK )
@@ -768,15 +769,17 @@ void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, 
 			int difficulty = spell->difficulty / 20;
 			if ( difficulty > casterAbility )
 			{
-				animation_manager->times_to_circle += (std::min(5, 1 + 2 * (difficulty - casterAbility)));
+				animation_manager->times_to_circle += (std::min(5, 1 + 2 * (difficulty - casterAbility))) * HANDMAGIC_TICKS_PER_CIRCLE;
 			}
 		}
 		else if ( stat->getModifiedProficiency(PRO_SPELLCASTING) >= SPELLCASTING_BEGINNER )
 		{
-			animation_manager->times_to_circle = (spellCost / 20) + 1; //Circle once for every 20 mana the spell costs.
+			animation_manager->times_to_circle = std::max(HANDMAGIC_TICKS_PER_CIRCLE, animation_manager->times_to_circle - 5);
+			//animation_manager->times_to_circle = (spellCost / 20) + 1; //Circle once for every 20 mana the spell costs.
 		}
 	}
-	animation_manager->consume_interval = (animation_manager->times_to_circle * ((2 * PI) / HANDMAGIC_CIRCLE_SPEED)) / spellCost;
+	animation_manager->times_to_circle = std::max(10, animation_manager->times_to_circle);
+	animation_manager->consume_interval = (animation_manager->times_to_circle / std::max(1, spellCost));
 	animation_manager->consume_timer = animation_manager->consume_interval;
 	animation_manager->setRangeFinderLocation();
 }
@@ -1256,32 +1259,33 @@ void actLeftHandMagic(Entity* my)
 				cast_animation[HANDMAGIC_PLAYERNUM].lefthand_angle += HANDMAGIC_CIRCLE_SPEED;
 				cast_animation[HANDMAGIC_PLAYERNUM].lefthand_movex = cos(cast_animation[HANDMAGIC_PLAYERNUM].lefthand_angle) * HANDMAGIC_CIRCLE_RADIUS;
 				cast_animation[HANDMAGIC_PLAYERNUM].lefthand_movey = sin(cast_animation[HANDMAGIC_PLAYERNUM].lefthand_angle) * HANDMAGIC_CIRCLE_RADIUS;
-				if ( cast_animation[HANDMAGIC_PLAYERNUM].lefthand_angle >= 2 * PI)   //Completed one loop.
+				cast_animation[HANDMAGIC_PLAYERNUM].circle_count++;
+				if ( cast_animation[HANDMAGIC_PLAYERNUM].lefthand_angle >= 2 * PI )   //Completed one loop.
+				{
+					cast_animation[HANDMAGIC_PLAYERNUM].lefthand_angle -= 2 * PI;
+				}
+				if ( cast_animation[HANDMAGIC_PLAYERNUM].circle_count >= cast_animation[HANDMAGIC_PLAYERNUM].times_to_circle)
+					//Finished circling. Time to move on!
 				{
 					cast_animation[HANDMAGIC_PLAYERNUM].lefthand_angle = 0;
-					cast_animation[HANDMAGIC_PLAYERNUM].circle_count++;
-					if ( cast_animation[HANDMAGIC_PLAYERNUM].circle_count >= cast_animation[HANDMAGIC_PLAYERNUM].times_to_circle)
-						//Finished circling. Time to move on!
+					if ( cast_animation[HANDMAGIC_PLAYERNUM].rangefinder == SpellRangefinderType::RANGEFINDER_TOUCH
+						|| cast_animation[HANDMAGIC_PLAYERNUM].rangefinder == SpellRangefinderType::RANGEFINDER_TOUCH_INTERACT
+						|| cast_animation[HANDMAGIC_PLAYERNUM].rangefinder == SpellRangefinderType::RANGEFINDER_TOUCH_INTERACT_TEST
+						|| cast_animation[HANDMAGIC_PLAYERNUM].rangefinder == SpellRangefinderType::RANGEFINDER_TOUCH_FLOOR_TILE
+						|| cast_animation[HANDMAGIC_PLAYERNUM].rangefinder == SpellRangefinderType::RANGEFINDER_TOUCH_WALL_TILE )
 					{
-						if ( cast_animation[HANDMAGIC_PLAYERNUM].rangefinder == SpellRangefinderType::RANGEFINDER_TOUCH
-							|| cast_animation[HANDMAGIC_PLAYERNUM].rangefinder == SpellRangefinderType::RANGEFINDER_TOUCH_INTERACT
-							|| cast_animation[HANDMAGIC_PLAYERNUM].rangefinder == SpellRangefinderType::RANGEFINDER_TOUCH_INTERACT_TEST
-							|| cast_animation[HANDMAGIC_PLAYERNUM].rangefinder == SpellRangefinderType::RANGEFINDER_TOUCH_FLOOR_TILE
-							|| cast_animation[HANDMAGIC_PLAYERNUM].rangefinder == SpellRangefinderType::RANGEFINDER_TOUCH_WALL_TILE )
+						cast_animation[HANDMAGIC_PLAYERNUM].stage = ANIM_SPELL_TOUCH;
+						if ( *cvar_vibe_spell_s > 0 )
 						{
-							cast_animation[HANDMAGIC_PLAYERNUM].stage = ANIM_SPELL_TOUCH;
-							if ( *cvar_vibe_spell_s > 0 )
-							{
-								inputs.rumble(HANDMAGIC_PLAYERNUM, GameController::Haptic_t::RUMBLE_SPELL, *cvar_vibe_spell_x,
-									*cvar_vibe_spell_y, *cvar_vibe_spell_s, 0);
-							}
+							inputs.rumble(HANDMAGIC_PLAYERNUM, GameController::Haptic_t::RUMBLE_SPELL, *cvar_vibe_spell_x,
+								*cvar_vibe_spell_y, *cvar_vibe_spell_s, 0);
+						}
 
-							playSoundEntityLocal(players[HANDMAGIC_PLAYERNUM]->entity, 759 + local_rng.rand() % 4, 92);
-						}
-						else
-						{
-							cast_animation[HANDMAGIC_PLAYERNUM].stage = ANIM_SPELL_THROW;
-						}
+						playSoundEntityLocal(players[HANDMAGIC_PLAYERNUM]->entity, 759 + local_rng.rand() % 4, 92);
+					}
+					else
+					{
+						cast_animation[HANDMAGIC_PLAYERNUM].stage = ANIM_SPELL_THROW;
 					}
 				}
 				break;

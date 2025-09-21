@@ -23321,8 +23321,16 @@ void GenericGUIMenu::ItemEffectGUI_t::getItemEffectCost(Item* itemUsedWith, int&
 	{
 		if ( parentGUI.isItemRepairable(itemUsedWith, SCROLL_REPAIR) )
 		{
-			goldCost = items[itemUsedWith->type].value;
-			manaCost = items[itemUsedWith->type].value / 4;
+			goldCost = itemUsedWith->sellValue(-1); // get value without player CHR/trading influence
+			real_t goldRatio = getSpellDamageFromID(SPELL_RESTORE, players[parentGUI.gui_player]->entity, stats[parentGUI.gui_player], players[parentGUI.gui_player]->entity) / 100.0;
+			goldRatio = std::max(goldRatio, getSpellEffectDurationSecondaryFromID(SPELL_RESTORE, players[parentGUI.gui_player]->entity, stats[parentGUI.gui_player], players[parentGUI.gui_player]->entity) / 100.0);
+			goldCost = std::max(1, static_cast<int>(goldCost * goldRatio));
+
+			manaCost = itemUsedWith->sellValue(-1); // get value without player CHR/trading influence
+			real_t manaRatio = getSpellEffectDurationFromID(SPELL_RESTORE, players[parentGUI.gui_player]->entity, stats[parentGUI.gui_player], players[parentGUI.gui_player]->entity) / 100.0;
+			manaCost *= manaRatio;
+			int minMana = getSpellDamageSecondaryFromID(SPELL_RESTORE, players[parentGUI.gui_player]->entity, stats[parentGUI.gui_player], players[parentGUI.gui_player]->entity);
+			manaCost = std::max(manaCost, minMana);
 		}
 	}
 	else if ( currentMode == ITEMFX_MODE_SANCTIFY_WATER )
@@ -23337,17 +23345,26 @@ void GenericGUIMenu::ItemEffectGUI_t::getItemEffectCost(Item* itemUsedWith, int&
 	{
 		if ( currentMode == ITEMFX_MODE_ALTER_INSTRUMENT )
 		{
-			goldCost = 200;
+			goldCost = getSpellDamageFromID(SPELL_ALTER_INSTRUMENT, players[parentGUI.gui_player]->entity, stats[parentGUI.gui_player], players[parentGUI.gui_player]->entity);
+			goldCost = std::max(goldCost, getSpellDamageSecondaryFromID(SPELL_ALTER_INSTRUMENT, players[parentGUI.gui_player]->entity, stats[parentGUI.gui_player], players[parentGUI.gui_player]->entity));
 		}
 		else if ( currentMode == ITEMFX_MODE_METALLURGY )
 		{
-			manaCost = std::max(10, items[itemUsedWith->type].value / 100);
-			goldCost = -itemUsedWith->sellValue(parentGUI.gui_player) / 4;
+			int maxGold = itemUsedWith->sellValue(-1); // get value without player CHR/trading influence
+			real_t ratio = getSpellDamageFromID(SPELL_METALLURGY, players[parentGUI.gui_player]->entity, stats[parentGUI.gui_player], players[parentGUI.gui_player]->entity) / 100.0;
+			ratio = std::min(ratio, 1.0);
+			goldCost = -(maxGold * ratio);
+			real_t minMana = getSpellDamageSecondaryFromID(SPELL_METALLURGY, players[parentGUI.gui_player]->entity, stats[parentGUI.gui_player], players[parentGUI.gui_player]->entity);
+			manaCost = std::max(minMana, (maxGold * ratio) / 15.0);
 		}
 		else if ( currentMode == ITEMFX_MODE_GEOMANCY )
 		{
-			manaCost = std::max(50, items[itemUsedWith->type].value / 100);
-			goldCost = -itemUsedWith->sellValue(parentGUI.gui_player) / 4;
+			int maxGold = itemUsedWith->sellValue(-1); // get value without player CHR/trading influence
+			real_t ratio = getSpellDamageFromID(SPELL_GEOMANCY, players[parentGUI.gui_player]->entity, stats[parentGUI.gui_player], players[parentGUI.gui_player]->entity) / 100.0;
+			ratio = std::min(ratio, 1.0);
+			goldCost = -(maxGold * ratio);
+			real_t minMana = getSpellDamageSecondaryFromID(SPELL_GEOMANCY, players[parentGUI.gui_player]->entity, stats[parentGUI.gui_player], players[parentGUI.gui_player]->entity);
+			manaCost = std::max(minMana, (maxGold * ratio) / 15.0);
 		}
 		else if ( currentMode == ITEMFX_MODE_VANDALISE )
 		{
@@ -23376,6 +23393,10 @@ void GenericGUIMenu::ItemEffectGUI_t::getItemEffectCost(Item* itemUsedWith, int&
 			{
 				goldCost = 100;
 			}
+
+			real_t ratio = getSpellDamageFromID(SPELL_FORGE_KEY, players[parentGUI.gui_player]->entity, stats[parentGUI.gui_player], players[parentGUI.gui_player]->entity) / 100.0;
+			real_t minRatio = getSpellDamageSecondaryFromID(SPELL_FORGE_KEY, players[parentGUI.gui_player]->entity, stats[parentGUI.gui_player], players[parentGUI.gui_player]->entity) / 100.0;
+			goldCost *= std::max(minRatio, ratio);
 		}
 		else if ( currentMode == ITEMFX_MODE_FORGE_JEWEL )
 		{
@@ -23387,9 +23408,21 @@ void GenericGUIMenu::ItemEffectGUI_t::getItemEffectCost(Item* itemUsedWith, int&
 			{
 				goldCost = 1000;
 			}
+
+			real_t ratio = getSpellDamageFromID(SPELL_FORGE_JEWEL, players[parentGUI.gui_player]->entity, stats[parentGUI.gui_player], players[parentGUI.gui_player]->entity) / 100.0;
+			real_t minRatio = getSpellDamageSecondaryFromID(SPELL_FORGE_JEWEL, players[parentGUI.gui_player]->entity, stats[parentGUI.gui_player], players[parentGUI.gui_player]->entity) / 100.0;
+			goldCost *= std::max(minRatio, ratio);
 		}
 		else if ( currentMode == ITEMFX_MODE_ENHANCE_WEAPON )
 		{
+			int skillTier = 0;
+			int skillLVL = stats[parentGUI.gui_player]->getModifiedProficiency(PRO_SPELLCASTING)
+				+ statGetINT(stats[parentGUI.gui_player], players[parentGUI.gui_player]->entity);
+			if ( spell_t* spell = getSpellFromID(SPELL_ENHANCE_WEAPON) )
+			{
+				skillTier = std::max(0, (skillLVL - spell->difficulty)) / 20;
+			}
+
 			if ( itemUsedWith->type == BRONZE_AXE
 				|| itemUsedWith->type == BRONZE_MACE
 				|| itemUsedWith->type == BRONZE_SWORD
@@ -23404,6 +23437,10 @@ void GenericGUIMenu::ItemEffectGUI_t::getItemEffectCost(Item* itemUsedWith, int&
 				|| itemUsedWith->type == IRON_DAGGER )
 			{
 				goldCost = 400;
+				if ( skillTier < 1 )
+				{
+					goldCost += 1000000; // denotes no skill lvl
+				}
 			}
 			else if ( itemUsedWith->type == STEEL_AXE
 				|| itemUsedWith->type == STEEL_MACE
@@ -23412,10 +23449,26 @@ void GenericGUIMenu::ItemEffectGUI_t::getItemEffectCost(Item* itemUsedWith, int&
 				|| itemUsedWith->type == STEEL_CHAKRAM )
 			{
 				goldCost = 1600;
+				if ( skillTier < 2 )
+				{
+					goldCost += 1000000; // denotes no skill lvl
+				}
 			}
+
+			real_t ratio = getSpellDamageFromID(SPELL_ENHANCE_WEAPON, players[parentGUI.gui_player]->entity, stats[parentGUI.gui_player], players[parentGUI.gui_player]->entity) / 100.0;
+			real_t minRatio = getSpellDamageSecondaryFromID(SPELL_ENHANCE_WEAPON, players[parentGUI.gui_player]->entity, stats[parentGUI.gui_player], players[parentGUI.gui_player]->entity) / 100.0;
+			goldCost *= std::max(minRatio, ratio);
 		}
 		else if ( currentMode == ITEMFX_MODE_RESHAPE_WEAPON )
 		{
+			int skillTier = 0;
+			int skillLVL = stats[parentGUI.gui_player]->getModifiedProficiency(PRO_SPELLCASTING)
+				+ statGetINT(stats[parentGUI.gui_player], players[parentGUI.gui_player]->entity);
+			if ( spell_t* spell = getSpellFromID(SPELL_RESHAPE_WEAPON) )
+			{
+				skillTier = std::max(0, (skillLVL - spell->difficulty)) / 20;
+			}
+
 			if ( itemUsedWith->type == BRONZE_AXE
 				|| itemUsedWith->type == BRONZE_MACE
 				|| itemUsedWith->type == BRONZE_SWORD )
@@ -23428,6 +23481,10 @@ void GenericGUIMenu::ItemEffectGUI_t::getItemEffectCost(Item* itemUsedWith, int&
 				|| itemUsedWith->type == IRON_SPEAR )
 			{
 				goldCost = 200;
+				if ( skillTier < 1 )
+				{
+					goldCost += 1000000; // denotes no skill lvl
+				}
 			}
 			else if ( itemUsedWith->type == STEEL_AXE
 				|| itemUsedWith->type == STEEL_MACE
@@ -23435,6 +23492,10 @@ void GenericGUIMenu::ItemEffectGUI_t::getItemEffectCost(Item* itemUsedWith, int&
 				|| itemUsedWith->type == STEEL_HALBERD )
 			{
 				goldCost = 300;
+				if ( skillTier < 2 )
+				{
+					goldCost += 1000000; // denotes no skill lvl
+				}
 			}
 			else if ( itemUsedWith->type == CRYSTAL_BATTLEAXE
 				|| itemUsedWith->type == CRYSTAL_MACE
@@ -23442,18 +23503,30 @@ void GenericGUIMenu::ItemEffectGUI_t::getItemEffectCost(Item* itemUsedWith, int&
 				|| itemUsedWith->type == CRYSTAL_SPEAR )
 			{
 				goldCost = 400;
+				if ( skillTier < 3 )
+				{
+					goldCost += 1000000; // denotes no skill lvl
+				}
 			}
+
+			real_t ratio = getSpellDamageFromID(SPELL_RESHAPE_WEAPON, players[parentGUI.gui_player]->entity, stats[parentGUI.gui_player], players[parentGUI.gui_player]->entity) / 100.0;
+			real_t minRatio = getSpellDamageSecondaryFromID(SPELL_RESHAPE_WEAPON, players[parentGUI.gui_player]->entity, stats[parentGUI.gui_player], players[parentGUI.gui_player]->entity) / 100.0;
+			goldCost *= std::max(minRatio, ratio);
 		}
 		else if ( currentMode == ITEMFX_MODE_ALTER_ARROW )
 		{
 			if ( itemUsedWith->type == GEM_ROCK )
 			{
-				goldCost = 200;
+				goldCost = 100 + 10 * itemUsedWith->count;
 			}
 			else if ( itemTypeIsQuiver(itemUsedWith->type) )
 			{
-				goldCost = 100;
+				goldCost = 100 + itemUsedWith->sellValue(-1);
 			}
+
+			real_t ratio = getSpellDamageFromID(SPELL_ALTER_ARROW, players[parentGUI.gui_player]->entity, stats[parentGUI.gui_player], players[parentGUI.gui_player]->entity) / 100.0;
+			real_t minRatio = getSpellDamageSecondaryFromID(SPELL_ALTER_ARROW, players[parentGUI.gui_player]->entity, stats[parentGUI.gui_player], players[parentGUI.gui_player]->entity) / 100.0;
+			goldCost *= std::max(minRatio, ratio);
 		}
 	}
 }
@@ -23604,6 +23677,14 @@ GenericGUIMenu::ItemEffectGUI_t::ItemEffectActions_t GenericGUIMenu::ItemEffectG
 				int goldCost = 0;
 				int manaCost = 0;
 				getItemEffectCost(item, goldCost, manaCost);
+
+				bool lowSkill = false;
+				if ( goldCost >= 1000000 )
+				{
+					lowSkill = true;
+					goldCost = goldCost % 1000000;
+				}
+
 				if ( !checkResultOnly )
 				{
 					costEffectGoldAmount = goldCost;
@@ -23612,7 +23693,12 @@ GenericGUIMenu::ItemEffectGUI_t::ItemEffectActions_t GenericGUIMenu::ItemEffectG
 
 				if ( parentGUI.isItemAlterable(item) )
 				{
-					if ( goldCost > 0 && goldCost > stats[parentGUI.gui_player]->GOLD )
+					if ( (currentMode == ITEMFX_MODE_RESHAPE_WEAPON || currentMode == ITEMFX_MODE_ENHANCE_WEAPON)
+						&& lowSkill )
+					{
+						result = ITEMFX_ACTION_NEED_SKILL_LVLS;
+					}
+					else if ( goldCost > 0 && goldCost > stats[parentGUI.gui_player]->GOLD )
 					{
 						result = ITEMFX_ACTION_CANT_AFFORD_GOLD;
 					}
@@ -24922,6 +25008,18 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 						case ITEMFX_ACTION_AT_MAX_BLESSING:
 							actionPromptTxt->setText(Language::get(6726));
 							break;
+						case ITEMFX_ACTION_NEED_SKILL_LVLS:
+							if ( currentMode == ITEMFX_MODE_RESHAPE_WEAPON || currentMode == ITEMFX_MODE_ENHANCE_WEAPON )
+							{
+								char buf[128] = "";
+								snprintf(buf, sizeof(buf), Language::get(6804), getSkillLangEntry(PRO_SPELLCASTING));
+								actionPromptTxt->setText(buf);
+							}
+							else
+							{
+								actionPromptTxt->setText(Language::get(6805));
+							}
+							break;
 						default:
 							actionPromptTxt->setText("-");
 							break;
@@ -24993,6 +25091,7 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 			if ( itemActionType == ITEMFX_ACTION_OK 
 				|| itemActionType == ITEMFX_ACTION_CANT_AFFORD_GOLD
 				|| itemActionType == ITEMFX_ACTION_CANT_AFFORD_MANA
+				|| itemActionType == ITEMFX_ACTION_NEED_SKILL_LVLS
 				|| itemActionType == ITEMFX_ACTION_MUST_BE_UNEQUIPPED )
 			{
 				char buf[32];

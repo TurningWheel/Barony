@@ -425,12 +425,16 @@ typedef struct spellElement_t spellElement_t;
 typedef struct spellElement_t
 {
 private:
-	int damage;
+	int damage = 0;
+	int damage2 = 0;
+	int duration2 = 0;
 public:
 	void setDamage(int _damage) { damage = _damage; }
 	int getDamage() { return damage; }
-	int mana, base_mana;
-	int overload_multiplier; // what does this do?
+	void setDamageSecondary(int _damage) { damage2 = _damage; }
+	int getDamageSecondary() { return damage2; }
+	void setDurationSecondary(int _duration) { duration2 = _duration; }
+	int getDurationSecondary() { return duration2; }
 	int duration; // travel time if it's a missile element, duration for a light spell, duration for curses/enchants/traps/beams/rays/effects/what have you.
 	char element_internal_name[64];
 	bool can_be_learned; // if a spellElement can't be learned, a player won't be able to build spells with it.
@@ -708,12 +712,19 @@ typedef struct spell_t
 	//int skill_caster; //The spellcasting skill it was cast with. Lower skill can introduce inefficiencies and other !!FUN!!
 	bool sustain; //If a spell is channeled, should it be sustained? (NOTE: True by default. Set to false when the player decides to cancel/abandon a spell)
 	bool magicstaff; // if true the spell was cast from a magicstaff and thus it may have slightly different behavior
-	node_t* sustain_node; //Node in the sustained/channeled spells list.
-	node_t* magic_effects_node;
+	node_t* sustain_node = nullptr; //Node in the sustained/channeled spells list.
+	node_t* magic_effects_node = nullptr;
 	bool hide_from_ui = false; // hide from skillsheet/other UI places
 	SpellRangefinderType rangefinder = SpellRangefinderType::RANGEFINDER_NONE;
+
+	Uint32 caster = 0;
 	real_t distance = 0.0;
-	Uint32 caster;
+	int skillID = PRO_MAGIC;
+	real_t cast_time = 1.0;
+	real_t cast_time_mult = 1.0;
+	int mana = 1;
+
+	int life_time = 0; // for floor based effects
 	int sustainEffectDissipate = -1; // when the spell is unsustained, clear this effect from the player (unique spell effects)
 	int channel_duration = 0; //This is the value to reset the timer to when a spell is channeled.
 	int channel_effectStrength = 1; // how strong to reapply the effect each duration tick
@@ -909,6 +920,7 @@ void createMushroomSpellEffect(Entity* caster, real_t x, real_t y);
 Entity* createWindMagic(Uint32 casterUID, int x, int y, int duration, int dir, int length);
 void createParticleDemesneDoor(real_t x, real_t y, real_t dir);
 Entity* createTunnelPortal(real_t x, real_t y, int duration, int dir);
+void tunnelPortalSetAttributes(Entity* portal, int duration, int dir);
 Entity* createSpellExplosionArea(int spellID, Entity* caster, real_t x, real_t y, real_t z, real_t radius, int damage, Entity* ohitentity);
 void doSpellExplosionArea(int spellID, Entity* my, Entity* caster, real_t x, real_t y, real_t z, real_t radius);
 void createParticleSpin(Entity* entity);
@@ -932,7 +944,6 @@ void spellElementDeconstructor(void* data);
 
 int getCostOfSpell(spell_t* spell, Entity* caster = nullptr);
 int getGoldCostOfSpell(spell_t* spell, int player);
-int getCostOfSpellElement(spellElement_t* spellElement);
 int getSustainCostOfSpell(spell_t* spell, Entity* caster);
 bool spell_isChanneled(spell_t* spell);
 bool spellElement_isChanneled(spellElement_t* spellElement);
@@ -1014,7 +1025,7 @@ void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, i
 spell_t* spellEffectVampiricAura(Entity* caster, spell_t* spell, int extramagic_to_use);
 int getCharmMonsterDifficulty(Entity& my, Stat& myStats);
 void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent, int resistance, bool magicstaff);
-Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell, int customDuration = 0); // returns nullptr if target was monster, otherwise returns pointer to new creature
+Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell, int customDuration = 0, Monster customMonster = NOTHING); // returns nullptr if target was monster, otherwise returns pointer to new creature
 void spellEffectPoison(Entity& my, spellElement_t& element, Entity* parent, int damage, int resistance);
 void spellEffectSprayWeb(Entity& my, spellElement_t& element, Entity* parent, int resistance);
 bool spellEffectFear(Entity* my, spellElement_t& element, Entity* forceParent, Entity* target, int resistance);
@@ -1026,7 +1037,10 @@ Entity* spellEffectFlameSprite(Entity& caster, spellElement_t& element, real_t x
 Entity* spellEffectHologram(Entity& caster, spellElement_t& element, real_t x, real_t y);
 Entity* spellEffectDemesneDoor(Entity& caster, Entity& doorFrame);
 void magicSetResistance(Entity* entity, Entity* parent, int& resistance, real_t& damageMultiplier, DamageGib& dmgGib, int& trapResist);
-int getSpellDamageFromID(int spellID, Entity* parent, Entity* magicSourceParticle, real_t addSpellBonus = 0.0, bool applyingDamageOnCast = true);
+int getSpellDamageFromID(int spellID, Entity* parent, Stat* parentStats, Entity* magicSourceParticle, real_t addSpellBonus = 0.0, bool applyingDamageOnCast = true);
+int getSpellDamageSecondaryFromID(int spellID, Entity* parent, Stat* parentStats, Entity* magicSourceParticle, real_t addSpellBonus = 0.0, bool applyingDamageOnCast = true);
+int getSpellEffectDurationFromID(int spellID, Entity* parent, Stat* parentStats, Entity* magicSourceParticle, real_t addSpellBonus = 0.0);
+int getSpellEffectDurationSecondaryFromID(int spellID, Entity* parent, Stat* parentStats, Entity* magicSourceParticle, real_t addSpellBonus = 0.0);
 void thrownItemUpdateSpellTrail(Entity& my, real_t _x, real_t _y);
 
 void freeSpells();

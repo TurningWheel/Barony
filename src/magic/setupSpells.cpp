@@ -13,6 +13,7 @@
 #include "../game.hpp"
 #include "../stat.hpp"
 #include "magic.hpp"
+#include "../mod_tools.hpp"
 
 std::map<int, spell_t*> allGameSpells;
 
@@ -38,463 +39,463 @@ void setupSpells()   ///TODO: Verify this function.
 	spellElement_t* element = NULL;
 
 	spellElementConstructor(&spellElement_unintelligible);
-	spellElement_unintelligible.mana = 0;
-	spellElement_unintelligible.base_mana = 0;
-	spellElement_unintelligible.overload_multiplier = 0; //NOTE: Might crash due to divide by zero?
+	//spellElement_unintelligible.mana = 0;
+	//spellElement_unintelligible.base_mana = 0;
+	//spellElement_unintelligible.overload_multiplier = 0; //NOTE: Might crash due to divide by zero?
 	spellElement_unintelligible.setDamage(0);
 	spellElement_unintelligible.duration = 0;
 	spellElement_unintelligible.can_be_learned = false;
 	strcpy(spellElement_unintelligible.element_internal_name, "spell_element_unintelligible");
 
 	spellElementConstructor(&spellElement_missile);
-	spellElement_missile.mana = 1;
-	spellElement_missile.base_mana = 1;
-	spellElement_missile.overload_multiplier = 1;
+	//spellElement_missile.mana = 1;
+	//spellElement_missile.base_mana = 1;
+	//spellElement_missile.overload_multiplier = 1;
 	spellElement_missile.setDamage(0);
 	spellElement_missile.duration = 75; //1.25 seconds.
 	//spellElement_missile.name = "Missile";
 	strcpy(spellElement_missile.element_internal_name, "spell_element_missile");
 	spellElementMap[SPELL_ELEMENT_PROPULSION_MISSILE] = *copySpellElement(&spellElement_missile);
 	spellElementMap[SPELL_ELEMENT_PROPULSION_MISSILE_NOCOST] = *copySpellElement(&spellElement_missile);
-	spellElementMap[SPELL_ELEMENT_PROPULSION_MISSILE_NOCOST].mana = 0;
-	spellElementMap[SPELL_ELEMENT_PROPULSION_MISSILE_NOCOST].base_mana = 0;
+	//spellElementMap[SPELL_ELEMENT_PROPULSION_MISSILE_NOCOST].mana = 0;
+	//spellElementMap[SPELL_ELEMENT_PROPULSION_MISSILE_NOCOST].base_mana = 0;
 
 	spellElementConstructor(&spellElement_force);
-	spellElement_force.mana = 4;
-	spellElement_force.base_mana = 4;
-	spellElement_force.overload_multiplier = 1;
+	//spellElement_force.mana = 4;
+	//spellElement_force.base_mana = 4;
+	//spellElement_force.overload_multiplier = 1;
 	spellElement_force.setDamage(15);
 	spellElement_force.duration = 0;
 	strcpy(spellElement_force.element_internal_name, "spell_element_forcebolt");
 
 	spellElementConstructor(&spellElement_fire);
-	spellElement_fire.mana = 6;
-	spellElement_fire.base_mana = 6;
-	spellElement_fire.overload_multiplier = 1;
+	//spellElement_fire.mana = 6;
+	//spellElement_fire.base_mana = 6;
+	//spellElement_fire.overload_multiplier = 1;
 	spellElement_fire.setDamage(25);
 	spellElement_fire.duration = 0;
 	strcpy(spellElement_fire.element_internal_name, "spell_element_fireball");
 
 	spellElementConstructor(&spellElement_lightning);
-	spellElement_lightning.mana = 5;
-	spellElement_lightning.base_mana = 5;
-	spellElement_lightning.overload_multiplier = 1;
+	//spellElement_lightning.mana = 5;
+	//spellElement_lightning.base_mana = 5;
+	//spellElement_lightning.overload_multiplier = 1;
 	spellElement_lightning.setDamage(25);
 	spellElement_lightning.duration = 75;
 	strcpy(spellElement_lightning.element_internal_name, "spell_element_lightning");
 
 	spellElementConstructor(&spellElement_light);
-	spellElement_light.mana = 1;
-	spellElement_light.base_mana = 1;
-	spellElement_light.overload_multiplier = 1;
+	//spellElement_light.mana = 1;
+	//spellElement_light.base_mana = 1;
+	//spellElement_light.overload_multiplier = 1;
 	spellElement_light.setDamage(0);
 	spellElement_light.duration = 750; //500 a better value? //NOTE: 750 is original value.
 	strcpy(spellElement_light.element_internal_name, "spell_element_light");
 
 	spellElementConstructor(&spellElement_dig);
-	spellElement_dig.mana = 20;
-	spellElement_dig.base_mana = 20;
-	spellElement_dig.overload_multiplier = 1;
+	//spellElement_dig.mana = 20;
+	//spellElement_dig.base_mana = 20;
+	//spellElement_dig.overload_multiplier = 1;
 	spellElement_dig.setDamage(0);
 	spellElement_dig.duration = 0;
 	strcpy(spellElement_dig.element_internal_name, "spell_element_dig");
 
 	spellElementConstructor(&spellElement_invisible);
-	spellElement_invisible.mana = 2;
-	spellElement_invisible.base_mana = 2;
-	spellElement_invisible.overload_multiplier = 1;
+	//spellElement_invisible.mana = 2;
+	//spellElement_invisible.base_mana = 2;
+	//spellElement_invisible.overload_multiplier = 1;
 	spellElement_invisible.setDamage(0);
 	spellElement_invisible.duration = 100;
 	strcpy(spellElement_invisible.element_internal_name, "spell_element_invisibility");
 
 	spellElementConstructor(&spellElement_identify);
-	spellElement_identify.mana = 10;
-	spellElement_identify.base_mana = 10;
-	spellElement_identify.overload_multiplier = 0; //NOTE: Might segfault due to divide by zero?
+	//spellElement_identify.mana = 10;
+	//spellElement_identify.base_mana = 10;
+	//spellElement_identify.overload_multiplier = 0; //NOTE: Might segfault due to divide by zero?
 	spellElement_identify.setDamage(0);
 	spellElement_identify.duration = 0;
 	strcpy(spellElement_identify.element_internal_name, "spell_element_identify");
 
 	spellElementConstructor(&spellElement_magicmapping);
-	spellElement_magicmapping.mana = 40;
-	spellElement_magicmapping.base_mana = 40;
-	spellElement_magicmapping.overload_multiplier = 0; //NOTE: Might segfault due to divide by zero?
+	//spellElement_magicmapping.mana = 40;
+	//spellElement_magicmapping.base_mana = 40;
+	//spellElement_magicmapping.overload_multiplier = 0; //NOTE: Might segfault due to divide by zero?
 	spellElement_magicmapping.setDamage(0);
 	spellElement_magicmapping.duration = 0;
 	strcpy(spellElement_magicmapping.element_internal_name, "spell_element_magicmapping");
 
 	spellElementConstructor(&spellElement_heal);
-	spellElement_heal.mana = 10;
-	spellElement_heal.base_mana = 10;
-	spellElement_heal.overload_multiplier = 1;
+	//spellElement_heal.mana = 10;
+	//spellElement_heal.base_mana = 10;
+	//spellElement_heal.overload_multiplier = 1;
 	spellElement_heal.setDamage(10);
 	spellElement_heal.duration = 0;
 	strcpy(spellElement_heal.element_internal_name, "spell_element_healing");
 
 	spellElementConstructor(&spellElement_confuse);
-	spellElement_confuse.mana = 4;
-	spellElement_confuse.base_mana = 4;
-	spellElement_confuse.overload_multiplier = 1;
+	//spellElement_confuse.mana = 4;
+	//spellElement_confuse.base_mana = 4;
+	//spellElement_confuse.overload_multiplier = 1;
 	spellElement_confuse.setDamage(0);
 	spellElement_confuse.duration = TICKS_PER_SECOND * SPELLELEMENT_CONFUSE_BASE_DURATION; //TODO: Decide on something.
 	strcpy(spellElement_confuse.element_internal_name, "spell_element_confuse");
 
 	spellElementConstructor(&spellElement_cure_ailment);
-	spellElement_cure_ailment.mana = 10;
-	spellElement_cure_ailment.base_mana = 10;
-	spellElement_cure_ailment.overload_multiplier = 0;
+	//spellElement_cure_ailment.mana = 10;
+	//spellElement_cure_ailment.base_mana = 10;
+	//spellElement_cure_ailment.overload_multiplier = 0;
 	spellElement_cure_ailment.setDamage(0);
 	spellElement_cure_ailment.duration = 0;
 	strcpy(spellElement_cure_ailment.element_internal_name, "spell_element_cureailment");
 
 	spellElementConstructor(&spellElement_locking);
-	spellElement_locking.mana = 10;
-	spellElement_locking.base_mana = 10;
-	spellElement_locking.overload_multiplier = 0;
+	//spellElement_locking.mana = 10;
+	//spellElement_locking.base_mana = 10;
+	//spellElement_locking.overload_multiplier = 0;
 	spellElement_locking.setDamage(0);
 	spellElement_locking.duration = 0;
 	strcpy(spellElement_locking.element_internal_name, "spell_element_locking");
 
 	spellElementConstructor(&spellElement_opening);
-	spellElement_opening.mana = 5;
-	spellElement_opening.base_mana = 5;
-	spellElement_opening.overload_multiplier = 0;
+	//spellElement_opening.mana = 5;
+	//spellElement_opening.base_mana = 5;
+	//spellElement_opening.overload_multiplier = 0;
 	spellElement_opening.setDamage(0);
 	spellElement_opening.duration = 0;
 	strcpy(spellElement_opening.element_internal_name, "spell_element_opening");
 
 	spellElementConstructor(&spellElement_sleep);
-	spellElement_sleep.mana = 3;
-	spellElement_sleep.base_mana = 3;
-	spellElement_sleep.overload_multiplier = 0;
+	//spellElement_sleep.mana = 3;
+	//spellElement_sleep.base_mana = 3;
+	//spellElement_sleep.overload_multiplier = 0;
 	spellElement_sleep.setDamage(0);
 	spellElement_sleep.duration = 0;
 	strcpy(spellElement_sleep.element_internal_name, "spell_element_sleep");
 
 	spellElementConstructor(&spellElement_cold);
-	spellElement_cold.mana = 5;
-	spellElement_cold.base_mana = 5;
-	spellElement_cold.overload_multiplier = 1;
+	//spellElement_cold.mana = 5;
+	//spellElement_cold.base_mana = 5;
+	//spellElement_cold.overload_multiplier = 1;
 	spellElement_cold.setDamage(20);
 	spellElement_cold.duration = 180;
 	strcpy(spellElement_cold.element_internal_name, "spell_element_cold");
 
 	spellElementConstructor(&spellElement_slow);
-	spellElement_slow.mana = 3;
-	spellElement_slow.base_mana = 3;
-	spellElement_slow.overload_multiplier = 1;
+	//spellElement_slow.mana = 3;
+	//spellElement_slow.base_mana = 3;
+	//spellElement_slow.overload_multiplier = 1;
 	spellElement_slow.setDamage(0);
 	spellElement_slow.duration = 180;
 	strcpy(spellElement_slow.element_internal_name, "spell_element_slow");
 
 	spellElementConstructor(&spellElement_levitation);
-	spellElement_levitation.mana = 1;
-	spellElement_levitation.base_mana = 1;
-	spellElement_levitation.overload_multiplier = 1;
+	//spellElement_levitation.mana = 1;
+	//spellElement_levitation.base_mana = 1;
+	//spellElement_levitation.overload_multiplier = 1;
 	spellElement_levitation.setDamage(0);
 	spellElement_levitation.duration = 30;
 	strcpy(spellElement_levitation.element_internal_name, "spell_element_levitation");
 
 	spellElementConstructor(&spellElement_teleportation);
-	spellElement_teleportation.mana = 20;
-	spellElement_teleportation.base_mana = 20;
-	spellElement_teleportation.overload_multiplier = 0;
+	//spellElement_teleportation.mana = 20;
+	//spellElement_teleportation.base_mana = 20;
+	//spellElement_teleportation.overload_multiplier = 0;
 	spellElement_teleportation.setDamage(0);
 	spellElement_teleportation.duration = 0;
 	strcpy(spellElement_teleportation.element_internal_name, "spell_element_teleportation");
 
 	spellElementConstructor(&spellElement_selfPolymorph);
-	spellElement_selfPolymorph.mana = 40;
-	spellElement_selfPolymorph.base_mana = 40;
-	spellElement_selfPolymorph.overload_multiplier = 0;
+	//spellElement_selfPolymorph.mana = 40;
+	//spellElement_selfPolymorph.base_mana = 40;
+	//spellElement_selfPolymorph.overload_multiplier = 0;
 	spellElement_selfPolymorph.setDamage(0);
 	spellElement_selfPolymorph.duration = 0;
 	strcpy(spellElement_selfPolymorph.element_internal_name, "spell_element_self_polymorph");
 
 	spellElementConstructor(&spellElement_magicmissile);
-	spellElement_magicmissile.mana = 6;
-	spellElement_magicmissile.base_mana = 6;
-	spellElement_magicmissile.overload_multiplier = 1;
+	//spellElement_magicmissile.mana = 6;
+	//spellElement_magicmissile.base_mana = 6;
+	//spellElement_magicmissile.overload_multiplier = 1;
 	spellElement_magicmissile.setDamage(30);
 	spellElement_magicmissile.duration = 0;
 	strcpy(spellElement_magicmissile.element_internal_name, "spell_element_magicmissile");
 
 	spellElementConstructor(&spellElement_removecurse);
-	spellElement_removecurse.mana = 20;
-	spellElement_removecurse.base_mana = 20;
-	spellElement_removecurse.overload_multiplier = 0;
+	//spellElement_removecurse.mana = 20;
+	//spellElement_removecurse.base_mana = 20;
+	//spellElement_removecurse.overload_multiplier = 0;
 	spellElement_removecurse.setDamage(0);
 	spellElement_removecurse.duration = 0;
 	strcpy(spellElement_removecurse.element_internal_name, "spell_element_removecurse");
 
 	spellElementConstructor(&spellElement_summon);
-	spellElement_summon.mana = 17;
-	spellElement_summon.base_mana = 17;
-	spellElement_summon.overload_multiplier = 1;
+	//spellElement_summon.mana = 17;
+	//spellElement_summon.base_mana = 17;
+	//spellElement_summon.overload_multiplier = 1;
 	spellElement_summon.setDamage(0);
 	spellElement_summon.duration = 0;
 	strcpy(spellElement_summon.element_internal_name, "spell_element_summon");
 
 	spellElementConstructor(&spellElement_stoneblood);
-	spellElement_stoneblood.mana = 20;
-	spellElement_stoneblood.base_mana = 20;
-	spellElement_stoneblood.overload_multiplier = 1;
+	//spellElement_stoneblood.mana = 20;
+	//spellElement_stoneblood.base_mana = 20;
+	//spellElement_stoneblood.overload_multiplier = 1;
 	spellElement_stoneblood.setDamage(0);
 	spellElement_stoneblood.duration = TICKS_PER_SECOND * SPELLELEMENT_STONEBLOOD_BASE_DURATION;
 	strcpy(spellElement_stoneblood.element_internal_name, "spell_element_stoneblood");
 
 	spellElementConstructor(&spellElement_bleed);
-	spellElement_bleed.mana = 10;
-	spellElement_bleed.base_mana = 10;
-	spellElement_bleed.overload_multiplier = 1;
+	//spellElement_bleed.mana = 10;
+	//spellElement_bleed.base_mana = 10;
+	//spellElement_bleed.overload_multiplier = 1;
 	spellElement_bleed.setDamage(30);
 	spellElement_bleed.duration = TICKS_PER_SECOND * SPELLELEMENT_BLEED_BASE_DURATION; //TODO: Decide on something.;
 	strcpy(spellElement_bleed.element_internal_name, "spell_element_bleed");
 
 	spellElementConstructor(&spellElement_missile_trio);
-	spellElement_missile_trio.mana = 1;
-	spellElement_missile_trio.base_mana = 1;
-	spellElement_missile_trio.overload_multiplier = 1;
+	//spellElement_missile_trio.mana = 1;
+	//spellElement_missile_trio.base_mana = 1;
+	//spellElement_missile_trio.overload_multiplier = 1;
 	spellElement_missile_trio.setDamage(0);
 	spellElement_missile_trio.duration = 25; //1 second.
 	strcpy(spellElement_missile_trio.element_internal_name, "spell_element_trio");
 
 	spellElementConstructor(&spellElement_slime_spray);
-	spellElement_slime_spray.mana = 1;
-	spellElement_slime_spray.base_mana = 1;
-	spellElement_slime_spray.overload_multiplier = 1;
+	//spellElement_slime_spray.mana = 1;
+	//spellElement_slime_spray.base_mana = 1;
+	//spellElement_slime_spray.overload_multiplier = 1;
 	spellElement_slime_spray.setDamage(0);
 	spellElement_slime_spray.duration = 100;
 	strcpy(spellElement_slime_spray.element_internal_name, "spell_element_slime_spray");
 
 	spellElementConstructor(&spellElement_dominate);
-	spellElement_dominate.mana = 20;
-	spellElement_dominate.base_mana = 20;
-	spellElement_dominate.overload_multiplier = 1;
+	//spellElement_dominate.mana = 20;
+	//spellElement_dominate.base_mana = 20;
+	//spellElement_dominate.overload_multiplier = 1;
 	spellElement_dominate.setDamage(0);
 	spellElement_dominate.duration = 0;
 	strcpy(spellElement_dominate.element_internal_name, "spell_element_dominate");
 
 	spellElementConstructor(&spellElement_reflectMagic);
-	spellElement_reflectMagic.mana = 10;
-	spellElement_reflectMagic.base_mana = 10;
-	spellElement_reflectMagic.overload_multiplier = 1;
+	//spellElement_reflectMagic.mana = 10;
+	//spellElement_reflectMagic.base_mana = 10;
+	//spellElement_reflectMagic.overload_multiplier = 1;
 	spellElement_reflectMagic.setDamage(0);
 	spellElement_reflectMagic.duration = 3000;
 	strcpy(spellElement_reflectMagic.element_internal_name, "spell_element_reflect_magic");
 
 	spellElementConstructor(&spellElement_acidSpray);
-	spellElement_acidSpray.mana = 10;
-	spellElement_acidSpray.base_mana = 10;
-	spellElement_acidSpray.overload_multiplier = 1;
+	//spellElement_acidSpray.mana = 10;
+	//spellElement_acidSpray.base_mana = 10;
+	//spellElement_acidSpray.overload_multiplier = 1;
 	spellElement_acidSpray.setDamage(10);
 	spellElement_acidSpray.duration = TICKS_PER_SECOND * SPELLELEMENT_ACIDSPRAY_BASE_DURATION; //TODO: Decide on something.;
 	strcpy(spellElement_acidSpray.element_internal_name, "spell_element_acid_spray");
 
 	spellElementConstructor(&spellElement_stealWeapon);
-	spellElement_stealWeapon.mana = 50;
-	spellElement_stealWeapon.base_mana = 50;
-	spellElement_stealWeapon.overload_multiplier = 1;
+	//spellElement_stealWeapon.mana = 50;
+	//spellElement_stealWeapon.base_mana = 50;
+	//spellElement_stealWeapon.overload_multiplier = 1;
 	spellElement_stealWeapon.setDamage(0);
 	spellElement_stealWeapon.duration = 0;
 	strcpy(spellElement_stealWeapon.element_internal_name, "spell_element_steal_weapon");
 
 	spellElementConstructor(&spellElement_drainSoul);
-	spellElement_drainSoul.mana = 17;
-	spellElement_drainSoul.base_mana = 17;
-	spellElement_drainSoul.overload_multiplier = 1;
+	//spellElement_drainSoul.mana = 17;
+	//spellElement_drainSoul.base_mana = 17;
+	//spellElement_drainSoul.overload_multiplier = 1;
 	spellElement_drainSoul.setDamage(18);
 	spellElement_drainSoul.duration = 0;
 	strcpy(spellElement_drainSoul.element_internal_name, "spell_element_drain_soul");
 
 	spellElementConstructor(&spellElement_vampiricAura);
-	spellElement_vampiricAura.mana = 5;
-	spellElement_vampiricAura.base_mana = 5;
-	spellElement_vampiricAura.overload_multiplier = 1;
+	//spellElement_vampiricAura.mana = 5;
+	//spellElement_vampiricAura.base_mana = 5;
+	//spellElement_vampiricAura.overload_multiplier = 1;
 	spellElement_vampiricAura.setDamage(0);
 	spellElement_vampiricAura.duration = 85; //TODO: Decide on something.
 	strcpy(spellElement_vampiricAura.element_internal_name, "spell_element_vampiric_aura");
 
 	spellElementConstructor(&spellElement_amplifyMagic);
-	spellElement_amplifyMagic.mana = 7;
-	spellElement_amplifyMagic.base_mana = 7;
-	spellElement_amplifyMagic.overload_multiplier = 1;
+	//spellElement_amplifyMagic.mana = 7;
+	//spellElement_amplifyMagic.base_mana = 7;
+	//spellElement_amplifyMagic.overload_multiplier = 1;
 	spellElement_amplifyMagic.setDamage(0);
 	spellElement_amplifyMagic.duration = 85; //TODO: Decide on something.
 	strcpy(spellElement_amplifyMagic.element_internal_name, "spell_element_amplify_magic");
 
 	spellElementConstructor(&spellElement_charmMonster);
-	spellElement_charmMonster.mana = 49;
-	spellElement_charmMonster.base_mana = 49;
-	spellElement_charmMonster.overload_multiplier = 1;
+	//spellElement_charmMonster.mana = 49;
+	//spellElement_charmMonster.base_mana = 49;
+	//spellElement_charmMonster.overload_multiplier = 1;
 	spellElement_charmMonster.setDamage(0);
 	spellElement_charmMonster.duration = 300;
 	strcpy(spellElement_charmMonster.element_internal_name, "spell_element_charm");
 
 	spellElementConstructor(&spellElement_shapeshift);
-	spellElement_shapeshift.mana = 1;
-	spellElement_shapeshift.base_mana = 1;
-	spellElement_shapeshift.overload_multiplier = 1;
+	//spellElement_shapeshift.mana = 1;
+	//spellElement_shapeshift.base_mana = 1;
+	//spellElement_shapeshift.overload_multiplier = 1;
 	spellElement_shapeshift.setDamage(0);
 	spellElement_shapeshift.duration = 0;
 	strcpy(spellElement_shapeshift.element_internal_name, "spell_element_shapeshift");
 
 	spellElementConstructor(&spellElement_sprayWeb);
-	spellElement_sprayWeb.mana = 7;
-	spellElement_sprayWeb.base_mana = 7;
-	spellElement_sprayWeb.overload_multiplier = 1;
+	//spellElement_sprayWeb.mana = 7;
+	//spellElement_sprayWeb.base_mana = 7;
+	//spellElement_sprayWeb.overload_multiplier = 1;
 	spellElement_sprayWeb.setDamage(0);
 	spellElement_sprayWeb.duration = 0;
 	strcpy(spellElement_sprayWeb.element_internal_name, "spell_element_spray_web");
 
 	spellElementConstructor(&spellElement_poison);
-	spellElement_poison.mana = 4;
-	spellElement_poison.base_mana = 4;
-	spellElement_poison.overload_multiplier = 1;
+	//spellElement_poison.mana = 4;
+	//spellElement_poison.base_mana = 4;
+	//spellElement_poison.overload_multiplier = 1;
 	spellElement_poison.setDamage(10);
 	spellElement_poison.duration = 0;
 	strcpy(spellElement_poison.element_internal_name, "spell_element_poison");
 
 	spellElementConstructor(&spellElement_speed);
-	spellElement_speed.mana = 11;
-	spellElement_speed.base_mana = 11;
-	spellElement_speed.overload_multiplier = 1;
+	//spellElement_speed.mana = 11;
+	//spellElement_speed.base_mana = 11;
+	//spellElement_speed.overload_multiplier = 1;
 	spellElement_speed.setDamage(0);
 	spellElement_speed.duration = 30 * TICKS_PER_SECOND;
 	strcpy(spellElement_speed.element_internal_name, "spell_element_speed");
 
 	spellElementConstructor(&spellElement_fear);
-	spellElement_fear.mana = 28;
-	spellElement_fear.base_mana = 28;
-	spellElement_fear.overload_multiplier = 1;
+	//spellElement_fear.mana = 28;
+	//spellElement_fear.base_mana = 28;
+	//spellElement_fear.overload_multiplier = 1;
 	spellElement_fear.setDamage(0);
 	spellElement_fear.duration = 0;
 	strcpy(spellElement_fear.element_internal_name, "spell_element_fear");
 
 	spellElementConstructor(&spellElement_strike);
-	spellElement_strike.mana = 23;
-	spellElement_strike.base_mana = 23;
-	spellElement_strike.overload_multiplier = 1;
+	//spellElement_strike.mana = 23;
+	//spellElement_strike.base_mana = 23;
+	//spellElement_strike.overload_multiplier = 1;
 	spellElement_strike.setDamage(1);
 	spellElement_strike.duration = 0;
 	strcpy(spellElement_strike.element_internal_name, "spell_element_strike");
 
 	spellElementConstructor(&spellElement_weakness);
-	spellElement_weakness.mana = 1;
-	spellElement_weakness.base_mana = 1;
-	spellElement_weakness.overload_multiplier = 1;
+	//spellElement_weakness.mana = 1;
+	//spellElement_weakness.base_mana = 1;
+	//spellElement_weakness.overload_multiplier = 1;
 	spellElement_weakness.setDamage(0);
 	spellElement_weakness.duration = 50;
 	strcpy(spellElement_weakness.element_internal_name, "spell_element_weakness");
 
 	spellElementConstructor(&spellElement_detectFood);
-	spellElement_detectFood.mana = 14;
-	spellElement_detectFood.base_mana = 14;
-	spellElement_detectFood.overload_multiplier = 0; //NOTE: Might segfault due to divide by zero?
+	//spellElement_detectFood.mana = 14;
+	//spellElement_detectFood.base_mana = 14;
+	//spellElement_detectFood.overload_multiplier = 0; //NOTE: Might segfault due to divide by zero?
 	spellElement_detectFood.setDamage(0);
 	spellElement_detectFood.duration = 0;
 	strcpy(spellElement_detectFood.element_internal_name, "spell_element_detect_food");
 
 	spellElementConstructor(&spellElement_trollsBlood);
-	spellElement_trollsBlood.mana = 25;
-	spellElement_trollsBlood.base_mana = 25;
-	spellElement_trollsBlood.overload_multiplier = 0; //NOTE: Might segfault due to divide by zero?
+	//spellElement_trollsBlood.mana = 25;
+	//spellElement_trollsBlood.base_mana = 25;
+	//spellElement_trollsBlood.overload_multiplier = 0; //NOTE: Might segfault due to divide by zero?
 	spellElement_trollsBlood.setDamage(0);
 	spellElement_trollsBlood.duration = 80 * TICKS_PER_SECOND;
 	strcpy(spellElement_trollsBlood.element_internal_name, "spell_element_trolls_blood");
 
 	spellElementConstructor(&spellElement_flutter);
-	spellElement_flutter.mana = 10;
-	spellElement_flutter.base_mana = 10;
-	spellElement_flutter.overload_multiplier = 1;
+	//spellElement_flutter.mana = 10;
+	//spellElement_flutter.base_mana = 10;
+	//spellElement_flutter.overload_multiplier = 1;
 	spellElement_flutter.setDamage(0);
 	spellElement_flutter.duration = 6 * TICKS_PER_SECOND;
 	strcpy(spellElement_flutter.element_internal_name, "spell_element_flutter");
 
 	spellElementConstructor(&spellElement_dash);
-	spellElement_dash.mana = 5;
-	spellElement_dash.base_mana = 5;
-	spellElement_dash.overload_multiplier = 1;
+	//spellElement_dash.mana = 5;
+	//spellElement_dash.base_mana = 5;
+	//spellElement_dash.overload_multiplier = 1;
 	spellElement_dash.setDamage(0);
 	spellElement_dash.duration = 1 * TICKS_PER_SECOND;
 	strcpy(spellElement_dash.element_internal_name, "spell_element_dash");
 
 	spellElementConstructor(&spellElement_salvageItem);
-	spellElement_salvageItem.mana = 6;
-	spellElement_salvageItem.base_mana = 6;
-	spellElement_salvageItem.overload_multiplier = 0; //NOTE: Might segfault due to divide by zero?
+	//spellElement_salvageItem.mana = 6;
+	//spellElement_salvageItem.base_mana = 6;
+	//spellElement_salvageItem.overload_multiplier = 0; //NOTE: Might segfault due to divide by zero?
 	spellElement_salvageItem.setDamage(0);
 	spellElement_salvageItem.duration = 0;
 	strcpy(spellElement_salvageItem.element_internal_name, "spell_element_salvage");
 
 	spellElementConstructor(&spellElement_shadowTag);
-	spellElement_shadowTag.mana = 4;
-	spellElement_shadowTag.base_mana = 4;
-	spellElement_shadowTag.overload_multiplier = 1;
+	//spellElement_shadowTag.mana = 4;
+	//spellElement_shadowTag.base_mana = 4;
+	//spellElement_shadowTag.overload_multiplier = 1;
 	spellElement_shadowTag.setDamage(0);
 	spellElement_shadowTag.duration = 0;
 	strcpy(spellElement_shadowTag.element_internal_name, "spell_element_shadow_tag");
 
 	spellElementConstructor(&spellElement_telePull);
-	spellElement_telePull.mana = 19;
-	spellElement_telePull.base_mana = 19;
-	spellElement_telePull.overload_multiplier = 1;
+	//spellElement_telePull.mana = 19;
+	//spellElement_telePull.base_mana = 19;
+	//spellElement_telePull.overload_multiplier = 1;
 	spellElement_telePull.setDamage(0);
 	spellElement_telePull.duration = 0;
 	strcpy(spellElement_telePull.element_internal_name, "spell_element_telepull");
 
 	spellElementConstructor(&spellElement_demonIllusion);
-	spellElement_demonIllusion.mana = 24;
-	spellElement_demonIllusion.base_mana = 24;
-	spellElement_demonIllusion.overload_multiplier = 1;
+	//spellElement_demonIllusion.mana = 24;
+	//spellElement_demonIllusion.base_mana = 24;
+	//spellElement_demonIllusion.overload_multiplier = 1;
 	spellElement_demonIllusion.setDamage(0);
 	spellElement_demonIllusion.duration = 0;
 	strcpy(spellElement_demonIllusion.element_internal_name, "spell_element_demon_illu");
 
 	spellElementConstructor(&spellElement_ghostBolt);
-	spellElement_ghostBolt.mana = 5;
-	spellElement_ghostBolt.base_mana = 5;
-	spellElement_ghostBolt.overload_multiplier = 1;
+	//spellElement_ghostBolt.mana = 5;
+	//spellElement_ghostBolt.base_mana = 5;
+	//spellElement_ghostBolt.overload_multiplier = 1;
 	spellElement_ghostBolt.setDamage(0);
 	spellElement_ghostBolt.duration = 75;
 	strcpy(spellElement_ghostBolt.element_internal_name, "spell_element_ghost_bolt");
 
 	spellElementConstructor(&spellElement_slimeAcid);
-	spellElement_slimeAcid.mana = 5;
-	spellElement_slimeAcid.base_mana = 5;
-	spellElement_slimeAcid.overload_multiplier = 1;
+	//spellElement_slimeAcid.mana = 5;
+	//spellElement_slimeAcid.base_mana = 5;
+	//spellElement_slimeAcid.overload_multiplier = 1;
 	spellElement_slimeAcid.setDamage(5);
 	spellElement_slimeAcid.duration = 100;
 	strcpy(spellElement_slimeAcid.element_internal_name, "spell_element_slime_acid");
 
 	spellElementConstructor(&spellElement_slimeWater);
-	spellElement_slimeWater.mana = 5;
-	spellElement_slimeWater.base_mana = 5;
-	spellElement_slimeWater.overload_multiplier = 1;
+	//spellElement_slimeWater.mana = 5;
+	//spellElement_slimeWater.base_mana = 5;
+	//spellElement_slimeWater.overload_multiplier = 1;
 	spellElement_slimeWater.setDamage(5);
 	spellElement_slimeWater.duration = 100;
 	strcpy(spellElement_slimeWater.element_internal_name, "spell_element_slime_water");
 
 	spellElementConstructor(&spellElement_slimeFire);
-	spellElement_slimeFire.mana = 5;
-	spellElement_slimeFire.base_mana = 5;
-	spellElement_slimeFire.overload_multiplier = 1;
+	//spellElement_slimeFire.mana = 5;
+	//spellElement_slimeFire.base_mana = 5;
+	//spellElement_slimeFire.overload_multiplier = 1;
 	spellElement_slimeFire.setDamage(5);
 	spellElement_slimeFire.duration = 100;
 	strcpy(spellElement_slimeFire.element_internal_name, "spell_element_slime_fire");
 
 	spellElementConstructor(&spellElement_slimeTar);
-	spellElement_slimeTar.mana = 5;
-	spellElement_slimeTar.base_mana = 5;
-	spellElement_slimeTar.overload_multiplier = 1;
+	//spellElement_slimeTar.mana = 5;
+	//spellElement_slimeTar.base_mana = 5;
+	//spellElement_slimeTar.overload_multiplier = 1;
 	spellElement_slimeTar.setDamage(5);
 	spellElement_slimeTar.duration = 100;
 	strcpy(spellElement_slimeTar.element_internal_name, "spell_element_slime_tar");
 
 	spellElementConstructor(&spellElement_slimeMetal);
-	spellElement_slimeMetal.mana = 5;
-	spellElement_slimeMetal.base_mana = 5;
-	spellElement_slimeMetal.overload_multiplier = 1;
+	//spellElement_slimeMetal.mana = 5;
+	//spellElement_slimeMetal.base_mana = 5;
+	//spellElement_slimeMetal.overload_multiplier = 1;
 	spellElement_slimeMetal.setDamage(5);
 	spellElement_slimeMetal.duration = 100;
 	strcpy(spellElement_slimeMetal.element_internal_name, "spell_element_slime_metal");
@@ -684,7 +685,7 @@ void setupSpells()   ///TODO: Verify this function.
 	node->deconstructor = &spellElementDeconstructor;
 	element = (spellElement_t*) node->element;
 	element->node = node;
-	element->mana = 15; //Set the spell's mana to 15 so that it lasts ~30 seconds.
+	//element->mana = 15; //Set the spell's mana to 15 so that it lasts ~30 seconds.
 
 	spellConstructor(&spell_slow, SPELL_SLOW);
 	strcpy(spell_slow.spell_internal_name, "spell_slow");
@@ -1062,7 +1063,7 @@ void setupSpells()   ///TODO: Verify this function.
 	node->deconstructor = &spellElementDeconstructor;
 	element = (spellElement_t*)node->element;
 	element->node = node;
-	element->mana = 5;
+	//element->mana = 5;
 
 	spellConstructor(&spell_ratForm, SPELL_RAT_FORM);
 	strcpy(spell_ratForm.spell_internal_name, "spell_rat_form");
@@ -1075,7 +1076,7 @@ void setupSpells()   ///TODO: Verify this function.
 	node->deconstructor = &spellElementDeconstructor;
 	element = (spellElement_t*)node->element;
 	element->node = node;
-	element->mana = 8;
+	//element->mana = 8;
 
 	spellConstructor(&spell_spiderForm, SPELL_SPIDER_FORM);
 	strcpy(spell_spiderForm.spell_internal_name, "spell_spider_form");
@@ -1088,7 +1089,7 @@ void setupSpells()   ///TODO: Verify this function.
 	node->deconstructor = &spellElementDeconstructor;
 	element = (spellElement_t*)node->element;
 	element->node = node;
-	element->mana = 16;
+	//element->mana = 16;
 
 	spellConstructor(&spell_trollForm, SPELL_TROLL_FORM);
 	strcpy(spell_trollForm.spell_internal_name, "spell_troll_form");
@@ -1101,7 +1102,7 @@ void setupSpells()   ///TODO: Verify this function.
 	node->deconstructor = &spellElementDeconstructor;
 	element = (spellElement_t*)node->element;
 	element->node = node;
-	element->mana = 24;
+	//element->mana = 24;
 
 	spellConstructor(&spell_impForm, SPELL_IMP_FORM);
 	strcpy(spell_impForm.spell_internal_name, "spell_imp_form");
@@ -1114,7 +1115,7 @@ void setupSpells()   ///TODO: Verify this function.
 	node->deconstructor = &spellElementDeconstructor;
 	element = (spellElement_t*)node->element;
 	element->node = node;
-	element->mana = 32;
+	//element->mana = 32;
 
 	spellConstructor(&spell_sprayWeb, SPELL_SPRAY_WEB);
 	strcpy(spell_sprayWeb.spell_internal_name, "spell_spray_web");
@@ -2553,17 +2554,32 @@ void setupSpells()   ///TODO: Verify this function.
 		750, // duration
 		"spell_reflector");
 
-	spell = createSimpleSpell(
-		SPELL_SPLINTER_GEAR,
-		100, // difficulty
-		1, // mana
-		1, // base mana
-		1, // overload
-		25, // damage
-		1, // duration
-		"spell_splinter_gear");
-	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH;
-	spell->distance = 64.0;
+	//spell = createSimpleSpell(
+	//	SPELL_SPLINTER_GEAR,
+	//	100, // difficulty
+	//	1, // mana
+	//	1, // base mana
+	//	1, // overload
+	//	25, // damage
+	//	1, // duration
+	//	"spell_splinter_gear");
+	//spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH;
+	//spell->distance = 64.0;
+
+	spellElementConstructor(SPELL_SPLINTER_GEAR,
+		1,		// mana
+		1,		// base mana
+		1,		// overload
+		5,		// damage
+		0,		// duration
+		"spell_element_splinter_gear");
+	spell = spellConstructor(
+		SPELL_SPLINTER_GEAR,		// ID
+		100,						// difficulty
+		"spell_splinter_gear",		// internal name
+		// elements
+		{ SPELL_ELEMENT_PROPULSION_MISSILE, SPELL_SPLINTER_GEAR }
+	);
 
 	spell = createSimpleSpell(
 		SPELL_LIGHTEN_LOAD,
@@ -3107,6 +3123,51 @@ void setupSpells()   ///TODO: Verify this function.
 	//static const int SPELL_SHATTER_OBJECTS = 187;
 	//static const int SPELL_KINETIC_FIELD = 188;
 	//static const int SPELL_ICE_BLOCK = 189;
+
+	for ( int i = 0; i < NUM_SPELLS; ++i )
+	{
+		auto find = ItemTooltips.spellItems.find(i);
+		if ( find != ItemTooltips.spellItems.end() )
+		{
+			if ( allGameSpells.find(i) == allGameSpells.end() )
+			{
+				continue;
+			}
+			if ( !find->second.hasExpandedJSON )
+			{
+				continue;
+			}
+			if ( auto spell = getSpellFromID(i) )
+			{
+				auto& info = find->second;
+				spell->life_time = info.life_time;
+				spell->difficulty = info.difficulty;
+				spell->distance = info.distance;
+				spell->mana = info.mana;
+				spell->cast_time = info.cast_time;
+				
+				spellElement_t* element = nullptr;
+				if ( spell->elements.first )
+				{
+					if ( element = (spellElement_t*)spell->elements.first->element )
+					{
+						if ( element->elements.first && element->elements.first->element )
+						{
+							element = (spellElement_t*)element->elements.first->element;
+						}
+					}
+				}
+				if ( element )
+				{
+					element->channeledMana = info.sustain_mana;
+					element->setDamage(info.damage);
+					element->setDamageSecondary(info.damage2);
+					element->duration = info.duration;
+					element->setDurationSecondary(info.duration2);
+				}
+			}
+		}
+	}
 }
 
 spell_t* createSimpleSpell(int spellID, int difficulty, int mana, int base_mana, int overload_mult, int damage, 

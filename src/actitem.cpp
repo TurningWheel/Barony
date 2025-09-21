@@ -271,39 +271,63 @@ void actItem(Entity* my)
 			my->clearMonsterInteract();
 		}
 
-		Entity* returnToParent = nullptr;
-		if ( my->itemReturnUID != 0 && my->ticks >= 3 * TICKS_PER_SECOND )
+		if ( my->itemReturnUID != 0 )
 		{
-			if ( returnToParent = uidToEntity(my->itemReturnUID) )
+			if ( Entity* returnToParent = uidToEntity(my->itemReturnUID) )
 			{
-				if ( returnToParent->behavior == &actPlayer )
+				int returnTime = std::max(10, std::max(getSpellDamageSecondaryFromID(SPELL_RETURN_ITEMS, returnToParent, nullptr, returnToParent, 0.0, false),
+					getSpellDamageFromID(SPELL_RETURN_ITEMS, returnToParent, nullptr, returnToParent, 0.0, false)));
+				if ( my->ticks >= returnTime && returnToParent->behavior == &actPlayer )
 				{
-					i = returnToParent->skill[2];
-					Item* item2 = newItemFromEntity(my);
-					if ( item2 )
+					int cost = std::max(1, getSpellEffectDurationSecondaryFromID(SPELL_RETURN_ITEMS, returnToParent, nullptr, returnToParent));
+					if ( cost > 0 && !returnToParent->safeConsumeMP(cost) )
 					{
-						int pickedUpCount = item2->count;
-						item = itemPickup(i, item2);
-						if ( item )
+						Stat* returnStats = returnToParent->getStats();
+						if ( returnStats && returnStats->MP > 0 )
 						{
-							if ( players[i]->isLocalPlayer() )
+							returnToParent->modMP(-returnStats->MP);
+						}
+						if ( spell_t* sustainSpell = returnToParent->getActiveMagicEffect(SPELL_RETURN_ITEMS) )
+						{
+							sustainSpell->sustain = false;
+						}
+						playSoundEntity(returnToParent, 163, 128);
+						if ( Item* item = newItemFromEntity(my, true) )
+						{
+							messagePlayerColor(returnToParent->skill[2], MESSAGE_COMBAT, makeColorRGB(255, 0, 0), Language::get(6813), item->getName());
+							free(item);
+						}
+						my->itemReturnUID = 0;
+					}
+					else
+					{
+						i = returnToParent->skill[2];
+						Item* item2 = newItemFromEntity(my);
+						if ( item2 )
+						{
+							int pickedUpCount = item2->count;
+							item = itemPickup(i, item2);
+							if ( item )
 							{
-								// item is the new inventory stack for server, free the picked up items
-								free(item2);
-								int oldcount = item->count;
-								item->count = pickedUpCount;
-								messagePlayer(i, MESSAGE_INTERACTION | MESSAGE_INVENTORY, Language::get(3746), item->getName());
-								item->count = oldcount;
+								if ( players[i]->isLocalPlayer() )
+								{
+									// item is the new inventory stack for server, free the picked up items
+									free(item2);
+									int oldcount = item->count;
+									item->count = pickedUpCount;
+									messagePlayer(i, MESSAGE_INTERACTION | MESSAGE_INVENTORY, Language::get(3746), item->getName());
+									item->count = oldcount;
+								}
+								else
+								{
+									messagePlayer(i, MESSAGE_INTERACTION | MESSAGE_INVENTORY, Language::get(3746), item->getName());
+									free(item); // item is the picked up items (item == item2)
+								}
+								spawnMagicEffectParticles(my->x, my->y, my->z, 170);
+								my->removeLightField();
+								list_RemoveNode(my->mynode);
+								return;
 							}
-							else
-							{
-								messagePlayer(i, MESSAGE_INTERACTION | MESSAGE_INVENTORY, Language::get(3746), item->getName());
-								free(item); // item is the picked up items (item == item2)
-							}
-							spawnMagicEffectParticles(my->x, my->y, my->z, 170);
-							my->removeLightField();
-							list_RemoveNode(my->mynode);
-							return;
 						}
 					}
 				}
@@ -517,7 +541,10 @@ void actItem(Entity* my)
 			{
 				Stat* leaderStats = leader->getStats();
 				real_t dist = entityDist(leader, my);
-				if ( dist > 2 * TOUCHRANGE + 4.0 || (leaderStats && !leaderStats->getEffectActive(EFF_ATTRACT_ITEMS)) )
+
+				real_t maxDist = std::max(16, std::min(getSpellDamageSecondaryFromID(SPELL_ATTRACT_ITEMS, leader, nullptr, leader),
+					getSpellDamageFromID(SPELL_ATTRACT_ITEMS, leader, nullptr, leader)));
+				if ( dist > maxDist + 4.0 || (leaderStats && !leaderStats->getEffectActive(EFF_ATTRACT_ITEMS)) )
 				{
 					my->itemFollowUID = 0;
 					serverUpdateEntitySkill(my, 30);
@@ -698,7 +725,7 @@ void actItem(Entity* my)
 		if ( my->x >= 0 && my->y >= 0 && my->x < map.width << 4 && my->y < map.height << 4 )
 		{
 			const int tile = map.tiles[(int)(my->y / 16) * MAPLAYERS + (int)(my->x / 16) * MAPLAYERS * map.height];
-			if ( tile || (my->sprite >= 610 && my->sprite <= 613) || (my->sprite >= 1206 && my->sprite <= 1209) )
+			if ( tile || (my->sprite >= 610 && my->sprite <= 613) || (my->sprite >= 1206 && my->sprite <= 1210) )
 			{
 				onground = true;
 				if (!isArtifact && tile >= 64 && tile < 72) { // landing on lava

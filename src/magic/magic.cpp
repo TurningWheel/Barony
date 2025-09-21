@@ -1611,7 +1611,7 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 	return;
 }
 
-Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell, int customDuration)
+Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell, int customDuration, Monster customMonster)
 {
 	int effectDuration = 0;
 	effectDuration = TICKS_PER_SECOND * 60 * (4 + local_rng.rand() % 3); // 4-6 minutes
@@ -1621,7 +1621,7 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 	}
 	if ( !target || !target->getStats() )
 	{
-		if ( parent && parent->behavior == &actPlayer )
+		if ( parent && parent->behavior == &actPlayer && customMonster == NOTHING )
 		{
 			messagePlayer(parent->skill[2], MESSAGE_HINT, Language::get(3191)); // had no effect
 		}
@@ -1630,28 +1630,32 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 
 	Stat* targetStats = target->getStats();
 
-	if ( targetStats->type == LICH || targetStats->type == SHOPKEEPER || targetStats->type == DEVIL
-		|| targetStats->type == MINOTAUR || targetStats->type == LICH_FIRE || targetStats->type == LICH_ICE
-		|| (target->behavior == &actMonster && target->monsterAllySummonRank != 0)
-		|| targetStats->type == MIMIC || targetStats->type == BAT_SMALL
-		|| targetStats->type == MONSTER_ADORCISED_WEAPON
-		|| targetStats->type == MOTH_SMALL
-		|| targetStats->type == MINIMIMIC
-		|| targetStats->type == REVENANT_SKULL
-		|| targetStats->type == FLAME_ELEMENTAL
-		|| targetStats->type == EARTH_ELEMENTAL
-		|| (targetStats->type == VAMPIRE && (targetStats->getAttribute("special_npc") == "bram kindly"))
-		|| (targetStats->type == INCUBUS && (targetStats->getAttribute("special_npc") == "johann"))
-		|| (targetStats->type == INCUBUS && !strncmp(targetStats->name, "inner demon", strlen("inner demon")))
-		|| targetStats->type == SENTRYBOT || targetStats->type == SPELLBOT || targetStats->type == GYROBOT
-		|| targetStats->type == DUMMYBOT
-		)
+	if ( customMonster == NOTHING )
 	{
-		if ( parent && parent->behavior == &actPlayer )
+		if ( targetStats->type == LICH || targetStats->type == SHOPKEEPER || targetStats->type == DEVIL
+			|| targetStats->type == MINOTAUR || targetStats->type == LICH_FIRE || targetStats->type == LICH_ICE
+			|| (target->behavior == &actMonster && target->monsterAllySummonRank != 0)
+			|| (targetStats->type == SKELETON && targetStats->getAttribute("revenant_skeleton") != "" )
+			|| targetStats->type == MIMIC || targetStats->type == BAT_SMALL
+			|| targetStats->type == MONSTER_ADORCISED_WEAPON
+			|| targetStats->type == MOTH_SMALL
+			|| targetStats->type == MINIMIMIC
+			|| targetStats->type == REVENANT_SKULL
+			|| targetStats->type == FLAME_ELEMENTAL
+			|| targetStats->type == EARTH_ELEMENTAL
+			|| (targetStats->type == VAMPIRE && (targetStats->getAttribute("special_npc") == "bram kindly"))
+			|| (targetStats->type == INCUBUS && (targetStats->getAttribute("special_npc") == "johann"))
+			|| (targetStats->type == INCUBUS && !strncmp(targetStats->name, "inner demon", strlen("inner demon")))
+			|| targetStats->type == SENTRYBOT || targetStats->type == SPELLBOT || targetStats->type == GYROBOT
+			|| targetStats->type == DUMMYBOT
+			)
 		{
-			messagePlayer(parent->skill[2], MESSAGE_HINT, Language::get(3191)); // had no effect
+			if ( parent && parent->behavior == &actPlayer )
+			{
+				messagePlayer(parent->skill[2], MESSAGE_HINT, Language::get(3191)); // had no effect
+			}
+			return nullptr;
 		}
-		return nullptr;
 	}
 
 	if ( target->behavior == &actMonster )
@@ -1659,7 +1663,11 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 		auto& rng = target->entity_rng ? *target->entity_rng : local_rng;
 		Monster monsterSummonType;
 
-		if ( targetStats->type == SHADOW )
+		if ( customMonster != NOTHING )
+		{
+			monsterSummonType = customMonster;
+		}
+		else if ( targetStats->type == SHADOW )
 		{
 			monsterSummonType = CREATURE_IMP; // shadows turn to imps
 		}
@@ -1799,7 +1807,16 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 		if ( tryReposition )
 		{
 			summonedEntity = summonMonster(monsterSummonType, target->x, target->y);
-			if ( !summonedEntity && (fellToDeath || fellInLava) )
+			if ( !summonedEntity && customMonster != NOTHING )
+			{
+				/*monsterSummonType = REVENANT_SKULL;
+				summonCanEquipItems = false;
+				summonedEntity = summonMonster(monsterSummonType, target->x, target->y, true);
+				fellToDeath = false;
+				fellInLava = false;
+				fellInWater = false;*/
+			}
+			else if ( !summonedEntity && (fellToDeath || fellInLava) )
 			{
 				summonedEntity = summonMonster(monsterSummonType, target->x, target->y, true); // force try, kill monster later.
 			}
@@ -1811,7 +1828,7 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 
 		if ( !summonedEntity )
 		{
-			if ( parent && parent->behavior == &actPlayer )
+			if ( parent && parent->behavior == &actPlayer && customMonster == NOTHING )
 			{
 				if ( fellInWater )
 				{
@@ -1891,9 +1908,10 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 		summonedStats->MISC_FLAGS[STAT_FLAG_MONSTER_DISABLE_HC_SCALING] = 1;
 		summonedStats->leader_uid = targetStats->leader_uid;
 		summonedStats->monsterIsCharmed = targetStats->monsterIsCharmed;
+		Entity* leader = nullptr;
 		if ( summonedStats->leader_uid != 0 && summonedStats->type != SHADOW )
 		{
-			Entity* leader = uidToEntity(summonedStats->leader_uid);
+			leader = uidToEntity(summonedStats->leader_uid);
 			if ( leader )
 			{
 				// lose old ally
@@ -1940,42 +1958,54 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 						}
 					}
 				}
+			}
+		}
 
-				if ( forceFollower(*leader, *summonedEntity) )
+		if ( customMonster != NOTHING )
+		{
+			if ( parent )
+			{
+				if ( Stat* parentStats = parent->getStats() )
 				{
-					summonedEntity->monsterAllyIndex = -1;
-					if ( leader->behavior == &actPlayer )
-					{
-						summonedEntity->monsterAllyIndex = leader->skill[2];
-						if ( multiplayer == SERVER )
-						{
-							serverUpdateEntitySkill(summonedEntity, 42); // update monsterAllyIndex for clients.
-						}
-					}
-					// change the color of the hit entity.
-					summonedEntity->flags[USERFLAG2] = true;
-					serverUpdateEntityFlag(summonedEntity, USERFLAG2);
-					if ( monsterChangesColorWhenAlly(summonedStats) )
-					{
-						int bodypart = 0;
-						for ( node_t* node = summonedEntity->children.first; node != nullptr; node = node->next )
-						{
-							if ( bodypart >= LIMB_HUMANOID_TORSO )
-							{
-								Entity* tmp = (Entity*)node->element;
-								if ( tmp )
-								{
-									tmp->flags[USERFLAG2] = true;
-									//serverUpdateEntityFlag(tmp, USERFLAG2);
-								}
-							}
-							++bodypart;
-						}
-					}
+					summonedStats->leader_uid = parent->getUID();
+					leader = parent;
 				}
 			}
 		}
-		if ( targetStats->type == HUMAN )
+
+		if ( leader && forceFollower(*leader, *summonedEntity) )
+		{
+			summonedEntity->monsterAllyIndex = -1;
+			if ( leader->behavior == &actPlayer )
+			{
+				summonedEntity->monsterAllyIndex = leader->skill[2];
+				if ( multiplayer == SERVER )
+				{
+					serverUpdateEntitySkill(summonedEntity, 42); // update monsterAllyIndex for clients.
+				}
+			}
+			// change the color of the hit entity.
+			summonedEntity->flags[USERFLAG2] = true;
+			serverUpdateEntityFlag(summonedEntity, USERFLAG2);
+			if ( monsterChangesColorWhenAlly(summonedStats) )
+			{
+				int bodypart = 0;
+				for ( node_t* node = summonedEntity->children.first; node != nullptr; node = node->next )
+				{
+					if ( bodypart >= LIMB_HUMANOID_TORSO )
+					{
+						Entity* tmp = (Entity*)node->element;
+						if ( tmp )
+						{
+							tmp->flags[USERFLAG2] = true;
+							//serverUpdateEntityFlag(tmp, USERFLAG2);
+						}
+					}
+					++bodypart;
+				}
+			}
+		}
+		if ( targetStats->type == HUMAN && customMonster == NOTHING )
 		{
 			strcpy(summonedStats->name, targetStats->name);
 		}
@@ -1986,8 +2016,24 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 			Item** slot = itemSlot(targetStats, targetStats->weapon);
 			if ( slot )
 			{
-				summonedStats->weapon = newItem((*slot)->type, (*slot)->status, (*slot)->beatitude,
-					(*slot)->count, (*slot)->appearance, (*slot)->identified, nullptr);
+				if ( targetStats->weapon && itemCategory(targetStats->weapon) == SPELLBOOK )
+				{
+					// spellbooks are not dropped
+					if ( targetStats->weapon->node )
+					{
+						list_RemoveNode(targetStats->weapon->node);
+					}
+					else
+					{
+						free(targetStats->weapon);
+					}
+					targetStats->weapon = nullptr;
+				}
+				else
+				{
+					summonedStats->weapon = newItem((*slot)->type, (*slot)->status, (*slot)->beatitude,
+						(*slot)->count, (*slot)->appearance, (*slot)->identified, nullptr);
+				}
 			}
 
 			// shield
@@ -2105,10 +2151,27 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 		}
 		else if ( hitMonsterCanTransferEquipment && !summonCanEquipItems )
 		{
-			Entity* dropped = dropItemMonster(targetStats->weapon, target, targetStats);
-			if ( dropped )
+			Entity* dropped = nullptr;
+			if ( targetStats->weapon && itemCategory(targetStats->weapon) == SPELLBOOK )
 			{
-				dropped->flags[USERFLAG1] = true;
+				// spellbooks are not dropped
+				if ( targetStats->weapon->node )
+				{
+					list_RemoveNode(targetStats->weapon->node);
+				}
+				else
+				{
+					free(targetStats->weapon);
+				}
+				targetStats->weapon = nullptr;
+			}
+			else
+			{
+				dropped = dropItemMonster(targetStats->weapon, target, targetStats);
+				if ( dropped )
+				{
+					dropped->flags[USERFLAG1] = true;
+				}
 			}
 			dropped = dropItemMonster(targetStats->shield, target, targetStats);
 			if ( dropped )
@@ -2157,9 +2220,14 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 		{
 			nextnode = node->next;
 			Item* item = (Item*)node->element;
-			if ( item && item->appearance != MONSTER_ITEM_UNDROPPABLE_APPEARANCE && itemSlot(targetStats, item) == nullptr )
+			if ( item && item->appearance != MONSTER_ITEM_UNDROPPABLE_APPEARANCE 
+				&& item->isDroppable
+				&& itemSlot(targetStats, item) == nullptr )
 			{
-				Item* copiedItem = newItem(item->type, item->status, item->beatitude, item->count, item->appearance, item->identified, &summonedStats->inventory);
+				if ( targetStats->type != SHOPKEEPER || (targetStats->type == SHOPKEEPER && local_rng.rand() % 2) )
+				{
+					Item* copiedItem = newItem(item->type, item->status, item->beatitude, item->count, item->appearance, item->identified, &summonedStats->inventory);
+				}
 				if ( item->node )
 				{
 					list_RemoveNode(item->node);
@@ -2176,7 +2244,11 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 			Uint32 color = makeColorRGB(0, 255, 0);
 			bool namedMonsterAsGeneric = monsterNameIsGeneric(*targetStats);
 			// the %s polymorph into a %s!
-			if ( !strcmp((*targetStats).name, "") || namedMonsterAsGeneric )
+			if ( customMonster != NOTHING )
+			{
+
+			}
+			else if ( !strcmp((*targetStats).name, "") || namedMonsterAsGeneric )
 			{
 				messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, color, Language::get(3187), getMonsterLocalizedName((*targetStats).type).c_str(), getMonsterLocalizedName(summonedStats->type).c_str());
 			}
@@ -2186,8 +2258,11 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 			}
 		}
 
-		playSoundEntity(target, 400, 92);
-		spawnExplosion(target->x, target->y, target->z);
+		if ( customMonster == NOTHING )
+		{
+			playSoundEntity(target, 400, 92);
+			spawnExplosion(target->x, target->y, target->z);
+		}
 		createParticleDropRising(target, 593, 1.f);
 		serverSpawnMiscParticles(target, PARTICLE_EFFECT_RISING_DROP, 593);
 
@@ -2635,6 +2710,7 @@ bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* paren
 				|| hitstats->type == REVENANT_SKULL
 				|| hitstats->type == FLAME_ELEMENTAL
 				|| hitstats->type == EARTH_ELEMENTAL
+				|| (hitstats->type == SKELETON && hitstats->getAttribute("revenant_skeleton") != "")
 				|| (hitstats->type == INCUBUS && !strncmp(hitstats->name, "inner demon", strlen("inner demon"))) )
 			{
 				if ( parent && parent->behavior == &actPlayer )
@@ -2926,7 +3002,8 @@ Entity* spellEffectAdorcise(Entity& caster, spellElement_t& element, real_t x, r
 				{
 					if ( &element == &spellElementMap[SPELL_SPIRIT_WEAPON] )
 					{
-						monsterStats->setAttribute("spirit_weapon", "250");
+						int duration = getSpellEffectDurationFromID(SPELL_SPIRIT_WEAPON, &caster, nullptr, &caster);
+						monsterStats->setAttribute("spirit_weapon", std::to_string(duration));
 						monster->setEffect(EFF_ROOTED, true, -1, false);
 
 						ItemType type = IRON_SWORD;
@@ -2946,6 +3023,11 @@ Entity* spellEffectAdorcise(Entity& caster, spellElement_t& element, real_t x, r
 							type = IRON_SWORD;
 							break;
 						}
+
+						monsterStats->STR = getSpellDamageFromID(SPELL_SPIRIT_WEAPON, &caster, nullptr, &caster);
+						monsterStats->MAXHP = getSpellDamageSecondaryFromID(SPELL_SPIRIT_WEAPON, &caster, nullptr, &caster);
+						monsterStats->HP = monsterStats->MAXHP;
+						monsterStats->OLDHP = monsterStats->MAXHP;
 
 						if ( monsterStats->weapon = newItem(type, EXCELLENT, 0, 1, local_rng.rand(), true, nullptr) )
 						{
@@ -2990,7 +3072,8 @@ Entity* spellEffectAdorcise(Entity& caster, spellElement_t& element, real_t x, r
 					}
 					else if ( &element == &spellElementMap[SPELL_ADORCISM] )
 					{
-						monsterStats->setAttribute("adorcised_weapon", "1000");
+						int duration = getSpellEffectDurationFromID(SPELL_ADORCISM, &caster, nullptr, &caster);
+						monsterStats->setAttribute("adorcised_weapon", std::to_string(duration));
 						if ( itemToAdorcise )
 						{
 							monsterStats->weapon = newItem(itemToAdorcise->type, itemToAdorcise->status,
@@ -3019,6 +3102,11 @@ Entity* spellEffectAdorcise(Entity& caster, spellElement_t& element, real_t x, r
 								type = IRON_SWORD;
 								break;
 							}
+
+							monsterStats->STR = getSpellDamageFromID(SPELL_ADORCISM, &caster, nullptr, &caster);
+							monsterStats->MAXHP = getSpellDamageSecondaryFromID(SPELL_ADORCISM, &caster, nullptr, &caster);
+							monsterStats->HP = monsterStats->MAXHP;
+							monsterStats->OLDHP = monsterStats->MAXHP;
 
 							if ( monsterStats->weapon = newItem(type, EXCELLENT, 0, 1, local_rng.rand(), true, nullptr) )
 							{
@@ -3122,10 +3210,15 @@ Entity* spellEffectFlameSprite(Entity& caster, spellElement_t& element, real_t x
 				{
 					if ( &element == &spellElementMap[SPELL_FIRE_SPRITE] )
 					{
-						monsterStats->setAttribute("fire_sprite", "2000");
+						int duration = getSpellEffectDurationSecondaryFromID(SPELL_FIRE_SPRITE, &caster, nullptr, &caster);
+						monsterStats->setAttribute("fire_sprite", std::to_string(duration));
 						monsterStats->monsterNoDropItems = 1;
-						//monsterStats->leader_uid = caster.getUID();
-						//monster->parent = caster.getUID();
+						
+						int lvl = getSpellDamageFromID(SPELL_FIRE_SPRITE, &caster, nullptr, &caster);
+						int maxlvl = getSpellDamageSecondaryFromID(SPELL_FIRE_SPRITE, &caster, nullptr, &caster);
+						lvl = std::min(lvl, maxlvl);
+						monsterStats->LVL = lvl;
+
 						if ( forceFollower(caster, *monster) )
 						{
 							if ( caster.behavior == &actPlayer )
@@ -3141,8 +3234,15 @@ Entity* spellEffectFlameSprite(Entity& caster, spellElement_t& element, real_t x
 					}
 					else if ( &element == &spellElementMap[SPELL_FLAME_ELEMENTAL] )
 					{
-						monsterStats->setAttribute("flame_elemental", "250");
+						int duration = getSpellEffectDurationSecondaryFromID(SPELL_FLAME_ELEMENTAL, &caster, nullptr, &caster);
+						monsterStats->setAttribute("flame_elemental", std::to_string(duration));
 						monsterStats->monsterNoDropItems = 1;
+
+						int lvl = getSpellDamageFromID(SPELL_FLAME_ELEMENTAL, &caster, nullptr, &caster);
+						int maxlvl = getSpellDamageSecondaryFromID(SPELL_FLAME_ELEMENTAL, &caster, nullptr, &caster);
+						lvl = std::min(lvl, maxlvl);
+						monsterStats->LVL = lvl;
+
 						if ( forceFollower(caster, *monster) )
 						{
 							if ( caster.behavior == &actPlayer )
@@ -3203,7 +3303,8 @@ bool Entity::spellEffectPreserveItem(Item* item)
 		{
 			if ( spell_t* preserveSpell = getActiveMagicEffect(SPELL_PRESERVE) )
 			{
-				int cost = 10;
+				int cost = getSpellDamageFromID(SPELL_PRESERVE, this, nullptr, this);
+				cost = std::max(1, std::max(getSpellDamageSecondaryFromID(SPELL_PRESERVE, this, nullptr, this), cost));
 				if ( !safeConsumeMP(cost) )
 				{
 					if ( myStats->MP > 0 )
@@ -3249,7 +3350,8 @@ bool Entity::mistFormDodge(bool checkEffectActiveOnly)
 			{
 				if ( spell_t* spell = getActiveMagicEffect(SPELL_MIST_FORM) )
 				{
-					int cost = 10;
+					int cost = getSpellDamageFromID(SPELL_MIST_FORM, this, nullptr, this);
+					cost = std::max(1, std::max(cost, getSpellDamageSecondaryFromID(SPELL_MIST_FORM, this, nullptr, this)));
 					if ( !safeConsumeMP(cost) )
 					{
 						if ( myStats->MP > 0 )
@@ -3335,9 +3437,9 @@ bool applyGenericMagicDamage(Entity* caster, Entity* hitentity, Entity& damageSo
 	else if ( (hitentity->behavior == &actMonster || hitentity->behavior == &actPlayer) && targetStats )
 	{
 		bool alertTarget = false;
-		if ( alertMonsters && caster )
+		if ( alertMonsters && caster && caster != hitentity )
 		{
-			bool alertTarget = hitentity->monsterAlertBeforeHit(caster);
+			alertTarget = hitentity->monsterAlertBeforeHit(caster);
 
 			// alert the monster!
 			if ( hitentity->monsterState != MONSTER_STATE_ATTACK && (targetStats->type < LICH || targetStats->type >= SHOPKEEPER) )
@@ -3478,7 +3580,7 @@ Entity* spellEffectDemesneDoor(Entity& caster, Entity& target)
 	return door;
 }
 
-int getSpellDamageFromID(int spellID, Entity* parent, Entity* magicSourceParticle, real_t addSpellBonus, bool applyingDamageOnCast)
+int getSpellDamageFromID(int spellID, Entity* parent, Stat* parentStats, Entity* magicSourceParticle, real_t addSpellBonus, bool applyingDamageOnCast)
 {
 	int damage = 0;
 	spellElement_t* element = nullptr;
@@ -3497,8 +3599,13 @@ int getSpellDamageFromID(int spellID, Entity* parent, Entity* magicSourceParticl
 	}
 	if ( element )
 	{
+		Stat* myStats = parentStats;
+		if ( !myStats && parent )
+		{
+			myStats = parent->getStats();
+		}
 		damage = element->getDamage();
-		real_t bonus = (getBonusFromCasterOfSpellElement(parent, parent ? parent->getStats() : nullptr, element, spellID));
+		real_t bonus = (getBonusFromCasterOfSpellElement(parent, myStats, element, spellID));
 		bonus += addSpellBonus;
 		if ( applyingDamageOnCast )
 		{
@@ -3511,4 +3618,97 @@ int getSpellDamageFromID(int spellID, Entity* parent, Entity* magicSourceParticl
 		damage += damage * bonus;
 	}
 	return damage;
+}
+
+int getSpellDamageSecondaryFromID(int spellID, Entity* parent, Stat* parentStats, Entity* magicSourceParticle, real_t addSpellBonus, bool applyingDamageOnCast)
+{
+	int damage = 0;
+	spellElement_t* element = nullptr;
+	if ( auto spell = getSpellFromID(spellID) )
+	{
+		if ( spell->elements.first )
+		{
+			if ( element = (spellElement_t*)spell->elements.first->element )
+			{
+				if ( element->elements.first && element->elements.first->element )
+				{
+					element = (spellElement_t*)element->elements.first->element;
+				}
+			}
+		}
+	}
+	if ( element )
+	{
+		Stat* myStats = parentStats;
+		if ( !myStats && parent )
+		{
+			myStats = parent->getStats();
+		}
+		damage = element->getDamageSecondary();
+		real_t bonus = (getBonusFromCasterOfSpellElement(parent, myStats, element, spellID));
+		bonus += addSpellBonus;
+		if ( applyingDamageOnCast )
+		{
+			if ( parent && parent->behavior == &actPlayer )
+			{
+				Compendium_t::Events_t::eventUpdateCodex(parent->skill[2], Compendium_t::CPDM_CLASS_PWR_MAX_CASTED, "pwr",
+					(Sint32)(bonus * 100.0));
+			}
+		}
+		damage += damage * bonus;
+	}
+	return damage;
+}
+int getSpellEffectDurationFromID(int spellID, Entity* parent, Stat* parentStats, Entity* magicSourceParticle, real_t addSpellBonus)
+{
+	int duration = 0;
+	spellElement_t* element = nullptr;
+	if ( auto spell = getSpellFromID(spellID) )
+	{
+		if ( spell->elements.first )
+		{
+			if ( element = (spellElement_t*)spell->elements.first->element )
+			{
+				if ( element->elements.first && element->elements.first->element )
+				{
+					element = (spellElement_t*)element->elements.first->element;
+				}
+			}
+		}
+	}
+	if ( element )
+	{
+		duration = element->duration;
+		//real_t bonus = (getBonusFromCasterOfSpellElement(parent, parent ? parent->getStats() : nullptr, element, spellID));
+		//bonus += addSpellBonus;
+		//duration += duration * bonus;
+	}
+	return duration;
+}
+
+int getSpellEffectDurationSecondaryFromID(int spellID, Entity* parent, Stat* parentStats, Entity* magicSourceParticle, real_t addSpellBonus)
+{
+	int duration = 0;
+	spellElement_t* element = nullptr;
+	if ( auto spell = getSpellFromID(spellID) )
+	{
+		if ( spell->elements.first )
+		{
+			if ( element = (spellElement_t*)spell->elements.first->element )
+			{
+				if ( element->elements.first && element->elements.first->element )
+				{
+					element = (spellElement_t*)element->elements.first->element;
+				}
+			}
+		}
+	}
+	if ( element )
+	{
+		duration = element->getDurationSecondary();
+		//real_t bonus = (getBonusFromCasterOfSpellElement(parent, parent ? parent->getStats() : nullptr, element, spellID));
+		//bonus += addSpellBonus;
+		//duration += duration * bonus;
+	}
+	return duration;
 }

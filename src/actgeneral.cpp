@@ -960,7 +960,7 @@ void actColliderMushroomCap(Entity* my)
 						int damage = 5;
 						if ( effectType == 6 || effectType == 7 ) // player casted
 						{
-							damage = getSpellDamageFromID(SPELL_MUSHROOM, caster, my);
+							damage = getSpellDamageFromID(SPELL_MUSHROOM, caster, nullptr, my);
 						}
 
 						if ( applyGenericMagicDamage(caster ? caster : parent, entity, caster ? *caster : *parent, SPELL_MUSHROOM, damage, true, true) )

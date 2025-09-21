@@ -839,6 +839,26 @@ void IRCHandler_t::handleMessage(std::string& msg)
 
 Uint32 ItemTooltips_t::itemsJsonHashRead = 0;
 const Uint32 ItemTooltips_t::kItemsJsonHash = 1748555711;
+
+void ItemTooltips_t::setSpellValueIfKeyPresent(ItemTooltips_t::spellItem_t& t, rapidjson::Value::ConstMemberIterator item_itr, Uint32& hash, Uint32& hashShift, const char* key, int& toSet)
+{
+	if ( item_itr->value.HasMember(key) )
+	{
+		t.hasExpandedJSON = true;
+		toSet = item_itr->value[key].GetInt();
+		hash += (Uint32)((Uint32)toSet << (hashShift % 32)); ++hashShift;
+	}
+}
+void ItemTooltips_t::setSpellValueIfKeyPresent(ItemTooltips_t::spellItem_t& t, rapidjson::Value::ConstMemberIterator item_itr, Uint32& hash, Uint32& hashShift, const char* key, real_t& toSet)
+{
+	if ( item_itr->value.HasMember(key) )
+	{
+		t.hasExpandedJSON = true;
+		toSet = item_itr->value[key].GetFloat();
+		hash += (Uint32)(static_cast<Uint32>(toSet * 100000) << (hashShift % 32)); ++hashShift;
+	}
+}
+
 void ItemTooltips_t::readItemsFromFile()
 {
 	printlog("loading items...\n");
@@ -1099,16 +1119,6 @@ void ItemTooltips_t::readItemsFromFile()
 		}*/
 	}
 
-	itemsJsonHashRead = hash;
-	if ( itemsJsonHashRead != kItemsJsonHash )
-	{
-		printlog("[JSON]: Notice: items.json unknown hash, achievements are disabled: %d", itemsJsonHashRead);
-	}
-	else
-	{
-		printlog("[JSON]: items.json hash verified successfully.");
-	}
-
 	spellItems.clear();
 
 	int spellsRead = 0;
@@ -1195,12 +1205,69 @@ void ItemTooltips_t::readItemsFromFile()
 			}
 		}
 
+		t.hasExpandedJSON = false;
+
+		setSpellValueIfKeyPresent(t, spell_itr, hash, shift, "mana", t.mana);
+		setSpellValueIfKeyPresent(t, spell_itr, hash, shift, "duration", t.duration);
+		setSpellValueIfKeyPresent(t, spell_itr, hash, shift, "duration_mult", t.duration_mult);
+		setSpellValueIfKeyPresent(t, spell_itr, hash, shift, "duration2", t.duration2);
+		setSpellValueIfKeyPresent(t, spell_itr, hash, shift, "duration2_mult", t.duration2_mult);
+		setSpellValueIfKeyPresent(t, spell_itr, hash, shift, "damage", t.damage);
+		setSpellValueIfKeyPresent(t, spell_itr, hash, shift, "damage_mult", t.damage_mult);
+		setSpellValueIfKeyPresent(t, spell_itr, hash, shift, "damage2", t.damage2);
+		setSpellValueIfKeyPresent(t, spell_itr, hash, shift, "damage2_mult", t.damage2_mult);
+		setSpellValueIfKeyPresent(t, spell_itr, hash, shift, "distance", t.distance);
+		setSpellValueIfKeyPresent(t, spell_itr, hash, shift, "distance_mult", t.distance_mult);
+		setSpellValueIfKeyPresent(t, spell_itr, hash, shift, "life_time", t.life_time);
+		setSpellValueIfKeyPresent(t, spell_itr, hash, shift, "life_mult", t.life_mult);
+		setSpellValueIfKeyPresent(t, spell_itr, hash, shift, "cast_time", t.cast_time);
+		setSpellValueIfKeyPresent(t, spell_itr, hash, shift, "cast_time_mult", t.cast_time_mult);
+		setSpellValueIfKeyPresent(t, spell_itr, hash, shift, "difficulty", t.difficulty);
+		setSpellValueIfKeyPresent(t, spell_itr, hash, shift, "sustain_mana", t.sustain_mana);
+		setSpellValueIfKeyPresent(t, spell_itr, hash, shift, "sustain_duration", t.sustain_duration);
+		setSpellValueIfKeyPresent(t, spell_itr, hash, shift, "sustain_mult", t.sustain_mult);
+
+		if ( spell_itr->value.HasMember("school") )
+		{
+			std::string school = spell_itr->value["school"].GetString();
+			if ( school == "sorcery" )
+			{
+				t.skillID = PRO_MAGIC;
+				hash += (Uint32)((Uint32)t.skillID << (shift % 32)); ++shift;
+			}
+			else if ( school == "mysticism" )
+			{
+				t.skillID = PRO_SPELLCASTING;
+				hash += (Uint32)((Uint32)t.skillID << (shift % 32)); ++shift;
+			}
+			else if ( school == "thaumaturgy" )
+			{
+				t.skillID = PRO_SWIMMING;
+				hash += (Uint32)((Uint32)t.skillID << (shift % 32)); ++shift;
+			}
+			else
+			{
+				assert(false && "invalid school from items.json!");
+				hash += (Uint32)((Uint32)1 << (shift % 32)); ++shift;
+			}
+		}
+
 		spellNameStringToSpellID[t.internalName] = t.id;
 		assert(spellItems.find(t.id) == spellItems.end()); // check we haven't got duplicate key
 		spellItems.insert(std::make_pair(t.id, t));
 		++spellsRead;
 	}
 	printlog("[JSON]: Successfully read %d spells from '%s'", spellsRead, inputPath.c_str());
+
+	itemsJsonHashRead = hash;
+	if ( itemsJsonHashRead != kItemsJsonHash )
+	{
+		printlog("[JSON]: Notice: items.json unknown hash, achievements are disabled: %d", itemsJsonHashRead);
+	}
+	else
+	{
+		printlog("[JSON]: items.json hash verified successfully.");
+	}
 
 	// validation against old items.txt
 	/*for ( int i = 0; i < NUMITEMS; ++i )
@@ -1461,7 +1528,7 @@ void ItemTooltips_t::readTooltipsFromFile(bool forceLoadBaseDirectory)
 {
 	if ( !PHYSFS_getRealDir("/items/item_tooltips.json") )
 	{
-		printlog("[JSON]: Error: Could not find file: items/items.json");
+		printlog("[JSON]: Error: Could not find file: items/item_tooltips.json");
 		return;
 	}
 
@@ -2112,14 +2179,13 @@ int ItemTooltips_t::getSpellDamageOrHealAmount(const int player, spell_t* spell,
 	if ( elementRoot )
 	{
 		node_t* primaryNode = elementRoot->elements.first;
-		mana = elementRoot->mana;
-		heal = mana;
 		if ( primaryNode )
 		{
 			primaryElement = (spellElement_t*)(primaryNode->element);
 			if ( primaryElement )
 			{
 				damage = primaryElement->getDamage();
+				heal = primaryElement->getDamage();
 			}
 		}
 		if ( player >= 0 && players[player] )
@@ -2277,7 +2343,20 @@ std::string ItemTooltips_t::getSpellIconText(const int player, Item& item, const
 real_t ItemTooltips_t::getSpellSustainCostPerSecond(int spellID)
 {
 	real_t cost = 0.0;
-	switch ( spellID )
+	if ( auto spell = getSpellFromID(spellID) )
+	{
+		if ( spell->elements.first )
+		{
+			if ( spellElement_t* element = (spellElement_t*)spell->elements.first->element )
+			{
+				if ( element->channeledMana > 0 )
+				{
+					return element->duration / (real_t)TICKS_PER_SECOND;
+				}
+			}
+		}
+	}
+	/*switch ( spellID )
 	{
 		case SPELL_REFLECT_MAGIC:
 			cost = 6.0;
@@ -2299,7 +2378,7 @@ real_t ItemTooltips_t::getSpellSustainCostPerSecond(int spellID)
 			break;
 		default:
 			break;
-	}
+	}*/
 	return cost;
 }
 
