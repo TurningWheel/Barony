@@ -1604,6 +1604,14 @@
 		"chain_coif": {
             "name_identified": "chain coif",
             "name_unidentified": "chain coif"
+        },
+		"food_shroom": {
+            "name_identified": "mushroom slice",
+            "name_unidentified": "mushroom slice"
+        },
+		"food_nut": {
+            "name_identified": "nut",
+            "name_unidentified": "nut"
         }
     },
 	"spell_names": {

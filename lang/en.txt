@@ -6732,7 +6732,7 @@ Host to enable the game setting.
 6476 You set nimble#
 6477 You set might#
 6478 You set counsel#
-6479 You set studiness#
+6479 You set sturdiness#
 6480 You set pinpoint#
 6481 You set scry ally#
 6482 You set scry shrine#
@@ -6792,7 +6792,7 @@ Host to enable the game setting.
 6534 %s is poisoned!#
 6535 The amulet feels warm against your neck.#
 6536 You feel greasy!#
-6537 You set command#
+6537 You set Compel#
 6538 Gold Cost:#
 6539 Not enough gold#
 6540 Insufficient gold!#
@@ -7003,7 +7003,7 @@ Host to enable the game setting.
 6733 Your flame cloak ignites %s!#
 6734 A flame cloak sets you on fire!#
 6735 You set absorb magic#
-6736 There is no ceiling to complete the spell!#
+6736 There is no stable ceiling to complete the spell!#
 6737 gets rocked by an earth sprite.#
 6738 gets killed by a monster.#
 6739 gets killed by a monster.#
@@ -7066,5 +7066,26 @@ to replay this challenge!
 6791 Class_23#
 6792 Class_24#
 6793 Class_25#
+6794 You lack the foilage to cast the spell!#
+6795 You are covered with thorns!#
+6796 You are covered with bladevines!#
+6797 Your thorned covering dissipates.#
+6798 Your bladevined covering dissipates.#
+6799 You set bastion mushroom#
+6800 You set bastion roots#
+6801 Bastion mushroom removed#
+6802 Bastion roots removed#
+6803 returns to dust.#
+6804 Higher %s skill required#
+6805 Higher skill required#
+6806 finds its final resting place.#
+6807 revenant skeleton#
+6808 You command a %s from the deceased's cursed flesh!#
+6809 You splinter the construction of the %s!#
+6810 You splinter the construction of %s!#
+6811 Your splintered armor wounds you!#
+6812 Your shattered armor heavily wounds you!#
+6813 Your mana could not return your %s!#
+6814 You are unable to create a passage through this wall.#
 
 6999 END#
