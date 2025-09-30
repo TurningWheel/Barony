@@ -9368,6 +9368,10 @@ void EditorEntityData_t::readFromFile()
 			collider.entityLangEntry = itr->value["entity_lang_entry"].GetInt();
 			collider.hitMessageLangEntry = itr->value["hit_message"].GetInt();
 			collider.breakMessageLangEntry = itr->value["break_message"].GetInt();
+			if ( itr->value.HasMember("jump_message") )
+			{
+				collider.colliderJumpLangEntry = itr->value["jump_message"].GetInt();
+			}
 			collider.hpbarLookupName = itr->value["hp_bar_lookup_name"].GetString();
 			collider.hideMonsters.clear();
 			collider.spellTriggers.clear();

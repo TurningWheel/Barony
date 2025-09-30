@@ -3376,6 +3376,7 @@ struct EditorEntityData_t
 		std::map<std::string, std::vector<int>> hideMonsters;
 		std::vector<int> spellTriggers;
 		std::set<int> pathableMonsters;
+		int colliderJumpLangEntry = 6234;
 		std::map<std::string, int> overrideProperties;
 		bool hasOverride(std::string key)
 		{

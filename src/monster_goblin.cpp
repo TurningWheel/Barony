@@ -99,7 +99,7 @@ void initGoblin(Entity* my, Stat* myStats)
 			}
 
 			// random effects
-			if ( rng.rand() % 8 == 0 )
+			if ( rng.rand() % 8 == 0 && myStats->getAttribute("spawn_no_sleep") == "" )
 			{
 				myStats->setEffectActive(EFF_ASLEEP, 1);
 				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + rng.rand() % 1800;

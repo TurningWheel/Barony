@@ -1972,8 +1972,11 @@ void actThrown(Entity* my)
 								hit.entity->colliderKillerUid = parent ? parent->getUID() : 0;
 								if ( parent && parent->behavior == &actPlayer )
 								{
-									messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(hit.entity->getColliderOnBreakLangEntry()),
-										Language::get(hit.entity->getColliderLangName()));
+									if ( hit.entity->getColliderOnBreakLangEntry() != 0 )
+									{
+										messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(hit.entity->getColliderOnBreakLangEntry()),
+											Language::get(hit.entity->getColliderLangName()));
+									}
 									if ( hit.entity->isColliderWall() )
 									{
 										Compendium_t::Events_t::eventUpdateWorld(parent->skill[2], Compendium_t::CPDM_BARRIER_DESTROYED, "breakable barriers", 1);

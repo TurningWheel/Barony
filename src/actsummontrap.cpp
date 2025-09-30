@@ -174,6 +174,7 @@ void actSummonTrap(Entity* my)
 						{
 							monster->getStats()->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] = 1; // disable champion normally.
 						}
+						monster->getStats()->setAttribute("spawn_no_sleep", "1");
 
 						if ( foundTriggerEntity )
 						{

@@ -60,13 +60,6 @@ void initCockatrice(Entity* my, Stat* myStats)
 			myStats->setEffectActive(EFF_LEVITATING, 1);
 			myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
 
-			// cockatrices don't sleep!
-			/*if ( rng.rand() % 4 == 0 )
-			{
-				myStats->setEffectActive(EFF_ASLEEP, 1);
-				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + rng.rand() % 3600;
-			}*/
-
 			// generates equipment and weapons if available from editor
 			createMonsterEquipment(myStats, rng);
 

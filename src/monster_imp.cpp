@@ -59,7 +59,7 @@ void initImp(Entity* my, Stat* myStats)
 			myStats->setEffectActive(EFF_LEVITATING, 1);
 			myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
 
-			if ( rng.rand() % 4 == 0 && strncmp(map.name, "Hell Boss", 9) )
+			if ( rng.rand() % 4 == 0 && strncmp(map.name, "Hell Boss", 9) && myStats->getAttribute("spawn_no_sleep") == "" )
 			{
 				myStats->setEffectActive(EFF_ASLEEP, 1);
 				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + rng.rand() % 3600;

@@ -366,7 +366,7 @@ void initHuman(Entity* my, Stat* myStats)
 			}
 
 			// random effects
-			if ( rng.rand() % 10 == 0 && strcmp(myStats->name, "scriptNPC") && myStats->MISC_FLAGS[STAT_FLAG_NPC] == 0 )
+			if ( rng.rand() % 10 == 0 && strcmp(myStats->name, "scriptNPC") && myStats->MISC_FLAGS[STAT_FLAG_NPC] == 0 && myStats->getAttribute("spawn_no_sleep") == "" )
 			{
 				myStats->setEffectActive(EFF_ASLEEP, 1);
 				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + rng.rand() % 1800;

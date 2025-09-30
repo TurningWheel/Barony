@@ -1304,6 +1304,7 @@ public:
 	void colliderOnDestroy();
 	int getColliderOnHitLangEntry() const;
 	int getColliderOnBreakLangEntry() const;
+	int getColliderOnJumpLangEntry() const;
 	int getColliderSfxOnHit() const;
 	int getColliderSfxOnBreak() const;
 	int getColliderLangName() const;

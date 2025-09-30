@@ -1204,7 +1204,8 @@ void Entity::colliderOnDestroy()
 						strcpy(stats->name, "enslaved ghoul");
 						stats->setAttribute("special_npc", "enslaved ghoul");
 					}
-					if ( stats->type == AUTOMATON )
+					stats->setAttribute("spawn_no_sleep", "1");
+					if ( stats->type == AUTOMATON && strcmp(map.filename, "automat.lmp") )
 					{
 						monster->monsterStoreType = 1; // damaged
 					}
@@ -1224,8 +1225,16 @@ void Entity::colliderOnDestroy()
 				}
 				if ( successes == 1 )
 				{
-					messagePlayer(killer->skill[2], MESSAGE_INTERACTION, Language::get(6234),
-						getMonsterLocalizedName((Monster)type).c_str(), Language::get(getColliderLangName()));
+					if ( getColliderOnJumpLangEntry() == 6815 )
+					{
+						messagePlayer(killer->skill[2], MESSAGE_INTERACTION, Language::get(getColliderOnJumpLangEntry()),
+							Language::get(getColliderLangName()));
+					}
+					else
+					{
+						messagePlayer(killer->skill[2], MESSAGE_INTERACTION, Language::get(getColliderOnJumpLangEntry()),
+							getMonsterLocalizedName((Monster)type).c_str(), Language::get(getColliderLangName()));
+					}
 				}
 				else if ( successes > 1 )
 				{
@@ -1380,6 +1389,13 @@ int Entity::getColliderOnBreakLangEntry() const
 	if ( !isDamageableCollider() ) { return 1; }
 	auto& colliderData = EditorEntityData_t::colliderData[colliderDamageTypes];
 	return colliderData.breakMessageLangEntry;
+}
+
+int Entity::getColliderOnJumpLangEntry() const
+{
+	if ( !isDamageableCollider() ) { return 1; }
+	auto& colliderData = EditorEntityData_t::colliderData[colliderDamageTypes];
+	return colliderData.colliderJumpLangEntry;
 }
 
 int Entity::getColliderSfxOnHit() const
@@ -2118,7 +2134,8 @@ void actColliderDecoration(Entity* my)
 										strcpy(stats->name, "enslaved ghoul");
 										stats->setAttribute("special_npc", "enslaved ghoul");
 									}
-									if ( stats->type == AUTOMATON )
+									stats->setAttribute("spawn_no_sleep", "1");
+									if ( stats->type == AUTOMATON && strcmp(map.filename, "automat.lmp") )
 									{
 										monster->monsterStoreType = 1; // damaged
 									}
@@ -2135,8 +2152,16 @@ void actColliderDecoration(Entity* my)
 							}
 							if ( successes == 1 )
 							{
-								messagePlayer(found->skill[2], MESSAGE_INTERACTION, Language::get(6234),
-									getMonsterLocalizedName((Monster)type).c_str(), Language::get(my->getColliderLangName()));
+								if ( my->getColliderOnJumpLangEntry() == 6815 )
+								{
+									messagePlayer(found->skill[2], MESSAGE_INTERACTION, Language::get(my->getColliderOnJumpLangEntry()),
+										Language::get(my->getColliderLangName()));
+								}
+								else
+								{
+									messagePlayer(found->skill[2], MESSAGE_INTERACTION, Language::get(6234),
+										getMonsterLocalizedName((Monster)type).c_str(), Language::get(my->getColliderLangName()));
+								}
 							}
 							else if ( successes > 1 )
 							{
@@ -2591,6 +2616,18 @@ int TextSourceScript::textSourceProcessScriptTag(std::string& input, std::string
 			y1 = std::min(std::max(0, y1), (int)map.height - 1);
 			x2 = std::min(std::max(x1, x2), (int)map.width - 1);
 			y2 = std::min(std::max(y1, y2), (int)map.height - 1);
+
+			if ( findTag.compare("@explode=") == 0 )
+			{
+				int explosionSprite = 0;
+				size_t foundSeperator = tagValue.find(";");
+				if ( foundSeperator != std::string::npos )
+				{
+					std::string first_str = tagValue.substr(foundSeperator + 1, tagValue.length() - foundSeperator);
+					explosionSprite = std::stoi(first_str);
+				}
+				return ((x1 & 0xFF) << 16) + ((y1 & 0xFF) << 24) + ((explosionSprite & 0xFFFF) << 0);
+			}
 
 			return (x1 & 0xFF) + ((x2 & 0xFF) << 8) + ((y1 & 0xFF) << 16) + ((y2 & 0xFF) << 24);
 		}
@@ -3546,6 +3583,75 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 								entity->setHP(0);
 							}
 						}
+					}
+				}
+			}
+		}
+		else if ( (*it).find("@damage=") != std::string::npos )
+		{
+			int result = textSourceProcessScriptTag(input, "@damage=", src);
+			if ( result != k_ScriptError )
+			{
+				int damage = result;
+				if ( processOnAttachedEntity )
+				{
+					for ( auto entity : attachedEntities )
+					{
+						if ( entity->behavior == &actChest )
+						{
+							entity->chestHealth -= damage;
+						}
+						else if ( entity->behavior == &actMonster )
+						{
+							entity->modHP(-damage);
+						}
+						else if ( entity->behavior == &actDoor )
+						{
+							entity->doorHealth -= damage;
+						}
+						else if ( entity->behavior == &actFurniture )
+						{
+							entity->furnitureHealth -= damage;
+						}
+						else if ( entity->isDamageableCollider() )
+						{
+							entity->colliderCurrentHP -= damage;
+						}
+					}
+				}
+			}
+		}
+		else if ( (*it).find("@explode=") != std::string::npos )
+		{
+			int result = textSourceProcessScriptTag(input, "@explode=", src);
+			if ( result != k_ScriptError )
+			{
+				int explosionSprite = (result >> 0) & 0xFFFF;
+				int x1 = (result >> 16) & 0xFF;
+				int y1 = (result >> 24) & 0xFF;
+				if ( processOnAttachedEntity )
+				{
+					for ( auto entity : attachedEntities )
+					{
+						if ( explosionSprite > 0 )
+						{
+							spawnExplosionFromSprite(explosionSprite, entity->x, entity->y, -4 + local_rng.rand() % 8);
+						}
+						else
+						{
+							spawnExplosion(entity->x, entity->y, -4 + local_rng.rand() % 8);
+						}
+					}
+				}
+				else
+				{
+					if ( explosionSprite > 0 )
+					{
+						spawnExplosionFromSprite(explosionSprite, x1 * 16.0 + 8.0, y1 * 16.0 + 8.0, -4 + local_rng.rand() % 8);
+					}
+					else
+					{
+						spawnExplosion(x1 * 16.0 + 8.0, y1 * 16.0 + 8.0, -4 + local_rng.rand() % 8);
 					}
 				}
 			}

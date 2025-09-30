@@ -9863,8 +9863,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 					else if ( hit.entity->isDamageableCollider() )
 					{
 						hit.entity->colliderKillerUid = getUID();
-						messagePlayer(player, MESSAGE_COMBAT, Language::get(hit.entity->getColliderOnBreakLangEntry()),
-							Language::get(hit.entity->getColliderLangName()));
+						if ( hit.entity->getColliderOnBreakLangEntry() != 0 )
+						{
+							messagePlayer(player, MESSAGE_COMBAT, Language::get(hit.entity->getColliderOnBreakLangEntry()),
+								Language::get(hit.entity->getColliderLangName()));
+						}
 						if ( hit.entity->isColliderWall() )
 						{
 							Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_BARRIER_DESTROYED, "breakable barriers", 1);
