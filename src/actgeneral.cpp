@@ -2360,26 +2360,71 @@ void actFloorDecoration(Entity* my)
 						if ( charIsWordSeparator(c) ) { break; }
 						key += c;
 					}
-					if ( ScriptTextParser.allEntries.find(key) != ScriptTextParser.allEntries.end() )
+					auto find = ScriptTextParser.allEntries.find(key);
+					if ( find != ScriptTextParser.allEntries.end() )
 					{
-						if ( players[i]->isLocalPlayer() )
+						if ( find->second.objectType == ScriptTextParser_t::OBJ_SIGN )
 						{
-							if ( players[i]->isLocalPlayerAlive() )
+							if ( players[i]->isLocalPlayer() )
 							{
-								players[i]->signGUI.openSign(key, my->getUID());
+								if ( players[i]->isLocalPlayerAlive() )
+								{
+									players[i]->signGUI.openSign(key, my->getUID());
+								}
 							}
+							else if ( multiplayer == SERVER && i > 0 && !client_disconnected[i] )
+							{
+								strcpy((char*)net_packet->data, "SIGN");
+								SDLNet_Write32(my->getUID(), &net_packet->data[4]);
+								strcpy((char*)(&net_packet->data[8]), key.c_str());
+								net_packet->address.host = net_clients[i - 1].host;
+								net_packet->address.port = net_clients[i - 1].port;
+								net_packet->len = 8 + strlen(key.c_str()) + 1;
+								sendPacketSafe(net_sock, -1, net_packet, i - 1);
+							}
+							return;
 						}
-						else if ( multiplayer == SERVER && i > 0 && !client_disconnected[i] )
+						else if ( find->second.objectType == ScriptTextParser_t::OBJ_MESSAGE )
 						{
-							strcpy((char*)net_packet->data, "SIGN");
-							SDLNet_Write32(my->getUID(), &net_packet->data[4]);
-							strcpy((char*)(&net_packet->data[8]), key.c_str());
-							net_packet->address.host = net_clients[i - 1].host;
-							net_packet->address.port = net_clients[i - 1].port;
-							net_packet->len = 8 + strlen(key.c_str()) + 1;
-							sendPacketSafe(net_sock, -1, net_packet, i - 1);
+							Uint8 r = 255;
+							Uint8 g = 255;
+							Uint8 b = 255;
+							for ( auto& var : find->second.variables )
+							{
+								if ( var.type == ScriptTextParser_t::VariableTypes::COLOR_R )
+								{
+									r = var.numericValue;
+								}
+								else if ( var.type == ScriptTextParser_t::VariableTypes::COLOR_G )
+								{
+									g = var.numericValue;
+								}
+								else if ( var.type == ScriptTextParser_t::VariableTypes::COLOR_B )
+								{
+									b = var.numericValue;
+								}
+							}
+							messagePlayerColor(i, MESSAGE_INSPECTION, makeColorRGB(r, g, b), find->second.formattedText.c_str());
+							return;
 						}
-						return;
+						else if ( find->second.objectType == ScriptTextParser_t::OBJ_BUBBLE_SIGN )
+						{
+							players[i]->worldUI.worldTooltipDialogue.createDialogueTooltip(my->getUID(),
+								Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_SIGNPOST, find->second.formattedText.c_str());
+							return;
+						}
+						else if ( find->second.objectType == ScriptTextParser_t::OBJ_BUBBLE_GRAVE )
+						{
+							players[i]->worldUI.worldTooltipDialogue.createDialogueTooltip(my->getUID(),
+								Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_GRAVE, find->second.formattedText.c_str());
+							return;
+						}
+						else if ( find->second.objectType == ScriptTextParser_t::OBJ_BUBBLE_DIALOGUE )
+						{
+							players[i]->worldUI.worldTooltipDialogue.createDialogueTooltip(my->getUID(),
+								Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, find->second.formattedText.c_str());
+							return;
+						}
 					}
 				}
 

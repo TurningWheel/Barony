@@ -3048,13 +3048,19 @@ public:
 	enum ObjectType_t : int {
 		OBJ_SIGN,
 		OBJ_MESSAGE,
-		OBJ_SCRIPT
+		OBJ_SCRIPT,
+		OBJ_BUBBLE_SIGN,
+		OBJ_BUBBLE_GRAVE,
+		OBJ_BUBBLE_DIALOGUE
 	};
 	enum VariableTypes : int {
 		TEXT,
 		GLYPH,
 		IMG,
-		SCRIPT
+		SCRIPT,
+		COLOR_R,
+		COLOR_G,
+		COLOR_B
 	};
 
 	struct Entry_t
@@ -3065,6 +3071,7 @@ public:
 		{
 			VariableTypes type = TEXT;
 			std::string value = "";
+			int numericValue = 0;
 			int sizex = 0;
 			int sizey = 0;
 		};

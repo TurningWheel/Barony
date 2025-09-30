@@ -6193,12 +6193,72 @@ bool ScriptTextParser_t::readFromFile(const std::string& filename)
 				entry.objectType = OBJ_SCRIPT;
 				entry.formattedText = entry_itr->value["script"].GetString();
 			}
+			else if ( entry_itr->value.HasMember("bubble_sign") )
+			{
+				entry.objectType = OBJ_BUBBLE_SIGN;
+				for ( rapidjson::Value::ConstValueIterator text_itr = entry_itr->value["bubble_sign"].Begin(); text_itr != entry_itr->value["bubble_sign"].End(); ++text_itr )
+				{
+					entry.rawText.push_back(text_itr->GetString());
+				}
+				entry.formattedText = "";
+				for ( auto& str : entry.rawText )
+				{
+					if ( entry.formattedText != "" )
+					{
+						entry.formattedText += '\n';
+					}
+					entry.formattedText += str;
+				}
+			}
+			else if ( entry_itr->value.HasMember("bubble_grave") )
+			{
+				entry.objectType = OBJ_BUBBLE_GRAVE;
+				for ( rapidjson::Value::ConstValueIterator text_itr = entry_itr->value["bubble_grave"].Begin(); text_itr != entry_itr->value["bubble_grave"].End(); ++text_itr )
+				{
+					entry.rawText.push_back(text_itr->GetString());
+				}
+				entry.formattedText = "";
+				for ( auto& str : entry.rawText )
+				{
+					if ( entry.formattedText != "" )
+					{
+						entry.formattedText += '\n';
+					}
+					entry.formattedText += str;
+				}
+			}
+			else if ( entry_itr->value.HasMember("bubble_dialogue") )
+			{
+				entry.objectType = OBJ_BUBBLE_DIALOGUE;
+				for ( rapidjson::Value::ConstValueIterator text_itr = entry_itr->value["bubble_dialogue"].Begin(); text_itr != entry_itr->value["bubble_dialogue"].End(); ++text_itr )
+				{
+					entry.rawText.push_back(text_itr->GetString());
+				}
+				entry.formattedText = "";
+				for ( auto& str : entry.rawText )
+				{
+					if ( entry.formattedText != "" )
+					{
+						entry.formattedText += '\n';
+					}
+					entry.formattedText += str;
+				}
+			}
 			else if ( entry_itr->value.HasMember("message") )
 			{
 				entry.objectType = OBJ_MESSAGE;
 				for ( rapidjson::Value::ConstValueIterator text_itr = entry_itr->value["message"].Begin(); text_itr != entry_itr->value["message"].End(); ++text_itr )
 				{
 					entry.rawText.push_back(text_itr->GetString());
+				}
+				entry.formattedText = "";
+				for ( auto& str : entry.rawText )
+				{
+					if ( entry.formattedText != "" )
+					{
+						entry.formattedText += '\n';
+					}
+					entry.formattedText += str;
 				}
 				if ( entry_itr->value.HasMember("variables") )
 				{
@@ -6210,22 +6270,29 @@ bool ScriptTextParser_t::readFromFile(const std::string& filename)
 						if ( (*var_itr).HasMember("type") )
 						{
 							std::string typeTxt = (*var_itr)["type"].GetString();
-							if ( typeTxt == "text" )
+							if ( typeTxt == "color_r" )
 							{
-								variable.type = TEXT;
+								variable.type = COLOR_R;
 							}
-							else if ( typeTxt == "input_glyph" )
+							else if ( typeTxt == "color_g" )
 							{
-								variable.type = GLYPH;
+								variable.type = COLOR_G;
 							}
-							else if ( typeTxt == "image" )
+							else if ( typeTxt == "color_b" )
 							{
-								variable.type = IMG;
+								variable.type = COLOR_B;
 							}
 						}
 						if ( (*var_itr).HasMember("value") )
 						{
+							if ( (*var_itr)["value"].IsInt() )
+							{
+								variable.numericValue = (*var_itr)["value"].GetInt();
+							}
+							else if ( (*var_itr)["value"].IsString() )
+							{
 							variable.value = (*var_itr)["value"].GetString();
+						}
 						}
 						entry.variables.push_back(variable);
 					}

@@ -464,6 +464,7 @@ public:
 	Sint32& floorDecorationXOffset; //skill[4]
 	Sint32& floorDecorationYOffset; //skill[5]
 	Sint32& floorDecorationDestroyIfNoWall; //skill[6]
+	Sint32& floorDecorationDialogueProgress = skill[7]; // for players interacting with a dialogue bubble progress on clicking, unused
 	Sint32& floorDecorationInteractText1; //skill[8]
 	Sint32& floorDecorationInteractText2; //skill[9]
 	Sint32& floorDecorationInteractText3; //skill[10]

@@ -4724,6 +4724,64 @@ namespace ConsoleCommands {
 #endif
 		});
 
+	static ConsoleCommand ccmd_map_debug_floor_interact("/map_debug_floor_interact", "", []CCMD{
+#ifndef NINTENDO
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+		for ( auto f : directoryContents(".\\maps\\", false, true) )
+		{
+			std::string mapPath = "maps/";
+			mapPath += f;
+			/*bool foundNumber = std::find_if(f.begin(), f.end(), ::isdigit) != f.end();*/
+			if ( /*foundNumber &&*/ PHYSFS_getRealDir(mapPath.c_str()) )
+			{
+				int maphash = 0;
+				std::string fullMapPath = PHYSFS_getRealDir(mapPath.c_str());
+				fullMapPath += PHYSFS_getDirSeparator();
+				fullMapPath += mapPath;
+				loadMap(fullMapPath.c_str(), &map, map.entities, map.creatures, nullptr);
+				for ( node_t* node = map.entities->first; node; node = node->next )
+				{
+					if ( Entity* entity = (Entity*)node->element )
+					{
+						if ( entity->sprite == 127 && entity->floorDecorationInteractText1 != 0 )
+						{
+							char buf[256] = "";
+							int totalChars = 0;
+							for ( int i = 8; i < 60; ++i )
+							{
+								if ( i == 28 ) // circuit_status
+								{
+									continue;
+								}
+								if ( entity->skill[i] != 0 )
+								{
+									for ( int c = 0; c < 4; ++c )
+									{
+										buf[totalChars] = static_cast<char>((entity->skill[i] >> (c * 8)) & 0xFF);
+										//messagePlayer(0, "%d %d", i, c);
+										++totalChars;
+									}
+								}
+							}
+							if ( buf[totalChars] != '\0' )
+							{
+								buf[totalChars] = '\0';
+							}
+							std::string output = buf;
+							printlog("Map: %s, floor interaction: %s", f.c_str(), output.c_str());
+						}
+					}
+				}
+				// will crash the game but will show results of every map load :)
+			}
+		}
+#endif
+		});
+
 	static ConsoleCommand ccmd_map_debug_treasure("/map_debug_treasure", "", []CCMD{
 #ifndef NINTENDO
 		if ( !(svFlags & SV_FLAG_CHEATS) )
