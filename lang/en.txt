@@ -7087,5 +7087,6 @@ to replay this challenge!
 6812 Your shattered armor heavily wounds you!#
 6813 Your mana could not return your %s!#
 6814 You are unable to create a passage through this wall.#
+6815 The %s comes to life!#
 
 6999 END#
