@@ -16898,6 +16898,11 @@ failed:
 				button->setBackgroundHighlighted((prefix + "ClassSelect_IconBGLegendsHigh_00.png").c_str());
 				button->setBackgroundActivated((prefix + "ClassSelect_IconBGLegendsPress_00.png").c_str());
 				break;
+			case DLC::DesertersAndDisciples:
+				button->setBackground((prefix + "ClassSelect_IconBGDeserters_00.png").c_str());
+				button->setBackgroundHighlighted((prefix + "ClassSelect_IconBGDesertersHigh_00.png").c_str());
+				button->setBackgroundActivated((prefix + "ClassSelect_IconBGDesertersPress_00.png").c_str());
+				break;
 			}
 			if (isCharacterValidFromDLC(*stats[index], c) == VALID_OK_CHARACTER) {
 				if (strcmp(name, current_class_name) == 0) {
@@ -17731,6 +17736,11 @@ failed:
 					button.setBackground("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_IconBGLegends_00.png");
 					button.setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_IconBGLegendsHigh_00.png");
 					button.setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_IconBGLegendsPress_00.png");
+					break;
+				case DLC::DesertersAndDisciples:
+					button.setBackground("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_IconBGDeserters_00.png");
+					button.setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_IconBGDesertersHigh_00.png");
+					button.setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_IconBGDesertersPress_00.png");
 					break;
 				}
 				button.setIcon((std::string("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/") + find->second.image_highlighted).c_str());
