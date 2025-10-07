@@ -42,6 +42,11 @@
 #define GIB_SWIRL my->fskill[5]
 #define GIB_OSC_H my->fskill[6]
 #define GIB_VEL_DECAY my->fskill[7]
+#define GIB_ORBIT_X my->fskill[8]
+#define GIB_ORBIT_Y my->fskill[9]
+#define GIB_FOCI_FLOAT1 my->fskill[10]
+#define GIB_FOCI_FLOAT2 my->fskill[11]
+#define GIB_FOCI_FLOAT3 my->fskill[12]
 #define GIB_DELAY_MOVE my->skill[8]
 #define GIB_HIT_GROUND my->skill[9]
 
@@ -113,46 +118,7 @@ void actGib(Entity* my)
 	}
 	else
 	{
-		my->focalx = 0.0;
-		my->focaly = 0.0;
-		if ( GIB_SWIRL > 0.00001 )
-		{
-			my->yaw += GIB_SWIRL;
-			Uint32 vortexStart = TICKS_PER_SECOND / 8;
-			if ( my->ticks >= vortexStart )
-			{
-				real_t vortexTime = 0.5 * TICKS_PER_SECOND;
-				real_t ratio = 2.0 + 2.0 * sin((-PI / 2) + (PI)*std::min((Uint32)vortexTime, my->ticks - vortexStart) / vortexTime);
-				my->focalx += ratio * cos(my->yaw);
-				my->focaly += ratio * sin(my->yaw);
-			}
-		}
-		else
-		{
-			if ( my->actGibMagicParticle > 0 )
-			{
-				my->pitch = atan(my->vel_z / std::max(1.0, sqrt(GIB_VELX * GIB_VELX + GIB_VELY * GIB_VELY)));
-			}
-			else
-			{
-				my->yaw += sqrt(GIB_VELX * GIB_VELX + GIB_VELY * GIB_VELY) * .05;
-			}
-		}
-
-		if ( abs(GIB_OSC_H) > 0.00001 )
-		{
-			Uint32 vortexStart = 0;// TICKS_PER_SECOND / 8;
-			if ( my->ticks >= vortexStart )
-			{
-				//my->yaw = atan2(my->vel_y, my->vel_x);
-				real_t vortexTime = 0.2 * TICKS_PER_SECOND;
-				real_t magnitude = GIB_OSC_H;
-				real_t ratio = magnitude * sin((PI)*((my->ticks - vortexStart) / vortexTime));
-				real_t tangent = 0.0;// my->yaw - atan2(my->vel_y, my->vel_x);
-				my->focalx += ratio * cos(tangent);
-				my->focaly += ratio * sin(tangent);
-			}
-		}
+		my->yaw += sqrt(GIB_VELX * GIB_VELX + GIB_VELY * GIB_VELY) * .05;
 
 		my->x += GIB_VELX;
 		my->y += GIB_VELY;
@@ -171,20 +137,6 @@ void actGib(Entity* my)
 	if ( GIB_LIGHTING )
 	{
 		my->removeLightField();
-	}
-
-	if ( my->actGibMagicParticle > 0 && ticks % 2 == 0 )
-	{
-		if ( Entity* fx = spawnMagicParticleCustom(my, my->actGibMagicParticle, 1.0, 1.0) )
-		{
-			fx->flags[SPRITE] = true;// my->flags[SPRITE];
-			fx->ditheringDisabled = true;
-			//fx->lightBonus = my->lightBonus;
-			//fx->flags[BRIGHT] = my->flags[BRIGHT];
-			//fx->scalex = my->scalex;
-			//fx->scaley = my->scaley;
-			//fx->scalez = my->scalez;
-		}
 	}
 
 	if ( my->actGibHitGroundEvent == 1 )
@@ -223,14 +175,8 @@ void actGib(Entity* my)
 		{
 			GIB_VELZ += GIB_GRAVITY;
 			my->z += GIB_VELZ;
-			if ( GIB_SWIRL > 0.00001 || my->actGibMagicParticle > 0 )
-			{
-				// don't roll swirling
-			}
-			else
-			{
-				my->roll += 0.1;
-			}
+
+			my->roll += 0.1;
 		}
 
 		if ( GIB_LIGHTING && my->flags[SPRITE] && my->sprite >= 180 && my->sprite <= 184 )
@@ -302,6 +248,523 @@ void actGib(Entity* my)
 		my->removeLightField();
 		list_RemoveNode(my->mynode);
 		return;
+	}
+}
+
+void actFociGib(Entity* my)
+{
+	// remove gibs that have exceeded their life span
+	//if ( multiplayer != CLIENT )
+	{
+		if ( my->ticks > GIB_LIFESPAN && GIB_LIFESPAN )
+		{
+			if ( GIB_SHRINK > 0.0001 )
+			{
+				my->scalex -= GIB_SHRINK;
+				my->scaley -= GIB_SHRINK;
+				my->scalez -= GIB_SHRINK;
+				if ( my->scalex < 0.0 )
+				{
+					poof(my);
+					my->removeLightField();
+					list_RemoveNode(my->mynode);
+					return;
+				}
+			}
+			else
+			{
+				poof(my);
+				my->removeLightField();
+				list_RemoveNode(my->mynode);
+				return;
+			}
+		}
+	}
+
+	Entity* parent = uidToEntity(my->parent);
+
+	// horizontal motion
+	//if ( multiplayer != CLIENT )
+	{
+		if ( GIB_DELAY_MOVE > 0 )
+		{
+			--GIB_DELAY_MOVE;
+			if ( GIB_LIFESPAN )
+			{
+				++GIB_LIFESPAN;
+			}
+		}
+		else
+		{
+			my->focalx = 0.0;
+			my->focaly = 0.0;
+			bool tryHitEntity = false;
+
+			if ( GIB_SWIRL > 0.00001 )
+			{
+				my->yaw += GIB_SWIRL;
+				Uint32 vortexStart = TICKS_PER_SECOND / 8;
+				if ( my->ticks >= vortexStart )
+				{
+					real_t vortexTime = 0.5 * TICKS_PER_SECOND;
+					real_t ratio = 2.0 + 2.0 * sin((-PI / 2) + (PI)*std::min((Uint32)vortexTime, my->ticks - vortexStart) / vortexTime);
+					my->focalx += ratio * cos(my->yaw);
+					my->focaly += ratio * sin(my->yaw);
+				}
+			}
+			else
+			{
+				if ( my->actGibMagicParticle > 0 )
+				{
+					my->pitch = atan(my->vel_z / std::max(1.0, sqrt(GIB_VELX * GIB_VELX + GIB_VELY * GIB_VELY)));
+
+					if ( my->sprite == 2153 || my->sprite == 2155 )
+					{
+						if ( my->ticks % 4 == 0 )
+						{
+							my->roll += PI / 2;// (local_rng.rand() % 8)* PI / 2;
+						}
+						my->focalx = 4.0;
+						my->flags[INVISIBLE] = true;
+					}
+					else if ( my->sprite >= 233 && my->sprite <= 244 )
+					{
+						if ( my->ticks % 4 == 0 )
+						{
+							if ( my->sprite < 244 )
+							{
+								++my->sprite;
+							}
+						}
+					}
+					else if ( my->sprite == 2154 )
+					{
+						my->x = GIB_ORBIT_X;
+						my->y = GIB_ORBIT_Y;
+
+						real_t scale = 2.0;
+						GIB_FOCI_FLOAT2 += 0.2;
+						real_t ratio = scale + scale * sin(GIB_FOCI_FLOAT2);
+
+						real_t dir = atan2(my->vel_y, my->vel_x);
+						my->x -= 2.0 * cos(dir) * sin(std::min(PI, GIB_FOCI_FLOAT2));
+						my->y -= 2.0 * sin(dir) * sin(std::min(PI, GIB_FOCI_FLOAT2));
+
+						if ( GIB_FOCI_FLOAT1 == 0 )
+						{
+							GIB_FOCI_FLOAT1 = -1 + ((local_rng.rand() % 2) ? 2 : 0);
+						}
+
+						my->x += 4.0 * GIB_FOCI_FLOAT1 * cos(dir + PI / 2) * sin(std::min(PI, GIB_FOCI_FLOAT2 * 0.4));
+						my->y += 4.0 * GIB_FOCI_FLOAT1 * sin(dir + PI / 2) * sin(std::min(PI, GIB_FOCI_FLOAT2 * 0.4));
+
+						if ( GIB_FOCI_FLOAT2 >= PI )
+						{
+							//GIB_ORBIT_X += my->vel_x;
+							//GIB_ORBIT_Y += my->vel_y;
+
+							real_t dist = clipMove(&GIB_ORBIT_X, &GIB_ORBIT_Y, my->vel_x, my->vel_y, my);
+							if ( multiplayer != CLIENT )
+							{
+								if ( dist != sqrt(pow(my->vel_x, 2) + pow(my->vel_y, 2)) )
+								{
+									if ( hit.entity )
+									{
+										tryHitEntity = true;
+									}
+								}
+							}
+						}
+						else
+						{
+							/*if ( parent )
+							{
+								GIB_ORBIT_X = parent->x;
+								GIB_ORBIT_Y = parent->y;
+							}*/
+						}
+
+						GIB_FOCI_FLOAT3 += 0.3;
+						my->focalz = 0.25;
+						my->roll = fmod(GIB_FOCI_FLOAT3, 2 * PI);
+					}
+				}
+			}
+
+			if ( abs(GIB_OSC_H) > 0.00001 )
+			{
+				Uint32 vortexStart = 0;// TICKS_PER_SECOND / 8;
+				if ( my->ticks >= vortexStart )
+				{
+					//my->yaw = atan2(my->vel_y, my->vel_x);
+					real_t vortexTime = 0.2 * TICKS_PER_SECOND;
+					real_t magnitude = GIB_OSC_H;
+					real_t ratio = magnitude * sin((PI) * ((my->ticks - vortexStart) / vortexTime));
+					real_t tangent = 0.0;// my->yaw - atan2(my->vel_y, my->vel_x);
+					my->focalx += ratio * cos(tangent);
+					my->focaly += ratio * sin(tangent);
+				}
+			}
+
+			bool doMove = true;
+			if ( my->sprite == 2154 /*&& GIB_FOCI_FLOAT2 < PI*/ )
+			{
+				doMove = false;
+			}
+			else
+			{
+				real_t dist = clipMove(&my->x, &my->y, my->vel_x, my->vel_y, my);
+				if ( multiplayer != CLIENT )
+				{
+					if ( dist != sqrt(pow(my->vel_x, 2) + pow(my->vel_y, 2)) )
+					{
+						if ( hit.entity )
+						{
+							tryHitEntity = true;
+						}
+					}
+				}
+			}
+
+			if ( multiplayer != CLIENT )
+			{
+				auto entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 0);
+				for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
+				{
+					list_t* currentList = *it;
+					for ( node_t* node = currentList->first;; )
+					{
+						Entity* entity = nullptr;
+						if ( node == nullptr ) // at the end of the list try the hit.entity from clipMove
+						{
+							if ( tryHitEntity )
+							{
+								entity = hit.entity;
+								tryHitEntity = false;
+							}
+							else
+							{
+								break;
+							}
+						}
+						else
+						{
+							entity = (Entity*)node->element;
+							node = node->next;
+						}
+						if ( entity == parent || entity == my )
+						{
+							continue;
+						}
+						if ( entity->behavior != &actMonster
+							&& entity->behavior != &actPlayer
+							&& entity->behavior != &actDoor
+							&& entity->behavior != &::actIronDoor
+							&& !(entity->isDamageableCollider() && entity->isColliderDamageableByMagic())
+							&& entity->behavior != &::actChest
+							&& entity->behavior != &::actFurniture )
+						{
+							continue;
+						}
+
+						if ( node != nullptr && !entityInsideEntity(entity, my) )
+						{
+							continue;
+						}
+
+						auto hitprops = getParticleEmitterHitProps(my->getUID(), entity);
+						if ( hitprops )
+						{
+							if ( hitprops->hits > 0 )
+							{
+								continue;
+							}
+						}
+
+						if ( entity->getStats() )
+						{
+							if ( !entity->monsterIsTargetable() )
+							{
+								if ( hitprops )
+								{
+									hitprops->hits++;
+								}
+								continue;
+							}
+
+							if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
+							{
+								if ( entity->checkFriend(parent) )
+								{
+									if ( hitprops )
+									{
+										hitprops->hits++;
+									}
+									continue;
+								}
+							}
+						}
+
+						if ( spell_t* spell = getSpellFromID(SPELL_FORCEBOLT) )
+						{
+							Uint32 targetUid = entity->getUID();
+							if ( Entity* entity = newEntity(my->sprite, 1, map.entities, nullptr) )
+							{
+								entity->behavior = &actMagicMissile;
+								entity->x = my->x;
+								entity->y = my->y;
+								entity->z = my->z;
+								entity->yaw = my->yaw;
+								entity->vel_x = cos(my->yaw);
+								entity->vel_y = sin(my->yaw);
+								entity->parent = parent ? parent->getUID() : 0;
+
+								entity->flags[INVISIBLE] = true;
+								entity->flags[PASSABLE] = true;
+								entity->flags[NOUPDATE] = true;
+								entity->flags[UPDATENEEDED] = false;
+								entity->flags[UNCLICKABLE] = true;
+
+								entity->skill[4] = 0; // life start
+								entity->skill[5] = 2; //lifetime
+								entity->actmagicSpray = 2;
+								entity->actmagicOrbitHitTargetUID4 = targetUid;
+								entity->actmagicCastByMagicstaff = 2;
+								entity->actmagicReflectionCount = my->actmagicReflectionCount;
+
+								node_t* node = list_AddNodeFirst(&entity->children);
+								node->element = copySpell(spell);
+								((spell_t*)node->element)->caster = parent ? parent->getUID() : 0;
+								node_t* elementNode = ((spell_t*)node->element)->elements.first;
+								spellElement_t* element = (spellElement_t*)elementNode->element;
+								{
+									elementNode = element->elements.first;
+									element = (spellElement_t*)elementNode->element;
+									if ( parent )
+									{
+										if ( Stat* stats = parent->getStats() )
+										{
+											element->setDamage(5);
+										}
+									}
+									((spell_t*)node->element)->mana = 5;
+								}
+
+								node->deconstructor = &spellDeconstructor;
+								node->size = sizeof(spell_t);
+
+								--entity_uids;
+								entity->setUID(-3);
+							}
+						}
+						
+						if ( hitprops )
+						{
+							hitprops->hits++;
+						}
+					}
+				}
+			}
+
+			if ( my->sprite == 2154 )
+			{
+				// no decay
+			}
+			else if ( GIB_VEL_DECAY > 0.001 )
+			{
+				GIB_VELX = GIB_VELX * GIB_VEL_DECAY;
+				GIB_VELY = GIB_VELY * GIB_VEL_DECAY;
+			}
+			else
+			{
+				GIB_VELX = GIB_VELX * .95;
+				GIB_VELY = GIB_VELY * .95;
+			}
+		}
+	}
+
+	if ( GIB_LIGHTING )
+	{
+		my->removeLightField();
+	}
+
+	if ( my->actGibMagicParticle > 0 )
+	{
+		if ( my->sprite == 2154 )
+		{
+			if ( GIB_FOCI_FLOAT2 < PI )
+			{
+			}
+			else
+			{
+				int sprite = my->actGibMagicParticle;
+				if ( local_rng.rand() % 2 == 0 )
+				{
+					sprite = 260;
+				}
+				if ( Entity* fx = spawnMagicParticleCustom(my, sprite, my->scalex, 5.0) )
+				{
+					fx->flags[SPRITE] = true;// my->flags[SPRITE];
+					fx->ditheringDisabled = true;
+					fx->fskill[1] = 0.05; // decay size
+					fx->focalx = my->focalx;
+					fx->focaly = my->focaly;
+					fx->focalz = my->focalz;
+
+					real_t dir = atan2(my->vel_y, my->vel_x);
+					fx->x -= 4.0 * cos(dir);
+					fx->y -= 4.0 * sin(dir);
+				}
+			}
+		}
+		else if ( my->sprite == 2153 || my->sprite == 2155 )
+		{
+			/*if ( ticks % 4 == 0 )
+			{
+				if ( Entity* particle = spawnMagicParticleCustom(my, 1764, my->scalex * 1.0, 1) )
+				{
+					particle->z = 6.0;
+					particle->x = my->x;
+					particle->y = my->y;
+					particle->yaw = local_rng.rand() % 360 * PI / 180;
+					particle->vel_x = 0.05 * cos(particle->yaw);
+					particle->vel_y = 0.05 * sin(particle->yaw);
+					particle->ditheringDisabled = true;
+				}
+			}*/
+
+			if ( my->ticks % 2 == 0 )
+			{
+				if ( Entity* fx = spawnMagicParticleCustom(my, my->actGibMagicParticle, my->scalex, 10.0) )
+				{
+					fx->ditheringDisabled = true;
+					fx->fskill[1] = 0.05; // decay size
+					fx->focalx = my->focalx;
+					fx->focaly = my->focaly;
+					fx->focalz = my->focalz;
+
+					fx->roll = my->roll + PI / 2;
+				}
+			}
+		}
+		else if ( my->sprite == 2152 || my->sprite == 256 )
+		{
+			//if ( Entity* fx = spawnMagicParticleCustom(my, my->actGibMagicParticle, 1.0, 1.0) )
+			//{
+			//	fx->flags[SPRITE] = my->flags[SPRITE];
+			//	fx->ditheringDisabled = true;
+			//	fx->fskill[1] = 0.05; // decay size
+			//	fx->focalx = my->focalx;
+			//	fx->focaly = my->focaly;
+			//	fx->focalz = my->focalz;
+
+			//	real_t dir = atan2(my->vel_y, my->vel_x);
+			//	fx->x -= 2.0 * cos(dir);
+			//	fx->y -= 2.0 * sin(dir);
+			//}
+			if ( Entity* fx = spawnMagicParticleCustom(my, 256, 1.0, 1.0) )
+			{
+				fx->flags[SPRITE] = true;
+				fx->ditheringDisabled = true;
+				fx->fskill[1] = 0.05; // decay size
+				fx->focalx = my->focalx;
+				fx->focaly = my->focaly;
+				fx->focalz = my->focalz;
+
+				real_t dir = atan2(my->vel_y, my->vel_x);
+				fx->x -= 2.0 * cos(dir);
+				fx->y -= 2.0 * sin(dir);
+			}
+		}
+		else if ( my->sprite == 2156 )
+		{
+			my->roll = fmod(my->roll + 0.1, 2 * PI);
+			if ( Entity* fx = spawnMagicParticleCustom(my, my->actGibMagicParticle, 1.0, 1.0) )
+			{
+				fx->flags[SPRITE] = my->flags[SPRITE];
+				fx->ditheringDisabled = true;
+				fx->fskill[1] = 0.05; // decay size
+				fx->focalx = my->focalx;
+				fx->focaly = my->focaly;
+				fx->focalz = my->focalz;
+
+				real_t dir = atan2(my->vel_y, my->vel_x);
+				fx->x -= 2.0 * cos(dir);
+				fx->y -= 2.0 * sin(dir);
+			}
+		}
+		else if ( my->sprite >= 233 && my->sprite <= 244 )
+		{
+			if ( my->ticks % 2 == 0 )
+			{
+				if ( Entity* fx = spawnMagicParticleCustom(my, my->actGibMagicParticle, 1.0, 1.0) )
+				{
+					fx->sprite = my->sprite;
+					fx->flags[SPRITE] = my->flags[SPRITE];
+					fx->ditheringDisabled = true;
+					fx->fskill[1] = 0.025; // decay size
+					fx->focalx = my->focalx;
+					fx->focaly = my->focaly;
+					fx->focalz = my->focalz;
+
+					real_t dir = atan2(my->vel_y, my->vel_x);
+					fx->x -= 2.0 * cos(dir);
+					fx->y -= 2.0 * sin(dir);
+				}
+			}
+		}
+		else 
+		{
+			if ( my->ticks % 2 == 0 )
+			{
+				if ( Entity* fx = spawnMagicParticleCustom(my, my->actGibMagicParticle, 1.0, 1.0) )
+				{
+					fx->flags[SPRITE] = true;// = my->flags[SPRITE];
+					fx->ditheringDisabled = true;
+					fx->fskill[1] = 0.05; // decay size
+					fx->focalx = my->focalx;
+					fx->focaly = my->focaly;
+					fx->focalz = my->focalz;
+
+					real_t dir = atan2(my->vel_y, my->vel_x);
+					fx->x -= 2.0 * cos(dir);
+					fx->y -= 2.0 * sin(dir);
+				}
+			}
+		}
+	}
+
+	// gravity
+	if ( GIB_DELAY_MOVE == 0 )
+	{
+		GIB_VELZ += GIB_GRAVITY;
+		my->z += GIB_VELZ;
+	}
+
+	if ( GIB_LIGHTING && my->flags[SPRITE] && my->sprite >= 180 && my->sprite <= 184 )
+	{
+		const char* lightname = nullptr;
+		switch ( my->sprite )
+		{
+		case 180:
+			lightname = "magic_spray_green_flicker";
+			break;
+		case 181:
+			lightname = "magic_spray_blue_flicker";
+			break;
+		case 182:
+			lightname = "magic_spray_orange_flicker";
+			break;
+		case 183:
+			lightname = "magic_spray_purple_flicker";
+			break;
+		case 184:
+			lightname = "magic_spray_white_flicker";
+			break;
+		default:
+			break;
+		}
+		my->light = addLight(my->x / 16, my->y / 16, lightname);
 	}
 }
 
@@ -549,6 +1012,265 @@ Entity* spawnGib(Entity* parentent, int customGibSprite)
 	entity->setUID(-3);
 
 	return entity;
+}
+
+Entity* spawnFociGib(real_t x, real_t y, real_t z, real_t dir, Uint32 parentUid, int sprite, Uint32 seed)
+{
+	Entity* my = newEntity(sprite, 1, map.entities, nullptr); //Gib entity.
+	if ( !my )
+	{
+		return nullptr;
+	}
+
+	dir = fmod(dir, 2 * PI);
+
+	BaronyRNG rng;
+	rng.seedBytes(&seed, sizeof(Uint32));
+
+	static ConsoleVariable<float> cvar_foci_vel("/foci_vel", 1.f);
+	static ConsoleVariable<float> cvar_foci_vel_decay("/foci_vel_decay", 0.95);
+	static ConsoleVariable<float> cvar_foci_life("/foci_life", 1.f);
+	static ConsoleVariable<float> cvar_foci_spread("/foci_spread", 1.f);
+	static ConsoleVariable<int> cvar_foci_delay("/foci_delay", 0);
+	static ConsoleVariable<bool> cvar_foci_model("/foci_model", false);
+	static ConsoleVariable<float> cvar_foci_scale("/foci_scale", 1.f);
+	static ConsoleVariable<float> cvar_foci_shrink("/foci_shrink", 0.1);
+	static ConsoleVariable<float> cvar_foci_osc_h("/foci_osc_h", 0.0);
+	static ConsoleVariable<float> cvar_foci_swirl("/foci_swirl", 0.2);
+	static ConsoleVariable<int> cvar_foci_particle("/foci_particle", 0);
+	static ConsoleVariable<bool> cvar_foci_invertz("/foci_invertz", false);
+	static ConsoleVariable<float> cvar_foci_gravity("/foci_gravity", 1.0);
+	static ConsoleVariable<float> cvar_foci_velz("/foci_velz", 1.0);
+
+	real_t foci_vel = *cvar_foci_vel;
+	real_t foci_vel_decay = *cvar_foci_vel_decay;
+	real_t foci_life = *cvar_foci_life;
+	real_t foci_spread = *cvar_foci_spread;
+	int foci_delay = *cvar_foci_delay;
+	bool foci_model = *cvar_foci_model;
+	real_t foci_scale = *cvar_foci_scale;
+	real_t foci_shrink = *cvar_foci_shrink;
+	real_t foci_osc_h = *cvar_foci_osc_h;
+	real_t foci_swirl = *cvar_foci_swirl;
+	int foci_particle = *cvar_foci_particle;
+	bool foci_invertz = *cvar_foci_invertz;
+	real_t foci_gravity = *cvar_foci_gravity;
+	real_t foci_velz = *cvar_foci_velz;
+
+	my->x = x;
+	my->y = y;
+	my->z = z;
+	int lifetime = (0.4 * TICKS_PER_SECOND) + (rng.rand() % 5);
+	my->flags[INVISIBLE] = false;
+
+	if ( sprite == 2153 )
+	{
+		my->flags[INVISIBLE] = true;
+		foci_vel = 1.5;
+		foci_vel_decay = 0.95;
+		foci_life = 1.0;
+		foci_spread = 1.0;
+		foci_delay = 0;
+
+		foci_model = true;
+		foci_scale = 1.0;
+		foci_shrink = 0.1;
+		foci_osc_h = 0.0;
+		foci_swirl = 0.0;
+
+		foci_particle = sprite;
+		foci_invertz = false;
+		foci_gravity = 1.0;
+		foci_velz = 1.0;
+	}
+	else if ( sprite == 2154 )
+	{
+		foci_vel = 1.5;
+		foci_vel_decay = 0.95;
+		foci_life = 1.0;
+		foci_spread = 0.25;
+		foci_delay = 0;
+
+		foci_model = true;
+		foci_scale = 1.0;
+		foci_shrink = 0.2;
+		foci_osc_h = 0.0;
+		foci_swirl = 0.0;
+
+		foci_particle = 257;
+		foci_invertz = false;
+		foci_gravity = 0.0;
+		foci_velz = 0.0;
+
+		my->x += 6.0 * cos(dir);
+		my->y += 6.0 * sin(dir);
+		lifetime += 10;
+	}
+	else if ( sprite == 255 || (sprite >= 233 && sprite <= 244) )
+	{
+		foci_vel = 1.5;
+		foci_vel_decay = 0.95;
+		foci_life = 1.0;
+		foci_spread = 1.0;
+		foci_delay = 0;
+
+		foci_model = false;
+		foci_scale = 1.0;
+		foci_shrink = 0.1;
+		foci_osc_h = 1.0;
+		foci_swirl = 0.0;
+
+		foci_particle = sprite;
+		foci_invertz = false;
+		foci_gravity = 1.0;
+		foci_velz = 1.0;
+	}
+	else if ( sprite == 256 || sprite == 2152 )
+	{
+		foci_vel = 1.5;
+		foci_vel_decay = 0.95;
+		foci_life = 1.0;
+		foci_spread = 0.5;
+		foci_delay = 0;
+
+		if ( sprite == 2152 )
+		{
+			foci_model = true;
+		}
+		else
+		{
+			foci_model = false;
+		}
+		foci_scale = 1.0;
+		foci_shrink = 0.1;
+		foci_osc_h = 0.0;
+		foci_swirl = 0.0;
+
+		foci_particle = sprite;
+		foci_invertz = false;
+		foci_gravity = -0.2;
+		foci_velz = -0.25;
+	}
+	else if ( sprite == 2156 )
+	{
+		foci_vel = 1.5;
+		foci_vel_decay = 0.95;
+		foci_life = 1.0;
+		foci_spread = 0.5;
+		foci_delay = 0;
+
+		foci_model = true;
+		foci_scale = 1.0;
+		foci_shrink = 0.1;
+		foci_osc_h = 0.0;
+		foci_swirl = 0.0;
+
+		foci_particle = 2157;
+		foci_invertz = false;
+		foci_gravity = -0.2;
+		foci_velz = -0.25;
+	}
+
+	my->parent = parentUid;
+	my->behavior = &actFociGib;
+	my->ditheringDisabled = true;
+	my->flags[SPRITE] = !foci_model;
+	my->flags[PASSABLE] = true;
+	my->flags[NOUPDATE] = false;
+	my->flags[UPDATENEEDED] = false;
+	my->flags[UNCLICKABLE] = true;
+	my->flags[NOCLIP_CREATURES] = true;
+	//my->flags[BRIGHT] = true;
+	my->lightBonus = vec4_t{ 0.25f, 0.25f, 0.25f, 0.f };
+
+	my->sizex = 3;
+	my->sizey = 3;
+	real_t spread = 0.2 * foci_spread;
+	my->yaw = dir - spread + ((rng.rand() % 21) * (spread / 10));
+	my->pitch = 0.0; //(rng.rand() % 360)* PI / 180.0;
+	my->roll = 0.0; //(rng.rand() % 360)* PI / 180.0;
+	double vel = foci_vel * (20 + (rng.rand() % 5)) / 10.f;
+	my->vel_x = vel * cos(my->yaw);
+	my->vel_y = vel * sin(my->yaw);
+
+	/*real_t movementDir = atan2(parent->vel_y, parent->vel_x);
+	real_t particleDir = fmod(my->yaw, 2 * PI);
+	real_t yawDiff = movementDir - particleDir;
+	while ( yawDiff > PI )
+	{
+		yawDiff -= 2 * PI;
+	}
+	while ( yawDiff <= -PI )
+	{
+		yawDiff += 2 * PI;
+	}
+	messagePlayer(0, MESSAGE_DEBUG, "%.2f", yawDiff);
+	if ( abs(yawDiff) <= PI )
+	{
+		entity->vel_x += parent->vel_x;
+		entity->vel_y += parent->vel_y;
+	}*/
+	my->vel_z = .6;
+	my->scalex = foci_scale;
+	my->scaley = foci_scale;
+	my->scalez = foci_scale;
+	real_t gravity = -0.035 - 0.002 * (rng.rand() % 6);
+	gravity *= foci_gravity;
+	my->vel_z *= foci_velz;
+	if ( foci_invertz )
+	{
+		gravity *= -1;
+		my->vel_z *= -0.5;
+	}
+
+	// swirl
+	if ( foci_swirl > 0.0001 )
+	{
+		//entity->yaw += (my->ticks % 10) * (2 * PI / 5);
+		lifetime += 5;
+	}
+	lifetime *= foci_life;
+
+	GIB_GRAVITY = gravity;
+	//if ( my->ticks % 5 == 0 )
+	//{
+	//	// add lighting
+	//	GIB_LIGHTING = 1;
+	//}
+	GIB_LIFESPAN = lifetime;
+	GIB_DELAY_MOVE = foci_delay; // delay velx/y movement
+	GIB_SHRINK = foci_shrink * foci_scale; // shrink at end of life
+	GIB_SWIRL = foci_swirl;
+	GIB_OSC_H = foci_osc_h;// *((my->ticks % 2) ? 1 : -1);
+	GIB_VEL_DECAY = foci_vel_decay;
+	my->actGibMagicParticle = foci_particle;
+	GIB_ORBIT_X = my->x;
+	GIB_ORBIT_Y = my->y;
+
+	if ( multiplayer == SERVER )
+	{
+		for ( int c = 1; c < MAXPLAYERS; c++ )
+		{
+			if ( client_disconnected[c] || players[c]->isLocalPlayer() )
+			{
+				continue;
+			}
+			strcpy((char*)net_packet->data, "FOCI");
+			SDLNet_Write32(my->getUID(), &net_packet->data[4]);
+			SDLNet_Write16((Sint16)(x * 32), &net_packet->data[8]);
+			SDLNet_Write16((Sint16)(y * 32), &net_packet->data[10]);
+			SDLNet_Write16((Sint16)(z * 32), &net_packet->data[12]);
+			SDLNet_Write16((Sint16)(dir * 256), &net_packet->data[14]);
+			SDLNet_Write16((Sint16)(sprite), &net_packet->data[16]);
+			SDLNet_Write32(seed, &net_packet->data[18]);
+			net_packet->address.host = net_clients[c - 1].host;
+			net_packet->address.port = net_clients[c - 1].port;
+			net_packet->len = 22;
+			sendPacketSafe(net_sock, -1, net_packet, c - 1);
+		}
+	}
+
+	return my;
 }
 
 Entity* spawnDamageGib(Entity* parentent, Sint32 dmgAmount, int gibDmgType, int displayType, bool updateClients)

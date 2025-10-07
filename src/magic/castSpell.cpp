@@ -2113,7 +2113,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							if ( Stat* stats = entity->getStats() )
 							{
 								//if ( stats->leader_uid == 0 )
-								if ( stats->type != SHOPKEEPER )
+								if ( stats->type != SHOPKEEPER && !entity->monsterCanTradeWith(-1) )
 								{
 									found = true;
 									int duration = element->duration;
@@ -2154,7 +2154,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 								if ( Stat* stats = entity->getStats() )
 								{
 									//if ( stats->leader_uid == 0 )
-									if ( stats->type != SHOPKEEPER && !entity->isInertMimic() )
+									if ( stats->type != SHOPKEEPER && !entity->isInertMimic() && !entity->monsterCanTradeWith(-1) )
 									{
 										if ( entity->monsterSetPathToLocation(caster->x / 16, caster->y / 16,
 											3, GeneratePathTypes::GENERATE_PATH_TO_HUNT_MONSTER_TARGET, true) )

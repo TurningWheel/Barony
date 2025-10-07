@@ -791,7 +791,7 @@ public:
 
 	// actGib
 	Sint32& actGibHitGroundEvent = skill[10];
-	Sint32& actGibMagicParticle = skill[11];
+	Sint32& actGibMagicParticle = skill[12]; // skill[11] is player hud denote
 
 	// actWind
 	Sint32& actWindParticleEffect = skill[1];

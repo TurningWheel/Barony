@@ -3639,13 +3639,13 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 				list_RemoveNode(entity->mynode);
 
 				// inform the server that we deleted the entity
-				strcpy((char*)net_packet->data, "ENTD");
-				net_packet->data[4] = clientnum;
-				SDLNet_Write32(entity2->getUID(), &net_packet->data[5]);
-				net_packet->address.host = net_server.host;
-				net_packet->address.port = net_server.port;
-				net_packet->len = 9;
-				sendPacket(net_sock, -1, net_packet, 0);
+				//strcpy((char*)net_packet->data, "ENTD");
+				//net_packet->data[4] = clientnum;
+				//SDLNet_Write32(entity2->getUID(), &net_packet->data[5]);
+				//net_packet->address.host = net_server.host;
+				//net_packet->address.port = net_server.port;
+				//net_packet->len = 9;
+				//sendPacket(net_sock, -1, net_packet, 0);
 			}
 		}
 	}},
@@ -6038,6 +6038,20 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 			FollowerMenu[clientnum].initfollowerMenuGUICursor(true); // set gui_mode to follower menu
 		}
 	} },
+
+	{ 'FOCI',[]() {
+		Uint32 uid = SDLNet_Read32(&net_packet->data[4]);
+		real_t x = SDLNet_Read16(&net_packet->data[8]) / 32.0;
+		real_t y = SDLNet_Read16(&net_packet->data[10]) / 32.0;
+		real_t z = SDLNet_Read16(&net_packet->data[12]) / 32.0;
+		real_t dir = SDLNet_Read16(&net_packet->data[14]) / 256.0;
+		int sprite = SDLNet_Read16(&net_packet->data[16]);
+		Uint32 seed = SDLNet_Read32(&net_packet->data[18]);
+		if ( Entity* gib = spawnFociGib(x, y, z, dir, uid, sprite, seed) )
+		{
+			gib->setUID(uid);
+		}
+	} },
 };
 
 void clientHandlePacket()
@@ -6663,7 +6677,7 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 	}},
 
 	// client deleted entity
-	{'ENTD', [](){
+	/*{'ENTD', [](){
 	    const int player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
 		for ( auto node = entitiesToDelete[player].first; node != NULL; node = node->next )
 		{
@@ -6674,7 +6688,7 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 				break;
 			}
 		}
-	}},
+	}},*/
 
 	// clicked entity in range
 	{'CKIR', [](){

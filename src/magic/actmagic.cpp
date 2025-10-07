@@ -731,7 +731,7 @@ void magicOnEntityHit(Entity* parent, Entity* particle, Entity* hitentity, Stat*
 			}
 		}
 		if ( !particle || (particle && particle->behavior != &actMagicMissile)) { return; }
-		if ( particle->actmagicCastByMagicstaff != 0 )
+		if ( particle->actmagicCastByMagicstaff == 1 )
 		{
 			auto find = ItemTooltips.spellItems.find(spellID);
 			if ( find != ItemTooltips.spellItems.end() )
@@ -1032,6 +1032,15 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 			if ( my->actmagicDelayMove > 0 )
 			{
 				// no movement or collision
+			}
+			else if ( my->actmagicSpray == 2 )
+			{
+				// foci auto-hit particle
+				if ( Entity* autohitTarget = uidToEntity(my->actmagicOrbitHitTargetUID4) )
+				{
+					hit.entity = autohitTarget;
+					hitFromSide = true;
+				}
 			}
 			else if ( my->actmagicSpray == 1 )
 			{
@@ -1352,7 +1361,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								{
 									if ( particleEmitterHitProps->hits == 1 )
 									{
-										if ( my->actmagicSpray == 1 )
+										if ( my->actmagicSpray == 1 || my->actmagicSpray == 2 )
 										{
 											//messagePlayerColor(player, MESSAGE_COMBAT, color, Language::get(6238));
 											//youAreHitByASpell = true;
@@ -1513,7 +1522,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					{
 						// Reflection of 3 does not degrade equipment
 						bool chance = false;
-						if ( my->actmagicSpray == 1 )
+						if ( my->actmagicSpray == 1 || my->actmagicSpray == 2 )
 						{
 							chance = local_rng.rand() % 10 == 0;
 						}
@@ -1674,6 +1683,18 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 
 					if ( my->actmagicReflectionCount >= 3 )
 					{
+						my->removeLightField();
+						list_RemoveNode(my->mynode);
+						return;
+					}
+
+					if ( my->actmagicSpray == 2 )
+					{
+						if ( Entity* gib = spawnFociGib(my->x, my->y, my->z, my->yaw, hit.entity->getUID(), my->sprite, local_rng.rand()) )
+						{
+							gib->actmagicReflectionCount = my->actmagicReflectionCount;
+						}
+
 						my->removeLightField();
 						list_RemoveNode(my->mynode);
 						return;
@@ -5523,6 +5544,32 @@ void actMagicParticle(Entity* my)
 		my->scaley -= 0.01;
 		my->scalez -= 0.01;
 	}
+	else if ( my->sprite >= 2152 && my->sprite <= 2157 )
+	{
+		my->scalex -= std::max(0.01, my->fskill[1]);
+		my->scaley -= std::max(0.01, my->fskill[1]);
+		my->scalez -= std::max(0.01, my->fskill[1]);
+		my->vel_z += my->fskill[0];
+
+		if ( (my->sprite == 2153 || my->sprite == 2155) && ticks % 4 == 0 )
+		{
+			my->roll = (local_rng.rand() % 8) * PI / 4;
+		}
+	}
+	else if ( my->sprite >= 233 && my->sprite <= 244 )
+	{
+		my->scalex -= std::max(0.01, my->fskill[1]);
+		my->scaley -= std::max(0.01, my->fskill[1]);
+		my->scalez -= std::max(0.01, my->fskill[1]);
+		my->vel_z += my->fskill[0];
+		if ( my->ticks % 4 == 0 )
+		{
+			if ( my->sprite < 244 )
+			{
+				++my->sprite;
+			}
+		}
+	}
 	else
 	{
 		my->scalex -= 0.05;
@@ -8295,22 +8342,6 @@ void actParticleTimer(Entity* my)
 					my->y = parent->y;
 					my->yaw = parent->yaw;
 
-					static ConsoleVariable<float> cvar_foci_vel("/foci_vel", 1.f);
-					static ConsoleVariable<float> cvar_foci_vel_decay("/foci_vel_decay", 0.95);
-					static ConsoleVariable<float> cvar_foci_life("/foci_life", 1.f);
-					static ConsoleVariable<float> cvar_foci_spread("/foci_spread", 1.f);
-					static ConsoleVariable<int> cvar_foci_delay("/foci_delay", 0);
-					static ConsoleVariable<bool> cvar_foci_model("/foci_model", false);
-					static ConsoleVariable<float> cvar_foci_scale("/foci_scale", 1.f);
-					static ConsoleVariable<float> cvar_foci_shrink("/foci_shrink", 0.1);
-					static ConsoleVariable<float> cvar_foci_grid("/foci_grid", 0.0);
-					static ConsoleVariable<float> cvar_foci_osc_h("/foci_osc_h", 0.0);
-					static ConsoleVariable<float> cvar_foci_swirl("/foci_swirl", 0.2);
-					static ConsoleVariable<int> cvar_foci_particle("/foci_particle", 0);
-					static ConsoleVariable<bool> cvar_foci_invertz("/foci_invertz", false);
-					static ConsoleVariable<float> cvar_foci_gravity("/foci_gravity", 1.0);
-					static ConsoleVariable<float> cvar_foci_velz("/foci_velz", 1.0);
-
 					Entity* entity = nullptr;
 					if ( multiplayer != CLIENT && my->ticks % 2 == 0 && false )
 					{
@@ -8320,133 +8351,8 @@ void actParticleTimer(Entity* my)
 					}
 					else if ( my->ticks % 10 == 2 )
 					{
-						entity = multiplayer == CLIENT ? spawnGibClient(0, 0, 0, -1) : spawnGib(my);
-					}
-					if ( entity )
-					{
-						int lifetime = (0.4 * TICKS_PER_SECOND) + (local_rng.rand() % 5);
-						entity->sprite = my->particleTimerCountdownSprite;
-						entity->x = parent->x;
-						entity->y = parent->y;
-						entity->z = parent->z + 2;
-						entity->parent = parent->getUID();
-
-						entity->ditheringDisabled = true;
-						entity->flags[SPRITE] = !*cvar_foci_model;
-						entity->flags[INVISIBLE] = false;
-						entity->flags[PASSABLE] = true;
-						entity->flags[NOUPDATE] = true;
-						entity->flags[UNCLICKABLE] = true;
-						//entity->flags[BRIGHT] = true;
-						entity->lightBonus = *cvar_magic_fx_light_bonus;
-
-						entity->sizex = 2;
-						entity->sizey = 2;
-						real_t spread = 0.2 * *cvar_foci_spread;
-						entity->yaw = my->yaw - spread + ((local_rng.rand() % 21) * (spread / 10));
-						entity->pitch = 0.0; //(local_rng.rand() % 360)* PI / 180.0;
-						entity->roll = 0.0; //(local_rng.rand() % 360)* PI / 180.0;
-						double vel = *cvar_foci_vel * (20 + (local_rng.rand() % 5)) / 10.f;
-						entity->vel_x = vel * cos(entity->yaw) + parent->vel_x;
-						entity->vel_y = vel * sin(entity->yaw) + parent->vel_y;
-						entity->vel_z = .6;
-						entity->scalex = *cvar_foci_scale;
-						entity->scaley = *cvar_foci_scale;
-						entity->scalez = *cvar_foci_scale;
-						real_t gravity = -0.035 - 0.002 * (local_rng.rand() % 6);
-						gravity *= *cvar_foci_gravity;
-						entity->vel_z *= *cvar_foci_velz;
-						if ( *cvar_foci_invertz )
-						{
-							gravity *= -1;
-							entity->vel_z *= -0.5;
-						}
-						//entity->vel_x = 0.0;
-						//entity->vel_y = 0.0;
-						//entity->x += 32.0 * cos((my->ticks % 10 / 10.0) * 2 * PI);
-						//entity->y += 32.0 * sin((my->ticks % 10 / 10.0) * 2 * PI);
-
-						if ( *cvar_foci_grid > 0.0001 )
-						{
-							entity->x += 2.0 * cos(my->yaw);
-							entity->y += 2.0 * sin(my->yaw);
-
-							int gridSize = 3;
-							int grid_x = -gridSize / 2;
-							int grid_y = -gridSize / 2;
-							int tempTicks = (my->ticks - 1);
-							while ( tempTicks > 0 )
-							{
-								grid_x++;
-								if ( grid_x > gridSize / 2 )
-								{
-									grid_x = -gridSize / 2;
-									grid_y++;
-								}
-								--tempTicks;
-							}
-
-							entity->x += *cvar_foci_grid * grid_x * cos(my->yaw + PI / 2);
-							entity->y += *cvar_foci_grid * grid_x * sin(my->yaw + PI / 2);
-							entity->z += *cvar_foci_grid * grid_y;
-						}
-
-						//entity->vel_z = 0.0;
-						//real_t gravity = 0.0;
-
-						// swirl
-						if ( *cvar_foci_swirl > 0.0001 )
-						{
-							entity->yaw += (my->ticks % 10) * (2 * PI / 5);
-							lifetime += 5;
-						}
-						lifetime *= *cvar_foci_life;
-						if ( entity->behavior == &actGib )
-						{
-							entity->fskill[3] = gravity;
-							if ( my->ticks % 5 == 0 )
-							{
-								// add lighting
-								entity->skill[6] = 1;
-							}
-							entity->skill[4] = lifetime;
-							entity->skill[8] = *cvar_foci_delay; // delay velx/y movement
-							entity->fskill[4] = *cvar_foci_shrink * *cvar_foci_scale; // shrink at end of life
-							entity->fskill[5] = *cvar_foci_swirl;
-							entity->fskill[6] = *cvar_foci_osc_h * ((my->ticks % 2) ? 1 : -1);
-							entity->fskill[7] = *cvar_foci_vel_decay;
-							entity->actGibMagicParticle = *cvar_foci_particle;
-						}
-						else if ( entity->behavior == &actMagicMissile )
-						{
-							spell_t* spell = getSpellFromID(spellID);
-							entity->skill[4] = 0; // life start
-							entity->skill[5] = lifetime; //lifetime
-							entity->actmagicSpray = 1;
-							entity->actmagicSprayGravity = gravity;
-							entity->actmagicEmitter = my->getUID();
-							node_t* node = list_AddNodeFirst(&entity->children);
-							node->element = copySpell(spell);
-							((spell_t*)node->element)->caster = parent->getUID();
-							node_t* elementNode = ((spell_t*)node->element)->elements.first;
-							spellElement_t* element = (spellElement_t*)elementNode->element;
-							{
-								elementNode = element->elements.first;
-								element = (spellElement_t*)elementNode->element;
-								static ConsoleVariable<int> cvar_foci_dmg("/foci_dmg", 2);
-								element->setDamage(*cvar_foci_dmg);
-								/*if ( Stat* stats = parent->getStats() )
-								{
-									element->damage += stats->getProficiency(PRO_MAGIC) / 10;
-								}*/
-							}
-
-							node->deconstructor = &spellDeconstructor;
-							node->size = sizeof(spell_t);
-
-							--entity_uids;
-							entity->setUID(-3);
-						}
+						//entity = multiplayer == CLIENT ? spawnGibClient(0, 0, 0, -1) : spawnGib(my);
+						entity = spawnFociGib(parent->x, parent->y, parent->z + 2, parent->yaw, parent->getUID(), my->particleTimerCountdownSprite, local_rng.rand());
 					}
 				}
 			}
