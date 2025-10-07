@@ -16,6 +16,7 @@
 #include "entity.hpp"
 #include "prng.hpp"
 #include "monster.hpp"
+#include "shops.hpp"
 
 #include <cassert>
 
@@ -384,6 +385,27 @@ void Entity::actMonsterLimb(bool processLight)
 
 void Entity::removeMonsterDeathNodes()
 {
+	if ( monsterCanTradeWith(-1) )
+	{
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( players[i]->isLocalPlayer() && shopkeeper[i] == getUID() )
+			{
+				players[i]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
+			}
+			else if ( i > 0 && !client_disconnected[i] && multiplayer == SERVER && !players[i]->isLocalPlayer() )
+			{
+				// inform client of abandonment
+				strcpy((char*)net_packet->data, "SHPC");
+				SDLNet_Write32(getUID(), &net_packet->data[4]);
+				net_packet->address.host = net_clients[i - 1].host;
+				net_packet->address.port = net_clients[i - 1].port;
+				net_packet->len = 8;
+				sendPacketSafe(net_sock, -1, net_packet, i - 1);
+			}
+		}
+	}
+
 	removeLightField();
 	int i = 0;
 	node_t *nextnode = nullptr;

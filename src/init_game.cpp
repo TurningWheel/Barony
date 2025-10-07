@@ -324,8 +324,6 @@ int initGame()
 			stats[c]->void_chest_inventory.first = nullptr;
 			stats[c]->void_chest_inventory.last = nullptr;
 			stats[c]->clearStats();
-			entitiesToDelete[c].first = nullptr;
-			entitiesToDelete[c].last = nullptr;
 			GenericGUI[c].setPlayer(c);
 			initClass(c);
 			FollowerMenu[c].setPlayer(c);

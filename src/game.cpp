@@ -1302,52 +1302,6 @@ void gameLogic(void)
 	}
 	else
 	{
-		if ( multiplayer == SERVER )
-		{
-			if ( ticks % 4 == 0 )
-			{
-				// continue informing clients of entities they need to delete
-				for ( i = 1; i < MAXPLAYERS; i++ )
-				{
-					if ( players[i]->isLocalPlayer() )
-					{
-						continue;
-					}
-					j = 0;
-					for ( node = entitiesToDelete[i].first; node != NULL; node = nextnode )
-					{
-						nextnode = node->next;
-
-						deleteent_t* deleteent = nullptr;
-						if (net_packet && net_packet->data) {
-							// send the delete entity command to the client
-							strcpy((char*)net_packet->data, "ENTD");
-							deleteent = (deleteent_t*)node->element;
-							SDLNet_Write32(deleteent->uid, &net_packet->data[4]);
-							net_packet->address.host = net_clients[i - 1].host;
-							net_packet->address.port = net_clients[i - 1].port;
-							net_packet->len = 8;
-							sendPacket(net_sock, -1, net_packet, i - 1);
-
-							// quit reminding clients after a certain number of attempts]
-							if (deleteent) {
-								deleteent->tries++;
-								if (deleteent->tries >= MAXTRIES)
-								{
-									list_RemoveNode(node);
-								}
-							}
-						}
-
-						j++;
-						if ( j >= MAXDELETES )
-						{
-							break;
-						}
-					}
-				}
-			}
-		}
 		DebugStats.eventsT2 = std::chrono::high_resolution_clock::now();
 		if ( multiplayer != CLIENT )   // server/singleplayer code
 		{

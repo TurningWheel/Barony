@@ -3274,6 +3274,10 @@ bool monsterIsFriendlyForTooltip(const int player, Entity& entity)
 			return true;
 		}
 	}
+	else if ( entity.monsterCanTradeWith(player) )
+	{
+		return true;
+	}
 	else if ( targetEntityType == SUCCUBUS || targetEntityType == INCUBUS )
 	{
 		if ( stats[player]->mask && stats[player]->mask->type == MASK_MOUTH_ROSE
@@ -3378,6 +3382,7 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 	}
 	else if ( parent 
 		&& (parent->getMonsterTypeFromSprite() == SHOPKEEPER 
+			|| parent->monsterCanTradeWith(player.playernum)
 			|| (parent->behavior == &actFloorDecoration && parent->sprite == 991 /* sign */)
 			|| (parent->behavior == &actMonster && (monsterIsFriendlyForTooltip(player.playernum, *parent)))
 			|| (parent->monsterAllyGetPlayerLeader()
@@ -3519,6 +3524,13 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 				{
 					return 0.0;
 				}
+			}
+			if ( parent->monsterCanTradeWith(player.playernum) && !selectInteract )
+			{
+				/*if ( !shopIsMysteriousShopkeeper(parent) && ShopkeeperPlayerHostility.isPlayerEnemy(player.playernum) )
+				{
+					return 0.0;
+				}*/
 			}
 			if ( parent->getMonsterTypeFromSprite() == BAT_SMALL && !selectInteract )
 			{
@@ -4011,6 +4023,10 @@ void Player::WorldUI_t::setTooltipActive(Entity& tooltip)
 					}
 				}
 				else if ( parent->getMonsterTypeFromSprite() == SHOPKEEPER )
+				{
+					interactText = Language::get(4013) + name; // "Trade with "
+				}
+				else if ( parent->monsterCanTradeWith(player.playernum) )
 				{
 					interactText = Language::get(4013) + name; // "Trade with "
 				}

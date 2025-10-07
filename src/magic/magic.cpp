@@ -1236,6 +1236,10 @@ int getCharmMonsterDifficulty(Entity& my, Stat& myStats)
 		break;
 	}
 
+	if ( my.monsterCanTradeWith(-1) )
+	{
+		difficulty = 666;
+	}
 
 	/************** CHANCE CALCULATION ***********/
 	if ( myStats.getEffectActive(EFF_CONFUSED) || myStats.getEffectActive(EFF_DRUNK) || my.behavior == &actPlayer )
@@ -1635,6 +1639,7 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 		if ( targetStats->type == LICH || targetStats->type == SHOPKEEPER || targetStats->type == DEVIL
 			|| targetStats->type == MINOTAUR || targetStats->type == LICH_FIRE || targetStats->type == LICH_ICE
 			|| (target->behavior == &actMonster && target->monsterAllySummonRank != 0)
+			|| target->monsterCanTradeWith(-1)
 			|| (targetStats->type == SKELETON && targetStats->getAttribute("revenant_skeleton") != "" )
 			|| targetStats->type == MIMIC || targetStats->type == BAT_SMALL
 			|| targetStats->type == MONSTER_ADORCISED_WEAPON

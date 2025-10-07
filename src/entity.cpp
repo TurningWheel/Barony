@@ -126,27 +126,12 @@ Entity::~Entity()
 					continue;
 				}
 
-				// create a reminder for the server to continue informing the client of the deletion
-				/*deleteent = (deleteent_t *) malloc(sizeof(deleteent_t)); //TODO: C++-PORT: Replace with new + class.
-				deleteent->uid = uid;
-				deleteent->tries = 0;
-				node = list_AddNodeLast(&entitiesToDelete[i]);
-				node->element = deleteent;
-				node->deconstructor = &defaultDeconstructor;*/
-
 				// send the delete entity command to the client
 				strcpy((char*)net_packet->data, "ENTD");
 				SDLNet_Write32((Uint32)uid, &net_packet->data[4]);
 				net_packet->address.host = net_clients[i - 1].host;
 				net_packet->address.port = net_clients[i - 1].port;
 				net_packet->len = 8;
-				/*if ( directConnect ) {
-				SDLNet_UDP_Send(net_sock,-1,net_packet);
-				} else {
-				#ifdef STEAMWORKS
-				SteamNetworking()->SendP2PPacket(*static_cast<CSteamID* >(steamIDRemote[i - 1]), net_packet->data, net_packet->len, k_EP2PSendUnreliable, 0);
-				#endif
-				}*/
 				sendPacketSafe(net_sock, -1, net_packet, i - 1);
 			}
 		}
@@ -15637,6 +15622,12 @@ bool Entity::checkEnemy(Entity* your)
 		return false;
 	}
 
+	if ( (your->behavior == &actPlayer && monsterCanTradeWith(your->isEntityPlayer()))
+		|| (behavior == &actPlayer && your->monsterCanTradeWith(isEntityPlayer())) )
+	{
+		return false;
+	}
+
 	if ( myStats->type == HUMAN && (yourStats->type == AUTOMATON && !strncmp(yourStats->name, "corrupted automaton", 19)) )
 	{
 		return true;
@@ -16115,6 +16106,12 @@ bool Entity::checkFriend(Entity* your)
 		|| (yourStats->type == SHOPKEEPER && yourStats->MISC_FLAGS[STAT_FLAG_MYSTERIOUS_SHOPKEEP] > 0) )
 	{
 		return false;
+	}
+
+	if ( (your->behavior == &actPlayer && monsterCanTradeWith(your->isEntityPlayer()))
+		|| (behavior == &actPlayer && your->monsterCanTradeWith(isEntityPlayer())) )
+	{
+		return true;
 	}
 
 	if ( myStats->type == GYROBOT )
@@ -20367,7 +20364,8 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool
 		monsterState = state;
 	}
 
-	if ( (myStats->type == SHOPKEEPER || myStats->type == HUMAN) && monsterTarget != target.getUID() )
+	if ( (myStats->type == SHOPKEEPER || myStats->type == HUMAN || (target.behavior == &actPlayer && monsterCanTradeWith(-1))) 
+		&& monsterTarget != target.getUID() )
 	{
 		Stat* targetStats = target.getStats();
 		if ( targetStats )
@@ -20387,26 +20385,29 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool
 			}
 			else
 			{
-				if ( monsterAllyIndex < 0 || (monsterAllyIndex >= 0 && local_rng.getU8() % 8 == 0) )
+				if ( myStats->type == HUMAN )
 				{
-					for (int c = 0; c < MAXPLAYERS; ++c)
+					if ( monsterAllyIndex < 0 || (monsterAllyIndex >= 0 && local_rng.getU8() % 8 == 0) )
 					{
-						if (local_rng.getU8() % 2) {
-							players[c]->worldUI.worldTooltipDialogue.createDialogueTooltip(getUID(),
-								Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_ATTACK, Language::get(516 + local_rng.uniform(0, 1)),
-								Language::get(4234 + local_rng.uniform(0, 16)), getMonsterLocalizedName(targetStats->type).c_str());
-						} else {
-							players[c]->worldUI.worldTooltipDialogue.createDialogueTooltip(getUID(),
-								Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_ATTACK, Language::get(518 + local_rng.uniform(0, 1)),
-								Language::get(4217 + local_rng.uniform(0, 16)), getMonsterLocalizedName(targetStats->type).c_str());
+						for (int c = 0; c < MAXPLAYERS; ++c)
+						{
+							if (local_rng.getU8() % 2) {
+								players[c]->worldUI.worldTooltipDialogue.createDialogueTooltip(getUID(),
+									Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_ATTACK, Language::get(516 + local_rng.uniform(0, 1)),
+									Language::get(4234 + local_rng.uniform(0, 16)), getMonsterLocalizedName(targetStats->type).c_str());
+							} else {
+								players[c]->worldUI.worldTooltipDialogue.createDialogueTooltip(getUID(),
+									Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_ATTACK, Language::get(518 + local_rng.uniform(0, 1)),
+									Language::get(4217 + local_rng.uniform(0, 16)), getMonsterLocalizedName(targetStats->type).c_str());
+							}
 						}
 					}
 				}
 			}
 
-			if ( myStats->type == SHOPKEEPER && target.behavior == &actPlayer )
+			if ( target.behavior == &actPlayer )
 			{
-				if ( oldMonsterState == MONSTER_STATE_TALK && monsterState != MONSTER_STATE_TALK )
+				if ( oldMonsterState == MONSTER_STATE_TALK && monsterState != MONSTER_STATE_TALK && (myStats->type == SHOPKEEPER || monsterCanTradeWith(-1)) )
 				{
 					for ( int i = 0; i < MAXPLAYERS; ++i )
 					{
@@ -20517,32 +20518,39 @@ void Entity::checkGroundForItems()
 	// Calls the function for a monster to pick up an item, if it's a monster that picks up items, only if they are not Asleep
 	if ( !myStats->getEffectActive(EFF_ASLEEP) )
 	{
-		switch ( myStats->type )
+		if ( monsterCanTradeWith(-1) )
 		{
-			case GOBLIN:
-			case HUMAN:
-				if ( myStats->getAttribute("special_npc") == "" )
-				{
-					//checkBetterEquipment(myStats);
-					monsterAddNearbyItemToInventory(myStats, 16, 9);
-				}
-				break;
-			case GOATMAN:
-				//Goatman boss picks up items too.
-				monsterAddNearbyItemToInventory(myStats, 16, 9); //Replaces checkBetterEquipment(), because more better. Adds items to inventory, and swaps out current equipped with better stuff on the ground.
-																 //checkBetterEquipment(myStats);
-				break;
-			case AUTOMATON:
-				monsterAddNearbyItemToInventory(myStats, 16, 5);
-				break;
-			case SHOPKEEPER:
-				if ( myStats->MISC_FLAGS[STAT_FLAG_MYSTERIOUS_SHOPKEEP] > 0 )
-				{
-					monsterAddNearbyItemToInventory(myStats, 16, 99);
-				}
-				break;
-			default:
-				return;
+			// no pickup
+		}
+		else
+		{
+			switch ( myStats->type )
+			{
+				case GOBLIN:
+				case HUMAN:
+					if ( myStats->getAttribute("special_npc") == "" )
+					{
+						//checkBetterEquipment(myStats);
+						monsterAddNearbyItemToInventory(myStats, 16, 9);
+					}
+					break;
+				case GOATMAN:
+					//Goatman boss picks up items too.
+					monsterAddNearbyItemToInventory(myStats, 16, 9); //Replaces checkBetterEquipment(), because more better. Adds items to inventory, and swaps out current equipped with better stuff on the ground.
+																	 //checkBetterEquipment(myStats);
+					break;
+				case AUTOMATON:
+					monsterAddNearbyItemToInventory(myStats, 16, 5);
+					break;
+				case SHOPKEEPER:
+					if ( myStats->MISC_FLAGS[STAT_FLAG_MYSTERIOUS_SHOPKEEP] > 0 )
+					{
+						monsterAddNearbyItemToInventory(myStats, 16, 99);
+					}
+					break;
+				default:
+					return;
+			}
 		}
 	}
 }
@@ -22115,6 +22123,7 @@ void Entity::createPathBoundariesNPC(int maxTileDistance)
 
 	if ( myStats->MISC_FLAGS[STAT_FLAG_NPC] != 0 
 		|| myStats->type == SHOPKEEPER
+		|| monsterCanTradeWith(-1)
 		|| monsterAllyState == ALLY_STATE_DEFEND )
 	{
 		// is NPC, find the bounds which movement is restricted to by finding the "box" it spawned in.
@@ -25701,6 +25710,7 @@ bool Entity::isBossMonster()
 	{
 		if ( myStats->type == MINOTAUR
 			|| myStats->type == SHOPKEEPER
+			|| monsterCanTradeWith(-1)
 			|| myStats->type == SHADOW
 			|| myStats->type == LICH
 			|| myStats->type == LICH_FIRE
@@ -26462,11 +26472,11 @@ void Entity::alertAlliesOnBeingHit(Entity* attacker, std::unordered_set<Entity*>
 			Stat* buddystats = entity->getStats();
 			if ( buddystats != nullptr )
 			{
-				if ( buddystats->type == SHOPKEEPER && hitstats->type != SHOPKEEPER )
+				if ( (buddystats->type == SHOPKEEPER || entity->monsterCanTradeWith(-1)) && hitstats->type != SHOPKEEPER )
 				{
 					continue; // shopkeepers don't care about hitting humans/robots etc.
 				}
-				if ( hitstats->type == SHOPKEEPER && entity->monsterAllyGetPlayerLeader() )
+				if ( (hitstats->type == SHOPKEEPER || this->monsterCanTradeWith(-1)) && entity->monsterAllyGetPlayerLeader())
 				{
 					continue; // hitting a shopkeeper, player followers won't retaliate against player
 				}

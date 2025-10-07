@@ -83,7 +83,6 @@ extern bool oassailant[MAXPLAYERS];
 extern int assailantTimer[MAXPLAYERS];
 static const int COMBAT_MUSIC_COOLDOWN = 200; // 200 ticks of combat music before it fades away.
 extern list_t removedEntities;
-extern list_t entitiesToDelete[MAXPLAYERS];
 extern char maptoload[256], configtoload[256];
 extern bool loadingmap, loadingconfig;
 extern int startfloor;
@@ -264,6 +263,8 @@ void actGreasePuddle(Entity* my);
 void actMiscPuddle(Entity* my);
 void spawnGreasePuddleSpawner(Entity* caster, real_t x, real_t y, int duration);
 void actDamageGib(Entity* my);
+void actFociGib(Entity* my);
+Entity* spawnFociGib(real_t x, real_t y, real_t z, real_t dir, Uint32 parentUid, int sprite, Uint32 seed);
 Entity* spawnGib(Entity* parentent, int customGibSprite = -1);
 Entity* spawnDamageGib(Entity* parentent, Sint32 dmgAmount, int gibDmgType, int displayType = 0, bool updateClients = false);
 Entity* spawnGibClient(Sint16 x, Sint16 y, Sint16 z, Sint16 sprite);

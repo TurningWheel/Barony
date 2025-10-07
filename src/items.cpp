@@ -326,7 +326,7 @@ ItemType itemLevelCurveEntity(Entity& my, Category cat, int minLevel, int maxLev
 {
 	itemLevelCurveType = ITEM_LEVEL_CURVE_TYPE_DEFAULT;
 	itemLevelCurveShop = -1;
-	if ( my.behavior == &actMonster && my.getMonsterTypeFromSprite() == SHOPKEEPER )
+	if ( my.behavior == &actMonster && (my.getMonsterTypeFromSprite() == SHOPKEEPER || my.monsterCanTradeWith(-1)) )
 	{
 		itemLevelCurveType = ITEM_LEVEL_CURVE_TYPE_SHOP;
 		itemLevelCurveShop = my.monsterStoreType;

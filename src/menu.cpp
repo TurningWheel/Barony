@@ -10264,8 +10264,6 @@ void doEndgame(bool saveHighscore, bool onServerDisconnect) {
 		stats[c]->type = HUMAN;
 		stats[c]->playerRace = RACE_HUMAN;
 		stats[c]->clearStats();
-		entitiesToDelete[c].first = NULL;
-		entitiesToDelete[c].last = NULL;
 		if ( c == 0 )
 		{
 			initClass(c);

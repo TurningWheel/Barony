@@ -2774,6 +2774,10 @@ void actMonster(Entity* my)
 		}
 		my->monsterLookTime = local_rng.rand() % 120;
 		my->monsterMoveTime = local_rng.rand() % 10;
+		if ( my->monsterCanTradeWith(-1) )
+		{
+			my->createPathBoundariesNPC();
+		}
 		MONSTER_SOUND = NULL;
 		if ( MONSTER_NUMBER == -1 )
 		{
@@ -4391,7 +4395,7 @@ void actMonster(Entity* my)
 		}
 		else
 		{
-			if (my->monsterTarget == players[monsterclicked]->entity->getUID() && my->monsterState != 4)
+			if (my->monsterTarget == players[monsterclicked]->entity->getUID() && my->monsterState != MONSTER_STATE_TALK)
 			{
 				// angry at the player, "En Guarde!"
 				for ( int c = 0; c < MAXPLAYERS; ++c )
@@ -4473,7 +4477,7 @@ void actMonster(Entity* my)
 			else
 			{
 				// handle followers/trading
-				if ( myStats->type != SHOPKEEPER )
+				if ( myStats->type != SHOPKEEPER && !my->monsterCanTradeWith(-1) )
 				{
 					if ( myStats->MISC_FLAGS[STAT_FLAG_NPC] == 0 )
 					{
@@ -4633,7 +4637,7 @@ void actMonster(Entity* my)
 							// shopkeepers start trading
 							startTradingServer(my, monsterclicked);
 							if ( stats[monsterclicked] && stats[monsterclicked]->type == HUMAN && stats[monsterclicked]->stat_appearance == 0
-								&& stats[monsterclicked]->playerRace == RACE_AUTOMATON )
+								&& stats[monsterclicked]->playerRace == RACE_AUTOMATON && myStats->type == SHOPKEEPER )
 							{
 								achievementObserver.updatePlayerAchievement(monsterclicked, AchievementObserver::Achievement::BARONY_ACH_REAL_BOY,
 									AchievementObserver::AchievementEvent::REAL_BOY_SHOP);
@@ -4994,7 +4998,7 @@ void actMonster(Entity* my)
 			--my->monsterAllySpecialCooldown;
 		}
 
-		if ( myStats->type == AUTOMATON )
+		if ( myStats->type == AUTOMATON && !my->monsterCanTradeWith(-1) )
 		{
 			my->automatonRecycleItem();
 		}
@@ -5719,7 +5723,8 @@ void actMonster(Entity* my)
 				int upperY = std::min<int>(centerY + searchLimitY, map.height);
 				//messagePlayer(0, "my x: %d, my y: %d, rangex: (%d-%d), rangey: (%d-%d)", centerX, centerY, lowerX, upperX, lowerY, upperY);
 
-				if ( myStats->type != SHOPKEEPER && (myStats->MISC_FLAGS[STAT_FLAG_NPC] == 0 && my->monsterAllyState == ALLY_STATE_DEFAULT) )
+				if ( myStats->type != SHOPKEEPER && !my->monsterCanTradeWith(-1)
+					&& (myStats->MISC_FLAGS[STAT_FLAG_NPC] == 0 && my->monsterAllyState == ALLY_STATE_DEFAULT) )
 				{
 					for ( x = lowerX; x < upperX; x++ )
 					{
@@ -9806,7 +9811,7 @@ timeToGoAgain:
 			serverUpdateEntitySkill(my, 1); // update monsterTarget for player leaders.
 		}
 
-		if ( myStats->type == SHOPKEEPER && previousMonsterState == MONSTER_STATE_TALK )
+		if ( previousMonsterState == MONSTER_STATE_TALK && (myStats->type == SHOPKEEPER || my->monsterCanTradeWith(-1)) )
 		{
 			for ( int i = 0; i < MAXPLAYERS; ++i )
 			{
@@ -14861,4 +14866,26 @@ bool monsterDebugModels(Entity* my, real_t* dist)
 
 #endif	
 	return true;
+}
+
+bool Entity::monsterCanTradeWith(int player)  const
+{
+	if ( behavior == &actMonster )
+	{
+		Monster type = NOTHING;
+		if ( Stat* myStats = getStats() )
+		{
+			type = myStats->type;
+		}
+		else
+		{
+			type = getMonsterTypeFromSprite();
+		}
+
+		/*if ( type == AUTOMATON || type == KOBOLD )
+		{
+			return true;
+		}*/
+	}
+	return false;
 }

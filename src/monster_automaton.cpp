@@ -22,6 +22,7 @@
 #include "magic/magic.hpp"
 #include "prng.hpp"
 #include "mod_tools.hpp"
+#include "shops.hpp"
 
 void initAutomaton(Entity* my, Stat* myStats)
 {
@@ -687,6 +688,27 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		{
 			my->monsterSpecialState = AUTOMATON_MALFUNCTION_RUN;
 			createParticleExplosionCharge(my, 174, 100, 0.1);
+
+			if ( multiplayer != CLIENT && my->monsterCanTradeWith(-1) )
+			{
+				for ( int i = 0; i < MAXPLAYERS; ++i )
+				{
+					if ( players[i]->isLocalPlayer() && shopkeeper[i] == my->getUID() )
+					{
+						players[i]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
+					}
+					else if ( i > 0 && !client_disconnected[i] && multiplayer == SERVER && !players[i]->isLocalPlayer() )
+					{
+						// inform client of abandonment
+						strcpy((char*)net_packet->data, "SHPC");
+						SDLNet_Write32(my->getUID(), &net_packet->data[4]);
+						net_packet->address.host = net_clients[i - 1].host;
+						net_packet->address.port = net_clients[i - 1].port;
+						net_packet->len = 8;
+						sendPacketSafe(net_sock, -1, net_packet, i - 1);
+					}
+				}
+			}
 		}
 		if ( multiplayer != CLIENT )
 		{
@@ -1483,6 +1505,11 @@ void Entity::automatonRecycleItem()
 {
 	Stat* myStats = getStats();
 	if ( !myStats )
+	{
+		return;
+	}
+
+	if ( monsterCanTradeWith(-1) )
 	{
 		return;
 	}

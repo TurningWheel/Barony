@@ -329,7 +329,6 @@ int fullscreen = 0;
 bool borderless = false;
 bool smoothlighting = true;
 list_t removedEntities;
-list_t entitiesToDelete[MAXPLAYERS];
 Entity* client_selected[MAXPLAYERS] = {nullptr, nullptr, nullptr, nullptr};
 bool inrange[MAXPLAYERS];
 Sint32 client_classes[MAXPLAYERS];

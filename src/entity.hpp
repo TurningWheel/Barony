@@ -1324,6 +1324,7 @@ public:
 	void attractItem(Entity& itemEntity);
 	void creatureHandleLiftZ();
 	bool monsterIsTargetable(bool targetInertMimics = false) const;
+	bool monsterCanTradeWith(int player) const;
 };
 
 Monster getMonsterFromPlayerRace(int playerRace); // convert playerRace into the relevant monster type
@@ -1333,7 +1334,6 @@ Sint32 statGetCON(Stat* entitystats, Entity* my);
 Sint32 statGetINT(Stat* entitystats, Entity* my);
 Sint32 statGetPER(Stat* entitystats, Entity* my);
 Sint32 statGetCHR(Stat* entitystats, Entity* my);
-extern list_t entitiesToDelete[MAXPLAYERS];
 extern Uint32 entity_uids, lastEntityUIDs;
 //extern Entity *players[4];
 extern Uint32 nummonsters;
