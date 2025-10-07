@@ -962,7 +962,7 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 			{
 				if ( x >= 0 && y >= 0 && x < map.width && y < map.height )
 				{
-					if ( x == 1 || (x == map.width - 1) || y == 1 || (y == map.height - 1) )
+					if ( x == 0 || (x == map.width - 1) || y == 0 || (y == map.height - 1) )
 					{
 						// collides with map edges only
 						hit.x = x * 16 + 8;
