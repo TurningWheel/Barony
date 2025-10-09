@@ -359,7 +359,7 @@ bool isSpellcasterBeginnerFromSpellbook(int player, Entity* caster, Stat* stat, 
 
 int getSpellbookBonusPercent(Entity* caster, Stat* stat, Item* spellbookItem)
 {
-	if ( !spellbookItem || itemCategory(spellbookItem) != SPELLBOOK )
+	if ( !spellbookItem || !(itemCategory(spellbookItem) == SPELLBOOK || itemTypeIsFoci(spellbookItem->type)) )
 	{
 		return 0;
 	}
@@ -367,7 +367,14 @@ int getSpellbookBonusPercent(Entity* caster, Stat* stat, Item* spellbookItem)
 	if ( spellbookItem->beatitude > 0
 		|| (shouldInvertEquipmentBeatitude(stat) && spellbookItem->beatitude < 0) )
 	{
-		spellBookBonusPercent += abs(spellbookItem->beatitude) * 25;
+		if ( itemTypeIsFoci(spellbookItem->type) )
+		{
+			spellBookBonusPercent += abs(spellbookItem->beatitude) * 5;
+		}
+		else
+		{
+			spellBookBonusPercent += abs(spellbookItem->beatitude) * 25;
+		}
 	}
 	return spellBookBonusPercent;
 }
@@ -453,7 +460,7 @@ bool CastSpellProps_t::setToMonsterCast(Entity* monster, int spellID)
 	return false;
 }
 
-Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool trap, bool usingSpellbook, CastSpellProps_t* castSpellProps)
+Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool trap, bool usingSpellbook, CastSpellProps_t* castSpellProps, bool usingFoci)
 {
 	Entity* caster = uidToEntity(caster_uid);
 
@@ -552,7 +559,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		sustainedSpell = (findSpellDef->second.spellType == ItemTooltips_t::SpellItemTypes::SPELL_TYPE_SELF_SUSTAIN);
 	}
 	int oldMP = caster->getMP();
-	if ( !using_magicstaff && !trap && stat )
+	if ( !using_magicstaff && !trap && !usingFoci && stat )
 	{
 		newbie = isSpellcasterBeginner(player, caster);
 
@@ -6167,18 +6174,91 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		else if ( !strcmp(element->element_internal_name, spellElementMap[SPELL_ELEMENT_PROPULSION_FOCI_SPRAY].element_internal_name) )
 		{
 			static ConsoleVariable<int> cvar_foci_sprite("/foci_sprite", 13);
-			int particle = *cvar_foci_sprite;
-			if ( particle >= 0 )
+			int particle = -1;
+			if ( svFlags & SV_FLAG_CHEATS )
 			{
-				Entity* spellTimer = createParticleTimer(caster, 10, -1);
-				spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_FOCI_SPRAY;
-				spellTimer->particleTimerCountdownSprite = particle;
-				result = spellTimer;
-				if ( !(caster && caster->behavior == &actMonster) )
+				particle = *cvar_foci_sprite;
+			}
+			switch ( spell->ID )
+			{
+			case SPELL_FOCI_FIRE:
+				particle = 233;
+				break;
+			case SPELL_FOCI_SNOW:
+				particle = 256;
+				break;
+			case SPELL_FOCI_NEEDLES:
+				particle = 2154;
+				break;
+			case SPELL_FOCI_ARCS:
+				particle = 2153;
+				break;
+			case SPELL_FOCI_SANDBLAST:
+				particle = 2156;
+				break;
+			default:
+				break;
+			}
+			if ( particle >= 0 && caster )
+			{
+				//Entity* spellTimer = createParticleTimer(caster, 10, -1);
+				//spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_FOCI_SPRAY;
+				//spellTimer->particleTimerCountdownSprite = particle;
+				//result = spellTimer;
+				//if ( !(caster && caster->behavior == &actMonster) )
+				//{
+				//	// spawn these if not a monster doing its special attack, client spawns own particles
+				//	serverSpawnMiscParticles(caster, PARTICLE_EFFECT_FOCI_SPRAY, particle);
+				//}
+
+				real_t velocityBonus = 0.0;
 				{
-					// spawn these if not a monster doing its special attack, client spawns own particles
-					serverSpawnMiscParticles(caster, PARTICLE_EFFECT_FOCI_SPRAY, particle);
+					real_t velocityDir = atan2(caster->vel_y, caster->vel_x);
+					real_t casterDir = fmod(caster->yaw, 2 * PI);
+					real_t yawDiff = velocityDir - casterDir;
+					while ( yawDiff > PI )
+					{
+						yawDiff -= 2 * PI;
+					}
+					while ( yawDiff <= -PI )
+					{
+						yawDiff += 2 * PI;
+					}
+					if ( abs(yawDiff) <= PI )
+					{
+						real_t vel = sqrt(pow(caster->vel_x, 2) + pow(caster->vel_y, 2));
+						velocityBonus = std::max(0.0, cos(yawDiff) * vel);
+					}
 				}
+				if ( Entity* gib = spawnFociGib(caster->x, caster->y, 1.0, caster->yaw, velocityBonus, caster->getUID(), particle, local_rng.rand()) )
+				{
+					node_t* node = list_AddNodeFirst(&gib->children);
+					node->element = copySpell(spell);
+					((spell_t*)node->element)->caster = caster->getUID();
+					node->deconstructor = &spellDeconstructor;
+					node->size = sizeof(spell_t);
+
+					if ( usingFoci && stat->shield && itemTypeIsFoci(stat->shield->type) )
+					{
+						spellBookBonusPercent = getSpellbookBonusPercent(caster, stat, stat->shield);
+						if ( spellBookBonusPercent > 0 )
+						{
+							gib->actmagicSpellbookBonus += spellBookBonusPercent;
+						}
+					}
+				}
+
+				/*Entity* fx = createParticleAestheticOrbit(parent, 16, 50, PARTICLE_EFFECT_FOCI_ORBIT);
+				fx->scalex = 0.5;
+				fx->scaley = 0.5;
+				fx->scalez = 0.5;
+				fx->flags[SPRITE] = true;
+				fx->x = parent->x + 8.0 * cos(parent->yaw);
+				fx->y = parent->y + 8.0 * sin(parent->yaw);
+				fx->yaw = parent->yaw;
+				fx->fskill[0] = (PI / 4) + (local_rng.rand() % 2) * 3 * PI / 2;
+				fx->z = 0.0;*/
+				//fx->actmagicOrbitDist = 4;
 			}
 		}
 		
@@ -6854,7 +6934,12 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				}
 			}
 		}
-		if ( using_magicstaff )
+
+		if ( usingFoci )
+		{
+
+		}
+		else if ( using_magicstaff )
 		{
 			if ( stat )
 			{
@@ -6964,11 +7049,6 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							}
 						}
 					}
-				}
-				else if ( spell->ID == SPELL_FOCI_FIRE )
-				{
-					spellCastChance = 0;
-					magicChance = 0;
 				}
 
 				bool sustainedChance = players[caster->skill[2]]->mechanics.sustainedSpellLevelChance();
@@ -7110,7 +7190,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		}
 	}
 
-	if (spell_isChanneled(spell) && !using_magicstaff && !trap)   //TODO: What about magic traps and channeled spells?
+	if (spell_isChanneled(spell) && !using_magicstaff && !trap && !usingFoci )   //TODO: What about magic traps and channeled spells?
 	{
 		if (!channeled_spell)
 		{
@@ -7160,7 +7240,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				{
 					castSpellProps->elementIndex = index;
 				}
-				castSpell(caster_uid, subSpell, using_magicstaff, _trap, usingSpellbook, castSpellProps);
+				castSpell(caster_uid, subSpell, using_magicstaff, _trap, usingSpellbook, castSpellProps, usingFoci);
 			}
 		}
 	}

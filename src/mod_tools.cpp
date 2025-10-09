@@ -1188,21 +1188,32 @@ void ItemTooltips_t::readItemsFromFile()
 
 		t.spellbookInternalName = spell_itr->value["spellbook_internal_name"].GetString();
 		t.magicstaffInternalName = spell_itr->value["magicstaff_internal_name"].GetString();
-
+		t.fociInternalName = "";
+		if ( spell_itr->value.HasMember("foci_internal_name") )
+		{
+			t.fociInternalName = spell_itr->value["foci_internal_name"].GetString();
+		}
 		for ( int i = 0; i < NUMITEMS; ++i )
 		{
-			if ( items[i].category != SPELLBOOK && items[i].category != MAGICSTAFF )
+			if ( items[i].category != SPELLBOOK && items[i].category != MAGICSTAFF && !itemTypeIsFoci((ItemType)i) )
 			{
 				continue;
 			}
 			if ( t.spellbookInternalName == tmpItems[i].internalName )
 			{
 				t.spellbookId = i;
+				items[i].attributes["spellbook_spell"] = t.id;
 			}
 			if ( t.magicstaffInternalName == tmpItems[i].internalName )
 			{
 				t.magicstaffId = i;
+				items[i].attributes["magicstaff_spell"] = t.id;
 			}
+			if ( t.fociInternalName == tmpItems[i].internalName )
+			{
+				t.fociId = i;
+				items[i].attributes["foci_spell"] = t.id;
+		}
 		}
 
 		t.hasExpandedJSON = false;
@@ -1224,6 +1235,10 @@ void ItemTooltips_t::readItemsFromFile()
 		setSpellValueIfKeyPresent(t, spell_itr, hash, shift, "cast_time_mult", t.cast_time_mult);
 		setSpellValueIfKeyPresent(t, spell_itr, hash, shift, "difficulty", t.difficulty);
 		setSpellValueIfKeyPresent(t, spell_itr, hash, shift, "sustain_mana", t.sustain_mana);
+		if ( t.sustain_mana > 0 )
+		{
+			t.sustain_duration = std::max(1, t.duration); // set a sane default
+		}
 		setSpellValueIfKeyPresent(t, spell_itr, hash, shift, "sustain_duration", t.sustain_duration);
 		setSpellValueIfKeyPresent(t, spell_itr, hash, shift, "sustain_mult", t.sustain_mult);
 
@@ -2345,6 +2360,8 @@ real_t ItemTooltips_t::getSpellSustainCostPerSecond(int spellID)
 	real_t cost = 0.0;
 	if ( auto spell = getSpellFromID(spellID) )
 	{
+		if ( spell_isChanneled(spell) )
+		{
 		if ( spell->elements.first )
 		{
 			if ( spellElement_t* element = (spellElement_t*)spell->elements.first->element )
@@ -2355,6 +2372,7 @@ real_t ItemTooltips_t::getSpellSustainCostPerSecond(int spellID)
 				}
 			}
 		}
+	}
 	}
 	/*switch ( spellID )
 	{

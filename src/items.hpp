@@ -423,6 +423,20 @@ typedef enum ItemType
 	CHAIN_COIF,
 	FOOD_SHROOM,
 	FOOD_NUT,
+	TOOL_FOCI_SNOW,
+	TOOL_FOCI_NEEDLES,
+	TOOL_FOCI_ARCS,
+	TOOL_FOCI_SAND,
+	TOOL_FOCI_DARK_LIFE,
+	TOOL_FOCI_DARK_RIFT,
+	TOOL_FOCI_DARK_SILENCE,
+	TOOL_FOCI_DARK_VENGEANCE,
+	TOOL_FOCI_DARK_SUPPRESS,
+	TOOL_FOCI_LIGHT_PEACE,
+	TOOL_FOCI_LIGHT_JUSTICE,
+	TOOL_FOCI_LIGHT_PROVIDENCE,
+	TOOL_FOCI_LIGHT_PURITY,
+	TOOL_FOCI_LIGHT_SANCTUARY,
 	ITEM_ENUM_MAX
 } ItemType;
 const int NUMITEMS = ITEM_ENUM_MAX;
@@ -851,7 +865,9 @@ node_t* getMeleeWeaponItemNodeInInventory(const Stat* myStats);
 ItemType itemTypeWithinGoldValue(int cat, int minValue, int maxValue, BaronyRNG& rng);
 bool itemSpriteIsQuiverThirdPersonModel(int sprite);
 bool itemSpriteIsQuiverBaseThirdPersonModel(int sprite);
+bool itemSpriteIsFociThirdPersonModel(const int sprite);
 bool itemTypeIsQuiver(ItemType type);
+bool itemTypeIsFoci(ItemType type);
 bool itemTypeIsThrownBall(ItemType type);
 real_t rangedAttackGetSpeedModifier(const Stat* myStats);
 bool rangedWeaponUseQuiverOnAttack(const Stat* myStats);

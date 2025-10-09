@@ -321,6 +321,7 @@ static const int PARTICLE_EFFECT_MUSHROOM_SPELL = 49;
 static const int PARTICLE_EFFECT_MISC_PUDDLE = 50;
 static const int PARTICLE_EFFECT_BOLAS = 51;
 static const int PARTICLE_EFFECT_BASTION_MUSHROOM = 52;
+static const int PARTICLE_EFFECT_FOCI_ORBIT = 53;
 
 // actmagicIsVertical constants
 static const int MAGIC_ISVERTICAL_NONE = 0;
@@ -428,6 +429,10 @@ private:
 	int damage = 0;
 	int damage2 = 0;
 	int duration2 = 0;
+	real_t damage_mult = 1.0;
+	real_t damage2_mult = 1.0;
+	real_t channeledMana_mult = 1.0;
+	int channeledMana_duration = TICKS_PER_SECOND;
 public:
 	void setDamage(int _damage) { damage = _damage; }
 	int getDamage() { return damage; }
@@ -435,10 +440,18 @@ public:
 	int getDamageSecondary() { return damage2; }
 	void setDurationSecondary(int _duration) { duration2 = _duration; }
 	int getDurationSecondary() { return duration2; }
+	real_t getDamageMult() { return damage_mult; }
+	real_t getDamage2Mult() { return damage2_mult; }
+	real_t getChanneledManaMult() { return channeledMana_mult; }
+	int getChanneledManaDuration() { return channeledMana_duration; }
+	void setChanneledManaDuration(int _duration) { channeledMana_duration = _duration; }
+	void setChanneledManaMult(real_t _mult) { channeledMana_mult = _mult; }
 	int duration; // travel time if it's a missile element, duration for a light spell, duration for curses/enchants/traps/beams/rays/effects/what have you.
 	char element_internal_name[64];
+	int elementID = 0;
 	bool can_be_learned; // if a spellElement can't be learned, a player won't be able to build spells with it.
 	int channeledMana = 0; // sustained spell if channeled cost > 0
+	bool fociSpell = false;
 	/*
 	I've been thinking about mana consumption. I think it should drain mana 1 by 1 regardless of how much the spell initially cost to cast.
 	So:
@@ -719,18 +732,37 @@ typedef struct spell_t
 
 	Uint32 caster = 0;
 	real_t distance = 0.0;
+	real_t distance_mult = 1.0;
 	int skillID = PRO_MAGIC;
 	real_t cast_time = 1.0;
 	real_t cast_time_mult = 1.0;
 	int mana = 1;
 
 	int life_time = 0; // for floor based effects
+	real_t life_time_mult = 1.0;
 	int sustainEffectDissipate = -1; // when the spell is unsustained, clear this effect from the player (unique spell effects)
 	int channel_duration = 0; //This is the value to reset the timer to when a spell is channeled.
 	int channel_effectStrength = 1; // how strong to reapply the effect each duration tick
 	list_t elements; //NOTE: This could technically allow a spell to have multiple roots. So you could make a flurry of fireballs, for example.
 	//TODO: Some way to make spells work with "need to cast more to get better at casting the spell." A sort of spell learning curve. The first time you cast it, prone to failure. Less the more you cast it.
 	
+	enum SpellBasePropertiesFloat
+	{
+		SPELLPROP_DISTANCE,
+		SPELLPROP_DISTANCE_MULT,
+		SPELLPROP_CAST_TIME,
+		SPELLPROP_CAST_TIME_MULT,
+		SPELLPROP_MODIFIED_CAST_TIME,
+		SPELLPROP_BASE_PROPERTY_FLOAT_ENUM_END
+	};
+
+	enum SpellBasePropertiesInt
+	{
+		SPELLPROP_FOCI_REFIRE_TICKS,
+		SPELLPROP_FOCI_SECONDARY_MANA_COST,
+		SPELLPROP_BASE_PROPERTY_INT_ENUM_END
+	};
+
 	// get localized spell name
 	const char* getSpellName();
 } spell_t;
@@ -824,7 +856,7 @@ struct CastSpellProps_t
 
 void setupSpells();
 void equipSpell(spell_t* spell, int playernum, Item* spellItem);
-Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool trap, bool usingSpellbook = false, CastSpellProps_t* castSpellProps = nullptr);
+Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool trap, bool usingSpellbook = false, CastSpellProps_t* castSpellProps = nullptr, bool usingFoci = false);
 void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook); //Initiates the spell animation, then hands off the torch to it, which, when finished, calls castSpell.
 int spellGetCastSound(spell_t* spell);
 #ifndef EDITOR // editor doesn't know about stat*
@@ -846,6 +878,7 @@ void actMagicClient(Entity* my);
 void actMagicClientNoLight(Entity* my);
 void actMagicParticle(Entity* my);
 void actHUDMagicParticle(Entity* my);
+void actTouchCastThirdPersonParticle(Entity* my);
 void actHUDMagicParticleCircling(Entity* my);
 void actMagicParticleCircling2(Entity* my);
 void actMagicParticleEnsembleCircling(Entity* my);
@@ -1010,11 +1043,14 @@ extern spellcasting_animation_manager_t cast_animation[MAXPLAYERS];
 
 void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, Uint32 caster_uid, spell_t* spell, bool usingSpellbook);
 void spellcastingAnimationManager_deactivate(spellcasting_animation_manager_t* animation_manager);
+void spellcastAnimationUpdateReceive(int player, int attackPose, int castTime);
+void spellcastAnimationUpdate(int player, int attackPose, int castTime);
 
 class Item;
 
 spell_t* getSpellFromItem(const int player, Item* item, bool usePlayerInventory);
 int getSpellIDFromSpellbook(int spellbookType);
+int getSpellIDFromFoci(int fociType);
 int canUseShapeshiftSpellInCurrentForm(const int player, Item& item);
 
 //Spell implementation stuff.
@@ -1041,8 +1077,11 @@ int getSpellDamageFromID(int spellID, Entity* parent, Stat* parentStats, Entity*
 int getSpellDamageSecondaryFromID(int spellID, Entity* parent, Stat* parentStats, Entity* magicSourceParticle, real_t addSpellBonus = 0.0, bool applyingDamageOnCast = true);
 int getSpellEffectDurationFromID(int spellID, Entity* parent, Stat* parentStats, Entity* magicSourceParticle, real_t addSpellBonus = 0.0);
 int getSpellEffectDurationSecondaryFromID(int spellID, Entity* parent, Stat* parentStats, Entity* magicSourceParticle, real_t addSpellBonus = 0.0);
+real_t getSpellPropertyFromID(spell_t::SpellBasePropertiesFloat prop, int spellID, Entity* parent, Stat* parentStats, Entity* magicSourceParticle, real_t addSpellBonus = 0.0);
+int getSpellPropertyFromID(spell_t::SpellBasePropertiesInt prop, int spellID, Entity* parent, Stat* parentStats, Entity* magicSourceParticle, real_t addSpellBonus = 0.0);
 void thrownItemUpdateSpellTrail(Entity& my, real_t _x, real_t _y);
-
+const char* magicLightColorForSprite(Entity* my, int sprite, bool darker);
+void doParticleEffectForTouchSpell(Entity& my, Entity* focalLimb, Monster monsterType);
 void freeSpells();
 
 struct AOEIndicators_t

@@ -3374,7 +3374,9 @@ void Entity::handleEffects(Stat* myStats)
 
 		if ( myStats->defending )
 		{
-			if ( myStats->shield && !myStats->getEffectActive(EFF_SHAPESHIFT) )
+			if ( myStats->shield 
+				&& (!myStats->getEffectActive(EFF_SHAPESHIFT) 
+					|| (myStats->getEffectActive(EFF_SHAPESHIFT) && effectShapeshift == CREATURE_IMP && itemTypeIsFoci(myStats->shield->type))) )
 			{
 				if ( players[player]->mechanics.defendTicks == 0 )
 				{
@@ -4815,6 +4817,10 @@ void Entity::handleEffects(Stat* myStats)
 			}
 			players[player]->mechanics.ensembleTakenInitialMP = false;
 		}
+		if ( players[player]->mechanics.fociChargeDelay > 0 )
+		{
+			--players[player]->mechanics.fociChargeDelay;
+		}
 	}
 
 	if ( myStats->shield != NULL )
@@ -4823,22 +4829,159 @@ void Entity::handleEffects(Stat* myStats)
 		{
 			if ( myStats->defending && players[player]->mechanics.defendTicks > 0 )
 			{
-				if ( myStats->shield->type == TOOL_FOCI_FIRE )
+				if ( itemTypeIsFoci(myStats->shield->type) )
 				{
-					static ConsoleVariable<float> cvar_foci_charge_init("/foci_charge_init", 1.f);
-					int chargeTimeInit = (float)(TICKS_PER_SECOND / 4) * *cvar_foci_charge_init;
-					Uint32 defendTime = ::ticks - players[player]->mechanics.defendTicks;
-					if ( defendTime >= chargeTimeInit )
+					int spellID = getSpellIDFromFoci(myStats->shield->type);
+					if ( spellID > SPELL_NONE )
 					{
-						static ConsoleVariable<float> cvar_foci_charge("/foci_charge", 1.f);
-						int chargeTime = (float)(TICKS_PER_SECOND / 4) * *cvar_foci_charge;
-						if ( (defendTime - chargeTimeInit) % chargeTime == 0 )
+						static ConsoleVariable<float> cvar_foci_charge_init("/foci_charge_init", 1.f);
+						int chargeTimeInit = (float)(TICKS_PER_SECOND / 4);
+						if ( svFlags & SV_FLAG_CHEATS )
 						{
-							auto spell = getSpellFromID(SPELL_FOCI_FIRE);
-							int mpcost = getCostOfSpell(spell, this);
-							if ( this->safeConsumeMP(mpcost) )
+							chargeTimeInit *= *cvar_foci_charge_init;
+						}
+						chargeTimeInit *= getSpellPropertyFromID(spell_t::SPELLPROP_MODIFIED_CAST_TIME, spellID,
+							this, myStats, this);
+						Uint32 defendTime = ::ticks - players[player]->mechanics.defendTicks;
+						if ( defendTime >= chargeTimeInit )
+						{
+							static ConsoleVariable<float> cvar_foci_charge("/foci_charge", 1.f);
+ 							int chargeTime = getSpellPropertyFromID(spell_t::SPELLPROP_FOCI_REFIRE_TICKS, spellID,
+								this, myStats, this);
+							if ( svFlags & SV_FLAG_CHEATS )
 							{
-								castSpell(this->getUID(), spell, false, false);
+								chargeTime *= *cvar_foci_charge;
+							}
+
+							if ( (defendTime - chargeTimeInit) % chargeTime == 0 )
+							{
+								if ( auto spell = getSpellFromID(spellID) )
+								{
+									int mpcost = getCostOfSpell(spell, this);
+									int bless = shouldInvertEquipmentBeatitude(myStats) ?
+										abs(myStats->shield->beatitude) :
+										myStats->shield->beatitude;
+									if ( bless < 0 )
+									{
+										mpcost += abs(bless) * mpcost;
+									}
+
+									if ( (defendTime - chargeTimeInit) > 0 )
+									{
+										// subsequent casts
+										mpcost = getSpellPropertyFromID(spell_t::SPELLPROP_FOCI_SECONDARY_MANA_COST, spellID,
+											this, myStats, this);
+
+										if ( bless < 0 )
+										{
+											mpcost += abs(bless) * mpcost;
+										}
+
+										int tier = bless > 0 ? std::min(2, bless) : 0;
+										int cycle = (defendTime - chargeTimeInit) / chargeTime;
+										Sint32 CHR = statGetCHR(myStats, this);
+										if ( CHR > 0 )
+										{
+											if ( CHR >= 3 && CHR <= 7 )
+											{
+												tier += 1;
+											}
+											else if ( CHR > 7 && CHR <= 15 )
+											{
+												tier += 2;
+											}
+											else if ( CHR > 15 && CHR <= 30 )
+											{
+												tier += 3;
+											}
+											else if ( CHR > 30 && CHR <= 60 )
+											{
+												tier += 4;
+											}
+											else if ( CHR > 60 )
+											{
+												tier += 5;
+											}
+										}
+
+										tier = std::min(tier, 5);
+
+										switch ( tier )
+										{
+										case 0:
+										default:
+											break;
+										case 1:
+											if ( cycle % 4 == 0 )
+											{
+												mpcost = 0;
+											}
+											break;
+										case 2:
+											if ( cycle % 3 == 0 )
+											{
+												mpcost = 0;
+											}
+											break;
+										case 3:
+											if ( cycle % 2 == 0 )
+											{
+												mpcost = 0;
+											}
+											break;
+										case 4:
+											if ( cycle % 3 != 0 )
+											{
+												mpcost = 0;
+											}
+											break;
+										case 5:
+											if ( cycle % 4 != 0 )
+											{
+												mpcost = 0;
+											}
+											break;
+										}
+									}
+
+									bool failedCast = false;
+									if ( this->safeConsumeMP(mpcost) || mpcost == 0 )
+									{
+										castSpell(this->getUID(), spell, false, false, false, nullptr, true);
+									}
+									else
+									{
+										failedCast = true;
+									}
+
+									if ( failedCast )
+									{
+										if ( players[player]->isLocalPlayer() )
+										{
+											messagePlayer(player, MESSAGE_MISC, Language::get(375));
+											playSound(563, 64);
+											if ( players[player]->magic.noManaProcessedOnTick == 0 )
+											{
+												players[player]->magic.flashNoMana();
+											}
+
+											Input& input = Input::inputs[player];
+											if ( input.binaryToggle("Defend") )
+											{
+												input.consumeBinaryToggle("Defend");
+											}
+										}
+										else if ( multiplayer == SERVER && !players[player]->isLocalPlayer() )
+										{
+											strcpy((char*)net_packet->data, "NOMP");
+											SDLNet_Write32((Uint32)myStats->shield->type, &net_packet->data[4]); // force stop defending with shield
+											net_packet->address.host = net_clients[player - 1].host;
+											net_packet->address.port = net_clients[player - 1].port;
+											net_packet->len = 8;
+											sendPacketSafe(net_sock, -1, net_packet, player - 1);
+										}
+									}
+								}
 							}
 						}
 					}
@@ -10378,7 +10521,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 					bool backstab = false;
 					bool flanking = false;
-					if ( player >= 0 && !monsterIsImmobileTurret(hit.entity, hitstats) && !(hitstats->type == MIMIC) )
+					if ( player >= 0 && !monsterIsImmobileTurret(hit.entity, hitstats) 
+						&& !(hitstats->type == MIMIC || hitstats->type == MINIMIMIC || hitstats->type == MONSTER_ADORCISED_WEAPON) )
 					{
 						real_t hitAngle = hit.entity->yawDifferenceFromEntity(this);
 						if ( (hitAngle >= 0 && hitAngle <= 2 * PI / 3) ) // 120 degree arc
@@ -11023,6 +11167,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 					// if nothing chosen to degrade, check extra shield chances to degrade
 					if ( hitstats->shield != NULL && hitstats->shield->status > BROKEN && armor == NULL
 						&& !itemTypeIsQuiver(hitstats->shield->type) && itemCategory(hitstats->shield) != SPELLBOOK
+						&& !itemTypeIsFoci(hitstats->shield->type)
+						&& !(hitstats->shield->type >= INSTRUMENT_FLUTE && hitstats->shield->type <= INSTRUMENT_HORN)
 						&& parriedDamage == 0
 						&& hitstats->shield->type != TOOL_TINKERING_KIT
 						&& hitstats->shield->type != TOOL_FRYING_PAN )
@@ -18880,9 +19026,14 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 	int monsterType = this->getMonsterTypeFromSprite();
 	int myAttack = this->monsterAttack;
 	bool isPlayer = this->behavior == &actPlayer;
+	bool neutralPose = myAttack == 0;
 	if ( isPlayer )
 	{
 		myAttack = this->skill[9];
+		if ( myAttack == MONSTER_POSE_MAGIC_WINDUP1 )
+		{
+			neutralPose = true;
+		}
 	}
 
 	if ( weaponLimb->flags[INVISIBLE] == false || weaponLimb->flags[INVISIBLE_DITHER] ) //TODO: isInvisible()?
@@ -18991,7 +19142,7 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 						}
 						else
 						{
-							weaponLimb->z = weaponArmLimb->z - .5 * (myAttack == 0);
+							weaponLimb->z = weaponArmLimb->z - .5 * (neutralPose);
 						}
 						if ( weaponLimb->pitch > PI / 2 )
 						{
@@ -19010,14 +19161,14 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 				// hold sword with pitch aligned to arm rotation.
 				else
 				{
-					weaponLimb->x = weaponArmLimb->x + .5 * cos(weaponArmLimb->yaw) * (myAttack == 0);
-					weaponLimb->y = weaponArmLimb->y + .5 * sin(weaponArmLimb->yaw) * (myAttack == 0);
+					weaponLimb->x = weaponArmLimb->x + .5 * cos(weaponArmLimb->yaw) * (neutralPose);
+					weaponLimb->y = weaponArmLimb->y + .5 * sin(weaponArmLimb->yaw) * (neutralPose);
 					weaponLimb->z = weaponArmLimb->z - .5;
 					if ( monsterType == BUGBEAR )
 					{
 						weaponLimb->z = weaponArmLimb->z;
 					}
-					weaponLimb->pitch = weaponArmLimb->pitch + .25 * (myAttack == 0);
+					weaponLimb->pitch = weaponArmLimb->pitch + .25 * (neutralPose);
 					if ( monsterType == INCUBUS || monsterType == SUCCUBUS )
 					{
 						weaponLimb->z += 1;
@@ -19026,10 +19177,10 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 			}
 			else
 			{
-				weaponLimb->x = weaponArmLimb->x + .5 * cos(weaponArmLimb->yaw) * (myAttack == 0);
-				weaponLimb->y = weaponArmLimb->y + .5 * sin(weaponArmLimb->yaw) * (myAttack == 0);
-				weaponLimb->z = weaponArmLimb->z - .5 * (myAttack == 0);
-				weaponLimb->pitch = weaponArmLimb->pitch + .25 * (myAttack == 0);
+				weaponLimb->x = weaponArmLimb->x + .5 * cos(weaponArmLimb->yaw) * (neutralPose);
+				weaponLimb->y = weaponArmLimb->y + .5 * sin(weaponArmLimb->yaw) * (neutralPose);
+				weaponLimb->z = weaponArmLimb->z - .5 * (neutralPose);
+				weaponLimb->pitch = weaponArmLimb->pitch + .25 * (neutralPose);
 				if ( monsterType == BUGBEAR )
 				{
 					if ( !isPlayer && this->monsterArmbended )
@@ -19074,7 +19225,7 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 			{
 				weaponLimb->roll += (PI / 2); // sprite rotated
 				weaponLimb->pitch -= PI / 8;
-				weaponLimb->pitch += .25 * (myAttack != 0); // add 0.25 if attacking
+				weaponLimb->pitch += .25 * (!neutralPose); // add 0.25 if attacking
 			}
 			else if ( weaponLimb->sprite == items[FOOD_CREAMPIE].index )
 			{
@@ -19138,7 +19289,7 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 		}
 		else
 		{
-			if ( myAttack > 0 && myAttack != MONSTER_POSE_FLAIL_SWING_RETURN )
+			if ( myAttack > 0 && !neutralPose && myAttack != MONSTER_POSE_FLAIL_SWING_RETURN )
 			{
 				weaponLimb->sprite = items[STEEL_FLAIL].index + 2;
 			}
@@ -19610,7 +19761,173 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 		}
 	}
 
+	if ( isPlayer && myAttack == MONSTER_POSE_MAGIC_WINDUP1 && weaponLimb->ticks % 10 == 0 )
+	{
+		bool doSpawnGib = true;
+		if ( doSpawnGib )
+		{
+			Entity* gib = spawnGib(weaponArmLimb, 16);
+			gib->flags[INVISIBLE] = false;
+			gib->flags[SPRITE] = true;
+			gib->flags[NOUPDATE] = true;
+			gib->flags[UPDATENEEDED] = false;
+			gib->lightBonus = vec4(0.2f, 0.2f, 0.2f, 0.f);
+			gib->x += 1.5 * cos(weaponArmLimb->yaw);
+			gib->y += 1.5 * sin(weaponArmLimb->yaw);
+			gib->z = weaponLimb->z + 1.0;
+			if ( weaponLimb->flags[INVISIBLE] && !weaponLimb->flags[INVISIBLE_DITHER] )
+			{
+				gib->z += 1.0;
+			}
+			if ( monsterType == CREATURE_IMP )
+			{
+				gib->z += 3.0;
+				gib->x += 3.5 * cos(weaponArmLimb->yaw);
+				gib->y += 3.5 * sin(weaponArmLimb->yaw);
+			}
+			else if ( monsterType == TROLL )
+			{
+				gib->z += 2.0;
+				gib->x += 2.5 * cos(weaponArmLimb->yaw);
+				gib->y += 2.5 * sin(weaponArmLimb->yaw);
+			}
+			gib->scalex = 0.25f; //MAKE 'EM SMALL PLEASE!
+			gib->scaley = 0.25f;
+			gib->scalez = 0.25f;
+			gib->sprite = 16; //TODO: Originally. 22. 16 -- spark sprite instead?
+			gib->yaw = ((local_rng.rand() % 6) * 60) * PI / 180.0;
+			gib->pitch = (local_rng.rand() % 360) * PI / 180.0;
+			gib->roll = (local_rng.rand() % 360) * PI / 180.0;
+			gib->vel_x = cos(weaponArmLimb->yaw) * .1;
+			gib->vel_y = sin(weaponArmLimb->yaw) * .1;
+			gib->vel_z = -.15;
+			gib->fskill[3] = 0.01;
+			gib->fskill[4] = 0.01; // GIB_SHRINK
+			gib->skill[4] = 25; // GIB_LIFESPAN
+			gib->skill[11] = this->skill[2];
+			gib->actGibDisableDrawForLocalPlayer = 1 + this->skill[2];
+		}
+	}
+	else if ( isPlayer && myAttack == MONSTER_POSE_MAGIC_WINDUP2 )
+	{
+		doParticleEffectForTouchSpell(*this, weaponArmLimb, (Monster)monsterType);
+	}
+
 	return;
+}
+
+void doParticleEffectForTouchSpell(Entity& my, Entity* focalLimb, Monster monsterType)
+{
+	if ( my.behavior != &actPlayer )
+	{
+		return;
+	}
+
+	real_t dir = focalLimb->yaw;
+	real_t x = focalLimb->x + 2.5 * cos(dir);
+	real_t y = focalLimb->y + 2.5 * sin(dir);
+	real_t z = focalLimb->z - 0.5;
+
+	real_t forwardOffset = 0.0;
+	if ( monsterType == GOBLIN || monsterType == SKELETON
+		|| monsterType == INSECTOID
+		|| monsterType == GOATMAN
+		|| monsterType == MONSTER_D
+		|| monsterType == MONSTER_G
+		|| monsterType == MONSTER_M )
+	{
+		z += 0.5;
+	}
+	else if ( monsterType == MONSTER_S )
+	{
+		z += 1.0;
+	}
+	else if ( monsterType == SUCCUBUS )
+	{
+		forwardOffset -= 0.5;
+		z += 1.5;
+	}
+	else if ( monsterType == INCUBUS )
+	{
+		forwardOffset -= 0.5;
+		z += 1.5;
+	}
+	else if ( monsterType == TROLL )
+	{
+		forwardOffset += 3.0;
+		z += 1.5;
+	}
+	else if ( monsterType == CREATURE_IMP )
+	{
+		forwardOffset += 3.5;
+		z += 3.5;
+		x -= 0.5 * cos(dir + PI / 2);
+		y -= 0.5 * sin(dir + PI / 2);
+	}
+	else if ( monsterType == SPIDER )
+	{
+		forwardOffset += 3.5;
+	}
+	else if ( monsterType == RAT )
+	{
+		forwardOffset += 4.0;
+	}
+	x += forwardOffset * cos(dir);
+	y += forwardOffset * sin(dir);
+
+	for ( int i = 1; i < 3; ++i )
+	{
+		//if ( i == 1 || i == 3 ) { continue; }
+		Uint32 animTick = std::min(20, my.skill[10]); // PLAYER_ATTACKTIME
+
+		Entity* entity = newEntity(1243, 1, map.entities, nullptr); //Particle entity.
+		entity->x = x - 0.01 * (5 + local_rng.rand() % 11);
+		entity->y = y - 0.01 * (5 + local_rng.rand() % 11);
+		entity->z = z - 0.01 * (10 + local_rng.rand() % 21);
+
+		real_t scaleOut = -2.0;
+		if ( i == 1 )
+		{
+			entity->x += (scaleOut + scaleOut * sin(2 * PI * (animTick % 40) / 40.f)) * cos(dir + PI / 2);
+			entity->y += (scaleOut + scaleOut * sin(2 * PI * (animTick % 40) / 40.f)) * sin(dir + PI / 2);
+		}
+		else
+		{
+			entity->x += (-scaleOut - scaleOut * sin(2 * PI * (animTick % 40) / 40.f)) * cos(dir + PI / 2);
+			entity->y += (-scaleOut - scaleOut * sin(2 * PI * (animTick % 40) / 40.f)) * sin(dir + PI / 2);
+		}
+
+		entity->focalz = -2;
+
+		real_t scale = 0.05f;
+		scale += (animTick) * 0.025f;
+		scale = std::min(scale, 0.5);
+
+		entity->scalex = scale;
+		entity->scaley = scale;
+		entity->scalez = scale;
+		entity->sizex = 1;
+		entity->sizey = 1;
+		entity->yaw = dir;
+		entity->roll = i * 2 * PI / 3;
+		entity->pitch = PI + ((animTick % 40) / 40.f) * 2 * PI;
+		entity->ditheringDisabled = true;
+		entity->flags[PASSABLE] = true;
+		entity->flags[NOUPDATE] = true;
+		entity->flags[UNCLICKABLE] = true;
+		entity->flags[UPDATENEEDED] = false;
+		//entity->flags[OVERDRAW] = true;
+		entity->lightBonus = vec4(0.25f, 0.25f,
+			0.25f, 0.f);
+		entity->behavior = &actTouchCastThirdPersonParticle;
+		entity->vel_z = 0;
+		entity->skill[11] = my.skill[2];
+		if ( multiplayer != CLIENT )
+		{
+			entity_uids--;
+		}
+		entity->setUID(-3);
+	}
 }
 
 void Entity::lookAtEntity(Entity& target)
@@ -21947,7 +22264,7 @@ bool Entity::backupWithRangedWeapon(Stat& myStats, int dist, int hasrangedweapon
 	{
 		return false;
 	}
-	if ( monsterIsImmobileTurret(this, &myStats) )
+	if ( monsterIsImmobileTurret(this, &myStats) || myStats.type == MONSTER_ADORCISED_WEAPON )
 	{
 		return false;
 	}
@@ -25086,6 +25403,8 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 		player = this->skill[2];
 	}
 	Entity* flameEntity = nullptr;
+	auto& shieldLimbFociAnimRotate = shieldLimb->fskill[0];
+	auto& shieldLimbFociRotateSpin = shieldLimb->fskill[1];
 
 	shieldLimb->focalx = limbs[race][7][0];
 	shieldLimb->focaly = limbs[race][7][1];
@@ -25130,6 +25449,24 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 				shieldLimb->scalex = 0.8;
 				shieldLimb->scaley = 0.8;
 				shieldLimb->scalez = 0.8;
+			}
+			else if ( itemSpriteIsFociThirdPersonModel(shieldLimb->sprite) )
+			{
+				shieldLimb->pitch = shieldArmLimb->pitch;
+				shieldLimb->yaw += PI / 6;
+				shieldLimb->roll = PI / 2;
+				shieldLimb->focalx += 3.0;
+				shieldLimb->focaly += 5.5;
+				shieldLimb->focalz += -1.75;
+				if ( !(shieldLimb->sprite == items[TOOL_FOCI_FIRE].index
+					|| shieldLimb->sprite == items[TOOL_FOCI_SNOW].index
+					|| shieldLimb->sprite == items[TOOL_FOCI_NEEDLES].index
+					|| shieldLimb->sprite == items[TOOL_FOCI_ARCS].index
+					|| shieldLimb->sprite == items[TOOL_FOCI_SAND].index) )
+				{
+					shieldLimb->focalz -= 1.0;
+				}
+				shieldLimb->z -= 2.0;
 			}
 			break;
 		case GNOME:
@@ -25602,6 +25939,12 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 			break;
 	}
 
+	if ( !itemSpriteIsFociThirdPersonModel(shieldLimb->sprite) )
+	{
+		shieldLimbFociAnimRotate = 0.0;
+		shieldLimbFociRotateSpin = 0.0;
+	}
+
 	if ( shieldLimb->sprite == items[TOOL_FRYING_PAN].index )
 	{
 		if ( this->fskill[8] > PI / 32 )
@@ -25648,6 +25991,102 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 	else if ( shieldLimb->sprite == items[SILVER_SHIELD].index )
 	{
 		shieldLimb->focalx += 0.5;
+	}
+	else if ( itemSpriteIsFociThirdPersonModel(shieldLimb->sprite) )
+	{
+		shieldLimb->focaly += 1;
+		if ( race == AUTOMATON )
+		{
+			shieldLimb->focaly -= 0.75;
+			shieldLimb->focalz -= 0.5;
+		}
+		else if ( race == MONSTER_S )
+		{
+			shieldLimb->focaly += 0.75;
+			shieldLimb->focalz -= 0.5;
+		}
+		else if ( race == MONSTER_D )
+		{
+			shieldLimb->focalz -= 0.5;
+		}
+		else if ( race == MONSTER_M )
+		{
+			shieldLimb->focaly += 0.5;
+		}
+		else if ( race == MONSTER_G )
+		{
+			shieldLimb->focaly += 0.5;
+		}
+		if ( this->fskill[8] > PI / 32 ) //MONSTER_SHIELDYAW and PLAYER_SHIELDYAW defending animation
+		{
+			int particleRate = 20;
+			shieldLimbFociAnimRotate += 1.0 / TICKS_PER_SECOND;
+			shieldLimbFociAnimRotate = std::min(1.0, shieldLimbFociAnimRotate);
+			if ( shieldLimbFociAnimRotate < 1.0 )
+			{
+				particleRate = 10;
+			}
+
+			shieldLimbFociRotateSpin += 0.15 + 0.25 * (1.0 - shieldLimbFociAnimRotate);
+			real_t animRatio = 1.0;
+
+			if ( race == CREATURE_IMP )
+			{
+				shieldLimb->focaly -= 5;
+				shieldLimb->focalz += 4;
+			}
+
+			real_t xDist = shieldLimb->focalx * animRatio;
+			real_t yDist = shieldLimb->focaly * animRatio;
+			xDist += 1.0;
+			yDist += 1.0;
+			shieldLimb->focalx *= 1.0 - animRatio;
+			shieldLimb->focaly *= 1.0 - animRatio;
+			shieldLimb->roll *= 1.0 - animRatio;
+			shieldLimb->pitch *= 1.0 - animRatio;
+			shieldLimb->x += yDist * cos(this->yaw + PI / 2) + xDist * cos(this->yaw);
+			shieldLimb->y += yDist * sin(this->yaw + PI / 2) + xDist * sin(this->yaw);
+
+			shieldLimb->yaw += shieldLimbFociRotateSpin;
+
+			if ( ticks % particleRate == 0 )
+			{
+				Entity* entity = spawnGib(shieldLimb, 16);
+				entity->flags[INVISIBLE] = false;
+				entity->flags[SPRITE] = true;
+				entity->flags[NOUPDATE] = true;
+				entity->flags[UPDATENEEDED] = false;
+				entity->lightBonus = vec4(0.2f, 0.2f, 0.2f, 0.f);
+				//entity->x = shieldLimb->x;
+				//entity->y = shieldLimb->y;
+				entity->z = shieldLimb->z - 1;
+				if ( race == CREATURE_IMP )
+				{
+					entity->z += 3.0;
+				}
+				entity->scalex = 0.25f; //MAKE 'EM SMALL PLEASE!
+				entity->scaley = 0.25f;
+				entity->scalez = 0.25f;
+				entity->yaw = ((local_rng.rand() % 6) * 60) * PI / 180.0;
+				entity->pitch = (local_rng.rand() % 360) * PI / 180.0;
+				entity->roll = (local_rng.rand() % 360) * PI / 180.0;
+				entity->vel_x = cos(entity->yaw) * .1;
+				entity->vel_y = sin(entity->yaw) * .1;
+				entity->vel_z = -.15;
+				entity->fskill[3] = 0.01;
+				entity->fskill[4] = 0.01; // GIB_SHRINK
+				entity->skill[4] = 25; // GIB_LIFESPAN
+			}
+		}
+		else
+		{
+			if ( shieldLimbFociAnimRotate > 0.0 )
+			{
+				shieldLimb->bNeedsRenderPositionInit = true;
+			}
+			shieldLimbFociAnimRotate = 0.0;
+			shieldLimbFociRotateSpin = 0.0;
+		}
 	}
 	else if ( shieldLimb->sprite == items[TOOL_TINKERING_KIT].index )
 	{

@@ -1960,7 +1960,7 @@ void Entity::lockChest()
 	chestLocked = 1;
 }
 
-void Entity::chestHandleDamageMagic(int damage, Entity &magicProjectile, Entity *caster)
+void Entity::chestHandleDamageMagic(int damage, Entity &magicProjectile, Entity *caster, bool doSound)
 {
 	if ( behavior == &actMonster )
 	{
@@ -2052,5 +2052,8 @@ void Entity::chestHandleDamageMagic(int damage, Entity &magicProjectile, Entity 
 				false, DamageGib::DMG_DEFAULT);
 		}
 	}
-	playSoundEntity(this, 28, 128);
+	if ( doSound )
+	{
+		playSoundEntity(this, 28, 128);
+	}
 }

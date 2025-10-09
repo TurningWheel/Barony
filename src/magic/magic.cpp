@@ -3721,3 +3721,102 @@ int getSpellEffectDurationSecondaryFromID(int spellID, Entity* parent, Stat* par
 	}
 	return duration;
 }
+
+real_t getSpellPropertyFromID(spell_t::SpellBasePropertiesFloat prop, int spellID, Entity* parent, Stat* parentStats, Entity* magicSourceParticle, real_t addSpellBonus)
+{
+	spellElement_t* element = nullptr;
+	spell_t* spell = nullptr;
+	real_t result = 1.0;
+	if ( spell = getSpellFromID(spellID) )
+	{
+		if ( spell->elements.first )
+		{
+			if ( element = (spellElement_t*)spell->elements.first->element )
+			{
+				if ( element->elements.first && element->elements.first->element )
+				{
+					element = (spellElement_t*)element->elements.first->element;
+				}
+			}
+		}
+
+		Stat* myStats = parentStats;
+		if ( !myStats && parent )
+		{
+			myStats = parent->getStats();
+		}
+		if ( prop == spell_t::SpellBasePropertiesFloat::SPELLPROP_CAST_TIME )
+		{
+			result = spell->cast_time;
+		}
+		else if ( prop == spell_t::SpellBasePropertiesFloat::SPELLPROP_CAST_TIME_MULT )
+		{
+			result = spell->cast_time_mult;
+		}
+		else if ( prop == spell_t::SpellBasePropertiesFloat::SPELLPROP_MODIFIED_CAST_TIME )
+		{
+			result = spell->cast_time;
+			real_t modifier = 1.0 + spell->cast_time_mult;
+			result *= modifier;
+		}
+	}
+	return result;
+}
+
+int getSpellPropertyFromID(spell_t::SpellBasePropertiesInt prop, int spellID, Entity* parent, Stat* parentStats, Entity* magicSourceParticle, real_t addSpellBonus)
+{
+	spellElement_t* element = nullptr;
+	spell_t* spell = nullptr;
+	int result = 1.0;
+	if ( spell = getSpellFromID(spellID) )
+	{
+		int propulsion = 0;
+		if ( spell->elements.first )
+		{
+			if ( element = (spellElement_t*)spell->elements.first->element )
+			{
+				if ( element->elements.first && element->elements.first->element )
+				{
+					propulsion = element->elementID;
+					element = (spellElement_t*)element->elements.first->element;
+				}
+			}
+		}
+
+		Stat* myStats = parentStats;
+		if ( !myStats && parent )
+		{
+			myStats = parent->getStats();
+		}
+		if ( prop == spell_t::SpellBasePropertiesInt::SPELLPROP_FOCI_REFIRE_TICKS )
+		{
+			if ( propulsion == SPELL_ELEMENT_PROPULSION_FOCI_SPRAY )
+			{
+				if ( element )
+				{
+					result = element->getChanneledManaDuration();
+					real_t mult = 1.0;
+					if ( myStats )
+					{
+						real_t modifier = std::min(100, myStats->getModifiedProficiency(spell->skillID)) / 100.f;
+						modifier *= element->getChanneledManaMult();
+						modifier += 1.0;
+						modifier = std::max(0.0, modifier);
+						result *= modifier;
+					}
+				}
+			}
+		}
+		else if ( prop == spell_t::SpellBasePropertiesInt::SPELLPROP_FOCI_SECONDARY_MANA_COST )
+		{
+			if ( propulsion == SPELL_ELEMENT_PROPULSION_FOCI_SPRAY )
+			{
+				if ( element )
+				{
+					result = element->channeledMana;
+				}
+			}
+		}
+	}
+	return result;
+}

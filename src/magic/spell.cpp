@@ -486,7 +486,15 @@ void spellConstructor(spell_t* spell, int ID)
 	spell->rangefinder = SpellRangefinderType::RANGEFINDER_NONE;
 	spell->hide_from_ui = false;
 	spell->distance = 0.0;
+	spell->distance_mult = 1.0;
+	spell->skillID = PRO_MAGIC;
+	spell->cast_time = 1.0;
+	spell->cast_time_mult = 1.0;
+	spell->life_time = 0;
+	spell->life_time_mult = 1.0;
 	spell->sustainEffectDissipate = -1;
+	spell->channel_duration = 0;
+	spell->channel_effectStrength = 1;
 	//spell->timer = 0;
 	allGameSpells[ID] = spell;
 }
@@ -551,6 +559,7 @@ void spellElementConstructor(spellElement_t* element)
 	//element->overload_multiplier = 1;
 	element->setDamage(0);
 	element->duration = 0;
+	element->elementID = 0;
 	element->can_be_learned = true;
 	strcpy(element->element_internal_name, "element_default");
 	element->elements.first = NULL;
@@ -570,6 +579,7 @@ void spellElementConstructor(int elementID, int mana, int base_mana, int overloa
 	//element.overload_multiplier = overload_mult;
 	element.setDamage(damage);
 	element.duration = duration;
+	element.elementID = elementID;
 	strcpy(element.element_internal_name, internal_name);
 }
 
@@ -883,16 +893,18 @@ bool spellElement_isChanneled(spellElement_t* spellElement)
 {
 	node_t* node = NULL;
 
-	if ( spellElement->channeledMana > 0 )
+	if ( spellElement->channeledMana > 0 && !spellElement->fociSpell )
 	{
 		return true;
 	}
 	for ( node = spellElement->elements.first; node != NULL; node = node->next )
 	{
-		spellElement_t* tempElement = (spellElement_t*)node->element;
-		if ( spellElement_isChanneled(tempElement) )
+		if ( spellElement_t* tempElement = (spellElement_t*)node->element )
 		{
-			return true;
+			if ( spellElement_isChanneled(tempElement) )
+			{
+				return true;
+			}
 		}
 	}
 
@@ -1299,6 +1311,22 @@ int getSpellbookFromSpellID(int spellID)
 	return itemType;
 }
 
+int getSpellIDFromFoci(int fociType)
+{
+	if ( fociType >= 0 && fociType < NUMITEMS )
+	{
+		if ( items[fociType].hasAttribute("foci_spell") )
+		{
+			auto& spellID = items[fociType].attributes["foci_spell"];
+			if ( spellID >= SPELL_NONE && spellID < NUM_SPELLS )
+			{
+				return spellID;
+			}
+		}
+	}
+	return SPELL_NONE;
+}
+
 int getSpellIDFromSpellbook(int spellbookType)
 {
 	switch (spellbookType )
@@ -1340,7 +1368,7 @@ int getSpellIDFromSpellbook(int spellbookType)
 		case SPELLBOOK_HEALING:
 			return spell_healing.ID;
 		case SPELLBOOK_EXTRAHEALING:
-			return spell_extrahealing.ID;
+			return SPELL_EXTRAHEALING;
 		case SPELLBOOK_CUREAILMENT:
 			return spell_cureailment.ID;
 		case SPELLBOOK_DIG:

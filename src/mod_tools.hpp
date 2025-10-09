@@ -2783,8 +2783,10 @@ private:
 		SpellItemTypes spellType;
 		std::string spellbookInternalName;
 		std::string magicstaffInternalName;
-		Sint32 spellbookId;
-		Sint32 magicstaffId;
+		std::string fociInternalName;
+		Sint32 spellbookId = -1;
+		Sint32 magicstaffId = -1;
+		Sint32 fociId = -1;
 		std::vector<std::string> spellTagsStr;
 		std::set<SpellTagTypes> spellTags;
 

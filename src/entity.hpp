@@ -310,6 +310,7 @@ public:
 	Sint32& playerVampireCurse; //skill[51]
 	Sint32& playerAutomatonDeathCounter; //skill[15] - 0 if unused, > 0 if counting to death
 	Sint32& playerCreatedDeathCam; //skill[16] - if we triggered actDeathCam already.
+	Sint32& playerCastTimeAnim = skill[17]; // how many ticks we're casting for in the current animation
 
 	//--PUBLIC MONSTER ANIMATION SKILLS--
 	Sint32& monsterAnimationLimbDirection;  //skill[20]
@@ -792,6 +793,7 @@ public:
 	// actGib
 	Sint32& actGibHitGroundEvent = skill[10];
 	Sint32& actGibMagicParticle = skill[12]; // skill[11] is player hud denote
+	Sint32& actGibDisableDrawForLocalPlayer = skill[13]; // set to 1 + playernum, won't draw for that playernum
 
 	// actWind
 	Sint32& actWindParticleEffect = skill[1];
@@ -940,14 +942,14 @@ public:
 	void unlockChest();
 	void lockChest();
 	list_t* getChestInventoryList();
-	void chestHandleDamageMagic(int damage, Entity &magicProjectile, Entity *caster);
+	void chestHandleDamageMagic(int damage, Entity &magicProjectile, Entity *caster, bool doSound = true);
 
 	//Power Crystal functions.
 	void powerCrystalCreateElectricityNodes();
 
 	//Door functions.
-	void doorHandleDamageMagic(int damage, Entity &magicProjectile, Entity *caster, bool messages = true);
-	void colliderHandleDamageMagic(int damage, Entity &magicProjectile, Entity *caster, bool messages = true);
+	void doorHandleDamageMagic(int damage, Entity &magicProjectile, Entity *caster, bool messages = true, bool doSound = true);
+	void colliderHandleDamageMagic(int damage, Entity &magicProjectile, Entity *caster, bool messages = true, bool doSound = true);
 
 	bool checkEnemy(Entity* your);
 	bool checkFriend(Entity* your);
@@ -970,7 +972,7 @@ public:
 	bool magicFallingCollision();
 	bool magicOrbitingCollision();
 	void actFurniture();
-	void furnitureHandleDamageMagic(int damage, Entity& magicProjectile, Entity* caster, bool messages = true);
+	void furnitureHandleDamageMagic(int damage, Entity& magicProjectile, Entity* caster, bool messages = true, bool doSound = true);
 	void actPistonCam();
 	void actStalagCeiling();
 	void actStalagFloor();
@@ -1508,6 +1510,8 @@ void boulderLavaOrArcaneOnDestroy(Entity* my, int sprite, Entity* boulderHitEnti
 
 int playerEntityMatchesUid(Uint32 uid); // Returns >= 0 if player uid matches uid.
 bool monsterNameIsGeneric(Stat& monsterStats); // returns true if a monster's name is a generic decription rather than a miniboss.
+bool shieldSpriteAllowedImpForm(int sprite);
+bool weaponSpriteAllowedImpForm(int sprite);
 
 bool playerRequiresBloodToSustain(int player); // vampire type or accursed class
 void spawnBloodVialOnMonsterDeath(Entity* entity, Stat* hitstats, Entity* killer);

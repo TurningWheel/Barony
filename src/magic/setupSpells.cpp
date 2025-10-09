@@ -3143,8 +3143,10 @@ void setupSpells()   ///TODO: Verify this function.
 				spell->life_time = info.life_time;
 				spell->difficulty = info.difficulty;
 				spell->distance = info.distance;
+				spell->distance_mult = info.distance_mult;
 				spell->mana = info.mana;
 				spell->cast_time = info.cast_time;
+				spell->cast_time_mult = info.cast_time_mult;
 				
 				spellElement_t* element = nullptr;
 				if ( spell->elements.first )
@@ -3160,6 +3162,12 @@ void setupSpells()   ///TODO: Verify this function.
 				if ( element )
 				{
 					element->channeledMana = info.sustain_mana;
+					if ( find->second.fociId != 0 )
+					{
+						element->fociSpell = true;
+					}
+					element->setChanneledManaDuration(info.sustain_duration);
+					element->setChanneledManaMult(info.sustain_mult);
 					element->setDamage(info.damage);
 					element->setDamageSecondary(info.damage2);
 					element->duration = info.duration;

@@ -35,7 +35,6 @@
 #define GIB_GRAVITY my->fskill[3]
 #define GIB_SHRINK my->fskill[4]
 #define GIB_LIFESPAN my->skill[4]
-#define GIB_PLAYER my->skill[11]
 #define GIB_POOF my->skill[5]
 #define GIB_LIGHTING my->skill[6]
 #define GIB_DMG_MISS my->skill[7]
@@ -49,6 +48,7 @@
 #define GIB_FOCI_FLOAT3 my->fskill[12]
 #define GIB_DELAY_MOVE my->skill[8]
 #define GIB_HIT_GROUND my->skill[9]
+#define GIB_PLAYER my->skill[11]
 
 void poof(Entity* my) {
     if (GIB_POOF) {
@@ -428,8 +428,14 @@ void actFociGib(Entity* my)
 
 			if ( multiplayer != CLIENT )
 			{
+				spell_t* spell = nullptr;
+				if ( my->children.first && my->children.first->element )
+				{
+					spell = (spell_t*)(my->children.first->element);
+				}
+
 				auto entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 0);
-				for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
+				for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end() && spell; ++it )
 				{
 					list_t* currentList = *it;
 					for ( node_t* node = currentList->first;; )
@@ -456,15 +462,32 @@ void actFociGib(Entity* my)
 						{
 							continue;
 						}
-						if ( entity->behavior != &actMonster
-							&& entity->behavior != &actPlayer
-							&& entity->behavior != &actDoor
-							&& entity->behavior != &::actIronDoor
-							&& !(entity->isDamageableCollider() && entity->isColliderDamageableByMagic())
-							&& entity->behavior != &::actChest
-							&& entity->behavior != &::actFurniture )
+
+						bool nonCreatureDamage = true;
+						if ( spell->ID == SPELL_FOCI_SNOW )
 						{
-							continue;
+							nonCreatureDamage = false;
+						}
+
+						if ( entity->behavior != &actMonster
+							&& !entity->isInertMimic()
+							&& entity->behavior != &actPlayer )
+						{
+							if ( nonCreatureDamage )
+							{
+								if ( entity->behavior != &actDoor
+									&& entity->behavior != &::actIronDoor
+									&& !(entity->isDamageableCollider() && entity->isColliderDamageableByMagic())
+									&& entity->behavior != &::actChest
+									&& entity->behavior != &::actFurniture )
+								{
+									continue;
+								}
+							}
+							else
+							{
+								continue;
+							}
 						}
 
 						if ( node != nullptr && !entityInsideEntity(entity, my) )
@@ -505,57 +528,39 @@ void actFociGib(Entity* my)
 							}
 						}
 
-						if ( spell_t* spell = getSpellFromID(SPELL_FORCEBOLT) )
+						Uint32 targetUid = entity->getUID();
+						if ( Entity* entity = newEntity(my->sprite, 1, map.entities, nullptr) )
 						{
-							Uint32 targetUid = entity->getUID();
-							if ( Entity* entity = newEntity(my->sprite, 1, map.entities, nullptr) )
-							{
-								entity->behavior = &actMagicMissile;
-								entity->x = my->x;
-								entity->y = my->y;
-								entity->z = my->z;
-								entity->yaw = my->yaw;
-								entity->vel_x = cos(my->yaw);
-								entity->vel_y = sin(my->yaw);
-								entity->parent = parent ? parent->getUID() : 0;
+							entity->behavior = &actMagicMissile;
+							entity->x = my->x;
+							entity->y = my->y;
+							entity->z = my->z;
+							entity->yaw = my->yaw;
+							entity->vel_x = cos(my->yaw);
+							entity->vel_y = sin(my->yaw);
+							entity->parent = parent ? parent->getUID() : 0;
 
-								entity->flags[INVISIBLE] = true;
-								entity->flags[PASSABLE] = true;
-								entity->flags[NOUPDATE] = true;
-								entity->flags[UPDATENEEDED] = false;
-								entity->flags[UNCLICKABLE] = true;
+							entity->flags[INVISIBLE] = true;
+							entity->flags[PASSABLE] = true;
+							entity->flags[NOUPDATE] = true;
+							entity->flags[UPDATENEEDED] = false;
+							entity->flags[UNCLICKABLE] = true;
 
-								entity->skill[4] = 0; // life start
-								entity->skill[5] = 2; //lifetime
-								entity->actmagicSpray = 2;
-								entity->actmagicOrbitHitTargetUID4 = targetUid;
-								entity->actmagicCastByMagicstaff = 2;
-								entity->actmagicReflectionCount = my->actmagicReflectionCount;
+							entity->skill[4] = 0; // life start
+							entity->skill[5] = 2; //lifetime
+							entity->actmagicSpray = 2;
+							entity->actmagicOrbitHitTargetUID4 = targetUid;
+							entity->actmagicReflectionCount = my->actmagicReflectionCount;
+							entity->actmagicSpellbookBonus = my->actmagicSpellbookBonus;
 
-								node_t* node = list_AddNodeFirst(&entity->children);
-								node->element = copySpell(spell);
-								((spell_t*)node->element)->caster = parent ? parent->getUID() : 0;
-								node_t* elementNode = ((spell_t*)node->element)->elements.first;
-								spellElement_t* element = (spellElement_t*)elementNode->element;
-								{
-									elementNode = element->elements.first;
-									element = (spellElement_t*)elementNode->element;
-									if ( parent )
-									{
-										if ( Stat* stats = parent->getStats() )
-										{
-											element->setDamage(5);
-										}
-									}
-									((spell_t*)node->element)->mana = 5;
-								}
+							node_t* node = list_AddNodeFirst(&entity->children);
+							node->element = copySpell(spell);
+							((spell_t*)node->element)->caster = parent ? parent->getUID() : 0;
+							node->deconstructor = &spellDeconstructor;
+							node->size = sizeof(spell_t);
 
-								node->deconstructor = &spellDeconstructor;
-								node->size = sizeof(spell_t);
-
-								--entity_uids;
-								entity->setUID(-3);
-							}
+							--entity_uids;
+							entity->setUID(-3);
 						}
 						
 						if ( hitprops )
@@ -602,11 +607,11 @@ void actFociGib(Entity* my)
 				{
 					sprite = 260;
 				}
-				if ( Entity* fx = spawnMagicParticleCustom(my, sprite, my->scalex, 5.0) )
+				if ( Entity* fx = spawnMagicParticleCustom(my, sprite, my->scalex, sprite == 260 ? 1.0 : 5.0) )
 				{
 					fx->flags[SPRITE] = true;// my->flags[SPRITE];
 					fx->ditheringDisabled = true;
-					fx->fskill[1] = 0.05; // decay size
+					fx->fskill[1] = 0.1; // decay size
 					fx->focalx = my->focalx;
 					fx->focaly = my->focaly;
 					fx->focalz = my->focalz;
@@ -741,30 +746,18 @@ void actFociGib(Entity* my)
 		my->z += GIB_VELZ;
 	}
 
-	if ( GIB_LIGHTING && my->flags[SPRITE] && my->sprite >= 180 && my->sprite <= 184 )
+	if ( GIB_LIGHTING )
 	{
+		my->removeLightField();
 		const char* lightname = nullptr;
-		switch ( my->sprite )
+		if ( my->ticks > 0 && my->ticks % 12 == 0 && flickerLights )
 		{
-		case 180:
-			lightname = "magic_spray_green_flicker";
-			break;
-		case 181:
-			lightname = "magic_spray_blue_flicker";
-			break;
-		case 182:
-			lightname = "magic_spray_orange_flicker";
-			break;
-		case 183:
-			lightname = "magic_spray_purple_flicker";
-			break;
-		case 184:
-			lightname = "magic_spray_white_flicker";
-			break;
-		default:
-			break;
+			my->light = addLight(my->x / 16, my->y / 16, magicLightColorForSprite(my, my->sprite, true));
 		}
-		my->light = addLight(my->x / 16, my->y / 16, lightname);
+		else
+		{
+			my->light = addLight(my->x / 16, my->y / 16, magicLightColorForSprite(my, my->sprite, false));
+		}
 	}
 }
 
@@ -1014,7 +1007,7 @@ Entity* spawnGib(Entity* parentent, int customGibSprite)
 	return entity;
 }
 
-Entity* spawnFociGib(real_t x, real_t y, real_t z, real_t dir, Uint32 parentUid, int sprite, Uint32 seed)
+Entity* spawnFociGib(real_t x, real_t y, real_t z, real_t dir, real_t velocityBonus, Uint32 parentUid, int sprite, Uint32 seed)
 {
 	Entity* my = newEntity(sprite, 1, map.entities, nullptr); //Gib entity.
 	if ( !my )
@@ -1189,7 +1182,7 @@ Entity* spawnFociGib(real_t x, real_t y, real_t z, real_t dir, Uint32 parentUid,
 	my->yaw = dir - spread + ((rng.rand() % 21) * (spread / 10));
 	my->pitch = 0.0; //(rng.rand() % 360)* PI / 180.0;
 	my->roll = 0.0; //(rng.rand() % 360)* PI / 180.0;
-	double vel = foci_vel * (20 + (rng.rand() % 5)) / 10.f;
+	double vel = velocityBonus + foci_vel * (20 + (rng.rand() % 5)) / 10.f;
 	my->vel_x = vel * cos(my->yaw);
 	my->vel_y = vel * sin(my->yaw);
 
@@ -1232,11 +1225,7 @@ Entity* spawnFociGib(real_t x, real_t y, real_t z, real_t dir, Uint32 parentUid,
 	lifetime *= foci_life;
 
 	GIB_GRAVITY = gravity;
-	//if ( my->ticks % 5 == 0 )
-	//{
-	//	// add lighting
-	//	GIB_LIGHTING = 1;
-	//}
+	GIB_LIGHTING = 1;
 	GIB_LIFESPAN = lifetime;
 	GIB_DELAY_MOVE = foci_delay; // delay velx/y movement
 	GIB_SHRINK = foci_shrink * foci_scale; // shrink at end of life
@@ -1263,9 +1252,10 @@ Entity* spawnFociGib(real_t x, real_t y, real_t z, real_t dir, Uint32 parentUid,
 			SDLNet_Write16((Sint16)(dir * 256), &net_packet->data[14]);
 			SDLNet_Write16((Sint16)(sprite), &net_packet->data[16]);
 			SDLNet_Write32(seed, &net_packet->data[18]);
+			SDLNet_Write16((Sint16)(velocityBonus * 256), &net_packet->data[22]);
 			net_packet->address.host = net_clients[c - 1].host;
 			net_packet->address.port = net_clients[c - 1].port;
-			net_packet->len = 22;
+			net_packet->len = 24;
 			sendPacketSafe(net_sock, -1, net_packet, c - 1);
 		}
 	}

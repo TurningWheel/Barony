@@ -692,7 +692,8 @@ void actArrow(Entity* my)
 					{
 						Stat* parentStats = parent->getStats();
 						if ( parentStats->helmet && parentStats->helmet->type == HAT_HOOD_WHISPERS 
-							&& !monsterIsImmobileTurret(hit.entity, hitstats) && !(hitstats->type == MIMIC) )
+							&& !monsterIsImmobileTurret(hit.entity, hitstats) && !(hitstats->type == MIMIC
+								|| hitstats->type == MINIMIMIC || hitstats->type == MONSTER_ADORCISED_WEAPON) )
 						{
 							real_t hitAngle = hit.entity->yawDifferenceFromEntity(my);
 							if ( (hitAngle >= 0 && hitAngle <= 2 * PI / 3) ) // 120 degree arc
@@ -725,7 +726,9 @@ void actArrow(Entity* my)
 									// unaware monster, get backstab damage.
 									int bonus = (parentStats->getModifiedProficiency(PRO_STEALTH) / 20 + 2) * (2 * stealthCapstoneBonus);
 									damage += ((bonus * equipmentModifier) * bonusModifier);
-									if ( local_rng.rand() % 10 == 0 && hit.entity->behavior != &actPlayer )
+									if ( local_rng.rand() % 10 == 0 
+										&& hit.entity->behavior != &actPlayer
+										&& !(parent->behavior == &actPlayer && hit.entity->monsterAllyGetPlayerLeader()) )
 									{
 										parent->increaseSkill(PRO_STEALTH);
 									}
@@ -737,7 +740,9 @@ void actArrow(Entity* my)
 									// 1 in 2 chance to flank defenses.
 									int bonus = (parentStats->getModifiedProficiency(PRO_STEALTH) / 20 + 1) * (stealthCapstoneBonus);
 									damage += ((bonus * equipmentModifier) * bonusModifier);
-									if ( local_rng.rand() % 20 == 0 && hit.entity->behavior != &actPlayer )
+									if ( local_rng.rand() % 20 == 0 
+										&& hit.entity->behavior != &actPlayer
+										&& !(parent->behavior == &actPlayer && hit.entity->monsterAllyGetPlayerLeader()) )
 									{
 										parent->increaseSkill(PRO_STEALTH);
 									}
@@ -1448,6 +1453,8 @@ void actArrow(Entity* my)
 						// if nothing chosen to degrade, check extra shield chances to degrade
 						if ( hitstats->shield != NULL && hitstats->shield->status > BROKEN && armor == NULL
 							&& !itemTypeIsQuiver(hitstats->shield->type) && itemCategory(hitstats->shield) != SPELLBOOK
+							&& !itemTypeIsFoci(hitstats->shield->type)
+							&& !(hitstats->shield->type >= INSTRUMENT_FLUTE && hitstats->shield->type <= INSTRUMENT_HORN)
 							&& hitstats->shield->type != TOOL_TINKERING_KIT && hitstats->shield->type != TOOL_FRYING_PAN )
 						{
 							if ( hitstats->shield->type == TOOL_CRYSTALSHARD && hitstats->defending )

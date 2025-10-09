@@ -2858,6 +2858,20 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		case QUIVER_CRYSTAL:
 		case QUIVER_HUNTING:
 		case TOOL_FOCI_FIRE:
+		case TOOL_FOCI_SNOW:
+		case TOOL_FOCI_NEEDLES:
+		case TOOL_FOCI_ARCS:
+		case TOOL_FOCI_SAND:
+		case TOOL_FOCI_DARK_LIFE:
+		case TOOL_FOCI_DARK_RIFT:
+		case TOOL_FOCI_DARK_SILENCE:
+		case TOOL_FOCI_DARK_VENGEANCE:
+		case TOOL_FOCI_DARK_SUPPRESS:
+		case TOOL_FOCI_LIGHT_PEACE:
+		case TOOL_FOCI_LIGHT_JUSTICE:
+		case TOOL_FOCI_LIGHT_PROVIDENCE:
+		case TOOL_FOCI_LIGHT_PURITY:
+		case TOOL_FOCI_LIGHT_SANCTUARY:
 		case INSTRUMENT_FLUTE:
 		case INSTRUMENT_LYRE:
 		case INSTRUMENT_DRUM:
@@ -4270,6 +4284,7 @@ Sint32 Item::weaponGetAttack(const Stat* const wielder) const
 bool Item::doesItemProvideBeatitudeAC(ItemType type)
 {
 	if ( itemTypeIsQuiver(type) || items[type].category == SPELLBOOK
+		|| itemTypeIsFoci(type)
 		|| items[type].category == AMULET )
 	{
 		return false;
@@ -6256,6 +6271,10 @@ bool Item::usableWhileShapeshifted(const Stat* const wielder) const
 		case TOOL:
 		case BOOK:
 		case SCROLL:
+			if ( wielder->type == CREATURE_IMP && itemTypeIsFoci(type) )
+			{
+				return true;
+			}
 			return false;
 		case MAGICSTAFF:
 		case SPELLBOOK:
@@ -6320,6 +6339,27 @@ char* Item::getScrollLabel() const
 	return scroll_label[chosenLabel];
 }
 
+bool itemSpriteIsFociThirdPersonModel(const int sprite)
+{
+	static std::set<int> fociModels;
+	if ( fociModels.size() == 0 )
+	{
+		for ( int i = 0; i < NUMITEMS; ++i )
+		{
+			if ( itemTypeIsFoci((ItemType)i) )
+			{
+				fociModels.insert(items[i].index);
+				if ( items[i].indexShort >= 0 )
+				{
+					fociModels.insert(items[i].indexShort);
+				}
+			}
+		}
+	}
+
+	return fociModels.find(sprite) != fociModels.end();
+}
+
 bool itemSpriteIsQuiverThirdPersonModel(const int sprite)
 {
 	for ( int i = QUIVER_SILVER; i <= QUIVER_HUNTING; ++i )
@@ -6350,6 +6390,33 @@ bool itemSpriteIsQuiverBaseThirdPersonModel(const int sprite)
 bool itemTypeIsQuiver(const ItemType type)
 {
 	return (type >= QUIVER_SILVER && type <= QUIVER_HUNTING);
+}
+
+bool itemTypeIsFoci(const ItemType type)
+{
+	switch ( type )
+	{
+	case TOOL_FOCI_FIRE:
+	case TOOL_FOCI_SNOW:
+	case TOOL_FOCI_NEEDLES:
+	case TOOL_FOCI_ARCS:
+	case TOOL_FOCI_SAND:
+	case TOOL_FOCI_DARK_LIFE:
+	case TOOL_FOCI_DARK_RIFT:
+	case TOOL_FOCI_DARK_SILENCE:
+	case TOOL_FOCI_DARK_VENGEANCE:
+	case TOOL_FOCI_DARK_SUPPRESS:
+	case TOOL_FOCI_LIGHT_PEACE:
+	case TOOL_FOCI_LIGHT_JUSTICE:
+	case TOOL_FOCI_LIGHT_PROVIDENCE:
+	case TOOL_FOCI_LIGHT_PURITY:
+	case TOOL_FOCI_LIGHT_SANCTUARY:
+		return true;
+		break;
+	default:
+		break;
+	}
+	return false;
 }
 
 bool itemTypeIsThrownBall(const ItemType type)

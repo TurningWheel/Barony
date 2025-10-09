@@ -264,7 +264,7 @@ void actMiscPuddle(Entity* my);
 void spawnGreasePuddleSpawner(Entity* caster, real_t x, real_t y, int duration);
 void actDamageGib(Entity* my);
 void actFociGib(Entity* my);
-Entity* spawnFociGib(real_t x, real_t y, real_t z, real_t dir, Uint32 parentUid, int sprite, Uint32 seed);
+Entity* spawnFociGib(real_t x, real_t y, real_t z, real_t dir, real_t velocityBonus, Uint32 parentUid, int sprite, Uint32 seed);
 Entity* spawnGib(Entity* parentent, int customGibSprite = -1);
 Entity* spawnDamageGib(Entity* parentent, Sint32 dmgAmount, int gibDmgType, int displayType = 0, bool updateClients = false);
 Entity* spawnGibClient(Sint16 x, Sint16 y, Sint16 z, Sint16 sprite);

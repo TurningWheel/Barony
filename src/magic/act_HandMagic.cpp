@@ -663,6 +663,96 @@ void spellcasting_animation_manager_t::setRangeFinderLocation()
 	}
 }
 
+void spellcastAnimationUpdate(int player, int attackPose, int castTime)
+{
+	if ( multiplayer == CLIENT )
+	{
+		// send to server with impulse
+		strcpy((char*)net_packet->data, "SANM");
+		net_packet->data[4] = player;
+		net_packet->data[5] = attackPose;
+		SDLNet_Write16(castTime, &net_packet->data[6]);
+		net_packet->len = 8;
+		net_packet->address.host = net_server.host;
+		net_packet->address.port = net_server.port;
+		sendPacketSafe(net_sock, -1, net_packet, 0);
+	}
+
+	spellcastAnimationUpdateReceive(player, attackPose, castTime);
+}
+
+void spellcastAnimationUpdateReceive(int player, int attackPose, int castTime)
+{
+	if ( player < 0 || player >= MAXPLAYERS )
+	{
+		return;
+	}
+
+	if ( multiplayer == SERVER )
+	{
+		for ( int i = 1; i < MAXPLAYERS; ++i )
+		{
+			if ( !client_disconnected[i] && !players[i]->isLocalPlayer() )
+			{
+				if ( i != player )
+				{
+					// forward on packet to other clients
+					strcpy((char*)net_packet->data, "SANM");
+					net_packet->data[4] = player;
+					net_packet->data[5] = attackPose;
+					SDLNet_Write16(castTime, &net_packet->data[6]);
+					net_packet->len = 8;
+					net_packet->address.host = net_clients[i - 1].host;
+					net_packet->address.port = net_clients[i - 1].port;
+					sendPacketSafe(net_sock, -1, net_packet, i - 1);
+				}
+			}
+		}
+	}
+
+	if ( players[player]->entity )
+	{
+		if ( attackPose == MONSTER_POSE_MAGIC_WINDUP1 )
+		{
+			players[player]->entity->playerCastTimeAnim = castTime;
+			if ( players[player]->entity->skill[9] == MONSTER_POSE_MAGIC_WINDUP1 )
+			{
+				// add to the counter to not stagger restart
+				players[player]->entity->playerCastTimeAnim += players[player]->entity->skill[10];
+			}
+			else
+			{
+				players[player]->entity->skill[10] = 0;
+			}
+			players[player]->entity->skill[9] = MONSTER_POSE_MAGIC_WINDUP1;
+		}
+		else if ( attackPose == MONSTER_POSE_MAGIC_WINDUP2 )
+		{
+			if ( !players[player]->isLocalPlayer() )
+			{
+				if ( players[player]->entity->skill[9] != MONSTER_POSE_MAGIC_WINDUP2 )
+				{
+					playSoundEntityLocal(players[player]->entity, 759 + local_rng.rand() % 4, 92); // charge up sound
+				}
+			}
+			players[player]->entity->skill[9] = attackPose;
+			players[player]->entity->skill[10] = 0;
+		}
+		else if ( attackPose == MONSTER_POSE_MAGIC_CAST2 || attackPose == 1 )
+		{
+			if ( attackPose == MONSTER_POSE_MAGIC_CAST2 && !players[player]->isLocalPlayer() )
+			{
+				if ( players[player]->entity->skill[9] == MONSTER_POSE_MAGIC_WINDUP2 )
+				{
+					playSoundEntityLocal(players[player]->entity, 163, 64); // fizzle sound
+				}
+			}
+			players[player]->entity->skill[9] = attackPose;
+			players[player]->entity->skill[10] = 0;
+		}
+	}
+}
+
 void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, Uint32 caster_uid, spell_t* spell, bool usingSpellbook)
 {
 	//This function triggers the spellcasting animation and sets up everything.
@@ -774,7 +864,7 @@ void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, 
 		}
 		else if ( stat->getModifiedProficiency(PRO_SPELLCASTING) >= SPELLCASTING_BEGINNER )
 		{
-			animation_manager->times_to_circle = std::max(HANDMAGIC_TICKS_PER_CIRCLE, animation_manager->times_to_circle - 5);
+			animation_manager->times_to_circle = std::max(HANDMAGIC_TICKS_PER_CIRCLE, animation_manager->times_to_circle - HANDMAGIC_TICKS_PER_CIRCLE);
 			//animation_manager->times_to_circle = (spellCost / 20) + 1; //Circle once for every 20 mana the spell costs.
 		}
 	}
@@ -782,10 +872,18 @@ void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, 
 	animation_manager->consume_interval = (animation_manager->times_to_circle / std::max(1, spellCost));
 	animation_manager->consume_timer = animation_manager->consume_interval;
 	animation_manager->setRangeFinderLocation();
+
+	spellcastAnimationUpdate(player, MONSTER_POSE_MAGIC_WINDUP1, animation_manager->times_to_circle + HANDMAGIC_TICKS_PER_CIRCLE);
 }
 
 void spellcastingAnimationManager_deactivate(spellcasting_animation_manager_t* animation_manager)
 {
+	if ( animation_manager->stage == ANIM_SPELL_TOUCH
+		|| animation_manager->stage == ANIM_SPELL_TOUCH_CHARGE )
+	{
+		spellcastAnimationUpdate(animation_manager->player, MONSTER_POSE_MAGIC_CAST2, 0);
+	}
+
 	animation_manager->caster = -1;
 	animation_manager->spell = NULL;
 	animation_manager->active = false;
@@ -820,6 +918,11 @@ void spellcastingAnimationManager_deactivate(spellcasting_animation_manager_t* a
 
 void spellcastingAnimationManager_completeSpell(int player, spellcasting_animation_manager_t* animation_manager, bool deactivate)
 {
+	if ( animation_manager->stage == ANIM_SPELL_TOUCH_THROW )
+	{
+		spellcastAnimationUpdate(animation_manager->player, 1, 0);
+	}
+
 	if ( animation_manager->rangefinder == SpellRangefinderType::RANGEFINDER_TARGET
 		|| animation_manager->rangefinder == SpellRangefinderType::RANGEFINDER_TOUCH_FLOOR_TILE
 		|| animation_manager->rangefinder == SpellRangefinderType::RANGEFINDER_TOUCH_INTERACT_TEST
@@ -1280,7 +1383,7 @@ void actLeftHandMagic(Entity* my)
 							inputs.rumble(HANDMAGIC_PLAYERNUM, GameController::Haptic_t::RUMBLE_SPELL, *cvar_vibe_spell_x,
 								*cvar_vibe_spell_y, *cvar_vibe_spell_s, 0);
 						}
-
+						spellcastAnimationUpdate(HANDMAGIC_PLAYERNUM, MONSTER_POSE_MAGIC_WINDUP2, 0);
 						playSoundEntityLocal(players[HANDMAGIC_PLAYERNUM]->entity, 759 + local_rng.rand() % 4, 92);
 					}
 					else
@@ -1298,6 +1401,43 @@ void actLeftHandMagic(Entity* my)
 			{
 				my->flags[INVISIBLE] = true;
 				my->flags[INVISIBLE_DITHER] = false;
+
+				bool levitating = isLevitating(stats[HANDMAGIC_PLAYERNUM]);
+
+				//Water walking boots
+				bool waterwalkingboots = false;
+				if ( skillCapstoneUnlocked(HANDMAGIC_PLAYERNUM, PRO_SWIMMING) )
+				{
+					waterwalkingboots = true;
+				}
+				if ( stats[HANDMAGIC_PLAYERNUM]->shoes != NULL )
+				{
+					if ( stats[HANDMAGIC_PLAYERNUM]->shoes->type == IRON_BOOTS_WATERWALKING )
+					{
+						waterwalkingboots = true;
+					}
+				}
+
+				//Check if swimming.
+				if ( !waterwalkingboots && !levitating )
+				{
+					bool swimming = false;
+					int x = std::min<int>(std::max<int>(0, floor(players[HANDMAGIC_PLAYERNUM]->entity->x / 16)), map.width - 1);
+					int y = std::min<int>(std::max<int>(0, floor(players[HANDMAGIC_PLAYERNUM]->entity->y / 16)), map.height - 1);
+					if ( swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] || lavatiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] )
+					{
+						swimming = true;
+					}
+					if ( swimming )
+					{
+						//Can't cast spells while swimming if not levitating or water walking.
+						messagePlayer(HANDMAGIC_PLAYERNUM, MESSAGE_MISC, Language::get(410));
+
+						playSoundEntityLocal(players[HANDMAGIC_PLAYERNUM]->entity, 163, 64);
+						spellcastingAnimationManager_deactivate(&cast_animation[HANDMAGIC_PLAYERNUM]);
+						break;
+					}
+				}
 
 				auto& anim = cast_animation[HANDMAGIC_PLAYERNUM];
 				if ( anim.throw_count == 0 )
@@ -1508,6 +1648,22 @@ void actLeftHandMagic(Entity* my)
 			float x = my->x + 2.5;
 			float y = -my->y;
 			float z = my->z - 0.0;
+
+			Monster playerRace = players[HANDMAGIC_PLAYERNUM]->entity->getMonsterFromPlayerRace(stats[HANDMAGIC_PLAYERNUM]->playerRace);
+			if ( players[HANDMAGIC_PLAYERNUM]->entity->effectShapeshift != NOTHING )
+			{
+				playerRace = static_cast<Monster>(players[HANDMAGIC_PLAYERNUM]->entity->effectShapeshift);
+				if ( playerRace == RAT )
+				{
+					y = 0.0;
+				}
+				else if ( playerRace == SPIDER )
+				{
+					y = 0.0;
+					z -= 2;
+				}
+			}
+
 			// boosty boost
 			Uint32 castLoopDuration = 4 * TICKS_PER_SECOND / 10;
 			for ( int i = 1; i < 3 && !(players[HANDMAGIC_PLAYERNUM]->entity->skill[3] == 1); ++i )

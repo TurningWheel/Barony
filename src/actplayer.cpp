@@ -3674,10 +3674,26 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 
 		speedFactor *= speedFactorMult;
 		speedFactor *= refreshRateDelta;
-		PLAYER_VELX += y_force * cos(my->yaw) * .045 * speedFactor / (1 + (stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 1));
-		PLAYER_VELY += y_force * sin(my->yaw) * .045 * speedFactor / (1 + (stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 1));
-		PLAYER_VELX += x_force * cos(my->yaw + PI / 2) * .0225 * speedFactor / (1 + (stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 1));
-		PLAYER_VELY += x_force * sin(my->yaw + PI / 2) * .0225 * speedFactor / (1 + (stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 1));
+
+		real_t defendPenalty = (stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 1) ? 1.0 : 0.0;
+		if ( stats[PLAYER_NUM]->defending && !stats[PLAYER_NUM]->sneaking 
+			&& stats[PLAYER_NUM]->shield && itemTypeIsFoci(stats[PLAYER_NUM]->shield->type) )
+		{
+			if ( int spellID = getSpellIDFromFoci(stats[PLAYER_NUM]->shield->type) )
+			{
+				if ( auto spell = getSpellFromID(spellID) )
+				{
+					real_t modifier = std::min(100, stats[PLAYER_NUM]->getModifiedProficiency(spell->skillID)) / 100.f;
+					defendPenalty *= std::max(0.0, 1.0 - modifier);
+				}
+			}
+		}
+
+		real_t defendSpeed = (1.0 + defendPenalty);
+		PLAYER_VELX += y_force * cos(my->yaw) * .045 * speedFactor / (defendSpeed);
+		PLAYER_VELY += y_force * sin(my->yaw) * .045 * speedFactor / (defendSpeed);
+		PLAYER_VELX += x_force * cos(my->yaw + PI / 2) * .0225 * speedFactor / (defendSpeed);
+		PLAYER_VELY += x_force * sin(my->yaw + PI / 2) * .0225 * speedFactor / (defendSpeed);
 
 	}
 
@@ -4658,6 +4674,78 @@ int playerHeadSprite(Monster race, sex_t sex, int appearance, int frame) {
     else {
         return 481; // shadow head due to unknown creature
     }
+}
+
+bool shieldSpriteIsSpellbook(int sprite)
+{
+	static std::set<int> spellbookSprites;
+	if ( spellbookSprites.size() == 0 )
+	{
+		for ( int i = 0; i < NUMITEMS; ++i )
+		{
+			if ( items[i].category == SPELLBOOK )
+			{
+				for ( int j = 0; j < items[i].variations; ++j )
+				{
+					spellbookSprites.insert(items[i].index + j);
+					if ( items[i].indexShort >= 0 )
+					{
+						spellbookSprites.insert(items[i].indexShort + j);
+					}
+				}
+			}
+		}
+	}
+
+	return spellbookSprites.find(sprite) != spellbookSprites.end();
+}
+
+bool shieldSpriteAllowedImpForm(int sprite)
+{
+	static std::set<int> allowedShieldSprites;
+	if ( allowedShieldSprites.size() == 0 )
+	{
+		for ( int i = 0; i < NUMITEMS; ++i )
+		{
+			if ( items[i].category == SPELLBOOK || itemTypeIsFoci(ItemType(i)) )
+			{
+				for ( int j = 0; j < items[i].variations; ++j )
+				{
+					allowedShieldSprites.insert(items[i].index + j);
+					if ( items[i].indexShort >= 0 )
+					{
+						allowedShieldSprites.insert(items[i].indexShort + j);
+					}
+				}
+			}
+		}
+	}
+
+	return allowedShieldSprites.find(sprite) != allowedShieldSprites.end();
+}
+
+bool weaponSpriteAllowedImpForm(int sprite)
+{
+	static std::set<int> allowedWeaponSprites;
+	if ( allowedWeaponSprites.size() == 0 )
+	{
+		for ( int i = 0; i < NUMITEMS; ++i )
+		{
+			if ( items[i].category == MAGICSTAFF )
+			{
+				for ( int j = 0; j < items[i].variations; ++j )
+				{
+					allowedWeaponSprites.insert(items[i].index + j);
+					if ( items[i].indexShort >= 0 )
+					{
+						allowedWeaponSprites.insert(items[i].indexShort + j);
+					}
+				}
+			}
+		}
+	}
+
+	return allowedWeaponSprites.find(sprite) != allowedWeaponSprites.end();
 }
 
 void actPlayer(Entity* my)
@@ -8917,6 +9005,7 @@ void actPlayer(Entity* my)
 		}
 		equipmentBonus = std::max(-6, std::min(equipmentBonus, 4));
 	}
+	const int fociCastRange = -2;
 	if (!intro && *cvar_playerLight) {
         if (!players[PLAYER_NUM]->isLocalPlayer() && multiplayer == CLIENT) {
             switch (PLAYER_TORCH) {
@@ -8939,6 +9028,36 @@ void actPlayer(Entity* my)
                     ++range_bonus;
                 }
                 break;
+			case 4:
+				light_type = "magic_foci_idle_red";
+				if ( stats[PLAYER_NUM]->defending ) {
+					range_bonus += fociCastRange;
+				}
+				break;
+			case 5:
+				light_type = "magic_foci_idle_blue";
+				if ( stats[PLAYER_NUM]->defending ) {
+					range_bonus += fociCastRange;
+				}
+				break;
+			case 6:
+				light_type = "magic_foci_idle_purple";
+				if ( stats[PLAYER_NUM]->defending ) {
+					range_bonus += fociCastRange;
+				}
+				break;
+			case 7:
+				light_type = "magic_foci_idle_yellow";
+				if ( stats[PLAYER_NUM]->defending ) {
+					range_bonus += fociCastRange;
+				}
+				break;
+			case 8:
+				light_type = "magic_foci_idle_brown";
+				if ( stats[PLAYER_NUM]->defending ) {
+					range_bonus += fociCastRange;
+				}
+				break;
             }
         } else { // multiplayer != CLIENT
             if (stats[PLAYER_NUM]->shield && showEquipment && isHumanoid) {
@@ -8960,6 +9079,36 @@ void actPlayer(Entity* my)
                         ++range_bonus;
                     }
                 }
+				else if ( stats[PLAYER_NUM]->shield->type == TOOL_FOCI_FIRE ) {
+					light_type = "magic_foci_idle_red";
+					if ( stats[PLAYER_NUM]->defending ) {
+						range_bonus += fociCastRange;
+					}
+				}
+				else if ( stats[PLAYER_NUM]->shield->type == TOOL_FOCI_SNOW ) {
+					light_type = "magic_foci_idle_blue";
+					if ( stats[PLAYER_NUM]->defending ) {
+						range_bonus += fociCastRange;
+					}
+				}
+				else if ( stats[PLAYER_NUM]->shield->type == TOOL_FOCI_NEEDLES ) {
+					light_type = "magic_foci_idle_purple";
+					if ( stats[PLAYER_NUM]->defending ) {
+						range_bonus += fociCastRange;
+					}
+				}
+				else if ( stats[PLAYER_NUM]->shield->type == TOOL_FOCI_ARCS ) {
+					light_type = "magic_foci_idle_yellow";
+					if ( stats[PLAYER_NUM]->defending ) {
+						range_bonus += fociCastRange;
+					}
+				}
+				else if ( stats[PLAYER_NUM]->shield->type == TOOL_FOCI_SAND ) {
+					light_type = "magic_foci_idle_brown";
+					if ( stats[PLAYER_NUM]->defending ) {
+						range_bonus += fociCastRange;
+					}
+				}
                 else if (players[PLAYER_NUM]->isLocalPlayer()) {
                     ambientLight = true;
 					if ( stats[PLAYER_NUM]->getEffectActive(EFF_ENSEMBLE_LYRE) )
@@ -10045,8 +10194,7 @@ void actPlayer(Entity* my)
 					{
 						bendArm = false;
 					}
-					else if ( shield->sprite >= items[SPELLBOOK_LIGHT].index
-						&& shield->sprite < (items[SPELLBOOK_LIGHT].index + items[SPELLBOOK_LIGHT].variations) )
+					else if ( shieldSpriteIsSpellbook(shield->sprite) )
 					{
 						bendArm = false;
 					}
@@ -10222,6 +10370,83 @@ void actPlayer(Entity* my)
 								PLAYER_ATTACK = 0;
 							}
 						}
+					}
+					else if ( PLAYER_ATTACK == MONSTER_POSE_MAGIC_WINDUP1 )
+					{
+						// magic wiggle hands
+						entity->skill[1] = 0;
+						PLAYER_ARMBENDED = 0;
+						PLAYER_WEAPONYAW = 0;
+						entity->roll = 0;
+						entity->pitch = 0;
+						entity->yaw = my->yaw;
+
+						real_t circleAmount = (1 * PI / 8);
+						if ( playerRace == TROLL || playerRace == CREATURE_IMP )
+						{
+							circleAmount *= 0.2;
+						}
+						real_t scaleDown = 1.0;
+						if ( (my->playerCastTimeAnim - PLAYER_ATTACKTIME) < 10 )
+						{
+							// scale down
+							scaleDown = 1.0 - (10 - (my->playerCastTimeAnim - PLAYER_ATTACKTIME)) / 10.0;
+						}
+						circleAmount *= scaleDown;
+						real_t circleTime = 20.0;
+						entity->pitch = circleAmount * cos(2 * PI * (PLAYER_ATTACKTIME / (real_t)circleTime));
+						if ( playerRace == TROLL )
+						{
+							entity->pitch -= scaleDown * (PI / 4) * std::min(1.0, (PLAYER_ATTACKTIME / (real_t)5));
+						}
+						else if ( playerRace == CREATURE_IMP )
+						{
+							entity->pitch -= scaleDown * (PI / 8) * std::min(1.0, (PLAYER_ATTACKTIME / (real_t)5));
+						}
+						PLAYER_WEAPONYAW = circleAmount * sin(2 * PI * (PLAYER_ATTACKTIME / (real_t)circleTime));
+						
+						if ( PLAYER_ATTACKTIME >= my->playerCastTimeAnim )
+						{
+							my->playerCastTimeAnim = 0;
+							entity->skill[0] = rightbody->skill[0];
+							PLAYER_WEAPONYAW = 0;
+							entity->pitch = rightbody->pitch;
+							entity->roll = 0;
+							PLAYER_ARMBENDED = 0;
+							PLAYER_ATTACK = 0;
+						}
+					}
+					else if ( PLAYER_ATTACK == MONSTER_POSE_MAGIC_WINDUP2 )
+					{
+						// touch spell intermission
+						my->playerCastTimeAnim = 0;
+						entity->skill[1] = 0;
+						PLAYER_ARMBENDED = 0;
+						PLAYER_WEAPONYAW = 0;
+						entity->roll = 0;
+						entity->pitch = 0;
+						entity->yaw = my->yaw;
+
+						if ( playerRace == TROLL )
+						{
+							entity->pitch -= (PI / 4) * std::min(1.0, (PLAYER_ATTACKTIME / (real_t)5));
+						}
+						else if ( playerRace == CREATURE_IMP )
+						{
+							entity->pitch -= (PI / 8) * std::min(1.0, (PLAYER_ATTACKTIME / (real_t)5));
+						}
+					}
+					else if ( PLAYER_ATTACK == MONSTER_POSE_MAGIC_CAST2 )
+					{
+						// cancelled spell
+						entity->skill[1] = 0;
+						my->playerCastTimeAnim = 0;
+						entity->skill[0] = rightbody->skill[0];
+						PLAYER_WEAPONYAW = 0;
+						entity->pitch = rightbody->pitch;
+						entity->roll = 0;
+						PLAYER_ARMBENDED = 0;
+						PLAYER_ATTACK = 0;
 					}
 					else if ( PLAYER_ATTACK == 1 || PLAYER_ATTACK == PLAYER_POSE_GOLEM_SMASH )
 					{
@@ -10845,12 +11070,14 @@ void actPlayer(Entity* my)
 							// successfully set sprite for the human model
 						}
 					}
-					if ( (!PLAYER_ARMBENDED && showEquipment) || (insectoidLevitating && PLAYER_ATTACK == 0 && PLAYER_ATTACKTIME == 0) )
+					if ( (!PLAYER_ARMBENDED && showEquipment) 
+						|| ((PLAYER_ATTACK == MONSTER_POSE_MAGIC_WINDUP1 || PLAYER_ATTACK == MONSTER_POSE_MAGIC_WINDUP2) && showEquipment)
+						|| (insectoidLevitating && PLAYER_ATTACK == 0 && PLAYER_ATTACKTIME == 0) )
 					{
 						entity->sprite += 2 * (stats[PLAYER_NUM]->weapon != NULL);
 
 						if ( stats[PLAYER_NUM]->weapon == nullptr
-							&& insectoidLevitating )
+							&& (insectoidLevitating || ((PLAYER_ATTACK == MONSTER_POSE_MAGIC_WINDUP1 || PLAYER_ATTACK == MONSTER_POSE_MAGIC_WINDUP2) && showEquipment)) )
 						{
 							entity->sprite += 2;
 						}
@@ -10881,7 +11108,15 @@ void actPlayer(Entity* my)
 				if ( tempNode )
 				{
 					Entity* weapon = (Entity*)tempNode->element;
-					if ( (weapon->flags[INVISIBLE] && !weapon->flags[INVISIBLE_DITHER]) || PLAYER_ARMBENDED || playerRace == CREATURE_IMP )
+
+					bool bendArm = PLAYER_ARMBENDED || playerRace == CREATURE_IMP;
+					if ( !((PLAYER_ATTACK == MONSTER_POSE_MAGIC_WINDUP1 || PLAYER_ATTACK == MONSTER_POSE_MAGIC_WINDUP2) 
+							&& showEquipment) )
+					{
+						bendArm |= (weapon->flags[INVISIBLE] && !weapon->flags[INVISIBLE_DITHER]);
+					}
+
+					if ( bendArm )
 					{
 						if ( playerRace == INCUBUS || playerRace == SUCCUBUS )
 						{
@@ -11043,8 +11278,7 @@ void actPlayer(Entity* my)
 							bendArm = true;
 						}
 					}
-					else if ( shield->sprite >= items[SPELLBOOK_LIGHT].index
-						&& shield->sprite < (items[SPELLBOOK_LIGHT].index + items[SPELLBOOK_LIGHT].variations) )
+					else if ( shieldSpriteIsSpellbook(shield->sprite) )
 					{
 						bendArm = false;
 					}
@@ -11131,7 +11365,14 @@ void actPlayer(Entity* my)
 					real_t prevYaw = PLAYER_SHIELDYAW;
 					if ( stats[PLAYER_NUM]->defending )
 					{
-						PLAYER_SHIELDYAW = PI / 5;
+						if ( playerRace == CREATURE_IMP )
+						{
+							PLAYER_SHIELDYAW = PI / 25;
+						}
+						else
+						{
+							PLAYER_SHIELDYAW = PI / 5;
+						}
 					}
 					else
 					{
@@ -11151,6 +11392,10 @@ void actPlayer(Entity* my)
 				{
 					entity->flags[INVISIBLE_DITHER] = false;
 					if ( swimming )
+					{
+						entity->flags[INVISIBLE] = true;
+					}
+					else if ( PLAYER_ATTACK == MONSTER_POSE_MAGIC_WINDUP2 )
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -12310,8 +12555,7 @@ void actPlayer(Entity* my)
 					entity->flags[INVISIBLE_DITHER] = false;
 					if ( playerRace == CREATURE_IMP && bodypart == 7 )
 					{
-						if ( entity->sprite >= items[SPELLBOOK_LIGHT].index
-							&& entity->sprite < (items[SPELLBOOK_LIGHT].index + items[SPELLBOOK_LIGHT].variations) )
+						if ( shieldSpriteAllowedImpForm(entity->sprite) )
 						{
 							entity->flags[INVISIBLE] = my->flags[INVISIBLE]; // show spellbooks
 							entity->flags[INVISIBLE_DITHER] = entity->flags[INVISIBLE];
@@ -12319,7 +12563,7 @@ void actPlayer(Entity* my)
 					}
 					else if ( playerRace == CREATURE_IMP && bodypart == 6 )
 					{
-						if ( entity->sprite >= 59 && entity->sprite < 64 )
+						if ( weaponSpriteAllowedImpForm(entity->sprite) && !(PLAYER_ATTACK == MONSTER_POSE_MAGIC_WINDUP2) )
 						{
 							entity->flags[INVISIBLE] = my->flags[INVISIBLE]; // show magicstaffs
 							entity->flags[INVISIBLE_DITHER] = entity->flags[INVISIBLE];
@@ -12517,8 +12761,28 @@ void actPlayerLimb(Entity* my)
 		players[my->skill[2]]->entity->skill[1] = 3;
         my->skill[4] = 1; // lets us know that this is indeed the off-hand item (shield)
 	}
+	else if ( my->sprite == items[TOOL_FOCI_FIRE].index )
+	{
+		players[my->skill[2]]->entity->skill[1] = 4;
+	}
+	else if ( my->sprite == items[TOOL_FOCI_SNOW].index )
+	{
+		players[my->skill[2]]->entity->skill[1] = 5;
+	}
+	else if ( my->sprite == items[TOOL_FOCI_NEEDLES].index )
+	{
+		players[my->skill[2]]->entity->skill[1] = 6;
+	}
+	else if ( my->sprite == items[TOOL_FOCI_ARCS].index )
+	{
+		players[my->skill[2]]->entity->skill[1] = 7;
+	}
+	else if ( my->sprite == items[TOOL_FOCI_SAND].index )
+	{
+		players[my->skill[2]]->entity->skill[1] = 8;
+	}
 	else {
-        // PLAYER_TORCH = 4 aka none
+        // PLAYER_TORCH = aka none
         if (my->skill[4]) {
             // we have to check skill[4] because if this logic runs for every limb,
             // the others will override the PLAYER_TORCH value set by the shield.
@@ -13432,6 +13696,52 @@ void playerAnimateRat(Entity* my)
 			my->scalex = 1.02;
 			my->scaley = 1.02;
 			my->scalez = 1.02;
+
+			if ( PLAYER_ATTACK == MONSTER_POSE_MAGIC_WINDUP1 )
+			{
+				// magic wiggle hands
+				if ( ticks % 10 == 0 )
+				{
+					Entity* gib = spawnGib(my, 16);
+					gib->flags[INVISIBLE] = false;
+					gib->flags[SPRITE] = true;
+					gib->flags[NOUPDATE] = true;
+					gib->flags[UPDATENEEDED] = false;
+					gib->lightBonus = vec4(0.2f, 0.2f, 0.2f, 0.f);
+					gib->x += 4.5 * cos(my->yaw);
+					gib->y += 4.5 * sin(my->yaw);
+					gib->z = my->z - 2.0;
+					gib->scalex = 0.25f; //MAKE 'EM SMALL PLEASE!
+					gib->scaley = 0.25f;
+					gib->scalez = 0.25f;
+					gib->sprite = 16; //TODO: Originally. 22. 16 -- spark sprite instead?
+					gib->yaw = ((local_rng.rand() % 6) * 60) * PI / 180.0;
+					gib->pitch = (local_rng.rand() % 360) * PI / 180.0;
+					gib->roll = (local_rng.rand() % 360) * PI / 180.0;
+					gib->vel_x = cos(my->yaw) * .1;
+					gib->vel_y = sin(my->yaw) * .1;
+					gib->vel_z = -.15;
+					gib->fskill[3] = 0.01;
+					gib->fskill[4] = 0.01; // GIB_SHRINK
+					gib->skill[4] = 25; // GIB_LIFESPAN
+					gib->skill[11] = my->skill[2];
+					gib->actGibDisableDrawForLocalPlayer = 1 + my->skill[2];
+				}
+
+				if ( PLAYER_ATTACKTIME >= my->playerCastTimeAnim )
+				{
+					PLAYER_ATTACK = 0;
+				}
+			}
+			else if ( PLAYER_ATTACK == MONSTER_POSE_MAGIC_WINDUP2 )
+			{
+				doParticleEffectForTouchSpell(*my, my, RAT);
+			}
+			else if ( PLAYER_ATTACK == MONSTER_POSE_MAGIC_CAST2 )
+			{
+				my->playerCastTimeAnim = 0;
+				PLAYER_ATTACK = 0;
+			}
 			continue;
 		}
 		Entity* entity = (Entity*)node->element;
@@ -13499,7 +13809,10 @@ void playerAnimateRat(Entity* my)
 
 	if ( PLAYER_ATTACKTIME >= 10 )
 	{
-		PLAYER_ATTACK = 0;
+		if ( !(PLAYER_ATTACK == MONSTER_POSE_MAGIC_WINDUP1 || PLAYER_ATTACK == MONSTER_POSE_MAGIC_WINDUP2) )
+		{
+			PLAYER_ATTACK = 0;
+		}
 	}
 }
 
@@ -13638,6 +13951,108 @@ void playerAnimateSpider(Entity* my)
 						}
 					}
 				}
+			}
+			else if ( PLAYER_ATTACK == MONSTER_POSE_MAGIC_WINDUP1 )
+			{
+				// magic wiggle hands
+				entity->skill[1] = 0;
+				PLAYER_ARMBENDED = 0;
+				PLAYER_WEAPONYAW = 0;
+				entity->roll = 0;
+				entity->pitch = 0;
+				entity->yaw = my->yaw;
+
+				real_t circleAmount = (1 * PI / 8);
+				circleAmount *= 0.5;
+				real_t scaleDown = 1.0;
+				if ( (my->playerCastTimeAnim - PLAYER_ATTACKTIME) < 10 )
+				{
+					// scale down
+					scaleDown = 1.0 - (10 - (my->playerCastTimeAnim - PLAYER_ATTACKTIME)) / 10.0;
+				}
+
+				circleAmount *= scaleDown;
+
+				real_t circleTime = 20.0;
+				entity->pitch = circleAmount * cos(2 * PI * (PLAYER_ATTACKTIME / (real_t)circleTime));
+				entity->pitch -= scaleDown * (PI / 2) * std::min(1.0, (PLAYER_ATTACKTIME / (real_t)5));
+
+				if ( bodypart == 11 )
+				{
+					entity->yaw -= circleAmount * sin(2 * PI * (PLAYER_ATTACKTIME / (real_t)circleTime));
+				}
+				else
+				{
+					entity->yaw += circleAmount * sin(2 * PI * (PLAYER_ATTACKTIME / (real_t)circleTime));
+				}
+
+				if ( ticks % 10 == 0 )
+				{
+					Entity* gib = spawnGib(entity, 16);
+					gib->flags[INVISIBLE] = false;
+					gib->flags[SPRITE] = true;
+					gib->flags[NOUPDATE] = true;
+					gib->flags[UPDATENEEDED] = false;
+					gib->lightBonus = vec4(0.2f, 0.2f, 0.2f, 0.f);
+					gib->x += 3.5 * cos(entity->yaw);
+					gib->y += 3.5 * sin(entity->yaw);
+					if ( bodypart == 11 )
+					{
+						gib->x += 3.0 * cos(entity->yaw + PI / 2);
+						gib->y += 3.0 * sin(entity->yaw + PI / 2);
+					}
+					else
+					{
+						gib->x -= 3.0 * cos(entity->yaw + PI / 2);
+						gib->y -= 3.0 * sin(entity->yaw + PI / 2);
+					}
+					gib->z = entity->z - 2.0;
+					gib->scalex = 0.25f; //MAKE 'EM SMALL PLEASE!
+					gib->scaley = 0.25f;
+					gib->scalez = 0.25f;
+					gib->sprite = 16; //TODO: Originally. 22. 16 -- spark sprite instead?
+					gib->yaw = ((local_rng.rand() % 6) * 60) * PI / 180.0;
+					gib->pitch = (local_rng.rand() % 360) * PI / 180.0;
+					gib->roll = (local_rng.rand() % 360) * PI / 180.0;
+					gib->vel_x = cos(entity->yaw) * .1;
+					gib->vel_y = sin(entity->yaw) * .1;
+					gib->vel_z = -.15;
+					gib->fskill[3] = 0.01;
+					gib->fskill[4] = 0.01; // GIB_SHRINK
+					gib->skill[4] = 25; // GIB_LIFESPAN
+					gib->skill[11] = my->skill[2];
+					gib->actGibDisableDrawForLocalPlayer = 1 + my->skill[2];
+				}
+
+				if ( PLAYER_ATTACKTIME >= my->playerCastTimeAnim )
+				{
+					my->playerCastTimeAnim = 0;
+					entity->skill[1] = 0;
+					PLAYER_WEAPONYAW = 0;
+					entity->roll = 0;
+					PLAYER_ARMBENDED = 0;
+					PLAYER_ATTACK = 0;
+				}
+			}
+			else if ( PLAYER_ATTACK == MONSTER_POSE_MAGIC_WINDUP2 )
+			{
+				// touch spell intermission
+				my->playerCastTimeAnim = 0;
+				entity->skill[1] = 0;
+				PLAYER_ARMBENDED = 0;
+				PLAYER_WEAPONYAW = 0;
+				entity->roll = 0;
+				entity->pitch = 0;
+				entity->yaw = my->yaw;
+
+				entity->pitch -= (PI / 2) * std::min(1.0, (PLAYER_ATTACKTIME / (real_t)5));
+
+				doParticleEffectForTouchSpell(*my, my, SPIDER);
+			}
+			else if ( PLAYER_ATTACK == MONSTER_POSE_MAGIC_CAST2 )
+			{
+				my->playerCastTimeAnim = 0;
+				PLAYER_ATTACK = 0;
 			}
 		}
 

@@ -6047,10 +6047,18 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		real_t dir = SDLNet_Read16(&net_packet->data[14]) / 256.0;
 		int sprite = SDLNet_Read16(&net_packet->data[16]);
 		Uint32 seed = SDLNet_Read32(&net_packet->data[18]);
-		if ( Entity* gib = spawnFociGib(x, y, z, dir, uid, sprite, seed) )
+		real_t velocityBonus = SDLNet_Read16(&net_packet->data[22]) / 256.0;
+		if ( Entity* gib = spawnFociGib(x, y, z, dir, velocityBonus, uid, sprite, seed) )
 		{
 			gib->setUID(uid);
 		}
+	} },
+
+	{ 'SANM',[]() { // player spellcast animation
+		int player = net_packet->data[4];
+		int pose = net_packet->data[5];
+		int charge = SDLNet_Read16(&net_packet->data[6]);
+		spellcastAnimationUpdateReceive(player, pose, charge);
 	} },
 };
 
@@ -8450,6 +8458,13 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 			sendPacketSafe(net_sock, -1, net_packet, player - 1);
 		}
 	}},
+
+	{ 'SANM',[]() { // player spellcast animation
+		int player = net_packet->data[4];
+		int pose = net_packet->data[5];
+		int charge = SDLNet_Read16(&net_packet->data[6]);
+		spellcastAnimationUpdateReceive(player, pose, charge);
+	} },
 };
 
 void serverHandlePacket()

@@ -127,7 +127,7 @@ void actFurniture(Entity* my)
 	my->actFurniture();
 }
 
-void Entity::furnitureHandleDamageMagic(int damage, Entity& magicProjectile, Entity* caster, bool messages)
+void Entity::furnitureHandleDamageMagic(int damage, Entity& magicProjectile, Entity* caster, bool messages, bool doSound)
 {
 	int oldHP = this->furnitureHealth;
 	this->furnitureHealth -= damage;
@@ -187,7 +187,11 @@ void Entity::furnitureHandleDamageMagic(int damage, Entity& magicProjectile, Ent
 			}
 		}
 	}
-	playSoundEntity(this, 28, 128);
+
+	if ( doSound )
+	{
+		playSoundEntity(this, 28, 128);
+	}
 }
 
 void Entity::actFurniture()
@@ -2194,7 +2198,7 @@ void actColliderDecoration(Entity* my)
 	}
 }
 
-void Entity::colliderHandleDamageMagic(int damage, Entity &magicProjectile, Entity *caster, bool messages)
+void Entity::colliderHandleDamageMagic(int damage, Entity &magicProjectile, Entity *caster, bool messages, bool doSound)
 {
 	auto oldHP = colliderCurrentHP;
 	colliderCurrentHP -= damage; //Decrease object health.
@@ -2251,7 +2255,10 @@ void Entity::colliderHandleDamageMagic(int damage, Entity &magicProjectile, Enti
 	{
 		sound = getColliderSfxOnHit();
 	}
-	playSoundEntity(this, sound, 64);
+	if ( doSound )
+	{
+		playSoundEntity(this, sound, 64);
+	}
 }
 
 void actFloorDecoration(Entity* my)

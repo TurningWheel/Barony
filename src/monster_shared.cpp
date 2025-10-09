@@ -284,7 +284,17 @@ void Entity::initMonster(int mySprite)
 Monster Entity::getMonsterTypeFromSprite() const
 {
 	Sint32 mySprite = this->sprite;
-	return Entity::getMonsterTypeFromSprite(mySprite);
+	Monster result = Entity::getMonsterTypeFromSprite(mySprite);
+	if ( result != NOTHING )
+	{
+		if ( flags[SPRITE] )
+		{
+#ifndef NDEBUG
+			assert(true && "getMonsterTypeFromSprite found a conflicting SPRITE flag!");
+#endif
+			return NOTHING;
+		}
+	}
 }
 
 Monster Entity::getMonsterTypeFromSprite(const int sprite)

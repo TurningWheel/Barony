@@ -79,8 +79,10 @@ void actHudArrowModel(Entity* my) {} // dummy for draw.cpp
 void actLeftHandMagic(Entity* my) {} // dummy for draw.cpp
 void actRightHandMagic(Entity* my) {} // dummy for draw.cpp
 void actMagicRangefinder(Entity* my) {} // dummy for draw.cpp
+void actTouchCastThirdPersonParticle(Entity* my) {} // dummy for draw.cpp
 void actSprite(Entity* my) {} // dummy for draw.cpp
 bool messagePlayer(int player, Uint32 type, char const * const message, ...) {return true;} // dummy
+bool itemTypeIsFoci(const ItemType type) { return false; } // dummy
 
 map_t copymap;
 

@@ -3542,6 +3542,7 @@ void actMonster(Entity* my)
 
 					int duration = getSpellEffectDurationSecondaryFromID(SPELL_REVENANT_CURSE, commanderEntity, nullptr, commanderEntity);
 					monsterStats->setAttribute("revenant_skeleton", std::to_string(duration));
+					monsterStats->MISC_FLAGS[STAT_FLAG_MONSTER_DISABLE_HC_SCALING] = 1;
 					strcpy(monsterStats->name, Language::get(6807));
 					real_t ratio = getSpellDamageFromID(SPELL_REVENANT_CURSE, commanderEntity, nullptr, commanderEntity) / 100.0;
 					real_t maxratio = getSpellDamageSecondaryFromID(SPELL_REVENANT_CURSE, commanderEntity, nullptr, commanderEntity) / 100.0;
@@ -4060,6 +4061,7 @@ void actMonster(Entity* my)
 
 					int duration = getSpellEffectDurationSecondaryFromID(SPELL_CURSE_FLESH, commanderEntity, nullptr, commanderEntity);
 					monsterStats->setAttribute("revenant_skull", std::to_string(duration));
+					monsterStats->MISC_FLAGS[STAT_FLAG_MONSTER_DISABLE_HC_SCALING] = 1;
 					int lvl = getSpellDamageFromID(SPELL_CURSE_FLESH, commanderEntity, nullptr, commanderEntity);
 					int maxlvl = getSpellDamageSecondaryFromID(SPELL_CURSE_FLESH, commanderEntity, nullptr, commanderEntity);
 					lvl = std::min(lvl, maxlvl);

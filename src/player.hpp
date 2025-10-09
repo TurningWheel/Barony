@@ -2365,6 +2365,7 @@ public:
 		void onItemDegrade(Item* item);
 		int sustainedSpellMPUsed = 0;
 		Uint32 defendTicks = 0;
+		int fociChargeDelay = 0;
 		bool sustainedSpellLevelChance();
 		void sustainedSpellIncrementMP(int mpChange);
 		std::map<Uint32, int> enemyRaisedBlockingAgainst;

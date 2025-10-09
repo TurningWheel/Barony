@@ -2166,6 +2166,36 @@ void drawEntities3D(view_t* camera, int mode)
                 }
             }
         }
+
+#ifndef EDITOR
+		if ( currentPlayerViewport >= 0 )
+		{
+			if ( entity->behavior == &actTouchCastThirdPersonParticle )
+			{
+				if ( entity->skill[11] == currentPlayerViewport )
+				{
+					if ( !players[currentPlayerViewport]->entity
+						|| (players[currentPlayerViewport]->entity && !players[currentPlayerViewport]->entity->skill[3]) )
+					{
+						// gib don't draw for local player, if not third person
+						continue;
+					}
+				}
+			}
+			else if ( (entity->behavior == &actGib && entity->actGibDisableDrawForLocalPlayer > 0) )
+			{
+				if ( (entity->actGibDisableDrawForLocalPlayer - 1) == currentPlayerViewport )
+				{
+					if ( !players[currentPlayerViewport]->entity
+						|| (players[currentPlayerViewport]->entity && !players[currentPlayerViewport]->entity->skill[3]) )
+					{
+						// gib don't draw for local player, if not third person
+						continue;
+					}
+				}
+			}
+		}
+#endif
         
         // update dithering
         auto& dither = entity->dithering[camera];

@@ -329,7 +329,7 @@ void actDoorFrame(Entity* my)
 	}
 }
 
-void Entity::doorHandleDamageMagic(int damage, Entity &magicProjectile, Entity *caster, bool messages)
+void Entity::doorHandleDamageMagic(int damage, Entity &magicProjectile, Entity *caster, bool messages, bool doSound)
 {
 	if ( behavior == &::actIronDoor )
 	{
@@ -384,8 +384,10 @@ void Entity::doorHandleDamageMagic(int damage, Entity &magicProjectile, Entity *
 	{
 		doorSmacked = (magicProjectile.y < this->y);
 	}
-
-	playSoundEntity(this, 28, 128);
+	if ( doSound )
+	{
+		playSoundEntity(this, 28, 128);
+	}
 }
 
 void actIronDoor(Entity* my)

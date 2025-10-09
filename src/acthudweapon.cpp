@@ -3822,12 +3822,17 @@ void actHudWeapon(Entity* my)
 #define HUDSHIELD_DEFEND my->skill[0]
 #define HUDSHIELD_SNEAKING my->skill[1]
 #define HUDSHIELD_PLAYERNUM my->skill[2]
+#define HUDSHIELD_DEFEND_DELAY_TICK my->skill[3]
+#define HUDSHIELD_DEFEND_TIME my->skill[4]
 #define HUDSHIELD_MOVEX my->fskill[0]
 #define HUDSHIELD_MOVEY my->fskill[1]
 #define HUDSHIELD_MOVEZ my->fskill[2]
 #define HUDSHIELD_YAW my->fskill[3]
 #define HUDSHIELD_PITCH my->fskill[4]
 #define HUDSHIELD_ROLL my->fskill[5]
+#define HUDSHIELD_FOCI_SPIN my->fskill[6]
+#define HUDSHIELD_FOCI_EASE my->fskill[7]
+#define HUDSHIELD_FOCI_BOB my->fskill[8]
 static ConsoleVariable<bool> cvar_hud_toggle_defend("/hud_toggle_defend", false);
 
 void actHudShield(Entity* my)
@@ -3922,6 +3927,7 @@ void actHudShield(Entity* my)
 
 	bool spellbook = false;
 	bool quiver = false;
+	bool foci = false;
 	if ( stats[HUDSHIELD_PLAYERNUM]->shield && itemCategory(stats[HUDSHIELD_PLAYERNUM]->shield) == SPELLBOOK )
 	{
 		spellbook = true;
@@ -3933,6 +3939,14 @@ void actHudShield(Entity* my)
 	else if ( stats[HUDSHIELD_PLAYERNUM]->shield && itemTypeIsQuiver(stats[HUDSHIELD_PLAYERNUM]->shield->type) )
 	{
 		quiver = true;
+	}
+	else if ( stats[HUDSHIELD_PLAYERNUM]->shield && itemTypeIsFoci(stats[HUDSHIELD_PLAYERNUM]->shield->type) )
+	{
+		foci = true;
+		if ( playerRace == CREATURE_IMP )
+		{
+			hideShield = false;
+		}
 	}
 
 	// when reverting form, render shield as invisible for 2 ticks as it's position needs to settle.
@@ -4068,7 +4082,9 @@ void actHudShield(Entity* my)
 			&& players[HUDSHIELD_PLAYERNUM]->entity->isMobile() 
 			&& !cast_animation[HUDSHIELD_PLAYERNUM].hideShieldFromBasicCast()
 			&& !cast_animation[HUDSHIELD_PLAYERNUM].active_spellbook
-			&& (!spellbook || (spellbook && hideShield)) )
+			&& (!spellbook || (spellbook && hideShield))
+			&& HUDSHIELD_DEFEND_DELAY_TICK == 0
+			&& !(foci && !hideShield && players[HUDSHIELD_PLAYERNUM]->hud.shieldSwitch) )
 		{
 			if ( stats[HUDSHIELD_PLAYERNUM]->shield )
 			{
@@ -4092,6 +4108,11 @@ void actHudShield(Entity* my)
 		}
 	}
 
+	if ( HUDSHIELD_DEFEND_DELAY_TICK > 0 )
+	{
+		--HUDSHIELD_DEFEND_DELAY_TICK;
+	}
+
 	if ( stats[HUDSHIELD_PLAYERNUM]->shield && itemTypeIsQuiver(stats[HUDSHIELD_PLAYERNUM]->shield->type) )
 	{
 		// can't defend with quivers.
@@ -4103,8 +4124,11 @@ void actHudShield(Entity* my)
 		|| playerRace == TROLL
 		|| playerRace == SPIDER )
 	{
-		defending = false;
-		wouldBeDefending = false;
+		if ( !(playerRace == CREATURE_IMP && foci) )
+		{
+			defending = false;
+			wouldBeDefending = false;
+		}
 	}
 
 	bool dropShield = false;
@@ -4118,10 +4142,12 @@ void actHudShield(Entity* my)
 	if (defending)
 	{
 		stats[HUDSHIELD_PLAYERNUM]->defending = true;
+		HUDSHIELD_DEFEND_TIME++;
 	}
 	else
 	{
 		stats[HUDSHIELD_PLAYERNUM]->defending = false;
+		HUDSHIELD_DEFEND_TIME = 0;
 	}
 	if ( sneaking && (!defending && !wouldBeDefending) )
 	{
@@ -4197,6 +4223,10 @@ void actHudShield(Entity* my)
 			}
 		}
 
+		if ( foci && !hideShield )
+		{
+			HUDSHIELD_DEFEND_DELAY_TICK = 10;
+		}
 		if ( !spellbook )
 		{
 			players[HUDSHIELD_PLAYERNUM]->hud.shieldSwitch = false;
@@ -4256,8 +4286,7 @@ void actHudShield(Entity* my)
 			if ( stats[HUDSHIELD_PLAYERNUM]->shield )
 			{
 				if ( stats[HUDSHIELD_PLAYERNUM]->shield->type == TOOL_TORCH 
-					|| stats[HUDSHIELD_PLAYERNUM]->shield->type == TOOL_CRYSTALSHARD
-					|| stats[HUDSHIELD_PLAYERNUM]->shield->type == TOOL_FOCI_FIRE )
+					|| stats[HUDSHIELD_PLAYERNUM]->shield->type == TOOL_CRYSTALSHARD )
 				{
 					if ( HUDSHIELD_MOVEX < 1.5 )
 					{
@@ -4275,6 +4304,25 @@ void actHudShield(Entity* my)
 							HUDSHIELD_ROLL = PI / 5;
 						}
 					}
+				}
+				else if ( itemTypeIsFoci(stats[HUDSHIELD_PLAYERNUM]->shield->type) )
+				{
+					if ( HUDSHIELD_MOVEX < 1.5 )
+					{
+						HUDSHIELD_MOVEX += .5;
+						if ( HUDSHIELD_MOVEX > 1.5 )
+						{
+							HUDSHIELD_MOVEX = 1.5;
+						}
+					}
+					/*if ( HUDSHIELD_ROLL < PI / 5 )
+					{
+						HUDSHIELD_ROLL += .15;
+						if ( HUDSHIELD_ROLL > PI / 5 )
+						{
+							HUDSHIELD_ROLL = PI / 5;
+						}
+					}*/
 				}
 			}
 		}
@@ -4562,10 +4610,72 @@ void actHudShield(Entity* my)
 	{
 		my->roll += PI / 8;
 	}
-	else if ( my->sprite == items[TOOL_FOCI_FIRE].fpindex && !hideShield )
+	else if ( foci && !hideShield )
 	{
 		//my->yaw += PI / 2 - HUDSHIELD_YAW / 4;
 		my->focalz -= 1.5;
+		if ( defending )
+		{
+			int rate = 20;
+			int chargeTimeInit = (float)(TICKS_PER_SECOND / 4);
+			chargeTimeInit *= getSpellPropertyFromID(spell_t::SPELLPROP_MODIFIED_CAST_TIME, getSpellIDFromFoci(stats[HUDSHIELD_PLAYERNUM]->shield->type),
+				nullptr, stats[HUDSHIELD_PLAYERNUM], nullptr);
+			chargeTimeInit = std::max(TICKS_PER_SECOND, chargeTimeInit + TICKS_PER_SECOND);
+			if ( HUDSHIELD_DEFEND_TIME < chargeTimeInit )
+			{
+				rate = 10;
+				if ( (chargeTimeInit - HUDSHIELD_DEFEND_TIME) > TICKS_PER_SECOND )
+				{
+					HUDSHIELD_FOCI_SPIN += 0.3;
+				}
+				else
+				{
+					HUDSHIELD_FOCI_SPIN += 0.15 + 0.25 * (chargeTimeInit - HUDSHIELD_DEFEND_TIME) / (real_t)TICKS_PER_SECOND;
+				}
+
+			}
+			else
+			{
+				HUDSHIELD_FOCI_SPIN += 0.15;
+			}
+			if ( my->ticks % rate == 0 )
+			{
+				Entity* entity = spawnGib(my);
+				entity->flags[INVISIBLE] = false;
+				entity->flags[SPRITE] = true;
+				entity->flags[NOUPDATE] = true;
+				entity->flags[UPDATENEEDED] = false;
+				entity->flags[OVERDRAW] = true;
+				entity->lightBonus = vec4(0.2f, 0.2f, 0.2f, 0.f);
+				entity->z = std::max(my->z, entity->z);
+				entity->z -= 2.0;
+				//entity->sizex = 1; //MAKE 'EM SMALL PLEASE!
+				//entity->sizey = 1;
+				entity->scalex = 0.25f; //MAKE 'EM SMALL PLEASE!
+				entity->scaley = 0.25f;
+				entity->scalez = 0.25f;
+				entity->sprite = 16; //TODO: Originally. 22. 16 -- spark sprite instead?
+				entity->yaw = ((local_rng.rand() % 6) * 60) * PI / 180.0;
+				entity->pitch = (local_rng.rand() % 360) * PI / 180.0;
+				entity->roll = (local_rng.rand() % 360) * PI / 180.0;
+				entity->vel_x = cos(entity->yaw) * .1;
+				entity->vel_y = sin(entity->yaw) * .1;
+				entity->vel_z = -.15;
+				entity->fskill[3] = 0.01;
+				entity->skill[11] = HUDSHIELD_PLAYERNUM;
+			}
+			HUDSHIELD_FOCI_EASE = std::min(1.0, HUDSHIELD_FOCI_EASE + 0.05);
+			HUDSHIELD_FOCI_BOB += 0.05;
+			my->z += 0.5 * sin(HUDSHIELD_FOCI_BOB);
+		}
+		my->yaw += HUDSHIELD_FOCI_SPIN * sin(HUDSHIELD_FOCI_EASE * PI / 2);
+	}
+
+	if ( !foci || hideShield || !defending )
+	{
+		HUDSHIELD_FOCI_SPIN = 0.0;
+		HUDSHIELD_FOCI_EASE = 0.0;
+		HUDSHIELD_FOCI_BOB = 0.0;
 	}
 
 	Entity*& hudarm = players[HUDSHIELD_PLAYERNUM]->hud.arm;

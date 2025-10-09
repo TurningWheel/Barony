@@ -1462,7 +1462,9 @@ int Stat::getActiveShieldBonus(bool checkShield, bool excludeSkill, Item* shield
 	}
 	if ( item )
 	{
-		if ( itemCategory(item) == SPELLBOOK || itemTypeIsQuiver(item->type) || itemTypeIsFoci(item->type) )
+		if ( itemCategory(item) == SPELLBOOK || itemTypeIsQuiver(item->type) 
+			|| itemTypeIsFoci(item->type)
+			|| (item->type >= INSTRUMENT_FLUTE && item->type <= INSTRUMENT_HORN) )
 		{
 			return 0;
 		}
