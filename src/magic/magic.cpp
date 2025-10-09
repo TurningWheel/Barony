@@ -3009,6 +3009,7 @@ Entity* spellEffectAdorcise(Entity& caster, spellElement_t& element, real_t x, r
 					{
 						int duration = getSpellEffectDurationFromID(SPELL_SPIRIT_WEAPON, &caster, nullptr, &caster);
 						monsterStats->setAttribute("spirit_weapon", std::to_string(duration));
+						monsterStats->MISC_FLAGS[STAT_FLAG_MONSTER_DISABLE_HC_SCALING] = 1;
 						monster->setEffect(EFF_ROOTED, true, -1, false);
 
 						ItemType type = IRON_SWORD;
@@ -3079,6 +3080,7 @@ Entity* spellEffectAdorcise(Entity& caster, spellElement_t& element, real_t x, r
 					{
 						int duration = getSpellEffectDurationFromID(SPELL_ADORCISM, &caster, nullptr, &caster);
 						monsterStats->setAttribute("adorcised_weapon", std::to_string(duration));
+						monsterStats->MISC_FLAGS[STAT_FLAG_MONSTER_DISABLE_HC_SCALING] = 1;
 						if ( itemToAdorcise )
 						{
 							monsterStats->weapon = newItem(itemToAdorcise->type, itemToAdorcise->status,
@@ -3218,6 +3220,7 @@ Entity* spellEffectFlameSprite(Entity& caster, spellElement_t& element, real_t x
 						int duration = getSpellEffectDurationSecondaryFromID(SPELL_FIRE_SPRITE, &caster, nullptr, &caster);
 						monsterStats->setAttribute("fire_sprite", std::to_string(duration));
 						monsterStats->monsterNoDropItems = 1;
+						monsterStats->MISC_FLAGS[STAT_FLAG_MONSTER_DISABLE_HC_SCALING] = 1;
 						
 						int lvl = getSpellDamageFromID(SPELL_FIRE_SPRITE, &caster, nullptr, &caster);
 						int maxlvl = getSpellDamageSecondaryFromID(SPELL_FIRE_SPRITE, &caster, nullptr, &caster);
@@ -3242,6 +3245,7 @@ Entity* spellEffectFlameSprite(Entity& caster, spellElement_t& element, real_t x
 						int duration = getSpellEffectDurationSecondaryFromID(SPELL_FLAME_ELEMENTAL, &caster, nullptr, &caster);
 						monsterStats->setAttribute("flame_elemental", std::to_string(duration));
 						monsterStats->monsterNoDropItems = 1;
+						monsterStats->MISC_FLAGS[STAT_FLAG_MONSTER_DISABLE_HC_SCALING] = 1;
 
 						int lvl = getSpellDamageFromID(SPELL_FLAME_ELEMENTAL, &caster, nullptr, &caster);
 						int maxlvl = getSpellDamageSecondaryFromID(SPELL_FLAME_ELEMENTAL, &caster, nullptr, &caster);

@@ -139,6 +139,33 @@ void initAdorcisedWeapon(Entity* my, Stat* myStats)
 			int defaultItems = countDefaultItems(myStats);
 
 			my->setHardcoreStats(*myStats);
+
+			if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
+			{
+				switch ( rng.rand() % 4 )
+				{
+				case 0:
+				case 1:
+					myStats->weapon = newItem(MAGICSTAFF_FIRE, static_cast<Status>(DECREPIT + rng.rand() % 4), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+					break;
+				case 2:
+				case 3:
+					myStats->weapon = newItem(IRON_SPEAR, static_cast<Status>(DECREPIT + rng.rand() % 4), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+					break;
+				case 4:
+				case 5:
+					myStats->weapon = newItem(IRON_MACE, static_cast<Status>(DECREPIT + rng.rand() % 4), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+					break;
+				case 6:
+				case 7:
+					myStats->weapon = newItem(IRON_AXE, static_cast<Status>(DECREPIT + rng.rand() % 4), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+					break;
+				case 8:
+				case 9:
+					myStats->weapon = newItem(IRON_SWORD, static_cast<Status>(DECREPIT + rng.rand() % 4), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+					break;
+				}
+			}
 		}
 	}
 
