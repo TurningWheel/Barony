@@ -1362,8 +1362,8 @@
 			"name_unidentified": "machine key"
 		},
 		"tool_foci_fire": {
-			"name_identified": "fire foci",
-			"name_unidentified": "foci"
+			"name_identified": "focus of flames",
+			"name_unidentified": "focus"
 		},
 		"instrument_flute": {
 			"name_identified": "flute",
@@ -1612,7 +1612,63 @@
 		"food_nut": {
             "name_identified": "nut",
             "name_unidentified": "nut"
-        }
+        },
+		"tool_foci_snow": {
+			"name_identified": "focus of snow",
+			"name_unidentified": "focus"
+		},
+		"tool_foci_needles": {
+			"name_identified": "focus of needles",
+			"name_unidentified": "focus"
+		},
+		"tool_foci_arcs": {
+			"name_identified": "focus of arcs",
+			"name_unidentified": "focus"
+		},
+		"tool_foci_sand": {
+			"name_identified": "focus of sandblast",
+			"name_unidentified": "focus"
+		},
+		"tool_foci_dark_life": {
+			"name_identified": "icon of claim life",
+			"name_unidentified": "icon"
+		},
+		"tool_foci_dark_rift": {
+			"name_identified": "icon of void rift",
+			"name_unidentified": "icon"
+		},
+		"tool_foci_dark_silence": {
+			"name_identified": "icon of silence",
+			"name_unidentified": "icon"
+		},
+		"tool_foci_dark_vengeance": {
+			"name_identified": "icon of vengeance",
+			"name_unidentified": "icon"
+		},
+		"tool_foci_dark_suppress": {
+			"name_identified": "icon of suppression",
+			"name_unidentified": "icon"
+		},
+		"tool_foci_light_peace": {
+			"name_identified": "symbol of peace",
+			"name_unidentified": "symbol"
+		},
+		"tool_foci_light_justice": {
+			"name_identified": "symbol of justice",
+			"name_unidentified": "symbol"
+		},
+		"tool_foci_light_providence": {
+			"name_identified": "symbol of providence",
+			"name_unidentified": "symbol"
+		},
+		"tool_foci_light_purity": {
+			"name_identified": "symbol of purity",
+			"name_unidentified": "symbol"
+		},
+		"tool_foci_light_sanctuary": {
+			"name_identified": "symbol of sanctuary",
+			"name_unidentified": "symbol"
+		}
     },
 	"spell_names": {
         "spell_forcebolt": {
@@ -1796,19 +1852,19 @@
 			"name": "Slime Spray (Metal)"
 		},
 		"spell_foci_fire": {
-			"name": "Foci (Fire)"
+			"name": "Focus of Flames"
 		},
 		"spell_foci_snow": {
-			"name": "Foci (Snow)"
+			"name": "Focus of Snow"
 		},
 		"spell_foci_needles": {
-			"name": "Foci (Needles)"
+			"name": "Focus of Needles"
 		},
 		"spell_foci_arcs": {
-			"name": "Foci (Arcs)"
+			"name": "Focus of Arcs"
 		},
 		"spell_foci_sandblast": {
-			"name": "Foci (Sandblast)"
+			"name": "Focus of Sandblast"
 		},
 		"spell_meteor": {
 			"name": "Meteor"
