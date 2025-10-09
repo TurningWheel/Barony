@@ -26,9 +26,55 @@
 #include "magic.hpp"
 #include "../mod_tools.hpp"
 
-static const char* colorForSprite(Entity* my, int sprite, bool darker) {
+const char* magicLightColorForSprite(Entity* my, int sprite, bool darker) {
 	if ( my && my->flags[SPRITE] )
 	{
+		if ( darker )
+		{
+			switch ( sprite )
+			{
+			case 233:
+			case 234:
+			case 235:
+			case 236:
+			case 237:
+			case 238:
+			case 239:
+			case 240:
+			case 241:
+			case 242:
+			case 243:
+			case 244:
+				return "magic_foci_red";
+			case 256:
+				return "magic_foci_blue";
+			default:
+				break;
+			}
+		}
+		else
+		{
+			switch ( sprite )
+			{
+			case 233:
+			case 234:
+			case 235:
+			case 236:
+			case 237:
+			case 238:
+			case 239:
+			case 240:
+			case 241:
+			case 242:
+			case 243:
+			case 244:
+				return "magic_foci_red_flicker";
+			case 256:
+				return "magic_foci_blue_flicker";
+			default:
+				break;
+			}
+		}
 		return nullptr;
 	}
     if (darker) {
@@ -57,6 +103,9 @@ static const char* colorForSprite(Entity* my, int sprite, bool darker) {
 		case 1817: return "magic_pink_flicker";
 		case 1886: return "magic_pink_flicker";
 		case 1816: return "magic_green_flicker";
+		case 2153: return "magic_foci_yellow_flicker";
+		case 2154: return "magic_foci_purple_flicker";
+		case 2156: return "magic_foci_brown_flicker";
         }
     } else {
         switch (sprite) {
@@ -84,8 +133,12 @@ static const char* colorForSprite(Entity* my, int sprite, bool darker) {
 		case 1817: return "magic_pink";
 		case 1886: return "magic_pink";
 		case 1816: return "magic_green";
+		case 2153: return "magic_foci_yellow";
+		case 2154: return "magic_foci_purple";
+		case 2156: return "magic_foci_brown";
         }
     }
+	return nullptr;
 }
 
 void actMagiclightMoving(Entity* my)
@@ -935,6 +988,8 @@ void magicSetResistance(Entity* entity, Entity* parent, int& resistance, real_t&
 	}
 }
 
+std::map<int, Uint32> lastMagicSoundPlayed;
+
 void actMagicMissile(Entity* my)   //TODO: Verify this function.
 {
 	if (!my || !my->children.first || !my->children.first->element)
@@ -1690,7 +1745,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 
 					if ( my->actmagicSpray == 2 )
 					{
-						if ( Entity* gib = spawnFociGib(my->x, my->y, my->z, my->yaw, hit.entity->getUID(), my->sprite, local_rng.rand()) )
+						if ( Entity* gib = spawnFociGib(my->x, my->y, my->z, my->yaw, 0.0, hit.entity->getUID(), my->sprite, local_rng.rand()) )
 						{
 							gib->actmagicReflectionCount = my->actmagicReflectionCount;
 						}
@@ -1877,7 +1932,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				}
 				else
 				{
-					if ( my->actmagicCastByMagicstaff == 0 && my->actmagicCastByTinkerTrap == 0 )
+					if ( my->actmagicCastByMagicstaff != 1 && my->actmagicCastByTinkerTrap == 0 )
 					{
 						spellbookDamageBonus += getBonusFromCasterOfSpellElement(parent, nullptr, element, spell ? spell->ID : SPELL_NONE);
 						if ( parent && parent->behavior == &actPlayer )
@@ -2061,7 +2116,8 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								}
 							}
 
-							if ( !strcmp(element->element_internal_name, spellElement_cold.element_internal_name) )
+							if ( !strcmp(element->element_internal_name, spellElement_cold.element_internal_name)
+								|| spell->ID == SPELL_FOCI_SNOW )
 							{
 								real_t coldMultiplier = 1.0;
 								if ( hitstats->helmet && hitstats->helmet->type == HAT_WARM )
@@ -2081,7 +2137,8 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								magicDmg *= coldMultiplier;
 							}
 							if ( !strcmp(element->element_internal_name, spellElement_fire.element_internal_name)
-								|| !strcmp(element->element_internal_name, "spell_element_flames") )
+								|| !strcmp(element->element_internal_name, "spell_element_flames")
+								|| spell->ID == SPELL_FOCI_FIRE )
 							{
 								real_t fireMultiplier = 1.0;
 								//if ( hitstats->helmet && hitstats->helmet->type == HAT_WARM )
@@ -2110,10 +2167,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						preResistanceDamage = std::max(2, preResistanceDamage);
 						magicDmg = std::max(2, magicDmg);
 					}
-					else if ( spell->ID == SPELL_FOCI_FIRE )
+					else if ( spell->ID == SPELL_FOCI_FIRE || spell->ID == SPELL_FOCI_ARCS || spell->ID == SPELL_FOCI_SNOW
+						|| spell->ID == SPELL_FOCI_NEEDLES || spell->ID == SPELL_FOCI_SANDBLAST )
 					{
-						preResistanceDamage = std::max(2, preResistanceDamage);
-						magicDmg = std::max(2, magicDmg);
+						preResistanceDamage = std::max(1, preResistanceDamage);
+						magicDmg = std::max(1, magicDmg);
 					}
 					else if ( !strcmp(element->element_internal_name, "spell_element_flames") )
 					{
@@ -2130,13 +2188,43 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					|| !strcmp(element->element_internal_name, spellElementMap[SPELL_MERCURY_BOLT].element_internal_name)
 					|| !strcmp(element->element_internal_name, spellElementMap[SPELL_LEAD_BOLT].element_internal_name)
 					|| !strcmp(element->element_internal_name, spellElementMap[SPELL_SPORE_BOMB].element_internal_name)
-					|| !strcmp(element->element_internal_name, spellElementMap[SPELL_MYCELIUM_BOMB].element_internal_name) )
+					|| !strcmp(element->element_internal_name, spellElementMap[SPELL_MYCELIUM_BOMB].element_internal_name)
+					|| spell->ID == SPELL_FOCI_ARCS
+					|| spell->ID == SPELL_FOCI_SANDBLAST
+					|| spell->ID == SPELL_FOCI_NEEDLES
+					|| spell->ID == SPELL_FOCI_SNOW )
 				{
 					if (hit.entity)
 					{
+						bool doSound = true;
+						int customSoundVolume = 0;
+						if ( spell->ID == SPELL_FOCI_ARCS
+							|| spell->ID == SPELL_FOCI_SANDBLAST
+							|| spell->ID == SPELL_FOCI_NEEDLES
+							|| spell->ID == SPELL_FOCI_SNOW )
+						{
+							if ( ticks - lastMagicSoundPlayed[spell->ID] < 10 )
+							{
+								doSound = false;
+							}
+							else if ( ticks - lastMagicSoundPlayed[spell->ID] < 25 )
+							{
+								doSound = false;
+								customSoundVolume = 32;
+							}
+							else
+							{
+								lastMagicSoundPlayed[spell->ID] = ticks;
+							}
+						}
+
 						if ( mimic )
 						{
-							hit.entity->chestHandleDamageMagic(damage, *my, parent);
+							hit.entity->chestHandleDamageMagic(damage, *my, parent, doSound);
+							if ( !doSound && customSoundVolume > 0 )
+							{
+								playSoundEntity(hit.entity, 28, customSoundVolume);
+							}
 							if ( spell->ID == SPELL_SPORE_BOMB || spell->ID == SPELL_MYCELIUM_BOMB )
 							{
 								floorMagicCreateSpores(hit.entity, my->x, my->y, parent, damage, spell->ID);
@@ -2149,13 +2237,27 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						else if (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer)
 						{
 							Entity* parent = uidToEntity(my->parent);
-							playSoundEntity(hit.entity, 28, 128);
+							if ( doSound )
+							{
+								playSoundEntity(hit.entity, 28, 128);
+							}
+							else if ( !doSound && customSoundVolume > 0 )
+							{
+								playSoundEntity(hit.entity, 28, customSoundVolume);
+							}
 
 							Sint32 oldHP = hitstats->HP;
 							hit.entity->modHP(-damage);
 							magicOnEntityHit(parent, my, hit.entity, hitstats, preResistanceDamage, damage, oldHP, spell ? spell->ID : SPELL_NONE);
 							magicTrapOnHit(parent, hit.entity, hitstats, oldHP, spell ? spell->ID : SPELL_NONE);
-							for (i = 0; i < damage; i += 2)   //Spawn a gib for every two points of damage.
+
+							int numGibs = damage / 2;
+							numGibs = std::min(5, numGibs);
+							if ( my->actmagicSpray == 2 )
+							{
+								numGibs = std::min(1, numGibs);
+							}
+							for (i = 0; i < numGibs; ++i)   //Spawn a gib for every two points of damage.
 							{
 								Entity* gib = spawnGib(hit.entity);
 								serverSpawnGibForClient(gib);
@@ -2166,7 +2268,76 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								parent->killedByMonsterObituary(hit.entity);
 							}
 
-							if ( !strcmp(element->element_internal_name, spellElementMap[SPELL_MERCURY_BOLT].element_internal_name)
+
+							if ( spell->ID == SPELL_FOCI_SANDBLAST )
+							{
+								if ( !hitstats->getEffectActive(EFF_KNOCKBACK) && hit.entity->setEffect(EFF_KNOCKBACK, true, element->duration, false) )
+								{
+									real_t pushbackMultiplier = 0.3;
+									if ( parent )
+									{
+										real_t dist = entityDist(parent, hit.entity);
+										if ( dist < TOUCHRANGE )
+										{
+											pushbackMultiplier += 0.5;
+										}
+									}
+									if ( hit.entity->behavior == &actMonster )
+									{
+										real_t tangent = atan2(hit.entity->y - my->y, hit.entity->x - my->x);
+										hit.entity->vel_x = cos(tangent) * pushbackMultiplier;
+										hit.entity->vel_y = sin(tangent) * pushbackMultiplier;
+										hit.entity->monsterKnockbackVelocity = 0.01;
+										hit.entity->monsterKnockbackTangentDir = tangent;
+										hit.entity->monsterKnockbackUID = parent ? parent->getUID() : 0;
+									}
+									else if ( hit.entity->behavior == &actPlayer )
+									{
+										if ( !players[hit.entity->skill[2]]->isLocalPlayer() )
+										{
+											hit.entity->monsterKnockbackVelocity = pushbackMultiplier;
+											hit.entity->monsterKnockbackTangentDir = my->yaw;
+											serverUpdateEntityFSkill(hit.entity, 11);
+											serverUpdateEntityFSkill(hit.entity, 9);
+										}
+										else
+										{
+											hit.entity->monsterKnockbackVelocity = pushbackMultiplier;
+											hit.entity->monsterKnockbackTangentDir = my->yaw;
+										}
+									}
+								}
+							}
+							else if ( spell->ID == SPELL_FOCI_SNOW )
+							{
+								Sint32 duration = element->duration;
+								duration /= (1 + (int)resistance);
+								int prevDuration = hitstats->getEffectActive(EFF_SLOW) ? hitstats->EFFECTS_TIMERS[EFF_SLOW] : 0;
+								if ( hit.entity->setEffect(EFF_SLOW, true, 
+									std::min(element->getDurationSecondary(), prevDuration + duration), false) )
+								{
+									/*if ( prevDuration )
+									{
+										playSoundEntity(hit.entity, 396 + local_rng.rand() % 3, 64);
+									}*/
+								}
+							}
+							else if ( spell->ID == SPELL_FOCI_NEEDLES )
+							{
+								Sint32 duration = element->duration;
+								duration /= (1 + (int)resistance);
+								int prevDuration = hitstats->getEffectActive(EFF_BLEEDING) ? hitstats->EFFECTS_TIMERS[EFF_BLEEDING] : 0;
+								if ( hit.entity->setEffect(EFF_BLEEDING, true, 
+									std::min(element->getDurationSecondary(), prevDuration + duration), false) )
+								{
+									//playSoundEntity(hit.entity, 396 + local_rng.rand() % 3, 64);
+									if ( parent )
+									{
+										hitstats->bleedInflictedBy = parent->getUID();
+									}
+								}
+							}
+							else if ( !strcmp(element->element_internal_name, spellElementMap[SPELL_MERCURY_BOLT].element_internal_name)
 								|| !strcmp(element->element_internal_name, spellElementMap[SPELL_LEAD_BOLT].element_internal_name) )
 							{
 								if ( hit.entity->setEffect(EFF_KNOCKBACK, true, 30, false) )
@@ -2271,7 +2442,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 						else if (hit.entity->behavior == &actDoor || hit.entity->behavior == &actIronDoor )
 						{
-							hit.entity->doorHandleDamageMagic(damage, *my, parent);
+							hit.entity->doorHandleDamageMagic(damage, *my, parent, true, doSound);
+							if ( !doSound && customSoundVolume > 0 )
+							{
+								playSoundEntity(hit.entity, 28, customSoundVolume);
+							}
 							if ( spell->ID == SPELL_SPORE_BOMB || spell->ID == SPELL_MYCELIUM_BOMB )
 							{
 								floorMagicCreateSpores(hit.entity, my->x, my->y, parent, damage, spell->ID);
@@ -2283,7 +2458,12 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 						else if ( hit.entity->isDamageableCollider() && hit.entity->isColliderDamageableByMagic() )
 						{
-							hit.entity->colliderHandleDamageMagic(damage, *my, parent);
+							hit.entity->colliderHandleDamageMagic(damage, *my, parent, true, doSound);
+							if ( !doSound && customSoundVolume > 0 )
+							{
+								playSoundEntity(hit.entity, hit.entity->getColliderSfxOnHit() > 0 ? 
+									hit.entity->getColliderSfxOnHit() : 28, customSoundVolume);
+							}
 							if ( spell->ID == SPELL_SPORE_BOMB || spell->ID == SPELL_MYCELIUM_BOMB )
 							{
 								floorMagicCreateSpores(hit.entity, my->x, my->y, parent, damage, spell->ID);
@@ -2295,7 +2475,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 						else if ( hit.entity->behavior == &actChest )
 						{
-							hit.entity->chestHandleDamageMagic(damage, *my, parent);
+							hit.entity->chestHandleDamageMagic(damage, *my, parent, doSound);
+							if ( !doSound && customSoundVolume > 0 )
+							{
+								playSoundEntity(hit.entity, 28, customSoundVolume);
+							}
 							if ( spell->ID == SPELL_SPORE_BOMB || spell->ID == SPELL_MYCELIUM_BOMB )
 							{
 								floorMagicCreateSpores(hit.entity, my->x, my->y, parent, damage, spell->ID);
@@ -2307,7 +2491,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 						else if (hit.entity->behavior == &actFurniture )
 						{
-							hit.entity->furnitureHandleDamageMagic(damage, *my, parent);
+							hit.entity->furnitureHandleDamageMagic(damage, *my, parent, true, doSound);
+							if ( !doSound && customSoundVolume > 0 )
+							{
+								playSoundEntity(hit.entity, 28, customSoundVolume);
+							}
 						}
 					}
 				}
@@ -2458,7 +2646,8 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					}
 				}
 				else if (!strcmp(element->element_internal_name, spellElement_fire.element_internal_name)
-					|| !strcmp(element->element_internal_name, "spell_element_flames") )
+					|| !strcmp(element->element_internal_name, "spell_element_flames")
+					|| spell->ID == SPELL_FOCI_FIRE )
 				{
 					bool explode = !strcmp(element->element_internal_name, spellElement_fire.element_internal_name);
 					if ( !(my->actmagicIsOrbiting == 2) )
@@ -2470,18 +2659,49 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					}
 					if (hit.entity)
 					{
+						bool doSound = true;
+						int customSoundVolume = 0;
+						if ( spell->ID == SPELL_FOCI_FIRE )
+						{
+							if ( ticks - lastMagicSoundPlayed[spell->ID] < 10 )
+							{
+								doSound = false;
+							}
+							else if ( ticks - lastMagicSoundPlayed[spell->ID] < 25 )
+							{
+								doSound = false;
+								customSoundVolume = 32;
+							}
+							else
+							{
+								lastMagicSoundPlayed[spell->ID] = ticks;
+							}
+						}
+
 						// Attempt to set the Entity on fire
+						int prevBurningCounter = hit.entity->flags[BURNING] ? hit.entity->char_fire : 0;
 						if ( hit.entity->SetEntityOnFire() )
 						{
 							if ( parent && parent->behavior == &actPlayer )
 							{
-								hit.entity->char_fire = std::min(hit.entity->char_fire, element->duration);
+								if ( spell->ID == SPELL_FOCI_FIRE )
+								{
+									hit.entity->char_fire = std::min(element->getDurationSecondary(), prevBurningCounter + element->duration);
+								}
+								else
+								{
+									hit.entity->char_fire = std::min(hit.entity->char_fire, element->duration);
+								}
 							}
 						}
 
 						if ( mimic )
 						{
-							hit.entity->chestHandleDamageMagic(damage, *my, parent);
+							hit.entity->chestHandleDamageMagic(damage, *my, parent, doSound);
+							if ( !doSound && customSoundVolume > 0 )
+							{
+								playSoundEntity(hit.entity, 28, customSoundVolume);
+							}
 							if ( my->actmagicProjectileArc > 0 )
 							{
 								Entity* caster = uidToEntity(spell->caster);
@@ -2510,7 +2730,14 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						else if (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer)
 						{
 							//playSoundEntity(my, 153, 64);
-							playSoundEntity(hit.entity, 28, 128);
+							if ( doSound )
+							{
+								playSoundEntity(hit.entity, 28, 128);
+							}
+							else if ( !doSound && customSoundVolume > 0 )
+							{
+								playSoundEntity(hit.entity, 28, customSoundVolume);
+							}
 							//TODO: Apply fire resistances/weaknesses.
 							if ( my->actmagicIsOrbiting == 2 )
 							{
@@ -2602,7 +2829,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 						else if ( hit.entity->behavior == &actDoor || hit.entity->behavior == &actIronDoor )
 						{
-							hit.entity->doorHandleDamageMagic(damage, *my, parent);
+							hit.entity->doorHandleDamageMagic(damage, *my, parent, true, doSound);
+							if ( !doSound && customSoundVolume > 0 )
+							{
+								playSoundEntity(hit.entity, 28, customSoundVolume);
+							}
 							if ( my->actmagicProjectileArc > 0 )
 							{
 								Entity* caster = uidToEntity(spell->caster);
@@ -2630,7 +2861,12 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						} 
 						else if ( hit.entity->isDamageableCollider() && hit.entity->isColliderDamageableByMagic() )
 						{
-							hit.entity->colliderHandleDamageMagic(damage, *my, parent);
+							hit.entity->colliderHandleDamageMagic(damage, *my, parent, true, doSound);
+							if ( !doSound && customSoundVolume > 0 )
+							{
+								playSoundEntity(hit.entity, hit.entity->getColliderSfxOnHit() > 0 ? 
+									hit.entity->getColliderSfxOnHit() : 28, customSoundVolume);
+							}
 							if ( my->actmagicProjectileArc > 0 )
 							{
 								Entity* caster = uidToEntity(spell->caster);
@@ -2658,7 +2894,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 						else if (hit.entity->behavior == &actChest) 
 						{
-							hit.entity->chestHandleDamageMagic(damage, *my, parent);
+							hit.entity->chestHandleDamageMagic(damage, *my, parent, doSound);
+							if ( !doSound && customSoundVolume > 0 )
+							{
+								playSoundEntity(hit.entity, 28, customSoundVolume);
+							}
 							if ( my->actmagicProjectileArc > 0 )
 							{
 								Entity* caster = uidToEntity(spell->caster);
@@ -2686,7 +2926,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 						else if (hit.entity->behavior == &actFurniture )
 						{
-							hit.entity->furnitureHandleDamageMagic(damage, *my, parent);
+							hit.entity->furnitureHandleDamageMagic(damage, *my, parent, true, doSound);
+							if ( !doSound && customSoundVolume > 0 )
+							{
+								playSoundEntity(hit.entity, 28, customSoundVolume);
+							}
 							if ( my->actmagicProjectileArc > 0 )
 							{
 								Entity* caster = uidToEntity(spell->caster);
@@ -3840,157 +4084,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 					}
 				}
-				else if ( spell->ID == SPELL_FOCI_FIRE )
-				{
-					if ( hit.entity )
-					{
-						int volume = 128;
-						int hitsfx = 173;
-						int hitvolume = (particleEmitterHitProps && particleEmitterHitProps->hits == 1) ? 128 : 64;
-						if ( particleEmitterHitProps && particleEmitterHitProps->hits > 1 )
-						{
-							volume = 0;
-						}
-
-						if ( mimic )
-						{
-							playSoundEntity(hit.entity, hitsfx, hitvolume);
-							hit.entity->chestHandleDamageMagic(damage, *my, parent);
-							if ( my->actmagicProjectileArc > 0 )
-							{
-								Entity* caster = uidToEntity(spell->caster);
-								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr, true);
-							}
-							if ( !(my->actmagicIsOrbiting == 2) )
-							{
-								my->removeLightField();
-								list_RemoveNode(my->mynode);
-							}
-							if ( spell->ID == SPELL_FOCI_FIRE )
-							{
-								hit.entity->SetEntityOnFire();
-							}
-							return;
-						}
-						else if ( hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer )
-						{
-							playSoundEntity(hit.entity, hitsfx, hitvolume);
-							Entity* parent = uidToEntity(my->parent);
-							playSoundEntity(hit.entity, 28, volume);
-
-							int oldHP = hitstats->HP;
-
-							if ( spell->ID == SPELL_FOCI_FIRE )
-							{
-								if ( particleEmitterHitProps && particleEmitterHitProps->hits == 1 )
-								{
-									if ( parent && parent->behavior == &actPlayer )
-									{
-										Uint32 color = makeColorRGB(0, 255, 0);
-										messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(6239), Language::get(6238), MSG_COMBAT);
-									}
-									if ( hit.entity->behavior == &actPlayer )
-									{
-										Uint32 color = makeColorRGB(255, 0, 0);
-										messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, color, Language::get(6237));
-									}
-								}
-							}
-
-							hit.entity->modHP(-damage);
-							magicOnEntityHit(parent, my, hit.entity, hitstats, preResistanceDamage, damage, oldHP, spell ? spell->ID : SPELL_NONE);
-							magicTrapOnHit(parent, hit.entity, hitstats, oldHP, spell ? spell->ID : SPELL_NONE);
-
-							// write the obituary
-							if ( parent )
-							{
-								parent->killedByMonsterObituary(hit.entity);
-							}
-
-							// update enemy bar for attacker
-							if ( !strcmp(hitstats->name, "") )
-							{
-								updateEnemyBar(parent, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP,
-									false, dmgGib);
-							}
-							else
-							{
-								updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP,
-									false, dmgGib);
-							}
-							if ( oldHP > 0 && hitstats->HP <= 0 && parent )
-							{
-								parent->awardXP(hit.entity, true, true);
-								spawnBloodVialOnMonsterDeath(hit.entity, hitstats, parent);
-							}
-						}
-						else if ( hit.entity->behavior == &actDoor || hit.entity->behavior == &actIronDoor )
-						{
-							hit.entity->SetEntityOnFire();
-							playSoundEntity(hit.entity, hitsfx, hitvolume);
-
-							hit.entity->doorHandleDamageMagic(damage, *my, parent);
-							if ( my->actmagicProjectileArc > 0 )
-							{
-								Entity* caster = uidToEntity(spell->caster);
-								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr, true);
-							}
-							if ( !(my->actmagicIsOrbiting == 2) )
-							{
-								my->removeLightField();
-								list_RemoveNode(my->mynode);
-							}
-							return;
-						}
-						else if ( hit.entity->isDamageableCollider() && hit.entity->isColliderDamageableByMagic() )
-						{
-							hit.entity->SetEntityOnFire();
-							playSoundEntity(hit.entity, hitsfx, hitvolume);
-
-							hit.entity->colliderHandleDamageMagic(damage, *my, parent);
-							if ( my->actmagicProjectileArc > 0 )
-							{
-								Entity* caster = uidToEntity(spell->caster);
-								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr, true);
-							}
-							if ( !(my->actmagicIsOrbiting == 2) )
-							{
-								my->removeLightField();
-								list_RemoveNode(my->mynode);
-							}
-							return;
-						}
-						else if ( hit.entity->behavior == &actChest )
-						{
-							hit.entity->SetEntityOnFire();
-							playSoundEntity(hit.entity, hitsfx, hitvolume);
-							hit.entity->chestHandleDamageMagic(damage, *my, parent);
-							if ( my->actmagicProjectileArc > 0 )
-							{
-								Entity* caster = uidToEntity(spell->caster);
-								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr, true);
-							}
-							if ( !(my->actmagicIsOrbiting == 2) )
-							{
-								my->removeLightField();
-								list_RemoveNode(my->mynode);
-							}
-							return;
-						}
-						else if ( hit.entity->behavior == &actFurniture )
-						{
-							hit.entity->SetEntityOnFire();
-							playSoundEntity(hit.entity, hitsfx, hitvolume);
-
-							hit.entity->furnitureHandleDamageMagic(damage, *my, parent);
-							if ( my->actmagicProjectileArc > 0 )
-							{
-								Entity* caster = uidToEntity(spell->caster);
-								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr, true);
-							}
-						}
-					}
-				}
 				else if ( !strcmp(element->element_internal_name, spellElementMap[SPELL_SPIN].element_internal_name)
 					|| !strcmp(element->element_internal_name, spellElementMap[SPELL_DIZZY].element_internal_name) )
 				{
@@ -4659,7 +4752,13 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 
 							if ( hitstats )
 							{
-								hit.entity->setEffect(EFF_BLEEDING, true, element->duration, false);
+								if ( hit.entity->setEffect(EFF_BLEEDING, true, element->duration, false) )
+								{
+									if ( parent )
+									{
+										hitstats->bleedInflictedBy = parent->getUID();
+									}
+								}
 								hit.entity->setEffect(EFF_SLOW, true, element->duration, false);
 								if ( !mimic )
 								{
@@ -5292,7 +5391,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 			//Make the ball light up stuff as it travels.
 			if ( !my->flags[INVISIBLE] || my->flags[INVISIBLE_DITHER] )
 			{
-				my->light = addLight(my->x / 16, my->y / 16, colorForSprite(my, my->sprite, false));
+				my->light = addLight(my->x / 16, my->y / 16, magicLightColorForSprite(my, my->sprite, false));
 			}
 
 			if ( flickerLights )
@@ -5311,7 +5410,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					my->removeLightField();
 					if ( !my->flags[INVISIBLE] || my->flags[INVISIBLE_DITHER] )
 					{
-						my->light = addLight(my->x / 16, my->y / 16, colorForSprite(my, my->sprite, false));
+						my->light = addLight(my->x / 16, my->y / 16, magicLightColorForSprite(my, my->sprite, false));
 					}
 				}
 				else
@@ -5319,7 +5418,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					my->removeLightField();
 					if ( !my->flags[INVISIBLE] || my->flags[INVISIBLE_DITHER] )
 					{
-						my->light = addLight(my->x / 16, my->y / 16, colorForSprite(my, my->sprite, true));
+						my->light = addLight(my->x / 16, my->y / 16, magicLightColorForSprite(my, my->sprite, true));
 					}
 				}
 				lightball_flicker = 0;
@@ -5375,7 +5474,7 @@ void actMagicClient(Entity* my)
 	my->removeLightField();
 	if ( !my->flags[INVISIBLE] || my->flags[INVISIBLE_DITHER] )
 	{
-		my->light = addLight(my->x / 16, my->y / 16, colorForSprite(my, my->sprite, false));
+		my->light = addLight(my->x / 16, my->y / 16, magicLightColorForSprite(my, my->sprite, false));
 	}
 
 	if ( flickerLights )
@@ -5394,7 +5493,7 @@ void actMagicClient(Entity* my)
 			my->removeLightField();
 			if ( !my->flags[INVISIBLE] || my->flags[INVISIBLE_DITHER] )
 			{
-				my->light = addLight(my->x / 16, my->y / 16, colorForSprite(my, my->sprite, false));
+				my->light = addLight(my->x / 16, my->y / 16, magicLightColorForSprite(my, my->sprite, false));
 			}
 		}
 		else
@@ -5402,7 +5501,7 @@ void actMagicClient(Entity* my)
 			my->removeLightField();
 			if ( !my->flags[INVISIBLE] || my->flags[INVISIBLE_DITHER] )
 			{
-				my->light = addLight(my->x / 16, my->y / 16, colorForSprite(my, my->sprite, true));
+				my->light = addLight(my->x / 16, my->y / 16, magicLightColorForSprite(my, my->sprite, true));
 			}
 		}
 		lightball_flicker = 0;
@@ -5587,6 +5686,24 @@ void actMagicParticle(Entity* my)
 }
 
 static ConsoleVariable<float> cvar_magic_fx_light_bonus("/magic_fx_light_bonus", 0.25f);
+
+void actTouchCastThirdPersonParticle(Entity* my)
+{
+	my->x += my->vel_x;
+	my->y += my->vel_y;
+	my->z += my->vel_z;
+	my->scalex -= 0.05;
+	my->scaley -= 0.05;
+	my->scalez -= 0.05;
+	if ( my->scalex <= 0 )
+	{
+		my->scalex = 0;
+		my->scaley = 0;
+		my->scalez = 0;
+		list_RemoveNode(my->mynode);
+		return;
+	}
+}
 
 void actHUDMagicParticle(Entity* my)
 {
@@ -6561,20 +6678,42 @@ void actParticleAestheticOrbit(Entity* my)
 		else if ( my->skill[1] == PARTICLE_EFFECT_VORTEX_ORBIT )
 		{
 			my->yaw += 0.2;
-			Entity* fx = spawnMagicParticle(my);
-			fx->scalex = my->scalex * 0.9;
-			fx->scaley = my->scaley * 0.9;
-			fx->scalez = my->scalez * 0.9;
+			if ( Entity* fx = spawnMagicParticle(my) )
+			{
+				fx->scalex = my->scalex * 0.9;
+				fx->scaley = my->scaley * 0.9;
+				fx->scalez = my->scalez * 0.9;
+			}
 			my->x = parent->x + my->actmagicOrbitDist * cos(my->yaw);
 			my->y = parent->y + my->actmagicOrbitDist * sin(my->yaw);
+		}
+		else if ( my->skill[1] == PARTICLE_EFFECT_FOCI_ORBIT )
+		{
+			if ( Entity* fx = spawnMagicParticleCustom(my, my->sprite, my->scalex, 1.0) )
+			{
+				fx->focalx = my->focalx;
+				fx->focaly = my->focaly;
+				fx->focalz = my->focalz;
+				fx->ditheringDisabled = true;
+				fx->flags[SPRITE] = my->flags[SPRITE];
+			}
+			my->x = parent->x + 8.0 * cos(parent->yaw);
+			my->y = parent->y + 8.0 * sin(parent->yaw);
+			my->yaw = parent->yaw + PI + my->fskill[0];
+			my->focalx = 0.5;
+			my->focalz = 0.5;
+			my->pitch -= 0.1;
+			//my->roll = PI / 2;
 		}
 		else if ( my->skill[1] == PARTICLE_EFFECT_SHATTER_EARTH_ORBIT )
 		{
 			//my->yaw += 0.2;
-			Entity* fx = spawnMagicParticle(my);
-			fx->scalex = my->scalex * 0.9;
-			fx->scaley = my->scaley * 0.9;
-			fx->scalez = my->scalez * 0.9;
+			if ( Entity* fx = spawnMagicParticle(my) )
+			{
+				fx->scalex = my->scalex * 0.9;
+				fx->scaley = my->scaley * 0.9;
+				fx->scalez = my->scalez * 0.9;
+			}
 			my->x = my->actmagicOrbitStationaryX + my->actmagicOrbitDist * cos(my->yaw);
 			my->y = my->actmagicOrbitStationaryY + my->actmagicOrbitDist * sin(my->yaw);
 			my->z += my->vel_z;
@@ -8120,7 +8259,7 @@ void actParticleTimer(Entity* my)
 				{
 					if ( !my->light )
 					{
-						my->light = addLight(my->x / 16, my->y / 16, colorForSprite(my, my->sprite, true));
+						my->light = addLight(my->x / 16, my->y / 16, magicLightColorForSprite(my, my->sprite, true));
 					}
 					playSoundEntityLocal(my, 167, 128);
 					createParticleDropRising(my, 680, 1.0);
@@ -8135,7 +8274,7 @@ void actParticleTimer(Entity* my)
 				{
 					if ( !my->light )
 					{
-						my->light = addLight(my->x / 16, my->y / 16, colorForSprite(my, my->sprite, true));
+						my->light = addLight(my->x / 16, my->y / 16, magicLightColorForSprite(my, my->sprite, true));
 					}
 					playSoundEntityLocal(my, 167, 128);
 					createParticleDropRising(my, 593, 1.0);
@@ -8352,7 +8491,38 @@ void actParticleTimer(Entity* my)
 					else if ( my->ticks % 10 == 2 )
 					{
 						//entity = multiplayer == CLIENT ? spawnGibClient(0, 0, 0, -1) : spawnGib(my);
-						entity = spawnFociGib(parent->x, parent->y, parent->z + 2, parent->yaw, parent->getUID(), my->particleTimerCountdownSprite, local_rng.rand());
+						real_t velocityBonus = 0.0;
+						{
+							real_t velocityDir = atan2(parent->vel_y, parent->vel_x);
+							real_t casterDir = fmod(my->yaw, 2 * PI);
+							real_t yawDiff = velocityDir - casterDir;
+							while ( yawDiff > PI )
+							{
+								yawDiff -= 2 * PI;
+							}
+							while ( yawDiff <= -PI )
+							{
+								yawDiff += 2 * PI;
+							}
+							if ( abs(yawDiff) <= PI )
+							{
+								real_t vel = sqrt(pow(parent->vel_x, 2) + pow(parent->vel_y, 2));
+								velocityBonus = std::max(0.0, cos(yawDiff) * vel);
+							}
+						}
+						entity = spawnFociGib(parent->x, parent->y, parent->z + 2, parent->yaw, velocityBonus, parent->getUID(), my->particleTimerCountdownSprite, local_rng.rand());
+
+						/*Entity* fx = createParticleAestheticOrbit(parent, 16, 50, PARTICLE_EFFECT_FOCI_ORBIT);
+						fx->scalex = 0.5;
+						fx->scaley = 0.5;
+						fx->scalez = 0.5;
+						fx->flags[SPRITE] = true;
+						fx->x = parent->x + 8.0 * cos(parent->yaw);
+						fx->y = parent->y + 8.0 * sin(parent->yaw);
+						fx->yaw = parent->yaw;
+						fx->fskill[0] = (PI / 4) + (local_rng.rand() % 2) * 3 * PI / 2;
+						fx->z = 0.0;*/
+						//fx->actmagicOrbitDist = 4;
 					}
 				}
 			}
@@ -11148,7 +11318,7 @@ void actParticleShadowTag(Entity* my)
 	{
 		--PARTICLE_LIFE;
 		my->removeLightField();
-		my->light = addLight(my->x / 16, my->y / 16, colorForSprite(my, my->sprite, true));
+		my->light = addLight(my->x / 16, my->y / 16, magicLightColorForSprite(my, my->sprite, true));
 
 		Entity* parent = uidToEntity(my->parent);
 		if ( parent )
@@ -11404,7 +11574,7 @@ void actParticlePinpointTarget(Entity* my)
 	{
 		--PARTICLE_LIFE;
 		my->removeLightField();
-		my->light = addLight(my->x / 16, my->y / 16, colorForSprite(my, my->sprite, true));
+		my->light = addLight(my->x / 16, my->y / 16, magicLightColorForSprite(my, my->sprite, true));
 
 		Entity* parent = uidToEntity(my->parent);
 		if ( parent )
@@ -15083,7 +15253,7 @@ void actRadiusMagic(Entity* my)
 	}
 
 	my->removeLightField();
-	my->light = addLight(my->x / 16, my->y / 16, colorForSprite(my, my->sprite, false));
+	my->light = addLight(my->x / 16, my->y / 16, magicLightColorForSprite(my, my->sprite, false));
 
 	my->flags[INVISIBLE] = true;
 
@@ -15674,6 +15844,7 @@ void actParticleShatterEarth(Entity* my)
 									if ( Stat* monsterStats = monster->getStats() )
 									{
 										monsterStats->setAttribute("SUMMONED_CREATURE", "1");
+										monsterStats->MISC_FLAGS[STAT_FLAG_MONSTER_DISABLE_HC_SCALING] = 1;
 									}
 									if ( multiplayer == SERVER )
 									{
