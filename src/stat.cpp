@@ -396,6 +396,7 @@ void Stat::clearStats()
 		{
 			this->EFFECTS[x] = 0;
 			this->EFFECTS_TIMERS[x] = 0;
+			this->EFFECTS_ACCRETION_TIME[x] = 0;
 		}
 	}
 
@@ -626,6 +627,7 @@ Stat* Stat::copyStats()
 	{
 		newStat->EFFECTS[c] = this->EFFECTS[c];
 		newStat->EFFECTS_TIMERS[c] = this->EFFECTS_TIMERS[c];
+		newStat->EFFECTS_ACCRETION_TIME[c] = this->EFFECTS_ACCRETION_TIME[c];
 	}
 
 	for ( c = 0; c < ITEM_SLOT_NUM; c++ )

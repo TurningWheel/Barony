@@ -9058,6 +9058,18 @@ void actPlayer(Entity* my)
 					range_bonus += fociCastRange;
 				}
 				break;
+			case 9:
+				light_type = "magic_foci_idle_dark";
+				if ( stats[PLAYER_NUM]->defending ) {
+					range_bonus += fociCastRange;
+				}
+				break;
+			case 10:
+				light_type = "magic_foci_idle_light";
+				if ( stats[PLAYER_NUM]->defending ) {
+					range_bonus += fociCastRange;
+				}
+				break;
             }
         } else { // multiplayer != CLIENT
             if (stats[PLAYER_NUM]->shield && showEquipment && isHumanoid) {
@@ -9105,6 +9117,26 @@ void actPlayer(Entity* my)
 				}
 				else if ( stats[PLAYER_NUM]->shield->type == TOOL_FOCI_SAND ) {
 					light_type = "magic_foci_idle_brown";
+					if ( stats[PLAYER_NUM]->defending ) {
+						range_bonus += fociCastRange;
+					}
+				}
+				else if ( stats[PLAYER_NUM]->shield->type == TOOL_FOCI_DARK_LIFE
+					|| stats[PLAYER_NUM]->shield->type == TOOL_FOCI_DARK_RIFT 
+					|| stats[PLAYER_NUM]->shield->type == TOOL_FOCI_DARK_SILENCE 
+					|| stats[PLAYER_NUM]->shield->type == TOOL_FOCI_DARK_SUPPRESS 
+					|| stats[PLAYER_NUM]->shield->type == TOOL_FOCI_DARK_VENGEANCE ) {
+					light_type = "magic_foci_idle_dark";
+					if ( stats[PLAYER_NUM]->defending ) {
+						range_bonus += fociCastRange;
+					}
+				}
+				else if ( stats[PLAYER_NUM]->shield->type == TOOL_FOCI_LIGHT_JUSTICE
+					|| stats[PLAYER_NUM]->shield->type == TOOL_FOCI_LIGHT_PEACE
+					|| stats[PLAYER_NUM]->shield->type == TOOL_FOCI_LIGHT_PROVIDENCE
+					|| stats[PLAYER_NUM]->shield->type == TOOL_FOCI_LIGHT_PURITY
+					|| stats[PLAYER_NUM]->shield->type == TOOL_FOCI_LIGHT_SANCTUARY ) {
+					light_type = "magic_foci_idle_light";
 					if ( stats[PLAYER_NUM]->defending ) {
 						range_bonus += fociCastRange;
 					}
@@ -12764,22 +12796,45 @@ void actPlayerLimb(Entity* my)
 	else if ( my->sprite == items[TOOL_FOCI_FIRE].index )
 	{
 		players[my->skill[2]]->entity->skill[1] = 4;
+		my->skill[4] = 1; // lets us know that this is indeed the off-hand item (shield)
 	}
 	else if ( my->sprite == items[TOOL_FOCI_SNOW].index )
 	{
 		players[my->skill[2]]->entity->skill[1] = 5;
+		my->skill[4] = 1; // lets us know that this is indeed the off-hand item (shield)
 	}
 	else if ( my->sprite == items[TOOL_FOCI_NEEDLES].index )
 	{
 		players[my->skill[2]]->entity->skill[1] = 6;
+		my->skill[4] = 1; // lets us know that this is indeed the off-hand item (shield)
 	}
 	else if ( my->sprite == items[TOOL_FOCI_ARCS].index )
 	{
 		players[my->skill[2]]->entity->skill[1] = 7;
+		my->skill[4] = 1; // lets us know that this is indeed the off-hand item (shield)
 	}
 	else if ( my->sprite == items[TOOL_FOCI_SAND].index )
 	{
 		players[my->skill[2]]->entity->skill[1] = 8;
+		my->skill[4] = 1; // lets us know that this is indeed the off-hand item (shield)
+	}
+	else if ( my->sprite == items[TOOL_FOCI_DARK_LIFE].index
+		|| my->sprite == items[TOOL_FOCI_DARK_RIFT].index
+		|| my->sprite == items[TOOL_FOCI_DARK_SILENCE].index
+		|| my->sprite == items[TOOL_FOCI_DARK_SUPPRESS].index
+		|| my->sprite == items[TOOL_FOCI_DARK_VENGEANCE].index )
+	{
+		players[my->skill[2]]->entity->skill[1] = 9;
+		my->skill[4] = 1; // lets us know that this is indeed the off-hand item (shield)
+	}
+	else if ( my->sprite == items[TOOL_FOCI_LIGHT_JUSTICE].index
+		|| my->sprite == items[TOOL_FOCI_LIGHT_PEACE].index
+		|| my->sprite == items[TOOL_FOCI_LIGHT_PROVIDENCE].index
+		|| my->sprite == items[TOOL_FOCI_LIGHT_PURITY].index
+		|| my->sprite == items[TOOL_FOCI_LIGHT_SANCTUARY].index )
+	{
+		players[my->skill[2]]->entity->skill[1] = 10;
+		my->skill[4] = 1; // lets us know that this is indeed the off-hand item (shield)
 	}
 	else {
         // PLAYER_TORCH = aka none

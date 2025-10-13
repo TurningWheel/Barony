@@ -405,6 +405,11 @@ Entity* getSpellTarget(node_t* node, int radius, Entity* caster, bool targetCast
 		return nullptr;
 	}
 
+	if ( !entity->monsterIsTargetable() )
+	{
+		return nullptr;
+	}
+
 	if ( entityDist(entity, caster) <= radius 
 		&& ((target & TARGET_ENEMY && entity->checkEnemy(caster)
 			|| (target & TARGET_NEUTRAL && !entity->checkEnemy(caster))
@@ -6171,7 +6176,9 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				}
 			}
 		}
-		else if ( !strcmp(element->element_internal_name, spellElementMap[SPELL_ELEMENT_PROPULSION_FOCI_SPRAY].element_internal_name) )
+		else if ( !strcmp(element->element_internal_name, spellElementMap[SPELL_ELEMENT_PROPULSION_FOCI_SPRAY].element_internal_name)
+			&& (spell->ID == SPELL_FOCI_ARCS || spell->ID == SPELL_FOCI_FIRE || spell->ID == SPELL_FOCI_SNOW
+			|| spell->ID == SPELL_FOCI_NEEDLES || spell->ID == SPELL_FOCI_SANDBLAST) )
 		{
 			static ConsoleVariable<int> cvar_foci_sprite("/foci_sprite", 13);
 			int particle = -1;
@@ -6262,6 +6269,200 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			}
 		}
 		
+		if ( spell->ID == SPELL_FOCI_DARK_LIFE
+			|| spell->ID == SPELL_FOCI_DARK_RIFT
+			|| spell->ID == SPELL_FOCI_DARK_SILENCE
+			|| spell->ID == SPELL_FOCI_DARK_SUPPRESS
+			|| spell->ID == SPELL_FOCI_DARK_VENGEANCE )
+		{
+			if ( caster )
+			{
+				if ( castSpellProps )
+				{
+					bool effect = true;
+					int charge = castSpellProps->optionalData & (0x7F);
+					bool newCast = charge == 1 && !(castSpellProps->optionalData & (1 << 7));
+					node_t* nextnode = nullptr;
+					int radius = getSpellPropertyFromID(spell_t::SPELLPROP_MODIFIED_RADIUS, spell->ID, caster, nullptr, caster);
+					for ( node_t* node = map.entities->first; node; node = nextnode )
+					{
+						nextnode = node->next;
+						if ( Entity* entity = (Entity*)(node->element) )
+						{
+							if ( entity->behavior == &actRadiusMagic && entity->actRadiusMagicID == spell->ID
+								&& entity->parent == caster->getUID() )
+							{
+								if ( newCast || true )
+								{
+									entity->removeLightField();
+									list_RemoveNode(entity->mynode);
+									continue;
+								}
+								else
+								{
+									effect = false;
+									int duration = entity->skill[0];
+									duration += element->duration;
+									duration = std::max(element->duration * charge, duration);
+									entity->skill[0] = duration;
+									entity->actRadiusMagicAutoPulseTick = getSpellPropertyFromID(spell_t::SPELLPROP_FOCI_REFIRE_TICKS, spell->ID,
+										caster, nullptr, caster);
+									if ( castSpellProps->optionalData & (1 << 7) )
+									{
+									}
+									else
+									{
+										entity->actRadiusMagicDoPulseTick = ticks + 1;
+									}
+									break;
+								}
+							}
+						}
+					}
+
+					if ( effect && (castSpellProps->optionalData & (1 << 7)) )
+					{
+						real_t x = caster->x;
+						real_t y = caster->y;
+						real_t dist = lineTrace(caster, caster->x, caster->y, caster->yaw, 64.0, 0, false);
+						x += dist * cos(caster->yaw);
+						y += dist * sin(caster->yaw);
+						
+						int duration = element->duration * charge;
+						if ( Entity* fx = createRadiusMagic(spell->ID, caster,
+							x, y, radius, duration, nullptr) )
+						{
+							fx->actRadiusMagicAutoPulseTick = getSpellPropertyFromID(spell_t::SPELLPROP_FOCI_REFIRE_TICKS, spell->ID,
+								caster, nullptr, caster);
+							if ( castSpellProps->optionalData & (1 << 7) )
+							{
+							}
+						}
+
+						spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
+						playSoundEntity(caster, 171, 128);
+					}
+				}
+			}
+		}
+		else if ( spell->ID == SPELL_FOCI_LIGHT_SANCTUARY
+			|| spell->ID == SPELL_FOCI_LIGHT_JUSTICE
+			|| spell->ID == SPELL_FOCI_LIGHT_PURITY
+			|| spell->ID == SPELL_FOCI_LIGHT_PEACE
+			|| spell->ID == SPELL_FOCI_LIGHT_PROVIDENCE )
+		{
+			if ( caster )
+			{
+				if ( castSpellProps )
+				{
+					/*real_t x = caster->x;
+					real_t y = caster->y;
+					real_t dist = lineTrace(caster, caster->x, caster->y, caster->yaw, 64.0, 0, false);
+					x += dist * cos(caster->yaw);
+					y += dist * sin(caster->yaw);*/
+
+					if ( castSpellProps->optionalData > 0 )
+					{
+						int effectID = -1;
+						int particle = 0;
+						int langEntry = 0;
+						switch ( spell->ID )
+						{
+						case SPELL_FOCI_LIGHT_SANCTUARY:
+							effectID = EFF_FOCI_LIGHT_SANCTUARY;
+							particle = 2188;
+							langEntry = 6830;
+							break;
+						case SPELL_FOCI_LIGHT_JUSTICE:
+							effectID = EFF_FOCI_LIGHT_JUSTICE;
+							particle = 2184;
+							langEntry = 6827;
+							break;
+						case SPELL_FOCI_LIGHT_PURITY:
+							effectID = EFF_FOCI_LIGHT_PURITY;
+							particle = 2187;
+							langEntry = 6829;
+							break;
+						case SPELL_FOCI_LIGHT_PEACE:
+							effectID = EFF_FOCI_LIGHT_PEACE;
+							langEntry = 6826;
+							break;
+						case SPELL_FOCI_LIGHT_PROVIDENCE:
+							effectID = EFF_FOCI_LIGHT_PROVIDENCE;
+							langEntry = 6828;
+							break;
+						default:
+							break;
+						}
+						particle = 169;
+
+						int radius = getSpellPropertyFromID(spell_t::SPELLPROP_MODIFIED_RADIUS, spell->ID, caster, nullptr, caster);
+
+						if ( effectID > 0 )
+						{
+							int charge = castSpellProps->optionalData & (0x7F);
+							Uint8 effectStrength = std::min(4, 1 + (charge / 4));
+							if ( castSpellProps->optionalData & (1 << 7) )
+							{
+								// finishing casting, apply to allies
+								for ( node_t* node = map.creatures->first; node; node = node->next )
+								{
+									if ( Entity* entity = getSpellTarget(node, radius + 4.0, caster, false, TARGET_FRIEND) )
+									{
+										if ( Stat* entityStats = entity->getStats() )
+										{
+											int duration = entityStats->getEffectActive(effectID) ? entityStats->EFFECTS_TIMERS[effectID] : 0;
+											duration += element->duration * charge;
+											bool prevEffect = entityStats->getEffectActive(effectID) > 0;
+											if ( entity->setEffect(effectID, effectStrength, duration, false) )
+											{
+												if ( !prevEffect )
+												{
+													playSoundEntity(entity, 171, 128);
+												}
+												spawnMagicEffectParticles(entity->x, entity->y, entity->z, particle);
+												messagePlayerColor(entity->isEntityPlayer(), MESSAGE_STATUS, makeColorRGB(0, 255, 0),
+													Language::get(langEntry));
+											}
+										}
+									}
+								}
+								createRadiusMagic(spell->ID, caster,
+									caster->x, caster->y, radius, TICKS_PER_SECOND, nullptr);
+								playSoundEntity(caster, 171, 128);
+							}
+							
+							{
+								// charging up the spell, set status effect on caster
+								if ( Stat* casterStats = caster->getStats() )
+								{
+									int duration = casterStats->getEffectActive(effectID) ? casterStats->EFFECTS_TIMERS[effectID] : 0;
+									duration += element->duration;
+
+									duration = std::max(element->duration * charge, duration);
+
+									bool prevEffect = casterStats->getEffectActive(effectID) > 0;
+									if ( caster->setEffect(effectID, effectStrength, duration, false) )
+									{
+										if ( !prevEffect )
+										{
+											playSoundEntity(caster, 171, 128);
+										}
+										if ( !prevEffect )
+										{
+											messagePlayerColor(caster->isEntityPlayer(), MESSAGE_STATUS, makeColorRGB(0, 255, 0),
+												Language::get(langEntry));
+										}
+										spawnMagicEffectParticles(caster->x, caster->y, caster->z, particle);
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
 		// intentional separate from else/if chain.
 		// disables propulsion if found a marked target.
 		if ( !strcmp(spell->spell_internal_name, spell_telePull.spell_internal_name) )

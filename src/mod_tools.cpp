@@ -1233,6 +1233,8 @@ void ItemTooltips_t::readItemsFromFile()
 		setSpellValueIfKeyPresent(t, spell_itr, hash, shift, "life_mult", t.life_mult);
 		setSpellValueIfKeyPresent(t, spell_itr, hash, shift, "cast_time", t.cast_time);
 		setSpellValueIfKeyPresent(t, spell_itr, hash, shift, "cast_time_mult", t.cast_time_mult);
+		setSpellValueIfKeyPresent(t, spell_itr, hash, shift, "radius", t.radius);
+		setSpellValueIfKeyPresent(t, spell_itr, hash, shift, "radius_mult", t.radius_mult);
 		setSpellValueIfKeyPresent(t, spell_itr, hash, shift, "difficulty", t.difficulty);
 		setSpellValueIfKeyPresent(t, spell_itr, hash, shift, "sustain_mana", t.sustain_mana);
 		if ( t.sustain_mana > 0 )

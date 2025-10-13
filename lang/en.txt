@@ -7089,4 +7089,10 @@ to replay this challenge!
 6814 You are unable to create a passage through this wall.#
 6815 The %s comes to life!#
 
+6826 You are blessed with peace!#
+6827 You are blessed with justice!#
+6828 You are blessed with providence!#
+6829 You are blessed with purity!#
+6830 You are blessed with sanctuary!#
+
 6999 END#

@@ -6466,6 +6466,7 @@ void assignActions(map_t* map)
 								{
 									stats[numplayers]->clearEffect(c);
 									stats[numplayers]->EFFECTS_TIMERS[c] = 0;
+									stats[numplayers]->EFFECTS_ACCRETION_TIME[c] = 0;
 								}
 							}
 						}

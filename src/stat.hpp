@@ -136,6 +136,11 @@ static const int EFF_THORNS = 111;
 static const int EFF_BLADEVINES = 112;
 static const int EFF_BASTION_MUSHROOM = 113;
 static const int EFF_BASTION_ROOTS = 114;
+static const int EFF_FOCI_LIGHT_PEACE = 115;
+static const int EFF_FOCI_LIGHT_JUSTICE = 116;
+static const int EFF_FOCI_LIGHT_PROVIDENCE = 117;
+static const int EFF_FOCI_LIGHT_PURITY = 118;
+static const int EFF_FOCI_LIGHT_SANCTUARY = 119;
 static const int NUMEFFECTS = 128;
 
 // stats
@@ -381,6 +386,7 @@ public:
 			EFFECTS[effect] = effectStrength;
 		}
 	}
+	Uint32 EFFECTS_ACCRETION_TIME[NUMEFFECTS];
 	Sint32 EFFECTS_TIMERS[NUMEFFECTS];
 	bool defending;
 	Uint32 parrying = 0;

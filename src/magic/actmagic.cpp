@@ -7065,6 +7065,13 @@ void createParticleSap(Entity* parent)
 			// boomerang return.
 			sprite = parent->sprite;
 		}
+		if ( parent->sprite == 2178 ) // testing particle
+		{
+			if ( c < 2 )
+			{
+				continue;
+			}
+		}
 		if ( parent->skill[6] == SPELL_STEAL_WEAPON || parent->skill[6] == SHADOW_SPELLCAST )
 		{
 			sprite = parent->sprite;
@@ -7115,6 +7122,12 @@ void createParticleSap(Entity* parent)
 		entity->scaley = 0.9;
 		entity->scalez = 0.9;
 		if ( sprite == 598 || sprite == 599 )
+		{
+			entity->scalex = 0.5;
+			entity->scaley = 0.5;
+			entity->scalez = 0.5;
+		}
+		if ( parent->sprite == 2178 )
 		{
 			entity->scalex = 0.5;
 			entity->scaley = 0.5;
@@ -15129,6 +15142,36 @@ Entity* createRadiusMagic(int spellID, Entity* caster, real_t x, real_t y, real_
 	case SPELL_HEAL_PULSE:
 		sprite = 1686;
 		break;
+	case SPELL_FOCI_DARK_LIFE:
+		sprite = 2179;
+		break;
+	case SPELL_FOCI_DARK_SILENCE:
+		sprite = 2180;
+		break;
+	case SPELL_FOCI_DARK_SUPPRESS:
+		sprite = 2181;
+		break;
+	case SPELL_FOCI_DARK_VENGEANCE:
+		sprite = 2182;
+		break;
+	case SPELL_FOCI_DARK_RIFT:
+		sprite = 2183;
+		break;
+	case SPELL_FOCI_LIGHT_JUSTICE:
+		sprite = 2184;
+		break;
+	case SPELL_FOCI_LIGHT_PEACE:
+		sprite = 2185;
+		break;
+	case SPELL_FOCI_LIGHT_PROVIDENCE:
+		sprite = 2186;
+		break;
+	case SPELL_FOCI_LIGHT_PURITY:
+		sprite = 2187;
+		break;
+	case SPELL_FOCI_LIGHT_SANCTUARY:
+		sprite = 2188;
+		break;
 	default:
 		break;
 	}
@@ -15237,6 +15280,33 @@ void actRadiusMagic(Entity* my)
 				my->y = follow->y;
 			}
 		}
+
+		//if ( my->actRadiusMagicID == SPELL_FOCI_DARK_LIFE
+		//	|| my->actRadiusMagicID == SPELL_FOCI_DARK_RIFT
+		//	|| my->actRadiusMagicID == SPELL_FOCI_DARK_SILENCE 
+		//	|| my->actRadiusMagicID == SPELL_FOCI_DARK_SUPPRESS 
+		//	|| my->actRadiusMagicID == SPELL_FOCI_DARK_VENGEANCE )
+		//{
+		//	bool endEffect = false;
+		//	if ( Stat* casterStats = caster->getStats() )
+		//	{
+		//		if ( !casterStats->defending )
+		//		{
+		//			endEffect = true;
+
+		//			Entity* spellEntity = createParticleSapCenter(caster, my, 0, 2178, 2178);
+		//			if ( spellEntity )
+		//			{
+		//				spellEntity->skill[0] = 25; // duration
+		//				spellEntity->skill[7] = my->getUID();
+		//			}
+
+		//			my->removeLightField();
+		//			list_RemoveNode(my->mynode);
+		//			return;
+		//		}
+		//	}
+		//}
 	}
 	else
 	{
@@ -15257,7 +15327,20 @@ void actRadiusMagic(Entity* my)
 
 	my->flags[INVISIBLE] = true;
 
-	if ( my->actRadiusMagicInit == 0 )
+	bool refireLoop = true;
+	if ( my->actRadiusMagicID == SPELL_FOCI_DARK_LIFE
+		|| my->actRadiusMagicID == SPELL_FOCI_DARK_RIFT
+		|| my->actRadiusMagicID == SPELL_FOCI_DARK_SILENCE
+		|| my->actRadiusMagicID == SPELL_FOCI_DARK_SUPPRESS
+		|| my->actRadiusMagicID == SPELL_FOCI_DARK_VENGEANCE )
+	{
+		refireLoop = false;
+	}
+
+	if ( my->actRadiusMagicInit == 0 
+		|| refireLoop && ((ticks - my->actRadiusMagicDoPulseTick) == 1
+			|| (my->actRadiusMagicAutoPulseTick > 0 && my->actRadiusMagicDoPulseTick > 0 &&
+			(ticks - my->actRadiusMagicDoPulseTick) % my->actRadiusMagicAutoPulseTick == 1)) )
 	{
 		if ( Entity* fx = createParticleAOEIndicator(my, my->x, my->y, 0.0, TICKS_PER_SECOND * 99, my->actRadiusMagicDist) )
 		{
@@ -15297,12 +15380,39 @@ void actRadiusMagic(Entity* my)
 				{
 					indicator->loopTimer = 3.5 * TICKS_PER_SECOND;
 				}
+				if ( my->actRadiusMagicID == SPELL_FOCI_DARK_LIFE
+					|| my->actRadiusMagicID == SPELL_FOCI_DARK_RIFT
+					|| my->actRadiusMagicID == SPELL_FOCI_DARK_SILENCE
+					|| my->actRadiusMagicID == SPELL_FOCI_DARK_SUPPRESS
+					|| my->actRadiusMagicID == SPELL_FOCI_DARK_VENGEANCE )
+				{
+					indicator->loop = true;
+					//indicator->lifetime = 100;
+					//indicator->loopType = 0;
+					//indicator->loopTimer = 0;
+				}
+				else if ( my->actRadiusMagicID == SPELL_FOCI_LIGHT_PEACE
+					|| my->actRadiusMagicID == SPELL_FOCI_LIGHT_JUSTICE
+					|| my->actRadiusMagicID == SPELL_FOCI_LIGHT_PROVIDENCE
+					|| my->actRadiusMagicID == SPELL_FOCI_LIGHT_PURITY
+					|| my->actRadiusMagicID == SPELL_FOCI_LIGHT_SANCTUARY )
+				{
+					indicator->loop = false;
+					indicator->loopType = 0;
+					indicator->loopTimer = 0;
+				}
 			}
 		}
 		spawnMagicEffectParticles(my->x, my->y, my->z, my->sprite);
-		createMagicRadiusBadge(*my);
+		if ( my->actRadiusMagicInit == 0 )
+		{
+			createMagicRadiusBadge(*my);
+		}
 		my->actRadiusMagicInit = 1;
 	}
+
+	my->vel_x = 0.0;
+	my->vel_y = 0.0;
 
 	bool checkArea = true;
 	if ( my->actRadiusMagicID == SPELL_HEAL_PULSE )
@@ -15312,6 +15422,86 @@ void actRadiusMagic(Entity* my)
 		{
 			checkArea = true;
 		}
+	}
+	else if ( my->actRadiusMagicID == SPELL_FOCI_DARK_LIFE
+		|| my->actRadiusMagicID == SPELL_FOCI_DARK_RIFT
+		|| my->actRadiusMagicID == SPELL_FOCI_DARK_SILENCE
+		|| my->actRadiusMagicID == SPELL_FOCI_DARK_SUPPRESS
+		|| my->actRadiusMagicID == SPELL_FOCI_DARK_VENGEANCE )
+	{
+		checkArea = false;
+		if ( my->ticks == 1 || (ticks - my->actRadiusMagicDoPulseTick) == 1 )
+		{
+			checkArea = true;
+		}
+		else if ( my->actRadiusMagicAutoPulseTick > 0 && my->actRadiusMagicDoPulseTick > 0 &&
+			(ticks - my->actRadiusMagicDoPulseTick) % my->actRadiusMagicAutoPulseTick == 1 )
+		{
+			checkArea = true;
+		}
+
+		//if ( my->actRadiusMagicFollowUID == 0 )
+		//{
+		//	real_t prevDist = 10000.0;
+		//	Entity* target = nullptr;
+		//	/*if ( my->actmagicOrbitHitTargetUID4 != 0 )
+		//	{
+		//		target = uidToEntity(my->actmagicOrbitHitTargetUID4);
+		//	}*/
+		//	if ( !target )
+		//	{
+		//		for ( node_t* node = map.creatures->first; node; node = node->next )
+		//		{
+		//			if ( Entity* entity = (Entity*)node->element )
+		//			{
+		//				if ( Stat* entityStats = entity->getStats() )
+		//				{
+		//					if ( caster->checkEnemy(entity) && entity->monsterIsTargetable() )
+		//					{
+		//						real_t tangent = atan2(entity->y - my->y, entity->x - my->x);
+		//						real_t targetdist = sqrt(pow(my->x - entity->x, 2) + pow(my->y - entity->y, 2));
+		//						real_t dist = lineTraceTarget(my, my->x, my->y, tangent, 64.0, 0, true, entity);
+		//						if ( hit.entity == entity && dist < prevDist )
+		//						{
+		//							prevDist = dist;
+		//							target = entity;
+		//						}
+		//					}
+		//				}
+		//			}
+		//		}
+		//	}
+
+		//	if ( target )
+		//	{
+		//		my->actRadiusMagicFollowUID = target->getUID();
+		//		serverUpdateEntitySkill(my, 5); // update follow UID
+		//		//real_t dist = entityDist(my, target);
+		//		//if ( dist < 8.0 )
+		//		//{
+		//		//	my->actRadiusMagicFollowUID = target->getUID();
+		//		//	serverUpdateEntitySkill(my, 5); // update follow UID
+		//		//}
+		//		//else
+		//		//{
+		//		//	real_t tangent = atan2(target->y - my->y, target->x - my->x);
+		//		//	real_t speed = std::min(dist, std::max(16.0, 64.0 - dist) / 100.0);
+		//		//	my->vel_x = speed * cos(tangent);
+		//		//	my->vel_y = speed * sin(tangent);
+		//		//}
+
+		//		//my->x += my->vel_x;
+		//		//my->y += my->vel_y;
+		//	}
+		//}
+	}
+	else if ( my->actRadiusMagicID == SPELL_FOCI_LIGHT_PEACE
+		|| my->actRadiusMagicID == SPELL_FOCI_LIGHT_JUSTICE
+		|| my->actRadiusMagicID == SPELL_FOCI_LIGHT_PROVIDENCE
+		|| my->actRadiusMagicID == SPELL_FOCI_LIGHT_PURITY
+		|| my->actRadiusMagicID == SPELL_FOCI_LIGHT_SANCTUARY )
+	{
+		checkArea = false; // visual effect only
 	}
 
 	if ( multiplayer == SERVER )
@@ -15413,6 +15603,33 @@ void actRadiusMagic(Entity* my)
 								}
 							}
 						}
+						else if ( my->actRadiusMagicID == SPELL_FOCI_DARK_LIFE )
+						{
+							if ( entity->behavior == &actPlayer || (entity->behavior == &actMonster && !entity->isInertMimic()) )
+							{
+								if ( entity->monsterIsTargetable() )
+								{
+									if ( entityDist(my, entity) <= (real_t)my->actRadiusMagicDist )
+									{
+										if ( caster && caster != entity && caster->checkEnemy(entity) )
+										{
+											real_t tangent = atan2(entity->y - my->y, entity->x - my->x);
+											real_t dist = lineTraceTarget(my, my->x, my->y, tangent, my->actRadiusMagicDist, 0, false, entity);
+											if ( hit.entity == entity )
+											{
+												auto props = getParticleEmitterHitProps(my->getUID(), entity);
+												if ( !props )
+												{
+													continue;
+												}
+												props->hits++;
+												applyEffects.push_back(entity);
+											}
+										}
+									}
+								}
+							}
+						}
 						else
 						{
 							if ( entity->behavior == &actPlayer || (entity->behavior == &actMonster && !entity->isInertMimic()) )
@@ -15430,6 +15647,15 @@ void actRadiusMagic(Entity* my)
 							}
 						}
 					}
+				}
+			}
+
+			if ( my->actRadiusMagicID == SPELL_FOCI_DARK_LIFE )
+			{
+				while ( applyEffects.size() > 1 )
+				{
+					unsigned int pick = local_rng.rand() % applyEffects.size();
+					applyEffects.erase(applyEffects.begin() + pick);
 				}
 			}
 
@@ -15469,6 +15695,18 @@ void actRadiusMagic(Entity* my)
 					serverSpawnMiscParticlesAtLocation(fx->x, fx->y, fx->z, PARTICLE_EFFECT_NULL_PARTICLE, my->sprite, 0, fx->yaw * 256.0);
 					ent->removeLightField();
 					list_RemoveNode(ent->mynode);
+				}
+				else if ( my->actRadiusMagicID == SPELL_FOCI_DARK_LIFE )
+				{
+					Entity* spellEntity = createParticleSapCenter(ent, my, 0, 2178, 2178);
+					if ( spellEntity )
+					{
+						/*spellEntity->x = ent->x;
+						spellEntity->y = ent->y;*/
+						spellEntity->skill[0] = 25; // duration
+						spellEntity->skill[7] = my->getUID();
+					}
+					ent->setEffect(EFF_ASLEEP, true, TICKS_PER_SECOND, false);
 				}
 				firstEffect = true;
 			}

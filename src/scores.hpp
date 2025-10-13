@@ -609,6 +609,7 @@ struct SaveGameInfo {
 			std::vector<int> PROFICIENCIES;
 			std::vector<int> EFFECTS;
 			std::vector<int> EFFECTS_TIMERS;
+			std::vector<int> EFFECTS_ACCRETION_TIME;
 			std::vector<int> MISC_FLAGS;
 			std::vector<std::pair<std::string, std::string>> attributes;
 			std::vector<std::pair<std::string, Uint32>> player_equipment;
@@ -639,6 +640,7 @@ struct SaveGameInfo {
 				fp->property("PROFICIENCIES", PROFICIENCIES);
 				fp->property("EFFECTS", EFFECTS);
 				fp->property("EFFECTS_TIMERS", EFFECTS_TIMERS);
+				fp->property("EFFECTS_ACCRETION_TIME", EFFECTS_ACCRETION_TIME);
 				fp->property("MISC_FLAGS", MISC_FLAGS);
 				fp->property("player_equipment", player_equipment);
 				fp->property("npc_equipment", npc_equipment);

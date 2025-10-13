@@ -224,6 +224,16 @@ static const int SPELL_THORNS = 201;
 static const int SPELL_BLADEVINES = 202;
 static const int SPELL_BASTION_MUSHROOM = 203;
 static const int SPELL_BASTION_ROOTS = 204;
+static const int SPELL_FOCI_DARK_LIFE = 205;
+static const int SPELL_FOCI_DARK_RIFT = 206;
+static const int SPELL_FOCI_DARK_SILENCE = 207;
+static const int SPELL_FOCI_DARK_VENGEANCE = 208;
+static const int SPELL_FOCI_DARK_SUPPRESS = 209;
+static const int SPELL_FOCI_LIGHT_PEACE = 210;
+static const int SPELL_FOCI_LIGHT_JUSTICE = 211;
+static const int SPELL_FOCI_LIGHT_PROVIDENCE = 212;
+static const int SPELL_FOCI_LIGHT_PURITY = 213;
+static const int SPELL_FOCI_LIGHT_SANCTUARY = 214;
 static const int NUM_SPELLS = 225;
 
 #define SPELLELEMENT_CONFUSE_BASE_DURATION 2//In seconds.
@@ -738,6 +748,8 @@ typedef struct spell_t
 	real_t cast_time_mult = 1.0;
 	int mana = 1;
 
+	int radius = 0;
+	real_t radius_mult = 0.0;
 	int life_time = 0; // for floor based effects
 	real_t life_time_mult = 1.0;
 	int sustainEffectDissipate = -1; // when the spell is unsustained, clear this effect from the player (unique spell effects)
@@ -760,6 +772,7 @@ typedef struct spell_t
 	{
 		SPELLPROP_FOCI_REFIRE_TICKS,
 		SPELLPROP_FOCI_SECONDARY_MANA_COST,
+		SPELLPROP_MODIFIED_RADIUS,
 		SPELLPROP_BASE_PROPERTY_INT_ENUM_END
 	};
 

@@ -97,6 +97,7 @@ Stat::Stat(Sint32 sprite) :
 		if ( c < NUMEFFECTS )
 		{
 			this->EFFECTS_TIMERS[c] = 0;
+			this->EFFECTS_ACCRETION_TIME[c] = 0;
 		}
 	}
 

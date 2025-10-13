@@ -527,6 +527,14 @@ void actFociGib(Entity* my)
 								}
 							}
 						}
+						else if ( entity->flags[PASSABLE] )
+						{
+							if ( hitprops )
+							{
+								hitprops->hits++;
+							}
+							continue;
+						}
 
 						Uint32 targetUid = entity->getUID();
 						if ( Entity* entity = newEntity(my->sprite, 1, map.entities, nullptr) )

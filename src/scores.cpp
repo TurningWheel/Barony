@@ -1064,6 +1064,7 @@ void saveAllScores(const std::string& scoresfilename)
 			Uint8 effectVal = score->stats->getEffectActive(c);
 			fp->write(&effectVal, sizeof(Uint8), 1);
 			fp->write(&score->stats->EFFECTS_TIMERS[c], sizeof(Sint32), 1);
+			fp->write(&score->stats->EFFECTS_ACCRETION_TIME[c], sizeof(Sint32), 1);
 		}
 		for ( int c = 0; c < NUM_CONDUCT_CHALLENGES; ++c )
 		{
@@ -1768,6 +1769,7 @@ void loadAllScores(const std::string& scoresfilename)
 					score->stats->clearEffect(c);
 					score->stats->EFFECTS_TIMERS[c] = 0;
 				}
+				score->stats->EFFECTS_ACCRETION_TIME[c] = 0;
 			}
 		}
 		else if ( versionNumber < 302 )
@@ -1786,6 +1788,7 @@ void loadAllScores(const std::string& scoresfilename)
 					score->stats->clearEffect(c);
 					score->stats->EFFECTS_TIMERS[c] = 0;
 				}
+				score->stats->EFFECTS_ACCRETION_TIME[c] = 0;
 			}
 		}
 		else if ( versionNumber <= 323 )
@@ -1804,6 +1807,7 @@ void loadAllScores(const std::string& scoresfilename)
 					score->stats->clearEffect(c);
 					score->stats->EFFECTS_TIMERS[c] = 0;
 				}
+				score->stats->EFFECTS_ACCRETION_TIME[c] = 0;
 			}
 		}
 		else if ( versionNumber <= 411 )
@@ -1822,6 +1826,7 @@ void loadAllScores(const std::string& scoresfilename)
 					score->stats->clearEffect(c);
 					score->stats->EFFECTS_TIMERS[c] = 0;
 				}
+				score->stats->EFFECTS_ACCRETION_TIME[c] = 0;
 			}
 		}
 		else if ( versionNumber <= 432 )
@@ -1832,6 +1837,7 @@ void loadAllScores(const std::string& scoresfilename)
 				fp->read(&effectVal, sizeof(bool), 1);
 				score->stats->setEffectValueUnsafe(c, effectVal ? 1 : 0);
 				fp->read(&score->stats->EFFECTS_TIMERS[c], sizeof(Sint32), 1);
+				score->stats->EFFECTS_ACCRETION_TIME[c] = 0;
 			}
 		}
 		else
@@ -1842,6 +1848,7 @@ void loadAllScores(const std::string& scoresfilename)
 				fp->read(&effectVal, sizeof(Uint8), 1);
 				score->stats->setEffectValueUnsafe(c, effectVal);
 				fp->read(&score->stats->EFFECTS_TIMERS[c], sizeof(Sint32), 1);
+				fp->read(&score->stats->EFFECTS_ACCRETION_TIME[c], sizeof(Sint32), 1);
 			}
 		}
 
@@ -3926,6 +3933,8 @@ std::set<ItemType> AchievementObserver::PlayerAchievements::startingClassItems =
 	TOOL_BLINDFOLD_TELEPATHY,
 	TOOL_BLINDFOLD,
 	MASK_EYEPATCH
+	/*,
+	HAT_CIRCLET_WISDOM*/
 };
 
 int AchievementObserver::PlayerAchievements::getItemIndexForDapperAchievement(Item* item)
@@ -5673,11 +5682,13 @@ int loadGame(int player, const SaveGameInfo& info) {
 		{
 			stats[statsPlayer]->setEffectValueUnsafe(c, (Uint8)p.EFFECTS[c]);
 			stats[statsPlayer]->EFFECTS_TIMERS[c] = p.EFFECTS_TIMERS[c];
+			stats[statsPlayer]->EFFECTS_ACCRETION_TIME[c] = p.EFFECTS_ACCRETION_TIME[c];
 		}
 		else
 		{
 			stats[statsPlayer]->clearEffect(c);
 			stats[statsPlayer]->EFFECTS_TIMERS[c] = 0;
+			stats[statsPlayer]->EFFECTS_ACCRETION_TIME[c] = 0;
 		}
 	}
 	constexpr int NUMMISCFLAGS = sizeof(Stat::MISC_FLAGS) / sizeof(Stat::MISC_FLAGS[0]);
@@ -5992,11 +6003,13 @@ list_t* loadGameFollowers(const SaveGameInfo& info) {
 				{
 					stats->setEffectValueUnsafe(c, (Uint8)follower.EFFECTS[c]);
 					stats->EFFECTS_TIMERS[c] = follower.EFFECTS_TIMERS[c];
+					stats->EFFECTS_ACCRETION_TIME[c] = follower.EFFECTS_ACCRETION_TIME[c];
 				}
 				else
 				{
 					stats->clearEffect(c);
 					stats->EFFECTS_TIMERS[c] = 0;
+					stats->EFFECTS_ACCRETION_TIME[c] = 0;
 				}
 			}
 			constexpr int NUMMISCFLAGS = sizeof(Stat::MISC_FLAGS) / sizeof(Stat::MISC_FLAGS[0]);

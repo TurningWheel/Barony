@@ -3116,6 +3116,166 @@ void setupSpells()   ///TODO: Verify this function.
 		4);
 	spell->sustainEffectDissipate = EFF_BASTION_ROOTS;
 
+	spellElementConstructor(SPELL_FOCI_DARK_LIFE,
+		1,		// mana
+		1,		// base mana
+		1,		// overload
+		0,		// damage
+		100,	// duration
+		"spell_element_foci_dark_life");
+	spell = spellConstructor(
+		SPELL_FOCI_DARK_LIFE,											// ID
+		100,														// difficulty
+		"spell_foci_dark_life",											// internal name
+		// elements
+		{ SPELL_ELEMENT_PROPULSION_FOCI_SPRAY, SPELL_FOCI_DARK_LIFE }
+	);
+	spell->hide_from_ui = true;
+
+	spellElementConstructor(SPELL_FOCI_DARK_RIFT,
+		1,		// mana
+		1,		// base mana
+		1,		// overload
+		0,		// damage
+		100,	// duration
+		"spell_element_foci_dark_rift");
+	spell = spellConstructor(
+		SPELL_FOCI_DARK_RIFT,											// ID
+		100,														// difficulty
+		"spell_foci_dark_rift",											// internal name
+		// elements
+		{ SPELL_ELEMENT_PROPULSION_FOCI_SPRAY, SPELL_FOCI_DARK_RIFT }
+	);
+	spell->hide_from_ui = true;
+
+	spellElementConstructor(SPELL_FOCI_DARK_SILENCE,
+		1,		// mana
+		1,		// base mana
+		1,		// overload
+		0,		// damage
+		100,	// duration
+		"spell_element_foci_dark_silence");
+	spell = spellConstructor(
+		SPELL_FOCI_DARK_SILENCE,											// ID
+		100,														// difficulty
+		"spell_foci_dark_silence",											// internal name
+		// elements
+		{ SPELL_ELEMENT_PROPULSION_FOCI_SPRAY, SPELL_FOCI_DARK_SILENCE }
+	);
+	spell->hide_from_ui = true;
+
+	spellElementConstructor(SPELL_FOCI_DARK_VENGEANCE,
+		1,		// mana
+		1,		// base mana
+		1,		// overload
+		0,		// damage
+		100,	// duration
+		"spell_element_foci_dark_vengeance");
+	spell = spellConstructor(
+		SPELL_FOCI_DARK_VENGEANCE,											// ID
+		100,														// difficulty
+		"spell_foci_dark_vengeance",											// internal name
+		// elements
+		{ SPELL_ELEMENT_PROPULSION_FOCI_SPRAY, SPELL_FOCI_DARK_VENGEANCE }
+	);
+	spell->hide_from_ui = true;
+
+	spellElementConstructor(SPELL_FOCI_DARK_SUPPRESS,
+		1,		// mana
+		1,		// base mana
+		1,		// overload
+		0,		// damage
+		100,	// duration
+		"spell_element_foci_dark_suppress");
+	spell = spellConstructor(
+		SPELL_FOCI_DARK_SUPPRESS,											// ID
+		100,														// difficulty
+		"spell_foci_dark_suppress",											// internal name
+		// elements
+		{ SPELL_ELEMENT_PROPULSION_FOCI_SPRAY, SPELL_FOCI_DARK_SUPPRESS }
+	);
+	spell->hide_from_ui = true;
+
+	spellElementConstructor(SPELL_FOCI_LIGHT_PEACE,
+		1,		// mana
+		1,		// base mana
+		1,		// overload
+		0,		// damage
+		100,	// duration
+		"spell_element_foci_light_peace");
+	spell = spellConstructor(
+		SPELL_FOCI_LIGHT_PEACE,											// ID
+		100,														// difficulty
+		"spell_foci_light_peace",											// internal name
+		// elements
+		{ SPELL_ELEMENT_PROPULSION_FOCI_SPRAY, SPELL_FOCI_LIGHT_PEACE }
+	);
+	spell->hide_from_ui = true;
+
+	spellElementConstructor(SPELL_FOCI_LIGHT_JUSTICE,
+		1,		// mana
+		1,		// base mana
+		1,		// overload
+		0,		// damage
+		100,	// duration
+		"spell_element_foci_light_justice");
+	spell = spellConstructor(
+		SPELL_FOCI_LIGHT_JUSTICE,											// ID
+		100,														// difficulty
+		"spell_foci_light_justice",											// internal name
+		// elements
+		{ SPELL_ELEMENT_PROPULSION_FOCI_SPRAY, SPELL_FOCI_LIGHT_JUSTICE}
+	);
+	spell->hide_from_ui = true;
+
+	spellElementConstructor(SPELL_FOCI_LIGHT_PROVIDENCE,
+		1,		// mana
+		1,		// base mana
+		1,		// overload
+		0,		// damage
+		100,	// duration
+		"spell_element_foci_light_providence");
+	spell = spellConstructor(
+		SPELL_FOCI_LIGHT_PROVIDENCE,											// ID
+		100,														// difficulty
+		"spell_foci_light_providence",											// internal name
+		// elements
+		{ SPELL_ELEMENT_PROPULSION_FOCI_SPRAY, SPELL_FOCI_LIGHT_PROVIDENCE }
+	);
+	spell->hide_from_ui = true;
+
+	spellElementConstructor(SPELL_FOCI_LIGHT_PURITY,
+		1,		// mana
+		1,		// base mana
+		1,		// overload
+		0,		// damage
+		100,	// duration
+		"spell_element_foci_light_purity");
+	spell = spellConstructor(
+		SPELL_FOCI_LIGHT_PURITY,											// ID
+		100,														// difficulty
+		"spell_foci_light_purity",											// internal name
+		// elements
+		{ SPELL_ELEMENT_PROPULSION_FOCI_SPRAY, SPELL_FOCI_LIGHT_PURITY }
+	);
+	spell->hide_from_ui = true;
+
+	spellElementConstructor(SPELL_FOCI_LIGHT_SANCTUARY,
+		1,		// mana
+		1,		// base mana
+		1,		// overload
+		0,		// damage
+		100,	// duration
+		"spell_element_foci_light_sanctuary");
+	spell = spellConstructor(
+		SPELL_FOCI_LIGHT_SANCTUARY,											// ID
+		100,														// difficulty
+		"spell_foci_light_sanctuary",											// internal name
+		// elements
+		{ SPELL_ELEMENT_PROPULSION_FOCI_SPRAY, SPELL_FOCI_LIGHT_SANCTUARY }
+	);
+	spell->hide_from_ui = true;
+
 	//static const int SPELL_LIGHTNING_NEXUS = 182;
 	//static const int SPELL_LIFT = 184;
 	//static const int SPELL_SLAM = 185;
@@ -3147,6 +3307,9 @@ void setupSpells()   ///TODO: Verify this function.
 				spell->mana = info.mana;
 				spell->cast_time = info.cast_time;
 				spell->cast_time_mult = info.cast_time_mult;
+				spell->skillID = info.skillID;
+				spell->radius = info.radius;
+				spell->radius_mult = info.radius_mult;
 				
 				spellElement_t* element = nullptr;
 				if ( spell->elements.first )

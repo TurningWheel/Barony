@@ -622,6 +622,8 @@ public:
 	Sint32& actRadiusMagicInit = skill[3];
 	Sint32& actRadiusMagicDist = skill[4];
 	Sint32& actRadiusMagicFollowUID = skill[5];
+	Sint32& actRadiusMagicDoPulseTick = skill[6];
+	Sint32& actRadiusMagicAutoPulseTick = skill[7];
 
 	Sint32& actParticleWaveStartFrame = skill[4];
 	Sint32& actParticleWaveLight = skill[7];

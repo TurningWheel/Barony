@@ -2811,6 +2811,8 @@ private:
 		int sustain_mana = 0;
 		int sustain_duration = 0;
 		real_t sustain_mult = 1.0;
+		real_t radius = 0;
+		real_t radius_mult = 0.0;
 	};
 
 	struct ItemTooltipIcons_t

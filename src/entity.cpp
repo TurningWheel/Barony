@@ -3301,6 +3301,15 @@ int Entity::getHungerTickRate(Stat* myStats, bool isPlayer, bool checkItemsEffec
 				}
 			}
 		}
+
+		if ( myStats->getEffectActive(EFF_FOCI_LIGHT_PROVIDENCE) )
+		{
+			real_t mult = 1.0;
+			mult += getSpellEffectDurationSecondaryFromID(SPELL_FOCI_LIGHT_PROVIDENCE, nullptr, nullptr, nullptr) / 100.0;
+			int tier = std::max(0, (myStats->getEffectActive(EFF_FOCI_LIGHT_PROVIDENCE) - 1));
+			mult += tier * getSpellDamageSecondaryFromID(SPELL_FOCI_LIGHT_PROVIDENCE, nullptr, nullptr, nullptr) / 100.0;
+			hungerTickRate *= mult;
+		}
 	}
 
 	bool playerAutomaton = (myStats->type == AUTOMATON && isPlayer);
@@ -3347,13 +3356,25 @@ static ConsoleVariable<bool> cvar_noxp("/noxp", false);
 void Entity::handleEffects(Stat* myStats)
 {
 	int increasestat[3] = { 0, 0, 0 };
-	int i, c;
 	int player = -1;
 
 	if ( !myStats )
 	{
 		return;
 	}
+
+	for ( int i = 0; i < NUMEFFECTS; ++i )
+	{
+		if ( myStats->getEffectActive(i) )
+		{
+			myStats->EFFECTS_ACCRETION_TIME[i]++;
+		}
+		else
+		{
+			myStats->EFFECTS_ACCRETION_TIME[i] = 0;
+		}
+	}
+
 	if ( this->behavior == &actPlayer )
 	{
 		player = this->skill[2];
@@ -3623,7 +3644,7 @@ void Entity::handleEffects(Stat* myStats)
 				}
 			}
 
-			for ( i = 0; i < 3; i++ )
+			for ( int i = 0; i < 3; i++ )
 			{
 				switch ( increasestat[i] )
 				{
@@ -3702,7 +3723,7 @@ void Entity::handleEffects(Stat* myStats)
 			// monsters use this.
 			Entity::monsterRollLevelUpStats(increasestat);
 
-			for ( i = 0; i < 3; i++ )
+			for ( int i = 0; i < 3; i++ )
 			{
 				switch ( increasestat[i] )
 				{
@@ -3737,7 +3758,7 @@ void Entity::handleEffects(Stat* myStats)
 				Entity* leader = uidToEntity(myStats->leader_uid);
 				if ( leader )
 				{
-					for ( i = 0; i < MAXPLAYERS; ++i )
+					for ( int i = 0; i < MAXPLAYERS; ++i )
 					{
 						if ( players[i] && players[i]->entity == leader )
 						{
@@ -3753,7 +3774,7 @@ void Entity::handleEffects(Stat* myStats)
 
 		if ( player >= 0 )
 		{
-			for ( i = 0; i < NUMSTATS * 2; ++i )
+			for ( int i = 0; i < NUMSTATS * 2; ++i )
 			{
 				myStats->PLAYER_LVL_STAT_TIMER[i] = 0;
 			}
@@ -3762,7 +3783,7 @@ void Entity::handleEffects(Stat* myStats)
 			int statIconTicks = 250;
 
 			std::vector<LevelUpAnimation_t::LevelUp_t::StatUp_t> StatUps;
-			for ( i = 0; i < 3; i++ )
+			for ( int i = 0; i < 3; i++ )
 			{
 				messagePlayerColor(player, MESSAGE_SPAM_MISC, color, Language::get(623 + increasestat[i]));
 				switch ( increasestat[i] )
@@ -3939,7 +3960,7 @@ void Entity::handleEffects(Stat* myStats)
 				}
 			}
 
-			for ( i = 0; i < MAXPLAYERS; ++i )
+			for ( int i = 0; i < MAXPLAYERS; ++i )
 			{
 				// broadcast a player levelled up to other players.
 				if ( i != player )
@@ -4004,7 +4025,7 @@ void Entity::handleEffects(Stat* myStats)
 			serverUpdatePlayerLVL(); // update all clients of party levels.
 		}
 
-		for ( i = 0; i < NUMSTATS; ++i )
+		for ( int i = 0; i < NUMSTATS; ++i )
 		{
 			myStats->PLAYER_LVL_STAT_BONUS[i] = -1;
 		}
@@ -4137,46 +4158,53 @@ void Entity::handleEffects(Stat* myStats)
 			if ( ticks % hungerTickRate == 0 )
 			{
 				//messagePlayer(0, "hungertick %d, curr %d, players: %d", hungerTickRate, myStats->HUNGER, playerCount);
-				myStats->HUNGER--;
 				Sint32 noLongerFull = getEntityHungerInterval(player, this, myStats, HUNGER_INTERVAL_OVERSATIATED);
 				Sint32 youFeelHungry = getEntityHungerInterval(player, this, myStats, HUNGER_INTERVAL_HUNGRY);
 				Sint32 youFeelWeak = getEntityHungerInterval(player, this, myStats, HUNGER_INTERVAL_WEAK);
 				Sint32 youFeelFaint = getEntityHungerInterval(player, this, myStats, HUNGER_INTERVAL_STARVING);
 
-				if ( myStats->HUNGER == noLongerFull )
+				if ( myStats->HUNGER <= youFeelWeak && myStats->getEffectActive(EFF_FOCI_LIGHT_PROVIDENCE) )
 				{
-					if ( !myStats->getEffectActive(EFF_VOMITING) )
-					{
-						messagePlayer(player, MESSAGE_STATUS, Language::get(629));
-					}
-					serverUpdateHunger(player);
+					// stall hunger
 				}
-				else if ( myStats->HUNGER == youFeelHungry )
+				else
 				{
-					if ( !myStats->getEffectActive(EFF_VOMITING) )
+					myStats->HUNGER--;
+					if ( myStats->HUNGER == noLongerFull )
 					{
-						messagePlayer(player, MESSAGE_STATUS, Language::get(630));
-						playSoundPlayer(player, 32, 128);
+						if ( !myStats->getEffectActive(EFF_VOMITING) )
+						{
+							messagePlayer(player, MESSAGE_STATUS, Language::get(629));
+						}
+						serverUpdateHunger(player);
 					}
-					serverUpdateHunger(player);
-				}
-				else if ( myStats->HUNGER == youFeelWeak )
-				{
-					if ( !myStats->getEffectActive(EFF_VOMITING) )
+					else if ( myStats->HUNGER == youFeelHungry )
 					{
-						messagePlayer(player, MESSAGE_STATUS, Language::get(631));
-						playSoundPlayer(player, 32, 128);
+						if ( !myStats->getEffectActive(EFF_VOMITING) )
+						{
+							messagePlayer(player, MESSAGE_STATUS, Language::get(630));
+							playSoundPlayer(player, 32, 128);
+						}
+						serverUpdateHunger(player);
 					}
-					serverUpdateHunger(player);
-				}
-				else if ( myStats->HUNGER == youFeelFaint )
-				{
-					if ( !myStats->getEffectActive(EFF_VOMITING) )
+					else if ( myStats->HUNGER == youFeelWeak )
 					{
-						messagePlayer(player, MESSAGE_STATUS, Language::get(632));
-						playSoundPlayer(player, 32, 128);
+						if ( !myStats->getEffectActive(EFF_VOMITING) )
+						{
+							messagePlayer(player, MESSAGE_STATUS, Language::get(631));
+							playSoundPlayer(player, 32, 128);
+						}
+						serverUpdateHunger(player);
 					}
-					serverUpdateHunger(player);
+					else if ( myStats->HUNGER == youFeelFaint )
+					{
+						if ( !myStats->getEffectActive(EFF_VOMITING) )
+						{
+							messagePlayer(player, MESSAGE_STATUS, Language::get(632));
+							playSoundPlayer(player, 32, 128);
+						}
+						serverUpdateHunger(player);
+					}
 				}
 			}
 		}
@@ -4205,7 +4233,7 @@ void Entity::handleEffects(Stat* myStats)
 			}
 
 			// Deal Hunger damage every three seconds
-			if ( doStarvation && !myStats->getEffectActive(EFF_VOMITING) && ticks % 150 == 0 )
+			if ( doStarvation && !myStats->getEffectActive(EFF_VOMITING) && ticks % 150 == 0 && !myStats->getEffectActive(EFF_FOCI_LIGHT_PROVIDENCE) )
 			{
 				serverUpdateHunger(player);
 				bool allowStarve = true;
@@ -4399,6 +4427,7 @@ void Entity::handleEffects(Stat* myStats)
 				{
 					myStats->clearEffect(i);
 					myStats->EFFECTS_TIMERS[i] = 0;
+					myStats->EFFECTS_ACCRETION_TIME[i] = 0;
 				}
 			}
 
@@ -4548,6 +4577,97 @@ void Entity::handleEffects(Stat* myStats)
 		else
 		{
 			this->char_heal = 0;
+		}
+	}
+
+	if ( myStats->getEffectActive(EFF_FOCI_LIGHT_PEACE) )
+	{
+		int effectStrength = std::min(4, (int)myStats->getEffectActive(EFF_FOCI_LIGHT_PEACE));
+  		int interval = getSpellEffectDurationSecondaryFromID(SPELL_FOCI_LIGHT_PEACE, nullptr, nullptr, nullptr);
+		interval -= (effectStrength - 1) * getSpellDamageSecondaryFromID(SPELL_FOCI_LIGHT_PEACE, nullptr, nullptr, nullptr);
+		interval = std::max(1, interval);
+		if ( ((myStats->EFFECTS_ACCRETION_TIME[EFF_FOCI_LIGHT_PEACE]) % interval == 0) )
+		{
+			Sint32 oldHP = myStats->HP;
+			this->modHP(1);
+			naturalHeal = true;
+			if ( behavior == &actPlayer )
+			{
+				if ( oldHP < myStats->HP )
+				{
+					Compendium_t::Events_t::eventUpdateCodex(skill[2], Compendium_t::CPDM_RGN_HP_RUN, "rgn", myStats->HP - oldHP);
+					Compendium_t::Events_t::eventUpdateCodex(skill[2], Compendium_t::CPDM_RGN_HP_SUM, "rgn", myStats->HP - oldHP);
+				}
+				Compendium_t::Events_t::eventUpdateCodex(skill[2], Compendium_t::CPDM_RGN_HP_RATE_MAX, "rgn", healthRegenInterval);
+			}
+		}
+	}
+
+	if ( myStats->getEffectActive(EFF_FOCI_LIGHT_PURITY) )
+	{
+		int effectStrength = std::min(4, (int)myStats->getEffectActive(EFF_FOCI_LIGHT_PURITY));
+		int interval = getSpellEffectDurationSecondaryFromID(SPELL_FOCI_LIGHT_PURITY, nullptr, nullptr, nullptr);
+		interval -= (effectStrength - 1) * getSpellDamageSecondaryFromID(SPELL_FOCI_LIGHT_PURITY, nullptr, nullptr, nullptr);
+		interval = std::max(1, interval);
+		
+		if ( ((myStats->EFFECTS_ACCRETION_TIME[EFF_FOCI_LIGHT_PURITY]) % interval == 0) )
+		{
+			std::vector<int> effectsToTry;
+			for ( int i = 0; i < NUMEFFECTS; ++i )
+			{
+				if ( myStats->getEffectActive(i) && myStats->statusEffectRemovedByCureAilment(i, this) )
+				{
+					effectsToTry.push_back(i);
+				}
+			}
+			if ( myStats->getEffectActive(EFF_WITHDRAWAL) )
+			{
+				effectsToTry.push_back(EFF_WITHDRAWAL);
+			}
+			if ( flags[BURNING] )
+			{
+				effectsToTry.push_back(StatusEffectQueue_t::kEffectBurning); // special case
+			}
+
+			if ( effectsToTry.size() )
+			{
+				int numToCure = effectStrength;
+				bool cured = false;
+				while ( effectsToTry.size() && numToCure > 0 )
+				{
+					unsigned int pick = local_rng.rand() % effectsToTry.size();
+					int effect = effectsToTry[pick];
+					if ( effect == StatusEffectQueue_t::kEffectBurning )
+					{
+						this->flags[BURNING] = false;
+						serverUpdateEntityFlag(this, BURNING);
+					}
+					else if ( effect == EFF_WITHDRAWAL )
+					{
+						this->setEffect(EFF_WITHDRAWAL, false, EFFECT_WITHDRAWAL_BASE_TIME, true);
+						serverUpdatePlayerGameplayStats(player, STATISTICS_FUNCTIONAL, 1);
+					}
+					else
+					{
+						myStats->clearEffect(effect);
+						if ( myStats->EFFECTS_TIMERS[effect] > 0 )
+						{
+							myStats->EFFECTS_TIMERS[effect] = 1;
+						}
+					}
+					cured = true;
+					--numToCure;
+					effectsToTry.erase(effectsToTry.begin() + pick);
+				}
+
+				if ( cured )
+				{
+					playSoundEntity(this, 168, 128);
+					spawnMagicEffectParticles(this->x, this->y, this->z, 169);
+					serverUpdateEffects(player);
+					messagePlayerColor(player, MESSAGE_STATUS, makeColorRGB(0, 255, 0), Language::get(411));
+				}
+			}
 		}
 	}
 
@@ -4805,6 +4925,9 @@ void Entity::handleEffects(Stat* myStats)
 	}
 
 	int previousEnsemblePlaying = -1;
+	bool holySymbolCharging = false;
+	bool darkIconCharging = false;
+	bool fociCharging = false;
 	if ( behavior == &actPlayer )
 	{
 		previousEnsemblePlaying = players[player]->mechanics.ensemblePlaying;
@@ -4816,10 +4939,6 @@ void Entity::handleEffects(Stat* myStats)
 				players[player]->mechanics.ensembleRequireRecast = false;
 			}
 			players[player]->mechanics.ensembleTakenInitialMP = false;
-		}
-		if ( players[player]->mechanics.fociChargeDelay > 0 )
-		{
-			--players[player]->mechanics.fociChargeDelay;
 		}
 	}
 
@@ -4834,6 +4953,30 @@ void Entity::handleEffects(Stat* myStats)
 					int spellID = getSpellIDFromFoci(myStats->shield->type);
 					if ( spellID > SPELL_NONE )
 					{
+						if ( spellID == SPELL_FOCI_LIGHT_JUSTICE
+							|| spellID == SPELL_FOCI_LIGHT_PEACE
+							|| spellID == SPELL_FOCI_LIGHT_PROVIDENCE
+							|| spellID == SPELL_FOCI_LIGHT_PURITY
+							|| spellID == SPELL_FOCI_LIGHT_SANCTUARY )
+						{
+							holySymbolCharging = true;
+						}
+						else if ( spellID == SPELL_FOCI_DARK_LIFE
+							|| spellID == SPELL_FOCI_DARK_RIFT
+							|| spellID == SPELL_FOCI_DARK_SILENCE
+							|| spellID == SPELL_FOCI_DARK_SUPPRESS
+							|| spellID == SPELL_FOCI_DARK_VENGEANCE )
+						{
+							darkIconCharging = true;
+						}
+						fociCharging = true;
+						if ( players[player]->mechanics.lastFociHeldType != myStats->shield->type )
+						{
+							players[player]->mechanics.fociDarkChargeTime = 0;
+							players[player]->mechanics.fociHolyChargeTime = 0;
+						}
+						players[player]->mechanics.lastFociHeldType = myStats->shield->type;
+
 						static ConsoleVariable<float> cvar_foci_charge_init("/foci_charge_init", 1.f);
 						int chargeTimeInit = (float)(TICKS_PER_SECOND / 4);
 						if ( svFlags & SV_FLAG_CHEATS )
@@ -4947,7 +5090,28 @@ void Entity::handleEffects(Stat* myStats)
 									bool failedCast = false;
 									if ( this->safeConsumeMP(mpcost) || mpcost == 0 )
 									{
-										castSpell(this->getUID(), spell, false, false, false, nullptr, true);
+										CastSpellProps_t props;
+										if ( spell->ID == SPELL_FOCI_LIGHT_JUSTICE
+											|| spell->ID == SPELL_FOCI_LIGHT_PEACE
+											|| spell->ID == SPELL_FOCI_LIGHT_PROVIDENCE
+											|| spell->ID == SPELL_FOCI_LIGHT_PURITY
+											|| spell->ID == SPELL_FOCI_LIGHT_SANCTUARY )
+										{
+											players[player]->mechanics.fociHolyChargeTime++;
+											players[player]->mechanics.fociHolyChargeTime = std::min(127, players[player]->mechanics.fociHolyChargeTime);
+											props.optionalData = players[player]->mechanics.fociHolyChargeTime;
+										}
+										else if ( spellID == SPELL_FOCI_DARK_LIFE
+											|| spellID == SPELL_FOCI_DARK_RIFT
+											|| spellID == SPELL_FOCI_DARK_SILENCE
+											|| spellID == SPELL_FOCI_DARK_SUPPRESS
+											|| spellID == SPELL_FOCI_DARK_VENGEANCE )
+										{
+											players[player]->mechanics.fociDarkChargeTime++;
+											players[player]->mechanics.fociDarkChargeTime = std::min(127, players[player]->mechanics.fociDarkChargeTime);
+											props.optionalData = players[player]->mechanics.fociDarkChargeTime;
+										}
+										castSpell(this->getUID(), spell, false, false, false, &props, true);
 									}
 									else
 									{
@@ -5339,6 +5503,62 @@ void Entity::handleEffects(Stat* myStats)
 					}
 				}
 			}
+		}
+	}
+
+	if ( behavior == &actPlayer )
+	{
+		if ( !holySymbolCharging && players[player]->mechanics.fociHolyChargeTime > 0 )
+		{
+			int chargeTime = players[player]->mechanics.fociHolyChargeTime;
+			players[player]->mechanics.fociHolyChargeTime = 0;
+			if ( myStats->shield != NULL && (effectShapeshift == NOTHING || effectShapeshift == CREATURE_IMP) )
+			{
+				if ( itemTypeIsFoci(myStats->shield->type) )
+				{
+					if ( myStats->shield->type == players[player]->mechanics.lastFociHeldType )
+					{
+						if ( auto spellID = getSpellIDFromFoci(myStats->shield->type) )
+						{
+							if ( auto spell = getSpellFromID(spellID) )
+							{
+								CastSpellProps_t props;
+								props.optionalData = std::min(127, chargeTime);
+								props.optionalData |= (1 << 7);
+								castSpell(this->getUID(), spell, false, false, false, &props, true);
+							}
+						}
+					}
+				}
+			}
+		}
+		if ( !darkIconCharging && players[player]->mechanics.fociDarkChargeTime > 0 )
+		{
+			int chargeTime = players[player]->mechanics.fociDarkChargeTime;
+			players[player]->mechanics.fociDarkChargeTime = 0;
+			if ( myStats->shield != NULL && (effectShapeshift == NOTHING || effectShapeshift == CREATURE_IMP) )
+			{
+				if ( itemTypeIsFoci(myStats->shield->type) )
+				{
+					if ( myStats->shield->type == players[player]->mechanics.lastFociHeldType )
+					{
+						if ( auto spellID = getSpellIDFromFoci(myStats->shield->type) )
+						{
+							if ( auto spell = getSpellFromID(spellID) )
+							{
+								CastSpellProps_t props;
+								props.optionalData = std::min(127, chargeTime);
+								props.optionalData |= (1 << 7);
+								castSpell(this->getUID(), spell, false, false, false, &props, true);
+							}
+						}
+					}
+				}
+			}
+		}
+		if ( !fociCharging )
+		{
+			players[player]->mechanics.lastFociHeldType = 0;
 		}
 	}
 
@@ -6016,13 +6236,14 @@ void Entity::handleEffects(Stat* myStats)
 						sendPacketSafe(net_sock, -1, net_packet, player - 1);
 					}
 				}
-				for ( c = 0; c < NUMEFFECTS; c++ )
+				for ( int c = 0; c < NUMEFFECTS; c++ )
 				{
 					if ( !(c == EFF_VAMPIRICAURA && myStats->EFFECTS_TIMERS[c] == -2) 
 						&& c != EFF_WITHDRAWAL && c != EFF_SHAPESHIFT )
 					{
 						myStats->clearEffect(c);
 						myStats->EFFECTS_TIMERS[c] = 0;
+						myStats->EFFECTS_ACCRETION_TIME[c] = 0;
 					}
 				}
 
@@ -6203,13 +6424,14 @@ void Entity::handleEffects(Stat* myStats)
 
 					real_t hpRestore = 100 * (0.5 + std::min(2, abs(myStats->amulet->beatitude)) * 0.5);
 					this->setHP(std::max((int)hpRestore, 5));
-					for ( c = 0; c < NUMEFFECTS; c++ )
+					for ( int c = 0; c < NUMEFFECTS; c++ )
 					{
 						if ( !(c == EFF_VAMPIRICAURA && myStats->EFFECTS_TIMERS[c] == -2) 
 							&& c != EFF_WITHDRAWAL && c != EFF_SHAPESHIFT )
 						{
 							myStats->clearEffect(c);
 							myStats->EFFECTS_TIMERS[c] = 0;
+							myStats->EFFECTS_ACCRETION_TIME[c] = 0;
 						}
 					}
 					
@@ -10323,7 +10545,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 				bool armorPierceProc = false;
 
 				if ( (weaponskill == PRO_SWORD && myStats->weapon && myStats->weapon->type == ARTIFACT_SWORD 
-					|| (myStats->weapon && myStats->getEffectActive(EFF_DIVINE_ZEAL)) )
+					|| (myStats->weapon && myStats->getEffectActive(EFF_DIVINE_ZEAL))
+					|| (myStats->weapon && myStats->getEffectActive(EFF_FOCI_LIGHT_JUSTICE)))
 					&& !shapeshifted)
 				{
 					switch ( hitstats->type )
@@ -10357,7 +10580,16 @@ void Entity::attack(int pose, int charge, Entity* target)
 							if ( myStats->getEffectActive(EFF_DIVINE_ZEAL) )
 							{
 								zealSmite = true;
-								weaponMultipliers += 0.5;
+								weaponMultipliers += getSpellEffectDurationSecondaryFromID(SPELL_DIVINE_ZEAL, nullptr, nullptr, nullptr) / 100.0;
+								int tier = std::max(0, (myStats->getEffectActive(EFF_DIVINE_ZEAL) - 1));
+								weaponMultipliers += tier * getSpellDamageSecondaryFromID(SPELL_DIVINE_ZEAL, nullptr, nullptr, nullptr) / 100.0;
+							}
+							if ( myStats->getEffectActive(EFF_FOCI_LIGHT_JUSTICE) )
+							{
+								zealSmite = true;
+								weaponMultipliers += getSpellEffectDurationSecondaryFromID(SPELL_FOCI_LIGHT_JUSTICE, nullptr, nullptr, nullptr) / 100.0;
+								int tier = std::max(0, (myStats->getEffectActive(EFF_FOCI_LIGHT_JUSTICE) - 1));
+								weaponMultipliers += tier * getSpellDamageSecondaryFromID(SPELL_FOCI_LIGHT_JUSTICE, nullptr, nullptr, nullptr) / 100.0;
 							}
 							if ( particle )
 							{
@@ -10497,6 +10729,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 						{
 							damage += 1;
 						}
+					}
+					if ( zealSmite )
+					{
+						damage += 3;
 					}
 					if ( myStats->type == LICH_FIRE && (!hitstats->defending && parriedDamage == 0) )
 					{
@@ -14151,6 +14387,12 @@ int AC(Stat* stat)
 		}
 	}
 	int armor = statGetCON(stat, playerEntity);
+	if ( stat->getEffectActive(EFF_FOCI_LIGHT_SANCTUARY) )
+	{
+		armor += getSpellDamageFromID(SPELL_FOCI_LIGHT_SANCTUARY, nullptr, nullptr, nullptr);
+		int tier = std::max(0, (stat->getEffectActive(EFF_FOCI_LIGHT_SANCTUARY) - 1));
+		armor += tier * getSpellDamageSecondaryFromID(SPELL_FOCI_LIGHT_SANCTUARY, nullptr, nullptr, nullptr);
+	}
 
 	if ( stat->helmet )
 	{
@@ -15025,9 +15267,8 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 	{
 		int numshares = 0;
 		Entity* shares[MAXPLAYERS];
-		int c;
 
-		for ( c = 0; c < MAXPLAYERS; ++c )
+		for ( int c = 0; c < MAXPLAYERS; ++c )
 		{
 			shares[c] = nullptr;
 		}
@@ -15064,7 +15305,7 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 		// award XP to everyone else in the group
 		if ( share )
 		{
-			for ( c = 0; c < MAXPLAYERS; c++ )
+			for ( int c = 0; c < MAXPLAYERS; c++ )
 			{
 				if ( shares[c] )
 				{

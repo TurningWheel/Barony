@@ -1565,6 +1565,7 @@ namespace ConsoleCommands {
 			{
 				players[clientnum]->entity->getStats()->clearEffect(c);
 				players[clientnum]->entity->getStats()->EFFECTS_TIMERS[c] = 0;
+				players[clientnum]->entity->getStats()->EFFECTS_ACCRETION_TIME[c] = 0;
 			}
 		}
 		if (players[clientnum]->entity->getStats()->getEffectActive(EFF_WITHDRAWAL))

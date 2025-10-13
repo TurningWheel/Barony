@@ -6287,7 +6287,12 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 				|| stats[player]->getEffectActive(EFF_NULL_RANGED)
 				|| stats[player]->getEffectActive(EFF_DELAY_PAIN)
 				|| stats[player]->getEffectActive(EFF_SACRED_PATH)
-				|| stats[player]->getEffectActive(EFF_MAGIC_WELL) )
+				|| stats[player]->getEffectActive(EFF_MAGIC_WELL)
+				|| stats[player]->getEffectActive(EFF_FOCI_LIGHT_JUSTICE)
+				|| stats[player]->getEffectActive(EFF_FOCI_LIGHT_PEACE)
+				|| stats[player]->getEffectActive(EFF_FOCI_LIGHT_PROVIDENCE)
+				|| stats[player]->getEffectActive(EFF_FOCI_LIGHT_PURITY)
+				|| stats[player]->getEffectActive(EFF_FOCI_LIGHT_SANCTUARY) )
 			{
 				for ( auto img : frame->getImages() )
 				{
@@ -6535,6 +6540,156 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 							if ( effectStrength > 1 )
 							{
 								if ( auto text = Text::get(std::to_string(effectStrength - 1).c_str(),
+									"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+								{
+									text->drawColor(SDL_Rect{ 0,0,0,0 },
+										SDL_Rect{ pos.x + img->pos.x + img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x,
+										pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
+										0, 0 },
+										SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+										makeColor(255, 255, 255, 255));
+								}
+							}
+						}
+						else if ( img->path.find("symbol_justice.png") != std::string::npos )
+						{
+							Uint8 effectStrength = stats[player]->getEffectActive(EFF_FOCI_LIGHT_JUSTICE);
+							if ( effectStrength >= 1 )
+							{
+								std::string val = "I";
+								if ( effectStrength >= 4 )
+								{
+									val = "IV";
+								}
+								else if ( effectStrength >= 3 )
+								{
+									val = "III";
+								}
+								else if ( effectStrength >= 2 )
+								{
+									val = "II";
+								}
+								if ( auto text = Text::get(val.c_str(),
+									"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+								{
+									text->drawColor(SDL_Rect{ 0,0,0,0 },
+										SDL_Rect{ pos.x + img->pos.x + img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x,
+										pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
+										0, 0 },
+										SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+										makeColor(255, 255, 255, 255));
+								}
+							}
+						}
+						else if ( img->path.find("symbol_peace.png") != std::string::npos )
+						{
+							Uint8 effectStrength = stats[player]->getEffectActive(EFF_FOCI_LIGHT_PEACE);
+							if ( effectStrength >= 1 )
+							{
+								std::string val = "I";
+								if ( effectStrength >= 4 )
+								{
+									val = "IV";
+								}
+								else if ( effectStrength >= 3 )
+								{
+									val = "III";
+								}
+								else if ( effectStrength >= 2 )
+								{
+									val = "II";
+								}
+								if ( auto text = Text::get(val.c_str(),
+									"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+								{
+									text->drawColor(SDL_Rect{ 0,0,0,0 },
+										SDL_Rect{ pos.x + img->pos.x + img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x,
+										pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
+										0, 0 },
+										SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+										makeColor(255, 255, 255, 255));
+								}
+							}
+						}
+						else if ( img->path.find("symbol_providence.png") != std::string::npos )
+						{
+							Uint8 effectStrength = stats[player]->getEffectActive(EFF_FOCI_LIGHT_PROVIDENCE);
+							if ( effectStrength >= 1 )
+							{
+								std::string val = "I";
+								if ( effectStrength >= 4 )
+								{
+									val = "IV";
+								}
+								else if ( effectStrength >= 3 )
+								{
+									val = "III";
+								}
+								else if ( effectStrength >= 2 )
+								{
+									val = "II";
+								}
+								if ( auto text = Text::get(val.c_str(),
+									"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+								{
+									text->drawColor(SDL_Rect{ 0,0,0,0 },
+										SDL_Rect{ pos.x + img->pos.x + img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x,
+										pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
+										0, 0 },
+										SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+										makeColor(255, 255, 255, 255));
+								}
+							}
+						}
+						else if ( img->path.find("symbol_purity.png") != std::string::npos )
+						{
+							Uint8 effectStrength = stats[player]->getEffectActive(EFF_FOCI_LIGHT_PURITY);
+							if ( effectStrength >= 1 )
+							{
+								std::string val = "I";
+								if ( effectStrength >= 4 )
+								{
+									val = "IV";
+								}
+								else if ( effectStrength >= 3 )
+								{
+									val = "III";
+								}
+								else if ( effectStrength >= 2 )
+								{
+									val = "II";
+								}
+								if ( auto text = Text::get(val.c_str(),
+									"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+								{
+									text->drawColor(SDL_Rect{ 0,0,0,0 },
+										SDL_Rect{ pos.x + img->pos.x + img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x,
+										pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
+										0, 0 },
+										SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+										makeColor(255, 255, 255, 255));
+								}
+							}
+						}
+						else if ( img->path.find("symbol_sanctuary.png") != std::string::npos )
+						{
+							Uint8 effectStrength = stats[player]->getEffectActive(EFF_FOCI_LIGHT_SANCTUARY);
+							if ( effectStrength >= 1 )
+							{
+								std::string val = "I";
+								if ( effectStrength >= 4 )
+								{
+									val = "IV";
+								}
+								else if ( effectStrength >= 3 )
+								{
+									val = "III";
+								}
+								else if ( effectStrength >= 2 )
+								{
+									val = "II";
+								}
+								if ( auto text = Text::get(val.c_str(),
 									"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
 								{
 									text->drawColor(SDL_Rect{ 0,0,0,0 },

@@ -3817,6 +3817,12 @@ int getSpellPropertyFromID(spell_t::SpellBasePropertiesInt prop, int spellID, En
 				}
 			}
 		}
+		else if ( prop == spell_t::SpellBasePropertiesInt::SPELLPROP_MODIFIED_RADIUS )
+		{
+			result = spell->radius;
+			real_t modifier = 1.0 + spell->radius_mult;
+			result *= modifier;
+		}
 	}
 	return result;
 }
