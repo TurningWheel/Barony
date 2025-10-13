@@ -295,6 +295,7 @@ Monster Entity::getMonsterTypeFromSprite() const
 			return NOTHING;
 		}
 	}
+	return result;
 }
 
 Monster Entity::getMonsterTypeFromSprite(const int sprite)
