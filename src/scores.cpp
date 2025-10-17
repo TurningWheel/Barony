@@ -4969,9 +4969,11 @@ int SaveGameInfo::populateFromSession(const int playernum)
 			}
 			player.stats.EFFECTS.resize(NUMEFFECTS);
 			player.stats.EFFECTS_TIMERS.resize(NUMEFFECTS);
+			player.stats.EFFECTS_ACCRETION_TIME.resize(NUMEFFECTS);
 			for ( int i = 0; i < NUMEFFECTS; ++i ) {
 				player.stats.EFFECTS[i] = stats[c]->getEffectActive(i);
 				player.stats.EFFECTS_TIMERS[i] = stats[c]->EFFECTS_TIMERS[i];
+				player.stats.EFFECTS_ACCRETION_TIME[i] = stats[c]->EFFECTS_ACCRETION_TIME[i];
 			}
 			constexpr int NUMMISCFLAGS = sizeof(Stat::MISC_FLAGS) / sizeof(Stat::MISC_FLAGS[0]);
 			player.stats.MISC_FLAGS.resize(NUMMISCFLAGS);
@@ -5141,9 +5143,11 @@ int SaveGameInfo::populateFromSession(const int playernum)
 					}
 					stats.EFFECTS.resize(NUMEFFECTS);
 					stats.EFFECTS_TIMERS.resize(NUMEFFECTS);
+					stats.EFFECTS_ACCRETION_TIME.resize(NUMEFFECTS);
 					for ( int i = 0; i < NUMEFFECTS; ++i ) {
 						stats.EFFECTS[i] = follower->getEffectActive(i);
 						stats.EFFECTS_TIMERS[i] = follower->EFFECTS_TIMERS[i];
+						stats.EFFECTS_ACCRETION_TIME[i] = follower->EFFECTS_ACCRETION_TIME[i];
 					}
 					stats.MISC_FLAGS.resize(NUMMISCFLAGS);
 					for ( int i = 0; i < NUMMISCFLAGS; ++i ) {
@@ -5682,12 +5686,18 @@ int loadGame(int player, const SaveGameInfo& info) {
 		{
 			stats[statsPlayer]->setEffectValueUnsafe(c, (Uint8)p.EFFECTS[c]);
 			stats[statsPlayer]->EFFECTS_TIMERS[c] = p.EFFECTS_TIMERS[c];
-			stats[statsPlayer]->EFFECTS_ACCRETION_TIME[c] = p.EFFECTS_ACCRETION_TIME[c];
 		}
 		else
 		{
 			stats[statsPlayer]->clearEffect(c);
 			stats[statsPlayer]->EFFECTS_TIMERS[c] = 0;
+		}
+		if ( c < p.EFFECTS_ACCRETION_TIME.size() )
+		{
+			stats[statsPlayer]->EFFECTS_ACCRETION_TIME[c] = p.EFFECTS_ACCRETION_TIME[c];
+		}
+		else
+		{
 			stats[statsPlayer]->EFFECTS_ACCRETION_TIME[c] = 0;
 		}
 	}
@@ -6003,12 +6013,18 @@ list_t* loadGameFollowers(const SaveGameInfo& info) {
 				{
 					stats->setEffectValueUnsafe(c, (Uint8)follower.EFFECTS[c]);
 					stats->EFFECTS_TIMERS[c] = follower.EFFECTS_TIMERS[c];
-					stats->EFFECTS_ACCRETION_TIME[c] = follower.EFFECTS_ACCRETION_TIME[c];
 				}
 				else
 				{
 					stats->clearEffect(c);
 					stats->EFFECTS_TIMERS[c] = 0;
+				}
+				if ( c < follower.EFFECTS_ACCRETION_TIME.size() )
+				{
+					stats->EFFECTS_ACCRETION_TIME[c] = follower.EFFECTS_ACCRETION_TIME[c];
+				}
+				else
+				{
 					stats->EFFECTS_ACCRETION_TIME[c] = 0;
 				}
 			}
