@@ -2765,6 +2765,27 @@ namespace ConsoleCommands {
 		secretlevel = (secretlevel == false);
 		});
 
+	static ConsoleCommand ccmd_setlvl("/setlvl", "set character lvl", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+
+		if ( multiplayer != SINGLE )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(299));
+			return;
+		}
+
+		if ( argc < 2 )
+		{
+			return;
+		}
+		int lvl = atoi(argv[1]);
+		stats[clientnum]->LVL = lvl;
+		});
+
 	static ConsoleCommand ccmd_seteffect("/seteffect", "give the player the specified effect (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
@@ -5645,6 +5666,161 @@ namespace ConsoleCommands {
 				stats[clientnum]->PER,
 				stats[clientnum]->CHR);
 		}
+		stats[clientnum]->STR = 0;
+		stats[clientnum]->DEX = 0;
+		stats[clientnum]->CON = 0;
+		stats[clientnum]->INT = 0;
+		stats[clientnum]->PER = 0;
+		stats[clientnum]->CHR = 0;
+	});
+
+	static ConsoleCommand ccmd_classstatrolls2("/classstatrolls2", "debug current class stats", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+
+		if ( multiplayer != SINGLE )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(299));
+			return;
+		}
+		if ( !players[clientnum]->entity ) { return; }
+
+		//for ( int i = 0; i < NUMCLASSES; ++i )
+		{
+			stats[clientnum]->STR = 0;
+			stats[clientnum]->DEX = 0;
+			stats[clientnum]->CON = 0;
+			stats[clientnum]->INT = 0;
+			stats[clientnum]->PER = 0;
+			stats[clientnum]->CHR = 0;
+			for ( int lv = 0; lv < 50; ++lv )
+			{
+				int increasestat[3] = { 0, 0, 0 };
+				players[clientnum]->entity->playerStatIncrease(client_classes[clientnum], increasestat);
+				for ( int i = 0; i < 3; i++ )
+				{
+					switch ( increasestat[i] )
+					{
+					case STAT_STR:
+						stats[clientnum]->STR++;
+						break;
+					case STAT_DEX:
+						stats[clientnum]->DEX++;
+						break;
+					case STAT_CON:
+						stats[clientnum]->CON++;
+						break;
+					case STAT_INT:
+						stats[clientnum]->INT++;
+						break;
+					case STAT_PER:
+						stats[clientnum]->PER++;
+						break;
+					case STAT_CHR:
+						stats[clientnum]->CHR++;
+						break;
+					default:
+						break;
+					}
+				}
+			}
+			printlog("%d: %d %d %d %d %d %d",
+				client_classes[clientnum],
+				stats[clientnum]->STR,
+				stats[clientnum]->DEX,
+				stats[clientnum]->CON,
+				stats[clientnum]->INT,
+				stats[clientnum]->PER,
+				stats[clientnum]->CHR);
+			char buf[128];
+			snprintf(buf, sizeof(buf), "%d %d %d %d %d %d",
+				stats[clientnum]->STR,
+				stats[clientnum]->DEX,
+				stats[clientnum]->CON,
+				stats[clientnum]->INT,
+				stats[clientnum]->PER,
+				stats[clientnum]->CHR);
+			SDL_SetClipboardText(buf);
+		}
+		stats[clientnum]->STR = 0;
+		stats[clientnum]->DEX = 0;
+		stats[clientnum]->CON = 0;
+		stats[clientnum]->INT = 0;
+		stats[clientnum]->PER = 0;
+		stats[clientnum]->CHR = 0;
+	});
+
+	static ConsoleCommand ccmd_classstatrolls3("/classstatrolls3", "debug current class stats", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+
+		if ( multiplayer != SINGLE )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(299));
+			return;
+		}
+		if ( !players[clientnum]->entity ) { return; }
+
+		int numStatRolls = 0;
+		int attr[6] = { 0, 0, 0, 0, 0, 0 };
+		for ( int i = 0; i < 1000; ++i )
+		{
+			stats[clientnum]->STR = 0;
+			stats[clientnum]->DEX = 0;
+			stats[clientnum]->CON = 0;
+			stats[clientnum]->INT = 0;
+			stats[clientnum]->PER = 0;
+			stats[clientnum]->CHR = 0;
+			for ( int lv = 0; lv < 50; ++lv )
+			{
+				int increasestat[3] = { 0, 0, 0 };
+				players[clientnum]->entity->playerStatIncrease(client_classes[clientnum], increasestat);
+				for ( int i = 0; i < 3; i++ )
+				{
+					switch ( increasestat[i] )
+					{
+					case STAT_STR:
+						stats[clientnum]->STR++;
+						break;
+					case STAT_DEX:
+						stats[clientnum]->DEX++;
+						break;
+					case STAT_CON:
+						stats[clientnum]->CON++;
+						break;
+					case STAT_INT:
+						stats[clientnum]->INT++;
+						break;
+					case STAT_PER:
+						stats[clientnum]->PER++;
+						break;
+					case STAT_CHR:
+						stats[clientnum]->CHR++;
+						break;
+					default:
+						break;
+					}
+					++attr[increasestat[i]];
+					++numStatRolls;
+				}
+			}
+		}
+		char buf[128];
+		snprintf(buf, sizeof(buf), "%.2f %.2f %.2f %.2f %.2f %.2f",
+			3 * attr[0] / float(numStatRolls),
+			3 * attr[1] / float(numStatRolls),
+			3 * attr[2] / float(numStatRolls),
+			3 * attr[3] / float(numStatRolls),
+			3 * attr[4] / float(numStatRolls),
+			3 * attr[5] / float(numStatRolls));
+		messagePlayer(clientnum, MESSAGE_STATUS, "%s", buf);
+		SDL_SetClipboardText(buf);
 		stats[clientnum]->STR = 0;
 		stats[clientnum]->DEX = 0;
 		stats[clientnum]->CON = 0;
