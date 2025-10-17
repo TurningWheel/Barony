@@ -373,6 +373,8 @@ int pathCheckObstacle(int x, int y, Entity* my, Entity* target)
 			|| entity->sprite == 177	// shrine
 			|| entity->sprite == 178	// spell shrine
 			|| entity->sprite == 1481	// daedalus shrine
+			|| entity->sprite == 217	// iron door
+			|| entity->sprite == 218	// iron door
 			)
 		{
 			if ( (int)floor(entity->x / 16) == u && (int)floor(entity->y / 16) == v )
