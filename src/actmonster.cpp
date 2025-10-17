@@ -2454,11 +2454,13 @@ void sentrybotPickSpotNoise(Entity* my, Stat* myStats)
 			{
 				doSpecialNoise = true;
 			}
+			break;
 		case 1:
 			if ( my->ticks % 60 >= 20 && my->ticks % 60 < 40 )
 			{
 				doSpecialNoise = true;
 			}
+			break;
 		case 2:
 			if ( my->ticks % 60 >= 40 )
 			{
@@ -11251,6 +11253,7 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_SHADOW_TELEPORT;
 						break;
 					}
+					break;
 				case GOATMAN:
 					if ( monsterSpecialState == GOATMAN_POTION )
 					{
