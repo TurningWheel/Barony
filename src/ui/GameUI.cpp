@@ -16670,7 +16670,7 @@ bool getAttackTooltipLines(int playernum, AttackHoverText_t& attackHoverTextInfo
 	return false;
 }
 
-real_t getDisplayedHPRegen(Entity* my, Stat& myStats, Uint32* outColor, char buf[32])
+real_t getDisplayedHPRegen(Entity* my, Stat& myStats, Uint32* outColor, char buf[32], bool excludeItemsEffectsBonus = false)
 {
 	real_t regen = 0.0;
 	if ( outColor )
@@ -16680,7 +16680,7 @@ real_t getDisplayedHPRegen(Entity* my, Stat& myStats, Uint32* outColor, char buf
 	if ( myStats.HP > 0 )
 	{
 		regen = (static_cast<real_t>(Entity::getHealthRegenInterval(my,
-			myStats, true)) / TICKS_PER_SECOND);
+			myStats, true, excludeItemsEffectsBonus)) / TICKS_PER_SECOND);
 		/*if ( myStats.type == SKELETON )
 		{
 			if ( !(svFlags & SV_FLAG_HUNGER) )
@@ -16706,11 +16706,16 @@ real_t getDisplayedHPRegen(Entity* my, Stat& myStats, Uint32* outColor, char buf
 				}
 			}
 		}
-		else if ( regen < HEAL_TIME / TICKS_PER_SECOND )
+		else
 		{
 			if ( outColor )
 			{
-				*outColor = hudColors.characterSheetGreen;
+				real_t regenWithoutItems = (static_cast<real_t>(Entity::getHealthRegenInterval(my,
+					myStats, true, true)) / TICKS_PER_SECOND);
+				if ( regen < (regenWithoutItems - 0.001) )
+				{
+					*outColor = hudColors.characterSheetGreen;
+				}
 			}
 		}
 	}
@@ -16738,14 +16743,14 @@ real_t getDisplayedHPRegen(Entity* my, Stat& myStats, Uint32* outColor, char buf
 	return regen * 100.0;
 }
 
-real_t getDisplayedMPRegen(Entity* my, Stat& myStats, Uint32* outColor, char buf[32])
+real_t getDisplayedMPRegen(Entity* my, Stat& myStats, Uint32* outColor, char buf[32], bool excludeItemsEffectsBonus = false)
 {
 	real_t regen = 0.0;
 	bool isNegative = false;
 	bool isInsectoid = false;
 	if ( /*players[player.playernum]->entity*/ true )
 	{
-		regen = (static_cast<real_t>(Entity::getManaRegenInterval(my, myStats, true)) / TICKS_PER_SECOND);
+		regen = (static_cast<real_t>(Entity::getManaRegenInterval(my, myStats, true, excludeItemsEffectsBonus)) / TICKS_PER_SECOND);
 		if ( myStats.type == AUTOMATON )
 		{
 			if ( myStats.HUNGER <= 300 )
@@ -16990,6 +16995,90 @@ struct CharacterSheetTooltipCache_t
 		weapontype = getWeaponSkill(stats[player]->weapon);
 	}
 };
+
+void characterSheetTooltipSetZeroStat(Entity* entity, Stat* myStats, Sint32* LVL, Sint32 oldStats[NUMSTATS])
+{
+	if ( !myStats ) { return; }
+	if ( LVL )
+	{
+		*LVL = myStats->LVL;
+		myStats->LVL = 1;
+	}
+	if ( oldStats )
+	{
+		for ( int i = 0; i < NUMSTATS; ++i )
+		{
+			switch ( i )
+			{
+			case STAT_STR:
+				oldStats[i] = myStats->STR;
+				myStats->STR += -statGetSTR(myStats, entity);
+				break;
+			case STAT_DEX:
+				oldStats[i] = myStats->DEX;
+				myStats->DEX += -statGetDEX(myStats, entity);
+				break;
+			case STAT_CON:
+				oldStats[i] = myStats->CON;
+				myStats->CON += -statGetCON(myStats, entity);
+				break;
+			case STAT_INT:
+				oldStats[i] = myStats->INT;
+				myStats->INT += -statGetINT(myStats, entity);
+				break;
+			case STAT_PER:
+				oldStats[i] = myStats->PER;
+				myStats->PER += -statGetPER(myStats, entity);
+				break;
+			case STAT_CHR:
+				oldStats[i] = myStats->CHR;
+				myStats->CHR += -statGetCHR(myStats, entity);
+				break;
+			default:
+				break;
+			}
+		}
+	}
+}
+
+void characterSheetTooltipRestoreStats(Stat* myStats, Sint32* LVL, Sint32 oldStats[NUMSTATS])
+{
+	if ( !myStats ) { return; }
+	if ( LVL )
+	{
+		myStats->LVL = *LVL;
+	}
+	if ( oldStats )
+	{
+		for ( int i = 0; i < NUMSTATS; ++i )
+		{
+			switch ( i )
+			{
+			case STAT_STR:
+				myStats->STR = oldStats[i];
+				break;
+			case STAT_DEX:
+				myStats->DEX = oldStats[i];
+				break;
+			case STAT_CON:
+				myStats->CON = oldStats[i];
+				break;
+			case STAT_INT:
+				myStats->INT = oldStats[i];
+				break;
+			case STAT_PER:
+				myStats->PER = oldStats[i];
+				break;
+			case STAT_CHR:
+				myStats->CHR = oldStats[i];
+				break;
+			default:
+				break;
+			}
+		}
+	}
+}
+
 bool blitCharacterSheetTooltipToSurf = false;
 CharacterSheetTooltipCache_t charsheetTooltipCache[MAXPLAYERS];
 void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element, SDL_Rect pos, Player::PanelJustify_t tooltipJustify)
@@ -18754,7 +18843,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 					capitalizeString(race);
 
 					snprintf(buf, sizeof(buf), getHoverTextString("attributes_rgn_base_value").c_str(), race.c_str());
-					real_t regen = 100.0;
+					/*real_t regen = 100.0;
 					if ( !(svFlags & SV_FLAG_HUNGER) )
 					{
 						regen = 0.0;
@@ -18762,8 +18851,21 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 					if ( type == SKELETON )
 					{
 						regen = 25.0;
-					}
-					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_rgn_bonus_format").c_str(), regen);
+					}*/
+
+					Sint32 oldLVL = 0;
+					Sint32 oldStats[NUMSTATS];
+					//characterSheetTooltipSetZeroStat(player.entity, stats[player.playernum], &oldLVL, oldStats);
+					//real_t baseRegen = getDisplayedMPRegen(player.entity, *stats[player.playernum], nullptr, nullptr, true);
+					//characterSheetTooltipRestoreStats(stats[player.playernum], &oldLVL, oldStats);
+
+					characterSheetTooltipSetZeroStat(player.entity, stats[player.playernum], nullptr, oldStats);
+					real_t regenWithoutStats = getDisplayedHPRegen(player.entity, *stats[player.playernum], nullptr, nullptr, true);
+					characterSheetTooltipRestoreStats(stats[player.playernum], nullptr, oldStats);
+
+					real_t displayedValue = regenWithoutStats;
+
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_rgn_bonus_format").c_str(), displayedValue);
 				}
 					break;
 				case SHEET_RGN_MP:
@@ -18771,7 +18873,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 					if ( isAutomatonHTRegen )
 					{
 						snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_rgn_ht_base_bonus").c_str());
-						real_t baseHTModifier = 100.f;
+						real_t baseHTModifier = 100.0 / (MAGIC_REGEN_AUTOMATON_TIME / (real_t)MAGIC_REGEN_TIME);
 						if ( stats[player.playernum]->HUNGER <= 300 )
 						{
 							int baseTime = getBaseManaRegen(player.entity, *stats[player.playernum]);
@@ -18835,12 +18937,24 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 						capitalizeString(race);
 
 						snprintf(buf, sizeof(buf), getHoverTextString("attributes_rgn_base_value").c_str(), race.c_str());
-						real_t regen = 100.0;
+						/*real_t regen = 100.0;
 						if ( type == SKELETON )
 						{
 							regen = 25.0;
-						}
-						snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_rgn_bonus_format").c_str(), regen);
+						}*/
+
+						Sint32 oldLVL = 0;
+						Sint32 oldStats[NUMSTATS];
+						//characterSheetTooltipSetZeroStat(player.entity, stats[player.playernum], &oldLVL, oldStats);
+						//real_t baseRegen = getDisplayedMPRegen(player.entity, *stats[player.playernum], nullptr, nullptr, true);
+						//characterSheetTooltipRestoreStats(stats[player.playernum], &oldLVL, oldStats);
+
+						characterSheetTooltipSetZeroStat(player.entity, stats[player.playernum], nullptr, oldStats);
+						real_t regenWithoutStats = getDisplayedMPRegen(player.entity, *stats[player.playernum], nullptr, nullptr, true);
+						characterSheetTooltipRestoreStats(stats[player.playernum], nullptr, oldStats);
+
+						real_t displayedValue = regenWithoutStats;
+						snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_rgn_bonus_format").c_str(), displayedValue);
 					}
 				}
 				break;
@@ -19007,7 +19121,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 							}
 						}
 					}
-					real_t baseRegen = 100.0;
+					/*/real_t baseRegen = 100.0;
 					if ( !(svFlags & SV_FLAG_HUNGER) )
 					{
 						baseRegen = 0.0;
@@ -19015,11 +19129,15 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 					if ( type == SKELETON )
 					{
 						baseRegen = 25.0;
-					}
+					}*/
 
 					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_rgn_entry_items_bonus").c_str());
-					real_t regen = getDisplayedHPRegen(player.entity, *stats[player.playernum], nullptr, nullptr);
-					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_rgn_bonus_format").c_str(), regen - baseRegen);
+
+					real_t regenWithoutItems = getDisplayedHPRegen(player.entity, *stats[player.playernum], nullptr, nullptr, true);
+					real_t regenTotal = getDisplayedHPRegen(player.entity, *stats[player.playernum], nullptr, nullptr);
+
+					real_t regenItemsEffects = regenTotal - regenWithoutItems;
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_rgn_bonus_format").c_str(), regenItemsEffects);
 				}
 					break;
 				case SHEET_RGN_MP:
@@ -19027,7 +19145,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 					if ( isAutomatonHTRegen )
 					{
 						snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_rgn_entry_items_bonus").c_str());
-						real_t baseHTModifier = 100.f;
+						real_t baseHTModifier = 100.0 / (MAGIC_REGEN_AUTOMATON_TIME / (real_t)MAGIC_REGEN_TIME);
 						if ( stats[player.playernum]->HUNGER <= 300 )
 						{
 							int baseTime = getBaseManaRegen(player.entity, *stats[player.playernum]);
@@ -19089,21 +19207,13 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 								}
 							}
 						}
-						real_t baseRegen = 100.0;
-						if ( type == SKELETON )
-						{
-							baseRegen = 25.0;
-						}
 
 						snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_rgn_entry_items_bonus").c_str());
-						Sint32 oldINT = stats[player.playernum]->INT;
-						stats[player.playernum]->INT += -statGetINT(stats[player.playernum], player.entity);
-						real_t regenWithoutINT = getDisplayedMPRegen(player.entity, *stats[player.playernum], nullptr, nullptr);
-						stats[player.playernum]->INT = oldINT;
-						real_t regenTotal = getDisplayedMPRegen(player.entity, *stats[player.playernum], nullptr, nullptr);
-						real_t regenStatSkill = regenTotal - regenWithoutINT;
 
-						real_t regenItemsEffects = regenTotal - regenStatSkill - baseRegen;
+						real_t regenWithoutItems = getDisplayedMPRegen(player.entity, *stats[player.playernum], nullptr, nullptr, true);
+						real_t regenTotal = getDisplayedMPRegen(player.entity, *stats[player.playernum], nullptr, nullptr);
+
+						real_t regenItemsEffects = regenTotal - regenWithoutItems;
 						snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_rgn_bonus_format").c_str(), regenItemsEffects);
 					}
 				}
@@ -19252,18 +19362,17 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 					break;
 				case SHEET_RGN:
 				{
-					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_rgn_plain_display").c_str());
-					real_t regen = (static_cast<real_t>(Entity::getHealthRegenInterval(player.entity, *stats[player.playernum], true)) / TICKS_PER_SECOND);
-					if ( regen <= 0.0 )
-					{
-						snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_rgn_hp_per_second_format_zero").c_str(),
-							(static_cast<real_t>(HEAL_TIME) / TICKS_PER_SECOND));
-					}
-					else
-					{
-						snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_rgn_hp_per_second_format").c_str(),
-							regen);
-					}
+					Sint32 oldStats[NUMSTATS];
+					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_rgn_hp_entry_statskill_bonus").c_str());
+
+					characterSheetTooltipSetZeroStat(player.entity, stats[player.playernum], nullptr, oldStats);
+					real_t regenWithoutStats = getDisplayedHPRegen(player.entity, *stats[player.playernum], nullptr, nullptr, true);
+					characterSheetTooltipRestoreStats(stats[player.playernum], nullptr, oldStats);
+
+					real_t regenTotal = getDisplayedHPRegen(player.entity, *stats[player.playernum], nullptr, nullptr, true);
+					real_t regenStatSkill = regenTotal - regenWithoutStats;
+
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_rgn_bonus_format").c_str(), regenStatSkill);
 				}
 					break;
 				case SHEET_RGN_MP:
@@ -19308,20 +19417,26 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 								}
 							}
 						}
-						real_t baseRegen = 100.0;
+						/*real_t baseRegen = 100.0;
 						if ( type == SKELETON )
 						{
 							baseRegen = 25.0;
-						}
+						}*/
+						//real_t baseRegen = 100.0;
+						//Sint32 oldLVL = 0;
+						//characterSheetTooltipSetZeroStat(player.entity, stats[player.playernum], nullptr, oldStats);
+						//baseRegen = getDisplayedMPRegen(player.entity, *stats[player.playernum], nullptr, nullptr);
+						//characterSheetTooltipRestoreStats(stats[player.playernum], nullptr, oldStats);
 
+						Sint32 oldStats[NUMSTATS];
 						snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_rgn_entry_statskill_bonus").c_str());
-						Sint32 oldINT = stats[player.playernum]->INT;
-						stats[player.playernum]->INT += -statGetINT(stats[player.playernum], player.entity);
-						real_t regenWithoutINT = getDisplayedMPRegen(player.entity, *stats[player.playernum], nullptr, nullptr);
-						stats[player.playernum]->INT = oldINT;
 
-						real_t regenTotal = getDisplayedMPRegen(player.entity, *stats[player.playernum], nullptr, nullptr);
-						real_t regenStatSkill = regenTotal - regenWithoutINT;
+						characterSheetTooltipSetZeroStat(player.entity, stats[player.playernum], nullptr, oldStats);
+						real_t regenWithoutStats = getDisplayedMPRegen(player.entity, *stats[player.playernum], nullptr, nullptr, true);
+						characterSheetTooltipRestoreStats(stats[player.playernum], nullptr, oldStats);
+
+						real_t regenTotal = getDisplayedMPRegen(player.entity, *stats[player.playernum], nullptr, nullptr, true);
+						real_t regenStatSkill = regenTotal - regenWithoutStats;
 
 						snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_rgn_bonus_format").c_str(), regenStatSkill);
 					}
@@ -19427,7 +19542,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			entryValue->setHJustify(Frame::justify_t::LEFT);
 			entryValue->setVJustify(Field::justify_t::TOP);
 
-			if ( element == SHEET_RGN || (element == SHEET_RGN_MP && (isAutomatonHTRegen || isInsectoidENRegen)) )
+			if ( /*element == SHEET_RGN ||*/ (element == SHEET_RGN_MP && (isAutomatonHTRegen || isInsectoidENRegen)) )
 			{
 				// special rule here to ignore size of this long line
 				auto txtValueBackingFrame = characterSheetTooltipTextBackingFrames[player.playernum][currentTextBackingFrameIndex];
@@ -19462,7 +19577,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		}
 
 		if ( element == SHEET_ATK && getAttackTooltipLines(player.playernum, attackHoverTextInfo, 6, buf, valueBuf)
-			|| (element == SHEET_RGN_MP && !isInsectoidENRegen) || element == SHEET_WGT )
+			|| (element == SHEET_RGN_MP && !isInsectoidENRegen) || element == SHEET_WGT || element == SHEET_RGN )
 		{
 			// extra number display - line 6
 			hasEntryInfoLines = true;
@@ -19479,6 +19594,22 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 				case SHEET_POW:
 					break;
 				case SHEET_RES:
+					break;
+				case SHEET_RGN:
+				{
+					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_rgn_plain_display").c_str());
+					real_t regen = (static_cast<real_t>(Entity::getHealthRegenInterval(player.entity, *stats[player.playernum], true)) / TICKS_PER_SECOND);
+					if ( regen <= 0.0 )
+					{
+						snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_rgn_hp_per_second_format_zero").c_str(),
+							(static_cast<real_t>(HEAL_TIME) / TICKS_PER_SECOND));
+					}
+					else
+					{
+						snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_rgn_hp_per_second_format").c_str(),
+							regen);
+					}
+				}
 					break;
 				case SHEET_RGN_MP:
 				{
@@ -19612,7 +19743,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			entryValue->setHJustify(Frame::justify_t::LEFT);
 			entryValue->setVJustify(Field::justify_t::TOP);
 
-			if ( element == SHEET_RGN_MP )
+			if ( element == SHEET_RGN_MP || element == SHEET_RGN )
 			{
 				// special rule here to ignore size of this long line
 				auto txtValueBackingFrame = characterSheetTooltipTextBackingFrames[player.playernum][currentTextBackingFrameIndex];

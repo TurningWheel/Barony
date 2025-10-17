@@ -65,6 +65,70 @@ Deconstruct an Entity
 
 -------------------------------------------------------------------------------*/
 
+struct ClassBaseGrowths
+{
+	struct ClassHPMPValues
+	{
+		int baseHP = 3;
+		int baseMP = 3;
+		int baseRegenHP = 3;
+		int baseRegenMP = 3;
+	};
+	static const std::vector<real_t> statRegenHP;
+	static const std::vector<real_t> statRegenMP;
+	static const std::vector<int> hpStatGrowths;
+	static const std::vector<int> mpStatGrowths;
+	static const real_t hpRegenFactor;
+	static const real_t mpRegenFactor;
+	static const std::vector<ClassHPMPValues> classBaseGrowths;
+	static const ClassHPMPValues& getClassBaseGrowths(int classnum)
+	{
+		if ( classnum >= 0 && (classnum + 1) < classBaseGrowths.size() )
+		{
+			return classBaseGrowths.at(classnum + 1);
+		}
+		return classBaseGrowths.at(0);
+	}
+};
+//															STR		DEX		CON		INT		PER		CHR
+const std::vector<real_t> ClassBaseGrowths::statRegenHP = { 0.05,	0.1,	0.0,	0.0,	0.0,	0.0 };
+const std::vector<real_t> ClassBaseGrowths::statRegenMP = { 0.0,	0.0,	0.0,	0.00,	.05,	0.1 };
+const std::vector<int> ClassBaseGrowths::hpStatGrowths = {	1,		2,		2,		0,		0,		0 };
+const std::vector<int> ClassBaseGrowths::mpStatGrowths = {	0,		0,		0,		2,		2,		1 };
+const real_t ClassBaseGrowths::hpRegenFactor = 0.05;
+const real_t ClassBaseGrowths::mpRegenFactor = 0.1;
+
+const std::vector<ClassBaseGrowths::ClassHPMPValues> ClassBaseGrowths::classBaseGrowths = {
+//   HP     MP    HP RGN  MP RGN
+	{3,		3,		3,		3}, // default
+	{4,		2,		1,		1}, //CLASS_BARBARIAN,
+	{4,		2,		1,		1}, //CLASS_WARRIOR,
+	{3,		5,		1,		4}, //CLASS_HEALER,
+	{2,		3,		5,		3}, //CLASS_ROGUE,
+	{4,		3,		4,		3}, //CLASS_WANDERER,
+	{3,		4,		3,		4}, //CLASS_CLERIC,
+	{3,		3,		3,		3}, //CLASS_MERCHANT,
+	{2,		5,		2,		5}, //CLASS_WIZARD,
+	{2,		4,		3,		4}, //CLASS_ARCANIST,
+	{3,		3,		3,		3}, //CLASS_JOKER,
+	{3,		4,		2,		4}, //CLASS_SEXTON,
+	{2,		1,		1,		1}, //CLASS_NINJA,
+	{4,		2,		2,		2}, //CLASS_MONK,
+	{4,		3,		2,		3}, //CLASS_CONJURER,
+	{2,		4,		1,		4}, //CLASS_ACCURSED,
+	{2,		4,		2,		5}, //CLASS_MESMER,
+	{3,		2,		5,		3}, //CLASS_BREWER,
+	{3,		1,		4,		2}, //CLASS_MACHINIST,
+	{4,		3,		4,		3}, //CLASS_PUNISHER,
+	{3,		3,		3,		3}, //CLASS_SHAMAN,
+	{2,		2,		5,		2}, //CLASS_HUNTER,
+	{3,		3,		3,		3}, //CLASS_21,
+	{3,		3,		3,		3}, //CLASS_22,
+	{3,		3,		3,		3}, //CLASS_23,
+	{3,		3,		3,		3}, //CLASS_24,
+	{3,		3,		3,		3}  //CLASS_25
+};
+
 Entity::~Entity()
 {
 	node_t* node;
@@ -3580,28 +3644,6 @@ void Entity::handleEffects(Stat* myStats)
 
 		static ConsoleVariable<int> cvar_lvlup_ally_sfx("/lvlup_ally_sfx", 520);
 
-		// increase MAXHP/MAXMP
-		myStats->MAXHP += HP_MOD;
-		modHP(getHPRestoreOnLevelUp());
-		myStats->HP = std::min(myStats->HP, myStats->MAXHP);
-		if ( !(behavior == &actMonster && monsterAllySummonRank != 0) )
-		{
-			myStats->MP += MP_MOD;
-			myStats->MAXMP += MP_MOD;
-			if ( behavior == &actPlayer && myStats->playerRace == RACE_INSECTOID && myStats->stat_appearance == 0 )
-			{
-				myStats->MAXMP = std::min(100, myStats->MAXMP);
-				if ( svFlags & SV_FLAG_HUNGER )
-				{
-					Sint32 hungerPointPerMana = playerInsectoidHungerValueOfManaPoint(*myStats);
-					myStats->HUNGER += MP_MOD * hungerPointPerMana;
-					myStats->HUNGER = std::min(1000, myStats->HUNGER);
-					serverUpdateHunger(skill[2]);
-				}
-			}
-			myStats->MP = std::min(myStats->MP, myStats->MAXMP);
-		}
-
 		// now pick three attributes to increase
 
 		if ( player >= 0 )
@@ -3751,26 +3793,9 @@ void Entity::handleEffects(Stat* myStats)
 			}
 		}
 
-		if ( behavior == &actMonster )
-		{
-			if ( myStats->leader_uid )
-			{
-				Entity* leader = uidToEntity(myStats->leader_uid);
-				if ( leader )
-				{
-					for ( int i = 0; i < MAXPLAYERS; ++i )
-					{
-						if ( players[i] && players[i]->entity == leader )
-						{
-							color = makeColorRGB(0, 255, 0);
-							messagePlayerMonsterEvent(i, color, *myStats, Language::get(2379), Language::get(2379), MSG_GENERIC);
-							playSoundEntity(this, *cvar_lvlup_ally_sfx, 128);
-							serverUpdateAllyStat(i, getUID(), myStats->LVL, myStats->HP, myStats->MAXHP, myStats->type);
-						}
-					}
-				}
-			}
-		}
+		int hpMod = HP_MOD;
+		int mpMod = MP_MOD;
+		int statIncrease[NUMSTATS] = { 0, 0, 0, 0, 0, 0 };
 
 		if ( player >= 0 )
 		{
@@ -3810,6 +3835,7 @@ void Entity::handleEffects(Stat* myStats)
 									}
 								}
 							}
+							statIncrease[increasestat[i]] += increment;
 							myStats->STR += increment;
 							Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_STAT_INCREASES, "str", 1);
 							Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_STAT_STR_MAX, "str", myStats->STR);
@@ -3838,6 +3864,7 @@ void Entity::handleEffects(Stat* myStats)
 									}
 								}
 							}
+							statIncrease[increasestat[i]] += increment;
 							myStats->DEX += increment;
 							Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_STAT_INCREASES, "dex", increment);
 							Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_STAT_DEX_MAX, "dex", myStats->DEX);
@@ -3866,6 +3893,7 @@ void Entity::handleEffects(Stat* myStats)
 									}
 								}
 							}
+							statIncrease[increasestat[i]] += increment;
 							myStats->CON += increment;
 							Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_STAT_INCREASES, "con", increment);
 							Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_STAT_CON_MAX, "con", myStats->CON);
@@ -3894,6 +3922,7 @@ void Entity::handleEffects(Stat* myStats)
 									}
 								}
 							}
+							statIncrease[increasestat[i]] += increment;
 							myStats->INT += increment;
 							Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_STAT_INCREASES, "int", increment);
 							Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_STAT_INT_MAX, "int", myStats->INT);
@@ -3921,6 +3950,7 @@ void Entity::handleEffects(Stat* myStats)
 									}
 								}
 							}
+							statIncrease[increasestat[i]] += increment;
 							myStats->PER += increment;
 							Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_STAT_INCREASES, "per", increment);
 							Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_STAT_PER_MAX, "per", myStats->PER);
@@ -3949,6 +3979,7 @@ void Entity::handleEffects(Stat* myStats)
 									}
 								}
 							}
+							statIncrease[increasestat[i]] += increment;
 							myStats->CHR += increment;
 							Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_STAT_INCREASES, "chr", increment);
 							Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_STAT_CHR_MAX, "chr", myStats->CHR);
@@ -3976,6 +4007,62 @@ void Entity::handleEffects(Stat* myStats)
 			if ( players[player]->isLocalPlayer() )
 			{
 				levelUpAnimation[player].addLevelUp(stats[player]->LVL, 1, StatUps);
+			}
+
+			auto& baseGrowths = ClassBaseGrowths::getClassBaseGrowths(client_classes[player]);
+			hpMod = baseGrowths.baseHP;
+			mpMod = baseGrowths.baseMP;
+			for ( int i = 0; i < 3; ++i )
+			{
+				hpMod += ClassBaseGrowths::hpStatGrowths[increasestat[i]] * statIncrease[increasestat[i]];
+				mpMod += ClassBaseGrowths::mpStatGrowths[increasestat[i]] * statIncrease[increasestat[i]];
+			}
+		}
+
+		// increase MAXHP/MAXMP
+		myStats->MAXHP += hpMod;
+		int hpRestore = getHPRestoreOnLevelUp(hpMod);
+		int mpRestore = getMPRestoreOnLevelUp(mpMod);
+
+		modHP(hpRestore);
+
+		myStats->HP = std::min(myStats->HP, myStats->MAXHP);
+		if ( !(behavior == &actMonster && monsterAllySummonRank != 0) )
+		{
+			myStats->MP += mpRestore;
+			myStats->MAXMP += mpMod;
+			if ( behavior == &actPlayer && myStats->playerRace == RACE_INSECTOID && myStats->stat_appearance == 0 )
+			{
+				myStats->MAXMP = std::min(100, myStats->MAXMP);
+				if ( svFlags & SV_FLAG_HUNGER )
+				{
+					Sint32 hungerPointPerMana = playerInsectoidHungerValueOfManaPoint(*myStats);
+					myStats->HUNGER += mpMod * hungerPointPerMana;
+					myStats->HUNGER = std::min(1000, myStats->HUNGER);
+					serverUpdateHunger(skill[2]);
+				}
+			}
+			myStats->MP = std::min(myStats->MP, myStats->MAXMP);
+		}
+
+		if ( behavior == &actMonster )
+		{
+			if ( myStats->leader_uid )
+			{
+				Entity* leader = uidToEntity(myStats->leader_uid);
+				if ( leader )
+				{
+					for ( int i = 0; i < MAXPLAYERS; ++i )
+					{
+						if ( players[i] && players[i]->entity == leader )
+						{
+							color = makeColorRGB(0, 255, 0);
+							messagePlayerMonsterEvent(i, color, *myStats, Language::get(2379), Language::get(2379), MSG_GENERIC);
+							playSoundEntity(this, *cvar_lvlup_ally_sfx, 128);
+							serverUpdateAllyStat(i, getUID(), myStats->LVL, myStats->HP, myStats->MAXHP, myStats->type);
+						}
+					}
+				}
 			}
 		}
 
@@ -4543,7 +4630,6 @@ void Entity::handleEffects(Stat* myStats)
 	}
 
 	// healing over time
-	int healring = 0;
 	int healthRegenInterval = getHealthRegenInterval(this, *myStats, behavior == &actPlayer);
 	bool naturalHeal = false;
 	if ( healthRegenInterval >= 0 )
@@ -5804,21 +5890,29 @@ void Entity::handleEffects(Stat* myStats)
 		}
 		if ( ticks % 40 == 0 )
 		{
-			Entity* entity = newEntity(862, 1, map.entities, nullptr); //Web pool entity.
-			if ( entity != NULL )
+			int x = this->x / 16;
+			int y = this->y / 16;
+			if ( x >= 0 && x < map.width && y >= 0 && y < map.height )
 			{
-				entity->x = this->x;
-				entity->y = this->y;
-				entity->z = 8.0 + (local_rng.rand() % 20) / 100.0;
-				entity->parent = this->uid;
-				entity->sizex = 2;
-				entity->sizey = 2;
-				entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
-				real_t scale = 0.75 + 0.25 * (local_rng.rand() % 100) / 100.f;
-				entity->scalex = scale;
-				entity->scaley = scale;
-				entity->flags[UPDATENEEDED] = true;
-				entity->flags[PASSABLE] = true;
+				if ( map.tiles[0 + y * MAPLAYERS + x * MAPLAYERS * map.height] )
+				{
+					Entity* entity = newEntity(862, 1, map.entities, nullptr); //Web pool entity.
+					if ( entity != NULL )
+					{
+						entity->x = this->x;
+						entity->y = this->y;
+						entity->z = 8.0 + (local_rng.rand() % 20) / 100.0;
+						entity->parent = this->uid;
+						entity->sizex = 2;
+						entity->sizey = 2;
+						entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
+						real_t scale = 0.75 + 0.25 * (local_rng.rand() % 100) / 100.f;
+						entity->scalex = scale;
+						entity->scaley = scale;
+						entity->flags[UPDATENEEDED] = true;
+						entity->flags[PASSABLE] = true;
+					}
+				}
 			}
 		}
 	}
@@ -15118,7 +15212,7 @@ Awards XP to the dest (ie killer) entity from the src (ie killed) entity
 
 void Entity::awardXP(Entity* src, bool share, bool root)
 {
-	if ( !src )
+ 	if ( !src )
 	{
 		return;
 	}
@@ -15219,7 +15313,13 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 		baseXp = 5;
 	}
 	int baseXpTop = baseXp;
-	if ( srcStats->LVL - destStats->LVL < 0 )
+
+	static ConsoleVariable<bool> cvar_level_curve("/levelcurve", true);
+	if ( svFlags & SV_FLAG_CHEATS && !*cvar_level_curve )
+	{
+		// disabled curve
+	}
+	else if ( srcStats->LVL - destStats->LVL < 0 )
 	{
 		if ( srcStats->LVL - destStats->LVL <= -5 )
 		{
@@ -15234,7 +15334,7 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 			}
 		}
 	}
-	int xpGain = baseXp + local_rng.rand() % std::max(1, baseXpTop) + std::max(0, srcStats->LVL - destStats->LVL) * baseXp;
+	int xpGain = baseXp + local_rng.rand() % std::max(2, baseXpTop) + std::max(0, srcStats->LVL - destStats->LVL) * baseXp;
 	if ( srcStats->MISC_FLAGS[STAT_FLAG_XP_PERCENT_AWARD] > 0 )
 	{
 		int value = srcStats->MISC_FLAGS[STAT_FLAG_XP_PERCENT_AWARD] - 1; // offset by 1 since 0 is nothing
@@ -15297,9 +15397,10 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 		}
 
 		// divide value of each share
+		real_t numSharesMult = std::max(0.25, 1.0 - 0.25 * numshares);
 		if ( numshares )
 		{
-			xpGain /= numshares;
+			xpGain *= numSharesMult;
 		}
 
 		// award XP to everyone else in the group
@@ -15346,7 +15447,7 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 								//int xpDivide = std::min(std::max(1, numFollowers), 4); // 1 - 4 depending on followers.
 								if ( follower->monsterAllySummonRank != 0 && numshares > 0 )
 								{
-									int gain = (xpGain * numshares); // summoned monsters aren't penalised XP.
+									int gain = (xpGain / numSharesMult); // summoned monsters aren't penalised XP.
 									if ( inspiration )
 									{
 										int oldGain = gain;
@@ -23001,9 +23102,9 @@ int Entity::getManaringFromEquipment(Entity* my, Stat& myStats, bool isPlayer)
 	return manaring;
 }
 
-int Entity::getManaRegenInterval(Entity* my, Stat& myStats, bool isPlayer)
+int Entity::getManaRegenInterval(Entity* my, Stat& myStats, bool isPlayer, bool excludeItemsEffectsBonus)
 {
-	int regenTime = getBaseManaRegen(my, myStats);
+	int regenTime = getBaseManaRegen(my, myStats, excludeItemsEffectsBonus);
 	int manaring = 0;
 	if ( isPlayer && myStats.type != HUMAN )
 	{
@@ -23014,8 +23115,11 @@ int Entity::getManaRegenInterval(Entity* my, Stat& myStats, bool isPlayer)
 	}
 
 	int bonusManaring = 0;
-	bonusManaring += Entity::getManaringFromEquipment(my, myStats, true);
-	bonusManaring += Entity::getManaringFromEffects(my, myStats);
+	if ( !excludeItemsEffectsBonus )
+	{
+		bonusManaring += Entity::getManaringFromEquipment(my, myStats, true);
+		bonusManaring += Entity::getManaringFromEffects(my, myStats);
+	}
 	manaring += bonusManaring;
 
 	if ( my && bonusManaring >= 2 && ::ticks % TICKS_PER_SECOND == 0 && isPlayer )
@@ -23066,17 +23170,49 @@ int Entity::getManaRegenInterval(Entity* my, Stat& myStats, bool isPlayer)
 		return floatRegenTime;
 	}
 
-	if ( manaring > 0 )
+	if ( !isPlayer )
 	{
-		return regenTime / (manaring * 2); // 1 MP each 6 seconds base
+		if ( manaring > 0 )
+		{
+			return regenTime / (manaring * 2); // 1 MP each 6 seconds base
+		}
+		else if ( manaring < 0 )
+		{
+			return regenTime * abs(manaring) * 4; // 1 MP each 24 seconds if negative regen
+		}
+		else if ( manaring == 0 )
+		{
+			return regenTime;
+		}
 	}
-	else if ( manaring < 0 )
+	else
 	{
-		return regenTime * abs(manaring) * 4; // 1 MP each 24 seconds if negative regen
-	}
-	else if ( manaring == 0 )
-	{
-		return regenTime;
+		int player = -1;
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( stats[i] == &myStats )
+			{
+				player = i;
+				break;
+			}
+		}
+		if ( player >= 0 )
+		{
+			real_t regenPerMinute = 60 * TICKS_PER_SECOND / (real_t)(regenTime);
+			if ( manaring > 0 )
+			{
+				regenPerMinute *= (abs(manaring) + 1);
+			}
+			else if ( manaring < 0 )
+			{
+				regenPerMinute /= abs(manaring) * 4.0;
+			}
+
+			const int regenTicks = TICKS_PER_SECOND * 60 / regenPerMinute;
+			int regenCap = 1 * TICKS_PER_SECOND;
+
+			return std::max(regenCap, regenTicks);
+		}
 	}
 	return MAGIC_REGEN_TIME;
 }
@@ -23164,50 +23300,54 @@ int Entity::getHealringFromEquipment(Entity* my, Stat& myStats, bool isPlayer)
 	return healring;
 }
 
-int Entity::getHealthRegenInterval(Entity* my, Stat& myStats, bool isPlayer)
+int Entity::getHealthRegenInterval(Entity* my, Stat& myStats, bool isPlayer, bool excludeItemsEffectsBonus)
 {
-	if ( myStats.getEffectActive(EFF_VAMPIRICAURA) )
+	if ( !excludeItemsEffectsBonus )
 	{
-		if ( isPlayer && myStats.EFFECTS_TIMERS[EFF_VAMPIRICAURA] > 0 )
+		if ( myStats.getEffectActive(EFF_VAMPIRICAURA) )
+		{
+			if ( isPlayer && myStats.EFFECTS_TIMERS[EFF_VAMPIRICAURA] > 0 )
+			{
+				return -1;
+			}
+		}
+
+		if ( myStats.HP <= 0 )
 		{
 			return -1;
 		}
-	}
-	if ( myStats.HP <= 0 )
-	{
-		return -1;
-	}
 
-	if ( myStats.breastplate && myStats.breastplate->type == VAMPIRE_DOUBLET )
-	{
-		return -1;
-	}
-
-	if ( svFlags & SV_FLAG_HUNGER )
-	{
-		if ( isPlayer )
+		if ( myStats.breastplate && myStats.breastplate->type == VAMPIRE_DOUBLET )
 		{
-			if ( myStats.HUNGER <= 0 )
+			return -1;
+		}
+		if ( svFlags & SV_FLAG_HUNGER )
+		{
+			if ( isPlayer )
 			{
-				bool doStarvation = true;
-				if ( myStats.type == AUTOMATON )
+				if ( myStats.HUNGER <= 0 )
 				{
-					if ( myStats.MP > 0 )
+					bool doStarvation = true;
+					if ( myStats.type == AUTOMATON )
+					{
+						if ( myStats.MP > 0 )
+						{
+							doStarvation = false;
+						}
+					}
+					else if ( myStats.type == SKELETON )
 					{
 						doStarvation = false;
 					}
-				}
-				else if ( myStats.type == SKELETON )
-				{
-					doStarvation = false;
-				}
-				if ( doStarvation )
-				{
-					return -1;
+					if ( doStarvation )
+					{
+						return -1;
+					}
 				}
 			}
 		}
 	}
+
 
 	double healring = 0;
 	double bonusHealring = 0.0;
@@ -23217,17 +23357,23 @@ int Entity::getHealthRegenInterval(Entity* my, Stat& myStats, bool isPlayer)
 	}
 	if ( !(svFlags & SV_FLAG_HUNGER) && isPlayer )
 	{
-		bonusHealring += Entity::getHealringFromEquipment(my, myStats, isPlayer);
-		bonusHealring += Entity::getHealringFromEffects(my, myStats);
-		if ( bonusHealring < 0.01 && myStats.type != SKELETON )
+		if ( !excludeItemsEffectsBonus )
 		{
-			return -1;
+			bonusHealring += Entity::getHealringFromEquipment(my, myStats, isPlayer);
+			bonusHealring += Entity::getHealringFromEffects(my, myStats);
+			if ( bonusHealring < 0.01 && myStats.type != SKELETON )
+			{
+				return -1;
+			}
 		}
 	}
 	else
 	{
-		bonusHealring += Entity::getHealringFromEquipment(my, myStats, isPlayer);
-		bonusHealring += Entity::getHealringFromEffects(my, myStats);
+		if ( !excludeItemsEffectsBonus )
+		{
+			bonusHealring += Entity::getHealringFromEquipment(my, myStats, isPlayer);
+			bonusHealring += Entity::getHealringFromEffects(my, myStats);
+		}
 	}
 	healring += bonusHealring;
 
@@ -23253,45 +23399,123 @@ int Entity::getHealthRegenInterval(Entity* my, Stat& myStats, bool isPlayer)
 		healring = 25; // these guys like regenerating
 	}
 
-	if ( healring > 0 )
+	if ( !isPlayer )
 	{
-		if ( !(svFlags & SV_FLAG_HUNGER) && isPlayer )
+		if ( healring > 0 )
 		{
-			return (HEAL_TIME / (healring * 4)); // 1 HP each 12 sec base
+			if ( !(svFlags & SV_FLAG_HUNGER) && isPlayer )
+			{
+				return (HEAL_TIME / (healring * 4)); // 1 HP each 12 sec base
+			}
+			else
+			{
+				return (HEAL_TIME / (healring * 6)); // 1 HP each 12 sec base
+			}
+		}
+		else if ( healring < 0 )
+		{
+			return (abs(healring) * HEAL_TIME * 4); // 1 HP each 48 sec if negative regen
 		}
 		else
 		{
-			return (HEAL_TIME / (healring * 6)); // 1 HP each 12 sec base
+			return HEAL_TIME;
 		}
 	}
-	else if ( healring < 0 )
+	else
 	{
-		return (abs(healring) * HEAL_TIME * 4); // 1 HP each 48 sec if negative regen
-	}
-	else if ( healring == 0 )
-	{
-		return HEAL_TIME;
+		int player = -1;
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( stats[i] == &myStats )
+			{
+				player = i;
+				break;
+			}
+		}
+		if ( player >= 0 )
+		{
+			real_t regenPerMinute = 60 * TICKS_PER_SECOND / (real_t)(HEAL_TIME);
+			auto& baseGrowths = ClassBaseGrowths::getClassBaseGrowths(client_classes[player]);
+			real_t factor = ClassBaseGrowths::hpRegenFactor;
+			static ConsoleVariable<float> cvar_class_hp_regen_factor("/class_hp_regen_factor", 1.0);
+			if ( svFlags & SV_FLAG_CHEATS )
+			{
+				factor *= *cvar_class_hp_regen_factor;
+			}
+			regenPerMinute += baseGrowths.baseRegenHP * std::max(0, (myStats.LVL - 1)) * factor;
+			for ( int i = 0; i < NUMSTATS; ++i )
+			{
+				if ( ClassBaseGrowths::statRegenHP[i] > 0.0 )
+				{
+					Sint32 statVal = 0;
+					switch ( i )
+					{
+					case STAT_STR:
+						statVal = std::max(statGetSTR(&myStats, my), 0);
+						break;
+					case STAT_DEX:
+						statVal = std::max(statGetDEX(&myStats, my), 0);
+						break;
+					case STAT_CON:
+						statVal = std::max(statGetCON(&myStats, my), 0);
+						break;
+					case STAT_INT:
+						statVal = std::max(statGetINT(&myStats, my), 0);
+						break;
+					case STAT_PER:
+						statVal = std::max(statGetPER(&myStats, my), 0);
+						break;
+					case STAT_CHR:
+						statVal = std::max(statGetCHR(&myStats, my), 0);
+						break;
+					default:
+						break;
+					}
+					regenPerMinute += statVal * ClassBaseGrowths::statRegenHP[i];
+				}
+			}
+			if ( healring > 0 )
+			{
+				regenPerMinute *= (abs(healring) + 1);
+			}
+			else if ( healring < 0 )
+			{
+				regenPerMinute /= abs(healring) * 4.0;
+			}
+
+			const int regenTicks = TICKS_PER_SECOND * 60 / regenPerMinute;
+			int regenCap = 2 * TICKS_PER_SECOND;
+			if ( healring > 0 )
+			{
+				regenCap = 1 * TICKS_PER_SECOND;
+			}
+			return std::max(regenCap, regenTicks);
+		}
 	}
 	return HEAL_TIME;
 }
 
-int getBaseManaRegen(Entity* my, Stat& myStats)
+int getBaseManaRegen(Entity* my, Stat& myStats, bool excludeItemsEffectsBonus)
 {
 	// reduced time from intelligence and spellcasting ability, 0-200 ticks of 300.
-	int profMultiplier = (myStats.getModifiedProficiency(PRO_SPELLCASTING) / 20) + 1; // 1 to 6
-	int statMultiplier = std::max(statGetINT(&myStats, my), 0); // get intelligence
+	//int profMultiplier = (myStats.getModifiedProficiency(PRO_SPELLCASTING) / 20) + 1; // 1 to 6
+	//int statMultiplier = std::max(statGetINT(&myStats, my), 0); // get intelligence
 	if ( myStats.type == AUTOMATON )
 	{
-		return MAGIC_REGEN_TIME;
+		return MAGIC_REGEN_AUTOMATON_TIME;
 	}
 
-	int multipliedTotal = profMultiplier * statMultiplier;
+	//int multipliedTotal = profMultiplier * statMultiplier;
 
-	if ( myStats.weapon && myStats.weapon->type == ARTIFACT_MACE )
+	real_t statMultiplier = 1.0;
+	real_t perMinModifier = 0.0;
+	if ( myStats.weapon && myStats.weapon->type == ARTIFACT_MACE && !excludeItemsEffectsBonus )
 	{
 		real_t amount = 0.0;
 		getArtifactWeaponEffectChance(myStats.weapon->type, myStats, &amount);
-		multipliedTotal += amount;
+		amount /= 100.0;
+		statMultiplier += 4 * amount; // stats count for 5x
+		perMinModifier = 3 * amount; // extra 3 MP per min
 	}
 
 	// unused - this is never hit by insectoid mana regen, old code
@@ -23309,7 +23533,67 @@ int getBaseManaRegen(Entity* my, Stat& myStats)
 	//	return (base - static_cast<int>(std::min(multipliedTotal, 100))); // return 100-33 ticks, 2-0.67 seconds.
 	//}
 
-	return (MAGIC_REGEN_TIME - static_cast<int>(std::min(multipliedTotal, 200))); // return 300-100 ticks, 6-2 seconds.
+	int player = -1;
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		if ( stats[i] == &myStats )
+		{
+			player = i;
+			break;
+		}
+	}
+
+	if ( player >= 0 )
+	{
+		real_t regenPerMinute = 60 * TICKS_PER_SECOND / (real_t)(MAGIC_REGEN_TIME);
+		auto& baseGrowths = ClassBaseGrowths::getClassBaseGrowths(client_classes[player]);
+		real_t factor = ClassBaseGrowths::mpRegenFactor;
+		static ConsoleVariable<float> cvar_class_mp_regen_factor("/class_mp_regen_factor", 1.0);
+		if ( svFlags & SV_FLAG_CHEATS )
+		{
+			factor *= *cvar_class_mp_regen_factor;
+		}
+		regenPerMinute += baseGrowths.baseRegenMP * std::max(0, (myStats.LVL - 1)) * factor;
+		for ( int i = 0; i < NUMSTATS; ++i )
+		{
+			if ( ClassBaseGrowths::statRegenMP[i] > 0.0 )
+			{
+				Sint32 statVal = 0;
+				switch ( i )
+				{
+				case STAT_STR:
+					statVal = std::max(statGetSTR(&myStats, my), 0);
+					break;
+				case STAT_DEX:
+					statVal = std::max(statGetDEX(&myStats, my), 0);
+					break;
+				case STAT_CON:
+					statVal = std::max(statGetCON(&myStats, my), 0);
+					break;
+				case STAT_INT:
+					statVal = std::max(statGetINT(&myStats, my), 0);
+					break;
+				case STAT_PER:
+					statVal = std::max(statGetPER(&myStats, my), 0);
+					break;
+				case STAT_CHR:
+					statVal = std::max(statGetCHR(&myStats, my), 0);
+					break;
+				default:
+					break;
+				}
+				regenPerMinute += statVal * ClassBaseGrowths::statRegenMP[i] * statMultiplier;
+			}
+		}
+		regenPerMinute += perMinModifier;
+
+		const int regenTicks = TICKS_PER_SECOND * 60 / regenPerMinute;
+		int regenCap = 1 * TICKS_PER_SECOND;
+
+		return std::max(regenCap, regenTicks);
+	}
+
+	return MAGIC_REGEN_TIME;
 }
 
 void Entity::setRangedProjectileAttack(Entity& marksman, Stat& myStats, int optionalOverrideForArrowType)
@@ -27318,53 +27602,88 @@ int Entity::getFollowerBonusDamageResist()
 	return resist;
 }
 
-int Entity::getHPRestoreOnLevelUp()
+int Entity::getMPRestoreOnLevelUp(int baseMP, bool statCheckOnly)
 {
-	int hpMod = HP_MOD;
-
+	int mpMod = baseMP;
 	if ( Stat* myStats = getStats() )
 	{
-		if ( myStats->helmet && myStats->helmet->type == HAT_CROWN )
+		if ( behavior == &actPlayer )
 		{
-			if ( myStats->helmet->beatitude >= 0 || shouldInvertEquipmentBeatitude(myStats) )
+			if ( statCheckOnly )
 			{
-				hpMod += (std::min(50, (20 + 10 * (abs(myStats->helmet->beatitude)))) / 100.0) * myStats->MAXHP;
+				mpMod += std::max(0, myStats->CHR);
 			}
 			else
 			{
-				hpMod = 0;
+				mpMod += std::max(0, statGetCHR(myStats, this));
 			}
 		}
-		if ( behavior == &actMonster )
+	}
+	return mpMod;
+}
+
+int Entity::getHPRestoreOnLevelUp(int baseHP, bool statCheckOnly)
+{
+	int hpMod = baseHP;
+
+	if ( Stat* myStats = getStats() )
+	{
+		if ( !statCheckOnly )
 		{
-			Entity* leader = monsterAllyGetPlayerLeader();
-			if ( !leader )
+			if ( myStats->helmet && myStats->helmet->type == HAT_CROWN )
 			{
-				if ( myStats->leader_uid != 0 )
+				if ( myStats->helmet->beatitude >= 0 || shouldInvertEquipmentBeatitude(myStats) )
 				{
-					leader = uidToEntity(myStats->leader_uid);
+					hpMod += (std::min(50, (20 + 10 * (abs(myStats->helmet->beatitude)))) / 100.0) * myStats->MAXHP;
+				}
+				else
+				{
+					hpMod = 0;
 				}
 			}
-			if ( leader )
+			if ( behavior == &actMonster )
 			{
-				if ( Stat* stat = leader->getStats() )
+				Entity* leader = monsterAllyGetPlayerLeader();
+				if ( !leader )
 				{
-					if ( stat->helmet &&
-						(stat->helmet->type == HAT_CROWN) )
+					if ( myStats->leader_uid != 0 )
 					{
-						if ( stat->helmet->beatitude >= 0 || shouldInvertEquipmentBeatitude(stat) )
+						leader = uidToEntity(myStats->leader_uid);
+					}
+				}
+				if ( leader )
+				{
+					if ( Stat* stat = leader->getStats() )
+					{
+						if ( stat->helmet &&
+							(stat->helmet->type == HAT_CROWN) )
 						{
-							hpMod += 20 + (10 * (abs(stat->helmet->beatitude)) / 100.0) * myStats->MAXHP;
-						}
-						else
-						{
-							hpMod = 0;
+							if ( stat->helmet->beatitude >= 0 || shouldInvertEquipmentBeatitude(stat) )
+							{
+								hpMod += 20 + (10 * (abs(stat->helmet->beatitude)) / 100.0) * myStats->MAXHP;
+							}
+							else
+							{
+								hpMod = 0;
+							}
 						}
 					}
 				}
 			}
 		}
+		if ( behavior == &actPlayer )
+		{
+			if ( statCheckOnly )
+			{
+				hpMod += std::max(0, myStats->CHR);
+			}
+			else
+			{
+				hpMod += std::max(0, statGetCHR(myStats, this));
+			}
+		}
 	}
+
 	return hpMod;
 }
 

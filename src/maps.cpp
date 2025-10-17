@@ -6414,8 +6414,11 @@ void assignActions(map_t* map)
 						entity = nullptr;
 						break;
 					}
+
+					bool revived = false;
                     if ( stats[numplayers]->HP <= 0 )
                     {
+						revived = true;
                         if (!keepInventoryGlobal)
                         {
                             Item** items[] = {
@@ -6513,6 +6516,31 @@ void assignActions(map_t* map)
 							createMinotaurTimer(entity, map, map_server_rng.getU32());
 						}
 					}
+
+					if ( !revived )
+					{
+						int hpMod = entity->getHPRestoreOnLevelUp(0, true);
+						int mpMod = entity->getMPRestoreOnLevelUp(0, true);
+						int maxHpMod = stats[numplayers]->MAXHP / 2 - stats[numplayers]->HP;
+						int maxMpMod = stats[numplayers]->MAXMP / 2 - stats[numplayers]->MP;
+						if ( maxHpMod > 0 )
+						{
+							hpMod = std::min(maxHpMod, hpMod);
+							if ( hpMod > 0 )
+							{
+								entity->modHP(hpMod);
+							}
+						}
+						if ( maxMpMod > 0 )
+						{
+							mpMod = std::min(maxMpMod, mpMod);
+							if ( mpMod > 0 )
+							{
+								entity->modMP(mpMod);
+							}
+						}
+					}
+
 					++numplayers;
 				}
 				if ( balance > 4 )

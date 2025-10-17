@@ -354,8 +354,9 @@ extern char last_port[64];
 
 //TODO: Maybe increase with level or something?
 //TODO: Pause health regen during combat?
-#define HEAL_TIME 600 //10 seconds. //Original time: 3600 (1 minute)
-#define MAGIC_REGEN_TIME 300 // 5 seconds
+#define HEAL_TIME 600 //12 seconds. //Original time: 3600 (1 minute)
+#define MAGIC_REGEN_TIME 600 // 12 seconds
+#define MAGIC_REGEN_AUTOMATON_TIME 300
 
 #define DEFAULT_HP 30
 #define DEFAULT_MP 30

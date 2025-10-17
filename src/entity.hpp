@@ -1084,11 +1084,11 @@ public:
 	// calc time required for a mana regen tick, uses equipped gear as modifiers.
 	static int getManaringFromEquipment(Entity* my, Stat& myStats, bool isPlayer);
 	static int getManaringFromEffects(Entity* my, Stat& myStats);
-	static int getManaRegenInterval(Entity* my, Stat& myStats, bool isPlayer);
+	static int getManaRegenInterval(Entity* my, Stat& myStats, bool isPlayer, bool excludeItemsEffectsBonus = false);
 	// calc time required for a hp regen tick, uses equipped gear as modifiers.
 	static int getHealringFromEquipment(Entity* my, Stat& myStats, bool isPlayer);
 	static int getHealringFromEffects(Entity* my, Stat& myStats);
-	static int getHealthRegenInterval(Entity* my, Stat& myStats, bool isPlayer);
+	static int getHealthRegenInterval(Entity* my, Stat& myStats, bool isPlayer, bool excludeItemsEffectsBonus = false);
 	// calc damage/effects for ranged weapons.
 	void setRangedProjectileAttack(Entity& marksman, Stat& myStats, int optionalOverrideForArrowType = 0);
 	bool setArrowProjectileProperties(int weaponType);
@@ -1263,7 +1263,8 @@ public:
 	int getEntityBonusTrapResist();
 	bool onEntityTrapHitSacredPath(Entity* trap);
 	int getFollowerBonusHPRegen();
-	int getHPRestoreOnLevelUp();
+	int getHPRestoreOnLevelUp(int baseHP, bool statCheckOnly = false);
+	int getMPRestoreOnLevelUp(int baseMP, bool statCheckOnly = false);
 	void monsterMoveBackwardsAndPath(bool trySidesFirst = false); // monster tries to move backwards in a cross shaped area if stuck against an entity.
 	bool monsterHasLeader(); // return true if monsterstats->leader_uid is not 0.
 	void monsterAllySendCommand(int command, int destX, int destY, Uint32 uid = 0); // update the behavior of allied NPCs.
@@ -1359,7 +1360,7 @@ list_t* checkTileForEntity(int x, int y); //Don't forget to free the list return
 void getItemsOnTile(int x, int y, list_t** list);
 
 // get mana regen from stats and proficiencies only.
-int getBaseManaRegen(Entity* my, Stat& myStats);
+int getBaseManaRegen(Entity* my, Stat& myStats, bool excludeItemsEffectsBonus = false);
 
 //--- Entity act* functions ---
 void actMonster(Entity* my);
