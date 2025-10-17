@@ -566,7 +566,7 @@ static std::vector<std::vector<unsigned int>> classStatGrowth =
 {
 	// stat weightings for classes on level up
 	//	STR	DEX	CON	INT	PER	CHR -- sum is approx 24.
-	{	6,	5,	2,	2,	4,	5 }, // BARB 0
+	{	6,	5,	5,	2,	4,	2 }, // BARB 0
 	{	7,	2,	6,	1,	2,	6 }, // WARRIOR 1
 	{	3,	3,	4,	6,	5,	3 }, // HEALER 2
 	{	2,	7,	1,	2,	7,	5 }, // ROGUE 3
@@ -577,7 +577,7 @@ static std::vector<std::vector<unsigned int>> classStatGrowth =
 	{	2,	6,	2,	6,	6,	2 }, // ARCANIST 8
 	{	4,	4,	4,	4,	4,	4 }, // JOKER 9
 	{	4,	4,	2,	4,	2,	2 }, // SEXTON 10
-	{	5,	5,	3,	2,	2,	1 }, // NINJA 11
+	{	4,	6,	3,	2,	4,	1 }, // NINJA 11
 	{	4,	2,	5,	3,	2,	2 }, // MONK 12
 	{	3,	2,	4,	6,	4,	4 }, // CONJURER 13
 	{	3,	3,	1,	6,	6,	3 }, // ACCURSED 14
@@ -590,8 +590,8 @@ static std::vector<std::vector<unsigned int>> classStatGrowth =
 	{	2,	5,	3,	4,	3,	7 },
 	{	6,	5,	5,	3,	4,	2 },
 	{	2,	2,	3,	8,	4,	5 },
-	{	1,	1,	1,	1,	1,	1 },
-	{	1,	1,	1,	1,	1,	1 }
+	{	4,	6,	3,	2,	4,	1 },
+	{	6,	5,	5,	2,	4,	2 }
 };
 
 enum AllyNPCCommand : int
