@@ -3325,7 +3325,7 @@ void setupSpells()   ///TODO: Verify this function.
 				if ( element )
 				{
 					element->channeledMana = info.sustain_mana;
-					if ( find->second.fociId != 0 )
+					if ( find->second.fociId >= 0 )
 					{
 						element->fociSpell = true;
 					}
