@@ -7121,9 +7121,9 @@ void actParticleAestheticOrbit(Entity* my)
 				my->scalex = 0.75;
 				my->scaley = 0.75;
 				my->scalez = 0.75;
-				my->focalx = limbs[CREATURE_IMP][11][0];
-				my->focaly = limbs[CREATURE_IMP][11][1];
-				my->focalz = limbs[CREATURE_IMP][11][2];
+				my->focalx = 0.0;
+				my->focaly = 0.0;
+				my->focalz = 0.5;
 				if ( my->ticks % 8 == 4 )
 				{
 					if ( Entity* fx = spawnMagicParticleCustom(my, my->sprite, my->scalex, 10.0) )
@@ -7148,9 +7148,9 @@ void actParticleAestheticOrbit(Entity* my)
 				my->scalex = 0.75;
 				my->scaley = 0.75;
 				my->scalez = 0.75;
-				my->focalx = limbs[CREATURE_IMP][12][0];
-				my->focaly = limbs[CREATURE_IMP][12][1];
-				my->focalz = limbs[CREATURE_IMP][12][2];
+				my->focalx = 0.0;
+				my->focaly = 0.0;
+				my->focalz = 0.5;
 				if ( my->ticks % 8 == 0 )
 				{
 					if ( Entity* fx = spawnMagicParticleCustom(my, my->sprite, my->scalex, 10.0) )
