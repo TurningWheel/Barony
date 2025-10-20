@@ -28433,7 +28433,8 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 		|| prompt == PROMPT_INSPECT 
 		|| prompt == PROMPT_INSPECT_ALTERNATE 
 		|| prompt == PROMPT_TINKER
-		|| prompt == PROMPT_COOK )
+		|| prompt == PROMPT_COOK
+		|| prompt == PROMPT_SCEPTER_CHARGE )
 	{
 		if ( item->type == TOOL_PLAYER_LOOT_BAG )
 		{
@@ -28444,6 +28445,31 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 			else if ( prompt == PROMPT_INSPECT )
 			{
 				useItem(item, player);
+			}
+		}
+		else if ( item->type == MAGICSTAFF_SCEPTER )
+		{
+			if ( !disableItemUsage )
+			{
+				if ( item->appearance % MAGICSTAFF_SCEPTER_CHARGE_MAX >= MAGICSTAFF_SCEPTER_CHARGE_MAX - 1 )
+				{
+					messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(6838), item->getName()); // fully charged!
+					playSoundPlayer(player, 90, 64);
+				}
+				else if ( true /*item->status > BROKEN*/ ) // allow broken tinker kit
+				{
+					GenericGUI[player].openGUI(GUI_TYPE_ITEMFX, item, item->beatitude, item->type, 0);
+				}
+				else
+				{
+					messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(1092), item->getName()); // this is useless!
+					playSoundPlayer(player, 90, 64);
+				}
+			}
+			else
+			{
+				messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(3432)); // unable to use in current form message.
+				playSoundPlayer(player, 90, 64);
 			}
 		}
 		else if ( item->type == TOOL_ALEMBIC )
@@ -37831,20 +37857,23 @@ void Player::Inventory_t::SpellPanel_t::updateSpellPanel()
 						}
 					}
 
-					if ( input.consumeBinaryToggle("MenuScrollDown") )
+					if ( abs(scrollSetpoint - scrollAnimateX) < 0.00001 )
 					{
-						scrollSetpoint = std::max(scrollSetpoint + player.inventoryUI.getSlotSize(), 0);
-						if ( player.inventoryUI.cursor.queuedModule == Player::GUI_t::MODULE_SPELLS )
+						if ( input.binaryToggle("MenuScrollDown") )
 						{
-							player.inventoryUI.cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+							scrollSetpoint = std::max(scrollSetpoint + player.inventoryUI.getSlotSize(), 0);
+							if ( player.inventoryUI.cursor.queuedModule == Player::GUI_t::MODULE_SPELLS )
+							{
+								player.inventoryUI.cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+							}
 						}
-					}
-					else if ( input.consumeBinaryToggle("MenuScrollUp") )
-					{
-						scrollSetpoint = std::max(scrollSetpoint - player.inventoryUI.getSlotSize(), 0);
-						if ( player.inventoryUI.cursor.queuedModule == Player::GUI_t::MODULE_SPELLS )
+						else if ( input.binaryToggle("MenuScrollUp") )
 						{
-							player.inventoryUI.cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+							scrollSetpoint = std::max(scrollSetpoint - player.inventoryUI.getSlotSize(), 0);
+							if ( player.inventoryUI.cursor.queuedModule == Player::GUI_t::MODULE_SPELLS )
+							{
+								player.inventoryUI.cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+							}
 						}
 					}
 				}
@@ -37863,7 +37892,7 @@ void Player::Inventory_t::SpellPanel_t::updateSpellPanel()
 
 			// slightly faster on gamepad
 			static ConsoleVariable<float> cvar_spell_slider_speed("/spell_slider_speed", 1.f);
-			const real_t factor = (3.0 * (*cvar_spell_slider_speed + (usingGamepad ? -.25f : 0.f)));
+			const real_t factor = (3.0 * (*cvar_spell_slider_speed + (usingGamepad ? -.5f : 0.f)));
 			if ( scrollSetpoint - scrollAnimateX > 0.0 )
 			{
 				setpointDiff = fpsScale * std::max(3.0, (scrollSetpoint - scrollAnimateX)) / factor;
@@ -39369,6 +39398,11 @@ SDL_Surface* Player::WorldUI_t::WorldTooltipItem_t::blitItemWorldTooltip(Item* i
 			{
 				snprintf(buf, sizeof(buf), "%s %s (%d%%) (%+d)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(),
 					item->getName(), item->appearance % ENCHANTED_FEATHER_MAX_DURABILITY, item->beatitude);
+			}
+			else if ( item->type == MAGICSTAFF_SCEPTER && item->identified )
+			{
+				snprintf(buf, sizeof(buf), "%s %s (%d%%) (%+d)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(),
+					item->getName(), item->appearance % MAGICSTAFF_SCEPTER_CHARGE_MAX, item->beatitude);
 			}
 			else if ( itemCategory(item) == BOOK )
 			{

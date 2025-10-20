@@ -234,6 +234,7 @@ static const int SPELL_FOCI_LIGHT_JUSTICE = 211;
 static const int SPELL_FOCI_LIGHT_PROVIDENCE = 212;
 static const int SPELL_FOCI_LIGHT_PURITY = 213;
 static const int SPELL_FOCI_LIGHT_SANCTUARY = 214;
+static const int SPELL_SCEPTER_BLAST = 215;
 static const int NUM_SPELLS = 225;
 
 #define SPELLELEMENT_CONFUSE_BASE_DURATION 2//In seconds.
@@ -332,6 +333,7 @@ static const int PARTICLE_EFFECT_MISC_PUDDLE = 50;
 static const int PARTICLE_EFFECT_BOLAS = 51;
 static const int PARTICLE_EFFECT_BASTION_MUSHROOM = 52;
 static const int PARTICLE_EFFECT_FOCI_ORBIT = 53;
+static const int PARTICLE_EFFECT_SCEPTER_BLAST_ORBIT1 = 54;
 
 // actmagicIsVertical constants
 static const int MAGIC_ISVERTICAL_NONE = 0;

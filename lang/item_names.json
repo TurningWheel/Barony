@@ -1668,6 +1668,10 @@
 		"tool_foci_light_sanctuary": {
 			"name_identified": "symbol of sanctuary",
 			"name_unidentified": "symbol"
+		},
+		"magicstaff_scepter": {
+			"name_identified": "archon scepter",
+			"name_unidentified": "scepter"
 		}
     },
 	"spell_names": {

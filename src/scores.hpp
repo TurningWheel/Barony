@@ -506,6 +506,7 @@ struct SaveGameInfo {
 		std::vector<std::pair<int, PlayerRaceHostility_t>> shopkeeperHostility;
 		std::vector<std::pair<std::string, std::vector<int>>> compendium_item_events;
 		std::vector<std::pair<int, int>> itemDegradeRNG;
+		std::vector<int> learnedSpells;
 		int sustainedSpellMPUsed = 0;
 
 		struct stat_t {
@@ -696,6 +697,7 @@ struct SaveGameInfo {
 			fp->property("compendium_item_events", compendium_item_events);
 			fp->property("item_degrade_rng", itemDegradeRNG);
 			fp->property("sustained_mp_used", sustainedSpellMPUsed);
+			fp->property("learned_spells", learnedSpells);
 			return true;
 		}
 

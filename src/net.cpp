@@ -6348,6 +6348,14 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 			{
 				appearance = (entity->skill[14] & 0xF) % items[entity->skill[10]].variations;
 			}
+			else if ( entity->skill[10] == ENCHANTED_FEATHER )
+			{
+				appearance = entity->skill[14] % ENCHANTED_FEATHER_MAX_DURABILITY;
+			}
+			else if ( entity->skill[10] == MAGICSTAFF_SCEPTER )
+			{
+				appearance = entity->skill[14] % MAGICSTAFF_SCEPTER_CHARGE_MAX;
+			}
 			statusBeatitudeQuantityAppearance |= (static_cast<Uint8>(appearance) & 0xFF); // appearance
 
 			SDLNet_Write32(statusBeatitudeQuantityAppearance, &net_packet->data[12]);
@@ -7569,9 +7577,11 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 			{
 				item->identified = slot->identified;
 			}
+			Uint32 newAppearance = item->appearance;
+			item->appearance = slot->appearance;
 			if ( !itemCompare(item, slot, false, false) )
 			{
-				slot->appearance = item->appearance;
+				slot->appearance = newAppearance;
 				if ( onIdentify )
 				{
 					slot->identified = true;
@@ -7692,6 +7702,15 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 	    const int player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
 		if (players[player] && players[player]->entity)
 		{
+			ItemType type = static_cast<ItemType>(SDLNet_Read32(&net_packet->data[7]));
+			Uint32 appearance = static_cast<ItemType>(SDLNet_Read32(&net_packet->data[11]));
+			if ( stats[player]->weapon && stats[player]->weapon->type == type )
+			{
+				if ( type == MAGICSTAFF_SCEPTER )
+				{
+					stats[player]->weapon->appearance = appearance;
+				}
+			}
 			players[player]->entity->attack(net_packet->data[5], net_packet->data[6], nullptr);
 		}
 	}},

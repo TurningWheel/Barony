@@ -878,8 +878,8 @@ void ItemTooltips_t::readItemsFromFile()
 		return;
 	}
 
-	const int bufSize = 360000;
-	char buf[bufSize];
+	const int bufSize = 400000;
+	static char buf[bufSize];
 	int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
 	buf[count] = '\0';
 	//rapidjson::FileReadStream is(fp, buf, sizeof(buf)); - use this for large chunks.

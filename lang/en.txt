@@ -6612,19 +6612,19 @@ Host to enable the game setting.
 6358 monster_d#
 6359 monster_m#
 6360 monster_s#
-6361 monster_g#
+6361 gremlin#
 6362 monster_ds#
 6363 monster_ms#
 6364 monster_ss#
-6365 monster_gs#
+6365 gremlins#
 6366 strikes#
 6367 strikes#
 6368 strikes#
 6369 strikes#
-6370 *grunt*#
-6371 *grunt*#
-6372 *grunt*#
-6373 *grunt*#
+6370 *sigh...*#
+6371 *croak*#
+6372 Hail, champion.#
+6373 Parrat soo skeba da.#
 6374 You reset the %s lock.#
 6375 You activate the %s lock.#
 6376 The %s key is stuck tight!#
@@ -7053,20 +7053,20 @@ to replay this challenge!
 6779 monster_d#
 6780 monster_m#
 6781 monster_s#
-6782 monster_g#
+6782 gremlin#
 6783 monster_x#
 6784 class_21#
 6785 class_22#
 6786 class_23#
-6787 class_24#
+6787 sapper#
 6788 class_25#
 # main menu capitalized
 6789 Class_21#
 6790 Class_22#
 6791 Class_23#
-6792 Class_24#
+6792 Sapper#
 6793 Class_25#
-6794 You lack the foilage to cast the spell!#
+6794 You lack the foliage to cast the spell!#
 6795 You are covered with thorns!#
 6796 You are covered with bladevines!#
 6797 Your thorned covering dissipates.#
@@ -7088,11 +7088,25 @@ to replay this challenge!
 6813 Your mana could not return your %s!#
 6814 You are unable to create a passage through this wall.#
 6815 The %s comes to life!#
+6816 dresser#
+6817 drawer#
+6818 candelabra#
 
 6826 You are blessed with peace!#
 6827 You are blessed with justice!#
 6828 You are blessed with providence!#
 6829 You are blessed with purity!#
 6830 You are blessed with sanctuary!#
+6831 Unlearn#
+6832 Sacrifice a spell to recharge:#
+6833 Recharge#
+6834 Recharge#
+6835 Confirm Unlearn (%d)#
+6836 You forget the %s spell.#
+6837 This %s
+ cannot be used to recharge.#
+6838 Your %s 
+ is already fully charged!#
+6839 Your %s is depleted!#
 
 6999 END#

@@ -1045,6 +1045,17 @@ Sint32 itemModel(const Item* const item, bool shortModel, Entity* creature)
 			return index + item->getLootBagPlayer();
 		}
 	}
+	else if ( item->type == MAGICSTAFF_SCEPTER )
+	{
+		if ( item->appearance % MAGICSTAFF_SCEPTER_CHARGE_MAX == 0 )
+		{
+			return index + 2;
+		}
+		else
+		{
+			return index;
+		}
+	}
 	return index + item->appearance % items[item->type].variations;
 }
 
@@ -1061,6 +1072,18 @@ Sint32 itemModelFirstperson(const Item* const item)
 	if ( !item || item->type < 0 || item->type >= NUMITEMS )
 	{
 		return 0;
+	}
+
+	if ( item->type == MAGICSTAFF_SCEPTER )
+	{
+		if ( item->appearance % MAGICSTAFF_SCEPTER_CHARGE_MAX == 0 )
+		{
+			return items[item->type].fpindex + 2;
+		}
+		else
+		{
+			return items[item->type].fpindex;
+		}
 	}
 	return items[item->type].fpindex + item->appearance % items[item->type].variations;
 }
@@ -1132,6 +1155,17 @@ SDL_Surface* itemSprite(Item* const item)
 			else
 			{
 				node = list_Node(&items[item->type].surfaces, item->getLootBagPlayer());
+			}
+		}
+		else if ( item->type == MAGICSTAFF_SCEPTER )
+		{
+			if ( item->appearance % MAGICSTAFF_SCEPTER_CHARGE_MAX == 0 )
+			{
+				node = list_Node(&items[item->type].surfaces, 1);
+			}
+			else
+			{
+				node = list_Node(&items[item->type].surfaces, 0);
 			}
 		}
 		else
@@ -2733,6 +2767,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		case MAGICSTAFF_CHARM:
 		case MAGICSTAFF_POISON:
 		case BRANCH_STAFF:
+		case MAGICSTAFF_SCEPTER:
 			equipItemResult = equipItem(item, &stats[player]->weapon, player, checkInventorySpaceForPaperDoll);
 			break;
 		case RING_ADORNMENT:
@@ -3506,6 +3541,10 @@ Item* itemPickup(const int player, Item* const item, Item* addToSpecificInventor
 				robot = true;
 				item->appearance += (local_rng.rand() % 100000) * 10;
 			}
+			else if ( item->type == MAGICSTAFF_SCEPTER )
+			{
+				item->appearance += (local_rng.rand() % 10000) * (MAGICSTAFF_SCEPTER_CHARGE_MAX);
+			}
 			else
 			{
 				item->appearance = local_rng.rand();
@@ -3528,6 +3567,10 @@ Item* itemPickup(const int player, Item* const item, Item* addToSpecificInventor
 				if ( robot )
 				{
 					item->appearance += (local_rng.rand() % 100000) * 10;
+				}
+				else if ( item->type == MAGICSTAFF_SCEPTER )
+				{
+					item->appearance += (local_rng.rand() % 10000) * (MAGICSTAFF_SCEPTER_CHARGE_MAX);
 				}
 				else
 				{
@@ -4075,7 +4118,7 @@ Sint32 Item::weaponGetAttack(const Stat* const wielder) const
 	}
 	if ( itemCategory(this) == MAGICSTAFF )
 	{
-		attack += 6;
+		attack += 1;
 	}
 	else if ( itemCategory(this) == GEM )
 	{
@@ -4272,7 +4315,8 @@ Sint32 Item::weaponGetAttack(const Stat* const wielder) const
 	// old formula
 	//attack *= (double)(status / 5.0);
 	//
-	if ( itemCategory(this) != TOOL && itemCategory(this) != THROWN && itemCategory(this) != GEM && itemCategory(this) != POTION )
+	if ( itemCategory(this) != TOOL && itemCategory(this) != THROWN && itemCategory(this) != GEM && itemCategory(this) != POTION
+		&& itemCategory(this) != MAGICSTAFF )
 	{
 		// new formula
 		attack += status - 3;

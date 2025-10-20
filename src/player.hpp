@@ -2361,6 +2361,7 @@ public:
 		Player& player;
 	public:
 		std::map<int, int> itemDegradeRng;
+		std::set<int> learnedSpells;
 		bool itemDegradeRoll(Item* item, int* checkInterval = nullptr);
 		void onItemDegrade(Item* item);
 		int sustainedSpellMPUsed = 0;

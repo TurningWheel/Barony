@@ -3033,6 +3033,18 @@ void initClass(const int player)
 			useItem(item, player);
 		}
 
+		item = newItem(MAGICSTAFF_SCEPTER, EXCELLENT, 0, 1, 50, true, nullptr);
+		if ( isLocalPlayer )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
 		item = newItem(HAT_CIRCLET_WISDOM, EXCELLENT, 0, 1, 0, true, nullptr);
 		if ( isLocalPlayer )
 		{

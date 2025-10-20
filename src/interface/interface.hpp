@@ -461,6 +461,10 @@ public:
 	bool isItemAdorcisable(const Item* item);
 	void adorciseItem(Item* item);
 
+	// scepter charge
+	bool isItemScepterChargeable(const Item* item);
+	void rechargeScepterUsingItem(Item* item);
+
 	// misc
 	bool isItemDesecratable(const Item* item);
 	void desecrateItem(Item* item);
@@ -722,7 +726,8 @@ public:
 			ITEMFX_MODE_SANCTIFY,
 			ITEMFX_MODE_SANCTIFY_WATER,
 			ITEMFX_MODE_CLEANSE_FOOD,
-			ITEMFX_MODE_ADORCISE_INSTRUMENT
+			ITEMFX_MODE_ADORCISE_INSTRUMENT,
+			ITEMFX_MODE_SCEPTER_CHARGE
 		};
 		void openItemEffectMenu(ItemEffectModes mode);
 		ItemEffectModes currentMode = ITEMFX_MODE_NONE;
@@ -735,6 +740,7 @@ public:
 		std::string itemDesc = "";
 		int itemType = -1;
 		int itemRequirement = -1;
+		int confirmActionSteps = 0;
 		enum ItemEffectActions_t : int
 		{
 			ITEMFX_ACTION_NONE,
@@ -752,6 +758,7 @@ public:
 			ITEMFX_ACTION_AT_MAX_BLESSING,
 			ITEMFX_ACTION_NEED_SKILL_LVLS
 		};
+		std::pair<Uint32, int> confirmActionOnItemSteps;
 		ItemEffectActions_t itemActionType = ITEMFX_ACTION_NONE;
 		bool itemRequiresTitleReflow = true;
 		real_t animTooltip = 0.0;
@@ -1915,7 +1922,8 @@ enum ItemContextMenuPrompts {
 	PROMPT_GRAB,
 	PROMPT_UNEQUIP_FOR_DROP,
 	PROMPT_CLEAR_HOTBAR_SLOT,
-	PROMPT_COOK
+	PROMPT_COOK,
+	PROMPT_SCEPTER_CHARGE
 };
 
 std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int player, Item* item);

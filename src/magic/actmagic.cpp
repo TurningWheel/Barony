@@ -92,6 +92,7 @@ const char* magicLightColorForSprite(Entity* my, int sprite, bool darker) {
 		case 1801: return "magic_blue_flicker";
 		case 1818: return "magic_blue_flicker";
         case 625:
+		case 2191:
         case 173: return "magic_purple_flicker";
         default:
         case 669:
@@ -122,6 +123,7 @@ const char* magicLightColorForSprite(Entity* my, int sprite, bool darker) {
 		case 1801: return "magic_blue";
 		case 1818: return "magic_blue";
         case 625:
+		case 2191:
         case 173: return "magic_purple";
         default:
         case 669:
@@ -2499,9 +2501,17 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 					}
 				}
-				else if (!strcmp(element->element_internal_name, spellElement_magicmissile.element_internal_name))
+				else if (!strcmp(element->element_internal_name, spellElement_magicmissile.element_internal_name)
+					|| spell->ID == SPELL_SCEPTER_BLAST )
 				{
-					spawnExplosion(my->x, my->y, my->z);
+					if ( spell->ID == SPELL_SCEPTER_BLAST )
+					{
+						spawnExplosionFromSprite(135, my->x, my->y, my->z);
+					}
+					else
+					{
+						spawnExplosion(my->x, my->y, my->z);
+					}
 					if (hit.entity)
 					{
 						if ( mimic )
@@ -2512,7 +2522,20 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								Entity* caster = uidToEntity(spell->caster);
 								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr, true);
 							}
-							if ( !(my->actmagicIsOrbiting == 2) )
+
+							if ( spell->ID == SPELL_SCEPTER_BLAST )
+							{
+								if ( hit.entity->getStats() && hit.entity->getStats()->HP > 0 )
+								{
+									my->removeLightField();
+									list_RemoveNode(my->mynode);
+								}
+								else
+								{
+									my->collisionIgnoreTargets.insert(hit.entity->getUID());
+								}
+							}
+							else if ( !(my->actmagicIsOrbiting == 2) )
 							{
 								my->removeLightField();
 								list_RemoveNode(my->mynode);
@@ -2528,6 +2551,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							Entity* parent = uidToEntity(my->parent);
 							playSoundEntity(hit.entity, 28, 128);
 
+							if ( spell->ID == SPELL_SCEPTER_BLAST )
+							{
+								my->collisionIgnoreTargets.insert(hit.entity->getUID());
+							}
+
 							if ( my->actmagicIsOrbiting == 2 )
 							{
 								spawnExplosion(my->x, my->y, my->z);
@@ -2537,7 +2565,9 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							hit.entity->modHP(-damage);
 							magicTrapOnHit(parent, hit.entity, hitstats, oldHP, spell ? spell->ID : SPELL_NONE);
 							magicOnEntityHit(parent, my, hit.entity, hitstats, preResistanceDamage, damage, oldHP, spell ? spell->ID : SPELL_NONE);
-							for (i = 0; i < damage; i += 2)   //Spawn a gib for every two points of damage.
+							int numGibs = damage / 2;
+							numGibs = std::min(5, numGibs);
+							for ( i = 0; i < numGibs; ++i )   //Spawn a gib for every two points of damage.
 							{
 								Entity* gib = spawnGib(hit.entity);
 								serverSpawnGibForClient(gib);
@@ -2575,7 +2605,20 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								Entity* caster = uidToEntity(spell->caster);
 								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr, true);
 							}
-							if ( !(my->actmagicIsOrbiting == 2) )
+
+							if ( spell->ID == SPELL_SCEPTER_BLAST )
+							{
+								if ( hit.entity->doorHealth > 0 )
+								{
+									my->removeLightField();
+									list_RemoveNode(my->mynode);
+								}
+								else
+								{
+									my->collisionIgnoreTargets.insert(hit.entity->getUID());
+								}
+							}
+							else if ( !(my->actmagicIsOrbiting == 2) )
 							{
 								my->removeLightField();
 								list_RemoveNode(my->mynode);
@@ -2594,7 +2637,20 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								Entity* caster = uidToEntity(spell->caster);
 								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr, true);
 							}
-							if ( !(my->actmagicIsOrbiting == 2) )
+
+							if ( spell->ID == SPELL_SCEPTER_BLAST )
+							{
+								if ( hit.entity->colliderCurrentHP > 0 )
+								{
+									my->removeLightField();
+									list_RemoveNode(my->mynode);
+								}
+								else
+								{
+									my->collisionIgnoreTargets.insert(hit.entity->getUID());
+								}
+							}
+							else if ( !(my->actmagicIsOrbiting == 2) )
 							{
 								my->removeLightField();
 								list_RemoveNode(my->mynode);
@@ -2613,7 +2669,20 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								Entity* caster = uidToEntity(spell->caster);
 								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr, true);
 							}
-							if ( !(my->actmagicIsOrbiting == 2) )
+
+							if ( spell->ID == SPELL_SCEPTER_BLAST )
+							{
+								if ( hit.entity->chestHealth > 0 )
+								{
+									my->removeLightField();
+									list_RemoveNode(my->mynode);
+								}
+								else
+								{
+									my->collisionIgnoreTargets.insert(hit.entity->getUID());
+								}
+							}
+							else if ( !(my->actmagicIsOrbiting == 2) )
 							{
 								my->removeLightField();
 								list_RemoveNode(my->mynode);
@@ -2632,7 +2701,20 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								Entity* caster = uidToEntity(spell->caster);
 								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr, true);
 							}
-							if ( !(my->actmagicIsOrbiting == 2) )
+
+							if ( spell->ID == SPELL_SCEPTER_BLAST )
+							{
+								if ( hit.entity->furnitureHealth > 0 )
+								{
+									my->removeLightField();
+									list_RemoveNode(my->mynode);
+								}
+								else
+								{
+									my->collisionIgnoreTargets.insert(hit.entity->getUID());
+								}
+							}
+							else if ( !(my->actmagicIsOrbiting == 2) )
 							{
 								my->removeLightField();
 								list_RemoveNode(my->mynode);
@@ -5359,7 +5441,22 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					createSpellExplosionArea(spell->ID, caster, my->x, my->y, my->z, 16.0, preResistanceDamage, hit.entity);
 				}
 
-				if ( !(my->actmagicIsOrbiting == 2) )
+				if ( spell->ID == SPELL_SCEPTER_BLAST )
+				{
+					if ( hit.entity && ((hit.entity->behavior == &actMonster && !mimic) || hit.entity->behavior == &actPlayer) )
+					{
+						// phase through
+					}
+					else
+					{
+						my->removeLightField();
+						if ( my->mynode )
+						{
+							list_RemoveNode(my->mynode);
+						}
+					}
+				}
+				else if ( !(my->actmagicIsOrbiting == 2) )
 				{
 					my->removeLightField();
 					if ( my->mynode )
@@ -5450,6 +5547,16 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								particle->flags[SPRITE] = my->flags[SPRITE];
 								particle->flags[INVISIBLE] = my->flags[INVISIBLE];
 								particle->flags[INVISIBLE_DITHER] = my->flags[INVISIBLE_DITHER];
+								if ( my->sprite == 2191 )
+								{
+									particle->scalex = my->scalex * 0.5;
+									particle->scaley = my->scaley * 0.5;
+									particle->scalez = my->scalez * 0.5;
+									particle->ditheringDisabled = true;
+									particle->x -= 2.0 * cos(my->yaw);
+									particle->y -= 2.0 * sin(my->yaw);
+									particle->lightBonus = vec4_t{ 0.f, 0.f, 0.f, 0.f };
+								}
 							}
 							break;
 						}
@@ -5464,6 +5571,24 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					particle->flags[INVISIBLE] = my->flags[INVISIBLE];
 					particle->flags[INVISIBLE_DITHER] = my->flags[INVISIBLE_DITHER];
 				}
+			}
+		}
+
+		if ( my->ticks == 1 && my->sprite == 2191 )
+		{
+			if ( Entity* fx = createParticleAestheticOrbit(my, 2192, 4 * TICKS_PER_SECOND, PARTICLE_EFFECT_SCEPTER_BLAST_ORBIT1) )
+			{
+				fx->x = my->x;
+				fx->y = my->y;
+				fx->z = my->z;
+				fx->yaw = my->yaw + PI / 4;
+			}
+			if ( Entity* fx = createParticleAestheticOrbit(my, 2193, 4 * TICKS_PER_SECOND, PARTICLE_EFFECT_SCEPTER_BLAST_ORBIT1) )
+			{
+				fx->x = my->x;
+				fx->y = my->y;
+				fx->z = my->z;
+				fx->yaw = my->yaw - PI / 4;
 			}
 		}
 	}
@@ -5525,6 +5650,16 @@ void actMagicClient(Entity* my)
 							particle->flags[SPRITE] = my->flags[SPRITE];
 							particle->flags[INVISIBLE] = my->flags[INVISIBLE];
 							particle->flags[INVISIBLE_DITHER] = my->flags[INVISIBLE_DITHER];
+							if ( my->sprite == 2191 )
+							{
+								particle->scalex = my->scalex * 0.5;
+								particle->scaley = my->scaley * 0.5;
+								particle->scalez = my->scalez * 0.5;
+								particle->ditheringDisabled = true;
+								particle->x -= 2.0 * cos(my->yaw);
+								particle->y -= 2.0 * sin(my->yaw);
+								particle->lightBonus = vec4_t{ 0.f, 0.f, 0.f, 0.f };
+							}
 						}
 						break;
 					}
@@ -5539,6 +5674,24 @@ void actMagicClient(Entity* my)
 				particle->flags[INVISIBLE] = my->flags[INVISIBLE];
 				particle->flags[INVISIBLE_DITHER] = my->flags[INVISIBLE_DITHER];
 			}
+		}
+	}
+
+	if ( my->ticks == 1 && my->sprite == 2191 )
+	{
+		if ( Entity* fx = createParticleAestheticOrbit(my, 2192, 4 * TICKS_PER_SECOND, PARTICLE_EFFECT_SCEPTER_BLAST_ORBIT1) )
+		{
+			fx->x = my->x;
+			fx->y = my->y;
+			fx->z = my->z;
+			fx->yaw = my->yaw + PI / 4;
+		}
+		if ( Entity* fx = createParticleAestheticOrbit(my, 2193, 4 * TICKS_PER_SECOND, PARTICLE_EFFECT_SCEPTER_BLAST_ORBIT1) )
+		{
+			fx->x = my->x;
+			fx->y = my->y;
+			fx->z = my->z;
+			fx->yaw = my->yaw - PI / 4;
 		}
 	}
 }
@@ -5642,6 +5795,19 @@ void actMagicParticle(Entity* my)
 		my->scalex -= 0.01;
 		my->scaley -= 0.01;
 		my->scalez -= 0.01;
+	}
+	else if ( my->sprite == 2191 )
+	{
+		my->scalex -= 0.025;
+		my->scaley -= 0.025;
+		my->scalez -= 0.025;
+	}
+	else if ( my->sprite == 2192 || my->sprite == 2193 )
+	{
+		my->scalex -= 0.025;
+		my->scaley -= 0.025;
+		my->scalez -= 0.025;
+		my->pitch += 0.1;
 	}
 	else if ( my->sprite >= 2152 && my->sprite <= 2157 )
 	{
@@ -6942,6 +7108,63 @@ void actParticleAestheticOrbit(Entity* my)
 			my->y += my->fskill[5] * sin(my->yaw - 3 * PI / 4 + PI / 2);
 
 			my->yaw += my->fskill[6];
+		}
+		else if ( my->skill[1] == PARTICLE_EFFECT_SCEPTER_BLAST_ORBIT1 )
+		{
+			if ( my->sprite == 2192 )
+			{
+				my->x = parent->x;
+				my->y = parent->y;
+				my->z = parent->z - 0.5;
+				my->roll = 0.0;
+				my->pitch -= 0.1;
+				my->scalex = 0.75;
+				my->scaley = 0.75;
+				my->scalez = 0.75;
+				my->focalx = limbs[CREATURE_IMP][11][0];
+				my->focaly = limbs[CREATURE_IMP][11][1];
+				my->focalz = limbs[CREATURE_IMP][11][2];
+				if ( my->ticks % 8 == 4 )
+				{
+					if ( Entity* fx = spawnMagicParticleCustom(my, my->sprite, my->scalex, 10.0) )
+					{
+						fx->ditheringDisabled = true;
+						fx->yaw = my->yaw;
+						fx->pitch = my->pitch;
+						fx->roll = my->roll;
+						fx->focalx = my->focalx;
+						fx->focaly = my->focaly;
+						fx->focalz = my->focalz;
+					}
+				}
+			}
+			else if ( my->sprite == 2193 )
+			{
+				my->x = parent->x;
+				my->y = parent->y;
+				my->z = parent->z - 0.5;
+				my->pitch += 0.1;
+				my->roll = 0.0;
+				my->scalex = 0.75;
+				my->scaley = 0.75;
+				my->scalez = 0.75;
+				my->focalx = limbs[CREATURE_IMP][12][0];
+				my->focaly = limbs[CREATURE_IMP][12][1];
+				my->focalz = limbs[CREATURE_IMP][12][2];
+				if ( my->ticks % 8 == 0 )
+				{
+					if ( Entity* fx = spawnMagicParticleCustom(my, my->sprite, my->scalex, 10.0) )
+					{
+						fx->ditheringDisabled = true;
+						fx->yaw = my->yaw;
+						fx->pitch = my->pitch;
+						fx->roll = my->roll;
+						fx->focalx = my->focalx;
+						fx->focaly = my->focaly;
+						fx->focalz = my->focalz;
+					}
+				}
+			}
 		}
 		--PARTICLE_LIFE;
 	}

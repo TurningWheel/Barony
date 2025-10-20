@@ -7105,6 +7105,19 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					missileEntity->flags[SPRITE] = true;
 				}
 			}
+			else if ( !strcmp(innerElement->element_internal_name, "spell_element_scepter_blast") )
+			{
+				if ( propulsion == PROPULSION_MISSILE )
+				{
+					missileEntity->skill[5] *= 2; // double lifetime as half speed
+					missileEntity->sprite = 2191;
+					missileEntity->scalex = 0.5;
+					missileEntity->scaley = missileEntity->scalex;
+					missileEntity->scalez = missileEntity->scalex;
+					missileEntity->vel_x *= 0.5;
+					missileEntity->vel_y *= 0.5;
+				}
+			}
 		}
 	}
 

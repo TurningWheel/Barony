@@ -2536,6 +2536,25 @@ void actHudWeapon(Entity* my)
 						{
 							players[HUDWEAPON_PLAYERNUM]->entity->attack(1, HUDWEAPON_CHARGE, nullptr);
 						}
+						else if ( !hideWeapon && stats[HUDWEAPON_PLAYERNUM]->weapon && stats[HUDWEAPON_PLAYERNUM]->weapon->type == MAGICSTAFF_SCEPTER )
+						{
+							int chargeAmount = HUDWEAPON_CHARGE;
+							if ( HUDWEAPON_OVERCHARGE >= (Stat::getMaxAttackCharge(stats[HUDWEAPON_PLAYERNUM]) - 3) )
+							{
+								int staffCharge = stats[HUDWEAPON_PLAYERNUM]->weapon->appearance % MAGICSTAFF_SCEPTER_CHARGE_MAX;
+								if ( staffCharge > 0 )
+								{
+									int decrement = std::min(staffCharge, 5);
+									stats[HUDWEAPON_PLAYERNUM]->weapon->appearance -= decrement;
+									chargeAmount = 100;
+								}
+								else
+								{
+									chargeAmount = 99;
+								}
+							}
+							players[HUDWEAPON_PLAYERNUM]->entity->attack(3, chargeAmount, nullptr);
+						}
 						else
 						{
 							players[HUDWEAPON_PLAYERNUM]->entity->attack(3, HUDWEAPON_CHARGE, nullptr);

@@ -7406,6 +7406,10 @@ void actPlayer(Entity* my)
 									robot = true;
 									tempItem->appearance += (local_rng.rand() % 100000) * 10;
 								}
+								else if ( tempItem->type == MAGICSTAFF_SCEPTER )
+								{
+									tempItem->appearance += (local_rng.rand() % 10000) * (MAGICSTAFF_SCEPTER_CHARGE_MAX);
+								}
 								else
 								{
 									tempItem->appearance = local_rng.rand();
@@ -7428,6 +7432,10 @@ void actPlayer(Entity* my)
 									if ( robot )
 									{
 										tempItem->appearance += (local_rng.rand() % 100000) * 10;
+									}
+									else if ( tempItem->type == MAGICSTAFF_SCEPTER )
+									{
+										tempItem->appearance += (local_rng.rand() % 10000) * (MAGICSTAFF_SCEPTER_CHARGE_MAX);
 									}
 									else
 									{

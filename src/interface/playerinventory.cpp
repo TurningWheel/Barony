@@ -2238,6 +2238,17 @@ std::string getItemSpritePath(const int player, Item& item)
 				imagePathsNode = list_Node(&items[item.type].images, item.getLootBagPlayer());
 			}
 		}
+		else if ( item.type == MAGICSTAFF_SCEPTER )
+		{
+			if ( item.appearance % MAGICSTAFF_SCEPTER_CHARGE_MAX == 0 )
+			{
+				imagePathsNode = list_Node(&items[item.type].images, 1);
+			}
+			else
+			{
+				imagePathsNode = list_Node(&items[item.type].images, 0);
+			}
+		}
 		else
 		{
 			imagePathsNode = list_Node(&items[item.type].images, item.appearance % items[item.type].variations);
@@ -4774,6 +4785,11 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                     snprintf(buf, sizeof(buf), "%s %s (%d%%) (%+d)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(),
                              item->getName(), item->appearance % ENCHANTED_FEATHER_MAX_DURABILITY, item->beatitude);
                 }
+				else if ( item->type == MAGICSTAFF_SCEPTER )
+				{
+					snprintf(buf, sizeof(buf), "%s %s (%d%%) (%+d)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(),
+						item->getName(), item->appearance % MAGICSTAFF_SCEPTER_CHARGE_MAX, item->beatitude);
+				}
                 else if ( itemCategory(item) == BOOK )
                 {
                     snprintf(buf, sizeof(buf), "%s %s\n%s (%+d)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(),
@@ -10683,6 +10699,7 @@ std::string getContextMenuOptionBindingName(const int player, const ItemContextM
 		case PROMPT_STORE_CHEST_ALL:
 		case PROMPT_CONSUME_ALTERNATE:
 		case PROMPT_INSPECT_ALTERNATE:
+		case PROMPT_SCEPTER_CHARGE:
 			if ( players[player]->inventoryUI.useItemDropdownOnGamepad == Player::Inventory_t::GAMEPAD_DROPDOWN_COMPACT )
 			{
 				return "MenuConfirm";
@@ -10773,6 +10790,8 @@ const char* getContextMenuLangEntry(const int player, const ItemContextMenuPromp
 			return Language::get(4050);
 		case PROMPT_DROPDOWN:
 			return Language::get(4040);
+		case PROMPT_SCEPTER_CHARGE:
+			return Language::get(6834);
 		default:
 			return "Invalid";
 	}
@@ -10882,7 +10901,10 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 				options.push_back(PROMPT_SPELL_CHANGE_FOCUS);
 			}
 		}*/
-		return options;
+		if ( !(GenericGUI[player].itemfxGUI.bOpen && GenericGUI[player].itemfxGUI.currentMode == GenericGUIMenu::ItemEffectGUI_t::ITEMFX_MODE_SCEPTER_CHARGE) )
+		{
+			return options;
+		}
 	}
 
 	if ( itemCategory(item) == POTION )
@@ -10933,6 +10955,13 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 	{
 		options.push_back(PROMPT_COOK);
 		options.push_back(PROMPT_EQUIP);
+		options.push_back(PROMPT_APPRAISE);
+		options.push_back(PROMPT_DROP);
+	}
+	else if ( item->type == MAGICSTAFF_SCEPTER )
+	{
+		options.push_back(PROMPT_EQUIP);
+		options.push_back(PROMPT_SCEPTER_CHARGE);
 		options.push_back(PROMPT_APPRAISE);
 		options.push_back(PROMPT_DROP);
 	}

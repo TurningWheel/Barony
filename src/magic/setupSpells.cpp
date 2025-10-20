@@ -3276,6 +3276,22 @@ void setupSpells()   ///TODO: Verify this function.
 	);
 	spell->hide_from_ui = true;
 
+	spellElementConstructor(SPELL_SCEPTER_BLAST,
+		1,		// mana
+		1,		// base mana
+		1,		// overload
+		0,		// damage
+		100,	// duration
+		"spell_element_scepter_blast");
+	spell = spellConstructor(
+		SPELL_SCEPTER_BLAST,											// ID
+		100,														// difficulty
+		"spell_scepter_blast",											// internal name
+		// elements
+		{ SPELL_ELEMENT_PROPULSION_MISSILE, SPELL_SCEPTER_BLAST }
+	);
+	spell->hide_from_ui = true;
+
 	//static const int SPELL_LIGHTNING_NEXUS = 182;
 	//static const int SPELL_LIFT = 184;
 	//static const int SPELL_SLAM = 185;

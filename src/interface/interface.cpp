@@ -5345,6 +5345,23 @@ bool GenericGUIMenu::isItemAdorcisable(const Item* item)
 	return false;
 }
 
+bool GenericGUIMenu::isItemScepterChargeable(const Item* item)
+{
+	if ( !item )
+	{
+		return false;
+	}
+	if ( !item->identified )
+	{
+		return false;
+	}
+
+	if ( itemCategory(item) == SPELL_CAT )
+	{
+		return true;
+	}
+	return false;
+}
 
 bool GenericGUIMenu::isItemAlterable(const Item* item)
 {
@@ -5527,6 +5544,18 @@ bool GenericGUIMenu::isItemRepairable(const Item* item, int repairScroll)
 				return true;
 			}
 			return false;
+		}
+		else if(item->type == MAGICSTAFF_SCEPTER)
+		{
+			if ( item->appearance % MAGICSTAFF_SCEPTER_CHARGE_MAX < 100 )
+			{
+				return true;
+			}
+			if ( item->status == EXCELLENT )
+			{
+				return false;
+			}
+			return true;
 		}
 		else if ( cat == MAGICSTAFF )
 		{
@@ -6707,6 +6736,10 @@ bool GenericGUIMenu::shouldDisplayItemInGUI(Item* item)
 		{
 			return isItemVoidable(item);
 		}
+		else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_SCEPTER_CHARGE )
+		{
+			return isItemScepterChargeable(item);
+		}
 		return false;
 	}
 	else if ( guiType == GUI_TYPE_ALCHEMY )
@@ -7365,7 +7398,28 @@ void GenericGUIMenu::repairItem(Item* item)
 		if ( itemCategory(item) == MAGICSTAFF )
 		{
 			Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_MAGICSTAFF_RECHARGED, item->type, 1);
-			if ( item->status == BROKEN )
+			if ( item->type == MAGICSTAFF_SCEPTER )
+			{
+				int durability = item->appearance % MAGICSTAFF_SCEPTER_CHARGE_MAX;
+				int repairAmount = ((MAGICSTAFF_SCEPTER_CHARGE_MAX - 1) - durability);
+				if ( repairAmount > (MAGICSTAFF_SCEPTER_CHARGE_MAX / 2) )
+				{
+					if ( itemEffectItemBeatitude == 0 )
+					{
+						repairAmount = MAGICSTAFF_SCEPTER_CHARGE_MAX / 2;
+					}
+				}
+				item->status = EXCELLENT;
+				item->appearance += repairAmount;
+				messagePlayer(gui_player, MESSAGE_MISC, Language::get(3730), item->getName());
+				closeGUI();
+				if ( multiplayer == CLIENT && isEquipped )
+				{
+					clientSendAppearanceUpdateToServer(gui_player, item, false);
+				}
+				return;
+			}
+			else if ( item->status == BROKEN )
 			{
 				if ( itemEffectItemBeatitude > 0 )
 				{
@@ -7475,6 +7529,7 @@ void GenericGUIMenu::closeGUI()
 	tinkeringFreeLists();
 	scribingFreeLists();
 	guiActive = false;
+	auto prevGUI = guiType;
 	guiType = GUI_TYPE_NONE;
 	basePotion = nullptr;
 	secondaryPotion = nullptr;
@@ -7484,6 +7539,13 @@ void GenericGUIMenu::closeGUI()
 	itemEffectScrollItem = nullptr;
 	itemEffectItemType = 0;
 	itemEffectItemBeatitude = 0;
+	if ( prevGUI == GUI_TYPE_ITEMFX && itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_SCEPTER_CHARGE )
+	{
+		if ( players[gui_player]->inventory_mode == INVENTORY_MODE_SPELL )
+		{
+			players[gui_player]->inventory_mode = INVENTORY_MODE_ITEM;
+		}
+	}
 	itemfxGUI.currentMode = ItemEffectGUI_t::ITEMFX_MODE_NONE;
 	if ( tinkerGUI.bOpen )
 	{
@@ -7780,6 +7842,10 @@ void GenericGUIMenu::openGUI(int type, Item* effectItem, int effectBeatitude, in
 		{
 			itemfxGUI.currentMode = ItemEffectGUI_t::ITEMFX_MODE_SPELL_REMOVECURSE;
 		}
+		else if ( itemEffectItemType == MAGICSTAFF_SCEPTER )
+		{
+			itemfxGUI.currentMode = ItemEffectGUI_t::ITEMFX_MODE_SCEPTER_CHARGE;
+		}
 		else if ( itemEffectItemType == SCROLL_REPAIR )
 		{
 			itemfxGUI.currentMode = ItemEffectGUI_t::ITEMFX_MODE_SCROLL_REPAIR;
@@ -8006,7 +8072,7 @@ void GenericGUIMenu::adorciseItem(Item* item)
 	}
 	if ( !shouldDisplayItemInGUI(item) )
 	{
-		messagePlayer(gui_player, MESSAGE_MISC, Language::get(6518), item->getName());
+		messagePlayer(gui_player, MESSAGE_MISC, Language::get(6618), item->getName());
 		closeGUI();
 		return;
 	}
@@ -8046,6 +8112,74 @@ void GenericGUIMenu::adorciseItem(Item* item)
 			sendPacketSafe(net_sock, -1, net_packet, 0);
 
 			consumeItem(item, gui_player);
+		}
+	}
+	closeGUI();
+}
+
+void GenericGUIMenu::rechargeScepterUsingItem(Item* item)
+{
+	if ( !item || gui_player < 0 )
+	{
+		return;
+	}
+	if ( !shouldDisplayItemInGUI(item) )
+	{
+		messagePlayer(gui_player, MESSAGE_MISC, Language::get(6837), item->getName());
+		closeGUI();
+		return;
+	}
+
+	if ( itemEffectScrollItem && itemEffectScrollItem->type == MAGICSTAFF_SCEPTER )
+	{
+		if ( auto spell = getSpellFromItem(gui_player, item, true) )
+		{
+			messagePlayer(gui_player, MESSAGE_INTERACTION, Language::get(6836), spell->getSpellName());
+			messagePlayerColor(gui_player, MESSAGE_INTERACTION, makeColorRGB(0, 255, 0), Language::get(3730), items[itemEffectScrollItem->type].getIdentifiedName());
+			playSound(167, 64);
+			int difficulty = std::max(10, spell->difficulty);
+			node_t* nextnode = nullptr;
+			for ( node_t* node = players[gui_player]->magic.spellList.first; node; node = nextnode )
+			{
+				nextnode = node->next;
+				if ( node->element )
+				{
+					spell_t* spell2 = (spell_t*)node->element;
+					if ( spell2 == spell )
+					{
+						if ( spell == players[gui_player]->magic.selectedSpell() )
+						{
+							players[gui_player]->magic.equipSpell(nullptr);
+						}
+						for ( int i = 0; i < NUM_HOTBAR_ALTERNATES; ++i )
+						{
+							if ( players[gui_player]->magic.selected_spell_alternate[i] == spell )
+							{
+								players[gui_player]->magic.selected_spell_alternate[i] = nullptr;
+							}
+						}
+						list_RemoveNode(node);
+						break;
+					}
+				}
+			}
+			consumeItem(item, gui_player);
+			Uint32 baseAppearance = itemEffectScrollItem->appearance % MAGICSTAFF_SCEPTER_CHARGE_MAX;
+			Uint32 increased = std::min(MAGICSTAFF_SCEPTER_CHARGE_MAX - 1U, baseAppearance + difficulty);
+			if ( increased > baseAppearance )
+			{
+				itemEffectScrollItem->appearance += (increased - baseAppearance);
+				itemEffectScrollItem->appearance = itemEffectScrollItem->appearance % MAGICSTAFF_SCEPTER_CHARGE_MAX;
+			}
+
+			if ( multiplayer == CLIENT )
+			{
+				// update item appearance
+				if ( itemIsEquipped(itemEffectScrollItem, gui_player) )
+				{
+					clientSendAppearanceUpdateToServer(gui_player, itemEffectScrollItem, false);
+				}
+			}
 		}
 	}
 	closeGUI();
@@ -8140,6 +8274,11 @@ bool GenericGUIMenu::executeOnItemClick(Item* item)
 			|| itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_ADORCISE_INSTRUMENT )
 		{
 			adorciseItem(item);
+			return true;
+		}
+		else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_SCEPTER_CHARGE )
+		{
+			rechargeScepterUsingItem(item);
 			return true;
 		}
 		else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_SCROLL_ENCHANT_WEAPON
@@ -11380,6 +11519,7 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 		case SPELLBOOK_FLUTTER:
 		case SCROLL_CHARGING:
 		case SCROLL_CONJUREARROW:
+		case MAGICSTAFF_SCEPTER:
 			*metal = 0;
 			*magic = 6;
 			break;
@@ -13816,6 +13956,24 @@ void buttonTinkerUpdateSelectorOnHighlight(const int player, Button* button)
 	}
 }
 
+void buttonItemfxSelectorOnHighlight(const int player, Button* button)
+{
+	if ( button->isHighlighted() )
+	{
+		players[player]->GUI.setHoveringOverModuleButton(Player::GUI_t::MODULE_ITEMEFFECTGUI);
+		if ( players[player]->GUI.activeModule != Player::GUI_t::MODULE_ITEMEFFECTGUI )
+		{
+			players[player]->GUI.activateModule(Player::GUI_t::MODULE_ITEMEFFECTGUI);
+		}
+		SDL_Rect pos = button->getAbsoluteSize();
+		// make sure to adjust absolute size to camera viewport
+		pos.x -= players[player]->camera_virtualx1();
+		pos.y -= players[player]->camera_virtualy1();
+		players[player]->hud.setCursorDisabled(false);
+		players[player]->hud.updateCursorAnimation(pos.x - 1, pos.y - 1, pos.w, pos.h, inputs.getVirtualMouse(player)->draw_cursor);
+	}
+}
+
 void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 {
 	const int playernum = parentGUI.getPlayer();
@@ -15878,6 +16036,11 @@ GenericGUIMenu::TinkerGUI_t::TinkerActions_t GenericGUIMenu::TinkerGUI_t::setIte
 			{
 				snprintf(buf, sizeof(buf), "%s %s (%d%%) (%+d)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(), 
 					item->getName(), item->appearance % ENCHANTED_FEATHER_MAX_DURABILITY, item->beatitude);
+			}
+			else if ( item->type == MAGICSTAFF_SCEPTER && item->identified )
+			{
+				snprintf(buf, sizeof(buf), "%s %s (%d%%) (%+d)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(),
+					item->getName(), item->appearance % MAGICSTAFF_SCEPTER_CHARGE_MAX, item->beatitude);
 			}
 			else
 			{
@@ -23320,6 +23483,8 @@ void GenericGUIMenu::ItemEffectGUI_t::clearItemDisplayed()
 	costEffectGoldAmount = 0;
 	costEffectMPAmount = 0;
 	itemActionType = ITEMFX_ACTION_NONE;
+	confirmActionOnItemSteps.first = 0;
+	confirmActionOnItemSteps.second = 0;
 }
 
 void GenericGUIMenu::ItemEffectGUI_t::getItemEffectCost(Item* itemUsedWith, int& goldCost, int& manaCost)
@@ -23606,6 +23771,31 @@ GenericGUIMenu::ItemEffectGUI_t::ItemEffectActions_t GenericGUIMenu::ItemEffectG
 				else
 				{
 					result = ITEMFX_ACTION_ITEM_FULLY_CHARGED;
+				}
+			}
+			else if ( item->type == MAGICSTAFF_SCEPTER )
+			{
+				if ( item->appearance % MAGICSTAFF_SCEPTER_CHARGE_MAX < (MAGICSTAFF_SCEPTER_CHARGE_MAX - 1) )
+				{
+					if ( itemIsEquipped(item, parentGUI.gui_player) )
+					{
+						result = ITEMFX_ACTION_MUST_BE_UNEQUIPPED;
+					}
+					else
+					{
+						result = ITEMFX_ACTION_OK;
+					}
+				}
+				else
+				{
+					if ( item->status == EXCELLENT )
+					{
+						result = ITEMFX_ACTION_ITEM_FULLY_CHARGED;
+					}
+					else
+					{
+						result = ITEMFX_ACTION_OK;
+					}
 				}
 			}
 			else if ( itemCategory(item) == MAGICSTAFF )
@@ -23906,7 +24096,18 @@ GenericGUIMenu::ItemEffectGUI_t::ItemEffectActions_t GenericGUIMenu::ItemEffectG
 					result = ITEMFX_ACTION_OK;
 				}
 			}
+		}
+		else if ( currentMode == ITEMFX_MODE_SCEPTER_CHARGE )
+		{
+			if ( itemCategory(item) == SPELL_CAT )
+			{
+				result = ITEMFX_ACTION_OK;
 			}
+			else
+			{
+				result = ITEMFX_ACTION_INVALID_ITEM;
+			}
+		}
 		else if ( currentMode == ITEMFX_MODE_SCROLL_REPAIR
 			|| currentMode == ITEMFX_MODE_RESTORE )
 		{
@@ -23974,7 +24175,15 @@ GenericGUIMenu::ItemEffectGUI_t::ItemEffectActions_t GenericGUIMenu::ItemEffectG
 		if ( result != ITEMFX_ACTION_NONE && item )
 		{
 			char buf[1024];
-			if ( !item->identified )
+			if ( item->type == SPELL_ITEM )
+			{
+				if ( auto spell = getSpellFromItem(parentGUI.gui_player, item, false) )
+				{
+					snprintf(buf, sizeof(buf), "%s%s",
+						ItemTooltips.adjectives["spell_prefixes"]["spell_of"].c_str(), spell->getSpellName());
+				}
+			}
+			else if ( !item->identified )
 			{
 				snprintf(buf, sizeof(buf), "%s %s (?)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(), item->getName());
 			}
@@ -23998,6 +24207,11 @@ GenericGUIMenu::ItemEffectGUI_t::ItemEffectActions_t GenericGUIMenu::ItemEffectG
 				{
 					snprintf(buf, sizeof(buf), "%s %s %d%% (%+d)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(),
 						item->getName(), item->appearance % ENCHANTED_FEATHER_MAX_DURABILITY, item->beatitude);
+				}
+				else if ( item->type == MAGICSTAFF_SCEPTER && item->identified )
+				{
+					snprintf(buf, sizeof(buf), "%s %s %d%% (%+d)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(),
+						item->getName(), item->appearance % MAGICSTAFF_SCEPTER_CHARGE_MAX, item->beatitude);
 				}
 				else
 				{
@@ -24024,13 +24238,22 @@ GenericGUIMenu::ItemEffectGUI_t::ItemEffectActions_t GenericGUIMenu::ItemEffectG
 			}
 		}
 		itemActionType = result;
+		if ( itemActionType == ITEMFX_ACTION_OK )
+		{
+			if ( confirmActionOnItemSteps.first != item->uid )
+			{
+				confirmActionOnItemSteps.second = 0;
+			}
+			confirmActionOnItemSteps.first = item->uid;
+		}
 	}
 	return result;
 }
 
 bool GenericGUIMenu::ItemEffectGUI_t::isItemSelectedToEffect(Item* item)
 {
-	if ( !item || itemCategory(item) == SPELL_CAT )
+	if ( !item || (itemCategory(item) == SPELL_CAT && currentMode != ITEMFX_MODE_SCEPTER_CHARGE) 
+		|| (itemCategory(item) != SPELL_CAT && currentMode == ITEMFX_MODE_SCEPTER_CHARGE) )
 	{
 		return false;
 	}
@@ -24040,7 +24263,26 @@ bool GenericGUIMenu::ItemEffectGUI_t::isItemSelectedToEffect(Item* item)
 		return false;
 	}
 
-	if ( players[parentGUI.getPlayer()]->GUI.activeModule == Player::GUI_t::MODULE_INVENTORY )
+	if ( players[parentGUI.getPlayer()]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS )
+	{
+		auto& inventoryUI = players[parentGUI.getPlayer()]->inventoryUI;
+		if ( inventoryUI.getSelectedSpellX() >= 0
+			&& inventoryUI.getSelectedSpellX() < inventoryUI.MAX_SPELLS_X
+			&& inventoryUI.getSelectedSpellY() >= 0
+			&& inventoryUI.getSelectedSpellY() < inventoryUI.MAX_SPELLS_Y
+			&& item->x == inventoryUI.getSelectedSpellX() && item->y == inventoryUI.getSelectedSpellY() )
+		{
+			if ( auto slotFrame = inventoryUI.getSpellSlotFrame(item->x, item->y) )
+			{
+				return slotFrame->capturesMouse();
+			}
+			else
+			{
+				return false;
+			}
+		}
+	}
+	else if ( players[parentGUI.getPlayer()]->GUI.activeModule == Player::GUI_t::MODULE_INVENTORY )
 	{
 		auto& inventoryUI = players[parentGUI.getPlayer()]->inventoryUI;
 		auto& paperDoll = players[parentGUI.getPlayer()]->paperDoll;
@@ -24133,6 +24375,10 @@ void GenericGUIMenu::ItemEffectGUI_t::openItemEffectMenu(GenericGUIMenu::ItemEff
 		}
 		player->hud.compactLayoutMode = Player::HUD_t::COMPACT_LAYOUT_INVENTORY;
 		player->inventory_mode = INVENTORY_MODE_ITEM;
+		if ( currentMode == ITEMFX_MODE_SCEPTER_CHARGE )
+		{
+			player->inventoryUI.cycleInventoryTab();
+		}
 		bOpen = true;
 	}
 	if ( inputs.getUIInteraction(playernum)->selectedItem )
@@ -24161,6 +24407,13 @@ void GenericGUIMenu::ItemEffectGUI_t::closeItemEffectMenu()
 	animInvalidActionTicks = 0;
 	panelJustifyInverted = false;
 	modeHasCostEffect = COST_EFFECT_NONE;
+	if ( currentMode == ItemEffectGUI_t::ITEMFX_MODE_SCEPTER_CHARGE )
+	{
+		if ( players[playernum]->inventory_mode == INVENTORY_MODE_SPELL )
+		{
+			players[playernum]->inventory_mode = INVENTORY_MODE_ITEM;
+		}
+	}
 	currentMode = ITEMFX_MODE_NONE;
 	invalidActionType = INVALID_ACTION_NONE;
 	isInteractable = false;
@@ -24176,7 +24429,9 @@ void GenericGUIMenu::ItemEffectGUI_t::closeItemEffectMenu()
 		}
 		inputs.getUIInteraction(playernum)->selectedItemFromChest = 0;
 	}
-	if ( players[playernum]->GUI.activeModule == Player::GUI_t::MODULE_ITEMEFFECTGUI
+
+	if ( (players[playernum]->GUI.activeModule == Player::GUI_t::MODULE_ITEMEFFECTGUI
+		|| players[playernum]->GUI.activeModule == Player::GUI_t::MODULE_SPELLS)
 		&& !players[playernum]->shootmode )
 	{
 		// reset to inventory mode if still hanging in itemeffect GUI
@@ -24430,6 +24685,13 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 		return;
 	}
 
+	if ( currentMode == ITEMFX_MODE_SCEPTER_CHARGE && player->inventory_mode != INVENTORY_MODE_SPELL )
+	{
+		closeItemEffectMenu();
+		parentGUI.closeGUI();
+		return;
+	}
+
 	if ( player->entity && player->entity->isBlind() )
 	{
 		messagePlayer(playernum, MESSAGE_MISC, Language::get(4159));
@@ -24486,7 +24748,11 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 			}
 			else if ( item )
 			{
-				if ( !item->identified )
+				if ( item->type == MAGICSTAFF_SCEPTER )
+				{
+					snprintf(buf, sizeof(buf), "%s", Language::get(6833));
+				}
+				else if ( !item->identified )
 				{
 					std::string prefix = ItemTooltips.adjectives["scroll_prefixes"]["unknown_scroll"].c_str();
 					snprintf(buf, sizeof(buf), "%s (?)", prefix.c_str());
@@ -24519,7 +24785,15 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 						scrollShortName = scrollShortName.substr(ItemTooltips.adjectives["scroll_prefixes"]["piece_of"].size());
 					}
 					camelCaseString(scrollShortName);
-					snprintf(buf, sizeof(buf), "%s (%+d)", scrollShortName.c_str(), item->beatitude);
+					if ( item->type == MAGICSTAFF_SCEPTER )
+					{
+						snprintf(buf, sizeof(buf), "%s (%d%%)", scrollShortName.c_str(), 
+							item->appearance % MAGICSTAFF_SCEPTER_CHARGE_MAX);
+					}
+					else
+					{
+						snprintf(buf, sizeof(buf), "%s (%+d)", scrollShortName.c_str(), item->beatitude);
+					}
 					itemFxStatus->setText(buf);
 				}
 				else
@@ -24628,6 +24902,29 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 				}
 			}
 		}
+		else if ( currentMode == ITEMFX_MODE_SCEPTER_CHARGE )
+		{
+			if ( parentGUI.itemEffectScrollItem )
+			{
+				itemIcon->path = getItemSpritePath(parentGUI.gui_player, *parentGUI.itemEffectScrollItem);
+				if ( auto imgGet = Image::get(itemIcon->path.c_str()) )
+				{
+					itemIcon->pos.w = imgGet->getWidth();
+					itemIcon->pos.h = imgGet->getHeight();
+					itemIcon->disabled = false;
+					itemIcon->pos.x = 48 - itemIcon->pos.w / 2;
+					itemIcon->pos.y = 68 + heightOffsetCompact - itemIcon->pos.h / 2;
+					if ( itemIcon->pos.x % 2 == 1 )
+					{
+						++itemIcon->pos.x;
+					}
+					if ( itemIcon->pos.y % 2 == 1 )
+					{
+						++itemIcon->pos.y;
+					}
+				}
+			}
+		}
 		else
 		{
 			itemIcon->path = "*images/ui/ScrollSpells/Scroll_Icon_Scroll_00.png";
@@ -24686,7 +24983,7 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 			closeBtn->setDisabled(!isInteractable);
 			if ( isInteractable )
 			{
-				buttonTinkerUpdateSelectorOnHighlight(playernum, closeBtn);
+				buttonItemfxSelectorOnHighlight(playernum, closeBtn);
 			}
 		}
 		else if ( closeBtn->isSelected() )
@@ -24842,6 +25139,12 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 		modifierPressed = true;
 	}
 
+	if ( itemActionType != ITEMFX_ACTION_OK )
+	{
+		confirmActionOnItemSteps.first = 0;
+		confirmActionOnItemSteps.second = 0;
+	}
+
 	if ( itemActionType != ITEMFX_ACTION_NONE && itemDesc.size() > 1 )
 	{
 		if ( isInteractable )
@@ -24973,6 +25276,15 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 						break;
 					case ITEMFX_MODE_ADORCISE_INSTRUMENT:
 						actionPromptTxt->setText(Language::get(6616));
+						break;
+					case ITEMFX_MODE_SCEPTER_CHARGE:
+						actionPromptTxt->setText(Language::get(6831));
+						if ( confirmActionOnItemSteps.second > 0 )
+						{
+							char buf[128];
+							snprintf(buf, sizeof(buf), Language::get(6835), 3 - confirmActionOnItemSteps.second);
+							actionPromptTxt->setText(buf);
+						}
 						break;
 					default:
 						actionPromptTxt->setText("");
@@ -25237,6 +25549,9 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 			case ITEMFX_MODE_ADORCISE_INSTRUMENT:
 				actionPromptUnselectedTxt->setText(Language::get(6713));
 				break;
+			case ITEMFX_MODE_SCEPTER_CHARGE:
+				actionPromptUnselectedTxt->setText(Language::get(6832));
+				break;
 			default:
 				actionPromptUnselectedTxt->setText("");
 				break;
@@ -25363,7 +25678,29 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 						}
 						if ( itemActionOK )
 						{
-							parentGUI.executeOnItemClick(item);
+							if ( currentMode == ITEMFX_MODE_SCEPTER_CHARGE )
+							{
+								if ( confirmActionOnItemSteps.first == item->uid )
+								{
+									if ( confirmActionOnItemSteps.second < 2 )
+									{
+										++confirmActionOnItemSteps.second;
+									}
+									else
+									{
+										parentGUI.executeOnItemClick(item);
+										confirmActionOnItemSteps.second = 0;
+									}
+								}
+								else
+								{
+									confirmActionOnItemSteps.second = 0;
+								}
+							}
+							else
+							{
+								parentGUI.executeOnItemClick(item);
+							}
 						}
 						break;
 					}

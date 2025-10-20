@@ -1166,11 +1166,19 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 			{
 				continue;
 			}
-			if ( projectileAttack && yourStats && (parentDodgeChance 
+			if ( projectileAttack && my->behavior == &actMagicMissile && my->sprite == 2191 ) // scepter blast phases entities
+			{
+				if ( my->collisionIgnoreTargets.find(entity->getUID()) != my->collisionIgnoreTargets.end() )
+				{
+					continue;
+				}
+			}
+			if ( projectileAttack 
+				&& (yourStats && (parentDodgeChance 
 				|| yourStats->getEffectActive(EFF_AGILITY) 
 				|| yourStats->getEffectActive(EFF_ENSEMBLE_LUTE)
 				|| entity->mistFormDodge(true)
-				|| (yourStats->getEffectActive(EFF_NULL_RANGED) && (my->behavior == &actThrown || my->behavior == &actArrow))) )
+				|| (yourStats->getEffectActive(EFF_NULL_RANGED) && (my->behavior == &actThrown || my->behavior == &actArrow)))) )
 			{
 				entityDodgeChance = true;
 			}

@@ -6862,6 +6862,12 @@ Sint32 Entity::getAttack(Entity* my, Stat* myStats, bool isPlayer, int chargeMod
 		atk = std::min(atk / 2, atk);
 		attack += atk;
 	}
+	else if ( !shapeshifted && myStats->weapon && myStats->weapon->type == MAGICSTAFF_SCEPTER )
+	{
+		int atk = statGetSTR(myStats, my);
+		atk = std::min(atk / 2, atk);
+		attack += atk;
+	}
 	else
 	{
 		attack += statGetSTR(myStats, my);
@@ -8763,6 +8769,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 			return;
 		}
 
+		bool magicstaffStrike = false;
+
 		if ( myStats->weapon != nullptr && !(myStats->type == BUGBEAR && pose == MONSTER_POSE_BUGBEAR_SHIELD)
 			&& (!shapeshifted || (shapeshifted && myStats->type == CREATURE_IMP && itemCategory(myStats->weapon) == MAGICSTAFF)) )
 		{
@@ -8826,12 +8834,28 @@ void Entity::attack(int pose, int charge, Entity* target)
 						case MAGICSTAFF_POISON:
 							castSpell(uid, &spell_poison, true, false);
 							break;
+						case MAGICSTAFF_SCEPTER:
+							if ( charge == 100 )
+							{
+								castSpell(uid, getSpellFromID(SPELL_SCEPTER_BLAST), true, false);
+							}
+							else
+							{
+								magicstaffStrike = true;
+								if ( charge == 99 )
+								{
+									charge = Stat::getMaxAttackCharge(myStats);
+									messagePlayer(isEntityPlayer(), MESSAGE_EQUIPMENT, Language::get(6839), items[myStats->weapon->type].getIdentifiedName());
+									playSoundEntity(this, 163, 128);
+								}
+							}
+							break;
 						default:
 							messagePlayer(player, MESSAGE_DEBUG | MESSAGE_MISC, "This is my wish stick! Wishy wishy wish!");
 							break;
 					}
 
-					if ( behavior == &actPlayer )
+					if ( behavior == &actPlayer && !magicstaffStrike )
 					{
 						Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_MAGICSTAFF_CASTS, myStats->weapon->type, 1);
 					}
@@ -8841,6 +8865,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 					if ( myStats->type == SHADOW || myStats->type == LICH_FIRE || myStats->type == LICH_ICE )
 					{
 						degradeWeapon = false; //certain monster's weapons don't degrade.
+					}
+					if ( myStats->weapon->type == MAGICSTAFF_SCEPTER )
+					{
+						degradeWeapon = false;
 					}
 					bool forceDegrade = false;
 					if ( degradeWeapon )
@@ -9070,7 +9098,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 					messagePlayer(player,"You lack the energy to cast magic!");
 					}*/
 				}
-				return;
+
+				if ( !magicstaffStrike )
+				{
+					return;
+				}
 			}
 
 			// ranged weapons (bows)
@@ -14446,9 +14478,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 		net_packet->data[4] = player;
 		net_packet->data[5] = pose;
 		net_packet->data[6] = charge;
+		SDLNet_Write32((Sint32)(myStats->weapon ? myStats->weapon->type : 0), &net_packet->data[7]);
+		SDLNet_Write32((Uint32)(myStats->weapon ? myStats->weapon->appearance : 0), &net_packet->data[11]);
 		net_packet->address.host = net_server.host;
 		net_packet->address.port = net_server.port;
-		net_packet->len = 7;
+		net_packet->len = 15;
 		sendPacketSafe(net_sock, -1, net_packet, 0);
 	}
 }

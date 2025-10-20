@@ -350,6 +350,12 @@ bool addSpell(int spell, int player, bool ignoreSkill)
 				return false;
 		}
 	}
+
+	if ( !new_spell )
+	{
+		return false;
+	}
+
 	if ( spellInList(&players[player]->magic.spellList, new_spell) )
 	{
 		// check inventory for shapeshift spells
@@ -433,7 +439,15 @@ bool addSpell(int spell, int player, bool ignoreSkill)
 	{
 		if ( players[player]->entity )
 		{
-			players[player]->entity->increaseSkill(PRO_MAGIC);
+			if ( players[player]->mechanics.learnedSpells.find(new_spell->ID) != players[player]->mechanics.learnedSpells.end() )
+			{
+				// no level up
+			}
+			else
+			{
+				players[player]->mechanics.learnedSpells.insert(new_spell->ID);
+				players[player]->entity->increaseSkill(PRO_MAGIC);
+			}
 		}
 	}
 

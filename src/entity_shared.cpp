@@ -1181,6 +1181,7 @@ char itemNameStrings[NUM_ITEM_STRINGS][32] =
 	"tool_foci_light_providence",
 	"tool_foci_light_purity",
 	"tool_foci_light_sanctuary",
+	"magicstaff_scepter",
 	""
 };
 
@@ -1374,6 +1375,7 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"bolas",
 		"steel_flail",
 		"slop_ball",
+		"magicstaff_scepter",
 		""
 	},
 	{

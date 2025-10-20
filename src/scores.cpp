@@ -4751,6 +4751,17 @@ void SaveGameInfo::computeHash(const int playernum, Uint32& hash)
 		hash += djb2Hash(const_cast<char*>(pair.first.c_str()));
 		hash += djb2Hash(const_cast<char*>(pair.second.c_str()));
 	}
+
+	for ( auto& val : players[playernum].itemDegradeRNG )
+	{
+		hash += (Uint32)((Uint32)val.first << (shift % 32)); ++shift;
+		hash += (Uint32)((Uint32)val.second << (shift % 32)); ++shift;
+	}
+	for ( auto& val : players[playernum].learnedSpells )
+	{
+		hash += (Uint32)((Uint32)val << (shift % 32)); ++shift;
+	}
+	hash += (Uint32)((Uint32)players[playernum].sustainedSpellMPUsed << (shift % 32)); ++shift;
 }
 
 void SaveGameInfo::Player::stat_t::item_t::computeHash(Uint32& hash, Uint32& shift)
@@ -4998,6 +5009,10 @@ int SaveGameInfo::populateFromSession(const int playernum)
 			for ( auto& pair : ::players[c]->mechanics.itemDegradeRng )
 			{
 				player.itemDegradeRNG.push_back(pair);
+			}
+			for ( auto learnedSpell : ::players[c]->mechanics.learnedSpells )
+			{
+				player.learnedSpells.push_back(learnedSpell);
 			}
 			player.sustainedSpellMPUsed = ::players[c]->mechanics.sustainedSpellMPUsed;
 
@@ -5922,9 +5937,14 @@ int loadGame(int player, const SaveGameInfo& info) {
 	{
 		auto& mechanics = players[statsPlayer]->mechanics;
 		mechanics.itemDegradeRng.clear();
+		mechanics.learnedSpells.clear();
 		for ( auto& pair : info.players[player].itemDegradeRNG )
 		{
 			mechanics.itemDegradeRng[pair.first] = pair.second;
+		}
+		for ( auto learnedSpell : info.players[player].learnedSpells )
+		{
+			mechanics.learnedSpells.insert(learnedSpell);
 		}
 		mechanics.sustainedSpellMPUsed = 0;
 		mechanics.sustainedSpellMPUsed = info.players[player].sustainedSpellMPUsed;
