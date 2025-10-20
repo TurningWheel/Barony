@@ -6477,7 +6477,7 @@ static void doConsoleCommands() {
 
 		if (input.consumeBinaryToggle("Console Command")) {
 			input.consumeBindingsSharedWithBinding("Console Command");
-			if (!command) {
+			if (!command && !inputstr ) {
 				confirm = true;
 			}
 		}
