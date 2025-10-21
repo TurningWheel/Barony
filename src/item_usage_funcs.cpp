@@ -4923,19 +4923,22 @@ void item_Food(Item*& item, int player)
 
 		stats[player]->HUNGER += hungerIncrease * foodMult;
 
-		if ( stats[player]->mask && stats[player]->mask->type == MASK_MARIGOLD )
+		if ( players[player] && players[player]->entity )
 		{
-			if ( players[player] && players[player]->entity )
+			if ( stats[player]->mask && stats[player]->mask->type == MASK_MARIGOLD )
 			{
 				players[player]->entity->setEffect(EFF_MARIGOLD, true, stats[player]->EFFECTS_TIMERS[EFF_MARIGOLD] + TICKS_PER_SECOND * 30, false);
 			}
-		}
 
-		if ( stats[player]->getEffectActive(EFF_BLESS_FOOD) )
-		{
-			if ( players[player] && players[player]->entity )
+			if ( item->beatitude > 0 )
 			{
-				players[player]->entity->setEffect(EFF_MARIGOLD, true, stats[player]->EFFECTS_TIMERS[EFF_MARIGOLD] + TICKS_PER_SECOND * 30, false);
+				players[player]->entity->setEffect(EFF_HP_MP_REGEN, true, 
+					stats[player]->EFFECTS_TIMERS[EFF_HP_MP_REGEN] + TICKS_PER_SECOND * 30 * item->beatitude, false);
+			}
+			else if ( stats[player]->getEffectActive(EFF_BLESS_FOOD) )
+			{
+				players[player]->entity->setEffect(EFF_HP_MP_REGEN, true, 
+					stats[player]->EFFECTS_TIMERS[EFF_HP_MP_REGEN] + TICKS_PER_SECOND * 30, false);
 			}
 		}
 	}
@@ -4952,7 +4955,12 @@ void item_Food(Item*& item, int player)
 					foodMod += 3 * std::min(2, abs(stats[player]->mask->beatitude));
 				}
 			}
-			if ( stats[player]->getEffectActive(EFF_BLESS_FOOD) )
+
+			if ( item->beatitude > 0 )
+			{
+				foodMod += 3 * item->beatitude;
+			}
+			else if ( stats[player]->getEffectActive(EFF_BLESS_FOOD) )
 			{
 				foodMod += 3;
 			}
@@ -5128,7 +5136,7 @@ void item_FoodTin(Item*& item, int player)
 		conductFoodless = false;
 		conductVegetarian = false;
 		if ( stats[player]->playerRace == RACE_SKELETON && stats[player]->stat_appearance == 0
-			&& players[player] && players[player]->entity->effectPolymorph > NUMMONSTERS )
+			&& players[player] && players[player]->entity && players[player]->entity->effectPolymorph > NUMMONSTERS )
 		{
 			steamAchievement("BARONY_ACH_MUSCLE_MEMORY");
 		}
@@ -5243,7 +5251,7 @@ void item_FoodTin(Item*& item, int player)
 		return;
 	}
 
-	int buffDuration = item->status * TICKS_PER_SECOND * 4; // (4 - 16 seconds)
+	int buffDuration = item->status * TICKS_PER_SECOND * 60;
 	if ( item->status > WORN )
 	{
 		buffDuration -= local_rng.rand() % ((buffDuration / 2) + 1); // 50-100% duration
@@ -5281,29 +5289,33 @@ void item_FoodTin(Item*& item, int player)
 	{
 		stats[player]->HUNGER += Item::getBaseFoodSatiation(item->type) * foodMult;
 
-		if ( stats[player]->mask && stats[player]->mask->type == MASK_MARIGOLD )
+		if ( players[player] && players[player]->entity )
 		{
-			if ( players[player] && players[player]->entity )
+			if ( stats[player]->mask && stats[player]->mask->type == MASK_MARIGOLD )
 			{
 				players[player]->entity->setEffect(EFF_MARIGOLD, true, stats[player]->EFFECTS_TIMERS[EFF_MARIGOLD] + TICKS_PER_SECOND * 30, false);
 			}
-		}
 
-		if ( stats[player]->getEffectActive(EFF_BLESS_FOOD) )
-		{
-			players[player]->entity->setEffect(EFF_MARIGOLD, true, stats[player]->EFFECTS_TIMERS[EFF_MARIGOLD] + TICKS_PER_SECOND * 30, false);
+			if ( item->beatitude > 0 )
+			{
+				players[player]->entity->setEffect(EFF_HP_MP_REGEN, true, stats[player]->EFFECTS_TIMERS[EFF_HP_MP_REGEN] + TICKS_PER_SECOND * item->beatitude, false);
+			}
+			else if ( stats[player]->getEffectActive(EFF_BLESS_FOOD) )
+			{
+				players[player]->entity->setEffect(EFF_HP_MP_REGEN, true, stats[player]->EFFECTS_TIMERS[EFF_HP_MP_REGEN] + TICKS_PER_SECOND * 30, false);
+			}
 		}
 
 		if ( hpBuff )
 		{
 			stats[player]->setEffectActive(EFF_HP_REGEN, 1);
-			stats[player]->EFFECTS_TIMERS[EFF_HP_REGEN] = buffDuration;
+			stats[player]->EFFECTS_TIMERS[EFF_HP_REGEN] += buffDuration;
 			Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_TIN_REGEN_HP, FOOD_TIN, 1);
 		}
 		if ( mpBuff )
 		{
 			stats[player]->setEffectActive(EFF_MP_REGEN, 1);
-			stats[player]->EFFECTS_TIMERS[EFF_MP_REGEN] = buffDuration;
+			stats[player]->EFFECTS_TIMERS[EFF_MP_REGEN] += buffDuration;
 			Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_TIN_REGEN_MP, FOOD_TIN, 1);
 		}
 	}
@@ -5320,7 +5332,11 @@ void item_FoodTin(Item*& item, int player)
 					foodMod += 3 * std::min(2, abs(stats[player]->mask->beatitude));
 				}
 			}
-			if ( stats[player]->getEffectActive(EFF_BLESS_FOOD) )
+			if ( item->beatitude > 0 )
+			{
+				foodMod += 3 * item->beatitude;
+			}
+			else if ( stats[player]->getEffectActive(EFF_BLESS_FOOD) )
 			{
 				foodMod += 3;
 			}

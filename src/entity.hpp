@@ -37,6 +37,7 @@
 #define NOCLIP_WALLS 17
 #define NOCLIP_CREATURES 18
 #define ENTITY_SKIP_CULLING 19
+#define STASIS_DITHER 20
 
 // number of entity skills and fskills
 static const int NUMENTITYSKILLS = 60;
@@ -624,6 +625,7 @@ public:
 	Sint32& actRadiusMagicFollowUID = skill[5];
 	Sint32& actRadiusMagicDoPulseTick = skill[6];
 	Sint32& actRadiusMagicAutoPulseTick = skill[7];
+	Sint32& actRadiusMagicEffectPower = skill[8];
 
 	Sint32& actParticleWaveStartFrame = skill[4];
 	Sint32& actParticleWaveLight = skill[7];
