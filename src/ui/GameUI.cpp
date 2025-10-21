@@ -6292,7 +6292,8 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 				|| stats[player]->getEffectActive(EFF_FOCI_LIGHT_PEACE)
 				|| stats[player]->getEffectActive(EFF_FOCI_LIGHT_PROVIDENCE)
 				|| stats[player]->getEffectActive(EFF_FOCI_LIGHT_PURITY)
-				|| stats[player]->getEffectActive(EFF_FOCI_LIGHT_SANCTUARY) )
+				|| stats[player]->getEffectActive(EFF_FOCI_LIGHT_SANCTUARY)
+				|| stats[player]->getEffectActive(EFF_GROWTH) )
 			{
 				for ( auto img : frame->getImages() )
 				{
@@ -6686,6 +6687,33 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 									val = "III";
 								}
 								else if ( effectStrength >= 2 )
+								{
+									val = "II";
+								}
+								if ( auto text = Text::get(val.c_str(),
+									"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+								{
+									text->drawColor(SDL_Rect{ 0,0,0,0 },
+										SDL_Rect{ pos.x + img->pos.x + img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x,
+										pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
+										0, 0 },
+										SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+										makeColor(255, 255, 255, 255));
+								}
+							}
+						}
+						else if ( img->path.find("growth_dryad") != std::string::npos
+							|| img->path.find("growth_myconid") != std::string::npos )
+						{
+							Uint8 effectStrength = stats[player]->getEffectActive(EFF_GROWTH);
+							if ( effectStrength >= 1 )
+							{
+								std::string val = "I";
+								if ( effectStrength >= 4 )
+								{
+									val = "III";
+								}
+								else if ( effectStrength >= 3 )
 								{
 									val = "II";
 								}
@@ -16815,11 +16843,18 @@ real_t getDisplayedMPRegen(Entity* my, Stat& myStats, Uint32* outColor, char buf
 				}
 			}
 		}
-		else if ( regen < static_cast<real_t>(getBaseManaRegen(my, myStats)) / TICKS_PER_SECOND )
+		else
 		{
-			if ( outColor )
+			int baseRegen = static_cast<real_t>(getBaseManaRegen(my, myStats));
+			real_t regenPerMinute = 60 * TICKS_PER_SECOND / (real_t)(baseRegen);
+			const int regenTicks = TICKS_PER_SECOND * 60 / regenPerMinute;
+			real_t compareRegen = regenTicks / (real_t)TICKS_PER_SECOND;
+			if ( regen < (compareRegen - 0.001) )
 			{
-				*outColor = hudColors.characterSheetGreen;
+				if ( outColor )
+				{
+					*outColor = hudColors.characterSheetGreen;
+				}
 			}
 		}
 	}
