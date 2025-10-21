@@ -1867,6 +1867,7 @@ namespace ConsoleCommands {
 
 	static ConsoleCommand ccmd_reloadlang("/reloadlang", "reload language file", []CCMD{
 		Language::reloadLanguage();
+		ItemTooltips.readItemLocalizationsFromFile();
 		});
 
 	static ConsoleCommand ccmd_disablemessages("/disablemessages", "disable all messages", []CCMD{
@@ -2819,7 +2820,7 @@ namespace ConsoleCommands {
 			{
 				strength = atoi(argv[3]);
 			}
-			players[clientnum]->entity->setEffect(effect, strength, duration, true);
+			players[clientnum]->entity->setEffect(effect, strength, duration, true, true, true);
 		}
 		});
 
@@ -3890,6 +3891,92 @@ namespace ConsoleCommands {
 		ItemTooltips.readItemsFromFile();
 		setupSpells();
 		messagePlayer(clientnum, MESSAGE_MISC, "Reloaded items.json");
+		});
+
+	static ConsoleCommand ccmd_reloadsprite("/reloadsprite", "reloads specific sprites.txt index", []CCMD{
+		if ( argc > 1 )
+		{
+			int reloadSpriteIndex = atoi(argv[1]);
+		
+			std::string spritesDirectory = PHYSFS_getRealDir("images/sprites.txt");
+			spritesDirectory.append(PHYSFS_getDirSeparator()).append("images/sprites.txt");
+			printlog("[PhysFS]: Loading sprites from directory %s...\n", spritesDirectory.c_str());
+			File* fp = openDataFile(spritesDirectory.c_str(), "rb");
+			char name[PATH_MAX];
+			for ( int c = 0; !fp->eof(); ++c )
+			{
+				fp->gets2(name, PATH_MAX);
+				if ( c != reloadSpriteIndex ) { continue; }
+				if ( PHYSFS_getRealDir(name) != nullptr )
+				{
+					std::string spriteFile = PHYSFS_getRealDir(name);
+					spriteFile.append(PHYSFS_getDirSeparator()).append(name);
+					if ( sprites[c] )
+					{
+						SDL_FreeSurface(sprites[c]);
+					}
+					char fullname[PATH_MAX];
+					strncpy(fullname, spriteFile.c_str(), PATH_MAX - 1);
+					sprites[c] = loadImage(fullname);
+					if ( nullptr != sprites[c] )
+					{
+						//Whee
+					}
+					else
+					{
+						printlog("warning: failed to load '%s' listed at line %d in %s\n", name, c + 1, spritesDirectory.c_str());
+						if ( 0 == c )
+						{
+							printlog("sprite 0 cannot be NULL!\n");
+							FileIO::close(fp);
+							return;
+						}
+					}
+				}
+				break;
+			}
+			FileIO::close(fp);
+		}
+	});
+
+	static ConsoleCommand ccmd_reloadspells("/reloadspells", "reload spells definitions and player owned spells (cheat)", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+
+		consoleCommand("/loaditems");
+		node_t* nextnode = nullptr;
+		std::vector<int> relearnSpells;
+		for ( auto node = stats[clientnum]->inventory.first; node; node = nextnode )
+		{
+			nextnode = node->next;
+			if ( Item* item = (Item*)node->element )
+			{
+				if ( getSpellFromItem(clientnum, item, true) )
+				{
+					list_RemoveNode(item->node);
+				}
+			}
+		}
+
+		for ( auto node = players[clientnum]->magic.spellList.first; node; node = nextnode )
+		{
+			nextnode = node->next;
+			int spellID = ((spell_t*)(node->element))->ID;
+			relearnSpells.push_back(spellID);
+			list_RemoveNode(node);
+		}
+
+
+		for ( auto spellID : relearnSpells )
+		{
+			bool oldIntro = intro;
+			intro = true;
+			bool learned = addSpell(spellID, clientnum, true);
+			intro = oldIntro;
+		}
 		});
 
 	static ConsoleCommand ccmd_gimmeallpotions("/gimmeallpotions", "give all potions (cheat)", []CCMD{
