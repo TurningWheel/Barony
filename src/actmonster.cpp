@@ -1312,6 +1312,10 @@ Entity* summonMonsterNoSmoke(Monster creature, long x, long y, bool forceLocatio
 		{
 			myStats->setAttribute("slime_type", "terrain_spawn_override");
 		}
+		if ( myStats->type == EARTH_ELEMENTAL )
+		{
+			myStats->setAttribute("earth_elemental_spawn", "terrain_spawn_override");
+		}
 	}
 
 	// Find a free tile next to the source and then spawn it there.
@@ -1381,6 +1385,10 @@ end:
 		if ( myStats->type == SLIME )
 		{
 			myStats->attributes.erase("slime_type");
+		}
+		if ( myStats->type == EARTH_ELEMENTAL )
+		{
+			myStats->attributes.erase("earth_elemental_spawn");
 		}
 	}
 
@@ -4791,7 +4799,12 @@ void actMonster(Entity* my)
 				{
 					continue;
 				}
-				if ( entity->behavior != &actMonster && entity->behavior != &actPlayer && entity->behavior != &actDoorFrame
+
+				if ( entity->behavior == &actChest && myStats->type == EARTH_ELEMENTAL )
+				{
+					// check for spawning on chest
+				}
+				else if ( entity->behavior != &actMonster && entity->behavior != &actPlayer && entity->behavior != &actDoorFrame
 					&& !(entity->behavior == &actColliderDecoration 
 						&& ((entity->flags[PASSABLE] && entity->colliderHasCollision != 0)
 							|| (entity->isColliderPathableMonster(myStats->type))) ))
