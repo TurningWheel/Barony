@@ -1244,6 +1244,8 @@ Entity* spawnFociGib(real_t x, real_t y, real_t z, real_t dir, real_t velocityBo
 	GIB_ORBIT_X = my->x;
 	GIB_ORBIT_Y = my->y;
 
+	playSoundEntityLocal(my, 164, 64);
+
 	if ( multiplayer == SERVER )
 	{
 		for ( int c = 1; c < MAXPLAYERS; c++ )
