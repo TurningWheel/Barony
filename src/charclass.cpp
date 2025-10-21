@@ -555,8 +555,9 @@ void initClassStats(const int classnum, void* myStats)
 
 		// skills
 		stat->setProficiency(PRO_POLEARM, 25);
-		stat->setProficiency(PRO_SPELLCASTING, 50);
-		stat->setProficiency(PRO_MAGIC, 50);
+		stat->setProficiency(PRO_SPELLCASTING, 40);
+		stat->setProficiency(PRO_MAGIC, 40);
+		stat->setProficiency(PRO_SWIMMING, 40);
 		stat->setProficiency(PRO_ALCHEMY, 10);
 		stat->setProficiency(PRO_APPRAISAL, 10);
 	}
@@ -3021,7 +3022,7 @@ void initClass(const int player)
 			return;
 		}
 
-		item = newItem(TOOL_FOCI_FIRE, EXCELLENT, 0, 1, 0, true, nullptr);
+		item = newItem(TOOL_FOCI_DARK_RIFT, EXCELLENT, 0, 1, 0, true, nullptr);
 		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
@@ -3045,7 +3046,7 @@ void initClass(const int player)
 			useItem(item, player);
 		}
 
-		item = newItem(HAT_CIRCLET_WISDOM, EXCELLENT, 0, 1, 0, true, nullptr);
+		/*item = newItem(HAT_CIRCLET_WISDOM, EXCELLENT, 0, 1, 0, true, nullptr);
 		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
@@ -3055,7 +3056,7 @@ void initClass(const int player)
 		else
 		{
 			useItem(item, player);
-		}
+		}*/
 
 		item = newItem(QUILTED_BOOTS, WORN, 0, 1, 0, true, nullptr);
 		if ( isLocalPlayer )
@@ -3221,6 +3222,11 @@ void initClass(const int player)
 		else if ( stats[player]->playerRace == RACE_AUTOMATON && stats[player]->stat_appearance == 0 )
 		{
 			addSpell(SPELL_SALVAGE, player, true);
+		}
+		else if ( stats[player]->playerRace == RACE_D && stats[player]->stat_appearance == 0 )
+		{
+			addSpell(SPELL_THORNS, player, true);
+			addSpell(SPELL_SHRUB, player, true);
 		}
 
 		if ( stats[player]->getProficiency(PRO_ALCHEMY) >= 0 )
