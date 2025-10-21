@@ -9241,7 +9241,7 @@ void actParticleTimer(Entity* my)
 							}
 
 							{
-								int damage = std::min(30, std::max(5, statGetCON(parentStats, parent)));
+								int damage = std::max(10, statGetCON(parentStats, parent));
 								if ( entity->getStats() )
 								{
 									if ( applyGenericMagicDamage(parent, entity, *parent, SPELL_NONE, damage, true, true) )
@@ -15971,6 +15971,29 @@ Entity* createSpellExplosionArea(int spellID, Entity* caster, real_t x, real_t y
 	if ( spellID == SPELL_EARTH_ELEMENTAL )
 	{
 		spellTimer->particleTimerDuration = 2;
+
+		if ( multiplayer != CLIENT )
+		{
+			Uint32 color = makeColorRGB(112, 104, 96);
+			if ( multiplayer == SERVER )
+			{
+				serverSpawnMiscParticlesAtLocation(x, y, z, PARTICLE_EFFECT_EARTH_ELEMENTAL_SUMMON_AOE, 0, radius, color);
+			}
+			if ( Entity* fx = createParticleAOEIndicator(spellTimer, x, y, 0.0, TICKS_PER_SECOND, radius) )
+			{
+				fx->actSpriteFollowUID = 0;
+				fx->actSpriteCheckParentExists = 0;
+				if ( auto indicator = AOEIndicators_t::getIndicator(fx->skill[10]) )
+				{
+					indicator->indicatorColor = color;
+					indicator->loop = false;
+					indicator->gradient = 4;
+					indicator->framesPerTick = 2;
+					indicator->ticksPerUpdate = 1;
+					indicator->delayTicks = 0;
+				}
+			}
+		}
 		return spellTimer;
 	}
 	if ( spellID == SPELL_ETERNALS_GAZE )
@@ -16241,8 +16264,15 @@ void actParticleShatterEarth(Entity* my)
 		int tallCeilingDelay = 0;
 		if ( tallCeiling )
 		{
+			if ( enableDebugKeys && (svFlags & SV_FLAG_CHEATS) )
+			{
 			static ConsoleVariable<int> cvar_se9("/se9", -5);
 			tallCeilingDelay = *cvar_se9;
+		}
+			else
+			{
+				tallCeilingDelay = -5;
+			}
 		}
 
 		static ConsoleVariable<int> cvar_se4("/se4", 20);
@@ -16306,6 +16336,10 @@ void actParticleShatterEarth(Entity* my)
 									{
 										monsterStats->setAttribute("SUMMONED_CREATURE", "1");
 										monsterStats->MISC_FLAGS[STAT_FLAG_MONSTER_DISABLE_HC_SCALING] = 1;
+										int lvl = getSpellDamageFromID(SPELL_EARTH_ELEMENTAL, caster, nullptr, caster);
+										int maxlvl = getSpellDamageSecondaryFromID(SPELL_EARTH_ELEMENTAL, caster, nullptr, caster);
+										lvl = std::min(lvl, maxlvl);
+										monsterStats->LVL = lvl;
 									}
 									if ( multiplayer == SERVER )
 									{

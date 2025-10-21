@@ -499,6 +499,14 @@ bool entityInsideSomething(Entity* entity)
 				{
 					continue;
 				}
+				if ( type == EARTH_ELEMENTAL && entity->getStats() && entity->getStats()->getAttribute("earth_elemental_spawn") == "terrain_spawn_override" )
+				{
+					if ( testEntity->behavior == &actFurniture || testEntity->behavior == &actDoor
+						|| testEntity->behavior == &actChest )
+					{
+						continue;
+					}
+				}
 			}
 			if ( entityInsideEntity(entity, testEntity) )
 			{
@@ -1155,10 +1163,17 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 			{
 				continue;
 			}
-			if ( type == EARTH_ELEMENTAL && stats && stats->getEffectActive(EFF_KNOCKBACK)
-				&& (entity->behavior == &actMonster || entity->behavior == &actPlayer) )
+			if ( type == EARTH_ELEMENTAL )
 			{
-				continue;
+				if ( stats && stats->getEffectActive(EFF_KNOCKBACK)
+					&& (entity->behavior == &actMonster || entity->behavior == &actPlayer) )
+				{
+					continue;
+				}
+				else if ( entity->behavior == &actChest && entityInsideEntity(entity, my) )
+				{
+					continue;
+				}
 			}
 			Stat* myStats = stats; //my->getStats();	//SEB <<<
 			Stat* yourStats = entity->getStats();
@@ -1655,7 +1670,21 @@ Entity* findEntityInLine( Entity* my, real_t x1, real_t y1, real_t angle, int en
 				}
 				else
 				{
-					continue;
+					if ( entities & LINETRACE_TELEKINESIS )
+					{
+						if ( entity->behavior == &actIronDoor && !entity->flags[PASSABLE] )
+						{
+
+						}
+						else
+						{
+							continue;
+						}
+					}
+					else
+					{
+						continue;
+					}
 				}
 			}
 			if ( entity->behavior == &actParticleTimer )

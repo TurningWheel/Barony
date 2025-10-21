@@ -13,6 +13,7 @@
 
 #define LINETRACE_IGNORE_ENTITIES 1
 #define LINETRACE_ATK_CHECK_FRIENDLYFIRE 2
+#define LINETRACE_TELEKINESIS 4
 
 // function prototypes
 real_t entityDist(Entity* my, Entity* your);

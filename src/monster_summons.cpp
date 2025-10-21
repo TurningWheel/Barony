@@ -142,12 +142,12 @@ void initAdorcisedWeapon(Entity* my, Stat* myStats)
 
 			if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
 			{
-				switch ( rng.rand() % 4 )
+				switch ( rng.rand() % 8 )
 				{
 				case 0:
 				case 1:
-					myStats->weapon = newItem(MAGICSTAFF_FIRE, static_cast<Status>(DECREPIT + rng.rand() % 4), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
 					break;
+					myStats->weapon = newItem(IRON_SWORD, static_cast<Status>(DECREPIT + rng.rand() % 4), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
 				case 2:
 				case 3:
 					myStats->weapon = newItem(IRON_SPEAR, static_cast<Status>(DECREPIT + rng.rand() % 4), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
@@ -162,7 +162,7 @@ void initAdorcisedWeapon(Entity* my, Stat* myStats)
 					break;
 				case 8:
 				case 9:
-					myStats->weapon = newItem(IRON_SWORD, static_cast<Status>(DECREPIT + rng.rand() % 4), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+					myStats->weapon = newItem(MAGICSTAFF_FIRE, static_cast<Status>(DECREPIT + rng.rand() % 4), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
 					break;
 				}
 			}
@@ -1549,6 +1549,18 @@ void initEarthElemental(Entity* my, Stat* myStats)
 			int defaultItems = countDefaultItems(myStats);
 
 			my->setHardcoreStats(*myStats);
+
+			if ( myStats->getAttribute("SUMMONED_CREATURE") == "1" )
+			{
+				// min 5, max 20
+				myStats->HP = 40 + std::max(0, (myStats->LVL - 5)) * 5; //40 - 115
+				myStats->MAXHP = myStats->HP;
+				myStats->OLDHP = myStats->HP;
+				myStats->STR = 5 + std::max(0, (myStats->LVL - 5)) * 2; //5-35
+				myStats->DEX = myStats->LVL / 5; // 1-5
+				myStats->CON = 5 + myStats->LVL; // 10-25
+				myStats->PER = 5 + myStats->LVL / 4; // 6-10
+			}
 		}
 	}
 
@@ -2216,7 +2228,9 @@ void earthElementalAnimate(Entity* my, Stat* myStats, double dist)
 					{
 						if ( multiplayer != CLIENT && myStats )
 						{
-							createSpellExplosionArea(SPELL_EARTH_ELEMENTAL, my, my->x, my->y, my->z, 8.0, 20, my);
+							int damage = getSpellEffectDurationFromID(SPELL_EARTH_ELEMENTAL, my, nullptr, my);
+							damage += statGetCON(myStats, my);
+							createSpellExplosionArea(SPELL_EARTH_ELEMENTAL, my, my->x, my->y, my->z, 16.0, damage, my);
 						}
 					}
 					else if ( EARTH_SPAWN_STATE == 2 )

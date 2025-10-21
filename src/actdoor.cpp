@@ -372,9 +372,9 @@ void Entity::doorHandleDamageMagic(int damage, Entity &magicProjectile, Entity *
 					}
 				}
 			}
-			updateEnemyBar(caster, this, behavior == &::actIronDoor ? Language::get(6414) : Language::get(674), doorHealth, doorMaxHealth,
-				false, DamageGib::DMG_DEFAULT);
 		}
+		updateEnemyBar(caster, this, behavior == &::actIronDoor ? Language::get(6414) : Language::get(674), doorHealth, doorMaxHealth,
+			false, DamageGib::DMG_DEFAULT);
 	}
 	if ( !doorDir )
 	{

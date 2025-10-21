@@ -147,44 +147,60 @@ void Entity::furnitureHandleDamageMagic(int damage, Entity& magicProjectile, Ent
 				{
 					messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(388));
 				}
-				updateEnemyBar(caster, this, Language::get(677), this->furnitureHealth, this->furnitureMaxHealth,
-					false, DamageGib::DMG_DEFAULT);
 				break;
 			case FURNITURE_TABLE:
 				if ( destroyed && messages )
 				{
 					messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(389));
 				}
-				updateEnemyBar(caster, this, Language::get(676), this->furnitureHealth, this->furnitureMaxHealth,
-					false, DamageGib::DMG_DEFAULT);
 				break;
 			case FURNITURE_BED:
 				if ( destroyed && messages )
 				{
 					messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2505));
 				}
-				updateEnemyBar(caster, this, Language::get(2505), this->furnitureHealth, this->furnitureMaxHealth,
-					false, DamageGib::DMG_DEFAULT);
 				break;
 			case FURNITURE_BUNKBED:
 				if ( destroyed && messages )
 				{
 					messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2506));
 				}
-				updateEnemyBar(caster, this, Language::get(2506), this->furnitureHealth, this->furnitureMaxHealth,
-					false, DamageGib::DMG_DEFAULT);
 				break;
 			case FURNITURE_PODIUM:
 				if ( destroyed && messages )
 				{
 					messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2507));
 				}
-				updateEnemyBar(caster, this, Language::get(2507), this->furnitureHealth, this->furnitureMaxHealth,
-					false, DamageGib::DMG_DEFAULT);
 				break;
 			default:
 				break;
 			}
+		}
+
+		switch ( this->furnitureType )
+		{
+		case FURNITURE_CHAIR:
+			updateEnemyBar(caster, this, Language::get(677), this->furnitureHealth, this->furnitureMaxHealth,
+				false, DamageGib::DMG_DEFAULT);
+			break;
+		case FURNITURE_TABLE:
+			updateEnemyBar(caster, this, Language::get(676), this->furnitureHealth, this->furnitureMaxHealth,
+				false, DamageGib::DMG_DEFAULT);
+			break;
+		case FURNITURE_BED:
+			updateEnemyBar(caster, this, Language::get(2505), this->furnitureHealth, this->furnitureMaxHealth,
+				false, DamageGib::DMG_DEFAULT);
+			break;
+		case FURNITURE_BUNKBED:
+			updateEnemyBar(caster, this, Language::get(2506), this->furnitureHealth, this->furnitureMaxHealth,
+				false, DamageGib::DMG_DEFAULT);
+			break;
+		case FURNITURE_PODIUM:
+			updateEnemyBar(caster, this, Language::get(2507), this->furnitureHealth, this->furnitureMaxHealth,
+				false, DamageGib::DMG_DEFAULT);
+			break;
+		default:
+			break;
 		}
 	}
 
@@ -2245,9 +2261,9 @@ void Entity::colliderHandleDamageMagic(int damage, Entity &magicProjectile, Enti
 					}
 				}
 			}
-			updateEnemyBar(caster, this, Language::get(getColliderLangName()), colliderCurrentHP, colliderMaxHP,
-				false, DamageGib::DMG_DEFAULT);
 		}
+		updateEnemyBar(caster, this, Language::get(getColliderLangName()), colliderCurrentHP, colliderMaxHP,
+			false, DamageGib::DMG_DEFAULT);
 	}
 
 	int sound = 28; //damage.ogg

@@ -3391,6 +3391,26 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 				spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_EARTH_ELEMENTAL_DIE;
 				break;
 			}
+			case PARTICLE_EFFECT_EARTH_ELEMENTAL_SUMMON_AOE:
+			{
+				int radius = SDLNet_Read32(&net_packet->data[13]);
+				Uint32 color = SDLNet_Read32(&net_packet->data[17]);
+				if ( Entity* fx = createParticleAOEIndicator(nullptr, particle_x, particle_y, 0.0, TICKS_PER_SECOND, radius) )
+				{
+					fx->actSpriteFollowUID = 0;
+					fx->actSpriteCheckParentExists = 0;
+					if ( auto indicator = AOEIndicators_t::getIndicator(fx->skill[10]) )
+					{
+						indicator->indicatorColor = color;
+						indicator->loop = false;
+						indicator->gradient = 4;
+						indicator->framesPerTick = 2;
+						indicator->ticksPerUpdate = 1;
+						indicator->delayTicks = 0;
+					}
+				}
+				break;
+			}
 			case PARTICLE_EFFECT_BASTION_MUSHROOM:
 			{
 				Uint32 casterUid = SDLNet_Read32(&net_packet->data[21]);
