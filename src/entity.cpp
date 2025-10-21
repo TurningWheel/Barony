@@ -1404,28 +1404,28 @@ void Entity::effectTimes()
 				{
 					setEffect(EFF_GROWTH, false, 0, false);
 				}
-				else if ( myStats->getEffectActive(c) >= 4 )
+				else if ( myStats->getEffectActive(c) >= 1 )
 				{
 					if ( myStats->EFFECTS_TIMERS[c] < 10 * TICKS_PER_SECOND )
 					{
-						setEffect(EFF_GROWTH, (Uint8)4, 30 * TICKS_PER_SECOND, false);
+						setEffect(EFF_GROWTH, (Uint8)myStats->getEffectActive(c), 30 * TICKS_PER_SECOND, false);
 					}
 				}
-				else if ( myStats->EFFECTS_TIMERS[c] == 0 )
+				/*else if ( myStats->EFFECTS_TIMERS[c] == 0 )
 				{
 					Uint8 effectStrength = myStats->getEffectActive(c);
 					if ( effectStrength < 4 )
 					{
 						setEffect(EFF_GROWTH, (Uint8)(effectStrength + 1), 15 * TICKS_PER_SECOND, false);
 					}
-				}
-				else if ( myStats->EFFECTS_TIMERS[c] == ((TICKS_PER_SECOND * 5) - 1) )
+				}*/
+				/*else if ( myStats->EFFECTS_TIMERS[c] == ((TICKS_PER_SECOND * 5) - 1) )
 				{
 					if ( player > 0 && multiplayer == SERVER )
 					{
 						needServerUpdateEffects = true;
 					}
-				}
+				}*/
 			}
 			else if ( myStats->EFFECTS_TIMERS[c] == 0 )
 			{
@@ -2907,6 +2907,11 @@ void Entity::modHP(int amount)
 		}
 	}
 
+	if ( entitystats && entitystats->getEffectActive(EFF_STASIS) )
+	{
+		amount = 0;
+	}
+
 	if ( !entitystats || amount == 0 )
 	{
 		if ( this->behavior == &actPlayer )
@@ -2918,16 +2923,19 @@ void Entity::modHP(int amount)
 
 	if ( amount < 0 )
 	{
-		if ( int effectStrength = entitystats->getEffectActive(EFF_DELAY_PAIN) )
+		if ( entitystats )
 		{
-			while ( amount < 0 && effectStrength < 251 )
+			if ( int effectStrength = entitystats->getEffectActive(EFF_DELAY_PAIN) )
 			{
-				effectStrength++;
-				++amount;
-			}
-			if ( effectStrength != entitystats->getEffectActive(EFF_DELAY_PAIN) )
-			{
-				setEffect(EFF_DELAY_PAIN, (Uint8)effectStrength, entitystats->EFFECTS_TIMERS[EFF_DELAY_PAIN], false);
+				while ( amount < 0 && effectStrength < 251 )
+				{
+					effectStrength++;
+					++amount;
+				}
+				if ( effectStrength != entitystats->getEffectActive(EFF_DELAY_PAIN) )
+				{
+					setEffect(EFF_DELAY_PAIN, (Uint8)effectStrength, entitystats->EFFECTS_TIMERS[EFF_DELAY_PAIN], false);
+				}
 			}
 		}
 	}
@@ -4112,6 +4120,15 @@ void Entity::handleEffects(Stat* myStats)
 			serverUpdatePlayerLVL(); // update all clients of party levels.
 		}
 
+		if ( behavior == &actPlayer )
+		{
+			Uint8 effectStrength = myStats->getEffectActive(EFF_GROWTH);
+			if ( effectStrength >= 1 )
+			{
+				setEffect(EFF_GROWTH, (Uint8)(std::min(4, effectStrength + 1)), 15 * TICKS_PER_SECOND, false);
+			}
+		}
+
 		for ( int i = 0; i < NUMSTATS; ++i )
 		{
 			myStats->PLAYER_LVL_STAT_BONUS[i] = -1;
@@ -4508,13 +4525,20 @@ void Entity::handleEffects(Stat* myStats)
 			myStats->setEffectActive(EFF_VOMITING, 1);
 			myStats->EFFECTS_TIMERS[EFF_VOMITING] = 50 + local_rng.rand() % 20;
 
+			std::vector<int> effectsToClear;
 			for ( int i = EFF_RATION_SPICY; i <= EFF_RATION_SWEET; ++i )
 			{
-				if ( myStats->getEffectActive(i) )
+				effectsToClear.push_back(i);
+			}
+			effectsToClear.push_back(EFF_HP_MP_REGEN);
+			effectsToClear.push_back(EFF_BLESS_FOOD);
+			for ( auto effectID : effectsToClear )
+			{
+				if ( myStats->getEffectActive(effectID) )
 				{
-					myStats->clearEffect(i);
-					myStats->EFFECTS_TIMERS[i] = 0;
-					myStats->EFFECTS_ACCRETION_TIME[i] = 0;
+					myStats->clearEffect(effectID);
+					myStats->EFFECTS_TIMERS[effectID] = 0;
+					myStats->EFFECTS_ACCRETION_TIME[effectID] = 0;
 				}
 			}
 
@@ -4792,6 +4816,34 @@ void Entity::handleEffects(Stat* myStats)
 		}
 	}
 
+	if ( myStats->getEffectActive(EFF_HP_MP_REGEN) && (svFlags & SV_FLAG_HUNGER)
+		&& myStats->EFFECTS_TIMERS[EFF_HP_MP_REGEN] > 0 )
+	{
+		if ( behavior == &actPlayer )
+		{
+			int foodMod = 5;
+			int interval = std::max(1, (30 * TICKS_PER_SECOND) / foodMod);
+			if ( (myStats->EFFECTS_TIMERS[EFF_HP_MP_REGEN] + 1) % interval == 0 )
+			{
+				if ( myStats->HP < myStats->MAXHP )
+				{
+					Sint32 oldHP = myStats->HP;
+					this->modHP(1);
+					naturalHeal = true;
+					if ( behavior == &actPlayer )
+					{
+						if ( oldHP < myStats->HP )
+						{
+							Compendium_t::Events_t::eventUpdateCodex(skill[2], Compendium_t::CPDM_RGN_HP_RUN, "rgn", myStats->HP - oldHP);
+							Compendium_t::Events_t::eventUpdateCodex(skill[2], Compendium_t::CPDM_RGN_HP_SUM, "rgn", myStats->HP - oldHP);
+						}
+						Compendium_t::Events_t::eventUpdateCodex(skill[2], Compendium_t::CPDM_RGN_HP_RATE_MAX, "rgn", healthRegenInterval);
+					}
+				}
+			}
+		}
+	}
+
 	// random teleportation
 	if ( myStats->ring != NULL )
 	{
@@ -4978,6 +5030,33 @@ void Entity::handleEffects(Stat* myStats)
 					}
 				}
 			}
+
+			if ( myStats->getEffectActive(EFF_HP_MP_REGEN)
+				&& myStats->EFFECTS_TIMERS[EFF_HP_MP_REGEN] > 0 )
+			{
+				if ( behavior == &actPlayer )
+				{
+					int foodMod = 5;
+					int interval = std::max(1, (30 * TICKS_PER_SECOND) / foodMod);
+					if ( (myStats->EFFECTS_TIMERS[EFF_HP_MP_REGEN] + 1) % interval == 0 )
+					{
+						if ( myStats->MP < myStats->MAXMP )
+						{
+							Sint32 oldMP = myStats->MP;
+							this->modMP(mpMod);
+							if ( behavior == &actPlayer )
+							{
+								if ( oldMP < myStats->MP )
+								{
+									Compendium_t::Events_t::eventUpdateCodex(skill[2], Compendium_t::CPDM_RGN_MP_RUN, "rgn", myStats->MP - oldMP);
+									Compendium_t::Events_t::eventUpdateCodex(skill[2], Compendium_t::CPDM_RGN_MP_SUM, "rgn", myStats->MP - oldMP);
+								}
+								Compendium_t::Events_t::eventUpdateCodex(skill[2], Compendium_t::CPDM_RGN_MP_RATE_MAX, "rgn", manaRegenInterval);
+							}
+						}
+					}
+				}
+			}
 		}
 		else
 		{
@@ -5039,6 +5118,7 @@ void Entity::handleEffects(Stat* myStats)
 					int spellID = getSpellIDFromFoci(myStats->shield->type);
 					if ( spellID > SPELL_NONE )
 					{
+						Uint32 defendTime = ::ticks - players[player]->mechanics.defendTicks;
 						if ( spellID == SPELL_FOCI_LIGHT_JUSTICE
 							|| spellID == SPELL_FOCI_LIGHT_PEACE
 							|| spellID == SPELL_FOCI_LIGHT_PROVIDENCE
@@ -5046,6 +5126,10 @@ void Entity::handleEffects(Stat* myStats)
 							|| spellID == SPELL_FOCI_LIGHT_SANCTUARY )
 						{
 							holySymbolCharging = true;
+							if ( defendTime == 1 )
+							{
+								playSoundEntity(this, 167, 128); // casting sound
+							}
 						}
 						else if ( spellID == SPELL_FOCI_DARK_LIFE
 							|| spellID == SPELL_FOCI_DARK_RIFT
@@ -5054,6 +5138,10 @@ void Entity::handleEffects(Stat* myStats)
 							|| spellID == SPELL_FOCI_DARK_VENGEANCE )
 						{
 							darkIconCharging = true;
+							if ( defendTime == 1 )
+							{
+								playSoundEntity(this, 167, 128); // casting sound
+							}
 						}
 						fociCharging = true;
 						if ( players[player]->mechanics.lastFociHeldType != myStats->shield->type )
@@ -5071,7 +5159,6 @@ void Entity::handleEffects(Stat* myStats)
 						}
 						chargeTimeInit *= getSpellPropertyFromID(spell_t::SPELLPROP_MODIFIED_CAST_TIME, spellID,
 							this, myStats, this);
-						Uint32 defendTime = ::ticks - players[player]->mechanics.defendTicks;
 						if ( defendTime >= chargeTimeInit )
 						{
 							static ConsoleVariable<float> cvar_foci_charge("/foci_charge", 1.f);
@@ -5197,7 +5284,19 @@ void Entity::handleEffects(Stat* myStats)
 											players[player]->mechanics.fociDarkChargeTime = std::min(127, players[player]->mechanics.fociDarkChargeTime);
 											props.optionalData = players[player]->mechanics.fociDarkChargeTime;
 										}
-										castSpell(this->getUID(), spell, false, false, false, &props, true);
+
+										if ( spellID == SPELL_FOCI_DARK_LIFE
+											|| spellID == SPELL_FOCI_DARK_RIFT
+											|| spellID == SPELL_FOCI_DARK_SILENCE
+											|| spellID == SPELL_FOCI_DARK_SUPPRESS
+											|| spellID == SPELL_FOCI_DARK_VENGEANCE )
+										{
+											// no cast yet
+										}
+										else
+										{
+											castSpell(this->getUID(), spell, false, false, false, &props, true);
+										}
 									}
 									else
 									{
@@ -5914,6 +6013,67 @@ void Entity::handleEffects(Stat* myStats)
 					}
 				}
 			}
+		}
+	}
+
+	if ( myStats->getEffectActive(EFF_THORNS) )
+	{
+		if ( ticks % 25 == 0 )
+		{
+			if ( Entity* particle = createParticleAestheticOrbit(this, 262, 2 * TICKS_PER_SECOND, PARTICLE_EFFECT_THORNS_ORBIT) )
+			{
+				particle->sizex = 8;
+				particle->sizey = 8;
+				particle->flags[GENIUS] = true;
+				particle->z += (local_rng.rand() % 8) * 0.25;
+				particle->flags[SPRITE] = true;
+				particle->yaw = this->yaw -(3 * PI / 8) + ((ticks / 25) % 4) * (2 / 4.0) * PI / 2;
+				//particle->flags[INVISIBLE] = true;
+			}
+		}
+	}
+
+	bool stasisDither = flags[STASIS_DITHER];
+	if ( myStats->getEffectActive(EFF_STASIS) )
+	{
+		if ( ticks % 25 == 0 )
+		{
+			if ( Entity* particle = createParticleAestheticOrbit(this, 2178, TICKS_PER_SECOND, PARTICLE_EFFECT_STASIS_RIFT_ORBIT) )
+			{
+				particle->flags[INVISIBLE] = true;
+			}
+		}
+		flags[STASIS_DITHER] = true;
+	}
+	else
+	{
+		flags[STASIS_DITHER] = false;
+	}
+	if ( flags[STASIS_DITHER] != stasisDither )
+	{
+		serverUpdateEntityFlag(this, STASIS_DITHER);
+	}
+
+	int bodypart = 0;
+	for ( auto node = this->children.first; node; node = node->next, bodypart++ )
+	{
+		if ( behavior == &actPlayer )
+		{
+			if ( bodypart < 1 )
+			{
+				continue;
+			}
+		}
+		else
+		{
+			if ( bodypart < 2 )
+			{
+				continue;
+			}
+		}
+		if ( Entity* entity = (Entity*)node->element )
+		{
+			entity->flags[STASIS_DITHER] = flags[STASIS_DITHER];
 		}
 	}
 
@@ -8223,6 +8383,12 @@ bool Entity::isMobile()
 
 	// paralyzed
 	if ( entitystats->getEffectActive(EFF_PARALYZED) )
+	{
+		return false;
+	}
+
+	// paralyzed
+	if ( entitystats->getEffectActive(EFF_STASIS) )
 	{
 		return false;
 	}
@@ -10883,7 +11049,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 					bool backstab = false;
 					bool flanking = false;
-					if ( player >= 0 && !monsterIsImmobileTurret(hit.entity, hitstats) 
+					if ( player >= 0 && !monsterIsImmobileTurret(hit.entity, hitstats) && !hitstats->getEffectActive(EFF_STASIS)
 						&& !(hitstats->type == MIMIC || hitstats->type == MINIMIMIC || hitstats->type == MONSTER_ADORCISED_WEAPON) )
 					{
 						real_t hitAngle = hit.entity->yawDifferenceFromEntity(this);
@@ -11137,7 +11303,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 							if ( local_rng.rand() % chance == 0 )
 							{
-								if ( hitstats->type != DUMMYBOT || (hitstats->type == DUMMYBOT && myStats->getProficiency(weaponskill) < SKILL_LEVEL_BASIC) )
+								bool lowSkill = hitstats->getEffectActive(EFF_STASIS) || hitstats->type == DUMMYBOT;
+								if ( !lowSkill || (lowSkill && myStats->getProficiency(weaponskill) < SKILL_LEVEL_BASIC) )
 								{
 									this->increaseSkill(weaponskill, notify);
 									skillIncreased = true;
@@ -11167,7 +11334,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 							if ( local_rng.rand() % chance == 0 )
 							{
-								if ( hitstats->type != DUMMYBOT || (hitstats->type == DUMMYBOT && myStats->getProficiency(weaponskill) < SKILL_LEVEL_BASIC) )
+								bool lowSkill = hitstats->getEffectActive(EFF_STASIS) || hitstats->type == DUMMYBOT;
+								if ( !lowSkill || (lowSkill && myStats->getProficiency(weaponskill) < SKILL_LEVEL_BASIC) )
 								{
 									this->increaseSkill(weaponskill, notify);
 									skillIncreased = true;
@@ -16328,7 +16496,8 @@ bool Entity::checkEnemy(Entity* your)
 			else if ( behavior == &actPlayer && myStats->type != HUMAN )
 			{
 				result = swornenemies[HUMAN][yourStats->type];
-				if ( (yourStats->type == HUMAN || yourStats->type == SHOPKEEPER) && myStats->type != AUTOMATON )
+				if ( (yourStats->type == HUMAN || yourStats->type == SHOPKEEPER) 
+					&& !(myStats->type == AUTOMATON || myStats->type == MONSTER_D || myStats->type == MONSTER_M) )
 				{
 					// enemies.
 					result = true;
@@ -16413,7 +16582,8 @@ bool Entity::checkEnemy(Entity* your)
 			else if ( behavior == &actMonster && your->behavior == &actPlayer && yourStats->type != HUMAN )
 			{
 				result = swornenemies[myStats->type][HUMAN];
-				if ( (myStats->type == HUMAN || myStats->type == SHOPKEEPER) && yourStats->type != AUTOMATON )
+				if ( (myStats->type == HUMAN || myStats->type == SHOPKEEPER) && 
+					!(yourStats->type == AUTOMATON || yourStats->type == MONSTER_D || yourStats->type == MONSTER_M) )
 				{
 					// enemies.
 					result = true;
@@ -16814,7 +16984,8 @@ bool Entity::checkFriend(Entity* your)
 			else if ( behavior == &actPlayer && myStats->type != HUMAN )
 			{
 				result = monsterally[HUMAN][yourStats->type];
-				if ( (yourStats->type == HUMAN || yourStats->type == SHOPKEEPER) && myStats->type != AUTOMATON )
+				if ( (yourStats->type == HUMAN || yourStats->type == SHOPKEEPER) 
+					&& !(myStats->type == AUTOMATON || myStats->type == MONSTER_D || myStats->type == MONSTER_M) )
 				{
 					result = false;
 				}
@@ -16903,7 +17074,8 @@ bool Entity::checkFriend(Entity* your)
 			else if ( behavior == &actMonster && your->behavior == &actPlayer && yourStats->type != HUMAN )
 			{
 				result = monsterally[myStats->type][HUMAN];
-				if ( (myStats->type == HUMAN || myStats->type == SHOPKEEPER) && yourStats->type != AUTOMATON )
+				if ( (myStats->type == HUMAN || myStats->type == SHOPKEEPER)
+					&& !(yourStats->type == AUTOMATON || yourStats->type == MONSTER_D || yourStats->type == MONSTER_M) )
 				{
 					result = false;
 				}
@@ -20466,6 +20638,29 @@ Entity* Entity::spawnAmbientParticles(int chance, int particleSprite, int durati
 
 void Entity::handleEffectsClient()
 {
+	int bodypart = 0;
+	for ( auto node = this->children.first; node; node = node->next, bodypart++ )
+	{
+		if ( behavior == &actPlayer )
+		{
+			if ( bodypart < 1 )
+			{
+				continue;
+			}
+		}
+		else
+		{
+			if ( bodypart < 2 )
+			{
+				continue;
+			}
+		}
+		if ( Entity* entity = (Entity*)node->element )
+		{
+			entity->flags[STASIS_DITHER] = flags[STASIS_DITHER];
+		}
+	}
+
 	Stat* myStats = getStats();
 
 	if ( !myStats )
@@ -20499,6 +20694,34 @@ void Entity::handleEffectsClient()
 	if ( myStats->getEffectActive(EFF_PACIFY) )
 	{
 		spawnAmbientParticles(30, 685, 20 + local_rng.rand() % 30, 0.5, true);
+	}
+
+	if ( myStats->getEffectActive(EFF_THORNS) )
+	{
+		if ( ticks % 25 == 0 )
+		{
+			if ( Entity* particle = createParticleAestheticOrbit(this, 262, 2 * TICKS_PER_SECOND, PARTICLE_EFFECT_THORNS_ORBIT) )
+			{
+				particle->sizex = 8;
+				particle->sizey = 8;
+				particle->flags[GENIUS] = true;
+				particle->z += (local_rng.rand() % 8) * 0.25;
+				particle->flags[SPRITE] = true;
+				particle->yaw = this->yaw - (3 * PI / 8) + ((ticks / 25) % 4) * (2 / 4.0) * PI / 2;
+				//particle->flags[INVISIBLE] = true;
+			}
+		}
+	}
+
+	if ( myStats->getEffectActive(EFF_STASIS) )
+	{
+		if ( ticks % 25 == 0 )
+		{
+			if ( Entity* particle = createParticleAestheticOrbit(this, 2178, TICKS_PER_SECOND, PARTICLE_EFFECT_STASIS_RIFT_ORBIT) )
+			{
+				particle->flags[INVISIBLE] = true;
+			}
+		}
 	}
 
 	if ( myStats->getEffectActive(EFF_SHADOW_TAGGED) )
@@ -20683,7 +20906,7 @@ bool Entity::setEffect(int effect, std::variant<bool, Uint8> value, int duration
 				}
 				if ( myStats->type == LICH || myStats->type == DEVIL
 					|| myStats->type == LICH_FIRE || myStats->type == LICH_ICE
-					|| myStats->type == MINOTAUR || myStats->type == MIMIC )
+					|| myStats->type == MINOTAUR || myStats->type == MIMIC || myStats->type == MINIMIMIC )
 				{
 					return false;
 				}
@@ -20697,7 +20920,15 @@ bool Entity::setEffect(int effect, std::variant<bool, Uint8> value, int duration
 			case EFF_CONFUSED:
 				if ( myStats->type == LICH || myStats->type == DEVIL
 					|| myStats->type == LICH_FIRE || myStats->type == LICH_ICE
-					|| myStats->type == MINOTAUR || myStats->type == MIMIC )
+					|| myStats->type == MINOTAUR || myStats->type == MIMIC || myStats->type == MINIMIMIC )
+				{
+					return false;
+				}
+				break;
+			case EFF_STASIS:
+				if ( myStats->type == LICH || myStats->type == DEVIL
+					|| myStats->type == LICH_FIRE || myStats->type == LICH_ICE
+					|| myStats->type == SHADOW )
 				{
 					return false;
 				}
@@ -20756,6 +20987,7 @@ bool Entity::setEffect(int effect, std::variant<bool, Uint8> value, int duration
 					|| myStats->type == EARTH_ELEMENTAL
 					|| monsterIsTinkeringCreation()
 					|| myStats->type == MIMIC
+					|| myStats->type == MINIMIMIC
 					|| myStats->type == CRYSTALGOLEM
 					|| myStats->type == LICH_FIRE || myStats->type == LICH_ICE
 					|| myStats->type == SHADOW )
@@ -28213,9 +28445,13 @@ real_t Entity::monsterGetWeightRatio()
 void Entity::creatureHandleLiftZ()
 {
 	Stat* myStats = getStats();
-	if ( myStats && myStats->getEffectActive(EFF_LIFT) )
+	if ( myStats && (myStats->getEffectActive(EFF_LIFT)) )
 	{
 		creatureHoverZ += 0.25;
+	}
+	else if ( myStats && (myStats->getEffectActive(EFF_STASIS)) )
+	{
+		creatureHoverZ += 0.025;
 	}
 	else
 	{
