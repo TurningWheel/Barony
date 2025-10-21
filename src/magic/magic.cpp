@@ -3423,6 +3423,15 @@ bool applyGenericMagicDamage(Entity* caster, Entity* hitentity, Entity& damageSo
 		resistance = 0;
 		trapResist = 0;
 	}
+	else if ( spellID == SPELL_EARTH_ELEMENTAL && damageSourceProjectile.behavior == &actMonster
+		&& damageSourceProjectile.getMonsterTypeFromSprite() == EARTH_ELEMENTAL )
+	{
+		// pure dmg
+		dmgGib = DMG_STRONGEST;
+		damageMultiplier = 1.0;
+		resistance = 0;
+		trapResist = 0;
+	}
 
 	if ( monsterCollisionOnly )
 	{
@@ -3455,7 +3464,14 @@ bool applyGenericMagicDamage(Entity* caster, Entity* hitentity, Entity& damageSo
 			{
 				if ( alertTarget )
 				{
+					bool oldPassable = caster->flags[PASSABLE];
+					if ( spellID == SPELL_EARTH_ELEMENTAL && caster->behavior == &actMonster
+						&& caster->getMonsterTypeFromSprite() == EARTH_ELEMENTAL )
+					{
+						caster->flags[PASSABLE] = false; // let monsters aggro
+					}
 					hitentity->monsterAcquireAttackTarget(*caster, MONSTER_STATE_PATH, true);
+					caster->flags[PASSABLE] = oldPassable;
 				}
 			}
 

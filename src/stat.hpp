@@ -141,6 +141,8 @@ static const int EFF_FOCI_LIGHT_JUSTICE = 116;
 static const int EFF_FOCI_LIGHT_PROVIDENCE = 117;
 static const int EFF_FOCI_LIGHT_PURITY = 118;
 static const int EFF_FOCI_LIGHT_SANCTUARY = 119;
+static const int EFF_STASIS = 120;
+static const int EFF_HP_MP_REGEN = 121;
 static const int NUMEFFECTS = 128;
 
 // stats

@@ -105,6 +105,11 @@ const char* magicLightColorForSprite(Entity* my, int sprite, bool darker) {
 		case 1886: return "magic_pink_flicker";
 		case 1816: return "magic_green_flicker";
 		case 2153: return "magic_foci_yellow_flicker";
+		case 2179:
+		case 2180:
+		case 2181:
+		case 2182:
+		case 2183:
 		case 2154: return "magic_foci_purple_flicker";
 		case 2156: return "magic_foci_brown_flicker";
         }
@@ -136,6 +141,11 @@ const char* magicLightColorForSprite(Entity* my, int sprite, bool darker) {
 		case 1886: return "magic_pink";
 		case 1816: return "magic_green";
 		case 2153: return "magic_foci_yellow";
+		case 2179:
+		case 2180:
+		case 2181:
+		case 2182:
+		case 2183:
 		case 2154: return "magic_foci_purple";
 		case 2156: return "magic_foci_brown";
         }
@@ -5802,6 +5812,12 @@ void actMagicParticle(Entity* my)
 		my->scaley -= 0.025;
 		my->scalez -= 0.025;
 	}
+	else if ( my->sprite == 262 && my->flags[SPRITE] )
+	{
+		my->scalex -= 0.025;
+		my->scaley -= 0.025;
+		my->scalez -= 0.025;
+	}
 	else if ( my->sprite == 2192 || my->sprite == 2193 )
 	{
 		my->scalex -= 0.025;
@@ -5821,7 +5837,7 @@ void actMagicParticle(Entity* my)
 			my->roll = (local_rng.rand() % 8) * PI / 4;
 		}
 	}
-	else if ( my->sprite >= 233 && my->sprite <= 244 )
+	else if ( my->sprite >= 233 && my->sprite <= 244 && my->flags[SPRITE] )
 	{
 		my->scalex -= std::max(0.01, my->fskill[1]);
 		my->scaley -= std::max(0.01, my->fskill[1]);
@@ -7166,6 +7182,68 @@ void actParticleAestheticOrbit(Entity* my)
 				}
 			}
 		}
+		else if ( my->skill[1] == PARTICLE_EFFECT_STASIS_RIFT_ORBIT )
+		{
+			Stat* stats = parent->getStats();
+			if ( stats && !stats->getEffectActive(EFF_STASIS) )
+			{
+				my->removeLightField();
+				list_RemoveNode(my->mynode);
+				return;
+			}
+
+			my->yaw += 0.2;
+			//spawnMagicParticle(my);
+			my->x = parent->x + my->actmagicOrbitDist * cos(my->yaw);
+			my->y = parent->y + my->actmagicOrbitDist * sin(my->yaw);
+			my->z = parent->z;
+			//my->z -= 0.1;
+			//my->bNeedsRenderPositionInit = true;
+			my->scalex = 1.0;
+			my->scaley = my->scalex;
+			my->scalez = my->scalex;
+
+			if ( Entity* fx = spawnMagicParticle(my) )
+			{
+				fx->yaw += PI / 2;
+				fx->scalex = my->scalex;
+				fx->scaley = my->scaley;
+				fx->scalez = my->scalez;
+			}
+		}
+		else if ( my->skill[1] == PARTICLE_EFFECT_THORNS_ORBIT )
+		{
+			Stat* stats = parent->getStats();
+			if ( stats && !stats->getEffectActive(EFF_THORNS) )
+			{
+				my->removeLightField();
+				list_RemoveNode(my->mynode);
+				return;
+			}
+
+			my->x = parent->x + 4.0 * cos(my->yaw);
+			my->y = parent->y + 4.0 * sin(my->yaw);
+
+			//my->z -= 0.05;
+			my->scalex -= 0.025;
+			my->scaley = my->scalex;
+			my->scalez = my->scalex;
+
+			if ( my->scalex <= 0.0 )
+			{
+				my->removeLightField();
+				list_RemoveNode(my->mynode);
+				return;
+			}
+
+			/*if ( Entity* fx = spawnMagicParticle(my) )
+			{
+				fx->yaw += PI / 2;
+				fx->scalex = my->scalex;
+				fx->scaley = my->scaley;
+				fx->scalez = my->scalez;
+			}*/
+		}
 		--PARTICLE_LIFE;
 	}
 	return;
@@ -7290,7 +7368,7 @@ void createParticleSap(Entity* parent)
 		}
 		if ( parent->sprite == 2178 ) // testing particle
 		{
-			if ( c < 2 )
+			if ( c >= 2 )
 			{
 				continue;
 			}
@@ -7602,6 +7680,7 @@ void floorMagicClientReceive(Entity* my)
 	}
 	else if ( my->actfloorMagicType == ParticleTimerEffect_t::EFFECT_ROOTS_PATH
 		|| my->actfloorMagicType == ParticleTimerEffect_t::EFFECT_ROOTS_SELF
+		|| my->actfloorMagicType == ParticleTimerEffect_t::EFFECT_ROOTS_TILE_VOID
 		|| my->actfloorMagicType == ParticleTimerEffect_t::EFFECT_ROOTS_SELF_SUSTAIN
 		|| my->actfloorMagicType == ParticleTimerEffect_t::EFFECT_ROOTS_TILE )
 	{
@@ -9991,6 +10070,20 @@ void actParticleTimer(Entity* my)
 				{
 					Entity* fx = createFloorMagic(ParticleTimerEffect_t::EffectType::EFFECT_ROOTS_TILE,
 						1765, my->x, my->y, 7.5, my->yaw, PARTICLE_LIFE);
+					//playSoundEntity(fx, data.sfx, 64);
+					fx->parent = my->getUID();
+					fx->actmagicNoParticle = 1;
+					fx->sizex = 6;
+					fx->sizey = 6;
+					floorMagicParticleSetUID(*fx, true);
+				}
+			}
+			else if ( my->particleTimerCountdownAction == PARTICLE_TIMER_ACTION_ROOTS_SINGLE_TILE_VOID )
+			{
+				if ( my->ticks == 1 && multiplayer != CLIENT )
+				{
+					Entity* fx = createFloorMagic(ParticleTimerEffect_t::EffectType::EFFECT_ROOTS_TILE_VOID,
+						2199, my->x, my->y, 7.5, my->yaw, PARTICLE_LIFE);
 					//playSoundEntity(fx, data.sfx, 64);
 					fx->parent = my->getUID();
 					fx->actmagicNoParticle = 1;
@@ -13175,12 +13268,16 @@ void actParticleRoot(Entity* my)
 		list_RemoveNode(my->mynode);
 		return;
 	}
-	int mapIndex = (y)*MAPLAYERS + (x)*MAPLAYERS * map.height;
-	if ( !map.tiles[mapIndex] || swimmingtiles[map.tiles[mapIndex]] || lavatiles[map.tiles[mapIndex]] || map.tiles[OBSTACLELAYER + mapIndex] )
+
+	if ( my->sprite != 2200 ) // void root
 	{
-		my->flags[INVISIBLE] = true;
-		list_RemoveNode(my->mynode);
-		return;
+		int mapIndex = (y)*MAPLAYERS + (x)*MAPLAYERS * map.height;
+		if ( !map.tiles[mapIndex] || swimmingtiles[map.tiles[mapIndex]] || lavatiles[map.tiles[mapIndex]] || map.tiles[OBSTACLELAYER + mapIndex] )
+		{
+			my->flags[INVISIBLE] = true;
+			list_RemoveNode(my->mynode);
+			return;
+		}
 	}
 
 	if ( my->actmagicDelayMove > 0 )
@@ -13257,7 +13354,12 @@ void actParticleRoot(Entity* my)
 		{
 			if ( true )
 			{
-				Entity* particle = spawnMagicParticleCustom(my, 226, .7, 1.0);
+				int sprite = 226;
+				if ( my->sprite == 2200 ) // void root
+				{
+					sprite = 261;
+				}
+				Entity* particle = spawnMagicParticleCustom(my, sprite, .7, 1.0);
 				particle->flags[SPRITE] = true;
 				particle->vel_z = -0.25;
 				particle->z = 6.0;
@@ -13417,6 +13519,7 @@ void actParticleFloorMagic(Entity* my)
 
 		if ( my->actfloorMagicType == ParticleTimerEffect_t::EffectType::EFFECT_ROOTS_SELF
 			|| my->actfloorMagicType == ParticleTimerEffect_t::EffectType::EFFECT_ROOTS_TILE
+			|| my->actfloorMagicType == ParticleTimerEffect_t::EffectType::EFFECT_ROOTS_TILE_VOID
 			|| my->actfloorMagicType == ParticleTimerEffect_t::EffectType::EFFECT_ROOTS_SELF_SUSTAIN
 			|| my->actfloorMagicType == ParticleTimerEffect_t::EffectType::EFFECT_ROOTS_PATH )
 		{
@@ -13477,7 +13580,8 @@ void actParticleFloorMagic(Entity* my)
 			my->flags[INVISIBLE] = true;
 			my->scalex = 1.0;
 		}
-		else if ( my->actfloorMagicType == ParticleTimerEffect_t::EffectType::EFFECT_ROOTS_TILE )
+		else if ( my->actfloorMagicType == ParticleTimerEffect_t::EffectType::EFFECT_ROOTS_TILE
+			|| my->actfloorMagicType == ParticleTimerEffect_t::EffectType::EFFECT_ROOTS_TILE_VOID )
 		{
 			BaronyRNG rng;
 			Uint32 rootSeed = my->getUID();
@@ -13506,7 +13610,12 @@ void actParticleFloorMagic(Entity* my)
 				{
 					yaw += PI / 8;
 				}*/
-				Entity* root = createParticleRoot(1766, my->x + dist * cos(yaw), my->y + dist * sin(yaw),
+				int sprite = 1766;
+				if ( my->actfloorMagicType == ParticleTimerEffect_t::EffectType::EFFECT_ROOTS_TILE_VOID )
+				{
+					sprite = 2200;
+				}
+				Entity* root = createParticleRoot(sprite, my->x + dist * cos(yaw), my->y + dist * sin(yaw),
 					7.5, rng.rand() % 360 * (PI / 180.0), PARTICLE_LIFE);
 				root->focalz = -0.5;
 				int roll = rng.rand() % 8;
@@ -13755,6 +13864,11 @@ void actParticleFloorMagic(Entity* my)
 			std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, radius);
 			for ( auto it : entLists )
 			{
+				if ( my->actfloorMagicType == ParticleTimerEffect_t::EffectType::EFFECT_ROOTS_TILE_VOID )
+				{
+					break;
+				}
+
 				node_t* node;
 				for ( node = it->first; node != nullptr; node = node->next )
 				{
@@ -15582,6 +15696,13 @@ void actRadiusMagic(Entity* my)
 				case 1686:
 					color = makeColorRGB(252, 107, 35);
 					break;
+				case 2179:
+				case 2180:
+				case 2181:
+				case 2182:
+				case 2183:
+					color = makeColorRGB(132, 47, 241);
+					break;
 				default:
 					break;
 				}
@@ -15609,7 +15730,7 @@ void actRadiusMagic(Entity* my)
 					|| my->actRadiusMagicID == SPELL_FOCI_DARK_SUPPRESS
 					|| my->actRadiusMagicID == SPELL_FOCI_DARK_VENGEANCE )
 				{
-					indicator->loop = true;
+					indicator->loop = false;
 					//indicator->lifetime = 100;
 					//indicator->loopType = 0;
 					//indicator->loopTimer = 0;
@@ -15826,7 +15947,8 @@ void actRadiusMagic(Entity* my)
 								}
 							}
 						}
-						else if ( my->actRadiusMagicID == SPELL_FOCI_DARK_LIFE )
+						else if ( my->actRadiusMagicID == SPELL_FOCI_DARK_RIFT
+							|| my->actRadiusMagicID == SPELL_FOCI_DARK_SUPPRESS )
 						{
 							if ( entity->behavior == &actPlayer || (entity->behavior == &actMonster && !entity->isInertMimic()) )
 							{
@@ -15873,14 +15995,14 @@ void actRadiusMagic(Entity* my)
 				}
 			}
 
-			if ( my->actRadiusMagicID == SPELL_FOCI_DARK_LIFE )
+			/*if ( my->actRadiusMagicID == SPELL_FOCI_DARK_LIFE )
 			{
 				while ( applyEffects.size() > 1 )
 				{
 					unsigned int pick = local_rng.rand() % applyEffects.size();
 					applyEffects.erase(applyEffects.begin() + pick);
 				}
-			}
+			}*/
 
 			bool firstEffect = true;
 			int totalHeal = 0;
@@ -15904,6 +16026,7 @@ void actRadiusMagic(Entity* my)
 						spawnDamageGib(ent, -heal, DamageGib::DMG_HEAL, DamageGibDisplayType::DMG_GIB_NUMBER, true);
 					}
 					spawnMagicEffectParticles(ent->x, ent->y, ent->z, 169);
+					firstEffect = false;
 				}
 				else if ( my->actRadiusMagicID == SPELL_NULL_AREA || my->actRadiusMagicID == SPELL_SPHERE_SILENCE )
 				{
@@ -15918,8 +16041,10 @@ void actRadiusMagic(Entity* my)
 					serverSpawnMiscParticlesAtLocation(fx->x, fx->y, fx->z, PARTICLE_EFFECT_NULL_PARTICLE, my->sprite, 0, fx->yaw * 256.0);
 					ent->removeLightField();
 					list_RemoveNode(ent->mynode);
+					firstEffect = false;
 				}
-				else if ( my->actRadiusMagicID == SPELL_FOCI_DARK_LIFE )
+				else if ( my->actRadiusMagicID == SPELL_FOCI_DARK_RIFT
+					|| my->actRadiusMagicID == SPELL_FOCI_DARK_SUPPRESS )
 				{
 					Entity* spellEntity = createParticleSapCenter(ent, my, 0, 2178, 2178);
 					if ( spellEntity )
@@ -15929,9 +16054,54 @@ void actRadiusMagic(Entity* my)
 						spellEntity->skill[0] = 25; // duration
 						spellEntity->skill[7] = my->getUID();
 					}
-					ent->setEffect(EFF_ASLEEP, true, TICKS_PER_SECOND, false);
+					int effectID = EFF_STASIS;
+					if ( my->actRadiusMagicID == SPELL_FOCI_DARK_SUPPRESS )
+					{
+						effectID = EFF_ROOTED;
+					}
+					if ( Stat* entStats = ent->getStats() )
+					{
+						int duration = my->actRadiusMagicEffectPower;
+						if ( Uint8 effectStrength = entStats->getEffectActive(effectID) )
+						{
+							duration = std::max(entStats->EFFECTS_TIMERS[effectID], duration);
+							duration = std::min(duration, getSpellEffectDurationSecondaryFromID(my->actRadiusMagicID, caster, nullptr, caster));
+						}
+						if ( duration > 0 )
+						{
+							bool updateClients = effectID == EFF_STASIS;
+							if ( ent->setEffect(effectID, true, duration, updateClients) )
+							{
+								if ( my->actRadiusMagicID == SPELL_FOCI_DARK_SUPPRESS )
+								{
+									if ( Entity* spellTimer = createParticleTimer(caster, duration, -1) )
+									{
+										spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_ROOTS_SINGLE_TILE_VOID;
+										spellTimer->particleTimerCountdownSprite = -1;
+										spellTimer->x = ent->x;
+										spellTimer->y = ent->y;
+									}
+								}
+
+								if ( firstEffect )
+								{
+									if ( caster )
+									{
+										if ( my->actRadiusMagicID == SPELL_FOCI_DARK_SUPPRESS )
+										{
+											messagePlayerColor(caster->isEntityPlayer(), MESSAGE_COMBAT, makeColorRGB(0, 255, 0), Language::get(6841));
+										}
+										else
+										{
+											messagePlayerColor(caster->isEntityPlayer(), MESSAGE_COMBAT, makeColorRGB(0, 255, 0), Language::get(6840));
+										}
+									}
+								}
+								firstEffect = false;
+							}
+						}
+					}
 				}
-				firstEffect = true;
 			}
 
 			if ( totalHeal > 0 )
@@ -16266,9 +16436,9 @@ void actParticleShatterEarth(Entity* my)
 		{
 			if ( enableDebugKeys && (svFlags & SV_FLAG_CHEATS) )
 			{
-			static ConsoleVariable<int> cvar_se9("/se9", -5);
-			tallCeilingDelay = *cvar_se9;
-		}
+				static ConsoleVariable<int> cvar_se9("/se9", -5);
+				tallCeilingDelay = *cvar_se9;
+			}
 			else
 			{
 				tallCeilingDelay = -5;

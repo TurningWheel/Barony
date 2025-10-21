@@ -720,7 +720,7 @@ static void uploadUniforms(Shader& shader, float* proj, float* view, float* mapD
     if (proj) { GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uProj"), 1, false, proj)); }
     if (view) { GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uView"), 1, false, view)); }
     if (mapDims) { GL_CHECK_ERR(glUniform2fv(shader.uniform("uMapDims"), 1, mapDims)); }
-    GL_CHECK_ERR(glUniform1ui(shader.uniform("uTicks"), (GLuint)ticks));
+    //GL_CHECK_ERR(glUniform1ui(shader.uniform("uTicks"), (GLuint)ticks));
 #ifdef EDITOR
     float fogDistance = 0.f;
     float fogColor[4] = { 1.f, 1.f, 1.f, 1.f };
@@ -1362,7 +1362,8 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
     auto& shader = !entity->flags[BRIGHT] && !telepath ?
         (dither.value < Entity::Dither::MAX ? voxelDitheredShader : voxelShader) :
         ((((entity->flags[INVISIBLE] && entity->flags[INVISIBLE_DITHER])
-            || entity->mistformGLRender >= 0.45)
+            || entity->mistformGLRender >= 0.45
+            || entity->flags[INVISIBLE_DITHER])
             && dither.value < Entity::Dither::MAX) 
                 ? voxelBrightDitheredShader : voxelBrightShader);
     shader.bind();

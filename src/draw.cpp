@@ -2236,7 +2236,7 @@ void drawEntities3D(view_t* camera, int mode)
                 if (ditheringDisabled) {
                     dither.value = decrease ? 0 : Entity::Dither::MAX;
                 } else {
-					if ( entity->flags[INVISIBLE] && entity->flags[INVISIBLE_DITHER] )
+					if ( (entity->flags[INVISIBLE] && entity->flags[INVISIBLE_DITHER]) || entity->flags[STASIS_DITHER] )
 					{
 #ifndef EDITOR
 						static ConsoleVariable<int> cvar_dither_invisibility("/dither_invisibility", 5);

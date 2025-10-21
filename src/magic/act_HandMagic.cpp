@@ -631,7 +631,8 @@ void spellcasting_animation_manager_t::setRangeFinderLocation()
 							else
 							{
 								Entity* ohit = hit.entity;
-								lineTraceTarget(entity, entity->x, entity->y, tangent + PI, dist, 0, false, caster);
+								int lineTraceFlags = spell->ID == SPELL_TELEKINESIS ? LINETRACE_TELEKINESIS : 0;
+								lineTraceTarget(entity, entity->x, entity->y, tangent + PI, dist, LINETRACE_TELEKINESIS, false, caster);
 								if ( hit.entity == caster )
 								{
 									real_t crossDist = abs(dist * sin(tangent - playerYaw));
@@ -724,6 +725,10 @@ void spellcastAnimationUpdateReceive(int player, int attackPose, int castTime)
 			{
 				players[player]->entity->skill[10] = 0;
 			}
+			if ( !players[player]->isLocalPlayer() )
+			{
+				playSoundEntityLocal(players[player]->entity, 170, 128);
+			}
 			players[player]->entity->skill[9] = MONSTER_POSE_MAGIC_WINDUP1;
 		}
 		else if ( attackPose == MONSTER_POSE_MAGIC_WINDUP2 )
@@ -780,7 +785,7 @@ void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, 
 		return;
 	}
 
-	playSoundEntity(caster, 170, 128 );
+	playSoundEntityLocal(caster, 170, 128 );
 	Stat* stat = caster->getStats();
 
 	//Save these three very important pieces of data.

@@ -1586,8 +1586,8 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			{
 				if ( Stat* casterStats = caster->getStats() )
 				{
-					Uint8 effectStrength = casterStats->getEffectActive(EFF_BLESS_FOOD);
-					if ( effectStrength == 0 )
+					//Uint8 effectStrength = casterStats->getEffectActive(EFF_BLESS_FOOD);
+					//if ( effectStrength == 0 )
 					{
 						if ( caster->setEffect(EFF_BLESS_FOOD, (Uint8)element->getDamage(), element->duration, false) )
 						{
@@ -1596,6 +1596,27 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						}
 					}
 				}
+
+				for ( node_t* node = map.creatures->first; node && false; node = node->next )
+				{
+					if ( Entity* entity = getSpellTarget(node, HEAL_RADIUS, caster, false, TARGET_FRIEND) )
+					{
+						//Uint8 effectStrength = casterStats->getEffectActive(EFF_BLESS_FOOD);
+						//if ( effectStrength == 0 )
+						{
+							if ( entity->behavior == &actPlayer )
+							{
+								if ( entity->setEffect(EFF_BLESS_FOOD, (Uint8)element->getDamage(), element->duration, false) )
+								{
+									messagePlayerColor(entity->isEntityPlayer(),
+										MESSAGE_HINT, makeColorRGB(0, 255, 0), Language::get(6486));
+									spawnMagicEffectParticles(entity->x, entity->y, entity->z, 171);
+								}
+							}
+						}
+					}
+				}
+
 				spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
 			}
 			playSoundEntity(caster, 166, 128);
@@ -5201,9 +5222,9 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				{
 					duration = element->duration;
 				}
-				if ( caster->setEffect(EFF_THORNS, true, duration, false) )
+				if ( caster->setEffect(EFF_THORNS, true, duration, true) )
 				{
-					caster->setEffect(EFF_BLADEVINES, false, 0, false);
+					caster->setEffect(EFF_BLADEVINES, false, 0, true);
 					messagePlayerColor(caster->isEntityPlayer(), MESSAGE_STATUS, uint32ColorGreen, Language::get(6795));
 					playSoundEntity(caster, 178, 128);
 					spawnMagicEffectParticles(caster->x, caster->y, caster->z, 170);
@@ -5230,9 +5251,9 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				{
 					duration = element->duration;
 				}
-				if ( caster->setEffect(EFF_BLADEVINES, true, duration, false) )
+				if ( caster->setEffect(EFF_BLADEVINES, true, duration, true) )
 				{
-					caster->setEffect(EFF_THORNS, false, 0, false);
+					caster->setEffect(EFF_THORNS, false, 0, true);
 					messagePlayerColor(caster->isEntityPlayer(), MESSAGE_STATUS, uint32ColorGreen, Language::get(6796));
 					playSoundEntity(caster, 178, 128);
 					spawnMagicEffectParticles(caster->x, caster->y, caster->z, 170);
@@ -6282,9 +6303,30 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					bool effect = true;
 					int charge = castSpellProps->optionalData & (0x7F);
 					bool newCast = charge == 1 && !(castSpellProps->optionalData & (1 << 7));
+					bool finishCast = (castSpellProps->optionalData & (1 << 7));
 					node_t* nextnode = nullptr;
 					int radius = getSpellPropertyFromID(spell_t::SPELLPROP_MODIFIED_RADIUS, spell->ID, caster, nullptr, caster);
-					for ( node_t* node = map.entities->first; node; node = nextnode )
+					if ( finishCast )
+					{
+						real_t x = caster->x;
+						real_t y = caster->y;
+						real_t dist = lineTrace(caster, caster->x, caster->y, caster->yaw, 64.0, 0, false);
+						x += dist * cos(caster->yaw);
+						y += dist * sin(caster->yaw);
+
+						const int maxDuration = getSpellEffectDurationSecondaryFromID(spell->ID, caster, nullptr, caster);
+						int duration = std::min(maxDuration, element->duration * charge);
+						if ( Entity* fx = createRadiusMagic(spell->ID, caster,
+							x, y, radius, duration, nullptr) )
+						{
+							fx->actRadiusMagicEffectPower = duration;
+							playSoundEntity(fx, 166, 128);
+						}
+
+						spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
+						playSoundEntity(caster, 166, 128);
+					}
+					/*for ( node_t* node = map.entities->first; node; node = nextnode )
 					{
 						nextnode = node->next;
 						if ( Entity* entity = (Entity*)(node->element) )
@@ -6318,9 +6360,9 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 								}
 							}
 						}
-					}
+					}*/
 
-					if ( effect && (castSpellProps->optionalData & (1 << 7)) )
+					/*if ( effect && (castSpellProps->optionalData & (1 << 7)) )
 					{
 						real_t x = caster->x;
 						real_t y = caster->y;
@@ -6341,7 +6383,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 
 						spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
 						playSoundEntity(caster, 171, 128);
-					}
+					}*/
 				}
 			}
 		}
@@ -6418,7 +6460,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 											{
 												if ( !prevEffect )
 												{
-													playSoundEntity(entity, 171, 128);
+													playSoundEntity(entity, 168, 128);
 												}
 												spawnMagicEffectParticles(entity->x, entity->y, entity->z, particle);
 												messagePlayerColor(entity->isEntityPlayer(), MESSAGE_STATUS, makeColorRGB(0, 255, 0),
@@ -6429,7 +6471,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 								}
 								createRadiusMagic(spell->ID, caster,
 									caster->x, caster->y, radius, TICKS_PER_SECOND, nullptr);
-								playSoundEntity(caster, 171, 128);
+								playSoundEntity(caster, 168, 128);
 							}
 							
 							{
@@ -6444,10 +6486,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 									bool prevEffect = casterStats->getEffectActive(effectID) > 0;
 									if ( caster->setEffect(effectID, effectStrength, duration, false) )
 									{
-										if ( !prevEffect )
+										/*if ( !prevEffect )
 										{
 											playSoundEntity(caster, 171, 128);
-										}
+										}*/
 										if ( !prevEffect )
 										{
 											messagePlayerColor(caster->isEntityPlayer(), MESSAGE_STATUS, makeColorRGB(0, 255, 0),
@@ -7539,6 +7581,10 @@ bool spellIsNaturallyLearnedByRaceOrClass(Entity& caster, Stat& stat, int spellI
 		return true;
 	}
 	else if ( stat.playerRace == RACE_G && stat.stat_appearance == 0 && (spellID == SPELL_DEFACE) )
+	{
+		return true;
+	}
+	else if ( stat.playerRace == RACE_D && stat.stat_appearance == 0 && (spellID == SPELL_THORNS || spellID == SPELL_SHRUB) )
 	{
 		return true;
 	}
