@@ -23483,8 +23483,6 @@ void GenericGUIMenu::ItemEffectGUI_t::clearItemDisplayed()
 	costEffectGoldAmount = 0;
 	costEffectMPAmount = 0;
 	itemActionType = ITEMFX_ACTION_NONE;
-	confirmActionOnItemSteps.first = 0;
-	confirmActionOnItemSteps.second = 0;
 }
 
 void GenericGUIMenu::ItemEffectGUI_t::getItemEffectCost(Item* itemUsedWith, int& goldCost, int& manaCost)
@@ -24388,6 +24386,8 @@ void GenericGUIMenu::ItemEffectGUI_t::openItemEffectMenu(GenericGUIMenu::ItemEff
 	}
 	inputs.getUIInteraction(playernum)->selectedItemFromChest = 0;
 	clearItemDisplayed();
+	confirmActionOnItemSteps.first = 0;
+	confirmActionOnItemSteps.second = 0;
 }
 
 void GenericGUIMenu::ItemEffectGUI_t::closeItemEffectMenu()
@@ -24443,6 +24443,8 @@ void GenericGUIMenu::ItemEffectGUI_t::closeItemEffectMenu()
 		}
 	}
 	clearItemDisplayed();
+	confirmActionOnItemSteps.first = 0;
+	confirmActionOnItemSteps.second = 0;
 	itemRequiresTitleReflow = true;
 	if ( itemEffectFrame )
 	{
