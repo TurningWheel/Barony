@@ -1878,6 +1878,21 @@
 		},
 		"spell_ice_wave": {
 			"name": "Ice Wave"
+		},
+		"spell_earth_elemental": {
+			"name": "Summon Earth Sprite"
+		},
+		"spell_thorns": {
+			"name": "Thorns"
+		},
+		"spell_bless_food": {
+			"name": "Blessed Meal"
+		},
+		"spell_shrub": {
+			"name": "Germinate"
+		},
+		"spell_telekinesis": {
+			"name": "Telekinesis"
 		}
     }
 }
