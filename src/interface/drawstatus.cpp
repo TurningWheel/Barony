@@ -80,7 +80,8 @@ void updateEnemyBar(Entity* source, Entity* target, const char* name, Sint32 hp,
 			}
 		}
 		else if ( source->behavior == &actMonster && source->monsterAllySummonRank != 0
-			&& (target->behavior == &actMonster || target->behavior == &actPlayer) )
+			&& (target->behavior == &actMonster || target->behavior == &actPlayer || target->behavior == &actDoor || target->behavior == &actIronDoor
+				|| target->behavior == &actChest || target->behavior == &actFurniture || target->behavior == &actColliderDecoration) )
 		{
 			player = source->monsterAllyIndex;
 			if ( source->monsterAllyGetPlayerLeader() && source->monsterAllyGetPlayerLeader() == target )
@@ -97,7 +98,8 @@ void updateEnemyBar(Entity* source, Entity* target, const char* name, Sint32 hp,
 			}
 		}
 		else if ( source->behavior == &actMonster && source->monsterAllyIndex >= 0/*monsterIsImmobileTurret(source, nullptr)*/
-			&& (target->behavior == &actMonster || target->behavior == &actPlayer || target->behavior == &actDoor || target->behavior == &actIronDoor) )
+			&& (target->behavior == &actMonster || target->behavior == &actPlayer || target->behavior == &actDoor || target->behavior == &actIronDoor
+				|| target->behavior == &actChest || target->behavior == &actFurniture || target->behavior == &actColliderDecoration) )
 		{
 			player = source->monsterAllyIndex;
 			if ( source->monsterAllyGetPlayerLeader() && source->monsterAllyGetPlayerLeader() == target )
