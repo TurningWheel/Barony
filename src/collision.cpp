@@ -1672,7 +1672,7 @@ Entity* findEntityInLine( Entity* my, real_t x1, real_t y1, real_t angle, int en
 				{
 					if ( entities & LINETRACE_TELEKINESIS )
 					{
-						if ( entity->behavior == &actIronDoor && !entity->flags[PASSABLE] )
+						if ( ((entity->behavior == &actIronDoor || entity->behavior == &actGate) && !entity->flags[PASSABLE]) )
 						{
 
 						}
