@@ -4660,10 +4660,10 @@ int playerHeadSprite(Monster race, sex_t sex, int appearance, int frame) {
         return sex == FEMALE ? 770 : 742;
     }
 	else if ( race == MONSTER_D ) {
-		return sex == FEMALE ? 1993 : 1963;
+		return sex == FEMALE ? 1992 : 1963;
 	}
 	else if ( race == MONSTER_M ) {
-		return sex == FEMALE ? 1998 : 1997;
+		return sex == MALE ? 1998 : 1997;
 	}
 	else if ( race == MONSTER_G ) {
 		return sex == FEMALE ? 2048 : 2047;
