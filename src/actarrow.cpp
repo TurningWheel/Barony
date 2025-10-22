@@ -692,8 +692,10 @@ void actArrow(Entity* my)
 					{
 						Stat* parentStats = parent->getStats();
 						if ( parentStats->helmet && parentStats->helmet->type == HAT_HOOD_WHISPERS 
-							&& !monsterIsImmobileTurret(hit.entity, hitstats) && !(hitstats->type == MIMIC
-								|| hitstats->type == MINIMIMIC || hitstats->type == MONSTER_ADORCISED_WEAPON) )
+							&& !monsterIsImmobileTurret(hit.entity, hitstats) && !hitstats->getEffectActive(EFF_STASIS) 
+							&& !(hitstats->type == MIMIC
+								|| hitstats->type == MINIMIMIC 
+								|| hitstats->type == MONSTER_ADORCISED_WEAPON) )
 						{
 							real_t hitAngle = hit.entity->yawDifferenceFromEntity(my);
 							if ( (hitAngle >= 0 && hitAngle <= 2 * PI / 3) ) // 120 degree arc
@@ -976,6 +978,10 @@ void actArrow(Entity* my)
 						if ( hit.entity->behavior == &actPlayer && parent && parent->behavior == &actPlayer )
 						{
 							doSkillIncrease = false; // no skill for killing/hurting players
+						}
+						if ( hitstats->getEffectActive(EFF_STASIS) )
+						{
+							doSkillIncrease = false;
 						}
 						int chance = 10;
 						if ( doSkillIncrease && (local_rng.rand() % chance == 0) && parent && parent->getStats() )

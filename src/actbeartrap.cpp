@@ -236,7 +236,8 @@ void actBeartrap(Entity* my)
 								{
 									messagePlayer(player, MESSAGE_HINT, Language::get(2522));
 								}
-								if ( local_rng.rand() % 10 == 0 )
+								if ( local_rng.rand() % 10 == 0 && !stat->getEffectActive(EFF_STASIS)
+									&& !monsterIsImmobileTurret(entity, stat) )
 								{
 									parent->increaseSkill(PRO_LOCKPICKING);
 								}
@@ -646,23 +647,42 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 			}
 			if ( triggered->behavior == &actMonster )
 			{
-				if ( oldHP > 0 && stat->HP == 0 ) // got a kill
+				bool doSkillIncrease = true;
+				Stat* triggeredStats = triggered->getStats();
+				if ( monsterIsImmobileTurret(triggered, triggeredStats) )
 				{
-					if ( local_rng.rand() % 5 == 0 )
+					doSkillIncrease = false;
+				}
+				else if ( triggered->monsterAllyGetPlayerLeader() 
+					|| (triggeredStats && achievementObserver.checkUidIsFromPlayer(triggeredStats->leader_uid) >= 0) )
+				{
+					doSkillIncrease = false;
+				}
+				else if ( triggeredStats && triggeredStats->getEffectActive(EFF_STASIS) )
+				{
+					doSkillIncrease = false;
+				}
+
+				if ( doSkillIncrease )
+				{
+					if ( oldHP > 0 && stat->HP == 0 ) // got a kill
+					{
+						if ( local_rng.rand() % 5 == 0 )
+						{
+							parent->increaseSkill(PRO_LOCKPICKING);
+						}
+					}
+					else if ( oldHP > stat->HP )
+					{
+						if ( local_rng.rand() % 20 == 0 ) // wounded
+						{
+							parent->increaseSkill(PRO_LOCKPICKING);
+						}
+					}
+					else if( local_rng.rand() % 20 == 0) // any other effect
 					{
 						parent->increaseSkill(PRO_LOCKPICKING);
 					}
-				}
-				else if ( oldHP > stat->HP )
-				{
-					if ( local_rng.rand() % 20 == 0 ) // wounded
-					{
-						parent->increaseSkill(PRO_LOCKPICKING);
-					}
-				}
-				else if( local_rng.rand() % 20 == 0) // any other effect
-				{
-					parent->increaseSkill(PRO_LOCKPICKING);
 				}
 
 				if ( !achievementObserver.playerAchievements[player].bombTrack )

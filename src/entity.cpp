@@ -11284,6 +11284,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						doSkillIncrease = false; // no skill for killing/hurting players
 					}
+					if ( hitstats->getEffectActive(EFF_STASIS) )
+					{
+						doSkillIncrease = false;
+					}
 					if ( doSkillIncrease
 						&& ((weaponskill >= PRO_SWORD && weaponskill <= PRO_POLEARM) || weaponskill == PRO_UNARMED || (whip && weaponskill == PRO_RANGED)) )
 					{
@@ -11303,7 +11307,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 							if ( local_rng.rand() % chance == 0 )
 							{
-								bool lowSkill = hitstats->getEffectActive(EFF_STASIS) || hitstats->type == DUMMYBOT;
+								bool lowSkill = hitstats->type == DUMMYBOT;
 								if ( !lowSkill || (lowSkill && myStats->getProficiency(weaponskill) < SKILL_LEVEL_BASIC) )
 								{
 									this->increaseSkill(weaponskill, notify);
@@ -11334,7 +11338,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 							if ( local_rng.rand() % chance == 0 )
 							{
-								bool lowSkill = hitstats->getEffectActive(EFF_STASIS) || hitstats->type == DUMMYBOT;
+								bool lowSkill = hitstats->type == DUMMYBOT;
 								if ( !lowSkill || (lowSkill && myStats->getProficiency(weaponskill) < SKILL_LEVEL_BASIC) )
 								{
 									this->increaseSkill(weaponskill, notify);
