@@ -6810,6 +6810,13 @@ void GenericGUIMenu::uncurseItem(Item* item)
 		return;
 	}
 
+	if ( item->beatitude != 0 )
+	{
+		if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_SPELL_REMOVECURSE )
+		{
+			magicOnSpellCastEvent(players[gui_player]->entity, players[gui_player]->entity, SPELL_REMOVECURSE, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
+		}
+	}
 	item->beatitude = 0; //0 = uncursed. > 0 = blessed.
 	messagePlayer(gui_player, MESSAGE_MISC, Language::get(348), item->description());
 
@@ -6885,6 +6892,10 @@ void GenericGUIMenu::identifyItem(Item* item)
 		if ( !item->identified )
 		{
 			Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_APPRAISED, item->type, 1);
+			if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_SPELL_IDENTIFY )
+			{
+				magicOnSpellCastEvent(players[gui_player]->entity, players[gui_player]->entity, SPELL_IDENTIFY, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
+			}
 		}
 	}
 	item->identified = true;
@@ -23593,10 +23604,11 @@ void GenericGUIMenu::ItemEffectGUI_t::getItemEffectCost(Item* itemUsedWith, int&
 		else if ( currentMode == ITEMFX_MODE_ENHANCE_WEAPON )
 		{
 			int skillTier = 0;
-			int skillLVL = stats[parentGUI.gui_player]->getModifiedProficiency(PRO_SPELLCASTING)
-				+ statGetINT(stats[parentGUI.gui_player], players[parentGUI.gui_player]->entity);
+			int skillLVL = 0;
 			if ( spell_t* spell = getSpellFromID(SPELL_ENHANCE_WEAPON) )
 			{
+				skillLVL = stats[parentGUI.gui_player]->getModifiedProficiency(spell->skillID)
+					+ statGetINT(stats[parentGUI.gui_player], players[parentGUI.gui_player]->entity);
 				skillTier = std::max(0, (skillLVL - spell->difficulty)) / 20;
 			}
 
@@ -23639,10 +23651,11 @@ void GenericGUIMenu::ItemEffectGUI_t::getItemEffectCost(Item* itemUsedWith, int&
 		else if ( currentMode == ITEMFX_MODE_RESHAPE_WEAPON )
 		{
 			int skillTier = 0;
-			int skillLVL = stats[parentGUI.gui_player]->getModifiedProficiency(PRO_SPELLCASTING)
-				+ statGetINT(stats[parentGUI.gui_player], players[parentGUI.gui_player]->entity);
+			int skillLVL = 0;
 			if ( spell_t* spell = getSpellFromID(SPELL_RESHAPE_WEAPON) )
 			{
+				skillLVL = stats[parentGUI.gui_player]->getModifiedProficiency(spell->skillID)
+					+ statGetINT(stats[parentGUI.gui_player], players[parentGUI.gui_player]->entity);
 				skillTier = std::max(0, (skillLVL - spell->difficulty)) / 20;
 			}
 
@@ -24821,16 +24834,16 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 		skillIcon->pos.y = 56 + heightOffsetCompact;
 		for ( auto& skill : Player::SkillSheet_t::skillSheetData.skillEntries )
 		{
-			if ( skill.skillId == PRO_MAGIC )
+			if ( skill.skillId == PRO_LEGACY_MAGIC )
 			{
-				if ( skillCapstoneUnlocked(playernum, skill.skillId) )
+				/*if ( skillCapstoneUnlocked(playernum, skill.skillId) )
 				{
 					skillIcon->path = skill.skillIconPathLegend;
 				}
 				else
 				{
-					skillIcon->path = skill.skillIconPath;
-				}
+				}*/
+				skillIcon->path = skill.skillIconPath;
 				skillIcon->disabled = false;
 				break;
 			}
@@ -25337,11 +25350,23 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 							actionPromptTxt->setText(Language::get(6726));
 							break;
 						case ITEMFX_ACTION_NEED_SKILL_LVLS:
-							if ( currentMode == ITEMFX_MODE_RESHAPE_WEAPON || currentMode == ITEMFX_MODE_ENHANCE_WEAPON )
+							if ( currentMode == ITEMFX_MODE_RESHAPE_WEAPON )
 							{
-								char buf[128] = "";
-								snprintf(buf, sizeof(buf), Language::get(6804), getSkillLangEntry(PRO_SPELLCASTING));
-								actionPromptTxt->setText(buf);
+								if ( auto spell = getSpellFromID(SPELL_RESHAPE_WEAPON) )
+								{
+									char buf[128] = "";
+									snprintf(buf, sizeof(buf), Language::get(6804), getSkillLangEntry(spell->ID));
+									actionPromptTxt->setText(buf);
+								}
+							}
+							else if ( currentMode == ITEMFX_MODE_ENHANCE_WEAPON )
+							{
+								if ( auto spell = getSpellFromID(SPELL_ENHANCE_WEAPON) )
+								{
+									char buf[128] = "";
+									snprintf(buf, sizeof(buf), Language::get(6804), getSkillLangEntry(spell->ID));
+									actionPromptTxt->setText(buf);
+								}
 							}
 							else
 							{

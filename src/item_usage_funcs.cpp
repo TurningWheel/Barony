@@ -3552,7 +3552,7 @@ void item_ScrollMagicMapping(Item* item, int player)
 	if ( item->beatitude >= 0 )
 	{
 		messagePlayer(player, MESSAGE_HINT, Language::get(868));
-		mapLevel(player);
+		mapLevel(player, 0, 0, 0);
 	}
 	else
 	{

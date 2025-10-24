@@ -4762,7 +4762,12 @@ void SaveGameInfo::computeHash(const int playernum, Uint32& hash)
 	{
 		hash += (Uint32)((Uint32)val << (shift % 32)); ++shift;
 	}
-	hash += (Uint32)((Uint32)players[playernum].sustainedSpellMPUsed << (shift % 32)); ++shift;
+	hash += (Uint32)((Uint32)players[playernum].sustainedSpellMPUsedSorcery << (shift % 32)); ++shift;
+	hash += (Uint32)((Uint32)players[playernum].sustainedSpellMPUsedMysticism << (shift % 32)); ++shift;
+	hash += (Uint32)((Uint32)players[playernum].sustainedSpellMPUsedThaumaturgy << (shift % 32)); ++shift;
+	hash += (Uint32)((Uint32)players[playernum].baseSpellMPUsedSorcery << (shift % 32)); ++shift;
+	hash += (Uint32)((Uint32)players[playernum].baseSpellMPUsedMysticism << (shift % 32)); ++shift;
+	hash += (Uint32)((Uint32)players[playernum].baseSpellMPUsedThaumaturgy << (shift % 32)); ++shift;
 }
 
 void SaveGameInfo::Player::stat_t::item_t::computeHash(Uint32& hash, Uint32& shift)
@@ -5015,7 +5020,13 @@ int SaveGameInfo::populateFromSession(const int playernum)
 			{
 				player.learnedSpells.push_back(learnedSpell);
 			}
-			player.sustainedSpellMPUsed = ::players[c]->mechanics.sustainedSpellMPUsed;
+			player.sustainedSpellMPUsedSorcery = ::players[c]->mechanics.sustainedSpellMPUsedSorcery;
+			player.sustainedSpellMPUsedMysticism = ::players[c]->mechanics.sustainedSpellMPUsedMysticism;
+			player.sustainedSpellMPUsedThaumaturgy = ::players[c]->mechanics.sustainedSpellMPUsedThaumaturgy;
+
+			player.baseSpellMPUsedSorcery = ::players[c]->mechanics.baseSpellMPUsedSorcery;
+			player.baseSpellMPUsedMysticism = ::players[c]->mechanics.baseSpellMPUsedMysticism;
+			player.baseSpellMPUsedThaumaturgy = ::players[c]->mechanics.baseSpellMPUsedThaumaturgy;
 
 			for ( auto& pair : ::players[c]->compendiumProgress.itemEvents )
 			{
@@ -5947,8 +5958,18 @@ int loadGame(int player, const SaveGameInfo& info) {
 		{
 			mechanics.learnedSpells.insert(learnedSpell);
 		}
-		mechanics.sustainedSpellMPUsed = 0;
-		mechanics.sustainedSpellMPUsed = info.players[player].sustainedSpellMPUsed;
+		mechanics.sustainedSpellMPUsedSorcery = 0;
+		mechanics.sustainedSpellMPUsedMysticism = 0;
+		mechanics.sustainedSpellMPUsedThaumaturgy = 0;
+		mechanics.baseSpellMPUsedSorcery = 0;
+		mechanics.baseSpellMPUsedMysticism = 0;
+		mechanics.baseSpellMPUsedThaumaturgy = 0;
+		mechanics.sustainedSpellMPUsedSorcery = info.players[player].sustainedSpellMPUsedSorcery;
+		mechanics.sustainedSpellMPUsedMysticism = info.players[player].sustainedSpellMPUsedMysticism;
+		mechanics.sustainedSpellMPUsedThaumaturgy = info.players[player].sustainedSpellMPUsedThaumaturgy;
+		mechanics.baseSpellMPUsedSorcery = info.players[player].baseSpellMPUsedSorcery;
+		mechanics.baseSpellMPUsedMysticism = info.players[player].baseSpellMPUsedMysticism;
+		mechanics.baseSpellMPUsedThaumaturgy = info.players[player].baseSpellMPUsedThaumaturgy;
 	}
 
 	Player::Minimap_t::mapDetails = info.map_messages;

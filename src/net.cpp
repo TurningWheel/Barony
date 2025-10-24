@@ -5266,7 +5266,10 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 
 	//Map the magic. I mean magic the map. I mean magically map the level (client).
 	{'MMAP', [](){
-		spell_magicMap(clientnum);
+		int radius = SDLNet_Read16(&net_packet->data[4]);
+		int x = SDLNet_Read16(&net_packet->data[6]);
+		int y = SDLNet_Read16(&net_packet->data[8]);
+		spell_magicMap(clientnum, radius, x, y);
 	}},
 
 	{'MFOD', [](){
@@ -8503,6 +8506,23 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		int pose = net_packet->data[5];
 		int charge = SDLNet_Read16(&net_packet->data[6]);
 		spellcastAnimationUpdateReceive(player, pose, charge);
+	} },
+
+	{ 'SPLV',[]() { // player spell level proc
+		int player = net_packet->data[4];
+		if ( player >= 0 && player < MAXPLAYERS )
+		{
+			if ( !players[player]->isLocalPlayer() )
+			{
+				if ( players[player]->entity )
+				{
+					int spellID = SDLNet_Read16(&net_packet->data[5]);
+					Uint32 eventType = SDLNet_Read32(&net_packet->data[7]);
+					int eventValue = SDLNet_Read32(&net_packet->data[11]);
+					magicOnSpellCastEvent(players[player]->entity, players[player]->entity, spellID, eventType, eventValue);
+				}
+			}
+		}
 	} },
 };
 

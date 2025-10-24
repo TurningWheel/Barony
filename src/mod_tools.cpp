@@ -1213,7 +1213,7 @@ void ItemTooltips_t::readItemsFromFile()
 			{
 				t.fociId = i;
 				items[i].attributes["foci_spell"] = t.id;
-		}
+			}
 		}
 
 		t.hasExpandedJSON = false;
@@ -2224,11 +2224,11 @@ int ItemTooltips_t::getSpellDamageOrHealAmount(const int player, spell_t* spell,
 				damage += (damage * (bonus * 0.01 
 					+ getBonusFromCasterOfSpellElement(
 						excludePlayerStats ? nullptr : players[player]->entity,
-						excludePlayerStats ? nullptr : stats[player], primaryElement, spell ? spell->ID : SPELL_NONE)));
+						excludePlayerStats ? nullptr : stats[player], primaryElement, spell ? spell->ID : SPELL_NONE, spell->skillID)));
 				heal += (heal * (bonus * 0.01 
 					+ getBonusFromCasterOfSpellElement(
 						excludePlayerStats ? nullptr : players[player]->entity,
-						excludePlayerStats ? nullptr : stats[player], primaryElement, spell ? spell->ID : SPELL_NONE)));
+						excludePlayerStats ? nullptr : stats[player], primaryElement, spell ? spell->ID : SPELL_NONE, spell->skillID)));
 			}
 		}
 		if ( spell->ID == SPELL_HEALING || spell->ID == SPELL_EXTRAHEALING )
@@ -2332,7 +2332,7 @@ std::string ItemTooltips_t::getSpellIconText(const int player, Item& item, const
 		if ( !compendiumTooltipIntro )
 		{
 			if ( (statGetINT(stats[player], players[player]->entity)
-				+ stats[player]->getModifiedProficiency(PRO_MAGIC)) >= SKILL_LEVEL_EXPERT )
+				+ stats[player]->getModifiedProficiency(spell->skillID)) >= SKILL_LEVEL_EXPERT )
 			{
 				numSummons = 2;
 			}
@@ -2364,17 +2364,17 @@ real_t ItemTooltips_t::getSpellSustainCostPerSecond(int spellID)
 	{
 		if ( spell_isChanneled(spell) )
 		{
-		if ( spell->elements.first )
-		{
-			if ( spellElement_t* element = (spellElement_t*)spell->elements.first->element )
+			if ( spell->elements.first )
 			{
-				if ( element->channeledMana > 0 )
+				if ( spellElement_t* element = (spellElement_t*)spell->elements.first->element )
 				{
-					return element->duration / (real_t)TICKS_PER_SECOND;
+					if ( element->channeledMana > 0 )
+					{
+						return element->duration / (real_t)TICKS_PER_SECOND;
+					}
 				}
 			}
 		}
-	}
 	}
 	/*switch ( spellID )
 	{
@@ -4664,9 +4664,10 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 			spell_t* spell = getSpellFromID(getSpellIDFromSpellbook(item.type));
 			if ( !spell ) { return; }
 
-			int intBonus = (statGetINT(
-				compendiumTooltipIntro ? nullptr : stats[player], 
-				compendiumTooltipIntro ? nullptr : players[player]->entity) * 0.5);
+			int intBonus = getSpellbookBaseINTBonus(
+				compendiumTooltipIntro ? nullptr : players[player]->entity,
+				compendiumTooltipIntro ? nullptr : stats[player],
+				spell->skillID);
 			real_t mult = ((items[item.type].attributes["SPELLBOOK_CAST_BONUS"]) / 100.0);
 			intBonus *= mult;
 			int beatitudeBonus = (mult * getSpellbookBonusPercent(
@@ -4717,7 +4718,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 			spell_t* spell = getSpellFromID(getSpellIDFromSpellbook(item.type));
 			if ( !spell ) { return; }
 
-			int skillLVL = std::min(100, stats[player]->getModifiedProficiency(PRO_MAGIC) + statGetINT(stats[player], players[player]->entity));
+			int skillLVL = std::min(100, stats[player]->getModifiedProficiency(spell->skillID) + statGetINT(stats[player], players[player]->entity));
 			if ( !playerLearnedSpellbook(player, &item) && (spell && spell->difficulty > skillLVL) )
 			{
 				str.insert((size_t)0, 1, '^'); // red line character
@@ -4737,13 +4738,13 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 			spell_t* spell = getSpellFromID(getSpellIDFromSpellbook(item.type));
 			if ( !spell ) { return; }
 
-			int skillLVL = std::min(100, stats[player]->getModifiedProficiency(PRO_MAGIC) + statGetINT(stats[player], players[player]->entity));
+			int skillLVL = std::min(100, stats[player]->getModifiedProficiency(spell->skillID) + statGetINT(stats[player], players[player]->entity));
 			if ( !playerLearnedSpellbook(player, &item) && (spell && spell->difficulty > skillLVL) )
 			{
 				str.insert((size_t)0, 1, '^'); // red line character
 			}
 			Sint32 INT = stats[player] ? statGetINT(stats[player], players[player]->entity) : 0;
-			Sint32 skill = stats[player] ? stats[player]->getModifiedProficiency(PRO_MAGIC) : 0;
+			Sint32 skill = stats[player] ? stats[player]->getModifiedProficiency(spell->skillID) : 0;
 			Sint32 total = std::min(SKILL_LEVEL_LEGENDARY, INT + skill);
 			snprintf(buf, sizeof(buf), str.c_str(), INT + skill, getProficiencyLevelName(INT + skill).c_str());
 		}
@@ -4761,15 +4762,21 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 
 			//int totalDamage = getSpellDamageOrHealAmount(player, spell, nullptr);
 			Sint32 oldINT = stats[player]->INT;
+			Sint32 oldCHR = stats[player]->CHR;
+			Sint32 oldCON = stats[player]->CON;
 			stats[player]->INT = 0;
+			stats[player]->CHR = 0;
+			stats[player]->CON = 0;
 
 			int baseDamage = getSpellDamageOrHealAmount(-1, spell, nullptr, compendiumTooltipIntro);
 
-			real_t bonusEquipPercent = 100.0 * getBonusFromCasterOfSpellElement(players[player]->entity, stats[player], nullptr, spell ? spell->ID : SPELL_NONE);
+			real_t bonusEquipPercent = 100.0 * getBonusFromCasterOfSpellElement(players[player]->entity, stats[player], nullptr, spell ? spell->ID : SPELL_NONE, spell->skillID);
 
 			stats[player]->INT = oldINT;
+			stats[player]->CHR = oldCHR;
+			stats[player]->CON = oldCON;
 
-			real_t bonusINTPercent = 100.0 * getBonusFromCasterOfSpellElement(players[player]->entity, stats[player], nullptr, spell ? spell->ID : SPELL_NONE);
+			real_t bonusINTPercent = 100.0 * getBonusFromCasterOfSpellElement(players[player]->entity, stats[player], nullptr, spell ? spell->ID : SPELL_NONE, spell->skillID);
 			bonusINTPercent -= bonusEquipPercent;
 
 			std::string damageOrHealing = adjectives["spell_strings"]["damage"];
@@ -4783,14 +4790,20 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		}
 		else if ( detailTag.compare("spell_cast_success") == 0 )
 		{
-			int spellcastingAbility = std::min(std::max(0, stats[player]->getModifiedProficiency(PRO_SPELLCASTING)
+			spell_t* spell = getSpellFromItem(player, &item, false);
+			if ( !spell ) { return; }
+
+			int spellcastingAbility = std::min(std::max(0, stats[player]->getModifiedProficiency(spell->skillID)
 				+ statGetINT(stats[player], players[player]->entity)), 100);
 			int chance = ((10 - (spellcastingAbility / 10)) * 20 / 3.0); // 33% after rolling to fizzle, 66% success
 			snprintf(buf, sizeof(buf), str.c_str(), chance);
 		}
 		else if ( detailTag.compare("spell_extramana_chance") == 0 )
 		{
-			int spellcastingAbility = std::min(std::max(0, stats[player]->getModifiedProficiency(PRO_SPELLCASTING)
+			spell_t* spell = getSpellFromItem(player, &item, false);
+			if ( !spell ) { return; }
+
+			int spellcastingAbility = std::min(std::max(0, stats[player]->getModifiedProficiency(spell->skillID)
 				+ statGetINT(stats[player], players[player]->entity)), 100);
 			int chance = (10 - (spellcastingAbility / 10)) * 10;
 			snprintf(buf, sizeof(buf), str.c_str(), chance);
@@ -6311,8 +6324,8 @@ bool ScriptTextParser_t::readFromFile(const std::string& filename)
 							}
 							else if ( (*var_itr)["value"].IsString() )
 							{
-							variable.value = (*var_itr)["value"].GetString();
-						}
+								variable.value = (*var_itr)["value"].GetString();
+							}
 						}
 						entry.variables.push_back(variable);
 					}
@@ -9293,6 +9306,8 @@ void EditorEntityData_t::readFromFile()
 					else if ( s == "PRO_MAGIC" )
 					{
 						colliderDmg.proficiencyBonusDamage.insert(PRO_MAGIC);
+						colliderDmg.proficiencyBonusDamage.insert(PRO_SPELLCASTING);
+						colliderDmg.proficiencyBonusDamage.insert(PRO_SWIMMING);
 					}
 					else if ( s == "PRO_RANGED" )
 					{
@@ -9328,6 +9343,8 @@ void EditorEntityData_t::readFromFile()
 					else if ( s == "PRO_MAGIC" )
 					{
 						colliderDmg.proficiencyResistDamage.insert(PRO_MAGIC);
+						colliderDmg.proficiencyResistDamage.insert(PRO_SPELLCASTING);
+						colliderDmg.proficiencyResistDamage.insert(PRO_SWIMMING);
 					}
 					else if ( s == "PRO_RANGED" )
 					{
@@ -15436,20 +15453,32 @@ void Compendium_t::Events_t::updateEventsInMainLoop(const int playernum)
 		}
 
 		{
+			int skillID = NUMPROFICIENCIES;
+			if ( auto spell = players[playernum]->magic.selectedSpell() )
+			{
+				skillID = spell->skillID;
+			}
+
 			{
 				// base PWR INT Bonus
-				real_t bonus = getSpellBonusFromCasterINT(entity, myStats) * 100.0;
+				real_t bonus = getSpellBonusFromCasterINT(entity, myStats, skillID) * 100.0;
 				real_t val = bonus;
 				eventUpdateCodex(playernum, CPDM_CLASS_PWR_MAX, "pwr", (int)val);
 			}
 
 			// equip/effect bonus (minus INT)
 			{
-				real_t val = (getBonusFromCasterOfSpellElement(entity, myStats, nullptr, SPELL_NONE) * 100.0);
+				real_t val = (getBonusFromCasterOfSpellElement(entity, myStats, nullptr, SPELL_NONE, NUMPROFICIENCIES) * 100.0);
 				// look for damage/healing spell bonus for mitre/magus hat
-				val = std::max(val, getBonusFromCasterOfSpellElement(entity, myStats, nullptr, SPELL_FIREBALL) * 100.0);
-				val = std::max(val, getBonusFromCasterOfSpellElement(entity, myStats, nullptr, SPELL_HEALING) * 100.0);
-				real_t bonus = getSpellBonusFromCasterINT(entity, myStats);
+				if ( auto spell = getSpellFromID(SPELL_FIREBALL) )
+				{
+					val = std::max(val, getBonusFromCasterOfSpellElement(entity, myStats, nullptr, SPELL_FIREBALL, spell->skillID) * 100.0);
+				}
+				if ( auto spell = getSpellFromID(SPELL_HEALING) )
+				{
+					val = std::max(val, getBonusFromCasterOfSpellElement(entity, myStats, nullptr, SPELL_HEALING, spell->skillID) * 100.0);
+				}
+				real_t bonus = getSpellBonusFromCasterINT(entity, myStats, skillID);
 				val -= bonus * 100.0;
 				eventUpdateCodex(playernum, CPDM_PWR_MAX_EQUIP, "pwr", (int)val);
 			}

@@ -1265,8 +1265,8 @@ public:
 	int getEntityBonusTrapResist();
 	bool onEntityTrapHitSacredPath(Entity* trap);
 	int getFollowerBonusHPRegen();
-	int getHPRestoreOnLevelUp(int baseHP, bool statCheckOnly = false);
-	int getMPRestoreOnLevelUp(int baseMP, bool statCheckOnly = false);
+	static int getHPRestoreOnLevelUp(Entity* entity, Stat* myStats, int baseHP, bool statCheckOnly = false);
+	static int getMPRestoreOnLevelUp(Entity* entity, Stat* myStats, int baseMP, bool statCheckOnly = false);
 	void monsterMoveBackwardsAndPath(bool trySidesFirst = false); // monster tries to move backwards in a cross shaped area if stuck against an entity.
 	bool monsterHasLeader(); // return true if monsterstats->leader_uid is not 0.
 	void monsterAllySendCommand(int command, int destX, int destY, Uint32 uid = 0); // update the behavior of allied NPCs.

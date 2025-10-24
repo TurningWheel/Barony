@@ -6519,8 +6519,8 @@ void assignActions(map_t* map)
 
 					if ( !revived )
 					{
-						int hpMod = entity->getHPRestoreOnLevelUp(0, true);
-						int mpMod = entity->getMPRestoreOnLevelUp(0, true);
+						int hpMod = Entity::getHPRestoreOnLevelUp(entity, stats[numplayers], 0, true);
+						int mpMod = Entity::getMPRestoreOnLevelUp(entity, stats[numplayers], 0, true);
 						int maxHpMod = stats[numplayers]->MAXHP / 2 - stats[numplayers]->HP;
 						int maxMpMod = stats[numplayers]->MAXMP / 2 - stats[numplayers]->MP;
 						if ( maxHpMod > 0 )
@@ -10232,13 +10232,32 @@ void assignActions(map_t* map)
     keepInventoryGlobal = svFlags & SV_FLAG_KEEPINVENTORY;
 }
 
-void mapLevel(int player)
+void mapLevel(int player, int radius, int _x, int _y)
 {
-	int x, y;
+	int x = 0;
+	int y = 0;
 	for ( y = 0; y < map.height; ++y )
 	{
 		for ( x = 0; x < map.width; ++x )
 		{
+			bool tileCheck = false;
+			if ( radius == 0 )
+			{
+				tileCheck = true;
+			}
+			else
+			{
+				if ( x >= (_x - radius) && x <= (_x + radius)
+					&& y >= (_y - radius) && y <= (_y + radius) )
+				{
+					tileCheck = true;
+				}
+			}
+
+			if ( !tileCheck )
+			{
+				continue;
+			}
 			if ( map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height] )
 			{
 				if ( !minimap[y][x] )
@@ -10328,6 +10347,11 @@ void mapFoodOnLevel(int player)
 	else
 	{
 		messagePlayerColor(player, MESSAGE_HINT, makeColorRGB(0, 255, 0),Language::get(3424));
+		if ( numFood > 0 )
+		{
+			magicOnSpellCastEvent(players[player]->entity, players[player]->entity, 
+				SPELL_DETECT_FOOD, spell_t::SPELL_LEVEL_EVENT_DEFAULT, numFood);
+		}
 	}
 }
 

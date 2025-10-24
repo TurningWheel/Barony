@@ -836,17 +836,17 @@ void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, 
 	animation_manager->mana_left = spellCost;
 	animation_manager->mana_cost = spellCost;
 	animation_manager->consumeMana = true;
-	if ( spell->ID == SPELL_FORCEBOLT && caster->skillCapstoneUnlockedEntity(PRO_SPELLCASTING) )
+	/*if ( spell->ID == SPELL_FORCEBOLT && caster->skillCapstoneUnlockedEntity(PRO_SPELLCASTING) )
 	{
 		animation_manager->consumeMana = false;
-	}
+	}*/
 
-	if (stat->getModifiedProficiency(PRO_SPELLCASTING) < SPELLCASTING_BEGINNER)   //There's a chance that caster is newer to magic (and thus takes longer to cast a spell).
+	if ( isSpellcasterBeginner(player, caster, spell->skillID) )   //There's a chance that caster is newer to magic (and thus takes longer to cast a spell).
 	{
 		int chance = local_rng.rand() % 10;
-		if (chance >= stat->getModifiedProficiency(PRO_SPELLCASTING) / 15)
+		if (chance >= stat->getModifiedProficiency(spell->skillID) / 15)
 		{
-			int amount = (local_rng.rand() % 50) / std::max(stat->getModifiedProficiency(PRO_SPELLCASTING) + statGetINT(stat, caster), 1);
+			int amount = (local_rng.rand() % 50) / std::max(stat->getModifiedProficiency(spell->skillID) + statGetINT(stat, caster), 1);
 			amount = std::min(amount, CASTING_EXTRA_TIMES_CAP);
 			animation_manager->times_to_circle += amount * HANDMAGIC_TICKS_PER_CIRCLE;
 		}
@@ -856,7 +856,7 @@ void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, 
 		if ( !playerLearnedSpellbook(player, stat->shield) || (stat->shield->beatitude < 0 && !shouldInvertEquipmentBeatitude(stat)) )
 		{
 			// for every tier below the spell you are, add 3 circle for 1 tier, or add 2 for every additional tier.
-			int casterAbility = std::min(100, std::max(0, stat->getModifiedProficiency(PRO_SPELLCASTING) + statGetINT(stat, caster))) / 20;
+			int casterAbility = std::min(100, std::max(0, stat->getModifiedProficiency(spell->skillID) + statGetINT(stat, caster))) / 20;
 			if ( stat->shield->beatitude < 0 )
 			{
 				casterAbility = 0; // cursed book has cast penalty.
@@ -867,7 +867,7 @@ void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, 
 				animation_manager->times_to_circle += (std::min(5, 1 + 2 * (difficulty - casterAbility))) * HANDMAGIC_TICKS_PER_CIRCLE;
 			}
 		}
-		else if ( stat->getModifiedProficiency(PRO_SPELLCASTING) >= SPELLCASTING_BEGINNER )
+		else if ( !isSpellcasterBeginner(player, caster, spell->skillID) )
 		{
 			animation_manager->times_to_circle = std::max(HANDMAGIC_TICKS_PER_CIRCLE, animation_manager->times_to_circle - HANDMAGIC_TICKS_PER_CIRCLE);
 			//animation_manager->times_to_circle = (spellCost / 20) + 1; //Circle once for every 20 mana the spell costs.
@@ -1347,7 +1347,11 @@ void actLeftHandMagic(Entity* my)
 							}
 							if ( sustainedSpell )
 							{
-								players[HANDMAGIC_PLAYERNUM]->mechanics.sustainedSpellIncrementMP(MP - stats[HANDMAGIC_PLAYERNUM]->MP);
+								players[HANDMAGIC_PLAYERNUM]->mechanics.sustainedSpellIncrementMP(MP - stats[HANDMAGIC_PLAYERNUM]->MP, cast_animation[HANDMAGIC_PLAYERNUM].spell->skillID);
+							}
+							else
+							{
+								players[HANDMAGIC_PLAYERNUM]->mechanics.baseSpellIncrementMP(MP - stats[HANDMAGIC_PLAYERNUM]->MP, cast_animation[HANDMAGIC_PLAYERNUM].spell->skillID);
 							}
 						}
 

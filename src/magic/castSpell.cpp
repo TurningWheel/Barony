@@ -182,12 +182,12 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook)
 	}
 
 	// Calculate the cost of the Spell for Singleplayer
-	if ( spell->ID == SPELL_FORCEBOLT && skillCapstoneUnlocked(player, PRO_SPELLCASTING) )
-	{
-		// Reaching Spellcasting capstone makes forcebolt free
-		magiccost = 0;
-	}
-	else
+	//if ( spell->ID == SPELL_FORCEBOLT && skillCapstoneUnlocked(player, PRO_SPELLCASTING) )
+	//{
+	//	// Reaching Spellcasting capstone makes forcebolt free
+	//	magiccost = 0;
+	//}
+	//else
 	{
 		magiccost = getCostOfSpell(spell, caster);
 	}
@@ -273,7 +273,7 @@ int getSpellcastingAbilityFromUsingSpellbook(spell_t* spell, Entity* caster, Sta
 		return 0;
 	}
 
-	int spellcastingAbility = std::min(std::max(0, casterStats->getModifiedProficiency(PRO_SPELLCASTING) + statGetINT(casterStats, caster)), 100);
+	int spellcastingAbility = std::min(std::max(0, casterStats->getModifiedProficiency(spell->skillID) + statGetINT(casterStats, caster)), 100);
 
 
 	// penalty for not knowing spellbook. e.g 40 spellcasting, 80 difficulty = 40% more chance to fumble/use mana.
@@ -300,7 +300,7 @@ int getSpellcastingAbilityFromUsingSpellbook(spell_t* spell, Entity* caster, Sta
 }
 
 
-bool isSpellcasterBeginner(int player, Entity* caster)
+bool isSpellcasterBeginner(int player, Entity* caster, int skillID)
 {
 	if ( !caster && player < 0 )
 	{
@@ -324,7 +324,7 @@ bool isSpellcasterBeginner(int player, Entity* caster)
 	{
 		return false;
 	}
-	else if ( std::min(std::max(0, myStats->getModifiedProficiency(PRO_SPELLCASTING) + statGetINT(myStats, caster)), 100) < SPELLCASTING_BEGINNER )
+	else if ( std::min(std::max(0, myStats->getModifiedProficiency(skillID) + statGetINT(myStats, caster)), 100) < SPELLCASTING_BEGINNER )
 	{
 		return true; //The caster has lower spellcasting skill. Cue happy fun times.
 	}
@@ -338,7 +338,7 @@ bool isSpellcasterBeginnerFromSpellbook(int player, Entity* caster, Stat* stat, 
 		return false;
 	}
 
-	int spellcastingLvl = std::min(std::max(0, stat->getModifiedProficiency(PRO_SPELLCASTING) + statGetINT(stat, caster)), 100);
+	int spellcastingLvl = std::min(std::max(0, stat->getModifiedProficiency(spell->skillID) + statGetINT(stat, caster)), 100);
 	bool newbie = false;
 
 	if ( spellcastingLvl >= spell->difficulty || playerLearnedSpellbook(player, spellbookItem) )
@@ -363,7 +363,14 @@ int getSpellbookBonusPercent(Entity* caster, Stat* stat, Item* spellbookItem)
 	{
 		return 0;
 	}
-	int spellBookBonusPercent = (statGetINT(stat, caster) * 0.5);
+
+	int spellBookBonusPercent = 0;
+	auto spellID = getSpellIDFromSpellbook(spellbookItem->type);
+	if ( auto spell = getSpellFromID(spellID) )
+	{
+		spellBookBonusPercent = getSpellbookBaseINTBonus(caster, stat, spell->skillID);
+	}
+
 	if ( spellbookItem->beatitude > 0
 		|| (shouldInvertEquipmentBeatitude(stat) && spellbookItem->beatitude < 0) )
 	{
@@ -465,6 +472,15 @@ bool CastSpellProps_t::setToMonsterCast(Entity* monster, int spellID)
 	return false;
 }
 
+int getEffectiveSpellcastingAbility(Entity* caster, Stat* stat, spell_t* spell) // to check for fumbling
+{
+	if ( !caster || !stat || !spell )
+	{
+		return 0;
+	}
+	return std::min(std::max(0, stat->getModifiedProficiency(spell->skillID) + statGetINT(stat, caster)), 100);
+}
+
 Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool trap, bool usingSpellbook, CastSpellProps_t* castSpellProps, bool usingFoci)
 {
 	Entity* caster = uidToEntity(caster_uid);
@@ -476,7 +492,6 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 	}
 
 	Entity* result = NULL; //If the spell spawns an entity (like a magic light ball or a magic missile), it gets stored here and returned.
-#define spellcasting std::min(std::max(0,stat->getModifiedProficiency(PRO_SPELLCASTING)+statGetINT(stat, caster)),100) //Shortcut!
 
 	if (clientnum != 0 && multiplayer == CLIENT)
 	{
@@ -535,8 +550,6 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 	int propulsion = 0;
 	int traveltime = 0;
 	int magiccost = 0;
-	int extramagic = 0; //Extra magic drawn in from the caster being a newbie.
-	int extramagic_to_use = 0; //Instead of doing element->mana (which causes bugs), this is an extra factor in the mana equations. Pumps extra mana into elements from extramagic.
 	spell_t* channeled_spell = NULL; //Pointer to the spell if it's a channeled spell. For the purpose of giving it its node in the channeled spell list.
 	node_t* node = spell->elements.first;
 
@@ -563,17 +576,39 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 	{
 		sustainedSpell = (findSpellDef->second.spellType == ItemTooltips_t::SpellItemTypes::SPELL_TYPE_SELF_SUSTAIN);
 	}
+	bool allowedSkillup = false;
+	if ( player >= 0 )
+	{
+		if ( !trap )
+		{
+			if ( using_magicstaff )
+			{
+				allowedSkillup = true;
+			}
+			else if ( (!using_magicstaff && !usingFoci) )
+			{
+				allowedSkillup = true;
+			}
+		}
+	}
+	Uint32 spellEventFlags = 0;
+	if ( using_magicstaff && !trap && !usingFoci )
+	{
+		spellEventFlags |= spell_t::SPELL_LEVEL_EVENT_MAGICSTAFF;
+	}
 	int oldMP = caster->getMP();
 	if ( !using_magicstaff && !trap && !usingFoci && stat )
 	{
-		newbie = isSpellcasterBeginner(player, caster);
+		newbie = isSpellcasterBeginner(player, caster, spell->skillID);
 
 		if ( usingSpellbook && stat->shield && itemCategory(stat->shield) == SPELLBOOK )
 		{
+			spellEventFlags |= spell_t::SPELL_LEVEL_EVENT_SPELLBOOK;
+
 			spellbookType = stat->shield->type;
 			spellBookBeatitude = stat->shield->beatitude;
 			spellBookBonusPercent += getSpellbookBonusPercent(caster, stat, stat->shield);
-			if ( spellcasting >= spell->difficulty || playerLearnedSpellbook(player, stat->shield) )
+			if ( getEffectiveSpellcastingAbility(caster, stat, spell) >= spell->difficulty || playerLearnedSpellbook(player, stat->shield) )
 			{
 				// bypass newbie penalty since we're good enough to cast the spell.
 				playerCastingFromKnownSpellbook = true;
@@ -596,25 +631,25 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		int prevHP = caster->getHP();
 		if ( multiplayer == SINGLE )
 		{
-			if ( spell->ID == SPELL_FORCEBOLT && skillCapstoneUnlocked(player, PRO_SPELLCASTING) )
+			/*if ( spell->ID == SPELL_FORCEBOLT && skillCapstoneUnlocked(player, PRO_SPELLCASTING) )
 			{
 				magiccost = 0;
 			}
 			else
 			{
-				magiccost = cast_animation[player].mana_left;
-			}
+			}*/
+			magiccost = cast_animation[player].mana_left;
 
 			caster->drainMP(magiccost, false);
 		}
 		else // Calculate the cost of the Spell for Multiplayer
 		{
-			if ( spell->ID == SPELL_FORCEBOLT && skillCapstoneUnlocked(player, PRO_SPELLCASTING) )
-			{
-				// Reaching Spellcasting capstone makes Forcebolt free
-				magiccost = 0;
-			}
-			else
+			//if ( spell->ID == SPELL_FORCEBOLT && skillCapstoneUnlocked(player, PRO_SPELLCASTING) )
+			//{
+			//	// Reaching Spellcasting capstone makes Forcebolt free
+			//	magiccost = 0;
+			//}
+			//else
 			{
 				int goldCost = getGoldCostOfSpell(spell, player);
 				if ( goldCost > 0 )
@@ -691,28 +726,50 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		}
 	}
 
+
+	if ( caster->behavior == &actPlayer )
+	{
+		if ( sustainedSpell )
+		{
+			players[caster->skill[2]]->mechanics.sustainedSpellIncrementMP(oldMP - stat->MP, spell->skillID);
+		}
+		else
+		{
+			players[caster->skill[2]]->mechanics.baseSpellIncrementMP(oldMP - stat->MP, spell->skillID);
+		}
+	}
+
 	if ( newbie && stat )
 	{
 		//So This wizard is a newbie.
 
 		//First, drain some extra mana maybe.
 		int chance = local_rng.rand() % 10;
-		int spellcastingAbility = spellcasting;
+		int spellcastingAbility = getEffectiveSpellcastingAbility(caster, stat, spell);
 		if ( usingSpellbook )
 		{
 			spellcastingAbility = getSpellcastingAbilityFromUsingSpellbook(spell, caster, stat);
 		}
 		if (chance >= spellcastingAbility / 10)   //At skill 20, there's an 80% chance you'll use extra mana. At 70, there's a 30% chance.
 		{
-			extramagic = local_rng.rand() % (300 / (spellcastingAbility + 1)); //Use up extra mana. More mana used the lower your spellcasting skill.
+			int extramagic = local_rng.rand() % (300 / (spellcastingAbility + 1)); //Use up extra mana. More mana used the lower your spellcasting skill.
 			extramagic = std::min<real_t>(extramagic, stat->MP / 10); //To make sure it doesn't draw, say, 5000 mana. Cause dammit, if you roll a 1 here...you're doomed.
+			Sint32 oldMP = stat->MP;
 			caster->drainMP(extramagic);
+
+			if ( caster->behavior == &actPlayer )
+			{
+				if ( sustainedSpell )
+				{
+					players[caster->skill[2]]->mechanics.sustainedSpellIncrementMP(oldMP - stat->MP, spell->skillID);
+				}
+				else
+				{
+					players[caster->skill[2]]->mechanics.baseSpellIncrementMP(oldMP - stat->MP, spell->skillID);
+				}
+			}
 		}
 
-		if ( caster->behavior == &actPlayer && sustainedSpell )
-		{
-			players[caster->skill[2]]->mechanics.sustainedSpellIncrementMP(oldMP - stat->MP);
-		}
 
 		bool fizzleSpell = false;
 		chance = local_rng.rand() % 10;
@@ -784,11 +841,6 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		}
 	}
 
-	if ( caster->behavior == &actPlayer && sustainedSpell )
-	{
-		players[caster->skill[2]]->mechanics.sustainedSpellIncrementMP(oldMP - stat->MP);
-	}
-
 	//Check if the bugger is levitating.
 	bool levitating = false;
 	if (!trap)
@@ -843,26 +895,6 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 	spellElement_t* const innerElement = element->elements.first ? (spellElement_t*)(element->elements.first->element) : nullptr;
 	if (element)
 	{
-		extramagic_to_use = 0;
-		/*if (magiccost > stat->MP) {
-			if (player >= 0)
-				messagePlayer(player, "Insufficient mana!"); //TODO: Allow overexpending at the cost of extreme danger? (maybe an immensely powerful tree of magic actually likes this -- using your life-force to power spells instead of mana)
-			return NULL;
-		}*/
-
-		if (extramagic > 0)
-		{
-			//Extra magic. Pump it in here?
-			chance = local_rng.rand() % 5;
-			if (chance == 1)
-			{
-				//Use some of that extra magic in this element.
-				int amount = local_rng.rand() % extramagic;
-				extramagic -= amount;
-				extramagic_to_use += amount;
-			}
-		}
-
 		if (!strcmp(element->element_internal_name, spellElement_missile.element_internal_name))
 		{
 			//Set the propulsion to missile.
@@ -872,9 +904,9 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			{
 				//This guy's a newbie. There's a chance they've screwed up and negatively impacted the efficiency of the spell.
 				chance = local_rng.rand() % 10;
-				if (chance >= spellcasting / 10)
+				if (chance >= getEffectiveSpellcastingAbility(caster, stat, spell) / 10)
 				{
-					traveltime -= local_rng.rand() % (1000 / (spellcasting + 1));
+					traveltime -= local_rng.rand() % (1000 / (getEffectiveSpellcastingAbility(caster, stat, spell) + 1));
 				}
 				if (traveltime < 30)
 				{
@@ -895,9 +927,9 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			{
 				//This guy's a newbie. There's a chance they've screwed up and negatively impacted the efficiency of the spell.
 				chance = local_rng.rand() % 10;
-				if ( chance >= spellcasting / 10 )
+				if ( chance >= getEffectiveSpellcastingAbility(caster, stat, spell) / 10 )
 				{
-					traveltime -= local_rng.rand() % (1000 / (spellcasting + 1));
+					traveltime -= local_rng.rand() % (1000 / (getEffectiveSpellcastingAbility(caster, stat, spell) + 1));
 				}
 				if ( traveltime < 30 )
 				{
@@ -1192,7 +1224,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				Entity* entityToTeleport = uidToEntity(caster->creatureShadowTaggedThisUid);
 				if ( entityToTeleport )
 				{
-					caster->teleportAroundEntity(entityToTeleport, 3, 0);
+					if ( caster->teleportAroundEntity(entityToTeleport, 3, 0) )
+					{
+						magicOnSpellCastEvent(caster, caster, spell->ID, spell_t::SPELL_LEVEL_EVENT_DEFAULT | spellEventFlags, 1, allowedSkillup);
+					}
 					if ( caster->behavior == &actPlayer )
 					{
 						achievementObserver.addEntityAchievementTimer(caster, AchievementObserver::BARONY_ACH_OHAI_MARK, 100, true, 0);
@@ -1200,12 +1235,18 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				}
 				else
 				{
-					caster->teleportRandom();
+					if ( caster->teleportRandom() )
+					{
+						magicOnSpellCastEvent(caster, caster, spell->ID, spell_t::SPELL_LEVEL_EVENT_DEFAULT | spellEventFlags, 1, allowedSkillup);
+					}
 				}
 			}
 			else
 			{
-				caster->teleportRandom();
+				if ( caster->teleportRandom() )
+				{
+					magicOnSpellCastEvent(caster, caster, spell->ID, spell_t::SPELL_LEVEL_EVENT_DEFAULT | spellEventFlags, 1, allowedSkillup);
+				}
 			}
 		}
 		else if ( spell->ID == SPELL_JUMP )
@@ -1227,6 +1268,8 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					{
 						serverSpawnMiscParticles(caster, PARTICLE_EFFECT_ERUPT, 625);
 					}
+
+					magicOnSpellCastEvent(caster, caster, spell->ID, spell_t::SPELL_LEVEL_EVENT_DEFAULT | spellEventFlags, 1, allowedSkillup);
 				}
 				else
 				{
@@ -1240,6 +1283,13 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			if ( caster->behavior == &actPlayer )
 			{
 				spellEffectPolymorph(caster, caster, true, TICKS_PER_SECOND * 60 * 2); // 2 minutes.
+				if ( caster->getStats() )
+				{
+					if ( caster->getStats()->getEffectActive(EFF_POLYMORPH) )
+					{
+						magicOnSpellCastEvent(caster, caster, spell->ID, spell_t::SPELL_LEVEL_EVENT_EFFECT | spellEventFlags, 1, allowedSkillup);
+					}
+				}
 			}
 			else if ( caster->behavior == &actMonster )
 			{
@@ -1503,7 +1553,9 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				if ( players[i] && caster && (caster == players[i]->entity) )
 				{
 					spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
-					spell_magicMap(i);
+					int radius = getSpellPropertyFromID(spell_t::SPELLPROP_MODIFIED_RADIUS, spell->ID, caster, nullptr, caster);
+					spell_magicMap(i, radius, caster->x / 16, caster->y / 16);
+					magicOnSpellCastEvent(caster, caster, spell->ID, spell_t::SPELL_LEVEL_EVENT_DEFAULT | spellEventFlags, 1, allowedSkillup);
 				}
 			}
 			playSoundEntity(caster, 167, 128 );
@@ -1515,7 +1567,8 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				if ( players[i] && caster && (caster == players[i]->entity) )
 				{
 					spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
-					spell_magicMap(i);
+					magicOnSpellCastEvent(caster, caster, spell->ID, spell_t::SPELL_LEVEL_EVENT_DEFAULT | spellEventFlags, 1, allowedSkillup);
+					//spell_magicMap(i);
 				}
 			}
 			playSoundEntity(caster, 167, 128);
@@ -4921,6 +4974,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					}
 					else
 					{
+						magicOnSpellCastEvent(caster, caster, spell->ID, spell_t::SPELL_LEVEL_EVENT_DEFAULT | spellEventFlags, 1, allowedSkillup);
 						messagePlayerColor(i, MESSAGE_INVENTORY, makeColorRGB(0, 255, 0), Language::get(3712), numItems);
 						playSoundEntity(caster, 167, 128);
 					}
@@ -5027,6 +5081,8 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							}
 						}
 					}
+
+					magicOnSpellCastEvent(caster, caster, spell->ID, spell_t::SPELL_LEVEL_EVENT_EFFECT | spellEventFlags, 1, allowedSkillup);
 					break;
 				}
 			}
@@ -5057,6 +5113,8 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						messagePlayerColor(i, MESSAGE_STATUS, uint32ColorGreen, Language::get(3767));
 						playSoundEntity(caster, 178, 128);
 						spawnMagicEffectParticles(caster->x, caster->y, caster->z, 170);
+
+						magicOnSpellCastEvent(caster, caster, spell->ID, spell_t::SPELL_LEVEL_EVENT_EFFECT | spellEventFlags, 1, allowedSkillup);
 					}
 					break;
 				}
@@ -5515,6 +5573,8 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					playSoundEntity(caster, 180, 128);
 					spawnMagicEffectParticles(caster->x, caster->y, caster->z, 982);
 					caster->setEffect(EFF_DASH, true, 60, true);
+
+					magicOnSpellCastEvent(caster, caster, spell->ID, spell_t::SPELL_LEVEL_EVENT_EFFECT | spellEventFlags, 1, allowedSkillup);
 					if ( i > 0 && multiplayer == SERVER && !players[i]->isLocalPlayer() )
 					{
 						strcpy((char*)net_packet->data, "DASH");
@@ -5582,6 +5642,8 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							}
 						}
 					}
+
+					magicOnSpellCastEvent(caster, caster, spell->ID, spell_t::SPELL_LEVEL_EVENT_EFFECT | spellEventFlags, 1, allowedSkillup);
 					break;
 				}
 			}
@@ -5608,7 +5670,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					int amount = element->getDamage(); //Amount to heal.
 
 					// spellbook 100-150%, 50 INT = 200%.
-					real_t bonus = ((spellBookBonusPercent * 1 / 100.f) + getBonusFromCasterOfSpellElement(caster, nullptr, element, spell ? spell->ID : SPELL_NONE));
+					real_t bonus = ((spellBookBonusPercent * 1 / 100.f) + getBonusFromCasterOfSpellElement(caster, nullptr, element, spell ? spell->ID : SPELL_NONE, spell->skillID));
 					amount += amount * bonus;
 					if ( caster && caster->behavior == &actPlayer )
 					{
@@ -5683,6 +5745,8 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						serverUpdatePlayerGameplayStats(i, STATISTICS_HEAL_BOT, totalHeal);
 						if ( spell && spell->ID > SPELL_NONE )
 						{
+							magicOnSpellCastEvent(caster, caster, spell->ID, spell_t::SPELL_LEVEL_EVENT_DMG | spellEventFlags, totalHeal, allowedSkillup);
+
 							if ( !using_magicstaff && !trap )
 							{
 								if ( usingSpellbook )
@@ -5802,6 +5866,8 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						playSoundEntity(caster, 400, 92);
 						createParticleDropRising(caster, 593, 1.f);
 						serverSpawnMiscParticles(caster, PARTICLE_EFFECT_RISING_DROP, 593);
+
+						magicOnSpellCastEvent(caster, caster, spell->ID, spell_t::SPELL_LEVEL_EVENT_DEFAULT | spellEventFlags, 1, allowedSkillup);
 					}
 					else if ( stats[caster->skill[2]]->getEffectActive(EFF_POLYMORPH) )
 					{
@@ -5813,6 +5879,8 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						playSoundEntity(caster, 400, 92);
 						createParticleDropRising(caster, 593, 1.f);
 						serverSpawnMiscParticles(caster, PARTICLE_EFFECT_RISING_DROP, 593);
+
+						magicOnSpellCastEvent(caster, caster, spell->ID, spell_t::SPELL_LEVEL_EVENT_DEFAULT | spellEventFlags, 1, allowedSkillup);
 					}
 					else
 					{
@@ -5939,6 +6007,11 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 								spawnMagicEffectParticles(entity->x, entity->y, entity->z, 169);
 							}
 						}
+					}
+
+					if ( numEffectsCured > 0 || numAlliesEffectsCured > 0 )
+					{
+						magicOnSpellCastEvent(caster, caster, spell->ID, spell_t::SPELL_LEVEL_EVENT_DEFAULT | spellEventFlags, numEffectsCured + numAlliesEffectsCured, allowedSkillup);
 					}
 
 					if ( regenEffect || numEffectsCured > 0 )
@@ -6116,7 +6189,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			}
 			else if ( caster->behavior == &actPlayer )
 			{
-				channeled_spell = spellEffectVampiricAura(caster, spell, extramagic_to_use);
+				channeled_spell = spellEffectVampiricAura(caster, spell);
 			}
 			//Also refactor the duration determining code.
 		}
@@ -6904,19 +6977,6 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			}
 		}
 
-		extramagic_to_use = 0;
-		if (extramagic > 0)
-		{
-			//Extra magic. Pump it in here?
-			chance = local_rng.rand() % 5;
-			if (chance == 1)
-			{
-				//Use some of that extra magic in this element.
-				int amount = local_rng.rand() % extramagic;
-				extramagic -= amount;
-				extramagic_to_use += amount; //TODO: Make the elements here use this? Looks like they won't, currently. Oh well.
-			}
-		}
 		//TODO: Add the status/conditional elements/modifiers (probably best as elements) too. Like onCollision or something.
 		if ( innerElement )
 		{
@@ -7163,7 +7223,6 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		}
 	}
 
-	//Random chance to level up spellcasting skill.
 	if ( !trap )
 	{
 		if ( player >= 0 )
@@ -7190,170 +7249,174 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				}
 			}
 		}
-
-		if ( usingFoci )
-		{
-
-		}
-		else if ( using_magicstaff )
-		{
-			if ( stat )
-			{
-				// spellcasting increase chances.
-				if ( stat->getProficiency(PRO_SPELLCASTING) < 60 )
-				{
-					if ( local_rng.rand() % 6 == 0 ) //16.67%
-					{
-						caster->increaseSkill(PRO_SPELLCASTING);
-					}
-				}
-				else if ( stat->getProficiency(PRO_SPELLCASTING) < 80 )
-				{
-					if ( local_rng.rand() % 9 == 0 ) //11.11%
-					{
-						caster->increaseSkill(PRO_SPELLCASTING);
-					}
-				}
-				else // greater than 80
-				{
-					if ( local_rng.rand() % 12 == 0 ) //8.33%
-					{
-						caster->increaseSkill(PRO_SPELLCASTING);
-					}
-				}
-
-				// magic increase chances.
-				if ( stat->getProficiency(PRO_SPELLCASTING) < 60 )
-				{
-					if ( local_rng.rand() % 7 == 0 ) //14.2%
-					{
-						caster->increaseSkill(PRO_MAGIC);
-					}
-				}
-				else if ( stat->getProficiency(PRO_SPELLCASTING) < 80 )
-				{
-					if ( local_rng.rand() % 10 == 0 ) //10.00%
-					{
-						caster->increaseSkill(PRO_MAGIC);
-					}
-				}
-				else // greater than 80
-				{
-					if ( local_rng.rand() % 13 == 0 ) //7.69%
-					{
-						caster->increaseSkill(PRO_MAGIC);
-					}
-				}
-			}
-		}
-		else
-		{
-			if ( stat )
-			{
-				int spellCastChance = 5; // 20%
-				int magicChance = 6; // 16.67%
-				int castDifficulty = stat->getProficiency(PRO_SPELLCASTING) / 20 - spell->difficulty / 20;
-				if ( castDifficulty <= -1 )
-				{
-					// spell was harder.
-					spellCastChance = 3; // 33%
-					magicChance = 3; // 33%
-				}
-				else if ( castDifficulty == 0 )
-				{
-					// spell was same level
-					spellCastChance = 3; // 33%
-					magicChance = 4; // 25%
-				}
-				else if ( castDifficulty == 1 )
-				{
-					// spell was easy.
-					spellCastChance = 4; // 25%
-					magicChance = 5; // 20%
-				}
-				else if ( castDifficulty > 1 )
-				{
-					// piece of cake!
-					spellCastChance = 6; // 16.67%
-					magicChance = 7; // 14.2%
-				}
-				if ( usingSpellbook && !playerCastingFromKnownSpellbook )
-				{
-					spellCastChance *= 2;
-					magicChance *= 2;
-				}
-				//messagePlayer(0, "Difficulty: %d, chance 1 in %d, 1 in %d", castDifficulty, spellCastChance, magicChance);
-				if ( (!strcmp(element->element_internal_name, spellElement_light.element_internal_name) || spell->ID == SPELL_REVERT_FORM) )
-				{
-					if ( stat->getProficiency(PRO_SPELLCASTING) >= SKILL_LEVEL_SKILLED )
-					{
-						spellCastChance = 0;
-					}
-					if ( stat->getProficiency(PRO_MAGIC) >= SKILL_LEVEL_SKILLED )
-					{
-						magicChance = 0;
-					}
-
-					// light provides no levelling past 40 in both spellcasting and magic.
-					if ( (magicChance == 0 && spellCastChance == 0) && local_rng.rand() % 20 == 0 )
-					{
-						for ( int i = 0; i < MAXPLAYERS; ++i )
-						{
-							if ( players[i] && caster && (caster == players[i]->entity) )
-							{
-								messagePlayer(i, MESSAGE_HINT, Language::get(2591));
-							}
-						}
-					}
-				}
-
-				bool sustainedChance = players[caster->skill[2]]->mechanics.sustainedSpellLevelChance();
-				if ( spellCastChance > 0 && (local_rng.rand() % spellCastChance == 0) )
-				{
-					if ( sustainedSpell && caster->behavior == &actPlayer )
-					{
-						if ( sustainedChance )
-						{
-							players[caster->skill[2]]->mechanics.sustainedSpellMPUsed = 0;
-
-							caster->increaseSkill(PRO_SPELLCASTING);
-						}
-					}
-					else
-					{
-						caster->increaseSkill(PRO_SPELLCASTING);
-					}
-				}
-
-				bool magicIncreased = false;
-				if ( magicChance > 0 && (local_rng.rand() % magicChance == 0) )
-				{
-					if ( sustainedSpell && caster->behavior == &actPlayer )
-					{
-						if ( sustainedChance )
-						{
-							players[caster->skill[2]]->mechanics.sustainedSpellMPUsed = 0;
-
-							caster->increaseSkill(PRO_MAGIC); // otherwise you will basically never be able to learn all the spells in the game...
-							magicIncreased = true;
-						}
-					}
-					else
-					{
-						caster->increaseSkill(PRO_MAGIC); // otherwise you will basically never be able to learn all the spells in the game...
-						magicIncreased = true;
-					}
-				}
-				if ( magicIncreased && usingSpellbook && caster->behavior == &actPlayer )
-				{
-					if ( stats[caster->skill[2]] && stats[caster->skill[2]]->playerRace == RACE_INSECTOID && stats[caster->skill[2]]->stat_appearance == 0 )
-					{
-						steamStatisticUpdateClient(caster->skill[2], STEAM_STAT_BOOKWORM, STEAM_STAT_INT, 1);
-					}
-				}
-			}
-		}
 	}
+
+	//Random chance to level up spellcasting skill.
+	// if ( !trap )
+	// {
+	//	if ( usingFoci )
+	//	{
+
+	//	}
+	//	else if ( using_magicstaff )
+	//	{
+	//		if ( stat )
+	//		{
+	//			// spellcasting increase chances.
+	//			if ( stat->getProficiency(PRO_SPELLCASTING) < 60 )
+	//			{
+	//				if ( local_rng.rand() % 6 == 0 ) //16.67%
+	//				{
+	//					caster->increaseSkill(PRO_SPELLCASTING);
+	//				}
+	//			}
+	//			else if ( stat->getProficiency(PRO_SPELLCASTING) < 80 )
+	//			{
+	//				if ( local_rng.rand() % 9 == 0 ) //11.11%
+	//				{
+	//					caster->increaseSkill(PRO_SPELLCASTING);
+	//				}
+	//			}
+	//			else // greater than 80
+	//			{
+	//				if ( local_rng.rand() % 12 == 0 ) //8.33%
+	//				{
+	//					caster->increaseSkill(PRO_SPELLCASTING);
+	//				}
+	//			}
+
+	//			// magic increase chances.
+	//			if ( stat->getProficiency(PRO_SPELLCASTING) < 60 )
+	//			{
+	//				if ( local_rng.rand() % 7 == 0 ) //14.2%
+	//				{
+	//					caster->increaseSkill(PRO_MAGIC);
+	//				}
+	//			}
+	//			else if ( stat->getProficiency(PRO_SPELLCASTING) < 80 )
+	//			{
+	//				if ( local_rng.rand() % 10 == 0 ) //10.00%
+	//				{
+	//					caster->increaseSkill(PRO_MAGIC);
+	//				}
+	//			}
+	//			else // greater than 80
+	//			{
+	//				if ( local_rng.rand() % 13 == 0 ) //7.69%
+	//				{
+	//					caster->increaseSkill(PRO_MAGIC);
+	//				}
+	//			}
+	//		}
+	//	}
+	//	else
+	//	{
+	//		if ( stat )
+	//		{
+	//			int spellCastChance = 5; // 20%
+	//			int magicChance = 6; // 16.67%
+	//			int castDifficulty = stat->getProficiency(PRO_SPELLCASTING) / 20 - spell->difficulty / 20;
+	//			if ( castDifficulty <= -1 )
+	//			{
+	//				// spell was harder.
+	//				spellCastChance = 3; // 33%
+	//				magicChance = 3; // 33%
+	//			}
+	//			else if ( castDifficulty == 0 )
+	//			{
+	//				// spell was same level
+	//				spellCastChance = 3; // 33%
+	//				magicChance = 4; // 25%
+	//			}
+	//			else if ( castDifficulty == 1 )
+	//			{
+	//				// spell was easy.
+	//				spellCastChance = 4; // 25%
+	//				magicChance = 5; // 20%
+	//			}
+	//			else if ( castDifficulty > 1 )
+	//			{
+	//				// piece of cake!
+	//				spellCastChance = 6; // 16.67%
+	//				magicChance = 7; // 14.2%
+	//			}
+	//			if ( usingSpellbook && !playerCastingFromKnownSpellbook )
+	//			{
+	//				spellCastChance *= 2;
+	//				magicChance *= 2;
+	//			}
+	//			//messagePlayer(0, "Difficulty: %d, chance 1 in %d, 1 in %d", castDifficulty, spellCastChance, magicChance);
+	//			if ( (!strcmp(element->element_internal_name, spellElement_light.element_internal_name) || spell->ID == SPELL_REVERT_FORM) )
+	//			{
+	//				if ( stat->getProficiency(PRO_SPELLCASTING) >= SKILL_LEVEL_SKILLED )
+	//				{
+	//					spellCastChance = 0;
+	//				}
+	//				if ( stat->getProficiency(PRO_MAGIC) >= SKILL_LEVEL_SKILLED )
+	//				{
+	//					magicChance = 0;
+	//				}
+
+	//				// light provides no levelling past 40 in both spellcasting and magic.
+	//				if ( (magicChance == 0 && spellCastChance == 0) && local_rng.rand() % 20 == 0 )
+	//				{
+	//					for ( int i = 0; i < MAXPLAYERS; ++i )
+	//					{
+	//						if ( players[i] && caster && (caster == players[i]->entity) )
+	//						{
+	//							messagePlayer(i, MESSAGE_HINT, Language::get(2591));
+	//						}
+	//					}
+	//				}
+	//			}
+
+	//			bool sustainedChance = players[caster->skill[2]]->mechanics.sustainedSpellLevelChance();
+	//			if ( spellCastChance > 0 && (local_rng.rand() % spellCastChance == 0) )
+	//			{
+	//				if ( sustainedSpell && caster->behavior == &actPlayer )
+	//				{
+	//					if ( sustainedChance )
+	//					{
+	//						players[caster->skill[2]]->mechanics.sustainedSpellMPUsed = 0;
+
+	//						caster->increaseSkill(PRO_SPELLCASTING);
+	//					}
+	//				}
+	//				else
+	//				{
+	//					caster->increaseSkill(PRO_SPELLCASTING);
+	//				}
+	//			}
+
+	//			bool magicIncreased = false;
+	//			if ( magicChance > 0 && (local_rng.rand() % magicChance == 0) )
+	//			{
+	//				if ( sustainedSpell && caster->behavior == &actPlayer )
+	//				{
+	//					if ( sustainedChance )
+	//					{
+	//						players[caster->skill[2]]->mechanics.sustainedSpellMPUsed = 0;
+
+	//						caster->increaseSkill(PRO_MAGIC); // otherwise you will basically never be able to learn all the spells in the game...
+	//						magicIncreased = true;
+	//					}
+	//				}
+	//				else
+	//				{
+	//					caster->increaseSkill(PRO_MAGIC); // otherwise you will basically never be able to learn all the spells in the game...
+	//					magicIncreased = true;
+	//				}
+	//			}
+	//			if ( magicIncreased && usingSpellbook && caster->behavior == &actPlayer )
+	//			{
+	//				if ( stats[caster->skill[2]] && stats[caster->skill[2]]->playerRace == RACE_INSECTOID && stats[caster->skill[2]]->stat_appearance == 0 )
+	//				{
+	//					steamStatisticUpdateClient(caster->skill[2], STEAM_STAT_BOOKWORM, STEAM_STAT_INT, 1);
+	//				}
+	//			}
+	//		}
+	//	}
+	//}
 
 	if ( !trap && usingSpellbook && stat ) // degrade spellbooks on use.
 	{

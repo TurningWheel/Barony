@@ -784,6 +784,18 @@ typedef struct spell_t
 		SPELLPROP_BASE_PROPERTY_INT_ENUM_END
 	};
 
+	enum SpellOnCastEventTypes
+	{
+		SPELL_LEVEL_EVENT_DEFAULT = 1,
+		SPELL_LEVEL_EVENT_DMG = 2,
+		SPELL_LEVEL_EVENT_EFFECT = 4,
+		SPELL_LEVEL_EVENT_SUMMON = 8,
+		SPELL_LEVEL_EVENT_SHAPESHIFT = 16,
+		SPELL_LEVEL_EVENT_SUSTAIN = 32,
+		SPELL_LEVEL_EVENT_MAGICSTAFF = 64,
+		SPELL_LEVEL_EVENT_SPELLBOOK = 128
+	};
+
 	// get localized spell name
 	const char* getSpellName();
 } spell_t;
@@ -884,14 +896,15 @@ int spellGetCastSound(spell_t* spell);
 int getSpellcastingAbilityFromUsingSpellbook(spell_t* spell, Entity* caster, Stat* casterStats);
 bool isSpellcasterBeginnerFromSpellbook(int player, Entity* caster, Stat* stat, spell_t* spell, Item* spellbookItem);
 int getSpellbookBonusPercent(Entity* caster, Stat* stat, Item* spellbookItem);
-real_t getBonusFromCasterOfSpellElement(Entity* caster, Stat* casterStats, spellElement_t* spellElement, int spellID);
-real_t getSpellBonusFromCasterINT(Entity* caster, Stat* casterStats);
+real_t getBonusFromCasterOfSpellElement(Entity* caster, Stat* casterStats, spellElement_t* spellElement, int spellID, int proficiencyWhenNoSpell);
+real_t getSpellBonusFromCasterINT(Entity* caster, Stat* casterStats, int skillID);
+int getSpellbookBaseINTBonus(Entity* caster, Stat* casterStats, int skillID);
 void magicOnEntityHit(Entity* parent, Entity* particle, Entity* hitentity, Stat* hitstats, Sint32 preResistanceDamage, Sint32 damage, Sint32 oldHP, int spellID, int selfCastUsingItem = 0);
 void magicTrapOnHit(Entity* parent, Entity* hitentity, Stat* hitstats, Sint32 oldHP, int spellID);
 bool applyGenericMagicDamage(Entity* caster, Entity* hitentity, Entity& damageSourceProjectile, int spellID, int damage, bool alertMonsters,
 	bool monsterCollisionOnly = false);
 #endif
-bool isSpellcasterBeginner(int player, Entity* caster);
+bool isSpellcasterBeginner(int player, Entity* caster, int skillID);
 void actMagicTrap(Entity* my);
 void actMagicStatusEffect(Entity* my);
 void actMagicMissile(Entity* my);
@@ -1008,7 +1021,7 @@ int getSpellbookFromSpellID(int spellID);
 bool spellInList(list_t* list, spell_t* spell);
 
 //-----Implementations of spell effects-----
-void spell_magicMap(int player); //Magics the map. I mean maps the magic. I mean magically maps the level.
+void spell_magicMap(int player, int radius, int x, int y); //Magics the map. I mean maps the magic. I mean magically maps the level.
 void spell_detectFoodEffectOnMap(int player);
 void spell_summonFamiliar(int player); // summons some familiars.
 void spell_changeHealth(Entity* entity, int amount, bool overdrewFromHP = false); //This function changes an entity's health.
@@ -1079,7 +1092,7 @@ bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, En
 void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int damage, int resistance);
 void spellEffectStealWeapon(Entity& my, spellElement_t& element, Entity* parent, int resistance);
 void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, int damage, int resistance);
-spell_t* spellEffectVampiricAura(Entity* caster, spell_t* spell, int extramagic_to_use);
+spell_t* spellEffectVampiricAura(Entity* caster, spell_t* spell);
 int getCharmMonsterDifficulty(Entity& my, Stat& myStats);
 void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent, int resistance, bool magicstaff);
 Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell, int customDuration = 0, Monster customMonster = NOTHING); // returns nullptr if target was monster, otherwise returns pointer to new creature
@@ -1103,6 +1116,7 @@ int getSpellPropertyFromID(spell_t::SpellBasePropertiesInt prop, int spellID, En
 void thrownItemUpdateSpellTrail(Entity& my, real_t _x, real_t _y);
 const char* magicLightColorForSprite(Entity* my, int sprite, bool darker);
 void doParticleEffectForTouchSpell(Entity& my, Entity* focalLimb, Monster monsterType);
+void magicOnSpellCastEvent(Entity* parent, Entity* projectile, int spellID, Uint32 eventType, int eventValue, bool allowedLevelup = true);
 void freeSpells();
 
 struct AOEIndicators_t

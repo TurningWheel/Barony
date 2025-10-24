@@ -57,7 +57,7 @@ void freeSpells()
 	}
 }
 
-void spell_magicMap(int player)
+void spell_magicMap(int player, int radius, int x, int y)
 {
 	if (players[player] == nullptr || players[player]->entity == nullptr)
 	{
@@ -68,15 +68,18 @@ void spell_magicMap(int player)
 	{
 		//Tell the client to map the magic.
 		strcpy((char*)net_packet->data, "MMAP");
+		SDLNet_Write16(radius, &net_packet->data[4]);
+		SDLNet_Write16(x, &net_packet->data[6]);
+		SDLNet_Write16(y, &net_packet->data[8]);
 		net_packet->address.host = net_clients[player - 1].host;
 		net_packet->address.port = net_clients[player - 1].port;
-		net_packet->len = 4;
+		net_packet->len = 10;
 		sendPacketSafe(net_sock, -1, net_packet, player - 1);
 		return;
 	}
 
 	messagePlayer(player, MESSAGE_HINT, Language::get(412));
-	mapLevel(player);
+	mapLevel(player, radius, x, y);
 }
 
 void spell_detectFoodEffectOnMap(int player)
@@ -596,6 +599,7 @@ bool spellEffectFear(Entity* my, spellElement_t& element, Entity* forceParent, E
 			Uint32 color = 0;
 			if ( parent )
 			{
+				magicOnEntityHit(parent, parent, target, target->getStats(), 0, 0, 0, SPELL_FEAR);
 				// update enemy bar for attacker
 				/*if ( !strcmp(hitstats->name, "") )
 				{
@@ -1116,7 +1120,7 @@ void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, i
 	return;
 }
 
-spell_t* spellEffectVampiricAura(Entity* caster, spell_t* spell, int extramagic_to_use)
+spell_t* spellEffectVampiricAura(Entity* caster, spell_t* spell)
 {
 	if ( !caster )
 	{
@@ -1137,16 +1141,6 @@ spell_t* spellEffectVampiricAura(Entity* caster, spell_t* spell, int extramagic_
 	if ( !myStats )
 	{
 		return nullptr;
-	}
-
-	bool newbie = false;
-	if ( caster->behavior == &actPlayer )
-	{
-		newbie = isSpellcasterBeginner(caster->skill[2], caster);
-	}
-	else
-	{
-		newbie = isSpellcasterBeginner(-1, caster);
 	}
 
 	node_t* spellnode = list_AddNodeLast(&myStats->magic_effects);
@@ -3609,8 +3603,10 @@ int getSpellDamageFromID(int spellID, Entity* parent, Stat* parentStats, Entity*
 {
 	int damage = 0;
 	spellElement_t* element = nullptr;
+	int skillID = NUMPROFICIENCIES;
 	if ( auto spell = getSpellFromID(spellID) )
 	{
+		skillID = spell->skillID;
 		if ( spell->elements.first )
 		{
 			if ( element = (spellElement_t*)spell->elements.first->element )
@@ -3630,7 +3626,7 @@ int getSpellDamageFromID(int spellID, Entity* parent, Stat* parentStats, Entity*
 			myStats = parent->getStats();
 		}
 		damage = element->getDamage();
-		real_t bonus = (getBonusFromCasterOfSpellElement(parent, myStats, element, spellID));
+		real_t bonus = (getBonusFromCasterOfSpellElement(parent, myStats, element, spellID, skillID));
 		bonus += addSpellBonus;
 		if ( applyingDamageOnCast )
 		{
@@ -3649,8 +3645,10 @@ int getSpellDamageSecondaryFromID(int spellID, Entity* parent, Stat* parentStats
 {
 	int damage = 0;
 	spellElement_t* element = nullptr;
+	int skillID = NUMPROFICIENCIES;
 	if ( auto spell = getSpellFromID(spellID) )
 	{
+		skillID = spell->skillID;
 		if ( spell->elements.first )
 		{
 			if ( element = (spellElement_t*)spell->elements.first->element )
@@ -3670,7 +3668,7 @@ int getSpellDamageSecondaryFromID(int spellID, Entity* parent, Stat* parentStats
 			myStats = parent->getStats();
 		}
 		damage = element->getDamageSecondary();
-		real_t bonus = (getBonusFromCasterOfSpellElement(parent, myStats, element, spellID));
+		real_t bonus = (getBonusFromCasterOfSpellElement(parent, myStats, element, spellID, skillID));
 		bonus += addSpellBonus;
 		if ( applyingDamageOnCast )
 		{
@@ -3836,7 +3834,8 @@ int getSpellPropertyFromID(spell_t::SpellBasePropertiesInt prop, int spellID, En
 		else if ( prop == spell_t::SpellBasePropertiesInt::SPELLPROP_MODIFIED_RADIUS )
 		{
 			result = spell->radius;
-			real_t modifier = 1.0 + spell->radius_mult;
+			real_t radiusScale = 0.0;
+			real_t modifier = 1.0 + spell->radius_mult * radiusScale;
 			result *= modifier;
 		}
 	}

@@ -258,7 +258,7 @@ Sint32 displayAttackPower(const int player, AttackHoverText_t& output)
 					output.totalAttack = attack;
 					output.attackMaxRange = output.totalAttack;
 					output.attackMinRange = output.totalAttack;
-					output.proficiency = PRO_SPELLCASTING;
+					output.proficiency = PRO_LEGACY_MAGIC;
 				}
 				else // tools etc.
 				{
@@ -285,7 +285,7 @@ Sint32 displayAttackPower(const int player, AttackHoverText_t& output)
 					output.attackMinRange = output.totalAttack;
 					if ( stats[player]->weapon->type == MAGICSTAFF_SCEPTER )
 					{
-						output.proficiency = PRO_MAGIC;
+						output.proficiency = PRO_LEGACY_MAGIC;
 					}
 					output.totalAttack = output.attackMaxRange - ((output.attackMaxRange - output.attackMinRange) / 2.0);
 				}

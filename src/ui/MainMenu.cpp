@@ -8839,7 +8839,7 @@ bind_failed:
 			char buf[1024];
 			if ( kills_show_proficiencies )
 			{
-				size_t numEntries = Player::SkillSheet_t::skillSheetData.skillEntries.size();
+				size_t numEntries = std::min((size_t)NUMPROFICIENCIES, Player::SkillSheet_t::skillSheetData.skillEntries.size());
 				for ( size_t index = 0; index < NUMPROFICIENCIES / 2; ++index )
 				{
 					int loops = 1;

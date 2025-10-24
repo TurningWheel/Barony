@@ -5253,7 +5253,11 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                              && icon.conditionalAttribute.find("SPELLBOOK_") != std::string::npos )
                     {
                         spell_t* spell = getSpellFromID(getSpellIDFromSpellbook(item->type));
-                        int skillLVL = std::min(100, stats[player]->getModifiedProficiency(PRO_MAGIC) + statGetINT(stats[player], players[player]->entity));
+						if ( !spell )
+						{
+							continue;
+						}
+                        int skillLVL = std::min(100, stats[player]->getModifiedProficiency(spell->skillID) + statGetINT(stats[player], players[player]->entity));
                         bool isGoblin = (stats[player]
                                          && (stats[player]->type == GOBLIN
                                              || (stats[player]->playerRace == RACE_GOBLIN && stats[player]->stat_appearance == 0)));
@@ -5757,7 +5761,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 						{
 							continue;
 						}
-                        bool newbie = isSpellcasterBeginner(player, players[player]->entity);
+                        bool newbie = isSpellcasterBeginner(player, players[player]->entity, spell->skillID);
                         if ( !newbie )
                         {
                             continue;
@@ -5769,7 +5773,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 						{
 							continue;
 						}
-                        bool newbie = isSpellcasterBeginner(player, players[player]->entity);
+                        bool newbie = isSpellcasterBeginner(player, players[player]->entity, spell->skillID);
                         if ( !newbie )
                         {
                             continue;
@@ -8938,7 +8942,22 @@ void Player::Inventory_t::updateInventory()
 		{
 			if ( auto slotFrame = getItemSlotFrame(item, itemx, itemy) )
 			{
-				updateSlotFrameFromItem(slotFrame, item);
+				if ( spellPanel.spellFilterBySkill > 0 )
+				{
+					bool greyBackground = false;
+					if ( auto spell = getSpellFromItem(player, item, true) )
+					{
+						if ( spell->skillID != spellPanel.spellFilterBySkill )
+						{
+							greyBackground = true;
+						}
+					}
+					updateSlotFrameFromItem(slotFrame, item, greyBackground);
+				}
+				else
+				{
+					updateSlotFrameFromItem(slotFrame, item);
+				}
 			}
 		}
 		else if ( itemx >= 0 && itemx < getSizeX()
@@ -10391,7 +10410,22 @@ void Player::Inventory_t::updateInventory()
 				{
 					if ( auto slotFrame = getItemSlotFrame(item, itemx, itemy) )
 					{
-						updateSlotFrameFromItem(slotFrame, item);
+						if ( spellPanel.spellFilterBySkill > 0 )
+						{
+							bool greyBackground = false;
+							if ( auto spell = getSpellFromItem(player, item, true) )
+							{
+								if ( spell->skillID != spellPanel.spellFilterBySkill )
+								{
+									greyBackground = true;
+								}
+							}
+							updateSlotFrameFromItem(slotFrame, item, greyBackground);
+						}
+						else
+						{
+							updateSlotFrameFromItem(slotFrame, item);
+						}
 					}
 				}
 				else if ( itemx >= 0 && itemx < getSizeX()

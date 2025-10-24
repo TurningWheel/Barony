@@ -695,7 +695,7 @@ void sustainedSpellProcess(Entity& entity, Stat& myStats, int effectID, std::map
 
 				if ( caster->behavior == &actPlayer )
 				{
-					players[caster->skill[2]]->mechanics.sustainedSpellIncrementMP(oldMP - caster->getMP());
+					players[caster->skill[2]]->mechanics.sustainedSpellIncrementMP(oldMP - caster->getMP(), sustainedSpell_hijacked[effectID]->skillID);
 				}
 			}
 			else
@@ -1499,7 +1499,7 @@ void Entity::effectTimes()
 
 									if ( caster->behavior == &actPlayer )
 									{
-										players[caster->skill[2]]->mechanics.sustainedSpellIncrementMP(oldMP - caster->getMP());
+										players[caster->skill[2]]->mechanics.sustainedSpellIncrementMP(oldMP - caster->getMP(), invisibility_hijacked->skillID);
 									}
 								}
 								else
@@ -1584,7 +1584,7 @@ void Entity::effectTimes()
 
 									if ( caster->behavior == &actPlayer )
 									{
-										players[caster->skill[2]]->mechanics.sustainedSpellIncrementMP(oldMP - caster->getMP());
+										players[caster->skill[2]]->mechanics.sustainedSpellIncrementMP(oldMP - caster->getMP(), levitation_hijacked->skillID);
 									}
 								}
 								else
@@ -1727,7 +1727,7 @@ void Entity::effectTimes()
 
 									if ( caster->behavior == &actPlayer )
 									{
-										players[caster->skill[2]]->mechanics.sustainedSpellIncrementMP(oldMP - caster->getMP());
+										players[caster->skill[2]]->mechanics.sustainedSpellIncrementMP(oldMP - caster->getMP(), reflectMagic_hijacked->skillID);
 									}
 								}
 								else
@@ -1775,7 +1775,7 @@ void Entity::effectTimes()
 
 									if ( caster->behavior == &actPlayer )
 									{
-										players[caster->skill[2]]->mechanics.sustainedSpellIncrementMP(oldMP - caster->getMP());
+										players[caster->skill[2]]->mechanics.sustainedSpellIncrementMP(oldMP - caster->getMP(), amplifyMagic_hijacked->skillID);
 									}
 								}
 								else
@@ -1975,7 +1975,7 @@ void Entity::effectTimes()
 
 									if ( caster->behavior == &actPlayer )
 									{
-										players[caster->skill[2]]->mechanics.sustainedSpellIncrementMP(oldMP - caster->getMP());
+										players[caster->skill[2]]->mechanics.sustainedSpellIncrementMP(oldMP - caster->getMP(), vampiricAura_hijacked->skillID);
 									}
 
 									// monsters have a chance to un-sustain the spell each MP consume.
@@ -2245,25 +2245,25 @@ bool Entity::increaseSkill(int skill, bool notify)
 				break;
 		}
 
-		if ( skill == PRO_SPELLCASTING && skillCapstoneUnlockedEntity(PRO_SPELLCASTING) )
-		{
-			//Spellcasting capstone = free casting of Forcebolt.
-			//Give the player the spell if they haven't learned it yet.
-			if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
-			{
-				strcpy((char*)net_packet->data, "ASPL");
-				net_packet->data[4] = clientnum;
-				net_packet->data[5] = SPELL_FORCEBOLT;
-				net_packet->address.host = net_clients[player - 1].host;
-				net_packet->address.port = net_clients[player - 1].port;
-				net_packet->len = 6;
-				sendPacketSafe(net_sock, -1, net_packet, player - 1);
-			}
-			else if ( player >= 0 )
-			{
-				addSpell(SPELL_FORCEBOLT, player, true);
-			}
-		}
+		//if ( skill == PRO_SPELLCASTING && skillCapstoneUnlockedEntity(PRO_SPELLCASTING) )
+		//{
+		//	//Spellcasting capstone = free casting of Forcebolt.
+		//	//Give the player the spell if they haven't learned it yet.
+		//	if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
+		//	{
+		//		strcpy((char*)net_packet->data, "ASPL");
+		//		net_packet->data[4] = clientnum;
+		//		net_packet->data[5] = SPELL_FORCEBOLT;
+		//		net_packet->address.host = net_clients[player - 1].host;
+		//		net_packet->address.port = net_clients[player - 1].port;
+		//		net_packet->len = 6;
+		//		sendPacketSafe(net_sock, -1, net_packet, player - 1);
+		//	}
+		//	else if ( player >= 0 )
+		//	{
+		//		addSpell(SPELL_FORCEBOLT, player, true);
+		//	}
+		//}
 
 		if ( skill == PRO_STEALTH && myStats->getProficiency(skill) == 100 )
 		{
@@ -3660,6 +3660,27 @@ void Entity::handleEffects(Stat* myStats)
 			this->playerStatIncrease(client_classes[player], increasestat);
 			Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_LVL_GAINED, "leveling up", 1);
 			Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_LVL_MAX, "leveling up", myStats->LVL);
+
+			if ( this->effectShapeshift != NOTHING )
+			{
+				switch ( stats[player]->type )
+				{
+				case RAT:
+					magicOnSpellCastEvent(this, this, SPELL_RAT_FORM, spell_t::SPELL_LEVEL_EVENT_SHAPESHIFT, 1);
+					break;
+				case SPIDER:
+					magicOnSpellCastEvent(this, this, SPELL_SPIDER_FORM, spell_t::SPELL_LEVEL_EVENT_SHAPESHIFT, 1);
+					break;
+				case TROLL:
+					magicOnSpellCastEvent(this, this, SPELL_TROLL_FORM, spell_t::SPELL_LEVEL_EVENT_SHAPESHIFT, 1);
+					break;
+				case CREATURE_IMP:
+					magicOnSpellCastEvent(this, this, SPELL_IMP_FORM, spell_t::SPELL_LEVEL_EVENT_SHAPESHIFT, 1);
+					break;
+				default:
+					break;
+				}
+			}
 		}
 		else if ( behavior == &actMonster && monsterAllySummonRank != 0 && myStats->type == SKELETON )
 		{
@@ -4029,8 +4050,8 @@ void Entity::handleEffects(Stat* myStats)
 
 		// increase MAXHP/MAXMP
 		myStats->MAXHP += hpMod;
-		int hpRestore = getHPRestoreOnLevelUp(hpMod);
-		int mpRestore = getMPRestoreOnLevelUp(mpMod);
+		int hpRestore = Entity::getHPRestoreOnLevelUp(this, myStats, hpMod);
+		int mpRestore = Entity::getMPRestoreOnLevelUp(this, myStats, mpMod);
 
 		modHP(hpRestore);
 
@@ -11415,6 +11436,19 @@ void Entity::attack(int pose, int charge, Entity* target)
 					bool artifactWeapon = false;
 					bool degradeWeapon = false;
 
+					if ( pose == PLAYER_POSE_GOLEM_SMASH )
+					{
+						if ( behavior == &actPlayer )
+						{
+							if ( damage > 0 && oldHP > hitstats->HP )
+							{
+								Sint32 damageTaken = oldHP - hitstats->HP;
+								Compendium_t::Events_t::eventUpdate(skill[2], Compendium_t::CPDM_SPELL_DMG, SPELL_ITEM, damageTaken, false, SPELL_STRIKE);
+								magicOnSpellCastEvent(this, this, SPELL_STRIKE, spell_t::SPELL_LEVEL_EVENT_DMG, damageTaken);
+							}
+						}
+					}
+
 					if ( weaponToBreak != nullptr && weaponType != WOODEN_SHIELD )
 					{
 						if ( behavior == &actPlayer )
@@ -11423,7 +11457,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								weaponType, 1);
 							if ( pose == PLAYER_POSE_GOLEM_SMASH )
 							{
-								Compendium_t::Events_t::eventUpdate(skill[2], Compendium_t::CPDM_SPELL_DMG, SPELL_ITEM, damage, false, SPELL_STRIKE);
+
 							}
 							else
 							{
@@ -15751,6 +15785,18 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 			Compendium_t::Events_t::eventUpdateCodex(skill[2], Compendium_t::CPDM_XP_KILLS, "xp", gain);
 
 			Compendium_t::Events_t::eventUpdateMonster(skill[2], Compendium_t::CPDM_KILL_XP, src, gain);
+
+			if ( gain > 0 )
+			{
+				if ( srcStats->getEffectActive(EFF_SHADOW_TAGGED) )
+				{
+					if ( this->creatureShadowTaggedThisUid == src->getUID() )
+					{
+						magicOnSpellCastEvent(this, this,
+							SPELL_SHADOW_TAG, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
+					}
+				}
+			}
 		}
 		destStats->EXP += gain;
 	}
@@ -16101,7 +16147,21 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 				{
 					if ( !spellEffectLeader )
 					{
-						leader->increaseSkill(PRO_LEADERSHIP);
+						if ( this->monsterAllySummonRank != 0 )
+						{
+							if ( destStats->type == EARTH_ELEMENTAL )
+							{
+								magicOnSpellCastEvent(leader, this, SPELL_EARTH_ELEMENTAL, spell_t::SPELL_LEVEL_EVENT_SUMMON, 1);
+							}
+							else if ( destStats->type == SKELETON )
+							{
+								magicOnSpellCastEvent(leader, this, SPELL_SUMMON, spell_t::SPELL_LEVEL_EVENT_SUMMON, 1);
+							}
+						}
+						else
+						{
+							leader->increaseSkill(PRO_LEADERSHIP);
+						}
 					}
 				}
 			}
@@ -18151,6 +18211,7 @@ int getStatForProficiency(int skill)
 			statForProficiency = STAT_DEX;
 			break;
 		case PRO_SHIELD:		// base attribute: con
+		case PRO_SWIMMING:      // base attribute: con
 			statForProficiency = STAT_CON;
 			break;
 		case PRO_SPELLCASTING:  // base attribute: int
@@ -18162,7 +18223,6 @@ int getStatForProficiency(int skill)
 		case PRO_APPRAISAL:		// base attribute: per
 			statForProficiency = STAT_PER;
 			break;
-		case PRO_SWIMMING:      // base attribute: chr
 		case PRO_TRADING:       // base attribute: chr
 		case PRO_LEADERSHIP:    // base attribute: chr
 			statForProficiency = STAT_CHR;
@@ -27872,31 +27932,36 @@ int Entity::getFollowerBonusDamageResist()
 	return resist;
 }
 
-int Entity::getMPRestoreOnLevelUp(int baseMP, bool statCheckOnly)
+int Entity::getMPRestoreOnLevelUp(Entity* entity, Stat* myStats, int baseMP, bool statCheckOnly)
 {
 	int mpMod = baseMP;
-	if ( Stat* myStats = getStats() )
+	if ( !myStats )
 	{
-		if ( behavior == &actPlayer )
+		return mpMod;
+	}
+	if ( !entity || (entity && entity->behavior == &actPlayer) )
+	{
+		if ( statCheckOnly )
 		{
-			if ( statCheckOnly )
-			{
-				mpMod += std::max(0, myStats->CHR);
-			}
-			else
-			{
-				mpMod += std::max(0, statGetCHR(myStats, this));
-			}
+			mpMod += std::max(0, myStats->CHR);
+		}
+		else
+		{
+			mpMod += std::max(0, statGetCHR(myStats, entity));
 		}
 	}
 	return mpMod;
 }
 
-int Entity::getHPRestoreOnLevelUp(int baseHP, bool statCheckOnly)
+int Entity::getHPRestoreOnLevelUp(Entity* entity, Stat* myStats, int baseHP, bool statCheckOnly)
 {
 	int hpMod = baseHP;
+	if ( !myStats )
+	{
+		return hpMod;
+	}
 
-	if ( Stat* myStats = getStats() )
+	if ( myStats )
 	{
 		if ( !statCheckOnly )
 		{
@@ -27911,9 +27976,9 @@ int Entity::getHPRestoreOnLevelUp(int baseHP, bool statCheckOnly)
 					hpMod = 0;
 				}
 			}
-			if ( behavior == &actMonster )
+			if ( entity && entity->behavior == &actMonster )
 			{
-				Entity* leader = monsterAllyGetPlayerLeader();
+				Entity* leader = entity->monsterAllyGetPlayerLeader();
 				if ( !leader )
 				{
 					if ( myStats->leader_uid != 0 )
@@ -27941,7 +28006,7 @@ int Entity::getHPRestoreOnLevelUp(int baseHP, bool statCheckOnly)
 				}
 			}
 		}
-		if ( behavior == &actPlayer )
+		if ( !entity || (entity && entity->behavior == &actPlayer) )
 		{
 			if ( statCheckOnly )
 			{
@@ -27949,7 +28014,7 @@ int Entity::getHPRestoreOnLevelUp(int baseHP, bool statCheckOnly)
 			}
 			else
 			{
-				hpMod += std::max(0, statGetCHR(myStats, this));
+				hpMod += std::max(0, statGetCHR(myStats, entity));
 			}
 		}
 	}

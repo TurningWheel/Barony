@@ -660,6 +660,172 @@ void spawnBloodVialOnMonsterDeath(Entity* entity, Stat* hitstats, Entity* killer
 }
 
 static ConsoleVariable<bool> cvar_magic_fx_use_vismap("/magic_fx_use_vismap", true);
+
+void magicOnSpellCastEvent(Entity* parent, Entity* projectile, int spellID, Uint32 eventType, int eventValue, bool allowedLevelup)
+{
+	if ( !parent )
+	{
+		return;
+	}
+
+	if ( parent->behavior != &actPlayer )
+	{
+		return;
+	}
+
+	if ( multiplayer == CLIENT )
+	{
+		if ( players[clientnum]->entity && players[clientnum]->entity == parent )
+		{
+			if ( projectile == parent || !projectile )
+			{
+				// request to server
+				strcpy((char*)net_packet->data, "SPLV");
+				net_packet->data[4] = clientnum;
+				SDLNet_Write16(spellID, &net_packet->data[5]);
+				SDLNet_Write32(eventType, &net_packet->data[7]);
+				SDLNet_Write32(eventValue, &net_packet->data[11]);
+
+				net_packet->address.host = net_server.host;
+				net_packet->address.port = net_server.port;
+				net_packet->len = 15;
+				sendPacketSafe(net_sock, -1, net_packet, 0);
+			}
+		}
+		return;
+	}
+
+	if ( spellID <= SPELL_NONE )
+	{
+		return;
+	}
+
+	bool magicstaff = eventType & spell_t::SPELL_LEVEL_EVENT_MAGICSTAFF;
+	bool spellbook = eventType & spell_t::SPELL_LEVEL_EVENT_SPELLBOOK;
+
+	if ( projectile && projectile->behavior == &actMagicMissile )
+	{
+		magicstaff = projectile->actmagicCastByMagicstaff == 1;
+		spellbook = projectile->actmagicFromSpellbook == 1;
+
+		if ( projectile->actmagicSpray > 0 )
+		{
+			allowedLevelup = false; // foci/sprays
+		}
+	}
+	
+	auto spell = getSpellFromID(spellID);
+	if ( !spell ) { return; }
+
+	int player = parent->skill[2];
+	if ( player < 0 || player >= MAXPLAYERS )
+	{
+		return;
+	}
+	if ( allowedLevelup )
+	{
+		if ( magicstaff )
+		{
+			if ( stats[player]->getProficiency(spell->skillID) >= SKILL_LEVEL_BASIC )
+			{
+				allowedLevelup = false;
+			}
+		}
+		else
+		{
+			if ( stats[player]->getProficiency(spell->skillID) >= std::min(SKILL_LEVEL_LEGENDARY, (spell->difficulty + 20)) )
+			{
+				allowedLevelup = false;
+			}
+		}
+	}
+
+	bool nothingElseToLearnMsg = false;
+	if ( spell->skillID > 0 )
+	{
+		if ( magicstaff )
+		{
+			if ( local_rng.rand() % 8 == 0 ) //16.67%
+			{
+				if ( allowedLevelup )
+				{
+					parent->increaseSkill(spell->skillID);
+				}
+				else
+				{
+					nothingElseToLearnMsg = true;
+				}
+			}
+		}
+		else
+		{
+			int chance = 4 + (stats[player]->getProficiency(spell->skillID) / 20) * 3; // 4 - 16
+			if ( eventType & spell_t::SPELL_LEVEL_EVENT_SHAPESHIFT
+				|| eventType & spell_t::SPELL_LEVEL_EVENT_SUMMON )
+			{
+				chance /= 2;
+			}
+
+			bool skillIncreased = false;
+			if ( (eventType & spell_t::SPELL_LEVEL_EVENT_SUSTAIN) )
+			{
+				bool sustainedChance = players[player]->mechanics.sustainedSpellLevelChance(spell->skillID);
+				if ( sustainedChance && (local_rng.rand() % chance == 0) )
+				{
+					if ( allowedLevelup )
+					{
+						players[player]->mechanics.sustainedSpellClearMP(spell->skillID);
+						parent->increaseSkill(spell->skillID);
+						skillIncreased = true;
+					}
+					else
+					{
+						nothingElseToLearnMsg = true;
+					}
+				}
+			}
+			else
+			{
+				int baseSpellChance = players[player]->mechanics.baseSpellLevelChance(spell->skillID);
+				chance = std::max(2, chance - baseSpellChance);
+
+				if ( local_rng.rand() % chance == 0 )
+				{
+					if ( allowedLevelup )
+					{
+						players[player]->mechanics.baseSpellClearMP(spell->skillID);
+						parent->increaseSkill(spell->skillID);
+						skillIncreased = true;
+					}
+					else
+					{
+						nothingElseToLearnMsg = true;
+					}
+				}
+			}
+
+			if ( nothingElseToLearnMsg )
+			{
+				if ( local_rng.rand() % 20 == 0 )
+				{
+					messagePlayer(player, MESSAGE_HINT, Language::get(2591));
+				}
+			}
+
+			if ( spellbook )
+			{
+				if ( skillIncreased )
+				{
+					if ( stats[player] && stats[player]->playerRace == RACE_INSECTOID && stats[player]->stat_appearance == 0 )
+					{
+						steamStatisticUpdateClient(player, STEAM_STAT_BOOKWORM, STEAM_STAT_INT, 1);
+					}
+				}
+			}
+		}
+	}
+}
+
 void magicOnEntityHit(Entity* parent, Entity* particle, Entity* hitentity, Stat* hitstats, Sint32 preResistanceDamage, Sint32 damage, Sint32 oldHP, int spellID, int selfCastUsingItem)
 {
 	if ( !hitentity  ) { return; }
@@ -731,6 +897,7 @@ void magicOnEntityHit(Entity* parent, Entity* particle, Entity* hitentity, Stat*
 							{
 								Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_SPELL_DMG, (ItemType)find->second.magicstaffId, damageTaken);
 							}
+							magicOnSpellCastEvent(parent, particle, spellID, spell_t::SPELL_LEVEL_EVENT_DMG | spell_t::SPELL_LEVEL_EVENT_MAGICSTAFF, damageTaken);
 						}
 						else if ( damage == 0 && oldHP == 0 )
 						{
@@ -739,6 +906,7 @@ void magicOnEntityHit(Entity* parent, Entity* particle, Entity* hitentity, Stat*
 								Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_SPELL_TARGETS,
 									(ItemType)find->second.magicstaffId, 1);
 							}
+							magicOnSpellCastEvent(parent, particle, spellID, spell_t::SPELL_LEVEL_EVENT_EFFECT | spell_t::SPELL_LEVEL_EVENT_MAGICSTAFF, 1);
 						}
 					}
 				}
@@ -759,6 +927,7 @@ void magicOnEntityHit(Entity* parent, Entity* particle, Entity* hitentity, Stat*
 								{
 									Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_SPELL_DMG, (ItemType)find->second.spellbookId, damageTaken);
 								}
+								magicOnSpellCastEvent(parent, particle, spellID, spell_t::SPELL_LEVEL_EVENT_DMG | spell_t::SPELL_LEVEL_EVENT_SPELLBOOK, damageTaken);
 							}
 							else if ( damage == 0 && oldHP == 0 )
 							{
@@ -767,6 +936,7 @@ void magicOnEntityHit(Entity* parent, Entity* particle, Entity* hitentity, Stat*
 									Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_SPELL_TARGETS,
 										(ItemType)find->second.spellbookId, 1);
 								}
+								magicOnSpellCastEvent(parent, particle, spellID, spell_t::SPELL_LEVEL_EVENT_EFFECT | spell_t::SPELL_LEVEL_EVENT_SPELLBOOK, 1);
 							}
 						}
 					}
@@ -783,6 +953,7 @@ void magicOnEntityHit(Entity* parent, Entity* particle, Entity* hitentity, Stat*
 						if ( damageTaken > 0 )
 						{
 							Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_SPELL_DMG, SPELL_ITEM, damageTaken, false, find->second.id);
+							magicOnSpellCastEvent(parent, particle, spellID, spell_t::SPELL_LEVEL_EVENT_DMG, damageTaken);
 						}
 						else if ( damage == 0 && oldHP == 0 )
 						{
@@ -790,6 +961,7 @@ void magicOnEntityHit(Entity* parent, Entity* particle, Entity* hitentity, Stat*
 							{
 								Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_SPELL_TARGETS, SPELL_ITEM, 1, false, find->second.id);
 							}
+							magicOnSpellCastEvent(parent, particle, spellID, spell_t::SPELL_LEVEL_EVENT_EFFECT, 1);
 						}
 					}
 				}
@@ -807,6 +979,7 @@ void magicOnEntityHit(Entity* parent, Entity* particle, Entity* hitentity, Stat*
 					{
 						Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_SPELL_DMG, (ItemType)find->second.magicstaffId, damageTaken);
 					}
+					magicOnSpellCastEvent(parent, particle, spellID, spell_t::SPELL_LEVEL_EVENT_DMG | spell_t::SPELL_LEVEL_EVENT_MAGICSTAFF, damageTaken);
 				}
 				else if ( damage == 0 && oldHP == 0 )
 				{
@@ -815,8 +988,13 @@ void magicOnEntityHit(Entity* parent, Entity* particle, Entity* hitentity, Stat*
 						Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_SPELL_TARGETS, 
 							(ItemType)find->second.magicstaffId, 1);
 					}
+					magicOnSpellCastEvent(parent, particle, spellID, spell_t::SPELL_LEVEL_EVENT_EFFECT | spell_t::SPELL_LEVEL_EVENT_MAGICSTAFF, 1);
 				}
 			}
+		}
+		else if ( particle->actmagicSpray == 2 )
+		{
+			// foci items
 		}
 		else if ( particle->actmagicFromSpellbook != 0 )
 		{
@@ -835,6 +1013,7 @@ void magicOnEntityHit(Entity* parent, Entity* particle, Entity* hitentity, Stat*
 						{
 							Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_SPELL_DMG, (ItemType)find->second.spellbookId, damageTaken);
 						}
+						magicOnSpellCastEvent(parent, particle, spellID, spell_t::SPELL_LEVEL_EVENT_DMG | spell_t::SPELL_LEVEL_EVENT_SPELLBOOK, damageTaken);
 					}
 					else if ( damage == 0 && oldHP == 0 )
 					{
@@ -843,6 +1022,7 @@ void magicOnEntityHit(Entity* parent, Entity* particle, Entity* hitentity, Stat*
 							Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_SPELL_TARGETS,
 								(ItemType)find->second.spellbookId, 1);
 						}
+						magicOnSpellCastEvent(parent, particle, spellID, spell_t::SPELL_LEVEL_EVENT_EFFECT | spell_t::SPELL_LEVEL_EVENT_SPELLBOOK, 1);
 					}
 				}
 			}
@@ -891,6 +1071,7 @@ void magicOnEntityHit(Entity* parent, Entity* particle, Entity* hitentity, Stat*
 						if ( damageTaken > 0 )
 						{
 							Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_SPELL_DMG, SPELL_ITEM, damageTaken, false, find->second.id);
+							magicOnSpellCastEvent(parent, particle, spellID, spell_t::SPELL_LEVEL_EVENT_DMG, damageTaken);
 						}
 						else if ( damage == 0 && oldHP == 0 )
 						{
@@ -898,6 +1079,7 @@ void magicOnEntityHit(Entity* parent, Entity* particle, Entity* hitentity, Stat*
 							{
 								Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_SPELL_TARGETS, SPELL_ITEM, 1, false, find->second.id);
 							}
+							magicOnSpellCastEvent(parent, particle, spellID, spell_t::SPELL_LEVEL_EVENT_EFFECT, 1);
 						}
 					}
 				}
@@ -1946,7 +2128,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				{
 					if ( my->actmagicCastByMagicstaff != 1 && my->actmagicCastByTinkerTrap == 0 )
 					{
-						spellbookDamageBonus += getBonusFromCasterOfSpellElement(parent, nullptr, element, spell ? spell->ID : SPELL_NONE);
+						spellbookDamageBonus += getBonusFromCasterOfSpellElement(parent, nullptr, element, spell ? spell->ID : SPELL_NONE, spell->skillID);
 						if ( parent && parent->behavior == &actPlayer )
 						{
 							Compendium_t::Events_t::eventUpdateCodex(parent->skill[2], Compendium_t::CPDM_CLASS_PWR_MAX_CASTED, "pwr",
@@ -4381,6 +4563,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							else
 							{
 								playSoundEntity(hit.entity, 92, 64);
+								auto prevLocked = hit.entity->doorLocked;
 								hit.entity->doorLocked = 1; //Lock the door.
 								if ( parent )
 								{
@@ -4394,7 +4577,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 										{
 											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(399));
 										}
-										magicOnEntityHit(parent, my, hit.entity, hitstats, 0, 0, 0, spell ? spell->ID : SPELL_NONE);
+										if ( prevLocked != hit.entity->doorLocked )
+										{
+											magicOnEntityHit(parent, my, hit.entity, hitstats, 0, 0, 0, spell ? spell->ID : SPELL_NONE);
+										}
 									}
 								}
 							}
@@ -4413,13 +4599,17 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								}
 								else
 								{
+									auto prevLocked = hit.entity->chestLocked;
 									hit.entity->lockChest();
 									if ( parent )
 									{
 										if ( parent->behavior == &actPlayer )
 										{
 											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(400));
-											magicOnEntityHit(parent, my, hit.entity, hitstats, 0, 0, 0, spell ? spell->ID : SPELL_NONE);
+											if ( prevLocked != hit.entity->chestLocked )
+											{
+												magicOnEntityHit(parent, my, hit.entity, hitstats, 0, 0, 0, spell ? spell->ID : SPELL_NONE);
+											}
 										}
 									}
 								}
@@ -4453,7 +4643,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 										{
 											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(6083));
 										}
-										magicOnEntityHit(parent, my, hit.entity, hitstats, 0, 0, 0, spell ? spell->ID : SPELL_NONE);
 									}
 									if ( !hitstats->getEffectActive(EFF_MIMIC_LOCKED) )
 									{
@@ -4461,6 +4650,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 										{
 											hit.entity->monsterHitTime = HITRATE - 2;
 											hitstats->monsterMimicLockedBy = parent ? parent->getUID() : 0;
+
+											if ( parent && parent->behavior == &actPlayer )
+											{
+												magicOnEntityHit(parent, my, hit.entity, hitstats, 0, 0, 0, spell ? spell->ID : SPELL_NONE);
+											}
 										}
 									}
 								}
@@ -4608,6 +4802,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								else
 								{
 									playSoundEntity(hit.entity, 91, 64); // "UnlockDoor.ogg"
+									auto prevLocked = hit.entity->chestLocked;
 									hit.entity->unlockChest();
 									if ( parent )
 									{
@@ -4615,7 +4810,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 										{
 											messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(404)); // "The spell unlocks the chest!"
 											Compendium_t::Events_t::eventUpdateWorld(parent->skill[2], Compendium_t::CPDM_CHESTS_UNLOCKED, "chest", 1);
-											magicOnEntityHit(parent, my, hit.entity, hitstats, 0, 0, 0, spell ? spell->ID : SPELL_NONE);
+											if ( prevLocked != hit.entity->chestLocked )
+											{
+												magicOnEntityHit(parent, my, hit.entity, hitstats, 0, 0, 0, spell ? spell->ID : SPELL_NONE);
+											}
 										}
 									}
 								}
@@ -4665,8 +4863,8 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 											messagePlayer(parent->skill[2], MESSAGE_INTERACTION, Language::get(6081));
 										}
 									}
+									magicOnEntityHit(parent, my, hit.entity, hitstats, 0, 0, 0, spell ? spell->ID : SPELL_NONE);
 								}
-								magicOnEntityHit(parent, my, hit.entity, hitstats, 0, 0, 0, spell ? spell->ID : SPELL_NONE);
 							}
 							else
 							{
@@ -4688,9 +4886,9 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 											if ( hit.entity->setEffect(EFF_MIMIC_LOCKED, false, 0, false) )
 											{
 												hit.entity->monsterHitTime = std::max(hit.entity->monsterHitTime, HITRATE / 2);
+												magicOnEntityHit(parent, my, hit.entity, hitstats, 0, 0, 0, spell ? spell->ID : SPELL_NONE);
 											}
 										}
-										magicOnEntityHit(parent, my, hit.entity, hitstats, 0, 0, 0, spell ? spell->ID : SPELL_NONE);
 									}
 								}
 							}
@@ -10871,10 +11069,12 @@ void actParticleSapCenter(Entity* my)
 
 							monster->setEffect(EFF_STUNNED, true, 20, false);
 							bool spawnSecondAlly = false;
-							
-							if ( (caster->getINT() + stats[caster->skill[2]]->getModifiedProficiency(PRO_MAGIC)) >= SKILL_LEVEL_EXPERT )
+							if ( auto spell = getSpellFromID(SPELL_SUMMON) )
 							{
-								spawnSecondAlly = true;
+								if ( (caster->getINT() + stats[caster->skill[2]]->getModifiedProficiency(spell->skillID)) >= SKILL_LEVEL_EXPERT )
+								{
+									spawnSecondAlly = true;
+								}
 							}
 							//parent->increaseSkill(PRO_LEADERSHIP);
 							monster->monsterAllyIndex = caster->skill[2];
@@ -12405,6 +12605,11 @@ bool magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks)
 					}
 				}
 
+				if ( projectile && projectile->behavior == &actMagicMissile )
+				{
+					magicOnSpellCastEvent(parent, projectile, SPELL_DIG, spell_t::SpellOnCastEventTypes::SPELL_LEVEL_EVENT_DEFAULT, 1);
+				}
+
 				generatePathMaps();
 				return true;
 			}
@@ -12437,6 +12642,11 @@ bool magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks)
 			}
 		}
 
+		if ( projectile && projectile->behavior == &actMagicMissile )
+		{
+			magicOnEntityHit(parent, projectile, hit.entity, nullptr, 0, 0, 0, SPELL_DIG);
+		}
+
 		// destroy the object
 		playSoundEntity(hit.entity, 67, 128);
 		list_RemoveNode(hit.entity->mynode);
@@ -12448,6 +12658,11 @@ bool magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks)
 		if ( multiplayer == SERVER )
 		{
 			serverSpawnMiscParticles(hit.entity, PARTICLE_EFFECT_ABILITY_ROCK, 78);
+		}
+
+		if ( projectile && projectile->behavior == &actMagicMissile )
+		{
+			magicOnEntityHit(parent, projectile, hit.entity, nullptr, 0, 0, 0, SPELL_DIG);
 		}
 
 		playSoundEntity(hit.entity, 67, 128);
@@ -12490,6 +12705,11 @@ bool magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks)
 
 		auto& rng = hit.entity->entity_rng ? *hit.entity->entity_rng : local_rng;
 		Uint32 monsterSpawnSeed = rng.getU32();
+
+		if ( projectile && projectile->behavior == &actMagicMissile )
+		{
+			magicOnEntityHit(parent, projectile, hit.entity, nullptr, 0, 0, 0, SPELL_DIG);
+		}
 
 		// destroy the boulder
 		playSoundEntity(hit.entity, 67, 128);

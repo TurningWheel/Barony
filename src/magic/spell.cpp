@@ -405,16 +405,16 @@ bool addSpell(int spell, int player, bool ignoreSkill)
 		else
 		{
 			// can't learn, already have it.
-			if ( !(spell == SPELL_FORCEBOLT && skillCapstoneUnlocked(player, PRO_SPELLCASTING)) )
-			{
-				messagePlayer(player, MESSAGE_STATUS, Language::get(439), new_spell->getSpellName());
-			}
+			//if ( !(spell == SPELL_FORCEBOLT && skillCapstoneUnlocked(player, PRO_SPELLCASTING)) )
+			//{
+			//}
+			messagePlayer(player, MESSAGE_STATUS, Language::get(439), new_spell->getSpellName());
 			spellDeconstructor((void*)new_spell);
 			return false;
 		}
 	}
-	int skillLVL = stats[player]->getModifiedProficiency(PRO_MAGIC) + statGetINT(stats[player], players[player]->entity);
-	if ( stats[player]->getModifiedProficiency(PRO_MAGIC) >= 100 )
+	int skillLVL = stats[player]->getModifiedProficiency(new_spell->skillID) + statGetINT(stats[player], players[player]->entity);
+	if ( stats[player]->getModifiedProficiency(new_spell->skillID) >= 100 )
 	{
 		skillLVL = 100;
 	}
@@ -446,7 +446,7 @@ bool addSpell(int spell, int player, bool ignoreSkill)
 			else
 			{
 				players[player]->mechanics.learnedSpells.insert(new_spell->ID);
-				players[player]->entity->increaseSkill(PRO_MAGIC);
+				players[player]->entity->increaseSkill(new_spell->skillID);
 			}
 		}
 	}
@@ -741,11 +741,12 @@ int getCostOfSpell(spell_t* spell, Entity* caster)
 
 	cost = spell->mana;
 
-	if ( spell->ID == SPELL_FORCEBOLT && caster && caster->skillCapstoneUnlockedEntity(PRO_SPELLCASTING) )
+	/*if ( spell->ID == SPELL_FORCEBOLT && caster && caster->skillCapstoneUnlockedEntity(PRO_SPELLCASTING) )
 	{
 		cost = 0;
 	}
-	else if ( spell->ID == SPELL_SUMMON && caster )
+	else */
+	if ( spell->ID == SPELL_SUMMON && caster )
 	{
 		Stat* casterStats = caster->getStats();
 		if ( casterStats )
@@ -781,7 +782,30 @@ bool spell_isChanneled(spell_t* spell)
 	return false;
 }
 
-real_t getSpellBonusFromCasterINT(Entity* caster, Stat* casterStats)
+int getSpellbookBaseINTBonus(Entity* caster, Stat* casterStats, int skillID)
+{
+	if ( caster && caster->behavior != &actPlayer )
+	{
+		return 0;
+	}
+
+	int bonus = 0;
+	if ( !casterStats && caster )
+	{
+		casterStats = caster->getStats();
+	}
+	if ( casterStats )
+	{
+		int INT = statGetINT(casterStats, caster);
+		if ( INT > 0 )
+		{
+			bonus += INT / 2.0;
+		}
+	}
+	return bonus;
+}
+
+real_t getSpellBonusFromCasterINT(Entity* caster, Stat* casterStats, int skillID)
 {
 	if ( caster && caster->behavior != &actPlayer )
 	{
@@ -799,12 +823,36 @@ real_t getSpellBonusFromCasterINT(Entity* caster, Stat* casterStats)
 		if ( INT > 0 )
 		{
 			bonus += INT / 100.0;
+			if ( skillID == PRO_MAGIC )
+			{
+				int bonusStat = statGetINT(casterStats, caster);
+				if ( bonusStat > 0 )
+				{
+					bonus += bonusStat / 100.0;
+				}
+			}
+			else if ( skillID == PRO_SPELLCASTING )
+			{
+				int bonusStat = statGetCHR(casterStats, caster);
+				if ( bonusStat > 0 )
+				{
+					bonus += bonusStat / 100.0;
+				}
+			}
+			else if ( skillID == PRO_SWIMMING )
+			{
+				int bonusStat = statGetCON(casterStats, caster);
+				if ( bonusStat > 0 )
+				{
+					bonus += bonusStat / 100.0;
+				}
+			}
 		}
 	}
 	return bonus;
 }
 
-real_t getBonusFromCasterOfSpellElement(Entity* caster, Stat* casterStats, spellElement_t* spellElement, int spellID)
+real_t getBonusFromCasterOfSpellElement(Entity* caster, Stat* casterStats, spellElement_t* spellElement, int spellID, int proficiencyWhenNoSpell)
 {
 	if ( caster && caster->behavior != &actPlayer )
 	{
@@ -817,7 +865,17 @@ real_t getBonusFromCasterOfSpellElement(Entity* caster, Stat* casterStats, spell
 	}
 
 	real_t bonus = 0.0;
-	bonus += getSpellBonusFromCasterINT(caster, casterStats);
+	if ( spellID == SPELL_NONE )
+	{
+		bonus += getSpellBonusFromCasterINT(caster, casterStats, proficiencyWhenNoSpell);
+	}
+	else
+	{
+		if ( auto spell = getSpellFromID(spellID) )
+		{
+			bonus += getSpellBonusFromCasterINT(caster, casterStats, spell->skillID);
+		}
+	}
 
 	if ( casterStats )
 	{
@@ -949,6 +1007,7 @@ spell_t* getSpellFromID(int ID)
 	spell_t* spell = nullptr;
 
 	auto find = allGameSpells.find(ID);
+	assert(ID != SPELL_NONE);
 	assert(find != allGameSpells.end());
 	if ( find != allGameSpells.end() )
 	{

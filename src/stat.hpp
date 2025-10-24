@@ -173,6 +173,9 @@ static const int PRO_SHIELD = 13;       // base attribute: con
 static const int PRO_UNARMED = 14;       // base attribute: str
 static const int PRO_ALCHEMY = 15;       // base attribute: int
 static const int NUMPROFICIENCIES = 16;
+static const int PRO_LEGACY_SWIMMING = 32; // for image lookups
+static const int PRO_LEGACY_MAGIC = 33; // for image lookups
+static const int PRO_LEGACY_SPELLCASTING = 34; // for image lookups
 
 //Start levels for the various proficiency ranges.
 //0 = "none"

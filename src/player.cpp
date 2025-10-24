@@ -3164,11 +3164,20 @@ void Player::init() // for use on new/restart game, UI related
 	levelUpAnimation[playernum].lvlUps.clear();
 	skillUpAnimation[playernum].skillUps.clear();
 	mechanics.itemDegradeRng.clear();
-	mechanics.sustainedSpellMPUsed = 0;
+	mechanics.sustainedSpellMPUsedSorcery = 0;
+	mechanics.sustainedSpellMPUsedMysticism = 0;
+	mechanics.sustainedSpellMPUsedThaumaturgy = 0;
+	mechanics.baseSpellMPUsedSorcery = 0;
+	mechanics.baseSpellMPUsedMysticism = 0;
+	mechanics.baseSpellMPUsedThaumaturgy = 0;
 	mechanics.ensemblePlaying = -1;
 	mechanics.ensembleRequireRecast = false;
 	mechanics.ensembleTakenInitialMP = false;
 	mechanics.ensembleDataUpdate = 0;
+
+	mechanics.fociDarkChargeTime = 0;
+	mechanics.fociHolyChargeTime = 0;
+	mechanics.lastFociHeldType = 0;
 }
 
 void Player::cleanUpOnEntityRemoval()
@@ -3187,6 +3196,10 @@ void Player::cleanUpOnEntityRemoval()
 	selectedEntity[playernum] = nullptr;
 	client_selected[playernum] = nullptr;
 	magic.telekinesisTarget = 0;
+
+	mechanics.fociDarkChargeTime = 0;
+	mechanics.fociHolyChargeTime = 0;
+	mechanics.lastFociHeldType = 0;
 }
 
 const bool Player::isLocalPlayer() const
@@ -5184,7 +5197,7 @@ const int Player::HUD_t::getActionIconForPlayer(ActionPrompts prompt, std::strin
 	if ( prompt == ACTION_PROMPT_MAGIC ) 
 	{ 
 		promptString = Language::get(4078);
-		return PRO_SPELLCASTING;
+		return PRO_LEGACY_SPELLCASTING;
 	}
 
 	bool shapeshifted = false;
@@ -5275,7 +5288,7 @@ const int Player::HUD_t::getActionIconForPlayer(ActionPrompts prompt, std::strin
 				{
 					if ( !shapeshifted || (shapeshifted && playerRace == CREATURE_IMP) )
 					{
-						skill = PRO_SPELLCASTING;
+						skill = PRO_LEGACY_MAGIC;
 						promptString = Language::get(4083);
 					}
 				}
@@ -7114,17 +7127,21 @@ bool Player::PlayerMechanics_t::itemDegradeRoll(Item* item, int* checkInterval)
 	if ( itemCategory(item) == SPELLBOOK )
 	{
 		// 10 max base interval
-		interval = (1 + item->status) + stats[player.playernum]->getModifiedProficiency(PRO_SPELLCASTING) / 20;
-		if ( item->beatitude < 0
-			&& !intro && !shouldInvertEquipmentBeatitude(stats[player.playernum]) )
+		auto spellID = getSpellIDFromSpellbook(item->type);
+		if ( auto spell = getSpellFromID(spellID) )
 		{
-			interval = 0;
-		}
-		else if ( item->beatitude > 0
-			|| (item->beatitude < 0 
-				&& !intro && shouldInvertEquipmentBeatitude(stats[player.playernum])) )
-		{
-			interval += std::min(abs(item->beatitude), 2);
+			interval = (1 + item->status) + stats[player.playernum]->getModifiedProficiency(spell->skillID) / 20;
+			if ( item->beatitude < 0
+				&& !intro && !shouldInvertEquipmentBeatitude(stats[player.playernum]) )
+			{
+				interval = 0;
+			}
+			else if ( item->beatitude > 0
+				|| (item->beatitude < 0 
+					&& !intro && shouldInvertEquipmentBeatitude(stats[player.playernum])) )
+			{
+				interval += std::min(abs(item->beatitude), 2);
+			}
 		}
 	}
 	else
@@ -7195,25 +7212,119 @@ bool Player::PlayerMechanics_t::itemDegradeRoll(Item* item, int* checkInterval)
 	return false;
 }
 
-void Player::PlayerMechanics_t::sustainedSpellIncrementMP(int mpChange)
+void Player::PlayerMechanics_t::sustainedSpellIncrementMP(int mpChange, int skillID)
 {
-	sustainedSpellMPUsed += std::max(0, mpChange);
+	if ( skillID == PRO_MAGIC )
+	{
+		sustainedSpellMPUsedSorcery += std::max(0, mpChange);
+	}
+	else if ( skillID == PRO_SPELLCASTING )
+	{
+		sustainedSpellMPUsedMysticism += std::max(0, mpChange);
+	}
+	else if ( skillID == PRO_SWIMMING )
+	{
+		sustainedSpellMPUsedThaumaturgy += std::max(0, mpChange);
+	}
 }
 
-bool Player::PlayerMechanics_t::sustainedSpellLevelChance()
+void Player::PlayerMechanics_t::baseSpellIncrementMP(int mpChange, int skillID)
+{
+	if ( skillID == PRO_MAGIC )
+	{
+		baseSpellMPUsedSorcery += std::max(0, mpChange);
+	}
+	else if ( skillID == PRO_SPELLCASTING )
+	{
+		baseSpellMPUsedMysticism += std::max(0, mpChange);
+	}
+	else if ( skillID == PRO_SWIMMING )
+	{
+		baseSpellMPUsedThaumaturgy += std::max(0, mpChange);
+	}
+}
+
+bool Player::PlayerMechanics_t::sustainedSpellLevelChance(int skillID)
 {
 	int threshold = 10;
-	if ( stats[player.playernum]->getProficiency(PRO_SPELLCASTING) < SKILL_LEVEL_BASIC )
+	if ( stats[player.playernum]->getProficiency(skillID) < SKILL_LEVEL_BASIC )
 	{
 		threshold = 5;
 	}
-	if ( sustainedSpellMPUsed >= threshold )
+	else
 	{
-		return true;
+		threshold = 5 + (stats[player.playernum]->getProficiency(skillID) / 2); // 5-55
+	}
+
+	if ( skillID == PRO_MAGIC )
+	{
+		return sustainedSpellMPUsedSorcery >= threshold;
+	}
+	else if ( skillID == PRO_SPELLCASTING )
+	{
+		return sustainedSpellMPUsedMysticism >= threshold;
+	}
+	else if ( skillID == PRO_SWIMMING )
+	{
+		return sustainedSpellMPUsedThaumaturgy >= threshold;
+	}
+
+	return false;
+}
+
+int Player::PlayerMechanics_t::baseSpellLevelChance(int skillID)
+{
+	int counter = 0;
+	if ( skillID == PRO_MAGIC )
+	{
+		counter = baseSpellMPUsedSorcery;
+	}
+	else if ( skillID == PRO_SPELLCASTING )
+	{
+		counter = baseSpellMPUsedMysticism;
+	}
+	else if ( skillID == PRO_SWIMMING )
+	{
+		counter = baseSpellMPUsedThaumaturgy;
 	}
 	else
 	{
-		return false;
+		return 0;
+	}
+	int threshold = 20 + stats[player.playernum]->getProficiency(skillID) / 2; //20-70
+
+	return counter / threshold;
+}
+
+void Player::PlayerMechanics_t::sustainedSpellClearMP(int skillID)
+{
+	if ( skillID == PRO_MAGIC )
+	{
+		sustainedSpellMPUsedSorcery = 0;
+	}
+	else if ( skillID == PRO_SPELLCASTING )
+	{
+		sustainedSpellMPUsedMysticism = 0;
+	}
+	else if ( skillID == PRO_SWIMMING )
+	{
+		sustainedSpellMPUsedThaumaturgy = 0;
+	}
+}
+
+void Player::PlayerMechanics_t::baseSpellClearMP(int skillID)
+{
+	if ( skillID == PRO_MAGIC )
+	{
+		baseSpellMPUsedSorcery = 0;
+	}
+	else if ( skillID == PRO_SPELLCASTING )
+	{
+		baseSpellMPUsedMysticism = 0;
+	}
+	else if ( skillID == PRO_SWIMMING )
+	{
+		baseSpellMPUsedThaumaturgy = 0;
 	}
 }
 

@@ -1328,6 +1328,7 @@ namespace ConsoleCommands {
 			{
 				players[clientnum]->entity->increaseSkill(PRO_MAGIC);
 				players[clientnum]->entity->increaseSkill(PRO_SPELLCASTING);
+				players[clientnum]->entity->increaseSkill(PRO_SWIMMING);
 			}
 		}
 		else
@@ -2424,7 +2425,7 @@ namespace ConsoleCommands {
 
 		messagePlayer(clientnum, MESSAGE_MISC, Language::get(412));
 
-		mapLevel(clientnum);
+		mapLevel(clientnum, 0, 0, 0);
 		});
 
 	static ConsoleCommand ccmd_maplevel2("/maplevel2", "magic mapping for the level (cheat)", []CCMD{
