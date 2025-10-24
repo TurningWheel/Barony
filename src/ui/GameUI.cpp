@@ -11473,6 +11473,18 @@ void Player::HUD_t::updateActionPrompts()
 					imgBacking->path = actionPromptBackingIconPath00;
 				}
 			}
+			else if ( skillForPrompt == PRO_LEGACY_MAGIC || skillForPrompt == PRO_LEGACY_SPELLCASTING )
+			{
+				imgBacking->path = actionPromptBackingIconPath00;
+				for ( auto& skill : player.skillSheet.skillSheetData.skillEntries )
+				{
+					if ( skill.skillId == skillForPrompt )
+					{
+						skillImg = skill.skillIconPath32px;
+						break;
+					}
+				}
+			}
 			else if ( ghostPrompts )
 			{
 				imgBacking->path = actionPromptBackingIconPath00;
@@ -16950,6 +16962,8 @@ struct CharacterSheetTooltipCache_t
 		std::string entry10 = "";
 		std::string entry11 = "";
 		std::string entry12 = "";
+		std::string entry13 = "";
+		std::string entry14 = "";
 	};
 	TextEntries_t textEntries[Player::CharacterSheet_t::SHEET_ENUM_END];
 	bool needsUpdate(const int player)
@@ -17627,7 +17641,16 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 				case SHEET_INT:
 				{
 					//real_t val = getBonusFromCasterOfSpellElement(players[player.playernum]->entity, stats[player.playernum], nullptr, SPELL_NONE) * 100.0;
-					real_t bonus = getSpellBonusFromCasterINT(players[player.playernum]->entity, stats[player.playernum]);
+					/*if ( auto spell = player.magic.selectedSpell() )
+					{
+						real_t bonus = getSpellBonusFromCasterINT(players[player.playernum]->entity, stats[player.playernum], spell->skillID);
+						real_t val = bonus * 100.0;
+						snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_pwr_value_format").c_str(), val);
+					}
+					else
+					{
+					}*/
+					real_t bonus = getSpellBonusFromCasterINT(players[player.playernum]->entity, stats[player.playernum], NUMPROFICIENCIES);
 					real_t val = bonus * 100.0;
 					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_pwr_value_format").c_str(), val);
 				}
@@ -17683,7 +17706,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			valueSizes[3] = std::make_pair(entryValue, backingFramePos);
 			txtValueBackingFrame->setDisabled(false);
 		}
-		if ( element == SHEET_STR || element == SHEET_DEX || element == SHEET_INT || element == SHEET_PER || element == SHEET_CHR )
+		if ( element == SHEET_STR || element == SHEET_DEX || element == SHEET_INT || element == SHEET_PER || element == SHEET_CHR || element == SHEET_CON )
 		{
 			// stat extra number display
 			currentHeight += padyMid;
@@ -17699,9 +17722,14 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			{
 				snprintf(buf, sizeof(buf), "%s", getHoverTextString("stat_dex_thrown_atk_bonus").c_str());
 			}
+			else if ( element == SHEET_CON )
+			{
+				snprintf(buf, sizeof(buf), "%s", getHoverTextString("stat_con_pwr_bonus").c_str());
+			}
 			else if ( element == SHEET_INT )
 			{
-				snprintf(buf, sizeof(buf), "%s", getHoverTextString("stat_int_mp_regen_bonus").c_str());
+				//snprintf(buf, sizeof(buf), "%s", getHoverTextString("stat_int_mp_regen_bonus").c_str());
+				snprintf(buf, sizeof(buf), "%s", getHoverTextString("stat_int_pwr_bonus2").c_str());
 			}
 			else if ( element == SHEET_PER )
 			{
@@ -17759,26 +17787,36 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 				}
 					break;
 				case SHEET_CON:
+				{
+					real_t bonus = getSpellBonusFromCasterINT(players[player.playernum]->entity, stats[player.playernum], PRO_SWIMMING);
+					bonus -= getSpellBonusFromCasterINT(players[player.playernum]->entity, stats[player.playernum], NUMPROFICIENCIES);
+					real_t val = bonus * 100.0;
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_pwr_value_format").c_str(), val);
 					break;
+				}
 				case SHEET_INT:
 				{
-					Sint32 oldINT = stats[player.playernum]->INT;
-					stats[player.playernum]->INT += -statGetINT(stats[player.playernum], player.entity);
-					real_t regenWithoutINT = getDisplayedMPRegen(player.entity, *stats[player.playernum], nullptr, nullptr);
-					stats[player.playernum]->INT = oldINT;
-
-					real_t regenTotal = getDisplayedMPRegen(player.entity, *stats[player.playernum], nullptr, nullptr);
-					real_t regenStatSkill = regenTotal - regenWithoutINT;
-					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_mp_regen_value_format").c_str(), regenStatSkill);
-				}
+					//Sint32 oldINT = stats[player.playernum]->INT;
+					//stats[player.playernum]->INT += -statGetINT(stats[player.playernum], player.entity);
+					//real_t regenWithoutINT = getDisplayedMPRegen(player.entity, *stats[player.playernum], nullptr, nullptr);
+					//stats[player.playernum]->INT = oldINT;
+					//
+					//real_t regenTotal = getDisplayedMPRegen(player.entity, *stats[player.playernum], nullptr, nullptr);
+					//real_t regenStatSkill = regenTotal - regenWithoutINT;
+					//snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_mp_regen_value_format").c_str(), regenStatSkill);
+					real_t bonus = getSpellBonusFromCasterINT(players[player.playernum]->entity, stats[player.playernum], PRO_MAGIC);
+					bonus -= getSpellBonusFromCasterINT(players[player.playernum]->entity, stats[player.playernum], NUMPROFICIENCIES);
+					real_t val = bonus * 100.0;
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_pwr_value_format").c_str(), val);
 					break;
+				}
 				case SHEET_PER:
 				{
 					const int PER = statGetPER(stats[player.playernum], players[player.playernum]->entity);
 					const int range_bonus = std::min(std::max(0, PER / 5), 2);
 					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_light_value_format").c_str(), range_bonus);
-				}
 					break;
+				}
 				case SHEET_CHR:
 				{
 					real_t val = (50 + stats[player.playernum]->getModifiedProficiency(PRO_TRADING)) / 150.f; // sell value
@@ -17795,8 +17833,8 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 					stats[player.playernum]->CHR = stat;
 
 					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_selling_value_format").c_str(), (normalVal - zeroVal) * 100.0);
-				}
 					break;
+				}
 				default:
 					break;
 			}
@@ -17824,7 +17862,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			valueSizes[4] = std::make_pair(entryValue, backingFramePos);
 			txtValueBackingFrame->setDisabled(false);
 		}
-		if ( element == SHEET_PER || element == SHEET_DEX )
+		if ( element == SHEET_PER || element == SHEET_DEX || element == SHEET_CHR )
 		{
 			// stat extra number display
 			currentHeight += padyMid;
@@ -17838,6 +17876,10 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			else if ( element == SHEET_PER )
 			{
 				snprintf(buf, sizeof(buf), "%s", getHoverTextString("stat_per_sneaking_bonus").c_str());
+			}
+			else if ( element == SHEET_CHR )
+			{
+				snprintf(buf, sizeof(buf), "%s", getHoverTextString("stat_chr_pwr_bonus").c_str());
 			}
 			entry->setText(buf);
 			entry->setVJustify(Field::justify_t::TOP);
@@ -17895,7 +17937,13 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 				}
 				break;
 				case SHEET_CHR:
+				{
+					real_t bonus = getSpellBonusFromCasterINT(players[player.playernum]->entity, stats[player.playernum], PRO_SPELLCASTING);
+					bonus -= getSpellBonusFromCasterINT(players[player.playernum]->entity, stats[player.playernum], NUMPROFICIENCIES);
+					real_t val = bonus * 100.0;
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_pwr_value_format").c_str(), val);
 					break;
+				}
 				default:
 					break;
 			}
@@ -17921,6 +17969,83 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			backingFramePos.x = backingFramePos.x + backingFramePos.w;
 			backingFramePos.h = actualFont->height(true) + extraTextHeightForLowerCharacters - 2;
 			valueSizes[5] = std::make_pair(entryValue, backingFramePos);
+			txtValueBackingFrame->setDisabled(false);
+		}
+		if ( element == SHEET_CHR )
+		{
+			// stat extra number display
+			currentHeight += padyMid;
+			auto entry = characterSheetTooltipTextFields[player.playernum][11]; assert(entry);
+			entry->setDisabled(false);
+			char buf[128] = "";
+			if ( element == SHEET_CHR )
+			{
+				snprintf(buf, sizeof(buf), "%s", getHoverTextString("stat_chr_restore_bonus").c_str());
+			}
+			entry->setText(buf);
+			entry->setVJustify(Field::justify_t::TOP);
+
+			SDL_Rect entryPos = entry->getSize();
+			entryPos.x = padx + padxMid;
+			entryPos.y = currentHeight;
+			entryPos.w = txtPos.w - (padxMid * 2);
+			entry->setSize(entryPos);
+			if ( charsheetTooltipCache[player.playernum].textEntries[element].entry11 != entry->getText() )
+			{
+				entry->reflowTextToFit(0);
+				charsheetTooltipCache[player.playernum].textEntries[element].entry11 = entry->getText();
+			}
+			entryPos.h = actualFont->height(true) * entry->getNumTextLines() + extraTextHeightForLowerCharacters;
+			entry->setSize(entryPos);
+			entry->setColor(defaultColor);
+			currentHeight = std::max(entryPos.y + entryPos.h - extraTextHeightForLowerCharacters, 0);
+			tooltipPos.h = pady1 + currentHeight + pady2;
+
+			auto entryValue = characterSheetTooltipTextFields[player.playernum][12]; assert(entry);
+			entryValue->setDisabled(false);
+			char valueBuf[128] = "";
+			int value = 0;
+			switch ( element )
+			{
+			case SHEET_STR:
+				break;
+			case SHEET_CON:
+				break;
+			case SHEET_INT:
+				break;
+			case SHEET_PER:
+				break;
+			case SHEET_CHR:
+			{
+				int val = Entity::getMPRestoreOnLevelUp(player.entity, stats[player.playernum], MP_MOD, true);
+				snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_chr_restore_format").c_str(), val);
+				break;
+			}
+			default:
+				break;
+			}
+			entryValue->setColor(hudColors.characterSheetNeutral);
+			if ( value < 0 )
+			{
+				entryValue->setColor(hudColors.characterSheetRed);
+			}
+			else if ( value > 0 )
+			{
+				entryValue->setColor(hudColors.characterSheetGreen);
+			}
+			entryValue->setText(valueBuf);
+			entryValue->setSize(entry->getSize());
+			entryValue->setHJustify(Frame::justify_t::LEFT);
+			entryValue->setVJustify(Field::justify_t::TOP);
+
+			auto txtValueBackingFrame = characterSheetTooltipTextBackingFrames[player.playernum][6];
+			SDL_Rect backingFramePos = entryValue->getSize();
+			auto txtValueGet = Text::get(entryValue->getText(), entryValue->getFont(),
+				entryValue->getTextColor(), entryValue->getOutlineColor());
+			longestValue = std::max(longestValue, txtValueGet->getWidth());
+			backingFramePos.x = backingFramePos.x + backingFramePos.w;
+			backingFramePos.h = actualFont->height(true) + extraTextHeightForLowerCharacters - 2;
+			valueSizes[6] = std::make_pair(entryValue, backingFramePos);
 			txtValueBackingFrame->setDisabled(false);
 		}
 
@@ -17965,7 +18090,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 
 			currentHeight += padyMid;
 
-			auto entry = characterSheetTooltipTextFields[player.playernum][11]; assert(entry);
+			auto entry = characterSheetTooltipTextFields[player.playernum][13]; assert(entry);
 			entry->setDisabled(false);
 			char buf[512] = "";
 
@@ -17987,10 +18112,10 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			entryPos.y = currentHeight;
 			entryPos.w = txtPos.w;
 			entry->setSize(entryPos);
-			if ( charsheetTooltipCache[player.playernum].textEntries[element].entry11 != entry->getText() )
+			if ( charsheetTooltipCache[player.playernum].textEntries[element].entry13 != entry->getText() )
 			{
 				entry->reflowTextToFit(0);
-				charsheetTooltipCache[player.playernum].textEntries[element].entry11 = entry->getText();
+				charsheetTooltipCache[player.playernum].textEntries[element].entry13 = entry->getText();
 			}
 			entryPos.h = actualFont->height(true) * entry->getNumTextLines() + extraTextHeightForLowerCharacters;
 			entry->setSize(entryPos);
@@ -18174,6 +18299,19 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 				break;
 			case SHEET_POW:
 				titleText = getHoverTextString("attributes_pwr_title");
+				if ( auto spell = player.magic.selectedSpell() )
+				{
+					for ( auto& skill : player.skillSheet.skillSheetData.skillEntries )
+					{
+						if ( skill.skillId == spell->skillID )
+						{
+							char buf[128];
+							snprintf(buf, sizeof(buf), getHoverTextString("attributes_pwr_title_skill").c_str(), skill.getSkillName().c_str());
+							titleText = buf;
+							break;
+						}
+					}
+				}
 				descText = getHoverTextString("attributes_pwr_desc");
 				break;
 			case SHEET_RES:
@@ -18283,7 +18421,15 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_pwr_base").c_str());
 					std::string tag = "MAGIC_SPELLPOWER_TOTAL";
 					std::string formatValue = "%d";
-					std::string pwrBonus = formatSkillSheetEffects(player.playernum, PRO_MAGIC, tag, formatValue);
+					std::string pwrBonus = "";
+					if ( auto spell = player.magic.selectedSpell() )
+					{
+						pwrBonus = formatSkillSheetEffects(player.playernum, spell->skillID, tag, formatValue);
+					}
+					else
+					{
+						pwrBonus = formatSkillSheetEffects(player.playernum, NUMPROFICIENCIES, tag, formatValue);
+					}
 					Sint32 pwr = 100 + std::stoi(pwrBonus);
 					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_pwr_nobonus_format").c_str(), pwr);
 				}
@@ -18404,6 +18550,18 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 						else
 						{
 							glyphBacking->path = actionPromptBackingIconPath00;
+						}
+					}
+					else if ( attackHoverTextInfo.proficiency == PRO_LEGACY_MAGIC || attackHoverTextInfo.proficiency == PRO_LEGACY_SPELLCASTING )
+					{
+						glyphBacking->path = actionPromptBackingIconPath00;
+						for ( auto& skill : player.skillSheet.skillSheetData.skillEntries )
+						{
+							if ( skill.skillId == attackHoverTextInfo.proficiency )
+							{
+								glyphIcon->path = skill.skillIconPath;
+								break;
+							}
 						}
 					}
 					break;
@@ -18602,7 +18760,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_pwr_spellbook").c_str());
 					std::string tag = "MAGIC_SPELLPOWER_INT";
 					std::string formatValue = "%d";
-					std::string pwrBonus = formatSkillSheetEffects(player.playernum, PRO_MAGIC, tag, formatValue);
+					std::string pwrBonus = formatSkillSheetEffects(player.playernum, NUMPROFICIENCIES, tag, formatValue);
 					Sint32 pwr = std::stoi(pwrBonus) / 2;
 					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_pwr_bonus_format").c_str(), pwr);
 				}
@@ -19126,7 +19284,23 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 				{
 					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_pwr_entry_attr_bonus").c_str());
 					std::string tag = "MAGIC_SPELLPOWER_INT";
-					std::string pwrINTBonus = formatSkillSheetEffects(player.playernum, PRO_MAGIC, tag, getHoverTextString("attributes_pwr_bonus_format"));
+					std::string pwrINTBonus = "";
+					if ( auto spell = player.magic.selectedSpell() )
+					{
+						pwrINTBonus = formatSkillSheetEffects(player.playernum, spell->skillID, tag, getHoverTextString("attributes_pwr_bonus_format"));
+						if ( spell->skillID == PRO_SPELLCASTING )
+						{
+							snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_pwr_entry_attr_bonus_mysticism").c_str());
+						}
+						else if ( spell->skillID == PRO_SWIMMING )
+						{
+							snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_pwr_entry_attr_bonus_thaumaturgy").c_str());
+						}
+					}
+					else
+					{
+						pwrINTBonus = formatSkillSheetEffects(player.playernum, NUMPROFICIENCIES, tag, getHoverTextString("attributes_pwr_bonus_format"));
+					}
 					snprintf(valueBuf, sizeof(valueBuf), "%s", pwrINTBonus.c_str());
 				}
 					break;
@@ -19389,7 +19563,15 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 				{
 					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_pwr_entry_items_bonus").c_str());
 					std::string tag = "MAGIC_SPELLPOWER_EQUIPMENT";
-					std::string pwrINTBonus = formatSkillSheetEffects(player.playernum, PRO_MAGIC, tag, getHoverTextString("attributes_pwr_bonus_format"));
+					std::string pwrINTBonus = "";
+					if ( auto spell = player.magic.selectedSpell() )
+					{
+						pwrINTBonus = formatSkillSheetEffects(player.playernum, spell->skillID, tag, getHoverTextString("attributes_pwr_bonus_format"));
+					}
+					else
+					{
+						pwrINTBonus = formatSkillSheetEffects(player.playernum, NUMPROFICIENCIES, tag, getHoverTextString("attributes_pwr_bonus_format"));
+					}
 					snprintf(valueBuf, sizeof(valueBuf), "%s", pwrINTBonus.c_str());
 				}
 					break;
@@ -21295,7 +21477,15 @@ void Player::CharacterSheet_t::updateAttributes()
 
 	if ( auto field = attributesInnerFrame->findField("pwr text stat") )
 	{
-		real_t spellPower = (getBonusFromCasterOfSpellElement(player.entity, stats[player.playernum], nullptr, SPELL_NONE) * 100.0) + 100.0;
+		real_t spellPower = 0.0;
+		if ( auto spell = player.magic.selectedSpell() )
+		{
+			spellPower = (getBonusFromCasterOfSpellElement(player.entity, stats[player.playernum], nullptr, spell->ID, spell->skillID) * 100.0) + 100.0;
+		}
+		else
+		{
+			spellPower = (getBonusFromCasterOfSpellElement(player.entity, stats[player.playernum], nullptr, SPELL_NONE, NUMPROFICIENCIES) * 100.0) + 100.0;
+		}
 		snprintf(buf, sizeof(buf), "%.f%%", spellPower);
 		if ( strcmp(buf, field->getText()) )
 		{
@@ -26274,6 +26464,26 @@ void createPlayerSpellList(const int player)
 		titleText->setSize(SDL_Rect{ 56, 12, 96, 24 });
 		titleText->setColor(makeColor(236, 175, 28, 255));
 
+		auto filterTooltipFrame = bgFrame->addFrame("filter frame");
+		filterTooltipFrame->setSize(SDL_Rect{ 0, bg->pos.h - 50, bg->pos.w, 50 });
+		filterTooltipFrame->setHollow(true);
+		filterTooltipFrame->setInheritParentFrameOpacity(false);
+
+		auto filterText = filterTooltipFrame->addField("filter txt", 64);
+		filterText->setFont(smallfont_outline);
+		filterText->setText(Language::get(6842));
+		filterText->setHJustify(Field::justify_t::CENTER);
+		filterText->setVJustify(Field::justify_t::TOP);
+		filterText->setSize(SDL_Rect{ 0, 3, filterTooltipFrame->getSize().w, 48});
+		filterText->setColor(makeColor(236, 175, 28, 255));
+		filterText->setDisabled(true);
+
+		auto filterTooltipImg = filterTooltipFrame->addImage(
+			SDL_Rect{ filterTooltipFrame->getSize().w / 2 - 154 / 2, filterTooltipFrame->getSize().h - 50, 154, 50 },
+			makeColor(255, 255, 255, 128),
+			"*#images/ui/Inventory/HUD_Magic_Filter_Tooltip.png", "spell filter tooltip img");
+		filterTooltipImg->disabled = true;
+
 		auto closeBtn = bgFrame->addButton("close spell button");
 		SDL_Rect closeBtnPos;
 		closeBtnPos.x = 180;
@@ -26310,18 +26520,64 @@ void createPlayerSpellList(const int player)
 			}
 		});
 
-		auto skillBg = bgFrame->addImage(SDL_Rect{ 6, 6, 32, 32 },
+		/*auto skillBg = bgFrame->addImage(SDL_Rect{ 14, 6, 32, 32 },
 			makeColor(255, 255, 255, 255),
-			"*#images/ui/Inventory/HUD_Magic_Casting_BG_01.png", "spell skill bg");
+			"*#images/ui/Inventory/HUD_Magic_Casting_BG_01.png", "spell skill bg");*/
 
-		auto skillIcon = bgFrame->addImage(SDL_Rect{ skillBg->pos.x + 4, skillBg->pos.y + 4, 24, 24 },
+		auto filterBtn = bgFrame->addButton("spell filter button");
+		SDL_Rect filterBtnPos;
+		filterBtnPos.x = 14;
+		filterBtnPos.y = 6;
+		filterBtnPos.w = 32;
+		filterBtnPos.h = 32;
+		filterBtn->setSize(filterBtnPos);
+		filterBtn->setColor(makeColor(255, 255, 255, 255));
+		filterBtn->setHighlightColor(makeColor(255, 255, 255, 255));
+		filterBtn->setTextHighlightColor(makeColor(201, 162, 100, 255));
+		filterBtn->setText("");
+		filterBtn->setFont(font);
+		filterBtn->setHideGlyphs(true);
+		filterBtn->setHideKeyboardGlyphs(true);
+		filterBtn->setHideSelectors(true);
+		filterBtn->setMenuConfirmControlType(0);
+		filterBtn->setBackground("*#images/ui/Inventory/HUD_Magic_Casting_BG_01.png");
+		filterBtn->setBackgroundHighlighted("*#images/ui/Inventory/HUD_Magic_Casting_BG_High_01.png");
+		filterBtn->setBackgroundActivated("*#images/ui/Inventory/HUD_Magic_Casting_BG_Press_01.png");
+		filterBtn->setCallback([](Button& button) {
+			auto& val = players[button.getOwner()]->inventoryUI.spellPanel.spellFilterBySkill;
+			if ( val == 0 ) { val = PRO_MAGIC; }
+			else if ( val == PRO_MAGIC ) { val = PRO_SPELLCASTING; }
+			else if ( val == PRO_SPELLCASTING ) { val = PRO_SWIMMING; }
+			else
+			{
+				val = 0;
+			}
+			Player::soundActivate();
+			});
+		filterBtn->setTickCallback([](Widget& widget) {
+			if ( widget.isSelected() )
+			{
+				if ( !inputs.getVirtualMouse(widget.getOwner())->draw_cursor )
+				{
+					widget.deselect();
+				}
+			}
+		});
+
+		auto skillIcon = bgFrame->addImage(SDL_Rect{ filterBtnPos.x + 4, filterBtnPos.y + 4, 24, 24 },
 			makeColor(255, 255, 255, 255),
 			"", "spell skill icon");
+		skillIcon->ontop = true;
 
 		auto closeGlyph = bgFrame->addImage(SDL_Rect{ 0, 0, 24, 24 },
 			makeColor(255, 255, 255, 255),
 			"", "close spell glyph");
 		closeGlyph->disabled = true;
+
+		auto filterGlyph = bgFrame->addImage(SDL_Rect{ 0, 0, 24, 24 },
+			makeColor(255, 255, 255, 255),
+			"", "filter spell glyph");
+		filterGlyph->disabled = true;
 	}
 }
 
@@ -34905,37 +35161,37 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		}
 		return buf;
 	}
-	else if ( proficiency == PRO_SWIMMING )
-	{
-		if ( tag == "SWIM_SPEED_TOTAL" )
-		{
-			val = (((stats[playernum]->getModifiedProficiency(proficiency) / 100.f) * 50.f) + 50); // water movement speed
-			if ( stats[playernum]->type == SKELETON )
-			{
-				val *= .5;
-			}
-			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
-		}
-		else if ( tag == "SWIM_SPEED_BASE" )
-		{
-			val = -50.0; // water movement speed
-			if ( stats[playernum]->type == SKELETON )
-			{
-				val -= 25.0;
-			}
-			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
-		}
-		else if ( tag == "SWIM_SPEED_BONUS" )
-		{
-			val = (((stats[playernum]->getModifiedProficiency(proficiency) / 100.f) * 50.f)); // water movement speed
-			if ( stats[playernum]->type == SKELETON )
-			{
-				val *= .5;
-			}
-			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
-		}
-		return buf;
-	}
+	//else if ( proficiency == PRO_SWIMMING )
+	//{
+	//	if ( tag == "SWIM_SPEED_TOTAL" )
+	//	{
+	//		val = (((stats[playernum]->getModifiedProficiency(proficiency) / 100.f) * 50.f) + 50); // water movement speed
+	//		if ( stats[playernum]->type == SKELETON )
+	//		{
+	//			val *= .5;
+	//		}
+	//		snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+	//	}
+	//	else if ( tag == "SWIM_SPEED_BASE" )
+	//	{
+	//		val = -50.0; // water movement speed
+	//		if ( stats[playernum]->type == SKELETON )
+	//		{
+	//			val -= 25.0;
+	//		}
+	//		snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+	//	}
+	//	else if ( tag == "SWIM_SPEED_BONUS" )
+	//	{
+	//		val = (((stats[playernum]->getModifiedProficiency(proficiency) / 100.f) * 50.f)); // water movement speed
+	//		if ( stats[playernum]->type == SKELETON )
+	//		{
+	//			val *= .5;
+	//		}
+	//		snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+	//	}
+	//	return buf;
+	//}
 	else if ( proficiency == PRO_LEADERSHIP )
 	{
 		if ( tag == "LEADER_MAX_FOLLOWERS" )
@@ -35298,8 +35554,124 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		}
 		return buf;
 	}
-	else if ( proficiency == PRO_SPELLCASTING )
+	/*else if ( proficiency == PRO_SPELLCASTING )
 	{
+		return buf;
+	}*/
+	else if ( proficiency == PRO_MAGIC || proficiency == PRO_SPELLCASTING || proficiency == PRO_SWIMMING || proficiency == NUMPROFICIENCIES )
+	{
+		snprintf(buf, sizeof(buf), "%d", 0);
+		if ( tag == "MAGIC_CURRENT_TIER" )
+		{
+			std::string tierName = Language::get(4061);
+			int skillLVL = std::min(stats[playernum]->getModifiedProficiency(proficiency) + statGetINT(stats[playernum], player), 100);
+			if ( skillLVL < 0 )
+			{
+				tierName = Language::get(4057); // none
+			}
+			else
+			{
+				skillLVL /= 20;
+				tierName += " ";
+				if ( skillLVL == 0 )
+				{
+					tierName += "I";
+				}
+				else if ( skillLVL == 1 )
+				{
+					tierName += "II";
+				}
+				else if ( skillLVL == 2 )
+				{
+					tierName += "III";
+				}
+				else if ( skillLVL == 3 )
+				{
+					tierName += "IV";
+				}
+				else if ( skillLVL == 4 )
+				{
+					tierName += "V";
+				}
+				else if ( skillLVL >= 5 )
+				{
+					tierName += "VI";
+				}
+			}
+			snprintf(buf, sizeof(buf), rawValue.c_str(), tierName.c_str());
+		}
+		else if ( tag == "MAGIC_SPELLPOWER_TOTAL" )
+		{
+			val = (getBonusFromCasterOfSpellElement(player, stats[playernum], nullptr, SPELL_NONE, proficiency) * 100.0);
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		else if ( tag == "MAGIC_SPELLPOWER_INT" )
+		{
+			//val = (getBonusFromCasterOfSpellElement(player, stats[playernum], nullptr, SPELL_NONE) * 100.0);
+			real_t bonus = getSpellBonusFromCasterINT(players[playernum]->entity, stats[playernum], proficiency);
+			val = bonus * 100.0;
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		else if ( tag == "MAGIC_SPELLPOWER_EQUIPMENT" )
+		{
+			val = (getBonusFromCasterOfSpellElement(player, stats[playernum], nullptr, SPELL_NONE, proficiency) * 100.0);
+			real_t bonus = getSpellBonusFromCasterINT(players[playernum]->entity, stats[playernum], proficiency);
+			val -= bonus * 100.0;
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		else if ( tag == "MAGIC_CURRENT_TIER_SPELLS" )
+		{
+			int skillLVL = std::min(stats[playernum]->getModifiedProficiency(proficiency) + statGetINT(stats[playernum], player), 100);
+			if ( skillLVL >= 0 )
+			{
+				skillLVL /= 20;
+			}
+			std::string magics = "";
+			std::set<int> inserted;
+			for ( int i = SPELL_NONE + 1; i < NUM_SPELLS; ++i )
+			{
+				auto find = allGameSpells.find(i);
+				if ( find != allGameSpells.end() )
+				{
+					auto spellEntry = find->second;
+					if ( !spellEntry )
+					{
+						continue;
+					}
+					if ( spellEntry->skillID != proficiency )
+					{
+						continue;
+					}
+					if ( spellEntry->ID == SPELL_WEAKNESS 
+						|| spellEntry->ID == SPELL_GHOST_BOLT
+						|| spellEntry->ID == SPELL_SLIME_ACID 
+						|| spellEntry->ID == SPELL_SLIME_FIRE 
+						|| spellEntry->ID == SPELL_SLIME_WATER 
+						|| spellEntry->ID == SPELL_SLIME_TAR
+						|| spellEntry->ID == SPELL_SLIME_METAL
+						|| spellEntry->hide_from_ui == true )
+					{
+						continue;
+					}
+					if ( spellEntry && spellEntry->difficulty == (skillLVL * 20) )
+					{
+						if ( inserted.find(spellEntry->ID) != inserted.end() )
+						{
+							continue;
+						}
+						inserted.insert(spellEntry->ID);
+						if ( magics != "" )
+						{
+							magics += '\n';
+						}
+						magics += "\x1E ";
+						magics += spellEntry->getSpellName();
+					}
+				}
+			}
+			if ( magics == "" ) { magics = "-"; }
+			snprintf(buf, sizeof(buf), rawValue.c_str(), magics.c_str());
+		}
 		if ( tag == "CASTING_MP_REGEN" )
 		{
 			if ( (stats[playernum])->playerRace == RACE_INSECTOID && (stats[playernum])->stat_appearance == 0 )
@@ -35349,7 +35721,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 			stats[playernum]->setProficiencyUnsafe(proficiency, -999);
 			real_t zeroValue = getBaseManaRegen(player, *(stats[playernum])) / (TICKS_PER_SECOND * 1.f);
 			stats[playernum]->setProficiency(proficiency, skill);
-				
+
 			val = (100 * zeroValue / normalValue) - 100;
 			snprintf(buf, sizeof(buf), rawValue.c_str(), val);
 		}
@@ -35367,7 +35739,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		}
 		else if ( tag == "CASTING_BEGINNER" )
 		{
-			if ( isSpellcasterBeginner(playernum, player) )
+			if ( isSpellcasterBeginner(playernum, player, proficiency) )
 			{
 				snprintf(buf, sizeof(buf), rawValue.c_str(), Language::get(1314)); // yes
 			}
@@ -35407,117 +35779,6 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 				tierName += "VI";
 			}
 			snprintf(buf, sizeof(buf), rawValue.c_str(), tierName.c_str());
-		}
-		return buf;
-	}
-	else if ( proficiency == PRO_MAGIC )
-	{
-		if ( tag == "MAGIC_CURRENT_TIER" )
-		{
-			std::string tierName = Language::get(4061);
-			int skillLVL = std::min(stats[playernum]->getModifiedProficiency(proficiency) + statGetINT(stats[playernum], player), 100);
-			if ( skillLVL < 0 )
-			{
-				tierName = Language::get(4057); // none
-			}
-			else
-			{
-				skillLVL /= 20;
-				tierName += " ";
-				if ( skillLVL == 0 )
-				{
-					tierName += "I";
-				}
-				else if ( skillLVL == 1 )
-				{
-					tierName += "II";
-				}
-				else if ( skillLVL == 2 )
-				{
-					tierName += "III";
-				}
-				else if ( skillLVL == 3 )
-				{
-					tierName += "IV";
-				}
-				else if ( skillLVL == 4 )
-				{
-					tierName += "V";
-				}
-				else if ( skillLVL >= 5 )
-				{
-					tierName += "VI";
-				}
-			}
-			snprintf(buf, sizeof(buf), rawValue.c_str(), tierName.c_str());
-		}
-		else if ( tag == "MAGIC_SPELLPOWER_TOTAL" )
-		{
-			val = (getBonusFromCasterOfSpellElement(player, stats[playernum], nullptr, SPELL_NONE) * 100.0);
-			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
-		}
-		else if ( tag == "MAGIC_SPELLPOWER_INT" )
-		{
-			//val = (getBonusFromCasterOfSpellElement(player, stats[playernum], nullptr, SPELL_NONE) * 100.0);
-			real_t bonus = getSpellBonusFromCasterINT(players[playernum]->entity, stats[playernum]);
-			val = bonus * 100.0;
-			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
-		}
-		else if ( tag == "MAGIC_SPELLPOWER_EQUIPMENT" )
-		{
-			val = (getBonusFromCasterOfSpellElement(player, stats[playernum], nullptr, SPELL_NONE) * 100.0);
-			real_t bonus = getSpellBonusFromCasterINT(players[playernum]->entity, stats[playernum]);
-			val -= bonus * 100.0;
-			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
-		}
-		else if ( tag == "MAGIC_CURRENT_TIER_SPELLS" )
-		{
-			int skillLVL = std::min(stats[playernum]->getModifiedProficiency(proficiency) + statGetINT(stats[playernum], player), 100);
-			if ( skillLVL >= 0 )
-			{
-				skillLVL /= 20;
-			}
-			std::string magics = "";
-			std::set<int> inserted;
-			for ( int i = SPELL_NONE + 1; i < NUM_SPELLS; ++i )
-			{
-				auto find = allGameSpells.find(i);
-				if ( find != allGameSpells.end() )
-				{
-					auto spellEntry = find->second;
-					if ( !spellEntry )
-					{
-						continue;
-					}
-					if ( spellEntry->ID == SPELL_WEAKNESS 
-						|| spellEntry->ID == SPELL_GHOST_BOLT
-						|| spellEntry->ID == SPELL_SLIME_ACID 
-						|| spellEntry->ID == SPELL_SLIME_FIRE 
-						|| spellEntry->ID == SPELL_SLIME_WATER 
-						|| spellEntry->ID == SPELL_SLIME_TAR
-						|| spellEntry->ID == SPELL_SLIME_METAL
-						|| spellEntry->hide_from_ui == true )
-					{
-						continue;
-					}
-					if ( spellEntry && spellEntry->difficulty == (skillLVL * 20) )
-					{
-						if ( inserted.find(spellEntry->ID) != inserted.end() )
-						{
-							continue;
-						}
-						inserted.insert(spellEntry->ID);
-						if ( magics != "" )
-						{
-							magics += '\n';
-						}
-						magics += "\x1E ";
-						magics += spellEntry->getSpellName();
-					}
-				}
-			}
-			if ( magics == "" ) { magics = "-"; }
-			snprintf(buf, sizeof(buf), rawValue.c_str(), magics.c_str());
 		}
 		return buf;
 	}
@@ -36077,14 +36338,14 @@ void Player::SkillSheet_t::processSkillSheet()
 		std::string rightBinary = "00000000";
 		for ( auto& skillEntry : skillSheetData.skillEntries )
 		{
-			if ( index >= 8 )
+			if ( index >= 8 && index < 16 )
 			{
 				if ( stats[player.playernum]->getModifiedProficiency(skillEntry.skillId) >= SKILL_LEVEL_LEGENDARY )
 				{
 					leftBinary[7 - (index - 8)] = '1';
 				}
 			}
-			else
+			else if ( index < 8 )
 			{
 				if ( stats[player.playernum]->getModifiedProficiency(skillEntry.skillId) >= SKILL_LEVEL_LEGENDARY )
 				{
@@ -36659,7 +36920,7 @@ void Player::SkillSheet_t::processSkillSheet()
 
 		//DebugTimers.addTimePoint("skill", "post resize");
 
-		if ( selectedSkill >= 0 && selectedSkill < skillSheetData.skillEntries.size() )
+		if ( selectedSkill >= 0 && selectedSkill < skillSheetData.skillEntries.size() && selectedSkill < NUMPROFICIENCIES )
 		{
 			int proficiency = skillSheetData.skillEntries[selectedSkill].skillId;
 			int proficiencyValue = stats[player.playernum]->getModifiedProficiency(proficiency);
@@ -37770,9 +38031,9 @@ void Player::Inventory_t::SpellPanel_t::updateSpellPanel()
 		sliderCapBot->pos.y = sliderPos.y + sliderPos.h - sliderCapBot->pos.h;
 	}
 
-	auto skillBg = baseFrame->findImage("spell skill bg");
+	/*auto skillBg = baseFrame->findImage("spell skill bg");
 	skillBg->pos.x = 14;
-	skillBg->pos.y = 6;
+	skillBg->pos.y = 6;*/
 
 	int lowestItemY = getNumSpellsToDisplayVertical() - 1;
 	for ( node_t* node = stats[player.playernum]->inventory.first; node != NULL; node = node->next )
@@ -37850,23 +38111,98 @@ void Player::Inventory_t::SpellPanel_t::updateSpellPanel()
 		}
 	}
 
-	auto skillIcon = baseFrame->findImage("spell skill icon");
-	skillIcon->pos.x = skillBg->pos.x + 4;
-	skillIcon->pos.y = skillBg->pos.y + 4;
-	for ( auto& skillEntry : Player::SkillSheet_t::skillSheetData.skillEntries )
+	auto filterGlyph = baseFrame->findImage("filter spell glyph");
+	filterGlyph->disabled = true;
+	auto filterBtn = baseFrame->findButton("spell filter button");
+	filterBtn->setDisabled(true);
+	SDL_Rect filterBtnPos = filterBtn->getSize();
+	filterBtnPos.x = 14;
+	filterBtnPos.y = 6;
+	filterBtn->setSize(filterBtnPos);
+	if ( inputs.getVirtualMouse(player.playernum)->draw_cursor )
 	{
-		if ( skillEntry.skillId == PRO_MAGIC )
+		filterBtn->setDisabled(!isInteractable);
+		if ( isInteractable )
 		{
-			if ( skillCapstoneUnlocked(player.playernum, PRO_MAGIC) )
-			{
-				skillIcon->path = skillEntry.skillIconPathLegend.c_str();
-			}
-			else
-			{
-				skillIcon->path = skillEntry.skillIconPath.c_str();
-			}
-			break;
+			buttonSpellUpdateSelectorOnHighlight(player.playernum, filterBtn);
 		}
+	}
+	else if ( filterBtn->isSelected() )
+	{
+		filterBtn->deselect();
+	}
+	if ( filterBtn->isDisabled() && usingGamepad )
+	{
+		SDL_Rect filterBtnPos = filterBtn->getSize();
+		filterBtnPos.x -= 8;
+		filterBtn->setSize(filterBtnPos);
+
+		filterGlyph->path = Input::inputs[player.playernum].getGlyphPathForBinding("MenuAlt2");
+		if ( auto imgGet = Image::get(filterGlyph->path.c_str()) )
+		{
+			filterGlyph->pos.w = imgGet->getWidth();
+			filterGlyph->pos.h = imgGet->getHeight();
+			filterGlyph->disabled = false;
+		}
+		filterGlyph->pos.x = filterBtn->getSize().x + filterBtn->getSize().w;
+		if ( filterGlyph->pos.x % 2 == 1 )
+		{
+			++filterGlyph->pos.x;
+		}
+		filterGlyph->pos.y = filterBtn->getSize().y + filterBtn->getSize().h / 2 - filterGlyph->pos.h / 2;
+		if ( filterGlyph->pos.y % 2 == 1 )
+		{
+			++filterGlyph->pos.y;
+		}
+	}
+
+	auto skillIcon = baseFrame->findImage("spell skill icon");
+	auto filterFrame = baseFrame->findFrame("filter frame");
+	auto filterText = filterFrame->findField("filter txt");
+	filterText->setDisabled(true);
+	auto filterTooltipImg = filterFrame->findImage("spell filter tooltip img");
+	filterTooltipImg->disabled = true;
+	if ( spellFilterBySkill > 0 )
+	{
+		skillIcon->pos.x = filterBtn->getSize().x + 4;
+		skillIcon->pos.y = filterBtn->getSize().y + 4;
+		skillIcon->pos.w = 24;
+		skillIcon->pos.h = 24;
+		for ( auto& skillEntry : Player::SkillSheet_t::skillSheetData.skillEntries )
+		{
+			if ( skillEntry.skillId == spellFilterBySkill )
+			{
+				if ( skillCapstoneUnlocked(player.playernum, skillEntry.skillId) )
+				{
+					skillIcon->path = skillEntry.skillIconPathLegend.c_str();
+				}
+				else
+				{
+					skillIcon->path = skillEntry.skillIconPath.c_str();
+				}
+				char buf[128];
+				snprintf(buf, sizeof(buf), Language::get(6842), skillEntry.getSkillName().c_str());
+				filterText->setText(buf);
+				filterText->setDisabled(false);
+				filterTooltipImg->disabled = false;
+				filterFrame->setDisabled(false);
+				real_t opacity = filterFrame->getOpacity() / 100.0;
+				real_t opacityChange = .05 * getFPSScale(144.0);
+				opacity = std::min(opacity + opacityChange, 1.0);
+				filterFrame->setOpacity(opacity * 100.0);
+				break;
+			}
+		}
+	}
+	else
+	{
+		skillIcon->pos.x = filterBtn->getSize().x;
+		skillIcon->pos.y = filterBtn->getSize().y;
+		skillIcon->path = "#*images/ui/Inventory/HUD_Magic_Filter_All.png";
+		skillIcon->pos.w = 32;
+		skillIcon->pos.h = 32;
+		filterFrame->setDisabled(true);
+		filterFrame->setOpacity(0.0);
 	}
 
 	if ( bOpen && isInteractable )
@@ -37962,6 +38298,14 @@ void Player::Inventory_t::SpellPanel_t::updateSpellPanel()
 				player.GUI.activateModule(Player::GUI_t::MODULE_SPELLS);
 				player.inventoryUI.cycleInventoryTab();
 				player.inventoryUI.spellPanel.closeSpellPanel();
+			}
+			if ( Input::inputs[player.playernum].binaryToggle("MenuAlt2") )
+			{
+				Input::inputs[player.playernum].consumeBinaryToggle("MenuAlt2");
+				if ( filterBtn )
+				{
+					filterBtn->getCallback()(*filterBtn);
+				}
 			}
 		}
 	}
@@ -41700,6 +42044,7 @@ size_t SkillUpAnimation_t::getSkillUpIndexToDisplay()
 					break;
 				case PRO_MAGIC:
 				case PRO_SPELLCASTING:
+				case PRO_SWIMMING:
 					priority.push(std::make_pair(5, index));
 					break;
 				case PRO_STEALTH:
@@ -41710,9 +42055,6 @@ size_t SkillUpAnimation_t::getSkillUpIndexToDisplay()
 				case PRO_LEADERSHIP:
 				case PRO_ALCHEMY:
 					priority.push(std::make_pair(2, index));
-					break;
-				case PRO_SWIMMING:
-					priority.push(std::make_pair(1, index));
 					break;
 				case PRO_APPRAISAL:
 				default:
@@ -41791,16 +42133,14 @@ void SkillUpAnimation_t::addSkillUp(const int _numSkill, const int _currentSkill
 			break;
 		case PRO_MAGIC:
 		case PRO_SPELLCASTING:
-			ticksToLive = 2 * TICKS_PER_SECOND;
+		case PRO_SWIMMING:
+			ticksToLive = 3 * TICKS_PER_SECOND;
 			break;
 		case PRO_LOCKPICKING:
 		case PRO_TRADING:
 		case PRO_LEADERSHIP:
 		case PRO_ALCHEMY:
 			ticksToLive = 3 * TICKS_PER_SECOND;
-			break;
-		case PRO_SWIMMING:
-			ticksToLive = 2 * TICKS_PER_SECOND;
 			break;
 		case PRO_APPRAISAL:
 		default:
