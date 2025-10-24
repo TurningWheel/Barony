@@ -593,7 +593,6 @@ public:
 
 	bool isShield() const;
 	static bool doesItemProvideBeatitudeAC(ItemType type);
-	bool doesItemProvidePassiveShieldBonus() const;
 	bool doesPotionHarmAlliesOnThrown() const;
 
 	Sint32 potionGetEffectHealth(Entity* my, Stat* myStats) const;
@@ -870,6 +869,7 @@ bool itemSpriteIsQuiverBaseThirdPersonModel(int sprite);
 bool itemSpriteIsFociThirdPersonModel(const int sprite);
 bool itemTypeIsQuiver(ItemType type);
 bool itemTypeIsFoci(ItemType type);
+bool itemTypeIsInstrument(ItemType type);
 bool itemTypeIsThrownBall(ItemType type);
 real_t rangedAttackGetSpeedModifier(const Stat* myStats);
 bool rangedWeaponUseQuiverOnAttack(const Stat* myStats);

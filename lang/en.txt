@@ -3596,7 +3596,7 @@ last of your magic is drained!#
 3238 DEPRECATED#
 
 3239 Skill number invalid!#
-3240 Your appraisal is not high enough to identify
+3240 Your Lore skill is not high enough to identify
  "%s".#
 3241 You feel the curse lift as you incant the spell...#
 3242 The tomes' knowledge grants you control over the curse!#
@@ -7110,5 +7110,9 @@ to replay this challenge!
 6839 Your %s is depleted!#
 6840 The icon holds your enemies in stasis!#
 6841 The icon roots your enemies in place!#
+6842 Filtering Spells:
+%s#
+6843 Invoke#
+6844 Play#
 
 6999 END#

@@ -11431,7 +11431,7 @@ void Player::HUD_t::updateActionPrompts()
 					promptText->getTextColor(),
 					promptText->getOutlineColor());
 				textPos.w = textGetLongestLine->getWidth();
-				textPos.h = promptText->getNumTextLines() * Font::get(promptText->getFont())->height();
+				textPos.h = promptText->getNumTextLines() * Font::get(promptText->getFont())->height() + 4;
 				textPos.x = promptPos.x + promptPos.w / 2 - textPos.w / 2;
 				//textPos.y = promptPos.y + imgBacking->pos.y - textPos.h - 4; -- top aligned
 				textPos.y = promptPos.y + imgBacking->pos.y + imgBacking->pos.h + 1;

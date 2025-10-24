@@ -5356,11 +5356,7 @@ void Entity::handleEffects(Stat* myStats)
 						}
 					}
 				}
-				else if ( myStats->shield->type == INSTRUMENT_DRUM
-					|| myStats->shield->type == INSTRUMENT_FLUTE
-					|| myStats->shield->type == INSTRUMENT_LUTE
-					|| myStats->shield->type == INSTRUMENT_LYRE
-					|| myStats->shield->type == INSTRUMENT_HORN )
+				else if ( itemTypeIsInstrument(myStats->shield->type) )
 				{
 					int chargeTimeInit = (float)(TICKS_PER_SECOND / 4);
 					Uint32 defendTime = ::ticks - players[player]->mechanics.defendTicks;
@@ -11736,7 +11732,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					if ( hitstats->shield != NULL && hitstats->shield->status > BROKEN && armor == NULL
 						&& !itemTypeIsQuiver(hitstats->shield->type) && itemCategory(hitstats->shield) != SPELLBOOK
 						&& !itemTypeIsFoci(hitstats->shield->type)
-						&& !(hitstats->shield->type >= INSTRUMENT_FLUTE && hitstats->shield->type <= INSTRUMENT_HORN)
+						&& !itemTypeIsInstrument(hitstats->shield->type)
 						&& parriedDamage == 0
 						&& hitstats->shield->type != TOOL_TINKERING_KIT
 						&& hitstats->shield->type != TOOL_FRYING_PAN )

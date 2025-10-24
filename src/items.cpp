@@ -4329,6 +4329,7 @@ bool Item::doesItemProvideBeatitudeAC(ItemType type)
 {
 	if ( itemTypeIsQuiver(type) || items[type].category == SPELLBOOK
 		|| itemTypeIsFoci(type)
+		|| itemTypeIsInstrument(type)
 		|| items[type].category == AMULET )
 	{
 		return false;
@@ -4359,15 +4360,6 @@ bool Item::doesItemProvideBeatitudeAC(ItemType type)
 		{
 			return true;
 		}
-		return false;
-	}
-	return true;
-}
-
-bool Item::doesItemProvidePassiveShieldBonus() const
-{
-	if ( itemTypeIsQuiver(type) || itemCategory(this) == SPELLBOOK )
-	{
 		return false;
 	}
 	return true;
@@ -6461,6 +6453,11 @@ bool itemTypeIsFoci(const ItemType type)
 		break;
 	}
 	return false;
+}
+
+bool itemTypeIsInstrument(const ItemType type)
+{
+	return (type >= INSTRUMENT_FLUTE && type <= INSTRUMENT_HORN);
 }
 
 bool itemTypeIsThrownBall(const ItemType type)

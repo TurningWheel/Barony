@@ -5337,7 +5337,7 @@ bool GenericGUIMenu::isItemAdorcisable(const Item* item)
 	}
 	else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_ADORCISE_INSTRUMENT )
 	{
-		if ( item->type >= INSTRUMENT_FLUTE && item->type <= INSTRUMENT_HORN )
+		if ( itemTypeIsInstrument(item->type) )
 		{
 			return true;
 		}
@@ -5376,11 +5376,7 @@ bool GenericGUIMenu::isItemAlterable(const Item* item)
 
 	if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_ALTER_INSTRUMENT )
 	{
-		if ( item->type == INSTRUMENT_FLUTE
-			|| item->type == INSTRUMENT_LYRE
-			|| item->type == INSTRUMENT_DRUM
-			|| item->type == INSTRUMENT_LUTE
-			|| item->type == INSTRUMENT_HORN )
+		if ( itemTypeIsInstrument(item->type) )
 		{
 			return true;
 		}

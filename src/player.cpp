@@ -4583,11 +4583,7 @@ void Player::WorldUI_t::handleTooltips()
 				foundTinkeringKit = true;
 			}
 			else if ( stats[player]->shield &&
-				(stats[player]->shield->type == INSTRUMENT_FLUTE
-					|| stats[player]->shield->type == INSTRUMENT_DRUM
-					|| stats[player]->shield->type == INSTRUMENT_HORN
-					|| stats[player]->shield->type == INSTRUMENT_LUTE
-					|| stats[player]->shield->type == INSTRUMENT_LYRE) )
+				(itemTypeIsInstrument(stats[player]->shield->type)) )
 			{
 				foundInstrument = true;
 			}
@@ -5229,10 +5225,24 @@ const int Player::HUD_t::getActionIconForPlayer(ActionPrompts prompt, std::strin
 				bool hasSpellBook = itemCategory(stats[player.playernum]->shield) == SPELLBOOK;
 				bool allowCasting = true;
 				bool allowDefending = true;
-				if ( shapeshifted && playerRace == CREATURE_IMP )
+				if ( shapeshifted && playerRace != CREATURE_IMP )
 				{
 					// imp allowed to cast via spellbook.
 					allowCasting = false;
+				}
+				if ( !shapeshifted && itemTypeIsInstrument(stats[player.playernum]->shield->type) )
+				{
+					promptString = Language::get(6844);
+					return PRO_APPRAISAL;
+				}
+				if ( allowCasting && itemTypeIsFoci(stats[player.playernum]->shield->type) )
+				{
+					if ( auto spell = getSpellFromID(getSpellIDFromFoci(stats[player.playernum]->shield->type)) )
+					{
+						return spell->skillID;
+					}
+					promptString = Language::get(6843);
+					return PRO_MAGIC;
 				}
 				if ( hasSpellBook && allowCasting )
 				{
@@ -5243,6 +5253,10 @@ const int Player::HUD_t::getActionIconForPlayer(ActionPrompts prompt, std::strin
 					else
 					{
 						promptString = Language::get(4079);
+					}
+					if ( auto spell = getSpellFromID(getSpellIDFromSpellbook(stats[player.playernum]->shield->type)) )
+					{
+						return spell->skillID;
 					}
 					return PRO_MAGIC;
 				}

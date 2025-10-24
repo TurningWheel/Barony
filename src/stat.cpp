@@ -900,7 +900,8 @@ int Stat::pickRandomEquippedItemToDegradeOnHit(Item** returnItem, bool excludeWe
 		|| itemCategory(shield) == SPELLBOOK
 		|| shield->type == TOOL_TINKERING_KIT
 		|| shield->type == TOOL_FRYING_PAN
-		|| itemTypeIsFoci(shield->type))
+		|| itemTypeIsFoci(shield->type)
+		|| itemTypeIsInstrument(shield->type))
 		 )
 	{
 		excludeShield = true;
@@ -1468,7 +1469,7 @@ int Stat::getActiveShieldBonus(bool checkShield, bool excludeSkill, Item* shield
 	{
 		if ( itemCategory(item) == SPELLBOOK || itemTypeIsQuiver(item->type) 
 			|| itemTypeIsFoci(item->type)
-			|| (item->type >= INSTRUMENT_FLUTE && item->type <= INSTRUMENT_HORN) )
+			|| itemTypeIsInstrument(item->type) )
 		{
 			return 0;
 		}
