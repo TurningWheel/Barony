@@ -3289,7 +3289,16 @@ bool monsterIsFriendlyForTooltip(const int player, Entity& entity)
 	Monster targetEntityType = entity.getMonsterTypeFromSprite();
 	if ( targetEntityType == SHOPKEEPER )
 	{
-		if ( shopIsMysteriousShopkeeper(&entity) || !ShopkeeperPlayerHostility.isPlayerEnemy(player) )
+		if ( shopIsMysteriousShopkeeper(&entity) )
+		{
+			return true;
+		}
+		bool hostile = ShopkeeperPlayerHostility.isPlayerEnemy(player);
+		if ( !hostile && !(entity.getStats() && entity.getStats()->getEffectActive(EFF_CONFUSED)) )
+		{
+			return true;
+		}
+		else if ( hostile && (entity.getStats() && entity.getStats()->getEffectActive(EFF_CONFUSED)) )
 		{
 			return true;
 		}
@@ -3542,7 +3551,15 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 			{
 				if ( !shopIsMysteriousShopkeeper(parent) && ShopkeeperPlayerHostility.isPlayerEnemy(player.playernum) )
 				{
-					return 0.0;
+					bool hostile = ShopkeeperPlayerHostility.isPlayerEnemy(player.playernum);
+					if ( !hostile && (parent->getStats() && parent->getStats()->getEffectActive(EFF_CONFUSED)) )
+					{
+						return 0.0;
+					}
+					else if ( hostile && !(parent->getStats() && parent->getStats()->getEffectActive(EFF_CONFUSED)) )
+					{
+						return 0.0;
+					}
 				}
 			}
 			if ( parent->monsterCanTradeWith(player.playernum) && !selectInteract )
