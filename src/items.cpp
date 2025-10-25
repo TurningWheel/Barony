@@ -342,6 +342,50 @@ ItemType itemLevelCurveEntity(Entity& my, Category cat, int minLevel, int maxLev
 	return result;
 }
 
+bool itemLevelCurvePostProcess(Entity* my, Item* item, BaronyRNG& rng)
+{
+	if ( !((my && my->behavior == &actItem) || item) )
+	{
+		return false;
+	}
+
+	bool modified = false;
+	itemLevelCurveType = ITEM_LEVEL_CURVE_TYPE_DEFAULT;
+	if ( my )
+	{
+		if ( my->behavior == &actMonster && (my->getMonsterTypeFromSprite() == SHOPKEEPER || my->monsterCanTradeWith(-1)) )
+		{
+			itemLevelCurveType = ITEM_LEVEL_CURVE_TYPE_SHOP;
+			itemLevelCurveShop = my->monsterStoreType;
+		}
+		else if ( my->behavior == &actChest )
+		{
+			itemLevelCurveType = ITEM_LEVEL_CURVE_TYPE_CHEST;
+		}
+	}
+
+	int itemType = (my && my->behavior == &actItem) ? my->skill[10] : item->type;
+	int itemStatus = (my && my->behavior == &actItem) ? my->skill[11] : item->type;
+	if ( itemType >= BRONZE_TOMAHAWK && itemType <= CRYSTAL_SHURIKEN )
+	{
+		// thrown weapons always fixed status. (tomahawk = decrepit, shuriken = excellent)
+		itemStatus = std::min(static_cast<Status>(DECREPIT + (itemType - BRONZE_TOMAHAWK)), EXCELLENT);
+		if ( my && my->behavior == &actItem )
+		{
+			my->skill[11] = itemStatus;
+		}
+		else
+		{
+			item->status = static_cast<Status>(itemStatus);
+		}
+	}
+
+	itemLevelCurveType = ITEM_LEVEL_CURVE_TYPE_DEFAULT;
+	itemLevelCurveShop = -1;
+
+	return modified;
+}
+
 bool isHatShopItem(ItemType hat)
 {
 	switch ( hat )

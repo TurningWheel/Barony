@@ -157,11 +157,7 @@ void createChestInventory(Entity* my, int chestType)
 			Item* currentItem = newItem(itemLevelCurve(static_cast<Category>(cat), 0, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 			if ( currentItem )
 			{
-				if ( currentItem->type >= BRONZE_TOMAHAWK && currentItem->type <= CRYSTAL_SHURIKEN )
-				{
-					// thrown weapons always fixed status. (tomahawk = decrepit, shuriken = excellent)
-					currentItem->status = std::min(static_cast<Status>(DECREPIT + (currentItem->type - BRONZE_TOMAHAWK)), EXCELLENT);
-				}
+				itemLevelCurvePostProcess(my, currentItem, rng);
 			}
 		}
 		break;
@@ -196,7 +192,11 @@ void createChestInventory(Entity* my, int chestType)
 		for ( i = 0; i < itemcount; ++i )
 		{
 			//newItem(static_cast<ItemType>(FOOD_BREAD + (rng.rand() % 7)), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
-			newItem(itemLevelCurve(FOOD, 0, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
+			Item* item = newItem(itemLevelCurve(FOOD, 0, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
+			if ( item )
+			{
+				itemLevelCurvePostProcess(my, item, rng);
+			}
 		}
 		if ( rng.rand() % 10 == 0 )
 		{
@@ -228,13 +228,21 @@ void createChestInventory(Entity* my, int chestType)
 			{
 				//Spawn a ring.
 				//newItem(static_cast<ItemType>(RING_ADORNMENT + rng.rand() % 12), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
-				newItem(itemLevelCurve(RING, 0, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
+				Item* item = newItem(itemLevelCurve(RING, 0, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
+				if ( item )
+				{
+					itemLevelCurvePostProcess(my, item, rng);
+				}
 			}
 			else
 			{
 				//Spawn an amulet.
 				//newItem(static_cast<ItemType>(AMULET_SEXCHANGE + rng.rand() % 6), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
-				newItem(itemLevelCurve(AMULET, 0, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
+				Item* item = newItem(itemLevelCurve(AMULET, 0, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
+				if ( item )
+				{
+					itemLevelCurvePostProcess(my, item, rng);
+				}
 			}
 		}
 		break;
@@ -259,7 +267,11 @@ void createChestInventory(Entity* my, int chestType)
 			//{
 			//	newItem(CROSSBOW, static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 			//}
-			newItem(itemLevelCurve(WEAPON, minimumQuality, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
+			Item* item = newItem(itemLevelCurve(WEAPON, minimumQuality, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
+			if ( item )
+			{
+				itemLevelCurvePostProcess(my, item, rng);
+			}
 		}
 		break;
 		case 1:
@@ -300,7 +312,11 @@ void createChestInventory(Entity* my, int chestType)
 			 //{
 			 //	newItem(static_cast<ItemType>(28 + rng.rand() % 10), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 			 //}
-			newItem(itemLevelCurve(ARMOR, minimumQuality, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
+			Item* item = newItem(itemLevelCurve(ARMOR, minimumQuality, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
+			if ( item )
+			{
+				itemLevelCurvePostProcess(my, item, rng);
+			}
 		}
 		break;
 		case 2:
@@ -355,8 +371,16 @@ void createChestInventory(Entity* my, int chestType)
 			//	newItem(static_cast<ItemType>(28 + rng.rand() % 10), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 			//}
 
-			newItem(itemLevelCurve(WEAPON, minimumQuality, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
-			newItem(itemLevelCurve(ARMOR, minimumQuality, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
+			Item* item = newItem(itemLevelCurve(WEAPON, minimumQuality, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
+			if ( item )
+			{
+				itemLevelCurvePostProcess(my, item, rng);
+			}
+			item = newItem(itemLevelCurve(ARMOR, minimumQuality, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
+			if ( item )
+			{
+				itemLevelCurvePostProcess(my, item, rng);
+			}
 
 			// try for thrown items.
 			itemcount = 0 + rng.rand() % 2;
@@ -365,11 +389,7 @@ void createChestInventory(Entity* my, int chestType)
 				Item* thrown = newItem(itemLevelCurve(THROWN, minimumQuality, currentlevel, rng), WORN, 0, 3 + rng.rand() % 3, rng.rand(), false, inventory);
 				if ( thrown )
 				{
-					if ( thrown->type >= BRONZE_TOMAHAWK && thrown->type <= CRYSTAL_SHURIKEN )
-					{
-						// thrown weapons always fixed status. (tomahawk = decrepit, shuriken = excellent)
-						thrown->status = std::min(static_cast<Status>(DECREPIT + (thrown->type - BRONZE_TOMAHAWK)), EXCELLENT);
-					}
+					itemLevelCurvePostProcess(my, thrown, rng);
 				}
 			}
 		}
@@ -420,11 +440,7 @@ void createChestInventory(Entity* my, int chestType)
 				Item* thrown = newItem(itemLevelCurve(THROWN, minimumQuality, currentlevel, rng), WORN, 0, 3 + rng.rand() % 3, rng.rand(), false, inventory);
 				if ( thrown )
 				{
-					if ( thrown->type >= BRONZE_TOMAHAWK && thrown->type <= CRYSTAL_SHURIKEN )
-					{
-						// thrown weapons always fixed status. (tomahawk = decrepit, shuriken = excellent)
-						thrown->status = std::min(static_cast<Status>(DECREPIT + (thrown->type - BRONZE_TOMAHAWK)), EXCELLENT);
-					}
+					itemLevelCurvePostProcess(my, thrown, rng);
 				}
 			}
 			break;
@@ -454,7 +470,11 @@ void createChestInventory(Entity* my, int chestType)
 			for ( i = 0; i < itemcount; ++i )
 			{
 				//newItem(static_cast<ItemType>(SCROLL_IDENTIFY + rng.rand() % 12), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
-				newItem(itemLevelCurve(SCROLL, 0, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
+				Item* item = newItem(itemLevelCurve(SCROLL, 0, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
+				if ( item )
+				{
+					itemLevelCurvePostProcess(my, item, rng);
+				}
 			}
 			if ( rng.rand() % 10 == 0 )
 			{
@@ -478,14 +498,24 @@ void createChestInventory(Entity* my, int chestType)
 			for ( i = 0; i < itemcount; ++i )
 			{
 				//newItem(static_cast<ItemType>(SPELLBOOK_FORCEBOLT + rng.rand() % 22), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
-				newItem(itemLevelCurve(SPELLBOOK, 0, currentlevel + 6, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
+				Item* item = newItem(itemLevelCurve(SPELLBOOK, 0, currentlevel + 6, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
+				if ( item )
+				{
+					itemLevelCurvePostProcess(my, item, rng);
+				}
 			}
 			break;
 		case 2:
+		{
 			//A staff.
 			//newItem(static_cast<ItemType>(MAGICSTAFF_LIGHT + rng.rand() % 10), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
-			newItem(itemLevelCurve(MAGICSTAFF, 0, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
+			Item* item = newItem(itemLevelCurve(MAGICSTAFF, 0, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
+			if ( item )
+			{
+				itemLevelCurvePostProcess(my, item, rng);
+			}
 			break;
+		}
 		case 3:
 			//So spawn several items at once. A wizard's chest!
 
@@ -494,13 +524,25 @@ void createChestInventory(Entity* my, int chestType)
 			for ( i = 0; i < itemcount; ++i )
 			{
 				//newItem(static_cast<ItemType>(SCROLL_IDENTIFY + rng.rand() % 12), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
-				newItem(itemLevelCurve(SCROLL, 0, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
+				Item* item = newItem(itemLevelCurve(SCROLL, 0, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
+				if ( item )
+				{
+					itemLevelCurvePostProcess(my, item, rng);
+				}
 			}
 
 			//newItem(static_cast<ItemType>(SPELLBOOK_FORCEBOLT + rng.rand() % 22), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
-			newItem(itemLevelCurve(SPELLBOOK, 0, currentlevel + 6, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
+			Item* item = newItem(itemLevelCurve(SPELLBOOK, 0, currentlevel + 6, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
+			if ( item )
+			{
+				itemLevelCurvePostProcess(my, item, rng);
+			}
 			//newItem(static_cast<ItemType>(MAGICSTAFF_LIGHT + rng.rand() % 10), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
-			newItem(itemLevelCurve(MAGICSTAFF, 0, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
+			item = newItem(itemLevelCurve(MAGICSTAFF, 0, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
+			if ( item )
+			{
+				itemLevelCurvePostProcess(my, item, rng);
+			}
 			switch ( rng.rand() % 9 )
 			{
 			case 0:
@@ -561,7 +603,11 @@ void createChestInventory(Entity* my, int chestType)
 		for ( i = 0; i < itemcount; ++i )
 		{
 			//newItem(static_cast<ItemType>(POTION_WATER + (rng.rand() % 15)), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
-			newItem(itemLevelCurve(POTION, 0, currentlevel + 7, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
+			Item* item = newItem(itemLevelCurve(POTION, 0, currentlevel + 7, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
+			if ( item )
+			{
+				itemLevelCurvePostProcess(my, item, rng);
+			}
 		}
 		if ( rng.rand() % 8 == 0 )
 		{

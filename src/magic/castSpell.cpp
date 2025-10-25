@@ -972,6 +972,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		else if (!strcmp(element->element_internal_name, spellElement_light.element_internal_name))
 		{
             if (using_magicstaff) {
+				bool removed = false;
                 for (auto node = map.entities->first; node != nullptr; node = node->next) {
                     auto entity = (Entity*)node->element;
                     if (entity->behavior == &actMagiclightBall && entity->sprite == 174) {
@@ -980,10 +981,20 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							if ( spell && spell->magicstaff )
 							{
 								spell->sustain = false; // remove other lightballs to prevent lightball insanity
+								removed = true;
 							}
                         }
                     }
                 }
+
+				if ( removed )
+				{
+					if ( player >= 0 )
+					{
+						messagePlayer(player, MESSAGE_HINT, Language::get(6845));
+					}
+					return nullptr;
+				}
             }
 			Entity* entity = newEntity(174, 1, map.entities, nullptr); // black magic ball
 			entity->parent = caster->getUID();

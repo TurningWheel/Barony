@@ -6746,6 +6746,7 @@ void assignActions(map_t* map)
 				}
 				entity->flags[PASSABLE] = true;
 				entity->behavior = &actItem;
+				bool rolledLevelCurveItem = false;
 				if ( entity->sprite == 68 )   // magic_bow.png
 				{
 					entity->skill[10] = ARTIFACT_BOW;
@@ -6803,6 +6804,7 @@ void assignActions(map_t* map)
 										randType = map_rng.rand() % (NUMCATEGORIES - 1);
 									}
 									entity->skill[10] = itemLevelCurve(static_cast<Category>(randType), 0, currentlevel, map_rng);
+									rolledLevelCurveItem = true;
 								}
 								else
 								{
@@ -6821,11 +6823,13 @@ void assignActions(map_t* map)
 										}
 									}
 									entity->skill[10] = itemLevelCurve(static_cast<Category>(randType), 0, currentlevel, map_rng);
+									rolledLevelCurveItem = true;
 								}
 							}
 							else
 							{
 								entity->skill[10] = itemLevelCurve(FOOD, 0, currentlevel, map_rng);
+								rolledLevelCurveItem = true;
 							}
 						}
 					}
@@ -6835,6 +6839,7 @@ void assignActions(map_t* map)
 						if ( entity->skill[16] > 0 && entity->skill[16] <= 13 )
 						{
 							entity->skill[10] = itemLevelCurve(static_cast<Category>(entity->skill[16] - 1), 0, currentlevel, map_rng);
+							rolledLevelCurveItem = true;
 						}
 						else
 						{
@@ -6846,10 +6851,12 @@ void assignActions(map_t* map)
 								if ( randType == 0 )
 								{
 									entity->skill[10] = itemLevelCurve(static_cast<Category>(WEAPON), 0, currentlevel, map_rng);
+									rolledLevelCurveItem = true;
 								}
 								else if ( randType == 1 )
 								{
 									entity->skill[10] = itemLevelCurve(static_cast<Category>(ARMOR), 0, currentlevel, map_rng);
+									rolledLevelCurveItem = true;
 								}
 							}
 							else if ( entity->skill[16] == 15 )
@@ -6859,10 +6866,12 @@ void assignActions(map_t* map)
 								if ( randType == 0 )
 								{
 									entity->skill[10] = itemLevelCurve(static_cast<Category>(AMULET), 0, currentlevel, map_rng);
+									rolledLevelCurveItem = true;
 								}
 								else
 								{
 									entity->skill[10] = itemLevelCurve(static_cast<Category>(RING), 0, currentlevel, map_rng);
+									rolledLevelCurveItem = true;
 								}
 							}
 							else if ( entity->skill[16] == 16 )
@@ -6872,14 +6881,17 @@ void assignActions(map_t* map)
 								if ( randType == 0 )
 								{
 									entity->skill[10] = itemLevelCurve(static_cast<Category>(SCROLL), 0, currentlevel, map_rng);
+									rolledLevelCurveItem = true;
 								}
 								else if ( randType == 1 )
 								{
 									entity->skill[10] = itemLevelCurve(static_cast<Category>(MAGICSTAFF), 0, currentlevel, map_rng);
+									rolledLevelCurveItem = true;
 								}
 								else
 								{
 									entity->skill[10] = itemLevelCurve(static_cast<Category>(SPELLBOOK), 0, currentlevel, map_rng);
+									rolledLevelCurveItem = true;
 								}
 							}
 						}
@@ -6998,10 +7010,10 @@ void assignActions(map_t* map)
 				{
 					entity->skill[14] = 75 + 25 * (map_rng.rand() % 2);    // appearance
 				}
-				else if ( entity->skill[10] >= BRONZE_TOMAHAWK && entity->skill[10] <= CRYSTAL_SHURIKEN )
+
+				if ( rolledLevelCurveItem )
 				{
-					// thrown weapons always fixed status. (tomahawk = decrepit, shuriken = excellent)
-					entity->skill[11] = std::min(DECREPIT + (entity->skill[10] - BRONZE_TOMAHAWK), static_cast<int>(EXCELLENT));
+					itemLevelCurvePostProcess(entity, nullptr, map_rng);
 				}
 
 				auto item = newItemFromEntity(entity);

@@ -242,7 +242,11 @@ void actMagiclightBall(Entity* my)
 	my->skill[2] = -10; // so the client sets the behavior of this entity
 	const char* light = (my->sprite == 1800 || my->sprite == 1801) ? "magic_shade" : "magic_light";
 	const char* light_flicker = (my->sprite == 1800 || my->sprite == 1801) ? "magic_shade_flicker" : "magic_light_flicker";
-
+	auto& lightball_travelled_distance = my->fskill[3];
+	/*if ( my->sprite == 174 )
+	{
+		my->ditheringOverride = 4;
+	}*/
 	if (clientnum != 0 && multiplayer == CLIENT)
 	{
 		my->removeLightField();
@@ -469,7 +473,132 @@ void actMagiclightBall(Entity* my)
 			{
 				return;
 			}
-			double distance = sqrt(pow(my->x - parent->x, 2) + pow(my->y - parent->y, 2));
+
+			real_t follow_x = parent->x;
+			real_t follow_y = parent->y;
+			if ( spell && spell->ID == SPELL_LIGHT )
+			{
+				real_t vel = sqrt(pow(parent->vel_x, 2) + pow(parent->vel_y, 2));
+				//if ( abs(vel) > 0.1 )
+				{
+					real_t dir = parent->yaw;// atan2(parent->vel_y, parent->vel_x);
+
+					// draw line from the leaders direction until we hit a wall or 24 dist
+					real_t startx = follow_x + 16.0 * cos(dir + PI / 4);
+					real_t starty = follow_y + 16.0 * sin(dir + PI / 4);
+					real_t previousx = startx;
+					real_t previousy = starty;
+					real_t followDist = 48.0;
+					std::map<int, bool> checkedTiles;
+					real_t furthestDist = 0.0;
+					for ( int iterations = 0; iterations < 20; ++iterations )
+					{
+						startx += 4 * cos(dir);
+						starty += 4 * sin(dir);
+						if ( sqrt(pow(startx - follow_x, 2) + pow(starty - follow_y, 2)) > followDist )
+						{
+							break;
+						}
+						int mapx = (static_cast<int>(startx) >> 4);
+						int mapy = (static_cast<int>(starty) >> 4);
+						if ( !(mapx >= 0 && mapx < map.width && mapy >= 0 && mapy < map.height) )
+						{
+							continue;
+						}
+						int index = (mapy)*MAPLAYERS + (mapx)*MAPLAYERS * map.height;
+						if ( !map.tiles[OBSTACLELAYER + index] )
+						{
+							bool foundObstacle = false;
+							if ( checkedTiles.find(mapx + mapy * 10000) == checkedTiles.end() )
+							{
+								if ( checkObstacle((mapx << 4) + 8, (mapy << 4) + 8, my, nullptr, true, true, false, false) )
+								{
+									foundObstacle = true;
+								}
+								checkedTiles[mapx + mapy * 10000] = foundObstacle;
+							}
+							else
+							{
+								continue;
+							}
+							if ( foundObstacle )
+							{
+								break;
+							}
+
+							// store the last known good coordinate
+							real_t dist = sqrt(pow(follow_x - startx, 2) + pow(follow_y - starty, 2));
+							if ( dist > furthestDist )
+							{
+								furthestDist = dist;
+								previousx = startx;
+								previousy = starty;
+							}
+						}
+						else if ( map.tiles[OBSTACLELAYER + index] )
+						{
+							break;
+						}
+					}
+
+					startx = follow_x; // retry straight line
+					starty = follow_y;
+					for ( int iterations = 0; iterations < 20; ++iterations )
+					{
+						startx += 4 * cos(dir);
+						starty += 4 * sin(dir);
+						if ( sqrt(pow(startx - follow_x, 2) + pow(starty - follow_y, 2)) > followDist )
+						{
+							break;
+						}
+						int mapx = (static_cast<int>(startx) >> 4);
+						int mapy = (static_cast<int>(starty) >> 4);
+						if ( !(mapx >= 0 && mapx < map.width && mapy >= 0 && mapy < map.height) )
+						{
+							continue;
+						}
+						int index = (mapy)*MAPLAYERS + (mapx)*MAPLAYERS * map.height;
+						if ( !map.tiles[OBSTACLELAYER + index] )
+						{
+							bool foundObstacle = false;
+							if ( checkedTiles.find(mapx + mapy * 10000) == checkedTiles.end() )
+							{
+								if ( checkObstacle((mapx << 4) + 8, (mapy << 4) + 8, my, nullptr, true, true, false, false) )
+								{
+									foundObstacle = true;
+								}
+								checkedTiles[mapx + mapy * 10000] = foundObstacle;
+							}
+							else
+							{
+								continue;
+							}
+							if ( foundObstacle )
+							{
+								break;
+							}
+
+							// store the last known good coordinate
+							real_t dist = sqrt(pow(follow_x - startx, 2) + pow(follow_y - starty, 2));
+							dist -= 8.0;
+							if ( dist > furthestDist )
+							{
+								furthestDist = dist;
+								previousx = startx;
+								previousy = starty;
+							}
+						}
+						else if ( map.tiles[OBSTACLELAYER + index] )
+						{
+							break;
+						}
+					}
+					follow_x = previousx;
+					follow_y = previousy;
+				}
+			}
+
+			double distance = sqrt(pow(my->x - follow_x, 2) + pow(my->y - follow_y, 2));
 			if ( distance > MAGICLIGHT_BALL_FOLLOW_DISTANCE || my->path)
 			{
 				lightball_player_lastmove_timer = 0;
@@ -480,7 +609,7 @@ void actMagiclightBall(Entity* my)
 				else
 				{
 					//messagePlayer(0, "****Moving.");
-					double tangent = atan2(parent->y - my->y, parent->x - my->x);
+					double tangent = atan2(follow_y - my->y, follow_x - my->x);
 					//lineTraceTarget(my, my->x, my->y, tangent, 1024, LINETRACE_IGNORE_ENTITIES, false, parent);
 					if ( true/*!hit.entity || hit.entity == parent*/ )   //Line of sight to caster?
 					{
@@ -492,8 +621,30 @@ void actMagiclightBall(Entity* my)
 						
 						my->vel_x = cos(tangent) * ((distance - MAGICLIGHT_BALL_FOLLOW_DISTANCE) / MAGICLIGHTBALL_DIVIDE_CONSTANT);
 						my->vel_y = sin(tangent) * ((distance - MAGICLIGHT_BALL_FOLLOW_DISTANCE) / MAGICLIGHTBALL_DIVIDE_CONSTANT);
-						my->x += (my->vel_x < MAGIC_LIGHTBALL_SPEEDLIMIT) ? my->vel_x : MAGIC_LIGHTBALL_SPEEDLIMIT;
-						my->y += (my->vel_y < MAGIC_LIGHTBALL_SPEEDLIMIT) ? my->vel_y : MAGIC_LIGHTBALL_SPEEDLIMIT;
+						real_t xMove = (my->vel_x < MAGIC_LIGHTBALL_SPEEDLIMIT) ? my->vel_x : MAGIC_LIGHTBALL_SPEEDLIMIT;
+						real_t yMove = (my->vel_y < MAGIC_LIGHTBALL_SPEEDLIMIT) ? my->vel_y : MAGIC_LIGHTBALL_SPEEDLIMIT;
+						my->x += xMove;
+						my->y += yMove;
+
+						if ( spell && spell->magicstaff )
+						{
+							if ( caster )
+							{
+								if ( lightball_travelled_distance >= 0 )
+								{
+									real_t dist = sqrt(pow(xMove, 2) + pow(yMove, 2));
+									lightball_travelled_distance += abs(dist);
+									if ( lightball_travelled_distance >= 8 * 16.0 )
+									{
+										lightball_travelled_distance = 0.0;
+										if ( magicOnSpellCastEvent(caster, my, spell->ID, spell_t::SPELL_LEVEL_EVENT_MAGICSTAFF, 1) )
+										{
+											lightball_travelled_distance = -1.0;
+										}
+									}
+								}
+							}
+						}
 						
 						if ( map.tiles[(int)(OBSTACLELAYER + static_cast<int>(my->y / 16) * MAPLAYERS + static_cast<int>(my->x / 16) * MAPLAYERS * map.height)] )   //If the ball has come to rest in a wall, move its butt.
 						{
@@ -661,16 +812,16 @@ void spawnBloodVialOnMonsterDeath(Entity* entity, Stat* hitstats, Entity* killer
 
 static ConsoleVariable<bool> cvar_magic_fx_use_vismap("/magic_fx_use_vismap", true);
 
-void magicOnSpellCastEvent(Entity* parent, Entity* projectile, int spellID, Uint32 eventType, int eventValue, bool allowedLevelup)
+bool magicOnSpellCastEvent(Entity* parent, Entity* projectile, int spellID, Uint32 eventType, int eventValue, bool allowedLevelup)
 {
 	if ( !parent )
 	{
-		return;
+		return false;
 	}
 
 	if ( parent->behavior != &actPlayer )
 	{
-		return;
+		return false;
 	}
 
 	if ( multiplayer == CLIENT )
@@ -692,12 +843,12 @@ void magicOnSpellCastEvent(Entity* parent, Entity* projectile, int spellID, Uint
 				sendPacketSafe(net_sock, -1, net_packet, 0);
 			}
 		}
-		return;
+		return false;
 	}
 
 	if ( spellID <= SPELL_NONE )
 	{
-		return;
+		return false;
 	}
 
 	bool magicstaff = eventType & spell_t::SPELL_LEVEL_EVENT_MAGICSTAFF;
@@ -715,12 +866,12 @@ void magicOnSpellCastEvent(Entity* parent, Entity* projectile, int spellID, Uint
 	}
 	
 	auto spell = getSpellFromID(spellID);
-	if ( !spell ) { return; }
+	if ( !spell ) { return false; }
 
 	int player = parent->skill[2];
 	if ( player < 0 || player >= MAXPLAYERS )
 	{
-		return;
+		return false;
 	}
 	if ( allowedLevelup )
 	{
@@ -741,6 +892,8 @@ void magicOnSpellCastEvent(Entity* parent, Entity* projectile, int spellID, Uint
 	}
 
 	bool nothingElseToLearnMsg = false;
+	bool skillIncreased = false;
+
 	if ( spell->skillID > 0 )
 	{
 		if ( magicstaff )
@@ -750,6 +903,7 @@ void magicOnSpellCastEvent(Entity* parent, Entity* projectile, int spellID, Uint
 				if ( allowedLevelup )
 				{
 					parent->increaseSkill(spell->skillID);
+					skillIncreased = true;
 				}
 				else
 				{
@@ -766,7 +920,6 @@ void magicOnSpellCastEvent(Entity* parent, Entity* projectile, int spellID, Uint
 				chance /= 2;
 			}
 
-			bool skillIncreased = false;
 			if ( (eventType & spell_t::SPELL_LEVEL_EVENT_SUSTAIN) )
 			{
 				bool sustainedChance = players[player]->mechanics.sustainedSpellLevelChance(spell->skillID);
@@ -824,6 +977,8 @@ void magicOnSpellCastEvent(Entity* parent, Entity* projectile, int spellID, Uint
 			}
 		}
 	}
+
+	return skillIncreased;
 }
 
 void magicOnEntityHit(Entity* parent, Entity* particle, Entity* hitentity, Stat* hitstats, Sint32 preResistanceDamage, Sint32 damage, Sint32 oldHP, int spellID, int selfCastUsingItem)
@@ -5558,7 +5713,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					entity->skill[5] = spawny; //Store what y it started shooting out from the player at.
 					entity->skill[0] = 1; // set init to not shoot out
 
-					entity->skill[12] = getSpellDamageSecondaryFromID(spell->ID, parent, nullptr, my);
+					entity->skill[12] = getSpellEffectDurationSecondaryFromID(spell->ID, parent, nullptr, my);
 					node_t* spellnode = list_AddNodeLast(&entity->children);
 					spellnode->element = copySpell(allGameSpells[spell->ID == SPELL_SHADE_BOLT ? SPELL_DEEP_SHADE : SPELL_LIGHT]); //We need to save the spell since this is a channeled spell.
 					spellnode->size = sizeof(spell_t);

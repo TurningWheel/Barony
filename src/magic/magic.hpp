@@ -1116,7 +1116,7 @@ int getSpellPropertyFromID(spell_t::SpellBasePropertiesInt prop, int spellID, En
 void thrownItemUpdateSpellTrail(Entity& my, real_t _x, real_t _y);
 const char* magicLightColorForSprite(Entity* my, int sprite, bool darker);
 void doParticleEffectForTouchSpell(Entity& my, Entity* focalLimb, Monster monsterType);
-void magicOnSpellCastEvent(Entity* parent, Entity* projectile, int spellID, Uint32 eventType, int eventValue, bool allowedLevelup = true);
+bool magicOnSpellCastEvent(Entity* parent, Entity* projectile, int spellID, Uint32 eventType, int eventValue, bool allowedLevelup = true); // return true on level up
 void freeSpells();
 
 struct AOEIndicators_t

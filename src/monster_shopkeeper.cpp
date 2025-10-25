@@ -394,11 +394,7 @@ void initShopkeeper(Entity* my, Stat* myStats)
 								tmpItem->count = 1;
 								tmpItem->status = static_cast<Status>(SERVICABLE + rng.rand() % 2);
 							}
-							if ( tmpItem->type >= BRONZE_TOMAHAWK && tmpItem->type <= CRYSTAL_SHURIKEN )
-							{
-								// thrown weapons always fixed status. (tomahawk = decrepit, shuriken = excellent)
-								tmpItem->status = std::min(static_cast<Status>(DECREPIT + (tmpItem->type - BRONZE_TOMAHAWK)), EXCELLENT);
-							}
+							itemLevelCurvePostProcess(my, tmpItem, rng);
 						}
 					}
 					break;
@@ -418,6 +414,10 @@ void initShopkeeper(Entity* my, Stat* myStats)
 						{
 							tmpItem->count = 1;
 							tmpItem->status = static_cast<Status>(SERVICABLE + rng.rand() % 2);
+						}
+						if ( tmpItem )
+						{
+							itemLevelCurvePostProcess(my, tmpItem, rng);
 						}
 					}
 					break;
@@ -442,6 +442,10 @@ void initShopkeeper(Entity* my, Stat* myStats)
 						{
 							tmpItem->count = 1;
 							tmpItem->status = static_cast<Status>(SERVICABLE + rng.rand() % 2);
+						}
+						if ( tmpItem )
+						{
+							itemLevelCurvePostProcess(my, tmpItem, rng);
 						}
 					}
 					break;
@@ -479,6 +483,10 @@ void initShopkeeper(Entity* my, Stat* myStats)
 						if ( rng.rand() % blessedShopkeeper > 0 )
 						{
 							tmpItem->status = static_cast<Status>(SERVICABLE + rng.rand() % 2);
+						}
+						if ( tmpItem )
+						{
+							itemLevelCurvePostProcess(my, tmpItem, rng);
 						}
 					}
 					if ( !doneFeather && rng.rand() % 20 == 0 )
@@ -553,6 +561,10 @@ void initShopkeeper(Entity* my, Stat* myStats)
 						{
 							tmpItem->status = static_cast<Status>(SERVICABLE + rng.rand() % 2);
 						}
+						if ( tmpItem )
+						{
+							itemLevelCurvePostProcess(my, tmpItem, rng);
+						}
 					}
 					break;
 				case 6:
@@ -584,10 +596,9 @@ void initShopkeeper(Entity* my, Stat* myStats)
 						{
 							tmpItem->status = static_cast<Status>(SERVICABLE + rng.rand() % 2);
 						}
-						if ( tmpItem->type >= BRONZE_TOMAHAWK && tmpItem->type <= CRYSTAL_SHURIKEN )
+						if ( tmpItem )
 						{
-							// thrown weapons always fixed status. (tomahawk = decrepit, shuriken = excellent)
-							tmpItem->status = std::min(static_cast<Status>(DECREPIT + (tmpItem->type - BRONZE_TOMAHAWK)), EXCELLENT);
+							itemLevelCurvePostProcess(my, tmpItem, rng);
 						}
 
 						if ( !doneLockpick && rng.rand() % 2 == 0 )
@@ -812,11 +823,7 @@ void initShopkeeper(Entity* my, Stat* myStats)
 								tmpItem->count = 1;
 								tmpItem->status = static_cast<Status>(SERVICABLE + rng.rand() % 2);
 							}
-							if ( tmpItem->type >= BRONZE_TOMAHAWK && tmpItem->type <= CRYSTAL_SHURIKEN )
-							{
-								// thrown weapons always fixed status. (tomahawk = decrepit, shuriken = excellent)
-								tmpItem->status = std::min(static_cast<Status>(DECREPIT + (tmpItem->type - BRONZE_TOMAHAWK)), EXCELLENT);
-							}
+							itemLevelCurvePostProcess(my, tmpItem, rng);
 						}
 					}
 					break;
@@ -835,11 +842,8 @@ void initShopkeeper(Entity* my, Stat* myStats)
 								tmpItem->count = 1;
 							}
 						}
-						if ( tmpItem && tmpItem->type >= BRONZE_TOMAHAWK && tmpItem->type <= CRYSTAL_SHURIKEN )
-						{
-							// thrown weapons always fixed status. (tomahawk = decrepit, shuriken = excellent)
-							tmpItem->status = std::min(static_cast<Status>(DECREPIT + (tmpItem->type - BRONZE_TOMAHAWK)), EXCELLENT);
-						}
+
+						itemLevelCurvePostProcess(my, tmpItem, rng);
 					}
 					if ( !doneTinkeringKit && rng.rand() % 20 == 0 )
 					{

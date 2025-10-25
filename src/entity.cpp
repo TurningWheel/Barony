@@ -8970,11 +8970,14 @@ void Entity::attack(int pose, int charge, Entity* target)
 			{
 				if ( itemCategory(myStats->weapon) == MAGICSTAFF )
 				{
+					Entity* castSpellResult = nullptr;
 					switch ( myStats->weapon->type )
 					{
 						case MAGICSTAFF_LIGHT:
-							castSpell(uid, &spell_light, true, false);
+						{
+							castSpellResult = castSpell(uid, &spell_light, true, false);
 							break;
+						}
 						case MAGICSTAFF_DIGGING:
 							castSpell(uid, &spell_dig, true, false);
 							break;
@@ -9050,6 +9053,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 						degradeWeapon = false; //certain monster's weapons don't degrade.
 					}
 					if ( myStats->weapon->type == MAGICSTAFF_SCEPTER )
+					{
+						degradeWeapon = false;
+					}
+					if ( myStats->weapon->type == MAGICSTAFF_LIGHT && !castSpellResult )
 					{
 						degradeWeapon = false;
 					}
