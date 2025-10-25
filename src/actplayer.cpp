@@ -115,8 +115,8 @@ void Player::Ghost_t::handleGhostCameraBobbing(bool useRefreshRateDelta)
 				&& ((input.binary("Move Forward") || input.binary("Move Backward"))
 					|| (input.binary("Move Left") - input.binary("Move Right"))))
 				|| (inputs.hasController(playernum)
-					&& (inputs.getController(playernum)->getLeftXPercentForPlayerMovement()
-						|| inputs.getController(playernum)->getLeftYPercentForPlayerMovement()))) )
+					&& (inputs.getController(playernum)->getLeftXPercentForPlayerMovement(playernum)
+						|| inputs.getController(playernum)->getLeftYPercentForPlayerMovement(playernum)))) )
 		{
 			if ( !player.usingCommand()
 				&& player.bControlEnabled )
@@ -199,12 +199,12 @@ void Player::Ghost_t::handleGhostMovement(const bool useRefreshRateDelta)
 
 			if ( inputs.hasController(player.playernum) /*&& !input.binary("Move Left") && !input.binary("Move Right")*/ )
 			{
-				x_force = inputs.getController(player.playernum)->getLeftXPercentForPlayerMovement();
+				x_force = inputs.getController(player.playernum)->getLeftXPercentForPlayerMovement(player.playernum);
 			}
 
 			if ( inputs.hasController(player.playernum) /*&& !input.binary("Move Forward") && !input.binary("Move Backward")*/ )
 			{
-				y_force = inputs.getController(player.playernum)->getLeftYPercentForPlayerMovement();
+				y_force = inputs.getController(player.playernum)->getLeftYPercentForPlayerMovement(player.playernum);
 				if ( y_force < 0 )
 				{
 					y_force *= backpedalMultiplier;    //Move backwards more slowly.
@@ -3064,8 +3064,8 @@ void Player::PlayerMovement_t::handlePlayerCameraBobbing(bool useRefreshRateDelt
 				&& ((input.binary("Move Forward") || input.binary("Move Backward"))
 					|| (input.binary("Move Left") - input.binary("Move Right"))))
 			|| (inputs.hasController(PLAYER_NUM) 
-				&& (inputs.getController(PLAYER_NUM)->getLeftXPercentForPlayerMovement() 
-					|| inputs.getController(PLAYER_NUM)->getLeftYPercentForPlayerMovement()))) )
+				&& (inputs.getController(PLAYER_NUM)->getLeftXPercentForPlayerMovement(player.playernum)
+					|| inputs.getController(PLAYER_NUM)->getLeftYPercentForPlayerMovement(player.playernum)))) )
 		{
 			if ( !player.usingCommand()
 				&& player.bControlEnabled && !swimming )
@@ -3144,15 +3144,15 @@ void Player::PlayerMovement_t::handlePlayerCameraBobbing(bool useRefreshRateDelt
 		else if ( !player.usingCommand()
 			&& player.bControlEnabled
 			&& !gamePaused
-			&& !swimming && inputs.hasController(PLAYER_NUM) && abs(inputs.getController(PLAYER_NUM)->getLeftXPercentForPlayerMovement()) > 0.001 )
+			&& !swimming && inputs.hasController(PLAYER_NUM) && abs(inputs.getController(PLAYER_NUM)->getLeftXPercentForPlayerMovement(player.playernum)) > 0.001 )
 		{
 			auto controller = inputs.getController(PLAYER_NUM);
-			if ( (controller->getLeftXPercentForPlayerMovement() > 0.001 && controller->getLeftYPercentForPlayerMovement() >= 0.0)
-				|| (controller->getLeftXPercentForPlayerMovement() < -0.001 && controller->getLeftYPercentForPlayerMovement() < -0.001 ) )
+			if ( (controller->getLeftXPercentForPlayerMovement(player.playernum) > 0.001 && controller->getLeftYPercentForPlayerMovement(player.playernum) >= 0.0)
+				|| (controller->getLeftXPercentForPlayerMovement(player.playernum) < -0.001 && controller->getLeftYPercentForPlayerMovement(player.playernum) < -0.001 ) )
 			{
 				PLAYER_SIDEBOB += 0.01 * refreshRateDelta;
 				real_t angle = PI / 32;
-				if ( controller->getLeftYPercentForPlayerMovement() < 0.001 )
+				if ( controller->getLeftYPercentForPlayerMovement(player.playernum) < 0.001 )
 				{
 					angle = PI / 64;
 				}
@@ -3161,12 +3161,12 @@ void Player::PlayerMovement_t::handlePlayerCameraBobbing(bool useRefreshRateDelt
 					PLAYER_SIDEBOB = angle;
 				}
 			}
-			else if ( (controller->getLeftXPercentForPlayerMovement() < -0.001 && controller->getLeftYPercentForPlayerMovement() >= 0.0)
-				|| (controller->getLeftXPercentForPlayerMovement() > 0.001 && controller->getLeftYPercentForPlayerMovement() < -0.001) )
+			else if ( (controller->getLeftXPercentForPlayerMovement(player.playernum) < -0.001 && controller->getLeftYPercentForPlayerMovement(player.playernum) >= 0.0)
+				|| (controller->getLeftXPercentForPlayerMovement(player.playernum) > 0.001 && controller->getLeftYPercentForPlayerMovement(player.playernum) < -0.001) )
 			{
 				PLAYER_SIDEBOB -= 0.01 * refreshRateDelta;
 				real_t angle = -PI / 32;
-				if ( controller->getLeftYPercentForPlayerMovement() < 0.001 )
+				if ( controller->getLeftYPercentForPlayerMovement(player.playernum) < 0.001 )
 				{
 					angle = -PI / 64;
 				}
@@ -3562,7 +3562,7 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 
 			if ( inputs.hasController(PLAYER_NUM) /*&& !input.binary("Move Left") && !input.binary("Move Right")*/ )
 			{
-				x_force = inputs.getController(PLAYER_NUM)->getLeftXPercentForPlayerMovement();
+				x_force = inputs.getController(PLAYER_NUM)->getLeftXPercentForPlayerMovement(PLAYER_NUM);
 
 				if ( stats[PLAYER_NUM]->getEffectActive(EFF_CONFUSED) )
 				{
@@ -3571,7 +3571,7 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 			}
 			if ( inputs.hasController(PLAYER_NUM) /*&& !input.binary("Move Forward") && !input.binary("Move Backward")*/ )
 			{
-				y_force = inputs.getController(PLAYER_NUM)->getLeftYPercentForPlayerMovement();
+				y_force = inputs.getController(PLAYER_NUM)->getLeftYPercentForPlayerMovement(PLAYER_NUM);
 
 				if ( stats[PLAYER_NUM]->getEffectActive(EFF_CONFUSED) )
 				{
@@ -10186,7 +10186,7 @@ void actPlayer(Entity* my)
 				}
 			}
 
-			if ( bodypart > 11 )
+			if ( bodypart > 12 )
 			{
 				// for GENIUS flag to not draw into the camera
 				entity->sizex = 4;
@@ -13924,7 +13924,7 @@ void playerAnimateSpider(Entity* my)
 			continue;
 		}
 		Entity* previous = NULL; // previous part
-		if ( bodypart > 11 )
+		if ( bodypart > 12 )
 		{
 			previous = (Entity*)node->prev->element;
 			// for GENIUS flag to draw into the camera

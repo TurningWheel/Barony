@@ -5837,8 +5837,8 @@ void ingameHud()
 				printTextFormatted(font8x8_bmp, x, y + 72, "flx: %4f | fly: %4f",
 					inputs.getController(player)->oldFloatRightX, inputs.getController(player)->oldFloatRightY);
 				printTextFormatted(font8x8_bmp, x, y + 84, "deadzonex: %3.1f%% | deadzoney: %3.1f%%",
-					inputs.getController(player)->leftStickDeadzone * 100 / 32767.0,
-					inputs.getController(player)->rightStickDeadzone * 100 / 32767.0);
+					playerSettings[multiplayer ? 0 : player].leftStickDeadzone * 100 / 32767.0,
+					playerSettings[multiplayer ? 0 : player].rightStickDeadzone * 100 / 32767.0);
 			}
 			if ( players[player]->entity )
 			{
@@ -5848,8 +5848,8 @@ void ingameHud()
 			if ( inputs.hasController(player) )
 			{
 				printTextFormatted(font8x8_bmp, x, y + 112, "leftx: %4f | lefty: %4f",
-					inputs.getController(player)->getLeftXPercent(),
-					inputs.getController(player)->getLeftYPercent());
+					inputs.getController(player)->getLeftXPercent(player),
+					inputs.getController(player)->getLeftYPercent(player));
 			}
 			if ( players[player]->entity )
 			{

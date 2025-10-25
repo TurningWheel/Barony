@@ -67,6 +67,8 @@ struct PlayerSettings_t
     bool gamepad_righty_invert = false;
 	float quick_turn_speed = 1.f;
 	float quick_turn_speed_mkb = 1.f;
+	Sint32 leftStickDeadzone = 8000;
+	Sint32 rightStickDeadzone = 8000;
 	void init(const int _player)
 	{
 		player = _player;
@@ -273,33 +275,33 @@ public:
 	int getRightTrigger();
 
 	//The amount of movement of the given analog stick along its respective axis, with no gamepad sensitivity application. Deadzone is taken into account.
-	int getRawLeftXMove();
-	int getRawLeftYMove();
-	int getRawRightXMove();
-	int getRawRightYMove();
+	int getRawLeftXMove(int player);
+	int getRawLeftYMove(int player);
+	int getRawRightXMove(int player);
+	int getRawRightYMove(int player);
 
 	int getRawLeftTrigger();
 	int getRawRightTrigger();
 
 	//Gets the percentage the given stick is pressed along its current axis. From 0% after the deadzone to 100% all the way to the edge of the analog stick.
-	float getLeftXPercent();
-	float getLeftYPercent();
-	float getRightXPercent();
-	float getRightYPercent();
+	float getLeftXPercent(int player);
+	float getLeftYPercent(int player);
+	float getRightXPercent(int player);
+	float getRightYPercent(int player);
 
 	//Gets the percentage of the left stick for player movement, 100% input is multiplied by :
 	// x_forceMaxForwardThreshold, x_forceMaxBackwardThreshold, y_forceMaxStrafeThreshold
-	float getLeftXPercentForPlayerMovement();
-	float getLeftYPercentForPlayerMovement();
+	float getLeftXPercentForPlayerMovement(int player);
+	float getLeftYPercentForPlayerMovement(int player);
 
 	float getLeftTriggerPercent();
 	float getRightTriggerPercent();
 
 	//The maximum amount the given analog stick can move on its respective axis. After the gamepad deadzone is taken into account.
-	int maxLeftXMove();
-	int maxLeftYMove();
-	int maxRightXMove();
-	int maxRightYMove();
+	int maxLeftXMove(int player);
+	int maxLeftYMove(int player);
+	int maxRightXMove(int player);
+	int maxRightYMove(int player);
 
 	int maxLeftTrigger();
 	int maxRightTrigger();
@@ -312,9 +314,6 @@ public:
 	};
 	DeadZoneType leftStickDeadzoneType = DEADZONE_PER_AXIS;
 	DeadZoneType rightStickDeadzoneType = DEADZONE_MAGNITUDE_HALFPIPE;
-
-	Sint32 leftStickDeadzone = 8000;
-	Sint32 rightStickDeadzone = 8000;
 
 	real_t oldFloatRightX = 0.0; // current delta per frame right-stick analogue value
 	real_t oldFloatRightY = 0.0; // current delta per frame right-stick analogue value

@@ -306,10 +306,13 @@ void GameController::handleAnalog(int player)
 		virtualDpad.padVirtualDpad = DpadDirection::CENTERED;
 	}
 
+	auto& leftStickDeadzone = playerSettings[multiplayer ? 0 : player].leftStickDeadzone;
+	auto& rightStickDeadzone = playerSettings[multiplayer ? 0 : player].rightStickDeadzone;
+
 	if (!players[player]->shootmode || gamePaused)
 	{
-        const auto rawx = getRawRightXMove() * (playerSettings[multiplayer ? 0 : player].gamepad_rightx_invert * -2 + 1);
-        const auto rawy = getRawRightYMove() * (playerSettings[multiplayer ? 0 : player].gamepad_righty_invert * -2 + 1);
+        const auto rawx = getRawRightXMove(player) * (playerSettings[multiplayer ? 0 : player].gamepad_rightx_invert * -2 + 1);
+        const auto rawy = getRawRightYMove(player) * (playerSettings[multiplayer ? 0 : player].gamepad_righty_invert * -2 + 1);
 		int rightx = rawx * getGamepadMenuXSensitivity(player);
 		int righty = rawy * getGamepadMenuYSensitivity(player);
 
@@ -334,8 +337,8 @@ void GameController::handleAnalog(int player)
 
 		if ( radialMenuOpen )
 		{
-            const auto rawx = getRawRightXMove();
-            const auto rawy = getRawRightYMove();
+            const auto rawx = getRawRightXMove(player);
+            const auto rawy = getRawRightYMove(player);
 			const real_t floatx = rawx;
 			const real_t floaty = rawy;
 
@@ -386,8 +389,8 @@ void GameController::handleAnalog(int player)
 		}
 		else if ( rightStickDeadzoneType != DEADZONE_PER_AXIS )
 		{
-            const auto rawx = getRawRightXMove() * (playerSettings[multiplayer ? 0 : player].gamepad_rightx_invert * -2 + 1);
-            const auto rawy = getRawRightYMove() * (playerSettings[multiplayer ? 0 : player].gamepad_righty_invert * -2 + 1);
+            const auto rawx = getRawRightXMove(player) * (playerSettings[multiplayer ? 0 : player].gamepad_rightx_invert * -2 + 1);
+            const auto rawy = getRawRightYMove(player) * (playerSettings[multiplayer ? 0 : player].gamepad_righty_invert * -2 + 1);
 			rightx = rawx;
 			righty = rawy;
 
@@ -458,8 +461,8 @@ void GameController::handleAnalog(int player)
 		}
 		else if ( rightStickDeadzoneType == DEADZONE_MAGNITUDE_LINEAR || rightStickDeadzoneType == DEADZONE_MAGNITUDE_HALFPIPE )
 		{
-            const auto rawx = getRawRightXMove() * (playerSettings[multiplayer ? 0 : player].gamepad_rightx_invert * -2 + 1);
-            const auto rawy = getRawRightYMove() * (playerSettings[multiplayer ? 0 : player].gamepad_righty_invert * -2 + 1);
+            const auto rawx = getRawRightXMove(player) * (playerSettings[multiplayer ? 0 : player].gamepad_rightx_invert * -2 + 1);
+            const auto rawy = getRawRightYMove(player) * (playerSettings[multiplayer ? 0 : player].gamepad_righty_invert * -2 + 1);
 			floatx = rawx;
 			floaty = rawy;
 
@@ -560,7 +563,7 @@ int GameController::getRightXMove(int player) // with sensitivity
 	{
 		return 0;
 	}
-	int x = getRawRightXMove();
+	int x = getRawRightXMove(player);
     x *= playerSettings[multiplayer ? 0 : player].gamepad_rightx_invert * -2 + 1;
 	x *= getGamepadRightXSensitivity(player);
 	return x;
@@ -572,7 +575,7 @@ int GameController::getRightYMove(int player) // with sensitivity
 	{
 		return 0;
 	}
-	int y = getRawRightYMove();
+	int y = getRawRightYMove(player);
     y *= playerSettings[multiplayer ? 0 : player].gamepad_righty_invert * -2 + 1;
 	y *= getGamepadRightYSensitivity(player);
 	return y;
@@ -581,7 +584,7 @@ int GameController::getRightYMove(int player) // with sensitivity
 int GameController::getLeftTrigger() { return getRawLeftTrigger(); } //No sensitivity taken into account (yet)
 int GameController::getRightTrigger() { return getRawRightTrigger(); } //No sensitivity taken into account (yet)
 
-int GameController::getRawLeftXMove() // no sensitivity
+int GameController::getRawLeftXMove(int player) // no sensitivity
 {
 	if (!isActive())
 	{
@@ -592,6 +595,7 @@ int GameController::getRawLeftXMove() // no sensitivity
 #else
 	int x = SDL_GameControllerGetAxis(sdl_device, SDL_CONTROLLER_AXIS_LEFTX);
 #endif
+	auto& leftStickDeadzone = playerSettings[multiplayer ? 0 : player].leftStickDeadzone;
 	if ( leftStickDeadzoneType == DEADZONE_PER_AXIS )
 	{
 		if (x < leftStickDeadzone && x > -leftStickDeadzone )
@@ -610,7 +614,7 @@ int GameController::getRawLeftXMove() // no sensitivity
 	return (!gamepad_leftx_invert) ? x : -x;
 }
 
-int GameController::getRawLeftYMove() // no sensitivity
+int GameController::getRawLeftYMove(int player) // no sensitivity
 {
 	if (!isActive())
 	{
@@ -621,6 +625,7 @@ int GameController::getRawLeftYMove() // no sensitivity
 #else
 	int y = SDL_GameControllerGetAxis(sdl_device, SDL_CONTROLLER_AXIS_LEFTY);
 #endif
+	auto& leftStickDeadzone = playerSettings[multiplayer ? 0 : player].leftStickDeadzone;
 	if ( leftStickDeadzoneType == DEADZONE_PER_AXIS )
 	{
 		if (y < leftStickDeadzone && y > -leftStickDeadzone )
@@ -639,7 +644,7 @@ int GameController::getRawLeftYMove() // no sensitivity
 	return (!gamepad_lefty_invert) ? -y : y;
 }
 
-int GameController::getRawRightXMove() // no sensitivity
+int GameController::getRawRightXMove(int player) // no sensitivity
 {
 	if (!isActive())
 	{
@@ -650,6 +655,7 @@ int GameController::getRawRightXMove() // no sensitivity
 #else
 	int x = SDL_GameControllerGetAxis(sdl_device, SDL_CONTROLLER_AXIS_RIGHTX);
 #endif
+	auto& rightStickDeadzone = playerSettings[multiplayer ? 0 : player].rightStickDeadzone;
 	if ( rightStickDeadzoneType == DEADZONE_PER_AXIS )
 	{
 		if (x < rightStickDeadzone && x > -rightStickDeadzone )
@@ -668,7 +674,7 @@ int GameController::getRawRightXMove() // no sensitivity
 	return (!gamepad_rightx_invert) ? x : -x;
 }
 
-int GameController::getRawRightYMove() // no sensitivity
+int GameController::getRawRightYMove(int player) // no sensitivity
 {
 	if (!isActive())
 	{
@@ -679,6 +685,7 @@ int GameController::getRawRightYMove() // no sensitivity
 #else
 	int y = SDL_GameControllerGetAxis(sdl_device, SDL_CONTROLLER_AXIS_RIGHTY);
 #endif
+	auto& rightStickDeadzone = playerSettings[multiplayer ? 0 : player].rightStickDeadzone;
 	if ( rightStickDeadzoneType == DEADZONE_PER_AXIS )
 	{
 		if (y < rightStickDeadzone && y > -rightStickDeadzone )
@@ -735,9 +742,9 @@ int GameController::getRawRightTrigger()
 	return n;
 }
 
-float GameController::getLeftXPercentForPlayerMovement()
+float GameController::getLeftXPercentForPlayerMovement(int player)
 {
-	float x_force = getLeftXPercent();
+	float x_force = getLeftXPercent(player);
 	if ( x_force > 0 )
 	{
 		x_force = std::min(x_force / x_forceMaxForwardThreshold, 1.f);
@@ -748,9 +755,9 @@ float GameController::getLeftXPercentForPlayerMovement()
 	}
 	return x_force;
 }
-float GameController::getLeftYPercentForPlayerMovement()
+float GameController::getLeftYPercentForPlayerMovement(int player)
 {
-	float y_force = getLeftYPercent();
+	float y_force = getLeftYPercent(player);
 	if ( y_force > 0 )
 	{
 		y_force = std::min(y_force / y_forceMaxStrafeThreshold, 1.f);
@@ -762,19 +769,19 @@ float GameController::getLeftYPercentForPlayerMovement()
 	return y_force;
 }
 
-float GameController::getLeftXPercent() { return (float)getRawLeftXMove() / (float)maxLeftXMove(); }
-float GameController::getLeftYPercent() { return (float)getRawLeftYMove() / (float)maxLeftYMove(); }
-float GameController::getRightXPercent() { return (float)getRawRightXMove() / (float)maxRightXMove(); }
-float GameController::getRightYPercent() { return (float)getRawRightYMove() / (float)maxRightYMove(); }
+float GameController::getLeftXPercent(int player) { return (float)getRawLeftXMove(player) / (float)maxLeftXMove(player); }
+float GameController::getLeftYPercent(int player) { return (float)getRawLeftYMove(player) / (float)maxLeftYMove(player); }
+float GameController::getRightXPercent(int player) { return (float)getRawRightXMove(player) / (float)maxRightXMove(player); }
+float GameController::getRightYPercent(int player) { return (float)getRawRightYMove(player) / (float)maxRightYMove(player); }
 
 float GameController::getLeftTriggerPercent() { return (float)getRawLeftTrigger() / (float)maxLeftTrigger(); }
 float GameController::getRightTriggerPercent() { return (float)getRawRightTrigger() / (float)maxRightTrigger(); }
 
 //Ya, it's pretty constant in SDL2.
-int GameController::maxLeftXMove() { return 32767 - (leftStickDeadzoneType == DEADZONE_PER_AXIS ? leftStickDeadzone : 0); }
-int GameController::maxLeftYMove() { return 32767 - (leftStickDeadzoneType == DEADZONE_PER_AXIS ? leftStickDeadzone : 0); }
-int GameController::maxRightXMove() { return 32767 - (rightStickDeadzoneType == DEADZONE_PER_AXIS ? rightStickDeadzone : 0); }
-int GameController::maxRightYMove() { return 32767 - (rightStickDeadzoneType == DEADZONE_PER_AXIS ? rightStickDeadzone : 0); }
+int GameController::maxLeftXMove(int player) { return 32767 - (leftStickDeadzoneType == DEADZONE_PER_AXIS ? playerSettings[multiplayer ? 0 : player].leftStickDeadzone : 0); }
+int GameController::maxLeftYMove(int player) { return 32767 - (leftStickDeadzoneType == DEADZONE_PER_AXIS ? playerSettings[multiplayer ? 0 : player].leftStickDeadzone : 0); }
+int GameController::maxRightXMove(int player) { return 32767 - (rightStickDeadzoneType == DEADZONE_PER_AXIS ? playerSettings[multiplayer ? 0 : player].rightStickDeadzone : 0); }
+int GameController::maxRightYMove(int player) { return 32767 - (rightStickDeadzoneType == DEADZONE_PER_AXIS ? playerSettings[multiplayer ? 0 : player].rightStickDeadzone : 0); }
 int GameController::maxLeftTrigger() { return 32767 - gamepad_deadzone; }
 int GameController::maxRightTrigger() {	return 32767 - gamepad_deadzone; }
 
@@ -4794,8 +4801,8 @@ void Player::WorldUI_t::handleTooltips()
 			real_t pitchDiff = players[player]->worldUI.playerLastPitch - currentPitch;
 			if ( inputs.hasController(player) )
 			{
-				real_t floatx = inputs.getController(player)->getLeftXPercent();
-				real_t floaty = inputs.getController(player)->getLeftYPercent();
+				real_t floatx = inputs.getController(player)->getLeftXPercent(player);
+				real_t floaty = inputs.getController(player)->getLeftYPercent(player);
 				real_t magnitude = sqrt(pow(floaty, 2) + pow(floatx, 2));
 				if ( magnitude > 0.0 )
 				{

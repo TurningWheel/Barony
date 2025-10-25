@@ -566,6 +566,8 @@ namespace MainMenu {
         float turn_sensitivity_y = 50.f;
         bool gamepad_camera_invert_x = false;
         bool gamepad_camera_invert_y = false;
+		float gamepad_deadzone_left = 25.f;
+		float gamepad_deadzone_right = 25.f;
 		float quick_turn_speed_control = 1.f;
 		float quick_turn_speed_mkb_control = 1.f;
         inline void save(int index);
@@ -2781,6 +2783,8 @@ namespace MainMenu {
         settings.gamepad_righty_sensitivity = std::min(std::max(25.f / 32768.f, turn_sensitivity_y / 32768.f), 200.f / 32768.f);
         settings.gamepad_rightx_invert = gamepad_camera_invert_x;
         settings.gamepad_righty_invert = gamepad_camera_invert_y;
+		settings.leftStickDeadzone = (32000.f / 100.f) * std::min(50.f, std::max(5.f, gamepad_deadzone_left));
+		settings.rightStickDeadzone = (32000.f / 100.f) * std::min(50.f, std::max(5.f, gamepad_deadzone_right));
 		settings.quick_turn_speed = std::max(1.f, std::min(5.f, quick_turn_speed_control));
 		settings.quick_turn_speed_mkb = std::max(1.f, std::min(5.f, quick_turn_speed_mkb_control));
     }
@@ -2799,6 +2803,8 @@ namespace MainMenu {
         controls.turn_sensitivity_y = settings.gamepad_righty_sensitivity * 32768.0;
         controls.gamepad_camera_invert_x = settings.gamepad_rightx_invert;
         controls.gamepad_camera_invert_y = settings.gamepad_righty_invert;
+		controls.gamepad_deadzone_left = 100.f * settings.leftStickDeadzone / 32000.f;
+		controls.gamepad_deadzone_right = 100.f * settings.rightStickDeadzone / 32000.f;
 		controls.quick_turn_speed_control = settings.quick_turn_speed;
 		controls.quick_turn_speed_mkb_control = settings.quick_turn_speed_mkb;
         return controls;
@@ -2809,7 +2815,7 @@ namespace MainMenu {
     }
 
     bool Controls::serialize(FileInterface* file) {
-        int version = 1;
+        int version = 2;
         file->property("version", version);
         file->property("mkb_world_tooltips_enabled", mkb_world_tooltips_enabled);
         file->property("gamepad_facehotbar", gamepad_facehotbar);
@@ -2821,6 +2827,8 @@ namespace MainMenu {
         file->property("turn_sensitivity_y", turn_sensitivity_y);
         file->property("gamepad_camera_invert_x", gamepad_camera_invert_x);
         file->property("gamepad_camera_invert_y", gamepad_camera_invert_y);
+		file->propertyVersion("gamepad_deadzone_left", version >= 2, gamepad_deadzone_left);
+		file->propertyVersion("gamepad_deadzone_right", version >= 2, gamepad_deadzone_right);
 		file->property("quick_turn_speed_control", quick_turn_speed_control);
 		file->property("quick_turn_speed_mkb_control", quick_turn_speed_mkb_control);
         return true;
@@ -7329,6 +7337,13 @@ bind_failed:
                 allSettings.controls[bound_player].turn_sensitivity_y, 25.f, 200.f, sliderPercent, [](Slider& slider)
                 {soundSliderSetting(slider, true); allSettings.controls[bound_player].turn_sensitivity_y = slider.getValue();});
 
+			y += settingsAddSlider(*settings_subwindow, y, "gamepad_deadzone_left", Language::get(6846), Language::get(6847),
+				allSettings.controls[bound_player].gamepad_deadzone_left, 5.f, 50.f, sliderPercent, [](Slider& slider)
+				{soundSliderSetting(slider, true); allSettings.controls[bound_player].gamepad_deadzone_left = slider.getValue(); });
+			y += settingsAddSlider(*settings_subwindow, y, "gamepad_deadzone_right", Language::get(6848), Language::get(6849),
+				allSettings.controls[bound_player].gamepad_deadzone_right, 5.f, 50.f, sliderPercent, [](Slider& slider)
+				{soundSliderSetting(slider, true); allSettings.controls[bound_player].gamepad_deadzone_right = slider.getValue(); });
+
             y += settingsAddBooleanOption(*settings_subwindow, y, "gamepad_camera_invert_x", Language::get(5237), Language::get(5238),
                 allSettings.controls[bound_player].gamepad_camera_invert_x, [](Button& button)
                 {soundToggleSetting(button); allSettings.controls[bound_player].gamepad_camera_invert_x = button.isPressed();});
@@ -7345,6 +7360,8 @@ bind_failed:
                 {Setting::Type::Dropdown, "gamepad_facehotbar"},
                 {Setting::Type::Slider, "turn_sensitivity_x"},
                 {Setting::Type::Slider, "turn_sensitivity_y"},
+				{Setting::Type::Slider, "gamepad_deadzone_left"},
+				{Setting::Type::Slider, "gamepad_deadzone_right"},
                 {Setting::Type::Boolean, "gamepad_camera_invert_x"},
                 {Setting::Type::Boolean, "gamepad_camera_invert_y"},
 				{Setting::Type::Slider, "quick_turn_speed_control"},
