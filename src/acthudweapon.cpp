@@ -4101,7 +4101,7 @@ void actHudShield(Entity* my)
 			&& players[HUDSHIELD_PLAYERNUM]->entity->isMobile() 
 			&& !cast_animation[HUDSHIELD_PLAYERNUM].hideShieldFromBasicCast()
 			&& !cast_animation[HUDSHIELD_PLAYERNUM].active_spellbook
-			&& (!spellbook || (spellbook && hideShield))
+			&& (!spellbook || (spellbook && (hideShield || playerRace == SPIDER)))
 			&& HUDSHIELD_DEFEND_DELAY_TICK == 0
 			&& !(foci && !hideShield && players[HUDSHIELD_PLAYERNUM]->hud.shieldSwitch) )
 		{
