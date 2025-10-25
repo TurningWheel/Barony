@@ -1475,6 +1475,7 @@ void Entity::effectTimes()
 						break;
 					case EFF_CONFUSED:
 						messagePlayer(player, MESSAGE_STATUS, Language::get(596));
+						updateClient = true;
 						break;
 					case EFF_DRUNK:
 						messagePlayer(player, MESSAGE_STATUS, Language::get(597));
@@ -6046,6 +6047,27 @@ void Entity::handleEffects(Stat* myStats)
 				particle->flags[SPRITE] = true;
 				particle->yaw = this->yaw -(3 * PI / 8) + ((ticks / 25) % 4) * (2 / 4.0) * PI / 2;
 				//particle->flags[INVISIBLE] = true;
+			}
+		}
+	}
+
+	if ( myStats->getEffectActive(EFF_CONFUSED) )
+	{
+		if ( ticks % 25 == 0 )
+		{
+			if ( !strncmp(map.name, "Sanctum", 7) && getMonsterTypeFromSprite() == AUTOMATON && !monsterAllyGetPlayerLeader() )
+			{
+				// boss automatons
+			}
+			else if ( Entity* particle = createParticleAestheticOrbit(this, 2203, 3 * TICKS_PER_SECOND, PARTICLE_EFFECT_CONFUSE_ORBIT) )
+			{
+				particle->yaw = 0.0;
+				particle->actmagicOrbitDist = 4;
+				particle->scalex = 0.05;
+				particle->scaley = 0.05;
+				particle->scalez = 0.05;
+				particle->z -= 4;
+				particle->z = std::max(-6.0, particle->z);
 			}
 		}
 	}
@@ -16111,8 +16133,16 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 		{
 			if ( players[destStats->getEffectActive(EFF_CONFUSED) - 1]->entity )
 			{
-				spellEffectLeader = true;
-				leader = players[destStats->getEffectActive(EFF_CONFUSED) - 1]->entity;
+				if ( destStats->type == AUTOMATON
+					&& !strncmp(destStats->name, "corrupted automaton", strlen("corrupted automaton")) )
+				{
+					// ignore
+				}
+				else
+				{
+					spellEffectLeader = true;
+					leader = players[destStats->getEffectActive(EFF_CONFUSED) - 1]->entity;
+				}
 			}
 		}
 
@@ -20776,6 +20806,27 @@ void Entity::handleEffectsClient()
 				particle->flags[SPRITE] = true;
 				particle->yaw = this->yaw - (3 * PI / 8) + ((ticks / 25) % 4) * (2 / 4.0) * PI / 2;
 				//particle->flags[INVISIBLE] = true;
+			}
+		}
+	}
+
+	if ( myStats->getEffectActive(EFF_CONFUSED) )
+	{
+		if ( ticks % 25 == 0 )
+		{
+			if ( !strncmp(map.name, "Sanctum", 7) && getMonsterTypeFromSprite() == AUTOMATON && !monsterAllyGetPlayerLeader() )
+			{
+				// boss automatons
+			}
+			else if ( Entity* particle = createParticleAestheticOrbit(this, 2203, 3 * TICKS_PER_SECOND, PARTICLE_EFFECT_CONFUSE_ORBIT) )
+			{
+				particle->yaw = 0.0;
+				particle->actmagicOrbitDist = 4;
+				particle->scalex = 0.05;
+				particle->scaley = 0.05;
+				particle->scalez = 0.05;
+				particle->z -= 4;
+				particle->z = std::max(-6.0, particle->z);
 			}
 		}
 	}

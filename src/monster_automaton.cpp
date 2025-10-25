@@ -79,18 +79,27 @@ void initAutomaton(Entity* my, Stat* myStats)
 			else if ( !strncmp(myStats->name, "corrupted automaton", strlen("corrupted automaton")) )
 			{
 				greaterMonster = true;
-				myStats->HP = 150;
-				myStats->MAXHP = 150;
+				myStats->HP = 200;
+				myStats->MAXHP = 200;
 				myStats->RANDOM_MAXHP = 0;
 				myStats->RANDOM_HP = 0;
-				myStats->OLDHP = myStats->HP;
 				myStats->STR = 35;
 				myStats->DEX = 13;
-				myStats->CON = 8;
+				myStats->CON = 10;
 				myStats->INT = 10;
 				myStats->PER = 25;
 				myStats->CHR = -3;
 				myStats->LVL = 30;
+				for ( int c = 1; c < MAXPLAYERS; ++c )
+				{
+					if ( !client_disconnected[c] )
+					{
+						myStats->MAXHP += 50;
+						myStats->HP = myStats->MAXHP;
+						myStats->CON += 2;
+					}
+				}
+				myStats->OLDHP = myStats->HP;
 				myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] = 1;
 				myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] = 1;
 				myStats->EDITOR_ITEMS[ITEM_SLOT_ARMOR] = 1;
@@ -663,8 +672,10 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						}
 						else
 						{
-							myStats->setEffectActive(EFF_CONFUSED, MAXPLAYERS + 1);
-							myStats->EFFECTS_TIMERS[EFF_CONFUSED] = -1;
+							if ( strncmp(myStats->name, "corrupted automaton", strlen("corrupted automaton")) )
+							{
+								my->setEffect(EFF_CONFUSED, Uint8(MAXPLAYERS + 1), -1, true, true, true, true);
+							}
 							myStats->setEffectActive(EFF_PARALYZED, 1);
 							myStats->EFFECTS_TIMERS[EFF_PARALYZED] = 25;
 							playSoundEntity(my, 263, 128);

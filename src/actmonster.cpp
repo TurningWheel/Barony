@@ -1701,7 +1701,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 					}
 					if ( myStats->getEffectActive(EFF_CONFUSED) )
 					{
-						my->setEffect(EFF_CONFUSED, false, 0, false);
+						my->setEffect(EFF_CONFUSED, false, 0, true);
 					}
 				}
 			}
@@ -1875,7 +1875,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 							}
 							if ( myStats->getEffectActive(EFF_CONFUSED) )
 							{
-								my->setEffect(EFF_CONFUSED, false, 0, false);
+								my->setEffect(EFF_CONFUSED, false, 0, true);
 							}
 						}
 					}

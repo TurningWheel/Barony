@@ -830,8 +830,7 @@ void Item::applyLockpick(int player, Entity& entity)
 					else
 					{
 						messagePlayer(player, MESSAGE_COMBAT, Language::get(2526), getMonsterLocalizedName(myStats->type).c_str());
-						myStats->setEffectActive(EFF_CONFUSED, MAXPLAYERS + 1);
-						myStats->EFFECTS_TIMERS[EFF_CONFUSED] = -1;
+						entity.setEffect(EFF_CONFUSED, Uint8(MAXPLAYERS + 1), -1, true, true, true, true);
 						myStats->setEffectActive(EFF_PARALYZED, 1);
 						myStats->EFFECTS_TIMERS[EFF_PARALYZED] = 25;
 						playSoundEntity(&entity, 263, 128);

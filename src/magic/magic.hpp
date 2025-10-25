@@ -338,6 +338,7 @@ static const int PARTICLE_EFFECT_STASIS_CAGE_ORBIT = 55;
 static const int PARTICLE_EFFECT_STASIS_RIFT_ORBIT = 56;
 static const int PARTICLE_EFFECT_EARTH_ELEMENTAL_SUMMON_AOE = 57;
 static const int PARTICLE_EFFECT_THORNS_ORBIT = 58;
+static const int PARTICLE_EFFECT_CONFUSE_ORBIT = 59;
 
 // actmagicIsVertical constants
 static const int MAGIC_ISVERTICAL_NONE = 0;

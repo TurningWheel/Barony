@@ -3416,7 +3416,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							{
 								effectStrength = parent->monsterAllyGetPlayerLeader()->skill[2] + 1;
 							}
-							if ( duration > 0 && hit.entity->setEffect(EFF_CONFUSED, effectStrength, duration, false) )
+							if ( duration > 0 && hit.entity->setEffect(EFF_CONFUSED, effectStrength, duration, true, true, true) )
 							{
 								magicOnEntityHit(parent, my, hit.entity, hitstats, 0, 0, 0, spell ? spell->ID : SPELL_NONE);
 								magicTrapOnHit(parent, hit.entity, hitstats, 0, spell ? spell->ID : SPELL_NONE);
@@ -7160,6 +7160,33 @@ void actParticleAestheticOrbit(Entity* my)
 			my->x = parent->x + my->actmagicOrbitDist * cos(my->yaw);
 			my->y = parent->y + my->actmagicOrbitDist * sin(my->yaw);
 		}
+		else if ( my->skill[1] == PARTICLE_EFFECT_CONFUSE_ORBIT )
+		{
+			my->fskill[2] += 0.05;
+			my->yaw -= 0.05;
+			my->x = parent->x + my->actmagicOrbitDist * cos(my->fskill[2]);
+			my->y = parent->y + my->actmagicOrbitDist * sin(my->fskill[2]);
+
+			Stat* stats = parent->getStats();
+			if ( PARTICLE_LIFE <= 10 || (!stats || !stats->getEffectActive(EFF_CONFUSED)) )
+			{
+				my->scalex -= 0.05;
+				my->scaley -= 0.05;
+				my->scalez -= 0.05;
+				if ( my->scalex <= 0.0 )
+				{
+					my->removeLightField();
+					list_RemoveNode(my->mynode);
+					return;
+				}
+			}
+			else
+			{
+				my->scalex = std::min(my->scalex + 0.05, 0.5);
+				my->scaley = std::min(my->scaley + 0.05, 0.5);
+				my->scalez = std::min(my->scalez + 0.05, 0.5);
+			}
+		}
 		else if ( my->skill[1] == PARTICLE_EFFECT_MUSHROOM_SPELL )
 		{
 			int mapx = static_cast<int>(my->x) >> 4;
@@ -8558,8 +8585,7 @@ void actParticleTimer(Entity* my)
 									{
 										case AUTOMATON:
 											strcpy(monsterStats->name, "corrupted automaton");
-											monsterStats->setEffectActive(EFF_CONFUSED, MAXPLAYERS + 1);
-											monsterStats->EFFECTS_TIMERS[EFF_CONFUSED] = -1;
+											monster->setEffect(EFF_CONFUSED, Uint8(MAXPLAYERS + 1), -1, true, true, true, true);
 											break;
 										default:
 											break;

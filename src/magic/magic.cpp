@@ -165,7 +165,7 @@ bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, En
 		}
 
 		hit.entity->monsterAllyIndex = parent->skill[2];
-		hit.entity->setEffect(EFF_CONFUSED, false, 0, false);
+		hit.entity->setEffect(EFF_CONFUSED, false, 0, true);
 		if ( multiplayer == SERVER )
 		{
 			serverUpdateEntitySkill(hit.entity, 42); // update monsterAllyIndex for clients.
@@ -1477,7 +1477,7 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 						}
 					}
 
-					hit.entity->setEffect(EFF_CONFUSED, false, 0, false);
+					hit.entity->setEffect(EFF_CONFUSED, false, 0, true);
 					magicOnEntityHit(parent, &my, hit.entity, hitstats, 0, 0, 0, SPELL_CHARM_MONSTER);
 
 					// change the color of the hit entity.

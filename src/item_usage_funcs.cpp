@@ -1131,7 +1131,7 @@ bool item_PotionConfusion(Item*& item, Entity* entity, Entity* usedBy)
 			effectStrength = usedBy->monsterAllyGetPlayerLeader()->skill[2] + 1;
 		}
 	}
-	if ( entity->setEffect(EFF_CONFUSED, effectStrength, duration, false) )
+	if ( entity->setEffect(EFF_CONFUSED, effectStrength, duration, true, true, true) )
 	{
 		if ( entity->behavior == &actMonster )
 		{
