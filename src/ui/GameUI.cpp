@@ -8377,7 +8377,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 				miscEffects[kEffectPush] = true;
 			}
 			if ( (stats[player]->shoes && stats[player]->shoes->type == IRON_BOOTS_WATERWALKING)
-				|| skillCapstoneUnlocked(player, PRO_SWIMMING) )
+				/*|| skillCapstoneUnlocked(player, PRO_LEGACY_SWIMMING)*/ )
 			{
 				miscEffects[kEffectWaterWalking] = true;
 			}
@@ -17788,7 +17788,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 					break;
 				case SHEET_CON:
 				{
-					real_t bonus = getSpellBonusFromCasterINT(players[player.playernum]->entity, stats[player.playernum], PRO_SWIMMING);
+					real_t bonus = getSpellBonusFromCasterINT(players[player.playernum]->entity, stats[player.playernum], PRO_THAUMATURGY);
 					bonus -= getSpellBonusFromCasterINT(players[player.playernum]->entity, stats[player.playernum], NUMPROFICIENCIES);
 					real_t val = bonus * 100.0;
 					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_pwr_value_format").c_str(), val);
@@ -17804,7 +17804,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 					//real_t regenTotal = getDisplayedMPRegen(player.entity, *stats[player.playernum], nullptr, nullptr);
 					//real_t regenStatSkill = regenTotal - regenWithoutINT;
 					//snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_mp_regen_value_format").c_str(), regenStatSkill);
-					real_t bonus = getSpellBonusFromCasterINT(players[player.playernum]->entity, stats[player.playernum], PRO_MAGIC);
+					real_t bonus = getSpellBonusFromCasterINT(players[player.playernum]->entity, stats[player.playernum], PRO_SORCERY);
 					bonus -= getSpellBonusFromCasterINT(players[player.playernum]->entity, stats[player.playernum], NUMPROFICIENCIES);
 					real_t val = bonus * 100.0;
 					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_pwr_value_format").c_str(), val);
@@ -17938,7 +17938,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 				break;
 				case SHEET_CHR:
 				{
-					real_t bonus = getSpellBonusFromCasterINT(players[player.playernum]->entity, stats[player.playernum], PRO_SPELLCASTING);
+					real_t bonus = getSpellBonusFromCasterINT(players[player.playernum]->entity, stats[player.playernum], PRO_MYSTICISM);
 					bonus -= getSpellBonusFromCasterINT(players[player.playernum]->entity, stats[player.playernum], NUMPROFICIENCIES);
 					real_t val = bonus * 100.0;
 					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_pwr_value_format").c_str(), val);
@@ -19288,11 +19288,11 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 					if ( auto spell = player.magic.selectedSpell() )
 					{
 						pwrINTBonus = formatSkillSheetEffects(player.playernum, spell->skillID, tag, getHoverTextString("attributes_pwr_bonus_format"));
-						if ( spell->skillID == PRO_SPELLCASTING )
+						if ( spell->skillID == PRO_MYSTICISM )
 						{
 							snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_pwr_entry_attr_bonus_mysticism").c_str());
 						}
-						else if ( spell->skillID == PRO_SWIMMING )
+						else if ( spell->skillID == PRO_THAUMATURGY )
 						{
 							snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_pwr_entry_attr_bonus_thaumaturgy").c_str());
 						}
@@ -26545,9 +26545,9 @@ void createPlayerSpellList(const int player)
 		filterBtn->setBackgroundActivated("*#images/ui/Inventory/HUD_Magic_Casting_BG_Press_01.png");
 		filterBtn->setCallback([](Button& button) {
 			auto& val = players[button.getOwner()]->inventoryUI.spellPanel.spellFilterBySkill;
-			if ( val == 0 ) { val = PRO_MAGIC; }
-			else if ( val == PRO_MAGIC ) { val = PRO_SPELLCASTING; }
-			else if ( val == PRO_SPELLCASTING ) { val = PRO_SWIMMING; }
+			if ( val == 0 ) { val = PRO_SORCERY; }
+			else if ( val == PRO_SORCERY ) { val = PRO_MYSTICISM; }
+			else if ( val == PRO_MYSTICISM ) { val = PRO_THAUMATURGY; }
 			else
 			{
 				val = 0;
@@ -35161,7 +35161,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		}
 		return buf;
 	}
-	//else if ( proficiency == PRO_SWIMMING )
+	//else if ( proficiency == PRO_LEGACY_SWIMMING )
 	//{
 	//	if ( tag == "SWIM_SPEED_TOTAL" )
 	//	{
@@ -35554,11 +35554,11 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		}
 		return buf;
 	}
-	/*else if ( proficiency == PRO_SPELLCASTING )
+	/*else if ( proficiency == PRO_LEGACY_SPELLCASTING )
 	{
 		return buf;
 	}*/
-	else if ( proficiency == PRO_MAGIC || proficiency == PRO_SPELLCASTING || proficiency == PRO_SWIMMING || proficiency == NUMPROFICIENCIES )
+	else if ( proficiency == PRO_SORCERY || proficiency == PRO_MYSTICISM || proficiency == PRO_THAUMATURGY || proficiency == NUMPROFICIENCIES )
 	{
 		snprintf(buf, sizeof(buf), "%d", 0);
 		if ( tag == "MAGIC_CURRENT_TIER" )
@@ -42042,9 +42042,9 @@ size_t SkillUpAnimation_t::getSkillUpIndexToDisplay()
 				case PRO_UNARMED:
 					priority.push(std::make_pair(10, index));
 					break;
-				case PRO_MAGIC:
-				case PRO_SPELLCASTING:
-				case PRO_SWIMMING:
+				case PRO_SORCERY:
+				case PRO_MYSTICISM:
+				case PRO_THAUMATURGY:
 					priority.push(std::make_pair(5, index));
 					break;
 				case PRO_STEALTH:
@@ -42131,9 +42131,9 @@ void SkillUpAnimation_t::addSkillUp(const int _numSkill, const int _currentSkill
 		case PRO_STEALTH:
 			ticksToLive = 4 * TICKS_PER_SECOND;
 			break;
-		case PRO_MAGIC:
-		case PRO_SPELLCASTING:
-		case PRO_SWIMMING:
+		case PRO_SORCERY:
+		case PRO_MYSTICISM:
+		case PRO_THAUMATURGY:
 			ticksToLive = 3 * TICKS_PER_SECOND;
 			break;
 		case PRO_LOCKPICKING:

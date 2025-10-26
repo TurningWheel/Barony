@@ -5266,7 +5266,7 @@ const int Player::HUD_t::getActionIconForPlayer(ActionPrompts prompt, std::strin
 						return spell->skillID;
 					}
 					promptString = Language::get(6843);
-					return PRO_MAGIC;
+					return PRO_SORCERY;
 				}
 				if ( hasSpellBook && allowCasting )
 				{
@@ -5282,7 +5282,7 @@ const int Player::HUD_t::getActionIconForPlayer(ActionPrompts prompt, std::strin
 					{
 						return spell->skillID;
 					}
-					return PRO_MAGIC;
+					return PRO_SORCERY;
 				}
 
 				if ( shapeshifted || itemTypeIsQuiver(stats[player.playernum]->shield->type) )
@@ -7252,15 +7252,15 @@ bool Player::PlayerMechanics_t::itemDegradeRoll(Item* item, int* checkInterval)
 
 void Player::PlayerMechanics_t::sustainedSpellIncrementMP(int mpChange, int skillID)
 {
-	if ( skillID == PRO_MAGIC )
+	if ( skillID == PRO_SORCERY )
 	{
 		sustainedSpellMPUsedSorcery += std::max(0, mpChange);
 	}
-	else if ( skillID == PRO_SPELLCASTING )
+	else if ( skillID == PRO_MYSTICISM )
 	{
 		sustainedSpellMPUsedMysticism += std::max(0, mpChange);
 	}
-	else if ( skillID == PRO_SWIMMING )
+	else if ( skillID == PRO_THAUMATURGY )
 	{
 		sustainedSpellMPUsedThaumaturgy += std::max(0, mpChange);
 	}
@@ -7268,15 +7268,15 @@ void Player::PlayerMechanics_t::sustainedSpellIncrementMP(int mpChange, int skil
 
 void Player::PlayerMechanics_t::baseSpellIncrementMP(int mpChange, int skillID)
 {
-	if ( skillID == PRO_MAGIC )
+	if ( skillID == PRO_SORCERY )
 	{
 		baseSpellMPUsedSorcery += std::max(0, mpChange);
 	}
-	else if ( skillID == PRO_SPELLCASTING )
+	else if ( skillID == PRO_MYSTICISM )
 	{
 		baseSpellMPUsedMysticism += std::max(0, mpChange);
 	}
-	else if ( skillID == PRO_SWIMMING )
+	else if ( skillID == PRO_THAUMATURGY )
 	{
 		baseSpellMPUsedThaumaturgy += std::max(0, mpChange);
 	}
@@ -7294,15 +7294,15 @@ bool Player::PlayerMechanics_t::sustainedSpellLevelChance(int skillID)
 		threshold = 5 + (stats[player.playernum]->getProficiency(skillID) / 2); // 5-55
 	}
 
-	if ( skillID == PRO_MAGIC )
+	if ( skillID == PRO_SORCERY )
 	{
 		return sustainedSpellMPUsedSorcery >= threshold;
 	}
-	else if ( skillID == PRO_SPELLCASTING )
+	else if ( skillID == PRO_MYSTICISM )
 	{
 		return sustainedSpellMPUsedMysticism >= threshold;
 	}
-	else if ( skillID == PRO_SWIMMING )
+	else if ( skillID == PRO_THAUMATURGY )
 	{
 		return sustainedSpellMPUsedThaumaturgy >= threshold;
 	}
@@ -7313,15 +7313,15 @@ bool Player::PlayerMechanics_t::sustainedSpellLevelChance(int skillID)
 int Player::PlayerMechanics_t::baseSpellLevelChance(int skillID)
 {
 	int counter = 0;
-	if ( skillID == PRO_MAGIC )
+	if ( skillID == PRO_SORCERY )
 	{
 		counter = baseSpellMPUsedSorcery;
 	}
-	else if ( skillID == PRO_SPELLCASTING )
+	else if ( skillID == PRO_MYSTICISM )
 	{
 		counter = baseSpellMPUsedMysticism;
 	}
-	else if ( skillID == PRO_SWIMMING )
+	else if ( skillID == PRO_THAUMATURGY )
 	{
 		counter = baseSpellMPUsedThaumaturgy;
 	}
@@ -7336,15 +7336,15 @@ int Player::PlayerMechanics_t::baseSpellLevelChance(int skillID)
 
 void Player::PlayerMechanics_t::sustainedSpellClearMP(int skillID)
 {
-	if ( skillID == PRO_MAGIC )
+	if ( skillID == PRO_SORCERY )
 	{
 		sustainedSpellMPUsedSorcery = 0;
 	}
-	else if ( skillID == PRO_SPELLCASTING )
+	else if ( skillID == PRO_MYSTICISM )
 	{
 		sustainedSpellMPUsedMysticism = 0;
 	}
-	else if ( skillID == PRO_SWIMMING )
+	else if ( skillID == PRO_THAUMATURGY )
 	{
 		sustainedSpellMPUsedThaumaturgy = 0;
 	}
@@ -7352,17 +7352,22 @@ void Player::PlayerMechanics_t::sustainedSpellClearMP(int skillID)
 
 void Player::PlayerMechanics_t::baseSpellClearMP(int skillID)
 {
-	if ( skillID == PRO_MAGIC )
+	int threshold = 20 + stats[player.playernum]->getProficiency(skillID) / 2;
+	int leftoverCap = threshold * 4;
+	if ( skillID == PRO_SORCERY )
 	{
-		baseSpellMPUsedSorcery = 0;
+		baseSpellMPUsedSorcery = std::max(0, baseSpellMPUsedSorcery - 4 * threshold);
+		baseSpellMPUsedSorcery = std::min(baseSpellMPUsedSorcery, leftoverCap);
 	}
-	else if ( skillID == PRO_SPELLCASTING )
+	else if ( skillID == PRO_MYSTICISM )
 	{
-		baseSpellMPUsedMysticism = 0;
+		baseSpellMPUsedMysticism = std::max(0, baseSpellMPUsedMysticism - 4 * threshold);
+		baseSpellMPUsedMysticism = std::min(baseSpellMPUsedMysticism, leftoverCap);
 	}
-	else if ( skillID == PRO_SWIMMING )
+	else if ( skillID == PRO_THAUMATURGY )
 	{
-		baseSpellMPUsedThaumaturgy = 0;
+		baseSpellMPUsedThaumaturgy = std::max(0, baseSpellMPUsedThaumaturgy - 4 * threshold);
+		baseSpellMPUsedThaumaturgy = std::min(baseSpellMPUsedThaumaturgy, leftoverCap);
 	}
 }
 

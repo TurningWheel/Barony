@@ -2197,6 +2197,21 @@ bool Entity::increaseSkill(int skill, bool notify)
 	{
 		return false;
 	}
+
+	if ( skill == PRO_LEGACY_SWIMMING )
+	{
+		if ( !(svFlags & SV_FLAG_HUNGER) )
+		{
+			// hunger off and swimming is raised.
+			serverUpdatePlayerGameplayStats(player, STATISTICS_HOT_TUB_TIME_MACHINE, 1);
+		}
+		return true;
+	}
+	if ( skill >= NUMPROFICIENCIES )
+	{
+		return false;
+	}
+
 	if ( this->behavior == &actPlayer )
 	{
 		player = this->skill[2];
@@ -2246,7 +2261,7 @@ bool Entity::increaseSkill(int skill, bool notify)
 				break;
 		}
 
-		//if ( skill == PRO_SPELLCASTING && skillCapstoneUnlockedEntity(PRO_SPELLCASTING) )
+		//if ( skill == PRO_LEGACY_SPELLCASTING && skillCapstoneUnlockedEntity(PRO_LEGACY_SPELLCASTING) )
 		//{
 		//	//Spellcasting capstone = free casting of Forcebolt.
 		//	//Give the player the spell if they haven't learned it yet.
@@ -2299,30 +2314,24 @@ bool Entity::increaseSkill(int skill, bool notify)
 			}
 		}
 
-		if ( skill == PRO_SWIMMING && !(svFlags & SV_FLAG_HUNGER) )
-		{
-			// hunger off and swimming is raised.
-			serverUpdatePlayerGameplayStats(player, STATISTICS_HOT_TUB_TIME_MACHINE, 1);
-		}
-
-		if ( skill == PRO_MAGIC && skillCapstoneUnlockedEntity(PRO_MAGIC) )
-		{
-			//magic capstone = bonus spell: Dominate.
-			if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
-			{
-				strcpy((char*)net_packet->data, "ASPL");
-				net_packet->data[4] = clientnum;
-				net_packet->data[5] = SPELL_DOMINATE;
-				net_packet->address.host = net_clients[player - 1].host;
-				net_packet->address.port = net_clients[player - 1].port;
-				net_packet->len = 6;
-				sendPacketSafe(net_sock, -1, net_packet, player - 1);
-			}
-			else if ( player >= 0 )
-			{
-				addSpell(SPELL_DOMINATE, player, true);
-			}
-		}
+		//if ( skill == PRO_SORCERY && skillCapstoneUnlockedEntity(PRO_SORCERY) )
+		//{
+		//	//magic capstone = bonus spell: Dominate.
+		//	if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
+		//	{
+		//		strcpy((char*)net_packet->data, "ASPL");
+		//		net_packet->data[4] = clientnum;
+		//		net_packet->data[5] = SPELL_DOMINATE;
+		//		net_packet->address.host = net_clients[player - 1].host;
+		//		net_packet->address.port = net_clients[player - 1].port;
+		//		net_packet->len = 6;
+		//		sendPacketSafe(net_sock, -1, net_packet, player - 1);
+		//	}
+		//	else if ( player >= 0 )
+		//	{
+		//		addSpell(SPELL_DOMINATE, player, true);
+		//	}
+		//}
 		myStats->EXP += 2;
 
 		if ( player >= 0 )
@@ -18244,11 +18253,11 @@ int getStatForProficiency(int skill)
 			statForProficiency = STAT_DEX;
 			break;
 		case PRO_SHIELD:		// base attribute: con
-		case PRO_SWIMMING:      // base attribute: con
+		case PRO_THAUMATURGY:      // base attribute: con
 			statForProficiency = STAT_CON;
 			break;
-		case PRO_SPELLCASTING:  // base attribute: int
-		case PRO_MAGIC:         // base attribute: int
+		case PRO_SORCERY:  // base attribute: int
+		case PRO_MYSTICISM:         // base attribute: int
 			statForProficiency = STAT_INT;
 			break;
 		case PRO_ALCHEMY:       // base attribute: per
@@ -23882,7 +23891,7 @@ int Entity::getHealthRegenInterval(Entity* my, Stat& myStats, bool isPlayer, boo
 int getBaseManaRegen(Entity* my, Stat& myStats, bool excludeItemsEffectsBonus)
 {
 	// reduced time from intelligence and spellcasting ability, 0-200 ticks of 300.
-	//int profMultiplier = (myStats.getModifiedProficiency(PRO_SPELLCASTING) / 20) + 1; // 1 to 6
+	//int profMultiplier = (myStats.getModifiedProficiency(PRO_LEGACY_SPELLCASTING) / 20) + 1; // 1 to 6
 	//int statMultiplier = std::max(statGetINT(&myStats, my), 0); // get intelligence
 	if ( myStats.type == AUTOMATON )
 	{

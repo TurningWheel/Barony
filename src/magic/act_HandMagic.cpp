@@ -836,7 +836,7 @@ void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, 
 	animation_manager->mana_left = spellCost;
 	animation_manager->mana_cost = spellCost;
 	animation_manager->consumeMana = true;
-	/*if ( spell->ID == SPELL_FORCEBOLT && caster->skillCapstoneUnlockedEntity(PRO_SPELLCASTING) )
+	/*if ( spell->ID == SPELL_FORCEBOLT && caster->skillCapstoneUnlockedEntity(PRO_LEGACY_SPELLCASTING) )
 	{
 		animation_manager->consumeMana = false;
 	}*/
@@ -1415,10 +1415,10 @@ void actLeftHandMagic(Entity* my)
 
 				//Water walking boots
 				bool waterwalkingboots = false;
-				if ( skillCapstoneUnlocked(HANDMAGIC_PLAYERNUM, PRO_SWIMMING) )
+				/*if ( skillCapstoneUnlocked(HANDMAGIC_PLAYERNUM, PRO_LEGACY_SWIMMING) )
 				{
 					waterwalkingboots = true;
-				}
+				}*/
 				if ( stats[HANDMAGIC_PLAYERNUM]->shoes != NULL )
 				{
 					if ( stats[HANDMAGIC_PLAYERNUM]->shoes->type == IRON_BOOTS_WATERWALKING )
@@ -1541,10 +1541,10 @@ void actLeftHandMagic(Entity* my)
 
 				//Water walking boots
 				bool waterwalkingboots = false;
-				if ( skillCapstoneUnlocked(HANDMAGIC_PLAYERNUM, PRO_SWIMMING) )
+				/*if ( skillCapstoneUnlocked(HANDMAGIC_PLAYERNUM, PRO_LEGACY_SWIMMING) )
 				{
 					waterwalkingboots = true;
-				}
+				}*/
 				if ( stats[HANDMAGIC_PLAYERNUM]->shoes != NULL )
 				{
 					if ( stats[HANDMAGIC_PLAYERNUM]->shoes->type == IRON_BOOTS_WATERWALKING )

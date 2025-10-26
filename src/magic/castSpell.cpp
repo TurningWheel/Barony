@@ -182,7 +182,7 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook)
 	}
 
 	// Calculate the cost of the Spell for Singleplayer
-	//if ( spell->ID == SPELL_FORCEBOLT && skillCapstoneUnlocked(player, PRO_SPELLCASTING) )
+	//if ( spell->ID == SPELL_FORCEBOLT && skillCapstoneUnlocked(player, PRO_LEGACY_SPELLCASTING) )
 	//{
 	//	// Reaching Spellcasting capstone makes forcebolt free
 	//	magiccost = 0;
@@ -631,7 +631,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		int prevHP = caster->getHP();
 		if ( multiplayer == SINGLE )
 		{
-			/*if ( spell->ID == SPELL_FORCEBOLT && skillCapstoneUnlocked(player, PRO_SPELLCASTING) )
+			/*if ( spell->ID == SPELL_FORCEBOLT && skillCapstoneUnlocked(player, PRO_LEGACY_SPELLCASTING) )
 			{
 				magiccost = 0;
 			}
@@ -644,7 +644,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		}
 		else // Calculate the cost of the Spell for Multiplayer
 		{
-			//if ( spell->ID == SPELL_FORCEBOLT && skillCapstoneUnlocked(player, PRO_SPELLCASTING) )
+			//if ( spell->ID == SPELL_FORCEBOLT && skillCapstoneUnlocked(player, PRO_LEGACY_SPELLCASTING) )
 			//{
 			//	// Reaching Spellcasting capstone makes Forcebolt free
 			//	magiccost = 0;
@@ -852,10 +852,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 	bool waterwalkingboots = false;
 	if (!trap)
 	{
-		if ( player >= 0 && skillCapstoneUnlocked(player, PRO_SWIMMING) )
+		/*if ( player >= 0 && skillCapstoneUnlocked(player, PRO_LEGACY_SWIMMING) )
 		{
 			waterwalkingboots = true;
-		}
+		}*/
 		if ( stat && stat->shoes != NULL )
 		{
 			if (stat->shoes->type == IRON_BOOTS_WATERWALKING )
@@ -7274,48 +7274,48 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 	//		if ( stat )
 	//		{
 	//			// spellcasting increase chances.
-	//			if ( stat->getProficiency(PRO_SPELLCASTING) < 60 )
+	//			if ( stat->getProficiency(PRO_LEGACY_SPELLCASTING) < 60 )
 	//			{
 	//				if ( local_rng.rand() % 6 == 0 ) //16.67%
 	//				{
-	//					caster->increaseSkill(PRO_SPELLCASTING);
+	//					caster->increaseSkill(PRO_LEGACY_SPELLCASTING);
 	//				}
 	//			}
-	//			else if ( stat->getProficiency(PRO_SPELLCASTING) < 80 )
+	//			else if ( stat->getProficiency(PRO_LEGACY_SPELLCASTING) < 80 )
 	//			{
 	//				if ( local_rng.rand() % 9 == 0 ) //11.11%
 	//				{
-	//					caster->increaseSkill(PRO_SPELLCASTING);
+	//					caster->increaseSkill(PRO_LEGACY_SPELLCASTING);
 	//				}
 	//			}
 	//			else // greater than 80
 	//			{
 	//				if ( local_rng.rand() % 12 == 0 ) //8.33%
 	//				{
-	//					caster->increaseSkill(PRO_SPELLCASTING);
+	//					caster->increaseSkill(PRO_LEGACY_SPELLCASTING);
 	//				}
 	//			}
 
 	//			// magic increase chances.
-	//			if ( stat->getProficiency(PRO_SPELLCASTING) < 60 )
+	//			if ( stat->getProficiency(PRO_LEGACY_SPELLCASTING) < 60 )
 	//			{
 	//				if ( local_rng.rand() % 7 == 0 ) //14.2%
 	//				{
-	//					caster->increaseSkill(PRO_MAGIC);
+	//					caster->increaseSkill(PRO_LEGACY_MAGIC);
 	//				}
 	//			}
-	//			else if ( stat->getProficiency(PRO_SPELLCASTING) < 80 )
+	//			else if ( stat->getProficiency(PRO_LEGACY_SPELLCASTING) < 80 )
 	//			{
 	//				if ( local_rng.rand() % 10 == 0 ) //10.00%
 	//				{
-	//					caster->increaseSkill(PRO_MAGIC);
+	//					caster->increaseSkill(PRO_LEGACY_MAGIC);
 	//				}
 	//			}
 	//			else // greater than 80
 	//			{
 	//				if ( local_rng.rand() % 13 == 0 ) //7.69%
 	//				{
-	//					caster->increaseSkill(PRO_MAGIC);
+	//					caster->increaseSkill(PRO_LEGACY_MAGIC);
 	//				}
 	//			}
 	//		}
@@ -7326,7 +7326,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 	//		{
 	//			int spellCastChance = 5; // 20%
 	//			int magicChance = 6; // 16.67%
-	//			int castDifficulty = stat->getProficiency(PRO_SPELLCASTING) / 20 - spell->difficulty / 20;
+	//			int castDifficulty = stat->getProficiency(PRO_LEGACY_SPELLCASTING) / 20 - spell->difficulty / 20;
 	//			if ( castDifficulty <= -1 )
 	//			{
 	//				// spell was harder.
@@ -7359,11 +7359,11 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 	//			//messagePlayer(0, "Difficulty: %d, chance 1 in %d, 1 in %d", castDifficulty, spellCastChance, magicChance);
 	//			if ( (!strcmp(element->element_internal_name, spellElement_light.element_internal_name) || spell->ID == SPELL_REVERT_FORM) )
 	//			{
-	//				if ( stat->getProficiency(PRO_SPELLCASTING) >= SKILL_LEVEL_SKILLED )
+	//				if ( stat->getProficiency(PRO_LEGACY_SPELLCASTING) >= SKILL_LEVEL_SKILLED )
 	//				{
 	//					spellCastChance = 0;
 	//				}
-	//				if ( stat->getProficiency(PRO_MAGIC) >= SKILL_LEVEL_SKILLED )
+	//				if ( stat->getProficiency(PRO_LEGACY_MAGIC) >= SKILL_LEVEL_SKILLED )
 	//				{
 	//					magicChance = 0;
 	//				}
@@ -7390,12 +7390,12 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 	//					{
 	//						players[caster->skill[2]]->mechanics.sustainedSpellMPUsed = 0;
 
-	//						caster->increaseSkill(PRO_SPELLCASTING);
+	//						caster->increaseSkill(PRO_LEGACY_SPELLCASTING);
 	//					}
 	//				}
 	//				else
 	//				{
-	//					caster->increaseSkill(PRO_SPELLCASTING);
+	//					caster->increaseSkill(PRO_LEGACY_SPELLCASTING);
 	//				}
 	//			}
 
@@ -7408,13 +7408,13 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 	//					{
 	//						players[caster->skill[2]]->mechanics.sustainedSpellMPUsed = 0;
 
-	//						caster->increaseSkill(PRO_MAGIC); // otherwise you will basically never be able to learn all the spells in the game...
+	//						caster->increaseSkill(PRO_LEGACY_MAGIC); // otherwise you will basically never be able to learn all the spells in the game...
 	//						magicIncreased = true;
 	//					}
 	//				}
 	//				else
 	//				{
-	//					caster->increaseSkill(PRO_MAGIC); // otherwise you will basically never be able to learn all the spells in the game...
+	//					caster->increaseSkill(PRO_LEGACY_MAGIC); // otherwise you will basically never be able to learn all the spells in the game...
 	//					magicIncreased = true;
 	//				}
 	//			}

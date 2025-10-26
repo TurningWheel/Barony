@@ -50,7 +50,7 @@ void initClassStats(const int classnum, void* myStats)
 		stat->MP -= 10;
 
 		// skills
-		stat->setProficiency(PRO_SWIMMING, 25);
+		//stat->setProficiency(PRO_LEGACY_SWIMMING, 25);
 		stat->setProficiency(PRO_SHIELD, 25);
 		stat->setProficiency(PRO_AXE, 50);
 		stat->setProficiency(PRO_MACE, 25);
@@ -94,9 +94,11 @@ void initClassStats(const int classnum, void* myStats)
 		stat->MP += 10;
 
 		// skills
-		stat->setProficiency(PRO_SPELLCASTING, 50);
-		stat->setProficiency(PRO_MAGIC, 25);
-		stat->setProficiency(PRO_SWIMMING, 25);
+		//stat->setProficiency(PRO_LEGACY_SPELLCASTING, 50);
+		//stat->setProficiency(PRO_LEGACY_MAGIC, 25);
+		//stat->setProficiency(PRO_LEGACY_SWIMMING, 25);
+		stat->setProficiency(PRO_THAUMATURGY, 50);
+		stat->setProficiency(PRO_MYSTICISM, 25);
 		stat->setProficiency(PRO_POLEARM, 25);
 		stat->setProficiency(PRO_ALCHEMY, 30);
 		stat->setProficiency(PRO_APPRAISAL, 10);
@@ -142,7 +144,7 @@ void initClassStats(const int classnum, void* myStats)
 
 		// skills
 		stat->setProficiency(PRO_STEALTH, 25);
-		stat->setProficiency(PRO_SWIMMING, 50);
+		//stat->setProficiency(PRO_LEGACY_SWIMMING, 50);
 		stat->setProficiency(PRO_POLEARM, 25);
 		stat->setProficiency(PRO_RANGED, 25);
 		stat->setProficiency(PRO_TRADING, 25);
@@ -160,9 +162,10 @@ void initClassStats(const int classnum, void* myStats)
 
 		// skills
 		stat->setProficiency(PRO_MACE, 25);
-		stat->setProficiency(PRO_SWIMMING, 25);
-		stat->setProficiency(PRO_MAGIC, 25);
-		stat->setProficiency(PRO_SPELLCASTING, 25);
+		//stat->setProficiency(PRO_LEGACY_SWIMMING, 25);
+		//stat->setProficiency(PRO_LEGACY_MAGIC, 25);
+		//stat->setProficiency(PRO_LEGACY_SPELLCASTING, 25);
+		stat->setProficiency(PRO_THAUMATURGY, 40);
 		stat->setProficiency(PRO_LEADERSHIP, 20);
 		stat->setProficiency(PRO_ALCHEMY, 20);
 		stat->setProficiency(PRO_SHIELD, 10);
@@ -204,8 +207,10 @@ void initClassStats(const int classnum, void* myStats)
 
 		// skills
 		stat->setProficiency(PRO_POLEARM, 25);
-		stat->setProficiency(PRO_SPELLCASTING, 50);
-		stat->setProficiency(PRO_MAGIC, 50);
+		//stat->setProficiency(PRO_LEGACY_SPELLCASTING, 50);
+		//stat->setProficiency(PRO_LEGACY_MAGIC, 50);
+		stat->setProficiency(PRO_SORCERY, 50);
+		stat->setProficiency(PRO_THAUMATURGY, 15);
 		stat->setProficiency(PRO_ALCHEMY, 10);
 		stat->setProficiency(PRO_APPRAISAL, 10);
 	}
@@ -226,8 +231,10 @@ void initClassStats(const int classnum, void* myStats)
 		stat->MP += 10;
 
 		// skills
-		stat->setProficiency(PRO_MAGIC, 25);
-		stat->setProficiency(PRO_SPELLCASTING, 50);
+		//stat->setProficiency(PRO_LEGACY_MAGIC, 25);
+		//stat->setProficiency(PRO_LEGACY_SPELLCASTING, 50);
+		stat->setProficiency(PRO_SORCERY, 40);
+		stat->setProficiency(PRO_MYSTICISM, 15);
 		stat->setProficiency(PRO_STEALTH, 25);
 		stat->setProficiency(PRO_LOCKPICKING, 25);
 		stat->setProficiency(PRO_RANGED, 25);
@@ -246,8 +253,10 @@ void initClassStats(const int classnum, void* myStats)
 		stat->setProficiency(PRO_LOCKPICKING, 25);
 		stat->setProficiency(PRO_TRADING, 25);
 		stat->setProficiency(PRO_LEADERSHIP, 20);
-		stat->setProficiency(PRO_MAGIC, 25);
-		stat->setProficiency(PRO_SPELLCASTING, 25);
+		//stat->setProficiency(PRO_LEGACY_MAGIC, 25);
+		//stat->setProficiency(PRO_LEGACY_SPELLCASTING, 25);
+		stat->setProficiency(PRO_MYSTICISM, 25);
+		stat->setProficiency(PRO_SORCERY, 10);
 		stat->setProficiency(PRO_ALCHEMY, 10);
 		stat->setProficiency(PRO_RANGED, 20);
 		stat->setProficiency(PRO_STEALTH, 10);
@@ -268,8 +277,9 @@ void initClassStats(const int classnum, void* myStats)
 		stat->setProficiency(PRO_MACE, 10);
 		stat->setProficiency(PRO_SHIELD, 10);
 		stat->setProficiency(PRO_STEALTH, 40);
-		stat->setProficiency(PRO_SPELLCASTING, 40);
-		stat->setProficiency(PRO_MAGIC, 40);
+		stat->setProficiency(PRO_MYSTICISM, 40);
+		//stat->setProficiency(PRO_LEGACY_SPELLCASTING, 40);
+		//stat->setProficiency(PRO_LEGACY_MAGIC, 40);
 		stat->setProficiency(PRO_RANGED, 20);
 		stat->setProficiency(PRO_ALCHEMY, 20);
 	}
@@ -305,12 +315,13 @@ void initClassStats(const int classnum, void* myStats)
 
 		// skills
 		stat->setProficiency(PRO_SHIELD, 40);
-		stat->setProficiency(PRO_SPELLCASTING, 20);
 		stat->setProficiency(PRO_LEADERSHIP, 10);
-		stat->setProficiency(PRO_MAGIC, 10);
+		stat->setProficiency(PRO_THAUMATURGY, 25);
+		//stat->setProficiency(PRO_LEGACY_MAGIC, 10);
+		//stat->setProficiency(PRO_LEGACY_SPELLCASTING, 20);
 		stat->setProficiency(PRO_UNARMED, 50);
 		stat->setProficiency(PRO_ALCHEMY, 20);
-		stat->setProficiency(PRO_SWIMMING, 10);
+		//stat->setProficiency(PRO_LEGACY_SWIMMING, 10);
 	}
 	// start DLC
 	else if ( classnum == CLASS_CONJURER )
@@ -327,8 +338,9 @@ void initClassStats(const int classnum, void* myStats)
 		stat->MP += 15;
 
 		// skills
-		stat->setProficiency(PRO_MAGIC, 40);
-		stat->setProficiency(PRO_SPELLCASTING, 40);
+		//stat->setProficiency(PRO_LEGACY_MAGIC, 40);
+		//stat->setProficiency(PRO_LEGACY_SPELLCASTING, 40);
+		stat->setProficiency(PRO_MYSTICISM, 40);
 		stat->setProficiency(PRO_STEALTH, 20);
 		stat->setProficiency(PRO_RANGED, 20);
 		stat->setProficiency(PRO_LEADERSHIP, 40);
@@ -349,8 +361,9 @@ void initClassStats(const int classnum, void* myStats)
 		stat->MP += 10;
 
 		// skills
-		stat->setProficiency(PRO_MAGIC, 70);
-		stat->setProficiency(PRO_SPELLCASTING, 40);
+		//stat->setProficiency(PRO_LEGACY_MAGIC, 70);
+		//stat->setProficiency(PRO_LEGACY_SPELLCASTING, 40);
+		stat->setProficiency(PRO_SORCERY, 60);
 		stat->setProficiency(PRO_STEALTH, 40);
 		stat->setProficiency(PRO_APPRAISAL, 20);
 		stat->setProficiency(PRO_UNARMED, 40);
@@ -371,8 +384,10 @@ void initClassStats(const int classnum, void* myStats)
 		stat->MP += 10;
 
 		// skills
-		stat->setProficiency(PRO_MAGIC, 60);
-		stat->setProficiency(PRO_SPELLCASTING, 40);
+		stat->setProficiency(PRO_MYSTICISM, 60);
+		stat->setProficiency(PRO_SORCERY, 25);
+		//stat->setProficiency(PRO_LEGACY_MAGIC, 60);
+		//stat->setProficiency(PRO_LEGACY_SPELLCASTING, 40);
 		stat->setProficiency(PRO_POLEARM, 20);
 		stat->setProficiency(PRO_LEADERSHIP, 60);
 	}
@@ -418,8 +433,9 @@ void initClassStats(const int classnum, void* myStats)
 		stat->MP += 10;
 
 		// skills
-		stat->setProficiency(PRO_SPELLCASTING, 40);
-		stat->setProficiency(PRO_MAGIC, 40);
+		stat->setProficiency(PRO_MYSTICISM, 40);
+		//stat->setProficiency(PRO_LEGACY_SPELLCASTING, 40);
+		//stat->setProficiency(PRO_LEGACY_MAGIC, 40);
 		stat->setProficiency(PRO_UNARMED, 10);
 		stat->setProficiency(PRO_ALCHEMY, 10);
 		stat->setProficiency(PRO_STEALTH, 10);
@@ -443,8 +459,10 @@ void initClassStats(const int classnum, void* myStats)
 		stat->MP += 10;*/
 
 		// skills
-		stat->setProficiency(PRO_SPELLCASTING, 40);
-		stat->setProficiency(PRO_MAGIC, 20);
+		//stat->setProficiency(PRO_LEGACY_SPELLCASTING, 40);
+		//stat->setProficiency(PRO_LEGACY_MAGIC, 20);
+		stat->setProficiency(PRO_SORCERY, 20);
+		stat->setProficiency(PRO_MYSTICISM, 20);
 		stat->setProficiency(PRO_RANGED, 25);
 		stat->setProficiency(PRO_AXE, 25);
 		/*stat->setProficiency(PRO_SHIELD, 40);
@@ -468,10 +486,10 @@ void initClassStats(const int classnum, void* myStats)
 		stat->MP -= 10;
 
 		// skills
-		stat->setProficiency(PRO_SPELLCASTING, 10);
+		//stat->setProficiency(PRO_LEGACY_SPELLCASTING, 10);
 		stat->setProficiency(PRO_APPRAISAL, 20);
 		stat->setProficiency(PRO_STEALTH, 25);
-		stat->setProficiency(PRO_SWIMMING, 50);
+		//stat->setProficiency(PRO_LEGACY_SWIMMING, 50);
 		stat->setProficiency(PRO_RANGED, 50);
 		stat->setProficiency(PRO_LOCKPICKING, 10);
 	}
@@ -513,7 +531,7 @@ void initClassStats(const int classnum, void* myStats)
 
 		stat->setProficiency(PRO_SWORD, 25);
 		stat->setProficiency(PRO_APPRAISAL, 50);
-		stat->setProficiency(PRO_MAGIC, 15);
+		stat->setProficiency(PRO_MYSTICISM, 15);
 		stat->setProficiency(PRO_LEADERSHIP, 15);
 		stat->setProficiency(PRO_STEALTH, 15);
 		stat->setProficiency(PRO_TRADING, 15);
@@ -534,7 +552,7 @@ void initClassStats(const int classnum, void* myStats)
 		stat->MP += 0;
 
 		stat->setProficiency(PRO_MACE, 50);
-		stat->setProficiency(PRO_MAGIC, 15);
+		stat->setProficiency(PRO_SORCERY, 15);
 		stat->setProficiency(PRO_RANGED, 15);
 		stat->setProficiency(PRO_STEALTH, 25);
 		stat->setProficiency(PRO_ALCHEMY, 25);
@@ -555,9 +573,9 @@ void initClassStats(const int classnum, void* myStats)
 
 		// skills
 		stat->setProficiency(PRO_POLEARM, 25);
-		stat->setProficiency(PRO_SPELLCASTING, 40);
-		stat->setProficiency(PRO_MAGIC, 40);
-		stat->setProficiency(PRO_SWIMMING, 40);
+		stat->setProficiency(PRO_SORCERY, 40);
+		stat->setProficiency(PRO_MYSTICISM, 40);
+		stat->setProficiency(PRO_THAUMATURGY, 40);
 		stat->setProficiency(PRO_ALCHEMY, 10);
 		stat->setProficiency(PRO_APPRAISAL, 10);
 	}

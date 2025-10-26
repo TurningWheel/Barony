@@ -172,15 +172,15 @@ Sint32 Stat::getModifiedProficiency(int skill) const
 				equipmentBonus -= abs(helmet->beatitude) * 10;
 			}
 		}
-		else if ( (helmet->type == HAT_CIRCLET || helmet->type == HAT_CIRCLET_WISDOM) && skill == PRO_SPELLCASTING )
+		else if ( (helmet->type == HAT_CIRCLET || helmet->type == HAT_CIRCLET_WISDOM) && skill == PRO_MYSTICISM )
 		{
 			if ( helmet->beatitude >= 0 || cursedItemIsBuff )
 			{
-				equipmentBonus += std::min(maxEquipmentBonusToSkill, (1 + abs(helmet->beatitude)) * 10);
+				equipmentBonus += std::min(maxEquipmentBonusToSkill, (1 + abs(helmet->beatitude)) * 5);
 			}
 			else
 			{
-				equipmentBonus -= abs(helmet->beatitude) * 10;
+				equipmentBonus -= abs(helmet->beatitude) * 5;
 			}
 		}
 	}
@@ -202,8 +202,8 @@ Sint32 Stat::getModifiedProficiency(int skill) const
 		effectBonus += 10;
 	}
 	if ( getEffectActive(EFF_COUNSEL) 
-		&& (skill == PRO_MAGIC
-			|| skill == PRO_SPELLCASTING
+		&& (skill == PRO_SORCERY
+			|| skill == PRO_MYSTICISM
 			|| skill == PRO_MACE) )
 	{
 		effectBonus += 10;

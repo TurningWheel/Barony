@@ -186,7 +186,7 @@ void slimeSetStats(Entity& my, Stat& myStats)
 	myStats.MAXHP = myStats.HP;
 	myStats.OLDHP = myStats.HP;
 
-	myStats.setProficiency(PRO_MAGIC, level * 10);
+	myStats.setProficiency(PRO_SORCERY, level * 10);
 }
 
 void initSlime(Entity* my, Stat* myStats)

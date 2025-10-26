@@ -12871,7 +12871,7 @@ void GenericGUIMenu::scribingGetChargeCost(Item* itemUsedWith, int& outChargeCos
 		int skillLVL = 0;
 		if ( stats[gui_player] && players[gui_player] )
 		{
-			skillLVL = (stats[gui_player]->getModifiedProficiency(PRO_MAGIC) + statGetINT(stats[gui_player], players[gui_player]->entity)) / 20; // 0 to 5
+			skillLVL = (stats[gui_player]->getModifiedProficiency(PRO_SORCERY) + statGetINT(stats[gui_player], players[gui_player]->entity)) / 20; // 0 to 5
 		}
 		if ( scribingToolItem->beatitude > 0 )
 		{
@@ -12944,7 +12944,7 @@ bool GenericGUIMenu::scribingWriteItem(Item* item)
 				// request level up
 				strcpy((char*)net_packet->data, "CSKL");
 				net_packet->data[4] = gui_player;
-				net_packet->data[5] = PRO_MAGIC;
+				net_packet->data[5] = PRO_SORCERY;
 				net_packet->address.host = net_server.host;
 				net_packet->address.port = net_server.port;
 				net_packet->len = 6;
@@ -12954,7 +12954,7 @@ bool GenericGUIMenu::scribingWriteItem(Item* item)
 			{
 				if ( players[gui_player] && players[gui_player]->entity )
 				{
-					players[gui_player]->entity->increaseSkill(PRO_MAGIC);
+					players[gui_player]->entity->increaseSkill(PRO_SORCERY);
 				}
 			}
 		}
@@ -13035,7 +13035,7 @@ bool GenericGUIMenu::scribingWriteItem(Item* item)
 				// request level up
 				strcpy((char*)net_packet->data, "CSKL");
 				net_packet->data[4] = gui_player;
-				net_packet->data[5] = PRO_MAGIC;
+				net_packet->data[5] = PRO_SORCERY;
 				net_packet->address.host = net_server.host;
 				net_packet->address.port = net_server.port;
 				net_packet->len = 6;
@@ -13045,7 +13045,7 @@ bool GenericGUIMenu::scribingWriteItem(Item* item)
 			{
 				if ( players[gui_player] && players[gui_player]->entity )
 				{
-					players[gui_player]->entity->increaseSkill(PRO_MAGIC);
+					players[gui_player]->entity->increaseSkill(PRO_SORCERY);
 				}
 			}
 		}
@@ -21314,7 +21314,7 @@ void GenericGUIMenu::FeatherGUI_t::updateFeatherMenu()
 		skillIcon->pos.y = 76 + heightOffsetCompact;
 		for ( auto& skill : Player::SkillSheet_t::skillSheetData.skillEntries )
 		{
-			if ( skill.skillId == PRO_MAGIC )
+			if ( skill.skillId == PRO_SORCERY )
 			{
 				if ( skillCapstoneUnlocked(playernum, skill.skillId) )
 				{

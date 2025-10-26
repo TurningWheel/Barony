@@ -1326,9 +1326,9 @@ namespace ConsoleCommands {
 			int i = 0;
 			for (; i < 10; ++i)
 			{
-				players[clientnum]->entity->increaseSkill(PRO_MAGIC);
-				players[clientnum]->entity->increaseSkill(PRO_SPELLCASTING);
-				players[clientnum]->entity->increaseSkill(PRO_SWIMMING);
+				players[clientnum]->entity->increaseSkill(PRO_SORCERY);
+				players[clientnum]->entity->increaseSkill(PRO_MYSTICISM);
+				players[clientnum]->entity->increaseSkill(PRO_THAUMATURGY);
 			}
 		}
 		else

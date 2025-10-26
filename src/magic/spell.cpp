@@ -405,7 +405,7 @@ bool addSpell(int spell, int player, bool ignoreSkill)
 		else
 		{
 			// can't learn, already have it.
-			//if ( !(spell == SPELL_FORCEBOLT && skillCapstoneUnlocked(player, PRO_SPELLCASTING)) )
+			//if ( !(spell == SPELL_FORCEBOLT && skillCapstoneUnlocked(player, PRO_LEGACY_SPELLCASTING)) )
 			//{
 			//}
 			messagePlayer(player, MESSAGE_STATUS, Language::get(439), new_spell->getSpellName());
@@ -501,7 +501,7 @@ void spellConstructor(spell_t* spell, int ID)
 	spell->hide_from_ui = false;
 	spell->distance = 0.0;
 	spell->distance_mult = 1.0;
-	spell->skillID = PRO_MAGIC;
+	spell->skillID = PRO_SORCERY;
 	spell->cast_time = 1.0;
 	spell->cast_time_mult = 1.0;
 	spell->life_time = 0;
@@ -741,7 +741,7 @@ int getCostOfSpell(spell_t* spell, Entity* caster)
 
 	cost = spell->mana;
 
-	/*if ( spell->ID == SPELL_FORCEBOLT && caster && caster->skillCapstoneUnlockedEntity(PRO_SPELLCASTING) )
+	/*if ( spell->ID == SPELL_FORCEBOLT && caster && caster->skillCapstoneUnlockedEntity(PRO_LEGACY_SPELLCASTING) )
 	{
 		cost = 0;
 	}
@@ -823,7 +823,7 @@ real_t getSpellBonusFromCasterINT(Entity* caster, Stat* casterStats, int skillID
 		if ( INT > 0 )
 		{
 			bonus += INT / 100.0;
-			if ( skillID == PRO_MAGIC )
+			if ( skillID == PRO_SORCERY )
 			{
 				int bonusStat = statGetINT(casterStats, caster);
 				if ( bonusStat > 0 )
@@ -831,7 +831,7 @@ real_t getSpellBonusFromCasterINT(Entity* caster, Stat* casterStats, int skillID
 					bonus += bonusStat / 100.0;
 				}
 			}
-			else if ( skillID == PRO_SPELLCASTING )
+			else if ( skillID == PRO_MYSTICISM )
 			{
 				int bonusStat = statGetCHR(casterStats, caster);
 				if ( bonusStat > 0 )
@@ -839,7 +839,7 @@ real_t getSpellBonusFromCasterINT(Entity* caster, Stat* casterStats, int skillID
 					bonus += bonusStat / 100.0;
 				}
 			}
-			else if ( skillID == PRO_SWIMMING )
+			else if ( skillID == PRO_THAUMATURGY )
 			{
 				int bonusStat = statGetCON(casterStats, caster);
 				if ( bonusStat > 0 )

@@ -2591,7 +2591,7 @@ bool Player::PlayerMovement_t::isPlayerSwimming()
 	}
 	bool swimming = false;
 	bool levitating = isLevitating(stats[PLAYER_NUM]);
-	if ( !levitating && !waterwalkingboots && !noclip && !skillCapstoneUnlocked(PLAYER_NUM, PRO_SWIMMING) )
+	if ( !levitating && !waterwalkingboots && !noclip /*&& !skillCapstoneUnlocked(PLAYER_NUM, PRO_LEGACY_SWIMMING)*/ )
 	{
 		int x = std::min(std::max<unsigned int>(0, floor(my->x / 16)), map.width - 1);
 		int y = std::min(std::max<unsigned int>(0, floor(my->y / 16)), map.height - 1);
@@ -3740,8 +3740,8 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 	bool swimming = isPlayerSwimming();
 	if ( swimming && !amuletwaterbreathing )
 	{
-		PLAYER_VELX *= (((stats[PLAYER_NUM]->getModifiedProficiency(PRO_SWIMMING) / 100.f) * 50.f) + 50) / 100.f;
-		PLAYER_VELY *= (((stats[PLAYER_NUM]->getModifiedProficiency(PRO_SWIMMING) / 100.f) * 50.f) + 50) / 100.f;
+		PLAYER_VELX *= (/*((stats[PLAYER_NUM]->getModifiedProficiency(PRO_LEGACY_SWIMMING) / 100.f) * 50.f) +*/ 50) / 100.f;
+		PLAYER_VELY *= (/*((stats[PLAYER_NUM]->getModifiedProficiency(PRO_LEGACY_SWIMMING) / 100.f) * 50.f) +*/ 50) / 100.f;
 
 		if ( stats[PLAYER_NUM]->type == SKELETON )
 		{
@@ -7993,7 +7993,7 @@ void actPlayer(Entity* my)
 			int y = std::min(std::max<unsigned int>(0, floor(my->y / 16)), map.height - 1);
 			if ( local_rng.rand() % 400 == 0 && multiplayer != CLIENT )
 			{
-				my->increaseSkill(PRO_SWIMMING);
+				my->increaseSkill(PRO_LEGACY_SWIMMING);
 			}
 			my->z = 7;
 			if ( playerRace == SPIDER || playerRace == RAT )

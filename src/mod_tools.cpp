@@ -1249,17 +1249,17 @@ void ItemTooltips_t::readItemsFromFile()
 			std::string school = spell_itr->value["school"].GetString();
 			if ( school == "sorcery" )
 			{
-				t.skillID = PRO_MAGIC;
+				t.skillID = PRO_SORCERY;
 				hash += (Uint32)((Uint32)t.skillID << (shift % 32)); ++shift;
 			}
 			else if ( school == "mysticism" )
 			{
-				t.skillID = PRO_SPELLCASTING;
+				t.skillID = PRO_MYSTICISM;
 				hash += (Uint32)((Uint32)t.skillID << (shift % 32)); ++shift;
 			}
 			else if ( school == "thaumaturgy" )
 			{
-				t.skillID = PRO_SWIMMING;
+				t.skillID = PRO_THAUMATURGY;
 				hash += (Uint32)((Uint32)t.skillID << (shift % 32)); ++shift;
 			}
 			else
@@ -3617,16 +3617,21 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 					|| (skill == PRO_LEADERSHIP && item.type == HAT_PLUMED_CAP)
 					|| (skill == PRO_RANGED && item.type == HAT_BOUNTYHUNTER)
 					|| (skill == PRO_STEALTH && item.type == HAT_HOOD_WHISPERS)
-					|| (skill == PRO_SPELLCASTING && (item.type == HAT_CIRCLET || item.type == HAT_CIRCLET_WISDOM))
+					|| (skill == PRO_MYSTICISM && (item.type == HAT_CIRCLET || item.type == HAT_CIRCLET_WISDOM))
 					|| (skill == PRO_ALCHEMY && item.type == MASK_HAZARD_GOGGLES) )
 				{
+					int bonus = 10;
+					if ( skill == PRO_MYSTICISM || skill == PRO_SORCERY || skill == PRO_THAUMATURGY )
+					{
+						bonus = 5;
+					}
 					if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
 					{
-						equipmentBonus += std::min(Stat::maxEquipmentBonusToSkill, (1 + abs(item.beatitude)) * 10);
+						equipmentBonus += std::min(Stat::maxEquipmentBonusToSkill, (1 + abs(item.beatitude)) * bonus);
 					}
 					else
 					{
-						equipmentBonus += 10;
+						equipmentBonus += bonus;
 					}
 				}
 
@@ -9305,9 +9310,9 @@ void EditorEntityData_t::readFromFile()
 					}
 					else if ( s == "PRO_MAGIC" )
 					{
-						colliderDmg.proficiencyBonusDamage.insert(PRO_MAGIC);
-						colliderDmg.proficiencyBonusDamage.insert(PRO_SPELLCASTING);
-						colliderDmg.proficiencyBonusDamage.insert(PRO_SWIMMING);
+						colliderDmg.proficiencyBonusDamage.insert(PRO_SORCERY);
+						colliderDmg.proficiencyBonusDamage.insert(PRO_MYSTICISM);
+						colliderDmg.proficiencyBonusDamage.insert(PRO_THAUMATURGY);
 					}
 					else if ( s == "PRO_RANGED" )
 					{
@@ -9342,9 +9347,9 @@ void EditorEntityData_t::readFromFile()
 					}
 					else if ( s == "PRO_MAGIC" )
 					{
-						colliderDmg.proficiencyResistDamage.insert(PRO_MAGIC);
-						colliderDmg.proficiencyResistDamage.insert(PRO_SPELLCASTING);
-						colliderDmg.proficiencyResistDamage.insert(PRO_SWIMMING);
+						colliderDmg.proficiencyResistDamage.insert(PRO_SORCERY);
+						colliderDmg.proficiencyResistDamage.insert(PRO_MYSTICISM);
+						colliderDmg.proficiencyResistDamage.insert(PRO_THAUMATURGY);
 					}
 					else if ( s == "PRO_RANGED" )
 					{

@@ -233,8 +233,8 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->setEffectActive(EFF_LEVITATING, 1);
 			stats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
 
-			stats->setProficiency(PRO_MAGIC, 100);
-			stats->setProficiency(PRO_SPELLCASTING, 100);
+			stats->setProficiency(PRO_SORCERY, 100);
+			stats->setProficiency(PRO_MYSTICISM, 100);
 
 			break;
 		case 62:
@@ -361,8 +361,8 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 
 			stats->FOLLOWERS.first = NULL;
 			stats->FOLLOWERS.last = NULL;
-			stats->setProficiency(PRO_MAGIC, 50);
-			stats->setProficiency(PRO_SPELLCASTING, 50);
+			stats->setProficiency(PRO_SORCERY, 50);
+			stats->setProficiency(PRO_MYSTICISM, 50);
 			stats->setProficiency(PRO_TRADING, 75);
 			stats->setProficiency(PRO_APPRAISAL, 75);
 
@@ -531,8 +531,8 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1] = 1;
 			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1 + ITEM_CHANCE] = 50;
 
-			stats->setProficiency(PRO_MAGIC, 50);
-			stats->setProficiency(PRO_SPELLCASTING, 50);
+			stats->setProficiency(PRO_SORCERY, 50);
+			stats->setProficiency(PRO_MYSTICISM, 50);
 
 			break;
 		case 86:
@@ -615,7 +615,7 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->setProficiency(PRO_MACE, 75);
 			stats->setProficiency(PRO_POLEARM, 60);
 			stats->setProficiency(PRO_RANGED, 75);
-			stats->setProficiency(PRO_MAGIC, 100);
+			stats->setProficiency(PRO_SORCERY, 100);
 			stats->setProficiency(PRO_LEADERSHIP, 60);
 
 			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1] = 1;
@@ -674,8 +674,8 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			//stats->setProficiency(PRO_POLEARM, 45);
 			stats->setProficiency(PRO_RANGED, 25);
 			stats->setProficiency(PRO_SHIELD, 25);
-			stats->setProficiency(PRO_MAGIC, 80);
-			stats->setProficiency(PRO_SPELLCASTING, 80);
+			stats->setProficiency(PRO_SORCERY, 80);
+			stats->setProficiency(PRO_MYSTICISM, 80);
 
 			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1] = 1;
 			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1 + ITEM_CHANCE] = 10; // doublet
@@ -719,8 +719,8 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->setProficiency(PRO_POLEARM, 90);
 			stats->setProficiency(PRO_RANGED, 60);
 			stats->setProficiency(PRO_SHIELD, 25);
-			stats->setProficiency(PRO_MAGIC, 80);
-			stats->setProficiency(PRO_SPELLCASTING, 80);
+			stats->setProficiency(PRO_SORCERY, 80);
+			stats->setProficiency(PRO_MYSTICISM, 80);
 
 			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1] = 1;
 			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1 + ITEM_CHANCE] = 5; //Spooky mask
@@ -874,8 +874,8 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			//stats->setProficiency(PRO_POLEARM, 25);
 			stats->setProficiency(PRO_RANGED, 60); //Chuck booze at you.
 			//stats->setProficiency(PRO_SHIELD, 35);
-			stats->setProficiency(PRO_SPELLCASTING, 60);
-			stats->setProficiency(PRO_MAGIC, 60);
+			stats->setProficiency(PRO_SORCERY, 60);
+			stats->setProficiency(PRO_MYSTICISM, 60);
 			break;
 		case 93:
 		case (1000 + AUTOMATON):
@@ -935,8 +935,8 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->HUNGER = 900;
 			stats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] = 1;
 			stats->setProficiency(PRO_RANGED, 100);
-			stats->setProficiency(PRO_MAGIC, 100);
-			stats->setProficiency(PRO_SPELLCASTING, 100);
+			stats->setProficiency(PRO_SORCERY, 100);
+			stats->setProficiency(PRO_MYSTICISM, 100);
 			break;
 		case 95:
 		case (1000 + LICH_FIRE):
@@ -963,8 +963,8 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->HUNGER = 900;
 			stats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] = 1;
 			stats->setProficiency(PRO_SWORD, 80);
-			stats->setProficiency(PRO_MAGIC, 100);
-			stats->setProficiency(PRO_SPELLCASTING, 100);
+			stats->setProficiency(PRO_SORCERY, 100);
+			stats->setProficiency(PRO_MYSTICISM, 100);
 			break;
 		case 83:
 		case (1000 + SKELETON):
@@ -1172,7 +1172,7 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->GOLD = 0;
 			stats->HUNGER = 900;
 
-			stats->setProficiency(PRO_MAGIC, 60);
+			stats->setProficiency(PRO_SORCERY, 60);
 			stats->setProficiency(PRO_LEADERSHIP, 40);
 
 			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1] = 1;

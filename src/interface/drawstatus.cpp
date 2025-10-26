@@ -849,8 +849,8 @@ bool warpMouseToSelectedHotbarSlot(const int player)
 //								spell_t* currentSpell = getSpellFromID(getSpellIDFromSpellbook(item->type));
 //								if ( currentSpell )
 //								{
-//									int skillLVL = stats[player]->getModifiedProficiency(PRO_MAGIC) + statGetINT(stats[player], players[player]->entity);
-//									if ( stats[player]->getModifiedProficiency(PRO_MAGIC) >= 100 )
+//									int skillLVL = stats[player]->getModifiedProficiency(PRO_LEGACY_MAGIC) + statGetINT(stats[player], players[player]->entity);
+//									if ( stats[player]->getModifiedProficiency(PRO_LEGACY_MAGIC) >= 100 )
 //									{
 //										skillLVL = 100;
 //									}
@@ -1149,7 +1149,7 @@ bool warpMouseToSelectedHotbarSlot(const int player)
 //								if ( !learnedSpellbook && stats[player] && players[player] && players[player]->entity )
 //								{
 //									// spellbook tooltip shows if you have the magic requirement as well (for goblins)
-//									int skillLVL = stats[player]->getModifiedProficiency(PRO_MAGIC) + statGetINT(stats[player], players[player]->entity);
+//									int skillLVL = stats[player]->getModifiedProficiency(PRO_LEGACY_MAGIC) + statGetINT(stats[player], players[player]->entity);
 //									spell_t* spell = getSpellFromID(getSpellIDFromSpellbook(item->type));
 //									if ( spell && skillLVL >= spell->difficulty )
 //									{
@@ -1797,8 +1797,8 @@ bool warpMouseToSelectedHotbarSlot(const int player)
 //				spell_t* currentSpell = getSpellFromID(getSpellIDFromSpellbook(item->type));
 //				if ( currentSpell && stats[player] )
 //				{
-//					int skillLVL = stats[player]->getModifiedProficiency(PRO_MAGIC) + statGetINT(stats[player], players[player]->entity);
-//					if ( stats[player]->getModifiedProficiency(PRO_MAGIC) >= 100 )
+//					int skillLVL = stats[player]->getModifiedProficiency(PRO_LEGACY_MAGIC) + statGetINT(stats[player], players[player]->entity);
+//					if ( stats[player]->getModifiedProficiency(PRO_LEGACY_MAGIC) >= 100 )
 //					{
 //						skillLVL = 100;
 //					}

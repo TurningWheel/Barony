@@ -9135,7 +9135,7 @@ void actParticleTimer(Entity* my)
 								{
 									if ( Stat* stats = parent->getStats() )
 									{
-										element->setDamage(element->getDamage() + stats->getProficiency(PRO_MAGIC) / 10);
+										element->setDamage(element->getDamage() + stats->getProficiency(PRO_SORCERY) / 10);
 									}
 								}
 								((spell_t*)node->element)->mana = 5;

@@ -2806,7 +2806,7 @@ private:
 		real_t life_mult = 1.0;
 		real_t cast_time = 1.0;
 		real_t cast_time_mult = 1.0;
-		int skillID = PRO_MAGIC;
+		int skillID = PRO_SORCERY;
 		int difficulty = 100;
 		int sustain_mana = 0;
 		int sustain_duration = 0;
@@ -4203,10 +4203,13 @@ struct Compendium_t
 		case PRO_STEALTH: return "stealth skill";
 		case PRO_TRADING: return "trading skill";
 		case PRO_APPRAISAL: return "appraisal skill";
-		case PRO_SWIMMING: return "swimming skill";
+		case PRO_LEGACY_SWIMMING: return "swimming skill";
+		case PRO_THAUMATURGY: return "thaumaturgy skill";
 		case PRO_LEADERSHIP: return "leadership skill";
-		case PRO_SPELLCASTING: return "casting skill";
-		case PRO_MAGIC: return "magic skill";
+		case PRO_LEGACY_SPELLCASTING: return "casting skill";
+		case PRO_MYSTICISM: return "mysticism skill";
+		case PRO_LEGACY_MAGIC: return "magic skill";
+		case PRO_SORCERY: return "sorcery skill";
 		case PRO_RANGED: return "ranged skill";
 		case PRO_SWORD: return "sword skill";
 		case PRO_MACE: return "mace skill";

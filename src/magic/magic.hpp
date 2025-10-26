@@ -752,7 +752,7 @@ typedef struct spell_t
 	Uint32 caster = 0;
 	real_t distance = 0.0;
 	real_t distance_mult = 1.0;
-	int skillID = PRO_MAGIC;
+	int skillID = PRO_SORCERY;
 	real_t cast_time = 1.0;
 	real_t cast_time_mult = 1.0;
 	int mana = 1;
