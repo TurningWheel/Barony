@@ -7114,5 +7114,10 @@ to replay this challenge!
 %s#
 6843 Invoke#
 6844 Play#
+6845 You recall your previous light.#
+6846 Player Movement Deadzone#
+6847 Affect the analog deadzone of the control stick used for player movement.#
+6848 Camera Turn Deadzone#
+6849 Affect the analog deadzone of the control stick used for turning the player camera.#
 
 6999 END#
