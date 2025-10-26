@@ -4322,6 +4322,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		    } else { // anonymous monster
 		        Monster monster = (Monster)SDLNet_Read32(&net_packet->data[9]);
 		        stats[clientnum]->killer_monster = monster;
+				stats[clientnum]->killer_name = "";
 		    }
 		} else if (killer == KilledBy::ITEM) {
 		    ItemType item = (ItemType)SDLNet_Read32(&net_packet->data[8]);
