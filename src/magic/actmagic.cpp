@@ -4402,6 +4402,29 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 										}
 									}
 								}
+
+								if ( hit.entity->behavior == &actPlayer )
+								{
+									if ( hitstats && hitstats->getEffectActive(EFF_POLYMORPH) )
+									{
+										hit.entity->setEffect(EFF_POLYMORPH, false, 0, true);
+										hit.entity->effectPolymorph = 0;
+										serverUpdateEntitySkill(hit.entity, 50);
+
+										messagePlayer(hit.entity->skill[2], MESSAGE_STATUS, Language::get(3192));
+										if ( !hitstats->getEffectActive(EFF_SHAPESHIFT) )
+										{
+											messagePlayer(hit.entity->skill[2], MESSAGE_STATUS, Language::get(3185));
+										}
+										else
+										{
+											messagePlayer(hit.entity->skill[2], MESSAGE_STATUS, Language::get(4303));
+										}
+										playSoundEntity(hit.entity, 400, 92);
+										createParticleDropRising(hit.entity, 593, 1.f);
+										serverSpawnMiscParticles(hit.entity, PARTICLE_EFFECT_RISING_DROP, 593);
+									}
+								}
 							}
 
 							hit.entity->modHP(-damage);
