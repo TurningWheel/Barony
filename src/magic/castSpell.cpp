@@ -772,8 +772,8 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 
 
 		bool fizzleSpell = false;
-		chance = local_rng.rand() % 10;
-		if ( chance >= spellcastingAbility / 10 )
+		chance = local_rng.rand() % 100;
+		if ( chance >= spellcastingAbility )
 		{
 			fizzleSpell = true;
 		}
