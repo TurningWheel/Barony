@@ -330,6 +330,18 @@ void uppercaseString(std::string& str)
 	}
 }
 
+void lowercaseString(std::string& str)
+{
+	if ( str.size() < 1 ) { return; }
+	for ( auto& letter : str )
+	{
+		if ( letter >= 'A' && letter <= 'Z' )
+		{
+			letter = tolower(letter);
+		}
+	}
+}
+
 void camelCaseString(std::string& str)
 {
 	if ( str.size() < 1 ) { return; }
@@ -23004,6 +23016,21 @@ void createInventoryTooltipFrame(const int player,
 		tooltipTextField->setHJustify(Field::justify_t::LEFT);
 		tooltipTextField->setVJustify(Field::justify_t::CENTER);
 		tooltipTextField->setColor(makeColor( 188, 154, 114, 255));
+
+		auto spellImg = valueFrame->addImage(SDL_Rect{ 0, 0, 16, 16 },
+			0xFFFFFFFF,
+			"*#images/ui/Inventory/tooltips/HUD_Tooltip_Icon_WGT_00.png",
+			"inventory mouse tooltip spell skill image");
+		spellImg->disabled = true;
+
+		tooltipTextField = valueFrame->addField("inventory mouse tooltip spell skill value", 64);
+		tooltipTextField->setText("Nothing");
+		tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
+		tooltipTextField->setFont(bodyFont.c_str());
+		tooltipTextField->setHJustify(Field::justify_t::LEFT);
+		tooltipTextField->setVJustify(Field::justify_t::CENTER);
+		tooltipTextField->setColor(makeColor(188, 154, 114, 255));
+		tooltipTextField->setDisabled(true);
 	}
 	if ( auto promptFrame = tooltipFrame->addFrame("inventory mouse tooltip prompt frame") )
 	{
@@ -28832,7 +28859,7 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 		{
 			if ( !disableItemUsage && prompt == PROMPT_INTERACT_SPELLBOOK_HOTBAR )
 			{
-				if ( itemCategory(item) == SPELLBOOK )
+				if ( itemCategory(item) == SPELLBOOK || itemCategory(item) == TOME_SPELL )
 				{
 					players[player]->magic.spellbookUidFromHotbarSlot = item->uid;
 				}
@@ -35783,6 +35810,19 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		return buf;
 	}
 	
+	return "";
+}
+
+std::string Player::SkillSheet_t::getSkillNameFromID(int skillID, bool shortName)
+{
+	for ( auto& entry : Player::SkillSheet_t::skillSheetData.skillEntries )
+	{
+		if ( entry.skillId == skillID )
+		{
+			return entry.getSkillName(shortName);
+		}
+	}
+
 	return "";
 }
 

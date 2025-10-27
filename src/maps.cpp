@@ -6798,10 +6798,10 @@ void assignActions(map_t* map)
 								if ( map_rng.rand() % 2 == 0 )
 								{
 									// possible magicstaff
-									int randType = map_rng.rand() % (NUMCATEGORIES - 1);
+									int randType = map_rng.rand() % (Category::CATEGORY_MAX - 2);
 									if ( randType == THROWN && map_rng.rand() % 3 ) // THROWN items 66% to be re-roll.
 									{
-										randType = map_rng.rand() % (NUMCATEGORIES - 1);
+										randType = map_rng.rand() % (Category::CATEGORY_MAX - 2);
 									}
 									entity->skill[10] = itemLevelCurve(static_cast<Category>(randType), 0, currentlevel, map_rng);
 									rolledLevelCurveItem = true;
@@ -6809,14 +6809,14 @@ void assignActions(map_t* map)
 								else
 								{
 									// impossible magicstaff
-									int randType = map_rng.rand() % (NUMCATEGORIES - 2);
+									int randType = map_rng.rand() % (Category::CATEGORY_MAX - 3);
 									if ( randType >= MAGICSTAFF )
 									{
 										randType++;
 									}
 									if ( randType == THROWN && map_rng.rand() % 3 ) // THROWN items 66% to be re-roll.
 									{
-										randType = map_rng.rand() % (NUMCATEGORIES - 2);
+										randType = map_rng.rand() % (Category::CATEGORY_MAX - 3);
 										if ( randType >= MAGICSTAFF )
 										{
 											randType++;

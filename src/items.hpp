@@ -438,11 +438,11 @@ typedef enum ItemType
 	TOOL_FOCI_LIGHT_PURITY,
 	TOOL_FOCI_LIGHT_SANCTUARY,
 	MAGICSTAFF_SCEPTER,
+	TOME_SORCERY,
 	ITEM_ENUM_MAX
 } ItemType;
 const int NUMITEMS = ITEM_ENUM_MAX;
 
-//NOTE: If you change this, make sure to update NUMCATEGORIES in game.h to reflect the total number of categories. Not doing that will make bad things happen.
 typedef enum Category
 {
 	WEAPON,
@@ -459,6 +459,7 @@ typedef enum Category
 	FOOD,
 	BOOK,
 	SPELL_CAT,
+	TOME_SPELL,
 	CATEGORY_MAX
 } Category;
 
@@ -572,6 +573,8 @@ public:
 	int sellValue(int player) const;
 	bool usableWhileShapeshifted(const Stat* wielder = nullptr) const;
 	char* getScrollLabel() const;
+	const char* getTomeLabel() const;
+	int getTomeSpellID() const;
 
 	void apply(int player, Entity* entity);
 	void applyLockpickToWall(int player, int x, int y) const;
@@ -745,7 +748,6 @@ Item** itemSlot(Stat* myStats, Item* item);
 enum Category itemCategory(const Item* item);
 Sint32 itemModel(const Item* item, bool shortModel = false, Entity* creature = nullptr);
 Sint32 itemModelFirstperson(const Item* item);
-SDL_Surface* itemSprite(Item* item);
 void consumeItem(Item*& item, int player); //NOTE: Items have to be unequipped before calling this function on them. NOTE: THIS CAN FREE THE ITEM POINTER. Sets item to nullptr if it does.
 bool dropItem(Item* item, int player, const bool notifyMessage = true, const bool dropAll = false); // return true on free'd item
 bool playerGreasyDropItem(const int player, Item* const item);
@@ -885,3 +887,18 @@ extern int decoyBoxRange;
 static const int MONSTER_ITEM_UNDROPPABLE_APPEARANCE = 1234567890;
 static const int ITEM_TINKERING_APPEARANCE = 987654320;
 static const int ITEM_GENERATED_QUIVER_APPEARANCE = 1122334455;
+
+enum SpellbookColors
+{
+	SPELLBOOK_COLOR_THAUM_2,		//"items/images/SpellbookYellow.png",
+	SPELLBOOK_COLOR_THAUM_3,		//"items/images/SpellbookWhite.png",
+	SPELLBOOK_COLOR_THAUM_1,		//"items/images/SpellbookBlack.png",
+	SPELLBOOK_COLOR_MYSTICISM_2,	//"items/images/SpellbookRed.png",
+	SPELLBOOK_COLOR_SORCERY_1,		//"items/images/SpellbookBrown.png",
+	SPELLBOOK_COLOR_SORCERY_3,		//"items/images/SpellbookOrange.png",
+	SPELLBOOK_COLOR_MYSTICISM_1,	//"items/images/SpellbookGreen.png",
+	SPELLBOOK_COLOR_SORCERY_2,		//"items/images/SpellbookBlue.png",
+	SPELLBOOK_COLOR_MYSTICISM_3		//"items/images/SpellbookPurple.png"
+};
+
+int getItemVariationFromSpellbookOrTome(const Item& item);

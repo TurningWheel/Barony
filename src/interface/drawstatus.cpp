@@ -3290,7 +3290,7 @@ void drawStatusNew(const int player)
 						}
 						else
 						{
-							if ( itemCategory(item) == SPELLBOOK )
+							if ( itemCategory(item) == SPELLBOOK || itemCategory(item) == TOME_SPELL )
 							{
 								players[player]->magic.spellbookUidFromHotbarSlot = item->uid;
 							}

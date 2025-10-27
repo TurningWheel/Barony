@@ -1182,6 +1182,7 @@ char itemNameStrings[NUM_ITEM_STRINGS][32] =
 	"tool_foci_light_purity",
 	"tool_foci_light_sanctuary",
 	"magicstaff_scepter",
+	"tome_sorcery",
 	""
 };
 

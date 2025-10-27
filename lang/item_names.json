@@ -1672,6 +1672,10 @@
 		"magicstaff_scepter": {
 			"name_identified": "archon scepter",
 			"name_unidentified": "scepter"
+		},
+		"tome_sorcery": {
+			"name_identified": "tome",
+			"name_unidentified": "tome"
 		}
     },
 	"spell_names": {

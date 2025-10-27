@@ -1050,6 +1050,10 @@ void ItemTooltips_t::readItemsFromFile()
 		{
 			items[i].category = SPELL_CAT;
 		}
+		else if ( tmpItems[i].category.compare("TOME_SPELL") == 0 )
+		{
+			items[i].category = TOME_SPELL;
+		}
 		else
 		{
 			items[i].category = GEM;
@@ -1128,6 +1132,8 @@ void ItemTooltips_t::readItemsFromFile()
 		spellItem_t t;
 		t.internalName = spell_itr->name.GetString();
 		t.name = spell_itr->value["spell_name"].GetString();
+		t.name_lowercase = t.name;
+		lowercaseString(t.name_lowercase);
 		t.id = spell_itr->value["spell_id"].GetInt();
 		t.spellTypeStr = spell_itr->value["spell_type"].GetString();
 		t.spellType = SPELL_TYPE_DEFAULT;
@@ -1443,6 +1449,8 @@ void ItemTooltips_t::readItemLocalizationsFromFile(bool forceLoadBaseDirectory)
 	for ( auto& spell : spellItems )
 	{
 		spell.second.name = spellNameLocalizations[spell.second.internalName];
+		spell.second.name_lowercase = spell.second.name;
+		lowercaseString(spell.second.name_lowercase);
 	}
 
 	/*for ( auto i : itemValueTable )
@@ -2005,6 +2013,7 @@ std::string& ItemTooltips_t::getItemStatusAdjective(Uint32 itemType, Status stat
 	}
 	else if ( items[itemType].category == SCROLL
 		|| items[itemType].category == SPELLBOOK
+		|| items[itemType].category == TOME_SPELL
 		|| items[itemType].category == BOOK )
 	{
 		if ( adjectives.find("book_status") == adjectives.end() )
@@ -2204,6 +2213,11 @@ int ItemTooltips_t::getSpellDamageOrHealAmount(const int player, spell_t* spell,
 				damage = primaryElement->getDamage();
 				heal = primaryElement->getDamage();
 			}
+		}
+		else
+		{
+			damage = elementRoot->getDamage();
+			heal = elementRoot->getDamage();
 		}
 		if ( player >= 0 && players[player] )
 		{
@@ -2603,6 +2617,10 @@ std::string ItemTooltips_t::getSpellIconPath(const int player, Item& item, int s
 	{
 		spellImageNode = list_Node(&items[SPELL_ITEM].images, getSpellIDFromSpellbook(item.type));
 	}
+	else if ( itemCategory(&item) == TOME_SPELL )
+	{
+		spellImageNode = list_Node(&items[SPELL_ITEM].images, item.getTomeSpellID());
+	}
 	else if ( item.type == TOOL_SPELLBOT )
 	{
 		spellImageNode = list_Node(&items[SPELL_ITEM].images, item.status < EXCELLENT ? SPELL_FORCEBOLT : SPELL_MAGICMISSILE);
@@ -2894,9 +2912,18 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 			str = getSpellIconText(player, item, compendiumTooltipIntro);
 			return;
 		}
-		else if ( conditionalAttribute == "SPELLBOOK_SPELLINFO_UNLEARNED" )
+		else if ( conditionalAttribute == "SPELLBOOK_SPELLINFO_UNLEARNED"
+			|| conditionalAttribute == "SPELLBOOK_SPELLINFO_TOME" )
 		{
-			spell_t* spell = getSpellFromID(getSpellIDFromSpellbook(item.type));
+			spell_t* spell = nullptr;
+			if ( itemCategory(&item) == SPELLBOOK )
+			{
+				spell = getSpellFromID(getSpellIDFromSpellbook(item.type));
+			}
+			else if ( itemCategory(&item) == TOME_SPELL )
+			{
+				spell = getSpellFromID(item.getTomeSpellID());
+			}
 			if ( spell )
 			{
 				snprintf(buf, sizeof(buf), str.c_str(), spell->getSpellName());
@@ -2911,7 +2938,7 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 				compendiumTooltipIntro ? nullptr : stats[player], &item);
 			spellBookBonusPercent *= ((items[item.type].attributes["SPELLBOOK_CAST_BONUS"]) / 100.0);
 
-			int spellID = getSpellIDFromSpellbook(item.type);
+			int spellID = itemCategory(&item) == SPELLBOOK ? getSpellIDFromSpellbook(item.type) : item.getTomeSpellID();
 			if ( spellItems.find(spellID) == spellItems.end() )
 			{
 				return;
@@ -3635,15 +3662,7 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 					}
 				}
 
-				std::string skillName = "";
-				for ( auto& s : Player::SkillSheet_t::skillSheetData.skillEntries )
-				{
-					if ( s.skillId == skill )
-					{
-						skillName = s.getSkillName();
-						break;
-					}
-				}
+				std::string skillName = Player::SkillSheet_t::getSkillNameFromID(skill);
 				snprintf(buf, sizeof(buf), str.c_str(), equipmentBonus, skillName.c_str());
 			}
 			else if ( conditionalAttribute == "EFF_BOULDER_RES" )
@@ -4115,15 +4134,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 				//}
 				//val = ((val * equipmentModifier) * bonusModifier);
 
-				std::string skillName = "";
-				for ( auto& s : Player::SkillSheet_t::skillSheetData.skillEntries )
-				{
-					if ( s.skillId == PRO_STEALTH )
-					{
-						skillName = s.getSkillName();
-						break;
-					}
-				}
+				std::string skillName = Player::SkillSheet_t::getSkillNameFromID(PRO_STEALTH);
 				snprintf(buf, sizeof(buf), str.c_str(), skillName.c_str());
 			}
 			else if ( detailTag == "EFF_SILKEN_BOW" )
@@ -4152,15 +4163,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 					}
 				}
 
-				std::string skillName = "";
-				for ( auto& s : Player::SkillSheet_t::skillSheetData.skillEntries )
-				{
-					if ( s.skillId == PRO_LEADERSHIP )
-					{
-						skillName = s.getSkillName();
-						break;
-					}
-				}
+				std::string skillName = Player::SkillSheet_t::getSkillNameFromID(PRO_LEADERSHIP);
 				snprintf(buf, sizeof(buf), str.c_str(), baseBonus,
 					chanceBonus, skillName.c_str(), getItemStatShortName("CHR").c_str());
 			}
@@ -4662,11 +4665,20 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 			return;
 		}
 	}
-	else if ( tooltipType.find("tooltip_spellbook") != std::string::npos )
+	else if ( tooltipType.find("tooltip_spellbook") != std::string::npos
+		|| tooltipType.find("tooltip_tome") != std::string::npos )
 	{
 		if ( detailTag.compare("spellbook_cast_bonus") == 0 )
 		{
-			spell_t* spell = getSpellFromID(getSpellIDFromSpellbook(item.type));
+			spell_t* spell = nullptr;
+			if ( itemCategory(&item) == SPELLBOOK )
+			{
+				spell = getSpellFromID(getSpellIDFromSpellbook(item.type));
+			}
+			else if ( itemCategory(&item) == TOME_SPELL )
+			{
+				spell = getSpellFromID(item.getTomeSpellID());
+			}
 			if ( !spell ) { return; }
 
 			int intBonus = getSpellbookBaseINTBonus(
@@ -4702,7 +4714,15 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		}
 		else if ( detailTag.compare("spellbook_cast_success") == 0 )
 		{
-			spell_t* spell = getSpellFromID(getSpellIDFromSpellbook(item.type));
+			spell_t* spell = nullptr;
+			if ( itemCategory(&item) == SPELLBOOK )
+			{
+				spell = getSpellFromID(getSpellIDFromSpellbook(item.type));
+			}
+			else if ( itemCategory(&item) == TOME_SPELL )
+			{
+				spell = getSpellFromID(item.getTomeSpellID());
+			}
 			if ( !spell ) { return; }
 
 			int spellcastingAbility = getSpellcastingAbilityFromUsingSpellbook(spell, players[player]->entity, stats[player]);
@@ -4711,7 +4731,15 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		}
 		else if ( detailTag.compare("spellbook_extramana_chance") == 0 )
 		{
-			spell_t* spell = getSpellFromID(getSpellIDFromSpellbook(item.type));
+			spell_t* spell = nullptr;
+			if ( itemCategory(&item) == SPELLBOOK )
+			{
+				spell = getSpellFromID(getSpellIDFromSpellbook(item.type));
+			}
+			else if ( itemCategory(&item) == TOME_SPELL )
+			{
+				spell = getSpellFromID(item.getTomeSpellID());
+			}
 			if ( !spell ) { return; }
 
 			int spellcastingAbility = getSpellcastingAbilityFromUsingSpellbook(spell, players[player]->entity, stats[player]);
@@ -4720,7 +4748,15 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		}
 		else if ( detailTag.compare("spellbook_magic_requirement") == 0 )
 		{
-			spell_t* spell = getSpellFromID(getSpellIDFromSpellbook(item.type));
+			spell_t* spell = nullptr;
+			if ( itemCategory(&item) == SPELLBOOK )
+			{
+				spell = getSpellFromID(getSpellIDFromSpellbook(item.type));
+			}
+			else if ( itemCategory(&item) == TOME_SPELL )
+			{
+				spell = getSpellFromID(item.getTomeSpellID());
+			}
 			if ( !spell ) { return; }
 
 			int skillLVL = std::min(100, stats[player]->getModifiedProficiency(spell->skillID) + statGetINT(stats[player], players[player]->entity));
@@ -4740,7 +4776,15 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		}
 		else if ( detailTag.compare("spellbook_magic_current") == 0 )
 		{
-			spell_t* spell = getSpellFromID(getSpellIDFromSpellbook(item.type));
+			spell_t* spell = nullptr;
+			if ( itemCategory(&item) == SPELLBOOK )
+			{
+				spell = getSpellFromID(getSpellIDFromSpellbook(item.type));
+			}
+			else if ( itemCategory(&item) == TOME_SPELL )
+			{
+				spell = getSpellFromID(item.getTomeSpellID());
+			}
 			if ( !spell ) { return; }
 
 			int skillLVL = std::min(100, stats[player]->getModifiedProficiency(spell->skillID) + statGetINT(stats[player], players[player]->entity));
@@ -4751,7 +4795,14 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 			Sint32 INT = stats[player] ? statGetINT(stats[player], players[player]->entity) : 0;
 			Sint32 skill = stats[player] ? stats[player]->getModifiedProficiency(spell->skillID) : 0;
 			Sint32 total = std::min(SKILL_LEVEL_LEGENDARY, INT + skill);
-			snprintf(buf, sizeof(buf), str.c_str(), INT + skill, getProficiencyLevelName(INT + skill).c_str());
+			if ( str.find("%s") != std::string::npos )
+			{
+				snprintf(buf, sizeof(buf), str.c_str(), Player::SkillSheet_t::getSkillNameFromID(spell->skillID).c_str(), INT + skill, getProficiencyLevelName(INT + skill).c_str());
+			}
+			else
+			{
+				snprintf(buf, sizeof(buf), str.c_str(), INT + skill, getProficiencyLevelName(INT + skill).c_str());
+			}
 		}
 		else
 		{
@@ -4800,8 +4851,15 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 
 			int spellcastingAbility = std::min(std::max(0, stats[player]->getModifiedProficiency(spell->skillID)
 				+ statGetINT(stats[player], players[player]->entity)), 100);
-			int chance = ((10 - (spellcastingAbility / 10)) * 20 / 3.0); // 33% after rolling to fizzle, 66% success
-			snprintf(buf, sizeof(buf), str.c_str(), chance);
+			int chance = ((100 - (spellcastingAbility)) / 3.0); // 33% after rolling to fizzle, 66% success
+			if ( str.find("%s") != std::string::npos )
+			{
+				snprintf(buf, sizeof(buf), str.c_str(), Player::SkillSheet_t::getSkillNameFromID(spell->skillID).c_str(), chance);
+			}
+			else
+			{
+				snprintf(buf, sizeof(buf), str.c_str(), chance);
+			}
 		}
 		else if ( detailTag.compare("spell_extramana_chance") == 0 )
 		{

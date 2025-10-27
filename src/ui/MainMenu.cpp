@@ -36326,6 +36326,14 @@ failed:
 					{
 						Compendium_t::compendiumItem.appearance = getBook("My Journal") % items[id].variations;
 					}
+					else if ( itemCategory(&Compendium_t::compendiumItem) == SPELLBOOK || itemCategory(&Compendium_t::compendiumItem) == TOME_SPELL )
+					{
+						int variation = getItemVariationFromSpellbookOrTome(Compendium_t::compendiumItem);
+						if ( variation >= 0 )
+						{
+							Compendium_t::compendiumItem.appearance = variation;
+						}
+					}
 
 					if ( unlockStatus == Compendium_t::CompendiumUnlockStatus::LOCKED_UNKNOWN )
 					{

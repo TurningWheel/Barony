@@ -153,7 +153,7 @@ void createChestInventory(Entity* my, int chestType)
 			//	itemnum = rng.rand() % NUMITEMS;    //Keep trying until you don't get a spell or invalid item.
 			//}
 			//newItem(static_cast<ItemType>(itemnum), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
-			int cat = rng.rand() % (NUMCATEGORIES - 1); // exclude spell_cat
+			int cat = rng.rand() % (Category::CATEGORY_MAX - 2); // exclude spell_cat
 			Item* currentItem = newItem(itemLevelCurve(static_cast<Category>(cat), 0, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 			if ( currentItem )
 			{

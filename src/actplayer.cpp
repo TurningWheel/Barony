@@ -7410,6 +7410,10 @@ void actPlayer(Entity* my)
 								{
 									tempItem->appearance += (local_rng.rand() % 10000) * (MAGICSTAFF_SCEPTER_CHARGE_MAX);
 								}
+								else if ( itemCategory(tempItem) == TOME_SPELL )
+								{
+									tempItem->appearance += (local_rng.rand() % 10000) * (1000);
+								}
 								else
 								{
 									tempItem->appearance = local_rng.rand();
@@ -7436,6 +7440,10 @@ void actPlayer(Entity* my)
 									else if ( tempItem->type == MAGICSTAFF_SCEPTER )
 									{
 										tempItem->appearance += (local_rng.rand() % 10000) * (MAGICSTAFF_SCEPTER_CHARGE_MAX);
+									}
+									else if ( itemCategory(tempItem) == TOME_SPELL )
+									{
+										tempItem->appearance += (local_rng.rand() % 10000) * (1000);
 									}
 									else
 									{

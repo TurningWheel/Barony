@@ -449,7 +449,7 @@ ItemType itemLevelCurve(const Category cat, const int minLevel, const int maxLev
 	bool chances[NUMITEMS];
 	int c;
 
-	if ( cat < 0 || cat >= NUMCATEGORIES )
+	if ( cat < 0 || cat >= Category::CATEGORY_MAX )
 	{
 		printlog("warning: itemLevelCurve() called with bad category value!\n");
 		return GEM_ROCK;
@@ -646,7 +646,7 @@ char* Item::description() const
 					snprintf(tempstr, 1024, Language::get(992 + status), Language::get(974 + items[type].index + appearance % items[type].variations - 50), beatitude);
 				}
 			}
-			else if ( itemCategory(this) == SCROLL || itemCategory(this) == SPELLBOOK || itemCategory(this) == BOOK )
+			else if ( itemCategory(this) == SCROLL || itemCategory(this) == SPELLBOOK || itemCategory(this) == BOOK || itemCategory(this) == TOME_SPELL )
 			{
 				snprintf(tempstr, 1024, Language::get(997 + status), beatitude);
 			}
@@ -668,6 +668,10 @@ char* Item::description() const
 				if ( itemCategory(this) == BOOK )
 				{
 					snprintf(&tempstr[c], 1024 - c, Language::get(1007), getBookLocalizedNameFromIndex(appearance % numbooks).c_str());
+				}
+				else if ( itemCategory(this) == TOME_SPELL )
+				{
+					snprintf(&tempstr[c], 1024 - c, Language::get(6850), getTomeLabel());
 				}
 				else
 				{
@@ -720,7 +724,7 @@ char* Item::description() const
 					snprintf(tempstr, 1024, Language::get(1018 + status), count, Language::get(974 + items[type].index + appearance % items[type].variations - 50), beatitude);
 				}
 			}
-			else if ( itemCategory(this) == SCROLL || itemCategory(this) == SPELLBOOK || itemCategory(this) == BOOK )
+			else if ( itemCategory(this) == SCROLL || itemCategory(this) == SPELLBOOK || itemCategory(this) == BOOK || itemCategory(this) == TOME_SPELL )
 			{
 				snprintf(tempstr, 1024, Language::get(1023 + status), count, beatitude);
 			}
@@ -742,6 +746,10 @@ char* Item::description() const
 				if ( itemCategory(this) == BOOK )
 				{
 					snprintf(&tempstr[c], 1024 - c, Language::get(1033), count, getBookLocalizedNameFromIndex(appearance % numbooks).c_str());
+				}
+				else if ( itemCategory(this) == TOME_SPELL )
+				{
+					snprintf(&tempstr[c], 1024 - c, Language::get(6851), getTomeLabel());
 				}
 				else
 				{
@@ -797,7 +805,7 @@ char* Item::description() const
 					snprintf(tempstr, 1024, Language::get(1044 + status), Language::get(974 + items[type].index + appearance % items[type].variations - 50));
 				}
 			}
-			else if ( itemCategory(this) == SCROLL || itemCategory(this) == SPELLBOOK || itemCategory(this) == BOOK )
+			else if ( itemCategory(this) == SCROLL || itemCategory(this) == SPELLBOOK || itemCategory(this) == BOOK || itemCategory(this) == TOME_SPELL )
 			{
 				strncpy(tempstr, Language::get(1049 + status), 1024);
 			}
@@ -878,7 +886,7 @@ char* Item::description() const
 					snprintf(tempstr, 1024, Language::get(1070 + status), count, Language::get(974 + items[type].index + appearance % items[type].variations - 50));
 				}
 			}
-			else if ( itemCategory(this) == SCROLL || itemCategory(this) == SPELLBOOK || itemCategory(this) == BOOK )
+			else if ( itemCategory(this) == SCROLL || itemCategory(this) == SPELLBOOK || itemCategory(this) == BOOK || itemCategory(this) == TOME_SPELL )
 			{
 				snprintf(tempstr, 1024, Language::get(1075 + status), count);
 			}
@@ -957,6 +965,10 @@ char* Item::getName() const
 			{
 				snprintf(tempstr, sizeof(tempstr), Language::get(1007), getBookLocalizedNameFromIndex(appearance % numbooks).c_str());
 			}
+			else if ( itemCategory(this) == TOME_SPELL )
+			{
+				snprintf(tempstr, sizeof(tempstr), Language::get(6850), getTomeLabel());
+			}
 			else
 			{
 				strcpy(tempstr, items[type].getIdentifiedName());
@@ -983,6 +995,76 @@ char* Item::getName() const
 		snprintf(tempstr, sizeof(tempstr), "ITEM%03d", type);
 	}
 	return tempstr;
+}
+
+int getItemVariationFromSpellbookOrTome(const Item& item)
+{
+	int spellID = SPELL_NONE;
+	if ( itemCategory(&item) == SPELLBOOK )
+	{
+		spellID = getSpellIDFromSpellbook(item.type);
+	}
+	else if ( itemCategory(&item) == TOME_SPELL )
+	{
+		spellID = item.getTomeSpellID();
+	}
+	if ( spellID <= SPELL_NONE )
+	{
+		return -1;
+	}
+	if ( auto spell = getSpellFromID(getSpellIDFromSpellbook(item.type)) )
+	{
+		int index = -1;
+		switch ( spell->skillID )
+		{
+		case PRO_SORCERY:
+			if ( spell->difficulty <= 20 )
+			{
+				index = SPELLBOOK_COLOR_SORCERY_1;
+			}
+			else if ( spell->difficulty <= 60 )
+			{
+				index = SPELLBOOK_COLOR_SORCERY_2;
+			}
+			else
+			{
+				index = SPELLBOOK_COLOR_SORCERY_3;
+			}
+			break;
+		case PRO_MYSTICISM:
+			if ( spell->difficulty <= 20 )
+			{
+				index = SPELLBOOK_COLOR_MYSTICISM_1;
+			}
+			else if ( spell->difficulty <= 60 )
+			{
+				index = SPELLBOOK_COLOR_MYSTICISM_2;
+			}
+			else
+			{
+				index = SPELLBOOK_COLOR_MYSTICISM_3;
+			}
+			break;
+		case PRO_THAUMATURGY:
+			if ( spell->difficulty <= 20 )
+			{
+				index = SPELLBOOK_COLOR_THAUM_1;
+			}
+			else if ( spell->difficulty <= 60 )
+			{
+				index = SPELLBOOK_COLOR_THAUM_2;
+			}
+			else
+			{
+				index = SPELLBOOK_COLOR_THAUM_3;
+			}
+			break;
+		default:
+			break;
+		}
+		return index;
+	}
+	return -1;
 }
 
 /*-------------------------------------------------------------------------------
@@ -1100,6 +1182,14 @@ Sint32 itemModel(const Item* const item, bool shortModel, Entity* creature)
 			return index;
 		}
 	}
+	else if ( itemCategory(item) == SPELLBOOK || itemCategory(item) == TOME_SPELL )
+	{
+		int variation = getItemVariationFromSpellbookOrTome(*item);
+		if ( variation >= 0 && variation < items[item->type].variations )
+		{
+			return index + variation;
+		}
+	}
 	return index + item->appearance % items[item->type].variations;
 }
 
@@ -1129,101 +1219,15 @@ Sint32 itemModelFirstperson(const Item* const item)
 			return items[item->type].fpindex;
 		}
 	}
+	else if ( itemCategory(item) == SPELLBOOK || itemCategory(item) == TOME_SPELL )
+	{
+		int variation = getItemVariationFromSpellbookOrTome(*item);
+		if ( variation >= 0 && variation < items[item->type].variations )
+		{
+			return items[item->type].fpindex + variation;
+		}
+	}
 	return items[item->type].fpindex + item->appearance % items[item->type].variations;
-}
-
-/*-------------------------------------------------------------------------------
-
-	itemSprite
-
-	returns a pointer to the SDL_Surface used to represent the item
-
--------------------------------------------------------------------------------*/
-
-SDL_Surface* itemSprite(Item* const item)
-{
-	if ( !item || item->type < 0 || item->type >= NUMITEMS )
-	{
-		return nullptr;
-	}
-	if (itemCategory(item) == SPELL_CAT)
-	{
-		spell_t* spell = nullptr;
-		for ( int i = 0; i < MAXPLAYERS; ++i )
-		{
-			spell = getSpellFromItem(i, item, false);
-			if ( spell )
-			{
-				break;
-			}
-		}
-		if (spell)
-		{
-			node_t* node = list_Node(&items[item->type].surfaces, spell->ID);
-			if ( !node )
-			{
-				return nullptr;
-			}
-			SDL_Surface** surface = static_cast<SDL_Surface**>(node->element);
-			return *surface;
-		}
-	}
-	else
-	{
-		node_t* node = nullptr;
-		if ( item->type == TOOL_PLAYER_LOOT_BAG )
-		{
-			if ( colorblind_lobby )
-			{
-				int playerOwner = item->getLootBagPlayer();
-				Uint32 index = 4;
-				switch ( playerOwner )
-				{
-					case 0:
-						index = 2;
-						break;
-					case 1:
-						index = 3;
-						break;
-					case 2:
-						index = 1;
-						break;
-					case 3:
-						index = 4;
-						break;
-					default:
-						break;
-				}
-				node = list_Node(&items[item->type].surfaces, index);
-			}
-			else
-			{
-				node = list_Node(&items[item->type].surfaces, item->getLootBagPlayer());
-			}
-		}
-		else if ( item->type == MAGICSTAFF_SCEPTER )
-		{
-			if ( item->appearance % MAGICSTAFF_SCEPTER_CHARGE_MAX == 0 )
-			{
-				node = list_Node(&items[item->type].surfaces, 1);
-			}
-			else
-			{
-				node = list_Node(&items[item->type].surfaces, 0);
-			}
-		}
-		else
-		{
-			node = list_Node(&items[item->type].surfaces, item->appearance % items[item->type].variations);
-		}
-		if ( !node )
-		{
-			return nullptr;
-		}
-		SDL_Surface** surface = static_cast<SDL_Surface**>(node->element);
-		return *surface;
-	}
-	return nullptr;
 }
 
 /*-------------------------------------------------------------------------------
@@ -1284,6 +1288,7 @@ int itemCompare(const Item* const item1, const Item* const item2, bool checkAppe
 		return 1;
 	}
 	else if ( item1->type == SCROLL_MAIL || item1->type == READABLE_BOOK || items[item1->type].category == SPELL_CAT
+		|| items[item1->type].category == TOME_SPELL
 		|| item1->type == TOOL_PLAYER_LOOT_BAG )
 	{
 		if ( comparisonUsedForStacking )
@@ -2882,6 +2887,9 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		case SPELLBOOK_SELF_POLYMORPH:
 			item_Spellbook(item, player);
 			break;
+		case TOME_SORCERY:
+			item_Spellbook(item, player);
+			break;
 		case GEM_ROCK:
 		case GEM_LUCK:
 		case GEM_GARNET:
@@ -3589,6 +3597,10 @@ Item* itemPickup(const int player, Item* const item, Item* addToSpecificInventor
 			{
 				item->appearance += (local_rng.rand() % 10000) * (MAGICSTAFF_SCEPTER_CHARGE_MAX);
 			}
+			else if ( itemCategory(item) == TOME_SPELL )
+			{
+				item->appearance += (local_rng.rand() % 10000) * (1000);
+			}
 			else
 			{
 				item->appearance = local_rng.rand();
@@ -3615,6 +3627,10 @@ Item* itemPickup(const int player, Item* const item, Item* addToSpecificInventor
 				else if ( item->type == MAGICSTAFF_SCEPTER )
 				{
 					item->appearance += (local_rng.rand() % 10000) * (MAGICSTAFF_SCEPTER_CHARGE_MAX);
+				}
+				else if ( itemCategory(item) == TOME_SPELL )
+				{
+					item->appearance += (local_rng.rand() % 10000) * (1000);
 				}
 				else
 				{
@@ -6110,7 +6126,7 @@ ItemType itemTypeWithinGoldValue(const int cat, const int minValue, const int ma
 	bool pickAnyCategory = false;
 	int c;
 
-	if ( cat < -1 || cat >= NUMCATEGORIES )
+	if ( cat < -1 || cat >= Category::CATEGORY_MAX )
 	{
 		printlog("warning: pickItemWithinGoldValue() called with bad category value!\n");
 		return GEM_ROCK;
@@ -6124,7 +6140,7 @@ ItemType itemTypeWithinGoldValue(const int cat, const int minValue, const int ma
 	// find highest value of items in category
 	for ( c = 0; c < NUMITEMS; ++c )
 	{
-		if ( items[c].category == cat || (pickAnyCategory && items[c].category != SPELL_CAT) )
+		if ( items[c].category == cat || (pickAnyCategory && items[c].category < Category::CATEGORY_MAX - 2) )
 		{
 			if ( items[c].value >= minValue && items[c].value <= maxValue && items[c].level != -1 )
 			{
@@ -6358,6 +6374,7 @@ bool Item::usableWhileShapeshifted(const Stat* const wielder) const
 			return false;
 		case MAGICSTAFF:
 		case SPELLBOOK:
+		case TOME_SPELL:
 		{
 			if (wielder->type == CREATURE_IMP)
 			{
@@ -6384,6 +6401,25 @@ bool Item::usableWhileShapeshifted(const Stat* const wielder) const
 			break;
 	}
 	return false;
+}
+
+int Item::getTomeSpellID() const
+{
+	int spellID = appearance % NUM_SPELLS;
+	return spellID;
+}
+
+const char* Item::getTomeLabel() const
+{
+	if ( type == TOME_SORCERY )
+	{
+		int spellID = getTomeSpellID();
+		if ( auto spell = getSpellFromID(spellID) )
+		{
+			return spell->getSpellName(true);
+		}
+	}
+	return "";
 }
 
 char* Item::getScrollLabel() const

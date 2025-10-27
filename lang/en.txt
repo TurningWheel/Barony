@@ -7119,5 +7119,8 @@ to replay this challenge!
 6847 Affect the analog deadzone of the control stick used for player movement.#
 6848 Camera Turn Deadzone#
 6849 Affect the analog deadzone of the control stick used for turning the player camera.#
+6850 tome of %s#
+6851 tomes of %s#
+6852 The %s deteriorates and crumbles to ash!#
 
 6999 END#

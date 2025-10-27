@@ -993,11 +993,47 @@ void equipSpell(spell_t* spell, int playernum, Item* spellItem)
 	}
 }
 
-const char* spell_t::getSpellName()
+const char* spell_t::getSpellName(bool lowercase)
 {
 	if ( ItemTooltips.spellItems.find(ID) != ItemTooltips.spellItems.end() )
 	{
-		return ItemTooltips.spellItems[ID].name.c_str();
+		if ( lowercase )
+		{
+			return ItemTooltips.spellItems[ID].name_lowercase.c_str();
+		}
+		else
+		{
+			return ItemTooltips.spellItems[ID].name.c_str();
+		}
+	}
+	return "";
+}
+
+const char* spell_t::getSpellTierName()
+{
+	if ( difficulty < 20 )
+	{
+		return "I";
+	}
+	else if ( difficulty >= 20 && difficulty < 40 )
+	{
+		return "II";
+	}
+	else if ( difficulty >= 40 && difficulty < 60 )
+	{
+		return "III";
+	}
+	else if ( difficulty >= 60 && difficulty < 80 )
+	{
+		return "IV";
+	}
+	else if ( difficulty >= 80 && difficulty < 100 )
+	{
+		return "V";
+	}
+	else if ( difficulty >= 100 )
+	{
+		return "VI";
 	}
 	return "";
 }

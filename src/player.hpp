@@ -1375,6 +1375,7 @@ public:
 		static real_t windowCompactHeightScaleX;
 		static real_t windowCompactHeightScaleY;
 		static bool generateFollowerTableForSkillsheet;
+		static std::string getSkillNameFromID(int skillID, bool shortName = false);
 		static struct SkillSheetData_t
 		{
 			Uint32 defaultTextColor = 0xFFFFFFFF;

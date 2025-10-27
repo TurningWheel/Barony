@@ -94,7 +94,7 @@ list_t chestInv[MAXPLAYERS];
 //SDL_Surface* attributesrightunclicked_bmp = NULL;
 //SDL_Surface* inventory_bmp = NULL, *inventoryoption_bmp = NULL, *inventoryoptionChest_bmp = NULL, *equipped_bmp = NULL;
 //SDL_Surface* itembroken_bmp = nullptr;
-//SDL_Surface *category_bmp[NUMCATEGORIES];
+//SDL_Surface *category_bmp[Category::CATEGORY_MAX];
 //SDL_Surface* shopkeeper_bmp = NULL;
 //SDL_Surface* shopkeeper2_bmp = NULL;
 //SDL_Surface* damage_bmp = NULL;
@@ -534,7 +534,7 @@ void freeInterfaceResources()
 	//{
 	//	SDL_FreeSurface(damage_bmp);
 	//}
-	//for( c=0; c<NUMCATEGORIES; c++ )
+	//for( c=0; c<Category::CATEGORY_MAX; c++ )
 	//if(category_bmp[c]!=NULL)
 	//SDL_FreeSurface(category_bmp[c]);
 	/*if (identifyGUI_img != NULL)
@@ -11488,6 +11488,7 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 		case SPELLBOOK_DASH:
 		case SPELLBOOK_9:
 		case SPELLBOOK_10:
+		case TOME_SORCERY:
 			*metal = 0;
 			*magic = 4;
 			break;

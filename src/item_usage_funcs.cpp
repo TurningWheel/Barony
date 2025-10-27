@@ -5795,7 +5795,22 @@ void item_Spellbook(Item*& item, int player)
 				learned = addSpell(SPELL_CRAB_WEB, player);
 				break;
 			default:
-				learned = addSpell(SPELL_FORCEBOLT, player);
+				if ( items[item->type].category == SPELLBOOK )
+				{
+					int spellID = getSpellIDFromSpellbook(item->type);
+					if ( spellID > SPELL_NONE )
+					{
+						learned = addSpell(spellID, player);
+					}
+				}
+				else if ( items[item->type].category == TOME_SPELL )
+				{
+					int spellID = item->getTomeSpellID();
+					if ( auto spell = getSpellFromID(spellID) )
+					{
+						learned = addSpell(spell->ID, player);
+					}
+				}
 				break;
 		}
 
@@ -5806,9 +5821,19 @@ void item_Spellbook(Item*& item, int player)
 
 		if ( learned )
 		{
-			Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_SPELLBOOK_LEARNT, item->type, 1);
-			Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_SPELLBOOK_CAST_DEGRADES, item->type, 1);
-			if ( item->type >= SPELLBOOK_RAT_FORM && item->type <= SPELLBOOK_IMP_FORM )
+			int spellID = SPELL_NONE;
+			if ( itemCategory(item) == SPELLBOOK )
+			{
+				Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_SPELLBOOK_LEARNT, item->type, 1);
+				Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_SPELLBOOK_CAST_DEGRADES, item->type, 1);
+				spellID = getSpellIDFromSpellbook(item->type);
+			}
+			else if ( itemCategory(item) == TOME_SPELL )
+			{
+				spellID = item->getTomeSpellID();
+			}
+
+			if ( spellID >= SPELL_RAT_FORM && spellID <= SPELL_IMP_FORM )
 			{
 				ItemType originalSpellbook = item->type;
 				item->type = SPELLBOOK_REVERT_FORM;
@@ -5818,21 +5843,31 @@ void item_Spellbook(Item*& item, int player)
 				}
 				item->type = originalSpellbook;
 			}
-			item->status = static_cast<Status>(item->status - 1);
-			if ( item->status != BROKEN )
+
+			if ( itemCategory(item) == SPELLBOOK )
 			{
-				messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_EQUIPMENT, Language::get(2595));
+				item->status = static_cast<Status>(item->status - 1);
+				if ( item->status != BROKEN )
+				{
+					messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_EQUIPMENT, Language::get(2595));
+				}
+				else
+				{
+					messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_EQUIPMENT, Language::get(2596));
+					consumeItem(item, player);
+				}
+
+				if ( stats[player] && stats[player]->playerRace == RACE_INSECTOID && stats[player]->stat_appearance == 0 )
+				{
+					steamStatisticUpdate(STEAM_STAT_BOOKWORM, STEAM_STAT_INT, 1);
+				}
 			}
-			else
+			else if ( itemCategory(item) == TOME_SPELL )
 			{
-				messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_EQUIPMENT, Language::get(2596));
+				messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_EQUIPMENT, Language::get(6852), items[item->type].getUnidentifiedName());
 				consumeItem(item, player);
 			}
-
-			if ( stats[player] && stats[player]->playerRace == RACE_INSECTOID && stats[player]->stat_appearance == 0 )
-			{
-				steamStatisticUpdate(STEAM_STAT_BOOKWORM, STEAM_STAT_INT, 1);
-			}
+			
 			if ( list_Size(&players[player]->magic.spellList) >= 20 )
 			{
 				steamAchievement("BARONY_ACH_MAGIC_MASTERY");

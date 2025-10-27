@@ -798,7 +798,8 @@ typedef struct spell_t
 	};
 
 	// get localized spell name
-	const char* getSpellName();
+	const char* getSpellName(bool lowercase = false);
+	const char* getSpellTierName();
 } spell_t;
 
 extern list_t channeledSpells[MAXPLAYERS]; //Spells the player is currently channeling. //TODO: Universalize it for all entities that can cast spells? //TODO: Cleanup and stuff.

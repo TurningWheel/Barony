@@ -831,7 +831,7 @@ void initShopkeeper(Entity* my, Stat* myStats)
 					// general store
 					for ( c = 0; c < numitems; c++ )
 					{
-						Category cat = static_cast<Category>(rng.rand() % (NUMCATEGORIES - 1));
+						Category cat = static_cast<Category>(rng.rand() % (Category::CATEGORY_MAX - 2));
 						tmpItem = newItem(itemLevelCurveEntity(*my, cat, 0, shoplevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1 + rng.rand() % 3, rng.rand(), false, &myStats->inventory);
 						if ( tmpItem && (itemCategory(tmpItem) == WEAPON || itemCategory(tmpItem) == ARMOR || itemCategory(tmpItem) == RING || itemCategory(tmpItem) == AMULET) )
 						{

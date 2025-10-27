@@ -2779,6 +2779,7 @@ private:
 		Sint32 id;
 		std::string internalName;
 		std::string name;
+		std::string name_lowercase;
 		std::string spellTypeStr;
 		SpellItemTypes spellType;
 		std::string spellbookInternalName;

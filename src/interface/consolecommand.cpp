@@ -4543,7 +4543,7 @@ namespace ConsoleCommands {
 		}
 
 		int cat = atoi(argv[1]);
-		cat = std::min(std::max(0, cat), NUMCATEGORIES - 1);
+		cat = std::min(std::max(0, cat), Category::CATEGORY_MAX - 2);
 		ItemType type = itemLevelCurve((Category)cat, 0, currentlevel, local_rng);
 		dropItem(newItem(type, EXCELLENT, 0, 1, local_rng.rand(), true, &stats[clientnum]->inventory), 0);
 	});
