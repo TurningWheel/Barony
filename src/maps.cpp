@@ -10362,6 +10362,7 @@ void mapFoodOnLevel(int player)
 		if ( numFood > 0 )
 		{
 			magicOnSpellCastEvent(players[player]->entity, players[player]->entity, 
+				nullptr,
 				SPELL_DETECT_FOOD, spell_t::SPELL_LEVEL_EVENT_DEFAULT, numFood);
 		}
 	}

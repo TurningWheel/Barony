@@ -6810,7 +6810,7 @@ void GenericGUIMenu::uncurseItem(Item* item)
 	{
 		if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_SPELL_REMOVECURSE )
 		{
-			magicOnSpellCastEvent(players[gui_player]->entity, players[gui_player]->entity, SPELL_REMOVECURSE, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
+			magicOnSpellCastEvent(players[gui_player]->entity, players[gui_player]->entity, nullptr, SPELL_REMOVECURSE, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
 		}
 	}
 	item->beatitude = 0; //0 = uncursed. > 0 = blessed.
@@ -6890,7 +6890,7 @@ void GenericGUIMenu::identifyItem(Item* item)
 			Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_APPRAISED, item->type, 1);
 			if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_SPELL_IDENTIFY )
 			{
-				magicOnSpellCastEvent(players[gui_player]->entity, players[gui_player]->entity, SPELL_IDENTIFY, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
+				magicOnSpellCastEvent(players[gui_player]->entity, players[gui_player]->entity, nullptr, SPELL_IDENTIFY, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
 			}
 		}
 	}

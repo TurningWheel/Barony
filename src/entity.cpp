@@ -3676,16 +3676,17 @@ void Entity::handleEffects(Stat* myStats)
 				switch ( stats[player]->type )
 				{
 				case RAT:
-					magicOnSpellCastEvent(this, this, SPELL_RAT_FORM, spell_t::SPELL_LEVEL_EVENT_SHAPESHIFT, 1);
+					magicOnSpellCastEvent(this, this, nullptr, SPELL_RAT_FORM, spell_t::SPELL_LEVEL_EVENT_SHAPESHIFT, 1);
 					break;
 				case SPIDER:
-					magicOnSpellCastEvent(this, this, SPELL_SPIDER_FORM, spell_t::SPELL_LEVEL_EVENT_SHAPESHIFT, 1);
+				case CRAB:
+					magicOnSpellCastEvent(this, this, nullptr, SPELL_SPIDER_FORM, spell_t::SPELL_LEVEL_EVENT_SHAPESHIFT, 1);
 					break;
 				case TROLL:
-					magicOnSpellCastEvent(this, this, SPELL_TROLL_FORM, spell_t::SPELL_LEVEL_EVENT_SHAPESHIFT, 1);
+					magicOnSpellCastEvent(this, this, nullptr, SPELL_TROLL_FORM, spell_t::SPELL_LEVEL_EVENT_SHAPESHIFT, 1);
 					break;
 				case CREATURE_IMP:
-					magicOnSpellCastEvent(this, this, SPELL_IMP_FORM, spell_t::SPELL_LEVEL_EVENT_SHAPESHIFT, 1);
+					magicOnSpellCastEvent(this, this, nullptr, SPELL_IMP_FORM, spell_t::SPELL_LEVEL_EVENT_SHAPESHIFT, 1);
 					break;
 				default:
 					break;
@@ -11478,7 +11479,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							{
 								Sint32 damageTaken = oldHP - hitstats->HP;
 								Compendium_t::Events_t::eventUpdate(skill[2], Compendium_t::CPDM_SPELL_DMG, SPELL_ITEM, damageTaken, false, SPELL_STRIKE);
-								magicOnSpellCastEvent(this, this, SPELL_STRIKE, spell_t::SPELL_LEVEL_EVENT_DMG, damageTaken);
+								magicOnSpellCastEvent(this, this, hit.entity, SPELL_STRIKE, spell_t::SPELL_LEVEL_EVENT_DMG, damageTaken);
 							}
 						}
 					}
@@ -15826,7 +15827,7 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 				{
 					if ( this->creatureShadowTaggedThisUid == src->getUID() )
 					{
-						magicOnSpellCastEvent(this, this,
+						magicOnSpellCastEvent(this, this, src,
 							SPELL_SHADOW_TAG, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
 					}
 				}
@@ -16193,11 +16194,11 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 						{
 							if ( destStats->type == EARTH_ELEMENTAL )
 							{
-								magicOnSpellCastEvent(leader, this, SPELL_EARTH_ELEMENTAL, spell_t::SPELL_LEVEL_EVENT_SUMMON, 1);
+								magicOnSpellCastEvent(leader, this, src, SPELL_EARTH_ELEMENTAL, spell_t::SPELL_LEVEL_EVENT_SUMMON, 1);
 							}
 							else if ( destStats->type == SKELETON )
 							{
-								magicOnSpellCastEvent(leader, this, SPELL_SUMMON, spell_t::SPELL_LEVEL_EVENT_SUMMON, 1);
+								magicOnSpellCastEvent(leader, this, src, SPELL_SUMMON, spell_t::SPELL_LEVEL_EVENT_SUMMON, 1);
 							}
 						}
 						else

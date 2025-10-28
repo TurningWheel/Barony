@@ -1237,7 +1237,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				{
 					if ( caster->teleportAroundEntity(entityToTeleport, 3, 0) )
 					{
-						magicOnSpellCastEvent(caster, caster, spell->ID, spell_t::SPELL_LEVEL_EVENT_DEFAULT | spellEventFlags, 1, allowedSkillup);
+						magicOnSpellCastEvent(caster, caster, nullptr, spell->ID, spell_t::SPELL_LEVEL_EVENT_DEFAULT | spellEventFlags, 1, allowedSkillup);
 					}
 					if ( caster->behavior == &actPlayer )
 					{
@@ -1248,7 +1248,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				{
 					if ( caster->teleportRandom() )
 					{
-						magicOnSpellCastEvent(caster, caster, spell->ID, spell_t::SPELL_LEVEL_EVENT_DEFAULT | spellEventFlags, 1, allowedSkillup);
+						magicOnSpellCastEvent(caster, caster, nullptr, spell->ID, spell_t::SPELL_LEVEL_EVENT_DEFAULT | spellEventFlags, 1, allowedSkillup);
 					}
 				}
 			}
@@ -1256,7 +1256,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			{
 				if ( caster->teleportRandom() )
 				{
-					magicOnSpellCastEvent(caster, caster, spell->ID, spell_t::SPELL_LEVEL_EVENT_DEFAULT | spellEventFlags, 1, allowedSkillup);
+					magicOnSpellCastEvent(caster, caster, nullptr, spell->ID, spell_t::SPELL_LEVEL_EVENT_DEFAULT | spellEventFlags, 1, allowedSkillup);
 				}
 			}
 		}
@@ -1280,7 +1280,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						serverSpawnMiscParticles(caster, PARTICLE_EFFECT_ERUPT, 625);
 					}
 
-					magicOnSpellCastEvent(caster, caster, spell->ID, spell_t::SPELL_LEVEL_EVENT_DEFAULT | spellEventFlags, 1, allowedSkillup);
+					magicOnSpellCastEvent(caster, caster, nullptr, spell->ID, spell_t::SPELL_LEVEL_EVENT_DEFAULT | spellEventFlags, 1, allowedSkillup);
 				}
 				else
 				{
@@ -1298,7 +1298,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				{
 					if ( caster->getStats()->getEffectActive(EFF_POLYMORPH) )
 					{
-						magicOnSpellCastEvent(caster, caster, spell->ID, spell_t::SPELL_LEVEL_EVENT_EFFECT | spellEventFlags, 1, allowedSkillup);
+						magicOnSpellCastEvent(caster, caster, nullptr, spell->ID, spell_t::SPELL_LEVEL_EVENT_EFFECT | spellEventFlags, 1, allowedSkillup);
 					}
 				}
 			}
@@ -1566,7 +1566,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
 					int radius = getSpellPropertyFromID(spell_t::SPELLPROP_MODIFIED_RADIUS, spell->ID, caster, nullptr, caster);
 					spell_magicMap(i, radius, caster->x / 16, caster->y / 16);
-					magicOnSpellCastEvent(caster, caster, spell->ID, spell_t::SPELL_LEVEL_EVENT_DEFAULT | spellEventFlags, 1, allowedSkillup);
+					magicOnSpellCastEvent(caster, caster, nullptr, spell->ID, spell_t::SPELL_LEVEL_EVENT_DEFAULT | spellEventFlags, 1, allowedSkillup);
 				}
 			}
 			playSoundEntity(caster, 167, 128 );
@@ -1578,7 +1578,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				if ( players[i] && caster && (caster == players[i]->entity) )
 				{
 					spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
-					magicOnSpellCastEvent(caster, caster, spell->ID, spell_t::SPELL_LEVEL_EVENT_DEFAULT | spellEventFlags, 1, allowedSkillup);
+					magicOnSpellCastEvent(caster, caster, nullptr, spell->ID, spell_t::SPELL_LEVEL_EVENT_DEFAULT | spellEventFlags, 1, allowedSkillup);
 					//spell_magicMap(i);
 				}
 			}
@@ -4985,7 +4985,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					}
 					else
 					{
-						magicOnSpellCastEvent(caster, caster, spell->ID, spell_t::SPELL_LEVEL_EVENT_DEFAULT | spellEventFlags, 1, allowedSkillup);
+						magicOnSpellCastEvent(caster, caster, nullptr, spell->ID, spell_t::SPELL_LEVEL_EVENT_DEFAULT | spellEventFlags, numItems, allowedSkillup);
 						messagePlayerColor(i, MESSAGE_INVENTORY, makeColorRGB(0, 255, 0), Language::get(3712), numItems);
 						playSoundEntity(caster, 167, 128);
 					}
@@ -5093,7 +5093,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						}
 					}
 
-					magicOnSpellCastEvent(caster, caster, spell->ID, spell_t::SPELL_LEVEL_EVENT_EFFECT | spellEventFlags, 1, allowedSkillup);
+					magicOnSpellCastEvent(caster, caster, nullptr, spell->ID, spell_t::SPELL_LEVEL_EVENT_EFFECT | spellEventFlags, 1, allowedSkillup);
 					break;
 				}
 			}
@@ -5125,7 +5125,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						playSoundEntity(caster, 178, 128);
 						spawnMagicEffectParticles(caster->x, caster->y, caster->z, 170);
 
-						magicOnSpellCastEvent(caster, caster, spell->ID, spell_t::SPELL_LEVEL_EVENT_EFFECT | spellEventFlags, 1, allowedSkillup);
+						magicOnSpellCastEvent(caster, caster, nullptr, spell->ID, spell_t::SPELL_LEVEL_EVENT_EFFECT | spellEventFlags, 1, allowedSkillup);
 					}
 					break;
 				}
@@ -5585,7 +5585,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					spawnMagicEffectParticles(caster->x, caster->y, caster->z, 982);
 					caster->setEffect(EFF_DASH, true, 60, true);
 
-					magicOnSpellCastEvent(caster, caster, spell->ID, spell_t::SPELL_LEVEL_EVENT_EFFECT | spellEventFlags, 1, allowedSkillup);
+					magicOnSpellCastEvent(caster, caster, nullptr, spell->ID, spell_t::SPELL_LEVEL_EVENT_EFFECT | spellEventFlags, 1, allowedSkillup);
 					if ( i > 0 && multiplayer == SERVER && !players[i]->isLocalPlayer() )
 					{
 						strcpy((char*)net_packet->data, "DASH");
@@ -5654,7 +5654,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						}
 					}
 
-					magicOnSpellCastEvent(caster, caster, spell->ID, spell_t::SPELL_LEVEL_EVENT_EFFECT | spellEventFlags, 1, allowedSkillup);
+					magicOnSpellCastEvent(caster, caster, nullptr, spell->ID, spell_t::SPELL_LEVEL_EVENT_EFFECT | spellEventFlags, 1, allowedSkillup);
 					break;
 				}
 			}
@@ -5756,7 +5756,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						serverUpdatePlayerGameplayStats(i, STATISTICS_HEAL_BOT, totalHeal);
 						if ( spell && spell->ID > SPELL_NONE )
 						{
-							magicOnSpellCastEvent(caster, caster, spell->ID, spell_t::SPELL_LEVEL_EVENT_DMG | spellEventFlags, totalHeal, allowedSkillup);
+							magicOnSpellCastEvent(caster, caster, nullptr, spell->ID, spell_t::SPELL_LEVEL_EVENT_DMG | spellEventFlags, totalHeal, allowedSkillup);
 
 							if ( !using_magicstaff && !trap )
 							{
@@ -5878,7 +5878,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						createParticleDropRising(caster, 593, 1.f);
 						serverSpawnMiscParticles(caster, PARTICLE_EFFECT_RISING_DROP, 593);
 
-						magicOnSpellCastEvent(caster, caster, spell->ID, spell_t::SPELL_LEVEL_EVENT_DEFAULT | spellEventFlags, 1, allowedSkillup);
+						magicOnSpellCastEvent(caster, caster, nullptr, spell->ID, spell_t::SPELL_LEVEL_EVENT_DEFAULT | spellEventFlags, 1, allowedSkillup);
 					}
 					else if ( stats[caster->skill[2]]->getEffectActive(EFF_POLYMORPH) )
 					{
@@ -5891,7 +5891,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						createParticleDropRising(caster, 593, 1.f);
 						serverSpawnMiscParticles(caster, PARTICLE_EFFECT_RISING_DROP, 593);
 
-						magicOnSpellCastEvent(caster, caster, spell->ID, spell_t::SPELL_LEVEL_EVENT_DEFAULT | spellEventFlags, 1, allowedSkillup);
+						magicOnSpellCastEvent(caster, caster, nullptr, spell->ID, spell_t::SPELL_LEVEL_EVENT_DEFAULT | spellEventFlags, 1, allowedSkillup);
 					}
 					else
 					{
@@ -6022,7 +6022,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 
 					if ( numEffectsCured > 0 || numAlliesEffectsCured > 0 )
 					{
-						magicOnSpellCastEvent(caster, caster, spell->ID, spell_t::SPELL_LEVEL_EVENT_DEFAULT | spellEventFlags, numEffectsCured + numAlliesEffectsCured, allowedSkillup);
+						magicOnSpellCastEvent(caster, caster, nullptr, spell->ID, spell_t::SPELL_LEVEL_EVENT_DEFAULT | spellEventFlags, numEffectsCured + numAlliesEffectsCured, allowedSkillup);
 					}
 
 					if ( regenEffect || numEffectsCured > 0 )

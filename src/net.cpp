@@ -8520,7 +8520,7 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 					int spellID = SDLNet_Read16(&net_packet->data[5]);
 					Uint32 eventType = SDLNet_Read32(&net_packet->data[7]);
 					int eventValue = SDLNet_Read32(&net_packet->data[11]);
-					magicOnSpellCastEvent(players[player]->entity, players[player]->entity, spellID, eventType, eventValue);
+					magicOnSpellCastEvent(players[player]->entity, players[player]->entity, nullptr, spellID, eventType, eventValue);
 				}
 			}
 		}
