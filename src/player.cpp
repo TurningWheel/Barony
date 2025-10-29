@@ -3196,6 +3196,7 @@ void Player::cleanUpOnEntityRemoval()
 		worldUI.reset();
 	}
 	mechanics.enemyRaisedBlockingAgainst.clear();
+	mechanics.enemyRaisedStealthAgainst.clear();
 	mechanics.ensemblePlaying = -1;
 	mechanics.ensembleRequireRecast = false;
 	mechanics.ensembleTakenInitialMP = false;
@@ -7378,6 +7379,15 @@ bool Player::PlayerMechanics_t::allowedRaiseBlockingAgainstEntity(Entity& attack
 		return false;
 	}
 	return enemyRaisedBlockingAgainst[attacker.getUID()] < 1;
+}
+
+bool Player::PlayerMechanics_t::allowedRaiseStealthAgainstEntity(Entity& attacker)
+{
+	if ( attacker.behavior != &actMonster )
+	{
+		return false;
+	}
+	return enemyRaisedStealthAgainst[attacker.getUID()] < 1;
 }
 
 void Player::PlayerMechanics_t::ensembleMusicUpdateServer()

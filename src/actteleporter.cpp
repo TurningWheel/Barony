@@ -93,7 +93,20 @@ void Entity::actTeleporter()
 			{
 				if ( teleporterType == 3 )
 				{
-					monsterInteracting->teleport(teleporterX, teleporterY);
+					if ( monsterInteracting->teleport(teleporterX, teleporterY) )
+					{
+						if ( Entity* caster = uidToEntity(this->parent) )
+						{
+							if ( auto hitprops = getParticleEmitterHitProps(this->getUID(), this) )
+							{
+								if ( hitprops->hits == 0 )
+								{
+									magicOnSpellCastEvent(caster, caster, nullptr, SPELL_TUNNEL, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
+									++hitprops->hits;
+								}
+							}
+						}
+					}
 				}
 				else
 				{
@@ -121,15 +134,26 @@ void Entity::actTeleporter()
 						case 2:
 							messagePlayer(i, MESSAGE_INTERACTION, Language::get(510));
 							break;
-						case 3:
-							messagePlayer(i, MESSAGE_INTERACTION, Language::get(6696));
-							break;
 						default:
 							break;
 					}
 					if ( teleporterType == 3 )
 					{
-						Player::getPlayerInteractEntity(i)->teleport(teleporterX, teleporterY);
+						if ( Player::getPlayerInteractEntity(i)->teleport(teleporterX, teleporterY) )
+						{
+							messagePlayer(i, MESSAGE_INTERACTION, Language::get(6696));
+							if ( Entity* caster = uidToEntity(this->parent) )
+							{
+								if ( auto hitprops = getParticleEmitterHitProps(this->getUID(), this) )
+								{
+									if ( hitprops->hits == 0 )
+									{
+										magicOnSpellCastEvent(caster, caster, nullptr, SPELL_TUNNEL, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
+										++hitprops->hits;
+									}
+								}
+							}
+						}
 					}
 					else
 					{

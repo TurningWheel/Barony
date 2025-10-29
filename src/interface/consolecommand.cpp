@@ -3949,6 +3949,7 @@ namespace ConsoleCommands {
 
 		consoleCommand("/loaditems");
 		node_t* nextnode = nullptr;
+		players[clientnum]->magic.clearSelectedSpells();
 		std::vector<int> relearnSpells;
 		for ( auto node = stats[clientnum]->inventory.first; node; node = nextnode )
 		{

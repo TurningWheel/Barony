@@ -3216,6 +3216,9 @@ Entity* spellEffectFlameSprite(Entity& caster, spellElement_t& element, real_t x
 						monsterStats->monsterNoDropItems = 1;
 						monsterStats->MISC_FLAGS[STAT_FLAG_MONSTER_DISABLE_HC_SCALING] = 1;
 						
+						monsterStats->setAttribute("special_npc", "fire sprite");
+						strcpy(monsterStats->name, MonsterData_t::getSpecialNPCName(*monsterStats).c_str());
+
 						int lvl = getSpellDamageFromID(SPELL_FIRE_SPRITE, &caster, nullptr, &caster);
 						int maxlvl = getSpellDamageSecondaryFromID(SPELL_FIRE_SPRITE, &caster, nullptr, &caster);
 						lvl = std::min(lvl, maxlvl);
@@ -3477,6 +3480,12 @@ bool applyGenericMagicDamage(Entity* caster, Entity* hitentity, Entity& damageSo
 		}
 		hitentity->updateEntityOnHit(caster, alertTarget);
 
+		if ( spellID == SPELL_IGNITE )
+		{
+			// alert entities only
+			return true;
+		}
+
 		playSoundEntity(hitentity, 28, 128);
 		int oldHP = targetStats->HP;
 
@@ -3489,7 +3498,7 @@ bool applyGenericMagicDamage(Entity* caster, Entity* hitentity, Entity& damageSo
 			Entity* gib = spawnGib(hitentity);
 			serverSpawnGibForClient(gib);
 		}
-		magicOnEntityHit(caster, &damageSourceProjectile, hitentity, targetStats, preResistanceDamage, damage, oldHP, damage);
+		magicOnEntityHit(caster, &damageSourceProjectile, hitentity, targetStats, preResistanceDamage, damage, oldHP, spellID);
 		magicTrapOnHit(caster, hitentity, targetStats, oldHP, spellID);
 
 		// write the obituary
@@ -3626,17 +3635,20 @@ int getSpellDamageFromID(int spellID, Entity* parent, Stat* parentStats, Entity*
 			myStats = parent->getStats();
 		}
 		damage = element->getDamage();
-		real_t bonus = (getBonusFromCasterOfSpellElement(parent, myStats, element, spellID, skillID));
-		bonus += addSpellBonus;
-		if ( applyingDamageOnCast )
+		if ( abs(element->getDamageMult()) > 0.01 )
 		{
-			if ( parent && parent->behavior == &actPlayer )
+			real_t bonus = (getBonusFromCasterOfSpellElement(parent, myStats, element, spellID, skillID));
+			bonus += addSpellBonus;
+			if ( applyingDamageOnCast )
 			{
-				Compendium_t::Events_t::eventUpdateCodex(parent->skill[2], Compendium_t::CPDM_CLASS_PWR_MAX_CASTED, "pwr",
-					(Sint32)(bonus * 100.0));
+				if ( parent && parent->behavior == &actPlayer )
+				{
+					Compendium_t::Events_t::eventUpdateCodex(parent->skill[2], Compendium_t::CPDM_CLASS_PWR_MAX_CASTED, "pwr",
+						(Sint32)(bonus * 100.0));
+				}
 			}
+			damage += damage * bonus * element->getDamageMult();
 		}
-		damage += damage * bonus;
 	}
 	return damage;
 }
@@ -3668,17 +3680,20 @@ int getSpellDamageSecondaryFromID(int spellID, Entity* parent, Stat* parentStats
 			myStats = parent->getStats();
 		}
 		damage = element->getDamageSecondary();
-		real_t bonus = (getBonusFromCasterOfSpellElement(parent, myStats, element, spellID, skillID));
-		bonus += addSpellBonus;
-		if ( applyingDamageOnCast )
+		if ( abs(element->getDamageSecondaryMult()) > 0.01 )
 		{
-			if ( parent && parent->behavior == &actPlayer )
+			real_t bonus = (getBonusFromCasterOfSpellElement(parent, myStats, element, spellID, skillID));
+			bonus += addSpellBonus;
+			if ( applyingDamageOnCast )
 			{
-				Compendium_t::Events_t::eventUpdateCodex(parent->skill[2], Compendium_t::CPDM_CLASS_PWR_MAX_CASTED, "pwr",
-					(Sint32)(bonus * 100.0));
+				if ( parent && parent->behavior == &actPlayer )
+				{
+					Compendium_t::Events_t::eventUpdateCodex(parent->skill[2], Compendium_t::CPDM_CLASS_PWR_MAX_CASTED, "pwr",
+						(Sint32)(bonus * 100.0));
+				}
 			}
+			damage += damage * bonus * element->getDamageSecondaryMult();
 		}
-		damage += damage * bonus;
 	}
 	return damage;
 }
@@ -3840,4 +3855,49 @@ int getSpellPropertyFromID(spell_t::SpellBasePropertiesInt prop, int spellID, En
 		}
 	}
 	return result;
+}
+
+int getSpellFromSummonedEntityForSpellEvent(Entity* summon)
+{
+	if ( !summon ) { return SPELL_NONE; }
+	if ( !summon->monsterAllyGetPlayerLeader() ) { return SPELL_NONE; }
+	Stat* destStats = summon->getStats();
+	if ( !destStats ) { return SPELL_NONE; }
+
+	if ( summon->monsterAllySummonRank != 0 )
+	{
+		if ( destStats->type == EARTH_ELEMENTAL )
+		{
+			return SPELL_EARTH_ELEMENTAL;
+		}
+		else if ( destStats->type == SKELETON )
+		{
+			return SPELL_SUMMON;
+		}
+	}
+	else if ( destStats->type == MONSTER_ADORCISED_WEAPON )
+	{
+		if ( destStats->getAttribute("spirit_weapon") != "" )
+		{
+			return SPELL_SPIRIT_WEAPON;
+		}
+		else if ( destStats->getAttribute("adorcised_weapon") != "" )
+		{
+			return SPELL_ADORCISM;
+		}
+	}
+	else if ( destStats->type == MOTH_SMALL && destStats->getAttribute("fire_sprite") != "" )
+	{
+		return SPELL_FIRE_SPRITE;
+	}
+	else if ( destStats->type == SKELETON && destStats->getAttribute("revenant_skeleton") != "" )
+	{
+		return SPELL_REVENANT_CURSE;
+	}
+	else if ( destStats->type == REVENANT_SKULL && destStats->getAttribute("revenant_skull") != "" )
+	{
+		return SPELL_CURSE_FLESH;
+	}
+
+	return SPELL_NONE;
 }

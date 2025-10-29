@@ -3345,7 +3345,22 @@ real_t Player::PlayerMovement_t::getSpeedFactor(real_t weightratio, Sint32 DEX)
 		DEX = std::min(DEX - 3, -2);
 		slowSpeedPenalty = 2.0;
 	}
-	else if ( stats[player.playernum]->getEffectActive(EFF_FAST) && !stats[player.playernum]->getEffectActive(EFF_SLOW) )
+	else if ( !stats[player.playernum]->getEffectActive(EFF_FAST) && stats[player.playernum]->getEffectActive(EFF_DISRUPTED) )
+	{
+		if ( stats[player.playernum]->getEffectActive(EFF_DISRUPTED) == 1 )
+		{
+			DEX = std::min(DEX - 3, -2);
+			slowSpeedPenalty = 1.0;
+		}
+		else
+		{
+			DEX = std::min(DEX - 3, -2);
+			slowSpeedPenalty = 2.0;
+		}
+	}
+	else if ( stats[player.playernum]->getEffectActive(EFF_FAST) 
+		&& !stats[player.playernum]->getEffectActive(EFF_SLOW)
+		&& !stats[player.playernum]->getEffectActive(EFF_DISRUPTED) )
 	{
 		maxSpeed += 1.0;
 	}
@@ -5361,7 +5376,7 @@ void actPlayer(Entity* my)
 		}
 		else
 		{
-			if ( Entity* fx = createParticleAOEIndicator(my, my->x, my->y, 0.0, TICKS_PER_SECOND * 5, 64) )
+			if ( Entity* fx = createParticleAOEIndicator(my, my->x, my->y, 0.0, TICKS_PER_SECOND * 5, 32) )
 			{
 				if ( auto indicator = AOEIndicators_t::getIndicator(fx->skill[10]) )
 				{
@@ -5377,7 +5392,7 @@ void actPlayer(Entity* my)
 			}
 			for ( int i = 0; i < 2; ++i )
 			{
-				if ( Entity* fx = createParticleAOEIndicator(my, my->x, my->y, -7.5, TICKS_PER_SECOND * 5, 64) )
+				if ( Entity* fx = createParticleAOEIndicator(my, my->x, my->y, -7.5, TICKS_PER_SECOND * 5, 32) )
 				{
 					if ( i == 1 )
 					{

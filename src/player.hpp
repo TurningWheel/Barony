@@ -2382,7 +2382,9 @@ public:
 		void sustainedSpellClearMP(int skillID);
 		void baseSpellClearMP(int skillID);
 		std::map<Uint32, int> enemyRaisedBlockingAgainst;
+		std::map<Uint32, int> enemyRaisedStealthAgainst;
 		bool allowedRaiseBlockingAgainstEntity(Entity& attacker);
+		bool allowedRaiseStealthAgainstEntity(Entity& attacker);
 		int ensemblePlaying = -1;
 		bool ensembleRequireRecast = false;
 		bool ensembleTakenInitialMP = false;

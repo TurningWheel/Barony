@@ -728,11 +728,15 @@ void actArrow(Entity* my)
 									// unaware monster, get backstab damage.
 									int bonus = (parentStats->getModifiedProficiency(PRO_STEALTH) / 20 + 2) * (2 * stealthCapstoneBonus);
 									damage += ((bonus * equipmentModifier) * bonusModifier);
-									if ( local_rng.rand() % 10 == 0 
+									if ( local_rng.rand() % 4 == 0 
 										&& hit.entity->behavior != &actPlayer
 										&& !(parent->behavior == &actPlayer && hit.entity->monsterAllyGetPlayerLeader()) )
 									{
-										parent->increaseSkill(PRO_STEALTH);
+										if ( parent->behavior == &actPlayer && players[parent->skill[2]]->mechanics.allowedRaiseStealthAgainstEntity(*hit.entity) )
+										{
+											parent->increaseSkill(PRO_STEALTH);
+											players[parent->skill[2]]->mechanics.enemyRaisedStealthAgainst[hit.entity->getUID()]++;
+										}
 									}
 									backstab = true;
 								}
@@ -746,7 +750,11 @@ void actArrow(Entity* my)
 										&& hit.entity->behavior != &actPlayer
 										&& !(parent->behavior == &actPlayer && hit.entity->monsterAllyGetPlayerLeader()) )
 									{
-										parent->increaseSkill(PRO_STEALTH);
+										if ( parent->behavior == &actPlayer && players[parent->skill[2]]->mechanics.allowedRaiseStealthAgainstEntity(*hit.entity) )
+										{
+											parent->increaseSkill(PRO_STEALTH);
+											players[parent->skill[2]]->mechanics.enemyRaisedStealthAgainst[hit.entity->getUID()]++;
+										}
 									}
 									flanking = true;
 								}

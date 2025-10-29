@@ -5067,6 +5067,14 @@ void actMonster(Entity* my)
 			my->monsterLookTime = 1;
 			my->monsterLookDir += PI / 16;
 		}
+		if ( myStats->getEffectActive(EFF_DISORIENTED) == 2 )
+		{
+			if ( myStats->EFFECTS_TIMERS[EFF_DISORIENTED] == 1 )
+			{
+				my->monsterLookTime = 1;
+				my->monsterLookDir += PI;
+			}
+		}
 
 		if ( my->monsterState == MONSTER_STATE_WAIT )
 		{
@@ -5217,7 +5225,11 @@ void actMonster(Entity* my)
 									if ( hit.entity == entity )
 										if ( local_rng.rand() % 100 == 0 )
 										{
-											entity->increaseSkill(PRO_STEALTH);
+											if ( entity->behavior == &actPlayer && players[entity->skill[2]]->mechanics.allowedRaiseStealthAgainstEntity(*my) )
+											{
+												entity->increaseSkill(PRO_STEALTH);
+												players[entity->skill[2]]->mechanics.enemyRaisedStealthAgainst[my->getUID()]++;
+											}
 										}
 								}
 								continue;
@@ -5945,7 +5957,11 @@ void actMonster(Entity* my)
 							{	
 								if ( local_rng.rand() % 100 == 0 )
 								{
-									entity->increaseSkill(PRO_STEALTH);
+									if ( entity->behavior == &actPlayer && players[entity->skill[2]]->mechanics.allowedRaiseStealthAgainstEntity(*my) )
+									{
+										entity->increaseSkill(PRO_STEALTH);
+										players[entity->skill[2]]->mechanics.enemyRaisedStealthAgainst[my->getUID()]++;
+									}
 								}
 							}
 						}
@@ -6993,7 +7009,11 @@ timeToGoAgain:
 									{
 										if ( local_rng.rand() % 100 == 0 )
 										{
-											entity->increaseSkill(PRO_STEALTH);
+											if ( entity->behavior == &actPlayer && players[entity->skill[2]]->mechanics.allowedRaiseStealthAgainstEntity(*my) )
+											{
+												entity->increaseSkill(PRO_STEALTH);
+												players[entity->skill[2]]->mechanics.enemyRaisedStealthAgainst[my->getUID()]++;
+											}
 										}
 									}
 								}

@@ -2761,7 +2761,12 @@ public:
 		SPELL_TYPE_PROJECTILE_SHORT_X3,
 		SPELL_TYPE_SELF,
 		SPELL_TYPE_AREA,
-		SPELL_TYPE_SELF_SUSTAIN
+		SPELL_TYPE_SELF_SUSTAIN,
+		SPELL_TYPE_TOUCH_FLOOR,
+		SPELL_TYPE_TOUCH_ALLY,
+		SPELL_TYPE_TOUCH_ENEMY,
+		SPELL_TYPE_TOUCH_ENTITY,
+		SPELL_TYPE_TOUCH_WALL
 	};
 	enum SpellTagTypes : int
 	{
@@ -2771,7 +2776,8 @@ public:
 		SPELL_TAG_HEALING,
 		SPELL_TAG_CURE,
 		SPELL_TAG_BASIC_HIT_MESSAGE,
-		SPELL_TAG_TRACK_HITS
+		SPELL_TAG_TRACK_HITS,
+		SPELL_TAG_BUFF
 	};
 private:
 	struct spellItem_t
@@ -2790,6 +2796,7 @@ private:
 		Sint32 fociId = -1;
 		std::vector<std::string> spellTagsStr;
 		std::set<SpellTagTypes> spellTags;
+		std::set<spell_t::SpellOnCastEventTypes> spellLevelTags;
 
 		bool hasExpandedJSON = false;
 		int damage = 0;

@@ -3292,9 +3292,28 @@ void setupSpells()   ///TODO: Verify this function.
 	);
 	spell->hide_from_ui = true;
 
+	spell = createSimpleSpell(
+		SPELL_IGNITE,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_ignite");
+
+	spell = createSimpleSpell(
+		SPELL_SHATTER_OBJECTS,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_shatter_objects");
+
 	//static const int SPELL_LIGHTNING_NEXUS = 182;
 	//static const int SPELL_LIFT = 184;
-	//static const int SPELL_SLAM = 185;
 	//static const int SPELL_IGNITE = 186;
 	//static const int SPELL_SHATTER_OBJECTS = 187;
 	//static const int SPELL_KINETIC_FIELD = 188;
@@ -3348,7 +3367,9 @@ void setupSpells()   ///TODO: Verify this function.
 					element->setChanneledManaDuration(info.sustain_duration);
 					element->setChanneledManaMult(info.sustain_mult);
 					element->setDamage(info.damage);
+					element->setDamageMult(info.damage_mult);
 					element->setDamageSecondary(info.damage2);
+					element->setDamageSecondaryMult(info.damage2_mult);
 					element->duration = info.duration;
 					element->setDurationSecondary(info.duration2);
 				}

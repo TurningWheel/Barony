@@ -29,7 +29,7 @@ void initMoth(Entity* my, Stat* myStats)
 	node_t* node;
 
 	my->z = 0;
-	my->initMonster(myStats && myStats->getAttribute("fire_sprite") != "" ? 1822 : 1819);
+	my->initMonster(1819);
 	my->flags[INVISIBLE] = true; // hide the "AI" bodypart
 	if ( multiplayer != CLIENT )
 	{
@@ -70,6 +70,19 @@ void initMoth(Entity* my, Stat* myStats)
 			int defaultItems = countDefaultItems(myStats);
 
 			my->setHardcoreStats(*myStats);
+
+			if ( myStats->getAttribute("special_npc") == "fire sprite" )
+			{
+				// min 1, max 10
+				myStats->HP = myStats->LVL * 10; //10-100
+				myStats->MAXHP = myStats->HP;
+				myStats->OLDHP = myStats->HP;
+				myStats->STR = myStats->LVL - 6; //-5-5
+				myStats->DEX = myStats->LVL; // 1-10
+				myStats->INT = myStats->LVL; // 1-10
+				myStats->CON = myStats->LVL; // 1-10
+				myStats->PER = 3 + myStats->LVL; // 3-13
+			}
 		}
 	}
 
@@ -525,6 +538,20 @@ void mothAnimate(Entity* my, Stat* myStats, double dist)
 				{
 					body->flags[INVISIBLE] = false;
 				}
+			}
+		}
+	}
+
+	if ( multiplayer == CLIENT )
+	{
+		if ( fireSprite )
+		{
+			// catch all for extra limbs hide
+			for ( int i = 3; i < my->bodyparts.size(); ++i )
+			{
+				Entity* bodypart = my->bodyparts.at(i);
+				bodypart->flags[INVISIBLE] = true;
+				bodypart->flags[INVISIBLE_DITHER] = false;
 			}
 		}
 	}

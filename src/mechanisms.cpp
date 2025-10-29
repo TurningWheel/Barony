@@ -2212,9 +2212,13 @@ void Entity::actWind()
 				Entity* entity = (Entity*)node->element;
 				if ( windEffectsEntity(entity) && entityInsideWind(entity, this) )
 				{
+					auto hitProps = getParticleEmitterHitProps(getUID(), entity);
+					if ( !hitProps )
+					{
+						continue;
+					}
 					if ( entity->behavior != &actPlayer && entity->behavior != &actMonster )
 					{
-						auto hitProps = getParticleEmitterHitProps(getUID(), entity);
 						if ( !hitProps )
 						{
 							continue;
@@ -2223,15 +2227,23 @@ void Entity::actWind()
 						{
 							continue;
 						}
-						hitProps->hits++;
-						hitProps->tick = ::ticks;
 					}
+					else if ( hitProps->hits == 0 )
+					{
+						if ( Entity* caster = uidToEntity(this->parent) )
+						{
+							magicOnSpellCastEvent(caster, caster, entity, SPELL_WINDGATE, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
+						}
+					}
+
 					real_t dirx = entity->creatureWindVelocity * cos(entity->creatureWindDir);
 					real_t diry = entity->creatureWindVelocity * sin(entity->creatureWindDir);
 					entity->creatureWindVelocity = *cvar_map_tile_wind;
 					dirx += cos(this->yaw);
 					diry += sin(this->yaw);
 					entity->creatureWindDir = atan2(diry, dirx);
+					hitProps->hits++;
+					hitProps->tick = ::ticks;
 				}
 			}
 		}

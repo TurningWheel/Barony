@@ -6296,7 +6296,19 @@ void Entity::handleEffects(Stat* myStats)
 				else
 				{
 					// Player is not Buddha, process fire damage normally
+					Entity* killer = uidToEntity(static_cast<Uint32>(myStats->burningInflictedBy));
 					int damage = -2 - local_rng.rand() % 4; // Deal between -2 to -5 damage
+					if ( killer )
+					{
+						if ( Stat* killerStats = killer->getStats() )
+						{
+							if ( killerStats->type == MOTH_SMALL && killerStats->getAttribute("special_npc") == "fire sprite" )
+							{
+								int damageCap = -(2 + killerStats->LVL / 2);
+								damage = std::max(damage, damageCap);
+							}
+						}
+					}
 
 					real_t fireMultiplier = 1.0;
 					if ( myStats->helmet && myStats->helmet->type == HAT_WARM && local_rng.rand() % 4 == 0 )
@@ -6318,7 +6330,6 @@ void Entity::handleEffects(Stat* myStats)
 
 					this->modHP(damage); // Deal between -2 to -5 damage
 
-					Entity* killer = uidToEntity(static_cast<Uint32>(myStats->burningInflictedBy));
 					// If the Entity died, handle experience
 					if ( myStats->HP <= 0 )
 					{
@@ -7582,6 +7593,22 @@ Sint32 statGetDEX(Stat* entitystats, Entity* my)
 			DEX = std::min(DEX - 3, -2);
 		}
 	}
+
+	if ( !entitystats->getEffectActive(EFF_FAST) && entitystats->getEffectActive(EFF_DISRUPTED) )
+	{
+		if ( my && my->behavior == &actMonster )
+		{
+			if ( entitystats->getEffectActive(EFF_DISRUPTED) == 1 )
+			{
+				DEX = std::min(DEX - 3, 1);
+			}
+			else
+			{
+				DEX = std::min(DEX - 3, -2);
+			}
+		}
+	}
+
 	if ( entitystats->shoes != nullptr )
 	{
 		if ( entitystats->shoes->type == LEATHER_BOOTS_SPEED )
@@ -11122,6 +11149,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 							{
 								skillChanceIncrease = false; // no level up on allies
 							}
+							if ( behavior == &actPlayer && !players[player]->mechanics.allowedRaiseStealthAgainstEntity(*hit.entity) )
+							{
+								skillChanceIncrease = false;
+							}
 
 							if ( previousMonsterState == MONSTER_STATE_WAIT
 								|| previousMonsterState == MONSTER_STATE_PATH
@@ -11149,6 +11180,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 										if ( local_rng.rand() % 10 == 0 )
 										{
 											this->increaseSkill(PRO_STEALTH);
+											if ( player >= 0 )
+											{
+												players[player]->mechanics.enemyRaisedStealthAgainst[hit.entity->getUID()]++;
+											}
 										}
 									}
 									else
@@ -11156,6 +11191,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 										if ( local_rng.rand() % 4 > 0 )
 										{
 											this->increaseSkill(PRO_STEALTH);
+											if ( player >= 0 )
+											{
+												players[player]->mechanics.enemyRaisedStealthAgainst[hit.entity->getUID()]++;
+											}
 										}
 									}
 								}
@@ -11169,6 +11208,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 								if ( local_rng.rand() % 20 == 0 && hit.entity->behavior != &actPlayer && skillChanceIncrease )
 								{
 									this->increaseSkill(PRO_STEALTH);
+									if ( player >= 0 )
+									{
+										players[player]->mechanics.enemyRaisedStealthAgainst[hit.entity->getUID()]++;
+									}
 								}
 							}
 						}
@@ -13157,7 +13200,15 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						if ( !whip && hitstats->getEffectActive(EFF_DISORIENTED) )
 						{
-							hit.entity->setEffect(EFF_DISORIENTED, false, 0, false);
+							if ( hitstats->getEffectActive(EFF_DISORIENTED) == 2 )
+							{
+								// reduce counter to 2 to turn around next tick in actMonster
+								hitstats->EFFECTS_TIMERS[EFF_DISORIENTED] = 2;
+							}
+							else
+							{
+								hit.entity->setEffect(EFF_DISORIENTED, false, 0, false);
+							}
 
 							// secondary alert to nerf the disorient time, second hit will aggro
 							if ( myStats->mask && myStats->mask->type == MASK_PHANTOM && hit.entity->behavior == &actMonster )
@@ -13191,7 +13242,15 @@ void Entity::attack(int pose, int charge, Entity* target)
 									{
 										if ( hitstats->getEffectActive(EFF_DISORIENTED) && !hitstats->shield )
 										{
-											hit.entity->setEffect(EFF_DISORIENTED, false, 0, false);
+											if ( hitstats->getEffectActive(EFF_DISORIENTED) == 2 )
+											{
+												// reduce counter to 2 to turn around next tick in actMonster
+												hitstats->EFFECTS_TIMERS[EFF_DISORIENTED] = 2;
+											}
+											else
+											{
+												hit.entity->setEffect(EFF_DISORIENTED, false, 0, false);
+											}
 										}
 										playSoundEntity(hit.entity, 406, 128);
 										dropped->itemDelayMonsterPickingUp = TICKS_PER_SECOND * 5;
@@ -13218,7 +13277,15 @@ void Entity::attack(int pose, int charge, Entity* target)
 									{
 										if ( hitstats->getEffectActive(EFF_DISORIENTED) )
 										{
-											hit.entity->setEffect(EFF_DISORIENTED, false, 0, false);
+											if ( hitstats->getEffectActive(EFF_DISORIENTED) == 2 )
+											{
+												// reduce counter to 2 to turn around next tick in actMonster
+												hitstats->EFFECTS_TIMERS[EFF_DISORIENTED] = 2;
+											}
+											else
+											{
+												hit.entity->setEffect(EFF_DISORIENTED, false, 0, false);
+											}
 										}
 										playSoundEntity(hit.entity, 406, 128);
 										dropped->itemDelayMonsterPickingUp = TICKS_PER_SECOND * 5;
@@ -13237,7 +13304,15 @@ void Entity::attack(int pose, int charge, Entity* target)
 								{
 									if ( hitstats->getEffectActive(EFF_DISORIENTED) )
 									{
-										hit.entity->setEffect(EFF_DISORIENTED, false, 0, false);
+										if ( hitstats->getEffectActive(EFF_DISORIENTED) == 2 )
+										{
+											// reduce counter to 2 to turn around next tick in actMonster
+											hitstats->EFFECTS_TIMERS[EFF_DISORIENTED] = 2;
+										}
+										else
+										{
+											hit.entity->setEffect(EFF_DISORIENTED, false, 0, false);
+										}
 									}
 								}
 							}
@@ -13245,7 +13320,15 @@ void Entity::attack(int pose, int charge, Entity* target)
 							{
 								if ( hitstats->getEffectActive(EFF_DISORIENTED) )
 								{
-									hit.entity->setEffect(EFF_DISORIENTED, false, 0, false);
+									if ( hitstats->getEffectActive(EFF_DISORIENTED) == 2 )
+									{
+										// reduce counter to 2 to turn around next tick in actMonster
+										hitstats->EFFECTS_TIMERS[EFF_DISORIENTED] = 2;
+									}
+									else
+									{
+										hit.entity->setEffect(EFF_DISORIENTED, false, 0, false);
+									}
 								}
 							}
 						}
@@ -14762,6 +14845,10 @@ int AC(Stat* stat)
 		int tier = std::max(0, (stat->getEffectActive(EFF_FOCI_LIGHT_SANCTUARY) - 1));
 		armor += tier * getSpellDamageSecondaryFromID(SPELL_FOCI_LIGHT_SANCTUARY, nullptr, nullptr, nullptr);
 	}
+	if ( stat->getEffectActive(EFF_DISRUPTED) )
+	{
+		armor -= std::min((Uint8)3, stat->getEffectActive(EFF_DISRUPTED)) * 5;
+	}
 
 	if ( stat->helmet )
 	{
@@ -14881,19 +14968,6 @@ bool Entity::teleport(int tele_x, int tele_y)
 		return false;
 	}
 
-	// play sound effect
-	int sfx = 77;
-	if ( behavior == &actDeathGhost )
-	{
-		sfx = 608 + local_rng.rand() % 3;
-		playSoundEntity(this, sfx, 128);
-	}
-	else
-	{
-		playSoundEntity(this, sfx, 64);
-	}
-    spawnPoof(x, y, 0, 1.0, true);
-
 	// relocate entity
 	double oldx = x;
 	double oldy = y;
@@ -14909,13 +14983,24 @@ bool Entity::teleport(int tele_x, int tele_y)
 		{
 			x = oldx;
 			y = oldy;
-			if ( multiplayer == SERVER && player > 0 )
-			{
-				messagePlayer(player, MESSAGE_HINT, Language::get(707));
-			}
+			messagePlayer(player, MESSAGE_HINT, Language::get(707));
 			return false;
 		}
 	}
+
+	// play sound effect
+	int sfx = 77;
+	if ( behavior == &actDeathGhost )
+	{
+		sfx = 608 + local_rng.rand() % 3;
+		playSoundPos(oldx, oldy, sfx, 128);
+	}
+	else
+	{
+		playSoundPos(oldx, oldy, sfx, 64);
+	}
+	spawnPoof(oldx, oldy, 0, 1.0, true);
+
 	updateAchievementBaitAndSwitch(player, true);
 	if ( multiplayer != CLIENT )
 	{
@@ -16190,19 +16275,17 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 				{
 					if ( !spellEffectLeader )
 					{
-						if ( this->monsterAllySummonRank != 0 )
+						int spellID = getSpellFromSummonedEntityForSpellEvent(this);
+						if ( spellID != SPELL_NONE )
 						{
-							if ( destStats->type == EARTH_ELEMENTAL )
-							{
-								magicOnSpellCastEvent(leader, this, src, SPELL_EARTH_ELEMENTAL, spell_t::SPELL_LEVEL_EVENT_SUMMON, 1);
-							}
-							else if ( destStats->type == SKELETON )
-							{
-								magicOnSpellCastEvent(leader, this, src, SPELL_SUMMON, spell_t::SPELL_LEVEL_EVENT_SUMMON, 1);
-							}
+							magicOnSpellCastEvent(leader, this, src, spellID, spell_t::SPELL_LEVEL_EVENT_SUMMON, 1);
 						}
 						else
 						{
+							if ( destStats->monsterIsCharmed == 1 )
+							{
+								magicOnSpellCastEvent(leader, this, src, SPELL_CHARM_MONSTER, spell_t::SPELL_LEVEL_EVENT_SUMMON, 1);
+							}
 							leader->increaseSkill(PRO_LEADERSHIP);
 						}
 					}
@@ -21356,7 +21439,7 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool
 		}
 	}
 
-	if ( myStats->getEffectActive(EFF_DISORIENTED) )
+	if ( myStats->getEffectActive(EFF_DISORIENTED) == 1 )
 	{
 		return;
 	}
@@ -25269,6 +25352,7 @@ bool monsterNameIsGeneric(Stat& monsterStats)
 		|| !strcmp(monsterStats.name, Language::get(6807)) // revenant skeleton
 		|| !strcmp(monsterStats.name, Language::get(6302)) // gnome thief
 		|| !strcmp(monsterStats.name, Language::get(6303)) // gnome thief leader
+		|| MonsterData_t::nameMatchesSpecialNPCName(monsterStats, "fire sprite")
 		|| strstr(monsterStats.name, getMonsterLocalizedName(SLIME).c_str()) )
 	{
 		// If true, pretend the monster doesn't have a name and use the generic message "You hit the lesser skeleton!"

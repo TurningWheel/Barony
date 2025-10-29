@@ -339,6 +339,9 @@ static const int PARTICLE_EFFECT_STASIS_RIFT_ORBIT = 56;
 static const int PARTICLE_EFFECT_EARTH_ELEMENTAL_SUMMON_AOE = 57;
 static const int PARTICLE_EFFECT_THORNS_ORBIT = 58;
 static const int PARTICLE_EFFECT_CONFUSE_ORBIT = 59;
+static const int PARTICLE_EFFECT_IGNITE_ORBIT = 60;
+static const int PARTICLE_EFFECT_IGNITE = 61;
+static const int PARTICLE_EFFECT_SHATTER_OBJECTS = 62;
 
 // actmagicIsVertical constants
 static const int MAGIC_ISVERTICAL_NONE = 0;
@@ -460,7 +463,9 @@ public:
 	void setDurationSecondary(int _duration) { duration2 = _duration; }
 	int getDurationSecondary() { return duration2; }
 	real_t getDamageMult() { return damage_mult; }
-	real_t getDamage2Mult() { return damage2_mult; }
+	real_t getDamageSecondaryMult() { return damage2_mult; }
+	void setDamageMult(real_t _mult) { damage_mult = _mult; }
+	void setDamageSecondaryMult(real_t _mult) { damage2_mult = _mult; }
 	real_t getChanneledManaMult() { return channeledMana_mult; }
 	int getChanneledManaDuration() { return channeledMana_duration; }
 	void setChanneledManaDuration(int _duration) { channeledMana_duration = _duration; }
@@ -794,7 +799,9 @@ typedef struct spell_t
 		SPELL_LEVEL_EVENT_SHAPESHIFT = 16,
 		SPELL_LEVEL_EVENT_SUSTAIN = 32,
 		SPELL_LEVEL_EVENT_MAGICSTAFF = 64,
-		SPELL_LEVEL_EVENT_SPELLBOOK = 128
+		SPELL_LEVEL_EVENT_SPELLBOOK = 128,
+		SPELL_LEVEL_EVENT_ASSIST = 256,
+		SPELL_LEVEL_EVENT_ENUM_END = 512
 	};
 
 	// get localized spell name
@@ -959,6 +966,8 @@ void createParticleShatteredGem(real_t x, real_t y, real_t z, int sprite, Entity
 void createParticleErupt(Entity* parent, int sprite);
 void createParticleErupt(real_t x, real_t y, int sprite);
 Entity* createParticleBoobyTrapExplode(Entity* caster, real_t x, real_t y);
+Entity* createParticleShatterObjects(Entity* caster);
+Entity* createParticleIgnite(Entity* caster);
 Entity* createParticleSapCenter(Entity* parent, Entity* target, int spell, int sprite, int endSprite);
 Entity* createParticleTimer(Entity* parent, int duration, int sprite);
 void createParticleSap(Entity* parent);
@@ -988,7 +997,7 @@ Entity* createParticleRoot(int sprite, real_t x, real_t y, real_t z, real_t dir,
 void createMushroomSpellEffect(Entity* caster, real_t x, real_t y);
 Entity* createWindMagic(Uint32 casterUID, int x, int y, int duration, int dir, int length);
 void createParticleDemesneDoor(real_t x, real_t y, real_t dir);
-Entity* createTunnelPortal(real_t x, real_t y, int duration, int dir);
+Entity* createTunnelPortal(real_t x, real_t y, int duration, int dir, Entity* caster);
 void tunnelPortalSetAttributes(Entity* portal, int duration, int dir);
 Entity* createSpellExplosionArea(int spellID, Entity* caster, real_t x, real_t y, real_t z, real_t radius, int damage, Entity* ohitentity);
 void doSpellExplosionArea(int spellID, Entity* my, Entity* caster, real_t x, real_t y, real_t z, real_t radius);
@@ -1116,6 +1125,7 @@ int getSpellEffectDurationSecondaryFromID(int spellID, Entity* parent, Stat* par
 real_t getSpellPropertyFromID(spell_t::SpellBasePropertiesFloat prop, int spellID, Entity* parent, Stat* parentStats, Entity* magicSourceParticle, real_t addSpellBonus = 0.0);
 int getSpellPropertyFromID(spell_t::SpellBasePropertiesInt prop, int spellID, Entity* parent, Stat* parentStats, Entity* magicSourceParticle, real_t addSpellBonus = 0.0);
 void thrownItemUpdateSpellTrail(Entity& my, real_t _x, real_t _y);
+int getSpellFromSummonedEntityForSpellEvent(Entity* summon);
 const char* magicLightColorForSprite(Entity* my, int sprite, bool darker);
 void doParticleEffectForTouchSpell(Entity& my, Entity* focalLimb, Monster monsterType);
 bool magicOnSpellCastEvent(Entity* parent, Entity* projectile, Entity* hitentity, int spellID, Uint32 eventType, int eventValue, bool allowedLevelup = true); // return true on level up
@@ -1130,7 +1140,11 @@ struct AOEIndicators_t
 		CACHE_VORTEX,
 		CACHE_CASTING,
 		CACHE_BOOBY_TRAP,
-		CACHE_BOOBY_TRAP2
+		CACHE_BOOBY_TRAP2,
+		CACHE_IGNITE,
+		CACHE_IGNITE2,
+		CACHE_SHATTER_OBJECTS,
+		CACHE_SHATTER_OBJECTS2
 	};
 	struct Indicator_t
 	{

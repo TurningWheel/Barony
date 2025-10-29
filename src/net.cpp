@@ -3243,6 +3243,12 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 				case PARTICLE_EFFECT_ENSEMBLE_SELF_CAST:
 					createEnsembleHUDParticleCircling(entity);
 					break;
+				case PARTICLE_EFFECT_IGNITE:
+					createParticleIgnite(entity);
+					break;
+				case PARTICLE_EFFECT_SHATTER_OBJECTS:
+					createParticleShatterObjects(entity);
+					break;
 				case PARTICLE_EFFECT_LIGHTNING_SEQ:
 					floorMagicCreateLightningSequence(entity, entity->ticks + 1);
 					break;

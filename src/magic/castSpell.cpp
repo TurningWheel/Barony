@@ -1238,6 +1238,8 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					if ( caster->teleportAroundEntity(entityToTeleport, 3, 0) )
 					{
 						magicOnSpellCastEvent(caster, caster, nullptr, spell->ID, spell_t::SPELL_LEVEL_EVENT_DEFAULT | spellEventFlags, 1, allowedSkillup);
+						magicOnSpellCastEvent(caster, caster, nullptr,
+							SPELL_SHADOW_TAG, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
 					}
 					if ( caster->behavior == &actPlayer )
 					{
@@ -4057,7 +4059,8 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					found = true;
 
 					int duration = element->duration;
-					int length = std::max(2, std::min(0xF, getSpellDamageFromID(SPELL_WINDGATE, caster, nullptr, caster)));
+					int maxLen = getSpellDamageSecondaryFromID(SPELL_WINDGATE, caster, nullptr, caster);
+					int length = std::max(2, std::min(std::min(0xF, maxLen), getSpellDamageFromID(SPELL_WINDGATE, caster, nullptr, caster)));
 					createWindMagic(caster->getUID(), castSpellProps->target_x, castSpellProps->target_y, duration, castSpellProps->wallDir, length);
 					Uint32 data = (castSpellProps->wallDir) & 0xF;
 					data |= ((length) & 0xF) << 4;
@@ -4082,7 +4085,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					found = true;
 
 					int duration = element->duration;
-					Entity* result = createTunnelPortal(castSpellProps->target_x, castSpellProps->target_y, duration, castSpellProps->wallDir);
+					Entity* result = createTunnelPortal(castSpellProps->target_x, castSpellProps->target_y, duration, castSpellProps->wallDir, caster);
 					if ( !result )
 					{
 						messagePlayer(caster->isEntityPlayer(), MESSAGE_HINT, Language::get(6814));
@@ -6588,6 +6591,32 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				}
 			}
 		}
+		else if ( spell->ID == SPELL_IGNITE )
+		{
+			if ( caster )
+			{
+				if ( Entity* spellTimer = createParticleIgnite(caster) )
+				{
+					serverSpawnMiscParticles(caster, PARTICLE_EFFECT_IGNITE, 0);
+				}
+
+				spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
+				playSoundEntity(caster, 167, 128);
+			}
+		}
+		else if ( spell->ID == SPELL_SHATTER_OBJECTS )
+		{
+			if ( caster )
+			{
+				if ( Entity* spellTimer = createParticleShatterObjects(caster) )
+				{
+					serverSpawnMiscParticles(caster, PARTICLE_EFFECT_SHATTER_OBJECTS, 0);
+				}
+
+				spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
+				playSoundEntity(caster, 167, 128);
+			}
+		}
 
 		// intentional separate from else/if chain.
 		// disables propulsion if found a marked target.
@@ -6599,7 +6628,12 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				if ( entityToTeleport )
 				{
 					propulsion = 0;
-					spellEffectTeleportPull(nullptr, *element, caster, entityToTeleport, 0);
+					if ( spellEffectTeleportPull(nullptr, *element, caster, entityToTeleport, 0) )
+					{
+						magicOnEntityHit(caster, caster, entityToTeleport, entityToTeleport->getStats(), 0, 0, 0, spell ? spell->ID : SPELL_NONE);
+						magicOnSpellCastEvent(caster, caster, entityToTeleport,
+							SPELL_SHADOW_TAG, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
+					}
 				}
 			}
 		}
@@ -6784,18 +6818,40 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				traveltime = 10;
 				missileEntity->skill[5] = traveltime;
 			}
-			if ( caster && caster->getStats() && caster->getStats()->type == FLAME_ELEMENTAL )
+			if ( caster && caster->getStats() )
 			{
-				traveltime = 15;
-				missileEntity->skill[5] = traveltime;
-				if ( node_t* elementNode = ((spell_t*)node->element)->elements.first )
+				Stat* casterStats = caster->getStats();
+				if ( casterStats->type == FLAME_ELEMENTAL )
 				{
-					if ( auto element = (spellElement_t*)elementNode->element )
+					traveltime = 15;
+					missileEntity->skill[5] = traveltime;
+					if ( node_t* elementNode = ((spell_t*)node->element)->elements.first )
 					{
-						if ( elementNode = element->elements.first )
+						if ( auto element = (spellElement_t*)elementNode->element )
 						{
-							element = (spellElement_t*)elementNode->element;
-							element->setDamage(element->getDamage() / 2);
+							if ( elementNode = element->elements.first )
+							{
+								element = (spellElement_t*)elementNode->element;
+								element->setDamage(element->getDamage() / 2);
+							}
+						}
+					}
+				}
+				if ( casterStats->type == MOTH_SMALL && casterStats->getAttribute("special_npc") == "fire sprite" )
+				{
+					if ( node_t* elementNode = ((spell_t*)node->element)->elements.first )
+					{
+						if ( auto element = (spellElement_t*)elementNode->element )
+						{
+							if ( elementNode = element->elements.first )
+							{
+								element = (spellElement_t*)elementNode->element;
+								element->setDamage(std::max(1, casterStats->INT));
+								if ( Entity* leader = caster->monsterAllyGetPlayerLeader() )
+								{
+									element->duration = getSpellEffectDurationFromID(SPELL_FIRE_SPRITE, leader, nullptr, nullptr);
+								}
+							}
 						}
 					}
 				}

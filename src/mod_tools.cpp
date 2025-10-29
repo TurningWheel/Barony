@@ -1157,6 +1157,26 @@ void ItemTooltips_t::readItemsFromFile()
 		{
 			t.spellType = SPELL_TYPE_PROJECTILE_SHORT_X3;
 		}
+		else if ( t.spellTypeStr == "TOUCH_FLOOR" )
+		{
+			t.spellType = SPELL_TYPE_TOUCH_FLOOR;
+		}
+		else if ( t.spellTypeStr == "TOUCH_WALL" )
+		{
+			t.spellType = SPELL_TYPE_TOUCH_WALL;
+		}
+		else if ( t.spellTypeStr == "TOUCH_ENEMY" )
+		{
+			t.spellType = SPELL_TYPE_TOUCH_ENEMY;
+		}
+		else if ( t.spellTypeStr == "TOUCH_ALLY" )
+		{
+			t.spellType = SPELL_TYPE_TOUCH_ALLY;
+		}
+		else if ( t.spellTypeStr == "TOUCH_ENTITY" )
+		{
+			t.spellType = SPELL_TYPE_TOUCH_ENTITY;
+		}
 
 		for ( rapidjson::Value::ConstValueIterator arr_itr = spell_itr->value["effect_tags"].Begin();
 			arr_itr != spell_itr->value["effect_tags"].End(); ++arr_itr )
@@ -1182,6 +1202,10 @@ void ItemTooltips_t::readItemsFromFile()
 			{
 				t.spellTags.insert(SPELL_TAG_CURE);
 			}
+			else if ( t.spellTagsStr[t.spellTagsStr.size() - 1] == "BUFF" )
+			{
+				t.spellTags.insert(SPELL_TAG_BUFF);
+			}
 			else if ( t.spellTagsStr[t.spellTagsStr.size() - 1] == "BASIC_HIT_MESSAGE" )
 			{
 				t.spellTags.insert(SPELL_TAG_BASIC_HIT_MESSAGE);
@@ -1189,6 +1213,34 @@ void ItemTooltips_t::readItemsFromFile()
 			else if ( t.spellTagsStr[t.spellTagsStr.size() - 1] == "TRACK_SPELL_HITS" )
 			{
 				t.spellTags.insert(SPELL_TAG_TRACK_HITS);
+			}
+			else if ( t.spellTagsStr[t.spellTagsStr.size() - 1] == "SPELL_LEVEL_EVENT" )
+			{
+				t.spellLevelTags.insert(spell_t::SPELL_LEVEL_EVENT_DEFAULT);
+			}
+			else if ( t.spellTagsStr[t.spellTagsStr.size() - 1] == "SPELL_LEVEL_DMG" )
+			{
+				t.spellLevelTags.insert(spell_t::SPELL_LEVEL_EVENT_DMG);
+			}
+			else if ( t.spellTagsStr[t.spellTagsStr.size() - 1] == "SPELL_LEVEL_EFFECT" )
+			{
+				t.spellLevelTags.insert(spell_t::SPELL_LEVEL_EVENT_EFFECT);
+			}
+			else if ( t.spellTagsStr[t.spellTagsStr.size() - 1] == "SPELL_LEVEL_SUMMON" )
+			{
+				t.spellLevelTags.insert(spell_t::SPELL_LEVEL_EVENT_SUMMON);
+			}
+			else if ( t.spellTagsStr[t.spellTagsStr.size() - 1] == "SPELL_LEVEL_SHAPESHIFT" )
+			{
+				t.spellLevelTags.insert(spell_t::SPELL_LEVEL_EVENT_SHAPESHIFT);
+			}
+			else if ( t.spellTagsStr[t.spellTagsStr.size() - 1] == "SPELL_LEVEL_SUSTAIN" )
+			{
+				t.spellLevelTags.insert(spell_t::SPELL_LEVEL_EVENT_SUSTAIN);
+			}
+			else if ( t.spellTagsStr[t.spellTagsStr.size() - 1] == "SPELL_LEVEL_ASSIST" )
+			{
+				t.spellLevelTags.insert(spell_t::SPELL_LEVEL_EVENT_ASSIST);
 			}
 		}
 
