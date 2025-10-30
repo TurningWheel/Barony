@@ -65,7 +65,6 @@ enum ArrowSpriteTypes : int
 
 void actArrow(Entity* my)
 {
-	double dist = 0.0;
 	node_t* node = nullptr;
 
 	// lifespan
@@ -349,6 +348,7 @@ void actArrow(Entity* my)
 			}
 		}
 
+		bool hitSomething = false;
 		if ( multiplayer != CLIENT )
 		{
 			// horizontal motion
@@ -358,7 +358,53 @@ void actArrow(Entity* my)
 			ARROW_OLDY = my->y;
 
 			my->processEntityWind();
-			dist = clipMove(&my->x, &my->y, ARROW_VELX, ARROW_VELY, my);
+			bool halfSpeedCheck = false;
+			static ConsoleVariable<bool> cvar_arrow_clip("/arrow_clip_test", true);
+			if ( my->arrowSpeed > 4.0 ) // can clip through thin gates
+			{
+				auto entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 1);
+				for ( auto it : entLists )
+				{
+					if ( !*cvar_arrow_clip && (svFlags & SV_FLAG_CHEATS) )
+					{
+						break;
+					}
+					for ( node_t* node = it->first; node != nullptr; node = node->next )
+					{
+						Entity* entity = (Entity*)node->element;
+						if ( entity->behavior == &actGate || entity->behavior == &actDoor || entity->behavior == &actIronDoor )
+						{
+							if ( entityDist(my, entity) < my->arrowSpeed )
+							{
+								halfSpeedCheck = true;
+								break;
+							}
+						}
+					}
+					if ( halfSpeedCheck )
+					{
+						break;
+					}
+				}
+			}
+			
+			if ( !halfSpeedCheck )
+			{
+				real_t dist = clipMove(&my->x, &my->y, ARROW_VELX, ARROW_VELY, my);
+				hitSomething = dist != sqrt(ARROW_VELX * ARROW_VELX + ARROW_VELY * ARROW_VELY);
+			}
+			else
+			{
+				real_t vel_x = ARROW_VELX / 2.0;
+				real_t vel_y = ARROW_VELY / 2.0;
+				real_t dist = clipMove(&my->x, &my->y, vel_x, vel_y, my);
+				hitSomething = dist != sqrt(vel_x * vel_x + vel_y * vel_y);
+				if ( !hitSomething )
+				{
+					dist = clipMove(&my->x, &my->y, vel_x, vel_y, my);
+					hitSomething = dist != sqrt(vel_x * vel_x + vel_y * vel_y);
+				}
+			}
 		}
 
 		bool arrowInGround = false;
@@ -419,7 +465,7 @@ void actArrow(Entity* my)
 		}
 
 		// damage monsters
-		if ( arrowSpawnedInsideEntity || dist != sqrt(ARROW_VELX * ARROW_VELX + ARROW_VELY * ARROW_VELY) || arrowInGround )
+		if ( arrowSpawnedInsideEntity || hitSomething || arrowInGround )
 		{
 			if ( arrowInGround )
 			{

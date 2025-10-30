@@ -960,8 +960,8 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 
 	long ymin = floor((ty - my->sizey)/16), ymax = floor((ty + my->sizey)/16);
 	long xmin = floor((tx - my->sizex)/16), xmax = floor((tx + my->sizex)/16);
-	const real_t tymin = ty - my->sizey - (my->sizey == 1 ? 0.01 : 0.0), tymax = ty + my->sizey + (my->sizey == 1 ? 0.01 : 0.0);
-	const real_t txmin = tx - my->sizex - (my->sizex == 1 ? 0.01 : 0.0), txmax = tx + my->sizex + (my->sizex == 1 ? 0.01 : 0.0);
+	const real_t tymin = ty - my->sizey, tymax = ty + my->sizey;
+	const real_t txmin = tx - my->sizex, txmax = tx + my->sizex;
 	if ( my && my->flags[NOCLIP_WALLS] )
 	{
 		for ( y = ymin; y <= ymax; y++ )
@@ -1347,6 +1347,19 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 				eymax += yoffset;
 				exmin += xoffset;
 				exmax += xoffset;
+			}
+			else if ( projectileAttack && (entity->behavior == &actGate || entity->behavior == &actDoor || entity->behavior == &actIronDoor) )
+			{
+				if ( entity->sizex == 1 )
+				{
+					eymin -= 0.01;
+					eymax += 0.01;
+				}
+				if ( entity->sizey == 1 )
+				{
+					exmin -= 0.01;
+					exmax += 0.01;
+				}
 			}
 			if ( (entity->sizex > 0) && ((txmin >= exmin && txmin < exmax) || (txmax >= exmin && txmax < exmax) || (txmin <= exmin && txmax > exmax)) )
 			{
