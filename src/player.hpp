@@ -2381,6 +2381,8 @@ public:
 		void baseSpellIncrementMP(int mpChange, int skillID);
 		void sustainedSpellClearMP(int skillID);
 		void baseSpellClearMP(int skillID);
+		std::map<int, real_t> sustainedSpellIDCounter;
+		void updateSustainedSpellEvent(int spellID, real_t value, real_t scaleValue);
 		std::map<Uint32, int> enemyRaisedBlockingAgainst;
 		std::map<Uint32, int> enemyRaisedStealthAgainst;
 		bool allowedRaiseBlockingAgainstEntity(Entity& attacker);

@@ -9930,6 +9930,40 @@ void actPlayer(Entity* my)
 			// perform collision detection
 			dist = clipMove(&my->x, &my->y, PLAYER_VELX, PLAYER_VELY, my);
 
+			if ( multiplayer != CLIENT && !intro )
+			{
+				if ( stats[PLAYER_NUM]->getEffectActive(EFF_DASH) >= 2 )
+				{
+					if ( hit.entity )
+					{
+						my->handleKnockbackDamage(*stats[PLAYER_NUM], hit.entity);
+					}
+				}
+
+				if ( my->isInvisible() && !assailant[PLAYER_NUM] )
+				{
+					players[PLAYER_NUM]->mechanics.updateSustainedSpellEvent(SPELL_INVISIBILITY, dist, 0.1);
+				}
+				if ( levitating && !swimming )
+				{
+					const int index_x = static_cast<int>(my->x) >> 4;
+					const int index_y = static_cast<int>(my->y) >> 4;
+					int index = (index_y)*MAPLAYERS + (index_x)*MAPLAYERS * map.height;
+					if ( index_x >= 0 && index_x < map.width && index_y >= 0 && index_y < map.height )
+					{
+						if ( !map.tiles[index] || swimmingtiles[map.tiles[index_y * MAPLAYERS + index_x * MAPLAYERS * map.height]]
+							|| lavatiles[map.tiles[index_y * MAPLAYERS + index_x * MAPLAYERS * map.height]] )
+						{
+							players[PLAYER_NUM]->mechanics.updateSustainedSpellEvent(SPELL_LEVITATION, dist, 0.5);
+						}
+					}
+				}
+				if ( stats[PLAYER_NUM]->getEffectActive(EFF_LIGHTEN_LOAD) )
+				{
+					players[PLAYER_NUM]->mechanics.updateSustainedSpellEvent(SPELL_LIGHTEN_LOAD, dist, 0.1);
+				}
+			}
+
 			// bumping into monsters disturbs them
 			if ( hit.entity && !intro && multiplayer != CLIENT )
 			{
@@ -10105,6 +10139,39 @@ void actPlayer(Entity* my)
 			}
 
 			dist = clipMove(&my->x, &my->y, PLAYER_VELX, PLAYER_VELY, my);
+
+			if ( multiplayer != CLIENT && !intro )
+			{
+				if ( stats[PLAYER_NUM]->getEffectActive(EFF_DASH) >= 2 )
+				{
+					if ( hit.entity )
+					{
+						my->handleKnockbackDamage(*stats[PLAYER_NUM], hit.entity);
+					}
+				}
+				if ( my->isInvisible() )
+				{
+					players[PLAYER_NUM]->mechanics.updateSustainedSpellEvent(SPELL_INVISIBILITY, dist, 0.1);
+				}
+				if ( levitating && !swimming )
+				{
+					const int index_x = static_cast<int>(my->x) >> 4;
+					const int index_y = static_cast<int>(my->y) >> 4;
+					int index = (index_y)*MAPLAYERS + (index_x)*MAPLAYERS * map.height;
+					if ( index_x >= 0 && index_x < map.width && index_y >= 0 && index_y < map.height )
+					{
+						if ( !map.tiles[index] || swimmingtiles[map.tiles[index_y * MAPLAYERS + index_x * MAPLAYERS * map.height]]
+							|| lavatiles[map.tiles[index_y * MAPLAYERS + index_x * MAPLAYERS * map.height]] )
+						{
+							players[PLAYER_NUM]->mechanics.updateSustainedSpellEvent(SPELL_LEVITATION, dist, 0.5);
+						}
+					}
+				}
+				if ( stats[PLAYER_NUM]->getEffectActive(EFF_LIGHTEN_LOAD) )
+				{
+					players[PLAYER_NUM]->mechanics.updateSustainedSpellEvent(SPELL_LIGHTEN_LOAD, dist, 0.1);
+				}
+			}
 
 			// bumping into monsters disturbs them
 			if ( hit.entity && !intro )

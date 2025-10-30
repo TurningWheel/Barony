@@ -47,6 +47,80 @@
 #define ITEM_SPLOOSHED my->skill[27]
 #define ITEM_WATERBOB my->fskill[2]
 
+bool itemProcessReturnItemEffect(Entity* my, bool fallingIntoVoid)
+{
+	if ( Entity* returnToParent = uidToEntity(my->itemReturnUID) )
+	{
+		int returnTime = std::max(10, std::max(getSpellDamageSecondaryFromID(SPELL_RETURN_ITEMS, returnToParent, nullptr, returnToParent, 0.0, false),
+			getSpellDamageFromID(SPELL_RETURN_ITEMS, returnToParent, nullptr, returnToParent, 0.0, false)));
+		if ( fallingIntoVoid || (my->ticks >= returnTime && returnToParent->behavior == &actPlayer) )
+		{
+			int cost = std::max(1, getSpellEffectDurationSecondaryFromID(SPELL_RETURN_ITEMS, returnToParent, nullptr, returnToParent));
+			if ( cost > 0 && !returnToParent->safeConsumeMP(cost) )
+			{
+				Stat* returnStats = returnToParent->getStats();
+				if ( returnStats && returnStats->MP > 0 )
+				{
+					returnToParent->modMP(-returnStats->MP);
+				}
+				if ( spell_t* sustainSpell = returnToParent->getActiveMagicEffect(SPELL_RETURN_ITEMS) )
+				{
+					sustainSpell->sustain = false;
+				}
+				playSoundEntity(returnToParent, 163, 128);
+				if ( Item* item = newItemFromEntity(my, true) )
+				{
+					messagePlayerColor(returnToParent->skill[2], MESSAGE_COMBAT, makeColorRGB(255, 0, 0), Language::get(6813), item->getName());
+					free(item);
+				}
+				my->itemReturnUID = 0;
+			}
+			else
+			{
+				int i = returnToParent->skill[2];
+				Item* item2 = newItemFromEntity(my);
+				if ( item2 )
+				{
+					int pickedUpCount = item2->count;
+					Item* item = itemPickup(i, item2);
+					if ( item )
+					{
+						if ( players[i]->isLocalPlayer() )
+						{
+							// item is the new inventory stack for server, free the picked up items
+							free(item2);
+							int oldcount = item->count;
+							item->count = pickedUpCount;
+							messagePlayer(i, MESSAGE_INTERACTION | MESSAGE_INVENTORY, Language::get(3746), item->getName());
+							item->count = oldcount;
+						}
+						else
+						{
+							messagePlayer(i, MESSAGE_INTERACTION | MESSAGE_INVENTORY, Language::get(3746), item->getName());
+							free(item); // item is the picked up items (item == item2)
+						}
+
+						if ( returnToParent->behavior == &actPlayer )
+						{
+							if ( auto spell = getSpellFromID(SPELL_RETURN_ITEMS) )
+							{
+								players[returnToParent->skill[2]]->mechanics.sustainedSpellIncrementMP(cost, spell->skillID);
+							}
+							players[returnToParent->skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_RETURN_ITEMS, 10.0, 1.0);
+						}
+
+						spawnMagicEffectParticles(my->x, my->y, my->z, 170);
+						my->removeLightField();
+						list_RemoveNode(my->mynode);
+						return true;
+					}
+				}
+			}
+		}
+	}
+	return false;
+}
+
 void actItem(Entity* my)
 {
 	Item* item;
@@ -273,64 +347,9 @@ void actItem(Entity* my)
 
 		if ( my->itemReturnUID != 0 )
 		{
-			if ( Entity* returnToParent = uidToEntity(my->itemReturnUID) )
+			if ( itemProcessReturnItemEffect(my, false) )
 			{
-				int returnTime = std::max(10, std::max(getSpellDamageSecondaryFromID(SPELL_RETURN_ITEMS, returnToParent, nullptr, returnToParent, 0.0, false),
-					getSpellDamageFromID(SPELL_RETURN_ITEMS, returnToParent, nullptr, returnToParent, 0.0, false)));
-				if ( my->ticks >= returnTime && returnToParent->behavior == &actPlayer )
-				{
-					int cost = std::max(1, getSpellEffectDurationSecondaryFromID(SPELL_RETURN_ITEMS, returnToParent, nullptr, returnToParent));
-					if ( cost > 0 && !returnToParent->safeConsumeMP(cost) )
-					{
-						Stat* returnStats = returnToParent->getStats();
-						if ( returnStats && returnStats->MP > 0 )
-						{
-							returnToParent->modMP(-returnStats->MP);
-						}
-						if ( spell_t* sustainSpell = returnToParent->getActiveMagicEffect(SPELL_RETURN_ITEMS) )
-						{
-							sustainSpell->sustain = false;
-						}
-						playSoundEntity(returnToParent, 163, 128);
-						if ( Item* item = newItemFromEntity(my, true) )
-						{
-							messagePlayerColor(returnToParent->skill[2], MESSAGE_COMBAT, makeColorRGB(255, 0, 0), Language::get(6813), item->getName());
-							free(item);
-						}
-						my->itemReturnUID = 0;
-					}
-					else
-					{
-						i = returnToParent->skill[2];
-						Item* item2 = newItemFromEntity(my);
-						if ( item2 )
-						{
-							int pickedUpCount = item2->count;
-							item = itemPickup(i, item2);
-							if ( item )
-							{
-								if ( players[i]->isLocalPlayer() )
-								{
-									// item is the new inventory stack for server, free the picked up items
-									free(item2);
-									int oldcount = item->count;
-									item->count = pickedUpCount;
-									messagePlayer(i, MESSAGE_INTERACTION | MESSAGE_INVENTORY, Language::get(3746), item->getName());
-									item->count = oldcount;
-								}
-								else
-								{
-									messagePlayer(i, MESSAGE_INTERACTION | MESSAGE_INVENTORY, Language::get(3746), item->getName());
-									free(item); // item is the picked up items (item == item2)
-								}
-								spawnMagicEffectParticles(my->x, my->y, my->z, 170);
-								my->removeLightField();
-								list_RemoveNode(my->mynode);
-								return;
-							}
-						}
-					}
-				}
+				return;
 			}
 		}
 
@@ -533,11 +552,12 @@ void actItem(Entity* my)
 	}
 
 	bool levitating = false;
+	Entity* leader = nullptr;
 	if ( my->itemFollowUID != 0 )
 	{
 		if ( multiplayer != CLIENT )
 		{
-			if ( Entity* leader = uidToEntity(my->itemFollowUID) )
+			if ( leader = uidToEntity(my->itemFollowUID) )
 			{
 				Stat* leaderStats = leader->getStats();
 				real_t dist = entityDist(leader, my);
@@ -855,11 +875,19 @@ void actItem(Entity* my)
 					}
 				}
 			}
+			if ( my->itemReturnUID != 0 )
+			{
+				if ( itemProcessReturnItemEffect(my, true) )
+				{
+					return;
+				}
+			}
 		}
 		if ( ITEM_TYPE == ARTIFACT_MACE && my->parent != 0 )
 		{
 			steamAchievementEntity(uidToEntity(my->parent), "BARONY_ACH_STFU");
 		}
+		my->removeLightField();
 		list_RemoveNode(my->mynode);
 		return;
 	}
@@ -898,6 +926,15 @@ void actItem(Entity* my)
 	{
 		double result = clipMove(&my->x, &my->y, ITEM_VELX, ITEM_VELY, my);
 		my->yaw += result * .05;
+
+		if ( multiplayer != CLIENT )
+		{
+			if ( levitating && leader && leader->behavior == &actPlayer )
+			{
+				players[leader->skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_ATTRACT_ITEMS, result, 0.025);
+			}
+		}
+
 		if ( result != sqrt( ITEM_VELX * ITEM_VELX + ITEM_VELY * ITEM_VELY ) )
 		{
 			if ( !hit.side )

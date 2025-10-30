@@ -6905,9 +6905,9 @@ Host to enable the game setting.
 6641 You are taboo!#
 6642 Spores removed#
 6643 You set spores#
-6644 The %s drops it's weapon!#
+6644 The %s drops their weapon!#
 6645 %s drops their weapon!#
-6646 The %s drops it's equipment!#
+6646 The %s drops their equipment!#
 6647 %s drops their equipment!#
 6648 Abundance removed#
 6649 Greater Abundance removed#
@@ -7122,5 +7122,8 @@ to replay this challenge!
 6850 tome of %s#
 6851 tomes of %s#
 6852 The %s deteriorates and crumbles to ash!#
+6853 didn't survive the impact.#
+6854 Velocity#
+6855 Not enough resources#
 
 6999 END#

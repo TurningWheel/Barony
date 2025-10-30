@@ -5223,6 +5223,14 @@ void actMonster(Entity* my)
 										lineTrace(my, my->x, my->y, tangent, monsterVisionRange, 0, false);
 									}
 									if ( hit.entity == entity )
+										if ( entity->behavior == &actPlayer && entity->isInvisible() )
+										{
+											real_t dist = sqrt(pow(entity->vel_x, 2) + pow(entity->vel_y, 2));
+											if ( dist > 0.05 )
+											{
+												players[entity->skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_INVISIBILITY, 1.0, 1.0);
+											}
+										}
 										if ( local_rng.rand() % 100 == 0 )
 										{
 											if ( entity->behavior == &actPlayer && players[entity->skill[2]]->mechanics.allowedRaiseStealthAgainstEntity(*my) )
@@ -5955,6 +5963,14 @@ void actMonster(Entity* my)
 							}
 							if ( hit.entity == entity )
 							{	
+								if ( entity->behavior == &actPlayer && entity->isInvisible() )
+								{
+									real_t dist = sqrt(pow(entity->vel_x, 2) + pow(entity->vel_y, 2));
+									if ( dist > 0.05 )
+									{
+										players[entity->skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_INVISIBILITY, 1.0, 1.0);
+									}
+								}
 								if ( local_rng.rand() % 100 == 0 )
 								{
 									if ( entity->behavior == &actPlayer && players[entity->skill[2]]->mechanics.allowedRaiseStealthAgainstEntity(*my) )
@@ -7007,6 +7023,14 @@ timeToGoAgain:
 									}
 									if ( hit.entity == entity )
 									{
+										if ( entity->behavior == &actPlayer && entity->isInvisible() )
+										{
+											real_t dist = sqrt(pow(entity->vel_x, 2) + pow(entity->vel_y, 2));
+											if ( dist > 0.05 )
+											{
+												players[entity->skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_INVISIBILITY, 1.0, 1.0);
+											}
+										}
 										if ( local_rng.rand() % 100 == 0 )
 										{
 											if ( entity->behavior == &actPlayer && players[entity->skill[2]]->mechanics.allowedRaiseStealthAgainstEntity(*my) )

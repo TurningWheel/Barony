@@ -7479,6 +7479,12 @@ void GenericGUIMenu::repairItem(Item* item)
 				item->status = static_cast<Status>(std::min(item->status + 2 + itemEffectItemBeatitude, static_cast<int>(EXCELLENT)));
 			}
 		}
+
+		if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_RESTORE )
+		{
+			magicOnSpellCastEvent(players[gui_player]->entity, players[gui_player]->entity, nullptr, SPELL_RESTORE, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
+		}
+
 		Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_REPAIRS, item->type, 1);
 		messagePlayer(gui_player, MESSAGE_MISC, Language::get(872), item->getName());
 	}
@@ -24155,9 +24161,16 @@ GenericGUIMenu::ItemEffectGUI_t::ItemEffectActions_t GenericGUIMenu::ItemEffectG
 						{
 							result = ITEMFX_ACTION_CANT_AFFORD_GOLD;
 						}
-						else if ( manaCost > 0 && manaCost > stats[parentGUI.gui_player]->MP && stats[parentGUI.gui_player]->type != VAMPIRE )
+						if ( manaCost > 0 && manaCost > stats[parentGUI.gui_player]->MP && stats[parentGUI.gui_player]->type != VAMPIRE )
 						{
-							result = ITEMFX_ACTION_CANT_AFFORD_MANA;
+							if ( result == ITEMFX_ACTION_CANT_AFFORD_GOLD )
+							{
+								result = ITEMFX_ACTION_CANT_AFFORD_MANA_AND_GOLD;
+							}
+							else
+							{
+								result = ITEMFX_ACTION_CANT_AFFORD_MANA;
+							}
 						}
 					}
 				}
@@ -25340,6 +25353,9 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 						case ITEMFX_ACTION_CANT_AFFORD_MANA:
 							actionPromptTxt->setText(Language::get(6552));
 							break;
+						case ITEMFX_ACTION_CANT_AFFORD_MANA_AND_GOLD:
+							actionPromptTxt->setText(Language::get(6855));
+							break;
 						case ITEMFX_ACTION_UNVOIDABLE:
 							actionPromptTxt->setText(Language::get(6563));
 							break;
@@ -25441,6 +25457,7 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 			if ( itemActionType == ITEMFX_ACTION_OK 
 				|| itemActionType == ITEMFX_ACTION_CANT_AFFORD_GOLD
 				|| itemActionType == ITEMFX_ACTION_CANT_AFFORD_MANA
+				|| itemActionType == ITEMFX_ACTION_CANT_AFFORD_MANA_AND_GOLD
 				|| itemActionType == ITEMFX_ACTION_NEED_SKILL_LVLS
 				|| itemActionType == ITEMFX_ACTION_MUST_BE_UNEQUIPPED )
 			{
@@ -25453,7 +25470,7 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 				else
 				{
 					snprintf(buf, sizeof(buf), "%dG", costEffectGoldAmount);
-					if ( itemActionType == ITEMFX_ACTION_CANT_AFFORD_GOLD )
+					if ( itemActionType == ITEMFX_ACTION_CANT_AFFORD_GOLD || itemActionType == ITEMFX_ACTION_CANT_AFFORD_MANA_AND_GOLD )
 					{
 						costEffectGoldText->setColor(negativeColor);
 					}
@@ -25461,7 +25478,7 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 				costEffectGoldText->setText(buf);
 
 				snprintf(buf, sizeof(buf), "%dMP", costEffectMPAmount);
-				if ( itemActionType == ITEMFX_ACTION_CANT_AFFORD_MANA )
+				if ( itemActionType == ITEMFX_ACTION_CANT_AFFORD_MANA || itemActionType == ITEMFX_ACTION_CANT_AFFORD_MANA_AND_GOLD )
 				{
 					costEffectManaText->setColor(negativeColor);
 				}

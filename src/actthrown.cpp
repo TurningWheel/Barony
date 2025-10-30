@@ -1673,6 +1673,15 @@ void actThrown(Entity* my)
 					{
 						doSkillIncrease = false; // no skill for killing/hurting players
 					}
+
+					if ( doSkillIncrease && parent && parent->behavior == &actPlayer )
+					{
+						if ( parent->isInvisible() && parent->checkEnemy(hit.entity) )
+						{
+							players[parent->skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_INVISIBILITY, 10.0, 1.0);
+						}
+					}
+
 					int chance = 5;
 					if ( doSkillIncrease && (local_rng.rand() % chance == 0) && parent && parent->getStats() )
 					{

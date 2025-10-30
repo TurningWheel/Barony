@@ -9211,6 +9211,9 @@ bind_failed:
 					case KilledBy::LEAVES:
 						cause_of_death = Language::get(6759);
 						break;
+					case KilledBy::DEATH_KNOCKBACK:
+						cause_of_death = Language::get(6854);
+						break;
 					default: 
 					{
 						cause_of_death = Language::get(5794 + (int)score->stats->killer);
@@ -27487,6 +27490,9 @@ failed:
 			break;
 		case KilledBy::LEAVES:
 			cause_of_death = Language::get(6759);
+			break;
+		case KilledBy::DEATH_KNOCKBACK:
+			cause_of_death = Language::get(6854);
 			break;
         default: {
             cause_of_death = Language::get(5794 + (int)stats[player]->killer);

@@ -294,7 +294,8 @@ enum KilledBy {
 	FAILED_CHALLENGE,
 	BELL,
 	MUSHROOM,
-	LEAVES
+	LEAVES,
+	DEATH_KNOCKBACK
 };
 
 class Stat

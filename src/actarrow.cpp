@@ -991,6 +991,15 @@ void actArrow(Entity* my)
 						{
 							doSkillIncrease = false;
 						}
+
+						if ( doSkillIncrease && parent && parent->behavior == &actPlayer )
+						{
+							if ( parent->isInvisible() && parent->checkEnemy(hit.entity) )
+							{
+								players[parent->skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_INVISIBILITY, 10.0, 1.0);
+							}
+						}
+
 						int chance = 10;
 						if ( doSkillIncrease && (local_rng.rand() % chance == 0) && parent && parent->getStats() )
 						{

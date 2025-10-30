@@ -1954,7 +1954,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			{
 				if ( Stat* casterStats = caster->getStats() )
 				{
-					Uint8 effectStrength = std::min(255, std::max(1, getSpellDamageFromID(SPELL_FORCE_SHIELD, caster, nullptr, caster)));
+					Uint8 effectStrength = std::min(255, std::max(1, getSpellDamageFromID(SPELL_FORCE_SHIELD, caster, nullptr, caster, usingSpellbook ? spellBookBonusPercent / 100.0 : 0.0)));
 					caster->setEffect(EFF_REFLECTOR_SHIELD, false, 0, false);
 					caster->setEffect(EFF_FORCE_SHIELD, effectStrength, element->duration, false);
 					messagePlayerColor(caster->isEntityPlayer(),
@@ -3394,7 +3394,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				{
 					found = true;
 
-					int duration = TICKS_PER_SECOND * 5;
+					int duration = element->duration;
 					Entity* spellTimer = createParticleTimer(caster, duration, -1);
 					spellTimer->x = castSpellProps->target_x;
 					spellTimer->y = castSpellProps->target_y;
@@ -3435,7 +3435,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				{
 					found = true;
 
-					int duration = TICKS_PER_SECOND * 5;
+					int duration = element->duration;
 					Entity* spellTimer = createParticleTimer(caster, duration, -1);
 					spellTimer->x = castSpellProps->target_x;
 					spellTimer->y = castSpellProps->target_y;
@@ -3606,7 +3606,9 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 
 					real_t tangent = atan2(castSpellProps->target_y - castSpellProps->caster_y,
 						castSpellProps->target_x - castSpellProps->caster_x);
-					Entity* spellTimer = createParticleTimer(caster, 4 * TICKS_PER_SECOND, -1);
+
+					int duration = getSpellEffectDurationFromID(spell->ID, caster, nullptr, caster, usingSpellbook ? spellBookBonusPercent / 100.0 : 0.0);
+					Entity* spellTimer = createParticleTimer(caster, duration, -1);
 					spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_VORTEX;
 					spellTimer->particleTimerCountdownSprite = -1;
 					spellTimer->particleTimerVariable2 = spell->ID;
@@ -3623,7 +3625,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						spellTimer->vel_x = 3.0 * cos(spellTimer->yaw);
 						spellTimer->vel_y = 3.0 * sin(spellTimer->yaw);
 					}
-
+					spellTimer->particleTimerDuration = std::min(spellTimer->particleTimerDuration, 0xFFF);
 					Sint32 val = (1 << 31);
 					val |= (Uint8)(19);
 					val |= (((Uint16)(spellTimer->particleTimerDuration) & 0xFFF) << 8);
@@ -4059,8 +4061,8 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					found = true;
 
 					int duration = element->duration;
-					int maxLen = getSpellDamageSecondaryFromID(SPELL_WINDGATE, caster, nullptr, caster);
-					int length = std::max(2, std::min(std::min(0xF, maxLen), getSpellDamageFromID(SPELL_WINDGATE, caster, nullptr, caster)));
+					int maxLen = getSpellDamageSecondaryFromID(SPELL_WINDGATE, caster, nullptr, caster, usingSpellbook ? spellBookBonusPercent / 100.0 : 0.0);
+					int length = std::max(2, std::min(std::min(0xF, maxLen), getSpellDamageFromID(SPELL_WINDGATE, caster, nullptr, caster, usingSpellbook ? spellBookBonusPercent / 100.0 : 0.0)));
 					createWindMagic(caster->getUID(), castSpellProps->target_x, castSpellProps->target_y, duration, castSpellProps->wallDir, length);
 					Uint32 data = (castSpellProps->wallDir) & 0xF;
 					data |= ((length) & 0xF) << 4;
@@ -4144,9 +4146,17 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 								messagePlayer(caster->isEntityPlayer(), MESSAGE_HINT, Language::get(6659));
 								if ( spell->ID == SPELL_HARVEST_TRAP )
 								{
-									scrapMetal = std::max(1, getSpellDamageFromID(SPELL_HARVEST_TRAP, caster, nullptr, caster));
-									scrapMagic = std::max(1, getSpellDamageSecondaryFromID(SPELL_HARVEST_TRAP, caster, nullptr, caster));
+									scrapMetal = std::max(1, getSpellDamageFromID(SPELL_HARVEST_TRAP, caster, nullptr, caster, usingSpellbook ? spellBookBonusPercent / 100.0 : 0.0));
+									scrapMagic = std::max(1, getSpellDamageSecondaryFromID(SPELL_HARVEST_TRAP, caster, nullptr, caster, usingSpellbook ? spellBookBonusPercent / 100.0 : 0.0));
 								}
+								magicOnSpellCastEvent(caster, caster, nullptr, spell->ID, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
+
+								Entity* spellTimer = createParticleTimer(nullptr, TICKS_PER_SECOND, -1);
+								spellTimer->x = x;
+								spellTimer->y = y;
+								spellTimer->z = 0.0;
+								spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_TRAP_SABOTAGED;
+								serverSpawnMiscParticlesAtLocation(spellTimer->x, spellTimer->y, spellTimer->z, PARTICLE_EFFECT_SABOTAGE_TRAP, 0);
 							}
 							else
 							{
@@ -4170,9 +4180,17 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 										messagePlayer(caster->isEntityPlayer(), MESSAGE_HINT, Language::get(6659));
 										if ( spell->ID == SPELL_HARVEST_TRAP )
 										{
-											scrapMetal = std::max(1, getSpellDamageFromID(SPELL_HARVEST_TRAP, caster, nullptr, caster));
-											scrapMagic = std::max(1, getSpellDamageSecondaryFromID(SPELL_HARVEST_TRAP, caster, nullptr, caster));
+											scrapMetal = std::max(1, getSpellDamageFromID(SPELL_HARVEST_TRAP, caster, nullptr, caster, usingSpellbook ? spellBookBonusPercent / 100.0 : 0.0));
+											scrapMagic = std::max(1, getSpellDamageSecondaryFromID(SPELL_HARVEST_TRAP, caster, nullptr, caster, usingSpellbook ? spellBookBonusPercent / 100.0 : 0.0));
 										}
+										magicOnSpellCastEvent(caster, caster, nullptr, spell->ID, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
+
+										Entity* spellTimer = createParticleTimer(nullptr, TICKS_PER_SECOND, -1);
+										spellTimer->x = target->x;
+										spellTimer->y = target->y;
+										spellTimer->z = target->z;
+										spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_TRAP_SABOTAGED;
+										serverSpawnMiscParticlesAtLocation(spellTimer->x, spellTimer->y, spellTimer->z, PARTICLE_EFFECT_SABOTAGE_TRAP, 0);
 									}
 									else
 									{
@@ -4189,6 +4207,20 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 									{
 										spawnExplosion(target->x, target->y, 7.5);
 									}
+									else if ( target->behavior == &actMagicTrapCeiling )
+									{
+										real_t z = -7.0;
+										int x = target->x / 16;
+										int y = target->y / 16;
+										if ( x >= 0 && y >= 0 && x < map.width && y < map.height )
+										{
+											if ( !map.tiles[(MAPLAYERS - 1) + y * MAPLAYERS + x * MAPLAYERS * map.height] )
+											{
+												z = -23;
+											}
+										}
+										spawnExplosion(target->x, target->y, z);
+									}
 									else
 									{
 										spawnExplosion(target->x, target->y, target->z);
@@ -4198,9 +4230,34 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 									messagePlayer(caster->isEntityPlayer(), MESSAGE_HINT, Language::get(6659));
 									if ( spell->ID == SPELL_HARVEST_TRAP )
 									{
-										scrapMetal = std::max(1, getSpellDamageFromID(SPELL_HARVEST_TRAP, caster, nullptr, caster));
-										scrapMagic = std::max(1, getSpellDamageSecondaryFromID(SPELL_HARVEST_TRAP, caster, nullptr, caster));
+										scrapMetal = std::max(1, getSpellDamageFromID(SPELL_HARVEST_TRAP, caster, nullptr, caster, usingSpellbook ? spellBookBonusPercent / 100.0 : 0.0));
+										scrapMagic = std::max(1, getSpellDamageSecondaryFromID(SPELL_HARVEST_TRAP, caster, nullptr, caster, usingSpellbook ? spellBookBonusPercent / 100.0 : 0.0));
 									}
+									magicOnSpellCastEvent(caster, caster, nullptr, spell->ID, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
+
+									Entity* spellTimer = createParticleTimer(nullptr, TICKS_PER_SECOND, -1);
+									spellTimer->x = target->x;
+									spellTimer->y = target->y;
+									spellTimer->z = target->z;
+									if ( target->behavior == &actSpearTrap )
+									{
+										spellTimer->z = 5.0;
+									}
+									else if ( target->behavior == &actMagicTrapCeiling )
+									{
+										spellTimer->z = -7.0;
+										int x = target->x / 16;
+										int y = target->y / 16;
+										if ( x >= 0 && y >= 0 && x < map.width && y < map.height )
+										{
+											if ( !map.tiles[(MAPLAYERS - 1) + y * MAPLAYERS + x * MAPLAYERS * map.height] )
+											{
+												spellTimer->z = -23;
+											}
+										}
+									}
+									spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_TRAP_SABOTAGED;
+									serverSpawnMiscParticlesAtLocation(spellTimer->x, spellTimer->y, spellTimer->z, PARTICLE_EFFECT_SABOTAGE_TRAP, 0);
 								}
 								else
 								{
@@ -4458,6 +4515,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 								}
 							}
 
+							magicOnSpellCastEvent(caster, caster, target, spell->ID, spellEventFlags | spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
 							spawnMagicEffectParticles(target->x, target->y, target->z, 171);
 							createParticleRock(target, 78);
 							playSoundEntity(target, 167, 128);
@@ -4582,6 +4640,8 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						{
 							found = true;
 							target->skill[14] = player + 1;
+
+							magicOnSpellCastEvent(caster, caster, target, spell->ID, spellEventFlags | spell_t::SPELL_LEVEL_EVENT_DEFAULT | spell_t::SPELL_LEVEL_EVENT_MINOR_CHANCE, 1);
 						}
 						else if ( target->behavior == &actMonster && target->getMonsterTypeFromSprite() == EARTH_ELEMENTAL )
 						{
@@ -4607,6 +4667,8 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 								target->monsterKnockbackVelocity = 0.005;
 								target->monsterKnockbackTangentDir = tangent;
 								target->monsterKnockbackUID = caster->getUID();
+
+								magicOnSpellCastEvent(caster, caster, target, spell->ID, spellEventFlags | spell_t::SPELL_LEVEL_EVENT_DEFAULT | spell_t::SPELL_LEVEL_EVENT_MINOR_CHANCE, 1);
 							}
 						}
 						else if ( caster->behavior == &actMonster
@@ -4656,6 +4718,11 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							{
 								client_selected[player] = target;
 								inrange[player] = true;
+							}
+
+							if ( Entity* telekinesisTarget = uidToEntity(players[player]->magic.telekinesisTarget) )
+							{
+								magicOnSpellCastEvent(caster, caster, telekinesisTarget, spell->ID, spellEventFlags | spell_t::SPELL_LEVEL_EVENT_DEFAULT | spell_t::SPELL_LEVEL_EVENT_MINOR_CHANCE, 1);
 							}
 						}
 						spawnMagicEffectParticles(target->x, target->y, target->z, 171);
@@ -4741,6 +4808,8 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							}
 							found = true;
 
+							applyGenericMagicDamage(caster, target, *caster, spell->ID, 0, true, false); // alert the target
+
 							spawnMagicEffectParticles(target->x, target->y, target->z, 171);
 							if ( !effect )
 							{
@@ -4749,6 +4818,8 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							}
 							else
 							{
+								magicOnSpellCastEvent(caster, caster, target, spell->ID, spellEventFlags | spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
+
 								playSoundEntity(caster, 167, 128);
 								if ( spell->ID == SPELL_DISARM )
 								{
@@ -5586,9 +5657,25 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				{
 					playSoundEntity(caster, 180, 128);
 					spawnMagicEffectParticles(caster->x, caster->y, caster->z, 982);
-					caster->setEffect(EFF_DASH, true, 60, true);
 
-					magicOnSpellCastEvent(caster, caster, nullptr, spell->ID, spell_t::SPELL_LEVEL_EVENT_EFFECT | spellEventFlags, 1, allowedSkillup);
+					int strength = getSpellDamageFromID(spell->ID, caster, nullptr, caster, usingSpellbook ? spellBookBonusPercent / 100.0 : 0.0);
+					if ( strength >= 2 )
+					{
+						Uint8 effectStrength = 2 + (0 * (MAXPLAYERS + 1)) + i;
+						caster->setEffect(EFF_DASH, effectStrength, 60, false);
+					}
+					else
+					{
+						caster->setEffect(EFF_DASH, true, 60, false);
+					}
+
+					if ( local_rng.rand() % 5 == 0 )
+					{
+						magicOnSpellCastEvent(caster, caster, nullptr, spell->ID, 
+							spell_t::SPELL_LEVEL_EVENT_EFFECT 
+							| spell_t::SPELL_LEVEL_EVENT_MINOR_CHANCE
+							| spellEventFlags, 1, allowedSkillup);
+					}
 					if ( i > 0 && multiplayer == SERVER && !players[i]->isLocalPlayer() )
 					{
 						strcpy((char*)net_packet->data, "DASH");
@@ -5600,7 +5687,11 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					else
 					{
 						real_t vel = sqrt(pow(caster->vel_y, 2) + pow(caster->vel_x, 2));
-						caster->monsterKnockbackVelocity = std::min(2.25, std::max(1.0, vel));
+						real_t maxVelocity = 0.25;
+						int percentModifier = getSpellDamageSecondaryFromID(spell->ID, caster, nullptr, caster, usingSpellbook ? spellBookBonusPercent / 100.0 : 0.0);
+						maxVelocity += (2.25 - 0.25) * (std::min(100, percentModifier) / 100.0);
+						maxVelocity = std::min(2.25, maxVelocity);
+						caster->monsterKnockbackVelocity = std::min(maxVelocity, std::max(1.0, vel));
 						caster->monsterKnockbackTangentDir = atan2(caster->vel_y, caster->vel_x);
 						if ( vel < 0.01 )
 						{
@@ -5614,7 +5705,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			{
 				playSoundEntity(caster, 180, 128);
 				spawnMagicEffectParticles(caster->x, caster->y, caster->z, 982);
-				caster->setEffect(EFF_DASH, true, 30, true);
+				caster->setEffect(EFF_DASH, true, 30, false);
 			}
 		}
 		else if ( !strcmp(element->element_internal_name, spellElement_speed.element_internal_name) )
@@ -7111,7 +7202,8 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					missileEntity->sprite = 171;
 				}
 			}
-			else if (!strcmp(innerElement->element_internal_name, spellElement_locking.element_internal_name))
+			else if (!strcmp(innerElement->element_internal_name, spellElement_locking.element_internal_name)
+				|| spell->ID == SPELL_SPLINTER_GEAR )
 			{
 				if (propulsion == PROPULSION_MISSILE)
 				{
@@ -7603,6 +7695,12 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				net_packet->len = 9;
 				sendPacketSafe(net_sock, -1, net_packet, target_client - 1);
 			}
+
+			if ( usingSpellbook )
+			{
+				channeled_spell->spellbook = true;
+			}
+
 			//Add this spell to the list of channeled spells.
 			node = list_AddNodeLast(&channeledSpells[target_client]);
 			node->element = channeled_spell;

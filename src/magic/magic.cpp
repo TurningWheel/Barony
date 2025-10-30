@@ -3311,6 +3311,10 @@ bool Entity::spellEffectPreserveItem(Item* item)
 			{
 				int cost = getSpellDamageFromID(SPELL_PRESERVE, this, nullptr, this);
 				cost = std::max(1, std::max(getSpellDamageSecondaryFromID(SPELL_PRESERVE, this, nullptr, this), cost));
+				if ( item->type == AMULET_LIFESAVING )
+				{
+					cost *= 10;
+				}
 				if ( !safeConsumeMP(cost) )
 				{
 					if ( myStats->MP > 0 )
@@ -3332,6 +3336,8 @@ bool Entity::spellEffectPreserveItem(Item* item)
 						spawnMagicEffectParticles(this->x, this->y, this->z / 2, 174);
 						playSoundEntity(this, 166, 128);
 						messagePlayerColor(skill[2], MESSAGE_COMBAT, makeColorRGB(0, 255, 0), Language::get(6654), item->getName());
+
+						players[skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_PRESERVE, 10.0, 1.0);
 					}
 					return true;
 				}
@@ -3480,7 +3486,7 @@ bool applyGenericMagicDamage(Entity* caster, Entity* hitentity, Entity& damageSo
 		}
 		hitentity->updateEntityOnHit(caster, alertTarget);
 
-		if ( spellID == SPELL_IGNITE )
+		if ( spellID == SPELL_IGNITE || spellID == SPELL_DISARM || spellID == SPELL_STRIP )
 		{
 			// alert entities only
 			return true;
@@ -3604,7 +3610,19 @@ Entity* spellEffectDemesneDoor(Entity& caster, Entity& target)
 		0.25, 0.f);*/
 	door->ditheringOverride = 4;
 	door->yaw = target.yaw;
+	if ( ((door->yaw > -PI / 4 && door->yaw < 1 * PI / 4) || door->yaw >= 7 * PI / 4)
+		|| (door->yaw >= 3 * PI / 4 && door->yaw < 5 * PI / 4) )
+	{
+		door->sizex = 1;
+		door->sizey = 8;
+	}
+	else
+	{
+		door->sizex = 8;
+		door->sizey = 1;
+	}
 	door->behavior = &actParticleDemesneDoor;
+	TileEntityList.addEntity(*door);
 	return door;
 }
 

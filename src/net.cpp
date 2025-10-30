@@ -3397,6 +3397,15 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 				spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_EARTH_ELEMENTAL_DIE;
 				break;
 			}
+			case PARTICLE_EFFECT_SABOTAGE_TRAP:
+			{
+				Entity* spellTimer = createParticleTimer(nullptr, TICKS_PER_SECOND, -1);
+				spellTimer->x = particle_x;
+				spellTimer->y = particle_y;
+				spellTimer->z = particle_z;
+				spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_TRAP_SABOTAGED;
+				break;
+			}
 			case PARTICLE_EFFECT_EARTH_ELEMENTAL_SUMMON_AOE:
 			{
 				int radius = SDLNet_Read32(&net_packet->data[13]);

@@ -6741,7 +6741,7 @@ void Entity::handleEffects(Stat* myStats)
 					for ( int c = 0; c < NUMEFFECTS; c++ )
 					{
 						if ( !(c == EFF_VAMPIRICAURA && myStats->EFFECTS_TIMERS[c] == -2) 
-							&& c != EFF_WITHDRAWAL && c != EFF_SHAPESHIFT )
+							&& c != EFF_WITHDRAWAL && c != EFF_SHAPESHIFT && c != EFF_PRESERVE)
 						{
 							myStats->clearEffect(c);
 							myStats->EFFECTS_TIMERS[c] = 0;
@@ -7370,6 +7370,10 @@ Sint32 statGetSTR(Stat* entitystats, Entity* my)
 	{
 		STR += entitystats->getEffectActive(EFF_COURAGE);
 	}
+	if ( entitystats->getEffectActive(EFF_DEMESNE_DOOR) )
+	{
+		STR += entitystats->getEffectActive(EFF_DEMESNE_DOOR);
+	}
 	if ( entitystats->getEffectActive(EFF_VAMPIRICAURA) && my && my->behavior == &actPlayer )
 	{
 		if ( entitystats->EFFECTS_TIMERS[EFF_VAMPIRICAURA] == -2 )
@@ -7809,11 +7813,14 @@ Sint32 statGetCON(Stat* entitystats, Entity* my)
 	{
 		CON += entitystats->getEffectActive(EFF_COURAGE);
 	}
+	if ( entitystats->getEffectActive(EFF_DEMESNE_DOOR) )
+	{
+		CON += entitystats->getEffectActive(EFF_DEMESNE_DOOR);
+	}
 	if ( my && entitystats->getEffectActive(EFF_DRUNK) && entitystats->type == GOATMAN )
 	{
 		CON += std::max(4, static_cast<int>(CON * 0.25));
 	}
-
 	CON += (Sint32)entitystats->getEnsembleEffectBonus(Stat::ENSEMBLE_HORN_EFF_1);
 	if ( entitystats->getEffectActive(EFF_STURDINESS) )
 	{
@@ -7943,6 +7950,10 @@ Sint32 statGetINT(Stat* entitystats, Entity* my)
 	if ( entitystats->getEffectActive(EFF_RATION_SOUR) )
 	{
 		INT += 4;
+	}
+	if ( entitystats->getEffectActive(EFF_DEMESNE_DOOR) )
+	{
+		INT += entitystats->getEffectActive(EFF_DEMESNE_DOOR);
 	}
 	if ( entitystats->getEffectActive(EFF_COUNSEL) )
 	{
@@ -11387,6 +11398,15 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						doSkillIncrease = false;
 					}
+
+					if ( doSkillIncrease && player >= 0 )
+					{
+						if ( isInvisible() && this->checkEnemy(hit.entity) )
+						{
+							players[player]->mechanics.updateSustainedSpellEvent(SPELL_INVISIBILITY, 10.0, 1.0);
+						}
+					}
+
 					if ( doSkillIncrease
 						&& ((weaponskill >= PRO_SWORD && weaponskill <= PRO_POLEARM) || weaponskill == PRO_UNARMED || (whip && weaponskill == PRO_RANGED)) )
 					{
@@ -11893,6 +11913,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 										}
 										if ( increaseSkill )
 										{
+											if ( hitstats->getEffectActive(EFF_FORCE_SHIELD) )
+											{
+												magicOnSpellCastEvent(hit.entity, hit.entity, this, SPELL_FORCE_SHIELD, spell_t::SpellOnCastEventTypes::SPELL_LEVEL_EVENT_DEFAULT, 1);
+											}
 											hit.entity->increaseSkill(PRO_SHIELD); // increase shield skill
 											shieldIncreased = true;
 											if ( hit.entity->behavior == &actPlayer )
@@ -12785,6 +12809,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 								}
 								if ( increaseSkill )
 								{
+									if ( myStats->getEffectActive(EFF_FORCE_SHIELD) )
+									{
+										magicOnSpellCastEvent(this, this, hit.entity, SPELL_FORCE_SHIELD, spell_t::SpellOnCastEventTypes::SPELL_LEVEL_EVENT_DEFAULT, 1);
+									}
 									this->increaseSkill(PRO_SHIELD);
 								}
 							}
@@ -13533,6 +13561,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 										}
 										if ( skillIncrease )
 										{
+											if ( hitstats->getEffectActive(EFF_FORCE_SHIELD) )
+											{
+												magicOnSpellCastEvent(hit.entity, hit.entity, this, SPELL_FORCE_SHIELD, spell_t::SpellOnCastEventTypes::SPELL_LEVEL_EVENT_DEFAULT, 1);
+											}
 											hit.entity->increaseSkill(PRO_SHIELD);
 											shieldIncreased = true;
 										}
@@ -21163,6 +21195,13 @@ bool Entity::setEffect(int effect, std::variant<bool, Uint8> value, int duration
 					}
 				}
 				break;
+			case EFF_LIFT:
+				if ( myStats->type == LICH || myStats->type == DEVIL
+					|| myStats->type == LICH_FIRE || myStats->type == LICH_ICE )
+				{
+					return false;
+				}
+				break;
 			case EFF_DISORIENTED:
 			case EFF_ROOTED:
 				if ( myStats->type == LICH || myStats->type == DEVIL
@@ -27175,19 +27214,59 @@ bool Entity::isBossMonster()
 
 void Entity::handleKnockbackDamage(Stat& myStats, Entity* knockedInto)
 {
-	if ( knockedInto != NULL && myStats.getEffectActive(EFF_KNOCKBACK) && myStats.HP > 0 && myStats.type != MONSTER_ADORCISED_WEAPON )
+	if ( knockedInto != NULL && (myStats.getEffectActive(EFF_KNOCKBACK) || myStats.getEffectActive(EFF_DASH) >= 2)
+		&& myStats.HP > 0 && myStats.type != MONSTER_ADORCISED_WEAPON )
 	{
+		Entity* whoKnockedMe = nullptr;
+		int spellID = SPELL_NONE;
+		int playerSource = -1;
+		if ( myStats.getEffectActive(EFF_DASH) >= 2 && behavior == &actPlayer )
+		{
+			int effect = myStats.getEffectActive(EFF_DASH) - 2;
+			int type = effect / (MAXPLAYERS + 1);
+			if ( type == 0 )
+			{
+				spellID = SPELL_DASH;
+			}
+			else if ( type == 1 )
+			{
+				spellID = SPELL_KINETIC_FIELD;
+			}
+			if ( (effect % (MAXPLAYERS + 1)) >= 0 && (effect % (MAXPLAYERS + 1)) < MAXPLAYERS )
+			{
+				playerSource = effect % (MAXPLAYERS + 1);
+				whoKnockedMe = players[playerSource]->entity;
+			}
+		}
+		else
+		{
+			if ( behavior == &actMonster )
+			{
+				whoKnockedMe = uidToEntity(this->monsterKnockbackUID);
+			}
+			else
+			{
+				return; // players no normal knockback impacts
+			}
+		}
+
 		int damageOnHit = 0;
+		bool spellEvent = false;
+		bool immuneDamageOnHit = spellID == SPELL_DASH;
 		if ( knockedInto->behavior == &actDoor || knockedInto->behavior == &::actIronDoor )
 		{
 			damageOnHit = 5 + local_rng.rand() % 6;
-			playSoundEntity(this, 28, 64);
-			this->modHP(-damageOnHit);
-
-			Entity* whoKnockedMe = uidToEntity(this->monsterKnockbackUID);
-			if ( myStats.HP <= 0 )
+			if ( !immuneDamageOnHit )
 			{
-				if ( whoKnockedMe )
+				playSoundEntity(this, 28, 64);
+				this->modHP(-damageOnHit);
+				this->setObituary(Language::get(6853));
+				myStats.killer = KilledBy::DEATH_KNOCKBACK;
+			}
+
+			if ( myStats.HP <= 0 && !immuneDamageOnHit )
+			{
+				if ( whoKnockedMe && whoKnockedMe != this )
 				{
 					whoKnockedMe->awardXP(this, true, true);
 				}
@@ -27201,54 +27280,69 @@ void Entity::handleKnockbackDamage(Stat& myStats, Entity* knockedInto)
 					Compendium_t::Events_t::eventUpdateWorld(whoKnockedMe->skill[2], Compendium_t::CPDM_DOOR_BROKEN, "door", 1);
 				}
 				playSoundEntity(knockedInto, 28, 64);
+				spellEvent = true;
 			}
 			else if ( knockedInto->behavior == &::actIronDoor )
 			{
+				setEffect(EFF_DASH, false, 0, false);
 				setEffect(EFF_KNOCKBACK, false, 0, false);
 			}
-			knockedInto->doorHandleDamageMagic(knockedInto->doorHealth, *this, whoKnockedMe);
+			knockedInto->doorHandleDamageMagic(knockedInto->doorHealth, *this, whoKnockedMe, false);
 		}
 		else if ( knockedInto->isDamageableCollider() )
 		{
 			damageOnHit = 5 + local_rng.rand() % 6;
-			playSoundEntity(this, 28, 64);
-			this->modHP(-damageOnHit);
-
-			Entity* whoKnockedMe = uidToEntity(this->monsterKnockbackUID);
-			if ( myStats.HP <= 0 )
+			if ( !immuneDamageOnHit )
 			{
-				if ( whoKnockedMe )
+				playSoundEntity(this, 28, 64);
+				this->modHP(-damageOnHit);
+				this->setObituary(Language::get(6853));
+				myStats.killer = KilledBy::DEATH_KNOCKBACK;
+			}
+
+			if ( myStats.HP <= 0 && !immuneDamageOnHit )
+			{
+				if ( whoKnockedMe && whoKnockedMe != this )
 				{
 					whoKnockedMe->awardXP(this, true, true);
 				}
 			}
-			knockedInto->colliderHandleDamageMagic(20, *this, whoKnockedMe);
+
+			spellEvent = true;
+			knockedInto->colliderHandleDamageMagic(20, *this, whoKnockedMe, false);
 			if ( knockedInto->colliderCurrentHP > 0 )
 			{
 				setEffect(EFF_KNOCKBACK, false, 0, false);
+				setEffect(EFF_DASH, false, 0, false);
 			}
 		}
 		else if ( knockedInto->behavior == &::actFurniture )
 		{
 			// break it down!
 			damageOnHit = 5 + local_rng.rand() % 6;
-			playSoundEntity(this, 28, 64);
-			this->modHP(-damageOnHit);
-			Entity* whoKnockedMe = uidToEntity(this->monsterKnockbackUID);
-			if ( myStats.HP <= 0 )
+			if ( !immuneDamageOnHit )
 			{
-				if ( whoKnockedMe )
+				playSoundEntity(this, 28, 64);
+				this->modHP(-damageOnHit);
+				this->setObituary(Language::get(6853));
+				myStats.killer = KilledBy::DEATH_KNOCKBACK;
+			}
+
+			if ( myStats.HP <= 0 && !immuneDamageOnHit )
+			{
+				if ( whoKnockedMe && whoKnockedMe != this )
 				{
 					whoKnockedMe->awardXP(this, true, true);
 				}
 			}
-			knockedInto->furnitureHandleDamageMagic(knockedInto->furnitureHealth, *this, whoKnockedMe);
+
+			spellEvent = true;
+			knockedInto->furnitureHandleDamageMagic(knockedInto->furnitureHealth, *this, whoKnockedMe, false);
 		}
 
-		if ( damageOnHit > 0 )
+		if ( damageOnHit > 0 && whoKnockedMe )
 		{
-			Entity* whoKnockedMe = uidToEntity(this->monsterKnockbackUID);
-			if ( getStats() )
+			if ( getStats() && !immuneDamageOnHit )
 			{
 				// update enemy bar for attacker
 				if ( !strcmp(getStats()->name, "") )
@@ -27261,6 +27355,11 @@ void Entity::handleKnockbackDamage(Stat& myStats, Entity* knockedInto)
 					updateEnemyBar(whoKnockedMe, this, getStats()->name, getStats()->HP, getStats()->MAXHP,
 						false, DamageGib::DMG_DEFAULT);
 				}
+			}
+			if ( spellEvent && spellID > SPELL_NONE && playerSource >= 0 )
+			{
+				magicOnSpellCastEvent(whoKnockedMe, whoKnockedMe, nullptr,
+					spellID, spell_t::SPELL_LEVEL_EVENT_DEFAULT | spell_t::SPELL_LEVEL_EVENT_MINOR_CHANCE, 1);
 			}
 		}
 	}

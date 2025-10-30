@@ -493,6 +493,7 @@ void spellConstructor(spell_t* spell, int ID)
 	spell->difficulty = 100;
 	spell->sustain = true;
 	spell->magicstaff = false;
+	spell->spellbook = false;
 	spell->sustain_node = NULL;
 	spell->magic_effects_node = NULL;
 	spell->caster = -1;

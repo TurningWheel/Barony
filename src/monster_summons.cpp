@@ -1428,7 +1428,7 @@ void hologramAnimate(Entity* my, Stat* myStats, double dist)
 
 void actEarthElementalDeathGib(Entity* my)
 {
-	if ( my->skill[0] <= 0 )
+	if ( my->skill[0] == 0 )
 	{
 		my->z += 0.05;
 		if ( my->z >= 7.5 )
@@ -1445,7 +1445,10 @@ void actEarthElementalDeathGib(Entity* my)
 	}
 	else
 	{
-		--my->skill[0];
+		if ( my->skill[0] > 0 )
+		{
+			--my->skill[0];
+		}
 
 		my->scalex = std::min(my->scalex + 0.0125, 0.5);
 		my->scaley = std::min(my->scaley + 0.0125, 0.5);

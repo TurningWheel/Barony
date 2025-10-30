@@ -3185,6 +3185,8 @@ void Player::init() // for use on new/restart game, UI related
 	mechanics.fociDarkChargeTime = 0;
 	mechanics.fociHolyChargeTime = 0;
 	mechanics.lastFociHeldType = 0;
+
+	mechanics.sustainedSpellIDCounter.clear();
 }
 
 void Player::cleanUpOnEntityRemoval()
@@ -7348,6 +7350,45 @@ void Player::PlayerMechanics_t::sustainedSpellClearMP(int skillID)
 	else if ( skillID == PRO_THAUMATURGY )
 	{
 		sustainedSpellMPUsedThaumaturgy = 0;
+	}
+}
+
+void Player::PlayerMechanics_t::updateSustainedSpellEvent(int spellID, real_t value, real_t scaleValue)
+{
+	if ( multiplayer == CLIENT ) { return; }
+	if ( intro ) { return; }
+	if ( value < 0.05 ) { return; }
+	//if ( auto spell = getSpellFromID(spellID) )
+	{
+		for ( node_t* node = stats[player.playernum]->magic_effects.first; node; node = node->next )
+		{
+			if ( spell_t* sustainedSpell = (spell_t*)node->element )
+			{
+				if ( sustainedSpell->ID == spellID )
+				{
+					sustainedSpellIDCounter[spellID] += value * scaleValue;
+					if ( players[player.playernum]->entity && sustainedSpellIDCounter[spellID] > 8 * 16.0 )
+					{
+						Uint32 flags = spell_t::SPELL_LEVEL_EVENT_SUSTAIN;
+						if ( sustainedSpell->spellbook )
+						{
+							flags |= spell_t::SPELL_LEVEL_EVENT_SPELLBOOK;
+						}
+						else if ( sustainedSpell->magicstaff )
+						{
+							flags |= spell_t::SPELL_LEVEL_EVENT_MAGICSTAFF;
+						}
+						sustainedSpellIDCounter[spellID] = 0.0;
+						if ( magicOnSpellCastEvent(players[player.playernum]->entity, players[player.playernum]->entity,
+							nullptr, spellID, flags, 1) )
+						{
+
+						}
+					}
+					break;
+				}
+			}
+		}
 	}
 }
 

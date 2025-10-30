@@ -342,6 +342,8 @@ static const int PARTICLE_EFFECT_CONFUSE_ORBIT = 59;
 static const int PARTICLE_EFFECT_IGNITE_ORBIT = 60;
 static const int PARTICLE_EFFECT_IGNITE = 61;
 static const int PARTICLE_EFFECT_SHATTER_OBJECTS = 62;
+static const int PARTICLE_EFFECT_SABOTAGE_ORBIT = 63;
+static const int PARTICLE_EFFECT_SABOTAGE_TRAP = 64;
 
 // actmagicIsVertical constants
 static const int MAGIC_ISVERTICAL_NONE = 0;
@@ -381,6 +383,7 @@ static const int PARTICLE_TIMER_ACTION_SPORES_TRAIL = 29;
 static const int PARTICLE_TIMER_ACTION_ROOTS_SUSTAIN = 30;
 static const int PARTICLE_TIMER_ACTION_BASTION_MUSHROOM = 31;
 static const int PARTICLE_TIMER_ACTION_ROOTS_SINGLE_TILE_VOID = 32;
+static const int PARTICLE_TIMER_ACTION_TRAP_SABOTAGED = 33;
 
 struct ParticleEmitterHit_t
 {
@@ -749,6 +752,7 @@ typedef struct spell_t
 	//int skill_caster; //The spellcasting skill it was cast with. Lower skill can introduce inefficiencies and other !!FUN!!
 	bool sustain; //If a spell is channeled, should it be sustained? (NOTE: True by default. Set to false when the player decides to cancel/abandon a spell)
 	bool magicstaff; // if true the spell was cast from a magicstaff and thus it may have slightly different behavior
+	bool spellbook = false;
 	node_t* sustain_node = nullptr; //Node in the sustained/channeled spells list.
 	node_t* magic_effects_node = nullptr;
 	bool hide_from_ui = false; // hide from skillsheet/other UI places
@@ -801,7 +805,8 @@ typedef struct spell_t
 		SPELL_LEVEL_EVENT_MAGICSTAFF = 64,
 		SPELL_LEVEL_EVENT_SPELLBOOK = 128,
 		SPELL_LEVEL_EVENT_ASSIST = 256,
-		SPELL_LEVEL_EVENT_ENUM_END = 512
+		SPELL_LEVEL_EVENT_MINOR_CHANCE = 512,
+		SPELL_LEVEL_EVENT_ENUM_END = 1024
 	};
 
 	// get localized spell name
