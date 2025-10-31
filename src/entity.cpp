@@ -686,7 +686,12 @@ void sustainedSpellProcess(Entity& entity, Stat& myStats, int effectID, std::map
 		{
 			//Deduct mana from caster. Cancel spell if not enough mana (simply leave sustained at false).
 			int oldMP = caster->getMP();
-			bool deducted = caster->safeConsumeMP(getSustainCostOfSpell(sustainedSpell_hijacked[effectID], &entity)); //Consume X mana ever duration / mana seconds
+			int sustainCost = getSustainCostOfSpell(sustainedSpell_hijacked[effectID], &entity);
+			if ( effectID == EFF_FLAME_CLOAK && entity.flags[BURNING] )
+			{
+				sustainCost *= 2;
+			}
+			bool deducted = caster->safeConsumeMP(sustainCost); //Consume X mana ever duration / mana seconds
 			if ( deducted )
 			{
 				sustained = true;
@@ -843,6 +848,31 @@ void Entity::effectTimes()
 			case SPELL_DIVINE_ZEAL:
 				sustainedSpell_hijacked[EFF_DIVINE_ZEAL] = spell;
 				if ( !myStats->getEffectActive(EFF_DIVINE_ZEAL) )
+				{
+					for ( int c = 0; c < MAXPLAYERS; ++c )
+					{
+						if ( players[c] && players[c]->entity && players[c]->entity == uidToEntity(spell->caster) )
+						{
+							messagePlayer(c, MESSAGE_COMBAT, Language::get(6503), spell->getSpellName());    //If cure ailments or somesuch bombs the status effects.
+						}
+					}
+					node_t* temp = nullptr;
+					if ( node->prev )
+					{
+						temp = node->prev;
+					}
+					else if ( node->next )
+					{
+						temp = node->next;
+					}
+					unsustain = true;
+					list_RemoveNode(node); //Remove this here node.
+					node = temp;
+				}
+				break;
+			case SPELL_FLAME_CLOAK:
+				sustainedSpell_hijacked[EFF_FLAME_CLOAK] = spell;
+				if ( !myStats->getEffectActive(EFF_FLAME_CLOAK) )
 				{
 					for ( int c = 0; c < MAXPLAYERS; ++c )
 					{
@@ -1828,6 +1858,15 @@ void Entity::effectTimes()
 						if ( dissipate )
 						{
 							messagePlayer(player, MESSAGE_STATUS, Language::get(6509));
+							updateClient = true;
+						}
+						break;
+					case EFF_FLAME_CLOAK:
+						dissipate = true; //Remove the effect by default.
+						sustainedSpellProcess(*this, *myStats, c, sustainedSpell_hijacked, dissipate, unsustainSpell);
+						if ( dissipate )
+						{
+							messagePlayer(player, MESSAGE_STATUS, Language::get(6859));
 							updateClient = true;
 						}
 						break;
@@ -6103,6 +6142,22 @@ void Entity::handleEffects(Stat* myStats)
 		serverUpdateEntityFlag(this, STASIS_DITHER);
 	}
 
+	if ( myStats->getEffectActive(EFF_STATIC) )
+	{
+		int interval = 40;
+		if ( ticks % interval == 0 )
+		{
+			Entity* fx = createParticleAestheticOrbit(this, 1758, TICKS_PER_SECOND / 2, PARTICLE_EFFECT_STATIC_ORBIT);
+			fx->z = 7.5 - 2.0 * ((ticks / interval) % 3);
+			fx->scalex = 1.0;
+			fx->scaley = 1.0;
+			fx->scalez = 1.0;
+			fx->actmagicOrbitDist = 20;
+			fx->yaw += ((ticks / interval) % 3) * 2 * PI / 3;
+			fx->actmagicNoLight = 1;
+		}
+	}
+
 	int bodypart = 0;
 	for ( auto node = this->children.first; node; node = node->next, bodypart++ )
 	{
@@ -6123,6 +6178,94 @@ void Entity::handleEffects(Stat* myStats)
 		if ( Entity* entity = (Entity*)node->element )
 		{
 			entity->flags[STASIS_DITHER] = flags[STASIS_DITHER];
+		}
+	}
+
+	if ( myStats->getEffectActive(EFF_FLAME_CLOAK) )
+	{
+		int interval = 40;
+		if ( ticks % interval == 0 )
+		{
+			Entity* fx = createParticleAestheticOrbit(this, 233, TICKS_PER_SECOND, PARTICLE_EFFECT_IGNITE_ORBIT_FOLLOW);
+			fx->flags[SPRITE] = true;
+			fx->z = this->z;// 7.5 - 2.0 * ((ticks / interval) % 3);
+			fx->vel_z = 0.25;
+			fx->scalex = 1.0;
+			fx->scaley = 1.0;
+			fx->scalez = 1.0;
+			fx->actmagicOrbitDist = 3;
+			fx->fskill[2] = this->yaw + PI;
+			//fx->fskill[2] += ((ticks / interval) % 3) * 2 * PI / 3;
+			fx->yaw = fx->fskill[2];
+			fx->actmagicNoLight = 1;
+
+			if ( Entity* fx = createParticleAOEIndicator(this, this->x, this->y, 0.0, TICKS_PER_SECOND, 16.0) )
+			{
+				fx->scalex = 0.8;
+				fx->scaley = 0.8;
+				if ( auto indicator = AOEIndicators_t::getIndicator(fx->skill[10]) )
+				{
+					//indicator->arc = PI / 2;
+					Uint32 color = makeColorRGB(255, 128, 0);
+					indicator->indicatorColor = color;
+					indicator->loop = false;
+					indicator->gradient = 2;
+					indicator->framesPerTick = 2;
+					indicator->ticksPerUpdate = 1;
+					indicator->delayTicks = 0;
+					indicator->expireAlphaRate = 0.95;
+					indicator->cacheType = AOEIndicators_t::CACHE_FLAME_CLOAK;
+				}
+			}
+		}
+
+		int x = this->x / 16;
+		int y = this->y / 16;
+
+		if ( x >= 0 && x < map.width && y >= 0 && y < map.height )
+		{
+			int mapIndex = y * MAPLAYERS + x * MAPLAYERS * map.height;
+			auto entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(this, 2);
+			for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
+			{
+				list_t* currentList = *it;
+				for ( node_t* node = currentList->first; node != nullptr; node = node->next )
+				{
+					Entity* entity = (Entity*)node->element;
+					if ( entity == this )
+					{
+						continue;
+					}
+
+					if ( (entity->behavior == &actCampfire && entity->skill[3] > 0) || entity->behavior == &actTorch )
+					{
+						if ( entityInsideEntity(entity, this) )
+						{
+							if ( this->SetEntityOnFire() )
+							{
+								myStats->burningInflictedBy = 0;
+							}
+						}
+					}
+					else if ( entity->flags[BURNING] && entity->flags[BURNABLE] )
+					{
+						if ( !entity->getStats() || (entity->behavior == &actMonster || entity->behavior == &actPlayer) )
+						{
+							if ( entityInsideEntity(entity, this) )
+							{
+								if ( this->SetEntityOnFire() )
+								{
+									myStats->burningInflictedBy = 0;
+									if ( entity->getStats() )
+									{
+										myStats->burningInflictedBy = entity->getUID();
+									}
+								}
+							}
+						}
+					}
+				}
+			}
 		}
 	}
 
@@ -6243,6 +6386,16 @@ void Entity::handleEffects(Stat* myStats)
 	{
 		this->char_fire--; // Decrease the fire counter
 		
+		if ( myStats->getEffectActive(EFF_FLAME_CLOAK) )
+		{
+			// sustain the fire effect
+			int chance = local_rng.rand() % 100;
+			if ( myStats->getEffectActive(EFF_FLAME_CLOAK) < chance )
+			{
+				this->char_fire++;
+			}
+		}
+		
 		if ( myStats->type == SKELETON )
 		{
 			this->char_fire = 0;
@@ -6259,10 +6412,6 @@ void Entity::handleEffects(Stat* myStats)
 		{
 			this->char_fire = 0;
 		}
-		if ( myStats->getEffectActive(EFF_FLAME_CLOAK) )
-		{
-			this->char_fire = 0;
-		}
 
 		// Check to see if time has run out
 		if ( this->char_fire <= 0 )
@@ -6274,10 +6423,14 @@ void Entity::handleEffects(Stat* myStats)
 		else
 		{
 			// If 0.6 seconds have passed (30 ticks), process the Burning Status Effect
-			if ( (this->char_fire % TICKS_TO_PROCESS_FIRE) == 0 )
+			if ( myStats->getEffectActive(EFF_FLAME_CLOAK) )
+			{
+				// sustain the fire effect without damage
+			}
+			else if ( (this->char_fire % TICKS_TO_PROCESS_FIRE) == 0 )
 			{
 				bool warmHat = false;
-
+				int oldHP = myStats->HP;
 				// Buddha should not die to fire
 				if ( buddhamode )
 				{
@@ -6307,6 +6460,11 @@ void Entity::handleEffects(Stat* myStats)
 								int damageCap = -(2 + killerStats->LVL / 2);
 								damage = std::max(damage, damageCap);
 							}
+							if ( killerStats->getEffectActive(EFF_FLAME_CLOAK) )
+							{
+								int damageCap = -3;
+								damage = std::max(damage, damageCap);
+							}
 						}
 					}
 
@@ -6331,7 +6489,7 @@ void Entity::handleEffects(Stat* myStats)
 					this->modHP(damage); // Deal between -2 to -5 damage
 
 					// If the Entity died, handle experience
-					if ( myStats->HP <= 0 )
+					if ( myStats->HP <= 0 && oldHP > myStats->HP )
 					{
 						this->setObituary(Language::get(1533)); // "burns to a crisp."
 				        myStats->killer = KilledBy::BURNING_TO_CRISP;
@@ -9854,7 +10012,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					miss = false;
 				}
 				else if ( bat || (hitstats && (hitstats->getEffectActive(EFF_AGILITY) 
-					|| hit.entity->mistFormDodge(true)
+					|| hit.entity->mistFormDodge(true, this)
 					|| (hitstats->getEffectActive(EFF_MAGIC_GREASE) && hitstats->type == MONSTER_G)
 					|| hitstats->getEffectActive(EFF_ENSEMBLE_LUTE))) || myStats->getEffectActive(EFF_BLIND) )
 				{
@@ -9889,7 +10047,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 					}
 
-					if ( hit.entity->mistFormDodge(false) )
+					if ( hit.entity->mistFormDodge(false, this) )
 					{
 						miss = true;
 					}
@@ -13945,21 +14103,30 @@ void Entity::attack(int pose, int charge, Entity* target)
 						if ( this->flags[BURNABLE] )
 						{
 							bool wasBurning = this->flags[BURNING];
-							this->SetEntityOnFire();
-							if ( !wasBurning && this->flags[BURNING] )
+							int chance = local_rng.rand() % 100;
+							if ( chance < hitstats->getEffectActive(EFF_FLAME_CLOAK) )
 							{
-								// 6 ticks maximum burning.
-								this->char_fire = std::min(this->char_fire, static_cast<int>(TICKS_TO_PROCESS_FIRE * (6)));
-								myStats->burningInflictedBy = static_cast<Sint32>(hit.entity->getUID());
-								// If a Player was hit, and they are now on fire, tell them what set them on fire
-								if ( player >= 0 && this->flags[BURNING] )
+								if ( this->SetEntityOnFire() )
 								{
-									messagePlayer(player, MESSAGE_COMBAT, Language::get(6734));
-								}
-								if ( playerhit >= 0 && this->flags[BURNING] )
-								{
-									messagePlayerMonsterEvent(playerhit, makeColorRGB(0, 255, 0), *myStats,
-										Language::get(6732), Language::get(6733), MSG_COMBAT);
+									if ( !wasBurning && this->flags[BURNING] )
+									{
+										this->char_fire = std::min(this->char_fire, getSpellEffectDurationSecondaryFromID(SPELL_FLAME_CLOAK, hit.entity, nullptr, hit.entity));
+										myStats->burningInflictedBy = static_cast<Sint32>(hit.entity->getUID());
+										// If a Player was hit, and they are now on fire, tell them what set them on fire
+										if ( player >= 0 && this->flags[BURNING] )
+										{
+											messagePlayer(player, MESSAGE_COMBAT, Language::get(6734));
+										}
+										if ( playerhit >= 0 && this->flags[BURNING] )
+										{
+											messagePlayerMonsterEvent(playerhit, makeColorRGB(0, 255, 0), *myStats,
+												Language::get(6732), Language::get(6733), MSG_COMBAT);
+										}
+										if ( playerhit >= 0 && hit.entity->checkEnemy(this) )
+										{
+											players[playerhit]->mechanics.updateSustainedSpellEvent(SPELL_FLAME_CLOAK, 100.0, 1.0);
+										}
+									}
 								}
 							}
 						}
@@ -20967,6 +21134,61 @@ void Entity::handleEffectsClient()
 		}
 	}
 
+	if ( myStats->getEffectActive(EFF_STATIC) )
+	{
+		int interval = 40;
+		if ( ticks % interval == 0 )
+		{
+			Entity* fx = createParticleAestheticOrbit(this, 1758, TICKS_PER_SECOND / 2, PARTICLE_EFFECT_STATIC_ORBIT);
+			fx->z = 7.5 - 2.0 * ((ticks / interval) % 3);
+			fx->scalex = 1.0;
+			fx->scaley = 1.0;
+			fx->scalez = 1.0;
+			fx->actmagicOrbitDist = 20;
+			fx->yaw += ((ticks / interval) % 3) * 2 * PI / 3;
+			fx->actmagicNoLight = 1;
+		}
+	}
+
+	if ( myStats->getEffectActive(EFF_FLAME_CLOAK) )
+	{
+		int interval = 40;
+		if ( ticks % interval == 0 )
+		{
+			Entity* fx = createParticleAestheticOrbit(this, 233, TICKS_PER_SECOND, PARTICLE_EFFECT_IGNITE_ORBIT_FOLLOW);
+			fx->flags[SPRITE] = true;
+			fx->z = this->z;// 7.5 - 2.0 * ((ticks / interval) % 3);
+			fx->vel_z = 0.25;
+			fx->scalex = 1.0;
+			fx->scaley = 1.0;
+			fx->scalez = 1.0;
+			fx->actmagicOrbitDist = 3;
+			fx->fskill[2] = this->yaw + PI;
+			//fx->fskill[2] += ((ticks / interval) % 3) * 2 * PI / 3;
+			fx->yaw = fx->fskill[2];
+			fx->actmagicNoLight = 1;
+
+			if ( Entity* fx = createParticleAOEIndicator(this, this->x, this->y, 0.0, TICKS_PER_SECOND, 16.0) )
+			{
+				fx->scalex = 0.8;
+				fx->scaley = 0.8;
+				if ( auto indicator = AOEIndicators_t::getIndicator(fx->skill[10]) )
+				{
+					//indicator->arc = PI / 2;
+					Uint32 color = makeColorRGB(255, 128, 0);
+					indicator->indicatorColor = color;
+					indicator->loop = false;
+					indicator->gradient = 2;
+					indicator->framesPerTick = 2;
+					indicator->ticksPerUpdate = 1;
+					indicator->delayTicks = 0;
+					indicator->expireAlphaRate = 0.95;
+					indicator->cacheType = AOEIndicators_t::CACHE_FLAME_CLOAK;
+				}
+			}
+		}
+	}
+
 	if ( myStats->getEffectActive(EFF_SHADOW_TAGGED) )
 	{
 		if ( ticks % 25 == 0 || ticks % 40 == 0 )
@@ -23243,7 +23465,7 @@ void Entity::playerStatIncrease(int playerClass, int chosenStats[3])
 		else if ( stats[skill[2]]->type == CREATURE_IMP )
 		{
 			//	            STR	DEX	CON	INT	PER	CHR
-			statWeights = { 1,	3,	1,	6,	1,	1 };
+			statWeights = { 1,	1,	1,	3,	1,	6 };
 		}
 	}
 
@@ -24380,10 +24602,6 @@ bool Entity::SetEntityOnFire(Entity* sourceOfFire)
 				{
 					return false;
 				}
-				if ( myStats->getEffectActive(EFF_FLAME_CLOAK) )
-				{
-					return false;
-				}
 			}
 		}
 		// Check if the Entity is already on fire
@@ -24416,7 +24634,14 @@ bool Entity::SetEntityOnFire(Entity* sourceOfFire)
 
 			if ( this->behavior == &actPlayer )
 			{
-				messagePlayerColor(this->skill[2], MESSAGE_COMBAT, makeColorRGB(255, 0, 0), Language::get(4324));
+				if ( getStats() && getStats()->getEffectActive(EFF_FLAME_CLOAK) )
+				{
+					messagePlayerColor(this->skill[2], MESSAGE_COMBAT, makeColorRGB(0, 255, 0), Language::get(6860));
+				}
+				else
+				{
+					messagePlayerColor(this->skill[2], MESSAGE_COMBAT, makeColorRGB(255, 0, 0), Language::get(4324));
+				}
 			}
 
 			// Determine decrease in time on fire based on the Entity's CON

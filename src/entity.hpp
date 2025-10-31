@@ -615,6 +615,7 @@ public:
 	Sint32& actmagicNoHitMessage; // skill[31]
 	Sint32& actmagicNoParticle; // skill[32]
 	Sint32& actmagicNoLight; // skill[33]
+	Sint32& actmagicUpdateOLDHPOnHit = skill[34];
 
 	Sint32& actfloorMagicType = skill[3];
 	Sint32& actfloorMagicClientReceived = skill[4];
@@ -1327,7 +1328,7 @@ public:
 	bool windEffectsEntity(Entity* entity);
 	real_t monsterGetWeightRatio();
 	bool spellEffectPreserveItem(Item* item);
-	bool mistFormDodge(bool checkEffectActiveOnly);
+	bool mistFormDodge(bool checkEffectActiveOnly, Entity* attacker);
 	void attractItem(Entity& itemEntity);
 	void creatureHandleLiftZ();
 	bool monsterIsTargetable(bool targetInertMimics = false) const;

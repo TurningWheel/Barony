@@ -6298,6 +6298,8 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 				|| stats[player]->getEffectActive(EFF_NULL_MELEE)
 				|| stats[player]->getEffectActive(EFF_NULL_RANGED)
 				|| stats[player]->getEffectActive(EFF_DELAY_PAIN)
+				|| stats[player]->getEffectActive(EFF_ABSORB_MAGIC)
+				|| stats[player]->getEffectActive(EFF_STATIC)
 				|| stats[player]->getEffectActive(EFF_SACRED_PATH)
 				|| stats[player]->getEffectActive(EFF_MAGIC_WELL)
 				|| stats[player]->getEffectActive(EFF_FOCI_LIGHT_JUSTICE)
@@ -6536,6 +6538,40 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 							if ( effectStrength > 1 )
 							{
 								if ( auto text = Text::get(std::to_string(effectStrength - 1).c_str(),
+									"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+								{
+									text->drawColor(SDL_Rect{ 0,0,0,0 },
+										SDL_Rect{ pos.x + img->pos.x + img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x,
+										pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
+										0, 0 },
+										SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+										makeColor(255, 255, 255, 255));
+								}
+							}
+						}
+						else if ( img->path.find("asborb_magic.png") != std::string::npos )
+						{
+							Uint8 effectStrength = stats[player]->getEffectActive(EFF_ABSORB_MAGIC);
+							if ( effectStrength > 1 )
+							{
+								if ( auto text = Text::get(std::to_string(effectStrength - 1).c_str(),
+									"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+								{
+									text->drawColor(SDL_Rect{ 0,0,0,0 },
+										SDL_Rect{ pos.x + img->pos.x + img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x,
+										pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
+										0, 0 },
+										SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+										makeColor(255, 255, 255, 255));
+								}
+							}
+						}
+						else if ( img->path.find("static.png") != std::string::npos )
+						{
+							Uint8 effectStrength = stats[player]->getEffectActive(EFF_STATIC);
+							if ( effectStrength >= 1 )
+							{
+								if ( auto text = Text::get(std::to_string(effectStrength).c_str(),
 									"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
 								{
 									text->drawColor(SDL_Rect{ 0,0,0,0 },

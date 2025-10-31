@@ -277,6 +277,7 @@ void actWinningPortal(Entity* my);
 void actFlame(Entity* my);
 void actCampfire(Entity* my);
 Entity* spawnFlame(Entity* parentent, Sint32 sprite);
+Entity* spawnFlameSprites(Entity* parentent, Sint32 sprite);
 Entity* castMagic(Entity* parentent);
 void actSprite(Entity* my);
 void actSpriteNametag(Entity* my);

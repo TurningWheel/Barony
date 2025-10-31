@@ -221,11 +221,15 @@ double sightranges[NUMMONSTERS] =
 int monsterGlobalAnimationMultiplier = 10;
 int monsterGlobalAttackTimeMultiplier = 1;
 
-std::string getMonsterLocalizedName(Monster creature)
+std::string getMonsterLocalizedName(Monster creature, Stat* optionalStats)
 {
 	if ( creature == BUGBEAR )
 	{
 		return Language::get(6256);
+	}
+	else if ( creature == MOTH_SMALL && optionalStats && MonsterData_t::nameMatchesSpecialNPCName(*optionalStats, "fire sprite") )
+	{
+		return optionalStats->name;
 	}
 	else if ( creature >= MONSTER_D && creature <= MONSTER_G )
 	{
@@ -1242,6 +1246,11 @@ Entity* summonMonster(Monster creature, long x, long y, bool forceLocation)
             // small poof
             auto poof = spawnPoof(entity->x, entity->y, 4, 0.5);
         }
+		else if ( creature == MOTH_SMALL || creature == FLAME_ELEMENTAL )
+		{
+			// small poof
+			auto poof = spawnPoof(entity->x, entity->y, -6, 0.5);
+		}
 		else if ( creature == EARTH_ELEMENTAL )
 		{
 			// no poof

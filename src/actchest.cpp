@@ -2008,6 +2008,8 @@ void Entity::lockChest()
 
 void Entity::chestHandleDamageMagic(int damage, Entity &magicProjectile, Entity *caster, bool doSound)
 {
+	updateEntityOldHPBeforeMagicHit(*this, magicProjectile);
+
 	if ( behavior == &actMonster )
 	{
 		Stat* stats = getStats();

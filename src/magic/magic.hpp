@@ -344,6 +344,11 @@ static const int PARTICLE_EFFECT_IGNITE = 61;
 static const int PARTICLE_EFFECT_SHATTER_OBJECTS = 62;
 static const int PARTICLE_EFFECT_SABOTAGE_ORBIT = 63;
 static const int PARTICLE_EFFECT_SABOTAGE_TRAP = 64;
+static const int PARTICLE_EFFECT_IGNITE_ORBIT_LOOP = 65;
+static const int PARTICLE_EFFECT_IGNITE_ORBIT_FOLLOW = 66;
+static const int PARTICLE_EFFECT_FLAMES = 67;
+static const int PARTICLE_EFFECT_FLAMES_BURNING = 68;
+static const int PARTICLE_EFFECT_SUMMON_FLAMES = 69;
 
 // actmagicIsVertical constants
 static const int MAGIC_ISVERTICAL_NONE = 0;
@@ -384,6 +389,7 @@ static const int PARTICLE_TIMER_ACTION_ROOTS_SUSTAIN = 30;
 static const int PARTICLE_TIMER_ACTION_BASTION_MUSHROOM = 31;
 static const int PARTICLE_TIMER_ACTION_ROOTS_SINGLE_TILE_VOID = 32;
 static const int PARTICLE_TIMER_ACTION_TRAP_SABOTAGED = 33;
+static const int PARTICLE_TIMER_ACTION_SPLINTER_GEAR = 34;
 
 struct ParticleEmitterHit_t
 {
@@ -457,6 +463,8 @@ private:
 	real_t damage_mult = 1.0;
 	real_t damage2_mult = 1.0;
 	real_t channeledMana_mult = 1.0;
+	real_t duration_mult = 0.0;
+	real_t duration2_mult = 0.0;
 	int channeledMana_duration = TICKS_PER_SECOND;
 public:
 	void setDamage(int _damage) { damage = _damage; }
@@ -467,8 +475,12 @@ public:
 	int getDurationSecondary() { return duration2; }
 	real_t getDamageMult() { return damage_mult; }
 	real_t getDamageSecondaryMult() { return damage2_mult; }
+	real_t getDurationMult() { return duration_mult; }
+	real_t getDurationSecondaryMult() { return duration2_mult; }
 	void setDamageMult(real_t _mult) { damage_mult = _mult; }
 	void setDamageSecondaryMult(real_t _mult) { damage2_mult = _mult; }
+	void setDurationMult(real_t _mult) { duration_mult = _mult; }
+	void setDurationSecondaryMult(real_t _mult) { duration2_mult = _mult; }
 	real_t getChanneledManaMult() { return channeledMana_mult; }
 	int getChanneledManaDuration() { return channeledMana_duration; }
 	void setChanneledManaDuration(int _duration) { channeledMana_duration = _duration; }
@@ -1122,13 +1134,16 @@ Entity* spellEffectAdorcise(Entity& caster, spellElement_t& element, real_t x, r
 Entity* spellEffectFlameSprite(Entity& caster, spellElement_t& element, real_t x, real_t y);
 Entity* spellEffectHologram(Entity& caster, spellElement_t& element, real_t x, real_t y);
 Entity* spellEffectDemesneDoor(Entity& caster, Entity& doorFrame);
-void magicSetResistance(Entity* entity, Entity* parent, int& resistance, real_t& damageMultiplier, DamageGib& dmgGib, int& trapResist);
+void magicSetResistance(Entity* entity, Entity* parent, int& resistance, real_t& damageMultiplier, DamageGib& dmgGib, int& trapResist, int spellID);
 int getSpellDamageFromID(int spellID, Entity* parent, Stat* parentStats, Entity* magicSourceParticle, real_t addSpellBonus = 0.0, bool applyingDamageOnCast = true);
 int getSpellDamageSecondaryFromID(int spellID, Entity* parent, Stat* parentStats, Entity* magicSourceParticle, real_t addSpellBonus = 0.0, bool applyingDamageOnCast = true);
 int getSpellEffectDurationFromID(int spellID, Entity* parent, Stat* parentStats, Entity* magicSourceParticle, real_t addSpellBonus = 0.0);
 int getSpellEffectDurationSecondaryFromID(int spellID, Entity* parent, Stat* parentStats, Entity* magicSourceParticle, real_t addSpellBonus = 0.0);
 real_t getSpellPropertyFromID(spell_t::SpellBasePropertiesFloat prop, int spellID, Entity* parent, Stat* parentStats, Entity* magicSourceParticle, real_t addSpellBonus = 0.0);
 int getSpellPropertyFromID(spell_t::SpellBasePropertiesInt prop, int spellID, Entity* parent, Stat* parentStats, Entity* magicSourceParticle, real_t addSpellBonus = 0.0);
+int getSpellDamageFromStatic(int spellID, Stat* hitstats);
+void updateEntityOldHPBeforeMagicHit(Entity& my, Entity& projectile);
+bool absorbMagicEvent(Entity* entity, Entity* parent, Entity& damageSourceProjectile, int spellID, real_t* result, real_t& damageMultiplier, DamageGib& dmgGib);
 void thrownItemUpdateSpellTrail(Entity& my, real_t _x, real_t _y);
 int getSpellFromSummonedEntityForSpellEvent(Entity* summon);
 const char* magicLightColorForSprite(Entity* my, int sprite, bool darker);
@@ -1149,7 +1164,13 @@ struct AOEIndicators_t
 		CACHE_IGNITE,
 		CACHE_IGNITE2,
 		CACHE_SHATTER_OBJECTS,
-		CACHE_SHATTER_OBJECTS2
+		CACHE_SHATTER_OBJECTS2,
+		CACHE_FLAME_CLOAK,
+		CACHE_EXPLOSION_AREA,
+		CACHE_MUSHROOM_1,
+		CACHE_MUSHROOM_2,
+		CACHE_MUSHROOM_3,
+		CACHE_MUSHROOM_4
 	};
 	struct Indicator_t
 	{

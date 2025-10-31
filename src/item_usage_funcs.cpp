@@ -2020,7 +2020,7 @@ bool item_PotionUnstableStorm(Item*& item, Entity* entity, Entity* usedBy, Entit
 			Uint32 color = makeColorRGB(255, 128, 0);
 			messagePlayerColor(player, MESSAGE_STATUS, color, Language::get(3699)); // superheats
 			serverUpdateHunger(player);
-			for ( int c = 0; c < 100; c++ )
+			for ( int c = 0; c < 25; c++ )
 			{
 				if ( Entity* entity = spawnFlame(players[player]->entity, SPRITE_FLAME) )
 				{
@@ -2031,6 +2031,22 @@ bool item_PotionUnstableStorm(Item*& item, Entity* entity, Entity* usedBy, Entit
 					entity->vel_z = vel * sin(entity->pitch) * .2;
 					entity->skill[0] = 5 + local_rng.rand() % 10;
 				}
+			}
+
+			if ( Entity* fx = createParticleAestheticOrbit(players[player]->entity, 233, TICKS_PER_SECOND / 2, PARTICLE_EFFECT_IGNITE_ORBIT) )
+			{
+				fx->flags[SPRITE] = true;
+				fx->x = players[player]->entity->x;
+				fx->y = players[player]->entity->y;
+				fx->fskill[0] = fx->x;
+				fx->fskill[1] = fx->y;
+				fx->vel_z = -0.05;
+				fx->actmagicOrbitDist = 2;
+				fx->fskill[2] = players[player]->entity->yaw + (local_rng.rand() % 8) * PI / 4.0;
+				fx->yaw = fx->fskill[2];
+				fx->actmagicNoLight = 1;
+
+				serverSpawnMiscParticles(players[player]->entity, PARTICLE_EFFECT_FLAMES, 233, 0, fx->skill[0]);
 			}
 		}
 		else
@@ -3418,13 +3434,20 @@ bool item_ScrollFire(Item* item, int player)
 	else
 	{
 		playSoundEntity(players[player]->entity, 153, 128); // "FireballExplode.ogg"
-		messagePlayer(player, MESSAGE_HINT | MESSAGE_STATUS, Language::get(864)); // "The scroll erupts in a tower of flame!"
+		if ( item->beatitude == 0 )
+		{
+			messagePlayer(player, MESSAGE_HINT | MESSAGE_STATUS, Language::get(864)); // "The scroll erupts in a tower of flame!"
+		}
+		else if ( item->beatitude > 0 )
+		{
+			messagePlayer(player, MESSAGE_HINT | MESSAGE_STATUS, Language::get(6861)); // "The scroll erupts in a cloak of flame!"
+		}
 
 		// Attempt to set the Player on fire
 		players[player]->entity->SetEntityOnFire();
 
 		int c;
-		for (c = 0; c < 100; c++)
+		for (c = 0; c < 25; c++)
 		{
 			if ( Entity* entity = spawnFlame(players[player]->entity, SPRITE_FLAME) )
 			{
@@ -3435,6 +3458,18 @@ bool item_ScrollFire(Item* item, int player)
 				entity->vel_z = vel * sin(entity->pitch) * .2;
 				entity->skill[0] = 5 + local_rng.rand() % 10;
 			}
+		}
+
+		if ( item->beatitude > 0 )
+		{
+			if ( players[player]->entity->setEffect(EFF_FLAME_CLOAK, (Uint8)75, 30 * TICKS_PER_SECOND, true) )
+			{
+				spawnMagicEffectParticles(players[player]->entity->x, players[player]->entity->y, players[player]->entity->z, 2207);
+			}
+		}
+		else
+		{
+			castSpell(players[player]->entity->getUID(), getSpellFromID(SPELL_IGNITE), true, true);
 		}
 
 		onScrollUseAppraisalIncrease(item, player);
@@ -6084,7 +6119,7 @@ void item_FoodAutomaton(Item*& item, int player)
 			}
 
 			playSoundEntity(players[player]->entity, 153, 128); // "FireballExplode.ogg"
-			for ( int c = 0; c < 100; c++ )
+			for ( int c = 0; c < 25; c++ )
 			{
 				if ( Entity* entity = spawnFlame(players[player]->entity, SPRITE_FLAME) )
 				{
@@ -6095,6 +6130,22 @@ void item_FoodAutomaton(Item*& item, int player)
 					entity->vel_z = vel * sin(entity->pitch) * .2;
 					entity->skill[0] = 5 + local_rng.rand() % 10;
 				}
+			}
+
+			if ( Entity* fx = createParticleAestheticOrbit(players[player]->entity, 233, TICKS_PER_SECOND / 2, PARTICLE_EFFECT_IGNITE_ORBIT) )
+			{
+				fx->flags[SPRITE] = true;
+				fx->x = players[player]->entity->x;
+				fx->y = players[player]->entity->y;
+				fx->fskill[0] = fx->x;
+				fx->fskill[1] = fx->y;
+				fx->vel_z = -0.05;
+				fx->actmagicOrbitDist = 2;
+				fx->fskill[2] = players[player]->entity->yaw + (local_rng.rand() % 8) * PI / 4.0;
+				fx->yaw = fx->fskill[2];
+				fx->actmagicNoLight = 1;
+
+				serverSpawnMiscParticles(players[player]->entity, PARTICLE_EFFECT_FLAMES, 233, 0, fx->skill[0]);
 			}
 			break;
 		}

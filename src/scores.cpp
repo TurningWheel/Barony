@@ -4762,6 +4762,11 @@ void SaveGameInfo::computeHash(const int playernum, Uint32& hash)
 	{
 		hash += (Uint32)((Uint32)val << (shift % 32)); ++shift;
 	}
+	for ( auto& val : players[playernum].sustainedSpellIDCounter )
+	{
+		hash += (Uint32)((Uint32)val.first << (shift % 32)); ++shift;
+		hash += (Uint32)((Uint32)val.second << (shift % 32)); ++shift;
+	}
 	hash += (Uint32)((Uint32)players[playernum].sustainedSpellMPUsedSorcery << (shift % 32)); ++shift;
 	hash += (Uint32)((Uint32)players[playernum].sustainedSpellMPUsedMysticism << (shift % 32)); ++shift;
 	hash += (Uint32)((Uint32)players[playernum].sustainedSpellMPUsedThaumaturgy << (shift % 32)); ++shift;
@@ -5019,6 +5024,10 @@ int SaveGameInfo::populateFromSession(const int playernum)
 			for ( auto learnedSpell : ::players[c]->mechanics.learnedSpells )
 			{
 				player.learnedSpells.push_back(learnedSpell);
+			}
+			for ( auto& pair : ::players[c]->mechanics.sustainedSpellIDCounter )
+			{
+				player.sustainedSpellIDCounter.push_back(pair);
 			}
 			player.sustainedSpellMPUsedSorcery = ::players[c]->mechanics.sustainedSpellMPUsedSorcery;
 			player.sustainedSpellMPUsedMysticism = ::players[c]->mechanics.sustainedSpellMPUsedMysticism;
@@ -5950,6 +5959,7 @@ int loadGame(int player, const SaveGameInfo& info) {
 		auto& mechanics = players[statsPlayer]->mechanics;
 		mechanics.itemDegradeRng.clear();
 		mechanics.learnedSpells.clear();
+		mechanics.sustainedSpellIDCounter.clear();
 		for ( auto& pair : info.players[player].itemDegradeRNG )
 		{
 			mechanics.itemDegradeRng[pair.first] = pair.second;
@@ -5957,6 +5967,10 @@ int loadGame(int player, const SaveGameInfo& info) {
 		for ( auto learnedSpell : info.players[player].learnedSpells )
 		{
 			mechanics.learnedSpells.insert(learnedSpell);
+		}
+		for ( auto& pair : info.players[player].sustainedSpellIDCounter )
+		{
+			mechanics.sustainedSpellIDCounter[pair.first] = pair.second;
 		}
 		mechanics.sustainedSpellMPUsedSorcery = 0;
 		mechanics.sustainedSpellMPUsedMysticism = 0;

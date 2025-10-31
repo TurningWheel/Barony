@@ -1202,7 +1202,7 @@ void gameLogic(void)
 					entity->flags[BURNING] = false;
 					continue;
 				}
-	            if ( flickerLights || entity->ticks % TICKS_PER_SECOND == 1 )
+	            /*if ( flickerLights || entity->ticks % TICKS_PER_SECOND == 1 )
 	            {
 				    j = 1 + local_rng.rand() % 4;
 				    for ( c = 0; c < j; ++c )
@@ -1219,6 +1219,12 @@ void gameLogic(void)
 							}
 						}
 				    }
+				}*/
+				if ( entity->ticks % 10 == 0 )
+				{
+					if ( Entity* fx = spawnFlameSprites(entity, 233) )
+					{
+					}
 				}
 			}
 		}

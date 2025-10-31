@@ -54,7 +54,7 @@ bool gamepad_menux_invert = false;
 bool gamepad_menuy_invert = false;
 
 const int Player::Inventory_t::MAX_SPELLS_X = 4;
-const int Player::Inventory_t::MAX_SPELLS_Y = 50;
+const int Player::Inventory_t::MAX_SPELLS_Y = 70;
 const int Player::Inventory_t::MAX_CHEST_X = 4;
 const int Player::Inventory_t::MAX_CHEST_Y = 3;
 
@@ -3171,6 +3171,7 @@ void Player::init() // for use on new/restart game, UI related
 	levelUpAnimation[playernum].lvlUps.clear();
 	skillUpAnimation[playernum].skillUps.clear();
 	mechanics.itemDegradeRng.clear();
+	mechanics.sustainedSpellIDCounter.clear();
 	mechanics.sustainedSpellMPUsedSorcery = 0;
 	mechanics.sustainedSpellMPUsedMysticism = 0;
 	mechanics.sustainedSpellMPUsedThaumaturgy = 0;
@@ -7294,7 +7295,7 @@ bool Player::PlayerMechanics_t::sustainedSpellLevelChance(int skillID)
 	}
 	else
 	{
-		threshold = 5 + (stats[player.playernum]->getProficiency(skillID) / 2); // 5-55
+		threshold = 5 + (stats[player.playernum]->getProficiency(skillID) / 2); // 10-55
 	}
 
 	if ( skillID == PRO_SORCERY )

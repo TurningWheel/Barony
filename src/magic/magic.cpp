@@ -3200,11 +3200,30 @@ Entity* spellEffectFlameSprite(Entity& caster, spellElement_t& element, real_t x
 
 			if ( monster )
 			{
-				playSoundEntity(monster, 171, 128);
+				playSoundEntity(monster, 164, 128);
 				//playSoundEntity(&my, 178, 128);
-				createParticleErupt(monster, 983);
-				serverSpawnMiscParticles(monster, PARTICLE_EFFECT_ERUPT, 983);
+				//createParticleErupt(monster, 983);
+				//serverSpawnMiscParticles(monster, PARTICLE_EFFECT_ERUPT, 983);
+				spawnMagicEffectParticles(monster->x, monster->y, monster->z, 2207);
+				for ( int i = 0; i < 3; ++i )
+				{
+					if ( Entity* fx = createParticleAestheticOrbit(monster, 233, TICKS_PER_SECOND, PARTICLE_EFFECT_IGNITE_ORBIT) )
+					{
+						fx->flags[SPRITE] = true;
+						fx->x = monster->x;
+						fx->y = monster->y;
+						fx->fskill[0] = fx->x;
+						fx->fskill[1] = fx->y;
+						fx->z = -7.5;
+						fx->vel_z = 0.25;
+						fx->actmagicOrbitDist = 4;
+						fx->fskill[2] = monster->yaw + (i) * 2 * PI / 3.0;
+						fx->yaw = fx->fskill[2];
+						fx->actmagicNoLight = 1;
 
+					}
+				}
+				serverSpawnMiscParticles(monster, PARTICLE_EFFECT_SUMMON_FLAMES, 233, 0, TICKS_PER_SECOND);
 
 				Stat* monsterStats = monster->getStats();
 				if ( monsterStats )
@@ -3347,7 +3366,7 @@ bool Entity::spellEffectPreserveItem(Item* item)
 	return false;
 }
 
-bool Entity::mistFormDodge(bool checkEffectActiveOnly)
+bool Entity::mistFormDodge(bool checkEffectActiveOnly, Entity* attacker)
 {
 	if ( Stat* myStats = getStats() )
 	{
@@ -3362,31 +3381,40 @@ bool Entity::mistFormDodge(bool checkEffectActiveOnly)
 			{
 				if ( spell_t* spell = getActiveMagicEffect(SPELL_MIST_FORM) )
 				{
-					int cost = getSpellDamageFromID(SPELL_MIST_FORM, this, nullptr, this);
-					cost = std::max(1, std::max(cost, getSpellDamageSecondaryFromID(SPELL_MIST_FORM, this, nullptr, this)));
-					if ( !safeConsumeMP(cost) )
+					int chance = 50;
+					if ( local_rng.rand() % 100 < chance )
 					{
-						if ( myStats->MP > 0 )
+						int cost = getSpellDamageFromID(SPELL_MIST_FORM, this, nullptr, this);
+						cost = std::max(1, std::max(cost, getSpellDamageSecondaryFromID(SPELL_MIST_FORM, this, nullptr, this)));
+						if ( !safeConsumeMP(cost) )
 						{
-							modMP(-myStats->MP);
+							if ( myStats->MP > 0 )
+							{
+								modMP(-myStats->MP);
+							}
+							spell->sustain = false;
+							if ( behavior == &actPlayer )
+							{
+								playSoundEntity(this, 163, 128);
+								messagePlayerColor(skill[2], MESSAGE_COMBAT, makeColorRGB(255, 0, 0), Language::get(6665));
+							}
+							return false;
 						}
-						spell->sustain = false;
-						if ( behavior == &actPlayer )
+						else
 						{
-							playSoundEntity(this, 163, 128);
-							messagePlayerColor(skill[2], MESSAGE_COMBAT, makeColorRGB(255, 0, 0), Language::get(6665));
+							if ( behavior == &actPlayer )
+							{
+								spawnPoof(this->x, this->y, this->z / 2, 1.0, true);
+								playSoundEntity(this, 166, 128);
+								messagePlayerColor(skill[2], MESSAGE_COMBAT, makeColorRGB(0, 255, 0), Language::get(6666));
+								magicOnSpellCastEvent(this, this, attacker, SPELL_MIST_FORM, spell_t::SPELL_LEVEL_EVENT_DEFAULT | spell_t::SPELL_LEVEL_EVENT_MINOR_CHANCE, 1);
+							}
+							return true;
 						}
-						return false;
 					}
 					else
 					{
-						if ( behavior == &actPlayer )
-						{
-							spawnPoof(this->x, this->y, this->z / 2, 1.0, true);
-							playSoundEntity(this, 166, 128);
-							messagePlayerColor(skill[2], MESSAGE_COMBAT, makeColorRGB(0, 255, 0), Language::get(6666));
-						}
-						return true;
+						return false;
 					}
 				}
 			}
@@ -3415,7 +3443,7 @@ bool applyGenericMagicDamage(Entity* caster, Entity* hitentity, Entity& damageSo
 	int resistance = 0;
 	DamageGib dmgGib = DMG_DEFAULT;
 	real_t damageMultiplier = 1.0;
-	magicSetResistance(hitentity, caster, resistance, damageMultiplier, dmgGib, trapResist);
+	magicSetResistance(hitentity, caster, resistance, damageMultiplier, dmgGib, trapResist, spellID);
 	Stat* targetStats = hitentity->getStats();
 
 	if ( damageSourceProjectile.behavior == &actBoulder )
@@ -3447,6 +3475,8 @@ bool applyGenericMagicDamage(Entity* caster, Entity* hitentity, Entity& damageSo
 			return false;
 		}
 	}
+
+	absorbMagicEvent(hitentity, caster, damageSourceProjectile, spellID, nullptr, damageMultiplier, dmgGib);
 
 	if ( hitentity->behavior == &actChest || hitentity->isInertMimic() )
 	{
@@ -3918,4 +3948,49 @@ int getSpellFromSummonedEntityForSpellEvent(Entity* summon)
 	}
 
 	return SPELL_NONE;
+}
+
+int getSpellDamageFromStatic(int spellID, Stat* hitstats)
+{
+	if ( !hitstats )
+	{
+		return 0;
+	}
+
+	if ( hitstats->getEffectActive(EFF_STATIC) )
+	{
+		return hitstats->getEffectActive(EFF_STATIC);
+	}
+
+	return 0;
+}
+
+void updateEntityOldHPBeforeMagicHit(Entity& my, Entity& projectile)
+{
+	if ( projectile.behavior == &actMagicMissile && projectile.actmagicUpdateOLDHPOnHit == 1 )
+	{
+		if ( my.getStats() )
+		{
+			my.getStats()->OLDHP = my.getStats()->HP;
+		}
+		else
+		{
+			if ( my.behavior == &actDoor || my.behavior == &actIronDoor )
+			{
+				my.doorOldHealth = my.doorHealth;
+			}
+			else if ( my.behavior == &actFurniture )
+			{
+				my.furnitureOldHealth = my.furnitureHealth;
+			}
+			else if ( my.behavior == &actChest )
+			{
+				my.chestOldHealth = my.chestHealth;
+			}
+			else if ( my.isDamageableCollider() )
+			{
+				my.colliderOldHP = my.colliderCurrentHP;
+			}
+		}
+	}
 }

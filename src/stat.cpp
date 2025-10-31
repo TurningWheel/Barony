@@ -1565,6 +1565,8 @@ bool Stat::statusEffectRemovedByCureAilment(const int effect, Entity* my)
 		case EFF_WEBBED:
 		case EFF_FEAR:
 		case EFF_DISORIENTED:
+		case EFF_ROOTED:
+		case EFF_STATIC:
 			return true;
 			break;
 		case EFF_DRUNK:

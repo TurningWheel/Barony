@@ -335,6 +335,7 @@ void Entity::doorHandleDamageMagic(int damage, Entity &magicProjectile, Entity *
 	{
 		damage = 0;
 	}
+	updateEntityOldHPBeforeMagicHit(*this, magicProjectile);
 	doorHealth -= damage; //Decrease door health.
 	if ( caster )
 	{

@@ -129,6 +129,7 @@ void actFurniture(Entity* my)
 
 void Entity::furnitureHandleDamageMagic(int damage, Entity& magicProjectile, Entity* caster, bool messages, bool doSound)
 {
+	updateEntityOldHPBeforeMagicHit(*this, magicProjectile);
 	int oldHP = this->furnitureHealth;
 	this->furnitureHealth -= damage;
 	if ( caster )
@@ -765,20 +766,24 @@ void actColliderMushroomCap(Entity* my)
 			range = 32;
 		}
 
+		auto cacheType = AOEIndicators_t::CACHE_MUSHROOM_1;
 		Uint32 color = makeColorRGB(0, 145, 16);
 		int gibSprite = 1885;
 		switch ( effectType )
 		{
 		case 4:
 			color = makeColorRGB(206, 162, 146);
+			cacheType = AOEIndicators_t::CACHE_MUSHROOM_2;
 			gibSprite = 1887;
 			break;
 		case 5:
 			color = makeColorRGB(116, 128, 180);
+			cacheType = AOEIndicators_t::CACHE_MUSHROOM_3;
 			gibSprite = 1888;
 			break;
 		case 2:
 			color = makeColorRGB(180, 116, 160);
+			cacheType = AOEIndicators_t::CACHE_MUSHROOM_4;
 			gibSprite = 1889;
 			break;
 		default:
@@ -857,6 +862,7 @@ void actColliderMushroomCap(Entity* my)
 						indicator->ticksPerUpdate = 1;
 						indicator->delayTicks = 0;
 						indicator->expireAlphaRate = 0.95;
+						indicator->cacheType = cacheType;
 					}
 				}
 				playSoundEntityLocal(parent, 169, 128);
@@ -2216,6 +2222,7 @@ void actColliderDecoration(Entity* my)
 
 void Entity::colliderHandleDamageMagic(int damage, Entity &magicProjectile, Entity *caster, bool messages, bool doSound)
 {
+	updateEntityOldHPBeforeMagicHit(*this, magicProjectile);
 	auto oldHP = colliderCurrentHP;
 	colliderCurrentHP -= damage; //Decrease object health.
 	if ( caster )
@@ -5821,8 +5828,8 @@ void actBell(Entity* my)
 				bellBreakBulb(my, true);
 				my->flags[BURNING] = false;
 				my->flags[INVISIBLE] = true;
-				serverUpdateEntitySkill(my, INVISIBLE);
-				serverUpdateEntitySkill(my, BURNING);
+				serverUpdateEntityFlag(my, INVISIBLE);
+				serverUpdateEntityFlag(my, BURNING);
 
 				if ( BELL_PULLED_TO_BREAK != 0 )
 				{
@@ -5842,9 +5849,11 @@ void actBell(Entity* my)
 	if ( my->flags[INVISIBLE] && my->flags[BURNING] )
 	{
 		my->flags[BURNING] = false;
+		my->flags[BURNABLE] = false;
 		if ( multiplayer != CLIENT )
 		{
-			serverUpdateEntitySkill(my, BURNING);
+			serverUpdateEntityFlag(my, BURNING);
+			serverUpdateEntityFlag(my, BURNABLE);
 		}
 	}
 

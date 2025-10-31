@@ -1544,12 +1544,15 @@ void setupSpells()   ///TODO: Verify this function.
 	spell->hide_from_ui = true;
 
 	spellElementConstructor(SPELL_ELEMENT_METEOR_FLAMES,
-		2,		// mana
-		2,		// base mana
+		5,		// mana
+		5,		// base mana
 		1,		// overload
-		2,		// damage
+		5,		// damage
 		0,		// duration
 		"spell_element_flames");
+	spellElementMap[SPELL_ELEMENT_METEOR_FLAMES].setDamageMult(1.0);
+	spellElementMap[SPELL_ELEMENT_METEOR_FLAMES].duration = 250;
+	spellElementMap[SPELL_ELEMENT_METEOR_FLAMES].setDurationMult(1.0);
 
 	spellElementConstructor(SPELL_METEOR,
 		1,		// mana
@@ -1557,7 +1560,7 @@ void setupSpells()   ///TODO: Verify this function.
 		1,		// overload
 		5,		// damage
 		0,		// duration
-		"spell_element_fireball");
+		"spell_element_meteor");
 	spell = spellConstructor(
 		SPELL_METEOR,										// ID
 		100,												// difficulty
@@ -1574,13 +1577,13 @@ void setupSpells()   ///TODO: Verify this function.
 		1,		// overload
 		10,		// damage
 		0,		// duration
-		"spell_element_fireball");
+		"spell_element_meteor_shower");
 	spell = spellConstructor(
 		SPELL_METEOR_SHOWER,										// ID
 		100,												// difficulty
 		"spell_meteor_shower",										// internal name
 		// elements
-		{ SPELL_ELEMENT_PROPULSION_MISSILE, SPELL_ELEMENT_METEOR_FLAMES, SPELL_METEOR, SPELL_ELEMENT_METEOR_FLAMES, SPELL_METEOR, SPELL_ELEMENT_METEOR_FLAMES, SPELL_METEOR_SHOWER }
+		{ SPELL_ELEMENT_PROPULSION_MISSILE, SPELL_METEOR_SHOWER, SPELL_ELEMENT_METEOR_FLAMES, SPELL_METEOR, SPELL_ELEMENT_METEOR_FLAMES, SPELL_METEOR, SPELL_ELEMENT_METEOR_FLAMES }
 	);
 	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH_FLOOR_TILE;
 	spell->distance = 64.0;
@@ -2842,7 +2845,9 @@ void setupSpells()   ///TODO: Verify this function.
 		1, // overload
 		0, // damage
 		1, // duration
-		"spell_flame_cloak");
+		"spell_flame_cloak",
+		1);
+	spell->sustainEffectDissipate = EFF_FLAME_CLOAK;
 
 	spell = createSimpleSpell(
 		SPELL_FLAME_SHIELD,
@@ -3319,6 +3324,8 @@ void setupSpells()   ///TODO: Verify this function.
 	//static const int SPELL_KINETIC_FIELD = 188;
 	//static const int SPELL_ICE_BLOCK = 189;
 
+	std::vector<node_t*> subElementsToCopy;
+
 	for ( int i = 0; i < NUM_SPELLS; ++i )
 	{
 		auto find = ItemTooltips.spellItems.find(i);
@@ -3347,13 +3354,22 @@ void setupSpells()   ///TODO: Verify this function.
 				spell->radius_mult = info.radius_mult;
 				
 				spellElement_t* element = nullptr;
+				std::vector<spellElement_t*> elementList;
 				if ( spell->elements.first )
 				{
 					if ( element = (spellElement_t*)spell->elements.first->element )
 					{
 						if ( element->elements.first && element->elements.first->element )
 						{
+							node_t* node = element->elements.first;
 							element = (spellElement_t*)element->elements.first->element;
+
+							node = node->next;
+							while ( node )
+							{
+								elementList.push_back((spellElement_t*)node->element);
+								node = node->next;
+							}
 						}
 					}
 				}
@@ -3372,6 +3388,37 @@ void setupSpells()   ///TODO: Verify this function.
 					element->setDamageSecondaryMult(info.damage2_mult);
 					element->duration = info.duration;
 					element->setDurationSecondary(info.duration2);
+				}
+
+				while ( elementList.size() )
+				{
+					if ( element = elementList.at(0) )
+					{
+						// additional hacks for meteor shower
+						if ( !strcmp(element->element_internal_name, spellElementMap[SPELL_METEOR].element_internal_name) )
+						{
+							auto find = ItemTooltips.spellItems.find(SPELL_METEOR);
+							if ( find != ItemTooltips.spellItems.end() )
+							{
+								auto& info = find->second;
+
+								element->channeledMana = info.sustain_mana;
+								if ( find->second.fociId >= 0 )
+								{
+									element->fociSpell = true;
+								}
+								element->setChanneledManaDuration(info.sustain_duration);
+								element->setChanneledManaMult(info.sustain_mult);
+								element->setDamage(info.damage);
+								element->setDamageMult(info.damage_mult);
+								element->setDamageSecondary(info.damage2);
+								element->setDamageSecondaryMult(info.damage2_mult);
+								element->duration = info.duration;
+								element->setDurationSecondary(info.duration2);
+							}
+						}
+					}
+					elementList.erase(elementList.begin());
 				}
 			}
 		}

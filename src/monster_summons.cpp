@@ -29,6 +29,7 @@ void initRevenantSkull(Entity* my, Stat* myStats)
 	node_t* node;
 
 	my->z = 0;
+	my->flags[BURNABLE] = false;
 	my->initMonster(1796);
 	my->flags[INVISIBLE] = true; // hide the "AI" bodypart
 	if ( multiplayer != CLIENT )
@@ -100,6 +101,7 @@ void initAdorcisedWeapon(Entity* my, Stat* myStats)
 
 	my->z = 0;
 	my->initMonster(1797);
+	my->flags[BURNABLE] = false;
 	my->flags[INVISIBLE] = true; // hide the "AI" bodypart
 	if ( multiplayer != CLIENT )
 	{
@@ -142,12 +144,13 @@ void initAdorcisedWeapon(Entity* my, Stat* myStats)
 
 			if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
 			{
-				switch ( rng.rand() % 8 )
+				int pick = rng.rand() % 8;
+				switch ( pick )
 				{
 				case 0:
 				case 1:
-					break;
 					myStats->weapon = newItem(IRON_SWORD, static_cast<Status>(DECREPIT + rng.rand() % 4), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+					break;
 				case 2:
 				case 3:
 					myStats->weapon = newItem(IRON_SPEAR, static_cast<Status>(DECREPIT + rng.rand() % 4), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
@@ -197,6 +200,7 @@ void initFlameElemental(Entity* my, Stat* myStats)
 
 	my->z = 0;
 	my->initMonster(1804);
+	my->flags[BURNABLE] = false;
 	my->flags[INVISIBLE] = true; // hide the "AI" bodypart
 	if ( multiplayer != CLIENT )
 	{
@@ -1235,6 +1239,7 @@ void initHologram(Entity* my, Stat* myStats)
 
 	my->z = 0;
 	my->initMonster(1803);
+	my->flags[BURNABLE] = false;
 	my->flags[INVISIBLE] = true; // hide the "AI" bodypart
 	if ( multiplayer != CLIENT )
 	{
@@ -1512,6 +1517,7 @@ void initEarthElemental(Entity* my, Stat* myStats)
 		}
 	}
 	my->initMonster(sprite);
+	my->flags[BURNABLE] = false;
 	my->flags[INVISIBLE] = true; // hide the "AI" bodypart
 	my->flags[PASSABLE] = true;
 	if ( multiplayer != CLIENT )

@@ -3260,6 +3260,47 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 					fx->actmagicNoLight = 1;
 					break;
 				}
+				case PARTICLE_EFFECT_FLAMES:
+				{
+					int duration = SDLNet_Read32(&net_packet->data[15]);
+					if( Entity* fx = createParticleAestheticOrbit(entity, 233, duration, PARTICLE_EFFECT_IGNITE_ORBIT))
+					{
+						fx->flags[SPRITE] = true;
+						fx->x = entity->x;
+						fx->y = entity->y;
+						fx->fskill[0] = fx->x;
+						fx->fskill[1] = fx->y;
+						fx->vel_z = -0.05;
+						fx->actmagicOrbitDist = 2;
+						fx->fskill[2] = entity->yaw + (local_rng.rand() % 8) * PI / 4.0;
+						fx->yaw = fx->fskill[2];
+						fx->actmagicNoLight = 1;
+					}
+					break;
+				}
+				case PARTICLE_EFFECT_SUMMON_FLAMES:
+				{
+					int duration = SDLNet_Read32(&net_packet->data[15]);
+					for ( int i = 0; i < 3; ++i )
+					{
+						if ( Entity* fx = createParticleAestheticOrbit(entity, 233, duration, PARTICLE_EFFECT_IGNITE_ORBIT) )
+						{
+							fx->flags[SPRITE] = true;
+							fx->x = entity->x;
+							fx->y = entity->y;
+							fx->fskill[0] = fx->x;
+							fx->fskill[1] = fx->y;
+							fx->z = -7.5;
+							fx->vel_z = 0.25;
+							fx->actmagicOrbitDist = 4;
+							fx->fskill[2] = entity->yaw + (i) * 2 * PI / 3.0;
+							fx->yaw = fx->fskill[2];
+							fx->actmagicNoLight = 1;
+
+						}
+					}
+					break;
+				}
 				case PARTICLE_EFFECT_BOLAS:
 				{
 					Uint32 duration = SDLNet_Read32(&net_packet->data[15]);
@@ -3384,8 +3425,8 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 			}
 			case PARTICLE_EFFECT_AREA_EFFECT:
 			{
-				int duration = SDLNet_Read32(&net_packet->data[13]);
-				createSpellExplosionArea(sprite, nullptr, particle_x, particle_y, particle_z, duration, 0, nullptr);
+				int radius = SDLNet_Read32(&net_packet->data[13]);
+				createSpellExplosionArea(sprite, nullptr, particle_x, particle_y, particle_z, radius, 0, nullptr);
 				break;
 			}
 			case PARTICLE_EFFECT_EARTH_ELEMENTAL_DIE:

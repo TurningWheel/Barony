@@ -564,7 +564,9 @@ bool Entity::collisionProjectileMiss(Entity* parent, Entity* projectile)
 				{
 					if ( spell_t* spell = (spell_t*)projectile->children.first->element )
 					{
-						if ( spell->ID == SPELL_FIREBALL || spell->ID == SPELL_SLIME_FIRE )
+						if ( spell->ID == SPELL_FIREBALL || spell->ID == SPELL_SLIME_FIRE
+							|| spell->ID == SPELL_FLAMES || spell->ID == SPELL_METEOR
+							|| spell->ID == SPELL_FOCI_FIRE || spell->ID == SPELL_METEOR_SHOWER )
 						{
 							SetEntityOnFire();
 							if ( parent && flags[BURNING] )
@@ -599,13 +601,14 @@ bool Entity::collisionProjectileMiss(Entity* parent, Entity* projectile)
 			}
 			else if ( projectile->flags[BURNING] && (projectile->behavior == &actMonster || projectile->behavior == &actPlayer) )
 			{
+				bool prevBurning = this->flags[BURNING];
 				SetEntityOnFire(projectile);
 				if ( flags[BURNING] )
 				{
 					if ( behavior == &actBell )
 					{
 						skill[13] = projectile->getUID(); // burning inflicted by for bell
-						if ( projectile->behavior == &actPlayer )
+						if ( projectile->behavior == &actPlayer && !prevBurning )
 						{
 							messagePlayer(projectile->skill[2], MESSAGE_INTERACTION, Language::get(6297));
 						}
@@ -699,7 +702,7 @@ bool Entity::collisionProjectileMiss(Entity* parent, Entity* projectile)
 			}
 
 			if ( myStats->type == BAT_SMALL || myStats->getEffectActive(EFF_AGILITY) || myStats->getEffectActive(EFF_ENSEMBLE_LUTE) 
-				|| mistFormDodge(true)
+				|| mistFormDodge(true, parent)
 				|| !monsterIsTargetable(true)
 				|| (parent && parent->getStats() && parent->getStats()->getEffectActive(EFF_BLIND)) )
 			{
@@ -744,7 +747,7 @@ bool Entity::collisionProjectileMiss(Entity* parent, Entity* projectile)
 				}
 
 				bool accuracyBonus = projectile->behavior == &actMagicMissile && myStats->type == BAT_SMALL;
-				if ( mistFormDodge(false) )
+				if ( mistFormDodge(false, parent) )
 				{
 					miss = true;
 				}
@@ -1196,7 +1199,7 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 				&& (yourStats && (parentDodgeChance 
 				|| yourStats->getEffectActive(EFF_AGILITY) 
 				|| yourStats->getEffectActive(EFF_ENSEMBLE_LUTE)
-				|| entity->mistFormDodge(true)
+				|| entity->mistFormDodge(true, parent)
 				|| (yourStats->getEffectActive(EFF_NULL_RANGED) && (my->behavior == &actThrown || my->behavior == &actArrow)))) )
 			{
 				entityDodgeChance = true;
@@ -1399,17 +1402,58 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 									}
 								}
 							}
+
+							//if ( myStats && myStats->getEffectActive(EFF_FLAME_CLOAK) )
+							//{
+							//	int chance = local_rng.rand() % 100;
+							//	if ( ticks % 50 == 0 && chance < myStats->getEffectActive(EFF_FLAME_CLOAK) )
+							//	{
+							//		// try burn
+							//	}
+							//	else
+							//	{
+							//		// no fire
+							//		dyrnwyn = true;
+							//	}
+							//}
+
 							if ( !dyrnwyn )
 							{
 								bool previouslyOnFire = hit.entity->flags[BURNING];
 
 								// Attempt to set the Entity on fire
-								hit.entity->SetEntityOnFire();
-
-								// If the Entity is now on fire, tell them
-								if ( hit.entity->flags[BURNING] && !previouslyOnFire )
+								if ( hit.entity->SetEntityOnFire() )
 								{
-									messagePlayer(hit.entity->isEntityPlayer(), MESSAGE_STATUS, Language::get(590)); // "You suddenly catch fire!"
+									if ( myStats && yourStats )
+									{
+										if ( myStats->getEffectActive(EFF_FLAME_CLOAK) )
+										{
+											hit.entity->char_fire = std::min(hit.entity->char_fire, 
+												getSpellEffectDurationSecondaryFromID(SPELL_FLAME_CLOAK, my, nullptr, my));
+										}
+										yourStats->burningInflictedBy = my->getUID();
+
+										if ( my->behavior == &actPlayer )
+										{
+											bool alertTarget = hit.entity->monsterAlertBeforeHit(my);
+
+											// alert the monster!
+											if ( hit.entity->monsterState != MONSTER_STATE_ATTACK && (yourStats->type < LICH || yourStats->type >= SHOPKEEPER) )
+											{
+												if ( alertTarget )
+												{
+													hit.entity->monsterAcquireAttackTarget(*my, MONSTER_STATE_PATH, true);
+												}
+											}
+
+											// alert other monsters too
+											/*if ( alertTarget )
+											{
+												hit.entity->alertAlliesOnBeingHit(my);
+											}*/
+											hit.entity->updateEntityOnHit(my, alertTarget);
+										}
+									}
 								}
 							}
 						}
@@ -1427,17 +1471,58 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 									}
 								}
 							}
+
+							//if ( yourStats && yourStats->getEffectActive(EFF_FLAME_CLOAK) )
+							//{
+							//	int chance = local_rng.rand() % 100;
+							//	if ( ticks % 50 == 0 && chance < yourStats->getEffectActive(EFF_FLAME_CLOAK) )
+							//	{
+							//		// try burn
+							//	}
+							//	else
+							//	{
+							//		// no fire
+							//		dyrnwyn = true;
+							//	}
+							//}
+
 							if ( !dyrnwyn )
 							{
 								bool previouslyOnFire = my->flags[BURNING];
 
 								// Attempt to set the Entity on fire
-								my->SetEntityOnFire();
-
-								// If the Entity is now on fire, tell them
-								if ( my->flags[BURNING] && !previouslyOnFire )
+								if ( my->SetEntityOnFire() )
 								{
-									messagePlayer(my->isEntityPlayer(), MESSAGE_STATUS, Language::get(590)); // "You suddenly catch fire!"
+									if ( myStats && yourStats )
+									{
+										if ( yourStats->getEffectActive(EFF_FLAME_CLOAK) )
+										{
+											my->char_fire = std::min(my->char_fire,
+												getSpellEffectDurationSecondaryFromID(SPELL_FLAME_CLOAK, hit.entity, nullptr, hit.entity));
+										}
+										myStats->burningInflictedBy = hit.entity->getUID();
+
+										if ( hit.entity->behavior == &actPlayer )
+										{
+											bool alertTarget = my->monsterAlertBeforeHit(hit.entity);
+
+											// alert the monster!
+											if ( my->monsterState != MONSTER_STATE_ATTACK && (myStats->type < LICH || myStats->type >= SHOPKEEPER) )
+											{
+												if ( alertTarget )
+												{
+													my->monsterAcquireAttackTarget(*hit.entity, MONSTER_STATE_PATH, true);
+												}
+											}
+
+											// alert other monsters too
+											/*if ( alertTarget )
+											{
+												my->alertAlliesOnBeingHit(hit.entity);
+											}*/
+											my->updateEntityOnHit(hit.entity, alertTarget);
+										}
+									}
 								}
 							}
 						}

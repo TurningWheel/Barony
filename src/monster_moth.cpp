@@ -30,6 +30,10 @@ void initMoth(Entity* my, Stat* myStats)
 
 	my->z = 0;
 	my->initMonster(1819);
+	if ( my->sprite == 1822 )
+	{
+		my->flags[BURNABLE] = false;
+	}
 	my->flags[INVISIBLE] = true; // hide the "AI" bodypart
 	if ( multiplayer != CLIENT )
 	{

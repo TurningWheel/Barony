@@ -365,7 +365,19 @@ int getSpellbookBonusPercent(Entity* caster, Stat* stat, Item* spellbookItem)
 	}
 
 	int spellBookBonusPercent = 0;
-	auto spellID = getSpellIDFromSpellbook(spellbookItem->type);
+	int spellID = SPELL_NONE;
+	if ( itemCategory(spellbookItem) == SPELLBOOK )
+	{
+		spellID = getSpellIDFromSpellbook(spellbookItem->type);
+	}
+	else if ( itemTypeIsFoci(spellbookItem->type) )
+	{
+		spellID = getSpellIDFromFoci(spellbookItem->type);
+	}
+	if ( spellID == SPELL_NONE )
+	{
+		return 0;
+	}
 	if ( auto spell = getSpellFromID(spellID) )
 	{
 		spellBookBonusPercent = getSpellbookBaseINTBonus(caster, stat, spell->skillID);
@@ -1746,7 +1758,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					Uint8 effectStrength = casterStats->getEffectActive(EFF_ABSORB_MAGIC);
 					if ( effectStrength == 0 )
 					{
-						if ( caster->setEffect(EFF_ABSORB_MAGIC, (Uint8)1, 30 * TICKS_PER_SECOND, false) )
+						if ( caster->setEffect(EFF_ABSORB_MAGIC, (Uint8)1, element->duration, false) )
 						{
 							messagePlayerColor(caster->isEntityPlayer(),
 								MESSAGE_HINT, makeColorRGB(0, 255, 0), Language::get(6735));
@@ -1758,23 +1770,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							MESSAGE_HINT, makeColorRGB(255, 255, 255), Language::get(6727), spell->getSpellName());
 					}
 				}
-				spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
-			}
-			playSoundEntity(caster, 166, 128);
-		}
-		else if ( !strcmp(element->element_internal_name, spellElementMap[SPELL_FLAME_CLOAK].element_internal_name) )
-		{
-			if ( caster )
-			{
-				if ( Stat* casterStats = caster->getStats() )
-				{
-					if ( caster->setEffect(EFF_FLAME_CLOAK, (Uint8)1, 30 * TICKS_PER_SECOND, false) )
-					{
-						messagePlayerColor(caster->isEntityPlayer(),
-							MESSAGE_HINT, makeColorRGB(0, 255, 0), Language::get(6730));
-					}
-				}
-				spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
+				spawnMagicEffectParticles(caster->x, caster->y, caster->z, 1817);
 			}
 			playSoundEntity(caster, 166, 128);
 		}
@@ -3031,8 +3027,8 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						}
 					}
 				}
-				spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
-				playSoundEntity(caster, 171, 128);
+				spawnMagicEffectParticles(caster->x, caster->y, caster->z, 2207);
+				playSoundEntity(caster, 164, 128);
 			}
 		}
 		else if ( spell->ID == SPELL_FLAME_ELEMENTAL )
@@ -3080,7 +3076,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					}
 				}
 				spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
-				playSoundEntity(caster, 171, 128);
+				playSoundEntity(caster, 164, 128);
 			}
 		}
 		else if ( spell->ID == SPELL_NULL_AREA )
@@ -5059,7 +5055,14 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					}
 					else
 					{
-						magicOnSpellCastEvent(caster, caster, nullptr, spell->ID, spell_t::SPELL_LEVEL_EVENT_DEFAULT | spellEventFlags, numItems, allowedSkillup);
+						if ( totalMetal >= 10 )
+						{
+							magicOnSpellCastEvent(caster, caster, nullptr, spell->ID, spell_t::SPELL_LEVEL_EVENT_DEFAULT | spellEventFlags, numItems, allowedSkillup);
+						}
+						else
+						{
+							magicOnSpellCastEvent(caster, caster, nullptr, spell->ID, spell_t::SPELL_LEVEL_EVENT_DEFAULT | spellEventFlags | spell_t::SPELL_LEVEL_EVENT_MINOR_CHANCE, numItems, allowedSkillup);
+						}
 						messagePlayerColor(i, MESSAGE_INVENTORY, makeColorRGB(0, 255, 0), Language::get(3712), numItems);
 						playSoundEntity(caster, 167, 128);
 					}
@@ -5286,6 +5289,42 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					messagePlayerColor(caster->isEntityPlayer(), MESSAGE_STATUS, uint32ColorGreen, Language::get(6508));
 					playSoundEntity(caster, 178, 128);
 					spawnMagicEffectParticles(caster->x, caster->y, caster->z, 170);
+				}
+			}
+		}
+		else if ( !strcmp(element->element_internal_name, spellElementMap[SPELL_FLAME_CLOAK].element_internal_name) )
+		{
+			if ( caster )
+			{
+				if ( caster->behavior == &actMonster )
+				{
+					caster->setEffect(EFF_FLAME_CLOAK, (Uint8)100, 1500, true);
+					playSoundEntity(caster, 164, 128);
+					spawnMagicEffectParticles(caster->x, caster->y, caster->z, 2207);
+				}
+				else if ( caster->behavior == &actPlayer && caster->getStats() )
+				{
+					node_t* spellnode = list_AddNodeLast(&caster->getStats()->magic_effects);
+					spellnode->element = copySpell(spell); //We need to save the spell since this is a channeled spell.
+					channeled_spell = (spell_t*)(spellnode->element);
+					channeled_spell->magic_effects_node = spellnode;
+					spellnode->size = sizeof(spell_t);
+					((spell_t*)spellnode->element)->caster = caster->getUID();
+					spellnode->deconstructor = &spellDeconstructor;
+
+					int duration = element->duration;
+					channeled_spell->channel_duration = duration; //Tell the spell how long it's supposed to last so that it knows what to reset its timer to.
+					channeled_spell->channel_effectStrength = 25;
+					int effectStrength = getSpellDamageFromID(SPELL_FLAME_CLOAK, caster, nullptr, caster);
+					effectStrength = std::min(effectStrength, getSpellDamageSecondaryFromID(SPELL_FLAME_CLOAK, caster, nullptr, caster));
+					channeled_spell->channel_effectStrength = std::min(100, effectStrength);
+					if ( caster->setEffect(EFF_FLAME_CLOAK, (Uint8)channeled_spell->channel_effectStrength, duration, true) )
+					{
+						messagePlayerColor(caster->isEntityPlayer(),
+							MESSAGE_HINT, makeColorRGB(0, 255, 0), Language::get(6730));
+						playSoundEntity(caster, 164, 128);
+						spawnMagicEffectParticles(caster->x, caster->y, caster->z, 2207);
+					}
 				}
 			}
 		}
@@ -6691,8 +6730,19 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					serverSpawnMiscParticles(caster, PARTICLE_EFFECT_IGNITE, 0);
 				}
 
-				spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
-				playSoundEntity(caster, 167, 128);
+				if ( Stat* casterStats = caster->getStats() )
+				{
+					if ( casterStats->getEffectActive(EFF_FLAME_CLOAK) )
+					{
+						if ( caster->flags[BURNABLE] && caster->SetEntityOnFire() )
+						{
+							casterStats->burningInflictedBy = 0;
+						}
+					}
+				}
+
+				spawnMagicEffectParticles(caster->x, caster->y, caster->z, 2207);
+				playSoundEntity(caster, 164, 128);
 			}
 		}
 		else if ( spell->ID == SPELL_SHATTER_OBJECTS )
@@ -6775,13 +6825,17 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					missileEntity->actmagicNoHitMessage = 1;
 					delayMove = std::max(0, 10 * (castSpellProps->elementIndex - 1));
 				}
-				missileEntity->vel_x = cos(yaw) * (missile_speed);
-				missileEntity->vel_y = sin(yaw) * (missile_speed);
 				real_t spellDistance = sqrt(pow(castSpellProps->caster_x - castSpellProps->target_x, 2)
 					+ pow(castSpellProps->caster_y - castSpellProps->target_y, 2));
 				spellDistance += 4.0; // add a little distance
+				missile_speed *= spellDistance / 64.0;
+				missileEntity->vel_x = cos(yaw) * (missile_speed);
+				missileEntity->vel_y = sin(yaw) * (missile_speed);
+
+				missileEntity->focalz = 0.5;
+
 				real_t startZ = -16.0;
-				missileEntity->vel_z = -(startZ - 7.5) / (spellDistance / missile_speed);
+				missileEntity->vel_z = -(startZ - 7.5) / (spellDistance / 3.0);
 				missileEntity->actmagicIsVertical = MAGIC_ISVERTICAL_XYZ;
 				missileEntity->z = startZ;
 				missileEntity->pitch = atan2(missileEntity->vel_z, missile_speed);
@@ -6810,20 +6864,44 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					yaw += ((spread - (local_rng.rand() % (spread * 2 + 1))) / 5.0) * PI / 64;
 					missileEntity->actmagicNoHitMessage = 1;
 				}
+				else
+				{
+					int spread = 5;
+					missile_speed = 3.0 + ((spread - (local_rng.rand() % (spread * 2 + 1))) / 5.0);
+					yaw += ((spread - (local_rng.rand() % (spread * 2 + 1))) / 5.0) * PI / 64;
+				}
 
 				int delayMove = 0;
-				delayMove += (TICKS_PER_SECOND) * (castSpellProps->elementIndex / 2);
-				if ( castSpellProps->elementIndex % 2 == 1 )
+				if ( castSpellProps->elementIndex == 0 )
 				{
-					delayMove += 30;
+					delayMove += (TICKS_PER_SECOND) * ((castSpellProps->elementIndex + 6) / 2);
 				}
-				missileEntity->vel_x = cos(yaw) * (missile_speed);
-				missileEntity->vel_y = sin(yaw) * (missile_speed);
+				else
+				{
+					delayMove += (TICKS_PER_SECOND) * ((castSpellProps->elementIndex - 1) / 2);
+					if ( (castSpellProps->elementIndex - 1) % 2 == 1 )
+					{
+						delayMove += 30;
+					}
+				}
 				real_t spellDistance = sqrt(pow(castSpellProps->caster_x - castSpellProps->target_x, 2)
 					+ pow(castSpellProps->caster_y - castSpellProps->target_y, 2));
 				spellDistance += 4.0; // add a little distance
+				missile_speed *= spellDistance / 64.0;
+
+				real_t speedScale = 1.0;
+				if ( castSpellProps->elementIndex == 0 )
+				{
+					speedScale = 0.5;
+				}
+
+				missileEntity->vel_x = cos(yaw) * (missile_speed) * speedScale;
+				missileEntity->vel_y = sin(yaw) * (missile_speed) * speedScale;
+
+				missileEntity->focalz = 0.5;
+
 				real_t startZ = -16.0;
-				missileEntity->vel_z = -(startZ - 7.5) / (spellDistance / missile_speed);
+				missileEntity->vel_z = speedScale * (-(startZ - 7.5) / (spellDistance / 3.0));
 				missileEntity->actmagicIsVertical = MAGIC_ISVERTICAL_XYZ;
 				missileEntity->z = startZ;
 				missileEntity->pitch = atan2(missileEntity->vel_z, missile_speed);
@@ -7362,8 +7440,19 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			{
 				if ( propulsion == PROPULSION_MISSILE )
 				{
-					missileEntity->sprite = 13;
+					missileEntity->sprite = 233;
 					missileEntity->flags[SPRITE] = true;
+				}
+			}
+			else if ( !strcmp(innerElement->element_internal_name, spellElementMap[SPELL_METEOR].element_internal_name)
+				|| !strcmp(innerElement->element_internal_name, spellElementMap[SPELL_METEOR_SHOWER].element_internal_name) )
+			{
+				if ( propulsion == PROPULSION_MISSILE )
+				{
+					missileEntity->sprite = 2209;
+					missileEntity->scalex = 0.75;
+					missileEntity->scaley = missileEntity->scalex;
+					missileEntity->scalez = missileEntity->scalex;
 				}
 			}
 			else if ( !strcmp(innerElement->element_internal_name, "spell_element_scepter_blast") )

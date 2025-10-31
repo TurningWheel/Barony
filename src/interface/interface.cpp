@@ -2563,15 +2563,15 @@ void FollowerRadialMenu::drawFollowerMenu()
 						// tell player current monster can't do what you asked (e.g using last command & swapping between monsters with different requirements)
 						if ( disableOption < 0 )
 						{
-							messagePlayer(gui_player, MESSAGE_MISC, Language::get(3640), getMonsterLocalizedName(followerStats->type).c_str());
+							messagePlayer(gui_player, MESSAGE_MISC, Language::get(3640), getMonsterLocalizedName(followerStats->type, followerStats).c_str());
 						}
 						else if ( tinkeringFollower )
 						{
-							messagePlayer(gui_player, MESSAGE_MISC, Language::get(3639), getMonsterLocalizedName(followerStats->type).c_str());
+							messagePlayer(gui_player, MESSAGE_MISC, Language::get(3639), getMonsterLocalizedName(followerStats->type, followerStats).c_str());
 						}
 						else
 						{
-							messagePlayer(gui_player, MESSAGE_MISC, Language::get(3638), getMonsterLocalizedName(followerStats->type).c_str());
+							messagePlayer(gui_player, MESSAGE_MISC, Language::get(3638), getMonsterLocalizedName(followerStats->type, followerStats).c_str());
 						}
 					}
 
@@ -3656,21 +3656,21 @@ void FollowerRadialMenu::drawFollowerMenu()
 				auto& textMap = FollowerMenu[gui_player].iconEntries["invalid_action"].text_map["command_unavailable"];
 				setFollowerBannerTextFormatted(gui_player, bannerTxt, hudColors.characterSheetRed,
 					textMap.second, textMap.first.c_str(),
-					getMonsterLocalizedName(followerStats->type).c_str());
+					getMonsterLocalizedName(followerStats->type, followerStats).c_str());
 			}
 			else if ( disableOption == -4 ) // disabled due to command spell type
 			{
 				auto& textMap = FollowerMenu[gui_player].iconEntries["invalid_action"].text_map["command_unavailable_spell"];
 				setFollowerBannerTextFormatted(gui_player, bannerTxt, hudColors.characterSheetRed,
 					textMap.second, textMap.first.c_str(),
-					getMonsterLocalizedName(followerStats->type).c_str());
+					getMonsterLocalizedName(followerStats->type, followerStats).c_str());
 			}
 			else if ( disableOption == -3 ) // disabled due to tinkerbot quality
 			{
 				auto& textMap = FollowerMenu[gui_player].iconEntries["invalid_action"].text_map["tinker_quality_low"];
 				setFollowerBannerTextFormatted(gui_player, bannerTxt, hudColors.characterSheetRed,
 					textMap.second, textMap.first.c_str(),
-					getMonsterLocalizedName(followerStats->type).c_str());
+					getMonsterLocalizedName(followerStats->type, followerStats).c_str());
 			}
 			else
 			{
@@ -3952,7 +3952,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 				}
 				else
 				{
-					snprintf(buf, sizeof(buf), Language::get(4200), getMonsterLocalizedName(followerStats->type).c_str());
+					snprintf(buf, sizeof(buf), Language::get(4200), getMonsterLocalizedName(followerStats->type, followerStats).c_str());
 				}
 
 				for ( int c = 0; c <= strlen(buf); ++c )
