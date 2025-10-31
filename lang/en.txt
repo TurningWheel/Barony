@@ -1311,7 +1311,7 @@ Thank you!#
 861 You feel like someone is helping you.#
 862 You feel funny for a moment.#
 863 The scroll smokes and crumbles to ash!#
-864 The scroll erupts in a tower of flame!#
+864 The scroll erupts in a circle of flame!#
 865 A feast suddenly appears before you!#
 866 Your stomach grumbles, but it passes.#
 867 Your food pouch feels lighter!#
@@ -6997,7 +6997,7 @@ Host to enable the game setting.
 6727 You are already under the effects of %s.#
 6728 You set magic well#
 6729 You set critical spell#
-6730 You set flame cloak#
+6730 You are enveloped by a flame cloak!#
 6731 You set flame shield#
 6732 Your flame cloak ignites the %s!#
 6733 Your flame cloak ignites %s!#
@@ -7125,5 +7125,11 @@ to replay this challenge!
 6853 didn't survive the impact.#
 6854 Velocity#
 6855 Not enough resources#
+6856 Your spell can not absorb any more magic!#
+6857 Your spell absorbs the incoming hit!#
+6858 Your absorbed magic increased your damage!#
+6859 Your flame cloak falls to ashes.#
+6860 Your flame cloak is roaring with flames!#
+6861 The scroll erupts in a cloak of flame!#
 
 6999 END#
