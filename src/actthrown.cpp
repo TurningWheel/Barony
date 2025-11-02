@@ -868,8 +868,60 @@ void actThrown(Entity* my)
 		return;
 	}
 	my->processEntityWind();
-	double result = clipMove(&my->x, &my->y, THROWN_VELX, THROWN_VELY, my);
-	if ( processXYCollision && result != sqrt(THROWN_VELX * THROWN_VELX + THROWN_VELY * THROWN_VELY) )
+
+	bool hitSomething = false;
+	real_t result = 0.0;
+	bool halfSpeedCheck = false;
+	static ConsoleVariable<bool> cvar_thrown_clip("/thrown_clip_test", true);
+	real_t speed = sqrt(THROWN_VELX * THROWN_VELX + THROWN_VELY * THROWN_VELY);
+	if ( speed > 4.0 ) // can clip through thin gates
+	{
+		auto entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 1);
+		for ( auto it : entLists )
+		{
+			if ( !*cvar_thrown_clip && (svFlags & SV_FLAG_CHEATS) )
+			{
+				break;
+			}
+			for ( node_t* node = it->first; node != nullptr; node = node->next )
+			{
+				Entity* entity = (Entity*)node->element;
+				if ( entity->behavior == &actGate || entity->behavior == &actDoor || entity->behavior == &actIronDoor )
+				{
+					if ( entityDist(my, entity) <= speed )
+					{
+						halfSpeedCheck = true;
+						break;
+					}
+				}
+			}
+			if ( halfSpeedCheck )
+			{
+				break;
+			}
+		}
+	}
+
+	if ( !halfSpeedCheck )
+	{
+		result = clipMove(&my->x, &my->y, THROWN_VELX, THROWN_VELY, my);
+		hitSomething = result != sqrt(THROWN_VELX * THROWN_VELX + THROWN_VELY * THROWN_VELY);
+	}
+	else
+	{
+		real_t vel_x = THROWN_VELX / 2.0;
+		real_t vel_y = THROWN_VELY / 2.0;
+		real_t dist = clipMove(&my->x, &my->y, vel_x, vel_y, my);
+		result = dist;
+		hitSomething = dist != sqrt(vel_x * vel_x + vel_y * vel_y);
+		if ( !hitSomething )
+		{
+			dist = clipMove(&my->x, &my->y, vel_x, vel_y, my);
+			result += dist;
+			hitSomething = dist != sqrt(vel_x * vel_x + vel_y * vel_y);
+		}
+	}
+	if ( processXYCollision && hitSomething )
 	{
 		item = newItemFromEntity(my);
 		if ( !item )

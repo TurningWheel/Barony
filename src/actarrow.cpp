@@ -374,7 +374,7 @@ void actArrow(Entity* my)
 						Entity* entity = (Entity*)node->element;
 						if ( entity->behavior == &actGate || entity->behavior == &actDoor || entity->behavior == &actIronDoor )
 						{
-							if ( entityDist(my, entity) < my->arrowSpeed )
+							if ( entityDist(my, entity) <= my->arrowSpeed )
 							{
 								halfSpeedCheck = true;
 								break;
