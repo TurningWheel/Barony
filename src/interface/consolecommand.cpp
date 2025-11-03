@@ -4546,7 +4546,9 @@ namespace ConsoleCommands {
 		int cat = atoi(argv[1]);
 		cat = std::min(std::max(0, cat), Category::CATEGORY_MAX - 2);
 		ItemType type = itemLevelCurve((Category)cat, 0, currentlevel, local_rng);
-		dropItem(newItem(type, EXCELLENT, 0, 1, local_rng.rand(), true, &stats[clientnum]->inventory), 0);
+		Item* item = newItem(type, EXCELLENT, 0, 1, local_rng.rand(), true, &stats[clientnum]->inventory);
+		itemLevelCurvePostProcess(nullptr, item, local_rng);
+		dropItem(item, 0);
 	});
 
 	static ConsoleCommand ccmd_spawnitem2("/spawnitem2", "spawn an item with beatitude and status (/spawnitem -2 5 wooden shield) (cheat)", []CCMD{

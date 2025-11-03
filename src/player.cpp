@@ -3172,6 +3172,7 @@ void Player::init() // for use on new/restart game, UI related
 	skillUpAnimation[playernum].skillUps.clear();
 	mechanics.itemDegradeRng.clear();
 	mechanics.sustainedSpellIDCounter.clear();
+	mechanics.learnedSpells.clear();
 	mechanics.sustainedSpellMPUsedSorcery = 0;
 	mechanics.sustainedSpellMPUsedMysticism = 0;
 	mechanics.sustainedSpellMPUsedThaumaturgy = 0;
@@ -3186,8 +3187,6 @@ void Player::init() // for use on new/restart game, UI related
 	mechanics.fociDarkChargeTime = 0;
 	mechanics.fociHolyChargeTime = 0;
 	mechanics.lastFociHeldType = 0;
-
-	mechanics.sustainedSpellIDCounter.clear();
 }
 
 void Player::cleanUpOnEntityRemoval()

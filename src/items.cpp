@@ -379,6 +379,50 @@ bool itemLevelCurvePostProcess(Entity* my, Item* item, BaronyRNG& rng)
 			item->status = static_cast<Status>(itemStatus);
 		}
 	}
+	if ( itemType >= 0 && itemType < NUMITEMS )
+	{
+		if ( items[itemType].category == SPELLBOOK )
+		{
+			//if ( itemLevelCurveType == ITEM_LEVEL_CURVE_TYPE_DEFAULT )
+			{
+				std::vector<unsigned int> chances;
+				int minDifficulty = std::min(60, (currentlevel / 5) * 20);
+				for ( auto& def : allGameSpells )
+				{
+					if ( auto spell = def.second )
+					{
+						if ( spell->ID != SPELL_NONE && !spell->hide_from_ui )
+						{
+							if ( spell->skillID == PRO_SORCERY 
+								&& (spell->difficulty / 20) <= (1 + (currentlevel / 5))
+								&& (spell->difficulty >= minDifficulty) )
+							{
+								chances.push_back(spell->ID);
+							}
+						}
+					}
+				}
+
+				if ( chances.size() )
+				{
+					itemType = TOME_SORCERY;
+					Uint32 appearance = (my && my->behavior == &actItem) ? my->skill[14] : item->appearance;
+					int pick = rng.rand() % chances.size();
+					appearance = chances[pick];
+					if ( my && my->behavior == &actItem )
+					{
+						my->skill[10] = itemType;
+						my->skill[14] = appearance;
+					}
+					else
+					{
+						item->type = static_cast<ItemType>(itemType);
+						item->appearance = appearance;
+					}
+				}
+			}
+		}
+	}
 
 	itemLevelCurveType = ITEM_LEVEL_CURVE_TYPE_DEFAULT;
 	itemLevelCurveShop = -1;
@@ -1012,7 +1056,7 @@ int getItemVariationFromSpellbookOrTome(const Item& item)
 	{
 		return -1;
 	}
-	if ( auto spell = getSpellFromID(getSpellIDFromSpellbook(item.type)) )
+	if ( auto spell = getSpellFromID(spellID) )
 	{
 		int index = -1;
 		switch ( spell->skillID )

@@ -145,6 +145,7 @@ static const int EFF_STASIS = 120;
 static const int EFF_HP_MP_REGEN = 121;
 static const int EFF_DISRUPTED = 122;
 static const int EFF_FROST = 123;
+static const int EFF_MAGICIANS_ARMOR = 124;
 static const int NUMEFFECTS = 128;
 
 // stats

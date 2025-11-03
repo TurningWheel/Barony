@@ -1602,6 +1602,7 @@ void setupSpells()   ///TODO: Verify this function.
 		// elements
 		{ SPELL_ELEMENT_PROPULSION_MISSILE, SPELL_ELEMENT_SPRITE_FLAMES }
 	);
+	spell->hide_from_ui = true;
 
 	spellElementConstructor(SPELL_ELEMENT_PROPULSION_FLOOR_TILE,
 		1,		// mana
@@ -3316,6 +3317,18 @@ void setupSpells()   ///TODO: Verify this function.
 		0, // damage
 		1, // duration
 		"spell_shatter_objects");
+
+	spell = createSimpleSpell(
+		SPELL_MAGICIANS_ARMOR,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_magicians_armor",
+		1);
+	spell->sustainEffectDissipate = EFF_MAGICIANS_ARMOR;
 
 	//static const int SPELL_LIGHTNING_NEXUS = 182;
 	//static const int SPELL_LIFT = 184;

@@ -2559,6 +2559,34 @@ void gameLogic(void)
 						Compendium_t::Events_t::onLevelChangeEvent(c, Compendium_t::Events_t::previousCurrentLevel, Compendium_t::Events_t::previousSecretlevel, prevmapname, playerDied[c]);
 						players[c]->compendiumProgress.playerAliveTimeTotal = 0;
 						players[c]->compendiumProgress.playerGameTimeTotal = 0;
+
+						// unsustain any previous effects
+						node_t* spellnode;
+						spellnode = stats[c]->magic_effects.first;
+						while ( spellnode )
+						{
+							node_t* oldnode = spellnode;
+							spellnode = spellnode->next;
+							if ( spell_t* spell = (spell_t*)oldnode->element )
+							{
+								spell->magic_effects_node = NULL;
+								if ( spell->sustainEffectDissipate >= 0 )
+								{
+									if ( stats[c]->getEffectActive(spell->sustainEffectDissipate) )
+									{
+										if ( stats[c]->EFFECTS_TIMERS[spell->sustainEffectDissipate] > 0 )
+										{
+											stats[c]->EFFECTS_TIMERS[spell->sustainEffectDissipate] = 1;
+										}
+									}
+									list_RemoveNode(oldnode);
+								}
+								else
+								{
+									spell->sustain = false;
+								}
+							}
+						}
 					}
 
                     // save at end of level change

@@ -405,8 +405,8 @@ void revenantSkullAnimate(Entity* my, Stat* myStats, double dist)
 
 	my->flags[INVISIBLE] = true; // hide the "AI" bodypart
 
-	my->sizex = 2;
-	my->sizey = 2;
+	my->sizex = 4;
+	my->sizey = 4;
 
 	Monster monsterType = my->sprite == 1804 ? FLAME_ELEMENTAL : (my->sprite == 1797 ? MONSTER_ADORCISED_WEAPON : REVENANT_SKULL);
 

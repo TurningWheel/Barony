@@ -5328,6 +5328,42 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				}
 			}
 		}
+		else if ( !strcmp(element->element_internal_name, spellElementMap[SPELL_MAGICIANS_ARMOR].element_internal_name) )
+		{
+			if ( caster )
+			{
+				if ( caster->behavior == &actMonster )
+				{
+					caster->setEffect(EFF_MAGICIANS_ARMOR, (Uint8)15, 1500, true);
+					playSoundEntity(caster, 166, 128);
+					spawnMagicEffectParticles(caster->x, caster->y, caster->z, 2204);
+				}
+				else if ( caster->behavior == &actPlayer && caster->getStats() )
+				{
+					node_t* spellnode = list_AddNodeLast(&caster->getStats()->magic_effects);
+					spellnode->element = copySpell(spell); //We need to save the spell since this is a channeled spell.
+					channeled_spell = (spell_t*)(spellnode->element);
+					channeled_spell->magic_effects_node = spellnode;
+					spellnode->size = sizeof(spell_t);
+					((spell_t*)spellnode->element)->caster = caster->getUID();
+					spellnode->deconstructor = &spellDeconstructor;
+
+					int duration = element->duration;
+					channeled_spell->channel_duration = duration; //Tell the spell how long it's supposed to last so that it knows what to reset its timer to.
+					channeled_spell->channel_effectStrength = 1;
+					int effectStrength = std::max(3, getSpellDamageFromID(SPELL_MAGICIANS_ARMOR, caster, nullptr, caster));
+					effectStrength = std::min(effectStrength, getSpellEffectDurationSecondaryFromID(SPELL_MAGICIANS_ARMOR, caster, nullptr, caster));
+					channeled_spell->channel_effectStrength = std::min(100, effectStrength);
+					if ( caster->setEffect(EFF_MAGICIANS_ARMOR, (Uint8)channeled_spell->channel_effectStrength, duration, true, true, true) )
+					{
+						messagePlayerColor(caster->isEntityPlayer(),
+							MESSAGE_HINT, makeColorRGB(0, 255, 0), Language::get(6862));
+						playSoundEntity(caster, 166, 128);
+						spawnMagicEffectParticles(caster->x, caster->y, caster->z, 2204);
+					}
+				}
+			}
+		}
 		else if ( spell->ID == SPELL_OVERCHARGE )
 		{
 			if ( caster )

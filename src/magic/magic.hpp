@@ -235,6 +235,7 @@ static const int SPELL_FOCI_LIGHT_PROVIDENCE = 212;
 static const int SPELL_FOCI_LIGHT_PURITY = 213;
 static const int SPELL_FOCI_LIGHT_SANCTUARY = 214;
 static const int SPELL_SCEPTER_BLAST = 215;
+static const int SPELL_MAGICIANS_ARMOR = 216;
 static const int NUM_SPELLS = 225;
 
 #define SPELLELEMENT_CONFUSE_BASE_DURATION 2//In seconds.
@@ -349,6 +350,7 @@ static const int PARTICLE_EFFECT_IGNITE_ORBIT_FOLLOW = 66;
 static const int PARTICLE_EFFECT_FLAMES = 67;
 static const int PARTICLE_EFFECT_FLAMES_BURNING = 68;
 static const int PARTICLE_EFFECT_SUMMON_FLAMES = 69;
+static const int PARTICLE_EFFECT_MAGICIANS_ARMOR_ORBIT = 70;
 
 // actmagicIsVertical constants
 static const int MAGIC_ISVERTICAL_NONE = 0;
@@ -1024,6 +1026,7 @@ void actEarthElementalDeathGib(Entity* my);
 void actLeafParticle(Entity* my);
 void actLeafPile(Entity* my);
 Entity* spawnLeafPile(real_t x, real_t y, bool trap);
+int magiciansArmorProc(Entity* my, Stat& myStats, bool checkEffectActiveOnly, Entity* attacker);
 
 void spawnMagicTower(Entity* parent, real_t x, real_t y, int spellID, Entity* autoHitTarget, bool castedSpell = false); // autoHitTarget is to immediate damage an entity, as all 3 tower magics hitting is unreliable
 bool magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks);
@@ -1170,7 +1173,8 @@ struct AOEIndicators_t
 		CACHE_MUSHROOM_1,
 		CACHE_MUSHROOM_2,
 		CACHE_MUSHROOM_3,
-		CACHE_MUSHROOM_4
+		CACHE_MUSHROOM_4,
+		CACHE_MAGICIANS_ARMOR
 	};
 	struct Indicator_t
 	{

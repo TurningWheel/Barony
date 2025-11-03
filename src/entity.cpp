@@ -691,6 +691,21 @@ void sustainedSpellProcess(Entity& entity, Stat& myStats, int effectID, std::map
 			{
 				sustainCost *= 2;
 			}
+			else if ( effectID == EFF_MAGICIANS_ARMOR )
+			{
+				int currentStrength = sustainedSpell_hijacked[effectID]->channel_effectStrength;
+				int effectStrengthMax = getSpellDamageSecondaryFromID(SPELL_MAGICIANS_ARMOR, caster, nullptr, caster);
+				effectStrengthMax = std::min(effectStrengthMax, getSpellEffectDurationSecondaryFromID(SPELL_MAGICIANS_ARMOR, caster, nullptr, caster));
+
+				int increment = std::max(1, getSpellDamageFromID(SPELL_MAGICIANS_ARMOR, caster, nullptr, caster));
+
+				sustainedSpell_hijacked[effectID]->channel_effectStrength += increment;
+				sustainedSpell_hijacked[effectID]->channel_effectStrength = std::min(effectStrengthMax, sustainedSpell_hijacked[effectID]->channel_effectStrength);
+				if ( sustainedSpell_hijacked[effectID]->channel_effectStrength > currentStrength )
+				{
+					sustainCost *= sustainedSpell_hijacked[effectID]->channel_effectStrength - currentStrength;
+				}
+			}
 			bool deducted = caster->safeConsumeMP(sustainCost); //Consume X mana ever duration / mana seconds
 			if ( deducted )
 			{
@@ -873,6 +888,31 @@ void Entity::effectTimes()
 			case SPELL_FLAME_CLOAK:
 				sustainedSpell_hijacked[EFF_FLAME_CLOAK] = spell;
 				if ( !myStats->getEffectActive(EFF_FLAME_CLOAK) )
+				{
+					for ( int c = 0; c < MAXPLAYERS; ++c )
+					{
+						if ( players[c] && players[c]->entity && players[c]->entity == uidToEntity(spell->caster) )
+						{
+							messagePlayer(c, MESSAGE_COMBAT, Language::get(6503), spell->getSpellName());    //If cure ailments or somesuch bombs the status effects.
+						}
+					}
+					node_t* temp = nullptr;
+					if ( node->prev )
+					{
+						temp = node->prev;
+					}
+					else if ( node->next )
+					{
+						temp = node->next;
+					}
+					unsustain = true;
+					list_RemoveNode(node); //Remove this here node.
+					node = temp;
+				}
+				break;
+			case SPELL_MAGICIANS_ARMOR:
+				sustainedSpell_hijacked[EFF_MAGICIANS_ARMOR] = spell;
+				if ( !myStats->getEffectActive(EFF_MAGICIANS_ARMOR) )
 				{
 					for ( int c = 0; c < MAXPLAYERS; ++c )
 					{
@@ -1867,6 +1907,19 @@ void Entity::effectTimes()
 						if ( dissipate )
 						{
 							messagePlayer(player, MESSAGE_STATUS, Language::get(6859));
+							updateClient = true;
+						}
+						break;
+					case EFF_MAGICIANS_ARMOR:
+						dissipate = true; //Remove the effect by default.
+						if ( sustainedSpell_hijacked.find(EFF_MAGICIANS_ARMOR) != sustainedSpell_hijacked.end() )
+						{
+							sustainedSpell_hijacked[EFF_MAGICIANS_ARMOR]->channel_effectStrength = effectStrength;
+						}
+						sustainedSpellProcess(*this, *myStats, c, sustainedSpell_hijacked, dissipate, unsustainSpell);
+						if ( dissipate )
+						{
+							messagePlayer(player, MESSAGE_STATUS, Language::get(6863));
 							updateClient = true;
 						}
 						break;
@@ -6181,6 +6234,49 @@ void Entity::handleEffects(Stat* myStats)
 		}
 	}
 
+	if ( myStats->getEffectActive(EFF_MAGICIANS_ARMOR) )
+	{
+		int interval = 80;
+		if ( ticks % interval == 0 )
+		{
+			Entity* fx = createParticleAestheticOrbit(this, 275, 2 * TICKS_PER_SECOND, PARTICLE_EFFECT_MAGICIANS_ARMOR_ORBIT);
+			fx->flags[SPRITE] = true;
+			fx->z = 4.0 - 2.0 * ((ticks / interval) % 4);
+			fx->vel_z = -0.025;
+			fx->sizex = 4;
+			fx->sizey = 4;
+			fx->flags[GENIUS] = true;
+			fx->scalex = 0.05;
+			fx->scaley = fx->scalex;
+			fx->scalez = fx->scalex;
+			fx->actmagicOrbitDist = 4;
+			fx->fskill[2] = this->yaw + PI;
+			fx->lightBonus = vec4{ 0.f, 0.f, 0.f, 0.f };
+			//fx->fskill[2] += ((ticks / interval) % 3) * 2 * PI / 3;
+			fx->yaw = fx->fskill[2];
+			fx->actmagicNoLight = 1;
+
+			if ( Entity* fx = createParticleAOEIndicator(this, this->x, this->y, 0.0, 2 * TICKS_PER_SECOND, 16.0) )
+			{
+				fx->scalex = 0.8;
+				fx->scaley = 0.8;
+				if ( auto indicator = AOEIndicators_t::getIndicator(fx->skill[10]) )
+				{
+					//indicator->arc = PI / 2;
+					Uint32 color = makeColorRGB(101, 16, 145);
+					indicator->indicatorColor = color;
+					indicator->loop = false;
+					indicator->gradient = 2;
+					indicator->framesPerTick = 1;
+					indicator->ticksPerUpdate = 1;
+					indicator->delayTicks = 0;
+					indicator->expireAlphaRate = 0.95;
+					indicator->cacheType = AOEIndicators_t::CACHE_MAGICIANS_ARMOR;
+				}
+			}
+		}
+	}
+
 	if ( myStats->getEffectActive(EFF_FLAME_CLOAK) )
 	{
 		int interval = 40;
@@ -6197,7 +6293,7 @@ void Entity::handleEffects(Stat* myStats)
 			fx->fskill[2] = this->yaw + PI;
 			//fx->fskill[2] += ((ticks / interval) % 3) * 2 * PI / 3;
 			fx->yaw = fx->fskill[2];
-			fx->actmagicNoLight = 1;
+			fx->actmagicNoLight = 0;
 
 			if ( Entity* fx = createParticleAOEIndicator(this, this->x, this->y, 0.0, TICKS_PER_SECOND, 16.0) )
 			{
@@ -11680,6 +11776,14 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 					}
 
+					if ( hitstats && hitstats->getEffectActive(EFF_MAGICIANS_ARMOR) )
+					{
+						if ( hit.entity->checkEnemy(this) )
+						{
+							magiciansArmorProc(hit.entity, *hitstats, false, this);
+						}
+					}
+
 					// write the obituary
 					if ( hit.entity != this )
 					{
@@ -15044,6 +15148,10 @@ int AC(Stat* stat)
 		int tier = std::max(0, (stat->getEffectActive(EFF_FOCI_LIGHT_SANCTUARY) - 1));
 		armor += tier * getSpellDamageSecondaryFromID(SPELL_FOCI_LIGHT_SANCTUARY, nullptr, nullptr, nullptr);
 	}
+	if ( stat->getEffectActive(EFF_MAGICIANS_ARMOR) )
+	{
+		armor += magiciansArmorProc(playerEntity, *stat, true, nullptr);
+	}
 	if ( stat->getEffectActive(EFF_DISRUPTED) )
 	{
 		armor -= std::min((Uint8)3, stat->getEffectActive(EFF_DISRUPTED)) * 5;
@@ -15863,10 +15971,10 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 	{
 		baseXp = 1 + local_rng.rand() % 2;
 	}
-	else if ( srcStats->type == SLIME )
+	/*else if ( srcStats->type == SLIME )
 	{
 		baseXp = 5;
-	}
+	}*/
 	else if ( srcStats->type == GNOME )
 	{
 		baseXp = 5;
@@ -15956,7 +16064,7 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 		}
 
 		// divide value of each share
-		real_t numSharesMult = std::max(0.25, 1.0 - 0.25 * numshares);
+		real_t numSharesMult = std::max(0.25, 1.0 - 0.2 * numshares);
 		if ( numshares )
 		{
 			xpGain *= numSharesMult;

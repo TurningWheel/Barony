@@ -870,6 +870,17 @@ void actArrow(Entity* my)
 						}
 					}
 
+					if ( hitstats && hitstats->getEffectActive(EFF_MAGICIANS_ARMOR) )
+					{
+						if ( parent && parent->getStats() )
+						{
+							if ( hit.entity->checkEnemy(parent) )
+							{
+								magiciansArmorProc(hit.entity, *hitstats, false, parent);
+							}
+						}
+					}
+
 					/*messagePlayer(0, "My damage: %d, AC: %d, Pierce: %d", my->arrowPower, AC(hitstats), my->arrowArmorPierce);
 					messagePlayer(0, "Resolved to %d damage.", damage);*/
 					Sint32 oldHP = hitstats->HP;

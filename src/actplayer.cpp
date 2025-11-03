@@ -9982,46 +9982,81 @@ void actPlayer(Entity* my)
 				{
 					hit.entity->doorHealth = 0;
 				}
-				//else if ( hit.entity->behavior == &actDoorFrame &&
-				//	hit.entity->flags[INVISIBLE] )
-				//{
-				//	// code that almost fixes door frame collision
-				//	if ( hit.entity->yaw >= -0.1 && hit.entity->yaw <= 0.1 )
-				//	{
-				//		// east/west doorway
-				//		if ( my->y < floor(hit.entity->y / 16) * 16 + 8 )
-				//		{
-				//			// slide south
-				//			PLAYER_VELX = 0;
-				//			PLAYER_VELY = .25;
-				//		}
-				//		else
-				//		{
-				//			// slide north
-				//			PLAYER_VELX = 0;
-				//			PLAYER_VELY = -.25;
-				//		}
-				//	}
-				//	else
-				//	{
-				//		// north/south doorway
-				//		if ( my->x < floor(hit.entity->x / 16) * 16 + 8 )
-				//		{
-				//			// slide east
-				//			PLAYER_VELX = .25;
-				//			PLAYER_VELY = 0;
-				//		}
-				//		else
-				//		{
-				//			// slide west
-				//			PLAYER_VELX = -.25;
-				//			PLAYER_VELY = 0;
-				//		}
-				//	}
-				//	my->x += PLAYER_VELX;
-				//	my->y += PLAYER_VELY;
-				//	dist = sqrt(PLAYER_VELX * PLAYER_VELX + PLAYER_VELY * PLAYER_VELY);
-				//}
+
+				if ( hit.entity->behavior == &actDoorFrame &&
+					hit.entity->flags[INVISIBLE] )
+				{
+					// code that almost fixes door frame collision
+					//real_t slidex = 0.0;
+					//real_t slidey = 0.0;
+					//if ( hit.entity->yaw >= -0.1 && hit.entity->yaw <= 0.1 )
+					//{
+					//	// east/west doorway
+					//	if ( my->y < floor(hit.entity->y / 16) * 16 + 8 )
+					//	{
+					//		// slide south
+					//		slidex = 0;
+					//		slidey = .25;
+					//	}
+					//	else
+					//	{
+					//		// slide north
+					//		slidex = 0;
+					//		slidey = -.25;
+					//	}
+					//}
+					//else
+					//{
+					//	// north/south doorway
+					//	if ( my->x < floor(hit.entity->x / 16) * 16 + 8 )
+					//	{
+					//		// slide east
+					//		slidex = .25;
+					//		slidey = 0;
+					//	}
+					//	else
+					//	{
+					//		// slide west
+					//		slidex = -.25;
+					//		slidey = 0;
+					//	}
+					//}
+
+					real_t centerx = floor(hit.entity->x / 16) * 16 + 8;
+					real_t centery = floor(hit.entity->y / 16) * 16 + 8;
+					real_t tangent = atan2(centery - my->y, centerx - my->x);
+					real_t dir = atan2(my->vel_y, my->vel_x);
+					real_t spd = sqrt(my->vel_x * my->vel_x + my->vel_y * my->vel_y);
+					//real_t dirx = cos(tangent - dir);
+					//real_t diry = sin(tangent - dir);
+					//real_t tangent2 = atan2(diry, dirx);
+					real_t diff = tangent - dir;
+					if ( diff >= PI )
+					{
+						diff -= 2 * PI;
+					}
+					else if ( diff < -PI )
+					{
+						diff += 2 * PI;
+					}
+					//messagePlayer(0, MESSAGE_DEBUG, "%.2f", diff);
+					if ( abs(diff) < PI / 2 )
+					{
+						dir += (tangent - dir);
+						my->vel_x = spd * cos(dir);
+						my->vel_y = spd * sin(dir);
+					}
+
+					/*if ( abs(slidex) > 0.0 )
+					{
+						PLAYER_VELX += slidex;
+					}
+					if ( abs(slidey) > 0.0 )
+					{
+						PLAYER_VELY += slidey;
+					}*/
+					//dist += clipMove(&my->x, &my->y, slidex, slidey, my);
+				}
 			}
 		}
 		else

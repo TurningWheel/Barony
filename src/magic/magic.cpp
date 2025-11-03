@@ -3366,6 +3366,65 @@ bool Entity::spellEffectPreserveItem(Item* item)
 	return false;
 }
 
+int magiciansArmorProc(Entity* my, Stat& myStats, bool checkEffectActiveOnly, Entity* attacker)
+{
+	int player = -1;
+	if ( my && my->behavior == &actPlayer )
+	{
+		player = my->skill[2];
+	}
+	if ( !my && player == -1 )
+	{
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( stats[i] == &myStats )
+			{
+				player = i;
+				break;
+			}
+		}
+	}
+
+	if ( myStats.getEffectActive(EFF_MAGICIANS_ARMOR) )
+	{
+		if ( player >= 0 )
+		{
+			int result = myStats.getEffectActive(EFF_MAGICIANS_ARMOR);
+
+			if ( !checkEffectActiveOnly )
+			{
+				if ( my )
+				{
+					int minValue = std::max(3, getSpellDamageFromID(SPELL_MAGICIANS_ARMOR, my, nullptr, my));
+					my->setEffect(EFF_MAGICIANS_ARMOR, (Uint8)std::max(minValue, myStats.getEffectActive(EFF_MAGICIANS_ARMOR) - 1),
+						myStats.EFFECTS_TIMERS[EFF_MAGICIANS_ARMOR], false, true, true);
+					if ( my->getActiveMagicEffect(SPELL_MAGICIANS_ARMOR) )
+					{
+						if ( result != myStats.getEffectActive(EFF_MAGICIANS_ARMOR) )
+						{
+							players[player]->mechanics.updateSustainedSpellEvent(SPELL_MAGICIANS_ARMOR, 10.0 + result, 1.0);
+						}
+					}
+				}
+			}
+			return result;
+		}
+		else
+		{
+			if ( !checkEffectActiveOnly )
+			{
+				if ( my && my->behavior == &actMonster )
+				{
+					myStats.EFFECTS_TIMERS[EFF_MAGICIANS_ARMOR] = std::max(1, myStats.EFFECTS_TIMERS[EFF_MAGICIANS_ARMOR] - TICKS_PER_SECOND);
+				}
+			}
+			return myStats.getEffectActive(EFF_MAGICIANS_ARMOR);
+		}
+	}
+
+	return 0;
+}
+
 bool Entity::mistFormDodge(bool checkEffectActiveOnly, Entity* attacker)
 {
 	if ( Stat* myStats = getStats() )

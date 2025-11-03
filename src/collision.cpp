@@ -1553,6 +1553,7 @@ real_t clipMove(real_t* x, real_t* y, real_t vx, real_t vy, Entity* my)
 	// move x and y
 	tx = *x + vx;
 	ty = *y + vy;
+
 	if (barony_clear(tx, ty, my))
 	{
 		*x = tx;
@@ -1561,6 +1562,7 @@ real_t clipMove(real_t* x, real_t* y, real_t vx, real_t vy, Entity* my)
 		return sqrt(vx * vx + vy * vy);
 	}
 
+	hit_t prevHit = hit;
 	// only move x
 	tx = *x + vx;
 	ty = *y;
@@ -1572,6 +1574,7 @@ real_t clipMove(real_t* x, real_t* y, real_t vx, real_t vy, Entity* my)
 		return fabs(vx);
 	}
 
+	prevHit = hit;
 	// only move y
 	tx = *x;
 	ty = *y + vy;
@@ -1582,6 +1585,13 @@ real_t clipMove(real_t* x, real_t* y, real_t vx, real_t vy, Entity* my)
 		hit.side = HORIZONTAL;
 		return fabs(vy);
 	}
+
+	if ( my && my->behavior == &actPlayer && prevHit.entity && prevHit.entity->behavior == &actDoorFrame && !hit.entity )
+	{
+		// allow players to hit doorways when next to map tile instead (otherwise gets overwritten here)
+		hit = prevHit;
+	}
+
 	hit.side = 0;
 	return 0;
 }

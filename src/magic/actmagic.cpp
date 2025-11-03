@@ -1006,6 +1006,7 @@ bool magicOnSpellCastEvent(Entity* parent, Entity* projectile, Entity* hitentity
 		return false;
 	}
 	auto& spellDef = findSpellDef->second;
+	bool skillTooHigh = false;
 	if ( allowedLevelup )
 	{
 		if ( hitentity )
@@ -1056,6 +1057,7 @@ bool magicOnSpellCastEvent(Entity* parent, Entity* projectile, Entity* hitentity
 			if ( stats[player]->getProficiency(spell->skillID) >= std::min(SKILL_LEVEL_LEGENDARY, (spell->difficulty + 20)) )
 			{
 				allowedLevelup = false;
+				skillTooHigh = true;
 			}
 		}
 	}
@@ -1142,7 +1144,11 @@ bool magicOnSpellCastEvent(Entity* parent, Entity* projectile, Entity* hitentity
 					}
 					else
 					{
-						nothingElseToLearnMsg = true;
+						if ( skillTooHigh )
+						{
+							nothingElseToLearnMsg = true;
+							players[player]->mechanics.baseSpellIncrementMP(5 + (spell->difficulty / 20), spell->skillID);
+						}
 					}
 				}
 			}
@@ -7570,6 +7576,12 @@ void actParticleAestheticOrbit(Entity* my)
 					{
 						sizeModY += sizeModY > 0 ? 1 : -1;
 					}
+
+					if ( parent->behavior == &actPlayer )
+					{
+						my->x += 1.0 * cos(parent->yaw + PI);
+						my->y += 1.0 * sin(parent->yaw + PI);
+					}
 					my->x += sizeModX;
 					my->y += sizeModY;
 					my->fskill[0] = my->x;
@@ -7584,6 +7596,14 @@ void actParticleAestheticOrbit(Entity* my)
 					my->yaw += (PI / 32) * sin(my->fskill[3]);
 					my->x = parent->x + my->actmagicOrbitDist * cos(my->yaw);
 					my->y = parent->y + my->actmagicOrbitDist * sin(my->yaw);
+
+					if ( !my->actmagicNoLight )
+					{
+						if ( !my->light )
+						{
+							my->light = addLight(my->x / 16, my->y / 16, "magic_spray_orange_flicker");
+						}
+					}
 				}
 			}
 			else
@@ -7747,6 +7767,33 @@ void actParticleAestheticOrbit(Entity* my)
 				my->scalex = std::min(my->scalex + 0.05, 0.5);
 				my->scaley = std::min(my->scaley + 0.05, 0.5);
 				my->scalez = std::min(my->scalez + 0.05, 0.5);
+			}
+		}
+		else if ( my->skill[1] == PARTICLE_EFFECT_MAGICIANS_ARMOR_ORBIT )
+		{
+			my->fskill[2] += 0.05;
+			my->yaw -= 0.05;
+			my->x = parent->x + my->actmagicOrbitDist * cos(my->fskill[2]);
+			my->y = parent->y + my->actmagicOrbitDist * sin(my->fskill[2]);
+			my->z += my->vel_z;
+			Stat* stats = parent->getStats();
+			if ( PARTICLE_LIFE <= 10 || (!stats || !stats->getEffectActive(EFF_MAGICIANS_ARMOR)) )
+			{
+				my->scalex -= 0.05;
+				my->scaley -= 0.05;
+				my->scalez -= 0.05;
+				if ( my->scalex <= 0.0 )
+				{
+					my->removeLightField();
+					list_RemoveNode(my->mynode);
+					return;
+				}
+			}
+			else
+			{
+				my->scalex = std::min(my->scalex + 0.05, 0.25);
+				my->scaley = std::min(my->scaley + 0.05, 0.25);
+				my->scalez = std::min(my->scalez + 0.05, 0.25);
 			}
 		}
 		else if ( my->skill[1] == PARTICLE_EFFECT_MUSHROOM_SPELL )

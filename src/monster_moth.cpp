@@ -372,8 +372,8 @@ void mothAnimate(Entity* my, Stat* myStats, double dist)
 	my->flags[INVISIBLE] = true; // hide the "AI" bodypart
 	//my->flags[PASSABLE] = true;
 
-	my->sizex = 2;
-	my->sizey = 2;
+	my->sizex = 4;
+	my->sizey = 4;
 
 	my->focalx = limbs[MOTH_SMALL][0][0];
 	my->focaly = limbs[MOTH_SMALL][0][1];

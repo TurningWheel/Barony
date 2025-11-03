@@ -322,6 +322,11 @@ void initShopkeeper(Entity* my, Stat* myStats)
 			bool doneLockpick = false;
 			bool doneBackpack = false;
 			bool doneTinkeringKit = false;
+			if ( !strcmp(map.name, "Mages Guild") )
+			{
+				doneAlembic = true;
+				doneTinkeringKit = true;
+			}
 			bool doneFeather = false;
 			int doneHardwareHat = 0;
 			switch ( my->monsterStoreType )

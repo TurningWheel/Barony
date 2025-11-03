@@ -1097,6 +1097,17 @@ void actThrown(Entity* my)
 							}
 							damage -= (AC(hit.entity->getStats()) * .5);
 						}
+
+						if ( hitstats && hitstats->getEffectActive(EFF_MAGICIANS_ARMOR) )
+						{
+							if ( parent && parent->getStats() )
+							{
+								if ( hit.entity->checkEnemy(parent) )
+								{
+									magiciansArmorProc(hit.entity, *hitstats, false, parent);
+								}
+							}
+						}
 					}
 				}
 				if ( hitstats && !hitstats->defending )

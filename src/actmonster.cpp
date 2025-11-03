@@ -5459,7 +5459,7 @@ void actMonster(Entity* my)
 				{
 					real_t followx = leader->x;
 					real_t followy = leader->y;
-					if ( myStats->type == GYROBOT )
+					if ( myStats->type == GYROBOT || (myStats->type == MOTH_SMALL && myStats->getAttribute("fire_sprite") != "") )
 					{
 						// follow ahead of the leader.
 						real_t startx = leader->x;
@@ -5524,7 +5524,8 @@ void actMonster(Entity* my)
 						{
 							my->monsterReleaseAttackTarget();
 							std::pair<int, int> followPos;
-							if ( myStats->type == GYROBOT )
+							if ( myStats->type == GYROBOT
+								|| (myStats->type == MOTH_SMALL && myStats->getAttribute("fire_sprite") != "") )
 							{
 								if ( my->monsterSetPathToLocation(static_cast<int>(followx) / 16, static_cast<int>(followy) / 16, 0,
 									GeneratePathTypes::GENERATE_PATH_ALLY_FOLLOW) )
@@ -5552,7 +5553,8 @@ void actMonster(Entity* my)
 							return;
 						}
 					}
-					else if ( myStats->type != GYROBOT )
+					else if ( !(myStats->type == GYROBOT
+						|| (myStats->type == MOTH_SMALL && myStats->getAttribute("fire_sprite") != "")) )
 					{
 						tangent = atan2( leader->y - my->y, leader->x - my->x );
 						lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, true);
@@ -7302,7 +7304,8 @@ timeToGoAgain:
 				{
 					real_t followx = leader->x;
 					real_t followy = leader->y;
-					if ( myStats->type == GYROBOT )
+					if ( myStats->type == GYROBOT
+						|| (myStats->type == MOTH_SMALL && myStats->getAttribute("fire_sprite") != "") )
 					{
 						// follow ahead of the leader.
 						real_t startx = leader->x;
@@ -7363,7 +7366,8 @@ timeToGoAgain:
 
 						if ( doFollow )
 						{
-							if ( myStats->type == GYROBOT )
+							if ( myStats->type == GYROBOT
+								|| (myStats->type == MOTH_SMALL && myStats->getAttribute("fire_sprite") != "") )
 							{
 								my->monsterSetPathToLocation(static_cast<int>(followx) / 16, static_cast<int>(followy) / 16, 0,
 									GeneratePathTypes::GENERATE_PATH_ALLY_FOLLOW2);
@@ -7385,7 +7389,8 @@ timeToGoAgain:
 							return;
 						}
 					}
-					else if ( myStats->type != GYROBOT )
+					else if ( !(myStats->type == GYROBOT
+						|| (myStats->type == MOTH_SMALL && myStats->getAttribute("fire_sprite") != "")) )
 					{
 						bool doFollow = true;
 						if ( my->monsterTarget != 0 )
