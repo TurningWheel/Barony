@@ -5784,17 +5784,31 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                         }
                     }
                     else if ( tag.compare("spell_cast_success") == 0
+							 || tag.compare("spell_cast_success1") == 0
+							 || tag.compare("spell_cast_success2") == 0
                              || tag.compare("spell_extramana_chance") == 0 )
                     {
 						if ( compendiumTooltip && intro )
 						{
 							continue;
 						}
-                        bool newbie = isSpellcasterBeginner(player, players[player]->entity, spell->skillID);
-                        if ( !newbie )
-                        {
-                            continue;
-                        }
+						if ( tag.compare("spell_cast_success2") == 0 )
+						{
+							bool newbie = std::min(std::max(0, 
+								stats[player]->getModifiedProficiency(spell->skillID) + statGetINT(stats[player], players[player]->entity)), 100) < SKILL_LEVEL_BASIC;
+							if ( !newbie )
+							{
+								continue;
+							}
+						}
+						else
+						{
+							bool newbie = isSpellcasterBeginner(player, players[player]->entity, spell->skillID);
+							if ( !newbie )
+							{
+								continue;
+							}
+						}
                     }
                     else if ( tag.compare("spell_newbie_newline") == 0 )
                     {

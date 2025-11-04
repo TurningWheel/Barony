@@ -762,7 +762,7 @@ void actMagiclightBall(Entity* my)
 									if ( dist > 0.05 )
 									{
 										lightball_travelled_distance += abs(dist);
-										if ( lightball_travelled_distance >= 8 * 16.0 )
+										if ( lightball_travelled_distance >= 16 * 16.0 )
 										{
 											lightball_travelled_distance = 0.0;
 											if ( magicOnSpellCastEvent(caster, my, nullptr, spell->ID, spell_t::SPELL_LEVEL_EVENT_SUSTAIN | spell_t::SPELL_LEVEL_EVENT_MAGICSTAFF, 1) )

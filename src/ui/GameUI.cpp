@@ -35820,7 +35820,9 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		}
 		else if ( tag == "CASTING_BEGINNER" )
 		{
-			if ( isSpellcasterBeginner(playernum, player, proficiency) )
+			//if ( isSpellcasterBeginner(playernum, player, proficiency) )
+			int skillLVL = std::min(std::max(0, stats[playernum]->getModifiedProficiency(proficiency) + statGetINT(stats[playernum], player)), 100);
+			if ( skillLVL < SKILL_LEVEL_BASIC )
 			{
 				snprintf(buf, sizeof(buf), rawValue.c_str(), Language::get(1314)); // yes
 			}

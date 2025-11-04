@@ -756,13 +756,13 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		//So This wizard is a newbie.
 
 		//First, drain some extra mana maybe.
-		int chance = local_rng.rand() % 10;
+		int chance = local_rng.rand() % 100;
 		int spellcastingAbility = getEffectiveSpellcastingAbility(caster, stat, spell);
 		if ( usingSpellbook )
 		{
 			spellcastingAbility = getSpellcastingAbilityFromUsingSpellbook(spell, caster, stat);
 		}
-		if (chance >= spellcastingAbility / 10)   //At skill 20, there's an 80% chance you'll use extra mana. At 70, there's a 30% chance.
+		if (chance >= spellcastingAbility)   //At skill 20, there's an 80% chance you'll use extra mana. At 70, there's a 30% chance.
 		{
 			int extramagic = local_rng.rand() % (300 / (spellcastingAbility + 1)); //Use up extra mana. More mana used the lower your spellcasting skill.
 			extramagic = std::min<real_t>(extramagic, stat->MP / 10); //To make sure it doesn't draw, say, 5000 mana. Cause dammit, if you roll a 1 here...you're doomed.
@@ -788,6 +788,13 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		if ( chance >= spellcastingAbility )
 		{
 			fizzleSpell = true;
+			if ( !usingSpellbook )
+			{
+				if ( spellcastingAbility >= SKILL_LEVEL_BASIC )
+				{
+					fizzleSpell = false;
+				}
+			}
 		}
 
 		// Check for natural monster spells - we won't fizzle those.

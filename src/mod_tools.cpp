@@ -859,6 +859,20 @@ void ItemTooltips_t::setSpellValueIfKeyPresent(ItemTooltips_t::spellItem_t& t, r
 	}
 }
 
+#ifdef EDITOR
+void lowercaseString(std::string& str)
+{
+	if ( str.size() < 1 ) { return; }
+	for ( auto& letter : str )
+	{
+		if ( letter >= 'A' && letter <= 'Z' )
+		{
+			letter = tolower(letter);
+		}
+	}
+}
+#endif
+
 void ItemTooltips_t::readItemsFromFile()
 {
 	printlog("loading items...\n");
@@ -2270,6 +2284,10 @@ int ItemTooltips_t::getSpellDamageOrHealAmount(const int player, spell_t* spell,
 		{
 			damage = elementRoot->getDamage();
 			heal = elementRoot->getDamage();
+		}
+		if ( spell->ID == SPELL_FORCEBOLT )
+		{
+			return damage;
 		}
 		if ( player >= 0 && players[player] )
 		{
@@ -4912,6 +4930,26 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 			{
 				snprintf(buf, sizeof(buf), str.c_str(), chance);
 			}
+		}
+		else if ( detailTag.compare("spell_cast_success1") == 0 )
+		{
+			spell_t* spell = getSpellFromItem(player, &item, false);
+			if ( !spell ) { return; }
+
+			if ( str.find("%s") != std::string::npos )
+			{
+				snprintf(buf, sizeof(buf), str.c_str(), Player::SkillSheet_t::getSkillNameFromID(spell->skillID).c_str());
+			}
+		}
+		else if ( detailTag.compare("spell_cast_success2") == 0 )
+		{
+			spell_t* spell = getSpellFromItem(player, &item, false);
+			if ( !spell ) { return; }
+
+			int spellcastingAbility = std::min(std::max(0, stats[player]->getModifiedProficiency(spell->skillID)
+				+ statGetINT(stats[player], players[player]->entity)), 100);
+			int chance = ((100 - (spellcastingAbility)) / 3.0); // 33% after rolling to fizzle, 66% success
+			snprintf(buf, sizeof(buf), str.c_str(), chance);
 		}
 		else if ( detailTag.compare("spell_extramana_chance") == 0 )
 		{

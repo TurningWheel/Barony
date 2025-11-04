@@ -1617,7 +1617,8 @@ void gameLogic(void)
 
 			//if( TICKS_PER_SECOND )
 			//generatePathMaps();
-			bool debugMonsterTimer = false && !gamePaused && keystatus[SDLK_F1];
+			static ConsoleVariable<bool> cvar_debug_monster_timer("/debug_monster_timer", false);
+			bool debugMonsterTimer = *cvar_debug_monster_timer && !gamePaused && keystatus[SDLK_F1];
 			if ( debugMonsterTimer )
 			{
 				printlog("loop start");

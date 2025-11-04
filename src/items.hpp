@@ -902,3 +902,7 @@ enum SpellbookColors
 };
 
 int getItemVariationFromSpellbookOrTome(const Item& item);
+
+#ifdef EDITOR
+SDL_Surface* itemSprite(Item* const item);
+#endif

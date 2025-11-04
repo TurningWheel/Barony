@@ -4797,7 +4797,7 @@ void actMonster(Entity* my)
 		}
 
 		// being bumped by someone friendly
-		std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 2);
+		std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 1);
 		for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
 		{
 			list_t* currentList = *it;
@@ -5764,13 +5764,17 @@ void actMonster(Entity* my)
 					searchLimitX = 7;
 					searchLimitY = 7;
 				}
+				else if ( !strcmp(map.name, "Citadel") )
+				{
+					searchLimitX = 7;
+					searchLimitY = 7;
+				}
 				int lowerX = std::max<int>(0, centerX - searchLimitX); // assigned upper/lower x coords from entity start position.
 				int upperX = std::min<int>(centerX + searchLimitX, map.width);
 
 				int lowerY = std::max<int>(0, centerY - searchLimitY); // assigned upper/lower y coords from entity start position.
 				int upperY = std::min<int>(centerY + searchLimitY, map.height);
 				//messagePlayer(0, "my x: %d, my y: %d, rangex: (%d-%d), rangey: (%d-%d)", centerX, centerY, lowerX, upperX, lowerY, upperY);
-
 				if ( myStats->type != SHOPKEEPER && !my->monsterCanTradeWith(-1)
 					&& (myStats->MISC_FLAGS[STAT_FLAG_NPC] == 0 && my->monsterAllyState == ALLY_STATE_DEFAULT) )
 				{

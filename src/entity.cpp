@@ -15965,6 +15965,11 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 		}
 	}
 
+	if ( src->monsterAllyGetPlayerLeader() && (this->behavior == &actPlayer || this->monsterAllyGetPlayerLeader()) )
+	{
+		return;
+	}
+
 	// calculate XP gain
 	int baseXp = 10;
 	if ( srcStats->type == BAT_SMALL )
@@ -16064,7 +16069,19 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 		}
 
 		// divide value of each share
-		real_t numSharesMult = std::max(0.25, 1.0 - 0.2 * numshares);
+		real_t numSharesMult = 1.0;
+		if ( numshares == 1 )
+		{
+			numSharesMult = 0.8;
+		}
+		else if ( numshares == 2 )
+		{
+			numSharesMult = 0.7;
+		}
+		else if ( numshares >= 3 )
+		{
+			numSharesMult = 0.6;
+		}
 		if ( numshares )
 		{
 			xpGain *= numSharesMult;
@@ -25811,7 +25828,6 @@ list_t* TileEntityListHandler::getTileList(int x, int y)
 std::vector<list_t*> TileEntityListHandler::getEntitiesWithinRadius(int u, int v, int radius)
 {
 	std::vector<list_t*> return_val;
-
 	for ( int i = u - radius; i <= u + radius; ++i )
 	{
 		for ( int j = v - radius; j <= v + radius; ++j )
