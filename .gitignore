@@ -81,3 +81,4 @@ xcode/Barony/Barony.xcodeproj/xcuserdata/*
 *.i
 *.enc
 *.ilk
+/VS.2015/x64
