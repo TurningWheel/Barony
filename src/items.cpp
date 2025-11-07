@@ -218,6 +218,7 @@ Item* newItem(const ItemType type, const Status status, const Sint16 beatitude, 
 	item->itemSpecialShopConsumable = false;
 	item->interactNPCUid = 0;
 	item->notifyIcon = false;
+	item->spellNotifyIcon = false;
 	if ( inventory )
 	{
 		Player::Inventory_t* playerInventoryUI = nullptr;

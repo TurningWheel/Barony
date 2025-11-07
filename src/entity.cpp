@@ -691,13 +691,23 @@ void sustainedSpellProcess(Entity& entity, Stat& myStats, int effectID, std::map
 			{
 				sustainCost *= 2;
 			}
-			else if ( effectID == EFF_MAGICIANS_ARMOR )
+			else if ( effectID == EFF_GUARD_BODY || effectID == EFF_GUARD_SPIRIT || effectID == EFF_DIVINE_GUARD )
 			{
-				int currentStrength = sustainedSpell_hijacked[effectID]->channel_effectStrength;
-				int effectStrengthMax = getSpellDamageSecondaryFromID(SPELL_MAGICIANS_ARMOR, caster, nullptr, caster);
-				effectStrengthMax = std::min(effectStrengthMax, getSpellEffectDurationSecondaryFromID(SPELL_MAGICIANS_ARMOR, caster, nullptr, caster));
+				int spellID = SPELL_GUARD_BODY;
+				if ( effectID == EFF_GUARD_SPIRIT )
+				{
+					spellID = SPELL_GUARD_SPIRIT;
+				}
+				else if ( effectID == EFF_DIVINE_GUARD )
+				{
+					spellID = SPELL_DIVINE_GUARD;
+				}
 
-				int increment = std::max(1, getSpellDamageFromID(SPELL_MAGICIANS_ARMOR, caster, nullptr, caster));
+				int currentStrength = sustainedSpell_hijacked[effectID]->channel_effectStrength;
+				int effectStrengthMax = getSpellDamageSecondaryFromID(spellID, caster, nullptr, caster);
+				effectStrengthMax = std::min(effectStrengthMax, getSpellEffectDurationSecondaryFromID(spellID, caster, nullptr, caster));
+
+				int increment = std::max(1, getSpellDamageFromID(spellID, caster, nullptr, caster));
 
 				sustainedSpell_hijacked[effectID]->channel_effectStrength += increment;
 				sustainedSpell_hijacked[effectID]->channel_effectStrength = std::min(effectStrengthMax, sustainedSpell_hijacked[effectID]->channel_effectStrength);
@@ -910,9 +920,59 @@ void Entity::effectTimes()
 					node = temp;
 				}
 				break;
-			case SPELL_MAGICIANS_ARMOR:
-				sustainedSpell_hijacked[EFF_MAGICIANS_ARMOR] = spell;
-				if ( !myStats->getEffectActive(EFF_MAGICIANS_ARMOR) )
+			case SPELL_GUARD_BODY:
+				sustainedSpell_hijacked[EFF_GUARD_BODY] = spell;
+				if ( !myStats->getEffectActive(EFF_GUARD_BODY) )
+				{
+					for ( int c = 0; c < MAXPLAYERS; ++c )
+					{
+						if ( players[c] && players[c]->entity && players[c]->entity == uidToEntity(spell->caster) )
+						{
+							messagePlayer(c, MESSAGE_COMBAT, Language::get(6503), spell->getSpellName());    //If cure ailments or somesuch bombs the status effects.
+						}
+					}
+					node_t* temp = nullptr;
+					if ( node->prev )
+					{
+						temp = node->prev;
+					}
+					else if ( node->next )
+					{
+						temp = node->next;
+					}
+					unsustain = true;
+					list_RemoveNode(node); //Remove this here node.
+					node = temp;
+				}
+				break;
+			case SPELL_GUARD_SPIRIT:
+				sustainedSpell_hijacked[EFF_GUARD_SPIRIT] = spell;
+				if ( !myStats->getEffectActive(EFF_GUARD_SPIRIT) )
+				{
+					for ( int c = 0; c < MAXPLAYERS; ++c )
+					{
+						if ( players[c] && players[c]->entity && players[c]->entity == uidToEntity(spell->caster) )
+						{
+							messagePlayer(c, MESSAGE_COMBAT, Language::get(6503), spell->getSpellName());    //If cure ailments or somesuch bombs the status effects.
+						}
+					}
+					node_t* temp = nullptr;
+					if ( node->prev )
+					{
+						temp = node->prev;
+					}
+					else if ( node->next )
+					{
+						temp = node->next;
+					}
+					unsustain = true;
+					list_RemoveNode(node); //Remove this here node.
+					node = temp;
+				}
+				break;
+			case SPELL_DIVINE_GUARD:
+				sustainedSpell_hijacked[EFF_DIVINE_GUARD] = spell;
+				if ( !myStats->getEffectActive(EFF_DIVINE_GUARD) )
 				{
 					for ( int c = 0; c < MAXPLAYERS; ++c )
 					{
@@ -1468,6 +1528,16 @@ void Entity::effectTimes()
 				}
 			}
 
+			if ( c == EFF_MAGICIANS_ARMOR )
+			{
+				if ( myStats->EFFECTS_TIMERS[c] > 1 && myStats->EFFECTS_TIMERS[c] < (TICKS_PER_SECOND * 5) )
+				{
+					// refresh timer and send to clients
+					this->setEffect(EFF_MAGICIANS_ARMOR, myStats->getEffectActive(EFF_MAGICIANS_ARMOR), 15 * TICKS_PER_SECOND, false, true, true);
+					updateClient = true;
+				}
+			}
+
 			if ( c == EFF_GROWTH && behavior == &actPlayer )
 			{
 				if ( !(myStats->type == MONSTER_M || myStats->type == MONSTER_D) || myStats->helmet )
@@ -1910,16 +1980,42 @@ void Entity::effectTimes()
 							updateClient = true;
 						}
 						break;
-					case EFF_MAGICIANS_ARMOR:
+					case EFF_GUARD_BODY:
 						dissipate = true; //Remove the effect by default.
-						if ( sustainedSpell_hijacked.find(EFF_MAGICIANS_ARMOR) != sustainedSpell_hijacked.end() )
+						if ( sustainedSpell_hijacked.find(EFF_GUARD_BODY) != sustainedSpell_hijacked.end() )
 						{
-							sustainedSpell_hijacked[EFF_MAGICIANS_ARMOR]->channel_effectStrength = effectStrength;
+							sustainedSpell_hijacked[EFF_GUARD_BODY]->channel_effectStrength = effectStrength;
 						}
 						sustainedSpellProcess(*this, *myStats, c, sustainedSpell_hijacked, dissipate, unsustainSpell);
 						if ( dissipate )
 						{
-							messagePlayer(player, MESSAGE_STATUS, Language::get(6863));
+							messagePlayer(player, MESSAGE_STATUS, Language::get(6864));
+							updateClient = true;
+						}
+						break;
+					case EFF_GUARD_SPIRIT:
+						dissipate = true; //Remove the effect by default.
+						if ( sustainedSpell_hijacked.find(EFF_GUARD_SPIRIT) != sustainedSpell_hijacked.end() )
+						{
+							sustainedSpell_hijacked[EFF_GUARD_SPIRIT]->channel_effectStrength = effectStrength;
+						}
+						sustainedSpellProcess(*this, *myStats, c, sustainedSpell_hijacked, dissipate, unsustainSpell);
+						if ( dissipate )
+						{
+							messagePlayer(player, MESSAGE_STATUS, Language::get(6865));
+							updateClient = true;
+						}
+						break;
+					case EFF_DIVINE_GUARD:
+						dissipate = true; //Remove the effect by default.
+						if ( sustainedSpell_hijacked.find(EFF_DIVINE_GUARD) != sustainedSpell_hijacked.end() )
+						{
+							sustainedSpell_hijacked[EFF_DIVINE_GUARD]->channel_effectStrength = effectStrength;
+						}
+						sustainedSpellProcess(*this, *myStats, c, sustainedSpell_hijacked, dissipate, unsustainSpell);
+						if ( dissipate )
+						{
+							messagePlayer(player, MESSAGE_STATUS, Language::get(6866));
 							updateClient = true;
 						}
 						break;
@@ -2151,6 +2247,10 @@ void Entity::effectTimes()
 						updateClient = true;
 						break;
 					case EFF_KNOCKBACK:
+						break;
+					case EFF_MAGICIANS_ARMOR:
+						messagePlayer(player, MESSAGE_STATUS, Language::get(6863));
+						updateClient = true;
 						break;
 					case EFF_DELAY_PAIN:
 						if ( effectStrength > 1 )
@@ -3695,7 +3795,7 @@ void Entity::handleEffects(Stat* myStats)
 	}
 
 
-	if ( auto effectStrength = myStats->getEffectActive(EFF_DETECT_ENEMY) )
+	if ( Uint8 effectStrength = myStats->getEffectActive(EFF_DETECT_ENEMY) )
 	{
 		if ( ticks % 60 == 0 && behavior == &actMonster )
 		{
@@ -6239,14 +6339,14 @@ void Entity::handleEffects(Stat* myStats)
 		int interval = 80;
 		if ( ticks % interval == 0 )
 		{
-			Entity* fx = createParticleAestheticOrbit(this, 275, 2 * TICKS_PER_SECOND, PARTICLE_EFFECT_MAGICIANS_ARMOR_ORBIT);
+			Entity* fx = createParticleAestheticOrbit(this, 276, 2 * TICKS_PER_SECOND, PARTICLE_EFFECT_MAGICIANS_ARMOR_ORBIT);
 			fx->flags[SPRITE] = true;
 			fx->z = 4.0 - 2.0 * ((ticks / interval) % 4);
 			fx->vel_z = -0.025;
 			fx->sizex = 4;
 			fx->sizey = 4;
-			fx->flags[GENIUS] = true;
-			fx->scalex = 0.05;
+			//fx->flags[GENIUS] = true;
+			fx->scalex = 0.0125;
 			fx->scaley = fx->scalex;
 			fx->scalez = fx->scalex;
 			fx->actmagicOrbitDist = 4;
@@ -6273,6 +6373,99 @@ void Entity::handleEffects(Stat* myStats)
 					indicator->expireAlphaRate = 0.95;
 					indicator->cacheType = AOEIndicators_t::CACHE_MAGICIANS_ARMOR;
 				}
+			}
+		}
+	}
+
+	if ( myStats->getEffectActive(EFF_GUARD_BODY) || myStats->getEffectActive(EFF_GUARD_SPIRIT) || myStats->getEffectActive(EFF_DIVINE_GUARD) )
+	{
+		int interval = 80;
+		if ( ticks % interval == 0 )
+		{
+			if ( Entity* fx = createParticleAOEIndicator(this, this->x, this->y, 0.0, 2 * TICKS_PER_SECOND, 16.0) )
+			{
+				fx->scalex = 0.8;
+				fx->scaley = 0.8;
+				if ( auto indicator = AOEIndicators_t::getIndicator(fx->skill[10]) )
+				{
+					//indicator->arc = PI / 2;
+					Uint32 color = makeColorRGB(255, 255, 255);
+					indicator->indicatorColor = color;
+					indicator->loop = false;
+					indicator->gradient = 2;
+					indicator->framesPerTick = 1;
+					indicator->ticksPerUpdate = 1;
+					indicator->delayTicks = 0;
+					indicator->expireAlphaRate = 0.95;
+					indicator->cacheType = AOEIndicators_t::CACHE_THAUM_ARMOR;
+				}
+			}
+		}
+
+		if ( myStats->getEffectActive(EFF_GUARD_BODY) )
+		{
+			if ( ticks % interval == 20 )
+			{
+				Entity* fx = createParticleAestheticOrbit(this, 280, 2 * TICKS_PER_SECOND, PARTICLE_EFFECT_GUARD_BODY_ORBIT);
+				fx->flags[SPRITE] = true;
+				fx->z = 4.0 - 2.0 * ((ticks / interval) % 4);
+				fx->vel_z = -0.025;
+				fx->sizex = 4;
+				fx->sizey = 4;
+				fx->flags[GENIUS] = true;
+				fx->scalex = 0.05;
+				fx->scaley = fx->scalex;
+				fx->scalez = fx->scalex;
+				fx->actmagicOrbitDist = 4;
+				fx->fskill[2] = this->yaw + PI;
+				fx->lightBonus = vec4{ 0.f, 0.f, 0.f, 0.f };
+				//fx->fskill[2] += ((ticks / interval) % 3) * 2 * PI / 3;
+				fx->yaw = fx->fskill[2];
+				fx->actmagicNoLight = 1;
+			}
+		}
+		if ( myStats->getEffectActive(EFF_GUARD_SPIRIT) )
+		{
+			if ( ticks % interval == 40 )
+			{
+				Entity* fx = createParticleAestheticOrbit(this, 281, 2 * TICKS_PER_SECOND, PARTICLE_EFFECT_GUARD_SPIRIT_ORBIT);
+				fx->flags[SPRITE] = true;
+				fx->z = 4.0 - 2.0 * ((ticks / interval) % 4);
+				fx->vel_z = -0.025;
+				fx->sizex = 4;
+				fx->sizey = 4;
+				fx->flags[GENIUS] = true;
+				fx->scalex = 0.05;
+				fx->scaley = fx->scalex;
+				fx->scalez = fx->scalex;
+				fx->actmagicOrbitDist = 4;
+				fx->fskill[2] = this->yaw + PI;
+				fx->lightBonus = vec4{ 0.f, 0.f, 0.f, 0.f };
+				//fx->fskill[2] += ((ticks / interval) % 3) * 2 * PI / 3;
+				fx->yaw = fx->fskill[2];
+				fx->actmagicNoLight = 1;
+			}
+		}
+		if ( myStats->getEffectActive(EFF_DIVINE_GUARD) )
+		{
+			if ( ticks % interval == 60 )
+			{
+				Entity* fx = createParticleAestheticOrbit(this, 282, 2 * TICKS_PER_SECOND, PARTICLE_EFFECT_GUARD_DIVINE_ORBIT);
+				fx->flags[SPRITE] = true;
+				fx->z = 4.0 - 2.0 * ((ticks / interval) % 4);
+				fx->vel_z = -0.025;
+				fx->sizex = 4;
+				fx->sizey = 4;
+				fx->flags[GENIUS] = true;
+				fx->scalex = 0.05;
+				fx->scaley = fx->scalex;
+				fx->scalez = fx->scalex;
+				fx->actmagicOrbitDist = 4;
+				fx->fskill[2] = this->yaw + PI;
+				fx->lightBonus = vec4{ 0.f, 0.f, 0.f, 0.f };
+				//fx->fskill[2] += ((ticks / interval) % 3) * 2 * PI / 3;
+				fx->yaw = fx->fskill[2];
+				fx->actmagicNoLight = 1;
 			}
 		}
 	}
@@ -10083,25 +10276,36 @@ void Entity::attack(int pose, int charge, Entity* target)
 				{
 					miss = true;
 				}
-				else if ( hitstats && hitstats->getEffectActive(EFF_NULL_MELEE)
+				else if ( hitstats && hitstats->getEffectActive(EFF_MAGICIANS_ARMOR)
 					&& !(!(svFlags & SV_FLAG_FRIENDLYFIRE) && checkFriend(hit.entity))  /*dont apply to friendly fire */ )
 				{
 					guard = true;
-					auto effectStrength = hitstats->getEffectActive(EFF_NULL_MELEE);
-					int duration = hitstats->EFFECTS_TIMERS[EFF_NULL_MELEE];
+					Uint8 effectStrength = hitstats->getEffectActive(EFF_MAGICIANS_ARMOR);
 					if ( effectStrength == 1 )
 					{
-						if ( hitstats->EFFECTS_TIMERS[EFF_NULL_MELEE] > 0 )
+						if ( hitstats->EFFECTS_TIMERS[EFF_MAGICIANS_ARMOR] > 0 )
 						{
-							hitstats->EFFECTS_TIMERS[EFF_NULL_MELEE] = 1;
+							hitstats->EFFECTS_TIMERS[EFF_MAGICIANS_ARMOR] = 1;
 						}
 					}
 					else if ( effectStrength > 1 )
 					{
 						--effectStrength;
-						hitstats->setEffectValueUnsafe(EFF_NULL_MELEE, effectStrength);
-						hit.entity->setEffect(EFF_NULL_MELEE, effectStrength, hitstats->EFFECTS_TIMERS[EFF_NULL_MELEE], false);
+						hitstats->setEffectValueUnsafe(EFF_MAGICIANS_ARMOR, effectStrength);
+						hit.entity->setEffect(EFF_MAGICIANS_ARMOR, effectStrength, hitstats->EFFECTS_TIMERS[EFF_MAGICIANS_ARMOR], true);
 					}
+
+					Entity* fx = createParticleAestheticOrbit(hit.entity, 1817, TICKS_PER_SECOND / 4, PARTICLE_EFFECT_NULL_PARTICLE);
+					fx->x = hit.entity->x;
+					fx->y = hit.entity->y;
+					fx->z = hit.entity->z;
+					real_t tangent = atan2(this->y - hit.entity->y, this->x - hit.entity->x);
+					fx->x += 4.0 * cos(tangent);
+					fx->y += 4.0 * sin(tangent);
+					fx->yaw = tangent;
+					fx->actmagicOrbitDist = 0;
+					fx->actmagicNoLight = 0;
+					serverSpawnMiscParticlesAtLocation(fx->x, fx->y, fx->z, PARTICLE_EFFECT_NULL_PARTICLE, 1817, 0, fx->yaw * 256.0);
 				}
 				else if ( bat && hit.entity->monsterSpecialState == BAT_REST )
 				{
@@ -10221,7 +10425,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 						if ( guard )
 						{
-							playSoundEntity(hit.entity, 166, 128);
+							//playSoundEntity(hit.entity, 166, 128);
 							if ( this->behavior == &actPlayer )
 							{
 								messagePlayerMonsterEvent(this->skill[2], makeColorRGB(255, 255, 255),
@@ -11776,12 +11980,13 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 					}
 
-					if ( hitstats && hitstats->getEffectActive(EFF_MAGICIANS_ARMOR) )
+					if ( hitstats && hitstats->getEffectActive(EFF_GUARD_BODY) )
 					{
-						if ( hit.entity->checkEnemy(this) )
-						{
-							magiciansArmorProc(hit.entity, *hitstats, false, this);
-						}
+						thaumSpellArmorProc(hit.entity, *hitstats, false, this, EFF_GUARD_BODY);
+					}
+					if ( hitstats && hitstats->getEffectActive(EFF_DIVINE_GUARD) )
+					{
+						thaumSpellArmorProc(hit.entity, *hitstats, false, this, EFF_DIVINE_GUARD);
 					}
 
 					// write the obituary
@@ -15148,9 +15353,13 @@ int AC(Stat* stat)
 		int tier = std::max(0, (stat->getEffectActive(EFF_FOCI_LIGHT_SANCTUARY) - 1));
 		armor += tier * getSpellDamageSecondaryFromID(SPELL_FOCI_LIGHT_SANCTUARY, nullptr, nullptr, nullptr);
 	}
-	if ( stat->getEffectActive(EFF_MAGICIANS_ARMOR) )
+	if ( stat->getEffectActive(EFF_GUARD_BODY) )
 	{
-		armor += magiciansArmorProc(playerEntity, *stat, true, nullptr);
+		armor += thaumSpellArmorProc(playerEntity, *stat, true, nullptr, EFF_GUARD_BODY);
+	}
+	if ( stat->getEffectActive(EFF_DIVINE_GUARD) )
+	{
+		armor += thaumSpellArmorProc(playerEntity, *stat, true, nullptr, EFF_DIVINE_GUARD);
 	}
 	if ( stat->getEffectActive(EFF_DISRUPTED) )
 	{
@@ -21275,6 +21484,142 @@ void Entity::handleEffectsClient()
 		}
 	}
 
+	if ( myStats->getEffectActive(EFF_MAGICIANS_ARMOR) )
+	{
+		int interval = 80;
+		if ( ticks % interval == 0 )
+		{
+			Entity* fx = createParticleAestheticOrbit(this, 276, 2 * TICKS_PER_SECOND, PARTICLE_EFFECT_MAGICIANS_ARMOR_ORBIT);
+			fx->flags[SPRITE] = true;
+			fx->z = 4.0 - 2.0 * ((ticks / interval) % 4);
+			fx->vel_z = -0.025;
+			fx->sizex = 4;
+			fx->sizey = 4;
+			//fx->flags[GENIUS] = true;
+			fx->scalex = 0.0125;
+			fx->scaley = fx->scalex;
+			fx->scalez = fx->scalex;
+			fx->actmagicOrbitDist = 4;
+			fx->fskill[2] = this->yaw + PI;
+			fx->lightBonus = vec4{ 0.f, 0.f, 0.f, 0.f };
+			//fx->fskill[2] += ((ticks / interval) % 3) * 2 * PI / 3;
+			fx->yaw = fx->fskill[2];
+			fx->actmagicNoLight = 1;
+
+			if ( Entity* fx = createParticleAOEIndicator(this, this->x, this->y, 0.0, 2 * TICKS_PER_SECOND, 16.0) )
+			{
+				fx->scalex = 0.8;
+				fx->scaley = 0.8;
+				if ( auto indicator = AOEIndicators_t::getIndicator(fx->skill[10]) )
+				{
+					//indicator->arc = PI / 2;
+					Uint32 color = makeColorRGB(101, 16, 145);
+					indicator->indicatorColor = color;
+					indicator->loop = false;
+					indicator->gradient = 2;
+					indicator->framesPerTick = 1;
+					indicator->ticksPerUpdate = 1;
+					indicator->delayTicks = 0;
+					indicator->expireAlphaRate = 0.95;
+					indicator->cacheType = AOEIndicators_t::CACHE_MAGICIANS_ARMOR;
+				}
+			}
+		}
+	}
+
+	if ( myStats->getEffectActive(EFF_GUARD_BODY) || myStats->getEffectActive(EFF_GUARD_SPIRIT) || myStats->getEffectActive(EFF_DIVINE_GUARD) )
+	{
+		int interval = 80;
+		if ( ticks % interval == 0 )
+		{
+			if ( Entity* fx = createParticleAOEIndicator(this, this->x, this->y, 0.0, 2 * TICKS_PER_SECOND, 16.0) )
+			{
+				fx->scalex = 0.8;
+				fx->scaley = 0.8;
+				if ( auto indicator = AOEIndicators_t::getIndicator(fx->skill[10]) )
+				{
+					//indicator->arc = PI / 2;
+					Uint32 color = makeColorRGB(255, 255, 255);
+					indicator->indicatorColor = color;
+					indicator->loop = false;
+					indicator->gradient = 2;
+					indicator->framesPerTick = 1;
+					indicator->ticksPerUpdate = 1;
+					indicator->delayTicks = 0;
+					indicator->expireAlphaRate = 0.95;
+					indicator->cacheType = AOEIndicators_t::CACHE_THAUM_ARMOR;
+				}
+			}
+		}
+
+		if ( myStats->getEffectActive(EFF_GUARD_BODY) )
+		{
+			if ( ticks % interval == 20 )
+			{
+				Entity* fx = createParticleAestheticOrbit(this, 280, 2 * TICKS_PER_SECOND, PARTICLE_EFFECT_GUARD_BODY_ORBIT);
+				fx->flags[SPRITE] = true;
+				fx->z = 4.0 - 2.0 * ((ticks / interval) % 4);
+				fx->vel_z = -0.025;
+				fx->sizex = 4;
+				fx->sizey = 4;
+				fx->flags[GENIUS] = true;
+				fx->scalex = 0.05;
+				fx->scaley = fx->scalex;
+				fx->scalez = fx->scalex;
+				fx->actmagicOrbitDist = 4;
+				fx->fskill[2] = this->yaw + PI;
+				fx->lightBonus = vec4{ 0.f, 0.f, 0.f, 0.f };
+				//fx->fskill[2] += ((ticks / interval) % 3) * 2 * PI / 3;
+				fx->yaw = fx->fskill[2];
+				fx->actmagicNoLight = 1;
+			}
+		}
+		if ( myStats->getEffectActive(EFF_GUARD_SPIRIT) )
+		{
+			if ( ticks % interval == 40 )
+			{
+				Entity* fx = createParticleAestheticOrbit(this, 281, 2 * TICKS_PER_SECOND, PARTICLE_EFFECT_GUARD_SPIRIT_ORBIT);
+				fx->flags[SPRITE] = true;
+				fx->z = 4.0 - 2.0 * ((ticks / interval) % 4);
+				fx->vel_z = -0.025;
+				fx->sizex = 4;
+				fx->sizey = 4;
+				fx->flags[GENIUS] = true;
+				fx->scalex = 0.05;
+				fx->scaley = fx->scalex;
+				fx->scalez = fx->scalex;
+				fx->actmagicOrbitDist = 4;
+				fx->fskill[2] = this->yaw + PI;
+				fx->lightBonus = vec4{ 0.f, 0.f, 0.f, 0.f };
+				//fx->fskill[2] += ((ticks / interval) % 3) * 2 * PI / 3;
+				fx->yaw = fx->fskill[2];
+				fx->actmagicNoLight = 1;
+			}
+		}
+		if ( myStats->getEffectActive(EFF_DIVINE_GUARD) )
+		{
+			if ( ticks % interval == 60 )
+			{
+				Entity* fx = createParticleAestheticOrbit(this, 282, 2 * TICKS_PER_SECOND, PARTICLE_EFFECT_GUARD_DIVINE_ORBIT);
+				fx->flags[SPRITE] = true;
+				fx->z = 4.0 - 2.0 * ((ticks / interval) % 4);
+				fx->vel_z = -0.025;
+				fx->sizex = 4;
+				fx->sizey = 4;
+				fx->flags[GENIUS] = true;
+				fx->scalex = 0.05;
+				fx->scaley = fx->scalex;
+				fx->scalez = fx->scalex;
+				fx->actmagicOrbitDist = 4;
+				fx->fskill[2] = this->yaw + PI;
+				fx->lightBonus = vec4{ 0.f, 0.f, 0.f, 0.f };
+				//fx->fskill[2] += ((ticks / interval) % 3) * 2 * PI / 3;
+				fx->yaw = fx->fskill[2];
+				fx->actmagicNoLight = 1;
+			}
+		}
+	}
+
 	if ( myStats->getEffectActive(EFF_FLAME_CLOAK) )
 	{
 		int interval = 40;
@@ -25610,6 +25955,7 @@ void Entity::addToWorldUIList(list_t *list)
 	}
 }
 
+real_t Entity::magicResistancePerPoint = 0.3;
 int Entity::getMagicResistance(Stat* myStats)
 {
 	int resistance = 0;
@@ -28078,10 +28424,9 @@ Sint32 Entity::playerInsectoidHungerValueOfManaPoint(Stat& myStats)
 	return static_cast<Sint32>(1000 * manaPointPercentage);
 }
 
-real_t Entity::getDamageTableMultiplier(Entity* my, Stat& myStats, DamageTableType damageType)
+real_t Entity::getDamageTableMultiplier(Entity* my, Stat& myStats, DamageTableType damageType, int* magicResistance, int* outNumSources)
 {
 	real_t damageMultiplier = damagetables[myStats.type][damageType];
-	real_t bonus = 0.0;
 	if ( myStats.getEffectActive(EFF_SHADOW_TAGGED) )
 	{
 		if ( myStats.type == LICH || myStats.type == LICH_FIRE || myStats.type == LICH_ICE
@@ -28094,10 +28439,13 @@ real_t Entity::getDamageTableMultiplier(Entity* my, Stat& myStats, DamageTableTy
 			return 1.0;
 		}
 	}
+
+	std::vector<real_t> allBonuses;
+
 	//messagePlayer(0, "%f", damageMultiplier);
 	if ( myStats.type == GOATMAN && myStats.getEffectActive(EFF_DRUNK) )
 	{
-		bonus = -.2;
+		allBonuses.push_back(-.2);
 	}
 	if ( damageType == DamageTableType::DAMAGE_TABLE_MAGIC
 		&& myStats.type == BUGBEAR && myStats.defending && myStats.shield )
@@ -28107,18 +28455,25 @@ real_t Entity::getDamageTableMultiplier(Entity* my, Stat& myStats, DamageTableTy
 	int followerResist = my ? my->getFollowerBonusDamageResist() : 0;
 	if ( followerResist != 0 )
 	{
-		bonus += -followerResist / 100.0;
+		allBonuses.push_back(-followerResist / 100.0);
 	}
 
-	if ( myStats.getEffectActive(EFF_RATION_HERBAL) )
+	if ( damageType == DAMAGE_TABLE_MAGIC )
 	{
-		if ( damageType == DAMAGE_TABLE_MAGIC )
+		if ( myStats.getEffectActive(EFF_RATION_HERBAL) )
 		{
-			bonus += -0.2;
+			allBonuses.push_back(-0.2);
+		}
+
+		if ( myStats.getEffectActive(EFF_GUARD_SPIRIT) || myStats.getEffectActive(EFF_DIVINE_GUARD) )
+		{
+			real_t guardBonus = -0.1 * myStats.getEffectActive(EFF_GUARD_SPIRIT);
+			guardBonus = std::min(guardBonus, -0.025 * myStats.getEffectActive(EFF_DIVINE_GUARD));
+			allBonuses.push_back(guardBonus);
 		}
 	}
 
-	bonus -= myStats.getEnsembleEffectBonus(Stat::ENSEMBLE_LYRE_TIER) / 100.0;
+	allBonuses.push_back(-myStats.getEnsembleEffectBonus(Stat::ENSEMBLE_LYRE_TIER) / 100.0);
 
 	if ( myStats.cloak && myStats.cloak->type == CLOAK_GUARDIAN )
 	{
@@ -28127,8 +28482,33 @@ real_t Entity::getDamageTableMultiplier(Entity* my, Stat& myStats, DamageTableTy
 		{
 			res = std::min(0.75, 0.25 + 0.25 * (abs(myStats.cloak->beatitude)));
 		}
-		bonus -= res;
+		allBonuses.push_back(-res);
 	}
+
+	if ( damageType == DAMAGE_TABLE_MAGIC )
+	{
+		int resistance = magicResistance ? *magicResistance : Entity::getMagicResistance(&myStats);
+		for ( int i = 0; i < resistance; ++i, allBonuses.push_back(-Entity::magicResistancePerPoint) ) {}
+	}
+	//std::sort(allBonuses.begin(), allBonuses.end());
+	real_t multipliedBonuses = 1.0;
+	real_t summedExtraDamage = 0.0;
+	for ( auto val : allBonuses )
+	{
+		if ( val > 0.01 ) // extra damage
+		{
+			summedExtraDamage += val;
+		}
+		else if ( val < -0.01 ) // less damage
+		{
+			multipliedBonuses *= (1 + val);
+			if ( outNumSources )
+			{
+				*outNumSources += 1;
+			}
+		}
+	}
+	real_t bonus = summedExtraDamage - (1.0 - floor(100.0 * multipliedBonuses) / 100.0);
 	return std::max(0.1, damageMultiplier + bonus);
 }
 
@@ -28660,7 +29040,7 @@ bool Entity::onEntityTrapHitSacredPath(Entity* trap)
 {
 	if ( Stat* myStats = getStats() )
 	{
-		if ( auto effectStrength = myStats->getEffectActive(EFF_SACRED_PATH) )
+		if ( Uint8 effectStrength = myStats->getEffectActive(EFF_SACRED_PATH) )
 		{
 			int duration = myStats->EFFECTS_TIMERS[EFF_SACRED_PATH];
 			if ( effectStrength == 1 )

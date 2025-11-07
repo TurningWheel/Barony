@@ -1163,6 +1163,7 @@ public:
 			Uint32 animStartTick = 0;
 			Uint32 itemNotifyUpdatedThisTick = 0;
 			int itemNotifyAnimState = 0;
+			real_t spellLearnAnim = 0.0;
 			enum ItemNotifyHoverStates : int
 			{
 				NOTIFY_ITEM_WAITING_TO_HOVER,
@@ -1427,6 +1428,7 @@ public:
 					~SkillEffect_t() {};
 					std::string tag;
 					std::string title;
+					std::string titleShort;
 					std::string rawValue;
 					std::string value;
 					int valueCustomWidthOffset = 0;

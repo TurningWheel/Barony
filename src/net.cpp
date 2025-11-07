@@ -3473,6 +3473,26 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 				createMushroomSpellEffect(uidToEntity(casterUid), particle_x, particle_y);
 				break;
 			}
+			case PARTICLE_EFFECT_METEOR_STATIONARY_ORBIT:
+			{
+				int duration = static_cast<int>(SDLNet_Read32(&net_packet->data[13]));
+				Sint32 dir = SDLNet_Read32(&net_packet->data[17]);
+				if ( Entity* fx = createParticleAestheticOrbit(nullptr, 2210, duration, PARTICLE_EFFECT_METEOR_STATIONARY_ORBIT) )
+				{
+					fx->x = particle_x;
+					fx->y = particle_y;
+					fx->z = particle_z;
+					fx->yaw = (dir / 256.0) + PI / 4;
+				}
+				if ( Entity* fx = createParticleAestheticOrbit(nullptr, 2211, duration, PARTICLE_EFFECT_METEOR_STATIONARY_ORBIT) )
+				{
+					fx->x = particle_x;
+					fx->y = particle_y;
+					fx->z = particle_z;
+					fx->yaw = (dir / 256.0) - PI / 4;
+				}
+				break;
+			}
 			default:
 				break;
 		}

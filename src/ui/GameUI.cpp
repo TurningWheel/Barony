@@ -301,6 +301,7 @@ int GAMEUI_FRAMEDATA_ALCHEMY_RECIPE_ENTRY = 4;
 int GAMEUI_FRAMEDATA_WORLDTOOLTIP_ITEM = 5;
 int GAMEUI_FRAMEDATA_SHOP_ITEM = 6;
 int GAMEUI_FRAMEDATA_ALCHEMY_MISSING_QTY = 7;
+int GAMEUI_FRAMEDATA_SPELL_LEARNABLE = 8;
 
 MinotaurWarning_t minotaurWarning[MAXPLAYERS];
 
@@ -6294,9 +6295,9 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 				|| stats[player]->getEffectActive(EFF_ENSEMBLE_LYRE) 
 				|| stats[player]->getEffectActive(EFF_ENSEMBLE_DRUM) 
 				|| stats[player]->getEffectActive(EFF_ENSEMBLE_HORN)
-				|| stats[player]->getEffectActive(EFF_NULL_MAGIC)
-				|| stats[player]->getEffectActive(EFF_NULL_MELEE)
-				|| stats[player]->getEffectActive(EFF_NULL_RANGED)
+				|| stats[player]->getEffectActive(EFF_GUARD_SPIRIT)
+				|| stats[player]->getEffectActive(EFF_GUARD_BODY)
+				|| stats[player]->getEffectActive(EFF_DIVINE_GUARD)
 				|| stats[player]->getEffectActive(EFF_DELAY_PAIN)
 				|| stats[player]->getEffectActive(EFF_ABSORB_MAGIC)
 				|| stats[player]->getEffectActive(EFF_STATIC)
@@ -6479,7 +6480,7 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 						}
 						else if ( img->path.find("battle_guard.png") != std::string::npos )
 						{
-							Uint8 effectStrength = stats[player]->getEffectActive(EFF_NULL_MELEE);
+							Uint8 effectStrength = stats[player]->getEffectActive(EFF_GUARD_BODY);
 							if ( auto text = Text::get(std::to_string(effectStrength).c_str(),
 								"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
 							{
@@ -6493,7 +6494,7 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 						}
 						else if ( img->path.find("missile_guard.png") != std::string::npos )
 						{
-							Uint8 effectStrength = stats[player]->getEffectActive(EFF_NULL_RANGED);
+							Uint8 effectStrength = stats[player]->getEffectActive(EFF_DIVINE_GUARD);
 							if ( auto text = Text::get(std::to_string(effectStrength).c_str(),
 								"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
 							{
@@ -6507,7 +6508,7 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 						}
 						else if ( img->path.find("spell_guard.png") != std::string::npos )
 						{
-							Uint8 effectStrength = stats[player]->getEffectActive(EFF_NULL_MAGIC);
+							Uint8 effectStrength = stats[player]->getEffectActive(EFF_GUARD_SPIRIT);
 							if ( auto text = Text::get(std::to_string(effectStrength).c_str(),
 								"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
 							{
@@ -18504,7 +18505,6 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 				{
 					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_res_base").c_str());
 					real_t resistance = 100.0 * Entity::getDamageTableMultiplier(player.entity, *stats[player.playernum], DAMAGE_TABLE_MAGIC);
-					resistance /= (Entity::getMagicResistance(stats[player.playernum]) + 1);
 					resistance = 100.0 - resistance;
 					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_res_nobonus_format").c_str(), (int)resistance);
 				}
@@ -18834,7 +18834,8 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 				case SHEET_RES:
 				{
 					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_res_sources").c_str());
-					int sources = Entity::getMagicResistance(stats[player.playernum]);
+					int sources = 0;
+					Entity::getDamageTableMultiplier(player.entity, *stats[player.playernum], DAMAGE_TABLE_MAGIC, nullptr, &sources);
 					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_res_sources_format").c_str(), sources);
 				}
 					break;
@@ -19376,7 +19377,6 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 					Sint32 baseResist = 100 * damagetables[stats[player.playernum]->type][DAMAGE_TABLE_MAGIC];
 					baseResist = 100 - baseResist;
 					real_t resistance = 100.0 * Entity::getDamageTableMultiplier(player.entity, *stats[player.playernum], DAMAGE_TABLE_MAGIC);
-					resistance /= (Entity::getMagicResistance(stats[player.playernum]) + 1);
 					resistance = (100.0 - resistance);
 					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_res_bonus_format").c_str(), (int)resistance - baseResist);
 				}
@@ -21576,7 +21576,6 @@ void Player::CharacterSheet_t::updateAttributes()
 	if ( auto field = attributesInnerFrame->findField("res text stat") )
 	{
 		real_t resistance = 100.0 * Entity::getDamageTableMultiplier(player.entity, *stats[player.playernum], DAMAGE_TABLE_MAGIC);
-		resistance /= (Entity::getMagicResistance(stats[player.playernum]) + 1);
 		resistance = -(resistance - 100.0);
 		snprintf(buf, sizeof(buf), "%d%%", (int)resistance);
 		if ( strcmp(buf, field->getText()) )
@@ -21758,6 +21757,13 @@ void Player::Inventory_t::Appraisal_t::updateAppraisalAnim()
 		{
 			itemNotifyAnimState = 0;
 		}
+	}
+
+	spellLearnAnim = 1.0;
+	int interval = 2 * TICKS_PER_SECOND;
+	if ( ticks % (2 * interval) <= interval )
+	{
+		spellLearnAnim = 1.0 - 0.25 * std::max(0.0, sin((ticks % interval) * PI / (real_t)interval));
 	}
 }
 
@@ -22254,6 +22260,10 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 			if ( iconLabelImg->path != "" )
 			{
 				iconLabelImg->disabled = (!item->identified || hiddenItemInGUI);
+				if ( item->type == SPELL_ITEM && !(slotType && *slotType == GAMEUI_FRAMEDATA_SPELL_LEARNABLE) )
+				{
+					iconLabelImg->disabled = true;
+				}
 			}
 			iconLabelImg->color = spriteImage->color;
 			if ( auto iconLabelBgImg = spriteImageFrame->getImages()[SLOTFRAME_ITEMSPRITE_LABELBG_IMG]/*spriteImageFrame->findImage("icon label bg img")*/ )
@@ -22264,6 +22274,14 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 				iconLabelBgImg->pos.y = 1;
 				iconLabelBgImg->disabled = iconLabelImg->disabled || disableBackgrounds;
 				iconLabelBgImg->color = makeColor(255, 255, 255, 255);
+				if ( item->type == SPELL_ITEM )
+				{
+					iconLabelBgImg->disabled = true;
+					SDL_Color color;
+					getColor(iconLabelImg->color, &color.r, &color.g, &color.b, &color.a);
+					color.a *= (players[player]->inventoryUI.appraisal.spellLearnAnim);
+					iconLabelImg->color = makeColor(color.r, color.g, color.b, color.a);
+				}
 			}
 		}
 		if ( slotFrame->getUserData() )
@@ -24846,6 +24864,10 @@ void Player::SkillSheet_t::loadSkillSheetJSON()
 								auto& effect = entry.effects[entry.effects.size() - 1];
 								effect.tag = (*eff_itr)["tag"].GetString();
 								effect.title = (*eff_itr)["title"].GetString();
+								if ( (*eff_itr).HasMember("title_short") )
+								{
+									effect.titleShort = (*eff_itr)["title_short"].GetString();
+								}
 								effect.rawValue = (*eff_itr)["value"].GetString();
 								effect.valueCustomWidthOffset = 0;
 								if ( (*eff_itr).HasMember("custom_value_width_offset") )
@@ -33829,6 +33851,13 @@ void Player::Hotbar_t::updateHotbar()
 			}
 		}
 
+		Item* hotbarItem = uidToItem(hotbar[num].item);
+		slotItem->setUserData(nullptr);
+		/*if ( hotbarItem && hotbarItem->type == SPELL_ITEM )
+		{
+			slotItem->setUserData(&GAMEUI_FRAMEDATA_SPELL_LEARNABLE);
+		}*/
+
 		if ( current_hotbar == num )
 		{
 			bool showHighlightedSlot = true;
@@ -33858,7 +33887,12 @@ void Player::Hotbar_t::updateHotbar()
 
 				highlightSlot->setSize(pos); // this follows the slots around
 				highlightSlotImg->disabled = false;
-				updateSlotFrameFromItem(highlightSlotItem, uidToItem(hotbar[num].item));
+				highlightSlotItem->setUserData(nullptr);
+				/*if ( hotbarItem && hotbarItem->type == SPELL_ITEM )
+				{
+					highlightSlotItem->setUserData(&GAMEUI_FRAMEDATA_SPELL_LEARNABLE);
+				}*/
+				updateSlotFrameFromItem(highlightSlotItem, hotbarItem);
 
 				if ( player.inventoryUI.frame )
 				{
@@ -33916,18 +33950,18 @@ void Player::Hotbar_t::updateHotbar()
 					{
 						highlightSlotImg->disabled = true;
 						highlightSlotItem->setDisabled(true);
-						updateSlotFrameFromItem(slotItem, uidToItem(hotbar[num].item));
+						updateSlotFrameFromItem(slotItem, hotbarItem);
 					}
 				}
 			}
 			else
 			{
-				updateSlotFrameFromItem(slotItem, uidToItem(hotbar[num].item));
+				updateSlotFrameFromItem(slotItem, hotbarItem);
 			}
 		}
 		else
 		{
-			updateSlotFrameFromItem(slotItem, uidToItem(hotbar[num].item));
+			updateSlotFrameFromItem(slotItem, hotbarItem);
 		}
 	}
 }
@@ -34331,7 +34365,7 @@ void Player::SkillSheet_t::createSkillSheet()
 	auto scrollAreaFrame = scrollAreaOuterFrame->addFrame("skill scroll area");
 	scrollAreaFrame->setHollow(true);
 	skillSheetEntryFrames[player.playernum].scrollArea = scrollAreaFrame;
-	scrollAreaFrame->setSize(SDL_Rect{ 0, 0, scrollAreaOuterFrame->getSize().w, 1000 });
+	scrollAreaFrame->setSize(SDL_Rect{ 0, 0, scrollAreaOuterFrame->getSize().w, 4000 });
 
 	SDL_Rect txtPos{ 0, 0, scrollAreaFrame->getSize().w, scrollAreaFrame->getSize().h };
 	{
@@ -34478,7 +34512,7 @@ void Player::SkillSheet_t::createSkillSheet()
 			auto effectValFrame = effectFrame->addFrame("effect val frame");
 			effectValFrame->setHollow(true);
 			effectValFrame->setSize(SDL_Rect{ valueX, 0, effectXOffset, effectFrame->getSize().h - 4 });
-			auto effectVal = effectValFrame->addField("effect val", 1024);
+			auto effectVal = effectValFrame->addField("effect val", 2048);
 			effectVal->setFont(descFont);
 			effectVal->setSize(SDL_Rect{ 0, 0, 1000, effectValFrame->getSize().h }); // large 1000px to handle large text length marquee
 			effectVal->setVJustify(Field::justify_t::CENTER);
@@ -34681,7 +34715,7 @@ void Player::SkillSheet_t::openSkillSheet()
 
 std::string formatSkillSheetEffects(int playernum, int proficiency, std::string& tag, std::string& rawValue)
 {
-	char buf[1024] = "";
+	char buf[2048] = "";
 	if ( !players[playernum] ) { return ""; }
 	Entity* player = players[playernum]->entity;
 	real_t val = 0.0;
@@ -35641,6 +35675,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 	}*/
 	else if ( proficiency == PRO_SORCERY || proficiency == PRO_MYSTICISM || proficiency == PRO_THAUMATURGY || proficiency == NUMPROFICIENCIES )
 	{
+		static ConsoleVariable<int> cvar_skillsheet_magic_namelen("/skillsheet_magic_namelen", 14);
 		snprintf(buf, sizeof(buf), "%d", 0);
 		if ( tag == "MAGIC_CURRENT_TIER" )
 		{
@@ -35683,7 +35718,14 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		}
 		else if ( tag == "MAGIC_SPELLPOWER_TOTAL" )
 		{
-			val = (getBonusFromCasterOfSpellElement(player, stats[playernum], nullptr, SPELL_NONE, proficiency) * 100.0);
+			if ( auto spell = players[playernum]->magic.selectedSpell() )
+			{
+				val = (getBonusFromCasterOfSpellElement(player, stats[playernum], nullptr, spell->ID, proficiency) * 100.0);
+			}
+			else
+			{
+				val = (getBonusFromCasterOfSpellElement(player, stats[playernum], nullptr, SPELL_NONE, proficiency) * 100.0);
+			}
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
 		else if ( tag == "MAGIC_SPELLPOWER_INT" )
@@ -35695,10 +35737,87 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		}
 		else if ( tag == "MAGIC_SPELLPOWER_EQUIPMENT" )
 		{
-			val = (getBonusFromCasterOfSpellElement(player, stats[playernum], nullptr, SPELL_NONE, proficiency) * 100.0);
+			if ( auto spell = players[playernum]->magic.selectedSpell() )
+			{
+				val = (getBonusFromCasterOfSpellElement(player, stats[playernum], nullptr, spell->ID, proficiency) * 100.0);
+			}
+			else
+			{
+				val = (getBonusFromCasterOfSpellElement(player, stats[playernum], nullptr, SPELL_NONE, proficiency) * 100.0);
+			}
 			real_t bonus = getSpellBonusFromCasterINT(players[playernum]->entity, stats[playernum], proficiency);
 			val -= bonus * 100.0;
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		else if ( tag == "MAGIC_MEMORIZED_LEVEL_SPELLS" )
+		{
+			int skillLVL = stats[playernum]->getProficiency(proficiency);
+			std::string magics = "";
+			std::set<int> inserted;
+			for ( node_t* node = players[playernum]->magic.spellList.first; node; node = node->next )
+			{
+				if ( skillLVL >= SKILL_LEVEL_LEGENDARY )
+				{
+					break;
+				}
+				if ( node && node->element )
+				{
+					if ( spell_t* spell = (spell_t*)node->element )
+					{
+						if ( spell->skillID != proficiency )
+						{
+							continue;
+						}
+						if ( spell->ID == SPELL_GHOST_BOLT
+							|| spell->ID == SPELL_SLIME_ACID
+							|| spell->ID == SPELL_SLIME_FIRE
+							|| spell->ID == SPELL_SLIME_WATER
+							|| spell->ID == SPELL_SLIME_TAR
+							|| spell->ID == SPELL_SLIME_METAL
+							|| spell->hide_from_ui == true )
+						{
+							continue;
+						}
+						if ( skillLVL < std::min(SKILL_LEVEL_LEGENDARY, (spell->difficulty + 20)) )
+						{
+							if ( inserted.find(spell->ID) != inserted.end() )
+							{
+								continue;
+							}
+							inserted.insert(spell->ID);
+							if ( strcmp(spell->getSpellName(), "") )
+							{
+								if ( magics != "" )
+								{
+									magics += '\n';
+								}
+								magics += "\x1E ";
+								if ( players[playernum]->bUseCompactGUIHeight() || players[playernum]->bUseCompactGUIWidth() )
+								{
+									std::string name = spell->getSpellName();
+									if ( name.size() > *cvar_skillsheet_magic_namelen )
+									{
+										name = name.substr(0, *cvar_skillsheet_magic_namelen - 1);
+										name += "..";
+										magics += name;
+									}
+									else
+									{
+										magics += name;
+									}
+								}
+								else
+								{
+									magics += spell->getSpellName();
+								}
+							}
+						}
+					}
+				}
+			}
+
+			if ( magics == "" ) { magics = "-"; }
+			snprintf(buf, sizeof(buf), rawValue.c_str(), magics.c_str());
 		}
 		else if ( tag == "MAGIC_CURRENT_TIER_SPELLS" )
 		{
@@ -35746,7 +35865,24 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 							magics += '\n';
 						}
 						magics += "\x1E ";
-						magics += spellEntry->getSpellName();
+						if ( players[playernum]->bUseCompactGUIHeight() || players[playernum]->bUseCompactGUIWidth() )
+						{
+							std::string name = spellEntry->getSpellName();
+							if ( name.size() > *cvar_skillsheet_magic_namelen )
+							{
+								name = name.substr(0, *cvar_skillsheet_magic_namelen - 1);
+								name += "..";
+								magics += name;
+							}
+							else
+							{
+								magics += name;
+							}
+						}
+						else
+						{
+							magics += spellEntry->getSpellName();
+						}
 					}
 				}
 			}
@@ -37190,6 +37326,8 @@ void Player::SkillSheet_t::processSkillSheet()
 			auto effectFrameBgImgTmp = scrollArea->findImage("effect frame bg tmp");
 			effectFrameBgImgTmp->disabled = false;
 
+			static ConsoleVariable<bool> cvar_skillsheet_skip_spell_list("/skillsheet_skip_spell_list", true);
+
 			for ( int eff = 0; eff < 10; ++eff )
 			{
 				auto effectFrame = skillSheetEntryFrames[player.playernum].effectFrames[eff];
@@ -37207,11 +37345,18 @@ void Player::SkillSheet_t::processSkillSheet()
 					{
 						effectFramePos.y += moveEffectsOffsetY;
 					}
-					effectFrame->setSize(effectFramePos);
-
-					effectFrame->setDisabled(false);
 
 					auto& effect_t = skillSheetData.skillEntries[selectedSkill].effects[eff];
+					if ( proficiency == PRO_SORCERY || proficiency == PRO_THAUMATURGY || proficiency == PRO_MYSTICISM )
+					{
+						if ( *cvar_skillsheet_skip_spell_list && effect_t.tag == "MAGIC_CURRENT_TIER_SPELLS" )
+						{
+							continue;
+						}
+					}
+
+					effectFrame->setSize(effectFramePos);
+					effectFrame->setDisabled(false);
 
 					bool bEffUpdated = false;
 					if ( (effect_t.bAllowRealtimeUpdate && (ticks % (std::max(TICKS_PER_SECOND, MAXPLAYERS * 10))) == (player.playernum * 10))
@@ -37259,7 +37404,15 @@ void Player::SkillSheet_t::processSkillSheet()
 						auto effectTxtFrame = effectFrame->findFrame("effect txt frame");
 						auto effectTxt = effectTxtFrame->findField("effect txt");
 						auto effectBgImgFrame = effectFrame->findFrame("effect val bg frame");
+
 						effectTxt->setText(effect_t.title.c_str());
+						if ( player.bUseCompactGUIHeight() || player.bUseCompactGUIWidth() )
+						{
+							if ( effect_t.titleShort != "" )
+							{
+								effectTxt->setText(effect_t.titleShort.c_str());
+							}
+						}
 
 						{
 							// adjust position to match width of container

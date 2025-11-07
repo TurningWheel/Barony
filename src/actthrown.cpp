@@ -1098,15 +1098,13 @@ void actThrown(Entity* my)
 							damage -= (AC(hit.entity->getStats()) * .5);
 						}
 
-						if ( hitstats && hitstats->getEffectActive(EFF_MAGICIANS_ARMOR) )
+						if ( hitstats && hitstats->getEffectActive(EFF_GUARD_BODY) )
 						{
-							if ( parent && parent->getStats() )
-							{
-								if ( hit.entity->checkEnemy(parent) )
-								{
-									magiciansArmorProc(hit.entity, *hitstats, false, parent);
-								}
-							}
+							thaumSpellArmorProc(hit.entity, *hitstats, false, parent, EFF_GUARD_BODY);
+						}
+						if ( hitstats && hitstats->getEffectActive(EFF_DIVINE_GUARD) )
+						{
+							thaumSpellArmorProc(hit.entity, *hitstats, false, parent, EFF_DIVINE_GUARD);
 						}
 					}
 				}

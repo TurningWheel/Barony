@@ -2359,6 +2359,7 @@ std::string ItemTooltips_t::getSpellDescriptionText(const int player, Item& item
 std::string& ItemTooltips_t::getIconLabel(Item& item)
 {
 #ifndef EDITOR
+	if ( item.type == SPELL_ITEM && !item.spellNotifyIcon ) { return defaultString; }
 	return tmpItems[item.type].iconLabelPath;
 #endif
 }
@@ -3789,7 +3790,10 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 					snprintf(buf, sizeof(buf), str.c_str(), (int)(bonus * 100),
 						getItemEquipmentEffectsForIconText(conditionalAttribute).c_str());
 				}
-				else if ( conditionalAttribute == "EFF_PWR_DMG" )
+				else if ( conditionalAttribute == "EFF_PWR_DMG"
+					|| conditionalAttribute == "EFF_PWR_SORCERY"
+					|| conditionalAttribute == "EFF_PWR_MYSTICISM"
+					|| conditionalAttribute == "EFF_PWR_THAUMATURGY" )
 				{
 					if ( item.type == HAT_MITER || item.type == HAT_HEADDRESS )
 					{
@@ -4911,8 +4915,20 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 			{
 				damageOrHealing = adjectives["spell_strings"]["healing"];
 			}
+
+			std::string statName = getItemStatShortName("INT");
+			if ( spell->skillID == PRO_MYSTICISM )
+			{
+				statName += '/';
+				statName += getItemStatShortName("CHR");
+			}
+			else if ( spell->skillID == PRO_THAUMATURGY )
+			{
+				statName += '/';
+				statName += getItemStatShortName("CON");
+			}
 			snprintf(buf, sizeof(buf), str.c_str(), damageOrHealing.c_str(), baseDamage, damageOrHealing.c_str(), 
-				bonusINTPercent, damageOrHealing.c_str(), getItemStatShortName("INT").c_str(), bonusEquipPercent, damageOrHealing.c_str());
+				bonusINTPercent, damageOrHealing.c_str(), statName.c_str(), bonusEquipPercent, damageOrHealing.c_str());
 		}
 		else if ( detailTag.compare("spell_cast_success") == 0 )
 		{
@@ -15517,7 +15533,6 @@ void Compendium_t::Events_t::updateEventsInMainLoop(const int playernum)
 		auto myStats = stats[playernum];
 		{
 			real_t resistance = 100.0 * Entity::getDamageTableMultiplier(entity, *myStats, DAMAGE_TABLE_MAGIC);
-			resistance /= (Entity::getMagicResistance(myStats) + 1);
 			resistance = -(resistance - 100.0);
 			eventUpdateCodex(playernum, CPDM_RES_MAX, "res", (int)resistance);
 			eventUpdateCodex(playernum, CPDM_CLASS_RES_MAX, "res", (int)resistance);

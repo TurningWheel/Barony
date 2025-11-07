@@ -78,6 +78,7 @@ extern int GAMEUI_FRAMEDATA_ALCHEMY_RECIPE_ENTRY; // the recipe icon
 extern int GAMEUI_FRAMEDATA_WORLDTOOLTIP_ITEM;
 extern int GAMEUI_FRAMEDATA_SHOP_ITEM;
 extern int GAMEUI_FRAMEDATA_ALCHEMY_MISSING_QTY; // alchemy ingredient missing quantity
+extern int GAMEUI_FRAMEDATA_SPELL_LEARNABLE; // if spell provides skill xp
 
 // if true, use the new user interface
 extern bool newui;

@@ -610,7 +610,7 @@ void actArrow(Entity* my)
 					//{
 					//	if ( hitstats->getEffectActive(EFF_NULL_RANGED) )
 					//	{
-					//		auto effectStrength = hitstats->getEffectActive(EFF_NULL_RANGED);
+					//		Uint8 effectStrength = hitstats->getEffectActive(EFF_NULL_RANGED);
 					//		int duration = hitstats->EFFECTS_TIMERS[EFF_NULL_RANGED];
 					//		if ( effectStrength == 1 )
 					//		{
@@ -870,15 +870,13 @@ void actArrow(Entity* my)
 						}
 					}
 
-					if ( hitstats && hitstats->getEffectActive(EFF_MAGICIANS_ARMOR) )
+					if ( hitstats && hitstats->getEffectActive(EFF_GUARD_BODY) )
 					{
-						if ( parent && parent->getStats() )
-						{
-							if ( hit.entity->checkEnemy(parent) )
-							{
-								magiciansArmorProc(hit.entity, *hitstats, false, parent);
-							}
-						}
+						thaumSpellArmorProc(hit.entity, *hitstats, false, parent, EFF_GUARD_BODY);
+					}
+					if ( hitstats && hitstats->getEffectActive(EFF_DIVINE_GUARD) )
+					{
+						thaumSpellArmorProc(hit.entity, *hitstats, false, parent, EFF_DIVINE_GUARD);
 					}
 
 					/*messagePlayer(0, "My damage: %d, AC: %d, Pierce: %d", my->arrowPower, AC(hitstats), my->arrowArmorPierce);

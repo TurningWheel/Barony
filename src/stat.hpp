@@ -74,9 +74,9 @@ static const int EFF_ENSEMBLE_DRUM = 49;
 static const int EFF_ENSEMBLE_LUTE = 50;
 static const int EFF_ENSEMBLE_HORN = 51;
 static const int EFF_LIFT = 52;
-static const int EFF_NULL_MAGIC = 53;
-static const int EFF_NULL_MELEE = 54;
-static const int EFF_NULL_RANGED = 55;
+static const int EFF_GUARD_SPIRIT = 53;
+static const int EFF_GUARD_BODY = 54;
+static const int EFF_DIVINE_GUARD = 55;
 static const int EFF_NIMBLENESS = 56;
 static const int EFF_GREATER_MIGHT = 57;
 static const int EFF_COUNSEL = 58;
@@ -361,13 +361,14 @@ public:
 		PROFICIENCIES[skill] = value;
 	}
 	int getGoldWeight() const;
-	Uint8 getEffectActive(int effect) const
+	static const Uint8 nullEffectValue = 0;
+	const Uint8& getEffectActive(int effect) const
 	{
 		if ( effect >= 0 && effect < NUMEFFECTS )
 		{
 			return EFFECTS[effect];
 		}
-		return 0;
+		return Stat::nullEffectValue;
 	}
 	void clearEffect(int effect)
 	{

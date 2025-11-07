@@ -61,7 +61,7 @@ void updateEnemyBar(Entity* source, Entity* target, const char* name, Sint32 hp,
 		{
 			if ( Stat* stats = target->getStats() )
 			{
-				if ( auto effectStrength = stats->getEffectActive(EFF_DETECT_ENEMY) )
+				if ( Uint8 effectStrength = stats->getEffectActive(EFF_DETECT_ENEMY) )
 				{
 					if ( effectStrength >= 1 && effectStrength < 1 + MAXPLAYERS )
 					{

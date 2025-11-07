@@ -627,22 +627,24 @@ bool Entity::collisionProjectileMiss(Entity* parent, Entity* projectile)
 		}
 		if ( Stat* myStats = getStats() )
 		{
-			if ( (projectile->behavior == &actThrown || projectile->behavior == &actArrow) && myStats->getEffectActive(EFF_NULL_RANGED) )
+			if ( (projectile->behavior == &actThrown || projectile->behavior == &actArrow) 
+				&& myStats->getEffectActive(EFF_MAGICIANS_ARMOR)
+				&& !(!(svFlags & SV_FLAG_FRIENDLYFIRE) && parent && parent->checkFriend(this))  /*dont apply to friendly fire */ )
 			{
-				auto effectStrength = myStats->getEffectActive(EFF_NULL_RANGED);
-				int duration = myStats->EFFECTS_TIMERS[EFF_NULL_RANGED];
+				Uint8 effectStrength = myStats->getEffectActive(EFF_MAGICIANS_ARMOR);
+				int duration = myStats->EFFECTS_TIMERS[EFF_MAGICIANS_ARMOR];
 				if ( effectStrength == 1 )
 				{
-					if ( myStats->EFFECTS_TIMERS[EFF_NULL_RANGED] > 0 )
+					if ( myStats->EFFECTS_TIMERS[EFF_MAGICIANS_ARMOR] > 0 )
 					{
-						myStats->EFFECTS_TIMERS[EFF_NULL_RANGED] = 1;
+						myStats->EFFECTS_TIMERS[EFF_MAGICIANS_ARMOR] = 1;
 					}
 				}
 				else if ( effectStrength > 1 )
 				{
 					--effectStrength;
-					myStats->setEffectValueUnsafe(EFF_NULL_RANGED, effectStrength);
-					this->setEffect(EFF_NULL_RANGED, effectStrength, myStats->EFFECTS_TIMERS[EFF_NULL_RANGED], false);
+					myStats->setEffectValueUnsafe(EFF_MAGICIANS_ARMOR, effectStrength);
+					this->setEffect(EFF_MAGICIANS_ARMOR, effectStrength, myStats->EFFECTS_TIMERS[EFF_MAGICIANS_ARMOR], true);
 				}
 				if ( projectile->collisionIgnoreTargets.find(getUID()) == projectile->collisionIgnoreTargets.end() )
 				{
@@ -696,7 +698,19 @@ bool Entity::collisionProjectileMiss(Entity* parent, Entity* projectile)
 						messagePlayerMonsterEvent(parent->skill[2], makeColorRGB(255, 255, 255),
 							*myStats, Language::get(6468), Language::get(6469), MSG_COMBAT); // %s guards the attack
 					}
-					playSoundEntity(this, 166, 128);
+					//playSoundEntity(this, 166, 128);
+
+					Entity* fx = createParticleAestheticOrbit(this, 1817, TICKS_PER_SECOND / 4, PARTICLE_EFFECT_NULL_PARTICLE);
+					fx->x = this->x;
+					fx->y = this->y;
+					fx->z = this->z;
+					real_t tangent = atan2(projectile->y - this->y, projectile->x - this->x);
+					fx->x += 4.0 * cos(tangent);
+					fx->y += 4.0 * sin(tangent);
+					fx->yaw = tangent;
+					fx->actmagicOrbitDist = 0;
+					fx->actmagicNoLight = 0;
+					serverSpawnMiscParticlesAtLocation(fx->x, fx->y, fx->z, PARTICLE_EFFECT_NULL_PARTICLE, 1817, 0, fx->yaw * 256.0);
 				}
 				return true;
 			}
@@ -1200,7 +1214,7 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 				|| yourStats->getEffectActive(EFF_AGILITY) 
 				|| yourStats->getEffectActive(EFF_ENSEMBLE_LUTE)
 				|| entity->mistFormDodge(true, parent)
-				|| (yourStats->getEffectActive(EFF_NULL_RANGED) && (my->behavior == &actThrown || my->behavior == &actArrow)))) )
+				|| (yourStats->getEffectActive(EFF_MAGICIANS_ARMOR) && (my->behavior == &actThrown || my->behavior == &actArrow)))) )
 			{
 				entityDodgeChance = true;
 			}
@@ -1266,7 +1280,7 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 			}
 			else if ( multiplayer != CLIENT )
 			{
-				if ( entityDodgeChance )
+				if ( entityDodgeChance || (projectileAttack && my->collisionIgnoreTargets.size()) )
 				{
 					if ( my->collisionIgnoreTargets.find(entity->getUID()) != my->collisionIgnoreTargets.end() )
 					{
@@ -1375,6 +1389,28 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 							if ( entity->collisionProjectileMiss(parent, my) )
 							{
 								continue;
+							}
+						}
+					}
+
+					if ( my && my->behavior == &actMagicMissile )
+					{
+						if ( my->actmagicIsVertical == MAGIC_ISVERTICAL_XYZ )
+						{
+							if ( my->sprite == 2209 || my->sprite == 233 )
+							{
+								int tilex = entity->x / 16;
+								int tiley = entity->y / 16;
+								if ( tilex >= 0 && tilex < map.width && tiley >= 0 && tiley < map.height )
+								{
+									if ( !map.tiles[(MAPLAYERS - 1) + tiley * MAPLAYERS + tilex * MAPLAYERS * map.height] )
+									{
+										if ( my->z <= -5 )
+										{
+											return 1;
+										}
+									}
+								}
 							}
 						}
 					}

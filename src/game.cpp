@@ -2834,9 +2834,21 @@ void gameLogic(void)
 						continue;
 					}
 
-					if ( item->notifyIcon && itemCategory(item) == SPELL_CAT )
+					if ( itemCategory(item) == SPELL_CAT )
 					{
-						players[player]->magic.bHasUnreadNewSpell = true;
+						if ( item->notifyIcon )
+						{
+							players[player]->magic.bHasUnreadNewSpell = true;
+						}
+						item->spellNotifyIcon = false;
+						if ( auto spell = getSpellFromItem(player, item, false) )
+						{
+							if ( stats[player]->getProficiency(spell->skillID) < SKILL_LEVEL_LEGENDARY
+								&& spell->difficulty > (stats[player]->getProficiency(spell->skillID) - 20) )
+							{
+								item->spellNotifyIcon = true;
+							}
+						}
 					}
 
 					// unlock achievements for special collected items
@@ -3505,9 +3517,22 @@ void gameLogic(void)
 				{
 					continue;
 				}
-				if ( item->notifyIcon && itemCategory(item) == SPELL_CAT )
+
+				if ( itemCategory(item) == SPELL_CAT )
 				{
-					players[clientnum]->magic.bHasUnreadNewSpell = true;
+					if ( item->notifyIcon )
+					{
+						players[clientnum]->magic.bHasUnreadNewSpell = true;
+					}
+					item->spellNotifyIcon = false;
+					if ( auto spell = getSpellFromItem(clientnum, item, false) )
+					{
+						if ( stats[clientnum]->getProficiency(spell->skillID) < SKILL_LEVEL_LEGENDARY
+							&& spell->difficulty > (stats[clientnum]->getProficiency(spell->skillID) - 20) )
+						{
+							item->spellNotifyIcon = true;
+						}
+					}
 				}
 
 				// unlock achievements for special collected items

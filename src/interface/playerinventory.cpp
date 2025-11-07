@@ -5826,6 +5826,34 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                             continue; // don't insert this newline
                         }
                     }
+					else if ( tag.compare("spell_nogain_newline") == 0 )
+					{
+						if ( compendiumTooltip && intro )
+						{
+							continue;
+						}
+
+						if ( item->spellNotifyIcon )
+						{
+							continue;
+						}
+						else if ( detailsTextString.compare("") == 0 )
+						{
+							continue; // don't insert this newline
+						}
+					}
+					else if ( tag.compare("spell_nogain_levels") == 0 )
+					{
+						if ( compendiumTooltip && intro )
+						{
+							continue;
+						}
+
+						if ( item->spellNotifyIcon )
+						{
+							continue;
+						}
+					}
                     else if ( tag.find("attribute_spell_") != std::string::npos )
                     {
                         spell_t* spell = getSpellFromItem(player, item, false);
@@ -9087,6 +9115,7 @@ void Player::Inventory_t::updateInventory()
 		{
 			if ( auto slotFrame = getItemSlotFrame(item, itemx, itemy) )
 			{
+				slotFrame->setUserData(&GAMEUI_FRAMEDATA_SPELL_LEARNABLE);
 				if ( spellPanel.spellFilterBySkill > 0 )
 				{
 					bool greyBackground = false;
