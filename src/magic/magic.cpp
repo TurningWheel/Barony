@@ -252,7 +252,7 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int da
 			}
 
 			DamageGib dmgGib = DMG_DEFAULT;
-			real_t damageMultiplier = Entity::getDamageTableMultiplier(hit.entity, *hitstats, DAMAGE_TABLE_MAGIC);
+			real_t damageMultiplier = Entity::getDamageTableMultiplier(hit.entity, *hitstats, DAMAGE_TABLE_MAGIC, &resistance);
 			if ( damageMultiplier <= 0.75 )
 			{
 				dmgGib = DMG_WEAKEST;
@@ -277,7 +277,6 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int da
 			int oldHP = hitstats->HP;
 			Sint32 preResistanceDamage = damage;
 			damage *= damageMultiplier;
-			damage /= (1 + (int)resistance);
 			if ( !hasgoggles )
 			{
 				hit.entity->modHP(-damage);
@@ -296,7 +295,7 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int da
 
 			int previousDuration = hitstats->EFFECTS_TIMERS[EFF_POISONED];
 			int duration = element.duration;
-			duration /= (1 + (int)resistance);
+			duration = convertResistancePointsToMagicValue(duration, resistance);
 			bool recentlyHitBySameSpell = false;
 			if ( !hasamulet && !hasgoggles )
 			{
@@ -451,7 +450,7 @@ void spellEffectPoison(Entity& my, spellElement_t& element, Entity* parent, int 
 			}
 
 			DamageGib dmgGib = DMG_DEFAULT;
-			real_t damageMultiplier = Entity::getDamageTableMultiplier(hit.entity, *hitstats, DAMAGE_TABLE_MAGIC);
+			real_t damageMultiplier = Entity::getDamageTableMultiplier(hit.entity, *hitstats, DAMAGE_TABLE_MAGIC, &resistance);
 			if ( damageMultiplier <= 0.75 )
 			{
 				dmgGib = DMG_WEAKEST;
@@ -475,7 +474,6 @@ void spellEffectPoison(Entity& my, spellElement_t& element, Entity* parent, int 
 
 			Sint32 preResistanceDamage = damage;
 			damage *= damageMultiplier;
-			damage /= (1 + (int)resistance);
 			Sint32 oldHP = hitstats->HP;
 			hit.entity->modHP(-damage);
 
@@ -592,7 +590,7 @@ bool spellEffectFear(Entity* my, spellElement_t& element, Entity* forceParent, E
 
 		int duration = 400; // 8 seconds
 		duration = std::max(150, duration - TICKS_PER_SECOND * (hitstats->CON / 5)); // 3-8 seconds, depending on CON.
-		duration /= (1 + resistance);
+		duration = convertResistancePointsToMagicValue(duration, resistance);
 		if ( target->setEffect(EFF_FEAR, true, duration, true) )
 		{
 			playSoundEntity(target, 687, 128); // fear.ogg
@@ -687,7 +685,7 @@ void spellEffectSprayWeb(Entity& my, spellElement_t& element, Entity* parent, in
 			}
 			int previousDuration = hitstats->EFFECTS_TIMERS[EFF_WEBBED];
 			int duration = 400;
-			duration /= (1 + resistance);
+			duration = convertResistancePointsToMagicValue(duration, resistance);
 			if ( hit.entity->setEffect(EFF_WEBBED, true, duration, true) ) // 8 seconds.
 			{
 				magicOnEntityHit(parent, &my, hit.entity, hitstats, 0, 0, 0, SPELL_SPRAY_WEB);
@@ -946,7 +944,7 @@ void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, i
 			}
 
 			DamageGib dmgGib = DMG_DEFAULT;
-			real_t damageMultiplier = Entity::getDamageTableMultiplier(hit.entity, *hitstats, DAMAGE_TABLE_MAGIC);
+			real_t damageMultiplier = Entity::getDamageTableMultiplier(hit.entity, *hitstats, DAMAGE_TABLE_MAGIC, &resistance);
 			if ( damageMultiplier <= 0.75 )
 			{
 				dmgGib = DMG_WEAKEST;
@@ -970,7 +968,6 @@ void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, i
 
 			Sint32 preResistanceDamage = damage;
 			damage *= damageMultiplier;
-			damage /= (1 + (int)resistance);
 
 			if ( parent )
 			{
@@ -1094,7 +1091,6 @@ void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, i
 
 			if ( forceFurnitureDamage )
 			{
-				damage /= (1 + (int)resistance);
 				if ( hit.entity->isDamageableCollider() && hit.entity->isColliderDamageableByMagic() )
 				{
 					hit.entity->colliderHandleDamageMagic(damage, my, parent);
@@ -1348,7 +1344,7 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 			{
 				chance += 10;
 			}
-			chance /= (1 + resistance);
+			chance = convertResistancePointsToMagicValue(chance, resistance);
 			/************** END CHANCE CALCULATION ***********/
 
 			// special cases:
@@ -1370,7 +1366,7 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 			{
 				// caster hit themselves somehow... get pacified.
 				int duration = element.duration;
-				duration /= (1 + resistance);
+				duration = convertResistancePointsToMagicValue(duration, resistance);
 				if ( hit.entity->setEffect(EFF_PACIFY, true, duration, true) )
 				{
 					playSoundEntity(hit.entity, 168, 128); // Healing.ogg
@@ -1530,7 +1526,7 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 				// had a chance, or currently in service of another monster, or a player, or spell no parent, failed to completely charm. 
 				// loses will to attack.
 				int duration = element.duration;
-				duration /= (1 + resistance);
+				duration = convertResistancePointsToMagicValue(duration, resistance);
 				if ( hitstats->type == SHOPKEEPER )
 				{
 					duration = 100;
@@ -3366,7 +3362,7 @@ bool Entity::spellEffectPreserveItem(Item* item)
 	return false;
 }
 
-int magiciansArmorProc(Entity* my, Stat& myStats, bool checkEffectActiveOnly, Entity* attacker)
+int thaumSpellArmorProc(Entity* my, Stat& myStats, bool checkEffectActiveOnly, Entity* attacker, int effectID)
 {
 	int player = -1;
 	if ( my && my->behavior == &actPlayer )
@@ -3385,24 +3381,51 @@ int magiciansArmorProc(Entity* my, Stat& myStats, bool checkEffectActiveOnly, En
 		}
 	}
 
-	if ( myStats.getEffectActive(EFF_MAGICIANS_ARMOR) )
+	int spellID = -1;
+	if ( effectID == EFF_GUARD_BODY )
+	{
+		spellID = SPELL_GUARD_BODY;
+	}
+	else if ( effectID == EFF_GUARD_SPIRIT )
+	{
+		spellID = SPELL_GUARD_SPIRIT;
+	}
+	else if ( effectID == EFF_DIVINE_GUARD )
+	{
+		spellID = SPELL_DIVINE_GUARD;
+	}
+
+	if ( spellID < 0 ) { return 0; }
+
+	if ( myStats.getEffectActive(effectID) )
 	{
 		if ( player >= 0 )
 		{
-			int result = myStats.getEffectActive(EFF_MAGICIANS_ARMOR);
+			int result = myStats.getEffectActive(effectID);
 
 			if ( !checkEffectActiveOnly )
 			{
 				if ( my )
 				{
-					int minValue = std::max(3, getSpellDamageFromID(SPELL_MAGICIANS_ARMOR, my, nullptr, my));
-					my->setEffect(EFF_MAGICIANS_ARMOR, (Uint8)std::max(minValue, myStats.getEffectActive(EFF_MAGICIANS_ARMOR) - 1),
-						myStats.EFFECTS_TIMERS[EFF_MAGICIANS_ARMOR], false, true, true);
-					if ( my->getActiveMagicEffect(SPELL_MAGICIANS_ARMOR) )
+					int baseMinValue = (effectID == EFF_GUARD_SPIRIT) ? 1 : 3;
+					//int minValue = std::max(baseMinValue, getSpellDamageFromID(spellID, my, nullptr, my));
+					//minValue = std::min(minValue, getSpellEffectDurationSecondaryFromID(spellID, my, nullptr, my));
+					my->setEffect(effectID, (Uint8)std::max(baseMinValue, myStats.getEffectActive(effectID) - 1),
+						myStats.EFFECTS_TIMERS[effectID], false, true, true);
+					if ( my->getActiveMagicEffect(spellID) )
 					{
-						if ( result != myStats.getEffectActive(EFF_MAGICIANS_ARMOR) )
+						if ( result != myStats.getEffectActive(effectID) )
 						{
-							players[player]->mechanics.updateSustainedSpellEvent(SPELL_MAGICIANS_ARMOR, 10.0 + result, 1.0);
+							bool increaseSkill = false;
+							if ( attacker && attacker->getStats() )
+							{
+								increaseSkill = true;
+								if ( !attacker->checkFriend(my) )
+								{
+									increaseSkill = false;
+								}
+							}
+							players[player]->mechanics.updateSustainedSpellEvent(spellID, std::min(150.0, 50.0 + 10 * result), 1.0);
 						}
 					}
 				}
@@ -3415,10 +3438,10 @@ int magiciansArmorProc(Entity* my, Stat& myStats, bool checkEffectActiveOnly, En
 			{
 				if ( my && my->behavior == &actMonster )
 				{
-					myStats.EFFECTS_TIMERS[EFF_MAGICIANS_ARMOR] = std::max(1, myStats.EFFECTS_TIMERS[EFF_MAGICIANS_ARMOR] - TICKS_PER_SECOND);
+					myStats.EFFECTS_TIMERS[effectID] = std::max(1, myStats.EFFECTS_TIMERS[effectID] - TICKS_PER_SECOND);
 				}
 			}
-			return myStats.getEffectActive(EFF_MAGICIANS_ARMOR);
+			return myStats.getEffectActive(effectID);
 		}
 	}
 
@@ -3540,7 +3563,6 @@ bool applyGenericMagicDamage(Entity* caster, Entity* hitentity, Entity& damageSo
 	if ( hitentity->behavior == &actChest || hitentity->isInertMimic() )
 	{
 		damage *= damageMultiplier;
-		damage /= (1 + (int)resistance);
 		hitentity->chestHandleDamageMagic(damage, damageSourceProjectile, caster);
 		return true;
 	}
@@ -3586,7 +3608,6 @@ bool applyGenericMagicDamage(Entity* caster, Entity* hitentity, Entity& damageSo
 
 		Sint32 preResistanceDamage = damage;
 		damage *= damageMultiplier;
-		damage /= (1 + (int)resistance);
 		hitentity->modHP(-damage);
 		if ( damage > 0 )
 		{
@@ -3894,6 +3915,25 @@ real_t getSpellPropertyFromID(spell_t::SpellBasePropertiesFloat prop, int spellI
 			result = spell->cast_time;
 			real_t modifier = 1.0 + spell->cast_time_mult;
 			result *= modifier;
+		}
+		else if ( prop == spell_t::SpellBasePropertiesFloat::SPELLPROP_MODIFIED_DISTANCE )
+		{
+			if ( spell->distance > 0.0 )
+			{
+				real_t bonus = (getBonusFromCasterOfSpellElement(parent, myStats, element, spellID, spell->skillID));
+				real_t modifier = (statGetPER(myStats, parent) * (1.0 + bonus) * spell->distance_mult);
+				real_t maxDist = 96.0;
+				static ConsoleVariable<float> cvar_spell_max_distance("/spell_max_distance", 96.0);
+				if ( svFlags & SV_FLAG_CHEATS )
+				{
+					maxDist = *cvar_spell_max_distance;
+				}
+				result = std::min(maxDist, spell->distance + modifier);
+			}
+			else
+			{
+				return 0.0;
+			}
 		}
 	}
 	return result;

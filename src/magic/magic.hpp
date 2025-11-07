@@ -89,9 +89,9 @@ static const int SPELL_METEOR = 66;
 static const int SPELL_FLAMES = 67;
 static const int SPELL_ICE_WAVE = 68;
 static const int SPELL_CONJURE_FOOD = 69;
-static const int SPELL_NULL_MELEE = 70;
-static const int SPELL_NULL_MAGIC = 71;
-static const int SPELL_NULL_RANGED = 72;
+static const int SPELL_GUARD_BODY = 70;
+static const int SPELL_GUARD_SPIRIT = 71;
+static const int SPELL_DIVINE_GUARD = 72;
 static const int SPELL_PROF_NIMBLENESS = 73;
 static const int SPELL_PROF_GREATER_MIGHT = 74;
 static const int SPELL_PROF_COUNSEL = 75;
@@ -351,6 +351,10 @@ static const int PARTICLE_EFFECT_FLAMES = 67;
 static const int PARTICLE_EFFECT_FLAMES_BURNING = 68;
 static const int PARTICLE_EFFECT_SUMMON_FLAMES = 69;
 static const int PARTICLE_EFFECT_MAGICIANS_ARMOR_ORBIT = 70;
+static const int PARTICLE_EFFECT_GUARD_BODY_ORBIT = 71;
+static const int PARTICLE_EFFECT_GUARD_SPIRIT_ORBIT = 72;
+static const int PARTICLE_EFFECT_GUARD_DIVINE_ORBIT = 73;
+static const int PARTICLE_EFFECT_METEOR_STATIONARY_ORBIT = 74;
 
 // actmagicIsVertical constants
 static const int MAGIC_ISVERTICAL_NONE = 0;
@@ -792,7 +796,7 @@ typedef struct spell_t
 	
 	enum SpellBasePropertiesFloat
 	{
-		SPELLPROP_DISTANCE,
+		SPELLPROP_MODIFIED_DISTANCE,
 		SPELLPROP_DISTANCE_MULT,
 		SPELLPROP_CAST_TIME,
 		SPELLPROP_CAST_TIME_MULT,
@@ -1026,7 +1030,7 @@ void actEarthElementalDeathGib(Entity* my);
 void actLeafParticle(Entity* my);
 void actLeafPile(Entity* my);
 Entity* spawnLeafPile(real_t x, real_t y, bool trap);
-int magiciansArmorProc(Entity* my, Stat& myStats, bool checkEffectActiveOnly, Entity* attacker);
+int thaumSpellArmorProc(Entity* my, Stat& myStats, bool checkEffectActiveOnly, Entity* attacker, int effectID);
 
 void spawnMagicTower(Entity* parent, real_t x, real_t y, int spellID, Entity* autoHitTarget, bool castedSpell = false); // autoHitTarget is to immediate damage an entity, as all 3 tower magics hitting is unreliable
 bool magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks);
@@ -1138,6 +1142,7 @@ Entity* spellEffectFlameSprite(Entity& caster, spellElement_t& element, real_t x
 Entity* spellEffectHologram(Entity& caster, spellElement_t& element, real_t x, real_t y);
 Entity* spellEffectDemesneDoor(Entity& caster, Entity& doorFrame);
 void magicSetResistance(Entity* entity, Entity* parent, int& resistance, real_t& damageMultiplier, DamageGib& dmgGib, int& trapResist, int spellID);
+Sint32 convertResistancePointsToMagicValue(Sint32 value, int resistance);
 int getSpellDamageFromID(int spellID, Entity* parent, Stat* parentStats, Entity* magicSourceParticle, real_t addSpellBonus = 0.0, bool applyingDamageOnCast = true);
 int getSpellDamageSecondaryFromID(int spellID, Entity* parent, Stat* parentStats, Entity* magicSourceParticle, real_t addSpellBonus = 0.0, bool applyingDamageOnCast = true);
 int getSpellEffectDurationFromID(int spellID, Entity* parent, Stat* parentStats, Entity* magicSourceParticle, real_t addSpellBonus = 0.0);
@@ -1174,7 +1179,8 @@ struct AOEIndicators_t
 		CACHE_MUSHROOM_2,
 		CACHE_MUSHROOM_3,
 		CACHE_MUSHROOM_4,
-		CACHE_MAGICIANS_ARMOR
+		CACHE_MAGICIANS_ARMOR,
+		CACHE_THAUM_ARMOR
 	};
 	struct Indicator_t
 	{

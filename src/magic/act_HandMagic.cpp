@@ -363,10 +363,12 @@ void spellcasting_animation_manager_t::setRangeFinderLocation()
 	int index = 0;
 	wallDir = 0;
 
+	real_t spellDistance = getSpellPropertyFromID(spell_t::SPELLPROP_MODIFIED_DISTANCE, spell->ID, caster, nullptr, caster);
+
 	if ( rangefinder == RANGEFINDER_TOUCH_WALL_TILE )
 	{
-		real_t dist = lineTrace(nullptr, startx, starty, yaw, spell->distance, 0, false);
-		if ( dist < spell->distance )
+		real_t dist = lineTrace(nullptr, startx, starty, yaw, spellDistance, 0, false);
+		if ( dist < spellDistance )
 		{
 			previousx = hit.x;
 			previousy = hit.y;
@@ -432,7 +434,7 @@ void spellcasting_animation_manager_t::setRangeFinderLocation()
 			{
 				break;
 			}
-			if ( pow(startx - caster->x, 2) + pow(starty - caster->y, 2) > (spell->distance * spell->distance) )
+			if ( pow(startx - caster->x, 2) + pow(starty - caster->y, 2) > (spellDistance * spellDistance) )
 			{
 				// break if distance reached
 				break;
@@ -448,7 +450,7 @@ void spellcasting_animation_manager_t::setRangeFinderLocation()
 	if ( rangefinder == RANGEFINDER_TOUCH
 		|| rangefinder == RANGEFINDER_TOUCH_INTERACT )
 	{
-		real_t maxDist = spell->distance + 8.0;
+		real_t maxDist = spellDistance + 8.0;
 		real_t minDist = 4.0;
 		real_t rangeFinderDist = std::max(0.0, sqrt(pow(startx - caster->x, 2) + pow(starty - caster->y, 2)) - 8.0);
 

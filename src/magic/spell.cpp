@@ -832,21 +832,21 @@ real_t getSpellBonusFromCasterINT(Entity* caster, Stat* casterStats, int skillID
 					bonus += bonusStat / 100.0;
 				}
 			}
-			else if ( skillID == PRO_MYSTICISM )
+		}
+		if ( skillID == PRO_MYSTICISM )
+		{
+			int bonusStat = statGetCHR(casterStats, caster);
+			if ( bonusStat > 0 )
 			{
-				int bonusStat = statGetCHR(casterStats, caster);
-				if ( bonusStat > 0 )
-				{
-					bonus += bonusStat / 100.0;
-				}
+				bonus += bonusStat / 100.0;
 			}
-			else if ( skillID == PRO_THAUMATURGY )
+		}
+		else if ( skillID == PRO_THAUMATURGY )
+		{
+			int bonusStat = statGetCON(casterStats, caster);
+			if ( bonusStat > 0 )
 			{
-				int bonusStat = statGetCON(casterStats, caster);
-				if ( bonusStat > 0 )
-				{
-					bonus += bonusStat / 100.0;
-				}
+				bonus += bonusStat / 100.0;
 			}
 		}
 	}
@@ -866,6 +866,7 @@ real_t getBonusFromCasterOfSpellElement(Entity* caster, Stat* casterStats, spell
 	}
 
 	real_t bonus = 0.0;
+	int spellSkillID = SPELL_NONE;
 	if ( spellID == SPELL_NONE )
 	{
 		bonus += getSpellBonusFromCasterINT(caster, casterStats, proficiencyWhenNoSpell);
@@ -875,6 +876,7 @@ real_t getBonusFromCasterOfSpellElement(Entity* caster, Stat* casterStats, spell
 		if ( auto spell = getSpellFromID(spellID) )
 		{
 			bonus += getSpellBonusFromCasterINT(caster, casterStats, spell->skillID);
+			spellSkillID = spell->skillID;
 		}
 	}
 
@@ -917,7 +919,7 @@ real_t getBonusFromCasterOfSpellElement(Entity* caster, Stat* casterStats, spell
 				{
 					hatBonus -= ((0.10 * abs(casterStats->helmet->beatitude)));
 				}
-				if ( spellID == SPELL_HEALING || spellID == SPELL_EXTRAHEALING )
+				if ( spellSkillID == PRO_THAUMATURGY )
 				{
 					hatBonus *= 2;
 				}
@@ -934,14 +936,18 @@ real_t getBonusFromCasterOfSpellElement(Entity* caster, Stat* casterStats, spell
 				{
 					hatBonus -= ((0.10 * abs(casterStats->helmet->beatitude)));
 				}
-				if ( ItemTooltips.spellItems.find(spellID) != ItemTooltips.spellItems.end() )
+				if ( spellSkillID == PRO_SORCERY )
+				{
+					hatBonus *= 2;
+				}
+				/*if ( ItemTooltips.spellItems.find(spellID) != ItemTooltips.spellItems.end() )
 				{
 					auto& entry = ItemTooltips.spellItems[spellID];
 					if ( entry.spellTags.find(ItemTooltips_t::SpellTagTypes::SPELL_TAG_DAMAGE) != entry.spellTags.end() )
 					{
 						hatBonus *= 2;
 					}
-				}
+				}*/
 				bonus += hatBonus;
 			}
 			else if ( casterStats->helmet->type == HAT_CIRCLET

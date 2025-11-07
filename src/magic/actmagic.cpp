@@ -67,6 +67,13 @@ void spawnAdditionalParticleForMissile(Entity* my)
 				fx->z = my->z;
 				fx->yaw = my->yaw - PI / 4;
 			}
+			if ( multiplayer == SERVER )
+			{
+				if ( my->actmagicDelayMove > 2 * TICKS_PER_SECOND || (my->actmagicDelayMove == TICKS_PER_SECOND - 1) )
+				{
+					serverSpawnMiscParticlesAtLocation(my->x, my->y, my->z, PARTICLE_EFFECT_METEOR_STATIONARY_ORBIT, 2209, my->actmagicDelayMove, my->yaw * 256.0);
+				}
+			}
 		}
 	}
 }
@@ -1153,13 +1160,13 @@ bool magicOnSpellCastEvent(Entity* parent, Entity* projectile, Entity* hitentity
 				}
 			}
 
-			if ( nothingElseToLearnMsg )
+			/*if ( nothingElseToLearnMsg )
 			{
 				if ( local_rng.rand() % 20 == 0 )
 				{
 					messagePlayer(player, MESSAGE_HINT, Language::get(2591));
 				}
-			}
+			}*/
 
 			if ( spellbook )
 			{
@@ -1200,6 +1207,18 @@ void magicOnEntityHit(Entity* parent, Entity* particle, Entity* hitentity, Stat*
 						Compendium_t::Events_t::eventUpdateCodex(hitentity->skill[2], Compendium_t::CPDM_RES_DMG_RESISTED, "res", noResistDmgTaken - damageTaken);
 						Compendium_t::Events_t::eventUpdateCodex(hitentity->skill[2], Compendium_t::CPDM_RES_DMG_RESISTED_RUN, "res", noResistDmgTaken - damageTaken);
 					}
+				}
+			}
+
+			if ( damage > 0 )
+			{
+				if ( hitstats->getEffectActive(EFF_GUARD_SPIRIT) )
+				{
+					thaumSpellArmorProc(hitentity, *hitstats, false, nullptr, EFF_GUARD_SPIRIT);
+				}
+				if ( hitstats->getEffectActive(EFF_DIVINE_GUARD) )
+				{
+					thaumSpellArmorProc(hitentity, *hitstats, false, nullptr, EFF_DIVINE_GUARD);
 				}
 			}
 		}
@@ -1565,6 +1584,21 @@ bool absorbMagicEvent(Entity* entity, Entity* parent, Entity& damageSourceProjec
 	return false;
 }
 
+Sint32 convertResistancePointsToMagicValue(Sint32 value, int resistance)
+{
+	if ( resistance > 0 )
+	{
+		real_t mult = 1.0;
+		for ( int i = 0; i < resistance; ++i, mult *= (1 - Entity::magicResistancePerPoint) ) {}
+
+		return std::max(1.0, value * (mult));
+	}
+	else
+	{
+		return value;
+	}
+}
+
 void magicSetResistance(Entity* entity, Entity* parent, int& resistance, real_t& damageMultiplier, DamageGib& dmgGib, int& trapResist, int spellID)
 {
 	if ( entity )
@@ -1572,7 +1606,7 @@ void magicSetResistance(Entity* entity, Entity* parent, int& resistance, real_t&
 		resistance = Entity::getMagicResistance(entity->getStats());
 		if ( (entity->behavior == &actMonster || entity->behavior == &actPlayer) && entity->getStats() )
 		{
-			damageMultiplier = Entity::getDamageTableMultiplier(entity, *entity->getStats(), DAMAGE_TABLE_MAGIC);
+			damageMultiplier = Entity::getDamageTableMultiplier(entity, *entity->getStats(), DAMAGE_TABLE_MAGIC, &resistance);
 			if ( damageMultiplier <= 0.75 )
 			{
 				dmgGib = DMG_WEAKEST;
@@ -1830,13 +1864,74 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					my->z += my->vel_z;
 					hitFromAbove = my->magicFallingCollision();
 					my->processEntityWind();
-					dist = clipMove(&my->x, &my->y, my->vel_x, my->vel_y, my);
-					if ( !hitFromAbove && my->z > -5 )
+
+					bool halfSpeedCheck = false;
+					static ConsoleVariable<bool> cvar_magic_clip("/magic_clip_test", true);
+					real_t speed = sqrt(pow(my->vel_x, 2) + pow(my->vel_y, 2));
+					if ( speed > 4.0 ) // can clip through thin gates
 					{
-						// if we didn't hit the floor, process normal horizontal movement collision if we aren't too high
-						if ( dist != sqrt(my->vel_x * my->vel_x + my->vel_y * my->vel_y) )
+						auto entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 1);
+						for ( auto it : entLists )
 						{
-							hitFromAbove = true;
+							if ( !*cvar_magic_clip && (svFlags & SV_FLAG_CHEATS) )
+							{
+								break;
+							}
+							for ( node_t* node = it->first; node != nullptr; node = node->next )
+							{
+								Entity* entity = (Entity*)node->element;
+								if ( entity->behavior == &actGate || entity->behavior == &actDoor || entity->behavior == &actIronDoor )
+								{
+									if ( entityDist(my, entity) <= speed )
+									{
+										halfSpeedCheck = true;
+										break;
+									}
+								}
+							}
+							if ( halfSpeedCheck )
+							{
+								break;
+							}
+						}
+					}
+
+					if ( !halfSpeedCheck )
+					{
+						dist = clipMove(&my->x, &my->y, my->vel_x, my->vel_y, my);
+						if ( !hitFromAbove && my->z > -5 )
+						{
+							// if we didn't hit the floor, process normal horizontal movement collision if we aren't too high
+							if ( dist != sqrt(my->vel_x * my->vel_x + my->vel_y * my->vel_y) )
+							{
+								hitFromAbove = true;
+							}
+						}
+					}
+					else
+					{
+						real_t vel_x = my->vel_x / 2.0;
+						real_t vel_y = my->vel_y / 2.0;
+						real_t dist = clipMove(&my->x, &my->y, vel_x, vel_y, my);
+						if ( !hitFromAbove && my->z > -5 )
+						{
+							// if we didn't hit the floor, process normal horizontal movement collision if we aren't too high
+							if ( dist != sqrt(vel_x * vel_x + vel_y * vel_y) )
+							{
+								hitFromAbove = true;
+							}
+						}
+						if ( !hitFromAbove )
+						{
+							dist = clipMove(&my->x, &my->y, vel_x, vel_y, my);
+							if ( !hitFromAbove && my->z > -5 )
+							{
+								// if we didn't hit the floor, process normal horizontal movement collision if we aren't too high
+								if ( dist != sqrt(vel_x * vel_x + vel_y * vel_y) )
+								{
+									hitFromAbove = true;
+								}
+							}
 						}
 					}
 
@@ -1903,23 +1998,23 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					}
 					if ( hit.entity && hitstats )
 					{
-						if ( hitstats->getEffectActive(EFF_NULL_MAGIC)
+						if ( hitstats->getEffectActive(EFF_MAGICIANS_ARMOR)
 							&& !(!(svFlags & SV_FLAG_FRIENDLYFIRE) && parent && parent->checkFriend(hit.entity)) )
 						{
-							auto effectStrength = hitstats->getEffectActive(EFF_NULL_MAGIC);
-							int duration = hitstats->EFFECTS_TIMERS[EFF_NULL_MAGIC];
+							Uint8 effectStrength = hitstats->getEffectActive(EFF_MAGICIANS_ARMOR);
+							int duration = hitstats->EFFECTS_TIMERS[EFF_MAGICIANS_ARMOR];
 							if ( effectStrength == 1 )
 							{
-								if ( hitstats->EFFECTS_TIMERS[EFF_NULL_MAGIC] > 0 )
+								if ( hitstats->EFFECTS_TIMERS[EFF_MAGICIANS_ARMOR] > 0 )
 								{
-									hitstats->EFFECTS_TIMERS[EFF_NULL_MAGIC] = 1;
+									hitstats->EFFECTS_TIMERS[EFF_MAGICIANS_ARMOR] = 1;
 								}
 							}
 							else if ( effectStrength > 1 )
 							{
 								--effectStrength;
-								hitstats->setEffectValueUnsafe(EFF_NULL_MAGIC, effectStrength);
-								hit.entity->setEffect(EFF_NULL_MAGIC, effectStrength, hitstats->EFFECTS_TIMERS[EFF_NULL_MAGIC], false);
+								hitstats->setEffectValueUnsafe(EFF_MAGICIANS_ARMOR, effectStrength);
+								hit.entity->setEffect(EFF_MAGICIANS_ARMOR, effectStrength, hitstats->EFFECTS_TIMERS[EFF_MAGICIANS_ARMOR], true);
 							}
 							if ( (parent && parent->behavior == &actPlayer) || (parent && parent->behavior == &actMonster && parent->monsterAllyGetPlayerLeader())
 								|| hit.entity->behavior == &actPlayer || hit.entity->monsterAllyGetPlayerLeader() )
@@ -1936,7 +2031,20 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								messagePlayerMonsterEvent(parent->skill[2], makeColorRGB(255, 255, 255),
 									*hitstats, Language::get(6466), Language::get(6467), MSG_COMBAT); // %s guards the spell
 							}
-							playSoundEntity(hit.entity, 166, 128);
+
+							Entity* fx = createParticleAestheticOrbit(hit.entity, 1817, TICKS_PER_SECOND / 4, PARTICLE_EFFECT_NULL_PARTICLE);
+							fx->x = hit.entity->x;
+							fx->y = hit.entity->y;
+							fx->z = hit.entity->z;
+							real_t tangent = atan2(my->y - hit.entity->y, my->x - hit.entity->x);
+							fx->x += 4.0 * cos(tangent);
+							fx->y += 4.0 * sin(tangent);
+							fx->yaw = tangent;
+							fx->actmagicOrbitDist = 0;
+							fx->actmagicNoLight = 0;
+							serverSpawnMiscParticlesAtLocation(fx->x, fx->y, fx->z, PARTICLE_EFFECT_NULL_PARTICLE, 1817, 0, fx->yaw * 256.0);
+
+							//playSoundEntity(hit.entity, 166, 128);
 							my->removeLightField();
 							list_RemoveNode(my->mynode);
 							return;
@@ -2741,7 +2849,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					{
 						if ( mimic )
 						{
-							magicDmg /= (1 + (int)resistance);
+							//magicDmg = convertResistancePointsToMagicValue(magicDmg, resistance);
 						}
 						else
 						{
@@ -2829,8 +2937,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								//}
 								magicDmg *= fireMultiplier;
 							}
-
-							magicDmg /= (1 + (int)resistance);
 						}
 					}
 
@@ -3021,7 +3127,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							else if ( spell->ID == SPELL_FOCI_SNOW )
 							{
 								Sint32 duration = element->duration;
-								duration /= (1 + (int)resistance);
+								duration = convertResistancePointsToMagicValue(duration, resistance);
 								int prevDuration = hitstats->getEffectActive(EFF_SLOW) ? hitstats->EFFECTS_TIMERS[EFF_SLOW] : 0;
 								if ( hit.entity->setEffect(EFF_SLOW, true, 
 									std::min(element->getDurationSecondary(), prevDuration + duration), false) )
@@ -3035,7 +3141,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							else if ( spell->ID == SPELL_FOCI_ARCS )
 							{
 								Sint32 duration = element->duration;
-								duration /= (1 + (int)resistance);
+								duration = convertResistancePointsToMagicValue(duration, resistance);
 
 								int prevDuration = hitstats->getEffectActive(EFF_STATIC) ? hitstats->EFFECTS_TIMERS[EFF_STATIC] : 0;
 								int maxDuration = element->getDurationSecondary();
@@ -3060,7 +3166,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							else if ( spell->ID == SPELL_FOCI_NEEDLES )
 							{
 								Sint32 duration = element->duration;
-								duration /= (1 + (int)resistance);
+								duration = convertResistancePointsToMagicValue(duration, resistance);
 								int prevDuration = hitstats->getEffectActive(EFF_BLEEDING) ? hitstats->EFFECTS_TIMERS[EFF_BLEEDING] : 0;
 								if ( hit.entity->setEffect(EFF_BLEEDING, true, 
 									std::min(element->getDurationSecondary(), prevDuration + duration), false) )
@@ -3115,14 +3221,14 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								if ( !strcmp(element->element_internal_name, spellElementMap[SPELL_MERCURY_BOLT].element_internal_name) )
 								{
 									Sint32 duration = element->duration;
-									duration /= (1 + (int)resistance);
+									duration = convertResistancePointsToMagicValue(duration, resistance);
 									if ( hit.entity->setEffect(EFF_SLOW, true, duration, false) )
 									{
 										playSoundEntity(hit.entity, 396 + local_rng.rand() % 3, 64);
 									}
 
 									duration = element->duration;
-									duration /= (1 + (int)resistance);
+									duration = convertResistancePointsToMagicValue(duration, resistance);
 									if ( hit.entity->setEffect(EFF_POISONED, true, duration, false) )
 									{
 										hitstats->poisonKiller = my->parent;
@@ -3134,14 +3240,14 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( !strcmp(element->element_internal_name, spellElementMap[SPELL_SPORE_BOMB].element_internal_name) )
 							{
 								Sint32 duration = 6 * TICKS_PER_SECOND + 10;
-								duration /= (1 + (int)resistance);
+								duration = convertResistancePointsToMagicValue(duration, resistance);
 								if ( hit.entity->setEffect(EFF_SLOW, true, duration, false, true, false, false) )
 								{
 									playSoundEntity(hit.entity, 396 + local_rng.rand() % 3, 64);
 								}
 
 								duration = 6 * TICKS_PER_SECOND + 10;
-								duration /= (1 + (int)resistance);
+								duration = convertResistancePointsToMagicValue(duration, resistance);
 								if ( hit.entity->setEffect(EFF_POISONED, true, duration, false, true, false, false) )
 								{
 									hitstats->poisonKiller = my->parent;
@@ -3150,7 +3256,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							else if ( !strcmp(element->element_internal_name, spellElementMap[SPELL_MYCELIUM_BOMB].element_internal_name) )
 							{
 								Sint32 duration = 6 * TICKS_PER_SECOND + 10;
-								duration /= (1 + (int)resistance);
+								duration = convertResistancePointsToMagicValue(duration, resistance);
 								if ( hit.entity->setEffect(EFF_SLOW, true, duration, false, true, false, false) )
 								{
 									playSoundEntity(hit.entity, 396 + local_rng.rand() % 3, 64);
@@ -3803,7 +3909,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						if ( (!mimic && hit.entity->behavior == &actMonster) || hit.entity->behavior == &actPlayer)
 						{
 							int duration = element->duration;
-							duration /= (1 + (int)resistance);
+							duration = convertResistancePointsToMagicValue(duration, resistance);
 
 							if ( parent && (parent->behavior == &actMagicTrap || parent->behavior == &actMagicTrapCeiling) )
 							{
@@ -3884,8 +3990,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( !warmHat )
 							{
 								hitstats->setEffectActive(EFF_SLOW, 1);
-								hitstats->EFFECTS_TIMERS[EFF_SLOW] = element->duration;
-								hitstats->EFFECTS_TIMERS[EFF_SLOW] /= (1 + (int)resistance);
+								hitstats->EFFECTS_TIMERS[EFF_SLOW] = convertResistancePointsToMagicValue(element->duration, resistance);
 
 								// If the Entity hit is a Player, update their status to be Slowed
 								if ( hit.entity->behavior == &actPlayer )
@@ -3976,8 +4081,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						{
 							playSoundEntity(hit.entity, 396 + local_rng.rand() % 3, 64);
 							hitstats->setEffectActive(EFF_SLOW, 1);
-							hitstats->EFFECTS_TIMERS[EFF_SLOW] = element->duration;
-							hitstats->EFFECTS_TIMERS[EFF_SLOW] /= (1 + (int)resistance);
+							hitstats->EFFECTS_TIMERS[EFF_SLOW] = convertResistancePointsToMagicValue(element->duration, resistance);
 
 							magicOnEntityHit(parent, my, hit.entity, hitstats, 0, 0, 0, spell ? spell->ID : SPELL_NONE);
 							magicTrapOnHit(parent, hit.entity, hitstats, 0, spell ? spell->ID : SPELL_NONE);
@@ -4058,8 +4162,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						{
 							//playSoundEntity(hit.entity, 396 + local_rng.rand() % 3, 64);
 							hitstats->setEffectActive(EFF_WEAKNESS, 1);
-							hitstats->EFFECTS_TIMERS[EFF_WEAKNESS] = element->duration;
-							hitstats->EFFECTS_TIMERS[EFF_WEAKNESS] /= (1 + (int)resistance);
+							hitstats->EFFECTS_TIMERS[EFF_WEAKNESS] = convertResistancePointsToMagicValue(element->duration, resistance);
 
 							magicOnEntityHit(parent, my, hit.entity, hitstats, 0, 0, 0, spell ? spell->ID : SPELL_NONE);
 							magicTrapOnHit(parent, hit.entity, hitstats, 0, spell ? spell->ID : SPELL_NONE);
@@ -4107,7 +4210,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									effectDuration = std::max(50, effectDuration - ((hitstats->CON % 10) * 50)); // reduce 1 sec every 10 CON.
 								}
 							}
-							effectDuration /= (1 + (int)resistance);
+							effectDuration = convertResistancePointsToMagicValue(effectDuration, resistance);
 
 							bool magicTrapReapplySleep = true;
 
@@ -4247,7 +4350,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 
 							Sint32 preResistanceDamage = damage;
 							damage *= damageMultiplier;
-							damage /= (1 + (int)resistance);
 							hit.entity->modHP(-damage);
 							magicOnEntityHit(parent, my, hit.entity, hitstats, preResistanceDamage, damage, oldHP, spell ? spell->ID : SPELL_NONE);
 							magicTrapOnHit(parent, hit.entity, hitstats, oldHP, spell ? spell->ID : SPELL_NONE);
@@ -4538,7 +4640,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								if ( particleEmitterHitProps && particleEmitterHitProps->hits == 1 )
 								{
 									int duration = element->duration;
-									duration /= (1 + (int)resistance);
+									duration = convertResistancePointsToMagicValue(duration, resistance);
 
 									if ( hasgoggles )
 									{
@@ -4581,7 +4683,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									if ( local_rng.rand() % 2 == 0 )
 									{
 										int duration = element->duration / 2;
-										duration /= (1 + (int)resistance);
+										duration = convertResistancePointsToMagicValue(duration, resistance);
 
 										int status = hit.entity->behavior == &actPlayer ? EFF_MESSY : EFF_BLIND;
 
@@ -4609,7 +4711,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									else
 									{
 										int duration = element->duration;
-										duration /= (1 + (int)resistance);
+										duration = convertResistancePointsToMagicValue(duration, resistance);
 
 										if ( hasgoggles )
 										{
@@ -4657,7 +4759,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								}
 
 								int duration = (spell->ID == SPELL_SLIME_METAL ? 10 : 6) * TICKS_PER_SECOND;
-								duration /= (1 + (int)resistance);
+								duration = convertResistancePointsToMagicValue(duration, resistance);
 								if ( spell->ID == SPELL_SLIME_ACID )
 								{
 									if ( !hasamulet && !hasgoggles )
@@ -5739,7 +5841,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						if ( (!mimic && hit.entity->behavior == &actMonster) || hit.entity->behavior == &actPlayer )
 						{
 							int effectDuration = element->duration;
-							effectDuration /= (1 + (int)resistance);
+							effectDuration = convertResistancePointsToMagicValue(effectDuration, resistance);
 							int oldDuration = !hitstats->getEffectActive(EFF_PARALYZED) ? 0 : hitstats->EFFECTS_TIMERS[EFF_PARALYZED];
 							if ( hit.entity->setEffect(EFF_PARALYZED, true, effectDuration, false) )
 							{
@@ -5813,7 +5915,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 
 							int bleedDuration = element->duration;
-							bleedDuration /= (1 + (int)resistance);
+							bleedDuration = convertResistancePointsToMagicValue(bleedDuration, resistance);
 							bool wasBleeding = hit.entity->getStats() ? hit.entity->getStats()->getEffectActive(EFF_BLEEDING) : false;
 							if ( bleedDuration > 0 && hit.entity->setEffect(EFF_BLEEDING, true, bleedDuration, false) )
 							{
@@ -5840,7 +5942,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 
 							int slowDuration = element->duration / 4;
-							slowDuration /= (1 + (int)resistance);
+							slowDuration = convertResistancePointsToMagicValue(slowDuration, resistance);
 							if ( slowDuration > 0 && hit.entity->setEffect(EFF_SLOW, true, slowDuration, false) )
 							{
 
@@ -7212,7 +7314,8 @@ Entity* createParticleAestheticOrbit(Entity* parent, int sprite, int duration, i
 {
 	if ( effectType == PARTICLE_EFFECT_NULL_PARTICLE
 		|| effectType == PARTICLE_EFFECT_IGNITE_ORBIT
-		|| effectType == PARTICLE_EFFECT_IGNITE_ORBIT_LOOP )
+		|| effectType == PARTICLE_EFFECT_IGNITE_ORBIT_LOOP
+		|| effectType == PARTICLE_EFFECT_METEOR_STATIONARY_ORBIT )
 	{
 		// no need parent
 	}
@@ -7489,7 +7592,8 @@ void actParticleAestheticOrbit(Entity* my)
 			if ( my->skill[1] == PARTICLE_EFFECT_NULL_PARTICLE 
 				|| my->skill[1] == PARTICLE_EFFECT_SHATTER_EARTH_ORBIT
 				|| my->skill[1] == PARTICLE_EFFECT_IGNITE_ORBIT
-				|| my->skill[1] == PARTICLE_EFFECT_IGNITE_ORBIT_LOOP )
+				|| my->skill[1] == PARTICLE_EFFECT_IGNITE_ORBIT_LOOP
+				|| my->skill[1] == PARTICLE_EFFECT_METEOR_STATIONARY_ORBIT )
 			{
 				// no need for parent
 			}
@@ -7777,7 +7881,57 @@ void actParticleAestheticOrbit(Entity* my)
 			my->y = parent->y + my->actmagicOrbitDist * sin(my->fskill[2]);
 			my->z += my->vel_z;
 			Stat* stats = parent->getStats();
+
+			if ( PARTICLE_LIFE <= 40 )
+			{
+				if ( my->ticks % 8 == 0 )
+				{
+					if ( my->sprite < 279 )
+					{
+						my->sprite++;
+					}
+					else if ( my->ticks % 16 == 0 )
+					{
+						my->removeLightField();
+						list_RemoveNode(my->mynode);
+						return;
+					}
+				}
+			}
+
 			if ( PARTICLE_LIFE <= 10 || (!stats || !stats->getEffectActive(EFF_MAGICIANS_ARMOR)) )
+			{
+				my->scalex -= 0.0125;
+				my->scaley -= 0.0125;
+				my->scalez -= 0.0125;
+				if ( my->scalex <= 0.0 )
+				{
+					my->removeLightField();
+					list_RemoveNode(my->mynode);
+					return;
+				}
+			}
+			else
+			{
+				my->scalex = std::min(my->scalex + 0.0025, 0.15);
+				my->scaley = std::min(my->scaley + 0.0025, 0.15);
+				my->scalez = std::min(my->scalez + 0.0025, 0.15);
+			}
+		}
+		else if ( my->skill[1] == PARTICLE_EFFECT_GUARD_BODY_ORBIT
+			|| my->skill[1] == PARTICLE_EFFECT_GUARD_SPIRIT_ORBIT
+			|| my->skill[1] == PARTICLE_EFFECT_GUARD_DIVINE_ORBIT )
+		{
+			my->fskill[2] += 0.05;
+			my->yaw -= 0.05;
+			my->x = parent->x + my->actmagicOrbitDist * cos(my->fskill[2]);
+			my->y = parent->y + my->actmagicOrbitDist * sin(my->fskill[2]);
+			my->z += my->vel_z;
+			Stat* stats = parent->getStats();
+			int effectID = my->skill[1] == PARTICLE_EFFECT_GUARD_BODY_ORBIT ? EFF_GUARD_BODY
+				: (my->skill[1] == PARTICLE_EFFECT_GUARD_SPIRIT_ORBIT ? EFF_GUARD_SPIRIT
+				: (my->skill[1] == PARTICLE_EFFECT_GUARD_DIVINE_ORBIT ? EFF_DIVINE_GUARD : -1));
+			if ( PARTICLE_LIFE <= 10 || (!stats || effectID < 0 || !stats->getEffectActive(effectID)) )
 			{
 				my->scalex -= 0.05;
 				my->scaley -= 0.05;
@@ -8128,13 +8282,17 @@ void actParticleAestheticOrbit(Entity* my)
 
 			my->yaw += my->fskill[6];
 		}
-		else if ( my->skill[1] == PARTICLE_EFFECT_SCEPTER_BLAST_ORBIT1 )
+		else if ( my->skill[1] == PARTICLE_EFFECT_SCEPTER_BLAST_ORBIT1
+			|| my->skill[1] == PARTICLE_EFFECT_METEOR_STATIONARY_ORBIT /* doesn't need parent entity */ )
 		{
 			if ( my->sprite == 2192 || my->sprite == 2210 )
 			{
-				my->x = parent->x;
-				my->y = parent->y;
-				my->z = parent->z - 0.5;
+				if ( parent )
+				{
+					my->x = parent->x;
+					my->y = parent->y;
+					my->z = parent->z - 0.5;
+				}
 				my->roll = 0.0;
 				my->pitch -= 0.1;
 				my->scalex = 0.75;
@@ -8146,9 +8304,18 @@ void actParticleAestheticOrbit(Entity* my)
 
 				if ( my->sprite == 2210 )
 				{
-					my->scalex = 0.75 * std::min(50, (int)my->ticks) / 50.0;
-					my->scaley = 0.75 * std::min(50, (int)my->ticks) / 50.0;
-					my->scalez = 0.75 * std::min(50, (int)my->ticks) / 50.0;
+					if ( multiplayer == CLIENT && my->skill[1] == PARTICLE_EFFECT_SCEPTER_BLAST_ORBIT1 )
+					{
+						my->scalex = 0.75;
+						my->scaley = 0.75;
+						my->scalez = 0.75;
+					}
+					else
+					{
+						my->scalex = 0.75 * std::min(50, (int)my->ticks) / 50.0;
+						my->scaley = 0.75 * std::min(50, (int)my->ticks) / 50.0;
+						my->scalez = 0.75 * std::min(50, (int)my->ticks) / 50.0;
+					}
 
 					if ( Entity* fx = spawnMagicParticle(my) )
 					{
@@ -8189,9 +8356,12 @@ void actParticleAestheticOrbit(Entity* my)
 			}
 			else if ( my->sprite == 2193 || my->sprite == 2211 )
 			{
-				my->x = parent->x;
-				my->y = parent->y;
-				my->z = parent->z - 0.5;
+				if ( parent )
+				{
+					my->x = parent->x;
+					my->y = parent->y;
+					my->z = parent->z - 0.5;
+				}
 				my->pitch += 0.1;
 				my->roll = 0.0;
 				my->scalex = 0.75;
@@ -8203,9 +8373,18 @@ void actParticleAestheticOrbit(Entity* my)
 
 				if ( my->sprite == 2211 )
 				{
-					my->scalex = 0.75 * std::min(50, (int)my->ticks) / 50.0;
-					my->scaley = 0.75 * std::min(50, (int)my->ticks) / 50.0;
-					my->scalez = 0.75 * std::min(50, (int)my->ticks) / 50.0;
+					if ( multiplayer == CLIENT && my->skill[1] == PARTICLE_EFFECT_SCEPTER_BLAST_ORBIT1 )
+					{
+						my->scalex = 0.75;
+						my->scaley = 0.75;
+						my->scalez = 0.75;
+					}
+					else
+					{
+						my->scalex = 0.75 * std::min(50, (int)my->ticks) / 50.0;
+						my->scaley = 0.75 * std::min(50, (int)my->ticks) / 50.0;
+						my->scalez = 0.75 * std::min(50, (int)my->ticks) / 50.0;
+					}
 
 					if ( my->ticks % 8 == 0 )
 					{
@@ -10714,15 +10893,18 @@ void actParticleTimer(Entity* my)
 						real_t staticEffectSpeedMult = 0.0;
 						if ( Stat* targetStats = closestEntity->getStats() )
 						{
-							staticEffectSpeedMult += std::min(1.0, targetStats->getEffectActive(EFF_STATIC) * 0.2);
+							staticEffectSpeedMult += (0.1 + std::min(1.6, targetStats->getEffectActive(EFF_STATIC) * 0.3));
 						}
 						if ( my->ticks >= 100 ) // first impact
 						{
-							if ( my->ticks == 100 )
+							if ( my->ticks >= (100 - 5 * staticEffectSpeedMult) )
 							{
-								if ( dist < 16.0 )
+								if ( my->actmagicOrbitHitTargetUID2 != 0 )
 								{
-									my->actmagicOrbitHitTargetUID2 = closestEntity->getUID(); // follow this target
+									if ( dist < 16.0 )
+									{
+										my->actmagicOrbitHitTargetUID2 = closestEntity->getUID(); // follow this target
+									}
 								}
 							}
 
@@ -12454,7 +12636,7 @@ bool Entity::magicFallingCollision()
 {
 	hit.entity = nullptr;
 	real_t zLimitHigh = -5;
-	if ( sprite == 2209 ) // meteor
+	if ( sprite == 2209 || sprite == 233 ) // meteor
 	{
 		zLimitHigh = 0.0;
 	}
@@ -15167,9 +15349,11 @@ void actParticleFloorMagic(Entity* my)
 				{
 					Entity* entity = (Entity*)node->element;
 					if ( entity->behavior == &actPlayer || (entity->behavior == &actMonster && !entity->isInertMimic())
-						|| my->actfloorMagicType == ParticleTimerEffect_t::EffectType::EFFECT_DISRUPT_EARTH /*hits furniture*/ )
+						|| my->actfloorMagicType == ParticleTimerEffect_t::EffectType::EFFECT_DISRUPT_EARTH /*hits furniture*/
+						|| my->actfloorMagicType == ParticleTimerEffect_t::EffectType::EFFECT_LIGHTNING_BOLT /*hits furniture*/ )
 					{
-						if ( my->actfloorMagicType == ParticleTimerEffect_t::EffectType::EFFECT_DISRUPT_EARTH )
+						if ( my->actfloorMagicType == ParticleTimerEffect_t::EffectType::EFFECT_DISRUPT_EARTH
+							|| my->actfloorMagicType == ParticleTimerEffect_t::EffectType::EFFECT_LIGHTNING_BOLT )
 						{
 							if ( entity->behavior != &actMonster
 								&& entity->behavior != &actPlayer
@@ -15298,9 +15482,11 @@ void actParticleFloorMagic(Entity* my)
 									continue;
 								}
 							}
+
 							Stat* stats = entity->getStats();
 							if ( stats && entityDist(my, entity) <= 16.0 )
 							{
+								if ( !entity->monsterIsTargetable(true) && !entity->isUntargetableBat() ) { continue; }
 								int damage = getSpellDamageFromID(SPELL_LIGHTNING_BOLT, caster, nullptr, my);
 								if ( stats->getEffectActive(EFF_STATIC) )
 								{
@@ -15611,6 +15797,10 @@ void actParticleFloorMagic(Entity* my)
 							}
 							if ( particleEmitterHitPropsTimer->hits > 0 && ((ticks - particleEmitterHitPropsTimer->tick) < 30) )
 							{
+								if ( particleEmitterHitPropsFloorMagic->hits > 5 )
+								{
+									continue;
+								}
 								if ( particleEmitterHitPropsFloorMagic->hits == 0 && my->skill[1] < 10 )
 								{
 									// allowed big hit

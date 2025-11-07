@@ -1641,34 +1641,40 @@ void setupSpells()   ///TODO: Verify this function.
 		"spell_conjure_food");
 
 	spell = createSimpleSpell(
-		SPELL_NULL_MELEE,
+		SPELL_GUARD_BODY,
 		100, // difficulty
 		1, // mana
 		1, // base mana
 		1, // overload
 		0, // damage
 		1, // duration
-		"spell_null_melee");
+		"spell_guard_body",
+		1);
+	spell->sustainEffectDissipate = EFF_GUARD_BODY;
 
 	spell = createSimpleSpell(
-		SPELL_NULL_MAGIC,
+		SPELL_GUARD_SPIRIT,
 		100, // difficulty
 		1, // mana
 		1, // base mana
 		1, // overload
 		0, // damage
 		1, // duration
-		"spell_null_magic");
+		"spell_guard_spirit",
+		1);
+	spell->sustainEffectDissipate = EFF_GUARD_SPIRIT;
 
 	spell = createSimpleSpell(
-		SPELL_NULL_RANGED,
+		SPELL_DIVINE_GUARD,
 		100, // difficulty
 		1, // mana
 		1, // base mana
 		1, // overload
 		0, // damage
 		1, // duration
-		"spell_null_ranged");
+		"spell_divine_guard",
+		1);
+	spell->sustainEffectDissipate = EFF_DIVINE_GUARD;
 
 	spell = createSimpleSpell(
 		SPELL_PROF_NIMBLENESS,
@@ -3326,9 +3332,7 @@ void setupSpells()   ///TODO: Verify this function.
 		1, // overload
 		0, // damage
 		1, // duration
-		"spell_magicians_armor",
-		1);
-	spell->sustainEffectDissipate = EFF_MAGICIANS_ARMOR;
+		"spell_magicians_armor");
 
 	//static const int SPELL_LIGHTNING_NEXUS = 182;
 	//static const int SPELL_LIFT = 184;
