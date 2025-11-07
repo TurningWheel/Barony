@@ -1886,17 +1886,401 @@
 		"spell_earth_elemental": {
 			"name": "Summon Earth Sprite"
 		},
-		"spell_thorns": {
-			"name": "Thorns"
-		},
 		"spell_bless_food": {
-			"name": "Blessed Meal"
+			"name": "Blessed Meals"
 		},
 		"spell_shrub": {
 			"name": "Germinate"
 		},
+		"spell_conjure_food": {
+			"name": "Conjure Food"
+		},
+		"spell_guard_body": {
+			"name": "Guard Body"
+		},
+		"spell_guard_spirit": {
+			"name": "Guard Spirit"
+		},
+		"spell_divine_guard": {
+			"name": "Divine Guard"
+		},
+		"spell_prof_nimbleness": {
+			"name": "Nimbleness"
+		},
+		"spell_prof_greater_might": {
+			"name": "Greater Might"
+		},
+		"spell_prof_counsel": {
+			"name": "Counsel"
+		},
+		"spell_prof_sturdiness": {
+			"name": "Sturdiness"
+		},
+		"spell_pinpoint": {
+			"name": "Pinpoint"
+		},
+		"spell_donation": {
+			"name": "Donation"
+		},
+		"spell_scry_allies": {
+			"name": "Scry Allies"
+		},
+		"spell_scry_shrines": {
+			"name": "Scry Shrines"
+		},
+		"spell_scry_traps": {
+			"name": "Scry Traps"
+		},
+		"spell_scry_treasures": {
+			"name": "Scry Treasures"
+		},
+		"spell_penance": {
+			"name": "Penance"
+		},
+		"spell_call_allies": {
+			"name": "Call Allies"
+		},
+		"spell_sacred_path": {
+			"name": "Sacred Path"
+		},
+		"spell_manifest_destiny": {
+			"name": "Manifest Destiny"
+		},
+		"spell_detect_enemy": {
+			"name": "Detect Enemy"
+		},
+		"spell_detect_enemies": {
+			"name": "Detect Enemies"
+		},
+		"spell_turn_undead": {
+			"name": "Turn Undead"
+		},
+		"spell_heal_other": {
+			"name": "Heal Other"
+		},
+		"spell_blood_ward": {
+			"name": "Blood Ward"
+		},
+		"spell_true_blood": {
+			"name": "True Blood"
+		},
+		"spell_divine_zeal": {
+			"name": "Divine Zeal"
+		},
+		"spell_alter_instrument": {
+			"name": "Alter Instrument"
+		},
+		"spell_maximise": {
+			"name": "Maximise"
+		},
+		"spell_minimise": {
+			"name": "Minimise"
+		},
+		"spell_jump": {
+			"name": "Jump"
+		},
+		"spell_incoherence": {
+			"name": "Incoherence"
+		},
+		"spell_overcharge": {
+			"name": "Overcharge"
+		},
+		"spell_envenom_weapon": {
+			"name": "Envenom Weapon"
+		},
+		"spell_humiliate": {
+			"name": "Humiliate"
+		},
+		"spell_lvl_death": {
+			"name": "Defy Flesh"
+		},
+		"spell_grease_spray": {
+			"name": "Grease Spray"
+		},
+		"spell_mana_burst": {
+			"name": "Mana Burst"
+		},
+		"spell_booby_trap": {
+			"name": "Booby Trap"
+		},
+		"spell_command": {
+			"name": "Compel"
+		},
+		"spell_metallurgy": {
+			"name": "Metallurgy"
+		},
+		"spell_geomancy": {
+			"name": "Geomancy"
+		},
+		"spell_forge_key": {
+			"name": "Forge Key"
+		},
+		"spell_forge_jewel": {
+			"name": "Forge Jewel"
+		},
+		"spell_enhance_weapon": {
+			"name": "Enhance Weapon"
+		},
+		"spell_reshape_weapon": {
+			"name": "Reshape Weapon"
+		},
+		"spell_alter_arrow": {
+			"name": "Alter Arrow"
+		},
+		"spell_void_chest": {
+			"name": "Void Chest"
+		},
+		"spell_puncture_void": {
+			"name": "Puncture Void"
+		},
+		"spell_lead_bolt": {
+			"name": "Lead Bolt"
+		},
+		"spell_mercury_bolt": {
+			"name": "Mercury Bolt"
+		},
+		"spell_numbing_bolt": {
+			"name": "Numbing Bolt"
+		},
+		"spell_delay_pain": {
+			"name": "Delay Pain"
+		},
+		"spell_curse_flesh": {
+			"name": "Curse Flesh"
+		},
+		"spell_revenant_curse": {
+			"name": "Revenant Curse"
+		},
+		"spell_deep_shade": {
+			"name": "Deep Shade"
+		},
+		"spell_shade_bolt": {
+			"name": "Shade Bolt"
+		},
+		"spell_spirit_weapon": {
+			"name": "Spirit Weapon"
+		},
+		"spell_adorcism": {
+			"name": "Adorcism"
+		},
+		"spell_taboo": {
+			"name": "Scapegoat"
+		},
+		"spell_wonderlight": {
+			"name": "Wonderlight"
+		},
+		"spell_spores": {
+			"name": "Spores"
+		},
+		"spell_spore_bomb": {
+			"name": "Spore Bomb"
+		},
+		"spell_windgate": {
+			"name": "Windgate"
+		},
+		"spell_vortex": {
+			"name": "Vortex"
+		},
 		"spell_telekinesis": {
 			"name": "Telekinesis"
+		},
+		"spell_kinetic_push": {
+			"name": "Kinetic Push"
+		},
+		"spell_disarm": {
+			"name": "Disarm"
+		},
+		"spell_strip": {
+			"name": "Strip"
+		},
+		"spell_abundance": {
+			"name": "Abundance"
+		},
+		"spell_greater_abundance": {
+			"name": "Greater Abundance"
+		},
+		"spell_preserve": {
+			"name": "Preserve"
+		},
+		"spell_restore": {
+			"name": "Restore"
+		},
+		"spell_sabotage": {
+			"name": "Sabotage"
+		},
+		"spell_harvest_trap": {
+			"name": "Harvest Trap"
+		},
+		"spell_mist_form": {
+			"name": "Mist Form"
+		},
+		"spell_hologram": {
+			"name": "Hologram"
+		},
+		"spell_force_shield": {
+			"name": "Kinetic Defense"
+		},
+		"spell_reflector": {
+			"name": "Reflector"
+		},
+		"spell_splinter_gear": {
+			"name": "Splinter Armor"
+		},
+		"spell_lighten_load": {
+			"name": "Lighten Load"
+		},
+		"spell_attract_items": {
+			"name": "Attract Items"
+		},
+		"spell_return_items": {
+			"name": "Return Items"
+		},
+		"spell_absorb_magic": {
+			"name": "Absorb Magic"
+		},
+		"spell_seize_magic": {
+			"name": "Seize Magic"
+		},
+		"spell_deface": {
+			"name": "Deface"
+		},
+		"spell_sunder_monument": {
+			"name": "Sunder Monument"
+		},
+		"spell_demesne_door": {
+			"name": "Demesne Door"
+		},
+		"spell_tunnel": {
+			"name": "Portal"
+		},
+		"spell_null_area": {
+			"name": "Null Area"
+		},
+		"spell_sphere_silence": {
+			"name": "Sphere of Silence"
+		},
+		"spell_forge_metal_scrap": {
+			"name": "Forge Metal"
+		},
+		"spell_forge_magic_scrap": {
+			"name": "Forge Magic"
+		},
+		"spell_fire_sprite": {
+			"name": "Summon Fire Sprite"
+		},
+		"spell_flame_elemental": {
+			"name": "Flame Elemental"
+		},
+		"spell_spin": {
+			"name": "Spin"
+		},
+		"spell_dizzy": {
+			"name": "Dizzy"
+		},
+		"spell_vandalise": {
+			"name": "Vandalise"
+		},
+		"spell_desecrate": {
+			"name": "Desecrate"
+		},
+		"spell_sanctify": {
+			"name": "Sanctify"
+		},
+		"spell_sanctify_water": {
+			"name": "Sanctify Water"
+		},
+		"spell_cleanse_food": {
+			"name": "Cleanse Food"
+		},
+		"spell_adorcise_instrument": {
+			"name": "Adorcise Instrument"
+		},
+		"spell_flame_cloak": {
+			"name": "Flame Cloak"
+		},
+		"spell_critical_spell": {
+			"name": "Critical Spell"
+		},
+		"spell_magic_well": {
+			"name": "Magic Well"
+		},
+		"spell_flame_shield": {
+			"name": "Flame Shield"
+		},
+		"spell_lightning_bolt": {
+			"name": "Lightning Bolt"
+		},
+		"spell_disrupt_earth": {
+			"name": "Disrupt Earth"
+		},
+		"spell_earth_spines": {
+			"name": "Earth Spines"
+		},
+		"spell_lightning_nexus": {
+			"name": "Lightning Nexus"
+		},
+		"spell_fire_wall": {
+			"name": "Fire Wall"
+		},
+		"spell_lift": {
+			"name": "Lift"
+		},
+		"spell_slam": {
+			"name": "Lift"
+		},
+		"spell_ignite": {
+			"name": "Ignite"
+		},
+		"spell_shatter_objects": {
+			"name": "Shatter Objects"
+		},
+		"spell_kinetic_field": {
+			"name": "Kinetic Field"
+		},
+		"spell_ice_block": {
+			"name": "Ice Block"
+		},
+		"spell_meteor_shower": {
+			"name": "Meteor Shower"
+		},
+		"spell_chronomic_field": {
+			"name": "Chronomic Field"
+		},
+		"spell_eternals_gaze": {
+			"name": "Eternals' Gaze"
+		},
+		"spell_shatter_earth": {
+			"name": "Shatter Earth"
+		},
+		"spell_roots": {
+			"name": "Roots"
+		},
+		"spell_mushroom": {
+			"name": "Germinate"
+		},
+		"spell_mycelium": {
+			"name": "Mycelium"
+		},
+		"spell_mycelium_spores": {
+			"name": "Mycelium Spores"
+		},
+		"spell_heal_pulse": {
+			"name": "Heal Pulse"
+		},
+		"spell_thorns": {
+			"name": "Thorns"
+		},
+		"spell_bladevines": {
+			"name": "Bladevines"
+		},
+		"spell_bastion_mushroom": {
+			"name": "Bastion"
+		},
+		"spell_bastion_roots": {
+			"name": "Bastion"
+		},
+		"spell_magicians_armor": {
+			"name": "Magicians' Bubble"
 		}
     }
 }
