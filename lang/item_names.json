@@ -1676,6 +1676,14 @@
 		"tome_sorcery": {
 			"name_identified": "tome",
 			"name_unidentified": "tome"
+		},
+		"tome_mysticism": {
+			"name_identified": "tome",
+			"name_unidentified": "tome"
+		},
+		"tome_thaumaturgy": {
+			"name_identified": "tome",
+			"name_unidentified": "tome"
 		}
     },
 	"spell_names": {

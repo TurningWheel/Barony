@@ -7136,5 +7136,7 @@ to replay this challenge!
 6864 The guard over your body fades.#
 6865 The guard over your spirit fades.#
 6866 Your divine guard fades.#
+6867 Your amulet glows a faint red.#
+6868 You have nothing else to learn by trading with this shopkeep.#
 
 6999 END#

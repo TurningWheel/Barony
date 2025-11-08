@@ -11495,6 +11495,8 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 		case SPELLBOOK_9:
 		case SPELLBOOK_10:
 		case TOME_SORCERY:
+		case TOME_MYSTICISM:
+		case TOME_THAUMATURGY:
 			*metal = 0;
 			*magic = 4;
 			break;

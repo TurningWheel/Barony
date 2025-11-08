@@ -11574,6 +11574,7 @@ void autosortInventory(int player, bool sortPaperDoll)
 					break;
 				case 3: // books/spellbooks
 					sortInventoryItemsOfType(player, SPELLBOOK, invertSortDirection);
+					sortInventoryItemsOfType(player, TOME_SPELL, invertSortDirection);
 					sortInventoryItemsOfType(player, BOOK, invertSortDirection);
 					break;
 				case 4: // tools
@@ -11628,6 +11629,7 @@ void autosortInventory(int player, bool sortPaperDoll)
 					break;
 				case 3: // books/spellbooks
 					sortInventoryItemsOfType(player, SPELLBOOK, invertSortDirection);
+					sortInventoryItemsOfType(player, TOME_SPELL, invertSortDirection);
 					sortInventoryItemsOfType(player, BOOK, invertSortDirection);
 					break;
 				case 4: // tools
@@ -11870,13 +11872,13 @@ bool Player::Inventory_t::moveItemToFreeInventorySlot(Item* item)
 
 void sortInventoryItemsOfType(int player, int categoryInt, bool sortRightToLeft)
 {
-	node_t* node = nullptr;
-	Item* itemBeingSorted = nullptr;
 	Category cat = static_cast<Category>(categoryInt);
 
-	for ( node = stats[player]->inventory.first; node != NULL; node = node->next )
+	std::map<int, std::vector<Item*>> itemsToSort;
+	std::vector<int> itemTypeSortOrder;
+	for ( node_t* node = stats[player]->inventory.first; node != NULL; node = node->next )
 	{
-		itemBeingSorted = (Item*)node->element;
+		Item* itemBeingSorted = (Item*)node->element;
 		if ( itemBeingSorted && (itemBeingSorted->x == -1 || itemBeingSorted->x == Player::PaperDoll_t::ITEM_RETURN_TO_INVENTORY_COORDINATE) )
 		{
 			if ( itemCategory(itemBeingSorted) == SPELL_CAT )
@@ -11888,6 +11890,10 @@ void sortInventoryItemsOfType(int player, int categoryInt, bool sortRightToLeft)
 				if ( (itemBeingSorted->type == GEM_ROCK && categoryInt == THROWN) )
 				{
 					// exception for rocks as they are part of the thrown sort category...
+				}
+				else if ( categoryInt == MAGICSTAFF && itemTypeIsFoci(itemBeingSorted->type) )
+				{
+					// foci part of magicstaffs
 				}
 				else
 				{
@@ -11907,78 +11913,32 @@ void sortInventoryItemsOfType(int player, int categoryInt, bool sortRightToLeft)
 					continue;
 				}
 			}
-
-			// find a place...
-			int x, y;
-			bool notfree = false, foundaspot = false;
-
-			bool is_spell = false;
-			int inventory_y = std::min(players[player]->inventoryUI.getSizeY(), players[player]->inventoryUI.DEFAULT_INVENTORY_SIZEY); // only sort y values of 2-3, if extra row don't auto sort into it.
-
-			if ( sortRightToLeft )
+			if ( categoryInt == TOOL && itemTypeIsFoci(itemBeingSorted->type) )
 			{
-				x = players[player]->inventoryUI.getSizeX() - 1; // fill rightmost first.
-			}
-			else
-			{
-				x = 0; // fill leftmost first.
-			}
-			while ( 1 )
-			{
-				for ( y = 0; y < inventory_y; y++ )
-				{
-					node_t* node2 = nullptr;
-					for ( node2 = stats[player]->inventory.first; node2 != nullptr; node2 = node2->next )
-					{
-						Item* tempItem = (Item*)node2->element;
-						if ( tempItem == itemBeingSorted )
-						{
-							continue;
-						}
-						if ( tempItem )
-						{
-							if ( tempItem->x == x && tempItem->y == y )
-							{
-								if ( is_spell && itemCategory(tempItem) == SPELL_CAT )
-								{
-									notfree = true;  //Both spells. Can't fit in the same slot.
-								}
-								else if ( !is_spell && itemCategory(tempItem) != SPELL_CAT )
-								{
-									notfree = true;  //Both not spells. Can't fit in the same slot.
-								}
-							}
-						}
-					}
-					if ( notfree )
-					{
-						notfree = false;
-						continue;
-					}
-					itemBeingSorted->x = x;
-					itemBeingSorted->y = y;
-					foundaspot = true;
-					break;
-				}
-				if ( foundaspot )
-				{
-					break;
-				}
-				if ( sortRightToLeft )
-				{
-					--x; // fill rightmost first.
-				}
-				else
-				{
-					++x; // fill leftmost first.
-				}
+				continue;
 			}
 
-			// backpack sorting, sort into here as last priority.
-			if ( (x < 0 || x > players[player]->inventoryUI.getSizeX() - 1) && players[player]->inventoryUI.getSizeY() > players[player]->inventoryUI.DEFAULT_INVENTORY_SIZEY )
+			if ( itemsToSort.find(itemBeingSorted->type) == itemsToSort.end() )
 			{
-				foundaspot = false;
-				notfree = false;
+				itemTypeSortOrder.push_back(itemBeingSorted->type);
+			}
+			itemsToSort[itemBeingSorted->type].push_back(itemBeingSorted);
+		}
+	}
+
+	for ( auto type : itemTypeSortOrder )
+	{
+		for ( Item* itemBeingSorted : itemsToSort[type] )
+		{
+			if ( itemBeingSorted && (itemBeingSorted->x == -1 || itemBeingSorted->x == Player::PaperDoll_t::ITEM_RETURN_TO_INVENTORY_COORDINATE) )
+			{
+				// find a place...
+				int x, y;
+				bool notfree = false, foundaspot = false;
+
+				bool is_spell = false;
+				int inventory_y = std::min(players[player]->inventoryUI.getSizeY(), players[player]->inventoryUI.DEFAULT_INVENTORY_SIZEY); // only sort y values of 2-3, if extra row don't auto sort into it.
+
 				if ( sortRightToLeft )
 				{
 					x = players[player]->inventoryUI.getSizeX() - 1; // fill rightmost first.
@@ -11989,7 +11949,7 @@ void sortInventoryItemsOfType(int player, int categoryInt, bool sortRightToLeft)
 				}
 				while ( 1 )
 				{
-					for ( y = players[player]->inventoryUI.DEFAULT_INVENTORY_SIZEY; y < players[player]->inventoryUI.getSizeY(); y++ )
+					for ( y = 0; y < inventory_y; y++ )
 					{
 						node_t* node2 = nullptr;
 						for ( node2 = stats[player]->inventory.first; node2 != nullptr; node2 = node2->next )
@@ -12035,6 +11995,71 @@ void sortInventoryItemsOfType(int player, int categoryInt, bool sortRightToLeft)
 					else
 					{
 						++x; // fill leftmost first.
+					}
+				}
+
+				// backpack sorting, sort into here as last priority.
+				if ( (x < 0 || x > players[player]->inventoryUI.getSizeX() - 1) && players[player]->inventoryUI.getSizeY() > players[player]->inventoryUI.DEFAULT_INVENTORY_SIZEY )
+				{
+					foundaspot = false;
+					notfree = false;
+					if ( sortRightToLeft )
+					{
+						x = players[player]->inventoryUI.getSizeX() - 1; // fill rightmost first.
+					}
+					else
+					{
+						x = 0; // fill leftmost first.
+					}
+					while ( 1 )
+					{
+						for ( y = players[player]->inventoryUI.DEFAULT_INVENTORY_SIZEY; y < players[player]->inventoryUI.getSizeY(); y++ )
+						{
+							node_t* node2 = nullptr;
+							for ( node2 = stats[player]->inventory.first; node2 != nullptr; node2 = node2->next )
+							{
+								Item* tempItem = (Item*)node2->element;
+								if ( tempItem == itemBeingSorted )
+								{
+									continue;
+								}
+								if ( tempItem )
+								{
+									if ( tempItem->x == x && tempItem->y == y )
+									{
+										if ( is_spell && itemCategory(tempItem) == SPELL_CAT )
+										{
+											notfree = true;  //Both spells. Can't fit in the same slot.
+										}
+										else if ( !is_spell && itemCategory(tempItem) != SPELL_CAT )
+										{
+											notfree = true;  //Both not spells. Can't fit in the same slot.
+										}
+									}
+								}
+							}
+							if ( notfree )
+							{
+								notfree = false;
+								continue;
+							}
+							itemBeingSorted->x = x;
+							itemBeingSorted->y = y;
+							foundaspot = true;
+							break;
+						}
+						if ( foundaspot )
+						{
+							break;
+						}
+						if ( sortRightToLeft )
+						{
+							--x; // fill rightmost first.
+						}
+						else
+						{
+							++x; // fill leftmost first.
+						}
 					}
 				}
 			}

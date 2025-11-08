@@ -233,6 +233,10 @@ void actSink(Entity* my)
 									serverUpdateHunger(i);
 								}
 								players[i]->entity->modHP(2 + local_rng.rand() % 2);
+								if ( !((svFlags & SV_FLAG_HUNGER) && stats[i]->playerRace == RACE_INSECTOID && stats[i]->stat_appearance == 0) )
+								{
+									players[i]->entity->modMP(1 + local_rng.rand() % 2);
+								}
 								Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_SINKS_HEALTH_RESTORED, "sink", 1);
 							}
 							else
@@ -277,7 +281,7 @@ void actSink(Entity* my)
 								messagePlayerColor(i, MESSAGE_STATUS, color, Language::get(3701));
 								playSoundEntity(players[i]->entity, 52, 64);
 								stats[i]->HUNGER += 200; //Gain boiler
-								players[i]->entity->modMP(2);
+								players[i]->entity->modMP(4);
 								serverUpdateHunger(i);
 								break;
 							}
