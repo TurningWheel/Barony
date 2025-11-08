@@ -3762,12 +3762,67 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 				}
 				snprintf(buf, sizeof(buf), str.c_str(), 100 - (int)(mult * 100));
 			}
+			else if ( conditionalAttribute.find("EFF_CAST_TOUCHSPEED_") != std::string::npos
+				|| conditionalAttribute.find("EFF_CAST_TOUCH_") != std::string::npos )
+			{
+				real_t bonus = 0.0;
+				if ( (item.type == ROBE_HEALER)
+					|| (item.type == ROBE_WIZARD)
+					|| (item.type == ROBE_CULTIST)
+					|| (item.type == ROBE_MONK) )
+				{
+					if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+					{
+						bonus = std::min(0.5, 0.2 + 0.1 * abs(item.beatitude));
+					}
+					else
+					{
+						bonus = 0.2;
+					}
+				}
+				else if ( item.type == SHAWL )
+				{
+					if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+					{
+						bonus = std::min(1.0, 0.35 + 0.35 * abs(item.beatitude));
+					}
+					else
+					{
+						bonus = 0.35;
+					}
+				}
+
+				std::string skillName = "";
+				if ( conditionalAttribute.find("SORCERY") != std::string::npos )
+				{
+					skillName = Player::SkillSheet_t::getSkillNameFromID(PRO_SORCERY);
+				}
+				else if ( conditionalAttribute.find("MYSTICISM") != std::string::npos )
+				{
+					skillName = Player::SkillSheet_t::getSkillNameFromID(PRO_MYSTICISM);
+				}
+				else if ( conditionalAttribute.find("THAUMATURGY") != std::string::npos )
+				{
+					skillName = Player::SkillSheet_t::getSkillNameFromID(PRO_THAUMATURGY);
+				}
+				if ( skillName != "" )
+				{
+					snprintf(buf, sizeof(buf), str.c_str(), (int)(bonus * 100),
+						skillName.c_str());
+				}
+				else
+				{
+					snprintf(buf, sizeof(buf), str.c_str(), (int)(bonus * 100));
+				}
+			}
 			else if ( conditionalAttribute.find("EFF_PWR") != std::string::npos )
 			{
 				real_t bonus = 0.0;
 				if ( conditionalAttribute == "EFF_PWR" )
 				{
 					if ( item.type == HAT_CIRCLET
+						|| item.type == HAT_CIRCLET_SORCERY
+						|| item.type == HAT_CIRCLET_THAUMATURGY
 						|| item.type == HAT_CIRCLET_WISDOM )
 					{
 						if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )

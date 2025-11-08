@@ -3660,6 +3660,36 @@ bool applyGenericMagicDamage(Entity* caster, Entity* hitentity, Entity& damageSo
 			}
 			spawnBloodVialOnMonsterDeath(hitentity, targetStats, caster);
 		}
+
+		if ( hitentity->behavior == &actPlayer )
+		{
+			if ( oldHP > targetStats->HP && targetStats->HP > 0 )
+			{
+				int strength = 10;
+				if ( oldHP - targetStats->HP < 10 )
+				{
+					strength = 5;
+				}
+				int player = hitentity->skill[2];
+				// entity took damage, shake screen.
+				if ( multiplayer == SERVER && player > 0 )
+				{
+					strcpy((char*)net_packet->data, "SHAK");
+					net_packet->data[4] = strength; // turns into .1
+					net_packet->data[5] = strength;
+					net_packet->address.host = net_clients[player - 1].host;
+					net_packet->address.port = net_clients[player - 1].port;
+					net_packet->len = 6;
+					sendPacketSafe(net_sock, -1, net_packet, player - 1);
+				}
+				else if ( player == 0 || (splitscreen && player > 0) )
+				{
+					cameravars[player].shakex += strength * 0.01;
+					cameravars[player].shakey += strength;
+				}
+			}
+		}
+
 		return true;
 	}
 	else if ( hitentity->behavior == &actDoor
@@ -3931,9 +3961,31 @@ real_t getSpellPropertyFromID(spell_t::SpellBasePropertiesFloat prop, int spellI
 			result = spell->cast_time;
 			if ( spell->cast_time_mult > 0.01 )
 			{
+				real_t equipmentModifier = 0.0;
+				if ( myStats )
+				{
+					if ( myStats->breastplate )
+					{
+						if ( (myStats->breastplate->type == ROBE_HEALER && spell->skillID == PRO_THAUMATURGY)
+							|| (myStats->breastplate->type == ROBE_WIZARD && spell->skillID == PRO_SORCERY)
+							|| (myStats->breastplate->type == ROBE_CULTIST && spell->skillID == PRO_MYSTICISM)
+							|| (myStats->breastplate->type == ROBE_MONK && spell->skillID == PRO_THAUMATURGY) )
+						{
+							if ( myStats->breastplate->beatitude >= 0 || shouldInvertEquipmentBeatitude(myStats) )
+							{
+								equipmentModifier = std::min(0.5, 0.2 + 0.1 * abs(myStats->breastplate->beatitude));
+							}
+							else
+							{
+								equipmentModifier = -0.5;
+							}
+						}
+					}
+				}
 				real_t bonus = (getBonusFromCasterOfSpellElement(parent, myStats, element, spellID, spell->skillID));
 				real_t modifier = (statGetDEX(myStats, parent) * (1.0 + bonus) * spell->cast_time_mult) / 100.0;
 				result += -modifier;
+				result *= (1 - equipmentModifier);
 				if ( spell->cast_time < 1.01 )
 				{
 					result = std::max(0.5, result);
@@ -3948,15 +4000,52 @@ real_t getSpellPropertyFromID(spell_t::SpellBasePropertiesFloat prop, int spellI
 		{
 			if ( spell->distance > 0.0 )
 			{
+				real_t equipmentModifier = 0.0;
+				if ( myStats )
+				{
+					if ( myStats->breastplate )
+					{
+						if ( (myStats->breastplate->type == ROBE_HEALER && spell->skillID == PRO_THAUMATURGY)
+							|| (myStats->breastplate->type == ROBE_WIZARD && spell->skillID == PRO_SORCERY)
+							|| (myStats->breastplate->type == ROBE_CULTIST && spell->skillID == PRO_MYSTICISM)
+							|| (myStats->breastplate->type == ROBE_MONK && spell->skillID == PRO_THAUMATURGY) )
+						{
+							if ( myStats->breastplate->beatitude >= 0 || shouldInvertEquipmentBeatitude(myStats) )
+							{
+								equipmentModifier = std::min(0.5, 0.2 + 0.1 * abs(myStats->breastplate->beatitude));
+							}
+							else
+							{
+								equipmentModifier = -0.5;
+							}
+						}
+						else if ( myStats->breastplate->type == SHAWL )
+						{
+							if ( myStats->breastplate->beatitude >= 0 || shouldInvertEquipmentBeatitude(myStats) )
+							{
+								equipmentModifier = std::min(1.0, 0.35 + 0.35 * abs(myStats->breastplate->beatitude));
+							}
+							else
+							{
+								equipmentModifier = -1.0;
+							}
+						}
+					}
+				}
 				real_t bonus = (getBonusFromCasterOfSpellElement(parent, myStats, element, spellID, spell->skillID));
 				real_t modifier = (statGetPER(myStats, parent) * (1.0 + bonus) * spell->distance_mult);
 				real_t maxDist = 96.0;
+				if ( equipmentModifier > 0.01 )
+				{
+					maxDist = 128.0;
+				}
 				static ConsoleVariable<float> cvar_spell_max_distance("/spell_max_distance", 96.0);
 				if ( svFlags & SV_FLAG_CHEATS )
 				{
 					maxDist = *cvar_spell_max_distance;
 				}
-				result = std::min(maxDist, spell->distance + modifier);
+				result = std::min(maxDist, (spell->distance + modifier) * (1.0 + equipmentModifier));
+				result = std::max(16.0, result);
 			}
 			else
 			{
