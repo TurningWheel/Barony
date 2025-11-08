@@ -646,6 +646,9 @@ bool Entity::collisionProjectileMiss(Entity* parent, Entity* projectile)
 					myStats->setEffectValueUnsafe(EFF_MAGICIANS_ARMOR, effectStrength);
 					this->setEffect(EFF_MAGICIANS_ARMOR, effectStrength, myStats->EFFECTS_TIMERS[EFF_MAGICIANS_ARMOR], true);
 				}
+
+				magicOnSpellCastEvent(this, this, parent, SPELL_MAGICIANS_ARMOR, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
+
 				if ( projectile->collisionIgnoreTargets.find(getUID()) == projectile->collisionIgnoreTargets.end() )
 				{
 					projectile->collisionIgnoreTargets.insert(getUID());
@@ -1405,7 +1408,14 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 								{
 									if ( !map.tiles[(MAPLAYERS - 1) + tiley * MAPLAYERS + tilex * MAPLAYERS * map.height] )
 									{
-										if ( my->z <= -5 )
+										if ( entity->behavior == &actMonster )
+										{
+											if ( my->z <= -8.0 )
+											{
+												return 1;
+											}
+										}
+										else if ( my->z <= -5 )
 										{
 											return 1;
 										}

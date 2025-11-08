@@ -5986,6 +5986,8 @@ void Entity::handleEffects(Stat* myStats)
 			myStats->clearEffect(EFF_POISONED);
 			serverUpdateEffects(player);
 			this->char_poison = 0;
+
+			this->degradeAmuletProc(myStats, AMULET_POISONRESISTANCE);
 		}
 
 		this->char_poison++;
@@ -6700,6 +6702,8 @@ void Entity::handleEffects(Stat* myStats)
 		if ( myStats->amulet && myStats->amulet->type == AMULET_BURNINGRESIST )
 		{
 			this->char_fire = 0;
+			messagePlayer(player, MESSAGE_EQUIPMENT | MESSAGE_HINT, Language::get(6867));
+			this->degradeAmuletProc(myStats, AMULET_BURNINGRESIST);
 		}
 
 		// Check to see if time has run out
@@ -10295,6 +10299,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 						hit.entity->setEffect(EFF_MAGICIANS_ARMOR, effectStrength, hitstats->EFFECTS_TIMERS[EFF_MAGICIANS_ARMOR], true);
 					}
 
+					magicOnSpellCastEvent(hit.entity, hit.entity, this, SPELL_MAGICIANS_ARMOR, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
+
 					Entity* fx = createParticleAestheticOrbit(hit.entity, 1817, TICKS_PER_SECOND / 4, PARTICLE_EFFECT_NULL_PARTICLE);
 					fx->x = hit.entity->x;
 					fx->y = hit.entity->y;
@@ -11123,10 +11129,18 @@ void Entity::attack(int pose, int charge, Entity* target)
 					if ( hit.entity->colliderSpellEvent % 1000 == 8 )
 					{
 						thornsEffect += getSpellDamageFromID(SPELL_THORNS, colliderParent, nullptr, hit.entity);
+						if ( colliderParent && colliderParent->behavior == &actPlayer )
+						{
+							magicOnSpellCastEvent(colliderParent, hit.entity, this, SPELL_SHRUB, spell_t::SPELL_LEVEL_EVENT_DEFAULT | spell_t::SPELL_LEVEL_EVENT_MINOR_CHANCE, thornsEffect);
+						}
 					}
 					else if ( hit.entity->colliderSpellEvent % 1000 == 9 )
 					{
 						thornsEffect += getSpellDamageFromID(SPELL_BLADEVINES, colliderParent, nullptr, hit.entity);
+						if ( colliderParent && colliderParent->behavior == &actPlayer )
+						{
+							magicOnSpellCastEvent(colliderParent, hit.entity, this, SPELL_SHRUB, spell_t::SPELL_LEVEL_EVENT_DEFAULT | spell_t::SPELL_LEVEL_EVENT_MINOR_CHANCE, thornsEffect);
+						}
 					}
 
 					if ( thornsEffect != 0 )
@@ -11590,15 +11604,6 @@ void Entity::attack(int pose, int charge, Entity* target)
 						damage += 5; // 5 bonus damage after reductions.
 					}
 
-					if ( hitstats->getEffectActive(EFF_THORNS) )
-					{
-						thornsEffect += getSpellDamageFromID(SPELL_THORNS, hit.entity, nullptr, hit.entity);
-					}
-					if ( hitstats->getEffectActive(EFF_BLADEVINES) )
-					{
-						thornsEffect += getSpellDamageFromID(SPELL_BLADEVINES, hit.entity, nullptr, hit.entity);
-					}
-
 					bool backstab = false;
 					bool flanking = false;
 					if ( player >= 0 && !monsterIsImmobileTurret(hit.entity, hitstats) && !hitstats->getEffectActive(EFF_STASIS)
@@ -11793,6 +11798,34 @@ void Entity::attack(int pose, int charge, Entity* target)
 							Compendium_t::Events_t::eventUpdateCodex(playerhit, Compendium_t::CPDM_CLASS_BLOCK_UNDEFENDED, "blocking", 1);
 							Compendium_t::Events_t::eventUpdateCodex(playerhit, Compendium_t::CPDM_CLASS_BLOCK_UNDEFENDED_RUN, "blocking", 1);
 						}
+					}
+
+					bool thornsAllowZeroDmg = false;
+					if ( hitstats->getEffectActive(EFF_THORNS) )
+					{
+						int thorn = getSpellDamageFromID(SPELL_THORNS, hit.entity, nullptr, hit.entity);
+						int extraThorn = std::min(damage, getSpellDamageSecondaryFromID(SPELL_THORNS, hit.entity, nullptr, hit.entity));
+						thorn += extraThorn;
+						thorn = std::min(thorn, getSpellEffectDurationSecondaryFromID(SPELL_THORNS, hit.entity, nullptr, hit.entity));
+						thornsAllowZeroDmg = true;
+						if ( playerhit >= 0 )
+						{
+							players[playerhit]->mechanics.updateSustainedSpellEvent(SPELL_THORNS, thorn * 5.0, 1.0);
+						}
+						thornsEffect += thorn;
+					}
+					if ( hitstats->getEffectActive(EFF_BLADEVINES) )
+					{
+						int thorn = getSpellDamageFromID(SPELL_BLADEVINES, hit.entity, nullptr, hit.entity);
+						int extraThorn = std::min(damage, getSpellDamageSecondaryFromID(SPELL_BLADEVINES, hit.entity, nullptr, hit.entity));
+						thorn += extraThorn;
+						thorn = std::min(thorn, getSpellEffectDurationSecondaryFromID(SPELL_BLADEVINES, hit.entity, nullptr, hit.entity));
+						thornsAllowZeroDmg = true;
+						if ( playerhit >= 0 )
+						{
+							players[playerhit]->mechanics.updateSustainedSpellEvent(SPELL_BLADEVINES, thorn * 5.0, 1.0);
+						}
+						thornsEffect += thorn;
 					}
 
 					Item** weaponToBreak = nullptr;
@@ -13062,7 +13095,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								else {
 									messagePlayer(playerhit, MESSAGE_COMBAT, Language::get(686));
 								}
-								messagePlayer(playerhit, MESSAGE_COMBAT, Language::get(687));
+								//messagePlayer(playerhit, MESSAGE_COMBAT, Language::get(687));
 								serverUpdateEffects(playerhit);
 								for ( int tmp = 0; tmp < 3; ++tmp )
 								{
@@ -13235,7 +13268,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 										} else {
 										    messagePlayer(playerhit, MESSAGE_COMBAT, Language::get(686));
 										}
-										messagePlayer(playerhit, MESSAGE_COMBAT, Language::get(687));
+										//messagePlayer(playerhit, MESSAGE_COMBAT, Language::get(687));
 										serverUpdateEffects(playerhit);
 										statusInflicted = true;
 									}
@@ -14336,7 +14369,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 					}
 
-					if ( thornsEffect != 0 && damage > 0 )
+					if ( thornsEffect != 0 && (damage > 0 || thornsAllowZeroDmg) )
 					{
 						if ( hitstats->getEffectActive(EFF_BLADEVINES) )
 						{
@@ -25068,10 +25101,6 @@ bool Entity::SetEntityOnFire(Entity* sourceOfFire)
 				{
 					return false;
 				}
-				if ( myStats->amulet && myStats->amulet->type == AMULET_BURNINGRESIST )
-				{
-					return false;
-				}
 			}
 		}
 		// Check if the Entity is already on fire
@@ -27270,9 +27299,13 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 				shieldLimb->yaw += PI / 6;
 				shieldLimb->focalx -= 4;
 				shieldLimb->focalz += .5;
-				shieldLimb->x += 0.5 * cos(this->yaw + PI / 2) + .5 * cos(this->yaw);
-				shieldLimb->y += 0.5 * sin(this->yaw + PI / 2) + .5 * sin(this->yaw);
-				shieldLimb->z -= 1;
+				if ( race == MONSTER_G )
+				{
+					shieldLimb->focalz -= 2.25;
+				}
+				shieldLimb->x += 0.5 * cos(this->yaw + PI / 2) + 0.5 * cos(this->yaw);
+				shieldLimb->y += 0.5 * sin(this->yaw + PI / 2) + 0.5 * sin(this->yaw);
+				shieldLimb->z += 0;
 				shieldLimb->scalex = 0.8;
 				shieldLimb->scaley = 0.8;
 				shieldLimb->scalez = 0.8;
@@ -27603,9 +27636,31 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 				{
 					shieldLimb->focalz -= 1.5;
 				}
+				else if ( race == MONSTER_D )
+				{
+					if ( sprite == 1514 || sprite == 1515 || sprite == 1992 || sprite == 1993 )
+					{
+						shieldLimb->focaly += 0.1;
+					}
+					shieldLimb->z -= 1.0;
+				}
+				else if ( race == MONSTER_M )
+				{
+					if ( sprite == 1520 || sprite == 1998 )
+					{
+						shieldLimb->focaly += 0.1;
+					}
+					shieldLimb->z -= 1.0;
+				}
+				else if ( race == MONSTER_S )
+				{
+					shieldLimb->focalx -= 1.0;
+					shieldLimb->focalz -= 1.0;
+					shieldLimb->z -= 1.0;
+				}
 				shieldLimb->x += 0.5 * cos(this->yaw + PI / 2) + .5 * cos(this->yaw);
 				shieldLimb->y += 0.5 * sin(this->yaw + PI / 2) + .5 * sin(this->yaw);
-				shieldLimb->z -= 1;
+				shieldLimb->z -= 0.5;
 				shieldLimb->scalex = 0.8;
 				shieldLimb->scaley = 0.8;
 				shieldLimb->scalez = 0.8;
@@ -29609,4 +29664,53 @@ void Entity::creatureHandleLiftZ()
 		default:
 			break;
 	}
+}
+
+bool Entity::degradeAmuletProc(Stat* myStats, ItemType type)
+{
+	if ( !myStats || (myStats && !myStats->amulet) ) { return false; }
+	int player = -1;
+	if ( behavior == &actPlayer )
+	{
+		player = this->skill[2];
+	}
+	if ( myStats->amulet && myStats->amulet->type == type && (type == AMULET_POISONRESISTANCE || type == AMULET_BURNINGRESIST) )
+	{
+		if ( myStats->amulet->status > BROKEN )
+		{
+			int chance = 8 + 4 * (shouldInvertEquipmentBeatitude(myStats) ? abs(myStats->amulet->beatitude) : myStats->amulet->beatitude);
+			if ( local_rng.rand() % std::max(chance, 1) == 0 && !this->spellEffectPreserveItem(myStats->amulet) )
+			{
+				myStats->amulet->count = 1;
+				myStats->amulet->status = static_cast<Status>(std::max(static_cast<int>(BROKEN), myStats->amulet->status - 1));
+				if ( myStats->amulet->status != BROKEN )
+				{
+					messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(382));
+				}
+				else
+				{
+					messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(383));
+					playSoundEntity(this, 76, 64);
+					if ( player >= 0 )
+					{
+						Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_BROKEN, myStats->amulet->type, 1);
+					}
+				}
+
+				if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
+				{
+					strcpy((char*)net_packet->data, "ARMR");
+					net_packet->data[4] = 7; // amulet
+					net_packet->data[5] = myStats->amulet->status;
+					net_packet->address.host = net_clients[player - 1].host;
+					net_packet->address.port = net_clients[player - 1].port;
+					net_packet->len = 6;
+					sendPacketSafe(net_sock, -1, net_packet, player - 1);
+				}
+				return true;
+			}
+		}
+	}
+
+	return false;
 }

@@ -439,6 +439,8 @@ typedef enum ItemType
 	TOOL_FOCI_LIGHT_SANCTUARY,
 	MAGICSTAFF_SCEPTER,
 	TOME_SORCERY,
+	TOME_MYSTICISM,
+	TOME_THAUMATURGY,
 	ITEM_ENUM_MAX
 } ItemType;
 const int NUMITEMS = ITEM_ENUM_MAX;
@@ -842,6 +844,7 @@ static const int QUIVER_MAX_AMMO_QTY = 51;
 static const int SCRAP_MAX_STACK_QTY = 101;
 static const int THROWN_GEM_MAX_STACK_QTY = 9;
 static const int MAGICSTAFF_SCEPTER_CHARGE_MAX = 101;
+static const int TOME_APPEARANCE_MAX = 1024;
 
 //-----ITEM COMPARISON FUNCS-----
 /*

@@ -786,6 +786,7 @@ typedef struct spell_t
 
 	int radius = 0;
 	real_t radius_mult = 0.0;
+	int drop_table = -1;
 	int life_time = 0; // for floor based effects
 	real_t life_time_mult = 1.0;
 	int sustainEffectDissipate = -1; // when the spell is unsustained, clear this effect from the player (unique spell effects)
@@ -834,6 +835,8 @@ typedef struct spell_t
 
 extern list_t channeledSpells[MAXPLAYERS]; //Spells the player is currently channeling. //TODO: Universalize it for all entities that can cast spells? //TODO: Cleanup and stuff.
 extern std::map<int, spell_t*> allGameSpells; // to iterate over for quickly finding attributes of all spells.
+extern std::map<int, std::map<int, int>> spellTomeAppearanceToID; // school, then appearance, then spell ID
+extern std::map<int, int> spellTomeIDToAppearance; // spell ID to appearance of school
 
 //TODO: Add stock spells.
 

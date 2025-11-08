@@ -1315,6 +1315,7 @@ void ItemTooltips_t::readItemsFromFile()
 		}
 		setSpellValueIfKeyPresent(t, spell_itr, hash, shift, "sustain_duration", t.sustain_duration);
 		setSpellValueIfKeyPresent(t, spell_itr, hash, shift, "sustain_mult", t.sustain_mult);
+		setSpellValueIfKeyPresent(t, spell_itr, hash, shift, "drop_table", t.drop_table);
 
 		if ( spell_itr->value.HasMember("school") )
 		{

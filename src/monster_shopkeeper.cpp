@@ -66,18 +66,27 @@ std::vector<Item*> generateShopkeeperConsumables(Entity& my, Stat& myStats, int 
 		Sint16 count = slot.count[rng.uniform(0, slot.count.size() - 1)];
 		if ( !strcmp(map.name, "Mages Guild") )
 		{
+			int numplayers = 0;
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				if ( !client_disconnected[i] )
+				{
+					++numplayers;
+				}
+			}
 			if ( type == POTION_HEALING || type == POTION_RESTOREMAGIC )
 			{
-				if ( count > 2 )
+				int limit = std::max(2, 1 + numplayers);
+				if ( count > limit )
 				{
-					count = 2;
+					count = limit;
 				}
 			}
 		}
 		Uint32 appearance = 0;
 		if ( slot.appearance.empty() )
 		{
-			appearance = rand();
+			appearance = rng.rand();
 		}
 		else
 		{

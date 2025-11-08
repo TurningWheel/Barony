@@ -2821,6 +2821,7 @@ private:
 		real_t sustain_mult = 1.0;
 		real_t radius = 0;
 		real_t radius_mult = 0.0;
+		int drop_table = -1;
 	};
 
 	struct ItemTooltipIcons_t

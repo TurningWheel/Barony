@@ -251,6 +251,11 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int da
 				}
 			}
 
+			if ( hasamulet && !hasgoggles )
+			{
+				hit.entity->degradeAmuletProc(hitstats, AMULET_POISONRESISTANCE);
+			}
+
 			DamageGib dmgGib = DMG_DEFAULT;
 			real_t damageMultiplier = Entity::getDamageTableMultiplier(hit.entity, *hitstats, DAMAGE_TABLE_MAGIC, &resistance);
 			if ( damageMultiplier <= 0.75 )
@@ -447,6 +452,11 @@ void spellEffectPoison(Entity& my, spellElement_t& element, Entity* parent, int 
 			{
 				resistance += 2;
 				hasamulet = true;
+			}
+
+			if ( hasamulet )
+			{
+				hit.entity->degradeAmuletProc(hitstats, AMULET_POISONRESISTANCE);
 			}
 
 			DamageGib dmgGib = DMG_DEFAULT;
@@ -3425,7 +3435,7 @@ int thaumSpellArmorProc(Entity* my, Stat& myStats, bool checkEffectActiveOnly, E
 									increaseSkill = false;
 								}
 							}
-							players[player]->mechanics.updateSustainedSpellEvent(spellID, std::min(150.0, 50.0 + 10 * result), 1.0);
+							players[player]->mechanics.updateSustainedSpellEvent(spellID, std::min(150.0, effectID == EFF_GUARD_SPIRIT ? 128.0 : 50.0 + 10 * result), 1.0);
 						}
 					}
 				}

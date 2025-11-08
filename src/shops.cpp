@@ -29,6 +29,7 @@ std::string shopspeech[MAXPLAYERS] = { "" };
 int shopkeepertype[MAXPLAYERS] = { 0 };
 std::string shopkeepername[MAXPLAYERS] = { "" };
 char shopkeepername_client[MAXPLAYERS][64];
+std::map<Uint32, int> hamletShopkeeperSkillLimit[MAXPLAYERS];
 
 std::unordered_map<int, std::unordered_set<int>> shopkeeperMysteriousItems(
 {
@@ -273,9 +274,25 @@ bool buyItemFromShop(const int player, Item* item, bool& bOutConsumedEntireStack
 				}
 				else
 				{
-					if ( rand() % 100 <= (std::max(10, buyValue)) ) // 10% to 100% from 1-100 gold
+					if ( local_rng.rand() % 100 <= (std::max(10, buyValue)) ) // 10% to 100% from 1-100 gold
 					{
 						increaseSkill = true;
+					}
+				}
+
+				if ( increaseSkill && entity )
+				{
+					if ( !strcmp(map.name, "Mages Guild") )
+					{
+						int increases = hamletShopkeeperSkillLimit[player][entity->getUID()];
+						if ( increases >= hamletTradingSkillLimit )
+						{
+							increaseSkill = false;
+							if ( local_rng.rand() % 2 )
+							{
+								messagePlayer(player, MESSAGE_HINT | MESSAGE_INTERACTION, Language::get(6868));
+							}
+						}
 					}
 				}
 
@@ -286,11 +303,25 @@ bool buyItemFromShop(const int player, Item* item, bool& bOutConsumedEntireStack
 						if ( stats[player]->getProficiency(PRO_TRADING) < SKILL_LEVEL_SKILLED )
 						{
 							players[player]->entity->increaseSkill(PRO_TRADING);
+							if ( entity )
+							{
+								if ( !strcmp(map.name, "Mages Guild") )
+								{
+									hamletShopkeeperSkillLimit[player][entity->getUID()]++;
+								}
+							}
 						}
 					}
 					else
 					{
 						players[player]->entity->increaseSkill(PRO_TRADING);
+						if ( entity )
+						{
+							if ( !strcmp(map.name, "Mages Guild") )
+							{
+								hamletShopkeeperSkillLimit[player][entity->getUID()]++;
+							}
+						}
 					}
 				}
 				//if ( local_rng.rand() % 2 )

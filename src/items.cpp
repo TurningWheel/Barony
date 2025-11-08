@@ -386,19 +386,18 @@ bool itemLevelCurvePostProcess(Entity* my, Item* item, BaronyRNG& rng)
 		{
 			//if ( itemLevelCurveType == ITEM_LEVEL_CURVE_TYPE_DEFAULT )
 			{
-				std::vector<unsigned int> chances;
+				std::vector<std::pair<int, int>> chances;
 				int minDifficulty = std::min(60, (currentlevel / 5) * 20);
 				for ( auto& def : allGameSpells )
 				{
 					if ( auto spell = def.second )
 					{
-						if ( spell->ID != SPELL_NONE && !spell->hide_from_ui )
+						if ( spell->ID != SPELL_NONE && !spell->hide_from_ui && currentlevel >= spell->drop_table )
 						{
-							if ( spell->skillID == PRO_SORCERY 
-								&& (spell->difficulty / 20) <= (1 + (currentlevel / 5))
+							if ( (spell->difficulty / 20) <= (1 + (currentlevel / 5))
 								&& (spell->difficulty >= minDifficulty) )
 							{
-								chances.push_back(spell->ID);
+								chances.push_back(std::make_pair(spell->skillID, spell->ID));
 							}
 						}
 					}
@@ -406,10 +405,26 @@ bool itemLevelCurvePostProcess(Entity* my, Item* item, BaronyRNG& rng)
 
 				if ( chances.size() )
 				{
-					itemType = TOME_SORCERY;
 					Uint32 appearance = (my && my->behavior == &actItem) ? my->skill[14] : item->appearance;
 					int pick = rng.rand() % chances.size();
-					appearance = chances[pick];
+					int spellbookType = getSpellbookFromSpellID(chances[pick].second);
+					if ( items[spellbookType].category == SPELLBOOK )
+					{
+						itemType = spellbookType;
+					}
+					else
+					{
+						itemType = TOME_SORCERY;
+						appearance = spellTomeIDToAppearance[chances[pick].second];
+						if ( chances[pick].first == PRO_MYSTICISM )
+						{
+							itemType = TOME_MYSTICISM;
+						}
+						else if ( chances[pick].first == PRO_THAUMATURGY )
+						{
+							itemType = TOME_THAUMATURGY;
+						}
+					}
 					if ( my && my->behavior == &actItem )
 					{
 						my->skill[10] = itemType;
@@ -2933,6 +2948,8 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 			item_Spellbook(item, player);
 			break;
 		case TOME_SORCERY:
+		case TOME_MYSTICISM:
+		case TOME_THAUMATURGY:
 			item_Spellbook(item, player);
 			break;
 		case GEM_ROCK:
@@ -3640,11 +3657,11 @@ Item* itemPickup(const int player, Item* const item, Item* addToSpecificInventor
 			}
 			else if ( item->type == MAGICSTAFF_SCEPTER )
 			{
-				item->appearance += (local_rng.rand() % 10000) * (MAGICSTAFF_SCEPTER_CHARGE_MAX);
+				item->appearance = ((local_rng.rand() % 10000) * (MAGICSTAFF_SCEPTER_CHARGE_MAX)) + (originalAppearance % MAGICSTAFF_SCEPTER_CHARGE_MAX);
 			}
 			else if ( itemCategory(item) == TOME_SPELL )
 			{
-				item->appearance += (local_rng.rand() % 10000) * (1000);
+				item->appearance = ((local_rng.rand() % 10000) * (TOME_APPEARANCE_MAX)) + (originalAppearance % TOME_APPEARANCE_MAX);
 			}
 			else
 			{
@@ -3671,11 +3688,11 @@ Item* itemPickup(const int player, Item* const item, Item* addToSpecificInventor
 				}
 				else if ( item->type == MAGICSTAFF_SCEPTER )
 				{
-					item->appearance += (local_rng.rand() % 10000) * (MAGICSTAFF_SCEPTER_CHARGE_MAX);
+					item->appearance = ((local_rng.rand() % 10000) * (MAGICSTAFF_SCEPTER_CHARGE_MAX)) + (originalAppearance % MAGICSTAFF_SCEPTER_CHARGE_MAX);
 				}
 				else if ( itemCategory(item) == TOME_SPELL )
 				{
-					item->appearance += (local_rng.rand() % 10000) * (1000);
+					item->appearance = ((local_rng.rand() % 10000) * (TOME_APPEARANCE_MAX)) + (originalAppearance % TOME_APPEARANCE_MAX);
 				}
 				else
 				{
@@ -6450,13 +6467,39 @@ bool Item::usableWhileShapeshifted(const Stat* const wielder) const
 
 int Item::getTomeSpellID() const
 {
-	int spellID = appearance % NUM_SPELLS;
-	return spellID;
+	if ( type == TOME_SORCERY )
+	{
+		auto find = spellTomeAppearanceToID[PRO_SORCERY].find(appearance % TOME_APPEARANCE_MAX);
+		if ( find == spellTomeAppearanceToID[PRO_SORCERY].end() )
+		{
+			return SPELL_FORCEBOLT;
+		}
+		return find->second;
+	}
+	else if ( type == TOME_MYSTICISM )
+	{
+		auto find = spellTomeAppearanceToID[PRO_MYSTICISM].find(appearance % TOME_APPEARANCE_MAX);
+		if ( find == spellTomeAppearanceToID[PRO_MYSTICISM].end() )
+		{
+			return SPELL_SLOW;
+		}
+		return find->second;
+	}
+	else if ( type == TOME_THAUMATURGY )
+	{
+		auto find = spellTomeAppearanceToID[PRO_THAUMATURGY].find(appearance % TOME_APPEARANCE_MAX);
+		if ( find == spellTomeAppearanceToID[PRO_THAUMATURGY].end() )
+		{
+			return SPELL_LIGHT;
+		}
+		return find->second;
+	}
+	return SPELL_NONE;
 }
 
 const char* Item::getTomeLabel() const
 {
-	if ( type == TOME_SORCERY )
+	if ( itemCategory(this) == TOME_SPELL )
 	{
 		int spellID = getTomeSpellID();
 		if ( auto spell = getSpellFromID(spellID) )

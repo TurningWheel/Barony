@@ -505,6 +505,9 @@ void spellConstructor(spell_t* spell, int ID)
 	spell->skillID = PRO_SORCERY;
 	spell->cast_time = 1.0;
 	spell->cast_time_mult = 1.0;
+	spell->radius = 0.0;
+	spell->radius_mult = 0.0;
+	spell->drop_table = -1;
 	spell->life_time = 0;
 	spell->life_time_mult = 1.0;
 	spell->sustainEffectDissipate = -1;

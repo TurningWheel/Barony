@@ -1334,6 +1334,7 @@ public:
 	void creatureHandleLiftZ();
 	bool monsterIsTargetable(bool targetInertMimics = false) const;
 	bool monsterCanTradeWith(int player) const;
+	bool degradeAmuletProc(Stat* myStats, ItemType type);
 };
 
 Monster getMonsterFromPlayerRace(int playerRace); // convert playerRace into the relevant monster type

@@ -1426,6 +1426,11 @@ void actArrow(Entity* my)
 								messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT_BASIC, color, Language::get(451)); // you are hit by an arrow!
 							}
 						}
+
+						if ( my->arrowQuiverType == QUIVER_HUNTING && procEffect )
+						{
+							hit.entity->degradeAmuletProc(hitstats, AMULET_POISONRESISTANCE);
+						}
 					}
 					else
 					{

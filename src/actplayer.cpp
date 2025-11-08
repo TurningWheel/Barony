@@ -7423,11 +7423,11 @@ void actPlayer(Entity* my)
 								}
 								else if ( tempItem->type == MAGICSTAFF_SCEPTER )
 								{
-									tempItem->appearance += (local_rng.rand() % 10000) * (MAGICSTAFF_SCEPTER_CHARGE_MAX);
+									tempItem->appearance = ((local_rng.rand() % 10000) * (MAGICSTAFF_SCEPTER_CHARGE_MAX)) + (originalAppearance % MAGICSTAFF_SCEPTER_CHARGE_MAX);
 								}
 								else if ( itemCategory(tempItem) == TOME_SPELL )
 								{
-									tempItem->appearance += (local_rng.rand() % 10000) * (1000);
+									tempItem->appearance = ((local_rng.rand() % 10000) * (TOME_APPEARANCE_MAX)) + (originalAppearance % TOME_APPEARANCE_MAX);
 								}
 								else
 								{
@@ -7454,11 +7454,11 @@ void actPlayer(Entity* my)
 									}
 									else if ( tempItem->type == MAGICSTAFF_SCEPTER )
 									{
-										tempItem->appearance += (local_rng.rand() % 10000) * (MAGICSTAFF_SCEPTER_CHARGE_MAX);
+										tempItem->appearance = ((local_rng.rand() % 10000) * (MAGICSTAFF_SCEPTER_CHARGE_MAX)) + (originalAppearance % MAGICSTAFF_SCEPTER_CHARGE_MAX);
 									}
 									else if ( itemCategory(tempItem) == TOME_SPELL )
 									{
-										tempItem->appearance += (local_rng.rand() % 10000) * (1000);
+										tempItem->appearance = ((local_rng.rand() % 10000) * (TOME_APPEARANCE_MAX)) + (originalAppearance % TOME_APPEARANCE_MAX);
 									}
 									else
 									{
@@ -13445,7 +13445,7 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 					}
 					break;
 				case MONSTER_M:
-					this->sprite = stats[playernum]->sex == FEMALE ? 2013 : 2012;
+					this->sprite = stats[playernum]->sex == MALE ? 2013 : 2012;
 					break;
 				case MONSTER_S:
 					this->sprite = 2038;

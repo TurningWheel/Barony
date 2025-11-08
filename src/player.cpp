@@ -3172,6 +3172,8 @@ void Player::init() // for use on new/restart game, UI related
 	skillUpAnimation[playernum].skillUps.clear();
 	mechanics.itemDegradeRng.clear();
 	mechanics.sustainedSpellIDCounter.clear();
+	hamletShopkeeperSkillLimit[playernum].clear();
+	mechanics.baseSpellLevelUpProcs.clear();
 	mechanics.learnedSpells.clear();
 	mechanics.sustainedSpellMPUsedSorcery = 0;
 	mechanics.sustainedSpellMPUsedMysticism = 0;

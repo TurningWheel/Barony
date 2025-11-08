@@ -16,6 +16,8 @@
 #include "../mod_tools.hpp"
 
 std::map<int, spell_t*> allGameSpells;
+std::map<int, std::map<int, int>> spellTomeAppearanceToID;
+std::map<int, int> spellTomeIDToAppearance;
 
 spell_t* createSimpleSpell(int spellID, int difficulty, int mana, int base_mana, int overload_mult, int damage, int duration, const char* internal_name, int sustainedMP = 0);
 void setupSpells()   ///TODO: Verify this function.
@@ -33,6 +35,8 @@ void setupSpells()   ///TODO: Verify this function.
 		list_FreeAll(&spell->elements);
 	}
 	allGameSpells.clear();
+	spellTomeAppearanceToID.clear();
+	spellTomeIDToAppearance.clear();
 	spellElementMap.clear();
 
 	node_t* node = NULL;
@@ -3342,7 +3346,7 @@ void setupSpells()   ///TODO: Verify this function.
 	//static const int SPELL_ICE_BLOCK = 189;
 
 	std::vector<node_t*> subElementsToCopy;
-
+	std::map<int, int> spellSchoolCounters;
 	for ( int i = 0; i < NUM_SPELLS; ++i )
 	{
 		auto find = ItemTooltips.spellItems.find(i);
@@ -3369,7 +3373,14 @@ void setupSpells()   ///TODO: Verify this function.
 				spell->skillID = info.skillID;
 				spell->radius = info.radius;
 				spell->radius_mult = info.radius_mult;
-				
+				spell->drop_table = info.drop_table;
+				if ( spell->drop_table < 0 )
+				{
+					spell->hide_from_ui = true;
+				}
+				spellTomeAppearanceToID[spell->skillID][spellSchoolCounters[spell->skillID]] = i;
+				spellTomeIDToAppearance[i] = spellSchoolCounters[spell->skillID];
+				++spellSchoolCounters[spell->skillID];
 				spellElement_t* element = nullptr;
 				std::vector<spellElement_t*> elementList;
 				if ( spell->elements.first )

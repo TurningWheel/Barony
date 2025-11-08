@@ -7336,11 +7336,28 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 			}
 			else
 			{
-				if ( rand() % 100 <= (std::max(10, buyValue)) ) // 20% to 100% from 1-100 gold
+				if ( local_rng.rand() % 100 <= (std::max(10, buyValue)) ) // 20% to 100% from 1-100 gold
 				{
 					increaseSkill = true;
 				}
 			}
+
+			if ( increaseSkill && entity )
+			{
+				if ( !strcmp(map.name, "Mages Guild") )
+				{
+					int increases = hamletShopkeeperSkillLimit[client][entity->getUID()];
+					if ( increases >= hamletTradingSkillLimit )
+					{
+						increaseSkill = false;
+						if ( local_rng.rand() % 2 )
+						{
+							messagePlayer(client, MESSAGE_HINT | MESSAGE_INTERACTION, Language::get(6868));
+						}
+					}
+				}
+			}
+
 			if ( increaseSkill )
 			{
 				if ( buyValue <= 1 )
@@ -7348,11 +7365,25 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 					if ( stats[client]->getProficiency(PRO_TRADING) < SKILL_LEVEL_SKILLED )
 					{
 						players[client]->entity->increaseSkill(PRO_TRADING);
+						if ( entity )
+						{
+							if ( !strcmp(map.name, "Mages Guild") )
+							{
+								hamletShopkeeperSkillLimit[client][entity->getUID()]++;
+							}
+						}
 					}
 				}
 				else
 				{
 					players[client]->entity->increaseSkill(PRO_TRADING);
+					if ( entity )
+					{
+						if ( !strcmp(map.name, "Mages Guild") )
+						{
+							hamletShopkeeperSkillLimit[client][entity->getUID()]++;
+						}
+					}
 				}
 			}
 			//if ( local_rng.rand() % 2 )

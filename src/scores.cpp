@@ -26,6 +26,7 @@
 #include "collision.hpp"
 #include "mod_tools.hpp"
 #include "lobbies.hpp"
+#include "shops.hpp"
 #ifdef USE_PLAYFAB
 #include "playfab.hpp"
 #endif
@@ -5960,6 +5961,8 @@ int loadGame(int player, const SaveGameInfo& info) {
 		mechanics.itemDegradeRng.clear();
 		mechanics.learnedSpells.clear();
 		mechanics.sustainedSpellIDCounter.clear();
+		hamletShopkeeperSkillLimit[statsPlayer].clear();
+		mechanics.baseSpellLevelUpProcs.clear();
 		for ( auto& pair : info.players[player].itemDegradeRNG )
 		{
 			mechanics.itemDegradeRng[pair.first] = pair.second;

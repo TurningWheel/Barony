@@ -5826,13 +5826,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						caster->setEffect(EFF_DASH, true, 60, false);
 					}
 
-					if ( local_rng.rand() % 5 == 0 )
-					{
-						magicOnSpellCastEvent(caster, caster, nullptr, spell->ID, 
-							spell_t::SPELL_LEVEL_EVENT_EFFECT 
-							| spell_t::SPELL_LEVEL_EVENT_MINOR_CHANCE
-							| spellEventFlags, 1, allowedSkillup);
-					}
+					magicOnSpellCastEvent(caster, caster, nullptr, spell->ID, 
+						spell_t::SPELL_LEVEL_EVENT_EFFECT 
+						| spell_t::SPELL_LEVEL_EVENT_MINOR_CHANCE
+						| spellEventFlags, 1, allowedSkillup);
 					if ( i > 0 && multiplayer == SERVER && !players[i]->isLocalPlayer() )
 					{
 						strcpy((char*)net_packet->data, "DASH");
