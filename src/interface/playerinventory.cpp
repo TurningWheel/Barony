@@ -6313,9 +6313,27 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 				}
 				else
 				{
-					if ( !item->identified && itemCategory(item) == GEM )
+					if ( !item->identified )
 					{
-						snprintf(valueBuf, sizeof(valueBuf), "%d", items[GEM_GLASS].value);
+						if ( itemCategory(item) == GEM )
+						{
+							snprintf(valueBuf, sizeof(valueBuf), "%s", "???");
+						}
+						else
+						{
+							if ( items[item->type].value < 100 )
+							{
+								snprintf(valueBuf, sizeof(valueBuf), "%s", "?");
+							}
+							else if ( items[item->type].value < 1000 )
+							{
+								snprintf(valueBuf, sizeof(valueBuf), "%s", "??");
+							}
+							else
+							{
+								snprintf(valueBuf, sizeof(valueBuf), "%s", "???");
+							}
+						}
 					}
 					else
 					{

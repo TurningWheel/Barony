@@ -40360,9 +40360,27 @@ SDL_Surface* Player::WorldUI_t::WorldTooltipItem_t::blitItemWorldTooltip(Item* i
 			SDL_BlitScaled(srcSurf, nullptr, itemWorldTooltipSurface, &goldPos);
 
 			char goldBuf[32];
-			if ( !item->identified && itemCategory(item) == GEM )
+			if ( !item->identified )
 			{
-				snprintf(goldBuf, sizeof(goldBuf), "%d", items[GEM_GLASS].value);
+				if ( itemCategory(item) == GEM )
+				{
+					snprintf(goldBuf, sizeof(goldBuf), "%s", "???");
+				}
+				else
+				{
+					if ( items[item->type].value < 100 )
+					{
+						snprintf(goldBuf, sizeof(goldBuf), "%s", "?");
+					}
+					else if ( items[item->type].value < 1000 )
+					{
+						snprintf(goldBuf, sizeof(goldBuf), "%s", "??");
+					}
+					else
+					{
+						snprintf(goldBuf, sizeof(goldBuf), "%s", "???");
+					}
+				}
 			}
 			else
 			{
