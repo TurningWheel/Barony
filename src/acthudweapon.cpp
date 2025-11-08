@@ -5334,11 +5334,18 @@ void actHudAdditional(Entity* my)
 	{
 		my->z -= -1 * .5;
 	}
-	else if ( stats[HUDSHIELD_PLAYERNUM]->type == MONSTER_D && players[HUDSHIELD_PLAYERNUM]->entity->z >= 1.5 )
+	else if ( stats[HUDSHIELD_PLAYERNUM]->type == MONSTER_D )
 	{
-		my->z -= -3.0 * .5;
+		if ( players[HUDSHIELD_PLAYERNUM]->entity->z >= 1.5 )
+		{
+			my->z -= -3.0 * .5;
+		}
+		else
+		{
+			my->z -= -2.0 * .5;
+		}
 	}
-	else if ( stats[HUDSHIELD_PLAYERNUM]->type == MONSTER_M && players[HUDSHIELD_PLAYERNUM]->entity->z >= 0.5 )
+	else if ( stats[HUDSHIELD_PLAYERNUM]->type == MONSTER_M )
 	{
 		my->z -= -1.0 * .5;
 	}
