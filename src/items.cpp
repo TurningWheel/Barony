@@ -496,6 +496,8 @@ bool isHatShopItem(ItemType hat)
 	case HAT_HOOD_WHISPERS:
 	case HAT_FELT:
 	case HOOD_TEAL:
+	case HAT_CIRCLET_SORCERY:
+	case HAT_CIRCLET_THAUMATURGY:
 		return true;
 		default:
 			break;
@@ -2645,6 +2647,8 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		case CHAIN_COIF:
 		case HAT_FELT:
 		case HOOD_TEAL:
+		case HAT_CIRCLET_SORCERY:
+		case HAT_CIRCLET_THAUMATURGY:
 			equipItemResult = equipItem(item, &stats[player]->helmet, player, checkInventorySpaceForPaperDoll);
 			break;
 		case AMULET_SEXCHANGE:
@@ -4462,6 +4466,8 @@ bool Item::doesItemProvideBeatitudeAC(ItemType type)
 			|| type == HAT_PLUMED_CAP
 			|| type == HAT_BYCOCKET
 			|| type == HAT_CIRCLET
+			|| type == HAT_CIRCLET_SORCERY
+			|| type == HAT_CIRCLET_THAUMATURGY
 			|| type == HAT_CIRCLET_WISDOM
 			|| type == HAT_CROWN 
 			|| type == HAT_LAURELS 

@@ -3920,11 +3920,29 @@ real_t getSpellPropertyFromID(spell_t::SpellBasePropertiesFloat prop, int spellI
 		{
 			result = spell->cast_time_mult;
 		}
-		else if ( prop == spell_t::SpellBasePropertiesFloat::SPELLPROP_MODIFIED_CAST_TIME )
+		else if ( prop == spell_t::SpellBasePropertiesFloat::SPELLPROP_MODIFIED_FOCI_CAST_TIME )
 		{
 			result = spell->cast_time;
-			real_t modifier = 1.0 + spell->cast_time_mult;
+			real_t modifier = 1.0;// +spell->cast_time_mult;
 			result *= modifier;
+		}
+		else if ( prop == spell_t::SpellBasePropertiesFloat::SPELLPROP_MODIFIED_SPELL_CAST_TIME )
+		{
+			result = spell->cast_time;
+			if ( spell->cast_time_mult > 0.01 )
+			{
+				real_t bonus = (getBonusFromCasterOfSpellElement(parent, myStats, element, spellID, spell->skillID));
+				real_t modifier = (statGetDEX(myStats, parent) * (1.0 + bonus) * spell->cast_time_mult) / 100.0;
+				result += -modifier;
+				if ( spell->cast_time < 1.01 )
+				{
+					result = std::max(0.5, result);
+				}
+				else
+				{
+					result = std::max(1.0, result);
+				}
+			}
 		}
 		else if ( prop == spell_t::SpellBasePropertiesFloat::SPELLPROP_MODIFIED_DISTANCE )
 		{

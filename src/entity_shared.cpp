@@ -1185,6 +1185,8 @@ char itemNameStrings[NUM_ITEM_STRINGS][32] =
 	"tome_sorcery",
 	"tome_mysticism",
 	"tome_thaumaturgy",
+	"hat_circlet_sorcery",
+	"hat_circlet_thaumaturgy",
 	""
 };
 
@@ -1238,6 +1240,8 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"quilted_cap",
 		"hood_teal",
 		"chain_coif",
+		"hat_circlet_sorcery",
+		"hat_circlet_thaumaturgy",
 		""
 	},
 	{

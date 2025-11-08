@@ -11442,6 +11442,8 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 		case MAGICSTAFF_SUMMON:
 		case MASK_SHAMAN:
 		case HAT_CIRCLET:
+		case HAT_CIRCLET_SORCERY:
+		case HAT_CIRCLET_THAUMATURGY:
 		case HAT_LAURELS:
 		case HAT_HOOD_APPRENTICE:
 		case HAT_HOOD_WHISPERS:

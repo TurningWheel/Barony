@@ -954,6 +954,8 @@ real_t getBonusFromCasterOfSpellElement(Entity* caster, Stat* casterStats, spell
 				bonus += hatBonus;
 			}
 			else if ( casterStats->helmet->type == HAT_CIRCLET
+				|| casterStats->helmet->type == HAT_CIRCLET_SORCERY
+				|| casterStats->helmet->type == HAT_CIRCLET_THAUMATURGY
 				|| casterStats->helmet->type == HAT_CIRCLET_WISDOM )
 			{
 				if ( casterStats->helmet->beatitude >= 0 || shouldInvertEquipmentBeatitude(casterStats) )

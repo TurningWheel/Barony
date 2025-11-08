@@ -4637,7 +4637,7 @@ void actHudShield(Entity* my)
 		{
 			int rate = 20;
 			int chargeTimeInit = (float)(TICKS_PER_SECOND / 4);
-			chargeTimeInit *= getSpellPropertyFromID(spell_t::SPELLPROP_MODIFIED_CAST_TIME, getSpellIDFromFoci(stats[HUDSHIELD_PLAYERNUM]->shield->type),
+			chargeTimeInit *= getSpellPropertyFromID(spell_t::SPELLPROP_MODIFIED_FOCI_CAST_TIME, getSpellIDFromFoci(stats[HUDSHIELD_PLAYERNUM]->shield->type),
 				nullptr, stats[HUDSHIELD_PLAYERNUM], nullptr);
 			chargeTimeInit = std::max(TICKS_PER_SECOND, chargeTimeInit + TICKS_PER_SECOND);
 			if ( HUDSHIELD_DEFEND_TIME < chargeTimeInit )

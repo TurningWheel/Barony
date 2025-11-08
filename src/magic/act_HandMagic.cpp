@@ -834,7 +834,7 @@ void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, 
 	animation_manager->circle_count = 0;
 	animation_manager->throw_count = 0;
 	animation_manager->active_count = 0;
-	animation_manager->times_to_circle = spell->cast_time * HANDMAGIC_TICKS_PER_CIRCLE;// (spellCost / 10) + 1; //Circle once for every 10 mana the spell costs.
+	animation_manager->times_to_circle = getSpellPropertyFromID(spell_t::SPELLPROP_MODIFIED_SPELL_CAST_TIME, spell->ID, caster, nullptr, caster) * HANDMAGIC_TICKS_PER_CIRCLE;// (spellCost / 10) + 1; //Circle once for every 10 mana the spell costs.
 	animation_manager->mana_left = spellCost;
 	animation_manager->mana_cost = spellCost;
 	animation_manager->consumeMana = true;
@@ -875,7 +875,7 @@ void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, 
 			//animation_manager->times_to_circle = (spellCost / 20) + 1; //Circle once for every 20 mana the spell costs.
 		}
 	}
-	animation_manager->times_to_circle = std::max(10, animation_manager->times_to_circle);
+	animation_manager->times_to_circle = std::max(HANDMAGIC_TICKS_PER_CIRCLE / 2, animation_manager->times_to_circle);
 	animation_manager->consume_interval = (animation_manager->times_to_circle / std::max(1, spellCost));
 	animation_manager->consume_timer = animation_manager->consume_interval;
 	animation_manager->setRangeFinderLocation();

@@ -172,7 +172,9 @@ Sint32 Stat::getModifiedProficiency(int skill) const
 				equipmentBonus -= abs(helmet->beatitude) * 10;
 			}
 		}
-		else if ( (helmet->type == HAT_CIRCLET || helmet->type == HAT_CIRCLET_WISDOM) && skill == PRO_MYSTICISM )
+		else if ( (helmet->type == HAT_CIRCLET && skill == PRO_MYSTICISM)
+			|| (helmet->type == HAT_CIRCLET_SORCERY && skill == PRO_SORCERY)
+			|| (helmet->type == HAT_CIRCLET_THAUMATURGY && skill == PRO_THAUMATURGY) )
 		{
 			if ( helmet->beatitude >= 0 || cursedItemIsBuff )
 			{

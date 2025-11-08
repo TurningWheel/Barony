@@ -5381,7 +5381,7 @@ void Entity::handleEffects(Stat* myStats)
 						{
 							chargeTimeInit *= *cvar_foci_charge_init;
 						}
-						chargeTimeInit *= getSpellPropertyFromID(spell_t::SPELLPROP_MODIFIED_CAST_TIME, spellID,
+						chargeTimeInit *= getSpellPropertyFromID(spell_t::SPELLPROP_MODIFIED_FOCI_CAST_TIME, spellID,
 							this, myStats, this);
 						if ( defendTime >= chargeTimeInit )
 						{
@@ -18357,6 +18357,8 @@ int checkEquipType(const Item *item)
 		case HAT_TOPHAT:
 		case HAT_BANDANA:
 		case HAT_CIRCLET:
+		case HAT_CIRCLET_SORCERY:
+		case HAT_CIRCLET_THAUMATURGY:
 		case HAT_CROWN:
 		case HAT_LAURELS:
 		case HAT_TURBAN:

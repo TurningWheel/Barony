@@ -3716,7 +3716,9 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 					|| (skill == PRO_LEADERSHIP && item.type == HAT_PLUMED_CAP)
 					|| (skill == PRO_RANGED && item.type == HAT_BOUNTYHUNTER)
 					|| (skill == PRO_STEALTH && item.type == HAT_HOOD_WHISPERS)
-					|| (skill == PRO_MYSTICISM && (item.type == HAT_CIRCLET || item.type == HAT_CIRCLET_WISDOM))
+					|| (skill == PRO_MYSTICISM && (item.type == HAT_CIRCLET))
+					|| (skill == PRO_SORCERY && (item.type == HAT_CIRCLET_SORCERY))
+					|| (skill == PRO_THAUMATURGY && (item.type == HAT_CIRCLET_THAUMATURGY))
 					|| (skill == PRO_ALCHEMY && item.type == MASK_HAZARD_GOGGLES) )
 				{
 					int bonus = 10;

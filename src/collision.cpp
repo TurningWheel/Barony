@@ -1415,7 +1415,10 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 												return 1;
 											}
 										}
-										else if ( my->z <= -5 )
+										else if ( my->z <= -5 && 
+											!(entity->behavior == &actGate 
+												|| entity->behavior == &actDoor
+												|| entity->behavior == &actIronDoor) )
 										{
 											return 1;
 										}
