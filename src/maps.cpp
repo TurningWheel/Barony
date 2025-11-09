@@ -10010,7 +10010,7 @@ void assignActions(map_t* map)
 	{
 		for ( int c = 0; c < MAXPLAYERS; ++c )
 		{
-			if ( client_classes[c] == CLASS_ACCURSED )
+			if ( client_classes[c] == CLASS_ACCURSED && !client_disconnected[c]  )
 			{
 				vampireQuestChest->chestHasVampireBook = 1;
 				break;
