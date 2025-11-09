@@ -604,9 +604,15 @@ void initShopkeeper(Entity* my, Stat* myStats)
 					}
 					break;
 				case 7:
+				{
+					int spawnedItems = 0; // make sure to not spawn over 20 items otherwise overwrites the special shop selection
 					// hardware store
 					for ( c = 0; c < numitems; c++ )
 					{
+						if ( spawnedItems >= 20 )
+						{
+							break;
+						}
 						if ( rng.rand() % 20 == 0 )
 						{
 							tmpItem = newItem(itemLevelCurveEntity(*my, THROWN, 0, shoplevel + 20, rng), static_cast<Status>(SERVICABLE + rng.rand() % 2), 0, 3 + rng.rand() % 3, rng.rand(), false, &myStats->inventory);
@@ -615,6 +621,7 @@ void initShopkeeper(Entity* my, Stat* myStats)
 						{
 							tmpItem = newItem(static_cast<ItemType>(TOOL_PICKAXE + rng.rand() % 11), static_cast<Status>(WORN + rng.rand() % 3), 0, 1 + rng.rand() % 3, rng.rand(), false, &myStats->inventory);
 						}
+						++spawnedItems;
 						// post-processing
 						if ( rng.rand() % blessedShopkeeper > 0 )
 						{
@@ -625,9 +632,10 @@ void initShopkeeper(Entity* my, Stat* myStats)
 							itemLevelCurvePostProcess(my, tmpItem, rng);
 						}
 
-						if ( !doneLockpick && rng.rand() % 2 == 0 )
+						if ( !doneLockpick && rng.rand() % 2 == 0 && spawnedItems < 20 )
 						{
 							tmpItem = newItem(TOOL_LOCKPICK, static_cast<Status>(WORN + rng.rand() % 3), 0, 1 + rng.rand() % 3, rng.rand(), true, &myStats->inventory);
+							++spawnedItems;
 							if ( rng.rand() % blessedShopkeeper > 0 )
 							{
 								tmpItem->status = static_cast<Status>(SERVICABLE + rng.rand() % 2);
@@ -635,30 +643,34 @@ void initShopkeeper(Entity* my, Stat* myStats)
 							doneLockpick = true;
 						}
 
-						if ( !doneTinkeringKit && rng.rand() % 5 == 0 )
+						if ( !doneTinkeringKit && rng.rand() % 5 == 0 && spawnedItems < 20 )
 						{
 							newItem(TOOL_TINKERING_KIT, DECREPIT, 0, 1, rng.rand(), true, &myStats->inventory);
+							++spawnedItems;
 							doneTinkeringKit = true;
 						}
 
-						if ( !doneAlembic && rng.rand() % 2 == 0 )
+						if ( !doneAlembic && rng.rand() % 2 == 0 && spawnedItems < 20 )
 						{
 							tmpItem = newItem(TOOL_ALEMBIC, static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), true, &myStats->inventory);
+							++spawnedItems;
 							if ( rng.rand() % blessedShopkeeper > 0 )
 							{
 								tmpItem->status = static_cast<Status>(SERVICABLE + rng.rand() % 2);
 							}
-							if ( rng.rand() % 2 == 0 )
+							if ( rng.rand() % 2 == 0 && spawnedItems < 20 )
 							{
 								tmpItem = newItem(TOOL_ALEMBIC, static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), true, &myStats->inventory);
+								++spawnedItems;
 								if ( rng.rand() % blessedShopkeeper > 0 )
 								{
 									tmpItem->status = static_cast<Status>(SERVICABLE + rng.rand() % 2);
 								}
 							}
-							else if ( rng.rand() % 2 == 0 )
+							else if ( rng.rand() % 2 == 0 && spawnedItems < 20 )
 							{
 								tmpItem = newItem(TOOL_ALEMBIC, static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), true, &myStats->inventory);
+								++spawnedItems;
 								if ( rng.rand() % blessedShopkeeper > 0 )
 								{
 									tmpItem->status = static_cast<Status>(SERVICABLE + rng.rand() % 2);
@@ -668,9 +680,10 @@ void initShopkeeper(Entity* my, Stat* myStats)
 						}
 
 					}
-					if ( !doneBackpack && rng.rand() % 10 == 0 )
+					if ( !doneBackpack && rng.rand() % 10 == 0 && spawnedItems < 20 )
 					{
 						newItem(CLOAK_BACKPACK, static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), true, &myStats->inventory);
+						++spawnedItems;
 						doneBackpack = true;
 					}
 					if ( (doneHardwareHat == 0 && rng.rand() % 5 == 0) || (doneHardwareHat == 1 && rng.rand() % 20 == 0) )
@@ -679,38 +692,40 @@ void initShopkeeper(Entity* my, Stat* myStats)
 						int numHats = 1 + ((rng.rand() % 4 == 0) ? 1 : 0);
 						while ( numHats > 0 )
 						{
+							if ( spawnedItems >= 20 ) { break; }
 							--numHats;
 							int roll = rng.rand() % 15;
 							ItemType hat = WOODEN_SHIELD;
 							switch ( roll )
 							{
-								case 0:
-								case 1:
-								case 2:
-								case 3:
-								case 4:
-								case 5:
-								case 6:
-								case 7:
-								case 8:
-								case 9:
-									hat = HELM_MINING;
-									break;
-								case 10:
-								case 11:
-								case 12:
-									hat = MASK_HAZARD_GOGGLES;
-									break;
-								case 13:
-									hat = MASK_PIPE;
-									break;
-								case 14:
-									hat = MASK_MOUTHKNIFE;
-									break;
-								default:
-									break;
+							case 0:
+							case 1:
+							case 2:
+							case 3:
+							case 4:
+							case 5:
+							case 6:
+							case 7:
+							case 8:
+							case 9:
+								hat = HELM_MINING;
+								break;
+							case 10:
+							case 11:
+							case 12:
+								hat = MASK_HAZARD_GOGGLES;
+								break;
+							case 13:
+								hat = MASK_PIPE;
+								break;
+							case 14:
+								hat = MASK_MOUTHKNIFE;
+								break;
+							default:
+								break;
 							}
 							Item* tmpItem = newItem(hat, static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), true, &myStats->inventory);
+							++spawnedItems;
 							if ( rng.rand() % blessedShopkeeper > 0 )
 							{
 								tmpItem->status = static_cast<Status>(SERVICABLE + rng.rand() % 2);
@@ -719,6 +734,7 @@ void initShopkeeper(Entity* my, Stat* myStats)
 						}
 					}
 					break;
+				}
 				case 8:
 					// weapon/hunting store
 					if ( shoplevel < 10 && customShopkeeperInUse == 0 )
