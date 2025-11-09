@@ -1230,7 +1230,7 @@
 			"name_unidentified": "bandana"
 		},
 		"hat_circlet": {
-			"name_identified": "circlet",
+			"name_identified": "circlet of mysticism",
 			"name_unidentified": "circlet"
 		},
 		"hat_crown": {
@@ -1684,6 +1684,14 @@
 		"tome_thaumaturgy": {
 			"name_identified": "tome",
 			"name_unidentified": "tome"
+		},
+		"hat_circlet_sorcery": {
+			"name_identified": "circlet of sorcery",
+			"name_unidentified": "circlet"
+		},
+		"hat_circlet_thaumaturgy": {
+			"name_identified": "circlet of thaumaturgy",
+			"name_unidentified": "circlet"
 		}
     },
 	"spell_names": {
