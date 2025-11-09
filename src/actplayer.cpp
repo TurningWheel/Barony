@@ -4950,7 +4950,7 @@ void playerDebugTests(Entity* my)
 	{
 		return;
 	}
-	if ( multiplayer == CLIENT )
+	if ( multiplayer == CLIENT || intro )
 	{
 		return;
 	}

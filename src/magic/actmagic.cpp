@@ -4230,7 +4230,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								effectDuration = element->duration;
 								if ( hitstats )
 								{
-									effectDuration = std::max(50, effectDuration - ((hitstats->CON % 10) * 50)); // reduce 1 sec every 10 CON.
+									effectDuration = std::max(50, effectDuration - ((hitstats->CON / 3) * 50)); // reduce 1 sec every 3 CON.
 								}
 							}
 							effectDuration = convertResistancePointsToMagicValue(effectDuration, resistance);

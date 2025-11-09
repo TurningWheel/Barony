@@ -5670,7 +5670,10 @@ void ingameHud()
 			}
 			if ( !castAnimationTouch )
 			{
-				input.consumeBinaryToggle("Cast Spell");
+				if ( !(cast_animation[player].stage == 4) ) // allow recast if pressed during touch throw window
+				{
+					input.consumeBinaryToggle("Cast Spell");
+				}
 			}
 		}
 		players[player]->magic.resetQuickCastSpell();
