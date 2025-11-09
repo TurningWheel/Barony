@@ -3543,6 +3543,10 @@ void actHudWeapon(Entity* my)
 		{
 			my->z -= -1 * .5;
 		}
+		else if ( playerRace == GNOME )
+		{
+			my->z -= -2 * .5;
+		}
 		else if ( playerRace == MONSTER_D )
 		{
 			if ( players[HUDWEAPON_PLAYERNUM]->entity->z >= 1.5 )
@@ -3723,6 +3727,10 @@ void actHudWeapon(Entity* my)
 		else if ( playerRace == MONSTER_G )
 		{
 			my->z -= -1 * .5;
+		}
+		else if ( playerRace == GNOME )
+		{
+			my->z -= -2 * .5;
 		}
 		else if ( playerRace == MONSTER_D )
 		{
@@ -4726,6 +4734,10 @@ void actHudShield(Entity* my)
 	{
 		my->z -= -1 * .5;
 	}
+	else if ( playerRace == GNOME )
+	{
+		my->z -= -2 * .5;
+	}
 	else if ( playerRace == MONSTER_D )
 	{
 		if ( players[HUDSHIELD_PLAYERNUM]->entity->z >= 1.5 )
@@ -5333,6 +5345,10 @@ void actHudAdditional(Entity* my)
 	else if ( stats[HUDSHIELD_PLAYERNUM]->type == MONSTER_G )
 	{
 		my->z -= -1 * .5;
+	}
+	else if ( stats[HUDSHIELD_PLAYERNUM]->type == GNOME )
+	{
+		my->z -= -2 * .5;
 	}
 	else if ( stats[HUDSHIELD_PLAYERNUM]->type == MONSTER_D )
 	{

@@ -1371,6 +1371,8 @@ int getBaseManaRegen(Entity* my, Stat& myStats, bool excludeItemsEffectsBonus = 
 void actMonster(Entity* my);
 int playerHeadSprite(Monster race, sex_t sex, int appearance, int frame = 0);
 void actPlayer(Entity* my);
+void actPlayerXP(Entity* my);
+void spawnPlayerXP(real_t x, real_t y, int player, int xpAmount);
 void playerAnimateRat(Entity* my);
 void playerAnimateSpider(Entity* my);
 

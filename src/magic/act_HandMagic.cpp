@@ -1088,6 +1088,10 @@ void actLeftHandMagic(Entity* my)
 	{
 		my->z -= -1 * .5;
 	}
+	else if ( playerRace == GNOME )
+	{
+		my->z -= -2 * .5;
+	}
 	else if ( playerRace == MONSTER_D )
 	{
 		if ( players[HANDMAGIC_PLAYERNUM]->entity->z >= 1.5 )
@@ -1629,6 +1633,10 @@ void actLeftHandMagic(Entity* my)
 		{
 			my->z -= -1 * .5;
 		}
+		else if ( playerRace == GNOME )
+		{
+			my->z -= -2 * .5;
+		}
 		else if ( playerRace == MONSTER_D )
 		{
 			if ( players[HANDMAGIC_PLAYERNUM]->entity->z >= 1.5 )
@@ -1801,6 +1809,10 @@ void actRightHandMagic(Entity* my)
 	if ( playerRace == MONSTER_G )
 	{
 		my->z -= -1 * .5;
+	}
+	else if ( playerRace == GNOME )
+	{
+		my->z -= -2 * .5;
 	}
 	else if ( playerRace == MONSTER_D )
 	{
@@ -2082,6 +2094,10 @@ void actRightHandMagic(Entity* my)
 		if ( playerRace == MONSTER_G )
 		{
 			my->z -= -1 * .5;
+		}
+		else if ( playerRace == GNOME )
+		{
+			my->z -= -2 * .5;
 		}
 		else if ( playerRace == MONSTER_D )
 		{

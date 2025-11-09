@@ -1320,6 +1320,177 @@ Entity* Player::Ghost_t::respawn()
 	return nullptr;
 }
 
+void actPlayerXP(Entity* my)
+{
+	if ( my->ticks >= 250 )
+	{
+		list_RemoveNode(my->mynode);
+		return;
+	}
+
+	auto& bounceFloor = my->fskill[0];
+	auto& hover = my->fskill[1];
+	auto& bounceAmount = my->fskill[2];
+	auto& hoverAmount = my->fskill[3];
+	auto& spawnBounce = my->skill[0];
+	auto& floatTimer = my->skill[1];
+	auto& numBounces = my->skill[3];
+
+	if ( spawnBounce == 0 )
+	{
+		my->vel_z += 0.04;
+		my->z += my->vel_z;
+		hoverAmount = 0.15;
+
+		if ( my->z < 0.0 )
+		{
+		}
+		else
+		{
+			my->z = bounceFloor;
+			bounceAmount = my->vel_z;
+			my->vel_z = 0.0;
+			spawnBounce = 1;
+		}
+		my->pitch += hoverAmount;
+		if ( ticks % 4 == 0 )
+		{
+			Entity* fx = spawnMagicParticleCustom(my, 261, my->scalex, 5.0);
+			fx->flags[SPRITE] = true;
+		}
+	}
+	else
+	{
+		++floatTimer;
+		hoverAmount = std::max(0.025, hoverAmount * 0.99);
+		hover += hoverAmount;
+		my->z = bounceFloor;
+		if ( hover >= 2 * PI )
+		{
+			hover -= 2 * PI;
+		}
+		bounceAmount *= 0.975;
+		bounceAmount = std::max(0.25, bounceAmount);
+		my->z += 3 * bounceAmount * sin(hover);
+		if ( ticks % 4 == 0 )
+		{
+			Entity* fx = spawnMagicParticleCustom(my, 225, 1.0, 1.0);
+			fx->flags[SPRITE] = true;
+		}
+	}
+
+	my->yaw += hoverAmount;
+
+}
+
+void spawnPlayerXP(real_t x, real_t y, int player, int xpAmount)
+{
+	if ( player < 0 || player >= MAXPLAYERS ) { return; }
+	if ( xpAmount <= 0 ) { return; }
+	//if ( players[player]->entity ) { return; }
+
+	int radius = 1;
+	std::set<int> goodspots;
+	std::set<int> okspots;
+
+	int sprite = 211; // Player::Ghost_t::getSpriteForPlayer(player);
+	Entity* entity = newEntity(sprite, 1, map.entities, nullptr); //Ghost entity.
+	entity->flags[PASSABLE] = true;
+	//entity->flags[INVISIBLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->flags[UPDATENEEDED] = true;
+	entity->flags[NOCLIP_CREATURES] = true;
+	entity->lightBonus = vec4{ 0.25f, 0.25f, 0.25f, 0.f };
+	entity->sizex = 4;
+	entity->sizex = 4;
+	entity->ditheringOverride = 6;
+	entity->vel_z = -1.0;
+	entity->behavior = &actPlayerXP;
+
+	for ( int ix = -1; ix <= 1; ++ix )
+	{
+		for ( int iy = -1; iy <= 1; ++iy )
+		{
+			int checkx = static_cast<int>(x / 16) + ix;
+			int checky = static_cast<int>(y / 16) + iy;
+			if ( checkx >= 0 && checkx < map.width && checky >= 0 && checky < map.height )
+			{
+				if ( !map.tiles[OBSTACLELAYER + checky * MAPLAYERS + checkx * MAPLAYERS * map.height] )
+				{
+					okspots.insert(checkx + 10000 * checky);
+					if ( !checkObstacle(checkx * 16.0 + 8.0, checky * 16.0 + 8.0, entity, nullptr, true, true, false, false) )
+					{
+						goodspots.insert(checkx + 10000 * checky);
+					}
+				}
+			}
+		}
+	}
+
+	int checkx = static_cast<int>(x / 16);
+	int checky = static_cast<int>(y / 16);
+	int destx = 0;
+	int desty = 0;
+	bool foundspot = false;
+	if ( goodspots.find(checkx + 10000 * checky) != goodspots.end() )
+	{
+		destx = checkx;
+		desty = checky;
+		foundspot = true;
+	}
+	else if ( goodspots.size() )
+	{
+		int pick = local_rng.rand() % goodspots.size();
+		int index = -1;
+		for ( auto spot : goodspots )
+		{
+			++index;
+			if ( pick == index )
+			{
+				destx = spot % 10000;
+				desty = spot / 10000;
+				foundspot = true;
+				break;
+			}
+		}
+	}
+
+	if ( !foundspot )
+	{
+		if ( okspots.find(checkx + 10000 * checky) != okspots.end() )
+		{
+			destx = checkx;
+			desty = checky;
+			foundspot = true;
+		}
+		else if ( okspots.size() )
+		{
+			int pick = local_rng.rand() % okspots.size();
+			int index = -1;
+			for ( auto spot : okspots )
+			{
+				++index;
+				if ( pick == index )
+				{
+					destx = spot % 10000;
+					desty = spot / 10000;
+					foundspot = true;
+					break;
+				}
+			}
+		}
+	}
+
+	if ( foundspot )
+	{
+		entity->x = destx * 16.0 + 8.0;
+		entity->y = desty * 16.0 + 8.0;
+		return;
+	}
+	list_RemoveNode(entity->mynode);
+	return;
+}
+
 Entity* Player::Ghost_t::spawnGhost()
 {
 	if ( !player.isLocalPlayer() )
@@ -3828,6 +3999,11 @@ void Player::PlayerMovement_t::handlePlayerCameraPosition(bool useRefreshRateDel
 			cameraSetpointZ -= 1.0;
 			players[player.playernum]->worldUI.modifiedTooltipDrawHeight = 3.0;
 		}
+		else if ( playerRace == GNOME )
+		{
+			cameraSetpointZ -= 2.0;
+			players[player.playernum]->worldUI.modifiedTooltipDrawHeight = 3.0;
+		}
 		else if ( playerRace == MONSTER_D )
 		{
 			if ( my->z >= 1.5 )
@@ -4686,6 +4862,10 @@ int playerHeadSprite(Monster race, sex_t sex, int appearance, int frame) {
 	else if ( race == MONSTER_S ) {
 		return sex == FEMALE ? 2015 : 2014;
 	}
+	else if ( race == GNOME )
+	{
+		return sex == FEMALE ? 2214 : 2213;
+	}
     else {
         return 481; // shadow head due to unknown creature
     }
@@ -4761,6 +4941,239 @@ bool weaponSpriteAllowedImpForm(int sprite)
 	}
 
 	return allowedWeaponSprites.find(sprite) != allowedWeaponSprites.end();
+}
+
+void playerDebugTests(Entity* my)
+{
+	if ( !my ) { return; }
+	if ( !(svFlags & SV_FLAG_CHEATS) )
+	{
+		return;
+	}
+	if ( multiplayer == CLIENT )
+	{
+		return;
+	}
+	static ConsoleVariable<int> cvar_test_xp("/test_xp", 0);
+	struct XPGain_t
+	{
+		int numKills = 0;
+		int numXP = 0;
+	};
+	static std::map<std::string, XPGain_t> xpGained;
+	static std::map<std::string, std::map<std::string, XPGain_t>> xpGainedBiome;
+	static std::map<int, bool> killingDoneLookup;
+	if ( currentlevel == 0 )
+	{
+		xpGained.clear();
+		killingDoneLookup.clear();
+		xpGainedBiome.clear();
+	}
+	else if ( *cvar_test_xp && ticks % 2 == 0 && ticks > 5 && my->skill[2] == 0 )
+	{
+		bool killingDone = true;
+		for ( auto node = map.entities->first; node; node = node->next )
+		{
+			if ( Entity* entity = (Entity*)node->element )
+			{
+				if ( entity->behavior == &actMonster )
+				{
+					if ( entity->getStats() && entity->getStats()->HP > 0 )
+					{
+						messagePlayer(0, MESSAGE_DEBUG, "Kill mon: %d", entity->getMonsterTypeFromSprite());
+						entity->setHP(0);
+						Sint32 oldXP = stats[0]->EXP;
+						if ( *cvar_test_xp == 3 || *cvar_test_xp == 5 )
+						{
+							if ( local_rng.rand() % 4 > 0 )
+							{
+								my->awardXP(entity, true, true);
+							}
+						}
+						else
+						{
+							my->awardXP(entity, true, true);
+						}
+						if ( stats[0]->EXP > oldXP )
+						{
+							xpGained[monstertypename[entity->getStats()->type]].numXP += stats[0]->EXP - oldXP;
+							xpGained[monstertypename[entity->getStats()->type]].numKills++;
+							xpGainedBiome[map.filename][monstertypename[entity->getStats()->type]].numXP += stats[0]->EXP - oldXP;
+							xpGainedBiome[map.filename][monstertypename[entity->getStats()->type]].numKills++;
+						}
+						killingDone = false;
+						break;
+					}
+				}
+				else if ( entity->behavior == &actColliderDecoration && entity->isDamageableCollider() )
+				{
+					entity->colliderCurrentHP = 0;
+					entity->colliderKillerUid = my->getUID();
+					killingDone = false;
+					break;
+				}
+				else if ( entity->behavior == &actHeadstone && !entity->skill[3] )
+				{
+					entity->flags[INVISIBLE] = false;
+					entity->skill[28] = 2;
+
+					/*Entity* oldSelected = selectedEntity[0];
+					selectedEntity[0] = entity;
+					bool oldInRange = inrange[0];
+					inrange[0] = true;
+					actSink(entity);
+					inrange[0] = oldInRange;
+					selectedEntity[0] = oldSelected;*/
+					killingDone = false;
+					break;
+				}
+				else if ( entity->behavior == &actSink )
+				{
+					if ( entity->skill[0] > 0 )
+					{
+						if ( *cvar_test_xp == 2 )
+						{
+							entity->skill[0]--;
+							if ( local_rng.rand() % 2 == 0 )
+							{
+								// spawn slime
+								int ox = entity->x / 16;
+								int oy = entity->y / 16;
+								Entity* monster = summonMonster(SLIME, ox * 16 + 8, oy * 16 + 8);
+								if ( monster )
+								{
+									auto& rng = entity->entity_rng ? *entity->entity_rng : local_rng;
+									monster->seedEntityRNG(rng.getU32());
+									slimeSetType(monster, monster->getStats(), true, &rng);
+								}
+							}
+						}
+						else
+						{
+							Entity* oldSelected = selectedEntity[0];
+							selectedEntity[0] = entity;
+							bool oldInRange = inrange[0];
+							inrange[0] = true;
+							actSink(entity);
+							inrange[0] = oldInRange;
+							selectedEntity[0] = oldSelected;
+						}
+						killingDone = false;
+						break;
+					}
+				}
+				else if ( entity->behavior == &actFountain )
+				{
+					if ( entity->skill[0] > 0 )
+					{
+						Entity* oldSelected = selectedEntity[0];
+						selectedEntity[0] = entity;
+						bool oldInRange = inrange[0];
+						inrange[0] = true;
+						actFountain(entity);
+						inrange[0] = oldInRange;
+						selectedEntity[0] = oldSelected;
+						killingDone = false;
+						break;
+					}
+				}
+				else if ( entity->behavior == &actSummonTrap )
+				{
+					if ( entity->skill[7] == 0 )
+					{
+						entity->skill[8] = 0;
+						if ( !entity->skill[4] )
+						{
+							entity->skill[28] = 2;
+						}
+						else
+						{
+							entity->skill[28] = 1;
+						}
+						killingDone = false;
+						break;
+					}
+				}
+			}
+		}
+		if ( killingDone && killingDoneLookup.find(currentlevel + (secretlevel ? 100 : 0)) == killingDoneLookup.end() )
+		{
+			killingDoneLookup[currentlevel + (secretlevel ? 100 : 0)] = true;
+
+			messagePlayer(0, MESSAGE_DEBUG, "Killing done");
+			if ( currentlevel == 35 )
+			{
+				std::vector<std::pair<std::string, real_t>> sortedXP;
+
+				for ( auto& pair : xpGained )
+				{
+					sortedXP.push_back(std::make_pair(pair.first, pair.second.numXP / (real_t)(std::max(1, pair.second.numKills))));
+				}
+				std::sort(sortedXP.begin(), sortedXP.end(), [](std::pair<std::string, real_t>& a, std::pair<std::string, real_t>& b) {
+					return a.second > b.second;
+					});
+				for ( auto& p : sortedXP )
+				{
+					auto pair = xpGained.find(p.first);
+					if ( pair != xpGained.end() )
+					{
+						printlog("Total XP: %s: XP: %d Kills: %d: Ratio: %.2f", pair->first.c_str(), pair->second.numXP, pair->second.numKills, (real_t)pair->second.numXP / (real_t)std::max(1, pair->second.numKills));
+					}
+				}
+				for ( auto& pair : xpGainedBiome )
+				{
+					sortedXP.clear();
+					for ( auto& pair2 : pair.second )
+					{
+						sortedXP.push_back(std::make_pair(pair2.first, pair2.second.numXP / (real_t)(std::max(1, pair2.second.numKills))));
+					}
+					std::sort(sortedXP.begin(), sortedXP.end(), [](std::pair<std::string, real_t>& a, std::pair<std::string, real_t>& b) {
+						return a.second > b.second;
+						});
+					for ( auto& p : sortedXP )
+					{
+						auto pair2 = pair.second.find(p.first);
+						if ( pair2 != pair.second.end() )
+						{
+							printlog("%s XP: %s: XP: %d Kills: %d: Ratio: %.2f", pair.first.c_str(), pair2->first.c_str(), pair2->second.numXP, pair2->second.numKills, (real_t)pair2->second.numXP / (real_t)std::max(1, pair2->second.numKills));
+						}
+					}
+				}
+			}
+			else
+			{
+				if ( currentlevel == 20 )
+				{
+					consoleCommand("/jumplevel 6");
+				}
+				else
+				{
+					if ( *cvar_test_xp == 4 || *cvar_test_xp == 5 )
+					{
+						if ( secretlevel )
+						{
+							consoleCommand("/togglesecretlevel");
+							consoleCommand("/jumplevel -1");
+						}
+						else
+						{
+							if ( currentlevel == 2 || currentlevel == 8 || currentlevel == 9 || currentlevel == 13
+								|| currentlevel == 16
+								|| currentlevel == 28 || currentlevel == 33 )
+							{
+								consoleCommand("/togglesecretlevel");
+							}
+							consoleCommand("/nextlevel");
+						}
+					}
+					else
+					{
+						consoleCommand("/nextlevel");
+					}
+				}
+			}
+		}
+	}
 }
 
 void actPlayer(Entity* my)
@@ -4977,9 +5390,19 @@ void actPlayer(Entity* my)
 		//}
 	}
 
-	static ConsoleVariable<int> cvar_pbaoe("/pbaoe", 15);
-	if ( keystatus[SDLK_x] && enableDebugKeys )
+	if ( svFlags & SV_FLAG_CHEATS )
 	{
+		if ( PLAYER_NUM == 0 )
+		{
+			playerDebugTests(my);
+		}
+	}
+	
+	static ConsoleVariable<int> cvar_pbaoe("/pbaoe", 15);
+	if ( keystatus[SDLK_x] && enableDebugKeys && (svFlags & SV_FLAG_CHEATS) )
+	{
+		spawnPlayerXP(my->x + 16.0, my->y, 0, 10);
+
 		keystatus[SDLK_x] = 0;
 		Uint32 color = makeColorRGB(255, 255, 255);
 		if ( *cvar_pbaoe == 0 )
@@ -5410,7 +5833,7 @@ void actPlayer(Entity* my)
 			}
 		}
 	}
-	if ( keystatus[SDLK_v] && enableDebugKeys )
+	if ( keystatus[SDLK_v] && enableDebugKeys && (svFlags & SV_FLAG_CHEATS) )
 	{
 		keystatus[SDLK_v] = 0;
 
@@ -7734,6 +8157,10 @@ void actPlayer(Entity* my)
 				zOffset = 1.5;
 				shortModel = true;
 				break;
+			case GNOME:
+				zOffset = 2.25;
+				shortModel = true;
+				break;
 			case MONSTER_S:
 				zOffset = -1.25;
 				break;
@@ -7802,6 +8229,9 @@ void actPlayer(Entity* my)
 					}
 					break;
 				case MONSTER_G:
+					my->z = 4.0;
+					break;
+				case GNOME:
 					my->z = 4.0;
 					break;
 				case MONSTER_S:
@@ -10309,6 +10739,10 @@ void actPlayer(Entity* my)
 				{
 					entity->z += 0.25;
 				}
+				else if ( playerRace == GNOME )
+				{
+					entity->z += 0.5;
+				}
 			}
 
 			if ( bodypart > 12 )
@@ -11345,6 +11779,12 @@ void actPlayer(Entity* my)
 							entity->focaly = limbs[playerRace][4][1] + 0.25;
 							entity->focalz = limbs[playerRace][4][2] - 0.75;
 						}
+						else if ( playerRace == GNOME )
+						{
+							entity->focalx = limbs[playerRace][4][0] + 1;
+							entity->focaly = limbs[playerRace][4][1] + 0.25;
+							entity->focalz = limbs[playerRace][4][2] - 0.75;
+						}
 						else
 						{
 							entity->focalx = limbs[playerRace][4][0] + 0.75;
@@ -11515,6 +11955,12 @@ void actPlayer(Entity* my)
 							entity->focalx = limbs[playerRace][5][0] + 1;
 							entity->focaly = limbs[playerRace][5][1] - 0.25;
 							entity->focalz = limbs[playerRace][5][2] - 0.75;
+						}
+						else if ( playerRace == GNOME )
+						{
+							entity->focalx = limbs[playerRace][5][0] + 1; // 1
+							entity->focaly = limbs[playerRace][5][1] - 0.25; // 0
+							entity->focalz = limbs[playerRace][5][2] - 0.75; // 1
 						}
 						else
 						{
@@ -13262,6 +13708,8 @@ bool Entity::isPlayerHeadSprite(const int sprite)
 		case 2019:
 		case 2047:
 		case 2048:
+		case 2213:
+		case 2214:
 			return true;
 			break;
 		default:
@@ -13331,7 +13779,7 @@ Monster getMonsterFromPlayerRace(int playerRace)
 			return MONSTER_S;
 			break;
 		case RACE_X:
-			return HUMAN;
+			return GNOME;
 			break;
 		default:
 			return HUMAN;
@@ -13461,6 +13909,9 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 				case MONSTER_G:
 					this->sprite = stats[playernum]->sex == FEMALE ? 2062 : 2061;
 					break;
+				case GNOME:
+					this->sprite = stats[playernum]->sex == FEMALE ? 2216 : 2215;
+					break;
 				default:
 					break;
 			}
@@ -13561,6 +14012,9 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 					break;
 				case MONSTER_G:
 					this->sprite = stats[playernum]->sex == FEMALE ? 2060 : 2058;
+					break;
+				case GNOME:
+					this->sprite = stats[playernum]->sex == FEMALE ? 2219 : 2217;
 					break;
 				default:
 					break;
@@ -13663,6 +14117,9 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 				case MONSTER_G:
 					this->sprite = stats[playernum]->sex == FEMALE ? 2059 : 2057;
 					break;
+				case GNOME:
+					this->sprite = stats[playernum]->sex == FEMALE ? 2220 : 2218;
+					break;
 				default:
 					break;
 			}
@@ -13750,6 +14207,9 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 				case MONSTER_G:
 					this->sprite = stats[playernum]->sex == FEMALE ? 2054 : 2050;
 					break;
+				case GNOME:
+					this->sprite = 2221;
+					break;
 				default:
 					break;
 			}
@@ -13836,6 +14296,9 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 					break;
 				case MONSTER_G:
 					this->sprite = stats[playernum]->sex == FEMALE ? 2053 : 2049;
+					break;
+				case GNOME:
+					this->sprite = 2222;
 					break;
 				default:
 					break;

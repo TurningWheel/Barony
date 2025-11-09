@@ -175,7 +175,7 @@ static std::vector<Sint32> monsterSprites[NUMMONSTERS] = {
 
     // GNOME
     {
-        295, 1426, 1430
+        295, 1426, 1430, 2213, 2214
     },
 
     // DEMON

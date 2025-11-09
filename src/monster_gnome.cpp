@@ -902,6 +902,7 @@ void gnomeMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	int bodypart;
 	bool wearingring = false;
 
+	bool debugModel = monsterDebugModels(my, &dist);
 	GnomeVariant gnomeVariant = GNOME_DEFAULT;
 	if ( myStats )
 	{
@@ -1001,7 +1002,7 @@ void gnomeMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		}
 		else
 		{
-			my->z = 2.75;
+			my->z = 2.25;
 			my->pitch = 0;
 		}
 		my->creatureHandleLiftZ();
@@ -1024,6 +1025,12 @@ void gnomeMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		entity->x = my->x;
 		entity->y = my->y;
 		entity->z = my->z;
+
+		if ( bodypart <= LIMB_HUMANOID_CLOAK )
+		{
+			entity->z += 0.5;
+		}
+
 		if ( MONSTER_ATTACK == MONSTER_POSE_MAGIC_WINDUP1 && bodypart == LIMB_HUMANOID_RIGHTARM )
 		{
 			// don't let the creatures's yaw move the casting arm
@@ -1579,8 +1586,8 @@ void gnomeMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					// push back for larger armors
 					entity->x -= cos(my->yaw) * 1.0;
 					entity->y -= sin(my->yaw) * 1.0;
-					entity->yaw += PI / 2;
 				}
+				entity->yaw += PI / 2;
 				my->setHumanoidLimbOffset(entity, GNOME, LIMB_HUMANOID_CLOAK);
 				break;
 				// helm

@@ -114,7 +114,18 @@ void actSummonTrap(Entity* my)
 					{
 	                    LICH, SHOPKEEPER, DEVIL, MIMIC, CRAB, BAT_SMALL,
 	                    MINOTAUR, LICH_FIRE, LICH_ICE, NOTHING,
-	                    SENTRYBOT, SPELLBOT, GYROBOT, DUMMYBOT
+	                    SENTRYBOT, SPELLBOT, GYROBOT, DUMMYBOT,
+						REVENANT_SKULL,
+						MINIMIMIC,
+						MONSTER_ADORCISED_WEAPON,
+						FLAME_ELEMENTAL,
+						HOLOGRAM,
+						EARTH_ELEMENTAL,
+						MONSTER_UNUSED_5,
+						MONSTER_UNUSED_6,
+						MONSTER_UNUSED_7,
+						MONSTER_UNUSED_8,
+						MOTH_SMALL
 	                };
 	                
 					std::vector<Monster> possibleTypes;

@@ -4172,7 +4172,7 @@ namespace ConsoleCommands {
 		}
 		if (players[clientnum]->entity)
 		{
-			spellEffectPolymorph(players[clientnum]->entity, players[clientnum]->entity, true, TICKS_PER_SECOND * 60 * 2);
+			spellEffectPolymorph(players[clientnum]->entity, players[clientnum]->entity, true, TICKS_PER_SECOND * 60 * 5);
 			if ( argc > 1 )
 			{
 				int type = std::min(NUMMONSTERS - 1, std::max((int)HUMAN, atoi(argv[1])));

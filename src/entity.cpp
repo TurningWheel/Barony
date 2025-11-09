@@ -16243,8 +16243,19 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 		{
 			if ( baseXp > 5 )
 			{
-				baseXp += ((srcStats->LVL - destStats->LVL) + 20) / 5;
-				baseXp = std::max(5, baseXp);
+				baseXp += ((srcStats->LVL - destStats->LVL) + 20) / 4;
+				if ( destStats->LVL >= 60 )
+				{
+					baseXp = std::max(3, baseXp);
+				}
+				else if ( destStats->LVL >= 50 )
+				{
+					baseXp = std::max(4, baseXp);
+				}
+				else
+				{
+					baseXp = std::max(5, baseXp);
+				}
 			}
 		}
 	}
@@ -16288,24 +16299,35 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 		}
 
 		// find other players to divide shares with
-		node_t* node;
-		for ( node = map.creatures->first; node != nullptr; node = node->next ) //Since only looking at players, this should just iterate over players[]
+		//node_t* node;
+		//for ( node = map.creatures->first; node != nullptr; node = node->next ) //Since only looking at players, this should just iterate over players[]
+		//{
+		//	Entity* entity = (Entity*)node->element;
+		//	if ( entity == this )
+		//	{
+		//		continue;
+		//	}
+		//	if ( entity && entity->behavior == &actPlayer )
+		//	{
+		//		if ( entityDist(this, entity) < shareRange )
+		//		{
+		//			++numshares;
+		//			shares[numshares] = entity;
+		//			if ( numshares == MAXPLAYERS - 1 )
+		//			{
+		//				break;
+		//			}
+		//		}
+		//	}
+		//}
+		for ( int i = 0; i < MAXPLAYERS; ++i )
 		{
-			Entity* entity = (Entity*)node->element;
-			if ( entity == this )
+			if ( !client_disconnected[i] && i != player )
 			{
-				continue;
-			}
-			if ( entity && entity->behavior == &actPlayer )
-			{
-				if ( entityDist(this, entity) < shareRange )
+				++numshares;
+				if ( players[i]->entity )
 				{
-					++numshares;
-					shares[numshares] = entity;
-					if ( numshares == MAXPLAYERS - 1 )
-					{
-						break;
-					}
+					shares[numshares] = players[i]->entity;
 				}
 			}
 		}
@@ -16314,19 +16336,26 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 		real_t numSharesMult = 1.0;
 		if ( numshares == 1 )
 		{
-			numSharesMult = 0.8;
+			numSharesMult = 0.7;
 		}
 		else if ( numshares == 2 )
 		{
-			numSharesMult = 0.7;
+			numSharesMult = 0.6;
 		}
 		else if ( numshares >= 3 )
 		{
-			numSharesMult = 0.6;
+			numSharesMult = 0.5;
 		}
 		if ( numshares )
 		{
-			xpGain *= numSharesMult;
+			if ( (xpGain * numSharesMult) < 3 )
+			{
+				xpGain = 3;
+			}
+			else
+			{
+				xpGain *= numSharesMult;
+			}
 		}
 
 		// award XP to everyone else in the group
@@ -16345,7 +16374,7 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 				if ( stats[this->skill[2]] )
 				{
 					// award XP to player's followers.
-					for ( node = stats[this->skill[2]]->FOLLOWERS.first; node != nullptr; node = node->next )
+					for ( node_t* node = stats[this->skill[2]]->FOLLOWERS.first; node != nullptr; node = node->next )
 					{
 						Entity* follower = nullptr;
 						if ( (Uint32*)node->element )
@@ -20653,6 +20682,7 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 				case MONSTER_M:
 				case MONSTER_S:
 				case MONSTER_G:
+				case GNOME:
 					weaponLimb->x += 0.5 * cos(weaponArmLimb->yaw + PI / 2);
 					weaponLimb->y += 0.5 * sin(weaponArmLimb->yaw + PI / 2);
 					break;
@@ -20726,6 +20756,7 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 					case MONSTER_M:
 					case MONSTER_S:
 					case MONSTER_G:
+					case GNOME:
 						weaponLimb->x += -.1 * cos(weaponArmLimb->yaw + PI / 2) + 0.25 * cos(weaponArmLimb->yaw);
 						weaponLimb->y += -.1 * sin(weaponArmLimb->yaw + PI / 2) + 0.25 * sin(weaponArmLimb->yaw);
 						weaponLimb->z += -1;
@@ -20781,6 +20812,7 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 					case MONSTER_M:
 					case MONSTER_S:
 					case MONSTER_G:
+					case GNOME:
 						weaponLimb->x += -.1 * cos(weaponArmLimb->yaw + PI / 2) + 0.5 * cos(weaponArmLimb->yaw);
 						weaponLimb->y += -.1 * sin(weaponArmLimb->yaw + PI / 2) + 0.5 * sin(weaponArmLimb->yaw);
 						weaponLimb->z += -1;
@@ -20843,6 +20875,7 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 					case MONSTER_M:
 					case MONSTER_S:
 					case MONSTER_G:
+					case GNOME:
 						weaponLimb->x += -.1 * cos(weaponArmLimb->yaw + PI / 2) + 0.5 * cos(weaponArmLimb->yaw);
 						weaponLimb->y += -.1 * sin(weaponArmLimb->yaw + PI / 2) + 0.5 * sin(weaponArmLimb->yaw);
 						weaponLimb->z += -1;
@@ -20894,13 +20927,15 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 				case MONSTER_M:
 				case MONSTER_S:
 				case MONSTER_G:
+				case GNOME:
 					weaponLimb->focaly -= 0.05; // minor z-fighting fix.
 					break;
 				default:
 					break;
 			}
 
-			if ( monsterType == MONSTER_D || monsterType == MONSTER_M || monsterType == MONSTER_S || monsterType == MONSTER_G )
+			if ( monsterType == MONSTER_D || monsterType == MONSTER_M || monsterType == MONSTER_S || monsterType == MONSTER_G
+				|| monsterType == GNOME )
 			{
 				weaponLimb->x += limbs[monsterType][17][0] * cos(weaponArmLimb->yaw + PI / 2) + limbs[monsterType][17][1] * cos(weaponArmLimb->yaw);
 				weaponLimb->y += limbs[monsterType][17][0] * sin(weaponArmLimb->yaw + PI / 2) + limbs[monsterType][17][1] * sin(weaponArmLimb->yaw);
@@ -20963,6 +20998,7 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 				case MONSTER_M:
 				case MONSTER_S:
 				case MONSTER_G:
+				case GNOME:
 					weaponLimb->x += 0.5 * cos(weaponArmLimb->yaw + PI / 2);
 					weaponLimb->y += 0.5 * sin(weaponArmLimb->yaw + PI / 2);
 					break;
@@ -21140,6 +21176,7 @@ void doParticleEffectForTouchSpell(Entity& my, Entity* focalLimb, Monster monste
 		|| monsterType == GOATMAN
 		|| monsterType == MONSTER_D
 		|| monsterType == MONSTER_G
+		|| monsterType == GNOME
 		|| monsterType == MONSTER_M )
 	{
 		z += 0.5;
@@ -26432,7 +26469,11 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 			{
 				limb->x -= cos(this->yaw) * 1.5;
 				limb->y -= sin(this->yaw) * 1.5;
-				limb->yaw += PI / 2;
+				limb->z -= 0.5;
+				if ( limb->sprite == items[CLOAK_BACKPACK].index )
+				{
+					limb->z -= 0.75;
+				}
 			}
 			else if ( limbType == LIMB_HUMANOID_TORSO )
 			{
@@ -26448,13 +26489,17 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 					limb->focalx += 0.5;
 				}
 
-				if ( limb->sprite != 1427 && limb->sprite != 1431 && limb->sprite != 296 )
+				if ( limb->sprite != 1427 && limb->sprite != 1431 && limb->sprite != 296 && limb->sprite != 2215 && limb->sprite != 2216 )
 				{
 					limb->focalz -= 0.25;
 				}
+				if ( limb->sprite == 2216 )
+				{
+					limb->focalx += 0.25;
+				}
 				if (limb->sprite == items[MACHINIST_APRON].indexShort)
 				{
-					limb->focalx -= 0.25;
+					//limb->focalx -= 0.25;
 					limb->focalz += 0.5;
 				}
 
@@ -26505,13 +26550,19 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 				}
 
 				if ( limb->sprite != 1434
-					&& limb->sprite != 299 )
+					&& limb->sprite != 299
+					&& limb->sprite != 2221 )
 				{
 					limb->x -= 0.25 * cos(this->yaw + PI / 2);
 					limb->y -= 0.25 * sin(this->yaw + PI / 2);
 				}
 				if ( limb->sprite == 1434 )
 				{
+					limb->focalz -= 0.25;
+				}
+				else if ( limb->sprite == 2221 )
+				{
+					limb->focalx += 0.25;
 					limb->focalz -= 0.25;
 				}
 			}
@@ -26526,13 +26577,19 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 				}
 
 				if ( limb->sprite != 1436
-					&& limb->sprite != 301 )
+					&& limb->sprite != 301
+					&& limb->sprite != 2222 )
 				{
 					limb->x += 0.25 * cos(this->yaw + PI / 2);
 					limb->y += 0.25 * sin(this->yaw + PI / 2);
 				}
 				if ( limb->sprite == 1436 )
 				{
+					limb->focalz -= 0.25;
+				}
+				else if ( limb->sprite == 2222 )
+				{
+					limb->focalx += 0.25;
 					limb->focalz -= 0.25;
 				}
 			}
@@ -27305,8 +27362,14 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 				{
 					shieldLimb->focalz -= 2.25;
 				}
-				shieldLimb->x += 0.5 * cos(this->yaw + PI / 2) + 0.5 * cos(this->yaw);
-				shieldLimb->y += 0.5 * sin(this->yaw + PI / 2) + 0.5 * sin(this->yaw);
+				if ( race == GNOME )
+				{
+					shieldLimb->x += -0.75 * cos(this->yaw);
+					shieldLimb->y += -0.75 * sin(this->yaw);
+					shieldLimb->z += -0.5;
+				}
+				shieldLimb->x += 0.55 * cos(this->yaw + PI / 2) + 0.5 * cos(this->yaw);
+				shieldLimb->y += 0.55 * sin(this->yaw + PI / 2) + 0.5 * sin(this->yaw);
 				shieldLimb->z += 0;
 				shieldLimb->scalex = 0.8;
 				shieldLimb->scaley = 0.8;
