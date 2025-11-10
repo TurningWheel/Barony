@@ -33853,10 +33853,10 @@ void Player::Hotbar_t::updateHotbar()
 
 		Item* hotbarItem = uidToItem(hotbar[num].item);
 		slotItem->setUserData(nullptr);
-		/*if ( hotbarItem && hotbarItem->type == SPELL_ITEM )
+		if ( hotbarItem && hotbarItem->type == SPELL_ITEM )
 		{
 			slotItem->setUserData(&GAMEUI_FRAMEDATA_SPELL_LEARNABLE);
-		}*/
+		}
 
 		if ( current_hotbar == num )
 		{
@@ -33888,10 +33888,10 @@ void Player::Hotbar_t::updateHotbar()
 				highlightSlot->setSize(pos); // this follows the slots around
 				highlightSlotImg->disabled = false;
 				highlightSlotItem->setUserData(nullptr);
-				/*if ( hotbarItem && hotbarItem->type == SPELL_ITEM )
+				if ( hotbarItem && hotbarItem->type == SPELL_ITEM )
 				{
 					highlightSlotItem->setUserData(&GAMEUI_FRAMEDATA_SPELL_LEARNABLE);
-				}*/
+				}
 				updateSlotFrameFromItem(highlightSlotItem, hotbarItem);
 
 				if ( player.inventoryUI.frame )

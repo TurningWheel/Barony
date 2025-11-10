@@ -1340,6 +1340,10 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 			{
 				return MODULE_NONE;
 			}
+			else if ( GenericGUI[player.playernum].itemfxGUI.bOpen )
+			{
+				return MODULE_NONE;
+			}
 			else if ( GenericGUI[player.playernum].featherGUI.bOpen )
 			{
 				return MODULE_NONE;
@@ -1702,6 +1706,10 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 				}
 			}
 			else if ( GenericGUI[player.playernum].tinkerGUI.bOpen )
+			{
+				return MODULE_NONE;
+			}
+			else if ( GenericGUI[player.playernum].itemfxGUI.bOpen )
 			{
 				return MODULE_NONE;
 			}

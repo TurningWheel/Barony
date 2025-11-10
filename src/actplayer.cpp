@@ -10417,64 +10417,50 @@ void actPlayer(Entity* my)
 					hit.entity->flags[INVISIBLE] )
 				{
 					// code that almost fixes door frame collision
-					//real_t slidex = 0.0;
-					//real_t slidey = 0.0;
-					//if ( hit.entity->yaw >= -0.1 && hit.entity->yaw <= 0.1 )
-					//{
-					//	// east/west doorway
-					//	if ( my->y < floor(hit.entity->y / 16) * 16 + 8 )
-					//	{
-					//		// slide south
-					//		slidex = 0;
-					//		slidey = .25;
-					//	}
-					//	else
-					//	{
-					//		// slide north
-					//		slidex = 0;
-					//		slidey = -.25;
-					//	}
-					//}
-					//else
-					//{
-					//	// north/south doorway
-					//	if ( my->x < floor(hit.entity->x / 16) * 16 + 8 )
-					//	{
-					//		// slide east
-					//		slidex = .25;
-					//		slidey = 0;
-					//	}
-					//	else
-					//	{
-					//		// slide west
-					//		slidex = -.25;
-					//		slidey = 0;
-					//	}
-					//}
+					bool doSlide = true;
+					if ( hit.entity->yaw >= -0.1 && hit.entity->yaw <= 0.1 )
+					{
+						// east/west doorway
+						if ( static_cast<int>(hit.entity->y / 16) != static_cast<int>(my->y / 16) )
+						{
+							doSlide = false;
+						}
+					}
+					else
+					{
+						// north/south doorway
+						if ( static_cast<int>(hit.entity->x / 16) != static_cast<int>(my->x / 16) )
+						{
+							doSlide = false;
+						}
+					}
 
-					real_t centerx = floor(hit.entity->x / 16) * 16 + 8;
-					real_t centery = floor(hit.entity->y / 16) * 16 + 8;
-					real_t tangent = atan2(centery - my->y, centerx - my->x);
-					real_t dir = atan2(my->vel_y, my->vel_x);
-					real_t spd = sqrt(my->vel_x * my->vel_x + my->vel_y * my->vel_y);
-					//real_t dirx = cos(tangent - dir);
-					//real_t diry = sin(tangent - dir);
-					//real_t tangent2 = atan2(diry, dirx);
-					real_t diff = tangent - dir;
-					if ( diff >= PI )
+					if ( doSlide )
 					{
-						diff -= 2 * PI;
-					}
-					else if ( diff < -PI )
-					{
-						diff += 2 * PI;
-					}
-					//messagePlayer(0, MESSAGE_DEBUG, "%.2f", diff);
-					if ( abs(diff) < PI / 2 )
-					{
-						dir += (tangent - dir);
-						my->vel_x = spd * cos(dir);
-						my->vel_y = spd * sin(dir);
+						real_t centerx = floor(hit.entity->x / 16) * 16 + 8;
+						real_t centery = floor(hit.entity->y / 16) * 16 + 8;
+						real_t tangent = atan2(centery - my->y, centerx - my->x);
+						real_t dir = atan2(my->vel_y, my->vel_x);
+						real_t spd = sqrt(my->vel_x * my->vel_x + my->vel_y * my->vel_y);
+						//real_t dirx = cos(tangent - dir);
+						//real_t diry = sin(tangent - dir);
+						//real_t tangent2 = atan2(diry, dirx);
+						real_t diff = tangent - dir;
+						if ( diff >= PI )
+						{
+							diff -= 2 * PI;
+						}
+						else if ( diff < -PI )
+						{
+							diff += 2 * PI;
+						}
+						//messagePlayer(0, MESSAGE_DEBUG, "%.2f", diff);
+						if ( abs(diff) < PI / 2 )
+						{
+							dir += (tangent - dir);
+							my->vel_x = spd * cos(dir);
+							my->vel_y = spd * sin(dir);
+						}
 					}
 
 					/*if ( abs(slidex) > 0.0 )

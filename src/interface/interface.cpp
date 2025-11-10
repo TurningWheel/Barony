@@ -23619,6 +23619,7 @@ void GenericGUIMenu::ItemEffectGUI_t::getItemEffectCost(Item* itemUsedWith, int&
 				skillTier = std::max(0, (skillLVL - spell->difficulty)) / 20;
 			}
 
+			int noSkillPenalty = 0;
 			if ( itemUsedWith->type == BRONZE_AXE
 				|| itemUsedWith->type == BRONZE_MACE
 				|| itemUsedWith->type == BRONZE_SWORD
@@ -23635,7 +23636,7 @@ void GenericGUIMenu::ItemEffectGUI_t::getItemEffectCost(Item* itemUsedWith, int&
 				goldCost = 400;
 				if ( skillTier < 1 )
 				{
-					goldCost += 1000000; // denotes no skill lvl
+					noSkillPenalty += 1000000; // denotes no skill lvl
 				}
 			}
 			else if ( itemUsedWith->type == STEEL_AXE
@@ -23647,13 +23648,14 @@ void GenericGUIMenu::ItemEffectGUI_t::getItemEffectCost(Item* itemUsedWith, int&
 				goldCost = 1600;
 				if ( skillTier < 2 )
 				{
-					goldCost += 1000000; // denotes no skill lvl
+					noSkillPenalty += 1000000; // denotes no skill lvl
 				}
 			}
 
 			real_t ratio = getSpellDamageFromID(SPELL_ENHANCE_WEAPON, players[parentGUI.gui_player]->entity, stats[parentGUI.gui_player], players[parentGUI.gui_player]->entity) / 100.0;
 			real_t minRatio = getSpellDamageSecondaryFromID(SPELL_ENHANCE_WEAPON, players[parentGUI.gui_player]->entity, stats[parentGUI.gui_player], players[parentGUI.gui_player]->entity) / 100.0;
 			goldCost *= std::max(minRatio, ratio);
+			goldCost += noSkillPenalty;
 		}
 		else if ( currentMode == ITEMFX_MODE_RESHAPE_WEAPON )
 		{
@@ -23666,6 +23668,7 @@ void GenericGUIMenu::ItemEffectGUI_t::getItemEffectCost(Item* itemUsedWith, int&
 				skillTier = std::max(0, (skillLVL - spell->difficulty)) / 20;
 			}
 
+			int noSkillPenalty = 0;
 			if ( itemUsedWith->type == BRONZE_AXE
 				|| itemUsedWith->type == BRONZE_MACE
 				|| itemUsedWith->type == BRONZE_SWORD )
@@ -23680,7 +23683,7 @@ void GenericGUIMenu::ItemEffectGUI_t::getItemEffectCost(Item* itemUsedWith, int&
 				goldCost = 200;
 				if ( skillTier < 1 )
 				{
-					goldCost += 1000000; // denotes no skill lvl
+					noSkillPenalty += 1000000; // denotes no skill lvl
 				}
 			}
 			else if ( itemUsedWith->type == STEEL_AXE
@@ -23691,7 +23694,7 @@ void GenericGUIMenu::ItemEffectGUI_t::getItemEffectCost(Item* itemUsedWith, int&
 				goldCost = 300;
 				if ( skillTier < 2 )
 				{
-					goldCost += 1000000; // denotes no skill lvl
+					noSkillPenalty += 1000000; // denotes no skill lvl
 				}
 			}
 			else if ( itemUsedWith->type == CRYSTAL_BATTLEAXE
@@ -23702,13 +23705,14 @@ void GenericGUIMenu::ItemEffectGUI_t::getItemEffectCost(Item* itemUsedWith, int&
 				goldCost = 400;
 				if ( skillTier < 3 )
 				{
-					goldCost += 1000000; // denotes no skill lvl
+					noSkillPenalty += 1000000; // denotes no skill lvl
 				}
 			}
 
 			real_t ratio = getSpellDamageFromID(SPELL_RESHAPE_WEAPON, players[parentGUI.gui_player]->entity, stats[parentGUI.gui_player], players[parentGUI.gui_player]->entity) / 100.0;
 			real_t minRatio = getSpellDamageSecondaryFromID(SPELL_RESHAPE_WEAPON, players[parentGUI.gui_player]->entity, stats[parentGUI.gui_player], players[parentGUI.gui_player]->entity) / 100.0;
 			goldCost *= std::max(minRatio, ratio);
+			goldCost += noSkillPenalty;
 		}
 		else if ( currentMode == ITEMFX_MODE_ALTER_ARROW )
 		{
@@ -25372,7 +25376,7 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 								if ( auto spell = getSpellFromID(SPELL_RESHAPE_WEAPON) )
 								{
 									char buf[128] = "";
-									snprintf(buf, sizeof(buf), Language::get(6804), getSkillLangEntry(spell->ID));
+									snprintf(buf, sizeof(buf), Language::get(6804), getSkillLangEntry(spell->skillID));
 									actionPromptTxt->setText(buf);
 								}
 							}
@@ -25381,7 +25385,7 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 								if ( auto spell = getSpellFromID(SPELL_ENHANCE_WEAPON) )
 								{
 									char buf[128] = "";
-									snprintf(buf, sizeof(buf), Language::get(6804), getSkillLangEntry(spell->ID));
+									snprintf(buf, sizeof(buf), Language::get(6804), getSkillLangEntry(spell->skillID));
 									actionPromptTxt->setText(buf);
 								}
 							}

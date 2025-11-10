@@ -6702,7 +6702,6 @@ void Entity::handleEffects(Stat* myStats)
 		if ( myStats->amulet && myStats->amulet->type == AMULET_BURNINGRESIST )
 		{
 			this->char_fire = 0;
-			messagePlayer(player, MESSAGE_EQUIPMENT | MESSAGE_HINT, Language::get(6867));
 			this->degradeAmuletProc(myStats, AMULET_BURNINGRESIST);
 		}
 
@@ -21906,6 +21905,13 @@ bool Entity::setEffect(int effect, std::variant<bool, Uint8> value, int duration
 					}
 				}
 				break;
+			case EFF_POISONED:
+				if ( myStats->amulet && myStats->amulet->type == AMULET_POISONRESISTANCE )
+				{
+					this->degradeAmuletProc(myStats, AMULET_POISONRESISTANCE);
+					return false;
+				}
+				break;
 			case EFF_GREASY:
 				if ( myStats->type == GOATMAN )
 				{
@@ -25138,6 +25144,11 @@ bool Entity::SetEntityOnFire(Entity* sourceOfFire)
 				}
 				if ( myStats->breastplate && myStats->breastplate->type == MACHINIST_APRON )
 				{
+					return false;
+				}
+				if ( myStats->amulet && myStats->amulet->type == AMULET_BURNINGRESIST )
+				{
+					this->degradeAmuletProc(myStats, AMULET_BURNINGRESIST);
 					return false;
 				}
 			}
@@ -29743,9 +29754,20 @@ bool Entity::degradeAmuletProc(Stat* myStats, ItemType type)
 	{
 		if ( myStats->amulet->status > BROKEN )
 		{
-			int chance = 8 + 4 * (shouldInvertEquipmentBeatitude(myStats) ? abs(myStats->amulet->beatitude) : myStats->amulet->beatitude);
-			if ( local_rng.rand() % std::max(chance, 1) == 0 && !this->spellEffectPreserveItem(myStats->amulet) )
+			if ( ::ticks - myStats->itemLastDegradeTick[myStats->amulet->type] < 3 * TICKS_PER_SECOND )
 			{
+				return false;
+			}
+			myStats->itemLastDegradeTick[myStats->amulet->type] = ::ticks;
+
+			int chance = 8 + 4 * (shouldInvertEquipmentBeatitude(myStats) ? abs(myStats->amulet->beatitude) : myStats->amulet->beatitude);
+			if ( chance > 0 && local_rng.rand() % std::max(chance, 1) == 0 && !this->spellEffectPreserveItem(myStats->amulet) )
+			{
+				if ( player >= 0 && type == AMULET_BURNINGRESIST )
+				{
+					messagePlayer(player, MESSAGE_EQUIPMENT | MESSAGE_HINT, Language::get(6867));
+				}
+
 				myStats->amulet->count = 1;
 				myStats->amulet->status = static_cast<Status>(std::max(static_cast<int>(BROKEN), myStats->amulet->status - 1));
 				if ( myStats->amulet->status != BROKEN )

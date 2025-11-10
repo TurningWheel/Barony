@@ -527,6 +527,7 @@ public:
 		void modifyProjectile(Entity& my, Entity& projectile);
 	};
 	MonsterRangedAccuracy monsterRangedAccuracy;
+	std::map<ItemType, Uint32> itemLastDegradeTick;
 };
 extern Stat* stats[MAXPLAYERS];
 

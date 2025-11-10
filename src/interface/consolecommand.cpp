@@ -429,6 +429,96 @@ namespace ConsoleCommands {
 		lastname = name.c_str();
 		});
 
+	static ConsoleCommand ccmd_spawntome("/spawntome", "spawn an item (cheat)", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+		if ( argc < 2 )
+		{
+			return;
+		}
+		std::string name = argv[1];
+		for ( int arg = 2; arg < argc; ++arg ) {
+			name.append(" ");
+			name.append(argv[arg]);
+		}
+		auto& rng = local_rng;
+
+		int skillID = 0;
+		switch ( rng.rand() % 3 )
+		{
+		case 0:
+			skillID = PRO_MYSTICISM;
+			break;
+		case 1:
+			skillID = PRO_SORCERY;
+			break;
+		case 2:
+			skillID = PRO_THAUMATURGY;
+			break;
+		default:
+			break;
+		}
+		if ( strstr("mysticism", name.c_str()) )
+		{
+			skillID = PRO_MYSTICISM;
+		}
+		else if ( strstr("sorcery", name.c_str()) )
+		{
+			skillID = PRO_SORCERY;
+		}
+		else if ( strstr("thaumaturgy", name.c_str()) )
+		{
+			skillID = PRO_THAUMATURGY;
+		}
+
+		int itemType = SPELLBOOK_FORCEBOLT;
+		std::vector<std::pair<int, int>> chances;
+		int minDifficulty = std::min(60, (currentlevel / 5) * 20);
+		for ( auto& def : allGameSpells )
+		{
+			if ( auto spell = def.second )
+			{
+				if ( spell->ID != SPELL_NONE && !spell->hide_from_ui && currentlevel >= spell->drop_table )
+				{
+					if ( (spell->difficulty / 20) <= (1 + (currentlevel / 5))
+						&& (spell->difficulty >= minDifficulty)
+						&& spell->skillID == skillID )
+					{
+						chances.push_back(std::make_pair(spell->skillID, spell->ID));
+					}
+				}
+			}
+		}
+
+		if ( chances.size() )
+		{
+			Uint32 appearance = 0;
+			int pick = rng.rand() % chances.size();
+			int spellbookType = getSpellbookFromSpellID(chances[pick].second);
+			if ( items[spellbookType].category == SPELLBOOK )
+			{
+				itemType = spellbookType;
+			}
+			else
+			{
+				itemType = TOME_SORCERY;
+				appearance = spellTomeIDToAppearance[chances[pick].second];
+				if ( chances[pick].first == PRO_MYSTICISM )
+				{
+					itemType = TOME_MYSTICISM;
+				}
+				else if ( chances[pick].first == PRO_THAUMATURGY )
+				{
+					itemType = TOME_THAUMATURGY;
+				}
+			}
+			dropItem(newItem(static_cast<ItemType>(itemType), EXCELLENT, 0, 1, appearance, true, &stats[clientnum]->inventory), 0);
+		}
+	});
+
 	static ConsoleCommand ccmd_spawnitem("/spawnitem", "spawn an item (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
@@ -4109,6 +4199,116 @@ namespace ConsoleCommands {
 					bool oldIntro = intro;
 					intro = true;
 					bool learned = addSpell(spell->ID, clientnum, true);
+					intro = oldIntro;
+				}
+			}
+		}
+		return;
+		});
+
+	static ConsoleCommand ccmd_levelspells_sorcery("/levelspells_sorcery", "teach the player some spells (cheat)", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+
+		for ( int i = 0; i < NUM_SPELLS; ++i )
+		{
+			if ( allGameSpells.find(i) != allGameSpells.end() )
+			{
+				if ( spell_t* spell = allGameSpells[i] )
+				{
+					bool oldIntro = intro;
+					intro = true;
+					if ( spell->skillID == PRO_SORCERY
+						&& spell->difficulty <= stats[clientnum]->getProficiency(PRO_SORCERY)
+						&& !spell->hide_from_ui && spell->drop_table >= 0 )
+					{
+						bool learned = addSpell(spell->ID, clientnum, true);
+					}
+					intro = oldIntro;
+				}
+			}
+		}
+		return;
+		});
+
+	static ConsoleCommand ccmd_levelspells_mysticism("/levelspells_mysticism", "teach the player some spells (cheat)", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+
+		for ( int i = 0; i < NUM_SPELLS; ++i )
+		{
+			if ( allGameSpells.find(i) != allGameSpells.end() )
+			{
+				if ( spell_t* spell = allGameSpells[i] )
+				{
+					bool oldIntro = intro;
+					intro = true;
+					if ( spell->skillID == PRO_MYSTICISM
+						&& spell->difficulty <= stats[clientnum]->getProficiency(PRO_MYSTICISM)
+						&& !spell->hide_from_ui && spell->drop_table >= 0 )
+					{
+						bool learned = addSpell(spell->ID, clientnum, true);
+					}
+					intro = oldIntro;
+				}
+			}
+		}
+		return;
+		});
+
+	static ConsoleCommand ccmd_collect_spellbooks("/collect_spellbooks", "collect some spells (cheat)", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+		node_t* nextnode = nullptr;
+		for ( auto node = map.entities->first; node; node = nextnode )
+		{
+			nextnode = node->next;
+			if ( Entity* entity = (Entity*)node->element )
+			{
+				if ( entity->behavior == &actItem && (items[entity->skill[10]].category == SPELLBOOK || items[entity->skill[10]].category == TOME_SPELL) )
+				{
+					Entity* oldSelected = selectedEntity[0];
+					selectedEntity[0] = entity;
+					bool oldInRange = inrange[0];
+					inrange[0] = true;
+					actItem(entity);
+					inrange[0] = oldInRange;
+					selectedEntity[0] = oldSelected;
+				}
+			}
+		}
+	});
+
+	static ConsoleCommand ccmd_levelspells_thaumaturgy("/levelspells_thaumaturgy", "teach the player some spells (cheat)", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+
+		for ( int i = 0; i < NUM_SPELLS; ++i )
+		{
+			if ( allGameSpells.find(i) != allGameSpells.end() )
+			{
+				if ( spell_t* spell = allGameSpells[i] )
+				{
+					bool oldIntro = intro;
+					intro = true;
+					if ( spell->skillID == PRO_THAUMATURGY
+						&& spell->difficulty <= stats[clientnum]->getProficiency(PRO_THAUMATURGY)
+						&& !spell->hide_from_ui && spell->drop_table >= 0 )
+					{
+						bool learned = addSpell(spell->ID, clientnum, true);
+					}
 					intro = oldIntro;
 				}
 			}
