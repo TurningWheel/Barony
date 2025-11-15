@@ -1855,6 +1855,12 @@ public:
 	bool minimapShareProgress = false;
 	int playerWeightPercent = 100;
 	double playerSpeedMax = 12.5;
+	int playerACEpassive = 75;
+	int playerACEactive = 100;
+	double playerACEbless = 2.5;
+	bool doConditionalXPModifier = false;
+	int conditionalXPModLvlThreshold = 0;
+	int conditionalXPModPercent = 100;
 	inline bool inUse() { return usingCustomManager; };
 	void resetValues()
 	{
@@ -1865,6 +1871,12 @@ public:
 		minimapShareProgress = false;
 		playerWeightPercent = 100;
 		playerSpeedMax = 12.5;
+		playerACEpassive = 75;
+		playerACEactive = 100;
+		playerACEbless = 2.5;
+		doConditionalXPModifier = false;
+		conditionalXPModLvlThreshold = 0;
+		conditionalXPModPercent = 100;
 
 		minotaurForceEnableFloors.first.clear();
 		minotaurForceEnableFloors.second.clear();
@@ -1932,6 +1944,12 @@ public:
 		CustomHelpers::addMemberToRoot(d, "player_share_minimap_progress", rapidjson::Value(minimapShareProgress));
 		CustomHelpers::addMemberToRoot(d, "player_speed_weight_impact_percent", rapidjson::Value(playerWeightPercent));
 		CustomHelpers::addMemberToRoot(d, "player_speed_max", rapidjson::Value(playerSpeedMax));
+		CustomHelpers::addMemberToRoot(d, "player_AC_eff_passive_percent", rapidjson::Value(playerACEpassive));
+		CustomHelpers::addMemberToRoot(d, "player_AC_eff_block_percent", rapidjson::Value(playerACEactive));
+		CustomHelpers::addMemberToRoot(d, "player_AC_eff_blessing_percent", rapidjson::Value(playerACEbless));
+		CustomHelpers::addMemberToRoot(d, "enable_conditional_xp_modifier", rapidjson::Value(doConditionalXPModifier));
+		CustomHelpers::addMemberToRoot(d, "conditional_mod_lvl_difference_threshold", rapidjson::Value(conditionalXPModLvlThreshold));
+		CustomHelpers::addMemberToRoot(d, "conditional_xp_modifier_percent", rapidjson::Value(conditionalXPModPercent));
 
 		rapidjson::Value obj(rapidjson::kObjectType);
 		rapidjson::Value arr(rapidjson::kArrayType);
@@ -2125,6 +2143,30 @@ public:
 		{
 			playerSpeedMax = itr->value.GetDouble();
 			return true;
+		}
+		else if ( name.compare("player_AC_eff_passive_percent") == 0 )
+		{
+			playerACEpassive = itr->value.GetInt();
+		}
+		else if ( name.compare("player_AC_eff_block_percent") == 0 )
+		{
+			playerACEactive = itr->value.GetInt();
+		}
+		else if ( name.compare("player_AC_eff_blessing_percent") == 0 )
+		{
+			playerACEbless = itr->value.GetDouble();
+		}
+		else if ( name.compare("enable_conditional_xp_modifier") == 0 )
+		{
+			doConditionalXPModifier = itr->value.GetBool();
+		}
+		else if ( name.compare("conditional_mod_lvl_difference_threshold") == 0 )
+		{
+			conditionalXPModLvlThreshold = itr->value.GetInt();
+		}
+		else if ( name.compare("conditional_xp_modifier_percent") == 0 )
+		{
+			conditionalXPModPercent = itr->value.GetInt();
 		}
 		else if ( name.compare("minotaur_force_disable_on_floors") == 0 )
 		{

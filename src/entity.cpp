@@ -5453,7 +5453,15 @@ real_t Entity::getACEffectiveness(Entity* my, Stat* myStats, bool isPlayer, Enti
 
 	if ( myStats->defending )
 	{
-		return 1.0;
+		if ( gameplayCustomManager.inUse() && my->behavior == &actPlayer )
+		{
+			double playerACEffActive = gameplayCustomManager.playerACEactive / 100.0;
+			return std::max(0.0, std::min(1.0, playerACEffActive));
+		}
+		else
+		{
+			return 1.0;
+		}
 	}
 
 	int blessings = 0;
@@ -5496,6 +5504,13 @@ real_t Entity::getACEffectiveness(Entity* my, Stat* myStats, bool isPlayer, Enti
 		blessings += cursedItemIsBuff ? abs(myStats->amulet->beatitude) : myStats->amulet->beatitude;
 	}
 	outNumBlessings = blessings;
+
+	if ( gameplayCustomManager.inUse() && my->behavior == &actPlayer )
+	{
+		double playerACEffPassive = gameplayCustomManager.playerACEpassive / 100.0;
+		double blessingModifier = gameplayCustomManager.playerACEbless / 100.0;
+		return std::max(0.0, std::min(1.0, playerACEffPassive + blessingModifier * blessings));
+	}
 	return std::max(0.0, std::min(1.0, .75 + 0.025 * blessings));
 }
 
@@ -12964,6 +12979,14 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 	if ( gameplayCustomManager.inUse() )
 	{
 		xpGain = (gameplayCustomManager.globalXPPercent / 100.f) * xpGain;
+
+		if ( gameplayCustomManager.doConditionalXPModifier )
+		{
+			if ( destStats->LVL - srcStats->LVL >= gameplayCustomManager.conditionalXPModLvlThreshold ) // check if level difference exceeds level threshold
+			{
+				xpGain = (gameplayCustomManager.conditionalXPModPercent / 100.f) * xpGain;
+			}
+		}
 	}
 	else if ( gameModeManager.currentSession.challengeRun.isActive()
 		&& gameModeManager.currentSession.challengeRun.globalXPPercent != 100 )
