@@ -2528,6 +2528,19 @@ void Entity::modHP(int amount)
 		{
 			Compendium_t::Events_t::eventUpdateCodex(skill[2], Compendium_t::CPDM_HP_LOST_RUN, "hp", oldHP - entitystats->HP);
 			Compendium_t::Events_t::eventUpdateCodex(skill[2], Compendium_t::CPDM_HP_LOST_TOTAL, "hp", oldHP - entitystats->HP);
+
+			if ( gameplayCustomManager.inUse() && gameplayCustomManager.doTraumaDamage ) // damage maxHP based on settings
+			{
+				double damage = oldHP - entitystats->HP;
+				double percent = ( (double)gameplayCustomManager.traumaDamagePercent / 100.0 );
+				double traumaDmg = percent * damage;
+				int oldMaxHP = entitystats->MAXHP;
+
+				entitystats->MAXHP -= traumaDmg;
+				entitystats->MAXHP = std::min(oldMaxHP, std::max( gameplayCustomManager.traumaDamageHPLimit, entitystats->MAXHP ) );
+				entitystats->HP = std::min(entitystats->HP, entitystats->MAXHP);
+				// prevent maxHP from dropping below minimum, don't increase maxHP by mistake, don't allow HP to exceed maxHP
+			}
 		}
 	}
 }
@@ -3141,13 +3154,29 @@ void Entity::handleEffects(Stat* myStats)
 		static ConsoleVariable<int> cvar_lvlup_ally_sfx("/lvlup_ally_sfx", 520);
 
 		// increase MAXHP/MAXMP
-		myStats->MAXHP += HP_MOD;
+		if ( gameplayCustomManager.inUse() && behavior == &actPlayer )
+		{
+			myStats->MAXHP += gameplayCustomManager.playerLevelupHP;
+		}
+		else
+		{
+			myStats->MAXHP += HP_MOD;
+		}
 		modHP(getHPRestoreOnLevelUp());
 		myStats->HP = std::min(myStats->HP, myStats->MAXHP);
 		if ( !(behavior == &actMonster && monsterAllySummonRank != 0) )
 		{
-			myStats->MP += MP_MOD;
-			myStats->MAXMP += MP_MOD;
+			if ( gameplayCustomManager.inUse() && behavior == &actPlayer)
+			{
+				myStats->MP += gameplayCustomManager.playerLevelupMP;
+				myStats->MAXMP += gameplayCustomManager.playerLevelupMP;
+			}
+			else
+			{
+				myStats->MP += MP_MOD;
+				myStats->MAXMP += MP_MOD;
+			}
+
 			if ( behavior == &actPlayer && myStats->playerRace == RACE_INSECTOID && myStats->stat_appearance == 0 )
 			{
 				myStats->MAXMP = std::min(100, myStats->MAXMP);
@@ -5851,6 +5880,10 @@ Sint32 statGetSTR(Stat* entitystats, Entity* my)
 				break;
 		}
 	}
+	if ( gameplayCustomManager.inUse() && my && my->behavior == &actPlayer )
+	{
+		STR *= gameplayCustomManager.playerMultiplierSTR;
+	}
 	return STR;
 }
 
@@ -6099,6 +6132,10 @@ Sint32 statGetDEX(Stat* entitystats, Entity* my)
 	{
 		DEX += 8;
 	}
+	if ( gameplayCustomManager.inUse() && my && my->behavior == &actPlayer )
+	{
+		DEX *= gameplayCustomManager.playerMultiplierDEX;
+	}
 	return DEX;
 }
 
@@ -6206,6 +6243,10 @@ Sint32 statGetCON(Stat* entitystats, Entity* my)
 		percentHP = 100 - percentHP;
 		CON += percentHP / 10;
 	}
+	if ( gameplayCustomManager.inUse() && my && my->behavior == &actPlayer )
+	{
+		CON *= gameplayCustomManager.playerMultiplierCON;
+	}
 	return CON;
 }
 
@@ -6312,6 +6353,10 @@ Sint32 statGetINT(Stat* entitystats, Entity* my)
 	if ( my && entitystats->EFFECTS[EFF_DRUNK] && my->behavior == &actPlayer && entitystats->type == GOATMAN )
 	{
 		INT -= std::max(8, static_cast<int>(INT * 0.25));
+	}
+	if ( gameplayCustomManager.inUse() && my && my->behavior == &actPlayer )
+	{
+		INT *= gameplayCustomManager.playerMultiplierINT;
 	}
 	return INT;
 }
@@ -6479,6 +6524,10 @@ Sint32 statGetPER(Stat* entitystats, Entity* my)
 	{
 		PER -= std::max(5, PER / 2);
 	}
+	if ( gameplayCustomManager.inUse() && my && my->behavior == &actPlayer )
+	{
+		PER *= gameplayCustomManager.playerMultiplierPER;
+	}
 	return PER;
 }
 
@@ -6569,6 +6618,10 @@ Sint32 statGetCHR(Stat* entitystats, Entity* my)
 	if ( my && entitystats->EFFECTS[EFF_DRUNK] && my->behavior == &actPlayer && entitystats->type == GOATMAN )
 	{
 		CHR += std::max(4, static_cast<int>(CHR * .25));
+	}
+	if ( gameplayCustomManager.inUse() && my && my->behavior == &actPlayer )
+	{
+		CHR *= gameplayCustomManager.playerMultiplierCHR;
 	}
 	return CHR;
 }
@@ -23135,6 +23188,11 @@ int Entity::getFollowerBonusDamageResist()
 int Entity::getHPRestoreOnLevelUp()
 {
 	int hpMod = HP_MOD;
+
+	if ( gameplayCustomManager.inUse() && behavior == &actPlayer )
+	{
+		hpMod = gameplayCustomManager.playerLevelupHP;
+	}
 
 	if ( Stat* myStats = getStats() )
 	{
