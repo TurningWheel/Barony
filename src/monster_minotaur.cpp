@@ -687,9 +687,17 @@ void actMinotaurTimer(Entity* my)
 	if ( !my ) { return; }
 	auto& rng = my->entity_rng ? *my->entity_rng : local_rng;
 
+	int zapChance = 20;
+	if ( gameplayCustomManager.inUse() )
+	{
+		zapChance = gameplayCustomManager.zapBrigadeSpawnPercent;
+		zapChance = std::min(100, zapChance);
+		zapChance = std::max(0, zapChance);
+	}
+
 	MINOTAURTIMER_LIFE++;
 	if ( MINOTAURTIMER_LIFE == (getMinotaurTimeToArrive() - (TICKS_PER_SECOND * 30))
-		&& rng.rand() % 5 == 0 )
+		&& rng.rand() % 100 < zapChance )
 	{
 		int c;
 		bool spawnedsomebody = false;

@@ -1872,6 +1872,7 @@ public:
 	bool doTraumaDamage = false;
 	int traumaDamagePercent = 0;
 	int traumaDamageHPLimit = 25;
+	int zapBrigadeSpawnPercent = 20;
 	inline bool inUse() { return usingCustomManager; };
 	void resetValues()
 	{
@@ -1899,6 +1900,7 @@ public:
 		doTraumaDamage = false;
 		traumaDamagePercent = 0;
 		traumaDamageHPLimit = 25;
+		zapBrigadeSpawnPercent = 20;
 
 		minotaurForceEnableFloors.first.clear();
 		minotaurForceEnableFloors.second.clear();
@@ -1988,6 +1990,8 @@ public:
 		CustomHelpers::addMemberToRoot(d, "enable_player_trauma_damage", rapidjson::Value(doTraumaDamage));
 		CustomHelpers::addMemberToRoot(d, "trauma_damage_percent", rapidjson::Value(traumaDamagePercent));
 		CustomHelpers::addMemberToRoot(d, "trauma_damage_hp_floor", rapidjson::Value(traumaDamageHPLimit));
+
+		CustomHelpers::addMemberToRoot(d,"zap_brigade_spawnrate_percent", rapidjson::Value(zapBrigadeSpawnPercent));
 
 		rapidjson::Value obj(rapidjson::kObjectType);
 		rapidjson::Value arr(rapidjson::kArrayType);
@@ -2249,6 +2253,10 @@ public:
 		else if ( name.compare("trauma_damage_hp_floor") == 0 )
 		{
 			traumaDamageHPLimit = itr->value.GetInt();
+		}
+		else if ( name.compare("zap_brigade_spawnrate_percent") == 0 )
+		{
+			zapBrigadeSpawnPercent = itr->value.GetInt();
 		}
 		else if ( name.compare("minotaur_force_disable_on_floors") == 0 )
 		{
