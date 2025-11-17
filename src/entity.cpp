@@ -2536,6 +2536,11 @@ void Entity::modHP(int amount)
 				double traumaDmg = percent * damage;
 				int oldMaxHP = entitystats->MAXHP;
 
+				if (traumaDmg < 1.0)
+				{
+					traumaDmg = 0.0; // don't allow player to take unfair trauma damage
+				}
+
 				entitystats->MAXHP -= traumaDmg;
 				entitystats->MAXHP = std::min(oldMaxHP, std::max( gameplayCustomManager.traumaDamageHPLimit, entitystats->MAXHP ) );
 				entitystats->HP = std::min(entitystats->HP, entitystats->MAXHP);
