@@ -4316,6 +4316,53 @@ namespace ConsoleCommands {
 		return;
 		});
 
+	static ConsoleCommand ccmd_levelspells_cast("/levelspells_cast", "teach the player some spells (cheat)", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+		
+		if ( argc > 1 )
+		{
+			int type = atoi(argv[1]);
+			int spellID = SPELL_FORCEBOLT;
+			if ( type == 1 )
+			{
+				spellID = SPELL_LIGHTNING;
+			}
+			else if ( type == 2 )
+			{
+				spellID = SPELL_FIREBALL;
+			}
+			else if ( type == 3 )
+			{
+				spellID = SPELL_COLD;
+			}
+			else if ( type == 4 )
+			{
+				spellID = SPELL_MAGICMISSILE;
+			}
+
+			static int mana = 0;
+			static int rolls = 0;
+			messagePlayer(0, MESSAGE_DEBUG, "Mana: %d | Rolls: %d", mana, rolls);
+			if ( type == -1 )
+			{
+				mana = 0;
+				rolls = 0;
+				return;
+			}
+			for ( int i = 0; i < 10; ++i )
+			{
+				players[clientnum]->mechanics.baseSpellIncrementMP(getSpellFromID(spellID)->mana, getSpellFromID(spellID)->skillID);
+				mana += getSpellFromID(spellID)->mana;
+				castSpell(players[clientnum]->entity->getUID(), getSpellFromID(spellID), false, false);
+				++rolls;
+			}
+		}
+		});
+
 	static ConsoleCommand ccmd_gimmexp("/gimmexp", "give the player some XP (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
