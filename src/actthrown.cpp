@@ -554,6 +554,13 @@ void actThrown(Entity* my)
 					list_RemoveNode(my->mynode);
 					return;
 				}
+				else if ( item && item->type == TOOL_DUCK )
+				{
+					item->applyDuck(my->parent, my->x, my->y, nullptr, false);
+					free(item);
+					list_RemoveNode(my->mynode);
+					return;
+				}
 				else if ( itemCategory(item) == POTION )
 				{
 					switch ( item->type )
@@ -741,6 +748,14 @@ void actThrown(Entity* my)
 					{
 						item->applyTinkeringCreation(parent, my);
 					}
+					free(item);
+					list_RemoveNode(my->mynode);
+					return;
+				}
+				else if ( my->skill[10] == TOOL_DUCK )
+				{
+					item = newItemFromEntity(my);
+					item->applyDuck(my->parent, my->x, my->y, nullptr, false);
 					free(item);
 					list_RemoveNode(my->mynode);
 					return;
@@ -1131,6 +1146,9 @@ void actThrown(Entity* my)
 					case FOOD_CREAMPIE:
 						damage = 0;
 						break;
+					case TOOL_DUCK:
+						damage = 1;
+						break;
 					default:
 						break;
 				}
@@ -1230,6 +1248,7 @@ void actThrown(Entity* my)
 							case POTION_STRENGTH:
 							case POTION_PARALYSIS:
 							case FOOD_CREAMPIE:
+							case TOOL_DUCK:
 								ignorePotion = true;
 								break;
 							default:
@@ -1502,6 +1521,35 @@ void actThrown(Entity* my)
 										messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(6766), Language::get(6767), MSG_COMBAT);
 									}
 								}
+								break;
+							}
+							case TOOL_DUCK:
+							{
+								// set disoriented and start a cooldown on being distracted.
+								if ( hit.entity->behavior == &actMonster && hitstats
+									&& !hitstats->getEffectActive(EFF_DISORIENTED)
+									&& !hitstats->getEffectActive(EFF_DISTRACTED_COOLDOWN) )
+								{
+									if ( hit.entity->monsterReleaseAttackTarget() )
+									{
+										hit.entity->monsterLookDir = hit.entity->yaw;
+										hit.entity->monsterLookDir += (PI - PI / 4 + (local_rng.rand() % 10) * PI / 40);
+										if ( hit.entity->monsterState == MONSTER_STATE_WAIT || hit.entity->monsterTarget == 0 )
+										{
+											// not attacking, duration longer.
+											hit.entity->setEffect(EFF_DISORIENTED, true, TICKS_PER_SECOND * 2, false);
+											hit.entity->setEffect(EFF_DISTRACTED_COOLDOWN, true, TICKS_PER_SECOND * 3, false);
+										}
+										else
+										{
+											hit.entity->setEffect(EFF_DISORIENTED, true, TICKS_PER_SECOND * 1, false);
+											hit.entity->setEffect(EFF_DISTRACTED_COOLDOWN, true, TICKS_PER_SECOND * 3, false);
+										}
+									}
+									spawnFloatingSpriteMisc(134, hit.entity->x + (-4 + local_rng.rand() % 9) + cos(hit.entity->yaw) * 2,
+										hit.entity->y + (-4 + local_rng.rand() % 9) + sin(hit.entity->yaw) * 2, hit.entity->z + local_rng.rand() % 4);
+								}
+								usedpotion = true;
 								break;
 							}
 							case FOOD_CREAMPIE:
@@ -2200,6 +2248,13 @@ void actThrown(Entity* my)
 		else if ( item && itemIsThrowableTinkerTool(item) /*&& !(item->type >= TOOL_BOMB && item->type <= TOOL_TELEPORT_BOMB)*/ )
 		{
 			// non-bomb tools will fall to the ground and get placed.
+		}
+		else if ( item && item->type == TOOL_DUCK )
+		{
+			item->applyDuck(my->parent, my->x, my->y, hit.entity, false);
+			free(item);
+			list_RemoveNode(my->mynode);
+			return;
 		}
 		else
 		{

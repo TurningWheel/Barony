@@ -508,6 +508,7 @@ struct SaveGameInfo {
 		std::vector<std::pair<int, int>> itemDegradeRNG;
 		std::vector<int> learnedSpells;
 		std::vector<std::pair<int, int>> sustainedSpellIDCounter;
+		std::vector<int> ducksInARow;
 		int sustainedSpellMPUsedSorcery = 0;
 		int sustainedSpellMPUsedMysticism = 0;
 		int sustainedSpellMPUsedThaumaturgy = 0;
@@ -709,6 +710,7 @@ struct SaveGameInfo {
 			fp->property("base_mp_used_mysticism", baseSpellMPUsedMysticism);
 			fp->property("base_mp_used_thaumaturgy", baseSpellMPUsedThaumaturgy);
 			fp->property("learned_spells", learnedSpells);
+			fp->property("ducks_in_a_row", ducksInARow);
 			fp->property("sustained_spell_id_counters", sustainedSpellIDCounter);
 			return true;
 		}

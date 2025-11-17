@@ -150,6 +150,13 @@ void actSpearTrap(Entity* my)
 						Stat* stats = entity->getStats();
 						if ( stats )
 						{
+							if ( stats->type == DUCK_SMALL && entityInsideEntity(my, entity) )
+							{
+								if ( entity->monsterAttack == 0 )
+								{
+									entity->attack(local_rng.rand() % 2 ? MONSTER_POSE_MELEE_WINDUP2 : MONSTER_POSE_MELEE_WINDUP3, 0, nullptr);
+								}
+							}
 							if ( !entity->flags[PASSABLE] && entityInsideEntity(my, entity) )
 							{
 								// do damage!

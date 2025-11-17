@@ -802,7 +802,7 @@ void actHudWeapon(Entity* my)
 
 	bool thrownWeapon = stats[HUDWEAPON_PLAYERNUM]->weapon
 		&& (itemCategory(stats[HUDWEAPON_PLAYERNUM]->weapon) == THROWN || itemCategory(stats[HUDWEAPON_PLAYERNUM]->weapon) == GEM
-			|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == FOOD_CREAMPIE);
+			|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == FOOD_CREAMPIE || stats[HUDWEAPON_PLAYERNUM]->weapon->type == TOOL_DUCK);
 	bool castStrikeAnimation = (players[HUDWEAPON_PLAYERNUM]->entity->skill[9] == MONSTER_POSE_SPECIAL_WINDUP1);
 	bool flail = !hideWeapon && stats[HUDWEAPON_PLAYERNUM]->weapon && stats[HUDWEAPON_PLAYERNUM]->weapon->type == STEEL_FLAIL;
 
@@ -1486,7 +1486,8 @@ void actHudWeapon(Entity* my)
 						{
 							HUDWEAPON_CHOP = 7; // magicstaffs lunge
 						}
-						else if ( itemCategory(item) == THROWN || itemCategory(item) == GEM || item->type == FOOD_CREAMPIE )
+						else if ( itemCategory(item) == THROWN || itemCategory(item) == GEM || item->type == FOOD_CREAMPIE
+							|| item->type == TOOL_DUCK )
 						{
 							if ( !throwGimpTimer )
 							{
@@ -1596,7 +1597,8 @@ void actHudWeapon(Entity* my)
 								throwGimpTimer = TICKS_PER_SECOND / 2;
 							}
 						}
-						else if ((itemCategory(item) == POTION || itemCategory(item) == GEM || itemCategory(item) == THROWN || item->type == FOOD_CREAMPIE ) 
+						else if ((itemCategory(item) == POTION || itemCategory(item) == GEM || itemCategory(item) == THROWN || item->type == FOOD_CREAMPIE
+							|| item->type == TOOL_DUCK)
 							&& !throwGimpTimer)
 						{
 							if ( itemCategory(item) == THROWN )
@@ -2099,6 +2101,7 @@ void actHudWeapon(Entity* my)
 					&& item->type != FOOD_CREAMPIE
 					&& !(item->type >= ARTIFACT_ORB_BLUE && item->type <= ARTIFACT_ORB_GREEN)
 					&& !(itemIsThrowableTinkerTool(item))
+					&& item->type != TOOL_DUCK
 					&& item->type != RAPIER
 					&& item->type != TOOL_WHIP
 					&& item->type != STEEL_FLAIL )
@@ -4155,6 +4158,18 @@ void actHudShield(Entity* my)
 		{
 			defending = false;
 			wouldBeDefending = false;
+		}
+	}
+
+	if ( defending )
+	{
+		if ( foci || (stats[HUDSHIELD_PLAYERNUM]->shield && itemTypeIsInstrument(stats[HUDSHIELD_PLAYERNUM]->shield->type)) )
+		{
+			if ( players[HUDSHIELD_PLAYERNUM]->messageZone.logWindow || players[HUDSHIELD_PLAYERNUM]->minimap.mapWindow
+				|| FollowerMenu[HUDSHIELD_PLAYERNUM].followerMenuIsOpen() || CalloutMenu[HUDSHIELD_PLAYERNUM].calloutMenuIsOpen() )
+			{
+				defending = false;
+			}
 		}
 	}
 

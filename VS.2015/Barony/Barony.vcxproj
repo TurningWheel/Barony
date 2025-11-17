@@ -1325,6 +1325,7 @@ if %errorlevel% leq 1 exit 0 else exit %errorlevel%</Command>
     <ClCompile Include="..\..\src\monster_d.cpp" />
     <ClCompile Include="..\..\src\monster_demon.cpp" />
     <ClCompile Include="..\..\src\monster_devil.cpp" />
+    <ClCompile Include="..\..\src\monster_duck.cpp" />
     <ClCompile Include="..\..\src\monster_g.cpp" />
     <ClCompile Include="..\..\src\monster_ghoul.cpp" />
     <ClCompile Include="..\..\src\monster_gnome.cpp" />

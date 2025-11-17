@@ -484,6 +484,13 @@ void actTrap(Entity* my)
 						}
 						break;
 					}
+
+					if ( entity->behavior == &actMonster && entity->getMonsterTypeFromSprite() == DUCK_SMALL
+						&& entity->monsterSpecialState == DUCK_RETURN )
+					{
+						continue;
+					}
+
 					somebodyonme = true;
 					if ( !TRAP_ON )
 					{
@@ -657,6 +664,12 @@ void actTrapPermanent(Entity* my)
 								continue; // non allies only 
 							}
 							break;
+						}
+
+						if ( entity->behavior == &actMonster && entity->getMonsterTypeFromSprite() == DUCK_SMALL
+							&& entity->monsterSpecialState == DUCK_RETURN )
+						{
+							continue;
 						}
 
 						my->toggleSwitch();

@@ -1815,6 +1815,119 @@ void Item::applyBomb(Entity* parent, ItemType type, ItemBombPlacement placement,
 	}
 }
 
+void Item::applyDuck(Uint32 parentUid, real_t x, real_t y, Entity* hitentity, bool onLevelRespawn)
+{
+	bool tryExactLocation = true;
+
+	if ( !onLevelRespawn )
+	{
+		Entity* testEntity = newEntity(2225, 1, map.entities, nullptr);
+		if ( testEntity )
+		{
+			testEntity->flags[PASSABLE] = true;
+			testEntity->x = x;
+			testEntity->y = y;
+			testEntity->behavior = &actMonster;
+			testEntity->sizex = 4;
+			testEntity->sizey = 4;
+			if ( !entityInsideSomething(testEntity) )
+			{
+				for ( int i = -1; i <= 1; ++i )
+				{
+					for ( int j = -1; j <= 1; ++j )
+					{
+						int ix = static_cast<int>(x / 16);
+						int iy = static_cast<int>(y / 16);
+						if ( entityInsideTile(testEntity, ix + i, iy + j, OBSTACLELAYER) ) // check not clipping in surrounding walls
+						{
+							tryExactLocation = false;
+							break;
+						}
+					}
+					if ( !tryExactLocation )
+					{
+						break;
+					}
+				}
+			}
+
+			list_RemoveNode(testEntity->mynode);
+		}
+	}
+
+	Entity* summon = nullptr;
+	if ( tryExactLocation )
+	{
+		summon = summonMonster(DUCK_SMALL, x, y, true);
+	}
+	if ( !summon )
+	{
+		summon = summonMonster(DUCK_SMALL, floor(x / 16) * 16 + 8, floor(y / 16) * 16 + 8, false);
+	}
+	if ( summon )
+	{
+		Stat* summonedStats = summon->getStats();
+		Entity* parent = uidToEntity(parentUid);
+		if ( parent && parent->behavior == &actPlayer )
+		{
+			if ( parent && parent->behavior == &actPlayer )
+			{
+				Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_GADGET_DEPLOYED, this->type, 1);
+			}
+		}
+
+		if ( summonedStats )
+		{
+			//summon->yaw = thrown->yaw;
+			summon->monsterSpecialState = DUCK_INERT;
+			serverUpdateEntitySkill(summon, 33);
+			playSoundPos(summon->x, summon->y, 794 + local_rng.rand() % 2, 128);
+			//if ( forceFollower(*parent, *summon) )
+			//{
+			//	if ( parent->behavior == &actPlayer )
+			//	{
+			//		summon->monsterAllyIndex = parent->skill[2];
+			//		if ( multiplayer == SERVER )
+			//		{
+			//			serverUpdateEntitySkill(summon, 42); // update monsterAllyIndex for clients.
+			//		}
+			//	}
+			//	// change the color of the hit entity.
+			//	summon->flags[USERFLAG2] = true;
+			//	serverUpdateEntityFlag(summon, USERFLAG2);
+			//}
+
+			if ( hitentity && (hitentity->behavior == &actMonster || hitentity->behavior == &actPlayer) )
+			{
+				summon->monsterTarget = hitentity->getUID();
+				playSoundPos(summon->x, summon->y, 786 + local_rng.rand() % 3, 128);
+			}
+			else
+			{
+				playSoundPos(summon->x, summon->y, 789 + local_rng.rand() % 5, 128);
+			}
+			int appearance = std::max(0, static_cast<int>(this->appearance % items[TOOL_DUCK].variations));
+			summonedStats->setAttribute("duck_type", std::to_string(appearance));
+			if ( onLevelRespawn )
+			{
+				summonedStats->setAttribute("duck_time", std::to_string(1 * TICKS_PER_SECOND));
+			}
+			else
+			{
+				summonedStats->setAttribute("duck_time", std::to_string(15 * TICKS_PER_SECOND));
+			}
+			summonedStats->setAttribute("skip_obituary", "1");
+			summonedStats->MISC_FLAGS[STAT_FLAG_MONSTER_DISABLE_HC_SCALING] = 1;
+			int playerOwner = this->getDuckPlayer();
+			if ( playerOwner >= 0 && playerOwner < MAXPLAYERS )
+			{
+				summonedStats->leader_uid = achievementObserver.playerUids[playerOwner];
+				summon->parent = achievementObserver.playerUids[playerOwner];
+			}
+		}
+	}
+}
+
 void Item::applyTinkeringCreation(Entity* parent, Entity* thrown)
 {
 	if ( !thrown )

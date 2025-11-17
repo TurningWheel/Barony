@@ -1274,7 +1274,7 @@ public:
 	bool monsterAllySetInteract(); // set interact flags for allied NPCs.
 	bool isInteractWithMonster(); // is a monster interacting with me? check interact flags for allied NPCs.
 	void clearMonsterInteract(); // tidy up flags after interaction.
-	bool monsterSetPathToLocation(int destX, int destY, int adjacentTilesToCheck, int pathingType, bool tryRandomSpot = false); // monster create path to destination, search adjacent tiles if specified target is inaccessible.
+	bool monsterSetPathToLocation(int destX, int destY, int adjacentTilesToCheck, int pathingType, bool tryRandomSpot = false, bool shortByShortest = true); // monster create path to destination, search adjacent tiles if specified target is inaccessible.
 	bool gyrobotSetPathToReturnLocation(int destX, int destY, int adjacentTilesToCheck, bool tryRandomSpot = false); // gyrobot create path to destination to land safely.
 	static int getMagicResistance(Stat* myStats); // returns the value of magic resistance of a monster.
 	static real_t magicResistancePerPoint;
@@ -1611,7 +1611,7 @@ public:
 		TO_HOLOGRAM,
 		TO_MOTH_SMALL,
 		TO_EARTH_ELEMENTAL,
-		TO_MONSTER_UNUSED_5,
+		TO_DUCK_SMALL,
 		TO_MONSTER_UNUSED_6,
 		TO_MONSTER_UNUSED_7,
 		TO_MONSTER_UNUSED_8,

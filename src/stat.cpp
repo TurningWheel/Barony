@@ -1598,6 +1598,12 @@ Uint32 Stat::getLootingBagKey(const int player)
 
 void Stat::addItemToLootingBag(const int player, const real_t x, const real_t y, Item& item)
 {
+	if ( item.type == TOOL_DUCK )
+	{
+		item.applyDuck(achievementObserver.playerUids[player], x, y, nullptr, false);
+		return;
+	}
+
 	Uint32 lootingBagKey = getLootingBagKey(player);
 	if ( player_lootbags.find(lootingBagKey) == player_lootbags.end() )
 	{

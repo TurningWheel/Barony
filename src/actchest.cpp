@@ -803,7 +803,7 @@ void Entity::actChest()
 			{
 				nextnode = node->next;
 				item = (Item*)node->element;
-				if ( rng.rand() % 2 == 0 )
+				if ( rng.rand() % 2 == 0 || (item && item->type >= WOODEN_SHIELD && item->type < NUMITEMS && items[item->type].hasAttribute("UNVOIDABLE")) )
 				{
 					dropItemMonster(item, this, NULL);
 				}

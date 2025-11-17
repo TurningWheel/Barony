@@ -4768,6 +4768,10 @@ void SaveGameInfo::computeHash(const int playernum, Uint32& hash)
 		hash += (Uint32)((Uint32)val.first << (shift % 32)); ++shift;
 		hash += (Uint32)((Uint32)val.second << (shift % 32)); ++shift;
 	}
+	for ( auto& val : players[playernum].ducksInARow )
+	{
+		hash += (Uint32)((Uint32)val << (shift % 32)); ++shift;
+	}
 	hash += (Uint32)((Uint32)players[playernum].sustainedSpellMPUsedSorcery << (shift % 32)); ++shift;
 	hash += (Uint32)((Uint32)players[playernum].sustainedSpellMPUsedMysticism << (shift % 32)); ++shift;
 	hash += (Uint32)((Uint32)players[playernum].sustainedSpellMPUsedThaumaturgy << (shift % 32)); ++shift;
@@ -5029,6 +5033,10 @@ int SaveGameInfo::populateFromSession(const int playernum)
 			for ( auto& pair : ::players[c]->mechanics.sustainedSpellIDCounter )
 			{
 				player.sustainedSpellIDCounter.push_back(pair);
+			}
+			for ( auto val : ::players[c]->mechanics.ducksInARow )
+			{
+				player.ducksInARow.push_back(val);
 			}
 			player.sustainedSpellMPUsedSorcery = ::players[c]->mechanics.sustainedSpellMPUsedSorcery;
 			player.sustainedSpellMPUsedMysticism = ::players[c]->mechanics.sustainedSpellMPUsedMysticism;
@@ -5960,6 +5968,7 @@ int loadGame(int player, const SaveGameInfo& info) {
 		auto& mechanics = players[statsPlayer]->mechanics;
 		mechanics.itemDegradeRng.clear();
 		mechanics.learnedSpells.clear();
+		mechanics.ducksInARow.clear();
 		mechanics.sustainedSpellIDCounter.clear();
 		hamletShopkeeperSkillLimit[statsPlayer].clear();
 		mechanics.baseSpellLevelUpProcs.clear();
@@ -5970,6 +5979,10 @@ int loadGame(int player, const SaveGameInfo& info) {
 		for ( auto learnedSpell : info.players[player].learnedSpells )
 		{
 			mechanics.learnedSpells.insert(learnedSpell);
+		}
+		for ( auto duck : info.players[player].ducksInARow )
+		{
+			mechanics.ducksInARow.push_back(duck);
 		}
 		for ( auto& pair : info.players[player].sustainedSpellIDCounter )
 		{

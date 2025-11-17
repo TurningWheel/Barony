@@ -1244,6 +1244,10 @@ Sint32 itemModel(const Item* const item, bool shortModel, Entity* creature)
 			return index;
 		}
 	}
+	else if ( item->type == TOOL_DUCK )
+	{
+		return items[TOOL_DUCK].index + (item->appearance % items[item->type].variations) / MAXPLAYERS;
+	}
 	else if ( itemCategory(item) == SPELLBOOK || itemCategory(item) == TOME_SPELL )
 	{
 		int variation = getItemVariationFromSpellbookOrTome(*item);
@@ -1288,6 +1292,10 @@ Sint32 itemModelFirstperson(const Item* const item)
 		{
 			return items[item->type].fpindex + variation;
 		}
+	}
+	else if ( item->type == TOOL_DUCK )
+	{
+		return items[TOOL_DUCK].fpindex + (item->appearance % items[item->type].variations) / MAXPLAYERS;
 	}
 	return items[item->type].fpindex + item->appearance % items[item->type].variations;
 }
@@ -1946,6 +1954,19 @@ Entity* dropItemMonster(Item* const item, Entity* const monster, Stat* const mon
 				entity->vel_x *= 0.1;
 				entity->vel_y *= 0.1;
 				entity->vel_z = -.5;
+			}
+			else if ( monsterStats->type == DUCK_SMALL )
+			{
+				// drop in center of tile
+				int ix = static_cast<int>(std::floor(monster->x)) >> 4;
+				int iy = static_cast<int>(std::floor(monster->y)) >> 4;
+				entity->x = ix * 16.0 + 8.0;
+				entity->y = iy * 16.0 + 8.0;
+				entity->z = 4;
+				entity->vel_x *= 0.1;
+				entity->vel_y *= 0.1;
+				entity->vel_z = -.5;
+				entity->pitch = -PI / 8;
 			}
 			else if ( item->type == ARTIFACT_ORB_PURPLE && monsterStats->type == LICH )
 			{
@@ -2997,6 +3018,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		case TOOL_GYROBOT:
 		case TOOL_SENTRYBOT:
 		case TOOL_SPELLBOT:
+		case TOOL_DUCK:
 			equipItemResult = equipItem(item, &stats[player]->weapon, player, checkInventorySpaceForPaperDoll);
 			break;
 		case TOOL_TORCH:
@@ -7100,6 +7122,11 @@ void clientUnequipSlotAndUpdateServer(const int player, const EquipItemSendToSer
 
 	clientSendEquipUpdateToServer(slot, equipType, player,
 		item->type, item->status, item->beatitude, item->count, item->appearance, item->identified);
+}
+
+int Item::getDuckPlayer() const
+{
+	return (int)(appearance % 12) % MAXPLAYERS;
 }
 
 int Item::getLootBagPlayer() const

@@ -3114,6 +3114,16 @@ void Entity::modHP(int amount)
 		amount = 0;
 	}
 
+	if ( entitystats && entitystats->type == DUCK_SMALL && amount < 0 )
+	{
+		amount = 0;
+		if ( monsterAttack == 0 )
+		{
+			// duck dodge
+			this->attack(local_rng.rand() % 2 ? MONSTER_POSE_MELEE_WINDUP2 : MONSTER_POSE_MELEE_WINDUP3, 0, nullptr);
+		}
+	}
+
 	if ( !entitystats || amount == 0 )
 	{
 		if ( this->behavior == &actPlayer )
@@ -8774,6 +8784,10 @@ bool Entity::isWaterWalking() const
 			{
 				return true;
 			}
+			else if ( stats->type == DUCK_SMALL )
+			{
+				return true;
+			}
 		}
 	}
 	return false;
@@ -8801,6 +8815,10 @@ bool Entity::isLavaWalking() const
 				}
 			}
 			else if ( stats->type == EARTH_ELEMENTAL )
+			{
+				return true;
+			}
+			else if ( stats->type == DUCK_SMALL )
 			{
 				return true;
 			}
@@ -8949,6 +8967,11 @@ bool Entity::isMobile()
 	}
 
 	if ( entitystats->type == BAT_SMALL && monsterSpecialState == BAT_REST )
+	{
+		return false;
+	}
+
+	if ( entitystats->type == DUCK_SMALL && (monsterSpecialState == DUCK_RETURN || monsterSpecialState == DUCK_DIVE) )
 	{
 		return false;
 	}
@@ -9981,7 +10004,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 				|| itemCategory(myStats->weapon) == GEM 
 				|| itemCategory(myStats->weapon) == THROWN
 				|| myStats->weapon->type == FOOD_CREAMPIE
-				|| itemIsThrowableTinkerTool(myStats->weapon) )
+				|| itemIsThrowableTinkerTool(myStats->weapon)
+				|| myStats->weapon->type == TOOL_DUCK )
 			{
 				bool drankPotion = false;
 				if ( behavior == &actMonster && myStats->type == GOATMAN && itemCategory(myStats->weapon) == POTION )
@@ -10180,6 +10204,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 				}
 				else
 				{
+					if ( entity->skill[10] == TOOL_DUCK )
+					{
+						entity->sizex = 2;
+						entity->sizey = 2;
+					}
 					real_t speed = 5.f;
 					if ( itemCategory(myStats->weapon) == GEM )
 					{
@@ -16145,6 +16174,7 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 			|| (srcStats->type == MOTH_SMALL && srcStats->getAttribute("fire_sprite") != "")
 			|| (srcStats->type == SKELETON && srcStats->getAttribute("revenant_skeleton") != "")
 			|| srcStats->type == FLAME_ELEMENTAL
+			|| srcStats->type == DUCK_SMALL
 			|| (srcStats->type == EARTH_ELEMENTAL && src->monsterAllyGetPlayerLeader())
 			|| srcStats->type == HOLOGRAM
 			|| src->monsterIsTinkeringCreation()) )
@@ -16388,7 +16418,8 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 								|| (follower->getStats() && follower->getStats()->type == SKELETON && follower->getStats()->getAttribute("revenant_skeleton") != "")
 								|| (follower->getStats() && follower->getStats()->type == MOTH_SMALL && follower->getStats()->getAttribute("fire_sprite") != "")
 								|| (follower->getStats() && follower->getStats()->type == EARTH_ELEMENTAL && follower->monsterAllyGetPlayerLeader())
-								|| (follower->getStats() && follower->getStats()->type == FLAME_ELEMENTAL) )
+								|| (follower->getStats() && follower->getStats()->type == FLAME_ELEMENTAL)
+								|| (follower->getStats() && follower->getStats()->type == DUCK_SMALL) )
 							{
 								continue; // no award xp
 							}
@@ -16456,6 +16487,7 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 		|| (destStats->type == MOTH_SMALL && destStats->getAttribute("fire_sprite") != "" )
 		|| (destStats->type == SKELETON && destStats->getAttribute("revenant_skeleton") != "")
 		|| destStats->type == FLAME_ELEMENTAL
+		|| destStats->type == DUCK_SMALL
 		|| (destStats->type == EARTH_ELEMENTAL && monsterAllyGetPlayerLeader())
 		|| destStats->type == HOLOGRAM
 		)
@@ -22116,6 +22148,11 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool
 		}
 	}
 
+	if ( target.getRace() == DUCK_SMALL )
+	{
+		return;
+	}
+
 	if ( target.getRace() == MOTH_SMALL )
 	{
 		if ( Stat* targetStats = target.getStats() )
@@ -23405,6 +23442,10 @@ double Entity::monsterRotate()
 	else if ( race == MOTH_SMALL )
 	{
 		yaw -= dir / 16;
+	}
+	else if ( race == DUCK_SMALL )
+	{
+		yaw -= dir / 4;
 	}
 	else if ( race == DUMMYBOT )
 	{
@@ -28427,7 +28468,7 @@ bool monsterChangesColorWhenAlly(Stat* myStats, Entity* entity)
 	}
 	
 	if ( race == HUMAN || race == SENTRYBOT || race == NOTHING || race == SLIME
-		|| race == SPELLBOT || race == AUTOMATON || race == GYROBOT || race == DUMMYBOT )
+		|| race == SPELLBOT || race == AUTOMATON || race == GYROBOT || race == DUMMYBOT || race == DUCK_SMALL )
 	{
 		return false;
 	}
@@ -29733,7 +29774,8 @@ void Entity::creatureHandleLiftZ()
 			break;
 		case GYROBOT:
 			break;
-		case MONSTER_UNUSED_5: 
+		case DUCK_SMALL: 
+			break;
 		case MONSTER_UNUSED_6: 
 		case MONSTER_UNUSED_7: 
 		case MONSTER_UNUSED_8: 

@@ -378,7 +378,8 @@ bool entityInsideTile(Entity* entity, int x, int y, int z, bool checkSafeTiles)
 										|| entity->getStats()->type == HOLOGRAM
 										|| entity->getStats()->type == MOTH_SMALL
 										|| entity->getStats()->type == FLAME_ELEMENTAL
-										|| entity->getStats()->type == EARTH_ELEMENTAL)) )
+										|| entity->getStats()->type == EARTH_ELEMENTAL
+										|| entity->getStats()->type == DUCK_SMALL)) )
 							{
 								return true;
 							}
@@ -507,6 +508,10 @@ bool entityInsideSomething(Entity* entity)
 						continue;
 					}
 				}
+			}
+			if ( type == DUCK_SMALL && (entity->behavior == &actPlayer || entity->behavior == &actMonster) )
+			{
+				continue;
 			}
 			if ( entityInsideEntity(entity, testEntity) )
 			{
@@ -1003,7 +1008,7 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 				}
 			}
 		}
-		if ( my && my->behavior == &actMagiclightMoving )
+		if ( my && (my->behavior == &actMagiclightMoving || (my->behavior == &actMonster && my->getMonsterTypeFromSprite() == DUCK_SMALL)) )
 		{
 			return 1; // no other collision
 		}
@@ -1810,14 +1815,20 @@ Entity* findEntityInLine( Entity* my, real_t x1, real_t y1, real_t angle, int en
 									&& entity->sprite != 1819
 									&& entity->sprite != 1822
 									&& entity->sprite != 1871
-									&& entity->sprite != 1876) )
+									&& entity->sprite != 1876
+									&& entity->sprite != 2225
+									&& entity->sprite != 2226
+									&& entity->sprite != 2231
+									&& entity->sprite != 2232
+									&& entity->sprite != 2237
+									&& entity->sprite != 2238) )
 						)
 					) 
 				)
 			{
 				// if entities & LINETRACE_IGNORE_ENTITIES, then ignore entities that block sight.
 				// 16/11/19 - added exception to monsters. if monster, use the INVISIBLE flag to skip checking.
-				// 889/1247/1408 is dummybot/mimic/bat/revenant_skull/adorcised weapon/elemental/moth "invisible" AI entity. so it's invisible, need to make it shown here.
+				// 889/1247/1408 is dummybot/mimic/bat/revenant_skull/adorcised weapon/elemental/moth/duck "invisible" AI entity. so it's invisible, need to make it shown here.
 				if ( entity->behavior == &actMonster && entity->sprite == 1408 )
 				{
 					if ( (entity != target && target != nullptr) || entity == my || entity->flags[PASSABLE] )

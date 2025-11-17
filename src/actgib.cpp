@@ -1857,7 +1857,22 @@ void actLeafParticle(Entity* my)
 	my->focalz = 2.0;
 
 	bool grounded = false;
-	if ( my->z >= 5.5 )
+	bool noFloor = false;
+	int mapx = my->x / 16;
+	int mapy = my->y / 16;
+	if ( my->parent == 0 ) // check no floor
+	{
+		if ( mapx >= 0 && mapx < map.width && mapy >= 0 && mapy < map.height )
+		{
+			int mapIndex = mapy * MAPLAYERS + mapx * MAPLAYERS * map.height;
+			if ( !map.tiles[mapIndex] )
+			{
+				noFloor = true;
+			}
+		}
+	}
+
+	if ( my->z >= 5.5 && !noFloor )
 	{
 		grounded = true;
 
@@ -1996,18 +2011,26 @@ void actLeafParticle(Entity* my)
 		my->vel_z = 0.1 * (1.0 - anim_bounce_fall) * abs(cos(float_oscillate_amt));
 		my->z += my->vel_z;
 	}
-	my->z = std::min(my->z, 5.5);
+
+	if ( noFloor )
+	{
+		// fall down
+	}
+	else
+	{
+		my->z = std::min(my->z, 5.5);
+	}
 
 	if ( !parent )
 	{
-		if ( multiplayer != CLIENT )
+		//if ( multiplayer != CLIENT )
 		{
-			my->vel_x *= 0.8;
-			my->vel_y *= 0.8;
-			if ( abs(my->vel_x) > 0.01 || abs(my->vel_y) > 0.01 )
-			{
-				clipMove(&pos_x_center, &pos_y_center, my->vel_x, my->vel_y, my);
-			}
+			//my->vel_x *= 0.8;
+			//my->vel_y *= 0.8;
+			//if ( abs(my->vel_x) > 0.01 || abs(my->vel_y) > 0.01 )
+			//{
+			//	clipMove(&pos_x_center, &pos_y_center, my->vel_x, my->vel_y, my);
+			//}
 			if ( anim_bounce_timer == 0 )
 			{
 				for ( int i = 0; i < MAXPLAYERS; ++i )

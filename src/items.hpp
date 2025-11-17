@@ -443,6 +443,7 @@ typedef enum ItemType
 	TOME_THAUMATURGY,
 	HAT_CIRCLET_SORCERY,
 	HAT_CIRCLET_THAUMATURGY,
+	TOOL_DUCK,
 	ITEM_ENUM_MAX
 } ItemType;
 const int NUMITEMS = ITEM_ENUM_MAX;
@@ -620,6 +621,7 @@ public:
 	int foodGetPukeChance(Stat* eater) const;
 	int getLootBagPlayer() const;
 	int getLootBagNumItems() const;
+	int getDuckPlayer() const;
 
 	enum ItemBombPlacement : int
 	{
@@ -645,6 +647,7 @@ public:
 	};
 	void applyBomb(Entity* parent, ItemType type, ItemBombPlacement placement, ItemBombFacingDirection dir, Entity* thrown, Entity* onEntity);
 	void applyTinkeringCreation(Entity* parent, Entity* thrown);
+	void applyDuck(Uint32 parentUid, real_t x, real_t y, Entity* hitentity, bool onLevelRespawn);
 	bool unableToEquipDueToSwapWeaponTimer(const int player) const;
 	bool tinkeringBotIsMaxHealth() const;
 	bool isTinkeringItemWithThrownLimit() const;

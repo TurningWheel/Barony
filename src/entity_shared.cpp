@@ -1187,6 +1187,7 @@ char itemNameStrings[NUM_ITEM_STRINGS][32] =
 	"tome_thaumaturgy",
 	"hat_circlet_sorcery",
 	"hat_circlet_thaumaturgy",
+	"tool_duck",
 	""
 };
 
@@ -1883,7 +1884,7 @@ char monsterEditorNameStrings[NUMMONSTERS][32] =
 	"hologram",
 	"moth",
 	"earth_elemental",
-	"monster_unused_5",
+	"duck_small",
 	"monster_unused_6",
 	"monster_unused_7",
 	"monster_unused_8"

@@ -2484,7 +2484,10 @@ void FollowerRadialMenu::drawFollowerMenu()
 						{
 							if ( !usingLastCmd )
 							{
-								if ( stats[gui_player]->shield && itemCategory(stats[gui_player]->shield) == SPELLBOOK )
+								if ( stats[gui_player]->shield 
+									&& (itemCategory(stats[gui_player]->shield) == SPELLBOOK
+										|| itemTypeIsFoci(stats[gui_player]->shield->type)
+										|| itemTypeIsInstrument(stats[gui_player]->shield->type)) )
 								{
 									input.consumeBinaryToggle("Defend"); // don't try cast when menu closes.
 								}
@@ -5606,6 +5609,7 @@ bool GenericGUIMenu::isItemRepairable(const Item* item, int repairScroll)
 				case TOOL_DECOY:
 				case TOOL_DUMMYBOT:
 				case ENCHANTED_FEATHER:
+				case TOOL_DUCK:
 					return false;
 					break;
 				default:
@@ -29329,7 +29333,10 @@ void CalloutRadialMenu::drawCalloutMenu()
 				{
 					if ( modifierPressed )
 					{
-						if ( stats[gui_player]->shield && itemCategory(stats[gui_player]->shield) == SPELLBOOK )
+						if ( stats[gui_player]->shield 
+							&& (itemCategory(stats[gui_player]->shield) == SPELLBOOK
+								|| itemTypeIsFoci(stats[gui_player]->shield->type)
+								|| itemTypeIsInstrument(stats[gui_player]->shield->type)) )
 						{
 							input.consumeBinaryToggle("Defend"); // don't try cast when menu closes.
 						}

@@ -2919,6 +2919,21 @@ void gameLogic(void)
 						}
 					}
 
+					if ( item->type == TOOL_DUCK && players[player]->entity )
+					{
+						if ( item->getDuckPlayer() != player )
+						{
+							messagePlayer(player, MESSAGE_INVENTORY, Language::get(6869));
+							bool droppedAll = false;
+							droppedAll = dropItem(item, player, false, true);
+							if ( droppedAll )
+							{
+								item = nullptr;
+								continue;
+							}
+						}
+					}
+
 					// drop any inventory items you don't have room for
 					if ( itemCategory(item) != SPELL_CAT 
 						&& item->x != Player::PaperDoll_t::ITEM_PAPERDOLL_COORDINATE
@@ -3600,6 +3615,21 @@ void gameLogic(void)
 					if ( !players[clientnum]->inventoryUI.moveItemToFreeInventorySlot(item) )
 					{
 						item->x = players[clientnum]->inventoryUI.getSizeX(); // force unequip below
+					}
+				}
+
+				if ( item->type == TOOL_DUCK && players[clientnum]->entity )
+				{
+					if ( item->getDuckPlayer() != clientnum )
+					{
+						messagePlayer(clientnum, MESSAGE_INVENTORY, Language::get(6869));
+						bool droppedAll = false;
+						droppedAll = dropItem(item, clientnum, false, true);
+						if ( droppedAll )
+						{
+							item = nullptr;
+							continue;
+						}
 					}
 				}
 

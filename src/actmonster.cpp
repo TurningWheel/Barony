@@ -87,13 +87,13 @@ bool swornenemies[NUMMONSTERS][NUMMONSTERS] =
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // HOLOGRAM
 	{ 0, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MOTH_SMALL
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // EARTH_ELEMENTAL
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MONSTER_UNUSED_5
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // DUCK_SMALL
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MONSTER_UNUSED_6
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MONSTER_UNUSED_7
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }  // MONSTER_UNUSED_8
-//    N  H  R  G  S  T  B  S  G  S  S  I  C  G  D  S  M  L  M  D  S  K  S  G  I  V  S  C  I  G  A  L  L  S  S  G  D  B  D  M  S  G  R  M  A  U  U  U  U  U  U  U  U
-//    O  U  A  O  L  R  A  P  H  K  C  M  R  N  E  U  I  I  I  E  H  O  C  O  N  A  H  O  N  O  U  I  I  N  P  Y  U  U  D  M  S  G  E  I  D  N  N  N  N  N  N  N  N
-//    T  M  T  B  I  O  T  I  O  E  O  P  A  O  M  C  M  C  N  V  P  B  A  L  C  M  A  C  S  A  T  F  I  T  L  R  M  G 	D  M  S  G  V  N  O  1  2  3  4  5  6  7  8
+//    N  H  R  G  S  T  B  S  G  S  S  I  C  G  D  S  M  L  M  D  S  K  S  G  I  V  S  C  I  G  A  L  L  S  S  G  D  B  D  M  S  G  R  M  A  F  H  M  E  D  U  U  U
+//    O  U  A  O  L  R  A  P  H  K  C  M  R  N  E  U  I  I  I  E  H  O  C  O  N  A  H  O  N  O  U  I  I  N  P  Y  U  U  D  M  S  G  E  I  D  L  O  T  R  U  N  N  N
+//    T  M  T  B  I  O  T  I  O  E  O  P  A  O  M  C  M  C  N  V  P  B  A  L  C  M  A  C  S  A  T  F  I  T  L  R  M  G 	D  M  S  G  V  N  O  M  L  H  F  C  6  7  8
 };
 
 // determines which monsters come to the aid of other monsters
@@ -151,13 +151,13 @@ bool monsterally[NUMMONSTERS][NUMMONSTERS] =
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // HOLOGRAM
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0 }, // MOTH_SMALL
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // EARTH_ELEMENTAL
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MONSTER_UNUSED_5
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // DUCK_SMALL
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MONSTER_UNUSED_6
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MONSTER_UNUSED_7
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }  // MONSTER_UNUSED_8
-//    N  H  R  G  S  T  B  S  G  S  S  I  C  G  D  S  M  L  M  D  S  K  S  G  I  V  S  C  I  G  A  L  L  S  S  G  D  B  D  M  S  G  R  M  A  U  U  U  U  U  U  U  U
-//    O  U  A  O  L  R  A  P  H  K  C  M  R  N  E  U  I  I  I  E  H  O  C  O  N  A  H  O  N  O  U  I  I  N  P  Y  U  U  D  M  S  G  E  I  D  N  N  N  N  N  N  N  N 
-//    T  M  T  B  I  O  T  I  O  E  O  P  A  O  M  C  M  C  N  V  P  B  A  L  C  M  A  C  S  A  T  F  I  T  L  R  M  G 	D  M  S  G  V  N  O  1  2  3  4  5  6  7  8  
+//    N  H  R  G  S  T  B  S  G  S  S  I  C  G  D  S  M  L  M  D  S  K  S  G  I  V  S  C  I  G  A  L  L  S  S  G  D  B  D  M  S  G  R  M  A  F  H  M  E  D  U  U  U
+//    O  U  A  O  L  R  A  P  H  K  C  M  R  N  E  U  I  I  I  E  H  O  C  O  N  A  H  O  N  O  U  I  I  N  P  Y  U  U  D  M  S  G  E  I  D  L  O  T  R  U  N  N  N
+//    T  M  T  B  I  O  T  I  O  E  O  P  A  O  M  C  M  C  N  V  P  B  A  L  C  M  A  C  S  A  T  F  I  T  L  R  M  G 	D  M  S  G  V  N  O  M  L  H  F  C  6  7  8
 };
 
 // monster sight ranges
@@ -212,7 +212,7 @@ double sightranges[NUMMONSTERS] =
 	256, // HOLOGRAM
 	128, // MOTH_SMALL
 	128, // EARTH_ELEMENTAL
-	256, // MONSTER_UNUSED_5
+	256, // DUCK_SMALL
 	256, // MONSTER_UNUSED_6
 	256, // MONSTER_UNUSED_7
 	256  // MONSTER_UNUSED_8
@@ -1246,7 +1246,7 @@ Entity* summonMonster(Monster creature, long x, long y, bool forceLocation)
             // small poof
             auto poof = spawnPoof(entity->x, entity->y, 4, 0.5);
         }
-		else if ( creature == MOTH_SMALL || creature == FLAME_ELEMENTAL )
+		else if ( creature == MOTH_SMALL || creature == FLAME_ELEMENTAL || creature == DUCK_SMALL )
 		{
 			// small poof
 			auto poof = spawnPoof(entity->x, entity->y, -6, 0.5);
@@ -2550,7 +2550,7 @@ void monsterAnimate(Entity* my, Stat* myStats, double dist)
 	case HOLOGRAM: hologramAnimate(my, myStats, dist); break;
 	case MOTH_SMALL: mothAnimate(my, myStats, dist); break;
 	case EARTH_ELEMENTAL: earthElementalAnimate(my, myStats, dist); break;
-	case MONSTER_UNUSED_5: break;
+	case DUCK_SMALL: duckAnimate(my, myStats, dist); break;
 	case MONSTER_UNUSED_6: break;
 	case MONSTER_UNUSED_7: break;
 	case MONSTER_UNUSED_8: break;
@@ -2571,7 +2571,7 @@ void actMonster(Entity* my)
 	    return;
 	}
 
-	int x, y, c, i;
+	int x, y;
 	double dist, dist2;
 	list_t* path;
 	node_t* node, *node2;
@@ -2660,7 +2660,7 @@ void actMonster(Entity* my)
 			case HOLOGRAM: initHologram(my, nullptr); break;
 			case MOTH_SMALL: initMoth(my, nullptr); break;
 			case EARTH_ELEMENTAL: initEarthElemental(my, nullptr); break;
-			case MONSTER_UNUSED_5: break;
+			case DUCK_SMALL: initDuck(my, nullptr); break;
 			case MONSTER_UNUSED_6: break;
 			case MONSTER_UNUSED_7: break;
 			case MONSTER_UNUSED_8: break;
@@ -2769,7 +2769,7 @@ void actMonster(Entity* my)
 				case HOLOGRAM: initHologram(my, myStats); break;
 				case MOTH_SMALL: initMoth(my, myStats); break;
 				case EARTH_ELEMENTAL: initEarthElemental(my, myStats); break;
-				case MONSTER_UNUSED_5: break;
+				case DUCK_SMALL: initDuck(my, myStats); break;
 				case MONSTER_UNUSED_6: break;
 				case MONSTER_UNUSED_7: break;
 				case MONSTER_UNUSED_8: break;
@@ -3686,13 +3686,13 @@ void actMonster(Entity* my)
 		{
 			nextnode = node->next;
 			Item* item = (Item*)node->element;
-			for ( c = item->count; c > 0; c-- )
+			for ( int c = item->count; c > 0; c-- )
 			{
 				bool wasDroppable = item->isDroppable;
 				if ( myStats->type == SHOPKEEPER )
 				{
 					auto& rng = my->entity_rng ? *my->entity_rng : local_rng;
-					if ( rng.rand() % 2 )
+					if ( rng.rand() % 2 && !items[item->type].hasAttribute("UNVOIDABLE") )
 					{
 						item->isDroppable = false; // sometimes don't drop inventory
 					}
@@ -3728,6 +3728,7 @@ void actMonster(Entity* my)
 						}
 					}
 				}
+				
 				bool wasQuiver = itemTypeIsQuiver(item->type);
 				entity = dropItemMonster(item, my, myStats); // returns nullptr on "undroppables"
 				if ( entity )
@@ -3747,7 +3748,7 @@ void actMonster(Entity* my)
 
 		// broadcast my player allies about my death
 		int playerFollower = MAXPLAYERS;
-		for (c = 0; c < MAXPLAYERS; c++)
+		for ( int c = 0; c < MAXPLAYERS; c++)
 		{
 			if (players[c] && players[c]->entity)
 			{
@@ -3906,7 +3907,7 @@ void actMonster(Entity* my)
 				MONSTER_ATTACKTIME = 0;
 				serverUpdateEntitySkill(my, 8);
 				serverUpdateEntitySkill(my, 9);
-				for ( c = 0; c < NUMEFFECTS; ++c )
+				for ( int c = 0; c < NUMEFFECTS; ++c )
 				{
 					myStats->clearEffect(c);
 					myStats->EFFECTS_TIMERS[c] = 0;
@@ -3928,7 +3929,7 @@ void actMonster(Entity* my)
 				serverUpdateEntitySkill(my, 8);
 				serverUpdateEntitySkill(my, 9);
 				serverUpdateEntitySkill(my, 10);
-				for ( c = 0; c < NUMEFFECTS; ++c )
+				for ( int c = 0; c < NUMEFFECTS; ++c )
 				{
 					myStats->clearEffect(c);
 					myStats->EFFECTS_TIMERS[c] = 0;
@@ -3973,7 +3974,7 @@ void actMonster(Entity* my)
 				serverUpdateEntitySkill(my, 8);
 				serverUpdateEntitySkill(my, 9);
 				serverUpdateEntitySkill(my, 0);
-				for ( c = 0; c < NUMEFFECTS; ++c )
+				for ( int c = 0; c < NUMEFFECTS; ++c )
 				{
 					myStats->clearEffect(c);
 					myStats->EFFECTS_TIMERS[c] = 0;
@@ -3988,7 +3989,7 @@ void actMonster(Entity* my)
 				serverUpdateEntitySkill(my, 8);
 				serverUpdateEntitySkill(my, 9);
 				serverUpdateEntitySkill(my, 0);
-				for ( c = 0; c < NUMEFFECTS; ++c )
+				for ( int c = 0; c < NUMEFFECTS; ++c )
 				{
 					myStats->clearEffect(c);
 					myStats->EFFECTS_TIMERS[c] = 0;
@@ -4046,7 +4047,8 @@ void actMonster(Entity* my)
 			case EARTH_ELEMENTAL:
 				earthElementalDie(my);
 				break;
-			case MONSTER_UNUSED_5:
+			case DUCK_SMALL:
+				duckDie(my);
 				break;
 			case MONSTER_UNUSED_6:
 				break;
@@ -4321,7 +4323,7 @@ void actMonster(Entity* my)
 		case HOLOGRAM:
 		case MOTH_SMALL:
 		case EARTH_ELEMENTAL:
-		case MONSTER_UNUSED_5:
+		case DUCK_SMALL:
 		case MONSTER_UNUSED_6:
 		case MONSTER_UNUSED_7:
 		case MONSTER_UNUSED_8:
@@ -4371,7 +4373,7 @@ void actMonster(Entity* my)
 		snprintf(namesays, 63, Language::get(1302), myStats->name);
 	}
 	int monsterclicked = -1;
-	for (i = 0; i < MAXPLAYERS; i++)
+	for ( int i = 0; i < MAXPLAYERS; i++)
 	{
 		if ( selectedEntity[i] == my || client_selected[i] == my )
 		{
@@ -5132,7 +5134,32 @@ void actMonster(Entity* my)
 		if ( my->monsterState == MONSTER_STATE_WAIT ) //Begin wait state
 		{
 			//my->monsterTarget = -1; //TODO: Setting it to -1 = Bug? -1 may not work properly for cases such as: if ( !my->monsterTarget )
-			my->monsterReleaseAttackTarget();
+			if ( myStats->type == DUCK_SMALL )
+			{
+				Entity* target = uidToEntity(my->monsterTarget);
+				if ( target && entityDist(target, my) < 64.0 )
+				{
+					// don't release, try path again
+					if ( myReflex )
+					{
+						my->monsterAcquireAttackTarget(*target, MONSTER_STATE_PATH);
+						my->lookAtEntity(*target);
+						if ( previousMonsterState != my->monsterState )
+						{
+							serverUpdateEntitySkill(my, 0);
+						}
+						return;
+					}
+				}
+				else
+				{
+					my->monsterReleaseAttackTarget();
+				}
+			}
+			else
+			{
+				my->monsterReleaseAttackTarget();
+			}
 			if ( !myStats->getEffectActive(EFF_KNOCKBACK) )
 			{
 				MONSTER_VELX = 0;
@@ -5221,7 +5248,7 @@ void actMonster(Entity* my)
 							{
 								if ( !(myStats->leader_uid == entity->getUID()) 
 									&& !(hitstats->leader_uid == my->getUID())
-									&& !(my->monsterAllyGetPlayerLeader() && entity->behavior == &actPlayer) )
+									&& !((my->monsterAllyGetPlayerLeader() || achievementObserver.checkUidIsFromPlayer(myStats->leader_uid) >= 0) && entity->behavior == &actPlayer) )
 								{
 									if ( !levitating )
 									{
@@ -5459,7 +5486,8 @@ void actMonster(Entity* my)
 				{
 					real_t followx = leader->x;
 					real_t followy = leader->y;
-					if ( myStats->type == GYROBOT || (myStats->type == MOTH_SMALL && myStats->getAttribute("fire_sprite") != "") )
+					if ( myStats->type == GYROBOT || myStats->type == DUCK_SMALL
+						|| (myStats->type == MOTH_SMALL && myStats->getAttribute("fire_sprite") != "") )
 					{
 						// follow ahead of the leader.
 						real_t startx = leader->x;
@@ -5524,7 +5552,7 @@ void actMonster(Entity* my)
 						{
 							my->monsterReleaseAttackTarget();
 							std::pair<int, int> followPos;
-							if ( myStats->type == GYROBOT
+							if ( myStats->type == GYROBOT || myStats->type == DUCK_SMALL
 								|| (myStats->type == MOTH_SMALL && myStats->getAttribute("fire_sprite") != "") )
 							{
 								if ( my->monsterSetPathToLocation(static_cast<int>(followx) / 16, static_cast<int>(followy) / 16, 0,
@@ -5553,7 +5581,7 @@ void actMonster(Entity* my)
 							return;
 						}
 					}
-					else if ( !(myStats->type == GYROBOT
+					else if ( !(myStats->type == GYROBOT || myStats->type == DUCK_SMALL
 						|| (myStats->type == MOTH_SMALL && myStats->getAttribute("fire_sprite") != "")) )
 					{
 						tangent = atan2( leader->y - my->y, leader->x - my->x );
@@ -5629,6 +5657,7 @@ void actMonster(Entity* my)
 					&& my->monsterTarget == 0 
 					&& my->monsterState == MONSTER_STATE_WAIT 
 					&& (my->monsterAllyGetPlayerLeader() 
+						|| achievementObserver.checkUidIsFromPlayer(myStats->leader_uid) >= 0
 						|| (myStats->type == MONSTER_ADORCISED_WEAPON && myStats->getAttribute("spirit_weapon") != "")) )
 				{
 					// allies should try intelligently scan for enemies in radius.
@@ -5903,7 +5932,7 @@ void actMonster(Entity* my)
 			if ( myStats->type == SHOPKEEPER && strncmp(map.name, "Mages Guild", 11) )
 			{
 				// shopkeepers hold a grudge against players
-				for ( c = 0; c < MAXPLAYERS; ++c )
+				for ( int c = 0; c < MAXPLAYERS; ++c )
 				{
 					if ( players[c] && players[c]->entity )
 					{
@@ -5965,7 +5994,7 @@ void actMonster(Entity* my)
 					{
 						if ( !(myStats->leader_uid == entity->getUID())
 							&& !(hitstats->leader_uid == my->getUID())
-							&& !(my->monsterAllyGetPlayerLeader() && entity->behavior == &actPlayer) )
+							&& !((my->monsterAllyGetPlayerLeader() || achievementObserver.checkUidIsFromPlayer(myStats->leader_uid) >= 0) && entity->behavior == &actPlayer) )
 						{
 							tangent = atan2( my->monsterTargetY - my->y, my->monsterTargetX - my->x );
 							if ( !levitating )
@@ -6189,6 +6218,10 @@ timeToGoAgain:
 							if ( myStats->type == BUGBEAR )
 							{
 								chaseRange = 20;
+							}
+							if ( myStats->type == DUCK_SMALL )
+							{
+								chaseRange = 32;
 							}
 							if ( myStats->weapon && (myStats->weapon->type == TOOL_WHIP || myStats->weapon->type == STEEL_FLAIL) )
 							{
@@ -6711,8 +6744,7 @@ timeToGoAgain:
 						{
 							if ( !MONSTER_ATTACK )
 							{
-								int c;
-								for ( c = 0; c < MAXPLAYERS; c++ )
+								for ( int c = 0; c < MAXPLAYERS; c++ )
 								{
 									playSoundPlayer(c, 204, 64);
 								}
@@ -6784,7 +6816,7 @@ timeToGoAgain:
 						tangent = atan2(entity->y - my->y, entity->x - my->x);
 						my->yaw = tangent;
 						(void)castSpell(my->getUID(), &spell_fireball, true, false);
-						for ( c = 0; c < MAXPLAYERS; ++c )
+						for ( int c = 0; c < MAXPLAYERS; ++c )
 						{
 							if ( players[c] && players[c]->entity && entity != players[c]->entity )
 							{
@@ -7026,7 +7058,7 @@ timeToGoAgain:
 							{
 								if ( !(myStats->leader_uid == entity->getUID())
 									&& !(hitstats->leader_uid == my->getUID())
-									&& !(my->monsterAllyGetPlayerLeader() && entity->behavior == &actPlayer) )
+									&& !((my->monsterAllyGetPlayerLeader() || achievementObserver.checkUidIsFromPlayer(myStats->leader_uid) >= 0) && entity->behavior == &actPlayer) )
 								{
 									if ( !levitating )
 									{
@@ -7068,7 +7100,7 @@ timeToGoAgain:
 							}
 							else if ( myStats->type != SPIDER )
 							{
-								if ( my->monsterAllyGetPlayerLeader() )
+								if ( my->monsterAllyGetPlayerLeader() || achievementObserver.checkUidIsFromPlayer(myStats->leader_uid) >= 0 )
 								{
 									if ( dir >= -13 * PI / 16 && dir <= 13 * PI / 16 )
 									{
@@ -7140,6 +7172,11 @@ timeToGoAgain:
 												//messagePlayer(0, "hunt -> attack, %d", my->monsterHitTime);
 												my->monsterAcquireAttackTarget(attackTarget, MONSTER_STATE_ATTACK);
 
+												if ( myStats->type == DUCK_SMALL )
+												{
+													my->monsterHitTime = 0;
+												}
+
 												if ( MONSTER_SOUND == NULL )
 												{
 													if ( myStats->type != MINOTAUR )
@@ -7158,8 +7195,7 @@ timeToGoAgain:
 													}
 													else
 													{
-														int c;
-														for ( c = 0; c < MAXPLAYERS; c++ )
+														for ( int c = 0; c < MAXPLAYERS; c++ )
 														{
 															if ( c == 0 )
 															{
@@ -7175,7 +7211,7 @@ timeToGoAgain:
 
 												if ( entity != nullptr )
 												{
-													if ( entity->behavior == &actPlayer && myStats->type != DUMMYBOT )
+													if ( entity->behavior == &actPlayer && myStats->type != DUMMYBOT && myStats->type != DUCK_SMALL )
 													{
 														assailant[entity->skill[2]] = true;  // as long as this is active, combat music doesn't turn off
 														assailantTimer[entity->skill[2]] = COMBAT_MUSIC_COOLDOWN;
@@ -7215,8 +7251,8 @@ timeToGoAgain:
 				if (shouldHuntPlayer)
 				{
 					double distToPlayer = 0;
-					int c, playerToChase = -1;
-					for (c = 0; c < MAXPLAYERS; c++)
+					int playerToChase = -1;
+					for ( int c = 0; c < MAXPLAYERS; c++)
 					{
 						if (players[c] && players[c]->entity)
 						{
@@ -7308,7 +7344,7 @@ timeToGoAgain:
 				{
 					real_t followx = leader->x;
 					real_t followy = leader->y;
-					if ( myStats->type == GYROBOT
+					if ( myStats->type == GYROBOT || myStats->type == DUCK_SMALL
 						|| (myStats->type == MOTH_SMALL && myStats->getAttribute("fire_sprite") != "") )
 					{
 						// follow ahead of the leader.
@@ -7370,7 +7406,7 @@ timeToGoAgain:
 
 						if ( doFollow )
 						{
-							if ( myStats->type == GYROBOT
+							if ( myStats->type == GYROBOT || myStats->type == DUCK_SMALL
 								|| (myStats->type == MOTH_SMALL && myStats->getAttribute("fire_sprite") != "") )
 							{
 								my->monsterSetPathToLocation(static_cast<int>(followx) / 16, static_cast<int>(followy) / 16, 0,
@@ -7393,7 +7429,7 @@ timeToGoAgain:
 							return;
 						}
 					}
-					else if ( !(myStats->type == GYROBOT
+					else if ( !(myStats->type == GYROBOT || myStats->type == DUCK_SMALL
 						|| (myStats->type == MOTH_SMALL && myStats->getAttribute("fire_sprite") != "")) )
 					{
 						bool doFollow = true;
@@ -7469,8 +7505,7 @@ timeToGoAgain:
 									}
 									else
 									{
-										int c;
-										for ( c = 0; c < MAXPLAYERS; c++ )
+										for ( int c = 0; c < MAXPLAYERS; c++ )
 										{
 											if ( c == 0 )
 											{
@@ -7490,8 +7525,18 @@ timeToGoAgain:
 							// move monster
 							tangent = atan2( pathnode->y * 16 + 8 - my->y, pathnode->x * 16 + 8 - my->x );
 							int myDex = my->getDEX();
-							if ( my->monsterAllyGetPlayerLeader() )
+							if ( my->monsterAllyGetPlayerLeader() || achievementObserver.checkUidIsFromPlayer(myStats->leader_uid) >= 0 )
 							{
+								if ( myStats->type == DUCK_SMALL )
+								{
+									if ( entity )
+									{
+										if ( entityDist(my, entity) > TOUCHRANGE )
+										{
+											myDex += 2;
+										}
+									}
+								}
 								myDex = std::min(myDex, MONSTER_ALLY_DEXTERITY_SPEED_CAP);
 							}
 							real_t maxVelX = cos(tangent) * .045 * (myDex + 10) * weightratio;
@@ -7731,6 +7776,10 @@ timeToGoAgain:
 											// melee 240ms
 											my->monsterHitTime = std::max(HITRATE - 12, my->monsterHitTime);
 										}
+										/*if ( myStats->type == DUCK_SMALL )
+										{
+											my->monsterHitTime = 0;
+										}*/
 										//messagePlayer(0, "bump1 -> attack, %d", my->monsterHitTime);
 									}
 									else if ( yourStats )
@@ -7797,6 +7846,10 @@ timeToGoAgain:
 										}
 										//messagePlayer(0, "bump2 -> attack, %d", my->monsterHitTime);
 										my->monsterAcquireAttackTarget(attackTarget, MONSTER_STATE_ATTACK);
+										/*if ( myStats->type == DUCK_SMALL )
+										{
+											my->monsterHitTime = 0;
+										}*/
 									}
 									else
 									{
@@ -8006,7 +8059,7 @@ timeToGoAgain:
 								serverUpdateEntitySkill(my, 43); // update monsterAllyState
 							}
 						}
-						else if ( !target && my->monsterAllyGetPlayerLeader() )
+						else if ( !target && (my->monsterAllyGetPlayerLeader() || achievementObserver.checkUidIsFromPlayer(myStats->leader_uid) >= 0) )
 						{
 							// scan for enemies after reaching move point.
 							real_t dist = sightranges[myStats->type];
@@ -8365,8 +8418,7 @@ timeToGoAgain:
 			{
 				serverUpdateEntitySkill(my, 8);
 				serverUpdateEntitySkill(my, 9);
-				int c;
-				for ( c = 0; c < MAXPLAYERS; c++ )
+				for ( int c = 0; c < MAXPLAYERS; c++ )
 				{
 					playSoundPlayer(c, 186, 128);
 				}
@@ -9381,7 +9433,7 @@ timeToGoAgain:
 						{
 							real_t distToPlayer = 0.f;
 							int playerToChase = -1;
-							for ( c = 0; c < MAXPLAYERS; c++ )
+							for ( int c = 0; c < MAXPLAYERS; c++ )
 							{
 								if ( players[c] && players[c]->entity )
 								{
@@ -9512,7 +9564,7 @@ timeToGoAgain:
 						{
 							real_t distToPlayer = 0.f;
 							int playerToChase = -1;
-							for ( c = 0; c < MAXPLAYERS; c++ )
+							for ( int c = 0; c < MAXPLAYERS; c++ )
 							{
 								if ( players[c] && players[c]->entity )
 								{
@@ -9864,7 +9916,116 @@ timeToGoAgain:
 			}
 		}
 
-		if ( myStats->getEffectActive(EFF_KNOCKBACK) )
+		if ( myStats && myStats->type == DUCK_SMALL )
+		{
+			if ( my->monsterSpecialState == DUCK_DIVE )
+			{
+				my->monsterReleaseAttackTarget();
+				real_t centerx = (int)floor(my->x / 16) * 16.0 + 8.0;
+				real_t centery = (int)floor(my->y / 16) * 16.0 + 8.0;
+
+				// center on tile
+				real_t tangent = atan2(centery - my->y, centerx - my->x);
+				MONSTER_VELX = 0.1 * cos(tangent);
+				MONSTER_VELY = 0.1 * sin(tangent);
+				clipMove(&my->x, &my->y, MONSTER_VELX, MONSTER_VELY, my);
+				MONSTER_VELX = 0.0;
+				MONSTER_VELY = 0.0;
+			}
+			else if ( my->monsterSpecialState == DUCK_RETURN )
+			{
+				my->monsterReleaseAttackTarget();
+				Entity* leader = uidToEntity(myStats->leader_uid);
+				if ( !leader )
+				{
+					int dir = my->getUID() % 4;
+					int mapx = 1;
+					int mapy = 1;
+					switch ( dir )
+					{
+					case 0:
+						mapx = 1;
+						mapy = 1;
+						break;
+					case 1:
+						mapx = 1;
+						mapy = map.height - 2;
+						break;
+					case 2:
+						mapx = map.width - 2;
+						mapy = 1;
+						break;
+					case 3:
+						mapx = map.width - 2;
+						mapy = map.height - 2;
+						break;
+					default:
+						break;
+					}
+
+					real_t tangent = atan2((mapy * 16.0 + 8.0) - my->y, (mapx * 16.0 + 8.0) - my->x);
+					my->monsterLookDir = tangent;
+					MONSTER_VELX = cos(tangent);
+					MONSTER_VELY = sin(tangent);
+					clipMove(&my->x, &my->y, MONSTER_VELX, MONSTER_VELY, my);
+					if ( static_cast<int>(my->x / 16) == mapx && static_cast<int>(my->y / 16) == mapy )
+					{
+						playSoundEntity(my, 794 + local_rng.rand() % 2, 128);
+						playSoundEntity(my, 789 + local_rng.rand() % 5, 128);
+						my->setHP(0);
+						return;
+					}
+				}
+				else if ( leader )
+				{
+					real_t tangent = atan2(leader->y - my->y, leader->x - my->x);
+					my->monsterLookDir = tangent;
+					MONSTER_VELX = cos(tangent);
+					MONSTER_VELY = sin(tangent);
+					clipMove(&my->x, &my->y, MONSTER_VELX, MONSTER_VELY, my);
+					if ( entityInsideEntity(my, leader) )
+					{
+						if ( Stat* leaderStats = leader->getStats() )
+						{
+							if ( leader->behavior == &actPlayer )
+							{
+								int player = leader->skill[2];
+								int appearance = 0;
+								if ( myStats->getAttribute("duck_type") != "" )
+								{
+									appearance = std::stoi(myStats->getAttribute("duck_type"));
+								}
+								Item* item2 = newItem(TOOL_DUCK, EXCELLENT, 0, 1, appearance, true, nullptr);
+								Item* item = itemPickup(player, item2);
+								if ( item )
+								{
+									if ( players[player]->isLocalPlayer() )
+									{
+										// item is the new inventory stack for server, free the picked up items
+										free(item2);
+										int oldcount = item->count;
+										item->count = 1;
+										messagePlayer(player, MESSAGE_INTERACTION | MESSAGE_INVENTORY, Language::get(504), item->description());
+										item->count = oldcount;
+									}
+									else
+									{
+										messagePlayer(player, MESSAGE_INTERACTION | MESSAGE_INVENTORY, Language::get(504), item->description());
+										free(item); // item is the picked up items (item == item2)
+									}
+								}
+							}
+						}
+						playSoundEntity(my, 794 + local_rng.rand() % 2, 128);
+						playSoundEntity(my, 789 + local_rng.rand() % 5, 128);
+						my->setHP(0);
+						return;
+					}
+				}
+			}
+			my->monsterRotate();
+		}
+		else if ( myStats->getEffectActive(EFF_KNOCKBACK) )
 		{
 			my->monsterHandleKnockbackVelocity(my->monsterKnockbackTangentDir + PI, weightratio);
 			if ( abs(MONSTER_VELX) > 0.01 || abs(MONSTER_VELY) > 0.01 )
@@ -9940,6 +10101,93 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 	        // but it does, so this fixes it.
 	        return;
 	    }
+	}
+
+	if ( myStats->type == DUCK_SMALL )
+	{
+		if ( dist < 48 )
+		{
+			++monsterHitTime;
+			if ( monsterHitTime >= HITRATE )
+			{
+				bool anyTarget = false;
+				for ( auto node = map.creatures->first; node; node = node->next )
+				{
+					if ( Entity* target = (Entity*)node->element )
+					{
+						if ( target->monsterIsTargetable() && entityDist(target, this) < 2 * TOUCHRANGE )
+						{
+							if ( this->checkEnemy(target) || target->getUID() == monsterTarget )
+							{
+								//if ( Entity* target = uidToEntity(monsterTarget) )
+								{
+									if ( Stat* targetStats = target->getStats() )
+									{
+										if ( !targetStats->getEffectActive(EFF_DISORIENTED)
+											&& !targetStats->getEffectActive(EFF_DISTRACTED_COOLDOWN)
+											&& target->behavior == &actMonster && target->isMobile()
+											&& !monsterIsImmobileTurret(target, targetStats)
+											&& !target->isBossMonster() && targetStats && !uidToEntity(targetStats->leader_uid) )
+										{
+											//if ( /*(entity->monsterState == MONSTER_STATE_WAIT || entity->monsterTarget == 0) || */
+											//	(entityDist(target, this) < 2 * TOUCHRANGE /*&& (Uint32)(target->monsterLastDistractedByNoisemaker) != this->getUID()*/) )
+											{
+												real_t tangent = atan2(target->y - this->y, target->x - this->x);
+												lineTraceTarget(this, this->x, this->y, tangent, 32.0, 0, false, target);
+												if ( hit.entity == target )
+												{
+													if ( target->monsterSetPathToLocation(this->x / 16, this->y / 16, 2,
+														GeneratePathTypes::GENERATE_PATH_DEFAULT) && target->children.first )
+													{
+														target->monsterLastDistractedByNoisemaker = this->getUID();
+														target->monsterTarget = this->getUID();
+														target->monsterState = MONSTER_STATE_HUNT; // hunt state
+														serverUpdateEntitySkill(target, 0);
+
+														if ( target->setEffect(EFF_DISORIENTED, true, 2 * TICKS_PER_SECOND, false) )
+														{
+															target->setEffect(EFF_DISTRACTED_COOLDOWN, true, TICKS_PER_SECOND * 2, false);
+														}
+
+														anyTarget = true;
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+				if ( anyTarget )
+				{
+					playSoundEntity(this, 784 + local_rng.rand() % 2, 128);
+					spawnDamageGib(this, 198, DamageGib::DMG_STRONGEST, DamageGibDisplayType::DMG_GIB_SPRITE, true);
+					monsterHitTime = 0;
+
+					if ( Entity* target = uidToEntity(monsterTarget) )
+					{
+						if ( monsterSetPathToLocation(target->x / 16, target->y / 16, 1,
+							GeneratePathTypes::GENERATE_PATH_TO_HUNT_MONSTER_TARGET, true, false) )
+						{
+							monsterState = MONSTER_STATE_HUNT; // hunt state
+							this->setEffect(EFF_DISORIENTED, true, TICKS_PER_SECOND / 2, false);
+						}
+					}
+					else
+					{
+						if ( monsterSetPathToLocation(this->x / 16, this->y / 16, 1,
+							GeneratePathTypes::GENERATE_PATH_TO_HUNT_MONSTER_TARGET, true, false) )
+						{
+							monsterState = MONSTER_STATE_HUNT; // hunt state
+							this->setEffect(EFF_DISORIENTED, true, TICKS_PER_SECOND / 2, false);
+						}
+					}
+				}
+			}
+		}
+		return;
 	}
 
 	//TODO: I don't like this function getting called every frame. Find a better place to put it.
@@ -12786,7 +13034,7 @@ void Entity::clearMonsterInteract()
 	interactedByMonster = 0;
 }
 
-bool Entity::monsterSetPathToLocation(int destX, int destY, int adjacentTilesToCheck, int pathingType, bool tryRandomSpot)
+bool Entity::monsterSetPathToLocation(int destX, int destY, int adjacentTilesToCheck, int pathingType, bool tryRandomSpot, bool shortByShortest)
 {
 	int u, v;
 	bool foundplace = false;
@@ -12795,8 +13043,15 @@ bool Entity::monsterSetPathToLocation(int destX, int destY, int adjacentTilesToC
 
 	if ( static_cast<int>(x / 16) == destX && static_cast<int>(y / 16) == destY )
 	{
-		monsterAllyFormations.updateOnPathSucceed(getUID(), this);
-		return true; // we're trying to move to the spot we're already at!
+		if ( getStats() && getStats()->type == DUCK_SMALL && tryRandomSpot )
+		{
+			// allow small movements
+		}
+		else
+		{
+			monsterAllyFormations.updateOnPathSucceed(getUID(), this);
+			return true; // we're trying to move to the spot we're already at!
+		}
 	}
 	else if ( !checkObstacle((destX << 4) + 8, (destY << 4) + 8, this, nullptr) )
 	{
@@ -12830,9 +13085,31 @@ bool Entity::monsterSetPathToLocation(int destX, int destY, int adjacentTilesToC
 	if ( !possibleDestinations.empty() )
 	{
 		// sort by distance from monster, first result is shortest path.
-		std::sort(possibleDestinations.begin(), possibleDestinations.end());
-		pathToX = possibleDestinations.at(0).second.first;
-		pathToY = possibleDestinations.at(0).second.second;
+		if ( shortByShortest )
+		{
+			std::sort(possibleDestinations.begin(), possibleDestinations.end());
+			pathToX = possibleDestinations.at(0).second.first;
+			pathToY = possibleDestinations.at(0).second.second;
+		}
+		else
+		{
+			int pick = local_rng.rand() % possibleDestinations.size();
+			pathToX = possibleDestinations.at(pick).second.first;
+			pathToY = possibleDestinations.at(pick).second.second;
+			if ( getStats() && getStats()->type == DUCK_SMALL )
+			{
+				if ( pathToX == destX && pathToY == destY )
+				{
+					// re-roll
+					if ( local_rng.rand() % 4 > 0 )
+					{
+						pick = local_rng.rand() % possibleDestinations.size();
+						pathToX = possibleDestinations.at(pick).second.first;
+						pathToY = possibleDestinations.at(pick).second.second;
+					}
+				}
+			}
+		}
 		foundplace = true;
 	}
 
@@ -14331,6 +14608,10 @@ bool Entity::monsterIsTargetable(bool targetInertMimics) const
 			return false;
 		}
 		else if ( type == MOTH_SMALL && getStats() && getStats()->getAttribute("fire_sprite") != "" )
+		{
+			return false;
+		}
+		else if ( type == DUCK_SMALL )
 		{
 			return false;
 		}

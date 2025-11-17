@@ -3438,6 +3438,11 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 				spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_EARTH_ELEMENTAL_DIE;
 				break;
 			}
+			case PARTICLE_EFFECT_DUCK_SPAWN_FEATHER:
+			{
+				duckSpawnFeather(sprite, particle_x, particle_y, particle_z);
+				break;
+			}
 			case PARTICLE_EFFECT_SABOTAGE_TRAP:
 			{
 				Entity* spellTimer = createParticleTimer(nullptr, TICKS_PER_SECOND, -1);
@@ -4484,8 +4489,14 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 				{
 					continue;
 				}
-				if ( item->type == ARTIFACT_ORB_PURPLE )
+				if ( item->type == ARTIFACT_ORB_PURPLE || item->type == TOOL_DUCK )
 				{
+					Item** slot = itemSlot(stats[clientnum], item);
+					if ( slot != nullptr )
+				{
+						*slot = nullptr;
+					}
+
 					strcpy((char*)net_packet->data, "DIEI");
 					SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
 					SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
@@ -7842,6 +7853,13 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 					stats[player]->weapon->appearance = appearance;
 				}
 			}
+			if ( type == TOOL_DUCK )
+			{
+				if ( stats[player]->weapon && stats[player]->weapon->type != TOOL_DUCK )
+				{
+					return;
+				}
+			}
 			players[player]->entity->attack(net_packet->data[5], net_packet->data[6], nullptr);
 		}
 	}},
@@ -7854,6 +7872,14 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 			openedChest[player]->closeChestServer();
 		}
 	}},
+
+	//Multiplayer duck code (server).
+	{ 'DUCK', []() {
+		const int player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
+		const int duck = net_packet->data[5];
+		players[player]->mechanics.pendingDucks.push_back(
+			std::make_pair(duck, ticks + (3 + (local_rng.rand() % 30)) * TICKS_PER_SECOND));
+	} },
 
 	//The client failed some alchemy.
 	{'BOOM', [](){

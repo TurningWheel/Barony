@@ -3183,6 +3183,8 @@ void Player::init() // for use on new/restart game, UI related
 	hamletShopkeeperSkillLimit[playernum].clear();
 	mechanics.baseSpellLevelUpProcs.clear();
 	mechanics.learnedSpells.clear();
+	mechanics.ducksInARow.clear();
+	mechanics.pendingDucks.clear();
 	mechanics.sustainedSpellMPUsedSorcery = 0;
 	mechanics.sustainedSpellMPUsedMysticism = 0;
 	mechanics.sustainedSpellMPUsedThaumaturgy = 0;
@@ -3220,6 +3222,8 @@ void Player::cleanUpOnEntityRemoval()
 	mechanics.fociDarkChargeTime = 0;
 	mechanics.fociHolyChargeTime = 0;
 	mechanics.lastFociHeldType = 0;
+
+	mechanics.pendingDucks.clear();
 }
 
 const bool Player::isLocalPlayer() const

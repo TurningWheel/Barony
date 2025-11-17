@@ -141,6 +141,25 @@ void actItem(Entity* my)
 	my->new_z -= ITEM_WATERBOB;
 	ITEM_WATERBOB = 0.0;
 
+	if ( my->sprite >= items[TOOL_DUCK].index && my->sprite < items[TOOL_DUCK].index + items[TOOL_DUCK].variations )
+	{
+		if ( multiplayer == CLIENT )
+		{
+			my->flags[INVISIBLE] = true;
+		}
+		else
+		{
+			Item* item = newItemFromEntity(my, true);
+			if ( item )
+			{
+				item->applyDuck(my->parent, my->x, my->y, nullptr, false);
+			}
+			free(item);
+			list_RemoveNode(my->mynode);
+			return;
+		}
+	}
+
 	if ( multiplayer == CLIENT )
 	{
 		my->flags[NOUPDATE] = true;
@@ -766,6 +785,7 @@ void actItem(Entity* my)
 						if ( splash )
 						{
 							playSoundEntity(my, 136, 64);
+							createWaterSplash(my->x, my->y, 30);
 						}
 					}
 				}

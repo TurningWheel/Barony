@@ -225,6 +225,15 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 			Stat* stats = entity->getStats();
 			if ( stats )
 			{
+				if ( stats->type == DUCK_SMALL )
+				{
+					if ( entity->monsterAttack == 0 )
+					{
+						entity->attack(local_rng.rand() % 2 ? MONSTER_POSE_MELEE_WINDUP2 : MONSTER_POSE_MELEE_WINDUP3, 0, nullptr);
+					}
+					return 0;
+				}
+
 				if ( entity->behavior == &actPlayer )
 				{
 					Uint32 color = makeColorRGB(255, 0, 0);

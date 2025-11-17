@@ -1662,20 +1662,20 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->GOLD = 0;
 			stats->RANDOM_GOLD = 0;
 			break;
-		case (1000 + MONSTER_UNUSED_5):
-			stats->type = MONSTER_UNUSED_5;
+		case (1000 + DUCK_SMALL):
+			stats->type = DUCK_SMALL;
 			stats->stat_appearance = local_rng.rand();
 			stats->inventory.first = NULL;
 			stats->inventory.last = NULL;
-			stats->MAXHP = 10;
+			stats->MAXHP = 100;
 			stats->HP = stats->MAXHP;
 			stats->OLDHP = stats->HP;
 			stats->RANDOM_MAXHP = 20;
 			stats->RANDOM_HP = stats->RANDOM_MAXHP;
 			stats->STR = 0;
-			stats->DEX = 0;
+			stats->DEX = 1;
 			stats->CON = 0;
-			stats->PER = 5;
+			stats->PER = 15;
 			stats->CHR = 0;
 			stats->EXP = 0;
 			stats->LVL = 10;

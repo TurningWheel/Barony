@@ -578,7 +578,7 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 		if ( entity->flags[PASSABLE] )
 		{
 			if ( entity->behavior == &actSpearTrap 
-				&& (my->getRace() == HUMAN || my->monsterAllyGetPlayerLeader()) )
+				&& ((my && my->getRace() == HUMAN) || my->monsterAllyGetPlayerLeader()) )
 			{
 				// humans/followers know better than that!
 
@@ -638,7 +638,7 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 		{
 			continue;
 		}
-		if ( entity->behavior == &actMonster && (!my->checkEnemy(entity) && !entity->isInertMimic()) )
+		if ( entity->behavior == &actMonster && ((!my->checkEnemy(entity) && !entity->isInertMimic()) || (my && my->getMonsterTypeFromSprite() == DUCK_SMALL)) )
 		{
 			continue;
 		}

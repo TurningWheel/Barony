@@ -11448,6 +11448,21 @@ bool autoAddHotbarFilter(const Item& item)
 							case INSTRUMENT_DRUM:
 							case INSTRUMENT_LUTE:
 							case INSTRUMENT_HORN:
+							case TOOL_FOCI_FIRE:
+							case TOOL_FOCI_SNOW:
+							case TOOL_FOCI_NEEDLES:
+							case TOOL_FOCI_ARCS:
+							case TOOL_FOCI_SAND:
+							case TOOL_FOCI_DARK_LIFE:
+							case TOOL_FOCI_DARK_RIFT:
+							case TOOL_FOCI_DARK_SILENCE:
+							case TOOL_FOCI_DARK_VENGEANCE:
+							case TOOL_FOCI_DARK_SUPPRESS:
+							case TOOL_FOCI_LIGHT_PEACE:
+							case TOOL_FOCI_LIGHT_JUSTICE:
+							case TOOL_FOCI_LIGHT_PROVIDENCE:
+							case TOOL_FOCI_LIGHT_PURITY:
+							case TOOL_FOCI_LIGHT_SANCTUARY:
 								return true;
 								break;
 							default:
@@ -11457,7 +11472,7 @@ bool autoAddHotbarFilter(const Item& item)
 					break;
 				case 5: // thrown
 					if ( cat == THROWN || item.type == GEM_ROCK || itemTypeIsQuiver(item.type)
-						|| itemIsThrowableTinkerTool(&item) || item.type == TOOL_BEARTRAP )
+						|| itemIsThrowableTinkerTool(&item) || item.type == TOOL_BEARTRAP || item.type == TOOL_DUCK )
 					{
 						return true;
 					}

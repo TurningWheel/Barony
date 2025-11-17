@@ -355,6 +355,7 @@ static const int PARTICLE_EFFECT_GUARD_BODY_ORBIT = 71;
 static const int PARTICLE_EFFECT_GUARD_SPIRIT_ORBIT = 72;
 static const int PARTICLE_EFFECT_GUARD_DIVINE_ORBIT = 73;
 static const int PARTICLE_EFFECT_METEOR_STATIONARY_ORBIT = 74;
+static const int PARTICLE_EFFECT_DUCK_SPAWN_FEATHER = 75;
 
 // actmagicIsVertical constants
 static const int MAGIC_ISVERTICAL_NONE = 0;

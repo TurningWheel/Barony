@@ -70,8 +70,8 @@ void updateEnemyBar(Entity* source, Entity* target, const char* name, Sint32 hp,
 				}
 			}
 		}
-		if ( source->behavior == &actMonster && source->getStats() && source->getStats()->type == MONSTER_ADORCISED_WEAPON  
-			&& source->getStats()->getAttribute("spirit_weapon") != "" )
+		if ( source->behavior == &actMonster && source->getStats() && (source->getStats()->type == DUCK_SMALL || (source->getStats()->type == MONSTER_ADORCISED_WEAPON
+			&& source->getStats()->getAttribute("spirit_weapon") != "")) ) // special non-follower list followers
 		{
 			Entity* parent = uidToEntity(source->parent);
 			if ( parent && parent->behavior == &actPlayer && parent != target )
