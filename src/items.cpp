@@ -5373,6 +5373,11 @@ bool Item::canUnequip(const Stat* const wielder)
 		}
 	}
 
+	if ( type == TOOL_DUCK )
+	{
+		return true;
+	}
+
 	if ( wielder )
 	{
 		if ( wielder->type == AUTOMATON )

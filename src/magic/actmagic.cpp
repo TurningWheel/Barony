@@ -1110,7 +1110,7 @@ bool magicOnSpellCastEvent(Entity* parent, Entity* projectile, Entity* hitentity
 		}
 		else
 		{
-			int chance = 4 + (stats[player]->getProficiency(spell->skillID) / 20) * 3; // 4 - 16
+			int chance = 4 + (stats[player]->getProficiency(spell->skillID) / 20) * 1; // 4 - 8
 			if ( eventType & spell_t::SPELL_LEVEL_EVENT_SHAPESHIFT
 				|| eventType & spell_t::SPELL_LEVEL_EVENT_SUMMON )
 			{
@@ -1119,16 +1119,20 @@ bool magicOnSpellCastEvent(Entity* parent, Entity* projectile, Entity* hitentity
 
 			if ( (eventType & spell_t::SPELL_LEVEL_EVENT_SUSTAIN) )
 			{
+				bool sustainedChance = players[player]->mechanics.sustainedSpellLevelChance(spell->skillID);
+				int baseSpellChance = players[player]->mechanics.baseSpellLevelChance(spell->skillID);
 				if ( eventType & spell_t::SPELL_LEVEL_EVENT_MINOR_CHANCE )
 				{
 					chance += 8;
 				}
-				bool sustainedChance = players[player]->mechanics.sustainedSpellLevelChance(spell->skillID);
+				chance = std::max(2, chance - baseSpellChance);
+
 				if ( sustainedChance && (local_rng.rand() % chance == 0) )
 				{
 					if ( allowedLevelup )
 					{
 						players[player]->mechanics.sustainedSpellClearMP(spell->skillID);
+						players[player]->mechanics.baseSpellClearMP(spell->skillID);
 						parent->increaseSkill(spell->skillID);
 						skillIncreased = true;
 					}
@@ -1141,11 +1145,11 @@ bool magicOnSpellCastEvent(Entity* parent, Entity* projectile, Entity* hitentity
 			else
 			{
 				int baseSpellChance = players[player]->mechanics.baseSpellLevelChance(spell->skillID);
-				chance = std::max(2, chance - baseSpellChance);
 				if ( eventType & spell_t::SPELL_LEVEL_EVENT_MINOR_CHANCE )
 				{
 					chance += 8;
 				}
+				chance = std::max(2, chance - baseSpellChance);
 
 				if ( local_rng.rand() % chance == 0 )
 				{

@@ -1523,7 +1523,7 @@ bool PlayfabUser_t::PostScoreHandler_t::ScoreUpdate_t::saveToFile()
 
     d.AddMember("version", rapidjson::Value(1), d.GetAllocator());
     d.AddMember("hash", rapidjson::Value(hash.c_str(), d.GetAllocator()), d.GetAllocator());
-    d.AddMember("name", rapidjson::Value(hash.c_str(), d.GetAllocator()), d.GetAllocator());
+    d.AddMember("name", rapidjson::Value(name.c_str(), d.GetAllocator()), d.GetAllocator());
     d.AddMember("score", rapidjson::Value(score.c_str(), d.GetAllocator()), d.GetAllocator());
 
     File* fp = FileIO::open(outputPath.c_str(), "wb");

@@ -7308,7 +7308,7 @@ bool Player::PlayerMechanics_t::sustainedSpellLevelChance(int skillID)
 	}
 	else
 	{
-		threshold = 5 + (stats[player.playernum]->getProficiency(skillID) / 2); // 10-55
+		threshold = 10;//5 + (stats[player.playernum]->getProficiency(skillID) / 2); // 10-55
 	}
 
 	if ( skillID == PRO_SORCERY )
@@ -7346,7 +7346,7 @@ int Player::PlayerMechanics_t::baseSpellLevelChance(int skillID)
 	{
 		return 0;
 	}
-	int threshold = 20 + stats[player.playernum]->getProficiency(skillID) / 2; //20-70
+	int threshold = 20 + stats[player.playernum]->getProficiency(skillID) / 5; //20-40
 
 	return counter / threshold;
 }

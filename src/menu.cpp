@@ -8729,6 +8729,11 @@ void doNewGame(bool makeHighscore) {
         camera.luminance = defaultLuminance;
 	}
 	gameplayCustomManager.readFromFile();
+	if ( gameplayCustomManager.inUse() )
+	{
+		conductGameChallenges[CONDUCT_MODDED] = 1;
+		Mods::disableSteamAchievements = true;
+	}
 	textSourceScript.scriptVariables.clear();
 
 	if ( multiplayer == CLIENT )

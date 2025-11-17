@@ -3526,6 +3526,7 @@ bool AchievementObserver::updateOnLevelChange()
 
 int AchievementObserver::checkUidIsFromPlayer(Uint32 uid)
 {
+	if ( uid == 0 ) { return -1; }
 	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
 		if ( achievementObserver.playerUids[i] == uid )

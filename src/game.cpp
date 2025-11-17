@@ -2165,6 +2165,11 @@ void gameLogic(void)
 	                std::atomic_bool loading_done {false};
 	                auto loading_task = std::async(std::launch::async, [&loading_done](){
 					    gameplayCustomManager.readFromFile();
+						if ( gameplayCustomManager.inUse() )
+						{
+							conductGameChallenges[CONDUCT_MODDED] = 1;
+							Mods::disableSteamAchievements = true;
+						}
 					    textSourceScript.scriptVariables.clear();
 	                    updateLoadingScreen(10);
 

@@ -2365,6 +2365,11 @@ static void changeLevel() {
     std::atomic_bool loading_done {false};
     auto loading_task = std::async(std::launch::async, [&loading_done](){
 	    gameplayCustomManager.readFromFile();
+		if ( gameplayCustomManager.inUse() )
+		{
+			conductGameChallenges[CONDUCT_MODDED] = 1;
+			Mods::disableSteamAchievements = true;
+		}
         updateLoadingScreen(10);
 
 	    int checkMapHash = -1;
@@ -4493,7 +4498,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 				{
 					Item** slot = itemSlot(stats[clientnum], item);
 					if ( slot != nullptr )
-				{
+					{
 						*slot = nullptr;
 					}
 
@@ -4512,7 +4517,6 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 					net_packet->len = 28;
 					sendPacketSafe(net_sock, -1, net_packet, 0);
 					list_RemoveNode(node);
-					break;
 				}
 			}
 		}

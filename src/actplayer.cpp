@@ -5223,14 +5223,14 @@ void actPlayer(Entity* my)
 	}
 
 #ifndef NDEBUG
-	/*if ( my->ticks == 1 )
-	{
-		consoleCommand("/allspells4");
-		if ( PLAYER_NUM == 0 )
-		{
-			consoleCommand("/god");
-		}
-	}*/
+	//if ( my->ticks == 1 )
+	//{
+	//	//consoleCommand("/allspells4");
+	//	//if ( PLAYER_NUM == 0 )
+	//	//{
+	//	//	//consoleCommand("/god");
+	//	//}
+	//}
 #endif
 
 	{
@@ -6949,6 +6949,92 @@ void actPlayer(Entity* my)
 		players[PLAYER_NUM]->player_last_y = my->y;
 
 		PLAYER_ALIVETIME++;
+
+		if ( multiplayer != CLIENT && PLAYER_ALIVETIME == 1 )
+		{
+			node_t* nextnode = nullptr;
+			for ( auto node = stats[PLAYER_NUM]->void_chest_inventory.first; node; node = nextnode )
+			{
+				nextnode = node->next;
+				if ( Item* item = (Item*)node->element )
+				{
+					if ( item->type == TOOL_DUCK )
+					{
+						list_RemoveNode(node);
+					}
+				}
+			}
+		}
+
+		if ( players[PLAYER_NUM]->isLocalPlayer() && PLAYER_ALIVETIME == 1 )
+		{
+			for ( auto duck : players[PLAYER_NUM]->mechanics.ducksInARow )
+			{
+				bool birdInHand = false;
+				for ( auto node = stats[PLAYER_NUM]->inventory.first; node; node = node->next )
+				{
+					if ( Item* item = (Item*)node->element )
+					{
+						if ( item->type == TOOL_DUCK )
+						{
+							if ( item->getDuckPlayer() == PLAYER_NUM )
+							{
+								if ( ((item->appearance % (3 * MAXPLAYERS)) / MAXPLAYERS) == duck )
+								{
+									birdInHand = true;
+									break;
+								}
+							}
+						}
+					}
+				}
+
+				if ( !birdInHand )
+				{
+					if ( multiplayer == CLIENT )
+					{
+						// request duck
+						strcpy((char*)net_packet->data, "DUCK");
+						net_packet->data[4] = PLAYER_NUM;
+						net_packet->data[5] = duck;
+						net_packet->address.host = net_server.host;
+						net_packet->address.port = net_server.port;
+						net_packet->len = 6;
+						sendPacketSafe(net_sock, -1, net_packet, 0);
+					}
+					else
+					{
+						players[PLAYER_NUM]->mechanics.pendingDucks.push_back(
+							std::make_pair(duck, ticks + (3 + (local_rng.rand() % 30)) * TICKS_PER_SECOND));
+					}
+				}
+			}
+		}
+
+		if ( PLAYER_ALIVETIME > 300 && players[PLAYER_NUM]->mechanics.pendingDucks.size() )
+		{
+			for ( auto it = players[PLAYER_NUM]->mechanics.pendingDucks.begin(); it != players[PLAYER_NUM]->mechanics.pendingDucks.end(); )
+			{
+				if ( ticks >= it->second )
+				{
+					int dirx = local_rng.rand() % 2;
+					int diry = local_rng.rand() % 2;
+					int mapx = dirx ? 1 : map.width - 2;
+					int mapy = diry ? 1 : map.height - 2;
+
+					int appearance = it->first * MAXPLAYERS + PLAYER_NUM;
+					Item* duckItem = newItem(TOOL_DUCK, EXCELLENT, 0, 1, appearance, true, nullptr);
+					duckItem->applyDuck(0, mapx * 16 + 8.0, mapy * 16 + 8.0, nullptr, true);
+					free(duckItem);
+					it = players[PLAYER_NUM]->mechanics.pendingDucks.erase(it);
+				}
+				else
+				{
+					++it;
+				}
+			}
+		}
+
 		if ( PLAYER_NUM == clientnum ) // specifically the host - in splitscreen we only process this once for all players.
 		{
 			if ( PLAYER_ALIVETIME == 300 && gameModeManager.currentMode == GameModeManager_t::GameModes::GAME_MODE_DEFAULT )
@@ -8487,15 +8573,18 @@ void actPlayer(Entity* my)
 					playSoundPlayer(PLAYER_NUM, 249, 128);
 					cameravars[PLAYER_NUM].shakex += .1;
 					cameravars[PLAYER_NUM].shakey += 10;
+					createWaterSplash(my->x, my->y, 30);
 				}
 				else if ( swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] && stats[PLAYER_NUM]->type == AUTOMATON )
 				{
 					messagePlayer(PLAYER_NUM, MESSAGE_STATUS, Language::get(3702));
 					playSound(136, 128);
+					createWaterSplash(my->x, my->y, 30);
 				}
 				else if ( swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] )
 				{
 					playSound(136, 128);
+					createWaterSplash(my->x, my->y, 30);
 				}
 			}
 
@@ -10117,8 +10206,14 @@ void actPlayer(Entity* my)
 									{
 										continue;
 									}
-									if ( item->type == ARTIFACT_ORB_PURPLE )
+									if ( item->type == ARTIFACT_ORB_PURPLE || item->type == TOOL_DUCK )
 									{
+										Item** slot = itemSlot(stats[PLAYER_NUM], item);
+										if ( slot != nullptr )
+										{
+											*slot = nullptr;
+										}
+
 										int c = item->count;
 										for ( c = item->count; c > 0; c-- )
 										{
@@ -10143,7 +10238,7 @@ void actPlayer(Entity* my)
 											entity->skill[14] = item->appearance;
 											entity->skill[15] = item->identified;
 										}
-										break;
+										list_RemoveNode(node);
 									}
 								}
 							}
@@ -10182,6 +10277,42 @@ void actPlayer(Entity* my)
                                         stats[0]->addItemToLootingBag(PLAYER_NUM, my->x, my->y, *slot);
                                     }
                                 }
+							}
+							else
+							{
+								Item** slots[] = {
+									&stats[PLAYER_NUM]->helmet,
+									&stats[PLAYER_NUM]->breastplate,
+									&stats[PLAYER_NUM]->gloves,
+									&stats[PLAYER_NUM]->shoes,
+									&stats[PLAYER_NUM]->shield,
+									&stats[PLAYER_NUM]->weapon,
+									&stats[PLAYER_NUM]->cloak,
+									&stats[PLAYER_NUM]->amulet,
+									&stats[PLAYER_NUM]->ring,
+									&stats[PLAYER_NUM]->mask,
+								};
+								constexpr int num_slots = sizeof(slots) / sizeof(slots[0]);
+								for ( int c = 0; c < num_slots; ++c ) {
+									if ( slots[c] )
+									{
+										if ( Item* item = *(slots[c]) )
+										{
+											if ( item->type == ARTIFACT_ORB_PURPLE || item->type == TOOL_DUCK )
+											{
+												*(slots[c]) = nullptr;
+												if ( item->node )
+												{
+													list_RemoveNode(item->node);
+												}
+												else
+												{
+													free(item);
+												}
+											}
+										}
+									}
+								}
 							}
 
 							deleteMultiplayerSaveGames(); //Will only delete save games if was last player alive.
