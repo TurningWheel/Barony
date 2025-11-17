@@ -5482,12 +5482,7 @@ real_t Entity::getACEffectiveness(Entity* my, Stat* myStats, bool isPlayer, Enti
 
 	if ( myStats->defending )
 	{
-		if ( gameplayCustomManager.inUse() && my->behavior == &actPlayer )
-		{
-			double playerACEffActive = gameplayCustomManager.playerACEactive / 100.0;
-			return std::max(0.0, std::min(1.0, playerACEffActive));
-		}
-		else
+		if ( !gameplayCustomManager.inUse() || my->behavior != &actPlayer )
 		{
 			return 1.0;
 		}
@@ -5537,8 +5532,21 @@ real_t Entity::getACEffectiveness(Entity* my, Stat* myStats, bool isPlayer, Enti
 	if ( gameplayCustomManager.inUse() && my->behavior == &actPlayer )
 	{
 		double playerACEffPassive = gameplayCustomManager.playerACEpassive / 100.0;
+		double playerACEffActive = gameplayCustomManager.playerACEactive / 100.0;
+		double ACEtoCalculate = 0.0;
+
+		if ( myStats->defending )
+		{
+			ACEtoCalculate = playerACEffActive;
+		}
+		else
+		{
+			ACEtoCalculate = playerACEffPassive;
+		}
+		ACEtoCalculate = std::max(0.0, std::min(1.0, ACEtoCalculate));
+
 		double blessingModifier = gameplayCustomManager.playerACEbless / 100.0;
-		return std::max(0.0, std::min(1.0, playerACEffPassive + blessingModifier * blessings));
+		return std::max(0.0, std::min(1.0, ACEtoCalculate + blessingModifier * blessings));
 	}
 	return std::max(0.0, std::min(1.0, .75 + 0.025 * blessings));
 }
