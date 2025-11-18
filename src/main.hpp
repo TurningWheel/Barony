@@ -822,6 +822,8 @@ extern real_t sfxvolume;
 extern real_t sfxAmbientVolume;
 extern real_t sfxEnvironmentVolume;
 extern real_t sfxNotificationVolume;
+extern bool instrument_bg_enabled;
+extern bool instrument_fg_enabled;
 extern bool musicPreload;
 extern bool *animatedtiles, *swimmingtiles, *lavatiles;
 extern char tempstr[1024];

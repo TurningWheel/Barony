@@ -638,6 +638,8 @@ namespace MainMenu {
 		float environment_volume = 100.f;
 		float notification_volume = 100.f;
 		float music_volume = 100.f;
+		bool set_instrument_bg_enabled = true;
+		bool set_instrument_fg_enabled = true;
 		bool minimap_pings_enabled = true;
 		bool player_monster_sounds_enabled = true;
 		bool out_of_focus_audio_enabled = true;
@@ -2922,6 +2924,8 @@ namespace MainMenu {
 		sfxEnvironmentVolume = std::min(std::max(0.f, environment_volume / 100.f), 1.f);
 		sfxNotificationVolume = std::min(std::max(0.f, notification_volume / 100.f), 1.f);
 		musvolume = std::min(std::max(0.f, music_volume / 100.f), 1.f);
+		instrument_bg_enabled = set_instrument_bg_enabled;
+		instrument_fg_enabled = set_instrument_fg_enabled;
 		minimapPingMute = !minimap_pings_enabled;
 		mute_player_monster_sounds = !player_monster_sounds_enabled;
 		mute_audio_on_focus_lost = !out_of_focus_audio_enabled;
@@ -3047,6 +3051,8 @@ namespace MainMenu {
 		settings.environment_volume = (float)sfxEnvironmentVolume * 100.f;
 		settings.notification_volume = (float)sfxNotificationVolume * 100.f;
 		settings.music_volume = (float)musvolume * 100.f;
+		settings.set_instrument_bg_enabled = instrument_bg_enabled;
+		settings.set_instrument_fg_enabled = instrument_fg_enabled;
 		settings.minimap_pings_enabled = !minimapPingMute;
 		settings.player_monster_sounds_enabled = !mute_player_monster_sounds;
 		settings.out_of_focus_audio_enabled = !mute_audio_on_focus_lost;
@@ -3084,7 +3090,7 @@ namespace MainMenu {
 	}
 
 	bool AllSettings::serialize(FileInterface* file) {
-	    int version = 22;
+	    int version = 23;
 	    file->property("version", version);
 	    file->property("mods", mods);
 		file->property("crossplay_enabled", crossplay_enabled);
@@ -3176,6 +3182,8 @@ namespace MainMenu {
 			file->property("notification_volume", notification_volume);
 		}
 		file->property("music_volume", music_volume);
+		file->propertyVersion("instrument_fg_enabled", version >= 23, set_instrument_fg_enabled);
+		file->propertyVersion("instrument_bg_enabled", version >= 23, set_instrument_bg_enabled);
 		file->property("minimap_pings_enabled", minimap_pings_enabled);
 		file->property("player_monster_sounds_enabled", player_monster_sounds_enabled);
 		file->property("out_of_focus_audio_enabled", out_of_focus_audio_enabled);
@@ -6776,6 +6784,8 @@ bind_failed:
 			allSettings.minimap_pings_enabled, [](Button& button){soundToggleSetting(button); allSettings.minimap_pings_enabled = button.isPressed();});
 		y += settingsAddBooleanOption(*settings_subwindow, y, "player_monster_sounds", Language::get(5201), Language::get(5202),
 			allSettings.player_monster_sounds_enabled, [](Button& button){soundToggleSetting(button); allSettings.player_monster_sounds_enabled = button.isPressed();});
+		y += settingsAddBooleanOption(*settings_subwindow, y, "instrument_bg_enabled", Language::get(6870), Language::get(6871),
+			allSettings.set_instrument_bg_enabled, [](Button& button) {soundToggleSetting(button); allSettings.set_instrument_bg_enabled = button.isPressed(); });
 #ifndef NINTENDO
 		y += settingsAddBooleanOption(*settings_subwindow, y, "out_of_focus_audio", Language::get(5203),
 			Language::get(5204),
@@ -6813,6 +6823,7 @@ bind_failed:
 #endif
 					{Setting::Type::Boolean, "minimap_pings"},
 					{Setting::Type::Boolean, "player_monster_sounds"},
+					{Setting::Type::Boolean, "instrument_bg_enabled"},
 					{Setting::Type::Boolean, "out_of_focus_audio"},
 					{Setting::Type::Boolean, "music_preload"} });
 		}
@@ -6837,6 +6848,7 @@ bind_failed:
 #endif
 				{Setting::Type::Boolean, "minimap_pings"},
 				{Setting::Type::Boolean, "player_monster_sounds"},
+				{Setting::Type::Boolean, "instrument_bg_enabled"},
 				{Setting::Type::Boolean, "out_of_focus_audio"},
 				{Setting::Type::Boolean, "music_preload"}});
 		}
@@ -6857,6 +6869,7 @@ bind_failed:
 #endif
 				{Setting::Type::Boolean, "minimap_pings"},
 				{Setting::Type::Boolean, "player_monster_sounds"},
+				{Setting::Type::Boolean, "instrument_bg_enabled"},
 				{Setting::Type::Boolean, "out_of_focus_audio"},
 				{Setting::Type::Boolean, "music_preload"}});
 		}
@@ -6874,7 +6887,9 @@ bind_failed:
 			{Setting::Type::Boolean, "use_custom_rolloff"},
 #endif
 			{Setting::Type::Boolean, "minimap_pings"},
-			{Setting::Type::Boolean, "player_monster_sounds"}});
+			{Setting::Type::Boolean, "player_monster_sounds"},
+			{Setting::Type::Boolean, "instrument_bg_enabled"},
+			});
 #endif
 
 #if !defined(NINTENDO) && defined(USE_FMOD)

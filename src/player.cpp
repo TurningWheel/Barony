@@ -7801,7 +7801,7 @@ void Player::PlayerMechanics_t::ensembleMusicUpdate()
 			debugPlaying += "Vol: " + std::to_string(volume) + ") ";
 		}
 		messagePlayer(0, MESSAGE_DEBUG, "%s", debugPlaying.c_str());*/
-		float defaultVolume = 0.5f * *cvar_ensemble_vol_bg;
+		//float defaultVolume = 0.5f * *cvar_ensemble_vol_bg;
 
 		Uint32 trackstatus = 0;
 		Uint32 trackstatusLocal = 0;
@@ -8010,7 +8010,7 @@ void Player::PlayerMechanics_t::ensembleMusicUpdate()
 						transceiver = nullptr;
 					}
 
-					float bg_volume = *cvar_ensemble_vol_bg;
+					float bg_volume = instrument_bg_enabled ? *cvar_ensemble_vol_bg : -80.f;
 					if ( transceiver )
 					{
 						if ( trackstatusLocal & (1 << i) )
@@ -8064,7 +8064,7 @@ void Player::PlayerMechanics_t::ensembleMusicUpdate()
 				{
 					channelFader->setActive(false);
 				}
-				music_ensemble_local_recv_player[c]->setVolume(0.5f * *cvar_ensemble_vol_fg);
+				music_ensemble_local_recv_player[c]->setVolume((instrument_bg_enabled ? 0.5f : 4.f) * *cvar_ensemble_vol_fg);
 
 				FMOD::DSP* transceivers[NUMENSEMBLEMUSIC] = { nullptr };
 				for ( int i = 0; i < NUMENSEMBLEMUSIC; ++i )

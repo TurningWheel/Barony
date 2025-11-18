@@ -238,8 +238,14 @@ void sound_update(int player, int index, int numplayers)
 							globalEnsemblePlaying |= (players[i]->mechanics.ensembleDataUpdate >> 16) & 0xFFFF;
 							localEnsemblePlaying |= (players[i]->mechanics.ensembleDataUpdate >> 8) & 0xFF;
 						}
+						/*if ( players[i]->entity && !client_disconnected[i] )
+						{
+							// if we want other players to override the main soundtrack with local sound
+							localEnsemblePlaying |= (players[i]->mechanics.ensembleDataUpdate >> 8) & 0xFF;
+						}*/
 					}
-					if ( globalEnsemblePlaying == 0 || (*cvar_ensemble_vol_bg <= -79.f && localEnsemblePlaying == 0) )
+					if ( globalEnsemblePlaying == 0 || (*cvar_ensemble_vol_bg <= -79.f && localEnsemblePlaying == 0)
+						|| (!instrument_bg_enabled && localEnsemblePlaying == 0) )
 					{
 						ensemblePlaying = false;
 					}

@@ -7139,5 +7139,9 @@ to replay this challenge!
 6867 Your amulet glows a faint red.#
 6868 You have nothing else to learn by trading with this shopkeep.#
 6869 The duck slips out from your pack!#
+6870 Instrument Background Tracks#
+6871 Enable instrument music tracks to continue while their effects are active but not actively being played.#
+6872 Instrument Foreground Tracks#
+6873 Instrument Foreground Tracks description#
 
 6999 END#
