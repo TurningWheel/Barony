@@ -6844,7 +6844,7 @@ Host to enable the game setting.
 6582 hologram#
 6583 moth#
 6584 earth sprite#
-6585 monster_unused_5#
+6585 duck#
 6586 monster_unused_6#
 6587 monster_unused_7#
 6588 monster_unused_8#
@@ -6853,7 +6853,7 @@ Host to enable the game setting.
 6591 holograms#
 6592 moths#
 6593 earth sprites#
-6594 monster_unused_5s#
+6594 ducks#
 6595 monster_unused_6s#
 6596 monster_unused_7s#
 6597 monster_unused_8s#
@@ -6871,7 +6871,7 @@ Host to enable the game setting.
 6609 ...#
 6610 ...#
 6611 ...#
-6612 ...#
+6612 *quack!*#
 6613 ...#
 6614 ...#
 6615 ...#
@@ -7056,15 +7056,15 @@ to replay this challenge!
 6782 Gremlin#
 6783 monster_x#
 6784 class_21#
-6785 class_22#
+6785 sapper#
 6786 scion#
-6787 sapper#
+6787 class_24#
 6788 class_25#
 # main menu capitalized
 6789 Class_21#
-6790 Class_22#
+6790 Sapper#
 6791 Scion#
-6792 Sapper#
+6792 class_24#
 6793 Class_25#
 6794 You lack the foliage to cast the spell!#
 6795 You are covered with thorns!#
@@ -7138,5 +7138,6 @@ to replay this challenge!
 6866 Your divine guard fades.#
 6867 Your amulet glows a faint red.#
 6868 You have nothing else to learn by trading with this shopkeep.#
+6869 The duck slips out from your pack!#
 
 6999 END#

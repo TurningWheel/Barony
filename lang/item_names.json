@@ -1692,6 +1692,10 @@
 		"hat_circlet_thaumaturgy": {
 			"name_identified": "circlet of thaumaturgy",
 			"name_unidentified": "circlet"
+		},
+		"tool_duck": {
+			"name_identified": "duck",
+			"name_unidentified": "duck"
 		}
     },
 	"spell_names": {

@@ -687,6 +687,8 @@ void mothAnimate(Entity* my, Stat* myStats, double dist)
 					BODY_FLOAT_ATK = 0.0;
 					BODY_CIRCLING_ATTACK = 0.0;
 					BODY_CIRCLING_ATTACK_SETPOINT = 2.0;
+
+					playSoundEntityLocal(my, 170, 32);
 				}
 				else
 				{

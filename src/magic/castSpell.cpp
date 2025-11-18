@@ -8049,6 +8049,13 @@ bool spellIsNaturallyLearnedByRaceOrClass(Entity& caster, Stat& stat, int spellI
 			return true;
 		}
 	}
+	else if ( client_classes[playernum] == CLASS_24 )
+	{
+		if ( spellID == SPELL_MAGICIANS_ARMOR || spellID == SPELL_SLOW )
+		{
+			return true;
+		}
+	}
 	else if ( stat.getEffectActive(EFF_SHAPESHIFT) )
 	{
 		switch ( spellID )

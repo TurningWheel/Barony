@@ -108,7 +108,7 @@ void initAdorcisedWeapon(Entity* my, Stat* myStats)
 		MONSTER_SPOTSND = -1;
 		MONSTER_SPOTVAR = 1;
 		MONSTER_IDLESND = -1;
-		MONSTER_IDLEVAR = 3;
+		MONSTER_IDLEVAR = 1;
 	}
 
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
@@ -207,7 +207,7 @@ void initFlameElemental(Entity* my, Stat* myStats)
 		MONSTER_SPOTSND = -1;
 		MONSTER_SPOTVAR = 1;
 		MONSTER_IDLESND = -1;
-		MONSTER_IDLEVAR = 3;
+		MONSTER_IDLEVAR = 1;
 	}
 
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
@@ -1246,7 +1246,7 @@ void initHologram(Entity* my, Stat* myStats)
 		MONSTER_SPOTSND = -1;
 		MONSTER_SPOTVAR = 1;
 		MONSTER_IDLESND = -1;
-		MONSTER_IDLEVAR = 3;
+		MONSTER_IDLEVAR = 1;
 	}
 
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
@@ -1491,6 +1491,8 @@ void earthElementalDie(Entity* my)
 	spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_EARTH_ELEMENTAL_DIE;
 	serverSpawnMiscParticlesAtLocation(spellTimer->x, spellTimer->y, spellTimer->z, PARTICLE_EFFECT_EARTH_ELEMENTAL_DIE, 0);
 
+	playSoundEntity(my, 798, 64);
+
 	my->removeMonsterDeathNodes();
 	//spawnPoof(my->x, my->y, my->z, 1.0, true);
 	list_RemoveNode(my->mynode);
@@ -1522,9 +1524,9 @@ void initEarthElemental(Entity* my, Stat* myStats)
 	my->flags[PASSABLE] = true;
 	if ( multiplayer != CLIENT )
 	{
-		MONSTER_SPOTSND = -1;
+		MONSTER_SPOTSND = 797;
 		MONSTER_SPOTVAR = 1;
-		MONSTER_IDLESND = -1;
+		MONSTER_IDLESND = 800;
 		MONSTER_IDLEVAR = 3;
 	}
 
@@ -2240,6 +2242,7 @@ void earthElementalAnimate(Entity* my, Stat* myStats, double dist)
 							int damage = getSpellEffectDurationFromID(SPELL_EARTH_ELEMENTAL, my, nullptr, my);
 							damage += statGetCON(myStats, my);
 							createSpellExplosionArea(SPELL_EARTH_ELEMENTAL, my, my->x, my->y, my->z, 16.0, damage, my);
+							playSoundEntity(my, 181, 128);
 						}
 					}
 					else if ( EARTH_SPAWN_STATE == 2 )

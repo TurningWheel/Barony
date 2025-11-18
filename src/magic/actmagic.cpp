@@ -18364,7 +18364,11 @@ void actParticleShatterEarth(Entity* my)
 			boulderSpawn = *cvar_se4 + tallCeilingDelay;
 		}
 		boulderSpawn += my->actmagicDelayMove;
-		if ( my->ticks == boulderSpawn )
+		if ( my->ticks == 1 )
+		{
+			playSoundEntity(my, 799, 128);
+		}
+		else if ( my->ticks == boulderSpawn )
 		{
 			if ( multiplayer != CLIENT )
 			{

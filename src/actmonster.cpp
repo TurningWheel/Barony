@@ -5259,6 +5259,7 @@ void actMonster(Entity* my)
 										lineTrace(my, my->x, my->y, tangent, monsterVisionRange, 0, false);
 									}
 									if ( hit.entity == entity )
+									{
 										if ( entity->behavior == &actPlayer && entity->isInvisible() )
 										{
 											real_t dist = sqrt(pow(entity->vel_x, 2) + pow(entity->vel_y, 2));
@@ -5275,6 +5276,7 @@ void actMonster(Entity* my)
 												players[entity->skill[2]]->mechanics.enemyRaisedStealthAgainst[my->getUID()]++;
 											}
 										}
+									}
 								}
 								continue;
 							}
@@ -5486,9 +5488,16 @@ void actMonster(Entity* my)
 				{
 					real_t followx = leader->x;
 					real_t followy = leader->y;
+
+					int followDist = WAIT_FOLLOWDIST;
 					if ( myStats->type == GYROBOT || myStats->type == DUCK_SMALL
 						|| (myStats->type == MOTH_SMALL && myStats->getAttribute("fire_sprite") != "") )
 					{
+						if ( myStats->type == MOTH_SMALL || myStats->type == DUCK_SMALL )
+						{
+							followDist /= 2;
+						}
+
 						// follow ahead of the leader.
 						real_t startx = leader->x;
 						real_t starty = leader->y;
@@ -5529,7 +5538,7 @@ void actMonster(Entity* my)
 								// hit a wall.
 								break;
 							}
-							if ( sqrt(pow(leader->x - previousx, 2) + pow(leader->y - previousy, 2)) > WAIT_FOLLOWDIST )
+							if ( sqrt(pow(leader->x - previousx, 2) + pow(leader->y - previousy, 2)) > followDist )
 							{
 								break;
 							}
@@ -5540,7 +5549,7 @@ void actMonster(Entity* my)
 					}
 					double dist = sqrt(pow(my->x - followx, 2) + pow(my->y - followy, 2));
 
-					if ( dist > WAIT_FOLLOWDIST )
+					if ( dist > followDist )
 					{
 						bool doFollow = true;
 						if ( my->monsterTarget != 0 )
@@ -7342,11 +7351,17 @@ timeToGoAgain:
 				Entity* leader = uidToEntity(myStats->leader_uid);
 				if ( leader )
 				{
+					int followDist = HUNT_FOLLOWDIST;
 					real_t followx = leader->x;
 					real_t followy = leader->y;
 					if ( myStats->type == GYROBOT || myStats->type == DUCK_SMALL
 						|| (myStats->type == MOTH_SMALL && myStats->getAttribute("fire_sprite") != "") )
 					{
+						if ( myStats->type == MOTH_SMALL || myStats->type == DUCK_SMALL )
+						{
+							followDist /= 2;
+						}
+
 						// follow ahead of the leader.
 						real_t startx = leader->x;
 						real_t starty = leader->y;
@@ -7386,7 +7401,7 @@ timeToGoAgain:
 							{
 								break;
 							}
-							if ( sqrt(pow(leader->x - previousx, 2) + pow(leader->y - previousy, 2)) > HUNT_FOLLOWDIST )
+							if ( sqrt(pow(leader->x - previousx, 2) + pow(leader->y - previousy, 2)) > followDist )
 							{
 								break;
 							}
@@ -7396,7 +7411,7 @@ timeToGoAgain:
 						//createParticleFollowerCommand(previousx, previousy, 0, 175); debug particle
 					}
 					double dist = sqrt(pow(my->x - followx, 2) + pow(my->y - followy, 2));
-					if ( dist > HUNT_FOLLOWDIST  )
+					if ( dist > followDist )
 					{
 						bool doFollow = true;
 						if ( my->monsterTarget != 0 )
@@ -9995,7 +10010,12 @@ timeToGoAgain:
 								{
 									appearance = std::stoi(myStats->getAttribute("duck_type"));
 								}
-								Item* item2 = newItem(TOOL_DUCK, EXCELLENT, 0, 1, appearance, true, nullptr);
+								int bless = 0;
+								if ( myStats->getAttribute("duck_bless") != "" )
+								{
+									bless = std::stoi(myStats->getAttribute("duck_bless"));
+								}
+								Item* item2 = newItem(TOOL_DUCK, EXCELLENT, bless, 1, appearance, true, nullptr);
 								Item* item = itemPickup(player, item2);
 								if ( item )
 								{

@@ -869,6 +869,46 @@ void actThrown(Entity* my)
 			}
 			free(item);
 		}
+		else if ( my->skill[10] >= WOODEN_SHIELD && my->skill[10] < NUMITEMS && items[my->skill[10]].category == THROWN )
+		{
+			if ( parent )
+			{
+				if ( Stat* parentStats = parent->getStats() )
+				{
+					if ( parentStats->getEffectActive(EFF_RETURN_ITEM) )
+					{
+						if ( Item* item = newItemFromEntity(my, true) )
+						{
+							Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
+							entity->flags[INVISIBLE] = true;
+							entity->flags[UPDATENEEDED] = true;
+							entity->flags[PASSABLE] = true;
+							entity->x = my->x;
+							entity->y = my->y;
+							entity->z = my->z;
+							entity->sizex = my->sizex;
+							entity->sizey = my->sizey;
+							entity->yaw = my->yaw;
+							entity->pitch = my->pitch;
+							entity->roll = my->roll;
+							entity->vel_x = THROWN_VELX;
+							entity->vel_y = THROWN_VELY;
+							entity->vel_z = my->vel_z;
+							entity->behavior = &actItem;
+							entity->skill[10] = item->type;
+							entity->skill[11] = item->status;
+							entity->skill[12] = item->beatitude;
+							entity->skill[13] = item->count;
+							entity->skill[14] = item->appearance;
+							entity->skill[15] = item->identified;
+							entity->itemReturnUID = parent->getUID();
+
+							free(item);
+						}
+					}
+				}
+			}
+		}
 		list_RemoveNode(my->mynode);
 		return;
 	}

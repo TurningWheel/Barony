@@ -560,6 +560,7 @@ void initClassStats(const int classnum, void* myStats)
 	else if ( classnum == CLASS_23 )
 	{
 		// attributes
+		stat->STR -= 2;
 		stat->INT += 3;
 		stat->PER += 1;
 		stat->DEX -= 2;
@@ -578,6 +579,28 @@ void initClassStats(const int classnum, void* myStats)
 		stat->setProficiency(PRO_THAUMATURGY, 40);
 		stat->setProficiency(PRO_ALCHEMY, 10);
 		stat->setProficiency(PRO_APPRAISAL, 10);
+	}
+	else if ( classnum == CLASS_24 )
+	{
+		// attributes
+		stat->INT += 1;
+		stat->CON += 2;
+		stat->STR -= 2;
+		stat->DEX -= 2;
+		stat->CHR += 1;
+
+		//stat->MAXHP -= 10;
+		//stat->HP -= 10;
+		//stat->MAXMP += 20;
+		//stat->MP += 20;
+		//stat->GOLD = 250;
+
+		// skills
+		stat->setProficiency(PRO_MYSTICISM, 40);
+		stat->setProficiency(PRO_SORCERY, 15);
+		stat->setProficiency(PRO_MACE, 25);
+		stat->setProficiency(PRO_STEALTH, 25);
+		stat->setProficiency(PRO_ALCHEMY, 10);
 	}
 
 	if ( gameModeManager.currentSession.challengeRun.isActive() )
@@ -3088,7 +3111,7 @@ void initClass(const int player)
 			useItem(item, player);
 		}
 
-		item = newItem(ROBE_WIZARD, WORN, 0, 1, 0, true, nullptr);
+		item = newItem(ROBE_WIZARD, SERVICABLE, 0, 1, 0, true, nullptr);
 		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
@@ -3116,7 +3139,102 @@ void initClass(const int player)
 			item2 = itemPickup(player, item);
 			free(item);
 
-			item = newItem(KEY_SILVER, SERVICABLE, 0, 2, 0, true, nullptr);
+			item = newItem(KEY_SILVER, WORN, 0, 2, 0, true, nullptr);
+			item2 = itemPickup(player, item);
+			free(item);
+		}
+	}
+	else if ( client_classes[player] == CLASS_24 )
+	{
+		initClassStats(client_classes[player], stats[player]);
+
+		if ( !isLocalPlayer && multiplayer == CLIENT && intro == false ) {
+			// don't do anything crazy with items on players we don't own
+			return;
+		}
+
+		item = newItem(MASK_PIPE, WORN, 0, 1, 0, true, nullptr);
+		if ( isLocalPlayer )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
+		item = newItem(BRONZE_MACE, SERVICABLE, 0, 1, 0, true, nullptr);
+		if ( isLocalPlayer )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
+		item = newItem(LEATHER_BOOTS, SERVICABLE, 0, 1, 0, true, nullptr);
+		if ( isLocalPlayer )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
+		item = newItem(CLOAK_PROTECTION, SERVICABLE, 0, 1, 0, true, nullptr);
+		if ( isLocalPlayer )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
+		item = newItem(AMULET_WATERBREATHING, SERVICABLE, 0, 1, 0, true, nullptr);
+		if ( isLocalPlayer )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
+		if ( isLocalPlayer )
+		{
+			item = newItem(TOOL_DUCK, EXCELLENT, 0, 1, player, true, nullptr);
+			item2 = itemPickup(player, item);
+			free(item);
+		}
+
+		if ( isLocalPlayer )
+		{
+			item = newItem(FOOD_APPLE, SERVICABLE, 0, 3, 0, true, nullptr);
+			item2 = itemPickup(player, item);
+			free(item);
+
+			item = newItem(FOOD_MEAT, EXCELLENT, 0, 1, 0, true, nullptr);
+			item2 = itemPickup(player, item);
+			free(item);
+
+			item = newItem(POTION_RESTOREMAGIC, EXCELLENT, 0, 1, 0, true, nullptr);
+			item2 = itemPickup(player, item);
+			free(item);
+
+			item = newItem(POTION_BOOZE, EXCELLENT, 0, 1, 0, true, nullptr);
 			item2 = itemPickup(player, item);
 			free(item);
 		}
@@ -3184,6 +3302,12 @@ void initClass(const int player)
 			item2 = itemPickup(player, item);
 			free(item);
 		}
+	}
+
+	players[player]->mechanics.ducksInARow.clear();
+	if ( client_classes[player] == CLASS_24 )
+	{
+		players[player]->mechanics.ducksInARow.push_back(0);
 	}
 
 	/*if ( svFlags & SV_FLAG_LIFESAVING )
@@ -3314,6 +3438,11 @@ void initClass(const int player)
 			addSpell(SPELL_EARTH_ELEMENTAL, player, true);
 			addSpell(SPELL_TELEKINESIS, player, true);
 			addSpell(SPELL_BLESS_FOOD, player, true);
+		}
+		else if ( client_classes[player] == CLASS_24 )
+		{
+			addSpell(SPELL_MAGICIANS_ARMOR, player, true);
+			addSpell(SPELL_SLOW, player, true);
 		}
 
 		//printlog("spell size: %d", list_Size(&spellList));

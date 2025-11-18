@@ -1916,6 +1916,7 @@ void Item::applyDuck(Uint32 parentUid, real_t x, real_t y, Entity* hitentity, bo
 			{
 				summonedStats->setAttribute("duck_time", std::to_string(15 * TICKS_PER_SECOND));
 			}
+			summonedStats->setAttribute("duck_bless", std::to_string(beatitude));
 			summonedStats->setAttribute("skip_obituary", "1");
 			summonedStats->MISC_FLAGS[STAT_FLAG_MONSTER_DISABLE_HC_SCALING] = 1;
 			int playerOwner = this->getDuckPlayer();

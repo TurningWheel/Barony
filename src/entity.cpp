@@ -4662,63 +4662,84 @@ void Entity::handleEffects(Stat* myStats)
 				|| myStats->type == INSECTOID
 				|| (behavior == &actPlayer && myStats->playerRace == RACE_INSECTOID && myStats->stat_appearance == 0)) )
 		{
-			if ( ticks % (HEAL_TIME) == 0 )
+			if ( ticks % (HEAL_TIME / 4) == 0 )
 			{
 				steamAchievementEntity(this, "BARONY_ACH_SMOKIN");
 
-				int damage = 1 + local_rng.rand() % 3;
-				this->modHP(-damage);
-				if ( myStats->HP <= 0 )
+				int damage = 1;
+				bool insect = false;
+				if ( myStats->type == INSECTOID
+					|| (behavior == &actPlayer && myStats->playerRace == RACE_INSECTOID && myStats->stat_appearance == 0) )
 				{
-					this->setObituary(Language::get(1534)); // choked to death
-					myStats->killer = KilledBy::ITEM;
-					myStats->killer_item = MASK_PIPE;
+					insect = true;
+					damage = 1 + local_rng.rand() % 3;
+				}
+				else
+				{
+					if ( local_rng.rand() % 4 > 0 )
+					{
+						damage = 0;
+					}
 				}
 
-				// Give the Player feedback on being hurt
-				playSoundEntity(this, 28, 32); // "Damage.ogg"
-
-				if ( myStats->HP > 0 )
+				if ( damage > 0 )
 				{
-					messagePlayer(player, MESSAGE_STATUS, Language::get(6091));
-
-					// Shake the Host's screen
-					if ( myStats->HP <= 10 )
+					this->modHP(-damage);
+					if ( myStats->HP <= 0 )
 					{
-						if ( player >= 0 && players[player]->isLocalPlayer() )
-						{
-							camera_shakex += .1;
-							camera_shakey += 10;
-						}
-						else if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
-						{
-							// Shake the Client's screen
-							strcpy((char*)net_packet->data, "SHAK");
-							net_packet->data[4] = 10; // turns into .1
-							net_packet->data[5] = 10;
-							net_packet->address.host = net_clients[player - 1].host;
-							net_packet->address.port = net_clients[player - 1].port;
-							net_packet->len = 6;
-							sendPacketSafe(net_sock, -1, net_packet, player - 1);
-						}
+						this->setObituary(Language::get(1534)); // choked to death
+						myStats->killer = KilledBy::ITEM;
+						myStats->killer_item = MASK_PIPE;
 					}
-					else
+				}
+
+				if ( (insect && damage > 0) || myStats->HP < 10 )
+				{
+					// Give the Player feedback on being hurt
+					playSoundEntity(this, 28, 32); // "Damage.ogg"
+
+					if ( myStats->HP > 0 )
 					{
-						if ( player >= 0 && players[player]->isLocalPlayer() )
+						messagePlayer(player, MESSAGE_STATUS, Language::get(6091));
+
+						// Shake the Host's screen
+						if ( myStats->HP <= 10 )
 						{
-							camera_shakex += .04;
-							camera_shakey += 5;
+							if ( player >= 0 && players[player]->isLocalPlayer() )
+							{
+								camera_shakex += .1;
+								camera_shakey += 10;
+							}
+							else if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
+							{
+								// Shake the Client's screen
+								strcpy((char*)net_packet->data, "SHAK");
+								net_packet->data[4] = 10; // turns into .1
+								net_packet->data[5] = 10;
+								net_packet->address.host = net_clients[player - 1].host;
+								net_packet->address.port = net_clients[player - 1].port;
+								net_packet->len = 6;
+								sendPacketSafe(net_sock, -1, net_packet, player - 1);
+							}
 						}
-						else if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
+						else
 						{
-							// Shake the Client's screen
-							strcpy((char*)net_packet->data, "SHAK");
-							net_packet->data[4] = 4; // turns into .1
-							net_packet->data[5] = 5;
-							net_packet->address.host = net_clients[player - 1].host;
-							net_packet->address.port = net_clients[player - 1].port;
-							net_packet->len = 6;
-							sendPacketSafe(net_sock, -1, net_packet, player - 1);
+							if ( player >= 0 && players[player]->isLocalPlayer() )
+							{
+								camera_shakex += .04;
+								camera_shakey += 5;
+							}
+							else if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
+							{
+								// Shake the Client's screen
+								strcpy((char*)net_packet->data, "SHAK");
+								net_packet->data[4] = 4; // turns into .1
+								net_packet->data[5] = 5;
+								net_packet->address.host = net_clients[player - 1].host;
+								net_packet->address.port = net_clients[player - 1].port;
+								net_packet->len = 6;
+								sendPacketSafe(net_sock, -1, net_packet, player - 1);
+							}
 						}
 					}
 				}
@@ -24944,7 +24965,11 @@ void Entity::setRangedProjectileAttack(Entity& marksman, Stat& myStats, int opti
 		if ( myStats.weapon->type != SLING )
 		{
 			// get armor pierce chance.
-			int statChance = std::min(std::max(marksman.getPER() / 2, 0), 50); // 0 to 50 value.
+			int statChance = std::min(std::max(marksman.getPER(), 0), 50); // 0 to 50 value.
+			if ( behavior == &actMonster )
+			{
+				statChance = std::min(std::max(marksman.getPER() / 2, 0), 50);
+			}
 			if ( myStats.weapon->type == HEAVY_CROSSBOW )
 			{
 				statChance += 50;

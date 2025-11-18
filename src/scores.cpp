@@ -3935,7 +3935,8 @@ std::set<ItemType> AchievementObserver::PlayerAchievements::startingClassItems =
 	TOOL_BLINDFOLD_TELEPATHY,
 	TOOL_BLINDFOLD,
 	MASK_EYEPATCH,
-	HOOD_TEAL
+	HOOD_TEAL,
+	MASK_PIPE
 	/*,
 	HAT_CIRCLET_WISDOM*/
 };

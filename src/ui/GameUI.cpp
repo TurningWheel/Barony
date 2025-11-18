@@ -17724,7 +17724,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 					break;
 				case SHEET_PER:
 				{
-					real_t val = std::min(std::max(statGetPER(stats[player.playernum], players[player.playernum]->entity) / 2, 0), 50);
+					real_t val = std::min(std::max(statGetPER(stats[player.playernum], players[player.playernum]->entity), 0), 50);
 					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_pierce_value_format").c_str(), val);
 				}
 					break;
@@ -34835,7 +34835,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		}
 		else if ( tag == "RANGED_PIERCE_CHANCE" )
 		{
-			val = std::min(std::max(statGetPER(stats[playernum], player) / 2, 0), 50);
+			val = std::min(std::max(statGetPER(stats[playernum], player), 0), 50);
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
 		return buf;

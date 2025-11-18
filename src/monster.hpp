@@ -591,7 +591,7 @@ static std::vector<std::vector<unsigned int>> classStatGrowth =
 	{	2,	5,	3,	4,	3,	7 },
 	{	6,	5,	5,	3,	4,	2 },
 	{	2,	2,	3,	8,	4,	5 },
-	{	4,	6,	3,	2,	4,	1 },
+	{	4,	2,	3,	6,	3,	5 },
 	{	6,	5,	5,	2,	4,	2 }
 };
 

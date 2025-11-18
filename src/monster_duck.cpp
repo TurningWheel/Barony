@@ -924,7 +924,7 @@ void duckAnimate(Entity* my, Stat* myStats, double dist)
 
 				if ( DUCK_INERT_ANIM_COMPLETE * DUCK_WALK_CYCLE2 >= 0.95 && (abs(fmod(DUCK_WALK_CYCLE_ANIM2, PI) < 0.35)) )
 				{
-					playSoundEntityLocal(my, 779 + local_rng.rand() % 5, 8);
+					playSoundEntityLocal(my, 779 + local_rng.rand() % 5, 12);
 				}
 				else if ( DUCK_INERT_ANIM_COMPLETE * DUCK_WALK_CYCLE >= 0.95 && (abs(fmod(DUCK_WALK_CYCLE_ANIM, PI) < 0.3)) )
 				{
@@ -1028,9 +1028,31 @@ void duckAnimate(Entity* my, Stat* myStats, double dist)
 						{
 							if ( multiplayer != CLIENT )
 							{
-								if ( local_rng.rand() % 5 == 0 )
+								int bless = 0;
+								if ( myStats->getAttribute("duck_bless") != "" )
 								{
-									Item* item = newItem(FOOD_FISH, static_cast<Status>(DECREPIT + local_rng.rand() % 4), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
+									bless = std::stoi(myStats->getAttribute("duck_bless"));
+								}
+								int chance = std::max(1, 5 - bless);
+								if ( local_rng.rand() % chance == 0 )
+								{
+									Item* item = nullptr;
+									if ( bless > 0 && local_rng.rand() % 3 == 0 )
+									{
+										int charge = std::min(ENCHANTED_FEATHER_MAX_DURABILITY - 1, 25 + local_rng.rand() % (bless * 25));
+										item = newItem(ENCHANTED_FEATHER, EXCELLENT, 0, 1, charge, false, nullptr);
+										--bless;
+										myStats->setAttribute("duck_bless", std::to_string(bless));
+									}
+									else
+									{
+										ItemType type = FOOD_FISH;
+										item = newItem(FOOD_FISH, static_cast<Status>(DECREPIT + local_rng.rand() % 4), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
+										if ( abs(bless) > 0 )
+										{
+											item->beatitude = bless;
+										}
+									}
 									if ( Entity* dropped = dropItemMonster(item, my, myStats, 1) )
 									{
 										

@@ -3984,6 +3984,18 @@ namespace ConsoleCommands {
 		messagePlayer(clientnum, MESSAGE_MISC, "Reloaded items.json");
 		});
 
+	static ConsoleCommand ccmd_reloadsound("/reloadsound", "reloads specific sounds.txt index", []CCMD{
+		if ( argc > 1 )
+		{
+			int soundIndex = atoi(argv[1]);
+			if ( soundIndex < numsounds )
+			{
+				Mods::soundsListModifiedIndexes.push_back(soundIndex);
+				physfsReloadSounds(false);
+			}
+		}
+	});
+
 	static ConsoleCommand ccmd_reloadsprite("/reloadsprite", "reloads specific sprites.txt index", []CCMD{
 		if ( argc > 1 )
 		{
