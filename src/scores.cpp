@@ -2584,12 +2584,12 @@ void updateGameplayStatisticsInMainLoop()
 				}
 				else if ( client_classes[clientnum] == CLASS_HUNTER && isRangedWeapon(*item) )
 				{
-					if ( item->type == CROSSBOW || item->type == HEAVY_CROSSBOW )
+					if ( item->type == CROSSBOW || item->type == HEAVY_CROSSBOW || item->type == BLACKIRON_CROSSBOW )
 					{
 						bowList.insert(CROSSBOW);
 					}
 					else if ( item->type == SHORTBOW || item->type == LONGBOW || item->type == COMPOUND_BOW
-						|| item->type == BRANCH_BOW || item->type == BRANCH_BOW_INFECTED )
+						|| item->type == BRANCH_BOW || item->type == BRANCH_BOW_INFECTED || item->type == BONE_SHORTBOW )
 					{
 						bowList.insert(SHORTBOW);
 					}

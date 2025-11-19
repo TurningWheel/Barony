@@ -60,7 +60,9 @@ enum ArrowSpriteTypes : int
 	PROJECTILE_CRYSTAL_SPRITE,
 	PROJECTILE_HUNTING_SPRITE,
 	PROJECTILE_SEED_ROOT_SPRITE = 1881,
-	PROJECTILE_SEED_POISON_SPRITE = 1882
+	PROJECTILE_SEED_POISON_SPRITE = 1882,
+	PROJECTILE_BONE_SPRITE = 2304,
+	PROJECTILE_BLACKIRON_SPRITE = 2305
 };
 
 void actArrow(Entity* my)
@@ -259,6 +261,32 @@ void actArrow(Entity* my)
 				particle->lightBonus = vec4(0.5f, 0.5f, 0.5f, 0.f);
 				particle->flags[SPRITE] = true;
                 particle->ditheringDisabled = true;
+			}
+		}
+	}
+	else if ( my->arrowQuiverType == QUIVER_BLACKIRON || my->sprite == PROJECTILE_BLACKIRON_SPRITE )
+	{
+		if ( ARROW_STUCK == 0 )
+		{
+			Entity* particle = spawnMagicParticleCustom(my, 155, 0.5, 4);
+			if ( particle )
+			{
+				particle->lightBonus = vec4(0.5f, 0.5f, 0.5f, 0.f);
+				particle->flags[SPRITE] = true;
+				particle->ditheringDisabled = true;
+			}
+		}
+	}
+	else if ( my->arrowQuiverType == QUIVER_BONE || my->sprite == PROJECTILE_BONE_SPRITE )
+	{
+		if ( ARROW_STUCK == 0 )
+		{
+			Entity* particle = spawnMagicParticleCustom(my, 155, 0.5, 4);
+			if ( particle )
+			{
+				particle->lightBonus = vec4(0.5f, 0.5f, 0.5f, 0.f);
+				particle->flags[SPRITE] = true;
+				particle->ditheringDisabled = true;
 			}
 		}
 	}

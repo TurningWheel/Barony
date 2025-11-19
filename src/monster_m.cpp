@@ -1626,7 +1626,7 @@ void monsterMMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					entity->sprite = itemModel(myStats->shield);
 					if ( itemTypeIsQuiver(myStats->shield->type) )
 					{
-						entity->handleQuiverThirdPersonModel(*myStats);
+						entity->handleQuiverThirdPersonModel(*myStats, my->sprite);
 					}
 				}
 				if ( myStats->getEffectActive(EFF_INVISIBLE) || wearingring ) //TODO: isInvisible()?

@@ -385,10 +385,14 @@ void actThrown(Entity* my)
 			/*THROWN_VELX = 0.f;
 			THROWN_VELY = 0.f;
 			THROWN_VELZ = 0.f;*/
-			if ( type == BRONZE_TOMAHAWK || type == IRON_DAGGER )
+			if ( type == BRONZE_TOMAHAWK || type == IRON_DAGGER || type == BONE_THROWING )
 			{
 				// axe and dagger spin vertically
 				my->pitch += 0.2;
+			}
+			else if ( type == BLACKIRON_DART || type == SILVER_PLUMBATA )
+			{
+				my->roll += 0.2;
 			}
 			else
 			{

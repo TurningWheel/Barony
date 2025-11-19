@@ -7227,6 +7227,12 @@ void GenericGUIMenu::alterItem(Item* item)
 		case QUIVER_HUNTING:
 			item->type = QUIVER_LIGHTWEIGHT;
 			break;
+		/*case QUIVER_BONE:
+			sprite = 2304;
+			break;
+		case QUIVER_BLACKIRON:
+			sprite = 2305;
+			break;*/
 		default:
 			if ( itemCategory(item) == GEM )
 			{
@@ -11637,6 +11643,10 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 		case MACHINIST_APRON:
 		case LONGBOW:
 		case MASK_HAZARD_GOGGLES:
+		case SHILLELAGH_MACE:
+		case CLAYMORE_SWORD:
+		case STEEL_FALSHION:
+		case STEEL_GREATAXE:
 			*metal = 3;
 			*magic = 0;
 			break;
@@ -11647,6 +11657,10 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 		case HAT_STAG_HOOD:
 		case HAT_BUNNY_HOOD:
 		case HAT_TOPHAT:
+		case SILVER_AXE:
+		case SILVER_GLAIVE:
+		case SILVER_MACE:
+		case SILVER_SWORD:
 			*metal = 3;
 			*magic = 1;
 			break;
@@ -11679,6 +11693,11 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 		case CRYSTAL_MACE:
 		case CLOAK_BACKPACK:
 		case COMPOUND_BOW:
+		case BLACKIRON_AXE:
+		case BLACKIRON_CROSSBOW:
+		case BLACKIRON_MACE:
+		case BLACKIRON_SWORD:
+		case BLACKIRON_TRIDENT:
 			*metal = 4;
 			*magic = 2;
 			break;
@@ -11841,6 +11860,16 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 		case QUILTED_CAP:
 		case HOOD_TEAL:
 		case CHAIN_COIF:
+		case ANELACE_SWORD:
+		case LANCE_SPEAR:
+		case BLACKIRON_DART:
+		case BONE_AXE:
+		case BONE_MACE:
+		case BONE_SHORTBOW:
+		case BONE_SPEAR:
+		case BONE_SWORD:
+		case BONE_THROWING:
+		case SILVER_PLUMBATA:
 			// TODOS
 			*metal = 0;
 			*magic = 0;
@@ -28255,7 +28284,7 @@ void CalloutRadialMenu::drawCallouts(const int playernum)
 			bool selfCallout = false;
 			if ( uidMatchesPlayer(playernum, callout.second.entityUid) )
 			{
-				if ( i == playernum && players[i]->entity && players[i]->entity->skill[3] == 1 )
+				if ( i == playernum && players[i]->entity && players[i]->entity->skill[3] != 0 )
 				{
 					// debug/thirdperson cam.
 				}

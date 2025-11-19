@@ -1050,7 +1050,7 @@ public:
 	// handle humanoid weapon arm animation/sprite offsets
 	void handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb);
 	void handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb);
-	void handleQuiverThirdPersonModel(Stat& myStats);
+	void handleQuiverThirdPersonModel(Stat& myStats, int mySprite = -1);
 	// server only function to set boot sprites on monsters.
 	bool setBootSprite(Entity* leg, int spriteOffset, bool forceShort = false);
 	static bool isBootSpriteShortArmor(Entity* leg);
@@ -1456,7 +1456,7 @@ void actTextSource(Entity* my);
 //checks if a sprite falls in certain sprite ranges
 
 static const int NUM_ITEM_STRINGS = ITEM_ENUM_MAX + 3;
-static const int NUM_ITEM_STRINGS_BY_TYPE = 139;
+static const int NUM_ITEM_STRINGS_BY_TYPE = 162;
 static const int NUM_EDITOR_TILES = 350;
 
 // furniture types.

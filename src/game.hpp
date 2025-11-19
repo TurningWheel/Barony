@@ -243,6 +243,7 @@ void actStatueAnimator(Entity* my);
 void actStatue(Entity* my);
 void actDoorFrame(Entity* my);
 void actDeathCam(Entity* my);
+void actProjectSpiritCam(Entity* my);
 void actDeathGhost(Entity* my);
 void actDeathGhostLimb(Entity* my);
 void actPlayerLimb(Entity* my);

@@ -4564,7 +4564,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		}
 		else if ( detailTag.compare("weapon_ranged_armor_pierce") == 0 )
 		{
-			int statChance = std::min(std::max((stats[player] ? statGetPER(stats[player], players[player]->entity) : 0) / 2, 0), 50); // 0 to 50 value.
+			int statChance = std::min(std::max((stats[player] ? statGetPER(stats[player], players[player]->entity) : 0), 0), 50); // 0 to 50 value.
 			if ( compendiumTooltipIntro )
 			{
 				statChance = 0;

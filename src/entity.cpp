@@ -9927,7 +9927,9 @@ void Entity::attack(int pose, int charge, Entity* target)
 					entity = newEntity(78, 1, map.entities, nullptr); // rock
 					playSoundEntity(this, 239 + local_rng.rand() % 3, 96);
 				}
-				else if ( myStats->weapon->type == CROSSBOW || myStats->weapon->type == HEAVY_CROSSBOW )
+				else if ( myStats->weapon->type == CROSSBOW 
+					|| myStats->weapon->type == HEAVY_CROSSBOW
+					|| myStats->weapon->type == BLACKIRON_CROSSBOW )
 				{
 					entity = newEntity(167, 1, map.entities, nullptr); // bolt
 					if ( myStats->weapon->type == HEAVY_CROSSBOW )
@@ -18925,23 +18927,44 @@ int getWeaponSkill(const Item* weapon)
 		return PRO_UNARMED;
 	}
 
-	if ( weapon->type == QUARTERSTAFF || weapon->type == IRON_SPEAR || weapon->type == STEEL_HALBERD || weapon->type == ARTIFACT_SPEAR || weapon->type == CRYSTAL_SPEAR )
+	if ( weapon->type == QUARTERSTAFF || weapon->type == IRON_SPEAR 
+		|| weapon->type == STEEL_HALBERD || weapon->type == ARTIFACT_SPEAR 
+		|| weapon->type == CRYSTAL_SPEAR
+		|| weapon->type == LANCE_SPEAR
+		|| weapon->type == BONE_SPEAR 
+		|| weapon->type == BLACKIRON_TRIDENT 
+		|| weapon->type == SILVER_GLAIVE )
 	{
 		return PRO_POLEARM;
 	}
 	if ( weapon->type == BRONZE_SWORD || weapon->type == IRON_SWORD || weapon->type == STEEL_SWORD 
 		|| weapon->type == ARTIFACT_SWORD || weapon->type == CRYSTAL_SWORD
-		|| weapon->type == RAPIER )
+		|| weapon->type == RAPIER
+		|| weapon->type == STEEL_FALSHION
+		|| weapon->type == BLACKIRON_SWORD
+		|| weapon->type == SILVER_SWORD
+		|| weapon->type == BONE_SWORD
+		|| weapon->type == CLAYMORE_SWORD
+		|| weapon->type == ANELACE_SWORD )
 	{
 		return PRO_SWORD;
 	}
 	if ( weapon->type == BRONZE_MACE || weapon->type == IRON_MACE || weapon->type == STEEL_MACE 
 		|| weapon->type == STEEL_FLAIL
-		|| weapon->type == ARTIFACT_MACE || weapon->type == CRYSTAL_MACE )
+		|| weapon->type == ARTIFACT_MACE || weapon->type == CRYSTAL_MACE
+		|| weapon->type == SHILLELAGH_MACE
+		|| weapon->type == BLACKIRON_MACE
+		|| weapon->type == BONE_MACE
+		|| weapon->type == SILVER_MACE )
 	{
 		return PRO_MACE;
 	}
-	if ( weapon->type == BRONZE_AXE || weapon->type == IRON_AXE || weapon->type == STEEL_AXE || weapon->type == ARTIFACT_AXE || weapon->type == CRYSTAL_BATTLEAXE )
+	if ( weapon->type == BRONZE_AXE || weapon->type == IRON_AXE || weapon->type == STEEL_AXE 
+		|| weapon->type == ARTIFACT_AXE || weapon->type == CRYSTAL_BATTLEAXE
+		|| weapon->type == STEEL_GREATAXE
+		|| weapon->type == BLACKIRON_AXE 
+		|| weapon->type == SILVER_AXE
+		|| weapon->type == BONE_AXE )
 	{
 		return PRO_AXE;
 	}
@@ -19366,7 +19389,8 @@ int Entity::getAttackPose() const
 
 				|| myStats->type == SHADOW )
 			{
-				if ( myStats->weapon->type == CROSSBOW || myStats->weapon->type == HEAVY_CROSSBOW )
+				if ( myStats->weapon->type == CROSSBOW || myStats->weapon->type == HEAVY_CROSSBOW 
+					|| myStats->weapon->type == BLACKIRON_CROSSBOW )
 				{
 					pose = MONSTER_POSE_RANGED_WINDUP1;
 				}
@@ -20425,7 +20449,8 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 
 	if ( weaponLimb->flags[INVISIBLE] == false || weaponLimb->flags[INVISIBLE_DITHER] ) //TODO: isInvisible()?
 	{
-		if ( weaponLimb->sprite == items[SHORTBOW].index )
+		if ( weaponLimb->sprite == items[SHORTBOW].index
+			|| weaponLimb->sprite == items[BONE_SHORTBOW].index )
 		{
 			weaponLimb->x = weaponArmLimb->x - .5 * cos(weaponArmLimb->yaw);
 			weaponLimb->y = weaponArmLimb->y - .5 * sin(weaponArmLimb->yaw);
@@ -20470,7 +20495,8 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 				weaponLimb->y += .5 * sin(weaponArmLimb->yaw);
 			}
 		}
-		else if ( weaponLimb->sprite == items[CROSSBOW].index || weaponLimb->sprite == items[HEAVY_CROSSBOW].index )
+		else if ( weaponLimb->sprite == items[CROSSBOW].index || weaponLimb->sprite == items[HEAVY_CROSSBOW].index
+			|| weaponLimb->sprite == items[BLACKIRON_CROSSBOW].index )
 		{
 			weaponLimb->x = weaponArmLimb->x;
 			weaponLimb->y = weaponArmLimb->y;
@@ -20775,7 +20801,9 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 				weaponLimb->focalz -= 1;
 			}
 		}
-		else if ( weaponLimb->sprite == items[CROSSBOW].index || weaponLimb->sprite == items[HEAVY_CROSSBOW].index )
+		else if ( weaponLimb->sprite == items[CROSSBOW].index 
+			|| weaponLimb->sprite == items[HEAVY_CROSSBOW].index
+			|| weaponLimb->sprite == items[BLACKIRON_CROSSBOW].index )
 		{
 			weaponLimb->focalx += 2.1;
 			weaponLimb->focaly -= 0.1;
@@ -20783,9 +20811,11 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 		else if ( weaponLimb->sprite == items[SHORTBOW].index || weaponLimb->sprite == items[ARTIFACT_BOW].index
 			|| weaponLimb->sprite == items[LONGBOW].index || weaponLimb->sprite == items[BRANCH_BOW].index
 			|| weaponLimb->sprite == items[BRANCH_BOW_INFECTED].index
-			|| weaponLimb->sprite == items[COMPOUND_BOW].index )
+			|| weaponLimb->sprite == items[COMPOUND_BOW].index
+			|| weaponLimb->sprite == items[BONE_SHORTBOW].index )
 		{
-			if ( weaponLimb->sprite == items[SHORTBOW].index )
+			if ( weaponLimb->sprite == items[SHORTBOW].index
+				|| weaponLimb->sprite == items[BONE_SHORTBOW].index )
 			{
 				switch ( monsterType )
 				{
@@ -21134,6 +21164,34 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 		|| weaponLimb->sprite == items[SLOP_BALL].index )
 	{
 		weaponLimb->focalz += 1;
+	}
+	else if ( weaponLimb->sprite == items[BLACKIRON_DART].index )
+	{
+		weaponLimb->focalx += 1.0;
+		weaponLimb->focalz += 1.5;
+	}
+	else if ( weaponLimb->sprite == items[SILVER_PLUMBATA].index )
+	{
+		weaponLimb->focalx += 1.5;
+		weaponLimb->focalz += 1.0;
+	}
+	else if ( weaponLimb->sprite == items[SHILLELAGH_MACE].index )
+	{
+		weaponLimb->focalx += 0.5;
+		weaponLimb->focalz -= 1.0;
+	}
+	else if ( weaponLimb->sprite == items[CLAYMORE_SWORD].index 
+		|| weaponLimb->sprite == items[SILVER_SWORD].index )
+	{
+		weaponLimb->focalz -= 0.5;
+	}
+	else if ( weaponLimb->sprite == items[STEEL_FALSHION].index )
+	{
+		weaponLimb->focalz -= 1.0;
+	}
+	else if ( weaponLimb->sprite == items[SILVER_AXE].index || weaponLimb->sprite == items[SILVER_GLAIVE].index )
+	{
+		weaponLimb->focalx += 0.5;
 	}
 
 	if ( monsterType == MONSTER_D )
@@ -25076,6 +25134,12 @@ void Entity::setRangedProjectileAttack(Entity& marksman, Stat& myStats, int opti
 			case QUIVER_HUNTING:
 				sprite = 930;
 				break;
+			case QUIVER_BONE:
+				sprite = 2304;
+				break;
+			case QUIVER_BLACKIRON:
+				sprite = 2305;
+				break;
 			default:
 				break;
 		}
@@ -25129,7 +25193,8 @@ bool Entity::setArrowProjectileProperties(int weaponType)
 		return true;
 	}
 
-	if ( weaponType == CROSSBOW || weaponType == SLING || weaponType == HEAVY_CROSSBOW )
+	if ( weaponType == CROSSBOW || weaponType == SLING || weaponType == HEAVY_CROSSBOW
+		|| weaponType == BLACKIRON_CROSSBOW )
 	{
 		this->vel_z = -0.2;
 		this->arrowSpeed = 6;
@@ -25154,7 +25219,8 @@ bool Entity::setArrowProjectileProperties(int weaponType)
 	{
 		this->vel_z = -0.6;
 		this->arrowFallSpeed = 0.08;
-		if ( weaponType == SHORTBOW || weaponType == COMPOUND_BOW || weaponType == ARTIFACT_BOW )
+		if ( weaponType == SHORTBOW || weaponType == COMPOUND_BOW || weaponType == ARTIFACT_BOW 
+			|| weaponType == BONE_SHORTBOW )
 		{
 			this->arrowSpeed = 7;
 			this->vel_z = -0.6;
@@ -28559,7 +28625,7 @@ int monsterTinkeringConvertAppearanceToHP(Stat* myStats, int appearance)
 	return 0;
 }
 
-void Entity::handleQuiverThirdPersonModel(Stat& myStats)
+void Entity::handleQuiverThirdPersonModel(Stat& myStats, int mySprite)
 {
 	if ( multiplayer == CLIENT )
 	{
@@ -28575,8 +28641,31 @@ void Entity::handleQuiverThirdPersonModel(Stat& myStats)
 				break;
 			case KOBOLD:
 			case GNOME:
+			case MONSTER_G:
 				// no strap.
 				break;
+			case MONSTER_D:
+			case MONSTER_M:
+			{
+				bool shortSprite = false;
+				if ( myStats.type == MONSTER_D && (mySprite == 1514 || mySprite == 1515 || mySprite == 1992 || mySprite == 1993) )
+				{
+					shortSprite = true;
+				}
+				if ( myStats.type == MONSTER_M && (mySprite == 1520 || mySprite == 1998) )
+				{
+					shortSprite = true;
+				}
+				if ( shortSprite )
+				{
+					// no strap.
+				}
+				else
+				{
+					sprite += 1; // normal strap
+				}
+				break;
+			}
 			default:
 				sprite += 1; // normal strap
 				break;
@@ -28592,8 +28681,31 @@ void Entity::handleQuiverThirdPersonModel(Stat& myStats)
 				break;
 			case KOBOLD:
 			case GNOME:
+			case MONSTER_G:
 				// no strap.
 				break;
+			case MONSTER_D:
+			case MONSTER_M:
+			{
+				bool shortSprite = false;
+				if ( myStats.type == MONSTER_D && (mySprite == 1514 || mySprite == 1515 || mySprite == 1992 || mySprite == 1993) )
+				{
+					shortSprite = true;
+				}
+				if ( myStats.type == MONSTER_M && (mySprite == 1520 || mySprite == 1998) )
+				{
+					shortSprite = true;
+				}
+				if ( shortSprite )
+				{
+					// no strap.
+				}
+				else
+				{
+					sprite += 3; // shoulderpad-less.
+				}
+				break;
+			}
 			default:
 				sprite += 3; // shoulderpad-less.
 				break;

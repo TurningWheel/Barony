@@ -551,7 +551,11 @@ void revenantSkullAnimate(Entity* my, Stat* myStats, double dist)
 					|| entity->sprite == items[IRON_SPEAR].index
 					|| entity->sprite == items[STEEL_HALBERD].index
 					|| entity->sprite == items[ARTIFACT_SPEAR].index
-					|| entity->sprite == items[CRYSTAL_SPEAR].index )
+					|| entity->sprite == items[CRYSTAL_SPEAR].index
+					|| entity->sprite == items[BLACKIRON_TRIDENT].index
+					|| entity->sprite == items[LANCE_SPEAR].index
+					|| entity->sprite == items[BONE_SPEAR].index 
+					|| entity->sprite == items[SILVER_GLAIVE].index )
 				{
 					poke = true;
 				}
@@ -560,6 +564,11 @@ void revenantSkullAnimate(Entity* my, Stat* myStats, double dist)
 					|| entity->sprite == items[STEEL_SWORD].index
 					|| entity->sprite == items[ARTIFACT_SWORD].index
 					|| entity->sprite == items[CRYSTAL_SWORD].index
+					|| entity->sprite == items[BLACKIRON_SWORD].index
+					|| entity->sprite == items[SILVER_SWORD].index
+					|| entity->sprite == items[BONE_SWORD].index
+					|| entity->sprite == items[CLAYMORE_SWORD].index
+					|| entity->sprite == items[ANELACE_SWORD].index
 					|| entity->sprite == items[RAPIER].index )
 				{
 					poke = true;

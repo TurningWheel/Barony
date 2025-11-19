@@ -2532,6 +2532,29 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		case BOLAS:
 		case STEEL_FLAIL:
 		case SLOP_BALL:
+		case SHILLELAGH_MACE:
+		case CLAYMORE_SWORD:
+		case ANELACE_SWORD:
+		case LANCE_SPEAR:
+		case STEEL_FALSHION:
+		case STEEL_GREATAXE:
+		case BLACKIRON_AXE:
+		case BLACKIRON_CROSSBOW:
+		case BLACKIRON_DART:
+		case BLACKIRON_MACE:
+		case BLACKIRON_SWORD:
+		case BLACKIRON_TRIDENT:
+		case BONE_AXE:
+		case BONE_MACE:
+		case BONE_SHORTBOW:
+		case BONE_SPEAR:
+		case BONE_SWORD:
+		case BONE_THROWING:
+		case SILVER_AXE:
+		case SILVER_GLAIVE:
+		case SILVER_MACE:
+		case SILVER_PLUMBATA:
+		case SILVER_SWORD:
 			equipItemResult = equipItem(item, &stats[player]->weapon, player, checkInventorySpaceForPaperDoll);
 			break;
 		case STEEL_SHIELD:
@@ -3032,6 +3055,8 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		case QUIVER_KNOCKBACK:
 		case QUIVER_CRYSTAL:
 		case QUIVER_HUNTING:
+		case QUIVER_BONE:
+		case QUIVER_BLACKIRON:
 		case TOOL_FOCI_FIRE:
 		case TOOL_FOCI_SNOW:
 		case TOOL_FOCI_NEEDLES:
@@ -4280,6 +4305,10 @@ Sint32 Item::weaponGetAttack(const Stat* const wielder) const
 	{
 		attack += 4;
 	}
+	else if ( type == ANELACE_SWORD )
+	{
+		attack += 1;
+	}
 	else if ( type == BRONZE_SWORD )
 	{
 		attack += 4;
@@ -4312,6 +4341,26 @@ Sint32 Item::weaponGetAttack(const Stat* const wielder) const
 	{
 		attack += 5;
 	}
+	else if ( type == SHILLELAGH_MACE )
+	{
+		attack += 5;
+	}
+	else if ( type == BONE_AXE )
+	{
+		attack += 5;
+	}
+	else if ( type == BONE_SWORD )
+	{
+		attack += 5;
+	}
+	else if ( type == BONE_MACE )
+	{
+		attack += 5;
+	}
+	else if ( type == BONE_SPEAR )
+	{
+		attack += 5;
+	}
 	else if ( type == STEEL_HALBERD )
 	{
 		attack += 6;
@@ -4329,6 +4378,54 @@ Sint32 Item::weaponGetAttack(const Stat* const wielder) const
 		attack += 6;
 	}
 	else if ( type == STEEL_FLAIL )
+	{
+		attack += 6;
+	}
+	else if ( type == CLAYMORE_SWORD )
+	{
+		attack += 6;
+	}
+	else if ( type == STEEL_FALSHION )
+	{
+		attack += 6;
+	}
+	else if ( type == STEEL_GREATAXE )
+	{
+		attack += 6;
+	}
+	else if ( type == LANCE_SPEAR )
+	{
+		attack += 6;
+	}
+	else if ( type == BLACKIRON_AXE )
+	{
+		attack += 6;
+	}
+	else if ( type == BLACKIRON_MACE )
+	{
+		attack += 6;
+	}
+	else if ( type == BLACKIRON_SWORD )
+	{
+		attack += 6;
+	}
+	else if ( type == BLACKIRON_TRIDENT )
+	{
+		attack += 6;
+	}
+	else if ( type == SILVER_AXE )
+	{
+		attack += 6;
+	}
+	else if ( type == SILVER_MACE )
+	{
+		attack += 6;
+	}
+	else if ( type == SILVER_SWORD )
+	{
+		attack += 6;
+	}
+	else if ( type == SILVER_GLAIVE )
 	{
 		attack += 6;
 	}
@@ -4356,7 +4453,15 @@ Sint32 Item::weaponGetAttack(const Stat* const wielder) const
 	{
 		attack += 6;
 	}
+	else if ( type == BONE_SHORTBOW )
+	{
+		attack += 6;
+	}
 	else if ( type == CROSSBOW )
+	{
+		attack += 7;
+	}
+	else if ( type == BLACKIRON_CROSSBOW )
 	{
 		attack += 7;
 	}
@@ -4400,6 +4505,10 @@ Sint32 Item::weaponGetAttack(const Stat* const wielder) const
 	{
 		attack += 6;
 	}
+	else if ( type == BONE_THROWING )
+	{
+		attack += 6;
+	}
 	else if ( type == BOLAS )
 	{
 		attack += 3;
@@ -4421,6 +4530,14 @@ Sint32 Item::weaponGetAttack(const Stat* const wielder) const
 		return (attack + std::max(0, (status - 1) * 2));
 	}
 	else if ( type == STEEL_CHAKRAM )
+	{
+		attack += 10;
+	}
+	else if ( type == SILVER_PLUMBATA )
+	{
+		attack += 10;
+	}
+	else if ( type == BLACKIRON_DART )
 	{
 		attack += 10;
 	}
@@ -6028,6 +6145,8 @@ bool isRangedWeapon(const ItemType type)
 	case HEAVY_CROSSBOW:
 	case BRANCH_BOW:
 	case BRANCH_BOW_INFECTED:
+	case BLACKIRON_CROSSBOW:
+	case BONE_SHORTBOW:
 		return true;
 	default:
 		return false;
@@ -6609,6 +6728,16 @@ bool itemSpriteIsQuiverThirdPersonModel(const int sprite)
 			return true;
 		}
 	}
+	for ( int i = QUIVER_BONE; i <= QUIVER_BLACKIRON; ++i )
+	{
+		if ( sprite == items[i].index
+			|| sprite == items[i].index + 1
+			|| sprite == items[i].index + 2
+			|| sprite == items[i].index + 3 )
+		{
+			return true;
+		}
+	}
 	return false;
 }
 
@@ -6621,12 +6750,19 @@ bool itemSpriteIsQuiverBaseThirdPersonModel(const int sprite)
 			return true;
 		}
 	}
+	for ( int i = QUIVER_BONE; i <= QUIVER_BLACKIRON; ++i )
+	{
+		if ( sprite == items[i].index + 1 )
+		{
+			return true;
+		}
+	}
 	return false;
 }
 
 bool itemTypeIsQuiver(const ItemType type)
 {
-	return (type >= QUIVER_SILVER && type <= QUIVER_HUNTING);
+	return (type >= QUIVER_SILVER && type <= QUIVER_HUNTING) || (type >= QUIVER_BONE && type <= QUIVER_BLACKIRON);
 }
 
 bool itemTypeIsFoci(const ItemType type)
@@ -6701,7 +6837,9 @@ real_t rangedAttackGetSpeedModifier(const Stat* const myStats)
 	{
 		bowModifier = 1.25;
 	}
-	else if ( myStats->weapon->type == BRANCH_BOW || myStats->weapon->type == BRANCH_BOW_INFECTED )
+	else if ( myStats->weapon->type == BRANCH_BOW 
+		|| myStats->weapon->type == BRANCH_BOW_INFECTED
+		|| myStats->weapon->type == BONE_SHORTBOW )
 	{
 		bowModifier = 1.0;
 	}

@@ -1287,7 +1287,7 @@ void actLeftHandMagic(Entity* my)
 			my->y = 0;
 			my->z += 1;
 		}
-		else if ( players[HANDMAGIC_PLAYERNUM]->entity->skill[3] == 1 )   // debug cam
+		else if ( players[HANDMAGIC_PLAYERNUM]->entity->skill[3] != 0 )   // debug cam
 		{
 			my->flags[INVISIBLE] = true;
 		}
@@ -1304,7 +1304,7 @@ void actLeftHandMagic(Entity* my)
 		switch ( cast_animation[HANDMAGIC_PLAYERNUM].stage)
 		{
 			case ANIM_SPELL_CIRCLE:
-				if ( ticks % 5 == 0 && !(players[HANDMAGIC_PLAYERNUM]->entity->skill[3] == 1) )
+				if ( ticks % 5 == 0 && !(players[HANDMAGIC_PLAYERNUM]->entity->skill[3] != 0) )
 				{
 					Entity* entity = spawnGib(my);
 					entity->flags[INVISIBLE] = false;
@@ -1685,7 +1685,7 @@ void actLeftHandMagic(Entity* my)
 
 			// boosty boost
 			Uint32 castLoopDuration = 4 * TICKS_PER_SECOND / 10;
-			for ( int i = 1; i < 3 && !(players[HANDMAGIC_PLAYERNUM]->entity->skill[3] == 1); ++i )
+			for ( int i = 1; i < 3 && !(players[HANDMAGIC_PLAYERNUM]->entity->skill[3] != 0); ++i )
 			{
 				//if ( i == 1 || i == 3 ) { continue; }
 				Uint32 animTick = cast_animation[HANDMAGIC_PLAYERNUM].active_count >= castLoopDuration
@@ -1989,7 +1989,7 @@ void actRightHandMagic(Entity* my)
 			my->y = 0;
 			my->z += 1;
 		}
-		else if ( players[HANDMAGIC_PLAYERNUM]->entity->skill[3] == 1 )   // debug cam
+		else if ( players[HANDMAGIC_PLAYERNUM]->entity->skill[3] != 0 )   // debug cam
 		{
 			my->flags[INVISIBLE] = true;
 		}
@@ -2025,7 +2025,7 @@ void actRightHandMagic(Entity* my)
 		switch ( cast_animation[HANDMAGIC_PLAYERNUM].stage)
 		{
 			case ANIM_SPELL_CIRCLE:
-				if ( ticks % 5 == 0 && !(players[HANDMAGIC_PLAYERNUM]->entity->skill[3] == 1) )
+				if ( ticks % 5 == 0 && !(players[HANDMAGIC_PLAYERNUM]->entity->skill[3] != 0) )
 				{
 					//messagePlayer(0, "Pingas!");
 					Entity* entity = spawnGib(my);

@@ -2407,6 +2407,259 @@ void actDeathGhost(Entity* my)
 #define DEATHCAM_IDLEPITCH_FLOAT_TO_ZERO my->fskill[4]
 #define DEATHCAM_IDLEYAWSPEED my->fskill[5]
 
+void actProjectSpiritCam(Entity* my)
+{
+	auto entityTarget = uidToEntity(DEATHCAM_PLAYERTARGET);
+	if ( !entityTarget || !(stats[DEATHCAM_PLAYERNUM]->getEffectActive(EFF_PROJECT_SPIRIT) && players[DEATHCAM_PLAYERNUM]->entity
+		&& players[DEATHCAM_PLAYERNUM]->entity->skill[3] == 2) )
+	{
+		if ( players[DEATHCAM_PLAYERNUM]->entity )
+		{
+			players[DEATHCAM_PLAYERNUM]->entity->skill[3] = 0;
+		}
+		my->removeLightField();
+		list_RemoveNode(my->mynode);
+		return;
+	}
+
+	DEATHCAM_TIME++;
+
+	real_t mousex_relative = mousexrel;
+	real_t mousey_relative = mouseyrel;
+
+	mousex_relative = inputs.getMouseFloat(DEATHCAM_PLAYERNUM, Inputs::ANALOGUE_XREL);
+	mousey_relative = inputs.getMouseFloat(DEATHCAM_PLAYERNUM, Inputs::ANALOGUE_YREL);
+
+	const bool smoothmouse = playerSettings[multiplayer ? 0 : DEATHCAM_PLAYERNUM].smoothmouse;
+	const bool reversemouse = playerSettings[multiplayer ? 0 : DEATHCAM_PLAYERNUM].reversemouse;
+	real_t mouse_speed = playerSettings[multiplayer ? 0 : DEATHCAM_PLAYERNUM].mousespeed;
+	if ( inputs.getVirtualMouse(DEATHCAM_PLAYERNUM)->lastMovementFromController )
+	{
+		mouse_speed = 32.0;
+	}
+
+	if ( DEATHCAM_TIME == 1 )
+	{
+		//DEATHCAM_PLAYERTARGET = DEATHCAM_PLAYERNUM;
+		DEATHCAM_IDLEROTATEDIRYAW = (local_rng.rand() % 2 == 0) ? 1 : -1;
+	}
+
+	bool shootmode = players[DEATHCAM_PLAYERNUM]->shootmode;
+	if ( shootmode && !gamePaused )
+	{
+		if ( smoothmouse )
+		{
+			DEATHCAM_ROTX += mousex_relative * .006 * (mouse_speed / 128.f);
+			DEATHCAM_ROTX = fmin(fmax(-0.35, DEATHCAM_ROTX), 0.35);
+		}
+		else
+		{
+			DEATHCAM_ROTX = std::min<float>(std::max<float>(-0.35f, mousex_relative * .01f * (mouse_speed / 128.f)), 0.35f);
+		}
+		my->yaw += DEATHCAM_ROTX;
+		if ( my->yaw >= PI * 2 )
+		{
+			my->yaw -= PI * 2;
+		}
+		else if ( my->yaw < 0 )
+		{
+			my->yaw += PI * 2;
+		}
+
+		if ( smoothmouse )
+		{
+			DEATHCAM_ROTY += mousey_relative * .006 * (mouse_speed / 128.f) * (reversemouse * 2 - 1);
+			DEATHCAM_ROTY = fmin(fmax(-0.35, DEATHCAM_ROTY), 0.35);
+		}
+		else
+		{
+			DEATHCAM_ROTY = std::min<float>(std::max<float>(-0.35f, mousey_relative * .01f * (mouse_speed / 128.f) * (reversemouse * 2 - 1)), 0.35f);
+		}
+		my->pitch -= DEATHCAM_ROTY;
+		if ( my->pitch > PI / 2 )
+		{
+			my->pitch = PI / 2;
+		}
+		else if ( my->pitch < -PI / 2 )
+		{
+			my->pitch = -PI / 2;
+		}
+
+		if ( abs(DEATHCAM_ROTX) < 0.0001 && abs(DEATHCAM_ROTY) < 0.0001
+			/*&& DEATHCAM_PLAYERTARGET == DEATHCAM_PLAYERNUM*/
+			&& (DEATHCAM_TIME >= TICKS_PER_SECOND * 3) )
+		{
+			++DEATHCAM_IDLETIME;
+			if ( DEATHCAM_IDLETIME >= TICKS_PER_SECOND * 3 )
+			{
+				my->yaw += DEATHCAM_IDLEYAWSPEED * DEATHCAM_IDLEROTATEDIRYAW;
+				if ( my->yaw >= PI * 2 )
+				{
+					my->yaw -= PI * 2;
+				}
+				else if ( my->yaw < 0 )
+				{
+					my->yaw += PI * 2;
+				}
+
+				if ( !DEATHCAM_IDLEROTATEPITCHINIT )
+				{
+					DEATHCAM_IDLEROTATEPITCHINIT = 1;
+					DEATHCAM_IDLEPITCH_START = my->pitch;
+					DEATHCAM_IDLEPITCH = 0.0;
+					DEATHCAM_IDLEPITCH_FLOAT_TO_ZERO = 0.0;
+					DEATHCAM_IDLEYAWSPEED = 0.0;
+				}
+				DEATHCAM_IDLEPITCH += PI / 1024;
+				if ( DEATHCAM_IDLEPITCH >= PI * 2 )
+				{
+					DEATHCAM_IDLEPITCH -= PI * 2;
+				}
+				else if ( DEATHCAM_IDLEPITCH < 0 )
+				{
+					DEATHCAM_IDLEPITCH += PI * 2;
+				}
+				if ( (DEATHCAM_IDLEPITCH_START - DEATHCAM_IDLEPITCH_FLOAT_TO_ZERO) > .001 )
+				{
+					DEATHCAM_IDLEPITCH_FLOAT_TO_ZERO += .0001;
+				}
+				else if ( (DEATHCAM_IDLEPITCH_START - DEATHCAM_IDLEPITCH_FLOAT_TO_ZERO) < .001 )
+				{
+					DEATHCAM_IDLEPITCH_FLOAT_TO_ZERO -= .0001;
+				}
+				my->pitch = -DEATHCAM_IDLEPITCH_FLOAT_TO_ZERO + DEATHCAM_IDLEPITCH_START + (PI / 64) * sin(DEATHCAM_IDLEPITCH);
+				if ( my->pitch > PI / 2 )
+				{
+					my->pitch = PI / 2;
+				}
+				else if ( my->pitch < -PI / 2 )
+				{
+					my->pitch = -PI / 2;
+				}
+
+				if ( DEATHCAM_IDLEYAWSPEED < .001 )
+				{
+					DEATHCAM_IDLEYAWSPEED += .00001;
+				}
+			}
+		}
+		else
+		{
+			DEATHCAM_IDLETIME = 0;
+			DEATHCAM_IDLEROTATEPITCHINIT = 0;
+			DEATHCAM_IDLEPITCH_FLOAT_TO_ZERO = 0.0;
+			DEATHCAM_IDLEYAWSPEED = 0.0;
+		}
+	}
+	if ( smoothmouse )
+	{
+		DEATHCAM_ROTX *= .5;
+		DEATHCAM_ROTY *= .5;
+	}
+	else
+	{
+		DEATHCAM_ROTX = 0;
+		DEATHCAM_ROTY = 0;
+	}
+
+	if ( shootmode
+		&& !players[DEATHCAM_PLAYERNUM]->GUI.isGameoverActive()
+		&& players[DEATHCAM_PLAYERNUM]->bControlEnabled
+		&& !players[DEATHCAM_PLAYERNUM]->usingCommand()
+		&& !gamePaused
+		&& (Input::inputs[DEATHCAM_PLAYERNUM].consumeBinaryToggle("Attack")
+			|| Input::inputs[DEATHCAM_PLAYERNUM].consumeBinaryToggle("MenuConfirm")) )
+	{
+		/*DEATHCAM_PLAYERTARGET++;
+		if ( DEATHCAM_PLAYERTARGET >= MAXPLAYERS )
+		{
+			DEATHCAM_PLAYERTARGET = 0;
+		}
+		int c = 0;
+		while ( !Player::getPlayerInteractEntity(DEATHCAM_PLAYERTARGET) )
+		{
+			if ( c > MAXPLAYERS )
+			{
+				break;
+			}
+			DEATHCAM_PLAYERTARGET++;
+			if ( DEATHCAM_PLAYERTARGET >= MAXPLAYERS )
+			{
+				DEATHCAM_PLAYERTARGET = 0;
+			}
+			c++;
+		}*/
+	}
+
+	if ( DEATHCAM_PLAYERTARGET >= 0 )
+	{
+		if ( entityTarget )
+		{
+			my->x = entityTarget->x;
+			my->y = entityTarget->y;
+		}
+		/*else
+		{
+			DEATHCAM_PLAYERTARGET = DEATHCAM_PLAYERNUM;
+		}*/
+	}
+
+	my->removeLightField();
+
+	my->light = addLight(my->x / 16, my->y / 16, "deathcam");
+
+	real_t camx, camy, camz, camang, camvang;
+	camx = my->x / 16.f;
+	camy = my->y / 16.f;
+	camz = my->z * 2.f;
+	camang = my->yaw;
+	camvang = my->pitch;
+
+	camx -= cos(my->yaw) * cos(my->pitch) * 1.5;
+	camy -= sin(my->yaw) * cos(my->pitch) * 1.5;
+	camz -= sin(my->pitch) * 16;
+
+	if ( !TimerExperiments::bUseTimerInterpolation )
+	{
+		cameras[DEATHCAM_PLAYERNUM].x = camx;
+		cameras[DEATHCAM_PLAYERNUM].y = camy;
+		cameras[DEATHCAM_PLAYERNUM].z = camz;
+		cameras[DEATHCAM_PLAYERNUM].ang = camang;
+		cameras[DEATHCAM_PLAYERNUM].vang = camvang;
+		return;
+	}
+	else
+	{
+		TimerExperiments::cameraCurrentState[DEATHCAM_PLAYERNUM].x.velocity =
+			TimerExperiments::lerpFactor * (camx - TimerExperiments::cameraCurrentState[DEATHCAM_PLAYERNUM].x.position);
+		TimerExperiments::cameraCurrentState[DEATHCAM_PLAYERNUM].y.velocity =
+			TimerExperiments::lerpFactor * (camy - TimerExperiments::cameraCurrentState[DEATHCAM_PLAYERNUM].y.position);
+		TimerExperiments::cameraCurrentState[DEATHCAM_PLAYERNUM].z.velocity =
+			TimerExperiments::lerpFactor * (camz - TimerExperiments::cameraCurrentState[DEATHCAM_PLAYERNUM].z.position);
+
+		real_t diff = camang - TimerExperiments::cameraCurrentState[DEATHCAM_PLAYERNUM].yaw.position;
+		if ( diff > PI )
+		{
+			diff -= 2 * PI;
+		}
+		else if ( diff < -PI )
+		{
+			diff += 2 * PI;
+		}
+		TimerExperiments::cameraCurrentState[DEATHCAM_PLAYERNUM].yaw.velocity = diff * TimerExperiments::lerpFactor;
+		diff = camvang - TimerExperiments::cameraCurrentState[DEATHCAM_PLAYERNUM].pitch.position;
+		if ( diff >= PI )
+		{
+			diff -= 2 * PI;
+		}
+		else if ( diff < -PI )
+		{
+			diff += 2 * PI;
+		}
+		TimerExperiments::cameraCurrentState[DEATHCAM_PLAYERNUM].pitch.velocity = diff * TimerExperiments::lerpFactor;
+	}
+}
+
 void actDeathCam(Entity* my)
 {
 	/*if ( keystatus[SDLK_F4] )
@@ -2917,7 +3170,7 @@ void Player::PlayerMovement_t::startQuickTurn()
 
 void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta)
 {
-	if ( !players[player.playernum]->entity )
+	if ( !players[player.playernum]->entity || (players[player.playernum]->entity && stats[player.playernum]->getEffectActive(EFF_PROJECT_SPIRIT)) )
 	{
 		return;
 	}
@@ -11407,7 +11660,9 @@ void actPlayer(Entity* my)
 						if ( weaponarm->skill[1] == 0 )
 						{
 							real_t targetPitch = 14 * PI / 8;
-							if ( weaponarm->sprite == items[CROSSBOW].index || weaponarm->sprite == items[HEAVY_CROSSBOW].index )
+							if ( weaponarm->sprite == items[CROSSBOW].index 
+								|| weaponarm->sprite == items[HEAVY_CROSSBOW].index
+								|| weaponarm->sprite == items[BLACKIRON_CROSSBOW].index )
 							{
 								targetPitch = 15 * PI / 8;
 							}
@@ -12215,7 +12470,7 @@ void actPlayer(Entity* my)
 							{
 								if ( itemTypeIsQuiver(stats[PLAYER_NUM]->shield->type) )
 								{
-									entity->handleQuiverThirdPersonModel(*stats[PLAYER_NUM]);
+									entity->handleQuiverThirdPersonModel(*stats[PLAYER_NUM], my->sprite);
 								}
 							}
 						}

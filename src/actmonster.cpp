@@ -10345,6 +10345,7 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 		{
 			if ( (myStats->weapon->type == SLING 
 					|| myStats->weapon->type == SHORTBOW 
+					|| myStats->weapon->type == BONE_SHORTBOW
 					|| myStats->weapon->type == ARTIFACT_BOW
 					|| myStats->weapon->type == LONGBOW
 					|| myStats->weapon->type == BRANCH_BOW
@@ -10364,7 +10365,7 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 					}
 				}
 			}
-			else if ( myStats->weapon->type == CROSSBOW )
+			else if ( myStats->weapon->type == CROSSBOW || myStats->weapon->type == BLACKIRON_CROSSBOW )
 			{
 				if ( myStats->shield && itemTypeIsQuiver(myStats->shield->type) )
 				{
@@ -14542,6 +14543,7 @@ int Entity::getMonsterEffectiveDistanceOfRangedWeapon(Item* weapon)
 		case SLING:
 		case CROSSBOW:
 		case HEAVY_CROSSBOW:
+		case BLACKIRON_CROSSBOW:
 			distance = 100;
 			break;
 		case LONGBOW:

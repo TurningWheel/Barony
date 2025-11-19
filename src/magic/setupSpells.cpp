@@ -3338,6 +3338,21 @@ void setupSpells()   ///TODO: Verify this function.
 		1, // duration
 		"spell_magicians_armor");
 
+	spellElementConstructor(SPELL_PROJECT_SPIRIT,
+		1,		// mana
+		1,		// base mana
+		1,		// overload
+		0,		// damage
+		0,		// duration
+		"spell_element_project_spirit");
+	spell = spellConstructor(
+		SPELL_PROJECT_SPIRIT,										// ID
+		100,												// difficulty
+		"spell_project_spirit",										// internal name
+		// elements
+		{ SPELL_ELEMENT_PROPULSION_MISSILE, SPELL_PROJECT_SPIRIT }
+	);
+
 	//static const int SPELL_LIGHTNING_NEXUS = 182;
 	//static const int SPELL_LIFT = 184;
 	//static const int SPELL_IGNITE = 186;

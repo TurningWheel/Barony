@@ -101,7 +101,7 @@ void actGib(Entity* my)
 	}
 
 	if ( my->flags[OVERDRAW] 
-		&& players[clientnum] && players[clientnum]->entity && players[clientnum]->entity->skill[3] == 1 )
+		&& players[clientnum] && players[clientnum]->entity && players[clientnum]->entity->skill[3] != 0 )
 	{
 		// debug cam, don't draw overdrawn.
 		my->flags[INVISIBLE] = true;

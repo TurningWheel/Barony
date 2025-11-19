@@ -577,7 +577,7 @@ void actHudWeapon(Entity* my)
 
 	my->flags[INVISIBLE_DITHER] = false;
 
-	if ( players[HUDWEAPON_PLAYERNUM]->entity->skill[3] == 1 )   // debug cam or player invisible
+	if ( players[HUDWEAPON_PLAYERNUM]->entity->skill[3] != 0 )   // debug cam or player invisible
 	{
 		my->flags[INVISIBLE] = true;
 		if (parent != nullptr)
@@ -659,7 +659,8 @@ void actHudWeapon(Entity* my)
 					if ( rangedweapon )
 					{
 						if ( stats[HUDWEAPON_PLAYERNUM]->weapon
-							&& stats[HUDWEAPON_PLAYERNUM]->weapon->type != CROSSBOW )
+							&& stats[HUDWEAPON_PLAYERNUM]->weapon->type != CROSSBOW
+							&& stats[HUDWEAPON_PLAYERNUM]->weapon->type != BLACKIRON_CROSSBOW )
 						{
 							my->sprite++;
 						}
@@ -667,7 +668,10 @@ void actHudWeapon(Entity* my)
 					}
 				}
 			}
-			else if ( stats[HUDWEAPON_PLAYERNUM]->weapon && (stats[HUDWEAPON_PLAYERNUM]->weapon->type == CROSSBOW || stats[HUDWEAPON_PLAYERNUM]->weapon->type == HEAVY_CROSSBOW) )
+			else if ( stats[HUDWEAPON_PLAYERNUM]->weapon 
+				&& (stats[HUDWEAPON_PLAYERNUM]->weapon->type == CROSSBOW 
+					|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == HEAVY_CROSSBOW
+					|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == BLACKIRON_CROSSBOW) )
 			{
 				HUDWEAPON_SHOOTING_RANGED_WEAPON = RANGED_ANIM_BEING_DRAWN;
 				if ( rangedWeaponUseQuiverOnAttack(stats[HUDWEAPON_PLAYERNUM]) )
@@ -702,6 +706,10 @@ void actHudWeapon(Entity* my)
 						else if ( stats[HUDWEAPON_PLAYERNUM]->weapon->type == HEAVY_CROSSBOW )
 						{
 							my->sprite = 987;
+						}
+						else if ( stats[HUDWEAPON_PLAYERNUM]->weapon->type == BLACKIRON_CROSSBOW )
+						{
+							my->sprite = 2260;
 						}
 					}
 					else if ( HUDWEAPON_CHOP == CROSSBOW_CHOP_RELOAD_ENDING )
@@ -812,7 +820,10 @@ void actHudWeapon(Entity* my)
 		players[HUDWEAPON_PLAYERNUM]->hud.weaponSwitch = false;
 		if ( !hideWeapon )
 		{
-			if ( stats[HUDWEAPON_PLAYERNUM]->weapon && (stats[HUDWEAPON_PLAYERNUM]->weapon->type == CROSSBOW || stats[HUDWEAPON_PLAYERNUM]->weapon->type == HEAVY_CROSSBOW) )
+			if ( stats[HUDWEAPON_PLAYERNUM]->weapon 
+				&& (stats[HUDWEAPON_PLAYERNUM]->weapon->type == CROSSBOW 
+					|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == HEAVY_CROSSBOW
+					|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == BLACKIRON_CROSSBOW) )
 			{
 				swingweapon = false;
 				HUDWEAPON_CHARGE = 0;
@@ -887,6 +898,7 @@ void actHudWeapon(Entity* my)
 			if ( rangedweapon && stats[HUDWEAPON_PLAYERNUM]->weapon
 				&& stats[HUDWEAPON_PLAYERNUM]->weapon->type != CROSSBOW
 				&& stats[HUDWEAPON_PLAYERNUM]->weapon->type != HEAVY_CROSSBOW
+				&& stats[HUDWEAPON_PLAYERNUM]->weapon->type != BLACKIRON_CROSSBOW
 				)
 			{
 				HUDWEAPON_BOW_FORCE_RELOAD = 1;
@@ -930,6 +942,7 @@ void actHudWeapon(Entity* my)
 	if ( rangedweapon && stats[HUDWEAPON_PLAYERNUM]->weapon
 		&& stats[HUDWEAPON_PLAYERNUM]->weapon->type != CROSSBOW
 		&& stats[HUDWEAPON_PLAYERNUM]->weapon->type != HEAVY_CROSSBOW
+		&& stats[HUDWEAPON_PLAYERNUM]->weapon->type != BLACKIRON_CROSSBOW
 		&& !hideWeapon )
 	{
 		bowFireRate = bowDrawBaseTicks * (rangedAttackGetSpeedModifier(stats[HUDWEAPON_PLAYERNUM]));
@@ -1089,6 +1102,7 @@ void actHudWeapon(Entity* my)
 		}
 		else if ( swingweapon && throwGimpTimer > 0 && stats[HUDWEAPON_PLAYERNUM]->weapon && !hideWeapon &&
 			( stats[HUDWEAPON_PLAYERNUM]->weapon->type == CROSSBOW
+				|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == BLACKIRON_CROSSBOW
 				|| itemCategory(stats[HUDWEAPON_PLAYERNUM]->weapon) == POTION
 				|| itemCategory(stats[HUDWEAPON_PLAYERNUM]->weapon) == GEM
 				|| itemCategory(stats[HUDWEAPON_PLAYERNUM]->weapon) == THROWN
@@ -1100,6 +1114,7 @@ void actHudWeapon(Entity* my)
 		else if ( swingweapon && bowGimpTimer > 0 && rangedweapon && stats[HUDWEAPON_PLAYERNUM]->weapon
 			&& stats[HUDWEAPON_PLAYERNUM]->weapon->type != CROSSBOW
 			&& stats[HUDWEAPON_PLAYERNUM]->weapon->type != HEAVY_CROSSBOW
+			&& stats[HUDWEAPON_PLAYERNUM]->weapon->type != BLACKIRON_CROSSBOW
 			&& !hideWeapon )
 		{
 			ignoreAttack = true;
@@ -1171,7 +1186,11 @@ void actHudWeapon(Entity* my)
 					{
 						pickaxeGimpTimer = 40;
 					}
-					if ( stats[HUDWEAPON_PLAYERNUM]->weapon->type == IRON_SPEAR || stats[HUDWEAPON_PLAYERNUM]->weapon->type == ARTIFACT_SPEAR )
+					if ( stats[HUDWEAPON_PLAYERNUM]->weapon->type == IRON_SPEAR 
+						|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == ARTIFACT_SPEAR
+						|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == BONE_SPEAR
+						|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == SILVER_GLAIVE
+						|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == BLACKIRON_TRIDENT )
 					{
 						HUDWEAPON_CHOP = 7; // spear lunges
 					}
@@ -1189,6 +1208,7 @@ void actHudWeapon(Entity* my)
 					{
 						if ( stats[HUDWEAPON_PLAYERNUM]->weapon->type == SLING
 							|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == SHORTBOW
+							|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == BONE_SHORTBOW
 							|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == ARTIFACT_BOW
 							|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == LONGBOW
 							|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == BRANCH_BOW
@@ -1358,7 +1378,8 @@ void actHudWeapon(Entity* my)
 
 									// set delay before crossbow can fire again
 									throwGimpTimer = 40;
-									if ( stats[HUDWEAPON_PLAYERNUM]->weapon->type == CROSSBOW )
+									if ( stats[HUDWEAPON_PLAYERNUM]->weapon->type == CROSSBOW
+										|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == BLACKIRON_CROSSBOW )
 									{
 										throwGimpTimer *= rangedAttackGetSpeedModifier(stats[HUDWEAPON_PLAYERNUM]);
 									}
@@ -1643,6 +1664,7 @@ void actHudWeapon(Entity* my)
 					if ( !hideWeapon &&
 						(stats[HUDWEAPON_PLAYERNUM]->weapon->type == SLING
 							|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == SHORTBOW
+							|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == BONE_SHORTBOW
 							|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == ARTIFACT_BOW
 							|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == LONGBOW
 							|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == BRANCH_BOW
@@ -1942,7 +1964,9 @@ void actHudWeapon(Entity* my)
 						players[HUDWEAPON_PLAYERNUM]->entity->attack(1, HUDWEAPON_CHARGE, nullptr);
 					}
 					if ( stats[HUDWEAPON_PLAYERNUM]->weapon
-						&& (stats[HUDWEAPON_PLAYERNUM]->weapon->type == CROSSBOW || stats[HUDWEAPON_PLAYERNUM]->weapon->type == HEAVY_CROSSBOW) )
+						&& (stats[HUDWEAPON_PLAYERNUM]->weapon->type == CROSSBOW 
+							|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == HEAVY_CROSSBOW
+							|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == BLACKIRON_CROSSBOW) )
 					{
 						throwGimpTimer = 40; // fix for swapping weapon to crossbow while charging.
 					}
@@ -2135,6 +2159,7 @@ void actHudWeapon(Entity* my)
 			{
 				if ( stats[HUDWEAPON_PLAYERNUM]->weapon->type == SLING
 					|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == SHORTBOW
+					|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == BONE_SHORTBOW
 					|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == ARTIFACT_BOW
 					|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == LONGBOW
 					|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == BRANCH_BOW
@@ -2306,7 +2331,9 @@ void actHudWeapon(Entity* my)
 						players[HUDWEAPON_PLAYERNUM]->entity->attack(2, HUDWEAPON_CHARGE, nullptr);
 					}
 					if ( stats[HUDWEAPON_PLAYERNUM]->weapon
-						&& (stats[HUDWEAPON_PLAYERNUM]->weapon->type == CROSSBOW || stats[HUDWEAPON_PLAYERNUM]->weapon->type == HEAVY_CROSSBOW) )
+						&& (stats[HUDWEAPON_PLAYERNUM]->weapon->type == CROSSBOW 
+							|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == HEAVY_CROSSBOW
+							|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == BLACKIRON_CROSSBOW) )
 					{
 						throwGimpTimer = 40; // fix for swapping weapon to crossbow while charging.
 					}
@@ -2564,7 +2591,9 @@ void actHudWeapon(Entity* my)
 						}
 					}
 					if ( stats[HUDWEAPON_PLAYERNUM]->weapon
-						&& (stats[HUDWEAPON_PLAYERNUM]->weapon->type == CROSSBOW || stats[HUDWEAPON_PLAYERNUM]->weapon->type == HEAVY_CROSSBOW) )
+						&& (stats[HUDWEAPON_PLAYERNUM]->weapon->type == CROSSBOW 
+							|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == HEAVY_CROSSBOW
+							|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == BLACKIRON_CROSSBOW) )
 					{
 						throwGimpTimer = 40; // fix for swapping weapon to crossbow while charging.
 					}
@@ -2652,6 +2681,9 @@ void actHudWeapon(Entity* my)
 						&& itemCategory(stats[HUDWEAPON_PLAYERNUM]->weapon) != MAGICSTAFF
 						&& stats[HUDWEAPON_PLAYERNUM]->weapon->type != CRYSTAL_SPEAR 
 						&& stats[HUDWEAPON_PLAYERNUM]->weapon->type != IRON_SPEAR 
+						&& stats[HUDWEAPON_PLAYERNUM]->weapon->type != BLACKIRON_TRIDENT
+						&& stats[HUDWEAPON_PLAYERNUM]->weapon->type != BONE_SPEAR
+						&& stats[HUDWEAPON_PLAYERNUM]->weapon->type != SILVER_GLAIVE
 						&& stats[HUDWEAPON_PLAYERNUM]->weapon->type != ARTIFACT_SPEAR )
 					{
 						HUDWEAPON_CHOP = 1;
@@ -2963,7 +2995,9 @@ void actHudWeapon(Entity* my)
 		else if ( HUDWEAPON_MOVEX < 0 )
 		{
 			real_t reloadSpeed = 1.0;
-			if ( stats[HUDWEAPON_PLAYERNUM]->weapon && stats[HUDWEAPON_PLAYERNUM]->weapon->type == CROSSBOW )
+			if ( stats[HUDWEAPON_PLAYERNUM]->weapon 
+				&& (stats[HUDWEAPON_PLAYERNUM]->weapon->type == CROSSBOW
+					|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == BLACKIRON_CROSSBOW) )
 			{
 				reloadSpeed += 5 * std::max(0.0, 1.0 - rangedAttackGetSpeedModifier(stats[HUDWEAPON_PLAYERNUM]));
 			}
@@ -3580,7 +3614,7 @@ void actHudWeapon(Entity* my)
 			{
 				defaultpitch = -PI / 8.f;
 			}
-			if ( item->type == CROSSBOW || item->type == HEAVY_CROSSBOW )
+			if ( item->type == CROSSBOW || item->type == HEAVY_CROSSBOW || item->type == BLACKIRON_CROSSBOW )
 			{
 				my->x = 6 + HUDWEAPON_MOVEX;
 				my->y = 1.5 + HUDWEAPON_MOVEY;
@@ -3602,6 +3636,7 @@ void actHudWeapon(Entity* my)
 			}
 			else if ( item->type == SLING
 				|| item->type == SHORTBOW
+				|| item->type == BONE_SHORTBOW
 				|| item->type == ARTIFACT_BOW
 				|| item->type == LONGBOW
 				|| item->type == BRANCH_BOW
@@ -3990,7 +4025,7 @@ void actHudShield(Entity* my)
 	}
 	HUD_LASTSHAPESHIFT_FORM = playerRace;
 
-	if ( players[HUDSHIELD_PLAYERNUM]->entity->skill[3] == 1 )   // debug cam or player invisible
+	if ( players[HUDSHIELD_PLAYERNUM]->entity->skill[3] != 0 )   // debug cam or player invisible
 	{
 		my->flags[INVISIBLE] = true;
 	}
@@ -4232,7 +4267,9 @@ void actHudShield(Entity* my)
 		return;
 	}
 
-	bool crossbow = (stats[HUDSHIELD_PLAYERNUM]->weapon && (stats[HUDSHIELD_PLAYERNUM]->weapon->type == CROSSBOW || stats[HUDSHIELD_PLAYERNUM]->weapon->type == HEAVY_CROSSBOW) );
+	bool crossbow = (stats[HUDSHIELD_PLAYERNUM]->weapon 
+		&& (stats[HUDSHIELD_PLAYERNUM]->weapon->type == CROSSBOW || stats[HUDSHIELD_PLAYERNUM]->weapon->type == HEAVY_CROSSBOW
+			|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == BLACKIRON_CROSSBOW) );
 	bool doCrossbowReloadAnimation = false;
 	bool doBowReload = false;
 
@@ -5388,6 +5425,7 @@ void actHudArrowModel(Entity* my)
 	bool crossbow = false;
 	if ( stats[HUDSHIELD_PLAYERNUM]->weapon
 		&& (stats[HUDSHIELD_PLAYERNUM]->weapon->type == SHORTBOW
+			|| stats[HUDSHIELD_PLAYERNUM]->weapon->type == BONE_SHORTBOW
 			|| stats[HUDSHIELD_PLAYERNUM]->weapon->type == LONGBOW
 			|| stats[HUDSHIELD_PLAYERNUM]->weapon->type == BRANCH_BOW
 			|| stats[HUDSHIELD_PLAYERNUM]->weapon->type == BRANCH_BOW_INFECTED
@@ -5398,7 +5436,9 @@ void actHudArrowModel(Entity* my)
 		bow = true;
 	}
 	else if ( stats[HUDSHIELD_PLAYERNUM]->weapon
-		&& (stats[HUDSHIELD_PLAYERNUM]->weapon->type == CROSSBOW || stats[HUDSHIELD_PLAYERNUM]->weapon->type == HEAVY_CROSSBOW) )
+		&& (stats[HUDSHIELD_PLAYERNUM]->weapon->type == CROSSBOW 
+			|| stats[HUDSHIELD_PLAYERNUM]->weapon->type == HEAVY_CROSSBOW
+			|| stats[HUDSHIELD_PLAYERNUM]->weapon->type == BLACKIRON_CROSSBOW) )
 	{
 		crossbow = true;
 	}
@@ -5484,6 +5524,14 @@ void actHudArrowModel(Entity* my)
 				return;
 			}
 		}
+		if ( stats[HUDSHIELD_PLAYERNUM]->weapon->type == BLACKIRON_CROSSBOW )
+		{
+			if ( hudweapon->sprite != items[BLACKIRON_CROSSBOW].fpindex )
+			{
+				my->flags[INVISIBLE] = true;
+				return;
+			}
+		}
 	}
 	else if ( hudweapon->skill[6] != 0
 		|| hudweapon->skill[7] != RANGED_ANIM_FIRED ) // skill[6] is hiding weapon, skill[7] is shooting something
@@ -5538,6 +5586,12 @@ void actHudArrowModel(Entity* my)
 			case QUIVER_HUNTING:
 				my->sprite = 941;
 				break;
+			case QUIVER_BONE:
+				my->sprite = 2302;
+				break;
+			case QUIVER_BLACKIRON:
+				my->sprite = 2303;
+				break;
 			default:
 				break;
 		}
@@ -5563,6 +5617,12 @@ void actHudArrowModel(Entity* my)
 	if ( crossbow )
 	{
 		if ( hudweapon->sprite == items[CROSSBOW].fpindex )
+		{
+			my->focalx += 3.5;
+			my->focaly += 0.25;
+			my->focalz += -0.25;
+		}
+		else if ( hudweapon->sprite == items[BLACKIRON_CROSSBOW].fpindex )
 		{
 			my->focalx += 3.5;
 			my->focaly += 0.25;

@@ -291,6 +291,14 @@ void actArrowTrap(Entity* my)
 							entity->arrowPoisonTime = 360;
 							if ( stronger ) { ARROWTRAP_REFIRE = 25; }
 							break;
+						case QUIVER_BONE:
+							entity->sprite = 2304;
+							if ( stronger ) { ARROWTRAP_REFIRE = 25; }
+							break;
+						case QUIVER_BLACKIRON:
+							entity->sprite = 2305;
+							if ( stronger ) { ARROWTRAP_REFIRE = 25; }
+							break;
 						default:
 							break;
 					}

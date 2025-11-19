@@ -391,7 +391,15 @@ void TimerExperiments::renderCameras(view_t& camera, int player)
 
 	if ( players[player]->entity )
 	{
-		if ( !(players[player]->entity->skill[3] == 1) ) // skill[3] is debug cam
+		if ( players[player]->entity->skill[3] == 2 )
+		{
+			camera.x = TimerExperiments::cameraRenderState[player].x.position;
+			camera.y = TimerExperiments::cameraRenderState[player].y.position;
+			camera.ang = TimerExperiments::cameraRenderState[player].yaw.position;
+			camera.vang = TimerExperiments::cameraRenderState[player].pitch.position;
+			camera.z = TimerExperiments::cameraRenderState[player].z.position; // this uses PLAYER_CAMERAZ_ACCEL, not entity Z
+		}
+		else if ( !(players[player]->entity->skill[3] != 0) ) // skill[3] is debug cam
 		{
 			if ( bDebug )
 			{

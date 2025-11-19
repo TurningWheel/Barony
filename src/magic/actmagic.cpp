@@ -6320,6 +6320,39 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					spellnode->deconstructor = &spellDeconstructor;
 					playSoundEntity(entity, 165, 128);
 				}
+				else if ( !strcmp(element->element_internal_name, spellElementMap[SPELL_PROJECT_SPIRIT].element_internal_name) )
+				{
+					Entity* caster = uidToEntity(spell->caster);
+					if ( caster && caster->behavior == &actPlayer )
+					{
+						Stat* casterStats = caster->getStats();
+						if ( casterStats )
+						{
+							if ( hit.entity && hit.entity->behavior == &actMonster && hitstats && !hit.entity->isInertMimic() )
+							{
+								if ( hit.entity->setEffect(EFF_PROJECT_SPIRIT, (Uint8)(caster->skill[2] + 1), 120 * TICKS_PER_SECOND, true, true, true) )
+								{
+									caster->setEffect(EFF_PROJECT_SPIRIT, (Uint8)(caster->skill[2] + 1), 120 * TICKS_PER_SECOND, true, true, true);
+
+									// deathcam
+									entity = newEntity(-1, 1, map.entities, nullptr); //Deathcam entity.
+									entity->x = hit.entity->x;
+									entity->y = hit.entity->y;
+									entity->z = -2;
+									entity->flags[NOUPDATE] = true;
+									entity->flags[PASSABLE] = true;
+									entity->flags[INVISIBLE] = true;
+									entity->behavior = &actProjectSpiritCam;
+									entity->skill[1] = hit.entity->getUID();
+									entity->skill[2] = caster->skill[2];
+									entity->yaw = hit.entity->yaw;
+									entity->pitch = PI / 8;
+									caster->skill[3] = 2;
+								}
+							}
+						}
+					}
+				}
 
 				if ( hitstats )
 				{

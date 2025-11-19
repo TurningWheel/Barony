@@ -4553,6 +4553,10 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 				}
 				while ( !found && item->type != prevType )
 				{
+					if ( item->type == WOODEN_SHIELD )
+					{
+						item->type = static_cast<ItemType>(NUMITEMS);
+					}
 					item->type = static_cast<ItemType>(item->type - 1);
 					if ( item->type == WOODEN_SHIELD )
 					{
