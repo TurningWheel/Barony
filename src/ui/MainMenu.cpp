@@ -2900,12 +2900,6 @@ namespace MainMenu {
         }
 		current_recording_audio_device = recording_audio_device;
 		current_audio_device = audio_device;
-        if (fmod_speakermode != speaker_mode) {
-            fmod_speakermode = (FMOD_SPEAKERMODE)speaker_mode;
-            if (initialized) {
-                restartPromptRequired = true;
-            }
-        }
 		MainMenu::master_volume = std::min(std::max(0.f, master_volume / 100.f), 1.f);
 		sfxvolume = std::min(std::max(0.f, gameplay_volume / 100.f), 1.f);
 		sfxAmbientVolume = std::min(std::max(0.f, ambient_volume / 100.f), 1.f);
@@ -2927,6 +2921,13 @@ namespace MainMenu {
 		VoiceChat.activeSettings.enable_voice_receive = enable_voice_receive;
 		VoiceChat.activeSettings.use_custom_rolloff = use_voice_custom_rolloff;
 		VoiceChat.mainmenuSettings = VoiceChat.activeSettings;
+  if (fmod_speakermode != speaker_mode) {
+    fmod_speakermode = (FMOD_SPEAKERMODE)speaker_mode;
+      if (initialized) {
+        restartPromptRequired = true;
+      }
+    }
+  }
 #endif
 		bindings.save();
         for (int c = 0; c < MAX_SPLITSCREEN; ++c) {
@@ -3029,8 +3030,8 @@ namespace MainMenu {
 		settings.enable_voice_receive = VoiceChat.activeSettings.enable_voice_receive;
 		settings.use_voice_custom_rolloff = VoiceChat.activeSettings.use_custom_rolloff;
 		VoiceChat.mainmenuSettings = VoiceChat.activeSettings;
+  	settings.speaker_mode = (int)fmod_speakermode;
 #endif
-        settings.speaker_mode = (int)fmod_speakermode;
 		settings.master_volume = MainMenu::master_volume * 100.f;
 		settings.gameplay_volume = (float)sfxvolume * 100.f;
 		settings.ambient_volume = (float)sfxAmbientVolume * 100.f;
@@ -3911,8 +3912,10 @@ namespace MainMenu {
 		// set volume and sound driver
 		if (initialized) {
 			setAudioDevice(current_audio_device);
-			setRecordDevice(current_recording_audio_device);
-		    setGlobalVolume(master_volume, musvolume, sfxvolume, sfxAmbientVolume, sfxEnvironmentVolume, sfxNotificationVolume);
+#if defined USE_FMOD
+		  setRecordDevice(current_recording_audio_device);
+#endif
+		  setGlobalVolume(master_volume, musvolume, sfxvolume, sfxAmbientVolume, sfxEnvironmentVolume, sfxNotificationVolume);
 		}
 	}
 
@@ -6767,7 +6770,7 @@ bind_failed:
 			allSettings.preload_music_files_enabled, [](Button& button) {soundToggleSetting(button); allSettings.preload_music_files_enabled = button.isPressed(); });
 #endif
 
-#ifndef NINTENDO
+#if !defined(NINTENDO) && defined(USE_FMOD)
 		if ( num_drivers > 0 && num_record_drivers > 0 )
 		{
 			hookSettings(*settings_subwindow,
@@ -25003,7 +25006,9 @@ failed:
 				{
 					soundCancel();
 					setAudioDevice(current_audio_device);
+#ifdef USE_FMOD
 					setRecordDevice(current_recording_audio_device);
+#endif
 					setGlobalVolume(master_volume, musvolume, sfxvolume, sfxAmbientVolume, sfxEnvironmentVolume, sfxNotificationVolume);
 					if (main_menu_frame) {
 						auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
@@ -25028,7 +25033,9 @@ failed:
 					soundActivate();
 
 					setAudioDevice(current_audio_device);
+#ifdef USE_FMOD
 					setRecordDevice(current_recording_audio_device);
+#endif
 					setGlobalVolume(master_volume, musvolume, sfxvolume, sfxAmbientVolume, sfxEnvironmentVolume, sfxNotificationVolume);
 					if ( main_menu_frame ) {
 						auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
