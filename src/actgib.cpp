@@ -1307,6 +1307,38 @@ Entity* spawnDamageGib(Entity* parentent, Sint32 dmgAmount, int gibDmgType, int 
 	{
 		entity->z += 8.0;
 	}
+	if ( (parentent->behavior == &actMonster || parentent->behavior == &actDeathGhost) )
+	{
+		if ( parentent->behavior == &actDeathGhost )
+		{
+			if ( node_t* node = list_Node(&parentent->children, 2) )
+			{
+				if ( Entity* entity2 = (Entity*)node->element )
+				{
+					if ( Entity::getMonsterTypeFromSprite(entity2->sprite) == DUCK_SMALL )
+					{
+						if ( node_t* node = list_Node(&entity2->children, 2) )
+						{
+							if ( Entity* entity3 = (Entity*)node->element )
+							{
+								entity->z = entity3->z - 4;
+							}
+						}
+					}
+				}
+			}
+		}
+		else if ( parentent->behavior == &actMonster && Entity::getMonsterTypeFromSprite(parentent->sprite) == DUCK_SMALL )
+		{
+			if ( node_t* node = list_Node(&parentent->children, 2) )
+			{
+				if ( Entity* entity2 = (Entity*)node->element )
+				{
+					entity->z = entity2->z - 4;
+				}
+			}
+		}
+	}
 	entity->yaw = (local_rng.rand() % 360) * PI / 180.0;
 	entity->vel_x = vel * cos(entity->yaw);
 	entity->vel_y = vel * sin(entity->yaw);

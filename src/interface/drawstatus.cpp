@@ -2151,7 +2151,7 @@ void drawStatusNew(const int player)
 				}
 			}
 
-			if ( stats[player] && stats[player]->HP > 0 )
+			if ( stats[player] && stats[player]->HP > 0 && !players[player]->ghost.isActive() )
 			{
 				Item*& selectedItem = inputs.getUIInteraction(player)->selectedItem;
 
@@ -2695,6 +2695,7 @@ void drawStatusNew(const int player)
 
 	//NOTE: If you change the number of hotbar slots, you *MUST* change this.
 	if ( !players[player]->usingCommand() && stats[player] && stats[player]->HP > 0
+		&& !players[player]->ghost.isActive()
 		&& players[player]->bControlEnabled && !gamePaused )
 	{
 		Item* item = NULL;

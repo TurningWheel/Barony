@@ -1403,6 +1403,106 @@ int itemCompare(const Item* const item1, const Item* const item2, bool checkAppe
 -------------------------------------------------------------------------------*/
 Uint32 dropItemSfxTicks[MAXPLAYERS] = { 0 };
 
+bool playerThrowDuck(const int player, Item* const item, int charge)
+{
+	if ( !item || item->count == 0 ) { return false; }
+	if ( player < 0 || player >= MAXPLAYERS ) { return false; }
+	if ( !players[player]->entity ) { return false; }
+
+	if ( players[player]->isLocalPlayer() )
+	{
+		if ( itemIsEquipped(item, player) )
+		{
+			if ( multiplayer == CLIENT )
+			{
+				strcpy((char*)net_packet->data, "DCKA");
+				SDLNet_Write32(static_cast<Uint32>(item->type), &net_packet->data[4]);
+				SDLNet_Write32(static_cast<Uint32>(item->status), &net_packet->data[8]);
+				SDLNet_Write32(static_cast<Uint32>(item->beatitude), &net_packet->data[12]);
+				SDLNet_Write32(static_cast<Uint32>(item->count), &net_packet->data[16]);
+				SDLNet_Write32(static_cast<Uint32>(item->appearance), &net_packet->data[20]);
+				net_packet->data[24] = item->identified;
+				net_packet->data[25] = clientnum;
+				net_packet->data[26] = charge;
+				net_packet->address.host = net_server.host;
+				net_packet->address.port = net_server.port;
+				net_packet->len = 27;
+				sendPacketSafe(net_sock, -1, net_packet, 0);
+
+				Item** slot = itemSlot(stats[player], item);
+				if ( slot != nullptr )
+				{
+					*slot = nullptr;
+				}
+
+				players[player]->paperDoll.updateSlots();
+
+				if ( item->node != nullptr )
+				{
+					list_RemoveNode(item->node);
+				}
+				else
+				{
+					free(item);
+				}
+
+				return true;
+			}
+		}
+	}
+
+	if ( multiplayer != CLIENT && players[player]->entity )
+	{
+		playSoundEntity(players[player]->entity, 75, 64);
+
+		Entity* entity = newEntity(itemModel(item), 1, map.entities, nullptr); // thrown item
+		entity->parent = players[player]->entity->getUID();
+		entity->x = players[player]->entity->x;
+		entity->y = players[player]->entity->y;
+		entity->z = players[player]->entity->z;
+		entity->yaw = players[player]->entity->yaw;
+		entity->sizex = 2;
+		entity->sizey = 2;
+		entity->behavior = &actThrown;
+		entity->flags[UPDATENEEDED] = true;
+		entity->flags[PASSABLE] = true;
+		entity->skill[10] = item->type;
+		entity->skill[11] = item->status;
+		entity->skill[12] = item->beatitude;
+		entity->skill[13] = 1;
+		entity->skill[14] = item->appearance;
+		entity->skill[15] = item->identified;
+
+		real_t speed = 1.f + 4.f * std::min(50, std::max(0, charge)) / (real_t)(50);
+		entity->vel_x = speed * cos(players[player]->entity->yaw);
+		entity->vel_y = speed * sin(players[player]->entity->yaw);
+		entity->vel_z = -.5;
+
+		Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_THROWN,
+			item->type, 1);
+
+		Item** slot = itemSlot(stats[player], item);
+
+		if ( slot != nullptr )
+		{
+			*slot = nullptr;
+		}
+		players[player]->paperDoll.updateSlots();
+
+		if ( item->node != nullptr )
+		{
+			list_RemoveNode(item->node);
+		}
+		else
+		{
+			free(item);
+		}
+		return true;
+	}
+
+	return false;
+}
+
 bool playerGreasyDropItem(const int player, Item* const item)
 {
 	if ( !item || item->count == 0 ) { return false; }
@@ -3041,7 +3141,6 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		case TOOL_GYROBOT:
 		case TOOL_SENTRYBOT:
 		case TOOL_SPELLBOT:
-		case TOOL_DUCK:
 			equipItemResult = equipItem(item, &stats[player]->weapon, player, checkInventorySpaceForPaperDoll);
 			break;
 		case TOOL_TORCH:
@@ -3078,6 +3177,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		case INSTRUMENT_LUTE:
 		case INSTRUMENT_HORN:
 		case TOOL_FRYING_PAN:
+		case TOOL_DUCK:
 			equipItemResult = equipItem(item, &stats[player]->shield, player, checkInventorySpaceForPaperDoll);
 			break;
 		case TOOL_BLINDFOLD:
@@ -4595,6 +4695,7 @@ bool Item::doesItemProvideBeatitudeAC(ItemType type)
 	if ( itemTypeIsQuiver(type) || items[type].category == SPELLBOOK
 		|| itemTypeIsFoci(type)
 		|| itemTypeIsInstrument(type)
+		|| type == TOOL_DUCK
 		|| items[type].category == AMULET )
 	{
 		return false;
@@ -7269,7 +7370,7 @@ void clientUnequipSlotAndUpdateServer(const int player, const EquipItemSendToSer
 
 int Item::getDuckPlayer() const
 {
-	return (int)(appearance % 12) % MAXPLAYERS;
+	return (int)(appearance % items[type].variations) % MAXPLAYERS;
 }
 
 int Item::getLootBagPlayer() const

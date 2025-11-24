@@ -903,7 +903,8 @@ int Stat::pickRandomEquippedItemToDegradeOnHit(Item** returnItem, bool excludeWe
 		|| shield->type == TOOL_TINKERING_KIT
 		|| shield->type == TOOL_FRYING_PAN
 		|| itemTypeIsFoci(shield->type)
-		|| itemTypeIsInstrument(shield->type))
+		|| itemTypeIsInstrument(shield->type)
+		|| shield->type == TOOL_DUCK )
 		 )
 	{
 		excludeShield = true;
@@ -1471,7 +1472,8 @@ int Stat::getActiveShieldBonus(bool checkShield, bool excludeSkill, Item* shield
 	{
 		if ( itemCategory(item) == SPELLBOOK || itemTypeIsQuiver(item->type) 
 			|| itemTypeIsFoci(item->type)
-			|| itemTypeIsInstrument(item->type) )
+			|| itemTypeIsInstrument(item->type)
+			|| item->type == TOOL_DUCK )
 		{
 			return 0;
 		}
@@ -1548,6 +1550,62 @@ int Stat::getPassiveShieldBonus(bool checkShield, bool excludeSkill) const
 	{
 		return 0;
 	}
+}
+
+int Stat::numShillelaghDebuffsActive(Entity* my)
+{
+	static std::set<int> effs = {
+		EFF_ASLEEP,
+		EFF_POISONED,
+		EFF_CONFUSED,
+		EFF_BLIND,
+		EFF_GREASY,
+		EFF_MESSY,
+		EFF_PARALYZED,
+		EFF_BLEEDING,
+		EFF_SLOW,
+		EFF_PACIFY,
+		EFF_WEBBED,
+		EFF_FEAR,
+		//EFF_DISORIENTED,
+		EFF_ROOTED,
+		EFF_STATIC,
+		EFF_DRUNK
+	};
+
+	int result = 0;
+	for ( auto eff : effs )
+	{
+		if ( getEffectActive(eff) )
+		{
+			++result;
+		}
+	}
+
+	if ( my )
+	{
+		for ( auto node = map.creatures->first; node; node = node->next )
+		{
+			if ( Entity* entity = (Entity*)node->element )
+			{
+				if ( entity != my )
+				{
+					if ( Stat* stat = entity->getStats() )
+					{
+						if ( stat->type == DUCK_SMALL )
+						{
+							if ( entityDist(my, entity) < TOUCHRANGE * 1.5 )
+							{
+								++result;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return result;
 }
 
 bool Stat::statusEffectRemovedByCureAilment(const int effect, Entity* my)

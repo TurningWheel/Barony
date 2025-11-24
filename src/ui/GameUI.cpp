@@ -8083,7 +8083,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 		effectsEnabled = false;
 		resetQueue();
 	}
-	if ( players[player]->ghost.isActive() && !kAllowGhostStatusEffects )
+	if ( players[player]->ghost.isActive() && !kAllowGhostStatusEffects && !players[player]->entity )
 	{
 		effectsEnabled = false;
 		resetQueue();
@@ -9934,7 +9934,15 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 	bool usingTinkeringKit = false;
 	bool useBracketsReticle = false;
 	bool useSneakingReticle = false;
-	if ( player.entity && stats[player.playernum] ) {
+
+	if ( player.ghost.isActive() )
+	{
+		if ( player.ghost.my->skill[3] == 1 )
+		{
+			useSneakingReticle = true;
+		}
+	}
+	else if ( player.entity && stats[player.playernum] ) {
 		if ( stats[player.playernum]->defending ) {
 			auto shield = stats[player.playernum]->shield;
 			if ( shield && shield->type == TOOL_TINKERING_KIT ) {
@@ -9944,13 +9952,6 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 		}
 		if ( stats[player.playernum]->sneaking ) {
 			useBracketsReticle = true;
-			useSneakingReticle = true;
-		}
-	}
-	else if ( player.ghost.isActive() )
-	{
-		if ( player.ghost.my->skill[3] == 1 )
-		{
 			useSneakingReticle = true;
 		}
 	}
@@ -24594,6 +24595,19 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 
 	//TempTexture* minimapTexture = new TempTexture();
 	auto playerEntity = Player::getPlayerInteractEntity(player);
+	if ( playerEntity && playerEntity->behavior == &actDeathGhost )
+	{
+		if ( playerEntity->skill[10] != 0 ) // cosmetic ghost
+		{
+			if ( auto node = list_Node(&playerEntity->children, 2) )
+			{
+				if ( Entity* entity = (Entity*)node->element )
+				{
+					playerEntity = entity;
+				}
+			}
+		}
+	}
 
 	if ( playerEntity )
 	{
@@ -24605,6 +24619,17 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 		view.y = playerEntity->y / 16.0 + (.92 * sin(offsetyaw
 			+ (*cvar_char_portrait_static_angle ? playerEntity->yaw : 0)));
 		view.z = playerEntity->z * 2;
+		if ( playerEntity->behavior == &actDeathGhostLimb )
+		{
+			if ( auto node = list_Node(&playerEntity->children, 2) )
+			{
+				if ( Entity* entity = (Entity*)node->element )
+				{
+					view.z = entity->z * 2;
+				}
+			}
+		}
+
 		view.ang = (offsetyaw - PI
 			+ (*cvar_char_portrait_static_angle ? playerEntity->yaw : 0)); //5 * PI / 4;
 		view.vang = PI / 20;
@@ -24647,6 +24672,14 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 						continue;
 					}
 				}
+				else if ( playerEntity->behavior == &actDeathGhostLimb )
+				{
+					if ( c < 2 )
+					{
+						c++;
+						continue;
+					}
+				}
 				Entity* entity = (Entity*)node->element;
 				if ( !entity->flags[INVISIBLE] || (entity->flags[INVISIBLE] && entity->flags[INVISIBLE_DITHER]) )
 				{
@@ -24654,7 +24687,11 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
                     if (!dark) { entity->flags[BRIGHT] = true; }
 
 					int oldDither = entity->dithering[&view].value;
-					if ( entity->flags[INVISIBLE] && entity->flags[INVISIBLE_DITHER] )
+					if ( entity->ditheringOverride >= 0 )
+					{
+						entity->dithering[&view].value = entity->ditheringOverride;
+					}
+					else if ( entity->flags[INVISIBLE] && entity->flags[INVISIBLE_DITHER] )
 					{
 						entity->dithering[&view].value = ditherVal;
 						//entity->flags[BRIGHT] = false;
@@ -24665,27 +24702,30 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 				}
 				c++;
 			}
-			for ( node_t* node = map.entities->first; node != NULL; node = node->next )
+			if ( playerEntity->behavior == &actPlayer )
 			{
-				Entity* entity = (Entity*)node->element;
-				if ( (Sint32)entity->getUID() == -4 ) // torch sprites
+				for ( node_t* node = map.entities->first; node != NULL; node = node->next )
 				{
-					if ( (entity->skill[1] - 1) != player )
+					Entity* entity = (Entity*)node->element;
+					if ( (Sint32)entity->getUID() == -4 ) // torch sprites
 					{
-						continue;
-					}
-                    bool b = entity->flags[BRIGHT];
-                    if (!dark) { entity->flags[BRIGHT] = true; }
+						if ( (entity->skill[1] - 1) != player )
+						{
+							continue;
+						}
+						bool b = entity->flags[BRIGHT];
+						if (!dark) { entity->flags[BRIGHT] = true; }
 
-					int oldDither = entity->dithering[&view].value;
-					if ( entity->flags[INVISIBLE] && entity->flags[INVISIBLE_DITHER] )
-					{
-						entity->dithering[&view].value = ditherVal;
-						//entity->flags[BRIGHT] = false;
+						int oldDither = entity->dithering[&view].value;
+						if ( entity->flags[INVISIBLE] && entity->flags[INVISIBLE_DITHER] )
+						{
+							entity->dithering[&view].value = ditherVal;
+							//entity->flags[BRIGHT] = false;
+						}
+						glDrawSprite(&view, entity, REALCOLORS);
+						entity->flags[BRIGHT] = b;
+						entity->dithering[&view].value = oldDither;
 					}
-					glDrawSprite(&view, entity, REALCOLORS);
-                    entity->flags[BRIGHT] = b;
-					entity->dithering[&view].value = oldDither;
 				}
 			}
 		}
@@ -24699,7 +24739,7 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 					if ( (entity->behavior == &actPlayerLimb && entity->skill[2] == player 
 						&& (!entity->flags[INVISIBLE] || (entity->flags[INVISIBLE] && entity->flags[INVISIBLE_DITHER]))) || (Sint32)entity->getUID() == -4 )
 					{
-						if ( (Sint32)entity->getUID() == -4 ) // torch sprites
+						if ( (Sint32)entity->getUID() == -4 && playerEntity->behavior == &actPlayer ) // torch sprites
 						{
 							if ( (entity->skill[1] - 1) != player )
 							{
@@ -24725,7 +24765,11 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 							if (!dark) { entity->flags[BRIGHT] = true; }
 
 							int oldDither = entity->dithering[&view].value;
-							if ( entity->flags[INVISIBLE] && entity->flags[INVISIBLE_DITHER] )
+							if ( entity->ditheringOverride >= 0 )
+							{
+								entity->dithering[&view].value = entity->ditheringOverride;
+							}
+							else if ( entity->flags[INVISIBLE] && entity->flags[INVISIBLE_DITHER] )
 							{
 								entity->dithering[&view].value = ditherVal;
 								//entity->flags[BRIGHT] = false;
@@ -24738,7 +24782,7 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 
 					}
 				}
-				else if ( playerEntity->behavior == &actDeathGhost )
+				else if ( playerEntity->behavior == &actDeathGhost || playerEntity->behavior == &actDeathGhostLimb )
 				{
 					if ( entity->behavior == &actDeathGhostLimb && entity->skill[2] == player 
 						&& (!entity->flags[INVISIBLE] || (entity->flags[INVISIBLE] && entity->flags[INVISIBLE_DITHER])) )
@@ -32854,7 +32898,7 @@ void Player::HUD_t::updateHPBar()
 		}
 	}
 
-	hpFrame->setDisabled(player.ghost.isActive());
+	hpFrame->setDisabled(player.ghost.isActive() && !player.entity);
 }
 
 void Player::HUD_t::updateMPBar()
@@ -33269,7 +33313,7 @@ void Player::HUD_t::updateMPBar()
 		}
 	}
 
-	mpFrame->setDisabled(player.ghost.isActive());
+	mpFrame->setDisabled(player.ghost.isActive() && !player.entity);
 }
 
 bool hotbar_slot_t::matchesExactLastItem(int player, Item* item)
@@ -40448,6 +40492,27 @@ void Player::WorldUI_t::WorldTooltipDialogue_t::update()
 	}
 }
 
+void Player::WorldUI_t::WorldTooltipDialogue_t::Dialogue_t::updateWorldCoordinates()
+{
+	auto& setting = WorldDialogueSettings_t::settings[dialogueType];
+	Entity* parentEnt = uidToEntity(parent);
+	if ( parentEnt && setting.followEntity )
+	{
+		if ( TimerExperiments::bUseTimerInterpolation && parentEnt->bUseRenderInterpolation )
+		{
+			x = parentEnt->lerpRenderState.x.position * 16.0;
+			y = parentEnt->lerpRenderState.y.position * 16.0;
+			z = parentEnt->lerpRenderState.z.position + setting.offsetZ;
+		}
+		else
+		{
+			x = parentEnt->x;
+			y = parentEnt->y;
+			z = parentEnt->z + setting.offsetZ;
+		}
+	}
+}
+
 void Player::WorldUI_t::WorldTooltipDialogue_t::Dialogue_t::update()
 {
 	if ( !init )
@@ -40480,21 +40545,7 @@ void Player::WorldUI_t::WorldTooltipDialogue_t::Dialogue_t::update()
 
 
 	auto& setting = WorldDialogueSettings_t::settings[dialogueType];
-	if ( parentEnt && setting.followEntity )
-	{
-		/*if ( parentEnt->bUseRenderInterpolation )
-		{
-			x = parentEnt->lerpRenderState.x.position * 16.0;
-			y = parentEnt->lerpRenderState.y.position * 16.0;
-			z = parentEnt->lerpRenderState.z.position + setting.offsetZ;
-		}
-		else*/
-		{
-			x = parentEnt->x;
-			y = parentEnt->y;
-			z = parentEnt->z + setting.offsetZ;
-		}
-	}
+	updateWorldCoordinates();
 
 	real_t dx, dy;
 	auto& camera = cameras[player];
@@ -40647,18 +40698,8 @@ void Player::WorldUI_t::WorldTooltipDialogue_t::createDialogueTooltip(Uint32 uid
 
 	auto& setting = WorldDialogueSettings_t::settings[d->dialogueType];
 
-	/*if ( parentEnt->bUseRenderInterpolation )
-	{
-		d->x = parentEnt->lerpRenderState.x.position * 16.0;
-		d->y = parentEnt->lerpRenderState.y.position * 16.0;
-		d->z = parentEnt->lerpRenderState.z.position + setting.offsetZ;
-	}
-	else*/
-	{
-		d->x = parentEnt->x;
-		d->y = parentEnt->y;
-		d->z = parentEnt->z + setting.offsetZ;
-	}
+	d->updateWorldCoordinates();
+	
 	d->animZ = 1.5;
 	d->drawScale = 0.1 + setting.scaleMod;
 

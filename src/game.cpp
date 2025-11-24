@@ -5528,7 +5528,8 @@ void ingameHud()
 		// spellcasting
 		// player needs to be alive
 		if ( players[player]->isLocalPlayerAlive() 
-			&& !gamePaused )
+			&& !gamePaused
+			&& !players[player]->ghost.isActive() )
 		{
             const bool shootmode = players[player]->shootmode;
 			bool hasSpellbook = false;
@@ -7624,6 +7625,11 @@ int main(int argc, char** argv)
 					for ( auto& HPBar : enemyHPDamageBarHandler[c].HPBars )
 					{
 						HPBar.second.updateWorldCoordinates(); // update enemy bar world coordinates before drawEntities3D called
+					}
+					players[c]->worldUI.worldTooltipDialogue.playerDialogue.updateWorldCoordinates(); // update dialogue world coordinates before drawEntities3D called
+					for ( auto& worldTooltipDialogue : players[c]->worldUI.worldTooltipDialogue.sharedDialogues )
+					{
+						worldTooltipDialogue.second.updateWorldCoordinates();
 					}
 				}
 

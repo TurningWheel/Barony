@@ -3938,7 +3938,7 @@ void Player::WorldUI_t::setTooltipActive(Entity& tooltip)
 				return;
 			}
 		}
-		else if ( player.ghost.isActive() && !CalloutMenu[player.playernum].calloutMenuIsOpen() )
+		else if ( player.ghost.isActive() && !CalloutMenu[player.playernum].calloutMenuIsOpen() && !FollowerMenu[player.playernum].followerMenuIsOpen() )
 		{
 			if ( !player.ghost.allowedInteractEntity(*parent) )
 			{
@@ -7302,14 +7302,14 @@ void Player::PlayerMechanics_t::baseSpellIncrementMP(int mpChange, int skillID)
 bool Player::PlayerMechanics_t::sustainedSpellLevelChance(int skillID)
 {
 	int threshold = 10;
-	if ( stats[player.playernum]->getProficiency(skillID) < SKILL_LEVEL_BASIC )
+	/*if ( stats[player.playernum]->getProficiency(skillID) < SKILL_LEVEL_BASIC )
 	{
 		threshold = 5;
 	}
 	else
 	{
-		threshold = 10;//5 + (stats[player.playernum]->getProficiency(skillID) / 2); // 10-55
-	}
+	}*/
+	threshold = 5 + 5 * (stats[player.playernum]->getProficiency(skillID) / 20); // 5-25
 
 	if ( skillID == PRO_SORCERY )
 	{
@@ -7325,6 +7325,29 @@ bool Player::PlayerMechanics_t::sustainedSpellLevelChance(int skillID)
 	}
 
 	return false;
+}
+
+int Player::PlayerMechanics_t::baseSpellMPSpent(int skillID)
+{
+	int counter = 0;
+	if ( skillID == PRO_SORCERY )
+	{
+		counter = baseSpellMPUsedSorcery;
+	}
+	else if ( skillID == PRO_MYSTICISM )
+	{
+		counter = baseSpellMPUsedMysticism;
+	}
+	else if ( skillID == PRO_THAUMATURGY )
+	{
+		counter = baseSpellMPUsedThaumaturgy;
+	}
+	else
+	{
+		return 0;
+	}
+
+	return counter;
 }
 
 int Player::PlayerMechanics_t::baseSpellLevelChance(int skillID)
@@ -7367,13 +7390,29 @@ void Player::PlayerMechanics_t::sustainedSpellClearMP(int skillID)
 	}
 }
 
-void Player::PlayerMechanics_t::updateSustainedSpellEvent(int spellID, real_t value, real_t scaleValue)
+bool Player::PlayerMechanics_t::updateSustainedSpellEvent(int spellID, real_t value, real_t scaleValue)
 {
-	if ( multiplayer == CLIENT ) { return; }
-	if ( intro ) { return; }
-	if ( value < 0.05 ) { return; }
+	if ( multiplayer == CLIENT ) { return false; }
+	if ( intro ) { return false; }
+	if ( value < 0.05 ) { return false; }
 	//if ( auto spell = getSpellFromID(spellID) )
 	{
+		if ( spellID == SPELL_LIGHT || spellID == SPELL_DEEP_SHADE )
+		{
+			sustainedSpellIDCounter[spellID] += value * scaleValue;
+			if ( players[player.playernum]->entity && sustainedSpellIDCounter[spellID] > 8 * 16.0 )
+			{
+				Uint32 flags = spell_t::SPELL_LEVEL_EVENT_SUSTAIN;
+				sustainedSpellIDCounter[spellID] = 0.0;
+				if ( magicOnSpellCastEvent(players[player.playernum]->entity, players[player.playernum]->entity,
+					nullptr, spellID, flags, 1) )
+				{
+					return true;
+				}
+			}
+			return false;
+		}
+
 		for ( node_t* node = stats[player.playernum]->magic_effects.first; node; node = node->next )
 		{
 			if ( spell_t* sustainedSpell = (spell_t*)node->element )
@@ -7396,7 +7435,7 @@ void Player::PlayerMechanics_t::updateSustainedSpellEvent(int spellID, real_t va
 						if ( magicOnSpellCastEvent(players[player.playernum]->entity, players[player.playernum]->entity,
 							nullptr, spellID, flags, 1) )
 						{
-
+							return true;
 						}
 					}
 					break;
@@ -7404,11 +7443,13 @@ void Player::PlayerMechanics_t::updateSustainedSpellEvent(int spellID, real_t va
 			}
 		}
 	}
+
+	return false;
 }
 
 void Player::PlayerMechanics_t::baseSpellClearMP(int skillID)
 {
-	int threshold = 20 + stats[player.playernum]->getProficiency(skillID) / 2;
+	int threshold = 20 + stats[player.playernum]->getProficiency(skillID) / 5;
 	int leftoverCap = threshold * 4;
 	if ( skillID == PRO_SORCERY )
 	{

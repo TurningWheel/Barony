@@ -784,6 +784,7 @@ Sint32 itemModelFirstperson(const Item* item);
 void consumeItem(Item*& item, int player); //NOTE: Items have to be unequipped before calling this function on them. NOTE: THIS CAN FREE THE ITEM POINTER. Sets item to nullptr if it does.
 bool dropItem(Item* item, int player, const bool notifyMessage = true, const bool dropAll = false); // return true on free'd item
 bool playerGreasyDropItem(const int player, Item* const item);
+bool playerThrowDuck(const int player, Item* const item, int charge);
 void useItem(Item* item, int player, Entity* usedBy = nullptr, bool unequipForDropping = false);
 enum EquipItemResult : int
 {

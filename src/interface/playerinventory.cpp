@@ -9366,7 +9366,7 @@ void Player::Inventory_t::updateInventory()
 					break;
 				}
 
-				if ( stats[player]->HP <= 0 )
+				if ( stats[player]->HP <= 0 || players[player]->ghost.isActive() )
 				{
 					break;
 				}
@@ -9426,7 +9426,7 @@ void Player::Inventory_t::updateInventory()
 					break;
 				}
 
-				if ( stats[player]->HP <= 0 )
+				if ( stats[player]->HP <= 0 || players[player]->ghost.isActive() )
 				{
 					break;
 				}
@@ -9477,7 +9477,7 @@ void Player::Inventory_t::updateInventory()
 				break;
 			}
 
-			if ( stats[player]->HP <= 0 )
+			if ( stats[player]->HP <= 0 || players[player]->ghost.isActive() )
 			{
 				break;
 			}
@@ -9624,7 +9624,7 @@ void Player::Inventory_t::updateInventory()
 						players[player]->hud.updateFrameTooltip(item, tooltipCoordX, tooltipCoordY, justify);
 					}
 
-					if ( stats[player]->HP <= 0 )
+					if ( stats[player]->HP <= 0 || players[player]->ghost.isActive() )
 					{
 						break;
 					}
@@ -10064,7 +10064,7 @@ void Player::Inventory_t::updateInventory()
 					}
 				}
 
-				if ( stats[player]->HP <= 0 )
+				if ( stats[player]->HP <= 0 || players[player]->ghost.isActive() )
 				{
 					break;
 				}
@@ -10485,7 +10485,7 @@ void Player::Inventory_t::updateInventory()
 		}
 	}
 
-	if ( !noPreviousSelectedItem && stats[player]->HP > 0 )
+	if ( !noPreviousSelectedItem && stats[player]->HP > 0 && !players[player]->ghost.isActive() )
 	{
 		// releasing items
 		Item* oldSelectedItem = selectedItem;
@@ -11030,7 +11030,7 @@ const char* getContextMenuLangEntry(const int player, const ItemContextMenuPromp
 
 std::vector<ItemContextMenuPrompts> getContextTooltipOptionsForItem(const int player, Item* item, int useDropdownMenu, bool hotbarItem)
 {
-	if ( stats[player] && stats[player]->HP <= 0 )
+	if ( (stats[player] && stats[player]->HP <= 0) || players[player]->ghost.isActive() )
 	{
 		// ded, cant do anything with items
 		return std::vector<ItemContextMenuPrompts>();

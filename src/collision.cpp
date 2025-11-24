@@ -1377,13 +1377,13 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 			{
 				if ( entity->sizex == 1 )
 				{
-					eymin -= 0.01;
-					eymax += 0.01;
+					exmin -= 0.01;
+					exmax += 0.01;
 				}
 				if ( entity->sizey == 1 )
 				{
-					exmin -= 0.01;
-					exmax += 0.01;
+					eymin -= 0.01;
+					eymax += 0.01;
 				}
 			}
 			if ( (entity->sizex > 0) && ((txmin >= exmin && txmin < exmax) || (txmax >= exmin && txmax < exmax) || (txmin <= exmin && txmax > exmax)) )

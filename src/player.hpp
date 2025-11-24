@@ -1839,6 +1839,7 @@ public:
 			GHOST_SPELL_NONE,
 			GHOST_SPELL_TELEPORT,
 			GHOST_SPELL_BOLT,
+			GHOST_SPELL_QUACK,
 			GHOST_SPELL_POST_CASTING
 		};
 		GhostSpells_t castingSpellAnimation = GHOST_SPELL_NONE;
@@ -1876,6 +1877,7 @@ public:
 		void handleGhostMovement(bool useRefreshRateDelta);
 		void handleActions();
 		void handleAttack();
+		bool isSpiritGhost();
 		bool isActive();
 		void setActive(bool active);
 		void initTeleportLocations(int x, int y);
@@ -2038,6 +2040,7 @@ public:
 				DialogueType_t dialogueType = DIALOGUE_NONE;
 				SDL_Surface* blitDialogueTooltip();
 				SDL_Surface* dialogueTooltipSurface = nullptr;
+				void updateWorldCoordinates();
 				Dialogue_t() {};
 				Dialogue_t(int player)
 				{
@@ -2381,13 +2384,14 @@ public:
 		int lastFociHeldType = 0;
 		bool sustainedSpellLevelChance(int skillID);
 		int baseSpellLevelChance(int skillID);
+		int baseSpellMPSpent(int skillID);
 		void sustainedSpellIncrementMP(int mpChange, int skillID);
 		void baseSpellIncrementMP(int mpChange, int skillID);
 		void sustainedSpellClearMP(int skillID);
 		void baseSpellClearMP(int skillID);
 		std::map<int, int> baseSpellLevelUpProcs;
 		std::map<int, real_t> sustainedSpellIDCounter;
-		void updateSustainedSpellEvent(int spellID, real_t value, real_t scaleValue);
+		bool updateSustainedSpellEvent(int spellID, real_t value, real_t scaleValue);
 		std::map<Uint32, int> enemyRaisedBlockingAgainst;
 		std::map<Uint32, int> enemyRaisedStealthAgainst;
 		bool allowedRaiseBlockingAgainstEntity(Entity& attacker);

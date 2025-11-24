@@ -1404,6 +1404,18 @@ namespace ConsoleCommands {
 		skipintro = (skipintro == false);
 		});
 
+#ifndef NDEBUG
+	static ConsoleCommand ccmd_test_story("/test_story", "test cutscene", []CCMD{
+		if ( argc < 2 ) {
+			return;
+		}
+		int num = atoi(argv[1]);
+		MainMenu::beginFade((MainMenu::FadeDestination)num);
+		movie = true;
+		pauseGame(2, false);
+		});
+#endif
+
 	static ConsoleCommand ccmd_levelmagic("/levelmagic", "level up magic skills (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
@@ -4355,21 +4367,51 @@ namespace ConsoleCommands {
 			{
 				spellID = SPELL_MAGICMISSILE;
 			}
+			else if ( type == 5 )
+			{
+				spellID = SPELL_METEOR;
+			}
 
 			static int mana = 0;
 			static int rolls = 0;
-			messagePlayer(0, MESSAGE_DEBUG, "Mana: %d | Rolls: %d", mana, rolls);
+			static int longestDryStreak = 0;
+			static int currentStreak = 0;
+			messagePlayer(0, MESSAGE_DEBUG, "Mana: %d | Rolls: %d | Longest Streak: %d", mana, rolls, longestDryStreak);
 			if ( type == -1 )
 			{
 				mana = 0;
 				rolls = 0;
+				longestDryStreak = 0;
+				currentStreak = 0;
+				stats[clientnum]->setProficiencyUnsafe(getSpellFromID(spellID)->skillID, 0);
 				return;
 			}
+			stats[clientnum]->setProficiencyUnsafe(getSpellFromID(spellID)->skillID,
+				std::max(getSpellFromID(spellID)->difficulty, stats[clientnum]->getProficiency(getSpellFromID(spellID)->skillID)));
 			for ( int i = 0; i < 10; ++i )
 			{
-				players[clientnum]->mechanics.baseSpellIncrementMP(getSpellFromID(spellID)->mana, getSpellFromID(spellID)->skillID);
-				mana += getSpellFromID(spellID)->mana;
-				castSpell(players[clientnum]->entity->getUID(), getSpellFromID(spellID), false, false);
+				int baseMana = getSpellFromID(spellID)->mana;
+				if ( argc > 2 )
+				{
+					baseMana = atoi(argv[2]);
+				}
+				players[clientnum]->mechanics.baseSpellIncrementMP(baseMana, getSpellFromID(spellID)->skillID);
+				mana += baseMana;
+				//castSpell(players[clientnum]->entity->getUID(), getSpellFromID(spellID), false, false);
+				int prevLvl = stats[clientnum]->getProficiency(getSpellFromID(spellID)->skillID);
+				magicOnSpellCastEvent(players[clientnum]->entity, nullptr, nullptr, spellID, spell_t::SPELL_LEVEL_EVENT_DMG, 1);
+				if ( stats[clientnum]->getProficiency(getSpellFromID(spellID)->skillID) == prevLvl )
+				{
+					++currentStreak;
+				}
+				else
+				{
+					currentStreak = 0;
+				}
+				if ( currentStreak > longestDryStreak )
+				{
+					longestDryStreak = currentStreak;
+				}
 				++rolls;
 			}
 		}
@@ -5919,6 +5961,33 @@ namespace ConsoleCommands {
 
 		players[clientnum]->ghost.respawn();
 		});
+
+	static ConsoleCommand ccmd_spawnghost3("/respawnasghost3", "respawn as a ghost", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+
+		/*if ( players[clientnum]->ghost.my )
+		{
+			players[clientnum]->ghost.setActive(!players[clientnum]->ghost.isActive());
+			return;
+		}
+
+		if ( stats[clientnum]->HP > 0 )
+		{
+			stats[clientnum]->HP = 0;
+		}*/
+
+		if ( players[clientnum]->entity )
+		{
+			players[clientnum]->ghost.initTeleportLocations(players[clientnum]->entity->x / 16, players[clientnum]->entity->y / 16);
+			players[clientnum]->entity->skill[3] = 2;
+			players[clientnum]->entity->setEffect(EFF_PROJECT_SPIRIT, true, 30 * TICKS_PER_SECOND, false);
+			players[clientnum]->ghost.spawnGhost();
+		}
+	});
 
 	static ConsoleCommand ccmd_spawnghost("/respawnasghost", "respawn as a ghost", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )

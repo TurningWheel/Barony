@@ -1096,6 +1096,11 @@ void MonsterAllyFormation_t::updateFormation(Uint32 leaderUid, Uint32 monsterUpd
 		}
 	}
 
+	if ( leader->behavior == &actPlayer && players[leader->skill[2]]->ghost.isActive() && players[leader->skill[2]]->ghost.isSpiritGhost() )
+	{
+		leader = players[leader->skill[2]]->ghost.my;
+	}
+
 	size_t formationIndex = 0;
 	for ( auto& unit : leaderUnits.meleeUnits )
 	{
@@ -1141,7 +1146,10 @@ void MonsterAllyFormation_t::updateFormation(Uint32 leaderUid, Uint32 monsterUpd
 			ally->x = x;
 			ally->y = y;
 			double tangent = atan2(leader->y - ally->y, leader->x - ally->x);
+			bool oldPassable = leader->flags[PASSABLE]; // hack to linetrace ghosts
+			leader->flags[PASSABLE] = false;
 			lineTraceTarget(ally, ally->x, ally->y, tangent, 128, 0, false, leader);
+			leader->flags[PASSABLE] = oldPassable;
 			if ( hit.entity == leader )
 			{
 				found = true;
@@ -1199,7 +1207,10 @@ void MonsterAllyFormation_t::updateFormation(Uint32 leaderUid, Uint32 monsterUpd
 			ally->x = x;
 			ally->y = y;
 			double tangent = atan2(leader->y - ally->y, leader->x - ally->x);
+			bool oldPassable = leader->flags[PASSABLE]; // hack to linetrace ghosts
+			leader->flags[PASSABLE] = false;
 			lineTraceTarget(ally, ally->x, ally->y, tangent, 128, 0, false, leader);
+			leader->flags[PASSABLE] = oldPassable;
 			if ( hit.entity == leader )
 			{
 				found = true;
@@ -5486,6 +5497,13 @@ void actMonster(Entity* my)
 				Entity* leader = uidToEntity(myStats->leader_uid);
 				if ( leader )
 				{
+					Uint32 leaderUid = leader->getUID();
+
+					if ( leader && leader->behavior == &actPlayer && players[leader->skill[2]]->ghost.isActive() && players[leader->skill[2]]->ghost.isSpiritGhost() )
+					{
+						leader = players[leader->skill[2]]->ghost.my;
+					}
+
 					real_t followx = leader->x;
 					real_t followy = leader->y;
 
@@ -5571,7 +5589,7 @@ void actMonster(Entity* my)
 									my->monsterState = MONSTER_STATE_HUNT; // hunt state
 								}
 							}
-							else if ( monsterAllyFormations.getFollowLocation(my->getUID(), leader->getUID(), followPos) )
+							else if ( monsterAllyFormations.getFollowLocation(my->getUID(), leaderUid, followPos) )
 							{
 								if ( my->monsterSetPathToLocation(followPos.first, followPos.second, 1,
 									GeneratePathTypes::GENERATE_PATH_ALLY_FOLLOW) )
@@ -5594,7 +5612,10 @@ void actMonster(Entity* my)
 						|| (myStats->type == MOTH_SMALL && myStats->getAttribute("fire_sprite") != "")) )
 					{
 						tangent = atan2( leader->y - my->y, leader->x - my->x );
+						bool oldPassable = leader->flags[PASSABLE]; // hack for ghosts
+						leader->flags[PASSABLE] = false;
 						lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, true);
+						leader->flags[PASSABLE] = oldPassable;
 						if ( hit.entity != leader )
 						{
 							bool doFollow = true;
@@ -5606,7 +5627,7 @@ void actMonster(Entity* my)
 							{
 								my->monsterReleaseAttackTarget();
 								std::pair<int, int> followPos;
-								if ( monsterAllyFormations.getFollowLocation(my->getUID(), leader->getUID(), followPos) )
+								if ( monsterAllyFormations.getFollowLocation(my->getUID(), leaderUid, followPos) )
 								{
 									if ( my->monsterSetPathToLocation(followPos.first, followPos.second, 1,
 										GeneratePathTypes::GENERATE_PATH_ALLY_FOLLOW) )
@@ -7351,6 +7372,11 @@ timeToGoAgain:
 				Entity* leader = uidToEntity(myStats->leader_uid);
 				if ( leader )
 				{
+					Uint32 leaderUid = leader->getUID();
+					if ( leader && leader->behavior == &actPlayer && players[leader->skill[2]]->ghost.isActive() && players[leader->skill[2]]->ghost.isSpiritGhost() )
+					{
+						leader = players[leader->skill[2]]->ghost.my;
+					}
 					int followDist = HUNT_FOLLOWDIST;
 					real_t followx = leader->x;
 					real_t followy = leader->y;
@@ -7430,7 +7456,7 @@ timeToGoAgain:
 							else
 							{
 								std::pair<int, int> followPos;
-								if ( monsterAllyFormations.getFollowLocation(my->getUID(), leader->getUID(), followPos) )
+								if ( monsterAllyFormations.getFollowLocation(my->getUID(), leaderUid, followPos) )
 								{
 									my->monsterSetPathToLocation(followPos.first, followPos.second, 2,
 										GeneratePathTypes::GENERATE_PATH_ALLY_FOLLOW2);
@@ -7457,12 +7483,15 @@ timeToGoAgain:
 						{
 							double tangent = atan2( leader->y - my->y, leader->x - my->x );
 							Entity* ohitentity = hit.entity;
+							bool oldPassable = leader->flags[PASSABLE]; // hack for ghosts
+							leader->flags[PASSABLE] = false;
 							lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, true);
+							leader->flags[PASSABLE] = oldPassable;
 							if ( hit.entity != leader )
 							{
 								my->monsterReleaseAttackTarget();
 								std::pair<int, int> followPos;
-								if ( monsterAllyFormations.getFollowLocation(my->getUID(), leader->getUID(), followPos) )
+								if ( monsterAllyFormations.getFollowLocation(my->getUID(), leaderUid, followPos) )
 								{
 									if ( my->monsterSetPathToLocation(followPos.first, followPos.second, 1,
 										GeneratePathTypes::GENERATE_PATH_ALLY_FOLLOW) )
@@ -10130,60 +10159,9 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 			++monsterHitTime;
 			if ( monsterHitTime >= HITRATE )
 			{
-				bool anyTarget = false;
-				for ( auto node = map.creatures->first; node; node = node->next )
-				{
-					if ( Entity* target = (Entity*)node->element )
-					{
-						if ( target->monsterIsTargetable() && entityDist(target, this) < 2 * TOUCHRANGE )
-						{
-							if ( this->checkEnemy(target) || target->getUID() == monsterTarget )
-							{
-								//if ( Entity* target = uidToEntity(monsterTarget) )
-								{
-									if ( Stat* targetStats = target->getStats() )
-									{
-										if ( !targetStats->getEffectActive(EFF_DISORIENTED)
-											&& !targetStats->getEffectActive(EFF_DISTRACTED_COOLDOWN)
-											&& target->behavior == &actMonster && target->isMobile()
-											&& !monsterIsImmobileTurret(target, targetStats)
-											&& !target->isBossMonster() && targetStats && !uidToEntity(targetStats->leader_uid) )
-										{
-											//if ( /*(entity->monsterState == MONSTER_STATE_WAIT || entity->monsterTarget == 0) || */
-											//	(entityDist(target, this) < 2 * TOUCHRANGE /*&& (Uint32)(target->monsterLastDistractedByNoisemaker) != this->getUID()*/) )
-											{
-												real_t tangent = atan2(target->y - this->y, target->x - this->x);
-												lineTraceTarget(this, this->x, this->y, tangent, 32.0, 0, false, target);
-												if ( hit.entity == target )
-												{
-													if ( target->monsterSetPathToLocation(this->x / 16, this->y / 16, 2,
-														GeneratePathTypes::GENERATE_PATH_DEFAULT) && target->children.first )
-													{
-														target->monsterLastDistractedByNoisemaker = this->getUID();
-														target->monsterTarget = this->getUID();
-														target->monsterState = MONSTER_STATE_HUNT; // hunt state
-														serverUpdateEntitySkill(target, 0);
-
-														if ( target->setEffect(EFF_DISORIENTED, true, 2 * TICKS_PER_SECOND, false) )
-														{
-															target->setEffect(EFF_DISTRACTED_COOLDOWN, true, TICKS_PER_SECOND * 2, false);
-														}
-
-														anyTarget = true;
-													}
-												}
-											}
-										}
-									}
-								}
-							}
-						}
-					}
-				}
+				bool anyTarget = duckAreaQuck(this);
 				if ( anyTarget )
 				{
-					playSoundEntity(this, 784 + local_rng.rand() % 2, 128);
-					spawnDamageGib(this, 198, DamageGib::DMG_STRONGEST, DamageGibDisplayType::DMG_GIB_SPRITE, true);
 					monsterHitTime = 0;
 
 					if ( Entity* target = uidToEntity(monsterTarget) )

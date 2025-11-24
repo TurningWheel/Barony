@@ -1527,6 +1527,14 @@ void Entity::effectTimes()
 					messagePlayer(player, MESSAGE_STATUS, Language::get(3475));
 				}
 			}
+			else if ( c == EFF_PROJECT_SPIRIT )
+			{
+				if ( myStats->EFFECTS_TIMERS[c] == TICKS_PER_SECOND * 15 )
+				{
+					playSoundPlayer(player, 611, 192);
+					messagePlayer(player, MESSAGE_STATUS, Language::get(6876));
+				}
+			}
 
 			if ( c == EFF_MAGICIANS_ARMOR )
 			{
@@ -2207,6 +2215,12 @@ void Entity::effectTimes()
 						break;
 					case EFF_SLOW:
 						messagePlayer(player, MESSAGE_STATUS, Language::get(604)); // "You return to your normal speed."
+						break;
+					case EFF_PROJECT_SPIRIT:
+						messagePlayer(player, MESSAGE_STATUS, Language::get(6875));
+						playSoundEntity(this, 400, 92);
+						createParticleDropRising(this, 593, 1.f);
+						serverSpawnMiscParticles(this, PARTICLE_EFFECT_RISING_DROP, 593);
 						break;
 					case EFF_POLYMORPH:
 						effectPolymorph = 0;
@@ -3778,7 +3792,7 @@ void Entity::handleEffects(Stat* myStats)
 	auto& camera_shakey2 = cameravars[player >= 0 ? player : 0].shakey2;
 
 	// sleep Zs
-	if ( myStats->getEffectActive(EFF_ASLEEP) && ticks % 30 == 0 )
+	if ( (myStats->getEffectActive(EFF_ASLEEP) || myStats->getEffectActive(EFF_PROJECT_SPIRIT)) && ticks % 30 == 0 )
 	{
 		spawnSleepZ(this->x + cos(this->yaw) * 2, this->y + sin(this->yaw) * 2, this->z);
 	}
@@ -3847,6 +3861,9 @@ void Entity::handleEffects(Stat* myStats)
 			{
 				myStats->LVL++;
 			}
+			players[player]->mechanics.baseSpellIncrementMP(stats[player]->getProficiency(PRO_SORCERY), PRO_SORCERY);
+			players[player]->mechanics.baseSpellIncrementMP(stats[player]->getProficiency(PRO_MYSTICISM), PRO_MYSTICISM);
+			players[player]->mechanics.baseSpellIncrementMP(stats[player]->getProficiency(PRO_THAUMATURGY), PRO_THAUMATURGY);
 		}
 		else
 		{
@@ -4693,7 +4710,7 @@ void Entity::handleEffects(Stat* myStats)
 					}
 				}
 
-				if ( (insect && damage > 0) || myStats->HP < 10 )
+				if ( (insect && damage > 0) || (damage > 0 && myStats->HP < 10) )
 				{
 					// Give the Player feedback on being hurt
 					playSoundEntity(this, 28, 32); // "Damage.ogg"
@@ -7435,6 +7452,12 @@ void Entity::handleEffects(Stat* myStats)
 			messagePlayerMonsterEvent(monsterAllyIndex, 0xFFFFFFFF, *myStats, Language::get(3881), Language::get(3881), MSG_GENERIC);
 		}
 	}
+
+	if ( myStats->OLDHP > myStats->HP && myStats->getEffectActive(EFF_PROJECT_SPIRIT) )
+	{
+		myStats->EFFECTS_TIMERS[EFF_PROJECT_SPIRIT] = 1;
+		serverUpdateEffects(player);
+	}
 	myStats->OLDHP = myStats->HP;
 }
 
@@ -8941,6 +8964,10 @@ bool Entity::isMobile()
 		return false;
 	}
 	else if ( behavior == &actPlayer && entitystats->HP <= 0 )
+	{
+		return false;
+	}
+	else if ( behavior == &actPlayer && (entitystats->getEffectActive(EFF_PROJECT_SPIRIT)) )
 	{
 		return false;
 	}
@@ -12386,6 +12413,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						&& !itemTypeIsQuiver(hitstats->shield->type) && itemCategory(hitstats->shield) != SPELLBOOK
 						&& !itemTypeIsFoci(hitstats->shield->type)
 						&& !itemTypeIsInstrument(hitstats->shield->type)
+						&& hitstats->shield->type != TOOL_DUCK
 						&& parriedDamage == 0
 						&& hitstats->shield->type != TOOL_TINKERING_KIT
 						&& hitstats->shield->type != TOOL_FRYING_PAN )
@@ -12550,7 +12578,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					bool swordExtraDamageInflicted = false;
 					bool knockbackInflicted = false;
 					bool dyrnwynBurn = false;
-
+					int shillelaghDamage = 0;
 					/*if ( thornsEffect < 0 )
 					{
 						hit.entity->modHP(thornsEffect);
@@ -12601,6 +12629,38 @@ void Entity::attack(int pose, int charge, Entity* target)
 								spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, 171);
 							}
 						}
+						if ( !shapeshifted && weaponskill == PRO_MACE && myStats->weapon && myStats->weapon->type == SHILLELAGH_MACE )
+						{
+							int numDebuffs = hitstats->numShillelaghDebuffsActive(hit.entity);
+							if ( numDebuffs > 0 )
+							{
+								real_t scale = 0.25 + numDebuffs * 0.25;
+								int bonusDamage = attackAfterReductions * scale * Entity::getDamageTableMultiplier(hit.entity, *hitstats, DAMAGE_TABLE_MAGIC);
+								if ( bonusDamage > 0 )
+								{
+									real_t variance = 20;
+									real_t baseSkillModifier = 50.0; // 40-60 base
+									real_t skillModifier = baseSkillModifier - (variance / 2) + (myStats->getModifiedProficiency(PRO_MYSTICISM) / 2.0);
+									skillModifier += (local_rng.rand() % (1 + static_cast<int>(variance)));
+									skillModifier /= 100.0;
+									skillModifier = std::min(skillModifier, 1.0);
+									bonusDamage = bonusDamage - static_cast<int>((1.0 - skillModifier) * bonusDamage);
+									//messagePlayer(0, MESSAGE_DEBUG, "Shill: %d", bonusDamage);
+									shillelaghDamage = bonusDamage;
+
+									Sint32 prevHP = hitstats->HP;
+									hit.entity->modHP(-shillelaghDamage);
+									Sint32 newHP = hitstats->HP;
+									if ( newHP < prevHP )
+									{
+										//spawnDamageGib(hit.entity, shillelaghDamage, DamageGib::DMG_STRONGER, DamageGibDisplayType::DMG_GIB_NUMBER);
+										spawnDamageGib(hit.entity, 225, DamageGib::DMG_STRONGER, DamageGibDisplayType::DMG_GIB_SPRITE);
+										spawnDamageGib(hit.entity, 261, DamageGib::DMG_STRONGER, DamageGibDisplayType::DMG_GIB_SPRITE);
+									}
+								}
+							}
+						}
+
 					}
 
 					if ( (hitstats->getEffectActive(EFF_WEBBED) || hitstats->getEffectActive(EFF_MAGIC_GREASE) 
@@ -14179,7 +14239,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 					DamageGib dmgGib = DMG_DEFAULT;
 					bool charged = static_cast<int>(std::max(charge, Stat::getMaxAttackCharge(myStats) / 2) / ((double)(Stat::getMaxAttackCharge(myStats) / 2))) > 1;
-					if ( weaponMultipliers >= 1.15 || (weaponskill == PRO_AXE && hitstats->type == MIMIC) )
+					if ( weaponMultipliers >= 1.15 || (weaponskill == PRO_AXE && hitstats->type == MIMIC) || shillelaghDamage > 0 )
 					{
 						dmgGib = DMG_STRONGER;
 						if ( charged )
@@ -15592,7 +15652,14 @@ bool Entity::teleport(int tele_x, int tele_y)
 	int sfx = 77;
 	if ( behavior == &actDeathGhost )
 	{
-		sfx = 608 + local_rng.rand() % 3;
+		if ( skill[2] >= 0 && skill[2] < MAXPLAYERS && players[skill[2]]->ghost.isSpiritGhost() )
+		{
+			sfx = 794 + local_rng.rand() % 2;
+		}
+		else
+		{
+			sfx = 608 + local_rng.rand() % 3;
+		}
 		playSoundPos(oldx, oldy, sfx, 128);
 	}
 	else
@@ -27945,7 +28012,20 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 		shieldLimbFociRotateSpin = 0.0;
 	}
 
-	if ( shieldLimb->sprite == items[TOOL_FRYING_PAN].index )
+	if ( shieldLimb->sprite >= items[TOOL_DUCK].index && shieldLimb->sprite < items[TOOL_DUCK].index + MAXPLAYERS )
+	{
+		shieldLimb->focalz -= 1.0;
+		shieldLimb->focalx += 0.25;
+		if ( this->fskill[8] > PI / 32 )
+		{
+
+		}
+		else
+		{
+			shieldLimb->yaw += PI / 12;
+		}
+	}
+	else if ( shieldLimb->sprite == items[TOOL_FRYING_PAN].index )
 	{
 		if ( this->fskill[8] > PI / 32 )
 		{
@@ -29161,7 +29241,7 @@ bool Entity::entityCanVomit() const
 		}
 	}
 
-	if ( myStats->type == SKELETON || myStats->type == AUTOMATON )
+	if ( myStats->type == SKELETON || myStats->type == AUTOMATON || myStats->type == MONSTER_M )
 	{
 		return false;
 	}
@@ -29235,6 +29315,11 @@ int Entity::getMPRestoreOnLevelUp(Entity* entity, Stat* myStats, int baseMP, boo
 			mpMod += std::max(0, statGetCHR(myStats, entity));
 		}
 	}
+	/*static int mpModCounter = 0;
+	if ( !statCheckOnly )
+	{
+		mpModCounter += mpMod;
+	}*/
 	return mpMod;
 }
 

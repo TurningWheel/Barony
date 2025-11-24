@@ -1199,6 +1199,8 @@ void Entity::colliderOnDestroy()
 			{
 				dropItemMonster(newItem(FOOD_SHROOM, SERVICABLE, 0, 1, 0, true, nullptr), this, nullptr);
 			}
+			Entity* parent = uidToEntity(this->colliderCreatedParent);
+			floorMagicCreateSpores(this, this->x, this->y, parent ? parent : this, 0, SPELL_SPORES);
 		}
 		else if ( find->second.name == "germinate_spell_casted" )
 		{
@@ -1994,6 +1996,11 @@ void actColliderDecoration(Entity* my)
 							|| rescan) )
 						{
 							Entity* caster = (my->colliderCreatedParent != 0 ? uidToEntity(my->colliderCreatedParent) : nullptr);
+							bool targetNonPlayer = false;
+							if ( !caster && achievementObserver.checkUidIsFromPlayer(my->colliderCreatedParent) >= 0 )
+							{
+								targetNonPlayer = true;
+							}
 							int range = colliderGetSpellRange(my);
 							auto entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 1 + (range / 16));
 							std::vector<Entity*> entitiesInRange;
@@ -2005,6 +2012,7 @@ void actColliderDecoration(Entity* my)
 								{
 									Entity* entity = (Entity*)node->element;
 									if ( !entity || !(entity->behavior == &actPlayer || entity->behavior == &actMonster) ) { continue; }
+									if ( !entity->monsterIsTargetable() ) { continue; }
 									if ( caster )
 									{
 										if ( caster == entity 
@@ -2018,7 +2026,18 @@ void actColliderDecoration(Entity* my)
 									}
 									else
 									{
-										if ( !(entity->behavior == &actPlayer || (entity->behavior == &actMonster && entity->monsterAllyGetPlayerLeader())) )
+										if ( targetNonPlayer )
+										{
+											if ( entity->behavior == &actMonster && !entity->monsterAllyGetPlayerLeader() )
+											{
+												// allowed to target
+											}
+											else
+											{
+												continue;
+											}
+										}
+										else if ( !(entity->behavior == &actPlayer || (entity->behavior == &actMonster && entity->monsterAllyGetPlayerLeader())) )
 										{
 											continue;
 										}

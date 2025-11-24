@@ -508,7 +508,17 @@ void sendEntityUDP(Entity* entity, int c, bool guarantee)
 	net_packet->data[27] = (Sint8)(entity->focalx * 8);
 	net_packet->data[28] = (Sint8)(entity->focaly * 8);
 	net_packet->data[29] = (Sint8)(entity->focalz * 8);
-	SDLNet_Write32(entity->skill[2], &net_packet->data[30]);
+	if ( entity->behavior == &actDeathGhost )
+	{
+		Uint32 flags = entity->skill[2];
+		flags |= ((entity->monsterSpecialState) & 0xFF) << 8;
+		flags |= ((entity->skill[10]) & 0xFFFF) << 16;
+		SDLNet_Write32(flags, &net_packet->data[30]);
+	}
+	else
+	{
+		SDLNet_Write32(entity->skill[2], &net_packet->data[30]);
+	}
 	net_packet->data[34] = 0;
 	net_packet->data[35] = 0;
 	for (j = 0; j < 16; j++)
@@ -2017,7 +2027,7 @@ void clientActions(Entity* entity)
 		case Player::Ghost_t::GHOST_MODEL_P4:
 		case Player::Ghost_t::GHOST_MODEL_PX:
 			// player ghosts
-			playernum = SDLNet_Read32(&net_packet->data[30]);
+			playernum = 0xFF & SDLNet_Read32(&net_packet->data[30]);
 			if ( playernum >= 0 && playernum < MAXPLAYERS )
 			{
 				if ( players[playernum] )
@@ -2037,6 +2047,16 @@ void clientActions(Entity* entity)
 				entity->flags[PASSABLE] = true;
 				entity->flags[INVISIBLE] = true;
 				entity->flags[GENIUS] = true;
+				Uint32 specialFlags = (SDLNet_Read32(&net_packet->data[30]) >> 8) & 0xFFFFFF;
+				if ( (specialFlags & 0xFF) )
+				{
+					entity->monsterSpecialState = (specialFlags & 0xFF);
+				}
+				if ( (specialFlags >> 8) & 0xFFFF )
+				{
+					int cosmeticSprite = (specialFlags >> 8) & 0xFFFF;
+					entity->skill[10] = cosmeticSprite;
+				}
 				entity->sizex = 2;
 				entity->sizey = 2;
 			}
@@ -2627,7 +2647,8 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		const int player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
 		if ( players[player]->ghost.my )
 		{
-			players[player]->ghost.my->skill[3] = net_packet->data[5];
+			players[player]->ghost.my->skill[3] = net_packet->data[5] & (1 << 0);
+			players[player]->ghost.my->skill[11] = net_packet->data[5] & (1 << 1) ? 1 : 0;
 		}
 	}},
 
@@ -3445,7 +3466,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 			}
 			case PARTICLE_EFFECT_DUCK_SPAWN_FEATHER:
 			{
-				duckSpawnFeather(sprite, particle_x, particle_y, particle_z);
+				duckSpawnFeather(sprite, particle_x, particle_y, particle_z, nullptr);
 				break;
 			}
 			case PARTICLE_EFFECT_SABOTAGE_TRAP:
@@ -3637,6 +3658,54 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 				MainMenu::disconnectedFromServer("The host player\nhas ended the game.");
 			}
 		}
+	}},
+
+	// project spirit player
+	{ 'PROJ', []() {
+		if ( players[clientnum] == nullptr || !players[clientnum]->entity || stats[clientnum]->HP <= 0 )
+		{
+			return;
+		}
+
+		players[clientnum]->ghost.initTeleportLocations(players[clientnum]->entity->x / 16, players[clientnum]->entity->y / 16);
+		players[clientnum]->ghost.spawnGhost();
+		//node_t* nextnode = nullptr;
+		//for ( auto node = map.entities->first; node; node = nextnode )
+		//{
+		//	nextnode = node->next;
+		//	if ( Entity* entity = (Entity*)node->element )
+		//	{
+		//		if ( entity->behavior == &actProjectSpiritCam && entity->skill[2] == clientnum )
+		//		{
+		//			entity->removeLightField();
+		//			list_RemoveNode(entity->mynode);
+		//		}
+		//	}
+		//}
+
+		//Uint32 uid = SDLNet_Read32(&net_packet->data[4]);
+		//if ( Entity* targetEntity = uidToEntity(uid) )
+		//{
+		//	// projectcam
+		//	Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Deathcam entity.
+		//	entity->x = targetEntity->x;
+		//	entity->y = targetEntity->y;
+		//	entity->z = -2;
+		//	entity->flags[NOUPDATE] = true;
+		//	entity->flags[PASSABLE] = true;
+		//	entity->flags[INVISIBLE] = true;
+		//	entity->behavior = &actProjectSpiritCam;
+		//	entity->skill[1] = targetEntity->getUID();
+		//	entity->skill[2] = clientnum;
+		//	entity->yaw = targetEntity->yaw;
+		//	entity->pitch = PI / 8;
+		//	players[clientnum]->entity->skill[3] = 2;
+		//	if ( multiplayer != CLIENT )
+		//	{
+		//		entity_uids--;
+		//	}
+		//	entity->setUID(-3);
+		//}
 	}},
 
 	// teleport player
@@ -4501,6 +4570,8 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 					{
 						*slot = nullptr;
 					}
+
+					players[clientnum]->paperDoll.updateSlots();
 
 					strcpy((char*)net_packet->data, "DIEI");
 					SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
@@ -7123,7 +7194,7 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 			net_packet->data[24],
 			&stats[player]->inventory);
 		playerGreasyDropItem(player, item);
-		if ( net_packet->data[27] == 1 )
+		if ( net_packet->data[26] == 1 )
 		{
 			// shield
 			if ( stats[player]->shield )
@@ -7139,7 +7210,7 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 				stats[player]->shield = nullptr;
 			}
 		}
-		else if ( net_packet->data[27] == 0 )
+		else if ( net_packet->data[26] == 0 )
 		{
 			// weapon
 			if ( stats[player]->weapon )
@@ -7154,6 +7225,33 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 				}
 				stats[player]->weapon = nullptr;
 			}
+		}
+	} },
+
+	// duck throw
+	{ 'DCKA', []() {
+		const int player = std::min(net_packet->data[25], (Uint8)(MAXPLAYERS - 1));
+		client_keepalive[player] = ticks;
+		auto item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])),
+			static_cast<Status>(SDLNet_Read32(&net_packet->data[8])),
+			SDLNet_Read32(&net_packet->data[12]),
+			SDLNet_Read32(&net_packet->data[16]),
+			SDLNet_Read32(&net_packet->data[20]),
+			net_packet->data[24],
+			&stats[player]->inventory);
+		playerThrowDuck(player, item, net_packet->data[26]);
+		// shield
+		if ( stats[player]->shield && stats[player]->shield->type == TOOL_DUCK )
+		{
+			if ( stats[player]->shield->node )
+			{
+				list_RemoveNode(stats[player]->shield->node);
+			}
+			else
+			{
+				free(stats[player]->shield);
+			}
+			stats[player]->shield = nullptr;
 		}
 	} },
 
@@ -7246,7 +7344,8 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		const int player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
 		if ( players[player]->ghost.my )
 		{
-			players[player]->ghost.my->skill[3] = net_packet->data[5];
+			players[player]->ghost.my->skill[3] = net_packet->data[5] & (1 << 0);
+			players[player]->ghost.my->skill[11] = net_packet->data[5] & (1 << 1) ? 1 : 0;
 			for ( int c = 1; c < MAXPLAYERS; ++c ) {
 				// relay packet to other players
 				if ( client_disconnected[c] || c == player ) {

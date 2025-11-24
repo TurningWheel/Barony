@@ -237,6 +237,7 @@ static const int SPELL_FOCI_LIGHT_SANCTUARY = 214;
 static const int SPELL_SCEPTER_BLAST = 215;
 static const int SPELL_MAGICIANS_ARMOR = 216;
 static const int SPELL_PROJECT_SPIRIT = 217;
+static const int SPELL_DUCK_DIVE = 218;
 static const int NUM_SPELLS = 225;
 
 #define SPELLELEMENT_CONFUSE_BASE_DURATION 2//In seconds.

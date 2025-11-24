@@ -28284,7 +28284,7 @@ void CalloutRadialMenu::drawCallouts(const int playernum)
 			bool selfCallout = false;
 			if ( uidMatchesPlayer(playernum, callout.second.entityUid) )
 			{
-				if ( i == playernum && players[i]->entity && players[i]->entity->skill[3] != 0 )
+				if ( i == playernum && players[i]->entity && players[i]->entity->skill[3] != 0 && !players[i]->ghost.isActive() )
 				{
 					// debug/thirdperson cam.
 				}

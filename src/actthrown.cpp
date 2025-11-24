@@ -2453,7 +2453,7 @@ void thrownItemUpdateSpellTrail(Entity& my, real_t _x, real_t _y)
 						effect.firstEffect = true;
 					}
 					int spellID = spellTimer->particleTimerVariable2;
-					auto particleEffectType = (spellID == SPELL_SPORES || spellID == SPELL_MYCELIUM_SPORES)
+					auto particleEffectType = (spellID == SPELL_MYCELIUM_BOMB || spellID == SPELL_MYCELIUM_SPORES)
 						? ParticleTimerEffect_t::EffectType::EFFECT_MYCELIUM
 						: ParticleTimerEffect_t::EffectType::EFFECT_SPORES;
 					effect.effectType = particleEffectType;

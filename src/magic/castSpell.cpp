@@ -1201,7 +1201,13 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				int tx = ghost.spawnX;
 				int ty = ghost.spawnY;
 				Entity* target = nullptr;
-				if ( ghost.teleportToPlayer >= MAXPLAYERS )
+				if ( players[caster->skill[2]]->entity )
+				{
+					target = players[caster->skill[2]]->entity;
+					tx = static_cast<int>(target->x) / 16;
+					ty = static_cast<int>(target->y) / 16;
+				}
+				else if ( ghost.teleportToPlayer >= MAXPLAYERS )
 				{
 					ghost.teleportToPlayer = -1;
 					tx = ghost.startRoomX;
@@ -3122,7 +3128,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					floorMagicCreateLightningSequence(spellTimer, 0);
 				}
 				spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
-				playSoundEntity(caster, 171, 128);
+				playSoundEntity(caster, 806, 128);
 			}
 		}
 		else if ( spell->ID == SPELL_ETERNALS_GAZE )
@@ -6873,6 +6879,53 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				playSoundEntity(caster, 167, 128);
 			}
 		}
+		else if ( spell->ID == SPELL_PROJECT_SPIRIT )
+		{
+			if ( caster && caster->behavior == &actDeathGhost )
+			{
+				duckAreaQuck(caster);
+			}
+			else if ( caster && caster->behavior == &actPlayer )
+			{
+				node_t* nextnode = nullptr;
+				for ( auto node = map.entities->first; node; node = nextnode )
+				{
+					nextnode = node->next;
+					if ( Entity* entity = (Entity*)node->element )
+					{
+						if ( entity->behavior == &actDeathGhost && entity->skill[2] == caster->skill[2] )
+						{
+							entity->removeLightField();
+							list_RemoveNode(entity->mynode);
+						}
+					}
+				}
+				if ( Stat* casterStats = caster->getStats() )
+				{
+					if ( !casterStats->getEffectActive(EFF_PROJECT_SPIRIT) )
+					{
+						if ( caster->setEffect(EFF_PROJECT_SPIRIT, true, 2 * 60 * TICKS_PER_SECOND, false) )
+						{
+							messagePlayer(caster->skill[2], MESSAGE_STATUS, Language::get(6874));
+							if ( players[caster->skill[2]]->isLocalPlayer() )
+							{
+								players[caster->skill[2]]->ghost.initTeleportLocations(caster->x / 16, caster->y / 16);
+								players[caster->skill[2]]->ghost.spawnGhost();
+								players[caster->skill[2]]->entity->skill[3] = 2;
+							}
+							else
+							{
+								strcpy((char*)net_packet->data, "PROJ");
+								net_packet->address.host = net_clients[caster->skill[2] - 1].host;
+								net_packet->address.port = net_clients[caster->skill[2] - 1].port;
+								net_packet->len = 4;
+								sendPacketSafe(net_sock, -1, net_packet, caster->skill[2] - 1);
+							}
+						}
+					}
+				}
+			}
+		}
 
 		// intentional separate from else/if chain.
 		// disables propulsion if found a marked target.
@@ -8020,6 +8073,10 @@ bool spellIsNaturallyLearnedByRaceOrClass(Entity& caster, Stat& stat, int spellI
 	{
 		return true;
 	}
+	else if ( stat.playerRace == RACE_M && stat.stat_appearance == 0 && (spellID == SPELL_SPORES || spellID == SPELL_MUSHROOM) )
+	{
+		return true;
+	}
 	
 	// class specific:
 	int playernum = caster.skill[2];
@@ -8051,7 +8108,7 @@ bool spellIsNaturallyLearnedByRaceOrClass(Entity& caster, Stat& stat, int spellI
 	}
 	else if ( client_classes[playernum] == CLASS_24 )
 	{
-		if ( spellID == SPELL_MAGICIANS_ARMOR || spellID == SPELL_SLOW )
+		if ( spellID == SPELL_MAGICIANS_ARMOR || spellID == SPELL_DEEP_SHADE || spellID == SPELL_PROJECT_SPIRIT )
 		{
 			return true;
 		}

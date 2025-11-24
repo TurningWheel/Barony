@@ -359,7 +359,7 @@ static std::vector<Sint32> monsterSprites[NUMMONSTERS] = {
 	},
 	// DUCK_SMALL
 	{
-		2225, 2226, 2231, 2232, 2237, 2238
+		2225, 2226, 2231, 2232, 2237, 2238, 2307, 2308
 	},
 	//MONSTER_UNUSED_6
 	{
@@ -951,7 +951,8 @@ int mothGetAttackPose(Entity* my, int basePose);
 void mothAnimate(Entity* my, Stat* myStats, double dist);
 void earthElementalAnimate(Entity* my, Stat* myStats, double dist);
 void duckAnimate(Entity* my, Stat* myStats, double dist);
-void duckSpawnFeather(int sprite, real_t x, real_t y, real_t z);
+void duckSpawnFeather(int sprite, real_t x, real_t y, real_t z, Entity* my);
+bool duckAreaQuck(Entity* my);
 
 //--misc functions--
 void actMinotaurTrap(Entity* my);

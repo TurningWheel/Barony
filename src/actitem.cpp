@@ -141,7 +141,7 @@ void actItem(Entity* my)
 	my->new_z -= ITEM_WATERBOB;
 	ITEM_WATERBOB = 0.0;
 
-	if ( my->sprite >= items[TOOL_DUCK].index && my->sprite < items[TOOL_DUCK].index + 3 )
+	if ( my->sprite >= items[TOOL_DUCK].index && my->sprite < items[TOOL_DUCK].index + 4 )
 	{
 		if ( multiplayer == CLIENT )
 		{
