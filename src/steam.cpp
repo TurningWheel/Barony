@@ -485,6 +485,13 @@ void SteamServerClientWrapper::OnLobbyMemberUpdate(LobbyChatUpdate_t* pCallback)
 						}
 					}
 				}
+
+				int numInLobby = SteamMatchmaking()->GetNumLobbyMembers(*static_cast<CSteamID*>(currentLobby));
+				for ( int i = 0; i < numInLobby; ++i )
+				{
+					CSteamID memberID = SteamMatchmaking()->GetLobbyMemberByIndex(*static_cast<CSteamID*>(currentLobby), i);
+					SteamFriends()->SetPlayedWith(memberID);
+				}
 			}
 			else
 			{
@@ -730,6 +737,7 @@ SteamAPICall_t cpp_SteamMatchmaking_CreateLobby(ELobbyType eLobbyType, int cMaxM
 	{
 		SteamMatchmaking()->LeaveLobby(*old_lobby);
 		cpp_Free_CSteamID((void*)old_lobby);
+		currentLobby = nullptr;
 	}
     steamAwaitingLobbyCreation = true;
 	SteamAPICall_t steamAPICall = SteamMatchmaking()->CreateLobby(eLobbyType, cMaxMembers);

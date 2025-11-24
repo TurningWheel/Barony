@@ -82,3 +82,4 @@ xcode/Barony/Barony.xcodeproj/xcuserdata/*
 *.enc
 *.ilk
 /VS.2015/x64
+*.sqlite-journal

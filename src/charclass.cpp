@@ -3373,6 +3373,10 @@ void initClass(const int player)
 			addSpell(SPELL_SPORES, player, true);
 			addSpell(SPELL_MUSHROOM, player, true);
 		}
+		else if ( stats[player]->playerRace == RACE_G && stats[player]->stat_appearance == 0 )
+		{
+			addSpell(SPELL_DEFACE, player, true);
+		}
 
 		if ( stats[player]->getProficiency(PRO_ALCHEMY) >= 0 )
 		{
@@ -3434,7 +3438,6 @@ void initClass(const int player)
 		else if ( client_classes[player] == CLASS_22 )
 		{
 			addSpell(SPELL_BOOBY_TRAP, player, true);
-			addSpell(SPELL_DEFACE, player, true);
 		}
 		else if ( client_classes[player] == CLASS_23 )
 		{

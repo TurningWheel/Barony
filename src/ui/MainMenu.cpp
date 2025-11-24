@@ -557,6 +557,7 @@ namespace MainMenu {
     // Controls options
     struct Controls {
         bool numkeys_in_inventory_enabled = true;
+		bool numkeys_change_hotbar_slot_enabled = true;
         bool mkb_world_tooltips_enabled = true;
         bool gamepad_facehotbar = true;
         float mouse_sensitivity = 32.f;
@@ -2778,6 +2779,7 @@ namespace MainMenu {
         settings.mkb_world_tooltips_enabled = mkb_world_tooltips_enabled;
         settings.gamepad_facehotbar = gamepad_facehotbar;
         settings.hotbar_numkey_quick_add = numkeys_in_inventory_enabled;
+		settings.hotbar_numkey_change_slot = numkeys_change_hotbar_slot_enabled;
         settings.mousespeed = std::min(std::max(0.f, mouse_sensitivity), 100.f);
         settings.reversemouse = reverse_mouse_enabled;
         settings.smoothmouse = smooth_mouse_enabled;
@@ -2798,6 +2800,7 @@ namespace MainMenu {
         controls.mkb_world_tooltips_enabled = settings.mkb_world_tooltips_enabled;
         controls.gamepad_facehotbar = settings.gamepad_facehotbar;
         controls.numkeys_in_inventory_enabled = settings.hotbar_numkey_quick_add;
+		controls.numkeys_change_hotbar_slot_enabled = settings.hotbar_numkey_change_slot;
         controls.mouse_sensitivity = settings.mousespeed;
         controls.reverse_mouse_enabled = settings.reversemouse;
         controls.smooth_mouse_enabled = settings.smoothmouse;
@@ -2817,11 +2820,12 @@ namespace MainMenu {
     }
 
     bool Controls::serialize(FileInterface* file) {
-        int version = 2;
+        int version = 3;
         file->property("version", version);
         file->property("mkb_world_tooltips_enabled", mkb_world_tooltips_enabled);
         file->property("gamepad_facehotbar", gamepad_facehotbar);
         file->property("numkeys_in_inventory_enabled", numkeys_in_inventory_enabled);
+		file->propertyVersion("numkeys_change_hotbar_slot_enabled", version >= 3, numkeys_change_hotbar_slot_enabled);
         file->property("mouse_sensitivity", mouse_sensitivity);
         file->property("reverse_mouse_enabled", reverse_mouse_enabled);
         file->property("smooth_mouse_enabled", smooth_mouse_enabled);
@@ -7312,9 +7316,6 @@ bind_failed:
             y += settingsAddSlider(*settings_subwindow, y, "mouse_sensitivity", Language::get(5218), Language::get(5219),
                 allSettings.controls[bound_player].mouse_sensitivity, 0, 100, nullptr, [](Slider& slider)
                 {soundSliderSetting(slider, true); allSettings.controls[bound_player].mouse_sensitivity = slider.getValue();});
-            y += settingsAddBooleanOption(*settings_subwindow, y, "numkeys_in_inventory", Language::get(5220), Language::get(5221),
-                allSettings.controls[bound_player].numkeys_in_inventory_enabled, [](Button& button)
-                {soundToggleSetting(button); allSettings.controls[bound_player].numkeys_in_inventory_enabled = button.isPressed();});
             y += settingsAddBooleanOption(*settings_subwindow, y, "reverse_mouse", Language::get(5222), Language::get(5223),
                 allSettings.controls[bound_player].reverse_mouse_enabled, [](Button& button)
                 {soundToggleSetting(button); allSettings.controls[bound_player].reverse_mouse_enabled = button.isPressed();});
@@ -7324,6 +7325,12 @@ bind_failed:
             y += settingsAddBooleanOption(*settings_subwindow, y, "mkb_world_tooltips", Language::get(5226), Language::get(5227),
                 allSettings.controls[bound_player].mkb_world_tooltips_enabled, [](Button& button)
                 {soundToggleSetting(button); allSettings.controls[bound_player].mkb_world_tooltips_enabled = button.isPressed();});
+            y += settingsAddBooleanOption(*settings_subwindow, y, "numkeys_in_inventory", Language::get(5220), Language::get(5221),
+                allSettings.controls[bound_player].numkeys_in_inventory_enabled, [](Button& button)
+                {soundToggleSetting(button); allSettings.controls[bound_player].numkeys_in_inventory_enabled = button.isPressed();});
+			y += settingsAddBooleanOption(*settings_subwindow, y, "numkeys_change_slot", Language::get(6880), Language::get(6881),
+				allSettings.controls[bound_player].numkeys_change_hotbar_slot_enabled, [](Button& button)
+				{soundToggleSetting(button); allSettings.controls[bound_player].numkeys_change_hotbar_slot_enabled = button.isPressed(); });
 			y += settingsAddSlider(*settings_subwindow, y, "quick_turn_speed_mkb_control", Language::get(6310), Language::get(6311),
 				allSettings.controls[bound_player].quick_turn_speed_mkb_control, 1.f, 5.f, sliderFloorInt, [](Slider& slider)
 				{soundSliderSetting(slider, true); allSettings.controls[bound_player].quick_turn_speed_mkb_control = slider.getValue(); });
@@ -7331,10 +7338,11 @@ bind_failed:
             hookSettings(*settings_subwindow,
                 {{Setting::Type::Customize, "bindings"},
                 {Setting::Type::Slider, "mouse_sensitivity"},
-                {Setting::Type::Boolean, "numkeys_in_inventory"},
                 {Setting::Type::Boolean, "reverse_mouse"},
                 {Setting::Type::Boolean, "smooth_mouse"},
                 {Setting::Type::Boolean, "mkb_world_tooltips"},
+                {Setting::Type::Boolean, "numkeys_in_inventory"},
+				{Setting::Type::Boolean, "numkeys_change_slot"},
 				{Setting::Type::Slider, "quick_turn_speed_mkb_control"},
             });
         }

@@ -8187,6 +8187,11 @@ void actParticleAestheticOrbit(Entity* my)
 				{
 					my->sprite = 1758;
 				}
+
+				if ( local_rng.rand() % 4 == 0 )
+				{
+					playSoundEntityLocal(my, 808 + local_rng.rand() % 5, 32);
+				}
 			}
 			if ( !my->flags[INVISIBLE] )
 			{

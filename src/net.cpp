@@ -4327,6 +4327,34 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 					}
 				}
 			}
+			else if ( pickedUp && pickedUp->type == TOOL_DUCK && !stats[clientnum]->shield )
+			{
+				bool shapeshifted = false;
+				if ( players[clientnum] && players[clientnum]->entity && players[clientnum]->entity->effectShapeshift != NOTHING )
+				{
+					shapeshifted = true;
+				}
+
+				if ( !shapeshifted && !intro )
+				{
+					useItem(pickedUp, clientnum);
+
+					auto& hotbar_t = players[clientnum]->hotbar;
+					auto& hotbar = hotbar_t.slots();
+					if ( hotbar_t.magicDuckHotbarSlot >= 0 )
+					{
+						hotbar[hotbar_t.magicDuckHotbarSlot].item = pickedUp->uid;
+						for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
+						{
+							if ( i != hotbar_t.magicDuckHotbarSlot && hotbar[i].item == pickedUp->uid )
+							{
+								hotbar[i].item = 0;
+								hotbar[i].resetLastItem();
+							}
+						}
+					}
+				}
+			}
 		}
 	}},
 

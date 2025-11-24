@@ -5072,8 +5072,8 @@ The next input you activate will be bound to this action.#
 5217 Mouse & Keyboard#
 5218 Mouse Sensitivity#
 5219 Control the speed by which mouse movement affects camera movement.#
-5220 Number Keys in Inventory#
-5221 Allow the player to bind inventory items to the hotbar using the number keys on their keyboard.#
+5220 Hotbar Keys in Inventory#
+5221 Allow the player to bind inventory items to the hotbar using the hotbar slot keys on their keyboard.#
 5222 Reverse Mouse#
 5223 Reverse mouse up and down movement for controlling the orientation of the player.#
 5224 Smooth Mouse#
@@ -7148,5 +7148,8 @@ to replay this challenge!
 6876 Your spirit projection begins to fade...#
 6877 Profile#
 6878 Quack#
+6879 Return#
+6880 Hotbar Keys Update Selection#
+6881 Allow the highlighted hotbar slot to change when using the individual slot keys to activate the hotbar.#
 
 6999 END#

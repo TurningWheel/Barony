@@ -33685,7 +33685,7 @@ void Player::Hotbar_t::updateHotbar()
 			if ( controller )
 			{
 				glyph->disabled = slot->isDisabled();
-				if ( !player.shootmode || !player.entity )
+				if ( !player.shootmode || !player.entity || player.ghost.isActive() )
 				{
 					glyph->disabled = true;
 				}

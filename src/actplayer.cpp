@@ -13077,6 +13077,18 @@ void actPlayer(Entity* my)
 					}
 				}
 				my->handleHumanoidWeaponLimb(entity, weaponarm);
+
+				if ( entity->sprite >= items[STEEL_FLAIL].index && entity->sprite <= items[STEEL_FLAIL].index + 2 )
+				{
+					// slight GENIUS flag fix for clipping into camera
+					entity->sizex = 5;
+					entity->sizey = 5;
+				}
+				else
+				{
+					entity->sizex = 4;
+					entity->sizey = 4;
+				}
 				break;
 				// shield
 			case 7:

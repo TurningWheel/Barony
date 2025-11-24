@@ -59,6 +59,7 @@ struct PlayerSettings_t
     bool mkb_world_tooltips_enabled = true;
     bool gamepad_facehotbar = true;
     bool hotbar_numkey_quick_add = true;
+	bool hotbar_numkey_change_slot = true;
     bool reversemouse = 0;
     bool smoothmouse = false;
     real_t gamepad_rightx_sensitivity = 1.0;
@@ -2208,6 +2209,7 @@ public:
 		int swapHotbarOnShapeshift = 0;
 		bool hotbarHasFocus = false;
 		int magicBoomerangHotbarSlot = -1;
+		int magicDuckHotbarSlot = -1;
 		Uint32 hotbarTooltipLastGameTick = 0;
 		SDL_Rect hotbarBox;
 		Frame* hotbarFrame = nullptr;
@@ -2280,6 +2282,7 @@ public:
 			current_hotbar = 0;
 			//hotbarHasFocus = false;
 			magicBoomerangHotbarSlot = -1;
+			magicDuckHotbarSlot = -1;
 			hotbarTooltipLastGameTick = 0;
 			for ( int j = 0; j < NUM_HOTBAR_ALTERNATES; ++j )
 			{

@@ -150,6 +150,10 @@ void autoHotbarTryAdd(const int player, Item& item)
 		{
 			players[player]->hotbar.magicBoomerangHotbarSlot = index;
 		}
+		if ( item.type == TOOL_DUCK )
+		{
+			players[player]->hotbar.magicDuckHotbarSlot = index;
+		}
 		return;
 	}
 
@@ -3869,6 +3873,35 @@ Item* itemPickup(const int player, Item* const item, Item* addToSpecificInventor
 		item2 = newItem(item->type, item->status, item->beatitude, item->count, item->appearance, item->identified, &stats[player]->inventory);
 		item2->ownerUid = item->ownerUid;
 		item2->notifyIcon = item->notifyIcon;
+
+		if ( item2->type == TOOL_DUCK && !stats[player]->shield )
+		{
+			bool shapeshifted = false;
+			if ( players[player] && players[player]->entity && players[player]->entity->effectShapeshift != NOTHING )
+			{
+				shapeshifted = true;
+			}
+
+			if ( !shapeshifted && !intro )
+			{
+				useItem(item2, player);
+				auto& hotbar_t = players[player]->hotbar;
+				auto& hotbar = hotbar_t.slots();
+				if ( hotbar_t.magicDuckHotbarSlot >= 0 )
+				{
+					hotbar[hotbar_t.magicDuckHotbarSlot].item = item2->uid;
+					for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
+					{
+						if ( i != hotbar_t.magicDuckHotbarSlot && hotbar[i].item == item2->uid )
+						{
+							hotbar[i].item = 0;
+							hotbar[i].resetLastItem();
+						}
+					}
+				}
+			}
+		}
+
 		return item2;
 	}
 

@@ -1058,6 +1058,9 @@ Entity* spawnFociGib(real_t x, real_t y, real_t z, real_t dir, real_t velocityBo
 	real_t foci_gravity = *cvar_foci_gravity;
 	real_t foci_velz = *cvar_foci_velz;
 
+	int sfx = 164;
+	int vol = 64;
+
 	my->x = x;
 	my->y = y;
 	my->z = z;
@@ -1072,6 +1075,9 @@ Entity* spawnFociGib(real_t x, real_t y, real_t z, real_t dir, real_t velocityBo
 		foci_life = 1.0;
 		foci_spread = 1.0;
 		foci_delay = 0;
+
+		sfx = 817 + local_rng.rand() % 2;
+		vol = 128;
 
 		foci_model = true;
 		foci_scale = 1.0;
@@ -1091,6 +1097,9 @@ Entity* spawnFociGib(real_t x, real_t y, real_t z, real_t dir, real_t velocityBo
 		foci_life = 1.0;
 		foci_spread = 0.25;
 		foci_delay = 0;
+
+		sfx = 814;
+		vol = 92;
 
 		foci_model = true;
 		foci_scale = 1.0;
@@ -1134,6 +1143,9 @@ Entity* spawnFociGib(real_t x, real_t y, real_t z, real_t dir, real_t velocityBo
 		foci_spread = 0.5;
 		foci_delay = 0;
 
+		sfx = 813;
+		vol = 128;
+
 		if ( sprite == 2152 )
 		{
 			foci_model = true;
@@ -1159,6 +1171,9 @@ Entity* spawnFociGib(real_t x, real_t y, real_t z, real_t dir, real_t velocityBo
 		foci_life = 1.0;
 		foci_spread = 0.5;
 		foci_delay = 0;
+
+		sfx = 815;
+		vol = 128;
 
 		foci_model = true;
 		foci_scale = 1.0;
@@ -1244,7 +1259,7 @@ Entity* spawnFociGib(real_t x, real_t y, real_t z, real_t dir, real_t velocityBo
 	GIB_ORBIT_X = my->x;
 	GIB_ORBIT_Y = my->y;
 
-	playSoundEntityLocal(my, 164, 64);
+	playSoundEntityLocal(my, sfx, vol);
 
 	if ( multiplayer == SERVER )
 	{

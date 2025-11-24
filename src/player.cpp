@@ -5214,16 +5214,37 @@ const int Player::HUD_t::getActionIconForPlayer(ActionPrompts prompt, std::strin
 		switch ( prompt )
 		{
 			case ACTION_PROMPT_MAGIC:
-				promptString = Language::get(6047); // Haunt
+				if ( player.ghost.isSpiritGhost() )
+				{
+					promptString = Language::get(6879); // Return
+				}
+				else
+				{
+					promptString = Language::get(6047); // Haunt
+				}
 				break;
 			case ACTION_PROMPT_MAINHAND:
-				promptString = Language::get(6046); // Chill
+				if ( player.ghost.isSpiritGhost() )
+				{
+					promptString = Language::get(6878); // Distract
+				}
+				else
+				{
+					promptString = Language::get(6046); // Chill
+				}
 				break;
 			case ACTION_PROMPT_OFFHAND:
 				promptString = Language::get(6048); // Push
 				break;
 			case ACTION_PROMPT_SNEAK:
-				promptString = Language::get(4077); // Sneak
+				if ( player.ghost.isSpiritGhost() )
+				{
+					promptString = Language::get(6877); // Profile
+				}
+				else
+				{
+					promptString = Language::get(4077); // Sneak
+				}
 				break;
 			default:
 				break;

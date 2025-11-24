@@ -2132,6 +2132,10 @@ void drawStatusNew(const int player)
 			{
 				hotbar_t.magicBoomerangHotbarSlot = num;
 			}
+			if ( item->type == TOOL_DUCK )
+			{
+				hotbar_t.magicDuckHotbarSlot = num;
+			}
 			bool used = false;
 			bool disableItemUsage = false;
 
@@ -2712,63 +2716,90 @@ void drawStatusNew(const int player)
 			{
 				Input::inputs[player].consumeBinaryToggle("Hotbar Slot 1");
 				item = uidToItem(hotbar[0].item);
-				hotbar_t.current_hotbar = 0;
+				if ( playerSettings[multiplayer ? 0 : player].hotbar_numkey_change_slot )
+				{
+					hotbar_t.current_hotbar = 0;
+				}
 				pressed = true;
 			}
 			if ( Input::inputs[player].binaryToggle("Hotbar Slot 2") )
 			{
 				Input::inputs[player].consumeBinaryToggle("Hotbar Slot 2");
 				item = uidToItem(hotbar[1].item);
-				hotbar_t.current_hotbar = 1;
+				if ( playerSettings[multiplayer ? 0 : player].hotbar_numkey_change_slot )
+				{
+					hotbar_t.current_hotbar = 1;
+				}
 				pressed = true;
 			}
 			if ( Input::inputs[player].binaryToggle("Hotbar Slot 3") )
 			{
 				Input::inputs[player].consumeBinaryToggle("Hotbar Slot 3");
 				item = uidToItem(hotbar[2].item);
-				hotbar_t.current_hotbar = 2;
+				if ( playerSettings[multiplayer ? 0 : player].hotbar_numkey_change_slot )
+				{
+					hotbar_t.current_hotbar = 2;
+				}
 				pressed = true;
 			}
 			if ( Input::inputs[player].binaryToggle("Hotbar Slot 4") )
 			{
 				Input::inputs[player].consumeBinaryToggle("Hotbar Slot 4");
 				item = uidToItem(hotbar[3].item);
-				hotbar_t.current_hotbar = 3;
+				if ( playerSettings[multiplayer ? 0 : player].hotbar_numkey_change_slot )
+				{
+					hotbar_t.current_hotbar = 3;
+				}
 				pressed = true;
 			}
 			if ( Input::inputs[player].binaryToggle("Hotbar Slot 5") )
 			{
 				Input::inputs[player].consumeBinaryToggle("Hotbar Slot 5");
 				item = uidToItem(hotbar[4].item);
-				hotbar_t.current_hotbar = 4;
+				if ( playerSettings[multiplayer ? 0 : player].hotbar_numkey_change_slot )
+				{
+					hotbar_t.current_hotbar = 4;
+				}
 				pressed = true;
 			}
 			if ( Input::inputs[player].binaryToggle("Hotbar Slot 6") )
 			{
 				Input::inputs[player].consumeBinaryToggle("Hotbar Slot 6");
 				item = uidToItem(hotbar[5].item);
-				hotbar_t.current_hotbar = 5;
+				if ( playerSettings[multiplayer ? 0 : player].hotbar_numkey_change_slot )
+				{
+					hotbar_t.current_hotbar = 5;
+				}
 				pressed = true;
 			}
 			if ( Input::inputs[player].binaryToggle("Hotbar Slot 7") )
 			{
 				Input::inputs[player].consumeBinaryToggle("Hotbar Slot 7");
 				item = uidToItem(hotbar[6].item);
-				hotbar_t.current_hotbar = 6;
+				if ( playerSettings[multiplayer ? 0 : player].hotbar_numkey_change_slot )
+				{
+					hotbar_t.current_hotbar = 6;
+				}
 				pressed = true;
 			}
 			if ( Input::inputs[player].binaryToggle("Hotbar Slot 8") )
 			{
 				Input::inputs[player].consumeBinaryToggle("Hotbar Slot 8");
 				item = uidToItem(hotbar[7].item);
-				hotbar_t.current_hotbar = 7;
+				if ( playerSettings[multiplayer ? 0 : player].hotbar_numkey_change_slot )
+				{
+					hotbar_t.current_hotbar = 7;
+				}
 				pressed = true;
 			}
 			if ( Input::inputs[player].binaryToggle("Hotbar Slot 9") )
 			{
 				Input::inputs[player].consumeBinaryToggle("Hotbar Slot 9");
 				item = uidToItem(hotbar[8].item);
-				hotbar_t.current_hotbar = 8;
+				if ( playerSettings[multiplayer ? 0 : player].hotbar_numkey_change_slot )
+				{
+					hotbar_t.current_hotbar = 8;
+				}
 				pressed = true;
 			}
 			if ( Input::inputs[player].binaryToggle("Hotbar Slot 10")
@@ -2777,7 +2808,10 @@ void drawStatusNew(const int player)
 			{
 				Input::inputs[player].consumeBinaryToggle("Hotbar Slot 10");
 				item = uidToItem(hotbar[9].item);
-				hotbar_t.current_hotbar = 9;
+				if ( playerSettings[multiplayer ? 0 : player].hotbar_numkey_change_slot )
+				{
+					hotbar_t.current_hotbar = 9;
+				}
 				pressed = true;
 			}
 
