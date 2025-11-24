@@ -43,6 +43,9 @@ bool partymode = false;
 static ConsoleVariable<float> cvar_calloutStartZ("/callout_start_z", -2.5);
 static ConsoleVariable<float> cvar_calloutMoveTo("/callout_moveto_z", 0.1);
 static ConsoleVariable<float> cvar_calloutStartZLimit("/callout_start_z_limit", 7.5);
+static ConsoleVariable<float> cvar_followerStartZ("/follower_start_z", -2.5);
+static ConsoleVariable<float> cvar_followerMoveTo("/follower_moveto_z", 0.1);
+static ConsoleVariable<float> cvar_followerStartZLimit("/follower_start_z_limit", 7.5);
 
 /*-------------------------------------------------------------------------------
 
@@ -62,6 +65,8 @@ static ConsoleVariable<float> cvar_calloutStartZLimit("/callout_start_z_limit", 
 #define GHOSTCAM_DEACTIVATED my->skill[7]
 #define GHOSTCAM_SPAWN_ANIM my->skill[8]
 #define GHOSTCAM_SPAWN_ANIM_COMPLETE my->skill[9]
+#define GHOSTCAM_COSMETIC_SPRITE my->skill[10]
+#define GHOSTCAM_SPIRIT_HIGH_PROFILE my->skill[11]
 #define GHOSTCAM_BOB my->fskill[0]
 #define GHOSTCAM_BOBMOVE my->fskill[1]
 #define GHOSTCAM_DX my->fskill[3]
@@ -73,6 +78,7 @@ static ConsoleVariable<float> cvar_calloutStartZLimit("/callout_start_z_limit", 
 #define GHOSTCAM_SQUISH_ANGLE my->fskill[9]
 #define GHOSTCAM_WEAVE my->fskill[10]
 #define GHOSTCAM_HOVER my->fskill[11]
+#define GHOSTCAM_THIRD_PERSON_CUSTOM my->fskill[12]
 
 static ConsoleVariable<bool> cvar_player_can_move_in_gui("/player_can_move_in_gui", true);
 bool playerAllowedMovement(const int playernum)
@@ -121,14 +127,28 @@ void Player::Ghost_t::handleGhostCameraBobbing(bool useRefreshRateDelta)
 			if ( !player.usingCommand()
 				&& player.bControlEnabled )
 			{
-				if ( !GHOSTCAM_SNEAKING )
+				if ( player.ghost.isSpiritGhost() )
 				{
-					GHOSTCAM_BOBMOVE += 0.0125 * *cvar_ghostBobSpeed;
+					if ( GHOSTCAM_SPIRIT_HIGH_PROFILE )
+					{
+						reset = true;
+					}
+					else
+					{
+						GHOSTCAM_BOBMOVE += 0.0125 * *cvar_ghostBobSpeed;
+					}
 				}
 				else
 				{
-					//GHOSTCAM_BOBMOVE += 0.025;
-					reset = true;
+					if ( !GHOSTCAM_SNEAKING )
+					{
+						GHOSTCAM_BOBMOVE += 0.0125 * *cvar_ghostBobSpeed;
+					}
+					else
+					{
+						//GHOSTCAM_BOBMOVE += 0.025;
+						reset = true;
+					}
 				}
 			}
 			else
@@ -180,7 +200,7 @@ void Player::Ghost_t::handleGhostMovement(const bool useRefreshRateDelta)
 	bool allowMovement = isControllable() && playerAllowedMovement(player.playernum);
 	static ConsoleVariable<float> cvar_ghostSpeed("/ghost_speed", 1.5);
 	static ConsoleVariable<float> cvar_ghostDrag("/ghost_drag", 0.95);
-
+	real_t drag = *cvar_ghostDrag;
 	if ( ((!player.usingCommand() && player.bControlEnabled && !gamePaused))
 		&& allowMovement )
 	{
@@ -212,16 +232,43 @@ void Player::Ghost_t::handleGhostMovement(const bool useRefreshRateDelta)
 			}
 		}
 
-		real_t speedFactor = *cvar_ghostSpeed;// getSpeedFactor(weightratio, statGetDEX(stats[PLAYER_NUM], players[PLAYER_NUM]->entity));
+		real_t speedFactor = *cvar_ghostSpeed;
+
+		int speedMult = 1;
+		bool isSpirit = isSpiritGhost();
+		if ( !isSpirit )
+		{
+			speedMult += GHOSTCAM_SNEAKING;
+		}
+		else
+		{
+			if ( node_t* node = list_Node(&my->children, 2) )
+			{
+				if ( Entity* entity = (Entity*)node->element )
+				{
+					if ( Entity::getMonsterTypeFromSprite(entity->sprite) == DUCK_SMALL )
+					{
+						if ( my->monsterSpecialState == DUCK_INERT )
+						{
+							speedMult += 1;
+							drag = 0.9;
+							speedFactor = 3.0;
+						}
+					}
+				}
+			}
+		}
+
 		speedFactor *= refreshRateDelta;
-		my->vel_x += y_force * cos(my->yaw) * .045 * speedFactor / (1 + GHOSTCAM_SNEAKING);
-		my->vel_y += y_force * sin(my->yaw) * .045 * speedFactor / (1 + GHOSTCAM_SNEAKING);
-		my->vel_x += x_force * cos(my->yaw + PI / 2) * .0225 * speedFactor / (1 + GHOSTCAM_SNEAKING);
-		my->vel_y += x_force * sin(my->yaw + PI / 2) * .0225 * speedFactor / (1 + GHOSTCAM_SNEAKING);
+
+		my->vel_x += y_force * cos(my->yaw) * .045 * speedFactor / (speedMult);
+		my->vel_y += y_force * sin(my->yaw) * .045 * speedFactor / (speedMult);
+		my->vel_x += x_force * cos(my->yaw + PI / 2) * .0225 * speedFactor / (speedMult);
+		my->vel_y += x_force * sin(my->yaw + PI / 2) * .0225 * speedFactor / (speedMult);
 
 	}
-	my->vel_x *= pow(*cvar_ghostDrag, refreshRateDelta);
-	my->vel_y *= pow(*cvar_ghostDrag, refreshRateDelta);
+	my->vel_x *= pow(drag, refreshRateDelta);
+	my->vel_y *= pow(drag, refreshRateDelta);
 
 	/*for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
@@ -397,6 +444,15 @@ bool Player::Ghost_t::isActive()
 	return false;
 }
 
+bool Player::Ghost_t::isSpiritGhost()
+{
+	if ( my )
+	{
+		return GHOSTCAM_COSMETIC_SPRITE != 0 && players[GHOSTCAM_PLAYERNUM]->entity && stats[GHOSTCAM_PLAYERNUM]->getEffectActive(EFF_PROJECT_SPIRIT);
+	}
+	return false;
+}
+
 void Player::Ghost_t::handleAttack()
 {
 	if ( !isActive() )
@@ -443,10 +499,13 @@ void Player::Ghost_t::handleAttack()
 		--errorFlashTeleportTicks;
 	}
 
+	bool spiritGhost = isSpiritGhost();
+
 	Input& input = Input::inputs[player.playernum];
 	bool attack = false;
 	bool useSpell = false;
 	bool defending = false;
+	bool highProfile = spiritGhost ? GHOSTCAM_SPIRIT_HIGH_PROFILE : false;
 	if ( !player.usingCommand() 
 		&& player.bControlEnabled 
 		&& !gamePaused
@@ -489,19 +548,32 @@ void Player::Ghost_t::handleAttack()
 				}
 			}
 		}
-		if ( input.binary("Defend") )
+
+		if ( spiritGhost )
 		{
-			defending = true;
+			if ( input.consumeBinaryToggle("Defend") )
+			{
+				highProfile = !highProfile;
+				playSoundEntityLocal(my, highProfile ? 794 : 795, 64);
+			}
+		}
+		else
+		{
+			if ( input.binary("Defend") )
+			{
+				defending = true;
+			}
 		}
 	}
 
-	if ( GHOSTCAM_SNEAKING != defending || ticks % 120 == 0 )
+	if ( GHOSTCAM_SNEAKING != defending || GHOSTCAM_SPIRIT_HIGH_PROFILE != highProfile || ticks % 120 == 0 )
 	{
 		if ( multiplayer == CLIENT )
 		{
 			strcpy((char*)net_packet->data, "GHOD");
 			net_packet->data[4] = player.playernum;
-			net_packet->data[5] = defending;
+			net_packet->data[5] = defending ? (1 << 0) : 0;
+			net_packet->data[5] |= highProfile ? (1 << 1) : 0;
 			net_packet->address.host = net_server.host;
 			net_packet->address.port = net_server.port;
 			net_packet->len = 6;
@@ -511,7 +583,8 @@ void Player::Ghost_t::handleAttack()
 		{
 			strcpy((char*)net_packet->data, "GHOD");
 			net_packet->data[4] = player.playernum;
-			net_packet->data[5] = defending;
+			net_packet->data[5] = defending ? (1 << 0) : 0;
+			net_packet->data[5] |= highProfile ? (1 << 1) : 0;
 			net_packet->len = 6;
 			for ( int c = 1; c < MAXPLAYERS; ++c )
 			{
@@ -527,6 +600,7 @@ void Player::Ghost_t::handleAttack()
 		}
 	}
 	GHOSTCAM_SNEAKING = defending;
+	GHOSTCAM_SPIRIT_HIGH_PROFILE = highProfile;
 
 	const int castLoopDuration = 4 * TICKS_PER_SECOND / 10;
 	bool finishSpell = false;
@@ -544,6 +618,13 @@ void Player::Ghost_t::handleAttack()
 			finishSpell = true;
 		}
 	}
+	else if ( castingSpellAnimation == GHOST_SPELL_QUACK )
+	{
+		if ( castingHeldDuration >= 1 )
+		{
+			finishSpell = true;
+		}
+	}
 
 	if ( finishSpell )
 	{
@@ -555,6 +636,11 @@ void Player::Ghost_t::handleAttack()
 		else if ( castingSpellAnimation == GHOST_SPELL_BOLT )
 		{
 			castSpell(uid, &spell_ghost_bolt, false, true);
+			castingSpellAnimation = GHOST_SPELL_POST_CASTING;
+		}
+		else if ( castingSpellAnimation == GHOST_SPELL_QUACK )
+		{
+			castSpell(uid, getSpellFromID(SPELL_PROJECT_SPIRIT), false, true);
 			castingSpellAnimation = GHOST_SPELL_POST_CASTING;
 		}
 		castingHeldDuration = 0;
@@ -605,10 +691,20 @@ void Player::Ghost_t::handleAttack()
 	{
 		if ( attack )
 		{
-			castingSpellAnimation = GHOST_SPELL_BOLT;
-			cooldownChill = cooldownChillDelay;
-			errorFlashChillTicks = 0;
-			playSoundEntity(my, 170, 128);
+			if ( spiritGhost )
+			{
+				castingSpellAnimation = GHOST_SPELL_QUACK;
+				cooldownChill = cooldownChillDelay;
+				errorFlashChillTicks = 0;
+				//playSoundEntity(my, 170, 128);
+			}
+			else
+			{
+				castingSpellAnimation = GHOST_SPELL_BOLT;
+				cooldownChill = cooldownChillDelay;
+				errorFlashChillTicks = 0;
+				playSoundEntity(my, 170, 128);
+			}
 		}
 		else if ( useSpell )
 		{
@@ -618,7 +714,8 @@ void Player::Ghost_t::handleAttack()
 			playSoundEntity(my, 170, 128);
 		}
 	}
-	else if ( castingSpellAnimation == GHOST_SPELL_TELEPORT || castingSpellAnimation == GHOST_SPELL_BOLT )
+	else if ( castingSpellAnimation == GHOST_SPELL_TELEPORT || castingSpellAnimation == GHOST_SPELL_BOLT
+		|| castingSpellAnimation == GHOST_SPELL_QUACK )
 	{
 		++castingHeldDuration;
 
@@ -695,6 +792,13 @@ void Player::Ghost_t::handleAttack()
 				entity->skill[11] = player.playernum;
 			}
 		}
+		else if ( castingSpellAnimation == GHOST_SPELL_QUACK )
+		{
+			if ( castingHeldDuration == 1 )
+			{
+				createEnsembleHUDParticleCircling(my);
+			}
+		}
 		else if ( castingSpellAnimation == GHOST_SPELL_BOLT )
 		{
 			float x = 6;
@@ -764,11 +868,14 @@ void Player::Ghost_t::handleActions()
 
 	Input& input = Input::inputs[player.playernum];
 	CalloutRadialMenu& calloutMenu = CalloutMenu[player.playernum];
+	FollowerRadialMenu& followerMenu = FollowerMenu[player.playernum];
 	auto& b = (multiplayer != SINGLE && player.playernum != 0) ? Input::inputs[0].getBindings() : input.getBindings();
 
 	clickDescription(player.playernum, NULL); // inspecting objects
 
-	if ( !calloutMenu.calloutMenuIsOpen() )
+	bool enableFollowerMenu = my && isSpiritGhost();
+
+	if ( !followerMenu.followerMenuIsOpen() && !calloutMenu.calloutMenuIsOpen() )
 	{
 		bool clickedOnGUI = false;
 
@@ -837,6 +944,124 @@ void Player::Ghost_t::handleActions()
 			input.consumeBinaryToggle("Use");
 			//input.consumeBindingsSharedWithBinding("Use");
 			selectedEntity[player.playernum] = nullptr;
+		}
+	}
+	else if ( enableFollowerMenu && followerMenu.followerMenuIsOpen() )
+	{
+		selectedEntity[player.playernum] = NULL;
+
+		if ( !players[player.playernum]->usingCommand() && players[player.playernum]->bControlEnabled && !gamePaused && input.binaryToggle("Use") )
+		{
+			if ( !followerMenu.menuToggleClick && followerMenu.selectMoveTo )
+			{
+				if ( followerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT )
+				{
+					// we're selecting a point for the ally to move to.
+					input.consumeBinaryToggle("Use");
+					//input.consumeBindingsSharedWithBinding("Use");
+
+					// we're selecting a point for the ally to move to.
+					if ( my )
+					{
+						real_t startx = cameras[player.playernum].x * 16.0;
+						real_t starty = cameras[player.playernum].y * 16.0;
+						real_t startz = cameras[player.playernum].z + (4.5 - cameras[player.playernum].z) / 2.0 + *cvar_followerStartZ;
+						real_t pitch = cameras[player.playernum].vang;
+						if ( pitch < 0 || pitch > PI )
+						{
+							pitch = 0;
+						}
+
+						// draw line from the players height and direction until we hit the ground.
+						real_t previousx = startx;
+						real_t previousy = starty;
+						int index = 0;
+						const real_t yaw = cameras[player.playernum].ang;
+						for ( ; startz < *cvar_followerStartZLimit; startz += abs((*cvar_followerMoveTo) * tan(pitch)) )
+						{
+							startx += 0.1 * cos(yaw);
+							starty += 0.1 * sin(yaw);
+							const int index_x = static_cast<int>(startx) >> 4;
+							const int index_y = static_cast<int>(starty) >> 4;
+							index = (index_y)*MAPLAYERS + (index_x)*MAPLAYERS * map.height;
+							if ( map.tiles[index] && !map.tiles[OBSTACLELAYER + index] )
+							{
+								// store the last known good coordinate
+								previousx = startx;// + 16 * cos(yaw);
+								previousy = starty;// + 16 * sin(yaw);
+							}
+							if ( map.tiles[OBSTACLELAYER + index] )
+							{
+								break;
+							}
+						}
+
+						createParticleFollowerCommand(previousx, previousy, 0, FOLLOWER_TARGET_PARTICLE, 0);
+						followerMenu.optionSelected = ALLY_CMD_MOVETO_CONFIRM;
+						followerMenu.selectMoveTo = false;
+						followerMenu.moveToX = static_cast<int>(previousx) / 16;
+						followerMenu.moveToY = static_cast<int>(previousy) / 16;
+						//messagePlayer(PLAYER_NUM, "%d, %d, pitch: %f", followerMoveToX, followerMoveToY, players[PLAYER_NUM]->entity->pitch);
+					}
+				}
+				else if ( followerMenu.optionSelected == ALLY_CMD_ATTACK_SELECT )
+				{
+					// we're selecting a target for the ally.
+					Entity* target = entityClicked(nullptr, false, player.playernum, EntityClickType::ENTITY_CLICK_FOLLOWER_INTERACT);
+					input.consumeBinaryToggle("Use");
+					//input.consumeBindingsSharedWithBinding("Use");
+					if ( target && followerMenu.followerToCommand )
+					{
+						Entity* parent = uidToEntity(target->skill[2]);
+						if ( target->behavior == &actMonster || (parent && parent->behavior == &actMonster) )
+						{
+							// see if we selected a limb
+							if ( parent )
+							{
+								target = parent;
+							}
+						}
+						else if ( target->sprite == 184 || target->sprite == 585 ) // switch base.
+						{
+							parent = uidToEntity(target->parent);
+							if ( parent )
+							{
+								target = parent;
+							}
+						}
+						if ( followerMenu.allowedInteractEntity(*target) )
+						{
+							createParticleFollowerCommand(target->x, target->y, 0, FOLLOWER_TARGET_PARTICLE,
+								target->getUID());
+							followerMenu.optionSelected = ALLY_CMD_ATTACK_CONFIRM;
+							followerMenu.followerToCommand->monsterAllyInteractTarget = target->getUID();
+						}
+						else
+						{
+							messagePlayer(player.playernum, MESSAGE_HINT, Language::get(3094));
+							followerMenu.optionSelected = ALLY_CMD_CANCEL;
+							followerMenu.optionPrevious = ALLY_CMD_ATTACK_CONFIRM;
+							followerMenu.followerToCommand->monsterAllyInteractTarget = 0;
+						}
+					}
+					else
+					{
+						followerMenu.optionSelected = ALLY_CMD_CANCEL;
+						followerMenu.optionPrevious = ALLY_CMD_ATTACK_CONFIRM;
+						followerMenu.followerToCommand->monsterAllyInteractTarget = 0;
+					}
+
+					if ( players[player.playernum]->worldUI.isEnabled() )
+					{
+						players[player.playernum]->worldUI.reset();
+						players[player.playernum]->worldUI.tooltipView = Player::WorldUI_t::TooltipView::TOOLTIP_VIEW_RESCAN;
+						players[player.playernum]->worldUI.gimpDisplayTimer = 0;
+					}
+
+					followerMenu.selectMoveTo = false;
+					strcpy(followerMenu.interactText, "");
+				}
+			}
 		}
 	}
 	else if ( calloutMenu.calloutMenuIsOpen() )
@@ -953,6 +1178,7 @@ void Player::Ghost_t::handleActions()
 		}
 	}
 
+	bool skipFollowerMenu = false;
 	if ( !player.usingCommand() && player.bControlEnabled
 		&& !gamePaused && CalloutRadialMenu::calloutMenuEnabledForGamemode() )
 	{
@@ -992,6 +1218,7 @@ void Player::Ghost_t::handleActions()
 				calloutMenu.optionSelected = CalloutRadialMenu::CALLOUT_CMD_SELECT;
 				calloutMenu.lockOnEntityUid = 0;
 				Player::soundActivate();
+				skipFollowerMenu = true;
 
 				if ( player.worldUI.isEnabled() )
 				{
@@ -1030,6 +1257,7 @@ void Player::Ghost_t::handleActions()
 					{
 						calloutMenu.holdWheel = false;
 					}
+					skipFollowerMenu = true;
 					calloutMenu.selectMoveTo = false;
 					calloutMenu.bOpen = true;
 					calloutMenu.initCalloutMenuGUICursor(true);
@@ -1079,6 +1307,7 @@ void Player::Ghost_t::handleActions()
 						{
 							calloutMenu.holdWheel = false;
 						}
+						skipFollowerMenu = true;
 						calloutMenu.selectMoveTo = false;
 						calloutMenu.bOpen = true;
 						calloutMenu.lockOnEntityUid = 0;
@@ -1096,82 +1325,207 @@ void Player::Ghost_t::handleActions()
 		}
 	}
 
-	if ( selectedEntity[player.playernum] != nullptr )
+	if ( !players[player.playernum]->usingCommand() && players[player.playernum]->bControlEnabled
+		&& !gamePaused
+		&& !skipFollowerMenu
+		&& enableFollowerMenu
+		&& !followerMenu.followerToCommand && followerMenu.recentEntity )
 	{
-		Entity* parent = uidToEntity(selectedEntity[player.playernum]->skill[2]);
-		if ( selectedEntity[player.playernum]->behavior == &actItem && pushPoints == 0 )
+		auto& b = (multiplayer != SINGLE && player.playernum != 0) ? Input::inputs[0].getBindings() : input.getBindings();
+		bool showNPCCommandsOnGamepad = false;
+		auto showNPCCommandsFind = b.find("Show NPC Commands");
+		std::string showNPCCommandsInputStr = "";
+		std::string lastNPCCommandInputStr = "";
+		if ( showNPCCommandsFind != b.end() )
 		{
-			selectedEntity[player.playernum] = nullptr;
-			input.consumeBinaryToggle("Use");
-			if ( cooldownPush > 0 )
+			showNPCCommandsOnGamepad = (*showNPCCommandsFind).second.isBindingUsingGamepad();
+			showNPCCommandsInputStr = (*showNPCCommandsFind).second.input;
+		}
+		bool lastNPCCommandOnGamepad = false;
+		auto lastNPCCommandFind = b.find("Command NPC");
+		if ( lastNPCCommandFind != b.end() )
+		{
+			lastNPCCommandOnGamepad = (*lastNPCCommandFind).second.isBindingUsingGamepad();
+			lastNPCCommandInputStr = (*lastNPCCommandFind).second.input;
+		}
+
+		if ( players[player.playernum]->worldUI.bTooltipInView && players[player.playernum]->worldUI.tooltipsInRange.size() > 1 )
+		{
+			if ( showNPCCommandsOnGamepad &&
+				(showNPCCommandsInputStr == input.binding("Interact Tooltip Next")
+					|| showNPCCommandsInputStr == input.binding("Interact Tooltip Prev")) )
 			{
-				// no action
-				if ( errorFlashPushTicks == 0 && cooldownPush > (TICKS_PER_SECOND / 2) )
-				{
-					errorFlashPushTicks = errorFlashTicks;
-					playSound(563, 64);
-				}
+				input.consumeBinaryToggle("Show NPC Commands");
+				players[player.playernum]->hud.followerDisplay.bOpenFollowerMenuDisabled = true;
+			}
+			if ( lastNPCCommandOnGamepad &&
+				(lastNPCCommandInputStr == input.binding("Interact Tooltip Next")
+					|| lastNPCCommandInputStr == input.binding("Interact Tooltip Prev")) )
+			{
+				input.consumeBinaryToggle("Command NPC");
+				players[player.playernum]->hud.followerDisplay.bCommandNPCDisabled = true;
 			}
 		}
-		if ( selectedEntity[player.playernum] )
+
+		if ( !calloutMenu.calloutMenuIsOpen() )
 		{
-			input.consumeBinaryToggle("Use");
-			//input.consumeBindingsSharedWithBinding("Use");
-			if ( entityDist(my, selectedEntity[player.playernum]) <= TOUCHRANGE )
+			if ( (input.binaryToggle("Show NPC Commands") && !showNPCCommandsOnGamepad)
+				|| (input.binaryToggle("Show NPC Commands") && showNPCCommandsOnGamepad
+					&& players[player.playernum]->shootmode /*&& !players[player.playernum]->worldUI.bTooltipInView*/) )
 			{
-				inrange[player.playernum] = true;
-				if ( selectedEntity[player.playernum]->behavior == &actItem )
+				if ( players[player.playernum] && players[player.playernum]->entity
+					&& followerMenu.recentEntity->monsterTarget == players[player.playernum]->entity->getUID() )
 				{
-					--pushPoints;
-					pushPoints = std::max(0, pushPoints);
-					if ( pushPoints == 0 )
+					// your ally is angry at you!
+				}
+				else
+				{
+					selectedEntity[player.playernum] = followerMenu.recentEntity;
+					followerMenu.holdWheel = true;
+					if ( showNPCCommandsOnGamepad )
 					{
-						cooldownPush = cooldownPushDelay;
+						followerMenu.holdWheel = false;
 					}
 				}
 			}
-			else
+			else if ( (input.binaryToggle("Command NPC") && !lastNPCCommandOnGamepad)
+				|| (input.binaryToggle("Command NPC") && lastNPCCommandOnGamepad && players[player.playernum]->shootmode/*&& !players[PLAYER_NUM]->worldUI.bTooltipInView*/) )
 			{
-				inrange[player.playernum] = false;
+				if ( players[player.playernum] && players[player.playernum]->entity
+					&& followerMenu.recentEntity->monsterTarget == players[player.playernum]->entity->getUID() )
+				{
+					// your ally is angry at you!
+					input.consumeBinaryToggle("Command NPC");
+				}
+				else if ( followerMenu.optionPrevious != -1 )
+				{
+					followerMenu.followerToCommand = followerMenu.recentEntity;
+				}
+				else
+				{
+					input.consumeBinaryToggle("Command NPC");
+				}
 			}
-			if ( multiplayer == CLIENT )
+		}
+	}
+
+	if ( selectedEntity[player.playernum] != nullptr )
+	{
+		if ( enableFollowerMenu )
+		{
+			followerMenu.followerToCommand = nullptr;
+			Entity* parent = uidToEntity(selectedEntity[player.playernum]->skill[2]);
+			if ( selectedEntity[player.playernum]->behavior == &actMonster || (parent && parent->behavior == &actMonster) )
 			{
-				if ( inrange[player.playernum] )
+				// see if we selected a follower to process right click menu.
+				if ( parent && parent->monsterAllyIndex == player.playernum )
 				{
-					strcpy((char*)net_packet->data, "CKIR");
+					followerMenu.followerToCommand = parent;
+					//messagePlayer(0, "limb");
 				}
-				else
+				else if ( selectedEntity[player.playernum]->monsterAllyIndex == player.playernum )
 				{
-					strcpy((char*)net_packet->data, "CKOR");
+					followerMenu.followerToCommand = selectedEntity[player.playernum];
+					//messagePlayer(0, "head");
 				}
-				net_packet->data[4] = player.playernum;
-				if ( selectedEntity[player.playernum]->behavior == &actPlayerLimb )
+
+				if ( followerMenu.followerToCommand )
 				{
-					SDLNet_Write32((Uint32)players[selectedEntity[player.playernum]->skill[2]]->entity->getUID(), &net_packet->data[5]);
-				}
-				else
-				{
-					Entity* tempEntity = uidToEntity(selectedEntity[player.playernum]->skill[2]);
-					if ( tempEntity )
+					if ( players[player.playernum] && players[player.playernum]->entity
+						&& followerMenu.followerToCommand->monsterTarget == players[player.playernum]->entity->getUID() )
 					{
-						if ( tempEntity->behavior == &actMonster )
+						// your ally is angry at you!
+						followerMenu.followerToCommand = nullptr;
+						followerMenu.optionPrevious = -1;
+					}
+					else
+					{
+						followerMenu.recentEntity = followerMenu.followerToCommand;
+						followerMenu.initfollowerMenuGUICursor(true);
+						followerMenu.updateScrollPartySheet();
+						selectedEntity[player.playernum] = NULL;
+						Player::soundActivate();
+					}
+				}
+			}
+		}
+
+		if ( selectedEntity[player.playernum] )
+		{
+			if ( selectedEntity[player.playernum]->behavior == &actItem && pushPoints == 0 )
+			{
+				selectedEntity[player.playernum] = nullptr;
+				input.consumeBinaryToggle("Use");
+				if ( cooldownPush > 0 )
+				{
+					// no action
+					if ( errorFlashPushTicks == 0 && cooldownPush > (TICKS_PER_SECOND / 2) )
+					{
+						errorFlashPushTicks = errorFlashTicks;
+						playSound(563, 64);
+					}
+				}
+			}
+			if ( selectedEntity[player.playernum] )
+			{
+				input.consumeBinaryToggle("Use");
+				//input.consumeBindingsSharedWithBinding("Use");
+				if ( entityDist(my, selectedEntity[player.playernum]) <= TOUCHRANGE )
+				{
+					inrange[player.playernum] = true;
+					if ( selectedEntity[player.playernum]->behavior == &actItem )
+					{
+						--pushPoints;
+						pushPoints = std::max(0, pushPoints);
+						if ( pushPoints == 0 )
 						{
-							SDLNet_Write32((Uint32)tempEntity->getUID(), &net_packet->data[5]);
+							cooldownPush = cooldownPushDelay;
+						}
+					}
+				}
+				else
+				{
+					inrange[player.playernum] = false;
+				}
+				if ( multiplayer == CLIENT )
+				{
+					if ( inrange[player.playernum] )
+					{
+						strcpy((char*)net_packet->data, "CKIR");
+					}
+					else
+					{
+						strcpy((char*)net_packet->data, "CKOR");
+					}
+					net_packet->data[4] = player.playernum;
+					if ( selectedEntity[player.playernum]->behavior == &actPlayerLimb )
+					{
+						SDLNet_Write32((Uint32)players[selectedEntity[player.playernum]->skill[2]]->entity->getUID(), &net_packet->data[5]);
+					}
+					else
+					{
+						Entity* tempEntity = uidToEntity(selectedEntity[player.playernum]->skill[2]);
+						if ( tempEntity )
+						{
+							if ( tempEntity->behavior == &actMonster )
+							{
+								SDLNet_Write32((Uint32)tempEntity->getUID(), &net_packet->data[5]);
+							}
+							else
+							{
+								SDLNet_Write32((Uint32)selectedEntity[player.playernum]->getUID(), &net_packet->data[5]);
+							}
 						}
 						else
 						{
 							SDLNet_Write32((Uint32)selectedEntity[player.playernum]->getUID(), &net_packet->data[5]);
 						}
 					}
-					else
-					{
-						SDLNet_Write32((Uint32)selectedEntity[player.playernum]->getUID(), &net_packet->data[5]);
-					}
+					net_packet->address.host = net_server.host;
+					net_packet->address.port = net_server.port;
+					net_packet->len = 9;
+					sendPacketSafe(net_sock, -1, net_packet, 0);
 				}
-				net_packet->address.host = net_server.host;
-				net_packet->address.port = net_server.port;
-				net_packet->len = 9;
-				sendPacketSafe(net_sock, -1, net_packet, 0);
 			}
 		}
 	}
@@ -1798,6 +2152,16 @@ void actDeathGhostLimb(Entity* my)
 
 	if ( !players[playernum] || !players[playernum]->ghost.my )
 	{
+		if ( my->monsterStoreType == 1 )
+		{
+			if ( Entity::getMonsterTypeFromSprite(my->sprite) == DUCK_SMALL )
+			{
+				duckSpawnFeather(my->sprite, my->x, my->y, my->z, my);
+				spawnPoof(my->x, my->y, 7.5, 0.5, false);
+
+				createParticleErupt(my, 593);
+			}
+		}
 		list_RemoveNode(my->mynode);
 		return;
 	}
@@ -1856,6 +2220,16 @@ void actDeathGhost(Entity* my)
 			my->removeLightField();
 			list_RemoveNode(my->mynode);
 			return;
+		}
+
+		if ( players[playernum]->entity )
+		{
+			if ( !stats[playernum]->getEffectActive(EFF_PROJECT_SPIRIT) )
+			{
+				my->removeLightField();
+				list_RemoveNode(my->mynode);
+				return;
+			}
 		}
 	}
 
@@ -1924,6 +2298,31 @@ void actDeathGhost(Entity* my)
 		{
 			players[playernum]->ghost.initTeleportLocations(my->x / 16, my->y / 16);
 		}
+
+		// extra cosmetic limbs
+		entity = newEntity(-1, 1, map.entities, nullptr);
+		entity->behavior = &actDeathGhostLimb;
+		entity->sizex = 4;
+		entity->sizey = 4;
+		entity->flags[PASSABLE] = true;
+		entity->flags[UPDATENEEDED] = false;
+		entity->flags[NOUPDATE] = true;
+		entity->flags[GENIUS] = true;
+		entity->monsterStoreType = 1; // cosmetic limb head flag
+		entity->skill[2] = GHOSTCAM_PLAYERNUM;
+		node = list_AddNodeLast(&my->children);
+		node->element = entity;
+		node->deconstructor = &emptyDeconstructor;
+		node->size = sizeof(Entity*);
+		my->bodyparts.push_back(entity);
+
+		if ( multiplayer == CLIENT && GHOSTCAM_PLAYERNUM == clientnum )
+		{
+			if ( GHOSTCAM_COSMETIC_SPRITE != 0 && players[clientnum]->entity )
+			{
+				players[clientnum]->entity->skill[3] = 2;
+			}
+		}
 	}
 
 	if ( GHOSTCAM_DEACTIVATED )
@@ -1941,6 +2340,23 @@ void actDeathGhost(Entity* my)
 	}
 	float floatAnimationPercent = std::min(1.f, (float)GHOSTCAM_SPAWN_ANIM / (spawnAnimationHalfway));
 	float thirdPersonAnimationPercent = 0.f;
+	if ( players[playernum]->ghost.isSpiritGhost() )
+	{
+		if ( node_t* node = list_Node(&my->children, 2) )
+		{
+			if ( Entity* entity = (Entity*)node->element )
+			{
+				if ( Entity::getMonsterTypeFromSprite(entity->sprite) == DUCK_SMALL )
+				{
+					if ( my->monsterSpecialState == DUCK_DIVE )
+					{
+						GHOSTCAM_THIRD_PERSON_CUSTOM = 1.0;
+					}
+					thirdPersonAnimationPercent = GHOSTCAM_THIRD_PERSON_CUSTOM;
+				}
+			}
+		}
+	}
 	if ( spawnAnimationPlaying )
 	{
 		thirdPersonAnimationPercent = 1.f;
@@ -1950,6 +2366,10 @@ void actDeathGhost(Entity* my)
 		}
 		thirdPersonAnimationPercent = std::max(0.f, thirdPersonAnimationPercent);
 	}
+	
+	GHOSTCAM_THIRD_PERSON_CUSTOM -= std::max(0.01, GHOSTCAM_THIRD_PERSON_CUSTOM / 20.0);
+	GHOSTCAM_THIRD_PERSON_CUSTOM = std::max(0.0, GHOSTCAM_THIRD_PERSON_CUSTOM);
+
 	if ( GHOSTCAM_SPAWN_ANIM < spawnAnimationDuration )
 	{
 		if ( !GHOSTCAM_DEACTIVATED )
@@ -2060,6 +2480,31 @@ void actDeathGhost(Entity* my)
 		camx = my->x / 16.f;
 		camy = my->y / 16.f;
 		camz = my->z * 2.f + GHOSTCAM_BOB;
+
+		if ( player->ghost.isSpiritGhost() )
+		{
+			if ( node_t* node = list_Node(&my->children, 2) )
+			{
+				if ( Entity* entity = (Entity*)node->element )
+				{
+					if ( node_t* innerNode = list_Node(&entity->children, 2) )
+					{
+						if ( Entity* entity2 = (Entity*)innerNode->element )
+						{
+							if ( GHOSTCAM_COSMETIC_SPRITE > 0 )
+							{
+								camz = entity2->fskill[18] * 2.f + GHOSTCAM_BOB;
+								if ( thirdPersonAnimationPercent > 0.01 )
+								{
+									camz = std::min(camz, 4.0 * 2.f);
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
 		camang = my->yaw;
 		camvang = my->pitch;
 
@@ -2069,10 +2514,10 @@ void actDeathGhost(Entity* my)
 			keystatus[SDLK_h] = 0;
 			player->ghost.setActive(false);
 		}*/
-		if ( *cvar_ghostThirdPerson || spawnAnimationPlaying )
+		if ( *cvar_ghostThirdPerson || spawnAnimationPlaying || thirdPersonAnimationPercent > 0.01 )
 		{
 			real_t dist = 1.0;
-			if ( spawnAnimationPlaying )
+			if ( spawnAnimationPlaying || thirdPersonAnimationPercent > 0.01 )
 			{
 				dist = cos((1.0 - thirdPersonAnimationPercent) * PI / 2);
 			}
@@ -2118,6 +2563,46 @@ void actDeathGhost(Entity* my)
 				diff += 2 * PI;
 			}
 			TimerExperiments::cameraCurrentState[playernum].pitch.velocity = diff * TimerExperiments::lerpFactor;
+		}
+	}
+
+	if ( multiplayer != CLIENT )
+	{
+		int cosmeticSprite = 0;
+		if ( player->entity && stats[GHOSTCAM_PLAYERNUM]->getEffectActive(EFF_PROJECT_SPIRIT) )
+		{
+			int appearance = GHOSTCAM_PLAYERNUM;
+			cosmeticSprite = 2225;
+			if ( player->mechanics.ducksInARow.size() )
+			{
+				appearance = player->mechanics.ducksInARow.at(0);
+			}
+			if ( appearance == 0 )
+			{
+				cosmeticSprite = 2225;
+			}
+			else if ( appearance == 1 )
+			{
+				cosmeticSprite = 2231;
+			}
+			else if ( appearance == 2 )
+			{
+				cosmeticSprite = 2237;
+			}
+			else if ( appearance == 3 )
+			{
+				cosmeticSprite = 2307;
+			}
+		}
+		bool update = false;
+		if ( GHOSTCAM_COSMETIC_SPRITE != cosmeticSprite || (my->getUID() % (TICKS_PER_SECOND * 3) == ticks % (TICKS_PER_SECOND * 3)) )
+		{
+			update = true;
+		}
+		GHOSTCAM_COSMETIC_SPRITE = cosmeticSprite;
+		if ( update )
+		{
+			serverUpdateEntitySkill(my, 10);
 		}
 	}
 
@@ -2390,6 +2875,92 @@ void actDeathGhost(Entity* my)
 			bodypart->z += 0.4 * sin(GHOSTCAM_HOVER);
 			bodypart->focalx = 2.25;
 		}
+		else if ( index == 2 )
+		{
+			if ( bodypart->sprite != GHOSTCAM_COSMETIC_SPRITE )
+			{
+				if ( GHOSTCAM_COSMETIC_SPRITE == 0 )
+				{
+					GHOSTCAM_SPAWN_ANIM = 0;
+					GHOSTCAM_SPAWN_ANIM_COMPLETE = 0;
+				}
+			}
+			bodypart->sprite = GHOSTCAM_COSMETIC_SPRITE;
+			if ( Entity::getMonsterTypeFromSprite(GHOSTCAM_COSMETIC_SPRITE) == DUCK_SMALL )
+			{
+				if ( !bodypart->skill[3] )
+				{
+					bodypart->skill[3] = 1;
+
+					// 2 empty nodes for stat struct
+					node_t* node2 = list_AddNodeFirst(&bodypart->children);
+					node2->element = nullptr;
+					node2->deconstructor = &emptyDeconstructor;
+					node2 = list_AddNodeFirst(&bodypart->children);
+					node2->element = nullptr;
+					node2->deconstructor = &emptyDeconstructor;
+
+					initDuck(bodypart, nullptr);
+				}
+
+				duckAnimate(bodypart, nullptr, dist);
+				if ( multiplayer != CLIENT )
+				{
+					if ( bodypart->monsterSpecialState != my->monsterSpecialState )
+					{
+						my->monsterSpecialState = bodypart->monsterSpecialState;
+						serverUpdateEntitySkill(my, 33);
+					}
+				}
+				if ( multiplayer == CLIENT )
+				{
+					bodypart->monsterSpecialState = my->monsterSpecialState;
+				}
+
+				node_t* node = nullptr;
+				int bodypartIndex = 0;
+				for ( bodypartIndex = 0, node = bodypart->children.first; node != nullptr; node = node->next, ++bodypartIndex )
+				{
+					if ( bodypartIndex < 2 )
+					{
+						continue;
+					}
+					if ( Entity* entity = (Entity*)node->element )
+					{
+						if ( !player->ghost.isActive() )
+						{
+							entity->flags[INVISIBLE] = true;
+							entity->flags[INVISIBLE_DITHER] = false;
+							entity->ditheringOverride = -1;
+						}
+					}
+				}
+
+				if ( my->bodyparts.size() >= 2 )
+				{
+					my->bodyparts.at(0)->flags[INVISIBLE] = true;
+					my->bodyparts.at(1)->flags[INVISIBLE] = true;
+				}
+			}
+			else
+			{
+				node_t* node = nullptr;
+				int bodypartIndex = 0;
+				for ( bodypartIndex = 0, node = bodypart->children.first; node != nullptr; node = node->next, ++bodypartIndex )
+				{
+					if ( bodypartIndex < 2 )
+					{
+						continue;
+					}
+					if ( Entity* entity = (Entity*)node->element )
+					{
+						entity->flags[INVISIBLE] = true;
+						entity->flags[INVISIBLE_DITHER] = false;
+						entity->ditheringOverride = -1;
+					}
+				}
+			}
+		}
 	}
 }
 
@@ -2407,11 +2978,14 @@ void actDeathGhost(Entity* my)
 #define DEATHCAM_IDLEPITCH_FLOAT_TO_ZERO my->fskill[4]
 #define DEATHCAM_IDLEYAWSPEED my->fskill[5]
 
+#define PROJECTCAM_EXPIRED my->skill[6]
+
 void actProjectSpiritCam(Entity* my)
 {
 	auto entityTarget = uidToEntity(DEATHCAM_PLAYERTARGET);
-	if ( !entityTarget || !(stats[DEATHCAM_PLAYERNUM]->getEffectActive(EFF_PROJECT_SPIRIT) && players[DEATHCAM_PLAYERNUM]->entity
-		&& players[DEATHCAM_PLAYERNUM]->entity->skill[3] == 2) )
+	if ( !entityTarget || 
+		!(stats[DEATHCAM_PLAYERNUM]->getEffectActive(EFF_PROJECT_SPIRIT) && players[DEATHCAM_PLAYERNUM]->entity
+			&& players[DEATHCAM_PLAYERNUM]->entity->skill[3] == 2) )
 	{
 		if ( players[DEATHCAM_PLAYERNUM]->entity )
 		{
@@ -2597,6 +3171,7 @@ void actProjectSpiritCam(Entity* my)
 		{
 			my->x = entityTarget->x;
 			my->y = entityTarget->y;
+			//my->z = entityTarget->z;
 		}
 		/*else
 		{
@@ -3170,7 +3745,9 @@ void Player::PlayerMovement_t::startQuickTurn()
 
 void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta)
 {
-	if ( !players[player.playernum]->entity || (players[player.playernum]->entity && stats[player.playernum]->getEffectActive(EFF_PROJECT_SPIRIT)) )
+	if ( !players[player.playernum]->entity || (players[player.playernum]->entity 
+		&& stats[player.playernum]->getEffectActive(EFF_PROJECT_SPIRIT)
+		&& players[player.playernum]->entity->skill[3] == 2) )
 	{
 		return;
 	}
@@ -6668,6 +7245,14 @@ void actPlayer(Entity* my)
 
 	if ( players[PLAYER_NUM]->isLocalPlayer() ) // TODO: hotbar code splitscreen
 	{
+		if ( !stats[PLAYER_NUM]->getEffectActive(EFF_PROJECT_SPIRIT) && !players[PLAYER_NUM]->ghost.isActive() )
+		{
+			if ( PLAYER_DEBUGCAM == 2 )
+			{
+				PLAYER_DEBUGCAM = 0;
+			}
+		}
+
 		if ( stats[PLAYER_NUM]->type != HUMAN && stats[PLAYER_NUM]->getEffectActive(EFF_SHAPESHIFT) )
 		{
 			if ( players[PLAYER_NUM]->hotbar.swapHotbarOnShapeshift == 0 )
@@ -7219,7 +7804,7 @@ void actPlayer(Entity* my)
 			}
 		}
 
-		if ( players[PLAYER_NUM]->isLocalPlayer() && PLAYER_ALIVETIME == 1 )
+		if ( players[PLAYER_NUM]->isLocalPlayer() && PLAYER_ALIVETIME == 1 && currentlevel > 0 )
 		{
 			for ( auto duck : players[PLAYER_NUM]->mechanics.ducksInARow )
 			{
@@ -7232,7 +7817,7 @@ void actPlayer(Entity* my)
 						{
 							if ( item->getDuckPlayer() == PLAYER_NUM )
 							{
-								if ( ((item->appearance % (3 * MAXPLAYERS)) / MAXPLAYERS) == duck )
+								if ( ((item->appearance % items[TOOL_DUCK].variations) / MAXPLAYERS) == duck )
 								{
 									birdInHand = true;
 									break;
@@ -7564,6 +8149,21 @@ void actPlayer(Entity* my)
 		}
 		if ( multiplayer != CLIENT )
 		{
+			if ( stats[PLAYER_NUM]->getEffectActive(EFF_PROJECT_SPIRIT) )
+			{
+				if ( PLAYER_ALIVETIME == 25 )
+				{
+					stats[PLAYER_NUM]->EFFECTS_TIMERS[EFF_PROJECT_SPIRIT] = 1;
+				}
+				else if ( PLAYER_ALIVETIME > 25 && !players[PLAYER_NUM]->ghost.isActive() )
+				{
+					if ( stats[PLAYER_NUM]->EFFECTS_ACCRETION_TIME[EFF_PROJECT_SPIRIT] >= 5 * TICKS_PER_SECOND )
+					{
+						stats[PLAYER_NUM]->EFFECTS_TIMERS[EFF_PROJECT_SPIRIT] = 1;
+					}
+				}
+			}
+
 			if ( PLAYER_ALIVETIME == 50 && currentlevel == 0 )
 			{
 				int monsterSquad = 0;
@@ -8527,7 +9127,7 @@ void actPlayer(Entity* my)
 		}
 
 		// sleeping
-		if ( stats[PLAYER_NUM]->getEffectActive(EFF_ASLEEP) )
+		if ( stats[PLAYER_NUM]->getEffectActive(EFF_ASLEEP) || stats[PLAYER_NUM]->getEffectActive(EFF_PROJECT_SPIRIT) )
 		{
 			switch ( playerRace )
 			{
@@ -8981,7 +9581,7 @@ void actPlayer(Entity* my)
 		CalloutRadialMenu& calloutMenu = CalloutMenu[PLAYER_NUM];
 
 		// object interaction
-		if ( intro == false )
+		if ( intro == false && !players[PLAYER_NUM]->ghost.isActive() )
 		{
 			clickDescription(PLAYER_NUM, NULL); // inspecting objects
 			doStatueEditor(PLAYER_NUM);
@@ -9134,7 +9734,6 @@ void actPlayer(Entity* my)
 							{
 								real_t startx = cameras[PLAYER_NUM].x * 16.0;
 								real_t starty = cameras[PLAYER_NUM].y * 16.0;
-								static ConsoleVariable<float> cvar_followerStartZ("/follower_start_z", -2.5);
 								real_t startz = cameras[PLAYER_NUM].z + (4.5 - cameras[PLAYER_NUM].z) / 2.0 + *cvar_followerStartZ;
 								real_t pitch = cameras[PLAYER_NUM].vang;
 								if ( pitch < 0 || pitch > PI )
@@ -9142,8 +9741,6 @@ void actPlayer(Entity* my)
 									pitch = 0;
 								}
 
-								static ConsoleVariable<float> cvar_followerMoveTo("/follower_moveto_z", 0.1);
-								static ConsoleVariable<float> cvar_followerStartZLimit("/follower_start_z_limit", 7.5);
 								// draw line from the players height and direction until we hit the ground.
 								real_t previousx = startx;
 								real_t previousy = starty;
@@ -10130,6 +10727,39 @@ void actPlayer(Entity* my)
 					{
 						Compendium_t::Events_t::eventUpdateCodex(PLAYER_NUM, Compendium_t::CPDM_CLASS_WGT_SLOWEST, "wgt", players[PLAYER_NUM]->movement.getCharacterWeight());
 
+						if ( stats[PLAYER_NUM]->type == MONSTER_M )
+						{
+							Uint32 lifetime = TICKS_PER_SECOND * 3;
+							Entity* spellTimer = createParticleTimer(my, lifetime + TICKS_PER_SECOND, -1);
+							spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_SPORES_TRAIL;
+							spellTimer->particleTimerCountdownSprite = 248;
+							spellTimer->yaw = 0.0;
+							spellTimer->x = my->x;
+							spellTimer->y = my->y;
+							spellTimer->particleTimerVariable1 = 0;
+							spellTimer->particleTimerVariable2 = SPELL_MYCELIUM_SPORES;
+							spellTimer->particleTimerVariable4 = 0;
+
+							my->thrownProjectileParticleTimerUID = spellTimer->getUID();
+							particleTimerEffects.emplace(std::pair<Uint32, ParticleTimerEffect_t>(spellTimer->getUID(), ParticleTimerEffect_t()));
+
+							auto findEffects = particleTimerEffects.find(spellTimer->getUID());
+							auto& effect = findEffects->second.effectMap[spellTimer->ticks + 1]; // insert x ticks beyond last effect
+							if ( findEffects->second.effectMap.size() == 1 )
+							{
+								effect.firstEffect = true;
+							}
+							int spellID = spellTimer->particleTimerVariable2;
+							auto particleEffectType = (spellID == SPELL_MYCELIUM_BOMB || spellID == SPELL_MYCELIUM_SPORES)
+								? ParticleTimerEffect_t::EffectType::EFFECT_MYCELIUM
+								: ParticleTimerEffect_t::EffectType::EFFECT_SPORES;
+							effect.effectType = particleEffectType;
+							effect.x = static_cast<int>(my->x / 16) * 16.0 + 8.0;
+							effect.y = static_cast<int>(my->y / 16) * 16.0 + 8.0;
+							effect.yaw = 0.0;
+							//floorMagicCreateSpores(my, my->x, my->y, my, 5, SPELL_MYCELIUM_BOMB);
+						}
+
 						// die //TODO: Refactor.
 						playSoundEntity(my, 28, 128);
 						Entity* gib = spawnGib(my);
@@ -10466,6 +11096,8 @@ void actPlayer(Entity* my)
 										{
 											*slot = nullptr;
 										}
+
+										players[PLAYER_NUM]->paperDoll.updateSlots();
 
 										int c = item->count;
 										for ( c = item->count; c > 0; c-- )

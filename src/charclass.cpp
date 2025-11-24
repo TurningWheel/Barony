@@ -3153,7 +3153,7 @@ void initClass(const int player)
 			return;
 		}
 
-		item = newItem(MASK_PIPE, WORN, 0, 1, 0, true, nullptr);
+		item = newItem(SHILLELAGH_MACE, EXCELLENT, 0, 1, 0, true, nullptr);
 		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
@@ -3165,7 +3165,8 @@ void initClass(const int player)
 			useItem(item, player);
 		}
 
-		item = newItem(BRONZE_MACE, SERVICABLE, 0, 1, 0, true, nullptr);
+		Uint32 color = ((uniqueGameKey + player) % MAXPLAYERS);
+		item = newItem(TOOL_DUCK, EXCELLENT, 0, 1, MAXPLAYERS * color + player, true, nullptr);
 		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
@@ -3215,13 +3216,6 @@ void initClass(const int player)
 
 		if ( isLocalPlayer )
 		{
-			item = newItem(TOOL_DUCK, EXCELLENT, 0, 1, player, true, nullptr);
-			item2 = itemPickup(player, item);
-			free(item);
-		}
-
-		if ( isLocalPlayer )
-		{
 			item = newItem(FOOD_APPLE, SERVICABLE, 0, 3, 0, true, nullptr);
 			item2 = itemPickup(player, item);
 			free(item);
@@ -3235,6 +3229,10 @@ void initClass(const int player)
 			free(item);
 
 			item = newItem(POTION_BOOZE, EXCELLENT, 0, 1, 0, true, nullptr);
+			item2 = itemPickup(player, item);
+			free(item);
+
+			item = newItem(MASK_PIPE, WORN, 0, 1, 0, true, nullptr);
 			item2 = itemPickup(player, item);
 			free(item);
 		}
@@ -3307,7 +3305,7 @@ void initClass(const int player)
 	players[player]->mechanics.ducksInARow.clear();
 	if ( client_classes[player] == CLASS_24 )
 	{
-		players[player]->mechanics.ducksInARow.push_back(0);
+		players[player]->mechanics.ducksInARow.push_back(((uniqueGameKey + player) % MAXPLAYERS));
 	}
 
 	/*if ( svFlags & SV_FLAG_LIFESAVING )
@@ -3369,6 +3367,11 @@ void initClass(const int player)
 		{
 			addSpell(SPELL_THORNS, player, true);
 			addSpell(SPELL_SHRUB, player, true);
+		}
+		else if ( stats[player]->playerRace == RACE_M && stats[player]->stat_appearance == 0 )
+		{
+			addSpell(SPELL_SPORES, player, true);
+			addSpell(SPELL_MUSHROOM, player, true);
 		}
 
 		if ( stats[player]->getProficiency(PRO_ALCHEMY) >= 0 )
@@ -3442,7 +3445,8 @@ void initClass(const int player)
 		else if ( client_classes[player] == CLASS_24 )
 		{
 			addSpell(SPELL_MAGICIANS_ARMOR, player, true);
-			addSpell(SPELL_SLOW, player, true);
+			addSpell(SPELL_PROJECT_SPIRIT, player, true);
+			addSpell(SPELL_DEEP_SHADE, player, true);
 		}
 
 		//printlog("spell size: %d", list_Size(&spellList));

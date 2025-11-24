@@ -3898,6 +3898,7 @@ void actHudWeapon(Entity* my)
 #define HUDSHIELD_FOCI_SPIN my->fskill[6]
 #define HUDSHIELD_FOCI_EASE my->fskill[7]
 #define HUDSHIELD_FOCI_BOB my->fskill[8]
+#define HUDSHIELD_DUCK_CHARGE my->fskill[9]
 static ConsoleVariable<bool> cvar_hud_toggle_defend("/hud_toggle_defend", false);
 
 void actHudShield(Entity* my)
@@ -3993,6 +3994,7 @@ void actHudShield(Entity* my)
 	bool spellbook = false;
 	bool quiver = false;
 	bool foci = false;
+	bool duck = false;
 	if ( stats[HUDSHIELD_PLAYERNUM]->shield && itemCategory(stats[HUDSHIELD_PLAYERNUM]->shield) == SPELLBOOK )
 	{
 		spellbook = true;
@@ -4012,6 +4014,10 @@ void actHudShield(Entity* my)
 		{
 			hideShield = false;
 		}
+	}
+	else if ( stats[HUDSHIELD_PLAYERNUM]->shield && stats[HUDSHIELD_PLAYERNUM]->shield->type == TOOL_DUCK )
+	{
+		duck = true;
 	}
 
 	// when reverting form, render shield as invisible for 2 ticks as it's position needs to settle.
@@ -4149,7 +4155,7 @@ void actHudShield(Entity* my)
 			&& !cast_animation[HUDSHIELD_PLAYERNUM].active_spellbook
 			&& (!spellbook || (spellbook && (hideShield || playerRace == SPIDER)))
 			&& HUDSHIELD_DEFEND_DELAY_TICK == 0
-			&& !(foci && !hideShield && players[HUDSHIELD_PLAYERNUM]->hud.shieldSwitch) )
+			&& !((foci || duck) && !hideShield && players[HUDSHIELD_PLAYERNUM]->hud.shieldSwitch) )
 		{
 			if ( stats[HUDSHIELD_PLAYERNUM]->shield )
 			{
@@ -4234,6 +4240,7 @@ void actHudShield(Entity* my)
 	{
 		stats[HUDSHIELD_PLAYERNUM]->sneaking = false;
 	}
+
 	if (multiplayer == CLIENT)
 	{
 		if ((HUDSHIELD_DEFEND > 0 ? true : false) != defending || ticks % 120 == 0)
@@ -4269,7 +4276,7 @@ void actHudShield(Entity* my)
 
 	bool crossbow = (stats[HUDSHIELD_PLAYERNUM]->weapon 
 		&& (stats[HUDSHIELD_PLAYERNUM]->weapon->type == CROSSBOW || stats[HUDSHIELD_PLAYERNUM]->weapon->type == HEAVY_CROSSBOW
-			|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == BLACKIRON_CROSSBOW) );
+			|| stats[HUDSHIELD_PLAYERNUM]->weapon->type == BLACKIRON_CROSSBOW) );
 	bool doCrossbowReloadAnimation = false;
 	bool doBowReload = false;
 
@@ -4302,7 +4309,7 @@ void actHudShield(Entity* my)
 			}
 		}
 
-		if ( foci && !hideShield )
+		if ( (foci || duck) && !hideShield )
 		{
 			HUDSHIELD_DEFEND_DELAY_TICK = 10;
 		}
@@ -4689,6 +4696,39 @@ void actHudShield(Entity* my)
 	{
 		my->roll += PI / 8;
 	}
+	else if ( duck && !hideShield )
+	{
+		my->yaw += (PI / 3) + -HUDSHIELD_YAW;
+		if ( defending && HUDSHIELD_DEFEND_TIME > 0 )
+		{
+			HUDSHIELD_DUCK_CHARGE += 1.0;
+		}
+
+		real_t chargeAnim = std::min(1.0, HUDSHIELD_DUCK_CHARGE / 10.0);
+
+		if ( HUDSHIELD_DUCK_CHARGE >= 1.0 )
+		{
+			my->pitch += (-PI / 16) * chargeAnim;
+			my->y += -3 * chargeAnim;
+			my->x += 2 * chargeAnim;
+			if ( ticks % 2 && HUDSHIELD_DUCK_CHARGE >= 50.0 )
+			{
+				my->x += (local_rng.rand() % 30 - 10) / 80.f;
+				my->y += (local_rng.rand() % 30 - 10) / 80.f;
+				my->z += (local_rng.rand() % 30 - 10) / 80.f;
+			}
+		}
+
+		if ( HUDSHIELD_DUCK_CHARGE >= 60.0 || (!defending && HUDSHIELD_DUCK_CHARGE >= 1.0) )
+		{
+			if ( playerThrowDuck(HUDSHIELD_PLAYERNUM, stats[HUDSHIELD_PLAYERNUM]->shield, std::min(50, (int)HUDSHIELD_DUCK_CHARGE)) )
+			{
+				my->flags[INVISIBLE] = true;
+				my->flags[INVISIBLE_DITHER] = false;
+				return;
+			}
+		}
+	}
 	else if ( foci && !hideShield )
 	{
 		//my->yaw += PI / 2 - HUDSHIELD_YAW / 4;
@@ -4755,6 +4795,11 @@ void actHudShield(Entity* my)
 		HUDSHIELD_FOCI_SPIN = 0.0;
 		HUDSHIELD_FOCI_EASE = 0.0;
 		HUDSHIELD_FOCI_BOB = 0.0;
+	}
+
+	if ( !duck || hideShield || !defending )
+	{
+		HUDSHIELD_DUCK_CHARGE = 0.0;
 	}
 
 	Entity*& hudarm = players[HUDSHIELD_PLAYERNUM]->hud.arm;
