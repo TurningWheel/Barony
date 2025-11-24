@@ -7143,5 +7143,10 @@ to replay this challenge!
 6871 Enable instrument music tracks to continue while their effects are active but not actively being played.#
 6872 Instrument Foreground Tracks#
 6873 Instrument Foreground Tracks description#
+6874 You project your spirit away!#
+6875 Your spirit rejoins your body.#
+6876 Your spirit projection begins to fade...#
+6877 Profile#
+6878 Quack#
 
 6999 END#

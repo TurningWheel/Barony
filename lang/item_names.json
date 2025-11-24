@@ -1696,6 +1696,106 @@
 		"tool_duck": {
 			"name_identified": "duck",
 			"name_unidentified": "duck"
+		},
+		"shillelagh_mace": {
+			"name_identified": "shillelagh",
+			"name_unidentified": "shillelagh"
+		},
+		"claymore_sword": {
+			"name_identified": "claymore",
+			"name_unidentified": "claymore"
+		},
+		"anelace_sword": {
+			"name_identified": "anelace",
+			"name_unidentified": "anelace"
+		},
+		"lance_spear": {
+			"name_identified": "lance",
+			"name_unidentified": "lance"
+		},
+		"steel_falshion": {
+			"name_identified": "steel falshion",
+			"name_unidentified": "steel falshion"
+		},
+		"steel_greataxe": {
+			"name_identified": "steel greataxe",
+			"name_unidentified": "steel greataxe"
+		},
+		"blackiron_axe": {
+			"name_identified": "blackiron axe",
+			"name_unidentified": "blackiron axe"
+		},
+		"blackiron_crossbow": {
+			"name_identified": "blackiron crossbow",
+			"name_unidentified": "blackiron crossbow"
+		},
+		"blackiron_dart": {
+			"name_identified": "blackiron dart",
+			"name_unidentified": "blackiron dart"
+		},
+		"blackiron_mace": {
+			"name_identified": "blackiron mace",
+			"name_unidentified": "blackiron mace"
+		},
+		"blackiron_sword": {
+			"name_identified": "blackiron sword",
+			"name_unidentified": "blackiron sword"
+		},
+		"blackiron_trident": {
+			"name_identified": "blackiron trident",
+			"name_unidentified": "blackiron trident"
+		},
+		"bone_axe": {
+			"name_identified": "bone axe",
+			"name_unidentified": "bone axe"
+		},
+		"bone_mace": {
+			"name_identified": "bone mace",
+			"name_unidentified": "bone mace"
+		},
+		"bone_shortbow": {
+			"name_identified": "bone shortbow",
+			"name_unidentified": "bone shortbow"
+		},
+		"bone_spear": {
+			"name_identified": "bone spear",
+			"name_unidentified": "bone spear"
+		},
+		"bone_sword": {
+			"name_identified": "bone sword",
+			"name_unidentified": "bone sword"
+		},
+		"bone_throwing": {
+			"name_identified": "bone",
+			"name_unidentified": "bone"
+		},
+		"silver_axe": {
+			"name_identified": "silver axe",
+			"name_unidentified": "silver axe"
+		},
+		"silver_glaive": {
+			"name_identified": "silver glaive",
+			"name_unidentified": "silver glaive"
+		},
+		"silver_mace": {
+			"name_identified": "silver mace",
+			"name_unidentified": "silver mace"
+		},
+		"silver_plumbata": {
+			"name_identified": "silver plumbata",
+			"name_unidentified": "silver plumbata"
+		},
+		"silver_sword": {
+			"name_identified": "silver sword",
+			"name_unidentified": "silver sword"
+		},
+		"quiver_bone": {
+			"name_identified": "quiver of bone ammo",
+			"name_unidentified": "quiver"
+		},
+		"quiver_blackiron": {
+			"name_identified": "quiver of blackiron ammo",
+			"name_unidentified": "quiver"
 		}
     },
 	"spell_names": {
