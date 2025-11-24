@@ -2340,10 +2340,14 @@ void updatePlayerConductsInMainLoop()
 	}
 	if ( !conductGameChallenges[CONDUCT_CLASSIC_MODE] )
 	{
-		if ( (svFlags & SV_FLAG_CLASSIC) )
+		if ( (svFlags & SV_FLAG_CLASSIC) && currentlevel < 25 )
 		{
 			conductGameChallenges[CONDUCT_CLASSIC_MODE] = 1;
 		}
+	}
+	else if ( currentlevel >= 25 )
+	{
+		conductGameChallenges[CONDUCT_CLASSIC_MODE] = 0;
 	}
 	if ( !conductGameChallenges[CONDUCT_MODDED] )
 	{
