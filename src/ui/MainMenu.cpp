@@ -3577,7 +3577,7 @@ namespace MainMenu {
 					auto textbox2 = textbox1->findFrame("story_text_box");
 					assert(textbox2);
 					auto size = textbox2->getActualSize();
-					++size.y;
+					size.y += std::max(0, (old_story_text_scroll - (int)story_text_scroll));
 					textbox2->setActualSize(size);
 				}
 			} else {
