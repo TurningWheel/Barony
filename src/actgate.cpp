@@ -188,7 +188,7 @@ void Entity::actGate()
 			{
 				Entity* entity = (Entity*)node->element;
 				if ( entity == this || (entity->flags[PASSABLE] && entity->behavior != &actDeathGhost)
-					|| entity->behavior == &actDoorFrame )
+					|| entity->behavior == &actDoorFrame || entity->behavior == &::actGate )
 				{
 					continue;
 				}
