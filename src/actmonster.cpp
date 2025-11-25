@@ -8014,6 +8014,31 @@ timeToGoAgain:
 						else
 						{
 							my->monsterState = MONSTER_STATE_WAIT; // no path, return to wait state
+
+							if ( target && ((target->getStats() && target->getStats()->type == DUCK_SMALL) || target->behavior == &actDeathGhost)
+								&& myStats->getEffectActive(EFF_DISORIENTED) )
+							{
+								if ( entityDist(my, target) < STRIKERANGE )
+								{
+									if ( target->getStats() && target->getStats()->type == DUCK_SMALL )
+									{
+										if ( target->monsterAttack == 0 )
+										{
+											if ( local_rng.rand() % 4 == 0 )
+											{
+												// dodge anim
+												target->attack(local_rng.rand() % 2 ? MONSTER_POSE_MELEE_WINDUP2 : MONSTER_POSE_MELEE_WINDUP3, 0, nullptr);
+											}
+										}
+									}
+
+									my->monsterAttack = my->getAttackPose(); // random attack motion
+									my->monsterAttackTime = 0;
+									my->monsterHitTime = std::max(my->monsterHitTime, HITRATE / 4);
+									serverUpdateEntitySkill(my, 9);
+									serverUpdateEntitySkill(my, 8);
+								}
+							}
 						}
 						if ( !target && myStats->type == MIMIC )
 						{
@@ -9980,7 +10005,7 @@ timeToGoAgain:
 			{
 				my->monsterReleaseAttackTarget();
 				Entity* leader = uidToEntity(myStats->leader_uid);
-				if ( !leader )
+				if ( !leader || myStats->getAttribute("duck_run") == "1" )
 				{
 					int dir = my->getUID() % 4;
 					int mapx = 1;

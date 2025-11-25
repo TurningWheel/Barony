@@ -556,7 +556,7 @@ bool duckAreaQuck(Entity* my)
 												if ( target->setEffect(EFF_DISORIENTED, true, 2 * TICKS_PER_SECOND, false) )
 												{
 													anyTarget = true;
-													target->setEffect(EFF_DISTRACTED_COOLDOWN, true, TICKS_PER_SECOND * 2, false);
+													target->setEffect(EFF_DISTRACTED_COOLDOWN, true, TICKS_PER_SECOND * 2 + 25, false);
 													spawnFloatingSpriteMisc(134, target->x + (-4 + local_rng.rand() % 9) + cos(target->yaw) * 2,
 														target->y + (-4 + local_rng.rand() % 9) + sin(target->yaw) * 2, target->z + local_rng.rand() % 4);
 												}
@@ -566,7 +566,7 @@ bool duckAreaQuck(Entity* my)
 												if ( target->setEffect(EFF_DISORIENTED, true, 2 * TICKS_PER_SECOND, false) )
 												{
 													anyTarget = true;
-													target->setEffect(EFF_DISTRACTED_COOLDOWN, true, TICKS_PER_SECOND * 2, false);
+													target->setEffect(EFF_DISTRACTED_COOLDOWN, true, TICKS_PER_SECOND * 2 + 25, false);
 												}
 											}
 										}
@@ -584,6 +584,8 @@ bool duckAreaQuck(Entity* my)
 		playSoundEntity(my, 784 + local_rng.rand() % 2, 128);
 		spawnDamageGib(my, 198, DamageGib::DMG_STRONGEST, DamageGibDisplayType::DMG_GIB_SPRITE, true);
 	}
+
+	return anyTarget;
 }
 
 void duckAnimate(Entity* my, Stat* myStats, double dist)
@@ -832,10 +834,19 @@ void duckAnimate(Entity* my, Stat* myStats, double dist)
 					{
 						if ( my->monsterTarget == 0 || !uidToEntity(my->monsterTarget) )
 						{
-							my->monsterSpecialState = DUCK_DIVE;
-							serverUpdateEntitySkill(my, 33);
-							playSoundEntity(my, 794 + local_rng.rand() % 2, 128);
-							playSoundEntity(my, 786 + local_rng.rand() % 3, 128);
+							if ( !spiritDuck )
+							{
+								if ( Entity* leader = uidToEntity(myStats->leader_uid) )
+								{
+									if ( leader->behavior == &actPlayer && players[leader->skill[2]]->mechanics.numFishingCaught < 3 )
+									{
+										my->monsterSpecialState = DUCK_DIVE;
+										serverUpdateEntitySkill(my, 33);
+										playSoundEntity(my, 794 + local_rng.rand() % 2, 128);
+										playSoundEntity(my, 786 + local_rng.rand() % 3, 128);
+									}
+								}
+							}
 						}
 					}
 				}
@@ -857,6 +868,7 @@ void duckAnimate(Entity* my, Stat* myStats, double dist)
 					}
 					else
 					{
+						my->monsterSpecialTimer += 3 * TICKS_PER_SECOND;
 						my->monsterSpecialState = DUCK_INERT;
 						serverUpdateEntitySkill(my, 33);
 					}
@@ -1299,10 +1311,40 @@ void duckAnimate(Entity* my, Stat* myStats, double dist)
 									else
 									{
 										ItemType type = FOOD_FISH;
+										if ( local_rng.rand() % 20 == 0 )
+										{
+											switch ( local_rng.rand() % 6 )
+											{
+											case 0:
+											case 1:
+												type = LEATHER_BOOTS;
+												break;
+											case 2:
+											case 3:
+												type = IRON_BOOTS;
+												break;
+											case 4:
+												type = LEATHER_BOOTS_SPEED;
+												break;
+											case 5:
+												type = IRON_BOOTS_WATERWALKING;
+												break;
+											default:
+												break;
+											}
+										}
 										item = newItem(FOOD_FISH, static_cast<Status>(DECREPIT + local_rng.rand() % 4), -1 + local_rng.rand() % 3, 1, local_rng.rand(), false, nullptr);
 										if ( abs(bless) > 0 )
 										{
 											item->beatitude = bless;
+										}
+
+										if ( Entity* leader = uidToEntity(myStats->leader_uid) )
+										{
+											if ( leader->behavior == &actPlayer )
+											{
+												players[leader->skill[2]]->mechanics.numFishingCaught++;
+											}
 										}
 									}
 									if ( Entity* dropped = dropItemMonster(item, my, myStats, 1) )

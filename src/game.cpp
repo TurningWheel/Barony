@@ -2934,7 +2934,7 @@ void gameLogic(void)
 
 					if ( item->type == TOOL_DUCK && players[player]->entity )
 					{
-						if ( item->getDuckPlayer() != player )
+						if ( item->getDuckPlayer() != player || item->status == BROKEN )
 						{
 							messagePlayer(player, MESSAGE_INVENTORY, Language::get(6869));
 							bool droppedAll = false;
@@ -3633,7 +3633,7 @@ void gameLogic(void)
 
 				if ( item->type == TOOL_DUCK && players[clientnum]->entity )
 				{
-					if ( item->getDuckPlayer() != clientnum )
+					if ( item->getDuckPlayer() != clientnum || item->status == BROKEN )
 					{
 						messagePlayer(clientnum, MESSAGE_INVENTORY, Language::get(6869));
 						bool droppedAll = false;

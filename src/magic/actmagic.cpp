@@ -613,7 +613,7 @@ void actMagiclightBall(Entity* my)
 
 			real_t follow_x = parent->x;
 			real_t follow_y = parent->y;
-			if ( spell && spell->ID == SPELL_LIGHT )
+			if ( spell && (spell->ID == SPELL_LIGHT || spell->ID == SPELL_DEEP_SHADE) )
 			{
 				real_t vel = sqrt(pow(parent->vel_x, 2) + pow(parent->vel_y, 2));
 				//if ( abs(vel) > 0.1 )
@@ -625,7 +625,7 @@ void actMagiclightBall(Entity* my)
 					real_t starty = follow_y + 16.0 * sin(dir + PI / 4);
 					real_t previousx = startx;
 					real_t previousy = starty;
-					real_t followDist = 48.0;
+					real_t followDist = spell->ID == SPELL_DEEP_SHADE ? 32.0 : 48.0;
 					std::map<int, bool> checkedTiles;
 					real_t furthestDist = 0.0;
 					for ( int iterations = 0; iterations < 20; ++iterations )
@@ -862,17 +862,17 @@ void actMagiclightBall(Entity* my)
 		//Move out from the player.
 		if ( followParent )
 		{
-			my->vel_x = cos(my->yaw) * 4;
+			/*my->vel_x = cos(my->yaw) * 4;
 			my->vel_y = sin(my->yaw) * 4;
 			double dist = clipMove(&my->x, &my->y, my->vel_x, my->vel_y, my);
 
 			unsigned int distance = sqrt(pow(my->x - lightball_player_startx, 2) + pow(my->y - lightball_player_starty, 2));
 			if (distance > MAGICLIGHT_BALL_FOLLOW_DISTANCE * 2 || dist != sqrt(my->vel_x * my->vel_x + my->vel_y * my->vel_y))
 			{
-				magic_init = 1;
-				lightball_lighting = 1;
-				lightball_movement_timer = 0; //Start off at 0 so that it moves towards the player as soon as it's created (since it's created farther away from the player).
-			}
+			}*/
+			magic_init = 1;
+			lightball_lighting = 1;
+			lightball_movement_timer = 0; //Start off at 0 so that it moves towards the player as soon as it's created (since it's created farther away from the player).
 		}
 		else
 		{
@@ -1743,6 +1743,29 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					my->vel_x = my->actmagicVelXStore;
 					my->vel_y = my->actmagicVelYStore;
 					my->vel_z = my->actmagicVelZStore;
+
+					if ( spell->ID == SPELL_METEOR || spell->ID == SPELL_METEOR_SHOWER )
+					{
+						if ( node_t* node = spell->elements.first )
+						{
+							spellElement_t* element = (spellElement_t*)node->element;
+							if ( node_t* node2 = element->elements.first )
+							{
+								if ( element = (spellElement_t*)node2->element )
+								{
+									if ( !strcmp(element->element_internal_name, "spell_element_flames") )
+									{
+										playSoundEntity(my, 814, 128);
+									}
+									else if ( !strcmp(element->element_internal_name, spellElementMap[SPELL_METEOR_SHOWER].element_internal_name)
+										|| !strcmp(element->element_internal_name, spellElementMap[SPELL_METEOR].element_internal_name) )
+									{
+										playSoundEntity(my, 164, 128);
+									}
+								}
+							}
+						}
+					}
 				}
 			}
 			
@@ -18259,6 +18282,7 @@ Entity* createSpellExplosionArea(int spellID, Entity* caster, real_t x, real_t y
 
 	if ( spellID == SPELL_METEOR || spellID == SPELL_METEOR_SHOWER || spellID == SPELL_FIREBALL )
 	{
+		playSoundPosLocal(x, y, 819, 128);
 		for ( int i = 0; i < 8; ++i )
 		{
 			if ( Entity* fx = createParticleAestheticOrbit(nullptr, 233, 25 + (10 * (local_rng.rand() % 6)), PARTICLE_EFFECT_IGNITE_ORBIT) )

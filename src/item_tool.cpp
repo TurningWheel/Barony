@@ -1914,7 +1914,15 @@ void Item::applyDuck(Uint32 parentUid, real_t x, real_t y, Entity* hitentity, bo
 			}
 			else
 			{
-				summonedStats->setAttribute("duck_time", std::to_string(15 * TICKS_PER_SECOND));
+				if ( status == BROKEN )
+				{
+					summonedStats->setAttribute("duck_time", std::to_string(1 * TICKS_PER_SECOND));
+					summonedStats->setAttribute("duck_run", "1");
+				}
+				else
+				{
+					summonedStats->setAttribute("duck_time", std::to_string(15 * TICKS_PER_SECOND));
+				}
 			}
 			summonedStats->setAttribute("duck_bless", std::to_string(beatitude));
 			summonedStats->setAttribute("skip_obituary", "1");

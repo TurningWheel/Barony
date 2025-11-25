@@ -281,6 +281,22 @@ void actFociGib(Entity* my)
 		}
 	}
 
+//#ifdef USE_FMOD
+//	if ( my->entity_sound )
+//	{
+//		bool isPlaying = false;
+//		my->entity_sound->isPlaying(&isPlaying);
+//		if ( isPlaying )
+//		{
+//			FMOD_VECTOR position;
+//			position.x = (float)(my->x / (real_t)16.0);
+//			position.y = (float)(0.0);
+//			position.z = (float)(my->y / (real_t)16.0);
+//			fmod_result = my->entity_sound->set3DAttributes(&position, nullptr);
+//		}
+//	}
+//#endif
+
 	Entity* parent = uidToEntity(my->parent);
 
 	// horizontal motion
@@ -1260,6 +1276,10 @@ Entity* spawnFociGib(real_t x, real_t y, real_t z, real_t dir, real_t velocityBo
 	GIB_ORBIT_Y = my->y;
 
 	playSoundEntityLocal(my, sfx, vol);
+//#ifdef USE_FMOD
+//	my->entity_sound = playSoundEntityLocal(my, sfx, vol);
+//#else
+//#endif
 
 	if ( multiplayer == SERVER )
 	{

@@ -11559,14 +11559,28 @@ void Player::HUD_t::updateActionPrompts()
 				switch ( promptInfo.promptType )
 				{
 					case ACTION_PROMPT_MAGIC:
-						skillImg = "*images/ui/HUD/HUD_Ghost_Haunt.png";
+						if ( player.ghost.isSpiritGhost() )
+						{
+							skillImg = "*images/ui/HUD/HUD_Ghost_Spirit_Return.png";
+						}
+						else
+						{
+							skillImg = "*images/ui/HUD/HUD_Ghost_Haunt.png";
+						}
 						img->pos.x -= 2;
 						img->pos.y -= 2;
 						img->pos.w = 36;
 						img->pos.h = 36;
 						break;
 					case ACTION_PROMPT_MAINHAND:
-						skillImg = "*images/ui/HUD/HUD_Ghost_Chill.png";
+						if ( player.ghost.isSpiritGhost() )
+						{
+							skillImg = "*images/ui/HUD/HUD_Ghost_Spirit_Attack.png";
+						}
+						else
+						{
+							skillImg = "*images/ui/HUD/HUD_Ghost_Chill.png";
+						}
 						img->pos.x -= 2;
 						img->pos.y -= 2;
 						img->pos.w = 36;
@@ -11580,12 +11594,26 @@ void Player::HUD_t::updateActionPrompts()
 						img->pos.h = 36;
 						break;
 					case ACTION_PROMPT_SNEAK:
-						for ( auto& skill : player.skillSheet.skillSheetData.skillEntries )
+						if ( player.ghost.isSpiritGhost() )
 						{
-							if ( skill.skillId == PRO_STEALTH )
+							if ( player.ghost.my && player.ghost.my->skill[11] == 0 ) // low profile
 							{
-								skillImg = skill.skillIconPath32px;
-								break;
+								skillImg = "*images/ui/HUD/HUD_Ghost_Spirit_LowProfile.png";
+							}
+							else
+							{
+								skillImg = "*images/ui/HUD/HUD_Ghost_Spirit_HighProfile.png";
+							}
+						}
+						else
+						{
+							for ( auto& skill : player.skillSheet.skillSheetData.skillEntries )
+							{
+								if ( skill.skillId == PRO_STEALTH )
+								{
+									skillImg = skill.skillIconPath32px;
+									break;
+								}
 							}
 						}
 						break;
@@ -40510,6 +40538,12 @@ void Player::WorldUI_t::WorldTooltipDialogue_t::Dialogue_t::updateWorldCoordinat
 			y = parentEnt->y;
 			z = parentEnt->z + setting.offsetZ;
 		}
+	}
+	else if ( parentEnt )
+	{
+		x = parentEnt->x;
+		y = parentEnt->y;
+		z = parentEnt->z + setting.offsetZ;
 	}
 }
 

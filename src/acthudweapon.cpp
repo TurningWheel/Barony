@@ -4698,6 +4698,7 @@ void actHudShield(Entity* my)
 	}
 	else if ( duck && !hideShield )
 	{
+		my->z += -1;
 		my->yaw += (PI / 3) + -HUDSHIELD_YAW;
 		if ( defending && HUDSHIELD_DEFEND_TIME > 0 )
 		{

@@ -3185,6 +3185,7 @@ void Player::init() // for use on new/restart game, UI related
 	mechanics.learnedSpells.clear();
 	mechanics.ducksInARow.clear();
 	mechanics.pendingDucks.clear();
+	mechanics.numFishingCaught = 0;
 	mechanics.sustainedSpellMPUsedSorcery = 0;
 	mechanics.sustainedSpellMPUsedMysticism = 0;
 	mechanics.sustainedSpellMPUsedThaumaturgy = 0;
@@ -3224,6 +3225,7 @@ void Player::cleanUpOnEntityRemoval()
 	mechanics.lastFociHeldType = 0;
 
 	mechanics.pendingDucks.clear();
+	mechanics.numFishingCaught = 0;
 }
 
 const bool Player::isLocalPlayer() const

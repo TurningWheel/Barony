@@ -551,10 +551,13 @@ void Player::Ghost_t::handleAttack()
 
 		if ( spiritGhost )
 		{
-			if ( input.consumeBinaryToggle("Defend") )
+			if ( player.shootmode && !CalloutMenu[player.playernum].calloutMenuIsOpen() && !FollowerMenu[player.playernum].followerMenuIsOpen() )
 			{
-				highProfile = !highProfile;
-				playSoundEntityLocal(my, highProfile ? 794 : 795, 64);
+				if ( input.consumeBinaryToggle("Defend") )
+				{
+					highProfile = !highProfile;
+					playSoundEntityLocal(my, highProfile ? 794 : 795, 64);
+				}
 			}
 		}
 		else
@@ -5784,6 +5787,13 @@ void playerDebugTests(Entity* my)
 	{
 		return;
 	}
+
+	static ConsoleVariable<bool> cvar_test_frameskip("/test_frameskip", false);
+	if ( *cvar_test_frameskip && ticks % (5 * TICKS_PER_SECOND) == 0 )
+	{
+		SDL_Delay(4000);
+	}
+
 	static ConsoleVariable<int> cvar_test_xp("/test_xp", 0);
 	struct XPGain_t
 	{
@@ -6062,163 +6072,6 @@ void actPlayer(Entity* my)
 	//	//}
 	//}
 #endif
-
-	{
-		//float defaultVol = 0.5f;
-		//if ( !command )
-		//{
-		//	/*if ( keystatus[SDLK_1] )
-		//	{
-		//		keystatus[SDLK_1] = 0;
-		//		for ( int c = 0; c < NUMENSEMBLEMUSIC; ++c )
-		//		{
-		//			if ( music_ensemble_global_channel[c] ) { music_ensemble_global_channel[c]->stop(); }
-		//			fmod_result = fmod_system->playSound(music_ensemble_global_sound[c], music_ensemble_global_group,
-		//				true, &music_ensemble_global_channel[c]);
-		//			fmod_result = music_ensemble_global_channel[c]->setPaused(false);
-		//			fmod_result = music_ensemble_global_channel[c]->setVolume(defaultVol);
-
-		//			static ConsoleVariable<float> cvar_ensemble_x("/ensemble_x", 0.f);
-		//			static ConsoleVariable<float> cvar_ensemble_y("/ensemble_y", 0.f);
-		//			static ConsoleVariable<float> cvar_ensemble_z("/ensemble_z", 0.f);
-		//			FMOD_VECTOR position;
-		//			position.x = *cvar_ensemble_x;
-		//			position.y = *cvar_ensemble_y;
-		//			position.z = *cvar_ensemble_z;
-		//			fmod_result = music_ensemble_global_channel[c]->setMode(FMOD_3D_HEADRELATIVE);
-		//			fmod_result = music_ensemble_global_channel[c]->set3DAttributes(&position, nullptr);
-		//		}
-		//		music_ensemble_global_group->setPaused(false);
-		//	}
-		//	if ( keystatus[SDLK_2] )
-		//	{
-		//		keystatus[SDLK_2] = 0;
-		//		bool paused = false;
-		//		music_ensemble_global_group->getPaused(&paused);
-		//		fmod_result = music_ensemble_global_group->setPaused(!paused);
-
-		//	}
-		//	if ( keystatus[SDLK_3] )
-		//	{
-		//		keystatus[SDLK_3] = 0;
-		//		float volume = 0.f;
-		//		music_ensemble_global_channel[0]->getVolume(&volume);
-		//		if ( volume > 0.001f )
-		//		{
-		//			volume = 0.f;
-		//		}
-		//		else
-		//		{
-		//			volume = defaultVol;
-		//		}
-		//		music_ensemble_global_channel[0]->setVolume(volume);
-		//	}
-		//	if ( keystatus[SDLK_4] )
-		//	{
-		//		keystatus[SDLK_4] = 0;
-		//		float volume = 0.f;
-		//		music_ensemble_global_channel[1]->getVolume(&volume);
-		//		if ( volume > 0.001f )
-		//		{
-		//			volume = 0.f;
-		//		}
-		//		else
-		//		{
-		//			volume = defaultVol;
-		//		}
-		//		music_ensemble_global_channel[1]->setVolume(volume);
-		//	}
-		//	if ( keystatus[SDLK_5] )
-		//	{
-		//		keystatus[SDLK_5] = 0;
-		//		float volume = 0.f;
-		//		music_ensemble_global_channel[2]->getVolume(&volume);
-		//		if ( volume > 0.001f )
-		//		{
-		//			volume = 0.f;
-		//		}
-		//		else
-		//		{
-		//			volume = defaultVol;
-		//		}
-		//		music_ensemble_global_channel[2]->setVolume(volume);
-		//	}
-		//	if ( keystatus[SDLK_6] )
-		//	{
-		//		keystatus[SDLK_6] = 0;
-		//		float volume = 0.f;
-		//		music_ensemble_global_channel[3]->getVolume(&volume);
-		//		if ( volume > 0.001f )
-		//		{
-		//			volume = 0.f;
-		//		}
-		//		else
-		//		{
-		//			volume = defaultVol;
-		//		}
-		//		music_ensemble_global_channel[3]->setVolume(volume);
-		//	}
-		//	if ( keystatus[SDLK_7] )
-		//	{
-		//		keystatus[SDLK_7] = 0;
-		//		float volume = 0.f;
-		//		music_ensemble_global_channel[4]->getVolume(&volume);
-		//		if ( volume > 0.001f )
-		//		{
-		//			volume = 0.f;
-		//		}
-		//		else
-		//		{
-		//			volume = defaultVol;
-		//		}
-		//		music_ensemble_global_channel[4]->setVolume(volume);
-		//	}*/
-		//	if ( keystatus[SDLK_8] )
-		//	{
-		//		keystatus[SDLK_8] = 0;
-		//		
-		//		createEnsembleHUDParticleCircling(my);
-		//		//Entity* entity = newEntity(198, 1, map.entities, nullptr);
-		//		//int i = 0;
-		//		//float x = 6 * 10;
-		//		//float y = 0.1;
-		//		//float z = 7;
-		//		//entity->yaw = i * 2 * PI / 3;
-		//		//entity->x = x;
-		//		//entity->y = y;
-		//		//entity->z = z;
-		//		//double missile_speed = 4;
-		//		//entity->vel_x = 0.0;
-		//		//entity->vel_y = 0.0;
-		//		//entity->actmagicIsOrbiting = 2;
-		//		//entity->actmagicOrbitDist = 16.0;
-		//		//entity->actmagicOrbitStationaryCurrentDist = 0.0;
-		//		//entity->actmagicOrbitStartZ = entity->z;
-		//		////entity->roll -= (PI / 8);
-		//		//entity->actmagicOrbitVerticalSpeed = -0.3;
-		//		//entity->actmagicOrbitVerticalDirection = 1;
-		//		//entity->actmagicOrbitLifetime = TICKS_PER_SECOND;
-		//		//entity->actmagicOrbitStationaryX = x;
-		//		//entity->actmagicOrbitStationaryY = y;
-		//		//entity->vel_z = -0.1;
-		//		//entity->behavior = &actHUDMagicParticleCircling;
-
-		//		//entity->flags[BRIGHT] = true;
-		//		//entity->flags[SPRITE] = true;
-		//		//entity->flags[PASSABLE] = true;
-		//		//entity->flags[NOUPDATE] = true;
-		//		//entity->flags[UNCLICKABLE] = true;
-		//		//entity->flags[UPDATENEEDED] = false;
-		//		//entity->flags[OVERDRAW] = true;
-		//		//entity->skill[11] = PLAYER_NUM;
-		//		//if ( multiplayer != CLIENT )
-		//		//{
-		//		//	entity_uids--;
-		//		//}
-		//		//entity->setUID(-3);
-		//	}
-		//}
-	}
 
 	if ( svFlags & SV_FLAG_CHEATS )
 	{
@@ -15013,7 +14866,7 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 					}
 					break;
 				case MONSTER_M:
-					this->sprite = stats[playernum]->sex == FEMALE ? 2011 : 2010;
+					this->sprite = stats[playernum]->sex == MALE ? 2011 : 2010;
 					break;
 				case MONSTER_S:
 					this->sprite = 2033;
@@ -15117,7 +14970,7 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 					}
 					break;
 				case MONSTER_M:
-					this->sprite = stats[playernum]->sex == FEMALE ? 2009 : 2008;
+					this->sprite = stats[playernum]->sex == MALE ? 2009 : 2008;
 					break;
 				case MONSTER_S:
 					this->sprite = 2032;

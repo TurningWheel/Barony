@@ -68,12 +68,12 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook)
 		{
 			if ( cast_animation[player].spellWaitingAttackInput() )
 			{
-				if ( multiplayer == SINGLE )
-				{
-					// refund some spent mana
-					int refund = (cast_animation[player].mana_cost - cast_animation[player].mana_left) / 2;
-					players[player]->entity->modMP(refund);
-				}
+				//if ( multiplayer == SINGLE )
+				//{
+				//	// refund some spent mana
+				//	int refund = (cast_animation[player].mana_cost - cast_animation[player].mana_left) / 2;
+				//	players[player]->entity->modMP(refund);
+				//}
 				spellcastingAnimationManager_deactivate(&cast_animation[player]);
 				messagePlayer(player, MESSAGE_COMBAT, Language::get(6496));
 				playSoundEntityLocal(players[player]->entity, 163, 64);
@@ -3214,7 +3214,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				if ( found )
 				{
 					spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
-					playSoundEntity(caster, 171, 128);
+					playSoundEntity(caster, 799, 128);
 				}
 				else
 				{
@@ -3300,7 +3300,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				if ( found )
 				{
 					spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
-					playSoundEntity(caster, 171, 128);
+					playSoundEntity(caster, 799, 128);
 				}
 				else
 				{
@@ -3535,7 +3535,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						auto& data = effLocations.back();
 						if ( i == 0 )
 						{
-							data.sfx = 151;
+							data.sfx = 799;
 						}
 						data.seconds = 1 / (real_t)numSprites;
 						data.dist = 0.25 + (0.75 * i / (real_t)numSprites);
@@ -3570,7 +3570,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					}
 				}
 				spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
-				playSoundEntity(caster, 171, 128);
+				playSoundEntity(caster, 799, 128);
 			}
 		}
 		else if ( spell->ID == SPELL_SLAM )
@@ -6883,7 +6883,17 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		{
 			if ( caster && caster->behavior == &actDeathGhost )
 			{
-				duckAreaQuck(caster);
+				if ( duckAreaQuck(caster) )
+				{
+					if ( caster->skill[2] >= 0 && caster->skill[2] < MAXPLAYERS )
+					{
+						if ( players[caster->skill[2]]->entity )
+						{
+							magicOnSpellCastEvent(players[caster->skill[2]]->entity, players[caster->skill[2]]->entity, nullptr, spell->ID,
+								spell_t::SPELL_LEVEL_EVENT_DEFAULT | spell_t::SPELL_LEVEL_EVENT_MINOR_CHANCE, 1);
+						}
+					}
+				}
 			}
 			else if ( caster && caster->behavior == &actPlayer )
 			{
@@ -8029,6 +8039,10 @@ int spellGetCastSound(spell_t* spell)
 	else if ( spell->ID >= SPELL_SLIME_ACID && spell->ID <= SPELL_SLIME_METAL )
 	{
 		return 0;
+	}
+	else if ( spell->ID >= SPELL_METEOR && spell->ID <= SPELL_METEOR_SHOWER )
+	{
+		return 814;
 	}
 	else
 	{

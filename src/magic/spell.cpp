@@ -561,6 +561,26 @@ void spellDeconstructor(void* data)
 		{
 			if ( spell->sustain_node )
 			{
+				if ( multiplayer != CLIENT )
+				{
+					for ( int i = 0; i < MAXPLAYERS; ++i )
+					{
+						if ( spell->sustain_node->list && spell->sustain_node->list == &channeledSpells[i] )
+						{
+							if ( i > 0 && !players[i]->isLocalPlayer() && !client_disconnected[i] )
+							{
+								strcpy((char*)net_packet->data, "UNCH");
+								net_packet->data[4] = i;
+								SDLNet_Write32(spell->ID, &net_packet->data[5]);
+								net_packet->address.host = net_clients[i - 1].host;
+								net_packet->address.port = net_clients[i - 1].port;
+								net_packet->len = 9;
+								sendPacketSafe(net_sock, -1, net_packet, i - 1);
+							}
+							break;
+						}
+					}
+				}
 				list_RemoveNode(spell->sustain_node);
 			}
 		}

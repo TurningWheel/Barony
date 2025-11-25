@@ -16455,15 +16455,15 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 		real_t numSharesMult = 1.0;
 		if ( numshares == 1 )
 		{
-			numSharesMult = 0.7;
+			numSharesMult = 0.9;
 		}
 		else if ( numshares == 2 )
 		{
-			numSharesMult = 0.6;
+			numSharesMult = 0.8;
 		}
 		else if ( numshares >= 3 )
 		{
-			numSharesMult = 0.5;
+			numSharesMult = 0.7;
 		}
 		if ( numshares )
 		{
