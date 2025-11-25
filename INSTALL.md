@@ -96,6 +96,8 @@ Linux Install (Navigate to somewhere to drop install files first):
  * make install
 You can then remove the installation files.
 
+For FMOD, you will need to go to https://www.fmod.com/download, select and download the 2.02.14 version, unpack it anywhere and set the environment variable `FMOD_DIR` to the directory where you unpacked it.
+
 ## Building Barony
 
 You can do something along the following lines:
