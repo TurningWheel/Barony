@@ -4202,6 +4202,7 @@ void Player::Inventory_t::cycleInventoryTab()
 			{
 				player.inventoryUI.selectSpell(selectedItem->x, selectedItem->y);
 			}
+			player.inventoryUI.spellPanel.currentScrollRow = player.inventoryUI.spellPanel.scrollSetpoint / player.inventoryUI.getSlotSize();
 			player.inventoryUI.spellPanel.scrollToSlot(player.inventoryUI.getSelectedSpellX(),
 				player.inventoryUI.getSelectedSpellY(), true);
 		}
