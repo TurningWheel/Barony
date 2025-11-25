@@ -517,6 +517,7 @@ bool duckAreaQuck(Entity* my)
 	}
 
 	bool anyTarget = false;
+	std::priority_queue<std::pair<real_t, Entity*>> possibleTargets;
 	for ( auto node = map.creatures->first; node; node = node->next )
 	{
 		if ( Entity* target = (Entity*)node->element )
@@ -542,34 +543,7 @@ bool duckAreaQuck(Entity* my)
 									lineTraceTarget(my, my->x, my->y, tangent, 32.0, 0, false, target);
 									if ( hit.entity == target )
 									{
-										if ( target->monsterSetPathToLocation(my->x / 16, my->y / 16, 2,
-											GeneratePathTypes::GENERATE_PATH_DEFAULT) && target->children.first )
-										{
-											target->monsterLastDistractedByNoisemaker = my->getUID();
-											target->monsterTarget = my->getUID();
-											target->monsterState = MONSTER_STATE_HUNT; // hunt state
-											serverUpdateEntitySkill(target, 0);
-
-
-											if ( my->behavior == &actDeathGhost )
-											{
-												if ( target->setEffect(EFF_DISORIENTED, true, 2 * TICKS_PER_SECOND, false) )
-												{
-													anyTarget = true;
-													target->setEffect(EFF_DISTRACTED_COOLDOWN, true, TICKS_PER_SECOND * 2 + 25, false);
-													spawnFloatingSpriteMisc(134, target->x + (-4 + local_rng.rand() % 9) + cos(target->yaw) * 2,
-														target->y + (-4 + local_rng.rand() % 9) + sin(target->yaw) * 2, target->z + local_rng.rand() % 4);
-												}
-											}
-											else
-											{
-												if ( target->setEffect(EFF_DISORIENTED, true, 2 * TICKS_PER_SECOND, false) )
-												{
-													anyTarget = true;
-													target->setEffect(EFF_DISTRACTED_COOLDOWN, true, TICKS_PER_SECOND * 2 + 25, false);
-												}
-											}
-										}
+										possibleTargets.push(std::make_pair(-entityDist(target, my), target));
 									}
 								}
 							}
@@ -579,6 +553,59 @@ bool duckAreaQuck(Entity* my)
 			}
 		}
 	}
+
+	int numEffected = 0;
+	while ( possibleTargets.size() )
+	{
+		Entity* target = possibleTargets.top().second;
+		possibleTargets.pop();
+		if ( my->behavior == &actDeathGhost )
+		{
+			if ( numEffected >= 3 )
+			{
+				break;
+			}
+			if ( numEffected >= 2 )
+			{
+				if ( local_rng.rand() % 2 == 0 )
+				{
+					continue;
+				}
+			}
+		}
+
+		if ( target->monsterSetPathToLocation(my->x / 16, my->y / 16, 2,
+			GeneratePathTypes::GENERATE_PATH_DEFAULT) && target->children.first )
+		{
+			target->monsterLastDistractedByNoisemaker = my->getUID();
+			target->monsterTarget = my->getUID();
+			target->monsterState = MONSTER_STATE_HUNT; // hunt state
+			serverUpdateEntitySkill(target, 0);
+
+
+			if ( my->behavior == &actDeathGhost )
+			{
+				if ( target->setEffect(EFF_DISORIENTED, true, 2 * TICKS_PER_SECOND, false) )
+				{
+					anyTarget = true;
+					++numEffected;
+					target->setEffect(EFF_DISTRACTED_COOLDOWN, true, TICKS_PER_SECOND * 2 + 25, false);
+					spawnFloatingSpriteMisc(134, target->x + (-4 + local_rng.rand() % 9) + cos(target->yaw) * 2,
+						target->y + (-4 + local_rng.rand() % 9) + sin(target->yaw) * 2, target->z + local_rng.rand() % 4);
+				}
+			}
+			else
+			{
+				if ( target->setEffect(EFF_DISORIENTED, true, 2 * TICKS_PER_SECOND, false) )
+				{
+					anyTarget = true;
+					++numEffected;
+					target->setEffect(EFF_DISTRACTED_COOLDOWN, true, TICKS_PER_SECOND * 2 + 25, false);
+				}
+			}
+		}
+	}
+
 	if ( anyTarget || my->behavior == &actDeathGhost )
 	{
 		playSoundEntity(my, 784 + local_rng.rand() % 2, 128);

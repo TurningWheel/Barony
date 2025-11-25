@@ -6610,11 +6610,11 @@ Host to enable the game setting.
 6356 You claim %d Assistance points from the shrine.#
 6357 %s claims %d Assistance points from the Assist shrine.#
 6358 dryad#
-6359 monster_m#
+6359 myconid#
 6360 monster_s#
 6361 gremlin#
 6362 dryads#
-6363 monster_ms#
+6363 myconids#
 6364 monster_ss#
 6365 gremlins#
 6366 strikes#
@@ -7058,13 +7058,13 @@ to replay this challenge!
 6784 class_21#
 6785 sapper#
 6786 scion#
-6787 class_24#
+6787 hermit#
 6788 class_25#
 # main menu capitalized
 6789 Class_21#
 6790 Sapper#
 6791 Scion#
-6792 class_24#
+6792 Hermit#
 6793 Class_25#
 6794 You lack the foliage to cast the spell!#
 6795 You are covered with thorns!#

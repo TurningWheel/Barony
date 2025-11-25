@@ -6914,7 +6914,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				{
 					if ( !casterStats->getEffectActive(EFF_PROJECT_SPIRIT) )
 					{
-						if ( caster->setEffect(EFF_PROJECT_SPIRIT, true, 2 * 60 * TICKS_PER_SECOND, false) )
+						if ( caster->setEffect(EFF_PROJECT_SPIRIT, true, element->duration, false) )
 						{
 							messagePlayer(caster->skill[2], MESSAGE_STATUS, Language::get(6874));
 							if ( players[caster->skill[2]]->isLocalPlayer() )
