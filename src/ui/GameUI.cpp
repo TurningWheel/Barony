@@ -24657,6 +24657,11 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 				}
 			}
 		}
+		else
+		{
+			real_t nominalHeight = 0.0;
+			view.z = std::min(nominalHeight, view.z);
+		}
 
 		view.ang = (offsetyaw - PI
 			+ (*cvar_char_portrait_static_angle ? playerEntity->yaw : 0)); //5 * PI / 4;

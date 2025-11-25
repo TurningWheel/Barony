@@ -7051,7 +7051,7 @@ to replay this challenge!
 
 #
 6779 Dryad#
-6780 monster_m#
+6780 Myconid#
 6781 monster_s#
 6782 Gremlin#
 6783 monster_x#
