@@ -24657,7 +24657,7 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 				}
 			}
 		}
-		else
+		else if ( playerEntity->behavior == &actPlayer )
 		{
 			real_t nominalHeight = 0.0;
 			view.z = std::min(nominalHeight, view.z);
