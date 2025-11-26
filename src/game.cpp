@@ -4488,6 +4488,64 @@ bool handleEvents(void)
 				mousey = event.motion.y * factorY;
 				mousexrel += event.motion.xrel;
 				mouseyrel += event.motion.yrel;
+				
+				//{
+				// // debug code for checking checking mouse motions during lag
+				//static std::map < Uint32, std::vector<SDL_MouseMotionEvent>> evs;
+				//evs[event.motion.timestamp].push_back(event.motion);
+				//if ( evs[event.motion.timestamp].size() > 1 )
+				//{
+				//	static std::map<Uint32, std::map<Sint32, std::map<Sint32, std::map<Sint32, std::map<Sint32, int>>>>> ss;
+				//	auto& val = ss[event.motion.timestamp][event.motion.x][event.motion.y][event.motion.xrel][event.motion.yrel];
+				//	val++;
+				//	if ( evs[event.motion.timestamp].size() >= 2000 )
+				//	{
+				//		mousexrel -= event.motion.xrel;
+				//		mouseyrel -= event.motion.yrel;
+				//		messagePlayer(0, MESSAGE_DEBUG, "cleared");
+				//	}
+				//}
+				//if ( evs.size() > 100 )
+				//{
+				//	size_t m = 0;
+				//	for ( auto& v : evs )
+				//	{
+				//		m = std::max(v.second.size(), m);
+				//	}
+				//	//if ( m > 25 )
+				//	{
+				//		for ( auto& v : evs )
+				//		{
+				//			//if ( v.second.size() > 25 )
+				//			{
+				//				int netx = 0;
+				//				int nety = 0;
+				//				int dupes = 0;
+				//				std::map<Sint32, std::map<Sint32, std::map<Sint32, std::map<Sint32, int>>>> ss;
+				//				for ( auto& s : v.second )
+				//				{
+				//					ss[s.x][s.y][s.xrel][s.yrel]++;
+				//					if ( ss[s.x][s.y][s.xrel][s.yrel] > 1 )
+				//					{
+				//						++dupes;
+				//					}
+				//					netx += s.xrel;
+				//					nety += s.yrel;
+				//				}
+				//				if ( dupes > 0 )
+				//				{
+				//					int rx = 0;
+				//					int ry = 0;
+				//					SDL_GetRelativeMouseState(&rx, &ry);
+				//					messagePlayer(0, MESSAGE_DEBUG, "net x: %d y: %d | dupes: %d | rx: %d ry: %d", netx, nety, dupes, rx, ry);
+				//				}
+				//			}
+				//		}
+				//		messagePlayer(0, MESSAGE_DEBUG, "max dupe: %d", m);
+				//	}
+				//	evs.clear();
+				//}
+				//}
 
 				if (initialized)
 				{

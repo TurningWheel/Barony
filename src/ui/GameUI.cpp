@@ -11587,7 +11587,14 @@ void Player::HUD_t::updateActionPrompts()
 						img->pos.h = 36;
 						break;
 					case ACTION_PROMPT_OFFHAND:
-						skillImg = "*images/ui/HUD/HUD_Ghost_Push.png";
+						if ( player.ghost.isSpiritGhost() )
+						{
+							skillImg = "*images/ui/HUD/HUD_Ghost_Spirit_Push.png";
+						}
+						else
+						{
+							skillImg = "*images/ui/HUD/HUD_Ghost_Push.png";
+						}
 						img->pos.x -= 2;
 						img->pos.y -= 2;
 						img->pos.w = 36;

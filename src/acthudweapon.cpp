@@ -4204,7 +4204,9 @@ void actHudShield(Entity* my)
 
 	if ( defending )
 	{
-		if ( foci || (stats[HUDSHIELD_PLAYERNUM]->shield && itemTypeIsInstrument(stats[HUDSHIELD_PLAYERNUM]->shield->type)) )
+		if ( foci 
+			|| (stats[HUDSHIELD_PLAYERNUM]->shield && itemTypeIsInstrument(stats[HUDSHIELD_PLAYERNUM]->shield->type))
+			|| duck )
 		{
 			if ( players[HUDSHIELD_PLAYERNUM]->messageZone.logWindow || players[HUDSHIELD_PLAYERNUM]->minimap.mapWindow
 				|| FollowerMenu[HUDSHIELD_PLAYERNUM].followerMenuIsOpen() || CalloutMenu[HUDSHIELD_PLAYERNUM].calloutMenuIsOpen() )

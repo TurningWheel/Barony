@@ -5778,6 +5778,7 @@ bool weaponSpriteAllowedImpForm(int sprite)
 
 void playerDebugTests(Entity* my)
 {
+#ifndef NDEBUG
 	if ( !my ) { return; }
 	if ( !(svFlags & SV_FLAG_CHEATS) )
 	{
@@ -5791,7 +5792,7 @@ void playerDebugTests(Entity* my)
 	static ConsoleVariable<bool> cvar_test_frameskip("/test_frameskip", false);
 	if ( *cvar_test_frameskip && ticks % (5 * TICKS_PER_SECOND) == 0 )
 	{
-		SDL_Delay(4000);
+		SDL_Delay(50);
 	}
 
 	static ConsoleVariable<int> cvar_test_xp("/test_xp", 0);
@@ -6014,6 +6015,7 @@ void playerDebugTests(Entity* my)
 			}
 		}
 	}
+#endif
 }
 
 void actPlayer(Entity* my)

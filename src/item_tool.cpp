@@ -1899,7 +1899,17 @@ void Item::applyDuck(Uint32 parentUid, real_t x, real_t y, Entity* hitentity, bo
 
 			if ( hitentity && (hitentity->behavior == &actMonster || hitentity->behavior == &actPlayer) )
 			{
-				summon->monsterTarget = hitentity->getUID();
+				if ( parent )
+				{
+					if ( parent->checkEnemy(hitentity) )
+					{
+						summon->monsterTarget = hitentity->getUID();
+					}
+				}
+				else
+				{
+					summon->monsterTarget = hitentity->getUID();
+				}
 				playSoundPos(summon->x, summon->y, 786 + local_rng.rand() % 3, 128);
 			}
 			else

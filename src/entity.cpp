@@ -12232,6 +12232,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 							{
 								degradeWeapon = false;
 							}
+							else if ( myStats->weapon && myStats->weapon->type == SHILLELAGH_MACE )
+							{
+								degradeWeapon = false;
+							}
 							else if ( flail	&& pose == MONSTER_POSE_FLAIL_SWING && local_rng.rand() % 4 > 0 )
 							{
 								degradeWeapon = false;
