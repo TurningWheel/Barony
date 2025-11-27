@@ -182,6 +182,7 @@ struct StatusEffectQueue_t
 	static const int kEffectRetaliation;
 	static const int kEffectAssistance;
 	static const int kEffectStability;
+	static const int kEffectVandal;
 	
 	Frame* statusEffectFrame = nullptr;
 	Frame* statusEffectTooltipFrame = nullptr;

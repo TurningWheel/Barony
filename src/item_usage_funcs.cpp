@@ -4922,6 +4922,15 @@ void item_Food(Item*& item, int player)
 			{
 				players[player]->entity->char_gonnavomit = 40 + local_rng.rand() % 10;
 			}
+			else if ( stats[player]->type == MONSTER_M && local_rng.rand() % 3 == 0 )
+			{
+				// gain some mp regen
+				players[player]->entity->modMP(1 + local_rng.rand() % 2);
+				Uint32 color = makeColorRGB(0, 255, 0);
+				players[player]->entity->setEffect(EFF_MP_REGEN, true, std::max(stats[player]->EFFECTS_TIMERS[EFF_MP_REGEN], 10 * TICKS_PER_SECOND), false);
+				messagePlayerColor(player, MESSAGE_HINT, color, Language::get(6882));
+				playSoundEntity(players[player]->entity, 168, 128);
+			}
 		}
 		foodUseAbundanceEffect(item, player);
 		consumeItem(item, player);
@@ -5323,6 +5332,15 @@ void item_FoodTin(Item*& item, int player)
 			if ( players[player]->entity->entityCanVomit() )
 			{
 				players[player]->entity->char_gonnavomit = 40 + local_rng.rand() % 10;
+			}
+			else if ( stats[player]->type == MONSTER_M && local_rng.rand() % 3 == 0 )
+			{
+				// gain some mp regen
+				players[player]->entity->modMP(1 + local_rng.rand() % 2);
+				Uint32 color = makeColorRGB(0, 255, 0);
+				players[player]->entity->setEffect(EFF_MP_REGEN, true, std::max(stats[player]->EFFECTS_TIMERS[EFF_MP_REGEN], 10 * TICKS_PER_SECOND), false);
+				messagePlayerColor(player, MESSAGE_HINT, color, Language::get(6882));
+				playSoundEntity(players[player]->entity, 168, 128);
 			}
 		}
 		foodUseAbundanceEffect(item, player);

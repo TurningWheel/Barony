@@ -349,7 +349,7 @@ void initClassStats(const int classnum, void* myStats)
 	else if ( classnum == CLASS_ACCURSED )
 	{
 		// attributes
-		stat->INT += 10;
+		stat->INT += 5;
 		stat->STR -= 2;
 		stat->CON -= 2;
 		stat->DEX -= 3;

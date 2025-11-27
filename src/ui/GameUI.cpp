@@ -6309,7 +6309,8 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 				|| stats[player]->getEffectActive(EFF_FOCI_LIGHT_PROVIDENCE)
 				|| stats[player]->getEffectActive(EFF_FOCI_LIGHT_PURITY)
 				|| stats[player]->getEffectActive(EFF_FOCI_LIGHT_SANCTUARY)
-				|| stats[player]->getEffectActive(EFF_GROWTH) )
+				|| stats[player]->getEffectActive(EFF_GROWTH)
+				|| (players[player]->mechanics.gremlinBreakableCounter > 0 && stats[player]->type == MONSTER_G) )
 			{
 				for ( auto img : frame->getImages() )
 				{
@@ -6781,6 +6782,40 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 									val = "III";
 								}
 								else if ( effectStrength >= 3 )
+								{
+									val = "II";
+								}
+								if ( auto text = Text::get(val.c_str(),
+									"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+								{
+									text->drawColor(SDL_Rect{ 0,0,0,0 },
+										SDL_Rect{ pos.x + img->pos.x + img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x,
+										pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
+										0, 0 },
+										SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+										makeColor(255, 255, 255, 255));
+								}
+							}
+						}
+						else if ( img->path.find("vandal.png") != std::string::npos )
+						{
+							int effectStrength = players[player]->mechanics.getBreakableCounterTier();
+							if ( effectStrength > 0 )
+							{
+								std::string val = "I";
+								if ( effectStrength >= 5 )
+								{
+									val = "V";
+								}
+								else if ( effectStrength >= 4 )
+								{
+									val = "IV";
+								}
+								else if ( effectStrength >= 3 )
+								{
+									val = "III";
+								}
+								else if ( effectStrength >= 2 )
 								{
 									val = "II";
 								}
@@ -7693,6 +7728,37 @@ bool StatusEffectQueue_t::doStatusEffectTooltip(StatusEffectQueueEntry_t& entry,
 					tooltipDesc->setText(definition.getDesc(variation).c_str());
 					tooltipInnerWidth = definition.tooltipWidth;
 				}
+				else if ( effectID == StatusEffectQueue_t::kEffectVandal )
+				{
+					int tier = players[player]->mechanics.getBreakableCounterTier();
+					variation = tier;
+
+					std::string newHeader = definition.getName(variation).c_str();
+					uppercaseString(newHeader);
+					tooltipHeader->setText(newHeader.c_str());
+
+					std::string descStr = definition.getDesc(0);
+					char buf[128];
+					memset(buf, 0, sizeof(buf));
+					int dmg = 1 + tier;
+					int speed = tier * 5;
+					int castspeed = tier * 5;
+
+					snprintf(buf, sizeof(buf), definition.getDesc(1).c_str(), dmg);
+					if ( descStr != "" ) { descStr += '\n'; }
+					descStr += buf;
+
+					snprintf(buf, sizeof(buf), definition.getDesc(2).c_str(), speed);
+					if ( descStr != "" ) { descStr += '\n'; }
+					descStr += buf;
+
+					snprintf(buf, sizeof(buf), definition.getDesc(3).c_str(), castspeed);
+					if ( descStr != "" ) { descStr += '\n'; }
+					descStr += buf;
+
+					tooltipDesc->setText(descStr.c_str());
+					tooltipInnerWidth = definition.tooltipWidth;
+				}
 				else if ( effectID == StatusEffectQueue_t::kEffectAssistance )
 				{
 					std::string newHeader = definition.getName(-1).c_str();
@@ -7740,6 +7806,7 @@ bool StatusEffectQueue_t::doStatusEffectTooltip(StatusEffectQueueEntry_t& entry,
 					&& effectID != StatusEffectQueue_t::kEffectBountyTarget
 					&& effectID != StatusEffectQueue_t::kEffectDisabledHPRegen
 					&& effectID != StatusEffectQueue_t::kEffectAssistance
+					&& effectID != StatusEffectQueue_t::kEffectVandal
 					&& !(effectID == EFF_ENSEMBLE_DRUM
 						|| effectID == EFF_ENSEMBLE_FLUTE
 						|| effectID == EFF_ENSEMBLE_LUTE
@@ -7837,6 +7904,7 @@ const int StatusEffectQueue_t::kEffectInspiration = -24;
 const int StatusEffectQueue_t::kEffectRetaliation = -25;
 const int StatusEffectQueue_t::kEffectAssistance = -26;
 const int StatusEffectQueue_t::kEffectStability = -27;
+const int StatusEffectQueue_t::kEffectVandal = -28;
 const int StatusEffectQueue_t::kSpellEffectOffset = 10000;
 
 Frame* StatusEffectQueue_t::getStatusEffectFrame()
@@ -8325,7 +8393,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 	bool inshop = false;
 
 	std::map<int, bool> miscEffects;
-	for ( int i = kEffectBurning; i >= kEffectStability; --i )
+	for ( int i = kEffectBurning; i >= kEffectVandal; --i )
 	{
 		miscEffects[i] = false;
 	}
@@ -8391,6 +8459,10 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 			if ( stats[player]->shoes && stats[player]->shoes->type == CLEAT_BOOTS )
 			{
 				miscEffects[kEffectStability] = true;
+			}
+			if ( stats[player]->type == MONSTER_G && players[player]->mechanics.gremlinBreakableCounter >= 0 )
+			{
+				miscEffects[kEffectVandal] = true;
 			}
 			if ( stats[player]->breastplate && stats[player]->breastplate->type == VAMPIRE_DOUBLET )
 			{
@@ -8509,7 +8581,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 		}
 	}
 
-	for ( int i = kEffectBurning; i >= kEffectStability; --i )
+	for ( int i = kEffectBurning; i >= kEffectVandal; --i )
 	{
 		if ( miscEffects[i] == false )
 		{
@@ -8765,6 +8837,10 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 							}
 						}
 						else if ( effectID == StatusEffectQueue_t::kEffectBountyTarget )
+						{
+							variation = 0;
+						}
+						else if ( effectID == StatusEffectQueue_t::kEffectVandal )
 						{
 							variation = 0;
 						}

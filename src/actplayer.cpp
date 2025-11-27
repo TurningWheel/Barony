@@ -4368,6 +4368,10 @@ real_t Player::PlayerMovement_t::getSpeedFactor(real_t weightratio, Sint32 DEX)
 	{
 		maxSpeed += 1.0;
 	}
+	else if ( player.mechanics.getBreakableCounterTier() >= 4 )
+	{
+		maxSpeed += 1.0;
+	}
 	real_t speedFactor = std::min((((DEX) * .4) + 8.5 - slowSpeedPenalty) * weightratio, maxSpeed);
 	/*if ( DEX <= 5 )
 	{
@@ -4382,6 +4386,27 @@ real_t Player::PlayerMovement_t::getSpeedFactor(real_t weightratio, Sint32 DEX)
 		|| stats[player.playernum]->getEffectActive(EFF_BASTION_ROOTS) )
 	{
 		speedFactor *= 0.3;
+	}
+
+	if ( stats[player.playernum]->type == MONSTER_M
+		&& !stats[player.playernum]->helmet
+		&& stats[player.playernum]->getEffectActive(EFF_GROWTH) > 1 )
+	{
+		int bonus = std::min(3, stats[player.playernum]->getEffectActive(EFF_GROWTH) - 1);
+		speedFactor *= 1.0 - (bonus * 0.10);
+	}
+	if ( stats[player.playernum]->type == MONSTER_D
+		&& !stats[player.playernum]->helmet
+		&& stats[player.playernum]->getEffectActive(EFF_GROWTH) > 1 )
+	{
+		int bonus = std::min(3, stats[player.playernum]->getEffectActive(EFF_GROWTH) - 1);
+		speedFactor *= 1.0 - (bonus * 0.05);
+	}
+
+	if ( int effectStrength = player.mechanics.getBreakableCounterTier() )
+	{
+		speedFactor *= 1.0 + effectStrength * 0.05;
+		speedFactor = std::min(speedFactor, maxSpeed);
 	}
 
 	for ( node_t* node = stats[player.playernum]->inventory.first; node != NULL; node = node->next )
@@ -4514,7 +4539,7 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 		speedFactorMult = 1 / find->second;
 	}
 
-	if ( ((!player.usingCommand() && player.bControlEnabled && !gamePaused) || pacified)
+	if ( ((!gamePaused) || pacified)
 		&& allowMovement )
 	{
 		//x_force and y_force represent the amount of percentage pushed on that respective axis. Given a keyboard, it's binary; either you're pushing "move left" or you aren't. On an analog stick, it can range from whatever value to whatever.
@@ -4555,54 +4580,57 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 				backpedalMultiplier = 1.25;
 			}
 
-			if ( !inputs.hasController(PLAYER_NUM) )
+			if ( !player.usingCommand() && player.bControlEnabled )
 			{
-				if ( !stats[PLAYER_NUM]->getEffectActive(EFF_CONFUSED) )
+				if ( !inputs.hasController(PLAYER_NUM) )
 				{
-					//Normal controls.
-					x_force = (input.binary("Move Right") - input.binary("Move Left"));
-					y_force = input.binary("Move Forward") - (double)input.binary("Move Backward") * backpedalMultiplier;
-					if ( noclip )
+					if ( !stats[PLAYER_NUM]->getEffectActive(EFF_CONFUSED) )
 					{
-						if ( keystatus[SDLK_LSHIFT] )
+						//Normal controls.
+						x_force = (input.binary("Move Right") - input.binary("Move Left"));
+						y_force = input.binary("Move Forward") - (double)input.binary("Move Backward") * backpedalMultiplier;
+						if ( noclip )
 						{
-							x_force = x_force * 0.5;
-							y_force = y_force * 0.5;
+							if ( keystatus[SDLK_LSHIFT] )
+							{
+								x_force = x_force * 0.5;
+								y_force = y_force * 0.5;
+							}
 						}
 					}
+					else
+					{
+						//Confused controls.
+						x_force = input.binary("Move Left") - input.binary("Move Right");
+						y_force = input.binary("Move Backward") - (double)input.binary("Move Forward") * backpedalMultiplier;
+					}
 				}
-				else
+
+				if ( inputs.hasController(PLAYER_NUM) /*&& !input.binary("Move Left") && !input.binary("Move Right")*/ )
 				{
-					//Confused controls.
-					x_force = input.binary("Move Left") - input.binary("Move Right");
-					y_force = input.binary("Move Backward") - (double)input.binary("Move Forward") * backpedalMultiplier;
+					x_force = inputs.getController(PLAYER_NUM)->getLeftXPercentForPlayerMovement(PLAYER_NUM);
+
+					if ( stats[PLAYER_NUM]->getEffectActive(EFF_CONFUSED) )
+					{
+						x_force *= -1;
+					}
 				}
+				if ( inputs.hasController(PLAYER_NUM) /*&& !input.binary("Move Forward") && !input.binary("Move Backward")*/ )
+				{
+					y_force = inputs.getController(PLAYER_NUM)->getLeftYPercentForPlayerMovement(PLAYER_NUM);
+
+					if ( stats[PLAYER_NUM]->getEffectActive(EFF_CONFUSED) )
+					{
+						y_force *= -1;
+					}
+
+					if ( y_force < 0 )
+					{
+						y_force *= backpedalMultiplier;    //Move backwards more slowly.
+					}
+				}
+				x_force *= lateralMultiplier;
 			}
-
-			if ( inputs.hasController(PLAYER_NUM) /*&& !input.binary("Move Left") && !input.binary("Move Right")*/ )
-			{
-				x_force = inputs.getController(PLAYER_NUM)->getLeftXPercentForPlayerMovement(PLAYER_NUM);
-
-				if ( stats[PLAYER_NUM]->getEffectActive(EFF_CONFUSED) )
-				{
-					x_force *= -1;
-				}
-			}
-			if ( inputs.hasController(PLAYER_NUM) /*&& !input.binary("Move Forward") && !input.binary("Move Backward")*/ )
-			{
-				y_force = inputs.getController(PLAYER_NUM)->getLeftYPercentForPlayerMovement(PLAYER_NUM);
-
-				if ( stats[PLAYER_NUM]->getEffectActive(EFF_CONFUSED) )
-				{
-					y_force *= -1;
-				}
-
-				if ( y_force < 0 )
-				{
-					y_force *= backpedalMultiplier;    //Move backwards more slowly.
-				}
-			}
-			x_force *= lateralMultiplier;
 		}
 
 		real_t speedFactor = getSpeedFactor(weightratio, statGetDEX(stats[PLAYER_NUM], players[PLAYER_NUM]->entity));
@@ -4695,6 +4723,10 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 		speedFactor *= refreshRateDelta;
 
 		real_t defendPenalty = (stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 1) ? 1.0 : 0.0;
+		if ( stats[PLAYER_NUM]->sneaking == 1 && !stats[PLAYER_NUM]->defending && stats[PLAYER_NUM]->type == MONSTER_G )
+		{
+			defendPenalty = 0.5;
+		}
 		if ( stats[PLAYER_NUM]->defending && !stats[PLAYER_NUM]->sneaking 
 			&& stats[PLAYER_NUM]->shield && itemTypeIsFoci(stats[PLAYER_NUM]->shield->type) )
 		{
@@ -10260,6 +10292,10 @@ void actPlayer(Entity* my)
 		}
 		equipmentBonus = std::max(-6, std::min(equipmentBonus, 4));
 	}
+	if ( stats[PLAYER_NUM]->type == MONSTER_G )
+	{
+		equipmentBonus += 2;
+	}
 	const int fociCastRange = -2;
 	if (!intro && *cvar_playerLight) {
         if (!players[PLAYER_NUM]->isLocalPlayer() && multiplayer == CLIENT) {
@@ -13127,6 +13163,12 @@ void actPlayer(Entity* my)
 				entity->pitch = my->pitch;
 				entity->roll = 0;
 				static int lastHelmSprite[MAXPLAYERS] = { 0 };
+				bool tryShake = false;
+				if ( entity->skill[1] == 1 )
+				{
+					tryShake = true;
+					entity->skill[1] = 0;
+				}
 				if ( multiplayer != CLIENT )
 				{
 					entity->sprite = itemModel(stats[PLAYER_NUM]->helmet);
@@ -13243,7 +13285,7 @@ void actPlayer(Entity* my)
 						entity->scalez = 1.01 - bobScale * sin(entity->fskill[3]);
 					}
 
-					if ( lastHelmSprite[PLAYER_NUM] != entity->sprite )
+					if ( lastHelmSprite[PLAYER_NUM] != entity->sprite || tryShake )
 					{
 						entity->skill[0] = 3;
 
@@ -13301,7 +13343,7 @@ void actPlayer(Entity* my)
 					entity->scaley = 1.01 + bobScale * sin(entity->fskill[3]);
 					entity->scalez = 1.01 - bobScale * sin(entity->fskill[3]);
 
-					if ( lastHelmSprite[PLAYER_NUM] != entity->sprite )
+					if ( lastHelmSprite[PLAYER_NUM] != entity->sprite || tryShake )
 					{
 						entity->skill[0] = 3;
 
@@ -14093,6 +14135,26 @@ void actPlayer(Entity* my)
 	if ( !usecamerasmoothing )
 	{
 		players[PLAYER_NUM]->movement.handlePlayerCameraPosition(false);
+	}
+}
+
+void Entity::playerShakeGrowthHelmet()
+{
+	if ( multiplayer == CLIENT ) { return; }
+	if ( behavior == &actPlayer )
+	{
+		Stat* myStats = getStats();
+		if ( myStats && (myStats->type == MONSTER_M || myStats->type == MONSTER_D) && !myStats->helmet && myStats->getEffectActive(EFF_GROWTH) > 1 )
+		{
+			if ( node_t* node = list_Node(&children, 9) )
+			{
+				if ( Entity* entity = (Entity*)node->element )
+				{
+					entity->skill[1] = 1;
+					serverUpdateEntitySkill(entity, 1);
+				}
+			}
+		}
 	}
 }
 

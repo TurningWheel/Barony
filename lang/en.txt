@@ -7151,5 +7151,10 @@ to replay this challenge!
 6879 Return#
 6880 Hotbar Keys Update Selection#
 6881 Allow the highlighted hotbar slot to change when using the individual slot keys to activate the hotbar.#
+6882 The rot invigorates you!#
+6883 You shed your burning foliage!#
+6884 You sprout forth a shrub!#
+6885 You spore forth a mushroom!#
+6886 Your vandalism energizes you!#
 
 6999 END#

@@ -612,6 +612,11 @@ void actArrow(Entity* my)
 							{
 								Compendium_t::Events_t::eventUpdateWorld(parent->skill[2], Compendium_t::CPDM_BARRIER_DESTROYED, "breakable barriers", 1);
 							}
+
+							if ( hit.entity->colliderOldHP > 0 )
+							{
+								players[parent->skill[2]]->mechanics.incrementBreakableCounter(Player::PlayerMechanics_t::BreakableEvent::GBREAK_COMMON, hit.entity);
+							}
 						}
 					}
 
@@ -1695,6 +1700,7 @@ void actArrow(Entity* my)
 								if ( parent && parent->behavior == &actPlayer && hit.entity->behavior == &actMonster )
 								{
 									steamStatisticUpdateClient(parent->skill[2], STEAM_STAT_UNSTOPPABLE_FORCE, STEAM_STAT_INT, 1);
+									players[parent->skill[2]]->mechanics.incrementBreakableCounter(Player::PlayerMechanics_t::BreakableEvent::GBREAK_DEGRADE, hit.entity);
 									if ( armornum == 4 && hitstats->type == BUGBEAR
 										&& (hitstats->defending || hit.entity->monsterAttack == MONSTER_POSE_BUGBEAR_SHIELD) )
 									{

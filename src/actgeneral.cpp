@@ -140,6 +140,7 @@ void Entity::furnitureHandleDamageMagic(int damage, Entity& magicProjectile, Ent
 			if ( destroyed )
 			{
 				gameModeManager.currentSession.challengeRun.updateKillEvent(this);
+				players[caster->skill[2]]->mechanics.incrementBreakableCounter(Player::PlayerMechanics_t::BreakableEvent::GBREAK_COMMON, this);
 			}
 			switch ( this->furnitureType )
 			{
@@ -2271,6 +2272,8 @@ void Entity::colliderHandleDamageMagic(int damage, Entity &magicProjectile, Enti
 					{
 						Compendium_t::Events_t::eventUpdateWorld(caster->skill[2], Compendium_t::CPDM_BARRIER_DESTROYED, "breakable barriers", 1);
 					}
+
+					players[caster->skill[2]]->mechanics.incrementBreakableCounter(Player::PlayerMechanics_t::BreakableEvent::GBREAK_COMMON, this);
 				}
 			}
 			else

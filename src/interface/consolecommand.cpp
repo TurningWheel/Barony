@@ -6188,6 +6188,8 @@ namespace ConsoleCommands {
 
 		int numStatRolls = 0;
 		int attr[6] = { 0, 0, 0, 0, 0, 0 };
+		int attr2[6] = { 0, 0, 0, 0, 0, 0 };
+		Monster prevType = stats[clientnum]->type;
 		for ( int i = 0; i < 1000; ++i )
 		{
 			stats[clientnum]->STR = 0;
@@ -6199,6 +6201,7 @@ namespace ConsoleCommands {
 			for ( int lv = 0; lv < 50; ++lv )
 			{
 				int increasestat[3] = { 0, 0, 0 };
+				stats[clientnum]->type = prevType;
 				players[clientnum]->entity->playerStatIncrease(client_classes[clientnum], increasestat);
 				for ( int i = 0; i < 3; i++ )
 				{
@@ -6228,6 +6231,38 @@ namespace ConsoleCommands {
 					++attr[increasestat[i]];
 					++numStatRolls;
 				}
+
+				increasestat[0] = 0; increasestat[1] = 0; increasestat[2] = 0;
+				stats[clientnum]->type = HUMAN;
+				players[clientnum]->entity->playerStatIncrease(client_classes[clientnum], increasestat);
+				for ( int i = 0; i < 3; i++ )
+				{
+					switch ( increasestat[i] )
+					{
+					case STAT_STR:
+						stats[clientnum]->STR++;
+						break;
+					case STAT_DEX:
+						stats[clientnum]->DEX++;
+						break;
+					case STAT_CON:
+						stats[clientnum]->CON++;
+						break;
+					case STAT_INT:
+						stats[clientnum]->INT++;
+						break;
+					case STAT_PER:
+						stats[clientnum]->PER++;
+						break;
+					case STAT_CHR:
+						stats[clientnum]->CHR++;
+						break;
+					default:
+						break;
+					}
+					++attr2[increasestat[i]];
+					//++numStatRolls;
+				}
 			}
 		}
 		char buf[128];
@@ -6239,6 +6274,25 @@ namespace ConsoleCommands {
 			3 * attr[4] / float(numStatRolls),
 			3 * attr[5] / float(numStatRolls));
 		messagePlayer(clientnum, MESSAGE_STATUS, "%s", buf);
+
+		snprintf(buf, sizeof(buf), "%.2f %.2f %.2f %.2f %.2f %.2f",
+			3 * attr2[0] / float(numStatRolls),
+			3 * attr2[1] / float(numStatRolls),
+			3 * attr2[2] / float(numStatRolls),
+			3 * attr2[3] / float(numStatRolls),
+			3 * attr2[4] / float(numStatRolls),
+			3 * attr2[5] / float(numStatRolls));
+		messagePlayer(clientnum, MESSAGE_STATUS, "%s", buf);
+
+		snprintf(buf, sizeof(buf), "%.2f%% %.2f%% %.2f%% %.2f%% %.2f%% %.2f%%",
+			100.0 * 3 * (attr[0] - attr2[0]) / float(numStatRolls),
+			100.0 * 3 * (attr[1] - attr2[1]) / float(numStatRolls),
+			100.0 * 3 * (attr[2] - attr2[2]) / float(numStatRolls),
+			100.0 * 3 * (attr[3] - attr2[3]) / float(numStatRolls),
+			100.0 * 3 * (attr[4] - attr2[4]) / float(numStatRolls),
+			100.0 * 3 * (attr[5] - attr2[5]) / float(numStatRolls));
+		messagePlayer(clientnum, MESSAGE_STATUS, "%s", buf);
+
 		SDL_SetClipboardText(buf);
 		stats[clientnum]->STR = 0;
 		stats[clientnum]->DEX = 0;

@@ -3772,6 +3772,8 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							}
 							breakable->colliderSetServerSkillOnSpawned(); // to update the variables modified from create()
 
+							messagePlayer(caster->isEntityPlayer(), MESSAGE_HINT, Language::get(6885));
+
 							if ( caster->behavior == &actPlayer )
 							{
 								if ( Stat* casterStats = caster->getStats() )
@@ -3835,6 +3837,8 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							}
 							breakable->colliderSetServerSkillOnSpawned(); // to update the variables modified from create()
 
+							messagePlayer(caster->isEntityPlayer(), MESSAGE_HINT, Language::get(6884));
+
 							if ( caster->behavior == &actPlayer )
 							{
 								if ( Stat* casterStats = caster->getStats() )
@@ -3843,6 +3847,12 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 									{
 										casterStats->setEffectValueUnsafe(EFF_GROWTH, effectStrength - 1);
 										serverUpdateEffects(caster->isEntityPlayer());
+										if ( caster->flags[BURNING] )
+										{
+											caster->flags[BURNING] = false;
+											serverUpdateEntityFlag(caster, BURNING);
+											messagePlayerColor(caster->isEntityPlayer(), MESSAGE_HINT, makeColorRGB(0, 255, 0), Language::get(6883));
+										}
 									}
 								}
 							}
@@ -4262,6 +4272,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 									|| targetStats->type == AUTOMATON
 									|| targetStats->type == MINIMIMIC
 									|| targetStats->type == MIMIC
+									|| monsterIsImmobileTurret(target, targetStats)
 									)
 								{
 									if ( effect = applyGenericMagicDamage(caster, target, *caster, spell->ID, damage, true) )
@@ -4498,6 +4509,12 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							spawnMagicEffectParticles(target->x, target->y, target->z, 171);
 							createParticleRock(target, 78);
 							playSoundEntity(target, 167, 128);
+
+							if ( caster->behavior == &actPlayer )
+							{
+								players[caster->skill[2]]->mechanics.incrementBreakableCounter(Player::PlayerMechanics_t::BreakableEvent::GBREAK_DEFACE, target);
+							}
+
 							if ( multiplayer == SERVER )
 							{
 								serverSpawnMiscParticles(target, PARTICLE_EFFECT_ABILITY_ROCK, 78);

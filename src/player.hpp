@@ -2405,6 +2405,17 @@ public:
 		bool ensembleTakenInitialMP = false;
 		static void ensembleMusicUpdateServer();
 		static void ensembleMusicUpdate();
+		enum class BreakableEvent
+		{
+			GBREAK_COMMON,
+			GBREAK_KILL,
+			GBREAK_DEFACE,
+			GBREAK_DEGRADE
+		};
+		int gremlinBreakableCounter = 0;
+		void incrementBreakableCounter(BreakableEvent eventType, Entity* entity);
+		int getBreakableCounterTier();
+		void updateBreakableCounterServer();
 		Uint32 ensembleDataUpdate = 0;
 		PlayerMechanics_t(Player& p) : player(p)
 		{};

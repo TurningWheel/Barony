@@ -3722,6 +3722,14 @@ void Entity::handleEffects(Stat* myStats)
 				}
 			}
 		}
+
+		if ( myStats->type == MONSTER_G || (myStats->playerRace == RACE_G && myStats->stat_appearance == 0) )
+		{
+			if ( getUID() % 10 * TICKS_PER_SECOND == ticks % 10 * TICKS_PER_SECOND )
+			{
+				players[player]->mechanics.updateBreakableCounterServer();
+			}
+		}
 	}
 
 	if ( myStats->parrying > 0 )
@@ -4920,6 +4928,19 @@ void Entity::handleEffects(Stat* myStats)
 			}
 		}
 	}
+
+	if ( myStats->type == GNOME )
+	{
+		int chance = 25;
+		if ( local_rng.rand() % 100 < chance )
+		{
+			if ( mpMod == 1 )
+			{
+				mpMod += 1;
+			}
+		}
+	}
+
 	if ( int bonusFollowerRegen = getFollowerBonusHPRegen() )
 	{
 		hpMod += abs(2 * bonusFollowerRegen);
@@ -6808,6 +6829,20 @@ void Entity::handleEffects(Stat* myStats)
 						}
 					}
 
+					if ( myStats->type == MONSTER_D )
+					{
+						int extraDmg = 1;
+						int extraDmgRoll = 1;
+						if ( !myStats->helmet && myStats->getEffectActive(EFF_GROWTH) > 1 )
+						{
+							int bonus = std::min(3, myStats->getEffectActive(EFF_GROWTH) - 1);
+							extraDmgRoll += bonus;
+						}
+						damage -= (extraDmg + local_rng.rand() % extraDmgRoll);
+						int damageCap = -5 + local_rng.rand() % 2; // -4 to -5, as we're pushing average up
+						damage = std::max(damageCap, damage); // set a cap
+					}
+
 					real_t fireMultiplier = 1.0;
 					if ( myStats->helmet && myStats->helmet->type == HAT_WARM && local_rng.rand() % 4 == 0 )
 					{
@@ -8154,6 +8189,7 @@ Sint32 statGetDEX(Stat* entitystats, Entity* my)
 	{
 		DEX += 4;
 	}
+
 	if ( entitystats->getEffectActive(EFF_DRUNK) )
 	{
 		switch ( entitystats->type )
@@ -10398,6 +10434,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 				else if ( bat || (hitstats && (hitstats->getEffectActive(EFF_AGILITY) 
 					|| hit.entity->mistFormDodge(true, this)
 					|| (hitstats->getEffectActive(EFF_MAGIC_GREASE) && hitstats->type == MONSTER_G)
+					|| (hitstats && hitstats->type == MONSTER_D
+						&& hit.entity->behavior == &actPlayer && hitstats->sex == FEMALE)
 					|| hitstats->getEffectActive(EFF_ENSEMBLE_LUTE))) || myStats->getEffectActive(EFF_BLIND) )
 				{
 					Sint32 previousMonsterState = hit.entity->monsterState;
@@ -10438,6 +10476,20 @@ void Entity::attack(int pose, int charge, Entity* target)
 					else if ( backstab )
 					{
 						miss = false;
+
+						if ( hitstats->type == MONSTER_D && hitstats->sex == FEMALE && hit.entity->behavior == &actPlayer )
+						{
+							int baseChance = 5;
+							miss = local_rng.rand() % 100 < baseChance;
+						}
+
+						if ( myStats->weapon )
+						{
+							if ( myStats->weapon->type == ARTIFACT_SPEAR && !shapeshifted )
+							{
+								miss = false;
+							}
+						}
 					}
 					else
 					{
@@ -10453,6 +10505,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 						if ( hitstats && hitstats->getEffectActive(EFF_MAGIC_GREASE) && hitstats->type == MONSTER_G )
 						{
 							baseChance = std::max(baseChance, 20);
+						}
+						if ( hitstats && hitstats->type == MONSTER_D 
+							&& hit.entity->behavior == &actPlayer && hitstats->sex == FEMALE )
+						{
+							baseChance = std::max(baseChance, 5);
 						}
 						if ( hitstats && hitstats->getEnsembleEffectBonus(Stat::ENSEMBLE_LUTE_TIER) > 0.001 )
 						{
@@ -10521,6 +10578,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 							if ( miss )
 							{
 								messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, makeColorRGB(0, 255, 0), Language::get(6286));
+								if ( hitstats->type == MONSTER_D )
+								{
+									hit.entity->playerShakeGrowthHelmet();
+								}
 							}
 							else if ( guard )
 							{
@@ -10935,6 +10996,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 				int axe = 0;
 				int damage = 1;
 				int weaponskill = -1;
+
 				if ( myStats->weapon && !shapeshifted )
 				{
 					weaponskill = getWeaponSkill(myStats->weapon);
@@ -10993,6 +11055,16 @@ void Entity::attack(int pose, int charge, Entity* target)
 						axe = std::min(axe, 9);
 					}
 				}
+
+				if ( myStats->type == MONSTER_G )
+				{
+					axe += 1;
+					if ( this->behavior == &actPlayer )
+					{
+						axe += 1 * players[this->skill[2]]->mechanics.getBreakableCounterTier();
+					}
+				}
+
 				if ( pose == PLAYER_POSE_GOLEM_SMASH )
 				{
 					if ( hit.entity->behavior == &actDoor || hit.entity->behavior == &::actFurniture )
@@ -11184,6 +11256,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 							default:
 								break;
 						}
+					}
+
+					if ( behavior == &actPlayer )
+					{
+						players[this->skill[2]]->mechanics.incrementBreakableCounter(Player::PlayerMechanics_t::BreakableEvent::GBREAK_COMMON, hit.entity);
 					}
 				}
 				if ( hit.entity->behavior == &actDoor || hit.entity->behavior == &::actIronDoor )
@@ -11656,6 +11733,15 @@ void Entity::attack(int pose, int charge, Entity* target)
 					else
 					{
 						damage = std::max(0, damage);
+					}
+
+					if ( myStats->type == MONSTER_G )
+					{
+						damage++;
+						if ( this->behavior == &actPlayer )
+						{
+							damage += 1 * players[this->skill[2]]->mechanics.getBreakableCounterTier();
+						}
 					}
 
 					if ( weaponskill == PRO_AXE )
@@ -12565,6 +12651,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						{
 							if ( player >= 0 && hit.entity->behavior == &actMonster )
 							{
+								players[player]->mechanics.incrementBreakableCounter(Player::PlayerMechanics_t::BreakableEvent::GBREAK_DEGRADE, hit.entity);
 								steamStatisticUpdateClient(player, STEAM_STAT_UNSTOPPABLE_FORCE, STEAM_STAT_INT, 1);
 								if ( armornum == 4 && hitstats->type == BUGBEAR 
 									&& (hitstats->defending || hit.entity->monsterAttack == MONSTER_POSE_BUGBEAR_SHIELD) )
@@ -12668,13 +12755,25 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 
 					if ( (hitstats->getEffectActive(EFF_WEBBED) || hitstats->getEffectActive(EFF_MAGIC_GREASE) 
-						|| pose == PLAYER_POSE_GOLEM_SMASH)
+						|| pose == PLAYER_POSE_GOLEM_SMASH 
+						|| hit.entity->myconidReboundOnHit(this) )
 						&& !hitstats->getEffectActive(EFF_KNOCKBACK) && hit.entity->setEffect(EFF_KNOCKBACK, true, 30, false) )
 					{
 						real_t baseMultiplier = 0.7;
+						knockbackInflicted = true;
 						if ( pose == PLAYER_POSE_GOLEM_SMASH )
 						{
 							baseMultiplier = 0.9;
+						}
+						else if ( (hitstats->getEffectActive(EFF_WEBBED) || hitstats->getEffectActive(EFF_MAGIC_GREASE)) )
+						{
+							baseMultiplier = 0.7;
+						}
+						else if ( hit.entity->myconidReboundOnHit(this) )
+						{
+							baseMultiplier = 0.2 + (hitstats->getEffectActive(EFF_GROWTH) - 1) * 0.25;
+							knockbackInflicted = false; // hide message
+							hit.entity->playerShakeGrowthHelmet();
 						}
 						real_t pushbackMultiplier = baseMultiplier;
 						if ( !hit.entity->isMobile() )
@@ -12722,7 +12821,6 @@ void Entity::attack(int pose, int charge, Entity* target)
 								hit.entity->monsterKnockbackTangentDir = tangent;
 							}
 						}
-						knockbackInflicted = true;
 					}
 
 					// player weapon skills
@@ -14804,7 +14902,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 									{
 										this->modMP(1 + local_rng.rand() % 2);
 										Uint32 color = makeColorRGB(0, 255, 0);
-										this->setEffect(EFF_MP_REGEN, true, 250, true);
+										this->setEffect(EFF_MP_REGEN, true, std::max(myStats->EFFECTS_TIMERS[EFF_MP_REGEN], 10 * TICKS_PER_SECOND), false);
 										if ( behavior == &actPlayer )
 										{
 											messagePlayerColor(player, MESSAGE_HINT, color, Language::get(3753));
@@ -15483,10 +15581,12 @@ int AC(Stat* stat)
 	}
 
 	Entity* playerEntity = nullptr;
+	int player = -1;
 	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
 		if ( stat && stats[i] == stat )
 		{
+			player = i;
 			if ( players[i] && players[i]->entity )
 			{
 				playerEntity = players[i]->entity;
@@ -15558,6 +15658,15 @@ int AC(Stat* stat)
 			{
 				return armor; // shapeshifted players do not benefit from shield defense/proficiency.
 			}
+		}
+	}
+
+	if ( stat->type == MONSTER_M && player >= 0 )
+	{
+		if ( !stat->helmet && stat->getEffectActive(EFF_GROWTH) > 1 )
+		{
+			int bonus = std::min(3, stat->getEffectActive(EFF_GROWTH) - 1);
+			armor += bonus;
 		}
 	}
 
@@ -16261,6 +16370,11 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 		Compendium_t::Events_t::eventUpdateMonster(src->skill[2], Compendium_t::CPDM_KILLED_BY, this, 1);
 	}
 
+	if ( this->behavior == &actPlayer && root )
+	{
+		players[this->skill[2]]->mechanics.incrementBreakableCounter(Player::PlayerMechanics_t::BreakableEvent::GBREAK_KILL, src);
+	}
+
 	if ( src->behavior == &actMonster 
 		&& (src->monsterAllySummonRank != 0
 			|| srcStats->type == REVENANT_SKULL
@@ -16531,7 +16645,7 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 									{
 										int oldGain = gain;
 										gain *= inspirationMult;
-										if ( ((followerStats->EXP + gain) >= 100) && ((followerStats->EXP + (xpGain * numshares)) < 100) )
+										if ( ((followerStats->EXP + gain) >= 100) && ((followerStats->EXP + (oldGain)) < 100) )
 										{
 											// inspiration caused us to level
 											steamAchievementEntity(this, "BARONY_ACH_BY_EXAMPLE");
@@ -16551,7 +16665,7 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 									{
 										int oldGain = gain;
 										gain *= inspirationMult;
-										if ( ((followerStats->EXP + gain) >= 100) && ((followerStats->EXP + xpGain) < 100) )
+										if ( ((followerStats->EXP + gain) >= 100) && ((followerStats->EXP + oldGain) < 100) )
 										{
 											// inspiration caused us to level
 											steamAchievementEntity(this, "BARONY_ACH_BY_EXAMPLE");
@@ -17407,7 +17521,7 @@ bool Entity::checkEnemy(Entity* your)
 			{
 				result = swornenemies[HUMAN][yourStats->type];
 				if ( (yourStats->type == HUMAN || yourStats->type == SHOPKEEPER) 
-					&& !(myStats->type == AUTOMATON || myStats->type == MONSTER_D || myStats->type == MONSTER_M) )
+					&& !(myStats->type == AUTOMATON || myStats->type == MONSTER_D || myStats->type == MONSTER_M || myStats->type == MONSTER_S) )
 				{
 					// enemies.
 					result = true;
@@ -17440,6 +17554,10 @@ bool Entity::checkEnemy(Entity* your)
 							{
 								result = false;
 							}
+							if ( yourStats->type == GNOME )
+							{
+								result = false;
+							}
 							break;
 						case CREATURE_IMP:
 							if ( yourStats->type == CREATURE_IMP )
@@ -17449,6 +17567,10 @@ bool Entity::checkEnemy(Entity* your)
 							break;
 						case GOBLIN:
 							if ( yourStats->type == GOBLIN )
+							{
+								result = false;
+							}
+							if ( yourStats->type == MONSTER_G )
 							{
 								result = false;
 							}
@@ -17484,6 +17606,52 @@ bool Entity::checkEnemy(Entity* your)
 								result = false;
 							}
 							break;
+						case MONSTER_M:
+							if ( yourStats->type == MONSTER_M )
+							{
+								result = false;
+							}
+							if ( yourStats->type == AUTOMATON )
+							{
+								result = true;
+							}
+							break;
+						case MONSTER_D:
+							if ( yourStats->type == MONSTER_D )
+							{
+								result = false;
+							}
+							if ( yourStats->type == AUTOMATON )
+							{
+								result = true;
+							}
+							break;
+						case MONSTER_S:
+							if ( yourStats->type == MONSTER_S )
+							{
+								result = false;
+							}
+							break;
+						case MONSTER_G:
+							if ( yourStats->type == MONSTER_G )
+							{
+								result = false;
+							}
+							if ( yourStats->type == GOBLIN )
+							{
+								result = false;
+							}
+							if ( yourStats->type == AUTOMATON )
+							{
+								result = true;
+							}
+							break;
+						case GNOME:
+							if ( yourStats->type == TROLL || yourStats->type == GNOME )
+							{
+								result = false;
+							}
+							break;
 						default:
 							break;
 					}
@@ -17493,7 +17661,7 @@ bool Entity::checkEnemy(Entity* your)
 			{
 				result = swornenemies[myStats->type][HUMAN];
 				if ( (myStats->type == HUMAN || myStats->type == SHOPKEEPER) && 
-					!(yourStats->type == AUTOMATON || yourStats->type == MONSTER_D || yourStats->type == MONSTER_M) )
+					!(yourStats->type == AUTOMATON || yourStats->type == MONSTER_D || yourStats->type == MONSTER_M || yourStats->type == MONSTER_S) )
 				{
 					// enemies.
 					result = true;
@@ -17526,6 +17694,10 @@ bool Entity::checkEnemy(Entity* your)
 							{
 								result = false;
 							}
+							if ( myStats->type == GNOME )
+							{
+								result = false;
+							}
 							break;
 						case CREATURE_IMP:
 							if ( myStats->type == CREATURE_IMP )
@@ -17535,6 +17707,10 @@ bool Entity::checkEnemy(Entity* your)
 							break;
 						case GOBLIN:
 							if ( myStats->type == GOBLIN )
+							{
+								result = false;
+							}
+							if ( myStats->type == MONSTER_G )
 							{
 								result = false;
 							}
@@ -17567,6 +17743,52 @@ bool Entity::checkEnemy(Entity* your)
 							break;
 						case AUTOMATON:
 							if ( myStats->type == INCUBUS || myStats->type == SUCCUBUS )
+							{
+								result = false;
+							}
+							break;
+						case MONSTER_M:
+							if ( myStats->type == MONSTER_M )
+							{
+								result = false;
+							}
+							if ( myStats->type == AUTOMATON )
+							{
+								result = true;
+							}
+							break;
+						case MONSTER_D:
+							if ( myStats->type == MONSTER_D )
+							{
+								result = false;
+							}
+							if ( myStats->type == AUTOMATON )
+							{
+								result = true;
+							}
+							break;
+						case MONSTER_S:
+							if ( myStats->type == MONSTER_S )
+							{
+								result = false;
+							}
+							break;
+						case MONSTER_G:
+							if ( myStats->type == MONSTER_G )
+							{
+								result = false;
+							}
+							if ( myStats->type == GOBLIN )
+							{
+								result = false;
+							}
+							if ( myStats->type == AUTOMATON )
+							{
+								result = true;
+							}
+							break;
+						case GNOME:
+							if ( myStats->type == TROLL || myStats->type == GNOME )
 							{
 								result = false;
 							}
@@ -17895,7 +18117,7 @@ bool Entity::checkFriend(Entity* your)
 			{
 				result = monsterally[HUMAN][yourStats->type];
 				if ( (yourStats->type == HUMAN || yourStats->type == SHOPKEEPER) 
-					&& !(myStats->type == AUTOMATON || myStats->type == MONSTER_D || myStats->type == MONSTER_M) )
+					&& !(myStats->type == AUTOMATON || myStats->type == MONSTER_D || myStats->type == MONSTER_M || myStats->type == MONSTER_S) )
 				{
 					result = false;
 				}
@@ -17976,6 +18198,42 @@ bool Entity::checkFriend(Entity* your)
 								result = true;
 							}
 							break;
+						case MONSTER_M:
+							if ( yourStats->type == MONSTER_M )
+							{
+								result = true;
+							}
+							if ( yourStats->type == AUTOMATON )
+							{
+								result = false;
+							}
+							break;
+						case MONSTER_D:
+							if ( yourStats->type == MONSTER_D )
+							{
+								result = true;
+							}
+							if ( yourStats->type == AUTOMATON )
+							{
+								result = false;
+							}
+							break;
+						case MONSTER_S:
+							if ( yourStats->type == MONSTER_S )
+							{
+								result = true;
+							}
+							break;
+						case MONSTER_G:
+							if ( yourStats->type == MONSTER_G )
+							{
+								result = true;
+							}
+							if ( yourStats->type == AUTOMATON )
+							{
+								result = false;
+							}
+							break;
 						default:
 							break;
 					}
@@ -17985,7 +18243,7 @@ bool Entity::checkFriend(Entity* your)
 			{
 				result = monsterally[myStats->type][HUMAN];
 				if ( (myStats->type == HUMAN || myStats->type == SHOPKEEPER)
-					&& !(yourStats->type == AUTOMATON || yourStats->type == MONSTER_D || yourStats->type == MONSTER_M) )
+					&& !(yourStats->type == AUTOMATON || yourStats->type == MONSTER_D || yourStats->type == MONSTER_M || yourStats->type == MONSTER_S) )
 				{
 					result = false;
 				}
@@ -18064,6 +18322,42 @@ bool Entity::checkFriend(Entity* your)
 							else if ( myStats->type == HUMAN )
 							{
 								result = true;
+							}
+							break;
+						case MONSTER_M:
+							if ( myStats->type == MONSTER_M )
+							{
+								result = true;
+							}
+							if ( myStats->type == AUTOMATON )
+							{
+								result = false;
+							}
+							break;
+						case MONSTER_D:
+							if ( myStats->type == MONSTER_D )
+							{
+								result = true;
+							}
+							if ( myStats->type == AUTOMATON )
+							{
+								result = false;
+							}
+							break;
+						case MONSTER_S:
+							if ( myStats->type == MONSTER_S )
+							{
+								result = true;
+							}
+							break;
+						case MONSTER_G:
+							if ( myStats->type == MONSTER_G )
+							{
+								result = true;
+							}
+							if ( myStats->type == AUTOMATON )
+							{
+								result = false;
 							}
 							break;
 						default:
@@ -24224,6 +24518,49 @@ void Entity::playerStatIncrease(int playerClass, int chosenStats[3])
 				statWeights[STAT_INT] = 0;
 			}
 		}
+		if ( behavior == &actPlayer )
+		{
+			if ( stat->type == MONSTER_M )
+			{
+				for ( int i = 0; i < NUMSTATS; ++i )
+				{
+					if ( i != STAT_DEX )
+					{
+						statWeights[i] *= 3;
+					}
+				}
+			}
+			if ( stat->type == GNOME )
+			{
+				for ( int i = 0; i < NUMSTATS; ++i )
+				{
+					if ( i != STAT_STR )
+					{
+						statWeights[i] *= 3;
+					}
+				}
+			}
+			if ( stat->type == MONSTER_G )
+			{
+				for ( int i = 0; i < NUMSTATS; ++i )
+				{
+					if ( i != STAT_CON )
+					{
+						statWeights[i] *= 3;
+					}
+				}
+			}
+			if ( stat->type == MONSTER_D )
+			{
+				for ( int i = 0; i < NUMSTATS; ++i )
+				{
+					if ( i != STAT_CHR )
+					{
+						statWeights[i] *= 3;
+					}
+				}
+			}
+		}
 	}
 	chosenStats[0] = local_rng.rand() % 6; // get first stat randomly.
 	statWeights[chosenStats[0]] = 0; // remove the chance of the local stat vector.
@@ -24676,6 +25013,20 @@ int Entity::getManaRegenInterval(Entity* my, Stat& myStats, bool isPlayer, bool 
 		if ( player >= 0 )
 		{
 			real_t regenPerMinute = 60 * TICKS_PER_SECOND / (real_t)(regenTime);
+
+			if ( !excludeItemsEffectsBonus )
+			{
+				if ( stats[player]->type == MONSTER_D )
+				{
+					int bonus = 0;
+					if ( !stats[player]->helmet && stats[player]->getEffectActive(EFF_GROWTH) > 1 )
+					{
+						bonus = std::min(3, stats[player]->getEffectActive(EFF_GROWTH) - 1);
+					}
+					regenPerMinute *= 1.0 + std::max(0, (bonus)) * 0.1;
+				}
+			}
+
 			if ( manaring > 0 )
 			{
 				regenPerMinute *= (abs(manaring) + 1);
@@ -28866,6 +29217,18 @@ real_t Entity::getDamageTableMultiplier(Entity* my, Stat& myStats, DamageTableTy
 		}
 	}
 
+	if ( damageType != DAMAGE_TABLE_MAGIC && damageType != DAMAGE_TABLE_RANGED )
+	{
+		if ( myStats.type == MONSTER_M )
+		{
+			if ( !myStats.helmet && myStats.getEffectActive(EFF_GROWTH) > 1 )
+			{
+				int bonus = std::min(3, myStats.getEffectActive(EFF_GROWTH) - 1);
+				allBonuses.push_back(-0.05 * bonus);
+			}
+		}
+	}
+
 	allBonuses.push_back(-myStats.getEnsembleEffectBonus(Stat::ENSEMBLE_LYRE_TIER) / 100.0);
 
 	if ( myStats.cloak && myStats.cloak->type == CLOAK_GUARDIAN )
@@ -30064,6 +30427,34 @@ bool Entity::degradeAmuletProc(Stat* myStats, ItemType type)
 				}
 				return true;
 			}
+		}
+	}
+
+	return false;
+}
+
+bool Entity::myconidReboundOnHit(Entity* attacker)
+{
+	if ( !attacker )
+	{
+		return false;
+	}
+	Stat* myStats = getStats();
+	if ( !myStats ) { return false; }
+	if ( behavior == &actPlayer
+		&& myStats->type == MONSTER_M
+		&& !myStats->helmet
+		&& myStats->sex == MALE
+		&& myStats->getEffectActive(EFF_GROWTH) > 1 )
+	{
+		if ( !isMobile() )
+		{
+			return true;
+		}
+		real_t yawDiff = this->yawDifferenceFromEntity(attacker);
+		if ( yawDiff >= 0 && yawDiff < 4 * PI / 5 )
+		{
+			return true;
 		}
 	}
 

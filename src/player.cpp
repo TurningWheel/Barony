@@ -3196,6 +3196,7 @@ void Player::init() // for use on new/restart game, UI related
 	mechanics.ensembleRequireRecast = false;
 	mechanics.ensembleTakenInitialMP = false;
 	mechanics.ensembleDataUpdate = 0;
+	mechanics.gremlinBreakableCounter = 0;
 
 	mechanics.fociDarkChargeTime = 0;
 	mechanics.fociHolyChargeTime = 0;
@@ -3226,6 +3227,8 @@ void Player::cleanUpOnEntityRemoval()
 
 	mechanics.pendingDucks.clear();
 	mechanics.numFishingCaught = 0;
+
+	mechanics.gremlinBreakableCounter = 0;
 }
 
 const bool Player::isLocalPlayer() const
@@ -3334,6 +3337,22 @@ bool monsterIsFriendlyForTooltip(const int player, Entity& entity)
 		{
 			return true;
 		}
+	}
+	else if ( targetEntityType == HUMAN && (playerRace == MONSTER_M || playerRace == MONSTER_D || playerRace == MONSTER_S) )
+	{
+		return true;
+	}
+	else if ( targetEntityType == GOBLIN && (playerRace == MONSTER_G) )
+	{
+		return true;
+	}
+	else if ( targetEntityType == MONSTER_G && (playerRace == GOBLIN) )
+	{
+		return true;
+	}
+	else if ( targetEntityType == TROLL && (playerRace == GNOME) )
+	{
+		return true;
 	}
 	if ( targetEntityType != NOTHING )
 	{
@@ -8192,4 +8211,103 @@ void Player::PlayerMechanics_t::ensembleMusicUpdate()
 		ensembleSounds.updatePlayingChannelVolumes();
 	}
 #endif
+}
+
+int Player::PlayerMechanics_t::getBreakableCounterTier()
+{
+	if ( stats[player.playernum]->type == MONSTER_G )
+	{
+		if ( gremlinBreakableCounter >= 50 )
+		{
+			return 4;
+		}
+		else if ( gremlinBreakableCounter >= 30 )
+		{
+			return 3;
+		}
+		else if ( gremlinBreakableCounter >= 20 )
+		{
+			return 2;
+		}
+		else if ( gremlinBreakableCounter >= 10 )
+		{
+			return 1;
+		}
+		else if ( gremlinBreakableCounter > 0 )
+		{
+			return 0;
+		}
+	}
+
+	return 0;
+}
+
+void Player::PlayerMechanics_t::incrementBreakableCounter(Player::PlayerMechanics_t::BreakableEvent eventType, Entity* entity)
+{
+	if ( stats[player.playernum]->type == MONSTER_G )
+	{
+		int amount = 0;
+		if ( eventType == BreakableEvent::GBREAK_COMMON )
+		{
+			amount = 1;
+			if ( entity && entity->behavior == &actChest )
+			{
+				amount = 3;
+			}
+		}
+		else if ( eventType == BreakableEvent::GBREAK_DEGRADE )
+		{
+			amount += 3;
+		}
+		else if ( eventType == BreakableEvent::GBREAK_KILL )
+		{
+			if ( entity && entity->behavior == &actMonster && players[player.playernum]->entity )
+			{
+				if ( Stat* targetStats = entity->getStats() )
+				{
+					if ( targetStats->type == CRYSTALGOLEM
+						|| targetStats->type == AUTOMATON
+						|| targetStats->type == MINIMIMIC
+						|| targetStats->type == MIMIC
+						|| monsterIsImmobileTurret(entity, targetStats) )
+					{
+						amount = 3;
+					}
+				}
+			}
+		}
+		else if ( eventType == BreakableEvent::GBREAK_DEFACE )
+		{
+			amount += 5;
+		}
+		int prevTier = getBreakableCounterTier();
+		gremlinBreakableCounter += amount;
+		gremlinBreakableCounter = std::min(50, gremlinBreakableCounter);
+		if ( getBreakableCounterTier() > prevTier )
+		{
+			if ( player.entity )
+			{
+				player.entity->modMP(getBreakableCounterTier() + local_rng.rand() % 2);
+				int duration = (5 + (getBreakableCounterTier() * 5)) * TICKS_PER_SECOND;
+				player.entity->setEffect(EFF_MP_REGEN, true, stats[player.playernum]->EFFECTS_TIMERS[EFF_MP_REGEN] + duration, false);
+				messagePlayerColor(player.playernum, MESSAGE_HINT, makeColorRGB(0, 255, 0), Language::get(6886));
+				playSoundEntity(player.entity, 168, 128);
+			}
+			updateBreakableCounterServer();
+		}
+	}
+}
+
+void Player::PlayerMechanics_t::updateBreakableCounterServer()
+{
+	if ( multiplayer == SERVER && player.playernum > 0 && !player.isLocalPlayer() && !client_disconnected[player.playernum] )
+	{
+		int i = player.playernum;
+		strcpy((char*)net_packet->data, "GBRK");
+		net_packet->data[4] = std::min(255, gremlinBreakableCounter);
+		net_packet->len = 5;
+		net_packet->address.host = net_clients[i - 1].host;
+		net_packet->address.port = net_clients[i - 1].port;
+		sendPacketSafe(net_sock, -1, net_packet, i - 1);
+	}
 }

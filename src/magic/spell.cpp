@@ -913,11 +913,15 @@ real_t getBonusFromCasterOfSpellElement(Entity* caster, Stat* casterStats, spell
 			percentMP = (100 - percentMP) / 10;
 			bonus += 0.5 * percentMP / 10.0;
 		}
-		if ( casterStats->getEffectActive(EFF_BASTION_ROOTS) )
+		if ( casterStats->type == MONSTER_D )
 		{
-			if ( casterStats->getEffectActive(EFF_GROWTH) >= 2 )
+			if ( !casterStats->helmet && casterStats->getEffectActive(EFF_GROWTH) > 1 )
 			{
 				bonus += (casterStats->getEffectActive(EFF_GROWTH) - 1) * 0.1;
+				if ( casterStats->getEffectActive(EFF_BASTION_ROOTS) )
+				{
+					bonus += (casterStats->getEffectActive(EFF_GROWTH) - 1) * 0.1;
+				}
 			}
 		}
 		bonus += (casterStats->getEnsembleEffectBonus(Stat::ENSEMBLE_LUTE_EFF_1)) / 100.0;

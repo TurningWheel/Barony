@@ -1801,43 +1801,42 @@ void earthElementalAnimate(Entity* my, Stat* myStats, double dist)
 		{
 			my->setEffect(EFF_STUNNED, true, -1, false);
 		}
+		if ( keystatus[SDLK_g] )
+		{
+			keystatus[SDLK_g] = 0;
+			//MONSTER_ATTACK = mothGetAttackPose(my, MONSTER_POSE_MELEE_WINDUP1);
+			MONSTER_ATTACK = MONSTER_POSE_MELEE_WINDUP1;// mothGetAttackPose(my, MONSTER_POSE_MAGIC_WINDUP1);
+			MONSTER_ATTACKTIME = 0;
+		}
+		if ( keystatus[SDLK_h] )
+		{
+			keystatus[SDLK_h] = 0;
+			//MONSTER_ATTACK = mothGetAttackPose(my, MONSTER_POSE_MELEE_WINDUP1);
+			MONSTER_ATTACK = MONSTER_POSE_MELEE_WINDUP3;// mothGetAttackPose(my, MONSTER_POSE_MAGIC_WINDUP1);
+			MONSTER_ATTACKTIME = 0;
+		}
+		if ( keystatus[SDLK_n] )
+		{
+			keystatus[SDLK_n] = 0;
+			//MONSTER_ATTACK = mothGetAttackPose(my, MONSTER_POSE_MELEE_WINDUP1);
+			MONSTER_ATTACK = MONSTER_POSE_RANGED_WINDUP1;// mothGetAttackPose(my, MONSTER_POSE_MAGIC_WINDUP1);
+			MONSTER_ATTACKTIME = 0;
+		}
+		if ( keystatus[SDLK_y] )
+		{
+			keystatus[SDLK_y] = 0;
+			//MONSTER_ATTACK = mothGetAttackPose(my, MONSTER_POSE_MELEE_WINDUP1);
+			MONSTER_ATTACK = MONSTER_POSE_MELEE_WINDUP2;// mothGetAttackPose(my, MONSTER_POSE_MAGIC_WINDUP1);
+			MONSTER_ATTACKTIME = 0;
+		}
+		//	if ( keystatus[SDLK_h] )
+		//	{
+		//		keystatus[SDLK_h] = 0;
+		//		myStats->setEffectValueUnsafe(EFF_STUNNED, myStats->getEffectActive(EFF_STUNNED) ? 0 : 1);
+		//		myStats->EFFECTS_TIMERS[EFF_STUNNED] = myStats->getEffectActive(EFF_STUNNED) ? -1 : 0;
+		//	}
+		//}
 	}
-	if ( keystatus[SDLK_g] )
-	{
-		keystatus[SDLK_g] = 0;
-		//MONSTER_ATTACK = mothGetAttackPose(my, MONSTER_POSE_MELEE_WINDUP1);
-		MONSTER_ATTACK = MONSTER_POSE_MELEE_WINDUP1;// mothGetAttackPose(my, MONSTER_POSE_MAGIC_WINDUP1);
-		MONSTER_ATTACKTIME = 0;
-	}
-	if ( keystatus[SDLK_h] )
-	{
-		keystatus[SDLK_h] = 0;
-		//MONSTER_ATTACK = mothGetAttackPose(my, MONSTER_POSE_MELEE_WINDUP1);
-		MONSTER_ATTACK = MONSTER_POSE_MELEE_WINDUP3;// mothGetAttackPose(my, MONSTER_POSE_MAGIC_WINDUP1);
-		MONSTER_ATTACKTIME = 0;
-	}
-	if ( keystatus[SDLK_n] )
-	{
-		keystatus[SDLK_n] = 0;
-		//MONSTER_ATTACK = mothGetAttackPose(my, MONSTER_POSE_MELEE_WINDUP1);
-		MONSTER_ATTACK = MONSTER_POSE_RANGED_WINDUP1;// mothGetAttackPose(my, MONSTER_POSE_MAGIC_WINDUP1);
-		MONSTER_ATTACKTIME = 0;
-	}
-	if ( keystatus[SDLK_y] )
-	{
-		keystatus[SDLK_y] = 0;
-		//MONSTER_ATTACK = mothGetAttackPose(my, MONSTER_POSE_MELEE_WINDUP1);
-		MONSTER_ATTACK = MONSTER_POSE_MELEE_WINDUP2;// mothGetAttackPose(my, MONSTER_POSE_MAGIC_WINDUP1);
-		MONSTER_ATTACKTIME = 0;
-	}
-
-	//	if ( keystatus[SDLK_h] )
-	//	{
-	//		keystatus[SDLK_h] = 0;
-	//		myStats->setEffectValueUnsafe(EFF_STUNNED, myStats->getEffectActive(EFF_STUNNED) ? 0 : 1);
-	//		myStats->EFFECTS_TIMERS[EFF_STUNNED] = myStats->getEffectActive(EFF_STUNNED) ? -1 : 0;
-	//	}
-	//}
 
 	//Move bodyparts
 	Entity* body = nullptr;

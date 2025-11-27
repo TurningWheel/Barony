@@ -1259,6 +1259,7 @@ void actThrown(Entity* my)
 				bool wasPotion = itemCategory(item) == POTION;
 				ItemType itemType = item->type;
 				bool wasConfused = (hitstats && hitstats->getEffectActive(EFF_CONFUSED));
+				Uint32 prevTarget = hit.entity->behavior == &actMonster ? hit.entity->monsterTarget : 0;
 				bool healingPotion = false;
 
 				if ( hitstats )
@@ -1904,7 +1905,7 @@ void actThrown(Entity* my)
 				if ( !wasConfused && hitstats && hitstats->getEffectActive(EFF_CONFUSED) && hit.entity->behavior == &actMonster && parent )
 				{
 					doAlert = false;
-					if ( hit.entity->monsterTarget == parent->getUID() )
+					if ( hit.entity->monsterTarget == parent->getUID() || prevTarget == parent->getUID() )
 					{
 						hit.entity->monsterReleaseAttackTarget();
 					}

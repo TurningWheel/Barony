@@ -726,6 +726,7 @@ bool Entity::collisionProjectileMiss(Entity* parent, Entity* projectile)
 			if ( myStats->type == BAT_SMALL || myStats->getEffectActive(EFF_AGILITY) || myStats->getEffectActive(EFF_ENSEMBLE_LUTE) 
 				|| mistFormDodge(true, parent)
 				|| !monsterIsTargetable(true)
+				|| (myStats->type == MONSTER_D && myStats->sex == FEMALE && behavior == &actPlayer)
 				|| (parent && parent->getStats() && parent->getStats()->getEffectActive(EFF_BLIND)) )
 			{
 				bool miss = false;
@@ -776,6 +777,12 @@ bool Entity::collisionProjectileMiss(Entity* parent, Entity* projectile)
 				else if ( backstab )
 				{
 					miss = false;
+
+					if ( myStats->type == MONSTER_D && myStats->sex == FEMALE && behavior == &actPlayer )
+					{
+						int baseChance = 5;
+						miss = local_rng.rand() % 100 < baseChance;
+					}
 				}
 				else
 				{
@@ -791,6 +798,10 @@ bool Entity::collisionProjectileMiss(Entity* parent, Entity* projectile)
 					if ( myStats->getEnsembleEffectBonus(Stat::ENSEMBLE_LUTE_TIER) > 0.001 )
 					{
 						baseChance = std::max(baseChance, static_cast<int>(myStats->getEnsembleEffectBonus(Stat::ENSEMBLE_LUTE_TIER)));
+					}
+					if ( myStats->type == MONSTER_D && myStats->sex == FEMALE && behavior == &actPlayer )
+					{
+						baseChance = std::max(baseChance, 5);
 					}
 					if ( parent && parent->getStats() && parent->getStats()->getEffectActive(EFF_BLIND) )
 					{
@@ -810,6 +821,7 @@ bool Entity::collisionProjectileMiss(Entity* parent, Entity* projectile)
 						{
 							baseChance -= 20;
 						}
+
 						baseChance = std::max(10, baseChance);
 						miss = local_rng.rand() % 100 < baseChance;
 					}
@@ -831,6 +843,10 @@ bool Entity::collisionProjectileMiss(Entity* parent, Entity* projectile)
 
 						if ( behavior == &actPlayer )
 						{
+							if ( myStats->type == MONSTER_D )
+							{
+								this->playerShakeGrowthHelmet();
+							}
 							if ( projectile->behavior == &actMagicMissile )
 							{
 								messagePlayerColor(skill[2], MESSAGE_COMBAT, makeColorRGB(0, 255, 0), Language::get(6287), Language::get(6295));
@@ -1222,6 +1238,7 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 				|| yourStats->getEffectActive(EFF_AGILITY) 
 				|| yourStats->getEffectActive(EFF_ENSEMBLE_LUTE)
 				|| entity->mistFormDodge(true, parent)
+				|| (yourStats->type == MONSTER_D && yourStats->sex == FEMALE && entity->behavior == &actPlayer)
 				|| (yourStats->getEffectActive(EFF_MAGICIANS_ARMOR) && (my->behavior == &actThrown || my->behavior == &actArrow)))) )
 			{
 				entityDodgeChance = true;

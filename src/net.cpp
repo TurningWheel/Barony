@@ -6274,6 +6274,11 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		int charge = SDLNet_Read16(&net_packet->data[6]);
 		spellcastAnimationUpdateReceive(player, pose, charge);
 	} },
+
+	// update breakable counter
+	{ 'GBRK', []() {
+		players[clientnum]->mechanics.gremlinBreakableCounter = net_packet->data[4];
+	} },
 };
 
 void clientHandlePacket()

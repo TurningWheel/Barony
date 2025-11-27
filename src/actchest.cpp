@@ -2083,6 +2083,11 @@ void Entity::chestHandleDamageMagic(int damage, Entity &magicProjectile, Entity 
 						messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(2520));
 					}
 					Compendium_t::Events_t::eventUpdateWorld(caster->skill[2], Compendium_t::CPDM_CHESTS_DESTROYED, "chest", 1);
+
+					if ( chestOldHealth > 0 )
+					{
+						players[caster->skill[2]]->mechanics.incrementBreakableCounter(Player::PlayerMechanics_t::BreakableEvent::GBREAK_COMMON, this);
+					}
 				}
 				else
 				{

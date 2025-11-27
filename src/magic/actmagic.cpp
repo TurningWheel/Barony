@@ -535,14 +535,17 @@ void actMagiclightBall(Entity* my)
 				if (caster)
 				{
 					//Deduct mana from caster. Cancel spell if not enough mana (simply leave sustained at false).
-					bool deducted = caster->safeConsumeMP(1); //Consume 1 mana every duration / mana seconds
-					if (deducted)
+					if ( spell->magicstaff )
 					{
-						if ( caster->behavior == &actPlayer )
+						lightball_timer = spell->channel_duration;
+					}
+					else if ( caster->safeConsumeMP(1) )
+					{
+						if ( caster->behavior == &actPlayer && !spell->magicstaff )
 						{
 							players[caster->skill[2]]->mechanics.sustainedSpellIncrementMP(1, spell->skillID);
 						}
-						lightball_timer = spell->channel_duration;// / getCostOfSpell(spell);
+						lightball_timer = spell->channel_duration;
 					}
 					else
 					{
@@ -613,7 +616,7 @@ void actMagiclightBall(Entity* my)
 
 			real_t follow_x = parent->x;
 			real_t follow_y = parent->y;
-			if ( spell && (spell->ID == SPELL_LIGHT || spell->ID == SPELL_DEEP_SHADE) )
+			if ( spell && (spell->ID == SPELL_LIGHT || spell->ID == SPELL_DEEP_SHADE) && spell->caster == my->parent )
 			{
 				real_t vel = sqrt(pow(parent->vel_x, 2) + pow(parent->vel_y, 2));
 				//if ( abs(vel) > 0.1 )
@@ -3053,6 +3056,15 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								//		}
 								//	}
 								//}
+								if ( hitstats->type == MONSTER_D )
+								{
+									fireMultiplier += 0.2;
+									if ( !hitstats->helmet && hitstats->getEffectActive(EFF_GROWTH) > 1 )
+									{
+										int bonus = std::min(3, hitstats->getEffectActive(EFF_GROWTH) - 1);
+										fireMultiplier += 0.05;
+									}
+								}
 								magicDmg *= fireMultiplier;
 							}
 						}
@@ -6053,7 +6065,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									{
 										parent->modMP(1 + local_rng.rand() % 2);
 										Uint32 color = makeColorRGB(0, 255, 0);
-										parent->setEffect(EFF_MP_REGEN, true, 250, true);
+										parent->setEffect(EFF_MP_REGEN, true, std::max(casterStats->EFFECTS_TIMERS[EFF_MP_REGEN], 10 * TICKS_PER_SECOND), false);
 										if ( parent->behavior == &actPlayer )
 										{
 											messagePlayerColor(parent->skill[2], MESSAGE_HINT, color, Language::get(3753));

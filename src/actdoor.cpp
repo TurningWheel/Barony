@@ -356,6 +356,11 @@ void Entity::doorHandleDamageMagic(int damage, Entity &magicProjectile, Entity *
 					}
 				}
 				Compendium_t::Events_t::eventUpdateWorld(caster->skill[2], Compendium_t::CPDM_DOOR_BROKEN, "door", 1);
+
+				if ( doorOldHealth > 0 )
+				{
+					players[caster->skill[2]]->mechanics.incrementBreakableCounter(Player::PlayerMechanics_t::BreakableEvent::GBREAK_COMMON, this);
+				}
 			}
 			else if ( damage > 0 )
 			{

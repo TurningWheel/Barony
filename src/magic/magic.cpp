@@ -3618,6 +3618,41 @@ bool applyGenericMagicDamage(Entity* caster, Entity* hitentity, Entity& damageSo
 
 		Sint32 preResistanceDamage = damage;
 		damage *= damageMultiplier;
+
+		if ( spellID == SPELL_ICE_WAVE )
+		{
+			real_t coldMultiplier = 1.0;
+			if ( targetStats && targetStats->helmet && targetStats->helmet->type == HAT_WARM )
+			{
+				if ( !(hitentity->behavior == &actPlayer && hitentity->effectShapeshift != NOTHING) )
+				{
+					if ( targetStats->helmet->beatitude >= 0 || shouldInvertEquipmentBeatitude(targetStats) )
+					{
+						coldMultiplier = std::max(0.0, 0.5 - 0.25 * (abs(targetStats->helmet->beatitude)));
+					}
+					else
+					{
+						coldMultiplier = 0.50;
+					}
+				}
+			}
+			damage *= coldMultiplier;
+		}
+		else if ( spellID == SPELL_FIRE_WALL )
+		{
+			real_t fireMultiplier = 1.0;
+			if ( targetStats && targetStats->type == MONSTER_D )
+			{
+				fireMultiplier += 0.2;
+				if ( !targetStats->helmet && targetStats->getEffectActive(EFF_GROWTH) > 1 )
+				{
+					int bonus = std::min(3, targetStats->getEffectActive(EFF_GROWTH) - 1);
+					fireMultiplier += 0.05;
+				}
+			}
+			damage *= fireMultiplier;
+		}
+
 		hitentity->modHP(-damage);
 		if ( damage > 0 )
 		{
@@ -3982,10 +4017,14 @@ real_t getSpellPropertyFromID(spell_t::SpellBasePropertiesFloat prop, int spellI
 						}
 					}
 				}
+				if ( parent && parent->behavior == &actPlayer )
+				{
+					equipmentModifier += 0.05 * players[parent->skill[2]]->mechanics.getBreakableCounterTier();
+				}
 				real_t bonus = (getBonusFromCasterOfSpellElement(parent, myStats, element, spellID, spell->skillID));
 				real_t modifier = (statGetDEX(myStats, parent) * (1.0 + bonus) * spell->cast_time_mult) / 100.0;
 				result += -modifier;
-				result *= (1 - equipmentModifier);
+				result *= (1 - std::min(1.0, equipmentModifier));
 				if ( spell->cast_time < 1.01 )
 				{
 					result = std::max(0.5, result);
