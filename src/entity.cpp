@@ -5292,7 +5292,7 @@ void Entity::handleEffects(Stat* myStats)
 			}
 		}
 	}
-	else if ( myStats->MP < myStats->MAXMP )
+	else if ( myStats->MP < myStats->MAXMP || (player >= 0 && myStats->playerRace == RACE_S && myStats->stat_appearance == 0) )
 	{
 		int manaRegenInterval = Entity::getManaRegenInterval(this, *myStats, behavior == &actPlayer);
 		// summons don't regen MP. we use this to refund mana to the caster.
@@ -5305,13 +5305,27 @@ void Entity::handleEffects(Stat* myStats)
 		if ( doManaRegen )
 		{
 			this->char_energize++;
+
+			bool mpModDirInvert = false;
+			if ( player >= 0 && myStats->playerRace == RACE_S && myStats->stat_appearance == 0 )
+			{
+				if ( myStats->MP < myStats->MAXMP / 2 )
+				{
+					mpModDirInvert = false;
+				}
+				else if ( myStats->MP > myStats->MAXMP / 2 )
+				{
+					mpModDirInvert = true;
+				}
+			}
+
 			if ( this->char_energize >= manaRegenInterval )
 			{
 				this->char_energize = 0;
 				if ( mpMod > 0 )
 				{
 					Sint32 oldMP = myStats->MP;
-					this->modMP(mpMod);
+					this->modMP(!mpModDirInvert ? mpMod : -mpMod);
 					if ( behavior == &actPlayer )
 					{
 						if ( oldMP < myStats->MP )
@@ -5336,7 +5350,7 @@ void Entity::handleEffects(Stat* myStats)
 						if ( myStats->MP < myStats->MAXMP )
 						{
 							Sint32 oldMP = myStats->MP;
-							this->modMP(mpMod);
+							this->modMP(!mpModDirInvert ? mpMod : -mpMod);
 							if ( behavior == &actPlayer )
 							{
 								if ( oldMP < myStats->MP )
