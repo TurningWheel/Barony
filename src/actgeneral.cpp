@@ -747,10 +747,10 @@ void actColliderMushroomCap(Entity* my)
 		if ( trigger >= 100 )
 		{
 			friendlyFire = 1;
-			if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
+			/*if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
 			{
 				friendlyFire = 0;
-			}
+			}*/
 		}
 		else
 		{
@@ -910,7 +910,7 @@ void actColliderMushroomCap(Entity* my)
 						}
 					}
 				}
-				else if ( my->skill[1] == 0 )
+				else if ( friendlyFire == 0 )
 				{
 					auto& colliderData = EditorEntityData_t::colliderData[parent->colliderDamageTypes];
 					if ( !(effectType == 3 || effectType == 4) &&
@@ -955,6 +955,23 @@ void actColliderMushroomCap(Entity* my)
 							if ( caster == entity )
 							{
 								continue;
+							}
+							if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
+							{
+								if ( caster->checkFriend(entity) && caster->friendlyFireProtection(entity) )
+								{
+									continue;
+								}
+							}
+						}
+						if ( caster && caster->behavior == &actPlayer )
+						{
+							if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
+							{
+								if ( caster->checkFriend(entity) && caster->friendlyFireProtection(entity) )
+								{
+									continue;
+								}
 							}
 						}
 

@@ -631,7 +631,7 @@ void actArrow(Entity* my)
 					if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
 					{
 						// test for friendly fire
-						if ( parent && parent->checkFriend(hit.entity) )
+						if ( parent && parent->checkFriend(hit.entity) && parent->friendlyFireProtection(hit.entity) )
 						{
 							my->removeLightField();
 							list_RemoveNode(my->mynode);

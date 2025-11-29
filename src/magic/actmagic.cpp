@@ -2117,7 +2117,9 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					if ( hit.entity && hitstats )
 					{
 						if ( hitstats->getEffectActive(EFF_MAGICIANS_ARMOR)
-							&& !(!(svFlags & SV_FLAG_FRIENDLYFIRE) && parent && parent->checkFriend(hit.entity)) )
+							&& !(!(svFlags & SV_FLAG_FRIENDLYFIRE) && parent 
+									&& parent->checkFriend(hit.entity) 
+									&& parent->friendlyFireProtection(hit.entity)) )
 						{
 							Uint8 effectStrength = hitstats->getEffectActive(EFF_MAGICIANS_ARMOR);
 							int duration = hitstats->EFFECTS_TIMERS[EFF_MAGICIANS_ARMOR];
@@ -2256,9 +2258,12 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					if ( hit.entity->behavior == &actPlayer )
 					{
 						bool skipMessage = false;
-						if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) && my->actmagicTinkerTrapFriendlyFire == 0 )
+						if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) && my->actmagicTinkerTrapFriendlyFire == 0 && my->actmagicAllowFriendlyFireHit == 0 )
 						{
-							if ( parent && (parent->behavior == &actMonster || parent->behavior == &actPlayer) && parent->checkFriend(hit.entity) )
+							if ( parent 
+								&& (parent->behavior == &actMonster || parent->behavior == &actPlayer) 
+								&& parent->checkFriend(hit.entity)
+								&& parent->friendlyFireProtection(hit.entity) )
 							{
 								skipMessage = true;
 							}
@@ -2621,13 +2626,12 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				// Test for Friendly Fire, if Friendly Fire is OFF, delete the missile
 				if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
 				{
-					if ( !strcmp(element->element_internal_name, spellElement_telePull.element_internal_name)
-						|| !strcmp(element->element_internal_name, spellElement_shadowTag.element_internal_name)
+					if ( my->actmagicAllowFriendlyFireHit == 1
 						|| my->actmagicTinkerTrapFriendlyFire == 1 )
 					{
 						// these spells can hit allies no penalty.
 					}
-					else if ( parent && parent->checkFriend(hit.entity) )
+					else if ( parent && parent->checkFriend(hit.entity) && parent->friendlyFireProtection(hit.entity) )
 					{
 						my->removeLightField();
 						list_RemoveNode(my->mynode);
@@ -10296,9 +10300,11 @@ void actParticleTimer(Entity* my)
 										{
 											if ( caster && caster->getStats() )
 											{
-												if ( svFlags & SV_FLAG_FRIENDLYFIRE )
+												if ( caster == entity ) { continue; }
+
+												//if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
 												{
-													if ( caster->checkFriend(entity) )
+													if ( caster->checkFriend(entity) && caster->friendlyFireProtection(entity) )
 													{
 														continue;
 													}
@@ -10494,6 +10500,7 @@ void actParticleTimer(Entity* my)
 								{
 									continue;
 								}
+
 								Stat* stats = entity->getStats();
 								if ( !stats ) { continue; }
 
@@ -10593,6 +10600,16 @@ void actParticleTimer(Entity* my)
 										continue;
 									}
 								}
+								if ( parent && parent->behavior == &actPlayer )
+								{
+									if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
+									{
+										if ( parent->checkFriend(entity) && parent->friendlyFireProtection(entity) )
+										{
+											continue;
+										}
+									}
+								}
 
 								auto props = getParticleEmitterHitProps(my->getUID(), entity);
 								if ( !props )
@@ -10676,9 +10693,9 @@ void actParticleTimer(Entity* my)
 											{
 												continue;
 											}
-											if ( svFlags & SV_FLAG_FRIENDLYFIRE )
+											//if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
 											{
-												if ( caster->checkFriend(entity) )
+												if ( caster->checkFriend(entity) && caster->friendlyFireProtection(entity) )
 												{
 													continue;
 												}
@@ -10762,7 +10779,7 @@ void actParticleTimer(Entity* my)
 							{
 								if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
 								{
-									if ( parent->checkFriend(entity) )
+									if ( parent->checkFriend(entity) && parent->friendlyFireProtection(entity) )
 									{
 										continue;
 									}
@@ -10875,16 +10892,16 @@ void actParticleTimer(Entity* my)
 								{
 									continue;
 								}
-								if ( entity == target || entity == my )
+								if ( entity == target || entity == my || entity == caster )
 								{
 									continue;
 								}
 								bool mimic = entity->isInertMimic();
 								if ( caster && caster->getStats() )
 								{
-									if ( svFlags & SV_FLAG_FRIENDLYFIRE )
+									//if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
 									{
-										if ( caster->checkFriend(entity) )
+										if ( caster->checkFriend(entity) && caster->friendlyFireProtection(entity) )
 										{
 											continue;
 										}
@@ -11465,9 +11482,26 @@ void actParticleTimer(Entity* my)
 								Stat* stats = entity->getStats();
 								if ( !stats ) { continue; }
 
-								if ( parent == entity || parent->checkFriend(entity) )
+								if ( parent == entity )
 								{
 									continue;
+								}
+								if ( parent && parent->behavior == &actMonster )
+								{
+									if ( parent->checkFriend(entity) )
+									{
+										continue;
+									}
+								}
+								if ( parent && parent->behavior == &actPlayer )
+								{
+									//if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
+									{
+										if ( parent->checkFriend(entity) && parent->friendlyFireProtection(entity) )
+										{
+											continue;
+										}
+									}
 								}
 
 								auto props = getParticleEmitterHitProps(my->getUID(), entity);
@@ -12920,7 +12954,7 @@ bool Entity::magicOrbitingCollision()
 			{
 				continue;
 			}
-			if ( caster && !(svFlags & SV_FLAG_FRIENDLYFIRE) && caster->checkFriend(entity) )
+			if ( caster && !(svFlags & SV_FLAG_FRIENDLYFIRE) && caster->checkFriend(entity) && caster->friendlyFireProtection(entity) )
 			{
 				continue;
 			}
@@ -13888,7 +13922,7 @@ void spawnMagicTower(Entity* parent, real_t x, real_t y, int spellID, Entity* au
 		autoHit = true;
 		if ( parent )
 		{
-			if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) && parent->checkFriend(autoHitTarget) )
+			if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) && parent->checkFriend(autoHitTarget) && parent->friendlyFireProtection(autoHitTarget) )
 			{
 				autoHit = false; // don't hit friendlies
 			}
@@ -15564,6 +15598,16 @@ void actParticleFloorMagic(Entity* my)
 									continue;
 								}
 							}
+							if ( caster && caster->behavior == &actPlayer )
+							{
+								if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
+								{
+									if ( caster->checkFriend(entity) && caster->friendlyFireProtection(entity) )
+									{
+										continue;
+									}
+								}
+							}
 
 							Stat* stats = entity->getStats();
 							if ( stats && entityInsideEntity(my, entity) )
@@ -15681,6 +15725,16 @@ void actParticleFloorMagic(Entity* my)
 									continue;
 								}
 							}
+							if ( caster && caster->behavior == &actPlayer )
+							{
+								if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
+								{
+									if ( caster->checkFriend(entity) && caster->friendlyFireProtection(entity) )
+									{
+										continue;
+									}
+								}
+							}
 
 							Stat* stats = entity->getStats();
 							if ( stats && entityDist(my, entity) <= 16.0 )
@@ -15787,7 +15841,7 @@ void actParticleFloorMagic(Entity* my)
 								{
 									if ( stats )
 									{
-										if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) && caster->checkFriend(entity) )
+										if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) && caster->checkFriend(entity) && caster->friendlyFireProtection(entity) )
 										{
 											++particleEmitterHitPropsTimer->hits;
 											continue;
@@ -15901,8 +15955,26 @@ void actParticleFloorMagic(Entity* my)
 							if ( stats && entityDist(my, entity) < radius * 16.0 + 16.0 )
 							{
 								if ( !entity->monsterIsTargetable() || entity == caster ) { continue; }
-								if ( caster && !caster->checkFriend(entity) )
+								if ( caster )
 								{
+									if ( caster && caster->behavior == &actMonster )
+									{
+										if ( caster->checkFriend(entity) )
+										{
+											continue;
+										}
+									}
+									if ( caster && caster->behavior == &actPlayer )
+									{
+										//if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
+										{
+											if ( caster->checkFriend(entity) && caster->friendlyFireProtection(entity) )
+											{
+												continue;
+											}
+										}
+									}
+
 									// check overlapping roots
 
 									bool found = false;
@@ -16015,6 +16087,16 @@ void actParticleFloorMagic(Entity* my)
 								if ( caster == entity || caster->checkFriend(entity) )
 								{
 									continue;
+								}
+							}
+							if ( caster && caster->behavior == &actPlayer )
+							{
+								if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
+								{
+									if ( caster->checkFriend(entity) && caster->friendlyFireProtection(entity) )
+									{
+										continue;
+									}
 								}
 							}
 							Stat* stats = entity->getStats();
@@ -16676,11 +16758,19 @@ void actParticleWave(Entity* my)
 						{
 							continue;
 						}
-						if ( particleEmitterHitProps->hits >= 3 || (particleEmitterHitProps->hits > 0 && ((ticks - particleEmitterHitProps->tick) < 20)) )
+						if ( particleEmitterHitProps->hits >= 5 || (particleEmitterHitProps->hits > 0 && ((ticks - particleEmitterHitProps->tick) < 20)) )
 						{
 							continue;
 						}
 
+						if ( caster && caster->behavior == &actMonster )
+						{
+							if ( caster == entity || caster->checkFriend(entity) )
+							{
+								continue;
+							}
+						}
+						
 						int damage = getSpellDamageFromID(SPELL_FIRE_WALL, caster, nullptr, my);
 						for ( int i = 0; i < 8; ++i )
 						{
@@ -16724,7 +16814,28 @@ void actParticleWave(Entity* my)
 											{
 												if ( !entity->monsterIsTargetable() ) { continue; }
 
-												if ( applyGenericMagicDamage(caster, entity, caster ? *caster : *my, SPELL_FIRE_WALL, damage, true, true) )
+												bool doKnockback = true;
+												bool doDamage = true;
+
+												if ( particleEmitterHitProps->hits >= 3 )
+												{
+													doDamage = false;
+												}
+
+												if ( caster && caster->behavior == &actPlayer )
+												{
+													if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
+													{
+														if ( caster->checkFriend(entity) && caster->friendlyFireProtection(entity) )
+														{
+															doDamage = false;
+															particleEmitterHitProps->hits++;
+															particleEmitterHitProps->tick = ticks;
+														}
+													}
+												}
+
+												if ( doDamage && applyGenericMagicDamage(caster, entity, caster ? *caster : *my, SPELL_FIRE_WALL, damage, true, true) )
 												{
 													particleEmitterHitProps->hits++;
 													particleEmitterHitProps->tick = ticks;
@@ -16743,40 +16854,40 @@ void actParticleWave(Entity* my)
 															}
 														}
 													}
+												}
 
-													if ( !stats->getEffectActive(EFF_KNOCKBACK)
-														&& !entity->flags[BURNING]
-														&& entity->setEffect(EFF_KNOCKBACK, true, 20, false) )
+												if ( doKnockback && !stats->getEffectActive(EFF_KNOCKBACK)
+													/*&& !entity->flags[BURNING]*/
+													&& entity->setEffect(EFF_KNOCKBACK, true, 20, false) )
+												{
+													real_t tangent2 = atan2(iy - entity->y, ix - entity->x);
+													real_t yawDiff = tangent2 - tangent;
+													while ( yawDiff > PI )
 													{
-														real_t tangent2 = atan2(iy - entity->y, ix - entity->x);
-														real_t yawDiff = tangent2 - tangent;
-														while ( yawDiff > PI )
+														yawDiff -= 2 * PI;
+													}
+													while ( yawDiff <= -PI )
+													{
+														yawDiff += 2 * PI;
+													}
+													real_t pushback = 0.3;
+													if ( entity->behavior == &actPlayer )
+													{
+														entity->monsterKnockbackVelocity = pushback;
+														entity->monsterKnockbackTangentDir = yawDiff >= 0 ? yaw : yaw + PI;
+														if ( !players[entity->skill[2]]->isLocalPlayer() )
 														{
-															yawDiff -= 2 * PI;
+															serverUpdateEntityFSkill(entity, 11);
+															serverUpdateEntityFSkill(entity, 9);
 														}
-														while ( yawDiff <= -PI )
-														{
-															yawDiff += 2 * PI;
-														}
-														real_t pushback = 0.3;
-														if ( entity->behavior == &actPlayer )
-														{
-															entity->monsterKnockbackVelocity = pushback;
-															entity->monsterKnockbackTangentDir = yawDiff >= 0 ? yaw : yaw + PI;
-															if ( !players[entity->skill[2]]->isLocalPlayer() )
-															{
-																serverUpdateEntityFSkill(entity, 11);
-																serverUpdateEntityFSkill(entity, 9);
-															}
-														}
-														else if ( entity->behavior == &actMonster )
-														{
-															entity->vel_x = cos(yawDiff >= 0 ? yaw : yaw + PI) * pushback;
-															entity->vel_y = sin(yawDiff >= 0 ? yaw : yaw + PI) * pushback;
-															entity->monsterKnockbackVelocity = 0.01;
-															entity->monsterKnockbackTangentDir = tangent;
-															entity->monsterKnockbackUID = parentTimer->parent;
-														}
+													}
+													else if ( entity->behavior == &actMonster )
+													{
+														entity->vel_x = cos(yawDiff >= 0 ? yaw : yaw + PI) * pushback;
+														entity->vel_y = sin(yawDiff >= 0 ? yaw : yaw + PI) * pushback;
+														entity->monsterKnockbackVelocity = 0.01;
+														entity->monsterKnockbackTangentDir = tangent;
+														entity->monsterKnockbackUID = parentTimer->parent;
 													}
 												}
 											}
@@ -18367,13 +18478,24 @@ void doSpellExplosionArea(int spellID, Entity* my, Entity* caster, real_t x, rea
 				continue;
 			}
 			bool mimic = entity->isInertMimic();
+
 			if ( caster && caster->getStats() )
 			{
-				if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
+				if ( caster->behavior == &actMonster && !caster->monsterAllyGetPlayerLeader() )
 				{
 					if ( caster->checkFriend(entity) )
 					{
 						continue;
+					}
+				}
+				if ( caster->behavior == &actPlayer )
+				{
+					if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
+					{
+						if ( caster->checkFriend(entity) && caster->friendlyFireProtection(entity) )
+						{
+							continue;
+						}
 					}
 				}
 			}

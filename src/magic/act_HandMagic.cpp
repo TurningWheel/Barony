@@ -1237,6 +1237,28 @@ void actLeftHandMagic(Entity* my)
 			case CREATURE_IMP:
 				my->sprite = 858;
 				break;
+			case MONSTER_D:
+				my->sprite = 2319;
+				break;
+			case MONSTER_M:
+				my->sprite = 2327;
+				break;
+			case MONSTER_G:
+				if ( stats[HANDMAGIC_PLAYERNUM]->sex == FEMALE )
+				{
+					my->sprite = 2323;
+				}
+				else
+				{
+					my->sprite = 2325;
+				}
+				break;
+			case MONSTER_S:
+				my->sprite = 2329;
+				break;
+			case GNOME:
+				my->sprite = 2321;
+				break;
 			default:
 				my->sprite = 656;
 				break;
@@ -1956,6 +1978,28 @@ void actRightHandMagic(Entity* my)
 				break;
 			case CREATURE_IMP:
 				my->sprite = 857;
+				break;
+			case MONSTER_D:
+				my->sprite = 2320;
+				break;
+			case MONSTER_M:
+				my->sprite = 2328;
+				break;
+			case MONSTER_G:
+				if ( stats[HANDMAGIC_PLAYERNUM]->sex == FEMALE )
+				{
+					my->sprite = 2324;
+				}
+				else
+				{
+					my->sprite = 2326;
+				}
+				break;
+			case MONSTER_S:
+				my->sprite = 2330;
+				break;
+			case GNOME:
+				my->sprite = 2322;
 				break;
 			default:
 				my->sprite = 634;

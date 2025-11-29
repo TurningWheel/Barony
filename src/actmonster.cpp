@@ -12456,7 +12456,7 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 								// attack anything except if FF is off + friend.
 								if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
 								{
-									if ( !checkFriend(target) )
+									if ( !(checkFriend(target) && players[playerLeader]->entity->friendlyFireProtection(target)) )
 									{
 										monsterAcquireAttackTarget(*target, MONSTER_STATE_ATTACK);
 										handleNPCInteractDialogue(*myStats, ALLY_EVENT_ATTACK);

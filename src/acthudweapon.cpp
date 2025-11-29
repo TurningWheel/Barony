@@ -299,6 +299,28 @@ void actHudArm(Entity* my)
 			case RAT:
 				my->sprite = 859;
 				break;
+			case MONSTER_D:
+				my->sprite = 2320;
+				break;
+			case MONSTER_M:
+				my->sprite = 2328;
+				break;
+			case MONSTER_G:
+				if ( stats[HUDARM_PLAYERNUM]->sex == FEMALE )
+				{
+					my->sprite = 2324;
+				}
+				else
+				{
+					my->sprite = 2326;
+				}
+				break;
+			case MONSTER_S:
+				my->sprite = 2330;
+				break;
+			case GNOME:
+				my->sprite = 2322;
+				break;
 			default:
 				my->sprite = 634;
 				break;

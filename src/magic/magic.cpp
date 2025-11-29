@@ -222,7 +222,7 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int da
 			if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
 			{
 				// test for friendly fire
-				if ( parent && parent->checkFriend(hit.entity) )
+				if ( parent && parent->checkFriend(hit.entity) && parent->friendlyFireProtection(hit.entity) )
 				{
 					return;
 				}
@@ -435,7 +435,7 @@ void spellEffectPoison(Entity& my, spellElement_t& element, Entity* parent, int 
 			if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
 			{
 				// test for friendly fire
-				if ( parent && parent->checkFriend(hit.entity) )
+				if ( parent && parent->checkFriend(hit.entity) && parent->friendlyFireProtection(hit.entity) )
 				{
 					return;
 				}
@@ -586,7 +586,7 @@ bool spellEffectFear(Entity* my, spellElement_t& element, Entity* forceParent, E
 		if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
 		{
 			// test for friendly fire
-			if ( parent && parent->checkFriend(target) )
+			if ( parent && parent->checkFriend(target) && parent->friendlyFireProtection(target) )
 			{
 				return false;
 			}
@@ -676,7 +676,7 @@ void spellEffectSprayWeb(Entity& my, spellElement_t& element, Entity* parent, in
 			if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
 			{
 				// test for friendly fire
-				if ( parent && parent->checkFriend(hit.entity) )
+				if ( parent && parent->checkFriend(hit.entity) && parent->friendlyFireProtection(hit.entity) )
 				{
 					return;
 				}
@@ -774,7 +774,7 @@ void spellEffectStealWeapon(Entity& my, spellElement_t& element, Entity* parent,
 			if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
 			{
 				// test for friendly fire
-				if ( parent && parent->checkFriend(hit.entity) )
+				if ( parent && parent->checkFriend(hit.entity) && parent->friendlyFireProtection(hit.entity) )
 				{
 					return;
 				}
@@ -941,7 +941,7 @@ void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, i
 			if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
 			{
 				// test for friendly fire
-				if ( parent && parent->checkFriend(hit.entity) )
+				if ( parent && parent->checkFriend(hit.entity) && parent->friendlyFireProtection(hit.entity) )
 				{
 					return;
 				}
@@ -1262,7 +1262,7 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 			if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
 			{
 				// test for friendly fire
-				if ( parent && parent->checkFriend(hit.entity) )
+				if ( parent && parent->checkFriend(hit.entity) && parent->friendlyFireProtection(hit.entity) )
 				{
 					return;
 				}
@@ -2401,14 +2401,14 @@ bool spellEffectTeleportPull(Entity* my, spellElement_t& element, Entity* parent
 			Stat* hitstats = target->getStats();
 			if ( hitstats )
 			{
-				if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
-				{
-					// test for friendly fire
-					if ( parent && parent->checkFriend(target) )
-					{
-						return false;
-					}
-				}
+				//if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
+				//{
+				//	// test for friendly fire
+				//	if ( parent && parent->checkFriend(target) && parent->friendlyFireProtection(target) )
+				//	{
+				//		return false;
+				//	}
+				//}
 			}
 			//playSoundEntity(target, 249, 64);
 

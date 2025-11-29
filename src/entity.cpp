@@ -10395,7 +10395,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					miss = true;
 				}
 				else if ( hitstats && hitstats->getEffectActive(EFF_MAGICIANS_ARMOR)
-					&& !(!(svFlags & SV_FLAG_FRIENDLYFIRE) && checkFriend(hit.entity))  /*dont apply to friendly fire */ )
+					&& !(!(svFlags & SV_FLAG_FRIENDLYFIRE) && checkFriend(hit.entity) && this->friendlyFireProtection(hit.entity))  /*dont apply to friendly fire */ )
 				{
 					guard = true;
 					Uint8 effectStrength = hitstats->getEffectActive(EFF_MAGICIANS_ARMOR);
@@ -10594,7 +10594,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
 							{
 								// test for friendly fire
-								if ( checkFriend(hit.entity) )
+								if ( checkFriend(hit.entity) && this->friendlyFireProtection(hit.entity) )
 								{
 									doHitAlert = false;
 								}
@@ -10643,7 +10643,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 			if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
 			{
 				// test for friendly fire
-				if ( checkFriend(hit.entity) )
+				if ( checkFriend(hit.entity) && this->friendlyFireProtection(hit.entity) )
 				{
 					return;
 				}
@@ -17844,6 +17844,17 @@ bool Entity::checkEnemy(Entity* your)
 	}
 
 	return result;
+}
+
+bool Entity::friendlyFireProtection(Entity* your)
+{
+	if ( !your ) { return false; }
+	if ( behavior == &actPlayer && (your->behavior == &actPlayer || your->monsterAllyGetPlayerLeader()) )
+	{
+		return true;
+	}
+
+	return false;
 }
 
 /*-------------------------------------------------------------------------------
@@ -29246,7 +29257,18 @@ real_t Entity::getDamageTableMultiplier(Entity* my, Stat& myStats, DamageTableTy
 		int resistance = magicResistance ? *magicResistance : Entity::getMagicResistance(&myStats);
 		for ( int i = 0; i < resistance; ++i, allBonuses.push_back(-Entity::magicResistancePerPoint) ) {}
 	}
+
+	bool isPlayer = false;
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		if ( &myStats == stats[i] )
+		{
+			isPlayer = true;
+		}
+	}
+
 	//std::sort(allBonuses.begin(), allBonuses.end());
+
 	real_t multipliedBonuses = 1.0;
 	real_t summedExtraDamage = 0.0;
 	for ( auto val : allBonuses )
@@ -29264,8 +29286,24 @@ real_t Entity::getDamageTableMultiplier(Entity* my, Stat& myStats, DamageTableTy
 			}
 		}
 	}
+	if ( isPlayer && damageType == DAMAGE_TABLE_MAGIC )
+	{
+		Sint32 INT = std::min(90, statGetINT(&myStats, my));
+		if ( INT > 0 )
+		{
+			multipliedBonuses *= 1 - INT / 100.0;
+		}
+	}
+	if ( damageMultiplier > 1.0 )
+	{
+		summedExtraDamage += std::max(0.0, damageMultiplier - 1.0);
+	}
+	else if ( damageMultiplier < 1.0 )
+	{
+		multipliedBonuses *= 1 - std::max(1.0 - damageMultiplier, 0.0);
+	}
 	real_t bonus = summedExtraDamage - (1.0 - floor(100.0 * multipliedBonuses) / 100.0);
-	return std::max(0.1, damageMultiplier + bonus);
+	return std::max(0.1, 1.0 + bonus);
 }
 
 void Entity::createWorldUITooltip()

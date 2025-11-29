@@ -7238,6 +7238,12 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				}
 			}
 
+			if ( missileEntity && (!strcmp(spell->spell_internal_name, spell_telePull.spell_internal_name)
+				|| !strcmp(spell->spell_internal_name, spell_shadowTag.spell_internal_name)) )
+			{
+				missileEntity->actmagicAllowFriendlyFireHit = 1;
+			}
+
 			if ( caster->behavior == &actMonster && missileEntity && !trap )
 			{
 				if ( Stat* casterStats = caster->getStats() )

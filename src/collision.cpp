@@ -632,9 +632,21 @@ bool Entity::collisionProjectileMiss(Entity* parent, Entity* projectile)
 		}
 		if ( Stat* myStats = getStats() )
 		{
+			if ( parent && (parent->behavior == &actPlayer || parent->behavior == &actMonster) )
+			{
+				if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) && (projectile->behavior == &actMagicMissile || projectile->behavior == &actArrow) )
+				{
+					if ( parent->checkFriend(this) && parent->friendlyFireProtection(this) )
+					{
+						projectile->collisionIgnoreTargets.insert(getUID());
+						return true;
+					}
+				}
+			}
+
 			if ( (projectile->behavior == &actThrown || projectile->behavior == &actArrow) 
 				&& myStats->getEffectActive(EFF_MAGICIANS_ARMOR)
-				&& !(!(svFlags & SV_FLAG_FRIENDLYFIRE) && parent && parent->checkFriend(this))  /*dont apply to friendly fire */ )
+				&& !(!(svFlags & SV_FLAG_FRIENDLYFIRE) && parent && parent->checkFriend(this) && parent->friendlyFireProtection(this))  /*dont apply to friendly fire */ )
 			{
 				Uint8 effectStrength = myStats->getEffectActive(EFF_MAGICIANS_ARMOR);
 				int duration = myStats->EFFECTS_TIMERS[EFF_MAGICIANS_ARMOR];
@@ -949,6 +961,7 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 	bool tryReduceCollisionSize = false;
 	bool projectileAttack = false;
 	bool parentDodgeChance = false;
+	bool friendlyFireCheck = false;
 	Entity* parent = nullptr;
 	Stat* parentStats = nullptr;
 	if ( my )
@@ -971,6 +984,19 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 					if ( Stat* tmpStats = parent->getStats() )
 					{
 						parentDodgeChance = tmpStats->getEffectActive(EFF_BLIND);
+
+						if ( parent && parent->behavior == &actPlayer )
+						{
+							if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
+							{
+								if ( !(my->behavior == &actMagicMissile
+									&& (my->actmagicTinkerTrapFriendlyFire == 1 || my->actmagicAllowFriendlyFireHit == 1))
+									&& (my->behavior == &actMagicMissile || my->behavior == &actArrow) )
+								{
+									friendlyFireCheck = true;
+								}
+							}
+						}
 					}
 					if ( my->behavior == &actThrown )
 					{
@@ -1308,6 +1334,13 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 				if ( entityDodgeChance || (projectileAttack && my->collisionIgnoreTargets.size()) )
 				{
 					if ( my->collisionIgnoreTargets.find(entity->getUID()) != my->collisionIgnoreTargets.end() )
+					{
+						continue;
+					}
+				}
+				if ( projectileAttack && friendlyFireCheck )
+				{
+					if ( parent && parent->checkFriend(entity) && parent->friendlyFireProtection(entity) )
 					{
 						continue;
 					}

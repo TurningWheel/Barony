@@ -18041,7 +18041,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			valueSizes[4] = std::make_pair(entryValue, backingFramePos);
 			txtValueBackingFrame->setDisabled(false);
 		}
-		if ( element == SHEET_PER || element == SHEET_DEX || element == SHEET_CHR )
+		if ( element == SHEET_PER || element == SHEET_DEX || element == SHEET_CHR || element == SHEET_INT )
 		{
 			// stat extra number display
 			currentHeight += padyMid;
@@ -18055,6 +18055,10 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			else if ( element == SHEET_PER )
 			{
 				snprintf(buf, sizeof(buf), "%s", getHoverTextString("stat_per_sneaking_bonus").c_str());
+			}
+			else if ( element == SHEET_INT )
+			{
+				snprintf(buf, sizeof(buf), "%s", getHoverTextString("stat_int_res_bonus").c_str());
 			}
 			else if ( element == SHEET_CHR )
 			{
@@ -18106,7 +18110,11 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 				case SHEET_CON:
 					break;
 				case SHEET_INT:
+				{
+					Sint32 INT = std::max(0, std::min(90, statGetINT(stats[player.playernum], players[player.playernum]->entity)));
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_int_res_value_format").c_str(), INT);
 					break;
+				}
 				case SHEET_PER:
 				{
 					const int PER = statGetPER(stats[player.playernum], players[player.playernum]->entity);
@@ -19485,12 +19493,24 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 					break;
 				case SHEET_RES:
 				{
-					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_res_entry_items_bonus").c_str());
-					Sint32 baseResist = 100 * damagetables[stats[player.playernum]->type][DAMAGE_TABLE_MAGIC];
-					baseResist = 100 - baseResist;
-					real_t resistance = 100.0 * Entity::getDamageTableMultiplier(player.entity, *stats[player.playernum], DAMAGE_TABLE_MAGIC);
-					resistance = (100.0 - resistance);
-					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_res_bonus_format").c_str(), (int)resistance - baseResist);
+					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_res_entry_int_bonus").c_str());
+
+					//Sint32 oldStats[NUMSTATS];
+					//characterSheetTooltipSetZeroStat(player.entity, stats[player.playernum], nullptr, oldStats);
+					//real_t resistanceNoINT = 100.0 * Entity::getDamageTableMultiplier(player.entity, *stats[player.playernum], DAMAGE_TABLE_MAGIC);
+					//characterSheetTooltipRestoreStats(stats[player.playernum], nullptr, oldStats);
+
+					//real_t resistance = 100.0 * Entity::getDamageTableMultiplier(player.entity, *stats[player.playernum], DAMAGE_TABLE_MAGIC);
+
+					real_t damageMultiplier = damagetables[stats[player.playernum]->type][DAMAGE_TABLE_MAGIC];
+
+					real_t resistanceFromINT = std::max(0, std::min(90, statGetINT(stats[player.playernum], player.entity)));
+					if ( damageMultiplier < 1.0 )
+					{
+						resistanceFromINT *= (1 - std::max(1.0 - damageMultiplier, 0.0));
+					}
+					
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_res_bonus_format").c_str(), (int)resistanceFromINT);
 				}
 					break;
 				case SHEET_RGN:
@@ -19702,7 +19722,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 
 		if ( element == SHEET_ATK && getAttackTooltipLines(player.playernum, attackHoverTextInfo, 5, buf, valueBuf)
 			|| (element != SHEET_ATK 
-				&& element != SHEET_RES 
+				/*&& element != SHEET_RES */
 				&& !(element == SHEET_RGN && false/*&& !(svFlags & SV_FLAG_HUNGER) && stats[player.playernum]->type != SKELETON*/)
 				&& !(element == SHEET_RGN_MP && isInsectoidENRegen && !(svFlags & SV_FLAG_HUNGER))
 				) 
@@ -19754,7 +19774,32 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 				}
 					break;
 				case SHEET_RES:
+				{
+					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_res_entry_items_bonus").c_str());
+					Sint32 baseResist = 100 * damagetables[stats[player.playernum]->type][DAMAGE_TABLE_MAGIC];
+					baseResist = 100 - baseResist;
+					
+					//Sint32 oldStats[NUMSTATS];
+					//characterSheetTooltipSetZeroStat(player.entity, stats[player.playernum], nullptr, oldStats);
+					//real_t resistanceNoINT = 100.0 * Entity::getDamageTableMultiplier(player.entity, *stats[player.playernum], DAMAGE_TABLE_MAGIC);
+					//characterSheetTooltipRestoreStats(stats[player.playernum], nullptr, oldStats);
+					//
+					//real_t resistanceFromINT = (100.0 - resistance) - (100.0 - resistanceNoINT);
+
+					real_t resistance = 100.0 * Entity::getDamageTableMultiplier(player.entity, *stats[player.playernum], DAMAGE_TABLE_MAGIC);
+					real_t damageMultiplier = damagetables[stats[player.playernum]->type][DAMAGE_TABLE_MAGIC];
+
+					real_t resistanceFromINT = std::max(0, std::min(90, statGetINT(stats[player.playernum], player.entity)));
+					if ( damageMultiplier < 1.0 )
+					{
+						resistanceFromINT *= (1 - std::max(1.0 - damageMultiplier, 0.0));
+					}
+
+					resistance = (100.0 - resistance) - resistanceFromINT - baseResist;
+
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_res_bonus_format").c_str(), (int)resistance);
 					break;
+				}
 				case SHEET_RGN:
 				{
 					Sint32 oldStats[NUMSTATS];
@@ -21688,7 +21733,15 @@ void Player::CharacterSheet_t::updateAttributes()
 	if ( auto field = attributesInnerFrame->findField("res text stat") )
 	{
 		real_t resistance = 100.0 * Entity::getDamageTableMultiplier(player.entity, *stats[player.playernum], DAMAGE_TABLE_MAGIC);
+
+		Sint32 oldStats[NUMSTATS];
+		characterSheetTooltipSetZeroStat(player.entity, stats[player.playernum], nullptr, oldStats);
+		real_t resistanceNoINT = 100.0 * Entity::getDamageTableMultiplier(player.entity, *stats[player.playernum], DAMAGE_TABLE_MAGIC);
+		characterSheetTooltipRestoreStats(stats[player.playernum], nullptr, oldStats);
+		
 		resistance = -(resistance - 100.0);
+		resistanceNoINT = -(resistanceNoINT - 100.0);
+
 		snprintf(buf, sizeof(buf), "%d%%", (int)resistance);
 		if ( strcmp(buf, field->getText()) )
 		{
@@ -21696,11 +21749,11 @@ void Player::CharacterSheet_t::updateAttributes()
 			charsheetTooltipCache[player.playernum].manualUpdate = true;
 		}
 		field->setColor(hudColors.characterSheetNeutral);
-		if ( resistance > 0.01 )
+		if ( (int)resistance > 0 && (int)resistanceNoINT > 0 )
 		{
 			field->setColor(hudColors.characterSheetGreen);
 		}
-		else if ( resistance < -0.01 )
+		else if ( (int)resistance < 0 )
 		{
 			field->setColor(hudColors.characterSheetRed);
 		}

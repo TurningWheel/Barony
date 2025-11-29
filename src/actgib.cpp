@@ -533,7 +533,7 @@ void actFociGib(Entity* my)
 
 							if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
 							{
-								if ( entity->checkFriend(parent) )
+								if ( parent && parent->checkFriend(entity) && parent->friendlyFireProtection(entity) )
 								{
 									if ( hitprops )
 									{

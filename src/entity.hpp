@@ -616,6 +616,7 @@ public:
 	Sint32& actmagicNoParticle; // skill[32]
 	Sint32& actmagicNoLight; // skill[33]
 	Sint32& actmagicUpdateOLDHPOnHit = skill[34];
+	Sint32& actmagicAllowFriendlyFireHit = skill[35];
 
 	Sint32& actfloorMagicType = skill[3];
 	Sint32& actfloorMagicClientReceived = skill[4];
@@ -958,6 +959,7 @@ public:
 
 	bool checkEnemy(Entity* your);
 	bool checkFriend(Entity* your);
+	bool friendlyFireProtection(Entity* your);
 	void alertAlliesOnBeingHit(Entity* attacker, std::unordered_set<Entity*>* skipEntitiesToAlert = nullptr);
 
 	//Act functions.
