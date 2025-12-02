@@ -8309,6 +8309,7 @@ void Player::Inventory_t::updateInventory()
 	bool tinkeringSalvageOrRepairMenuActive = tinkerGUI.isSalvageOrRepairMenuActive();
 	bool featherDrawerOpen = featherGUI.isInscriptionDrawerOpen();
 	bool featherInscribeOrRepairActive = featherGUI.isInscribeOrRepairActive();
+	bool transmuteItemOpen = itemfxGUI.isItemEffectMenuActive() && GenericGUI[player].transmuteItemTarget && itemfxGUI.modeHasTransmuteMenu();
 	featherGUI.highlightedSlot = -1;
 
 	if ( true )
@@ -9182,7 +9183,8 @@ void Player::Inventory_t::updateInventory()
 				else if ( itemfxGUI.isItemEffectMenuActive() )
 				{
 					auto res = itemfxGUI.setItemDisplayNameAndPrice(item, true);
-					if ( res == GenericGUIMenu::ItemEffectGUI_t::ITEMFX_ACTION_OK )
+					if ( (res == GenericGUIMenu::ItemEffectGUI_t::ITEMFX_ACTION_OK
+						&& GenericGUI[player].transmuteItemTarget == nullptr) || GenericGUI[player].transmuteItemTarget == item )
 					{
 						updateSlotFrameFromItem(slotFrame, item);
 					}
@@ -9314,7 +9316,10 @@ void Player::Inventory_t::updateInventory()
 	shopGUI.clearItemDisplayed();
 	tinkerGUI.clearItemDisplayed();
 	alchemyGUI.clearItemDisplayed();
-	itemfxGUI.clearItemDisplayed();
+	if ( !transmuteItemOpen )
+	{
+		itemfxGUI.clearItemDisplayed();
+	}
 	if ( !featherDrawerOpen || (featherDrawerOpen && GenericGUI[player].scribingBlankScrollTarget == nullptr) )
 	{
 		featherGUI.clearItemDisplayed();
@@ -10032,7 +10037,10 @@ void Player::Inventory_t::updateInventory()
 				{
 					tooltipOpen = false;
 					itemfxOpen = true;
-					itemfxGUI.setItemDisplayNameAndPrice(item);
+					if ( !transmuteItemOpen )
+					{
+						itemfxGUI.setItemDisplayNameAndPrice(item);
+					}
 				}
 				else if ( tinkeringSalvageOrRepairMenuActive )
 				{
@@ -10650,7 +10658,8 @@ void Player::Inventory_t::updateInventory()
 						else if ( itemfxGUI.isItemEffectMenuActive() )
 						{
 							auto res = itemfxGUI.setItemDisplayNameAndPrice(item, true);
-							if ( res == GenericGUIMenu::ItemEffectGUI_t::ITEMFX_ACTION_OK )
+							if ( (res == GenericGUIMenu::ItemEffectGUI_t::ITEMFX_ACTION_OK
+								&& GenericGUI[player].transmuteItemTarget == nullptr) || GenericGUI[player].transmuteItemTarget == item )
 							{
 								updateSlotFrameFromItem(slotFrame, item);
 							}
@@ -11346,6 +11355,11 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 				continue;
 			}
 			if ( featherOpen && getContextMenuOptionBindingName(player, *it) == "MenuAlt2" )
+			{
+				it = options.erase(it);
+				continue;
+			}
+			if ( itemfxOpen && GenericGUI[player].itemfxGUI.modeHasTransmuteMenu() && getContextMenuOptionBindingName(player, *it) == "MenuAlt2" )
 			{
 				it = options.erase(it);
 				continue;

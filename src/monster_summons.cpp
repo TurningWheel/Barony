@@ -789,15 +789,23 @@ void revenantSkullAnimate(Entity* my, Stat* myStats, double dist)
 								if ( adorcisedWeapon && myStats->getAttribute("spirit_weapon") != "" )
 								{
 									// knockback to lunge forward
-									if ( my->setEffect(EFF_KNOCKBACK, true, 30, false) )
+									if ( my->setEffect(EFF_KNOCKBACK, true, 25, false) )
 									{
-										real_t pushbackMultiplier = 3.0;
+										real_t pushbackMultiplier = 1.5;
 										real_t tangent = my->yaw;
 										my->vel_x = cos(tangent) * pushbackMultiplier;
 										my->vel_y = sin(tangent) * pushbackMultiplier;
 										my->monsterKnockbackVelocity = 0.025;
 										my->monsterKnockbackUID = 0;
 										my->monsterKnockbackTangentDir = tangent;
+
+										if ( multiplayer != CLIENT )
+										{
+											Entity* spellTimer = createParticleTimer(my, 25, -1);
+											spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_SPIRIT_WEAPON_ATTACK;
+
+											playSoundEntity(my, 23 + local_rng.rand() % 5, 128); // whoosh noise
+										}
 									}
 								}
 							}

@@ -1674,6 +1674,15 @@ void actLeftHandMagic(Entity* my)
 		{
 			my->z -= -1.0 * .5;
 		}
+
+		if ( stats[HANDMAGIC_PLAYERNUM]->getEffectActive(EFF_MINIMISE) )
+		{
+			my->z += -Player::PlayerMovement_t::minimiseMaximiseCameraZ * (stats[HANDMAGIC_PLAYERNUM]->getEffectActive(EFF_MINIMISE) & 0xF) * .5;
+		}
+		if ( stats[HANDMAGIC_PLAYERNUM]->getEffectActive(EFF_MAXIMISE) )
+		{
+			my->z -= -Player::PlayerMovement_t::minimiseMaximiseCameraZ * (stats[HANDMAGIC_PLAYERNUM]->getEffectActive(EFF_MAXIMISE) & 0xF) * .5;
+		}
 	}
 
 	//my->y = 3 + HUDWEAPON_MOVEY;
@@ -1850,6 +1859,15 @@ void actRightHandMagic(Entity* my)
 	else if ( playerRace == MONSTER_M )
 	{
 		my->z -= -1.0 * .5;
+	}
+
+	if ( stats[HANDMAGIC_PLAYERNUM]->getEffectActive(EFF_MINIMISE) )
+	{
+		my->z += -Player::PlayerMovement_t::minimiseMaximiseCameraZ * (stats[HANDMAGIC_PLAYERNUM]->getEffectActive(EFF_MINIMISE) & 0xF) * .5;
+	}
+	if ( stats[HANDMAGIC_PLAYERNUM]->getEffectActive(EFF_MAXIMISE) )
+	{
+		my->z -= -Player::PlayerMovement_t::minimiseMaximiseCameraZ * (stats[HANDMAGIC_PLAYERNUM]->getEffectActive(EFF_MAXIMISE) & 0xF) * .5;
 	}
 
 	bool noGloves = false;
@@ -2157,6 +2175,15 @@ void actRightHandMagic(Entity* my)
 		else if ( playerRace == MONSTER_M )
 		{
 			my->z -= -1.0 * .5;
+		}
+
+		if ( stats[HANDMAGIC_PLAYERNUM]->getEffectActive(EFF_MINIMISE) )
+		{
+			my->z += -Player::PlayerMovement_t::minimiseMaximiseCameraZ * (stats[HANDMAGIC_PLAYERNUM]->getEffectActive(EFF_MINIMISE) & 0xF) * .5;
+		}
+		if ( stats[HANDMAGIC_PLAYERNUM]->getEffectActive(EFF_MAXIMISE) )
+		{
+			my->z -= -Player::PlayerMovement_t::minimiseMaximiseCameraZ * (stats[HANDMAGIC_PLAYERNUM]->getEffectActive(EFF_MAXIMISE) & 0xF) * .5;
 		}
 	}
 

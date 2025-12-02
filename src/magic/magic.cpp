@@ -3607,7 +3607,11 @@ bool applyGenericMagicDamage(Entity* caster, Entity* hitentity, Entity& damageSo
 		}
 		hitentity->updateEntityOnHit(caster, alertTarget);
 
-		if ( spellID == SPELL_IGNITE || spellID == SPELL_DISARM || spellID == SPELL_STRIP )
+		if ( spellID == SPELL_IGNITE 
+			|| spellID == SPELL_DISARM 
+			|| spellID == SPELL_STRIP
+			|| spellID == SPELL_MAXIMISE
+			|| spellID == SPELL_MINIMISE )
 		{
 			// alert entities only
 			return true;
@@ -4163,9 +4167,16 @@ int getSpellPropertyFromID(spell_t::SpellBasePropertiesInt prop, int spellID, En
 int getSpellFromSummonedEntityForSpellEvent(Entity* summon)
 {
 	if ( !summon ) { return SPELL_NONE; }
-	if ( !summon->monsterAllyGetPlayerLeader() ) { return SPELL_NONE; }
+	if ( summon->behavior != &actMonster ) { return SPELL_NONE; }
+
 	Stat* destStats = summon->getStats();
 	if ( !destStats ) { return SPELL_NONE; }
+
+	if ( !(summon->monsterAllyGetPlayerLeader() 
+		|| achievementObserver.checkUidIsFromPlayer(destStats->leader_uid) >= 0) ) 
+	{ 
+		return SPELL_NONE;
+	}
 
 	if ( summon->monsterAllySummonRank != 0 )
 	{

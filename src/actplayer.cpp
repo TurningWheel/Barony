@@ -4409,6 +4409,11 @@ real_t Player::PlayerMovement_t::getSpeedFactor(real_t weightratio, Sint32 DEX)
 		speedFactor = std::min(speedFactor, maxSpeed);
 	}
 
+	if ( stats[player.playernum]->getEffectActive(EFF_MAXIMISE) )
+	{
+		speedFactor *= 1.0 - 0.1 * std::min(5, (stats[player.playernum]->getEffectActive(EFF_MAXIMISE) & 0xF));
+	}
+
 	for ( node_t* node = stats[player.playernum]->inventory.first; node != NULL; node = node->next )
 	{
 		Item* item = (Item*)node->element;
@@ -4808,6 +4813,8 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 	}
 }
 
+real_t Player::PlayerMovement_t::minimiseMaximiseCameraZ = 0.4;
+
 void Player::PlayerMovement_t::handlePlayerCameraPosition(bool useRefreshRateDelta)
 {
 	players[player.playernum]->worldUI.modifiedTooltipDrawHeight = 0.0;
@@ -4892,6 +4899,14 @@ void Player::PlayerMovement_t::handlePlayerCameraPosition(bool useRefreshRateDel
 			{
 				cameraSetpointZ -= 1.0;
 			}
+		}
+		if ( stats[PLAYER_NUM]->getEffectActive(EFF_MINIMISE) )
+		{
+			cameraSetpointZ += Player::PlayerMovement_t::minimiseMaximiseCameraZ * (stats[PLAYER_NUM]->getEffectActive(EFF_MINIMISE) & 0xF);
+		}
+		if ( stats[PLAYER_NUM]->getEffectActive(EFF_MAXIMISE) )
+		{
+			cameraSetpointZ -= Player::PlayerMovement_t::minimiseMaximiseCameraZ * (stats[PLAYER_NUM]->getEffectActive(EFF_MAXIMISE) & 0xF);
 		}
 
 		real_t diff = abs(PLAYER_CAMERAZ_ACCEL - cameraSetpointZ);

@@ -1812,6 +1812,7 @@ public:
 		int monsterEmoteGimpTimer = 0;
 		int selectedEntityGimpTimer = 0;
 		bool insectoidLevitating = false;
+		static real_t minimiseMaximiseCameraZ;
 
 		bool handleQuickTurn(bool useRefreshRateDelta);
 		void startQuickTurn();

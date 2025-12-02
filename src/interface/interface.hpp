@@ -379,6 +379,9 @@ public:
 	};
 	ScribingFilter scribingFilter;
 
+	Item* transmuteItemTarget = nullptr;
+	int transmuteItemScroll = 0;
+
 	GenericGUIMenu() :
 		guiActive(false),
 		basePotion(nullptr),
@@ -445,13 +448,7 @@ public:
 	// transmute
 	bool isItemAlterable(const Item* item);
 	void alterItem(Item* item);
-	void doMetallurgyEffect(Item* item);
-	void doGeomancyEffect(Item* item);
-	void doForgeKeyEffect(Item* item);
-	void doForgeJewelEffect(Item* item);
-	void doEnhanceWeaponEffect(Item* item);
-	void doReshapeWeaponEffect(Item* item);
-	void doAlterArrowEffect(Item* item);
+	int getAlterItemResultAtCycle(Item* item);
 
 	// void
 	bool isItemVoidable(const Item* item);
@@ -545,6 +542,7 @@ public:
 	{
 		if ( &item == scribingToolItem || &item == tinkeringKitItem || &item == alembicItem
 			|| &item == scribingBlankScrollTarget
+			|| &item == transmuteItemTarget
 			|| &item == basePotion || &item == secondaryPotion || &item == itemEffectScrollItem )
 		{
 			return true;
@@ -556,6 +554,10 @@ public:
 		if ( &item == scribingToolItem )
 		{
 			scribingToolItem = nullptr;
+		}
+		if ( &item == transmuteItemTarget )
+		{
+			transmuteItemTarget = nullptr;
 		}
 		if ( &item == scribingBlankScrollTarget )
 		{
@@ -697,6 +699,7 @@ public:
 			COST_EFFECT_MANA_AND_GOLD
 		};
 		CostEffectTypes modeHasCostEffect = COST_EFFECT_NONE;
+		bool modeHasTransmuteMenu();
 		int costEffectGoldAmount = 0;
 		int costEffectMPAmount = 0;
 		enum ItemEffectModes : int

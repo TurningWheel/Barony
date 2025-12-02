@@ -4768,6 +4768,11 @@ void Player::WorldUI_t::handleTooltips()
 				{
 					continue;
 				}
+				if ( parent && parent->flags[PASSABLE] && parent->behavior == &actMonster 
+					&& parent->getMonsterTypeFromSprite() == MONSTER_ADORCISED_WEAPON )
+				{
+					continue;
+				}
 				real_t newDist = players[player]->worldUI.tooltipInRange(*tooltip);
 				if ( newDist > 0.01 )
 				{

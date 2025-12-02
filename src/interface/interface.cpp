@@ -5511,7 +5511,7 @@ bool GenericGUIMenu::isItemAlterable(const Item* item)
 	}
 	else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_ALTER_ARROW )
 	{
-		if ( item->type == GEM_ROCK )
+		if ( itemCategory(item) == GEM )
 		{
 			return true;
 		}
@@ -6932,7 +6932,17 @@ bool GenericGUIMenu::ItemEffectGUI_t::consumeResourcesForTransmute()
 							cameravars[parentGUI.gui_player].shakey += 10;
 							playSoundPlayer(parentGUI.gui_player, 28, 92);
 						}
+						Sint32 prevMP = stats[parentGUI.gui_player]->MP;
 						players[parentGUI.gui_player]->entity->drainMP(costEffectMPAmount);
+
+						if ( parentGUI.itemEffectScrollItem && parentGUI.itemEffectScrollItem->type == SPELL_ITEM )
+						{
+							if ( auto spell = getSpellFromItem(parentGUI.gui_player, parentGUI.itemEffectScrollItem, false) )
+							{
+								players[parentGUI.gui_player]->mechanics.baseSpellIncrementMP(
+									prevMP - stats[parentGUI.gui_player]->MP, spell->skillID);
+							}
+						}
 					}
 				}
 			}
@@ -6942,9 +6952,19 @@ bool GenericGUIMenu::ItemEffectGUI_t::consumeResourcesForTransmute()
 				net_packet->data[4] = parentGUI.gui_player;
 				SDLNet_Write32((Uint32)costEffectGoldAmount, &net_packet->data[5]);
 				SDLNet_Write32((Uint32)costEffectMPAmount, &net_packet->data[9]);
+
+				Uint16 spellID = 0;
+				if ( parentGUI.itemEffectScrollItem && parentGUI.itemEffectScrollItem->type == SPELL_ITEM )
+				{
+					if ( auto spell = getSpellFromItem(parentGUI.gui_player, parentGUI.itemEffectScrollItem, false) )
+					{
+						spellID = spell->ID;
+					}
+				}
+				SDLNet_Write16(spellID, &net_packet->data[13]);
 				net_packet->address.host = net_server.host;
 				net_packet->address.port = net_server.port;
-				net_packet->len = 13;
+				net_packet->len = 15;
 				sendPacketSafe(net_sock, -1, net_packet, 0);
 			}
 			return true;
@@ -6967,6 +6987,143 @@ bool GenericGUIMenu::ItemEffectGUI_t::consumeResourcesForTransmute()
 		}
 	}
 	return false;
+}
+
+int GenericGUIMenu::getAlterItemResultAtCycle(Item* item)
+{
+	if ( !item )
+	{
+		return -1;
+	}
+
+	std::vector<int> targetItems;
+	if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_RESHAPE_WEAPON )
+	{
+		switch ( item->type )
+		{
+		case BRONZE_AXE:
+		case BRONZE_MACE:
+		case BRONZE_SWORD:
+			targetItems.push_back(BRONZE_AXE);
+			targetItems.push_back(BRONZE_MACE);
+			targetItems.push_back(BRONZE_SWORD);
+			break;
+		case IRON_AXE:
+		case IRON_MACE:
+		case IRON_SWORD:
+		case IRON_SPEAR:
+			targetItems.push_back(IRON_AXE);
+			targetItems.push_back(IRON_MACE);
+			targetItems.push_back(IRON_SWORD);
+			targetItems.push_back(IRON_SPEAR);
+			break;
+		case STEEL_AXE:
+		case STEEL_MACE:
+		case STEEL_SWORD:
+		case STEEL_HALBERD:
+			targetItems.push_back(STEEL_AXE);
+			targetItems.push_back(STEEL_MACE);
+			targetItems.push_back(STEEL_SWORD);
+			targetItems.push_back(STEEL_HALBERD);
+			break;
+		case CRYSTAL_BATTLEAXE:
+		case CRYSTAL_MACE:
+		case CRYSTAL_SWORD:
+		case CRYSTAL_SPEAR:
+			targetItems.push_back(CRYSTAL_BATTLEAXE);
+			targetItems.push_back(CRYSTAL_MACE);
+			targetItems.push_back(CRYSTAL_SWORD);
+			targetItems.push_back(CRYSTAL_SPEAR);
+			break;
+		default:
+			break;
+		}
+	}
+	else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_ALTER_ARROW )
+	{
+		if ( itemTypeIsQuiver(item->type) || itemCategory(item) == GEM )
+		{
+			targetItems =
+			{
+				QUIVER_LIGHTWEIGHT,
+				QUIVER_FIRE,
+				QUIVER_KNOCKBACK,
+				QUIVER_PIERCE,
+				//QUIVER_BONE,
+				QUIVER_SILVER,
+				//QUIVER_BLACKIRON,
+				QUIVER_CRYSTAL,
+				QUIVER_HUNTING,
+			};
+		}
+	}
+	else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_ALTER_INSTRUMENT )
+	{
+		targetItems = {
+			INSTRUMENT_FLUTE,
+			INSTRUMENT_LYRE,
+			INSTRUMENT_DRUM,
+			INSTRUMENT_LUTE,
+			INSTRUMENT_HORN
+		};
+	}
+
+	if ( targetItems.size() == 0 ) { return -1; }
+
+	auto find = std::find(targetItems.begin(), targetItems.end(), item->type);
+	{
+		bool inList = find != targetItems.end();
+		if ( !inList )
+		{
+			find = targetItems.begin();
+		}
+
+		if ( targetItems.size() >= (2 + (inList ? 1 : 0)) )
+		{
+			int cycles = transmuteItemScroll % (targetItems.size() - (inList ? 1 : 0));
+			while ( cycles >= 0 )
+			{
+				--cycles;
+				++find;
+				if ( find == targetItems.end() )
+				{
+					find = targetItems.begin();
+				}
+				if ( *find == item->type )
+				{
+					++find;
+					if ( find == targetItems.end() )
+					{
+						find = targetItems.begin();
+					}
+				}
+			}
+			return *find;
+		}
+		else if ( targetItems.size() == (1 + (inList ? 1 : 0)) )
+		{
+			++find;
+			if ( find == targetItems.end() )
+			{
+				find = targetItems.begin();
+			}
+			if ( *find == item->type )
+			{
+				++find;
+				if ( find == targetItems.end() )
+				{
+					find = targetItems.begin();
+				}
+			}
+			return *find;
+		}
+		else
+		{
+			return targetItems.at(0);
+		}
+	}
+
+	return -1;
 }
 
 void GenericGUIMenu::alterItem(Item* item)
@@ -6999,6 +7156,9 @@ void GenericGUIMenu::alterItem(Item* item)
 			newType = INSTRUMENT_FLUTE;
 		}
 		item->type = newType;
+
+		magicOnSpellCastEvent(players[gui_player]->entity, players[gui_player]->entity, 
+			nullptr, SPELL_ALTER_INSTRUMENT, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
 	}
 	else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_ENHANCE_WEAPON )
 	{
@@ -7051,6 +7211,8 @@ void GenericGUIMenu::alterItem(Item* item)
 				closeGUI();
 				return;
 		}
+		magicOnSpellCastEvent(players[gui_player]->entity, players[gui_player]->entity,
+			nullptr, SPELL_ENHANCE_WEAPON, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
 	}
 	else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_RESHAPE_WEAPON )
 	{
@@ -7106,6 +7268,9 @@ void GenericGUIMenu::alterItem(Item* item)
 			closeGUI();
 			return;
 		}
+
+		magicOnSpellCastEvent(players[gui_player]->entity, players[gui_player]->entity,
+			nullptr, SPELL_RESHAPE_WEAPON, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
 	}
 	else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_FORGE_KEY )
 	{
@@ -7147,6 +7312,9 @@ void GenericGUIMenu::alterItem(Item* item)
 			item->count = oldCount;
 			free(itemToPickup);
 			consumeItem(item, gui_player);
+
+			magicOnSpellCastEvent(players[gui_player]->entity, players[gui_player]->entity,
+				nullptr, SPELL_FORGE_KEY, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
 		}
 		closeGUI();
 		return;
@@ -7164,6 +7332,9 @@ void GenericGUIMenu::alterItem(Item* item)
 			item->count = oldCount;
 			free(itemToPickup);
 			consumeItem(item, gui_player);
+
+			magicOnSpellCastEvent(players[gui_player]->entity, players[gui_player]->entity,
+				nullptr, SPELL_FORGE_JEWEL, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
 		}
 		else
 		{
@@ -7179,6 +7350,10 @@ void GenericGUIMenu::alterItem(Item* item)
 		messagePlayer(gui_player, MESSAGE_MISC, Language::get(6554), -itemfxGUI.costEffectGoldAmount, item->description());
 		item->count = oldCount;
 		consumeItem(item, gui_player);
+
+		magicOnSpellCastEvent(players[gui_player]->entity, players[gui_player]->entity,
+			nullptr, SPELL_METALLURGY, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
+
 		closeGUI();
 		return;
 	}
@@ -7189,6 +7364,10 @@ void GenericGUIMenu::alterItem(Item* item)
 		messagePlayer(gui_player, MESSAGE_MISC, Language::get(6554), -itemfxGUI.costEffectGoldAmount, item->description());
 		item->count = oldCount;
 		consumeItem(item, gui_player);
+
+		magicOnSpellCastEvent(players[gui_player]->entity, players[gui_player]->entity,
+			nullptr, SPELL_GEOMANCY, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
+
 		closeGUI();
 		return;
 	}
@@ -7199,52 +7378,28 @@ void GenericGUIMenu::alterItem(Item* item)
 		messagePlayer(gui_player, MESSAGE_MISC, Language::get(6724), -itemfxGUI.costEffectGoldAmount, item->description());
 		item->count = oldCount;
 		consumeItem(item, gui_player);
+
+		magicOnSpellCastEvent(players[gui_player]->entity, players[gui_player]->entity,
+			nullptr, SPELL_VANDALISE, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
+
 		closeGUI();
 		return;
 	}
 	else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_ALTER_ARROW )
 	{
-		switch ( item->type )
+		int result = getAlterItemResultAtCycle(item);
+		if ( result >= 0 )
 		{
-		case QUIVER_LIGHTWEIGHT:
-			item->type = QUIVER_FIRE;
-			break;
-		case QUIVER_FIRE:
-			item->type = QUIVER_KNOCKBACK;
-			break;
-		case QUIVER_KNOCKBACK:
-			item->type = QUIVER_PIERCE;
-			break;
-		case QUIVER_PIERCE:
-			item->type = QUIVER_SILVER;
-			break;
-		case QUIVER_SILVER:
-			item->type = QUIVER_CRYSTAL;
-			break;
-		case QUIVER_CRYSTAL:
-			item->type = QUIVER_HUNTING;
-			break;
-		case QUIVER_HUNTING:
-			item->type = QUIVER_LIGHTWEIGHT;
-			break;
-		/*case QUIVER_BONE:
-			sprite = 2304;
-			break;
-		case QUIVER_BLACKIRON:
-			sprite = 2305;
-			break;*/
-		default:
-			if ( itemCategory(item) == GEM )
-			{
-				item->type = QUIVER_LIGHTWEIGHT;
-				break;
-			}
-			else
-			{
-				messagePlayer(gui_player, MESSAGE_MISC, Language::get(6514), item->description());
-				closeGUI();
-				return;
-			}
+			item->type = (ItemType)(result);
+
+			magicOnSpellCastEvent(players[gui_player]->entity, players[gui_player]->entity,
+				nullptr, SPELL_ALTER_ARROW, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
+		}
+		else
+		{
+			messagePlayer(gui_player, MESSAGE_MISC, Language::get(6514), item->description());
+			closeGUI();
+			return;
 		}
 	}
 	messagePlayer(gui_player, MESSAGE_HINT, Language::get(6515), prevItem.c_str(), item->description());
@@ -7562,6 +7717,8 @@ void GenericGUIMenu::closeGUI()
 	itemEffectScrollItem = nullptr;
 	itemEffectItemType = 0;
 	itemEffectItemBeatitude = 0;
+	transmuteItemTarget = nullptr;
+	transmuteItemScroll = 0;
 	if ( prevGUI == GUI_TYPE_ITEMFX && itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_SCEPTER_CHARGE )
 	{
 		if ( players[gui_player]->inventory_mode == INVENTORY_MODE_SPELL )
@@ -23575,6 +23732,7 @@ void GenericGUIMenu::ItemEffectGUI_t::getItemEffectCost(Item* itemUsedWith, int&
 		{
 			goldCost = getSpellDamageFromID(SPELL_ALTER_INSTRUMENT, players[parentGUI.gui_player]->entity, stats[parentGUI.gui_player], players[parentGUI.gui_player]->entity);
 			goldCost = std::max(goldCost, getSpellDamageSecondaryFromID(SPELL_ALTER_INSTRUMENT, players[parentGUI.gui_player]->entity, stats[parentGUI.gui_player], players[parentGUI.gui_player]->entity));
+			manaCost = 15;
 		}
 		else if ( currentMode == ITEMFX_MODE_METALLURGY )
 		{
@@ -23684,11 +23842,12 @@ void GenericGUIMenu::ItemEffectGUI_t::getItemEffectCost(Item* itemUsedWith, int&
 					noSkillPenalty += 1000000; // denotes no skill lvl
 				}
 			}
-
+			noSkillPenalty = 0;
 			real_t ratio = getSpellDamageFromID(SPELL_ENHANCE_WEAPON, players[parentGUI.gui_player]->entity, stats[parentGUI.gui_player], players[parentGUI.gui_player]->entity) / 100.0;
 			real_t minRatio = getSpellDamageSecondaryFromID(SPELL_ENHANCE_WEAPON, players[parentGUI.gui_player]->entity, stats[parentGUI.gui_player], players[parentGUI.gui_player]->entity) / 100.0;
 			goldCost *= std::max(minRatio, ratio);
 			goldCost += noSkillPenalty;
+			manaCost = 10;
 		}
 		else if ( currentMode == ITEMFX_MODE_RESHAPE_WEAPON )
 		{
@@ -23741,28 +23900,50 @@ void GenericGUIMenu::ItemEffectGUI_t::getItemEffectCost(Item* itemUsedWith, int&
 					noSkillPenalty += 1000000; // denotes no skill lvl
 				}
 			}
-
+			noSkillPenalty = 0;
 			real_t ratio = getSpellDamageFromID(SPELL_RESHAPE_WEAPON, players[parentGUI.gui_player]->entity, stats[parentGUI.gui_player], players[parentGUI.gui_player]->entity) / 100.0;
 			real_t minRatio = getSpellDamageSecondaryFromID(SPELL_RESHAPE_WEAPON, players[parentGUI.gui_player]->entity, stats[parentGUI.gui_player], players[parentGUI.gui_player]->entity) / 100.0;
 			goldCost *= std::max(minRatio, ratio);
 			goldCost += noSkillPenalty;
+			manaCost = 10;
 		}
 		else if ( currentMode == ITEMFX_MODE_ALTER_ARROW )
 		{
-			if ( itemUsedWith->type == GEM_ROCK )
+			if ( itemTypeIsQuiver(itemUsedWith->type) || itemCategory(itemUsedWith) == GEM )
 			{
-				goldCost = 100 + 10 * itemUsedWith->count;
+				int result = parentGUI.getAlterItemResultAtCycle(itemUsedWith);
+				if ( result >= 0 )
+				{
+					ItemType prevType = itemUsedWith->type;
+					itemUsedWith->type = (ItemType)(result);
+					goldCost = 100 + itemUsedWith->sellValue(-1);
+					itemUsedWith->type = prevType;
+				}
 			}
-			else if ( itemTypeIsQuiver(itemUsedWith->type) )
-			{
-				goldCost = 100 + itemUsedWith->sellValue(-1);
-			}
-
 			real_t ratio = getSpellDamageFromID(SPELL_ALTER_ARROW, players[parentGUI.gui_player]->entity, stats[parentGUI.gui_player], players[parentGUI.gui_player]->entity) / 100.0;
 			real_t minRatio = getSpellDamageSecondaryFromID(SPELL_ALTER_ARROW, players[parentGUI.gui_player]->entity, stats[parentGUI.gui_player], players[parentGUI.gui_player]->entity) / 100.0;
 			goldCost *= std::max(minRatio, ratio);
+			manaCost = 5 + itemUsedWith->count / 10;
+		}
+		
+		if ( modeHasTransmuteMenu() && parentGUI.transmuteItemTarget != itemUsedWith )
+		{
+			goldCost = 0;
+			manaCost = 0;
 		}
 	}
+}
+
+bool GenericGUIMenu::ItemEffectGUI_t::modeHasTransmuteMenu()
+{
+	if ( currentMode == ITEMFX_MODE_ALTER_ARROW
+		|| currentMode == ITEMFX_MODE_ALTER_INSTRUMENT
+		|| currentMode == ITEMFX_MODE_RESHAPE_WEAPON )
+	{
+		return true;
+	}
+
+	return false;
 }
 
 GenericGUIMenu::ItemEffectGUI_t::ItemEffectActions_t GenericGUIMenu::ItemEffectGUI_t::setItemDisplayNameAndPrice(Item* item, bool checkResultOnly)
@@ -24236,6 +24417,16 @@ GenericGUIMenu::ItemEffectGUI_t::ItemEffectActions_t GenericGUIMenu::ItemEffectG
 	{
 		if ( result != ITEMFX_ACTION_NONE && item )
 		{
+			ItemType prevItemType = item->type;
+			if ( parentGUI.transmuteItemTarget == item )
+			{
+				int result = parentGUI.getAlterItemResultAtCycle(item);
+				if ( result >= 0 )
+				{
+					item->type = (ItemType)(result);
+				}
+			}
+
 			char buf[1024];
 			if ( item->type == SPELL_ITEM )
 			{
@@ -24285,7 +24476,6 @@ GenericGUIMenu::ItemEffectGUI_t::ItemEffectActions_t GenericGUIMenu::ItemEffectG
 				itemRequiresTitleReflow = true;
 			}
 			itemDesc = buf;
-			itemType = item->type;
 
 			if ( itemEffectFrame )
 			{
@@ -24298,6 +24488,9 @@ GenericGUIMenu::ItemEffectGUI_t::ItemEffectActions_t GenericGUIMenu::ItemEffectG
 					}
 				}
 			}
+
+			itemType = item->type;
+			item->type = prevItemType;
 		}
 		itemActionType = result;
 		if ( itemActionType == ITEMFX_ACTION_OK )
@@ -24406,16 +24599,16 @@ void GenericGUIMenu::ItemEffectGUI_t::openItemEffectMenu(GenericGUIMenu::ItemEff
 	case ITEMFX_MODE_SANCTIFY_WATER:
 		modeHasCostEffect = COST_EFFECT_MANA;
 		break;
-	case ITEMFX_MODE_ALTER_INSTRUMENT:
 	case ITEMFX_MODE_FORGE_KEY:
 	case ITEMFX_MODE_FORGE_JEWEL:
-	case ITEMFX_MODE_ENHANCE_WEAPON:
-	case ITEMFX_MODE_RESHAPE_WEAPON:
 		modeHasCostEffect = COST_EFFECT_GOLD;
 		break;
 	case ITEMFX_MODE_RESTORE:
 		modeHasCostEffect = COST_EFFECT_MANA_AND_GOLD;
 		break;
+	case ITEMFX_MODE_ENHANCE_WEAPON:
+	case ITEMFX_MODE_ALTER_INSTRUMENT:
+	case ITEMFX_MODE_RESHAPE_WEAPON:
 	case ITEMFX_MODE_ALTER_ARROW:
 		modeHasCostEffect = COST_EFFECT_MANA_AND_GOLD;
 		break;
@@ -24452,6 +24645,8 @@ void GenericGUIMenu::ItemEffectGUI_t::openItemEffectMenu(GenericGUIMenu::ItemEff
 	clearItemDisplayed();
 	confirmActionOnItemSteps.first = 0;
 	confirmActionOnItemSteps.second = 0;
+	parentGUI.transmuteItemTarget = nullptr;
+	parentGUI.transmuteItemScroll = 0;
 }
 
 void GenericGUIMenu::ItemEffectGUI_t::closeItemEffectMenu()
@@ -24509,6 +24704,8 @@ void GenericGUIMenu::ItemEffectGUI_t::closeItemEffectMenu()
 	clearItemDisplayed();
 	confirmActionOnItemSteps.first = 0;
 	confirmActionOnItemSteps.second = 0;
+	parentGUI.transmuteItemTarget = nullptr;
+	parentGUI.transmuteItemScroll = 0;
 	itemRequiresTitleReflow = true;
 	if ( itemEffectFrame )
 	{
@@ -25035,13 +25232,13 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 
 	bool usingGamepad = inputs.hasController(playernum) && !inputs.getVirtualMouse(playernum)->draw_cursor;
 
+	auto closeGlyph = baseFrame->findImage("close itemfx glyph");
 	{
 		// close btn
 		auto closeBtn = baseFrame->findButton("close itemfx button");
 		SDL_Rect closeBtnPos = closeBtn->getSize();
 		closeBtnPos.y = 34 + heightOffsetCompact;
 		closeBtn->setSize(closeBtnPos);
-		auto closeGlyph = baseFrame->findImage("close itemfx glyph");
 		closeBtn->setDisabled(true);
 		closeGlyph->disabled = true;
 		if ( inputs.getVirtualMouse(playernum)->draw_cursor )
@@ -25080,6 +25277,12 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 	auto actionPromptTxt = baseFrame->findField("action prompt txt");
 	actionPromptTxt->setDisabled(false);
 	auto actionPromptImg = baseFrame->findImage("action prompt glyph");
+	auto actionConfirmImg = baseFrame->findImage("action confirm glyph");
+	actionConfirmImg->disabled = true;
+	auto actionRefreshImg = baseFrame->findImage("action refresh glyph");
+	actionRefreshImg->disabled = true;
+	auto actionCancelImg = baseFrame->findImage("action cancel glyph");
+	actionCancelImg->disabled = true;
 	//auto actionModifierImg = baseFrame->findImage("action modifier glyph");
 
 	Uint32 negativeColor = hudColors.characterSheetRed;
@@ -25090,8 +25293,12 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 	auto displayItemName = itemDisplayTooltip->findField("item display name");
 	auto displayItemTextImg = itemDisplayTooltip->findImage("item text img");
 	auto itemSlotBg = itemDisplayTooltip->findImage("item bg img");
+	auto itemTransmuteGlow = itemDisplayTooltip->findImage("item transmute gleam img");
 	auto costEffectGoldText = itemDisplayTooltip->findField("item gold value");
 	auto costEffectManaText = itemDisplayTooltip->findField("item mp value");
+	itemTransmuteGlow->disabled = true;
+	itemTransmuteGlow->pos.x = 16;
+	itemTransmuteGlow->pos.y = 16;
 	itemSlotBg->pos.x = 12;
 	itemSlotBg->pos.y = 12;
 	const int displayItemTextImgBaseX = itemSlotBg->pos.x + itemSlotBg->pos.w;
@@ -25211,6 +25418,217 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 		confirmActionOnItemSteps.second = 0;
 	}
 
+	auto actionButtonRefresh = baseFrame->findButton("action button refresh");
+	auto actionButtonCancel = baseFrame->findButton("action button cancel");
+	{
+		if ( parentGUI.transmuteItemTarget && itemIsEquipped(parentGUI.transmuteItemTarget, playernum) )
+		{
+			parentGUI.transmuteItemTarget = nullptr;
+		}
+
+		// action btn
+		SDL_Rect btnPos = actionButtonRefresh->getSize();
+		btnPos.x = 38;
+		btnPos.y = 196;
+		actionButtonRefresh->setSize(btnPos);
+		//auto closeGlyph = baseFrame->findImage("close itemfx glyph");
+		actionButtonRefresh->setDisabled(true);
+		//closeGlyph->disabled = true;
+		if ( inputs.getVirtualMouse(playernum)->draw_cursor && parentGUI.transmuteItemTarget && isInteractable )
+		{
+			actionButtonRefresh->setDisabled(!isInteractable);
+			if ( isInteractable )
+			{
+				buttonItemfxSelectorOnHighlight(playernum, actionButtonRefresh);
+			}
+		}
+		else if ( actionButtonRefresh->isSelected() )
+		{
+			actionButtonRefresh->deselect();
+		}
+
+		actionButtonRefresh->setInvisible(actionButtonRefresh->isDisabled());
+		actionButtonRefresh->setStyle(Button::STYLE_NORMAL);
+		if ( usingGamepad )
+		{
+			actionButtonRefresh->setStyle(Button::STYLE_TOGGLE);
+			if ( parentGUI.transmuteItemTarget && isInteractable )
+			{
+				actionButtonRefresh->setInvisible(false);
+				actionButtonRefresh->setDisabled(true);
+
+				btnPos = actionButtonRefresh->getSize();
+				btnPos.x += 16;
+				actionButtonRefresh->setSize(btnPos);
+
+				actionRefreshImg->path = Input::inputs[playernum].getGlyphPathForBinding("MenuAlt2");
+				if ( auto imgGet = Image::get(actionRefreshImg->path.c_str()) )
+				{
+					actionRefreshImg->pos.w = imgGet->getWidth();
+					actionRefreshImg->pos.h = imgGet->getHeight();
+					actionRefreshImg->disabled = false;
+				}
+				actionRefreshImg->pos.x = actionButtonRefresh->getSize().x - actionRefreshImg->pos.w - 4;
+				if ( actionRefreshImg->pos.x % 2 == 1 )
+				{
+					++actionRefreshImg->pos.x;
+				}
+				actionRefreshImg->pos.y = actionButtonRefresh->getSize().y + actionButtonRefresh->getSize().h / 2 - actionRefreshImg->pos.h / 2;
+				if ( actionRefreshImg->pos.y % 2 == 1 )
+				{
+					--actionRefreshImg->pos.y;
+				}
+			}
+		}
+
+		if ( !actionButtonRefresh->isInvisible() && parentGUI.transmuteItemTarget )
+		{
+			setItemDisplayNameAndPrice(parentGUI.transmuteItemTarget);
+
+			itemTransmuteGlow->disabled = false;
+			itemTransmuteGlow->path = "*#images/ui/ScrollSpells/Gleam_00.png";
+			const int gleam = ((ticks % TICKS_PER_SECOND) / 5) % 5;
+			switch ( gleam )
+			{
+			case 0:
+				itemTransmuteGlow->path = "*#images/ui/ScrollSpells/Gleam_00.png";
+				break;
+			case 1:
+				itemTransmuteGlow->path = "*#images/ui/ScrollSpells/Gleam_01.png";
+				break;
+			case 2:
+				itemTransmuteGlow->path = "*#images/ui/ScrollSpells/Gleam_02.png";
+				break;
+			case 3:
+				itemTransmuteGlow->path = "*#images/ui/ScrollSpells/Gleam_03.png";
+				break;
+			case 4:
+				itemTransmuteGlow->path = "*#images/ui/ScrollSpells/Gleam_04.png";
+				break;
+			default:
+				break;
+			}
+		}
+
+		{
+			actionButtonCancel->setInvisible(true);
+			actionButtonCancel->setDisabled(true);
+			actionButtonCancel->setText(Language::get(6889));
+			// cancel btn
+			SDL_Rect btnPos = actionButtonCancel->getSize();
+			btnPos.x = 26;
+			btnPos.y = actionPromptTxtPos.y - 3;
+			actionButtonCancel->setSize(btnPos);
+			//auto closeGlyph = baseFrame->findImage("close itemfx glyph");
+			actionButtonCancel->setDisabled(true);
+			//closeGlyph->disabled = true;
+			if ( inputs.getVirtualMouse(playernum)->draw_cursor && parentGUI.transmuteItemTarget && isInteractable )
+			{
+				actionButtonCancel->setDisabled(!isInteractable);
+				if ( isInteractable )
+				{
+					buttonItemfxSelectorOnHighlight(playernum, actionButtonCancel);
+				}
+			}
+			else if ( actionButtonCancel->isSelected() )
+			{
+				actionButtonCancel->deselect();
+			}
+
+			actionButtonCancel->setInvisible(actionButtonCancel->isDisabled());
+
+			if ( usingGamepad )
+			{
+				if ( parentGUI.transmuteItemTarget && isInteractable )
+				{
+					actionButtonCancel->setInvisible(false);
+					actionButtonCancel->setDisabled(true);
+
+					actionCancelImg->path = Input::inputs[playernum].getGlyphPathForBinding("MenuCancel");
+					if ( auto imgGet = Image::get(actionCancelImg->path.c_str()) )
+					{
+						actionCancelImg->pos.w = imgGet->getWidth();
+						actionCancelImg->pos.h = imgGet->getHeight();
+						actionCancelImg->disabled = false;
+						closeGlyph->disabled = true;
+					}
+					actionCancelImg->pos.x = actionButtonCancel->getSize().x + actionButtonCancel->getSize().w + 4;
+					if ( actionCancelImg->pos.x % 2 == 1 )
+					{
+						++actionCancelImg->pos.x;
+					}
+					actionCancelImg->pos.y = actionButtonCancel->getSize().y + actionButtonCancel->getSize().h / 2 - actionCancelImg->pos.h / 2 + 2;
+					if ( actionCancelImg->pos.y % 2 == 1 )
+					{
+						--actionCancelImg->pos.y;
+					}
+				}
+			}
+		}
+	}
+
+	auto actionButtonConfirm = baseFrame->findButton("action button confirm");
+	{
+		// action btn
+		actionButtonConfirm->setText(Language::get(6888));
+		SDL_Rect btnPos = actionButtonConfirm->getSize();
+		btnPos.x = actionPromptTxtPos.x + actionPromptTxtPos.w - btnPos.w;
+		btnPos.y = actionPromptTxtPos.y - 3;
+		actionButtonConfirm->setSize(btnPos);
+		//auto closeGlyph = baseFrame->findImage("close itemfx glyph");
+		actionButtonConfirm->setDisabled(true);
+		//closeGlyph->disabled = true;
+		if ( inputs.getVirtualMouse(playernum)->draw_cursor && parentGUI.transmuteItemTarget && itemActionType == ITEMFX_ACTION_OK && isInteractable )
+		{
+			actionButtonConfirm->setDisabled(!isInteractable);
+			if ( isInteractable )
+			{
+				buttonItemfxSelectorOnHighlight(playernum, actionButtonConfirm);
+			}
+		}
+		else if ( actionButtonConfirm->isSelected() )
+		{
+			actionButtonConfirm->deselect();
+		}
+
+		actionButtonConfirm->setInvisible(actionButtonConfirm->isDisabled());
+		/*if ( usingGamepad )
+		{
+			if ( parentGUI.transmuteItemTarget && itemActionType == ITEMFX_ACTION_OK && isInteractable )
+			{
+				actionButtonConfirm->setInvisible(false);
+				actionButtonConfirm->setDisabled(true);
+
+				actionConfirmImg->path = Input::inputs[playernum].getGlyphPathForBinding("MenuConfirm");
+				if ( auto imgGet = Image::get(actionConfirmImg->path.c_str()) )
+				{
+					actionConfirmImg->pos.w = imgGet->getWidth();
+					actionConfirmImg->pos.h = imgGet->getHeight();
+					actionConfirmImg->disabled = false;
+				}
+				actionConfirmImg->pos.x = actionButtonConfirm->getSize().x - actionConfirmImg->pos.w - 4;
+				if ( actionConfirmImg->pos.x % 2 == 1 )
+				{
+					++actionConfirmImg->pos.x;
+				}
+				actionConfirmImg->pos.y = actionButtonConfirm->getSize().y + actionButtonConfirm->getSize().h / 2 - actionConfirmImg->pos.h / 2 + 2;
+				if ( actionConfirmImg->pos.y % 2 == 1 )
+				{
+					--actionConfirmImg->pos.y;
+				}
+			}
+			actionButtonConfirm->setHJustify(Field::justify_t::RIGHT);
+			actionButtonConfirm->setColor(makeColor(255, 255, 255, 0));
+			actionButtonConfirm->setHighlightColor(makeColor(255, 255, 255, 0));
+		}
+		else
+		{
+			actionButtonConfirm->setHJustify(Field::justify_t::CENTER);
+			actionButtonConfirm->setColor(makeColor(255, 255, 255, 255));
+			actionButtonConfirm->setHighlightColor(makeColor(255, 255, 255, 255));
+		}*/
+	}
+
 	if ( itemActionType != ITEMFX_ACTION_NONE && itemDesc.size() > 1 )
 	{
 		if ( isInteractable )
@@ -25265,6 +25683,10 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 						actionModifierImg->disabled = true;
 					}*/
 				}
+
+				actionPromptTxt->setDisabled(!actionButtonConfirm->isInvisible());
+				actionPromptImg->disabled = !actionButtonConfirm->isInvisible();
+
 				switch ( currentMode )
 				{
 					case ITEMFX_MODE_NONE:
@@ -25356,6 +25778,15 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 						actionPromptTxt->setText("");
 						break;
 				}
+
+				if ( modeHasTransmuteMenu() )
+				{
+					if ( parentGUI.transmuteItemTarget )
+					{
+						actionPromptTxt->setText(Language::get(6888));
+					}
+				}
+
 				actionPromptTxt->setColor(defaultPromptColor);
 			}
 			else
@@ -25524,6 +25955,15 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 					costEffectManaText->setColor(negativeColor);
 				}
 				costEffectManaText->setText(buf);
+
+				if ( modeHasTransmuteMenu() )
+				{
+					if ( !parentGUI.transmuteItemTarget )
+					{
+						costEffectGoldText->setText("-");
+						costEffectManaText->setText("-");
+					}
+				}
 			}
 		}
 	}
@@ -25639,6 +26079,14 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 				break;
 		}
 
+		if ( modeHasTransmuteMenu() )
+		{
+			if ( parentGUI.transmuteItemTarget )
+			{
+				actionPromptUnselectedTxt->setText(Language::get(6887));
+			}
+		}
+
 		{
 			SDL_Rect pos = actionPromptTxt->getSize();
 			pos.x = 26;
@@ -25705,6 +26153,7 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 	itemSlotFrame->setOpacity(100.0 * animTooltip);
 
 	bool activateSelection = false;
+	bool transmuteActivate = false;
 	if ( isInteractable )
 	{
 		if ( !inputs.getUIInteraction(playernum)->selectedItem
@@ -25716,15 +26165,26 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 			if ( Input::inputs[playernum].binaryToggle("MenuCancel") )
 			{
 				Input::inputs[playernum].consumeBinaryToggle("MenuCancel");
-				parentGUI.closeGUI();
-				Player::soundCancel();
-				return;
+				if ( !actionButtonCancel->isInvisible() )
+				{
+					actionButtonCancel->getCallback()(*actionButtonCancel);
+				}
+				else
+				{
+					parentGUI.closeGUI();
+					Player::soundCancel();
+					return;
+				}
 			}
 			else
 			{
 				if ( usingGamepad && Input::inputs[playernum].binaryToggle("MenuConfirm") )
 				{
 					activateSelection = true;
+					if ( parentGUI.transmuteItemTarget )
+					{
+						transmuteActivate = true;
+					}
 					Input::inputs[playernum].consumeBinaryToggle("MenuConfirm");
 				}
 				else if ( !usingGamepad && Input::inputs[playernum].binaryToggle("MenuRightClick") )
@@ -25732,9 +26192,33 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 					activateSelection = true;
 					Input::inputs[playernum].consumeBinaryToggle("MenuRightClick");
 				}
+
+				if ( usingGamepad )
+				{
+					actionButtonRefresh->setPressed(Input::inputs[playernum].binary("MenuAlt2"));
+					if ( Input::inputs[playernum].binaryToggle("MenuAlt2") )
+					{
+						Input::inputs[playernum].consumeBinaryToggle("MenuAlt2");
+						if ( !actionButtonRefresh->isInvisible() )
+						{
+							actionButtonRefresh->getCallback()(*actionButtonRefresh);
+						}
+					}
+				}
 			}
 		}
+
+		if ( actionButtonConfirm->getUserData() )
+		{
+			transmuteActivate = true;
+		}
+		if ( parentGUI.transmuteItemTarget && transmuteActivate )
+		{
+			activateSelection = true;
+		}
 	}
+
+	actionButtonConfirm->setUserData(nullptr);
 
 	if ( activateSelection && players[playernum] && players[playernum]->entity )
 	{
@@ -25751,13 +26235,43 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 				if ( node->element )
 				{
 					Item* item = (Item*)node->element;
-					if ( isItemSelectedToEffect(item) )
+					if ( (!transmuteActivate && isItemSelectedToEffect(item)) || (transmuteActivate && item == parentGUI.transmuteItemTarget) )
 					{
 						foundItem = true;
 						if ( itemCategory(item) == SPELLBOOK )
 						{
 							//repairingSpellbook = true;
 						}
+
+						if ( modeHasTransmuteMenu() )
+						{
+							if ( !transmuteActivate )
+							{
+								if ( parentGUI.transmuteItemTarget == nullptr )
+								{
+									if ( itemActionOK )
+									{
+										Player::soundActivate();
+										parentGUI.transmuteItemTarget = item;
+										animPrompt = 1.0;
+										animPromptTicks = ticks;
+										animPromptMoveLeft = false;
+									}
+								}
+								else
+								{
+									Player::soundCancel();
+									parentGUI.transmuteItemTarget = nullptr;
+									animPrompt = 1.0;
+									animPromptTicks = ticks;
+									animPromptMoveLeft = true;
+									animTooltip = 0.0;
+									itemActionOK = true;
+								}
+								break;
+							}
+						}
+
 						if ( itemActionOK )
 						{
 							if ( currentMode == ITEMFX_MODE_SCEPTER_CHARGE )
@@ -25770,6 +26284,8 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 									}
 									else
 									{
+										Player::soundActivate();
+										playSoundEntityLocal(players[parentGUI.gui_player]->entity, 167, 128);
 										parentGUI.executeOnItemClick(item);
 										confirmActionOnItemSteps.second = 0;
 									}
@@ -25781,6 +26297,8 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 							}
 							else
 							{
+								Player::soundActivate();
+								playSoundEntityLocal(players[parentGUI.gui_player]->entity, 167, 128);
 								parentGUI.executeOnItemClick(item);
 							}
 						}
@@ -25914,6 +26432,10 @@ void GenericGUIMenu::ItemEffectGUI_t::createItemEffectMenu()
 			auto itemBgImg = itemDisplayTooltip->addImage(SDL_Rect{ 0, 0, 54, 54 }, 0xFFFFFFFF,
 				"*images/ui/ScrollSpells/Scroll_ItemBGSurround_00.png", "item bg img");
 
+			auto itemBgTransmuteGlow = itemDisplayTooltip->addImage(SDL_Rect{ 0, 0, 44, 44 }, 0xFFFFFFFF,
+				"*images/ui/ScrollSpells/Gleam_00.png", "item transmute gleam img");
+			itemBgTransmuteGlow->disabled = true;
+
 			{
 				auto itemCostBg = itemDisplayTooltip->addImage(SDL_Rect{ 0, 0, 104, 34 },
 					0xFFFFFFFF, "*images/ui/ScrollSpells/Scroll_CostBacking_00.png", "item cost img");
@@ -26013,6 +26535,116 @@ void GenericGUIMenu::ItemEffectGUI_t::createItemEffectMenu()
 				0xFFFFFFFF, "", "action modifier glyph");
 			actionModifierGlyph->ontop = true;
 			actionModifierGlyph->disabled = true;
+		}
+
+		{
+			auto actionButtonConfirm = bgFrame->addButton("action button confirm");
+			SDL_Rect actionBtnPos{ 0, 0, 86, 26 };
+			actionButtonConfirm->setSize(actionBtnPos);
+			actionButtonConfirm->setColor(makeColor(255, 255, 255, 255));
+			actionButtonConfirm->setHighlightColor(makeColor(255, 255, 255, 255));
+			actionButtonConfirm->setText("");
+			actionButtonConfirm->setFont(itemFont);
+			actionButtonConfirm->setHideGlyphs(true);
+			actionButtonConfirm->setHideKeyboardGlyphs(true);
+			actionButtonConfirm->setHideSelectors(true);
+			actionButtonConfirm->setMenuConfirmControlType(0);
+			actionButtonConfirm->setBackground("*images/ui/ScrollSpells/Button_TakeAll_00.png");
+			actionButtonConfirm->setBackgroundHighlighted("*images/ui/ScrollSpells/Button_TakeAllHigh_00.png");
+			actionButtonConfirm->setBackgroundActivated("*images/ui/ScrollSpells/Button_TakeAllPress_00.png");
+			actionButtonConfirm->setTextHighlightColor(makeColor(201, 162, 100, 255));
+			actionButtonConfirm->setCallback([](Button& button) {
+				button.setUserData((void*)(intptr_t)(1));
+				});
+			actionButtonConfirm->setTickCallback(genericgui_deselect_fn);
+			actionButtonConfirm->setInvisible(true);
+			actionButtonConfirm->setDisabled(true);
+
+			auto actionPromptGlyph = bgFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+				0xFFFFFFFF, "", "action confirm glyph");
+			actionPromptGlyph->ontop = true;
+			actionPromptGlyph->disabled = true;
+
+			actionPromptGlyph = bgFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+				0xFFFFFFFF, "", "action cancel glyph");
+			actionPromptGlyph->ontop = true;
+			actionPromptGlyph->disabled = true;
+
+			actionPromptGlyph = bgFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+				0xFFFFFFFF, "", "action refresh glyph");
+			actionPromptGlyph->ontop = true;
+			actionPromptGlyph->disabled = true;
+
+			auto actionButtonCancel = bgFrame->addButton("action button cancel");
+			actionBtnPos = SDL_Rect{ 0, 0, 86, 26 };
+			actionButtonCancel->setSize(actionBtnPos);
+			actionButtonCancel->setColor(makeColor(255, 255, 255, 255));
+			actionButtonCancel->setHighlightColor(makeColor(255, 255, 255, 255));
+			actionButtonCancel->setText("");
+			actionButtonCancel->setFont(itemFont);
+			actionButtonCancel->setHideGlyphs(true);
+			actionButtonCancel->setHideKeyboardGlyphs(true);
+			actionButtonCancel->setHideSelectors(true);
+			actionButtonCancel->setMenuConfirmControlType(0);
+			actionButtonCancel->setBackground("*images/ui/ScrollSpells/Button_Cancel_00.png");
+			actionButtonCancel->setBackgroundHighlighted("*images/ui/ScrollSpells/Button_CancelHigh_00.png");
+			actionButtonCancel->setBackgroundActivated("*images/ui/ScrollSpells/Button_CancelPress_00.png");
+			//actionButtonCancel->setTextColor(hudColors.characterSheetRed);
+			actionButtonCancel->setTextHighlightColor(makeColor(201, 162, 100, 255));
+			actionButtonCancel->setCallback([](Button& button) {
+				if ( button.getOwner() >= 0 && button.getOwner() < MAXPLAYERS )
+				{
+					if ( GenericGUI[button.getOwner()].transmuteItemTarget )
+					{
+						GenericGUI[button.getOwner()].transmuteItemTarget = nullptr;
+						GenericGUI[button.getOwner()].itemfxGUI.animPrompt = 1.0;
+						GenericGUI[button.getOwner()].itemfxGUI.animPromptTicks = ticks;
+						GenericGUI[button.getOwner()].itemfxGUI.animPromptMoveLeft = true;
+						GenericGUI[button.getOwner()].itemfxGUI.animTooltip = 0.0;
+					}
+
+					if ( players[button.getOwner()]->GUI.activeModule == Player::GUI_t::MODULE_ITEMEFFECTGUI )
+					{
+						// reset to inventory mode if still hanging in itemfx GUI
+						players[button.getOwner()]->hud.compactLayoutMode = Player::HUD_t::COMPACT_LAYOUT_INVENTORY;
+						players[button.getOwner()]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
+						if ( !inputs.getVirtualMouse(button.getOwner())->draw_cursor )
+						{
+							players[button.getOwner()]->GUI.warpControllerToModule(false);
+						}
+					}
+				}
+				Player::soundCancel();
+				});
+			actionButtonCancel->setTickCallback(genericgui_deselect_fn);
+			actionButtonCancel->setInvisible(true);
+			actionButtonCancel->setDisabled(true);
+
+			auto actionButtonRefresh = bgFrame->addButton("action button refresh");
+			actionBtnPos = SDL_Rect{ 0, 0, 40, 40 };
+			actionButtonRefresh->setSize(actionBtnPos);
+			actionButtonRefresh->setColor(makeColor(255, 255, 255, 255));
+			actionButtonRefresh->setHighlightColor(makeColor(255, 255, 255, 255));
+			actionButtonRefresh->setText("");
+			actionButtonRefresh->setFont(itemFont);
+			actionButtonRefresh->setHideGlyphs(true);
+			actionButtonRefresh->setHideKeyboardGlyphs(true);
+			actionButtonRefresh->setHideSelectors(true);
+			actionButtonRefresh->setMenuConfirmControlType(0);
+			actionButtonRefresh->setBackground("*images/ui/ScrollSpells/Button_Refresh00.png");
+			actionButtonRefresh->setBackgroundHighlighted("*images/ui/ScrollSpells/Button_RefreshHigh00.png");
+			actionButtonRefresh->setBackgroundActivated("*images/ui/ScrollSpells/Button_RefreshPress00.png");
+			actionButtonRefresh->setTextHighlightColor(makeColor(201, 162, 100, 255));
+			actionButtonRefresh->setCallback([](Button& button) {
+				Player::soundModuleNavigation();
+				if ( button.getOwner() >= 0 && button.getOwner() < MAXPLAYERS )
+				{
+					GenericGUI[button.getOwner()].transmuteItemScroll++;
+				}
+				});
+			actionButtonRefresh->setTickCallback(genericgui_deselect_fn);
+			actionButtonRefresh->setInvisible(true);
+			actionButtonRefresh->setDisabled(true);
 		}
 
 		{

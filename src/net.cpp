@@ -3286,6 +3286,21 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 					fx->actmagicNoLight = 1;
 					break;
 				}
+				case PARTICLE_EFFECT_STATIC_MAXIMISE:
+				{
+					for ( int i = 0; i < 3; ++i )
+					{
+						Entity* fx = createParticleAestheticOrbit(entity, sprite, 2 * TICKS_PER_SECOND, PARTICLE_EFFECT_STATIC_ORBIT);
+						fx->z = 7.5 - 2.0 * i;
+						fx->scalex = 1.0;
+						fx->scaley = 1.0;
+						fx->scalez = 1.0;
+						fx->actmagicOrbitDist = 20;
+						fx->yaw += i * 2 * PI / 3;
+						fx->actmagicNoLight = (i == 0 ? 0 : 1);
+					}
+					break;
+				}
 				case PARTICLE_EFFECT_FLAMES:
 				{
 					int duration = SDLNet_Read32(&net_packet->data[15]);
@@ -8745,6 +8760,7 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 			stats[player]->GOLD = std::max(0, stats[player]->GOLD);
 
 			Sint32 magiccost = std::max(0, (Sint32)SDLNet_Read32(&net_packet->data[9]));
+			Sint32 prevMP = stats[player]->MP;
 			if ( players[player] && players[player]->entity )
 			{
 				if ( magiccost > stats[player]->MP )
@@ -8760,6 +8776,12 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 					playSoundPlayer(player, 28, 92);
 				}
 				players[player]->entity->drainMP(magiccost);
+			}
+
+			Uint16 spellID = SDLNet_Read16(&net_packet->data[13]);
+			if ( auto spell = getSpellFromID(spellID) )
+			{
+				players[player]->mechanics.baseSpellIncrementMP(prevMP - stats[player]->MP, spell->skillID);
 			}
 
 			strcpy((char*)net_packet->data, "GOLD");

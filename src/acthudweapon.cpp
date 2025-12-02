@@ -3621,6 +3621,15 @@ void actHudWeapon(Entity* my)
 		{
 			my->z -= -1.0 * .5;
 		}
+
+		if ( stats[HUDWEAPON_PLAYERNUM]->getEffectActive(EFF_MINIMISE) )
+		{
+			my->z += -Player::PlayerMovement_t::minimiseMaximiseCameraZ * (stats[HUDWEAPON_PLAYERNUM]->getEffectActive(EFF_MINIMISE) & 0xF) * .5;
+		}
+		if ( stats[HUDWEAPON_PLAYERNUM]->getEffectActive(EFF_MAXIMISE) )
+		{
+			my->z -= -Player::PlayerMovement_t::minimiseMaximiseCameraZ * (stats[HUDWEAPON_PLAYERNUM]->getEffectActive(EFF_MAXIMISE) & 0xF) * .5;
+		}
 	}
 	else
 	{
@@ -3808,6 +3817,14 @@ void actHudWeapon(Entity* my)
 			my->z -= -1.0 * .5;
 		}
 
+		if ( stats[HUDWEAPON_PLAYERNUM]->getEffectActive(EFF_MINIMISE) )
+		{
+			my->z += -Player::PlayerMovement_t::minimiseMaximiseCameraZ * (stats[HUDWEAPON_PLAYERNUM]->getEffectActive(EFF_MINIMISE) & 0xF) * .5;
+		}
+		if ( stats[HUDWEAPON_PLAYERNUM]->getEffectActive(EFF_MAXIMISE) )
+		{
+			my->z -= -Player::PlayerMovement_t::minimiseMaximiseCameraZ * (stats[HUDWEAPON_PLAYERNUM]->getEffectActive(EFF_MAXIMISE) & 0xF) * .5;
+		}
 	}
 	if ( !my->flags[OVERDRAW] )
 	{
@@ -4876,6 +4893,15 @@ void actHudShield(Entity* my)
 		my->z -= -1.0 * .5;
 	}
 
+	if ( stats[HUDSHIELD_PLAYERNUM]->getEffectActive(EFF_MINIMISE) )
+	{
+		my->z += -Player::PlayerMovement_t::minimiseMaximiseCameraZ * (stats[HUDSHIELD_PLAYERNUM]->getEffectActive(EFF_MINIMISE) & 0xF) * .5;
+	}
+	if ( stats[HUDSHIELD_PLAYERNUM]->getEffectActive(EFF_MAXIMISE) )
+	{
+		my->z -= -Player::PlayerMovement_t::minimiseMaximiseCameraZ * (stats[HUDSHIELD_PLAYERNUM]->getEffectActive(EFF_MAXIMISE) & 0xF) * .5;
+	}
+
 	// torch/lantern flames
 	if ( playerRace == TROLL || playerRace == SPIDER || playerRace == CREATURE_IMP || playerRace == RAT )
 	{
@@ -5486,6 +5512,15 @@ void actHudAdditional(Entity* my)
 	else if ( stats[HUDSHIELD_PLAYERNUM]->type == MONSTER_M )
 	{
 		my->z -= -1.0 * .5;
+	}
+
+	if ( stats[HUDSHIELD_PLAYERNUM]->getEffectActive(EFF_MINIMISE) )
+	{
+		my->z += -Player::PlayerMovement_t::minimiseMaximiseCameraZ * (stats[HUDSHIELD_PLAYERNUM]->getEffectActive(EFF_MINIMISE) & 0xF) * .5;
+	}
+	if ( stats[HUDSHIELD_PLAYERNUM]->getEffectActive(EFF_MAXIMISE) )
+	{
+		my->z -= -Player::PlayerMovement_t::minimiseMaximiseCameraZ * (stats[HUDSHIELD_PLAYERNUM]->getEffectActive(EFF_MAXIMISE) & 0xF) * .5;
 	}
 }
 

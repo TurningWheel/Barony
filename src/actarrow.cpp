@@ -1124,6 +1124,42 @@ void actArrow(Entity* my)
 						}
 					}
 
+					bool envenomWeapon = false;
+					if ( parent )
+					{
+						Stat* parentStats = parent->getStats();
+						if ( parentStats && parentStats->getEffectActive(EFF_ENVENOM_WEAPON) && hitstats )
+						{
+							if ( local_rng.rand() % 2 == 0 )
+							{
+								int envenomDamage = std::min(
+									getSpellDamageSecondaryFromID(SPELL_ENVENOM_WEAPON, parent, parentStats, parent),
+									getSpellDamageFromID(SPELL_ENVENOM_WEAPON, parent, parentStats, parent));
+
+								hit.entity->modHP(-envenomDamage); // do the damage
+								for ( int tmp = 0; tmp < 3; ++tmp )
+								{
+									Entity* gib = spawnGib(hit.entity, 211);
+									serverSpawnGibForClient(gib);
+								}
+								if ( !hitstats->getEffectActive(EFF_POISONED) )
+								{
+									envenomWeapon = true;
+									hitstats->setEffectActive(EFF_POISONED, 1);
+
+									int duration = 160 * envenomDamage;
+									hitstats->EFFECTS_TIMERS[EFF_POISONED] = std::max(200, duration - hit.entity->getCON() * 20);
+									hitstats->poisonKiller = parent->getUID();
+									if ( hit.entity->isEntityPlayer() )
+									{
+										messagePlayerMonsterEvent(hit.entity->isEntityPlayer(), makeColorRGB(255, 0, 0), *parentStats, Language::get(6531), Language::get(6532), MSG_COMBAT);
+										serverUpdateEffects(hit.entity->isEntityPlayer());
+									}
+								}
+							}
+						}
+					}
+
 					if ( hitstats->HP <= 0 && parent)
 					{
 						parent->awardXP( hit.entity, true, true );
@@ -1457,6 +1493,15 @@ void actArrow(Entity* my)
 							{
 								Uint32 color = makeColorRGB(255, 0, 0);
 								messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT_BASIC, color, Language::get(451)); // you are hit by an arrow!
+							}
+						}
+						else if ( envenomWeapon )
+						{
+							statusEffectApplied = true;
+							if ( parent && parent->behavior == &actPlayer )
+							{
+								Uint32 color = makeColorRGB(0, 255, 0);
+								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(6533), Language::get(6534), MSG_COMBAT);
 							}
 						}
 

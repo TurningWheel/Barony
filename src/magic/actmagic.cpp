@@ -8211,7 +8211,22 @@ void actParticleAestheticOrbit(Entity* my)
 			my->removeLightField();
 			if ( !my->actmagicNoLight )
 			{
-				my->light = addLight(my->x / 16, my->y / 16, "orb_blue");
+				if ( (my->sprite >= 1758 && my->sprite <= 1763) )
+				{
+					my->light = addLight(my->x / 16, my->y / 16, "orb_blue");
+				}
+				else if ( my->sprite >= 2335 && my->sprite <= 2340 )
+				{
+					my->light = addLight(my->x / 16, my->y / 16, "orb_red");
+				}
+				else if ( my->sprite >= 2347 && my->sprite <= 2352 )
+				{
+					my->light = addLight(my->x / 16, my->y / 16, "orb_purple");
+				}
+				else if ( my->sprite >= 2341 && my->sprite <= 2346 )
+				{
+					my->light = addLight(my->x / 16, my->y / 16, "orb_blue");
+				}
 			}
 
 			if ( anim == 0 || anim == 2 || anim >= 4 )
@@ -8220,16 +8235,40 @@ void actParticleAestheticOrbit(Entity* my)
 			}
 			if ( my->ticks % 4 == 0 )
 			{
+				int prevSprite = my->sprite;
 				my->sprite++;
 				my->yaw += 1 * PI / 3;
-				if ( my->sprite > 1763 )
+				if ( prevSprite == 1763 )
 				{
 					my->sprite = 1758;
+				}
+				else if ( prevSprite == 2340 )
+				{
+					my->sprite = 2335;
+				}
+				else if ( prevSprite == 2346 )
+				{
+					my->sprite = 2341;
+				}
+				else if ( prevSprite == 2352 )
+				{
+					my->sprite = 2347;
 				}
 
 				if ( local_rng.rand() % 4 == 0 )
 				{
-					playSoundEntityLocal(my, 808 + local_rng.rand() % 5, 32);
+					bool doSound = true;
+					if ( !(my->sprite >= 1758 && my->sprite <= 1763) /*&& parent->behavior == &actPlayer && players[parent->skill[2]]->isLocalPlayer()*/ )
+					{
+						if ( local_rng.rand() % 4 > 0 )
+						{
+							doSound = false;
+						}
+					}
+					if ( doSound )
+					{
+						playSoundEntityLocal(my, 808 + local_rng.rand() % 5, 32);
+					}
 				}
 			}
 			if ( !my->flags[INVISIBLE] )
@@ -10748,6 +10787,81 @@ void actParticleTimer(Entity* my)
 				{
 					Entity* caster = uidToEntity(my->parent);
 					doSpellExplosionArea(my->particleTimerVariable2, my, caster, my->x, my->y, my->z, my->particleTimerVariable3);
+				}
+			}
+			else if ( my->particleTimerCountdownAction == PARTICLE_TIMER_ACTION_SPIRIT_WEAPON_ATTACK )
+			{
+				Entity* parent = uidToEntity(my->parent);
+				Stat* parentStats = parent ? parent->getStats() : nullptr;
+				if ( parent && parentStats && parent->monsterAttack != 0 && parentStats->getEffectActive(EFF_KNOCKBACK) )
+				{
+					std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadius(parent->x / 16, parent->y / 16, 1);
+					for ( auto it : entLists )
+					{
+						node_t* node;
+						for ( node = it->first; node != nullptr; node = node->next )
+						{
+							Entity* entity = (Entity*)node->element;
+							if ( entity == parent )
+							{
+								continue;
+							}
+							if ( !entity->getStats() )
+							{
+								continue;
+							}
+							if ( !entityInsideEntity(parent, entity) )
+							{
+								continue;
+							}
+							if ( parent && parent->getStats() )
+							{
+								//if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
+								{
+									if ( parent->checkFriend(entity) && parent->friendlyFireProtection(entity) )
+									{
+										continue;
+									}
+								}
+							}
+
+							auto hitProps = getParticleEmitterHitProps(my->getUID(), entity);
+							if ( !hitProps )
+							{
+								continue;
+							}
+							if ( hitProps->hits > 0 )
+							{
+								continue;
+							}
+							if ( !entity->monsterIsTargetable() ) { continue; }
+
+							real_t tangent = atan2(entity->y - parent->y, entity->x - parent->x);
+							bool oldPassable = entity->flags[PASSABLE];
+							entity->flags[PASSABLE] = false;
+							real_t d = lineTraceTarget(parent, parent->x, parent->y, tangent, 8.0, 0, false, entity);
+							entity->flags[PASSABLE] = oldPassable;
+							if ( hit.entity != entity )
+							{
+								continue;
+							}
+
+							{
+								Sint32 prevAtk = parent->monsterAttack;
+								Sint32 prevAtkTime = parent->monsterAttackTime;
+								parent->attack(0, 0, entity);
+								parent->monsterAttack = prevAtk;
+								parent->monsterAttackTime = prevAtkTime;
+
+								++hitProps->hits;
+								hitProps->tick = ticks;
+							}
+						}
+					}
+				}
+				else
+				{
+					PARTICLE_LIFE = 0;
 				}
 			}
 			else if ( my->particleTimerCountdownAction == PARTICLE_TIMER_ACTION_EARTH_ELEMENTAL_ROLL )

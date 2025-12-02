@@ -1234,14 +1234,14 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 			{
 				continue;
 			}
-			if ( type == EARTH_ELEMENTAL )
+			if ( type == EARTH_ELEMENTAL || type == MONSTER_ADORCISED_WEAPON )
 			{
 				if ( stats && stats->getEffectActive(EFF_KNOCKBACK)
 					&& (entity->behavior == &actMonster || entity->behavior == &actPlayer) )
 				{
 					continue;
 				}
-				else if ( entity->behavior == &actChest && entityInsideEntity(entity, my) )
+				else if ( type == EARTH_ELEMENTAL && entity->behavior == &actChest && entityInsideEntity(entity, my) )
 				{
 					continue;
 				}

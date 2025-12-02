@@ -5292,7 +5292,11 @@ void actMonster(Entity* my)
 								continue;
 							}
 							bool visiontest = false;
-							if ( hitstats->type == DUMMYBOT || hitstats->type == HOLOGRAM || myStats->type == SENTRYBOT || myStats->type == SPELLBOT
+							if ( (myStats->type == MONSTER_ADORCISED_WEAPON && myStats->getAttribute("spirit_weapon") != "") )
+							{
+								visiontest = true;
+							}
+							else if ( hitstats->type == DUMMYBOT || hitstats->type == HOLOGRAM || myStats->type == SENTRYBOT || myStats->type == SPELLBOT
 								|| (ringConflictHolder && ringConflictHolder == entity) )
 							{
 								if ( dir >= -13 * PI / 16 && dir <= 13 * PI / 16 )
@@ -7121,7 +7125,11 @@ timeToGoAgain:
 								continue;
 							}
 							bool visiontest = false;
-							if ( hitstats->type == DUMMYBOT || hitstats->type == HOLOGRAM || myStats->type == SENTRYBOT || myStats->type == SPELLBOT )
+							if ( (myStats->type == MONSTER_ADORCISED_WEAPON && myStats->getAttribute("spirit_weapon") != "") )
+							{
+								visiontest = true;
+							}
+							else if ( hitstats->type == DUMMYBOT || hitstats->type == HOLOGRAM || myStats->type == SENTRYBOT || myStats->type == SPELLBOT )
 							{
 								if ( dir >= -13 * PI / 16 && dir <= 13 * PI / 16 )
 								{
@@ -10231,6 +10239,11 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 		|| myStats->type == EARTH_ELEMENTAL )
 	{
 		if ( monsterSpecialState == SKULL_CAST )
+		{
+			lichRangeCheckOverride = true;
+		}
+
+		if ( (myStats->type == MONSTER_ADORCISED_WEAPON && myStats->getAttribute("spirit_weapon") != "") )
 		{
 			lichRangeCheckOverride = true;
 		}

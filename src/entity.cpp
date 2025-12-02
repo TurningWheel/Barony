@@ -6396,6 +6396,37 @@ void Entity::handleEffects(Stat* myStats)
 		}
 	}
 
+	if ( myStats->getEffectActive(EFF_MAXIMISE) )
+	{
+		int interval = 40;
+		if ( (ticks + 20) % interval == 0 )
+		{
+			Entity* fx = createParticleAestheticOrbit(this, 2335, TICKS_PER_SECOND / 2, PARTICLE_EFFECT_STATIC_ORBIT);
+			fx->z = 7.5 - 2.0 * ((ticks / interval) % 3);
+			fx->scalex = 1.0;
+			fx->scaley = 1.0;
+			fx->scalez = 1.0;
+			fx->actmagicOrbitDist = 20;
+			fx->yaw += ((ticks / interval) % 3) * 2 * PI / 3;
+			fx->actmagicNoLight = 1;
+		}
+	}
+	else if ( myStats->getEffectActive(EFF_MINIMISE) )
+	{
+		int interval = 40;
+		if ( (ticks + 20) % interval == 0 )
+		{
+			Entity* fx = createParticleAestheticOrbit(this, 2341, TICKS_PER_SECOND / 2, PARTICLE_EFFECT_STATIC_ORBIT);
+			fx->z = 7.5 - 2.0 * ((ticks / interval) % 3);
+			fx->scalex = 1.0;
+			fx->scaley = 1.0;
+			fx->scalez = 1.0;
+			fx->actmagicOrbitDist = 20;
+			fx->yaw += ((ticks / interval) % 3) * 2 * PI / 3;
+			fx->actmagicNoLight = 1;
+		}
+	}
+
 	int bodypart = 0;
 	for ( auto node = this->children.first; node; node = node->next, bodypart++ )
 	{
@@ -7938,6 +7969,32 @@ Sint32 statGetSTR(Stat* entitystats, Entity* my)
 			STR += (std::max(5, STR / 4));
 		}
 	}
+
+	if ( entitystats->getEffectActive(EFF_MAXIMISE) )
+	{
+		Uint8 effectStrength = entitystats->getEffectActive(EFF_MAXIMISE) & 0xF;
+		if ( my && my->behavior == &actPlayer )
+		{
+			STR += std::max((real_t)effectStrength, STR * 0.1 * effectStrength);
+		}
+		else
+		{
+			STR += std::max((real_t)effectStrength, STR * 0.1 * effectStrength);
+		}
+	}
+	if ( entitystats->getEffectActive(EFF_MINIMISE) )
+	{
+		Uint8 effectStrength = entitystats->getEffectActive(EFF_MINIMISE) & 0xF;
+		if ( my && my->behavior == &actPlayer )
+		{
+			STR -= std::max((real_t)effectStrength, STR * 0.1 * effectStrength);
+		}
+		else
+		{
+			STR -= std::max((real_t)effectStrength, STR * 0.1 * effectStrength);
+		}
+	}
+
 	if ( entitystats->getEffectActive(EFF_POTION_STR) )
 	{
 		STR += (std::max(5, STR / 4));
@@ -8252,6 +8309,31 @@ Sint32 statGetDEX(Stat* entitystats, Entity* my)
 		DEX += 8;
 	}
 
+	if ( entitystats->getEffectActive(EFF_MAXIMISE) )
+	{
+		Uint8 effectStrength = entitystats->getEffectActive(EFF_MAXIMISE) & 0xF;
+		if ( my && my->behavior == &actPlayer )
+		{
+			DEX -= std::max(5.0, DEX * 0.1 * effectStrength);
+		}
+		else
+		{
+			DEX -= std::max(5.0, DEX * 0.1 * effectStrength);
+		}
+	}
+	if ( entitystats->getEffectActive(EFF_MINIMISE) )
+	{
+		Uint8 effectStrength = entitystats->getEffectActive(EFF_MINIMISE) & 0xF;
+		if ( my && my->behavior == &actPlayer )
+		{
+			DEX += std::max((real_t)effectStrength, DEX * 0.1 * effectStrength);
+		}
+		else
+		{
+			DEX += std::max((real_t)effectStrength, DEX * 0.1 * effectStrength);
+		}
+	}
+
 	if ( entitystats->type == MIMIC )
 	{
 		if ( entitystats->getEffectActive(EFF_MIMIC_VOID) )
@@ -8388,6 +8470,31 @@ Sint32 statGetCON(Stat* entitystats, Entity* my)
 		percentHP = std::min(100, std::max(0, percentHP));
 		percentHP = 100 - percentHP;
 		CON += percentHP / 10;
+	}
+
+	if ( entitystats->getEffectActive(EFF_MAXIMISE) )
+	{
+		Uint8 effectStrength = entitystats->getEffectActive(EFF_MAXIMISE) & 0xF;
+		if ( my && my->behavior == &actPlayer )
+		{
+			CON += std::max((real_t)effectStrength, CON * 0.1 * effectStrength);
+		}
+		else
+		{
+			CON += std::max((real_t)effectStrength, CON * 0.1 * effectStrength);
+		}
+	}
+	if ( entitystats->getEffectActive(EFF_MINIMISE) )
+	{
+		Uint8 effectStrength = entitystats->getEffectActive(EFF_MINIMISE) & 0xF;
+		if ( my && my->behavior == &actPlayer )
+		{
+			CON -= std::max((real_t)effectStrength, CON * 0.1 * effectStrength);
+		}
+		else
+		{
+			CON -= std::max((real_t)effectStrength, CON * 0.1 * effectStrength);
+		}
 	}
 
 	if ( entitystats->type == MIMIC )
@@ -9514,6 +9621,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 						serverUpdateEntitySkill(this, 8); // don't update basic hits
 					}
 				}
+				else if ( myStats->type == MONSTER_ADORCISED_WEAPON && target != nullptr )
+				{
+					// don't update special auto attack hits
+				}
 				else
 				{
 					serverUpdateEntitySkill(this, 8);
@@ -9591,6 +9702,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 		{
 			castSpell(uid, &spell_fireball, true, false);
 			return;
+		}
+		if ( myStats->type == MONSTER_ADORCISED_WEAPON && myStats->getAttribute("spirit_weapon") != "" 
+			&& target == nullptr )
+		{
+			return; // don't hit basic hits, only slide through targeted hits
 		}
 
 		bool magicstaffStrike = false;
@@ -13430,21 +13546,31 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 						if ( myStats->getEffectActive(EFF_ENVENOM_WEAPON) )
 						{
-							if ( !hitstats->getEffectActive(EFF_POISONED) )
+							if ( local_rng.rand() % 2 == 0 )
 							{
-								envenomWeapon = true;
-								hitstats->setEffectActive(EFF_POISONED, 1);
-								hitstats->EFFECTS_TIMERS[EFF_POISONED] = std::max(200, 600 - hit.entity->getCON() * 20);
-								hitstats->poisonKiller = getUID();
-								if ( playerhit >= 0 )
-								{
-									messagePlayerMonsterEvent(playerhit, makeColorRGB(255, 0, 0), *myStats, Language::get(6531), Language::get(6532), MSG_COMBAT);
-								}
-								serverUpdateEffects(playerhit);
+								int envenomDamage = std::min(
+									getSpellDamageSecondaryFromID(SPELL_ENVENOM_WEAPON, this, myStats, this),
+									getSpellDamageFromID(SPELL_ENVENOM_WEAPON, this, myStats, this));
+
+								hit.entity->modHP(-envenomDamage); // do the damage
 								for ( int tmp = 0; tmp < 3; ++tmp )
 								{
 									Entity* gib = spawnGib(hit.entity, 211);
 									serverSpawnGibForClient(gib);
+								}
+								if ( !hitstats->getEffectActive(EFF_POISONED) )
+								{
+									envenomWeapon = true;
+									hitstats->setEffectActive(EFF_POISONED, 1);
+
+									int duration = 310 * envenomDamage;
+									hitstats->EFFECTS_TIMERS[EFF_POISONED] = std::max(200, duration - hit.entity->getCON() * 20);
+									hitstats->poisonKiller = getUID();
+									if ( playerhit >= 0 )
+									{
+										messagePlayerMonsterEvent(playerhit, makeColorRGB(255, 0, 0), *myStats, Language::get(6531), Language::get(6532), MSG_COMBAT);
+										serverUpdateEffects(playerhit);
+									}
 								}
 							}
 						}
@@ -15230,6 +15356,22 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 					}
 
+					if ( hitstats->HP > 0 && hitstats->OLDHP > hitstats->HP )
+					{
+						// assist damage from summons
+						if ( this->behavior == &actMonster )
+						{
+							int summonSpellID = getSpellFromSummonedEntityForSpellEvent(this);
+							if ( summonSpellID != SPELL_NONE )
+							{
+								if ( Entity* leader = uidToEntity(myStats->leader_uid) )
+								{
+									magicOnSpellCastEvent(leader, nullptr, hit.entity, summonSpellID, spell_t::SPELL_LEVEL_EVENT_ASSIST | spell_t::SPELL_LEVEL_EVENT_MINOR_CHANCE, 1);
+								}
+							}
+						}
+					}
+
 					if ( hitstats )
 					{
 						if ( hitstats->type == BUGBEAR
@@ -16516,6 +16658,16 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 		int value = srcStats->MISC_FLAGS[STAT_FLAG_XP_PERCENT_AWARD] - 1; // offset by 1 since 0 is nothing
 		double percent = value / 100.f;
 		xpGain = percent * xpGain;
+	}
+	if ( srcStats->getEffectActive(EFF_MINIMISE) )
+	{
+		int effectStrength = srcStats->getEffectActive(EFF_MINIMISE) & 0xF;
+		xpGain = std::max(1, std::min((int)(xpGain * (1.0 - 0.1 * effectStrength)), xpGain - 2 * effectStrength));
+	}
+	else if ( srcStats->getEffectActive(EFF_MAXIMISE) )
+	{
+		int effectStrength = srcStats->getEffectActive(EFF_MINIMISE) & 0xF;
+		xpGain = std::max(1, std::min((int)(xpGain * (1.0 + 0.1 * effectStrength)), xpGain + 2 * effectStrength));
 	}
 	if ( gameplayCustomManager.inUse() )
 	{
@@ -22046,6 +22198,37 @@ void Entity::handleEffectsClient()
 		if ( ticks % interval == 0 )
 		{
 			Entity* fx = createParticleAestheticOrbit(this, 1758, TICKS_PER_SECOND / 2, PARTICLE_EFFECT_STATIC_ORBIT);
+			fx->z = 7.5 - 2.0 * ((ticks / interval) % 3);
+			fx->scalex = 1.0;
+			fx->scaley = 1.0;
+			fx->scalez = 1.0;
+			fx->actmagicOrbitDist = 20;
+			fx->yaw += ((ticks / interval) % 3) * 2 * PI / 3;
+			fx->actmagicNoLight = 1;
+		}
+	}
+
+	if ( myStats->getEffectActive(EFF_MAXIMISE) )
+	{
+		int interval = 40;
+		if ( (ticks + 20) % interval == 0 )
+		{
+			Entity* fx = createParticleAestheticOrbit(this, 2335, TICKS_PER_SECOND / 2, PARTICLE_EFFECT_STATIC_ORBIT);
+			fx->z = 7.5 - 2.0 * ((ticks / interval) % 3);
+			fx->scalex = 1.0;
+			fx->scaley = 1.0;
+			fx->scalez = 1.0;
+			fx->actmagicOrbitDist = 20;
+			fx->yaw += ((ticks / interval) % 3) * 2 * PI / 3;
+			fx->actmagicNoLight = 1;
+		}
+	}
+	else if ( myStats->getEffectActive(EFF_MINIMISE) )
+	{
+		int interval = 40;
+		if ( (ticks + 20) % interval == 0 )
+		{
+			Entity* fx = createParticleAestheticOrbit(this, 2341, TICKS_PER_SECOND / 2, PARTICLE_EFFECT_STATIC_ORBIT);
 			fx->z = 7.5 - 2.0 * ((ticks / interval) % 3);
 			fx->scalex = 1.0;
 			fx->scaley = 1.0;
@@ -28451,6 +28634,22 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 	else if ( shieldLimb->sprite == items[SILVER_SHIELD].index )
 	{
 		shieldLimb->focalx += 0.5;
+	}
+	else if ( shieldLimb->sprite == items[INSTRUMENT_DRUM].index
+		|| shieldLimb->sprite == items[INSTRUMENT_FLUTE].index
+		|| shieldLimb->sprite == items[INSTRUMENT_LUTE].index
+		|| shieldLimb->sprite == items[INSTRUMENT_LYRE].index
+		|| shieldLimb->sprite == items[INSTRUMENT_HORN].index )
+	{
+		shieldLimb->focaly += 1.0;
+		if ( shieldLimb->sprite == items[INSTRUMENT_HORN].index )
+		{
+			shieldLimb->focalx += 1.25;
+		}
+		else if ( shieldLimb->sprite == items[INSTRUMENT_DRUM].index )
+		{
+			shieldLimb->focalx += 0.75;
+		}
 	}
 	else if ( itemSpriteIsFociThirdPersonModel(shieldLimb->sprite) )
 	{
