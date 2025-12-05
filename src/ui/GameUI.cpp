@@ -6310,6 +6310,7 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 				|| stats[player]->getEffectActive(EFF_FOCI_LIGHT_PURITY)
 				|| stats[player]->getEffectActive(EFF_FOCI_LIGHT_SANCTUARY)
 				|| stats[player]->getEffectActive(EFF_GROWTH)
+				|| (cast_animation[player].overcharge > 0 || cast_animation[player].overcharge_init > 0)
 				|| (players[player]->mechanics.gremlinBreakableCounter > 0 && stats[player]->type == MONSTER_G) )
 			{
 				for ( auto img : frame->getImages() )
@@ -6820,6 +6821,23 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 									val = "II";
 								}
 								if ( auto text = Text::get(val.c_str(),
+									"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+								{
+									text->drawColor(SDL_Rect{ 0,0,0,0 },
+										SDL_Rect{ pos.x + img->pos.x + img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x,
+										pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
+										0, 0 },
+										SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+										makeColor(255, 255, 255, 255));
+								}
+							}
+						}
+						else if ( img->path.find("overcharge.png") != std::string::npos )
+						{
+							int charges = std::max(cast_animation[player].overcharge, cast_animation[player].overcharge_init);
+							if ( charges > 0 )
+							{
+								if ( auto text = Text::get(std::to_string(charges).c_str(),
 									"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
 								{
 									text->drawColor(SDL_Rect{ 0,0,0,0 },
@@ -7905,6 +7923,8 @@ const int StatusEffectQueue_t::kEffectRetaliation = -25;
 const int StatusEffectQueue_t::kEffectAssistance = -26;
 const int StatusEffectQueue_t::kEffectStability = -27;
 const int StatusEffectQueue_t::kEffectVandal = -28;
+const int StatusEffectQueue_t::kEffectOvercharge = -29;
+const int StatusEffectQueue_t::kEffectEnd = -30;
 const int StatusEffectQueue_t::kSpellEffectOffset = 10000;
 
 Frame* StatusEffectQueue_t::getStatusEffectFrame()
@@ -8393,7 +8413,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 	bool inshop = false;
 
 	std::map<int, bool> miscEffects;
-	for ( int i = kEffectBurning; i >= kEffectVandal; --i )
+	for ( int i = kEffectBurning; i >= kEffectEnd; --i )
 	{
 		miscEffects[i] = false;
 	}
@@ -8463,6 +8483,10 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 			if ( stats[player]->type == MONSTER_G && players[player]->mechanics.gremlinBreakableCounter >= 0 )
 			{
 				miscEffects[kEffectVandal] = true;
+			}
+			if ( cast_animation[player].overcharge_init > 0 || cast_animation[player].overcharge > 0 )
+			{
+				miscEffects[kEffectOvercharge] = true;
 			}
 			if ( stats[player]->breastplate && stats[player]->breastplate->type == VAMPIRE_DOUBLET )
 			{
@@ -8581,7 +8605,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 		}
 	}
 
-	for ( int i = kEffectBurning; i >= kEffectVandal; --i )
+	for ( int i = kEffectBurning; i >= kEffectEnd; --i )
 	{
 		if ( miscEffects[i] == false )
 		{
@@ -10033,6 +10057,13 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 	}
 
 	bool spellTarget = cast_animation[player.playernum].spellWaitingAttackInput();
+	if ( spellTarget )
+	{
+		if ( cast_animation[player.playernum].rangefinder == SpellRangefinderType::RANGEFINDER_NONE )
+		{
+			spellTarget = false;
+		}
+	}
 	bool followerInteract = followerMenu.selectMoveTo && (followerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT
 		|| followerMenu.optionSelected == ALLY_CMD_ATTACK_SELECT);
 	bool calloutInteract = calloutMenu.selectMoveTo && (calloutMenu.optionSelected == CalloutRadialMenu::CALLOUT_CMD_SELECT);
@@ -10442,6 +10473,10 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 		}
 
 		textSpellTarget->setDisabled(false);
+		/*if ( cast_animation[player.playernum].rangefinder == SpellRangefinderType::RANGEFINDER_NONE )
+		{
+			textSpellTarget->setDisabled(true);
+		}*/
 		if ( target )
 		{
 			std::string interactText = Language::get(6500);

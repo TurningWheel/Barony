@@ -536,7 +536,8 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				SDLNet_Write32(castSpellProps->targetUID, &net_packet->data[26]);
 				net_packet->data[30] = castSpellProps->wallDir;
 				net_packet->data[31] = castSpellProps->optionalData;
-				net_packet->len = 32;
+				net_packet->data[32] = castSpellProps->overcharge;
+				net_packet->len = 33;
 			}
 			else
 			{
@@ -5696,27 +5697,33 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		{
 			if ( caster )
 			{
-				int duration = element->duration;
-				if ( caster->behavior == &actPlayer )
-				{
-					node_t* spellnode = list_AddNodeLast(&caster->getStats()->magic_effects);
-					spellnode->element = copySpell(spell); //We need to save the spell since this is a channeled spell.
-					channeled_spell = (spell_t*)(spellnode->element);
-					channeled_spell->magic_effects_node = spellnode;
-					spellnode->size = sizeof(spell_t);
-					((spell_t*)spellnode->element)->caster = caster->getUID();
-					spellnode->deconstructor = &spellDeconstructor;
-					channeled_spell->channel_duration = duration; //Tell the spell how long it's supposed to last so that it knows what to reset its timer to.
-				}
-				else
-				{
-					duration = element->duration;
-				}
-				if ( caster->setEffect(EFF_OVERCHARGE, true, duration, false) )
+				int charges = getSpellDamageFromID(SPELL_OVERCHARGE, caster, caster->getStats(), caster, spellBookBonusPercent);
+				charges = std::min(charges, getSpellEffectDurationSecondaryFromID(SPELL_OVERCHARGE, caster, caster->getStats(), caster, spellBookBonusPercent));
+
+				//if ( caster->setEffect(EFF_OVERCHARGE, (Uint8)charges, element->duration, false, true, true) )
 				{
 					messagePlayerColor(caster->isEntityPlayer(), MESSAGE_STATUS, uint32ColorGreen, Language::get(6520));
-					playSoundEntity(caster, 178, 128);
-					spawnMagicEffectParticles(caster->x, caster->y, caster->z, 170);
+					playSoundEntity(caster, 167, 128);
+
+					createParticleDropRising(caster, 791, 1.0);
+					serverSpawnMiscParticles(caster, PARTICLE_EFFECT_RISING_DROP, 791);
+
+					if ( caster->behavior == &actPlayer )
+					{
+						if ( players[caster->skill[2]]->isLocalPlayer() )
+						{
+							cast_animation[caster->skill[2]].overcharge_init = charges;
+						}
+						else if ( caster->skill[2] > 0 && multiplayer == SERVER && !players[caster->skill[2]]->isLocalPlayer() )
+						{
+							strcpy((char*)net_packet->data, "OVRC");
+							net_packet->data[4] = charges;
+							net_packet->address.host = net_clients[caster->skill[2] - 1].host;
+							net_packet->address.port = net_clients[caster->skill[2] - 1].port;
+							net_packet->len = 5;
+							sendPacketSafe(net_sock, -1, net_packet, caster->skill[2] - 1);
+						}
+					}
 				}
 			}
 		}
@@ -6176,7 +6183,14 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 
 					// spellbook 100-150%, 50 INT = 200%.
 					real_t bonus = ((spellBookBonusPercent * 1 / 100.f) + getBonusFromCasterOfSpellElement(caster, nullptr, element, spell ? spell->ID : SPELL_NONE, spell->skillID));
-					amount += amount * bonus;
+					if ( overdrewIntoHP )
+					{
+						amount /= 2;
+					}
+					else
+					{
+						amount += amount * bonus;
+					}
 					if ( caster && caster->behavior == &actPlayer )
 					{
 						Compendium_t::Events_t::eventUpdateCodex(caster->skill[2], Compendium_t::CPDM_CLASS_PWR_MAX_CASTED, "pwr",
@@ -6190,7 +6204,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						if ( Entity* entity = uidToEntity(castSpellProps->targetUID) )
 						{
 							int oldHP = entity->getHP();
-							spell_changeHealth(entity, amount);
+							spell_changeHealth(entity, amount, overdrewIntoHP);
 							int heal = std::max(entity->getHP() - oldHP, 0);
 							totalHeal += heal;
 							if ( heal > 0 )
@@ -6204,10 +6218,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					else
 					{
 						int oldHP = players[i]->entity->getHP();
-						if ( overdrewIntoHP )
+						/*if ( overdrewIntoHP )
 						{
 							amount /= 2;
-						}
+						}*/
 						if ( oldHP > 0 )
 						{
 							spell_changeHealth(players[i]->entity, amount, overdrewIntoHP);

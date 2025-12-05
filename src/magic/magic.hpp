@@ -934,6 +934,7 @@ struct CastSpellProps_t
 	real_t distanceOffset = 0.0;
 	int wallDir = 0;
 	Uint8 optionalData = 0;
+	Uint8 overcharge = 0;
 	bool setToMonsterCast(Entity* monster, int spellID);
 };
 
@@ -1100,6 +1101,7 @@ typedef struct spellcastingAnimationManager
 	int throw_count = 0;
 	int active_count = 0;
 	int overcharge = 0;
+	int overcharge_init = 0;
 
 	int consume_interval; //Every consume_interval ticks, eat a mana.
 	int consume_timer; //How many ticks left till next mana consume.

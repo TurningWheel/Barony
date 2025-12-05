@@ -966,6 +966,12 @@ void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, 
 	animation_manager->setRangeFinderLocation();
 
 	spellcastAnimationUpdate(player, MONSTER_POSE_MAGIC_WINDUP1, animation_manager->times_to_circle + HANDMAGIC_TICKS_PER_CIRCLE);
+
+	if ( animation_manager->overcharge_init && !usingSpellbook && spell->ID != SPELL_OVERCHARGE )
+	{
+		animation_manager->overcharge = animation_manager->overcharge_init;
+		animation_manager->overcharge_init = 0;
+	}
 }
 
 void spellcastingAnimationManager_deactivate(spellcasting_animation_manager_t* animation_manager)
@@ -986,6 +992,7 @@ void spellcastingAnimationManager_deactivate(spellcasting_animation_manager_t* a
 	animation_manager->circle_count = 0;
 	animation_manager->active_count = 0;
 	animation_manager->overcharge = 0;
+	//animation_manager->overcharge_init = 0;
 	animation_manager->resetRangefinder();
 
 	if ( animation_manager->player == -1 )
@@ -1019,6 +1026,8 @@ void spellcastingAnimationManager_completeSpell(int player, spellcasting_animati
 		spellcastAnimationUpdate(animation_manager->player, 1, 0);
 	}
 
+	int overcharge = (animation_manager->overcharge > 0 && animation_manager->stage == ANIM_SPELL_OVERCHARGE_THROW) ? animation_manager->overcharge : 0;
+
 	if ( animation_manager->rangefinder == SpellRangefinderType::RANGEFINDER_TARGET
 		|| animation_manager->rangefinder == SpellRangefinderType::RANGEFINDER_TOUCH_FLOOR_TILE
 		|| animation_manager->rangefinder == SpellRangefinderType::RANGEFINDER_TOUCH_INTERACT_TEST
@@ -1030,6 +1039,7 @@ void spellcastingAnimationManager_completeSpell(int player, spellcasting_animati
 		castSpellProps.target_x = animation_manager->target_x;
 		castSpellProps.target_y = animation_manager->target_y;
 		castSpellProps.wallDir = animation_manager->wallDir;
+		castSpellProps.overcharge = overcharge;
 		if ( animation_manager->spell )
 		{
 			if ( animation_manager->spell->ID == SPELL_MUSHROOM )
@@ -1063,9 +1073,13 @@ void spellcastingAnimationManager_completeSpell(int player, spellcasting_animati
 		CastSpellProps_t castSpellProps;
 		castSpellProps.targetUID = animation_manager->targetUid;
 		castSpellProps.wallDir = animation_manager->wallDir;
+		castSpellProps.overcharge = overcharge;
 		castSpell(animation_manager->caster, animation_manager->spell, false, false, animation_manager->active_spellbook, &castSpellProps); //Actually cast the spell.
 	}
-	else if ( animation_manager->spell && (animation_manager->spell->ID == SPELL_BASTION_MUSHROOM || animation_manager->spell->ID == SPELL_BASTION_ROOTS) )
+	else if ( animation_manager->spell 
+		&& (animation_manager->spell->ID == SPELL_BASTION_MUSHROOM 
+			|| animation_manager->spell->ID == SPELL_BASTION_ROOTS
+			|| (overcharge > 0)) )
 	{
 		CastSpellProps_t castSpellProps;
 		if ( animation_manager->spell->ID == SPELL_BASTION_MUSHROOM )
@@ -1090,6 +1104,7 @@ void spellcastingAnimationManager_completeSpell(int player, spellcasting_animati
 				castSpellProps.optionalData = 2;
 			}
 		}
+		castSpellProps.overcharge = overcharge;
 		castSpell(animation_manager->caster, animation_manager->spell, false, false, animation_manager->active_spellbook, &castSpellProps); //Actually cast the spell.
 	}
 	else
@@ -1604,6 +1619,9 @@ void actLeftHandMagic(Entity* my)
 				my->flags[INVISIBLE] = true;
 				my->flags[INVISIBLE_DITHER] = false;
 
+				bool overchargeRepeat = cast_animation[HANDMAGIC_PLAYERNUM].stage == ANIM_SPELL_OVERCHARGE_THROW
+					&& cast_animation[HANDMAGIC_PLAYERNUM].overcharge > 0;
+
 				auto& anim = cast_animation[HANDMAGIC_PLAYERNUM];
 				if ( anim.throw_count == 0 )
 				{
@@ -1625,12 +1643,10 @@ void actLeftHandMagic(Entity* my)
 					float setpointDiff = std::max(.05f, (1.f - anim.lefthand_angle) / 10.f);
 					anim.lefthand_angle += setpointDiff;
 					anim.lefthand_angle = std::min(1.f, anim.lefthand_angle);
-
 				}
 
 				float neutralSetpoint = -2.5f;
-				if ( cast_animation[HANDMAGIC_PLAYERNUM].stage == ANIM_SPELL_OVERCHARGE_THROW
-					&& cast_animation[HANDMAGIC_PLAYERNUM].overcharge > 0 )
+				if ( overchargeRepeat )
 				{
 					neutralSetpoint = -5.f;
 				}
@@ -1641,6 +1657,13 @@ void actLeftHandMagic(Entity* my)
 					if ( anim.lefthand_angle >= 1.f )
 					{
 						anim.lefthand_movex = std::max(neutralSetpoint, anim.lefthand_movex - 0.75f);
+						if ( overchargeRepeat )
+						{
+							if ( anim.throw_count >= 30 && cast_animation[HANDMAGIC_PLAYERNUM].overcharge > 1 )
+							{
+								anim.lefthand_movex *= 1.0 - std::min(1.0, (anim.throw_count - 30) / (50.0 - 30.0));
+							}
+						}
 					}
 					else
 					{
@@ -1649,24 +1672,26 @@ void actLeftHandMagic(Entity* my)
 				}
 
 
-				if ( /*anim.throw_count >= 20 ||*/ anim.lefthand_movex <= neutralSetpoint )
+				if ( overchargeRepeat || (!overchargeRepeat && anim.lefthand_movex <= neutralSetpoint) )
 				{
-					if ( cast_animation[HANDMAGIC_PLAYERNUM].stage == ANIM_SPELL_OVERCHARGE_THROW
-						&& cast_animation[HANDMAGIC_PLAYERNUM].overcharge > 0 )
+					if ( overchargeRepeat )
 					{
-						--cast_animation[HANDMAGIC_PLAYERNUM].overcharge;
-						if ( cast_animation[HANDMAGIC_PLAYERNUM].overcharge == 0 )
+						if ( anim.throw_count >= 50 /*|| (cast_animation[HANDMAGIC_PLAYERNUM].overcharge == 1 && anim.throw_count >= 20)*/ )
 						{
-							if ( stats[HANDMAGIC_PLAYERNUM]->weapon )
+							--cast_animation[HANDMAGIC_PLAYERNUM].overcharge;
+							if ( cast_animation[HANDMAGIC_PLAYERNUM].overcharge == 0 )
 							{
-								players[HANDMAGIC_PLAYERNUM]->hud.weaponSwitch = true;
+								if ( stats[HANDMAGIC_PLAYERNUM]->weapon )
+								{
+									players[HANDMAGIC_PLAYERNUM]->hud.weaponSwitch = true;
+								}
+								spellcastingAnimationManager_deactivate(&cast_animation[HANDMAGIC_PLAYERNUM]);
 							}
-							spellcastingAnimationManager_deactivate(&cast_animation[HANDMAGIC_PLAYERNUM]);
-						}
-						else
-						{
-							fireOffSpellAnimation(&cast_animation[HANDMAGIC_PLAYERNUM], cast_animation[HANDMAGIC_PLAYERNUM].caster, 
-								cast_animation[HANDMAGIC_PLAYERNUM].spell, cast_animation[HANDMAGIC_PLAYERNUM].active_spellbook);
+							else
+							{
+								fireOffSpellAnimation(&cast_animation[HANDMAGIC_PLAYERNUM], cast_animation[HANDMAGIC_PLAYERNUM].caster, 
+									cast_animation[HANDMAGIC_PLAYERNUM].spell, cast_animation[HANDMAGIC_PLAYERNUM].active_spellbook);
+							}
 						}
 					}
 					else

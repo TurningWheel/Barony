@@ -6775,7 +6775,7 @@ Host to enable the game setting.
 6517 The %s shrivels away!#
 6518 You set weakness#
 6519 You set incoherence#
-6520 You set overcharge#
+6520 Your spell focus improves!#
 6521 Your weapons are imbued with venom!#
 6522 You set humiliate#
 6523 You set level death#
@@ -6785,7 +6785,7 @@ Host to enable the game setting.
 6527 The %s is weakened!#
 6528 You feel weak!#
 6529 Your weapons no longer envenom.#
-6530 Overcharge removed#
+6530 Your spell focus returns to normal.#
 6531 The %s poisons you!#
 6532 %s poisons you!#
 6533 The %s is poisoned!#
