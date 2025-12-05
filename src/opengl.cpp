@@ -1394,6 +1394,7 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
     v = vec4(entity->x * 2.f, -entity->z * 2.f - 1, entity->y * 2.f, 0.f);
     (void)translate_mat(&m, &t, &v); t = m;
 
+#ifndef EDITOR
     if ( (modelindex >= PINPOINT_PARTICLE_START && modelindex < PINPOINT_PARTICLE_END) && entity->behavior == &actParticlePinpointTarget )
     {
         // billboard
@@ -1401,6 +1402,7 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
             -90.f - camera->ang * (180.f / PI), &i.y); t = m;
     }
     else
+#endif
     {
         rotx = entity->roll * 180.0 / PI; // roll
         roty = 360.0 - entity->yaw * 180.0 / PI; // yaw
