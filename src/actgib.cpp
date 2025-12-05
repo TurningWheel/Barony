@@ -977,7 +977,7 @@ Entity* spawnGib(Entity* parentent, int customGibSprite)
 					gibsprite = 683;
 					break;
 				case 5:
-					if (parentstats->HP > 0) {
+					if (parentstats->HP > 0 || parentstats->type == REVENANT_SKULL ) {
 						return nullptr;
 					}
 					gibsprite = 688;

@@ -5393,7 +5393,7 @@ bool GenericGUIMenu::isItemAlterable(const Item* item)
 		{
 			if ( items[item->type].value > 0 )
 			{
-				int value = item->sellValue(gui_player) / 4;
+				int value = item->sellValue(-1) / 4;
 				return value > 0;
 			}
 		}
@@ -5412,7 +5412,7 @@ bool GenericGUIMenu::isItemAlterable(const Item* item)
 
 		if ( items[item->type].value > 0 )
 		{
-			int value = item->sellValue(gui_player) / 20;
+			int value = item->sellValue(-1) / 20;
 			return value > 0;
 		}
 		return true;
@@ -5426,7 +5426,7 @@ bool GenericGUIMenu::isItemAlterable(const Item* item)
 		{
 			if ( items[item->type].value > 0 )
 			{
-				int value = item->sellValue(gui_player) / 2;
+				int value = item->sellValue(-1) / 2;
 				return value > 0;
 			}
 		}
@@ -5436,7 +5436,7 @@ bool GenericGUIMenu::isItemAlterable(const Item* item)
 		if ( item->type == KEY_IRON
 			|| item->type == KEY_BRONZE
 			|| item->type == KEY_SILVER
-			|| item->type == KEY_GOLD
+			/*|| item->type == KEY_GOLD*/
 			|| (itemCategory(item) == GEM && item->type != GEM_ROCK && item->type != GEM_LUCK) )
 		{
 			return true;
@@ -23741,7 +23741,7 @@ void GenericGUIMenu::ItemEffectGUI_t::getItemEffectCost(Item* itemUsedWith, int&
 			ratio = std::min(ratio, 1.0);
 			goldCost = -(maxGold * ratio);
 			real_t minMana = getSpellDamageSecondaryFromID(SPELL_METALLURGY, players[parentGUI.gui_player]->entity, stats[parentGUI.gui_player], players[parentGUI.gui_player]->entity);
-			manaCost = std::max(minMana, (maxGold * ratio) / 15.0);
+			manaCost = std::max(minMana, (maxGold * ratio) / 20.0);
 		}
 		else if ( currentMode == ITEMFX_MODE_GEOMANCY )
 		{
@@ -23750,7 +23750,7 @@ void GenericGUIMenu::ItemEffectGUI_t::getItemEffectCost(Item* itemUsedWith, int&
 			ratio = std::min(ratio, 1.0);
 			goldCost = -(maxGold * ratio);
 			real_t minMana = getSpellDamageSecondaryFromID(SPELL_GEOMANCY, players[parentGUI.gui_player]->entity, stats[parentGUI.gui_player], players[parentGUI.gui_player]->entity);
-			manaCost = std::max(minMana, (maxGold * ratio) / 15.0);
+			manaCost = std::max(minMana, (maxGold * ratio) / 20.0);
 		}
 		else if ( currentMode == ITEMFX_MODE_VANDALISE )
 		{
@@ -23771,10 +23771,10 @@ void GenericGUIMenu::ItemEffectGUI_t::getItemEffectCost(Item* itemUsedWith, int&
 			{
 				goldCost = 900;
 			}
-			else if ( itemUsedWith->type == KEY_GOLD )
+			/*else if ( itemUsedWith->type == KEY_GOLD )
 			{
 				goldCost = 1200;
-			}
+			}*/
 			else if ( (itemCategory(itemUsedWith) == GEM && itemUsedWith->type != GEM_ROCK && itemUsedWith->type != GEM_LUCK) )
 			{
 				goldCost = 100;

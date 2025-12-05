@@ -121,10 +121,10 @@ static const int SPELL_JUMP = 98;
 static const int SPELL_INCOHERENCE = 99;
 static const int SPELL_OVERCHARGE = 100;
 static const int SPELL_ENVENOM_WEAPON = 101;
-static const int SPELL_HUMILIATE = 102;
-static const int SPELL_LVL_DEATH = 103;
+static const int SPELL_PSYCHIC_SPEAR = 102;
+static const int SPELL_DEFY_FLESH = 103;
 static const int SPELL_GREASE_SPRAY = 104;
-static const int SPELL_MANA_BURST = 105;
+static const int SPELL_BLOOD_WAVES = 105;
 static const int SPELL_BOOBY_TRAP = 106;
 static const int SPELL_COMMAND = 107;
 static const int SPELL_METALLURGY = 108;
@@ -359,6 +359,15 @@ static const int PARTICLE_EFFECT_GUARD_DIVINE_ORBIT = 73;
 static const int PARTICLE_EFFECT_METEOR_STATIONARY_ORBIT = 74;
 static const int PARTICLE_EFFECT_DUCK_SPAWN_FEATHER = 75;
 static const int PARTICLE_EFFECT_STATIC_MAXIMISE = 76;
+static const int PARTICLE_EFFECT_NULL_PARTICLE_NOSOUND = 77;
+static const int PARTICLE_EFFECT_CONTROL = 78;
+static const int PARTICLE_EFFECT_REVENANT_CURSE = 79;
+static const int PARTICLE_EFFECT_TURN_UNDEAD = 80;
+static const int PARTICLE_EFFECT_PSYCHIC_SPEAR = 81;
+static const int PARTICLE_EFFECT_DEFY_FLESH = 82;
+static const int PARTICLE_EFFECT_DEFY_FLESH_ORBIT = 83;
+static const int PARTICLE_EFFECT_BLOOD_WAVES_ORBIT = 84;
+static const int PARTICLE_EFFECT_BLOOD_BUBBLE = 85;
 
 // actmagicIsVertical constants
 static const int MAGIC_ISVERTICAL_NONE = 0;
@@ -1012,7 +1021,7 @@ static const int FOLLOWER_TARGET_PARTICLE = 1230;
 void createParticleCharmMonster(Entity* parent);
 void createParticleShadowTag(Entity* parent, Uint32 casterUid, int duration);
 static const int PINPOINT_PARTICLE_START = 1767;
-static const int PINPOINT_PARTICLE_END = 1775;
+static const int PINPOINT_PARTICLE_END = 1782;
 void createParticleSpellPinpointTarget(Entity* parent, Uint32 casterUid, int sprite, int duration, int spellID);
 Entity* createFloorMagic(ParticleTimerEffect_t::EffectType particleType, int sprite, real_t x, real_t y, real_t z, real_t dir, Uint32 lifetime);
 Entity* createRadiusMagic(int spellID, Entity* caster, real_t x, real_t y, real_t radius, Uint32 lifetime, Entity* follow);
@@ -1090,6 +1099,7 @@ typedef struct spellcastingAnimationManager
 	int times_to_circle; //How many times to circle around in the circle stage.
 	int throw_count = 0;
 	int active_count = 0;
+	int overcharge = 0;
 
 	int consume_interval; //Every consume_interval ticks, eat a mana.
 	int consume_timer; //How many ticks left till next mana consume.
@@ -1189,7 +1199,8 @@ struct AOEIndicators_t
 		CACHE_MUSHROOM_3,
 		CACHE_MUSHROOM_4,
 		CACHE_MAGICIANS_ARMOR,
-		CACHE_THAUM_ARMOR
+		CACHE_THAUM_ARMOR,
+		CACHE_PSYCHIC_SPEAR
 	};
 	struct Indicator_t
 	{

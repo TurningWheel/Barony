@@ -1332,6 +1332,7 @@ public:
 	real_t monsterGetWeightRatio();
 	bool spellEffectPreserveItem(Item* item);
 	bool mistFormDodge(bool checkEffectActiveOnly, Entity* attacker);
+	bool defyFleshProc(Entity* attacker);
 	void attractItem(Entity& itemEntity);
 	void creatureHandleLiftZ();
 	bool monsterIsTargetable(bool targetInertMimics = false) const;

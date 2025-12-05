@@ -1946,17 +1946,20 @@ void setupSpells()   ///TODO: Verify this function.
 	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH_FLOOR_TILE;
 	spell->distance = 64.0;
 
-	spell = createSimpleSpell(
-		SPELL_INCOHERENCE,
-		100, // difficulty
-		1, // mana
-		1, // base mana
-		1, // overload
-		0, // damage
-		50, // duration
-		"spell_incoherence");
-	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH;
-	spell->distance = 64.0;
+	spellElementConstructor(SPELL_INCOHERENCE,
+		1,		// mana
+		1,		// base mana
+		1,		// overload
+		50,		// damage
+		0,		// duration
+		"spell_element_incoherence");
+	spell = spellConstructor(
+		SPELL_INCOHERENCE,										// ID
+		100,												// difficulty
+		"spell_incoherence",										// internal name
+		// elements
+		{ SPELL_ELEMENT_PROPULSION_MISSILE, SPELL_INCOHERENCE }
+	);
 
 	spell = createSimpleSpell(
 		SPELL_OVERCHARGE,
@@ -1982,34 +1985,34 @@ void setupSpells()   ///TODO: Verify this function.
 		1);
 	spell->sustainEffectDissipate = EFF_ENVENOM_WEAPON;
 
-	spellElementConstructor(SPELL_HUMILIATE,
+	spellElementConstructor(SPELL_PSYCHIC_SPEAR,
 		1,		// mana
 		1,		// base mana
 		1,		// overload
 		50,		// damage
 		0,		// duration
-		"spell_element_humiliate");
+		"spell_element_psychic_spear");
 	spell = spellConstructor(
-		SPELL_HUMILIATE,										// ID
+		SPELL_PSYCHIC_SPEAR,										// ID
 		100,												// difficulty
-		"spell_humiliate",										// internal name
+		"spell_psychic_spear",										// internal name
 		// elements
-		{ SPELL_ELEMENT_PROPULSION_MISSILE, SPELL_HUMILIATE }
+		{ SPELL_ELEMENT_PROPULSION_MISSILE, SPELL_PSYCHIC_SPEAR }
 	);
 
-	spellElementConstructor(SPELL_LVL_DEATH,
+	spellElementConstructor(SPELL_DEFY_FLESH,
 		1,		// mana
 		1,		// base mana
 		1,		// overload
 		5,		// damage
 		0,		// duration
-		"spell_element_lvl_death");
+		"spell_element_defy_flesh");
 	spell = spellConstructor(
-		SPELL_LVL_DEATH,										// ID
+		SPELL_DEFY_FLESH,										// ID
 		100,												// difficulty
-		"spell_lvl_death",										// internal name
+		"spell_defy_flesh",										// internal name
 		// elements
-		{ SPELL_ELEMENT_PROPULSION_MISSILE, SPELL_LVL_DEATH }
+		{ SPELL_ELEMENT_PROPULSION_MISSILE, SPELL_DEFY_FLESH }
 	);
 
 	spellElementConstructor(SPELL_ELEMENT_PROPULSION_MAGIC_SPRAY,
@@ -2034,19 +2037,19 @@ void setupSpells()   ///TODO: Verify this function.
 		{ SPELL_ELEMENT_PROPULSION_MAGIC_SPRAY, SPELL_GREASE_SPRAY }
 	);
 
-	spellElementConstructor(SPELL_MANA_BURST,
+	spellElementConstructor(SPELL_BLOOD_WAVES,
 		1,		// mana
 		1,		// base mana
 		1,		// overload
 		0,		// damage
 		0,		// duration
-		"spell_element_mana_burst");
+		"spell_element_blood_waves");
 	spell = spellConstructor(
-		SPELL_MANA_BURST,										// ID
+		SPELL_BLOOD_WAVES,										// ID
 		100,												// difficulty
-		"spell_mana_burst",										// internal name
+		"spell_blood_waves",										// internal name
 		// elements
-		{ SPELL_ELEMENT_PROPULSION_MISSILE, SPELL_MANA_BURST }
+		{ SPELL_ELEMENT_PROPULSION_MISSILE, SPELL_BLOOD_WAVES }
 	);
 
 	spell = createSimpleSpell(

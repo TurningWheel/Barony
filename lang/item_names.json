@@ -2108,17 +2108,17 @@
 		"spell_envenom_weapon": {
 			"name": "Envenom Weapon"
 		},
-		"spell_humiliate": {
-			"name": "Humiliate"
+		"spell_psychic_spear": {
+			"name": "Psychic Spear"
 		},
-		"spell_lvl_death": {
+		"spell_defy_flesh": {
 			"name": "Defy Flesh"
 		},
 		"spell_grease_spray": {
 			"name": "Grease Spray"
 		},
-		"spell_mana_burst": {
-			"name": "Mana Burst"
+		"spell_blood_waves": {
+			"name": "Blood Waves"
 		},
 		"spell_booby_trap": {
 			"name": "Booby Trap"
@@ -2170,6 +2170,18 @@
 		},
 		"spell_revenant_curse": {
 			"name": "Revenant Curse"
+		},
+		"spell_cowardice": {
+			"name": "Cowardice"
+		},
+		"spell_courage": {
+			"name": "Courage"
+		},
+		"spell_seek_ally": {
+			"name": "Seek Ally"
+		},
+		"spell_seek_foe": {
+			"name": "Seek Foe"
 		},
 		"spell_deep_shade": {
 			"name": "Deep Shade"

@@ -3587,6 +3587,7 @@ void actMonster(Entity* my)
 					monsterStats->INT *= ratio;
 					monsterStats->PER *= ratio;
 					monsterStats->LVL *= ratio;
+					monsterStats->LVL = std::max(1, monsterStats->LVL);
 					monsterStats->GOLD *= ratio;
 
 					monsterStats->HP = monsterStats->MAXHP * ratio;
@@ -3596,6 +3597,10 @@ void actMonster(Entity* my)
 					{
 						messagePlayer(player, MESSAGE_STATUS, Language::get(6808), Language::get(6807));
 					}
+
+					playSoundEntity(monster, 167, 128);
+					createParticleDropRising(monster, 2354, 1.f);
+					serverSpawnMiscParticles(monster, PARTICLE_EFFECT_RISING_DROP, 2354);
 				}
 				return;
 			}
@@ -4129,8 +4134,10 @@ void actMonster(Entity* my)
 							}
 						}
 					}
-					createParticleDropRising(monster, 593, 1.f);
-					serverSpawnMiscParticles(monster, PARTICLE_EFFECT_RISING_DROP, 593);
+
+					playSoundEntity(monster, 167, 128);
+					createParticleDropRising(monster, 2354, 1.f);
+					serverSpawnMiscParticles(monster, PARTICLE_EFFECT_RISING_DROP, 2354);
 				}
 			}
 		}

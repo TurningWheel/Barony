@@ -2267,9 +2267,9 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 		{
 			playSoundEntity(target, 400, 92);
 			spawnExplosion(target->x, target->y, target->z);
+			createParticleDropRising(target, 593, 1.f);
+			serverSpawnMiscParticles(target, PARTICLE_EFFECT_RISING_DROP, 593);
 		}
-		createParticleDropRising(target, 593, 1.f);
-		serverSpawnMiscParticles(target, PARTICLE_EFFECT_RISING_DROP, 593);
 
 		if ( fellToDeath )
 		{
@@ -3458,6 +3458,59 @@ int thaumSpellArmorProc(Entity* my, Stat& myStats, bool checkEffectActiveOnly, E
 	return 0;
 }
 
+bool Entity::defyFleshProc(Entity* attacker)
+{
+	if ( multiplayer == CLIENT ) { return false; }
+	if ( Stat* myStats = getStats() )
+	{
+		if ( myStats->getEffectActive(EFF_DEFY_FLESH) )
+		{
+			// find particle to update
+			auto entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(this, 1);
+			for ( auto it : entLists )
+			{
+				node_t* node;
+				for ( node = it->first; node != nullptr; node = node->next )
+				{
+					if ( Entity* entity = (Entity*)node->element )
+					{
+						if ( entity->behavior == &actParticleAestheticOrbit 
+							&& entity->parent == this->getUID()
+							&& entity->skill[1] == PARTICLE_EFFECT_DEFY_FLESH_ORBIT )
+						{
+							if ( entity->skill[8] == 0 ) // cooldown timer
+							{
+								entity->skill[7] = 1;
+								Uint8 charges = myStats->getEffectActive(EFF_DEFY_FLESH) & 0xF;
+								if ( charges == 0 )
+								{
+									setEffect(EFF_DEFY_FLESH, false, 0, true);
+								}
+								else
+								{
+									--charges;
+									/*if ( charges == 0 )
+									{
+										setEffect(EFF_DEFY_FLESH, false, 0, true);
+									}
+									else*/
+									{
+										charges |= (myStats->getEffectActive(EFF_DEFY_FLESH) & 0xF0);
+										setEffect(EFF_DEFY_FLESH, charges, myStats->EFFECTS_TIMERS[EFF_DEFY_FLESH], true, true, true);
+									}
+								}
+							}
+							return true;
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return false;
+}
+
 bool Entity::mistFormDodge(bool checkEffectActiveOnly, Entity* attacker)
 {
 	if ( Stat* myStats = getStats() )
@@ -3611,7 +3664,10 @@ bool applyGenericMagicDamage(Entity* caster, Entity* hitentity, Entity& damageSo
 			|| spellID == SPELL_DISARM 
 			|| spellID == SPELL_STRIP
 			|| spellID == SPELL_MAXIMISE
-			|| spellID == SPELL_MINIMISE )
+			|| spellID == SPELL_MINIMISE
+			|| spellID == SPELL_COWARDICE
+			|| spellID == SPELL_SEEK_ALLY
+			|| spellID == SPELL_SEEK_FOE )
 		{
 			// alert entities only
 			return true;
@@ -3655,6 +3711,10 @@ bool applyGenericMagicDamage(Entity* caster, Entity* hitentity, Entity& damageSo
 				}
 			}
 			damage *= fireMultiplier;
+		}
+		if ( spellID == SPELL_DEFY_FLESH )
+		{
+			damage = std::max(1, damage);
 		}
 
 		hitentity->modHP(-damage);
@@ -3854,7 +3914,13 @@ int getSpellDamageFromID(int spellID, Entity* parent, Stat* parentStats, Entity*
 						(Sint32)(bonus * 100.0));
 				}
 			}
+
 			damage += damage * bonus * element->getDamageMult();
+			if ( element->getDamageMult() > 0.01 && element->getDamage() > 0 )
+			{
+				// range checking for PWR penalties, if we should do _some_ damage, then do at least 1
+				damage = std::max(1, damage);
+			}
 		}
 	}
 	return damage;
@@ -3900,6 +3966,11 @@ int getSpellDamageSecondaryFromID(int spellID, Entity* parent, Stat* parentStats
 				}
 			}
 			damage += damage * bonus * element->getDamageSecondaryMult();
+			if ( element->getDamageSecondaryMult() > 0.01 && element->getDamageSecondary() > 0 )
+			{
+				// range checking for PWR penalties, if we should do _some_ damage, then do at least 1
+				damage = std::max(1, damage);
+			}
 		}
 	}
 	return damage;
@@ -4026,8 +4097,12 @@ real_t getSpellPropertyFromID(spell_t::SpellBasePropertiesFloat prop, int spellI
 					equipmentModifier += 0.05 * players[parent->skill[2]]->mechanics.getBreakableCounterTier();
 				}
 				real_t bonus = (getBonusFromCasterOfSpellElement(parent, myStats, element, spellID, spell->skillID));
-				real_t modifier = (statGetDEX(myStats, parent) * (1.0 + bonus) * spell->cast_time_mult) / 100.0;
+				real_t modifier = (statGetDEX(myStats, parent) * (1.0 + std::max(0.0, bonus)) * spell->cast_time_mult) / 100.0;
 				result += -modifier;
+				if ( bonus < -0.05 )
+				{
+					result *= (1 - bonus);
+				}
 				result *= (1 - std::min(1.0, equipmentModifier));
 				if ( spell->cast_time < 1.01 )
 				{
@@ -4076,7 +4151,7 @@ real_t getSpellPropertyFromID(spell_t::SpellBasePropertiesFloat prop, int spellI
 					}
 				}
 				real_t bonus = (getBonusFromCasterOfSpellElement(parent, myStats, element, spellID, spell->skillID));
-				real_t modifier = (statGetPER(myStats, parent) * (1.0 + bonus) * spell->distance_mult);
+				real_t modifier = (statGetPER(myStats, parent) * (1.0 + std::max(0.0, bonus)) * spell->distance_mult);
 				real_t maxDist = 96.0;
 				if ( equipmentModifier > 0.01 )
 				{
@@ -4088,6 +4163,10 @@ real_t getSpellPropertyFromID(spell_t::SpellBasePropertiesFloat prop, int spellI
 					maxDist = *cvar_spell_max_distance;
 				}
 				result = std::min(maxDist, (spell->distance + modifier) * (1.0 + equipmentModifier));
+				if ( bonus < -0.05 )
+				{
+					result *= (1 + bonus);
+				}
 				result = std::max(16.0, result);
 			}
 			else

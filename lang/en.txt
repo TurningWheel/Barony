@@ -6734,7 +6734,7 @@ Host to enable the game setting.
 6478 You set counsel#
 6479 You set sturdiness#
 6480 You set pinpoint#
-6481 You set scry ally#
+6481 You detect an ally!#
 6482 You set scry shrine#
 6483 You set scry trap#
 6484 You set scry traps#
@@ -6771,12 +6771,12 @@ Host to enable the game setting.
  is unable to be altered.#
 6515 Your %s transforms into
  %s!#
-6516 You set maximise#
-6517 You set minimise#
+6516 The %s grows in strength!#
+6517 The %s shrivels away!#
 6518 You set weakness#
 6519 You set incoherence#
 6520 You set overcharge#
-6521 You set envenom#
+6521 Your weapons are imbued with venom!#
 6522 You set humiliate#
 6523 You set level death#
 6524 You set grease#
@@ -6784,7 +6784,7 @@ Host to enable the game setting.
 6526 %s is weakened!#
 6527 The %s is weakened!#
 6528 You feel weak!#
-6529 Envenom removed#
+6529 Your weapons no longer envenom.#
 6530 Overcharge removed#
 6531 The %s poisons you!#
 6532 %s poisons you!#
@@ -6792,7 +6792,7 @@ Host to enable the game setting.
 6534 %s is poisoned!#
 6535 The amulet feels warm against your neck.#
 6536 You feel greasy!#
-6537 You set Compel#
+6537 The %s is compelled to your command!#
 6538 Gold Cost:#
 6539 Not enough gold#
 6540 Insufficient gold!#
@@ -6835,7 +6835,7 @@ Host to enable the game setting.
 6573 bites#
 6574 *rattle*#
 6575 *creak*#
-6576 You set curse flesh#
+6576 You curse the flesh of the %s!#
 6577 You summon a spirited %s!#
 6578 There is no room here to summon!#
 6579 spirit weapon#
@@ -6893,16 +6893,16 @@ Host to enable the game setting.
 6629 You are hurt by your previous pain!#
 6630 The %s could not reach any allies!#
 6631 %s could not reach any allies!#
-6632 you set cowardice#
+6632 The %s loses their courage!#
 6633 The %s wanders in search of an ally!#
 6634 %s wanders in search of an ally!#
 6635 The %s could not reach any foes!#
 6636 %s could not reach any foes!#
-6637 you set courage#
+6637 The %s is encouraged!#
 6638 The %s wanders in search of a foe!#
 6639 %s wanders in search of a foe!#
-6640 you set taboo#
-6641 You are taboo!#
+6640 The %s becomes a scapegoat!#
+6641 You become a scapegoat!#
 6642 Spores removed#
 6643 You set spores#
 6644 The %s drops their weapon!#
@@ -7080,7 +7080,7 @@ to replay this challenge!
 6805 Higher skill required#
 6806 finds its final resting place.#
 6807 revenant skeleton#
-6808 You command a %s from the deceased's cursed flesh!#
+6808 You command a %s from the deceased!#
 6809 You splinter the construction of the %s!#
 6810 You splinter the construction of %s!#
 6811 Your splintered armor wounds you!#
@@ -7156,5 +7156,30 @@ to replay this challenge!
 6884 You sprout forth a shrub!#
 6885 You spore forth a mushroom!#
 6886 Your vandalism energizes you!#
+6887 Select transmutation result:#
+6888 Confirm#
+6889 Deselect#
+6890 %s grows in strength!#
+6891 The %s cannot grow any stronger!#
+6892 %s cannot grow any stronger!#
+6893 %s shrivels away!#
+6894 The %s cannot shrivel down any further!#
+6895 %s cannot shrivel down any further!#
+6896 You feel enlarged!#
+6897 You feel diminished!#
+6898 Your stature feels ordinary once more.#
+6899 You were unable to detect any other allies.#
+6900 %s loses their courage!#
+6901 %s is encouraged!#
+6902 %s is compelled to your command!#
+6903 %s becomes a scapegoat!#
+6904 You curse the flesh of %s!#
+6905 The %s's vitality is defied!#
+6906 %s's vitality is defied!#
+6907 Your vitality is defied!#
+6908 Your spell has no effect right now!#
+6909 %s's spell power is diminished!#
+6910 The %s's spell power is diminished!#
+6911 Your spell power is diminished!#
 
 6999 END#

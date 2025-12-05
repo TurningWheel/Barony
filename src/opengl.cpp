@@ -1390,14 +1390,26 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
         (void)rotate_mat(&m, &t, rotx, &i.x); t = m; // roll
         GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uProj"), 1, false, (float*)&camera->proj_hud));
     }
-    rotx = entity->roll * 180.0 / PI; // roll
-    roty = 360.0 - entity->yaw * 180.0 / PI; // yaw
-    rotz = 360.0 - entity->pitch * 180.0 / PI; // pitch
+
     v = vec4(entity->x * 2.f, -entity->z * 2.f - 1, entity->y * 2.f, 0.f);
     (void)translate_mat(&m, &t, &v); t = m;
-    (void)rotate_mat(&m, &t, roty, &i.y); t = m; // yaw
-    (void)rotate_mat(&m, &t, rotz, &i.z); t = m; // pitch
-    (void)rotate_mat(&m, &t, rotx, &i.x); t = m; // roll
+
+    if ( (modelindex >= PINPOINT_PARTICLE_START && modelindex < PINPOINT_PARTICLE_END) && entity->behavior == &actParticlePinpointTarget )
+    {
+        // billboard
+        (void)rotate_mat(&m, &t, entity->flags[OVERDRAW] ? -90.f :
+            -90.f - camera->ang * (180.f / PI), &i.y); t = m;
+    }
+    else
+    {
+        rotx = entity->roll * 180.0 / PI; // roll
+        roty = 360.0 - entity->yaw * 180.0 / PI; // yaw
+        rotz = 360.0 - entity->pitch * 180.0 / PI; // pitch
+        (void)rotate_mat(&m, &t, roty, &i.y); t = m; // yaw
+        (void)rotate_mat(&m, &t, rotz, &i.z); t = m; // pitch
+        (void)rotate_mat(&m, &t, rotx, &i.x); t = m; // roll
+    }
+
     v = vec4(entity->focalx * 2.f, -entity->focalz * 2.f, entity->focaly * 2.f, 0.f);
     (void)translate_mat(&m, &t, &v); t = m;
     v = vec4(entity->scalex, entity->scaley, entity->scalez, 0.f);

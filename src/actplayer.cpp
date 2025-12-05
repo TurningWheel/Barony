@@ -6133,7 +6133,9 @@ void actPlayer(Entity* my)
 	static ConsoleVariable<int> cvar_pbaoe("/pbaoe", 15);
 	if ( keystatus[SDLK_x] && enableDebugKeys && (svFlags & SV_FLAG_CHEATS) )
 	{
-		spawnPlayerXP(my->x + 16.0, my->y, 0, 10);
+		//spawnPlayerXP(my->x + 16.0, my->y, 0, 10);
+
+		//Entity* fx1 = createParticleAestheticOrbit(my, 2361, 5 * TICKS_PER_SECOND, PARTICLE_EFFECT_DEFY_FLESH_ORBIT);
 
 		keystatus[SDLK_x] = 0;
 		Uint32 color = makeColorRGB(255, 255, 255);
@@ -14013,12 +14015,32 @@ void actPlayer(Entity* my)
 					entity->z += limbs[HUMAN][28][2];
 					entity->flags[INVISIBLE_DITHER] = false;
 					entity->sprite = 0;
-					if ( torso && torso->sprite == items[ROBE_WIZARD].index 
-						&& !(torso->flags[INVISIBLE] && !torso->flags[INVISIBLE_DITHER]) )
+					if ( torso && !(torso->flags[INVISIBLE] && !torso->flags[INVISIBLE_DITHER]) )
 					{
-						entity->sprite = 2137;
-						entity->flags[INVISIBLE] = my->flags[INVISIBLE];
-						entity->flags[INVISIBLE_DITHER] = entity->flags[INVISIBLE];
+						if ( torso->sprite == items[ROBE_WIZARD].index )
+						{
+							entity->sprite = 2137;
+							entity->flags[INVISIBLE] = my->flags[INVISIBLE];
+							entity->flags[INVISIBLE_DITHER] = entity->flags[INVISIBLE];
+						}
+						else if ( torso->sprite == items[ROBE_CULTIST].index )
+						{
+							entity->sprite = 2368;
+							entity->flags[INVISIBLE] = my->flags[INVISIBLE];
+							entity->flags[INVISIBLE_DITHER] = entity->flags[INVISIBLE];
+						}
+						else if ( torso->sprite == items[ROBE_HEALER].index )
+						{
+							entity->sprite = 2370;
+							entity->flags[INVISIBLE] = my->flags[INVISIBLE];
+							entity->flags[INVISIBLE_DITHER] = entity->flags[INVISIBLE];
+						}
+						else if ( torso->sprite == items[ROBE_MONK].index )
+						{
+							entity->sprite = 2372;
+							entity->flags[INVISIBLE] = my->flags[INVISIBLE];
+							entity->flags[INVISIBLE_DITHER] = entity->flags[INVISIBLE];
+						}
 					}
 					/*else if ( torso && torso->sprite == items[ROBE_WIZARD].indexShort )
 					{
@@ -14058,12 +14080,32 @@ void actPlayer(Entity* my)
 					entity->z += limbs[HUMAN][29][2];
 					entity->flags[INVISIBLE_DITHER] = false;
 					entity->sprite = 0;
-					if ( torso && torso->sprite == items[ROBE_WIZARD].index 
-						&& !(torso->flags[INVISIBLE] && !torso->flags[INVISIBLE_DITHER]) )
+					if ( torso && !(torso->flags[INVISIBLE] && !torso->flags[INVISIBLE_DITHER]) )
 					{
-						entity->sprite = 2138;
-						entity->flags[INVISIBLE] = my->flags[INVISIBLE];
-						entity->flags[INVISIBLE_DITHER] = entity->flags[INVISIBLE];
+						if ( torso->sprite == items[ROBE_WIZARD].index )
+						{
+							entity->sprite = 2138;
+							entity->flags[INVISIBLE] = my->flags[INVISIBLE];
+							entity->flags[INVISIBLE_DITHER] = entity->flags[INVISIBLE];
+						}
+						else if ( torso->sprite == items[ROBE_CULTIST].index )
+						{
+							entity->sprite = 2369;
+							entity->flags[INVISIBLE] = my->flags[INVISIBLE];
+							entity->flags[INVISIBLE_DITHER] = entity->flags[INVISIBLE];
+						}
+						else if ( torso->sprite == items[ROBE_HEALER].index )
+						{
+							entity->sprite = 2371;
+							entity->flags[INVISIBLE] = my->flags[INVISIBLE];
+							entity->flags[INVISIBLE_DITHER] = entity->flags[INVISIBLE];
+						}
+						else if ( torso->sprite == items[ROBE_MONK].index )
+						{
+							entity->sprite = 2373;
+							entity->flags[INVISIBLE] = my->flags[INVISIBLE];
+							entity->flags[INVISIBLE_DITHER] = entity->flags[INVISIBLE];
+						}
 					}
 					/*else if ( torso && torso->sprite == items[ROBE_WIZARD].indexShort )
 					{

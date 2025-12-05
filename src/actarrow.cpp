@@ -916,6 +916,16 @@ void actArrow(Entity* my)
 					messagePlayer(0, "Resolved to %d damage.", damage);*/
 					Sint32 oldHP = hitstats->HP;
 					hit.entity->modHP(-damage);
+
+					if ( hitstats && hitstats->getEffectActive(EFF_DEFY_FLESH) )
+					{
+						Sint32 damageTaken = oldHP - hitstats->HP;
+						if ( damageTaken > 0 )
+						{
+							hit.entity->defyFleshProc(parent);
+						}
+					}
+
 					// write obituary
 					if ( parent )
 					{
@@ -1154,6 +1164,11 @@ void actArrow(Entity* my)
 									{
 										messagePlayerMonsterEvent(hit.entity->isEntityPlayer(), makeColorRGB(255, 0, 0), *parentStats, Language::get(6531), Language::get(6532), MSG_COMBAT);
 										serverUpdateEffects(hit.entity->isEntityPlayer());
+									}
+
+									if ( parent->behavior == &actPlayer )
+									{
+										players[parent->skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_ENVENOM_WEAPON, 50.0, 1.0);
 									}
 								}
 							}

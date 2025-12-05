@@ -316,6 +316,30 @@ void actFlameElementalLimb(Entity* my)
 
 void revenantSkullDie(Entity* my)
 {
+	real_t gibx = my->x;
+	real_t giby = my->y;
+	real_t gibz = my->z;
+	real_t gibYaw = my->yaw;
+
+	node_t* node = nullptr;
+	int bodypart = 0;
+	for ( bodypart = 0, node = my->children.first; node != nullptr; node = node->next, ++bodypart )
+	{
+		if ( bodypart < 2 )
+		{
+			continue;
+		}
+
+		if ( Entity* entity = (Entity*)node->element )
+		{
+			real_t gibx = entity->x;
+			real_t giby = entity->y;
+			real_t gibz = entity->z;
+			real_t gibYaw = entity->yaw;
+		}
+		break;
+	}
+
 	my->removeMonsterDeathNodes();
 
 	int c;
@@ -324,28 +348,20 @@ void revenantSkullDie(Entity* my)
 		Entity* entity = spawnGib(my);
 		if ( entity )
 		{
-			entity->skill[5] = 1; // poof
 			switch ( c )
 			{
 			case 0:
-				entity->sprite = 229;
+				entity->sprite = my->sprite;
+				entity->skill[5] = 1; // poof
 				break;
-			case 1:
-				entity->sprite = 230;
-				break;
-			case 2:
-				entity->sprite = 231;
-				break;
-			case 3:
-				entity->sprite = 233;
-				break;
-			case 4:
-				entity->sprite = 235;
-				break;
-			case 5:
-				entity->sprite = 236;
+			default:
+				entity->sprite = 2354;
 				break;
 			}
+			entity->x = gibx;
+			entity->y = giby;
+			entity->z = gibz;
+			entity->yaw = gibYaw;
 			serverSpawnGibForClient(entity);
 		}
 	}
@@ -400,7 +416,6 @@ void revenantSkullAnimate(Entity* my, Stat* myStats, double dist)
 {
 	node_t* node;
 	Entity* entity = nullptr;
-	Entity* head = nullptr;
 	int bodypart;
 
 	my->flags[INVISIBLE] = true; // hide the "AI" bodypart

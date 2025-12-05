@@ -2327,12 +2327,18 @@ void Entity::effectTimes()
 						messagePlayer(player, MESSAGE_STATUS, Language::get(3439));
 						updateClient = true;
 						break;
+					case EFF_MAXIMISE:
+					case EFF_MINIMISE:
+						messagePlayer(player, MESSAGE_STATUS, Language::get(6898));
+						updateClient = true;
+						break;
 					case EFF_PACIFY:
 					case EFF_SHADOW_TAGGED:
 					case EFF_WEBBED:
 					case EFF_PINPOINT:
 					case EFF_PENANCE:
 					case EFF_DETECT_ENEMY:
+					case EFF_DEFY_FLESH:
 						updateClient = true;
 						break;
 					case EFF_DUSTED:
@@ -7538,6 +7544,7 @@ void Entity::handleEffects(Stat* myStats)
 		myStats->EFFECTS_TIMERS[EFF_PROJECT_SPIRIT] = 1;
 		serverUpdateEffects(player);
 	}
+	
 	myStats->OLDHP = myStats->HP;
 }
 
@@ -7691,6 +7698,12 @@ Sint32 Entity::getAttack(Entity* my, Stat* myStats, bool isPlayer, int chargeMod
 		}
 	}
 
+	if ( Uint8 effectStrength = myStats->getEffectActive(EFF_WEAKNESS) )
+	{
+		real_t mult = std::min(0.9, 0.2 + (effectStrength - 1) * 0.1);
+		attack *= 1.0 - mult;
+	}
+
 	return attack;
 }
 
@@ -7727,6 +7740,12 @@ Sint32 Entity::getRangedAttack()
 	{
 		return 0;
 	}
+
+	/*if ( Uint8 effectStrength = entitystats->getEffectActive(EFF_WEAKNESS) )
+	{
+		real_t mult = 0.2 + (effectStrength - 1) * 0.1;
+	}*/
+
 	return attack;
 }
 
@@ -7790,6 +7809,12 @@ Sint32 Entity::getThrownAttack()
 	{
 		return 0;
 	}
+
+	/*if ( Uint8 effectStrength = entitystats->getEffectActive(EFF_WEAKNESS) )
+	{
+		real_t mult = 0.2 + (effectStrength - 1) * 0.1;
+	}*/
+
 	return attack;
 }
 
@@ -12154,6 +12179,15 @@ void Entity::attack(int pose, int charge, Entity* target)
 					Sint32 oldHP = hitstats->HP;
 					hit.entity->modHP(-damage); // do the damage
 
+					if ( hitstats && hitstats->getEffectActive(EFF_DEFY_FLESH) )
+					{
+						Sint32 damageTaken = oldHP - hitstats->HP;
+						if ( damageTaken > 0 )
+						{
+							hit.entity->defyFleshProc(this);
+						}
+					}
+
 					bool skillIncreased = false;
 					// skill increase
 					// can raise skills up to skill level 20 on dummybots...
@@ -13570,6 +13604,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 									{
 										messagePlayerMonsterEvent(playerhit, makeColorRGB(255, 0, 0), *myStats, Language::get(6531), Language::get(6532), MSG_COMBAT);
 										serverUpdateEffects(playerhit);
+									}
+
+									if ( player >= 0 )
+									{
+										players[player]->mechanics.updateSustainedSpellEvent(SPELL_ENVENOM_WEAPON, 50.0, 1.0);
 									}
 								}
 							}
@@ -15366,7 +15405,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 							{
 								if ( Entity* leader = uidToEntity(myStats->leader_uid) )
 								{
-									magicOnSpellCastEvent(leader, nullptr, hit.entity, summonSpellID, spell_t::SPELL_LEVEL_EVENT_ASSIST | spell_t::SPELL_LEVEL_EVENT_MINOR_CHANCE, 1);
+									if ( local_rng.rand() % 8 == 0 )
+									{
+										magicOnSpellCastEvent(leader, nullptr, hit.entity, summonSpellID, spell_t::SPELL_LEVEL_EVENT_ASSIST | spell_t::SPELL_LEVEL_EVENT_MINOR_CHANCE, 1);
+									}
 								}
 							}
 						}
@@ -17212,6 +17254,7 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 		leader = uidToEntity(destStats->leader_uid);
 
 		bool spellEffectLeader = false;
+		int spellEffectLeaderID = SPELL_NONE;
 		if ( !leader || (leader && !leader->monsterAllyGetPlayerLeader()) )
 		{
 			// target is taboo'd, then award xp to the inflicter
@@ -17238,6 +17281,15 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 					spellEffectLeader = true;
 					leader = players[destStats->getEffectActive(EFF_CONFUSED) - 1]->entity;
 				}
+			}
+		}
+		else if ( destStats->getEffectActive(EFF_COMMAND) >= 1 && destStats->getEffectActive(EFF_COMMAND) < MAXPLAYERS + 1 )
+		{
+			if ( players[destStats->getEffectActive(EFF_COMMAND) - 1]->entity )
+			{
+				spellEffectLeader = true;
+				leader = players[destStats->getEffectActive(EFF_COMMAND) - 1]->entity;
+				spellEffectLeaderID = SPELL_COMMAND;
 			}
 		}
 

@@ -33,6 +33,9 @@
 #define ANIM_SPELL_TOUCH_THROW 4
 #define ANIM_SPELL_COMPLETE_NOCAST 5
 #define ANIM_SPELL_TOUCH_CHARGE 6
+#define ANIM_SPELL_OVERCHARGE_READY 7
+#define ANIM_SPELL_OVERCHARGE_CHARGE 8
+#define ANIM_SPELL_OVERCHARGE_THROW 9
 
 spellcasting_animation_manager_t cast_animation[MAXPLAYERS];
 bool overDrawDamageNotify = false;
@@ -63,7 +66,12 @@ bool spellcasting_animation_manager_t::hideShieldFromBasicCast()
 	if ( player < 0 || player >= MAXPLAYERS ) { return false; }
 	if ( active )
 	{
-		if ( stage == ANIM_SPELL_TOUCH || stage == ANIM_SPELL_TOUCH_THROW || stage == ANIM_SPELL_TOUCH_CHARGE )
+		if ( stage == ANIM_SPELL_TOUCH 
+			|| stage == ANIM_SPELL_TOUCH_THROW 
+			|| stage == ANIM_SPELL_TOUCH_CHARGE
+			|| stage == ANIM_SPELL_OVERCHARGE_READY
+			|| stage == ANIM_SPELL_OVERCHARGE_CHARGE
+			|| stage == ANIM_SPELL_OVERCHARGE_THROW )
 		{
 			return false;
 		}
@@ -91,7 +99,7 @@ void spellcasting_animation_manager_t::executeAttackSpell(bool swingweapon)
 			throw_count = 0;
 		}
 	}
-	else
+	else if ( stage == ANIM_SPELL_TOUCH_CHARGE )
 	{
 		if ( !swingweapon )
 		{
@@ -125,11 +133,62 @@ void spellcasting_animation_manager_t::executeAttackSpell(bool swingweapon)
 			}*/
 		}
 	}
+	else if ( stage == ANIM_SPELL_OVERCHARGE_READY )
+	{
+		if ( swingweapon )
+		{
+			stage = ANIM_SPELL_OVERCHARGE_CHARGE;
+			throw_count = 0;
+		}
+	}
+	else if ( stage == ANIM_SPELL_OVERCHARGE_CHARGE )
+	{
+		if ( !swingweapon )
+		{
+			if ( rangefinder == RANGEFINDER_TOUCH_FLOOR_TILE )
+			{
+				stage = ANIM_SPELL_OVERCHARGE_THROW;
+				throw_count = 0;
+			}
+			else if ( (rangefinder == RANGEFINDER_TOUCH
+				|| rangefinder == RANGEFINDER_TOUCH_INTERACT
+				|| rangefinder == RANGEFINDER_TOUCH_INTERACT_TEST) && uidToEntity(targetUid) )
+			{
+				stage = ANIM_SPELL_OVERCHARGE_THROW;
+				throw_count = 0;
+			}
+			else if ( rangefinder == RANGEFINDER_TOUCH_WALL_TILE && wallDir >= 1 )
+			{
+				stage = ANIM_SPELL_OVERCHARGE_THROW;
+				throw_count = 0;
+			}
+			else if ( rangefinder != RANGEFINDER_NONE )
+			{
+				stage = ANIM_SPELL_OVERCHARGE_READY;
+				throw_count = 0;
+			}
+			else
+			{
+				stage = ANIM_SPELL_OVERCHARGE_THROW;
+				throw_count = 0;
+			}
+			/*else
+			{
+				spellcastingAnimationManager_deactivate(this);
+				messagePlayer(player, MESSAGE_COMBAT, Language::get(6496));
+				playSoundEntityLocal(players[player]->entity, 163, 64);
+			}*/
+		}
+	}
 }
 
 bool spellcasting_animation_manager_t::spellWaitingAttackInput()
 {
-	if ( active && !active_spellbook && (stage == ANIM_SPELL_TOUCH || stage == ANIM_SPELL_TOUCH_CHARGE) )
+	if ( active && !active_spellbook 
+		&& (stage == ANIM_SPELL_TOUCH 
+			|| stage == ANIM_SPELL_TOUCH_CHARGE
+			|| stage == ANIM_SPELL_OVERCHARGE_READY
+			|| stage == ANIM_SPELL_OVERCHARGE_CHARGE) )
 	{
 		return true;
 	}
@@ -139,7 +198,10 @@ bool spellcasting_animation_manager_t::spellWaitingAttackInput()
 bool spellcasting_animation_manager_t::spellIgnoreAttack()
 {
 	if ( active && !active_spellbook 
-		&& (stage == ANIM_SPELL_COMPLETE_NOCAST	|| stage == ANIM_SPELL_COMPLETE_SPELL || stage == ANIM_SPELL_TOUCH_THROW) )
+		&& (stage == ANIM_SPELL_COMPLETE_NOCAST	
+			|| stage == ANIM_SPELL_COMPLETE_SPELL 
+			|| stage == ANIM_SPELL_TOUCH_THROW
+			|| stage == ANIM_SPELL_OVERCHARGE_THROW) )
 	{
 		return true;
 	}
@@ -148,6 +210,11 @@ bool spellcasting_animation_manager_t::spellIgnoreAttack()
 
 bool rangefinderTargetEnemyType(spell_t& spell, Entity& entity)
 {
+	if ( entity.behavior == &actMonster && !entity.monsterIsTargetable(true) )
+	{
+		return false;
+	}
+
 	if ( spell.ID == SPELL_TELEKINESIS )
 	{
 		if ( entity.behavior == &actBoulder && !entity.flags[PASSABLE] && entity.z >= -8 )
@@ -302,11 +369,12 @@ void spellcasting_animation_manager_t::setRangeFinderLocation()
 
 	rangefinder = spell->rangefinder;
 
-	if ( stage == ANIM_SPELL_TOUCH_THROW )
+	if ( stage == ANIM_SPELL_TOUCH_THROW || stage == ANIM_SPELL_OVERCHARGE_THROW )
 	{
 		return;
 	}
-	if ( stage == ANIM_SPELL_TOUCH_CHARGE && targetUid != 0 && uidToEntity(targetUid) )
+	if ( (stage == ANIM_SPELL_TOUCH_CHARGE || stage == ANIM_SPELL_OVERCHARGE_CHARGE)
+		&& targetUid != 0 && uidToEntity(targetUid) )
 	{
 		return;
 	}
@@ -633,7 +701,7 @@ void spellcasting_animation_manager_t::setRangeFinderLocation()
 							else
 							{
 								Entity* ohit = hit.entity;
-								int lineTraceFlags = spell->ID == SPELL_TELEKINESIS ? LINETRACE_TELEKINESIS : 0;
+								//int lineTraceFlags = spell->ID == SPELL_TELEKINESIS ? LINETRACE_TELEKINESIS : 0;
 								lineTraceTarget(entity, entity->x, entity->y, tangent + PI, dist, LINETRACE_TELEKINESIS, false, caster);
 								if ( hit.entity == caster )
 								{
@@ -787,7 +855,12 @@ void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, 
 		return;
 	}
 
-	playSoundEntityLocal(caster, 170, 128 );
+	bool overchargeRepeat = animation_manager->overcharge > 0;
+
+	if ( !overchargeRepeat )
+	{
+		playSoundEntityLocal(caster, 170, 128 );
+	}
 	Stat* stat = caster->getStats();
 
 	//Save these three very important pieces of data.
@@ -803,27 +876,35 @@ void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, 
 	{
 		animation_manager->active_spellbook = true;
 	}
-	animation_manager->stage = ANIM_SPELL_CIRCLE;
 
-	//Make the HUDWEAPON disappear, or somesuch?
-	players[player]->hud.magicLeftHand->flags[INVISIBLE_DITHER] = false;
-	players[player]->hud.magicRightHand->flags[INVISIBLE_DITHER] = false;
-	if ( stat->type != RAT )
+	animation_manager->stage = ANIM_SPELL_CIRCLE;
+	if ( overchargeRepeat )
 	{
-		if ( !usingSpellbook )
+		//
+	}
+	else
+	{
+
+		//Make the HUDWEAPON disappear, or somesuch?
+		players[player]->hud.magicLeftHand->flags[INVISIBLE_DITHER] = false;
+		players[player]->hud.magicRightHand->flags[INVISIBLE_DITHER] = false;
+		if ( stat->type != RAT )
 		{
-			players[player]->hud.magicLeftHand->flags[INVISIBLE] = false;
+			if ( !usingSpellbook )
+			{
+				players[player]->hud.magicLeftHand->flags[INVISIBLE] = false;
+				if ( caster->isInvisible() )
+				{
+					players[player]->hud.magicLeftHand->flags[INVISIBLE] = true;
+					players[player]->hud.magicLeftHand->flags[INVISIBLE_DITHER] = true;
+				}
+			}
+			players[player]->hud.magicRightHand->flags[INVISIBLE] = false;
 			if ( caster->isInvisible() )
 			{
-				players[player]->hud.magicLeftHand->flags[INVISIBLE] = true;
-				players[player]->hud.magicLeftHand->flags[INVISIBLE_DITHER] = true;
+				players[player]->hud.magicRightHand->flags[INVISIBLE] = true;
+				players[player]->hud.magicRightHand->flags[INVISIBLE_DITHER] = true;
 			}
-		}
-		players[player]->hud.magicRightHand->flags[INVISIBLE] = false;
-		if ( caster->isInvisible() )
-		{
-			players[player]->hud.magicRightHand->flags[INVISIBLE] = true;
-			players[player]->hud.magicRightHand->flags[INVISIBLE_DITHER] = true;
 		}
 	}
 
@@ -876,6 +957,10 @@ void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, 
 		}
 	}
 	animation_manager->times_to_circle = std::max(HANDMAGIC_TICKS_PER_CIRCLE / 2, animation_manager->times_to_circle);
+	if ( overchargeRepeat )
+	{
+		animation_manager->times_to_circle = 0;
+	}
 	animation_manager->consume_interval = (animation_manager->times_to_circle / std::max(1, spellCost));
 	animation_manager->consume_timer = animation_manager->consume_interval;
 	animation_manager->setRangeFinderLocation();
@@ -886,7 +971,9 @@ void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, 
 void spellcastingAnimationManager_deactivate(spellcasting_animation_manager_t* animation_manager)
 {
 	if ( animation_manager->stage == ANIM_SPELL_TOUCH
-		|| animation_manager->stage == ANIM_SPELL_TOUCH_CHARGE )
+		|| animation_manager->stage == ANIM_SPELL_TOUCH_CHARGE
+		|| animation_manager->stage == ANIM_SPELL_OVERCHARGE_READY
+		|| animation_manager->stage == ANIM_SPELL_OVERCHARGE_CHARGE )
 	{
 		spellcastAnimationUpdate(animation_manager->player, MONSTER_POSE_MAGIC_CAST2, 0);
 	}
@@ -898,6 +985,7 @@ void spellcastingAnimationManager_deactivate(spellcasting_animation_manager_t* a
 	animation_manager->stage = 0;
 	animation_manager->circle_count = 0;
 	animation_manager->active_count = 0;
+	animation_manager->overcharge = 0;
 	animation_manager->resetRangefinder();
 
 	if ( animation_manager->player == -1 )
@@ -925,7 +1013,8 @@ void spellcastingAnimationManager_deactivate(spellcasting_animation_manager_t* a
 
 void spellcastingAnimationManager_completeSpell(int player, spellcasting_animation_manager_t* animation_manager, bool deactivate)
 {
-	if ( animation_manager->stage == ANIM_SPELL_TOUCH_THROW )
+	if ( animation_manager->stage == ANIM_SPELL_TOUCH_THROW
+		|| animation_manager->stage == ANIM_SPELL_OVERCHARGE_THROW )
 	{
 		spellcastAnimationUpdate(animation_manager->player, 1, 0);
 	}
@@ -1415,11 +1504,21 @@ void actLeftHandMagic(Entity* my)
 						|| cast_animation[HANDMAGIC_PLAYERNUM].rangefinder == SpellRangefinderType::RANGEFINDER_TOUCH_WALL_TILE )
 					{
 						cast_animation[HANDMAGIC_PLAYERNUM].stage = ANIM_SPELL_TOUCH;
+						if ( cast_animation[HANDMAGIC_PLAYERNUM].overcharge > 0 )
+						{
+							cast_animation[HANDMAGIC_PLAYERNUM].stage = ANIM_SPELL_OVERCHARGE_READY;
+						}
 						if ( *cvar_vibe_spell_s > 0 )
 						{
 							inputs.rumble(HANDMAGIC_PLAYERNUM, GameController::Haptic_t::RUMBLE_SPELL, *cvar_vibe_spell_x,
 								*cvar_vibe_spell_y, *cvar_vibe_spell_s, 0);
 						}
+						spellcastAnimationUpdate(HANDMAGIC_PLAYERNUM, MONSTER_POSE_MAGIC_WINDUP2, 0);
+						playSoundEntityLocal(players[HANDMAGIC_PLAYERNUM]->entity, 759 + local_rng.rand() % 4, 92);
+					}
+					else if ( cast_animation[HANDMAGIC_PLAYERNUM].overcharge > 0 )
+					{
+						cast_animation[HANDMAGIC_PLAYERNUM].stage = ANIM_SPELL_OVERCHARGE_READY;
 						spellcastAnimationUpdate(HANDMAGIC_PLAYERNUM, MONSTER_POSE_MAGIC_WINDUP2, 0);
 						playSoundEntityLocal(players[HANDMAGIC_PLAYERNUM]->entity, 759 + local_rng.rand() % 4, 92);
 					}
@@ -1435,6 +1534,7 @@ void actLeftHandMagic(Entity* my)
 				cast_animation[HANDMAGIC_PLAYERNUM].stage = ANIM_SPELL_COMPLETE_SPELL;
 				break;
 			case ANIM_SPELL_TOUCH_CHARGE:
+			case ANIM_SPELL_OVERCHARGE_CHARGE:
 			{
 				my->flags[INVISIBLE] = true;
 				my->flags[INVISIBLE_DITHER] = false;
@@ -1499,6 +1599,7 @@ void actLeftHandMagic(Entity* my)
 				break;
 			}
 			case ANIM_SPELL_TOUCH_THROW:
+			case ANIM_SPELL_OVERCHARGE_THROW:
 			{
 				my->flags[INVISIBLE] = true;
 				my->flags[INVISIBLE_DITHER] = false;
@@ -1527,11 +1628,19 @@ void actLeftHandMagic(Entity* my)
 
 				}
 
+				float neutralSetpoint = -2.5f;
+				if ( cast_animation[HANDMAGIC_PLAYERNUM].stage == ANIM_SPELL_OVERCHARGE_THROW
+					&& cast_animation[HANDMAGIC_PLAYERNUM].overcharge > 0 )
+				{
+					neutralSetpoint = -5.f;
+				}
+
+
 				if ( anim.throw_count > 0 )
 				{
 					if ( anim.lefthand_angle >= 1.f )
 					{
-						anim.lefthand_movex = std::max(-2.5f, anim.lefthand_movex - 0.75f);
+						anim.lefthand_movex = std::max(neutralSetpoint, anim.lefthand_movex - 0.75f);
 					}
 					else
 					{
@@ -1540,18 +1649,40 @@ void actLeftHandMagic(Entity* my)
 				}
 
 
-				if ( /*anim.throw_count >= 20 ||*/ anim.lefthand_movex <= -2.5f )
+				if ( /*anim.throw_count >= 20 ||*/ anim.lefthand_movex <= neutralSetpoint )
 				{
-					if ( stats[HANDMAGIC_PLAYERNUM]->weapon )
+					if ( cast_animation[HANDMAGIC_PLAYERNUM].stage == ANIM_SPELL_OVERCHARGE_THROW
+						&& cast_animation[HANDMAGIC_PLAYERNUM].overcharge > 0 )
 					{
-						players[HANDMAGIC_PLAYERNUM]->hud.weaponSwitch = true;
+						--cast_animation[HANDMAGIC_PLAYERNUM].overcharge;
+						if ( cast_animation[HANDMAGIC_PLAYERNUM].overcharge == 0 )
+						{
+							if ( stats[HANDMAGIC_PLAYERNUM]->weapon )
+							{
+								players[HANDMAGIC_PLAYERNUM]->hud.weaponSwitch = true;
+							}
+							spellcastingAnimationManager_deactivate(&cast_animation[HANDMAGIC_PLAYERNUM]);
+						}
+						else
+						{
+							fireOffSpellAnimation(&cast_animation[HANDMAGIC_PLAYERNUM], cast_animation[HANDMAGIC_PLAYERNUM].caster, 
+								cast_animation[HANDMAGIC_PLAYERNUM].spell, cast_animation[HANDMAGIC_PLAYERNUM].active_spellbook);
+						}
 					}
-					spellcastingAnimationManager_deactivate(&cast_animation[HANDMAGIC_PLAYERNUM]);
+					else
+					{
+						if ( stats[HANDMAGIC_PLAYERNUM]->weapon )
+						{
+							players[HANDMAGIC_PLAYERNUM]->hud.weaponSwitch = true;
+						}
+						spellcastingAnimationManager_deactivate(&cast_animation[HANDMAGIC_PLAYERNUM]);
+					}
 				}
 				anim.throw_count++;
 				break;
 			}
 			case ANIM_SPELL_TOUCH:
+			case ANIM_SPELL_OVERCHARGE_READY:
 			{
 				my->flags[INVISIBLE] = true;
 				my->flags[INVISIBLE_DITHER] = false;
@@ -1693,7 +1824,9 @@ void actLeftHandMagic(Entity* my)
 	if ( cast_animation[HANDMAGIC_PLAYERNUM].active )
 	{
 		if ( cast_animation[HANDMAGIC_PLAYERNUM].stage == ANIM_SPELL_TOUCH
-			|| cast_animation[HANDMAGIC_PLAYERNUM].stage == ANIM_SPELL_TOUCH_CHARGE )
+			|| cast_animation[HANDMAGIC_PLAYERNUM].stage == ANIM_SPELL_TOUCH_CHARGE
+			|| cast_animation[HANDMAGIC_PLAYERNUM].stage == ANIM_SPELL_OVERCHARGE_READY
+			|| cast_animation[HANDMAGIC_PLAYERNUM].stage == ANIM_SPELL_OVERCHARGE_CHARGE )
 		{
 			float x = my->x + 2.5;
 			float y = -my->y;
@@ -2118,6 +2251,9 @@ void actRightHandMagic(Entity* my)
 				break;
 			case ANIM_SPELL_TOUCH:
 				break;
+			case ANIM_SPELL_OVERCHARGE_READY:
+			case ANIM_SPELL_OVERCHARGE_CHARGE:
+			case ANIM_SPELL_OVERCHARGE_THROW:
 			default:
 				break;
 		}
@@ -2229,6 +2365,7 @@ void actMagicRangefinder(Entity* my)
 
 	if ( !(cast_anim.active || cast_anim.active_spellbook) || !cast_anim.rangefinder 
 		|| cast_anim.stage == ANIM_SPELL_TOUCH_THROW
+		|| cast_anim.stage == ANIM_SPELL_OVERCHARGE_THROW
 		|| cast_anim.stage == ANIM_SPELL_CIRCLE )
 	{
 		my->flags[INVISIBLE] = true;

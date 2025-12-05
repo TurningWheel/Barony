@@ -1252,7 +1252,8 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 			{
 				continue;
 			}
-			if ( projectileAttack && my->behavior == &actMagicMissile && my->sprite == 2191 ) // scepter blast phases entities
+			if ( projectileAttack && my->behavior == &actMagicMissile 
+				&& (my->sprite == 2191 || my->sprite == 2364) ) // scepter blast/blood waves phases entities
 			{
 				if ( my->collisionIgnoreTargets.find(entity->getUID()) != my->collisionIgnoreTargets.end() )
 				{

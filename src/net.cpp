@@ -3209,9 +3209,52 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 					}
 					break;
 				}
+				case PARTICLE_EFFECT_REVENANT_CURSE:
+				{
+					int duration = SDLNet_Read32(&net_packet->data[15]);
+					if ( Entity* fx = createParticleAestheticOrbit(entity, sprite, duration, PARTICLE_EFFECT_REVENANT_CURSE) )
+					{
+						fx->z = 7.5;
+						fx->yaw = entity->yaw;
+						fx->ditheringOverride = 6;
+					}
+					break;
+				}
 				case PARTICLE_EFFECT_SPELL_WEB_ORBIT:
 					createParticleAestheticOrbit(entity, 863, 400, PARTICLE_EFFECT_SPELL_WEB_ORBIT);
 					break;
+				case PARTICLE_EFFECT_DEFY_FLESH_ORBIT:
+				{
+					int duration = SDLNet_Read32(&net_packet->data[15]);
+					if ( Entity* fx = createParticleAestheticOrbit(entity, 2363, duration, PARTICLE_EFFECT_DEFY_FLESH_ORBIT) )
+					{
+						fx->flags[INVISIBLE] = true;
+					}
+					break;
+				
+				}
+				case PARTICLE_EFFECT_DEFY_FLESH:
+				{
+					int duration = SDLNet_Read32(&net_packet->data[15]);
+					Sint32 dir = SDLNet_Read32(&net_packet->data[19]);
+					if ( Entity* fx = createParticleAestheticOrbit(entity, 2363, duration, PARTICLE_EFFECT_DEFY_FLESH) )
+					{
+						fx->yaw = dir / 256.0;
+						fx->flags[INVISIBLE] = true;
+
+						fx->pitch = PI / 2;
+						fx->fskill[0] = fx->yaw;
+						fx->fskill[1] = PI / 4 - PI / 8;
+						fx->fskill[2] = entity->z;
+						fx->x = entity->x - 8.0 * cos(fx->yaw);
+						fx->y = entity->y - 8.0 * sin(fx->yaw);
+						fx->z = entity->z;
+						fx->scalex = 0.0;
+						fx->scaley = 0.0;
+						fx->scalez = 0.0;
+					}
+					break;
+				}
 				case PARTICLE_EFFECT_PORTAL_SPAWN:
 				{
 					Entity* spellTimer = createParticleTimer(entity, 100, sprite);
@@ -3301,6 +3344,19 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 					}
 					break;
 				}
+				case PARTICLE_EFFECT_CONTROL:
+					for ( int i = 0; i < 4; ++i )
+					{
+						Entity* fx = spawnMagicParticle(entity);
+						fx->sprite = sprite;
+						fx->yaw = entity->yaw + i * PI / 2;
+						fx->scalex = 0.7;
+						fx->scaley = fx->scalex;
+						fx->scalez = fx->scalex;
+						fx->vel_x = 0.5 * cos(entity->yaw + i * PI / 2);
+						fx->vel_y = 0.5 * sin(entity->yaw + i * PI / 2);
+					}
+					break;
 				case PARTICLE_EFFECT_FLAMES:
 				{
 					int duration = SDLNet_Read32(&net_packet->data[15]);
@@ -3423,6 +3479,33 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 			case PARTICLE_EFFECT_MISC_PUDDLE:
 				spawnMiscPuddle(nullptr, particle_x, particle_y, sprite);
 				break;
+			case PARTICLE_EFFECT_BLOOD_BUBBLE:
+			{
+				for ( int i = 0; i < 4; ++i )
+				{
+					if ( Entity* gib = spawnGibClient(particle_x, particle_y, particle_z, 5) )
+					{
+						gib->sprite = 5;
+					}
+
+					Entity* fx = createParticleAestheticOrbit(nullptr, 283, 1.5 * TICKS_PER_SECOND + i * 10, PARTICLE_EFFECT_BLOOD_BUBBLE);
+					real_t dir = (local_rng.rand() % 360) * PI / 180.f;
+					fx->x = particle_x + 4.0 * cos(dir);
+					fx->y = particle_y + 4.0 * sin(dir);
+					fx->z = particle_z - (local_rng.rand() % 5);
+					fx->flags[SPRITE] = true;
+
+					fx->fskill[2] = 2 * PI * (local_rng.rand() % 10) / 10.0;
+					fx->fskill[3] = 0.025; // speed osc
+					fx->scalex = 0.0125;
+					fx->scaley = fx->scalex;
+					fx->scalez = fx->scalex;
+					fx->actmagicOrbitDist = 2;
+					fx->actmagicOrbitStationaryX = particle_x;
+					fx->actmagicOrbitStationaryY = particle_y;
+				}
+				break;
+			}
 			case PARTICLE_EFFECT_SPORE_BOMB:
 				for ( int i = 0; i < 16; ++i )
 				{

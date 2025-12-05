@@ -1112,6 +1112,7 @@ void actThrown(Entity* my)
 				int oldHP = 0;
 				oldHP = hit.entity->getHP();
 				int damage = (BASE_THROWN_DAMAGE + item->weaponGetAttack(parentStats));
+				bool thrownTypeWeapon = false;
 				if ( parentStats )
 				{
 					if ( itemCategory(item) == POTION )
@@ -1146,6 +1147,8 @@ void actThrown(Entity* my)
 							real_t targetACEffectiveness = Entity::getACEffectiveness(hit.entity, hitstats, hit.entity->behavior == &actPlayer, parent, parentStats, numBlessings);
 							int attackAfterReductions = static_cast<int>(std::max(0.0, ((damage * targetACEffectiveness - enemyAC))) + (1.0 - targetACEffectiveness) * damage);
 							damage = attackAfterReductions;
+
+							thrownTypeWeapon = true;
 						}
 						else
 						{
@@ -1207,11 +1210,61 @@ void actThrown(Entity* my)
 					damage = std::min(10, damage); // impact damage is 10 max on allies.
 				}
 
+				bool envenomWeapon = false;
+				if ( parent )
+				{
+					Stat* parentStats = parent->getStats();
+					if ( parentStats && parentStats->getEffectActive(EFF_ENVENOM_WEAPON) && hitstats )
+					{
+						if ( local_rng.rand() % 2 == 0 )
+						{
+							int envenomDamage = std::min(
+								getSpellDamageSecondaryFromID(SPELL_ENVENOM_WEAPON, parent, parentStats, parent),
+								getSpellDamageFromID(SPELL_ENVENOM_WEAPON, parent, parentStats, parent));
+
+							hit.entity->modHP(-envenomDamage); // do the damage
+							for ( int tmp = 0; tmp < 3; ++tmp )
+							{
+								Entity* gib = spawnGib(hit.entity, 211);
+								serverSpawnGibForClient(gib);
+							}
+							if ( !hitstats->getEffectActive(EFF_POISONED) )
+							{
+								envenomWeapon = true;
+								hitstats->setEffectActive(EFF_POISONED, 1);
+
+								int duration = 160 * envenomDamage;
+								hitstats->EFFECTS_TIMERS[EFF_POISONED] = std::max(200, duration - hit.entity->getCON() * 20);
+								hitstats->poisonKiller = parent->getUID();
+								if ( hit.entity->isEntityPlayer() )
+								{
+									messagePlayerMonsterEvent(hit.entity->isEntityPlayer(), makeColorRGB(255, 0, 0), *parentStats, Language::get(6531), Language::get(6532), MSG_COMBAT);
+									serverUpdateEffects(hit.entity->isEntityPlayer());
+								}
+
+								if ( parent->behavior == &actPlayer )
+								{
+									players[parent->skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_ENVENOM_WEAPON, 50.0, 1.0);
+								}
+							}
+						}
+					}
+				}
+
 				char whatever[256] = "";
 				if ( !friendlyHit )
 				{
 					Sint32 oldHP = hitstats->HP;
 					hit.entity->modHP(-damage);
+
+					if ( hitstats && hitstats->getEffectActive(EFF_DEFY_FLESH) )
+					{
+						Sint32 damageTaken = oldHP - hitstats->HP;
+						if ( damageTaken > 0 )
+						{
+							hit.entity->defyFleshProc(parent);
+						}
+					}
 
 					if ( hit.entity->behavior == &actPlayer )
 					{
@@ -2023,6 +2076,11 @@ void actThrown(Entity* my)
 					{
 						messagePlayerColor(hit.entity->skill[2], MESSAGE_STATUS, makeColorRGB(0, 255, 0), Language::get(6088));
 					}
+				}
+				if ( parent && parent->behavior == &actPlayer && envenomWeapon && hitstats && hitstats->HP > 0 )
+				{
+					Uint32 color = makeColorRGB(0, 255, 0);
+					messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(6533), Language::get(6534), MSG_COMBAT);
 				}
 			}
 			else

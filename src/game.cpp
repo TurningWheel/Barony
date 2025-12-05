@@ -5772,7 +5772,7 @@ void ingameHud()
 			}
 			if ( !castAnimationTouch )
 			{
-				if ( !(cast_animation[player].stage == 4) ) // allow recast if pressed during touch throw window
+				if ( !(cast_animation[player].stage == 4 || cast_animation[player].stage == 9) ) // allow recast if pressed during touch throw window
 				{
 					input.consumeBinaryToggle("Cast Spell");
 				}

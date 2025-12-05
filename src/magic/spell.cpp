@@ -993,8 +993,14 @@ real_t getBonusFromCasterOfSpellElement(Entity* caster, Stat* casterStats, spell
 			}
 		}
 	}
+
+	if ( Uint8 effectStrength = casterStats->getEffectActive(EFF_INCOHERENCE) )
+	{
+		real_t mult = std::min(0.9, 0.2 + (effectStrength - 1) * 0.1);
+		bonus = -mult;
+	}
 	
-	return bonus;
+	return std::max(-0.9, bonus);
 }
 
 bool spellElement_isChanneled(spellElement_t* spellElement)
