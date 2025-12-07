@@ -912,6 +912,18 @@ void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, 
 	animation_manager->lefthand_movex = 0;
 	animation_manager->lefthand_movey = 0;
 	int spellCost = getCostOfSpell(spell, caster);
+	if ( !usingSpellbook && spell->ID != SPELL_OVERCHARGE )
+	{
+		if ( animation_manager->overcharge_init )
+		{
+			animation_manager->overcharge = animation_manager->overcharge_init;
+			animation_manager->overcharge_init = 0;
+		}
+		if ( animation_manager->overcharge )
+		{
+			spellCost = std::max(1, spellCost / 2);
+		}
+	}
 	animation_manager->circle_count = 0;
 	animation_manager->throw_count = 0;
 	animation_manager->active_count = 0;
@@ -966,12 +978,6 @@ void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, 
 	animation_manager->setRangeFinderLocation();
 
 	spellcastAnimationUpdate(player, MONSTER_POSE_MAGIC_WINDUP1, animation_manager->times_to_circle + HANDMAGIC_TICKS_PER_CIRCLE);
-
-	if ( animation_manager->overcharge_init && !usingSpellbook && spell->ID != SPELL_OVERCHARGE )
-	{
-		animation_manager->overcharge = animation_manager->overcharge_init;
-		animation_manager->overcharge_init = 0;
-	}
 }
 
 void spellcastingAnimationManager_deactivate(spellcasting_animation_manager_t* animation_manager)

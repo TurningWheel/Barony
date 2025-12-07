@@ -194,6 +194,14 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook)
 
 	if ( player >= 0 )
 	{
+		if ( players[player]->isLocalPlayer() )
+		{
+			if ( cast_animation[player].overcharge_init && !usingSpellbook && spell->ID != SPELL_OVERCHARGE )
+			{
+				magiccost = std::max(1, magiccost / 2);
+			}
+		}
+
 		int goldCost = getGoldCostOfSpell(spell, player);
 		if ( goldCost > 0 )
 		{
@@ -692,6 +700,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				}
 
 				magiccost = getCostOfSpell(spell, caster);
+				if ( castSpellProps && castSpellProps->overcharge > 0 && !usingSpellbook )
+				{
+					magiccost = std::max(1, magiccost / 2);
+				}
 				if ( magiccost > stat->MP )
 				{
 					// damage sound/effect due to overdraw.
