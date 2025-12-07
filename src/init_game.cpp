@@ -277,10 +277,16 @@ int initGame()
 		{
 			safePacketsReceivedMap[c].clear();
 		}
-		topscores.first = NULL;
-		topscores.last = NULL;
-		topscoresMultiplayer.first = NULL;
-		topscoresMultiplayer.last = NULL;
+		topscores_legacy.first = NULL;
+		topscores_legacy.last = NULL;
+		topscoresMultiplayer_legacy.first = NULL;
+		topscoresMultiplayer_legacy.last = NULL;
+
+		topscores_json.first = nullptr;
+		topscores_json.last = nullptr;
+		topscoresMultiplayer_json.first = nullptr;
+		topscoresMultiplayer_json.last = nullptr;
+
 		messages.first = NULL;
 		messages.last = NULL;
 		for ( int i = 0; i < MAXPLAYERS; ++i )
@@ -504,8 +510,10 @@ void deinitGame()
 
 	saveAllScores(SCORESFILE);
 	saveAllScores(SCORESFILE_MULTIPLAYER);
-	list_FreeAll(&topscores);
-	list_FreeAll(&topscoresMultiplayer);
+	list_FreeAll(&topscores_json);
+	list_FreeAll(&topscoresMultiplayer_json);
+	list_FreeAll(&topscores_legacy);
+	list_FreeAll(&topscoresMultiplayer_legacy);
 	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
 		players[i]->messageZone.deleteAllNotificationMessages();

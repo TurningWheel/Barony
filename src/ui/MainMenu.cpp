@@ -9597,7 +9597,7 @@ bind_failed:
 
             if (boardType == BoardType::LOCAL_SINGLE || boardType == BoardType::LOCAL_MULTI) {
                 auto scores = boardType == BoardType::LOCAL_SINGLE ?
-                    &topscores : &topscoresMultiplayer;
+                    &topscores_json : &topscoresMultiplayer_json;
                 if (scores->first) {
                     (void)window->remove("wait_message");
                     int index = 0;
@@ -10232,7 +10232,7 @@ bind_failed:
 		delete_entry->setTickCallback([](Widget& widget){
             if (boardType == BoardType::LOCAL_SINGLE || boardType == BoardType::LOCAL_MULTI) {
                 auto scores = boardType == BoardType::LOCAL_SINGLE ?
-                    &topscores : &topscoresMultiplayer;
+                    &topscores_json : &topscoresMultiplayer_json;
                 widget.setInvisible(scores->first == nullptr);
             }
             else
@@ -10285,7 +10285,7 @@ bind_failed:
                         }
                         });
                 auto scores = boardType == BoardType::LOCAL_SINGLE ?
-                    &topscores : &topscoresMultiplayer;
+                    &topscores_json : &topscoresMultiplayer_json;
             } else {
                 errorPrompt(Language::get(5316), Language::get(5317),
                     [](Button& button){
@@ -27390,7 +27390,7 @@ failed:
         int placement = 1;
 	    score_t* score = scoreConstructor(player);
 	    Uint32 total = totalScore(score);
-	    list_t* scoresPtr = multiplayer == SINGLE ? &topscores : &topscoresMultiplayer;
+	    list_t* scoresPtr = multiplayer == SINGLE ? &topscores_json : &topscoresMultiplayer_json;
         for (auto node = scoresPtr->first; node != nullptr; node = node->next) {
             if (total > totalScore((score_t*)node->element)) {
                 break;

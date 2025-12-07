@@ -24,7 +24,8 @@
 
 enum class EFileFormat {
 	Json,
-	Binary
+	Binary,
+	Json_Compact
 };
 
 class FileInterface {

@@ -10646,10 +10646,10 @@ void openGameoverWindow()
 	snprintf(scorenum, 16, "%d\n\n", total);
 
 	bool madetop = false;
-	list_t* scoresPtr = &topscores;
+	list_t* scoresPtr = &topscores_json;
 	if ( score->conductGameChallenges[CONDUCT_MULTIPLAYER] )
 	{
-		scoresPtr = &topscoresMultiplayer;
+		scoresPtr = &topscoresMultiplayer_json;
 	}
 	if ( !list_Size(scoresPtr) )
 	{
@@ -11229,11 +11229,11 @@ void buttonScoreNext(button_t* my)
 {
 	if ( scoreDisplayMultiplayer )
 	{
-		score_window = std::min<int>(score_window + 1, std::max<Uint32>(1, list_Size(&topscoresMultiplayer)));
+		score_window = std::min<int>(score_window + 1, std::max<Uint32>(1, list_Size(&topscoresMultiplayer_json)));
 	}
 	else
 	{
-		score_window = std::min<int>(score_window + 1, std::max<Uint32>(1, list_Size(&topscores)));
+		score_window = std::min<int>(score_window + 1, std::max<Uint32>(1, list_Size(&topscores_json)));
 	}
 	loadScore(score_window - 1);
 	camera_charsheet_offsetyaw = (330) * PI / 180;
@@ -11403,35 +11403,6 @@ void buttonOpenSteamLeaderboards(button_t* my)
 	}
 }
 #endif
-
-void buttonOpenScoresWindow(button_t* my)
-{
-    // deprecated
-    return;
-}
-
-void buttonDeleteCurrentScore(button_t* my)
-{
-	node_t* node = nullptr;
-	if ( score_window_delete_multiplayer )
-	{
-		node = list_Node(&topscoresMultiplayer, score_window_to_delete - 1);
-		if ( node )
-		{
-			list_RemoveNode(node);
-			score_window_to_delete = std::max(score_window_to_delete - 1, 1);
-		}
-	}
-	else
-	{
-		node = list_Node(&topscores, score_window_to_delete - 1);
-		if ( node )
-		{
-			list_RemoveNode(node);
-			score_window_to_delete = std::max(score_window_to_delete - 1, 1);
-		}
-	}
-}
 
 // handles slider
 void doSlider(int x, int y, int dots, int minvalue, int maxvalue, int increment, int* var, SDL_Surface* slider_font, int slider_font_char_width)

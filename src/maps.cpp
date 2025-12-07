@@ -10371,7 +10371,7 @@ void mapFoodOnLevel(int player)
 int loadMainMenuMap(bool blessedAdditionMaps, bool forceVictoryMap, int forcemap)
 {
 	bool foundVictory = false;
-	for ( node_t* node = topscores.first; node != nullptr && !foundVictory; node = node->next )
+	for ( node_t* node = topscores_json.first; node != nullptr && !foundVictory; node = node->next )
 	{
 		score_t* score = (score_t*)node->element;
 		if ( score && (score->victory == 3 || score->victory == 4 || score->victory == 5) )
@@ -10379,7 +10379,7 @@ int loadMainMenuMap(bool blessedAdditionMaps, bool forceVictoryMap, int forcemap
 			foundVictory = true;
 		}
 	}
-	for ( node_t* node = topscoresMultiplayer.first; node != nullptr && !foundVictory; node = node->next )
+	for ( node_t* node = topscoresMultiplayer_json.first; node != nullptr && !foundVictory; node = node->next )
 	{
 		score_t* score = (score_t*)node->element;
 		if ( score && (score->victory == 3 || score->victory == 4 || score->victory == 5) )

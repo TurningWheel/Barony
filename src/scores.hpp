@@ -14,8 +14,8 @@
 #include "json.hpp"
 #include "player.hpp"
 
-#define SCORESFILE "scores.dat"
-#define SCORESFILE_MULTIPLAYER "scores_multiplayer.dat"
+#define SCORESFILE "savegames/scores.json"
+#define SCORESFILE_MULTIPLAYER "savegames/scores_multiplayer.json"
 
 // game score structure
 #define MAXTOPSCORES 100
@@ -348,8 +348,10 @@ typedef struct score_t
 	Sint32 conductGameChallenges[NUM_CONDUCT_CHALLENGES];
 	Sint32 gameStatistics[NUM_GAMEPLAY_STATISTICS];
 } score_t;
-extern list_t topscores;
-extern list_t topscoresMultiplayer;
+extern list_t topscores_json;
+extern list_t topscoresMultiplayer_json;
+extern list_t topscores_legacy;
+extern list_t topscoresMultiplayer_legacy;
 extern int victory;
 
 extern Uint32 completionTime;
