@@ -136,10 +136,12 @@ public:
 		Uint32 enemy_statusEffects2 = 0;
 		Uint32 enemy_statusEffects3 = 0;
 		Uint32 enemy_statusEffects4 = 0;
+		Uint32 enemy_statusEffects5 = 0;
 		Uint32 enemy_statusEffectsLowDuration1 = 0;
 		Uint32 enemy_statusEffectsLowDuration2 = 0;
 		Uint32 enemy_statusEffectsLowDuration3 = 0;
 		Uint32 enemy_statusEffectsLowDuration4 = 0;
+		Uint32 enemy_statusEffectsLowDuration5 = 0;
 		bool lowPriorityTick = false;
 		bool shouldDisplay = true;
 		bool hasDistanceCheck = false;

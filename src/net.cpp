@@ -3651,7 +3651,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 			}
 		}
 		char enemy_name[128] = "";
-		strcpy(enemy_name, (char*)(&net_packet->data[47]));
+		strcpy(enemy_name, (char*)(&net_packet->data[55]));
 		auto details = enemyHPDamageBarHandler[clientnum].addEnemyToList(static_cast<Sint32>(enemy_hp), 
 			static_cast<Sint32>(enemy_maxhp), static_cast<Sint32>(oldhp), uid, enemy_name, lowPriorityTick, gib);
 		if ( details )
@@ -3660,10 +3660,12 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 			details->enemy_statusEffects2 = SDLNet_Read32(&net_packet->data[19]);
 			details->enemy_statusEffects3 = SDLNet_Read32(&net_packet->data[23]);
 			details->enemy_statusEffects4 = SDLNet_Read32(&net_packet->data[27]);
-			details->enemy_statusEffectsLowDuration1 = SDLNet_Read32(&net_packet->data[31]);
-			details->enemy_statusEffectsLowDuration2 = SDLNet_Read32(&net_packet->data[35]);
-			details->enemy_statusEffectsLowDuration3 = SDLNet_Read32(&net_packet->data[39]);
-			details->enemy_statusEffectsLowDuration4 = SDLNet_Read32(&net_packet->data[43]);
+			details->enemy_statusEffects5 = SDLNet_Read32(&net_packet->data[31]);
+			details->enemy_statusEffectsLowDuration1 = SDLNet_Read32(&net_packet->data[35]);
+			details->enemy_statusEffectsLowDuration2 = SDLNet_Read32(&net_packet->data[39]);
+			details->enemy_statusEffectsLowDuration3 = SDLNet_Read32(&net_packet->data[43]);
+			details->enemy_statusEffectsLowDuration4 = SDLNet_Read32(&net_packet->data[47]);
+			details->enemy_statusEffectsLowDuration5 = SDLNet_Read32(&net_packet->data[51]);
 		}
 	}},
 

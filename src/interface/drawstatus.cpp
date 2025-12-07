@@ -246,10 +246,12 @@ void updateEnemyBar(Entity* source, Entity* target, const char* name, Sint32 hp,
 					SDLNet_Write32(details->enemy_statusEffects2, &net_packet->data[19]);
 					SDLNet_Write32(details->enemy_statusEffects3, &net_packet->data[23]);
 					SDLNet_Write32(details->enemy_statusEffects4, &net_packet->data[27]);
-					SDLNet_Write32(details->enemy_statusEffectsLowDuration1, &net_packet->data[31]);
-					SDLNet_Write32(details->enemy_statusEffectsLowDuration2, &net_packet->data[35]);
-					SDLNet_Write32(details->enemy_statusEffectsLowDuration3, &net_packet->data[39]);
-					SDLNet_Write32(details->enemy_statusEffectsLowDuration4, &net_packet->data[43]);
+					SDLNet_Write32(details->enemy_statusEffects5, &net_packet->data[31]);
+					SDLNet_Write32(details->enemy_statusEffectsLowDuration1, &net_packet->data[35]);
+					SDLNet_Write32(details->enemy_statusEffectsLowDuration2, &net_packet->data[39]);
+					SDLNet_Write32(details->enemy_statusEffectsLowDuration3, &net_packet->data[43]);
+					SDLNet_Write32(details->enemy_statusEffectsLowDuration4, &net_packet->data[47]);
+					SDLNet_Write32(details->enemy_statusEffectsLowDuration5, &net_packet->data[51]);
 				}
 				else
 				{
@@ -261,12 +263,14 @@ void updateEnemyBar(Entity* source, Entity* target, const char* name, Sint32 hp,
 					SDLNet_Write32(0, &net_packet->data[35]);
 					SDLNet_Write32(0, &net_packet->data[39]);
 					SDLNet_Write32(0, &net_packet->data[43]);
+					SDLNet_Write32(0, &net_packet->data[47]);
+					SDLNet_Write32(0, &net_packet->data[51]);
 				}
-				strcpy((char*)(&net_packet->data[47]), name);
-				net_packet->data[47 + strlen(name)] = 0;
+				strcpy((char*)(&net_packet->data[55]), name);
+				net_packet->data[55 + strlen(name)] = 0;
 				net_packet->address.host = net_clients[p - 1].host;
 				net_packet->address.port = net_clients[p - 1].port;
-				net_packet->len = 47 + strlen(name) + 1;
+				net_packet->len = 55 + strlen(name) + 1;
 				sendPacketSafe(net_sock, -1, net_packet, p - 1);
 
 			}
