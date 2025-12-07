@@ -16330,7 +16330,23 @@ failed:
 			male_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAuto_00.png");
 			male_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAutoHigh_00.png");
 			male_button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAutoPress_00.png");
-		} else {
+		}
+		else if ( stats[index]->playerRace == RACE_M )
+		{
+			male_button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortOn_00.png");
+			male_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShort_00.png");
+			male_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortHigh_00.png");
+			male_button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortPress_00.png");
+		}
+		else if ( stats[index]->playerRace == RACE_D )
+		{
+			male_button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallOn_00.png");
+			male_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTall_00.png");
+			male_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallHigh_00.png");
+			male_button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallPress_00.png");
+		}
+		else 
+		{
 			male_button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMaleOn_00.png");
 			male_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMale_00.png");
 			male_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMaleHigh_00.png");
@@ -16364,12 +16380,29 @@ failed:
 		male_button->setTickCallback([](Widget& widget){
 			const int index = widget.getOwner();
 			auto button = static_cast<Button*>(&widget); assert(button);
-			if (stats[index]->playerRace == RACE_AUTOMATON) {
+			if (stats[index]->playerRace == RACE_AUTOMATON) 
+			{
 				button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAutoOn_00.png");
 				button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAuto_00.png");
 				button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAutoHigh_00.png");
 				button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAutoPress_00.png");
-			} else {
+			}
+			else if ( stats[index]->playerRace == RACE_M )
+			{
+				button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortOn_00.png");
+				button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShort_00.png");
+				button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortHigh_00.png");
+				button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortPress_00.png");
+			}
+			else if ( stats[index]->playerRace == RACE_D )
+			{
+				button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallOn_00.png");
+				button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTall_00.png");
+				button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallHigh_00.png");
+				button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallPress_00.png");
+			}
+			else 
+			{
 				button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMaleOn_00.png");
 				button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMale_00.png");
 				button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMaleHigh_00.png");
@@ -16382,12 +16415,28 @@ failed:
 		female_button->setColor(stats[index]->sex == FEMALE ? makeColorRGB(255, 255, 255) : makeColorRGB(127, 127, 127));
 		female_button->setHighlightColor(stats[index]->sex == FEMALE ? makeColorRGB(255, 255, 255) : makeColorRGB(127, 127, 127));
 		female_button->setStyle(Button::style_t::STYLE_RADIO);
-		if (stats[index]->playerRace == RACE_AUTOMATON) {
+		if ( stats[index]->playerRace == RACE_AUTOMATON ) {
 			female_button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAutoOn_00.png");
 			female_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAuto_00.png");
 			female_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAutoHigh_00.png");
 			female_button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAutoPress_00.png");
-		} else {
+		}
+		else if ( stats[index]->playerRace == RACE_M )
+		{
+			female_button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallOn_00.png");
+			female_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTall_00.png");
+			female_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallHigh_00.png");
+			female_button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallPress_00.png");
+		}
+		else if ( stats[index]->playerRace == RACE_D )
+		{
+			female_button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortOn_00.png");
+			female_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShort_00.png");
+			female_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortHigh_00.png");
+			female_button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortPress_00.png");
+		}
+		else 
+		{
 			female_button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFemaleOn_00.png");
 			female_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFemale_00.png");
 			female_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFemaleHigh_00.png");
@@ -16427,7 +16476,23 @@ failed:
 				button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAuto_00.png");
 				button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAutoHigh_00.png");
 				button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAutoPress_00.png");
-			} else {
+			} 
+			else if ( stats[index]->playerRace == RACE_M )
+			{
+				button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallOn_00.png");
+				button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTall_00.png");
+				button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallHigh_00.png");
+				button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallPress_00.png");
+			}
+			else if ( stats[index]->playerRace == RACE_D )
+			{
+				button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortOn_00.png");
+				button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShort_00.png");
+				button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortHigh_00.png");
+				button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortPress_00.png");
+			}
+			else 
+			{
 				button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFemaleOn_00.png");
 				button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFemale_00.png");
 				button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFemaleHigh_00.png");
@@ -17454,7 +17519,23 @@ failed:
 			male_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAuto_00.png");
 			male_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAutoHigh_00.png");
 			male_button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAutoPress_00.png");
-		} else {
+		} 
+		else if ( stats[index]->playerRace == RACE_M )
+		{
+			male_button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortOn_00.png");
+			male_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShort_00.png");
+			male_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortHigh_00.png");
+			male_button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortPress_00.png");
+		}
+		else if ( stats[index]->playerRace == RACE_D )
+		{
+			male_button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallOn_00.png");
+			male_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTall_00.png");
+			male_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallHigh_00.png");
+			male_button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallPress_00.png");
+		}
+		else 
+		{
 			male_button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMaleOn_00.png");
 			male_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMale_00.png");
 			male_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMaleHigh_00.png");
@@ -17489,7 +17570,23 @@ failed:
 				button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAuto_00.png");
 				button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAutoHigh_00.png");
 				button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAutoPress_00.png");
-			} else {
+			} 
+			else if ( stats[index]->playerRace == RACE_M )
+			{
+				button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortOn_00.png");
+				button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShort_00.png");
+				button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortHigh_00.png");
+				button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortPress_00.png");
+			}
+			else if ( stats[index]->playerRace == RACE_D )
+			{
+				button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallOn_00.png");
+				button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTall_00.png");
+				button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallHigh_00.png");
+				button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallPress_00.png");
+			}
+			else 
+			{
 				button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMaleOn_00.png");
 				button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMale_00.png");
 				button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMaleHigh_00.png");
@@ -17507,7 +17604,23 @@ failed:
 			female_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAuto_00.png");
 			female_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAutoHigh_00.png");
 			female_button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAutoPress_00.png");
-		} else {
+		} 
+		else if ( stats[index]->playerRace == RACE_M )
+		{
+			female_button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallOn_00.png");
+			female_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTall_00.png");
+			female_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallHigh_00.png");
+			female_button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallPress_00.png");
+		}
+		else if ( stats[index]->playerRace == RACE_D )
+		{
+			female_button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortOn_00.png");
+			female_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShort_00.png");
+			female_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortHigh_00.png");
+			female_button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortPress_00.png");
+		}
+		else 
+		{
 			female_button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFemaleOn_00.png");
 			female_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFemale_00.png");
 			female_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFemaleHigh_00.png");
@@ -17543,7 +17656,23 @@ failed:
 				button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAuto_00.png");
 				button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAutoHigh_00.png");
 				button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAutoPress_00.png");
-			} else {
+			}
+			else if ( stats[index]->playerRace == RACE_M )
+			{
+				button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallOn_00.png");
+				button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTall_00.png");
+				button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallHigh_00.png");
+				button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallPress_00.png");
+			}
+			else if ( stats[index]->playerRace == RACE_D )
+			{
+				button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortOn_00.png");
+				button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShort_00.png");
+				button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortHigh_00.png");
+				button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortPress_00.png");
+			}
+			else 
+			{
 				button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFemaleOn_00.png");
 				button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFemale_00.png");
 				button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFemaleHigh_00.png");

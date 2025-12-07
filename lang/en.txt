@@ -664,8 +664,8 @@ thou makest use of them.#
 446 You shot the %s!#
 447 But it didn't even flinch!#
 448 You shot %s!#
-449 But she didn't even flinch!#
-450 But he didn't even flinch!#
+449 But they didn't even flinch!#
+450 But they didn't even flinch!#
 451 You are hit by an arrow!#
 452 But it bounced off your armor!#
 453 The arrow poisons you!#
@@ -1065,8 +1065,8 @@ You should call a plumber!#
 692 You killed the %s!#
 693 You critically hit %s!#
 694 You hit %s!#
-695 She didn't even flinch!#
-696 He didn't even flinch!#
+695 They didn't even flinch!#
+696 They didn't even flinch!#
 697 You killed %s!#
 698 The %s %s!#
 699 %s %s!#
@@ -1942,8 +1942,8 @@ Compatible save file not found.#
 1506 goes for a swim in some lava.#
 1507 walks into a spike trap and dies.#
 1508 gets killed by a flying %s.#
-1509 was betrayed by his fellow %s.#
-1510 was betrayed by her fellow %s.#
+1509 was betrayed by their fellow %s.#
+1510 was betrayed by their fellow %s.#
 1511 is violently dispatched by an angry human.#
 1512 gets nibbled to death by a lowly rat.#
 1513 is viciously flayed by a goblin.#
@@ -1961,8 +1961,8 @@ Compatible save file not found.#
 1525 is unceremoniously pulverized by the minotaur.#
 1526 is damned to hell. Literally.#
 1527 attempts a robbery and fails.#
-1528 kills himself during an invocation.#
-1529 kills herself during an invocation.#
+1528 kills themself during an invocation.#
+1529 kills themself during an invocation.#
 1530 diets for a little too long.#
 1531 is finished off by the poison.#
 1532 bleeds to death.#
@@ -7181,5 +7181,8 @@ to replay this challenge!
 6909 %s's spell power is diminished!#
 6910 The %s's spell power is diminished!#
 6911 Your spell power is diminished!#
+6912 You suddenly feel rather tall!#
+6913 You suddenly feel rather small!#
+6914 You suddenly detect a change of appearance!#
 
 6999 END#

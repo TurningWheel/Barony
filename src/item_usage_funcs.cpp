@@ -5552,7 +5552,33 @@ void item_AmuletSexChange(Item* item, int player)
 	}
 	else
 	{
-		if ( stats[player]->sex == MALE )
+		if ( stats[player]->type == AUTOMATON )
+		{
+			messagePlayer(player, MESSAGE_HINT | MESSAGE_STATUS, Language::get(6914));
+		}
+		else if ( stats[player]->type == MONSTER_D )
+		{
+			if ( stats[player]->sex == MALE )
+			{
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_STATUS, Language::get(6912));
+			}
+			else
+			{
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_STATUS, Language::get(6913));
+			}
+		}
+		else if ( stats[player]->type == MONSTER_M )
+		{
+			if ( stats[player]->sex == MALE )
+			{
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_STATUS, Language::get(6913));
+			}
+			else
+			{
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_STATUS, Language::get(6912));
+			}
+		}
+		else if ( stats[player]->sex == MALE )
 		{
 			messagePlayer(player, MESSAGE_HINT | MESSAGE_STATUS, Language::get(967));
 		}

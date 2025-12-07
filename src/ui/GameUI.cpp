@@ -21154,6 +21154,14 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 				{
 					sexImg->path = "*#images/ui/CharSheet/HUD_CharSheet_Sex_AutomatonM_02.png";
 				}
+				else if ( type == MONSTER_D )
+				{
+					sexImg->path = "*#images/ui/CharSheet/HUD_CharSheet_Height_T_00.png";
+				}
+				else if ( type == MONSTER_M )
+				{
+					sexImg->path = "*#images/ui/CharSheet/HUD_CharSheet_Height_S_00.png";
+				}
 				else
 				{
 					sexImg->path = "*#images/ui/CharSheet/HUD_CharSheet_Sex_M_02.png";
@@ -21166,6 +21174,14 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 				if ( type == AUTOMATON )
 				{
 					sexImg->path = "*#images/ui/CharSheet/HUD_CharSheet_Sex_AutomatonF_02.png";
+				}
+				else if ( type == MONSTER_D )
+				{
+					sexImg->path = "*#images/ui/CharSheet/HUD_CharSheet_Height_S_00.png";
+				}
+				else if ( type == MONSTER_M )
+				{
+					sexImg->path = "*#images/ui/CharSheet/HUD_CharSheet_Height_T_00.png";
 				}
 				else
 				{

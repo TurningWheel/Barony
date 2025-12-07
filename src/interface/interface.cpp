@@ -33074,6 +33074,54 @@ void GenericGUIMenu::AssistShrineGUI_t::createAssistShrine()
 								widget.isPressed() ? makeColorRGB(255, 255, 255) : makeColorRGB(128, 128, 128));
 						}
 					}
+					else if ( (gui.selectedRace == -1 && gui.savedRace == -1 && stats[widget.getOwner()]->playerRace == RACE_M)
+						|| (gui.savedRace == RACE_M && gui.selectedRace == -1)
+						|| gui.selectedRace == RACE_M)
+					{
+						if ( auto img = Image::get("*images/ui/CharSheet/HUD_CharSheet_Height_S_00.png") )
+						{
+							SDL_Rect pos2 = pos;
+							pos2.x -= img->getWidth();
+							pos2.x -= 8;
+							pos2.w = img->getWidth();
+							pos2.h = img->getHeight();
+							img->drawColor(nullptr, pos2, SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+								!widget.isPressed() ? makeColorRGB(255, 255, 255) : makeColorRGB(128, 128, 128));
+						}
+						if ( auto img = Image::get("*images/ui/CharSheet/HUD_CharSheet_Height_T_00.png") )
+						{
+							SDL_Rect pos2 = pos;
+							pos2.x += button->getSize().w + 8;
+							pos2.w = img->getWidth();
+							pos2.h = img->getHeight();
+							img->drawColor(nullptr, pos2, SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+								widget.isPressed() ? makeColorRGB(255, 255, 255) : makeColorRGB(128, 128, 128));
+						}
+					}
+					else if ( (gui.selectedRace == -1 && gui.savedRace == -1 && stats[widget.getOwner()]->playerRace == RACE_D)
+						|| (gui.savedRace == RACE_D && gui.selectedRace == -1)
+						|| gui.selectedRace == RACE_D )
+					{
+						if ( auto img = Image::get("*images/ui/CharSheet/HUD_CharSheet_Height_T_00.png") )
+						{
+							SDL_Rect pos2 = pos;
+							pos2.x -= img->getWidth();
+							pos2.x -= 8;
+							pos2.w = img->getWidth();
+							pos2.h = img->getHeight();
+							img->drawColor(nullptr, pos2, SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+								!widget.isPressed() ? makeColorRGB(255, 255, 255) : makeColorRGB(128, 128, 128));
+						}
+						if ( auto img = Image::get("*images/ui/CharSheet/HUD_CharSheet_Height_S_00.png") )
+						{
+							SDL_Rect pos2 = pos;
+							pos2.x += button->getSize().w + 8;
+							pos2.w = img->getWidth();
+							pos2.h = img->getHeight();
+							img->drawColor(nullptr, pos2, SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+								widget.isPressed() ? makeColorRGB(255, 255, 255) : makeColorRGB(128, 128, 128));
+						}
+					}
 					else
 					{
 						if ( auto img = Image::get("*images/ui/CharSheet/HUD_CharSheet_Sex_M_02.png") )
