@@ -797,6 +797,7 @@ typedef struct spell_t
 	real_t cast_time = 1.0;
 	real_t cast_time_mult = 1.0;
 	int mana = 1;
+	int needsDataFreed = 0;
 
 	int radius = 0;
 	real_t radius_mult = 0.0;
@@ -1058,6 +1059,7 @@ spell_t* copySpell(spell_t* spell, int subElementToCopy = -1);
 void spellConstructor(spell_t* spell, int ID);
 spell_t* spellConstructor(int ID, int difficulty, const char* internal_name, std::vector<int> elements);
 void spellDeconstructor(void* data);
+void copySpellElement(spellElement_t* spellElement, spellElement_t* spellElementToSet);
 spellElement_t* copySpellElement(spellElement_t* spellElement);
 void spellElementConstructor(spellElement_t* element);
 void spellElementConstructor(int elementID, int mana, int base_mana, int overload_mult, int damage, int duration, const char* internal_name);

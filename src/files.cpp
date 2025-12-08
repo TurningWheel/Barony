@@ -9,6 +9,8 @@
 
 -------------------------------------------------------------------------------*/
 
+#include "main.hpp"
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <dirent.h>
@@ -19,7 +21,6 @@
 #include <thread>
 #include <future>
 
-#include "main.hpp"
 #include "files.hpp"
 #include "engine/audio/sound.hpp"
 #include "entity.hpp"

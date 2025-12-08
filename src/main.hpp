@@ -10,6 +10,15 @@
 -------------------------------------------------------------------------------*/
 
 #pragma once
+#include "Config.hpp"
+
+#include <stdlib.h>
+//#ifdef WINDOWS
+//#ifdef _DEBUG
+//#define _CRTDBG_MAP_ALLOC
+//#include <crtdbg.h>
+//#endif
+//#endif
 
 #ifdef __arm__
 typedef float real_t;
@@ -56,7 +65,6 @@ using std::string; //Instead of including an entire namespace, please explicitly
 #include <set>
 #include <functional>
 #include "physfs.h"
-#include "Config.hpp"
 
 #ifdef NINTENDO
 #include "nintendo/baronynx.hpp"
@@ -92,7 +100,6 @@ extern bool logCheckMainLoopTimers;
 extern bool autoLimbReload;
 
 #include <dirent.h>
-#include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
 #include <time.h>

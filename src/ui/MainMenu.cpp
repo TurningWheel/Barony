@@ -1,3 +1,4 @@
+#include "../main.hpp"
 #include "MainMenu.hpp"
 #include "Frame.hpp"
 #include "Image.hpp"

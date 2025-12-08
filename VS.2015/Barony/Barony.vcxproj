@@ -1395,6 +1395,7 @@ if %errorlevel% leq 1 exit 0 else exit %errorlevel%</Command>
     <ClInclude Include="..\..\src\engine\audio\music_pc.hpp" />
     <ClInclude Include="..\..\src\engine\audio\sound.hpp" />
     <ClInclude Include="..\..\src\engine\filepc.hpp" />
+    <ClInclude Include="..\..\src\files.hpp" />
     <ClInclude Include="..\..\src\imgui\imconfig.h" />
     <ClInclude Include="..\..\src\imgui\imgui.h" />
     <ClInclude Include="..\..\src\imgui\imgui_impl_opengl2.h" />

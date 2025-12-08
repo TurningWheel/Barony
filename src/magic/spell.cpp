@@ -514,6 +514,7 @@ void spellConstructor(spell_t* spell, int ID)
 	spell->channel_duration = 0;
 	spell->channel_effectStrength = 1;
 	//spell->timer = 0;
+	assert(allGameSpells.find(ID) == allGameSpells.end());
 	allGameSpells[ID] = spell;
 }
 
@@ -525,6 +526,7 @@ spell_t* spellConstructor(int ID, int difficulty, const char* internal_name, std
 		spellConstructor(spell, ID);
 		strcpy(spell->spell_internal_name, internal_name);
 		spell->difficulty = difficulty;
+		spell->needsDataFreed = 1;
 
 		list_t* list = &spell->elements;
 		for ( auto elementID : elements )
@@ -640,6 +642,7 @@ spell_t* copySpell(spell_t* spell, int subElementIndexToCopy)
 	spell_t* result = (spell_t*) malloc(sizeof(spell_t));
 	*result = *spell; // copy over all the static data members.
 
+	result->needsDataFreed = 0;
 	result->sustain_node = NULL;
 	result->magic_effects_node = NULL;
 	result->elements.first = NULL;
@@ -677,6 +680,32 @@ spell_t* copySpell(spell_t* spell, int subElementIndexToCopy)
 	}
 
 	return result;
+}
+
+void copySpellElement(spellElement_t* spellElement, spellElement_t* spellElementToSet)
+{
+	if ( !spellElement || !spellElementToSet )
+	{
+		return;
+	}
+	*spellElementToSet = *spellElement; // copy over all the static data members.
+
+	spellElementToSet->node = NULL;
+	spellElementToSet->elements.first = NULL;
+	spellElementToSet->elements.last = NULL;
+
+	for ( node_t* node = spellElement->elements.first; node != NULL; node = node->next )
+	{
+		spellElement_t* tempElement = (spellElement_t*)node->element;
+
+		node_t* tempNode = list_AddNodeLast(&spellElementToSet->elements);
+		tempNode->deconstructor = &spellElementDeconstructor;
+		tempNode->size = sizeof(spellElement_t);
+		tempNode->element = copySpellElement(tempElement);
+
+		spellElement_t* newElement = (spellElement_t*)tempNode->element;
+		newElement->node = tempNode;
+	}
 }
 
 spellElement_t* copySpellElement(spellElement_t* spellElement)

@@ -9,8 +9,8 @@
 
 -------------------------------------------------------------------------------*/
 
-#include <list>
 #include "main.hpp"
+#include <list>
 #include "draw.hpp"
 #include "game.hpp"
 #include "stat.hpp"

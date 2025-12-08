@@ -25,14 +25,12 @@ void setupSpells()   ///TODO: Verify this function.
 	for ( auto it : allGameSpells )
 	{
 		spell_t* spell = it.second;
-		if ( spell_isChanneled(spell) )
-		{
-			if ( spell->sustain_node )
-			{
-				list_RemoveNode(spell->sustain_node);
-			}
-		}
+		list_RemoveNode(spell->sustain_node);
 		list_FreeAll(&spell->elements);
+		if ( spell->needsDataFreed )
+		{
+			free(spell);
+		}
 	}
 	allGameSpells.clear();
 	spellTomeAppearanceToID.clear();
@@ -59,8 +57,8 @@ void setupSpells()   ///TODO: Verify this function.
 	spellElement_missile.duration = 75; //1.25 seconds.
 	//spellElement_missile.name = "Missile";
 	strcpy(spellElement_missile.element_internal_name, "spell_element_missile");
-	spellElementMap[SPELL_ELEMENT_PROPULSION_MISSILE] = *copySpellElement(&spellElement_missile);
-	spellElementMap[SPELL_ELEMENT_PROPULSION_MISSILE_NOCOST] = *copySpellElement(&spellElement_missile);
+	copySpellElement(&spellElement_missile, &spellElementMap[SPELL_ELEMENT_PROPULSION_MISSILE]);
+	copySpellElement(&spellElement_missile, &spellElementMap[SPELL_ELEMENT_PROPULSION_MISSILE_NOCOST]);
 	//spellElementMap[SPELL_ELEMENT_PROPULSION_MISSILE_NOCOST].mana = 0;
 	//spellElementMap[SPELL_ELEMENT_PROPULSION_MISSILE_NOCOST].base_mana = 0;
 

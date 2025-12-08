@@ -812,6 +812,18 @@ void deinitGame()
 	{
 		free(CompendiumEntries.compendiumMap.tiles);
 	}
+
+	for ( auto it : allGameSpells )
+	{
+		spell_t* spell = it.second;
+		list_RemoveNode(spell->sustain_node);
+		list_FreeAll(&spell->elements);
+		if ( spell->needsDataFreed )
+		{
+			free(spell);
+		}
+	}
+
 	for (int i = 0; i < MAXPLAYERS; ++i)
 	{
 		delete players[i];
