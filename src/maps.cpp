@@ -47,7 +47,7 @@ void TreasureRoomGenerator::init()
 	{
 		seed -= 64;
 	}
-	treasure_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
+	treasure_rng.seedBytes(&seed, sizeof(seed));
 
 	for ( int i = 0; i <= 35; i += 5 )
 	{
@@ -83,6 +83,11 @@ void TreasureRoomGenerator::init()
 			//}
 		}
 	}
+
+	orb_floors.clear();
+	orb_floors[8] = "orb_green";
+	orb_floors[13] = "orb_red";
+	orb_floors[18] = "orb_blue";
 }
 
 bool TreasureRoomGenerator::bForceSpawnForCurrentFloor(int secretlevelexit, bool minotaur, BaronyRNG& mapRNG)
@@ -1363,6 +1368,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		TREASURE_ROOM_MAX
 	};
 	GroupSubRooms_t treasureRooms[TREASURE_ROOM_MAX];
+	GroupSubRooms_t specialMapRooms;
 	GroupSubRooms_t* treasureRoomLevel = nullptr;
 
 	// load shop room
@@ -1442,6 +1448,45 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		}
 
 		loadSubRoomData(fullMapPath, &mapList);
+	}
+
+	if ( !secretlevel )
+	{
+		if ( treasure_room_generator.orb_floors.find(currentlevel) != treasure_room_generator.orb_floors.end() )
+		{
+			std::string specialMapName = treasure_room_generator.orb_floors[currentlevel];
+			std::string fullMapPath = physfsFormatMapName(specialMapName.c_str());
+			if ( !fullMapPath.empty() )
+			{
+				if ( loadSubRoomData(fullMapPath, &specialMapRooms.list) )
+				{
+					++specialMapRooms.count;
+
+					// load subrooms if found
+					for ( char letter = 'a'; letter <= 'z'; letter++ )
+					{
+						char subRoomName[128] = "";
+						snprintf(subRoomName, sizeof(subRoomName), "%s%c", specialMapName.c_str(), letter);
+
+						std::string fullMapPath = physfsFormatMapName(subRoomName);
+
+						if ( fullMapPath.empty() )
+						{
+							break;    // no more levels to load
+						}
+
+						auto& innerSubRooms = specialMapRooms.innerSubRooms[0];
+						printlog("[SUBMAP GENERATOR] Found map lv %s, count: %d", subRoomName, innerSubRooms.count);
+
+						if ( loadSubRoomData(fullMapPath, &innerSubRooms.list) )
+						{
+							++innerSubRooms.count;
+						}
+					}
+				}
+			}
+			specialMapRooms.possibleRooms.resize(specialMapRooms.count, true);
+		}
 	}
 
 	static ConsoleVariable<std::string> cvar_treasure_room_spawn("/treasure_room_spawn", "");
@@ -1857,6 +1902,36 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				levelnum2 = -1;
 				tempMap = &shopmap;
 			}
+			else if ( c == 4 && specialMapRooms.count > 0 )
+			{
+				// generate a special room
+				levelnum = 0;
+				levelnum2 = -1;
+
+				levelnum = map_rng.rand() % (specialMapRooms.count); // draw randomly from the pool
+
+				// traverse the map list to the picked level
+				node = specialMapRooms.list.first;
+				i = 0;
+				j = -1;
+				while ( 1 )
+				{
+					if ( specialMapRooms.possibleRooms[i] )
+					{
+						++j;
+						if ( j == levelnum )
+						{
+							break;
+						}
+					}
+					node = node->next;
+					++i;
+				}
+				levelnum2 = i;
+				node = ((list_t*)node->element)->first;
+				doorNode = node->next;
+				tempMap = (map_t*)node->element;
+			}
 			else
 			{
 				if ( !numlevels )
@@ -1931,6 +2006,19 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 					continue;
 				}
 			}
+			else if ( c == 4 && specialMapRooms.count > 0 )
+			{
+				if ( numpossiblelocations <= 0 )
+				{
+					if ( levelnum2 >= 0 && levelnum2 < specialMapRooms.count )
+					{
+						specialMapRooms.possibleRooms[levelnum2] = false;
+					}
+					--specialMapRooms.count;
+					--c;
+					continue;
+				}
+			}
 			else if ( numpossiblelocations <= 0 )
 			{
 				if ( levelnum2 >= 0 && levelnum2 < numlevels )
@@ -1970,6 +2058,11 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 						{
 							list_FreeAll(&r.second.list);
 						}
+					}
+					list_FreeAll(&specialMapRooms.list);
+					for ( auto& r : specialMapRooms.innerSubRooms )
+					{
+						list_FreeAll(&r.second.list);
 					}
 					if ( shoplevel && c == 2 )
 					{
@@ -2196,6 +2289,32 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				snprintf(submapLogMsg, sizeof(submapLogMsg),
 					"Picked level: %d from %d possible rooms in submap %s at x:%d y:%d", pickSubRoom + 1, subroomLogCount, tempMap->filename, x, y);
 			}
+			else if ( c == 4 && specialMapRooms.count > 0
+				&& specialMapRooms.innerSubRooms.find(levelnum2) != specialMapRooms.innerSubRooms.end()
+				&& specialMapRooms.innerSubRooms[levelnum2].count > 0 )
+			{
+				auto& innerSubRooms = specialMapRooms.innerSubRooms[levelnum2];
+				pickSubRoom = map_rng.rand() % innerSubRooms.count;
+				subRoomNode = innerSubRooms.list.first;
+				int k = 0;
+				while ( 1 )
+				{
+					if ( k == pickSubRoom )
+					{
+						break;
+					}
+					subRoomNode = subRoomNode->next;
+					k++;
+				}
+				subRoomNode = ((list_t*)subRoomNode->element)->first;
+				subRoomMap = (map_t*)subRoomNode->element;
+				subRoomDoorNode = subRoomNode->next;
+
+				subroomLogCount = innerSubRooms.count;
+
+				snprintf(submapLogMsg, sizeof(submapLogMsg),
+					"Picked level: %d from %d possible rooms in submap %s at x:%d y:%d", pickSubRoom + 1, subroomLogCount, tempMap->filename, x, y);
+			}
 			else if ( c == 2 && shoplevel && tempMap == &shopmap && shopSubRooms.count > 0 )
 			{
 				pickSubRoom = map_rng.rand() % shopSubRooms.count;
@@ -2363,6 +2482,13 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 							{
 								decorationexcludelocations[x0 + y0 * map.width] = true;
 								treasureRoomLocations[x0 + y0 * map.width] = true;
+								map.tileAttributes[(y0)*MAPLAYERS + (x0)*MAPLAYERS * map.height] |= map_t::TILE_ATTRIBUTE_TREASURE_ROOM;
+							}
+							if ( c == 4 && specialMapRooms.count > 0 )
+							{
+								decorationexcludelocations[x0 + y0 * map.width] = true;
+								treasureRoomLocations[x0 + y0 * map.width] = true;
+								map.tileAttributes[(y0)*MAPLAYERS + (x0)*MAPLAYERS * map.height] |= map_t::TILE_ATTRIBUTE_TREASURE_ROOM;
 							}
 						}
 
@@ -2502,6 +2628,11 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				list_FreeAll(&r.second.list);
 			}
 		}
+		list_FreeAll(&specialMapRooms.list);
+		for ( auto& r : specialMapRooms.innerSubRooms )
+		{
+			list_FreeAll(&r.second.list);
+		}
 		free(possiblerooms);
 		free(possiblelocations2);
 	}
@@ -2514,6 +2645,11 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			{
 				list_FreeAll(&r.second.list);
 			}
+		}
+		list_FreeAll(&specialMapRooms.list);
+		for ( auto& r : specialMapRooms.innerSubRooms )
+		{
+			list_FreeAll(&r.second.list);
 		}
 		list_FreeAll(&shopSubRooms.list);
 		list_FreeAll(&subRoomMapList);
@@ -2588,113 +2724,141 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				switch ( doordir )
 				{
 					case door_t::DIR_EAST: // east
-						map.tiles[OBSTACLELAYER + door->y * MAPLAYERS + (door->x + 1)*MAPLAYERS * map.height] = 0;
-						for ( node3 = map.entities->first; node3 != nullptr; node3 = nextnode )
+						if ( treasureRoomLocations[(door->x + 1) + (door->y) * map.width] )
 						{
-							entity = (Entity*)node3->element;
-							nextnode = node3->next;
-							if ( mapSpriteIsDoorway(entity->sprite) )
+							// don't defile this room
+						}
+						else
+						{
+							map.tiles[OBSTACLELAYER + door->y * MAPLAYERS + (door->x + 1)*MAPLAYERS * map.height] = 0;
+							for ( node3 = map.entities->first; node3 != nullptr; node3 = nextnode )
 							{
-								if ( (int)(entity->x / 16) == door->x + 2 && (int)(entity->y / 16) == door->y 
-									&& (entity->sprite == 3 || entity->sprite == 19 || entity->sprite == 113 || entity->sprite == 217) ) // north/south doors 2 tiles away
+								entity = (Entity*)node3->element;
+								nextnode = node3->next;
+								if ( mapSpriteIsDoorway(entity->sprite) )
 								{
-									list_RemoveNode(entity->mynode);
-								}
-								else if ( (int)(entity->x / 16) == door->x + 1 && (int)(entity->y / 16) == door->y )
-								{
-									list_RemoveNode(entity->mynode);
-								}
-								else if ( (int)(entity->x / 16) == door->x + 1 && (int)(entity->y / 16) == door->y + 1 )
-								{
-									list_RemoveNode(entity->mynode);
-								}
-								else if ( (int)(entity->x / 16) == door->x + 1 && (int)(entity->y / 16) == door->y - 1 )
-								{
-									list_RemoveNode(entity->mynode);
+									if ( (int)(entity->x / 16) == door->x + 2 && (int)(entity->y / 16) == door->y 
+										&& (entity->sprite == 3 || entity->sprite == 19 || entity->sprite == 113 || entity->sprite == 217) ) // north/south doors 2 tiles away
+									{
+										list_RemoveNode(entity->mynode);
+									}
+									else if ( (int)(entity->x / 16) == door->x + 1 && (int)(entity->y / 16) == door->y )
+									{
+										list_RemoveNode(entity->mynode);
+									}
+									else if ( (int)(entity->x / 16) == door->x + 1 && (int)(entity->y / 16) == door->y + 1 )
+									{
+										list_RemoveNode(entity->mynode);
+									}
+									else if ( (int)(entity->x / 16) == door->x + 1 && (int)(entity->y / 16) == door->y - 1 )
+									{
+										list_RemoveNode(entity->mynode);
+									}
 								}
 							}
 						}
 						break;
 					case door_t::DIR_SOUTH: // south
-						map.tiles[OBSTACLELAYER + (door->y + 1)*MAPLAYERS + door->x * MAPLAYERS * map.height] = 0;
-						for ( node3 = map.entities->first; node3 != nullptr; node3 = nextnode )
+						if ( treasureRoomLocations[(door->x) + (door->y + 1) * map.width] )
 						{
-							entity = (Entity*)node3->element;
-							nextnode = node3->next;
-							if ( mapSpriteIsDoorway(entity->sprite) )
+							// don't defile this room
+						}
+						else
+						{
+							map.tiles[OBSTACLELAYER + (door->y + 1)*MAPLAYERS + door->x * MAPLAYERS * map.height] = 0;
+							for ( node3 = map.entities->first; node3 != nullptr; node3 = nextnode )
 							{
-								if ( (int)(entity->x / 16) == door->x && (int)(entity->y / 16) == door->y + 2
-									&& (entity->sprite == 2 || entity->sprite == 20 || entity->sprite == 114 || entity->sprite == 218) ) // east/west doors 2 tiles away
+								entity = (Entity*)node3->element;
+								nextnode = node3->next;
+								if ( mapSpriteIsDoorway(entity->sprite) )
 								{
-									list_RemoveNode(entity->mynode);
-								}
-								else if ( (int)(entity->x / 16) == door->x && (int)(entity->y / 16) == door->y + 1 )
-								{
-									list_RemoveNode(entity->mynode);
-								}
-								else if ( (int)(entity->x / 16) == door->x + 1 && (int)(entity->y / 16) == door->y + 1 )
-								{
-									list_RemoveNode(entity->mynode);
-								}
-								else if ( (int)(entity->x / 16) == door->x - 1 && (int)(entity->y / 16) == door->y + 1 )
-								{
-									list_RemoveNode(entity->mynode);
+									if ( (int)(entity->x / 16) == door->x && (int)(entity->y / 16) == door->y + 2
+										&& (entity->sprite == 2 || entity->sprite == 20 || entity->sprite == 114 || entity->sprite == 218) ) // east/west doors 2 tiles away
+									{
+										list_RemoveNode(entity->mynode);
+									}
+									else if ( (int)(entity->x / 16) == door->x && (int)(entity->y / 16) == door->y + 1 )
+									{
+										list_RemoveNode(entity->mynode);
+									}
+									else if ( (int)(entity->x / 16) == door->x + 1 && (int)(entity->y / 16) == door->y + 1 )
+									{
+										list_RemoveNode(entity->mynode);
+									}
+									else if ( (int)(entity->x / 16) == door->x - 1 && (int)(entity->y / 16) == door->y + 1 )
+									{
+										list_RemoveNode(entity->mynode);
+									}
 								}
 							}
 						}
 						break;
 					case door_t::DIR_WEST: // west
-						map.tiles[OBSTACLELAYER + door->y * MAPLAYERS + (door->x - 1)*MAPLAYERS * map.height] = 0;
-						for ( node3 = map.entities->first; node3 != nullptr; node3 = nextnode )
+						if ( treasureRoomLocations[(door->x - 1) + (door->y) * map.width] )
 						{
-							entity = (Entity*)node3->element;
-							nextnode = node3->next;
-							if ( mapSpriteIsDoorway(entity->sprite) )
+							// don't defile this room
+						}
+						else
+						{
+							map.tiles[OBSTACLELAYER + door->y * MAPLAYERS + (door->x - 1) * MAPLAYERS * map.height] = 0;
+							for ( node3 = map.entities->first; node3 != nullptr; node3 = nextnode )
 							{
-								if ( (int)(entity->x / 16) == door->x - 2 && (int)(entity->y / 16) == door->y
-									&& (entity->sprite == 3 || entity->sprite == 19 || entity->sprite == 113 || entity->sprite == 217) ) // north/south doors 2 tiles away
+								entity = (Entity*)node3->element;
+								nextnode = node3->next;
+								if ( mapSpriteIsDoorway(entity->sprite) )
 								{
-									list_RemoveNode(entity->mynode);
-								}
-								else if ( (int)(entity->x / 16) == door->x - 1 && (int)(entity->y / 16) == door->y )
-								{
-									list_RemoveNode(entity->mynode);
-								}
-								else if ( (int)(entity->x / 16) == door->x - 1 && (int)(entity->y / 16) == door->y + 1 )
-								{
-									list_RemoveNode(entity->mynode);
-								}
-								else if ( (int)(entity->x / 16) == door->x - 1 && (int)(entity->y / 16) == door->y - 1 )
-								{
-									list_RemoveNode(entity->mynode);
+									if ( (int)(entity->x / 16) == door->x - 2 && (int)(entity->y / 16) == door->y
+										&& (entity->sprite == 3 || entity->sprite == 19 || entity->sprite == 113 || entity->sprite == 217) ) // north/south doors 2 tiles away
+									{
+										list_RemoveNode(entity->mynode);
+									}
+									else if ( (int)(entity->x / 16) == door->x - 1 && (int)(entity->y / 16) == door->y )
+									{
+										list_RemoveNode(entity->mynode);
+									}
+									else if ( (int)(entity->x / 16) == door->x - 1 && (int)(entity->y / 16) == door->y + 1 )
+									{
+										list_RemoveNode(entity->mynode);
+									}
+									else if ( (int)(entity->x / 16) == door->x - 1 && (int)(entity->y / 16) == door->y - 1 )
+									{
+										list_RemoveNode(entity->mynode);
+									}
 								}
 							}
 						}
 						break;
 					case door_t::DIR_NORTH: // north
-						map.tiles[OBSTACLELAYER + (door->y - 1)*MAPLAYERS + door->x * MAPLAYERS * map.height] = 0;
-						for ( node3 = map.entities->first; node3 != nullptr; node3 = nextnode )
+						if ( treasureRoomLocations[(door->x) + (door->y - 1) * map.width] )
 						{
-							entity = (Entity*)node3->element;
-							nextnode = node3->next;
-							if ( mapSpriteIsDoorway(entity->sprite) )
+							// don't defile this room
+						}
+						else
+						{
+							map.tiles[OBSTACLELAYER + (door->y - 1)*MAPLAYERS + door->x * MAPLAYERS * map.height] = 0;
+							for ( node3 = map.entities->first; node3 != nullptr; node3 = nextnode )
 							{
-								if ( (int)(entity->x / 16) == door->x && (int)(entity->y / 16) == door->y - 2
-									&& (entity->sprite == 2 || entity->sprite == 20 || entity->sprite == 114 || entity->sprite == 218) ) // east/west doors 2 tiles away
+								entity = (Entity*)node3->element;
+								nextnode = node3->next;
+								if ( mapSpriteIsDoorway(entity->sprite) )
 								{
-									list_RemoveNode(entity->mynode);
-								}
-								else if ( (int)(entity->x / 16) == door->x && (int)(entity->y / 16) == door->y - 1 )
-								{
-									list_RemoveNode(entity->mynode);
-								}
-								else if ( (int)(entity->x / 16) == door->x + 1 && (int)(entity->y / 16) == door->y - 1 )
-								{
-									list_RemoveNode(entity->mynode);
-								}
-								else if ( (int)(entity->x / 16) == door->x - 1 && (int)(entity->y / 16) == door->y - 1 )
-								{
-									list_RemoveNode(entity->mynode);
+									if ( (int)(entity->x / 16) == door->x && (int)(entity->y / 16) == door->y - 2
+										&& (entity->sprite == 2 || entity->sprite == 20 || entity->sprite == 114 || entity->sprite == 218) ) // east/west doors 2 tiles away
+									{
+										list_RemoveNode(entity->mynode);
+									}
+									else if ( (int)(entity->x / 16) == door->x && (int)(entity->y / 16) == door->y - 1 )
+									{
+										list_RemoveNode(entity->mynode);
+									}
+									else if ( (int)(entity->x / 16) == door->x + 1 && (int)(entity->y / 16) == door->y - 1 )
+									{
+										list_RemoveNode(entity->mynode);
+									}
+									else if ( (int)(entity->x / 16) == door->x - 1 && (int)(entity->y / 16) == door->y - 1 )
+									{
+										list_RemoveNode(entity->mynode);
+									}
 								}
 							}
 						}
@@ -2768,113 +2932,142 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				switch ( doordir )
 				{
 					case door_t::DIR_EAST: // east
-						map.tiles[OBSTACLELAYER + door->y * MAPLAYERS + (door->x + 1)*MAPLAYERS * map.height] = 0;
-						for ( node3 = map.entities->first; node3 != nullptr; node3 = nextnode )
+
+						if ( treasureRoomLocations[(door->x + 1) + (door->y) * map.width] )
 						{
-							entity = (Entity*)node3->element;
-							nextnode = node3->next;
-							if ( mapSpriteIsDoorway(entity->sprite) )
+							// don't defile this room
+						}
+						else
+						{
+							map.tiles[OBSTACLELAYER + door->y * MAPLAYERS + (door->x + 1) * MAPLAYERS * map.height] = 0;
+							for ( node3 = map.entities->first; node3 != nullptr; node3 = nextnode )
 							{
-								if ( (int)(entity->x / 16) == door->x + 2 && (int)(entity->y / 16) == door->y
-									&& (entity->sprite == 3 || entity->sprite == 19 || entity->sprite == 113 || entity->sprite == 217) ) // north/south doors 2 tiles away
+								entity = (Entity*)node3->element;
+								nextnode = node3->next;
+								if ( mapSpriteIsDoorway(entity->sprite) )
 								{
-									list_RemoveNode(entity->mynode);
-								}
-								else if ( (int)(entity->x / 16) == door->x + 1 && (int)(entity->y / 16) == door->y )
-								{
-									list_RemoveNode(entity->mynode);
-								}
-								else if ( (int)(entity->x / 16) == door->x + 1 && (int)(entity->y / 16) == door->y + 1 )
-								{
-									list_RemoveNode(entity->mynode);
-								}
-								else if ( (int)(entity->x / 16) == door->x + 1 && (int)(entity->y / 16) == door->y - 1 )
-								{
-									list_RemoveNode(entity->mynode);
+									if ( (int)(entity->x / 16) == door->x + 2 && (int)(entity->y / 16) == door->y
+										&& (entity->sprite == 3 || entity->sprite == 19 || entity->sprite == 113 || entity->sprite == 217) ) // north/south doors 2 tiles away
+									{
+										list_RemoveNode(entity->mynode);
+									}
+									else if ( (int)(entity->x / 16) == door->x + 1 && (int)(entity->y / 16) == door->y )
+									{
+										list_RemoveNode(entity->mynode);
+									}
+									else if ( (int)(entity->x / 16) == door->x + 1 && (int)(entity->y / 16) == door->y + 1 )
+									{
+										list_RemoveNode(entity->mynode);
+									}
+									else if ( (int)(entity->x / 16) == door->x + 1 && (int)(entity->y / 16) == door->y - 1 )
+									{
+										list_RemoveNode(entity->mynode);
+									}
 								}
 							}
 						}
 						break;
 					case door_t::DIR_SOUTH: // south
-						map.tiles[OBSTACLELAYER + (door->y + 1)*MAPLAYERS + door->x * MAPLAYERS * map.height] = 0;
-						for ( node3 = map.entities->first; node3 != nullptr; node3 = nextnode )
+						if ( treasureRoomLocations[(door->x) + (door->y + 1) * map.width] )
 						{
-							entity = (Entity*)node3->element;
-							nextnode = node3->next;
-							if ( mapSpriteIsDoorway(entity->sprite) )
+							// don't defile this room
+						}
+						else
+						{
+							map.tiles[OBSTACLELAYER + (door->y + 1) * MAPLAYERS + door->x * MAPLAYERS * map.height] = 0;
+							for ( node3 = map.entities->first; node3 != nullptr; node3 = nextnode )
 							{
-								if ( (int)(entity->x / 16) == door->x && (int)(entity->y / 16) == door->y + 2
-									&& (entity->sprite == 2 || entity->sprite == 20 || entity->sprite == 114 || entity->sprite == 218) ) // east/west doors 2 tiles away
+								entity = (Entity*)node3->element;
+								nextnode = node3->next;
+								if ( mapSpriteIsDoorway(entity->sprite) )
 								{
-									list_RemoveNode(entity->mynode);
-								}
-								else if ( (int)(entity->x / 16) == door->x && (int)(entity->y / 16) == door->y + 1 )
-								{
-									list_RemoveNode(entity->mynode);
-								}
-								else if ( (int)(entity->x / 16) == door->x + 1 && (int)(entity->y / 16) == door->y + 1 )
-								{
-									list_RemoveNode(entity->mynode);
-								}
-								else if ( (int)(entity->x / 16) == door->x - 1 && (int)(entity->y / 16) == door->y + 1 )
-								{
-									list_RemoveNode(entity->mynode);
+									if ( (int)(entity->x / 16) == door->x && (int)(entity->y / 16) == door->y + 2
+										&& (entity->sprite == 2 || entity->sprite == 20 || entity->sprite == 114 || entity->sprite == 218) ) // east/west doors 2 tiles away
+									{
+										list_RemoveNode(entity->mynode);
+									}
+									else if ( (int)(entity->x / 16) == door->x && (int)(entity->y / 16) == door->y + 1 )
+									{
+										list_RemoveNode(entity->mynode);
+									}
+									else if ( (int)(entity->x / 16) == door->x + 1 && (int)(entity->y / 16) == door->y + 1 )
+									{
+										list_RemoveNode(entity->mynode);
+									}
+									else if ( (int)(entity->x / 16) == door->x - 1 && (int)(entity->y / 16) == door->y + 1 )
+									{
+										list_RemoveNode(entity->mynode);
+									}
 								}
 							}
 						}
 						break;
 					case door_t::DIR_WEST: // west
-						map.tiles[OBSTACLELAYER + door->y * MAPLAYERS + (door->x - 1)*MAPLAYERS * map.height] = 0;
-						for ( node3 = map.entities->first; node3 != nullptr; node3 = nextnode )
+						if ( treasureRoomLocations[(door->x - 1) + (door->y) * map.width] )
 						{
-							entity = (Entity*)node3->element;
-							nextnode = node3->next;
-							if ( mapSpriteIsDoorway(entity->sprite) )
+							// don't defile this room
+						}
+						else
+						{
+							map.tiles[OBSTACLELAYER + door->y * MAPLAYERS + (door->x - 1) * MAPLAYERS * map.height] = 0;
+							for ( node3 = map.entities->first; node3 != nullptr; node3 = nextnode )
 							{
-								if ( (int)(entity->x / 16) == door->x - 2 && (int)(entity->y / 16) == door->y
-									&& (entity->sprite == 3 || entity->sprite == 19 || entity->sprite == 113 || entity->sprite == 217) ) // north/south doors 2 tiles away
+								entity = (Entity*)node3->element;
+								nextnode = node3->next;
+								if ( mapSpriteIsDoorway(entity->sprite) )
 								{
-									list_RemoveNode(entity->mynode);
-								}
-								else if ( (int)(entity->x / 16) == door->x - 1 && (int)(entity->y / 16) == door->y )
-								{
-									list_RemoveNode(entity->mynode);
-								}
-								else if ( (int)(entity->x / 16) == door->x - 1 && (int)(entity->y / 16) == door->y + 1 )
-								{
-									list_RemoveNode(entity->mynode);
-								}
-								else if ( (int)(entity->x / 16) == door->x - 1 && (int)(entity->y / 16) == door->y - 1 )
-								{
-									list_RemoveNode(entity->mynode);
+									if ( (int)(entity->x / 16) == door->x - 2 && (int)(entity->y / 16) == door->y
+										&& (entity->sprite == 3 || entity->sprite == 19 || entity->sprite == 113 || entity->sprite == 217) ) // north/south doors 2 tiles away
+									{
+										list_RemoveNode(entity->mynode);
+									}
+									else if ( (int)(entity->x / 16) == door->x - 1 && (int)(entity->y / 16) == door->y )
+									{
+										list_RemoveNode(entity->mynode);
+									}
+									else if ( (int)(entity->x / 16) == door->x - 1 && (int)(entity->y / 16) == door->y + 1 )
+									{
+										list_RemoveNode(entity->mynode);
+									}
+									else if ( (int)(entity->x / 16) == door->x - 1 && (int)(entity->y / 16) == door->y - 1 )
+									{
+										list_RemoveNode(entity->mynode);
+									}
 								}
 							}
 						}
 						break;
 					case door_t::DIR_NORTH: // north
-						map.tiles[OBSTACLELAYER + (door->y - 1)*MAPLAYERS + door->x * MAPLAYERS * map.height] = 0;
-						for ( node3 = map.entities->first; node3 != nullptr; node3 = nextnode )
+						if ( treasureRoomLocations[(door->x) + (door->y - 1) * map.width] )
 						{
-							entity = (Entity*)node3->element;
-							nextnode = node3->next;
-							if ( mapSpriteIsDoorway(entity->sprite) )
+							// don't defile this room
+						}
+						else
+						{
+							map.tiles[OBSTACLELAYER + (door->y - 1) * MAPLAYERS + door->x * MAPLAYERS * map.height] = 0;
+							for ( node3 = map.entities->first; node3 != nullptr; node3 = nextnode )
 							{
-								if ( (int)(entity->x / 16) == door->x && (int)(entity->y / 16) == door->y - 2
-									&& (entity->sprite == 2 || entity->sprite == 20 || entity->sprite == 114 || entity->sprite == 218) ) // east/west doors 2 tiles away
+								entity = (Entity*)node3->element;
+								nextnode = node3->next;
+								if ( mapSpriteIsDoorway(entity->sprite) )
 								{
-									list_RemoveNode(entity->mynode);
-								}
-								else if ( (int)(entity->x / 16) == door->x && (int)(entity->y / 16) == door->y - 1 )
-								{
-									list_RemoveNode(entity->mynode);
-								}
-								else if ( (int)(entity->x / 16) == door->x + 1 && (int)(entity->y / 16) == door->y - 1 )
-								{
-									list_RemoveNode(entity->mynode);
-								}
-								else if ( (int)(entity->x / 16) == door->x - 1 && (int)(entity->y / 16) == door->y - 1 )
-								{
-									list_RemoveNode(entity->mynode);
+									if ( (int)(entity->x / 16) == door->x && (int)(entity->y / 16) == door->y - 2
+										&& (entity->sprite == 2 || entity->sprite == 20 || entity->sprite == 114 || entity->sprite == 218) ) // east/west doors 2 tiles away
+									{
+										list_RemoveNode(entity->mynode);
+									}
+									else if ( (int)(entity->x / 16) == door->x && (int)(entity->y / 16) == door->y - 1 )
+									{
+										list_RemoveNode(entity->mynode);
+									}
+									else if ( (int)(entity->x / 16) == door->x + 1 && (int)(entity->y / 16) == door->y - 1 )
+									{
+										list_RemoveNode(entity->mynode);
+									}
+									else if ( (int)(entity->x / 16) == door->x - 1 && (int)(entity->y / 16) == door->y - 1 )
+									{
+										list_RemoveNode(entity->mynode);
+									}
 								}
 							}
 						}
