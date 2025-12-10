@@ -2189,74 +2189,92 @@ public:
 		else if ( name.compare("player_AC_eff_passive_percent") == 0 )
 		{
 			playerACEpassive = itr->value.GetInt();
+			return true;
 		}
 		else if ( name.compare("player_AC_eff_block_percent") == 0 )
 		{
 			playerACEactive = itr->value.GetInt();
+			return true;
 		}
 		else if ( name.compare("player_AC_eff_blessing_percent") == 0 )
 		{
 			playerACEbless = itr->value.GetDouble();
+			return true;
 		}
 		else if ( name.compare("enable_conditional_xp_modifier") == 0 )
 		{
 			doConditionalXPModifier = itr->value.GetBool();
+			return true;
 		}
 		else if ( name.compare("conditional_mod_lvl_difference_threshold") == 0 )
 		{
 			conditionalXPModLvlThreshold = itr->value.GetInt();
+			return true;
 		}
 		else if ( name.compare("conditional_xp_modifier_percent") == 0 )
 		{
 			conditionalXPModPercent = itr->value.GetInt();
+			return true;
 		}
 		else if ( name.compare("player_STR_multiplier") == 0 )
 		{
 			playerMultiplierSTR = itr->value.GetDouble();
+			return true;
 		}
 		else if ( name.compare("player_DEX_multiplier") == 0 )
 		{
 			playerMultiplierDEX = itr->value.GetDouble();
+			return true;
 		}
 		else if ( name.compare("player_CON_multiplier") == 0 )
 		{
 			playerMultiplierCON = itr->value.GetDouble();
+			return true;
 		}
 		else if ( name.compare("player_INT_multiplier") == 0 )
 		{
 			playerMultiplierINT = itr->value.GetDouble();
+			return true;
 		}
 		else if ( name.compare("player_PER_multiplier") == 0 )
 		{
 			playerMultiplierPER = itr->value.GetDouble();
+			return true;
 		}
 		else if ( name.compare("player_CHR_multiplier") == 0 )
 		{
 			playerMultiplierCHR = itr->value.GetDouble();
+			return true;
 		}
 		else if ( name.compare("player_levelup_HP") == 0 )
 		{
 			playerLevelupHP = itr->value.GetInt();
+			return true;
 		}
 		else if ( name.compare("player_levelup_MP") == 0 )
 		{
 			playerLevelupMP = itr->value.GetInt();
+			return true;
 		}
 		else if ( name.compare("enable_player_trauma_damage") == 0 )
 		{
 			doTraumaDamage = itr->value.GetBool();
+			return true;
 		}
 		else if ( name.compare("trauma_damage_percent") == 0 )
 		{
 			traumaDamagePercent = itr->value.GetInt();
+			return true;
 		}
 		else if ( name.compare("trauma_damage_hp_floor") == 0 )
 		{
 			traumaDamageHPLimit = itr->value.GetInt();
+			return true;
 		}
 		else if ( name.compare("zap_brigade_spawnrate_percent") == 0 )
 		{
 			zapBrigadeSpawnPercent = itr->value.GetInt();
+			return true;
 		}
 		else if ( name.compare("minotaur_force_disable_on_floors") == 0 )
 		{
