@@ -1627,7 +1627,7 @@ void monsterSMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			entity->x += limbs[MONSTER_S][12][0] * cos(my->yaw + PI / 2) + limbs[MONSTER_S][12][1] * cos(my->yaw);
 			entity->y += limbs[MONSTER_S][12][0] * sin(my->yaw + PI / 2) + limbs[MONSTER_S][12][1] * sin(my->yaw);
 			entity->z += limbs[MONSTER_S][12][2];
-			entity->pitch = my->pitch;
+			entity->pitch = my->pitch + 0.15;
 			if ( multiplayer != CLIENT )
 			{
 				entity->sprite = 1563;
@@ -1746,14 +1746,16 @@ void monsterSMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					entity->fskill[0] -= 0.007;
 				}
 
-				if ( entity->fskill[0] < -PI / 32 )
+				if ( entity->fskill[0] < -0.0 )
 				{
 					entity->skill[0] = 0;
+					entity->skill[1] = entity->skill[1] != 0 ? 0 : 1;
 				}
 			}
 			//entity->yaw += -entity->fskill[0];
-			entity->pitch += entity->fskill[0];
-			entity->roll = -entity->fskill[0];
+			real_t dir = entity->skill[1] == 0 ? 1 : -1;
+			entity->pitch += 0.5 * sin(entity->fskill[0]);
+			entity->roll = dir * -0.25 * sin(entity->fskill[0]);
 		}
 		break;
 		}

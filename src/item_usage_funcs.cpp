@@ -3444,7 +3444,7 @@ bool item_ScrollFire(Item* item, int player)
 		}
 
 		// Attempt to set the Player on fire
-		players[player]->entity->SetEntityOnFire();
+		players[player]->entity->SetEntityOnFire(nullptr);
 
 		int c;
 		for (c = 0; c < 25; c++)

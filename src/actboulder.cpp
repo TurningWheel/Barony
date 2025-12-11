@@ -2422,7 +2422,7 @@ void boulderLavaOrArcaneOnDestroy(Entity* my, int sprite, Entity* boulderHitEnti
 	}
 	else
 	{
-		boulderHitEntity->SetEntityOnFire();
+		boulderHitEntity->SetEntityOnFire(my);
 		Stat* stats = boulderHitEntity->getStats();
 		if ( stats )
 		{

@@ -1627,7 +1627,7 @@ namespace ConsoleCommands {
 		}
 
 		// Attempt to set the Player on fire
-		players[clientnum]->entity->SetEntityOnFire();
+		players[clientnum]->entity->SetEntityOnFire(nullptr);
 
 		for (int c = 0; c < 100; c++)
 		{

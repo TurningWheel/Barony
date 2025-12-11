@@ -3308,6 +3308,11 @@ void initClass(const int player)
 		players[player]->mechanics.ducksInARow.push_back(((uniqueGameKey + player) % MAXPLAYERS));
 	}
 
+	if ( stats[player]->playerRace == RACE_S && stats[player]->stat_appearance == 0 )
+	{
+		stats[player]->MP = stats[player]->MAXMP / 2;
+	}
+
 	/*if ( svFlags & SV_FLAG_LIFESAVING )
 	{
 		item = newItem(AMULET_LIFESAVING, WORN, 0, 1, 0, true, nullptr);
@@ -3376,6 +3381,10 @@ void initClass(const int player)
 		else if ( stats[player]->playerRace == RACE_G && stats[player]->stat_appearance == 0 )
 		{
 			addSpell(SPELL_DEFACE, player, true);
+		}
+		else if ( stats[player]->playerRace == RACE_S && stats[player]->stat_appearance == 0 )
+		{
+			addSpell(SPELL_BREATHE_FIRE, player, true);
 		}
 
 		if ( stats[player]->getProficiency(PRO_ALCHEMY) >= 0 )

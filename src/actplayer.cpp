@@ -4372,6 +4372,7 @@ real_t Player::PlayerMovement_t::getSpeedFactor(real_t weightratio, Sint32 DEX)
 	{
 		maxSpeed += 1.0;
 	}
+
 	real_t speedFactor = std::min((((DEX) * .4) + 8.5 - slowSpeedPenalty) * weightratio, maxSpeed);
 	/*if ( DEX <= 5 )
 	{
@@ -4386,6 +4387,28 @@ real_t Player::PlayerMovement_t::getSpeedFactor(real_t weightratio, Sint32 DEX)
 		|| stats[player.playernum]->getEffectActive(EFF_BASTION_ROOTS) )
 	{
 		speedFactor *= 0.3;
+	}
+	if ( stats[player.playernum]->type == MONSTER_S && stats[player.playernum]->getEffectActive(EFF_SALAMANDER_HEART) )
+	{
+		if ( Uint8 effectStrength = stats[player.playernum]->getEffectActive(EFF_SALAMANDER_HEART) )
+		{
+			if ( effectStrength == 2 )
+			{
+				speedFactor += std::max(1.0, (speedFactor * .1));
+			}
+			else
+			{
+				real_t ratioLimit = 0.5;
+				if ( effectStrength == 4 )
+				{
+					speedFactor *= ratioLimit;
+				}
+				else if ( effectStrength == 3 )
+				{
+					speedFactor *= 0.75;
+				}
+			}
+		}
 	}
 
 	if ( stats[player.playernum]->type == MONSTER_M
@@ -4910,7 +4933,7 @@ void Player::PlayerMovement_t::handlePlayerCameraPosition(bool useRefreshRateDel
 		}
 
 		real_t diff = abs(PLAYER_CAMERAZ_ACCEL - cameraSetpointZ);
-		if ( diff > 0.01 )
+		if ( diff > 0.01 && abs(my->creatureHoverZ) < 0.01 )
 		{
 			real_t rateChange = std::min(2.0, std::max(0.3, diff * 0.5)) * refreshRateDelta;
 
@@ -5673,7 +5696,7 @@ void doStatueEditor(int player)
 	}
 }
 
-int playerHeadSprite(Monster race, sex_t sex, int appearance, int frame) {
+int playerHeadSprite(Monster race, sex_t sex, int appearance, int frame, int player) {
     if (race == HUMAN) {
         if (appearance < 5) {
             return 113 + 12 * sex + appearance;
@@ -5740,6 +5763,18 @@ int playerHeadSprite(Monster race, sex_t sex, int appearance, int frame) {
 		return sex == FEMALE ? 2048 : 2047;
 	}
 	else if ( race == MONSTER_S ) {
+		if ( player >= 0 && player < MAXPLAYERS )
+		{
+			Uint8 effectStrength = stats[player]->getEffectActive(EFF_SALAMANDER_HEART);
+			if ( effectStrength == 1 || effectStrength == 2 )
+			{
+				return sex == FEMALE ? 2017 : 2016;
+			}
+			else if ( effectStrength == 3 || effectStrength == 4 )
+			{
+				return sex == FEMALE ? 2019 : 2018;
+			}
+		}
 		return sex == FEMALE ? 2015 : 2014;
 	}
 	else if ( race == GNOME )
@@ -6154,7 +6189,32 @@ void actPlayer(Entity* my)
 			color = makeColor(255, 0, 255, 255);
 		}
 
-		if ( *cvar_pbaoe == 13 )
+		if ( *cvar_pbaoe == 20 )
+		{
+			//Entity* fx = spawnFlameSprites(my, 263);
+			for ( int i = 0; i < 2; ++i )
+			{
+				if ( Entity* fx = createParticleAestheticOrbit(my, 263, TICKS_PER_SECOND / 2, PARTICLE_EFFECT_HEAT_ORBIT_SPIN) )
+				{
+					fx->flags[SPRITE] = true;
+					fx->x = my->x;
+					fx->y = my->y;
+					fx->z = 7.5;
+					fx->fskill[0] = fx->x;
+					fx->fskill[1] = fx->y;
+					fx->vel_z = -0.5;
+					fx->actmagicOrbitDist = 5;
+					fx->fskill[2] = my->yaw + PI / 4.0 + i * PI;
+					fx->yaw = fx->fskill[2];
+					fx->fskill[4] = 0.25;
+					fx->lightBonus = vec4{ 0.f, 0.f, 0.f, 0.f };
+					fx->actmagicNoLight = 1;
+
+					serverSpawnMiscParticles(my, PARTICLE_EFFECT_HEAT_ORBIT_SPIN, 263, 0, fx->skill[0]);
+				}
+			}
+		}
+		else if ( *cvar_pbaoe == 13 )
 		{
 			Entity* leaf = newEntity(1912, 1, map.entities, nullptr); //Gib entity.
 			if ( leaf != NULL )
@@ -7685,6 +7745,7 @@ void actPlayer(Entity* my)
 		if ( PLAYER_ALIVETIME == 0 )
 		{
 			my->createWorldUITooltip();
+			players[PLAYER_NUM]->mechanics.previouslyLevitating = false;
 		}
 
 		players[PLAYER_NUM]->player_last_x = my->x;
@@ -9010,10 +9071,10 @@ void actPlayer(Entity* my)
 			default:
 				break;
 		}
-		bool prevlevitating = false;
+		bool prevlevitating = players[PLAYER_NUM]->mechanics.previouslyLevitating;
 		if ( multiplayer != CLIENT )
 		{
-			if ( abs(zOffset) <= 0.05 )
+			/*if ( abs(zOffset) <= 0.05 )
 			{
 				if ( (my->z >= -2.05 && my->z <= -1.95 ) || (my->z >= -1.55 && my->z <= -1.45) )
 				{
@@ -9027,7 +9088,7 @@ void actPlayer(Entity* my)
 				{
 					prevlevitating = true;
 				}
-			}
+			}*/
 		}
 
 		// sleeping
@@ -9101,11 +9162,18 @@ void actPlayer(Entity* my)
 
 		// levitation
 		levitating = isLevitating(stats[PLAYER_NUM]);
+		players[PLAYER_NUM]->mechanics.previouslyLevitating = levitating;
 
 		if ( levitating )
 		{
 			my->z -= 1; // floating
 			insectoidLevitating = (playerRace == INSECTOID && stats[PLAYER_NUM]->getEffectActive(EFF_FLUTTER));
+			if ( playerRace == MONSTER_S
+				&& stats[PLAYER_NUM]->getEffectActive(EFF_SALAMANDER_HEART) >= 1 && stats[PLAYER_NUM]->getEffectActive(EFF_SALAMANDER_HEART) <= 2 )
+			{
+				insectoidLevitating = true;
+				my->z += 1;
+			}
 			if ( players[PLAYER_NUM]->isLocalPlayer() )
 			{
 				int x = std::min(std::max<unsigned int>(1, my->x / 16), map.width - 2);
@@ -9265,6 +9333,12 @@ void actPlayer(Entity* my)
 	else
 	{
 		if ( playerRace == INSECTOID && stats[PLAYER_NUM]->getEffectActive(EFF_FLUTTER) && (my->z >= -2.05 && my->z <= -1.95) )
+		{
+			insectoidLevitating = true;
+		}
+		if ( playerRace == MONSTER_S
+			&& ((stats[PLAYER_NUM]->getEffectActive(EFF_SALAMANDER_HEART) >= 1 && stats[PLAYER_NUM]->getEffectActive(EFF_SALAMANDER_HEART) <= 2)
+				|| (my->sprite == 2016 || my->sprite == 2017)) )
 		{
 			insectoidLevitating = true;
 		}
@@ -9443,7 +9517,7 @@ void actPlayer(Entity* my)
 					if ( !my->flags[BURNING] )
 					{
 						// Attempt to set the Entity on fire
-						my->SetEntityOnFire();
+						my->SetEntityOnFire(nullptr);
 					}
 					if ( stats[PLAYER_NUM]->type == AUTOMATON || stats[PLAYER_NUM]->type == SKELETON )
 					{
@@ -10532,12 +10606,16 @@ void actPlayer(Entity* my)
         }
 	}
     if (*cvar_playerLight) {
-        if (my->flags[BURNING]) {
+		if (my->flags[BURNING] ) {
             my->light = addLight(my->x / 16, my->y / 16, "player_burning");
         }
 		else if ( my->mistformGLRender > 0.9 )
 		{
 			my->light = addLight(my->x / 16, my->y / 16, "mistform_glow", range_bonus);
+		}
+		else if ( playerRace == MONSTER_S && (my->sprite == 2016 || my->sprite == 2017) )
+		{
+			my->light = addLight(my->x / 16, my->y / 16, "magic_foci_idle_red");
 		}
         else if (!my->light) {
             my->light = addLight(my->x / 16, my->y / 16, light_type, range_bonus, ambientLight ? PLAYER_NUM + 1 : 0);
@@ -10549,7 +10627,7 @@ void actPlayer(Entity* my)
 	{
 		// set head model
         my->sprite = playerHeadSprite(playerRace, stats[PLAYER_NUM]->sex,
-            playerAppearance, PLAYER_ATTACK ? PLAYER_ATTACKTIME : 0);
+            playerAppearance, PLAYER_ATTACK ? PLAYER_ATTACKTIME : 0, PLAYER_NUM);
 	}
 	if ( multiplayer != CLIENT )
 	{
@@ -12330,6 +12408,34 @@ void actPlayer(Entity* my)
 							}
 						}
 					}
+
+					if ( bodypart == 8 )
+					{
+						if ( fabs(PLAYER_VELX) > 0.1 || fabs(PLAYER_VELY) > 0.1 )
+						{
+							if ( entity->skill[0] == 0 )
+							{
+								entity->pitch -= dist * PLAYERWALKSPEED * 0.05;
+								if ( entity->pitch < -PI / 4.0 )
+								{
+									entity->skill[0] = 1;
+								}
+							}
+							else
+							{
+								entity->pitch += dist * PLAYERWALKSPEED * 0.05;
+								if ( entity->pitch > -PI / 8.0 )
+								{
+									entity->skill[0] = 0;
+								}
+							}
+						}
+						else
+						{
+							entity->pitch += PLAYERWALKSPEED / 5;
+							entity->pitch = std::min(entity->pitch, 0.0);
+						}
+					}
 				}
 				else if ( bodypart != 4 || (PLAYER_ATTACK == 0 && PLAYER_ATTACKTIME == 0) )
 				{
@@ -13601,6 +13707,111 @@ void actPlayer(Entity* my)
 					entity->flags[INVISIBLE] = true;
 					entity->flags[INVISIBLE_DITHER] = false;
 
+					if ( playerRace == MONSTER_S )
+					{
+						entity->focalx = limbs[MONSTER_S][11][0];
+						entity->focaly = limbs[MONSTER_S][11][1];
+						entity->focalz = limbs[MONSTER_S][11][2];
+						entity->x += limbs[MONSTER_S][12][0] * cos(my->yaw + PI / 2) + limbs[MONSTER_S][12][1] * cos(my->yaw);
+						entity->y += limbs[MONSTER_S][12][0] * sin(my->yaw + PI / 2) + limbs[MONSTER_S][12][1] * sin(my->yaw);
+						entity->z += limbs[MONSTER_S][12][2];
+						entity->pitch = 0.15;
+
+						entity->flags[INVISIBLE] = my->flags[INVISIBLE];
+						entity->flags[INVISIBLE_DITHER] = entity->flags[INVISIBLE];
+
+						entity->sprite = 2041;
+						switch ( my->sprite )
+						{
+						case 2014:
+							entity->sprite = 2041;
+							break;
+						case 2015:
+							entity->sprite = 2042;
+							break;
+						case 2016:
+							entity->sprite = 2043;
+							break;
+						case 2017:
+							entity->sprite = 2044;
+							break;
+						case 2018:
+							entity->sprite = 2045;
+							break;
+						case 2019:
+							entity->sprite = 2046;
+							break;
+						default:
+							break;
+						}
+
+						if ( entity->sprite == 2042
+							|| entity->sprite == 2044
+							|| entity->sprite == 2046 )
+						{
+							entity->focalx += 0.5;
+							entity->focalz -= 0.25;
+						}
+
+						bool moving = false;
+						if ( fabs(PLAYER_VELX) > 0.1 || fabs(PLAYER_VELY) > 0.1 || insectoidLevitating )
+						{
+							moving = true;
+						}
+						if ( entity->skill[0] == 0 )
+						{
+							if ( moving )
+							{
+								entity->fskill[0] += std::min(dist * PLAYERWALKSPEED, 2.f * PLAYERWALKSPEED); // move proportional to move speed
+							}
+							else if ( PLAYER_ATTACK != 0 )
+							{
+								entity->fskill[0] += PLAYERWALKSPEED; // move fixed speed when attacking if stationary
+							}
+							else
+							{
+								entity->fskill[0] += 0.01; // otherwise move slow idle
+							}
+
+							if ( entity->fskill[0] > PI / 3 || ((!moving || PLAYER_ATTACK != 0) && entity->fskill[0] > PI / 5) )
+							{
+								// switch direction if angle too great, angle is shorter if attacking or stationary
+								entity->skill[0] = 1;
+							}
+						}
+						else // reverse of the above
+						{
+							if ( moving )
+							{
+								if ( insectoidLevitating )
+								{
+									entity->fskill[0] -= std::min(std::max(0.15, dist * PLAYERWALKSPEED), 2.f * PLAYERWALKSPEED);
+								}
+								else
+								{
+									entity->fskill[0] -= std::min(dist * PLAYERWALKSPEED, 2.f * PLAYERWALKSPEED);
+								}
+							}
+							else if ( PLAYER_ATTACK != 0 )
+							{
+								entity->fskill[0] -= PLAYERWALKSPEED;
+							}
+							else
+							{
+								entity->fskill[0] -= 0.007;
+							}
+
+							if ( entity->fskill[0] < 0.0 )
+							{
+								entity->skill[0] = 0;
+								entity->skill[1] = entity->skill[1] != 0 ? 0 : 1;
+							}
+						}
+						//entity->yaw += -entity->fskill[0];
+						real_t dir = entity->skill[1] == 0 ? 1 : -1;
+						entity->pitch += 0.5 * sin(entity->fskill[0]);
+						entity->roll = dir * -0.25 * sin(entity->fskill[0]);
+					}
 					if ( playerRace == MONSTER_D )
 					{
 						entity->focalx = limbs[playerRace][11][0];
@@ -14893,7 +15104,7 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 					}
 					else if ( headSprite == 2018 || headSprite == 2019 )
 					{
-						this->sprite = 2024;
+						this->sprite = 2040;
 					}
 					break;
 				case MONSTER_G:

@@ -3375,6 +3375,34 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 					}
 					break;
 				}
+				case PARTICLE_EFFECT_HEAT_ORBIT_SPIN:
+				{
+					Uint32 particle = SDLNet_Read32(&net_packet->data[11]);
+					int duration = SDLNet_Read32(&net_packet->data[15]);
+					for ( int i = 0; i < 2; ++i )
+					{
+						if ( Entity* fx = createParticleAestheticOrbit(entity, sprite, duration, PARTICLE_EFFECT_IGNITE_ORBIT) )
+						{
+							fx->flags[SPRITE] = true;
+							fx->x = entity->x;
+							fx->y = entity->y;
+							fx->z = 7.5;
+							fx->fskill[0] = fx->x;
+							fx->fskill[1] = fx->y;
+							fx->vel_z = -0.5;
+							fx->actmagicOrbitDist = 5;
+							fx->fskill[2] = entity->yaw + PI / 4.0 + i * PI;
+							fx->yaw = fx->fskill[2];
+							fx->fskill[4] = 0.25;
+							if ( particle == 1 )
+							{
+								fx->lightBonus = vec4{ 0.f, 0.f, 0.f, 0.f };
+								fx->actmagicNoLight = 1;
+							}
+						}
+					}
+					break;
+				}
 				case PARTICLE_EFFECT_SUMMON_FLAMES:
 				{
 					int duration = SDLNet_Read32(&net_packet->data[15]);

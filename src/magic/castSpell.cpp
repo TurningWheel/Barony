@@ -202,6 +202,11 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook)
 			}
 		}
 
+		if ( stats[player]->type == MONSTER_S && stats[player]->getEffectActive(EFF_SALAMANDER_HEART) == 2 )
+		{
+			magiccost = 0;
+		}
+
 		int goldCost = getGoldCostOfSpell(spell, player);
 		if ( goldCost > 0 )
 		{
@@ -618,7 +623,13 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		spellEventFlags |= spell_t::SPELL_LEVEL_EVENT_MAGICSTAFF;
 	}
 	int oldMP = caster->getMP();
-	if ( !using_magicstaff && !trap && !usingFoci && stat )
+	Sint32 prevMP = 0;
+	if ( stat )
+	{
+		prevMP = stat->MP;
+	}
+
+	if ( !using_magicstaff && !trap && !usingFoci && stat && player >= 0 )
 	{
 		newbie = isSpellcasterBeginner(player, caster, spell->skillID);
 
@@ -673,7 +684,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			//else
 			{
 				int goldCost = getGoldCostOfSpell(spell, player);
-				if ( goldCost > 0 )
+				if ( goldCost > 0 && player >= 0 )
 				{
 					if ( goldCost > stat->GOLD )
 					{
@@ -703,6 +714,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				if ( castSpellProps && castSpellProps->overcharge > 0 && !usingSpellbook )
 				{
 					magiccost = std::max(1, magiccost / 2);
+				}
+				if ( stat->type == MONSTER_S && stat->getEffectActive(EFF_SALAMANDER_HEART) == 2 )
+				{
+					magiccost = 0;
 				}
 				if ( magiccost > stat->MP )
 				{
@@ -6785,15 +6800,31 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			case SPELL_GREASE_SPRAY:
 				particle = 245;
 				break;
+			case SPELL_BREATHE_FIRE:
+				particle = 233;
+				break;
 			default:
 				break;
 			}
-			if ( particle >= 0 )
+
+			if ( spell->ID == SPELL_BREATHE_FIRE )
+			{
+				Entity* spellTimer = createParticleTimer(caster, 50, -1);
+				spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_FOCI_SPRAY;
+				spellTimer->particleTimerCountdownSprite = particle;
+				spellTimer->particleTimerVariable2 = SPELL_BREATHE_FIRE;
+				spellTimer->particleTimerVariable3 = getSpellDamageSecondaryFromID(SPELL_BREATHE_FIRE, caster, caster->getStats(), caster, usingSpellbook ? spellBookBonusPercent / 100.0 : 0.0);
+				spellTimer->particleTimerVariable3 = std::max(1, std::min(10, spellTimer->particleTimerVariable3));
+				spellTimer->particleTimerEffectLifetime = spellTimer->particleTimerVariable3 * 25;
+				result = spellTimer;
+			}
+			else if ( particle >= 0 )
 			{
 				Entity* spellTimer = createParticleTimer(caster, 30, -1);
 				spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_MAGIC_SPRAY;
 				spellTimer->particleTimerCountdownSprite = particle;
 				result = spellTimer;
+
 				if ( !(caster && caster->behavior == &actMonster && caster->getStats() && caster->getStats()->type == SLIME) )
 				{
 					// spawn these if not a slime doing its special attack, client spawns own particles
@@ -6803,7 +6834,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		}
 		else if ( !strcmp(element->element_internal_name, spellElementMap[SPELL_ELEMENT_PROPULSION_FOCI_SPRAY].element_internal_name)
 			&& (spell->ID == SPELL_FOCI_ARCS || spell->ID == SPELL_FOCI_FIRE || spell->ID == SPELL_FOCI_SNOW
-			|| spell->ID == SPELL_FOCI_NEEDLES || spell->ID == SPELL_FOCI_SANDBLAST) )
+			|| spell->ID == SPELL_FOCI_NEEDLES || spell->ID == SPELL_FOCI_SANDBLAST || spell->ID == SPELL_BREATHE_FIRE) )
 		{
 			static ConsoleVariable<int> cvar_foci_sprite("/foci_sprite", 13);
 			int particle = -1;
@@ -6814,6 +6845,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			switch ( spell->ID )
 			{
 			case SPELL_FOCI_FIRE:
+			case SPELL_BREATHE_FIRE:
 				particle = 233;
 				break;
 			case SPELL_FOCI_SNOW:
@@ -6833,16 +6865,6 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			}
 			if ( particle >= 0 && caster )
 			{
-				//Entity* spellTimer = createParticleTimer(caster, 10, -1);
-				//spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_FOCI_SPRAY;
-				//spellTimer->particleTimerCountdownSprite = particle;
-				//result = spellTimer;
-				//if ( !(caster && caster->behavior == &actMonster) )
-				//{
-				//	// spawn these if not a monster doing its special attack, client spawns own particles
-				//	serverSpawnMiscParticles(caster, PARTICLE_EFFECT_FOCI_SPRAY, particle);
-				//}
-
 				real_t velocityBonus = 0.0;
 				{
 					real_t velocityDir = atan2(caster->vel_y, caster->vel_x);
@@ -6860,6 +6882,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					{
 						real_t vel = sqrt(pow(caster->vel_x, 2) + pow(caster->vel_y, 2));
 						velocityBonus = std::max(0.0, cos(yawDiff) * vel);
+						if ( spell->ID == SPELL_BREATHE_FIRE )
+						{
+							velocityBonus += 2;
+						}
 					}
 				}
 				if ( Entity* gib = spawnFociGib(caster->x, caster->y, 1.0, caster->yaw, velocityBonus, caster->getUID(), particle, local_rng.rand()) )
@@ -6878,6 +6904,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							gib->actmagicSpellbookBonus += spellBookBonusPercent;
 						}
 					}
+					result = gib;
 				}
 
 				/*Entity* fx = createParticleAestheticOrbit(parent, 16, 50, PARTICLE_EFFECT_FOCI_ORBIT);
@@ -7121,7 +7148,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				{
 					if ( casterStats->getEffectActive(EFF_FLAME_CLOAK) )
 					{
-						if ( caster->flags[BURNABLE] && caster->SetEntityOnFire() )
+						if ( caster->flags[BURNABLE] && caster->SetEntityOnFire(nullptr) )
 						{
 							casterStats->burningInflictedBy = 0;
 						}
@@ -8384,6 +8411,28 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				castSpell(caster_uid, subSpell, using_magicstaff, _trap, usingSpellbook, castSpellProps, usingFoci);
 			}
 		}
+
+		if ( !trap && !usingFoci && !using_magicstaff )
+		{
+			if ( caster && players[player]->entity == caster && stats[player]->type == MONSTER_S )
+			{
+				if ( spell->ID == SPELL_BREATHE_FIRE 
+					&& !strcmp(element->element_internal_name, spellElementMap[SPELL_ELEMENT_PROPULSION_MAGIC_SPRAY].element_internal_name) )
+				{
+					if ( /*prevMP*/stats[player]->MP >= stats[player]->MAXMP * 0.75 )
+					{
+						Uint8 effectStrength = stats[player]->getEffectActive(EFF_SALAMANDER_HEART);
+						if ( effectStrength != 2 && effectStrength != 1 )
+						{
+							caster->setEffect(EFF_SALAMANDER_HEART, (Uint8)2, 5 * TICKS_PER_SECOND, true, true, true);
+							castSpell(caster_uid, getSpellFromID(SPELL_IGNITE), true, false, false);
+							messagePlayerColor(caster->isEntityPlayer(), MESSAGE_STATUS, makeColorRGB(0, 255, 0), Language::get(6918));
+							playSoundEntity(caster, 167, 128);
+						}
+					}
+				}
+			}
+		}
 	}
 	return result;
 }
@@ -8479,6 +8528,10 @@ bool spellIsNaturallyLearnedByRaceOrClass(Entity& caster, Stat& stat, int spellI
 		return true;
 	}
 	else if ( stat.playerRace == RACE_M && stat.stat_appearance == 0 && (spellID == SPELL_SPORES || spellID == SPELL_MUSHROOM) )
+	{
+		return true;
+	}
+	else if ( stat.playerRace == RACE_S && stat.stat_appearance == 0 && (spellID == SPELL_BREATHE_FIRE) )
 	{
 		return true;
 	}

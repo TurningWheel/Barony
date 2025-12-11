@@ -525,6 +525,10 @@ struct MPBarPaths_t
 			}*/
 			return automatonSTBars;
 		}
+		else if ( stats[player]->type == MONSTER_S || (stats[player]->playerRace == RACE_S && stats[player]->stat_appearance == 0) )
+		{
+			return automatonHTBars;
+		}
 		else if ( stats[player]->playerRace == RACE_INSECTOID && stats[player]->stat_appearance == 0 )
 		{
 			return insectoidENBars;
@@ -7547,6 +7551,10 @@ bool StatusEffectQueue_t::doStatusEffectTooltip(StatusEffectQueueEntry_t& entry,
 						}
 					}
 				}
+				else if ( effectID == EFF_SALAMANDER_HEART )
+				{
+					variation = std::min(3, std::max(0, (int)entry.customVariable - 1));
+				}
 				else if ( effectID == EFF_ENSEMBLE_DRUM
 					|| effectID == EFF_ENSEMBLE_FLUTE
 					|| effectID == EFF_ENSEMBLE_LUTE
@@ -8334,6 +8342,35 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 					}
 				}
 			}
+			else if ( i == EFF_SALAMANDER_HEART )
+			{
+				if ( !(stats[player]->type == MONSTER_S) )
+				{
+					effectActive = false;
+				}
+				else
+				{
+					for ( auto it = effectQueue.rbegin(); it != effectQueue.rend(); ++it )
+					{
+						if ( (*it).effect == EFF_SALAMANDER_HEART )
+						{
+							if ( (*it).customVariable != stats[player]->getEffectActive(i) )
+							{
+								if ( stats[player]->getEffectActive(i) == 1 || stats[player]->getEffectActive(i) == 3 )
+								{
+									// don't re-trigger
+									(*it).customVariable = stats[player]->getEffectActive(i);
+								}
+								else
+								{
+									deleteEffect(EFF_SALAMANDER_HEART);
+								}
+								break;
+							}
+						}
+					}
+				}
+			}
 			else if ( i == EFF_BLIND )
 			{
 				if ( stats[player]->mask && stats[player]->mask->type == TOOL_BLINDFOLD_TELEPATHY )
@@ -8378,6 +8415,14 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 						{
 							effectQueue.back().customVariable = stats[player]->getEffectActive(EFF_GROWTH);
 							notificationQueue.back().customVariable = stats[player]->getEffectActive(EFF_GROWTH);
+						}
+					}
+					else if ( i == EFF_SALAMANDER_HEART )
+					{
+						if ( insertEffect(i, -1) )
+						{
+							effectQueue.back().customVariable = stats[player]->getEffectActive(EFF_SALAMANDER_HEART);
+							notificationQueue.back().customVariable = stats[player]->getEffectActive(EFF_SALAMANDER_HEART);
 						}
 					}
 					else
@@ -8867,6 +8912,10 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 						else if ( effectID == StatusEffectQueue_t::kEffectVandal )
 						{
 							variation = 0;
+						}
+						else if ( effectID == EFF_SALAMANDER_HEART )
+						{
+							variation = std::min(3, std::max(0, (int)notif.customVariable - 1));
 						}
 						else if ( effectID == EFF_VAMPIRICAURA )
 						{
@@ -9374,6 +9423,11 @@ void StatusEffectQueue_t::updateEntryImage(StatusEffectQueueEntry_t& entry, Fram
 						{
 							img->path = StatusEffectDefinitions_t::getEffectImgPath(StatusEffectDefinitions_t::getEffect(effectID), variation);
 						}
+					}
+					else if ( effectID == EFF_SALAMANDER_HEART )
+					{
+						variation = std::min(3, std::max(0, (int)entry.customVariable - 1));
+						img->path = StatusEffectDefinitions_t::getEffectImgPath(StatusEffectDefinitions_t::getEffect(effectID), variation);
 					}
 					else
 					{
@@ -31838,26 +31892,20 @@ SDL_Surface* EnemyHPDamageBarHandler::EnemyHPDetails::blitEnemyBarStatusEffects(
 				{
 					int variation = -1;
 					SDL_Surface* srcSurf = nullptr;
-					if ( i == EFF_SHAPESHIFT )
+					if ( effectID == EFF_SALAMANDER_HEART )
 					{
-						if ( entity && entity->behavior == &actPlayer )
+						variation = -1;
+						if ( entity )
 						{
-							switch ( entity->effectShapeshift )
+							if ( (entity->sprite == 2018 || entity->sprite == 2019)
+								|| (entity->sprite == 1540 || entity->sprite == 1541) )
 							{
-							case RAT:
-								variation = 0;
-								break;
-							case SPIDER:
-								variation = 1;
-								break;
-							case TROLL:
 								variation = 2;
-								break;
-							case CREATURE_IMP:
-								variation = 3;
-								break;
-							default:
-								break;
+							}
+							else if ( (entity->sprite == 2016 || entity->sprite == 2017)
+								|| (entity->sprite == 1538 || entity->sprite == 1539) )
+							{
+								variation = 0;
 							}
 						}
 					}
@@ -31865,7 +31913,11 @@ SDL_Surface* EnemyHPDamageBarHandler::EnemyHPDetails::blitEnemyBarStatusEffects(
 					if ( !definition.neverDisplay )
 					{
 						std::string imgPath;
-						if ( i == EFF_SHAPESHIFT && variation == -1 )
+						if ( effectID == EFF_SHAPESHIFT && variation == -1 )
+						{
+							imgPath = "";
+						}
+						else if ( effectID == EFF_SALAMANDER_HEART && variation == -1 )
 						{
 							imgPath = "";
 						}
@@ -33254,6 +33306,7 @@ void Player::HUD_t::updateMPBar()
 		mpForegroundFrame->setSize(_pos);
 	}
 
+	std::vector<Frame::image_t*> allMPBarImages;
 	auto mpBg = mpFrame->findImage("mp img base");
 	auto mpEndcap = mpForegroundFrame->findImage("mp img endcap");
 	auto mpProgressBot = mpForegroundFrame->findImage("mp img progress bot");
@@ -33303,6 +33356,7 @@ void Player::HUD_t::updateMPBar()
 
 	MPBar.animateSetpoint = stats[player.playernum]->MP;
 
+	bool forceLoop = false;
 	bool flashAnimationPreviouslyPlaying = MPBar.flashTicks > 0;
 	if ( MPBar.animateSetpoint < MPBar.animatePreviousSetpoint ) // insta-change as losing health
 	{
@@ -33314,6 +33368,24 @@ void Player::HUD_t::updateMPBar()
 		MPBar.flashProcessedOnTick = 0;
 		MPBar.flashAnimState = -1;
 		MPBar.flashType = FLASH_ON_DAMAGE;
+	}
+
+	if ( &MPBarPaths_t::getMPBar(player.playernum) == &MPBarPaths_t::automatonHTBars )
+	{
+		if ( stats[player.playernum]->getEffectActive(EFF_SALAMANDER_HEART) == 2 )
+		{
+			forceLoop = true; 
+			// flash for taking damage
+			if ( MPBar.flashTicks <= 0 )
+			{
+				MPBar.animateTicks = ticks;
+
+				// flash for taking damage
+				MPBar.flashTicks = ticks;
+				MPBar.flashProcessedOnTick = 0;
+				MPBar.flashType = FLASH_ON_DAMAGE;
+			}
+		}
 	}
 
 	if ( MPBar.maxValue > stats[player.playernum]->MAXMP )
@@ -33352,7 +33424,7 @@ void Player::HUD_t::updateMPBar()
 		mpFadedValue = mpForegroundValue;
 		MPBar.animateTicks = ticks;
 	}
-	else if ( mpFadedValue > MPBar.animateSetpoint )
+	else if ( mpFadedValue > MPBar.animateSetpoint || forceLoop )
 	{
 		if ( ticks - MPBar.animateTicks > 30 /*|| stats[player.playernum]->MP <= 0*/ ) // fall after x ticks
 		{
@@ -33448,7 +33520,11 @@ void Player::HUD_t::updateMPBar()
 	mpProgressEndCap->path = MPBarPaths_t::get(player.playernum, "mp img progress endcap");
 	auto mpProgressEndCapFlash = mpForegroundFrame->findImage("mp img progress endcap flash");
 	mpProgressEndCapFlash->disabled = true;
-	const int framesPerAnimation = (MPBar.flashType == FLASH_ON_DAMAGE ? 1 : 2)/* * *cvar_hpanimdebug*/;
+	int framesPerAnimation = (MPBar.flashType == FLASH_ON_DAMAGE ? 1 : 2)/* * *cvar_hpanimdebug*/;
+	if ( forceLoop )
+	{
+		framesPerAnimation = 4;
+	}
 	const int numAnimationFrames = (MPBar.flashType == FLASH_ON_DAMAGE ? 30 : 2)/* * *cvar_hpanimdebug*/;
 	if ( MPBar.flashTicks > 0 )
 	{
@@ -33497,6 +33573,10 @@ void Player::HUD_t::updateMPBar()
 
 				if ( MPBar.flashAnimState <= 9 )
 				{
+					if ( forceLoop && MPBar.flashAnimState == 9 )
+					{
+						MPBar.flashAnimState = 1;
+					}
 					if ( MPBar.flashAnimState == 7 )
 					{
 						// we need the MP bar to flash long enough for long spellcast times
@@ -33614,6 +33694,73 @@ void Player::HUD_t::updateMPBar()
 			mpProgressEndCapFlash->pos.x += overflowx;
 			mpProgressEndCapFlash->pos.w -= overflowx;
 			mpProgressEndCapFlash->section.w = mpProgressEndCapFlash->pos.w;
+		}
+	}
+
+	//allMPBarImages.push_back(mpBg);
+	//allMPBarImages.push_back(mpEndcap);
+	allMPBarImages.push_back(mpProgressBot);
+	allMPBarImages.push_back(mpProgress);
+	allMPBarImages.push_back(mpProgressEndCap);
+	allMPBarImages.push_back(mpFadedBase);
+	allMPBarImages.push_back(mpFaded);
+	allMPBarImages.push_back(mpFadedEndCap);
+	allMPBarImages.push_back(mpBase);
+	allMPBarImages.push_back(mpProgressEndCapFlash);
+	static ConsoleVariable<Vector4> cvar_mp_color_ht("/mp_color_ht", { 0.85, 0.85, 1.0, 1.0 });
+	static ConsoleVariable<Vector4> cvar_mp_color_ht_high("/mp_color_ht_high", { 1.0, 1.0, 1.0, 1.0 });
+	static ConsoleVariable<Vector4> cvar_mp_color_default("/mp_color_default", { 1.0, 1.0, 1.0, 1.0 });
+	Vector4 mpColor = *cvar_mp_color_default;
+	if ( &MPBarPaths_t::getMPBar(player.playernum) == &MPBarPaths_t::automatonHTBars )
+	{
+		mpColor = *cvar_mp_color_ht;
+		if ( stats[player.playernum]->getEffectActive(EFF_SALAMANDER_HEART) == 2 )
+		{
+			mpColor = *cvar_mp_color_ht_high;
+		}
+	}
+
+	/*if ( keystatus[SDLK_KP_7] )
+	{
+		keystatus[SDLK_KP_7] = 0;
+		cvar_mp_color->x = std::min(1.f, cvar_mp_color->x + 0.01f);
+	}
+	if ( keystatus[SDLK_KP_4] )
+	{
+		keystatus[SDLK_KP_4] = 0;
+		cvar_mp_color->x = std::max(0.f, cvar_mp_color->x - 0.01f);
+	}
+	if ( keystatus[SDLK_KP_8] )
+	{
+		keystatus[SDLK_KP_8] = 0;
+		cvar_mp_color->y = std::min(1.f, cvar_mp_color->y + 0.01f);
+	}
+	if ( keystatus[SDLK_KP_5] )
+	{
+		keystatus[SDLK_KP_5] = 0;
+		cvar_mp_color->y = std::max(0.f, cvar_mp_color->y - 0.01f);
+	}
+	if ( keystatus[SDLK_KP_9] )
+	{
+		keystatus[SDLK_KP_9] = 0;
+		cvar_mp_color->z = std::min(1.f, cvar_mp_color->z + 0.01f);
+	}
+	if ( keystatus[SDLK_KP_6] )
+	{
+		keystatus[SDLK_KP_6] = 0;
+		cvar_mp_color->z = std::max(0.f, cvar_mp_color->z - 0.01f);
+	}*/
+	for ( auto img : allMPBarImages )
+	{
+		if ( img )
+		{
+			Uint8 r, g, b, a;
+			getColor(img->color, &r, &g, &b, &a);
+			r = 255 * mpColor.x;
+			g = 255 * mpColor.y;
+			b = 255 * mpColor.z;
+			//a *= 255 * cvar_mp_color->w;
+			img->color = makeColor(r, g, b, a);
 		}
 	}
 

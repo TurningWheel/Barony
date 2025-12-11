@@ -450,7 +450,7 @@ void actFociGib(Entity* my)
 					spell = (spell_t*)(my->children.first->element);
 				}
 
-				auto entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 0);
+				auto entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 1);
 				for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end() && spell; ++it )
 				{
 					list_t* currentList = *it;
@@ -1696,7 +1696,7 @@ void actGreasePuddleSpawner(Entity* my)
 			{
 				if ( !my->flags[BURNING] )
 				{
-					my->SetEntityOnFire();
+					my->SetEntityOnFire(nullptr);
 				}
 			}
 
@@ -1722,7 +1722,7 @@ void actGreasePuddleSpawner(Entity* my)
 						}
 						if ( (entity->behavior == &actCampfire && entity->skill[3] > 0 ) || entity->behavior == &actTorch )
 						{
-							my->SetEntityOnFire();
+							my->SetEntityOnFire(nullptr);
 						}
 						if ( my->flags[BURNING] )
 						{

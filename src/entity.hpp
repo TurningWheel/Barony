@@ -1246,7 +1246,7 @@ public:
 	 * Entities with Stats will have their fire time (char_fire) and chance to stop being on fire (chanceToPutOutFire) reduced by their CON
 	 * Calculations for reductions is outlined in this function
 	 */
-	bool SetEntityOnFire(Entity* sourceOfFire = nullptr);
+	bool SetEntityOnFire(Entity* sourceOfFire);
 
 	void addToCreatureList(list_t* list);
 	void addToWorldUIList(list_t *list);
@@ -1374,7 +1374,7 @@ int getBaseManaRegen(Entity* my, Stat& myStats, bool excludeItemsEffectsBonus = 
 
 //--- Entity act* functions ---
 void actMonster(Entity* my);
-int playerHeadSprite(Monster race, sex_t sex, int appearance, int frame = 0);
+int playerHeadSprite(Monster race, sex_t sex, int appearance, int frame = 0, int player = -1);
 void actPlayer(Entity* my);
 void actPlayerXP(Entity* my);
 void spawnPlayerXP(real_t x, real_t y, int player, int xpAmount);
