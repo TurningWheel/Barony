@@ -450,15 +450,41 @@ void actFociGib(Entity* my)
 					spell = (spell_t*)(my->children.first->element);
 				}
 
+				/*Entity* particle = spawnMagicParticle(my);
+				particle->sprite = 942;
+				particle->x = my->x + my->sizex;
+				particle->y = my->y + my->sizey;
+				particle->z = 0;
+
+				particle = spawnMagicParticle(my);
+				particle->sprite = 942;
+				particle->x = my->x - my->sizex;
+				particle->y = my->y + my->sizey;
+				particle->z = 0;
+
+				particle = spawnMagicParticle(my);
+				particle->sprite = 942;
+				particle->x = my->x + my->sizex;
+				particle->y = my->y - my->sizey;
+				particle->z = 0;
+
+				particle = spawnMagicParticle(my);
+				particle->sprite = 942;
+				particle->x = my->x - my->sizex;
+				particle->y = my->y - my->sizey;
+				particle->z = 0;*/
+
 				auto entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 1);
 				for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end() && spell; ++it )
 				{
 					list_t* currentList = *it;
+					bool lastEntity = false;
 					for ( node_t* node = currentList->first;; )
 					{
 						Entity* entity = nullptr;
 						if ( node == nullptr ) // at the end of the list try the hit.entity from clipMove
 						{
+							lastEntity = true;
 							if ( tryHitEntity )
 							{
 								entity = hit.entity;
@@ -497,6 +523,23 @@ void actFociGib(Entity* my)
 									&& entity->behavior != &::actChest
 									&& entity->behavior != &::actFurniture )
 								{
+									if ( entity->behavior == &actBell && (spell->ID == SPELL_FOCI_FIRE || spell->ID == SPELL_BREATHE_FIRE) )
+									{
+										if ( entityInsideEntity(entity, my) )
+										{
+											if ( entity->SetEntityOnFire(parent) && entity->flags[BURNING] )
+											{
+												if ( parent && parent->behavior == &actPlayer )
+												{
+													entity->skill[13] = parent->getUID(); // burning inflicted by for bell
+													if ( parent->behavior == &actPlayer )
+													{
+														messagePlayer(parent->skill[2], MESSAGE_INTERACTION, Language::get(6297));
+													}
+												}
+											}
+										}
+									}
 									continue;
 								}
 							}
@@ -506,7 +549,7 @@ void actFociGib(Entity* my)
 							}
 						}
 
-						if ( node != nullptr && !entityInsideEntity(entity, my) )
+						if ( !lastEntity && !entityInsideEntity(entity, my) )
 						{
 							continue;
 						}
@@ -522,7 +565,7 @@ void actFociGib(Entity* my)
 
 						if ( entity->getStats() )
 						{
-							if ( !entity->monsterIsTargetable() )
+							if ( !entity->monsterIsTargetable(nonCreatureDamage ? true : false) )
 							{
 								if ( hitprops )
 								{
@@ -1215,8 +1258,8 @@ Entity* spawnFociGib(real_t x, real_t y, real_t z, real_t dir, real_t velocityBo
 	//my->flags[BRIGHT] = true;
 	my->lightBonus = vec4_t{ 0.25f, 0.25f, 0.25f, 0.f };
 
-	my->sizex = 2;
-	my->sizey = 2;
+	my->sizex = 3;
+	my->sizey = 3;
 	real_t spread = 0.2 * foci_spread;
 	my->yaw = dir - spread + ((rng.rand() % 21) * (spread / 10));
 	my->pitch = 0.0; //(rng.rand() % 360)* PI / 180.0;
