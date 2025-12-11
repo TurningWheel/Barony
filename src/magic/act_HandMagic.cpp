@@ -404,7 +404,7 @@ void spellcasting_animation_manager_t::setRangeFinderLocation()
 	}
 
 	static ConsoleVariable<float> cvar_rangefinderStartZ("/rangefinder_start_z", -2.5);
-	static ConsoleVariable<float> cvar_rangefinderMoveTo("/rangefinder_moveto_z", 0.1);
+	static ConsoleVariable<float> cvar_rangefinderMoveTo("/rangefinder_moveto_z", 1.0);
 	static ConsoleVariable<float> cvar_rangefinderStartZLimit("/rangefinder_start_z_limit", 7.5);
 	static ConsoleVariable<bool> cvar_rangefinder_cam("/rangefinder_cam", false);
 	real_t startx = caster->x;
@@ -432,10 +432,11 @@ void spellcasting_animation_manager_t::setRangeFinderLocation()
 	wallDir = 0;
 
 	real_t spellDistance = getSpellPropertyFromID(spell_t::SPELLPROP_MODIFIED_DISTANCE, spell->ID, caster, nullptr, caster);
+	static ConsoleVariable<bool> cvar_rangefinder_linetrace("/rangefinder_linetrace", true);
 
 	if ( rangefinder == RANGEFINDER_TOUCH_WALL_TILE )
 	{
-		real_t dist = lineTrace(nullptr, startx, starty, yaw, spellDistance, 0, false);
+		real_t dist = lineTrace(nullptr, startx, starty, yaw, spellDistance, LINETRACE_TELEKINESIS, false);
 		if ( dist < spellDistance )
 		{
 			previousx = hit.x;
@@ -479,10 +480,53 @@ void spellcasting_animation_manager_t::setRangeFinderLocation()
 	}
 	else
 	{
-		for ( ; startz < *cvar_rangefinderStartZLimit; startz += abs((*cvar_rangefinderMoveTo) * tan(pitch)) )
+		bool invertZ = false;
+		/*if ( (*cvar_rangefinder_linetrace || !(svFlags & SV_FLAG_CHEATS)) )
 		{
-			startx += 0.1 * cos(yaw);
-			starty += 0.1 * sin(yaw);
+			invertZ = true;
+		}*/
+		real_t increment = abs((*cvar_rangefinderMoveTo) * tan(pitch));
+		real_t end = *cvar_rangefinderStartZLimit;
+		if ( invertZ )
+		{
+			end = caster->z;
+			increment *= -1;
+			startz = *cvar_rangefinderStartZLimit;
+			startx += spellDistance * cos(yaw);
+			starty += spellDistance * sin(yaw);
+		}
+
+		/*list_t entityList;
+		entityList.first = nullptr;
+		entityList.last = nullptr;
+
+		node_t* node2 = list_AddNodeLast(&entityList);
+		node2->element = caster;
+		node2->deconstructor = &emptyDeconstructor;
+		node2->size = sizeof(Entity*);
+
+		for ( auto node = map.entities->first; node; node = node->next )
+		{
+			if ( Entity* entity = (Entity*)node->element )
+			{
+				if ( ((entity->behavior == &actGate || entity->behavior == &actIronDoor) && !entity->flags[PASSABLE]) )
+				{
+					if ( entityDist(caster, entity) >= spellDistance + 4.0 )
+					{
+						continue;
+					}
+					node_t* node2 = list_AddNodeLast(&entityList);
+					node2->element = entity;
+					node2->deconstructor = &emptyDeconstructor;
+					node2->size = sizeof(Entity*);
+				}
+			}
+		}*/
+
+		for ( ; invertZ ? startz > end : startz < end; startz += increment )
+		{
+			startx += (invertZ ? -1.0 : 1.0) * cos(yaw);
+			starty += (invertZ ? -1.0 : 1.0) * sin(yaw);
 			const int index_x = static_cast<int>(startx) >> 4;
 			const int index_y = static_cast<int>(starty) >> 4;
 			index = (index_y)*MAPLAYERS + (index_x)*MAPLAYERS * map.height;
@@ -508,6 +552,29 @@ void spellcasting_animation_manager_t::setRangeFinderLocation()
 				break;
 			}
 		}
+
+		if ( caster->bodyparts.size() && (*cvar_rangefinder_linetrace || !(svFlags & SV_FLAG_CHEATS)) )
+		{
+			real_t lineTraceDist = sqrt(pow(previousx - caster->x, 2) + pow(previousy - caster->y, 2));
+			Entity* ohit = hit.entity;
+			real_t tangent = atan2(caster->y - previousy, caster->x - previousx);
+			auto bodypart = caster->bodyparts[0]; // temporary entity for lineTraceTarget
+			real_t tempx = bodypart->x;
+			real_t tempy = bodypart->y;
+			bodypart->x = previousx;
+			bodypart->y = previousy;
+			real_t dist = lineTraceTarget(bodypart, bodypart->x, bodypart->y, tangent, lineTraceDist, LINETRACE_TELEKINESIS, false, caster, nullptr);
+			if ( hit.entity != caster )
+			{
+				previousx = bodypart->x + dist * cos(tangent);
+				previousy = bodypart->y + dist * sin(tangent);
+			}
+			bodypart->x = tempx;
+			bodypart->y = tempy;
+			hit.entity = ohit;
+		}
+
+		//list_FreeAll(&entityList);
 	}
 
 	target_x = previousx;
@@ -642,7 +709,7 @@ void spellcasting_animation_manager_t::setRangeFinderLocation()
 							if ( entity->behavior == &actArrowTrap || entity->behavior == &actMagicTrap )
 							{
 								Entity* ohit = hit.entity;
-								real_t dist2 = lineTrace(nullptr, caster->x, caster->y, yaw, dist, 0, false);
+								real_t dist2 = lineTrace(nullptr, caster->x, caster->y, yaw, dist, LINETRACE_TELEKINESIS, false);
 								if ( dist2 < dist )
 								{
 									int tempx = hit.x;
@@ -922,6 +989,10 @@ void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, 
 		if ( animation_manager->overcharge )
 		{
 			spellCost = std::max(1, spellCost / 2);
+		}
+		if ( stats[player]->type == MONSTER_S && stats[player]->getEffectActive(EFF_SALAMANDER_HEART) == 2 )
+		{
+			spellCost = 0;
 		}
 	}
 	animation_manager->circle_count = 0;

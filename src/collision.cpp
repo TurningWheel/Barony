@@ -571,9 +571,10 @@ bool Entity::collisionProjectileMiss(Entity* parent, Entity* projectile)
 					{
 						if ( spell->ID == SPELL_FIREBALL || spell->ID == SPELL_SLIME_FIRE
 							|| spell->ID == SPELL_FLAMES || spell->ID == SPELL_METEOR
+							|| spell->ID == SPELL_BREATHE_FIRE
 							|| spell->ID == SPELL_FOCI_FIRE || spell->ID == SPELL_METEOR_SHOWER )
 						{
-							SetEntityOnFire();
+							SetEntityOnFire(parent);
 							if ( parent && flags[BURNING] )
 							{
 								if ( behavior == &actBell )
@@ -1527,7 +1528,7 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 								bool previouslyOnFire = hit.entity->flags[BURNING];
 
 								// Attempt to set the Entity on fire
-								if ( hit.entity->SetEntityOnFire() )
+								if ( hit.entity->SetEntityOnFire(my) )
 								{
 									if ( myStats && yourStats )
 									{
@@ -1596,7 +1597,7 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 								bool previouslyOnFire = my->flags[BURNING];
 
 								// Attempt to set the Entity on fire
-								if ( my->SetEntityOnFire() )
+								if ( my->SetEntityOnFire(hit.entity) )
 								{
 									if ( myStats && yourStats )
 									{
@@ -1711,7 +1712,7 @@ real_t clipMove(real_t* x, real_t* y, real_t vx, real_t vy, Entity* my)
 
 -------------------------------------------------------------------------------*/
 
-Entity* findEntityInLine( Entity* my, real_t x1, real_t y1, real_t angle, int entities, Entity* target )
+Entity* findEntityInLine( Entity* my, real_t x1, real_t y1, real_t angle, int entities, Entity* target, list_t* entityListToUse)
 {
 	Entity* result = NULL;
 	node_t* node;
@@ -1814,6 +1815,12 @@ Entity* findEntityInLine( Entity* my, real_t x1, real_t y1, real_t angle, int en
 				}
 			}
 		}
+	}
+
+	if ( entityListToUse )
+	{
+		entLists.clear();
+		entLists.push_back(entityListToUse);
 	}
 
 	bool adjust = false;
@@ -2363,7 +2370,7 @@ real_t lineTrace( Entity* my, real_t x1, real_t y1, real_t angle, real_t range, 
 	return range;
 }
 
-real_t lineTraceTarget(Entity* my, real_t x1, real_t y1, real_t angle, real_t range, int entities, bool ground, Entity* target)
+real_t lineTraceTarget(Entity* my, real_t x1, real_t y1, real_t angle, real_t range, int entities, bool ground, Entity* target, list_t* entityListToUse)
 {
 	int posx, posy;
 	real_t fracx, fracy;
@@ -2421,7 +2428,7 @@ real_t lineTraceTarget(Entity* my, real_t x1, real_t y1, real_t angle, real_t ra
 	}
 	d = 0;
 
-	Entity* entity = findEntityInLine(my, x1, y1, angle, entities, target);
+	Entity* entity = findEntityInLine(my, x1, y1, angle, entities, target, entityListToUse);
 
 	bool isMonster = false;
 	bool waterWalking = my && my->isWaterWalking();
