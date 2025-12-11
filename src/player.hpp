@@ -2404,6 +2404,7 @@ public:
 		int ensemblePlaying = -1;
 		bool ensembleRequireRecast = false;
 		bool ensembleTakenInitialMP = false;
+		bool previouslyLevitating = false;
 		static void ensembleMusicUpdateServer();
 		static void ensembleMusicUpdate();
 		enum class BreakableEvent

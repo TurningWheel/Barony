@@ -339,6 +339,7 @@ public:
 	Item* basePotion;
 	Item* secondaryPotion;
 	Item* alembicItem;
+	Uint32 alembicEntityUid = 0;
 	bool experimentingAlchemy;
 	
 	// Misc item/spell effects

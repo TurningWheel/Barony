@@ -149,7 +149,8 @@ static const int EFF_MAGICIANS_ARMOR = 124;
 static const int EFF_PROJECT_SPIRIT = 125;
 static const int EFF_DEFY_FLESH = 126;
 static const int EFF_UNUSED_1 = 127;
-static const int EFF_SALAMANDER_HEAT = 128;
+static const int EFF_SALAMANDER_HEART = 128;
+static const int EFF_DIVINE_FIRE = 129;
 static const int NUMEFFECTS = 160;
 
 // stats

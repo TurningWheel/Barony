@@ -1354,6 +1354,10 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 			}
 			else if ( GenericGUI[player.playernum].alchemyGUI.bOpen )
 			{
+				return MODULE_NONE;
+			}
+			else if ( GenericGUI[player.playernum].alchemyGUI.bOpen )
+			{
 				if ( inputs.getUIInteraction(player.playernum)->selectedItem )
 				{
 					if ( !checkDestinationOnly )
@@ -1469,6 +1473,10 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 				soundModuleNavigation();
 			}
 			return MODULE_INVENTORY;
+		}
+		else if ( activeModule == MODULE_ALCHEMY )
+		{
+			return MODULE_NONE;
 		}
 		else if ( activeModule == MODULE_ALCHEMY
 			&& (GenericGUI[player.playernum].alchemyGUI.bFirstTimeSnapCursor || checkDestinationOnly) )
@@ -1721,6 +1729,10 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 			{
 				return MODULE_NONE;
 			}
+			else if ( GenericGUI[player.playernum].alchemyGUI.bOpen )
+			{
+				return MODULE_NONE;
+			}
 			else if ( player.ghost.isActive() )
 			{
 				if ( bCompactView )
@@ -1838,6 +1850,10 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 				soundModuleNavigation();
 			}
 			return MODULE_INVENTORY;
+		}
+		else if ( activeModule == MODULE_ALCHEMY )
+		{
+			return MODULE_NONE;
 		}
 		else if ( activeModule == MODULE_ALCHEMY
 			&& (GenericGUI[player.playernum].alchemyGUI.bFirstTimeSnapCursor || checkDestinationOnly) )
@@ -3229,6 +3245,8 @@ void Player::cleanUpOnEntityRemoval()
 	mechanics.numFishingCaught = 0;
 
 	mechanics.gremlinBreakableCounter = 0;
+
+	mechanics.previouslyLevitating = false;
 }
 
 const bool Player::isLocalPlayer() const

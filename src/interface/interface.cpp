@@ -5791,21 +5791,25 @@ void GenericGUIMenu::updateGUI()
 		}
 		if ( guiType == GUI_TYPE_ALCHEMY )
 		{
-			if ( !alembicItem )
+			if ( (alembicEntityUid == 0 && !alembicItem) || (alembicEntityUid != 0 && !uidToEntity(alembicEntityUid)) )
 			{
 				closeGUI();
 				return;
 			}
-			if ( !alembicItem->node )
+
+			if ( alembicItem )
 			{
-				closeGUI();
-				return;
-			}
-			if ( alembicItem->node->list != &stats[gui_player]->inventory )
-			{
-				// dropped out of inventory or something.
-				closeGUI();
-				return;
+				if ( !alembicItem->node )
+				{
+					closeGUI();
+					return;
+				}
+				if ( alembicItem->node->list != &stats[gui_player]->inventory )
+				{
+					// dropped out of inventory or something.
+					closeGUI();
+					return;
+				}
 			}
 		}
 		else if ( guiType == GUI_TYPE_TINKERING )
@@ -7712,6 +7716,7 @@ void GenericGUIMenu::closeGUI()
 	basePotion = nullptr;
 	secondaryPotion = nullptr;
 	alembicItem = nullptr;
+	alembicEntityUid = 0;
 	itemEffectUsingSpell = false;
 	itemEffectUsingSpellbook = false;
 	itemEffectScrollItem = nullptr;
@@ -8071,6 +8076,7 @@ void GenericGUIMenu::openGUI(int type, bool experimenting, Item* itemOpenedWith)
 	players[gui_player]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM); // Reset the GUI to the inventory.
 	guiActive = true;
 	alembicItem = itemOpenedWith;
+	alembicEntityUid = 0;
 	experimentingAlchemy = experimenting;
 	guiType = static_cast<GUICurrentType>(type);
 	//players[gui_player]->GUI.activateModule(Player::GUI_t::MODULE_ALCHEMY);
@@ -8153,10 +8159,22 @@ void GenericGUIMenu::openGUI(int type, Item* itemOpenedWith)
 
 void GenericGUIMenu::openGUI(int type, Entity* shrine)
 {
-	Uint32 oldUID = assistShrineGUI.shrineUID;
-	assistShrineGUI.shrineUID = 0;
-	this->closeGUI();
-	assistShrineGUI.shrineUID = oldUID;
+	// close existing guis
+	if ( guiType == GUI_TYPE_ASSIST )
+	{
+		Uint32 oldUID = assistShrineGUI.shrineUID;
+		assistShrineGUI.shrineUID = 0;
+		this->closeGUI();
+		assistShrineGUI.shrineUID = oldUID;
+	}
+	else if ( guiType == GUI_TYPE_ALCHEMY )
+	{
+		Uint32 oldUID = alembicEntityUid;
+		alembicEntityUid = 0;
+		this->closeGUI();
+		alembicEntityUid = oldUID;
+	}
+
 	if ( players[gui_player] && players[gui_player]->entity )
 	{
 		if ( players[gui_player]->entity->isBlind() )
@@ -8183,6 +8201,16 @@ void GenericGUIMenu::openGUI(int type, Entity* shrine)
 	{
 		players[gui_player]->GUI.activateModule(Player::GUI_t::MODULE_ASSISTSHRINE);
 		assistShrineGUI.openAssistShrine(shrine);
+	}
+	else if ( guiType == GUI_TYPE_ALCHEMY )
+	{
+		alembicItem = nullptr;
+		experimentingAlchemy = true;
+		alchemyGUI.openAlchemyMenu(AlchemyGUI_t::ALCHEMY_VIEW_COOK);
+		if ( shrine )
+		{
+			alembicEntityUid = shrine->getUID();
+		}
 	}
 
 	FollowerMenu[gui_player].closeFollowerMenuGUI();
@@ -16810,6 +16838,29 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 		return;
 	}
 
+	Entity* alembicStation = nullptr;
+	if ( bOpen )
+	{
+		if ( parentGUI.alembicEntityUid != 0 )
+		{
+			alembicStation = uidToEntity(parentGUI.alembicEntityUid);
+			if ( !alembicStation )
+			{
+				parentGUI.closeGUI();
+				return;
+			}
+		}
+
+		if ( alembicStation )
+		{
+			if (player->entity && (entityDist(player->entity, alembicStation) > TOUCHRANGE))
+			{
+				parentGUI.closeGUI();
+				return;
+			}
+		}
+	}
+
 	if ( !alchFrame )
 	{
 		return;
@@ -17095,7 +17146,7 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 	if ( auto emptyBottleFrame = baseFrame->findFrame("empty bottles") )
 	{
 		emptyBottleFrame->setUserData(&GAMEUI_FRAMEDATA_ALCHEMY_RECIPE_ENTRY);
-		if ( currentView == ALCHEMY_VIEW_BREW || currentView == ALCHEMY_VIEW_RECIPES_COOK )
+		if ( currentView == ALCHEMY_VIEW_BREW || currentView == ALCHEMY_VIEW_RECIPES )
 		{
 			updateSlotFrameFromItem(emptyBottleFrame, &emptyBottleCount);
 		}
@@ -17469,10 +17520,22 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 
 	// alembic status
 	{
+		auto alembicItemIcon = baseFrame->findImage("alchemy item icon");
+		alembicItemIcon->disabled = true;
+		auto alembicItemBadge = baseFrame->findImage("alchemy badge");
+		alembicItemBadge->disabled = false;
+		if ( alembicStation )
+		{
+			alembicItemBadge->disabled = true;
+		}
+
 		auto alembicTitle = baseFrame->findField("alchemy alembic title");
 		auto alembicStatus = baseFrame->findField("alchemy alembic status");
 		if ( auto item = parentGUI.alembicItem )
 		{
+			alembicItemIcon->path = getItemSpritePath(playernum, *item);
+			alembicItemIcon->disabled = false;
+
 			char buf[128];
 			if ( !item->identified )
 			{
@@ -17517,11 +17580,22 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 		}
 		else
 		{
-			alembicTitle->setText("");
+			if ( alembicStation )
+			{
+				alembicTitle->setText(Language::get(6915));
+			}
+			else
+			{
+				alembicTitle->setText("");
+			}
 			alembicStatus->setText("");
 		}
 
 		SDL_Rect textPos{ 0, 21, baseFrame->getSize().w, 24 };
+		if ( alembicStation )
+		{
+			textPos.y -= 14;
+		}
 		alembicTitle->setSize(textPos);
 		textPos.y += 18;
 		alembicStatus->setSize(textPos);
@@ -17529,7 +17603,28 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 
 	bool usingGamepad = inputs.hasController(playernum) && !inputs.getVirtualMouse(playernum)->draw_cursor;
 	auto recipeBtn = baseFrame->findButton("recipe button");
+	recipeBtn->setInvisible(false);
+	auto stationCookBtn = baseFrame->findButton("station cook button");
+	auto stationCookText = baseFrame->findField("station cook text");
+	auto stationBrewText = baseFrame->findField("station brew text");
+	stationCookBtn->setInvisible(!alembicStation);
+	stationCookText->setDisabled(stationCookBtn->isInvisible());
+	stationBrewText->setDisabled(stationCookBtn->isInvisible());
+	if ( currentView == ALCHEMY_VIEW_COOK
+		|| currentView == ALCHEMY_VIEW_RECIPES_COOK )
+	{
+		recipeBtn->setInvisible(true);
+		stationCookText->setTextColor(hudColors.characterSheetLightNeutral);
+		stationBrewText->setTextColor(hudColors.characterSheetFaintText);
+	}
+	else
+	{
+		stationBrewText->setTextColor(hudColors.characterSheetLightNeutral);
+		stationCookText->setTextColor(hudColors.characterSheetFaintText);
+	}
 	auto recipeGlyph = baseFrame->findImage("recipe glyph");
+	auto stationToggleGlyph = baseFrame->findImage("station toggle glyph");
+	auto stationToggleGlyph2 = baseFrame->findImage("station toggle glyph 2");
 	{
 		// close btn
 		auto closeBtn = baseFrame->findButton("close alchemy button");
@@ -17557,12 +17652,25 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 				closeGlyph->pos.h = imgGet->getHeight();
 				closeGlyph->disabled = false;
 			}
-			closeGlyph->pos.x = closeBtn->getSize().x + closeBtn->getSize().w / 2 - closeGlyph->pos.w / 2;
-			if ( closeGlyph->pos.x % 2 == 1 )
+
+			if ( stationBrewText->isDisabled() )
 			{
-				++closeGlyph->pos.x;
+				closeGlyph->pos.x = closeBtn->getSize().x + closeBtn->getSize().w / 2 - closeGlyph->pos.w / 2;
+				if ( closeGlyph->pos.x % 2 == 1 )
+				{
+					++closeGlyph->pos.x;
+				}
+				closeGlyph->pos.y = closeBtn->getSize().y + closeBtn->getSize().h - 4;
 			}
-			closeGlyph->pos.y = closeBtn->getSize().y + closeBtn->getSize().h - 4;
+			else
+			{
+				closeGlyph->pos.x = closeBtn->getSize().x - closeGlyph->pos.w;
+				closeGlyph->pos.y = closeBtn->getSize().y + closeBtn->getSize().h / 2 - closeGlyph->pos.h / 2;
+				if ( closeGlyph->pos.y % 2 == 1 )
+				{
+					++closeGlyph->pos.y;
+				}
+			}
 		}
 
 		recipeBtn->setDisabled(true);
@@ -17575,7 +17683,7 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 		{
 			recipeBtn->setText(Language::get(4170));
 		}
-		if ( inputs.getVirtualMouse(playernum)->draw_cursor )
+		if ( inputs.getVirtualMouse(playernum)->draw_cursor && !recipeBtn->isInvisible() )
 		{
 			recipeBtn->setDisabled(!isInteractable);
 			if ( isInteractable )
@@ -17587,7 +17695,7 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 		{
 			recipeBtn->deselect();
 		}
-		if ( recipeBtn->isDisabled() && usingGamepad )
+		if ( recipeBtn->isDisabled() && usingGamepad && !recipeBtn->isInvisible() )
 		{
 			recipeGlyph->path = Input::inputs[playernum].getGlyphPathForBinding("MenuPageRightAlt");
 			if ( auto imgGet = Image::get(recipeGlyph->path.c_str()) )
@@ -17602,6 +17710,58 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 				++recipeGlyph->pos.x;
 			}
 			recipeGlyph->pos.y = recipeBtn->getSize().y + recipeBtn->getSize().h - 8;
+		}
+	}
+	{
+		stationCookBtn->setDisabled(true);
+		//recipeGlyph->disabled = true;
+		if ( inputs.getVirtualMouse(playernum)->draw_cursor && !stationCookBtn->isInvisible() )
+		{
+			stationCookBtn->setDisabled(!isInteractable);
+			if ( isInteractable )
+			{
+				buttonAlchemyUpdateSelectorOnHighlight(playernum, stationCookBtn);
+			}
+		}
+		else if ( stationCookBtn->isSelected() )
+		{
+			stationCookBtn->deselect();
+		}
+
+		stationToggleGlyph->disabled = true;
+		if ( stationCookBtn->isDisabled() && usingGamepad && !stationCookBtn->isInvisible() )
+		{
+			stationToggleGlyph->path = Input::inputs[playernum].getGlyphPathForBinding("MenuPageLeft");
+			if ( auto imgGet = Image::get(stationToggleGlyph->path.c_str()) )
+			{
+				stationToggleGlyph->pos.w = imgGet->getWidth();
+				stationToggleGlyph->pos.h = imgGet->getHeight();
+				stationToggleGlyph->disabled = false;
+			}
+			stationToggleGlyph->pos.x = stationCookBtn->getSize().x - stationToggleGlyph->pos.w - 12;
+			if ( stationToggleGlyph->pos.x % 2 == 1 )
+			{
+				++stationToggleGlyph->pos.x;
+			}
+			stationToggleGlyph->pos.y = stationCookBtn->getSize().y + stationCookBtn->getSize().h - 6;
+		}
+
+		stationToggleGlyph2->disabled = true;
+		if ( stationCookBtn->isDisabled() && usingGamepad && !stationCookBtn->isInvisible() )
+		{
+			stationToggleGlyph2->path = Input::inputs[playernum].getGlyphPathForBinding("MenuPageRight");
+			if ( auto imgGet = Image::get(stationToggleGlyph2->path.c_str()) )
+			{
+				stationToggleGlyph2->pos.w = imgGet->getWidth();
+				stationToggleGlyph2->pos.h = imgGet->getHeight();
+				stationToggleGlyph2->disabled = false;
+			}
+			stationToggleGlyph2->pos.x = stationCookBtn->getSize().x + stationCookBtn->getSize().w + 12;
+			if ( stationToggleGlyph2->pos.x % 2 == 1 )
+			{
+				++stationToggleGlyph2->pos.x;
+			}
+			stationToggleGlyph2->pos.y = stationCookBtn->getSize().y + stationCookBtn->getSize().h - 6;
 		}
 	}
 
@@ -18335,10 +18495,35 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 			}
 			else if ( Input::inputs[playernum].binaryToggle("MenuPageRightAlt") || Input::inputs[playernum].binaryToggle("MenuPageLeftAlt") )
 			{
-				Input::inputs[playernum].consumeBinaryToggle("MenuPageLeftAlt");
-				Input::inputs[playernum].consumeBinaryToggle("MenuPageRightAlt");
-				recipeBtn->activate();
-				return;
+				bool left = Input::inputs[playernum].consumeBinaryToggle("MenuPageLeftAlt");
+				bool right = Input::inputs[playernum].consumeBinaryToggle("MenuPageRightAlt");
+				/*if ( left && !stationCookBtn->isInvisible() )
+				{
+					stationCookBtn->activate();
+				}*/
+				if ( (left || right) && !recipeBtn->isInvisible() )
+				{
+					recipeBtn->activate();
+					return;
+				}
+			}
+			else if ( Input::inputs[playernum].binaryToggle("MenuPageRight") || Input::inputs[playernum].binaryToggle("MenuPageLeft") )
+			{
+				bool left = Input::inputs[playernum].consumeBinaryToggle("MenuPageLeft");
+				bool right = Input::inputs[playernum].consumeBinaryToggle("MenuPageRight");
+				if ( (left || right) && !stationCookBtn->isInvisible() )
+				{
+					if ( left && (currentView == ALCHEMY_VIEW_BREW || currentView == ALCHEMY_VIEW_RECIPES) )
+					{
+						stationCookBtn->activate();
+						return;
+					}
+					if ( right && (currentView == ALCHEMY_VIEW_COOK || currentView == ALCHEMY_VIEW_RECIPES_COOK) )
+					{
+						stationCookBtn->activate();
+						return;
+					}
+				}
 			}
 			else if ( Input::inputs[playernum].binaryToggle("MenuAlt2") )
 			{
@@ -18975,6 +19160,13 @@ void GenericGUIMenu::AlchemyGUI_t::createAlchemyMenu()
 			makeColor(255, 255, 255, 255),
 			"*#images/ui/Alchemy/Alchemy_Base_01.png", "alchemy base img");
 
+		auto alembicItemIcon = bgFrame->addImage(SDL_Rect{ 11, 23, 36, 36 }, 0xFFFFFFFF,
+			"", "alchemy item icon");
+		alembicItemIcon->disabled = true;
+
+		auto alembicAlchemyBadge = bgFrame->addImage(SDL_Rect{ 8, 6, 190, 60 }, 0xFFFFFFFF,
+			"*#images/ui/Alchemy/Alchemy_Badge.png", "alchemy badge");
+
 		auto headerFont = "fonts/pixel_maz_multiline.ttf#16#2";
 		auto alembicTitle = bgFrame->addField("alchemy alembic title", 128);
 		alembicTitle->setFont(headerFont);
@@ -19012,6 +19204,128 @@ void GenericGUIMenu::AlchemyGUI_t::createAlchemyMenu()
 					0xFFFFFFFF, "*#images/ui/Alchemy/Alchemy_LabelName_2Row_00.png", "item text img");
 			}
 		}
+
+		{
+			auto stationCookBtn = bgFrame->addButton("station cook button");
+			stationCookBtn->setInvisible(true);
+			SDL_Rect btnPos{ 62, 28, 82, 30 };
+			stationCookBtn->setSize(btnPos);
+			stationCookBtn->setColor(makeColor(255, 255, 255, 255));
+			stationCookBtn->setHighlightColor(makeColor(255, 255, 255, 255));
+			stationCookBtn->setText("");
+			stationCookBtn->setFont(itemFont);
+			stationCookBtn->setHideGlyphs(true);
+			stationCookBtn->setHideKeyboardGlyphs(true);
+			stationCookBtn->setHideSelectors(true);
+			stationCookBtn->setMenuConfirmControlType(0);
+			stationCookBtn->setColor(makeColor(255, 255, 255, 255));
+			stationCookBtn->setHighlightColor(makeColor(255, 255, 255, 255));
+			//recipeBtn->setTextHighlightColor(makeColor(201, 162, 100, 255));
+			stationCookBtn->setCallback([](Button& button) {
+				int player = button.getOwner();
+				if ( GenericGUI[player].alchemyGUI.bOpen )
+				{
+					if ( GenericGUI[player].alchemyGUI.currentView == GenericGUIMenu::AlchemyGUI_t::ALCHEMY_VIEW_BREW
+						|| GenericGUI[player].alchemyGUI.currentView == GenericGUIMenu::AlchemyGUI_t::ALCHEMY_VIEW_RECIPES )
+					{
+						GenericGUI[player].alchemyGUI.changeCurrentView(GenericGUIMenu::AlchemyGUI_t::ALCHEMY_VIEW_COOK);
+						button.setBackground("*#images/ui/Alchemy/Button_CauldronToggleLeft.png");
+						button.setBackgroundHighlighted("*#images/ui/Alchemy/Button_CauldronToggleLeft.png");
+						button.setBackgroundActivated("*#images/ui/Alchemy/Button_CauldronToggleLeft.png");
+						Player::soundActivate();
+					}
+					else
+					{
+						GenericGUI[player].alchemyGUI.changeCurrentView(GenericGUIMenu::AlchemyGUI_t::ALCHEMY_VIEW_BREW);
+						button.setBackground("*#images/ui/Alchemy/Button_CauldronToggleRight.png");
+						button.setBackgroundHighlighted("*#images/ui/Alchemy/Button_CauldronToggleRight.png");
+						button.setBackgroundActivated("*#images/ui/Alchemy/Button_CauldronToggleRight.png");
+						Player::soundActivate();
+					}
+				}
+			});
+			stationCookBtn->setTickCallback(genericgui_deselect_fn);
+
+			auto stationCookText = bgFrame->addField("station cook text", 32);
+			stationCookText->setFont(itemFont);
+			stationCookText->setText(Language::get(6773));
+			stationCookText->setHJustify(Field::justify_t::RIGHT);
+			stationCookText->setVJustify(Field::justify_t::TOP);
+			stationCookText->setSize(SDL_Rect{ btnPos.x - 90 - 8, btnPos.y + 5, 90, 24 });
+			stationCookText->setTextColor(hudColors.characterSheetLightNeutral);
+			stationCookText->setDisabled(true);
+
+			auto stationBrewText = bgFrame->addField("station brew text", 32);
+			stationBrewText->setFont(itemFont);
+			stationBrewText->setText(Language::get(3339));
+			stationBrewText->setHJustify(Field::justify_t::LEFT);
+			stationBrewText->setVJustify(Field::justify_t::TOP);
+			stationBrewText->setSize(SDL_Rect{ btnPos.x + btnPos.w + 8, btnPos.y + 5, 90, 24 });
+			stationBrewText->setTextColor(hudColors.characterSheetLightNeutral);
+			stationBrewText->setDisabled(true);
+
+			auto stationToggleGlyph = bgFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+				0xFFFFFFFF, "", "station toggle glyph");
+			stationToggleGlyph->disabled = true;
+			stationToggleGlyph->ontop = true;
+
+			auto stationToggleGlyph2 = bgFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+				0xFFFFFFFF, "", "station toggle glyph 2");
+			stationToggleGlyph2->disabled = true;
+			stationToggleGlyph2->ontop = true;
+
+			if ( currentView == ALCHEMY_VIEW_BREW || currentView == ALCHEMY_VIEW_RECIPES )
+			{
+				stationCookBtn->setBackground("*#images/ui/Alchemy/Button_CauldronToggleRight.png");
+				stationCookBtn->setBackgroundHighlighted("*#images/ui/Alchemy/Button_CauldronToggleRight.png");
+				stationCookBtn->setBackgroundActivated("*#images/ui/Alchemy/Button_CauldronToggleRight.png");
+				stationCookText->setTextColor(hudColors.characterSheetFaintText);
+			}
+			else
+			{
+				stationCookBtn->setBackground("*#images/ui/Alchemy/Button_CauldronToggleLeft.png");
+				stationCookBtn->setBackgroundHighlighted("*#images/ui/Alchemy/Button_CauldronToggleLeft.png");
+				stationCookBtn->setBackgroundActivated("*#images/ui/Alchemy/Button_CauldronToggleLeft.png");
+				stationBrewText->setTextColor(hudColors.characterSheetFaintText);
+			}
+
+			//auto stationBrewBtn = bgFrame->addButton("station brew button");
+			//stationBrewBtn->setInvisible(true);
+			//btnPos.x += 92;
+			//stationBrewBtn->setSize(btnPos);
+			//stationBrewBtn->setColor(makeColor(255, 255, 255, 255));
+			//stationBrewBtn->setHighlightColor(makeColor(255, 255, 255, 255));
+			//stationBrewBtn->setText(Language::get(3339));
+			//stationBrewBtn->setFont(itemFont);
+			//stationBrewBtn->setHideGlyphs(true);
+			//stationBrewBtn->setHideKeyboardGlyphs(true);
+			//stationBrewBtn->setHideSelectors(true);
+			//stationBrewBtn->setMenuConfirmControlType(0);
+			//stationBrewBtn->setBackground("*#images/ui/Alchemy/Cauldron_ButtonTop_Base_00.png");
+			//stationBrewBtn->setColor(makeColor(255, 255, 255, 255));
+			//stationBrewBtn->setHighlightColor(makeColor(255, 255, 255, 255));
+			//stationBrewBtn->setBackgroundHighlighted("*#images/ui/Alchemy/Cauldron_ButtonTop_High_00.png");
+			//stationBrewBtn->setBackgroundActivated("*#images/ui/Alchemy/Cauldron_ButtonTop_Press_00.png");
+			////recipeBtn->setTextHighlightColor(makeColor(201, 162, 100, 255));
+			//stationBrewBtn->setCallback([](Button& button) {
+			//	int player = button.getOwner();
+			//	if ( GenericGUI[player].alchemyGUI.bOpen )
+			//	{
+			//		if ( GenericGUI[player].alchemyGUI.currentView == GenericGUIMenu::AlchemyGUI_t::ALCHEMY_VIEW_COOK
+			//			|| GenericGUI[player].alchemyGUI.currentView == GenericGUIMenu::AlchemyGUI_t::ALCHEMY_VIEW_RECIPES_COOK )
+			//		{
+			//			GenericGUI[player].alchemyGUI.changeCurrentView(GenericGUIMenu::AlchemyGUI_t::ALCHEMY_VIEW_BREW);
+			//			Player::soundActivate();
+			//		}
+			//		else
+			//		{
+			//			Player::soundActivate();
+			//		}
+			//	}
+			//	});
+			//stationBrewBtn->setTickCallback(genericgui_deselect_fn);
+		}
+
 		{
 			auto recipeBtn = bgFrame->addButton("recipe button");
 			SDL_Rect recipeBtnPos{ 12, 72, 182, 40 };
@@ -19034,15 +19348,19 @@ void GenericGUIMenu::AlchemyGUI_t::createAlchemyMenu()
 				int player = button.getOwner();
 				if ( GenericGUI[player].alchemyGUI.bOpen )
 				{
-					if ( GenericGUI[player].alchemyGUI.recipes.bOpen )
+					if ( GenericGUI[player].alchemyGUI.currentView == GenericGUIMenu::AlchemyGUI_t::ALCHEMY_VIEW_BREW
+						|| GenericGUI[player].alchemyGUI.currentView == GenericGUIMenu::AlchemyGUI_t::ALCHEMY_VIEW_RECIPES )
 					{
-						GenericGUI[player].alchemyGUI.recipes.closeRecipePanel();
-						Player::soundCancel();
-					}
-					else
-					{
-						GenericGUI[player].alchemyGUI.recipes.openRecipePanel();
-						Player::soundActivate();
+						if ( GenericGUI[player].alchemyGUI.recipes.bOpen )
+						{
+							GenericGUI[player].alchemyGUI.recipes.closeRecipePanel();
+							Player::soundCancel();
+						}
+						else
+						{
+							GenericGUI[player].alchemyGUI.recipes.openRecipePanel();
+							Player::soundActivate();
+						}
 					}
 				}
 			});
@@ -19904,7 +20222,11 @@ void buildRecipeList(const int player)
 
 	if ( alchemy.currentView == alchemy.ALCHEMY_VIEW_COOK || alchemy.currentView == alchemy.ALCHEMY_VIEW_RECIPES_COOK )
 	{
-		if ( players[player] && players[player]->entity )
+		if ( GenericGUI[player].alembicEntityUid != 0 && !GenericGUI[player].alembicItem && uidToEntity(GenericGUI[player].alembicEntityUid) )
+		{
+			alchemy.torchCount.count = -1;
+		}
+		else if ( players[player] && players[player]->entity )
 		{
 			auto entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(players[player]->entity, 2);
 			for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
