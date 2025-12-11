@@ -1563,6 +1563,7 @@ void PlayfabUser_t::PostScoreHandler_t::readFromFiles()
     for ( auto& f : directoryContents("scores/processing/", false, true, outputdir) )
     {
         std::string inputPath = PHYSFS_getRealDir(baseDir.c_str());
+        inputPath.append(PHYSFS_getDirSeparator());
         inputPath += "scores/processing/";
         inputPath += f;
 
