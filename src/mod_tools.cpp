@@ -1145,10 +1145,12 @@ void ItemTooltips_t::readItemsFromFile()
 	{
 		spellItem_t t;
 		t.internalName = spell_itr->name.GetString();
+		hash += djb2Hash(const_cast<char*>(t.internalName.c_str()));
 		t.name = spell_itr->value["spell_name"].GetString();
 		t.name_lowercase = t.name;
 		lowercaseString(t.name_lowercase);
 		t.id = spell_itr->value["spell_id"].GetInt();
+		hash += (Uint32)((Uint32)t.id << (shift % 32)); ++shift;
 		t.spellTypeStr = spell_itr->value["spell_type"].GetString();
 		t.spellType = SPELL_TYPE_DEFAULT;
 		if ( t.spellTypeStr == "PROJECTILE" )
@@ -1192,10 +1194,13 @@ void ItemTooltips_t::readItemsFromFile()
 			t.spellType = SPELL_TYPE_TOUCH_ENTITY;
 		}
 
+		hash += djb2Hash(const_cast<char*>(t.spellTypeStr.c_str()));
+
 		for ( rapidjson::Value::ConstValueIterator arr_itr = spell_itr->value["effect_tags"].Begin();
 			arr_itr != spell_itr->value["effect_tags"].End(); ++arr_itr )
 		{
 			t.spellTagsStr.push_back(arr_itr->GetString());
+			hash += djb2Hash(const_cast<char*>(t.spellTagsStr.back().c_str()));
 			if ( t.spellTagsStr[t.spellTagsStr.size() - 1] == "DAMAGE" )
 			{
 				t.spellTags.insert(SPELL_TAG_DAMAGE);
@@ -1288,6 +1293,10 @@ void ItemTooltips_t::readItemsFromFile()
 			}
 		}
 
+		hash += djb2Hash(const_cast<char*>(t.spellbookInternalName.c_str()));
+		hash += djb2Hash(const_cast<char*>(t.magicstaffInternalName.c_str()));
+		hash += djb2Hash(const_cast<char*>(t.fociInternalName.c_str()));
+		
 		t.hasExpandedJSON = false;
 
 		setSpellValueIfKeyPresent(t, spell_itr, hash, shift, "mana", t.mana);

@@ -4358,6 +4358,7 @@ struct TreasureRoomGenerator
 	BaronyRNG treasure_rng;
 	std::unordered_set<unsigned int> treasure_floors;
 	std::unordered_set<unsigned int> treasure_secret_floors;
+	std::map<unsigned int, std::string> orb_floors;
 	void init();
 	bool bForceSpawnForCurrentFloor(int secretlevelexit, bool minotaur, BaronyRNG& mapRNG);
 };
