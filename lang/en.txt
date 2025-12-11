@@ -1942,8 +1942,8 @@ Compatible save file not found.#
 1506 goes for a swim in some lava.#
 1507 walks into a spike trap and dies.#
 1508 gets killed by a flying %s.#
-1509 was betrayed by their fellow %s.#
-1510 was betrayed by their fellow %s.#
+1509 was betrayed by a fellow %s.#
+1510 was betrayed by a fellow %s.#
 1511 is violently dispatched by an angry human.#
 1512 gets nibbled to death by a lowly rat.#
 1513 is viciously flayed by a goblin.#
@@ -1961,8 +1961,8 @@ Compatible save file not found.#
 1525 is unceremoniously pulverized by the minotaur.#
 1526 is damned to hell. Literally.#
 1527 attempts a robbery and fails.#
-1528 kills themself during an invocation.#
-1529 kills themself during an invocation.#
+1528 was killed attempting an invocation.#
+1529 was killed attempting an invocation.#
 1530 diets for a little too long.#
 1531 is finished off by the poison.#
 1532 bleeds to death.#
@@ -6611,11 +6611,11 @@ Host to enable the game setting.
 6357 %s claims %d Assistance points from the Assist shrine.#
 6358 dryad#
 6359 myconid#
-6360 monster_s#
+6360 salamander#
 6361 gremlin#
 6362 dryads#
 6363 myconids#
-6364 monster_ss#
+6364 salamanders#
 6365 gremlins#
 6366 strikes#
 6367 strikes#
@@ -7052,20 +7052,20 @@ to replay this challenge!
 #
 6779 Dryad#
 6780 Myconid#
-6781 monster_s#
+6781 Salamander#
 6782 Gremlin#
 6783 monster_x#
 6784 class_21#
 6785 sapper#
 6786 scion#
 6787 hermit#
-6788 class_25#
+6788 paladin#
 # main menu capitalized
 6789 Class_21#
 6790 Sapper#
 6791 Scion#
 6792 Hermit#
-6793 Class_25#
+6793 Paladin#
 6794 You lack the foliage to cast the spell!#
 6795 You are covered with thorns!#
 6796 You are covered with bladevines!#
@@ -7184,5 +7184,12 @@ to replay this challenge!
 6912 You suddenly feel rather tall!#
 6913 You suddenly feel rather small!#
 6914 You suddenly detect a change of appearance!#
+6915 Cauldron#
+6916 Your dousing flames increase your fervor!#
+6917 Your impervious armor fades.#
+6918 You are blazing with radiance!#
+6919 Your scales constrict into impervious stone!#
+6920 Your temperance returns to normal.#
+6921 Your radiance reaches a more stable level.#
 
 6999 END#
