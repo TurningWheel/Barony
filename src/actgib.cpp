@@ -531,7 +531,7 @@ void actFociGib(Entity* my)
 								continue;
 							}
 
-							if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
+							//if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
 							{
 								if ( parent && parent->checkFriend(entity) && parent->friendlyFireProtection(entity) )
 								{
@@ -1215,8 +1215,8 @@ Entity* spawnFociGib(real_t x, real_t y, real_t z, real_t dir, real_t velocityBo
 	//my->flags[BRIGHT] = true;
 	my->lightBonus = vec4_t{ 0.25f, 0.25f, 0.25f, 0.f };
 
-	my->sizex = 3;
-	my->sizey = 3;
+	my->sizex = 2;
+	my->sizey = 2;
 	real_t spread = 0.2 * foci_spread;
 	my->yaw = dir - spread + ((rng.rand() % 21) * (spread / 10));
 	my->pitch = 0.0; //(rng.rand() % 360)* PI / 180.0;

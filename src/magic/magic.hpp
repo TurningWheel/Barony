@@ -238,6 +238,7 @@ static const int SPELL_SCEPTER_BLAST = 215;
 static const int SPELL_MAGICIANS_ARMOR = 216;
 static const int SPELL_PROJECT_SPIRIT = 217;
 static const int SPELL_DUCK_DIVE = 218;
+static const int SPELL_BREATHE_FIRE = 219;
 static const int NUM_SPELLS = 225;
 
 #define SPELLELEMENT_CONFUSE_BASE_DURATION 2//In seconds.
@@ -368,6 +369,8 @@ static const int PARTICLE_EFFECT_DEFY_FLESH = 82;
 static const int PARTICLE_EFFECT_DEFY_FLESH_ORBIT = 83;
 static const int PARTICLE_EFFECT_BLOOD_WAVES_ORBIT = 84;
 static const int PARTICLE_EFFECT_BLOOD_BUBBLE = 85;
+static const int PARTICLE_EFFECT_RADIANT_ORBIT_FOLLOW = 86;
+static const int PARTICLE_EFFECT_HEAT_ORBIT_SPIN = 87;
 
 // actmagicIsVertical constants
 static const int MAGIC_ISVERTICAL_NONE = 0;

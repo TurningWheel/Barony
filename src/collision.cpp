@@ -2681,6 +2681,10 @@ int checkObstacle(long x, long y, Entity* my, Entity* target, bool useTileEntity
 						{
 							continue;
 						}
+						else if ( my && my->behavior == &actMagiclightBall && !entity->flags[BLOCKSIGHT] )
+						{
+							continue;
+						}
 						if ( my && (my->behavior == &actDeathGhost || !checkEnemies) && (entity->behavior == &actPlayer || entity->behavior == &actMonster) )
 						{
 							continue;

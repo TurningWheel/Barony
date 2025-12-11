@@ -130,6 +130,19 @@ void actArrow(Entity* my)
 			}
 		}
 	}
+	else if ( (my->arrowQuiverType == QUIVER_PIERCE || my->sprite == PROJECTILE_PIERCE_SPRITE) )
+	{
+		if ( ARROW_STUCK == 0 )
+		{
+			Entity* particle = spawnMagicParticleCustom(my, 158, 0.5, 4);
+			if ( particle )
+			{
+				particle->lightBonus = vec4(0.5f, 0.5f, 0.5f, 0.f);
+				particle->flags[SPRITE] = true;
+				particle->ditheringDisabled = true;
+			}
+		}
+	}
 	else if ( my->arrowQuiverType == QUIVER_FIRE || my->sprite == PROJECTILE_FIRE_SPRITE )
 	{
 		if ( ARROW_LIFE > 1 )
@@ -225,19 +238,6 @@ void actArrow(Entity* my)
 			}
 		}
 	}
-	else if ( my->arrowQuiverType == QUIVER_PIERCE || my->sprite == PROJECTILE_PIERCE_SPRITE )
-	{
-		if ( ARROW_STUCK == 0 )
-		{
-			Entity* particle = spawnMagicParticleCustom(my, 158, 0.5, 4);
-			if ( particle )
-			{
-				particle->lightBonus = vec4(0.5f, 0.5f, 0.5f, 0.f);
-				particle->flags[SPRITE] = true;
-                particle->ditheringDisabled = true;
-			}
-		}
-	}
 	else if ( my->arrowQuiverType == QUIVER_LIGHTWEIGHT || my->sprite == PROJECTILE_SWIFT_SPRITE )
 	{
 		if ( ARROW_STUCK == 0 )
@@ -288,6 +288,17 @@ void actArrow(Entity* my)
 				particle->flags[SPRITE] = true;
 				particle->ditheringDisabled = true;
 			}
+		}
+	}
+
+	if ( my->arrowArmorPierce > 0 && ARROW_STUCK == 0 && !(my->arrowQuiverType == QUIVER_PIERCE || my->sprite == PROJECTILE_PIERCE_SPRITE) )
+	{
+		Entity* particle = spawnMagicParticleCustom(my, 158, 0.5, 4);
+		if ( particle )
+		{
+			particle->lightBonus = vec4(0.5f, 0.5f, 0.5f, 0.f);
+			particle->flags[SPRITE] = true;
+			particle->ditheringDisabled = true;
 		}
 	}
 
@@ -498,12 +509,27 @@ void actArrow(Entity* my)
 			if ( arrowInGround )
 			{
 				ARROW_STUCK = 2;
+				serverUpdateEntitySkill(my, 0);
 			}
 			else
 			{
 				ARROW_STUCK = 1;
+				if ( !arrowSpawnedInsideEntity && !arrowInGround && hitSomething && hit.entity )
+				{
+					if ( my->arrowArmorPierce > 0 && hit.entity && hit.entity->getUID() > 0 )
+					{
+						if ( hit.entity->getStats() || hit.entity->isDamageableCollider() )
+						{
+							ARROW_STUCK = 0;
+							my->collisionIgnoreTargets.insert(hit.entity->getUID());
+						}
+					}
+				}
+				if ( ARROW_STUCK > 0 )
+				{
+					serverUpdateEntitySkill(my, 0);
+				}
 			}
-			serverUpdateEntitySkill(my, 0);
 			my->x = ARROW_OLDX;
 			my->y = ARROW_OLDY;
 
@@ -633,8 +659,11 @@ void actArrow(Entity* my)
 						// test for friendly fire
 						if ( parent && parent->checkFriend(hit.entity) && parent->friendlyFireProtection(hit.entity) )
 						{
-							my->removeLightField();
-							list_RemoveNode(my->mynode);
+							if ( ARROW_STUCK > 0 )
+							{
+								my->removeLightField();
+								list_RemoveNode(my->mynode);
+							}
 							return;
 						}
 					}
@@ -878,6 +907,19 @@ void actArrow(Entity* my)
 					if ( huntingDamage || silverDamage )
 					{
 						damageMultiplier = std::max(0.75, damageMultiplier);
+					}
+
+					if ( my->arrowArmorPierce > 0 && parent && parent->behavior == &actPlayer )
+					{
+						if ( parent->getStats() )
+						{
+							/*real_t mult = 1.0;
+							if ( parent->getStats()->getModifiedProficiency(PRO_RANGED) >= SKILL_LEVEL_LEGENDARY )
+							{
+								mult = 2.0;
+							}*/
+							damageMultiplier += statGetPER(parent->getStats(), parent) / 100.0;
+						}
 					}
 
 					if ( hitWeaklyOnTarget )
@@ -1239,7 +1281,7 @@ void actArrow(Entity* my)
 								// you shot the %s!
 								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(446), Language::get(448), MSG_COMBAT_BASIC);
 							}
-							if ( my->arrowArmorPierce > 0 && AC(hitstats) > 0 )
+							if ( my->arrowArmorPierce > 0 /*&& AC(hitstats) > 0*/ )
 							{
 								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(2513), Language::get(2514), MSG_COMBAT);
 							}
@@ -1291,7 +1333,7 @@ void actArrow(Entity* my)
 							}
 						}
 
-						if ( my->arrowArmorPierce > 0 && AC(hitstats) > 0 )
+						if ( my->arrowArmorPierce > 0 /*&& AC(hitstats) > 0*/ )
 						{
 							messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, color, Language::get(2515));
 						}
@@ -1832,23 +1874,26 @@ void actArrow(Entity* my)
 					}
 				}
 
-				if ( my->sprite == PROJECTILE_SEED_POISON_SPRITE )
+				if ( ARROW_STUCK > 0 )
 				{
-					if ( !hitstats || hit.entity->isInertMimic() )
+					if ( my->sprite == PROJECTILE_SEED_POISON_SPRITE )
 					{
-						floorMagicCreateSpores(nullptr, hit.entity->x, hit.entity->y, parent, 15, SPELL_SPORES);
+						if ( !hitstats || hit.entity->isInertMimic() )
+						{
+							floorMagicCreateSpores(nullptr, hit.entity->x, hit.entity->y, parent, 15, SPELL_SPORES);
+						}
 					}
-				}
-				else if ( my->sprite == PROJECTILE_SEED_ROOT_SPRITE )
-				{
-					if ( !hitstats || hit.entity->isInertMimic() )
+					else if ( my->sprite == PROJECTILE_SEED_ROOT_SPRITE )
 					{
-						floorMagicCreateRoots(hit.entity->x, hit.entity->y, parent, 3, SPELL_ROOTS, 3 * TICKS_PER_SECOND, PARTICLE_TIMER_ACTION_ROOTS_SINGLE_TILE);
+						if ( !hitstats || hit.entity->isInertMimic() )
+						{
+							floorMagicCreateRoots(hit.entity->x, hit.entity->y, parent, 3, SPELL_ROOTS, 3 * TICKS_PER_SECOND, PARTICLE_TIMER_ACTION_ROOTS_SINGLE_TILE);
+						}
 					}
-				}
 
-				my->removeLightField();
-				list_RemoveNode(my->mynode);
+					my->removeLightField();
+					list_RemoveNode(my->mynode);
+				}
 			}
 			else if ( my->sprite == PROJECTILE_ROCK_SPRITE )
 			{

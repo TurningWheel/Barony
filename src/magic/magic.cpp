@@ -3710,6 +3710,18 @@ bool applyGenericMagicDamage(Entity* caster, Entity* hitentity, Entity& damageSo
 					fireMultiplier += 0.05;
 				}
 			}
+			if ( targetStats->type == MONSTER_S )
+			{
+				if ( targetStats->getEffectActive(EFF_SALAMANDER_HEART) == 1
+					|| targetStats->getEffectActive(EFF_SALAMANDER_HEART) == 2 )
+				{
+					fireMultiplier *= 0.25;
+				}
+				else
+				{
+					fireMultiplier *= 0.5;
+				}
+			}
 			damage *= fireMultiplier;
 		}
 		if ( spellID == SPELL_DEFY_FLESH )

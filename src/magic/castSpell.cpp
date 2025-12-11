@@ -794,6 +794,12 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		{
 			int extramagic = local_rng.rand() % (300 / (spellcastingAbility + 1)); //Use up extra mana. More mana used the lower your spellcasting skill.
 			extramagic = std::min<real_t>(extramagic, stat->MP / 10); //To make sure it doesn't draw, say, 5000 mana. Cause dammit, if you roll a 1 here...you're doomed.
+
+			if ( stat->type == MONSTER_S && stat->getEffectActive(EFF_SALAMANDER_HEART) == 2 )
+			{
+				extramagic = 0;
+			}
+
 			Sint32 oldMP = stat->MP;
 			caster->drainMP(extramagic);
 
@@ -8416,15 +8422,19 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		{
 			if ( caster && players[player]->entity == caster && stats[player]->type == MONSTER_S )
 			{
-				if ( spell->ID == SPELL_BREATHE_FIRE 
+				Uint8 effectStrength = stats[player]->getEffectActive(EFF_SALAMANDER_HEART);
+				if ( effectStrength == 2 && stats[player]->EFFECTS_TIMERS[EFF_SALAMANDER_HEART] == -1 )
+				{
+					caster->setEffect(EFF_SALAMANDER_HEART, (Uint8)2, 5 * TICKS_PER_SECOND, true, true, true);
+				}
+				else if ( spell->ID == SPELL_BREATHE_FIRE 
 					&& !strcmp(element->element_internal_name, spellElementMap[SPELL_ELEMENT_PROPULSION_MAGIC_SPRAY].element_internal_name) )
 				{
 					if ( /*prevMP*/stats[player]->MP >= stats[player]->MAXMP * 0.75 )
 					{
-						Uint8 effectStrength = stats[player]->getEffectActive(EFF_SALAMANDER_HEART);
 						if ( effectStrength != 2 && effectStrength != 1 )
 						{
-							caster->setEffect(EFF_SALAMANDER_HEART, (Uint8)2, 5 * TICKS_PER_SECOND, true, true, true);
+							caster->setEffect(EFF_SALAMANDER_HEART, (Uint8)2, -1, true, true, true);
 							castSpell(caster_uid, getSpellFromID(SPELL_IGNITE), true, false, false);
 							messagePlayerColor(caster->isEntityPlayer(), MESSAGE_STATUS, makeColorRGB(0, 255, 0), Language::get(6918));
 							playSoundEntity(caster, 167, 128);

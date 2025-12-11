@@ -3349,6 +3349,21 @@ void setupSpells()   ///TODO: Verify this function.
 		1, // duration
 		"spell_project_spirit");
 
+	spellElementConstructor(SPELL_BREATHE_FIRE,
+		1,		// mana
+		1,		// base mana
+		1,		// overload
+		0,		// damage
+		50,	// duration
+		"spell_element_breathe_fire");
+	spell = spellConstructor(
+		SPELL_BREATHE_FIRE,										// ID
+		100,												// difficulty
+		"spell_breathe_fire",										// internal name
+		// elements
+		{ SPELL_ELEMENT_PROPULSION_MAGIC_SPRAY, SPELL_BREATHE_FIRE }
+	);
+
 	//static const int SPELL_LIGHTNING_NEXUS = 182;
 	//static const int SPELL_LIFT = 184;
 	//static const int SPELL_IGNITE = 186;

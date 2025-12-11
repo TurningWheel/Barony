@@ -808,6 +808,14 @@ int getCostOfSpell(spell_t* spell, Entity* caster)
 			cost += 5 * (summonLevel / 5);
 		}
 	}
+	else if ( spell->ID == SPELL_BREATHE_FIRE && caster )
+	{
+		Stat* casterStats = caster->getStats();
+		if ( casterStats )
+		{
+			cost += (casterStats->MAXMP / 50);
+		}
+	}
 	else if ( caster && (spell->ID == SPELL_TELEPORTATION || spell->ID == SPELL_TELEPULL) )
 	{
 		if ( caster->creatureShadowTaggedThisUid != 0 && uidToEntity(caster->creatureShadowTaggedThisUid) )
@@ -901,7 +909,20 @@ real_t getSpellBonusFromCasterINT(Entity* caster, Stat* casterStats, int skillID
 				bonus += bonusStat / 100.0;
 			}
 		}
+		if ( skillID == PRO_SORCERY
+			|| skillID == PRO_MYSTICISM
+			|| skillID == PRO_THAUMATURGY )
+		{
+			real_t mult = 1.0;
+			if ( casterStats->getModifiedProficiency(skillID) >= SKILL_LEVEL_EXPERT )
+			{
+				real_t ratio = (casterStats->getModifiedProficiency(skillID) - SKILL_LEVEL_EXPERT) / (real_t)40.0;
+				mult += (ratio * (60 / 100.0)); // 0.6 max
+			}
+			bonus *= mult;
+		}
 	}
+
 	return bonus;
 }
 
@@ -1025,6 +1046,18 @@ real_t getBonusFromCasterOfSpellElement(Entity* caster, Stat* casterStats, spell
 		{
 			bonus += 0.25 * effectStrength;
 		}*/
+
+		if ( casterStats->type == MONSTER_S )
+		{
+			if ( Uint8 effectStrength = casterStats->getEffectActive(EFF_SALAMANDER_HEART) )
+			{
+				if ( effectStrength == 1 || effectStrength == 2 )
+				{
+					real_t ratio = (statGetCHR(casterStats, caster) * 2 + 10) / 100.0;
+					bonus += 1.0 * (ratio);
+				}
+			}
+		}
 
 		if ( Uint8 effectStrength = casterStats->getEffectActive(EFF_INCOHERENCE) )
 		{
