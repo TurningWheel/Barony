@@ -3960,15 +3960,13 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								int maxStrength = 10;
 								if ( parentStats )
 								{
+									int minStrength = 2;
 									if ( parentStats->type == MONSTER_S
 										&& parentStats->getEffectActive(EFF_SALAMANDER_HEART) == 2 )
 									{
-										maxStrength = 10;
+										minStrength += 3;
 									}
-									else
-									{
-										maxStrength = std::min(maxStrength, 2 + std::max(0, statGetCHR(parent->getStats(), parent)) / 4);
-									}
+									maxStrength = std::min(maxStrength, minStrength + std::max(0, statGetCHR(parent->getStats(), parent)) / 5);
 								}
 								if ( effectStrength < maxStrength )
 								{

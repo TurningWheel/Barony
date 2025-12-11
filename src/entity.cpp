@@ -1546,7 +1546,32 @@ void Entity::effectTimes()
 				}
 			}
 
-			if ( c == EFF_GROWTH && behavior == &actPlayer )
+			if ( c == EFF_SALAMANDER_HEART && behavior == &actPlayer )
+			{
+				if ( !(myStats->type == MONSTER_S) )
+				{
+					setEffect(EFF_SALAMANDER_HEART, false, 0, true);
+				}
+				else if ( Uint8 effectStrength = myStats->getEffectActive(c) )
+				{
+					if ( myStats->EFFECTS_TIMERS[EFF_SALAMANDER_HEART] == 0 )
+					{
+						if ( effectStrength == 2 )
+						{
+							setEffect(EFF_SALAMANDER_HEART, 
+								(Uint8)1, -1, true, true, true);
+							messagePlayer(isEntityPlayer(), MESSAGE_STATUS, Language::get(6921));
+						}
+						else if ( effectStrength == 4 )
+						{
+							setEffect(EFF_SALAMANDER_HEART,
+								(Uint8)3, -1, true, true, true);
+							messagePlayer(isEntityPlayer(), MESSAGE_STATUS, Language::get(6917));
+						}
+					}
+				}
+			}
+			else if ( c == EFF_GROWTH && behavior == &actPlayer )
 			{
 				if ( !(myStats->type == MONSTER_M || myStats->type == MONSTER_D) || myStats->helmet )
 				{
@@ -2552,6 +2577,20 @@ bool Entity::increaseSkill(int skill, bool notify)
 			Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_XP_MAX_INSTANCE, "xp", 2);
 			Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_XP_SKILLS, "xp", 2);
 
+			if ( myStats->playerRace == RACE_S && myStats->stat_appearance == 0 )
+			{
+				Sint32 oldMP = myStats->MP;
+				this->modMP(std::max(1, myStats->MAXMP / 50 + statGetCHR(myStats, this) / 10));
+				if ( oldMP < myStats->MP )
+				{
+					if ( behavior == &actPlayer )
+					{
+						Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_RGN_MP_RUN, "rgn", myStats->MP - oldMP);
+						Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_RGN_MP_SUM, "rgn", myStats->MP - oldMP);
+					}
+				}
+			}
+
 			const char* skillstr = Compendium_t::getSkillStringForCompendium(skill);
 			if ( strcmp(skillstr, "") )
 			{
@@ -3132,6 +3171,13 @@ void Entity::modHP(int amount)
 	if ( entitystats && entitystats->getEffectActive(EFF_STASIS) )
 	{
 		amount = 0;
+	}
+	if ( entitystats && entitystats->getEffectActive(EFF_SALAMANDER_HEART) == 4 && entitystats->type == MONSTER_S )
+	{
+		if ( amount < 0 )
+		{
+			amount = 0;
+		}
 	}
 
 	if ( entitystats && entitystats->type == DUCK_SMALL && amount < 0 )
@@ -5156,7 +5202,21 @@ void Entity::handleEffects(Stat* myStats)
 	}
 
 	// regaining energy over time
-	if ( myStats->type == AUTOMATON && player >= 0 )
+	if ( player >= 0
+		&& ((myStats->playerRace == RACE_S
+			&& myStats->stat_appearance == 0)
+			|| myStats->type == MONSTER_S)
+		&& (myStats->getEffectActive(EFF_SALAMANDER_HEART) == 1 || myStats->getEffectActive(EFF_SALAMANDER_HEART) == 2) )
+	{
+		this->char_energize++;
+		if ( this->char_energize >= TICKS_PER_SECOND * 3 )
+		{
+			this->char_energize = 0;
+			int decrease = std::max(1, myStats->MAXMP / 50);
+			this->modMP(-decrease);
+		}
+	}
+	else if ( myStats->type == AUTOMATON && player >= 0 )
 	{
 		int manaRegenInterval = Entity::getManaRegenInterval(this, *myStats, behavior == &actPlayer);
 		this->char_energize++;
@@ -5298,7 +5358,7 @@ void Entity::handleEffects(Stat* myStats)
 			}
 		}
 	}
-	else if ( myStats->MP < myStats->MAXMP || (player >= 0 && myStats->playerRace == RACE_S && myStats->stat_appearance == 0) )
+	else if ( myStats->MP < myStats->MAXMP )
 	{
 		int manaRegenInterval = Entity::getManaRegenInterval(this, *myStats, behavior == &actPlayer);
 		// summons don't regen MP. we use this to refund mana to the caster.
@@ -5312,34 +5372,46 @@ void Entity::handleEffects(Stat* myStats)
 		{
 			this->char_energize++;
 
-			bool mpModDirInvert = false;
-			if ( player >= 0 && myStats->playerRace == RACE_S && myStats->stat_appearance == 0 )
-			{
-				if ( myStats->MP < myStats->MAXMP / 2 )
-				{
-					mpModDirInvert = false;
-				}
-				else if ( myStats->MP > myStats->MAXMP / 2 )
-				{
-					mpModDirInvert = true;
-				}
-			}
-
 			if ( this->char_energize >= manaRegenInterval )
 			{
 				this->char_energize = 0;
-				if ( mpMod > 0 )
+
+				if ( player >= 0
+					&& ((myStats->playerRace == RACE_S
+						&& myStats->stat_appearance == 0)
+						|| myStats->type == MONSTER_S)
+					&& (myStats->getEffectActive(EFF_SALAMANDER_HEART) == 1
+						|| myStats->getEffectActive(EFF_SALAMANDER_HEART) == 2) )
 				{
-					Sint32 oldMP = myStats->MP;
-					this->modMP(!mpModDirInvert ? mpMod : -mpMod);
-					if ( behavior == &actPlayer )
+
+				}
+				else if ( mpMod > 0 )
+				{
+					bool naturalManaRegen = true;
+					if ( player >= 0 
+						&& ((myStats->playerRace == RACE_S 
+							&& myStats->stat_appearance == 0)
+							|| myStats->type == MONSTER_S) )
 					{
-						if ( oldMP < myStats->MP )
+						if ( myStats->MP >= myStats->MAXMP / 2 )
 						{
-							Compendium_t::Events_t::eventUpdateCodex(skill[2], Compendium_t::CPDM_RGN_MP_RUN, "rgn", myStats->MP - oldMP);
-							Compendium_t::Events_t::eventUpdateCodex(skill[2], Compendium_t::CPDM_RGN_MP_SUM, "rgn", myStats->MP - oldMP);
+							naturalManaRegen = false;
 						}
-						Compendium_t::Events_t::eventUpdateCodex(skill[2], Compendium_t::CPDM_RGN_MP_RATE_MAX, "rgn", manaRegenInterval);
+					}
+
+					if ( naturalManaRegen )
+					{
+						Sint32 oldMP = myStats->MP;
+						this->modMP(mpMod);
+						if ( behavior == &actPlayer )
+						{
+							if ( oldMP < myStats->MP )
+							{
+								Compendium_t::Events_t::eventUpdateCodex(skill[2], Compendium_t::CPDM_RGN_MP_RUN, "rgn", myStats->MP - oldMP);
+								Compendium_t::Events_t::eventUpdateCodex(skill[2], Compendium_t::CPDM_RGN_MP_SUM, "rgn", myStats->MP - oldMP);
+							}
+							Compendium_t::Events_t::eventUpdateCodex(skill[2], Compendium_t::CPDM_RGN_MP_RATE_MAX, "rgn", manaRegenInterval);
+						}
 					}
 				}
 			}
@@ -5356,7 +5428,7 @@ void Entity::handleEffects(Stat* myStats)
 						if ( myStats->MP < myStats->MAXMP )
 						{
 							Sint32 oldMP = myStats->MP;
-							this->modMP(!mpModDirInvert ? mpMod : -mpMod);
+							this->modMP(mpMod);
 							if ( behavior == &actPlayer )
 							{
 								if ( oldMP < myStats->MP )
@@ -6056,6 +6128,75 @@ void Entity::handleEffects(Stat* myStats)
 		}
 	}
 
+	if ( myStats->getEffectActive(EFF_SALAMANDER_HEART) && myStats->type != MONSTER_S )
+	{
+		this->setEffect(EFF_SALAMANDER_HEART, false, 0, true, true, true);
+	}
+	if ( behavior == &actPlayer && myStats->type == MONSTER_S )
+	{
+		Uint8 effectStrength = myStats->getEffectActive(EFF_SALAMANDER_HEART);
+		int particle = 0;
+		// check stone form
+		if ( myStats->MP <= myStats->MAXMP * 0.25 && effectStrength <= 2 )
+		{
+			// radiant stone
+			this->setEffect(EFF_SALAMANDER_HEART, (Uint8)4, 5 * TICKS_PER_SECOND, true, true, true);
+			messagePlayerColor(skill[2], MESSAGE_STATUS, makeColorRGB(0, 255, 0), Language::get(6919));
+			playSoundEntity(this, 826, 128);
+			//createParticleDropRising(this, 593, 1.f);
+			//serverSpawnMiscParticles(this, PARTICLE_EFFECT_RISING_DROP, 593);
+			particle = 1;
+		}
+		else if ( effectStrength == 3 )
+		{
+			if ( myStats->MP >= myStats->MAXMP * 0.4 )
+			{
+				this->setEffect(EFF_SALAMANDER_HEART, false, 0, true, true, true);
+				messagePlayerColor(skill[2], MESSAGE_STATUS, makeColorRGB(255, 255, 255), Language::get(6920));
+				playSoundEntity(this, 827, 128);
+				particle = 2;
+			}
+		}
+		else if ( effectStrength == 1 || effectStrength == 2 )
+		{
+			if ( myStats->MP <= myStats->MAXMP * 0.6 )
+			{
+				this->setEffect(EFF_SALAMANDER_HEART, false, 0, true, true, true);
+				messagePlayerColor(skill[2], MESSAGE_STATUS, makeColorRGB(255, 255, 255), Language::get(6920));
+				playSoundEntity(this, 827, 128);
+				particle = 2;
+			}
+		}
+
+		if ( particle )
+		{
+			for ( int i = 0; i < 2; ++i )
+			{
+				if ( Entity* fx = createParticleAestheticOrbit(this, 263, TICKS_PER_SECOND / 2, PARTICLE_EFFECT_HEAT_ORBIT_SPIN) )
+				{
+					fx->flags[SPRITE] = true;
+					fx->x = this->x;
+					fx->y = this->y;
+					fx->z = 7.5;
+					fx->fskill[0] = fx->x;
+					fx->fskill[1] = fx->y;
+					fx->vel_z = -0.5;
+					fx->actmagicOrbitDist = 5;
+					fx->fskill[2] = this->yaw + PI / 4.0 + i * PI;
+					fx->yaw = fx->fskill[2];
+					fx->fskill[4] = 0.25;
+					if ( particle == 1 )
+					{
+						fx->lightBonus = vec4{ 0.f, 0.f, 0.f, 0.f };
+						fx->actmagicNoLight = 1;
+					}
+
+					serverSpawnMiscParticles(this, PARTICLE_EFFECT_HEAT_ORBIT_SPIN, 263, particle, fx->skill[0]);
+				}
+			}
+		}
+	}
+
 	// effects of being poisoned
 	if ( myStats->getEffectActive(EFF_POISONED) )
 	{
@@ -6592,7 +6733,8 @@ void Entity::handleEffects(Stat* myStats)
 		}
 	}
 
-	if ( myStats->getEffectActive(EFF_FLAME_CLOAK) )
+	if ( myStats->getEffectActive(EFF_FLAME_CLOAK) || 
+		(myStats->type == MONSTER_S && myStats->getEffectActive(EFF_SALAMANDER_HEART) >= 1 && myStats->getEffectActive(EFF_SALAMANDER_HEART) <= 2) )
 	{
 		int interval = 40;
 		if ( ticks % interval == 0 )
@@ -6609,7 +6751,42 @@ void Entity::handleEffects(Stat* myStats)
 			//fx->fskill[2] += ((ticks / interval) % 3) * 2 * PI / 3;
 			fx->yaw = fx->fskill[2];
 			fx->actmagicNoLight = 0;
+		}
+		if ( (myStats->type == MONSTER_S && myStats->getEffectActive(EFF_SALAMANDER_HEART) >= 1 && myStats->getEffectActive(EFF_SALAMANDER_HEART) <= 2) )
+		{
+			if ( ((ticks % 10 == 0) && (abs(this->vel_x) > 0.1 || abs(this->vel_y) > 0.1)) )
+			{
+				//if ( abs(this->vel_x) > 0.05 || abs(this->vel_y) > 0.05 )
+				{
+					Entity* fx = createParticleAestheticOrbit(this, 233, TICKS_PER_SECOND / 4, PARTICLE_EFFECT_RADIANT_ORBIT_FOLLOW);
+					fx->flags[SPRITE] = true;
+					fx->z = this->z;// 7.5 - 2.0 * ((ticks / interval) % 3);
+					fx->vel_z = 0.25;
+					fx->scalex = 1.0;
+					fx->scaley = 1.0;
+					fx->scalez = 1.0;
+					fx->actmagicOrbitDist = 1;
+					fx->z += 8;
+					fx->fskill[2] = this->yaw + PI;
+					fx->fskill[4] = 0.1; // rotate
+					fx->x = this->x + fx->actmagicOrbitDist * cos(this->yaw + PI);
+					fx->y = this->y + fx->actmagicOrbitDist * sin(this->yaw + PI);
+					//fx->fskill[2] += ((ticks / interval) % 3) * 2 * PI / 3;
+					fx->yaw = fx->fskill[2];
+					if ( (abs(this->vel_x) > 0.05 || abs(this->vel_y) > 0.05) )
+					{
+						fx->actmagicNoLight = 0;
+					}
+					else
+					{
+						fx->actmagicNoLight = 1;
+					}
+				}
+			}
+		}
 
+		if ( myStats->getEffectActive(EFF_FLAME_CLOAK) && (ticks % interval == 0) )
+		{
 			if ( Entity* fx = createParticleAOEIndicator(this, this->x, this->y, 0.0, TICKS_PER_SECOND, 16.0) )
 			{
 				fx->scalex = 0.8;
@@ -6633,7 +6810,7 @@ void Entity::handleEffects(Stat* myStats)
 		int x = this->x / 16;
 		int y = this->y / 16;
 
-		if ( x >= 0 && x < map.width && y >= 0 && y < map.height )
+		if ( x >= 0 && x < map.width && y >= 0 && y < map.height && myStats->getEffectActive(EFF_FLAME_CLOAK) )
 		{
 			int mapIndex = y * MAPLAYERS + x * MAPLAYERS * map.height;
 			auto entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(this, 2);
@@ -6652,7 +6829,7 @@ void Entity::handleEffects(Stat* myStats)
 					{
 						if ( entityInsideEntity(entity, this) )
 						{
-							if ( this->SetEntityOnFire() )
+							if ( this->SetEntityOnFire(nullptr) )
 							{
 								myStats->burningInflictedBy = 0;
 							}
@@ -6664,7 +6841,7 @@ void Entity::handleEffects(Stat* myStats)
 						{
 							if ( entityInsideEntity(entity, this) )
 							{
-								if ( this->SetEntityOnFire() )
+								if ( this->SetEntityOnFire(entity) )
 								{
 									myStats->burningInflictedBy = 0;
 									if ( entity->getStats() )
@@ -6910,6 +7087,18 @@ void Entity::handleEffects(Stat* myStats)
 							warmHat = true;
 						}
 					}
+					if ( myStats->type == MONSTER_S )
+					{
+						if ( myStats->getEffectActive(EFF_SALAMANDER_HEART) == 1
+							|| myStats->getEffectActive(EFF_SALAMANDER_HEART) == 2 )
+						{
+							fireMultiplier = 0.0;
+						}
+						else
+						{
+							fireMultiplier *= 0.25;
+						}
+					}
 					damage *= fireMultiplier;
 
 					this->modHP(damage); // Deal between -2 to -5 damage
@@ -6962,23 +7151,26 @@ void Entity::handleEffects(Stat* myStats)
 				playSoundEntity(this, 28, 64); // "Damage.ogg"
 
 				// Shake the Camera
-				if ( player >= 0 && players[player]->isLocalPlayer() )
+				if ( oldHP > myStats->HP )
 				{
-					camera_shakey += 5;
-				}
-				else if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
-				{
-					strcpy((char*)net_packet->data, "SHAK");
-					net_packet->data[4] = 0; // turns into 0
-					net_packet->data[5] = 5;
-					net_packet->address.host = net_clients[player - 1].host;
-					net_packet->address.port = net_clients[player - 1].port;
-					net_packet->len = 6;
-					sendPacketSafe(net_sock, -1, net_packet, player - 1);
+					if ( player >= 0 && players[player]->isLocalPlayer() )
+					{
+						camera_shakey += 5;
+					}
+					else if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
+					{
+						strcpy((char*)net_packet->data, "SHAK");
+						net_packet->data[4] = 0; // turns into 0
+						net_packet->data[5] = 5;
+						net_packet->address.host = net_clients[player - 1].host;
+						net_packet->address.port = net_clients[player - 1].port;
+						net_packet->len = 6;
+						sendPacketSafe(net_sock, -1, net_packet, player - 1);
+					}
 				}
 
 				// If the Entity has a Cloak, process dealing damage to the Entity's Cloak
-				if ( myStats->cloak != nullptr )
+				if ( myStats->cloak != nullptr && oldHP > myStats->HP )
 				{
 					// 1 in 10 chance of dealing damage to Entity's cloak
 					if ( local_rng.rand() % 10 == 0 
@@ -8048,6 +8240,18 @@ Sint32 statGetSTR(Stat* entitystats, Entity* my)
 		}
 	}
 
+	if ( entitystats->type == MONSTER_S )
+	{
+		if ( Uint8 effectStrength = entitystats->getEffectActive(EFF_SALAMANDER_HEART) )
+		{
+			if ( effectStrength == 3 || effectStrength == 4 )
+			{
+				real_t ratio = (statGetCHR(entitystats, my) + 10) / 100.0;
+				STR += 3 + (STR * ratio);
+			}
+		}
+	}
+
 	STR += (Sint32)entitystats->getEnsembleEffectBonus(Stat::ENSEMBLE_DRUM_EFF_1);
 
 	if ( entitystats->type == MIMIC )
@@ -8299,6 +8503,18 @@ Sint32 statGetDEX(Stat* entitystats, Entity* my)
 		}
 	}
 
+	if ( entitystats->type == MONSTER_S )
+	{
+		if ( Uint8 effectStrength = entitystats->getEffectActive(EFF_SALAMANDER_HEART) )
+		{
+			if ( effectStrength == 3 || effectStrength == 4 )
+			{
+				real_t ratio = (statGetCHR(entitystats, my) + 10) / 100.0;
+				DEX -= 3 + (DEX * ratio);
+			}
+		}
+	}
+
 	if ( !(svFlags & SV_FLAG_HUNGER) )
 	{
 		if ( my && my->behavior == &actPlayer && entitystats->playerRace == RACE_INSECTOID && entitystats->stat_appearance == 0 )
@@ -8519,6 +8735,23 @@ Sint32 statGetCON(Stat* entitystats, Entity* my)
 		else
 		{
 			CON -= std::max((real_t)effectStrength, CON * 0.1 * effectStrength);
+		}
+	}
+
+	if ( entitystats->type == MONSTER_S )
+	{
+		if ( Uint8 effectStrength = entitystats->getEffectActive(EFF_SALAMANDER_HEART) )
+		{
+			if ( effectStrength == 1 || effectStrength == 2 )
+			{
+				real_t ratio = (statGetCHR(entitystats, my) + 10) / 100.0;
+				CON -= 3 + (CON * ratio);
+			}
+			else if ( effectStrength == 3 || effectStrength == 4 )
+			{
+				real_t ratio = (statGetCHR(entitystats, my) + 10) / 100.0;
+				CON += 3 + (CON * ratio);
+			}
 		}
 	}
 
@@ -11712,11 +11945,22 @@ void Entity::attack(int pose, int charge, Entity* target)
 				bool gugnirProc = false;
 				bool armorPierceProc = false;
 
-				if ( (weaponskill == PRO_SWORD && myStats->weapon && myStats->weapon->type == ARTIFACT_SWORD 
-					|| (myStats->weapon && myStats->getEffectActive(EFF_DIVINE_ZEAL))
-					|| (myStats->weapon && myStats->getEffectActive(EFF_FOCI_LIGHT_JUSTICE)))
-					&& !shapeshifted)
+				if ( (hitstats->getEffectActive(EFF_DIVINE_FIRE) & 0xF) ||
+						(!shapeshifted &&
+							((weaponskill == PRO_SWORD && myStats->weapon && myStats->weapon->type == ARTIFACT_SWORD)
+							|| (myStats->weapon && myStats->getEffectActive(EFF_DIVINE_ZEAL))
+							|| (myStats->weapon && myStats->getEffectActive(EFF_FOCI_LIGHT_JUSTICE))))
+					)
 				{
+					bool particle = false;
+
+					bool effect = false;
+					if ( (hitstats->getEffectActive(EFF_DIVINE_FIRE) & 0xF) )
+					{
+						particle = true;
+						effect = true;
+					}
+
 					switch ( hitstats->type )
 					{
 						case SKELETON:
@@ -11731,9 +11975,9 @@ void Entity::attack(int pose, int charge, Entity* target)
 						case LICH_FIRE:
 						case DEVIL:
 						{
-							bool particle = false;
 							// smite these creatures
-							if ( myStats->weapon->type == ARTIFACT_SWORD )
+							if ( weaponskill == PRO_SWORD && myStats->weapon && myStats->weapon->type == ARTIFACT_SWORD
+								&& !shapeshifted )
 							{
 								real_t amount = 0.0;
 								real_t percent = getArtifactWeaponEffectChance(myStats->weapon->type, *myStats, &amount);
@@ -11742,31 +11986,60 @@ void Entity::attack(int pose, int charge, Entity* target)
 									weaponMultipliers += amount;
 									dyrnwynSmite = true;
 									particle = true;
+									effect = true;
 									//playSoundEntity(hit.entity, 249, 64);
 								}
 							}
-							if ( myStats->getEffectActive(EFF_DIVINE_ZEAL) )
+							if ( !dyrnwynSmite )
 							{
-								zealSmite = true;
-								weaponMultipliers += getSpellEffectDurationSecondaryFromID(SPELL_DIVINE_ZEAL, nullptr, nullptr, nullptr) / 100.0;
-								int tier = std::max(0, (myStats->getEffectActive(EFF_DIVINE_ZEAL) - 1));
-								weaponMultipliers += tier * getSpellDamageSecondaryFromID(SPELL_DIVINE_ZEAL, nullptr, nullptr, nullptr) / 100.0;
-							}
-							if ( myStats->getEffectActive(EFF_FOCI_LIGHT_JUSTICE) )
-							{
-								zealSmite = true;
-								weaponMultipliers += getSpellEffectDurationSecondaryFromID(SPELL_FOCI_LIGHT_JUSTICE, nullptr, nullptr, nullptr) / 100.0;
-								int tier = std::max(0, (myStats->getEffectActive(EFF_FOCI_LIGHT_JUSTICE) - 1));
-								weaponMultipliers += tier * getSpellDamageSecondaryFromID(SPELL_FOCI_LIGHT_JUSTICE, nullptr, nullptr, nullptr) / 100.0;
-							}
-							if ( particle )
-							{
-								spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, 981);
+								if ( myStats->getEffectActive(EFF_DIVINE_ZEAL) )
+								{
+									zealSmite = true;
+									particle = true;
+									effect = true;
+									weaponMultipliers += getSpellEffectDurationSecondaryFromID(SPELL_DIVINE_ZEAL, nullptr, nullptr, nullptr) / 100.0;
+									int tier = std::max(0, (myStats->getEffectActive(EFF_DIVINE_ZEAL) - 1));
+									weaponMultipliers += tier * getSpellDamageSecondaryFromID(SPELL_DIVINE_ZEAL, nullptr, nullptr, nullptr) / 100.0;
+								}
+								if ( myStats->getEffectActive(EFF_FOCI_LIGHT_JUSTICE) )
+								{
+									effect = true;
+									zealSmite = true;
+									particle = true;
+									weaponMultipliers += getSpellEffectDurationSecondaryFromID(SPELL_FOCI_LIGHT_JUSTICE, nullptr, nullptr, nullptr) / 100.0;
+									int tier = std::max(0, (myStats->getEffectActive(EFF_FOCI_LIGHT_JUSTICE) - 1));
+									weaponMultipliers += tier * getSpellDamageSecondaryFromID(SPELL_FOCI_LIGHT_JUSTICE, nullptr, nullptr, nullptr) / 100.0;
+								}
 							}
 							break;
 						}
 						default:
 							break;
+					}
+
+					if ( effect )
+					{
+						if ( myStats->type == MONSTER_S
+							&& myStats->getEffectActive(EFF_SALAMANDER_HEART) == 2 )
+						{
+							if ( myStats->EFFECTS_TIMERS[EFF_SALAMANDER_HEART] > 0 )
+							{
+								int prevDuration = myStats->EFFECTS_TIMERS[EFF_SALAMANDER_HEART];
+								myStats->EFFECTS_TIMERS[EFF_SALAMANDER_HEART] += TICKS_PER_SECOND / 2;
+								if ( prevDuration < 5 * TICKS_PER_SECOND && myStats->EFFECTS_TIMERS[EFF_SALAMANDER_HEART] >= 5 * TICKS_PER_SECOND )
+								{
+									if ( this->behavior == &actPlayer )
+									{
+										serverUpdateEffects(skill[2]); // update timer
+									}
+								}
+							}
+						}
+					}
+
+					if ( particle )
+					{
+						spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, 981);
 					}
 				}
 				/*if( weaponskill>=0 )
@@ -12174,6 +12447,12 @@ void Entity::attack(int pose, int charge, Entity* target)
 					if ( weaponToBreak != nullptr && !shapeshifted )
 					{
 						weaponType = (*weaponToBreak)->type;
+					}
+
+					if ( hitstats && hitstats->getEffectActive(EFF_SALAMANDER_HEART) == 4 && hitstats->type == MONSTER_S )
+					{
+						damage = 0;
+						spawnBang(hit.entity->x, hit.entity->y, hit.entity->z);
 					}
 
 					Sint32 oldHP = hitstats->HP;
@@ -12857,7 +13136,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 									bool wasBurning = hit.entity->flags[BURNING];
 									// Attempt to set the Entity on fire
-									hit.entity->SetEntityOnFire();
+									hit.entity->SetEntityOnFire(this);
 
 									if ( !wasBurning && hit.entity->flags[BURNING] )
 									{
@@ -14840,7 +15119,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							int chance = local_rng.rand() % 100;
 							if ( chance < hitstats->getEffectActive(EFF_FLAME_CLOAK) )
 							{
-								if ( this->SetEntityOnFire() )
+								if ( this->SetEntityOnFire(hit.entity) )
 								{
 									if ( !wasBurning && this->flags[BURNING] )
 									{
@@ -16956,6 +17235,38 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 					{
 						magicOnSpellCastEvent(this, this, src,
 							SPELL_SHADOW_TAG, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
+					}
+				}
+			}
+
+			if ( gain > 0 && destStats->playerRace == RACE_S && destStats->stat_appearance == 0 )
+			{
+				Sint32 oldMP = destStats->MP;
+				int minRoll = std::max(1, destStats->MAXMP / 50 + statGetCHR(destStats, this) / 10);
+				bool bonus = false;
+				if ( srcStats->getEffectActive(EFF_DIVINE_FIRE) )
+				{
+					int effectInflictedBy = (srcStats->getEffectActive(EFF_DIVINE_FIRE) & 0xF0) >> 4;
+					if ( behavior == &actPlayer && !checkFriend(src) )
+					{
+						if ( effectInflictedBy & (1 + skill[2]) )
+						{
+							minRoll += srcStats->getEffectActive(EFF_DIVINE_FIRE) & 0xF;
+							bonus = true;
+						}
+					}
+				}
+				this->modMP(minRoll);
+				if ( oldMP < destStats->MP )
+				{
+					if ( behavior == &actPlayer )
+					{
+						if ( bonus )
+						{
+							messagePlayerColor(skill[2], MESSAGE_HINT, makeColorRGB(0, 255, 0), Language::get(6916));
+						}
+						Compendium_t::Events_t::eventUpdateCodex(skill[2], Compendium_t::CPDM_RGN_MP_RUN, "rgn", destStats->MP - oldMP);
+						Compendium_t::Events_t::eventUpdateCodex(skill[2], Compendium_t::CPDM_RGN_MP_SUM, "rgn", destStats->MP - oldMP);
 					}
 				}
 			}
@@ -19478,6 +19789,10 @@ bool isLevitating(Stat* mystats)
 		return true;
 	}
 	else if ( mystats->getEffectActive(EFF_FLUTTER) )
+	{
+		return true;
+	}
+	else if ( mystats->type == MONSTER_S && mystats->getEffectActive(EFF_SALAMANDER_HEART) >= 1 && mystats->getEffectActive(EFF_SALAMANDER_HEART) <= 2 )
 	{
 		return true;
 	}
@@ -22427,7 +22742,8 @@ void Entity::handleEffectsClient()
 		}
 	}
 
-	if ( myStats->getEffectActive(EFF_FLAME_CLOAK) )
+	if ( myStats->getEffectActive(EFF_FLAME_CLOAK) ||
+		(myStats->type == MONSTER_S && myStats->getEffectActive(EFF_SALAMANDER_HEART) >= 1 && myStats->getEffectActive(EFF_SALAMANDER_HEART) <= 2) )
 	{
 		int interval = 40;
 		if ( ticks % interval == 0 )
@@ -22443,8 +22759,43 @@ void Entity::handleEffectsClient()
 			fx->fskill[2] = this->yaw + PI;
 			//fx->fskill[2] += ((ticks / interval) % 3) * 2 * PI / 3;
 			fx->yaw = fx->fskill[2];
-			fx->actmagicNoLight = 1;
+			fx->actmagicNoLight = 0;
+		}
+		if ( (myStats->type == MONSTER_S && myStats->getEffectActive(EFF_SALAMANDER_HEART) >= 1 && myStats->getEffectActive(EFF_SALAMANDER_HEART) <= 2) )
+		{
+			if ( ((ticks % 10 == 0) && (abs(this->vel_x) > 0.1 || abs(this->vel_y) > 0.1)) )
+			{
+				//if ( abs(this->vel_x) > 0.05 || abs(this->vel_y) > 0.05 )
+				{
+					Entity* fx = createParticleAestheticOrbit(this, 233, TICKS_PER_SECOND / 4, PARTICLE_EFFECT_RADIANT_ORBIT_FOLLOW);
+					fx->flags[SPRITE] = true;
+					fx->z = this->z;// 7.5 - 2.0 * ((ticks / interval) % 3);
+					fx->vel_z = 0.25;
+					fx->scalex = 1.0;
+					fx->scaley = 1.0;
+					fx->scalez = 1.0;
+					fx->actmagicOrbitDist = 1;
+					fx->z += 8;
+					fx->fskill[2] = this->yaw + PI;
+					fx->fskill[4] = 0.1; // rotate
+					fx->x = this->x + fx->actmagicOrbitDist * cos(this->yaw + PI);
+					fx->y = this->y + fx->actmagicOrbitDist * sin(this->yaw + PI);
+					//fx->fskill[2] += ((ticks / interval) % 3) * 2 * PI / 3;
+					fx->yaw = fx->fskill[2];
+					if ( (abs(this->vel_x) > 0.1 || abs(this->vel_y) > 0.1) )
+					{
+						fx->actmagicNoLight = 0;
+					}
+					else
+					{
+						fx->actmagicNoLight = 1;
+					}
+				}
+			}
+		}
 
+		if ( myStats->getEffectActive(EFF_FLAME_CLOAK) && (ticks % interval == 0) )
+		{
 			if ( Entity* fx = createParticleAOEIndicator(this, this->x, this->y, 0.0, TICKS_PER_SECOND, 16.0) )
 			{
 				fx->scalex = 0.8;
@@ -29567,7 +29918,23 @@ real_t Entity::getDamageTableMultiplier(Entity* my, Stat& myStats, DamageTableTy
 	{
 		multipliedBonuses *= 1 - std::max(1.0 - damageMultiplier, 0.0);
 	}
+
 	real_t bonus = summedExtraDamage - (1.0 - floor(100.0 * multipliedBonuses) / 100.0);
+
+	if ( myStats.getEffectActive(EFF_DIVINE_FIRE) )
+	{
+		for ( int i = 0; i < (myStats.getEffectActive(EFF_DIVINE_FIRE) & 0xF); ++i )
+		{
+			if ( bonus < 0.0 )
+			{
+				bonus += 0.1;
+			}
+			else
+			{
+				bonus += 0.025;
+			}
+		}
+	}
 	return std::max(0.1, 1.0 + bonus);
 }
 
@@ -30553,7 +30920,9 @@ real_t Entity::monsterGetWeightRatio()
 
 void Entity::creatureHandleLiftZ()
 {
+	Monster type = getMonsterTypeFromSprite();
 	Stat* myStats = getStats();
+	real_t shiftMult = 1.0;
 	if ( myStats && (myStats->getEffectActive(EFF_LIFT)) )
 	{
 		creatureHoverZ += 0.25;
@@ -30561,6 +30930,12 @@ void Entity::creatureHandleLiftZ()
 	else if ( myStats && (myStats->getEffectActive(EFF_STASIS)) )
 	{
 		creatureHoverZ += 0.025;
+	}
+	else if ( myStats && type == MONSTER_S
+		&& myStats->getEffectActive(EFF_SALAMANDER_HEART) >= 1 && myStats->getEffectActive(EFF_SALAMANDER_HEART) <= 2 )
+	{
+		creatureHoverZ += 0.025;
+		shiftMult = 0.5;
 	}
 	else
 	{
@@ -30573,8 +30948,7 @@ void Entity::creatureHandleLiftZ()
 		height += 0.5 * cos(creatureHoverZ);
 	}
 	
-	real_t shift = 2 * height;
-	Monster type = getMonsterTypeFromSprite();
+	real_t shift = 2 * height * shiftMult;
 
 	if ( multiplayer == CLIENT && behavior == &actMonster )
 	{
