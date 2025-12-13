@@ -16014,7 +16014,7 @@ failed:
 		    }
 		    label->setText(Language::get(getLangEntryForMainMenuRaceName(c)));
 		    label->setFont(smallfont_outline);
-		    label->setSize(SDL_Rect{32, c * 36, 96, 36});
+		    label->setSize(SDL_Rect{32, c * 36, 108, 36});
 		    label->setHJustify(Field::justify_t::LEFT);
 		    label->setVJustify(Field::justify_t::CENTER);
 		}
