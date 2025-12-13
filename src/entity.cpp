@@ -5214,7 +5214,10 @@ void Entity::handleEffects(Stat* myStats)
 		{
 			this->char_energize = 0;
 			int decrease = std::max(1, myStats->MAXMP / 50);
-			this->modMP(-decrease);
+			if ( !hit.entity->safeConsumeMP(decrease) )
+			{
+				hit.entity->modMP(-decrease);
+			}
 		}
 	}
 	else if ( myStats->type == AUTOMATON && player >= 0 )
@@ -12470,7 +12473,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						thornsAllowZeroDmg = true;
 						if ( playerhit >= 0 )
 						{
-							hit.entity->modMP(-1);
+							hit.entity->safeConsumeMP(1);
 							players[playerhit]->mechanics.updateSustainedSpellEvent(SPELL_THORNS, thorn * 5.0, 1.0);
 						}
 						thornsEffect += thorn;
@@ -12484,7 +12487,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						thornsAllowZeroDmg = true;
 						if ( playerhit >= 0 )
 						{
-							hit.entity->modMP(-1);
+							hit.entity->safeConsumeMP(1);
 							players[playerhit]->mechanics.updateSustainedSpellEvent(SPELL_BLADEVINES, thorn * 5.0, 1.0);
 						}
 						thornsEffect += thorn;
