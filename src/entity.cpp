@@ -731,8 +731,9 @@ void sustainedSpellProcess(Entity& entity, Stat& myStats, int effectID, std::map
 			else
 			{
 				messagePlayer(caster->isEntityPlayer(), MESSAGE_STATUS, Language::get(6504), sustainedSpell_hijacked[effectID]->getSpellName());
-				outUnsustainSpell = sustainedSpell_hijacked[effectID];
+				//outUnsustainSpell = sustainedSpell_hijacked[effectID];
 				list_RemoveNode(sustainedSpell_hijacked[effectID]->magic_effects_node); //Remove it from the entity's magic effects. This has the side effect of removing it from the sustained spells list too.
+				sustainedSpell_hijacked.erase(effectID);
 			}
 		}
 		if ( sustained )
@@ -1686,7 +1687,7 @@ void Entity::effectTimes()
 											messagePlayer(i, MESSAGE_STATUS, Language::get(598));
 										}
 									}
-									unsustainSpell = invisibility_hijacked;
+									//unsustainSpell = invisibility_hijacked;
 									list_RemoveNode(invisibility_hijacked->magic_effects_node); //Remove it from the entity's magic effects. This has the side effect of removing it from the sustained spells list too.
 																								//list_RemoveNode(invisibility_hijacked->sustain_node); //Remove it from the channeled spells list.
 								}
@@ -1771,7 +1772,7 @@ void Entity::effectTimes()
 											messagePlayer(i, MESSAGE_STATUS, Language::get(606));    //TODO: Unhardcode name?
 										}
 									}
-									unsustainSpell = levitation_hijacked;
+									//unsustainSpell = levitation_hijacked;
 									list_RemoveNode(levitation_hijacked->magic_effects_node); //Remove it from the entity's magic effects. This has the side effect of removing it from the sustained spells list too.
 								}
 							}
@@ -1914,7 +1915,7 @@ void Entity::effectTimes()
 											messagePlayer(i, MESSAGE_STATUS, Language::get(2474));
 										}
 									}
-									unsustainSpell = reflectMagic_hijacked;
+									//unsustainSpell = reflectMagic_hijacked;
 									list_RemoveNode(reflectMagic_hijacked->magic_effects_node); //Remove it from the entity's magic effects. This has the side effect of removing it from the sustained spells list too.
 																								//list_RemoveNode(reflectMagic_hijacked->sustain_node); //Remove it from the channeled spells list.
 								}
@@ -1962,7 +1963,7 @@ void Entity::effectTimes()
 											messagePlayer(i, MESSAGE_STATUS, Language::get(3443));
 										}
 									}
-									unsustainSpell = amplifyMagic_hijacked;
+									//unsustainSpell = amplifyMagic_hijacked;
 									list_RemoveNode(amplifyMagic_hijacked->magic_effects_node); //Remove it from the entity's magic effects. This has the side effect of removing it from the sustained spells list too.
 								}
 							}
@@ -2217,7 +2218,7 @@ void Entity::effectTimes()
 											//messagePlayer(player, MESSAGE_STATUS, Language::get(2449));
 										}
 									}
-									unsustainSpell = vampiricAura_hijacked;
+									//unsustainSpell = vampiricAura_hijacked;
 									list_RemoveNode(vampiricAura_hijacked->magic_effects_node); //Remove it from the entity's magic effects. This has the side effect of removing it from the sustained spells list too.
 																								//list_RemoveNode(reflectMagic_hijacked->sustain_node); //Remove it from the channeled spells list.
 								}

@@ -5555,13 +5555,18 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 
 	//Add a spell to the channeled spells list.
 	{'CHAN', [](){
-		spell_t* thespell = getSpellFromID(SDLNet_Read32(&net_packet->data[5]));
+		if ( auto spell = getSpellFromID(SDLNet_Read32(&net_packet->data[5])) )
+		{
+			if ( spell_t* thespell = copySpell(spell) )
+			{
 		auto node = list_AddNodeLast(&channeledSpells[clientnum]);
 		node->element = thespell;
 		node->size = sizeof(spell_t);
 		//node->deconstructor = &spellDeconstructor_Channeled;
-		node->deconstructor = &emptyDeconstructor;
+				node->deconstructor = &spellDeconstructor;
 		((spell_t*)(node->element))->sustain_node = node;
+			}
+		}		
 	}},
 
 	//Remove a spell from the channeled spells list.
