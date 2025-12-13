@@ -6902,7 +6902,14 @@ void GenericGUIMenu::identifyItem(Item* item)
 			}
 		}
 	}
+	bool prevIdentified = item->identified;
 	item->identified = true;
+
+	if ( !prevIdentified )
+	{
+		Item::onItemIdentified(gui_player, item);
+	}
+
 	messagePlayer(gui_player, MESSAGE_MISC, Language::get(320), item->description());
 	closeGUI();
 }
@@ -7154,12 +7161,17 @@ void GenericGUIMenu::alterItem(Item* item)
 	std::string prevItem = item->getName();
 	if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_ALTER_INSTRUMENT )
 	{
-		ItemType newType = ItemType(((int)item->type) + 1);
-		if ( newType > INSTRUMENT_HORN )
+		int result = getAlterItemResultAtCycle(item);
+		if ( result >= 0 )
 		{
-			newType = INSTRUMENT_FLUTE;
+			item->type = (ItemType)(result);
 		}
-		item->type = newType;
+		else
+		{
+			messagePlayer(gui_player, MESSAGE_MISC, Language::get(6514), item->description());
+			closeGUI();
+			return;
+		}
 
 		magicOnSpellCastEvent(players[gui_player]->entity, players[gui_player]->entity, 
 			nullptr, SPELL_ALTER_INSTRUMENT, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
@@ -7220,54 +7232,13 @@ void GenericGUIMenu::alterItem(Item* item)
 	}
 	else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_RESHAPE_WEAPON )
 	{
-		switch ( item->type )
+		int result = getAlterItemResultAtCycle(item);
+		if ( result >= 0 )
 		{
-		case BRONZE_AXE:
-			item->type = BRONZE_MACE;
-			break;
-		case BRONZE_MACE:
-			item->type = BRONZE_SWORD;
-			break;
-		case BRONZE_SWORD:
-			item->type = BRONZE_AXE;
-			break;
-		case IRON_AXE:
-			item->type = IRON_MACE;
-			break;
-		case IRON_MACE:
-			item->type = IRON_SWORD;
-			break;
-		case IRON_SWORD:
-			item->type = IRON_SPEAR;
-			break;
-		case IRON_SPEAR:
-			item->type = IRON_AXE;
-			break;
-		case STEEL_AXE:
-			item->type = STEEL_MACE;
-			break;
-		case STEEL_MACE:
-			item->type = STEEL_SWORD;
-			break;
-		case STEEL_SWORD:
-			item->type = STEEL_HALBERD;
-			break;
-		case STEEL_HALBERD:
-			item->type = STEEL_AXE;
-			break;
-		case CRYSTAL_BATTLEAXE:
-			item->type = CRYSTAL_MACE;
-			break;
-		case CRYSTAL_MACE:
-			item->type = CRYSTAL_SWORD;
-			break;
-		case CRYSTAL_SWORD:
-			item->type = CRYSTAL_SPEAR;
-			break;
-		case CRYSTAL_SPEAR:
-			item->type = CRYSTAL_BATTLEAXE;
-			break;
-		default:
+			item->type = (ItemType)(result);
+		}
+		else
+		{
 			messagePlayer(gui_player, MESSAGE_MISC, Language::get(6514), item->description());
 			closeGUI();
 			return;
@@ -7413,7 +7384,7 @@ void GenericGUIMenu::alterItem(Item* item)
 	for ( node_t* node = stats[gui_player]->inventory.first; node != nullptr; node = node->next )
 	{
 		Item* item2 = static_cast<Item*>(node->element);
-		if ( !itemCompare(item, item2, true) )
+		if ( item2 && item2 != item && !itemCompare(item, item2, true) )
 		{
 			// items are the same (incl. appearance!)
 			// if they shouldn't stack, we need to change appearance of the new item.
@@ -7421,30 +7392,7 @@ void GenericGUIMenu::alterItem(Item* item)
 		}
 	}
 
-	if ( !appearancesOfSimilarItems.empty() )
-	{
-		Uint32 originalAppearance = item->appearance;
-		int originalVariation = originalAppearance % items[item->type].variations;
-		int tries = 100;
-
-		while ( appearancesOfSimilarItems.find(item->appearance) != appearancesOfSimilarItems.end() && tries > 0 )
-		{
-			item->appearance = local_rng.rand();
-			if ( item->appearance % items[item->type].variations != originalVariation )
-			{
-				// we need to match the variation for the new appearance, take the difference so new varation matches
-				int change = (item->appearance % items[item->type].variations - originalVariation);
-				if ( item->appearance < change ) // underflow protection
-				{
-					item->appearance += items[item->type].variations;
-				}
-				item->appearance -= change;
-				int newVariation = item->appearance % items[item->type].variations;
-				assert(newVariation == originalVariation);
-			}
-			--tries;
-		}
-	}
+	Item::itemFindUniqueAppearance(item, appearancesOfSimilarItems);
 
 	if ( multiplayer == CLIENT )
 	{

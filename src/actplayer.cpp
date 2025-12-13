@@ -8418,43 +8418,7 @@ void actPlayer(Entity* my)
 				{
 					if ( !appearancesOfSimilarItems.empty() )
 					{
-						Uint32 originalAppearance = tempItem->appearance;
-						int originalVariation = originalAppearance % items[tempItem->type].variations;
-
-						int tries = 100;
-						// we need to find a unique appearance within the list.
-						tempItem->appearance = local_rng.rand();
-						if ( tempItem->appearance % items[tempItem->type].variations != originalVariation )
-						{
-							// we need to match the variation for the new appearance, take the difference so new varation matches
-							int change = (tempItem->appearance % items[tempItem->type].variations - originalVariation);
-							if ( tempItem->appearance < change ) // underflow protection
-							{
-								tempItem->appearance += items[tempItem->type].variations;
-							}
-							tempItem->appearance -= change;
-							int newVariation = tempItem->appearance % items[tempItem->type].variations;
-							assert(newVariation == originalVariation);
-						}
-						auto it = appearancesOfSimilarItems.find(tempItem->appearance);
-						while ( it != appearancesOfSimilarItems.end() && tries > 0 )
-						{
-							tempItem->appearance = local_rng.rand();
-							if ( tempItem->appearance % items[tempItem->type].variations != originalVariation )
-							{
-								// we need to match the variation for the new appearance, take the difference so new varation matches
-								int change = (tempItem->appearance % items[tempItem->type].variations - originalVariation);
-								if ( tempItem->appearance < change ) // underflow protection
-								{
-									tempItem->appearance += items[tempItem->type].variations;
-								}
-								tempItem->appearance -= change;
-								int newVariation = tempItem->appearance % items[tempItem->type].variations;
-								assert(newVariation == originalVariation);
-							}
-							it = appearancesOfSimilarItems.find(tempItem->appearance);
-							--tries;
-						}
+						Item::itemFindUniqueAppearance(tempItem, appearancesOfSimilarItems);
 					}
 
 					if ( multiplayer == CLIENT && itemIsEquipped(tempItem, PLAYER_NUM) && players[PLAYER_NUM]->paperDoll.isItemOnDoll(*tempItem) )
@@ -8640,18 +8604,20 @@ void actPlayer(Entity* my)
 									if ( multiplayer == CLIENT && itemIsEquipped(item2, PLAYER_NUM) )
 									{
 										// if incrementing qty and holding item, then send "equip" for server to update their count of your held item.
-										strcpy((char*)net_packet->data, "EQUS");
-										SDLNet_Write32((Uint32)item2->type, &net_packet->data[4]);
-										SDLNet_Write32((Uint32)item2->status, &net_packet->data[8]);
-										SDLNet_Write32((Uint32)item2->beatitude, &net_packet->data[12]);
-										SDLNet_Write32((Uint32)item2->count, &net_packet->data[16]);
-										SDLNet_Write32((Uint32)item2->appearance, &net_packet->data[20]);
-										net_packet->data[24] = item2->identified;
-										net_packet->data[25] = PLAYER_NUM;
-										net_packet->address.host = net_server.host;
-										net_packet->address.port = net_server.port;
-										net_packet->len = 27;
-										sendPacketSafe(net_sock, -1, net_packet, 0);
+										Item** slot = itemSlot(stats[PLAYER_NUM], item2);
+										if ( slot )
+										{
+											if ( slot == &stats[PLAYER_NUM]->weapon )
+											{
+												clientSendEquipUpdateToServer(EQUIP_ITEM_SLOT_WEAPON, EQUIP_ITEM_SUCCESS_UPDATE_QTY, PLAYER_NUM,
+													item2->type, item2->status, item2->beatitude, item2->count, item2->appearance, item2->identified);
+											}
+											else if ( slot == &stats[PLAYER_NUM]->shield )
+											{
+												clientSendEquipUpdateToServer(EQUIP_ITEM_SLOT_SHIELD, EQUIP_ITEM_SUCCESS_UPDATE_QTY, PLAYER_NUM,
+													item2->type, item2->status, item2->beatitude, item2->count, item2->appearance, item2->identified);
+											}
+										}
 									}
 									if ( tempItem->count <= 0 )
 									{
@@ -8736,77 +8702,7 @@ void actPlayer(Entity* my)
 						{
 							if ( !appearancesOfSimilarItems.empty() )
 							{
-								Uint32 originalAppearance = tempItem->appearance;
-								int originalVariation = originalAppearance % items[tempItem->type].variations;
-
-								int tries = 100;
-								bool robot = false;
-								// we need to find a unique appearance within the list.
-								if ( tempItem->type == TOOL_SENTRYBOT || tempItem->type == TOOL_SPELLBOT || tempItem->type == TOOL_GYROBOT
-									|| tempItem->type == TOOL_DUMMYBOT )
-								{
-									robot = true;
-									tempItem->appearance += (local_rng.rand() % 100000) * 10;
-								}
-								else if ( tempItem->type == MAGICSTAFF_SCEPTER )
-								{
-									tempItem->appearance = ((local_rng.rand() % 10000) * (MAGICSTAFF_SCEPTER_CHARGE_MAX)) + (originalAppearance % MAGICSTAFF_SCEPTER_CHARGE_MAX);
-								}
-								else if ( itemCategory(tempItem) == TOME_SPELL )
-								{
-									tempItem->appearance = ((local_rng.rand() % 10000) * (TOME_APPEARANCE_MAX)) + (originalAppearance % TOME_APPEARANCE_MAX);
-								}
-								else
-								{
-									tempItem->appearance = local_rng.rand();
-									if ( tempItem->appearance % items[tempItem->type].variations != originalVariation )
-									{
-										// we need to match the variation for the new appearance, take the difference so new varation matches
-										int change = (tempItem->appearance % items[tempItem->type].variations - originalVariation);
-										if ( tempItem->appearance < change ) // underflow protection
-										{
-											tempItem->appearance += items[tempItem->type].variations;
-										}
-										tempItem->appearance -= change;
-										int newVariation = tempItem->appearance % items[tempItem->type].variations;
-										assert(newVariation == originalVariation);
-									}
-								}
-								auto it = appearancesOfSimilarItems.find(tempItem->appearance);
-								while ( it != appearancesOfSimilarItems.end() && tries > 0 )
-								{
-									if ( robot )
-									{
-										tempItem->appearance += (local_rng.rand() % 100000) * 10;
-									}
-									else if ( tempItem->type == MAGICSTAFF_SCEPTER )
-									{
-										tempItem->appearance = ((local_rng.rand() % 10000) * (MAGICSTAFF_SCEPTER_CHARGE_MAX)) + (originalAppearance % MAGICSTAFF_SCEPTER_CHARGE_MAX);
-									}
-									else if ( itemCategory(tempItem) == TOME_SPELL )
-									{
-										tempItem->appearance = ((local_rng.rand() % 10000) * (TOME_APPEARANCE_MAX)) + (originalAppearance % TOME_APPEARANCE_MAX);
-									}
-									else
-									{
-										tempItem->appearance = local_rng.rand();
-										if ( tempItem->appearance % items[tempItem->type].variations != originalVariation )
-										{
-											// we need to match the variation for the new appearance, take the difference so new varation matches
-											int change = (tempItem->appearance % items[tempItem->type].variations - originalVariation);
-											if ( tempItem->appearance < change ) // underflow protection
-											{
-												tempItem->appearance += items[tempItem->type].variations;
-											}
-											tempItem->appearance -= change;
-											int newVariation = tempItem->appearance % items[tempItem->type].variations;
-											assert(newVariation == originalVariation);
-										}
-									}
-									it = appearancesOfSimilarItems.find(tempItem->appearance);
-									--tries;
-								}
-
+								Item::itemFindUniqueAppearance(tempItem, appearancesOfSimilarItems);
 							}
 							if ( multiplayer == CLIENT && itemIsEquipped(tempItem, PLAYER_NUM) && players[PLAYER_NUM]->paperDoll.isItemOnDoll(*tempItem) )
 							{
@@ -11397,22 +11293,25 @@ void actPlayer(Entity* my)
 			}
 
 			// bumping into monsters disturbs them
-			if ( hit.entity && !intro && multiplayer != CLIENT )
+			if ( hit.entity && !intro )
 			{
-				if ( !everybodyfriendly && hit.entity->behavior == &actMonster )
+				if ( multiplayer != CLIENT )
 				{
-					bool enemy = my->checkEnemy(hit.entity);
-					if ( enemy && !hit.entity->isInertMimic() )
+					if ( !everybodyfriendly && hit.entity->behavior == &actMonster )
 					{
-						if ( hit.entity->monsterState == MONSTER_STATE_WAIT || (hit.entity->monsterState == MONSTER_STATE_HUNT && hit.entity->monsterTarget == 0) )
+						bool enemy = my->checkEnemy(hit.entity);
+						if ( enemy && !hit.entity->isInertMimic() )
 						{
-							hit.entity->lookAtEntity(*my);
+							if ( hit.entity->monsterState == MONSTER_STATE_WAIT || (hit.entity->monsterState == MONSTER_STATE_HUNT && hit.entity->monsterTarget == 0) )
+							{
+								hit.entity->lookAtEntity(*my);
+							}
 						}
 					}
-				}
-				else if ( stats[PLAYER_NUM]->getEffectActive(EFF_DASH) && hit.entity->behavior == &actDoor )
-				{
-					hit.entity->doorHealth = 0;
+					else if ( stats[PLAYER_NUM]->getEffectActive(EFF_DASH) && hit.entity->behavior == &actDoor )
+					{
+						hit.entity->doorHealth = 0;
+					}
 				}
 
 				if ( hit.entity->behavior == &actDoorFrame &&

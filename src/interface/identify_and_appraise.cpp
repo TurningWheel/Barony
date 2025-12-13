@@ -445,6 +445,7 @@ void Player::Inventory_t::Appraisal_t::appraiseItem(Item* item)
 			timer = 0;
 			current_item = 0;
 		}
+		Item::onItemIdentified(player.playernum, item);
 		if ( item->type == GEM_GLASS )
 		{
 			steamStatisticUpdate(STEAM_STAT_RHINESTONE_COWBOY, STEAM_STAT_INT, 1);

@@ -676,6 +676,8 @@ public:
 	bool unableToEquipDueToSwapWeaponTimer(const int player) const;
 	bool tinkeringBotIsMaxHealth() const;
 	bool isTinkeringItemWithThrownLimit() const;
+	static void onItemIdentified(int player, Item* tempItem);
+	static void itemFindUniqueAppearance(Item* tempItem, std::unordered_set<Uint32>& appearancesOfSimilarItems);
 };
 extern Uint32 itemuids;
 

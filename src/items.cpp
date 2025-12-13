@@ -2248,7 +2248,12 @@ EquipItemResult equipItem(Item* const item, Item** const slot, const int player,
 							Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_APPRAISED, (*slot)->type, 1);
 						}
 					}
+					bool prevIdentified = (*slot)->identified;
 					(*slot)->identified = true;
+					if ( !prevIdentified )
+					{
+						Item::onItemIdentified(player, item);
+					}
 					return EQUIP_ITEM_FAIL_CANT_UNEQUIP;
 				}
 			}
@@ -2361,7 +2366,12 @@ EquipItemResult equipItem(Item* const item, Item** const slot, const int player,
 							Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_APPRAISED, (*slot)->type, 1);
 						}
 					}
+					bool prevIdentified = (*slot)->identified;
 					(*slot)->identified = true;
+					if ( !prevIdentified )
+					{
+						Item::onItemIdentified(player, item);
+					}
 					return EQUIP_ITEM_FAIL_CANT_UNEQUIP;
 				}
 
@@ -3733,18 +3743,20 @@ Item* itemPickup(const int player, Item* const item, Item* addToSpecificInventor
 					if ( multiplayer == CLIENT && player >= 0 && players[player]->isLocalPlayer() && itemIsEquipped(item2, player) )
 					{
 						// if incrementing qty and holding item, then send "equip" for server to update their count of your held item.
-						strcpy((char*)net_packet->data, "EQUS");
-						SDLNet_Write32(static_cast<Uint32>(item2->type), &net_packet->data[4]);
-						SDLNet_Write32(static_cast<Uint32>(item2->status), &net_packet->data[8]);
-						SDLNet_Write32(static_cast<Uint32>(item2->beatitude), &net_packet->data[12]);
-						SDLNet_Write32(static_cast<Uint32>(item2->count), &net_packet->data[16]);
-						SDLNet_Write32(static_cast<Uint32>(item2->appearance), &net_packet->data[20]);
-						net_packet->data[24] = item2->identified;
-						net_packet->data[25] = player;
-						net_packet->address.host = net_server.host;
-						net_packet->address.port = net_server.port;
-						net_packet->len = 27;
-						sendPacketSafe(net_sock, -1, net_packet, 0);
+						Item** slot = itemSlot(stats[player], item2);
+						if ( slot )
+						{
+							if ( slot == &stats[player]->weapon )
+							{
+								clientSendEquipUpdateToServer(EQUIP_ITEM_SLOT_WEAPON, EQUIP_ITEM_SUCCESS_UPDATE_QTY, player,
+									item2->type, item2->status, item2->beatitude, item2->count, item2->appearance, item2->identified);
+							}
+							else if ( slot == &stats[player]->shield )
+							{
+								clientSendEquipUpdateToServer(EQUIP_ITEM_SLOT_SHIELD, EQUIP_ITEM_SUCCESS_UPDATE_QTY, player,
+									item2->type, item2->status, item2->beatitude, item2->count, item2->appearance, item2->identified);
+							}
+						}
 					}
 					item2->ownerUid = item->ownerUid;
 					if ( item->count <= 0 )
@@ -3798,76 +3810,7 @@ Item* itemPickup(const int player, Item* const item, Item* addToSpecificInventor
 		}
 		if ( !appearancesOfSimilarItems.empty() && item && item->type >= 0 && item->type < NUMITEMS )
 		{
-			Uint32 originalAppearance = item->appearance;
-			int originalVariation = originalAppearance % items[item->type].variations;
-
-			int tries = 100;
-			bool robot = false;
-			// we need to find a unique appearance within the list.
-			if ( item->type == TOOL_SENTRYBOT || item->type == TOOL_SPELLBOT || item->type == TOOL_GYROBOT
-				|| item->type == TOOL_DUMMYBOT )
-			{
-				robot = true;
-				item->appearance += (local_rng.rand() % 100000) * 10;
-			}
-			else if ( item->type == MAGICSTAFF_SCEPTER )
-			{
-				item->appearance = ((local_rng.rand() % 10000) * (MAGICSTAFF_SCEPTER_CHARGE_MAX)) + (originalAppearance % MAGICSTAFF_SCEPTER_CHARGE_MAX);
-			}
-			else if ( itemCategory(item) == TOME_SPELL )
-			{
-				item->appearance = ((local_rng.rand() % 10000) * (TOME_APPEARANCE_MAX)) + (originalAppearance % TOME_APPEARANCE_MAX);
-			}
-			else
-			{
-				item->appearance = local_rng.rand();
-				if ( item->appearance % items[item->type].variations != originalVariation )
-				{
-					// we need to match the variation for the new appearance, take the difference so new varation matches
-					int change = (item->appearance % items[item->type].variations - originalVariation);
-					if ( item->appearance < change ) // underflow protection
-					{
-						item->appearance += items[item->type].variations;
-					}
-					item->appearance -= change;
-					int newVariation = item->appearance % items[item->type].variations;
-					assert(newVariation == originalVariation);
-				}
-			}
-			auto it = appearancesOfSimilarItems.find(item->appearance);
-			while ( it != appearancesOfSimilarItems.end() && tries > 0 )
-			{
-				if ( robot )
-				{
-					item->appearance += (local_rng.rand() % 100000) * 10;
-				}
-				else if ( item->type == MAGICSTAFF_SCEPTER )
-				{
-					item->appearance = ((local_rng.rand() % 10000) * (MAGICSTAFF_SCEPTER_CHARGE_MAX)) + (originalAppearance % MAGICSTAFF_SCEPTER_CHARGE_MAX);
-				}
-				else if ( itemCategory(item) == TOME_SPELL )
-				{
-					item->appearance = ((local_rng.rand() % 10000) * (TOME_APPEARANCE_MAX)) + (originalAppearance % TOME_APPEARANCE_MAX);
-				}
-				else
-				{
-					item->appearance = local_rng.rand();
-					if ( item->appearance % items[item->type].variations != originalVariation )
-					{
-						// we need to match the variation for the new appearance, take the difference so new varation matches
-						int change = (item->appearance % items[item->type].variations - originalVariation);
-						if ( item->appearance < change ) // underflow protection
-						{
-							item->appearance += items[item->type].variations;
-						}
-						item->appearance -= change;
-						int newVariation = item->appearance % items[item->type].variations;
-						assert(newVariation == originalVariation);
-					}
-				}
-				it = appearancesOfSimilarItems.find(item->appearance);
-				--tries;
-			}
+			Item::itemFindUniqueAppearance(item, appearancesOfSimilarItems);
 		}
 
 		item2 = newItem(item->type, item->status, item->beatitude, item->count, item->appearance, item->identified, &stats[player]->inventory);
@@ -5646,7 +5589,12 @@ bool Item::canUnequip(const Stat* const wielder)
 						Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_APPRAISED, type, 1);
 					}
 				}
+				bool prevIdentified = identified;
 				identified = true;
+				if ( !prevIdentified )
+				{
+					Item::onItemIdentified(player, this);
+				}
 				return false;
 			}
 			else
@@ -5665,7 +5613,12 @@ bool Item::canUnequip(const Stat* const wielder)
 				Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_APPRAISED, type, 1);
 			}
 		}
+		bool prevIdentified = identified;
 		identified = true;
+		if ( !prevIdentified )
+		{
+			Item::onItemIdentified(player, this);
+		}
 		return false;
 	}
 
@@ -7427,4 +7380,106 @@ int Item::getLootBagNumItems() const
 		return 0;
 	}
 	return 0;
+}
+
+void Item::itemFindUniqueAppearance(Item* tempItem, std::unordered_set<Uint32>& appearancesOfSimilarItems)
+{
+	if ( !appearancesOfSimilarItems.empty() && tempItem )
+	{
+		Uint32 originalAppearance = tempItem->appearance;
+		int originalVariation = originalAppearance % items[tempItem->type].variations;
+
+		int tries = 100;
+		bool robot = false;
+		// we need to find a unique appearance within the list.
+		if ( tempItem->type == TOOL_SENTRYBOT || tempItem->type == TOOL_SPELLBOT || tempItem->type == TOOL_GYROBOT
+			|| tempItem->type == TOOL_DUMMYBOT )
+		{
+			robot = true;
+			tempItem->appearance += (local_rng.rand() % 100000) * 10;
+		}
+		else if ( tempItem->type == MAGICSTAFF_SCEPTER )
+		{
+			tempItem->appearance = ((local_rng.rand() % 10000) * (MAGICSTAFF_SCEPTER_CHARGE_MAX)) + (originalAppearance % MAGICSTAFF_SCEPTER_CHARGE_MAX);
+		}
+		else if ( itemCategory(tempItem) == TOME_SPELL )
+		{
+			tempItem->appearance = ((local_rng.rand() % 10000) * (TOME_APPEARANCE_MAX)) + (originalAppearance % TOME_APPEARANCE_MAX);
+		}
+		else
+		{
+			tempItem->appearance = local_rng.rand();
+			if ( tempItem->appearance % items[tempItem->type].variations != originalVariation )
+			{
+				// we need to match the variation for the new appearance, take the difference so new varation matches
+				int change = (tempItem->appearance % items[tempItem->type].variations - originalVariation);
+				if ( tempItem->appearance < change ) // underflow protection
+				{
+					tempItem->appearance += items[tempItem->type].variations;
+				}
+				tempItem->appearance -= change;
+				int newVariation = tempItem->appearance % items[tempItem->type].variations;
+				assert(newVariation == originalVariation);
+			}
+		}
+		auto it = appearancesOfSimilarItems.find(tempItem->appearance);
+		while ( it != appearancesOfSimilarItems.end() && tries > 0 )
+		{
+			if ( robot )
+			{
+				tempItem->appearance += (local_rng.rand() % 100000) * 10;
+			}
+			else if ( tempItem->type == MAGICSTAFF_SCEPTER )
+			{
+				tempItem->appearance = ((local_rng.rand() % 10000) * (MAGICSTAFF_SCEPTER_CHARGE_MAX)) + (originalAppearance % MAGICSTAFF_SCEPTER_CHARGE_MAX);
+			}
+			else if ( itemCategory(tempItem) == TOME_SPELL )
+			{
+				tempItem->appearance = ((local_rng.rand() % 10000) * (TOME_APPEARANCE_MAX)) + (originalAppearance % TOME_APPEARANCE_MAX);
+			}
+			else
+			{
+				tempItem->appearance = local_rng.rand();
+				if ( tempItem->appearance % items[tempItem->type].variations != originalVariation )
+				{
+					// we need to match the variation for the new appearance, take the difference so new varation matches
+					int change = (tempItem->appearance % items[tempItem->type].variations - originalVariation);
+					if ( tempItem->appearance < change ) // underflow protection
+					{
+						tempItem->appearance += items[tempItem->type].variations;
+					}
+					tempItem->appearance -= change;
+					int newVariation = tempItem->appearance % items[tempItem->type].variations;
+					assert(newVariation == originalVariation);
+				}
+			}
+			it = appearancesOfSimilarItems.find(tempItem->appearance);
+			--tries;
+		}
+	}
+}
+
+void Item::onItemIdentified(int player, Item* tempItem)
+{
+	if ( player >= 0 && player < MAXPLAYERS && players[player]->isLocalPlayer() && stats[player] )
+	{
+		std::unordered_set<Uint32> appearancesOfSimilarItems;
+		for ( node_t* node = stats[player]->inventory.first; node != NULL; node = node->next )
+		{
+			Item* item2 = static_cast<Item*>(node->element);
+			if ( item2 && item2 != tempItem && !itemCompare(tempItem, item2, true) )
+			{
+				// items are the same (incl. appearance!)
+				// if they shouldn't stack, we need to change appearance of the new item.
+				appearancesOfSimilarItems.insert(item2->appearance);
+			}
+		}
+
+		Item::itemFindUniqueAppearance(tempItem, appearancesOfSimilarItems);
+
+		if ( multiplayer == CLIENT && itemIsEquipped(tempItem, player) && players[player]->paperDoll.isItemOnDoll(*tempItem) )
+		{
+			clientSendAppearanceUpdateToServer(player, tempItem, true);
+		}
+	}
 }

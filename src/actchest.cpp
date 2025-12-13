@@ -1358,6 +1358,7 @@ Item* Entity::addItemToChestFromInventory(int player, Item* item, int amount, bo
 				}
 			}
 			item->identified = true;
+			Item::onItemIdentified(player, item);
 			return nullptr;
 		}
 	}
