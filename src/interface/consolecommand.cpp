@@ -5422,6 +5422,7 @@ namespace ConsoleCommands {
 					stat->MAXHP = 5000;
 					stat->CON = 0;
 					stat->LVL = 50;
+					stat->setAttribute("dummy_target", "0");
 					stat->monsterForceAllegiance = Stat::MONSTER_FORCE_PLAYER_ENEMY;
 					serverUpdateEntityStatFlag(monster, 20);
 				}
@@ -5452,6 +5453,7 @@ namespace ConsoleCommands {
 					stat->RANDOM_CON = 0;
 					stat->LVL = 50;
 					stat->setEffectActive(EFF_STUNNED, 1);
+					stat->setAttribute("dummy_target", "0");
 					stat->monsterForceAllegiance = Stat::MONSTER_FORCE_PLAYER_ENEMY;
 					serverUpdateEntityStatFlag(monster, 20);
 					stat->EDITOR_ITEMS[ITEM_SLOT_HELM] = 0;

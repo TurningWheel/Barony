@@ -657,4 +657,3 @@ void loadAchievementData(const char* path);
 void sortAchievementsForDisplay();
 
 real_t getFPSScale(real_t baseFPS);
-extern ConsoleVariable<int> cvar_rapier_toggle;

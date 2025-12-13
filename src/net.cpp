@@ -3255,6 +3255,16 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 					}
 					break;
 				}
+				case PARTICLE_EFFECT_FOCI_LIGHT:
+				{
+					createParticleFociLight(entity, sprite, false);
+					break;
+				}
+				case PARTICLE_EFFECT_FOCI_DARK:
+				{
+					createParticleFociDark(entity, sprite, false);
+					break;
+				}
 				case PARTICLE_EFFECT_PORTAL_SPAWN:
 				{
 					Entity* spellTimer = createParticleTimer(entity, 100, sprite);
@@ -5559,12 +5569,12 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		{
 			if ( spell_t* thespell = copySpell(spell) )
 			{
-		auto node = list_AddNodeLast(&channeledSpells[clientnum]);
-		node->element = thespell;
-		node->size = sizeof(spell_t);
-		//node->deconstructor = &spellDeconstructor_Channeled;
+				auto node = list_AddNodeLast(&channeledSpells[clientnum]);
+				node->element = thespell;
+				node->size = sizeof(spell_t);
+				//node->deconstructor = &spellDeconstructor_Channeled;
 				node->deconstructor = &spellDeconstructor;
-		((spell_t*)(node->element))->sustain_node = node;
+				((spell_t*)(node->element))->sustain_node = node;
 			}
 		}		
 	}},

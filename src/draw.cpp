@@ -2516,6 +2516,11 @@ void drawEntities3D(view_t* camera, int mode)
 					{
 						glDrawSpriteFromImage(camera, entity, Language::get(6464), mode);
 					}
+					else if ( entity->skill[7] == 4 )
+					{
+						snprintf(buf, sizeof(buf), "DPS: %d", entity->skill[0]);
+						glDrawSpriteFromImage(camera, entity, buf, mode);
+					}
 					else
 					{
 						snprintf(buf, sizeof(buf), "%d", entity->skill[0]);

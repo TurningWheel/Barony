@@ -371,6 +371,8 @@ static const int PARTICLE_EFFECT_BLOOD_WAVES_ORBIT = 84;
 static const int PARTICLE_EFFECT_BLOOD_BUBBLE = 85;
 static const int PARTICLE_EFFECT_RADIANT_ORBIT_FOLLOW = 86;
 static const int PARTICLE_EFFECT_HEAT_ORBIT_SPIN = 87;
+static const int PARTICLE_EFFECT_FOCI_LIGHT = 88;
+static const int PARTICLE_EFFECT_FOCI_DARK = 89;
 
 // actmagicIsVertical constants
 static const int MAGIC_ISVERTICAL_NONE = 0;
@@ -413,6 +415,7 @@ static const int PARTICLE_TIMER_ACTION_ROOTS_SINGLE_TILE_VOID = 32;
 static const int PARTICLE_TIMER_ACTION_TRAP_SABOTAGED = 33;
 static const int PARTICLE_TIMER_ACTION_SPLINTER_GEAR = 34;
 static const int PARTICLE_TIMER_ACTION_SPIRIT_WEAPON_ATTACK = 35;
+static const int PARTICLE_TIMER_ACTION_SWEEP_ATTACK = 36;
 
 struct ParticleEmitterHit_t
 {
@@ -1184,6 +1187,8 @@ const char* magicLightColorForSprite(Entity* my, int sprite, bool darker);
 void doParticleEffectForTouchSpell(Entity& my, Entity* focalLimb, Monster monsterType);
 bool magicOnSpellCastEvent(Entity* parent, Entity* projectile, Entity* hitentity, int spellID, Uint32 eventType, int eventValue, bool allowedLevelup = true); // return true on level up
 void freeSpells();
+void createParticleFociLight(Entity* entity, int spellID, bool updateClients);
+void createParticleFociDark(Entity* entity, int spellID, bool updateClients);
 
 struct AOEIndicators_t
 {

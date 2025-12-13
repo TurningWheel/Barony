@@ -3637,7 +3637,8 @@ bool applyGenericMagicDamage(Entity* caster, Entity* hitentity, Entity& damageSo
 			alertTarget = hitentity->monsterAlertBeforeHit(caster);
 
 			// alert the monster!
-			if ( hitentity->monsterState != MONSTER_STATE_ATTACK && (targetStats->type < LICH || targetStats->type >= SHOPKEEPER) )
+			if ( hitentity->monsterState != MONSTER_STATE_ATTACK && (targetStats->type < LICH || targetStats->type >= SHOPKEEPER)
+				&& targetStats->type != GYROBOT )
 			{
 				if ( alertTarget )
 				{

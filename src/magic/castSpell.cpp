@@ -5545,7 +5545,8 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				{
 					messagePlayerColor(caster->isEntityPlayer(), MESSAGE_STATUS, uint32ColorGreen, Language::get(6508));
 					playSoundEntity(caster, 178, 128);
-					spawnMagicEffectParticles(caster->x, caster->y, caster->z, 170);
+					//spawnMagicEffectParticles(caster->x, caster->y, caster->z, 170);
+					createParticleFociLight(caster, SPELL_DIVINE_ZEAL, true);
 				}
 			}
 		}
@@ -6960,7 +6961,8 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							playSoundEntity(fx, 166, 128);
 						}
 
-						spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
+						//spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
+						createParticleFociDark(caster, spell->ID, true);
 						playSoundEntity(caster, 166, 128);
 					}
 					/*for ( node_t* node = map.entities->first; node; node = nextnode )
@@ -7081,6 +7083,22 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						{
 							int charge = castSpellProps->optionalData & (0x7F);
 							Uint8 effectStrength = std::min(4, 1 + (charge / 4));
+							Sint32 CHR = statGetCHR(caster->getStats(), caster);
+							int tier = 1;
+							if ( CHR >= 3 && CHR <= 7 )
+							{
+								tier = 2;
+							}
+							else if ( CHR > 7 && CHR <= 15 )
+							{
+								tier = 3;
+							}
+							else if ( CHR > 15 )
+							{
+								tier = 4;
+							}
+							effectStrength = std::min((Uint8)tier, effectStrength);
+
 							if ( castSpellProps->optionalData & (1 << 7) )
 							{
 								// finishing casting, apply to allies
@@ -7099,7 +7117,8 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 												{
 													playSoundEntity(entity, 168, 128);
 												}
-												spawnMagicEffectParticles(entity->x, entity->y, entity->z, particle);
+												//spawnMagicEffectParticles(entity->x, entity->y, entity->z, particle);
+												createParticleFociLight(caster, spell->ID, true);
 												messagePlayerColor(entity->isEntityPlayer(), MESSAGE_STATUS, makeColorRGB(0, 255, 0),
 													Language::get(langEntry));
 											}
@@ -7132,7 +7151,8 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 											messagePlayerColor(caster->isEntityPlayer(), MESSAGE_STATUS, makeColorRGB(0, 255, 0),
 												Language::get(langEntry));
 										}
-										spawnMagicEffectParticles(caster->x, caster->y, caster->z, particle);
+										//spawnMagicEffectParticles(caster->x, caster->y, caster->z, particle);
+										createParticleFociLight(caster, spell->ID, true);
 									}
 								}
 							}
@@ -8560,6 +8580,13 @@ bool spellIsNaturallyLearnedByRaceOrClass(Entity& caster, Stat& stat, int spellI
 			return true;
 		}
 	}
+	else if ( client_classes[playernum] == CLASS_21 )
+	{
+		if ( spellID == SPELL_ALTER_INSTRUMENT )
+		{
+			return true;
+		}
+	}
 	else if ( client_classes[playernum] == CLASS_22 )
 	{
 		if ( spellID == SPELL_BOOBY_TRAP )
@@ -8577,6 +8604,13 @@ bool spellIsNaturallyLearnedByRaceOrClass(Entity& caster, Stat& stat, int spellI
 	else if ( client_classes[playernum] == CLASS_24 )
 	{
 		if ( spellID == SPELL_MAGICIANS_ARMOR || spellID == SPELL_DEEP_SHADE || spellID == SPELL_PROJECT_SPIRIT )
+		{
+			return true;
+		}
+	}
+	else if ( client_classes[playernum] == CLASS_25 )
+	{
+		if ( spellID == SPELL_DIVINE_ZEAL )
 		{
 			return true;
 		}
@@ -8621,4 +8655,51 @@ bool spellIsNaturallyLearnedByRaceOrClass(Entity& caster, Stat& stat, int spellI
 	}
 
 	return false;
+}
+
+void createParticleFociLight(Entity* entity, int spellID, bool updateClients)
+{
+	if ( !entity ) { return; }
+
+	int sprite = 1866;
+	if ( updateClients )
+	{
+		serverSpawnMiscParticles(entity, PARTICLE_EFFECT_FOCI_LIGHT, spellID);
+	}
+
+	for ( int i = 0; i < 4; ++i )
+	{
+		Entity* fx = createParticleAestheticOrbit(entity, sprite, 2 * TICKS_PER_SECOND, PARTICLE_EFFECT_FOCI_LIGHT);
+		fx->yaw = i * PI / 2 + 3 * PI / 4;
+		fx->fskill[2] = 7.75;
+		fx->fskill[3] = -16.25;
+		fx->fskill[6] = 0.15; // yaw
+		fx->fskill[7] = 0.1;
+		fx->z = 7.75;
+		fx->flags[INVISIBLE] = true;
+		fx->scaley = 1.0;
+	}
+}
+
+void createParticleFociDark(Entity* entity, int spellID, bool updateClients)
+{
+	if ( !entity ) { return; }
+
+	if ( updateClients )
+	{
+		serverSpawnMiscParticles(entity, PARTICLE_EFFECT_FOCI_DARK, spellID);
+	}
+
+	for ( int i = 0; i < 4; ++i )
+	{
+		Entity* fx = createParticleAestheticOrbit(entity, 2374, 2 * TICKS_PER_SECOND, PARTICLE_EFFECT_FOCI_DARK);
+		fx->yaw = i * PI / 2 + 3 * PI / 4;
+		fx->fskill[2] = 7.75;
+		fx->fskill[3] = -16.25;
+		fx->fskill[6] = 0.15; // yaw
+		fx->fskill[7] = 0.1;
+		fx->z = 7.75;
+		fx->flags[INVISIBLE] = true;
+		fx->scaley = 1.0;
+	}
 }

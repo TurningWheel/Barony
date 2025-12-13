@@ -523,18 +523,24 @@ void actFociGib(Entity* my)
 									&& entity->behavior != &::actChest
 									&& entity->behavior != &::actFurniture )
 								{
-									if ( entity->behavior == &actBell && (spell->ID == SPELL_FOCI_FIRE || spell->ID == SPELL_BREATHE_FIRE) )
+									if ( (spell->ID == SPELL_FOCI_FIRE || spell->ID == SPELL_BREATHE_FIRE) )
 									{
-										if ( entityInsideEntity(entity, my) )
+										if ( entity->behavior == &actBell || entity->behavior == &actGreasePuddleSpawner )
 										{
-											if ( entity->SetEntityOnFire(parent) && entity->flags[BURNING] )
+											if ( entityInsideEntity(entity, my) )
 											{
-												if ( parent && parent->behavior == &actPlayer )
+												if ( entity->SetEntityOnFire(parent) && entity->flags[BURNING] )
 												{
-													entity->skill[13] = parent->getUID(); // burning inflicted by for bell
-													if ( parent->behavior == &actPlayer )
+													if ( entity->behavior == &actBell )
 													{
-														messagePlayer(parent->skill[2], MESSAGE_INTERACTION, Language::get(6297));
+														if ( parent && parent->behavior == &actPlayer )
+														{
+															entity->skill[13] = parent->getUID(); // burning inflicted by for bell
+															if ( parent->behavior == &actPlayer )
+															{
+																messagePlayer(parent->skill[2], MESSAGE_INTERACTION, Language::get(6297));
+															}
+														}
 													}
 												}
 											}
@@ -1763,7 +1769,8 @@ void actGreasePuddleSpawner(Entity* my)
 								}
 							}
 						}
-						if ( (entity->behavior == &actCampfire && entity->skill[3] > 0 ) || entity->behavior == &actTorch )
+						if ( (entity->behavior == &actCampfire && entity->skill[3] > 0 ) 
+							|| entity->behavior == &actTorch )
 						{
 							my->SetEntityOnFire(nullptr);
 						}

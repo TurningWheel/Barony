@@ -80,7 +80,8 @@ enum DamageGibDisplayType {
 	DMG_GIB_NUMBER,
 	DMG_GIB_MISS,
 	DMG_GIB_SPRITE,
-	DMG_GIB_GUARD
+	DMG_GIB_GUARD,
+	DMG_GIB_DPS_CHECK
 };
 class EnemyHPDamageBarHandler
 {

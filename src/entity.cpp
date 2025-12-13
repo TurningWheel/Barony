@@ -5512,10 +5512,6 @@ void Entity::handleEffects(Stat* myStats)
 							|| spellID == SPELL_FOCI_LIGHT_SANCTUARY )
 						{
 							holySymbolCharging = true;
-							if ( defendTime == 1 )
-							{
-								playSoundEntity(this, 167, 128); // casting sound
-							}
 						}
 						else if ( spellID == SPELL_FOCI_DARK_LIFE
 							|| spellID == SPELL_FOCI_DARK_RIFT
@@ -5524,10 +5520,6 @@ void Entity::handleEffects(Stat* myStats)
 							|| spellID == SPELL_FOCI_DARK_VENGEANCE )
 						{
 							darkIconCharging = true;
-							if ( defendTime == 1 )
-							{
-								playSoundEntity(this, 167, 128); // casting sound
-							}
 						}
 						fociCharging = true;
 						if ( players[player]->mechanics.lastFociHeldType != myStats->shield->type )
@@ -5547,6 +5539,19 @@ void Entity::handleEffects(Stat* myStats)
 							this, myStats, this);
 						if ( defendTime >= chargeTimeInit )
 						{
+							if ( defendTime == chargeTimeInit )
+							{
+								if ( holySymbolCharging )
+								{
+									playSoundEntity(this, 167, 128); // casting sound
+									createParticleFociLight(this, spellID, true);
+								}
+								else if ( darkIconCharging )
+								{
+									playSoundEntity(this, 167, 128); // casting sound
+								}
+							}
+
 							static ConsoleVariable<float> cvar_foci_charge("/foci_charge", 1.f);
  							int chargeTime = getSpellPropertyFromID(spell_t::SPELLPROP_FOCI_REFIRE_TICKS, spellID,
 								this, myStats, this);
@@ -5669,6 +5674,7 @@ void Entity::handleEffects(Stat* myStats)
 											players[player]->mechanics.fociDarkChargeTime++;
 											players[player]->mechanics.fociDarkChargeTime = std::min(127, players[player]->mechanics.fociDarkChargeTime);
 											props.optionalData = players[player]->mechanics.fociDarkChargeTime;
+											createParticleFociDark(this, spellID, true);
 										}
 
 										if ( spellID == SPELL_FOCI_DARK_LIFE
@@ -7738,6 +7744,36 @@ void Entity::handleEffects(Stat* myStats)
 		serverUpdateEffects(player);
 	}
 	
+	if ( (myStats->type == DUMMYBOT || myStats->type == HUMAN) && myStats->getAttribute("dummy_target") != "" )
+	{
+		if ( myStats->getAttribute("dummy_ticks") == "" )
+		{
+			myStats->setAttribute("dummy_ticks", std::to_string(this->ticks));
+		}
+		Uint32 dummyTick = std::stoi(myStats->getAttribute("dummy_ticks"));
+		int damage = std::stoi(myStats->getAttribute("dummy_target"));
+		if ( myStats->HP < myStats->OLDHP )
+		{
+			damage += myStats->OLDHP - myStats->HP;
+			myStats->setAttribute("dummy_target", std::to_string(damage));
+		}
+		if ( damage == 0 )
+		{
+			myStats->setAttribute("dummy_ticks", std::to_string(this->ticks));
+		}
+		if ( this->ticks - dummyTick >= 5 * TICKS_PER_SECOND )
+		{
+			myStats->setAttribute("dummy_ticks", std::to_string(this->ticks));
+			myStats->setAttribute("dummy_target", "0");
+			int dps = damage / ((this->ticks - dummyTick) / (real_t)(5 * TICKS_PER_SECOND));
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				messagePlayer(i, MESSAGE_HINT, "DPS: %d", dps);
+			}
+			spawnDamageGib(this, dps, DMG_STRONGER, DamageGibDisplayType::DMG_GIB_DPS_CHECK, true);
+		}
+	}
+
 	myStats->OLDHP = myStats->HP;
 }
 
@@ -9636,7 +9672,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 			players[player]->entity->skill[10] = 0; // PLAYER_ATTACKTIME
 			if ( pose == MONSTER_POSE_SPECIAL_WINDUP1 || pose == PLAYER_POSE_GOLEM_SMASH 
 				|| pose == MONSTER_POSE_SPECIAL_WINDUP2
-				|| (pose == MONSTER_POSE_PARRY && *cvar_rapier_toggle != 3) )
+				|| (pose == MONSTER_POSE_PARRY) )
 			{
 				players[player]->entity->skill[9] = pose; // PLAYER_ATTACK
 				if ( pose == MONSTER_POSE_SPECIAL_WINDUP1 || pose == MONSTER_POSE_SPECIAL_WINDUP2
@@ -9866,7 +9902,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 		if ( multiplayer == SERVER )
 		{
-			if ( player >= 0 && player < MAXPLAYERS )
+			if ( pose == MONSTER_POSE_SWEEP_ATTACK_NO_UPDATE )
+			{
+				// don't update aoe hits
+			}
+			else if ( player >= 0 && player < MAXPLAYERS )
 			{
 				serverUpdateEntitySkill(players[player]->entity, 9);
 				serverUpdateEntitySkill(players[player]->entity, 10);
@@ -9966,6 +10006,18 @@ void Entity::attack(int pose, int charge, Entity* target)
 			&& target == nullptr )
 		{
 			return; // don't hit basic hits, only slide through targeted hits
+		}
+
+		Entity* sweepAttackTimer = nullptr;
+		if ( player >= 0 
+			&& pose == 2 && !shapeshifted && myStats->weapon && myStats->weapon->type == CLAYMORE_SWORD
+			&& charge >= Stat::getMaxAttackCharge(myStats) / 2 
+			&& target == nullptr )
+		{
+			sweepAttackTimer = createParticleTimer(this, 3, -1);
+			sweepAttackTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_SWEEP_ATTACK;
+
+			playSoundEntity(this, 770 + local_rng.rand() % 4, 108); // whoosh noise
 		}
 
 		bool magicstaffStrike = false;
@@ -10771,8 +10823,23 @@ void Entity::attack(int pose, int charge, Entity* target)
 			}
 			else
 			{
-				playSoundEntity(this, 23 + local_rng.rand() % 5, 128); // whoosh noise
 				dist = lineTrace(this, x, y, yaw, strikeRange, LINETRACE_ATK_CHECK_FRIENDLYFIRE, false);
+				if ( sweepAttackTimer )
+				{
+					// already played the sound
+					if ( hit.entity )
+					{
+						if ( auto hitProps = getParticleEmitterHitProps(sweepAttackTimer->getUID(), hit.entity) )
+						{
+							hitProps->hits++;
+							hitProps->tick = ::ticks;
+						}
+					}
+				}
+				else
+				{
+					playSoundEntity(this, 23 + local_rng.rand() % 5, 128); // whoosh noise
+				}
 			}
 
 			if ( hit.entity && (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer) )
@@ -11998,9 +12065,9 @@ void Entity::attack(int pose, int charge, Entity* target)
 									zealSmite = true;
 									particle = true;
 									effect = true;
-									weaponMultipliers += getSpellEffectDurationSecondaryFromID(SPELL_DIVINE_ZEAL, nullptr, nullptr, nullptr) / 100.0;
-									int tier = std::max(0, (myStats->getEffectActive(EFF_DIVINE_ZEAL) - 1));
-									weaponMultipliers += tier * getSpellDamageSecondaryFromID(SPELL_DIVINE_ZEAL, nullptr, nullptr, nullptr) / 100.0;
+									real_t bonus = getSpellDamageFromID(SPELL_DIVINE_ZEAL, this, myStats, this) / 100.0;
+									bonus = std::min(bonus, getSpellDamageSecondaryFromID(SPELL_DIVINE_ZEAL, nullptr, nullptr, nullptr) / 100.0);
+									weaponMultipliers += bonus;
 								}
 								if ( myStats->getEffectActive(EFF_FOCI_LIGHT_JUSTICE) )
 								{
@@ -12057,7 +12124,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 				}
 				if ( hitsuccess ) */
 				{
-					if ( myStats->weapon && myStats->weapon->type == RAPIER && !shapeshifted )
+					/*if ( myStats->weapon && myStats->weapon->type == RAPIER && !shapeshifted )
 					{
 						if ( *cvar_rapier_toggle == 3 )
 						{
@@ -12070,7 +12137,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								myStats->parrying = 15;
 							}
 						}
-					}
+					}*/
 
 					Sint32 parriedDamage = 0;
 					int parriedSkill = -1;
@@ -12357,7 +12424,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 					}
 					
-					if ( hitstats->type == DUMMYBOT )
+					if ( hitstats->type == DUMMYBOT && hitstats->getAttribute("dummy_target") == "" )
 					{
 						// higher level dummy bots have damage cap limits on hit.
 						if ( myStats->type != MINOTAUR && myStats->type != LICH_FIRE )
@@ -12403,6 +12470,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						thornsAllowZeroDmg = true;
 						if ( playerhit >= 0 )
 						{
+							hit.entity->modMP(-1);
 							players[playerhit]->mechanics.updateSustainedSpellEvent(SPELL_THORNS, thorn * 5.0, 1.0);
 						}
 						thornsEffect += thorn;
@@ -12416,6 +12484,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						thornsAllowZeroDmg = true;
 						if ( playerhit >= 0 )
 						{
+							hit.entity->modMP(-1);
 							players[playerhit]->mechanics.updateSustainedSpellEvent(SPELL_BLADEVINES, thorn * 5.0, 1.0);
 						}
 						thornsEffect += thorn;
@@ -14875,11 +14944,15 @@ void Entity::attack(int pose, int charge, Entity* target)
 							parriedDamage = std::max(0, parriedDamage);
 						}
 
-						this->modHP(-parriedDamage);
 						spawnBang(this->x + cos(this->yaw) * 2, this->y + sin(this->yaw) * 2, 0);
-						if ( myStats->HP <= 0 && myStats->OLDHP > myStats->HP )
+
+						if ( hitstats->weapon && hitstats->weapon->type == RAPIER )
 						{
-							hit.entity->awardXP(this, true, true);
+							this->modHP(-parriedDamage);
+							if ( myStats->HP <= 0 && myStats->OLDHP > myStats->HP )
+							{
+								hit.entity->awardXP(this, true, true);
+							}
 						}
 
 						if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
@@ -30169,6 +30242,10 @@ void Entity::alertAlliesOnBeingHit(Entity* attacker, std::unordered_set<Entity*>
 			Stat* buddystats = entity->getStats();
 			if ( buddystats != nullptr )
 			{
+				if ( buddystats->type == GYROBOT )
+				{
+					continue;
+				}
 				if ( (buddystats->type == SHOPKEEPER || entity->monsterCanTradeWith(-1)) && hitstats->type != SHOPKEEPER )
 				{
 					continue; // shopkeepers don't care about hitting humans/robots etc.

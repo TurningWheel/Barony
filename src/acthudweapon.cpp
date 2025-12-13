@@ -46,8 +46,9 @@ static ConsoleVariable<float> cvar_hudweapon_y_spd("/hudweapon_y_spd", 1.0);
 static ConsoleVariable<float> cvar_hudweapon_z_ang("/hudweapon_z_ang", 0.0);
 static ConsoleVariable<float> cvar_hudweapon_z_spd("/hudweapon_z_spd", 0.0);
 static ConsoleVariable<float> cvar_hudweapon_timescale("/hudweapon_timescale", 0.5);
-static ConsoleVariable<float> cvar_hudweapon_timescale2("/hudweapon_timescale2", 1.0);
+static ConsoleVariable<float> cvar_hudweapon_timescale2("/hudweapon_timescale2", 0.675);
 static ConsoleVariable<float> cvar_hudweapon_timescale3("/hudweapon_timescale3", 1.0);
+static ConsoleVariable<int> cvar_claymore_toggle("/claymore_toggle", 0);
 void hudWeaponAnimateVariable(real_t& variable, real_t target, real_t speed)
 {
 	if ( variable < target )
@@ -59,6 +60,7 @@ void hudWeaponAnimateVariable(real_t& variable, real_t target, real_t speed)
 		variable = std::max(variable - speed * *cvar_hudweapon_timescale, target);
 	}
 }
+static Uint32 parryTick = 0;
 
 struct HUDFlail_t
 {
@@ -396,7 +398,6 @@ void actHudArm(Entity* my)
 #define HUDWEAPON_OLDVIBRATEX my->fskill[6]
 #define HUDWEAPON_OLDVIBRATEY my->fskill[7]
 #define HUDWEAPON_OLDVIBRATEZ my->fskill[8]
-ConsoleVariable<int> cvar_rapier_toggle("/rapier_toggle", 0);
 enum CrossbowAnimState : int
 {
 	CROSSBOW_ANIM_NONE,
@@ -1099,6 +1100,7 @@ void actHudWeapon(Entity* my)
 	bool whip = !hideWeapon && stats[HUDWEAPON_PLAYERNUM]->weapon && stats[HUDWEAPON_PLAYERNUM]->weapon->type == TOOL_WHIP;
 	bool bearTrap = !hideWeapon && stats[HUDWEAPON_PLAYERNUM]->weapon && stats[HUDWEAPON_PLAYERNUM]->weapon->type == TOOL_BEARTRAP;
 	bool rapier = stats[HUDWEAPON_PLAYERNUM]->weapon && !hideWeapon && stats[HUDWEAPON_PLAYERNUM]->weapon->type == RAPIER;
+	bool claymore = stats[HUDWEAPON_PLAYERNUM]->weapon && !hideWeapon && stats[HUDWEAPON_PLAYERNUM]->weapon->type == CLAYMORE_SWORD;
 
 	// main animation
 	if ( HUDWEAPON_CHOP == 0 )
@@ -1967,58 +1969,85 @@ void actHudWeapon(Entity* my)
 		{
 			HUDWEAPON_MOVEZ -= .65;
 		}
+
+		bool parry = (claymore) && input.binaryToggle("Defend");
+
 		if ( HUDWEAPON_MOVEZ < targetZ )
 		{
 			HUDWEAPON_MOVEZ = targetZ;
 			if ( HUDWEAPON_PITCH == targetPitch && HUDWEAPON_ROLL == 0 && HUDWEAPON_YAW == 0 && HUDWEAPON_MOVEX == targetX && HUDWEAPON_MOVEY == targetY )
 			{
-				if ( !swingweapon && flail && HUDWEAPON_OVERCHARGE == 0 )
+				if ( claymore && (HUDWEAPON_OVERCHARGE > 0 
+					|| (*cvar_claymore_toggle == 2 && HUDWEAPON_CHARGE >= Stat::getMaxAttackCharge(stats[HUDWEAPON_PLAYERNUM]) / 2)) )
+				{
+					if ( *cvar_claymore_toggle == 2 )
+					{
+						HUDWEAPON_CHARGE = Stat::getMaxAttackCharge(stats[HUDWEAPON_PLAYERNUM]);
+					}
+					HUDWEAPON_CHOP = 4;
+				}
+				else if ( !swingweapon && flail && HUDWEAPON_OVERCHARGE == 0 )
 				{
 					HUDWEAPON_CHARGE = 0;
 					HUDWEAPON_OVERCHARGE = 0;
 					HUDWEAPON_CHOP = 24;
 				}
-				else if ( !swingweapon )
+				else if ( !swingweapon || parry )
 				{
 					HUDWEAPON_CHOP++;
-					if ( !bearTrap )
+					if ( parry )
 					{
-						players[HUDWEAPON_PLAYERNUM]->entity->attack(1, HUDWEAPON_CHARGE, nullptr);
+						input.consumeBinaryToggle("Defend");
+						HUDWEAPON_CHOP = 21;
+						players[HUDWEAPON_PLAYERNUM]->entity->attack(MONSTER_POSE_PARRY, 35, nullptr);
+						HUDWEAPON_MOVEX = 0.0;
+						HUDWEAPON_MOVEY = -1;
+						HUDWEAPON_MOVEZ = -2;
+						HUDWEAPON_YAW = 2 * PI / 5;
+						HUDWEAPON_PITCH = 0.2;
+						HUDWEAPON_ROLL = -2 * PI / 5;
 					}
-					if ( stats[HUDWEAPON_PLAYERNUM]->weapon
-						&& (stats[HUDWEAPON_PLAYERNUM]->weapon->type == CROSSBOW 
-							|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == HEAVY_CROSSBOW
-							|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == BLACKIRON_CROSSBOW) )
+					else
 					{
-						throwGimpTimer = 40; // fix for swapping weapon to crossbow while charging.
-					}
-					else if ( (stats[HUDWEAPON_PLAYERNUM]->weapon
-						&& stats[HUDWEAPON_PLAYERNUM]->weapon->type == TOOL_PICKAXE) || whip )
-					{
-						if ( pickaxeGimpTimer < 20 )
+						if ( !bearTrap )
 						{
-							pickaxeGimpTimer = 20; // fix for swapping weapon from pickaxe causing issues.
+							players[HUDWEAPON_PLAYERNUM]->entity->attack(1, HUDWEAPON_CHARGE, nullptr);
 						}
-					}
-
-
-					if ( multiplayer == CLIENT && (thrownWeapon || (stats[HUDWEAPON_PLAYERNUM]->weapon && itemCategory(stats[HUDWEAPON_PLAYERNUM]->weapon) == POTION)) )
-					{
-						Item* item = stats[HUDWEAPON_PLAYERNUM]->weapon;
-						if ( item )
+						if ( stats[HUDWEAPON_PLAYERNUM]->weapon
+							&& (stats[HUDWEAPON_PLAYERNUM]->weapon->type == CROSSBOW 
+								|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == HEAVY_CROSSBOW
+								|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == BLACKIRON_CROSSBOW) )
 						{
-							item->count--;
-							if ( item->count <= 0 )
+							throwGimpTimer = 40; // fix for swapping weapon to crossbow while charging.
+						}
+						else if ( (stats[HUDWEAPON_PLAYERNUM]->weapon
+							&& stats[HUDWEAPON_PLAYERNUM]->weapon->type == TOOL_PICKAXE) || whip )
+						{
+							if ( pickaxeGimpTimer < 20 )
 							{
-								if ( item->node )
+								pickaxeGimpTimer = 20; // fix for swapping weapon from pickaxe causing issues.
+							}
+						}
+
+
+						if ( multiplayer == CLIENT && (thrownWeapon || (stats[HUDWEAPON_PLAYERNUM]->weapon && itemCategory(stats[HUDWEAPON_PLAYERNUM]->weapon) == POTION)) )
+						{
+							Item* item = stats[HUDWEAPON_PLAYERNUM]->weapon;
+							if ( item )
+							{
+								item->count--;
+								if ( item->count <= 0 )
 								{
-									list_RemoveNode(item->node);
+									if ( item->node )
+									{
+										list_RemoveNode(item->node);
+									}
+									else
+									{
+										free(item);
+									}
+									stats[HUDWEAPON_PLAYERNUM]->weapon = NULL;
 								}
-								else
-								{
-									free(item);
-								}
-								stats[HUDWEAPON_PLAYERNUM]->weapon = NULL;
 							}
 						}
 					}
@@ -2154,7 +2183,20 @@ void actHudWeapon(Entity* my)
 				{
 					if ( stats[HUDWEAPON_PLAYERNUM]->weapon->type != TOOL_PICKAXE && itemCategory(item) != THROWN )
 					{
-						HUDWEAPON_CHOP = 4;
+						if ( claymore )
+						{
+							HUDWEAPON_CHOP = 7;
+							HUDWEAPON_YAW = 3 * PI / 4;
+							HUDWEAPON_MOVEX = sin(HUDWEAPON_YAW) * 1;
+							HUDWEAPON_MOVEY = cos(HUDWEAPON_YAW) * -6;
+							HUDWEAPON_MOVEZ = -4;
+							HUDWEAPON_PITCH = 0.0;
+							HUDWEAPON_ROLL = - PI / 2;
+						}
+						else
+						{
+							HUDWEAPON_CHOP = 4;
+						}
 					}
 					else
 					{
@@ -2314,6 +2356,22 @@ void actHudWeapon(Entity* my)
 			rateY = .55;
 			rateRoll = .35;
 		}
+		else if ( claymore )
+		{
+			real_t factor = 0.75;
+			rateY *= factor;
+			rateRoll *= factor;
+			HUDWEAPON_PITCH -= 0.25 * factor;
+			if ( HUDWEAPON_PITCH < targetPitch )
+			{
+				HUDWEAPON_PITCH = targetPitch;
+			}
+			HUDWEAPON_YAW -= 0.25;
+			if ( HUDWEAPON_YAW < 0.0 )
+			{
+				HUDWEAPON_YAW = 0.0;
+			}
+		}
 		else
 		{
 			HUDWEAPON_YAW = 0;
@@ -2345,7 +2403,7 @@ void actHudWeapon(Entity* my)
 			HUDWEAPON_ROLL = targetRoll;
 			if (HUDWEAPON_PITCH == targetPitch && HUDWEAPON_MOVEX == 0 && HUDWEAPON_MOVEY == targetY && HUDWEAPON_MOVEZ == targetZ)
 			{
-				if (!swingweapon)
+				if (!swingweapon || claymore )
 				{
 					HUDWEAPON_CHOP++;
 					if ( !bearTrap )
@@ -2364,6 +2422,10 @@ void actHudWeapon(Entity* my)
 					if (players[HUDWEAPON_PLAYERNUM]->entity->skill[3] == 0)   // debug cam OFF
 					{
 						camera_shakex += .07;
+						if ( claymore )
+						{
+							camera_shakex += .07;
+						}
 					}
 					if ( whip && pickaxeGimpTimer < 20 )
 					{
@@ -2409,6 +2471,17 @@ void actHudWeapon(Entity* my)
 				HUDWEAPON_MOVEY += 10;
 			}
 		}
+		else if ( claymore )
+		{
+			HUDWEAPON_MOVEX = sin(HUDWEAPON_YAW) * 1;
+			HUDWEAPON_MOVEY = cos(HUDWEAPON_YAW) * -6;
+			HUDWEAPON_YAW += .25;
+			if ( HUDWEAPON_YAW > (3 * PI) / 4 )
+			{
+				HUDWEAPON_YAW = (3 * PI) / 4;
+				HUDWEAPON_CHOP++;
+			}
+		}
 		else
 		{
 			HUDWEAPON_MOVEX = sin(HUDWEAPON_YAW) * 1;
@@ -2429,7 +2502,11 @@ void actHudWeapon(Entity* my)
 			if ( stats[HUDWEAPON_PLAYERNUM]->weapon && !hideWeapon )
 			{
 				int weaponSkill = getWeaponSkill(stats[HUDWEAPON_PLAYERNUM]->weapon);
-				if ( weaponSkill == PRO_SWORD || stats[HUDWEAPON_PLAYERNUM]->weapon->type == STEEL_HALBERD )
+				if ( claymore && *cvar_claymore_toggle == 1 )
+				{
+					HUDWEAPON_CHOP = 1;
+				}
+				else if ( weaponSkill == PRO_SWORD || stats[HUDWEAPON_PLAYERNUM]->weapon->type == STEEL_HALBERD )
 				{
 					HUDWEAPON_CHOP = 7;  // swords + halberds can stab
 				}
@@ -2540,11 +2617,7 @@ void actHudWeapon(Entity* my)
 		}
 		HUDWEAPON_ROLL -= .15;
 
-		bool parry = false;
-		if ( *cvar_rapier_toggle == 0 )
-		{
-			parry = rapier && input.binaryToggle("Defend");
-		}
+		bool parry = (rapier || claymore) && input.binaryToggle("Defend");
 
 		if (HUDWEAPON_ROLL < -2 * PI / 5)
 		{
@@ -2552,35 +2625,28 @@ void actHudWeapon(Entity* my)
 			if (HUDWEAPON_PITCH == pitchLimit && HUDWEAPON_YAW == result 
 				&& HUDWEAPON_MOVEX == 0 && HUDWEAPON_MOVEY == -1 && (HUDWEAPON_MOVEZ == -2))
 			{
+				if ( claymore 
+					&& (HUDWEAPON_OVERCHARGE > 0 
+						|| (*cvar_claymore_toggle == 2 && HUDWEAPON_CHARGE >= Stat::getMaxAttackCharge(stats[HUDWEAPON_PLAYERNUM]) / 2)) )
+				{
+					if ( *cvar_claymore_toggle == 2 )
+					{
+						HUDWEAPON_CHARGE = Stat::getMaxAttackCharge(stats[HUDWEAPON_PLAYERNUM]);
+					}
+					HUDWEAPON_CHOP = 4;
+				}
 				if ( (!swingweapon || parry) && HUDWEAPON_DELAY_TICK == 0)
 				{
 					HUDWEAPON_CHOP++;
-					if ( rapier )
+					if ( parry )
 					{
-						if ( *cvar_rapier_toggle == 1 || *cvar_rapier_toggle == 3 )
-						{
-							parry = HUDWEAPON_CHARGE < Stat::getMaxAttackCharge(stats[HUDWEAPON_PLAYERNUM]);
-						}
-						if ( parry )
-						{
-							if ( *cvar_rapier_toggle == 0 )
-							{
-								input.consumeBinaryToggle("Defend");
-							}
-							HUDWEAPON_CHOP = 21;
-							if ( *cvar_rapier_toggle == 3 )
-							{
-								players[HUDWEAPON_PLAYERNUM]->entity->attack(MONSTER_POSE_PARRY, HUDWEAPON_CHARGE, nullptr);
-							}
-							else
-							{
-								players[HUDWEAPON_PLAYERNUM]->entity->attack(MONSTER_POSE_PARRY, 35, nullptr);
-							}
-						}
-						else
-						{
-							players[HUDWEAPON_PLAYERNUM]->entity->attack(3, HUDWEAPON_CHARGE, nullptr);
-						}
+						input.consumeBinaryToggle("Defend");
+						HUDWEAPON_CHOP = 21;
+						players[HUDWEAPON_PLAYERNUM]->entity->attack(MONSTER_POSE_PARRY, 35, nullptr);
+					}
+					else if ( rapier )
+					{
+						players[HUDWEAPON_PLAYERNUM]->entity->attack(3, HUDWEAPON_CHARGE, nullptr);
 					}
 					else if ( !bearTrap && !flail )
 					{
@@ -2695,7 +2761,12 @@ void actHudWeapon(Entity* my)
 				}
 				else if ( !(stats[HUDWEAPON_PLAYERNUM]->weapon && stats[HUDWEAPON_PLAYERNUM]->weapon->type == TOOL_BEARTRAP) )
 				{
-					if ( rapier )
+					if ( claymore && *cvar_claymore_toggle == 1 )
+					{
+						HUDWEAPON_CHARGE = Stat::getMaxAttackCharge(stats[HUDWEAPON_PLAYERNUM]);
+						HUDWEAPON_CHOP = 4;
+					}
+					else if ( rapier )
 					{
 						HUDWEAPON_CHOP = 7;
 					}
@@ -3357,22 +3428,37 @@ void actHudWeapon(Entity* my)
 	}
 	else if ( HUDWEAPON_CHOP == 21 )     // parry
 	{
+		if ( parryTick == 0 )
+		{
+			parryTick = my->ticks;
+		}
 		//HUDWEAPON_MOVEX = std::min(static_cast<real_t>(1.0), HUDWEAPON_MOVEX + .15); // forward/back
 		//HUDWEAPON_MOVEY = std::min(static_cast<real_t>(1.0), HUDWEAPON_MOVEY + .25); // left/right
 		//HUDWEAPON_MOVEZ = std::min(static_cast<real_t>(0.0), HUDWEAPON_MOVEZ + .05); // up/down
 		real_t spd = 1.0;
+
+		real_t z_ang = *cvar_hudweapon_z_ang;
+		real_t z_spd = *cvar_hudweapon_z_spd;
+		real_t roll_ang = *cvar_hudweapon_roll_ang;
+		if ( rapier )
+		{
+			z_ang -= 4.0;
+			z_spd = 1.0;
+			roll_ang += -1.0;
+		}
+
 		hudWeaponAnimateVariable(HUDWEAPON_MOVEX, *cvar_hudweapon_x_ang, *cvar_hudweapon_x_spd * spd);
 		hudWeaponAnimateVariable(HUDWEAPON_MOVEY, *cvar_hudweapon_y_ang, *cvar_hudweapon_y_spd * spd);
-		hudWeaponAnimateVariable(HUDWEAPON_MOVEZ, *cvar_hudweapon_z_ang, *cvar_hudweapon_z_spd * spd);
+		hudWeaponAnimateVariable(HUDWEAPON_MOVEZ, z_ang, z_spd * spd);
 		hudWeaponAnimateVariable(HUDWEAPON_PITCH, *cvar_hudweapon_pitch_ang, *cvar_hudweapon_pitch_spd * spd);
-		hudWeaponAnimateVariable(HUDWEAPON_ROLL, *cvar_hudweapon_roll_ang, *cvar_hudweapon_roll_spd * spd);
+		hudWeaponAnimateVariable(HUDWEAPON_ROLL, roll_ang, *cvar_hudweapon_roll_spd * spd);
 		hudWeaponAnimateVariable(HUDWEAPON_YAW, *cvar_hudweapon_yaw_ang, *cvar_hudweapon_yaw_spd * spd);
-		if ( (abs(HUDWEAPON_ROLL - *cvar_hudweapon_roll_ang) < 0.001 || *cvar_hudweapon_roll_spd == 0.f)
+		if ( (abs(HUDWEAPON_ROLL - roll_ang) < 0.001 || *cvar_hudweapon_roll_spd == 0.f)
 			&& (abs(HUDWEAPON_PITCH - *cvar_hudweapon_pitch_ang) < 0.001 || *cvar_hudweapon_pitch_spd == 0.f)
 			&& (abs(HUDWEAPON_YAW - *cvar_hudweapon_yaw_ang) < 0.001 || *cvar_hudweapon_yaw_spd == 0.f)
 			&& (abs(HUDWEAPON_MOVEX - *cvar_hudweapon_x_ang) < 0.001 || *cvar_hudweapon_x_spd == 0.f)
 			&& (abs(HUDWEAPON_MOVEY - *cvar_hudweapon_y_ang) < 0.001 || *cvar_hudweapon_y_spd == 0.f)
-			&& (abs(HUDWEAPON_MOVEZ - *cvar_hudweapon_z_ang) < 0.001 || *cvar_hudweapon_z_spd == 0.f) )
+			&& (abs(HUDWEAPON_MOVEZ - z_ang) < 0.001 || z_spd == 0.f) )
 		{
 			HUDWEAPON_CHOP = 22;
 		}
@@ -3395,17 +3481,56 @@ void actHudWeapon(Entity* my)
 		{
 			real_t scale = *cvar_hudweapon_timescale2;
 			real_t scaleRoll = *cvar_hudweapon_timescale3;
-			hudWeaponAnimateVariable(HUDWEAPON_MOVEX, 0.0, 0.25 * scale);
-			hudWeaponAnimateVariable(HUDWEAPON_MOVEY, 0.0, 1.0 * scale);
-			hudWeaponAnimateVariable(HUDWEAPON_MOVEZ, 0.0, 0.25 * scale);
-			hudWeaponAnimateVariable(HUDWEAPON_PITCH, 0.0, 0.1 * scale);
-			hudWeaponAnimateVariable(HUDWEAPON_ROLL, 0.0, 0.025 * scaleRoll);
-			hudWeaponAnimateVariable(HUDWEAPON_YAW, -.1, 0.2 * scale);
+			//hudWeaponAnimateVariable(HUDWEAPON_MOVEX, 0.0, 0.25 * scale);
+			//hudWeaponAnimateVariable(HUDWEAPON_MOVEY, 0.0, 1.0 * scale);
+			//hudWeaponAnimateVariable(HUDWEAPON_MOVEZ, 0.0, 0.25 * scale);
+			//hudWeaponAnimateVariable(HUDWEAPON_PITCH, 0.0, 0.1 * scale);
+			//hudWeaponAnimateVariable(HUDWEAPON_ROLL, 0.0, 0.025 * scaleRoll);
+			//hudWeaponAnimateVariable(HUDWEAPON_YAW, -.1, 0.2 * scale);
+			HUDWEAPON_MOVEX *= scale;
+			HUDWEAPON_MOVEY *= scale;
+			HUDWEAPON_MOVEZ *= scale;
+			HUDWEAPON_YAW = HUDWEAPON_YAW + (-.1 - HUDWEAPON_YAW) * (1.0 - scale);
+			HUDWEAPON_PITCH *= scale;
+			HUDWEAPON_ROLL *= scale;
+			if ( abs(HUDWEAPON_MOVEX) < 0.01 )
+			{
+				HUDWEAPON_MOVEX = 0;
+			}
+			if ( abs(HUDWEAPON_MOVEY) < 0.01 )
+			{
+				HUDWEAPON_MOVEY = 0;
+			}
+			if ( abs(HUDWEAPON_MOVEZ) < 0.01 )
+			{
+				HUDWEAPON_MOVEZ = 0;
+			}
+			if ( abs(-.1 - HUDWEAPON_YAW) < 0.01 )
+			{
+				HUDWEAPON_YAW = -.1;
+			}
+			if ( abs(HUDWEAPON_PITCH) < 0.01 )
+			{
+				HUDWEAPON_PITCH = 0;
+			}
+			if ( abs(HUDWEAPON_ROLL) < 0.01 )
+			{
+				HUDWEAPON_ROLL = 0;
+			}
 			if ( HUDWEAPON_YAW == -.1 && HUDWEAPON_ROLL == 0 && HUDWEAPON_PITCH == 0 && HUDWEAPON_MOVEZ == 0 && HUDWEAPON_MOVEY == 0 && HUDWEAPON_MOVEX == 0 )
 			{
-				if ( swingweapon && rapier )
+				//messagePlayer(0, MESSAGE_DEBUG, "Parry ticks: %d", my->ticks - parryTick);
+				parryTick = 0;
+				if ( swingweapon && (rapier || claymore) )
 				{
-					HUDWEAPON_CHOP = 7;
+					if ( claymore && *cvar_claymore_toggle == 1)
+					{
+						HUDWEAPON_CHOP = 1;
+					}
+					else
+					{
+						HUDWEAPON_CHOP = 7;
+					}
 				}
 				else
 				{

@@ -296,6 +296,9 @@ void initClassStats(const int classnum, void* myStats)
 		stat->MAXHP += 5;
 		stat->HP += 5;
 
+		stat->MAXMP -= 10;
+		stat->MP -= 10;
+
 		// skills
 		stat->setProficiency(PRO_STEALTH, 60);
 		stat->setProficiency(PRO_SWORD, 60);
@@ -545,11 +548,11 @@ void initClassStats(const int classnum, void* myStats)
 		stat->PER += 0;
 		stat->CHR += -3;
 
-		stat->MAXHP += 10;
-		stat->HP += 10;
+		//stat->MAXHP += 5;
+		//stat->HP += 5;
 
-		stat->MAXMP += 0;
-		stat->MP += 0;
+		stat->MAXMP -= 5;
+		stat->MP -= 5;
 
 		stat->setProficiency(PRO_MACE, 50);
 		stat->setProficiency(PRO_SORCERY, 15);
@@ -601,6 +604,29 @@ void initClassStats(const int classnum, void* myStats)
 		stat->setProficiency(PRO_MACE, 25);
 		stat->setProficiency(PRO_STEALTH, 25);
 		stat->setProficiency(PRO_ALCHEMY, 10);
+	}
+	else if ( classnum == CLASS_25 )
+	{
+		// attributes
+		stat->CON += 1;
+		stat->STR += 1;
+		stat->DEX -= 1;
+		stat->INT -= 1;
+		stat->PER -= 1;
+		stat->CHR += 1;
+
+		//stat->MAXHP -= 10;
+		//stat->HP -= 10;
+		stat->MAXMP -= 5;
+		stat->MP -= 5;
+		//stat->GOLD = 250;
+
+		// skills
+		stat->setProficiency(PRO_SWORD, 50);
+		stat->setProficiency(PRO_THAUMATURGY, 25);
+		stat->setProficiency(PRO_APPRAISAL, 25);
+		stat->setProficiency(PRO_SHIELD, 10);
+		stat->setProficiency(PRO_LEADERSHIP, 10);
 	}
 
 	if ( gameModeManager.currentSession.challengeRun.isActive() )
@@ -2892,36 +2918,66 @@ void initClass(const int player)
 			useItem(item, player);
 		}
 
+		item = newItem(BANDIT_BREASTPIECE, EXCELLENT, 0, 1, 1, true, nullptr);
 		if ( isLocalPlayer )
 		{
-			item = newItem(INSTRUMENT_FLUTE, EXCELLENT, 0, 1, 0, true, nullptr);
 			item2 = itemPickup(player, item);
-			hotbar[1].item = item2->uid;
+			useItem(item2, player);
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
+		item = newItem(HAT_PLUMED_CAP, EXCELLENT, 0, 1, 1, true, nullptr);
+		if ( isLocalPlayer )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
+		item = newItem(LOAFERS, SERVICABLE, 0, 1, 0, true, nullptr);
+		if ( isLocalPlayer )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
+		item = newItem(player % 2 == 0 ? INSTRUMENT_FLUTE : INSTRUMENT_LYRE, EXCELLENT, 0, 1, 0, true, nullptr);
+		if ( isLocalPlayer )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
+		if ( isLocalPlayer )
+		{
+			item = newItem(player % 2 == 1 ? INSTRUMENT_FLUTE : INSTRUMENT_LYRE, EXCELLENT, 0, 1, 0, true, nullptr);
+			item2 = itemPickup(player, item);
 			free(item);
 
-			item = newItem(INSTRUMENT_DRUM, EXCELLENT, 0, 1, 0, true, nullptr);
+			item = newItem(FOOD_FISH, EXCELLENT, 0, 2, 0, true, nullptr);
 			item2 = itemPickup(player, item);
-			hotbar[2].item = item2->uid;
-			free(item);
-
-			item = newItem(INSTRUMENT_HORN, EXCELLENT, 0, 1, 0, true, nullptr);
-			item2 = itemPickup(player, item);
-			hotbar[3].item = item2->uid;
-			free(item);
-
-			item = newItem(INSTRUMENT_LUTE, EXCELLENT, 0, 1, 0, true, nullptr);
-			item2 = itemPickup(player, item);
-			hotbar[4].item = item2->uid;
-			free(item);
-
-			item = newItem(INSTRUMENT_LYRE, EXCELLENT, 0, 1, 0, true, nullptr);
-			item2 = itemPickup(player, item);
-			hotbar[5].item = item2->uid;
 			free(item);
 
 			item = newItem(POTION_RESTOREMAGIC, EXCELLENT, 0, 1, 1, true, nullptr);
 			item2 = itemPickup(player, item);
-			hotbar[6].item = item2->uid;
 			free(item);
 		}
 	}
@@ -3237,6 +3293,74 @@ void initClass(const int player)
 			free(item);
 		}
 	}
+	else if ( client_classes[player] == CLASS_25 )
+	{
+		initClassStats(client_classes[player], stats[player]);
+
+		if ( !isLocalPlayer && multiplayer == CLIENT && intro == false ) {
+			// don't do anything crazy with items on players we don't own
+			return;
+		}
+
+		item = newItem(CHAIN_COIF, EXCELLENT, 0, 1, 0, true, nullptr);
+		if ( isLocalPlayer )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
+		item = newItem(CHAIN_HAUBERK, EXCELLENT, 0, 1, 0, true, nullptr);
+		if ( isLocalPlayer )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
+		item = newItem(CLAYMORE_SWORD, EXCELLENT, 0, 1, 0, true, nullptr);
+		if ( isLocalPlayer )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
+		item = newItem(TOOL_FOCI_LIGHT_SANCTUARY, EXCELLENT, 0, 1, 0, true, nullptr);
+		if ( isLocalPlayer )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
+		if ( isLocalPlayer )
+		{
+			item = newItem(FOOD_BREAD, SERVICABLE, 0, 2, 0, true, nullptr);
+			item2 = itemPickup(player, item);
+			free(item);
+
+			item = newItem(POTION_WATER, EXCELLENT, 4, 4, 0, true, nullptr);
+			item2 = itemPickup(player, item);
+			free(item);
+		}
+	}
 
 	stats[player]->OLDHP = stats[player]->HP;
 
@@ -3444,6 +3568,10 @@ void initClass(const int player)
 		{
 			addSpell(SPELL_SUMMON, player, true);
 		}
+		else if ( client_classes[player] == CLASS_21 )
+		{
+			addSpell(SPELL_ALTER_INSTRUMENT, player, true);
+		}
 		else if ( client_classes[player] == CLASS_22 )
 		{
 			addSpell(SPELL_BOOBY_TRAP, player, true);
@@ -3459,6 +3587,10 @@ void initClass(const int player)
 			addSpell(SPELL_MAGICIANS_ARMOR, player, true);
 			addSpell(SPELL_PROJECT_SPIRIT, player, true);
 			addSpell(SPELL_DEEP_SHADE, player, true);
+		}
+		else if ( client_classes[player] == CLASS_25 )
+		{
+			addSpell(SPELL_DIVINE_ZEAL, player, true);
 		}
 
 		//printlog("spell size: %d", list_Size(&spellList));
