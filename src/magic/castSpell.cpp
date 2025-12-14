@@ -6953,12 +6953,15 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						y += dist * sin(caster->yaw);
 
 						const int maxDuration = getSpellEffectDurationSecondaryFromID(spell->ID, caster, nullptr, caster);
-						int duration = std::min(maxDuration, element->duration * charge);
-						if ( Entity* fx = createRadiusMagic(spell->ID, caster,
-							x, y, radius, duration, nullptr) )
+						if ( innerElement )
 						{
-							fx->actRadiusMagicEffectPower = duration;
-							playSoundEntity(fx, 166, 128);
+							int duration = std::min(maxDuration, innerElement->duration * charge);
+							if ( Entity* fx = createRadiusMagic(spell->ID, caster,
+								x, y, radius, duration, nullptr) )
+							{
+								fx->actRadiusMagicEffectPower = duration;
+								playSoundEntity(fx, 166, 128);
+							}
 						}
 
 						//spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
@@ -7082,18 +7085,23 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						if ( effectID > 0 )
 						{
 							int charge = castSpellProps->optionalData & (0x7F);
+
 							Uint8 effectStrength = std::min(4, 1 + (charge / 4));
 							Sint32 CHR = statGetCHR(caster->getStats(), caster);
 							int tier = 1;
 							if ( CHR >= 3 && CHR <= 7 )
 							{
-								tier = 2;
+								tier = 1;
 							}
 							else if ( CHR > 7 && CHR <= 15 )
 							{
+								tier = 2;
+							}
+							else if ( CHR > 15 && CHR <= 30 )
+							{
 								tier = 3;
 							}
-							else if ( CHR > 15 )
+							else if ( CHR > 30 )
 							{
 								tier = 4;
 							}
@@ -7108,19 +7116,22 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 									{
 										if ( Stat* entityStats = entity->getStats() )
 										{
-											int duration = entityStats->getEffectActive(effectID) ? entityStats->EFFECTS_TIMERS[effectID] : 0;
-											duration += element->duration * charge;
-											bool prevEffect = entityStats->getEffectActive(effectID) > 0;
-											if ( entity->setEffect(effectID, effectStrength, duration, false) )
+											if ( innerElement )
 											{
-												if ( !prevEffect )
+												int duration = entityStats->getEffectActive(effectID) ? entityStats->EFFECTS_TIMERS[effectID] : 0;
+												duration += innerElement->duration * charge;
+												bool prevEffect = entityStats->getEffectActive(effectID) > 0;
+												if ( entity->setEffect(effectID, effectStrength, duration, false) )
 												{
-													playSoundEntity(entity, 168, 128);
+													if ( !prevEffect )
+													{
+														playSoundEntity(entity, 168, 128);
+													}
+													//spawnMagicEffectParticles(entity->x, entity->y, entity->z, particle);
+													createParticleFociLight(caster, spell->ID, true);
+													messagePlayerColor(entity->isEntityPlayer(), MESSAGE_STATUS, makeColorRGB(0, 255, 0),
+														Language::get(langEntry));
 												}
-												//spawnMagicEffectParticles(entity->x, entity->y, entity->z, particle);
-												createParticleFociLight(caster, spell->ID, true);
-												messagePlayerColor(entity->isEntityPlayer(), MESSAGE_STATUS, makeColorRGB(0, 255, 0),
-													Language::get(langEntry));
 											}
 										}
 									}
@@ -7134,25 +7145,34 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 								// charging up the spell, set status effect on caster
 								if ( Stat* casterStats = caster->getStats() )
 								{
-									int duration = casterStats->getEffectActive(effectID) ? casterStats->EFFECTS_TIMERS[effectID] : 0;
-									duration += element->duration;
-
-									duration = std::max(element->duration * charge, duration);
-
-									bool prevEffect = casterStats->getEffectActive(effectID) > 0;
-									if ( caster->setEffect(effectID, effectStrength, duration, false) )
+									if ( innerElement )
 									{
-										/*if ( !prevEffect )
+										int duration = casterStats->getEffectActive(effectID) ? casterStats->EFFECTS_TIMERS[effectID] : 0;
+										duration += innerElement->duration;
+
+										duration = std::max(innerElement->duration * charge, duration);
+
+										static ConsoleVariable<bool> cvar_foci_light_debug("/foci_light_debug", false);
+										if ( *cvar_foci_light_debug )
 										{
-											playSoundEntity(caster, 171, 128);
-										}*/
-										if ( !prevEffect )
-										{
-											messagePlayerColor(caster->isEntityPlayer(), MESSAGE_STATUS, makeColorRGB(0, 255, 0),
-												Language::get(langEntry));
+											messagePlayer(caster->isEntityPlayer(), MESSAGE_DEBUG, "Duration: %.2f", duration / (real_t)TICKS_PER_SECOND);
 										}
-										//spawnMagicEffectParticles(caster->x, caster->y, caster->z, particle);
-										createParticleFociLight(caster, spell->ID, true);
+
+										bool prevEffect = casterStats->getEffectActive(effectID) > 0;
+										if ( caster->setEffect(effectID, effectStrength, duration, false) )
+										{
+											/*if ( !prevEffect )
+											{
+												playSoundEntity(caster, 171, 128);
+											}*/
+											if ( !prevEffect )
+											{
+												messagePlayerColor(caster->isEntityPlayer(), MESSAGE_STATUS, makeColorRGB(0, 255, 0),
+													Language::get(langEntry));
+											}
+											//spawnMagicEffectParticles(caster->x, caster->y, caster->z, particle);
+											createParticleFociLight(caster, spell->ID, true);
+										}
 									}
 								}
 							}

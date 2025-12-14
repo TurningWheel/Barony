@@ -60,7 +60,6 @@ void hudWeaponAnimateVariable(real_t& variable, real_t target, real_t speed)
 		variable = std::max(variable - speed * *cvar_hudweapon_timescale, target);
 	}
 }
-static Uint32 parryTick = 0;
 
 struct HUDFlail_t
 {
@@ -389,6 +388,7 @@ void actHudArm(Entity* my)
 #define HUDWEAPON_BOW_FORCE_RELOAD my->skill[10]
 #define HUDWEAPON_PLAYERNUM my->skill[11]
 #define HUDWEAPON_DELAY_TICK my->skill[14]
+#define HUDWEAPON_PARRY_TICK my->skill[15]
 #define HUDWEAPON_MOVEX my->fskill[0]
 #define HUDWEAPON_MOVEY my->fskill[1]
 #define HUDWEAPON_MOVEZ my->fskill[2]
@@ -1985,6 +1985,7 @@ void actHudWeapon(Entity* my)
 						HUDWEAPON_CHARGE = Stat::getMaxAttackCharge(stats[HUDWEAPON_PLAYERNUM]);
 					}
 					HUDWEAPON_CHOP = 4;
+					HUDWEAPON_OVERCHARGE = 0;
 				}
 				else if ( !swingweapon && flail && HUDWEAPON_OVERCHARGE == 0 )
 				{
@@ -1999,6 +2000,8 @@ void actHudWeapon(Entity* my)
 					{
 						input.consumeBinaryToggle("Defend");
 						HUDWEAPON_CHOP = 21;
+						pickaxeGimpTimer = 40;
+						HUDWEAPON_PARRY_TICK = my->ticks;
 						players[HUDWEAPON_PLAYERNUM]->entity->attack(MONSTER_POSE_PARRY, 35, nullptr);
 						HUDWEAPON_MOVEX = 0.0;
 						HUDWEAPON_MOVEY = -1;
@@ -2634,14 +2637,17 @@ void actHudWeapon(Entity* my)
 						HUDWEAPON_CHARGE = Stat::getMaxAttackCharge(stats[HUDWEAPON_PLAYERNUM]);
 					}
 					HUDWEAPON_CHOP = 4;
+					HUDWEAPON_OVERCHARGE = 0;
 				}
-				if ( (!swingweapon || parry) && HUDWEAPON_DELAY_TICK == 0)
+				else if ( (!swingweapon || parry) && HUDWEAPON_DELAY_TICK == 0)
 				{
 					HUDWEAPON_CHOP++;
 					if ( parry )
 					{
 						input.consumeBinaryToggle("Defend");
 						HUDWEAPON_CHOP = 21;
+						pickaxeGimpTimer = 40;
+						HUDWEAPON_PARRY_TICK = my->ticks;
 						players[HUDWEAPON_PLAYERNUM]->entity->attack(MONSTER_POSE_PARRY, 35, nullptr);
 					}
 					else if ( rapier )
@@ -2765,6 +2771,7 @@ void actHudWeapon(Entity* my)
 					{
 						HUDWEAPON_CHARGE = Stat::getMaxAttackCharge(stats[HUDWEAPON_PLAYERNUM]);
 						HUDWEAPON_CHOP = 4;
+						HUDWEAPON_OVERCHARGE = 0;
 					}
 					else if ( rapier )
 					{
@@ -3428,10 +3435,6 @@ void actHudWeapon(Entity* my)
 	}
 	else if ( HUDWEAPON_CHOP == 21 )     // parry
 	{
-		if ( parryTick == 0 )
-		{
-			parryTick = my->ticks;
-		}
 		//HUDWEAPON_MOVEX = std::min(static_cast<real_t>(1.0), HUDWEAPON_MOVEX + .15); // forward/back
 		//HUDWEAPON_MOVEY = std::min(static_cast<real_t>(1.0), HUDWEAPON_MOVEY + .25); // left/right
 		//HUDWEAPON_MOVEZ = std::min(static_cast<real_t>(0.0), HUDWEAPON_MOVEZ + .05); // up/down
@@ -3517,10 +3520,25 @@ void actHudWeapon(Entity* my)
 			{
 				HUDWEAPON_ROLL = 0;
 			}
-			if ( HUDWEAPON_YAW == -.1 && HUDWEAPON_ROLL == 0 && HUDWEAPON_PITCH == 0 && HUDWEAPON_MOVEZ == 0 && HUDWEAPON_MOVEY == 0 && HUDWEAPON_MOVEX == 0 )
+			if ( (HUDWEAPON_YAW == -.1 && HUDWEAPON_ROLL == 0 && HUDWEAPON_PITCH == 0 && HUDWEAPON_MOVEZ == 0 && HUDWEAPON_MOVEY == 0 && HUDWEAPON_MOVEX == 0)
+				|| ((my->ticks - HUDWEAPON_PARRY_TICK) > TICKS_PER_SECOND) )
 			{
-				//messagePlayer(0, MESSAGE_DEBUG, "Parry ticks: %d", my->ticks - parryTick);
-				parryTick = 0;
+				//messagePlayer(0, MESSAGE_DEBUG, "Parry ticks: %d", my->ticks - HUDWEAPON_PARRY_TICK);
+
+				HUDWEAPON_YAW = -.1;
+				HUDWEAPON_ROLL = 0;
+				HUDWEAPON_PITCH = 0;
+				HUDWEAPON_MOVEX = 0;
+				HUDWEAPON_MOVEY = 0;
+				HUDWEAPON_MOVEZ = 0;
+
+				HUDWEAPON_PARRY_TICK = 0;
+				HUDWEAPON_CHARGE = 0;
+				HUDWEAPON_OVERCHARGE = 0;
+				if ( pickaxeGimpTimer > 2 )
+				{
+					pickaxeGimpTimer = 2;
+				}
 				if ( swingweapon && (rapier || claymore) )
 				{
 					if ( claymore && *cvar_claymore_toggle == 1)
@@ -4303,7 +4321,7 @@ void actHudShield(Entity* my)
 				allowDefend = false;
 			}
 			else if ( players[HUDSHIELD_PLAYERNUM]->hud.weapon->skill[6] == 0 // hideWeapon == false
-				&& stats[HUDSHIELD_PLAYERNUM]->weapon && stats[HUDSHIELD_PLAYERNUM]->weapon->type == RAPIER
+				&& stats[HUDSHIELD_PLAYERNUM]->weapon /*&& stats[HUDSHIELD_PLAYERNUM]->weapon->type == RAPIER*/
 				&& (players[HUDSHIELD_PLAYERNUM]->hud.weapon->skill[0] == 21
 					|| players[HUDSHIELD_PLAYERNUM]->hud.weapon->skill[0] == 22) )
 			{

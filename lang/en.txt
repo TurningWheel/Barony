@@ -7191,5 +7191,7 @@ to replay this challenge!
 6919 Your scales constrict into impervious stone!#
 6920 Your temperance returns to normal.#
 6921 Your radiance reaches a more stable level.#
+6922 You are unable to charge your symbol any further!#
+6923 You are unable to charge your icon any further!#
 
 6999 END#

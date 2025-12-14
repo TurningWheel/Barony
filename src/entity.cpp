@@ -5665,7 +5665,11 @@ void Entity::handleEffects(Stat* myStats)
 											|| spell->ID == SPELL_FOCI_LIGHT_SANCTUARY )
 										{
 											players[player]->mechanics.fociHolyChargeTime++;
-											players[player]->mechanics.fociHolyChargeTime = std::min(127, players[player]->mechanics.fociHolyChargeTime);
+											if ( players[player]->mechanics.fociHolyChargeTime == 32 )
+											{
+												messagePlayer(this->isEntityPlayer(), MESSAGE_INTERACTION, Language::get(6922));
+											}
+											players[player]->mechanics.fociHolyChargeTime = std::min(32, players[player]->mechanics.fociHolyChargeTime);
 											props.optionalData = players[player]->mechanics.fociHolyChargeTime;
 										}
 										else if ( spellID == SPELL_FOCI_DARK_LIFE
@@ -5675,7 +5679,11 @@ void Entity::handleEffects(Stat* myStats)
 											|| spellID == SPELL_FOCI_DARK_VENGEANCE )
 										{
 											players[player]->mechanics.fociDarkChargeTime++;
-											players[player]->mechanics.fociDarkChargeTime = std::min(127, players[player]->mechanics.fociDarkChargeTime);
+											if ( players[player]->mechanics.fociDarkChargeTime == 32 )
+											{
+												messagePlayer(this->isEntityPlayer(), MESSAGE_INTERACTION, Language::get(6923));
+											}
+											players[player]->mechanics.fociDarkChargeTime = std::min(32, players[player]->mechanics.fociDarkChargeTime);
 											props.optionalData = players[player]->mechanics.fociDarkChargeTime;
 											createParticleFociDark(this, spellID, true);
 										}
