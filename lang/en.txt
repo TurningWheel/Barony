@@ -7193,5 +7193,7 @@ to replay this challenge!
 6921 Your radiance reaches a more stable level.#
 6922 You are unable to charge your symbol any further!#
 6923 You are unable to charge your icon any further!#
+6924 Your foliage flourishes!#
+6925 Your foliage grows!#
 
 6999 END#

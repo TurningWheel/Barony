@@ -2387,6 +2387,7 @@ public:
 		int fociHolyChargeTime = 0;
 		int fociDarkChargeTime = 0;
 		int lastFociHeldType = 0;
+		int evasionProc = 0;
 		bool sustainedSpellLevelChance(int skillID);
 		int baseSpellLevelChance(int skillID);
 		int baseSpellMPSpent(int skillID);
@@ -2397,6 +2398,7 @@ public:
 		std::map<int, int> baseSpellLevelUpProcs;
 		std::map<int, real_t> sustainedSpellIDCounter;
 		bool updateSustainedSpellEvent(int spellID, real_t value, real_t scaleValue);
+		bool rollEvasionProc(int chance);
 		std::map<Uint32, int> enemyRaisedBlockingAgainst;
 		std::map<Uint32, int> enemyRaisedStealthAgainst;
 		bool allowedRaiseBlockingAgainstEntity(Entity& attacker);

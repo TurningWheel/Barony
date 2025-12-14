@@ -4366,6 +4366,25 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 					case 506:
 					case 507:
 					case 508:
+					case 830:
+					case 831:
+					case 832:
+					case 833:
+					case 834:
+					case 835:
+					case 836:
+					case 837:
+					case 838:
+					case 839:
+					case 840:
+					case 841:
+					case 842:
+					case 843:
+					case 844:
+					case 845:
+					case 846:
+					case 847:
+					case 848:
 						// return early, don't play monster noises from players.
 						return;
 					default:
@@ -8547,9 +8566,10 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 	{'EMOT', [](){
 	    const int player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
 		const int sfx = SDLNet_Read16(&net_packet->data[5]);
+		const int vol = std::min(92, (int)(net_packet->data[7]));
 		if ( players[player] && players[player]->entity )
 		{
-			playSoundEntityLocal(players[player]->entity, sfx, 92);
+			playSoundEntityLocal(players[player]->entity, sfx, vol);
 			for ( int c = 1; c < MAXPLAYERS; ++c )
 			{
 				// send to all other players
@@ -8558,7 +8578,7 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 					strcpy((char*)net_packet->data, "SNEL");
 					SDLNet_Write16(sfx, &net_packet->data[4]);
 					SDLNet_Write32((Uint32)players[player]->entity->getUID(), &net_packet->data[6]);
-					SDLNet_Write16(92, &net_packet->data[10]);
+					SDLNet_Write16(vol, &net_packet->data[10]);
 					net_packet->address.host = net_clients[c - 1].host;
 					net_packet->address.port = net_clients[c - 1].port;
 					net_packet->len = 12;

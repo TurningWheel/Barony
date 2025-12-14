@@ -6088,7 +6088,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				if ( caster->setEffect(EFF_SPORES, true, duration, false) )
 				{
 					messagePlayerColor(caster->isEntityPlayer(), MESSAGE_STATUS, uint32ColorGreen, Language::get(6643));
-					playSoundEntity(caster, 178, 128);
+					playSoundEntity(caster, 717 + local_rng.rand() % 3, 128);
 					spawnMagicEffectParticles(caster->x, caster->y, caster->z, 170);
 				}
 			}

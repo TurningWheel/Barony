@@ -6580,5 +6580,72 @@ namespace ConsoleCommands {
 			}
 		}
 	});
+
+	real_t testPFromC(real_t c, int iterations, int chance)
+	{
+		int rollsRequired = 0;
+		int max_n = 0;
+		std::map<int, int> buckets;
+		for ( int i = 0; i < iterations; ++i )
+		{
+			int n = 1;
+			while ( c * n < 1.0 )
+			{
+				real_t roll = (local_rng.rand() % 100) / 100.0;
+				if ( roll <= (c * n) || n >= 20 )
+				{
+					break;
+				}
+				++n;
+			}
+			max_n = std::max(max_n, n);
+			buckets[n / 5]++;
+			rollsRequired += n;
+		}
+		real_t res = rollsRequired / (real_t)iterations;
+		messagePlayer(0, MESSAGE_DEBUG, "Rolls avg: %.2f%%, max_n: %d", 100.0 / (rollsRequired / (real_t)iterations), max_n);
+		for ( int i = 0; i < buckets.size(); ++i )
+		{
+			messagePlayer(0, MESSAGE_DEBUG, "Bucket: %d-%d: %.2f", i, i + 4, buckets[i] / (real_t)iterations);
+		}
+
+		rollsRequired = 0;
+		int n = 1;
+		max_n = 0;
+		for ( int i = 0; i < iterations; ++i )
+		{
+			bool success = players[0]->mechanics.rollEvasionProc(chance);
+			if ( success )
+			{
+				++rollsRequired;
+				max_n = std::max(max_n, n);
+				n = 0;
+			}
+			else
+			{
+				++n;
+			}
+		}
+
+		messagePlayer(0, MESSAGE_DEBUG, "Rolls new: %.2f%%, max_n: %d", (100.0 * rollsRequired / (real_t)iterations), max_n);
+
+		return res;
+	}
+
+	static ConsoleCommand ccmd_test_rand_prng("/test_rand_prng", "", []CCMD{
+
+		if ( argc < 2 )
+		{
+			return;
+		}
+		std::string str_c = argv[1];
+		real_t c = std::stof(str_c);
+		int chance = 5;
+		if ( argc >= 3 )
+		{
+			chance = atoi(argv[2]);
+		}
+		testPFromC(c, 100000, chance);
+	});
 }
 

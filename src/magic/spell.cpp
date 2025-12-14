@@ -983,6 +983,25 @@ real_t getBonusFromCasterOfSpellElement(Entity* caster, Stat* casterStats, spell
 		{
 			bonus += 0.25;
 		}
+		if ( casterStats->shield && itemTypeIsFoci(casterStats->shield->type) )
+		{
+			if ( auto spell = getSpellFromID(getSpellIDFromFoci(casterStats->shield->type)) )
+			{
+				if ( spell->skillID == spellSkillID )
+				{
+					real_t shieldBonus = 0.0;
+					if ( casterStats->shield->beatitude >= 0 || shouldInvertEquipmentBeatitude(casterStats) )
+					{
+						shieldBonus += (0.10 + (0.05 * std::min(10, abs(casterStats->shield->beatitude))));
+					}
+					else
+					{
+						shieldBonus -= ((0.10 * std::min(10, abs(casterStats->shield->beatitude))));
+					}
+					bonus += shieldBonus;
+				}
+			}
+		}
 		if ( casterStats->helmet )
 		{
 			if ( casterStats->helmet->type == HAT_MITER )

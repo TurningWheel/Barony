@@ -219,6 +219,7 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player, E
 			players[player]->movement.monsterEmoteGimpTimer = TICKS_PER_SECOND * 5;
 			int sfx = 0;
 			int line = 0;
+			int vol = 92;
 			switch ( stats[player]->type )
 			{
 				case SKELETON:
@@ -289,6 +290,21 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player, E
 				case CREATURE_IMP:
 					sfx = 198 + local_rng.rand() % 3;
 					break;
+				case GNOME:
+					sfx = 835 + local_rng.rand() % 8;
+					break;
+				case MONSTER_D:
+					sfx = 828 + local_rng.rand() % 4;
+					break;
+				case MONSTER_G:
+					sfx = 843 + local_rng.rand() % 3;
+					break;
+				case MONSTER_S:
+					sfx = 0; // 846 + local_rng.rand() % 3
+					break;
+				case MONSTER_M:
+					sfx = 832 + local_rng.rand() % 3;
+					break;
 				default:
 					sfx = 0;
 					break;
@@ -299,18 +315,19 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player, E
 			{
 				if ( multiplayer == CLIENT )
 				{
-					playSound(sfx, 92);
+					playSound(sfx, vol);
 					strcpy((char*)net_packet->data, "EMOT");
 					net_packet->data[4] = player;
 					SDLNet_Write16(sfx, &net_packet->data[5]);
+					net_packet->data[7] = vol;
 					net_packet->address.host = net_server.host;
 					net_packet->address.port = net_server.port;
-					net_packet->len = 7;
+					net_packet->len = 8;
 					sendPacketSafe(net_sock, -1, net_packet, 0);
 				}
 				else if ( multiplayer != CLIENT )
 				{
-					playSound(sfx, 92);
+					playSound(sfx, vol);
 					for ( int c = 1; c < MAXPLAYERS; ++c )
 					{
 						if ( !client_disconnected[c] && !players[c]->isLocalPlayer() )
@@ -318,7 +335,7 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player, E
 							strcpy((char*)net_packet->data, "SNEL");
 							SDLNet_Write16(sfx, &net_packet->data[4]);
 							SDLNet_Write32((Uint32)players[player]->entity->getUID(), &net_packet->data[6]);
-							SDLNet_Write16(92, &net_packet->data[10]);
+							SDLNet_Write16(vol, &net_packet->data[10]);
 							net_packet->address.host = net_clients[c - 1].host;
 							net_packet->address.port = net_clients[c - 1].port;
 							net_packet->len = 12;
@@ -794,7 +811,7 @@ bool Entity::collisionProjectileMiss(Entity* parent, Entity* projectile)
 					if ( myStats->type == MONSTER_D && myStats->sex == FEMALE && behavior == &actPlayer )
 					{
 						int baseChance = 5;
-						miss = local_rng.rand() % 100 < baseChance;
+						miss = players[this->skill[2]]->mechanics.rollEvasionProc(baseChance);
 					}
 				}
 				else
@@ -836,7 +853,14 @@ bool Entity::collisionProjectileMiss(Entity* parent, Entity* projectile)
 						}
 
 						baseChance = std::max(10, baseChance);
-						miss = local_rng.rand() % 100 < baseChance;
+						if ( this->behavior == &actPlayer )
+						{
+							miss = players[this->skill[2]]->mechanics.rollEvasionProc(baseChance);
+						}
+						else
+						{
+							miss = local_rng.rand() % 100 < baseChance;
+						}
 					}
 				}
 

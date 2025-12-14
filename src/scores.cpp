@@ -6473,6 +6473,7 @@ int loadGame(int player, const SaveGameInfo& info) {
 		mechanics.sustainedSpellMPUsedMysticism = 0;
 		mechanics.sustainedSpellMPUsedThaumaturgy = 0;
 		mechanics.baseSpellMPUsedSorcery = 0;
+		mechanics.evasionProc = 0;
 		mechanics.baseSpellMPUsedMysticism = 0;
 		mechanics.baseSpellMPUsedThaumaturgy = 0;
 		mechanics.sustainedSpellMPUsedSorcery = info.players[player].sustainedSpellMPUsedSorcery;

@@ -13309,6 +13309,11 @@ void actPlayer(Entity* my)
 
 					if ( lastHelmSprite[PLAYER_NUM] != entity->sprite || tryShake )
 					{
+						if ( !intro )
+						{
+							playSoundEntityLocal(my, 754 + local_rng.rand() % 2, 156);
+						}
+
 						entity->skill[0] = 3;
 
 						entity->fskill[3] = 0.0;
@@ -13367,6 +13372,22 @@ void actPlayer(Entity* my)
 
 					if ( lastHelmSprite[PLAYER_NUM] != entity->sprite || tryShake )
 					{
+						if ( !intro )
+						{
+							if ( entity->sprite == 2003 )
+							{
+								playSoundEntityLocal(my, 714, 64);
+							}
+							else if ( entity->sprite == 2004 )
+							{
+								playSoundEntityLocal(my, 715, 64);
+							}
+							else if ( entity->sprite == 2005 )
+							{
+								playSoundEntityLocal(my, 716, 64);
+							}
+						}
+
 						entity->skill[0] = 3;
 
 						entity->fskill[3] = 0.0;

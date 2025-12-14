@@ -3213,6 +3213,7 @@ void Player::init() // for use on new/restart game, UI related
 	mechanics.ensembleTakenInitialMP = false;
 	mechanics.ensembleDataUpdate = 0;
 	mechanics.gremlinBreakableCounter = 0;
+	mechanics.evasionProc = 0;
 
 	mechanics.fociDarkChargeTime = 0;
 	mechanics.fociHolyChargeTime = 0;
@@ -8333,4 +8334,81 @@ void Player::PlayerMechanics_t::updateBreakableCounterServer()
 		net_packet->address.port = net_clients[i - 1].port;
 		sendPacketSafe(net_sock, -1, net_packet, i - 1);
 	}
+}
+
+std::map<int, real_t> prng_tables
+{
+	{0,		0.0},
+	{5,		0.0038},
+	{10,	0.0147},
+	{15,	0.0322},
+	{20,	0.0557},
+	{25,	0.0847},
+	{30,	0.1189},
+	{35,	0.1579},
+	{40,	0.2015},
+	{45,	0.2493},
+	{50,	0.3021},
+	{55,	0.3604},
+	{60,	0.4226},
+	{65,	0.4811},
+	{70,	0.5714},
+	{75,	0.6667},
+	{80,	0.7500},
+	{85,	0.8235},
+	{90,	0.8889},
+	{95,	0.9474},
+};
+
+// escalating rng
+bool Player::PlayerMechanics_t::rollEvasionProc(int chance)
+{
+	chance = std::min(95, chance);
+	if ( chance <= 0 )
+	{
+		return false;
+	}
+	int breakpoint = (chance / 5) * 5;
+	auto find = prng_tables.find(breakpoint);
+	if ( find != prng_tables.end() )
+	{
+		real_t c = find->second;
+		if ( chance < 5 )
+		{
+			c *= (chance / 5.0);
+		}
+		else if ( chance % 5 > 0 )
+		{
+			// find next breakpoint, lerp
+			auto find2 = prng_tables.find(breakpoint + 5);
+			if ( find2 != prng_tables.end() )
+			{
+				real_t c2 = find2->second;
+				c += (c2 - c) * ((chance % 5) / 5.0);
+			}
+		}
+
+		if ( c * evasionProc >= 1.0 
+			|| (chance >= 5 && evasionProc >= 20) ) // 20 is hard pity cap
+		{
+			// success
+			evasionProc = 0;
+			return true;
+		}
+
+		real_t roll = (local_rng.rand() % 10000) / 10000.0;
+		if ( roll <= c * evasionProc )
+		{
+			// success
+			evasionProc = 0;
+			return true;
+		}
+
+		++evasionProc;
+	}
+	else
+	{
+		return local_rng.rand() % 100 < chance; // default to basic 1-100
+	}
+	return false;
 }

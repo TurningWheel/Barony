@@ -534,17 +534,17 @@ static double damagetables[NUMMONSTERS][7] =
 	{ 1.f, 1.f, 1.f, 1.f, 0.5, 0.5, 1.f }, // gyrobot
 	{ 1.f, 1.f, 1.f, 1.f, 0.5, 1.2, 0.5 }, // dummybot
 	{ 1.3, 1.2, 1.2, 0.7, 0.8, 1.f, 0.7 }, // bugbear
-	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // monster_d
-	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // monster_m
-	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // monster_s
-	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // monster_g
-	{ 0.5, 1.4, 0.8, 1.3, 0.5, 0.8, 1.1 }, // revenant_skull
+	{ 1.3, 1.f, 1.3, 0.9, 0.7, 1.1, 0.8 }, // monster_d
+	{ 1.3, 0.7, 1.1, 1.f, 1.f, 0.7, 1.f }, // monster_m
+	{ 0.8, 1.f, 1.f, 1.2, 1.1, 1.f, 0.9 }, // monster_s
+	{ 1.3, 0.9, 1.1, 0.8, 0.9, 0.8, 0.9 }, // monster_g
+	{ 0.7, 1.5, 0.8, 0.8, 0.8, 1.3, 0.7 }, // revenant_skull
 	{ 0.5, 0.5, 1.0, 0.5, 0.5, 1.3, 0.5 }, // minimimic
-	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // monster_adorcised_weapon
-	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // flame_elemental
+	{ 0.5, 1.f, 0.7, 0.5, 0.5, 1.5, 0.5 }, // monster_adorcised_weapon
+	{ 0.5, 0.5, 0.5, 0.5, 0.5, 1.5, 0.5 }, // flame_elemental
 	{ 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f }, // hologram
 	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // moth_small
-	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // earth_elemental
+	{ 0.7, 1.5, 1.f, 1.f, 0.7, 1.5, 0.7 }, // earth_elemental
 	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // duck_small
 	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // monster_unused_6
 	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // monster_unused_7

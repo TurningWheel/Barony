@@ -4442,7 +4442,24 @@ void Entity::handleEffects(Stat* myStats)
 			Uint8 effectStrength = myStats->getEffectActive(EFF_GROWTH);
 			if ( effectStrength >= 1 )
 			{
-				setEffect(EFF_GROWTH, (Uint8)(std::min(4, effectStrength + 1)), 15 * TICKS_PER_SECOND, false);
+				int stages = 1;
+				if ( (myStats->type == MONSTER_D && myStats->sex == FEMALE)
+					|| (myStats->type == MONSTER_M && myStats->sex == MALE) )
+				{
+					if ( local_rng.rand() % 5 == 0 )
+					{
+						stages += 1;
+					}
+				}
+				setEffect(EFF_GROWTH, (Uint8)(std::min(4, effectStrength + stages)), 15 * TICKS_PER_SECOND, false);
+				if ( myStats->getEffectActive(EFF_GROWTH) - effectStrength == 2 )
+				{
+					messagePlayerColor(skill[2], MESSAGE_STATUS, makeColorRGB(0, 255, 0), Language::get(6924));
+				}
+				else if ( myStats->getEffectActive(EFF_GROWTH) > effectStrength )
+				{
+					messagePlayerColor(skill[2], MESSAGE_STATUS, makeColorRGB(0, 255, 0), Language::get(6925));
+				}
 			}
 		}
 
@@ -10952,7 +10969,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						if ( hitstats->type == MONSTER_D && hitstats->sex == FEMALE && hit.entity->behavior == &actPlayer )
 						{
 							int baseChance = 5;
-							miss = local_rng.rand() % 100 < baseChance;
+							miss = players[hit.entity->skill[2]]->mechanics.rollEvasionProc(baseChance);
 						}
 
 						if ( myStats->weapon )
@@ -11001,7 +11018,14 @@ void Entity::attack(int pose, int charge, Entity* target)
 							{
 								baseChance = std::max(1, baseChance - 20);
 							}
-							miss = local_rng.rand() % 100 < baseChance;
+							if ( hit.entity->behavior == &actPlayer )
+							{
+								miss = players[hit.entity->skill[2]]->mechanics.rollEvasionProc(baseChance);
+							}
+							else
+							{
+								miss = local_rng.rand() % 100 < baseChance;
+							}
 						}
 					}
 
@@ -30783,7 +30807,11 @@ bool Entity::doSilkenBowOnAttack(Entity* attacker)
 			chance = 1;
 		}
 
-		if ( roll < chance )
+		if ( playerHit >= 0 )
+		{
+			tryEffect = players[playerHit]->mechanics.rollEvasionProc(chance);
+		}
+		else if ( roll < chance )
 		{
 			tryEffect = true;
 		}
