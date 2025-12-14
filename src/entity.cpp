@@ -3663,6 +3663,11 @@ int Entity::getHungerTickRate(Stat* myStats, bool isPlayer, bool checkItemsEffec
 		}
 	}
 
+	if ( myStats->type == MONSTER_S )
+	{
+		hungerTickRate *= 0.75;
+	}
+
 	bool playerAutomaton = (myStats->type == AUTOMATON && isPlayer);
 	if ( playerAutomaton )
 	{
