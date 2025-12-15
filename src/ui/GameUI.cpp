@@ -6116,6 +6116,7 @@ int StatusEffectQueue_t::getBaseEffectPosY()
 	return statusEffectFrame->getSize().h / 2 - 50;
 }
 
+static ConsoleVariable<int> cvar_statusfx_spell_size("/statusfx_spell_size", 36);
 int StatusEffectQueueEntry_t::getEffectSpriteNormalWidth()
 {
 	if ( effect == StatusEffectQueue_t::kEffectBread
@@ -6126,6 +6127,27 @@ int StatusEffectQueueEntry_t::getEffectSpriteNormalWidth()
 	else if ( effect == StatusEffectQueue_t::kEffectAutomatonHunger )
 	{
 		return 64;
+	}
+
+	if ( effect >= StatusEffectQueue_t::kSpellEffectOffset )
+	{
+		int effectID = effect - StatusEffectQueue_t::kSpellEffectOffset;
+		if ( StatusEffectQueue_t::StatusEffectDefinitions_t::sustainedSpellDefinitionExists(effectID) )
+		{
+			auto& definition = StatusEffectQueue_t::StatusEffectDefinitions_t::getSustainedSpell(effectID);
+			if ( definition.useSpellIDForImg >= 0 )
+			{
+				return *cvar_statusfx_spell_size;
+			}
+		}
+	}
+	else if ( StatusEffectQueue_t::StatusEffectDefinitions_t::effectDefinitionExists(effect) )
+	{
+		auto& definition = StatusEffectQueue_t::StatusEffectDefinitions_t::getEffect(effect);
+		if ( definition.useSpellIDForImg >= 0 )
+		{
+			return *cvar_statusfx_spell_size;
+		}
 	}
 	return 32;
 }
@@ -6139,6 +6161,26 @@ int StatusEffectQueueEntry_t::getEffectSpriteNormalHeight()
 	else if ( effect == StatusEffectQueue_t::kEffectAutomatonHunger )
 	{
 		return 64;
+	}
+	if ( effect >= StatusEffectQueue_t::kSpellEffectOffset )
+	{
+		int effectID = effect - StatusEffectQueue_t::kSpellEffectOffset;
+		if ( StatusEffectQueue_t::StatusEffectDefinitions_t::sustainedSpellDefinitionExists(effectID) )
+		{
+			auto& definition = StatusEffectQueue_t::StatusEffectDefinitions_t::getSustainedSpell(effectID);
+			if ( definition.useSpellIDForImg >= 0 )
+			{
+				return *cvar_statusfx_spell_size;
+			}
+		}
+	}
+	else if ( StatusEffectQueue_t::StatusEffectDefinitions_t::effectDefinitionExists(effect) )
+	{
+		auto& definition = StatusEffectQueue_t::StatusEffectDefinitions_t::getEffect(effect);
+		if ( definition.useSpellIDForImg >= 0 )
+		{
+			return *cvar_statusfx_spell_size;
+		}
 	}
 	return 32;
 }
@@ -8136,7 +8178,6 @@ void StatusEffectQueue_t::handleNavigation(std::map<int, StatusEffectQueueEntry_
 		if ( q.index == selectedElement )
 		{
 			SDL_Rect size = statusEffectFrame->getAbsoluteSize();
-			int mouseDetectionPadding = 2;
 
 			SDL_Rect frameImgPos = frameImg->pos;
 			bool oldDisabled = frameImg->disabled;
@@ -8145,6 +8186,7 @@ void StatusEffectQueue_t::handleNavigation(std::map<int, StatusEffectQueueEntry_
 			frameImgPos.x = q.animateSetpointX;
 			frameImgPos.y = q.animateSetpointY;
 
+			int mouseDetectionPadding = frameImg->pos.w == 36 ? 0 : 2;
 			size.x += frameImgPos.x - (mouseDetectionPadding);
 			size.y += frameImgPos.y - (mouseDetectionPadding);
 			size.w = frameImgPos.w + (mouseDetectionPadding * 2);
@@ -8157,7 +8199,7 @@ void StatusEffectQueue_t::handleNavigation(std::map<int, StatusEffectQueueEntry_
 			size.y -= players[player]->camera_virtualy1();
 
 			players[player]->hud.updateCursorAnimation(size.x - 1 + mouseDetectionPadding, size.y - 1 + mouseDetectionPadding,
-				frameImgPos.w, frameImgPos.h, inputs.getVirtualMouse(player)->draw_cursor);
+				frameImgPos.w + mouseDetectionPadding * 2, frameImgPos.h + mouseDetectionPadding * 2, inputs.getVirtualMouse(player)->draw_cursor);
 			break;
 		}
 
@@ -8717,7 +8759,8 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 	automatonHungerFrame->setDisabled(true);
 	auto automatonFlameImg = automatonHungerFrame->findImage("flame");
 
-	int iconSize = 32;
+	static ConsoleVariable<int> cvar_statusfx_iconsize("/statusfx_iconsize", 36);
+	int iconSize = *cvar_statusfx_iconsize;
 	int movex = splitscreen ? 4 : 0;
 	if ( hungerIconActive )
 	{
@@ -9088,7 +9131,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 			if ( bFrameCapturesMouse && !tooltipShowing )
 			{
 				SDL_Rect size = statusEffectFrame->getAbsoluteSize();
-				int mouseDetectionPadding = 2;
+				int mouseDetectionPadding = frameImg->pos.w == 36 ? 0 : 2;
 				size.x += frameImg->pos.x - (mouseDetectionPadding);
 				size.y += frameImg->pos.y - (mouseDetectionPadding);
 				size.w = frameImg->pos.w + (mouseDetectionPadding * 2);
@@ -9106,8 +9149,8 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 					size.x -= players[player]->camera_virtualx1();
 					size.y -= players[player]->camera_virtualy1();
 
-					players[player]->hud.updateCursorAnimation(size.x - 1 + mouseDetectionPadding, size.y - 1 + mouseDetectionPadding, 
-						frameImg->pos.w, frameImg->pos.h, inputs.getVirtualMouse(player)->draw_cursor);
+					players[player]->hud.updateCursorAnimation(size.x - 1, size.y - 1, 
+						frameImg->pos.w + mouseDetectionPadding * 2, frameImg->pos.h + mouseDetectionPadding * 2, inputs.getVirtualMouse(player)->draw_cursor);
 				}
 			}
 		}
@@ -9441,6 +9484,14 @@ void StatusEffectQueue_t::updateEntryImage(StatusEffectQueueEntry_t& entry, Fram
 		dest.x = entry.pos.x;
 		dest.y = entry.pos.y;
 		img->pos = dest;
+		if ( img->pos.w < 36 )
+		{
+			img->pos.x += (36 - img->pos.w) / 2;
+		}
+		if ( img->pos.h < 36 )
+		{
+			img->pos.y += (36 - img->pos.h) / 2;
+		}
 		img->disabled = false;
 
 		if ( img->path.size() > 1 && img->path[0] != '*' )
