@@ -2495,6 +2495,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							my->vel_x = 4 * cos(hit.entity->yaw);
 							my->vel_y = 4 * sin(hit.entity->yaw);
 							my->vel_z = 0;
+							my->actmagicIsVertical = 0;
 							my->pitch = 0;
 						}
 						my->parent = hit.entity->getUID();
