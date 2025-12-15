@@ -7019,7 +7019,7 @@ Host to enable the game setting.
 6749 mushroom#
 6750 There is no room to complete the spell!#
 6751 You stop shimmering.#
-6752 You are blinded by shimmering dust!#
+6752 You are covered with shimmering dust!#
 6753 gets capped by a mushroom.#
 6754 Mushroom#
 6755 The air is filled with a deep fog.#
@@ -7028,8 +7028,8 @@ Host to enable the game setting.
 6758 You are slammed back down!#
 6759 Leaves#
 6760 becomes dust in the wind.#
-6761 %s is blinded with shimmering dust!#
-6762 The %s is blinded with shimmering dust!#
+6761 %s is covered with shimmering dust!#
+6762 The %s is covered with shimmering dust!#
 6763 You are ensnared!#
 6764 The %s is ensnared!#
 6765 %s is ensnared!#
@@ -7193,7 +7193,7 @@ to replay this challenge!
 6921 Your radiance reaches a more stable level.#
 6922 You are unable to charge your symbol any further!#
 6923 You are unable to charge your icon any further!#
-6924 Your foliage flourishes!#
+6924 Your foliage flourishes with nutrition!#
 6925 Your foliage grows!#
 
 6999 END#

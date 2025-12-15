@@ -292,6 +292,30 @@ bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 				players[player]->entity->modMP(mpAmount); //Raise temperature because steam.
 				serverUpdateHunger(player);
 			}
+
+			if ( stats->type == MONSTER_D )
+			{
+				if ( auto effectStrength = stats->getEffectActive(EFF_GROWTH) )
+				{
+					int chance = 10;
+					if ( (stats->type == MONSTER_D && stats->sex == FEMALE) )
+					{
+						chance = 20;
+					}
+					if ( item->beatitude >= 0 )
+					{
+						chance += 10 * item->beatitude;
+						if ( players[player]->mechanics.rollRngProc(Player::PlayerMechanics_t::RngRollTypes::RNG_ROLL_GROWTH, chance) )
+						{
+							if ( stats->getEffectActive(EFF_GROWTH) < 4 )
+							{
+								players[player]->entity->setEffect(EFF_GROWTH, (Uint8)(std::min(4, effectStrength + 1)), 15 * TICKS_PER_SECOND, false);
+								messagePlayerColor(player, MESSAGE_STATUS, makeColorRGB(0, 255, 0), Language::get(6924));
+							}
+						}
+					}
+				}
+			}
 		}
 		if ( player >= 0 && !players[player]->isLocalPlayer() )
 		{
@@ -4930,6 +4954,23 @@ void item_Food(Item*& item, int player)
 				players[player]->entity->setEffect(EFF_MP_REGEN, true, std::max(stats[player]->EFFECTS_TIMERS[EFF_MP_REGEN], 10 * TICKS_PER_SECOND), false);
 				messagePlayerColor(player, MESSAGE_HINT, color, Language::get(6882));
 				playSoundEntity(players[player]->entity, 168, 128);
+
+				if ( auto effectStrength = stats[player]->getEffectActive(EFF_GROWTH) )
+				{
+					int chance = 25;
+					if ( (stats[player]->type == MONSTER_M && stats[player]->sex == MALE) )
+					{
+						chance = 50;
+					}
+					if ( players[player]->mechanics.rollRngProc(Player::PlayerMechanics_t::RngRollTypes::RNG_ROLL_GROWTH, chance) )
+					{
+						if ( stats[player]->getEffectActive(EFF_GROWTH) < 4 )
+						{
+							players[player]->entity->setEffect(EFF_GROWTH, (Uint8)(std::min(4, effectStrength + 1)), 15 * TICKS_PER_SECOND, false);
+							messagePlayerColor(player, MESSAGE_STATUS, makeColorRGB(0, 255, 0), Language::get(6924));
+						}
+					}
+				}
 			}
 		}
 		foodUseAbundanceEffect(item, player);
@@ -5341,6 +5382,23 @@ void item_FoodTin(Item*& item, int player)
 				players[player]->entity->setEffect(EFF_MP_REGEN, true, std::max(stats[player]->EFFECTS_TIMERS[EFF_MP_REGEN], 10 * TICKS_PER_SECOND), false);
 				messagePlayerColor(player, MESSAGE_HINT, color, Language::get(6882));
 				playSoundEntity(players[player]->entity, 168, 128);
+
+				if ( auto effectStrength = stats[player]->getEffectActive(EFF_GROWTH) )
+				{
+					int chance = 25;
+					if ( (stats[player]->type == MONSTER_M && stats[player]->sex == MALE) )
+					{
+						chance = 50;
+					}
+					if ( players[player]->mechanics.rollRngProc(Player::PlayerMechanics_t::RngRollTypes::RNG_ROLL_GROWTH, chance) )
+					{
+						if ( stats[player]->getEffectActive(EFF_GROWTH) < 4 )
+						{
+							players[player]->entity->setEffect(EFF_GROWTH, (Uint8)(std::min(4, effectStrength + 1)), 15 * TICKS_PER_SECOND, false);
+							messagePlayerColor(player, MESSAGE_STATUS, makeColorRGB(0, 255, 0), Language::get(6924));
+						}
+					}
+				}
 			}
 		}
 		foodUseAbundanceEffect(item, player);

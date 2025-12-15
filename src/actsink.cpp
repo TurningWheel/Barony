@@ -238,6 +238,26 @@ void actSink(Entity* my)
 									players[i]->entity->modMP(1 + local_rng.rand() % 2);
 								}
 								Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_SINKS_HEALTH_RESTORED, "sink", 1);
+
+								if ( stats[i]->type == MONSTER_D )
+								{
+									if ( auto effectStrength = stats[i]->getEffectActive(EFF_GROWTH) )
+									{
+										int chance = 5;
+										if ( (stats[i]->type == MONSTER_D && stats[i]->sex == FEMALE) )
+										{
+											chance = 10;
+										}
+										if ( players[i]->mechanics.rollRngProc(Player::PlayerMechanics_t::RngRollTypes::RNG_ROLL_GROWTH, chance) )
+										{
+											if ( stats[i]->getEffectActive(EFF_GROWTH) < 4 )
+											{
+												players[i]->entity->setEffect(EFF_GROWTH, (Uint8)(std::min(4, effectStrength + 1)), 15 * TICKS_PER_SECOND, false);
+												messagePlayerColor(i, MESSAGE_STATUS, makeColorRGB(0, 255, 0), Language::get(6924));
+											}
+										}
+									}
+								}
 							}
 							else
 							{

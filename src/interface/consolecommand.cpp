@@ -6614,7 +6614,7 @@ namespace ConsoleCommands {
 		max_n = 0;
 		for ( int i = 0; i < iterations; ++i )
 		{
-			bool success = players[0]->mechanics.rollEvasionProc(chance);
+			bool success = players[0]->mechanics.rollRngProc(Player::PlayerMechanics_t::RngRollTypes::RNG_ROLL_DEFAULT, chance);
 			if ( success )
 			{
 				++rollsRequired;
@@ -6633,7 +6633,11 @@ namespace ConsoleCommands {
 	}
 
 	static ConsoleCommand ccmd_test_rand_prng("/test_rand_prng", "", []CCMD{
-
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
 		if ( argc < 2 )
 		{
 			return;

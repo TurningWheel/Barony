@@ -5240,6 +5240,11 @@ void SaveGameInfo::computeHash(const int playernum, Uint32& hash)
 		hash += (Uint32)((Uint32)val.first << (shift % 32)); ++shift;
 		hash += (Uint32)((Uint32)val.second << (shift % 32)); ++shift;
 	}
+	for ( auto& val : players[playernum].escalatingRngRolls )
+	{
+		hash += (Uint32)((Uint32)val.first << (shift % 32)); ++shift;
+		hash += (Uint32)((Uint32)val.second << (shift % 32)); ++shift;
+	}
 	for ( auto& val : players[playernum].learnedSpells )
 	{
 		hash += (Uint32)((Uint32)val << (shift % 32)); ++shift;
@@ -5518,6 +5523,10 @@ int SaveGameInfo::populateFromSession(const int playernum)
 			for ( auto val : ::players[c]->mechanics.ducksInARow )
 			{
 				player.ducksInARow.push_back(val);
+			}
+			for ( auto& pair : ::players[c]->mechanics.escalatingRngRolls )
+			{
+				player.escalatingRngRolls.push_back(pair);
 			}
 			player.sustainedSpellMPUsedSorcery = ::players[c]->mechanics.sustainedSpellMPUsedSorcery;
 			player.sustainedSpellMPUsedMysticism = ::players[c]->mechanics.sustainedSpellMPUsedMysticism;
@@ -6453,6 +6462,7 @@ int loadGame(int player, const SaveGameInfo& info) {
 		mechanics.sustainedSpellIDCounter.clear();
 		hamletShopkeeperSkillLimit[statsPlayer].clear();
 		mechanics.baseSpellLevelUpProcs.clear();
+		mechanics.escalatingRngRolls.clear();
 		for ( auto& pair : info.players[player].itemDegradeRNG )
 		{
 			mechanics.itemDegradeRng[pair.first] = pair.second;
@@ -6469,11 +6479,14 @@ int loadGame(int player, const SaveGameInfo& info) {
 		{
 			mechanics.sustainedSpellIDCounter[pair.first] = pair.second;
 		}
+		for ( auto& pair : info.players[player].escalatingRngRolls )
+		{
+			mechanics.escalatingRngRolls[pair.first] = pair.second;
+		}
 		mechanics.sustainedSpellMPUsedSorcery = 0;
 		mechanics.sustainedSpellMPUsedMysticism = 0;
 		mechanics.sustainedSpellMPUsedThaumaturgy = 0;
 		mechanics.baseSpellMPUsedSorcery = 0;
-		mechanics.evasionProc = 0;
 		mechanics.baseSpellMPUsedMysticism = 0;
 		mechanics.baseSpellMPUsedThaumaturgy = 0;
 		mechanics.sustainedSpellMPUsedSorcery = info.players[player].sustainedSpellMPUsedSorcery;

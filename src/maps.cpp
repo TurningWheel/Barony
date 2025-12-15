@@ -3082,7 +3082,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 	{
 		for ( int y = 1; y < map.height; ++y )
 		{
-			for ( int x = 1; x < map.height; ++x )
+			for ( int x = 1; x < map.width; ++x )
 			{
 				if ( map.tiles[z + y * MAPLAYERS + x * MAPLAYERS * map.height] == 201 )
 				{
@@ -4210,7 +4210,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			&& ((c == 1 && !(secretlevel && currentlevel == 7)) || (c == 2 && secretlevel && currentlevel == 7)) )
 		{
 			std::set<int> walkableTiles;
-			for ( int isley = 1; isley < map.width - 1; ++isley )
+			for ( int isley = 1; isley < map.height - 1; ++isley )
 			{
 				for ( int islex = 1; islex < map.width - 1; ++islex )
 				{

@@ -508,6 +508,7 @@ struct SaveGameInfo {
 		std::vector<std::pair<int, PlayerRaceHostility_t>> shopkeeperHostility;
 		std::vector<std::pair<std::string, std::vector<int>>> compendium_item_events;
 		std::vector<std::pair<int, int>> itemDegradeRNG;
+		std::vector<std::pair<int, int>> escalatingRngRolls;
 		std::vector<int> learnedSpells;
 		std::vector<std::pair<int, int>> sustainedSpellIDCounter;
 		std::vector<int> ducksInARow;
@@ -714,6 +715,7 @@ struct SaveGameInfo {
 			fp->property("learned_spells", learnedSpells);
 			fp->property("ducks_in_a_row", ducksInARow);
 			fp->property("sustained_spell_id_counters", sustainedSpellIDCounter);
+			fp->property("escalating_rng_rolls", escalatingRngRolls);
 			return true;
 		}
 

@@ -2498,7 +2498,7 @@ void thrownItemUpdateSpellTrail(Entity& my, real_t _x, real_t _y)
 				for ( auto& eff : findEffects->second.effectMap )
 				{
 					if ( static_cast<int>(eff.second.x) / 16 == x
-						&& static_cast<int>(eff.second.x) / 16 == y )
+						&& static_cast<int>(eff.second.y) / 16 == y )
 					{
 						freeSpot = false;
 					}

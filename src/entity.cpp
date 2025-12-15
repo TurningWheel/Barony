@@ -4443,14 +4443,6 @@ void Entity::handleEffects(Stat* myStats)
 			if ( effectStrength >= 1 )
 			{
 				int stages = 1;
-				if ( (myStats->type == MONSTER_D && myStats->sex == FEMALE)
-					|| (myStats->type == MONSTER_M && myStats->sex == MALE) )
-				{
-					if ( local_rng.rand() % 5 == 0 )
-					{
-						stages += 1;
-					}
-				}
 				setEffect(EFF_GROWTH, (Uint8)(std::min(4, effectStrength + stages)), 15 * TICKS_PER_SECOND, false);
 				if ( myStats->getEffectActive(EFF_GROWTH) - effectStrength == 2 )
 				{
@@ -10969,7 +10961,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						if ( hitstats->type == MONSTER_D && hitstats->sex == FEMALE && hit.entity->behavior == &actPlayer )
 						{
 							int baseChance = 5;
-							miss = players[hit.entity->skill[2]]->mechanics.rollEvasionProc(baseChance);
+							miss = players[hit.entity->skill[2]]->mechanics.rollRngProc(Player::PlayerMechanics_t::RngRollTypes::RNG_ROLL_EVASION, baseChance);
 						}
 
 						if ( myStats->weapon )
@@ -11020,7 +11012,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							}
 							if ( hit.entity->behavior == &actPlayer )
 							{
-								miss = players[hit.entity->skill[2]]->mechanics.rollEvasionProc(baseChance);
+								miss = players[hit.entity->skill[2]]->mechanics.rollRngProc(Player::PlayerMechanics_t::RngRollTypes::RNG_ROLL_EVASION, baseChance);
 							}
 							else
 							{
@@ -23348,7 +23340,8 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool
 			return;
 		}
 	}
-	else if ( myStats->type == GYROBOT )
+	
+	if ( myStats->type == GYROBOT )
 	{
 		if ( state == MONSTER_STATE_ATTACK )
 		{
@@ -30809,7 +30802,7 @@ bool Entity::doSilkenBowOnAttack(Entity* attacker)
 
 		if ( playerHit >= 0 )
 		{
-			tryEffect = players[playerHit]->mechanics.rollEvasionProc(chance);
+			tryEffect = players[playerHit]->mechanics.rollRngProc(Player::PlayerMechanics_t::RngRollTypes::RNG_ROLL_SILKEN_BOW, chance);
 		}
 		else if ( roll < chance )
 		{

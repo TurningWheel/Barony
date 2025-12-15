@@ -1215,7 +1215,14 @@ void Entity::colliderOnDestroy()
 		{
 			for ( int i = 0; i < 3; ++i )
 			{
-				dropItemMonster(newItem(FOOD_SHROOM, SERVICABLE, 0, 1, 0, true, nullptr), this, nullptr);
+				if ( i == 0 && local_rng.rand() % 10 == 0 )
+				{
+					dropItemMonster(newItem(DUST_BALL, SERVICABLE, 0, 1, 0, true, nullptr), this, nullptr);
+				}
+				else
+				{
+					dropItemMonster(newItem(FOOD_SHROOM, SERVICABLE, 0, 1, 0, true, nullptr), this, nullptr);
+				}
 			}
 			Entity* parent = uidToEntity(this->colliderCreatedParent);
 			floorMagicCreateSpores(this, this->x, this->y, parent ? parent : this, 0, SPELL_SPORES);

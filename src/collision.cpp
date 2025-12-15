@@ -811,7 +811,7 @@ bool Entity::collisionProjectileMiss(Entity* parent, Entity* projectile)
 					if ( myStats->type == MONSTER_D && myStats->sex == FEMALE && behavior == &actPlayer )
 					{
 						int baseChance = 5;
-						miss = players[this->skill[2]]->mechanics.rollEvasionProc(baseChance);
+						miss = players[this->skill[2]]->mechanics.rollRngProc(Player::PlayerMechanics_t::RngRollTypes::RNG_ROLL_EVASION, baseChance);
 					}
 				}
 				else
@@ -855,7 +855,7 @@ bool Entity::collisionProjectileMiss(Entity* parent, Entity* projectile)
 						baseChance = std::max(10, baseChance);
 						if ( this->behavior == &actPlayer )
 						{
-							miss = players[this->skill[2]]->mechanics.rollEvasionProc(baseChance);
+							miss = players[this->skill[2]]->mechanics.rollRngProc(Player::PlayerMechanics_t::RngRollTypes::RNG_ROLL_EVASION, baseChance);
 						}
 						else
 						{

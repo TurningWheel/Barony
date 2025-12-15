@@ -8442,7 +8442,7 @@ void actParticleAestheticOrbit(Entity* my)
 			int mapx = static_cast<int>(my->x) >> 4;
 			int mapy = static_cast<int>(my->y) >> 4;
 			int mapIndex = (mapy)*MAPLAYERS + (mapx)*MAPLAYERS * map.height;
-			if ( mapx > 0 && mapy > 0 && mapx < map.width - 1 && mapy < map.width - 1 )
+			if ( mapx > 0 && mapy > 0 && mapx < map.width - 1 && mapy < map.height - 1 )
 			{
 				if ( map.tiles[OBSTACLELAYER + mapIndex] )
 				{
@@ -9928,7 +9928,7 @@ Entity* floorMagicCreateRoots(real_t x, real_t y, Entity* caster, int damage, in
 	int mapx = static_cast<int>(x) >> 4;
 	int mapy = static_cast<int>(y) >> 4;
 	int mapIndex = (mapy)*MAPLAYERS + (mapx) * MAPLAYERS * map.height;
-	if ( mapx > 0 && mapy > 0 && mapx < map.width - 1 && mapy < map.width - 1 )
+	if ( mapx > 0 && mapy > 0 && mapx < map.width - 1 && mapy < map.height - 1 )
 	{
 		if ( !map.tiles[mapIndex] 
 			|| swimmingtiles[map.tiles[mapIndex]]
@@ -9990,7 +9990,7 @@ void floorMagicCreateSpores(Entity* spawnOnEntity, real_t x, real_t y, Entity* c
 	int mapy = static_cast<int>(y) >> 4;
 
 	int mapIndex = (mapy)*MAPLAYERS + (mapx)*MAPLAYERS * map.height;
-	if ( mapx > 0 && mapy > 0 && mapx < map.width - 1 && mapy < map.width - 1 )
+	if ( mapx > 0 && mapy > 0 && mapx < map.width - 1 && mapy < map.height - 1 )
 	{
 		if ( map.tiles[OBSTACLELAYER + mapIndex] )
 		{
@@ -12741,7 +12741,7 @@ void actParticleTimer(Entity* my)
 					int x = static_cast<int>(my->x) >> 4;
 					int y = static_cast<int>(my->y) >> 4;
 					int mapIndex = (y)*MAPLAYERS + (x) * MAPLAYERS * map.height;
-					if ( x > 0 && y > 0 && x < map.width - 1 && y < map.width - 1 )
+					if ( x > 0 && y > 0 && x < map.width - 1 && y < map.height - 1 )
 					{
 						if ( map.tiles[mapIndex] )
 						{
@@ -12802,7 +12802,7 @@ void actParticleTimer(Entity* my)
 					int x = static_cast<int>(my->x) >> 4;
 					int y = static_cast<int>(my->y) >> 4;
 					int mapIndex = (y)*MAPLAYERS + (x)*MAPLAYERS * map.height;
-					if ( x > 0 && y > 0 && x < map.width - 1 && y < map.width - 1 )
+					if ( x > 0 && y > 0 && x < map.width - 1 && y < map.height - 1 )
 					{
 						if ( map.tiles[mapIndex] )
 						{
@@ -12902,7 +12902,7 @@ void actParticleTimer(Entity* my)
 						int x = static_cast<int>(data.x) >> 4;
 						int y = static_cast<int>(data.y) >> 4;
 						int mapIndex = (y)*MAPLAYERS + (x)*MAPLAYERS * map.height;
-						if ( x > 0 && y > 0 && x < map.width - 1 && y < map.width - 1
+						if ( x > 0 && y > 0 && x < map.width - 1 && y < map.height - 1
 							&& !map.tiles[OBSTACLELAYER + mapIndex] )
 						{
 							auto entLists = TileEntityList.getEntitiesWithinRadius(x, y, 0);
@@ -12966,7 +12966,7 @@ void actParticleTimer(Entity* my)
 						int x = static_cast<int>(data.x) >> 4;
 						int y = static_cast<int>(data.y) >> 4;
 						int mapIndex = (y)*MAPLAYERS + (x) * MAPLAYERS * map.height;
-						if ( x > 0 && y > 0 && x < map.width - 1 && y < map.width - 1
+						if ( x > 0 && y > 0 && x < map.width - 1 && y < map.height - 1
 							&& !map.tiles[OBSTACLELAYER + mapIndex] )
 						{
 							auto entLists = TileEntityList.getEntitiesWithinRadius(x, y, 0);
@@ -13056,7 +13056,7 @@ void actParticleTimer(Entity* my)
 							int mapy = static_cast<int>(data.y) >> 4;
 
 							int mapIndex = (mapy)*MAPLAYERS + (mapx)*MAPLAYERS * map.height;
-							if ( mapx > 0 && mapy > 0 && mapx < map.width - 1 && mapy < map.width - 1 )
+							if ( mapx > 0 && mapy > 0 && mapx < map.width - 1 && mapy < map.height - 1 )
 							{
 								if ( !map.tiles[OBSTACLELAYER + mapIndex] && map.tiles[mapIndex] 
 									&& !swimmingtiles[map.tiles[mapIndex] && !lavatiles[map.tiles[mapIndex]]] )
@@ -16634,14 +16634,14 @@ void actParticleFloorMagic(Entity* my)
 							}
 						}
 					}
-					if ( parentTimer->particleTimerVariable3 == 0 )
+					if ( !skip && parentTimer->particleTimerVariable3 == 0 )
 					{
 						if ( Entity* breakable = Entity::createBreakableCollider(EditorEntityData_t::getColliderIndexFromName("mushroom_spell_fragile"),
 							my->x, my->y, caster) )
 						{
 							parentTimer->particleTimerVariable3 = 1;
 							breakable->colliderSpellEvent = 1 + local_rng.rand() % 5;
-							if ( !caster && achievementObserver.checkUidIsFromPlayer(parentTimer->parent) >= 0 )
+							if ( !caster && achievementObserver.checkUidIsFromPlayer(parentTimer->parent) >= 0 || (caster && caster->behavior == &actPlayer) )
 							{
 								breakable->colliderCreatedParent = parentTimer->parent;
 								breakable->colliderSpellEvent = 6;
@@ -16723,7 +16723,11 @@ void actParticleFloorMagic(Entity* my)
 							if ( stats && entityInsideEntity(my, entity) )
 							{
 								bool targetNonPlayer = false;
-								if ( !caster && achievementObserver.checkUidIsFromPlayer(parentTimer->parent) >= 0 )
+								if ( caster && caster->behavior == &actPlayer )
+								{
+									targetNonPlayer = true;
+								}
+								else if ( !caster && achievementObserver.checkUidIsFromPlayer(parentTimer->parent) >= 0 )
 								{
 									targetNonPlayer = true;
 								}
@@ -16807,6 +16811,10 @@ void actParticleFloorMagic(Entity* my)
 									if ( caster )
 									{
 										bool alertTarget = entity->monsterAlertBeforeHit(caster);
+										if ( my->actfloorMagicType == ParticleTimerEffect_t::EffectType::EFFECT_MYCELIUM )
+										{
+											alertTarget = false;
+										}
 
 										// alert the monster!
 										if ( entity->monsterState != MONSTER_STATE_ATTACK && (stats->type < LICH || stats->type >= SHOPKEEPER) )

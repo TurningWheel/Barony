@@ -3213,7 +3213,7 @@ void Player::init() // for use on new/restart game, UI related
 	mechanics.ensembleTakenInitialMP = false;
 	mechanics.ensembleDataUpdate = 0;
 	mechanics.gremlinBreakableCounter = 0;
-	mechanics.evasionProc = 0;
+	mechanics.escalatingRngRolls.clear();
 
 	mechanics.fociDarkChargeTime = 0;
 	mechanics.fociHolyChargeTime = 0;
@@ -8361,7 +8361,7 @@ std::map<int, real_t> prng_tables
 };
 
 // escalating rng
-bool Player::PlayerMechanics_t::rollEvasionProc(int chance)
+bool Player::PlayerMechanics_t::rollRngProc(Player::PlayerMechanics_t::RngRollTypes rngType, int chance)
 {
 	chance = std::min(95, chance);
 	if ( chance <= 0 )
@@ -8375,7 +8375,7 @@ bool Player::PlayerMechanics_t::rollEvasionProc(int chance)
 		real_t c = find->second;
 		if ( chance < 5 )
 		{
-			c *= (chance / 5.0);
+			c = (chance / 5.0) * prng_tables[5];
 		}
 		else if ( chance % 5 > 0 )
 		{
@@ -8388,23 +8388,32 @@ bool Player::PlayerMechanics_t::rollEvasionProc(int chance)
 			}
 		}
 
-		if ( c * evasionProc >= 1.0 
-			|| (chance >= 5 && evasionProc >= 20) ) // 20 is hard pity cap
+		int pityCap = 20;
+		if ( chance < 5 )
+		{
+			int oneInRoll = 1 / (chance / 100.0);
+			pityCap = std::max(pityCap, oneInRoll);
+		}
+
+		auto& rng_counter = escalatingRngRolls[(int)rngType];
+
+		if ( c * rng_counter >= 1.0
+			|| (rng_counter >= pityCap) )
 		{
 			// success
-			evasionProc = 0;
+			rng_counter = 0;
 			return true;
 		}
 
 		real_t roll = (local_rng.rand() % 10000) / 10000.0;
-		if ( roll <= c * evasionProc )
+		if ( roll <= c * rng_counter )
 		{
 			// success
-			evasionProc = 0;
+			rng_counter = 0;
 			return true;
 		}
 
-		++evasionProc;
+		++rng_counter;
 	}
 	else
 	{
