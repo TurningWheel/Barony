@@ -1361,7 +1361,7 @@ Frame* createAllyPlayerFrame(const int player, Frame* baseFrame)
 }
 
 static ConsoleVariable<int> cvar_assist_icon_txt_x("/assist_icon_txt_x", 0);
-static ConsoleVariable<int> cvar_assist_icon_txt_y("/assist_icon_txt_y", 8);
+static ConsoleVariable<int> cvar_assist_icon_txt_y("/assist_icon_txt_y", 14);
 
 Frame* createAllyPlayerEntry(const int player, Frame* baseFrame)
 {
@@ -6328,6 +6328,7 @@ void StatusEffectQueueEntry_t::animateNotification(int player)
 	pos.h = animateStartH + destH * animateH;
 }
 
+static ConsoleVariable<bool> cvar_statusfx_align_text_right("/statusfx_align_text_right", false);
 void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 	Frame* frame = (Frame*)&widget;
 	if ( auto parent = frame->getParent() )
@@ -6361,6 +6362,7 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 			{
 				for ( auto img : frame->getImages() )
 				{
+					bool alignRight = *cvar_statusfx_align_text_right;
 					if ( !img->disabled )
 					{
 						if ( img->path.find("assistance.png") != std::string::npos )
@@ -6378,6 +6380,7 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 						}
 						else if ( img->path.find("ensemble_flute.png") != std::string::npos )
 						{
+							alignRight = true;
 							std::string val = "I";
 							Uint8 effectStrength = stats[player]->getEffectActive(EFF_ENSEMBLE_FLUTE);
 							if ( effectStrength >= 1 )
@@ -6399,7 +6402,7 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 								"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
 							{
 								text->drawColor(SDL_Rect{ 0,0,0,0 },
-									SDL_Rect{ pos.x + img->pos.x + img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x,
+									SDL_Rect{ pos.x + img->pos.x + (alignRight ? (img->pos.w - (int)text->getWidth()) : (img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x)),
 									pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
 									0, 0 },
 									SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
@@ -6408,6 +6411,7 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 						}
 						else if ( img->path.find("ensemble_lute.png") != std::string::npos )
 						{
+							alignRight = true;
 							std::string val = "I";
 							Uint8 effectStrength = stats[player]->getEffectActive(EFF_ENSEMBLE_LUTE);
 							if ( effectStrength >= 1 )
@@ -6429,7 +6433,7 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 								"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
 							{
 								text->drawColor(SDL_Rect{ 0,0,0,0 },
-									SDL_Rect{ pos.x + img->pos.x + img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x,
+									SDL_Rect{ pos.x + img->pos.x + (alignRight ? (img->pos.w - (int)text->getWidth()) : (img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x)),
 									pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
 									0, 0 },
 									SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
@@ -6438,6 +6442,7 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 						}
 						else if ( img->path.find("ensemble_lyre.png") != std::string::npos )
 						{
+							alignRight = true;
 							std::string val = "I";
 							Uint8 effectStrength = stats[player]->getEffectActive(EFF_ENSEMBLE_LYRE);
 							if ( effectStrength >= 1 )
@@ -6459,7 +6464,7 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 								"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
 							{
 								text->drawColor(SDL_Rect{ 0,0,0,0 },
-									SDL_Rect{ pos.x + img->pos.x + img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x,
+									SDL_Rect{ pos.x + img->pos.x + (alignRight ? (img->pos.w - (int)text->getWidth()) : (img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x)),
 									pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
 									0, 0 },
 									SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
@@ -6468,6 +6473,7 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 						}
 						else if ( img->path.find("ensemble_drum.png") != std::string::npos )
 						{
+							alignRight = true;
 							std::string val = "I";
 							Uint8 effectStrength = stats[player]->getEffectActive(EFF_ENSEMBLE_DRUM);
 							if ( effectStrength >= 1 )
@@ -6489,7 +6495,7 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 								"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
 							{
 								text->drawColor(SDL_Rect{ 0,0,0,0 },
-									SDL_Rect{ pos.x + img->pos.x + img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x,
+									SDL_Rect{ pos.x + img->pos.x + (alignRight ? (img->pos.w - (int)text->getWidth()) : (img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x)),
 									pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
 									0, 0 },
 									SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
@@ -6498,6 +6504,7 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 							}
 						else if ( img->path.find("ensemble_horn.png") != std::string::npos )
 						{
+							alignRight = true;
 							std::string val = "I";
 							Uint8 effectStrength = stats[player]->getEffectActive(EFF_ENSEMBLE_HORN);
 							if ( effectStrength >= 1 )
@@ -6519,7 +6526,7 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 								"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
 							{
 								text->drawColor(SDL_Rect{ 0,0,0,0 },
-									SDL_Rect{ pos.x + img->pos.x + img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x,
+									SDL_Rect{ pos.x + img->pos.x + (alignRight ? (img->pos.w - (int)text->getWidth()) : (img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x)),
 									pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
 									0, 0 },
 									SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
@@ -6533,7 +6540,7 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 								"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
 							{
 								text->drawColor(SDL_Rect{ 0,0,0,0 },
-									SDL_Rect{ pos.x + img->pos.x + img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x,
+									SDL_Rect{ pos.x + img->pos.x + (alignRight ? (img->pos.w - (int)text->getWidth()) : (img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x)),
 									pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
 									0, 0 },
 									SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
@@ -6547,7 +6554,7 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 								"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
 							{
 								text->drawColor(SDL_Rect{ 0,0,0,0 },
-									SDL_Rect{ pos.x + img->pos.x + img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x,
+									SDL_Rect{ pos.x + img->pos.x + (alignRight ? (img->pos.w - (int)text->getWidth()) : (img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x)),
 									pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
 									0, 0 },
 									SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
@@ -6561,7 +6568,7 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 								"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
 							{
 								text->drawColor(SDL_Rect{ 0,0,0,0 },
-									SDL_Rect{ pos.x + img->pos.x + img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x,
+									SDL_Rect{ pos.x + img->pos.x + (alignRight ? (img->pos.w - (int)text->getWidth()) : (img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x)),
 									pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
 									0, 0 },
 									SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
@@ -6575,7 +6582,7 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 								"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
 							{
 								text->drawColor(SDL_Rect{ 0,0,0,0 },
-									SDL_Rect{ pos.x + img->pos.x + img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x,
+									SDL_Rect{ pos.x + img->pos.x + (alignRight ? (img->pos.w - (int)text->getWidth()) : (img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x)),
 									pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
 									0, 0 },
 									SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
@@ -6591,7 +6598,7 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 									"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
 								{
 									text->drawColor(SDL_Rect{ 0,0,0,0 },
-										SDL_Rect{ pos.x + img->pos.x + img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x,
+										SDL_Rect{ pos.x + img->pos.x + (alignRight ? (img->pos.w - (int)text->getWidth()) : (img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x)),
 										pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
 										0, 0 },
 										SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
@@ -6608,7 +6615,7 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 									"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
 								{
 									text->drawColor(SDL_Rect{ 0,0,0,0 },
-										SDL_Rect{ pos.x + img->pos.x + img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x,
+										SDL_Rect{ pos.x + img->pos.x + (alignRight ? (img->pos.w - (int)text->getWidth()) : (img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x)),
 										pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
 										0, 0 },
 										SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
@@ -6625,7 +6632,7 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 									"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
 								{
 									text->drawColor(SDL_Rect{ 0,0,0,0 },
-										SDL_Rect{ pos.x + img->pos.x + img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x,
+										SDL_Rect{ pos.x + img->pos.x + (alignRight ? (img->pos.w - (int)text->getWidth()) : (img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x)),
 										pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
 										0, 0 },
 										SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
@@ -6642,7 +6649,7 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 									"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
 								{
 									text->drawColor(SDL_Rect{ 0,0,0,0 },
-										SDL_Rect{ pos.x + img->pos.x + img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x,
+										SDL_Rect{ pos.x + img->pos.x + (alignRight ? (img->pos.w - (int)text->getWidth()) : (img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x)),
 										pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
 										0, 0 },
 										SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
@@ -6659,7 +6666,7 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 									"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
 								{
 									text->drawColor(SDL_Rect{ 0,0,0,0 },
-										SDL_Rect{ pos.x + img->pos.x + img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x,
+										SDL_Rect{ pos.x + img->pos.x + (alignRight ? (img->pos.w - (int)text->getWidth()) : (img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x)),
 										pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
 										0, 0 },
 										SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
@@ -6669,6 +6676,7 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 						}
 						else if ( img->path.find("symbol_justice.png") != std::string::npos )
 						{
+							alignRight = true;
 							Uint8 effectStrength = stats[player]->getEffectActive(EFF_FOCI_LIGHT_JUSTICE);
 							if ( effectStrength >= 1 )
 							{
@@ -6689,7 +6697,7 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 									"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
 								{
 									text->drawColor(SDL_Rect{ 0,0,0,0 },
-										SDL_Rect{ pos.x + img->pos.x + img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x,
+										SDL_Rect{ pos.x + img->pos.x + (alignRight ? (img->pos.w - (int)text->getWidth()) : (img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x)),
 										pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
 										0, 0 },
 										SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
@@ -6699,6 +6707,7 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 						}
 						else if ( img->path.find("symbol_peace.png") != std::string::npos )
 						{
+							alignRight = true;
 							Uint8 effectStrength = stats[player]->getEffectActive(EFF_FOCI_LIGHT_PEACE);
 							if ( effectStrength >= 1 )
 							{
@@ -6719,7 +6728,7 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 									"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
 								{
 									text->drawColor(SDL_Rect{ 0,0,0,0 },
-										SDL_Rect{ pos.x + img->pos.x + img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x,
+										SDL_Rect{ pos.x + img->pos.x + (alignRight ? (img->pos.w - (int)text->getWidth()) : (img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x)),
 										pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
 										0, 0 },
 										SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
@@ -6729,6 +6738,7 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 						}
 						else if ( img->path.find("symbol_providence.png") != std::string::npos )
 						{
+							alignRight = true;
 							Uint8 effectStrength = stats[player]->getEffectActive(EFF_FOCI_LIGHT_PROVIDENCE);
 							if ( effectStrength >= 1 )
 							{
@@ -6749,7 +6759,7 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 									"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
 								{
 									text->drawColor(SDL_Rect{ 0,0,0,0 },
-										SDL_Rect{ pos.x + img->pos.x + img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x,
+										SDL_Rect{ pos.x + img->pos.x + (alignRight ? (img->pos.w - (int)text->getWidth()) : (img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x)),
 										pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
 										0, 0 },
 										SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
@@ -6759,6 +6769,7 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 						}
 						else if ( img->path.find("symbol_purity.png") != std::string::npos )
 						{
+							alignRight = true;
 							Uint8 effectStrength = stats[player]->getEffectActive(EFF_FOCI_LIGHT_PURITY);
 							if ( effectStrength >= 1 )
 							{
@@ -6779,7 +6790,7 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 									"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
 								{
 									text->drawColor(SDL_Rect{ 0,0,0,0 },
-										SDL_Rect{ pos.x + img->pos.x + img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x,
+										SDL_Rect{ pos.x + img->pos.x + (alignRight ? (img->pos.w - (int)text->getWidth()) : (img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x)),
 										pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
 										0, 0 },
 										SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
@@ -6789,6 +6800,7 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 						}
 						else if ( img->path.find("symbol_sanctuary.png") != std::string::npos )
 						{
+							alignRight = true;
 							Uint8 effectStrength = stats[player]->getEffectActive(EFF_FOCI_LIGHT_SANCTUARY);
 							if ( effectStrength >= 1 )
 							{
@@ -6809,7 +6821,7 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 									"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
 								{
 									text->drawColor(SDL_Rect{ 0,0,0,0 },
-										SDL_Rect{ pos.x + img->pos.x + img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x,
+										SDL_Rect{ pos.x + img->pos.x + (alignRight ? (img->pos.w - (int)text->getWidth()) : (img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x)),
 										pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
 										0, 0 },
 										SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
@@ -6820,6 +6832,7 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 						else if ( img->path.find("growth_dryad") != std::string::npos
 							|| img->path.find("growth_myconid") != std::string::npos )
 						{
+							alignRight = true;
 							Uint8 effectStrength = stats[player]->getEffectActive(EFF_GROWTH);
 							if ( effectStrength >= 1 )
 							{
@@ -6836,7 +6849,7 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 									"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
 								{
 									text->drawColor(SDL_Rect{ 0,0,0,0 },
-										SDL_Rect{ pos.x + img->pos.x + img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x,
+										SDL_Rect{ pos.x + img->pos.x + (alignRight ? (img->pos.w - (int)text->getWidth()) : (img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x)),
 										pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
 										0, 0 },
 										SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
@@ -6846,6 +6859,7 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 						}
 						else if ( img->path.find("vandal.png") != std::string::npos )
 						{
+							alignRight = true;
 							int effectStrength = players[player]->mechanics.getBreakableCounterTier();
 							if ( effectStrength > 0 )
 							{
@@ -6870,7 +6884,7 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 									"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
 								{
 									text->drawColor(SDL_Rect{ 0,0,0,0 },
-										SDL_Rect{ pos.x + img->pos.x + img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x,
+										SDL_Rect{ pos.x + img->pos.x + (alignRight ? (img->pos.w - (int)text->getWidth()) : (img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x)),
 										pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
 										0, 0 },
 										SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
@@ -6887,7 +6901,7 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 									"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
 								{
 									text->drawColor(SDL_Rect{ 0,0,0,0 },
-										SDL_Rect{ pos.x + img->pos.x + img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x,
+										SDL_Rect{ pos.x + img->pos.x + (alignRight ? (img->pos.w - (int)text->getWidth()) : (img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x)),
 										pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
 										0, 0 },
 										SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
