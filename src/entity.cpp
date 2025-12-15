@@ -5236,9 +5236,9 @@ void Entity::handleEffects(Stat* myStats)
 		{
 			this->char_energize = 0;
 			int decrease = std::max(1, myStats->MAXMP / 50);
-			if ( !hit.entity->safeConsumeMP(decrease) )
+			if ( !this->safeConsumeMP(decrease) )
 			{
-				hit.entity->modMP(-decrease);
+				this->modMP(-decrease);
 			}
 		}
 	}
