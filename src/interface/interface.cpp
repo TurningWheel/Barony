@@ -5391,7 +5391,7 @@ bool GenericGUIMenu::isItemAlterable(const Item* item)
 		GenericGUIMenu::tinkeringGetItemValue(item, &metal, &magic);
 		if ( metal > 0 && itemCategory(item) != GEM )
 		{
-			if ( items[item->type].value > 0 )
+			if ( item->getGoldValue() > 0 )
 			{
 				int value = item->sellValue(-1) / 4;
 				return value > 0;
@@ -5410,7 +5410,7 @@ bool GenericGUIMenu::isItemAlterable(const Item* item)
 			return false;
 		}
 
-		if ( items[item->type].value > 0 )
+		if ( item->getGoldValue() > 0 )
 		{
 			int value = item->sellValue(-1) / 20;
 			return value > 0;
@@ -5424,7 +5424,7 @@ bool GenericGUIMenu::isItemAlterable(const Item* item)
 		GenericGUIMenu::tinkeringGetItemValue(item, &metal, &magic);
 		if ( metal > 0 )
 		{
-			if ( items[item->type].value > 0 )
+			if ( item->getGoldValue() > 0 )
 			{
 				int value = item->sellValue(-1) / 2;
 				return value > 0;
@@ -24034,7 +24034,7 @@ void GenericGUIMenu::ItemEffectGUI_t::getItemEffectCost(Item* itemUsedWith, int&
 		}
 		else if ( currentMode == ITEMFX_MODE_VANDALISE )
 		{
-			manaCost = std::max(20, items[itemUsedWith->type].value / 100);
+			manaCost = std::max(20, itemUsedWith->getGoldValue() / 100);
 			goldCost = -itemUsedWith->sellValue(parentGUI.gui_player) / 20;
 		}
 		else if ( currentMode == ITEMFX_MODE_FORGE_KEY )

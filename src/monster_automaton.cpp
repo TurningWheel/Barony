@@ -1626,12 +1626,12 @@ void Entity::automatonRecycleItem()
 
 	//messagePlayer(0, "made it past");
 
-	int maxGoldValue = ((items[item1->type].value + items[item2->type].value) * 2) / 3;
+	int maxGoldValue = ((item1->getGoldValue() + item2->getGoldValue()) * 2) / 3;
 	if ( local_rng.rand() % 2 == 0 )
 	{
-		maxGoldValue = ((items[item1->type].value + items[item2->type].value) * 1) / 2;
+		maxGoldValue = ((item1->getGoldValue() + item2->getGoldValue()) * 1) / 2;
 	}
-	int minGoldValue = ((items[item1->type].value + items[item2->type].value) * 1) / 3;
+	int minGoldValue = ((item1->getGoldValue() + item2->getGoldValue()) * 1) / 3;
 	ItemType type;
 	// generate a weapon/armor piece and add it into the inventory.
 	switch ( local_rng.rand() % 10 )

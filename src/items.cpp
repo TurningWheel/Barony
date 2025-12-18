@@ -1477,7 +1477,7 @@ bool playerThrowDuck(const int player, Item* const item, int charge)
 		entity->skill[14] = item->appearance;
 		entity->skill[15] = item->identified;
 
-		real_t speed = 1.f + 4.f * std::min(50, std::max(0, charge)) / (real_t)(50);
+		real_t speed = 1.f + 4.f * (-30 + std::min(50, std::max(30, charge))) / (real_t)(20);
 		entity->vel_x = speed * cos(players[player]->entity->yaw);
 		entity->vel_y = speed * sin(players[player]->entity->yaw);
 		entity->vel_z = -.5;
@@ -5106,6 +5106,45 @@ Sint32 Item::potionGetCursedEffectDurationRandom(Entity* my, Stat* myStats) cons
 	return potionGetCursedEffectDurationMinimum(my, myStats) + (local_rng.rand() % (range));
 }
 
+Sint32 Item::getGoldValue() const
+{
+	if ( type >= 0 && type < NUMITEMS )
+	{
+		if ( items[type].category == TOME_SPELL )
+		{
+			int spellID = getTomeSpellID();
+			if ( spellID > SPELL_NONE )
+			{
+				if ( auto spell = getSpellFromID(spellID) )
+				{
+					if ( spell->difficulty >= 100 )
+					{
+						return items[type].gold_value + 950;
+					}
+					else if ( spell->difficulty >= 80 )
+					{
+						return items[type].gold_value + 550;
+					}
+					else if ( spell->difficulty >= 60 )
+					{
+						return items[type].gold_value + 350;
+					}
+					else if ( spell->difficulty >= 40 )
+					{
+						return items[type].gold_value + 150;
+					}
+					else if ( spell->difficulty >= 20 )
+					{
+						return items[type].gold_value + 50;
+					}
+				}
+			}
+		}
+		return items[type].gold_value;
+	}
+	return 0;
+}
+
 Sint32 Item::getWeight() const
 {
 	if ( type >= 0 && type < NUMITEMS )
@@ -5635,7 +5674,7 @@ bool Item::canUnequip(const Stat* const wielder)
 
 int Item::buyValue(const int player) const
 {
-	int value = items[type].value; // base value
+	int value = this->getGoldValue(); // base value
 
 	// identified bonus
 	if ( identified )
@@ -5687,10 +5726,10 @@ int Item::buyValue(const int player) const
 
 	if ( itemTypeIsQuiver(type) )
 	{
-		return std::max(value, items[type].value) * count;
+		return std::max(value, this->getGoldValue()) * count;
 	}
 
-	return std::max(value, items[type].value);
+	return std::max(value, this->getGoldValue());
 }
 
 /*-------------------------------------------------------------------------------
@@ -5703,7 +5742,7 @@ int Item::buyValue(const int player) const
 
 int Item::sellValue(const int player) const
 {
-	int value = items[type].value; // base value
+	int value = this->getGoldValue(); // base value
 
 	// identified bonus
 	if ( identified )
@@ -5714,7 +5753,7 @@ int Item::sellValue(const int player) const
 	{
 		if ( itemCategory(this) == GEM )
 		{
-			value = items[GEM_GLASS].value;
+			value = items[GEM_GLASS].gold_value;
 		}
 		else
 		{
@@ -5740,10 +5779,10 @@ int Item::sellValue(const int player) const
 
 	if ( itemTypeIsQuiver(type) )
 	{
-		return std::min(value, items[type].value) * count;
+		return std::min(value, this->getGoldValue()) * count;
 	}
 
-	return std::min(value, items[type].value);
+	return std::min(value, this->getGoldValue());
 }
 
 /*-------------------------------------------------------------------------------
@@ -6443,7 +6482,7 @@ ItemType itemTypeWithinGoldValue(const int cat, const int minValue, const int ma
 	{
 		if ( items[c].category == cat || (pickAnyCategory && items[c].category < Category::CATEGORY_MAX - 2) )
 		{
-			if ( items[c].value >= minValue && items[c].value <= maxValue && items[c].level != -1 )
+			if ( items[c].gold_value >= minValue && items[c].gold_value <= maxValue && items[c].level != -1 )
 			{
 				// chance true for an item if it's not forbidden from the global item list.
 				chances[c] = true;

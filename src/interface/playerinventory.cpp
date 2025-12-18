@@ -6326,11 +6326,11 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 						}
 						else
 						{
-							if ( items[item->type].value < 100 )
+							if ( item->getGoldValue() < 100 )
 							{
 								snprintf(valueBuf, sizeof(valueBuf), "%s", "?");
 							}
-							else if ( items[item->type].value < 1000 )
+							else if ( item->getGoldValue() < 1000 )
 							{
 								snprintf(valueBuf, sizeof(valueBuf), "%s", "??");
 							}
@@ -6342,7 +6342,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 					}
 					else
 					{
-						snprintf(valueBuf, sizeof(valueBuf), "%d", items[item->type].value);
+						snprintf(valueBuf, sizeof(valueBuf), "%d", item->getGoldValue());
 					}
 				}
                 txtGoldValue->setText(valueBuf);

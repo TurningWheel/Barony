@@ -116,6 +116,7 @@ void initGameDatafiles(bool moddedReload)
 	CompendiumEntries.readModelLimbsFromFile("world");
 	CompendiumEntries.readModelLimbsFromFile("codex");
 	MainMenu::MainMenuBanners_t::readFromFile();
+	Player::Inventory_t::Appraisal_t::readFromFile();
 }
 
 void initGameDatafilesAsync(bool moddedReload)

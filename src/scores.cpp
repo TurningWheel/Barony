@@ -361,7 +361,7 @@ int totalScore(score_t* score)
 	for ( node_t* node = score->stats->inventory.first; node != NULL; node = node->next )
 	{
 		Item* item = (Item*)node->element;
-		amount += items[item->type].value;
+		amount += items[item->type].gold_value;
 	}
 	amount += score->stats->GOLD;
 	amount += score->stats->EXP;
@@ -5790,7 +5790,7 @@ int SaveGameInfo::getTotalScore(const int playernum, const int victory)
 
 	for ( auto& item : stats->inventory )
 	{
-		amount += items[item.type].value;
+		amount += items[item.type].gold_value;
 	}
 	amount += stats->GOLD;
 	amount += stats->EXP;

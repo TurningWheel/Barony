@@ -1176,7 +1176,7 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 									}
 								}
 								else if ( my->monsterAllyPickupItems == ALLY_GYRO_DETECT_ITEMS_VALUABLE
-									&& (items[itemOnGround->type].value >= 400
+									&& (itemOnGround->getGoldValue() >= 400
 										|| (itemOnGround->type >= KEY_STONE && itemOnGround->type <= KEY_MACHINE)) )
 								{
 									if ( gyroBotFoundNewEntity(*ent) )

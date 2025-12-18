@@ -4527,7 +4527,10 @@ void actHudShield(Entity* my)
 	// main animation
 	if ( defending || cast_animation[HUDSHIELD_PLAYERNUM].active_spellbook )
 	{
-		if ( !spellbook )
+		if ( duck )
+		{
+		}
+		else if ( !spellbook )
 		{
 			if ( HUDSHIELD_MOVEY < 3 )
 			{
@@ -4894,9 +4897,12 @@ void actHudShield(Entity* my)
 		if ( HUDSHIELD_DUCK_CHARGE >= 1.0 )
 		{
 			my->pitch += (-PI / 16) * chargeAnim;
-			my->y += -3 * chargeAnim;
+			my->y += (3 - 3) * chargeAnim;
 			my->x += 2 * chargeAnim;
-			if ( ticks % 2 && HUDSHIELD_DUCK_CHARGE >= 50.0 )
+			//my->yaw += (PI / 3) * chargeAnim;
+			my->z += -1 * chargeAnim;
+
+			if ( ticks % 2 && HUDSHIELD_DUCK_CHARGE >= 30.0 )
 			{
 				my->x += (local_rng.rand() % 30 - 10) / 80.f;
 				my->y += (local_rng.rand() % 30 - 10) / 80.f;
@@ -4904,7 +4910,7 @@ void actHudShield(Entity* my)
 			}
 		}
 
-		if ( HUDSHIELD_DUCK_CHARGE >= 60.0 || (!defending && HUDSHIELD_DUCK_CHARGE >= 1.0) )
+		if ( HUDSHIELD_DUCK_CHARGE >= 60.0 || (!defending && HUDSHIELD_DUCK_CHARGE >= 30.0) )
 		{
 			if ( playerThrowDuck(HUDSHIELD_PLAYERNUM, stats[HUDSHIELD_PLAYERNUM]->shield, std::min(50, (int)HUDSHIELD_DUCK_CHARGE)) )
 			{

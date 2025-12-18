@@ -8438,14 +8438,15 @@ void actPlayer(Entity* my)
 					bool success = false;
 					if ( stats[PLAYER_NUM]->getModifiedProficiency(PRO_APPRAISAL) < 100 )
 					{
-						if ( tempItem->type != GEM_GLASS )
+						/*if ( tempItem->type != GEM_GLASS )
 						{
-							success = (stats[PLAYER_NUM]->getModifiedProficiency(PRO_APPRAISAL) + my->getPER() * 5 >= items[tempItem->type].value / 10);
+							success = (stats[PLAYER_NUM]->getModifiedProficiency(PRO_APPRAISAL) + my->getPER() * 5 >= items[tempItem->type].gold_value / 10);
 						}
 						else
 						{
 							success = (stats[PLAYER_NUM]->getModifiedProficiency(PRO_APPRAISAL) + my->getPER() * 5 >= 100);
-						}
+						}*/
+						success = players[PLAYER_NUM]->inventoryUI.appraisal.appraisalPossible(tempItem);
 					}
 					else
 					{
@@ -8471,27 +8472,27 @@ void actPlayer(Entity* my)
 					}
 
 					//Attempt a level up.
-					if ( tempItem && items[tempItem->type].value > 0 && stats[PLAYER_NUM] )
+					if ( tempItem && tempItem->getGoldValue() > 0 && stats[PLAYER_NUM] )
 					{
 						if ( tempItem->identified )
 						{
 							int appraisalEaseOfDifficulty = 0;
-							if ( items[tempItem->type].value < 100 )
+							if ( tempItem->getGoldValue() < 100 )
 							{
 								// easy junk items
 								appraisalEaseOfDifficulty = 2;
 							}
-							else if ( items[tempItem->type].value < 200 )
+							else if ( tempItem->getGoldValue() < 200 )
 							{
 								// medium
 								appraisalEaseOfDifficulty = 1;
 							}
-							else if ( items[tempItem->type].value < 300 )
+							else if ( tempItem->getGoldValue() < 300 )
 							{
 								// medium
 								appraisalEaseOfDifficulty = 0;
 							}
-							else if ( items[tempItem->type].value < 400 )
+							else if ( tempItem->getGoldValue() < 400 )
 							{
 								// hardest
 								appraisalEaseOfDifficulty = -1;
@@ -8505,22 +8506,28 @@ void actPlayer(Entity* my)
 							// difficulty ranges from 1-in-1 to 1-in-6
 							appraisalEaseOfDifficulty = std::max(appraisalEaseOfDifficulty, 1);
 							//messagePlayer(0, "Appraisal level up chance: 1 in %d", appraisalEaseOfDifficulty);
-							if ( local_rng.rand() % appraisalEaseOfDifficulty == 0 )
+
+							int attempts = itemTypeIsQuiver(tempItem->type) ? 1 : tempItem->count;
+							for ( int i = 0; i < attempts; ++i )
 							{
-								if ( multiplayer == CLIENT )
+								if ( local_rng.rand() % appraisalEaseOfDifficulty == 0 )
 								{
-									// request level up
-									strcpy((char*)net_packet->data, "CSKL");
-									net_packet->data[4] = PLAYER_NUM;
-									net_packet->data[5] = PRO_APPRAISAL;
-									net_packet->address.host = net_server.host;
-									net_packet->address.port = net_server.port;
-									net_packet->len = 6;
-									sendPacketSafe(net_sock, -1, net_packet, 0);
-								}
-								else
-								{
-									my->increaseSkill(PRO_APPRAISAL);
+									if ( multiplayer == CLIENT )
+									{
+										// request level up
+										strcpy((char*)net_packet->data, "CSKL");
+										net_packet->data[4] = PLAYER_NUM;
+										net_packet->data[5] = PRO_APPRAISAL;
+										net_packet->address.host = net_server.host;
+										net_packet->address.port = net_server.port;
+										net_packet->len = 6;
+										sendPacketSafe(net_sock, -1, net_packet, 0);
+									}
+									else
+									{
+										my->increaseSkill(PRO_APPRAISAL);
+									}
+									break;
 								}
 							}
 						}

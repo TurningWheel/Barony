@@ -40942,11 +40942,11 @@ SDL_Surface* Player::WorldUI_t::WorldTooltipItem_t::blitItemWorldTooltip(Item* i
 				}
 				else
 				{
-					if ( items[item->type].value < 100 )
+					if ( item->getGoldValue() < 100 )
 					{
 						snprintf(goldBuf, sizeof(goldBuf), "%s", "?");
 					}
-					else if ( items[item->type].value < 1000 )
+					else if ( item->getGoldValue() < 1000 )
 					{
 						snprintf(goldBuf, sizeof(goldBuf), "%s", "??");
 					}
@@ -40958,7 +40958,7 @@ SDL_Surface* Player::WorldUI_t::WorldTooltipItem_t::blitItemWorldTooltip(Item* i
 			}
 			else
 			{
-				snprintf(goldBuf, sizeof(goldBuf), "%d", items[item->type].value);
+				snprintf(goldBuf, sizeof(goldBuf), "%d", item->getGoldValue());
 			}
 			if ( SDL_Surface* textSurf = const_cast<SDL_Surface*>(Text::get(goldBuf, font->getName(),
 				hudColors.characterSheetNeutral, 0)->getSurf()) )

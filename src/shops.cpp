@@ -212,7 +212,7 @@ bool buyItemFromShop(const int player, Item* item, bool& bOutConsumedEntireStack
 		{
 			shopspeech[player] = Language::get(4255 + local_rng.rand() % 5);
 		}
-		else if ( items[item->type].value * 1.5 >= item->buyValue(player) )
+		else if ( item->getGoldValue() * 1.5 >= item->buyValue(player) )
 		{
 			shopspeech[player] = Language::get(200 + local_rng.rand() % 3);
 		}
@@ -614,7 +614,7 @@ bool sellItemToShop(const int player, Item* item)
 		return false;
 	}
 
-	if ( items[item->type].value * .75 <= item->sellValue(player) )
+	if ( item->getGoldValue() * .75 <= item->sellValue(player) )
 	{
 		shopspeech[player] = Language::get(209 + local_rng.rand() % 3);
 	}

@@ -891,7 +891,7 @@ void actItem(Entity* my)
 					Compendium_t::Events_t::eventUpdateWorld(playerOwner, Compendium_t::CPDM_PITS_ITEMS_LOST, "pits", 1);
 					if ( ITEM_TYPE >= 0 && ITEM_TYPE < NUMITEMS )
 					{
-						Compendium_t::Events_t::eventUpdateWorld(playerOwner, Compendium_t::CPDM_PITS_ITEMS_VALUE_LOST, "pits", items[ITEM_TYPE].value);
+						Compendium_t::Events_t::eventUpdateWorld(playerOwner, Compendium_t::CPDM_PITS_ITEMS_VALUE_LOST, "pits", items[ITEM_TYPE].gold_value);
 					}
 				}
 			}

@@ -640,6 +640,7 @@ public:
 	static int getBaseFoodSatiation(ItemType type);
 
 	Sint32 getWeight() const;
+	Sint32 getGoldValue() const;
 
 	void foodTinGetDescriptionIndices(int* a, int* b, int* c) const;
 	void foodTinGetDescription(std::string& cookingMethod, std::string& protein, std::string& sides) const;
@@ -692,7 +693,7 @@ public:
 	int fpindex;                // first person model
 	int variations;             // number of model variations
 	int weight;                 // weight per item
-	int value;                  // value per item
+	int gold_value;                  // value per item
 	list_t images;              // item image filenames (inventory)
 	list_t surfaces;            // item image surfaces (inventory)
 	Category category;          // item category

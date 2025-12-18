@@ -1173,6 +1173,17 @@ public:
 			};
 			std::unordered_map<Uint32, ItemNotifyHoverStates> itemsToNotify;
 			void updateAppraisalAnim();
+			static void readFromFile();
+			static std::vector<std::pair<int, int>> appraisal_time_points;
+			struct AppraisalBreakpoint_t
+			{
+				int skillLVL = 0;
+				int goldValueLimit = 0;
+				int fastTimeGold = 0;
+			};
+			static int fastTimeAppraisal;
+			static int perStatMult;
+			static std::vector<AppraisalBreakpoint_t> appraisal_tables;
 		} appraisal;
 		bool bNewInventoryLayout = true;
 	} inventoryUI;

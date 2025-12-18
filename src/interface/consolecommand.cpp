@@ -515,7 +515,16 @@ namespace ConsoleCommands {
 					itemType = TOME_THAUMATURGY;
 				}
 			}
-			dropItem(newItem(static_cast<ItemType>(itemType), EXCELLENT, 0, 1, appearance, true, &stats[clientnum]->inventory), 0);
+			bool identified = true;
+			if ( argc >= 3 )
+			{
+				std::string str = argv[2];
+				if ( str == "0" )
+				{
+					identified = false;
+				}
+			}
+			dropItem(newItem(static_cast<ItemType>(itemType), EXCELLENT, 0, 1, appearance, identified, &stats[clientnum]->inventory), 0);
 		}
 	});
 
@@ -5322,7 +5331,7 @@ namespace ConsoleCommands {
 								item += entity->skill[15] == 1 ? "id'd)" : "unid'd)";
 								if ( entity->skill[10] > 1 )
 								{
-									item += ", [value: " + std::to_string(items[entity->skill[10] - 2].value) + "G]";
+									item += ", [value: " + std::to_string(items[entity->skill[10] - 2].gold_value) + "G]";
 								}
 								else
 								{
@@ -6650,6 +6659,49 @@ namespace ConsoleCommands {
 			chance = atoi(argv[2]);
 		}
 		testPFromC(c, 100000, chance);
+	});
+
+	static ConsoleCommand ccmd_appraisal_table("/appraisal_table", "", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+		std::vector<std::tuple<int, int, int>> appraisalValues;
+		std::set<int> sortedItems;
+		Item* item = newItem(WOODEN_SHIELD, EXCELLENT, 0, 0, 0, false, nullptr);
+		for ( int i = 0; i < NUMITEMS; ++i )
+		{
+			item->type = (ItemType)i;
+			for ( int skill = 0; skill <= 100; ++skill )
+			{
+				stats[0]->setProficiencyUnsafe(PRO_APPRAISAL, 0);
+				stats[0]->PER = skill;
+				if ( players[0]->inventoryUI.appraisal.appraisalPossible(item) )
+				{
+					appraisalValues.push_back(std::make_tuple(skill, players[0]->inventoryUI.appraisal.getAppraisalTime(item), i));
+					break;
+				}
+			}
+		}
+
+		std::sort(appraisalValues.begin(), appraisalValues.end());
+		for ( auto& pair : appraisalValues )
+		{
+			printlog("%d, %.2f, %d, %d, \"%s\"", std::get<0>(pair), std::get<1>(pair) / (real_t)TICKS_PER_SECOND, items[std::get<2>(pair)].gold_value, (int)items[std::get<2>(pair)].category, items[std::get<2>(pair)].getIdentifiedName());
+		}
+
+		/*for ( auto& pair : allGameSpells )
+		{
+			printlog("\"template_icon_%s\": [\"%%+d Magic Damage\"],", pair.second->spell_internal_name);
+			printlog("\"template_desc_%s\": [\"Press[Cast] while equipped\", \"to cast the[Projectile].\"],", pair.second->spell_internal_name);
+		}*/
+
+		free(item);
+	});
+
+	static ConsoleCommand ccmd_reloadappraisal("/reloadappraisal", "reloads appraisal entries", []CCMD{
+		Player::Inventory_t::Appraisal_t::readFromFile();
 	});
 }
 

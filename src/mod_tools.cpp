@@ -974,7 +974,7 @@ void ItemTooltips_t::readItemsFromFile()
 	{
 		assert(i == tmpItems[i].itemId);
 		items[i].level = tmpItems[i].itemLevel;
-		items[i].value = tmpItems[i].gold;
+		items[i].gold_value = tmpItems[i].gold;
 		items[i].weight = tmpItems[i].weight;
 		items[i].fpindex = tmpItems[i].fpIndex;
 		items[i].index = tmpItems[i].tpIndex;
@@ -1116,7 +1116,7 @@ void ItemTooltips_t::readItemsFromFile()
 		}
 
 		hash += (Uint32)((Uint32)items[i].weight << (shift % 32)); ++shift;
-		hash += (Uint32)((Uint32)items[i].value << (shift % 32)); ++shift;
+		hash += (Uint32)((Uint32)items[i].gold_value << (shift % 32)); ++shift;
 		hash += (Uint32)((Uint32)items[i].level << (shift % 32)); ++shift;
 		/*{
 			auto pair = std::make_pair(items[i].value, i);
