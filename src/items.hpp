@@ -469,6 +469,7 @@ typedef enum ItemType
 	SILVER_SWORD,
 	QUIVER_BONE,
 	QUIVER_BLACKIRON,
+	GEM_JEWEL,
 	ITEM_ENUM_MAX
 } ItemType;
 const int NUMITEMS = ITEM_ENUM_MAX;

@@ -79,7 +79,7 @@ void spell_magicMap(int player, int radius, int x, int y)
 	}
 
 	messagePlayer(player, MESSAGE_HINT, Language::get(412));
-	mapLevel(player, radius, x, y);
+	mapLevel(player, radius, x, y, true);
 }
 
 void spell_detectFoodEffectOnMap(int player)
@@ -258,6 +258,9 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int da
 
 			DamageGib dmgGib = DMG_DEFAULT;
 			real_t damageMultiplier = Entity::getDamageTableMultiplier(hit.entity, *hitstats, DAMAGE_TABLE_MAGIC, &resistance);
+
+			Entity::modifyDamageMultipliersFromEffects(hit.entity, parent, damageMultiplier, DAMAGE_TABLE_MAGIC, &my, SPELL_ACID_SPRAY);
+
 			if ( damageMultiplier <= 0.75 )
 			{
 				dmgGib = DMG_WEAKEST;
@@ -461,6 +464,9 @@ void spellEffectPoison(Entity& my, spellElement_t& element, Entity* parent, int 
 
 			DamageGib dmgGib = DMG_DEFAULT;
 			real_t damageMultiplier = Entity::getDamageTableMultiplier(hit.entity, *hitstats, DAMAGE_TABLE_MAGIC, &resistance);
+
+			Entity::modifyDamageMultipliersFromEffects(hit.entity, parent, damageMultiplier, DAMAGE_TABLE_MAGIC, &my, SPELL_POISON);
+
 			if ( damageMultiplier <= 0.75 )
 			{
 				dmgGib = DMG_WEAKEST;
@@ -3458,6 +3464,96 @@ int thaumSpellArmorProc(Entity* my, Stat& myStats, bool checkEffectActiveOnly, E
 	return 0;
 }
 
+bool Entity::pinpointDamageProc(Entity* attacker, int damage)
+{
+	if ( multiplayer == CLIENT || !attacker ) { return false; }
+	if ( Stat* myStats = getStats() )
+	{
+		if ( myStats->HP == 0 ) { return false; }
+		if ( !(attacker->behavior == &actPlayer || (attacker->behavior == &actMonster && attacker->monsterAllyGetPlayerLeader())) )
+		{
+			return false;
+		}
+
+		if ( myStats->getEffectActive(EFF_PINPOINT) || myStats->getEffectActive(EFF_PINPOINT_DAMAGE) )
+		{
+			if ( damage > 0 )
+			{
+				// find particle to update
+				bool found = false;
+				auto entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(this, 1);
+				for ( auto it : entLists )
+				{
+					node_t* node;
+					for ( node = it->first; node != nullptr && !found; node = node->next )
+					{
+						if ( Entity* entity = (Entity*)node->element )
+						{
+							if ( entity->behavior == &actParticleAestheticOrbit
+								&& entity->parent == this->getUID()
+								&& entity->skill[1] == PARTICLE_EFFECT_SMITE_PINPOINT
+								&& entity->actmagicNoLight == 0 )
+							{
+								Entity* caster = uidToEntity(entity->skill[3]);
+								real_t damageMult = getSpellDamageSecondaryFromID(SPELL_PINPOINT, caster, caster ? caster->getStats() : nullptr,
+									entity) / 100.0;
+								entity->skill[4] += std::max(0, (damage)) * damageMult;
+								found = true;
+								break;
+							}
+							else if ( entity->behavior == &actParticlePinpointTarget
+								&& entity->skill[4] == SPELL_PINPOINT
+								&& entity->parent == this->getUID()
+								&& entity->skill[0] >= 0 )
+							{
+								Uint32 casterUid = static_cast<Uint32>(entity->skill[2]);
+								Entity* caster = uidToEntity(casterUid);
+
+								for ( int i = 0; i < 3; ++i )
+								{
+									Entity* fx1 = createParticleAestheticOrbit(this, 2401, 2 * TICKS_PER_SECOND, PARTICLE_EFFECT_SMITE_PINPOINT);
+									fx1->yaw = this->yaw + PI / 2 + 2 * i * PI / 3;
+									fx1->fskill[4] = this->x;
+									fx1->fskill[5] = this->y;
+									fx1->x = this->x;
+									fx1->y = this->y;
+									fx1->fskill[6] = fx1->yaw;
+									fx1->skill[3] = caster ? caster->getUID() : 0;
+									if ( i != 0 )
+									{
+										fx1->actmagicNoLight = 1;
+
+										real_t damageMult = getSpellDamageSecondaryFromID(SPELL_PINPOINT, caster, caster ? caster->getStats() : nullptr,
+											entity) / 100.0;
+										fx1->skill[4] += std::max(0, (damage)) * damageMult;
+									}
+								}
+
+								setEffect(EFF_PINPOINT_DAMAGE, true, 2 * TICKS_PER_SECOND, false);
+								serverSpawnMiscParticles(this, PARTICLE_EFFECT_SMITE_PINPOINT, 2401, 0, 0);
+
+								entity->skill[0] = -1; // expire this
+								found = true;
+								break;
+							}
+						}
+					}
+					if ( found )
+					{
+						break;
+					}
+				}
+
+				if ( found )
+				{
+					return true;
+				}
+			}
+		}
+	}
+	return false;
+}
+
 bool Entity::defyFleshProc(Entity* attacker)
 {
 	if ( multiplayer == CLIENT ) { return false; }
@@ -3590,6 +3686,19 @@ bool applyGenericMagicDamage(Entity* caster, Entity* hitentity, Entity& damageSo
 	real_t damageMultiplier = 1.0;
 	magicSetResistance(hitentity, caster, resistance, damageMultiplier, dmgGib, trapResist, spellID);
 	Stat* targetStats = hitentity->getStats();
+	if ( monsterCollisionOnly )
+	{
+		if ( !targetStats )
+		{
+			return false;
+		}
+		if ( hitentity->isInertMimic() )
+		{
+			return false;
+		}
+	}
+
+	Entity::modifyDamageMultipliersFromEffects(hitentity, caster, damageMultiplier, DAMAGE_TABLE_MAGIC, &damageSourceProjectile, spellID);
 
 	if ( damageSourceProjectile.behavior == &actBoulder )
 	{
@@ -3608,17 +3717,13 @@ bool applyGenericMagicDamage(Entity* caster, Entity* hitentity, Entity& damageSo
 		resistance = 0;
 		trapResist = 0;
 	}
-
-	if ( monsterCollisionOnly )
+	if ( spellID == SPELL_HOLY_FIRE )
 	{
-		if ( !targetStats )
-		{
-			return false;
-		}
-		if ( hitentity->isInertMimic() )
-		{
-			return false;
-		}
+		// pure dmg
+		dmgGib = DMG_STRONGER;
+		damageMultiplier = 1.0;
+		resistance = 0;
+		trapResist = 0;
 	}
 
 	absorbMagicEvent(hitentity, caster, damageSourceProjectile, spellID, nullptr, damageMultiplier, dmgGib);

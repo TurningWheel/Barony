@@ -57,7 +57,7 @@ void serverSendItemToPickupAndEquip(int player, Item* item);
 void serverUpdateAllyStat(int player, Uint32 uidToUpdate, int LVL, int HP, int MAXHP, int type);
 void serverUpdatePlayerSummonStrength(int player);
 void serverUpdateAllyHP(int player, Uint32 uidToUpdate, int HP, int MAXHP, bool guarantee = false);
-void sendMinimapPing(Uint8 player, Uint8 x, Uint8 y, Uint8 pingType = 0);
+void sendMinimapPing(Uint8 player, Uint8 x, Uint8 y, Uint8 pingType = 0, bool radius = false);
 void sendAllyCommandClient(int player, Uint32 uid, int command, Uint8 x, Uint8 y, Uint32 targetUid = 0);
 enum NetworkingLobbyJoinRequestResult : int
 {

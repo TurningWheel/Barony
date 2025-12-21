@@ -773,6 +773,10 @@ void Entity::updateEntityOnHit(Entity* attacker, bool alertTarget)
 		{
 			setEffect(EFF_SEEK_CREATURE, false, 0, true);
 		}
+		/*if ( myStats->getEffectActive(EFF_HEALING_WORD) )
+		{
+			setEffect(EFF_HEALING_WORD, false, 0, false);
+		}*/
 		if ( myStats->type == SHOPKEEPER )
 		{
 			if ( alertTarget )
@@ -5194,12 +5198,27 @@ void actMonster(Entity* my)
 				}
 			}
 
+			Entity* scaryEntity = nullptr;
+			if ( myStats->getEffectActive(EFF_FEAR) && my->monsterFearfulOfUid != 0
+				&& !myStats->getEffectActive(EFF_DISORIENTED)
+				&& !myStats->getEffectActive(EFF_KNOCKBACK) && !isIllusionTaunt )
+			{
+				scaryEntity = uidToEntity(my->monsterFearfulOfUid);
+				if ( scaryEntity && scaryEntity->behavior == &actRadiusMagic )
+				{
+					real_t tangent = atan2(scaryEntity->y - my->y, scaryEntity->x - my->x);
+					MONSTER_VELX = 0.25 * cos(tangent + PI);
+					MONSTER_VELY = 0.25 * sin(tangent + PI);
+					my->lookAtEntity(*scaryEntity);
+					clipMove(&my->x, &my->y, MONSTER_VELX, MONSTER_VELY, my);
+				}
+			}
+
 			if ( myReflex && !myStats->getEffectActive(EFF_DISORIENTED) && !isIllusionTaunt )
 			{
 				if ( myStats->getEffectActive(EFF_FEAR) && my->monsterFearfulOfUid != 0 )
 				{
-					Entity* scaryEntity = uidToEntity(my->monsterFearfulOfUid);
-					if ( scaryEntity )
+					if ( scaryEntity && scaryEntity->behavior != &actRadiusMagic )
 					{
 						my->monsterAcquireAttackTarget(*scaryEntity, MONSTER_STATE_PATH);
 						my->lookAtEntity(*scaryEntity);
@@ -13986,7 +14005,7 @@ bool Entity::monsterConsumeFoodEntity(Entity* food, Stat* myStats)
 	return foodEntityConsumed;
 }
 
-Entity* Entity::monsterAllyGetPlayerLeader()
+Entity* Entity::monsterAllyGetPlayerLeader() const
 {
 	if ( behavior != &actMonster )
 	{

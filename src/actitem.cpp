@@ -121,6 +121,200 @@ bool itemProcessReturnItemEffect(Entity* my, bool fallingIntoVoid)
 	return false;
 }
 
+void onItemPickedUp(Entity& who, Uint32 itemUid)
+{
+	for ( int player = 0; player < MAXPLAYERS; ++player )
+	{
+		if ( players[player]->mechanics.donationRevealedOnFloor == itemUid )
+		{
+			if ( who.behavior == &actPlayer )
+			{
+				messagePlayerColor(who.skill[2], MESSAGE_HINT, makeColorRGB(255, 255, 0), Language::get(6943)); // you discovered a gift
+
+				for ( int player2 = 0; player2 < MAXPLAYERS; ++player2 ) // relay to other players
+				{
+					if ( player2 != who.skill[2] && !client_disconnected[player2] )
+					{
+						messagePlayerColor(player2, MESSAGE_HINT, makeColorRGB(255, 255, 0), Language::get(6944), stats[who.skill[2]]->name); // an ally discovered a gift
+					}
+				}
+			}
+			else if ( who.behavior == &actMonster && who.monsterAllyIndex >= 0 && who.monsterAllyIndex < MAXPLAYERS && who.getStats() )
+			{
+				std::string allyName = who.getStats()->name;
+				if ( allyName == "" )
+				{
+					allyName = getMonsterLocalizedName(who.getStats()->type);
+				}
+
+				messagePlayerColor(who.monsterAllyIndex, MESSAGE_HINT, makeColorRGB(255, 255, 0), Language::get(6944), allyName.c_str()); // your ally %s discovered a gift
+
+				for ( int player2 = 0; player2 < MAXPLAYERS; ++player2 ) // relay to other players
+				{
+					if ( player2 != who.monsterAllyIndex && !client_disconnected[player2] )
+					{
+						messagePlayerColor(player2, MESSAGE_HINT, makeColorRGB(255, 255, 0), Language::get(6945), stats[who.monsterAllyIndex]->name, allyName.c_str()); // %s's ally %s discovered a gift
+					}
+				}
+			}
+
+			players[player]->mechanics.updateSustainedSpellEvent(SPELL_DONATION, 150.0, 1.0);
+			break;
+		}
+	}
+}
+
+bool entityWantsJewel(int tier, Entity& entity, Stat& stats, bool checkTypeOnly)
+{
+	int req = -1;
+	switch ( stats.type )
+	{
+		case GNOME:
+		case GOBLIN:
+			req = 1;
+			break;
+		case HUMAN:
+		case MONSTER_G:
+		case SUCCUBUS:
+		case GOATMAN:
+			req = 2;
+			break;
+		case KOBOLD:
+		case INSECTOID:
+		case MONSTER_D:
+		case MONSTER_M:
+		case BUGBEAR:
+		case INCUBUS:
+			req = 3;
+			break;
+		case VAMPIRE:
+		case MONSTER_S:
+			req = 4;
+			break;
+		//case TROLL,
+		//case AUTOMATON,
+		default:
+			break;
+	}
+
+	if ( req < 0 )
+	{
+		return false;
+	}
+
+	if ( entity.behavior != &actMonster ) { return false; }
+	if ( !entity.monsterIsTargetable() || !entity.isMobile() ) { return false; }
+	if ( entity.isBossMonster() ) { return false; }
+	if ( entity.monsterAllyGetPlayerLeader() ) { return false; }
+	if ( stats.type == INCUBUS && !strncmp(stats.name, "inner demon", strlen("inner demon")) ) { return false; }
+	//if ( stats.leader_uid != 0 && uidToEntity(stats.leader_uid) ) { return false; }
+
+	if ( checkTypeOnly )
+	{
+		return req >= 0;
+	}
+	else if ( req >= 0 )
+	{
+		return tier >= req;
+	}
+
+	return false;
+}
+
+bool jewelItemRecruit(Entity* parent, Entity* entity)
+{
+	if ( !(entity && parent) )
+	{
+		return false;
+	}
+
+	Stat* entitystats = entity->getStats();
+	if ( !entitystats ) 
+	{
+		return false;
+	}
+
+	int allowedFollowers = 4;
+	int numFollowers = 0;
+	for ( node_t* node = stats[parent->skill[2]]->FOLLOWERS.first; node; node = node->next )
+	{
+		Entity* follower = nullptr;
+		if ( (Uint32*)node->element )
+		{
+			follower = uidToEntity(*((Uint32*)node->element));
+		}
+		if ( follower )
+		{
+			Stat* followerStats = follower->getStats();
+			if ( followerStats )
+			{
+				if ( !(followerStats->type == SENTRYBOT || followerStats->type == GYROBOT
+					|| followerStats->type == SPELLBOT || followerStats->type == DUMMYBOT) )
+				{
+					++numFollowers;
+				}
+			}
+		}
+	}
+
+	if ( numFollowers >= allowedFollowers )
+	{
+		return false;
+	}
+	else if ( forceFollower(*parent, *entity) )
+	{
+		Entity* fx = createRadiusMagic(SPELL_FORGE_JEWEL, entity, entity->x, entity->y, 16, 2 * TICKS_PER_SECOND, entity);
+		spawnMagicEffectParticles(entity->x, entity->y, entity->z, 2410);
+		playSoundEntity(entity, 167, 64);
+
+		if ( parent->behavior == &actPlayer )
+		{
+			magicOnSpellCastEvent(parent, parent, entity, SPELL_FORGE_JEWEL, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
+			messagePlayerMonsterEvent(parent->skill[2], makeColorRGB(0, 255, 0), *entitystats, Language::get(6954), Language::get(6955), MSG_COMBAT);
+			Compendium_t::Events_t::eventUpdateMonster(parent->skill[2], Compendium_t::CPDM_RECRUITED, entity, 1);
+			if ( entitystats->type == HUMAN && entitystats->getAttribute("special_npc") == "merlin" )
+			{
+				Compendium_t::Events_t::eventUpdateWorld(parent->skill[2], Compendium_t::CPDM_MERLINS, "magicians guild", 1);
+			}
+			entity->monsterAllyIndex = parent->skill[2];
+			if ( multiplayer == SERVER )
+			{
+				serverUpdateEntitySkill(entity, 42); // update monsterAllyIndex for clients.
+			}
+		}
+
+		if ( entity->monsterTarget == parent->getUID() )
+		{
+			entity->monsterReleaseAttackTarget();
+		}
+		entity->setEffect(EFF_CONFUSED, false, 0, true);
+
+		// change the color of the hit entity.
+		entity->flags[USERFLAG2] = true;
+		serverUpdateEntityFlag(entity, USERFLAG2);
+		if ( monsterChangesColorWhenAlly(entitystats) )
+		{
+			int bodypart = 0;
+			for ( node_t* node = (entity)->children.first; node != nullptr; node = node->next )
+			{
+				if ( bodypart >= LIMB_HUMANOID_TORSO )
+				{
+					Entity* tmp = (Entity*)node->element;
+					if ( tmp )
+					{
+						tmp->flags[USERFLAG2] = true;
+						//serverUpdateEntityFlag(tmp, USERFLAG2);
+					}
+				}
+				++bodypart;
+			}
+		}
+
+		return true;
+	}
+	return false;
+}
+
 void actItem(Entity* my)
 {
 	Item* item;
@@ -275,6 +469,57 @@ void actItem(Entity* my)
 	// pick up item
 	if (multiplayer != CLIENT)
 	{
+		if ( my->skill[10] == GEM_JEWEL )
+		{
+			if ( Entity* parent = uidToEntity(my->parent) )
+			{
+				if ( parent && parent->behavior == &actPlayer )
+				{
+					int tier = my->skill[11];
+					auto entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 2);
+					for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
+					{
+						list_t* currentList = *it;
+						node_t* node;
+						for ( node = currentList->first; node != nullptr; node = node->next )
+						{
+							Entity* entity = (Entity*)node->element;
+							if ( entity && entity->behavior == &actMonster )
+							{
+								if ( Stat* entitystats = entity->getStats() )
+								{
+									auto hitProps = getParticleEmitterHitProps(my->getUID(), entity);
+									if ( hitProps->hits > 0 || (ticks - hitProps->tick) < TICKS_PER_SECOND )
+									{
+										continue;
+									}
+									if ( entity->getUID() % 10 == ticks % 10 )
+									{
+										hitProps->tick = ticks;
+										if ( entityWantsJewel(tier, *entity, *entitystats, false) )
+										{
+											if ( entityDist(my, entity) < 16.0 )
+											{
+												hitProps->hits++;
+												if ( jewelItemRecruit(parent, entity) )
+												{
+													my->clearMonsterInteract();
+													my->removeLightField();
+													list_RemoveNode(my->mynode);
+													return;
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+		Uint32 myUid = my->getUID();
 		if ( my->isInteractWithMonster() )
 		{
 			Entity* monsterInteracting = uidToEntity(my->interactedByMonster);
@@ -336,6 +581,7 @@ void actItem(Entity* my)
 							copyOfItem = nullptr;
 							if ( pickedUpItem && monsterInteracting->monsterAllyIndex >= 0 )
 							{
+								onItemPickedUp(*monsterInteracting, myUid);
 								FollowerMenu[monsterInteracting->monsterAllyIndex].entityToInteractWith = nullptr; // in lieu of my->clearMonsterInteract, my might have been deleted.
 								return;
 							}
@@ -345,6 +591,7 @@ void actItem(Entity* my)
 					{
 						if ( monsterInteracting->monsterConsumeFoodEntity(my, monsterInteracting->getStats()) && monsterInteracting->monsterAllyIndex >= 0 )
 						{
+							onItemPickedUp(*monsterInteracting, myUid);
 							FollowerMenu[monsterInteracting->monsterAllyIndex].entityToInteractWith = nullptr; // in lieu of my->clearMonsterInteract, my might have been deleted.
 							return;
 						}
@@ -353,6 +600,7 @@ void actItem(Entity* my)
 					{
 						if ( monsterInteracting->monsterAddNearbyItemToInventory(monsterInteracting->getStats(), 24, 9, my) && monsterInteracting->monsterAllyIndex >= 0 )
 						{
+							onItemPickedUp(*monsterInteracting, myUid);
 							FollowerMenu[monsterInteracting->monsterAllyIndex].entityToInteractWith = nullptr; // in lieu of my->clearMonsterInteract, my might have been deleted.
 							return;
 						}
@@ -443,6 +691,7 @@ void actItem(Entity* my)
 
 							if ( salvaged )
 							{
+								onItemPickedUp(*players[i]->entity, myUid);
 								free(item2);
 								my->removeLightField();
 								list_RemoveNode(my->mynode);
@@ -498,6 +747,7 @@ void actItem(Entity* my)
 									}
 									free(item); // item is the picked up items (item == item2)
 								}
+								onItemPickedUp(*players[i]->entity, myUid);
 								my->removeLightField();
 								list_RemoveNode(my->mynode);
 								return;
@@ -566,6 +816,12 @@ void actItem(Entity* my)
 			my->light = addLight(my->x / 16, my->y / 16, "lootbag_white");
 		}
 		break;
+	case 2409: // jewel
+		if ( !my->light )
+		{
+			my->light = addLight(my->x / 16, my->y / 16, "jewel_yellow");
+		}
+		break;
 	default:
 		break;
 	}
@@ -614,6 +870,21 @@ void actItem(Entity* my)
 			my->itemNotMovingClient = 0;
 			my->flags[UPDATENEEDED] = true;
 			my->flags[NOUPDATE] = false;
+		}
+	}
+
+	if ( my->sprite == items[GEM_JEWEL].index )
+	{
+		if ( my->ticks % 25 == 0 || my->ticks % 40 == 0 )
+		{
+			if ( Entity* fx = spawnMagicParticleCustom(my, 2410, 1.0, 1.0) )
+			{
+				fx->vel_z = -0.2;
+				fx->yaw = (local_rng.rand() % 360) * PI / 180.0;
+				fx->x = my->x + 3.0 * cos(fx->yaw);
+				fx->y = my->y + 3.0 * sin(fx->yaw);
+				fx->focalz = 0.25;
+			}
 		}
 	}
 

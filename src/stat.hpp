@@ -148,9 +148,13 @@ static const int EFF_FROST = 123;
 static const int EFF_MAGICIANS_ARMOR = 124;
 static const int EFF_PROJECT_SPIRIT = 125;
 static const int EFF_DEFY_FLESH = 126;
-static const int EFF_UNUSED_1 = 127;
+static const int EFF_PINPOINT_DAMAGE = 127;
 static const int EFF_SALAMANDER_HEART = 128;
 static const int EFF_DIVINE_FIRE = 129;
+static const int EFF_HEALING_WORD = 130;
+static const int EFF_HOLY_FIRE = 131;
+static const int EFF_SIGIL = 132;
+static const int EFF_SANCTUARY = 133;
 static const int NUMEFFECTS = 160;
 
 // stats
@@ -522,6 +526,7 @@ public:
 	static const Sint32 kEnsembleBreakPointTier2 = 5;
 	static const Sint32 kEnsembleBreakPointTier1 = 0;
 	real_t getEnsembleEffectBonus(EnsembleEffectsBonusType bonusType);
+	Sint32 getThaumProficiencySpellStatBonus(int whichStat, Sint32 currentBonus);
 	static int getMaxAttackCharge(Stat* myStats);
 	struct MonsterRangedAccuracy
 	{

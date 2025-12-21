@@ -7466,9 +7466,22 @@ void Player::PlayerMechanics_t::sustainedSpellClearMP(int skillID)
 
 bool Player::PlayerMechanics_t::updateSustainedSpellEvent(int spellID, real_t value, real_t scaleValue)
 {
+	if ( value < 0.05 ) { return false; }
+	if ( spellID == SPELL_MAGICMAPPING && multiplayer == CLIENT )
+	{
+		sustainedSpellIDCounter[spellID] += value * scaleValue;
+		if ( players[player.playernum]->entity && sustainedSpellIDCounter[spellID] > 8 * 16.0 )
+		{
+			sustainedSpellIDCounter[spellID] = 0.0;
+			Uint32 flags = spell_t::SPELL_LEVEL_EVENT_DEFAULT;
+			magicOnSpellCastEvent(players[player.playernum]->entity, players[player.playernum]->entity,
+				nullptr, spellID, flags, 1);
+			return true;
+		}
+	}
+
 	if ( multiplayer == CLIENT ) { return false; }
 	if ( intro ) { return false; }
-	if ( value < 0.05 ) { return false; }
 	//if ( auto spell = getSpellFromID(spellID) )
 	{
 		if ( spellID == SPELL_LIGHT || spellID == SPELL_DEEP_SHADE )
@@ -7485,6 +7498,63 @@ bool Player::PlayerMechanics_t::updateSustainedSpellEvent(int spellID, real_t va
 				}
 			}
 			return false;
+		}
+		else if ( spellID == SPELL_PINPOINT || spellID == SPELL_PENANCE || spellID == SPELL_TURN_UNDEAD
+			|| spellID == SPELL_SIGIL
+			|| spellID == SPELL_SANCTUARY
+			|| spellID == SPELL_HEALING
+			|| spellID == SPELL_EXTRAHEALING
+			|| spellID == SPELL_HOLY_BEAM 
+			|| spellID == SPELL_MAGICMAPPING )
+		{
+			sustainedSpellIDCounter[spellID] += value * scaleValue;
+			if ( players[player.playernum]->entity && sustainedSpellIDCounter[spellID] > 8 * 16.0 )
+			{
+				sustainedSpellIDCounter[spellID] = 0.0;
+				Uint32 flags = spell_t::SPELL_LEVEL_EVENT_DEFAULT;
+				if ( magicOnSpellCastEvent(players[player.playernum]->entity, players[player.playernum]->entity,
+					nullptr, spellID, flags, 1) )
+				{
+					return true;
+				}
+			}
+		}
+		else if ( spellID == SPELL_PROF_NIMBLENESS || spellID == SPELL_PROF_STURDINESS
+			|| spellID == SPELL_PROF_GREATER_MIGHT || spellID == SPELL_PROF_COUNSEL )
+		{
+			sustainedSpellIDCounter[spellID] += value * scaleValue;
+			if ( players[player.playernum]->entity && sustainedSpellIDCounter[spellID] > 8 * 16.0 )
+			{
+				Uint32 flags = spell_t::SPELL_LEVEL_EVENT_SUMMON;
+				if ( magicOnSpellCastEvent(players[player.playernum]->entity, players[player.playernum]->entity,
+					nullptr, spellID, flags, 1) )
+				{
+					sustainedSpellIDCounter[spellID] = 0.0;
+					return true;
+				}
+			}
+		}
+		else if ( spellID == SPELL_BLESS_FOOD
+			|| spellID == SPELL_SCRY_TRAPS
+			|| spellID == SPELL_SCRY_SHRINES
+			|| spellID == SPELL_SCRY_TREASURES
+			|| spellID == SPELL_DONATION )
+		{
+			sustainedSpellIDCounter[spellID] += value * scaleValue;
+			if ( players[player.playernum]->entity && sustainedSpellIDCounter[spellID] > 8 * 16.0 )
+			{
+				Uint32 flags = spell_t::SPELL_LEVEL_EVENT_DEFAULT;
+				if ( spellID == SPELL_DONATION )
+				{
+					flags |= spell_t::SPELL_LEVEL_EVENT_ALWAYS;
+				}
+				if ( magicOnSpellCastEvent(players[player.playernum]->entity, players[player.playernum]->entity,
+					nullptr, spellID, flags, 1) )
+				{
+					sustainedSpellIDCounter[spellID] = 0.0;
+					return true;
+				}
+			}
 		}
 
 		for ( node_t* node = stats[player.playernum]->magic_effects.first; node; node = node->next )
@@ -7505,10 +7575,23 @@ bool Player::PlayerMechanics_t::updateSustainedSpellEvent(int spellID, real_t va
 						{
 							flags |= spell_t::SPELL_LEVEL_EVENT_MAGICSTAFF;
 						}
-						sustainedSpellIDCounter[spellID] = 0.0;
+
+						bool resetOnProc = false;
+						if ( spellID == SPELL_BLOOD_WARD )
+						{
+							resetOnProc = true;
+						}
+						if ( !resetOnProc )
+						{
+							sustainedSpellIDCounter[spellID] = 0.0;
+						}
 						if ( magicOnSpellCastEvent(players[player.playernum]->entity, players[player.playernum]->entity,
 							nullptr, spellID, flags, 1) )
 						{
+							if ( resetOnProc )
+							{
+								sustainedSpellIDCounter[spellID] = 0.0;
+							}
 							return true;
 						}
 					}

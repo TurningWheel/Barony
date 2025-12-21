@@ -2536,7 +2536,7 @@ namespace ConsoleCommands {
 
 		messagePlayer(clientnum, MESSAGE_MISC, Language::get(412));
 
-		mapLevel(clientnum, 0, 0, 0);
+		mapLevel(clientnum, 0, 0, 0, false);
 		});
 
 	static ConsoleCommand ccmd_maplevel2("/maplevel2", "magic mapping for the level (cheat)", []CCMD{

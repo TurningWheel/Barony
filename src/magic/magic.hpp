@@ -239,6 +239,11 @@ static const int SPELL_MAGICIANS_ARMOR = 216;
 static const int SPELL_PROJECT_SPIRIT = 217;
 static const int SPELL_DUCK_DIVE = 218;
 static const int SPELL_BREATHE_FIRE = 219;
+static const int SPELL_HEAL_MINOR = 220;
+static const int SPELL_HOLY_FIRE = 221;
+static const int SPELL_SIGIL = 222;
+static const int SPELL_SANCTUARY = 223;
+static const int SPELL_HOLY_BEAM = 224;
 static const int NUM_SPELLS = 225;
 
 #define SPELLELEMENT_CONFUSE_BASE_DURATION 2//In seconds.
@@ -373,6 +378,12 @@ static const int PARTICLE_EFFECT_RADIANT_ORBIT_FOLLOW = 86;
 static const int PARTICLE_EFFECT_HEAT_ORBIT_SPIN = 87;
 static const int PARTICLE_EFFECT_FOCI_LIGHT = 88;
 static const int PARTICLE_EFFECT_FOCI_DARK = 89;
+static const int PARTICLE_EFFECT_HEAL_OTHER = 90;
+static const int PARTICLE_EFFECT_MINOR_HEAL = 91;
+static const int PARTICLE_EFFECT_BLOOD_WARD_ORBIT = 92;
+static const int PARTICLE_EFFECT_SMITE_PINPOINT = 93;
+static const int PARTICLE_EFFECT_HOLY_FIRE = 94;
+static const int PARTICLE_EFFECT_HOLY_BEAM_ORBIT = 95;
 
 // actmagicIsVertical constants
 static const int MAGIC_ISVERTICAL_NONE = 0;
@@ -847,7 +858,8 @@ typedef struct spell_t
 		SPELL_LEVEL_EVENT_SPELLBOOK = 128,
 		SPELL_LEVEL_EVENT_ASSIST = 256,
 		SPELL_LEVEL_EVENT_MINOR_CHANCE = 512,
-		SPELL_LEVEL_EVENT_ENUM_END = 1024
+		SPELL_LEVEL_EVENT_ALWAYS = 1024,
+		SPELL_LEVEL_EVENT_ENUM_END = 2048
 	};
 
 	// get localized spell name
@@ -1065,6 +1077,7 @@ spell_t* copySpell(spell_t* spell, int subElementToCopy = -1);
 void spellConstructor(spell_t* spell, int ID);
 spell_t* spellConstructor(int ID, int difficulty, const char* internal_name, std::vector<int> elements);
 void spellDeconstructor(void* data);
+void spellChanneledClientDeconstructor(void* data);
 void copySpellElement(spellElement_t* spellElement, spellElement_t* spellElementToSet);
 spellElement_t* copySpellElement(spellElement_t* spellElement);
 void spellElementConstructor(spellElement_t* element);
@@ -1086,7 +1099,7 @@ bool spellInList(list_t* list, spell_t* spell);
 void spell_magicMap(int player, int radius, int x, int y); //Magics the map. I mean maps the magic. I mean magically maps the level.
 void spell_detectFoodEffectOnMap(int player);
 void spell_summonFamiliar(int player); // summons some familiars.
-void spell_changeHealth(Entity* entity, int amount, bool overdrewFromHP = false); //This function changes an entity's health.
+void spell_changeHealth(Entity* entity, int amount, bool overdrewFromHP = false, bool doMessage = true); //This function changes an entity's health.
 
 //-----Spell Casting Animation-----
 //The two hand animation functions.
@@ -1189,6 +1202,8 @@ bool magicOnSpellCastEvent(Entity* parent, Entity* projectile, Entity* hitentity
 void freeSpells();
 void createParticleFociLight(Entity* entity, int spellID, bool updateClients);
 void createParticleFociDark(Entity* entity, int spellID, bool updateClients);
+bool jewelItemRecruit(Entity* parent, Entity* entity);
+bool entityWantsJewel(int tier, Entity& entity, Stat& stats, bool checkTypeOnly);
 
 struct AOEIndicators_t
 {
@@ -1212,7 +1227,8 @@ struct AOEIndicators_t
 		CACHE_MUSHROOM_4,
 		CACHE_MAGICIANS_ARMOR,
 		CACHE_THAUM_ARMOR,
-		CACHE_PSYCHIC_SPEAR
+		CACHE_PSYCHIC_SPEAR,
+		CACHE_RADIUS_MAGIC_GENERIC
 	};
 	struct Indicator_t
 	{

@@ -5260,7 +5260,14 @@ bool GenericGUIMenu::isItemCleaseFoodable(const Item* item)
 
 	if ( itemCategory(item) == FOOD )
 	{
-		return true;
+		if ( item->status < EXCELLENT )
+		{
+			return true;
+		}
+		else if ( item->beatitude < 0 )
+		{
+			return true;
+		}
 	}
 
 	return false;
@@ -5284,19 +5291,24 @@ void GenericGUIMenu::cleanseFood(Item* item)
 		item->status = EXCELLENT;
 		statusModified = true;
 	}
-
-	if ( item->beatitude < 0 )
+	else
 	{
-		item->beatitude = 0;
-		statusModified = true;
+		if ( item->beatitude < 0 )
+		{
+			item->beatitude += 1;
+			statusModified = true;
+		}
 	}
-	else if ( item->beatitude == 0 )
+
+	/*if ( item->beatitude == 0 )
 	{
 		item->beatitude = 1;
 		statusModified = true;
-	}
+	}*/
 	if ( statusModified )
 	{
+		magicOnSpellCastEvent(players[gui_player]->entity, players[gui_player]->entity, nullptr, SPELL_CLEANSE_FOOD, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
+
 		messagePlayer(gui_player, MESSAGE_HINT, Language::get(6725), item->getName()); // looks fresher
 	}
 	closeGUI();
@@ -5437,18 +5449,20 @@ bool GenericGUIMenu::isItemAlterable(const Item* item)
 			|| item->type == KEY_BRONZE
 			|| item->type == KEY_SILVER
 			/*|| item->type == KEY_GOLD*/
-			|| (itemCategory(item) == GEM && item->type != GEM_ROCK && item->type != GEM_LUCK) )
+			|| (itemCategory(item) == GEM && item->type != GEM_ROCK && item->type != GEM_LUCK && item->type != GEM_GLASS) )
 		{
 			return true;
 		}
 	}
 	else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_FORGE_JEWEL )
 	{
-		if ( item->type == GEM_GLASS )
+		/*if ( item->type == GEM_GLASS )
 		{
 			return true;
 		}
-		else if ( (itemCategory(item) == GEM && item->type != GEM_ROCK && item->type != GEM_LUCK) )
+		else */
+		if ( (itemCategory(item) == GEM && item->type != GEM_ROCK && item->type != GEM_LUCK && item->type != GEM_GLASS
+			&& !(item->type == GEM_JEWEL && item->status == EXCELLENT)) )
 		{
 			return true;
 		}
@@ -7296,9 +7310,33 @@ void GenericGUIMenu::alterItem(Item* item)
 	}
 	else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_FORGE_JEWEL )
 	{
-		if ( item->type == GEM_GLASS || (itemCategory(item) == GEM && item->type != GEM_ROCK && item->type != GEM_LUCK) )
+		if ( itemCategory(item) == GEM && item->type != GEM_ROCK && item->type != GEM_LUCK && item->type != GEM_GLASS
+			&& !(item->type == GEM_JEWEL && item->status == EXCELLENT) )
 		{
-			Item* itemToPickup = newItem(GEM_DIAMOND, EXCELLENT, 0, 1, 0, true, nullptr);
+			int value = item->getGoldValue();
+			Status result = DECREPIT;
+			if ( item->type == GEM_JEWEL )
+			{
+				result = (Status)std::min((int)EXCELLENT, (int)item->status + 1);
+			}
+			else if ( value < 250 )
+			{
+				result = DECREPIT;
+			}
+			else if ( value < 500 )
+			{
+				result = WORN;
+			}
+			else if ( value < 1000 )
+			{
+				result = SERVICABLE;
+			}
+			else if ( value >= 1000 )
+			{
+				result = EXCELLENT;
+			}
+
+			Item* itemToPickup = newItem(GEM_JEWEL, result, 0, 1, 0, true, nullptr);
 			Item* pickedUp = itemPickup(gui_player, itemToPickup);
 			int oldCount = item->count;
 			item->count = 1;
@@ -11577,6 +11615,7 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 		case RING_REGENERATION:
 		case RING_RESOLVE:
 		case GEM_DIAMOND:
+		case GEM_JEWEL:
 		case TOOL_SKELETONKEY:
 		case VAMPIRE_DOUBLET:
 		case MAGICSTAFF_CHARM:
@@ -24039,6 +24078,7 @@ void GenericGUIMenu::ItemEffectGUI_t::getItemEffectCost(Item* itemUsedWith, int&
 		}
 		else if ( currentMode == ITEMFX_MODE_FORGE_KEY )
 		{
+			manaCost = 15;
 			if ( itemUsedWith->type == KEY_IRON )
 			{
 				goldCost = 100;
@@ -24046,18 +24086,20 @@ void GenericGUIMenu::ItemEffectGUI_t::getItemEffectCost(Item* itemUsedWith, int&
 			else if ( itemUsedWith->type == KEY_BRONZE )
 			{
 				goldCost = 300;
+				manaCost = 25;
 			}
 			else if ( itemUsedWith->type == KEY_SILVER )
 			{
 				goldCost = 900;
+				manaCost = 40;
 			}
 			/*else if ( itemUsedWith->type == KEY_GOLD )
 			{
 				goldCost = 1200;
 			}*/
-			else if ( (itemCategory(itemUsedWith) == GEM && itemUsedWith->type != GEM_ROCK && itemUsedWith->type != GEM_LUCK) )
+			else if ( (itemCategory(itemUsedWith) == GEM && itemUsedWith->type != GEM_ROCK && itemUsedWith->type != GEM_LUCK && itemUsedWith->type != GEM_GLASS) )
 			{
-				goldCost = 100;
+				goldCost = 300;
 			}
 
 			real_t ratio = getSpellDamageFromID(SPELL_FORGE_KEY, players[parentGUI.gui_player]->entity, stats[parentGUI.gui_player], players[parentGUI.gui_player]->entity) / 100.0;
@@ -24066,13 +24108,34 @@ void GenericGUIMenu::ItemEffectGUI_t::getItemEffectCost(Item* itemUsedWith, int&
 		}
 		else if ( currentMode == ITEMFX_MODE_FORGE_JEWEL )
 		{
-			if ( itemUsedWith->type == GEM_GLASS )
+			manaCost = 30;
+			if ( (itemCategory(itemUsedWith) == GEM 
+				&& itemUsedWith->type != GEM_ROCK 
+				&& itemUsedWith->type != GEM_LUCK 
+				&& itemUsedWith->type != GEM_GLASS)
+				&& !(itemUsedWith->type == GEM_JEWEL && itemUsedWith->status == EXCELLENT) )
 			{
-				goldCost = 2000;
-			}
-			else if ( (itemCategory(itemUsedWith) == GEM && itemUsedWith->type != GEM_ROCK && itemUsedWith->type != GEM_LUCK) )
-			{
-				goldCost = 1000;
+				int value = itemUsedWith->getGoldValue();
+				if ( value < 250 )
+				{
+					manaCost = 20;
+					goldCost = std::max(100, 250 - value);
+				}
+				else if ( value < 500 )
+				{
+					manaCost = 25;
+					goldCost = std::max(100, 500 - value);
+				}
+				else if ( value < 1000 )
+				{
+					manaCost = 30;
+					goldCost = std::max(100, 1000 - value);
+				}
+				else if ( value >= 1000 )
+				{
+					manaCost = 40;
+					goldCost = std::max(100, 2000 - value);
+				}
 			}
 
 			real_t ratio = getSpellDamageFromID(SPELL_FORGE_JEWEL, players[parentGUI.gui_player]->entity, stats[parentGUI.gui_player], players[parentGUI.gui_player]->entity) / 100.0;
@@ -24523,11 +24586,12 @@ GenericGUIMenu::ItemEffectGUI_t::ItemEffectActions_t GenericGUIMenu::ItemEffectG
 			{
 				if ( parentGUI.isItemCleaseFoodable(item) )
 				{
-					if ( item->status == EXCELLENT && item->beatitude >= 1 )
+					/*if ( item->status == EXCELLENT && item->beatitude >= 1 )
 					{
 						result = ITEMFX_ACTION_AT_MAX_BLESSING;
 					}
-					else if ( itemIsEquipped(item, parentGUI.gui_player) )
+					else */
+					if ( itemIsEquipped(item, parentGUI.gui_player) )
 					{
 						result = ITEMFX_ACTION_MUST_BE_UNEQUIPPED;
 					}
@@ -24881,8 +24945,6 @@ void GenericGUIMenu::ItemEffectGUI_t::openItemEffectMenu(GenericGUIMenu::ItemEff
 		break;
 	case ITEMFX_MODE_FORGE_KEY:
 	case ITEMFX_MODE_FORGE_JEWEL:
-		modeHasCostEffect = COST_EFFECT_GOLD;
-		break;
 	case ITEMFX_MODE_RESTORE:
 		modeHasCostEffect = COST_EFFECT_MANA_AND_GOLD;
 		break;

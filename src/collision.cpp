@@ -1023,7 +1023,12 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 							}
 						}
 					}
-					if ( my->behavior == &actThrown )
+
+					if ( my->behavior == &actMagicMissile && my->sprite == 2407 ) // holy beam targets allies too
+					{
+						tryReduceCollisionSize = false;
+					}
+					else if ( my->behavior == &actThrown )
 					{
 						tryReduceCollisionSize = true;
 						if ( Item* item = newItemFromEntity(my) )
@@ -1278,7 +1283,7 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 				continue;
 			}
 			if ( projectileAttack && my->behavior == &actMagicMissile 
-				&& (my->sprite == 2191 || my->sprite == 2364) ) // scepter blast/blood waves phases entities
+				&& (my->sprite == 2191 || my->sprite == 2364 || my->sprite == 2407) ) // scepter blast/blood waves/holy beam phases entities
 			{
 				if ( my->collisionIgnoreTargets.find(entity->getUID()) != my->collisionIgnoreTargets.end() )
 				{

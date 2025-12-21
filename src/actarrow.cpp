@@ -713,27 +713,16 @@ void actArrow(Entity* my)
 					bool huntingDamage = false;
 					if ( my->arrowQuiverType == QUIVER_SILVER )
 					{
-						switch ( hitstats->type )
+						if ( hit.entity->isSmiteWeakMonster() )
 						{
-							case SKELETON:
-							case CREATURE_IMP:
-							case GHOUL:
-							case DEMON:
-							case SUCCUBUS:
-							case INCUBUS:
-							case VAMPIRE:
-							case LICH:
-							case LICH_ICE:
-							case LICH_FIRE:
-							case DEVIL:
-								// smite these creatures
-								silverDamage = true;
-								spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, 981);
-								playSoundEntity(hit.entity, 249, 64);
-								break;
-							default:
-								silverDamage = false;
-								break;
+							// smite these creatures
+							silverDamage = true;
+							spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, 981);
+							playSoundEntity(hit.entity, 249, 64);
+						}
+						else
+						{
+							silverDamage = false;
 						}
 					}
 					else if ( my->arrowQuiverType == QUIVER_HUNTING )
@@ -909,6 +898,8 @@ void actArrow(Entity* my)
 						damageMultiplier = std::max(0.75, damageMultiplier);
 					}
 
+					Entity::modifyDamageMultipliersFromEffects(hit.entity, parent, damageMultiplier, DAMAGE_TABLE_RANGED, my);
+
 					if ( my->arrowArmorPierce > 0 && parent && parent->behavior == &actPlayer )
 					{
 						if ( parent->getStats() )
@@ -959,12 +950,16 @@ void actArrow(Entity* my)
 					Sint32 oldHP = hitstats->HP;
 					hit.entity->modHP(-damage);
 
-					if ( hitstats && hitstats->getEffectActive(EFF_DEFY_FLESH) )
+					if ( hitstats )
 					{
 						Sint32 damageTaken = oldHP - hitstats->HP;
 						if ( damageTaken > 0 )
 						{
-							hit.entity->defyFleshProc(parent);
+							if ( hitstats->getEffectActive(EFF_DEFY_FLESH) )
+							{
+								hit.entity->defyFleshProc(parent);
+							}
+							hit.entity->pinpointDamageProc(parent, damageTaken);
 						}
 					}
 

@@ -2552,6 +2552,64 @@ bool Entity::increaseSkill(int skill, bool notify)
 			}
 		}
 
+		if ( player >= 0 )
+		{
+			if ( myStats->getEffectActive(EFF_NIMBLENESS)
+				&& (skill == PRO_LOCKPICKING
+					|| skill == PRO_SWORD
+					|| skill == PRO_RANGED
+					|| skill == PRO_STEALTH) )
+			{
+				int caster = ((myStats->getEffectActive(EFF_NIMBLENESS) >> 4) & 0xF) - 1;
+				if ( caster >= 0 && caster < MAXPLAYERS )
+				{
+					if ( players[caster]->entity )
+					{
+						players[caster]->mechanics.updateSustainedSpellEvent(SPELL_PROF_NIMBLENESS, 100.0, 1.0);
+					}
+				}
+			}
+			if ( myStats->getEffectActive(EFF_GREATER_MIGHT)
+				&& (skill == PRO_POLEARM
+					|| skill == PRO_AXE
+					|| skill == PRO_MACE) )
+			{
+				int caster = ((myStats->getEffectActive(EFF_GREATER_MIGHT) >> 4) & 0xF) - 1;
+				if ( caster >= 0 && caster < MAXPLAYERS )
+				{
+					if ( players[caster]->entity )
+					{
+						players[caster]->mechanics.updateSustainedSpellEvent(SPELL_PROF_GREATER_MIGHT, 100.0, 1.0);
+					}
+				}
+			}
+			if ( myStats->getEffectActive(EFF_COUNSEL)
+				&& (skill == PRO_SORCERY
+					|| skill == PRO_MYSTICISM) )
+			{
+				int caster = ((myStats->getEffectActive(EFF_COUNSEL) >> 4) & 0xF) - 1;
+				if ( caster >= 0 && caster < MAXPLAYERS )
+				{
+					if ( players[caster]->entity )
+					{
+						players[caster]->mechanics.updateSustainedSpellEvent(SPELL_PROF_COUNSEL, 100.0, 1.0);
+					}
+				}
+			}
+			if ( myStats->getEffectActive(EFF_STURDINESS)
+				&& (skill == PRO_SHIELD) )
+			{
+				int caster = ((myStats->getEffectActive(EFF_STURDINESS) >> 4) & 0xF) - 1;
+				if ( caster >= 0 && caster < MAXPLAYERS )
+				{
+					if ( players[caster]->entity )
+					{
+						players[caster]->mechanics.updateSustainedSpellEvent(SPELL_PROF_STURDINESS, 100.0, 1.0);
+					}
+				}
+			}
+		}
+
 		//if ( skill == PRO_SORCERY && skillCapstoneUnlockedEntity(PRO_SORCERY) )
 		//{
 		//	//magic capstone = bonus spell: Dominate.
@@ -6253,7 +6311,24 @@ void Entity::handleEffects(Stat* myStats)
 		}
 
 		this->char_poison++;
-		if ( this->char_poison > 150 )   // three seconds
+		if ( myStats->getEffectActive(EFF_BLOOD_WARD) )
+		{
+			if ( this->char_poison > 150 )
+			{
+				messagePlayerColor(player, MESSAGE_STATUS, makeColorRGB(0, 255, 0), Language::get(6934));
+				myStats->EFFECTS_TIMERS[EFF_POISONED] = 0;
+				myStats->clearEffect(EFF_POISONED);
+				serverUpdateEffects(player);
+				this->char_poison = 0;
+
+				if ( behavior == &actPlayer )
+				{
+					players[skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_BLOOD_WARD, 128.0, 1.0);
+					this->safeConsumeMP(1);
+				}
+			}
+		}
+		else if ( this->char_poison > 150 )   // three seconds
 		{
 			this->char_poison = 0;
 			int poisonhurt = std::max(3, (myStats->MAXHP / 20));
@@ -6363,7 +6438,20 @@ void Entity::handleEffects(Stat* myStats)
 	{
 		if ( ticks % 120 == 0 )
 		{
-			if ( myStats->HP > 5 + (std::max(0, getCON())) ) // CON increases when bleeding stops.
+			if ( myStats->getEffectActive(EFF_BLOOD_WARD) )
+			{
+				messagePlayerColor(player, MESSAGE_STATUS, makeColorRGB(0, 255, 0), Language::get(6935));
+				myStats->clearEffect(EFF_BLEEDING);
+				myStats->EFFECTS_TIMERS[EFF_BLEEDING] = 0;
+				serverUpdateEffects(player);
+
+				if ( behavior == &actPlayer )
+				{
+					players[skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_BLOOD_WARD, 128.0, 1.0);
+					this->safeConsumeMP(1);
+				}
+			}
+			else if ( myStats->HP > 5 + (std::max(0, getCON())) ) // CON increases when bleeding stops.
 			{
 				int bleedhurt = 1 + myStats->MAXHP / 30;
 				if ( bleedhurt > 1 )
@@ -6669,6 +6757,49 @@ void Entity::handleEffects(Stat* myStats)
 					indicator->cacheType = AOEIndicators_t::CACHE_MAGICIANS_ARMOR;
 				}
 			}
+		}
+	}
+
+	if ( myStats->getEffectActive(EFF_BLOOD_WARD) )
+	{
+		int interval = 80;
+		if ( ticks % interval == 10 )
+		{
+			if ( Entity* fx = createParticleAOEIndicator(this, this->x, this->y, 0.0, 2 * TICKS_PER_SECOND, 16.0) )
+			{
+				fx->scalex = 0.8;
+				fx->scaley = 0.8;
+				if ( auto indicator = AOEIndicators_t::getIndicator(fx->skill[10]) )
+				{
+					//indicator->arc = PI / 2;
+					Uint32 color = makeColorRGB(128, 0, 0);
+					indicator->indicatorColor = color;
+					indicator->loop = false;
+					indicator->gradient = 2;
+					indicator->framesPerTick = 1;
+					indicator->ticksPerUpdate = 1;
+					indicator->delayTicks = 0;
+					indicator->expireAlphaRate = 0.95;
+					indicator->cacheType = AOEIndicators_t::CACHE_THAUM_ARMOR;
+				}
+			}
+
+			Entity* fx = createParticleAestheticOrbit(this, 287, 2 * TICKS_PER_SECOND, PARTICLE_EFFECT_BLOOD_WARD_ORBIT);
+			fx->flags[SPRITE] = true;
+			fx->z = 4.0 - 2.0 * ((ticks / interval) % 4);
+			fx->vel_z = -0.025;
+			fx->sizex = 4;
+			fx->sizey = 4;
+			fx->flags[GENIUS] = true;
+			fx->scalex = 0.05;
+			fx->scaley = fx->scalex;
+			fx->scalez = fx->scalex;
+			fx->actmagicOrbitDist = 4;
+			fx->fskill[2] = this->yaw + PI;
+			fx->lightBonus = vec4{ 0.f, 0.f, 0.f, 0.f };
+			//fx->fskill[2] += ((ticks / interval) % 3) * 2 * PI / 3;
+			fx->yaw = fx->fskill[2];
+			fx->actmagicNoLight = 1;
 		}
 	}
 
@@ -7768,7 +7899,12 @@ void Entity::handleEffects(Stat* myStats)
 		myStats->EFFECTS_TIMERS[EFF_PROJECT_SPIRIT] = 1;
 		serverUpdateEffects(player);
 	}
-	
+
+	if ( myStats->OLDHP > myStats->HP && myStats->getEffectActive(EFF_HEALING_WORD) )
+	{
+		setEffect(EFF_HEALING_WORD, false, 0, false);
+	}
+
 	if ( (myStats->type == DUMMYBOT || myStats->type == HUMAN) && myStats->getAttribute("dummy_target") != "" )
 	{
 		if ( myStats->getAttribute("dummy_ticks") == "" )
@@ -8280,7 +8416,7 @@ Sint32 statGetSTR(Stat* entitystats, Entity* my)
 	}
 	if ( entitystats->getEffectActive(EFF_GREATER_MIGHT) )
 	{
-		STR += (std::max(5, STR / 4));
+		STR += entitystats->getThaumProficiencySpellStatBonus(STAT_STR, STR);
 	}
 	if ( entitystats->getEffectActive(EFF_DRUNK) )
 	{
@@ -8437,7 +8573,7 @@ Sint32 statGetDEX(Stat* entitystats, Entity* my)
 	}
 	if ( entitystats->getEffectActive(EFF_NIMBLENESS) )
 	{
-		DEX += (std::max(5, DEX / 4));
+		DEX += entitystats->getThaumProficiencySpellStatBonus(STAT_DEX, DEX);
 	}
 
 	if ( my && my->monsterAllyGetPlayerLeader() )
@@ -8763,7 +8899,7 @@ Sint32 statGetCON(Stat* entitystats, Entity* my)
 	CON += (Sint32)entitystats->getEnsembleEffectBonus(Stat::ENSEMBLE_HORN_EFF_1);
 	if ( entitystats->getEffectActive(EFF_STURDINESS) )
 	{
-		CON += (std::max(5, CON / 4));
+		CON += entitystats->getThaumProficiencySpellStatBonus(STAT_CON, CON);
 	}
 
 	if ( entitystats->getEffectActive(EFF_CON_BONUS) )
@@ -8938,7 +9074,7 @@ Sint32 statGetINT(Stat* entitystats, Entity* my)
 	}
 	if ( entitystats->getEffectActive(EFF_COUNSEL) )
 	{
-		INT += (std::max(5, INT / 4));
+		INT += entitystats->getThaumProficiencySpellStatBonus(STAT_INT, INT);
 	}
 	if ( my && entitystats->getEffectActive(EFF_DRUNK) && my->behavior == &actPlayer && entitystats->type == GOATMAN )
 	{
@@ -10754,6 +10890,19 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 					}
 				}
+				else if ( myStats->weapon->type == GEM_JEWEL )
+				{
+					real_t normalisedCharge = (charge * 1.0);
+					normalisedCharge /= Stat::getMaxAttackCharge(myStats);
+					entity->sizex = 2;
+					entity->sizey = 2;
+					if ( behavior == &actPlayer )
+					{
+						entity->vel_x = (1.f + normalisedCharge) * cos(players[player]->entity->yaw);
+						entity->vel_y = (1.f + normalisedCharge) * sin(players[player]->entity->yaw);
+					}
+					entity->vel_z = -.3;
+				}
 				else
 				{
 					if ( entity->skill[10] == TOOL_DUCK )
@@ -12009,17 +12158,20 @@ void Entity::attack(int pose, int charge, Entity* target)
 				}
 
 				real_t weaponMultipliers = 0.0;
+				DamageTableType dmgType = DAMAGE_TABLE_UNARMED;
 				if ( weaponskill == PRO_UNARMED )
 				{
+					dmgType = DAMAGE_TABLE_UNARMED;
 					weaponMultipliers = Entity::getDamageTableMultiplier(hit.entity, *hitstats, DAMAGE_TABLE_UNARMED);
 				}
 				else if ( weaponskill == PRO_RANGED )
 				{
+					dmgType = DAMAGE_TABLE_RANGED;
 					weaponMultipliers = Entity::getDamageTableMultiplier(hit.entity, *hitstats, DAMAGE_TABLE_RANGED);
 				}
 				else if ( weaponskill >= 0 )
 				{
-					DamageTableType dmgType = static_cast<DamageTableType>(weaponskill - PRO_SWORD);
+					dmgType = static_cast<DamageTableType>(weaponskill - PRO_SWORD);
 					weaponMultipliers = Entity::getDamageTableMultiplier(hit.entity, *hitstats, dmgType);
 				}
 
@@ -12045,6 +12197,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 				bool gugnirProc = false;
 				bool armorPierceProc = false;
 
+				Entity::modifyDamageMultipliersFromEffects(hit.entity, this, weaponMultipliers, dmgType);
+
 				if ( (hitstats->getEffectActive(EFF_DIVINE_FIRE) & 0xF) ||
 						(!shapeshifted &&
 							((weaponskill == PRO_SWORD && myStats->weapon && myStats->weapon->type == ARTIFACT_SWORD)
@@ -12061,60 +12215,49 @@ void Entity::attack(int pose, int charge, Entity* target)
 						effect = true;
 					}
 
-					switch ( hitstats->type )
+					if ( hit.entity->isSmiteWeakMonster() )
 					{
-						case SKELETON:
-						case CREATURE_IMP:
-						case GHOUL:
-						case DEMON:
-						case SUCCUBUS:
-						case INCUBUS:
-						case VAMPIRE:
-						case LICH:
-						case LICH_ICE:
-						case LICH_FIRE:
-						case DEVIL:
+						// smite these creatures
+						if ( weaponskill == PRO_SWORD && myStats->weapon && myStats->weapon->type == ARTIFACT_SWORD
+							&& !shapeshifted )
 						{
-							// smite these creatures
-							if ( weaponskill == PRO_SWORD && myStats->weapon && myStats->weapon->type == ARTIFACT_SWORD
-								&& !shapeshifted )
+							real_t amount = 0.0;
+							real_t percent = getArtifactWeaponEffectChance(myStats->weapon->type, *myStats, &amount);
+							if ( local_rng.rand() % 100 < static_cast<int>(percent) )
 							{
-								real_t amount = 0.0;
-								real_t percent = getArtifactWeaponEffectChance(myStats->weapon->type, *myStats, &amount);
-								if ( local_rng.rand() % 100 < static_cast<int>(percent) )
-								{
-									weaponMultipliers += amount;
-									dyrnwynSmite = true;
-									particle = true;
-									effect = true;
-									//playSoundEntity(hit.entity, 249, 64);
-								}
+								weaponMultipliers += amount;
+								dyrnwynSmite = true;
+								particle = true;
+								effect = true;
+								//playSoundEntity(hit.entity, 249, 64);
 							}
-							if ( !dyrnwynSmite )
-							{
-								if ( myStats->getEffectActive(EFF_DIVINE_ZEAL) )
-								{
-									zealSmite = true;
-									particle = true;
-									effect = true;
-									real_t bonus = getSpellDamageFromID(SPELL_DIVINE_ZEAL, this, myStats, this) / 100.0;
-									bonus = std::min(bonus, getSpellDamageSecondaryFromID(SPELL_DIVINE_ZEAL, nullptr, nullptr, nullptr) / 100.0);
-									weaponMultipliers += bonus;
-								}
-								if ( myStats->getEffectActive(EFF_FOCI_LIGHT_JUSTICE) )
-								{
-									effect = true;
-									zealSmite = true;
-									particle = true;
-									weaponMultipliers += getSpellEffectDurationSecondaryFromID(SPELL_FOCI_LIGHT_JUSTICE, nullptr, nullptr, nullptr) / 100.0;
-									int tier = std::max(0, (myStats->getEffectActive(EFF_FOCI_LIGHT_JUSTICE) - 1));
-									weaponMultipliers += tier * getSpellDamageSecondaryFromID(SPELL_FOCI_LIGHT_JUSTICE, nullptr, nullptr, nullptr) / 100.0;
-								}
-							}
-							break;
 						}
-						default:
-							break;
+						if ( !dyrnwynSmite )
+						{
+							if ( myStats->getEffectActive(EFF_DIVINE_ZEAL) )
+							{
+								zealSmite = true;
+								particle = true;
+								effect = true;
+								real_t bonus = getSpellDamageFromID(SPELL_DIVINE_ZEAL, this, myStats, this) / 100.0;
+								bonus = std::min(bonus, getSpellDamageSecondaryFromID(SPELL_DIVINE_ZEAL, nullptr, nullptr, nullptr) / 100.0);
+								weaponMultipliers += bonus;
+
+								if ( behavior == &actPlayer )
+								{
+									players[skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_DIVINE_ZEAL, bonus, 1.0);
+								}
+							}
+							if ( myStats->getEffectActive(EFF_FOCI_LIGHT_JUSTICE) )
+							{
+								effect = true;
+								zealSmite = true;
+								particle = true;
+								weaponMultipliers += getSpellEffectDurationSecondaryFromID(SPELL_FOCI_LIGHT_JUSTICE, nullptr, nullptr, nullptr) / 100.0;
+								int tier = std::max(0, (myStats->getEffectActive(EFF_FOCI_LIGHT_JUSTICE) - 1));
+								weaponMultipliers += tier * getSpellDamageSecondaryFromID(SPELL_FOCI_LIGHT_JUSTICE, nullptr, nullptr, nullptr) / 100.0;
+							}
+						}
 					}
 
 					if ( effect )
@@ -12503,7 +12646,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						if ( playerhit >= 0 )
 						{
 							hit.entity->safeConsumeMP(1);
-							players[playerhit]->mechanics.updateSustainedSpellEvent(SPELL_THORNS, thorn * 5.0, 1.0);
+							players[playerhit]->mechanics.updateSustainedSpellEvent(SPELL_THORNS, 50.0 + thorn * 5.0, 1.0);
 						}
 						thornsEffect += thorn;
 					}
@@ -12517,7 +12660,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						if ( playerhit >= 0 )
 						{
 							hit.entity->safeConsumeMP(1);
-							players[playerhit]->mechanics.updateSustainedSpellEvent(SPELL_BLADEVINES, thorn * 5.0, 1.0);
+							players[playerhit]->mechanics.updateSustainedSpellEvent(SPELL_BLADEVINES, 50.0 + thorn * 5.0, 1.0);
 						}
 						thornsEffect += thorn;
 					}
@@ -12560,10 +12703,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 					Sint32 oldHP = hitstats->HP;
 					hit.entity->modHP(-damage); // do the damage
 
-					if ( hitstats && hitstats->getEffectActive(EFF_DEFY_FLESH) )
+					if ( hitstats )
 					{
 						Sint32 damageTaken = oldHP - hitstats->HP;
-						if ( damageTaken > 0 )
+						if ( damageTaken > 0 && hitstats->getEffectActive(EFF_DEFY_FLESH) )
 						{
 							hit.entity->defyFleshProc(this);
 						}
@@ -14892,6 +15035,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 								Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_CLASS_BACKSTAB_DMG_RUN, "backstabs", oldHP - hitstats->HP);
 							}
 						}
+					}
+
+					if ( oldHP - hitstats->HP > 0 )
+					{
+						hit.entity->pinpointDamageProc(this, oldHP - hitstats->HP);
 					}
 
 					if ( !strncmp(hitstats->name, "inner demon", strlen("inner demon")) )
@@ -23167,6 +23315,7 @@ bool Entity::setEffect(int effect, std::variant<bool, Uint8> value, int duration
 				break;
 			case EFF_DISORIENTED:
 			case EFF_ROOTED:
+			case EFF_PENANCE:
 				if ( myStats->type == LICH || myStats->type == DEVIL
 					|| myStats->type == LICH_FIRE || myStats->type == LICH_ICE
 					|| myStats->type == SHADOW || myStats->type == SHOPKEEPER )
@@ -23865,6 +24014,31 @@ bool Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 					continue;
 				}
 
+				bool donationItem = false;
+				for ( int c = 0; c < MAXPLAYERS; ++c )
+				{
+					if ( players[c]->mechanics.donationRevealedOnFloor > 0 && entity->getUID() == players[c]->mechanics.donationRevealedOnFloor )
+					{
+						donationItem = true;
+					}
+				}
+
+				if ( donationItem )
+				{
+					if ( item->interactNPCUid == getUID() )
+					{
+						// item being interacted with, can interact with item.
+					}
+					else
+					{
+						if ( item != nullptr )
+						{
+							free(item);
+						}
+						continue;
+					}
+				}
+
 				int playerOwned = -1;
 				if ( entity->itemOriginalOwner != 0 )
 				{
@@ -24261,6 +24435,20 @@ bool Entity::monsterWantsItem(const Item& item, Item**& shouldEquip, node_t*& re
 	if ( item.status == BROKEN )
 	{
 		return false; // no want broken.
+	}
+	if ( item.type == GEM_JEWEL )
+	{
+		if ( myStats->type == AUTOMATON )
+		{
+			if ( this->monsterAllyGetPlayerLeader() )
+			{
+				return false;
+			}
+		}
+		else
+		{
+			return false;
+		}
 	}
 
 	switch ( myStats->type )
@@ -29311,6 +29499,43 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 	}
 }
 
+bool Entity::isSmiteWeakMonster()
+{
+	Stat* myStats = getStats();
+	if ( myStats )
+	{
+		switch ( myStats->type )
+		{
+			case SKELETON:
+			case CREATURE_IMP:
+			case GHOUL:
+			case DEMON:
+			case SUCCUBUS:
+			case INCUBUS:
+			case VAMPIRE:
+			case LICH:
+			case LICH_ICE:
+			case LICH_FIRE:
+			case DEVIL:
+			case SHADOW:
+			case REVENANT_SKULL:
+			case MONSTER_ADORCISED_WEAPON:
+				return true;
+				break;
+			case MIMIC:
+			case MINIMIMIC:
+				if ( myStats->getEffectActive(EFF_MIMIC_VOID) )
+				{
+					return true;
+				}
+				break;
+			default:
+				break;
+		}
+	}
+	return false;
+}
+
 bool Entity::isBossMonster()
 {
 	Stat* myStats = getStats();
@@ -31251,4 +31476,112 @@ bool Entity::myconidReboundOnHit(Entity* attacker)
 	}
 
 	return false;
+}
+
+bool Entity::modifyDamageMultipliersFromEffects(Entity* hitentity, Entity* attacker,
+	real_t& damageMultiplier, DamageTableType damageTableType, Entity* projectile, int spellID)
+{
+	if ( !hitentity ) { return false; }
+
+	Stat* hitstats = hitentity->getStats();
+	if ( !hitstats ) { return false; }
+
+	Stat* attackerStats = attacker ? attacker->getStats() : nullptr;
+	bool result = false;
+	if ( hitstats->getEffectActive(EFF_BLOOD_WARD) )
+	{
+		real_t reduction = std::min(0.8, std::max(0.0, getSpellDamageFromID(SPELL_BLOOD_WARD, hitentity, nullptr, hitentity) / 100.0));
+		if ( attackerStats )
+		{
+			if ( (attackerStats && attackerStats->type == SPIDER
+				|| attackerStats->type == SCORPION
+				|| attackerStats->type == INSECTOID
+				|| attackerStats->type == MONSTER_M)
+				|| spellID == SPELL_POISON
+				|| spellID == SPELL_ACID_SPRAY
+				|| spellID == SPELL_SLIME_ACID
+				|| spellID == SPELL_SPORES
+				|| spellID == SPELL_SPORE_BOMB
+				|| spellID == SPELL_MYCELIUM_BOMB
+				|| spellID == SPELL_MYCELIUM_SPORES
+				|| spellID == SPELL_BLEED
+				|| spellID == SPELL_MERCURY_BOLT
+				|| spellID == SPELL_MUSHROOM
+				|| (projectile && projectile->behavior == &actArrow && projectile->arrowQuiverType == QUIVER_HUNTING)
+				)
+			{
+				damageMultiplier = std::max(0.1, damageMultiplier * (1.0 - reduction));
+				if ( hitentity->behavior == &actPlayer )
+				{
+					players[hitentity->skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_BLOOD_WARD, 30.0, 1.0);
+					hitentity->safeConsumeMP(1);
+				}
+				result = true;
+			}
+		}
+	}
+	if ( hitstats->getEffectActive(EFF_SIGIL) )
+	{
+		int caster = ((hitstats->getEffectActive(EFF_SIGIL) >> 4) & 0xF) - 1;
+		if ( caster >= 0 && caster < MAXPLAYERS )
+		{
+			if ( hitentity->behavior == &actMonster 
+				&& !hitentity->monsterAllyGetPlayerLeader() )
+			{
+				damageMultiplier += 0.1 + (0.1 * (int)(hitstats->getEffectActive(EFF_SIGIL) & 0xF));
+				if ( players[caster]->entity )
+				{
+					players[caster]->mechanics.updateSustainedSpellEvent(SPELL_SIGIL, 10.0, 1.0);
+				}
+				result = true;
+			}
+		}
+	}
+	if ( hitstats->getEffectActive(EFF_SANCTUARY) )
+	{
+		real_t reduction = std::min(0.8, std::max(0.0, 0.1 + (0.15 * (int)(hitstats->getEffectActive(EFF_SANCTUARY) & 0xF))));
+		damageMultiplier = std::max(0.1, damageMultiplier * (1.0 - reduction));
+
+		int caster = ((hitstats->getEffectActive(EFF_SANCTUARY) >> 4) & 0xF) - 1;
+		if ( caster >= 0 && caster < MAXPLAYERS )
+		{
+			if ( players[caster]->entity )
+			{
+				players[caster]->mechanics.updateSustainedSpellEvent(SPELL_SANCTUARY, 5.0, 1.0);
+				players[caster]->entity->safeConsumeMP(1);
+			}
+		}
+		result = true;
+	}
+
+	return result;
+}
+
+real_t Entity::getHealingSpellPotionModifierFromEffects(bool processLevelup)
+{
+	real_t result = 1.0;
+	if ( Stat* myStats = getStats() )
+	{
+		if ( myStats->getEffectActive(EFF_SIGIL) )
+		{
+			int caster = ((myStats->getEffectActive(EFF_SIGIL) >> 4) & 0xF) - 1;
+			if ( caster >= 0 && caster < MAXPLAYERS )
+			{
+				if ( (behavior == &actMonster
+					&& monsterAllyGetPlayerLeader()) || behavior == &actPlayer )
+				{
+					result += 0.1 + (0.1 * (int)(myStats->getEffectActive(EFF_SIGIL) & 0xF));
+					if ( processLevelup )
+					{
+						if ( players[caster]->entity )
+						{
+							players[caster]->mechanics.updateSustainedSpellEvent(SPELL_SIGIL, 10.0, 1.0);
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return result;
 }

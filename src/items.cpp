@@ -3132,6 +3132,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		case GEM_JETSTONE:
 		case GEM_OBSIDIAN:
 		case GEM_GLASS:
+		case GEM_JEWEL:
 			equipItemResult = equipItem(item, &stats[player]->weapon, player, checkInventorySpaceForPaperDoll);
 			break;
 		case TOOL_PICKAXE:
@@ -5139,6 +5140,31 @@ Sint32 Item::getGoldValue() const
 					}
 				}
 			}
+		}
+		if ( type == GEM_JEWEL )
+		{
+			int value = items[type].gold_value;
+			if ( status == BROKEN )
+			{
+				value = 0;
+			}
+			else if ( status == DECREPIT )
+			{
+				value = 250;
+			}
+			else if ( status == WORN )
+			{
+				value = 500;
+			}
+			else if ( status == SERVICABLE )
+			{
+				value = 1000;
+			}
+			else if ( status == EXCELLENT )
+			{
+				value = 2000;
+			}
+			return value;
 		}
 		return items[type].gold_value;
 	}

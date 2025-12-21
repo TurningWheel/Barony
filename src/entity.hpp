@@ -734,7 +734,10 @@ public:
 	{
 		SHOW_MAP_DEFAULT = 1,
 		SHOW_MAP_GYRO = 2,
-		SHOW_MAP_SCRY = 3
+		SHOW_MAP_SCRY = 3,
+		SHOW_MAP_DONATION = 4,
+		SHOW_MAP_PINPOINT = 5,
+		SHOW_MAP_DETECT_MONSTER = 6
 	};
 	void setEntityShowOnMap(EntityShowMapSource source, int duration)
 	{
@@ -914,7 +917,7 @@ public:
 	Item** shouldMonsterEquipThisArmor(const Item& item) const;
 	int shouldMonsterDefend(Stat& myStats, const Entity& target, const Stat& targetStats, int targetDist, bool hasrangedweapon);
 	bool monsterConsumeFoodEntity(Entity* food, Stat* myStats);
-	Entity* monsterAllyGetPlayerLeader();
+	Entity* monsterAllyGetPlayerLeader() const;
 	bool monsterAllyEquipmentInClass(const Item& item) const;
 	bool monsterIsTinkeringCreation();
 	void monsterHandleKnockbackVelocity(real_t monsterFacingTangent, real_t weightratio);
@@ -1289,6 +1292,7 @@ public:
 	void handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event); // monster text for interactions.
 	void playerStatIncrease(int playerClass, int chosenStats[3]);
 	bool isBossMonster(); // return true if boss map (hell boss, boss etc or shopkeeper/shadow/other boss
+	bool isSmiteWeakMonster();
 	void handleKnockbackDamage(Stat& myStats, Entity* knockedInto); // handle knockback damage from getting hit into other things.
 	void setHelmetLimbOffsetWithMask(Entity* helm, Entity* mask);
 	bool entityCheckIfTriggeredBomb(bool triggerBomb);
@@ -1333,6 +1337,10 @@ public:
 	bool spellEffectPreserveItem(Item* item);
 	bool mistFormDodge(bool checkEffectActiveOnly, Entity* attacker);
 	bool defyFleshProc(Entity* attacker);
+	bool pinpointDamageProc(Entity* attacker, int damage);
+	static bool modifyDamageMultipliersFromEffects(Entity* hitentity, Entity* attacker, 
+		real_t& damageMultiplier, DamageTableType damageTableType, Entity* projectile = nullptr, int spellID = -1);
+	real_t getHealingSpellPotionModifierFromEffects(bool processLevelup);
 	void attractItem(Entity& itemEntity);
 	void creatureHandleLiftZ();
 	bool monsterIsTargetable(bool targetInertMimics = false) const;

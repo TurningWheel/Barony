@@ -156,6 +156,8 @@ void actThrown(Entity* my)
 		item = nullptr;
 	}
 
+	my->removeLightField();
+
 	if ( multiplayer == CLIENT )
 	{
 		if ( THROWN_LIFE == 0 )
@@ -269,6 +271,28 @@ void actThrown(Entity* my)
 				fx->vel_z = 0.0;
 			}
 		}
+		else if ( my->sprite == items[GEM_JEWEL].index )
+		{
+			if ( my->ticks % 4 == 0 )
+			{
+				if ( Entity* fx = spawnMagicParticleCustom(my, 2410, 1.0, 1.0) )
+				{
+					fx->ditheringDisabled = true;
+					fx->focalz = 0.25;
+					fx->vel_z = 0.04;
+					fx->fskill[0] = 0.04;
+					real_t dir = atan2(my->vel_y, my->vel_x);
+					if ( local_rng.rand() % 2 )
+					{
+						dir += PI;
+					}
+					real_t spd = sqrt(my->vel_x * my->vel_x + my->vel_y * my->vel_y);
+					fx->vel_x = spd * 0.05 * cos(dir + PI / 2);
+					fx->vel_y = spd * 0.05 * sin(dir + PI / 2);
+				}
+			}
+			my->light = addLight(my->x / 16, my->y / 16, "jewel_yellow");
+		}
 	}
 	else
 	{
@@ -308,6 +332,7 @@ void actThrown(Entity* my)
 	{
 		if ( my->ticks > (THROWN_LINGER + 1) )
 		{
+			my->removeLightField();
 			list_RemoveNode(my->mynode);
 			return;
 		}
@@ -512,6 +537,28 @@ void actThrown(Entity* my)
 				fx->vel_z = 0.0;
 			}
 		}
+		else if ( my->sprite == items[GEM_JEWEL].index )
+		{
+			if ( my->ticks % 4 == 0 )
+			{
+				if ( Entity* fx = spawnMagicParticleCustom(my, 2410, 1.0, 1.0) )
+				{
+					fx->ditheringDisabled = true;
+					fx->focalz = 0.25;
+					fx->vel_z = 0.04;
+					fx->fskill[0] = 0.04;
+					real_t dir = atan2(my->vel_y, my->vel_x);
+					if ( local_rng.rand() % 2 )
+					{
+						dir += PI;
+					}
+					real_t spd = sqrt(my->vel_x * my->vel_x + my->vel_y * my->vel_y);
+					fx->vel_x = spd * 0.05 * cos(dir + PI / 2);
+					fx->vel_y = spd * 0.05 * sin(dir + PI / 2);
+				}
+			}
+			my->light = addLight(my->x / 16, my->y / 16, "jewel_yellow");
+		}
 	}
 	else
 	{
@@ -555,6 +602,7 @@ void actThrown(Entity* my)
 						item->applyTinkeringCreation(parent, my);
 					}
 					free(item);
+					my->removeLightField();
 					list_RemoveNode(my->mynode);
 					return;
 				}
@@ -562,6 +610,7 @@ void actThrown(Entity* my)
 				{
 					item->applyDuck(my->parent, my->x, my->y, nullptr, false);
 					free(item);
+					my->removeLightField();
 					list_RemoveNode(my->mynode);
 					return;
 				}
@@ -584,12 +633,14 @@ void actThrown(Entity* my)
 					playSoundEntity(my, 162, 64);
 					free(item);
 					onThrownLandingParticle(my);
+					my->removeLightField();
 					list_RemoveNode(my->mynode);
 					return;
 				}
 				else if ( specialMonster )
 				{
 					free(item);
+					my->removeLightField();
 					list_RemoveNode(my->mynode);
 					return;
 				}
@@ -600,15 +651,18 @@ void actThrown(Entity* my)
 					free(item);
 					onThrownLandingParticle(my);
 					playSoundEntity(my, 764, 64);
+					my->removeLightField();
 					list_RemoveNode(my->mynode);
 					return;
 				}
-				else if ( itemCategory(item) == GEM && (item->beatitude < 0 || local_rng.rand() % 5 == 0) )
+				else if ( itemCategory(item) == GEM && (item->beatitude < 0 || local_rng.rand() % 5 == 0)
+					&& item->type != GEM_JEWEL )
 				{
 					// cursed gem, explode
 					createParticleShatteredGem(my->x, my->y, 7.5, my->sprite, nullptr);
 					serverSpawnMiscParticlesAtLocation(my->x, my->y, 7.5, PARTICLE_EFFECT_SHATTERED_GEM, my->sprite);
 					free(item);
+					my->removeLightField();
 					list_RemoveNode(my->mynode);
 					return;
 				}
@@ -637,6 +691,7 @@ void actThrown(Entity* my)
 						item->applyBomb(parent, item->type, Item::ItemBombPlacement::BOMB_FLOOR, Item::ItemBombFacingDirection::BOMB_UP, my, nullptr);
 					}
 					free(item);
+					my->removeLightField();
 					list_RemoveNode(my->mynode);
 					return;
 				}
@@ -661,6 +716,7 @@ void actThrown(Entity* my)
 						return;
 					}
 					free(item);
+					my->removeLightField();
 					list_RemoveNode(my->mynode);
 					return;
 				}
@@ -707,6 +763,10 @@ void actThrown(Entity* my)
 					entity->skill[13] = item->count;
 					entity->skill[14] = item->appearance;
 					entity->skill[15] = item->identified;
+					if ( item->type == GEM_JEWEL )
+					{
+						entity->parent = my->parent;
+					}
 					if ( itemCategory(item) == THROWN )
 					{
 						//Hack to make monsters stop catching your shurikens and chakrams.
@@ -723,6 +783,7 @@ void actThrown(Entity* my)
 						}
 					}
 					free(item);
+					my->removeLightField();
 					list_RemoveNode(my->mynode);
 					return;
 				}
@@ -753,6 +814,7 @@ void actThrown(Entity* my)
 						item->applyTinkeringCreation(parent, my);
 					}
 					free(item);
+					my->removeLightField();
 					list_RemoveNode(my->mynode);
 					return;
 				}
@@ -761,6 +823,7 @@ void actThrown(Entity* my)
 					item = newItemFromEntity(my);
 					item->applyDuck(my->parent, my->x, my->y, nullptr, false);
 					free(item);
+					my->removeLightField();
 					list_RemoveNode(my->mynode);
 					return;
 				}
@@ -840,6 +903,7 @@ void actThrown(Entity* my)
 							{
 								free(item);
 							}
+							my->removeLightField();
 							list_RemoveNode(my->mynode);
 							return;
 						}
@@ -913,6 +977,7 @@ void actThrown(Entity* my)
 				}
 			}
 		}
+		my->removeLightField();
 		list_RemoveNode(my->mynode);
 		return;
 	}
@@ -1045,6 +1110,30 @@ void actThrown(Entity* my)
 		{
 			tryHitEntity = false;
 		}
+		if ( item->type == GEM_JEWEL )
+		{
+			tryHitEntity = false;
+			if ( hit.entity != nullptr )
+			{
+				if ( hit.entity->behavior == &actMonster && hit.entity->getStats() )
+				{
+					Entity* parent = uidToEntity(my->parent);
+					if ( parent && parent->behavior == &actPlayer )
+					{
+						if ( entityWantsJewel(item->status, *hit.entity, *hit.entity->getStats(), false) )
+						{
+							if ( jewelItemRecruit(parent, hit.entity) )
+							{
+								free(item);
+								my->removeLightField();
+								list_RemoveNode(my->mynode);
+								return;
+							}
+						}
+					}
+				}
+			}
+		}
 
 		if ( my->sprite == items[GREASE_BALL].index )
 		{
@@ -1087,6 +1176,7 @@ void actThrown(Entity* my)
 				{
 					item->applyBomb(parent, item->type, Item::ItemBombPlacement::BOMB_CHEST, Item::ItemBombFacingDirection::BOMB_UP, my, hit.entity);
 					free(item);
+					my->removeLightField();
 					list_RemoveNode(my->mynode);
 					return;
 				}
@@ -1094,6 +1184,7 @@ void actThrown(Entity* my)
 				{
 					item->applyBomb(parent, item->type, Item::ItemBombPlacement::BOMB_DOOR, Item::ItemBombFacingDirection::BOMB_UP, my, hit.entity);
 					free(item);
+					my->removeLightField();
 					list_RemoveNode(my->mynode);
 					return;
 				}
@@ -1102,6 +1193,7 @@ void actThrown(Entity* my)
 				{
 					item->applyBomb(parent, item->type, Item::ItemBombPlacement::BOMB_COLLIDER, Item::ItemBombFacingDirection::BOMB_UP, my, hit.entity);
 					free(item);
+					my->removeLightField();
 					list_RemoveNode(my->mynode);
 					return;
 				}
@@ -1257,12 +1349,16 @@ void actThrown(Entity* my)
 					Sint32 oldHP = hitstats->HP;
 					hit.entity->modHP(-damage);
 
-					if ( hitstats && hitstats->getEffectActive(EFF_DEFY_FLESH) )
+					if ( hitstats )
 					{
 						Sint32 damageTaken = oldHP - hitstats->HP;
 						if ( damageTaken > 0 )
 						{
-							hit.entity->defyFleshProc(parent);
+							if ( hitstats->getEffectActive(EFF_DEFY_FLESH) )
+							{
+								hit.entity->defyFleshProc(parent);
+							}
+							hit.entity->pinpointDamageProc(parent, damageTaken);
 						}
 					}
 
@@ -1813,6 +1909,10 @@ void actThrown(Entity* my)
 						entity->skill[13] = item->count;
 						entity->skill[14] = item->appearance;
 						entity->skill[15] = item->identified;
+						if ( item->type == GEM_JEWEL )
+						{
+							entity->parent = my->parent;
+						}
 						if ( itemCategory(item) == THROWN )
 						{
 							//Hack to make monsters stop catching your shurikens and chakrams.
@@ -1830,6 +1930,7 @@ void actThrown(Entity* my)
 						}
 					}
 					free(item);
+					my->removeLightField();
 					list_RemoveNode(my->mynode);
 					return;
 				}
@@ -2273,6 +2374,7 @@ void actThrown(Entity* my)
 						}
 					}
 					free(item);
+					my->removeLightField();
 					list_RemoveNode(my->mynode);
 					return;
 					break;
@@ -2289,6 +2391,7 @@ void actThrown(Entity* my)
 				free(item);
 			}
 			onThrownLandingParticle(my);
+			my->removeLightField();
 			list_RemoveNode(my->mynode);
 			return;
 		}
@@ -2304,6 +2407,7 @@ void actThrown(Entity* my)
 			}
 			free(item);
 			item = nullptr;
+			my->removeLightField();
 			list_RemoveNode(my->mynode);
 			return;
 		}
@@ -2323,6 +2427,7 @@ void actThrown(Entity* my)
 			}
 			else
 			{
+				my->removeLightField();
 				list_RemoveNode(my->mynode);
 				return;
 			}
@@ -2337,6 +2442,7 @@ void actThrown(Entity* my)
 			{
 				// boomerang always tink and return to owner.
 				free(item);
+				my->removeLightField();
 				list_RemoveNode(my->mynode);
 				return;
 			}
@@ -2345,6 +2451,7 @@ void actThrown(Entity* my)
 		{
 			// boomerang always return to owner.
 			free(item);
+			my->removeLightField();
 			list_RemoveNode(my->mynode);
 			return;
 		}
@@ -2352,10 +2459,15 @@ void actThrown(Entity* my)
 		{
 			// non-bomb tools will fall to the ground and get placed.
 		}
+		else if ( item && item->type == GEM_JEWEL )
+		{
+			// will fall to the ground and get placed.
+		}
 		else if ( item && item->type == TOOL_DUCK )
 		{
 			item->applyDuck(my->parent, my->x, my->y, hit.entity, false);
 			free(item);
+			my->removeLightField();
 			list_RemoveNode(my->mynode);
 			return;
 		}
@@ -2417,6 +2529,10 @@ void actThrown(Entity* my)
 				entity->skill[13] = item->count;
 				entity->skill[14] = item->appearance;
 				entity->skill[15] = item->identified;
+				if ( item->type == GEM_JEWEL )
+				{
+					entity->parent = my->parent;
+				}
 				if ( itemCategory(item) == THROWN )
 				{
 					//Hack to make monsters stop catching your shurikens and chakrams.
@@ -2434,6 +2550,7 @@ void actThrown(Entity* my)
 				}
 			}
 			free(item);
+			my->removeLightField();
 			list_RemoveNode(my->mynode);
 			return;
 		}

@@ -146,7 +146,10 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 		Entity* entity = (Entity*)node->element;
 		if ( entity->flags[SPRITE] )
 		{
-			continue;
+			if ( entity->getEntityShowOnMapDuration() == 0 )
+			{
+				continue;
+			}
 		}
 		if ( entity->sprite == 161 || (entity->sprite >= 254 && entity->sprite < 258)
 			|| entity->behavior == &actCustomPortal )   // ladder or portal models
@@ -636,7 +639,24 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 									{
 										int x = std::min<int>(std::max<int>(0, entity->x / 16), map.width - 1);
 										int y = std::min<int>(std::max<int>(0, entity->y / 16), map.height - 1);
-										drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(191, 127, 191, 255));
+										if ( entity->getEntityShowOnMapSource() == Entity::SHOW_MAP_SCRY )
+										{
+											if ( ticks % 40 - ticks % 20 )
+											{
+												drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(200, 200, 255, 255));
+											}
+										}
+										else
+										{
+											if ( entity->getEntityShowOnMapSource() == Entity::SHOW_MAP_PINPOINT )
+											{
+												drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(240, 228, 66, 255));
+											}
+											else
+											{
+												drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(191, 127, 191, 255));
+											}
+										}
 										warningEffect = true;
 										break;
 									}
@@ -674,7 +694,24 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 								{
 									int x = std::min<int>(std::max<int>(0, entity->x / 16), map.width - 1);
 									int y = std::min<int>(std::max<int>(0, entity->y / 16), map.height - 1);
-									drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(191, 127, 191, 255));
+									if ( entity->getEntityShowOnMapSource() == Entity::SHOW_MAP_SCRY )
+									{
+										if ( ticks % 40 - ticks % 20 )
+										{
+											drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(200, 200, 255, 255));
+										}
+									}
+									else
+									{
+										if ( entity->getEntityShowOnMapSource() == Entity::SHOW_MAP_PINPOINT )
+										{
+											drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(240, 228, 66, 255));
+										}
+										else
+										{
+											drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(191, 127, 191, 255));
+										}
+									}
 									warningEffect = true;
 								}
 							}
@@ -787,9 +824,28 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 			{
 				int x = std::min<int>(std::max<int>(0, entity->x / 16), map.width - 1);
 				int y = std::min<int>(std::max<int>(0, entity->y / 16), map.height - 1);
-				if ( ticks % 40 - ticks % 20 )
+				if ( entity->getEntityShowOnMapSource() == Entity::SHOW_MAP_DETECT_MONSTER )
 				{
-					drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(255, 168, 200, 255));
+					drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(191, 127, 191, 255));
+				}
+				else if ( entity->getEntityShowOnMapSource() == Entity::SHOW_MAP_PINPOINT )
+				{
+					drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(240, 228, 66, 255));
+				}
+				else if ( (ticks % 40 - ticks % 20) )
+				{
+					if ( entity->getEntityShowOnMapSource() == Entity::SHOW_MAP_SCRY )
+					{
+						drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(200, 200, 255, 255));
+					}
+					else if ( entity->getEntityShowOnMapSource() == Entity::SHOW_MAP_DONATION )
+					{
+						drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(240, 228, 66, 255));
+					}
+					else
+					{
+						drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(255, 168, 200, 255));
+					}
 				}
 			}
 		}

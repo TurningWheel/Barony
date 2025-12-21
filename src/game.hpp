@@ -400,7 +400,7 @@ extern bool enabledDLCPack2;
 extern bool enabledDLCPack3;
 extern std::vector<std::string> physFSFilesInDirectory;
 void loadRandomNames();
-void mapLevel(int player, int radius, int _x, int _y);
+int mapLevel(int player, int radius, int _x, int _y, bool usingSpell);
 void mapLevel2(int player);
 void mapFoodOnLevel(int player);
 bool mapTileDiggable(const int x, const int y);

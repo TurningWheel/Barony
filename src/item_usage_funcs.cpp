@@ -2283,6 +2283,9 @@ bool item_PotionHealing(Item*& item, Entity* entity, Entity* usedBy, bool should
 		amount += 2 * statGetCON(stats, entity);
 	}
 
+	real_t healMult = entity->getHealingSpellPotionModifierFromEffects(false);
+	amount *= healMult;
+
 	if ( item->beatitude < 0 )
 	{
 		amount /= (std::abs(item->beatitude) * 2);
@@ -2295,6 +2298,7 @@ bool item_PotionHealing(Item*& item, Entity* entity, Entity* usedBy, bool should
 	int heal = std::max(entity->getHP() - oldHP, 0);
 	if ( heal > 0 )
 	{
+		entity->getHealingSpellPotionModifierFromEffects(true);
 		serverUpdatePlayerGameplayStats(player, STATISTICS_HEAL_BOT, heal);
 	}
 
@@ -2434,6 +2438,9 @@ bool item_PotionExtraHealing(Item*& item, Entity* entity, Entity* usedBy, bool s
 		amount += 4 * statGetCON(stats, entity);
 	}
 
+	real_t healMult = entity->getHealingSpellPotionModifierFromEffects(false);
+	amount *= healMult;
+
 	if ( item->beatitude < 0 )
 	{
 		amount /= (std::abs(item->beatitude) * 2);
@@ -2446,6 +2453,7 @@ bool item_PotionExtraHealing(Item*& item, Entity* entity, Entity* usedBy, bool s
 	int heal = std::max(entity->getHP() - oldHP, 0);
 	if ( heal > 0 )
 	{
+		entity->getHealingSpellPotionModifierFromEffects(true);
 		serverUpdatePlayerGameplayStats(player, STATISTICS_HEAL_BOT, heal);
 	}
 
@@ -3655,7 +3663,11 @@ void item_ScrollMagicMapping(Item* item, int player)
 	if ( item->beatitude >= 0 )
 	{
 		messagePlayer(player, MESSAGE_HINT, Language::get(868));
-		mapLevel(player, 0, 0, 0);
+		mapLevel(player, 16 + 8 * item->beatitude, players[player]->entity->x / 16, players[player]->entity->y / 16, false);
+
+		/*int pingx = players[player]->entity->x / 16;
+		int pingy = players[player]->entity->y / 16;
+		sendMinimapPing(player, pingx, pingy, 0, true);*/
 	}
 	else
 	{
@@ -5068,6 +5080,15 @@ void item_Food(Item*& item, int player)
 			{
 				players[player]->entity->setEffect(EFF_HP_MP_REGEN, true, 
 					stats[player]->EFFECTS_TIMERS[EFF_HP_MP_REGEN] + TICKS_PER_SECOND * 30, false);
+
+				int caster = (int)stats[player]->getEffectActive(EFF_BLESS_FOOD) - 1;
+				if ( caster >= 0 && caster < MAXPLAYERS )
+				{
+					if ( players[caster]->entity )
+					{
+						players[caster]->mechanics.updateSustainedSpellEvent(SPELL_BLESS_FOOD, 30.0, 1.0);
+					}
+				}
 			}
 		}
 	}
@@ -5453,11 +5474,20 @@ void item_FoodTin(Item*& item, int player)
 
 			if ( item->beatitude > 0 )
 			{
-				players[player]->entity->setEffect(EFF_HP_MP_REGEN, true, stats[player]->EFFECTS_TIMERS[EFF_HP_MP_REGEN] + TICKS_PER_SECOND * item->beatitude, false);
+				players[player]->entity->setEffect(EFF_HP_MP_REGEN, true, stats[player]->EFFECTS_TIMERS[EFF_HP_MP_REGEN] + TICKS_PER_SECOND * 30 * item->beatitude, false);
 			}
 			else if ( stats[player]->getEffectActive(EFF_BLESS_FOOD) )
 			{
 				players[player]->entity->setEffect(EFF_HP_MP_REGEN, true, stats[player]->EFFECTS_TIMERS[EFF_HP_MP_REGEN] + TICKS_PER_SECOND * 30, false);
+
+				int caster = (int)stats[player]->getEffectActive(EFF_BLESS_FOOD) - 1;
+				if ( caster >= 0 && caster < MAXPLAYERS )
+				{
+					if ( players[caster]->entity )
+					{
+						players[caster]->mechanics.updateSustainedSpellEvent(SPELL_BLESS_FOOD, 30.0, 1.0);
+					}
+				}
 			}
 		}
 
@@ -6177,6 +6207,7 @@ void item_FoodAutomaton(Item*& item, int player)
 		case GEM_DIAMOND:
 		case GEM_JETSTONE:
 		case GEM_OBSIDIAN:
+		case GEM_JEWEL:
 			stats[player]->HUNGER += 1000;
 			players[player]->entity->modMP(10);
 			break;
@@ -6397,6 +6428,7 @@ bool itemIsConsumableByAutomaton(const Item& item)
 		case GEM_DIAMOND:
 		case GEM_JETSTONE:
 		case GEM_OBSIDIAN:
+		case GEM_JEWEL:
 
 		case READABLE_BOOK:
 

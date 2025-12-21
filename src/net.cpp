@@ -1417,7 +1417,7 @@ void serverUpdateAllyHP(int player, Uint32 uidToUpdate, int HP, int MAXHP, bool 
 	}
 }
 
-void sendMinimapPing(Uint8 player, Uint8 x, Uint8 y, Uint8 pingType)
+void sendMinimapPing(Uint8 player, Uint8 x, Uint8 y, Uint8 pingType, bool radius)
 {
 	if ( multiplayer == CLIENT )
 	{
@@ -1427,10 +1427,11 @@ void sendMinimapPing(Uint8 player, Uint8 x, Uint8 y, Uint8 pingType)
 		net_packet->data[5] = x;
 		net_packet->data[6] = y;
 		net_packet->data[7] = pingType;
+		net_packet->data[8] = radius ? 1 : 0;
 
 		net_packet->address.host = net_server.host;
 		net_packet->address.port = net_server.port;
-		net_packet->len = 8;
+		net_packet->len = 9;
 		sendPacket(net_sock, -1, net_packet, 0);
 	}
 	else
@@ -1443,7 +1444,7 @@ void sendMinimapPing(Uint8 player, Uint8 x, Uint8 y, Uint8 pingType)
 			}
 			if ( players[c]->isLocalPlayer() )
 			{
-				minimapPingAdd(player, c, MinimapPing(ticks, player, x, y, false, (MinimapPing::PingType)pingType));
+				minimapPingAdd(player, c, MinimapPing(ticks, player, x, y, radius, (MinimapPing::PingType)pingType));
 				continue;
 			}
 
@@ -1455,10 +1456,11 @@ void sendMinimapPing(Uint8 player, Uint8 x, Uint8 y, Uint8 pingType)
 				net_packet->data[5] = x;
 				net_packet->data[6] = y;
 				net_packet->data[7] = pingType;
+				net_packet->data[8] = radius ? 1 : 0;
 
 				net_packet->address.host = net_clients[c - 1].host;
 				net_packet->address.port = net_clients[c - 1].port;
-				net_packet->len = 8;
+				net_packet->len = 9;
 				sendPacketSafe(net_sock, -1, net_packet, c - 1);
 			}
 		}
@@ -3223,6 +3225,49 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 				case PARTICLE_EFFECT_SPELL_WEB_ORBIT:
 					createParticleAestheticOrbit(entity, 863, 400, PARTICLE_EFFECT_SPELL_WEB_ORBIT);
 					break;
+				case PARTICLE_EFFECT_SMITE_PINPOINT:
+				{
+					for ( int i = 0; i < 3; ++i )
+					{
+						Entity* fx1 = createParticleAestheticOrbit(entity, 2401, 2 * TICKS_PER_SECOND, PARTICLE_EFFECT_SMITE_PINPOINT);
+						fx1->yaw = entity->yaw + PI / 2 + 2 * i * PI / 3;
+						fx1->fskill[4] = entity->x;
+						fx1->fskill[5] = entity->y;
+						fx1->x = entity->x;
+						fx1->y = entity->y;
+						fx1->fskill[6] = fx1->yaw;
+						fx1->skill[3] = 0;
+						if ( i != 0 )
+						{
+							fx1->actmagicNoLight = 1;
+						}
+					}
+					break;
+				}
+				case PARTICLE_EFFECT_TURN_UNDEAD:
+				{
+					if ( Entity* fx1 = createParticleAestheticOrbit(entity, 2401, 3 * TICKS_PER_SECOND, PARTICLE_EFFECT_TURN_UNDEAD) )
+					{
+						fx1->yaw = entity->yaw;
+						fx1->fskill[4] = entity->x;
+						fx1->fskill[5] = entity->y;
+						fx1->x = entity->x;
+						fx1->y = entity->y;
+						fx1->fskill[6] = fx1->yaw;
+						fx1->skill[3] = 0;
+					}
+					break;
+				}
+				case PARTICLE_EFFECT_HOLY_FIRE:
+				{
+					int duration = SDLNet_Read32(&net_packet->data[15]);
+					if ( Entity* fx = createParticleAestheticOrbit(entity, 288, duration, PARTICLE_EFFECT_HOLY_FIRE) )
+					{
+						fx->flags[SPRITE] = true;
+						fx->flags[INVISIBLE] = true;
+					}
+					break;
+				}
 				case PARTICLE_EFFECT_DEFY_FLESH_ORBIT:
 				{
 					int duration = SDLNet_Read32(&net_packet->data[15]);
@@ -3231,7 +3276,6 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 						fx->flags[INVISIBLE] = true;
 					}
 					break;
-				
 				}
 				case PARTICLE_EFFECT_DEFY_FLESH:
 				{
@@ -5592,7 +5636,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 				node->element = thespell;
 				node->size = sizeof(spell_t);
 				//node->deconstructor = &spellDeconstructor_Channeled;
-				node->deconstructor = &spellDeconstructor;
+				node->deconstructor = &spellChanneledClientDeconstructor;
 				((spell_t*)(node->element))->sustain_node = node;
 			}
 		}		
@@ -5917,7 +5961,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		MinimapPing newPing(ticks, net_packet->data[4], 
 			net_packet->data[5], 
 			net_packet->data[6],
-			false,
+			net_packet->data[8] ? true : false,
 			(MinimapPing::PingType)net_packet->data[7]);
 		for ( int c = 0; c < MAXPLAYERS; ++c )
 		{
@@ -8165,6 +8209,13 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 					return;
 				}
 			}
+			if ( type == GEM_JEWEL )
+			{
+				if ( stats[player]->weapon && stats[player]->weapon->type != GEM_JEWEL )
+				{
+					return;
+				}
+			}
 			players[player]->entity->attack(net_packet->data[5], net_packet->data[6], nullptr);
 		}
 	}},
@@ -8615,7 +8666,7 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		MinimapPing newPing(ticks, net_packet->data[4], 
 			net_packet->data[5], 
 			net_packet->data[6],
-			false,
+			net_packet->data[8] ? true : false,
 			(MinimapPing::PingType)net_packet->data[7]);
 		sendMinimapPing(net_packet->data[4], newPing.x, newPing.y, newPing.pingType); // relay self and to other clients.
 	}},

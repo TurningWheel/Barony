@@ -133,6 +133,25 @@ void actGoldBag(Entity* my)
 						messagePlayer(i, MESSAGE_INTERACTION | MESSAGE_INVENTORY, Language::get(484), my->goldAmount);
 					}
 
+					for ( int player = 0; player < MAXPLAYERS; ++player )
+					{
+						if ( players[player]->mechanics.donationRevealedOnFloor == my->getUID() )
+						{
+							messagePlayerColor(i, MESSAGE_HINT, makeColorRGB(255, 255, 0), Language::get(6943)); // you discovered a gift
+
+							for ( int player2 = 0; player2 < MAXPLAYERS; ++player2 ) // relay to other players
+							{
+								if ( player2 != i && !client_disconnected[player2] )
+								{
+									messagePlayerColor(player2, MESSAGE_HINT, makeColorRGB(255, 255, 0), Language::get(6944), stats[i]->name); // an ally discovered a gift
+								}
+							}
+
+							players[player]->mechanics.updateSustainedSpellEvent(SPELL_DONATION, 150.0, 1.0);
+							break;
+						}
+					}
+
 					// remove gold entity
 					list_RemoveNode(my->mynode);
 					return;
@@ -150,6 +169,7 @@ void actGoldBag(Entity* my)
 	real_t groundheight = my->sprite == 1379 ? 7.75 : 6.25;
 
 	my->flags[BURNING] = false;
+	my->flags[NOCLIP_CREATURES] = true;
 
 	if ( my->goldBouncing == 0 )
 	{

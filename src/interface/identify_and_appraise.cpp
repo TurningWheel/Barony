@@ -562,6 +562,11 @@ void Player::Inventory_t::Appraisal_t::appraiseItem(Item* item)
 			}
 		}
 		current_item = item->uid;
+		if ( appraisalProgressionItems.find(current_item) != appraisalProgressionItems.end() )
+		{
+			timer = std::min(appraisalProgressionItems[current_item], timer);
+		}
+
 		if ( doMessage )
 		{
 			animAppraisal = PI;

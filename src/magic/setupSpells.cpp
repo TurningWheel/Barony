@@ -1847,7 +1847,7 @@ void setupSpells()   ///TODO: Verify this function.
 		0, // damage
 		1, // duration
 		"spell_turn_undead");
-	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH;
+	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH_FLOOR_TILE;
 	spell->distance = 64.0;
 
 	spell = createSimpleSpell(
@@ -3362,6 +3362,64 @@ void setupSpells()   ///TODO: Verify this function.
 		"spell_breathe_fire",										// internal name
 		// elements
 		{ SPELL_ELEMENT_PROPULSION_MAGIC_SPRAY, SPELL_BREATHE_FIRE }
+	);
+
+	createSimpleSpell(
+		SPELL_HEAL_MINOR,
+		100, // difficulty
+		1,		// mana
+		1,		// base mana
+		1,		// overload
+		0,		// damage
+		50,	// duration
+		"spell_heal_minor");
+
+	spell = createSimpleSpell(
+		SPELL_HOLY_FIRE,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_holy_fire");
+	spell->hide_from_ui = true;
+
+	spell = createSimpleSpell(
+		SPELL_SIGIL,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_sigil");
+	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH_FLOOR_TILE;
+
+	spell = createSimpleSpell(
+		SPELL_SANCTUARY,
+		100, // difficulty
+		1, // mana
+		1, // base mana
+		1, // overload
+		0, // damage
+		1, // duration
+		"spell_sanctuary");
+	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH_FLOOR_TILE;
+
+	spellElementConstructor(SPELL_HOLY_BEAM,
+		1,		// mana
+		1,		// base mana
+		1,		// overload
+		0,		// damage
+		100,	// duration
+		"spell_element_holy_beam");
+	spell = spellConstructor(
+		SPELL_HOLY_BEAM,											// ID
+		100,														// difficulty
+		"spell_holy_beam",											// internal name
+		// elements
+		{ SPELL_ELEMENT_PROPULSION_MISSILE, SPELL_HOLY_BEAM }
 	);
 
 	//static const int SPELL_LIGHTNING_NEXUS = 182;

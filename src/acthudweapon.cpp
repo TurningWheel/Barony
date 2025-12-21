@@ -48,7 +48,7 @@ static ConsoleVariable<float> cvar_hudweapon_z_spd("/hudweapon_z_spd", 0.0);
 static ConsoleVariable<float> cvar_hudweapon_timescale("/hudweapon_timescale", 0.5);
 static ConsoleVariable<float> cvar_hudweapon_timescale2("/hudweapon_timescale2", 0.675);
 static ConsoleVariable<float> cvar_hudweapon_timescale3("/hudweapon_timescale3", 1.0);
-static ConsoleVariable<int> cvar_claymore_toggle("/claymore_toggle", 0);
+//static ConsoleVariable<int> cvar_claymore_toggle("/claymore_toggle", 0);
 void hudWeaponAnimateVariable(real_t& variable, real_t target, real_t speed)
 {
 	if ( variable < target )
@@ -1978,12 +1978,12 @@ void actHudWeapon(Entity* my)
 			if ( HUDWEAPON_PITCH == targetPitch && HUDWEAPON_ROLL == 0 && HUDWEAPON_YAW == 0 && HUDWEAPON_MOVEX == targetX && HUDWEAPON_MOVEY == targetY )
 			{
 				if ( claymore && (HUDWEAPON_OVERCHARGE > 0 
-					|| (*cvar_claymore_toggle == 2 && HUDWEAPON_CHARGE >= Stat::getMaxAttackCharge(stats[HUDWEAPON_PLAYERNUM]) / 2)) )
+					/*|| (*cvar_claymore_toggle == 2 && HUDWEAPON_CHARGE >= Stat::getMaxAttackCharge(stats[HUDWEAPON_PLAYERNUM]) / 2)*/) )
 				{
-					if ( *cvar_claymore_toggle == 2 )
+					/*if ( *cvar_claymore_toggle == 2 )
 					{
 						HUDWEAPON_CHARGE = Stat::getMaxAttackCharge(stats[HUDWEAPON_PLAYERNUM]);
-					}
+					}*/
 					HUDWEAPON_CHOP = 4;
 					HUDWEAPON_OVERCHARGE = 0;
 				}
@@ -2505,11 +2505,12 @@ void actHudWeapon(Entity* my)
 			if ( stats[HUDWEAPON_PLAYERNUM]->weapon && !hideWeapon )
 			{
 				int weaponSkill = getWeaponSkill(stats[HUDWEAPON_PLAYERNUM]->weapon);
-				if ( claymore && *cvar_claymore_toggle == 1 )
+				/*if ( claymore && *cvar_claymore_toggle == 1 )
 				{
 					HUDWEAPON_CHOP = 1;
 				}
-				else if ( weaponSkill == PRO_SWORD || stats[HUDWEAPON_PLAYERNUM]->weapon->type == STEEL_HALBERD )
+				else*/ 
+				if ( weaponSkill == PRO_SWORD || stats[HUDWEAPON_PLAYERNUM]->weapon->type == STEEL_HALBERD )
 				{
 					HUDWEAPON_CHOP = 7;  // swords + halberds can stab
 				}
@@ -2630,12 +2631,12 @@ void actHudWeapon(Entity* my)
 			{
 				if ( claymore 
 					&& (HUDWEAPON_OVERCHARGE > 0 
-						|| (*cvar_claymore_toggle == 2 && HUDWEAPON_CHARGE >= Stat::getMaxAttackCharge(stats[HUDWEAPON_PLAYERNUM]) / 2)) )
+						/*|| (*cvar_claymore_toggle == 2 && HUDWEAPON_CHARGE >= Stat::getMaxAttackCharge(stats[HUDWEAPON_PLAYERNUM]) / 2)*/) )
 				{
-					if ( *cvar_claymore_toggle == 2 )
+					/*if ( *cvar_claymore_toggle == 2 )
 					{
 						HUDWEAPON_CHARGE = Stat::getMaxAttackCharge(stats[HUDWEAPON_PLAYERNUM]);
-					}
+					}*/
 					HUDWEAPON_CHOP = 4;
 					HUDWEAPON_OVERCHARGE = 0;
 				}
@@ -2767,13 +2768,14 @@ void actHudWeapon(Entity* my)
 				}
 				else if ( !(stats[HUDWEAPON_PLAYERNUM]->weapon && stats[HUDWEAPON_PLAYERNUM]->weapon->type == TOOL_BEARTRAP) )
 				{
-					if ( claymore && *cvar_claymore_toggle == 1 )
+					/*if ( claymore && *cvar_claymore_toggle == 1 )
 					{
 						HUDWEAPON_CHARGE = Stat::getMaxAttackCharge(stats[HUDWEAPON_PLAYERNUM]);
 						HUDWEAPON_CHOP = 4;
 						HUDWEAPON_OVERCHARGE = 0;
 					}
-					else if ( rapier )
+					else*/ 
+					if ( rapier )
 					{
 						HUDWEAPON_CHOP = 7;
 					}
@@ -3541,11 +3543,11 @@ void actHudWeapon(Entity* my)
 				}
 				if ( swingweapon && (rapier || claymore) )
 				{
-					if ( claymore && *cvar_claymore_toggle == 1)
+					/*if ( claymore && *cvar_claymore_toggle == 1)
 					{
 						HUDWEAPON_CHOP = 1;
 					}
-					else
+					else*/
 					{
 						HUDWEAPON_CHOP = 7;
 					}

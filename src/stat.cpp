@@ -194,26 +194,25 @@ Sint32 Stat::getModifiedProficiency(int skill) const
 			|| skill == PRO_RANGED
 			|| skill == PRO_STEALTH) )
 	{
-		effectBonus += 10;
+		effectBonus += 10 + 5 * std::max(0, ((int)(getEffectActive(EFF_NIMBLENESS) & 0xF) - 1));
 	}
 	if ( getEffectActive(EFF_GREATER_MIGHT)
 		&& (skill == PRO_POLEARM
 			|| skill == PRO_AXE
 			|| skill == PRO_MACE) )
 	{
-		effectBonus += 10;
+		effectBonus += 10 + 5 * std::max(0, ((int)(getEffectActive(EFF_GREATER_MIGHT) & 0xF) - 1));
 	}
 	if ( getEffectActive(EFF_COUNSEL) 
 		&& (skill == PRO_SORCERY
-			|| skill == PRO_MYSTICISM
-			|| skill == PRO_MACE) )
+			|| skill == PRO_MYSTICISM) )
 	{
-		effectBonus += 10;
+		effectBonus += 10 + 5 * std::max(0, ((int)(getEffectActive(EFF_COUNSEL) & 0xF) - 1));
 	}
 	if ( getEffectActive(EFF_STURDINESS)
 		&& (skill == PRO_SHIELD) )
 	{
-		effectBonus += 10;
+		effectBonus += 10 + 5 * std::max(0, ((int)(getEffectActive(EFF_STURDINESS) & 0xF) - 1));
 	}
 	int result = std::min(100, std::max(0, base + equipmentBonus + effectBonus));
 	if ( skill == PRO_STEALTH && getEffectActive(EFF_DUSTED) )
@@ -221,6 +220,44 @@ Sint32 Stat::getModifiedProficiency(int skill) const
 		result *= 0.3;
 	}
 	return result;
+}
+
+Sint32 Stat::getThaumProficiencySpellStatBonus(int whichStat, Sint32 currentBonus)
+{
+	Sint32 bonus = 0;
+	if ( whichStat == STAT_INT )
+	{
+		if ( getEffectActive(EFF_COUNSEL) )
+		{
+			real_t ratio = std::max(0.0, 0.1 * ((int)(getEffectActive(EFF_COUNSEL) & 0xF) - 1));
+			bonus = (std::max(2 + (getEffectActive(EFF_COUNSEL) & 0xF), (int)(currentBonus * ratio)));
+		}
+	}
+	else if ( whichStat == STAT_DEX )
+	{
+		if ( getEffectActive(EFF_NIMBLENESS) )
+		{
+			real_t ratio = std::max(0.0, 0.1 * ((int)(getEffectActive(EFF_NIMBLENESS) & 0xF) - 1));
+			bonus = (std::max(2 + (getEffectActive(EFF_NIMBLENESS) & 0xF), (int)(currentBonus * ratio)));
+		}
+	}
+	else if ( whichStat == STAT_STR )
+	{
+		if ( getEffectActive(EFF_GREATER_MIGHT) )
+		{
+			real_t ratio = std::max(0.0, 0.1 * ((int)(getEffectActive(EFF_GREATER_MIGHT) & 0xF) - 1));
+			bonus = (std::max(2 + (getEffectActive(EFF_GREATER_MIGHT) & 0xF), (int)(currentBonus * ratio)));
+		}
+	}
+	else if ( whichStat == STAT_CON )
+	{
+		if ( getEffectActive(EFF_STURDINESS) )
+		{
+			real_t ratio = std::max(0.0, 0.1 * ((int)(getEffectActive(EFF_STURDINESS) & 0xF) - 1));
+			bonus = (std::max(2 + (getEffectActive(EFF_STURDINESS) & 0xF), (int)(currentBonus * ratio)));
+		}
+	}
+	return bonus;
 }
 
 //Destructor

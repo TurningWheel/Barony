@@ -4426,6 +4426,13 @@ real_t Player::PlayerMovement_t::getSpeedFactor(real_t weightratio, Sint32 DEX)
 		speedFactor *= 1.0 - (bonus * 0.05);
 	}
 
+	if ( stats[player.playernum]->getEffectActive(EFF_NIMBLENESS) )
+	{
+		real_t bonus = 0.025 * (stats[player.playernum]->getEffectActive(EFF_NIMBLENESS) & 0xF);
+		speedFactor *= 1.0 + bonus;
+		speedFactor = std::min(speedFactor, maxSpeed);
+	}
+
 	if ( int effectStrength = player.mechanics.getBreakableCounterTier() )
 	{
 		speedFactor *= 1.0 + effectStrength * 0.05;
@@ -6169,8 +6176,18 @@ void actPlayer(Entity* my)
 	if ( keystatus[SDLK_x] && enableDebugKeys && (svFlags & SV_FLAG_CHEATS) )
 	{
 		//spawnPlayerXP(my->x + 16.0, my->y, 0, 10);
-
-		//Entity* fx1 = createParticleAestheticOrbit(my, 2361, 5 * TICKS_PER_SECOND, PARTICLE_EFFECT_DEFY_FLESH_ORBIT);
+		Entity* fx = spawnFlameSprites(my, 288);
+		/*for ( int i = 0; i < 3; ++i )
+		{
+			Entity* fx1 = createParticleAestheticOrbit(my, 2401, 5 * TICKS_PER_SECOND, PARTICLE_EFFECT_SMITE_PINPOINT);
+			fx1->yaw = my->yaw + PI / 2 + 2 * i * PI / 3;
+			fx1->fskill[6] = fx1->yaw;
+			fx1->skill[3] = my->getUID();
+			if ( i != 0 )
+			{
+				fx1->actmagicNoLight = 1;
+			}
+		}*/
 
 		keystatus[SDLK_x] = 0;
 		Uint32 color = makeColorRGB(255, 255, 255);
@@ -8341,6 +8358,7 @@ void actPlayer(Entity* my)
 		{
 			if ( tempItem->identified )
 			{
+				players[PLAYER_NUM]->inventoryUI.appraisal.appraisalProgressionItems.erase(players[PLAYER_NUM]->inventoryUI.appraisal.current_item);
 				players[PLAYER_NUM]->inventoryUI.appraisal.timer = 0;
 				players[PLAYER_NUM]->inventoryUI.appraisal.current_item = 0;
 			}
@@ -8354,6 +8372,7 @@ void actPlayer(Entity* my)
 				tempItem->identified = true;
 				tempItem->notifyIcon = true;
 				messagePlayer(PLAYER_NUM, MESSAGE_INVENTORY, Language::get(570), tempItem->description());
+				players[PLAYER_NUM]->inventoryUI.appraisal.appraisalProgressionItems.erase(players[PLAYER_NUM]->inventoryUI.appraisal.current_item);
 				players[PLAYER_NUM]->inventoryUI.appraisal.current_item = 0;
 				players[PLAYER_NUM]->inventoryUI.appraisal.timer = 0;
 
@@ -8430,9 +8449,11 @@ void actPlayer(Entity* my)
 			else
 			{
 				players[PLAYER_NUM]->inventoryUI.appraisal.timer -= 1; //De-increment appraisal timer.
+				players[PLAYER_NUM]->inventoryUI.appraisal.appraisalProgressionItems[players[PLAYER_NUM]->inventoryUI.appraisal.current_item] = players[PLAYER_NUM]->inventoryUI.appraisal.timer;
 				if ( players[PLAYER_NUM]->inventoryUI.appraisal.timer <= 0)
 				{
 					players[PLAYER_NUM]->inventoryUI.appraisal.timer = 0;
+					players[PLAYER_NUM]->inventoryUI.appraisal.appraisalProgressionItems.erase(players[PLAYER_NUM]->inventoryUI.appraisal.current_item);
 
 					//Cool. Time to identify the item.
 					bool success = false;

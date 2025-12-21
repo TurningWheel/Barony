@@ -551,6 +551,47 @@ spell_t* spellConstructor(int ID, int difficulty, const char* internal_name, std
 	return spell;
 }
 
+void spellChanneledClientDeconstructor(void* data)
+{
+	spell_t* spell;
+
+	if ( data != NULL )
+	{
+		spell = (spell_t*)data;
+
+		if ( spell_isChanneled(spell) )
+		{
+			if ( spell->sustain_node )
+			{
+				/*if ( multiplayer != CLIENT )
+				{
+					for ( int i = 0; i < MAXPLAYERS; ++i )
+					{
+						if ( spell->sustain_node->list && spell->sustain_node->list == &channeledSpells[i] )
+						{
+							if ( i > 0 && !players[i]->isLocalPlayer() && !client_disconnected[i] )
+							{
+								strcpy((char*)net_packet->data, "UNCH");
+								net_packet->data[4] = i;
+								SDLNet_Write32(spell->ID, &net_packet->data[5]);
+								net_packet->address.host = net_clients[i - 1].host;
+								net_packet->address.port = net_clients[i - 1].port;
+								net_packet->len = 9;
+								sendPacketSafe(net_sock, -1, net_packet, i - 1);
+							}
+							break;
+						}
+					}
+				}*/
+				//list_RemoveNode(spell->sustain_node);
+			}
+		}
+
+		list_FreeAll(&spell->elements);
+		free(spell);
+	}
+}
+
 void spellDeconstructor(void* data)
 {
 	spell_t* spell;
@@ -814,6 +855,10 @@ int getCostOfSpell(spell_t* spell, Entity* caster)
 		if ( casterStats )
 		{
 			cost += (casterStats->MAXMP / 50);
+			if ( casterStats->MP < 0.4 * casterStats->MAXMP )
+			{
+				cost *= 2;
+			}
 		}
 	}
 	else if ( caster && (spell->ID == SPELL_TELEPORTATION || spell->ID == SPELL_TELEPULL) )
@@ -977,7 +1022,11 @@ real_t getBonusFromCasterOfSpellElement(Entity* caster, Stat* casterStats, spell
 		bonus += (casterStats->getEnsembleEffectBonus(Stat::ENSEMBLE_LUTE_EFF_1)) / 100.0;
 		if ( casterStats->getEffectActive(EFF_COUNSEL) )
 		{
-			bonus += 0.25;
+			if ( spellSkillID == PRO_SORCERY
+				|| spellSkillID == PRO_MYSTICISM )
+			{
+				bonus += 0.2 + (0.1 * std::max(0, (int)(casterStats->getEffectActive(EFF_COUNSEL) & 0xF)) - 1);
+			}
 		}
 		if ( casterStats->getEffectActive(EFF_RATION_SOUR) )
 		{
@@ -1701,14 +1750,30 @@ bool spellInList(list_t* list, spell_t* spell)
 	return false;
 }
 
-void spell_changeHealth(Entity* entity, int amount, bool overdrewFromHP)
+void spell_changeHealth(Entity* entity, int amount, bool overdrewFromHP, bool doMessage)
 {
 	if (!entity)
 	{
 		return;
 	}
 
+	int baseAmount = amount;
+	if ( amount > 0 )
+	{
+		real_t healMult = entity->getHealingSpellPotionModifierFromEffects(false);
+		amount *= healMult;
+	}
+	Stat* entitystats = entity->getStats();
+	Sint32 prevHP = entitystats ? entity->getStats()->HP : 0;
 	entity->modHP(amount);
+
+	if ( entitystats && entitystats->HP > prevHP )
+	{
+		if ( baseAmount < amount )
+		{
+			entity->getHealingSpellPotionModifierFromEffects(true);
+		}
+	}
 
 	int player = -1;
 	int i = 0;
@@ -1722,33 +1787,36 @@ void spell_changeHealth(Entity* entity, int amount, bool overdrewFromHP)
 
 	if (player > -1 && player < MAXPLAYERS)
 	{
-		if (amount > 0)
+		if ( doMessage )
 		{
-			if ( overdrewFromHP )
+			if (amount > 0)
 			{
-				Uint32 color = makeColorRGB(255, 255, 255);
-				messagePlayerColor(player, MESSAGE_STATUS, color, Language::get(3400));
+				if ( overdrewFromHP )
+				{
+					Uint32 color = makeColorRGB(255, 255, 255);
+					messagePlayerColor(player, MESSAGE_STATUS, color, Language::get(3400));
+				}
+				else
+				{
+					Uint32 color = makeColorRGB(0, 255, 0);
+					messagePlayerColor(player, MESSAGE_STATUS, color, Language::get(443));
+				}
 			}
 			else
 			{
-				Uint32 color = makeColorRGB(0, 255, 0);
-				messagePlayerColor(player, MESSAGE_STATUS, color, Language::get(443));
-			}
-		}
-		else
-		{
-			Uint32 color = makeColorRGB(255, 255, 0);
-			if (amount == 0)
-			{
-				messagePlayerColor(player, MESSAGE_COMBAT, color, Language::get(444));
-			}
-			else
-			{
-				messagePlayerColor(player, MESSAGE_COMBAT, color, Language::get(445));
+				Uint32 color = makeColorRGB(255, 255, 0);
+				if (amount == 0)
+				{
+					messagePlayerColor(player, MESSAGE_COMBAT, color, Language::get(444));
+				}
+				else
+				{
+					messagePlayerColor(player, MESSAGE_COMBAT, color, Language::get(445));
+				}
 			}
 		}
 
-		if ( multiplayer == SERVER && player > 0 && !players[player]->isLocalPlayer() )
+		/*if ( multiplayer == SERVER && player > 0 && !players[player]->isLocalPlayer() )
 		{
 			strcpy((char*)net_packet->data, "UPHP");
 			SDLNet_Write32((Uint32)stats[player]->HP, &net_packet->data[4]);
@@ -1757,7 +1825,7 @@ void spell_changeHealth(Entity* entity, int amount, bool overdrewFromHP)
 			net_packet->address.port = net_clients[player - 1].port;
 			net_packet->len = 12;
 			sendPacketSafe(net_sock, net_packet->channel, net_packet, player - 1);
-		}
+		}*/
 	}
 }
 

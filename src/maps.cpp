@@ -10437,8 +10437,9 @@ void assignActions(map_t* map)
     keepInventoryGlobal = svFlags & SV_FLAG_KEEPINVENTORY;
 }
 
-void mapLevel(int player, int radius, int _x, int _y)
+int mapLevel(int player, int radius, int _x, int _y, bool usingSpell)
 {
+	int revealed = 0;
 	int x = 0;
 	int y = 0;
 	for ( y = 0; y < map.height; ++y )
@@ -10452,10 +10453,18 @@ void mapLevel(int player, int radius, int _x, int _y)
 			}
 			else
 			{
+				if ( minimap[y][x] )
+				{
+					continue;
+				}
+
 				if ( x >= (_x - radius) && x <= (_x + radius)
 					&& y >= (_y - radius) && y <= (_y + radius) )
 				{
-					tileCheck = true;
+					if ( pow(_x - x, 2) + pow(_y - y, 2) <= radius * radius )
+					{
+						tileCheck = true;
+					}
 				}
 			}
 
@@ -10468,6 +10477,7 @@ void mapLevel(int player, int radius, int _x, int _y)
 				if ( !minimap[y][x] )
 				{
 					minimap[y][x] = 4;
+					++revealed;
 				}
 			}
 			else if ( map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] )
@@ -10475,6 +10485,7 @@ void mapLevel(int player, int radius, int _x, int _y)
 				if ( !minimap[y][x] )
 				{
 					minimap[y][x] = 3;
+					++revealed;
 				}
 			}
 			else
@@ -10483,6 +10494,19 @@ void mapLevel(int player, int radius, int _x, int _y)
 			}
 		}
 	}
+
+	if ( usingSpell )
+	{
+		if ( player >= 0 && player < MAXPLAYERS )
+		{
+			if ( players[player]->isLocalPlayer() )
+			{
+				players[player]->mechanics.updateSustainedSpellEvent(SPELL_MAGICMAPPING, revealed, 0.2);
+			}
+		}
+	}
+
+	return revealed;
 }
 
 void mapLevel2(int player)

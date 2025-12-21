@@ -1213,6 +1213,7 @@ char itemNameStrings[NUM_ITEM_STRINGS][32] =
 	"silver_sword",
 	"quiver_bone",
 	"quiver_blackiron",
+	"gem_jewel",
 	""
 };
 
