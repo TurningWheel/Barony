@@ -4690,7 +4690,7 @@ void Player::WorldUI_t::handleTooltips()
 		{
 			Entity* ohitentity = hit.entity;
 			lineTrace(playerEntity, playerEntity->x, playerEntity->y,
-				playerEntity->yaw, STRIKERANGE, 0, true);
+				playerEntity->yaw, STRIKERANGE, 0, false);
 			if ( hit.entity )
 			{
 				if ( hit.entity->behavior == &actMonster && selectInteract
