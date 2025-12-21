@@ -3748,7 +3748,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								int heal = std::max(hitstats->HP - oldHP, 0);
 								if ( heal >= 0 )
 								{
-									spawnDamageGib(hit.entity, -heal, DamageGib::DMG_HEAL, DamageGibDisplayType::DMG_GIB_NUMBER, true);
+									if ( heal > 0 )
+									{
+										spawnDamageGib(hit.entity, -heal, DamageGib::DMG_HEAL, DamageGibDisplayType::DMG_GIB_NUMBER, true);
+									}
 									playSoundEntity(hit.entity, 168, 128);
 									spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, 169);
 
