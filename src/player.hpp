@@ -1156,6 +1156,7 @@ public:
 			int timer = 0; //There is a delay after the appraisal skill is activated before the item is identified.
 			int timermax = 0;
 			Uint32 current_item = 0; //The item being appraised (or rather its uid)
+			std::map<Uint32, int> appraisalProgressionItems;
 			Uint32 old_item = 0;
 			int getAppraisalTime(Item* item); // Return time in ticks needed to appraise an item
 			void appraiseItem(Item* item); // start appraise process
@@ -2426,6 +2427,8 @@ public:
 		bool ensembleRequireRecast = false;
 		bool ensembleTakenInitialMP = false;
 		bool previouslyLevitating = false;
+		Uint32 donationRevealedOnFloor = 0;
+		bool donationClaimed = false;
 		static void ensembleMusicUpdateServer();
 		static void ensembleMusicUpdate();
 		enum class BreakableEvent

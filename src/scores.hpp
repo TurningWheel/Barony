@@ -509,6 +509,7 @@ struct SaveGameInfo {
 		std::vector<std::pair<std::string, std::vector<int>>> compendium_item_events;
 		std::vector<std::pair<int, int>> itemDegradeRNG;
 		std::vector<std::pair<int, int>> escalatingRngRolls;
+		std::vector<std::pair<int, int>> appraisal_item_progress;
 		std::vector<int> learnedSpells;
 		std::vector<std::pair<int, int>> sustainedSpellIDCounter;
 		std::vector<int> ducksInARow;
@@ -551,7 +552,6 @@ struct SaveGameInfo {
 				bool identified = false;
 				int x = 0;
 				int y = 0;
-
 				bool serialize(FileInterface* fp) {
 					fp->property("type", type);
 					fp->property("status", status);
@@ -716,6 +716,7 @@ struct SaveGameInfo {
 			fp->property("ducks_in_a_row", ducksInARow);
 			fp->property("sustained_spell_id_counters", sustainedSpellIDCounter);
 			fp->property("escalating_rng_rolls", escalatingRngRolls);
+			fp->property("appraisal_time_progress", appraisal_item_progress);
 			return true;
 		}
 

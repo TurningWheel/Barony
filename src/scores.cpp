@@ -5245,6 +5245,11 @@ void SaveGameInfo::computeHash(const int playernum, Uint32& hash)
 		hash += (Uint32)((Uint32)val.first << (shift % 32)); ++shift;
 		hash += (Uint32)((Uint32)val.second << (shift % 32)); ++shift;
 	}
+	for ( auto& val : players[playernum].appraisal_item_progress )
+	{
+		hash += (Uint32)((Uint32)val.first << (shift % 32)); ++shift;
+		hash += (Uint32)((Uint32)val.second << (shift % 32)); ++shift;
+	}
 	for ( auto& val : players[playernum].learnedSpells )
 	{
 		hash += (Uint32)((Uint32)val << (shift % 32)); ++shift;
@@ -5617,6 +5622,12 @@ int SaveGameInfo::populateFromSession(const int playernum)
 			for ( node_t* node = stats[c]->inventory.first;
 				node != nullptr; node = node->next ) {
 				auto item = (Item*)node->element;
+				if ( ::players[c]->inventoryUI.appraisal.appraisalProgressionItems.find(item->uid)
+					!= ::players[c]->inventoryUI.appraisal.appraisalProgressionItems.end() )
+				{
+					player.appraisal_item_progress.push_back(std::make_pair(player.stats.inventory.size(), 
+						::players[c]->inventoryUI.appraisal.appraisalProgressionItems[item->uid]));
+				}
 				player.stats.inventory.push_back(
 					SaveGameInfo::Player::stat_t::item_t{
 					(Uint32)item->type,
@@ -6263,8 +6274,21 @@ int loadGame(int player, const SaveGameInfo& info) {
 		}
 	}
 
+	players[statsPlayer]->inventoryUI.appraisal.appraisalProgressionItems.clear();
+	bool checkAppraisalProgress = players[statsPlayer]->isLocalPlayer();
+	std::map<int, int> appraisalMap;
+	if ( checkAppraisalProgress )
+	{
+		for ( auto& pair : info.players[statsPlayer].appraisal_item_progress )
+		{
+			appraisalMap[pair.first] = pair.second;
+		}
+	}
+
 	// inventory
+	int inventory_index = -1;
 	for (auto& item : p.inventory) {
+		++inventory_index;
 		ItemType type = static_cast<ItemType>(item.type);
 		Status status = static_cast<Status>(item.status);
 		Sint16 beatitude = item.beatitude;
@@ -6275,6 +6299,11 @@ int loadGame(int player, const SaveGameInfo& info) {
 			appearance, identified, &stats[statsPlayer]->inventory);
 		i->x = item.x;
 		i->y = item.y;
+
+		if ( appraisalMap.find(inventory_index) != appraisalMap.end() )
+		{
+			players[statsPlayer]->inventoryUI.appraisal.appraisalProgressionItems[i->uid] = appraisalMap[inventory_index];
+		}
 	}
 
 	// void chest inventory
@@ -6307,6 +6336,7 @@ int loadGame(int player, const SaveGameInfo& info) {
 	if (players[statsPlayer]->isLocalPlayer()) {
 		// if this is a local player, we have their inventory, and can
 		// restore equipment using item indexes in the player_equipment table
+
 		for (auto& item : p.player_equipment) {
 			auto find = slots.find(item.first);
 			if (find != slots.end()) {

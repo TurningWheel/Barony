@@ -3218,6 +3218,11 @@ void Player::init() // for use on new/restart game, UI related
 	mechanics.fociDarkChargeTime = 0;
 	mechanics.fociHolyChargeTime = 0;
 	mechanics.lastFociHeldType = 0;
+
+	mechanics.donationRevealedOnFloor = 0;
+	mechanics.donationClaimed = false;
+
+	inventoryUI.appraisal.appraisalProgressionItems.clear();
 }
 
 void Player::cleanUpOnEntityRemoval()
@@ -3248,6 +3253,9 @@ void Player::cleanUpOnEntityRemoval()
 	mechanics.gremlinBreakableCounter = 0;
 
 	mechanics.previouslyLevitating = false;
+
+	mechanics.donationRevealedOnFloor = 0;
+	mechanics.donationClaimed = false;
 }
 
 const bool Player::isLocalPlayer() const
