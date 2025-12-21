@@ -586,6 +586,11 @@ void actHudWeapon(Entity* my)
 		}
 	}
 
+	if ( HUDWEAPON_CHOP >= 10 && HUDWEAPON_CHOP <= 12 ) // power strike charge
+	{
+		hideWeapon = true;
+	}
+
 	HUDWEAPON_HIDEWEAPON = hideWeapon;
 	HUDWEAPON_SHOOTING_RANGED_WEAPON = RANGED_ANIM_IDLE;
 
@@ -2862,7 +2867,10 @@ void actHudWeapon(Entity* my)
 				}
 				if ( !bearTrap )
 				{
+					Item* tmp = stats[HUDWEAPON_PLAYERNUM]->weapon;
+					stats[HUDWEAPON_PLAYERNUM]->weapon = nullptr;
 					players[HUDWEAPON_PLAYERNUM]->entity->attack(PLAYER_POSE_GOLEM_SMASH, MAXCHARGE, nullptr);
+					stats[HUDWEAPON_PLAYERNUM]->weapon = tmp;
 				}
 			}
 		}
@@ -2912,6 +2920,7 @@ void actHudWeapon(Entity* my)
 				if ( HUDWEAPON_YAW == -.1 && HUDWEAPON_PITCH == 0 && HUDWEAPON_MOVEZ == 0 && HUDWEAPON_MOVEY == 0 && HUDWEAPON_MOVEX == 0 )
 				{
 					HUDWEAPON_CHOP = 0;
+					players[HUDWEAPON_PLAYERNUM]->hud.weaponSwitch = true;
 				}
 			}
 		}

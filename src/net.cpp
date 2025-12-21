@@ -8216,7 +8216,18 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 					return;
 				}
 			}
-			players[player]->entity->attack(net_packet->data[5], net_packet->data[6], nullptr);
+			int pose = net_packet->data[5];
+			if ( pose == PLAYER_POSE_GOLEM_SMASH )
+			{
+				Item* tmp = stats[player]->weapon;
+				stats[player]->weapon = nullptr;
+				players[player]->entity->attack(pose, net_packet->data[6], nullptr);
+				stats[player]->weapon = tmp;
+			}
+			else
+			{
+				players[player]->entity->attack(pose, net_packet->data[6], nullptr);
+			}
 		}
 	}},
 
