@@ -1796,6 +1796,10 @@
 		"quiver_blackiron": {
 			"name_identified": "quiver of blackiron ammo",
 			"name_unidentified": "quiver"
+		},
+		"gem_jewel": {
+			"name_identified": "jewel",
+			"name_unidentified": "jewel"
 		}
     },
 	"spell_names": {
@@ -2073,10 +2077,10 @@
 			"name": "Detect Enemies"
 		},
 		"spell_turn_undead": {
-			"name": "Turn Undead"
+			"name": "Exorcise"
 		},
 		"spell_heal_other": {
-			"name": "Heal Other"
+			"name": "Minor Heal Other"
 		},
 		"spell_blood_ward": {
 			"name": "Blood Ward"
@@ -2419,6 +2423,21 @@
 		},
 		"spell_breathe_fire": {
 			"name": "Breathe Fire"
+		},
+		"spell_heal_minor": {
+			"name": "Minor Heal"
+		},
+		"spell_holy_fire": {
+			"name": "Holy Fire"
+		},
+		"spell_sigil": {
+			"name": "Holy Sigil"
+		},
+		"spell_sanctuary": {
+			"name": "Divine Fortress"
+		},
+		"spell_holy_beam": {
+			"name": "Holy Beam"
 		}
     }
 }

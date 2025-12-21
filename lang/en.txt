@@ -7005,10 +7005,10 @@ Host to enable the game setting.
 6735 You set absorb magic#
 6736 There is no stable ceiling to complete the spell!#
 6737 gets rocked by an earth sprite.#
-6738 gets killed by a monster.#
-6739 gets killed by a monster.#
-6740 gets killed by a monster.#
-6741 gets killed by a monster.#
+6738 gets overgrown by a dryad.#
+6739 gets vandalised by a gremlin.#
+6740 gets capped by a myconid.#
+6741 learns how cold-blooded a salamander can be.#
 6742 %s is hit with a rooting seed!#
 6743 The %s is hit with a rooting seed!#
 6744 You are hit by a rooting seed!#
@@ -7168,7 +7168,7 @@ to replay this challenge!
 6896 You feel enlarged!#
 6897 You feel diminished!#
 6898 Your stature feels ordinary once more.#
-6899 You were unable to detect any other allies.#
+6899 You were unable to scry any other allies.#
 6900 %s loses their courage!#
 6901 %s is encouraged!#
 6902 %s is compelled to your command!#
@@ -7195,5 +7195,37 @@ to replay this challenge!
 6923 You are unable to charge your icon any further!#
 6924 Your foliage flourishes with nutrition!#
 6925 Your foliage grows!#
+6926 Your prayer on %s fades.#
+6927 Your prayer on the %s fades.#
+6928 The %s receives a prayer for healing!#
+6929 %s receives a prayer for healing!#
+6930 You pray for healing!#
+6931 Your prayer fades.#
+6932 You receive a healing prayer!#
+6933 Your prayer was interrupted!#
+6934 The blood ward cures your poisoning!#
+6935 The blood ward cures your bleeding!#
+6936 You are unable to scry any allies.#
+6937 You are unable to scry any traps nearby.#
+6938 You are unable to scry any other traps nearby.#
+6939 You are unable to scry any treasures nearby.#
+6940 You are unable to scry any other treasures nearby.#
+6941 You were not deemed worthy of an additional donation.#
+6942 Your call for divine providence falls unanswered.#
+6943 You discover a gift of divine providence!#
+6944 Your ally %s discovers a gift of divine providence!#
+6945 %s's ally %s discovers a gift of divine providence!#
+6946 You are unable to detect any more monsters nearby.#
+6947 You are unable to detect any monsters nearby.#
+6948 You are unable to pinpoint any more monsters nearby.#
+6949 You are unable to pinpoint any monsters nearby.#
+6950 The %s gets smited with divine precision!#
+6951 %s gets smited with divine precision!#
+6952 You cover the area with a divine sigil!#
+6953 You cover the area with divine sanctuary!#
+6954 The %s is purchased into your service!#
+6955 %s is purchased into your service!#
+6956 (%02d:%02d%) Appraising...#
+6957 (%02d:%02d%) %3.0f%% Appraising...#
 
 6999 END#
