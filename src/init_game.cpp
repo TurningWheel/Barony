@@ -554,7 +554,7 @@ void deinitGame()
 		list_FreeAll(map.worldUI); //TODO: Need to do this?
 	}
 	list_FreeAll(&messages);
-	if ( multiplayer == SINGLE )
+	/*if ( multiplayer == SINGLE )
 	{
 		list_FreeAll(&channeledSpells[0]);
 	}
@@ -568,6 +568,10 @@ void deinitGame()
 		{
 			list_FreeAll(&channeledSpells[c]);
 		}
+	}*/
+	for ( int c = 0; c < MAXPLAYERS; ++c )
+	{
+		list_FreeAll(&channeledSpells[c]);
 	}
 
 	for ( int c = 0; c < MAXPLAYERS; c++ )
