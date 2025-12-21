@@ -6356,7 +6356,13 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 				|| stats[player]->getEffectActive(EFF_FOCI_LIGHT_PROVIDENCE)
 				|| stats[player]->getEffectActive(EFF_FOCI_LIGHT_PURITY)
 				|| stats[player]->getEffectActive(EFF_FOCI_LIGHT_SANCTUARY)
+				|| stats[player]->getEffectActive(EFF_NIMBLENESS)
+				|| stats[player]->getEffectActive(EFF_GREATER_MIGHT)
+				|| stats[player]->getEffectActive(EFF_COUNSEL)
+				|| stats[player]->getEffectActive(EFF_STURDINESS)
 				|| stats[player]->getEffectActive(EFF_GROWTH)
+				|| stats[player]->getEffectActive(EFF_SIGIL)
+				|| stats[player]->getEffectActive(EFF_SANCTUARY)
 				|| (cast_animation[player].overcharge > 0 || cast_animation[player].overcharge_init > 0)
 				|| (players[player]->mechanics.gremlinBreakableCounter > 0 && stats[player]->type == MONSTER_G) )
 			{
@@ -6802,6 +6808,192 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 						{
 							alignRight = true;
 							Uint8 effectStrength = stats[player]->getEffectActive(EFF_FOCI_LIGHT_SANCTUARY);
+							if ( effectStrength >= 1 )
+							{
+								std::string val = "I";
+								if ( effectStrength >= 4 )
+								{
+									val = "IV";
+								}
+								else if ( effectStrength >= 3 )
+								{
+									val = "III";
+								}
+								else if ( effectStrength >= 2 )
+								{
+									val = "II";
+								}
+								if ( auto text = Text::get(val.c_str(),
+									"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+								{
+									text->drawColor(SDL_Rect{ 0,0,0,0 },
+										SDL_Rect{ pos.x + img->pos.x + (alignRight ? (img->pos.w - (int)text->getWidth()) : (img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x)),
+										pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
+										0, 0 },
+										SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+										makeColor(255, 255, 255, 255));
+								}
+							}
+						}
+						else if ( img->path.find("divine_sanctuary.png") != std::string::npos )
+						{
+							alignRight = true;
+							Uint8 effectStrength = stats[player]->getEffectActive(EFF_SANCTUARY) & 0xF;
+							if ( effectStrength >= 1 )
+							{
+								std::string val = "I";
+								if ( effectStrength >= 4 )
+								{
+									val = "IV";
+								}
+								else if ( effectStrength >= 3 )
+								{
+									val = "III";
+								}
+								else if ( effectStrength >= 2 )
+								{
+									val = "II";
+								}
+								if ( auto text = Text::get(val.c_str(),
+									"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+								{
+									text->drawColor(SDL_Rect{ 0,0,0,0 },
+										SDL_Rect{ pos.x + img->pos.x + (alignRight ? (img->pos.w - (int)text->getWidth()) : (img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x)),
+										pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
+										0, 0 },
+										SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+										makeColor(255, 255, 255, 255));
+								}
+							}
+						}
+						else if ( img->path.find("sigil.png") != std::string::npos )
+						{
+							alignRight = true;
+							Uint8 effectStrength = stats[player]->getEffectActive(EFF_SIGIL) & 0xF;
+							if ( effectStrength >= 1 )
+							{
+								std::string val = "I";
+								if ( effectStrength >= 4 )
+								{
+									val = "IV";
+								}
+								else if ( effectStrength >= 3 )
+								{
+									val = "III";
+								}
+								else if ( effectStrength >= 2 )
+								{
+									val = "II";
+								}
+								if ( auto text = Text::get(val.c_str(),
+									"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+								{
+									text->drawColor(SDL_Rect{ 0,0,0,0 },
+										SDL_Rect{ pos.x + img->pos.x + (alignRight ? (img->pos.w - (int)text->getWidth()) : (img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x)),
+										pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
+										0, 0 },
+										SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+										makeColor(255, 255, 255, 255));
+								}
+							}
+						}
+						else if ( img->path.find("greater_might.png") != std::string::npos )
+						{
+							alignRight = true;
+							Uint8 effectStrength = stats[player]->getEffectActive(EFF_GREATER_MIGHT) & 0xF;
+							if ( effectStrength >= 1 )
+							{
+								std::string val = "I";
+								if ( effectStrength >= 4 )
+								{
+									val = "IV";
+								}
+								else if ( effectStrength >= 3 )
+								{
+									val = "III";
+								}
+								else if ( effectStrength >= 2 )
+								{
+									val = "II";
+								}
+								if ( auto text = Text::get(val.c_str(),
+									"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+								{
+									text->drawColor(SDL_Rect{ 0,0,0,0 },
+										SDL_Rect{ pos.x + img->pos.x + (alignRight ? (img->pos.w - (int)text->getWidth()) : (img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x)),
+										pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
+										0, 0 },
+										SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+										makeColor(255, 255, 255, 255));
+								}
+							}
+						}
+						else if ( img->path.find("counsel.png") != std::string::npos )
+						{
+							alignRight = true;
+							Uint8 effectStrength = stats[player]->getEffectActive(EFF_COUNSEL) & 0xF;
+							if ( effectStrength >= 1 )
+							{
+								std::string val = "I";
+								if ( effectStrength >= 4 )
+								{
+									val = "IV";
+								}
+								else if ( effectStrength >= 3 )
+								{
+									val = "III";
+								}
+								else if ( effectStrength >= 2 )
+								{
+									val = "II";
+								}
+								if ( auto text = Text::get(val.c_str(),
+									"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+								{
+									text->drawColor(SDL_Rect{ 0,0,0,0 },
+										SDL_Rect{ pos.x + img->pos.x + (alignRight ? (img->pos.w - (int)text->getWidth()) : (img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x)),
+										pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
+										0, 0 },
+										SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+										makeColor(255, 255, 255, 255));
+								}
+							}
+						}
+						else if ( img->path.find("nimbleness.png") != std::string::npos )
+						{
+							alignRight = true;
+							Uint8 effectStrength = stats[player]->getEffectActive(EFF_NIMBLENESS) & 0xF;
+							if ( effectStrength >= 1 )
+							{
+								std::string val = "I";
+								if ( effectStrength >= 4 )
+								{
+									val = "IV";
+								}
+								else if ( effectStrength >= 3 )
+								{
+									val = "III";
+								}
+								else if ( effectStrength >= 2 )
+								{
+									val = "II";
+								}
+								if ( auto text = Text::get(val.c_str(),
+									"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+								{
+									text->drawColor(SDL_Rect{ 0,0,0,0 },
+										SDL_Rect{ pos.x + img->pos.x + (alignRight ? (img->pos.w - (int)text->getWidth()) : (img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x)),
+										pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
+										0, 0 },
+										SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+										makeColor(255, 255, 255, 255));
+								}
+							}
+						}
+						else if ( img->path.find("sturdiness.png") != std::string::npos )
+						{
+							alignRight = true;
+							Uint8 effectStrength = stats[player]->getEffectActive(EFF_STURDINESS) & 0xF;
 							if ( effectStrength >= 1 )
 							{
 								std::string val = "I";
