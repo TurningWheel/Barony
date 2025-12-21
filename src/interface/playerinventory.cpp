@@ -6770,10 +6770,31 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
         bool doAppraisalProgressPrompt = !item->identified && isItemFromInventory && appraisal.current_item == item->uid && !compendiumTooltip;
         if ( doAppraisalProgressPrompt )
         {
-            real_t percent = (((double)(appraisal.timermax - appraisal.timer)) / ((double)appraisal.timermax)) * 100;
-            char buf[32];
-            snprintf(buf, sizeof(buf), Language::get(4198), percent);
-            txtPrompt->setText(buf);
+			static ConsoleVariable<int> cvar_appraisal_display("/appraisal_display", 0);
+			if ( *cvar_appraisal_display == 0 )
+			{
+				char buf[64];
+				Uint32 sec = (appraisal.timer / TICKS_PER_SECOND) % 60;
+				Uint32 min = ((appraisal.timer / TICKS_PER_SECOND) / 60) % 60;
+				snprintf(buf, sizeof(buf), Language::get(6956), min, sec);
+				txtPrompt->setText(buf);
+			}
+			else if ( *cvar_appraisal_display == 1 )
+			{
+				real_t percent = (((double)(appraisal.timermax - appraisal.timer)) / ((double)appraisal.timermax)) * 100;
+				char buf[64];
+				snprintf(buf, sizeof(buf), Language::get(4198), percent);
+	            txtPrompt->setText(buf);
+			}
+			else if ( *cvar_appraisal_display == 2 )
+			{
+				Uint32 sec = (appraisal.timer / TICKS_PER_SECOND) % 60;
+				Uint32 min = ((appraisal.timer / TICKS_PER_SECOND) / 60) % 60;
+				real_t percent = (((double)(appraisal.timermax - appraisal.timer)) / ((double)appraisal.timermax)) * 100;
+				char buf[64];
+				snprintf(buf, sizeof(buf), Language::get(6957), min, sec, percent);
+				txtPrompt->setText(buf);
+			}
         }
         else if ( doAppraisalPrompt )
         {
