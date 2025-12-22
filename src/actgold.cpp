@@ -33,6 +33,7 @@
 void actGoldBag(Entity* my)
 {
 	int i;
+	my->goldTelepathy = 0;
 
 	if ( my->ticks == 1 )
 	{
@@ -93,6 +94,20 @@ void actGoldBag(Entity* my)
 	}
 #endif
 
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		if ( players[i]->isLocalPlayer() )
+		{
+			if ( players[i]->entity && players[i]->entity->isBlind() )
+			{
+				if ( stats[i]->type == GNOME )
+				{
+					my->goldTelepathy |= (1 << i);
+				}
+			}
+		}
+	}
+
 	// pick up gold
 	if ( multiplayer != CLIENT )
 	{
@@ -110,6 +125,11 @@ void actGoldBag(Entity* my)
 					if (players[i] && players[i]->entity)
 					{
 						playSoundEntity(players[i]->entity, 242 + local_rng.rand() % 4, 64 );
+					}
+					if ( stats[i]->type == GNOME )
+					{
+						my->goldAmount += my->goldAmountBonus;
+						my->goldAmountBonus = 0;
 					}
 					stats[i]->GOLD += my->goldAmount;
 					if ( multiplayer == SERVER && i > 0 && !players[i]->isLocalPlayer() )

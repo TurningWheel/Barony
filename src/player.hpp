@@ -2423,6 +2423,7 @@ public:
 		std::map<Uint32, int> enemyRaisedStealthAgainst;
 		bool allowedRaiseBlockingAgainstEntity(Entity& attacker);
 		bool allowedRaiseStealthAgainstEntity(Entity& attacker);
+		int getWealthTier();
 		int ensemblePlaying = -1;
 		bool ensembleRequireRecast = false;
 		bool ensembleTakenInitialMP = false;

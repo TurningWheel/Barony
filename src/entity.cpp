@@ -5056,12 +5056,19 @@ void Entity::handleEffects(Stat* myStats)
 
 	if ( myStats->type == GNOME )
 	{
-		int chance = 25;
-		if ( local_rng.rand() % 100 < chance )
+		int chance = 0;
+		if ( behavior == &actPlayer )
 		{
-			if ( mpMod == 1 )
+			chance = 10 * players[skill[2]]->mechanics.getWealthTier();
+		}
+		if ( chance > 0 )
+		{
+			if ( local_rng.rand() % 100 < chance )
 			{
-				mpMod += 1;
+				if ( mpMod == 1 )
+				{
+					mpMod += 1;
+				}
 			}
 		}
 	}
@@ -11701,6 +11708,13 @@ void Entity::attack(int pose, int charge, Entity* target)
 						axe += 1 * players[this->skill[2]]->mechanics.getBreakableCounterTier();
 					}
 				}
+				if ( myStats->type == GNOME )
+				{
+					if ( !shapeshifted && myStats->weapon && myStats->weapon->type == TOOL_PICKAXE )
+					{
+						axe += 2 + local_rng.rand() % 3;
+					}
+				}
 
 				if ( pose == PLAYER_POSE_GOLEM_SMASH )
 				{
@@ -11812,6 +11826,52 @@ void Entity::attack(int pose, int charge, Entity* target)
 				else
 				{
 					entityHP = 0;
+
+					if ( oldHP > 0 )
+					{
+						if ( behavior == &actPlayer )
+						{
+							if ( weaponskill >= 0 && weaponskill != PRO_RANGED )
+							{
+								if ( myStats->getProficiency(weaponskill) < SKILL_LEVEL_BASIC
+									&& local_rng.rand() % 20 == 0 )
+								{
+									bool skillIncreased = this->increaseSkill(weaponskill);
+									if ( skillIncreased && myStats->type == GOBLIN && weaponskill != PRO_RANGED )
+									{
+										// goblins level up all combat skills at once.
+										int numIncreases = 0;
+										if ( weaponskill != PRO_SWORD )
+										{
+											numIncreases += this->increaseSkill(PRO_SWORD, false) ? 1 : 0;
+										}
+										if ( weaponskill != PRO_MACE )
+										{
+											numIncreases += this->increaseSkill(PRO_MACE, false) ? 1 : 0;
+										}
+										if ( weaponskill != PRO_AXE )
+										{
+											numIncreases += this->increaseSkill(PRO_AXE, false) ? 1 : 0;
+										}
+										if ( weaponskill != PRO_POLEARM )
+										{
+											numIncreases += this->increaseSkill(PRO_POLEARM, false) ? 1 : 0;
+										}
+										if ( weaponskill != PRO_UNARMED )
+										{
+											numIncreases += this->increaseSkill(PRO_UNARMED, false) ? 1 : 0;
+										}
+										if ( player >= 0 && numIncreases > 0 )
+										{
+											Uint32 color = makeColorRGB(255, 255, 0);
+											messagePlayerColor(player, MESSAGE_PROGRESSION, color, Language::get(3446));
+										}
+									}
+								}
+							}
+						}
+					}
+
 					if ( hit.entity->behavior == &actDoor )
 					{
 						messagePlayer(player, MESSAGE_COMBAT, Language::get(670));
@@ -13010,6 +13070,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 							{
 								degradeWeapon = false;
 							}
+							else if ( myStats->weapon && myStats->weapon->type == TOOL_PICKAXE && myStats->type == GNOME )
+							{
+								degradeWeapon = false;
+							}
 							else if ( flail	&& pose == MONSTER_POSE_FLAIL_SWING && local_rng.rand() % 4 > 0 )
 							{
 								degradeWeapon = false;
@@ -13444,7 +13508,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 					if ( (hitstats->getEffectActive(EFF_WEBBED) || hitstats->getEffectActive(EFF_MAGIC_GREASE) 
 						|| pose == PLAYER_POSE_GOLEM_SMASH 
-						|| hit.entity->myconidReboundOnHit(this) )
+						|| hit.entity->myconidReboundOnHit(this)
+						|| (myStats->type == GNOME && myStats->weapon && !shapeshifted && myStats->weapon->type == TOOL_PICKAXE))
 						&& !hitstats->getEffectActive(EFF_KNOCKBACK) && hit.entity->setEffect(EFF_KNOCKBACK, true, 30, false) )
 					{
 						real_t baseMultiplier = 0.7;
@@ -13456,6 +13521,17 @@ void Entity::attack(int pose, int charge, Entity* target)
 						else if ( (hitstats->getEffectActive(EFF_WEBBED) || hitstats->getEffectActive(EFF_MAGIC_GREASE)) )
 						{
 							baseMultiplier = 0.7;
+						}
+						else if ( (myStats->type == GNOME && myStats->weapon && !shapeshifted && myStats->weapon->type == TOOL_PICKAXE) )
+						{
+							baseMultiplier = 0.7;
+							if ( behavior == &actPlayer )
+							{
+								if ( charge < Stat::getMaxAttackCharge(myStats) / 2 )
+								{
+									baseMultiplier = 0.5;
+								}
+							}
 						}
 						else if ( hit.entity->myconidReboundOnHit(this) )
 						{

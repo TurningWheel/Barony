@@ -1313,6 +1313,7 @@ void Entity::colliderOnDestroy()
 						entity->goldBouncing = 0;
 						entity->z = 0.0 - (local_rng.rand() % 3);
 						entity->flags[INVISIBLE] = false;
+						entity->goldAmountBonus = entity->goldAmount;
 
 						if ( multiplayer == SERVER )
 						{
@@ -1351,6 +1352,7 @@ void Entity::colliderOnDestroy()
 									ent->goldInContainer = 0;
 									ent->z = 0.0 - (local_rng.rand() % 3);
 									ent->flags[INVISIBLE] = false;
+									ent->goldAmountBonus = ent->goldAmount;
 
 									if ( multiplayer == SERVER )
 									{
@@ -1967,6 +1969,35 @@ void actColliderDecoration(Entity* my)
 		if ( my->ticks == 1 )
 		{
 			my->createWorldUITooltip();
+		}
+
+		my->colliderTelepathy = 0;
+		if ( my->colliderContainedEntity != 0 )
+		{
+			Sint32 telepathy = 0;
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				if ( players[i]->isLocalPlayer() )
+				{
+					if ( players[i]->entity && players[i]->entity->isBlind() )
+					{
+						if ( stats[i]->type == GNOME )
+						{
+							telepathy |= (1 << i);
+						}
+					}
+				}
+			}
+			if ( telepathy )
+			{
+				if ( Entity* containedEntity = uidToEntity(my->colliderContainedEntity) )
+				{
+					if ( containedEntity->behavior == &actGoldBag )
+					{
+						my->colliderTelepathy = telepathy;
+					}
+				}
+			}
 		}
 
 		if ( multiplayer != CLIENT )

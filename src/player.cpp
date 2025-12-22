@@ -8512,3 +8512,27 @@ bool Player::PlayerMechanics_t::rollRngProc(Player::PlayerMechanics_t::RngRollTy
 	}
 	return false;
 }
+
+int Player::PlayerMechanics_t::getWealthTier()
+{
+	if ( stats[player.playernum]->type == GNOME )
+	{
+		if ( stats[player.playernum]->GOLD >= 100 && stats[player.playernum]->GOLD < 500 )
+		{
+			return 1;
+		}
+		else if ( stats[player.playernum]->GOLD >= 500 && stats[player.playernum]->GOLD < 1000 )
+		{
+			return 2;
+		}
+		else if ( stats[player.playernum]->GOLD >= 1000 && stats[player.playernum]->GOLD < 10000 )
+		{
+			return 3;
+		}
+		else if ( stats[player.playernum]->GOLD >= 10000 )
+		{
+			return 4;
+		}
+	}
+	return 0;
+}

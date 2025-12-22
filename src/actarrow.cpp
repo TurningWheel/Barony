@@ -629,6 +629,15 @@ void actArrow(Entity* my)
 						hit.entity->colliderKillerUid = parent ? parent->getUID() : 0;
 						if ( parent && parent->behavior == &actPlayer )
 						{
+							if ( oldHP > 0 )
+							{
+								if ( parent->getStats() && parent->getStats()->getProficiency(PRO_RANGED) < SKILL_LEVEL_BASIC
+									&& local_rng.rand() % 20 == 0 )
+								{
+									parent->increaseSkill(PRO_RANGED);
+								}
+							}
+
 							if ( hit.entity->getColliderOnBreakLangEntry() != 0 )
 							{
 								messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(hit.entity->getColliderOnBreakLangEntry()),

@@ -500,6 +500,7 @@ public:
 	Sint32& colliderSpellEventTrigger = skill[21];
 	Sint32& colliderIsMapGenerated = skill[22];
 	Sint32& colliderSpellTarget = skill[23];
+	Sint32& colliderTelepathy = skill[24];
 	static void colliderAssignProperties(Entity* entity, bool mapGeneration, map_t* whichMap);
 	static Entity* createBreakableCollider(int colliderDamageType, real_t _x, real_t _y, Entity* parent);
 	void colliderSetServerSkillOnSpawned();
@@ -641,6 +642,8 @@ public:
 	Sint32& goldSokoban; //skill[2]
 	Sint32& goldBouncing; //skill[3]
 	Sint32& goldInContainer; //skill[4]
+	Sint32& goldTelepathy = skill[5];
+	Sint32& goldAmountBonus = skill[6];
 
 	//--PUBLIC SOUND SOURCE SKILLS--
 	Sint32& soundSourceFired; //skill[0]

@@ -3510,6 +3510,10 @@ void initClass(const int player)
 		{
 			addSpell(SPELL_BREATHE_FIRE, player, true);
 		}
+		else if ( stats[player]->playerRace == RACE_X && stats[player]->stat_appearance == 0 )
+		{
+			addSpell(SPELL_FORGE_JEWEL, player, true);
+		}
 
 		if ( stats[player]->getProficiency(PRO_ALCHEMY) >= 0 )
 		{

@@ -9130,6 +9130,10 @@ bool spellIsNaturallyLearnedByRaceOrClass(Entity& caster, Stat& stat, int spellI
 	{
 		return true;
 	}
+	else if ( stat.playerRace == RACE_X && stat.stat_appearance == 0 && (spellID == SPELL_FORGE_JEWEL) )
+	{
+		return true;
+	}
 	
 	// class specific:
 	int playernum = caster.skill[2];

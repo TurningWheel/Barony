@@ -191,7 +191,7 @@ namespace MainMenu {
 			case RACE_S:
 				return "monster_s";
 			case RACE_X:
-				return "human";
+				return "gnome";
 			default:
 				break;
 			}

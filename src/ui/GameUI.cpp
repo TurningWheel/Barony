@@ -6364,7 +6364,8 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 				|| stats[player]->getEffectActive(EFF_SIGIL)
 				|| stats[player]->getEffectActive(EFF_SANCTUARY)
 				|| (cast_animation[player].overcharge > 0 || cast_animation[player].overcharge_init > 0)
-				|| (players[player]->mechanics.gremlinBreakableCounter > 0 && stats[player]->type == MONSTER_G) )
+				|| (players[player]->mechanics.gremlinBreakableCounter > 0 && stats[player]->type == MONSTER_G)
+				|| players[player]->mechanics.getWealthTier() > 0 )
 			{
 				for ( auto img : frame->getImages() )
 				{
@@ -7061,6 +7062,37 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 									val = "V";
 								}
 								else if ( effectStrength >= 4 )
+								{
+									val = "IV";
+								}
+								else if ( effectStrength >= 3 )
+								{
+									val = "III";
+								}
+								else if ( effectStrength >= 2 )
+								{
+									val = "II";
+								}
+								if ( auto text = Text::get(val.c_str(),
+									"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+								{
+									text->drawColor(SDL_Rect{ 0,0,0,0 },
+										SDL_Rect{ pos.x + img->pos.x + (alignRight ? (img->pos.w - (int)text->getWidth()) : (img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x)),
+										pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
+										0, 0 },
+										SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+										makeColor(255, 255, 255, 255));
+								}
+							}
+						}
+						else if ( img->path.find("wealth") != std::string::npos )
+						{
+							alignRight = true;
+							int effectStrength = players[player]->mechanics.getWealthTier();
+							if ( effectStrength > 0 )
+							{
+								std::string val = "I";
+								if ( effectStrength >= 4 )
 								{
 									val = "IV";
 								}
@@ -8033,6 +8065,28 @@ bool StatusEffectQueue_t::doStatusEffectTooltip(StatusEffectQueueEntry_t& entry,
 					tooltipDesc->setText(descStr.c_str());
 					tooltipInnerWidth = definition.tooltipWidth;
 				}
+				else if ( effectID == StatusEffectQueue_t::kEffectWealth )
+				{
+					int tier = players[player]->mechanics.getWealthTier();
+					variation = tier;
+					std::string newHeader = definition.getName(variation).c_str();
+					uppercaseString(newHeader);
+					tooltipHeader->setText(newHeader.c_str());
+
+
+					std::string descStr = "";
+					char buf[128];
+					memset(buf, 0, sizeof(buf));
+					snprintf(buf, sizeof(buf), definition.getDesc(0).c_str(), tier * 10);
+					if ( descStr != "" ) { descStr += '\n'; }
+					descStr += buf;
+
+					if ( descStr != "" ) { descStr += '\n'; }
+					descStr += definition.getDesc(1);
+
+					tooltipDesc->setText(descStr.c_str());
+					tooltipInnerWidth = definition.tooltipWidth;
+				}
 				else if ( effectID == StatusEffectQueue_t::kEffectAssistance )
 				{
 					std::string newHeader = definition.getName(-1).c_str();
@@ -8081,6 +8135,7 @@ bool StatusEffectQueue_t::doStatusEffectTooltip(StatusEffectQueueEntry_t& entry,
 					&& effectID != StatusEffectQueue_t::kEffectDisabledHPRegen
 					&& effectID != StatusEffectQueue_t::kEffectAssistance
 					&& effectID != StatusEffectQueue_t::kEffectVandal
+					&& effectID != StatusEffectQueue_t::kEffectWealth
 					&& !(effectID == EFF_ENSEMBLE_DRUM
 						|| effectID == EFF_ENSEMBLE_FLUTE
 						|| effectID == EFF_ENSEMBLE_LUTE
@@ -8180,7 +8235,8 @@ const int StatusEffectQueue_t::kEffectAssistance = -26;
 const int StatusEffectQueue_t::kEffectStability = -27;
 const int StatusEffectQueue_t::kEffectVandal = -28;
 const int StatusEffectQueue_t::kEffectOvercharge = -29;
-const int StatusEffectQueue_t::kEffectEnd = -30;
+const int StatusEffectQueue_t::kEffectWealth = -30;
+const int StatusEffectQueue_t::kEffectEnd = -31;
 const int StatusEffectQueue_t::kSpellEffectOffset = 10000;
 
 Frame* StatusEffectQueue_t::getStatusEffectFrame()
@@ -8777,6 +8833,22 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 			{
 				miscEffects[kEffectVandal] = true;
 			}
+			if ( players[player]->mechanics.getWealthTier() > 0 )
+			{
+				miscEffects[kEffectWealth] = true;
+
+				for ( auto it = effectQueue.rbegin(); it != effectQueue.rend(); ++it )
+				{
+					if ( (*it).effect == kEffectWealth )
+					{
+						if ( (*it).customVariable != players[player]->mechanics.getWealthTier() )
+						{
+							deleteEffect(kEffectWealth);
+							break;
+						}
+					}
+				}
+			}
 			if ( cast_animation[player].overcharge_init > 0 || cast_animation[player].overcharge > 0 )
 			{
 				miscEffects[kEffectOvercharge] = true;
@@ -8909,7 +8981,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 		}
 		else
 		{
-			if ( !players[player]->entity )
+			if ( players[player] && !players[player]->entity )
 			{
 				effectsToSkipAnim.insert(i);
 			}
@@ -8919,11 +8991,19 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 			}
 			if ( effectSet.find(i) == effectSet.end() )
 			{
-				insertEffect(i, -1);
+				bool inserted = insertEffect(i, -1);
 
 				if ( i == kEffectSneak )
 				{
 					effectsToSkipAnimThisFrame.push_back(i);
+				}
+				else if ( i == kEffectWealth )
+				{
+					if ( inserted )
+					{
+						effectQueue.back().customVariable = players[player]->mechanics.getWealthTier();
+						notificationQueue.back().customVariable = players[player]->mechanics.getWealthTier();
+					}
 				}
 			}
 		}
@@ -9159,6 +9239,10 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 							variation = 0;
 						}
 						else if ( effectID == StatusEffectQueue_t::kEffectVandal )
+						{
+							variation = 0;
+						}
+						else if ( effectID == StatusEffectQueue_t::kEffectWealth )
 						{
 							variation = 0;
 						}
@@ -9624,6 +9708,11 @@ void StatusEffectQueue_t::updateEntryImage(StatusEffectQueueEntry_t& entry, Fram
 			{
 				variation = 2;
 			}
+			img->path = StatusEffectDefinitions_t::getEffectImgPath(StatusEffectDefinitions_t::getEffect(entry.effect), variation);
+		}
+		else if ( entry.effect == kEffectWealth )
+		{
+			int variation = std::max(0, std::min(3, (int)entry.customVariable - 1));
 			img->path = StatusEffectDefinitions_t::getEffectImgPath(StatusEffectDefinitions_t::getEffect(entry.effect), variation);
 		}
 		else

@@ -2210,6 +2210,12 @@ void drawEntities3D(view_t* camera, int mode)
                 {
                     if ( !camera->vismap[y + x * map.height] 
 						&& entity->monsterEntityRenderAsTelepath == 0
+						&& !(!intro && entity->goldTelepathy > 0 && entity->behavior == &actGoldBag 
+							&& currentPlayerViewport >= 0 && currentPlayerViewport < MAXPLAYERS
+							&& entity->goldTelepathy & (1 << currentPlayerViewport))
+						&& !(!intro && entity->colliderTelepathy > 0 && entity->behavior == &actColliderDecoration
+							&& currentPlayerViewport >= 0 && currentPlayerViewport < MAXPLAYERS
+							&& entity->colliderTelepathy & (1 << currentPlayerViewport))
 						&& !(entity->behavior == &actSpriteNametag && entity->ditheringDisabled) )
                     {
                         decrease = true;

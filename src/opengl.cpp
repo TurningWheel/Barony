@@ -909,6 +909,13 @@ static void uploadLightUniforms(view_t* camera, Shader& shader, Entity* entity, 
             (entity->monsterEntityRenderAsTelepath && player >= 0 && player < MAXPLAYERS
             && players[player] && players[player]->entity
             && stats[player]->mask && stats[player]->mask->type == TOOL_BLINDFOLD_TELEPATHY);
+
+        if ( !intro && player >= 0 && player < MAXPLAYERS && players[player] && players[player]->entity
+            && (entity->goldTelepathy > 0 && entity->behavior == &actGoldBag && entity->goldTelepathy & (1 << player)
+                || (entity->colliderTelepathy > 0 && entity->behavior == &actColliderDecoration && entity->colliderTelepathy & (1 << player))) )
+        {
+            telepathy = true;
+        }
 #endif
         if ( telepathy ) {
             const GLfloat factor[4] = { 1.f, 1.f, 1.f, 1.f, };
@@ -1345,6 +1352,13 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
         ((entity->monsterEntityRenderAsTelepath == 1 && !intro 
             && player >= 0 && player < MAXPLAYERS && players[player] && players[player]->entity
             && stats[player]->mask && stats[player]->mask->type == TOOL_BLINDFOLD_TELEPATHY));
+
+        if ( !intro && player >= 0 && player < MAXPLAYERS && players[player] && players[player]->entity
+            && (entity->goldTelepathy > 0 && entity->behavior == &actGoldBag && entity->goldTelepathy & (1 << player)
+                || (entity->colliderTelepathy > 0 && entity->behavior == &actColliderDecoration && entity->colliderTelepathy & (1 << player))) )
+        {
+            telepath = true;
+        }
 #endif
 
     bool changedDepthRange = false;

@@ -1674,16 +1674,16 @@
 			"name_unidentified": "scepter"
 		},
 		"tome_sorcery": {
-			"name_identified": "tome",
-			"name_unidentified": "tome"
+			"name_identified": "tablet",
+			"name_unidentified": "tablet"
 		},
 		"tome_mysticism": {
-			"name_identified": "tome",
-			"name_unidentified": "tome"
+			"name_identified": "tablet",
+			"name_unidentified": "tablet"
 		},
 		"tome_thaumaturgy": {
-			"name_identified": "tome",
-			"name_unidentified": "tome"
+			"name_identified": "tablet",
+			"name_unidentified": "tablet"
 		},
 		"hat_circlet_sorcery": {
 			"name_identified": "circlet of sorcery",
