@@ -8000,6 +8000,10 @@ real_t Entity::getACEffectiveness(Entity* my, Stat* myStats, bool isPlayer, Enti
 	return std::max(0.0, std::min(1.0, .75 + 0.025 * blessings));
 }
 
+real_t Entity::PlayerAttackMeleeStatFactor = 0.055;
+real_t Entity::PlayerAttackRangedStatFactor = 0.06;
+real_t Entity::PlayerAttackThrownStatFactor = 0.0625;
+
 /*-------------------------------------------------------------------------------
 
 Entity::getAttack
@@ -8009,7 +8013,7 @@ base number
 
 -------------------------------------------------------------------------------*/
 
-Sint32 Entity::getAttack(Entity* my, Stat* myStats, bool isPlayer, int chargeModifier)
+Sint32 Entity::getAttack(Entity* my, Stat* myStats, bool isPlayer, int chargeModifier, int* returnWeaponAttackValue)
 {
 	Sint32 attack = 0;
 
@@ -8055,6 +8059,11 @@ Sint32 Entity::getAttack(Entity* my, Stat* myStats, bool isPlayer, int chargeMod
 		attack += myStats->weapon->weaponGetAttack(myStats);
 	}
 
+	if ( returnWeaponAttackValue )
+	{
+		*returnWeaponAttackValue = attack;
+	}
+
 	if ( !shapeshifted && myStats->weapon && myStats->weapon->type == RAPIER )
 	{
 		int atk = statGetDEX(myStats, my);
@@ -8062,23 +8071,52 @@ Sint32 Entity::getAttack(Entity* my, Stat* myStats, bool isPlayer, int chargeMod
 		{
 			atk /= 2;
 		}
-		attack += atk;
+		if ( isPlayer )
+		{
+			attack *= (1.0 + atk * Entity::PlayerAttackMeleeStatFactor);
+		}
+		else
+		{
+			attack += atk;
+		}
 	}
 	else if ( !shapeshifted && myStats->weapon && myStats->weapon->type == TOOL_WHIP )
 	{
 		int atk = statGetSTR(myStats, my) + statGetDEX(myStats, my);
 		atk = std::min(atk / 2, atk);
-		attack += atk;
+		if ( isPlayer )
+		{
+			attack *= (1.0 + atk * Entity::PlayerAttackMeleeStatFactor);
+		}
+		else
+		{
+			attack += atk;
+		}
 	}
 	else if ( !shapeshifted && myStats->weapon && myStats->weapon->type == MAGICSTAFF_SCEPTER )
 	{
 		int atk = statGetSTR(myStats, my);
 		atk = std::min(atk / 2, atk);
-		attack += atk;
+		if ( isPlayer )
+		{
+			attack *= (1.0 + atk * Entity::PlayerAttackMeleeStatFactor);
+		}
+		else
+		{
+			attack += atk;
+		}
 	}
 	else
 	{
-		attack += statGetSTR(myStats, my);
+		int atk = statGetSTR(myStats, my);
+		if ( isPlayer )
+		{
+			attack *= (1.0 + atk * Entity::PlayerAttackMeleeStatFactor);
+		}
+		else
+		{
+			attack += atk;
+		}
 		if ( !shapeshifted && myStats->weapon && myStats->weapon->type == STEEL_FLAIL )
 		{
 			if ( (my && my->behavior == &actMonster) )
@@ -8113,10 +8151,10 @@ base number
 
 -------------------------------------------------------------------------------*/
 
-Sint32 Entity::getRangedAttack()
+Sint32 Entity::getRangedAttack(int atkFromQuivers)
 {
 	Stat* entitystats;
-	int attack = BASE_RANGED_DAMAGE; // base ranged attack strength
+	int attack = BASE_RANGED_DAMAGE + atkFromQuivers; // base ranged attack strength
 
 	if ( (entitystats = this->getStats()) == nullptr )
 	{
@@ -8126,7 +8164,14 @@ Sint32 Entity::getRangedAttack()
 	if ( entitystats->weapon )
 	{
 		attack += entitystats->weapon->weaponGetAttack(entitystats);
-		attack += getDEX();
+		if ( behavior == &actPlayer )
+		{
+			attack *= (1.0 + getDEX() * Entity::PlayerAttackRangedStatFactor);
+		}
+		else
+		{
+			attack += getDEX();
+		}
 		if ( behavior == &actMonster )
 		{
 			attack += getPER(); // monsters take PER into their ranged attacks to avoid having to increase their speed.
@@ -8169,6 +8214,8 @@ Sint32 Entity::getThrownAttack()
 
 	if ( entitystats->weapon )
 	{
+		real_t statToAtkRatio = Entity::PlayerAttackThrownStatFactor;
+
 		if ( entitystats->weapon->type == BOLAS )
 		{
 			attack = entitystats->weapon->weaponGetAttack(entitystats);
@@ -8181,9 +8228,16 @@ Sint32 Entity::getThrownAttack()
 		}
 		else if ( itemCategory(entitystats->weapon) == THROWN  )
 		{
-			int dex = getDEX() / 4;
-			attack += dex;
 			attack += entitystats->weapon->weaponGetAttack(entitystats);
+			if ( behavior == &actPlayer )
+			{
+				attack *= (1.0 + (getDEX() / 4.0) * statToAtkRatio);
+			}
+			else
+			{
+				int dex = getDEX() / 4;
+				attack += dex;
+			}
 			attack *= thrownDamageSkillMultipliers[std::min(skillLVL, 5)];
 		}
 		else if ( itemCategory(entitystats->weapon) == POTION )
@@ -8196,9 +8250,16 @@ Sint32 Entity::getThrownAttack()
 		}
 		else
 		{
-			int dex = getDEX() / 4;
-			attack += dex;
 			attack += entitystats->weapon->weaponGetAttack(entitystats);
+			if ( behavior == &actPlayer )
+			{
+				attack *= (1.0 + (getDEX() / 4.0) * statToAtkRatio);
+			}
+			else
+			{
+				int dex = getDEX() / 4;
+				attack += dex;
+			}
 			attack += entitystats->getModifiedProficiency(PRO_RANGED) / 10; // 0 to 10 bonus attack.
 		}
 	}
@@ -26575,7 +26636,7 @@ void Entity::setRangedProjectileAttack(Entity& marksman, Stat& myStats, int opti
 	}
 
 	// get arrow power.
-	attack += marksman.getRangedAttack();
+	attack = marksman.getRangedAttack(attack);
 	real_t variance = 20;
 	real_t baseSkillModifier = 50.0; // 40-60 base
 	real_t skillModifier = baseSkillModifier - (variance / 2) + (myStats.getModifiedProficiency(PRO_RANGED) / 2.0);

@@ -869,11 +869,14 @@ public:
 	void drainMP(int amount, bool notifyOverexpend = true); //Removes this much from MP. Anything over the entity's MP is subtracted from their health. Can be very dangerous.
 	bool safeConsumeMP(int amount); //A function for the magic code. Attempts to remove mana without overdrawing the player. Returns true if success, returns false if didn't have enough mana.
 
-	static Sint32 getAttack(Entity* my, Stat* myStats, bool isPlayer = false, int chargeModifier = -1);
+	static real_t PlayerAttackMeleeStatFactor;
+	static real_t PlayerAttackRangedStatFactor;
+	static real_t PlayerAttackThrownStatFactor;
+	static Sint32 getAttack(Entity* my, Stat* myStats, bool isPlayer, int chargeModifier = -1, int* returnWeaponAttackValue = nullptr);
 	static real_t getACEffectiveness(Entity* my, Stat* myStats, bool isPlayer, Entity* attacker, Stat* attackerStats, int& outNumBlessings);
 	static void setMeleeDamageSkillModifiers(Entity* my, Stat* myStats, int skill, real_t& baseSkillModifier, real_t& variance, ItemType* itemType);
 	Sint32 getBonusAttackOnTarget(Stat& hitstats);
-	Sint32 getRangedAttack();
+	Sint32 getRangedAttack(int atkFromQuivers);
 	Sint32 getThrownAttack();
 	bool isBlind();
 	bool isWaterWalking() const;

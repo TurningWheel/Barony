@@ -18237,13 +18237,13 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 				case SHEET_STR:
 				{
 					Sint32 STR = statGetSTR(stats[player.playernum], players[player.playernum]->entity);
-					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_atk_value_format").c_str(), STR);
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_atk_percent_format").c_str(), STR * 100 * Entity::PlayerAttackMeleeStatFactor);
 				}
 					break;
 				case SHEET_DEX:
 				{
 					Sint32 DEX = statGetDEX(stats[player.playernum], players[player.playernum]->entity);
-					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_atk_value_format").c_str(), DEX);
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_atk_percent_format").c_str(), DEX * 100 * Entity::PlayerAttackRangedStatFactor);
 				}
 					break;
 				case SHEET_CON:
@@ -18397,7 +18397,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 				case SHEET_DEX:
 				{
 					Sint32 DEX = statGetDEX(stats[player.playernum], players[player.playernum]->entity);
-					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_atk_value_format").c_str(), DEX / 4);
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_atk_percent_format").c_str(), (DEX / 4) * 100 * Entity::PlayerAttackThrownStatFactor);
 				}
 					break;
 				case SHEET_CON:

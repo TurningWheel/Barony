@@ -48,12 +48,17 @@ Sint32 displayAttackPower(const int player, AttackHoverText_t& output)
 			if ( !stats[player]->weapon || shapeshiftUseMeleeAttack )
 			{
 				// fists
-				attack += Entity::getAttack(players[player]->entity, stats[player], true);
+				int weaponAttack = 0;
+				attack += Entity::getAttack(players[player]->entity, stats[player], true, -1, &weaponAttack);
 				output.hoverType = AttackHoverText_t::ATK_HOVER_TYPE_UNARMED; // melee
 				output.totalAttack = attack;
 				output.proficiencyBonus = (stats[player]->getModifiedProficiency(PRO_UNARMED) / 20); // bonus from proficiency
-				output.mainAttributeBonus = statGetSTR(stats[player], entity); // bonus from main attribute
-				output.equipmentAndEffectBonus = attack - statGetSTR(stats[player], entity) - BASE_PLAYER_UNARMED_DAMAGE - output.proficiencyBonus; // bonus from equipment
+				Sint32 attr = statGetSTR(stats[player], entity); // bonus from main attribute
+				Sint32 prevStat = stats[player]->STR;
+				stats[player]->STR += -attr;
+				output.mainAttributeBonus = output.totalAttack - Entity::getAttack(players[player]->entity, stats[player], true);
+				stats[player]->STR = prevStat;
+				output.equipmentAndEffectBonus = weaponAttack - BASE_PLAYER_UNARMED_DAMAGE - output.proficiencyBonus; // bonus from equipment
 
 				{
 					real_t variance = 20;
@@ -79,23 +84,30 @@ Sint32 displayAttackPower(const int player, AttackHoverText_t& output)
 				{
 					if ( isRangedWeapon(*stats[player]->weapon) )
 					{
+						Sint32 quiverATK = 0;
+						if ( stats[player]->shield && rangedWeaponUseQuiverOnAttack(stats[player]) )
+						{
+							quiverATK = stats[player]->shield->weaponGetAttack(stats[player]);
+						}
 						if ( entity )
 						{
-							attack += entity->getRangedAttack();
+							attack += entity->getRangedAttack(quiverATK);
 						}
 						output.hoverType = AttackHoverText_t::ATK_HOVER_TYPE_RANGED; // ranged
 						output.totalAttack = attack;
 						output.weaponBonus = stats[player]->weapon->weaponGetAttack(stats[player]); // bonus from weapon
 						output.equipmentAndEffectBonus = 0;
-						Sint32 quiverATK = 0;
-						if ( stats[player]->shield && rangedWeaponUseQuiverOnAttack(stats[player]) )
+
+						Sint32 attr = statGetDEX(stats[player], entity); // bonus from main attribute
+						Sint32 prevStat = stats[player]->DEX;
+						stats[player]->DEX += -attr;
+						if ( entity )
 						{
-							quiverATK = stats[player]->shield->weaponGetAttack(stats[player]);
-							attack += quiverATK;
+							output.mainAttributeBonus = output.totalAttack - entity->getRangedAttack(quiverATK);
 						}
-						output.mainAttributeBonus = statGetDEX(stats[player], entity); // bonus from main attribute
-						output.equipmentAndEffectBonus += attack - output.mainAttributeBonus
-							- BASE_RANGED_DAMAGE - output.weaponBonus; // bonus from equipment
+						stats[player]->DEX = prevStat;
+
+						output.equipmentAndEffectBonus += quiverATK; // bonus from equipment
 
 						{
 							real_t variance = 20;
@@ -122,13 +134,22 @@ Sint32 displayAttackPower(const int player, AttackHoverText_t& output)
 						output.weaponBonus = stats[player]->weapon->weaponGetAttack(stats[player]); // bonus from weapon
 						Sint32 STR = statGetSTR(stats[player], entity);
 						Sint32 DEX = statGetDEX(stats[player], entity);
-						Sint32 totalAttributeBonus = (STR + DEX);
-						totalAttributeBonus = std::min(totalAttributeBonus / 2, totalAttributeBonus);
+
+						Sint32 prevStatSTR = stats[player]->STR;
+						Sint32 prevStatDEX = stats[player]->DEX;
+						stats[player]->STR += -STR;
+						stats[player]->DEX += -DEX;
+						output.mainAttributeBonus = output.totalAttack - Entity::getAttack(players[player]->entity, stats[player], true);
+						stats[player]->STR = prevStatSTR;
+						stats[player]->DEX = prevStatDEX;
+
+						//Sint32 totalAttributeBonus = (STR + DEX);
+						//totalAttributeBonus = std::min(totalAttributeBonus / 2, totalAttributeBonus);
 						//output.mainAttributeBonus = totalAttributeBonus - STRComponent; // bonus from main attribute (DEX)
 						//output.secondaryAttributeBonus = totalAttributeBonus - DEXComponent; // secondary (STR)
-						output.mainAttributeBonus = totalAttributeBonus;
-						output.equipmentAndEffectBonus += attack - totalAttributeBonus
-							- BASE_MELEE_DAMAGE - output.weaponBonus; // bonus from equipment
+						//output.mainAttributeBonus = totalAttributeBonus;
+						//output.equipmentAndEffectBonus += attack - totalAttributeBonus
+						//	- BASE_MELEE_DAMAGE - output.weaponBonus; // bonus from equipment
 
 						{
 							real_t variance = 20;
@@ -162,13 +183,21 @@ Sint32 displayAttackPower(const int player, AttackHoverText_t& output)
 						if ( itemCategory(stats[player]->weapon) != POTION )
 						{
 							Sint32 oldDEX = statGetDEX(stats[player], entity);
-							Sint32 DEXComponent = oldDEX / 4;
+							//Sint32 DEXComponent = oldDEX / 4;
 							if ( itemCategory(stats[player]->weapon) == THROWN )
 							{
-								output.mainAttributeBonus = DEXComponent; //(output.totalAttack - entity->getThrownAttack());
+								//output.mainAttributeBonus = DEXComponent; //(output.totalAttack - entity->getThrownAttack());
 
 								Sint32 oldSkill = stats[player]->getProficiency(PRO_RANGED);
 								stats[player]->setProficiencyUnsafe(PRO_RANGED, -999);
+
+								Sint32 noSkillATK = (entity ? entity->getThrownAttack() : 0);
+
+								Sint32 prevStat = stats[player]->DEX;
+								stats[player]->DEX += -oldDEX;
+								output.mainAttributeBonus = noSkillATK - (entity ? entity->getThrownAttack() : 0);
+								stats[player]->DEX = prevStat;
+
 								output.proficiencyBonus = output.totalAttack - (entity ? entity->getThrownAttack() : 0);
 								stats[player]->setProficiency(PRO_RANGED, oldSkill);
 							}
@@ -179,14 +208,27 @@ Sint32 displayAttackPower(const int player, AttackHoverText_t& output)
 									output.hoverType = AttackHoverText_t::ATK_HOVER_TYPE_THROWN_GEM; // thrown
 								}
 								// gems etc.
-								Sint32 tmpDEX = stats[player]->DEX;
+								/*Sint32 tmpDEX = stats[player]->DEX;
 								stats[player]->DEX -= oldDEX;
 								if ( entity )
 								{
 									output.mainAttributeBonus = (output.totalAttack - (entity ? entity->getThrownAttack() : 0));
 								}
 								output.proficiencyBonus = skillLVL / 10;
-								stats[player]->DEX = tmpDEX;
+								stats[player]->DEX = tmpDEX;*/
+
+								Sint32 oldSkill = stats[player]->getProficiency(PRO_RANGED);
+								stats[player]->setProficiencyUnsafe(PRO_RANGED, -999);
+
+								Sint32 noSkillATK = (entity ? entity->getThrownAttack() : 0);
+
+								Sint32 prevStat = stats[player]->DEX;
+								stats[player]->DEX += -oldDEX;
+								output.mainAttributeBonus = noSkillATK - (entity ? entity->getThrownAttack() : 0);
+								stats[player]->DEX = prevStat;
+
+								output.proficiencyBonus = output.totalAttack - (entity ? entity->getThrownAttack() : 0);
+								stats[player]->setProficiency(PRO_RANGED, oldSkill);
 							}
 							output.proficiency = weaponskill;
 						}
@@ -225,7 +267,11 @@ Sint32 displayAttackPower(const int player, AttackHoverText_t& output)
 					output.hoverType = AttackHoverText_t::ATK_HOVER_TYPE_MELEE_WEAPON; // melee
 					output.totalAttack = attack;
 					output.weaponBonus = stats[player]->weapon->weaponGetAttack(stats[player]); // bonus from weapon
-					output.mainAttributeBonus = statGetSTR(stats[player], entity); // bonus from main attribute
+					Sint32 attr = statGetSTR(stats[player], entity); // bonus from main attribute
+					Sint32 prevStat = stats[player]->STR;
+					stats[player]->STR += -attr;
+					output.mainAttributeBonus = output.totalAttack - Entity::getAttack(players[player]->entity, stats[player], true);
+					stats[player]->STR = prevStat;
 					if ( weaponskill == PRO_AXE )
 					{
 						output.weaponBonus += 1; // bonus from equipment
@@ -274,13 +320,20 @@ Sint32 displayAttackPower(const int player, AttackHoverText_t& output)
 					}
 					output.totalAttack = attack;
 					output.weaponBonus = 0; // bonus from weapon
-					output.mainAttributeBonus = statGetSTR(stats[player], entity); // bonus from main attribute
-					if ( stats[player]->weapon->type == MAGICSTAFF_SCEPTER )
-					{
-						output.mainAttributeBonus /= 2;
-					}
+					//output.mainAttributeBonus = statGetSTR(stats[player], entity); // bonus from main attribute
+					//if ( stats[player]->weapon->type == MAGICSTAFF_SCEPTER )
+					//{
+					//	output.mainAttributeBonus /= 2;
+					//}
+
+					Sint32 attr = statGetSTR(stats[player], entity); // bonus from main attribute
+					Sint32 prevStat = stats[player]->STR;
+					stats[player]->STR += -attr;
+					output.mainAttributeBonus = output.totalAttack - Entity::getAttack(players[player]->entity, stats[player], true);
+					stats[player]->STR = prevStat;
+
 					output.proficiencyBonus = 0; // bonus from proficiency
-					output.equipmentAndEffectBonus = attack - output.mainAttributeBonus - BASE_MELEE_DAMAGE; // bonus from equipment
+					//output.equipmentAndEffectBonus = attack - output.mainAttributeBonus - BASE_MELEE_DAMAGE; // bonus from equipment
 					output.attackMaxRange = output.totalAttack;
 					output.attackMinRange = output.totalAttack;
 					if ( stats[player]->weapon->type == MAGICSTAFF_SCEPTER )
