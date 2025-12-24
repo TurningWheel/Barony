@@ -2939,7 +2939,12 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				Sint32 preResistanceDamageTmp = 0;
 				{
 					int magicDmg = element->getDamage();
-					magicDmg += (spellbookDamageBonus * magicDmg);
+					magicDmg += (spellbookDamageBonus * magicDmg * (abs(element->getDamageMult()) > 0.01 ? element->getDamageMult() : 1.0));
+					if ( element->getDamageMult() > 0.01 && element->getDamage() > 0 )
+					{
+						// range checking for PWR penalties, if we should do _some_ damage, then do at least 1
+						magicDmg = std::max(1, magicDmg);
+					}
 					if ( hit.entity && !mimic && (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer) )
 					{
 						if ( my->actmagicIsOrbiting == 2 )
@@ -6061,14 +6066,14 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				{
 					if ( hit.entity )
 					{
-						int damage = element->getDamage();
+						real_t ratio = 1.0;
 						bool found = false;
 						bool criticalEffect = false;
 						Entity* parent = uidToEntity(my->parent);
 						if ( mimic || hit.entity->behavior == &actChest )
 						{
 							found = true;
-							real_t ratio = std::max(100, getSpellDamageSecondaryFromID(SPELL_SPLINTER_GEAR, parent, nullptr, my)) / 100.0;
+							ratio = std::max(100, getSpellDamageSecondaryFromID(SPELL_SPLINTER_GEAR, parent, nullptr, my)) / 100.0;
 							if ( applyGenericMagicDamage(parent, hit.entity, *my, spell->ID, damage * ratio, false) )
 							{
 								criticalEffect = true;
@@ -6089,8 +6094,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									if ( !armor || (armor && armor->status == BROKEN) )
 									{
 										criticalEffect = true;
-										real_t ratio = std::max(100, getSpellDamageSecondaryFromID(SPELL_SPLINTER_GEAR, parent, nullptr, my)) / 100.0;
-										damage *= ratio;
+										ratio = std::max(100, getSpellDamageSecondaryFromID(SPELL_SPLINTER_GEAR, parent, nullptr, my)) / 100.0;
 									}
 
 									if ( parent )
@@ -6155,8 +6159,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								if ( !criticalEffect )
 								{
 									criticalEffect = true;
-									real_t ratio = std::max(100, getSpellDamageSecondaryFromID(SPELL_SPLINTER_GEAR, parent, nullptr, my)) / 100.0;
-									damage *= ratio;
+									ratio = std::max(100, getSpellDamageSecondaryFromID(SPELL_SPLINTER_GEAR, parent, nullptr, my)) / 100.0;
 								}
 							}
 						}
@@ -6210,7 +6213,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								hit.entity->setEffect(EFF_SLOW, true, element->duration, false);
 								if ( !mimic )
 								{
-									if ( applyGenericMagicDamage(parent, hit.entity, *my, spell->ID, damage, false) )
+									if ( applyGenericMagicDamage(parent, hit.entity, *my, spell->ID, damage * ratio, false) )
 									{
 
 									}

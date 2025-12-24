@@ -792,15 +792,19 @@ void spellEffectStealWeapon(Entity& my, spellElement_t& element, Entity* parent,
 				return;
 			}
 
-			if ( hitstats->type == LICH || hitstats->type == LICH_FIRE || hitstats->type == LICH_ICE || hitstats->type == DEVIL
-				|| hitstats->type == SHADOW )
+			if ( hitstats->type == LICH 
+				|| hitstats->type == LICH_FIRE 
+				|| hitstats->type == LICH_ICE 
+				|| hitstats->type == DEVIL
+				|| hitstats->type == SHADOW
+				|| hitstats->type == SHOPKEEPER )
 			{
 				return;
 			}
 
 			if ( hit.entity->behavior == &actMonster 
 				&& (hit.entity->monsterAllySummonRank != 0 
-					|| hitstats->type == MONSTER_ADORCISED_WEAPON
+					/*|| hitstats->type == MONSTER_ADORCISED_WEAPON*/
 					|| (hitstats->type == INCUBUS && !strncmp(hitstats->name, "inner demon", strlen("inner demon"))))
 				)
 			{

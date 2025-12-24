@@ -1861,16 +1861,6 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					}
 				}
 			}
-			/*for ( node_t* node = map.creatures->first; node && false; node = node->next )
-			{
-				if ( Entity* entity = getSpellTarget(node, HEAL_RADIUS, caster, false, TARGET_FRIEND) )
-				{
-					entity->setEffect(EFF_NIMBLENESS, (Uint8)element->getDamage(), element->duration, false);
-					messagePlayerColor(entity->isEntityPlayer(),
-						MESSAGE_HINT, makeColorRGB(0, 255, 0), Language::get(6476));
-					playSoundEntity(entity, 167, 128);
-				}
-			}*/
 		}
 		else if ( !strcmp(element->element_internal_name, spellElementMap[SPELL_PROF_GREATER_MIGHT].element_internal_name) )
 		{
@@ -1899,16 +1889,6 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					}
 				}
 			}
-			/*for ( node_t* node = map.creatures->first; node && false; node = node->next )
-			{
-				if ( Entity* entity = getSpellTarget(node, HEAL_RADIUS, caster, false, TARGET_FRIEND) )
-				{
-					entity->setEffect(EFF_GREATER_MIGHT, (Uint8)element->getDamage(), element->duration, false);
-					messagePlayerColor(entity->isEntityPlayer(),
-						MESSAGE_HINT, makeColorRGB(0, 255, 0), Language::get(6477));
-					playSoundEntity(entity, 167, 128);
-				}
-			}*/
 		}
 		else if ( !strcmp(element->element_internal_name, spellElementMap[SPELL_PROF_COUNSEL].element_internal_name) )
 		{
@@ -1937,16 +1917,6 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					}
 				}
 			}
-			/*for ( node_t* node = map.creatures->first; node && false; node = node->next )
-			{
-				if ( Entity* entity = getSpellTarget(node, HEAL_RADIUS, caster, false, TARGET_FRIEND) )
-				{
-					entity->setEffect(EFF_COUNSEL, (Uint8)element->getDamage(), element->duration, false);
-					messagePlayerColor(entity->isEntityPlayer(),
-						MESSAGE_HINT, makeColorRGB(0, 255, 0), Language::get(6478));
-					playSoundEntity(entity, 167, 128);
-				}
-			}*/
 		}
 		else if ( !strcmp(element->element_internal_name, spellElementMap[SPELL_PROF_STURDINESS].element_internal_name) )
 		{
@@ -1975,16 +1945,6 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					}
 				}
 			}
-			/*for ( node_t* node = map.creatures->first; node && false; node = node->next )
-			{
-				if ( Entity* entity = getSpellTarget(node, HEAL_RADIUS, caster, false, TARGET_FRIEND) )
-				{
-					entity->setEffect(EFF_STURDINESS, (Uint8)element->getDamage(), element->duration, false);
-					messagePlayerColor(entity->isEntityPlayer(),
-						MESSAGE_HINT, makeColorRGB(0, 255, 0), Language::get(6479));
-					playSoundEntity(entity, 167, 128);
-				}
-			}*/
 		}
 		else if ( spell->ID == SPELL_DELAY_PAIN )
 		{
@@ -1994,7 +1954,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				{
 					if ( !casterStats->getEffectActive(EFF_DELAY_PAIN) )
 					{
-						if ( caster->setEffect(EFF_DELAY_PAIN, (Uint8)element->getDamage(), element->duration, false) )
+						if ( caster->setEffect(EFF_DELAY_PAIN, (Uint8)1, element->duration, false) )
 						{
 							messagePlayerColor(caster->isEntityPlayer(),
 								MESSAGE_HINT, makeColorRGB(0, 255, 0), Language::get(6627));
@@ -2017,7 +1977,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					{
 						if ( !entity->getStats()->getEffectActive(EFF_DELAY_PAIN) )
 						{
-							entity->setEffect(EFF_DELAY_PAIN, (Uint8)element->getDamage(), element->duration, false);
+							entity->setEffect(EFF_DELAY_PAIN, (Uint8)1, element->duration, false);
 							messagePlayerColor(entity->isEntityPlayer(),
 								MESSAGE_HINT, makeColorRGB(0, 255, 0), Language::get(6627));
 							playSoundEntity(entity, 167, 128);
@@ -2901,138 +2861,6 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				playSoundEntity(caster, 166, 64);
 			}
 		}
-		//else if ( spell->ID == SPELL_SPLINTER_GEAR )
-		//{
-		//	if ( caster )
-		//	{
-		//		bool found = false;
-		//		bool effect = false;
-		//		if ( castSpellProps && castSpellProps->targetUID != 0 )
-		//		{
-		//			if ( Entity* target = uidToEntity(castSpellProps->targetUID) )
-		//			{
-		//				int damage = element->getDamage();
-		//				if ( Stat* targetStats = target->getStats() )
-		//				{
-		//					if ( target->behavior == &actMonster || target->behavior == &actPlayer )
-		//					{
-		//						Item* armor = nullptr;
-		//						bool shields = targetStats->shield && itemCategory(targetStats->shield) == ARMOR;
-		//						int armornum = targetStats->pickRandomEquippedItemToDegradeOnHit(&armor, true, !shields, false, true);
-		//						
-		//						if ( armor != nullptr && armor->status > BROKEN )
-		//						{
-		//							ItemType type = armor->type;
-		//							if ( target->degradeArmor(*targetStats, *armor, armornum) )
-		//							{
-		//								effect = true;
-		//								if ( !armor || (armor && armor->status == BROKEN) )
-		//								{
-		//									real_t ratio = std::max(100, getSpellDamageSecondaryFromID(SPELL_SPLINTER_GEAR, caster, nullptr, caster)) / 100.0;
-		//									damage *= ratio;
-		//								}
-
-		//								if ( armor->status > BROKEN )
-		//								{
-		//									const char* msg = Language::get(6678); // named
-		//									if ( !strcmp(targetStats->name, "") || monsterNameIsGeneric(*targetStats) )
-		//									{
-		//										msg = Language::get(6677);
-		//									}
-
-		//									if ( !strcmp(targetStats->name, "") )
-		//									{
-		//										messagePlayerColor(caster->isEntityPlayer(), MESSAGE_COMBAT, makeColorRGB(0, 255, 0),
-		//											msg, getMonsterLocalizedName(targetStats->type).c_str(), items[type].getIdentifiedName());
-		//									}
-		//									else
-		//									{
-		//										messagePlayerColor(caster->isEntityPlayer(), MESSAGE_COMBAT, makeColorRGB(0, 255, 0),
-		//											msg, targetStats->name, items[type].getIdentifiedName());
-		//									}
-		//								}
-		//								else
-		//								{
-		//									const char* msg = Language::get(6680); // named
-		//									if ( !strcmp(targetStats->name, "") || monsterNameIsGeneric(*targetStats) )
-		//									{
-		//										msg = Language::get(6679);
-		//									}
-		//									if ( !strcmp(targetStats->name, "") )
-		//									{
-		//										messagePlayerColor(caster->isEntityPlayer(), MESSAGE_COMBAT, makeColorRGB(0, 255, 0),
-		//											msg, getMonsterLocalizedName(targetStats->type).c_str(), items[type].getIdentifiedName());
-		//									}
-		//									else
-		//									{
-		//										messagePlayerColor(caster->isEntityPlayer(), MESSAGE_COMBAT, makeColorRGB(0, 255, 0),
-		//											msg, targetStats->name, items[type].getIdentifiedName());
-		//									}
-		//								}
-		//							}
-
-		//						}
-
-		//						if ( targetStats->type == CRYSTALGOLEM
-		//							|| targetStats->type == AUTOMATON
-		//							|| targetStats->type == MINIMIMIC
-		//							|| targetStats->type == MIMIC )
-		//						{
-		//							if ( !effect )
-		//							{
-		//								real_t ratio = std::max(100, getSpellDamageSecondaryFromID(SPELL_SPLINTER_GEAR, caster, nullptr, caster)) / 100.0;
-		//								damage *= ratio;
-		//							}
-		//							effect = true;
-		//						}
-
-		//						if ( effect )
-		//						{
-		//							if ( applyGenericMagicDamage(caster, target, *caster, spell->ID, damage, true) )
-		//							{
-		//								target->setEffect(EFF_BLEEDING, true, 10 * TICKS_PER_SECOND, false);
-		//								target->setEffect(EFF_SLOW, true, 10 * TICKS_PER_SECOND, false);
-		//							
-		//								for ( int i = 0; i < 5; ++i )
-		//								{
-		//									Entity* gib = spawnGib(target, 187);
-		//									gib->sprite = 187;
-		//									serverSpawnGibForClient(gib);
-		//								}
-		//							}
-		//						}
-		//					}
-		//					found = true;
-
-		//					if ( !effect )
-		//					{
-		//						messagePlayerMonsterEvent(caster->isEntityPlayer(), makeColorRGB(255, 0, 0),
-		//							*targetStats, Language::get(2905), Language::get(2906), MSG_COMBAT);
-		//					}
-		//				}
-		//				else if ( target->behavior == &actChest )
-		//				{
-		//					if ( applyGenericMagicDamage(caster, target, *caster, spell->ID, damage, true) )
-		//					{
-		//						for ( int i = 0; i < 5; ++i )
-		//						{
-		//							Entity* gib = spawnGib(target, 187);
-		//							gib->sprite = 187;
-		//							serverSpawnGibForClient(gib);
-		//						}
-		//						found = true;
-		//					}
-		//				}
-		//			}
-		//		}
-		//		if ( !found )
-		//		{
-		//			messagePlayer(caster->isEntityPlayer(), MESSAGE_HINT, Language::get(6498));
-		//		}
-		//		spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
-		//		playSoundEntity(caster, 167, 128);
-		//	}
-		//}
 		else if ( spell->ID == SPELL_MAXIMISE )
 		{
 			if ( caster )
@@ -3445,7 +3273,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						found = true;
 
 						Entity* spellTimer = createParticleBoobyTrapExplode(caster, target->x, target->y);
-						spellTimer->particleTimerVariable1 = element->getDamage();
+						spellTimer->particleTimerVariable1 = getSpellDamageFromID(SPELL_BOOBY_TRAP, caster, nullptr, caster, usingSpellbook ? spellBookBonusPercent / 100.0 : 0.0);
 						spellTimer->particleTimerVariable2 = SPELL_BOOBY_TRAP;
 						spellTimer->particleTimerTarget = target->getUID();
 
@@ -4845,7 +4673,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						{
 							found = true;
 							bool effect = false;
-							int damage = element->getDamage();
+							int damage = getSpellDamageFromID(SPELL_SABOTAGE, caster, nullptr, caster, usingSpellbook ? spellBookBonusPercent / 100.0 : 0.0);
 							if ( target->behavior == &actChest )
 							{
 								if ( effect = applyGenericMagicDamage(caster, target, *caster, spell->ID, damage, true) )
@@ -4865,6 +4693,8 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 									if ( effect = applyGenericMagicDamage(caster, target, *caster, spell->ID, damage, true) )
 									{
 										spawnExplosion(target->x, target->y, 0.0);
+										messagePlayerMonsterEvent(caster->isEntityPlayer(), makeColorRGB(0, 255, 0),
+											*targetStats, Language::get(6958), Language::get(6959), MSG_COMBAT);
 									}
 								}
 								if ( !effect )
@@ -8083,10 +7913,6 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 
 								int ratioINT = getSpellDamageSecondaryFromID(SPELL_BLOOD_WAVES, caster, casterStats, missileEntity);
 								element->setDamage(element->getDamage() + std::max(1, ratioINT * statGetINT(casterStats, caster)));
-								if ( Entity* leader = caster->monsterAllyGetPlayerLeader() )
-								{
-									element->duration = getSpellEffectDurationFromID(SPELL_FIRE_SPRITE, leader, nullptr, nullptr);
-								}
 							}
 						}
 					}
