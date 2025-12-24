@@ -1940,6 +1940,13 @@ Entity* findEntityInLine( Entity* my, real_t x1, real_t y1, real_t angle, int en
 							continue;
 						}
 					}
+					else if ( (entities & LINETRACE_TOOLTIP_INTERACT) && my && my->behavior == &actSpriteWorldTooltip
+						&& ((entity->behavior == &actIronDoor || entity->behavior == &actDoor) 
+							&& my->parent != entity->getUID() && target && target->behavior == &actPlayer && !entityInsideEntity(target, entity)
+							&& !entity->flags[PASSABLE]) )
+					{
+						// let doors block tooltips
+					}
 					else
 					{
 						continue;

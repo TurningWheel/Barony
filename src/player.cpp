@@ -3736,7 +3736,7 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 				{
 					playerEntity->flags[PASSABLE] = false; // hack to make ghosts linetraceable
 				}
-				lineTraceTarget(&tooltip, tooltip.x, tooltip.y, tangent2, maxDist, 0, false, playerEntity);
+				lineTraceTarget(&tooltip, tooltip.x, tooltip.y, tangent2, maxDist, LINETRACE_TOOLTIP_INTERACT, false, playerEntity);
 				playerEntity->flags[PASSABLE] = oldPassable;
 				if ( hit.entity != playerEntity )
 				{
