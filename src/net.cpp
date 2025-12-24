@@ -2886,6 +2886,16 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 			entity->skill[12] = static_cast<Sint8>((statusBeatitudeQuantityAppearance >> 16) & 0xFF); // beatitude
 			entity->skill[13] = static_cast<Uint8>((statusBeatitudeQuantityAppearance >> 8) & 0xFF); // quantity
 			entity->skill[14] = static_cast<Uint8>((statusBeatitudeQuantityAppearance) & 0xFF); // appearance
+			if ( net_packet->len >= 16 )
+			{
+				if ( entity->skill[10] >= 0 && entity->skill[10] < NUMITEMS )
+				{
+					if ( items[entity->skill[10]].category == TOME_SPELL )
+					{
+						entity->skill[14] = SDLNet_Read16(&net_packet->data[16]);
+					}
+				}
+			}
 			entity->itemReceivedDetailsFromServer = 1;
 		}
 	}},
@@ -6789,12 +6799,20 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 				appearance = entity->skill[14] % MAGICSTAFF_SCEPTER_CHARGE_MAX;
 			}
 			statusBeatitudeQuantityAppearance |= (static_cast<Uint8>(appearance) & 0xFF); // appearance
-
 			SDLNet_Write32(statusBeatitudeQuantityAppearance, &net_packet->data[12]);
+
+			net_packet->len = 16;
+			if ( entity->skill[10] >= 0 && entity->skill[10] < NUMITEMS )
+			{
+				if ( items[entity->skill[10]].category == TOME_SPELL )
+				{
+					SDLNet_Write16(entity->skill[14] % TOME_APPEARANCE_MAX, &net_packet->data[16]);
+					net_packet->len = 18;
+				}
+			}
 
 			net_packet->address.host = net_clients[x - 1].host;
 			net_packet->address.port = net_clients[x - 1].port;
-			net_packet->len = 16;
 			sendPacketSafe(net_sock, -1, net_packet, x - 1);
 		}
 	}},

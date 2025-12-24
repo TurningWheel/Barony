@@ -5370,6 +5370,19 @@ void item_FoodTin(Item*& item, int player)
 	// chance of rottenness
 	pukeChance = item->foodGetPukeChance(stats[player]);
 
+	if ( players[player] && players[player]->entity && players[player]->entity->effectShapeshift != NOTHING )
+	{
+		pukeChance = 100; // shapeshifted players don't puke
+	}
+	else if ( player >= 0 && stats[player]->type == INSECTOID )
+	{
+		pukeChance = 100; // insectoids can eat anything.
+	}
+	else if ( item->beatitude < 0 && pukeChance == 100 )
+	{
+		pukeChance = 99; // make it so you will vomit
+	}
+
 	if ((item->beatitude < 0 || local_rng.rand() % pukeChance == 0) && pukeChance < 100)
 	{
 		if (players[player] && players[player]->entity && !(svFlags & SV_FLAG_HUNGER))

@@ -2636,7 +2636,7 @@ bool Entity::increaseSkill(int skill, bool notify)
 			Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_XP_MAX_INSTANCE, "xp", 2);
 			Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_XP_SKILLS, "xp", 2);
 
-			if ( myStats->playerRace == RACE_S && myStats->stat_appearance == 0 )
+			if ( (myStats->playerRace == RACE_S && myStats->stat_appearance == 0) || myStats->type == MONSTER_S )
 			{
 				Sint32 oldMP = myStats->MP;
 				this->modMP(std::max(1, myStats->MAXMP / 50 + statGetCHR(myStats, this) / 10));
@@ -17569,7 +17569,7 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 				}
 			}
 
-			if ( gain > 0 && destStats->playerRace == RACE_S && destStats->stat_appearance == 0 )
+			if ( gain > 0 && ((destStats->playerRace == RACE_S && destStats->stat_appearance == 0) || destStats->type == MONSTER_S) )
 			{
 				Sint32 oldMP = destStats->MP;
 				int minRoll = std::max(1, destStats->MAXMP / 50 + statGetCHR(destStats, this) / 10);
@@ -18380,7 +18380,8 @@ bool Entity::checkEnemy(Entity* your)
 			{
 				result = swornenemies[HUMAN][yourStats->type];
 				if ( (yourStats->type == HUMAN || yourStats->type == SHOPKEEPER) 
-					&& !(myStats->type == AUTOMATON || myStats->type == MONSTER_D || myStats->type == MONSTER_M || myStats->type == MONSTER_S) )
+					&& !(myStats->type == AUTOMATON || myStats->type == MONSTER_D || myStats->type == MONSTER_M || myStats->type == MONSTER_S
+						|| myStats->type == GNOME) )
 				{
 					// enemies.
 					result = true;
@@ -18520,7 +18521,8 @@ bool Entity::checkEnemy(Entity* your)
 			{
 				result = swornenemies[myStats->type][HUMAN];
 				if ( (myStats->type == HUMAN || myStats->type == SHOPKEEPER) && 
-					!(yourStats->type == AUTOMATON || yourStats->type == MONSTER_D || yourStats->type == MONSTER_M || yourStats->type == MONSTER_S) )
+					!(yourStats->type == AUTOMATON || yourStats->type == MONSTER_D || yourStats->type == MONSTER_M || yourStats->type == MONSTER_S
+						|| yourStats->type == GNOME) )
 				{
 					// enemies.
 					result = true;
@@ -18987,7 +18989,8 @@ bool Entity::checkFriend(Entity* your)
 			{
 				result = monsterally[HUMAN][yourStats->type];
 				if ( (yourStats->type == HUMAN || yourStats->type == SHOPKEEPER) 
-					&& !(myStats->type == AUTOMATON || myStats->type == MONSTER_D || myStats->type == MONSTER_M || myStats->type == MONSTER_S) )
+					&& !(myStats->type == AUTOMATON || myStats->type == MONSTER_D || myStats->type == MONSTER_M || myStats->type == MONSTER_S
+						|| myStats->type == GNOME) )
 				{
 					result = false;
 				}
@@ -19113,7 +19116,8 @@ bool Entity::checkFriend(Entity* your)
 			{
 				result = monsterally[myStats->type][HUMAN];
 				if ( (myStats->type == HUMAN || myStats->type == SHOPKEEPER)
-					&& !(yourStats->type == AUTOMATON || yourStats->type == MONSTER_D || yourStats->type == MONSTER_M || yourStats->type == MONSTER_S) )
+					&& !(yourStats->type == AUTOMATON || yourStats->type == MONSTER_D || yourStats->type == MONSTER_M || yourStats->type == MONSTER_S
+						|| yourStats->type == GNOME) )
 				{
 					result = false;
 				}
@@ -19581,6 +19585,7 @@ int checkEquipType(const Item *item)
 		case SILVER_HELM:
 		case QUILTED_CAP:
 		case CHAIN_COIF:
+		case HAT_CROWNED_HELM:
 			return TYPE_HELM;
 			break;
 
@@ -30203,6 +30208,21 @@ Sint32 Entity::playerInsectoidHungerValueOfManaPoint(Stat& myStats)
 	return static_cast<Sint32>(1000 * manaPointPercentage);
 }
 
+real_t getDamageTableEquipmentMod(Stat& myStats, Item& item, real_t base, real_t mod)
+{
+	real_t bonus = base;
+	if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(&myStats) )
+	{
+		bonus += mod * std::min(abs(myStats.breastplate->beatitude), 3);
+	}
+	else
+	{
+		bonus = -base - mod * abs(myStats.breastplate->beatitude);
+	}
+
+	return bonus;
+}
+
 real_t Entity::getDamageTableMultiplier(Entity* my, Stat& myStats, DamageTableType damageType, int* magicResistance, int* outNumSources)
 {
 	real_t damageMultiplier = damagetables[myStats.type][damageType];
@@ -30283,11 +30303,85 @@ real_t Entity::getDamageTableMultiplier(Entity* my, Stat& myStats, DamageTableTy
 	}
 
 	bool isPlayer = false;
+	bool shapeshifted = false;
 	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
 		if ( &myStats == stats[i] )
 		{
+			if ( myStats.type == TROLL || myStats.type == RAT || myStats.type == SPIDER || myStats.type == CREATURE_IMP )
+			{
+				shapeshifted = true;
+			}
 			isPlayer = true;
+			break;
+		}
+	}
+
+	if ( !shapeshifted )
+	{
+		if ( damageType == DAMAGE_TABLE_AXE || damageType == DAMAGE_TABLE_SWORD )
+		{
+			if ( myStats.breastplate && myStats.breastplate->type == CHAIN_HAUBERK )
+			{
+				allBonuses.push_back(-getDamageTableEquipmentMod(myStats, *myStats.breastplate, 0.2, 0.05));
+			}
+			if ( myStats.gloves && myStats.gloves->type == CHAIN_GLOVES )
+			{
+				allBonuses.push_back(-getDamageTableEquipmentMod(myStats, *myStats.gloves, 0.1, 0.05));
+			}
+			if ( myStats.shoes && myStats.shoes->type == CHAIN_BOOTS )
+			{
+				allBonuses.push_back(-getDamageTableEquipmentMod(myStats, *myStats.shoes, 0.1, 0.05));
+			}
+			if ( myStats.helmet && myStats.helmet->type == CHAIN_COIF )
+			{
+				allBonuses.push_back(-getDamageTableEquipmentMod(myStats, *myStats.helmet, 0.1, 0.05));
+			}
+		}
+		if ( damageType == DAMAGE_TABLE_POLEARM || damageType == DAMAGE_TABLE_RANGED )
+		{
+			if ( myStats.breastplate && myStats.breastplate->type == QUILTED_GAMBESON )
+			{
+				allBonuses.push_back(-getDamageTableEquipmentMod(myStats, *myStats.breastplate, 0.2, 0.05));
+			}
+			if ( myStats.gloves && myStats.gloves->type == QUILTED_GLOVES )
+			{
+				allBonuses.push_back(-getDamageTableEquipmentMod(myStats, *myStats.gloves, 0.1, 0.05));
+			}
+			if ( myStats.shoes && myStats.shoes->type == QUILTED_BOOTS )
+			{
+				allBonuses.push_back(-getDamageTableEquipmentMod(myStats, *myStats.shoes, 0.1, 0.05));
+			}
+			if ( myStats.helmet && myStats.helmet->type == QUILTED_CAP )
+			{
+				allBonuses.push_back(-getDamageTableEquipmentMod(myStats, *myStats.helmet, 0.1, 0.05));
+			}
+		}
+		if ( damageType == DAMAGE_TABLE_UNARMED || damageType == DAMAGE_TABLE_MACE )
+		{
+			if ( myStats.breastplate && myStats.breastplate->type == BONE_BREASTPIECE )
+			{
+				allBonuses.push_back(-getDamageTableEquipmentMod(myStats, *myStats.breastplate, 0.2, 0.05));
+			}
+			if ( myStats.gloves && myStats.gloves->type == BONE_BRACERS )
+			{
+				allBonuses.push_back(-getDamageTableEquipmentMod(myStats, *myStats.gloves, 0.1, 0.05));
+			}
+			if ( myStats.shoes && myStats.shoes->type == BONE_BOOTS )
+			{
+				allBonuses.push_back(-getDamageTableEquipmentMod(myStats, *myStats.shoes, 0.1, 0.05));
+			}
+			if ( myStats.helmet && myStats.helmet->type == BONE_HELM )
+			{
+				allBonuses.push_back(-getDamageTableEquipmentMod(myStats, *myStats.helmet, 0.1, 0.05));
+			}
+		}
+		if ( damageType == DAMAGE_TABLE_MAGIC )
+		{
+			if ( myStats.breastplate && myStats.breastplate->type == BANDIT_BREASTPIECE )
+			{
+				allBonuses.push_back(-getDamageTableEquipmentMod(myStats, *myStats.breastplate, 0.15, 0.05));
+			}
 		}
 	}
 

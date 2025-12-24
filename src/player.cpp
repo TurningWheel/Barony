@@ -4672,7 +4672,8 @@ void Player::WorldUI_t::handleTooltips()
 				foundTinkeringKit = true;
 			}
 			else if ( stats[player]->shield &&
-				(itemTypeIsInstrument(stats[player]->shield->type)) )
+				((itemTypeIsInstrument(stats[player]->shield->type)
+					|| itemTypeIsFoci(stats[player]->shield->type))) )
 			{
 				foundInstrument = true;
 			}

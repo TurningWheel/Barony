@@ -1603,6 +1603,11 @@ void initEarthElemental(Entity* my, Stat* myStats)
 				myStats->DEX = myStats->LVL / 5; // 1-5
 				myStats->CON = 5 + myStats->LVL; // 10-25
 				myStats->PER = 5 + myStats->LVL / 4; // 6-10
+
+				if ( Entity* leader = my->monsterAllyGetPlayerLeader() )
+				{
+					serverUpdateAllyStat(leader->skill[2], my->getUID(), myStats->LVL, myStats->HP, myStats->MAXHP, myStats->type);
+				}
 			}
 		}
 	}

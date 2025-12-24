@@ -5288,11 +5288,11 @@ Sint32 Item::armorGetAC(const Stat* const wielder) const
 	}
 	else if ( type == BONE_HELM )
 	{
-		armor += 2;
+		armor += 1;
 	}
 	else if ( type == BLACKIRON_HELM )
 	{
-		armor += 4;
+		armor += 3;
 	}
 	else if ( type == SILVER_HELM )
 	{
@@ -5300,11 +5300,11 @@ Sint32 Item::armorGetAC(const Stat* const wielder) const
 	}
 	else if ( type == QUILTED_CAP )
 	{
-		armor += 2;
+		armor += 1;
 	}
 	else if ( type == CHAIN_COIF )
 	{
-		armor += 3;
+		armor += 1;
 	}
 	else if ( type == HAT_FELT )
 	{
@@ -5389,11 +5389,11 @@ Sint32 Item::armorGetAC(const Stat* const wielder) const
 	}
 	else if ( type == BONE_BRACERS )
 	{
-		armor += 2;
+		armor += 1;
 	}
 	else if ( type == BLACKIRON_GAUNTLETS )
 	{
-		armor += 4;
+		armor += 3;
 	}
 	else if ( type == SILVER_GAUNTLETS )
 	{
@@ -5405,15 +5405,15 @@ Sint32 Item::armorGetAC(const Stat* const wielder) const
 	}
 	else if ( type == CHAIN_GLOVES )
 	{
-		armor += 2;
+		armor += 1;
 	}
 	else if ( type == BONE_BOOTS )
 	{
-		armor += 2;
+		armor += 1;
 	}
 	else if ( type == BLACKIRON_BOOTS )
 	{
-		armor += 4;
+		armor += 3;
 	}
 	else if ( type == SILVER_BOOTS )
 	{
@@ -5429,7 +5429,7 @@ Sint32 Item::armorGetAC(const Stat* const wielder) const
 	}
 	else if ( type == CHAIN_BOOTS )
 	{
-		armor += 2;
+		armor += 1;
 	}
 	else if ( type == WOODEN_SHIELD )
 	{
@@ -5453,11 +5453,11 @@ Sint32 Item::armorGetAC(const Stat* const wielder) const
 	}
 	else if ( type == BONE_SHIELD )
 	{
-		armor += 3;
+		armor += 2;
 	}
 	else if ( type == BLACKIRON_SHIELD )
 	{
-		armor += 5;
+		armor += 4;
 	}
 	else if ( type == SILVER_SHIELD )
 	{
@@ -5533,7 +5533,7 @@ Sint32 Item::armorGetAC(const Stat* const wielder) const
 	}
 	else if ( type == BANDIT_BREASTPIECE )
 	{
-		armor += 3;
+		armor += 2;
 	}
 	else if ( type == TUNIC_BLOUSE)
 	{
@@ -5541,11 +5541,11 @@ Sint32 Item::armorGetAC(const Stat* const wielder) const
 	}
 	else if ( type == BONE_BREASTPIECE)
 	{
-		armor += 3;
+		armor += 2;
 	}
 	else if ( type == BLACKIRON_BREASTPIECE)
 	{
-		armor += 5;
+		armor += 4;
 	}
 	else if ( type == SILVER_BREASTPIECE)
 	{
@@ -5553,7 +5553,7 @@ Sint32 Item::armorGetAC(const Stat* const wielder) const
 	}
 	else if ( type == IRON_PAULDRONS)
 	{
-		armor += 3;
+		armor += 2;
 	}
 	else if ( type == QUILTED_GAMBESON)
 	{
@@ -5561,19 +5561,19 @@ Sint32 Item::armorGetAC(const Stat* const wielder) const
 	}
 	else if ( type == ROBE_CULTIST)
 	{
-		armor += 0;
+		armor += 1;
 	}
 	else if ( type == ROBE_HEALER)
 	{
-		armor += 0;
+		armor += 1;
 	}
 	else if ( type == ROBE_MONK)
 	{
-		armor += 0;
+		armor += 1;
 	}
 	else if ( type == ROBE_WIZARD)
 	{
-		armor += 0;
+		armor += 1;
 	}
 	else if ( type == SHAWL)
 	{
@@ -5581,7 +5581,7 @@ Sint32 Item::armorGetAC(const Stat* const wielder) const
 	}
 	else if ( type == CHAIN_HAUBERK)
 	{
-		armor += 3;
+		armor += 2;
 	}
 	//armor *= (double)(item->status/5.0);
 

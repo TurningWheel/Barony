@@ -532,6 +532,8 @@ void initClassStats(const int classnum, void* myStats)
 		stat->MAXMP += 5;
 		stat->MP += 5;
 
+		stat->GOLD = 200;
+
 		stat->setProficiency(PRO_SWORD, 25);
 		stat->setProficiency(PRO_APPRAISAL, 50);
 		stat->setProficiency(PRO_MYSTICISM, 15);
@@ -608,10 +610,10 @@ void initClassStats(const int classnum, void* myStats)
 	else if ( classnum == CLASS_25 )
 	{
 		// attributes
-		stat->CON += 1;
+		stat->CON += 0;
 		stat->STR += 1;
 		stat->DEX -= 1;
-		stat->INT -= 1;
+		stat->INT += 1;
 		stat->PER -= 1;
 		stat->CHR += 1;
 
@@ -2990,7 +2992,7 @@ void initClass(const int player)
 			return;
 		}
 
-		item = newItem(STEEL_FLAIL, EXCELLENT, 0, 1, 0, true, nullptr);
+		item = newItem(STEEL_FLAIL, SERVICABLE, 0, 1, 0, true, nullptr);
 		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
@@ -3209,7 +3211,7 @@ void initClass(const int player)
 			return;
 		}
 
-		item = newItem(SHILLELAGH_MACE, EXCELLENT, 0, 1, 0, true, nullptr);
+		item = newItem(SHILLELAGH_MACE, WORN, 0, 1, 0, true, nullptr);
 		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);
@@ -3326,7 +3328,7 @@ void initClass(const int player)
 			useItem(item, player);
 		}
 
-		item = newItem(CLAYMORE_SWORD, EXCELLENT, 0, 1, 0, true, nullptr);
+		item = newItem(CLAYMORE_SWORD, SERVICABLE, 0, 1, 0, true, nullptr);
 		if ( isLocalPlayer )
 		{
 			item2 = itemPickup(player, item);

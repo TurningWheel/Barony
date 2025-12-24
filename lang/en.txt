@@ -7227,5 +7227,7 @@ to replay this challenge!
 6955 %s is purchased into your service!#
 6956 (%02d:%02d%) Appraising...#
 6957 (%02d:%02d%) %3.0f%% Appraising...#
+6958 You sabotage the construction of the %s!#
+6959 You sabotage the construction of %s!#
 
 6999 END#

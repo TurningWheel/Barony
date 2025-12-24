@@ -415,7 +415,7 @@ bool ShopkeeperPlayerHostility_t::isPlayerEnemy(const int player)
 bool ShopkeeperPlayerHostility_t::playerRaceCheckHostility(const int player, const Monster type) const
 {
 	if ( player < 0 || player >= MAXPLAYERS ) { return false; }
-	if ( type != HUMAN && type != AUTOMATON && type != MONSTER_D && type != MONSTER_M && type != MONSTER_S ) 
+	if ( type != HUMAN && type != AUTOMATON && type != MONSTER_D && type != MONSTER_M && type != MONSTER_S && type != GNOME ) 
 	{
 		if ( stats[player] && stats[player]->mask && stats[player]->mask->type == MONOCLE )
 		{
