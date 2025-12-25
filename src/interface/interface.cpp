@@ -7455,6 +7455,12 @@ void GenericGUIMenu::enchantItem(Item* item)
 		return;
 	}
 
+	if ( !itemfxGUI.consumeResourcesForTransmute() )
+	{
+		closeGUI();
+		return;
+	}
+
 	if ( itemEffectItemBeatitude >= 0 )
 	{
 		if ( gui_player >= 0 && gui_player < MAXPLAYERS && players[gui_player]->isLocalPlayer() )
@@ -24045,6 +24051,32 @@ void GenericGUIMenu::ItemEffectGUI_t::getItemEffectCost(Item* itemUsedWith, int&
 			manaCost += 2 * itemUsedWith->count * std::max(0, (int)itemUsedWith->beatitude);
 		}
 	}
+	else if ( currentMode == ITEMFX_MODE_SCROLL_ENCHANT_ARMOR )
+	{
+		goldCost = 75;
+		if ( parentGUI.isItemEnchantArmorable(itemUsedWith) )
+		{
+			int bless = std::max((int)itemUsedWith->beatitude, 0);
+			for ( int i = 0; i < bless; ++i )
+			{
+				goldCost *= 2;
+			}
+		}
+		goldCost = std::min(10000, goldCost);
+	}
+	else if ( currentMode == ITEMFX_MODE_SCROLL_ENCHANT_WEAPON )
+	{
+		goldCost = 75;
+		if ( parentGUI.isItemEnchantWeaponable(itemUsedWith) )
+		{
+			int bless = std::max((int)itemUsedWith->beatitude, 0);
+			for ( int i = 0; i < bless; ++i )
+			{
+				goldCost *= 2;
+			}
+		}
+		goldCost = std::min(10000, goldCost);
+	}
 	else if ( parentGUI.isItemAlterable(itemUsedWith) )
 	{
 		if ( currentMode == ITEMFX_MODE_ALTER_INSTRUMENT )
@@ -24405,9 +24437,26 @@ GenericGUIMenu::ItemEffectGUI_t::ItemEffectActions_t GenericGUIMenu::ItemEffectG
 			}
 			else
 			{
+				int goldCost = 0;
+				int manaCost = 0;
+				getItemEffectCost(item, goldCost, manaCost);
+
+				if ( !checkResultOnly )
+				{
+					costEffectGoldAmount = goldCost;
+					costEffectMPAmount = manaCost;
+				}
+
 				if ( parentGUI.isItemEnchantArmorable(item) )
 				{
-					result = ITEMFX_ACTION_OK;
+					if ( goldCost > 0 && goldCost > stats[parentGUI.gui_player]->GOLD )
+					{
+						result = ITEMFX_ACTION_CANT_AFFORD_GOLD;
+					}
+					else
+					{
+						result = ITEMFX_ACTION_OK;
+					}
 				}
 				else
 				{
@@ -24427,9 +24476,26 @@ GenericGUIMenu::ItemEffectGUI_t::ItemEffectActions_t GenericGUIMenu::ItemEffectG
 			}
 			else
 			{
+				int goldCost = 0;
+				int manaCost = 0;
+				getItemEffectCost(item, goldCost, manaCost);
+
+				if ( !checkResultOnly )
+				{
+					costEffectGoldAmount = goldCost;
+					costEffectMPAmount = manaCost;
+				}
+
 				if ( parentGUI.isItemEnchantWeaponable(item) )
 				{
-					result = ITEMFX_ACTION_OK;
+					if ( goldCost > 0 && goldCost > stats[parentGUI.gui_player]->GOLD )
+					{
+						result = ITEMFX_ACTION_CANT_AFFORD_GOLD;
+					}
+					else
+					{
+						result = ITEMFX_ACTION_OK;
+					}
 				}
 				else
 				{
@@ -24939,6 +25005,10 @@ void GenericGUIMenu::ItemEffectGUI_t::openItemEffectMenu(GenericGUIMenu::ItemEff
 		break;
 	case ITEMFX_MODE_VANDALISE:
 		modeHasCostEffect = COST_EFFECT_MANA_RETURN_GOLD;
+		break;
+	case ITEMFX_MODE_SCROLL_ENCHANT_ARMOR:
+	case ITEMFX_MODE_SCROLL_ENCHANT_WEAPON:
+		modeHasCostEffect = COST_EFFECT_GOLD;
 		break;
 	case ITEMFX_MODE_SANCTIFY_WATER:
 		modeHasCostEffect = COST_EFFECT_MANA;
