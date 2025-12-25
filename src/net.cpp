@@ -4156,7 +4156,13 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 				item = NULL;
 				break;
 		}
-		if ( item != NULL )
+
+		int checkType = -1;
+		if ( net_packet->len >= 8 )
+		{
+			checkType = SDLNet_Read16(&net_packet->data[6]);
+		}
+		if ( item != NULL && (checkType <= -1 || (checkType >= 0 && item->type == checkType)) )
 		{
 			if ( item->count > 1 )
 			{
