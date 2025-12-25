@@ -578,7 +578,6 @@ void initClassStats(const int classnum, void* myStats)
 		stat->GOLD = 250;
 
 		// skills
-		stat->setProficiency(PRO_POLEARM, 25);
 		stat->setProficiency(PRO_SORCERY, 40);
 		stat->setProficiency(PRO_MYSTICISM, 40);
 		stat->setProficiency(PRO_THAUMATURGY, 40);

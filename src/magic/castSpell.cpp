@@ -1706,7 +1706,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					}
 				}
 
-				for ( node_t* node = map.creatures->first; node && false; node = node->next )
+				for ( node_t* node = map.creatures->first; node /*&& false*/; node = node->next )
 				{
 					if ( Entity* entity = getSpellTarget(node, HEAL_RADIUS, caster, false, TARGET_FRIEND) )
 					{
