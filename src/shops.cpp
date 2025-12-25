@@ -471,7 +471,7 @@ bool isItemSellableToShop(const int player, Item* item)
 				}
 				break;
 			case 3: // bookstore
-				if ( itemCategory(item) != SPELLBOOK && itemCategory(item) != SCROLL && itemCategory(item) != BOOK )
+				if ( itemCategory(item) != SPELLBOOK && itemCategory(item) != SCROLL && itemCategory(item) != BOOK && itemCategory(item) != TOME_SPELL )
 				{
 					deal = false;
 				}
@@ -487,6 +487,10 @@ bool isItemSellableToShop(const int player, Item* item)
 				{
 					deal = false;
 				}
+				if ( itemTypeIsFoci(item->type) )
+				{
+					deal = true;
+				}
 				break;
 			case 6: // food
 				if ( itemCategory(item) != FOOD )
@@ -496,6 +500,10 @@ bool isItemSellableToShop(const int player, Item* item)
 				break;
 			case 7: // tools
 				if ( itemCategory(item) != TOOL && itemCategory(item) != THROWN )
+				{
+					deal = false;
+				}
+				if ( itemTypeIsFoci(item->type) || itemTypeIsInstrument(item->type) )
 				{
 					deal = false;
 				}
@@ -583,7 +591,8 @@ bool sellItemToShop(const int player, Item* item)
 		}
 		else if ( itemCategory(item) == SPELLBOOK 
 			|| itemCategory(item) == BOOK
-			|| itemCategory(item) == SCROLL )
+			|| itemCategory(item) == SCROLL
+			|| itemCategory(item) == TOME_SPELL )
 		{
 			shopspeech[player] = Language::get(3915);
 		}

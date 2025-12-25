@@ -501,7 +501,15 @@ void createChestInventory(Entity* my, int chestType)
 				Item* item = newItem(itemLevelCurve(SPELLBOOK, 0, currentlevel + 6, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 				if ( item )
 				{
-					itemLevelCurvePostProcess(my, item, rng);
+					int spell_level = currentlevel + 6;
+					if ( spell_level >= 15 )
+					{
+						if ( rng.rand() % 8 == 0 ) // some lower level spells
+						{
+							spell_level = 0 + 5 * rng.rand() % 3;
+						}
+					}
+					itemLevelCurvePostProcess(my, item, rng, spell_level);
 				}
 			}
 			break;
@@ -535,7 +543,15 @@ void createChestInventory(Entity* my, int chestType)
 			Item* item = newItem(itemLevelCurve(SPELLBOOK, 0, currentlevel + 6, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 			if ( item )
 			{
-				itemLevelCurvePostProcess(my, item, rng);
+				int spell_level = currentlevel + 6;
+				if ( spell_level >= 15 )
+				{
+					if ( rng.rand() % 8 == 0 ) // some lower level spells
+					{
+						spell_level = 0 + 5 * rng.rand() % 3;
+					}
+				}
+				itemLevelCurvePostProcess(my, item, rng, spell_level);
 			}
 			//newItem(static_cast<ItemType>(MAGICSTAFF_LIGHT + rng.rand() % 10), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 			item = newItem(itemLevelCurve(MAGICSTAFF, 0, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);

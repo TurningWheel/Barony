@@ -480,19 +480,20 @@ void initShopkeeper(Entity* my, Stat* myStats)
 						switch ( rng.rand() % 3 )
 						{
 							case 0:
-								if ( shoplevel >= 18 )
+							case 1:
+								/*if ( shoplevel >= 18 )
 								{
-									tmpItem = newItem(itemLevelCurveEntity(*my, SPELLBOOK, 0, shoplevel, rng), static_cast<Status>(WORN + rng.rand() % 3), rng.rand() % blessedShopkeeper, 1 + rng.rand() % 2, rng.rand(), true, &myStats->inventory);
+									tmpItem = newItem(itemLevelCurveEntity(*my, SPELLBOOK, 0, shoplevel, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1 + rng.rand() % 2, rng.rand(), true, &myStats->inventory);
 								}
 								else
 								{
-									tmpItem = newItem(static_cast<ItemType>(SPELLBOOK_FORCEBOLT + rng.rand() % 21), static_cast<Status>(WORN + rng.rand() % 3), 0, 1 + rng.rand() % 2, rng.rand(), true, &myStats->inventory);
-								}
-								break;
-							case 1:
-								tmpItem = newItem(itemLevelCurveEntity(*my, SCROLL, 0, 35, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1 + rng.rand() % 2, rng.rand(), true, &myStats->inventory);
+								}*/
+								tmpItem = newItem(static_cast<ItemType>(SPELLBOOK_FORCEBOLT + rng.rand() % 21), static_cast<Status>(WORN + rng.rand() % 3), 0, 1 + rng.rand() % 2, rng.rand(), true, &myStats->inventory);
 								break;
 							case 2:
+								tmpItem = newItem(itemLevelCurveEntity(*my, SCROLL, 0, 35, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1 + rng.rand() % 2, rng.rand(), true, &myStats->inventory);
+								break;
+							/*case 2:
 								if ( rng.rand() % 3 == 0 )
 								{
 									tmpItem = newItem(itemLevelCurveEntity(*my, SCROLL, 0, 35, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1 + rng.rand() % 2, rng.rand(), true, &myStats->inventory);
@@ -501,7 +502,7 @@ void initShopkeeper(Entity* my, Stat* myStats)
 								{
 									tmpItem = newItem(READABLE_BOOK, static_cast<Status>(WORN + rng.rand() % 3), 0, 1 + rng.rand() % 3, rng.rand(), false, &myStats->inventory);
 								}
-								break;
+								break;*/
 						}
 						// post-processing
 						if ( rng.rand() % blessedShopkeeper > 0 )
@@ -510,7 +511,26 @@ void initShopkeeper(Entity* my, Stat* myStats)
 						}
 						if ( tmpItem )
 						{
-							itemLevelCurvePostProcess(my, tmpItem, rng);
+							if ( items[tmpItem->type].category == TOME_SPELL || items[tmpItem->type].category == SPELLBOOK )
+							{
+								int spell_level = currentlevel + 6;
+								if ( spell_level >= 10 )
+								{
+									if ( rng.rand() % 8 == 0 ) // some lower level spells
+									{
+										spell_level = 0 + 5 * rng.rand() % 3;
+									}
+								}
+								itemLevelCurvePostProcess(my, tmpItem, rng, spell_level);
+							}
+							else
+							{
+								itemLevelCurvePostProcess(my, tmpItem, rng);
+							}
+							if ( items[tmpItem->type].category == SPELLBOOK && shoplevel >= 18 )
+							{
+								tmpItem->beatitude = rng.rand() % blessedShopkeeper;
+							}
 						}
 					}
 					if ( !doneFeather && rng.rand() % 20 == 0 )

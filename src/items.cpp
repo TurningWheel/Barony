@@ -347,7 +347,7 @@ ItemType itemLevelCurveEntity(Entity& my, Category cat, int minLevel, int maxLev
 	return result;
 }
 
-bool itemLevelCurvePostProcess(Entity* my, Item* item, BaronyRNG& rng)
+bool itemLevelCurvePostProcess(Entity* my, Item* item, BaronyRNG& rng, int itemLevel)
 {
 	if ( !((my && my->behavior == &actItem) || item) )
 	{
@@ -391,14 +391,14 @@ bool itemLevelCurvePostProcess(Entity* my, Item* item, BaronyRNG& rng)
 			//if ( itemLevelCurveType == ITEM_LEVEL_CURVE_TYPE_DEFAULT )
 			{
 				std::vector<std::pair<int, int>> chances;
-				int minDifficulty = std::min(60, (currentlevel / 5) * 20);
+				int minDifficulty = std::min(60, (itemLevel / 5) * 20);
 				for ( auto& def : allGameSpells )
 				{
 					if ( auto spell = def.second )
 					{
-						if ( spell->ID != SPELL_NONE && !spell->hide_from_ui && currentlevel >= spell->drop_table )
+						if ( spell->ID != SPELL_NONE && !spell->hide_from_ui && itemLevel >= spell->drop_table )
 						{
-							if ( (spell->difficulty / 20) <= (1 + (currentlevel / 5))
+							if ( (spell->difficulty / 20) <= (1 + (itemLevel / 5))
 								&& (spell->difficulty >= minDifficulty) )
 							{
 								chances.push_back(std::make_pair(spell->skillID, spell->ID));
@@ -534,6 +534,11 @@ ItemType itemLevelCurve(const Category cat, const int minLevel, const int maxLev
 
 				if ( itemLevelCurveType == ITEM_LEVEL_CURVE_TYPE_SHOP )
 				{
+					if ( c == READABLE_BOOK )
+					{
+						continue;
+					}
+
 					if ( itemLevelCurveShop == 1 ) // hat store
 					{
 						if ( !isHatShopItem(static_cast<ItemType>(c)) )
