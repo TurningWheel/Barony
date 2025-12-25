@@ -364,9 +364,10 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 								strcpy((char*)net_packet->data, "ARMR");
 								net_packet->data[4] = 0;
 								net_packet->data[5] = stats->helmet->status;
+								SDLNet_Write16((int)stats->helmet->type, &net_packet->data[6]);
 								net_packet->address.host = net_clients[player - 1].host;
 								net_packet->address.port = net_clients[player - 1].port;
-								net_packet->len = 6;
+								net_packet->len = 8;
 								sendPacketSafe(net_sock, -1, net_packet, player - 1);
 							}
 						}

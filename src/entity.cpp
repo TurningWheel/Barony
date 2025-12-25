@@ -6159,9 +6159,10 @@ void Entity::handleEffects(Stat* myStats)
 						strcpy((char*)net_packet->data, "ARMR");
 						net_packet->data[4] = 4;
 						net_packet->data[5] = myStats->shield->status;
+						SDLNet_Write16((int)myStats->shield->type, &net_packet->data[6]);
 						net_packet->address.host = net_clients[player - 1].host;
 						net_packet->address.port = net_clients[player - 1].port;
-						net_packet->len = 6;
+						net_packet->len = 8;
 						sendPacketSafe(net_sock, -1, net_packet, player - 1);
 					}
 				}
@@ -7373,9 +7374,10 @@ void Entity::handleEffects(Stat* myStats)
 							strcpy((char*)net_packet->data, "ARMR");
 							net_packet->data[4] = 6;
 							net_packet->data[5] = myStats->cloak->status;
+							SDLNet_Write16((int)myStats->cloak->type, &net_packet->data[6]);
 							net_packet->address.host = net_clients[player - 1].host;
 							net_packet->address.port = net_clients[player - 1].port;
-							net_packet->len = 6;
+							net_packet->len = 8;
 							sendPacketSafe(net_sock, -1, net_packet, player - 1);
 						}
 					}
@@ -7578,9 +7580,10 @@ void Entity::handleEffects(Stat* myStats)
 							strcpy((char*)net_packet->data, "ARMR");
 							net_packet->data[4] = 7;
 							net_packet->data[5] = myStats->amulet->status;
+							SDLNet_Write16((int)myStats->amulet->type, &net_packet->data[6]);
 							net_packet->address.host = net_clients[player - 1].host;
 							net_packet->address.port = net_clients[player - 1].port;
-							net_packet->len = 6;
+							net_packet->len = 8;
 							sendPacketSafe(net_sock, -1, net_packet, player - 1);
 						}
 					}
@@ -7620,9 +7623,10 @@ void Entity::handleEffects(Stat* myStats)
 						strcpy((char*)net_packet->data, "ARMR");
 						net_packet->data[4] = 7;
 						net_packet->data[5] = myStats->amulet->status;
+						SDLNet_Write16((int)myStats->amulet->type, &net_packet->data[6]);
 						net_packet->address.host = net_clients[player - 1].host;
 						net_packet->address.port = net_clients[player - 1].port;
-						net_packet->len = 6;
+						net_packet->len = 8;
 						sendPacketSafe(net_sock, -1, net_packet, player - 1);
 					}
 				}
@@ -7735,9 +7739,10 @@ void Entity::handleEffects(Stat* myStats)
 						strcpy((char*)net_packet->data, "ARMR");
 						net_packet->data[4] = 7;
 						net_packet->data[5] = myStats->amulet->status;
+						SDLNet_Write16((int)myStats->amulet->type, &net_packet->data[6]);
 						net_packet->address.host = net_clients[player - 1].host;
 						net_packet->address.port = net_clients[player - 1].port;
-						net_packet->len = 6;
+						net_packet->len = 8;
 						sendPacketSafe(net_sock, -1, net_packet, player - 1);
 					}
 					myStats->amulet = NULL;
@@ -10431,9 +10436,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 							strcpy((char*)net_packet->data, "ARMR");
 							net_packet->data[4] = 5;
 							net_packet->data[5] = myStats->weapon->status;
+							SDLNet_Write16((int)myStats->weapon->type, &net_packet->data[6]);
 							net_packet->address.host = net_clients[player - 1].host;
 							net_packet->address.port = net_clients[player - 1].port;
-							net_packet->len = 6;
+							net_packet->len = 8;
 							sendPacketSafe(net_sock, -1, net_packet, player - 1);
 						}
 					}
@@ -10647,9 +10653,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 							strcpy((char*)net_packet->data, "ARMR");
 							net_packet->data[4] = 5;
 							net_packet->data[5] = myStats->weapon->status;
+							SDLNet_Write16((int)myStats->weapon->type, &net_packet->data[6]);
 							net_packet->address.host = net_clients[player - 1].host;
 							net_packet->address.port = net_clients[player - 1].port;
-							net_packet->len = 6;
+							net_packet->len = 8;
 							sendPacketSafe(net_sock, -1, net_packet, player - 1);
 						}
 					}
@@ -11514,9 +11521,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 								strcpy((char*)net_packet->data, "ARMR");
 								net_packet->data[4] = 5;
 								net_packet->data[5] = myStats->weapon->status;
+								SDLNet_Write16((int)myStats->weapon->type, &net_packet->data[6]);
 								net_packet->address.host = net_clients[player - 1].host;
 								net_packet->address.port = net_clients[player - 1].port;
-								net_packet->len = 6;
+								net_packet->len = 8;
 								sendPacketSafe(net_sock, -1, net_packet, player - 1);
 							}
 						}
@@ -11680,9 +11688,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 						strcpy((char*)net_packet->data, "ARMR");
 						net_packet->data[4] = 5;
 						net_packet->data[5] = myStats->weapon->status;
+						SDLNet_Write16((int)myStats->weapon->type, &net_packet->data[6]);
 						net_packet->address.host = net_clients[player - 1].host;
 						net_packet->address.port = net_clients[player - 1].port;
-						net_packet->len = 6;
+						net_packet->len = 8;
 						sendPacketSafe(net_sock, -1, net_packet, player - 1);
 					}
 				}
@@ -13181,9 +13190,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 										net_packet->data[4] = 2;
 									}
 									net_packet->data[5] = (*weaponToBreak)->status;
+									SDLNet_Write16((int)(*weaponToBreak)->type, &net_packet->data[6]);
 									net_packet->address.host = net_clients[player - 1].host;
 									net_packet->address.port = net_clients[player - 1].port;
-									net_packet->len = 6;
+									net_packet->len = 8;
 									sendPacketSafe(net_sock, -1, net_packet, player - 1);
 								}
 								if ( (*weaponToBreak)->status == BROKEN && behavior == &actMonster && playerhit >= 0 )
@@ -16292,9 +16302,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 									strcpy((char*)net_packet->data, "ARMR");
 									net_packet->data[4] = 5;
 									net_packet->data[5] = myStats->weapon->status;
+									SDLNet_Write16((int)myStats->weapon->type, &net_packet->data[6]);
 									net_packet->address.host = net_clients[player - 1].host;
 									net_packet->address.port = net_clients[player - 1].port;
-									net_packet->len = 6;
+									net_packet->len = 8;
 									sendPacketSafe(net_sock, -1, net_packet, player - 1);
 								}
 							}
@@ -25221,9 +25232,10 @@ bool Entity::degradeArmor(Stat& hitstats, Item& armor, int armornum)
 		strcpy((char*)net_packet->data, "ARMR");
 		net_packet->data[4] = armornum;
 		net_packet->data[5] = armor.status;
+		SDLNet_Write16((int)armor.type, &net_packet->data[6]);
 		net_packet->address.host = net_clients[playerhit - 1].host;
 		net_packet->address.port = net_clients[playerhit - 1].port;
-		net_packet->len = 6;
+		net_packet->len = 8;
 		sendPacketSafe(net_sock, -1, net_packet, playerhit - 1);
 	}
 	return true;
@@ -31668,9 +31680,10 @@ bool Entity::degradeAmuletProc(Stat* myStats, ItemType type)
 					strcpy((char*)net_packet->data, "ARMR");
 					net_packet->data[4] = 7; // amulet
 					net_packet->data[5] = myStats->amulet->status;
+					SDLNet_Write16((int)myStats->amulet->type, &net_packet->data[6]);
 					net_packet->address.host = net_clients[player - 1].host;
 					net_packet->address.port = net_clients[player - 1].port;
-					net_packet->len = 6;
+					net_packet->len = 8;
 					sendPacketSafe(net_sock, -1, net_packet, player - 1);
 				}
 				return true;

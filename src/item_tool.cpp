@@ -26,6 +26,10 @@
 
 void Item::applySkeletonKey(int player, Entity& entity)
 {
+	static std::pair<int, std::set<Uint32>> entitiesUnlockedFirstTime;
+	bool interacted = false;
+	bool rollDegrade = false;
+
 	if ( entity.behavior == &actChest )
 	{
 		playSoundEntity(&entity, 91, 64);
@@ -35,6 +39,7 @@ void Item::applySkeletonKey(int player, Entity& entity)
 			entity.unlockChest();
 			Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_CHESTS_UNLOCKED, "chest", 1);
 			Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_LOCKPICK_CHESTS_UNLOCK, TOOL_SKELETONKEY, 1);
+			rollDegrade = true;
 		}
 		else
 		{
@@ -42,6 +47,7 @@ void Item::applySkeletonKey(int player, Entity& entity)
 			entity.lockChest();
 			Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_LOCKPICK_CHESTS_LOCK, TOOL_SKELETONKEY, 1);
 		}
+		interacted = true;
 	}
 	else if ( entity.behavior == &actWallLock )
 	{
@@ -63,6 +69,7 @@ void Item::applySkeletonKey(int player, Entity& entity)
 						entity.wallLockPower = 2; // turn off later in actWallLock
 						messagePlayer(player, MESSAGE_INTERACTION, Language::get(6427), items[TOOL_SKELETONKEY].getIdentifiedName(), 
 							Language::get(6383 + entity.wallLockMaterial));
+						interacted = true;
 					}
 				}
 				else if ( entity.wallLockPower == 0 )
@@ -71,6 +78,8 @@ void Item::applySkeletonKey(int player, Entity& entity)
 					entity.wallLockPower = 3; // turn on later in actWallLock
 					messagePlayer(player, MESSAGE_INTERACTION, Language::get(6426), items[TOOL_SKELETONKEY].getIdentifiedName(), 
 						Language::get(6383 + entity.wallLockMaterial));
+					interacted = true;
+					rollDegrade = true;
 				}
 			}
 			else
@@ -162,6 +171,7 @@ void Item::applySkeletonKey(int player, Entity& entity)
 					messagePlayer(player, MESSAGE_INTERACTION, Language::get(1098));
 					entity.setEffect(EFF_MIMIC_LOCKED, true, -1, false);
 				}
+				interacted = true;
 			}
 			else
 			{
@@ -170,6 +180,7 @@ void Item::applySkeletonKey(int player, Entity& entity)
 					playSoundEntity(&entity, 91, 64);
 					messagePlayer(player, MESSAGE_INTERACTION, Language::get(1097));
 					entity.setEffect(EFF_MIMIC_LOCKED, false, 0, false);
+					interacted = true;
 				}
 				else
 				{
@@ -190,6 +201,7 @@ void Item::applySkeletonKey(int player, Entity& entity)
 						{
 							myStats->monsterMimicLockedBy = players[player]->entity ? players[player]->entity->getUID() : 0;
 						}
+						interacted = true;
 					}
 				}
 			}
@@ -198,6 +210,57 @@ void Item::applySkeletonKey(int player, Entity& entity)
 	else
 	{
 		messagePlayer(player, MESSAGE_INTERACTION, Language::get(1101), getName());
+	}
+
+	if ( entitiesUnlockedFirstTime.first != currentlevel )
+	{
+		entitiesUnlockedFirstTime.second.clear();
+	}
+	entitiesUnlockedFirstTime.first = currentlevel;
+	if ( interacted )
+	{
+		auto find = entitiesUnlockedFirstTime.second.find(entity.getUID());
+		if ( find == entitiesUnlockedFirstTime.second.end() )
+		{
+			if ( rollDegrade )
+			{
+				if ( stats[player]->weapon && stats[player]->weapon->type == TOOL_SKELETONKEY )
+				{
+					if ( local_rng.rand() % 1 == 0 && !(players[player]->entity && players[player]->entity->spellEffectPreserveItem(stats[player]->weapon)) )
+					{
+						if ( player >= 0 && players[player]->isLocalPlayer() )
+						{
+							if ( count > 1 )
+							{
+								newItem(type, status, beatitude, count - 1, appearance, identified, &stats[player]->inventory);
+							}
+						}
+						stats[player]->weapon->count = 1;
+						stats[player]->weapon->status = static_cast<Status>(stats[player]->weapon->status - 1);
+						if ( status != BROKEN )
+						{
+							messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(6960));
+						}
+						else
+						{
+							messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(6961));
+						}
+						if ( player > 0 && multiplayer == SERVER )
+						{
+							strcpy((char*)(net_packet->data), "ARMR");
+							net_packet->data[4] = 5;
+							net_packet->data[5] = stats[player]->weapon->status;
+							SDLNet_Write16((int)stats[player]->weapon->type, &net_packet->data[6]);
+							net_packet->address.host = net_clients[player - 1].host;
+							net_packet->address.port = net_clients[player - 1].port;
+							net_packet->len = 8;
+							sendPacketSafe(net_sock, -1, net_packet, player - 1);
+						}
+					}
+				}
+			}
+			entitiesUnlockedFirstTime.second.insert(entity.getUID());
+		}
 	}
 }
 
@@ -404,9 +467,10 @@ void Item::applyLockpick(int player, Entity& entity)
 							strcpy((char*) (net_packet->data), "ARMR");
 							net_packet->data[4] = 5;
 							net_packet->data[5] = stats[player]->weapon->status;
+							SDLNet_Write16((int)stats[player]->weapon->type, &net_packet->data[6]);
 							net_packet->address.host = net_clients[player - 1].host;
 							net_packet->address.port = net_clients[player - 1].port;
-							net_packet->len = 6;
+							net_packet->len = 8;
 							sendPacketSafe(net_sock, -1, net_packet, player - 1);
 						}
 					}
@@ -548,9 +612,10 @@ void Item::applyLockpick(int player, Entity& entity)
 							strcpy((char*) (net_packet->data), "ARMR");
 							net_packet->data[4] = 5;
 							net_packet->data[5] = stats[player]->weapon->status;
+							SDLNet_Write16((int)stats[player]->weapon->type, &net_packet->data[6]);
 							net_packet->address.host = net_clients[player - 1].host;
 							net_packet->address.port = net_clients[player - 1].port;
-							net_packet->len = 6;
+							net_packet->len = 8;
 							sendPacketSafe(net_sock, -1, net_packet, player - 1);
 						}
 					}
@@ -714,9 +779,10 @@ void Item::applyLockpick(int player, Entity& entity)
 								strcpy((char*)(net_packet->data), "ARMR");
 								net_packet->data[4] = 5;
 								net_packet->data[5] = stats[player]->weapon->status;
+								SDLNet_Write16((int)stats[player]->weapon->type, &net_packet->data[6]);
 								net_packet->address.host = net_clients[player - 1].host;
 								net_packet->address.port = net_clients[player - 1].port;
-								net_packet->len = 6;
+								net_packet->len = 8;
 								sendPacketSafe(net_sock, -1, net_packet, player - 1);
 							}
 						}
@@ -867,9 +933,10 @@ void Item::applyLockpick(int player, Entity& entity)
 							strcpy((char*)(net_packet->data), "ARMR");
 							net_packet->data[4] = 5;
 							net_packet->data[5] = stats[player]->weapon->status;
+							SDLNet_Write16((int)stats[player]->weapon->type, &net_packet->data[6]);
 							net_packet->address.host = net_clients[player - 1].host;
 							net_packet->address.port = net_clients[player - 1].port;
-							net_packet->len = 6;
+							net_packet->len = 8;
 							sendPacketSafe(net_sock, -1, net_packet, player - 1);
 						}
 					}

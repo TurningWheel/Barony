@@ -1554,6 +1554,10 @@ void actHudWeapon(Entity* my)
 							// keys and lockpicks
 							HUDWEAPON_MOVEX = 5;
 							HUDWEAPON_CHOP = 3;
+							if ( pickaxeGimpTimer < TICKS_PER_SECOND / 2 )
+							{
+								pickaxeGimpTimer = TICKS_PER_SECOND / 2; // fix for swapping weapon causing issues.
+							}
 							Entity* player = players[HUDWEAPON_PLAYERNUM]->entity;
 							bool foundPassableObject = false;
 							if ( stats[HUDWEAPON_PLAYERNUM]->weapon )
@@ -1610,6 +1614,10 @@ void actHudWeapon(Entity* my)
 						{
 							HUDWEAPON_MOVEX = 5;
 							HUDWEAPON_CHOP = 3;
+							if ( pickaxeGimpTimer < TICKS_PER_SECOND / 2 )
+							{
+								pickaxeGimpTimer = TICKS_PER_SECOND / 2; // fix for swapping weapon causing issues.
+							}
 							Entity* player = players[HUDWEAPON_PLAYERNUM]->entity;
 							lineTrace(player, player->x, player->y, player->yaw, STRIKERANGE, 0, false);
 							if ( hit.entity && stats[HUDWEAPON_PLAYERNUM]->weapon )
@@ -1645,6 +1653,10 @@ void actHudWeapon(Entity* my)
 									messagePlayer(HUDWEAPON_PLAYERNUM, MESSAGE_HINT, Language::get(3336));
 								}
 								throwGimpTimer = TICKS_PER_SECOND / 2;
+								if ( pickaxeGimpTimer < TICKS_PER_SECOND / 2 )
+								{
+									pickaxeGimpTimer = TICKS_PER_SECOND / 2; // fix for swapping weapon causing issues.
+								}
 							}
 						}
 						else if ((itemCategory(item) == POTION || itemCategory(item) == GEM || itemCategory(item) == THROWN || item->type == FOOD_CREAMPIE

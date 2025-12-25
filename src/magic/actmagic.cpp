@@ -2658,18 +2658,21 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								if ( reflection == 1 )
 								{
 									net_packet->data[5] = hitstats->cloak->status;
+									SDLNet_Write16(hitstats->cloak->type, &net_packet->data[6]);
 								}
 								else if ( reflection == 2 )
 								{
 									net_packet->data[5] = hitstats->amulet->status;
+									SDLNet_Write16(hitstats->amulet->type, &net_packet->data[6]);
 								}
 								else
 								{
 									net_packet->data[5] = hitstats->shield->status;
+									SDLNet_Write16(hitstats->shield->type, &net_packet->data[6]);
 								}
 								net_packet->address.host = net_clients[player - 1].host;
 								net_packet->address.port = net_clients[player - 1].port;
-								net_packet->len = 6;
+								net_packet->len = 8;
 								sendPacketSafe(net_sock, -1, net_packet, player - 1);
 							}
 						}
