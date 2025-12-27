@@ -4480,6 +4480,7 @@ namespace ConsoleCommands {
 			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
+#ifndef NDEBUG
 		if (players[clientnum]->entity)
 		{
 			spellEffectPolymorph(players[clientnum]->entity, players[clientnum]->entity, true, TICKS_PER_SECOND * 60 * 5);
@@ -4489,6 +4490,12 @@ namespace ConsoleCommands {
 				players[clientnum]->entity->effectPolymorph = type;
 			}
 		}
+#else
+		if ( players[clientnum]->entity )
+		{
+			spellEffectPolymorph(players[clientnum]->entity, players[clientnum]->entity, true, TICKS_PER_SECOND * 60 * 1);
+		}
+#endif
 		});
 
 	static ConsoleCommand ccmd_sexchange("/sexchange", "fix yourself (cheat)", []CCMD{

@@ -8273,7 +8273,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			{
 				if ( propulsion == PROPULSION_MISSILE )
 				{
-					missileEntity->sprite = 168;
+					missileEntity->sprite = 2189;
 				}
 			}
 			else if ( !strcmp(innerElement->element_internal_name, spellElement_acidSpray.element_internal_name) )

@@ -140,7 +140,37 @@ bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, En
 		{
 			messagePlayerColor(parent->skill[2], MESSAGE_COMBAT, color, Language::get(2429));
 		}
+		playSoundEntity(hit.entity, 163, 128);
 		return false;
+	}
+
+	if ( caster.behavior == &actPlayer )
+	{
+		int numDominated = 0;
+		for ( node_t* node = stats[caster.skill[2]]->FOLLOWERS.first; node != nullptr; node = node->next )
+		{
+			Entity* follower = nullptr;
+			if ( (Uint32*)(node)->element )
+			{
+				follower = uidToEntity(*((Uint32*)(node)->element));
+			}
+			if ( follower )
+			{
+				Stat* followerStats = follower->getStats();
+				if ( followerStats && followerStats->getAttribute("DOMINATED_CREATURE") != "" )
+				{
+					++numDominated;
+				}
+			}
+		}
+
+		int maxDominate = getSpellDamageFromID(SPELL_DOMINATE, &caster, nullptr, &caster);
+		if ( numDominated >= maxDominate )
+		{
+			messagePlayerColor(caster.isEntityPlayer(), MESSAGE_COMBAT, makeColorRGB(255, 0, 0), Language::get(6962));
+			playSoundEntity(hit.entity, 163, 128);
+			return false;
+		}
 	}
 
 	playSoundEntity(hit.entity, 174, 64); //TODO: Dominate spell sound effect.
@@ -171,6 +201,12 @@ bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, En
 			serverUpdateEntitySkill(hit.entity, 42); // update monsterAllyIndex for clients.
 		}
 		// change the color of the hit entity.
+
+		if ( hit.entity->getStats() )
+		{
+			hit.entity->getStats()->setAttribute("DOMINATED_CREATURE", "1");
+			hit.entity->getStats()->monsterIsCharmed = 0;
+		}
 
 		hit.entity->flags[USERFLAG2] = true;
 		serverUpdateEntityFlag(hit.entity, USERFLAG2);
@@ -1203,6 +1239,7 @@ int getCharmMonsterDifficulty(Entity& my, Stat& myStats)
 	case SKELETON:
 	case SCORPION:
 	case SHOPKEEPER:
+	case REVENANT_SKULL:
 		difficulty = 0;
 		break;
 	case GOBLIN:
@@ -1212,6 +1249,7 @@ int getCharmMonsterDifficulty(Entity& my, Stat& myStats)
 	case SCARAB:
 	case AUTOMATON:
 	case SUCCUBUS:
+	case MONSTER_G:
 		difficulty = 1;
 		break;
 	case CREATURE_IMP:
@@ -1225,6 +1263,9 @@ int getCharmMonsterDifficulty(Entity& my, Stat& myStats)
 	case FLAME_ELEMENTAL:
 	case EARTH_ELEMENTAL:
 	case MOTH_SMALL:
+	case MONSTER_D:
+	case MONSTER_M:
+	case MONSTER_S:
 		difficulty = 2;
 		break;
 	case CRYSTALGOLEM:
@@ -1242,6 +1283,10 @@ int getCharmMonsterDifficulty(Entity& my, Stat& myStats)
 	case BAT_SMALL:
 	case MINIMIMIC:
 	case HOLOGRAM:
+	case DUCK_SMALL:
+	case MONSTER_UNUSED_6:
+	case MONSTER_UNUSED_7:
+	case MONSTER_UNUSED_8:
 		difficulty = 666;
 		break;
 	}
@@ -1923,6 +1968,7 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 		summonedStats->MISC_FLAGS[STAT_FLAG_MONSTER_DISABLE_HC_SCALING] = 1;
 		summonedStats->leader_uid = targetStats->leader_uid;
 		summonedStats->monsterIsCharmed = targetStats->monsterIsCharmed;
+		summonedStats->setAttribute("DOMINATED_CREATURE", targetStats->getAttribute("DOMINATED_CREATURE"));
 		Entity* leader = nullptr;
 		if ( summonedStats->leader_uid != 0 && summonedStats->type != SHADOW )
 		{
