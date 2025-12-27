@@ -1093,6 +1093,7 @@ Entity* spawnFociGib(real_t x, real_t y, real_t z, real_t dir, real_t velocityBo
 	BaronyRNG rng;
 	rng.seedBytes(&seed, sizeof(Uint32));
 
+#ifndef NDEBUG
 	static ConsoleVariable<float> cvar_foci_vel("/foci_vel", 1.f);
 	static ConsoleVariable<float> cvar_foci_vel_decay("/foci_vel_decay", 0.95);
 	static ConsoleVariable<float> cvar_foci_life("/foci_life", 1.f);
@@ -1122,6 +1123,22 @@ Entity* spawnFociGib(real_t x, real_t y, real_t z, real_t dir, real_t velocityBo
 	bool foci_invertz = *cvar_foci_invertz;
 	real_t foci_gravity = *cvar_foci_gravity;
 	real_t foci_velz = *cvar_foci_velz;
+#else
+	real_t foci_vel = 1.0;
+	real_t foci_vel_decay = 0.95;
+	real_t foci_life = 1.0;
+	real_t foci_spread = 1.0;
+	int foci_delay = 0;
+	bool foci_model = false;
+	real_t foci_scale = 1.0;
+	real_t foci_shrink = 0.1;
+	real_t foci_osc_h = 0.0;
+	real_t foci_swirl = 0.2;
+	int foci_particle = 0;
+	bool foci_invertz = false;
+	real_t foci_gravity = 1.0;
+	real_t foci_velz = 1.0;
+#endif
 
 	int sfx = 164;
 	int vol = 64;
