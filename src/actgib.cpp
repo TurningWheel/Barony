@@ -971,9 +971,9 @@ Entity* spawnGib(Entity* parentent, int customGibSprite)
 
 	if ( (parentstats = parentent->getStats()) != nullptr )
 	{
-		if ( multiplayer == CLIENT )
+		if ( multiplayer == CLIENT && customGibSprite == -1 )
 		{
-			printlog("[%s:%d spawnGib()] spawnGib() called on client, got clientstats. Probably bad?", __FILE__, __LINE__);
+			printlog("spawnGib() called on client, got clientstats. Probably bad?");
 		}
 
 		if ( customGibSprite != -1 )

@@ -1509,7 +1509,7 @@ void actLeftHandMagic(Entity* my)
 			case ANIM_SPELL_CIRCLE:
 				if ( ticks % 5 == 0 && !(players[HANDMAGIC_PLAYERNUM]->entity->skill[3] != 0) )
 				{
-					Entity* entity = spawnGib(my);
+					Entity* entity = spawnGib(my, 16);
 					entity->flags[INVISIBLE] = false;
 					entity->flags[SPRITE] = true;
 					entity->flags[NOUPDATE] = true;

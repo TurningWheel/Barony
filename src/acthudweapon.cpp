@@ -3687,7 +3687,7 @@ void actHudWeapon(Entity* my)
 	{
 		if ( ticks % 5 == 0 )
 		{
-			Entity* entity = spawnGib(my);
+			Entity* entity = spawnGib(my, 16);
 			entity->flags[INVISIBLE] = false;
 			entity->flags[SPRITE] = true;
 			entity->flags[NOUPDATE] = true;
@@ -4973,7 +4973,7 @@ void actHudShield(Entity* my)
 			}
 			if ( my->ticks % rate == 0 )
 			{
-				Entity* entity = spawnGib(my);
+				Entity* entity = spawnGib(my, 16);
 				entity->flags[INVISIBLE] = false;
 				entity->flags[SPRITE] = true;
 				entity->flags[NOUPDATE] = true;

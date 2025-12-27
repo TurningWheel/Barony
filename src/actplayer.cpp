@@ -651,7 +651,7 @@ void Player::Ghost_t::handleAttack()
 
 		for ( int i = 0; i < 5; ++i )
 		{
-			Entity* entity = spawnGib(my);
+			Entity* entity = spawnGib(my, 16);
 			entity->flags[INVISIBLE] = false;
 			entity->flags[SPRITE] = true;
 			entity->flags[NOUPDATE] = true;
@@ -766,7 +766,7 @@ void Player::Ghost_t::handleAttack()
 
 			if ( ticks % 5 == 0 )
 			{
-				Entity* entity = spawnGib(my);
+				Entity* entity = spawnGib(my, 16);
 				entity->flags[INVISIBLE] = false;
 				entity->flags[SPRITE] = true;
 				entity->flags[NOUPDATE] = true;

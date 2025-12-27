@@ -259,7 +259,10 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 				}
 				playSoundEntity(my, 181, 128);
 				playSoundEntity(entity, 28, 64);
-				Entity* gib = spawnGib(entity);
+				if ( Entity* gib = spawnGib(entity) )
+				{
+					serverSpawnGibForClient(gib);
+				}
 
 				int damage = 80;
 				if ( my->sprite == BOULDER_LAVA_SPRITE
