@@ -9195,6 +9195,10 @@ void doNewGame(bool makeHighscore) {
 										{
 											monster->monsterAllySummonRank = (stats[c]->playerSummon2PERCHR & 0x0000FF00) >> 8;
 										}
+										else if ( monsterStats->getAttribute("SUMMONED_CREATURE") != "" )
+										{
+											monster->monsterAllySummonRank = std::stoi(monsterStats->getAttribute("SUMMONED_CREATURE"));
+										}
 										serverUpdateEntitySkill(monster, 46); // update monsterAllyClass
 										serverUpdateEntitySkill(monster, 44); // update monsterAllyPickupItems
 										serverUpdateEntitySkill(monster, 50); // update monsterAllySummonRank
