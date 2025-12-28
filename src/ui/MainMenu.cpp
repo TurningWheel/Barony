@@ -3745,7 +3745,7 @@ namespace MainMenu {
 		auto font = Font::get(bigfont_outline); assert(font);
 
 		static float credits_scroll = 0.f;
-		constexpr int num_credits_lines = 83;
+		constexpr int num_credits_lines = 90;
 
 		auto credits = main_menu_frame->addFrame("credits");
 		credits->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
@@ -3798,6 +3798,9 @@ namespace MainMenu {
 			u8"Additional writing\n"
 			u8" \n"
 			u8" \n \n \n \n \n"
+			u8"Additional music and sound design\n"
+			u8" \n"
+			u8" \n \n \n \n \n"
 			u8"Special thanks\n"
 			u8" \n"
 			u8" \n"
@@ -3844,6 +3847,9 @@ namespace MainMenu {
 			u8" \n \n \n \n \n"
 			u8" \n"
 			u8"Frasier Panton\n"
+			u8" \n \n \n \n \n"
+			u8" \n"
+			u8"Garrett Williamson\n"
 			u8" \n \n \n \n \n"
 			u8" \n"
 			u8"Our Kickstarter Backers\n"

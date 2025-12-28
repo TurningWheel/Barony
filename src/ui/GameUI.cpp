@@ -6135,7 +6135,7 @@ int StatusEffectQueueEntry_t::getEffectSpriteNormalWidth()
 		if ( StatusEffectQueue_t::StatusEffectDefinitions_t::sustainedSpellDefinitionExists(effectID) )
 		{
 			auto& definition = StatusEffectQueue_t::StatusEffectDefinitions_t::getSustainedSpell(effectID);
-			if ( definition.useSpellIDForImg >= 0 )
+			if ( definition.useSpellIDForImg >= 0 || definition.useSpellIDForImgVariations.size() > 0 )
 			{
 				return *cvar_statusfx_spell_size;
 			}
@@ -6144,7 +6144,7 @@ int StatusEffectQueueEntry_t::getEffectSpriteNormalWidth()
 	else if ( StatusEffectQueue_t::StatusEffectDefinitions_t::effectDefinitionExists(effect) )
 	{
 		auto& definition = StatusEffectQueue_t::StatusEffectDefinitions_t::getEffect(effect);
-		if ( definition.useSpellIDForImg >= 0 )
+		if ( definition.useSpellIDForImg >= 0 || definition.useSpellIDForImgVariations.size() > 0 )
 		{
 			return *cvar_statusfx_spell_size;
 		}
@@ -6168,7 +6168,7 @@ int StatusEffectQueueEntry_t::getEffectSpriteNormalHeight()
 		if ( StatusEffectQueue_t::StatusEffectDefinitions_t::sustainedSpellDefinitionExists(effectID) )
 		{
 			auto& definition = StatusEffectQueue_t::StatusEffectDefinitions_t::getSustainedSpell(effectID);
-			if ( definition.useSpellIDForImg >= 0 )
+			if ( definition.useSpellIDForImg >= 0 || definition.useSpellIDForImgVariations.size() > 0 )
 			{
 				return *cvar_statusfx_spell_size;
 			}
@@ -6177,7 +6177,7 @@ int StatusEffectQueueEntry_t::getEffectSpriteNormalHeight()
 	else if ( StatusEffectQueue_t::StatusEffectDefinitions_t::effectDefinitionExists(effect) )
 	{
 		auto& definition = StatusEffectQueue_t::StatusEffectDefinitions_t::getEffect(effect);
-		if ( definition.useSpellIDForImg >= 0 )
+		if ( definition.useSpellIDForImg >= 0 || definition.useSpellIDForImgVariations.size() > 0 )
 		{
 			return *cvar_statusfx_spell_size;
 		}

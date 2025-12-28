@@ -5240,6 +5240,18 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                             if ( spell && ItemTooltips.spellItems[spell->ID].internalName == icon.conditionalAttribute )
                             {
                                 // current spell uses this attribute
+
+								if ( index == 2 )
+								{
+									if ( spell->ID == SPELL_RAT_FORM || spell->ID == SPELL_SPIDER_FORM
+										|| spell->ID == SPELL_TROLL_FORM || spell->ID == SPELL_IMP_FORM )
+									{
+										if ( client_classes[player] != CLASS_SHAMAN )
+										{
+											continue; // ignore mentions of spells having access to
+										}
+									}
+								}
                             }
                             else
                             {

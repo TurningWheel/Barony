@@ -375,7 +375,18 @@ int totalScore(score_t* score)
 	{
 		if ( c != HUMAN )
 		{
-			amount += score->kills[c] * 100;
+			if ( c == DEVIL || c == LICH_ICE || c == LICH_FIRE )
+			{
+				amount += std::min(1, score->kills[c]) * 100;
+			}
+			else if ( c == LICH )
+			{
+				amount += std::min(3, score->kills[c]) * 100;
+			}
+			else
+			{
+				amount += score->kills[c] * 100;
+			}
 		}
 		else
 		{
@@ -5815,7 +5826,18 @@ int SaveGameInfo::getTotalScore(const int playernum, const int victory)
 	{
 		if ( c != HUMAN )
 		{
-			amount += player.kills[c] * 100;
+			if ( c == DEVIL || c == LICH_ICE || c == LICH_FIRE )
+			{
+				amount += std::min(1, player.kills[c]) * 100;
+			}
+			else if ( c == LICH )
+			{
+				amount += std::min(3, player.kills[c]) * 100;
+			}
+			else
+			{
+				amount += player.kills[c] * 100;
+			}
 		}
 		else
 		{
