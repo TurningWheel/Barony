@@ -2037,10 +2037,10 @@ void monsterMMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			entity->y += limbs[MYCONID][16][0] * sin(my->yaw + PI / 2) + limbs[MYCONID][16][1] * sin(my->yaw);
 			entity->z += limbs[MYCONID][16][2] - 0.01;
 			entity->pitch = my->pitch;
-			if ( keystatus[SDLK_h] )
+			/*if ( keystatus[SDLK_h] )
 			{
 				entity->fskill[0] += 0.05;
-			}
+			}*/
 			if ( entity->sprite == 1526 )
 			{
 				entity->focalz -= .25;
@@ -2095,7 +2095,7 @@ void monsterMMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			//entity->scalez = 1.008 + 0.05 * sin(entity->fskill[0]);
 			if ( multiplayer != CLIENT )
 			{
-				if ( debugModel )
+				if ( debugModel && (svFlags & SV_FLAG_CHEATS) )
 				{
 					static int stage = 0;
 					if ( keystatus[SDLK_g] )

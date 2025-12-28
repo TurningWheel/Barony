@@ -2017,10 +2017,10 @@ void monsterDMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->y += limbs[DRYAD][16][0] * sin(my->yaw + PI / 2) + limbs[DRYAD][16][1] * sin(my->yaw);
 				entity->z += limbs[DRYAD][16][2];
 				entity->pitch = my->pitch;
-				if ( keystatus[SDLK_h] )
+				/*if ( keystatus[SDLK_h] )
 				{
 					entity->fskill[0] += 0.05;
-				}
+				}*/
 				//entity->scalex = 1.0 + std::max(0.0, 0.05 * sin(entity->fskill[0]));
 				//entity->scaley = 1.0 + std::max(0.0, 0.05 * sin(entity->fskill[0]));
 				//entity->scalez = 1.008 + 0.05 * sin(entity->fskill[0]);
@@ -2029,8 +2029,8 @@ void monsterDMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->z -= 0.05 * sin(additionalLimb->fskill[0]);
 				if ( multiplayer != CLIENT )
 				{
-					static int stage = 0;
-					if ( keystatus[SDLK_g] )
+					int stage = 0;
+					/*if ( keystatus[SDLK_g] )
 					{
 						keystatus[SDLK_g] = 0;
 						stage += 1;
@@ -2038,7 +2038,7 @@ void monsterDMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						{
 							stage = 0;
 						}
-					}
+					}*/
 					if ( stage == 0 )
 					{
 						entity->sprite = (my->sprite == 1485 || my->sprite == 1514) ? 1495 : 1496;

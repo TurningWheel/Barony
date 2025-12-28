@@ -762,7 +762,7 @@ void monsterSMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	my->focaly = limbs[SALAMANDER][0][1];
 	my->focalz = limbs[SALAMANDER][0][2];
 
-	if ( keystatus[SDLK_g] )
+	/*if ( keystatus[SDLK_g] )
 	{
 		keystatus[SDLK_g] = 0;
 		my->sprite += 1;
@@ -770,7 +770,7 @@ void monsterSMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		{
 			my->sprite = 1536;
 		}
-	}
+	}*/
 
 	bool debugModel = monsterDebugModels(my, &dist);
 
