@@ -2933,6 +2933,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					}
 					if ( parent && (parent->behavior == &actMagicTrap || parent->behavior == &actMagicTrapCeiling) )
 					{
+						if ( currentlevel >= 26 )
+						{
+							spellbookDamageBonus += 1.0;
+						}
 						if ( gameModeManager.currentSession.challengeRun.isActive(GameModeManager_t::CurrentSession_t::ChallengeRun_t::CHEVENT_STRONG_TRAPS) )
 						{
 							spellbookDamageBonus += 1.0;
