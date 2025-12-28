@@ -12375,7 +12375,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 								if ( behavior == &actPlayer )
 								{
-									players[skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_DIVINE_ZEAL, bonus, 1.0, hit.entity);
+									players[skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_DIVINE_ZEAL, bonus * 100.0, 1.0, hit.entity);
 								}
 							}
 							if ( myStats->getEffectActive(EFF_FOCI_LIGHT_JUSTICE) )

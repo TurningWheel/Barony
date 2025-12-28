@@ -1193,6 +1193,10 @@ void ItemTooltips_t::readItemsFromFile()
 		{
 			t.spellType = SPELL_TYPE_TOUCH_ENTITY;
 		}
+		else if ( t.spellTypeStr == "DIVINE_TARGET" )
+		{
+			t.spellType = SPELL_TYPE_DIVINE_TARGET;
+		}
 
 		hash += djb2Hash(const_cast<char*>(t.spellTypeStr.c_str()));
 
@@ -2524,6 +2528,24 @@ std::string& ItemTooltips_t::getSpellTypeString(const int player, Item& item)
 			break;
 		case SPELL_TYPE_PROJECTILE_SHORT_X3:
 			return adjectives["spell_strings"]["spell_type_projectile_3x"];
+			break;
+		case SPELL_TYPE_TOUCH_FLOOR:
+			return adjectives["spell_strings"]["spell_type_touch_floor"];
+			break;
+		case SPELL_TYPE_TOUCH_WALL:
+			return adjectives["spell_strings"]["spell_type_touch_wall"];
+			break;
+		case SPELL_TYPE_TOUCH_ENEMY:
+			return adjectives["spell_strings"]["spell_type_touch_enemy"];
+			break;
+		case SPELL_TYPE_TOUCH_ALLY:
+			return adjectives["spell_strings"]["spell_type_touch_ally"];
+			break;
+		case SPELL_TYPE_TOUCH_ENTITY:
+			return adjectives["spell_strings"]["spell_type_touch_entity"];
+			break;
+		case SPELL_TYPE_DIVINE_TARGET:
+			return adjectives["spell_strings"]["spell_type_divine_target"];
 			break;
 		case SPELL_TYPE_DEFAULT:
 		default:
@@ -4968,13 +4990,21 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 
 			int baseDamage = getSpellDamageOrHealAmount(-1, spell, nullptr, compendiumTooltipIntro);
 
-			real_t bonusEquipPercent = 100.0 * getBonusFromCasterOfSpellElement(players[player]->entity, stats[player], nullptr, spell ? spell->ID : SPELL_NONE, spell->skillID);
+			real_t mult = getSpellPropertyFromID(spell_t::SPELLPROP_DAMAGE_MULT, spell->ID, compendiumTooltipIntro ? nullptr : players[player]->entity, nullptr, nullptr);
+
+			real_t bonusEquipPercent = 100.0 * getBonusFromCasterOfSpellElement(
+				compendiumTooltipIntro ? nullptr : players[player]->entity, 
+				compendiumTooltipIntro ? nullptr : stats[player], 
+				nullptr, spell ? spell->ID : SPELL_NONE, spell->skillID);
 
 			stats[player]->INT = oldINT;
 			stats[player]->CHR = oldCHR;
 			stats[player]->CON = oldCON;
 
-			real_t bonusINTPercent = 100.0 * getBonusFromCasterOfSpellElement(players[player]->entity, stats[player], nullptr, spell ? spell->ID : SPELL_NONE, spell->skillID);
+			real_t bonusINTPercent = 100.0 * getBonusFromCasterOfSpellElement(
+				compendiumTooltipIntro ? nullptr : players[player]->entity,
+				compendiumTooltipIntro ? nullptr : stats[player],
+				nullptr, spell ? spell->ID : SPELL_NONE, spell->skillID);
 			bonusINTPercent -= bonusEquipPercent;
 
 			std::string damageOrHealing = adjectives["spell_strings"]["damage"];
@@ -4996,7 +5026,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 				statName += getItemStatShortName("CON");
 			}
 			snprintf(buf, sizeof(buf), str.c_str(), damageOrHealing.c_str(), baseDamage, damageOrHealing.c_str(), 
-				bonusINTPercent, damageOrHealing.c_str(), statName.c_str(), bonusEquipPercent, damageOrHealing.c_str());
+				bonusINTPercent * mult, damageOrHealing.c_str(), statName.c_str(), bonusEquipPercent * mult, damageOrHealing.c_str());
 		}
 		else if ( detailTag.compare("spell_cast_success") == 0 )
 		{

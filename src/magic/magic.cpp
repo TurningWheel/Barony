@@ -4217,6 +4217,10 @@ real_t getSpellPropertyFromID(spell_t::SpellBasePropertiesFloat prop, int spellI
 		{
 			result = spell->cast_time;
 		}
+		else if ( prop == spell_t::SpellBasePropertiesFloat::SPELLPROP_DAMAGE_MULT )
+		{
+			result = element->getDamageMult();
+		}
 		else if ( prop == spell_t::SpellBasePropertiesFloat::SPELLPROP_CAST_TIME_MULT )
 		{
 			result = spell->cast_time_mult;
