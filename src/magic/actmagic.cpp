@@ -3194,7 +3194,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								//		}
 								//	}
 								//}
-								if ( hitstats->type == MONSTER_D )
+								if ( hitstats->type == DRYAD )
 								{
 									fireMultiplier += 0.2;
 									if ( !hitstats->helmet && hitstats->getEffectActive(EFF_GROWTH) > 1 )
@@ -3203,7 +3203,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 										fireMultiplier += 0.05;
 									}
 								}
-								if ( hitstats->type == MONSTER_S )
+								if ( hitstats->type == SALAMANDER )
 								{
 									if ( hitstats->getEffectActive(EFF_SALAMANDER_HEART) == 1
 										|| hitstats->getEffectActive(EFF_SALAMANDER_HEART) == 2 )
@@ -4079,7 +4079,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								if ( parentStats )
 								{
 									int minStrength = 2;
-									if ( parentStats->type == MONSTER_S
+									if ( parentStats->type == SALAMANDER
 										&& parentStats->getEffectActive(EFF_SALAMANDER_HEART) == 2 )
 									{
 										minStrength += 3;
@@ -4105,7 +4105,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								}
 								if ( hit.entity->setEffect(EFF_DIVINE_FIRE, effectStrength, duration, false, true, true) )
 								{
-									if ( parentStats && parentStats->type == MONSTER_S )
+									if ( parentStats && parentStats->type == SALAMANDER )
 									{
 										parent->modMP(1 + (effectStrength & 0xF) / 4);
 									}

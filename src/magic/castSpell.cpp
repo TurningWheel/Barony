@@ -202,7 +202,7 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook)
 			}
 		}
 
-		if ( stats[player]->type == MONSTER_S && stats[player]->getEffectActive(EFF_SALAMANDER_HEART) == 2 )
+		if ( stats[player]->type == SALAMANDER && stats[player]->getEffectActive(EFF_SALAMANDER_HEART) == 2 )
 		{
 			magiccost = 0;
 		}
@@ -715,7 +715,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				{
 					magiccost = std::max(1, magiccost / 2);
 				}
-				if ( stat->type == MONSTER_S && stat->getEffectActive(EFF_SALAMANDER_HEART) == 2 )
+				if ( stat->type == SALAMANDER && stat->getEffectActive(EFF_SALAMANDER_HEART) == 2 )
 				{
 					magiccost = 0;
 				}
@@ -795,7 +795,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			int extramagic = local_rng.rand() % (300 / (spellcastingAbility + 1)); //Use up extra mana. More mana used the lower your spellcasting skill.
 			extramagic = std::min<real_t>(extramagic, stat->MP / 10); //To make sure it doesn't draw, say, 5000 mana. Cause dammit, if you roll a 1 here...you're doomed.
 
-			if ( stat->type == MONSTER_S && stat->getEffectActive(EFF_SALAMANDER_HEART) == 2 )
+			if ( stat->type == SALAMANDER && stat->getEffectActive(EFF_SALAMANDER_HEART) == 2 )
 			{
 				extramagic = 0;
 			}
@@ -8831,7 +8831,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 
 		if ( !trap && !usingFoci && !using_magicstaff )
 		{
-			if ( caster && players[player]->entity == caster && stats[player]->type == MONSTER_S )
+			if ( caster && players[player]->entity == caster && stats[player]->type == SALAMANDER )
 			{
 				Uint8 effectStrength = stats[player]->getEffectActive(EFF_SALAMANDER_HEART);
 				if ( effectStrength == 2 && stats[player]->EFFECTS_TIMERS[EFF_SALAMANDER_HEART] == -1 )
@@ -8940,23 +8940,23 @@ bool spellIsNaturallyLearnedByRaceOrClass(Entity& caster, Stat& stat, int spellI
 	{
 		return true;
 	}
-	else if ( stat.playerRace == RACE_G && stat.stat_appearance == 0 && (spellID == SPELL_DEFACE) )
+	else if ( stat.playerRace == RACE_GREMLIN && stat.stat_appearance == 0 && (spellID == SPELL_DEFACE) )
 	{
 		return true;
 	}
-	else if ( stat.playerRace == RACE_D && stat.stat_appearance == 0 && (spellID == SPELL_THORNS || spellID == SPELL_SHRUB) )
+	else if ( stat.playerRace == RACE_DRYAD && stat.stat_appearance == 0 && (spellID == SPELL_THORNS || spellID == SPELL_SHRUB) )
 	{
 		return true;
 	}
-	else if ( stat.playerRace == RACE_M && stat.stat_appearance == 0 && (spellID == SPELL_SPORES || spellID == SPELL_MUSHROOM) )
+	else if ( stat.playerRace == RACE_MYCONID && stat.stat_appearance == 0 && (spellID == SPELL_SPORES || spellID == SPELL_MUSHROOM) )
 	{
 		return true;
 	}
-	else if ( stat.playerRace == RACE_S && stat.stat_appearance == 0 && (spellID == SPELL_BREATHE_FIRE) )
+	else if ( stat.playerRace == RACE_SALAMANDER && stat.stat_appearance == 0 && (spellID == SPELL_BREATHE_FIRE) )
 	{
 		return true;
 	}
-	else if ( stat.playerRace == RACE_X && stat.stat_appearance == 0 && (spellID == SPELL_FORGE_JEWEL) )
+	else if ( stat.playerRace == RACE_GNOME && stat.stat_appearance == 0 && (spellID == SPELL_FORGE_JEWEL) )
 	{
 		return true;
 	}
@@ -8975,35 +8975,35 @@ bool spellIsNaturallyLearnedByRaceOrClass(Entity& caster, Stat& stat, int spellI
 			return true;
 		}
 	}
-	else if ( client_classes[playernum] == CLASS_21 )
+	else if ( client_classes[playernum] == CLASS_BARD )
 	{
 		if ( spellID == SPELL_ALTER_INSTRUMENT )
 		{
 			return true;
 		}
 	}
-	else if ( client_classes[playernum] == CLASS_22 )
+	else if ( client_classes[playernum] == CLASS_SAPPER )
 	{
 		if ( spellID == SPELL_BOOBY_TRAP )
 		{
 			return true;
 		}
 	}
-	else if ( client_classes[playernum] == CLASS_23 )
+	else if ( client_classes[playernum] == CLASS_SCION )
 	{
 		if ( spellID == SPELL_BLESS_FOOD || spellID == SPELL_EARTH_ELEMENTAL || spellID == SPELL_TELEKINESIS )
 		{
 			return true;
 		}
 	}
-	else if ( client_classes[playernum] == CLASS_24 )
+	else if ( client_classes[playernum] == CLASS_HERMIT )
 	{
 		if ( spellID == SPELL_MAGICIANS_ARMOR || spellID == SPELL_DEEP_SHADE || spellID == SPELL_PROJECT_SPIRIT )
 		{
 			return true;
 		}
 	}
-	else if ( client_classes[playernum] == CLASS_25 )
+	else if ( client_classes[playernum] == CLASS_PALADIN )
 	{
 		if ( spellID == SPELL_DIVINE_ZEAL )
 		{

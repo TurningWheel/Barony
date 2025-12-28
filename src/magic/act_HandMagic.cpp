@@ -990,7 +990,7 @@ void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, 
 		{
 			spellCost = std::max(1, spellCost / 2);
 		}
-		if ( stats[player]->type == MONSTER_S && stats[player]->getEffectActive(EFF_SALAMANDER_HEART) == 2 )
+		if ( stats[player]->type == SALAMANDER && stats[player]->getEffectActive(EFF_SALAMANDER_HEART) == 2 )
 		{
 			spellCost = 0;
 		}
@@ -1265,7 +1265,7 @@ void actLeftHandMagic(Entity* my)
 		}
 	}
 
-	if ( playerRace == MONSTER_G )
+	if ( playerRace == GREMLIN )
 	{
 		my->z -= -1 * .5;
 	}
@@ -1273,7 +1273,7 @@ void actLeftHandMagic(Entity* my)
 	{
 		my->z -= -2 * .5;
 	}
-	else if ( playerRace == MONSTER_D )
+	else if ( playerRace == DRYAD )
 	{
 		if ( players[HANDMAGIC_PLAYERNUM]->entity->z >= 1.5 )
 		{
@@ -1284,7 +1284,7 @@ void actLeftHandMagic(Entity* my)
 			my->z -= -2.0 * .5;
 		}
 	}
-	else if ( playerRace == MONSTER_M )
+	else if ( playerRace == MYCONID )
 	{
 		my->z -= -1.0 * .5;
 	}
@@ -1418,13 +1418,13 @@ void actLeftHandMagic(Entity* my)
 			case CREATURE_IMP:
 				my->sprite = 858;
 				break;
-			case MONSTER_D:
+			case DRYAD:
 				my->sprite = 2319;
 				break;
-			case MONSTER_M:
+			case MYCONID:
 				my->sprite = 2327;
 				break;
-			case MONSTER_G:
+			case GREMLIN:
 				if ( stats[HANDMAGIC_PLAYERNUM]->sex == FEMALE )
 				{
 					my->sprite = 2323;
@@ -1434,7 +1434,7 @@ void actLeftHandMagic(Entity* my)
 					my->sprite = 2325;
 				}
 				break;
-			case MONSTER_S:
+			case SALAMANDER:
 				my->sprite = 2329;
 				break;
 			case GNOME:
@@ -1884,7 +1884,7 @@ void actLeftHandMagic(Entity* my)
 		my->roll = HANDMAGIC_ROLL;
 		my->focalz = -1.5;
 
-		if ( playerRace == MONSTER_G )
+		if ( playerRace == GREMLIN )
 		{
 			my->z -= -1 * .5;
 		}
@@ -1892,7 +1892,7 @@ void actLeftHandMagic(Entity* my)
 		{
 			my->z -= -2 * .5;
 		}
-		else if ( playerRace == MONSTER_D )
+		else if ( playerRace == DRYAD )
 		{
 			if ( players[HANDMAGIC_PLAYERNUM]->entity->z >= 1.5 )
 			{
@@ -1903,7 +1903,7 @@ void actLeftHandMagic(Entity* my)
 				my->z -= -2.0 * .5;
 			}
 		}
-		else if ( playerRace == MONSTER_M )
+		else if ( playerRace == MYCONID )
 		{
 			my->z -= -1.0 * .5;
 		}
@@ -2072,7 +2072,7 @@ void actRightHandMagic(Entity* my)
 		}
 	}
 
-	if ( playerRace == MONSTER_G )
+	if ( playerRace == GREMLIN )
 	{
 		my->z -= -1 * .5;
 	}
@@ -2080,7 +2080,7 @@ void actRightHandMagic(Entity* my)
 	{
 		my->z -= -2 * .5;
 	}
-	else if ( playerRace == MONSTER_D )
+	else if ( playerRace == DRYAD )
 	{
 		if ( players[HANDMAGIC_PLAYERNUM]->entity->z >= 1.5 )
 		{
@@ -2091,7 +2091,7 @@ void actRightHandMagic(Entity* my)
 			my->z -= -2.0 * .5;
 		}
 	}
-	else if ( playerRace == MONSTER_M )
+	else if ( playerRace == MYCONID )
 	{
 		my->z -= -1.0 * .5;
 	}
@@ -2232,13 +2232,13 @@ void actRightHandMagic(Entity* my)
 			case CREATURE_IMP:
 				my->sprite = 857;
 				break;
-			case MONSTER_D:
+			case DRYAD:
 				my->sprite = 2320;
 				break;
-			case MONSTER_M:
+			case MYCONID:
 				my->sprite = 2328;
 				break;
-			case MONSTER_G:
+			case GREMLIN:
 				if ( stats[HANDMAGIC_PLAYERNUM]->sex == FEMALE )
 				{
 					my->sprite = 2324;
@@ -2248,7 +2248,7 @@ void actRightHandMagic(Entity* my)
 					my->sprite = 2326;
 				}
 				break;
-			case MONSTER_S:
+			case SALAMANDER:
 				my->sprite = 2330;
 				break;
 			case GNOME:
@@ -2391,7 +2391,7 @@ void actRightHandMagic(Entity* my)
 		my->roll = HANDMAGIC_ROLL;
 		my->focalz = -1.5;
 
-		if ( playerRace == MONSTER_G )
+		if ( playerRace == GREMLIN )
 		{
 			my->z -= -1 * .5;
 		}
@@ -2399,7 +2399,7 @@ void actRightHandMagic(Entity* my)
 		{
 			my->z -= -2 * .5;
 		}
-		else if ( playerRace == MONSTER_D )
+		else if ( playerRace == DRYAD )
 		{
 			if ( players[HANDMAGIC_PLAYERNUM]->entity->z >= 1.5 )
 			{
@@ -2410,7 +2410,7 @@ void actRightHandMagic(Entity* my)
 				my->z -= -2.0 * .5;
 			}
 		}
-		else if ( playerRace == MONSTER_M )
+		else if ( playerRace == MYCONID )
 		{
 			my->z -= -1.0 * .5;
 		}

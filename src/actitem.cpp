@@ -174,21 +174,21 @@ bool entityWantsJewel(int tier, Entity& entity, Stat& stats, bool checkTypeOnly)
 			req = 1;
 			break;
 		case HUMAN:
-		case MONSTER_G:
+		case GREMLIN:
 		case SUCCUBUS:
 		case GOATMAN:
 			req = 2;
 			break;
 		case KOBOLD:
 		case INSECTOID:
-		case MONSTER_D:
-		case MONSTER_M:
+		case DRYAD:
+		case MYCONID:
 		case BUGBEAR:
 		case INCUBUS:
 			req = 3;
 			break;
 		case VAMPIRE:
-		case MONSTER_S:
+		case SALAMANDER:
 			req = 4;
 			break;
 		//case TROLL,

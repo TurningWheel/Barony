@@ -3365,15 +3365,19 @@ bool monsterIsFriendlyForTooltip(const int player, Entity& entity)
 			return true;
 		}
 	}
-	else if ( targetEntityType == HUMAN && (playerRace == MONSTER_M || playerRace == MONSTER_D || playerRace == MONSTER_S) )
+	else if ( targetEntityType == HUMAN && (playerRace == MYCONID || playerRace == DRYAD || playerRace == SALAMANDER) )
 	{
 		return true;
 	}
-	else if ( targetEntityType == GOBLIN && (playerRace == MONSTER_G) )
+	else if ( targetEntityType == GOBLIN && (playerRace == GREMLIN) )
 	{
 		return true;
 	}
-	else if ( targetEntityType == MONSTER_G && (playerRace == GOBLIN) )
+	else if ( targetEntityType == GNOME && (playerRace == GNOME) )
+	{
+		return true;
+	}
+	else if ( targetEntityType == HUMAN && (playerRace == GNOME) )
 	{
 		return true;
 	}
@@ -8331,7 +8335,7 @@ void Player::PlayerMechanics_t::ensembleMusicUpdate()
 
 int Player::PlayerMechanics_t::getBreakableCounterTier()
 {
-	if ( stats[player.playernum]->type == MONSTER_G )
+	if ( stats[player.playernum]->type == GREMLIN )
 	{
 		if ( gremlinBreakableCounter >= 50 )
 		{
@@ -8360,7 +8364,7 @@ int Player::PlayerMechanics_t::getBreakableCounterTier()
 
 void Player::PlayerMechanics_t::incrementBreakableCounter(Player::PlayerMechanics_t::BreakableEvent eventType, Entity* entity)
 {
-	if ( stats[player.playernum]->type == MONSTER_G )
+	if ( stats[player.playernum]->type == GREMLIN )
 	{
 		int amount = 0;
 		if ( eventType == BreakableEvent::GBREAK_COMMON )

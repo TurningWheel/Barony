@@ -559,10 +559,10 @@ Monster editorSpriteTypeToMonster(Sint32 sprite)
 	case 166: monsterType = GYROBOT; break;
 	case 188: monsterType = BAT_SMALL; break;
 	case 189: monsterType = BUGBEAR; break;
-	case 204: monsterType = MONSTER_D; break;
-	case 205: monsterType = MONSTER_M; break;
-	case 206: monsterType = MONSTER_S; break;
-	case 207: monsterType = MONSTER_G; break;
+	case 204: monsterType = DRYAD; break;
+	case 205: monsterType = MYCONID; break;
+	case 206: monsterType = SALAMANDER; break;
+	case 207: monsterType = GREMLIN; break;
 	case 246: monsterType = REVENANT_SKULL; break;
 	case 247: monsterType = MONSTER_ADORCISED_WEAPON; break;
 	default:
@@ -1838,10 +1838,10 @@ std::vector<const char*> spriteEditorNameStrings =
 	"ASSIST SHRINE",
 	"NOT USED",
 	"NOT USED",
-	"MONSTER_D",
-	"MONSTER_M",
-	"MONSTER_S",
-	"MONSTER_G",
+	"DRYAD",
+	"MYCONID",
+	"SALAMANDER",
+	"GREMLIN",
 	"WALL LOCK (East)",
 	"WALL LOCK (South)",
 	"WALL LOCK (West)",
@@ -1924,10 +1924,10 @@ char monsterEditorNameStrings[NUMMONSTERS][32] =
 	"gyrobot",
 	"dummybot",
 	"bugbear",
-	"monster_d",
-	"monster_m",
-	"monster_s",
-	"monster_g",
+	"dryad",
+	"myconid",
+	"salamander",
+	"gremlin",
 	"revenant_skull",
 	"minimimic",
 	"monster_adorcised_weapon",
@@ -2268,10 +2268,10 @@ int canWearEquip(Entity* entity, int category)
 				case GOATMAN:
 				case KOBOLD:
 				case INSECTOID:
-				case MONSTER_D:
-				case MONSTER_M:
-				case MONSTER_S:
-				case MONSTER_G:
+				case DRYAD:
+				case MYCONID:
+				case SALAMANDER:
+				case GREMLIN:
 					equipType = 3;
 					break;
 

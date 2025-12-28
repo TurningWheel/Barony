@@ -1249,7 +1249,7 @@ int getCharmMonsterDifficulty(Entity& my, Stat& myStats)
 	case SCARAB:
 	case AUTOMATON:
 	case SUCCUBUS:
-	case MONSTER_G:
+	case GREMLIN:
 		difficulty = 1;
 		break;
 	case CREATURE_IMP:
@@ -1263,9 +1263,9 @@ int getCharmMonsterDifficulty(Entity& my, Stat& myStats)
 	case FLAME_ELEMENTAL:
 	case EARTH_ELEMENTAL:
 	case MOTH_SMALL:
-	case MONSTER_D:
-	case MONSTER_M:
-	case MONSTER_S:
+	case DRYAD:
+	case MYCONID:
+	case SALAMANDER:
 		difficulty = 2;
 		break;
 	case CRYSTALGOLEM:
@@ -3857,7 +3857,7 @@ bool applyGenericMagicDamage(Entity* caster, Entity* hitentity, Entity& damageSo
 		else if ( spellID == SPELL_FIRE_WALL )
 		{
 			real_t fireMultiplier = 1.0;
-			if ( targetStats && targetStats->type == MONSTER_D )
+			if ( targetStats && targetStats->type == DRYAD )
 			{
 				fireMultiplier += 0.2;
 				if ( !targetStats->helmet && targetStats->getEffectActive(EFF_GROWTH) > 1 )
@@ -3866,7 +3866,7 @@ bool applyGenericMagicDamage(Entity* caster, Entity* hitentity, Entity& damageSo
 					fireMultiplier += 0.05;
 				}
 			}
-			if ( targetStats->type == MONSTER_S )
+			if ( targetStats->type == SALAMANDER )
 			{
 				if ( targetStats->getEffectActive(EFF_SALAMANDER_HEART) == 1
 					|| targetStats->getEffectActive(EFF_SALAMANDER_HEART) == 2 )

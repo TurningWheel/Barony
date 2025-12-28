@@ -1369,8 +1369,8 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1 + ITEM_CHANCE] = 33; //Random Items
 			break;
 		case 204:
-		case (1000 + MONSTER_D):
-			stats->type = MONSTER_D;
+		case (1000 + DRYAD):
+			stats->type = DRYAD;
 			stats->sex = static_cast<sex_t>(local_rng.rand() % 2);
 			stats->stat_appearance = local_rng.rand();
 			stats->inventory.first = NULL;
@@ -1402,8 +1402,8 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] = 1;
 			break;
 		case 205:
-		case (1000 + MONSTER_M):
-			stats->type = MONSTER_M;
+		case (1000 + MYCONID):
+			stats->type = MYCONID;
 			stats->sex = static_cast<sex_t>(local_rng.rand() % 2);
 			stats->stat_appearance = local_rng.rand();
 			stats->inventory.first = NULL;
@@ -1440,8 +1440,8 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] = 1;
 			break;
 		case 206:
-		case (1000 + MONSTER_S):
-			stats->type = MONSTER_S;
+		case (1000 + SALAMANDER):
+			stats->type = SALAMANDER;
 			stats->sex = static_cast<sex_t>(local_rng.rand() % 2);
 			stats->stat_appearance = local_rng.rand();
 			stats->inventory.first = NULL;
@@ -1465,8 +1465,8 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->HUNGER = 900;
 			break;
 		case 207:
-		case (1000 + MONSTER_G):
-			stats->type = MONSTER_G;
+		case (1000 + GREMLIN):
+			stats->type = GREMLIN;
 			stats->sex = static_cast<sex_t>(local_rng.rand() % 2);
 			stats->stat_appearance = local_rng.rand();
 			stats->inventory.first = NULL;

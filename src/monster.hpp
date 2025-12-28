@@ -59,10 +59,10 @@ enum Monster : int
 	GYROBOT,
 	DUMMYBOT,
 	BUGBEAR,
-	MONSTER_D,
-	MONSTER_M,
-	MONSTER_S,
-	MONSTER_G,
+	DRYAD,
+	MYCONID,
+	SALAMANDER,
+	GREMLIN,
 	REVENANT_SKULL,
 	MINIMIMIC,
 	MONSTER_ADORCISED_WEAPON,
@@ -310,22 +310,22 @@ static std::vector<Sint32> monsterSprites[NUMMONSTERS] = {
 		1412,
 	},
 
-	//MONSTER_D
+	//DRYAD
 	{
 		1485, 1486, 1514, 1515,
 		1963, 1964, 1992, 1993
 	},
-	//MONSTER_M
+	//MYCONID
 	{
 		1519, 1520,
 		1997, 1998
 	},
-	//MONSTER_S
+	//SALAMANDER
 	{
 		1536, 1538, 1540, 1537, 1539, 1541,
 		2014, 2015, 2016, 2017, 2018, 2019
 	},
-	//MONSTER_G
+	//GREMLIN
 	{
 		1569, 1570, 2047, 2048
 	},
@@ -410,10 +410,10 @@ static char monstertypename[][32] =
 	"gyrobot",
 	"dummybot",
 	"bugbear",
-	"monster_d",
-	"monster_m",
-	"monster_s",
-	"monster_g",
+	"dryad",
+	"myconid",
+	"salamander",
+	"gremlin",
 	"revenant_skull",
 	"minimimic",
 	"monster_adorcised_weapon",
@@ -474,10 +474,10 @@ static char gibtype[NUMMONSTERS] =
 	0,  //GYROBOT
 	0,	//DUMMYBOT
 	1,	//BUGBEAR
-	1,	//MONSTER_D
-	1,	//MONSTER_M
-	1,	//MONSTER_S
-	1,	//MONSTER_G
+	1,	//DRYAD
+	1,	//MYCONID
+	1,	//SALAMANDER
+	1,	//GREMLIN
 	5,  //REVENANT_SKULL
 	1,  //MINIMIMIC
 	0,  //MONSTER_ADORCISED_WEAPON

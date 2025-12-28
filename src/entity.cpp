@@ -122,11 +122,11 @@ const std::vector<ClassBaseGrowths::ClassHPMPValues> ClassBaseGrowths::classBase
 	{4,		3,		4,		3}, //CLASS_PUNISHER,
 	{3,		3,		3,		3}, //CLASS_SHAMAN,
 	{2,		2,		5,		2}, //CLASS_HUNTER,
-	{3,		3,		3,		3}, //CLASS_21,
-	{3,		3,		3,		3}, //CLASS_22,
-	{3,		3,		3,		3}, //CLASS_23,
-	{3,		3,		3,		3}, //CLASS_24,
-	{3,		3,		3,		3}  //CLASS_25
+	{2,		4,		4,		4}, //CLASS_BARD,
+	{3,		2,		3,		2}, //CLASS_SAPPER,
+	{2,		4,		3,		4}, //CLASS_SCION,
+	{3,		4,		3,		3}, //CLASS_HERMIT,
+	{3,		3,		3,		3}  //CLASS_PALADIN
 };
 
 Entity::~Entity()
@@ -485,16 +485,16 @@ void Entity::killedByMonsterObituary(Entity* victim)
 			case EARTH_ELEMENTAL:
 				victim->setObituary(Language::get(6737));
 				break;
-			case MONSTER_D:
+			case DRYAD:
 				victim->setObituary(Language::get(6738));
 				break;
-			case MONSTER_G:
+			case GREMLIN:
 				victim->setObituary(Language::get(6739));
 				break;
-			case MONSTER_M:
+			case MYCONID:
 				victim->setObituary(Language::get(6740));
 				break;
-			case MONSTER_S:
+			case SALAMANDER:
 				victim->setObituary(Language::get(6741));
 				break;
 			default:
@@ -641,7 +641,7 @@ int Entity::entityLightAfterReductions(Stat& myStats, Entity* observer)
 		{
 			if ( Stat* observerStats = observer->getStats() )
 			{
-				if ( observerStats->type == MONSTER_M )
+				if ( observerStats->type == MYCONID )
 				{
 					light = std::max(light, 5 * 16);
 				}
@@ -1549,7 +1549,7 @@ void Entity::effectTimes()
 
 			if ( c == EFF_SALAMANDER_HEART && behavior == &actPlayer )
 			{
-				if ( !(myStats->type == MONSTER_S) )
+				if ( !(myStats->type == SALAMANDER) )
 				{
 					setEffect(EFF_SALAMANDER_HEART, false, 0, true);
 				}
@@ -1574,7 +1574,7 @@ void Entity::effectTimes()
 			}
 			else if ( c == EFF_GROWTH && behavior == &actPlayer )
 			{
-				if ( !(myStats->type == MONSTER_M || myStats->type == MONSTER_D) || myStats->helmet )
+				if ( !(myStats->type == MYCONID || myStats->type == DRYAD) || myStats->helmet )
 				{
 					setEffect(EFF_GROWTH, false, 0, false);
 				}
@@ -2636,7 +2636,7 @@ bool Entity::increaseSkill(int skill, bool notify)
 			Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_XP_MAX_INSTANCE, "xp", 2);
 			Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_XP_SKILLS, "xp", 2);
 
-			if ( (myStats->playerRace == RACE_S && myStats->stat_appearance == 0) || myStats->type == MONSTER_S )
+			if ( (myStats->playerRace == RACE_SALAMANDER && myStats->stat_appearance == 0) || myStats->type == SALAMANDER )
 			{
 				Sint32 oldMP = myStats->MP;
 				this->modMP(std::max(1, myStats->MAXMP / 50 + statGetCHR(myStats, this) / 10));
@@ -3231,7 +3231,7 @@ void Entity::modHP(int amount)
 	{
 		amount = 0;
 	}
-	if ( entitystats && entitystats->getEffectActive(EFF_SALAMANDER_HEART) == 4 && entitystats->type == MONSTER_S )
+	if ( entitystats && entitystats->getEffectActive(EFF_SALAMANDER_HEART) == 4 && entitystats->type == SALAMANDER )
 	{
 		if ( amount < 0 )
 		{
@@ -3721,7 +3721,7 @@ int Entity::getHungerTickRate(Stat* myStats, bool isPlayer, bool checkItemsEffec
 		}
 	}
 
-	if ( myStats->type == MONSTER_S )
+	if ( myStats->type == SALAMANDER )
 	{
 		hungerTickRate *= 0.75;
 	}
@@ -3828,7 +3828,7 @@ void Entity::handleEffects(Stat* myStats)
 			players[player]->mechanics.defendTicks = 0;
 		}
 
-		if ( myStats->type == MONSTER_M || myStats->type == MONSTER_D )
+		if ( myStats->type == MYCONID || myStats->type == DRYAD )
 		{
 			if ( !myStats->helmet )
 			{
@@ -3839,7 +3839,7 @@ void Entity::handleEffects(Stat* myStats)
 			}
 		}
 
-		if ( myStats->type == MONSTER_G || (myStats->playerRace == RACE_G && myStats->stat_appearance == 0) )
+		if ( myStats->type == GREMLIN || (myStats->playerRace == RACE_GREMLIN && myStats->stat_appearance == 0) )
 		{
 			if ( getUID() % 10 * TICKS_PER_SECOND == ticks % 10 * TICKS_PER_SECOND )
 			{
@@ -5283,9 +5283,9 @@ void Entity::handleEffects(Stat* myStats)
 
 	// regaining energy over time
 	if ( player >= 0
-		&& ((myStats->playerRace == RACE_S
+		&& ((myStats->playerRace == RACE_SALAMANDER
 			&& myStats->stat_appearance == 0)
-			|| myStats->type == MONSTER_S)
+			|| myStats->type == SALAMANDER)
 		&& (myStats->getEffectActive(EFF_SALAMANDER_HEART) == 1 || myStats->getEffectActive(EFF_SALAMANDER_HEART) == 2) )
 	{
 		this->char_energize++;
@@ -5460,9 +5460,9 @@ void Entity::handleEffects(Stat* myStats)
 				this->char_energize = 0;
 
 				if ( player >= 0
-					&& ((myStats->playerRace == RACE_S
+					&& ((myStats->playerRace == RACE_SALAMANDER
 						&& myStats->stat_appearance == 0)
-						|| myStats->type == MONSTER_S)
+						|| myStats->type == SALAMANDER)
 					&& (myStats->getEffectActive(EFF_SALAMANDER_HEART) == 1
 						|| myStats->getEffectActive(EFF_SALAMANDER_HEART) == 2) )
 				{
@@ -5472,9 +5472,9 @@ void Entity::handleEffects(Stat* myStats)
 				{
 					bool naturalManaRegen = true;
 					if ( player >= 0 
-						&& ((myStats->playerRace == RACE_S 
+						&& ((myStats->playerRace == RACE_SALAMANDER 
 							&& myStats->stat_appearance == 0)
-							|| myStats->type == MONSTER_S) )
+							|| myStats->type == SALAMANDER) )
 					{
 						if ( myStats->MP >= myStats->MAXMP / 2 )
 						{
@@ -6226,11 +6226,11 @@ void Entity::handleEffects(Stat* myStats)
 		}
 	}
 
-	if ( myStats->getEffectActive(EFF_SALAMANDER_HEART) && myStats->type != MONSTER_S )
+	if ( myStats->getEffectActive(EFF_SALAMANDER_HEART) && myStats->type != SALAMANDER )
 	{
 		this->setEffect(EFF_SALAMANDER_HEART, false, 0, true, true, true);
 	}
-	if ( behavior == &actPlayer && myStats->type == MONSTER_S )
+	if ( behavior == &actPlayer && myStats->type == SALAMANDER )
 	{
 		Uint8 effectStrength = myStats->getEffectActive(EFF_SALAMANDER_HEART);
 		int particle = 0;
@@ -6905,7 +6905,7 @@ void Entity::handleEffects(Stat* myStats)
 	}
 
 	if ( myStats->getEffectActive(EFF_FLAME_CLOAK) || 
-		(myStats->type == MONSTER_S && myStats->getEffectActive(EFF_SALAMANDER_HEART) >= 1 && myStats->getEffectActive(EFF_SALAMANDER_HEART) <= 2) )
+		(myStats->type == SALAMANDER && myStats->getEffectActive(EFF_SALAMANDER_HEART) >= 1 && myStats->getEffectActive(EFF_SALAMANDER_HEART) <= 2) )
 	{
 		int interval = 40;
 		if ( ticks % interval == 0 )
@@ -6923,7 +6923,7 @@ void Entity::handleEffects(Stat* myStats)
 			fx->yaw = fx->fskill[2];
 			fx->actmagicNoLight = 0;
 		}
-		if ( (myStats->type == MONSTER_S && myStats->getEffectActive(EFF_SALAMANDER_HEART) >= 1 && myStats->getEffectActive(EFF_SALAMANDER_HEART) <= 2) )
+		if ( (myStats->type == SALAMANDER && myStats->getEffectActive(EFF_SALAMANDER_HEART) >= 1 && myStats->getEffectActive(EFF_SALAMANDER_HEART) <= 2) )
 		{
 			if ( ((ticks % 10 == 0) && (abs(this->vel_x) > 0.1 || abs(this->vel_y) > 0.1)) )
 			{
@@ -7228,7 +7228,7 @@ void Entity::handleEffects(Stat* myStats)
 						}
 					}
 
-					if ( myStats->type == MONSTER_D )
+					if ( myStats->type == DRYAD )
 					{
 						int extraDmg = 1;
 						int extraDmgRoll = 1;
@@ -7258,7 +7258,7 @@ void Entity::handleEffects(Stat* myStats)
 							warmHat = true;
 						}
 					}
-					if ( myStats->type == MONSTER_S )
+					if ( myStats->type == SALAMANDER )
 					{
 						if ( myStats->getEffectActive(EFF_SALAMANDER_HEART) == 1
 							|| myStats->getEffectActive(EFF_SALAMANDER_HEART) == 2 )
@@ -8511,7 +8511,7 @@ Sint32 statGetSTR(Stat* entitystats, Entity* my)
 		}
 	}
 
-	if ( entitystats->type == MONSTER_S )
+	if ( entitystats->type == SALAMANDER )
 	{
 		if ( Uint8 effectStrength = entitystats->getEffectActive(EFF_SALAMANDER_HEART) )
 		{
@@ -8774,7 +8774,7 @@ Sint32 statGetDEX(Stat* entitystats, Entity* my)
 		}
 	}
 
-	if ( entitystats->type == MONSTER_S )
+	if ( entitystats->type == SALAMANDER )
 	{
 		if ( Uint8 effectStrength = entitystats->getEffectActive(EFF_SALAMANDER_HEART) )
 		{
@@ -9009,7 +9009,7 @@ Sint32 statGetCON(Stat* entitystats, Entity* my)
 		}
 	}
 
-	if ( entitystats->type == MONSTER_S )
+	if ( entitystats->type == SALAMANDER )
 	{
 		if ( Uint8 effectStrength = entitystats->getEffectActive(EFF_SALAMANDER_HEART) )
 		{
@@ -11138,8 +11138,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 				}
 				else if ( bat || (hitstats && (hitstats->getEffectActive(EFF_AGILITY) 
 					|| hit.entity->mistFormDodge(true, this)
-					|| (hitstats->getEffectActive(EFF_MAGIC_GREASE) && hitstats->type == MONSTER_G)
-					|| (hitstats && hitstats->type == MONSTER_D
+					|| (hitstats->getEffectActive(EFF_MAGIC_GREASE) && hitstats->type == GREMLIN)
+					|| (hitstats && hitstats->type == DRYAD
 						&& hit.entity->behavior == &actPlayer && hitstats->sex == FEMALE)
 					|| hitstats->getEffectActive(EFF_ENSEMBLE_LUTE))) || myStats->getEffectActive(EFF_BLIND) )
 				{
@@ -11182,7 +11182,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						miss = false;
 
-						if ( hitstats->type == MONSTER_D && hitstats->sex == FEMALE && hit.entity->behavior == &actPlayer )
+						if ( hitstats->type == DRYAD && hitstats->sex == FEMALE && hit.entity->behavior == &actPlayer )
 						{
 							int baseChance = 5;
 							miss = players[hit.entity->skill[2]]->mechanics.rollRngProc(Player::PlayerMechanics_t::RngRollTypes::RNG_ROLL_EVASION, baseChance);
@@ -11207,11 +11207,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 						{
 							baseChance = std::max(baseChance, 30);
 						}
-						if ( hitstats && hitstats->getEffectActive(EFF_MAGIC_GREASE) && hitstats->type == MONSTER_G )
+						if ( hitstats && hitstats->getEffectActive(EFF_MAGIC_GREASE) && hitstats->type == GREMLIN )
 						{
 							baseChance = std::max(baseChance, 20);
 						}
-						if ( hitstats && hitstats->type == MONSTER_D 
+						if ( hitstats && hitstats->type == DRYAD 
 							&& hit.entity->behavior == &actPlayer && hitstats->sex == FEMALE )
 						{
 							baseChance = std::max(baseChance, 5);
@@ -11290,7 +11290,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							if ( miss )
 							{
 								messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, makeColorRGB(0, 255, 0), Language::get(6286));
-								if ( hitstats->type == MONSTER_D )
+								if ( hitstats->type == DRYAD )
 								{
 									hit.entity->playerShakeGrowthHelmet();
 								}
@@ -11770,7 +11770,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 				}
 
-				if ( myStats->type == MONSTER_G )
+				if ( myStats->type == GREMLIN )
 				{
 					axe += 1;
 					if ( this->behavior == &actPlayer )
@@ -12392,7 +12392,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 					if ( effect )
 					{
-						if ( myStats->type == MONSTER_S
+						if ( myStats->type == SALAMANDER
 							&& myStats->getEffectActive(EFF_SALAMANDER_HEART) == 2 )
 						{
 							if ( myStats->EFFECTS_TIMERS[EFF_SALAMANDER_HEART] > 0 )
@@ -12536,7 +12536,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						damage = std::max(0, damage);
 					}
 
-					if ( myStats->type == MONSTER_G )
+					if ( myStats->type == GREMLIN )
 					{
 						damage++;
 						if ( this->behavior == &actPlayer )
@@ -12824,7 +12824,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						weaponType = (*weaponToBreak)->type;
 					}
 
-					if ( hitstats && hitstats->getEffectActive(EFF_SALAMANDER_HEART) == 4 && hitstats->type == MONSTER_S )
+					if ( hitstats && hitstats->getEffectActive(EFF_SALAMANDER_HEART) == 4 && hitstats->type == SALAMANDER )
 					{
 						damage = 0;
 						spawnBang(hit.entity->x, hit.entity->y, hit.entity->z);
@@ -16540,7 +16540,7 @@ int AC(Stat* stat)
 		}
 	}
 
-	if ( stat->type == MONSTER_M && player >= 0 )
+	if ( stat->type == MYCONID && player >= 0 )
 	{
 		if ( !stat->helmet && stat->getEffectActive(EFF_GROWTH) > 1 )
 		{
@@ -17641,7 +17641,7 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 				}
 			}
 
-			if ( gain > 0 && ((destStats->playerRace == RACE_S && destStats->stat_appearance == 0) || destStats->type == MONSTER_S) )
+			if ( gain > 0 && ((destStats->playerRace == RACE_SALAMANDER && destStats->stat_appearance == 0) || destStats->type == SALAMANDER) )
 			{
 				Sint32 oldMP = destStats->MP;
 				int minRoll = std::max(1, destStats->MAXMP / 50 + statGetCHR(destStats, this) / 10);
@@ -18452,7 +18452,7 @@ bool Entity::checkEnemy(Entity* your)
 			{
 				result = swornenemies[HUMAN][yourStats->type];
 				if ( (yourStats->type == HUMAN || yourStats->type == SHOPKEEPER) 
-					&& !(myStats->type == AUTOMATON || myStats->type == MONSTER_D || myStats->type == MONSTER_M || myStats->type == MONSTER_S
+					&& !(myStats->type == AUTOMATON || myStats->type == DRYAD || myStats->type == MYCONID || myStats->type == SALAMANDER
 						|| myStats->type == GNOME) )
 				{
 					// enemies.
@@ -18502,7 +18502,7 @@ bool Entity::checkEnemy(Entity* your)
 							{
 								result = false;
 							}
-							if ( yourStats->type == MONSTER_G )
+							if ( yourStats->type == GREMLIN )
 							{
 								result = false;
 							}
@@ -18538,8 +18538,8 @@ bool Entity::checkEnemy(Entity* your)
 								result = false;
 							}
 							break;
-						case MONSTER_M:
-							if ( yourStats->type == MONSTER_M )
+						case MYCONID:
+							if ( yourStats->type == MYCONID )
 							{
 								result = false;
 							}
@@ -18548,8 +18548,8 @@ bool Entity::checkEnemy(Entity* your)
 								result = true;
 							}
 							break;
-						case MONSTER_D:
-							if ( yourStats->type == MONSTER_D )
+						case DRYAD:
+							if ( yourStats->type == DRYAD )
 							{
 								result = false;
 							}
@@ -18558,14 +18558,14 @@ bool Entity::checkEnemy(Entity* your)
 								result = true;
 							}
 							break;
-						case MONSTER_S:
-							if ( yourStats->type == MONSTER_S )
+						case SALAMANDER:
+							if ( yourStats->type == SALAMANDER )
 							{
 								result = false;
 							}
 							break;
-						case MONSTER_G:
-							if ( yourStats->type == MONSTER_G )
+						case GREMLIN:
+							if ( yourStats->type == GREMLIN )
 							{
 								result = false;
 							}
@@ -18593,7 +18593,7 @@ bool Entity::checkEnemy(Entity* your)
 			{
 				result = swornenemies[myStats->type][HUMAN];
 				if ( (myStats->type == HUMAN || myStats->type == SHOPKEEPER) && 
-					!(yourStats->type == AUTOMATON || yourStats->type == MONSTER_D || yourStats->type == MONSTER_M || yourStats->type == MONSTER_S
+					!(yourStats->type == AUTOMATON || yourStats->type == DRYAD || yourStats->type == MYCONID || yourStats->type == SALAMANDER
 						|| yourStats->type == GNOME) )
 				{
 					// enemies.
@@ -18643,7 +18643,7 @@ bool Entity::checkEnemy(Entity* your)
 							{
 								result = false;
 							}
-							if ( myStats->type == MONSTER_G )
+							if ( myStats->type == GREMLIN )
 							{
 								result = false;
 							}
@@ -18680,8 +18680,8 @@ bool Entity::checkEnemy(Entity* your)
 								result = false;
 							}
 							break;
-						case MONSTER_M:
-							if ( myStats->type == MONSTER_M )
+						case MYCONID:
+							if ( myStats->type == MYCONID )
 							{
 								result = false;
 							}
@@ -18690,8 +18690,8 @@ bool Entity::checkEnemy(Entity* your)
 								result = true;
 							}
 							break;
-						case MONSTER_D:
-							if ( myStats->type == MONSTER_D )
+						case DRYAD:
+							if ( myStats->type == DRYAD )
 							{
 								result = false;
 							}
@@ -18700,14 +18700,14 @@ bool Entity::checkEnemy(Entity* your)
 								result = true;
 							}
 							break;
-						case MONSTER_S:
-							if ( myStats->type == MONSTER_S )
+						case SALAMANDER:
+							if ( myStats->type == SALAMANDER )
 							{
 								result = false;
 							}
 							break;
-						case MONSTER_G:
-							if ( myStats->type == MONSTER_G )
+						case GREMLIN:
+							if ( myStats->type == GREMLIN )
 							{
 								result = false;
 							}
@@ -19061,7 +19061,7 @@ bool Entity::checkFriend(Entity* your)
 			{
 				result = monsterally[HUMAN][yourStats->type];
 				if ( (yourStats->type == HUMAN || yourStats->type == SHOPKEEPER) 
-					&& !(myStats->type == AUTOMATON || myStats->type == MONSTER_D || myStats->type == MONSTER_M || myStats->type == MONSTER_S
+					&& !(myStats->type == AUTOMATON || myStats->type == DRYAD || myStats->type == MYCONID || myStats->type == SALAMANDER
 						|| myStats->type == GNOME) )
 				{
 					result = false;
@@ -19143,8 +19143,8 @@ bool Entity::checkFriend(Entity* your)
 								result = true;
 							}
 							break;
-						case MONSTER_M:
-							if ( yourStats->type == MONSTER_M )
+						case MYCONID:
+							if ( yourStats->type == MYCONID )
 							{
 								result = true;
 							}
@@ -19153,8 +19153,8 @@ bool Entity::checkFriend(Entity* your)
 								result = false;
 							}
 							break;
-						case MONSTER_D:
-							if ( yourStats->type == MONSTER_D )
+						case DRYAD:
+							if ( yourStats->type == DRYAD )
 							{
 								result = true;
 							}
@@ -19163,14 +19163,14 @@ bool Entity::checkFriend(Entity* your)
 								result = false;
 							}
 							break;
-						case MONSTER_S:
-							if ( yourStats->type == MONSTER_S )
+						case SALAMANDER:
+							if ( yourStats->type == SALAMANDER )
 							{
 								result = true;
 							}
 							break;
-						case MONSTER_G:
-							if ( yourStats->type == MONSTER_G )
+						case GREMLIN:
+							if ( yourStats->type == GREMLIN )
 							{
 								result = true;
 							}
@@ -19188,7 +19188,7 @@ bool Entity::checkFriend(Entity* your)
 			{
 				result = monsterally[myStats->type][HUMAN];
 				if ( (myStats->type == HUMAN || myStats->type == SHOPKEEPER)
-					&& !(yourStats->type == AUTOMATON || yourStats->type == MONSTER_D || yourStats->type == MONSTER_M || yourStats->type == MONSTER_S
+					&& !(yourStats->type == AUTOMATON || yourStats->type == DRYAD || yourStats->type == MYCONID || yourStats->type == SALAMANDER
 						|| yourStats->type == GNOME) )
 				{
 					result = false;
@@ -19270,8 +19270,8 @@ bool Entity::checkFriend(Entity* your)
 								result = true;
 							}
 							break;
-						case MONSTER_M:
-							if ( myStats->type == MONSTER_M )
+						case MYCONID:
+							if ( myStats->type == MYCONID )
 							{
 								result = true;
 							}
@@ -19280,8 +19280,8 @@ bool Entity::checkFriend(Entity* your)
 								result = false;
 							}
 							break;
-						case MONSTER_D:
-							if ( myStats->type == MONSTER_D )
+						case DRYAD:
+							if ( myStats->type == DRYAD )
 							{
 								result = true;
 							}
@@ -19290,14 +19290,14 @@ bool Entity::checkFriend(Entity* your)
 								result = false;
 							}
 							break;
-						case MONSTER_S:
-							if ( myStats->type == MONSTER_S )
+						case SALAMANDER:
+							if ( myStats->type == SALAMANDER )
 							{
 								result = true;
 							}
 							break;
-						case MONSTER_G:
-							if ( myStats->type == MONSTER_G )
+						case GREMLIN:
+							if ( myStats->type == GREMLIN )
 							{
 								result = true;
 							}
@@ -19994,20 +19994,20 @@ bool Entity::setBootSprite(Entity* leg, int spriteOffset, bool forceShort)
 		case VAMPIRE:
 		case SUCCUBUS:
 		case SHOPKEEPER:
-		case MONSTER_D:
-		case MONSTER_M:
-		case MONSTER_S:
-			if ( myStats->type == MONSTER_D && (sprite == 1514 || sprite == 1515 || sprite == 1992 || sprite == 1993) )
+		case DRYAD:
+		case MYCONID:
+		case SALAMANDER:
+			if ( myStats->type == DRYAD && (sprite == 1514 || sprite == 1515 || sprite == 1992 || sprite == 1993) )
 			{
 				shortSprite = true;
 			}
-			if ( myStats->type == MONSTER_M && (sprite == 1520 || sprite == 1998) )
+			if ( myStats->type == MYCONID && (sprite == 1520 || sprite == 1998) )
 			{
 				shortSprite = true;
 			}
 			break;
 		case GNOME:
-		case MONSTER_G:
+		case GREMLIN:
 			shortSprite = true;
 			break;
 		default:
@@ -20199,7 +20199,7 @@ bool isLevitating(Stat* mystats)
 	{
 		return true;
 	}
-	else if ( mystats->type == MONSTER_S && mystats->getEffectActive(EFF_SALAMANDER_HEART) >= 1 && mystats->getEffectActive(EFF_SALAMANDER_HEART) <= 2 )
+	else if ( mystats->type == SALAMANDER && mystats->getEffectActive(EFF_SALAMANDER_HEART) >= 1 && mystats->getEffectActive(EFF_SALAMANDER_HEART) <= 2 )
 	{
 		return true;
 	}
@@ -20554,7 +20554,7 @@ int Entity::getAttackPose() const
 				pose = MONSTER_POSE_MIMIC_MAGIC1;
 			}
 		}
-		else if ( myStats->type == MONSTER_D 
+		else if ( myStats->type == DRYAD 
 			&& (this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_MONSTER_D
 			|| this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_MONSTER_D_PUSH) )
 		{
@@ -20567,7 +20567,7 @@ int Entity::getAttackPose() const
 				pose = MONSTER_POSE_MAGIC_WINDUP1;
 			}
 		}
-		else if ( myStats->type == MONSTER_M
+		else if ( myStats->type == MYCONID
 			&& (this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_MONSTER_M_CAST_SHORT
 			|| this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_MONSTER_M_CAST_LONG) )
 		{
@@ -20580,7 +20580,7 @@ int Entity::getAttackPose() const
 				pose = MONSTER_POSE_SPECIAL_WINDUP1;
 			}
 		}
-		else if ( myStats->type == MONSTER_G
+		else if ( myStats->type == GREMLIN
 			&& this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_MONSTER_G_CAST )
 		{
 			pose = MONSTER_POSE_MAGIC_WINDUP1;
@@ -20593,8 +20593,8 @@ int Entity::getAttackPose() const
 				|| myStats->type == HUMAN || myStats->type == GOBLIN
 				|| myStats->type == SKELETON || myStats->type == GNOME
 				|| myStats->type == SUCCUBUS || myStats->type == SHOPKEEPER
-				|| myStats->type == MONSTER_D || myStats->type == MONSTER_M
-				|| myStats->type == MONSTER_S || myStats->type == MONSTER_G
+				|| myStats->type == DRYAD || myStats->type == MYCONID
+				|| myStats->type == SALAMANDER || myStats->type == GREMLIN
 				|| myStats->type == SHADOW )
 			{
 				pose = MONSTER_POSE_MELEE_WINDUP1;
@@ -20672,7 +20672,7 @@ int Entity::getAttackPose() const
 				}
 
 			}
-			else if ( myStats->type == MONSTER_G )
+			else if ( myStats->type == GREMLIN )
 			{
 				if ( this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_MONSTER_G_THROW )
 				{
@@ -20700,8 +20700,8 @@ int Entity::getAttackPose() const
 				|| myStats->type == SKELETON || myStats->type == GNOME
 				|| myStats->type == SUCCUBUS || myStats->type == SHOPKEEPER
 				|| myStats->type == BUGBEAR 
-				|| myStats->type == MONSTER_D || myStats->type == MONSTER_M
-				|| myStats->type == MONSTER_S || myStats->type == MONSTER_G
+				|| myStats->type == DRYAD || myStats->type == MYCONID
+				|| myStats->type == SALAMANDER || myStats->type == GREMLIN
 
 				|| myStats->type == SHADOW )
 			{
@@ -20723,14 +20723,14 @@ int Entity::getAttackPose() const
 							pose = MONSTER_POSE_MELEE_WINDUP1;
 						}
 					}
-					else if ( myStats->type == MONSTER_M )
+					else if ( myStats->type == MYCONID )
 					{
 						if ( this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_MONSTER_M_THROW )
 						{
 							pose = MONSTER_POSE_RANGED_WINDUP3;
 						}
 					}
-					else if ( myStats->type == MONSTER_G )
+					else if ( myStats->type == GREMLIN )
 					{
 						if ( this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_MONSTER_G_THROW )
 						{
@@ -20761,8 +20761,8 @@ int Entity::getAttackPose() const
 				|| myStats->type == SKELETON || myStats->type == GNOME
 				|| myStats->type == SUCCUBUS || myStats->type == SHOPKEEPER
 				|| myStats->type == BUGBEAR
-				|| myStats->type == MONSTER_D || myStats->type == MONSTER_M
-				|| myStats->type == MONSTER_S || myStats->type == MONSTER_G
+				|| myStats->type == DRYAD || myStats->type == MYCONID
+				|| myStats->type == SALAMANDER || myStats->type == GREMLIN
 				|| myStats->type == SHADOW )
 			{
 				if ( getWeaponSkill(myStats->weapon) == PRO_AXE || getWeaponSkill(myStats->weapon) == PRO_MACE
@@ -20810,7 +20810,7 @@ int Entity::getAttackPose() const
 		{
 			pose = MONSTER_POSE_MAGIC_WINDUP1;
 		}
-		else if ( myStats->type == MONSTER_D && (this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_MONSTER_D
+		else if ( myStats->type == DRYAD && (this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_MONSTER_D
 			|| this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_MONSTER_D_PUSH) )
 		{
 			if ( this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_MONSTER_D )
@@ -20822,7 +20822,7 @@ int Entity::getAttackPose() const
 				pose = MONSTER_POSE_MAGIC_WINDUP1;
 			}
 		}
-		else if ( myStats->type == MONSTER_M && (this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_MONSTER_M_CAST_SHORT
+		else if ( myStats->type == MYCONID && (this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_MONSTER_M_CAST_SHORT
 			|| this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_MONSTER_M_CAST_LONG) )
 		{
 			if ( this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_MONSTER_M_CAST_SHORT )
@@ -20834,7 +20834,7 @@ int Entity::getAttackPose() const
 				pose = MONSTER_POSE_SPECIAL_WINDUP1;
 			}
 		}
-		else if ( myStats->type == MONSTER_G && this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_MONSTER_G_CAST )
+		else if ( myStats->type == GREMLIN && this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_MONSTER_G_CAST )
 		{
 			pose = MONSTER_POSE_MAGIC_WINDUP1;
 		}
@@ -20849,8 +20849,8 @@ int Entity::getAttackPose() const
 			type == SHADOW || type == RAT || type == SPIDER || type == CRAB ||
 			type == MIMIC || type == MINIMIMIC ||
 			type == BAT_SMALL ||
-			type == MONSTER_D || type == MONSTER_M ||
-			type == MONSTER_S || type == MONSTER_G ||
+			type == DRYAD || type == MYCONID ||
+			type == SALAMANDER || type == GREMLIN ||
 			type == REVENANT_SKULL || type == MONSTER_ADORCISED_WEAPON ||
 			type == FLAME_ELEMENTAL ||
 			type == SLIME || (type == SCARAB && sprite != 1078 && sprite != 1079))
@@ -20946,7 +20946,7 @@ bool Entity::hasRangedWeapon(bool ignoreMonsterNPCType) const
 
 	if ( !ignoreMonsterNPCType )
 	{
-		if ( myStats && myStats->type == MONSTER_D && myStats->getAttribute("monster_d_type") == "watcher" )
+		if ( myStats && myStats->type == DRYAD && myStats->getAttribute("monster_d_type") == "watcher" )
 		{
 			return true;
 		}
@@ -21417,17 +21417,17 @@ void Entity::handleWeaponArmAttack(Entity* weaponarm)
 				{
 					this->attack(MONSTER_POSE_MAGIC_CAST1, 0, nullptr);
 				}
-				else if ( stats && stats->type == MONSTER_D 
+				else if ( stats && stats->type == DRYAD 
 					&& (monsterSpecialState >= MONSTER_D_SPECIAL_CAST1 && monsterSpecialState <= MONSTER_D_SPECIAL_CAST3) )
 				{
 					this->attack(MONSTER_POSE_MAGIC_WINDUP3, 0, nullptr);
 				}
-				else if ( stats && stats->type == MONSTER_M
+				else if ( stats && stats->type == MYCONID
 					&& (monsterSpecialState >= MONSTER_M_SPECIAL_CAST1 && monsterSpecialState <= MONSTER_M_SPECIAL_CAST3) )
 				{
 					this->attack(MONSTER_POSE_MAGIC_WINDUP3, 0, nullptr);
 				}
-				else if ( stats && stats->type == MONSTER_G
+				else if ( stats && stats->type == GREMLIN
 					&& monsterSpecialState == MONSTER_G_SPECIAL_CAST1 )
 				{
 					this->attack(MONSTER_POSE_MAGIC_WINDUP3, 0, nullptr);
@@ -22072,10 +22072,10 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 				case GOATMAN:
 				case INSECTOID:
 				case GOBLIN:
-				case MONSTER_D:
-				case MONSTER_M:
-				case MONSTER_S:
-				case MONSTER_G:
+				case DRYAD:
+				case MYCONID:
+				case SALAMANDER:
+				case GREMLIN:
 				case GNOME:
 					weaponLimb->x += 0.5 * cos(weaponArmLimb->yaw + PI / 2);
 					weaponLimb->y += 0.5 * sin(weaponArmLimb->yaw + PI / 2);
@@ -22150,10 +22150,10 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 					case INSECTOID:
 					case SUCCUBUS:
 					case INCUBUS:
-					case MONSTER_D:
-					case MONSTER_M:
-					case MONSTER_S:
-					case MONSTER_G:
+					case DRYAD:
+					case MYCONID:
+					case SALAMANDER:
+					case GREMLIN:
 					case GNOME:
 						weaponLimb->x += -.1 * cos(weaponArmLimb->yaw + PI / 2) + 0.25 * cos(weaponArmLimb->yaw);
 						weaponLimb->y += -.1 * sin(weaponArmLimb->yaw + PI / 2) + 0.25 * sin(weaponArmLimb->yaw);
@@ -22206,10 +22206,10 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 					case GOBLIN:
 					case GOATMAN:
 					case INSECTOID:
-					case MONSTER_D:
-					case MONSTER_M:
-					case MONSTER_S:
-					case MONSTER_G:
+					case DRYAD:
+					case MYCONID:
+					case SALAMANDER:
+					case GREMLIN:
 					case GNOME:
 						weaponLimb->x += -.1 * cos(weaponArmLimb->yaw + PI / 2) + 0.5 * cos(weaponArmLimb->yaw);
 						weaponLimb->y += -.1 * sin(weaponArmLimb->yaw + PI / 2) + 0.5 * sin(weaponArmLimb->yaw);
@@ -22269,10 +22269,10 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 					case GOBLIN:
 					case GOATMAN:
 					case INSECTOID:
-					case MONSTER_D:
-					case MONSTER_M:
-					case MONSTER_S:
-					case MONSTER_G:
+					case DRYAD:
+					case MYCONID:
+					case SALAMANDER:
+					case GREMLIN:
 					case GNOME:
 						weaponLimb->x += -.1 * cos(weaponArmLimb->yaw + PI / 2) + 0.5 * cos(weaponArmLimb->yaw);
 						weaponLimb->y += -.1 * sin(weaponArmLimb->yaw + PI / 2) + 0.5 * sin(weaponArmLimb->yaw);
@@ -22321,10 +22321,10 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 				case AUTOMATON:
 				case INSECTOID:
 				case GOBLIN:
-				case MONSTER_D:
-				case MONSTER_M:
-				case MONSTER_S:
-				case MONSTER_G:
+				case DRYAD:
+				case MYCONID:
+				case SALAMANDER:
+				case GREMLIN:
 				case GNOME:
 					weaponLimb->focaly -= 0.05; // minor z-fighting fix.
 					break;
@@ -22332,7 +22332,7 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 					break;
 			}
 
-			if ( monsterType == MONSTER_D || monsterType == MONSTER_M || monsterType == MONSTER_S || monsterType == MONSTER_G
+			if ( monsterType == DRYAD || monsterType == MYCONID || monsterType == SALAMANDER || monsterType == GREMLIN
 				|| monsterType == GNOME )
 			{
 				weaponLimb->x += limbs[monsterType][17][0] * cos(weaponArmLimb->yaw + PI / 2) + limbs[monsterType][17][1] * cos(weaponArmLimb->yaw);
@@ -22392,10 +22392,10 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 				case GOATMAN:
 				case INSECTOID:
 				case GOBLIN:
-				case MONSTER_D:
-				case MONSTER_M:
-				case MONSTER_S:
-				case MONSTER_G:
+				case DRYAD:
+				case MYCONID:
+				case SALAMANDER:
+				case GREMLIN:
 				case GNOME:
 					weaponLimb->x += 0.5 * cos(weaponArmLimb->yaw + PI / 2);
 					weaponLimb->y += 0.5 * sin(weaponArmLimb->yaw + PI / 2);
@@ -22510,7 +22510,7 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 		weaponLimb->focalx += 0.5;
 	}
 
-	if ( monsterType == MONSTER_D )
+	if ( monsterType == DRYAD )
 	{
 		if ( sprite == 1514 || sprite == 1515 || sprite == 1992 || sprite == 1993 )
 		{
@@ -22519,7 +22519,7 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 			weaponLimb->y += -0.5 * sin(weaponArmLimb->yaw + PI / 2);
 		}
 	}
-	else if ( monsterType == MONSTER_M )
+	else if ( monsterType == MYCONID )
 	{
 		if ( sprite == 1520 || sprite == 1998 )
 		{
@@ -22600,14 +22600,14 @@ void doParticleEffectForTouchSpell(Entity& my, Entity* focalLimb, Monster monste
 	if ( monsterType == GOBLIN || monsterType == SKELETON
 		|| monsterType == INSECTOID
 		|| monsterType == GOATMAN
-		|| monsterType == MONSTER_D
-		|| monsterType == MONSTER_G
+		|| monsterType == DRYAD
+		|| monsterType == GREMLIN
 		|| monsterType == GNOME
-		|| monsterType == MONSTER_M )
+		|| monsterType == MYCONID )
 	{
 		z += 0.5;
 	}
-	else if ( monsterType == MONSTER_S )
+	else if ( monsterType == SALAMANDER )
 	{
 		z += 1.0;
 	}
@@ -23150,7 +23150,7 @@ void Entity::handleEffectsClient()
 	}
 
 	if ( myStats->getEffectActive(EFF_FLAME_CLOAK) ||
-		(myStats->type == MONSTER_S && myStats->getEffectActive(EFF_SALAMANDER_HEART) >= 1 && myStats->getEffectActive(EFF_SALAMANDER_HEART) <= 2) )
+		(myStats->type == SALAMANDER && myStats->getEffectActive(EFF_SALAMANDER_HEART) >= 1 && myStats->getEffectActive(EFF_SALAMANDER_HEART) <= 2) )
 	{
 		int interval = 40;
 		if ( ticks % interval == 0 )
@@ -23168,7 +23168,7 @@ void Entity::handleEffectsClient()
 			fx->yaw = fx->fskill[2];
 			fx->actmagicNoLight = 0;
 		}
-		if ( (myStats->type == MONSTER_S && myStats->getEffectActive(EFF_SALAMANDER_HEART) >= 1 && myStats->getEffectActive(EFF_SALAMANDER_HEART) <= 2) )
+		if ( (myStats->type == SALAMANDER && myStats->getEffectActive(EFF_SALAMANDER_HEART) >= 1 && myStats->getEffectActive(EFF_SALAMANDER_HEART) <= 2) )
 		{
 			if ( ((ticks % 10 == 0) && (abs(this->vel_x) > 0.1 || abs(this->vel_y) > 0.1)) )
 			{
@@ -25297,7 +25297,7 @@ bool Entity::shouldRetreat(Stat& myStats)
 	{
 		return false;
 	}
-	else if ( myStats.type == MONSTER_M )
+	else if ( myStats.type == MYCONID )
 	{
 		return false;
 	}
@@ -25407,7 +25407,7 @@ bool Entity::backupWithRangedWeapon(Stat& myStats, int dist, int hasrangedweapon
 	int distanceLimit = 100;
 	if ( hasrangedweapon )
 	{
-		if ( myStats.weapon || (myStats.type == MONSTER_D && myStats.getAttribute("monster_d_type") == "watcher") )
+		if ( myStats.weapon || (myStats.type == DRYAD && myStats.getAttribute("monster_d_type") == "watcher") )
 		{
 			if ( distanceLimit >= getMonsterEffectiveDistanceOfRangedWeapon(myStats.weapon) )
 			{
@@ -25580,7 +25580,7 @@ void Entity::playerStatIncrease(int playerClass, int chosenStats[3])
 		}
 		if ( behavior == &actPlayer )
 		{
-			if ( stat->type == MONSTER_M )
+			if ( stat->type == MYCONID )
 			{
 				for ( int i = 0; i < NUMSTATS; ++i )
 				{
@@ -25600,7 +25600,7 @@ void Entity::playerStatIncrease(int playerClass, int chosenStats[3])
 					}
 				}
 			}
-			if ( stat->type == MONSTER_G )
+			if ( stat->type == GREMLIN )
 			{
 				for ( int i = 0; i < NUMSTATS; ++i )
 				{
@@ -25610,7 +25610,7 @@ void Entity::playerStatIncrease(int playerClass, int chosenStats[3])
 					}
 				}
 			}
-			if ( stat->type == MONSTER_D )
+			if ( stat->type == DRYAD )
 			{
 				for ( int i = 0; i < NUMSTATS; ++i )
 				{
@@ -26076,7 +26076,7 @@ int Entity::getManaRegenInterval(Entity* my, Stat& myStats, bool isPlayer, bool 
 
 			if ( !excludeItemsEffectsBonus )
 			{
-				if ( stats[player]->type == MONSTER_D )
+				if ( stats[player]->type == DRYAD )
 				{
 					int bonus = 0;
 					if ( !stats[player]->helmet && stats[player]->getEffectActive(EFF_GROWTH) > 1 )
@@ -27065,9 +27065,9 @@ char const * playerClassLangEntry(int classnum, int playernum)
 	{
 		return Language::get(1900 + classnum);
 	}
-	else if ( classnum >= CLASS_21 && classnum <= CLASS_25 )
+	else if ( classnum >= CLASS_BARD && classnum <= CLASS_PALADIN )
 	{
-		return Language::get(6784 + classnum - CLASS_21);
+		return Language::get(6784 + classnum - CLASS_BARD);
 	}
 	else if ( classnum >= CLASS_CONJURER )
 	{
@@ -27902,7 +27902,7 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 	}
 	switch ( race )
 	{
-		case MONSTER_G:
+		case GREMLIN:
 			if ( limbType == LIMB_HUMANOID_CLOAK )
 			{
 				limb->x -= cos(this->yaw) * 1.25;
@@ -27942,9 +27942,9 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 					limb->focalz += 0.25;
 				}
 
-				limb->scalex = limbs[MONSTER_G][11][0];
-				limb->scaley = limbs[MONSTER_G][11][1];
-				limb->scalez = limbs[MONSTER_G][11][2];
+				limb->scalex = limbs[GREMLIN][11][0];
+				limb->scaley = limbs[GREMLIN][11][1];
+				limb->scalez = limbs[GREMLIN][11][2];
 
 				this->setTorsoLimbOffset(limb);
 			}
@@ -28467,12 +28467,12 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 		case GOBLIN:
 		case GOATMAN:
 		case INSECTOID:
-		case MONSTER_D:
-		case MONSTER_M:
-		case MONSTER_S:
+		case DRYAD:
+		case MYCONID:
+		case SALAMANDER:
 		{
 			real_t sleepHeight = 2.5;
-			if ( race == MONSTER_D )
+			if ( race == DRYAD )
 			{
 				sleepHeight = 3.0;
 				if ( sprite == 1514 || sprite == 1515 || sprite == 1992 || sprite == 1993 )
@@ -28524,7 +28524,7 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 					}
 				}
 			}
-			else if ( race == MONSTER_M )
+			else if ( race == MYCONID )
 			{
 				sleepHeight = 3.0;
 				if ( sprite == 1520 || sprite == 1998 )
@@ -28574,7 +28574,7 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 					limb->y -= .5 * sin(this->yaw);
 				}
 			}
-			else if ( race == MONSTER_S )
+			else if ( race == SALAMANDER )
 			{
 				if ( limbType == LIMB_HUMANOID_LEFTLEG || limbType == LIMB_HUMANOID_RIGHTLEG )
 				{
@@ -28611,7 +28611,7 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 					}
 				}
 
-				if ( race == MONSTER_M )
+				if ( race == MYCONID )
 				{
 					limb->scalex = 1.01;
 					limb->scaley = 1.01;
@@ -28626,7 +28626,7 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 						//limb->z -= 0.5;
 					}
 				}
-				else if ( race == MONSTER_D )
+				else if ( race == DRYAD )
 				{
 					limb->scalex = 1.01;
 					limb->scaley = 1.01;
@@ -28650,7 +28650,7 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 						limb->focalz -= 0.25;
 					}
 				}
-				else if ( race == MONSTER_S )
+				else if ( race == SALAMANDER )
 				{
 					limb->scalex = 1.01;
 					limb->scaley = 1.01;
@@ -28920,7 +28920,7 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 			}
 			break;
 		case GNOME:
-		case MONSTER_G:
+		case GREMLIN:
 			shieldLimb->x -= 2.5 * cos(this->yaw + PI / 2) + .20 * cos(this->yaw);
 			shieldLimb->y -= 2.5 * sin(this->yaw + PI / 2) + .20 * sin(this->yaw);
 			shieldLimb->z += 1;
@@ -28941,7 +28941,7 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 						flameEntity->x += 2 * cos(shieldArmLimb->yaw);
 						flameEntity->y += 2 * sin(shieldArmLimb->yaw);
 						flameEntity->z -= 2;
-						if ( race == MONSTER_G )
+						if ( race == GREMLIN )
 						{
 							flameEntity->z += 1;
 						}
@@ -28961,7 +28961,7 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 						flameEntity->x += 2 * cos(shieldArmLimb->yaw);
 						flameEntity->y += 2 * sin(shieldArmLimb->yaw);
 						flameEntity->z += 1;
-						if ( race == MONSTER_G )
+						if ( race == GREMLIN )
 						{
 							flameEntity->z += 1;
 						}
@@ -28983,7 +28983,7 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 				shieldLimb->yaw += PI / 6;
 				shieldLimb->focalx -= 4;
 				shieldLimb->focalz += .5;
-				if ( race == MONSTER_G )
+				if ( race == GREMLIN )
 				{
 					shieldLimb->focalz -= 2.25;
 				}
@@ -29260,9 +29260,9 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 		case INSECTOID:
 		case INCUBUS:
 		case SUCCUBUS:
-		case MONSTER_D:
-		case MONSTER_M:
-		case MONSTER_S:
+		case DRYAD:
+		case MYCONID:
+		case SALAMANDER:
 			shieldLimb->x -= 2.5 * cos(this->yaw + PI / 2) + .20 * cos(this->yaw);
 			shieldLimb->y -= 2.5 * sin(this->yaw + PI / 2) + .20 * sin(this->yaw);
 			shieldLimb->z += 2.5;
@@ -29326,7 +29326,7 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 				{
 					shieldLimb->focalz -= 1.5;
 				}
-				else if ( race == MONSTER_D )
+				else if ( race == DRYAD )
 				{
 					if ( sprite == 1514 || sprite == 1515 || sprite == 1992 || sprite == 1993 )
 					{
@@ -29334,7 +29334,7 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 					}
 					shieldLimb->z -= 1.0;
 				}
-				else if ( race == MONSTER_M )
+				else if ( race == MYCONID )
 				{
 					if ( sprite == 1520 || sprite == 1998 )
 					{
@@ -29342,7 +29342,7 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 					}
 					shieldLimb->z -= 1.0;
 				}
-				else if ( race == MONSTER_S )
+				else if ( race == SALAMANDER )
 				{
 					shieldLimb->focalx -= 1.0;
 					shieldLimb->focalz -= 1.0;
@@ -29450,7 +29450,7 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 			shieldLimb->focalz += -3;
 			shieldLimb->focalx += -0.5;
 			shieldLimb->focaly += 1.25;
-			if ( race == MONSTER_G )
+			if ( race == GREMLIN )
 			{
 				shieldLimb->x += 0.25 * cos(this->yaw);
 				shieldLimb->y += 0.25 * sin(this->yaw);
@@ -29478,7 +29478,7 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 			shieldLimb->y += 0.75 * sin(this->yaw + PI / 2) + -0.5 * sin(this->yaw);
 			shieldLimb->z += -0.5;
 		}
-		else if ( race == MONSTER_G )
+		else if ( race == GREMLIN )
 		{
 			shieldLimb->focaly += 0.75;
 		}
@@ -29511,20 +29511,20 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 			shieldLimb->focaly -= 0.75;
 			shieldLimb->focalz -= 0.5;
 		}
-		else if ( race == MONSTER_S )
+		else if ( race == SALAMANDER )
 		{
 			shieldLimb->focaly += 0.75;
 			shieldLimb->focalz -= 0.5;
 		}
-		else if ( race == MONSTER_D )
+		else if ( race == DRYAD )
 		{
 			shieldLimb->focalz -= 0.5;
 		}
-		else if ( race == MONSTER_M )
+		else if ( race == MYCONID )
 		{
 			shieldLimb->focaly += 0.5;
 		}
-		else if ( race == MONSTER_G )
+		else if ( race == GREMLIN )
 		{
 			shieldLimb->focaly += 0.5;
 		}
@@ -30189,18 +30189,18 @@ void Entity::handleQuiverThirdPersonModel(Stat& myStats, int mySprite)
 				break;
 			case KOBOLD:
 			case GNOME:
-			case MONSTER_G:
+			case GREMLIN:
 				// no strap.
 				break;
-			case MONSTER_D:
-			case MONSTER_M:
+			case DRYAD:
+			case MYCONID:
 			{
 				bool shortSprite = false;
-				if ( myStats.type == MONSTER_D && (mySprite == 1514 || mySprite == 1515 || mySprite == 1992 || mySprite == 1993) )
+				if ( myStats.type == DRYAD && (mySprite == 1514 || mySprite == 1515 || mySprite == 1992 || mySprite == 1993) )
 				{
 					shortSprite = true;
 				}
-				if ( myStats.type == MONSTER_M && (mySprite == 1520 || mySprite == 1998) )
+				if ( myStats.type == MYCONID && (mySprite == 1520 || mySprite == 1998) )
 				{
 					shortSprite = true;
 				}
@@ -30229,18 +30229,18 @@ void Entity::handleQuiverThirdPersonModel(Stat& myStats, int mySprite)
 				break;
 			case KOBOLD:
 			case GNOME:
-			case MONSTER_G:
+			case GREMLIN:
 				// no strap.
 				break;
-			case MONSTER_D:
-			case MONSTER_M:
+			case DRYAD:
+			case MYCONID:
 			{
 				bool shortSprite = false;
-				if ( myStats.type == MONSTER_D && (mySprite == 1514 || mySprite == 1515 || mySprite == 1992 || mySprite == 1993) )
+				if ( myStats.type == DRYAD && (mySprite == 1514 || mySprite == 1515 || mySprite == 1992 || mySprite == 1993) )
 				{
 					shortSprite = true;
 				}
-				if ( myStats.type == MONSTER_M && (mySprite == 1520 || mySprite == 1998) )
+				if ( myStats.type == MYCONID && (mySprite == 1520 || mySprite == 1998) )
 				{
 					shortSprite = true;
 				}
@@ -30347,7 +30347,7 @@ real_t Entity::getDamageTableMultiplier(Entity* my, Stat& myStats, DamageTableTy
 
 	if ( damageType != DAMAGE_TABLE_MAGIC && damageType != DAMAGE_TABLE_RANGED )
 	{
-		if ( myStats.type == MONSTER_M )
+		if ( myStats.type == MYCONID )
 		{
 			if ( !myStats.helmet && myStats.getEffectActive(EFF_GROWTH) > 1 )
 			{
@@ -30857,7 +30857,7 @@ bool Entity::entityCanVomit() const
 		}
 	}
 
-	if ( myStats->type == SKELETON || myStats->type == AUTOMATON || myStats->type == MONSTER_M )
+	if ( myStats->type == SKELETON || myStats->type == AUTOMATON || myStats->type == MYCONID )
 	{
 		return false;
 	}
@@ -31514,7 +31514,7 @@ void Entity::creatureHandleLiftZ()
 	{
 		creatureHoverZ += 0.025;
 	}
-	else if ( myStats && type == MONSTER_S
+	else if ( myStats && type == SALAMANDER
 		&& myStats->getEffectActive(EFF_SALAMANDER_HEART) >= 1 && myStats->getEffectActive(EFF_SALAMANDER_HEART) <= 2 )
 	{
 		creatureHoverZ += 0.025;
@@ -31583,10 +31583,10 @@ void Entity::creatureHandleLiftZ()
 		case INCUBUS:
 		case INSECTOID:
 		case VAMPIRE:
-		case MONSTER_D:
-		case MONSTER_M:
-		case MONSTER_S:
-		case MONSTER_G:
+		case DRYAD:
+		case MYCONID:
+		case SALAMANDER:
+		case GREMLIN:
 		case GOATMAN:
 		case GHOUL:
 		case AUTOMATON:
@@ -31703,7 +31703,7 @@ bool Entity::myconidReboundOnHit(Entity* attacker)
 	Stat* myStats = getStats();
 	if ( !myStats ) { return false; }
 	if ( behavior == &actPlayer
-		&& myStats->type == MONSTER_M
+		&& myStats->type == MYCONID
 		&& !myStats->helmet
 		&& myStats->sex == MALE
 		&& myStats->getEffectActive(EFF_GROWTH) > 1 )
@@ -31740,7 +31740,7 @@ bool Entity::modifyDamageMultipliersFromEffects(Entity* hitentity, Entity* attac
 			if ( (attackerStats && attackerStats->type == SPIDER
 				|| attackerStats->type == SCORPION
 				|| attackerStats->type == INSECTOID
-				|| attackerStats->type == MONSTER_M)
+				|| attackerStats->type == MYCONID)
 				|| spellID == SPELL_POISON
 				|| spellID == SPELL_ACID_SPRAY
 				|| spellID == SPELL_SLIME_ACID

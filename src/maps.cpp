@@ -482,11 +482,11 @@ int monsterCurve(int level)
 		switch ( map_rng.rand() % 4 )
 		{
 			case 0:
-				return MONSTER_D;
+				return DRYAD;
 			case 1:
-				return MONSTER_M;
+				return MYCONID;
 			case 2:
-				return MONSTER_G;
+				return GREMLIN;
 			case 3:
 				return MOTH_SMALL;
 		}
@@ -9375,11 +9375,11 @@ void assignActions(map_t* map)
 	            case RACE_TROLL: victoryType = 3; break;
 	            case RACE_SPIDER: victoryType = 3; break;
 	            case RACE_IMP: victoryType = 5; break;
-				case RACE_D: victoryType = 4; break;
-				case RACE_M: victoryType = 4; break;
-				case RACE_G: victoryType = 4; break;
-				case RACE_S: victoryType = 4; break;
-				case RACE_X: victoryType = 4; break;
+				case RACE_DRYAD: victoryType = 3; break;
+				case RACE_MYCONID: victoryType = 3; break;
+				case RACE_GREMLIN: victoryType = 5; break;
+				case RACE_SALAMANDER: victoryType = 3; break;
+				case RACE_GNOME: victoryType = 4; break;
 				}
 				entity->portalVictoryType = victoryType;
 				entity->skill[28] = 1; // is a mechanism

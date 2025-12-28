@@ -293,16 +293,16 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player, E
 				case GNOME:
 					sfx = 835 + local_rng.rand() % 8;
 					break;
-				case MONSTER_D:
+				case DRYAD:
 					sfx = 828 + local_rng.rand() % 4;
 					break;
-				case MONSTER_G:
+				case GREMLIN:
 					sfx = 843 + local_rng.rand() % 3;
 					break;
-				case MONSTER_S:
+				case SALAMANDER:
 					sfx = 0; // 846 + local_rng.rand() % 3
 					break;
-				case MONSTER_M:
+				case MYCONID:
 					sfx = 832 + local_rng.rand() % 3;
 					break;
 				default:
@@ -756,7 +756,7 @@ bool Entity::collisionProjectileMiss(Entity* parent, Entity* projectile)
 			if ( myStats->type == BAT_SMALL || myStats->getEffectActive(EFF_AGILITY) || myStats->getEffectActive(EFF_ENSEMBLE_LUTE) 
 				|| mistFormDodge(true, parent)
 				|| !monsterIsTargetable(true)
-				|| (myStats->type == MONSTER_D && myStats->sex == FEMALE && behavior == &actPlayer)
+				|| (myStats->type == DRYAD && myStats->sex == FEMALE && behavior == &actPlayer)
 				|| (parent && parent->getStats() && parent->getStats()->getEffectActive(EFF_BLIND)) )
 			{
 				bool miss = false;
@@ -808,7 +808,7 @@ bool Entity::collisionProjectileMiss(Entity* parent, Entity* projectile)
 				{
 					miss = false;
 
-					if ( myStats->type == MONSTER_D && myStats->sex == FEMALE && behavior == &actPlayer )
+					if ( myStats->type == DRYAD && myStats->sex == FEMALE && behavior == &actPlayer )
 					{
 						int baseChance = 5;
 						miss = players[this->skill[2]]->mechanics.rollRngProc(Player::PlayerMechanics_t::RngRollTypes::RNG_ROLL_EVASION, baseChance);
@@ -829,7 +829,7 @@ bool Entity::collisionProjectileMiss(Entity* parent, Entity* projectile)
 					{
 						baseChance = std::max(baseChance, static_cast<int>(myStats->getEnsembleEffectBonus(Stat::ENSEMBLE_LUTE_TIER)));
 					}
-					if ( myStats->type == MONSTER_D && myStats->sex == FEMALE && behavior == &actPlayer )
+					if ( myStats->type == DRYAD && myStats->sex == FEMALE && behavior == &actPlayer )
 					{
 						baseChance = std::max(baseChance, 5);
 					}
@@ -880,7 +880,7 @@ bool Entity::collisionProjectileMiss(Entity* parent, Entity* projectile)
 
 						if ( behavior == &actPlayer )
 						{
-							if ( myStats->type == MONSTER_D )
+							if ( myStats->type == DRYAD )
 							{
 								this->playerShakeGrowthHelmet();
 							}
@@ -1295,7 +1295,7 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 				|| yourStats->getEffectActive(EFF_AGILITY) 
 				|| yourStats->getEffectActive(EFF_ENSEMBLE_LUTE)
 				|| entity->mistFormDodge(true, parent)
-				|| (yourStats->type == MONSTER_D && yourStats->sex == FEMALE && entity->behavior == &actPlayer)
+				|| (yourStats->type == DRYAD && yourStats->sex == FEMALE && entity->behavior == &actPlayer)
 				|| (yourStats->getEffectActive(EFF_MAGICIANS_ARMOR) && (my->behavior == &actThrown || my->behavior == &actArrow)))) )
 			{
 				entityDodgeChance = true;

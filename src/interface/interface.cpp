@@ -4384,10 +4384,10 @@ int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monste
 		case INSECTOID:
 		case GOATMAN:
 		case BUGBEAR:
-		case MONSTER_D:
-		case MONSTER_M:
-		case MONSTER_S:
-		case MONSTER_G:
+		case DRYAD:
+		case MYCONID:
+		case SALAMANDER:
+		case GREMLIN:
 		case MIMIC:
 			creatureTier = 2;
 			break;
@@ -31717,11 +31717,11 @@ void GenericGUIMenu::AssistShrineGUI_t::changeCurrentView(GenericGUIMenu::Assist
 	}
 	if ( enabledDLCPack3 )
 	{
-		raceSlots.push_back(RACE_D);
-		raceSlots.push_back(RACE_M);
-		raceSlots.push_back(RACE_S);
-		raceSlots.push_back(RACE_G);
-		raceSlots.push_back(RACE_X);
+		raceSlots.push_back(RACE_GNOME);
+		raceSlots.push_back(RACE_GREMLIN);
+		raceSlots.push_back(RACE_DRYAD);
+		raceSlots.push_back(RACE_MYCONID);
+		raceSlots.push_back(RACE_SALAMANDER);
 	}
 
 	if ( currentView == ASSIST_SHRINE_VIEW_RACE )
@@ -33476,9 +33476,9 @@ void GenericGUIMenu::AssistShrineGUI_t::createAssistShrine()
 								widget.isPressed() ? makeColorRGB(255, 255, 255) : makeColorRGB(128, 128, 128));
 						}
 					}
-					else if ( (gui.selectedRace == -1 && gui.savedRace == -1 && stats[widget.getOwner()]->playerRace == RACE_M)
-						|| (gui.savedRace == RACE_M && gui.selectedRace == -1)
-						|| gui.selectedRace == RACE_M)
+					else if ( (gui.selectedRace == -1 && gui.savedRace == -1 && stats[widget.getOwner()]->playerRace == RACE_MYCONID)
+						|| (gui.savedRace == RACE_MYCONID && gui.selectedRace == -1)
+						|| gui.selectedRace == RACE_MYCONID)
 					{
 						if ( auto img = Image::get("*images/ui/CharSheet/HUD_CharSheet_Height_S_00.png") )
 						{
@@ -33500,9 +33500,9 @@ void GenericGUIMenu::AssistShrineGUI_t::createAssistShrine()
 								widget.isPressed() ? makeColorRGB(255, 255, 255) : makeColorRGB(128, 128, 128));
 						}
 					}
-					else if ( (gui.selectedRace == -1 && gui.savedRace == -1 && stats[widget.getOwner()]->playerRace == RACE_D)
-						|| (gui.savedRace == RACE_D && gui.selectedRace == -1)
-						|| gui.selectedRace == RACE_D )
+					else if ( (gui.selectedRace == -1 && gui.savedRace == -1 && stats[widget.getOwner()]->playerRace == RACE_DRYAD)
+						|| (gui.savedRace == RACE_DRYAD && gui.selectedRace == -1)
+						|| gui.selectedRace == RACE_DRYAD )
 					{
 						if ( auto img = Image::get("*images/ui/CharSheet/HUD_CharSheet_Height_T_00.png") )
 						{
@@ -35043,7 +35043,7 @@ void GenericGUIMenu::AssistShrineGUI_t::updateAssistShrine()
 				{
 					color = hudColors.characterDLC2ClassText;
 				}
-				else if ( classnum >= CLASS_21 && classnum <= CLASS_25 )
+				else if ( classnum >= CLASS_BARD && classnum <= CLASS_PALADIN )
 				{
 					color = hudColors.characterDLC3ClassText;
 				}
@@ -35077,7 +35077,7 @@ void GenericGUIMenu::AssistShrineGUI_t::updateAssistShrine()
 				{
 					classNewText->addColorToLine(1, hudColors.characterDLC2ClassText);
 				}
-				else if ( selectedClass >= CLASS_21 && selectedClass <= CLASS_25 )
+				else if ( selectedClass >= CLASS_BARD && selectedClass <= CLASS_PALADIN )
 				{
 					classNewText->addColorToLine(1, hudColors.characterDLC3ClassText);
 				}
@@ -37228,7 +37228,7 @@ void GenericGUIMenu::AssistShrineGUI_t::updateAssistShrine()
 							{
 								txt->setColor(hudColors.characterDLC2ClassText);
 							}
-							else if ( itemType >= CLASS_21 && itemType <= CLASS_25 )
+							else if ( itemType >= CLASS_BARD && itemType <= CLASS_PALADIN )
 							{
 								txt->setColor(hudColors.characterDLC3ClassText);
 							}

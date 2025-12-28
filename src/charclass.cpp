@@ -517,7 +517,7 @@ void initClassStats(const int classnum, void* myStats)
 		stat->setProficiency(PRO_ALCHEMY, 10);
 		stat->setProficiency(PRO_TRADING, 10);
 	}
-	else if ( classnum == CLASS_21 )
+	else if ( classnum == CLASS_BARD )
 	{
 		stat->STR += -2;
 		stat->DEX += 1;
@@ -541,7 +541,7 @@ void initClassStats(const int classnum, void* myStats)
 		stat->setProficiency(PRO_STEALTH, 15);
 		stat->setProficiency(PRO_TRADING, 15);
 	}
-	else if ( classnum == CLASS_22 )
+	else if ( classnum == CLASS_SAPPER )
 	{
 		stat->STR += 1;
 		stat->DEX += 1;
@@ -562,7 +562,7 @@ void initClassStats(const int classnum, void* myStats)
 		stat->setProficiency(PRO_STEALTH, 25);
 		stat->setProficiency(PRO_ALCHEMY, 25);
 	}
-	else if ( classnum == CLASS_23 )
+	else if ( classnum == CLASS_SCION )
 	{
 		// attributes
 		stat->STR -= 2;
@@ -584,7 +584,7 @@ void initClassStats(const int classnum, void* myStats)
 		stat->setProficiency(PRO_ALCHEMY, 10);
 		stat->setProficiency(PRO_APPRAISAL, 10);
 	}
-	else if ( classnum == CLASS_24 )
+	else if ( classnum == CLASS_HERMIT )
 	{
 		// attributes
 		stat->INT += 1;
@@ -606,7 +606,7 @@ void initClassStats(const int classnum, void* myStats)
 		stat->setProficiency(PRO_STEALTH, 25);
 		stat->setProficiency(PRO_ALCHEMY, 10);
 	}
-	else if ( classnum == CLASS_25 )
+	else if ( classnum == CLASS_PALADIN )
 	{
 		// attributes
 		stat->CON += 0;
@@ -2897,7 +2897,7 @@ void initClass(const int player)
 			free(item);
 		}
 	}
-	else if ( client_classes[player] == CLASS_21 )
+	else if ( client_classes[player] == CLASS_BARD )
 	{
 		initClassStats(client_classes[player], stats[player]);
 
@@ -2982,7 +2982,7 @@ void initClass(const int player)
 			free(item);
 		}
 	}
-	else if ( client_classes[player] == CLASS_22 )
+	else if ( client_classes[player] == CLASS_SAPPER )
 	{
 		initClassStats(client_classes[player], stats[player]);
 
@@ -3111,7 +3111,7 @@ void initClass(const int player)
 			free(item);
 		}
 	}
-	else if ( client_classes[player] == CLASS_23 )
+	else if ( client_classes[player] == CLASS_SCION )
 	{
 		initClassStats(client_classes[player], stats[player]);
 
@@ -3201,7 +3201,7 @@ void initClass(const int player)
 			free(item);
 		}
 	}
-	else if ( client_classes[player] == CLASS_24 )
+	else if ( client_classes[player] == CLASS_HERMIT )
 	{
 		initClassStats(client_classes[player], stats[player]);
 
@@ -3294,7 +3294,7 @@ void initClass(const int player)
 			free(item);
 		}
 	}
-	else if ( client_classes[player] == CLASS_25 )
+	else if ( client_classes[player] == CLASS_PALADIN )
 	{
 		initClassStats(client_classes[player], stats[player]);
 
@@ -3384,7 +3384,7 @@ void initClass(const int player)
 	}
 
 	if ( stats[player]->stat_appearance == 0 
-		&& (stats[player]->playerRace == RACE_D || stats[player]->playerRace == RACE_M)
+		&& (stats[player]->playerRace == RACE_DRYAD || stats[player]->playerRace == RACE_MYCONID)
 		&& !stats[player]->helmet )
 	{
 		stats[player]->setEffectActive(EFF_GROWTH, 3);
@@ -3415,7 +3415,7 @@ void initClass(const int player)
 	}
 	if ( stats[player]->stat_appearance == 0 
 		&& (client_classes[player] >= CLASS_CONJURER 
-			&& client_classes[player] <= CLASS_25)
+			&& client_classes[player] <= CLASS_PALADIN)
 		&& stats[player]->playerRace != RACE_HUMAN )
 	{
 		if ( isLocalPlayer )
@@ -3428,12 +3428,12 @@ void initClass(const int player)
 	}
 
 	players[player]->mechanics.ducksInARow.clear();
-	if ( client_classes[player] == CLASS_24 )
+	if ( client_classes[player] == CLASS_HERMIT )
 	{
 		players[player]->mechanics.ducksInARow.push_back(((uniqueGameKey + player) % MAXPLAYERS));
 	}
 
-	if ( stats[player]->playerRace == RACE_S && stats[player]->stat_appearance == 0 )
+	if ( stats[player]->playerRace == RACE_SALAMANDER && stats[player]->stat_appearance == 0 )
 	{
 		stats[player]->MP = stats[player]->MAXMP / 2;
 	}
@@ -3493,25 +3493,25 @@ void initClass(const int player)
 		{
 			addSpell(SPELL_SALVAGE, player, true);
 		}
-		else if ( stats[player]->playerRace == RACE_D && stats[player]->stat_appearance == 0 )
+		else if ( stats[player]->playerRace == RACE_DRYAD && stats[player]->stat_appearance == 0 )
 		{
 			addSpell(SPELL_THORNS, player, true);
 			addSpell(SPELL_SHRUB, player, true);
 		}
-		else if ( stats[player]->playerRace == RACE_M && stats[player]->stat_appearance == 0 )
+		else if ( stats[player]->playerRace == RACE_MYCONID && stats[player]->stat_appearance == 0 )
 		{
 			addSpell(SPELL_SPORES, player, true);
 			addSpell(SPELL_MUSHROOM, player, true);
 		}
-		else if ( stats[player]->playerRace == RACE_G && stats[player]->stat_appearance == 0 )
+		else if ( stats[player]->playerRace == RACE_GREMLIN && stats[player]->stat_appearance == 0 )
 		{
 			addSpell(SPELL_DEFACE, player, true);
 		}
-		else if ( stats[player]->playerRace == RACE_S && stats[player]->stat_appearance == 0 )
+		else if ( stats[player]->playerRace == RACE_SALAMANDER && stats[player]->stat_appearance == 0 )
 		{
 			addSpell(SPELL_BREATHE_FIRE, player, true);
 		}
-		else if ( stats[player]->playerRace == RACE_X && stats[player]->stat_appearance == 0 )
+		else if ( stats[player]->playerRace == RACE_GNOME && stats[player]->stat_appearance == 0 )
 		{
 			addSpell(SPELL_FORGE_JEWEL, player, true);
 		}
@@ -3573,27 +3573,27 @@ void initClass(const int player)
 		{
 			addSpell(SPELL_SUMMON, player, true);
 		}
-		else if ( client_classes[player] == CLASS_21 )
+		else if ( client_classes[player] == CLASS_BARD )
 		{
 			addSpell(SPELL_ALTER_INSTRUMENT, player, true);
 		}
-		else if ( client_classes[player] == CLASS_22 )
+		else if ( client_classes[player] == CLASS_SAPPER )
 		{
 			addSpell(SPELL_BOOBY_TRAP, player, true);
 		}
-		else if ( client_classes[player] == CLASS_23 )
+		else if ( client_classes[player] == CLASS_SCION )
 		{
 			addSpell(SPELL_EARTH_ELEMENTAL, player, true);
 			addSpell(SPELL_TELEKINESIS, player, true);
 			addSpell(SPELL_BLESS_FOOD, player, true);
 		}
-		else if ( client_classes[player] == CLASS_24 )
+		else if ( client_classes[player] == CLASS_HERMIT )
 		{
 			addSpell(SPELL_MAGICIANS_ARMOR, player, true);
 			addSpell(SPELL_PROJECT_SPIRIT, player, true);
 			addSpell(SPELL_DEEP_SHADE, player, true);
 		}
-		else if ( client_classes[player] == CLASS_25 )
+		else if ( client_classes[player] == CLASS_PALADIN )
 		{
 			addSpell(SPELL_DIVINE_ZEAL, player, true);
 		}

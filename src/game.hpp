@@ -155,11 +155,11 @@ enum PlayerClasses : int
 	CLASS_PUNISHER,
 	CLASS_SHAMAN,
 	CLASS_HUNTER,
-	CLASS_21,
-	CLASS_22,
-	CLASS_23,
-	CLASS_24,
-	CLASS_25
+	CLASS_BARD,
+	CLASS_SAPPER,
+	CLASS_SCION,
+	CLASS_HERMIT,
+	CLASS_PALADIN
 };
 
 static const std::vector<std::string> playerClassInternalNames = {
@@ -184,11 +184,11 @@ static const std::vector<std::string> playerClassInternalNames = {
 	"class_punisher",
 	"class_shaman",
 	"class_hunter",
-	"class_21",
-	"class_22",
-	"class_23",
-	"class_24",
-	"class_25"
+	"class_bard",
+	"class_sapper",
+	"class_scion",
+	"class_hermit",
+	"class_paladin"
 };
 
 static const int CLASS_SHAMAN_NUM_STARTING_SPELLS = 15;
@@ -208,11 +208,11 @@ enum PlayerRaces : int
 	RACE_TROLL,
 	RACE_SPIDER,
 	RACE_IMP,
-	RACE_D,
-	RACE_M,
-	RACE_S,
-	RACE_G,
-	RACE_X,
+	RACE_GNOME,
+	RACE_GREMLIN,
+	RACE_DRYAD,
+	RACE_MYCONID,
+	RACE_SALAMANDER,
 	RACE_ENUM_END
 };
 

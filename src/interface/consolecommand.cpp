@@ -2135,11 +2135,11 @@ namespace ConsoleCommands {
 					}
 					if ( enabledDLCPack3 )
 					{
-						chances[RACE_G] = 1;
-						chances[RACE_M] = 1;
-						chances[RACE_D] = 1;
-						chances[RACE_X] = 1;
-						chances[RACE_S] = 1;
+						chances[RACE_GREMLIN] = 1;
+						chances[RACE_MYCONID] = 1;
+						chances[RACE_DRYAD] = 1;
+						chances[RACE_GNOME] = 1;
+						chances[RACE_SALAMANDER] = 1;
 					}
 
 					stats[i]->playerRace = local_rng.discrete(chances.data(), chances.size());
@@ -2160,8 +2160,8 @@ namespace ConsoleCommands {
 								|| client_classes[i] == CLASS_MESMER || client_classes[i] == CLASS_BREWER))
 							|| (!enabledDLCPack2 && (client_classes[i] == CLASS_HUNTER || client_classes[i] == CLASS_SHAMAN
 								|| client_classes[i] == CLASS_PUNISHER || client_classes[i] == CLASS_MACHINIST))
-							|| (!enabledDLCPack3 && (client_classes[i] == CLASS_21 || client_classes[i] == CLASS_22
-								|| client_classes[i] == CLASS_23 || client_classes[i] == CLASS_24 || client_classes[i] == CLASS_25)) )
+							|| (!enabledDLCPack3 && (client_classes[i] == CLASS_BARD || client_classes[i] == CLASS_SAPPER
+								|| client_classes[i] == CLASS_SCION || client_classes[i] == CLASS_HERMIT || client_classes[i] == CLASS_PALADIN)) )
 						{
 							client_classes[i] = local_rng.rand() % (NUMCLASSES);
 						}
@@ -6435,10 +6435,10 @@ namespace ConsoleCommands {
 						case 166: monsterType = GYROBOT; break;
 						case 188: monsterType = BAT_SMALL; break;
 						case 189: monsterType = BUGBEAR; break;
-						case 204: monsterType = MONSTER_D; break;
-						case 205: monsterType = MONSTER_M; break;
-						case 206: monsterType = MONSTER_S; break;
-						case 207: monsterType = MONSTER_G; break;
+						case 204: monsterType = DRYAD; break;
+						case 205: monsterType = MYCONID; break;
+						case 206: monsterType = SALAMANDER; break;
+						case 207: monsterType = GREMLIN; break;
 						case 246: monsterType = REVENANT_SKULL; break;
 						case 247: monsterType = MONSTER_ADORCISED_WEAPON; break;
 						default:

@@ -293,12 +293,12 @@ bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 				serverUpdateHunger(player);
 			}
 
-			if ( stats->type == MONSTER_D )
+			if ( stats->type == DRYAD )
 			{
 				if ( auto effectStrength = stats->getEffectActive(EFF_GROWTH) )
 				{
 					int chance = 10;
-					if ( (stats->type == MONSTER_D && stats->sex == FEMALE) )
+					if ( (stats->type == DRYAD && stats->sex == FEMALE) )
 					{
 						chance = 20;
 					}
@@ -4958,7 +4958,7 @@ void item_Food(Item*& item, int player)
 			{
 				players[player]->entity->char_gonnavomit = 40 + local_rng.rand() % 10;
 			}
-			else if ( stats[player]->type == MONSTER_M && local_rng.rand() % 3 == 0 )
+			else if ( stats[player]->type == MYCONID && local_rng.rand() % 3 == 0 )
 			{
 				// gain some mp regen
 				players[player]->entity->modMP(1 + local_rng.rand() % 2);
@@ -4970,7 +4970,7 @@ void item_Food(Item*& item, int player)
 				if ( auto effectStrength = stats[player]->getEffectActive(EFF_GROWTH) )
 				{
 					int chance = 25;
-					if ( (stats[player]->type == MONSTER_M && stats[player]->sex == MALE) )
+					if ( (stats[player]->type == MYCONID && stats[player]->sex == MALE) )
 					{
 						chance = 50;
 					}
@@ -5408,7 +5408,7 @@ void item_FoodTin(Item*& item, int player)
 			{
 				players[player]->entity->char_gonnavomit = 40 + local_rng.rand() % 10;
 			}
-			else if ( stats[player]->type == MONSTER_M && local_rng.rand() % 3 == 0 )
+			else if ( stats[player]->type == MYCONID && local_rng.rand() % 3 == 0 )
 			{
 				// gain some mp regen
 				players[player]->entity->modMP(1 + local_rng.rand() % 2);
@@ -5420,7 +5420,7 @@ void item_FoodTin(Item*& item, int player)
 				if ( auto effectStrength = stats[player]->getEffectActive(EFF_GROWTH) )
 				{
 					int chance = 25;
-					if ( (stats[player]->type == MONSTER_M && stats[player]->sex == MALE) )
+					if ( (stats[player]->type == MYCONID && stats[player]->sex == MALE) )
 					{
 						chance = 50;
 					}
@@ -5657,7 +5657,7 @@ void item_AmuletSexChange(Item* item, int player)
 		{
 			messagePlayer(player, MESSAGE_HINT | MESSAGE_STATUS, Language::get(6914));
 		}
-		else if ( stats[player]->type == MONSTER_D )
+		else if ( stats[player]->type == DRYAD )
 		{
 			if ( stats[player]->sex == MALE )
 			{
@@ -5668,7 +5668,7 @@ void item_AmuletSexChange(Item* item, int player)
 				messagePlayer(player, MESSAGE_HINT | MESSAGE_STATUS, Language::get(6913));
 			}
 		}
-		else if ( stats[player]->type == MONSTER_M )
+		else if ( stats[player]->type == MYCONID )
 		{
 			if ( stats[player]->sex == MALE )
 			{

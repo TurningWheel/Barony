@@ -6719,11 +6719,11 @@ int SaveGameInfo::Player::isCharacterValidFromDLC()
 			return INVALID_REQUIREDLC2;
 		}
 		break;
-	case CLASS_21:
-	case CLASS_22:
-	case CLASS_23:
-	case CLASS_24:
-	case CLASS_25:
+	case CLASS_BARD:
+	case CLASS_SAPPER:
+	case CLASS_SCION:
+	case CLASS_HERMIT:
+	case CLASS_PALADIN:
 		if ( !enabledDLCPack3 )
 		{
 			return INVALID_REQUIREDLC3;
@@ -6753,11 +6753,11 @@ int SaveGameInfo::Player::isCharacterValidFromDLC()
 			return INVALID_REQUIREDLC2;
 		}
 		break;
-	case RACE_D:
-	case RACE_M:
-	case RACE_G:
-	case RACE_S:
-	case RACE_X:
+	case RACE_DRYAD:
+	case RACE_MYCONID:
+	case RACE_GREMLIN:
+	case RACE_SALAMANDER:
+	case RACE_GNOME:
 		if ( !enabledDLCPack3 )
 		{
 			return INVALID_REQUIREDLC3;
@@ -6838,40 +6838,40 @@ int SaveGameInfo::Player::isCharacterValidFromDLC()
 		}
 		return isAchievementUnlockedForClassUnlock(RACE_INSECTOID) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
 		break;
-	case CLASS_21:
-		if ( this->race == RACE_X )
+	case CLASS_BARD:
+		if ( this->race == RACE_GNOME )
 		{
 			return VALID_OK_CHARACTER;
 		}
-		return isAchievementUnlockedForClassUnlock(RACE_X) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
+		return isAchievementUnlockedForClassUnlock(RACE_GNOME) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
 		break;
-	case CLASS_22:
-		if ( this->race == RACE_G )
+	case CLASS_SAPPER:
+		if ( this->race == RACE_GREMLIN )
 		{
 			return VALID_OK_CHARACTER;
 		}
-		return isAchievementUnlockedForClassUnlock(RACE_G) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
+		return isAchievementUnlockedForClassUnlock(RACE_GREMLIN) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
 		break;
-	case CLASS_23:
-		if ( this->race == RACE_D )
+	case CLASS_SCION:
+		if ( this->race == RACE_DRYAD )
 		{
 			return VALID_OK_CHARACTER;
 		}
-		return isAchievementUnlockedForClassUnlock(RACE_D) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
+		return isAchievementUnlockedForClassUnlock(RACE_DRYAD) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
 		break;
-	case CLASS_24:
-		if ( this->race == RACE_M )
+	case CLASS_HERMIT:
+		if ( this->race == RACE_MYCONID )
 		{
 			return VALID_OK_CHARACTER;
 		}
-		return isAchievementUnlockedForClassUnlock(RACE_M) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
+		return isAchievementUnlockedForClassUnlock(RACE_MYCONID) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
 		break;
-	case CLASS_25:
-		if ( this->race == RACE_S )
+	case CLASS_PALADIN:
+		if ( this->race == RACE_SALAMANDER )
 		{
 			return VALID_OK_CHARACTER;
 		}
-		return isAchievementUnlockedForClassUnlock(RACE_S) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
+		return isAchievementUnlockedForClassUnlock(RACE_SALAMANDER) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
 		break;
 	default:
 		break;

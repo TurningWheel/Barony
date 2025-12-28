@@ -2448,7 +2448,7 @@ void actLeafPile(Entity* my)
 							if ( !entity->monsterIsTargetable() ) { continue; }
 							if ( Stat* entityStats = entity->getStats() )
 							{
-								if ( entityStats->type == MONSTER_M || entityStats->type == MONSTER_D )
+								if ( entityStats->type == MYCONID || entityStats->type == DRYAD )
 								{
 									continue;
 								}

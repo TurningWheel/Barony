@@ -13456,7 +13456,7 @@ failed:
 	std::vector<const char*> reducedClassList(int index) {
 		std::vector<const char*> result;
 		result.reserve(num_classes);
-		for (int c = CLASS_BARBARIAN; c <= CLASS_25; ++c) {
+		for (int c = CLASS_BARBARIAN; c <= CLASS_PALADIN; ++c) {
 			if (isCharacterValidFromDLC(*stats[index], c) == VALID_OK_CHARACTER) {
 				result.emplace_back(classes_in_order[c]);
 			}
@@ -13809,19 +13809,19 @@ failed:
 		case CLASS_HUNTER:
 			achName = Compendium_t::achievements["BARONY_ACH_BUGGAR_BARON"].name;
 			break;
-		case CLASS_21:
+		case CLASS_BARD:
 			achName = Compendium_t::achievements["BARONY_ACH_XXX"].name;
 			break;
-		case CLASS_22:
+		case CLASS_SAPPER:
 			achName = Compendium_t::achievements["BARONY_ACH_XXX"].name;
 			break;
-		case CLASS_23:
+		case CLASS_SCION:
 			achName = Compendium_t::achievements["BARONY_ACH_XXX"].name;
 			break;
-		case CLASS_24:
+		case CLASS_HERMIT:
 			achName = Compendium_t::achievements["BARONY_ACH_XXX"].name;
 			break;
-		case CLASS_25:
+		case CLASS_PALADIN:
 			achName = Compendium_t::achievements["BARONY_ACH_XXX"].name;
 			break;
 		default:
@@ -13885,25 +13885,25 @@ failed:
 		{
 			allowPick = isAchievementUnlockedForClassUnlock(RACE_INSECTOID);
 		}
-		else if ( race != RACE_X && challengeClass == CLASS_21 )
+		else if ( race != RACE_GNOME && challengeClass == CLASS_BARD )
 		{
-			allowPick = isAchievementUnlockedForClassUnlock(RACE_X);
+			allowPick = isAchievementUnlockedForClassUnlock(RACE_GNOME);
 		}
-		else if ( race != RACE_G && challengeClass == CLASS_22 )
+		else if ( race != RACE_GREMLIN && challengeClass == CLASS_SAPPER )
 		{
-			allowPick = isAchievementUnlockedForClassUnlock(RACE_G);
+			allowPick = isAchievementUnlockedForClassUnlock(RACE_GREMLIN);
 		}
-		else if ( race != RACE_D && challengeClass == CLASS_23 )
+		else if ( race != RACE_DRYAD && challengeClass == CLASS_SCION )
 		{
-			allowPick = isAchievementUnlockedForClassUnlock(RACE_D);
+			allowPick = isAchievementUnlockedForClassUnlock(RACE_DRYAD);
 		}
-		else if ( race != RACE_M && challengeClass == CLASS_24 )
+		else if ( race != RACE_MYCONID && challengeClass == CLASS_HERMIT )
 		{
-			allowPick = isAchievementUnlockedForClassUnlock(RACE_M);
+			allowPick = isAchievementUnlockedForClassUnlock(RACE_MYCONID);
 		}
-		else if ( race != RACE_S && challengeClass == CLASS_25 )
+		else if ( race != RACE_SALAMANDER && challengeClass == CLASS_PALADIN )
 		{
-			allowPick = isAchievementUnlockedForClassUnlock(RACE_S);
+			allowPick = isAchievementUnlockedForClassUnlock(RACE_SALAMANDER);
 		}
 		return allowPick;
 	}
@@ -16332,14 +16332,14 @@ failed:
 			male_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAutoHigh_00.png");
 			male_button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAutoPress_00.png");
 		}
-		else if ( stats[index]->playerRace == RACE_M )
+		else if ( stats[index]->playerRace == RACE_MYCONID )
 		{
 			male_button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortOn_00.png");
 			male_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShort_00.png");
 			male_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortHigh_00.png");
 			male_button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortPress_00.png");
 		}
-		else if ( stats[index]->playerRace == RACE_D )
+		else if ( stats[index]->playerRace == RACE_DRYAD )
 		{
 			male_button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallOn_00.png");
 			male_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTall_00.png");
@@ -16388,14 +16388,14 @@ failed:
 				button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAutoHigh_00.png");
 				button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAutoPress_00.png");
 			}
-			else if ( stats[index]->playerRace == RACE_M )
+			else if ( stats[index]->playerRace == RACE_MYCONID )
 			{
 				button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortOn_00.png");
 				button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShort_00.png");
 				button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortHigh_00.png");
 				button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortPress_00.png");
 			}
-			else if ( stats[index]->playerRace == RACE_D )
+			else if ( stats[index]->playerRace == RACE_DRYAD )
 			{
 				button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallOn_00.png");
 				button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTall_00.png");
@@ -16422,14 +16422,14 @@ failed:
 			female_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAutoHigh_00.png");
 			female_button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAutoPress_00.png");
 		}
-		else if ( stats[index]->playerRace == RACE_M )
+		else if ( stats[index]->playerRace == RACE_MYCONID )
 		{
 			female_button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallOn_00.png");
 			female_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTall_00.png");
 			female_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallHigh_00.png");
 			female_button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallPress_00.png");
 		}
-		else if ( stats[index]->playerRace == RACE_D )
+		else if ( stats[index]->playerRace == RACE_DRYAD )
 		{
 			female_button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortOn_00.png");
 			female_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShort_00.png");
@@ -16478,14 +16478,14 @@ failed:
 				button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAutoHigh_00.png");
 				button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAutoPress_00.png");
 			} 
-			else if ( stats[index]->playerRace == RACE_M )
+			else if ( stats[index]->playerRace == RACE_MYCONID )
 			{
 				button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallOn_00.png");
 				button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTall_00.png");
 				button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallHigh_00.png");
 				button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallPress_00.png");
 			}
-			else if ( stats[index]->playerRace == RACE_D )
+			else if ( stats[index]->playerRace == RACE_DRYAD )
 			{
 				button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortOn_00.png");
 				button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShort_00.png");
@@ -16554,9 +16554,9 @@ failed:
 		{
 			return 5348 + classnum;
 		}
-		else if ( classnum >= CLASS_21 && classnum <= CLASS_25 )
+		else if ( classnum >= CLASS_BARD && classnum <= CLASS_PALADIN )
 		{
-			return 6789 + (classnum - CLASS_21);
+			return 6789 + (classnum - CLASS_BARD);
 		}
 		return 5348;
 	}
@@ -17521,14 +17521,14 @@ failed:
 			male_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAutoHigh_00.png");
 			male_button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAutoPress_00.png");
 		} 
-		else if ( stats[index]->playerRace == RACE_M )
+		else if ( stats[index]->playerRace == RACE_MYCONID )
 		{
 			male_button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortOn_00.png");
 			male_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShort_00.png");
 			male_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortHigh_00.png");
 			male_button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortPress_00.png");
 		}
-		else if ( stats[index]->playerRace == RACE_D )
+		else if ( stats[index]->playerRace == RACE_DRYAD )
 		{
 			male_button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallOn_00.png");
 			male_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTall_00.png");
@@ -17572,14 +17572,14 @@ failed:
 				button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAutoHigh_00.png");
 				button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAutoPress_00.png");
 			} 
-			else if ( stats[index]->playerRace == RACE_M )
+			else if ( stats[index]->playerRace == RACE_MYCONID )
 			{
 				button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortOn_00.png");
 				button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShort_00.png");
 				button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortHigh_00.png");
 				button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortPress_00.png");
 			}
-			else if ( stats[index]->playerRace == RACE_D )
+			else if ( stats[index]->playerRace == RACE_DRYAD )
 			{
 				button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallOn_00.png");
 				button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTall_00.png");
@@ -17606,14 +17606,14 @@ failed:
 			female_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAutoHigh_00.png");
 			female_button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAutoPress_00.png");
 		} 
-		else if ( stats[index]->playerRace == RACE_M )
+		else if ( stats[index]->playerRace == RACE_MYCONID )
 		{
 			female_button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallOn_00.png");
 			female_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTall_00.png");
 			female_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallHigh_00.png");
 			female_button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallPress_00.png");
 		}
-		else if ( stats[index]->playerRace == RACE_D )
+		else if ( stats[index]->playerRace == RACE_DRYAD )
 		{
 			female_button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortOn_00.png");
 			female_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShort_00.png");
@@ -17658,14 +17658,14 @@ failed:
 				button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAutoHigh_00.png");
 				button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAutoPress_00.png");
 			}
-			else if ( stats[index]->playerRace == RACE_M )
+			else if ( stats[index]->playerRace == RACE_MYCONID )
 			{
 				button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallOn_00.png");
 				button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTall_00.png");
 				button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallHigh_00.png");
 				button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallPress_00.png");
 			}
-			else if ( stats[index]->playerRace == RACE_D )
+			else if ( stats[index]->playerRace == RACE_DRYAD )
 			{
 				button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortOn_00.png");
 				button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShort_00.png");
@@ -17788,11 +17788,11 @@ failed:
 					}
 					if ( enabledDLCPack3 )
 					{
-						chances[RACE_G] = 1;
-						chances[RACE_M] = 1;
-						chances[RACE_D] = 1;
-						chances[RACE_X] = 1;
-						chances[RACE_S] = 1;
+						chances[RACE_GREMLIN] = 1;
+						chances[RACE_MYCONID] = 1;
+						chances[RACE_DRYAD] = 1;
+						chances[RACE_GNOME] = 1;
+						chances[RACE_SALAMANDER] = 1;
 					}
 					stats[index]->playerRace = RNG.discrete(chances.data(), chances.size());
 				}
@@ -32302,11 +32302,11 @@ failed:
 							check = INVALID_REQUIREDLC2;
 						}
 						break;
-					case CLASS_21:
-					case CLASS_22:
-					case CLASS_23:
-					case CLASS_24:
-					case CLASS_25:
+					case CLASS_BARD:
+					case CLASS_SAPPER:
+					case CLASS_SCION:
+					case CLASS_HERMIT:
+					case CLASS_PALADIN:
 						if ( !enabledDLCPack3 )
 						{
 							check = INVALID_REQUIREDLC3;
@@ -32335,11 +32335,11 @@ failed:
 							check = INVALID_REQUIREDLC2;
 						}
 						break;
-					case RACE_G:
-					case RACE_D:
-					case RACE_M:
-					case RACE_S:
-					case RACE_X:
+					case RACE_GREMLIN:
+					case RACE_DRYAD:
+					case RACE_MYCONID:
+					case RACE_SALAMANDER:
+					case RACE_GNOME:
 						if ( !enabledDLCPack3 )
 						{
 							check = INVALID_REQUIREDLC3;

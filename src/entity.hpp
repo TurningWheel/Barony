@@ -1182,13 +1182,13 @@ public:
 			case BUGBEAR:
 				bugbearChooseWeapon(target, dist);
 				break;
-			case MONSTER_D:
+			case DRYAD:
 				monsterDChooseWeapon(target, dist);
 				break;
-			case MONSTER_M:
+			case MYCONID:
 				monsterMChooseWeapon(target, dist);
 				break;
-			case MONSTER_G:
+			case GREMLIN:
 				monsterGChooseWeapon(target, dist);
 				break;
 			case SHOPKEEPER:

@@ -1008,7 +1008,7 @@ real_t getBonusFromCasterOfSpellElement(Entity* caster, Stat* casterStats, spell
 			percentMP = (100 - percentMP) / 10;
 			bonus += 0.5 * percentMP / 10.0;
 		}
-		if ( casterStats->type == MONSTER_D )
+		if ( casterStats->type == DRYAD )
 		{
 			if ( !casterStats->helmet && casterStats->getEffectActive(EFF_GROWTH) > 1 )
 			{
@@ -1115,7 +1115,7 @@ real_t getBonusFromCasterOfSpellElement(Entity* caster, Stat* casterStats, spell
 			bonus += 0.25 * effectStrength;
 		}*/
 
-		if ( casterStats->type == MONSTER_S )
+		if ( casterStats->type == SALAMANDER )
 		{
 			if ( Uint8 effectStrength = casterStats->getEffectActive(EFF_SALAMANDER_HEART) )
 			{

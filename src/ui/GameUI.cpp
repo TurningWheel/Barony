@@ -525,7 +525,7 @@ struct MPBarPaths_t
 			}*/
 			return automatonSTBars;
 		}
-		else if ( stats[player]->type == MONSTER_S || (stats[player]->playerRace == RACE_S && stats[player]->stat_appearance == 0) )
+		else if ( stats[player]->type == SALAMANDER || (stats[player]->playerRace == RACE_SALAMANDER && stats[player]->stat_appearance == 0) )
 		{
 			return automatonHTBars;
 		}
@@ -6364,7 +6364,7 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 				|| stats[player]->getEffectActive(EFF_SIGIL)
 				|| stats[player]->getEffectActive(EFF_SANCTUARY)
 				|| (cast_animation[player].overcharge > 0 || cast_animation[player].overcharge_init > 0)
-				|| (players[player]->mechanics.gremlinBreakableCounter > 0 && stats[player]->type == MONSTER_G)
+				|| (players[player]->mechanics.gremlinBreakableCounter > 0 && stats[player]->type == GREMLIN)
 				|| players[player]->mechanics.getWealthTier() > 0 )
 			{
 				for ( auto img : frame->getImages() )
@@ -8619,7 +8619,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 			}
 			else if ( i == EFF_GROWTH )
 			{
-				if ( !(stats[player]->type == MONSTER_M || stats[player]->type == MONSTER_D)
+				if ( !(stats[player]->type == MYCONID || stats[player]->type == DRYAD)
 					|| stats[player]->helmet )
 				{
 					effectActive = false;
@@ -8648,7 +8648,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 			}
 			else if ( i == EFF_SALAMANDER_HEART )
 			{
-				if ( !(stats[player]->type == MONSTER_S) )
+				if ( !(stats[player]->type == SALAMANDER) )
 				{
 					effectActive = false;
 				}
@@ -8829,7 +8829,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 			{
 				miscEffects[kEffectStability] = true;
 			}
-			if ( stats[player]->type == MONSTER_G && players[player]->mechanics.gremlinBreakableCounter >= 0 )
+			if ( stats[player]->type == GREMLIN && players[player]->mechanics.gremlinBreakableCounter >= 0 )
 			{
 				miscEffects[kEffectVandal] = true;
 			}
@@ -21428,7 +21428,7 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 		{
 			className->setTextColor(hudColors.characterDLC2ClassText);
 		}
-		else if ( client_classes[player.playernum] >= CLASS_21 && client_classes[player.playernum] <= CLASS_25 )
+		else if ( client_classes[player.playernum] >= CLASS_BARD && client_classes[player.playernum] <= CLASS_PALADIN )
 		{
 			className->setTextColor(hudColors.characterDLC3ClassText);
 		}
@@ -21554,11 +21554,11 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 				{
 					sexImg->path = "*#images/ui/CharSheet/HUD_CharSheet_Sex_AutomatonM_02.png";
 				}
-				else if ( type == MONSTER_D )
+				else if ( type == DRYAD )
 				{
 					sexImg->path = "*#images/ui/CharSheet/HUD_CharSheet_Height_T_00.png";
 				}
-				else if ( type == MONSTER_M )
+				else if ( type == MYCONID )
 				{
 					sexImg->path = "*#images/ui/CharSheet/HUD_CharSheet_Height_S_00.png";
 				}
@@ -21575,11 +21575,11 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 				{
 					sexImg->path = "*#images/ui/CharSheet/HUD_CharSheet_Sex_AutomatonF_02.png";
 				}
-				else if ( type == MONSTER_D )
+				else if ( type == DRYAD )
 				{
 					sexImg->path = "*#images/ui/CharSheet/HUD_CharSheet_Height_S_00.png";
 				}
-				else if ( type == MONSTER_M )
+				else if ( type == MYCONID )
 				{
 					sexImg->path = "*#images/ui/CharSheet/HUD_CharSheet_Height_T_00.png";
 				}
@@ -31411,7 +31411,7 @@ void Player::HUD_t::updateXPBar()
 			{
 				textClass->setColor(hudColors.characterDLC2ClassText);
 			}
-			else if ( client_classes[player.playernum] >= CLASS_21 && client_classes[player.playernum] <= CLASS_25 )
+			else if ( client_classes[player.playernum] >= CLASS_BARD && client_classes[player.playernum] <= CLASS_PALADIN )
 			{
 				textClass->setColor(hudColors.characterDLC3ClassText);
 			}

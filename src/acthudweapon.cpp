@@ -300,13 +300,13 @@ void actHudArm(Entity* my)
 			case RAT:
 				my->sprite = 859;
 				break;
-			case MONSTER_D:
+			case DRYAD:
 				my->sprite = 2320;
 				break;
-			case MONSTER_M:
+			case MYCONID:
 				my->sprite = 2328;
 				break;
-			case MONSTER_G:
+			case GREMLIN:
 				if ( stats[HUDARM_PLAYERNUM]->sex == FEMALE )
 				{
 					my->sprite = 2324;
@@ -316,7 +316,7 @@ void actHudArm(Entity* my)
 					my->sprite = 2326;
 				}
 				break;
-			case MONSTER_S:
+			case SALAMANDER:
 				my->sprite = 2330;
 				break;
 			case GNOME:
@@ -3764,7 +3764,7 @@ void actHudWeapon(Entity* my)
 		{
 			my->z -= -2 * .5;
 		}
-		else if ( playerRace == MONSTER_G )
+		else if ( playerRace == GREMLIN )
 		{
 			my->z -= -1 * .5;
 		}
@@ -3772,7 +3772,7 @@ void actHudWeapon(Entity* my)
 		{
 			my->z -= -2 * .5;
 		}
-		else if ( playerRace == MONSTER_D )
+		else if ( playerRace == DRYAD )
 		{
 			if ( players[HUDWEAPON_PLAYERNUM]->entity->z >= 1.5 )
 			{
@@ -3783,7 +3783,7 @@ void actHudWeapon(Entity* my)
 				my->z -= -2.0 * .5;
 			}
 		}
-		else if ( playerRace == MONSTER_M )
+		else if ( playerRace == MYCONID )
 		{
 			my->z -= -1.0 * .5;
 		}
@@ -3959,7 +3959,7 @@ void actHudWeapon(Entity* my)
 		{
 			my->z -= -2 * .5;
 		}
-		else if ( playerRace == MONSTER_G )
+		else if ( playerRace == GREMLIN )
 		{
 			my->z -= -1 * .5;
 		}
@@ -3967,7 +3967,7 @@ void actHudWeapon(Entity* my)
 		{
 			my->z -= -2 * .5;
 		}
-		else if ( playerRace == MONSTER_D )
+		else if ( playerRace == DRYAD )
 		{
 			if ( players[HUDWEAPON_PLAYERNUM]->entity->z >= 1.5 )
 			{
@@ -3978,7 +3978,7 @@ void actHudWeapon(Entity* my)
 				my->z -= -2.0 * .5;
 			}
 		}
-		else if ( playerRace == MONSTER_M )
+		else if ( playerRace == MYCONID )
 		{
 			my->z -= -1.0 * .5;
 		}
@@ -5041,7 +5041,7 @@ void actHudShield(Entity* my)
 	{
 		my->z -= -2 * .5;
 	}
-	else if ( playerRace == MONSTER_G )
+	else if ( playerRace == GREMLIN )
 	{
 		my->z -= -1 * .5;
 	}
@@ -5049,7 +5049,7 @@ void actHudShield(Entity* my)
 	{
 		my->z -= -2 * .5;
 	}
-	else if ( playerRace == MONSTER_D )
+	else if ( playerRace == DRYAD )
 	{
 		if ( players[HUDSHIELD_PLAYERNUM]->entity->z >= 1.5 )
 		{
@@ -5060,7 +5060,7 @@ void actHudShield(Entity* my)
 			my->z -= -2.0 * .5;
 		}
 	}
-	else if ( playerRace == MONSTER_M )
+	else if ( playerRace == MYCONID )
 	{
 		my->z -= -1.0 * .5;
 	}
@@ -5662,7 +5662,7 @@ void actHudAdditional(Entity* my)
 	{
 		my->z -= -2 * .5;
 	}
-	else if ( stats[HUDSHIELD_PLAYERNUM]->type == MONSTER_G )
+	else if ( stats[HUDSHIELD_PLAYERNUM]->type == GREMLIN )
 	{
 		my->z -= -1 * .5;
 	}
@@ -5670,7 +5670,7 @@ void actHudAdditional(Entity* my)
 	{
 		my->z -= -2 * .5;
 	}
-	else if ( stats[HUDSHIELD_PLAYERNUM]->type == MONSTER_D )
+	else if ( stats[HUDSHIELD_PLAYERNUM]->type == DRYAD )
 	{
 		if ( players[HUDSHIELD_PLAYERNUM]->entity->z >= 1.5 )
 		{
@@ -5681,7 +5681,7 @@ void actHudAdditional(Entity* my)
 			my->z -= -2.0 * .5;
 		}
 	}
-	else if ( stats[HUDSHIELD_PLAYERNUM]->type == MONSTER_M )
+	else if ( stats[HUDSHIELD_PLAYERNUM]->type == MYCONID )
 	{
 		my->z -= -1.0 * .5;
 	}

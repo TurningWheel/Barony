@@ -499,9 +499,9 @@ void initMonsterS(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[MONSTER_S][1][0]; // 0
-	entity->focaly = limbs[MONSTER_S][1][1]; // 0
-	entity->focalz = limbs[MONSTER_S][1][2]; // 0
+	entity->focalx = limbs[SALAMANDER][1][0]; // 0
+	entity->focaly = limbs[SALAMANDER][1][1]; // 0
+	entity->focalz = limbs[SALAMANDER][1][2]; // 0
 	entity->behavior = &actMonsterSLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
@@ -519,9 +519,9 @@ void initMonsterS(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[MONSTER_S][2][0]; // 0
-	entity->focaly = limbs[MONSTER_S][2][1]; // 0
-	entity->focalz = limbs[MONSTER_S][2][2]; // 2
+	entity->focalx = limbs[SALAMANDER][2][0]; // 0
+	entity->focaly = limbs[SALAMANDER][2][1]; // 0
+	entity->focalz = limbs[SALAMANDER][2][2]; // 2
 	entity->behavior = &actMonsterSLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
@@ -539,9 +539,9 @@ void initMonsterS(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[MONSTER_S][3][0]; // 0
-	entity->focaly = limbs[MONSTER_S][3][1]; // 0
-	entity->focalz = limbs[MONSTER_S][3][2]; // 2
+	entity->focalx = limbs[SALAMANDER][3][0]; // 0
+	entity->focaly = limbs[SALAMANDER][3][1]; // 0
+	entity->focalz = limbs[SALAMANDER][3][2]; // 2
 	entity->behavior = &actMonsterSLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
@@ -559,9 +559,9 @@ void initMonsterS(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[MONSTER_S][4][0]; // 0
-	entity->focaly = limbs[MONSTER_S][4][1]; // 0
-	entity->focalz = limbs[MONSTER_S][4][2]; // 1.5
+	entity->focalx = limbs[SALAMANDER][4][0]; // 0
+	entity->focaly = limbs[SALAMANDER][4][1]; // 0
+	entity->focalz = limbs[SALAMANDER][4][2]; // 1.5
 	entity->behavior = &actMonsterSLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
@@ -579,9 +579,9 @@ void initMonsterS(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[MONSTER_S][5][0]; // 0
-	entity->focaly = limbs[MONSTER_S][5][1]; // 0
-	entity->focalz = limbs[MONSTER_S][5][2]; // 1.5
+	entity->focalx = limbs[SALAMANDER][5][0]; // 0
+	entity->focaly = limbs[SALAMANDER][5][1]; // 0
+	entity->focalz = limbs[SALAMANDER][5][2]; // 1.5
 	entity->behavior = &actMonsterSLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
@@ -599,9 +599,9 @@ void initMonsterS(Entity* my, Stat* myStats)
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->noColorChangeAllyLimb = 1.0;
-	entity->focalx = limbs[MONSTER_S][6][0]; // 1.5
-	entity->focaly = limbs[MONSTER_S][6][1]; // 0
-	entity->focalz = limbs[MONSTER_S][6][2]; // -.5
+	entity->focalx = limbs[SALAMANDER][6][0]; // 1.5
+	entity->focaly = limbs[SALAMANDER][6][1]; // 0
+	entity->focalz = limbs[SALAMANDER][6][2]; // -.5
 	entity->behavior = &actMonsterSLimb;
 	entity->parent = my->getUID();
 	entity->pitch = .25;
@@ -620,9 +620,9 @@ void initMonsterS(Entity* my, Stat* myStats)
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->noColorChangeAllyLimb = 1.0;
-	entity->focalx = limbs[MONSTER_S][7][0]; // 2
-	entity->focaly = limbs[MONSTER_S][7][1]; // 0
-	entity->focalz = limbs[MONSTER_S][7][2]; // 0
+	entity->focalx = limbs[SALAMANDER][7][0]; // 2
+	entity->focaly = limbs[SALAMANDER][7][1]; // 0
+	entity->focalz = limbs[SALAMANDER][7][2]; // 0
 	entity->behavior = &actMonsterSLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
@@ -640,9 +640,9 @@ void initMonsterS(Entity* my, Stat* myStats)
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->noColorChangeAllyLimb = 1.0;
-	entity->focalx = limbs[MONSTER_S][8][0]; // 0
-	entity->focaly = limbs[MONSTER_S][8][1]; // 0
-	entity->focalz = limbs[MONSTER_S][8][2]; // 4
+	entity->focalx = limbs[SALAMANDER][8][0]; // 0
+	entity->focaly = limbs[SALAMANDER][8][1]; // 0
+	entity->focalz = limbs[SALAMANDER][8][2]; // 4
 	entity->behavior = &actMonsterSLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
@@ -663,9 +663,9 @@ void initMonsterS(Entity* my, Stat* myStats)
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->noColorChangeAllyLimb = 1.0;
-	entity->focalx = limbs[MONSTER_S][9][0]; // 0
-	entity->focaly = limbs[MONSTER_S][9][1]; // 0
-	entity->focalz = limbs[MONSTER_S][9][2]; // -2
+	entity->focalx = limbs[SALAMANDER][9][0]; // 0
+	entity->focaly = limbs[SALAMANDER][9][1]; // 0
+	entity->focalz = limbs[SALAMANDER][9][2]; // -2
 	entity->behavior = &actMonsterSLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
@@ -683,9 +683,9 @@ void initMonsterS(Entity* my, Stat* myStats)
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->noColorChangeAllyLimb = 1.0;
-	entity->focalx = limbs[MONSTER_S][10][0]; // 0
-	entity->focaly = limbs[MONSTER_S][10][1]; // 0
-	entity->focalz = limbs[MONSTER_S][10][2]; // .25
+	entity->focalx = limbs[SALAMANDER][10][0]; // 0
+	entity->focaly = limbs[SALAMANDER][10][1]; // 0
+	entity->focalz = limbs[SALAMANDER][10][2]; // .25
 	entity->behavior = &actMonsterSLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
@@ -702,9 +702,9 @@ void initMonsterS(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[MONSTER_S][11][0];
-	entity->focaly = limbs[MONSTER_S][11][1];
-	entity->focalz = limbs[MONSTER_S][11][2];
+	entity->focalx = limbs[SALAMANDER][11][0];
+	entity->focaly = limbs[SALAMANDER][11][1];
+	entity->focalz = limbs[SALAMANDER][11][2];
 	entity->behavior = &actMonsterSLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
@@ -758,9 +758,9 @@ void monsterSMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	int bodypart;
 	bool wearingring = false;
 
-	my->focalx = limbs[MONSTER_S][0][0];
-	my->focaly = limbs[MONSTER_S][0][1];
-	my->focalz = limbs[MONSTER_S][0][2];
+	my->focalx = limbs[SALAMANDER][0][0];
+	my->focaly = limbs[SALAMANDER][0][1];
+	my->focalz = limbs[SALAMANDER][0][2];
 
 	if ( keystatus[SDLK_g] )
 	{
@@ -981,9 +981,9 @@ void monsterSMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			entity->scalex = 1.0;
 			entity->scaley = 1.0;
 			entity->scalez = 1.0;
-			entity->focalx = limbs[MONSTER_S][1][0];
-			entity->focaly = limbs[MONSTER_S][1][1];
-			entity->focalz = limbs[MONSTER_S][1][2];
+			entity->focalx = limbs[SALAMANDER][1][0];
+			entity->focaly = limbs[SALAMANDER][1][1];
+			entity->focalz = limbs[SALAMANDER][1][2];
 			if ( multiplayer != CLIENT )
 			{
 				if ( myStats->breastplate == nullptr || !itemModel(myStats->breastplate, false, my) )
@@ -1018,13 +1018,13 @@ void monsterSMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 				}
 			}
-			my->setHumanoidLimbOffset(entity, MONSTER_S, LIMB_HUMANOID_TORSO);
+			my->setHumanoidLimbOffset(entity, SALAMANDER, LIMB_HUMANOID_TORSO);
 			break;
 			// right leg
 		case LIMB_HUMANOID_RIGHTLEG:
-			entity->focalx = limbs[MONSTER_S][2][0];
-			entity->focaly = limbs[MONSTER_S][2][1];
-			entity->focalz = limbs[MONSTER_S][2][2];
+			entity->focalx = limbs[SALAMANDER][2][0];
+			entity->focaly = limbs[SALAMANDER][2][1];
+			entity->focalz = limbs[SALAMANDER][2][2];
 			if ( multiplayer != CLIENT )
 			{
 				if ( myStats->shoes == nullptr )
@@ -1059,13 +1059,13 @@ void monsterSMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 				}
 			}
-			my->setHumanoidLimbOffset(entity, MONSTER_S, LIMB_HUMANOID_RIGHTLEG);
+			my->setHumanoidLimbOffset(entity, SALAMANDER, LIMB_HUMANOID_RIGHTLEG);
 			break;
 			// left leg
 		case LIMB_HUMANOID_LEFTLEG:
-			entity->focalx = limbs[MONSTER_S][3][0];
-			entity->focaly = limbs[MONSTER_S][3][1];
-			entity->focalz = limbs[MONSTER_S][3][2];
+			entity->focalx = limbs[SALAMANDER][3][0];
+			entity->focaly = limbs[SALAMANDER][3][1];
+			entity->focalz = limbs[SALAMANDER][3][2];
 			if ( multiplayer != CLIENT )
 			{
 				if ( myStats->shoes == nullptr )
@@ -1099,7 +1099,7 @@ void monsterSMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 				}
 			}
-			my->setHumanoidLimbOffset(entity, MONSTER_S, LIMB_HUMANOID_LEFTLEG);
+			my->setHumanoidLimbOffset(entity, SALAMANDER, LIMB_HUMANOID_LEFTLEG);
 			break;
 			// right arm
 		case LIMB_HUMANOID_RIGHTARM:
@@ -1175,9 +1175,9 @@ void monsterSMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				if ( MONSTER_ARMBENDED || (weapon->flags[INVISIBLE] && my->monsterState == MONSTER_STATE_WAIT) )
 				{
 					// if weapon invisible and I'm not attacking, relax arm.
-					entity->focalx = limbs[MONSTER_S][4][0]; // 0
-					entity->focaly = limbs[MONSTER_S][4][1];
-					entity->focalz = limbs[MONSTER_S][4][2]; // 2
+					entity->focalx = limbs[SALAMANDER][4][0]; // 0
+					entity->focaly = limbs[SALAMANDER][4][1];
+					entity->focalz = limbs[SALAMANDER][4][2]; // 2
 
 					/*if ( entity->sprite == 1523 )
 					{
@@ -1187,9 +1187,9 @@ void monsterSMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				else
 				{
 					// else flex arm.
-					entity->focalx = limbs[MONSTER_S][4][0] + 0.75;
-					entity->focaly = limbs[MONSTER_S][4][1] + 0.25;
-					entity->focalz = limbs[MONSTER_S][4][2] - 0.75;
+					entity->focalx = limbs[SALAMANDER][4][0] + 0.75;
+					entity->focaly = limbs[SALAMANDER][4][1] + 0.25;
+					entity->focalz = limbs[SALAMANDER][4][2] - 0.75;
 					if ( entity->sprite == 1544 || entity->sprite == 1548 || entity->sprite == 1552 )
 					{
 						entity->sprite += 1;
@@ -1200,7 +1200,7 @@ void monsterSMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 				}
 			}
-			my->setHumanoidLimbOffset(entity, MONSTER_S, LIMB_HUMANOID_RIGHTARM);
+			my->setHumanoidLimbOffset(entity, SALAMANDER, LIMB_HUMANOID_RIGHTARM);
 			entity->yaw += MONSTER_WEAPONYAW;
 			break;
 			// left arm
@@ -1278,9 +1278,9 @@ void monsterSMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				Entity* shield = (Entity*)shieldNode->element;
 				if ( shield->flags[INVISIBLE] && my->monsterState == MONSTER_STATE_WAIT )
 				{
-					entity->focalx = limbs[MONSTER_S][5][0]; // 0
-					entity->focaly = limbs[MONSTER_S][5][1];
-					entity->focalz = limbs[MONSTER_S][5][2]; // 2
+					entity->focalx = limbs[SALAMANDER][5][0]; // 0
+					entity->focaly = limbs[SALAMANDER][5][1];
+					entity->focalz = limbs[SALAMANDER][5][2]; // 2
 
 					/*if ( entity->sprite == 1521 )
 					{
@@ -1289,9 +1289,9 @@ void monsterSMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				}
 				else
 				{
-					entity->focalx = limbs[MONSTER_S][5][0] + 0.75;
-					entity->focaly = limbs[MONSTER_S][5][1] - 0.25;
-					entity->focalz = limbs[MONSTER_S][5][2] - 0.75;
+					entity->focalx = limbs[SALAMANDER][5][0] + 0.75;
+					entity->focaly = limbs[SALAMANDER][5][1] - 0.25;
+					entity->focalz = limbs[SALAMANDER][5][2] - 0.75;
 					if ( entity->sprite == 1542 || entity->sprite == 1546 || entity->sprite == 1550 )
 					{
 						entity->sprite += 1;
@@ -1302,7 +1302,7 @@ void monsterSMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 				}
 			}
-			my->setHumanoidLimbOffset(entity, MONSTER_S, LIMB_HUMANOID_LEFTARM);
+			my->setHumanoidLimbOffset(entity, SALAMANDER, LIMB_HUMANOID_LEFTARM);
 			if ( my->monsterDefend && my->monsterAttack == 0 )
 			{
 				MONSTER_SHIELDYAW = PI / 5;
@@ -1433,9 +1433,9 @@ void monsterSMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			break;
 			// cloak
 		case LIMB_HUMANOID_CLOAK:
-			entity->focalx = limbs[MONSTER_S][8][0];
-			entity->focaly = limbs[MONSTER_S][8][1];
-			entity->focalz = limbs[MONSTER_S][8][2];
+			entity->focalx = limbs[SALAMANDER][8][0];
+			entity->focaly = limbs[SALAMANDER][8][1];
+			entity->focalz = limbs[SALAMANDER][8][2];
 			if ( multiplayer != CLIENT )
 			{
 				if ( myStats->cloak == nullptr || myStats->getEffectActive(EFF_INVISIBLE) || wearingring ) //TODO: isInvisible()?
@@ -1488,9 +1488,9 @@ void monsterSMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			// helm
 		case LIMB_HUMANOID_HELMET:
 			helmet = entity;
-			entity->focalx = limbs[MONSTER_S][9][0]; // 0
-			entity->focaly = limbs[MONSTER_S][9][1]; // 0
-			entity->focalz = limbs[MONSTER_S][9][2]; // -2
+			entity->focalx = limbs[SALAMANDER][9][0]; // 0
+			entity->focaly = limbs[SALAMANDER][9][1]; // 0
+			entity->focalz = limbs[SALAMANDER][9][2]; // -2
 			entity->pitch = my->pitch;
 			entity->roll = 0;
 			if ( multiplayer != CLIENT )
@@ -1542,9 +1542,9 @@ void monsterSMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			break;
 			// mask
 		case LIMB_HUMANOID_MASK:
-			entity->focalx = limbs[MONSTER_S][10][0]; // 0
-			entity->focaly = limbs[MONSTER_S][10][1]; // 0
-			entity->focalz = limbs[MONSTER_S][10][2]; // .25
+			entity->focalx = limbs[SALAMANDER][10][0]; // 0
+			entity->focaly = limbs[SALAMANDER][10][1]; // 0
+			entity->focalz = limbs[SALAMANDER][10][2]; // .25
 			entity->pitch = my->pitch;
 			entity->roll = PI / 2;
 			if ( multiplayer != CLIENT )
@@ -1606,27 +1606,27 @@ void monsterSMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					entity->flags[INVISIBLE] = true;
 				}
 			}
-			if ( EquipmentModelOffsets.modelOffsetExists(MONSTER_S, entity->sprite, my->sprite) )
+			if ( EquipmentModelOffsets.modelOffsetExists(SALAMANDER, entity->sprite, my->sprite) )
 			{
 				my->setHelmetLimbOffset(entity);
 				my->setHelmetLimbOffsetWithMask(helmet, entity);
 			}
 			else
 			{
-				entity->focalx = limbs[MONSTER_S][10][0] + .35; // .35
-				entity->focaly = limbs[MONSTER_S][10][1] - 2; // -2
-				entity->focalz = limbs[MONSTER_S][10][2]; // .25
+				entity->focalx = limbs[SALAMANDER][10][0] + .35; // .35
+				entity->focaly = limbs[SALAMANDER][10][1] - 2; // -2
+				entity->focalz = limbs[SALAMANDER][10][2]; // .25
 			}
 			break;
 		// tail
 		case 12:
 		{
-			entity->focalx = limbs[MONSTER_S][11][0];
-			entity->focaly = limbs[MONSTER_S][11][1];
-			entity->focalz = limbs[MONSTER_S][11][2];
-			entity->x += limbs[MONSTER_S][12][0] * cos(my->yaw + PI / 2) + limbs[MONSTER_S][12][1] * cos(my->yaw);
-			entity->y += limbs[MONSTER_S][12][0] * sin(my->yaw + PI / 2) + limbs[MONSTER_S][12][1] * sin(my->yaw);
-			entity->z += limbs[MONSTER_S][12][2];
+			entity->focalx = limbs[SALAMANDER][11][0];
+			entity->focaly = limbs[SALAMANDER][11][1];
+			entity->focalz = limbs[SALAMANDER][11][2];
+			entity->x += limbs[SALAMANDER][12][0] * cos(my->yaw + PI / 2) + limbs[SALAMANDER][12][1] * cos(my->yaw);
+			entity->y += limbs[SALAMANDER][12][0] * sin(my->yaw + PI / 2) + limbs[SALAMANDER][12][1] * sin(my->yaw);
+			entity->z += limbs[SALAMANDER][12][2];
 			entity->pitch = my->pitch + 0.15;
 			if ( multiplayer != CLIENT )
 			{

@@ -976,7 +976,7 @@ void actColliderMushroomCap(Entity* my)
 						}
 
 						if ( entity->behavior == &actMonster 
-							&& stats->type == MONSTER_M )
+							&& stats->type == MYCONID )
 						{
 							continue;
 						}
@@ -3069,7 +3069,7 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 				{
 					result = CLASS_BARBARIAN;
 				}
-				if ( !enabledDLCPack3 && result >= CLASS_21 && result <= CLASS_25 )
+				if ( !enabledDLCPack3 && result >= CLASS_BARD && result <= CLASS_PALADIN )
 				{
 					result = CLASS_BARBARIAN;
 				}

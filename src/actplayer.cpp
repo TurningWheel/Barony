@@ -4388,7 +4388,7 @@ real_t Player::PlayerMovement_t::getSpeedFactor(real_t weightratio, Sint32 DEX)
 	{
 		speedFactor *= 0.3;
 	}
-	if ( stats[player.playernum]->type == MONSTER_S && stats[player.playernum]->getEffectActive(EFF_SALAMANDER_HEART) )
+	if ( stats[player.playernum]->type == SALAMANDER && stats[player.playernum]->getEffectActive(EFF_SALAMANDER_HEART) )
 	{
 		if ( Uint8 effectStrength = stats[player.playernum]->getEffectActive(EFF_SALAMANDER_HEART) )
 		{
@@ -4411,14 +4411,14 @@ real_t Player::PlayerMovement_t::getSpeedFactor(real_t weightratio, Sint32 DEX)
 		}
 	}
 
-	if ( stats[player.playernum]->type == MONSTER_M
+	if ( stats[player.playernum]->type == MYCONID
 		&& !stats[player.playernum]->helmet
 		&& stats[player.playernum]->getEffectActive(EFF_GROWTH) > 1 )
 	{
 		int bonus = std::min(3, stats[player.playernum]->getEffectActive(EFF_GROWTH) - 1);
 		speedFactor *= 1.0 - (bonus * 0.10);
 	}
-	if ( stats[player.playernum]->type == MONSTER_D
+	if ( stats[player.playernum]->type == DRYAD
 		&& !stats[player.playernum]->helmet
 		&& stats[player.playernum]->getEffectActive(EFF_GROWTH) > 1 )
 	{
@@ -4758,7 +4758,7 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 		speedFactor *= refreshRateDelta;
 
 		real_t defendPenalty = (stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 1) ? 1.0 : 0.0;
-		if ( stats[PLAYER_NUM]->sneaking == 1 && !stats[PLAYER_NUM]->defending && stats[PLAYER_NUM]->type == MONSTER_G )
+		if ( stats[PLAYER_NUM]->sneaking == 1 && !stats[PLAYER_NUM]->defending && stats[PLAYER_NUM]->type == GREMLIN )
 		{
 			defendPenalty = 0.5;
 		}
@@ -4896,7 +4896,7 @@ void Player::PlayerMovement_t::handlePlayerCameraPosition(bool useRefreshRateDel
 		{
 			cameraSetpointZ -= 2;
 		}
-		else if ( playerRace == MONSTER_G )
+		else if ( playerRace == GREMLIN )
 		{
 			cameraSetpointZ -= 1.0;
 			players[player.playernum]->worldUI.modifiedTooltipDrawHeight = 3.0;
@@ -4906,7 +4906,7 @@ void Player::PlayerMovement_t::handlePlayerCameraPosition(bool useRefreshRateDel
 			cameraSetpointZ -= 2.0;
 			players[player.playernum]->worldUI.modifiedTooltipDrawHeight = 3.0;
 		}
-		else if ( playerRace == MONSTER_D )
+		else if ( playerRace == DRYAD )
 		{
 			if ( my->z >= 1.5 )
 			{
@@ -4918,7 +4918,7 @@ void Player::PlayerMovement_t::handlePlayerCameraPosition(bool useRefreshRateDel
 				cameraSetpointZ -= 2.0;
 			}
 		}
-		else if ( playerRace == MONSTER_M )
+		else if ( playerRace == MYCONID )
 		{
 			if ( my->z >= 0.5 )
 			{
@@ -5760,16 +5760,16 @@ int playerHeadSprite(Monster race, sex_t sex, int appearance, int frame, int pla
     else if (race == AUTOMATON) {
         return sex == FEMALE ? 770 : 742;
     }
-	else if ( race == MONSTER_D ) {
+	else if ( race == DRYAD ) {
 		return sex == FEMALE ? 1992 : 1963;
 	}
-	else if ( race == MONSTER_M ) {
+	else if ( race == MYCONID ) {
 		return sex == MALE ? 1998 : 1997;
 	}
-	else if ( race == MONSTER_G ) {
+	else if ( race == GREMLIN ) {
 		return sex == FEMALE ? 2048 : 2047;
 	}
-	else if ( race == MONSTER_S ) {
+	else if ( race == SALAMANDER ) {
 		if ( player >= 0 && player < MAXPLAYERS )
 		{
 			Uint8 effectStrength = stats[player]->getEffectActive(EFF_SALAMANDER_HEART);
@@ -7269,7 +7269,7 @@ void actPlayer(Entity* my)
 		my->scaley = 1.01;
 		my->scalez = 1.01;
 	}
-	else if ( playerRace == MONSTER_D )
+	else if ( playerRace == DRYAD )
 	{
 		if ( my->sprite == 1992 || my->sprite == 1993 )
 		{
@@ -7279,7 +7279,7 @@ void actPlayer(Entity* my)
 		my->scaley = 1.f;
 		my->scalez = 1.f;
 	}
-	else if ( playerRace == MONSTER_M )
+	else if ( playerRace == MYCONID )
 	{
 		if ( my->sprite == 1998 )
 		{
@@ -8959,7 +8959,7 @@ void actPlayer(Entity* my)
 			case CREATURE_IMP:
 				zOffset = -3.5;
 				break;
-			case MONSTER_D:
+			case DRYAD:
 				if ( my->sprite == 1992 || my->sprite == 1993 )
 				{
 					zOffset = 2.5;
@@ -8970,7 +8970,7 @@ void actPlayer(Entity* my)
 					zOffset = 0.06;
 				}
 				break;
-			case MONSTER_M:
+			case MYCONID:
 				if ( my->sprite == 1998 )
 				{
 					zOffset = 1.5;
@@ -8981,7 +8981,7 @@ void actPlayer(Entity* my)
 					zOffset = -0.5;
 				}
 				break;
-			case MONSTER_G:
+			case GREMLIN:
 				zOffset = 1.5;
 				shortModel = true;
 				break;
@@ -8989,7 +8989,7 @@ void actPlayer(Entity* my)
 				zOffset = 2.25;
 				shortModel = true;
 				break;
-			case MONSTER_S:
+			case SALAMANDER:
 				zOffset = -1.25;
 				break;
 			default:
@@ -9036,7 +9036,7 @@ void actPlayer(Entity* my)
 				case TROLL:
 					my->z = 1.5;
 					break;
-				case MONSTER_D:
+				case DRYAD:
 					if ( my->sprite == 1992 || my->sprite == 1993 )
 					{
 						my->z = 3.75;
@@ -9046,7 +9046,7 @@ void actPlayer(Entity* my)
 						my->z = 3.0;
 					}
 					break;
-				case MONSTER_M:
+				case MYCONID:
 					if ( my->sprite == 1998 )
 					{
 						my->z = 3.75;
@@ -9056,13 +9056,13 @@ void actPlayer(Entity* my)
 						my->z = 3.0;
 					}
 					break;
-				case MONSTER_G:
+				case GREMLIN:
 					my->z = 4.0;
 					break;
 				case GNOME:
 					my->z = 4.0;
 					break;
-				case MONSTER_S:
+				case SALAMANDER:
 					my->z = 3.0;
 					break;
 				default:
@@ -9092,7 +9092,7 @@ void actPlayer(Entity* my)
 		{
 			my->z -= 1; // floating
 			insectoidLevitating = (playerRace == INSECTOID && stats[PLAYER_NUM]->getEffectActive(EFF_FLUTTER));
-			if ( playerRace == MONSTER_S
+			if ( playerRace == SALAMANDER
 				&& stats[PLAYER_NUM]->getEffectActive(EFF_SALAMANDER_HEART) >= 1 && stats[PLAYER_NUM]->getEffectActive(EFF_SALAMANDER_HEART) <= 2 )
 			{
 				insectoidLevitating = true;
@@ -9260,7 +9260,7 @@ void actPlayer(Entity* my)
 		{
 			insectoidLevitating = true;
 		}
-		if ( playerRace == MONSTER_S
+		if ( playerRace == SALAMANDER
 			&& ((stats[PLAYER_NUM]->getEffectActive(EFF_SALAMANDER_HEART) >= 1 && stats[PLAYER_NUM]->getEffectActive(EFF_SALAMANDER_HEART) <= 2)
 				|| (my->sprite == 2016 || my->sprite == 2017)) )
 		{
@@ -10307,7 +10307,7 @@ void actPlayer(Entity* my)
 		}
 		equipmentBonus = std::max(-6, std::min(equipmentBonus, 4));
 	}
-	if ( stats[PLAYER_NUM]->type == MONSTER_G )
+	if ( stats[PLAYER_NUM]->type == GREMLIN )
 	{
 		equipmentBonus += 2;
 	}
@@ -10537,7 +10537,7 @@ void actPlayer(Entity* my)
 		{
 			my->light = addLight(my->x / 16, my->y / 16, "mistform_glow", range_bonus);
 		}
-		else if ( playerRace == MONSTER_S && (my->sprite == 2016 || my->sprite == 2017) )
+		else if ( playerRace == SALAMANDER && (my->sprite == 2016 || my->sprite == 2017) )
 		{
 			my->light = addLight(my->x / 16, my->y / 16, "magic_foci_idle_red");
 		}
@@ -10637,7 +10637,7 @@ void actPlayer(Entity* my)
 					{
 						Compendium_t::Events_t::eventUpdateCodex(PLAYER_NUM, Compendium_t::CPDM_CLASS_WGT_SLOWEST, "wgt", players[PLAYER_NUM]->movement.getCharacterWeight());
 
-						if ( stats[PLAYER_NUM]->type == MONSTER_M )
+						if ( stats[PLAYER_NUM]->type == MYCONID )
 						{
 							Uint32 lifetime = TICKS_PER_SECOND * 3;
 							Entity* spellTimer = createParticleTimer(my, lifetime + TICKS_PER_SECOND, -1);
@@ -12668,7 +12668,7 @@ void actPlayer(Entity* my)
 							entity->focaly = limbs[playerRace][4][1] - 0.25;
 							entity->focalz = limbs[playerRace][4][2];
 						}
-						else if ( playerRace == MONSTER_D )
+						else if ( playerRace == DRYAD )
 						{
 							entity->focalx = limbs[playerRace][4][0];
 							entity->focaly = limbs[playerRace][4][1] - 0.25;
@@ -12680,7 +12680,7 @@ void actPlayer(Entity* my)
 								entity->focaly += 0.25;
 							}
 						}
-						else if ( playerRace == MONSTER_M )
+						else if ( playerRace == MYCONID )
 						{
 							entity->focalx = limbs[playerRace][4][0];
 							entity->focaly = limbs[playerRace][4][1];
@@ -12712,13 +12712,13 @@ void actPlayer(Entity* my)
 							entity->focaly = limbs[playerRace][4][1] + 0.25; // 0
 							entity->focalz = limbs[playerRace][4][2] - 1; // 1
 						}
-						else if ( playerRace == MONSTER_M || playerRace == MONSTER_S )
+						else if ( playerRace == MYCONID || playerRace == SALAMANDER )
 						{
 							entity->focalx = limbs[playerRace][4][0] + 0.75;
 							entity->focaly = limbs[playerRace][4][1] + 0.25;
 							entity->focalz = limbs[playerRace][4][2] - 0.75;
 						}
-						else if ( playerRace == MONSTER_G )
+						else if ( playerRace == GREMLIN )
 						{
 							entity->focalx = limbs[playerRace][4][0] + 1;
 							entity->focaly = limbs[playerRace][4][1] + 0.25;
@@ -12845,7 +12845,7 @@ void actPlayer(Entity* my)
 							entity->focaly = limbs[playerRace][5][1] + 0.25;
 							entity->focalz = limbs[playerRace][5][2];
 						}
-						else if ( playerRace == MONSTER_D )
+						else if ( playerRace == DRYAD )
 						{
 							entity->focalx = limbs[playerRace][5][0]; // 0
 							entity->focaly = limbs[playerRace][5][1] + .25; // 0
@@ -12857,7 +12857,7 @@ void actPlayer(Entity* my)
 								entity->focaly -= 0.25;
 							}
 						}
-						else if ( playerRace == MONSTER_M )
+						else if ( playerRace == MYCONID )
 						{
 							entity->focalx = limbs[playerRace][5][0];
 							entity->focaly = limbs[playerRace][5][1];
@@ -12889,13 +12889,13 @@ void actPlayer(Entity* my)
 							entity->focaly = limbs[playerRace][5][1] - 0.25; // 0
 							entity->focalz = limbs[playerRace][5][2] - 1; // 1
 						}
-						else if ( playerRace == MONSTER_M || playerRace == MONSTER_S )
+						else if ( playerRace == MYCONID || playerRace == SALAMANDER )
 						{
 							entity->focalx = limbs[playerRace][5][0] + 0.75;
 							entity->focaly = limbs[playerRace][5][1] - 0.25;
 							entity->focalz = limbs[playerRace][5][2] - 0.75;
 						}
-						else if ( playerRace == MONSTER_G )
+						else if ( playerRace == GREMLIN )
 						{
 							entity->focalx = limbs[playerRace][5][0] + 1;
 							entity->focaly = limbs[playerRace][5][1] - 0.25;
@@ -13225,7 +13225,7 @@ void actPlayer(Entity* my)
 					entity->flags[INVISIBLE_DITHER] = false;
 					if ( stats[PLAYER_NUM]->helmet == NULL )
 					{
-						if ( playerRace == MONSTER_M && stats[PLAYER_NUM]->getEffectActive(EFF_GROWTH) >= 2 )
+						if ( playerRace == MYCONID && stats[PLAYER_NUM]->getEffectActive(EFF_GROWTH) >= 2 )
 						{
 							entity->sprite = 2003 + std::min(2, (stats[PLAYER_NUM]->getEffectActive(EFF_GROWTH) - 2));
 							entity->flags[INVISIBLE] = false;
@@ -13235,7 +13235,7 @@ void actPlayer(Entity* my)
 								entity->flags[INVISIBLE_DITHER] = true;
 							}
 						}
-						else if ( playerRace == MONSTER_D && stats[PLAYER_NUM]->getEffectActive(EFF_GROWTH) >= 2 )
+						else if ( playerRace == DRYAD && stats[PLAYER_NUM]->getEffectActive(EFF_GROWTH) >= 2 )
 						{
 							if ( my->sprite == 1964 || my->sprite == 1993 )
 							{
@@ -13306,12 +13306,12 @@ void actPlayer(Entity* my)
 
 				if ( entity->sprite >= 1973 && entity->sprite <= 1978 )
 				{
-					entity->focalx = limbs[MONSTER_D][15][0];
-					entity->focaly = limbs[MONSTER_D][15][1];
-					entity->focalz = limbs[MONSTER_D][15][2];
-					entity->x += limbs[MONSTER_D][16][0] * cos(my->yaw + PI / 2) + limbs[MONSTER_D][16][1] * cos(my->yaw);
-					entity->y += limbs[MONSTER_D][16][0] * sin(my->yaw + PI / 2) + limbs[MONSTER_D][16][1] * sin(my->yaw);
-					entity->z += limbs[MONSTER_D][16][2];
+					entity->focalx = limbs[DRYAD][15][0];
+					entity->focaly = limbs[DRYAD][15][1];
+					entity->focalz = limbs[DRYAD][15][2];
+					entity->x += limbs[DRYAD][16][0] * cos(my->yaw + PI / 2) + limbs[DRYAD][16][1] * cos(my->yaw);
+					entity->y += limbs[DRYAD][16][0] * sin(my->yaw + PI / 2) + limbs[DRYAD][16][1] * sin(my->yaw);
+					entity->z += limbs[DRYAD][16][2];
 
 					if ( additionalLimb )
 					{
@@ -13378,12 +13378,12 @@ void actPlayer(Entity* my)
 				}
 				else if ( entity->sprite == 2003 || entity->sprite == 2004 || entity->sprite == 2005 )
 				{
-					entity->focalx = limbs[MONSTER_M][15][0];
-					entity->focaly = limbs[MONSTER_M][15][1];
-					entity->focalz = limbs[MONSTER_M][15][2];
-					entity->x += limbs[MONSTER_M][16][0] * cos(my->yaw + PI / 2) + limbs[MONSTER_M][16][1] * cos(my->yaw);
-					entity->y += limbs[MONSTER_M][16][0] * sin(my->yaw + PI / 2) + limbs[MONSTER_M][16][1] * sin(my->yaw);
-					entity->z += limbs[MONSTER_M][16][2] - 0.01;
+					entity->focalx = limbs[MYCONID][15][0];
+					entity->focaly = limbs[MYCONID][15][1];
+					entity->focalz = limbs[MYCONID][15][2];
+					entity->x += limbs[MYCONID][16][0] * cos(my->yaw + PI / 2) + limbs[MYCONID][16][1] * cos(my->yaw);
+					entity->y += limbs[MYCONID][16][0] * sin(my->yaw + PI / 2) + limbs[MYCONID][16][1] * sin(my->yaw);
+					entity->z += limbs[MYCONID][16][2] - 0.01;
 
 					if ( entity->sprite == 2004 )
 					{
@@ -13655,14 +13655,14 @@ void actPlayer(Entity* my)
 					entity->flags[INVISIBLE] = true;
 					entity->flags[INVISIBLE_DITHER] = false;
 
-					if ( playerRace == MONSTER_S )
+					if ( playerRace == SALAMANDER )
 					{
-						entity->focalx = limbs[MONSTER_S][11][0];
-						entity->focaly = limbs[MONSTER_S][11][1];
-						entity->focalz = limbs[MONSTER_S][11][2];
-						entity->x += limbs[MONSTER_S][12][0] * cos(my->yaw + PI / 2) + limbs[MONSTER_S][12][1] * cos(my->yaw);
-						entity->y += limbs[MONSTER_S][12][0] * sin(my->yaw + PI / 2) + limbs[MONSTER_S][12][1] * sin(my->yaw);
-						entity->z += limbs[MONSTER_S][12][2];
+						entity->focalx = limbs[SALAMANDER][11][0];
+						entity->focaly = limbs[SALAMANDER][11][1];
+						entity->focalz = limbs[SALAMANDER][11][2];
+						entity->x += limbs[SALAMANDER][12][0] * cos(my->yaw + PI / 2) + limbs[SALAMANDER][12][1] * cos(my->yaw);
+						entity->y += limbs[SALAMANDER][12][0] * sin(my->yaw + PI / 2) + limbs[SALAMANDER][12][1] * sin(my->yaw);
+						entity->z += limbs[SALAMANDER][12][2];
 						entity->pitch = 0.15;
 
 						entity->flags[INVISIBLE] = my->flags[INVISIBLE];
@@ -13760,7 +13760,7 @@ void actPlayer(Entity* my)
 						entity->pitch += 0.5 * sin(entity->fskill[0]);
 						entity->roll = dir * -0.25 * sin(entity->fskill[0]);
 					}
-					if ( playerRace == MONSTER_D )
+					if ( playerRace == DRYAD )
 					{
 						entity->focalx = limbs[playerRace][11][0];
 						entity->focaly = limbs[playerRace][11][1];
@@ -13828,7 +13828,7 @@ void actPlayer(Entity* my)
 						entity->roll = -entity->fskill[0] / 8;
 						entity->scalez = 1.00 + 0.1 * sin(entity->fskill[0]);
 					}
-					else if ( playerRace == MONSTER_M )
+					else if ( playerRace == MYCONID )
 					{
 						entity->x += limbs[playerRace][12][0] * cos(my->yaw + PI / 2) + limbs[playerRace][12][1] * cos(my->yaw);
 						entity->y += limbs[playerRace][12][0] * sin(my->yaw + PI / 2) + limbs[playerRace][12][1] * sin(my->yaw);
@@ -14005,7 +14005,7 @@ void actPlayer(Entity* my)
 					entity->flags[INVISIBLE] = true;
 					entity->flags[INVISIBLE_DITHER] = false;
 
-					if ( playerRace == MONSTER_D )
+					if ( playerRace == DRYAD )
 					{
 						entity->focalx = limbs[playerRace][13][0];
 						entity->focaly = limbs[playerRace][13][1];
@@ -14029,7 +14029,7 @@ void actPlayer(Entity* my)
 							entity->scalez = 1.00 + 0.1 * sin(additionalLimb->fskill[0]);
 						}
 					}
-					else if ( playerRace == MONSTER_M )
+					else if ( playerRace == MYCONID )
 					{
 						entity->focalx = limbs[playerRace][13][0];
 						entity->focaly = limbs[playerRace][13][1];
@@ -14164,7 +14164,7 @@ void actPlayer(Entity* my)
 					entity->z = torso->z;
 					entity->z += torso->focalz;
 
-					if ( playerRace == MONSTER_M || playerRace == GOATMAN )
+					if ( playerRace == MYCONID || playerRace == GOATMAN )
 					{
 						entity->x += (-.2) * cos(my->yaw);
 						entity->y += (-.2) * sin(my->yaw);
@@ -14229,7 +14229,7 @@ void actPlayer(Entity* my)
 					entity->z = torso->z;
 					entity->z += torso->focalz;
 
-					if ( playerRace == MONSTER_M || playerRace == GOATMAN )
+					if ( playerRace == MYCONID || playerRace == GOATMAN )
 					{
 						entity->x += (-.2) * cos(my->yaw);
 						entity->y += (-.2) * sin(my->yaw);
@@ -14360,7 +14360,7 @@ void Entity::playerShakeGrowthHelmet()
 	if ( behavior == &actPlayer )
 	{
 		Stat* myStats = getStats();
-		if ( myStats && (myStats->type == MONSTER_M || myStats->type == MONSTER_D) && !myStats->helmet && myStats->getEffectActive(EFF_GROWTH) > 1 )
+		if ( myStats && (myStats->type == MYCONID || myStats->type == DRYAD) && !myStats->helmet && myStats->getEffectActive(EFF_GROWTH) > 1 )
 		{
 			if ( node_t* node = list_Node(&children, 9) )
 			{
@@ -14915,19 +14915,19 @@ Monster getMonsterFromPlayerRace(int playerRace)
 		case RACE_IMP:
 			return CREATURE_IMP;
 			break;
-		case RACE_D:
-			return MONSTER_D;
+		case RACE_DRYAD:
+			return DRYAD;
 			break;
-		case RACE_M:
-			return MONSTER_M;
+		case RACE_MYCONID:
+			return MYCONID;
 			break;
-		case RACE_G:
-			return MONSTER_G;
+		case RACE_GREMLIN:
+			return GREMLIN;
 			break;
-		case RACE_S:
-			return MONSTER_S;
+		case RACE_SALAMANDER:
+			return SALAMANDER;
 			break;
-		case RACE_X:
+		case RACE_GNOME:
 			return GNOME;
 			break;
 		default:
@@ -15034,17 +15034,17 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 				case TROLL:
 					this->sprite = 818;
 					break;
-				case MONSTER_D:
+				case DRYAD:
 					this->sprite = stats[playernum]->sex == FEMALE ? 1991 : 1989;
 					if ( headSprite == 1964 || headSprite == 1993 )
 					{
 						this->sprite = stats[playernum]->sex == FEMALE ? 1994 : 1990;
 					}
 					break;
-				case MONSTER_M:
+				case MYCONID:
 					this->sprite = stats[playernum]->sex == MALE ? 2013 : 2012;
 					break;
-				case MONSTER_S:
+				case SALAMANDER:
 					this->sprite = 2038;
 					if ( headSprite == 2016 || headSprite == 2017 )
 					{
@@ -15055,7 +15055,7 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 						this->sprite = 2040;
 					}
 					break;
-				case MONSTER_G:
+				case GREMLIN:
 					this->sprite = stats[playernum]->sex == FEMALE ? 2062 : 2061;
 					break;
 				case GNOME:
@@ -15138,17 +15138,17 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 				case TROLL:
 					this->sprite = 822;
 					break;
-				case MONSTER_D:
+				case DRYAD:
 					this->sprite = stats[playernum]->sex == FEMALE ? 1988 : 1986;
 					if ( headSprite == 1964 || headSprite == 1993 )
 					{
 						this->sprite = stats[playernum]->sex == FEMALE ? 1996 : 1987;
 					}
 					break;
-				case MONSTER_M:
+				case MYCONID:
 					this->sprite = stats[playernum]->sex == MALE ? 2011 : 2010;
 					break;
-				case MONSTER_S:
+				case SALAMANDER:
 					this->sprite = 2033;
 					if ( headSprite == 2016 || headSprite == 2017 )
 					{
@@ -15159,7 +15159,7 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 						this->sprite = 2037;
 					}
 					break;
-				case MONSTER_G:
+				case GREMLIN:
 					this->sprite = stats[playernum]->sex == FEMALE ? 2060 : 2058;
 					break;
 				case GNOME:
@@ -15242,17 +15242,17 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 				case TROLL:
 					this->sprite = 821;
 					break;
-				case MONSTER_D:
+				case DRYAD:
 					this->sprite = stats[playernum]->sex == FEMALE ? 1985 : 1983;
 					if ( headSprite == 1964 || headSprite == 1993 )
 					{
 						this->sprite = stats[playernum]->sex == FEMALE ? 1995 : 1984;
 					}
 					break;
-				case MONSTER_M:
+				case MYCONID:
 					this->sprite = stats[playernum]->sex == MALE ? 2009 : 2008;
 					break;
-				case MONSTER_S:
+				case SALAMANDER:
 					this->sprite = 2032;
 					if ( headSprite == 2016 || headSprite == 2017 )
 					{
@@ -15263,7 +15263,7 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 						this->sprite = 2036;
 					}
 					break;
-				case MONSTER_G:
+				case GREMLIN:
 					this->sprite = stats[playernum]->sex == FEMALE ? 2059 : 2057;
 					break;
 				case GNOME:
@@ -15332,17 +15332,17 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 				case TROLL:
 					this->sprite = 820;
 					break;
-				case MONSTER_D:
+				case DRYAD:
 					this->sprite = 1966;
 					if ( headSprite == 1964 || headSprite == 1993 )
 					{
 						this->sprite = 1970;
 					}
 					break;
-				case MONSTER_M:
+				case MYCONID:
 					this->sprite = 2000;
 					break;
-				case MONSTER_S:
+				case SALAMANDER:
 					this->sprite = 2021;
 					if ( headSprite == 2016 || headSprite == 2017 )
 					{
@@ -15353,7 +15353,7 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 						this->sprite = 2029;
 					}
 					break;
-				case MONSTER_G:
+				case GREMLIN:
 					this->sprite = stats[playernum]->sex == FEMALE ? 2054 : 2050;
 					break;
 				case GNOME:
@@ -15422,17 +15422,17 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 				case TROLL:
 					this->sprite = 819;
 					break;
-				case MONSTER_D:
+				case DRYAD:
 					this->sprite = 1965;
 					if ( headSprite == 1964 || headSprite == 1993 )
 					{
 						this->sprite = 1969;
 					}
 					break;
-				case MONSTER_M:
+				case MYCONID:
 					this->sprite = 1999;
 					break;
-				case MONSTER_S:
+				case SALAMANDER:
 					this->sprite = 2020;
 					if ( headSprite == 2016 || headSprite == 2017 )
 					{
@@ -15443,7 +15443,7 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 						this->sprite = 2028;
 					}
 					break;
-				case MONSTER_G:
+				case GREMLIN:
 					this->sprite = stats[playernum]->sex == FEMALE ? 2053 : 2049;
 					break;
 				case GNOME:

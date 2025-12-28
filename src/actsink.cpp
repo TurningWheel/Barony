@@ -239,12 +239,12 @@ void actSink(Entity* my)
 								}
 								Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_SINKS_HEALTH_RESTORED, "sink", 1);
 
-								if ( stats[i]->type == MONSTER_D )
+								if ( stats[i]->type == DRYAD )
 								{
 									if ( auto effectStrength = stats[i]->getEffectActive(EFF_GROWTH) )
 									{
 										int chance = 5;
-										if ( (stats[i]->type == MONSTER_D && stats[i]->sex == FEMALE) )
+										if ( (stats[i]->type == DRYAD && stats[i]->sex == FEMALE) )
 										{
 											chance = 10;
 										}

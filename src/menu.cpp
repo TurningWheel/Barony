@@ -393,23 +393,23 @@ bool isAchievementUnlockedForClassUnlock(int race)
 	{
 		return unlocked;
 	}
-	else if ( enabledDLCPack3 && race == RACE_D && SteamUserStats()->GetAchievement("BARONY_ACH_XXX", &unlocked) )
+	else if ( enabledDLCPack3 && race == RACE_DRYAD && SteamUserStats()->GetAchievement("BARONY_ACH_XXX", &unlocked) )
 	{
 		return unlocked;
 	}
-	else if ( enabledDLCPack3 && race == RACE_M && SteamUserStats()->GetAchievement("BARONY_ACH_XXX", &unlocked) )
+	else if ( enabledDLCPack3 && race == RACE_MYCONID && SteamUserStats()->GetAchievement("BARONY_ACH_XXX", &unlocked) )
 	{
 		return unlocked;
 	}
-	else if ( enabledDLCPack3 && race == RACE_G && SteamUserStats()->GetAchievement("BARONY_ACH_XXX", &unlocked) )
+	else if ( enabledDLCPack3 && race == RACE_GREMLIN && SteamUserStats()->GetAchievement("BARONY_ACH_XXX", &unlocked) )
 	{
 		return unlocked;
 	}
-	else if ( enabledDLCPack3 && race == RACE_S && SteamUserStats()->GetAchievement("BARONY_ACH_XXX", &unlocked) )
+	else if ( enabledDLCPack3 && race == RACE_SALAMANDER && SteamUserStats()->GetAchievement("BARONY_ACH_XXX", &unlocked) )
 	{
 		return unlocked;
 	}
-	else if ( enabledDLCPack3 && race == RACE_X && SteamUserStats()->GetAchievement("BARONY_ACH_XXX", &unlocked) )
+	else if ( enabledDLCPack3 && race == RACE_GNOME && SteamUserStats()->GetAchievement("BARONY_ACH_XXX", &unlocked) )
 	{
 		return unlocked;
 	}
@@ -446,23 +446,23 @@ bool isAchievementUnlockedForClassUnlock(int race)
 	{
 		return true;
 	}
-	else if ( enabledDLCPack3 && race == RACE_D && achievementUnlocked("BARONY_ACH_XXX") )
+	else if ( enabledDLCPack3 && race == RACE_DRYAD && achievementUnlocked("BARONY_ACH_XXX") )
 	{
 		return true;
 	}
-	else if ( enabledDLCPack3 && race == RACE_M && achievementUnlocked("BARONY_ACH_XXX") )
+	else if ( enabledDLCPack3 && race == RACE_MYCONID && achievementUnlocked("BARONY_ACH_XXX") )
 	{
 		return true;
 	}
-	else if ( enabledDLCPack3 && race == RACE_G && achievementUnlocked("BARONY_ACH_XXX") )
+	else if ( enabledDLCPack3 && race == RACE_GREMLIN && achievementUnlocked("BARONY_ACH_XXX") )
 	{
 		return true;
 	}
-	else if ( enabledDLCPack3 && race == RACE_S && achievementUnlocked("BARONY_ACH_XXX") )
+	else if ( enabledDLCPack3 && race == RACE_SALAMANDER && achievementUnlocked("BARONY_ACH_XXX") )
 	{
 		return true;
 	}
-	else if ( enabledDLCPack3 && race == RACE_X && achievementUnlocked("BARONY_ACH_XXX") )
+	else if ( enabledDLCPack3 && race == RACE_GNOME && achievementUnlocked("BARONY_ACH_XXX") )
 	{
 		return true;
 	}
@@ -543,11 +543,11 @@ int isCharacterValidFromDLC(Stat& myStats, int characterClass)
 				}
 			}
 			break;
-		case CLASS_21:
-		case CLASS_22:
-		case CLASS_23:
-		case CLASS_24:
-		case CLASS_25:
+		case CLASS_BARD:
+		case CLASS_SAPPER:
+		case CLASS_SCION:
+		case CLASS_HERMIT:
+		case CLASS_PALADIN:
 			if ( !enabledDLCPack3 )
 			{
 				if ( !challengeClass )
@@ -586,11 +586,11 @@ int isCharacterValidFromDLC(Stat& myStats, int characterClass)
 				}
 			}
 			break;
-		case RACE_D:
-		case RACE_M:
-		case RACE_G:
-		case RACE_S:
-		case RACE_X:
+		case RACE_DRYAD:
+		case RACE_MYCONID:
+		case RACE_GREMLIN:
+		case RACE_SALAMANDER:
+		case RACE_GNOME:
 			if ( !enabledDLCPack3 )
 			{
 				if ( !challengeRace )
@@ -674,40 +674,40 @@ int isCharacterValidFromDLC(Stat& myStats, int characterClass)
 			}
 			return isAchievementUnlockedForClassUnlock(RACE_INSECTOID) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
 			break;
-		case CLASS_21:
-			if ( myStats.playerRace == RACE_X )
+		case CLASS_BARD:
+			if ( myStats.playerRace == RACE_GNOME )
 			{
 				return VALID_OK_CHARACTER;
 			}
-			return isAchievementUnlockedForClassUnlock(RACE_X) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
+			return isAchievementUnlockedForClassUnlock(RACE_GNOME) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
 			break;
-		case CLASS_22:
-			if ( myStats.playerRace == RACE_G )
+		case CLASS_SAPPER:
+			if ( myStats.playerRace == RACE_GREMLIN )
 			{
 				return VALID_OK_CHARACTER;
 			}
-			return isAchievementUnlockedForClassUnlock(RACE_G) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
+			return isAchievementUnlockedForClassUnlock(RACE_GREMLIN) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
 			break;
-		case CLASS_23:
-			if ( myStats.playerRace == RACE_D )
+		case CLASS_SCION:
+			if ( myStats.playerRace == RACE_DRYAD )
 			{
 				return VALID_OK_CHARACTER;
 			}
-			return isAchievementUnlockedForClassUnlock(RACE_D) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
+			return isAchievementUnlockedForClassUnlock(RACE_DRYAD) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
 			break;
-		case CLASS_24:
-			if ( myStats.playerRace == RACE_M )
+		case CLASS_HERMIT:
+			if ( myStats.playerRace == RACE_MYCONID )
 			{
 				return VALID_OK_CHARACTER;
 			}
-			return isAchievementUnlockedForClassUnlock(RACE_M) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
+			return isAchievementUnlockedForClassUnlock(RACE_MYCONID) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
 			break;
-		case CLASS_25:
-			if ( myStats.playerRace == RACE_S )
+		case CLASS_PALADIN:
+			if ( myStats.playerRace == RACE_SALAMANDER )
 			{
 				return VALID_OK_CHARACTER;
 			}
-			return isAchievementUnlockedForClassUnlock(RACE_S) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
+			return isAchievementUnlockedForClassUnlock(RACE_SALAMANDER) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
 			break;
 		default:
 			break;
@@ -9503,7 +9503,7 @@ void doNewGame(bool makeHighscore) {
 	}
 	// new achievement
 	usedAllClasses = true;
-	for ( int c = CLASS_CONJURER; c <= CLASS_25; ++c )
+	for ( int c = CLASS_CONJURER; c <= CLASS_PALADIN; ++c )
 	{
 		if ( !usedClass[c] )
 		{
@@ -10121,19 +10121,19 @@ void doEndgame(bool saveHighscore, bool onServerDisconnect) {
 							case RACE_GOBLIN:
 								steamAchievement("BARONY_ACH_BAYOU_BARON");
 								break;
-							case RACE_D:
+							case RACE_DRYAD:
 								steamAchievement("BARONY_ACH_XXX");
 								break;
-							case RACE_M:
+							case RACE_MYCONID:
 								steamAchievement("BARONY_ACH_XXX");
 								break;
-							case RACE_G:
+							case RACE_GREMLIN:
 								steamAchievement("BARONY_ACH_XXX");
 								break;
-							case RACE_S:
+							case RACE_SALAMANDER:
 								steamAchievement("BARONY_ACH_XXX");
 								break;
-							case RACE_X:
+							case RACE_GNOME:
 								steamAchievement("BARONY_ACH_XXX");
 								break;
 							default:

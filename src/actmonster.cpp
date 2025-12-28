@@ -76,10 +76,10 @@ bool swornenemies[NUMMONSTERS][NUMMONSTERS] =
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // GYROBOT
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // DUMMYBOT
 	{ 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // BUGBEAR
-	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MONSTER_D
-	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MONSTER_M
-	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MONSTER_S
-	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MONSTER_G
+	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // DRYAD
+	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MYCONID
+	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // SALAMANDER
+	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // GREMLIN
 	{ 0, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // REVENANT_SKULL
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MINIMIMIC
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MONSTER_ADORCISED_WEAPON
@@ -140,10 +140,10 @@ bool monsterally[NUMMONSTERS][NUMMONSTERS] =
 	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // GYROBOT
 	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // DUMMYBOT
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // BUGBEAR
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MONSTER_D
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MONSTER_M
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MONSTER_S
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MONSTER_G
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // DRYAD
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MYCONID
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // SALAMANDER
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // GREMLIN
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // REVENANT_SKULL
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MINIMIMIC
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MONSTER_ADORCISED_WEAPON
@@ -201,10 +201,10 @@ double sightranges[NUMMONSTERS] =
 	256,  // GYROBOT
 	32,   // DUMMYBOT
 	128,  // BUGBEAR
-	256,  // MONSTER_D
-	256,  // MONSTER_M
-	256,  // MONSTER_S
-	256,  // MONSTER_G
+	256,  // DRYAD
+	256,  // MYCONID
+	256,  // SALAMANDER
+	256,  // GREMLIN
 	192,  // REVENANT_SKULL
 	256,  // MINIMIMIC
 	64,  // ADORCISED_WEAPON
@@ -231,9 +231,9 @@ std::string getMonsterLocalizedName(Monster creature, Stat* optionalStats)
 	{
 		return optionalStats->name;
 	}
-	else if ( creature >= MONSTER_D && creature <= MONSTER_G )
+	else if ( creature >= DRYAD && creature <= GREMLIN )
 	{
-		return Language::get(6358 + (creature - MONSTER_D));
+		return Language::get(6358 + (creature - DRYAD));
 	}
 	else if ( creature >= REVENANT_SKULL && creature <= MINIMIMIC )
 	{
@@ -264,9 +264,9 @@ std::string getMonsterLocalizedPlural(Monster creature)
 	{
 		return Language::get(6257);
 	}
-	else if ( creature >= MONSTER_D && creature <= MONSTER_G )
+	else if ( creature >= DRYAD && creature <= GREMLIN )
 	{
-		return Language::get(6362 + (creature - MONSTER_D));
+		return Language::get(6362 + (creature - DRYAD));
 	}
 	else if ( creature >= REVENANT_SKULL && creature <= MINIMIMIC )
 	{
@@ -296,9 +296,9 @@ std::string getMonsterLocalizedInjury(Monster creature)
 	{
 		return Language::get(6258);
 	}
-	else if ( creature >= MONSTER_D && creature <= MONSTER_G )
+	else if ( creature >= DRYAD && creature <= GREMLIN )
 	{
-		return Language::get(6366 + (creature - MONSTER_D));
+		return Language::get(6366 + (creature - DRYAD));
 	}
 	else if ( creature >= REVENANT_SKULL && creature <= MINIMIMIC )
 	{
@@ -415,7 +415,7 @@ bool ShopkeeperPlayerHostility_t::isPlayerEnemy(const int player)
 bool ShopkeeperPlayerHostility_t::playerRaceCheckHostility(const int player, const Monster type) const
 {
 	if ( player < 0 || player >= MAXPLAYERS ) { return false; }
-	if ( type != HUMAN && type != AUTOMATON && type != MONSTER_D && type != MONSTER_M && type != MONSTER_S && type != GNOME ) 
+	if ( type != HUMAN && type != AUTOMATON && type != DRYAD && type != MYCONID && type != SALAMANDER && type != GNOME ) 
 	{
 		if ( stats[player] && stats[player]->mask && stats[player]->mask->type == MONOCLE )
 		{
@@ -1555,9 +1555,9 @@ int getMonsterInteractGreeting(Stat& myStats)
 	{
 		return (6607 + (myStats.type - MONSTER_ADORCISED_WEAPON));
 	}
-	else if ( myStats.type >= MONSTER_D && myStats.type <= MONSTER_G )
+	else if ( myStats.type >= DRYAD && myStats.type <= GREMLIN )
 	{
-		return 6370 + (myStats.type - MONSTER_D);
+		return 6370 + (myStats.type - DRYAD);
 	}
 	else if ( myStats.type < BUGBEAR )
 	{
@@ -2554,10 +2554,10 @@ void monsterAnimate(Entity* my, Stat* myStats, double dist)
 	case MIMIC: mimicAnimate(my, myStats, dist); break;
 	case BAT_SMALL: batAnimate(my, myStats, dist); break;
 	case BUGBEAR: bugbearMoveBodyparts(my, myStats, dist); break;
-	case MONSTER_D: monsterDMoveBodyparts(my, myStats, dist); break;
-	case MONSTER_M: monsterMMoveBodyparts(my, myStats, dist); break;
-	case MONSTER_S: monsterSMoveBodyparts(my, myStats, dist); break;
-	case MONSTER_G: monsterGMoveBodyparts(my, myStats, dist); break;
+	case DRYAD: monsterDMoveBodyparts(my, myStats, dist); break;
+	case MYCONID: monsterMMoveBodyparts(my, myStats, dist); break;
+	case SALAMANDER: monsterSMoveBodyparts(my, myStats, dist); break;
+	case GREMLIN: monsterGMoveBodyparts(my, myStats, dist); break;
 	case REVENANT_SKULL: revenantSkullAnimate(my, myStats, dist); break;
 	case MINIMIMIC: mimicAnimate(my, myStats, dist); break;
 	case MONSTER_ADORCISED_WEAPON: revenantSkullAnimate(my, myStats, dist); break;
@@ -2664,10 +2664,10 @@ void actMonster(Entity* my)
 			case MIMIC: initMimic(my, nullptr); break;
 			case BAT_SMALL: initBat(my, nullptr); break;
 			case BUGBEAR: initBugbear(my, nullptr); break;
-			case MONSTER_D: initMonsterD(my, nullptr); break;
-			case MONSTER_M: initMonsterM(my, nullptr); break;
-			case MONSTER_S: initMonsterS(my, nullptr); break;
-			case MONSTER_G: initMonsterG(my, nullptr); break;
+			case DRYAD: initMonsterD(my, nullptr); break;
+			case MYCONID: initMonsterM(my, nullptr); break;
+			case SALAMANDER: initMonsterS(my, nullptr); break;
+			case GREMLIN: initMonsterG(my, nullptr); break;
 			case REVENANT_SKULL: initRevenantSkull(my, nullptr); break;
 			case MINIMIMIC: initMiniMimic(my, nullptr); break;
 			case MONSTER_ADORCISED_WEAPON: initAdorcisedWeapon(my, nullptr); break;
@@ -2774,10 +2774,10 @@ void actMonster(Entity* my)
 				case MIMIC: initMimic(my, myStats); break;
 				case BAT_SMALL: initBat(my, myStats); break;
 				case BUGBEAR: initBugbear(my, myStats); break;
-				case MONSTER_D: initMonsterD(my, myStats); break;
-				case MONSTER_M: initMonsterM(my, myStats); break;
-				case MONSTER_S: initMonsterS(my, myStats); break;
-				case MONSTER_G: initMonsterG(my, myStats); break;
+				case DRYAD: initMonsterD(my, myStats); break;
+				case MYCONID: initMonsterM(my, myStats); break;
+				case SALAMANDER: initMonsterS(my, myStats); break;
+				case GREMLIN: initMonsterG(my, myStats); break;
 				case REVENANT_SKULL: initRevenantSkull(my, myStats); break;
 				case MONSTER_ADORCISED_WEAPON: initAdorcisedWeapon(my, myStats); break;
 				case FLAME_ELEMENTAL: initFlameElemental(my, myStats); break;
@@ -4034,16 +4034,16 @@ void actMonster(Entity* my)
 			case BUGBEAR:
 				bugbearDie(my);
 				break;
-			case MONSTER_D:
+			case DRYAD:
 				monsterDDie(my);
 				break;
-			case MONSTER_M:
+			case MYCONID:
 				monsterMDie(my);
 				break;
-			case MONSTER_S:
+			case SALAMANDER:
 				monsterSDie(my);
 				break;
-			case MONSTER_G:
+			case GREMLIN:
 				monsterGDie(my);
 				break;
 			case REVENANT_SKULL:
@@ -4334,10 +4334,10 @@ void actMonster(Entity* my)
 		case DUMMYBOT:
 		case MIMIC:
 		case BUGBEAR:
-		case MONSTER_D:
-		case MONSTER_M:
-		case MONSTER_S:
-		case MONSTER_G:
+		case DRYAD:
+		case MYCONID:
+		case SALAMANDER:
+		case GREMLIN:
 		case REVENANT_SKULL:
 		case MONSTER_ADORCISED_WEAPON:
 		case MINIMIMIC:
@@ -10281,7 +10281,7 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 			lichRangeCheckOverride = true;
 		}
 	}
-	else if ( myStats->type == MONSTER_D )
+	else if ( myStats->type == DRYAD )
 	{
 		if ( (monsterSpecialState >= MONSTER_D_SPECIAL_CAST1
 			&& monsterSpecialState <= MONSTER_D_SPECIAL_CAST3) )
@@ -10289,7 +10289,7 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 			lichRangeCheckOverride = true;
 		}
 	}
-	else if ( myStats->type == MONSTER_M )
+	else if ( myStats->type == MYCONID )
 	{
 		if ( (monsterSpecialState >= MONSTER_M_SPECIAL_CAST1
 			&& monsterSpecialState <= MONSTER_M_SPECIAL_CAST3) )
@@ -10297,7 +10297,7 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 			lichRangeCheckOverride = true;
 		}
 	}
-	else if ( myStats->type == MONSTER_G )
+	else if ( myStats->type == GREMLIN )
 	{
 		if ( monsterSpecialState == MONSTER_G_SPECIAL_CAST1 )
 		{
@@ -11451,7 +11451,7 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_MOTH_CAST;
 					}
 					break;
-				case MONSTER_D:
+				case DRYAD:
 					// magic
 					if ( (monsterSpecialState >= MONSTER_D_SPECIAL_CAST1
 						&& monsterSpecialState <= MONSTER_D_SPECIAL_CAST3) )
@@ -11467,7 +11467,7 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						}
 					}
 					break;
-				case MONSTER_M:
+				case MYCONID:
 					// special handled in monsterMChooseWeapon()
 					if ( monsterSpecialState == MONSTER_M_SPECIAL_THROW )
 					{
@@ -11486,7 +11486,7 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						}
 					}
 					break;
-				case MONSTER_G:
+				case GREMLIN:
 					// special handled in monsterGChooseWeapon()
 					if ( monsterSpecialState == MONSTER_G_SPECIAL_THROW )
 					{
@@ -11757,7 +11757,7 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						deinitSuccess = true;
 					}
 					break;
-				case MONSTER_D:
+				case DRYAD:
 					if ( (monsterSpecialState >= MONSTER_D_SPECIAL_CAST1 
 						&& monsterSpecialState <= MONSTER_D_SPECIAL_CAST3)
 						|| forceDeinit )
@@ -11965,7 +11965,7 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						deinitSuccess = true;
 					}
 					break;
-				case MONSTER_M:
+				case MYCONID:
 					if ( (monsterSpecialState >= MONSTER_M_SPECIAL_CAST1
 						&& monsterSpecialState <= MONSTER_M_SPECIAL_CAST3) )
 					{
@@ -11990,7 +11990,7 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						deinitSuccess = true;
 					}
 					break;
-				case MONSTER_G:
+				case GREMLIN:
 					if ( monsterSpecialState == MONSTER_G_SPECIAL_CAST1 )
 					{
 						monsterSpecialState = 0;
@@ -13700,7 +13700,7 @@ int Entity::shouldMonsterDefend(Stat& myStats, const Entity& target, const Stat&
 
 	bool isPlayerAlly = (monsterAllyIndex >= 0 && monsterAllyIndex < MAXPLAYERS);
 	
-	if ( !(isPlayerAlly || myStats.type == HUMAN || myStats.type == BUGBEAR || myStats.type == MONSTER_G || myStats.type == GOATMAN) )
+	if ( !(isPlayerAlly || myStats.type == HUMAN || myStats.type == BUGBEAR || myStats.type == GREMLIN || myStats.type == GOATMAN) )
 	{
 		return MONSTER_DEFEND_NONE;
 	}
@@ -14552,7 +14552,7 @@ int Entity::getMonsterEffectiveDistanceOfRangedWeapon(Item* weapon)
 	int distance = 160;
 	if ( Stat* myStats = getStats() )
 	{
-		if ( myStats->type == MONSTER_D )
+		if ( myStats->type == DRYAD )
 		{
 			if ( myStats->getAttribute("monster_d_type") == "watcher" )
 			{
