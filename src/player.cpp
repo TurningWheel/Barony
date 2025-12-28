@@ -7510,7 +7510,8 @@ bool Player::PlayerMechanics_t::updateSustainedSpellEvent(int spellID, real_t va
 			|| spellID == SPELL_HEALING
 			|| spellID == SPELL_EXTRAHEALING
 			|| spellID == SPELL_HOLY_BEAM 
-			|| spellID == SPELL_MAGICMAPPING )
+			|| spellID == SPELL_MAGICMAPPING
+			|| spellID == SPELL_WINDGATE )
 		{
 			sustainedSpellIDCounter[spellID] += value * scaleValue;
 			if ( players[player.playernum]->entity && sustainedSpellIDCounter[spellID] > 8 * 16.0 )

@@ -2196,6 +2196,11 @@ void Entity::actWind()
 		}
 	}
 
+	if ( !(svFlags & SV_FLAG_CHEATS) )
+	{
+		*cvar_map_tile_wind = 1.0;
+	}
+
 	if ( multiplayer == CLIENT )
 	{
 		Entity* entity = players[clientnum]->entity;
@@ -2236,6 +2241,32 @@ void Entity::actWind()
 						{
 							continue;
 						}
+						if ( hitProps->hits == 0 )
+						{
+							if ( entity->behavior == &actArrow || entity->behavior == &actThrown || entity->behavior == &actMagicMissile )
+							{
+								if ( Entity* caster = uidToEntity(this->parent) )
+								{
+									if ( entity->behavior == &actArrow )
+									{
+										entity->arrowPower += getSpellDamageSecondaryFromID(SPELL_WINDGATE, caster, nullptr, caster);
+									}
+									else if ( entity->behavior == &actThrown )
+									{
+										entity->thrownProjectilePower += getSpellDamageSecondaryFromID(SPELL_WINDGATE, caster, nullptr, caster);
+									}
+									else if ( entity->behavior == &actMagicMissile )
+									{
+										entity->actmagicAdditionalDamage += getSpellDamageSecondaryFromID(SPELL_WINDGATE, caster, nullptr, caster);
+									}
+
+									if ( caster->behavior == &actPlayer )
+									{
+										players[caster->skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_WINDGATE, 10.0, 1.0);
+									}
+								}
+							}
+						}
 						if ( hitProps->hits > 0 )
 						{
 							continue;
@@ -2245,7 +2276,11 @@ void Entity::actWind()
 					{
 						if ( Entity* caster = uidToEntity(this->parent) )
 						{
-							magicOnSpellCastEvent(caster, caster, entity, SPELL_WINDGATE, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
+							//magicOnSpellCastEvent(caster, caster, entity, SPELL_WINDGATE, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
+							if ( caster->behavior == &actPlayer )
+							{
+								players[caster->skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_WINDGATE, 20.0, 1.0);
+							}
 						}
 					}
 
@@ -2281,12 +2316,12 @@ void Entity::actWind()
 			fx->yaw = yaw;
 			fx->parent = getUID();
 			fx->behavior = &actMagiclightMoving;
-			fx->skill[0] = 20;
+			fx->skill[0] = std::max(20, (1 + actWindTileBonusLength) * 10);
 			fx->skill[3] = 1;
 			fx->flags[NOUPDATE] = true;
 			fx->flags[PASSABLE] = true;
 			fx->flags[UNCLICKABLE] = true;
-			fx->flags[NOCLIP_WALLS] = true;
+			//fx->flags[NOCLIP_WALLS] = true;
 			fx->flags[INVISIBLE] = true;
 			fx->flags[INVISIBLE_DITHER] = true;
 			if ( multiplayer != CLIENT )

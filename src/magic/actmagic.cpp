@@ -2942,6 +2942,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				Sint32 preResistanceDamageTmp = 0;
 				{
 					int magicDmg = element->getDamage();
+					if ( my->actmagicAdditionalDamage > 0 )
+					{
+						magicDmg += my->actmagicAdditionalDamage;
+					}
 					magicDmg += (spellbookDamageBonus * magicDmg * (abs(element->getDamageMult()) > 0.01 ? element->getDamageMult() : 1.0));
 					if ( element->getDamageMult() > 0.01 && element->getDamage() > 0 )
 					{

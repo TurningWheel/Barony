@@ -31373,6 +31373,20 @@ bool Entity::windEffectsEntity(Entity* entity)
 		{
 			return false;
 		}
+		if ( !entity->monsterIsTargetable() )
+		{
+			return false;
+		}
+		if ( Stat* myStats = entity->getStats() )
+		{
+			if ( myStats->type == LICH
+				|| myStats->type == DEVIL
+				|| myStats->type == LICH_FIRE
+				|| myStats->type == LICH_ICE )
+			{
+				return false;
+			}
+		}
 		if ( !entity->isUntargetableBat() && !entity->isInertMimic() )
 		{
 			return true;

@@ -233,8 +233,8 @@ void initClassStats(const int classnum, void* myStats)
 		// skills
 		//stat->setProficiency(PRO_LEGACY_MAGIC, 25);
 		//stat->setProficiency(PRO_LEGACY_SPELLCASTING, 50);
-		stat->setProficiency(PRO_SORCERY, 40);
-		stat->setProficiency(PRO_MYSTICISM, 15);
+		stat->setProficiency(PRO_SORCERY, 30);
+		stat->setProficiency(PRO_MYSTICISM, 20);
 		stat->setProficiency(PRO_STEALTH, 25);
 		stat->setProficiency(PRO_LOCKPICKING, 25);
 		stat->setProficiency(PRO_RANGED, 25);
@@ -1732,19 +1732,6 @@ void initClass(const int player)
 			else
 			{
 				hotbar[8].item = item2->uid;
-			}
-			free(item);
-
-			// spellbook of light
-			item = newItem(SPELLBOOK_LIGHT, WORN, 0, 1, 7, true, nullptr);
-			item2 = itemPickup(player, item);
-			if ( players[player]->hotbar.useHotbarFaceMenu )
-			{
-				hotbar[8].item = item2->uid;
-			}
-			else
-			{
-				hotbar[9].item = item2->uid;
 			}
 			free(item);
 
@@ -3580,6 +3567,10 @@ void initClass(const int player)
 		else if ( client_classes[player] == CLASS_SAPPER )
 		{
 			addSpell(SPELL_BOOBY_TRAP, player, true);
+		}
+		else if ( client_classes[player] == CLASS_ARCANIST )
+		{
+			addSpell(SPELL_WINDGATE, player, true);
 		}
 		else if ( client_classes[player] == CLASS_SCION )
 		{

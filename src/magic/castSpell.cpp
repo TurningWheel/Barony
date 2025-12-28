@@ -4465,7 +4465,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					found = true;
 
 					int duration = element->duration;
-					int maxLen = getSpellDamageSecondaryFromID(SPELL_WINDGATE, caster, nullptr, caster, usingSpellbook ? spellBookBonusPercent / 100.0 : 0.0);
+					int maxLen = getSpellEffectDurationSecondaryFromID(SPELL_WINDGATE, caster, nullptr, caster, usingSpellbook ? spellBookBonusPercent / 100.0 : 0.0);
 					int length = std::max(2, std::min(std::min(0xF, maxLen), getSpellDamageFromID(SPELL_WINDGATE, caster, nullptr, caster, usingSpellbook ? spellBookBonusPercent / 100.0 : 0.0)));
 					createWindMagic(caster->getUID(), castSpellProps->target_x, castSpellProps->target_y, duration, castSpellProps->wallDir, length);
 					Uint32 data = (castSpellProps->wallDir) & 0xF;
@@ -8985,6 +8985,13 @@ bool spellIsNaturallyLearnedByRaceOrClass(Entity& caster, Stat& stat, int spellI
 	else if ( client_classes[playernum] == CLASS_SAPPER )
 	{
 		if ( spellID == SPELL_BOOBY_TRAP )
+		{
+			return true;
+		}
+	}
+	else if ( client_classes[playernum] == CLASS_ARCANIST )
+	{
+		if ( spellID == SPELL_WINDGATE )
 		{
 			return true;
 		}

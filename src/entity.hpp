@@ -618,6 +618,7 @@ public:
 	Sint32& actmagicNoLight; // skill[33]
 	Sint32& actmagicUpdateOLDHPOnHit = skill[34];
 	Sint32& actmagicAllowFriendlyFireHit = skill[35];
+	Sint32& actmagicAdditionalDamage = skill[38]; // extra damage bonus from external sources like windgate
 
 	Sint32& actfloorMagicType = skill[3];
 	Sint32& actfloorMagicClientReceived = skill[4];
