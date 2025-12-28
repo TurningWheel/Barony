@@ -14117,6 +14117,26 @@ void Entity::attack(int pose, int charge, Entity* target)
 							messagePlayer(playerhit, MESSAGE_COMBAT, Language::get(685));
 							serverUpdateEffects(playerhit);
 							break;
+						case SCARAB:
+							if ( myStats->getAttribute("SCARAB_GREATER_CURSE") != "" )
+							{
+								if ( hit.entity->setEffect(EFF_WEAKNESS, (Uint8)5, hitstats->EFFECTS_TIMERS[EFF_WEAKNESS] + 30 * TICKS_PER_SECOND,
+									false, true, false) )
+								{
+									messagePlayer(playerhit, MESSAGE_COMBAT, Language::get(6964));
+									spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, 2367);
+								}
+							}
+							else
+							{
+								if ( hit.entity->setEffect(EFF_WEAKNESS, (Uint8)2, hitstats->EFFECTS_TIMERS[EFF_WEAKNESS] + 15 * TICKS_PER_SECOND,
+									false, true, false) )
+								{
+									messagePlayer(playerhit, MESSAGE_COMBAT, Language::get(6963));
+									spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, 2367);
+								}
+							}
+							break;
 						case SPIDER:
 						{
 							bool applyPoison = true;
@@ -14320,6 +14340,26 @@ void Entity::attack(int pose, int charge, Entity* target)
 									messagePlayer(playerhit, MESSAGE_COMBAT, Language::get(685));
 									serverUpdateEffects(playerhit);
 									statusInflicted = true;
+									break;
+								case SCARAB:
+									if ( myStats->getAttribute("SCARAB_GREATER_CURSE") != "" )
+									{
+										if ( hit.entity->setEffect(EFF_WEAKNESS, (Uint8)5, hitstats->EFFECTS_TIMERS[EFF_WEAKNESS] + 30 * TICKS_PER_SECOND,
+											false, true, false) )
+										{
+											messagePlayer(playerhit, MESSAGE_COMBAT, Language::get(6964));
+											spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, 2367);
+										}
+									}
+									else
+									{
+										if ( hit.entity->setEffect(EFF_WEAKNESS, (Uint8)2, hitstats->EFFECTS_TIMERS[EFF_WEAKNESS] + 15 * TICKS_PER_SECOND,
+											false, true, false) )
+										{
+											messagePlayer(playerhit, MESSAGE_COMBAT, Language::get(6963));
+											spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, 2367);
+										}
+									}
 									break;
 								case SPIDER:
 									if ( behavior != &actPlayer )

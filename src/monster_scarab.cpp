@@ -54,6 +54,10 @@ void initScarab(Entity* my, Stat* myStats)
 				myStats->DEX -= 4;
 			    myStats->LVL = 10;
 		    }
+			else if ( currentlevel >= 26 )
+			{
+				myStats->setAttribute("SCARAB_GREATER_CURSE", "1");
+			}
 			if ( !myStats->leader_uid )
 			{
 				myStats->leader_uid = 0;
