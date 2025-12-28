@@ -2417,7 +2417,7 @@ public:
 		void baseSpellClearMP(int skillID);
 		std::map<int, int> baseSpellLevelUpProcs;
 		std::map<int, real_t> sustainedSpellIDCounter;
-		bool updateSustainedSpellEvent(int spellID, real_t value, real_t scaleValue);
+		bool updateSustainedSpellEvent(int spellID, real_t value, real_t scaleValue, Entity* hitEntity);
 		bool rollRngProc(RngRollTypes rngType, int chance);
 		std::map<Uint32, int> enemyRaisedBlockingAgainst;
 		std::map<Uint32, int> enemyRaisedStealthAgainst;

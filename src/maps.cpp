@@ -10501,7 +10501,7 @@ int mapLevel(int player, int radius, int _x, int _y, bool usingSpell)
 		{
 			if ( players[player]->isLocalPlayer() )
 			{
-				players[player]->mechanics.updateSustainedSpellEvent(SPELL_MAGICMAPPING, revealed, 0.2);
+				players[player]->mechanics.updateSustainedSpellEvent(SPELL_MAGICMAPPING, revealed, 0.2, nullptr);
 			}
 		}
 	}

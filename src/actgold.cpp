@@ -167,7 +167,7 @@ void actGoldBag(Entity* my)
 								}
 							}
 
-							players[player]->mechanics.updateSustainedSpellEvent(SPELL_DONATION, 150.0, 1.0);
+							players[player]->mechanics.updateSustainedSpellEvent(SPELL_DONATION, 150.0, 1.0, nullptr);
 							break;
 						}
 					}

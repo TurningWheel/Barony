@@ -861,7 +861,7 @@ void actMagiclightBall(Entity* my)
 											{
 												if ( caster->behavior == &actPlayer )
 												{
-													if ( players[caster->skill[2]]->mechanics.updateSustainedSpellEvent(spell->ID, 150.0, 1.0) )
+													if ( players[caster->skill[2]]->mechanics.updateSustainedSpellEvent(spell->ID, 150.0, 1.0, nullptr) )
 													{
 														//lightball_travelled_distance = -1.0;
 													}
@@ -1136,15 +1136,15 @@ bool magicOnSpellCastEvent(Entity* parent, Entity* projectile, Entity* hitentity
 
 				if ( allowedLevelup )
 				{
-					if ( parent->isInvisible() && parent->checkEnemy(hitentity) )
+					if ( parent->isInvisible() )
 					{
-						players[player]->mechanics.updateSustainedSpellEvent(SPELL_INVISIBILITY, 1.0, 1.0);
+						players[player]->mechanics.updateSustainedSpellEvent(SPELL_INVISIBILITY, 10.0, 1.0, hitentity);
 					}
 					if ( projectile && projectile->behavior == &actMagicMissile && projectile->actmagicOrbitCastFromSpell == 1 )
 					{
 						if ( stats[player]->getEffectActive(EFF_MAGICAMPLIFY) )
 						{
-							players[player]->mechanics.updateSustainedSpellEvent(SPELL_AMPLIFY_MAGIC, 5.0, 1.0);
+							players[player]->mechanics.updateSustainedSpellEvent(SPELL_AMPLIFY_MAGIC, 5.0, 1.0, hitentity);
 						}
 					}
 				}
@@ -1412,7 +1412,12 @@ void magicOnEntityHit(Entity* parent, Entity* particle, Entity* hitentity, Stat*
 		Uint32 additionalFlags = 0;
 		if ( hitstats && hitstats->HP > 0 )
 		{
-			if ( spellID == SPELL_FIRE_WALL || spellID == SPELL_DISRUPT_EARTH || spellID == SPELL_EARTH_SPINES || spellID == SPELL_ICE_WAVE || spellID == SPELL_HOLY_FIRE )
+			if ( spellID == SPELL_FIRE_WALL 
+				|| spellID == SPELL_DISRUPT_EARTH 
+				|| spellID == SPELL_EARTH_SPINES 
+				|| spellID == SPELL_ICE_WAVE 
+				|| spellID == SPELL_HOLY_FIRE
+				|| spellID == SPELL_SHADOW_TAG )
 			{
 				additionalFlags |= spell_t::SPELL_LEVEL_EVENT_MINOR_CHANCE;
 			}
@@ -2918,10 +2923,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					}
 					if ( my->actmagicCastByMagicstaff != 1 && my->actmagicCastByTinkerTrap == 0 )
 					{
-						if ( spell->ID != SPELL_FORCEBOLT )
-						{
-							spellbookDamageBonus += getBonusFromCasterOfSpellElement(parent, nullptr, element, spell ? spell->ID : SPELL_NONE, spell->skillID);
-						}
+						spellbookDamageBonus += getBonusFromCasterOfSpellElement(parent, nullptr, element, spell ? spell->ID : SPELL_NONE, spell->skillID);
 						if ( parent && parent->behavior == &actPlayer )
 						{
 							Compendium_t::Events_t::eventUpdateCodex(parent->skill[2], Compendium_t::CPDM_CLASS_PWR_MAX_CASTED, "pwr",
@@ -3770,7 +3772,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									if ( parent && parent->behavior == &actPlayer && heal > 0 )
 									{
 										serverUpdatePlayerGameplayStats(parent->skill[2], STATISTICS_HEAL_BOT, heal);
-										players[parent->skill[2]]->mechanics.updateSustainedSpellEvent(spell->ID, heal, 1.0);
+										players[parent->skill[2]]->mechanics.updateSustainedSpellEvent(spell->ID, heal, 1.0, nullptr);
 									}
 								}
 							}
@@ -17254,7 +17256,7 @@ void actParticleFloorMagic(Entity* my)
 										{
 											if ( caster && caster->behavior == &actPlayer && parentTimer && parentTimer->particleTimerVariable2 == SPELL_SPORES )
 											{
-												players[caster->skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_SPORES, 50.0, 1.0);
+												players[caster->skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_SPORES, 50.0, 1.0, entity);
 											}
 										}
 									}
@@ -20407,7 +20409,7 @@ void actRadiusMagic(Entity* my)
 						{
 							if ( caster->behavior == &actPlayer )
 							{
-								players[caster->skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_TURN_UNDEAD, 100.0, 1.0);
+								players[caster->skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_TURN_UNDEAD, 100.0, 1.0, ent);
 							}
 						}
 					}

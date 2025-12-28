@@ -2141,7 +2141,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 
 								if ( caster->behavior == &actPlayer )
 								{
-									players[caster->skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_SCRY_TRAPS, 10.0, 1.0);
+									players[caster->skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_SCRY_TRAPS, 10.0, 1.0, nullptr);
 								}
 							}
 						}
@@ -2272,7 +2272,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 
 								if ( caster->behavior == &actPlayer )
 								{
-									players[caster->skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_SCRY_TREASURES, 10.0, 1.0);
+									players[caster->skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_SCRY_TREASURES, 10.0, 1.0, nullptr);
 								}
 							}
 						}
@@ -2457,7 +2457,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						serverSpawnMiscParticles(entity, PARTICLE_EFFECT_PINPOINT, 1768, caster->getUID(), duration, spell->ID);
 
 						playSoundEntity(entity, 167, 128);
-						players[caster->skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_DONATION, 100.0, 1.0);
+						players[caster->skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_DONATION, 100.0, 1.0, nullptr);
 
 						found = true;
 						break;
@@ -5415,7 +5415,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 
 							if ( caster->behavior == &actPlayer )
 							{
-								players[caster->skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_PINPOINT, 20.0, 1.0);
+								players[caster->skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_PINPOINT, 20.0, 1.0, nullptr);
 							}
 
 							playSoundEntity(entity, 167, 128);
@@ -5452,7 +5452,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							spawnMagicEffectParticles(entity->x, entity->y, entity->z, 174);
 							if ( caster->behavior == &actPlayer )
 							{
-								players[caster->skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_PENANCE, 20.0, 1.0);
+								players[caster->skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_PENANCE, 20.0, 1.0, nullptr);
 							}
 							found = true;
 							break;
@@ -6608,7 +6608,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							//magicOnSpellCastEvent(caster, caster, nullptr, spell->ID, spell_t::SPELL_LEVEL_EVENT_DMG | spellEventFlags, totalHeal, allowedSkillup);
 							if ( caster && caster->behavior == &actPlayer )
 							{
-								players[caster->skill[2]]->mechanics.updateSustainedSpellEvent(spell->ID, totalHeal, 1.0);
+								players[caster->skill[2]]->mechanics.updateSustainedSpellEvent(spell->ID, totalHeal, 1.0, nullptr);
 							}
 
 							if ( !using_magicstaff && !trap )

@@ -5302,7 +5302,7 @@ void actMonster(Entity* my)
 											real_t dist = sqrt(pow(entity->vel_x, 2) + pow(entity->vel_y, 2));
 											if ( dist > 0.05 )
 											{
-												players[entity->skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_INVISIBILITY, 1.0, 1.0);
+												players[entity->skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_INVISIBILITY, 1.0, 1.0, my);
 											}
 										}
 										if ( local_rng.rand() % 100 == 0 )
@@ -6072,7 +6072,7 @@ void actMonster(Entity* my)
 									real_t dist = sqrt(pow(entity->vel_x, 2) + pow(entity->vel_y, 2));
 									if ( dist > 0.05 )
 									{
-										players[entity->skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_INVISIBILITY, 1.0, 1.0);
+										players[entity->skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_INVISIBILITY, 1.0, 1.0, my);
 									}
 								}
 								if ( local_rng.rand() % 100 == 0 )
@@ -7135,7 +7135,7 @@ timeToGoAgain:
 											real_t dist = sqrt(pow(entity->vel_x, 2) + pow(entity->vel_y, 2));
 											if ( dist > 0.05 )
 											{
-												players[entity->skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_INVISIBILITY, 1.0, 1.0);
+												players[entity->skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_INVISIBILITY, 1.0, 1.0, my);
 											}
 										}
 										if ( local_rng.rand() % 100 == 0 )

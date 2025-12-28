@@ -129,10 +129,12 @@ bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, En
 	//Abort if invalid creature (boss, shopkeep, etc).
 	if ( hit.entity->isBossMonster()
 		|| hitstats->type == MIMIC
+		|| hitstats->type == MINIMIMIC
 		|| hitstats->type == BAT_SMALL
 		|| hitstats->type == HOLOGRAM
 		|| hit.entity->monsterIsTinkeringCreation()
 		|| hit.entity->monsterAllySummonRank != 0
+		|| (hitstats->type == INCUBUS && !strncmp(hitstats->name, "inner demon", strlen("inner demon")))
 		)
 	{
 		Uint32 color = makeColorRGB(255, 0, 0);
@@ -3418,7 +3420,7 @@ bool Entity::spellEffectPreserveItem(Item* item)
 						playSoundEntity(this, 166, 128);
 						messagePlayerColor(skill[2], MESSAGE_COMBAT, makeColorRGB(0, 255, 0), Language::get(6654), item->getName());
 
-						players[skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_PRESERVE, 10.0, 1.0);
+						players[skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_PRESERVE, 10.0, 1.0, nullptr);
 					}
 					return true;
 				}
@@ -3482,16 +3484,7 @@ int thaumSpellArmorProc(Entity* my, Stat& myStats, bool checkEffectActiveOnly, E
 					{
 						if ( result != myStats.getEffectActive(effectID) )
 						{
-							bool increaseSkill = false;
-							if ( attacker && attacker->getStats() )
-							{
-								increaseSkill = true;
-								if ( !attacker->checkFriend(my) )
-								{
-									increaseSkill = false;
-								}
-							}
-							players[player]->mechanics.updateSustainedSpellEvent(spellID, std::min(150.0, effectID == EFF_GUARD_SPIRIT ? 128.0 : 50.0 + 10 * result), 1.0);
+							players[player]->mechanics.updateSustainedSpellEvent(spellID, std::min(150.0, effectID == EFF_GUARD_SPIRIT ? 128.0 : 50.0 + 10 * result), 1.0, attacker);
 						}
 					}
 				}

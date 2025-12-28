@@ -11298,7 +11298,7 @@ void actPlayer(Entity* my)
 
 				if ( my->isInvisible() && !assailant[PLAYER_NUM] )
 				{
-					players[PLAYER_NUM]->mechanics.updateSustainedSpellEvent(SPELL_INVISIBILITY, dist, 0.1);
+					players[PLAYER_NUM]->mechanics.updateSustainedSpellEvent(SPELL_INVISIBILITY, dist, 0.1, nullptr);
 				}
 				if ( levitating && !swimming )
 				{
@@ -11310,13 +11310,13 @@ void actPlayer(Entity* my)
 						if ( !map.tiles[index] || swimmingtiles[map.tiles[index_y * MAPLAYERS + index_x * MAPLAYERS * map.height]]
 							|| lavatiles[map.tiles[index_y * MAPLAYERS + index_x * MAPLAYERS * map.height]] )
 						{
-							players[PLAYER_NUM]->mechanics.updateSustainedSpellEvent(SPELL_LEVITATION, dist, 0.5);
+							players[PLAYER_NUM]->mechanics.updateSustainedSpellEvent(SPELL_LEVITATION, dist, 0.5, nullptr);
 						}
 					}
 				}
 				if ( stats[PLAYER_NUM]->getEffectActive(EFF_LIGHTEN_LOAD) )
 				{
-					players[PLAYER_NUM]->mechanics.updateSustainedSpellEvent(SPELL_LIGHTEN_LOAD, dist, 0.1);
+					players[PLAYER_NUM]->mechanics.updateSustainedSpellEvent(SPELL_LIGHTEN_LOAD, dist, 0.1, nullptr);
 				}
 			}
 
@@ -11338,7 +11338,12 @@ void actPlayer(Entity* my)
 					}
 					else if ( stats[PLAYER_NUM]->getEffectActive(EFF_DASH) && hit.entity->behavior == &actDoor )
 					{
-						hit.entity->doorHealth = 0;
+						if ( hit.entity->doorHealth > 0 )
+						{
+							hit.entity->doorHealth = 0;
+							magicOnSpellCastEvent(my, my, nullptr,
+								SPELL_DASH, spell_t::SPELL_LEVEL_EVENT_DEFAULT | spell_t::SPELL_LEVEL_EVENT_MINOR_CHANCE, 1);
+						}
 					}
 				}
 
@@ -11531,7 +11536,7 @@ void actPlayer(Entity* my)
 				}
 				if ( my->isInvisible() )
 				{
-					players[PLAYER_NUM]->mechanics.updateSustainedSpellEvent(SPELL_INVISIBILITY, dist, 0.1);
+					players[PLAYER_NUM]->mechanics.updateSustainedSpellEvent(SPELL_INVISIBILITY, dist, 0.1, nullptr);
 				}
 				if ( levitating && !swimming )
 				{
@@ -11543,13 +11548,13 @@ void actPlayer(Entity* my)
 						if ( !map.tiles[index] || swimmingtiles[map.tiles[index_y * MAPLAYERS + index_x * MAPLAYERS * map.height]]
 							|| lavatiles[map.tiles[index_y * MAPLAYERS + index_x * MAPLAYERS * map.height]] )
 						{
-							players[PLAYER_NUM]->mechanics.updateSustainedSpellEvent(SPELL_LEVITATION, dist, 0.5);
+							players[PLAYER_NUM]->mechanics.updateSustainedSpellEvent(SPELL_LEVITATION, dist, 0.5, nullptr);
 						}
 					}
 				}
 				if ( stats[PLAYER_NUM]->getEffectActive(EFF_LIGHTEN_LOAD) )
 				{
-					players[PLAYER_NUM]->mechanics.updateSustainedSpellEvent(SPELL_LIGHTEN_LOAD, dist, 0.1);
+					players[PLAYER_NUM]->mechanics.updateSustainedSpellEvent(SPELL_LIGHTEN_LOAD, dist, 0.1, nullptr);
 				}
 			}
 
@@ -11569,7 +11574,12 @@ void actPlayer(Entity* my)
 				}
 				else if ( stats[PLAYER_NUM]->getEffectActive(EFF_DASH) && hit.entity->behavior == &actDoor )
 				{
-					hit.entity->doorHealth = 0;
+					if ( hit.entity->doorHealth > 0 )
+					{
+						hit.entity->doorHealth = 0;
+						magicOnSpellCastEvent(my, my, nullptr,
+							SPELL_DASH, spell_t::SPELL_LEVEL_EVENT_DEFAULT | spell_t::SPELL_LEVEL_EVENT_MINOR_CHANCE, 1);
+					}
 				}
 			}
 		}

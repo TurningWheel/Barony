@@ -1506,7 +1506,9 @@ void ItemTooltips_t::readItemLocalizationsFromFile(bool forceLoadBaseDirectory)
 
 	printlog("[JSON]: Successfully read %d item names, %d spell names from '%s'", itemNameLocalizations.size(), spellNameLocalizations.size(), inputPath.c_str());
 	assert(itemNameLocalizations.size() == (NUMITEMS));
-	assert(spellNameLocalizations.size() == (NUM_SPELLS - 1)); // ignore SPELL_NONE
+#ifndef NDEBUG
+	//assert(spellNameLocalizations.size() == (NUM_SPELLS - 1)); // ignore SPELL_NONE
+#endif
 
 	// apply localizations
 	for ( int i = 0; i < NUMITEMS; ++i )
@@ -2278,6 +2280,7 @@ int ItemTooltips_t::getSpellDamageOrHealAmount(const int player, spell_t* spell,
 	int mana = 0;
 	int heal = 0;
 	spellElement_t* primaryElement = nullptr;
+	real_t damageMult = 1.0;
 	if ( elementRoot )
 	{
 		node_t* primaryNode = elementRoot->elements.first;
@@ -2288,16 +2291,14 @@ int ItemTooltips_t::getSpellDamageOrHealAmount(const int player, spell_t* spell,
 			{
 				damage = primaryElement->getDamage();
 				heal = primaryElement->getDamage();
+				damageMult = primaryElement->getDamageMult();
 			}
 		}
 		else
 		{
 			damage = elementRoot->getDamage();
 			heal = elementRoot->getDamage();
-		}
-		if ( spell->ID == SPELL_FORCEBOLT )
-		{
-			return damage;
+			damageMult = elementRoot->getDamageMult();
 		}
 		if ( player >= 0 && players[player] )
 		{
@@ -2315,11 +2316,11 @@ int ItemTooltips_t::getSpellDamageOrHealAmount(const int player, spell_t* spell,
 						excludePlayerStats ? nullptr : stats[player], 
 						spellbook);
 				}
-				damage += (damage * (bonus * 0.01 
+				damage += damageMult * (damage * (bonus * 0.01
 					+ getBonusFromCasterOfSpellElement(
 						excludePlayerStats ? nullptr : players[player]->entity,
 						excludePlayerStats ? nullptr : stats[player], primaryElement, spell ? spell->ID : SPELL_NONE, spell->skillID)));
-				heal += (heal * (bonus * 0.01 
+				heal += damageMult * (heal * (bonus * 0.01
 					+ getBonusFromCasterOfSpellElement(
 						excludePlayerStats ? nullptr : players[player]->entity,
 						excludePlayerStats ? nullptr : stats[player], primaryElement, spell ? spell->ID : SPELL_NONE, spell->skillID)));

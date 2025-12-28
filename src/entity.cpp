@@ -2565,7 +2565,7 @@ bool Entity::increaseSkill(int skill, bool notify)
 				{
 					if ( players[caster]->entity )
 					{
-						players[caster]->mechanics.updateSustainedSpellEvent(SPELL_PROF_NIMBLENESS, 100.0, 1.0);
+						players[caster]->mechanics.updateSustainedSpellEvent(SPELL_PROF_NIMBLENESS, 100.0, 1.0, nullptr);
 					}
 				}
 			}
@@ -2579,7 +2579,7 @@ bool Entity::increaseSkill(int skill, bool notify)
 				{
 					if ( players[caster]->entity )
 					{
-						players[caster]->mechanics.updateSustainedSpellEvent(SPELL_PROF_GREATER_MIGHT, 100.0, 1.0);
+						players[caster]->mechanics.updateSustainedSpellEvent(SPELL_PROF_GREATER_MIGHT, 100.0, 1.0, nullptr);
 					}
 				}
 			}
@@ -2592,7 +2592,7 @@ bool Entity::increaseSkill(int skill, bool notify)
 				{
 					if ( players[caster]->entity )
 					{
-						players[caster]->mechanics.updateSustainedSpellEvent(SPELL_PROF_COUNSEL, 100.0, 1.0);
+						players[caster]->mechanics.updateSustainedSpellEvent(SPELL_PROF_COUNSEL, 100.0, 1.0, nullptr);
 					}
 				}
 			}
@@ -2604,7 +2604,7 @@ bool Entity::increaseSkill(int skill, bool notify)
 				{
 					if ( players[caster]->entity )
 					{
-						players[caster]->mechanics.updateSustainedSpellEvent(SPELL_PROF_STURDINESS, 100.0, 1.0);
+						players[caster]->mechanics.updateSustainedSpellEvent(SPELL_PROF_STURDINESS, 100.0, 1.0, nullptr);
 					}
 				}
 			}
@@ -6331,7 +6331,7 @@ void Entity::handleEffects(Stat* myStats)
 
 				if ( behavior == &actPlayer )
 				{
-					players[skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_BLOOD_WARD, 128.0, 1.0);
+					players[skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_BLOOD_WARD, 128.0, 1.0, nullptr);
 					this->safeConsumeMP(1);
 				}
 			}
@@ -6455,7 +6455,7 @@ void Entity::handleEffects(Stat* myStats)
 
 				if ( behavior == &actPlayer )
 				{
-					players[skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_BLOOD_WARD, 128.0, 1.0);
+					players[skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_BLOOD_WARD, 128.0, 1.0, nullptr);
 					this->safeConsumeMP(1);
 				}
 			}
@@ -12375,7 +12375,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 								if ( behavior == &actPlayer )
 								{
-									players[skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_DIVINE_ZEAL, bonus, 1.0);
+									players[skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_DIVINE_ZEAL, bonus, 1.0, hit.entity);
 								}
 							}
 							if ( myStats->getEffectActive(EFF_FOCI_LIGHT_JUSTICE) )
@@ -12776,7 +12776,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						if ( playerhit >= 0 )
 						{
 							hit.entity->safeConsumeMP(1);
-							players[playerhit]->mechanics.updateSustainedSpellEvent(SPELL_THORNS, 50.0 + thorn * 5.0, 1.0);
+							players[playerhit]->mechanics.updateSustainedSpellEvent(SPELL_THORNS, 50.0 + thorn * 5.0, 1.0, this);
 						}
 						thornsEffect += thorn;
 					}
@@ -12790,7 +12790,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						if ( playerhit >= 0 )
 						{
 							hit.entity->safeConsumeMP(1);
-							players[playerhit]->mechanics.updateSustainedSpellEvent(SPELL_BLADEVINES, 50.0 + thorn * 5.0, 1.0);
+							players[playerhit]->mechanics.updateSustainedSpellEvent(SPELL_BLADEVINES, 50.0 + thorn * 5.0, 1.0, this);
 						}
 						thornsEffect += thorn;
 					}
@@ -12874,9 +12874,9 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 					if ( doSkillIncrease && player >= 0 )
 					{
-						if ( isInvisible() && this->checkEnemy(hit.entity) )
+						if ( isInvisible() )
 						{
-							players[player]->mechanics.updateSustainedSpellEvent(SPELL_INVISIBILITY, 10.0, 1.0);
+							players[player]->mechanics.updateSustainedSpellEvent(SPELL_INVISIBILITY, 10.0, 1.0, hit.entity);
 						}
 					}
 
@@ -14279,7 +14279,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 									if ( player >= 0 )
 									{
-										players[player]->mechanics.updateSustainedSpellEvent(SPELL_ENVENOM_WEAPON, 50.0, 1.0);
+										players[player]->mechanics.updateSustainedSpellEvent(SPELL_ENVENOM_WEAPON, 50.0, 1.0, hit.entity);
 									}
 								}
 							}
@@ -15536,9 +15536,9 @@ void Entity::attack(int pose, int charge, Entity* target)
 											messagePlayerMonsterEvent(playerhit, makeColorRGB(0, 255, 0), *myStats,
 												Language::get(6732), Language::get(6733), MSG_COMBAT);
 										}
-										if ( playerhit >= 0 && hit.entity->checkEnemy(this) )
+										if ( playerhit >= 0 )
 										{
-											players[playerhit]->mechanics.updateSustainedSpellEvent(SPELL_FLAME_CLOAK, 100.0, 1.0);
+											players[playerhit]->mechanics.updateSustainedSpellEvent(SPELL_FLAME_CLOAK, 100.0, 1.0, this);
 										}
 									}
 								}
@@ -15582,6 +15582,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 							spawnMagicEffectParticles(this->x, this->y, this->z, 983);
 							if ( illusionParent->behavior == &actPlayer && illusionParent != this )
 							{
+								players[illusionParent->skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_DEMON_ILLUSION, 30.0, 1.0, this);
+
 								// update enemy bar for attacker
 								if ( !strcmp(myStats->name, "") )
 								{
@@ -15967,6 +15969,14 @@ void Entity::attack(int pose, int charge, Entity* target)
 						{
 							if ( player >= 0 )
 							{
+								if ( myStats->getEffectActive(EFF_VAMPIRICAURA) && myStats->EFFECTS_TIMERS[EFF_VAMPIRICAURA] > 0 )
+								{
+									if ( behavior == &actPlayer )
+									{
+										players[player]->mechanics.updateSustainedSpellEvent(SPELL_VAMPIRIC_AURA, 50.0, 1.0, hit.entity);
+									}
+								}
+
 								myStats->HUNGER = std::min(1499, myStats->HUNGER + 100);
 								serverUpdateHunger(player);
 								if ( stats[player]->type == VAMPIRE )
@@ -16090,6 +16100,18 @@ void Entity::attack(int pose, int charge, Entity* target)
 										magicOnSpellCastEvent(leader, nullptr, hit.entity, summonSpellID, spell_t::SPELL_LEVEL_EVENT_ASSIST | spell_t::SPELL_LEVEL_EVENT_MINOR_CHANCE, 1);
 									}
 								}
+							}
+						}
+
+					}
+					
+					if ( damage > 0 && hitstats->OLDHP > hitstats->HP )
+					{
+						if ( myStats->getEffectActive(EFF_VAMPIRICAURA) && myStats->EFFECTS_TIMERS[EFF_VAMPIRICAURA] > 0 )
+						{
+							if ( behavior == &actPlayer )
+							{
+								players[player]->mechanics.updateSustainedSpellEvent(SPELL_VAMPIRIC_AURA, 10.0, 1.0, hit.entity);
 							}
 						}
 					}
@@ -17629,18 +17651,6 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 
 			Compendium_t::Events_t::eventUpdateMonster(skill[2], Compendium_t::CPDM_KILL_XP, src, gain);
 
-			if ( gain > 0 )
-			{
-				if ( srcStats->getEffectActive(EFF_SHADOW_TAGGED) )
-				{
-					if ( this->creatureShadowTaggedThisUid == src->getUID() )
-					{
-						magicOnSpellCastEvent(this, this, src,
-							SPELL_SHADOW_TAG, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
-					}
-				}
-			}
-
 			if ( gain > 0 && ((destStats->playerRace == RACE_SALAMANDER && destStats->stat_appearance == 0) || destStats->type == SALAMANDER) )
 			{
 				Sint32 oldMP = destStats->MP;
@@ -17695,6 +17705,21 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 
 	if ( root ) // global stats
 	{
+		if ( srcStats && srcStats->getEffectActive(EFF_SHADOW_TAGGED) )
+		{
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				if ( players[i] && players[i]->entity )
+				{
+					if ( players[i]->entity->creatureShadowTaggedThisUid == src->getUID() )
+					{
+						magicOnSpellCastEvent(players[i]->entity, players[i]->entity, src,
+							SPELL_SHADOW_TAG, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
+					}
+				}
+			}
+		}
+
 		if ( src->behavior == &actPlayer && this->behavior == &actMonster )
 		{
 			achievementObserver.updateGlobalStat(getIndexForDeathType(destStats->type), src->skill[2]);
@@ -31771,7 +31796,7 @@ bool Entity::modifyDamageMultipliersFromEffects(Entity* hitentity, Entity* attac
 				damageMultiplier = std::max(0.1, damageMultiplier * (1.0 - reduction));
 				if ( hitentity->behavior == &actPlayer )
 				{
-					players[hitentity->skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_BLOOD_WARD, 30.0, 1.0);
+					players[hitentity->skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_BLOOD_WARD, 30.0, 1.0, attacker);
 					hitentity->safeConsumeMP(1);
 				}
 				result = true;
@@ -31789,7 +31814,7 @@ bool Entity::modifyDamageMultipliersFromEffects(Entity* hitentity, Entity* attac
 				damageMultiplier += 0.1 + (0.1 * (int)(hitstats->getEffectActive(EFF_SIGIL) & 0xF));
 				if ( players[caster]->entity )
 				{
-					players[caster]->mechanics.updateSustainedSpellEvent(SPELL_SIGIL, 10.0, 1.0);
+					players[caster]->mechanics.updateSustainedSpellEvent(SPELL_SIGIL, 10.0, 1.0, hitentity);
 				}
 				result = true;
 			}
@@ -31805,7 +31830,7 @@ bool Entity::modifyDamageMultipliersFromEffects(Entity* hitentity, Entity* attac
 		{
 			if ( players[caster]->entity )
 			{
-				players[caster]->mechanics.updateSustainedSpellEvent(SPELL_SANCTUARY, 5.0, 1.0);
+				players[caster]->mechanics.updateSustainedSpellEvent(SPELL_SANCTUARY, 5.0, 1.0, hitentity);
 				players[caster]->entity->safeConsumeMP(1);
 			}
 		}
@@ -31833,7 +31858,7 @@ real_t Entity::getHealingSpellPotionModifierFromEffects(bool processLevelup)
 					{
 						if ( players[caster]->entity )
 						{
-							players[caster]->mechanics.updateSustainedSpellEvent(SPELL_SIGIL, 10.0, 1.0);
+							players[caster]->mechanics.updateSustainedSpellEvent(SPELL_SIGIL, 10.0, 1.0, nullptr);
 						}
 					}
 				}

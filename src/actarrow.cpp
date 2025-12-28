@@ -1140,7 +1140,7 @@ void actArrow(Entity* my)
 						{
 							if ( parent->isInvisible() && parent->checkEnemy(hit.entity) )
 							{
-								players[parent->skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_INVISIBILITY, 10.0, 1.0);
+								players[parent->skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_INVISIBILITY, 10.0, 1.0, hit.entity);
 							}
 						}
 
@@ -1214,7 +1214,7 @@ void actArrow(Entity* my)
 
 									if ( parent->behavior == &actPlayer )
 									{
-										players[parent->skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_ENVENOM_WEAPON, 50.0, 1.0);
+										players[parent->skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_ENVENOM_WEAPON, 50.0, 1.0, hit.entity);
 									}
 								}
 							}
@@ -1361,6 +1361,28 @@ void actArrow(Entity* my)
 							if ( local_rng.rand() % 100 < trapResist )
 							{
 								procEffect = false;
+							}
+						}
+
+						if ( hitstats->HP > 0 && hitstats->OLDHP > hitstats->HP && parent )
+						{
+							// assist damage from summons
+							if ( parent->behavior == &actMonster )
+							{
+								int summonSpellID = getSpellFromSummonedEntityForSpellEvent(parent);
+								if ( summonSpellID != SPELL_NONE )
+								{
+									if ( Stat* parentStats = parent->getStats() )
+									{
+										if ( Entity* leader = uidToEntity(parentStats->leader_uid) )
+										{
+											if ( local_rng.rand() % 8 == 0 )
+											{
+												magicOnSpellCastEvent(leader, nullptr, hit.entity, summonSpellID, spell_t::SPELL_LEVEL_EVENT_ASSIST | spell_t::SPELL_LEVEL_EVENT_MINOR_CHANCE, 1);
+											}
+										}
+									}
+								}
 							}
 						}
 

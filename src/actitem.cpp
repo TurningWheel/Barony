@@ -106,7 +106,7 @@ bool itemProcessReturnItemEffect(Entity* my, bool fallingIntoVoid)
 							{
 								players[returnToParent->skill[2]]->mechanics.sustainedSpellIncrementMP(cost, spell->skillID);
 							}
-							players[returnToParent->skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_RETURN_ITEMS, 10.0, 1.0);
+							players[returnToParent->skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_RETURN_ITEMS, 10.0, 1.0, nullptr);
 						}
 
 						spawnMagicEffectParticles(my->x, my->y, my->z, 170);
@@ -158,7 +158,7 @@ void onItemPickedUp(Entity& who, Uint32 itemUid)
 				}
 			}
 
-			players[player]->mechanics.updateSustainedSpellEvent(SPELL_DONATION, 150.0, 1.0);
+			players[player]->mechanics.updateSustainedSpellEvent(SPELL_DONATION, 150.0, 1.0, nullptr);
 			break;
 		}
 	}
@@ -1222,7 +1222,7 @@ void actItem(Entity* my)
 		{
 			if ( levitating && leader && leader->behavior == &actPlayer )
 			{
-				players[leader->skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_ATTRACT_ITEMS, result, 0.025);
+				players[leader->skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_ATTRACT_ITEMS, result, 0.025, nullptr);
 			}
 		}
 

@@ -5086,7 +5086,7 @@ void item_Food(Item*& item, int player)
 				{
 					if ( players[caster]->entity )
 					{
-						players[caster]->mechanics.updateSustainedSpellEvent(SPELL_BLESS_FOOD, 30.0, 1.0);
+						players[caster]->mechanics.updateSustainedSpellEvent(SPELL_BLESS_FOOD, 30.0, 1.0, nullptr);
 					}
 				}
 			}
@@ -5498,7 +5498,7 @@ void item_FoodTin(Item*& item, int player)
 				{
 					if ( players[caster]->entity )
 					{
-						players[caster]->mechanics.updateSustainedSpellEvent(SPELL_BLESS_FOOD, 30.0, 1.0);
+						players[caster]->mechanics.updateSustainedSpellEvent(SPELL_BLESS_FOOD, 30.0, 1.0, nullptr);
 					}
 				}
 			}

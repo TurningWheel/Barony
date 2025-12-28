@@ -2262,7 +2262,7 @@ void Entity::actWind()
 
 									if ( caster->behavior == &actPlayer )
 									{
-										players[caster->skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_WINDGATE, 10.0, 1.0);
+										players[caster->skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_WINDGATE, 10.0, 1.0, nullptr);
 									}
 								}
 							}
@@ -2279,7 +2279,7 @@ void Entity::actWind()
 							//magicOnSpellCastEvent(caster, caster, entity, SPELL_WINDGATE, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
 							if ( caster->behavior == &actPlayer )
 							{
-								players[caster->skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_WINDGATE, 20.0, 1.0);
+								players[caster->skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_WINDGATE, 20.0, 1.0, nullptr);
 							}
 						}
 					}

@@ -1336,7 +1336,7 @@ void actThrown(Entity* my)
 
 								if ( parent->behavior == &actPlayer )
 								{
-									players[parent->skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_ENVENOM_WEAPON, 50.0, 1.0);
+									players[parent->skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_ENVENOM_WEAPON, 50.0, 1.0, hit.entity);
 								}
 							}
 						}
@@ -1986,7 +1986,7 @@ void actThrown(Entity* my)
 					{
 						if ( parent->isInvisible() && parent->checkEnemy(hit.entity) )
 						{
-							players[parent->skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_INVISIBILITY, 10.0, 1.0);
+							players[parent->skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_INVISIBILITY, 10.0, 1.0, hit.entity);
 						}
 					}
 

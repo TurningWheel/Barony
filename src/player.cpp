@@ -7469,9 +7469,27 @@ void Player::PlayerMechanics_t::sustainedSpellClearMP(int skillID)
 	}
 }
 
-bool Player::PlayerMechanics_t::updateSustainedSpellEvent(int spellID, real_t value, real_t scaleValue)
+bool Player::PlayerMechanics_t::updateSustainedSpellEvent(int spellID, real_t value, real_t scaleValue, Entity* hitentity)
 {
 	if ( value < 0.05 ) { return false; }
+
+	if ( hitentity && multiplayer != CLIENT )
+	{
+		if ( Stat* hitstats = hitentity->getStats() )
+		{
+			if ( hitstats->getEffectActive(EFF_STASIS) )
+			{
+				return false;
+			}
+			else if ( (hitentity->behavior == &actMonster
+				&& (hitentity->monsterAllyGetPlayerLeader() || (hitstats && achievementObserver.checkUidIsFromPlayer(hitstats->leader_uid) >= 0)))
+				|| hitentity->behavior == &actPlayer )
+			{
+				return false;
+			}
+		}
+	}
+
 	if ( spellID == SPELL_MAGICMAPPING && multiplayer == CLIENT )
 	{
 		sustainedSpellIDCounter[spellID] += value * scaleValue;
@@ -7511,7 +7529,8 @@ bool Player::PlayerMechanics_t::updateSustainedSpellEvent(int spellID, real_t va
 			|| spellID == SPELL_EXTRAHEALING
 			|| spellID == SPELL_HOLY_BEAM 
 			|| spellID == SPELL_MAGICMAPPING
-			|| spellID == SPELL_WINDGATE )
+			|| spellID == SPELL_WINDGATE
+			|| spellID == SPELL_DEMON_ILLUSION )
 		{
 			sustainedSpellIDCounter[spellID] += value * scaleValue;
 			if ( players[player.playernum]->entity && sustainedSpellIDCounter[spellID] > 8 * 16.0 )
