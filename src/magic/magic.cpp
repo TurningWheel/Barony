@@ -2378,7 +2378,24 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 
 			if ( targetStats->playerRace == RACE_HUMAN || (targetStats->playerRace != RACE_HUMAN && targetStats->stat_appearance != 0) )
 			{
-				int roll = (RACE_HUMAN + 1) + local_rng.rand() % 8;
+				std::vector<int> chances =
+				{
+					RACE_SKELETON,
+					RACE_VAMPIRE,
+					RACE_SUCCUBUS,
+					RACE_GOATMAN,
+					RACE_AUTOMATON,
+					RACE_INCUBUS,
+					RACE_GOBLIN,
+					RACE_INSECTOID,
+					RACE_GNOME,
+					RACE_GREMLIN,
+					RACE_DRYAD,
+					RACE_MYCONID,
+					RACE_SALAMANDER
+				};
+				int roll = chances[local_rng.rand() % chances.size()];
+				
 				if ( target->effectPolymorph == 0 )
 				{
 					target->effectPolymorph = target->getMonsterFromPlayerRace(roll);
@@ -2387,7 +2404,7 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 				{
 					while ( target->effectPolymorph == target->getMonsterFromPlayerRace(roll) )
 					{
-						roll = (RACE_HUMAN + 1) + local_rng.rand() % 8; // re roll to not polymorph into the same thing
+						roll = chances[local_rng.rand() % chances.size()]; // re roll to not polymorph into the same thing
 					}
 					target->effectPolymorph = target->getMonsterFromPlayerRace(roll);
 				}
