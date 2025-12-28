@@ -36293,29 +36293,84 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		{
 			if ( skillCapstoneUnlocked(playernum, proficiency) )
 			{
+				snprintf(buf, sizeof(buf), "%s", Language::get(6965)); // "any"
+			}
+			else
+			{
+				int skillLVL = (stats[playernum]->getModifiedProficiency(proficiency) + (statGetPER(stats[playernum], player) * Player::Inventory_t::Appraisal_t::perStatMult)); // max gold value can appraise
+				if ( skillLVL < 0 )
+				{
+					snprintf(buf, sizeof(buf), "??? Gold");
+				}
+				else
+				{
+					for ( auto& table : Player::Inventory_t::Appraisal_t::appraisal_tables )
+					{
+						if ( skillLVL >= table.skillLVL )
+						{
+							val = table.goldValueLimit;
+							break;
+						}
+					}
+					if ( val > 99999 )
+					{
+						snprintf(buf, sizeof(buf), "%s", Language::get(4065)); // "any"
+					}
+					else
+					{
+						snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+					}
+				}
+			}
+		}
+		else if ( tag == "APPRAISE_GOLD_FAST" )
+		{
+			if ( skillCapstoneUnlocked(playernum, proficiency) )
+			{
 				snprintf(buf, sizeof(buf), "%s", Language::get(4065)); // "any"
 			}
 			else
 			{
-				val = 10 * (stats[playernum]->getModifiedProficiency(proficiency) + (statGetPER(stats[playernum], player) * 5)); // max gold value can appraise
-				if ( val < 0.0 )
+				int skillLVL = (stats[playernum]->getModifiedProficiency(proficiency) + (statGetPER(stats[playernum], player) * Player::Inventory_t::Appraisal_t::perStatMult)); // max gold value can appraise
+				if ( skillLVL < 0 )
 				{
 					snprintf(buf, sizeof(buf), "??? Gold");
 				}
-				else if ( val < 0.1 )
-				{
-					val = 9;
-					snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
-				}
 				else
 				{
+					for ( auto& table : Player::Inventory_t::Appraisal_t::appraisal_tables )
+					{
+						if ( skillLVL >= table.skillLVL )
+						{
+							val = table.fastTimeGold;
+							break;
+						}
+					}
 					snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 				}
 			}
 		}
+		else if ( tag == "APPRAISE_SPEEDUP" )
+		{
+			int skillLVL = (stats[playernum]->getModifiedProficiency(proficiency) + (statGetPER(stats[playernum], player) * Player::Inventory_t::Appraisal_t::perStatMult));
+			if ( skillCapstoneUnlocked(playernum, proficiency) )
+			{
+				val = 100.0;
+			}
+			else if ( skillLVL >= 50 )
+			{
+				real_t ratio = (1.0 - std::max(0.2, 0.5 + (100 - skillLVL) / 100.0)) * 100.0;
+				val = ratio;
+			}
+			else
+			{
+				val = 0.0;
+			}
+			snprintf(buf, sizeof(buf), rawValue.c_str(), val);
+		}
 		else if ( tag == "APPRAISE_WORTHLESS_GLASS" )
 		{
-			if ( (stats[playernum]->getModifiedProficiency(proficiency) + (statGetPER(stats[playernum], player) * 5)) >= 100 )
+			if ( (stats[playernum]->getModifiedProficiency(proficiency) + (statGetPER(stats[playernum], player) * Player::Inventory_t::Appraisal_t::perStatMult)) >= 40 )
 			{
 				snprintf(buf, sizeof(buf), rawValue.c_str(), Language::get(1314)); // yes
 			}

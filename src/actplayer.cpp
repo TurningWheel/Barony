@@ -8498,57 +8498,70 @@ void actPlayer(Entity* my)
 						if ( tempItem->identified )
 						{
 							int appraisalEaseOfDifficulty = 0;
-							if ( tempItem->getGoldValue() < 100 )
+							bool increaseSkill = false;
+							if ( stats[PLAYER_NUM]->getProficiency(PRO_APPRAISAL) < 50 )
 							{
-								// easy junk items
-								appraisalEaseOfDifficulty = 2;
-							}
-							else if ( tempItem->getGoldValue() < 200 )
-							{
-								// medium
-								appraisalEaseOfDifficulty = 1;
-							}
-							else if ( tempItem->getGoldValue() < 300 )
-							{
-								// medium
-								appraisalEaseOfDifficulty = 0;
-							}
-							else if ( tempItem->getGoldValue() < 400 )
-							{
-								// hardest
-								appraisalEaseOfDifficulty = -1;
-							}
-							else
-							{
-								// hardest
-								appraisalEaseOfDifficulty = -1;
-							}
-							appraisalEaseOfDifficulty += stats[PLAYER_NUM]->getProficiency(PRO_APPRAISAL) / 20;
-							// difficulty ranges from 1-in-1 to 1-in-6
-							appraisalEaseOfDifficulty = std::max(appraisalEaseOfDifficulty, 1);
-							//messagePlayer(0, "Appraisal level up chance: 1 in %d", appraisalEaseOfDifficulty);
-
-							int attempts = itemTypeIsQuiver(tempItem->type) ? 1 : tempItem->count;
-							for ( int i = 0; i < attempts; ++i )
-							{
-								if ( local_rng.rand() % appraisalEaseOfDifficulty == 0 )
+								if ( tempItem->getGoldValue() < 100 )
 								{
-									if ( multiplayer == CLIENT )
+									// easy junk items
+									appraisalEaseOfDifficulty = 2;
+								}
+								else if ( tempItem->getGoldValue() < 200 )
+								{
+									// medium
+									appraisalEaseOfDifficulty = 1;
+								}
+								else if ( tempItem->getGoldValue() < 300 )
+								{
+									// medium
+									appraisalEaseOfDifficulty = 0;
+								}
+								else if ( tempItem->getGoldValue() < 400 )
+								{
+									// hardest
+									appraisalEaseOfDifficulty = -1;
+								}
+								else
+								{
+									// hardest
+									appraisalEaseOfDifficulty = -1;
+								}
+								appraisalEaseOfDifficulty += stats[PLAYER_NUM]->getProficiency(PRO_APPRAISAL) / 20;
+								// difficulty ranges from 1-in-1 to 1-in-6
+								appraisalEaseOfDifficulty = std::max(appraisalEaseOfDifficulty, 1);
+								//messagePlayer(0, "Appraisal level up chance: 1 in %d", appraisalEaseOfDifficulty);
+								increaseSkill = true;
+							}
+							else if ( tempItem->getGoldValue() >= 300 )
+							{
+								appraisalEaseOfDifficulty = 1;
+								increaseSkill = true;
+							}
+
+							if ( increaseSkill && appraisalEaseOfDifficulty > 0 )
+							{
+								int attempts = itemTypeIsQuiver(tempItem->type) ? 1 : tempItem->count;
+								for ( int i = 0; i < attempts; ++i )
+								{
+									if ( local_rng.rand() % appraisalEaseOfDifficulty == 0 )
 									{
-										// request level up
-										strcpy((char*)net_packet->data, "CSKL");
-										net_packet->data[4] = PLAYER_NUM;
-										net_packet->data[5] = PRO_APPRAISAL;
-										net_packet->address.host = net_server.host;
-										net_packet->address.port = net_server.port;
-										net_packet->len = 6;
-										sendPacketSafe(net_sock, -1, net_packet, 0);
+										if ( multiplayer == CLIENT )
+										{
+											// request level up
+											strcpy((char*)net_packet->data, "CSKL");
+											net_packet->data[4] = PLAYER_NUM;
+											net_packet->data[5] = PRO_APPRAISAL;
+											net_packet->address.host = net_server.host;
+											net_packet->address.port = net_server.port;
+											net_packet->len = 6;
+											sendPacketSafe(net_sock, -1, net_packet, 0);
+										}
+										else
+										{
+											my->increaseSkill(PRO_APPRAISAL);
+										}
+										break;
 									}
-									else
-									{
-										my->increaseSkill(PRO_APPRAISAL);
-									}
-									break;
 								}
 							}
 						}
