@@ -7050,11 +7050,11 @@ to replay this challenge!
 
 
 #
-6779 Dryad#
-6780 Myconid#
-6781 Salamander#
-6782 Gremlin#
-6783 Gnome#
+6779 Gnome#
+6780 Gremlin#
+6781 Dryad#
+6782 Myconid#
+6783 Salamander#
 6784 bard#
 6785 sapper#
 6786 scion#
@@ -7229,5 +7229,8 @@ to replay this challenge!
 6957 (%02d:%02d%) %3.0f%% Appraising...#
 6958 You sabotage the construction of the %s!#
 6959 You sabotage the construction of %s!#
+6960 Your skeleton key is damaged.#
+6961 Your skeleton key is broken.#
+6962 Your current power is unable to dominate any more creatures.#
 
 6999 END#
