@@ -2176,6 +2176,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				{
 
 				}
+				playSoundEntity(caster, 167, 128);
 				spawnMagicEffectParticles(caster->x, caster->y, caster->z, 174);
 			}
 		}
@@ -7831,7 +7832,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			int volume = 128;
 
 			// IMPORTANT - TRAP IS USED FOR STORM POTIONS AND ORBIT PARTICLES, QUIET SOUND HERE.
-			if ( trap && caster && (caster->behavior == &actPlayer || caster->behavior == &actMonster) )
+			if ( trap && caster && (caster->behavior == &actPlayer || caster->behavior == &actMonster || caster->behavior == &actBoulder) )
 			{
 				volume = 8;
 			}
