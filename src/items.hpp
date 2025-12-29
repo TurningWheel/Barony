@@ -776,7 +776,13 @@ void item_ToolLootBag(Item*& item, int player);
 Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint32 appearance, bool identified, list_t* inventory);
 Item* uidToItem(Uint32 uid);
 ItemType itemLevelCurveEntity(Entity& my, Category cat, int minLevel, int maxLevel, BaronyRNG& rng);
-bool itemLevelCurvePostProcess(Entity* my, Item* item, BaronyRNG& rng, int itemLevel = currentlevel);
+bool itemLevelCurvePostProcess(Entity* my, Item* item, BaronyRNG& rng, 
+#ifdef EDITOR
+	int itemLevel = 0
+#else
+	int itemLevel = currentlevel
+#endif
+);
 ItemType itemLevelCurve(Category cat, int minLevel, int maxLevel, BaronyRNG& rng);
 Item* newItemFromEntity(const Entity* entity, bool discardUid = false); //Make sure to call free(item). discardUid will free the new items uid if this is for temp purposes
 Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 count = 1);
