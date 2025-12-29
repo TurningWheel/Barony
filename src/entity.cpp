@@ -4004,7 +4004,7 @@ void Entity::handleEffects(Stat* myStats)
 		messagePlayerColor(player, MESSAGE_SPAM_MISC, color, Language::get(622));
 
 		static ConsoleVariable<int> cvar_lvlup_ally_sfx("/lvlup_ally_sfx", 520);
-
+		bool alreadyProcessedMaxHPIncrease = false;
 		// now pick three attributes to increase
 
 		if ( player >= 0 )
@@ -4104,6 +4104,8 @@ void Entity::handleEffects(Stat* myStats)
 				{
 					if ( !secondSummon )
 					{
+						myStats->MAXHP += HP_MOD;
+						alreadyProcessedMaxHPIncrease = true;
 						leaderStats->playerSummonLVLHP = (myStats->LVL << 16);
 						leaderStats->playerSummonLVLHP |= (myStats->MAXHP);
 
@@ -4118,6 +4120,8 @@ void Entity::handleEffects(Stat* myStats)
 					}
 					else
 					{
+						myStats->MAXHP += HP_MOD;
+						alreadyProcessedMaxHPIncrease = true;
 						leaderStats->playerSummon2LVLHP = (myStats->LVL << 16);
 						leaderStats->playerSummon2LVLHP |= (myStats->MAXHP);
 
@@ -4403,7 +4407,10 @@ void Entity::handleEffects(Stat* myStats)
 		}
 
 		// increase MAXHP/MAXMP
-		myStats->MAXHP += hpMod;
+		if ( !alreadyProcessedMaxHPIncrease )
+		{
+			myStats->MAXHP += hpMod;
+		}
 		int hpRestore = Entity::getHPRestoreOnLevelUp(this, myStats, hpMod);
 		int mpRestore = Entity::getMPRestoreOnLevelUp(this, myStats, mpMod);
 
