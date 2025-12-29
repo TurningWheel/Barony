@@ -333,6 +333,10 @@ bool rangefinderTargetEnemyType(spell_t& spell, Entity& entity)
 	{
 		return entity.behavior == &actMonster || entity.behavior == &actPlayer || entity.behavior == &actChest;
 	}
+	else if ( spell.ID == SPELL_DISARM || spell.ID == SPELL_STRIP )
+	{
+		return entity.behavior == &actMonster;
+	}
 	else if ( spell.ID == SPELL_DEFACE )
 	{
 		return (!entity.flags[INVISIBLE] && entity.behavior == &actHeadstone) || entity.behavior == &actSink;
