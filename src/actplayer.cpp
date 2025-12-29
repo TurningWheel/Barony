@@ -7786,6 +7786,15 @@ void actPlayer(Entity* my)
 			}
 		}
 
+		if ( players[PLAYER_NUM]->isLocalPlayer() && stats[PLAYER_NUM]->playerRace >= 13 && stats[PLAYER_NUM]->playerRace <= 17 )
+		{
+			if ( !enabledDLCPack3 )
+			{
+				int* potato = NULL;
+				(*potato) = 322;
+			}
+		}
+
 		if ( players[PLAYER_NUM]->isLocalPlayer() && PLAYER_ALIVETIME == 1 && currentlevel > 0 )
 		{
 			for ( auto duck : players[PLAYER_NUM]->mechanics.ducksInARow )
