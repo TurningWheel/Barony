@@ -30351,11 +30351,11 @@ real_t getDamageTableEquipmentMod(Stat& myStats, Item& item, real_t base, real_t
 	real_t bonus = base;
 	if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(&myStats) )
 	{
-		bonus += mod * std::min(abs(myStats.breastplate->beatitude), 3);
+		bonus += mod * std::min(abs(item.beatitude), 3);
 	}
 	else
 	{
-		bonus = -base - mod * abs(myStats.breastplate->beatitude);
+		bonus = -base - mod * abs(item.beatitude);
 	}
 
 	return bonus;

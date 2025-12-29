@@ -8532,7 +8532,8 @@ void actPlayer(Entity* my)
 								//messagePlayer(0, "Appraisal level up chance: 1 in %d", appraisalEaseOfDifficulty);
 								increaseSkill = true;
 							}
-							else if ( tempItem->getGoldValue() >= 300 )
+
+							if ( tempItem->getGoldValue() >= 300 || tempItem->type == GEM_GLASS )
 							{
 								appraisalEaseOfDifficulty = 1;
 								increaseSkill = true;
