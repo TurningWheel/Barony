@@ -26678,8 +26678,7 @@ failed:
 			else if ( clientnum >= 0 && clientnum < MAXPLAYERS && stats )
 			{
 				auto find = Player::CharacterSheet_t::mapDisplayNamesDescriptions.find(map.name);
-				if ( find == Player::CharacterSheet_t::mapDisplayNamesDescriptions.end()
-					|| client_classes[clientnum] > CLASS_HUNTER )
+				if ( find == Player::CharacterSheet_t::mapDisplayNamesDescriptions.end() )
 				{
 					result = SteamFriends()->SetRichPresence("steam_display", "#Status_Nolocation");
 				}
