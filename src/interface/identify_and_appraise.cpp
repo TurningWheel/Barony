@@ -372,7 +372,7 @@ bool Player::Inventory_t::Appraisal_t::appraisalPossible(Item* item)
 		int value = item->type == GEM_GLASS ? 1000 : item->getGoldValue();
 
 		int skillLVL = stats[player.playernum]->getModifiedProficiency(PRO_APPRAISAL)
-			+ statGetPER(stats[player.playernum], player.entity) * 3;
+			+ statGetPER(stats[player.playernum], player.entity) * Player::Inventory_t::Appraisal_t::perStatMult;
 
 		for ( auto& table : appraisal_tables )
 		{
