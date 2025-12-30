@@ -683,12 +683,12 @@ int Player::Inventory_t::Appraisal_t::getAppraisalTime(Item* item)
 					break;
 				}
 			}
-
-			if ( skillLVL >= 50 )
-			{
-				real_t ratio = std::max(0.2, 0.5 + (100 - skillLVL) / 100.0);
-				appraisal_time = std::max((real_t)Player::Inventory_t::Appraisal_t::fastTimeAppraisal, appraisal_time * ratio);
-			}
+		}
+		if ( skillLVL >= 50 )
+		{
+			real_t ratio = std::max(0.2, 0.5 + (100 - skillLVL) / 100.0);
+			appraisal_time = std::max((real_t)Player::Inventory_t::Appraisal_t::fastTimeAppraisal * ratio, appraisal_time * ratio);
+			appraisal_time = std::max(2 * TICKS_PER_SECOND, appraisal_time);
 		}
 		/*if ( fast_time )
 		{
