@@ -3395,9 +3395,21 @@ void initClass(const int player)
 		if ( isLocalPlayer )
 		{
 			// bonus polymorph potions
-			item = newItem(POTION_POLYMORPH, EXCELLENT, 0, 2, 0, true, nullptr);
-			item2 = itemPickup(player, item);
-			free(item);
+			if ( stats[player]->playerRace == RACE_DRYAD
+				|| stats[player]->playerRace == RACE_MYCONID
+				|| stats[player]->playerRace == RACE_GNOME
+				|| stats[player]->playerRace == RACE_SALAMANDER )
+			{
+				/*item = newItem(POTION_POLYMORPH, EXCELLENT, 0, 1, 0, true, nullptr);
+				item2 = itemPickup(player, item);
+				free(item);*/
+			}
+			else
+			{
+				item = newItem(POTION_POLYMORPH, EXCELLENT, 0, 2, 0, true, nullptr);
+				item2 = itemPickup(player, item);
+				free(item);
+			}
 		}
 	}
 	if ( stats[player]->stat_appearance == 0 
@@ -3407,10 +3419,22 @@ void initClass(const int player)
 	{
 		if ( isLocalPlayer )
 		{
-			// bonus polymorph potions
-			item = newItem(POTION_POLYMORPH, EXCELLENT, 0, 3, 0, true, nullptr);
-			item2 = itemPickup(player, item);
-			free(item);
+			if ( stats[player]->playerRace == RACE_DRYAD
+				|| stats[player]->playerRace == RACE_MYCONID
+				|| stats[player]->playerRace == RACE_GNOME
+				|| stats[player]->playerRace == RACE_SALAMANDER )
+			{
+				/*item = newItem(POTION_POLYMORPH, EXCELLENT, 0, 1, 0, true, nullptr);
+				item2 = itemPickup(player, item);
+				free(item);*/
+			}
+			else
+			{
+				// bonus polymorph potions
+				item = newItem(POTION_POLYMORPH, EXCELLENT, 0, 3, 0, true, nullptr);
+				item2 = itemPickup(player, item);
+				free(item);
+			}
 		}
 	}
 

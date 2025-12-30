@@ -514,13 +514,13 @@ void initShopkeeper(Entity* my, Stat* myStats)
 							if ( items[tmpItem->type].category == TOME_SPELL || items[tmpItem->type].category == SPELLBOOK )
 							{
 								int spell_level = currentlevel + 6;
-								if ( spell_level >= 10 )
-								{
-									if ( rng.rand() % 8 == 0 ) // some lower level spells
-									{
-										spell_level = 0 + 5 * rng.rand() % 3;
-									}
-								}
+								//if ( spell_level >= 10 )
+								//{
+								//	if ( rng.rand() % 8 == 0 ) // some lower level spells
+								//	{
+								//		spell_level = 0 + 5 * rng.rand() % 3;
+								//	}
+								//}
 								itemLevelCurvePostProcess(my, tmpItem, rng, spell_level);
 							}
 							else

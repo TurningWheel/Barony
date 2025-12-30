@@ -391,26 +391,78 @@ bool itemLevelCurvePostProcess(Entity* my, Item* item, BaronyRNG& rng, int itemL
 			//if ( itemLevelCurveType == ITEM_LEVEL_CURVE_TYPE_DEFAULT )
 			{
 				std::vector<std::pair<int, int>> chances;
+				chances.reserve(NUM_SPELLS);
+				std::vector<unsigned int> chanceWeights;
+				chanceWeights.reserve(NUM_SPELLS);
 				int minDifficulty = std::min(60, (itemLevel / 5) * 20);
-				for ( auto& def : allGameSpells )
+#ifndef NDEBUG
+				std::map<int, int> debugChances;
+				std::map<int, int> debugChancesNum;
+#endif
+				for ( int i = 0; i < NUM_SPELLS; ++i )
 				{
-					if ( auto spell = def.second )
+					auto find = allGameSpells.find(i);
+					if ( find != allGameSpells.end() )
 					{
-						if ( spell->ID != SPELL_NONE && !spell->hide_from_ui && itemLevel >= spell->drop_table )
+						if ( auto spell = find->second )
 						{
-							if ( (spell->difficulty / 20) <= (1 + (itemLevel / 5))
-								&& (spell->difficulty >= minDifficulty) )
+							if ( spell->ID != SPELL_NONE && !spell->hide_from_ui && itemLevel >= spell->drop_table )
 							{
-								chances.push_back(std::make_pair(spell->skillID, spell->ID));
+								if ( (spell->difficulty / 20) <= (1 + (itemLevel / 5))
+									/*&& (spell->difficulty >= minDifficulty)*/ )
+								{
+									chances.push_back(std::make_pair(spell->skillID, spell->ID));
+									if ( spell->difficulty == minDifficulty )
+									{
+										chanceWeights.push_back(40);
+									}
+									else if ( spell->difficulty > minDifficulty )
+									{
+										chanceWeights.push_back(30);
+									}
+									else if ( spell->difficulty == 40 )
+									{
+										chanceWeights.push_back(10);
+									}
+									else if ( spell->difficulty == 20 )
+									{
+										chanceWeights.push_back(10);
+									}
+									else if ( spell->difficulty == 0 )
+									{
+										chanceWeights.push_back(10);
+									}
+
+									if ( spell->difficulty == 0 )
+									{
+										if ( minDifficulty == 0 )
+										{
+											chanceWeights.back() += 20;
+										}
+										else if ( minDifficulty == 20 )
+										{
+											chanceWeights.back() += 20;
+										}
+										chanceWeights.back() *= 2;
+									}
+									else if ( spell->difficulty >= 80 )
+									{
+										chanceWeights.back() *= 2;
+									}
+#ifndef NDEBUG
+									debugChances[spell->difficulty] += chanceWeights.back();
+									debugChancesNum[spell->difficulty] += 1;
+#endif
+								}
 							}
 						}
 					}
 				}
-
+				assert(chances.size() == chanceWeights.size());
 				if ( chances.size() )
 				{
 					Uint32 appearance = (my && my->behavior == &actItem) ? my->skill[14] : item->appearance;
-					int pick = rng.rand() % chances.size();
+					int pick = rng.discrete(chanceWeights.data(), chanceWeights.size());
 					int spellbookType = getSpellbookFromSpellID(chances[pick].second);
 					if ( items[spellbookType].category == SPELLBOOK )
 					{
