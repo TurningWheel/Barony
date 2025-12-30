@@ -24057,7 +24057,7 @@ void GenericGUIMenu::ItemEffectGUI_t::getItemEffectCost(Item* itemUsedWith, int&
 		if ( parentGUI.isItemEnchantArmorable(itemUsedWith) )
 		{
 			int bless = std::max((int)itemUsedWith->beatitude, 0);
-			for ( int i = 0; i < bless; ++i )
+			for ( int i = 0; i < std::min(10, bless); ++i )
 			{
 				goldCost *= 2;
 			}
@@ -24070,7 +24070,7 @@ void GenericGUIMenu::ItemEffectGUI_t::getItemEffectCost(Item* itemUsedWith, int&
 		if ( parentGUI.isItemEnchantWeaponable(itemUsedWith) )
 		{
 			int bless = std::max((int)itemUsedWith->beatitude, 0);
-			for ( int i = 0; i < bless; ++i )
+			for ( int i = 0; i < std::min(10, bless); ++i )
 			{
 				goldCost *= 2;
 			}

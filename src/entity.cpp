@@ -23556,9 +23556,10 @@ bool Entity::setEffect(int effect, std::variant<bool, Uint8> value, int duration
 				}
 				break;
 			case EFF_FEAR:
+			case EFF_COWARDICE:
 				if ( myStats->type == LICH || myStats->type == DEVIL 
 					|| myStats->type == LICH_FIRE || myStats->type == LICH_ICE
-					|| myStats->type == SHADOW )
+					|| myStats->type == SHADOW || myStats->type == MINOTAUR )
 				{
 					return false;
 				}
