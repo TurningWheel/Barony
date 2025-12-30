@@ -7235,5 +7235,9 @@ to replay this challenge!
 6963 The scarab inflicts a curse of weakness!#
 6964 The scarab inflicts a greater curse of weakness!#
 6965 N/A#
+6966 Your influence is not high enough to compel the %s!#
+6967 Your influence is not high enough to compel %s!#
+6968 The %s refuses to be compelled further!#
+6969 %s refuses to be compelled further!#
 
 6999 END#
