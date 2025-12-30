@@ -3721,7 +3721,7 @@ int Entity::getHungerTickRate(Stat* myStats, bool isPlayer, bool checkItemsEffec
 		}
 	}
 
-	if ( myStats->type == SALAMANDER )
+	if ( myStats->type == SALAMANDER || (myStats->playerRace == RACE_SALAMANDER && myStats->stat_appearance == 0) )
 	{
 		hungerTickRate *= 0.75;
 	}
