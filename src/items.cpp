@@ -7063,7 +7063,7 @@ real_t getArtifactWeaponEffectChance(const ItemType type, Stat& wielder, real_t*
 		const real_t percent = (wielder.getModifiedProficiency(PRO_SWORD)); //0-100%
 		if ( effectAmount )
 		{
-			*effectAmount = (wielder.getModifiedProficiency(PRO_SWORD)) / 200.f + 0.5; //0.5x-1.0x add to weapon multiplier
+			*effectAmount = (wielder.getModifiedProficiency(PRO_SWORD)) / 400.f + 0.25; //0.25x-0.5x add to weapon multiplier
 		}
 
 		return percent;
