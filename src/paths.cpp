@@ -638,7 +638,10 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 		{
 			continue;
 		}
-		if ( entity->behavior == &actMonster && ((!my->checkEnemy(entity) && !entity->isInertMimic()) || (my && my->getMonsterTypeFromSprite() == DUCK_SMALL)) )
+		if ( entity->behavior == &actMonster && 
+			((!my->checkEnemy(entity) && !entity->isInertMimic()) 
+				|| (my && my->getMonsterTypeFromSprite() == DUCK_SMALL) 
+				|| entity->sprite == 1822 /* fire sprite*/) )
 		{
 			continue;
 		}

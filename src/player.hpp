@@ -2430,6 +2430,8 @@ public:
 		bool previouslyLevitating = false;
 		Uint32 donationRevealedOnFloor = 0;
 		bool donationClaimed = false;
+		std::map<Uint32, std::map<Uint32, Uint32>> targetsCompelled;
+		std::set<Uint32> targetsRefuseCompel;
 		static void ensembleMusicUpdateServer();
 		static void ensembleMusicUpdate();
 		enum class BreakableEvent

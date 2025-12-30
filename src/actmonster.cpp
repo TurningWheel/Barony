@@ -773,6 +773,17 @@ void Entity::updateEntityOnHit(Entity* attacker, bool alertTarget)
 		{
 			setEffect(EFF_SEEK_CREATURE, false, 0, true);
 		}
+		if ( Uint8 effectStrength = myStats->getEffectActive(EFF_COMMAND) )
+		{
+			if ( attacker && (attacker->behavior == &actPlayer || attacker->monsterAllyGetPlayerLeader()) )
+			{
+				if ( effectStrength >= 1 && effectStrength < 1 + MAXPLAYERS )
+				{
+					players[effectStrength - 1]->mechanics.targetsRefuseCompel.insert(this->getUID());
+				}
+				setEffect(EFF_COMMAND, false, 0, true);
+			}
+		}
 		/*if ( myStats->getEffectActive(EFF_HEALING_WORD) )
 		{
 			setEffect(EFF_HEALING_WORD, false, 0, false);
@@ -4841,6 +4852,10 @@ void actMonster(Entity* my)
 					&& !(entity->behavior == &actColliderDecoration 
 						&& ((entity->flags[PASSABLE] && entity->colliderHasCollision != 0)
 							|| (entity->isColliderPathableMonster(myStats->type))) ))
+				{
+					continue;
+				}
+				if ( entity->sprite == 1822 ) /* fire sprite */
 				{
 					continue;
 				}
@@ -12371,9 +12386,11 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 	}
 
 	int playerLeader = monsterAllyIndex;
+	bool compelSpell = false;
 	if ( myStats->getEffectActive(EFF_COMMAND) >= 1 && myStats->getEffectActive(EFF_COMMAND) < MAXPLAYERS + 1 )
 	{
 		playerLeader = myStats->getEffectActive(EFF_COMMAND) - 1;
+		compelSpell = true;
 	}
 
 	if ( playerLeader <= -1 || monsterAllyIndex >= MAXPLAYERS )
@@ -12425,6 +12442,10 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 		if ( isTinkeringFollower )
 		{
 			skillLVL = tinkeringLVL;
+		}
+		if ( compelSpell )
+		{
+			skillLVL = std::max(skillLVL, stats[playerLeader]->getModifiedProficiency(PRO_MYSTICISM) + statGetCHR(stats[playerLeader], players[playerLeader]->entity));
 		}
 	}
 
@@ -12488,6 +12509,7 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 				{
 					if ( target->behavior == &actMonster || target->behavior == &actPlayer )
 					{
+						Uint32 oldTarget = this->monsterTarget;
 						if ( stats[playerLeader] ) // check owner's proficiency.
 						{
 							if ( skillLVL >= SKILL_LEVEL_MASTER || myStats->type != HUMAN )
@@ -12526,6 +12548,10 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 							}
 						}
 						monsterAllyInteractTarget = 0;
+						//if ( oldTarget != this->monsterTarget )
+						{
+							players[playerLeader]->mechanics.targetsCompelled[getUID()][target->getUID()] = ::ticks;
+						}
 					}
 					else
 					{
@@ -12972,23 +12998,30 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 		{
 			if ( monsterAllySpecialCooldown == 0 )
 			{
-				int duration = TICKS_PER_SECOND * (60);
-				if ( myStats->HP < myStats->MAXHP && setEffect(EFF_ASLEEP, true, duration, false) ) // 60 seconds of sleep.
+				if ( myStats->getEffectActive(EFF_COMMAND) )
 				{
-					setEffect(EFF_HP_REGEN, true, duration, false);
-					monsterAllySpecial = ALLY_SPECIAL_CMD_REST;
-					monsterAllySpecialCooldown = -1; // locked out until next floor.
-					serverUpdateEntitySkill(this, 49);
-					messagePlayerMonsterEvent(playerLeader, 0xFFFFFF, *myStats, Language::get(398), Language::get(397), MSG_COMBAT);
-					if ( players[playerLeader] && players[playerLeader]->entity 
-						&& myStats->HP < myStats->MAXHP && local_rng.rand() % 3 == 0 )
-					{
-						players[playerLeader]->entity->increaseSkill(PRO_LEADERSHIP);
-					}
+					messagePlayerMonsterEvent(playerLeader, 0xFFFFFFFF, *myStats, Language::get(514), Language::get(515), MSG_COMBAT);
 				}
 				else
 				{
-					messagePlayerMonsterEvent(playerLeader, 0xFFFFFF, *myStats, Language::get(3880), Language::get(3880), MSG_GENERIC);
+					int duration = TICKS_PER_SECOND * (60);
+					if ( myStats->HP < myStats->MAXHP && setEffect(EFF_ASLEEP, true, duration, false) ) // 60 seconds of sleep.
+					{
+						setEffect(EFF_HP_REGEN, true, duration, false);
+						monsterAllySpecial = ALLY_SPECIAL_CMD_REST;
+						monsterAllySpecialCooldown = -1; // locked out until next floor.
+						serverUpdateEntitySkill(this, 49);
+						messagePlayerMonsterEvent(playerLeader, 0xFFFFFF, *myStats, Language::get(398), Language::get(397), MSG_COMBAT);
+						if ( players[playerLeader] && players[playerLeader]->entity 
+							&& myStats->HP < myStats->MAXHP && local_rng.rand() % 3 == 0 )
+						{
+							players[playerLeader]->entity->increaseSkill(PRO_LEADERSHIP);
+						}
+					}
+					else
+					{
+						messagePlayerMonsterEvent(playerLeader, 0xFFFFFF, *myStats, Language::get(3880), Language::get(3880), MSG_GENERIC);
+					}
 				}
 			}
 			break;

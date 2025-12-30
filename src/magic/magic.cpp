@@ -1353,11 +1353,11 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 				{
 					if ( magicstaff )
 					{
-						chance += ((parent->getCHR() + casterStats->getModifiedProficiency(PRO_LEADERSHIP)) / 20) * 10;
+						chance += ((parent->getCHR() + std::max(casterStats->getModifiedProficiency(PRO_MYSTICISM), casterStats->getModifiedProficiency(PRO_LEADERSHIP))) / 20) * 10;
 					}
 					else
 					{
-						chance += ((parent->getCHR() + casterStats->getModifiedProficiency(PRO_LEADERSHIP)) / 20) * 5;
+						chance += ((parent->getCHR() + std::max(casterStats->getModifiedProficiency(PRO_MYSTICISM), casterStats->getModifiedProficiency(PRO_LEADERSHIP))) / 20) * 5;
 						chance += (parent->getINT() * 2);
 					}
 
@@ -3503,6 +3503,10 @@ int thaumSpellArmorProc(Entity* my, Stat& myStats, bool checkEffectActiveOnly, E
 						{
 							players[player]->mechanics.updateSustainedSpellEvent(spellID, std::min(150.0, effectID == EFF_GUARD_SPIRIT ? 128.0 : 50.0 + 10 * result), 1.0, attacker);
 						}
+						else
+						{
+							players[player]->mechanics.updateSustainedSpellEvent(spellID, std::min(150.0, effectID == EFF_GUARD_SPIRIT ? 128.0 : 50.0 + 10 * result) / 10.0, 1.0, attacker);
+						}
 					}
 				}
 			}
@@ -3833,7 +3837,8 @@ bool applyGenericMagicDamage(Entity* caster, Entity* hitentity, Entity& damageSo
 			|| spellID == SPELL_MINIMISE
 			|| spellID == SPELL_COWARDICE
 			|| spellID == SPELL_SEEK_ALLY
-			|| spellID == SPELL_SEEK_FOE )
+			|| spellID == SPELL_SEEK_FOE
+			|| spellID == SPELL_COMMAND )
 		{
 			// alert entities only
 			return true;

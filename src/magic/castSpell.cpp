@@ -4319,7 +4319,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		}
 		else if ( spell->ID == SPELL_COMMAND )
 		{
-			if ( caster && caster->behavior == &actPlayer )
+			if ( caster && caster->behavior == &actPlayer && caster->getStats() )
 			{
 				bool found = false;
 				bool effect = false;
@@ -4333,60 +4333,113 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						{
 							int player = caster->skill[2];
 							int duration = element->duration;
-							if ( target->setEffect(EFF_COMMAND, (Uint8)(player + 1), duration, true, true, true) )
+							Uint8 previousEffect = targetStats->getEffectActive(EFF_COMMAND);
+
+							int difficulty = getCharmMonsterDifficulty(*target, *targetStats);
+							int casterAbility = caster->getCHR() +
+								std::max(caster->getStats()->getModifiedProficiency(PRO_MYSTICISM), caster->getStats()->getModifiedProficiency(PRO_LEADERSHIP));
+
+							bool refusedEffect = false;
+							for ( int i = 0; i < MAXPLAYERS; ++i )
 							{
-								playSoundEntity(caster, 167, 128);
-								effect = true;
-
-								messagePlayerMonsterEvent(caster->isEntityPlayer(), makeColorRGB(0, 255, 0),
-									*targetStats, Language::get(6537), Language::get(6902), MSG_COMBAT);
-
-								magicOnEntityHit(caster, caster, target, targetStats, 0, 0, 0, spell ? spell->ID : SPELL_NONE);
-
-								//createParticleSpellPinpointTarget(target, caster->getUID(), 1774, duration, spell->ID);
-								//serverSpawnMiscParticles(target, PARTICLE_EFFECT_PINPOINT, 1774, caster->getUID(), duration, spell->ID);
-								if ( Entity* fx = createRadiusMagic(spell->ID, caster,
-									target->x, target->y, 16, duration, target) )
+								if ( players[i] && players[i]->entity )
 								{
-								}
-								if ( players[player]->isLocalPlayer() )
-								{
-									FollowerMenu[player].followerToCommand = target;
-									FollowerMenu[player].initfollowerMenuGUICursor(true); // set gui_mode to follower menu
-								}
-								else
-								{
-									if ( player >= 1 && player < MAXPLAYERS )
+									if ( players[i]->mechanics.targetsRefuseCompel.find(target->getUID())
+										!= players[i]->mechanics.targetsRefuseCompel.end() )
 									{
-										strcpy((char*)net_packet->data, "COMD");
-										SDLNet_Write32(target->getUID(), &net_packet->data[4]);
-										net_packet->address.host = net_clients[player - 1].host;
-										net_packet->address.port = net_clients[player - 1].port;
-										net_packet->len = 8;
-										sendPacketSafe(net_sock, -1, net_packet, player - 1);
-									}
-								}
-								target->monsterReleaseAttackTarget();
-								for ( node_t* node = map.creatures->first; node != nullptr; node = node->next )
-								{
-									Entity* entity2 = (Entity*)node->element;
-									if ( !entity2 ) { continue; }
-									if ( entity2->behavior == &actMonster && entity2 != target )
-									{
-										if ( entity2->monsterAllyGetPlayerLeader() && ((Uint32)entity2->monsterTarget == target->getUID()) )
-										{
-											entity2->monsterReleaseAttackTarget(); // player allies stop attacking this target
-										}
+										refusedEffect = true;
+										break;
 									}
 								}
 							}
-							found = true;
 
-							if ( !effect )
+							if ( casterAbility >= ((difficulty * 15) + 60) && !refusedEffect )
 							{
-								messagePlayerMonsterEvent(caster->isEntityPlayer(), makeColorRGB(255, 0, 0),
-									*targetStats, Language::get(2905), Language::get(2906), MSG_COMBAT);
-								playSoundEntity(caster, 163, 128);
+								if ( target->setEffect(EFF_COMMAND, (Uint8)(player + 1), duration, true, true, true) )
+								{
+									playSoundEntity(caster, 167, 128);
+									effect = true;
+
+									messagePlayerMonsterEvent(caster->isEntityPlayer(), makeColorRGB(0, 255, 0),
+										*targetStats, Language::get(6537), Language::get(6902), MSG_COMBAT);
+
+									if ( !previousEffect )
+									{
+										magicOnEntityHit(caster, caster, target, targetStats, 0, 0, 0, spell ? spell->ID : SPELL_NONE);
+									}
+
+									//createParticleSpellPinpointTarget(target, caster->getUID(), 1774, duration, spell->ID);
+									//serverSpawnMiscParticles(target, PARTICLE_EFFECT_PINPOINT, 1774, caster->getUID(), duration, spell->ID);
+									if ( Entity* fx = createRadiusMagic(spell->ID, caster,
+										target->x, target->y, 16, duration, target) )
+									{
+									}
+									if ( players[player]->isLocalPlayer() )
+									{
+										FollowerMenu[player].followerToCommand = target;
+										FollowerMenu[player].initfollowerMenuGUICursor(true); // set gui_mode to follower menu
+									}
+									else
+									{
+										if ( player >= 1 && player < MAXPLAYERS )
+										{
+											strcpy((char*)net_packet->data, "COMD");
+											SDLNet_Write32(target->getUID(), &net_packet->data[4]);
+											net_packet->address.host = net_clients[player - 1].host;
+											net_packet->address.port = net_clients[player - 1].port;
+											net_packet->len = 8;
+											sendPacketSafe(net_sock, -1, net_packet, player - 1);
+										}
+									}
+									target->monsterReleaseAttackTarget();
+									for ( node_t* node = map.creatures->first; node != nullptr; node = node->next )
+									{
+										Entity* entity2 = (Entity*)node->element;
+										if ( !entity2 ) { continue; }
+										if ( entity2->behavior == &actMonster && entity2 != target )
+										{
+											if ( entity2->monsterAllyGetPlayerLeader() && ((Uint32)entity2->monsterTarget == target->getUID()) )
+											{
+												entity2->monsterReleaseAttackTarget(); // player allies stop attacking this target
+											}
+										}
+									}
+								}
+								found = true;
+								if ( !effect )
+								{
+									messagePlayerMonsterEvent(caster->isEntityPlayer(), makeColorRGB(255, 0, 0),
+										*targetStats, Language::get(2905), Language::get(2906), MSG_COMBAT);
+									playSoundEntity(caster, 163, 128);
+								}
+							}
+							else
+							{
+								found = true;
+								if ( difficulty >= 666 )
+								{
+									messagePlayerMonsterEvent(caster->isEntityPlayer(), makeColorRGB(255, 0, 0),
+										*targetStats, Language::get(2905), Language::get(2906), MSG_COMBAT);
+									playSoundEntity(caster, 163, 128);
+
+									applyGenericMagicDamage(caster, target, *caster, SPELL_COMMAND, 0, true, true); // alert the target
+								}
+								else if ( refusedEffect )
+								{
+									messagePlayerMonsterEvent(caster->isEntityPlayer(), makeColorRGB(255, 0, 0),
+										*targetStats, Language::get(6968), Language::get(6969), MSG_COMBAT);
+									playSoundEntity(caster, 163, 128);
+
+									applyGenericMagicDamage(caster, target, *caster, SPELL_COMMAND, 0, true, true); // alert the target
+								}
+								else
+								{
+									messagePlayerMonsterEvent(caster->isEntityPlayer(), makeColorRGB(255, 0, 0),
+										*targetStats, Language::get(6966), Language::get(6967), MSG_COMBAT);
+									playSoundEntity(caster, 163, 128);
+
+									applyGenericMagicDamage(caster, target, *caster, SPELL_COMMAND, 0, true, true); // alert the target
+								}
 							}
 						}
 					}
@@ -5763,7 +5816,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						playSoundEntity(caster, 178, 128);
 						spawnMagicEffectParticles(caster->x, caster->y, caster->z, 170);
 
-						magicOnSpellCastEvent(caster, caster, nullptr, spell->ID, spell_t::SPELL_LEVEL_EVENT_EFFECT | spellEventFlags, 1, allowedSkillup);
+						//magicOnSpellCastEvent(caster, caster, nullptr, spell->ID, spell_t::SPELL_LEVEL_EVENT_EFFECT | spellEventFlags, 1, allowedSkillup);
 					}
 					break;
 				}
@@ -6471,7 +6524,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					{
 						caster->setEffect(EFF_SLOW, false, 0, true);
 					}
-					caster->setEffect(EFF_FAST, true, duration, true);
+					caster->setEffect(EFF_FAST, Uint8(1 | (1 << (i + 1))), duration, false, true, true);
 					messagePlayerColor(i, MESSAGE_STATUS, uint32ColorGreen, Language::get(768));
 					for ( node = map.creatures->first; node; node = node->next )
 					{
@@ -6487,7 +6540,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 
 						if ( entityDist(entity, caster) <= HEAL_RADIUS && entity->checkFriend(caster) )
 						{
-							entity->setEffect(EFF_FAST, true, duration, true);
+							entity->setEffect(EFF_FAST, Uint8(1 | (1 << (i + 1))), duration, false, true, true);
 							playSoundEntity(entity, 178, 128);
 							spawnMagicEffectParticles(entity->x, entity->y, entity->z, 174);
 							if ( entity->behavior == &actPlayer )
@@ -6497,7 +6550,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						}
 					}
 
-					magicOnSpellCastEvent(caster, caster, nullptr, spell->ID, spell_t::SPELL_LEVEL_EVENT_EFFECT | spellEventFlags, 1, allowedSkillup);
+					//magicOnSpellCastEvent(caster, caster, nullptr, spell->ID, spell_t::SPELL_LEVEL_EVENT_EFFECT | spell_t::SPELL_LEVEL_EVENT_MINOR_CHANCE | spellEventFlags, 1, allowedSkillup);
 					break;
 				}
 			}
@@ -8993,6 +9046,20 @@ bool spellIsNaturallyLearnedByRaceOrClass(Entity& caster, Stat& stat, int spellI
 	else if ( client_classes[playernum] == CLASS_ARCANIST )
 	{
 		if ( spellID == SPELL_WINDGATE )
+		{
+			return true;
+		}
+	}
+	else if ( client_classes[playernum] == CLASS_MESMER )
+	{
+		if ( spellID == SPELL_COMMAND )
+		{
+			return true;
+		}
+	}
+	else if ( client_classes[playernum] == CLASS_CONJURER )
+	{
+		if ( spellID == SPELL_SUMMON )
 		{
 			return true;
 		}

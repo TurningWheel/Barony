@@ -2222,7 +2222,7 @@ void initClass(const int player)
 		if ( isLocalPlayer )
 		{
 			// slow book
-			item = newItem(SPELLBOOK_SLOW, WORN, 0, 1, 8, true, nullptr);
+			item = newItem(SPELLBOOK_POISON, DECREPIT, 0, 1, 8, true, nullptr);
 			item2 = itemPickup(player, item);
 			hotbar[9].item = item2->uid;
 			free(item);
@@ -2368,7 +2368,7 @@ void initClass(const int player)
 		if ( isLocalPlayer )
 		{
 			// spear
-			item = newItem(IRON_SPEAR, SERVICABLE, curseItems ? -1 : 1, 1, 1, true, nullptr);
+			item = newItem(MAGICSTAFF_COLD, SERVICABLE, 0, 1, 1, true, nullptr);
 			item2 = itemPickup(player, item);
 			hotbar[1].item = item2->uid;
 			free(item);
@@ -2386,10 +2386,10 @@ void initClass(const int player)
 			free(item);
 
 			// cold spellbook
-			item = newItem(SPELLBOOK_COLD, SERVICABLE, 0, 1, 4, true, nullptr);
+			/*item = newItem(SPELLBOOK_COLD, SERVICABLE, 0, 1, 4, true, nullptr);
 			item2 = itemPickup(player, item);
 			hotbar[8].item = item2->uid;
-			free(item);
+			free(item);*/
 
 			// charm monster spellbook
 			item = newItem(SPELLBOOK_CHARM_MONSTER, DECREPIT, 0, 1, 8, true, nullptr);
@@ -3559,6 +3559,10 @@ void initClass(const int player)
 		else if ( client_classes[player] == CLASS_CONJURER )
 		{
 			addSpell(SPELL_SUMMON, player, true);
+		}
+		else if ( client_classes[player] == CLASS_MESMER )
+		{
+			addSpell(SPELL_COMMAND, player, true);
 		}
 		else if ( client_classes[player] == CLASS_BARD )
 		{

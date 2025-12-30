@@ -10578,9 +10578,19 @@ void mapFoodOnLevel(int player)
 		messagePlayerColor(player, MESSAGE_HINT, makeColorRGB(0, 255, 0),Language::get(3424));
 		if ( numFood > 0 )
 		{
-			magicOnSpellCastEvent(players[player]->entity, players[player]->entity, 
-				nullptr,
-				SPELL_DETECT_FOOD, spell_t::SPELL_LEVEL_EVENT_DEFAULT, numFood);
+			if ( multiplayer != CLIENT )
+			{
+				if ( players[player]->entity )
+				{
+					players[player]->mechanics.updateSustainedSpellEvent(SPELL_DETECT_FOOD, numFood * 10, 1.0, nullptr);
+				}
+			}
+			else
+			{
+				magicOnSpellCastEvent(players[player]->entity, players[player]->entity, 
+					nullptr,
+					SPELL_DETECT_FOOD, spell_t::SPELL_LEVEL_EVENT_DEFAULT, numFood);
+			}
 		}
 	}
 }

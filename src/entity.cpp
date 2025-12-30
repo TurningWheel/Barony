@@ -17752,16 +17752,31 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 
 	if ( root ) // global stats
 	{
-		if ( srcStats && srcStats->getEffectActive(EFF_SHADOW_TAGGED) )
+		if ( srcStats )
 		{
-			for ( int i = 0; i < MAXPLAYERS; ++i )
+			if ( srcStats->getEffectActive(EFF_SHADOW_TAGGED) )
 			{
-				if ( players[i] && players[i]->entity )
+				for ( int i = 0; i < MAXPLAYERS; ++i )
 				{
-					if ( players[i]->entity->creatureShadowTaggedThisUid == src->getUID() )
+					if ( players[i] && players[i]->entity )
 					{
-						magicOnSpellCastEvent(players[i]->entity, players[i]->entity, src,
-							SPELL_SHADOW_TAG, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
+						if ( players[i]->entity->creatureShadowTaggedThisUid == src->getUID() )
+						{
+							magicOnSpellCastEvent(players[i]->entity, players[i]->entity, src,
+								SPELL_SHADOW_TAG, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
+						}
+					}
+				}
+			}
+			if ( srcStats->getEffectActive(EFF_DETECT_ENEMY) )
+			{
+				int caster = srcStats->getEffectActive(EFF_DETECT_ENEMY) - 1;
+				if ( caster >= 0 && caster < MAXPLAYERS )
+				{
+					if ( players[caster] && players[caster]->entity )
+					{
+						magicOnSpellCastEvent(players[caster]->entity, players[caster]->entity, src,
+							SPELL_DETECT_ENEMY, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
 					}
 				}
 			}
@@ -18075,6 +18090,55 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 				spellEffectLeader = true;
 				leader = players[destStats->getEffectActive(EFF_COMMAND) - 1]->entity;
 				spellEffectLeaderID = SPELL_COMMAND;
+			}
+		}
+
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( players[i]->entity )
+			{
+				{
+					auto find1 = players[i]->mechanics.targetsCompelled.find(src->getUID());  // has the player compelled the deceased
+					if ( find1 != players[i]->mechanics.targetsCompelled.end() )
+					{
+						auto find2 = find1->second.find(this->getUID()); // has the player compelled the deceased to attack me
+						if ( find2 != find1->second.end() ) 
+						{
+							if ( (::ticks - find2->second) < 15 * TICKS_PER_SECOND ) // less than x seconds ago
+							{
+								if ( src->behavior != &actPlayer && this->behavior != &actPlayer
+									&& !src->monsterAllyGetPlayerLeader() && !this->monsterAllyGetPlayerLeader() )
+								{
+									players[i]->mechanics.updateSustainedSpellEvent(SPELL_COMMAND, 150.0, 1.0, nullptr);
+								}
+							}
+						}
+					}
+				}
+				{
+					auto find1 = players[i]->mechanics.targetsCompelled.find(this->getUID());  // has the player compelled me
+					if ( find1 != players[i]->mechanics.targetsCompelled.end() )
+					{
+						auto find2 = find1->second.find(src->getUID()); // has the player compelled me to attack the deceased
+						if ( find2 != find1->second.end() )
+						{
+							if ( (::ticks - find2->second) < 15 * TICKS_PER_SECOND ) // less than x seconds ago
+							{
+								if ( src->behavior != &actPlayer && this->behavior != &actPlayer
+									&& !src->monsterAllyGetPlayerLeader() && !this->monsterAllyGetPlayerLeader() )
+								{
+									players[i]->mechanics.updateSustainedSpellEvent(SPELL_COMMAND, 150.0, 1.0, nullptr);
+									if ( !spellEffectLeader )
+									{
+										spellEffectLeader = true;
+										leader = players[i]->entity;
+										spellEffectLeaderID = SPELL_COMMAND;
+									}
+								}
+							}
+						}
+					}
+				}
 			}
 		}
 
@@ -23541,6 +23605,7 @@ bool Entity::setEffect(int effect, std::variant<bool, Uint8> value, int duration
 			case EFF_DISORIENTED:
 			case EFF_ROOTED:
 			case EFF_PENANCE:
+			case EFF_COMMAND:
 				if ( myStats->type == LICH || myStats->type == DEVIL
 					|| myStats->type == LICH_FIRE || myStats->type == LICH_ICE
 					|| myStats->type == SHADOW || myStats->type == SHOPKEEPER )

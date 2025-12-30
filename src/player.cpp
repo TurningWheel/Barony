@@ -3235,6 +3235,8 @@ void Player::cleanUpOnEntityRemoval()
 	}
 	mechanics.enemyRaisedBlockingAgainst.clear();
 	mechanics.enemyRaisedStealthAgainst.clear();
+	mechanics.targetsCompelled.clear();
+	mechanics.targetsRefuseCompel.clear();
 	mechanics.ensemblePlaying = -1;
 	mechanics.ensembleRequireRecast = false;
 	mechanics.ensembleTakenInitialMP = false;
@@ -7530,7 +7532,15 @@ bool Player::PlayerMechanics_t::updateSustainedSpellEvent(int spellID, real_t va
 			|| spellID == SPELL_HOLY_BEAM 
 			|| spellID == SPELL_MAGICMAPPING
 			|| spellID == SPELL_WINDGATE
-			|| spellID == SPELL_DEMON_ILLUSION )
+			|| spellID == SPELL_DEMON_ILLUSION
+			|| spellID == SPELL_DASH
+			|| spellID == SPELL_HEAL_MINOR
+			|| spellID == SPELL_HEAL_OTHER
+			|| spellID == SPELL_HEAL_PULSE
+			|| spellID == SPELL_SPEED
+			|| spellID == SPELL_DETECT_FOOD
+			|| spellID == SPELL_COMMAND
+			|| spellID == SPELL_FLUTTER )
 		{
 			sustainedSpellIDCounter[spellID] += value * scaleValue;
 			if ( players[player.playernum]->entity && sustainedSpellIDCounter[spellID] > 8 * 16.0 )

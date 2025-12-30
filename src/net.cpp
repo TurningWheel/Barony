@@ -9053,7 +9053,14 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 					int spellID = SDLNet_Read16(&net_packet->data[5]);
 					Uint32 eventType = SDLNet_Read32(&net_packet->data[7]);
 					int eventValue = SDLNet_Read32(&net_packet->data[11]);
-					magicOnSpellCastEvent(players[player]->entity, players[player]->entity, nullptr, spellID, eventType, eventValue);
+					if ( spellID == SPELL_DETECT_FOOD )
+					{
+						players[player]->mechanics.updateSustainedSpellEvent(SPELL_DETECT_FOOD, eventValue * 10, 1.0, nullptr);
+					}
+					else
+					{
+						magicOnSpellCastEvent(players[player]->entity, players[player]->entity, nullptr, spellID, eventType, eventValue);
+					}
 				}
 			}
 		}

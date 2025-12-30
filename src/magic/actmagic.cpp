@@ -1417,7 +1417,8 @@ void magicOnEntityHit(Entity* parent, Entity* particle, Entity* hitentity, Stat*
 				|| spellID == SPELL_EARTH_SPINES 
 				|| spellID == SPELL_ICE_WAVE 
 				|| spellID == SPELL_HOLY_FIRE
-				|| spellID == SPELL_SHADOW_TAG )
+				|| spellID == SPELL_SHADOW_TAG
+				|| spellID == SPELL_COMMAND )
 			{
 				additionalFlags |= spell_t::SPELL_LEVEL_EVENT_MINOR_CHANCE;
 			}
@@ -15133,6 +15134,18 @@ void actParticlePinpointTarget(Entity* my)
 						}
 					}
 				}
+				else if ( spellID == SPELL_SCRY_ALLIES )
+				{
+					if ( parent->monsterAllyGetPlayerLeader() )
+					{
+						PARTICLE_LIFE = -1;
+						Uint32 casterUid = static_cast<Uint32>(my->skill[2]);
+						if ( Entity* caster = uidToEntity(casterUid) )
+						{
+							magicOnSpellCastEvent(caster, my, nullptr, SPELL_SCRY_ALLIES, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
+						}
+					}
+				}
 			}
 		}
 
@@ -20211,8 +20224,12 @@ void actRadiusMagic(Entity* my)
 						spawnDamageGib(ent, -heal, DamageGib::DMG_HEAL, DamageGibDisplayType::DMG_GIB_NUMBER, true);
 						if ( caster )
 						{
-							magicOnSpellCastEvent(caster, caster, uidToEntity(ent->parent), my->actRadiusMagicID,
-								spell_t::SPELL_LEVEL_EVENT_DEFAULT | spell_t::SPELL_LEVEL_EVENT_MINOR_CHANCE, 1);
+							if ( caster->behavior == &actPlayer )
+							{
+								players[caster->skill[2]]->mechanics.updateSustainedSpellEvent(my->actRadiusMagicID, 30.0, 1.0, nullptr);
+							}
+							//magicOnSpellCastEvent(caster, caster, uidToEntity(ent->parent), my->actRadiusMagicID,
+							//	spell_t::SPELL_LEVEL_EVENT_DEFAULT | spell_t::SPELL_LEVEL_EVENT_MINOR_CHANCE, 1);
 						}
 					}
 					spawnMagicEffectParticles(ent->x, ent->y, ent->z, 169);
@@ -20236,8 +20253,12 @@ void actRadiusMagic(Entity* my)
 						spawnDamageGib(ent, -heal, DamageGib::DMG_HEAL, DamageGibDisplayType::DMG_GIB_NUMBER, true);
 						if ( caster )
 						{
-							magicOnSpellCastEvent(caster, caster, uidToEntity(ent->parent), my->actRadiusMagicID,
-								spell_t::SPELL_LEVEL_EVENT_DEFAULT | spell_t::SPELL_LEVEL_EVENT_MINOR_CHANCE, 1);
+							if ( caster->behavior == &actPlayer )
+							{
+								players[caster->skill[2]]->mechanics.updateSustainedSpellEvent(my->actRadiusMagicID, 25.0, 1.0, nullptr);
+							}
+							//magicOnSpellCastEvent(caster, caster, uidToEntity(ent->parent), my->actRadiusMagicID,
+							//	spell_t::SPELL_LEVEL_EVENT_DEFAULT | spell_t::SPELL_LEVEL_EVENT_MINOR_CHANCE, 1);
 						}
 					}
 					//spawnMagicEffectParticles(ent->x, ent->y, ent->z, 169);

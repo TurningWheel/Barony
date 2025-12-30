@@ -11335,11 +11335,74 @@ void actPlayer(Entity* my)
 						{
 							players[PLAYER_NUM]->mechanics.updateSustainedSpellEvent(SPELL_LEVITATION, dist, 0.5, nullptr);
 						}
+						if ( stats[PLAYER_NUM]->getEffectActive(EFF_FLUTTER) )
+						{
+							players[PLAYER_NUM]->mechanics.updateSustainedSpellEvent(SPELL_FLUTTER, dist, 0.5, nullptr);
 					}
+				}
 				}
 				if ( stats[PLAYER_NUM]->getEffectActive(EFF_LIGHTEN_LOAD) )
 				{
 					players[PLAYER_NUM]->mechanics.updateSustainedSpellEvent(SPELL_LIGHTEN_LOAD, dist, 0.1, nullptr);
+				}
+				if ( stats[PLAYER_NUM]->getEffectActive(EFF_DASH) )
+				{
+					players[PLAYER_NUM]->mechanics.updateSustainedSpellEvent(SPELL_DASH, dist, 0.4, nullptr);
+				}
+				if ( Uint8 effectStrength = stats[PLAYER_NUM]->getEffectActive(EFF_FAST) )
+				{
+					for ( int i = 0; i < MAXPLAYERS; ++i )
+					{
+						if ( effectStrength & (1 << (i + 1)) && players[i]->entity )
+						{
+							players[i]->mechanics.updateSustainedSpellEvent(SPELL_SPEED, dist, 0.05, nullptr);
+							break;
+						}
+			}
+				}
+				if ( Uint8 effectStrength = stats[PLAYER_NUM]->getEffectActive(EFF_NIMBLENESS) )
+				{
+					int caster = ((stats[PLAYER_NUM]->getEffectActive(EFF_NIMBLENESS) >> 4) & 0xF) - 1;
+					if ( caster >= 0 && caster < MAXPLAYERS )
+					{
+						if ( players[caster]->entity )
+						{
+							players[caster]->mechanics.updateSustainedSpellEvent(SPELL_PROF_NIMBLENESS, dist, 0.002, nullptr);
+						}
+					}
+				}
+				if ( Uint8 effectStrength = stats[PLAYER_NUM]->getEffectActive(EFF_GREATER_MIGHT) )
+				{
+					int caster = ((stats[PLAYER_NUM]->getEffectActive(EFF_GREATER_MIGHT) >> 4) & 0xF) - 1;
+					if ( caster >= 0 && caster < MAXPLAYERS )
+					{
+						if ( players[caster]->entity )
+						{
+							players[caster]->mechanics.updateSustainedSpellEvent(SPELL_PROF_GREATER_MIGHT, dist, 0.002, nullptr);
+						}
+					}
+				}
+				if ( Uint8 effectStrength = stats[PLAYER_NUM]->getEffectActive(EFF_COUNSEL) )
+				{
+					int caster = ((stats[PLAYER_NUM]->getEffectActive(EFF_COUNSEL) >> 4) & 0xF) - 1;
+					if ( caster >= 0 && caster < MAXPLAYERS )
+					{
+						if ( players[caster]->entity )
+						{
+							players[caster]->mechanics.updateSustainedSpellEvent(SPELL_PROF_COUNSEL, dist, 0.002, nullptr);
+						}
+					}
+				}
+				if ( Uint8 effectStrength = stats[PLAYER_NUM]->getEffectActive(EFF_STURDINESS) )
+				{
+					int caster = ((stats[PLAYER_NUM]->getEffectActive(EFF_STURDINESS) >> 4) & 0xF) - 1;
+					if ( caster >= 0 && caster < MAXPLAYERS )
+					{
+						if ( players[caster]->entity )
+						{
+							players[caster]->mechanics.updateSustainedSpellEvent(SPELL_PROF_STURDINESS, dist, 0.002, nullptr);
+						}
+					}
 				}
 			}
 
@@ -11365,7 +11428,7 @@ void actPlayer(Entity* my)
 						{
 							hit.entity->doorHealth = 0;
 							magicOnSpellCastEvent(my, my, nullptr,
-								SPELL_DASH, spell_t::SPELL_LEVEL_EVENT_DEFAULT | spell_t::SPELL_LEVEL_EVENT_MINOR_CHANCE, 1);
+								SPELL_DASH, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
 						}
 					}
 				}
@@ -11573,11 +11636,74 @@ void actPlayer(Entity* my)
 						{
 							players[PLAYER_NUM]->mechanics.updateSustainedSpellEvent(SPELL_LEVITATION, dist, 0.5, nullptr);
 						}
+						if ( stats[PLAYER_NUM]->getEffectActive(EFF_FLUTTER) )
+						{
+							players[PLAYER_NUM]->mechanics.updateSustainedSpellEvent(SPELL_FLUTTER, dist, 0.5, nullptr);
 					}
+				}
 				}
 				if ( stats[PLAYER_NUM]->getEffectActive(EFF_LIGHTEN_LOAD) )
 				{
 					players[PLAYER_NUM]->mechanics.updateSustainedSpellEvent(SPELL_LIGHTEN_LOAD, dist, 0.1, nullptr);
+				}
+				if ( stats[PLAYER_NUM]->getEffectActive(EFF_DASH) )
+				{
+					players[PLAYER_NUM]->mechanics.updateSustainedSpellEvent(SPELL_DASH, dist, 0.4, nullptr);
+				}
+				if ( Uint8 effectStrength = stats[PLAYER_NUM]->getEffectActive(EFF_FAST) )
+				{
+					for ( int i = 0; i < MAXPLAYERS; ++i )
+					{
+						if ( effectStrength & (1 << (i + 1)) && players[i]->entity )
+						{
+							players[i]->mechanics.updateSustainedSpellEvent(SPELL_SPEED, dist, 0.05, nullptr);
+							break;
+						}
+			}
+				}
+				if ( Uint8 effectStrength = stats[PLAYER_NUM]->getEffectActive(EFF_NIMBLENESS) )
+				{
+					int caster = ((stats[PLAYER_NUM]->getEffectActive(EFF_NIMBLENESS) >> 4) & 0xF) - 1;
+					if ( caster >= 0 && caster < MAXPLAYERS )
+					{
+						if ( players[caster]->entity )
+						{
+							players[caster]->mechanics.updateSustainedSpellEvent(SPELL_PROF_NIMBLENESS, dist, 0.002, nullptr);
+						}
+					}
+				}
+				if ( Uint8 effectStrength = stats[PLAYER_NUM]->getEffectActive(EFF_GREATER_MIGHT) )
+				{
+					int caster = ((stats[PLAYER_NUM]->getEffectActive(EFF_GREATER_MIGHT) >> 4) & 0xF) - 1;
+					if ( caster >= 0 && caster < MAXPLAYERS )
+					{
+						if ( players[caster]->entity )
+						{
+							players[caster]->mechanics.updateSustainedSpellEvent(SPELL_PROF_GREATER_MIGHT, dist, 0.002, nullptr);
+						}
+					}
+				}
+				if ( Uint8 effectStrength = stats[PLAYER_NUM]->getEffectActive(EFF_COUNSEL) )
+				{
+					int caster = ((stats[PLAYER_NUM]->getEffectActive(EFF_COUNSEL) >> 4) & 0xF) - 1;
+					if ( caster >= 0 && caster < MAXPLAYERS )
+					{
+						if ( players[caster]->entity )
+						{
+							players[caster]->mechanics.updateSustainedSpellEvent(SPELL_PROF_COUNSEL, dist, 0.002, nullptr);
+						}
+					}
+				}
+				if ( Uint8 effectStrength = stats[PLAYER_NUM]->getEffectActive(EFF_STURDINESS) )
+				{
+					int caster = ((stats[PLAYER_NUM]->getEffectActive(EFF_STURDINESS) >> 4) & 0xF) - 1;
+					if ( caster >= 0 && caster < MAXPLAYERS )
+					{
+						if ( players[caster]->entity )
+						{
+							players[caster]->mechanics.updateSustainedSpellEvent(SPELL_PROF_STURDINESS, dist, 0.002, nullptr);
+						}
+					}
 				}
 			}
 
@@ -11601,7 +11727,7 @@ void actPlayer(Entity* my)
 					{
 						hit.entity->doorHealth = 0;
 						magicOnSpellCastEvent(my, my, nullptr,
-							SPELL_DASH, spell_t::SPELL_LEVEL_EVENT_DEFAULT | spell_t::SPELL_LEVEL_EVENT_MINOR_CHANCE, 1);
+							SPELL_DASH, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
 					}
 				}
 			}
