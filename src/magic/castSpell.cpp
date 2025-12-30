@@ -6609,7 +6609,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							//magicOnSpellCastEvent(caster, caster, nullptr, spell->ID, spell_t::SPELL_LEVEL_EVENT_DMG | spellEventFlags, totalHeal, allowedSkillup);
 							if ( caster && caster->behavior == &actPlayer )
 							{
-								players[caster->skill[2]]->mechanics.updateSustainedSpellEvent(spell->ID, totalHeal, 1.0, nullptr);
+								players[caster->skill[2]]->mechanics.updateSustainedSpellEvent(spell->ID, totalHeal + 50.0, 1.0, nullptr);
 							}
 
 							if ( !using_magicstaff && !trap )
