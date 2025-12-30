@@ -4961,7 +4961,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 			Sint32 total = std::min(SKILL_LEVEL_LEGENDARY, INT + skill);
 			if ( str.find("%s") != std::string::npos )
 			{
-				snprintf(buf, sizeof(buf), str.c_str(), Player::SkillSheet_t::getSkillNameFromID(spell->skillID).c_str(), INT + skill, getProficiencyLevelName(INT + skill).c_str());
+				snprintf(buf, sizeof(buf), str.c_str(), Player::SkillSheet_t::getSkillNameFromID(spell->skillID, true).c_str(), INT + skill, getProficiencyLevelName(INT + skill).c_str());
 			}
 			else
 			{
@@ -5038,7 +5038,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 			int chance = ((100 - (spellcastingAbility)) / 3.0); // 33% after rolling to fizzle, 66% success
 			if ( str.find("%s") != std::string::npos )
 			{
-				snprintf(buf, sizeof(buf), str.c_str(), Player::SkillSheet_t::getSkillNameFromID(spell->skillID).c_str(), chance);
+				snprintf(buf, sizeof(buf), str.c_str(), Player::SkillSheet_t::getSkillNameFromID(spell->skillID, true).c_str(), chance);
 			}
 			else
 			{
@@ -5052,7 +5052,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 
 			if ( str.find("%s") != std::string::npos )
 			{
-				snprintf(buf, sizeof(buf), str.c_str(), Player::SkillSheet_t::getSkillNameFromID(spell->skillID).c_str());
+				snprintf(buf, sizeof(buf), str.c_str(), Player::SkillSheet_t::getSkillNameFromID(spell->skillID, true).c_str());
 			}
 		}
 		else if ( detailTag.compare("spell_cast_success2") == 0 )
