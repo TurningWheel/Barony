@@ -18110,6 +18110,12 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 									&& !src->monsterAllyGetPlayerLeader() && !this->monsterAllyGetPlayerLeader() )
 								{
 									players[i]->mechanics.updateSustainedSpellEvent(SPELL_COMMAND, 150.0, 1.0, nullptr);
+									if ( !spellEffectLeader )
+									{
+										spellEffectLeader = true;
+										leader = players[i]->entity;
+										spellEffectLeaderID = SPELL_COMMAND;
+									}
 								}
 							}
 						}

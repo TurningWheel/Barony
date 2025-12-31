@@ -4338,7 +4338,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							int difficulty = getCharmMonsterDifficulty(*target, *targetStats);
 							int casterAbility = caster->getCHR() +
 								std::max(caster->getStats()->getModifiedProficiency(PRO_MYSTICISM), caster->getStats()->getModifiedProficiency(PRO_LEADERSHIP));
-
+							if ( target->behavior == &actPlayer )
+							{
+								difficulty = 666;
+							}
 							bool refusedEffect = false;
 							for ( int i = 0; i < MAXPLAYERS; ++i )
 							{
@@ -5270,6 +5273,13 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 										dropped->vel_z = (-10 - local_rng.rand() % 20) * .01;
 										dropped->flags[USERFLAG1] = false;
 										dropped->itemOriginalOwner = target->getUID();
+									}
+									else
+									{
+										if ( !(*slot) )
+										{
+											effect = true;
+										}
 									}
 								}
 							}
@@ -9085,7 +9095,8 @@ bool spellIsNaturallyLearnedByRaceOrClass(Entity& caster, Stat& stat, int spellI
 			return true;
 		}
 	}
-	else if ( stat.getEffectActive(EFF_SHAPESHIFT) )
+		
+	if ( stat.getEffectActive(EFF_SHAPESHIFT) )
 	{
 		switch ( spellID )
 		{

@@ -11355,7 +11355,7 @@ void actPlayer(Entity* my)
 					{
 						if ( effectStrength & (1 << (i + 1)) && players[i]->entity )
 						{
-							players[i]->mechanics.updateSustainedSpellEvent(SPELL_SPEED, dist, 0.05, nullptr);
+							players[i]->mechanics.updateSustainedSpellEvent(SPELL_SPEED, dist, 0.025, nullptr);
 							break;
 						}
 			}
@@ -11656,7 +11656,7 @@ void actPlayer(Entity* my)
 					{
 						if ( effectStrength & (1 << (i + 1)) && players[i]->entity )
 						{
-							players[i]->mechanics.updateSustainedSpellEvent(SPELL_SPEED, dist, 0.05, nullptr);
+							players[i]->mechanics.updateSustainedSpellEvent(SPELL_SPEED, dist, 0.025, nullptr);
 							break;
 						}
 			}

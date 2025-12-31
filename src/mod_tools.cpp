@@ -14531,12 +14531,27 @@ std::vector<std::pair<std::string, Sint32>> Compendium_t::Events_t::getCustomEve
 									int startOffsetId = -1;
 									if ( def.attributes.find("skills") != def.attributes.end() )
 									{
-										for ( int i = 0; i < NUMPROFICIENCIES; ++i )
+										if ( cat == "magic skill" )
 										{
-											if ( cat == getSkillStringForCompendium(i) )
+											startOffsetId = findClassTag->second[0] + PRO_SORCERY * kEventClassesMax;
+										}
+										else if ( cat == "casting skill" )
+										{
+											startOffsetId = findClassTag->second[0] + PRO_MYSTICISM * kEventClassesMax;
+										}
+										else if ( cat == "swimming skill" )
+										{
+											startOffsetId = findClassTag->second[0] + PRO_THAUMATURGY * kEventClassesMax;
+										}
+										else
+										{
+											for ( int i = 0; i < NUMPROFICIENCIES; ++i )
 											{
-												startOffsetId = findClassTag->second[0] + i * kEventClassesMax;
-												break;
+												if ( cat == getSkillStringForCompendium(i) )
+												{
+													startOffsetId = findClassTag->second[0] + i * kEventClassesMax;
+													break;
+												}
 											}
 										}
 									}
@@ -14604,12 +14619,27 @@ std::vector<std::pair<std::string, Sint32>> Compendium_t::Events_t::getCustomEve
 
 								if ( formatType == "skills" )
 								{
-									for ( int i = 0; i < NUMPROFICIENCIES; ++i )
+									if ( cat == "magic skill" )
 									{
-										if ( cat == getSkillStringForCompendium(i) )
+										classnum = PRO_SORCERY;
+									}
+									else if ( cat == "casting skill" )
+									{
+										classnum = PRO_MYSTICISM;
+									}
+									else if ( cat == "swimming skill" )
+									{
+										classnum = PRO_THAUMATURGY;
+									}
+									else
+									{
+										for ( int i = 0; i < NUMPROFICIENCIES; ++i )
 										{
-											classnum = i;
-											break;
+											if ( cat == getSkillStringForCompendium(i) )
+											{
+												classnum = i;
+												break;
+											}
 										}
 									}
 								}
@@ -14644,12 +14674,27 @@ std::vector<std::pair<std::string, Sint32>> Compendium_t::Events_t::getCustomEve
 									int categoryValue = foundId;
 									if ( formatType == "skills" )
 									{
-										for ( int i = 0; i < NUMPROFICIENCIES; ++i )
+										if ( cat == "magic skill" )
 										{
-											if ( cat == getSkillStringForCompendium(i) )
+											categoryValue = PRO_SORCERY;
+										}
+										else if ( cat == "casting skill" )
+										{
+											categoryValue = PRO_MYSTICISM;
+										}
+										else if ( cat == "swimming skill" )
+										{
+											categoryValue = PRO_THAUMATURGY;
+										}
+										else
+										{
+											for ( int i = 0; i < NUMPROFICIENCIES; ++i )
 											{
-												categoryValue = i;
-												break;
+												if ( cat == getSkillStringForCompendium(i) )
+												{
+													categoryValue = i;
+													break;
+												}
 											}
 										}
 									}
