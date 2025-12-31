@@ -38,6 +38,7 @@ TreasureRoomGenerator treasure_room_generator;
 void TreasureRoomGenerator::init()
 {
 	treasure_floors.clear();
+	treasure_secret_floors.clear();
 	Uint32 seed = uniqueGameKey;
 	if ( seed < (0xFFFFFFFF - 64) )
 	{
