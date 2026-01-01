@@ -7540,7 +7540,8 @@ bool Player::PlayerMechanics_t::updateSustainedSpellEvent(int spellID, real_t va
 			|| spellID == SPELL_SPEED
 			|| spellID == SPELL_DETECT_FOOD
 			|| spellID == SPELL_COMMAND
-			|| spellID == SPELL_FLUTTER )
+			|| spellID == SPELL_FLUTTER
+			|| spellID == SPELL_DIG )
 		{
 			sustainedSpellIDCounter[spellID] += value * scaleValue;
 			if ( players[player.playernum]->entity && sustainedSpellIDCounter[spellID] > 8 * 16.0 )

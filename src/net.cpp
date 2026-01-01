@@ -6125,6 +6125,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		{
 			deleteSaveGame(multiplayer);
 		}
+		printlog("Received order to restart game");
 		MainMenu::beginFade(MainMenu::FadeDestination::GameStart);
 		pauseGame(2, 0);
 	}},

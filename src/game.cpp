@@ -1680,6 +1680,7 @@ void gameLogic(void)
 				}
 			}
 
+			bool loadedNextLevel = false;
 			for ( node = map.entities->first; node != nullptr; node = nextnode )
 			{
 				nextnode = node->next;
@@ -1800,6 +1801,7 @@ void gameLogic(void)
 				{
 				    // when this flag is set, it's time to load the next level.
 					loadnextlevel = false;
+					loadedNextLevel = true;
 
 					int totalFloorGold = 0;
 					int totalFloorItems = 0;

@@ -6704,7 +6704,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				spell_changeHealth(caster, element->getDamage());
 			}
 
-			playSoundEntity(caster, 168, 128);
+			//playSoundEntity(caster, 168, 128);
 			spawnMagicEffectParticles(caster->x, caster->y, caster->z, 169);
 		}
 		else if ( !strcmp(element->element_internal_name, spellElement_shapeshift.element_internal_name) 

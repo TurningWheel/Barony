@@ -1155,7 +1155,23 @@ bool magicOnSpellCastEvent(Entity* parent, Entity* projectile, Entity* hitentity
 		{
 			if ( stats[player]->getProficiency(spell->skillID) >= SKILL_LEVEL_BASIC )
 			{
-				allowedLevelup = false;
+				if ( stats[player]->getProficiency(spell->skillID) >= std::min(SKILL_LEVEL_LEGENDARY, (spell->difficulty + 20)) )
+				{
+					allowedLevelup = false;
+					skillTooHigh = true;
+				}
+				else
+				{
+					int& procsToLevel = players[player]->mechanics.baseSpellLevelUpProcs[spell->ID];
+					if ( procsToLevel < 2 + (spell->difficulty / 30) )
+					{
+						allowedLevelup = false;
+						if ( local_rng.rand() % 4 == 0 )
+						{
+							++procsToLevel;
+						}
+					}
+				}
 			}
 		}
 		else
@@ -1195,7 +1211,7 @@ bool magicOnSpellCastEvent(Entity* parent, Entity* projectile, Entity* hitentity
 	{
 		if ( magicstaff )
 		{
-			if ( local_rng.rand() % 8 == 0 ) //16.67%
+			if ( (local_rng.rand() % ((eventType & spell_t::SPELL_LEVEL_EVENT_MINOR_CHANCE) ? 12 : 8)) == 0 ) //16.67%
 			{
 				if ( allowedLevelup )
 				{
@@ -1262,7 +1278,7 @@ bool magicOnSpellCastEvent(Entity* parent, Entity* projectile, Entity* hitentity
 						int& procsToLevel = players[player]->mechanics.baseSpellLevelUpProcs[spell->ID];
 						int mpSpent = players[player]->mechanics.baseSpellMPSpent(spell->skillID);
 						int threshold = 5 + 5 * (stats[player]->getProficiency(spell->skillID) / 20);
-						if ( (procsToLevel == 0 && mpSpent >= threshold) || (eventType & spell_t::SPELL_LEVEL_EVENT_ALWAYS) )
+						if ( (/*procsToLevel == 0 &&*/ mpSpent >= threshold) || (eventType & spell_t::SPELL_LEVEL_EVENT_ALWAYS) )
 						{
 							players[player]->mechanics.baseSpellClearMP(spell->skillID);
 							parent->increaseSkill(spell->skillID);
@@ -15674,7 +15690,7 @@ bool magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks)
 
 				if ( projectile && projectile->behavior == &actMagicMissile )
 				{
-					magicOnSpellCastEvent(parent, projectile, nullptr, SPELL_DIG, spell_t::SpellOnCastEventTypes::SPELL_LEVEL_EVENT_DEFAULT, 1);
+					magicOnSpellCastEvent(parent, projectile, nullptr, SPELL_DIG, spell_t::SpellOnCastEventTypes::SPELL_LEVEL_EVENT_DEFAULT | spell_t::SPELL_LEVEL_EVENT_MINOR_CHANCE, 1);
 				}
 
 				generatePathMaps();

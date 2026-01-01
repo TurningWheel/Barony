@@ -12337,10 +12337,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 				Entity::modifyDamageMultipliersFromEffects(hit.entity, this, weaponMultipliers, dmgType);
 
 				if ( (hitstats->getEffectActive(EFF_DIVINE_FIRE) & 0xF) ||
-						(!shapeshifted &&
-							((weaponskill == PRO_SWORD && myStats->weapon && myStats->weapon->type == ARTIFACT_SWORD)
-							|| (myStats->weapon && myStats->getEffectActive(EFF_DIVINE_ZEAL))
-							|| (myStats->weapon && myStats->getEffectActive(EFF_FOCI_LIGHT_JUSTICE))))
+						(
+							(!shapeshifted && weaponskill == PRO_SWORD && myStats->weapon && myStats->weapon->type == ARTIFACT_SWORD)
+							|| (/*myStats->weapon &&*/ myStats->getEffectActive(EFF_DIVINE_ZEAL))
+							|| (/*myStats->weapon &&*/ myStats->getEffectActive(EFF_FOCI_LIGHT_JUSTICE)))
 					)
 				{
 					bool particle = false;

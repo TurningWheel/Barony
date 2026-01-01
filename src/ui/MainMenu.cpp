@@ -18758,6 +18758,8 @@ failed:
 			uniqueLobbyKey = local_rng.getU32();
 	        net_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
 
+			printlog("Starting game, game seed: %lu", uniqueGameKey);
+
 	        // send start signal to each player
 	        if (multiplayer == SERVER) {
 	            for (int c = 1; c < MAXPLAYERS; c++) {
