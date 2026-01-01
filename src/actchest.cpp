@@ -1807,34 +1807,35 @@ Item* Entity::addItemToVoidChestServer(int player, Item* item, bool forceNewStac
 				item->identified,
 				&stats[player]->inventory);
 			dropped = dropItem(item2, player, true, true);
+
+			if ( !dropped )
+			{
+				Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
+				entity->flags[INVISIBLE] = true;
+				entity->flags[UPDATENEEDED] = true;
+				entity->x = players[player]->player_last_x;
+				entity->y = players[player]->player_last_y;
+				entity->sizex = 4;
+				entity->sizey = 4;
+				entity->yaw = local_rng.rand() % 360 * (PI / 180.0);
+				entity->vel_x = 0.0;
+				entity->vel_y = 0.0;
+				entity->vel_z = (-10 - local_rng.rand() % 20) * .01;
+				entity->flags[PASSABLE] = true;
+				entity->behavior = &actItem;
+				entity->skill[10] = item->type;
+				entity->skill[11] = item->status;
+				entity->skill[12] = item->beatitude;
+				entity->skill[13] = item->count;
+				entity->skill[14] = item->appearance;
+				entity->skill[15] = item->identified;
+				entity->parent = 0;
+				entity->itemOriginalOwner = 0;
+
+				playSoundPos(players[player]->player_last_x, players[player]->player_last_y, 47 + local_rng.rand() % 3, 64);
+			}
 		}
 
-		if ( !dropped )
-		{
-			Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
-			entity->flags[INVISIBLE] = true;
-			entity->flags[UPDATENEEDED] = true;
-			entity->x = players[player]->player_last_x;
-			entity->y = players[player]->player_last_y;
-			entity->sizex = 4;
-			entity->sizey = 4;
-			entity->yaw = local_rng.rand() % 360 * (PI / 180.0);
-			entity->vel_x = 0.0;
-			entity->vel_y = 0.0;
-			entity->vel_z = (-10 - local_rng.rand() % 20) * .01;
-			entity->flags[PASSABLE] = true;
-			entity->behavior = &actItem;
-			entity->skill[10] = item->type;
-			entity->skill[11] = item->status;
-			entity->skill[12] = item->beatitude;
-			entity->skill[13] = item->count;
-			entity->skill[14] = item->appearance;
-			entity->skill[15] = item->identified;
-			entity->parent = 0;
-			entity->itemOriginalOwner = 0;
-
-			playSoundPos(players[player]->player_last_x, players[player]->player_last_y, 47 + local_rng.rand() % 3, 64);
-		}
 		messagePlayer(player, MESSAGE_INVENTORY, Language::get(6566));
 		return nullptr;
 	}
