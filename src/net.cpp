@@ -9022,9 +9022,12 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 			}
 
 			Uint16 spellID = SDLNet_Read16(&net_packet->data[13]);
-			if ( auto spell = getSpellFromID(spellID) )
+			if ( spellID != SPELL_NONE )
 			{
-				players[player]->mechanics.baseSpellIncrementMP(prevMP - stats[player]->MP, spell->skillID);
+				if ( auto spell = getSpellFromID(spellID) )
+				{
+					players[player]->mechanics.baseSpellIncrementMP(prevMP - stats[player]->MP, spell->skillID);
+				}
 			}
 
 			strcpy((char*)net_packet->data, "GOLD");

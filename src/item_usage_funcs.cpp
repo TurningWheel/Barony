@@ -3034,17 +3034,61 @@ void item_ScrollEnchantWeapon(Item* item, int player)
 		}
 		else 
 		{
-			if ( toEnchant == &stats[player]->gloves )
+			bool hasGold = false;
+			Sint32 goldSubtract = 0;
 			{
-				messagePlayer(player, MESSAGE_HINT, Language::get(858), (*toEnchant)->getName());
-			}
-			else
-			{
-				messagePlayer(player, MESSAGE_HINT, Language::get(854));
+				int goldCost = 75;
+				int bless = std::max(abs((int)(*toEnchant)->beatitude), 0);
+				if ( (*toEnchant)->beatitude > 0 )
+				{
+					bless = std::max(0, bless - 1);
+				}
+				for ( int i = 0; i < std::min(10, bless); ++i )
+				{
+					goldCost *= 2;
+				}
+				goldCost = std::min(10000, goldCost);
+
+				hasGold = stats[player]->GOLD >= goldCost;
+
+				goldSubtract = std::max(0, std::min(goldCost, stats[player]->GOLD));
+
+				stats[player]->GOLD -= goldCost;
+				stats[player]->GOLD = std::max(0, stats[player]->GOLD);
+
+				if ( multiplayer == CLIENT )
+				{
+					strcpy((char*)net_packet->data, "FXGD");
+					net_packet->data[4] = player;
+					SDLNet_Write32((Uint32)goldSubtract, &net_packet->data[5]);
+					SDLNet_Write32((Uint32)0, &net_packet->data[9]);
+
+					Uint16 spellID = SPELL_NONE;
+					SDLNet_Write16(spellID, &net_packet->data[13]);
+					net_packet->address.host = net_server.host;
+					net_packet->address.port = net_server.port;
+					net_packet->len = 15;
+					sendPacketSafe(net_sock, -1, net_packet, 0);
+				}
 			}
 
-			if ( (*toEnchant)->beatitude > 0 )
+			if ( goldSubtract > 0 )
 			{
+				messagePlayer(player, MESSAGE_HINT, Language::get(6973));
+			}
+
+			bool effect = false;
+			if ( !hasGold )
+			{
+				if ( (*toEnchant)->beatitude > 0 )
+				{
+					(*toEnchant)->beatitude = 0;
+					effect = true;
+				}
+			}
+			else if ( (*toEnchant)->beatitude > 0 )
+			{
+				effect = true;
 				(*toEnchant)->beatitude = -(*toEnchant)->beatitude;
 				if ( stats[player]->type == SUCCUBUS )
 				{
@@ -3053,10 +3097,27 @@ void item_ScrollEnchantWeapon(Item* item, int player)
 			}
 			else
 			{
+				effect = true;
 				(*toEnchant)->beatitude -= 1;
 			}
 
-			if ( multiplayer == CLIENT )
+			if ( effect )
+			{
+				if ( toEnchant == &stats[player]->gloves )
+				{
+					messagePlayer(player, MESSAGE_HINT, Language::get(858), (*toEnchant)->getName());
+				}
+				else
+				{
+					messagePlayer(player, MESSAGE_HINT, Language::get(854));
+				}
+			}
+			else
+			{
+				messagePlayer(player, MESSAGE_HINT, Language::get(853));
+			}
+
+			if ( effect && multiplayer == CLIENT )
 			{
 				strcpy((char*)net_packet->data, "BEAT");
 				net_packet->data[4] = player;
@@ -3213,18 +3274,79 @@ void item_ScrollEnchantArmor(Item* item, int player)
 		}
 		else if ( armor != nullptr )
 		{
-			messagePlayer(player, MESSAGE_HINT, Language::get(858), armor->getName());
+			bool hasGold = false;
+			Sint32 goldSubtract = 0;
+			{
+				int goldCost = 75;
+				int bless = std::max(abs((int)armor->beatitude), 0);
+				if ( armor->beatitude > 0 )
+				{
+					bless = std::max(0, bless - 1);
+				}
+				for ( int i = 0; i < std::min(10, bless); ++i )
+				{
+					goldCost *= 2;
+				}
+				goldCost = std::min(10000, goldCost);
 
-			if ( armor->beatitude > 0 )
+				hasGold = stats[player]->GOLD >= goldCost;
+
+				goldSubtract = std::max(0, std::min(goldCost, stats[player]->GOLD));
+
+				stats[player]->GOLD -= goldCost;
+				stats[player]->GOLD = std::max(0, stats[player]->GOLD);
+
+				if ( multiplayer == CLIENT )
+				{
+					strcpy((char*)net_packet->data, "FXGD");
+					net_packet->data[4] = player;
+					SDLNet_Write32((Uint32)goldSubtract, &net_packet->data[5]);
+					SDLNet_Write32((Uint32)0, &net_packet->data[9]);
+
+					Uint16 spellID = SPELL_NONE;
+					SDLNet_Write16(spellID, &net_packet->data[13]);
+					net_packet->address.host = net_server.host;
+					net_packet->address.port = net_server.port;
+					net_packet->len = 15;
+					sendPacketSafe(net_sock, -1, net_packet, 0);
+				}
+			}
+
+			if ( goldSubtract > 0 )
+			{
+				messagePlayer(player, MESSAGE_HINT, Language::get(6973));
+			}
+
+			bool effect = false;
+			if ( !hasGold )
+			{
+				if ( armor->beatitude > 0 )
+				{
+					armor->beatitude = 0;
+					effect = true;
+				}
+			}
+			else if ( armor->beatitude > 0 )
 			{
 				armor->beatitude = -armor->beatitude;
+				effect = true;
 			}
 			else
 			{
 				armor->beatitude -= 1;
+				effect = true;
 			}
 
-			if ( multiplayer == CLIENT )
+			if ( effect )
+			{
+				messagePlayer(player, MESSAGE_HINT, Language::get(858), armor->getName());
+			}
+			else
+			{
+				messagePlayer(player, MESSAGE_HINT, Language::get(857));
+			}
+
+			if ( effect && multiplayer == CLIENT )
 			{
 				strcpy((char*)net_packet->data, "BEAT");
 				net_packet->data[4] = player;
