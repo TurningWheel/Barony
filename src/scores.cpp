@@ -6301,7 +6301,7 @@ int loadGame(int player, const SaveGameInfo& info) {
 	std::map<int, int> appraisalMap;
 	if ( checkAppraisalProgress )
 	{
-		for ( auto& pair : info.players[statsPlayer].appraisal_item_progress )
+		for ( auto& pair : info.players[player].appraisal_item_progress )
 		{
 			appraisalMap[pair.first] = pair.second;
 		}

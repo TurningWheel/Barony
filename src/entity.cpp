@@ -16699,6 +16699,13 @@ bool Entity::teleport(int tele_x, int tele_y)
 		if ( behavior == &actPlayer && barony_clear(x, y, this) )
 		{
 			// it's fine
+			if ( !strncmp(map.name, "Mages Guild", 11) ) // mages guild out of bounds
+			{
+				x = oldx;
+				y = oldy;
+				messagePlayer(player, MESSAGE_HINT, Language::get(707));
+				return false;
+			}
 		}
 		else
 		{

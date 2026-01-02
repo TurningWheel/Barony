@@ -973,14 +973,23 @@ real_t getSpellBonusFromCasterINT(Entity* caster, Stat* casterStats, int skillID
 
 real_t getBonusFromCasterOfSpellElement(Entity* caster, Stat* casterStats, spellElement_t* spellElement, int spellID, int proficiencyWhenNoSpell)
 {
-	if ( caster && caster->behavior != &actPlayer )
-	{
-		return 0.0;
-	}
-
 	if ( !casterStats && caster )
 	{
 		casterStats = caster->getStats();
+	}
+
+	if ( caster && caster->behavior != &actPlayer )
+	{
+		if ( casterStats )
+		{
+			if ( Uint8 effectStrength = casterStats->getEffectActive(EFF_INCOHERENCE) )
+			{
+				real_t mult = std::min(0.9, 0.2 + (effectStrength - 1) * 0.1);
+				real_t bonus = -mult;
+				return std::max(-0.9, bonus);
+			}
+		}
+		return 0.0;
 	}
 
 	real_t bonus = 0.0;

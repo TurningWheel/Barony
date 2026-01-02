@@ -289,7 +289,13 @@ bool rangefinderTargetEnemyType(spell_t& spell, Entity& entity)
 			else
 			{
 				Monster type = entity.getMonsterTypeFromSprite();
-				if ( type == MIMIC || type == AUTOMATON || type == CRYSTALGOLEM || type == MINIMIMIC )
+				if ( type == MIMIC 
+					|| type == AUTOMATON 
+					|| type == CRYSTALGOLEM 
+					|| type == MINIMIMIC
+					|| type == SENTRYBOT
+					|| type == SPELLBOT
+					|| type == DUMMYBOT )
 				{
 					return true;
 				}

@@ -4710,6 +4710,10 @@ int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monste
 			{
 				return -1; // disabled due to creature.
 			}
+			if ( followerStats && followerStats->getEffectActive(EFF_COMMAND) >= 1 && followerStats->getEffectActive(EFF_COMMAND) < MAXPLAYERS + 1 )
+			{
+				return -4; // unavailable due to spell
+			}
 			if ( playerSkillLVL < requirement )
 			{
 				return requirement; // disabled due to basic skill requirements.
@@ -4853,6 +4857,16 @@ bool FollowerRadialMenu::allowedInteractItems(int monsterType)
 			if ( followerToCommand && followerToCommand->monsterAllySummonRank != 0 )
 			{
 				return false;
+			}
+			if ( followerToCommand )
+			{
+				if ( Stat* followerStats = followerToCommand->getStats() )
+				{
+					if ( followerStats->getEffectActive(EFF_COMMAND) >= 1 && followerStats->getEffectActive(EFF_COMMAND) < MAXPLAYERS + 1 )
+					{
+						return false;
+					}
+				}
 			}
 			return true;
 			break;
