@@ -215,7 +215,11 @@ bool entityWantsJewel(int tier, Entity& entity, Stat& stats, bool checkTypeOnly)
 	}
 	else if ( req >= 0 )
 	{
-		return tier >= req;
+		if ( (tier * 5) >= currentlevel )
+		{
+			return true;
+		}
+		//return tier >= req;
 	}
 
 	return false;
@@ -228,13 +232,18 @@ bool jewelItemRecruit(Entity* parent, Entity* entity)
 		return false;
 	}
 
+	if ( parent->behavior != &actPlayer )
+	{
+		return false;
+	}
+
 	Stat* entitystats = entity->getStats();
 	if ( !entitystats ) 
 	{
 		return false;
 	}
 
-	int allowedFollowers = 4;
+	int allowedFollowers = std::min(8, std::max(4, 2 * (stats[parent->skill[2]]->getModifiedProficiency(PRO_LEADERSHIP) / 20)));
 	int numFollowers = 0;
 	for ( node_t* node = stats[parent->skill[2]]->FOLLOWERS.first; node; node = node->next )
 	{
@@ -496,17 +505,25 @@ void actItem(Entity* my)
 									if ( entity->getUID() % 10 == ticks % 10 )
 									{
 										hitProps->tick = ticks;
-										if ( entityWantsJewel(tier, *entity, *entitystats, false) )
+										if ( entityWantsJewel(tier, *entity, *entitystats, true) )
 										{
 											if ( entityDist(my, entity) < 16.0 )
 											{
 												hitProps->hits++;
-												if ( jewelItemRecruit(parent, entity) )
+												if ( entityWantsJewel(tier, *entity, *entitystats, false) )
 												{
-													my->clearMonsterInteract();
-													my->removeLightField();
-													list_RemoveNode(my->mynode);
-													return;
+													if ( jewelItemRecruit(parent, entity) )
+													{
+														my->clearMonsterInteract();
+														my->removeLightField();
+														list_RemoveNode(my->mynode);
+														return;
+													}
+												}
+												else
+												{
+													spawnFloatingSpriteMisc(134, entity->x + (-4 + local_rng.rand() % 9) + cos(entity->yaw) * 2,
+														entity->y + (-4 + local_rng.rand() % 9) + sin(entity->yaw) * 2, entity->z + local_rng.rand() % 4);
 												}
 											}
 										}
