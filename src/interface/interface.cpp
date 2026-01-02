@@ -2164,6 +2164,17 @@ void FollowerRadialMenu::drawFollowerMenu()
 		{
 			followerFrame->setDisabled(true);
 		}
+
+		if ( followerToCommand )
+		{
+			if ( followerToCommand->monsterAllyIndex < 0 && followerToCommand->getStats() && 
+				(!followerToCommand->getStats()->getEffectActive(EFF_COMMAND)
+					|| followerToCommand->getStats()->getEffectActive(EFF_COMMAND) - 1 != gui_player) )
+			{
+				selectMoveTo = false;
+				closeFollowerMenuGUI();
+			}
+		}
 		return;
 	}
 
@@ -4218,6 +4229,18 @@ bool FollowerRadialMenu::allowedInteractEntity(Entity& selectedEntity, bool upda
 		skillLVL = SKILL_LEVEL_LEGENDARY;
 	}
 
+	if ( followerToCommand )
+	{
+		if ( Stat* followerStats = followerToCommand->getStats() )
+		{
+			if ( followerStats->getEffectActive(EFF_COMMAND) >= 1 && followerStats->getEffectActive(EFF_COMMAND) < MAXPLAYERS + 1 )
+			{
+				interactWorld = false;
+				interactItems = false;
+			}
+		}
+	}
+
 	bool enableAttack = (optionDisabledForCreature(skillLVL, followerStats->type, ALLY_CMD_ATTACK_CONFIRM, followerToCommand) == 0);
 	
 	if ( !interactItems && !interactWorld && enableAttack )
@@ -4858,7 +4881,7 @@ bool FollowerRadialMenu::allowedInteractItems(int monsterType)
 			{
 				return false;
 			}
-			if ( followerToCommand )
+			/*if ( followerToCommand )
 			{
 				if ( Stat* followerStats = followerToCommand->getStats() )
 				{
@@ -4867,7 +4890,7 @@ bool FollowerRadialMenu::allowedInteractItems(int monsterType)
 						return false;
 					}
 				}
-			}
+			}*/
 			return true;
 			break;
 		default:
@@ -4880,16 +4903,13 @@ bool FollowerRadialMenu::attackCommandOnly(int monsterType)
 {
 	bool result = !(allowedInteractItems(monsterType) || allowedInteractWorld(monsterType) || allowedInteractFood(monsterType));
 
-	if ( !result )
+	if ( followerToCommand )
 	{
-		if ( followerToCommand )
+		if ( Stat* followerStats = followerToCommand->getStats() )
 		{
-			if ( Stat* followerStats = followerToCommand->getStats() )
+			if ( followerStats->getEffectActive(EFF_COMMAND) >= 1 && followerStats->getEffectActive(EFF_COMMAND) < MAXPLAYERS + 1 )
 			{
-				if ( followerStats->getEffectActive(EFF_COMMAND) >= 1 && followerStats->getEffectActive(EFF_COMMAND) < MAXPLAYERS + 1 )
-				{
-					return true;
-				}
+				return true;
 			}
 		}
 	}

@@ -10728,7 +10728,12 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 					if ( followerMenu.followerToCommand )
 					{
 						int type = followerMenu.followerToCommand->getMonsterTypeFromSprite();
-						if ( followerMenu.allowedInteractItems(type)
+						if ( followerMenu.attackCommandOnly(type) )
+						{
+							text->setDisabled(false);
+							text->setText(Language::get(4042)); // "Attack..."
+						}
+						else if ( followerMenu.allowedInteractItems(type)
 							|| followerMenu.allowedInteractFood(type)
 							|| followerMenu.allowedInteractWorld(type)
 							)

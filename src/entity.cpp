@@ -10632,6 +10632,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 				{
 					bowDegradeChance = 100; // conjured skeleton weapon doesn't break.
 				}
+				if ( myStats->type == SENTRYBOT )
+				{
+					bowDegradeChance = 100;
+				}
 				if ( bowDegradeChance < 100 && local_rng.rand() % bowDegradeChance == 0 && myStats->weapon->type != ARTIFACT_BOW
 					&& !spellEffectPreserveItem(myStats->weapon) )
 				{

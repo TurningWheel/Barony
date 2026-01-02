@@ -12904,10 +12904,10 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 						handleNPCInteractDialogue(*myStats, ALLY_EVENT_DROP_WEAPON);
 					}
 				}
-				/*if ( unableToDrop )
+				if ( unableToDrop )
 				{
 					handleNPCInteractDialogue(*myStats, ALLY_EVENT_DROP_FAILED);
-				}*/
+				}
 			}
 			break;
 		case ALLY_CMD_MOVETO_CONFIRM:
@@ -13308,11 +13308,20 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 	{
 		return;
 	}
-	if ( monsterAllyIndex < 0 || monsterAllyIndex >= MAXPLAYERS )
+
+	int playerLeader = monsterAllyIndex;
+	bool compelSpell = false;
+	if ( myStats.getEffectActive(EFF_COMMAND) >= 1 && myStats.getEffectActive(EFF_COMMAND) < MAXPLAYERS + 1 )
+	{
+		playerLeader = myStats.getEffectActive(EFF_COMMAND) - 1;
+		compelSpell = true;
+	}
+
+	if ( playerLeader < 0 || playerLeader >= MAXPLAYERS )
 	{
 		return;
 	}
-	if ( !stats[monsterAllyIndex] )
+	if ( !stats[playerLeader] )
 	{
 		return;
 	}
@@ -13336,9 +13345,9 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 				message = Language::get(3077 + local_rng.rand() % 2);
 				break;
 			case ALLY_EVENT_INTERACT_ITEM_CURSED:
-				if ( FollowerMenu[monsterAllyIndex].entityToInteractWith && FollowerMenu[monsterAllyIndex].entityToInteractWith->behavior == &actItem )
+				if ( FollowerMenu[playerLeader].entityToInteractWith && FollowerMenu[playerLeader].entityToInteractWith->behavior == &actItem )
 				{
-					Item* item = newItemFromEntity(FollowerMenu[monsterAllyIndex].entityToInteractWith);
+					Item* item = newItemFromEntity(FollowerMenu[playerLeader].entityToInteractWith);
 					if ( item )
 					{
 						char fullmsg[256];
@@ -13482,13 +13491,13 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 				for ( int c = 0; c < MAXPLAYERS; ++c )
 				{
 					players[c]->worldUI.worldTooltipDialogue.createDialogueTooltip(getUID(),
-						Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_ATTACK, message.c_str(), stats[monsterAllyIndex]->name);
+						Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_ATTACK, message.c_str(), stats[playerLeader]->name);
 				}
 			}
 			else
 			{
-				players[monsterAllyIndex]->worldUI.worldTooltipDialogue.createDialogueTooltip(getUID(),
-					Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_FOLLOWER_CMD, message.c_str(), stats[monsterAllyIndex]->name);
+				players[playerLeader]->worldUI.worldTooltipDialogue.createDialogueTooltip(getUID(),
+					Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_FOLLOWER_CMD, message.c_str(), stats[playerLeader]->name);
 			}
 		}
 	}
@@ -13502,9 +13511,9 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 			case ALLY_EVENT_MOVEASIDE:
 				if ( local_rng.getU8() % 8 == 0 ) 
 				{
-					players[monsterAllyIndex]->worldUI.worldTooltipDialogue.createDialogueTooltip(getUID(),
+					players[playerLeader]->worldUI.worldTooltipDialogue.createDialogueTooltip(getUID(),
 						Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_FOLLOWER_CMD, Language::get(getMonsterInteractGreeting(myStats)), stats[monsterAllyIndex]->name);
-					//messagePlayerMonsterEvent(monsterAllyIndex, 0xFFFFFFFF,
+					//messagePlayerMonsterEvent(playerLeader, 0xFFFFFFFF,
 					//	myStats, Language::get(3129), Language::get(3130), MSG_COMBAT);
 				}
 				break;
@@ -13517,19 +13526,19 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 			case ALLY_EVENT_MOVETO_FAIL:
 				if ( local_rng.rand() % 2 == 0 )
 				{
-					messagePlayerMonsterEvent(monsterAllyIndex, 0xFFFFFFFF,
+					messagePlayerMonsterEvent(playerLeader, 0xFFFFFFFF,
 						myStats, Language::get(3131), Language::get(3132), MSG_COMBAT);
 				}
 				else
 				{
-					messagePlayerMonsterEvent(monsterAllyIndex, 0xFFFFFFFF,
+					messagePlayerMonsterEvent(playerLeader, 0xFFFFFFFF,
 						myStats, Language::get(3133), Language::get(3134), MSG_COMBAT);
 				}
 				break;
 			case ALLY_EVENT_INTERACT_ITEM_CURSED:
-				if ( FollowerMenu[monsterAllyIndex].entityToInteractWith && FollowerMenu[monsterAllyIndex].entityToInteractWith->behavior == &actItem )
+				if ( FollowerMenu[playerLeader].entityToInteractWith && FollowerMenu[playerLeader].entityToInteractWith->behavior == &actItem )
 				{
-					Item* item = newItemFromEntity(FollowerMenu[monsterAllyIndex].entityToInteractWith);
+					Item* item = newItemFromEntity(FollowerMenu[playerLeader].entityToInteractWith);
 					if ( item )
 					{
 						char fullmsg[256] = "";
@@ -13577,7 +13586,7 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 							char namedStr[128];
 							strcpy(namedStr, Language::get(3120));
 							strcat(namedStr, fullmsg);
-							messagePlayerMonsterEvent(monsterAllyIndex, 0xFFFFFFFF,
+							messagePlayerMonsterEvent(playerLeader, 0xFFFFFFFF,
 								myStats, genericStr, namedStr, MSG_COMBAT);
 						}
 					}
@@ -13590,7 +13599,7 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 			case ALLY_EVENT_INTERACT_ITEM_NOUSE:
 			case ALLY_EVENT_INTERACT_ITEM_FOOD_FULL:
 			{
-				Item* item = newItemFromEntity(FollowerMenu[monsterAllyIndex].entityToInteractWith);
+				Item* item = newItemFromEntity(FollowerMenu[playerLeader].entityToInteractWith);
 				if ( item )
 				{
 					char itemString[64] = "";
@@ -13599,7 +13608,7 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 					strcat(genericStr, itemString);
 					strcpy(namedStr, Language::get(3122));
 					strcat(namedStr, itemString);
-					messagePlayerMonsterEvent(monsterAllyIndex, 0xFFFFFFFF,
+					messagePlayerMonsterEvent(playerLeader, 0xFFFFFFFF,
 						myStats, genericStr, namedStr, MSG_COMBAT);
 					free(item);
 				}
@@ -13609,7 +13618,7 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 			case ALLY_EVENT_INTERACT_ITEM_FOOD_GOOD:
 			case ALLY_EVENT_INTERACT_ITEM_FOOD_ROTTEN:
 			{
-				Item* item = newItemFromEntity(FollowerMenu[monsterAllyIndex].entityToInteractWith);
+				Item* item = newItemFromEntity(FollowerMenu[playerLeader].entityToInteractWith);
 				if ( item )
 				{
 					char itemString[64] = "";
@@ -13618,7 +13627,7 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 					strcat(genericStr, itemString);
 					strcpy(namedStr, Language::get(3122));
 					strcat(namedStr, itemString);
-					messagePlayerMonsterEvent(monsterAllyIndex, 0xFFFFFFFF,
+					messagePlayerMonsterEvent(playerLeader, 0xFFFFFFFF,
 						myStats, genericStr, namedStr, MSG_COMBAT);
 					free(item);
 				}
@@ -13636,7 +13645,7 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 				strcat(genericStr, Language::get(3125));
 				strcpy(namedStr, Language::get(3122));
 				strcat(namedStr, Language::get(3125));
-				messagePlayerMonsterEvent(monsterAllyIndex, 0xFFFFFFFF,
+				messagePlayerMonsterEvent(playerLeader, 0xFFFFFFFF,
 					myStats, genericStr, namedStr, MSG_COMBAT);
 				break;
 			case ALLY_EVENT_DROP_EQUIP:
@@ -13644,7 +13653,7 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 				strcat(genericStr, Language::get(3126));
 				strcpy(namedStr, Language::get(3122));
 				strcat(namedStr, Language::get(3126));
-				messagePlayerMonsterEvent(monsterAllyIndex, 0xFFFFFFFF,
+				messagePlayerMonsterEvent(playerLeader, 0xFFFFFFFF,
 					myStats, genericStr, namedStr, MSG_COMBAT);
 				break;
 			case ALLY_EVENT_DROP_ALL:
@@ -13652,30 +13661,38 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 				strcat(genericStr, Language::get(3127));
 				strcpy(namedStr, Language::get(3122));
 				strcat(namedStr, Language::get(3127));
-				messagePlayerMonsterEvent(monsterAllyIndex, 0xFFFFFFFF,
+				messagePlayerMonsterEvent(playerLeader, 0xFFFFFFFF,
+					myStats, genericStr, namedStr, MSG_COMBAT);
+				break;
+			case ALLY_EVENT_DROP_FAILED:
+				strcpy(genericStr, Language::get(3121));
+				strcat(genericStr, Language::get(6970));
+				strcpy(namedStr, Language::get(3122));
+				strcat(namedStr, Language::get(6970));
+				messagePlayerMonsterEvent(playerLeader, 0xFFFFFFFF,
 					myStats, genericStr, namedStr, MSG_COMBAT);
 				break;
 			case ALLY_EVENT_WAIT:
 				if ( myStats.type == SENTRYBOT || myStats.type == SPELLBOT )
 				{
-					messagePlayerColor(monsterAllyIndex, MESSAGE_STATUS, 0xFFFFFFFF,
+					messagePlayerColor(playerLeader, MESSAGE_STATUS, 0xFFFFFFFF,
 					    Language::get(3676), monstertypename[myStats.type]);
 				}
 				else
 				{
-					messagePlayerMonsterEvent(monsterAllyIndex, 0xFFFFFFFF,
+					messagePlayerMonsterEvent(playerLeader, 0xFFFFFFFF,
 						myStats, Language::get(3105), Language::get(3106), MSG_COMBAT);
 				}
 				break;
 			case ALLY_EVENT_FOLLOW:
 				if ( myStats.type == SENTRYBOT || myStats.type == SPELLBOT )
 				{
-					messagePlayerColor(monsterAllyIndex, MESSAGE_STATUS, 0xFFFFFFFF,
+					messagePlayerColor(playerLeader, MESSAGE_STATUS, 0xFFFFFFFF,
 					    Language::get(3677), monstertypename[myStats.type]);
 				}
 				else
 				{
-					messagePlayerMonsterEvent(monsterAllyIndex, 0xFFFFFFFF,
+					messagePlayerMonsterEvent(playerLeader, 0xFFFFFFFF,
 						myStats, Language::get(529), Language::get(3128), MSG_COMBAT);
 				}
 				break;

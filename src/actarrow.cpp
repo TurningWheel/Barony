@@ -918,7 +918,14 @@ void actArrow(Entity* my)
 							{
 								mult = 2.0;
 							}*/
-							damageMultiplier += statGetPER(parent->getStats(), parent) / 100.0;
+							if ( parent->behavior == &actMonster )
+							{
+								damageMultiplier += std::min(25, std::max(0, statGetPER(parent->getStats(), parent))) / 100.0;
+							}
+							else
+							{
+								damageMultiplier += std::max(0, statGetPER(parent->getStats(), parent)) / 100.0;
+							}
 						}
 					}
 
