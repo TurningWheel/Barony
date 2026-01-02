@@ -912,6 +912,26 @@ void duckAnimate(Entity* my, Stat* myStats, double dist)
 				}
 			}
 		}
+
+		if ( !spiritDuck && my->ticks % 15 == 1 )
+		{
+			if ( my )
+			{
+				for ( auto node = map.creatures->first; node; node = node->next )
+				{
+					if ( Entity* entity = (Entity*)node->element )
+					{
+						if ( entity != my )
+						{
+							if ( entity->behavior == &actMonster && entityDist(my, entity) < 1.5 * TOUCHRANGE )
+							{
+								entity->setEffect(EFF_DUCKED, true, 0.5 * TICKS_PER_SECOND, false, false, true, true);
+							}
+						}
+					}
+				}
+			}
+		}
 	}
 
 	if ( body )

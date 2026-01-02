@@ -1607,7 +1607,8 @@ int Stat::numShillelaghDebuffsActive(Entity* my)
 		//EFF_DISORIENTED,
 		EFF_ROOTED,
 		EFF_STATIC,
-		EFF_DRUNK
+		EFF_DRUNK,
+		EFF_DUCKED
 	};
 
 	int result = 0;
@@ -1616,29 +1617,6 @@ int Stat::numShillelaghDebuffsActive(Entity* my)
 		if ( getEffectActive(eff) )
 		{
 			++result;
-		}
-	}
-
-	if ( my )
-	{
-		for ( auto node = map.creatures->first; node; node = node->next )
-		{
-			if ( Entity* entity = (Entity*)node->element )
-			{
-				if ( entity != my )
-				{
-					if ( Stat* stat = entity->getStats() )
-					{
-						if ( stat->type == DUCK_SMALL )
-						{
-							if ( entityDist(my, entity) < TOUCHRANGE * 1.5 )
-							{
-								++result;
-							}
-						}
-					}
-				}
-			}
 		}
 	}
 

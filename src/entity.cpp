@@ -2371,6 +2371,27 @@ void Entity::effectTimes()
 						messagePlayer(player, MESSAGE_STATUS, Language::get(6751));
 						updateClient = true;
 						break;
+					case EFF_DISORIENTED:
+						if ( behavior == &actMonster && monsterState == MONSTER_STATE_WAIT )
+						{
+							if ( Entity* target = uidToEntity(monsterLastDistractedByNoisemaker) )
+							{
+								if ( target->behavior == &actMonster )
+								{
+									if ( Stat* targetStats = target->getStats() )
+									{
+										if ( targetStats->type == DUCK_SMALL )
+										{
+											if ( Entity* leader = uidToEntity(targetStats->leader_uid) )
+											{
+												lookAtEntity(*leader);
+											}
+										}
+									}
+								}
+							}
+						}
+						break;
 					default:
 						break;
 				}
