@@ -577,7 +577,7 @@ static std::vector<std::vector<unsigned int>> classStatGrowth =
 	{	1,	3,	2,	7,	6,	5 }, // WIZARD 7
 	{	2,	6,	2,	6,	6,	2 }, // ARCANIST 8
 	{	4,	4,	4,	4,	4,	4 }, // JOKER 9
-	{	4,	4,	2,	4,	2,	2 }, // SEXTON 10
+	{	3,	4,	2,	4,	2,	3 }, // SEXTON 10
 	{	4,	6,	3,	2,	4,	1 }, // NINJA 11
 	{	4,	2,	5,	3,	2,	2 }, // MONK 12
 	{	3,	2,	4,	6,	4,	4 }, // CONJURER 13
