@@ -677,14 +677,22 @@ int Player::Inventory_t::Appraisal_t::getAppraisalTime(Item* item)
 		{
 			for ( auto& pair : appraisal_time_points )
 			{
-				if ( value > pair.first )
+				if ( value >= pair.first )
 				{
 					appraisal_time = pair.second;
 					break;
 				}
 			}
 		}
-		if ( skillLVL >= 50 )
+
+		Category cat = itemCategory(item);
+		if ( cat == FOOD || cat == SCROLL || cat == POTION )
+		{
+			real_t ratio = std::max(0.2, 1.0 + (-skillLVL) / 100.0);
+			appraisal_time = std::max((real_t)Player::Inventory_t::Appraisal_t::fastTimeAppraisal * ratio, appraisal_time * ratio);
+			appraisal_time = std::max(2 * TICKS_PER_SECOND, appraisal_time);
+		}
+		else if ( skillLVL >= 50 )
 		{
 			real_t ratio = std::max(0.2, 0.5 + (100 - skillLVL) / 100.0);
 			appraisal_time = std::max((real_t)Player::Inventory_t::Appraisal_t::fastTimeAppraisal * ratio, appraisal_time * ratio);

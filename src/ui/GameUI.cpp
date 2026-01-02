@@ -36373,6 +36373,42 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 			}
 			snprintf(buf, sizeof(buf), rawValue.c_str(), val);
 		}
+		else if ( tag == "APPRAISE_SPEEDUP_CONSUMABLES" )
+		{
+			int skillLVL = (stats[playernum]->getModifiedProficiency(proficiency) + (statGetPER(stats[playernum], player) * Player::Inventory_t::Appraisal_t::perStatMult));
+			if ( skillCapstoneUnlocked(playernum, proficiency) )
+			{
+				val = 100.0;
+			}
+			else if ( skillLVL >= 0 )
+			{
+				real_t ratio = (1.0 - std::max(0.2, 1.0 + (-skillLVL) / 100.0)) * 100.0;
+				val = ratio;
+			}
+			else
+			{
+				val = 0.0;
+			}
+			snprintf(buf, sizeof(buf), rawValue.c_str(), val);
+		}
+		else if ( tag == "APPRAISE_FLOOR_BONUS" )
+		{
+			int skillLVL = std::min(100, std::max(0, (stats[playernum]->getModifiedProficiency(proficiency) + (statGetPER(stats[playernum], player) * Player::Inventory_t::Appraisal_t::perStatMult))));
+			if ( skillCapstoneUnlocked(playernum, proficiency) )
+			{
+				val = 100.0;
+			}
+			else if ( skillLVL >= 0 )
+			{
+				real_t appraisalTimerReduce = (1.0 - (0.75 - (0.25 * skillLVL) / 100.0)) * 100.0;
+				val = appraisalTimerReduce;
+			}
+			else
+			{
+				val = 0.0;
+			}
+			snprintf(buf, sizeof(buf), rawValue.c_str(), val);
+		}
 		else if ( tag == "APPRAISE_WORTHLESS_GLASS" )
 		{
 			if ( (stats[playernum]->getModifiedProficiency(proficiency) + (statGetPER(stats[playernum], player) * Player::Inventory_t::Appraisal_t::perStatMult)) >= 40 )

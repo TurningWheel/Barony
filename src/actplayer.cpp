@@ -8359,8 +8359,37 @@ void actPlayer(Entity* my)
 		}
 	}
 
+	if ( players[PLAYER_NUM]->isLocalPlayer() && PLAYER_ALIVETIME == 10 && currentlevel > 0 && !intro )
+	{
+		auto& appraisal = players[PLAYER_NUM]->inventoryUI.appraisal;
+		real_t appraisalTimerReduce = 0.75 - 0.25 * std::max(0, std::min(100, (stats[PLAYER_NUM]->getModifiedProficiency(PRO_APPRAISAL) + statGetPER(stats[PLAYER_NUM], my)))) / 100.0;
+		for ( auto node = stats[PLAYER_NUM]->inventory.first; node; node = node->next )
+		{
+			if ( Item* item = (Item*)node->element )
+			{
+				if ( !item->identified )
+				{
+					auto find = appraisal.appraisalProgressionItems.find(item->uid);
+					if ( find == appraisal.appraisalProgressionItems.end() )
+					{
+						appraisal.appraisalProgressionItems[item->uid] = std::max((int)(appraisalTimerReduce * appraisal.getAppraisalTime(item)), 1);
+					}
+					else
+					{
+						appraisal.appraisalProgressionItems[item->uid] = std::max((int)(appraisalTimerReduce * appraisal.appraisalProgressionItems[item->uid]), 1);
+					}
+
+					if ( appraisal.current_item == item->uid )
+					{
+						appraisal.timer = std::max(1, std::min(appraisal.timer, appraisal.appraisalProgressionItems[item->uid]));
+					}
+				}
+			}
+		}
+	}
+
 	if ( players[PLAYER_NUM]->isLocalPlayer() 
-		&& players[PLAYER_NUM]->inventoryUI.appraisal.timer > 0 )
+		&& players[PLAYER_NUM]->inventoryUI.appraisal.timer > 0 && !intro )
 	{
 		Item* tempItem = uidToItem(players[PLAYER_NUM]->inventoryUI.appraisal.current_item);
 		if ( tempItem )
