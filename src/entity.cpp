@@ -17107,15 +17107,69 @@ bool Entity::teleportAroundEntity(Entity* target, int dist, int effectType)
 						y = (iy << 4) + 8;
 						if ( !entityInsideSomething(this) )
 						{
-							if ( behavior == &actDeathGhost )
+							if ( effectType == SPELL_JUMP && (this == target) )
 							{
-								goodspots.push_back(Coord_t(ix, iy, false));
+								Entity* ohit = hit.entity;
+								if ( this->bodyparts.size() )
+								{
+									// check LOS
+									TileEntityList.updateEntity(*this); // important - lineTrace needs the TileEntityListUpdated.
+
+									Entity* tmpTarget = nullptr;
+									for ( auto limb : bodyparts )
+									{
+										if ( limb->behavior == &actPlayerLimb )
+										{
+											tmpTarget = limb;
+											break;
+										}
+									}
+
+									if ( tmpTarget )
+									{
+										//real_t tmpx2 = tmpTarget->x;
+										//real_t tmpy2 = tmpTarget->y;
+										//tmpTarget->x = tmpx;
+										//tmpTarget->y = tmpy;
+										bool oldPassable = tmpTarget->flags[PASSABLE];
+										tmpTarget->flags[PASSABLE] = false;
+										TileEntityList.updateEntity(*tmpTarget);
+
+										// pretend player has teleported, get the angle needed.
+										real_t tangent = atan2(tmpTarget->y - this->y, tmpTarget->x - this->x);
+										lineTraceTarget(this, this->x, this->y, tangent, 64 * dist, LINETRACE_TELEKINESIS, false, tmpTarget);
+										if ( hit.entity == tmpTarget )
+										{
+											goodspots.push_back(Coord_t(ix, iy, teleportCoordHasTrap(ix, iy)));
+											numlocations++;
+										}
+
+										tmpTarget->flags[PASSABLE] = oldPassable;
+										//tmpTarget->x = tmpx2;
+										//tmpTarget->y = tmpy2;
+										TileEntityList.updateEntity(*tmpTarget);
+									}
+
+								}
+								// restore coordinates.
+								x = tmpx;
+								y = tmpy;
+								TileEntityList.updateEntity(*this); // important - lineTrace needs the TileEntityListUpdated.
+								hit.entity = ohit;
+								continue;
 							}
 							else
 							{
-								goodspots.push_back(Coord_t(ix, iy, teleportCoordHasTrap(ix, iy)));
+								if ( behavior == &actDeathGhost )
+								{
+									goodspots.push_back(Coord_t(ix, iy, false));
+								}
+								else
+								{
+									goodspots.push_back(Coord_t(ix, iy, teleportCoordHasTrap(ix, iy)));
+								}
+								numlocations++;
 							}
-							numlocations++;
 						}
 						// restore coordinates.
 						x = tmpx;
@@ -18111,7 +18165,7 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 						auto find2 = find1->second.find(this->getUID()); // has the player compelled the deceased to attack me
 						if ( find2 != find1->second.end() ) 
 						{
-							if ( (::ticks - find2->second) < 15 * TICKS_PER_SECOND ) // less than x seconds ago
+							if ( (::ticks - find2->second) < 30 * TICKS_PER_SECOND ) // less than x seconds ago
 							{
 								if ( src->behavior != &actPlayer && this->behavior != &actPlayer
 									&& !src->monsterAllyGetPlayerLeader() && !this->monsterAllyGetPlayerLeader() )
@@ -18135,7 +18189,7 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 						auto find2 = find1->second.find(src->getUID()); // has the player compelled me to attack the deceased
 						if ( find2 != find1->second.end() )
 						{
-							if ( (::ticks - find2->second) < 15 * TICKS_PER_SECOND ) // less than x seconds ago
+							if ( (::ticks - find2->second) < 30 * TICKS_PER_SECOND ) // less than x seconds ago
 							{
 								if ( src->behavior != &actPlayer && this->behavior != &actPlayer
 									&& !src->monsterAllyGetPlayerLeader() && !this->monsterAllyGetPlayerLeader() )

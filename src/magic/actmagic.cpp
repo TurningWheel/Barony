@@ -1720,7 +1720,7 @@ bool absorbMagicEvent(Entity* entity, Entity* parent, Entity& damageSourceProjec
 	{
 		if ( parentStats->getEffectActive(EFF_ABSORB_MAGIC) > 1 && spellID > SPELL_NONE )
 		{
-			if ( entity->behavior == &actMonster && parent && parent->checkEnemy(entity) )
+			if ( entity->behavior == &actMonster && parent && !entity->monsterAllyGetPlayerLeader() )
 			{
 				if ( auto spell = getSpellFromID(spellID) )
 				{
@@ -2938,7 +2938,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					{
 						spellbookDamageBonus += getBonusFromCasterOfSpellElement(parent, nullptr, element, spell ? spell->ID : SPELL_NONE, spell->skillID);
 					}
-					if ( my->actmagicCastByMagicstaff != 1 && my->actmagicCastByTinkerTrap == 0 )
+					else if ( my->actmagicCastByMagicstaff != 1 && my->actmagicCastByTinkerTrap == 0 )
 					{
 						spellbookDamageBonus += getBonusFromCasterOfSpellElement(parent, nullptr, element, spell ? spell->ID : SPELL_NONE, spell->skillID);
 						if ( parent && parent->behavior == &actPlayer )
@@ -2948,6 +2948,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 						absorbMagicEvent(hit.entity, parent, *my, spell->ID, nullptr, damageMultiplier, dmgGib);
 					}
+					else if ( parent && parent->behavior == &actMonster && my->actmagicCastByTinkerTrap == 0 )
+					{
+						spellbookDamageBonus += getBonusFromCasterOfSpellElement(parent, nullptr, element, spell ? spell->ID : SPELL_NONE, spell->skillID);
+					}
+
 					if ( parent && (parent->behavior == &actMagicTrap || parent->behavior == &actMagicTrapCeiling) )
 					{
 						if ( currentlevel >= 26 )
@@ -18468,6 +18473,10 @@ void actParticleWave(Entity* my)
 												bool doKnockback = true;
 												bool doDamage = true;
 
+												if ( particleEmitterHitProps->hits >= 5 )
+												{
+													continue;
+												}
 												if ( particleEmitterHitProps->hits >= 3 )
 												{
 													doDamage = false;
