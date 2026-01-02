@@ -1599,7 +1599,7 @@ void initEarthElemental(Entity* my, Stat* myStats)
 				myStats->HP = 40 + std::max(0, (myStats->LVL - 5)) * 5; //40 - 115
 				myStats->MAXHP = myStats->HP;
 				myStats->OLDHP = myStats->HP;
-				myStats->STR = 5 + std::max(0, (myStats->LVL - 5)) * 2; //5-35
+				myStats->STR = 5 + std::max(0, (myStats->LVL - 5)) * 1; //5-35
 				myStats->DEX = myStats->LVL / 5; // 1-5
 				myStats->CON = 5 + myStats->LVL; // 10-25
 				myStats->PER = 5 + myStats->LVL / 4; // 6-10
