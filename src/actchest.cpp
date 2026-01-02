@@ -166,6 +166,11 @@ void createChestInventory(Entity* my, int chestType)
 		if ( rng.rand() % 2 )
 		{
 			//Empty.
+			Item* item = newItem(itemLevelCurve(SCROLL, 0, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
+			if ( item )
+			{
+				itemLevelCurvePostProcess(my, item, rng);
+			}
 		}
 		else
 		{
@@ -176,7 +181,18 @@ void createChestInventory(Entity* my, int chestType)
 			{
 				if ( rng.rand() % 20 == 0 )
 				{
-					newItem(MASK_MOUTH_ROSE, static_cast<Status>(itemStatus), -1 + rng.rand() % 3, 1, rng.rand(), false, inventory);
+					if ( rng.rand() % 2 == 0 )
+					{
+						Item* item = newItem(itemLevelCurve(SCROLL, 0, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
+						if ( item )
+						{
+							itemLevelCurvePostProcess(my, item, rng);
+						}
+					}
+					else
+					{
+						newItem(MASK_MOUTH_ROSE, static_cast<Status>(itemStatus), -1 + rng.rand() % 3, 1, rng.rand(), false, inventory);
+					}
 				}
 				else
 				{
@@ -209,7 +225,7 @@ void createChestInventory(Entity* my, int chestType)
 		break;
 	case 3:
 		//Treasures, jewelry, gems 'n stuff.
-		itemcount = (rng.rand() % 5) + 1;
+		itemcount = /*(rng.rand() % 5) +*/ 1;
 		for ( i = 0; i < itemcount; ++i )
 		{
 			if ( rng.rand() % 4 )
@@ -243,6 +259,22 @@ void createChestInventory(Entity* my, int chestType)
 				{
 					itemLevelCurvePostProcess(my, item, rng);
 				}
+			}
+		}
+		if ( rng.rand() % 4 > 0 ) // 75%
+		{
+			Item* item = newItem(SCROLL_IDENTIFY, static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
+			if ( item )
+			{
+				itemLevelCurvePostProcess(my, item, rng);
+			}
+		}
+		if ( rng.rand() % 4 == 0 ) // 25%
+		{
+			Item* item = newItem(SCROLL_REMOVECURSE, static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
+			if ( item )
+			{
+				itemLevelCurvePostProcess(my, item, rng);
 			}
 		}
 		break;
