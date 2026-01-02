@@ -2639,7 +2639,8 @@ bool Entity::increaseSkill(int skill, bool notify)
 			if ( (myStats->playerRace == RACE_SALAMANDER && myStats->stat_appearance == 0) || myStats->type == SALAMANDER )
 			{
 				Sint32 oldMP = myStats->MP;
-				this->modMP(std::max(1, myStats->MAXMP / 50 + statGetCHR(myStats, this) / 10));
+				int mpAmount = this->modMP(std::max(1, myStats->MAXMP / 50 + statGetCHR(myStats, this) / 10));
+				this->playerInsectoidIncrementHungerToMP(mpAmount);
 				if ( oldMP < myStats->MP )
 				{
 					if ( behavior == &actPlayer )
@@ -3346,13 +3347,13 @@ modifies the MP of the given entity
 
 -------------------------------------------------------------------------------*/
 
-void Entity::modMP(int amount, bool updateClients)
+int Entity::modMP(int amount, bool updateClients)
 {
 	Stat* entitystats = this->getStats();
 
 	if ( !entitystats )
 	{
-		return;
+		return 0;
 	}
 
 	if ( this->behavior == &actPlayer && godmode && amount < 0 )
@@ -3361,10 +3362,12 @@ void Entity::modMP(int amount, bool updateClients)
 	}
 	if ( !entitystats || amount == 0 )
 	{
-		return;
+		return 0;
 	}
 
+	Sint32 oldMP = entitystats->MP;
 	this->setMP(entitystats->MP + amount, updateClients);
+	return entitystats->MP - oldMP;
 }
 
 int Entity::getMP()
@@ -7553,7 +7556,10 @@ void Entity::handleEffects(Stat* myStats)
 								messagePlayerColor(player, MESSAGE_HINT, color, Language::get(3358));
 								int amount = 2 + local_rng.rand() % 2;
 								int oldMP = myStats->MP;
-								this->modMP(amount);
+								
+								int mpAmount = this->modMP(amount);
+								this->playerInsectoidIncrementHungerToMP(mpAmount);
+
 								if ( player >= 0 && stats[player]->stat_appearance == 0 )
 								{
 									if ( stats[player]->playerRace == RACE_INCUBUS || stats[player]->playerRace == RACE_SUCCUBUS )
@@ -15812,7 +15818,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 									// energize if wearing punisher hood!
 									if ( myStats->helmet && myStats->helmet->type == PUNISHER_HOOD )
 									{
-										this->modMP(1 + local_rng.rand() % 2);
+										int mpAmount = this->modMP(1 + local_rng.rand() % 2);
+										this->playerInsectoidIncrementHungerToMP(mpAmount);
 										Uint32 color = makeColorRGB(0, 255, 0);
 										this->setEffect(EFF_MP_REGEN, true, std::max(myStats->EFFECTS_TIMERS[EFF_MP_REGEN], 10 * TICKS_PER_SECOND), false);
 										if ( behavior == &actPlayer )
@@ -17523,7 +17530,7 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 	}
 	else if ( srcStats->getEffectActive(EFF_MAXIMISE) )
 	{
-		int effectStrength = srcStats->getEffectActive(EFF_MINIMISE) & 0xF;
+		int effectStrength = srcStats->getEffectActive(EFF_MAXIMISE) & 0xF;
 		xpGain = std::max(1, std::min((int)(xpGain * (1.0 + 0.1 * effectStrength)), xpGain + 2 * effectStrength));
 	}
 	if ( gameplayCustomManager.inUse() )
@@ -17780,7 +17787,9 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 						}
 					}
 				}
-				this->modMP(minRoll);
+				
+				int mpAmount = this->modMP(minRoll);
+				this->playerInsectoidIncrementHungerToMP(mpAmount);
 				if ( oldMP < destStats->MP )
 				{
 					if ( behavior == &actPlayer )
@@ -30488,6 +30497,30 @@ Sint32 Entity::playerInsectoidHungerValueOfManaPoint(Stat& myStats)
 {
 	float manaPointPercentage = 1 / static_cast<float>(myStats.MAXMP);
 	return static_cast<Sint32>(1000 * manaPointPercentage);
+}
+
+void Entity::playerInsectoidIncrementHungerToMP(int mpAmount)
+{
+	if ( mpAmount <= 0 )
+	{
+		return;
+	}
+	if ( svFlags & SV_FLAG_HUNGER && multiplayer != CLIENT )
+	{
+		if ( behavior == &actPlayer )
+		{
+			if ( Stat* myStats = getStats() )
+			{
+				if ( myStats->playerRace == RACE_INSECTOID && myStats->stat_appearance == 0 )
+				{
+					Sint32 hungerPointPerMana = playerInsectoidHungerValueOfManaPoint(*myStats);
+					myStats->HUNGER += mpAmount * hungerPointPerMana;
+					myStats->HUNGER = std::min(999, myStats->HUNGER);
+					serverUpdateHunger(skill[2]);
+				}
+			}
+		}
+	}
 }
 
 real_t getDamageTableEquipmentMod(Stat& myStats, Item& item, real_t base, real_t mod)

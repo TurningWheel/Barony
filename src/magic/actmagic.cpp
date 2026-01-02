@@ -4139,7 +4139,8 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								{
 									if ( parentStats && parentStats->type == SALAMANDER )
 									{
-										parent->modMP(1 + (effectStrength & 0xF) / 4);
+										int mpAmount = parent->modMP(1 + (effectStrength & 0xF) / 4);
+										parent->playerInsectoidIncrementHungerToMP(mpAmount);
 									}
 								}
 							}
@@ -6403,7 +6404,8 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									// energize if wearing punisher hood!
 									if ( casterStats->helmet && casterStats->helmet->type == PUNISHER_HOOD )
 									{
-										parent->modMP(1 + local_rng.rand() % 2);
+										int mpAmount = parent->modMP(1 + local_rng.rand() % 2);
+										parent->playerInsectoidIncrementHungerToMP(mpAmount);
 										Uint32 color = makeColorRGB(0, 255, 0);
 										parent->setEffect(EFF_MP_REGEN, true, std::max(casterStats->EFFECTS_TIMERS[EFF_MP_REGEN], 10 * TICKS_PER_SECOND), false);
 										if ( parent->behavior == &actPlayer )

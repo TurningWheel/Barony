@@ -864,7 +864,7 @@ public:
 	int getHP();
 
 	void setMP(int amount, bool updateClients = true);
-	void modMP(int amount, bool updateClients = true); //Adds amount to MP.
+	int modMP(int amount, bool updateClients = true); //Adds amount to MP.
 	int getMP();
 
 	void drainMP(int amount, bool notifyOverexpend = true); //Removes this much from MP. Anything over the entity's MP is subtracted from their health. Can be very dangerous.
@@ -1306,6 +1306,7 @@ public:
 	bool entityCheckIfTriggeredWallButton();
 	Sint32 playerInsectoidExpectedManaFromHunger(Stat& myStats);
 	Sint32 playerInsectoidHungerValueOfManaPoint(Stat& myStats);
+	void playerInsectoidIncrementHungerToMP(int mpAmount);
 	static real_t getDamageTableMultiplier(Entity* my, Stat& myStats, DamageTableType damageType, int* magicResistance = nullptr, int* outNumSources = nullptr);
 	bool isBoulderSprite();
 	void createWorldUITooltip();

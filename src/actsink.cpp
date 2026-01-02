@@ -229,14 +229,16 @@ void actSink(Entity* my)
 								playSoundEntity(players[i]->entity, 52, 64);
 								if ( stats[i]->type != SKELETON )
 								{
-									stats[i]->HUNGER += 50; //Less nutrition than the refreshing fountain.
-									serverUpdateHunger(i);
+									if ( !((svFlags & SV_FLAG_HUNGER) && stats[i]->playerRace == RACE_INSECTOID && stats[i]->stat_appearance == 0) )
+									{
+										stats[i]->HUNGER += 50; //Less nutrition than the refreshing fountain.
+										serverUpdateHunger(i);
+									}
 								}
 								players[i]->entity->modHP(2 + local_rng.rand() % 2);
-								if ( !((svFlags & SV_FLAG_HUNGER) && stats[i]->playerRace == RACE_INSECTOID && stats[i]->stat_appearance == 0) )
-								{
-									players[i]->entity->modMP(1 + local_rng.rand() % 2);
-								}
+
+								int mpAmount = players[i]->entity->modMP(1 + local_rng.rand() % 2);
+								players[i]->entity->playerInsectoidIncrementHungerToMP(mpAmount);
 								Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_SINKS_HEALTH_RESTORED, "sink", 1);
 
 								if ( stats[i]->type == DRYAD )

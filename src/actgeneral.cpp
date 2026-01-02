@@ -6524,17 +6524,9 @@ void actBell(Entity* my)
 									{
 										int amount = 15;
 										entity->modHP(amount);
-										entity->modMP(amount);
-										if ( svFlags & SV_FLAG_HUNGER )
-										{
-											if ( entity->behavior == &actPlayer && stats->playerRace == RACE_INSECTOID && stats->stat_appearance == 0 )
-											{
-												Sint32 hungerPointPerMana = entity->playerInsectoidHungerValueOfManaPoint(*stats);
-												stats->HUNGER += amount * hungerPointPerMana;
-												stats->HUNGER = std::min(999, stats->HUNGER);
-												serverUpdateHunger(entity->skill[2]);
-											}
-										}
+										int mpAmount = entity->modMP(amount);
+										entity->playerInsectoidIncrementHungerToMP(mpAmount);
+
 										playSoundEntity(entity, 168, 128);
 										spawnDamageGib(entity, NOTE_DOUBLE_EIGHTH, DamageGib::DMG_STRONGEST, DamageGibDisplayType::DMG_GIB_SPRITE, true);
 										spawnMagicEffectParticles(entity->x, entity->y, entity->z, 169);

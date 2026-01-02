@@ -6730,7 +6730,8 @@ void assignActions(map_t* map)
 							mpMod = std::min(maxMpMod, mpMod);
 							if ( mpMod > 0 )
 							{
-								entity->modMP(mpMod);
+								int mpAmount = entity->modMP(mpMod);
+								entity->playerInsectoidIncrementHungerToMP(mpAmount);
 							}
 						}
 					}
