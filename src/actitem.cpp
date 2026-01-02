@@ -225,7 +225,7 @@ bool entityWantsJewel(int tier, Entity& entity, Stat& stats, bool checkTypeOnly)
 	return false;
 }
 
-bool jewelItemRecruit(Entity* parent, Entity* entity)
+bool jewelItemRecruit(Entity* parent, Entity* entity, const char** msg)
 {
 	if ( !(entity && parent) )
 	{
@@ -268,6 +268,20 @@ bool jewelItemRecruit(Entity* parent, Entity* entity)
 
 	if ( numFollowers >= allowedFollowers )
 	{
+		if ( allowedFollowers >= 8 )
+		{
+			if ( msg )
+			{
+				*msg = Language::get(3482);
+			}
+		}
+		else
+		{
+			if ( msg )
+			{
+				*msg = Language::get(3480);
+			}
+		}
 		return false;
 	}
 	else if ( forceFollower(*parent, *entity) )
@@ -512,12 +526,25 @@ void actItem(Entity* my)
 												hitProps->hits++;
 												if ( entityWantsJewel(tier, *entity, *entitystats, false) )
 												{
-													if ( jewelItemRecruit(parent, entity) )
+													const char* msg = nullptr;
+													if ( jewelItemRecruit(parent, entity, &msg) )
 													{
 														my->clearMonsterInteract();
 														my->removeLightField();
 														list_RemoveNode(my->mynode);
 														return;
+													}
+													else
+													{
+														if ( msg )
+														{
+															auto hitProps = getParticleEmitterHitProps(my->getUID(), parent);
+															if ( hitProps && hitProps->hits == 0 )
+															{
+																++hitProps->hits;
+																messagePlayer(parent->isEntityPlayer(), MESSAGE_HINT, msg);
+															}
+														}
 													}
 												}
 												else

@@ -1122,7 +1122,7 @@ void actThrown(Entity* my)
 					{
 						if ( entityWantsJewel(item->status, *hit.entity, *hit.entity->getStats(), false) )
 						{
-							if ( jewelItemRecruit(parent, hit.entity) )
+							if ( jewelItemRecruit(parent, hit.entity, nullptr) )
 							{
 								free(item);
 								my->removeLightField();

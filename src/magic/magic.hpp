@@ -1203,7 +1203,7 @@ bool magicOnSpellCastEvent(Entity* parent, Entity* projectile, Entity* hitentity
 void freeSpells();
 void createParticleFociLight(Entity* entity, int spellID, bool updateClients);
 void createParticleFociDark(Entity* entity, int spellID, bool updateClients);
-bool jewelItemRecruit(Entity* parent, Entity* entity);
+bool jewelItemRecruit(Entity* parent, Entity* entity, const char** msg);
 bool entityWantsJewel(int tier, Entity& entity, Stat& stats, bool checkTypeOnly);
 
 struct AOEIndicators_t
