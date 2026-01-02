@@ -5483,7 +5483,7 @@ bool GenericGUIMenu::isItemAlterable(const Item* item)
 			|| item->type == KEY_BRONZE
 			|| item->type == KEY_SILVER
 			/*|| item->type == KEY_GOLD*/
-			|| (itemCategory(item) == GEM && item->type != GEM_ROCK && item->type != GEM_LUCK && item->type != GEM_GLASS) )
+			|| (itemCategory(item) == GEM && item->type != GEM_ROCK && item->type != GEM_LUCK /*&& item->type != GEM_GLASS*/) )
 		{
 			return true;
 		}
@@ -5495,7 +5495,7 @@ bool GenericGUIMenu::isItemAlterable(const Item* item)
 			return true;
 		}
 		else */
-		if ( (itemCategory(item) == GEM && item->type != GEM_ROCK && item->type != GEM_LUCK && item->type != GEM_GLASS
+		if ( (itemCategory(item) == GEM && item->type != GEM_ROCK && item->type != GEM_LUCK /*&& item->type != GEM_GLASS*/
 			&& !(item->type == GEM_JEWEL && item->status == EXCELLENT)) )
 		{
 			return true;
@@ -7126,6 +7126,15 @@ int GenericGUIMenu::getAlterItemResultAtCycle(Item* item)
 			INSTRUMENT_HORN
 		};
 	}
+	else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_FORGE_KEY )
+	{
+		targetItems = {
+			KEY_IRON,
+			KEY_BRONZE,
+			KEY_SILVER,
+			KEY_GOLD
+		};
+	}
 
 	if ( targetItems.size() == 0 ) { return -1; }
 
@@ -7298,7 +7307,7 @@ void GenericGUIMenu::alterItem(Item* item)
 	else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_FORGE_KEY )
 	{
 		ItemType newType = GEM_ROCK;
-		switch ( item->type )
+		/*switch ( item->type )
 		{
 		case KEY_IRON:
 			newType = KEY_BRONZE;
@@ -7318,6 +7327,17 @@ void GenericGUIMenu::alterItem(Item* item)
 				newType = KEY_IRON;
 			}
 			break;
+		}*/
+		int result = getAlterItemResultAtCycle(item);
+		if ( result >= 0 )
+		{
+			newType = (ItemType)(result);
+		}
+		else
+		{
+			messagePlayer(gui_player, MESSAGE_MISC, Language::get(6514), item->description());
+			closeGUI();
+			return;
 		}
 
 		if ( newType == GEM_ROCK )
@@ -7326,7 +7346,7 @@ void GenericGUIMenu::alterItem(Item* item)
 		}
 		else
 		{
-			Item* itemToPickup = newItem(newType, item->status, item->beatitude, 1, item->appearance, true, nullptr);
+			Item* itemToPickup = newItem(newType, SERVICABLE, item->beatitude, 1, item->appearance, true, nullptr);
 			Item* pickedUp = itemPickup(gui_player, itemToPickup);
 			int oldCount = item->count;
 			item->count = 1;
@@ -7344,7 +7364,7 @@ void GenericGUIMenu::alterItem(Item* item)
 	}
 	else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_FORGE_JEWEL )
 	{
-		if ( itemCategory(item) == GEM && item->type != GEM_ROCK && item->type != GEM_LUCK && item->type != GEM_GLASS
+		if ( itemCategory(item) == GEM && item->type != GEM_ROCK && item->type != GEM_LUCK /*&& item->type != GEM_GLASS*/
 			&& !(item->type == GEM_JEWEL && item->status == EXCELLENT) )
 		{
 			int value = item->getGoldValue();
@@ -24145,27 +24165,80 @@ void GenericGUIMenu::ItemEffectGUI_t::getItemEffectCost(Item* itemUsedWith, int&
 		else if ( currentMode == ITEMFX_MODE_FORGE_KEY )
 		{
 			manaCost = 15;
-			if ( itemUsedWith->type == KEY_IRON )
+			goldCost = 100;
+			//if ( itemUsedWith->type == KEY_IRON )
+			//{
+			//	goldCost = 100;
+			//}
+			//else if ( itemUsedWith->type == KEY_BRONZE )
+			//{
+			//	goldCost = 300;
+			//	manaCost = 25;
+			//}
+			//else if ( itemUsedWith->type == KEY_SILVER )
+			//{
+			//	goldCost = 900;
+			//	manaCost = 40;
+			//}
+			///*else if ( itemUsedWith->type == KEY_GOLD )
+			//{
+			//	goldCost = 1200;
+			//}*/
+			//else if ( (itemCategory(itemUsedWith) == GEM && itemUsedWith->type != GEM_ROCK && itemUsedWith->type != GEM_LUCK /*&& itemUsedWith->type != GEM_GLASS*/) )
+			//{
+			//	goldCost = 300;
+			//}
+
+			int result = parentGUI.getAlterItemResultAtCycle(itemUsedWith);
+			if ( result >= 0 )
 			{
-				goldCost = 100;
-			}
-			else if ( itemUsedWith->type == KEY_BRONZE )
-			{
-				goldCost = 300;
-				manaCost = 25;
-			}
-			else if ( itemUsedWith->type == KEY_SILVER )
-			{
-				goldCost = 900;
-				manaCost = 40;
-			}
-			/*else if ( itemUsedWith->type == KEY_GOLD )
-			{
-				goldCost = 1200;
-			}*/
-			else if ( (itemCategory(itemUsedWith) == GEM && itemUsedWith->type != GEM_ROCK && itemUsedWith->type != GEM_LUCK && itemUsedWith->type != GEM_GLASS) )
-			{
-				goldCost = 300;
+				int inputValue = 0;
+				if ( itemUsedWith->type == KEY_IRON )
+				{
+					inputValue = 300;
+				}
+				else if ( itemUsedWith->type == KEY_BRONZE )
+				{
+					inputValue = 450;
+				}
+				else if ( itemUsedWith->type == KEY_SILVER )
+				{
+					inputValue = 700;
+				}
+				else if ( itemUsedWith->type == KEY_GOLD )
+				{
+					inputValue = 1500;
+				}
+				else if ( itemCategory(itemUsedWith) == GEM )
+				{
+					inputValue = itemUsedWith->getGoldValue();
+				}
+				inputValue /= 4;
+
+				if ( result == KEY_IRON )
+				{
+					manaCost = 10;
+					goldCost = 300;
+					goldCost = std::max(goldCost / 2, goldCost - inputValue);
+				}
+				else if ( result == KEY_BRONZE )
+				{
+					manaCost = 20;
+					goldCost = 450;
+					goldCost = std::max(goldCost / 2, goldCost - inputValue);
+				}
+				else if ( result == KEY_SILVER )
+				{
+					manaCost = 30;
+					goldCost = 700;
+					goldCost = std::max(goldCost / 2, goldCost - inputValue);
+				}
+				else if ( result == KEY_GOLD )
+				{
+					manaCost = 50;
+					goldCost = 1500;
+					goldCost = std::max(goldCost / 2, goldCost - inputValue);
+				}
 			}
 
 			real_t ratio = getSpellDamageFromID(SPELL_FORGE_KEY, players[parentGUI.gui_player]->entity, stats[parentGUI.gui_player], players[parentGUI.gui_player]->entity) / 100.0;
@@ -24178,7 +24251,7 @@ void GenericGUIMenu::ItemEffectGUI_t::getItemEffectCost(Item* itemUsedWith, int&
 			if ( (itemCategory(itemUsedWith) == GEM 
 				&& itemUsedWith->type != GEM_ROCK 
 				&& itemUsedWith->type != GEM_LUCK 
-				&& itemUsedWith->type != GEM_GLASS)
+				/*&& itemUsedWith->type != GEM_GLASS*/)
 				&& !(itemUsedWith->type == GEM_JEWEL && itemUsedWith->status == EXCELLENT) )
 			{
 				int value = itemUsedWith->getGoldValue();
@@ -24347,7 +24420,8 @@ bool GenericGUIMenu::ItemEffectGUI_t::modeHasTransmuteMenu()
 {
 	if ( currentMode == ITEMFX_MODE_ALTER_ARROW
 		|| currentMode == ITEMFX_MODE_ALTER_INSTRUMENT
-		|| currentMode == ITEMFX_MODE_RESHAPE_WEAPON )
+		|| currentMode == ITEMFX_MODE_RESHAPE_WEAPON
+		|| currentMode == ITEMFX_MODE_FORGE_KEY )
 	{
 		return true;
 	}

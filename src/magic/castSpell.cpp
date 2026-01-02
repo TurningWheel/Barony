@@ -1665,16 +1665,31 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				if ( Stat* casterStats = caster->getStats() )
 				{
 					Uint8 effectStrength = casterStats->getEffectActive(EFF_MAGICIANS_ARMOR);
-					if ( effectStrength == 0 )
+					if ( true /*effectStrength == 0*/ )
 					{
 						int instances = getSpellDamageFromID(spell->ID, caster, nullptr, caster, usingSpellbook ? spellBookBonusPercent / 100.0 : 0.0);
 						instances *= (casterStats->getModifiedProficiency(spell->skillID) + statGetINT(casterStats, caster)) / std::max(1, element->getDurationSecondary());
 						int maxInstances = getSpellDamageSecondaryFromID(spell->ID, caster, nullptr, caster, usingSpellbook ? spellBookBonusPercent / 100.0 : 0.0);
 						instances = std::min(std::max(1, instances), maxInstances);
-						if ( caster->setEffect(EFF_MAGICIANS_ARMOR, (Uint8)instances, element->duration, true, true, true) )
+
+						Uint8 applyStrength = std::min(effectStrength + 1, instances);
+						if ( caster->setEffect(EFF_MAGICIANS_ARMOR, (Uint8)applyStrength, element->duration, true, true, true) )
 						{
-							messagePlayerColor(caster->isEntityPlayer(),
-								MESSAGE_HINT, makeColorRGB(0, 255, 0), Language::get(6862));
+							if ( effectStrength == 0 )
+							{
+								messagePlayerColor(caster->isEntityPlayer(),
+									MESSAGE_HINT, makeColorRGB(0, 255, 0), Language::get(6862));
+							}
+							else if ( applyStrength >= instances && applyStrength == effectStrength )
+							{
+								messagePlayerColor(caster->isEntityPlayer(),
+									MESSAGE_HINT, makeColorRGB(255, 255, 255), Language::get(6972));
+							}
+							else
+							{
+								messagePlayerColor(caster->isEntityPlayer(),
+									MESSAGE_HINT, makeColorRGB(0, 255, 0), Language::get(6971));
+							}
 						}
 						playSoundEntity(caster, 166, 128);
 					}
