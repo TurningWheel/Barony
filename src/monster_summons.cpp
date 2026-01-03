@@ -34,10 +34,10 @@ void initRevenantSkull(Entity* my, Stat* myStats)
 	my->flags[INVISIBLE] = true; // hide the "AI" bodypart
 	if ( multiplayer != CLIENT )
 	{
-		MONSTER_SPOTSND = 666;
+		MONSTER_SPOTSND = -1;
 		MONSTER_SPOTVAR = 1;
-		MONSTER_IDLESND = 667;
-		MONSTER_IDLEVAR = 3;
+		MONSTER_IDLESND = -1;
+		MONSTER_IDLEVAR = 1;
 	}
 
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
@@ -70,6 +70,17 @@ void initRevenantSkull(Entity* my, Stat* myStats)
 			int defaultItems = countDefaultItems(myStats);
 
 			my->setHardcoreStats(*myStats);
+
+			if ( myStats->getAttribute("revenant_skull") != "" )
+			{
+				myStats->HP = 80 + std::max(0, (myStats->LVL - 5)) * 4;
+				myStats->MAXHP = myStats->HP;
+				myStats->OLDHP = myStats->HP;
+				myStats->STR = 10 + std::max(0, (myStats->LVL - 5)) / 3;
+				myStats->DEX = 3 + std::max(0, (myStats->LVL - 5)) / 3;
+				myStats->CON = 5 + std::max(0, (myStats->LVL - 5)) / 4;
+				myStats->PER = 8 + std::max(0, (myStats->LVL - 5)) / 3;
+			}
 		}
 	}
 
