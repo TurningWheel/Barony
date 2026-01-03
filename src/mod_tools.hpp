@@ -2797,6 +2797,7 @@ private:
 		Sint32 fociId = -1;
 		std::vector<std::string> spellTagsStr;
 		std::set<SpellTagTypes> spellTags;
+		std::vector<std::string> spellFormatTags;
 		std::set<spell_t::SpellOnCastEventTypes> spellLevelTags;
 
 		bool hasExpandedJSON = false;
@@ -2916,6 +2917,7 @@ public:
 	std::string& getProficiencyLevelName(Sint32 proficiencyLevel);
 	std::string& getIconLabel(Item& item);
 	std::string getSpellIconText(const int player, Item& item, const bool excludePlayerStats);
+	std::string getSpellIconFormatText(const int player, Item& item, std::string& format, const spell_t* spell, const int iconIndex, const bool compendiumTooltipIntro);
 	std::string getSpellDescriptionText(const int player, Item& item);
 	std::string getSpellIconPath(const int player, Item& item, int spellID);
 	std::string getCostOfSpellString(const int player, Item& item);

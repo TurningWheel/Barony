@@ -1200,6 +1200,15 @@ void ItemTooltips_t::readItemsFromFile()
 
 		hash += djb2Hash(const_cast<char*>(t.spellTypeStr.c_str()));
 
+		if ( spell_itr->value.HasMember("format_tags") )
+		{
+			for ( rapidjson::Value::ConstValueIterator arr_itr = spell_itr->value["format_tags"].Begin();
+				arr_itr != spell_itr->value["format_tags"].End(); ++arr_itr )
+			{
+				t.spellFormatTags.push_back(arr_itr->GetString());
+			}
+		}
+
 		for ( rapidjson::Value::ConstValueIterator arr_itr = spell_itr->value["effect_tags"].Begin();
 			arr_itr != spell_itr->value["effect_tags"].End(); ++arr_itr )
 		{
@@ -2379,6 +2388,137 @@ std::string& ItemTooltips_t::getIconLabel(Item& item)
 #endif
 }
 
+const char* spellValueToTier(int val)
+{
+	if ( val == 1 ) { return "I"; }
+	if ( val == 2 ) { return "II"; }
+	if ( val == 3 ) { return "III"; }
+	if ( val == 4 ) { return "IV"; }
+	if ( val == 5 ) { return "V"; }
+	return "I";
+}
+
+std::string ItemTooltips_t::getSpellIconFormatText(const int player, Item& item, std::string& format, const spell_t* spell, const int iconIndex, const bool compendiumTooltipIntro)
+{
+	if ( !spell ) { return defaultString; }
+	auto def = spellItems.find(spell->ID);
+	if ( def == spellItems.end() )
+	{
+		return defaultString;
+	}
+
+	enum Comparators
+	{
+		COMP_NONE,
+		COMP_MIN,
+		COMP_MAX
+	};
+	enum Values
+	{
+		VAL_NUM,
+		VAL_TIER
+	};
+	Values valueType = VAL_NUM;
+	Comparators comparator = COMP_NONE;
+	Entity* caster = compendiumTooltipIntro ? nullptr : players[player]->entity;
+	Stat* myStats = compendiumTooltipIntro ? nullptr : stats[player];
+
+	for ( auto& formatTag : def->second.spellFormatTags )
+	{
+		if ( formatTag.size() == 0 ) { continue; }
+		if ( (formatTag.at(0) - '1') != iconIndex ) { continue; }
+		std::vector<int> vals;
+		size_t index = 2;
+		std::string str;
+		size_t offset = 1;
+		while ( index + offset < formatTag.size() )
+		{
+			if ( (index + offset == (formatTag.size() - 1)) || formatTag[index + offset] == ' ' )
+			{
+				std::string key = (index + offset == (formatTag.size() - 1)) ? formatTag.substr(index) : formatTag.substr(index, offset);
+				if ( key == "min" )
+				{
+					comparator = COMP_MIN;
+				}
+				else if ( key == "dmg" )
+				{
+					vals.push_back(getSpellDamageFromID(spell->ID, caster, myStats, caster, 0.0, false));
+				}
+				else if ( key == "dmg2" )
+				{
+					vals.push_back(getSpellDamageSecondaryFromID(spell->ID, caster, myStats, caster, 0.0, false));
+				}
+				else if ( key == "dur" )
+				{
+					vals.push_back(getSpellEffectDurationFromID(spell->ID, caster, myStats, caster, 0.0));
+				}
+				else if ( key == "dur2" )
+				{
+					vals.push_back(getSpellEffectDurationFromID(spell->ID, caster, myStats, caster, 0.0));
+				}
+				else if ( key == "tier" )
+				{
+					valueType = VAL_TIER;
+				}
+				index += offset + 1;
+				offset = 1;
+			}
+			else
+			{
+				++offset;
+			}
+		}
+
+		if ( vals.size() )
+		{
+			if ( vals.size() == 1 || comparator == COMP_MIN || comparator == COMP_MAX )
+			{
+				char buf[128];
+				memset(buf, 0, sizeof(buf));
+				if ( vals.size() == 2 )
+				{
+					if ( comparator == COMP_MIN )
+					{
+						if ( valueType == VAL_TIER )
+						{
+							snprintf(buf, sizeof(buf), format.c_str(), spellValueToTier(std::min(vals[0], vals[1])));
+						}
+						else
+						{
+							snprintf(buf, sizeof(buf), format.c_str(), std::min(vals[0], vals[1]));
+						}
+					}
+					else if ( comparator == COMP_MAX )
+					{
+						snprintf(buf, sizeof(buf), format.c_str(), std::max(vals[0], vals[1]));
+					}
+				}
+				else
+				{
+					if ( valueType == VAL_TIER )
+					{
+						snprintf(buf, sizeof(buf), format.c_str(), spellValueToTier(vals[0]));
+					}
+					else
+					{
+						snprintf(buf, sizeof(buf), format.c_str(), vals[0]);
+					}
+				}
+				str = buf;
+			}
+			else if ( vals.size() == 2 )
+			{
+				char buf[128];
+				memset(buf, 0, sizeof(buf));
+				snprintf(buf, sizeof(buf), format.c_str(), vals[0], vals[1]);
+				str = buf;
+			}
+			return str;
+		}
+	}
+	return defaultString;
+}
+
 std::string ItemTooltips_t::getSpellIconText(const int player, Item& item, const bool compendiumTooltipIntro)
 {
 #ifndef EDITOR
@@ -3006,6 +3146,21 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 		else if ( conditionalAttribute == "SPELL_ICON_EFFECT" )
 		{
 			str = getSpellIconText(player, item, compendiumTooltipIntro);
+		}
+		return;
+	}
+	else if ( item.type == SPELL_ITEM && conditionalAttribute.find("spell_") != std::string::npos )
+	{
+		if ( auto spell = getSpellFromItem(player, &item, false) )
+		{
+			auto def = spellItems.find(spell->ID);
+			if ( def != spellItems.end() )
+			{
+				if ( def->second.spellFormatTags.size() )
+				{
+					str = getSpellIconFormatText(player, item, str, spell, iconIndex, compendiumTooltipIntro);
+				}
+			}
 		}
 		return;
 	}
