@@ -397,7 +397,7 @@ thou makest use of them.#
 236 Tinkering#
 237 Stealth#
 238 Trading#
-239 Appraise#
+239 Lore#
 240 Thaumaturgy#
 241 Leader#
 242 Mysticism#
@@ -7239,5 +7239,9 @@ to replay this challenge!
 6967 Your influence is not high enough to compel %s!#
 6968 The %s refuses to be compelled further!#
 6969 %s refuses to be compelled further!#
+6970 was unable to drop some of their equipment.#
+6971 Your magical bubble enhances!#
+6972 Your magical bubble has reached the limit of your powers.#
+6973 Some of your gold has vanished!#
 
 6999 END#
