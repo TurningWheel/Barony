@@ -7667,6 +7667,12 @@ bool Player::PlayerMechanics_t::allowedRaiseBlockingAgainstEntity(Entity& attack
 	{
 		return false;
 	}
+	else if ( attacker.behavior == &actMonster
+		&& (attacker.monsterAllyGetPlayerLeader() 
+			|| (attacker.getStats() && achievementObserver.checkUidIsFromPlayer(attacker.getStats()->leader_uid) >= 0)) )
+	{
+		return false;
+	}
 	return enemyRaisedBlockingAgainst[attacker.getUID()] < 1;
 }
 
@@ -8533,7 +8539,7 @@ bool Player::PlayerMechanics_t::rollRngProc(Player::PlayerMechanics_t::RngRollTy
 		}
 
 		real_t roll = (local_rng.rand() % 10000) / 10000.0;
-		if ( roll <= c * rng_counter )
+		if ( roll <= c * (rng_counter + 1) )
 		{
 			// success
 			rng_counter = 0;

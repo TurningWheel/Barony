@@ -478,6 +478,20 @@ void actItem(Entity* my)
 			my->flags[INVISIBLE] = false;
 		}
 		item = newItemFromEntity(my, true);
+		/*if ( currentlevel > 0 && my->ticks == 1 )
+		{
+			if ( items[item->type].category != TOME_SPELL && items[item->type].category != SPELLBOOK )
+			{
+				if ( items[item->type].level < 0 )
+				{
+					if ( item->type != KEY_IRON && item->type != KEY_BRONZE && item->type != KEY_GOLD
+						&& item->type != KEY_SILVER )
+					{
+						printlog("%s", items[item->type].getIdentifiedName());
+					}
+				}
+			}
+		}*/
 		my->sprite = itemModel(item);
 		free(item);
 	}
