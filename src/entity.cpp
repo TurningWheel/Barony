@@ -4443,18 +4443,13 @@ void Entity::handleEffects(Stat* myStats)
 		myStats->HP = std::min(myStats->HP, myStats->MAXHP);
 		if ( !(behavior == &actMonster && monsterAllySummonRank != 0) )
 		{
+			Sint32 oldMP = myStats->MP;
 			myStats->MP += mpRestore;
 			myStats->MAXMP += mpMod;
 			if ( behavior == &actPlayer && myStats->playerRace == RACE_INSECTOID && myStats->stat_appearance == 0 )
 			{
 				myStats->MAXMP = std::min(100, myStats->MAXMP);
-				if ( svFlags & SV_FLAG_HUNGER )
-				{
-					Sint32 hungerPointPerMana = playerInsectoidHungerValueOfManaPoint(*myStats);
-					myStats->HUNGER += mpMod * hungerPointPerMana;
-					myStats->HUNGER = std::min(1000, myStats->HUNGER);
-					serverUpdateHunger(skill[2]);
-				}
+				this->playerInsectoidIncrementHungerToMP(myStats->MP - oldMP);
 			}
 			myStats->MP = std::min(myStats->MP, myStats->MAXMP);
 		}
