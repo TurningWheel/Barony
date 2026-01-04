@@ -4640,7 +4640,9 @@ void actHudShield(Entity* my)
 	}
 	else if ( !hideShield && quiver && hudweapon && rangedWeaponUseQuiverOnAttack(stats[HUDSHIELD_PLAYERNUM])
 		&& hudweapon->skill[7] != RANGED_ANIM_IDLE
-		&& (!crossbow || (crossbow && crossbowReloadAnimation && hudweapon->skill[8] != CROSSBOW_ANIM_RELOAD_START)) )
+		&& (!crossbow 
+			|| (crossbow && crossbowReloadAnimation && hudweapon->skill[8] != CROSSBOW_ANIM_RELOAD_START
+				&& !cast_animation[HUDSHIELD_PLAYERNUM].spellWaitingAttackInput() && !cast_animation[HUDSHIELD_PLAYERNUM].spellIgnoreAttack()) ))
 	{
 		// skill[7] == 1 is hudweapon bow drawing, skill[8] is the crossbow reload animation state.
 		if ( hudweapon->skill[7] == RANGED_ANIM_FIRED && (!crossbow || (crossbow && hudweapon->skill[8] == CROSSBOW_ANIM_SHOOT)) )
@@ -5767,7 +5769,9 @@ void actHudArrowModel(Entity* my)
 		}
 	}
 
-	if ( (!crossbow && !bow) || cast_animation[HUDSHIELD_PLAYERNUM].hideShieldFromBasicCast() || cast_animation[HUDSHIELD_PLAYERNUM].active_spellbook )
+	if ( (!crossbow && !bow) 
+		|| cast_animation[HUDSHIELD_PLAYERNUM].hideShieldFromBasicCast() 
+		|| cast_animation[HUDSHIELD_PLAYERNUM].active_spellbook )
 	{
 		my->flags[INVISIBLE] = true;
 		return;
