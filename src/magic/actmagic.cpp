@@ -1083,7 +1083,10 @@ bool magicOnSpellCastEvent(Entity* parent, Entity* projectile, Entity* hitentity
 	{
 		magicstaff = projectile->actmagicCastByMagicstaff == 1;
 		spellbook = projectile->actmagicFromSpellbook == 1;
-
+		if ( magicstaff && projectile->actmagicReflectionCount > 0 )
+		{
+			allowedLevelup = false;
+		}
 		if ( projectile->actmagicSpray > 0 )
 		{
 			if ( spellID == SPELL_BREATHE_FIRE )
