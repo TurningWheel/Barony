@@ -1855,6 +1855,24 @@ public:
 	bool minimapShareProgress = false;
 	int playerWeightPercent = 100;
 	double playerSpeedMax = 12.5;
+	int playerACEpassive = 75;
+	int playerACEactive = 100;
+	double playerACEbless = 2.5;
+	bool doConditionalXPModifier = false;
+	int conditionalXPModLvlThreshold = 0;
+	int conditionalXPModPercent = 100;
+	double playerMultiplierSTR = 1.0;
+	double playerMultiplierDEX = 1.0;
+	double playerMultiplierCON = 1.0;
+	double playerMultiplierINT = 1.0;
+	double playerMultiplierPER = 1.0;
+	double playerMultiplierCHR = 1.0;
+	int playerLevelupHP = 5;
+	int playerLevelupMP = 5;
+	bool doTraumaDamage = false;
+	int traumaDamagePercent = 0;
+	int traumaDamageHPLimit = 25;
+	int zapBrigadeSpawnPercent = 20;
 	inline bool inUse() { return usingCustomManager; };
 	void resetValues()
 	{
@@ -1865,6 +1883,24 @@ public:
 		minimapShareProgress = false;
 		playerWeightPercent = 100;
 		playerSpeedMax = 12.5;
+		playerACEpassive = 75;
+		playerACEactive = 100;
+		playerACEbless = 2.5;
+		doConditionalXPModifier = false;
+		conditionalXPModLvlThreshold = 0;
+		conditionalXPModPercent = 100;
+		playerMultiplierSTR = 1.0;
+		playerMultiplierDEX = 1.0;
+		playerMultiplierCON = 1.0;
+		playerMultiplierINT = 1.0;
+		playerMultiplierPER = 1.0;
+		playerMultiplierCHR = 1.0;
+		playerLevelupHP = 5;
+		playerLevelupMP = 5;
+		doTraumaDamage = false;
+		traumaDamagePercent = 0;
+		traumaDamageHPLimit = 25;
+		zapBrigadeSpawnPercent = 20;
 
 		minotaurForceEnableFloors.first.clear();
 		minotaurForceEnableFloors.second.clear();
@@ -1932,6 +1968,30 @@ public:
 		CustomHelpers::addMemberToRoot(d, "player_share_minimap_progress", rapidjson::Value(minimapShareProgress));
 		CustomHelpers::addMemberToRoot(d, "player_speed_weight_impact_percent", rapidjson::Value(playerWeightPercent));
 		CustomHelpers::addMemberToRoot(d, "player_speed_max", rapidjson::Value(playerSpeedMax));
+
+		CustomHelpers::addMemberToRoot(d, "player_AC_eff_passive_percent", rapidjson::Value(playerACEpassive));
+		CustomHelpers::addMemberToRoot(d, "player_AC_eff_block_percent", rapidjson::Value(playerACEactive));
+		CustomHelpers::addMemberToRoot(d, "player_AC_eff_blessing_percent", rapidjson::Value(playerACEbless));
+		
+		CustomHelpers::addMemberToRoot(d, "enable_conditional_xp_modifier", rapidjson::Value(doConditionalXPModifier));
+		CustomHelpers::addMemberToRoot(d, "conditional_mod_lvl_difference_threshold", rapidjson::Value(conditionalXPModLvlThreshold));
+		CustomHelpers::addMemberToRoot(d, "conditional_xp_modifier_percent", rapidjson::Value(conditionalXPModPercent));
+
+		CustomHelpers::addMemberToRoot(d, "player_STR_multiplier", rapidjson::Value(playerMultiplierSTR));
+		CustomHelpers::addMemberToRoot(d, "player_DEX_multiplier", rapidjson::Value(playerMultiplierDEX));
+		CustomHelpers::addMemberToRoot(d, "player_CON_multiplier", rapidjson::Value(playerMultiplierCON));
+		CustomHelpers::addMemberToRoot(d, "player_INT_multiplier", rapidjson::Value(playerMultiplierINT));
+		CustomHelpers::addMemberToRoot(d, "player_PER_multiplier", rapidjson::Value(playerMultiplierPER));
+		CustomHelpers::addMemberToRoot(d, "player_CHR_multiplier", rapidjson::Value(playerMultiplierCHR));
+
+		CustomHelpers::addMemberToRoot(d, "player_levelup_HP", rapidjson::Value(playerLevelupHP));
+		CustomHelpers::addMemberToRoot(d, "player_levelup_MP", rapidjson::Value(playerLevelupMP));
+
+		CustomHelpers::addMemberToRoot(d, "enable_player_trauma_damage", rapidjson::Value(doTraumaDamage));
+		CustomHelpers::addMemberToRoot(d, "trauma_damage_percent", rapidjson::Value(traumaDamagePercent));
+		CustomHelpers::addMemberToRoot(d, "trauma_damage_hp_floor", rapidjson::Value(traumaDamageHPLimit));
+
+		CustomHelpers::addMemberToRoot(d,"zap_brigade_spawnrate_percent", rapidjson::Value(zapBrigadeSpawnPercent));
 
 		rapidjson::Value obj(rapidjson::kObjectType);
 		rapidjson::Value arr(rapidjson::kArrayType);
@@ -2124,6 +2184,96 @@ public:
 		else if ( name.compare("player_speed_max") == 0 )
 		{
 			playerSpeedMax = itr->value.GetDouble();
+			return true;
+		}
+		else if ( name.compare("player_AC_eff_passive_percent") == 0 )
+		{
+			playerACEpassive = itr->value.GetInt();
+			return true;
+		}
+		else if ( name.compare("player_AC_eff_block_percent") == 0 )
+		{
+			playerACEactive = itr->value.GetInt();
+			return true;
+		}
+		else if ( name.compare("player_AC_eff_blessing_percent") == 0 )
+		{
+			playerACEbless = itr->value.GetDouble();
+			return true;
+		}
+		else if ( name.compare("enable_conditional_xp_modifier") == 0 )
+		{
+			doConditionalXPModifier = itr->value.GetBool();
+			return true;
+		}
+		else if ( name.compare("conditional_mod_lvl_difference_threshold") == 0 )
+		{
+			conditionalXPModLvlThreshold = itr->value.GetInt();
+			return true;
+		}
+		else if ( name.compare("conditional_xp_modifier_percent") == 0 )
+		{
+			conditionalXPModPercent = itr->value.GetInt();
+			return true;
+		}
+		else if ( name.compare("player_STR_multiplier") == 0 )
+		{
+			playerMultiplierSTR = itr->value.GetDouble();
+			return true;
+		}
+		else if ( name.compare("player_DEX_multiplier") == 0 )
+		{
+			playerMultiplierDEX = itr->value.GetDouble();
+			return true;
+		}
+		else if ( name.compare("player_CON_multiplier") == 0 )
+		{
+			playerMultiplierCON = itr->value.GetDouble();
+			return true;
+		}
+		else if ( name.compare("player_INT_multiplier") == 0 )
+		{
+			playerMultiplierINT = itr->value.GetDouble();
+			return true;
+		}
+		else if ( name.compare("player_PER_multiplier") == 0 )
+		{
+			playerMultiplierPER = itr->value.GetDouble();
+			return true;
+		}
+		else if ( name.compare("player_CHR_multiplier") == 0 )
+		{
+			playerMultiplierCHR = itr->value.GetDouble();
+			return true;
+		}
+		else if ( name.compare("player_levelup_HP") == 0 )
+		{
+			playerLevelupHP = itr->value.GetInt();
+			return true;
+		}
+		else if ( name.compare("player_levelup_MP") == 0 )
+		{
+			playerLevelupMP = itr->value.GetInt();
+			return true;
+		}
+		else if ( name.compare("enable_player_trauma_damage") == 0 )
+		{
+			doTraumaDamage = itr->value.GetBool();
+			return true;
+		}
+		else if ( name.compare("trauma_damage_percent") == 0 )
+		{
+			traumaDamagePercent = itr->value.GetInt();
+			return true;
+		}
+		else if ( name.compare("trauma_damage_hp_floor") == 0 )
+		{
+			traumaDamageHPLimit = itr->value.GetInt();
+			return true;
+		}
+		else if ( name.compare("zap_brigade_spawnrate_percent") == 0 )
+		{
+			zapBrigadeSpawnPercent = itr->value.GetInt();
 			return true;
 		}
 		else if ( name.compare("minotaur_force_disable_on_floors") == 0 )

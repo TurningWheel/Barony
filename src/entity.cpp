@@ -2528,6 +2528,24 @@ void Entity::modHP(int amount)
 		{
 			Compendium_t::Events_t::eventUpdateCodex(skill[2], Compendium_t::CPDM_HP_LOST_RUN, "hp", oldHP - entitystats->HP);
 			Compendium_t::Events_t::eventUpdateCodex(skill[2], Compendium_t::CPDM_HP_LOST_TOTAL, "hp", oldHP - entitystats->HP);
+
+			if ( gameplayCustomManager.inUse() && gameplayCustomManager.doTraumaDamage ) // damage maxHP based on settings
+			{
+				double damage = oldHP - entitystats->HP;
+				double percent = ( (double)gameplayCustomManager.traumaDamagePercent / 100.0 );
+				double traumaDmg = percent * damage;
+				int oldMaxHP = entitystats->MAXHP;
+
+				if (traumaDmg < 1.0)
+				{
+					traumaDmg = 0.0; // don't allow player to take unfair trauma damage
+				}
+
+				entitystats->MAXHP -= traumaDmg;
+				entitystats->MAXHP = std::min(oldMaxHP, std::max( gameplayCustomManager.traumaDamageHPLimit, entitystats->MAXHP ) );
+				entitystats->HP = std::min(entitystats->HP, entitystats->MAXHP);
+				// prevent maxHP from dropping below minimum, don't increase maxHP by mistake, don't allow HP to exceed maxHP
+			}
 		}
 	}
 }
@@ -3141,13 +3159,29 @@ void Entity::handleEffects(Stat* myStats)
 		static ConsoleVariable<int> cvar_lvlup_ally_sfx("/lvlup_ally_sfx", 520);
 
 		// increase MAXHP/MAXMP
-		myStats->MAXHP += HP_MOD;
+		if ( gameplayCustomManager.inUse() && behavior == &actPlayer )
+		{
+			myStats->MAXHP += gameplayCustomManager.playerLevelupHP;
+		}
+		else
+		{
+			myStats->MAXHP += HP_MOD;
+		}
 		modHP(getHPRestoreOnLevelUp());
 		myStats->HP = std::min(myStats->HP, myStats->MAXHP);
 		if ( !(behavior == &actMonster && monsterAllySummonRank != 0) )
 		{
-			myStats->MP += MP_MOD;
-			myStats->MAXMP += MP_MOD;
+			if ( gameplayCustomManager.inUse() && behavior == &actPlayer)
+			{
+				myStats->MP += gameplayCustomManager.playerLevelupMP;
+				myStats->MAXMP += gameplayCustomManager.playerLevelupMP;
+			}
+			else
+			{
+				myStats->MP += MP_MOD;
+				myStats->MAXMP += MP_MOD;
+			}
+
 			if ( behavior == &actPlayer && myStats->playerRace == RACE_INSECTOID && myStats->stat_appearance == 0 )
 			{
 				myStats->MAXMP = std::min(100, myStats->MAXMP);
@@ -5453,7 +5487,10 @@ real_t Entity::getACEffectiveness(Entity* my, Stat* myStats, bool isPlayer, Enti
 
 	if ( myStats->defending )
 	{
-		return 1.0;
+		if ( !gameplayCustomManager.inUse() || my->behavior != &actPlayer )
+		{
+			return 1.0;
+		}
 	}
 
 	int blessings = 0;
@@ -5496,6 +5533,26 @@ real_t Entity::getACEffectiveness(Entity* my, Stat* myStats, bool isPlayer, Enti
 		blessings += cursedItemIsBuff ? abs(myStats->amulet->beatitude) : myStats->amulet->beatitude;
 	}
 	outNumBlessings = blessings;
+
+	if ( gameplayCustomManager.inUse() && my->behavior == &actPlayer )
+	{
+		double playerACEffPassive = gameplayCustomManager.playerACEpassive / 100.0;
+		double playerACEffActive = gameplayCustomManager.playerACEactive / 100.0;
+		double ACEtoCalculate = 0.0;
+
+		if ( myStats->defending )
+		{
+			ACEtoCalculate = playerACEffActive;
+		}
+		else
+		{
+			ACEtoCalculate = playerACEffPassive;
+		}
+		ACEtoCalculate = std::max(0.0, std::min(1.0, ACEtoCalculate));
+
+		double blessingModifier = gameplayCustomManager.playerACEbless / 100.0;
+		return std::max(0.0, std::min(1.0, ACEtoCalculate + blessingModifier * blessings));
+	}
 	return std::max(0.0, std::min(1.0, .75 + 0.025 * blessings));
 }
 
@@ -5836,6 +5893,10 @@ Sint32 statGetSTR(Stat* entitystats, Entity* my)
 				break;
 		}
 	}
+	if ( gameplayCustomManager.inUse() && my && my->behavior == &actPlayer )
+	{
+		STR *= gameplayCustomManager.playerMultiplierSTR;
+	}
 	return STR;
 }
 
@@ -6084,6 +6145,10 @@ Sint32 statGetDEX(Stat* entitystats, Entity* my)
 	{
 		DEX += 8;
 	}
+	if ( gameplayCustomManager.inUse() && my && my->behavior == &actPlayer )
+	{
+		DEX *= gameplayCustomManager.playerMultiplierDEX;
+	}
 	return DEX;
 }
 
@@ -6191,6 +6256,10 @@ Sint32 statGetCON(Stat* entitystats, Entity* my)
 		percentHP = 100 - percentHP;
 		CON += percentHP / 10;
 	}
+	if ( gameplayCustomManager.inUse() && my && my->behavior == &actPlayer )
+	{
+		CON *= gameplayCustomManager.playerMultiplierCON;
+	}
 	return CON;
 }
 
@@ -6297,6 +6366,10 @@ Sint32 statGetINT(Stat* entitystats, Entity* my)
 	if ( my && entitystats->EFFECTS[EFF_DRUNK] && my->behavior == &actPlayer && entitystats->type == GOATMAN )
 	{
 		INT -= std::max(8, static_cast<int>(INT * 0.25));
+	}
+	if ( gameplayCustomManager.inUse() && my && my->behavior == &actPlayer )
+	{
+		INT *= gameplayCustomManager.playerMultiplierINT;
 	}
 	return INT;
 }
@@ -6464,6 +6537,10 @@ Sint32 statGetPER(Stat* entitystats, Entity* my)
 	{
 		PER -= std::max(5, PER / 2);
 	}
+	if ( gameplayCustomManager.inUse() && my && my->behavior == &actPlayer )
+	{
+		PER *= gameplayCustomManager.playerMultiplierPER;
+	}
 	return PER;
 }
 
@@ -6554,6 +6631,10 @@ Sint32 statGetCHR(Stat* entitystats, Entity* my)
 	if ( my && entitystats->EFFECTS[EFF_DRUNK] && my->behavior == &actPlayer && entitystats->type == GOATMAN )
 	{
 		CHR += std::max(4, static_cast<int>(CHR * .25));
+	}
+	if ( gameplayCustomManager.inUse() && my && my->behavior == &actPlayer )
+	{
+		CHR *= gameplayCustomManager.playerMultiplierCHR;
 	}
 	return CHR;
 }
@@ -12964,6 +13045,14 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 	if ( gameplayCustomManager.inUse() )
 	{
 		xpGain = (gameplayCustomManager.globalXPPercent / 100.f) * xpGain;
+
+		if ( gameplayCustomManager.doConditionalXPModifier )
+		{
+			if ( destStats->LVL - srcStats->LVL >= gameplayCustomManager.conditionalXPModLvlThreshold ) // check if level difference exceeds level threshold
+			{
+				xpGain = (gameplayCustomManager.conditionalXPModPercent / 100.f) * xpGain;
+			}
+		}
 	}
 	else if ( gameModeManager.currentSession.challengeRun.isActive()
 		&& gameModeManager.currentSession.challengeRun.globalXPPercent != 100 )
@@ -22822,6 +22911,7 @@ int getEntityHungerInterval(int player, Entity* my, Stat* myStats, EntityHungerI
 {
 	bool isInsectoidPlayer = false;
 	bool isAutomatonPlayer = false;
+	bool isSkeletonPlayer = false;
 	if ( player >= 0 )
 	{
 		if ( stats[player]->type == AUTOMATON )
@@ -22831,6 +22921,10 @@ int getEntityHungerInterval(int player, Entity* my, Stat* myStats, EntityHungerI
 		else if ( stats[player]->playerRace == RACE_INSECTOID && stats[player]->stat_appearance == 0 )
 		{
 			isInsectoidPlayer = true;
+		}
+		else if ( stats[player]->type == SKELETON )
+		{
+			isSkeletonPlayer = true;
 		}
 	}
 	else if ( my && my->behavior == &actPlayer && myStats )
@@ -22842,6 +22936,10 @@ int getEntityHungerInterval(int player, Entity* my, Stat* myStats, EntityHungerI
 		else if ( myStats->playerRace == RACE_INSECTOID && myStats->stat_appearance == 0 )
 		{
 			isInsectoidPlayer = true;
+		}
+		else if ( myStats->type == SKELETON )
+		{
+			isSkeletonPlayer = true;
 		}
 	}
 	else if ( myStats )
@@ -22857,6 +22955,10 @@ int getEntityHungerInterval(int player, Entity* my, Stat* myStats, EntityHungerI
 				else if ( myStats->playerRace == RACE_INSECTOID && myStats->stat_appearance == 0 )
 				{
 					isInsectoidPlayer = true;
+				}
+				else if ( myStats->type == SKELETON )
+				{
+					isSkeletonPlayer = true;
 				}
 				break;
 			}
@@ -22881,6 +22983,20 @@ int getEntityHungerInterval(int player, Entity* my, Stat* myStats, EntityHungerI
 				return 1200;
 			default:
 				return 1000;
+		}
+	}
+	else if ( isSkeletonPlayer )
+	{
+		switch ( hungerInterval )
+		{
+			case HUNGER_INTERVAL_OVERSATIATED:
+			return 5000; // unreachable
+			case HUNGER_INTERVAL_HUNGRY:
+			return -1; //unreachable
+			case HUNGER_INTERVAL_WEAK:
+			return -1; //unreachable
+			case HUNGER_INTERVAL_STARVING:
+			return -1; //unreachable
 		}
 	}
 
@@ -23112,6 +23228,11 @@ int Entity::getFollowerBonusDamageResist()
 int Entity::getHPRestoreOnLevelUp()
 {
 	int hpMod = HP_MOD;
+
+	if ( gameplayCustomManager.inUse() && behavior == &actPlayer )
+	{
+		hpMod = gameplayCustomManager.playerLevelupHP;
+	}
 
 	if ( Stat* myStats = getStats() )
 	{
