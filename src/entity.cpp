@@ -22911,6 +22911,7 @@ int getEntityHungerInterval(int player, Entity* my, Stat* myStats, EntityHungerI
 {
 	bool isInsectoidPlayer = false;
 	bool isAutomatonPlayer = false;
+	bool isSkeletonPlayer = false;
 	if ( player >= 0 )
 	{
 		if ( stats[player]->type == AUTOMATON )
@@ -22920,6 +22921,10 @@ int getEntityHungerInterval(int player, Entity* my, Stat* myStats, EntityHungerI
 		else if ( stats[player]->playerRace == RACE_INSECTOID && stats[player]->stat_appearance == 0 )
 		{
 			isInsectoidPlayer = true;
+		}
+		else if ( stats[player]->type == SKELETON )
+		{
+			isSkeletonPlayer = true;
 		}
 	}
 	else if ( my && my->behavior == &actPlayer && myStats )
@@ -22931,6 +22936,10 @@ int getEntityHungerInterval(int player, Entity* my, Stat* myStats, EntityHungerI
 		else if ( myStats->playerRace == RACE_INSECTOID && myStats->stat_appearance == 0 )
 		{
 			isInsectoidPlayer = true;
+		}
+		else if ( myStats->type == SKELETON )
+		{
+			isSkeletonPlayer = true;
 		}
 	}
 	else if ( myStats )
@@ -22946,6 +22955,10 @@ int getEntityHungerInterval(int player, Entity* my, Stat* myStats, EntityHungerI
 				else if ( myStats->playerRace == RACE_INSECTOID && myStats->stat_appearance == 0 )
 				{
 					isInsectoidPlayer = true;
+				}
+				else if ( myStats->type == SKELETON )
+				{
+					isSkeletonPlayer = true;
 				}
 				break;
 			}
@@ -22970,6 +22983,20 @@ int getEntityHungerInterval(int player, Entity* my, Stat* myStats, EntityHungerI
 				return 1200;
 			default:
 				return 1000;
+		}
+	}
+	else if ( isSkeletonPlayer )
+	{
+		switch ( hungerInterval )
+		{
+			case HUNGER_INTERVAL_OVERSATIATED:
+			return 5000; // unreachable
+			case HUNGER_INTERVAL_HUNGRY:
+			return -1; //unreachable
+			case HUNGER_INTERVAL_WEAK:
+			return -1; //unreachable
+			case HUNGER_INTERVAL_STARVING:
+			return -1; //unreachable
 		}
 	}
 
