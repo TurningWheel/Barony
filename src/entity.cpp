@@ -31621,6 +31621,11 @@ bool Entity::windEffectsEntity(Entity* entity)
 	{
 		if ( entity->behavior == &actPlayer && players[entity->skill[2]]->isLocalPlayer() )
 		{
+			/*if ( stats[entity->skill[2]]->shoes && stats[entity->skill[2]]->shoes->type == CLEAT_BOOTS
+				&& entity->effectShapeshift == NOTHING )
+			{
+				return false;
+			}*/
 			return true;
 		}
 		return false;
@@ -31644,6 +31649,10 @@ bool Entity::windEffectsEntity(Entity* entity)
 			{
 				return false;
 			}
+			/*if ( myStats->shoes && myStats->shoes->type == CLEAT_BOOTS )
+			{
+				return false;
+			}*/
 		}
 		if ( !entity->isUntargetableBat() && !entity->isInertMimic() )
 		{
@@ -31656,6 +31665,14 @@ bool Entity::windEffectsEntity(Entity* entity)
 				|| entity->behavior == &actMagicMissile 
 				|| entity->behavior == &actThrown)) )
 	{
+		/*if ( entity->behavior == &actPlayer )
+		{
+			if ( stats[entity->skill[2]]->shoes && stats[entity->skill[2]]->shoes->type == CLEAT_BOOTS
+				&& entity->effectShapeshift == NOTHING )
+			{
+				return false;
+			}
+		}*/
 		return true;
 	}
 	return false;

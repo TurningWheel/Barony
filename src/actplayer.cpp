@@ -4707,10 +4707,10 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 			{
 				rate = 0.8;
 			}
-			if ( cleats )
+			/*if ( cleats )
 			{
 				rate *= 0.5;
-			}
+			}*/
 			my->monsterKnockbackVelocity *= pow(rate, refreshRateDelta);
 		}
 		else if ( stats[PLAYER_NUM]->getEffectActive(EFF_KNOCKBACK) )

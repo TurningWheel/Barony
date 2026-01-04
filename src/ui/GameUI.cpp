@@ -8825,7 +8825,8 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 			{
 				miscEffects[kEffectLesserWarning] = true;
 			}
-			if ( stats[player]->shoes && stats[player]->shoes->type == CLEAT_BOOTS )
+			if ( stats[player]->shoes && stats[player]->shoes->type == CLEAT_BOOTS
+				&& players[player]->entity && players[player]->entity->effectShapeshift == NOTHING )
 			{
 				miscEffects[kEffectStability] = true;
 			}
