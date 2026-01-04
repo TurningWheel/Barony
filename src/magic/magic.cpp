@@ -2717,7 +2717,7 @@ void spellEffectShadowTag(Entity& my, spellElement_t& element, Entity* parent, i
 				}
 				else
 				{
-					hit.entity->setEffect(EFF_SHADOW_TAGGED, true, element.duration * TICKS_PER_SECOND, true);
+					hit.entity->setEffect(EFF_SHADOW_TAGGED, true, element.duration, true);
 				}
 				magicOnEntityHit(parent, &my, hit.entity, hitstats, 0, 0, 0, SPELL_SHADOW_TAG);
 				parent->creatureShadowTaggedThisUid = hit.entity->getUID();
