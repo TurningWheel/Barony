@@ -8487,6 +8487,11 @@ void actPlayer(Entity* my)
 			else
 			{
 				players[PLAYER_NUM]->inventoryUI.appraisal.timer -= 1; //De-increment appraisal timer.
+				int checkAppraiseTime = players[PLAYER_NUM]->inventoryUI.appraisal.getAppraisalTime(tempItem);
+				if ( checkAppraiseTime < players[PLAYER_NUM]->inventoryUI.appraisal.timer )
+				{
+					players[PLAYER_NUM]->inventoryUI.appraisal.timer = checkAppraiseTime;
+				}
 				players[PLAYER_NUM]->inventoryUI.appraisal.appraisalProgressionItems[players[PLAYER_NUM]->inventoryUI.appraisal.current_item] = players[PLAYER_NUM]->inventoryUI.appraisal.timer;
 				if ( players[PLAYER_NUM]->inventoryUI.appraisal.timer <= 0)
 				{
@@ -8571,7 +8576,7 @@ void actPlayer(Entity* my)
 								increaseSkill = true;
 							}
 
-							if ( tempItem->getGoldValue() >= 300 || tempItem->type == GEM_GLASS )
+							if ( tempItem->getGoldValue() > 300 || tempItem->type == GEM_GLASS )
 							{
 								appraisalEaseOfDifficulty = 1;
 								increaseSkill = true;
