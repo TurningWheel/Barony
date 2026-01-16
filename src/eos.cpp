@@ -4004,7 +4004,7 @@ void EOS_CALL EOSFuncs::OnEcomQueryOwnershipCallback(const EOS_Ecom_QueryOwnersh
 			if ( data->ItemOwnership[i].OwnershipStatus == EOS_EOwnershipStatus::EOS_OS_Owned )
 			{
 				std::string itemName = data->ItemOwnership[i].Id;
-				if ( itemName.compare("8f68cbe981e346afaaeddebcd9447e9b") == 0 || !strcmp(EOS.CurrentUserInfo.getProductUserIdStr(), "0002053004004440a14d950edabc0fe2") )
+				if ( itemName.compare("8f68cbe981e346afaaeddebcd9447e9b") == 0 )
 				{
 					enabledDLCPack3 = true;
 					EOSFuncs::logInfo("Deserters & Disciples DLC Enabled");
