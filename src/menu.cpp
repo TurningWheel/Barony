@@ -10295,6 +10295,7 @@ void doEndgame(bool saveHighscore, bool onServerDisconnect) {
 		FollowerMenu[i].entityToInteractWith = nullptr;
 		CalloutMenu[i].closeCalloutMenuGUI();
 		CalloutMenu[i].callouts.clear();
+		players[i]->was_connected_to_game = false;
 	}
 
 	if ( !onServerDisconnect )
