@@ -166,7 +166,7 @@ bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, En
 			}
 		}
 
-		int maxDominate = getSpellDamageFromID(SPELL_DOMINATE, &caster, nullptr, &caster);
+		int maxDominate = getSpellDamageFromID(SPELL_DOMINATE, &caster, nullptr, &caster, my.actmagicSpellbookBonus / 100.f);
 		if ( numDominated >= maxDominate )
 		{
 			messagePlayerColor(caster.isEntityPlayer(), MESSAGE_COMBAT, makeColorRGB(255, 0, 0), Language::get(6962));

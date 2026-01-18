@@ -8224,6 +8224,13 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			node->deconstructor = &spellDeconstructor;
 			node->size = sizeof(spell_t);
 
+			if ( spell->ID == SPELL_ACID_SPRAY )
+			{
+				if ( missileEntity ) { missileEntity->actmagicUpdateOLDHPOnHit = 1; }
+				if ( entity1 ) { entity1->actmagicUpdateOLDHPOnHit = 1; }
+				if ( entity2 ) { entity2->actmagicUpdateOLDHPOnHit = 1; }
+			}
+
 			if ( caster->behavior == &actMonster && missileEntity && !trap )
 			{
 				if ( Stat* casterStats = caster->getStats() )
