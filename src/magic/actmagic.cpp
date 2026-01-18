@@ -4661,7 +4661,8 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							Uint8 effectStrength = 1;
 							if ( parent && parent->behavior == &actPlayer )
 							{
-								effectStrength = std::min(7, getSpellDamageFromID(spell->ID, parent, parent ? parent->getStats() : nullptr, my));
+								effectStrength = std::min(getSpellDamageSecondaryFromID(spell->ID, parent, parent ? parent->getStats() : nullptr, my, my->actmagicSpellbookBonus / 100.f), 
+									getSpellDamageFromID(spell->ID, parent, parent ? parent->getStats() : nullptr, my, my->actmagicSpellbookBonus / 100.f));
 							}
 							else
 							{
@@ -6113,7 +6114,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						{
 							found = true;
 							ratio = std::max(100, getSpellDamageSecondaryFromID(SPELL_SPLINTER_GEAR, parent, nullptr, my)) / 100.0;
-							if ( applyGenericMagicDamage(parent, hit.entity, *my, spell->ID, damage * ratio, false) )
+							if ( applyGenericMagicDamage(parent, hit.entity, *my, spell->ID, preResistanceDamage * ratio, false) )
 							{
 								criticalEffect = true;
 							}
@@ -6252,7 +6253,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								hit.entity->setEffect(EFF_SLOW, true, element->duration, false);
 								if ( !mimic )
 								{
-									if ( applyGenericMagicDamage(parent, hit.entity, *my, spell->ID, damage * ratio, false) )
+									if ( applyGenericMagicDamage(parent, hit.entity, *my, spell->ID, preResistanceDamage * ratio, false) )
 									{
 
 									}
@@ -9128,7 +9129,7 @@ void actParticleAestheticOrbit(Entity* my)
 													playSoundEntity(parent, 249, 64);
 												}
 												flatDamage += my->skill[4];
-												applyGenericMagicDamage(caster, parent, caster ? *caster : *my, SPELL_PINPOINT, flatDamage + my->skill[4], true);
+												applyGenericMagicDamage(caster, parent, caster ? *caster : *my, SPELL_PINPOINT, flatDamage, true);
 												//spawnMagicEffectParticles(parent->x, parent->y, parent->z, 981);
 
 												if ( caster && parent->getStats() )

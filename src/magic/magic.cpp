@@ -3586,7 +3586,9 @@ bool Entity::pinpointDamageProc(Entity* attacker, int damage)
 									if ( i != 0 )
 									{
 										fx1->actmagicNoLight = 1;
-
+									}
+									if ( i == 0 )
+									{
 										real_t damageMult = getSpellDamageSecondaryFromID(SPELL_PINPOINT, caster, caster ? caster->getStats() : nullptr,
 											entity) / 100.0;
 										fx1->skill[4] += std::max(0, (damage)) * damageMult;
@@ -3686,7 +3688,7 @@ bool Entity::mistFormDodge(bool checkEffectActiveOnly, Entity* attacker)
 			{
 				if ( spell_t* spell = getActiveMagicEffect(SPELL_MIST_FORM) )
 				{
-					int chance = 50;
+					int chance = getSpellEffectDurationSecondaryFromID(SPELL_MIST_FORM, this, nullptr, this);
 					if ( local_rng.rand() % 100 < chance )
 					{
 						int cost = getSpellDamageFromID(SPELL_MIST_FORM, this, nullptr, this);

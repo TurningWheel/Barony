@@ -5177,6 +5177,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
         if ( itemTooltip.icons.size() > 0 )
         {
             int index = 0;
+			int iconSpellIndex = -1;
             for ( auto& icon : itemTooltip.icons )
             {
                 if ( icon.conditionalAttribute.compare("") != 0 )
@@ -5239,6 +5240,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                             spell_t* spell = getSpellFromItem(player, item, false);
                             if ( spell && ItemTooltips.spellItems[spell->ID].internalName == icon.conditionalAttribute )
                             {
+								++iconSpellIndex;
                                 // current spell uses this attribute
 
 								if ( index == 2 )
@@ -5250,6 +5252,33 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 										{
 											continue; // ignore mentions of spells having access to
 										}
+									}
+								}
+								if ( spell->ID == SPELL_TURN_UNDEAD )
+								{
+									if ( index >= 1 )
+									{
+										int effectStrength = std::min(3, std::max(1, getSpellDamageSecondaryFromID(SPELL_TURN_UNDEAD, players[player]->entity, stats[player], players[player]->entity)));
+										if ( compendiumTooltip && intro )
+										{
+											effectStrength = 1;
+										}
+										if ( (effectStrength - 1) != iconSpellIndex )
+										{
+											continue;
+										}
+									}
+								}
+								else if ( spell->ID == SPELL_DASH )
+								{
+									int effectStrength = std::min(2, std::max(1, getSpellDamageFromID(SPELL_DASH, players[player]->entity, stats[player], players[player]->entity)));
+									if ( compendiumTooltip && intro )
+									{
+										effectStrength = 1;
+									}
+									if ( (effectStrength - 1) != iconSpellIndex )
+									{
+										continue;
 									}
 								}
                             }

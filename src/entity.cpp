@@ -13943,6 +13943,42 @@ void Entity::attack(int pose, int charge, Entity* target)
 					bool playerPoisonedTarget = false;
 					bool envenomWeapon = false;
 
+					if ( damage > 0 && myStats->getEffectActive(EFF_ENVENOM_WEAPON) )
+					{
+						if ( local_rng.rand() % 2 == 0 )
+						{
+							int envenomDamage = std::min(
+								getSpellDamageSecondaryFromID(SPELL_ENVENOM_WEAPON, this, myStats, this),
+								getSpellDamageFromID(SPELL_ENVENOM_WEAPON, this, myStats, this));
+
+							hit.entity->modHP(-envenomDamage); // do the damage
+							for ( int tmp = 0; tmp < 3; ++tmp )
+							{
+								Entity* gib = spawnGib(hit.entity, 211);
+								serverSpawnGibForClient(gib);
+							}
+							if ( !hitstats->getEffectActive(EFF_POISONED) )
+							{
+								envenomWeapon = true;
+								hitstats->setEffectActive(EFF_POISONED, 1);
+
+								int duration = 310 * envenomDamage;
+								hitstats->EFFECTS_TIMERS[EFF_POISONED] = std::max(200, duration - hit.entity->getCON() * 20);
+								hitstats->poisonKiller = getUID();
+								if ( playerhit >= 0 )
+								{
+									messagePlayerMonsterEvent(playerhit, makeColorRGB(255, 0, 0), *myStats, Language::get(6531), Language::get(6532), MSG_COMBAT);
+									serverUpdateEffects(playerhit);
+								}
+
+								if ( player >= 0 )
+								{
+									players[player]->mechanics.updateSustainedSpellEvent(SPELL_ENVENOM_WEAPON, 50.0, 1.0, hit.entity);
+								}
+							}
+						}
+					}
+
 					// special monster effects
 					if ( myStats->type == CRYSTALGOLEM && pose == MONSTER_POSE_GOLEM_SMASH )
 					{
@@ -14300,42 +14336,6 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 						default:
 							break;
-						}
-
-						if ( myStats->getEffectActive(EFF_ENVENOM_WEAPON) )
-						{
-							if ( local_rng.rand() % 2 == 0 )
-							{
-								int envenomDamage = std::min(
-									getSpellDamageSecondaryFromID(SPELL_ENVENOM_WEAPON, this, myStats, this),
-									getSpellDamageFromID(SPELL_ENVENOM_WEAPON, this, myStats, this));
-
-								hit.entity->modHP(-envenomDamage); // do the damage
-								for ( int tmp = 0; tmp < 3; ++tmp )
-								{
-									Entity* gib = spawnGib(hit.entity, 211);
-									serverSpawnGibForClient(gib);
-								}
-								if ( !hitstats->getEffectActive(EFF_POISONED) )
-								{
-									envenomWeapon = true;
-									hitstats->setEffectActive(EFF_POISONED, 1);
-
-									int duration = 310 * envenomDamage;
-									hitstats->EFFECTS_TIMERS[EFF_POISONED] = std::max(200, duration - hit.entity->getCON() * 20);
-									hitstats->poisonKiller = getUID();
-									if ( playerhit >= 0 )
-									{
-										messagePlayerMonsterEvent(playerhit, makeColorRGB(255, 0, 0), *myStats, Language::get(6531), Language::get(6532), MSG_COMBAT);
-										serverUpdateEffects(playerhit);
-									}
-
-									if ( player >= 0 )
-									{
-										players[player]->mechanics.updateSustainedSpellEvent(SPELL_ENVENOM_WEAPON, 50.0, 1.0, hit.entity);
-									}
-								}
-							}
 						}
 
 						if ( myStats->weapon && myStats->weapon->type == BRANCH_STAFF && !shapeshifted )
@@ -16661,10 +16661,10 @@ int AC(Stat* stat)
 		{
 			//messagePlayer(0, "shield up! +%d", 5 + stat->PROFICIENCIES[PRO_SHIELD] / 5);
 			armor += stat->getActiveShieldBonus(true, false);
-			if ( stat->getEffectActive(EFF_FORCE_SHIELD) > 0 )
+			/*if ( stat->getEffectActive(EFF_FORCE_SHIELD) > 0 )
 			{
 				armor += stat->getEffectActive(EFF_FORCE_SHIELD);
-			}
+			}*/
 		}
 	}
 	if ( stat->type == EARTH_ELEMENTAL && stat->defending )
@@ -28003,6 +28003,7 @@ bool monsterNameIsGeneric(Stat& monsterStats)
 		|| strstr(monsterStats.name, "damaged")
 		|| strstr(monsterStats.name, "corrupted")
 		|| strstr(monsterStats.name, "cultist")
+		|| strstr(monsterStats.name, "encased")
 		|| strstr(monsterStats.name, "knight")
 		|| strstr(monsterStats.name, "sentinel")
 		|| strstr(monsterStats.name, "mage")
@@ -32023,7 +32024,7 @@ bool Entity::modifyDamageMultipliersFromEffects(Entity* hitentity, Entity* attac
 	bool result = false;
 	if ( hitstats->getEffectActive(EFF_BLOOD_WARD) )
 	{
-		real_t reduction = std::min(0.8, std::max(0.0, getSpellDamageFromID(SPELL_BLOOD_WARD, hitentity, nullptr, hitentity) / 100.0));
+		real_t reduction = std::min(getSpellDamageSecondaryFromID(SPELL_BLOOD_WARD, hitentity, nullptr, hitentity) / 100.0, std::max(0.0, getSpellDamageFromID(SPELL_BLOOD_WARD, hitentity, nullptr, hitentity) / 100.0));
 		if ( attackerStats )
 		{
 			if ( (attackerStats && attackerStats->type == SPIDER

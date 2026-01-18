@@ -2411,7 +2411,16 @@ std::string ItemTooltips_t::getSpellIconFormatText(const int player, Item& item,
 	{
 		COMP_NONE,
 		COMP_MIN,
-		COMP_MAX
+		COMP_MAX,
+		COMP_HEAL_OTHER,
+		COMP_INCOHERENCE,
+		COMP_WEAKNESS,
+		COMP_BLOOD_WAVES,
+		COMP_MAGICIANS_ARMOR,
+		COMP_BREATHE_FIRE,
+		COMP_BREATHE_FIRE2,
+		COMP_SIGIL,
+		COMP_SANCTUARY
 	};
 	enum Values
 	{
@@ -2454,11 +2463,47 @@ std::string ItemTooltips_t::getSpellIconFormatText(const int player, Item& item,
 				}
 				else if ( key == "dur2" )
 				{
-					vals.push_back(getSpellEffectDurationFromID(spell->ID, caster, myStats, caster, 0.0));
+					vals.push_back(getSpellEffectDurationSecondaryFromID(spell->ID, caster, myStats, caster, 0.0));
 				}
 				else if ( key == "tier" )
 				{
 					valueType = VAL_TIER;
+				}
+				else if ( key == "comp_heal_other" )
+				{
+					comparator = COMP_HEAL_OTHER;
+				}
+				else if ( key == "comp_incoherence" )
+				{
+					comparator = COMP_INCOHERENCE;
+				}
+				else if ( key == "comp_weakness" )
+				{
+					comparator = COMP_WEAKNESS;
+				}
+				else if ( key == "comp_blood_waves" )
+				{
+					comparator = COMP_BLOOD_WAVES;
+				}
+				else if ( key == "comp_magicians_armor" )
+				{
+					comparator = COMP_MAGICIANS_ARMOR;
+				}
+				else if ( key == "comp_breathe_fire" )
+				{
+					comparator = COMP_BREATHE_FIRE;
+				}
+				else if ( key == "comp_breathe_fire2" )
+				{
+					comparator = COMP_BREATHE_FIRE2;
+				}
+				else if ( key == "comp_sigil" )
+				{
+					comparator = COMP_SIGIL;
+				}
+				else if ( key == "comp_sanctuary" )
+				{
+					comparator = COMP_SANCTUARY;
 				}
 				index += offset + 1;
 				offset = 1;
@@ -2471,7 +2516,108 @@ std::string ItemTooltips_t::getSpellIconFormatText(const int player, Item& item,
 
 		if ( vals.size() )
 		{
-			if ( vals.size() == 1 || comparator == COMP_MIN || comparator == COMP_MAX )
+			if ( comparator == COMP_HEAL_OTHER && vals.size() >= 4 )
+			{
+				char buf[128];
+				memset(buf, 0, sizeof(buf));
+				real_t healTicks = vals[0] * (vals[1] / 100.0) * vals[2];
+				snprintf(buf, sizeof(buf), format.c_str(), (int)(healTicks / vals[3]));
+				str = buf;
+			}
+			else if ( (comparator == COMP_INCOHERENCE || comparator == COMP_WEAKNESS) && vals.size() >= 2 )
+			{
+				char buf[128];
+				memset(buf, 0, sizeof(buf));
+				int effectStrength = std::min(vals[0], vals[1]);
+				int reduction = 100.0 * std::min(0.9, 0.2 + (effectStrength - 1) * 0.1);
+				snprintf(buf, sizeof(buf), format.c_str(), -reduction);
+				str = buf;
+			}
+			else if ( comparator == COMP_MAGICIANS_ARMOR && vals.size() >= 3 )
+			{
+				char buf[128];
+				memset(buf, 0, sizeof(buf));
+
+				int instances = vals[2];
+				instances *= ((myStats ? myStats->getModifiedProficiency(spell->skillID) : 0) + statGetINT(myStats, caster)) / std::max(1, vals[1]);
+				int maxInstances = vals[0];
+				instances = std::min(std::max(1, instances), maxInstances);
+
+				snprintf(buf, sizeof(buf), format.c_str(), instances);
+				str = buf;
+			}
+			else if ( comparator == COMP_BREATHE_FIRE && vals.size() >= 2 )
+			{
+				char buf[128];
+				memset(buf, 0, sizeof(buf));
+
+				snprintf(buf, sizeof(buf), format.c_str(), std::min(10, vals[1]), vals[0]);
+				str = buf;
+			}
+			else if ( comparator == COMP_BREATHE_FIRE2 )
+			{
+				int maxStrength = 10;
+				int minStrength = 2;
+				if ( myStats )
+				{
+					if ( myStats->type == SALAMANDER
+						&& myStats->getEffectActive(EFF_SALAMANDER_HEART) == 2 )
+					{
+						minStrength += 3;
+					}
+					maxStrength = std::min(maxStrength, minStrength + std::max(0, statGetCHR(myStats, caster)) / 5);
+				}
+				else
+				{
+					maxStrength = minStrength;
+				}
+
+				snprintf(buf, sizeof(buf), format.c_str(), maxStrength);
+				str = buf;
+			}
+			else if ( comparator == COMP_SIGIL && vals.size() >= 2 )
+			{
+				char buf[128];
+				memset(buf, 0, sizeof(buf));
+
+				int tier = std::min(vals[0], vals[1]);
+				int dmgMult = 10 + 10 * tier;
+				int healMult = 10 + 10 * tier;
+
+				snprintf(buf, sizeof(buf), format.c_str(), healMult, dmgMult);
+				str = buf;
+			}
+			else if ( comparator == COMP_SANCTUARY && vals.size() >= 2 )
+			{
+				char buf[128];
+				memset(buf, 0, sizeof(buf));
+
+				int tier = std::min(vals[0], vals[1]);
+				int reduction = std::min(80, std::max(0, 10 + (15 * tier)));
+
+				snprintf(buf, sizeof(buf), format.c_str(), reduction);
+				str = buf;
+			}
+			else if ( (comparator == COMP_BLOOD_WAVES) && vals.size() >= 2 )
+			{
+				char buf[128];
+				memset(buf, 0, sizeof(buf));
+				spellElement_t* element = nullptr;
+				if ( spell->elements.first )
+				{
+					if ( element = (spellElement_t*)spell->elements.first->element )
+					{
+						if ( element->elements.first && element->elements.first->element )
+						{
+							element = (spellElement_t*)element->elements.first->element;
+						}
+					}
+				}
+				int damage = vals[0] + std::max(1, vals[1] * statGetINT(myStats, caster)) * (1.0 + getBonusFromCasterOfSpellElement(caster, myStats, element, spell->ID, spell->skillID));
+				snprintf(buf, sizeof(buf), format.c_str(), damage);
+				str = buf;
+			}
+			else if ( vals.size() == 1 || comparator == COMP_MIN || comparator == COMP_MAX )
 			{
 				char buf[128];
 				memset(buf, 0, sizeof(buf));
@@ -2582,6 +2728,14 @@ std::string ItemTooltips_t::getSpellIconText(const int player, Item& item, const
 		snprintf(buf, sizeof(buf), str.c_str(), numSummons);
 		str = buf;
 	}
+	else if ( spell->ID == SPELL_BREATHE_FIRE )
+	{
+		std::string result = getSpellIconFormatText(player, item, str, spell, 0, compendiumTooltipIntro);
+		if ( result != "" )
+		{
+			str = result;
+		}
+	}
 	else if ( spellItems[spell->ID].spellTags.find(SpellTagTypes::SPELL_TAG_HEALING) != spellItems[spell->ID].spellTags.end()
 		|| spellItems[spell->ID].spellTags.find(SpellTagTypes::SPELL_TAG_DAMAGE) != spellItems[spell->ID].spellTags.end() )
 	{
@@ -2589,6 +2743,14 @@ std::string ItemTooltips_t::getSpellIconText(const int player, Item& item, const
 		memset(buf, 0, sizeof(buf));
 		snprintf(buf, sizeof(buf), str.c_str(), getSpellDamageOrHealAmount(player, spell, &item, compendiumTooltipIntro));
 		str = buf;
+	}
+	else if ( spellItems[spell->ID].spellFormatTags.size() )
+	{
+		std::string result = getSpellIconFormatText(player, item, str, spell, 0, compendiumTooltipIntro);
+		if ( result != "" )
+		{
+			str = result;
+		}
 	}
 
 	return str;
@@ -3158,7 +3320,11 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 			{
 				if ( def->second.spellFormatTags.size() )
 				{
-					str = getSpellIconFormatText(player, item, str, spell, iconIndex, compendiumTooltipIntro);
+					std::string result = getSpellIconFormatText(player, item, str, spell, iconIndex, compendiumTooltipIntro);
+					if ( result != "" )
+					{
+						str = result;
+					}
 				}
 			}
 		}
