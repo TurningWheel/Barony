@@ -370,6 +370,7 @@ public:
 	bool tinkeringBulkSalvage = false;
 	Sint32 tinkeringBulkSalvageMetalScrap = 0;
 	Sint32 tinkeringBulkSalvageMagicScrap = 0;
+	Uint32 workstationEntityUid = 0;
 
 	// Scribing
 	Item* scribingToolItem;

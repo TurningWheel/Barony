@@ -10100,6 +10100,50 @@ void assignActions(map_t* map)
 				entity->flags[PASSABLE] = true;
 				entity->flags[UNCLICKABLE] = true;
 				break;
+			case 300:
+				entity->sizex = 4;
+				entity->sizey = 4;
+				entity->x += 8;
+				entity->y += 8;
+				entity->z = 7.5;
+				entity->flags[PASSABLE] = false;
+				entity->behavior = &actCauldron;
+				entity->sprite = 1622; // firepit
+				entity->seedEntityRNG(map_rng.getU32());
+				break;
+			case 301:
+				entity->sizex = 4;
+				entity->sizey = 4;
+				entity->x += 8;
+				entity->y += 8;
+				entity->z = 7.5;
+				entity->flags[PASSABLE] = false;
+				entity->behavior = &actWorkbench;
+				entity->sprite = 1617;
+				entity->seedEntityRNG(map_rng.getU32());
+				break;
+			case 302: // yellow mailbox
+				entity->sizex = 4;
+				entity->sizey = 4;
+				entity->x += 8;
+				entity->y += 8;
+				entity->z = 7.5;
+				entity->flags[PASSABLE] = false;
+				entity->behavior = &actMailbox;
+				entity->sprite = 1619;
+				entity->seedEntityRNG(map_rng.getU32());
+				break;
+			case 303: // blue mailbox
+				entity->sizex = 4;
+				entity->sizey = 4;
+				entity->x += 8;
+				entity->y += 8;
+				entity->z = 7.5;
+				entity->flags[PASSABLE] = false;
+				entity->behavior = &actMailbox;
+				entity->sprite = 1620;
+				entity->seedEntityRNG(map_rng.getU32());
+				break;
             default:
                 break;
 		}

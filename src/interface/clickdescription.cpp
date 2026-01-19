@@ -147,6 +147,18 @@ void clickDescription(int player, Entity* entity)
 				{
 					messagePlayer(player, MESSAGE_INSPECTION, Language::get(260));
 				}
+				else if ( entity->behavior == &actCauldron )
+				{
+					messagePlayer(player, MESSAGE_INSPECTION, Language::get(6976));
+				}
+				else if ( entity->behavior == &actWorkbench )
+				{
+					messagePlayer(player, MESSAGE_INSPECTION, Language::get(6980));
+				}
+				else if ( entity->behavior == &actMailbox )
+				{
+					messagePlayer(player, MESSAGE_INSPECTION, Language::get(6985));
+				}
 				else if ( entity->behavior == &actFountain)
 				{
 					messagePlayer(player, MESSAGE_INSPECTION, Language::get(262));

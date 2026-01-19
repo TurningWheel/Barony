@@ -5862,21 +5862,25 @@ void GenericGUIMenu::updateGUI()
 		}
 		else if ( guiType == GUI_TYPE_TINKERING )
 		{
-			if ( !tinkeringKitItem )
+			if ( (workstationEntityUid == 0 && !tinkeringKitItem) || (workstationEntityUid != 0 && !uidToEntity(workstationEntityUid)) )
 			{
 				closeGUI();
 				return;
 			}
-			if ( !tinkeringKitItem->node )
+
+			if ( tinkeringKitItem )
 			{
-				closeGUI();
-				return;
-			}
-			if ( tinkeringKitItem->node->list != &stats[gui_player]->inventory )
-			{
-				// dropped out of inventory or something.
-				closeGUI();
-				return;
+				if ( !tinkeringKitItem->node )
+				{
+					closeGUI();
+					return;
+				}
+				if ( tinkeringKitItem->node->list != &stats[gui_player]->inventory )
+				{
+					// dropped out of inventory or something.
+					closeGUI();
+					return;
+				}
 			}
 		}
 		else if ( guiType == GUI_TYPE_SCRIBING )
@@ -7762,7 +7766,6 @@ void GenericGUIMenu::closeGUI()
 	basePotion = nullptr;
 	secondaryPotion = nullptr;
 	alembicItem = nullptr;
-	alembicEntityUid = 0;
 	itemEffectUsingSpell = false;
 	itemEffectUsingSpellbook = false;
 	itemEffectScrollItem = nullptr;
@@ -7802,6 +7805,8 @@ void GenericGUIMenu::closeGUI()
 	{
 		players[gui_player]->inventoryUI.tooltipDelayTick = ticks + TICKS_PER_SECOND / 10;
 	}
+	alembicEntityUid = 0;
+	workstationEntityUid = 0;
 }
 
 //inline Item* GenericGUIMenu::getItemInfo(int slot)
@@ -8173,6 +8178,7 @@ void GenericGUIMenu::openGUI(int type, Item* itemOpenedWith)
 	// build the craftables list.
 	if ( guiType == GUI_TYPE_TINKERING )
 	{
+		workstationEntityUid = 0;
 		tinkeringKitItem = itemOpenedWith;
 		tinkeringCreateCraftableItemList();
 		if ( tinkeringFilter == TINKER_FILTER_CRAFTABLE )
@@ -8220,6 +8226,13 @@ void GenericGUIMenu::openGUI(int type, Entity* shrine)
 		this->closeGUI();
 		alembicEntityUid = oldUID;
 	}
+	else if ( guiType == GUI_TYPE_TINKERING )
+	{
+		Uint32 oldUID = workstationEntityUid;
+		workstationEntityUid = 0;
+		this->closeGUI();
+		workstationEntityUid = oldUID;
+	}
 
 	if ( players[gui_player] && players[gui_player]->entity )
 	{
@@ -8256,6 +8269,20 @@ void GenericGUIMenu::openGUI(int type, Entity* shrine)
 		if ( shrine )
 		{
 			alembicEntityUid = shrine->getUID();
+		}
+	}
+	else if ( guiType == GUI_TYPE_TINKERING )
+	{
+		tinkeringKitItem = nullptr;
+		tinkeringCreateCraftableItemList();
+		if ( tinkeringFilter == TINKER_FILTER_CRAFTABLE )
+		{
+			players[gui_player]->GUI.activateModule(Player::GUI_t::MODULE_TINKERING);
+		}
+		tinkerGUI.openTinkerMenu();
+		if ( shrine )
+		{
+			workstationEntityUid = shrine->getUID();
 		}
 	}
 
@@ -11598,6 +11625,9 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 		case CLOAK_SILVER:
 		case TOOL_LOCKPICK:
 		case MASK_EYEPATCH:
+		case TOOL_BEARTRAP:
+		case TOOL_GLASSES:
+		case TOOL_LANTERN:
 			*metal = 1;
 			*magic = 0;
 			break;
@@ -11819,10 +11849,7 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 		case LEATHER_BREASTPIECE:
 		case IRON_HELM:
 		case TOOL_PICKAXE:
-		case TOOL_LANTERN:
-		case TOOL_GLASSES:
 		case IRON_KNUCKLES:
-		case TOOL_BEARTRAP:
 		case IRON_DAGGER:
 		case MONOCLE:
 		case MASK_BANDIT:
@@ -12012,7 +12039,7 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 			}
 			break;
 		case TOOL_DECOY:
-			*metal = 2;
+			*metal = 1;
 			*magic = 0;
 			break;
 		case TOOL_DETONATOR_CHARGE:
@@ -12371,6 +12398,10 @@ bool GenericGUIMenu::tinkeringKitDegradeOnUse(int player)
 				return false;
 			}
 		}
+		if ( !toDegrade )
+		{
+			return false;
+		}
 
 		bool isEquipped = itemIsEquipped(toDegrade, gui_player);
 		if ( isEquipped && players[player]->entity && players[player]->entity->spellEffectPreserveItem(toDegrade) )
@@ -12417,6 +12448,11 @@ Item* GenericGUIMenu::tinkeringKitFindInInventory()
 	}
 	else
 	{
+		if ( workstationEntityUid != 0 )
+		{
+			return nullptr;
+		}
+
 		for ( node_t* invnode = stats[gui_player]->inventory.first; invnode != NULL; invnode = invnode->next )
 		{
 			Item* tinkerItem = (Item*)invnode->element;
@@ -13925,6 +13961,27 @@ void GenericGUIMenu::TinkerGUI_t::closeTinkerMenu()
 		}
 		tinkerSlotFrames.clear();
 	}
+
+	if ( multiplayer != CLIENT )
+	{
+		if ( Entity* workstation = uidToEntity(parentGUI.workstationEntityUid) )
+		{
+			workstation->skill[6] = 0;
+			serverUpdateEntitySkill(workstation, 6);
+		}
+	}
+
+	if ( multiplayer == CLIENT && parentGUI.workstationEntityUid > 0 )
+	{
+		strcpy((char*)net_packet->data, "WRKC");
+		net_packet->data[4] = clientnum;
+		SDLNet_Write32(parentGUI.workstationEntityUid, &net_packet->data[5]);
+		net_packet->address.host = net_server.host;
+		net_packet->address.port = net_server.port;
+		net_packet->len = 9;
+		sendPacketSafe(net_sock, -1, net_packet, 0);
+	}
+	parentGUI.workstationEntityUid = 0;
 }
 
 void onTinkerChangeTabAction(const int playernum, bool changingToNewTab = true)
@@ -14278,6 +14335,29 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 		return;
 	}
 
+	Entity* workStation = nullptr;
+	if ( bOpen )
+	{
+		if ( parentGUI.workstationEntityUid != 0 )
+		{
+			workStation = uidToEntity(parentGUI.workstationEntityUid);
+			if ( !workStation )
+			{
+				parentGUI.closeGUI();
+				return;
+			}
+		}
+
+		if ( workStation )
+		{
+			if ( player->entity && (entityDist(player->entity, workStation) > TOUCHRANGE) )
+			{
+				parentGUI.closeGUI();
+				return;
+			}
+		}
+	}
+
 	if ( !tinkerFrame )
 	{
 		return;
@@ -14600,11 +14680,22 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 		}
 		else
 		{
-			tinkerKitTitle->setText("");
+			if ( workStation )
+			{
+				tinkerKitTitle->setText(Language::get(6978));
+			}
+			else
+			{
+				tinkerKitTitle->setText("");
+			}
 			tinkerKitStatus->setText("");
 		}
 
 		SDL_Rect textPos{ 0, 27, baseFrame->getSize().w, 24 };
+		if ( workStation )
+		{
+			textPos.y += 8;
+		}
 		tinkerKitTitle->setSize(textPos);
 		textPos.y += 20;
 		tinkerKitStatus->setSize(textPos);
@@ -15589,7 +15680,7 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 						if ( isTinkerConstructItemSelected(item) )
 						{
 							foundItem = true;
-							if ( parentGUI.tinkeringKitItem && parentGUI.tinkeringKitItem->status > BROKEN
+							if ( ((parentGUI.tinkeringKitItem && parentGUI.tinkeringKitItem->status > BROKEN) || workStation)
 								&& actionOK )
 							{
 								parentGUI.executeOnItemClick(item);
@@ -15614,8 +15705,8 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 									bool finalAction = false;
 									for ( int i = 0; i < numActions
 										&& parentGUI.tinkeringBulkSalvage
-										&& parentGUI.tinkeringKitItem
-										&& parentGUI.tinkeringKitItem->status > BROKEN; ++i )
+										&& ((parentGUI.tinkeringKitItem
+										&& parentGUI.tinkeringKitItem->status > BROKEN) || workStation); ++i )
 									{
 										if ( i == numActions - 1 )
 										{
@@ -15641,7 +15732,7 @@ void GenericGUIMenu::TinkerGUI_t::updateTinkerMenu()
 											checkConsumedItem = true;
 										}
 									}
-									if ( (parentGUI.tinkeringKitItem && parentGUI.tinkeringKitItem->status > BROKEN)
+									if ( ((parentGUI.tinkeringKitItem && parentGUI.tinkeringKitItem->status > BROKEN) || workStation)
 										|| (parentGUI.tinkeringKitItem == item && parentGUI.tinkeringFilter == TINKER_FILTER_REPAIRABLE))
 									{
 										parentGUI.executeOnItemClick(item);
@@ -16789,6 +16880,27 @@ void GenericGUIMenu::AlchemyGUI_t::closeAlchemyMenu()
 	recipesFrame = nullptr;
 	notifications.clear();
 	recipes.stones.clear();
+
+	if ( multiplayer != CLIENT )
+	{
+		if ( Entity* cauldron = uidToEntity(parentGUI.alembicEntityUid) )
+		{
+			cauldron->skill[6] = 0;
+			serverUpdateEntitySkill(cauldron, 6);
+		}
+	}
+
+	if ( multiplayer == CLIENT && parentGUI.alembicEntityUid > 0 )
+	{
+		strcpy((char*)net_packet->data, "CAUC");
+		net_packet->data[4] = clientnum;
+		SDLNet_Write32(parentGUI.alembicEntityUid, &net_packet->data[5]);
+		net_packet->address.host = net_server.host;
+		net_packet->address.port = net_server.port;
+		net_packet->len = 9;
+		sendPacketSafe(net_sock, -1, net_packet, 0);
+	}
+	parentGUI.alembicEntityUid = 0;
 }
 
 int GenericGUIMenu::AlchemyGUI_t::heightOffsetWhenNotCompact = 150;
@@ -28565,6 +28677,18 @@ std::string CalloutRadialMenu::setCalloutText(Field* field, const char* iconName
 			{
 				objectName = Language::get(4365);
 			}
+			else if ( entity->behavior == &actCauldron )
+			{
+				objectName = Language::get(6974);
+			}
+			else if ( entity->behavior == &actWorkbench )
+			{
+				objectName = Language::get(6981);
+			}
+			else if ( entity->behavior == &actMailbox )
+			{
+				objectName = Language::get(6986);
+			}
 			else if ( entity->behavior == &actPowerCrystal )
 			{
 				objectName = Language::get(4356);
@@ -29104,6 +29228,12 @@ CalloutRadialMenu::CalloutType CalloutRadialMenu::getCalloutTypeForEntity(const 
 		type = CALLOUT_TYPE_GENERIC_INTERACTABLE;
 	}
 	else if ( parent->behavior == &actCampfire )
+	{
+		type = CALLOUT_TYPE_GENERIC_INTERACTABLE;
+	}
+	else if ( parent->behavior == &actCauldron
+		|| parent->behavior == &actWorkbench
+		|| parent->behavior == &actMailbox )
 	{
 		type = CALLOUT_TYPE_GENERIC_INTERACTABLE;
 	}
@@ -31639,6 +31769,27 @@ bool CalloutRadialMenu::allowedInteractEntity(Entity& selectedEntity, bool updat
 		if ( updateInteractText )
 		{
 			strcat(interactText, Language::get(4365)); // "campfire"
+		}
+	}
+	else if ( selectedEntity.behavior == &actCauldron )
+	{
+		if ( updateInteractText )
+		{
+			strcat(interactText, Language::get(6974)); // "cauldron"
+		}
+	}
+	else if ( selectedEntity.behavior == &actWorkbench )
+	{
+		if ( updateInteractText )
+		{
+			strcat(interactText, Language::get(6981)); // "workbench"
+		}
+	}
+	else if ( selectedEntity.behavior == &actMailbox )
+	{
+		if ( updateInteractText )
+		{
+			strcat(interactText, Language::get(6986)); // "mailbox"
 		}
 	}
 	else if ( selectedEntity.behavior == &actPowerCrystal || selectedEntity.behavior == &actPowerCrystalBase )

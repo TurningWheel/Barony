@@ -1994,6 +1994,16 @@ void clientActions(Entity* entity)
 		case 1484:
 			entity->behavior = &actAssistShrine;
 			break;
+		case 1622:
+			entity->behavior = &actCauldron;
+			break;
+		case 1617:
+			entity->behavior = &actWorkbench;
+			break;
+		case 1619:
+		case 1620:
+			entity->behavior = &actMailbox;
+			break;
 		case 1585:
 		case 1586:
 		case 1587:
@@ -6393,6 +6403,56 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		}
 	} },
 
+	{ 'CAUO', []() {
+		// server order to open cauldron gui
+		Uint32 uid = SDLNet_Read32(&net_packet->data[4]);
+		if ( auto entity = uidToEntity(uid) )
+		{
+			if ( entity->behavior == &::actCauldron )
+			{
+				GenericGUI[clientnum].openGUI(GUI_TYPE_ALCHEMY, entity);
+			}
+		}
+	} },
+
+	// server order to close cauldron
+	{ 'CAUC', []() {
+		int player = net_packet->data[4];
+		if ( player == clientnum )
+		{
+			Uint32 uid = SDLNet_Read32(&net_packet->data[5]);
+			if ( Entity* cauldron = uidToEntity(uid) )
+			{
+				GenericGUI[clientnum].alchemyGUI.closeAlchemyMenu();
+			}
+		}
+	} },
+
+	{ 'WRKO', []() {
+		// server order to open workbench gui
+		Uint32 uid = SDLNet_Read32(&net_packet->data[4]);
+		if ( auto entity = uidToEntity(uid) )
+		{
+			if ( entity->behavior == &::actWorkbench )
+			{
+				GenericGUI[clientnum].openGUI(GUI_TYPE_TINKERING, entity);
+			}
+		}
+	} },
+
+	// server order to close workbench
+	{ 'WRKC', []() {
+		int player = net_packet->data[4];
+		if ( player == clientnum )
+		{
+			Uint32 uid = SDLNet_Read32(&net_packet->data[5]);
+			if ( Entity* cauldron = uidToEntity(uid) )
+			{
+				GenericGUI[clientnum].tinkerGUI.closeTinkerMenu();
+			}
+		}
+	} },
+
 	// server order to consume key for lock
 	{ 'LKEY', []() {
 		const int player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
@@ -8949,6 +9009,40 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 			}
 		}
 	}},
+
+	// client closed cauldron
+	{ 'CAUC', []() {
+		int player = net_packet->data[4];
+		if ( player >= 0 && player < MAXPLAYERS )
+		{
+			Uint32 uid = SDLNet_Read32(&net_packet->data[5]);
+			if ( Entity* cauldron = uidToEntity(uid) )
+			{
+				if ( achievementObserver.playerUids[player] == (Uint32)cauldron->skill[6] )
+				{
+					cauldron->skill[6] = 0;
+					serverUpdateEntitySkill(cauldron, 6);
+				}
+			}
+		}
+	} },
+
+	// client closed workbench
+	{ 'WRKC', []() {
+		int player = net_packet->data[4];
+		if ( player >= 0 && player < MAXPLAYERS )
+		{
+			Uint32 uid = SDLNet_Read32(&net_packet->data[5]);
+			if ( Entity* workbench = uidToEntity(uid) )
+			{
+				if ( achievementObserver.playerUids[player] == (Uint32)workbench->skill[6] )
+				{
+					workbench->skill[6] = 0;
+					serverUpdateEntitySkill(workbench, 6);
+				}
+			}
+		}
+	} },
 
 	// client claimed some assist items
 	{ 'ASSI', []() {

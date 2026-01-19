@@ -4204,6 +4204,18 @@ void Player::WorldUI_t::setTooltipActive(Entity& tooltip)
 		{
 			interactText = Language::get(4024); // "Pull torch" 
 		}
+		else if ( parent->behavior == &actCauldron )
+		{
+			interactText = Language::get(6977); // "Use cauldron" 
+		}
+		else if ( parent->behavior == &actWorkbench )
+		{
+			interactText = Language::get(6979); // "Use workbench"
+		}
+		else if ( parent->behavior == &actMailbox )
+		{
+			interactText = Language::get(6984); // "Use mailbox"
+		}
 		else if ( parent->behavior == &actFurniture || parent->behavior == &actMCaxe )
 		{
 			interactText = Language::get(4023); // "Inspect" 
@@ -4520,6 +4532,18 @@ bool entityBlocksTooltipInteraction(const int player, Entity& entity)
 		return false;
 	}
 	else if ( entity.behavior == &::actAssistShrine )
+	{
+		return false;
+	}
+	else if ( entity.behavior == &actCauldron )
+	{
+		return false;
+	}
+	else if ( entity.behavior == &actWorkbench )
+	{
+		return false;
+	}
+	else if ( entity.behavior == &actMailbox )
 	{
 		return false;
 	}

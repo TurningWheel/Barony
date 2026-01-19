@@ -1090,7 +1090,10 @@ void Entity::actAssistShrine()
 			}
 			else if ( multiplayer == SINGLE || playernum == 0 )
 			{
-				GenericGUI[playernum].assistShrineGUI.closeAssistShrine();
+				if ( playernum >= 0 && playernum < MAXPLAYERS )
+				{
+					GenericGUI[playernum].assistShrineGUI.closeAssistShrine();
+				}
 			}
 		}
 	}
