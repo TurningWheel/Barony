@@ -8977,11 +8977,15 @@ Sint32 statGetCON(Stat* entitystats, Entity* my)
 	{
 		CON += 8;
 	}
-	if ( entitystats->getEffectActive(EFF_RATION_HEARTY)
-		|| entitystats->getEffectActive(EFF_RATION_BITTER) )
+	if ( entitystats->getEffectActive(EFF_RATION_HEARTY) )
 	{
 		CON += 4;
 	}
+	if ( entitystats->getEffectActive(EFF_RATION_BITTER) )
+	{
+		CON += 4;
+	}
+
 	if ( entitystats->getEffectActive(EFF_COWARDICE) )
 	{
 		CON -= entitystats->getEffectActive(EFF_COWARDICE);
