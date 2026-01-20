@@ -501,6 +501,7 @@ public:
 	Sint32& colliderIsMapGenerated = skill[22];
 	Sint32& colliderSpellTarget = skill[23];
 	Sint32& colliderTelepathy = skill[24];
+	Sint32& colliderDropVariable = skill[25]; // store germinate drop qtys
 	static void colliderAssignProperties(Entity* entity, bool mapGeneration, map_t* whichMap);
 	static Entity* createBreakableCollider(int colliderDamageType, real_t _x, real_t _y, Entity* parent);
 	void colliderSetServerSkillOnSpawned();

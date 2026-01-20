@@ -4207,6 +4207,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 								{
 									if ( Uint8 effectStrength = casterStats->getEffectActive(EFF_GROWTH) )
 									{
+										breakable->colliderDropVariable = std::max(1, effectStrength - 1);
 										casterStats->setEffectValueUnsafe(EFF_GROWTH, effectStrength - 1);
 										serverUpdateEffects(caster->isEntityPlayer());
 									}
@@ -4272,6 +4273,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 								{
 									if ( Uint8 effectStrength = casterStats->getEffectActive(EFF_GROWTH) )
 									{
+										breakable->colliderDropVariable = std::max(1, effectStrength - 1);
 										casterStats->setEffectValueUnsafe(EFF_GROWTH, effectStrength - 1);
 										serverUpdateEffects(caster->isEntityPlayer());
 										if ( caster->flags[BURNING] )

@@ -1213,9 +1213,9 @@ void Entity::colliderOnDestroy()
 	{
 		if ( find->second.name == "mushroom_spell_casted" )
 		{
-			for ( int i = 0; i < 3; ++i )
+			for ( int i = 0; i < this->colliderDropVariable; ++i )
 			{
-				if ( i == 0 && local_rng.rand() % 10 == 0 )
+				if ( local_rng.rand() % 10 == 0 )
 				{
 					dropItemMonster(newItem(DUST_BALL, SERVICABLE, 0, 1, 0, true, nullptr), this, nullptr);
 				}
@@ -1229,7 +1229,7 @@ void Entity::colliderOnDestroy()
 		}
 		else if ( find->second.name == "germinate_spell_casted" )
 		{
-			for ( int i = 0; i < 3; ++i )
+			for ( int i = 0; i < this->colliderDropVariable; ++i )
 			{
 				dropItemMonster(newItem(FOOD_NUT, SERVICABLE, 0, 1, 0, true, nullptr), this, nullptr);
 			}
