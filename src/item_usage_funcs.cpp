@@ -5057,6 +5057,7 @@ void item_Food(Item*& item, int player)
 		if (players[player] && players[player]->entity && !(svFlags & SV_FLAG_HUNGER))
 		{
 			//if ( !(stats[player]->mask && stats[player]->mask->type == MASK_MARIGOLD) )
+			if ( stats[player]->type != MYCONID )
 			{
 				playSoundEntity(players[player]->entity, 28, 64);
 				players[player]->entity->modHP(-5);
@@ -5510,6 +5511,7 @@ void item_FoodTin(Item*& item, int player)
 		if (players[player] && players[player]->entity && !(svFlags & SV_FLAG_HUNGER))
 		{
 			//if ( !(stats[player]->mask && stats[player]->mask->type == MASK_MARIGOLD) )
+			if ( stats[player]->type != MYCONID )
 			{
 				playSoundEntity(players[player]->entity, 28, 64);
 				players[player]->entity->modHP(-5);
