@@ -8065,6 +8065,25 @@ Sint32 Entity::getAttack(Entity* my, Stat* myStats, bool isPlayer, int chargeMod
 		{
 			attack = BASE_PLAYER_UNARMED_DAMAGE;
 			attack += (myStats->getModifiedProficiency(PRO_UNARMED) / 20); // 0, 1, 2, 3, 4, 5 damage from total
+			if ( shapeshifted )
+			{
+				if ( my->effectShapeshift == RAT )
+				{
+					attack += 2;
+				}
+				else if ( my->effectShapeshift == SPIDER )
+				{
+					attack += 3;
+				}
+				else if ( my->effectShapeshift == TROLL )
+				{
+					attack += 5;
+				}
+				else if ( my->effectShapeshift == CREATURE_IMP )
+				{
+					attack += 2;
+				}
+			}
 		}
 		if ( myStats->gloves && !shapeshifted )
 		{
