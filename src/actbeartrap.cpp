@@ -155,7 +155,25 @@ void actBeartrap(Entity* my)
 				if ( entityDist(my, entity) < 6.5 )
 				{
 					entity->setEffect(EFF_PARALYZED, true, 200, false);
-					entity->setEffect(EFF_BLEEDING, true, 300, false);
+					if ( entity->setEffect(EFF_BLEEDING, true, 300, false) )
+					{
+						if ( parent && parent->behavior == &actPlayer )
+						{
+							if ( stats[parent->skill[2]]->helmet && stats[parent->skill[2]]->helmet->type == PUNISHER_HOOD )
+							{
+								int mpAmount = parent->modMP(1 + local_rng.rand() % 2);
+								parent->playerInsectoidIncrementHungerToMP(mpAmount);
+								Uint32 color = makeColorRGB(0, 255, 0);
+								parent->setEffect(EFF_MP_REGEN, true, std::max(stats[parent->skill[2]]->EFFECTS_TIMERS[EFF_MP_REGEN], 10 * TICKS_PER_SECOND), false);
+								if ( parent->behavior == &actPlayer )
+								{
+									messagePlayerColor(parent->skill[2], MESSAGE_HINT, color, Language::get(3753));
+									steamStatisticUpdateClient(parent->skill[2], STEAM_STAT_ITS_A_LIVING, STEAM_STAT_INT, 1);
+								}
+								playSoundEntity(parent, 168, 128);
+							}
+						}
+					}
 					int damage = 10 + 3 * (BEARTRAP_STATUS + BEARTRAP_BEATITUDE);
 					if ( parent )
 					{
