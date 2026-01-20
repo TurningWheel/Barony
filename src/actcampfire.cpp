@@ -565,6 +565,13 @@ void actWorkbench(Entity* my)
 
 void actMailbox(Entity* my)
 {
+	if ( !CAMPFIRE_INIT )
+	{
+		CAMPFIRE_INIT = 1;
+		CAMPFIRE_HEALTH = MAXPLAYERS;
+		my->createWorldUITooltip();
+	}
+
 	if ( multiplayer == CLIENT )
 	{
 		return;
@@ -609,7 +616,7 @@ void actMailbox(Entity* my)
 			{
 				if ( playernum >= 0 && playernum < MAXPLAYERS )
 				{
-					//GenericGUI[playernum].tinkerGUI.closeTinkerMenu();
+					GenericGUI[playernum].mailboxGUI.closeMailMenu();
 				}
 			}
 		}
@@ -641,7 +648,7 @@ void actMailbox(Entity* my)
 					}
 					if ( players[i]->isLocalPlayer() )
 					{
-						//GenericGUI[i].openGUI(GUI_TYPE_TINKERING, my);
+						GenericGUI[i].openGUI(GUI_TYPE_MAILBOX, my);
 					}
 					else if ( multiplayer == SERVER && i > 0 )
 					{

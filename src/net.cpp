@@ -6453,6 +6453,31 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		}
 	} },
 
+	{ 'MBXO', []() {
+		// server order to open mailbox gui
+		Uint32 uid = SDLNet_Read32(&net_packet->data[4]);
+		if ( auto entity = uidToEntity(uid) )
+		{
+			if ( entity->behavior == &::actMailbox )
+			{
+				GenericGUI[clientnum].openGUI(GUI_TYPE_MAILBOX, entity);
+			}
+		}
+	} },
+
+	// server order to close mailbox
+	{ 'MBXC', []() {
+		int player = net_packet->data[4];
+		if ( player == clientnum )
+		{
+			Uint32 uid = SDLNet_Read32(&net_packet->data[5]);
+			if ( Entity* cauldron = uidToEntity(uid) )
+			{
+				GenericGUI[clientnum].mailboxGUI.closeMailMenu();
+			}
+		}
+	} },
+
 	// server order to consume key for lock
 	{ 'LKEY', []() {
 		const int player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
@@ -9039,6 +9064,23 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 				{
 					workbench->skill[6] = 0;
 					serverUpdateEntitySkill(workbench, 6);
+				}
+			}
+		}
+	} },
+
+	// client closed mailbox
+	{ 'MBXC', []() {
+		int player = net_packet->data[4];
+		if ( player >= 0 && player < MAXPLAYERS )
+		{
+			Uint32 uid = SDLNet_Read32(&net_packet->data[5]);
+			if ( Entity* mailbox = uidToEntity(uid) )
+			{
+				if ( achievementObserver.playerUids[player] == (Uint32)mailbox->skill[6] )
+				{
+					mailbox->skill[6] = 0;
+					serverUpdateEntitySkill(mailbox, 6);
 				}
 			}
 		}

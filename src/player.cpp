@@ -1199,6 +1199,7 @@ bool Player::GUI_t::bModuleAccessibleWithMouse(GUIModules moduleToAccess)
 		|| moduleToAccess == MODULE_SHOP || moduleToAccess == MODULE_TINKERING
 		|| moduleToAccess == MODULE_FEATHER
 		|| moduleToAccess == MODULE_ALCHEMY
+		|| moduleToAccess == MODULE_MAILBOX
 		|| moduleToAccess == MODULE_ASSISTSHRINE
 		|| moduleToAccess == MODULE_ITEMEFFECTGUI )
 	{
@@ -1356,6 +1357,10 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 			{
 				return MODULE_NONE;
 			}
+			else if ( GenericGUI[player.playernum].mailboxGUI.bOpen )
+			{
+				return MODULE_NONE;
+			}
 			else if ( GenericGUI[player.playernum].alchemyGUI.bOpen )
 			{
 				if ( inputs.getUIInteraction(player.playernum)->selectedItem )
@@ -1475,6 +1480,10 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 			return MODULE_INVENTORY;
 		}
 		else if ( activeModule == MODULE_ALCHEMY )
+		{
+			return MODULE_NONE;
+		}
+		else if ( activeModule == MODULE_MAILBOX )
 		{
 			return MODULE_NONE;
 		}
@@ -1733,6 +1742,10 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 			{
 				return MODULE_NONE;
 			}
+			else if ( GenericGUI[player.playernum].mailboxGUI.bOpen )
+			{
+				return MODULE_NONE;
+			}
 			else if ( player.ghost.isActive() )
 			{
 				if ( bCompactView )
@@ -1852,6 +1865,10 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 			return MODULE_INVENTORY;
 		}
 		else if ( activeModule == MODULE_ALCHEMY )
+		{
+			return MODULE_NONE;
+		}
+		else if ( activeModule == MODULE_MAILBOX )
 		{
 			return MODULE_NONE;
 		}
@@ -2184,6 +2201,13 @@ bool Player::GUI_t::handleInventoryMovement()
 				GenericGUI[player].alchemyGUI.getSelectedAlchemySlotY(),
 				-1, 0);
 		}
+		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_MAILBOX )
+		{
+			select_mail_slot(player,
+				GenericGUI[player].mailboxGUI.getSelectedMailSlotX(),
+				GenericGUI[player].mailboxGUI.getSelectedMailSlotY(),
+				-1, 0);
+		}
 		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_ASSISTSHRINE )
 		{
 			select_assistshrine_slot(player,
@@ -2289,6 +2313,13 @@ bool Player::GUI_t::handleInventoryMovement()
 			select_alchemy_slot(player,
 				GenericGUI[player].alchemyGUI.getSelectedAlchemySlotX(),
 				GenericGUI[player].alchemyGUI.getSelectedAlchemySlotY(),
+				1, 0);
+		}
+		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_MAILBOX )
+		{
+			select_mail_slot(player,
+				GenericGUI[player].mailboxGUI.getSelectedMailSlotX(),
+				GenericGUI[player].mailboxGUI.getSelectedMailSlotY(),
 				1, 0);
 		}
 		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_ASSISTSHRINE )
@@ -2450,6 +2481,13 @@ bool Player::GUI_t::handleInventoryMovement()
 				GenericGUI[player].alchemyGUI.getSelectedAlchemySlotY(),
 				0, -1);
 		}
+		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_MAILBOX )
+		{
+			select_mail_slot(player,
+				GenericGUI[player].mailboxGUI.getSelectedMailSlotX(),
+				GenericGUI[player].mailboxGUI.getSelectedMailSlotY(),
+				0, -1);
+		}
 		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_ASSISTSHRINE )
 		{
 			select_assistshrine_slot(player,
@@ -2607,6 +2645,13 @@ bool Player::GUI_t::handleInventoryMovement()
 			select_alchemy_slot(player,
 				GenericGUI[player].alchemyGUI.getSelectedAlchemySlotX(),
 				GenericGUI[player].alchemyGUI.getSelectedAlchemySlotY(),
+				0, 1);
+		}
+		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_MAILBOX )
+		{
+			select_mail_slot(player,
+				GenericGUI[player].mailboxGUI.getSelectedMailSlotX(),
+				GenericGUI[player].mailboxGUI.getSelectedMailSlotY(),
 				0, 1);
 		}
 		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_ASSISTSHRINE )
@@ -7144,6 +7189,9 @@ void Player::clearGUIPointers()
 	genericGUI.alchemyGUI.alchFrame = nullptr;
 	genericGUI.alchemyGUI.alchemySlotFrames.clear();
 	genericGUI.alchemyGUI.itemRequiresTitleReflow = true;
+	genericGUI.mailboxGUI.mailFrame = nullptr;
+	genericGUI.mailboxGUI.mailSlotFrames.clear();
+	genericGUI.mailboxGUI.itemRequiresTitleReflow = true;
 	genericGUI.assistShrineGUI.assistShrineFrame = nullptr;
 	genericGUI.assistShrineGUI.assistShrineSlotFrames.clear();
 	genericGUI.featherGUI.featherFrame = nullptr;

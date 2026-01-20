@@ -5123,6 +5123,7 @@ void Player::HUD_t::updateUINavigation()
 			if ( !GenericGUI[player.playernum].tinkerGUI.bOpen && !GenericGUI[player.playernum].alchemyGUI.bOpen
 				&& !GenericGUI[player.playernum].featherGUI.bOpen
 				&& !GenericGUI[player.playernum].assistShrineGUI.bOpen
+				&& !GenericGUI[player.playernum].mailboxGUI.bOpen
 				&& !GenericGUI[player.playernum].itemfxGUI.bOpen )
 			{
 				justify = PANEL_JUSTIFY_LEFT;
@@ -5178,6 +5179,7 @@ void Player::HUD_t::updateUINavigation()
 			if ( !player.inventoryUI.chestGUI.bOpen && !player.shopGUI.bOpen
 				&& !GenericGUI[player.playernum].tinkerGUI.bOpen && !GenericGUI[player.playernum].alchemyGUI.bOpen
 				&& !GenericGUI[player.playernum].featherGUI.bOpen
+				&& !GenericGUI[player.playernum].mailboxGUI.bOpen
 				&& !GenericGUI[player.playernum].assistShrineGUI.bOpen
 				&& !GenericGUI[player.playernum].itemfxGUI.bOpen )
 			{
@@ -28497,6 +28499,13 @@ void createPlayerInventory(const int player)
 		GenericGUI[player].assistShrineGUI.assistShrineFrame->setInheritParentFrameOpacity(false);
 		GenericGUI[player].assistShrineGUI.assistShrineFrame->setDisabled(true);
 
+		GenericGUI[player].mailboxGUI.mailFrame = frame->addFrame("mail");
+		GenericGUI[player].mailboxGUI.mailFrame->setHollow(true);
+		GenericGUI[player].mailboxGUI.mailFrame->setBorder(0);
+		GenericGUI[player].mailboxGUI.mailFrame->setOwner(player);
+		GenericGUI[player].mailboxGUI.mailFrame->setInheritParentFrameOpacity(false);
+		GenericGUI[player].mailboxGUI.mailFrame->setDisabled(true);
+
 		auto oldCursorFrame = frame->addFrame("inventory old item cursor");
 		oldCursorFrame->setSize(SDL_Rect{ 0, 0, inventorySlotSize + 16, inventorySlotSize + 16 });
 		oldCursorFrame->setDisabled(true);
@@ -30159,6 +30168,21 @@ void Player::Inventory_t::updateCursor()
 				cursor.queuedModule = Player::GUI_t::MODULE_NONE;
 			}
 			else if ( alchemyGUI.isInteractable )
+			{
+				moveMouse = true;
+				cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+			}
+		}
+		else if ( cursor.queuedModule == Player::GUI_t::MODULE_MAILBOX )
+		{
+			auto& mailboxGUI = GenericGUI[player.playernum].mailboxGUI;
+			if ( !mailboxGUI.mailGUIHasBeenCreated()
+				|| mailboxGUI.mailFrame->isDisabled() )
+			{
+				// cancel
+				cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+			}
+			else if ( mailboxGUI.isInteractable )
 			{
 				moveMouse = true;
 				cursor.queuedModule = Player::GUI_t::MODULE_NONE;

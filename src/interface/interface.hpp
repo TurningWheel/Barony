@@ -226,6 +226,7 @@ void select_tinkering_slot(int player, int currentx, int currenty, int diffx, in
 void select_alchemy_slot(int player, int currentx, int currenty, int diffx, int diffy);
 void select_feather_slot(int player, int currentx, int currenty, int diffx, int diffy);
 void select_assistshrine_slot(int player, int currentx, int currenty, int diffx, int diffy);
+void select_mail_slot(int player, int currentx, int currenty, int diffx, int diffy);
 
 extern Entity* openedChest[MAXPLAYERS]; //One for each client. //TODO: Clientside, [0] will always point to something other than NULL when a chest is open and it will be NULL when a chest is closed.
 extern list_t chestInv[MAXPLAYERS]; //This is just for the client, so that it can populate the chest inventory on its end.
@@ -324,7 +325,8 @@ enum GUICurrentType
 	GUI_TYPE_TINKERING,
 	GUI_TYPE_SCRIBING,
 	GUI_TYPE_ITEMFX,
-	GUI_TYPE_ASSIST
+	GUI_TYPE_ASSIST,
+	GUI_TYPE_MAILBOX
 };
 
 // Generic GUI Stuff (repair/alchemy)
@@ -343,6 +345,11 @@ public:
 	Uint32 alembicEntityUid = 0;
 	bool experimentingAlchemy;
 	
+	bool isItemMailable(const Item* item);
+	Uint32 mailboxEntityUid = 0;
+	void mailboxClaimItem();
+	bool mailboxSendItem();
+
 	// Misc item/spell effects
 	Item* itemEffectScrollItem;
 	bool itemEffectUsingSpell;
@@ -413,7 +420,8 @@ public:
 		alchemyGUI(*this),
 		featherGUI(*this),
 		itemfxGUI(*this),
-		assistShrineGUI(*this)
+		assistShrineGUI(*this),
+		mailboxGUI(*this)
 	{
 		tinkeringTotalItems.first = nullptr;
 		tinkeringTotalItems.last = nullptr;
@@ -963,6 +971,93 @@ public:
 		void clearItemDisplayed();
 	};
 	AssistShrineGUI_t assistShrineGUI;
+
+	struct MailboxGui_t
+	{
+		GenericGUIMenu& parentGUI;
+
+		static const int MAIL_SLOT_SEND = -1;
+		static const int MAIL_SLOT_RECV = -2;
+
+		Item mailReceiveItem;
+		MailboxGui_t(GenericGUIMenu& g) :
+			parentGUI(g)
+		{
+			mailReceiveItem.appearance = 0;
+			mailReceiveItem.type = POTION_EMPTY;
+			mailReceiveItem.node = nullptr;
+			mailReceiveItem.status = SERVICABLE;
+			mailReceiveItem.beatitude = 0;
+			mailReceiveItem.count = 1;
+			mailReceiveItem.appearance = 0;
+			mailReceiveItem.identified = false;
+			mailReceiveItem.uid = 0;
+			mailReceiveItem.isDroppable = false;
+			mailReceiveItem.x = MAIL_SLOT_RECV;
+			mailReceiveItem.y = 0;
+		}
+
+		enum MailActions_t : int
+		{
+			MAIL_ACTION_NONE,
+			MAIL_ACTION_OK,
+			MAIL_ACTION_INVALID_ITEM,
+			MAIL_ACTION_UNIDENTIFIED
+		};
+		MailActions_t itemActionType = MAIL_ACTION_NONE;
+		/*enum AlchemyView_t : int
+		{
+			ALCHEMY_VIEW_BREW,
+			ALCHEMY_VIEW_RECIPES,
+			ALCHEMY_VIEW_COOK,
+			ALCHEMY_VIEW_RECIPES_COOK
+		};*/
+		//AlchemyView_t currentView = ALCHEMY_VIEW_BREW;
+		Frame* mailFrame = nullptr;
+		real_t animx = 0.0;
+		real_t animTooltip = 0.0;
+		Uint32 animTooltipTicks = 0;
+		real_t animSendItem1 = 0.0;
+		int animSendItem1StartX = 0;
+		int animSendItem1StartY = 0;
+		int animSendItem1DestX = 0;
+		int animSendItem1DestY = 0;
+		Uint32 sendItem1Uid = 0;
+		real_t animRecvItem = 0.0;
+		int animRecvItemStartX = 0;
+		int animRecvItemStartY = 0;
+		int animRecvItemDestX = 0;
+		int animRecvItemDestY = 0;
+		Uint32 recvItemUid = 0;
+		//int animRecvItemCount = 1;
+		bool isInteractable = true;
+		bool bOpen = false;
+		bool bFirstTimeSnapCursor = false;
+		void openMailMenu(/*AlchemyView_t view*/);
+		//void changeCurrentView(AlchemyView_t view);
+		void closeMailMenu();
+		void updateMailMenu();
+		void createMailMenu();
+		bool mailGUIHasBeenCreated() const;
+		std::string itemDesc = "";
+		int itemType = -1;
+		bool itemRequiresTitleReflow = true;
+		int selectedMailSlotX = -1;
+		int selectedMailSlotY = -1;
+		std::unordered_map<int, Frame*> mailSlotFrames;
+		void selectMailSlot(const int x, const int y);
+		const int getSelectedMailSlotX() const { return selectedMailSlotX; }
+		const int getSelectedMailSlotY() const { return selectedMailSlotY; }
+		Frame* getMailSlotFrame(int x, int y) const;
+		void setItemDisplayNameAndPrice(Item* item, const bool isTooltipForRecvItem);
+		//void setItemDisplayNameAndPriceBrew(Item* item, const bool isTooltipForResultPotion, const bool isTooltipForRecipe);
+		//void setItemDisplayNameAndPriceCook(Item* item, const bool isTooltipForResultPotion, const bool isTooltipForRecipe);
+		bool inventoryItemAllowedInGUI(Item* item);
+		bool warpMouseToSelectedMailItem(Item* snapToItem, Uint32 flags);
+		void clearItemDisplayed();
+		static int heightOffsetWhenNotCompact;
+	};
+	MailboxGui_t mailboxGUI;
 
 	struct FeatherGUI_t
 	{

@@ -5933,6 +5933,7 @@ void ingameHud()
 		GenericGUI[player].tinkerGUI.updateTinkerMenu();
 		GenericGUI[player].alchemyGUI.updateAlchemyMenu();
 		GenericGUI[player].assistShrineGUI.updateAssistShrine();
+		GenericGUI[player].mailboxGUI.updateMailMenu();
 		GenericGUI[player].featherGUI.updateFeatherMenu();
 		GenericGUI[player].itemfxGUI.updateItemEffectMenu();
 		players[player]->GUI.dropdownMenu.process();
