@@ -5537,7 +5537,8 @@ void Entity::handleEffects(Stat* myStats)
 						if ( myStats->MP < myStats->MAXMP )
 						{
 							Sint32 oldMP = myStats->MP;
-							this->modMP(mpMod);
+							int mpAmount = this->modMP(mpMod);
+							this->playerInsectoidIncrementHungerToMP(mpAmount);
 							if ( behavior == &actPlayer )
 							{
 								if ( oldMP < myStats->MP )
