@@ -6481,7 +6481,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 				{
 					if ( !item->identified )
 					{
-						if ( itemCategory(item) == GEM )
+						if ( itemCategory(item) == GEM && item->type != GEM_ROCK )
 						{
 							snprintf(valueBuf, sizeof(valueBuf), "%s", "???");
 						}

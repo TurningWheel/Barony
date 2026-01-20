@@ -41338,7 +41338,7 @@ SDL_Surface* Player::WorldUI_t::WorldTooltipItem_t::blitItemWorldTooltip(Item* i
 			char goldBuf[32];
 			if ( !item->identified )
 			{
-				if ( itemCategory(item) == GEM )
+				if ( itemCategory(item) == GEM && item->type != GEM_ROCK )
 				{
 					snprintf(goldBuf, sizeof(goldBuf), "%s", "???");
 				}
