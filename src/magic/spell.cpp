@@ -905,8 +905,33 @@ int getSpellbookBaseINTBonus(Entity* caster, Stat* casterStats, int skillID)
 		int INT = statGetINT(casterStats, caster);
 		if ( INT > 0 )
 		{
-			bonus += INT / 2.0;
+			bonus += INT;
+			if ( skillID == PRO_SORCERY )
+			{
+				int bonusStat = statGetINT(casterStats, caster);
+				if ( bonusStat > 0 )
+				{
+					bonus += bonusStat;
+				}
+			}
 		}
+		if ( skillID == PRO_MYSTICISM )
+		{
+			int bonusStat = statGetCHR(casterStats, caster);
+			if ( bonusStat > 0 )
+			{
+				bonus += bonusStat;
+			}
+		}
+		else if ( skillID == PRO_THAUMATURGY )
+		{
+			int bonusStat = statGetCON(casterStats, caster);
+			if ( bonusStat > 0 )
+			{
+				bonus += bonusStat;
+			}
+		}
+		bonus /= 2;
 	}
 	return bonus;
 }
@@ -1432,6 +1457,17 @@ spell_t* getSpellFromID(int ID)
 int getSpellbookFromSpellID(int spellID)
 {
 	ItemType itemType = WOODEN_SHIELD;
+
+	auto find = ItemTooltips.spellItems.find(spellID);
+	if ( find != ItemTooltips.spellItems.end() )
+	{
+		if ( find->second.spellbookId >= 0 && find->second.spellbookId < NUMITEMS )
+		{
+			itemType = (ItemType)find->second.spellbookId;
+			return itemType;
+		}
+	}
+
 	switch (spellID)
 	{
 		case SPELL_FORCEBOLT:
@@ -1624,6 +1660,18 @@ int getSpellIDFromFoci(int fociType)
 
 int getSpellIDFromSpellbook(int spellbookType)
 {
+	if ( spellbookType >= 0 && spellbookType < NUMITEMS )
+	{
+		if ( items[spellbookType].hasAttribute("spellbook_spell") )
+		{
+			auto& spellID = items[spellbookType].attributes["spellbook_spell"];
+			if ( spellID >= SPELL_NONE && spellID < NUM_SPELLS )
+			{
+				return spellID;
+			}
+		}
+	}
+
 	switch (spellbookType )
 	{
 		case SPELLBOOK_FORCEBOLT:

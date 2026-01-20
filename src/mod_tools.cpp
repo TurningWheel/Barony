@@ -892,7 +892,7 @@ void ItemTooltips_t::readItemsFromFile()
 		return;
 	}
 
-	const int bufSize = 400000;
+	const int bufSize = 600000;
 	static char buf[bufSize];
 	int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
 	buf[count] = '\0';
@@ -1209,6 +1209,15 @@ void ItemTooltips_t::readItemsFromFile()
 			}
 		}
 
+		if ( spell_itr->value.HasMember("spellbook_item_icon_padding") )
+		{
+			for ( rapidjson::Value::ConstValueIterator arr_itr = spell_itr->value["spellbook_item_icon_padding"].Begin();
+				arr_itr != spell_itr->value["spellbook_item_icon_padding"].End(); ++arr_itr )
+			{
+				t.spellbookItemIconPaddingLines.push_back(arr_itr->GetInt());
+			}
+		}
+
 		for ( rapidjson::Value::ConstValueIterator arr_itr = spell_itr->value["effect_tags"].Begin();
 			arr_itr != spell_itr->value["effect_tags"].End(); ++arr_itr )
 		{
@@ -1245,6 +1254,14 @@ void ItemTooltips_t::readItemsFromFile()
 			else if ( t.spellTagsStr[t.spellTagsStr.size() - 1] == "TRACK_SPELL_HITS" )
 			{
 				t.spellTags.insert(SPELL_TAG_TRACK_HITS);
+			}
+			else if ( t.spellTagsStr[t.spellTagsStr.size() - 1] == "SPELL_SCALE_SPELLBOOK" )
+			{
+				t.spellTags.insert(SPELL_TAG_SPELLBOOK_SCALING);
+			}
+			else if ( t.spellTagsStr[t.spellTagsStr.size() - 1] == "BONUS_AS_EFFECT_POWER" )
+			{
+				t.spellTags.insert(SPELL_TAG_BONUS_AS_EFFECT_POWER);
 			}
 			else if ( t.spellTagsStr[t.spellTagsStr.size() - 1] == "SPELL_LEVEL_EVENT" )
 			{
@@ -1292,7 +1309,10 @@ void ItemTooltips_t::readItemsFromFile()
 			if ( t.spellbookInternalName == tmpItems[i].internalName )
 			{
 				t.spellbookId = i;
-				items[i].attributes["spellbook_spell"] = t.id;
+				if ( !items[i].hasAttribute("spellbook_spell") )
+				{
+					items[i].attributes["spellbook_spell"] = t.id;
+				}
 			}
 			if ( t.magicstaffInternalName == tmpItems[i].internalName )
 			{
@@ -2432,6 +2452,15 @@ std::string ItemTooltips_t::getSpellIconFormatText(const int player, Item& item,
 	Entity* caster = compendiumTooltipIntro ? nullptr : players[player]->entity;
 	Stat* myStats = compendiumTooltipIntro ? nullptr : stats[player];
 
+	real_t bonusPercent = 0.0;
+	if ( itemCategory(&item) == SPELLBOOK )
+	{
+		bonusPercent = getSpellbookBonusPercent(
+			caster,
+			myStats,
+			&item) / 100.0;
+	}
+
 	for ( auto& formatTag : def->second.spellFormatTags )
 	{
 		if ( formatTag.size() == 0 ) { continue; }
@@ -2451,19 +2480,19 @@ std::string ItemTooltips_t::getSpellIconFormatText(const int player, Item& item,
 				}
 				else if ( key == "dmg" )
 				{
-					vals.push_back(getSpellDamageFromID(spell->ID, caster, myStats, caster, 0.0, false));
+					vals.push_back(getSpellDamageFromID(spell->ID, caster, myStats, caster, bonusPercent, false));
 				}
 				else if ( key == "dmg2" )
 				{
-					vals.push_back(getSpellDamageSecondaryFromID(spell->ID, caster, myStats, caster, 0.0, false));
+					vals.push_back(getSpellDamageSecondaryFromID(spell->ID, caster, myStats, caster, bonusPercent, false));
 				}
 				else if ( key == "dur" )
 				{
-					vals.push_back(getSpellEffectDurationFromID(spell->ID, caster, myStats, caster, 0.0));
+					vals.push_back(getSpellEffectDurationFromID(spell->ID, caster, myStats, caster, bonusPercent));
 				}
 				else if ( key == "dur2" )
 				{
-					vals.push_back(getSpellEffectDurationSecondaryFromID(spell->ID, caster, myStats, caster, 0.0));
+					vals.push_back(getSpellEffectDurationSecondaryFromID(spell->ID, caster, myStats, caster, bonusPercent));
 				}
 				else if ( key == "tier" )
 				{
@@ -2613,7 +2642,7 @@ std::string ItemTooltips_t::getSpellIconFormatText(const int player, Item& item,
 						}
 					}
 				}
-				int damage = vals[0] + std::max(1, vals[1] * statGetINT(myStats, caster)) * (1.0 + getBonusFromCasterOfSpellElement(caster, myStats, element, spell->ID, spell->skillID));
+				int damage = vals[0] + std::max(1, vals[1] * statGetINT(myStats, caster)) * (1.0 + bonusPercent + getBonusFromCasterOfSpellElement(caster, myStats, element, spell->ID, spell->skillID));
 				snprintf(buf, sizeof(buf), format.c_str(), damage);
 				str = buf;
 			}
@@ -3334,7 +3363,41 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 	{
 		if ( conditionalAttribute == "SPELLBOOK_SPELLINFO_LEARNED" )
 		{
-			str = getSpellIconText(player, item, compendiumTooltipIntro);
+			if ( iconIndex == 1 )
+			{
+				if ( auto spell = getSpellFromID(getSpellIDFromSpellbook(item.type)) )
+				{
+					auto def = spellItems.find(spell->ID);
+					if ( def != spellItems.end() )
+					{
+						if ( def->second.spellFormatTags.size() )
+						{
+							std::string result = getSpellIconFormatText(player, item, str, spell, iconIndex, compendiumTooltipIntro);
+							if ( result != "" )
+							{
+								str = result;
+							}
+						}
+					}
+				}
+			}
+			else
+			{
+				str = getSpellIconText(player, item, compendiumTooltipIntro);
+				if ( itemCategory(&item) == SPELLBOOK )
+				{
+					if ( auto spell = getSpellFromID(getSpellIDFromSpellbook(item.type)) )
+					{
+						if ( iconIndex < ItemTooltips.spellItems[spell->ID].spellbookItemIconPaddingLines.size() )
+						{
+							for ( int i = 0; i < ItemTooltips.spellItems[spell->ID].spellbookItemIconPaddingLines[iconIndex]; ++i )
+							{
+								str += '\n';
+							}
+						}
+					}
+				}
+			}
 			return;
 		}
 		else if ( conditionalAttribute == "SPELLBOOK_SPELLINFO_UNLEARNED"
@@ -3370,7 +3433,20 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 			}
 			SpellItemTypes spellType = spellItems[spellID].spellType;
 
-			if ( spellItems[spellID].spellTags.find(SPELL_TAG_DAMAGE) != spellItems[spellID].spellTags.end() )
+			if ( spellItems[spellID].spellTags.find(SPELL_TAG_BONUS_AS_EFFECT_POWER) != spellItems[spellID].spellTags.end() )
+			{
+				str = "";
+				for ( auto it = ItemTooltips.templates["template_spellbook_icon_pwr_bonus"].begin();
+					it != ItemTooltips.templates["template_spellbook_icon_pwr_bonus"].end(); ++it )
+				{
+					str += *it;
+					if ( std::next(it) != ItemTooltips.templates["template_spellbook_icon_pwr_bonus"].end() )
+					{
+						str += '\n';
+					}
+				}
+			}
+			else if ( spellItems[spellID].spellTags.find(SPELL_TAG_DAMAGE) != spellItems[spellID].spellTags.end() )
 			{
 				str = "";
 				for ( auto it = ItemTooltips.templates["template_spellbook_icon_damage_bonus"].begin();
@@ -5192,9 +5268,26 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 			{
 				damageOrHealing = adjectives["spell_strings"]["duration"];
 			}
+			if ( spellItems[spell->ID].spellTags.find(SpellTagTypes::SPELL_TAG_BONUS_AS_EFFECT_POWER)
+				!= spellItems[spell->ID].spellTags.end() )
+			{
+				damageOrHealing = adjectives["spell_strings"]["effect"];
+			}
+
+			std::string statName = getItemStatShortName("INT");
+			if ( spell->skillID == PRO_MYSTICISM )
+			{
+				statName += '/';
+				statName += getItemStatShortName("CHR");
+			}
+			else if ( spell->skillID == PRO_THAUMATURGY )
+			{
+				statName += '/';
+				statName += getItemStatShortName("CON");
+			}
 
 			snprintf(buf, sizeof(buf), str.c_str(),
-				intBonus, damageOrHealing.c_str(), getItemStatShortName("INT").c_str(),
+				intBonus, damageOrHealing.c_str(), statName.c_str(),
 				beatitudeBonus, damageOrHealing.c_str(), getItemBeatitudeAdjective(item.beatitude).c_str());
 		}
 		else if ( detailTag.compare("spellbook_cast_success") == 0 )
@@ -5302,37 +5395,42 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 			if ( !spell ) { return; }
 
 			//int totalDamage = getSpellDamageOrHealAmount(player, spell, nullptr);
-			Sint32 oldINT = stats[player]->INT;
+			/*Sint32 oldINT = stats[player]->INT;
 			Sint32 oldCHR = stats[player]->CHR;
 			Sint32 oldCON = stats[player]->CON;
 			stats[player]->INT = 0;
 			stats[player]->CHR = 0;
-			stats[player]->CON = 0;
+			stats[player]->CON = 0;*/
 
 			int baseDamage = getSpellDamageOrHealAmount(-1, spell, nullptr, compendiumTooltipIntro);
 
 			real_t mult = getSpellPropertyFromID(spell_t::SPELLPROP_DAMAGE_MULT, spell->ID, compendiumTooltipIntro ? nullptr : players[player]->entity, nullptr, nullptr);
 
-			real_t bonusEquipPercent = 100.0 * getBonusFromCasterOfSpellElement(
+			/*real_t bonusEquipPercent = 100.0 * getBonusFromCasterOfSpellElement(
 				compendiumTooltipIntro ? nullptr : players[player]->entity, 
 				compendiumTooltipIntro ? nullptr : stats[player], 
 				nullptr, spell ? spell->ID : SPELL_NONE, spell->skillID);
 
 			stats[player]->INT = oldINT;
 			stats[player]->CHR = oldCHR;
-			stats[player]->CON = oldCON;
+			stats[player]->CON = oldCON;*/
 
 			real_t bonusINTPercent = 100.0 * getBonusFromCasterOfSpellElement(
 				compendiumTooltipIntro ? nullptr : players[player]->entity,
 				compendiumTooltipIntro ? nullptr : stats[player],
 				nullptr, spell ? spell->ID : SPELL_NONE, spell->skillID);
-			bonusINTPercent -= bonusEquipPercent;
+			//bonusINTPercent -= bonusEquipPercent;
 
 			std::string damageOrHealing = adjectives["spell_strings"]["damage"];
 			if ( spellItems[spell->ID].spellTags.find(SpellTagTypes::SPELL_TAG_HEALING)
 				!= spellItems[spell->ID].spellTags.end() )
 			{
 				damageOrHealing = adjectives["spell_strings"]["healing"];
+			}
+			if ( spellItems[spell->ID].spellTags.find(SpellTagTypes::SPELL_TAG_BONUS_AS_EFFECT_POWER)
+				!= spellItems[spell->ID].spellTags.end() )
+			{
+				damageOrHealing = adjectives["spell_strings"]["effect"];
 			}
 
 			std::string statName = getItemStatShortName("INT");
@@ -5346,8 +5444,23 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 				statName += '/';
 				statName += getItemStatShortName("CON");
 			}
-			snprintf(buf, sizeof(buf), str.c_str(), damageOrHealing.c_str(), baseDamage, damageOrHealing.c_str(), 
-				bonusINTPercent * mult, damageOrHealing.c_str(), statName.c_str(), bonusEquipPercent * mult, damageOrHealing.c_str());
+
+			if ( spell->ID == SPELL_HOLY_BEAM && templates["template_spell_damage_bonus_pwr_dual"].size() )
+			{
+				int damage = getSpellDamageFromID(SPELL_HOLY_BEAM, nullptr, nullptr, nullptr, 0.0, false);
+				real_t damageMult = mult;
+				int healing = getSpellDamageSecondaryFromID(SPELL_HOLY_BEAM, nullptr, nullptr, nullptr, 0.0, false);
+				real_t healingMult = getSpellPropertyFromID(spell_t::SPELLPROP_DAMAGE_SECONDARY_MULT, spell->ID, compendiumTooltipIntro ? nullptr : players[player]->entity, nullptr, nullptr);
+				snprintf(buf, sizeof(buf), templates["template_spell_damage_bonus_pwr_dual"][0].c_str(), adjectives["spell_strings"]["effect"].c_str(), damage, adjectives["spell_strings"]["damage"].c_str(),
+					bonusINTPercent * damageMult, adjectives["spell_strings"]["damage"].c_str(),
+					healing, adjectives["spell_strings"]["healing"].c_str(),
+					bonusINTPercent * healingMult, adjectives["spell_strings"]["healing"].c_str());
+			}
+			else
+			{
+				snprintf(buf, sizeof(buf), str.c_str(), damageOrHealing.c_str(), baseDamage, damageOrHealing.c_str(), 
+					bonusINTPercent * mult, damageOrHealing.c_str());// , statName.c_str(), bonusEquipPercent* mult, damageOrHealing.c_str());
+			}
 		}
 		else if ( detailTag.compare("spell_cast_success") == 0 )
 		{

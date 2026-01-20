@@ -836,6 +836,7 @@ typedef struct spell_t
 		SPELLPROP_MODIFIED_FOCI_CAST_TIME,
 		SPELLPROP_MODIFIED_SPELL_CAST_TIME,
 		SPELLPROP_DAMAGE_MULT,
+		SPELLPROP_DAMAGE_SECONDARY_MULT,
 		SPELLPROP_BASE_PROPERTY_FLOAT_ENUM_END
 	};
 
@@ -1043,7 +1044,7 @@ void createParticleCharmMonster(Entity* parent);
 void createParticleShadowTag(Entity* parent, Uint32 casterUid, int duration);
 static const int PINPOINT_PARTICLE_START = 1767;
 static const int PINPOINT_PARTICLE_END = 1782;
-void createParticleSpellPinpointTarget(Entity* parent, Uint32 casterUid, int sprite, int duration, int spellID);
+Entity* createParticleSpellPinpointTarget(Entity* parent, Uint32 casterUid, int sprite, int duration, int spellID);
 Entity* createFloorMagic(ParticleTimerEffect_t::EffectType particleType, int sprite, real_t x, real_t y, real_t z, real_t dir, Uint32 lifetime);
 Entity* createRadiusMagic(int spellID, Entity* caster, real_t x, real_t y, real_t radius, Uint32 lifetime, Entity* follow);
 void floorMagicClientReceive(Entity* my);

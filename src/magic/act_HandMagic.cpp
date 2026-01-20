@@ -184,7 +184,7 @@ void spellcasting_animation_manager_t::executeAttackSpell(bool swingweapon)
 
 bool spellcasting_animation_manager_t::spellWaitingAttackInput()
 {
-	if ( active && !active_spellbook 
+	if ( (active || active_spellbook)
 		&& (stage == ANIM_SPELL_TOUCH 
 			|| stage == ANIM_SPELL_TOUCH_CHARGE
 			|| stage == ANIM_SPELL_OVERCHARGE_READY
@@ -197,7 +197,7 @@ bool spellcasting_animation_manager_t::spellWaitingAttackInput()
 
 bool spellcasting_animation_manager_t::spellIgnoreAttack()
 {
-	if ( active && !active_spellbook 
+	if ( (active || active_spellbook)
 		&& (stage == ANIM_SPELL_COMPLETE_NOCAST	
 			|| stage == ANIM_SPELL_COMPLETE_SPELL 
 			|| stage == ANIM_SPELL_TOUCH_THROW
@@ -1045,7 +1045,11 @@ void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, 
 		}
 		else if ( !isSpellcasterBeginner(player, caster, spell->skillID) )
 		{
-			animation_manager->times_to_circle = std::max(HANDMAGIC_TICKS_PER_CIRCLE, animation_manager->times_to_circle - HANDMAGIC_TICKS_PER_CIRCLE);
+			if ( animation_manager->times_to_circle >= HANDMAGIC_TICKS_PER_CIRCLE )
+			{
+				//int skillLVL = std::max(0, std::min(100, stat->getModifiedProficiency(spell->skillID)));
+				//animation_manager->times_to_circle = std::max(HANDMAGIC_TICKS_PER_CIRCLE, (int)(animation_manager->times_to_circle - HANDMAGIC_TICKS_PER_CIRCLE * skillLVL / 100.0));
+			}
 			//animation_manager->times_to_circle = (spellCost / 20) + 1; //Circle once for every 20 mana the spell costs.
 		}
 	}
@@ -1933,7 +1937,7 @@ void actLeftHandMagic(Entity* my)
 	my->x += cast_animation[HANDMAGIC_PLAYERNUM].lefthand_movex;
 	my->y += cast_animation[HANDMAGIC_PLAYERNUM].lefthand_movey;
 
-	if ( cast_animation[HANDMAGIC_PLAYERNUM].active )
+	if ( cast_animation[HANDMAGIC_PLAYERNUM].active || cast_animation[HANDMAGIC_PLAYERNUM].active_spellbook )
 	{
 		if ( cast_animation[HANDMAGIC_PLAYERNUM].stage == ANIM_SPELL_TOUCH
 			|| cast_animation[HANDMAGIC_PLAYERNUM].stage == ANIM_SPELL_TOUCH_CHARGE

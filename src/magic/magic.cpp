@@ -3560,7 +3560,7 @@ bool Entity::pinpointDamageProc(Entity* attacker, int damage)
 							{
 								Entity* caster = uidToEntity(entity->skill[3]);
 								real_t damageMult = getSpellDamageSecondaryFromID(SPELL_PINPOINT, caster, caster ? caster->getStats() : nullptr,
-									entity) / 100.0;
+									entity, entity->actmagicSpellbookBonus / 100.0) / 100.0;
 								entity->skill[4] += std::max(0, (damage)) * damageMult;
 								found = true;
 								break;
@@ -3589,8 +3589,9 @@ bool Entity::pinpointDamageProc(Entity* attacker, int damage)
 									}
 									if ( i == 0 )
 									{
+										fx1->actmagicSpellbookBonus = entity->actmagicSpellbookBonus;
 										real_t damageMult = getSpellDamageSecondaryFromID(SPELL_PINPOINT, caster, caster ? caster->getStats() : nullptr,
-											entity) / 100.0;
+											entity, entity->actmagicSpellbookBonus / 100.0) / 100.0;
 										fx1->skill[4] += std::max(0, (damage)) * damageMult;
 									}
 								}
@@ -4244,6 +4245,10 @@ real_t getSpellPropertyFromID(spell_t::SpellBasePropertiesFloat prop, int spellI
 		else if ( prop == spell_t::SpellBasePropertiesFloat::SPELLPROP_DAMAGE_MULT )
 		{
 			result = element->getDamageMult();
+		}
+		else if ( prop == spell_t::SpellBasePropertiesFloat::SPELLPROP_DAMAGE_SECONDARY_MULT )
+		{
+			result = element->getDamageSecondaryMult();
 		}
 		else if ( prop == spell_t::SpellBasePropertiesFloat::SPELLPROP_CAST_TIME_MULT )
 		{

@@ -2778,7 +2778,9 @@ public:
 		SPELL_TAG_CURE,
 		SPELL_TAG_BASIC_HIT_MESSAGE,
 		SPELL_TAG_TRACK_HITS,
-		SPELL_TAG_BUFF
+		SPELL_TAG_BUFF,
+		SPELL_TAG_SPELLBOOK_SCALING,
+		SPELL_TAG_BONUS_AS_EFFECT_POWER
 	};
 private:
 	struct spellItem_t
@@ -2798,6 +2800,7 @@ private:
 		std::vector<std::string> spellTagsStr;
 		std::set<SpellTagTypes> spellTags;
 		std::vector<std::string> spellFormatTags;
+		std::vector<int> spellbookItemIconPaddingLines;
 		std::set<spell_t::SpellOnCastEventTypes> spellLevelTags;
 
 		bool hasExpandedJSON = false;
@@ -2826,6 +2829,16 @@ private:
 		int drop_table = -1;
 	};
 
+	Uint32 defaultHeadingTextColor = 0xFFFFFFFF;
+	Uint32 defaultIconTextColor = 0xFFFFFFFF;
+	Uint32 defaultDescriptionTextColor = 0xFFFFFFFF;
+	Uint32 defaultDetailsTextColor = 0xFFFFFFFF;
+	Uint32 defaultPositiveTextColor = 0xFFFFFFFF;
+	Uint32 defaultNegativeTextColor = 0xFFFFFFFF;
+	Uint32 defaultStatusEffectTextColor = 0xFFFFFFFF;
+	Uint32 defaultFaintTextColor = 0xFFFFFFFF;
+
+public:
 	struct ItemTooltipIcons_t
 	{
 		std::string iconPath = "";
@@ -2841,16 +2854,6 @@ private:
 		void setConditionalAttribute(std::string str) { conditionalAttribute = str; }
 	};
 
-	Uint32 defaultHeadingTextColor = 0xFFFFFFFF;
-	Uint32 defaultIconTextColor = 0xFFFFFFFF;
-	Uint32 defaultDescriptionTextColor = 0xFFFFFFFF;
-	Uint32 defaultDetailsTextColor = 0xFFFFFFFF;
-	Uint32 defaultPositiveTextColor = 0xFFFFFFFF;
-	Uint32 defaultNegativeTextColor = 0xFFFFFFFF;
-	Uint32 defaultStatusEffectTextColor = 0xFFFFFFFF;
-	Uint32 defaultFaintTextColor = 0xFFFFFFFF;
-
-public:
 	struct ItemTooltip_t
 	{
 		Uint32 headingTextColor = 0;

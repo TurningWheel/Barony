@@ -3440,10 +3440,15 @@ namespace ConsoleCommands {
 			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
+
 		for (int i = 0; i < NUM_SPELLS; ++i)
 		{
+			if ( i == SPELL_CRAB_FORM || i == SPELL_CRAB_WEB ) { continue; }
 			int spellbook = getSpellbookFromSpellID(i);
-			dropItem(newItem(static_cast<ItemType>(spellbook), DECREPIT, -1, 1, local_rng.rand(), true, &stats[clientnum]->inventory), 0);
+			if ( spellbook >= 0 && spellbook < NUMITEMS && items[spellbook].category == SPELLBOOK )
+			{
+				dropItem(newItem(static_cast<ItemType>(spellbook), DECREPIT, 0, 1, local_rng.rand(), true, &stats[clientnum]->inventory), 0);
+			}
 		}
 		});
 
@@ -4223,6 +4228,10 @@ namespace ConsoleCommands {
 			return;
 		}
 
+		/*rapidjson::Document d;
+		d.SetObject();
+		CustomHelpers::addMemberToRoot(d, "item_names", rapidjson::Value(rapidjson::kObjectType));*/
+
 		for ( int i = SPELL_NONE + 50; i < NUM_SPELLS; ++i )
 		{
 			if ( allGameSpells.find(i) != allGameSpells.end() )
@@ -4233,9 +4242,32 @@ namespace ConsoleCommands {
 					intro = true;
 					bool learned = addSpell(spell->ID, clientnum, true);
 					intro = oldIntro;
+
+					/*int spellbookId = getSpellbookFromSpellID(spell->ID);
+					if ( items[spellbookId].category == SPELLBOOK )
+					{
+						d["item_names"].AddMember(rapidjson::Value(ItemTooltips.tmpItems[spellbookId].internalName.c_str(), d.GetAllocator()), rapidjson::Value(rapidjson::kObjectType),
+							d.GetAllocator());
+						std::string str = "spellbook of ";
+						str += spell->getSpellName(true);
+						d["item_names"][ItemTooltips.tmpItems[spellbookId].internalName.c_str()].AddMember("name_identified", rapidjson::Value(str.c_str(), d.GetAllocator()), d.GetAllocator());
+						d["item_names"][ItemTooltips.tmpItems[spellbookId].internalName.c_str()].AddMember("name_unidentified", rapidjson::Value("spellbook", d.GetAllocator()), d.GetAllocator());
+					}*/
 				}
 			}
 		}
+
+		/*File* fp = FileIO::open("lang/stuff.json", "wb");
+		if ( !fp )
+		{
+			return;
+		}
+		rapidjson::StringBuffer os;
+		rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(os);
+		d.Accept(writer);
+		fp->write(os.GetString(), sizeof(char), os.GetSize());
+		FileIO::close(fp);*/
+
 		return;
 		});
 
@@ -4245,6 +4277,8 @@ namespace ConsoleCommands {
 			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
+		
+		std::vector<std::pair<int, std::pair<int, const char*>>> orderedSpells;
 
 		for ( int i = 0; i < NUM_SPELLS; ++i )
 		{
@@ -4259,11 +4293,21 @@ namespace ConsoleCommands {
 						&& !spell->hide_from_ui && spell->drop_table >= 0 )
 					{
 						bool learned = addSpell(spell->ID, clientnum, true);
+						if ( argc >= 2 )
+						{
+							orderedSpells.push_back(std::make_pair(spell->ID, std::make_pair(spell->difficulty, spell->spell_internal_name)));
+						}
 					}
 					intro = oldIntro;
 				}
 			}
 		}
+
+		for ( auto& spell : orderedSpells )
+		{
+			printlog("%d %d %s", spell.first, spell.second.first, spell.second.second);
+		}
+
 		return;
 		});
 
@@ -4273,6 +4317,8 @@ namespace ConsoleCommands {
 			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
+
+		std::vector<std::pair<int, std::pair<int, const char*>>> orderedSpells;
 
 		for ( int i = 0; i < NUM_SPELLS; ++i )
 		{
@@ -4287,11 +4333,21 @@ namespace ConsoleCommands {
 						&& !spell->hide_from_ui && spell->drop_table >= 0 )
 					{
 						bool learned = addSpell(spell->ID, clientnum, true);
+						if ( argc >= 2 )
+						{
+							orderedSpells.push_back(std::make_pair(spell->ID, std::make_pair(spell->difficulty, spell->spell_internal_name)));
+						}
 					}
 					intro = oldIntro;
 				}
 			}
 		}
+
+		for ( auto& spell : orderedSpells )
+		{
+			printlog("%d %d %s", spell.first, spell.second.first, spell.second.second);
+		}
+
 		return;
 		});
 
@@ -4301,6 +4357,7 @@ namespace ConsoleCommands {
 			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
+
 		node_t* nextnode = nullptr;
 		for ( auto node = map.entities->first; node; node = nextnode )
 		{
@@ -4328,6 +4385,8 @@ namespace ConsoleCommands {
 			return;
 		}
 
+		std::vector<std::pair<int, std::pair<int, const char*>>> orderedSpells;
+
 		for ( int i = 0; i < NUM_SPELLS; ++i )
 		{
 			if ( allGameSpells.find(i) != allGameSpells.end() )
@@ -4341,10 +4400,19 @@ namespace ConsoleCommands {
 						&& !spell->hide_from_ui && spell->drop_table >= 0 )
 					{
 						bool learned = addSpell(spell->ID, clientnum, true);
+						if ( argc >= 2 )
+						{
+							orderedSpells.push_back(std::make_pair(spell->ID, std::make_pair(spell->difficulty, spell->spell_internal_name)));
+						}
 					}
 					intro = oldIntro;
 				}
 			}
+		}
+
+		for ( auto& spell : orderedSpells )
+		{
+			printlog("%d %d %s", spell.first, spell.second.first, spell.second.second);
 		}
 		return;
 		});

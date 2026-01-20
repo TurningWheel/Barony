@@ -3142,7 +3142,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							{
 								if ( hitstats && hitstats->getEffectActive(EFF_STATIC) )
 								{
-									int extraDamage = getSpellDamageSecondaryFromID(spell->ID, parent, nullptr, my);
+									int extraDamage = getSpellDamageSecondaryFromID(spell->ID, parent, nullptr, my, (my->actmagicSpellbookBonus / 100.f));
 									if ( extraDamage > 0 )
 									{
 										extraDamage *= getSpellDamageFromStatic(spell->ID, hitstats);
@@ -3786,7 +3786,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							{
 								Sint32 oldHP = hitstats->HP;
 
-								int holyHeal = getSpellDamageSecondaryFromID(SPELL_HOLY_BEAM, parent, parent ? parent->getStats() : nullptr, my);
+								int holyHeal = getSpellDamageSecondaryFromID(SPELL_HOLY_BEAM, parent, parent ? parent->getStats() : nullptr, my, (my->actmagicSpellbookBonus / 100.f));
 								spell_changeHealth(hit.entity, holyHeal);
 								int heal = std::max(hitstats->HP - oldHP, 0);
 								if ( heal >= 0 )
@@ -4634,6 +4634,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								fx->scalex = 0.0;
 								fx->scaley = 0.0;
 								fx->scalez = 0.0;
+								fx->actmagicSpellbookBonus = my->actmagicSpellbookBonus;
 							}
 						}
 					}
@@ -4818,7 +4819,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						if ( (!mimic && hit.entity->behavior == &actMonster) || hit.entity->behavior == &actPlayer )
 						{
 							int charges = std::min(15, std::max(1, 
-								std::min(getSpellDamageSecondaryFromID(SPELL_DEFY_FLESH, parent, nullptr, my), 
+								std::min(getSpellDamageSecondaryFromID(SPELL_DEFY_FLESH, parent, nullptr, my, (my->actmagicSpellbookBonus / 100.f)),
 								hitstats->HP / std::max(1, element->getDurationSecondary()))));
 							Uint8 effectStrength = charges;
 							if ( parent )
@@ -4845,6 +4846,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								{
 									fx->skill[3] = spell->caster;
 									fx->flags[INVISIBLE] = true;
+									fx->actmagicSpellbookBonus = my->actmagicSpellbookBonus;
 								}
 
 								serverSpawnMiscParticles(hit.entity, PARTICLE_EFFECT_DEFY_FLESH_ORBIT, 2363, 0, element->duration);
@@ -6113,7 +6115,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						if ( mimic || hit.entity->behavior == &actChest )
 						{
 							found = true;
-							ratio = std::max(100, getSpellDamageSecondaryFromID(SPELL_SPLINTER_GEAR, parent, nullptr, my)) / 100.0;
+							ratio = std::max(100, getSpellDamageSecondaryFromID(SPELL_SPLINTER_GEAR, parent, nullptr, my, (my->actmagicSpellbookBonus / 100.f))) / 100.0;
 							if ( applyGenericMagicDamage(parent, hit.entity, *my, spell->ID, preResistanceDamage * ratio, false) )
 							{
 								criticalEffect = true;
@@ -6134,7 +6136,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									if ( !armor || (armor && armor->status == BROKEN) )
 									{
 										criticalEffect = true;
-										ratio = std::max(100, getSpellDamageSecondaryFromID(SPELL_SPLINTER_GEAR, parent, nullptr, my)) / 100.0;
+										ratio = std::max(100, getSpellDamageSecondaryFromID(SPELL_SPLINTER_GEAR, parent, nullptr, my, (my->actmagicSpellbookBonus / 100.f))) / 100.0;
 									}
 
 									if ( parent )
@@ -6199,7 +6201,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								if ( !criticalEffect )
 								{
 									criticalEffect = true;
-									ratio = std::max(100, getSpellDamageSecondaryFromID(SPELL_SPLINTER_GEAR, parent, nullptr, my)) / 100.0;
+									ratio = std::max(100, getSpellDamageSecondaryFromID(SPELL_SPLINTER_GEAR, parent, nullptr, my, (my->actmagicSpellbookBonus / 100.f))) / 100.0;
 								}
 							}
 						}
@@ -8981,15 +8983,15 @@ void actParticleAestheticOrbit(Entity* my)
 					playSoundEntityLocal(my, 821, 92);
 
 					Entity* caster = uidToEntity(my->skill[3]);
-					int damage = getSpellDamageFromID(SPELL_PSYCHIC_SPEAR, caster, caster ? caster->getStats() : nullptr, my);
+					int damage = getSpellDamageFromID(SPELL_PSYCHIC_SPEAR, caster, caster ? caster->getStats() : nullptr, my, my->actmagicSpellbookBonus / 100.0);
 					if ( Stat* parentStats = parent->getStats() )
 					{
-						real_t hpThreshold = getSpellEffectDurationSecondaryFromID(SPELL_PSYCHIC_SPEAR, caster, caster ? caster->getStats() : nullptr, my) / 100.0;
+						real_t hpThreshold = getSpellEffectDurationSecondaryFromID(SPELL_PSYCHIC_SPEAR, caster, caster ? caster->getStats() : nullptr, my, my->actmagicSpellbookBonus / 100.0) / 100.0;
 						real_t parentHPRatio = std::min(1.0, parentStats->HP / std::max(1.0, (real_t)parentStats->MAXHP));
 						if ( parentHPRatio >= hpThreshold )
 						{
 							real_t scale = std::min(1.0, std::max(0.0, (parentHPRatio - hpThreshold) / (1.0 - hpThreshold)));
-							damage += scale * getSpellDamageSecondaryFromID(SPELL_PSYCHIC_SPEAR, caster, caster ? caster->getStats() : nullptr, my);
+							damage += scale * getSpellDamageSecondaryFromID(SPELL_PSYCHIC_SPEAR, caster, caster ? caster->getStats() : nullptr, my, my->actmagicSpellbookBonus / 100.0);
 						}
 					}
 
@@ -9122,7 +9124,7 @@ void actParticleAestheticOrbit(Entity* my)
 											if ( my->skill[1] == PARTICLE_EFFECT_SMITE_PINPOINT )
 											{
 												int flatDamage = getSpellDamageFromID(SPELL_PINPOINT, caster, caster ? caster->getStats() : nullptr,
-													my);
+													my, my->actmagicSpellbookBonus / 100.0);
 												if ( parent->isSmiteWeakMonster() )
 												{
 													flatDamage *= 2.0;
@@ -9335,6 +9337,7 @@ void actParticleAestheticOrbit(Entity* my)
 						fx->scalex = 0.0;
 						fx->scaley = 0.0;
 						fx->scalez = 0.0;
+						fx->actmagicSpellbookBonus = my->actmagicSpellbookBonus;
 
 						serverSpawnMiscParticles(parent, PARTICLE_EFFECT_DEFY_FLESH, 2363, 0, 3 * TICKS_PER_SECOND, fx->yaw * 256.0);
 
@@ -9402,7 +9405,7 @@ void actParticleAestheticOrbit(Entity* my)
 					{
 						Entity* caster = uidToEntity(my->skill[3]);
 						int damage = getSpellDamageFromID(SPELL_DEFY_FLESH, caster, caster ? caster->getStats() : nullptr,
-							my);
+							my, my->actmagicSpellbookBonus / 100.0);
 						applyGenericMagicDamage(caster, parent, caster ? *caster : *my, SPELL_DEFY_FLESH, damage, true);
 					}
 
@@ -11904,9 +11907,9 @@ void actParticleTimer(Entity* my)
 												serverSpawnMiscParticles(entity, PARTICLE_EFFECT_ABILITY_ROCK, 78);
 											}
 
-											int damage = getSpellDamageFromID(my->particleTimerVariable2, parent ? parent : my, nullptr, my);
-											int perStatDmg = getSpellDamageSecondaryFromID(my->particleTimerVariable2, parent ? parent : my, nullptr, my);
-											real_t perStatMult = getSpellEffectDurationSecondaryFromID(my->particleTimerVariable2, parent ? parent : my, nullptr, my) / 100.0;
+											int damage = getSpellDamageFromID(my->particleTimerVariable2, parent ? parent : my, nullptr, my, my->actmagicSpellbookBonus / 100.0);
+											int perStatDmg = getSpellDamageSecondaryFromID(my->particleTimerVariable2, parent ? parent : my, nullptr, my, my->actmagicSpellbookBonus / 100.0);
+											real_t perStatMult = getSpellEffectDurationSecondaryFromID(my->particleTimerVariable2, parent ? parent : my, nullptr, my, my->actmagicSpellbookBonus / 100.0) / 100.0;
 											perStatDmg *= (statGetSTR(stats, entity) + statGetCON(stats, entity)) * perStatMult;
 											damage += perStatDmg;
 											real_t mult = 0.1 * (std::min(10, effectStrength - 3));
@@ -12042,7 +12045,7 @@ void actParticleTimer(Entity* my)
 											|| (entity->isDamageableCollider() && entity->isColliderDamageableByMagic())
 											|| entity->behavior == &::actFurniture )
 										{
-											int damage = getSpellDamageFromID(SPELL_SHATTER_OBJECTS, caster, nullptr, my);
+											int damage = getSpellDamageFromID(SPELL_SHATTER_OBJECTS, caster, nullptr, my, my->actmagicSpellbookBonus / 100.0);
 											if ( applyGenericMagicDamage(caster, entity, *caster, SPELL_SHATTER_OBJECTS, damage, true) )
 											{
 												if ( entity->behavior != &::actIronDoor )
@@ -12673,6 +12676,10 @@ void actParticleTimer(Entity* my)
 							}
 							Entity* fx = createFloorMagic(data.effectType, 1757, my->x + data.x, my->y + data.y, -8.5, data.yaw, TICKS_PER_SECOND / 8);
 							fx->parent = my->getUID();
+							if ( my->actmagicSpellbookBonus > 0 )
+							{
+								fx->actmagicSpellbookBonus = my->actmagicSpellbookBonus;
+							}
 
 							fx->actmagicOrbitHitTargetUID1 = my->actmagicOrbitHitTargetUID2;
 							if ( data.sfx )
@@ -13500,6 +13507,10 @@ void actParticleTimer(Entity* my)
 							fx->sizex = 4;
 							fx->sizey = 4;
 							fx->parent = my->getUID();
+							if ( my->actmagicSpellbookBonus > 0 )
+							{
+								fx->actmagicSpellbookBonus = my->actmagicSpellbookBonus;
+							}
 							if ( data.sfx )
 							{
 								playSoundEntity(fx, data.sfx, 64);
@@ -13520,6 +13531,10 @@ void actParticleTimer(Entity* my)
 								{
 									Entity* fx = createFloorMagic(data.effectType, my->particleTimerCountdownSprite, data.x, data.y, 7.8, data.yaw, PARTICLE_LIFE + 3 * TICKS_PER_SECOND);
 									fx->parent = my->getUID();
+									if ( my->actmagicSpellbookBonus > 0 )
+									{
+										fx->actmagicSpellbookBonus = my->actmagicSpellbookBonus;
+									}
 									fx->sizex = 6;
 									fx->sizey = 6;
 									Uint32 nextTickEffect = std::numeric_limits<Uint32>::max();
@@ -13562,6 +13577,10 @@ void actParticleTimer(Entity* my)
 							fx->ditheringDisabled = true;
 							fx->actmagicNoParticle = 1;
 							fx->parent = my->getUID();
+							if ( my->actmagicSpellbookBonus > 0 )
+							{
+								fx->actmagicSpellbookBonus = my->actmagicSpellbookBonus;
+							}
 							if ( flickerLights )
 							{
 								fx->light = addLight(fx->x / 16, fx->y / 16, "explosion");
@@ -15391,11 +15410,11 @@ void actParticlePinpointTarget(Entity* my)
 	}
 }
 
-void createParticleSpellPinpointTarget(Entity* parent, Uint32 casterUid, int sprite, int duration, int spellID)
+Entity* createParticleSpellPinpointTarget(Entity* parent, Uint32 casterUid, int sprite, int duration, int spellID)
 {
 	if ( !parent )
 	{
-		return;
+		return nullptr;
 	}
 	Entity* entity = newEntity(sprite, 1, map.entities, nullptr); //Particle entity.
 	entity->parent = parent->getUID();
@@ -15449,6 +15468,8 @@ void createParticleSpellPinpointTarget(Entity* parent, Uint32 casterUid, int spr
 			}
 		}
 	}
+
+	return entity;
 }
 
 void createParticleCharmMonster(Entity* parent)
@@ -17402,10 +17423,10 @@ void actParticleFloorMagic(Entity* my)
 							if ( stats && entityDist(my, entity) <= 16.0 )
 							{
 								if ( !entity->monsterIsTargetable(true) && !entity->isUntargetableBat() ) { continue; }
-								int damage = getSpellDamageFromID(SPELL_LIGHTNING_BOLT, caster, nullptr, my);
+								int damage = getSpellDamageFromID(SPELL_LIGHTNING_BOLT, caster, nullptr, my, my->actmagicSpellbookBonus / 100.0);
 								if ( stats->getEffectActive(EFF_STATIC) )
 								{
-									int extraDamage = getSpellDamageSecondaryFromID(SPELL_LIGHTNING_BOLT, caster, nullptr, my);
+									int extraDamage = getSpellDamageSecondaryFromID(SPELL_LIGHTNING_BOLT, caster, nullptr, my, my->actmagicSpellbookBonus / 100.0);
 									if ( extraDamage > 0 )
 									{
 										extraDamage *= getSpellDamageFromStatic(SPELL_LIGHTNING_BOLT, stats);
@@ -17415,12 +17436,12 @@ void actParticleFloorMagic(Entity* my)
 								if ( applyGenericMagicDamage(caster, entity, caster ? *caster : *my, SPELL_LIGHTNING_BOLT, damage, true, true) )
 								{
 									Uint8 effectStrength = stats->getEffectActive(EFF_STATIC);
-									if ( effectStrength < getSpellEffectDurationSecondaryFromID(SPELL_LIGHTNING_BOLT, caster, nullptr, my) )
+									if ( effectStrength < getSpellEffectDurationSecondaryFromID(SPELL_LIGHTNING_BOLT, caster, nullptr, my, my->actmagicSpellbookBonus / 100.0) )
 									{
 										effectStrength += 1;
 									}
 									if ( entity->setEffect(EFF_STATIC, effectStrength,
-										getSpellEffectDurationFromID(SPELL_LIGHTNING_BOLT, caster, nullptr, my), true, true, false, false) )
+										getSpellEffectDurationFromID(SPELL_LIGHTNING_BOLT, caster, nullptr, my, my->actmagicSpellbookBonus / 100.0), true, true, false, false) )
 									{
 										Entity* fx = createParticleAestheticOrbit(entity, 1758, 2 * TICKS_PER_SECOND, PARTICLE_EFFECT_STATIC_ORBIT);
 										fx->z = 7.5;
@@ -17473,7 +17494,7 @@ void actParticleFloorMagic(Entity* my)
 								if ( stats )
 								{
 									int prevDuration = stats->getEffectActive(EFF_DISRUPTED) ? stats->EFFECTS_TIMERS[EFF_DISRUPTED] : 0;
-									int duration = getSpellEffectDurationFromID(spellID, caster, nullptr, my);
+									int duration = getSpellEffectDurationFromID(spellID, caster, nullptr, my, my->actmagicSpellbookBonus / 100.0);
 									if ( !stats->getEffectActive(EFF_DISRUPTED) )
 									{
 										entity->setEffect(EFF_DISRUPTED, true, duration, false, true, false, false); // don't override strength
@@ -17521,7 +17542,7 @@ void actParticleFloorMagic(Entity* my)
 										{
 											if ( particleEmitterHitPropsTimer2->hits == 0 || ((ticks - particleEmitterHitPropsTimer2->tick) > 15) )
 											{
-												damage = getSpellDamageFromID(spellID, caster, nullptr, parentTimer);
+												damage = getSpellDamageFromID(spellID, caster, nullptr, parentTimer, my->actmagicSpellbookBonus / 100.0);
 												++particleEmitterHitPropsTimer2->hits;
 												particleEmitterHitPropsTimer2->tick = ticks;
 											}
@@ -17530,7 +17551,7 @@ void actParticleFloorMagic(Entity* my)
 										{
 											if ( ((ticks - particleEmitterHitPropsTimer2->tick) > 50) )
 											{
-												damage = getSpellDamageFromID(spellID, caster, nullptr, parentTimer);
+												damage = getSpellDamageFromID(spellID, caster, nullptr, parentTimer, my->actmagicSpellbookBonus / 100.0);
 												++particleEmitterHitPropsTimer2->hits;
 												particleEmitterHitPropsTimer2->tick = ticks;
 											}
@@ -17772,14 +17793,14 @@ void actParticleFloorMagic(Entity* my)
 								if ( particleEmitterHitPropsFloorMagic->hits == 0 && my->skill[1] < 10 )
 								{
 									strength = 1;
-									duration = getSpellEffectDurationFromID(SPELL_ICE_WAVE, caster ? caster : my, nullptr, my);
-									damage = getSpellDamageFromID(SPELL_ICE_WAVE, caster ? caster : my, nullptr, my); // big damage region
+									duration = getSpellEffectDurationFromID(SPELL_ICE_WAVE, caster ? caster : my, nullptr, my, my->actmagicSpellbookBonus / 100.0);
+									damage = getSpellDamageFromID(SPELL_ICE_WAVE, caster ? caster : my, nullptr, my, my->actmagicSpellbookBonus / 100.0); // big damage region
 								}
 								else
 								{
 									strength = std::min(8, stats->getEffectActive(EFF_SLOW) + 1);
-									duration = getSpellEffectDurationSecondaryFromID(SPELL_ICE_WAVE, caster ? caster : my, nullptr, my);
-									damage += strength * getSpellDamageSecondaryFromID(SPELL_ICE_WAVE, caster ? caster : my, nullptr, my);
+									duration = getSpellEffectDurationSecondaryFromID(SPELL_ICE_WAVE, caster ? caster : my, nullptr, my, my->actmagicSpellbookBonus / 100.0);
+									damage += strength * getSpellDamageSecondaryFromID(SPELL_ICE_WAVE, caster ? caster : my, nullptr, my, my->actmagicSpellbookBonus / 100.0);
 								}
 								if ( damage > 0 )
 								{
@@ -18433,7 +18454,7 @@ void actParticleWave(Entity* my)
 							}
 						}
 						
-						int damage = getSpellDamageFromID(SPELL_FIRE_WALL, caster, nullptr, my);
+						int damage = getSpellDamageFromID(SPELL_FIRE_WALL, caster, nullptr, my, my->actmagicSpellbookBonus / 100.0);
 						for ( int i = 0; i < 8; ++i )
 						{
 							real_t ix = x + i * 2.0 * cos(tangent);
@@ -18516,7 +18537,7 @@ void actParticleWave(Entity* my)
 																{
 																	stats->burningInflictedBy = caster->getUID();
 																}
-																entity->char_fire = std::min(entity->char_fire, getSpellEffectDurationFromID(SPELL_FIRE_WALL, caster, nullptr, my));
+																entity->char_fire = std::min(entity->char_fire, getSpellEffectDurationFromID(SPELL_FIRE_WALL, caster, nullptr, my, my->actmagicSpellbookBonus / 100.0));
 															}
 														}
 													}
@@ -19831,8 +19852,8 @@ void actRadiusMagic(Entity* my)
 	else if ( my->actRadiusMagicID == SPELL_HEAL_MINOR || my->actRadiusMagicID == SPELL_HEAL_OTHER )
 	{
 		checkArea = false;
-		int interval = getSpellEffectDurationSecondaryFromID(my->actRadiusMagicID, caster, nullptr, caster);
-		if ( my->ticks % (interval) == 1 )
+		int interval = getSpellEffectDurationSecondaryFromID(my->actRadiusMagicID, caster, nullptr, caster, my->actmagicSpellbookBonus / 100.0);
+		if ( my->ticks % (interval) == 1 && my->ticks >= interval )
 		{
 			checkArea = true;
 		}
@@ -20239,7 +20260,7 @@ void actRadiusMagic(Entity* my)
 			{
 				if ( my->actRadiusMagicID == SPELL_HEAL_PULSE )
 				{
-					int amount = getSpellDamageFromID(SPELL_HEAL_PULSE, caster, nullptr, my);
+					int amount = getSpellDamageFromID(SPELL_HEAL_PULSE, caster, nullptr, my, my->actmagicSpellbookBonus / 100.0);
 					if ( firstEffect )
 					{
 						playSoundEntity(my, 168, 128);
@@ -20268,7 +20289,7 @@ void actRadiusMagic(Entity* my)
 				}
 				else if ( my->actRadiusMagicID == SPELL_HEAL_MINOR || my->actRadiusMagicID == SPELL_HEAL_OTHER )
 				{
-					int amount = getSpellDamageFromID(my->actRadiusMagicID, caster, nullptr, my);
+					int amount = getSpellDamageFromID(my->actRadiusMagicID, caster, nullptr, my, my->actmagicSpellbookBonus / 100.0);
 					/*if ( firstEffect )
 					{
 						playSoundEntity(my, 168, 128);

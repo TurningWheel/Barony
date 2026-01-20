@@ -5276,6 +5276,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 			int iconSpellIndex = -1;
             for ( auto& icon : itemTooltip.icons )
             {
+				ItemTooltips_t::ItemTooltipIcons_t* overrideIconType = nullptr;
                 if ( icon.conditionalAttribute.compare("") != 0 )
                 {
                     if ( itemCategory(item) == MAGICSTAFF )
@@ -5429,7 +5430,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                             {
                                 continue;
                             }
-                            if ( spell->ID == SPELL_CUREAILMENT && getSpellbookBonusPercent(players[player]->entity, stats[player], item) < 25 )
+                            if ( spell->ID == SPELL_CUREAILMENT && getSpellbookBonusPercent(players[player]->entity, stats[player], item) < 10 )
                             {
                                 continue;
                             }
@@ -5478,6 +5479,25 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                                 {
                                     continue;
                                 }
+
+								if ( index == 1 )
+								{
+									bool found = false;
+									auto& spellTooltip = ItemTooltips.tooltips["tooltip_spell_item"];
+									for ( auto& icon : spellTooltip.icons )
+									{
+										if ( icon.conditionalAttribute == spell->spell_internal_name )
+										{
+											found = true;
+											overrideIconType = &icon;
+											break;
+										}
+									}
+									if ( !found )
+									{
+										continue;
+									}
+								}
                             }
                             else if ( icon.conditionalAttribute == "SPELLBOOK_SPELLINFO_UNLEARNED" )
                             {
@@ -5551,9 +5571,9 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                 else if ( index == 1 )
                 {
                     imgSecondaryIcon->disabled = false;
-                    imgSecondaryIcon->path = icon.iconPath;
+                    imgSecondaryIcon->path = overrideIconType ? overrideIconType->iconPath : icon.iconPath;
                     
-                    std::string iconText = icon.text;
+                    std::string iconText = overrideIconType ? overrideIconType->text : icon.text;
                     ItemTooltips.formatItemIcon(player, tooltipType, *item, iconText, index, icon.conditionalAttribute, parentFrame);
                     
                     std::string bracketText = "";
@@ -5922,7 +5942,11 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                     {
                         if ( !ItemTooltips.bIsSpellDamageOrHealingType(spell) )
                         {
-                            continue;
+							if ( ItemTooltips.spellItems[spell->ID].spellTags.find(ItemTooltips_t::SPELL_TAG_BONUS_AS_EFFECT_POWER)
+								== ItemTooltips.spellItems[spell->ID].spellTags.end() )
+							{
+								continue;
+							}
                         }
                     }
                     else if ( tag.compare("spell_cast_success") == 0

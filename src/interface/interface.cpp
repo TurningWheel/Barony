@@ -11236,6 +11236,18 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 		case TOOL_BEARTRAP:
 		case TOOL_GLASSES:
 		case TOOL_LANTERN:
+		case BONE_AXE:
+		case BONE_MACE:
+		case BONE_SHORTBOW:
+		case BONE_SPEAR:
+		case BONE_SWORD:
+		case BONE_THROWING:
+		case HOOD_TEAL:
+		case HAT_FELT:
+		case BANDIT_BREASTPIECE:
+		case TUNIC_BLOUSE:
+		case BOLAS:
+		case LOAFERS:
 			*metal = 1;
 			*magic = 0;
 			break;
@@ -11263,6 +11275,7 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 		case HAT_SILKEN_BOW:
 		case HAT_BANDANA:
 		case HAT_CHEF:
+		case SHAWL:
 			*metal = 1;
 			*magic = 1;
 			break;
@@ -11284,6 +11297,12 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 		case GEM_AMETHYST:
 		case GEM_FLUORITE:
 		case MASK_PIPE:
+		case CLEAT_BOOTS:
+		case BONE_BREASTPIECE:
+		case BONE_BRACERS:
+		case BONE_BOOTS:
+		case BONE_SHIELD:
+		case BONE_HELM:
 			*metal = 1;
 			*magic = 2;
 			break;
@@ -11300,6 +11319,8 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 		case GEM_AQUAMARINE:
 		case GEM_OPAL:
 		case TOOL_BLINDFOLD_FOCUS:
+		case CLOAK_DENDRITE:
+		case AMULET_BURNINGRESIST:
 			*metal = 1;
 			*magic = 3;
 			break;
@@ -11328,6 +11349,10 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 		case HAT_HOOD_APPRENTICE:
 		case HAT_HOOD_WHISPERS:
 		case HAT_HOOD_ASSASSIN:
+		case ROBE_CULTIST:
+		case ROBE_HEALER:
+		case ROBE_MONK:
+		case ROBE_WIZARD:
 			*metal = 1;
 			*magic = 4;
 			break;
@@ -11360,20 +11385,56 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 		case SCROLL_REMOVECURSE:
 		case SCROLL_FOOD:
 		case SCROLL_SUMMON:
+
 		case SPELLBOOK_FORCEBOLT:
 		case SPELLBOOK_LIGHT:
+		case SPELLBOOK_CONFUSE:
 		case SPELLBOOK_SLOW:
-		case SPELLBOOK_LOCKING:
-		case SPELLBOOK_TELEPORTATION:
 		case SPELLBOOK_REVERT_FORM:
 		case SPELLBOOK_RAT_FORM:
-		case SPELLBOOK_SPRAY_WEB:
 		case SPELLBOOK_POISON:
-		case SPELLBOOK_SPEED:
-		case SPELLBOOK_DETECT_FOOD:
-		case SPELLBOOK_SHADOW_TAG:
 		case SPELLBOOK_SALVAGE:
 		case SPELLBOOK_DASH:
+		case SPELLBOOK_HEAL_OTHER:
+		case SPELLBOOK_BLOOD_WARD:
+		case SPELLBOOK_MAXIMISE:
+		case SPELLBOOK_SPIRIT_WEAPON:
+		case SPELLBOOK_FIRE_SPRITE:
+		case SPELLBOOK_IGNITE:
+		case SPELLBOOK_SHATTER_OBJECTS:
+		case SPELLBOOK_HEAL_MINOR:
+		case SPELLBOOK_LIGHTNING:
+		case SPELLBOOK_SLEEP:
+		case SPELLBOOK_OPENING:
+		case SPELLBOOK_LOCKING:
+		case SPELLBOOK_CUREAILMENT:
+		case SPELLBOOK_ACID_SPRAY:
+		case SPELLBOOK_SPRAY_WEB:
+		case SPELLBOOK_SHADOW_TAG:
+		case SPELLBOOK_GUARD_BODY:
+		case SPELLBOOK_GUARD_SPIRIT:
+		case SPELLBOOK_DONATION:
+		case SPELLBOOK_SCRY_ALLIES:
+		case SPELLBOOK_DETECT_ENEMY:
+		case SPELLBOOK_TURN_UNDEAD:
+		case SPELLBOOK_MINIMISE:
+		case SPELLBOOK_ENVENOM_WEAPON:
+		case SPELLBOOK_DEFY_FLESH:
+		case SPELLBOOK_RESHAPE_WEAPON:
+		case SPELLBOOK_ALTER_ARROW:
+		case SPELLBOOK_LEAD_BOLT:
+		case SPELLBOOK_COWARDICE:
+		case SPELLBOOK_SEEK_ALLY:
+		case SPELLBOOK_SPORES:
+		case SPELLBOOK_WINDGATE:
+		case SPELLBOOK_ATTRACT_ITEMS:
+		case SPELLBOOK_SPIN:
+		case SPELLBOOK_CLEANSE_FOOD:
+		case SPELLBOOK_FLAME_CLOAK:
+		case SPELLBOOK_DISRUPT_EARTH:
+		case SPELLBOOK_THORNS:
+		case SPELLBOOK_SIGIL:
+
 		case SPELLBOOK_9:
 		case SPELLBOOK_10:
 		case TOME_SORCERY:
@@ -11396,25 +11457,62 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 
 		case SCROLL_ENCHANTWEAPON:
 		case SCROLL_ENCHANTARMOR:
-		case SPELLBOOK_COLD:
+
 		case SPELLBOOK_FIREBALL:
+		case SPELLBOOK_INVISIBILITY:
+		case SPELLBOOK_HEALING:
+		case SPELLBOOK_DIG:
+		case SPELLBOOK_BLEED:
+		case SPELLBOOK_SPIDER_FORM:
+		case SPELLBOOK_SPEED:
+		case SPELLBOOK_DETECT_FOOD:
+		case SPELLBOOK_WEAKNESS:
+		case SPELLBOOK_TELEPULL:
+		case SPELLBOOK_TROLLS_BLOOD:
+		case SPELLBOOK_PROF_NIMBLENESS:
+		case SPELLBOOK_PROF_COUNSEL:
+		case SPELLBOOK_BLESS_FOOD:
+		case SPELLBOOK_DIVINE_ZEAL:
+		case SPELLBOOK_INCOHERENCE:
+		case SPELLBOOK_OVERCHARGE:
+		case SPELLBOOK_GREASE_SPRAY:
+		case SPELLBOOK_FORGE_KEY:
+		case SPELLBOOK_DEEP_SHADE:
+		case SPELLBOOK_TELEKINESIS:
+		case SPELLBOOK_DISARM:
+		case SPELLBOOK_ABUNDANCE:
+		case SPELLBOOK_FORCE_SHIELD:
+		case SPELLBOOK_SPLINTER_GEAR:
+		case SPELLBOOK_FIRE_WALL:
+		case SPELLBOOK_MAGICIANS_ARMOR:
+		case SPELLBOOK_MAGICMISSILE:
+		case SPELLBOOK_COLD:
 		case SPELLBOOK_REMOVECURSE:
-		case SPELLBOOK_LIGHTNING:
 		case SPELLBOOK_IDENTIFY:
 		case SPELLBOOK_MAGICMAPPING:
-		case SPELLBOOK_SLEEP:
-		case SPELLBOOK_CONFUSE:
-		case SPELLBOOK_OPENING:
-		case SPELLBOOK_HEALING:
-		case SPELLBOOK_CUREAILMENT:
-		case SPELLBOOK_ACID_SPRAY:
-		case SPELLBOOK_CHARM_MONSTER:
-		case SPELLBOOK_SPIDER_FORM:
-		case SPELLBOOK_TROLL_FORM:
+		case SPELLBOOK_TELEPORTATION:
+		case SPELLBOOK_VAMPIRIC_AURA:
 		case SPELLBOOK_FEAR:
-		case SPELLBOOK_STRIKE:
-		case SPELLBOOK_TELEPULL:
 		case SPELLBOOK_FLUTTER:
+		case SPELLBOOK_SELF_POLYMORPH:
+		case SPELLBOOK_DIVINE_GUARD:
+		case SPELLBOOK_PROF_GREATER_MIGHT:
+		case SPELLBOOK_PROF_STURDINESS:
+		case SPELLBOOK_PINPOINT:
+		case SPELLBOOK_SCRY_TRAPS:
+		case SPELLBOOK_PSYCHIC_SPEAR:
+		case SPELLBOOK_COMMAND:
+		case SPELLBOOK_METALLURGY:
+		case SPELLBOOK_VOID_CHEST:
+		case SPELLBOOK_NUMBING_BOLT:
+		case SPELLBOOK_CURSE_FLESH:
+		case SPELLBOOK_PRESERVE:
+		case SPELLBOOK_SABOTAGE:
+		case SPELLBOOK_NULL_AREA:
+		case SPELLBOOK_SLAM:
+		case SPELLBOOK_KINETIC_FIELD:
+		case SPELLBOOK_TROLL_FORM:
+
 		case SCROLL_CHARGING:
 		case SCROLL_CONJUREARROW:
 		case MAGICSTAFF_SCEPTER:
@@ -11422,24 +11520,31 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 			*magic = 6;
 			break;
 
-		case SPELLBOOK_MAGICMISSILE:
+		case SPELLBOOK_CHARM_MONSTER:
 		case SPELLBOOK_LEVITATION:
-		case SPELLBOOK_INVISIBILITY:
 		case SPELLBOOK_EXTRAHEALING:
-		case SPELLBOOK_DIG:
-		case SPELLBOOK_SUMMON:
-		case SPELLBOOK_BLEED:
-		case SPELLBOOK_REFLECT_MAGIC:
 		case SPELLBOOK_STONEBLOOD:
+		case SPELLBOOK_REFLECT_MAGIC:
+		case SPELLBOOK_STRIKE:
+		case SPELLBOOK_AMPLIFY_MAGIC:
+		case SPELLBOOK_METEOR:
+		case SPELLBOOK_ICE_WAVE:
+		case SPELLBOOK_SCRY_TREASURES:
+		case SPELLBOOK_BLOOD_WAVES:
+		case SPELLBOOK_MIST_FORM:
+		case SPELLBOOK_ABSORB_MAGIC:
+		case SPELLBOOK_TUNNEL:
+		case SPELLBOOK_LIGHTNING_BOLT:
+		case SPELLBOOK_SANCTUARY:
+		case SPELLBOOK_HOLY_BEAM:
+		case SPELLBOOK_DOMINATE:
+
+		case SPELLBOOK_SUMMON:
 		case SPELLBOOK_STEAL_WEAPON:
 		case SPELLBOOK_DRAIN_SOUL:
-		case SPELLBOOK_VAMPIRIC_AURA:
 		case SPELLBOOK_IMP_FORM:
-		case SPELLBOOK_TROLLS_BLOOD:
-		case SPELLBOOK_WEAKNESS:
-		case SPELLBOOK_AMPLIFY_MAGIC:
 		case SPELLBOOK_DEMON_ILLU:
-		case SPELLBOOK_SELF_POLYMORPH:
+
 		case GEM_LUCK:
 		case ENCHANTED_FEATHER:
 			*metal = 0;
@@ -11461,6 +11566,12 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 		case IRON_DAGGER:
 		case MONOCLE:
 		case MASK_BANDIT:
+		case TOOL_FRYING_PAN:
+		case IRON_PAULDRONS:
+		case QUILTED_GAMBESON:
+		case QUILTED_GLOVES:
+		case QUILTED_BOOTS:
+		case QUILTED_CAP:
 			*metal = 2;
 			*magic = 0;
 			break;
@@ -11490,6 +11601,26 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 			break;
 
 		case MIRROR_SHIELD:
+		case TOOL_FOCI_FIRE:
+		case TOOL_FOCI_SNOW:
+		case TOOL_FOCI_NEEDLES:
+		case TOOL_FOCI_ARCS:
+		case TOOL_FOCI_SAND:
+		case TOOL_FOCI_DARK_LIFE:
+		case TOOL_FOCI_DARK_RIFT:
+		case TOOL_FOCI_DARK_SILENCE:
+		case TOOL_FOCI_DARK_VENGEANCE:
+		case TOOL_FOCI_DARK_SUPPRESS:
+		case TOOL_FOCI_LIGHT_PEACE:
+		case TOOL_FOCI_LIGHT_JUSTICE:
+		case TOOL_FOCI_LIGHT_PROVIDENCE:
+		case TOOL_FOCI_LIGHT_PURITY:
+		case TOOL_FOCI_LIGHT_SANCTUARY:
+		case INSTRUMENT_FLUTE:
+		case INSTRUMENT_LYRE:
+		case INSTRUMENT_DRUM:
+		case INSTRUMENT_LUTE:
+		case INSTRUMENT_HORN:
 			*metal = 2;
 			*magic = 4;
 			break;
@@ -11514,6 +11645,12 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 		case CLAYMORE_SWORD:
 		case STEEL_FALSHION:
 		case STEEL_GREATAXE:
+		case BLACKIRON_DART:
+		case SILVER_PLUMBATA:
+		case ANELACE_SWORD:
+		case LANCE_SPEAR:
+		case RAPIER:
+		case STEEL_FLAIL:
 			*metal = 3;
 			*magic = 0;
 			break;
@@ -11528,6 +11665,15 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 		case SILVER_GLAIVE:
 		case SILVER_MACE:
 		case SILVER_SWORD:
+		case SILVER_BREASTPIECE:
+		case SILVER_GAUNTLETS:
+		case SILVER_BOOTS:
+		case SILVER_SHIELD:
+		case SILVER_HELM:
+		case CHAIN_HAUBERK:
+		case CHAIN_GLOVES:
+		case CHAIN_BOOTS:
+		case CHAIN_COIF:
 			*metal = 3;
 			*magic = 1;
 			break;
@@ -11546,6 +11692,7 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 		case STEEL_BREASTPIECE:
 		case CRYSTAL_SHURIKEN:
 		case HEAVY_CROSSBOW:
+		case SCUTUM:
 			*metal = 4;
 			*magic = 0;
 			break;
@@ -11565,6 +11712,11 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 		case BLACKIRON_MACE:
 		case BLACKIRON_SWORD:
 		case BLACKIRON_TRIDENT:
+		case BLACKIRON_BREASTPIECE:
+		case BLACKIRON_GAUNTLETS:
+		case BLACKIRON_BOOTS:
+		case BLACKIRON_SHIELD:
+		case BLACKIRON_HELM:
 			*metal = 4;
 			*magic = 2;
 			break;
@@ -11655,92 +11807,23 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 			*magic = 4;
 			break;
 
-		case TOOL_FOCI_FIRE:
-		case TOOL_FOCI_SNOW:
-		case TOOL_FOCI_NEEDLES:
-		case TOOL_FOCI_ARCS:
-		case TOOL_FOCI_SAND:
-		case TOOL_FOCI_DARK_LIFE:
-		case TOOL_FOCI_DARK_RIFT:
-		case TOOL_FOCI_DARK_SILENCE:
-		case TOOL_FOCI_DARK_VENGEANCE:
-		case TOOL_FOCI_DARK_SUPPRESS:
-		case TOOL_FOCI_LIGHT_PEACE:
-		case TOOL_FOCI_LIGHT_JUSTICE:
-		case TOOL_FOCI_LIGHT_PROVIDENCE:
-		case TOOL_FOCI_LIGHT_PURITY:
-		case TOOL_FOCI_LIGHT_SANCTUARY:
-		case INSTRUMENT_FLUTE:
-		case INSTRUMENT_LYRE:
-		case INSTRUMENT_DRUM:
-		case INSTRUMENT_LUTE:
-		case INSTRUMENT_HORN:
-		case RAPIER:
-		case AMULET_BURNINGRESIST:
-		case GREASE_BALL:
-		case DUST_BALL:
-		case BOLAS:
-		case STEEL_FLAIL:
-		case FOOD_RATION:
-		case FOOD_RATION_SPICY:
-		case FOOD_RATION_SOUR:
-		case FOOD_RATION_BITTER:
-		case FOOD_RATION_HEARTY:
-		case FOOD_RATION_HERBAL:
-		case FOOD_RATION_SWEET:
-		case SLOP_BALL:
-		case TOOL_FRYING_PAN:
-		case CLEAT_BOOTS:
-		case BANDIT_BREASTPIECE:
-		case TUNIC_BLOUSE:
-		case BONE_BREASTPIECE:
-		case BLACKIRON_BREASTPIECE:
-		case SILVER_BREASTPIECE:
-		case IRON_PAULDRONS:
-		case QUILTED_GAMBESON:
-		case ROBE_CULTIST:
-		case ROBE_HEALER:
-		case ROBE_MONK:
-		case ROBE_WIZARD:
-		case SHAWL:
-		case CHAIN_HAUBERK:
-		case BONE_BRACERS:
-		case BLACKIRON_GAUNTLETS:
-		case SILVER_GAUNTLETS:
-		case QUILTED_GLOVES:
-		case CHAIN_GLOVES:
-		case BONE_BOOTS:
-		case BLACKIRON_BOOTS:
-		case SILVER_BOOTS:
-		case QUILTED_BOOTS:
-		case LOAFERS:
-		case CHAIN_BOOTS:
-		case SCUTUM:
-		case BONE_SHIELD:
-		case BLACKIRON_SHIELD:
-		case SILVER_SHIELD:
-		case CLOAK_DENDRITE:
-		case BONE_HELM:
-		case BLACKIRON_HELM:
-		case SILVER_HELM:
-		case HAT_FELT:
-		case QUILTED_CAP:
-		case HOOD_TEAL:
-		case CHAIN_COIF:
-		case ANELACE_SWORD:
-		case LANCE_SPEAR:
-		case BLACKIRON_DART:
-		case BONE_AXE:
-		case BONE_MACE:
-		case BONE_SHORTBOW:
-		case BONE_SPEAR:
-		case BONE_SWORD:
-		case BONE_THROWING:
-		case SILVER_PLUMBATA:
-			// TODOS
-			*metal = 0;
+		case KEY_IRON:
+		case KEY_BRONZE:
+			*metal = 1;
 			*magic = 0;
 			break;
+
+		case KEY_SILVER:
+		case KEY_GOLD:
+			*metal = 2;
+			*magic = 0;
+			break;
+
+		//case XXX:
+		//	// TODOS
+		//	*metal = 0;
+		//	*magic = 0;
+		//	break;
 
 		default:
 			*metal = 0;

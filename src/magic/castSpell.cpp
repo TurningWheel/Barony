@@ -393,6 +393,15 @@ int getSpellbookBonusPercent(Entity* caster, Stat* stat, Item* spellbookItem)
 	}
 	if ( auto spell = getSpellFromID(spellID) )
 	{
+		if ( itemCategory(spellbookItem) == SPELLBOOK )
+		{
+			auto find = ItemTooltips.spellItems.find(spell->ID);
+			if ( find != ItemTooltips.spellItems.end()
+				&& find->second.spellTags.find(ItemTooltips_t::SPELL_TAG_SPELLBOOK_SCALING) == find->second.spellTags.end() )
+			{
+				return 0;
+			}
+		}
 		spellBookBonusPercent = getSpellbookBaseINTBonus(caster, stat, spell->skillID);
 	}
 
@@ -405,7 +414,7 @@ int getSpellbookBonusPercent(Entity* caster, Stat* stat, Item* spellbookItem)
 		}
 		else
 		{
-			spellBookBonusPercent += abs(spellbookItem->beatitude) * 25;
+			spellBookBonusPercent += abs(spellbookItem->beatitude) * 10;
 		}
 	}
 	return spellBookBonusPercent;
@@ -3523,6 +3532,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					val |= (Uint8)(spellTimer->particleTimerCountdownAction & 0xFF) << 20;
 					spellTimer->skill[2] = val;
 					spellTimer->particleTimerEffectLifetime = lifetime;
+					if ( spellBookBonusPercent > 0 )
+					{
+						spellTimer->actmagicSpellbookBonus = spellBookBonusPercent;
+					}
 					floorMagicCreateLightningSequence(spellTimer, 0);
 				}
 				spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
@@ -3754,6 +3767,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						wave->fskill[0] = scale; // final scale
 						wave->fskill[1] = grouping; // final grouping
 						wave->skill[6] = 1; // grow to scale
+						if ( spellBookBonusPercent > 0 )
+						{
+							wave->actmagicSpellbookBonus = spellBookBonusPercent;
+						}
 						wave->flags[UPDATENEEDED] = true;
 					}
 				}
@@ -3863,6 +3880,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					spellTimer->yaw = tangent;
 					spellTimer->x = castSpellProps->target_x;
 					spellTimer->y = castSpellProps->target_y;
+					if ( spellBookBonusPercent > 0 )
+					{
+						spellTimer->actmagicSpellbookBonus = spellBookBonusPercent;
+					}
 					int lifetime_tick = 0;
 					auto& timerEffects = particleTimerEffects[spellTimer->getUID()];
 
@@ -3921,6 +3942,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					spellTimer->x = castSpellProps->target_x;
 					spellTimer->y = castSpellProps->target_y;
 					spellTimer->particleTimerVariable3 = spell->ID;
+					if ( spellBookBonusPercent > 0 )
+					{
+						spellTimer->actmagicSpellbookBonus = spellBookBonusPercent;
+					}
 					int lifetime_tick = 0;
 					auto& timerEffects = particleTimerEffects[spellTimer->getUID()];
 
@@ -3994,6 +4019,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					spellTimer->yaw = tangent;
 					spellTimer->x = castSpellProps->target_x;
 					spellTimer->y = castSpellProps->target_y;
+					if ( spellBookBonusPercent > 0 )
+					{
+						spellTimer->actmagicSpellbookBonus = spellBookBonusPercent;
+					}
 
 					if ( caster->behavior == &actMonster )
 					{
@@ -5489,7 +5518,13 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						{
 							messagePlayerColor(caster->isEntityPlayer(),
 								MESSAGE_HINT, makeColorRGB(0, 255, 0), Language::get(6480));
-							createParticleSpellPinpointTarget(entity, caster->getUID(), 1767, duration, spell->ID);
+							if ( Entity* fx = createParticleSpellPinpointTarget(entity, caster->getUID(), 1767, duration, spell->ID) )
+							{
+								if ( spellBookBonusPercent > 0 )
+								{
+									fx->actmagicSpellbookBonus = spellBookBonusPercent;
+								}
+							}
 							serverSpawnMiscParticles(entity, PARTICLE_EFFECT_PINPOINT, 1767, caster->getUID(), duration, spell->ID);
 
 							if ( caster->behavior == &actPlayer )
@@ -5761,7 +5796,6 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				if ( spell->ID == SPELL_HEAL_MINOR || (spell->ID == SPELL_HEAL_OTHER && castSpellProps) )
 				{
 					int amount = element->duration;
-					amount *= getSpellDamageSecondaryFromID(spell->ID, caster, caster->getStats(), caster, usingSpellbook ? spellBookBonusPercent / 100.0 : 0.0) / 100.0;
 					if ( caster->behavior == &actPlayer )
 					{
 						if ( overdrewIntoHP )
@@ -5769,6 +5803,14 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							amount /= 4;
 							messagePlayerColor(caster->isEntityPlayer(), MESSAGE_COMBAT, makeColorRGB(255, 255, 255), Language::get(3400));
 						}
+						else
+						{
+							amount *= getSpellDamageSecondaryFromID(spell->ID, caster, caster->getStats(), caster, usingSpellbook ? spellBookBonusPercent / 100.0 : 0.0) / 100.0;
+						}
+					}
+					else
+					{
+						amount *= getSpellDamageSecondaryFromID(spell->ID, caster, caster->getStats(), caster, usingSpellbook ? spellBookBonusPercent / 100.0 : 0.0) / 100.0;
 					}
 
 					Entity* target = spell->ID == SPELL_HEAL_MINOR ? caster : uidToEntity(castSpellProps->targetUID);
@@ -5795,6 +5837,17 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						if ( Entity* fx = createRadiusMagic(spell->ID, caster,
 							target->x, target->y, 16, amount, target) )
 						{
+							if ( spellBookBonusPercent > 0 )
+							{
+								fx->actmagicSpellbookBonus = spellBookBonusPercent;
+								if ( caster->behavior == &actPlayer )
+								{
+									if ( overdrewIntoHP )
+									{
+										fx->actmagicSpellbookBonus = 0;
+									}
+								}
+							}
 							if ( target == caster )
 							{
 								messagePlayerColor(caster->isEntityPlayer(), MESSAGE_HINT, makeColorRGB(0, 255, 0), Language::get(6930));
@@ -6873,7 +6926,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						serverUpdateEntityFlag(players[i]->entity, BURNING);
 					}
 
-					bool regenEffect = spellBookBonusPercent >= 25;
+					bool regenEffect = spellBookBonusPercent >= 10;
 					if ( regenEffect )
 					{
 						int bonus = 10 * ((spellBookBonusPercent * 4) / 100.f); // 25% = 10 seconds, 50% = 20 seconds.
@@ -7601,6 +7654,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			{
 				if ( Entity* spellTimer = createParticleShatterObjects(caster) )
 				{
+					if ( spellBookBonusPercent > 0 )
+					{
+						spellTimer->actmagicSpellbookBonus = spellBookBonusPercent;
+					}
 					serverSpawnMiscParticles(caster, PARTICLE_EFFECT_SHATTER_OBJECTS, 0);
 				}
 
