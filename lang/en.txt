@@ -7243,5 +7243,20 @@ to replay this challenge!
 6971 Your magical bubble enhances!#
 6972 Your magical bubble has reached the limit of your powers.#
 6973 Some of your gold has vanished!#
+6974 cauldron#
+6975 The cauldron is currently in use by someone else.#
+6976 You see a cauldron.#
+6977 Use cauldron#
+6978 Workbench#
+6979 Use workbench#
+6980 You see a workbench.#
+6981 workbench#
+6982 The workbench is currently in use by someone else.#
+6983 Mailbox#
+6984 Use mailbox#
+6985 You see a mailbox.#
+6986 mailbox#
+6987 The mailbox is currently in use by someone else.#
+6988 Claim#
 
 6999 END#

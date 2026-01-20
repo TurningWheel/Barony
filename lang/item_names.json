@@ -1800,7 +1800,303 @@
 		"gem_jewel": {
 			"name_identified": "jewel",
 			"name_unidentified": "jewel"
-		}
+		},
+		"spellbook_meteor": {
+            "name_identified": "spellbook of meteor",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_ice_wave": {
+            "name_identified": "spellbook of ice wave",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_guard_body": {
+            "name_identified": "spellbook of guard body",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_guard_spirit": {
+            "name_identified": "spellbook of guard spirit",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_divine_guard": {
+            "name_identified": "spellbook of divine guard",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_prof_nimbleness": {
+            "name_identified": "spellbook of nimbleness",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_prof_greater_might": {
+            "name_identified": "spellbook of greater might",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_prof_counsel": {
+            "name_identified": "spellbook of counsel",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_prof_sturdiness": {
+            "name_identified": "spellbook of sturdiness",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_bless_food": {
+            "name_identified": "spellbook of blessed meals",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_pinpoint": {
+            "name_identified": "spellbook of pinpoint",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_donation": {
+            "name_identified": "spellbook of donation",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_scry_allies": {
+            "name_identified": "spellbook of scry allies",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_scry_traps": {
+            "name_identified": "spellbook of scry traps",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_scry_treasures": {
+            "name_identified": "spellbook of scry treasures",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_detect_enemy": {
+            "name_identified": "spellbook of detect enemy",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_turn_undead": {
+            "name_identified": "spellbook of exorcise",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_heal_other": {
+            "name_identified": "spellbook of minor heal other",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_blood_ward": {
+            "name_identified": "spellbook of blood ward",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_divine_zeal": {
+            "name_identified": "spellbook of divine zeal",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_maximise": {
+            "name_identified": "spellbook of maximise",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_minimise": {
+            "name_identified": "spellbook of minimise",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_incoherence": {
+            "name_identified": "spellbook of incoherence",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_overcharge": {
+            "name_identified": "spellbook of overcharge",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_envenom_weapon": {
+            "name_identified": "spellbook of envenom weapon",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_psychic_spear": {
+            "name_identified": "spellbook of psychic spear",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_defy_flesh": {
+            "name_identified": "spellbook of defy flesh",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_grease_spray": {
+            "name_identified": "spellbook of grease spray",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_blood_waves": {
+            "name_identified": "spellbook of blood waves",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_command": {
+            "name_identified": "spellbook of compel",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_metallurgy": {
+            "name_identified": "spellbook of metallurgy",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_forge_key": {
+            "name_identified": "spellbook of forge key",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_reshape_weapon": {
+            "name_identified": "spellbook of reshape weapon",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_alter_arrow": {
+            "name_identified": "spellbook of alter arrow",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_void_chest": {
+            "name_identified": "spellbook of void chest",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_lead_bolt": {
+            "name_identified": "spellbook of lead bolt",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_numbing_bolt": {
+            "name_identified": "spellbook of numbing bolt",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_curse_flesh": {
+            "name_identified": "spellbook of curse flesh",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_cowardice": {
+            "name_identified": "spellbook of cowardice",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_seek_ally": {
+            "name_identified": "spellbook of seek ally",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_deep_shade": {
+            "name_identified": "spellbook of deep shade",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_spirit_weapon": {
+            "name_identified": "spellbook of spirit weapon",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_spores": {
+            "name_identified": "spellbook of spores",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_windgate": {
+            "name_identified": "spellbook of windgate",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_telekinesis": {
+            "name_identified": "spellbook of telekinesis",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_disarm": {
+            "name_identified": "spellbook of disarm",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_abundance": {
+            "name_identified": "spellbook of abundance",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_preserve": {
+            "name_identified": "spellbook of preserve",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_sabotage": {
+            "name_identified": "spellbook of sabotage",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_mist_form": {
+            "name_identified": "spellbook of mist form",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_force_shield": {
+            "name_identified": "spellbook of kinetic defense",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_splinter_gear": {
+            "name_identified": "spellbook of splinter armor",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_attract_items": {
+            "name_identified": "spellbook of attract items",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_absorb_magic": {
+            "name_identified": "spellbook of absorb magic",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_tunnel": {
+            "name_identified": "spellbook of portal",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_null_area": {
+            "name_identified": "spellbook of null area",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_fire_sprite": {
+            "name_identified": "spellbook of summon fire sprite",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_spin": {
+            "name_identified": "spellbook of spin",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_cleanse_food": {
+            "name_identified": "spellbook of cleanse food",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_flame_cloak": {
+            "name_identified": "spellbook of flame cloak",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_lightning_bolt": {
+            "name_identified": "spellbook of lightning bolt",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_disrupt_earth": {
+            "name_identified": "spellbook of disrupt earth",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_fire_wall": {
+            "name_identified": "spellbook of fire wall",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_slam": {
+            "name_identified": "spellbook of lift",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_ignite": {
+            "name_identified": "spellbook of ignite",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_shatter_objects": {
+            "name_identified": "spellbook of shatter objects",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_kinetic_field": {
+            "name_identified": "spellbook of kinetic field",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_thorns": {
+            "name_identified": "spellbook of thorns",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_magicians_armor": {
+            "name_identified": "spellbook of magicians' bubble",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_heal_minor": {
+            "name_identified": "spellbook of minor heal",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_sigil": {
+            "name_identified": "spellbook of holy sigil",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_sanctuary": {
+            "name_identified": "spellbook of divine fortress",
+            "name_unidentified": "spellbook"
+        },
+        "spellbook_holy_beam": {
+            "name_identified": "spellbook of holy beam",
+            "name_unidentified": "spellbook"
+        },
+		"spellbook_dominate": {
+            "name_identified": "spellbook of dominate",
+            "name_unidentified": "spellbook"
+        }
     },
 	"spell_names": {
         "spell_forcebolt": {
