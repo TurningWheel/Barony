@@ -11958,7 +11958,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						if ( behavior == &actPlayer )
 						{
-							if ( weaponskill >= 0 && weaponskill != PRO_RANGED )
+							if ( weaponskill >= 0 && (weaponskill != PRO_RANGED || whip) )
 							{
 								if ( myStats->getProficiency(weaponskill) < SKILL_LEVEL_BASIC
 									&& local_rng.rand() % 20 == 0 )
@@ -12383,6 +12383,29 @@ void Entity::attack(int pose, int charge, Entity* target)
 				bool zealSmite = false;
 				bool gugnirProc = false;
 				bool armorPierceProc = false;
+				bool whipPierce = false;
+				if ( whip )
+				{
+					int statChance = std::min(std::max(this->getPER(), 0), 50); // 0 to 50 value.
+					if ( behavior == &actMonster )
+					{
+						statChance = std::min(std::max(this->getPER() / 2, 0), 50);
+					}
+					int chance = local_rng.rand() % 100;
+					if ( chance < statChance )
+					{
+						whipPierce = true;
+						armorPierceProc = true;
+						if ( this->behavior == &actMonster )
+						{
+							weaponMultipliers += std::min(25, std::max(0, statGetPER(myStats, this))) / 100.0;
+						}
+						else
+						{
+							weaponMultipliers += std::max(0, statGetPER(myStats, this)) / 100.0;
+						}
+					}
+				}
 
 				Entity::modifyDamageMultipliersFromEffects(hit.entity, this, weaponMultipliers, dmgType);
 
@@ -12550,6 +12573,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 							enemyAC *= amount;
 							gugnirProc = true;
 						}
+					}
+					else if ( whipPierce )
+					{
+						enemyAC *= 0.5;
+						armorPierceProc = true;
 					}
 					else if ( myStats->getEffectActive(EFF_ENSEMBLE_DRUM) )
 					{

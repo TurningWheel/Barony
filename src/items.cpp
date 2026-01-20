@@ -4755,7 +4755,7 @@ Sint32 Item::weaponGetAttack(const Stat* const wielder) const
 	}
 	else if ( type == TOOL_WHIP )
 	{
-		attack += 2;
+		attack += 6;
 	}
 	else if ( type == QUIVER_SILVER )
 	{
