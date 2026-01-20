@@ -734,20 +734,23 @@ int Player::Inventory_t::Appraisal_t::getAppraisalTime(Item* item)
 		//appraisal_time = (items[item->type].value * 60) / (stats[this->player.playernum]->getModifiedProficiency(PRO_APPRAISAL) + 1);    // time in ticks until item is appraised
 		if ( stats[player.playernum] && stats[player.playernum]->mask && stats[player.playernum]->mask->type == MONOCLE )
 		{
-			real_t mult = 1.0;
-			if ( stats[player.playernum]->mask->beatitude == 0 )
+			if ( cat == GEM )
 			{
-				mult = .5;
+				real_t mult = 1.0;
+				if ( stats[player.playernum]->mask->beatitude == 0 )
+				{
+					mult = .5;
+				}
+				else if ( stats[player.playernum]->mask->beatitude > 0 || shouldInvertEquipmentBeatitude(stats[player.playernum]) )
+				{
+					mult = .25;
+				}
+				else if ( stats[player.playernum]->mask->beatitude < 0 )
+				{
+					mult = 2.0;
+				}
+				appraisal_time *= mult;
 			}
-			else if ( stats[player.playernum]->mask->beatitude > 0 || shouldInvertEquipmentBeatitude(stats[player.playernum]) )
-			{
-				mult = .25;
-			}
-			else if ( stats[player.playernum]->mask->beatitude < 0 )
-			{
-				mult = 2.0;
-			}
-			appraisal_time *= mult;
 		}
 		int playerCount = 0;
 		for ( int i = 0; i < MAXPLAYERS; ++i )
