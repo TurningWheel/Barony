@@ -852,6 +852,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		//Now, there's a chance they'll fumble the spell.
 		if ( fizzleSpell )
 		{
+			//bool doFizzle = usingSpellbook ? local_rng.rand() % 3 > 0 : local_rng.rand() % 3 == 0;
 			if ( local_rng.rand() % 3 == 1 )
 			{
 				//Fizzle the spell.

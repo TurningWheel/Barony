@@ -24998,6 +24998,10 @@ void drawObjectPreview(std::string modelsPath, Entity* object, SDL_Rect pos, rea
 						{
 							entity = newEntity(989, 0, &limb.children, nullptr);
 						}
+						else if ( modelsPath == "arcane_boulder" )
+						{
+							entity = newEntity(990, 0, &limb.children, nullptr);
+						}
 						else
 						{
 							entity = newEntity(245, 0, &limb.children, nullptr);
