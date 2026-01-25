@@ -225,7 +225,7 @@ bool entityWantsJewel(int tier, Entity& entity, Stat& stats, bool checkTypeOnly)
 	return false;
 }
 
-bool jewelItemRecruit(Entity* parent, Entity* entity, const char** msg)
+bool jewelItemRecruit(Entity* parent, Entity* entity, int itemStatus, const char** msg)
 {
 	if ( !(entity && parent) )
 	{
@@ -295,6 +295,25 @@ bool jewelItemRecruit(Entity* parent, Entity* entity, const char** msg)
 			magicOnSpellCastEvent(parent, parent, entity, SPELL_FORGE_JEWEL, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
 			messagePlayerMonsterEvent(parent->skill[2], makeColorRGB(0, 255, 0), *entitystats, Language::get(6954), Language::get(6955), MSG_COMBAT);
 			Compendium_t::Events_t::eventUpdateMonster(parent->skill[2], Compendium_t::CPDM_RECRUITED, entity, 1);
+
+			if ( itemStatus == DECREPIT )
+			{
+				Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_JEWEL_RECRUIT_DECREPIT, GEM_JEWEL, 1);
+			}
+			else if ( itemStatus == WORN )
+			{
+				Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_JEWEL_RECRUIT_WORN, GEM_JEWEL, 1);
+			}
+			else if ( itemStatus == SERVICABLE )
+			{
+				Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_JEWEL_RECRUIT_SERVICABLE, GEM_JEWEL, 1);
+			}
+			else if ( itemStatus == EXCELLENT )
+			{
+				Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_JEWEL_RECRUIT_EXCELLENT, GEM_JEWEL, 1);
+			}
+			Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_RECRUITED, GEM_JEWEL, 1);
+
 			if ( entitystats->type == HUMAN && entitystats->getAttribute("special_npc") == "merlin" )
 			{
 				Compendium_t::Events_t::eventUpdateWorld(parent->skill[2], Compendium_t::CPDM_MERLINS, "magicians guild", 1);
@@ -541,7 +560,7 @@ void actItem(Entity* my)
 												if ( entityWantsJewel(tier, *entity, *entitystats, false) )
 												{
 													const char* msg = nullptr;
-													if ( jewelItemRecruit(parent, entity, &msg) )
+													if ( jewelItemRecruit(parent, entity, tier, &msg) )
 													{
 														my->clearMonsterInteract();
 														my->removeLightField();

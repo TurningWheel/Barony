@@ -419,8 +419,8 @@ int getSpellbookBonusPercent(Entity* caster, Stat* stat, Item* spellbookItem)
 			{
 				return 0;
 			}
+			spellBookBonusPercent = getSpellbookBaseINTBonus(caster, stat, spell->skillID);
 		}
-		spellBookBonusPercent = getSpellbookBaseINTBonus(caster, stat, spell->skillID);
 	}
 
 	if ( spellbookItem->beatitude > 0
@@ -7611,15 +7611,15 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							{
 								tier = 1;
 							}
-							else if ( CHR > 7 && CHR <= 15 )
+							else if ( CHR >= 8 && CHR <= 14 )
 							{
 								tier = 2;
 							}
-							else if ( CHR > 15 && CHR <= 30 )
+							else if ( CHR >= 15 && CHR <= 29 )
 							{
 								tier = 3;
 							}
-							else if ( CHR > 30 )
+							else if ( CHR >= 30 )
 							{
 								tier = 4;
 							}

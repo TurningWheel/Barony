@@ -1923,6 +1923,7 @@ void Entity::actWallLock()
 									if ( Item* foundWallLockKey = players[i]->inventoryUI.hasKeyForWallLock(*this) )
 									{
 										Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_KEYLOCK_UNLOCKED_KEY, "wall locks", 1);
+										Compendium_t::Events_t::eventUpdate(i, Compendium_t::CPDM_KEYLOCK_UNLOCKED_KEY, foundWallLockKey->type, 1);
 										if ( foundWallLockKey->type == KEY_IRON )
 										{
 											Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_KEYLOCK_UNLOCKED_KEY_IRON, "wall locks", 1);

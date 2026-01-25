@@ -176,6 +176,10 @@ Sint32 displayAttackPower(const int player, AttackHoverText_t& output)
 							attack += entity->getThrownAttack();
 						}
 						output.hoverType = AttackHoverText_t::ATK_HOVER_TYPE_THROWN; // thrown
+						if ( itemTypeIsThrownBall(stats[player]->weapon->type) || stats[player]->weapon->type == BOLAS )
+						{
+							output.hoverType = AttackHoverText_t::ATK_HOVER_TYPE_THROWN_MISC;
+						}
 						output.totalAttack = attack;
 						// bonus from weapon
 						output.weaponBonus = stats[player]->weapon->weaponGetAttack(stats[player]);
@@ -267,11 +271,23 @@ Sint32 displayAttackPower(const int player, AttackHoverText_t& output)
 					output.hoverType = AttackHoverText_t::ATK_HOVER_TYPE_MELEE_WEAPON; // melee
 					output.totalAttack = attack;
 					output.weaponBonus = stats[player]->weapon->weaponGetAttack(stats[player]); // bonus from weapon
-					Sint32 attr = statGetSTR(stats[player], entity); // bonus from main attribute
-					Sint32 prevStat = stats[player]->STR;
-					stats[player]->STR += -attr;
-					output.mainAttributeBonus = output.totalAttack - Entity::getAttack(players[player]->entity, stats[player], true);
-					stats[player]->STR = prevStat;
+					if ( stats[player]->weapon && stats[player]->weapon->type == RAPIER )
+					{
+						output.hoverType = AttackHoverText_t::ATK_HOVER_TYPE_RAPIER;
+						Sint32 attr = statGetDEX(stats[player], entity); // bonus from main attribute
+						Sint32 prevStat = stats[player]->DEX;
+						stats[player]->DEX += -attr;
+						output.mainAttributeBonus = output.totalAttack - Entity::getAttack(players[player]->entity, stats[player], true);
+						stats[player]->DEX = prevStat;
+					}
+					else
+					{
+						Sint32 attr = statGetSTR(stats[player], entity); // bonus from main attribute
+						Sint32 prevStat = stats[player]->STR;
+						stats[player]->STR += -attr;
+						output.mainAttributeBonus = output.totalAttack - Entity::getAttack(players[player]->entity, stats[player], true);
+						stats[player]->STR = prevStat;
+					}
 					if ( weaponskill == PRO_AXE )
 					{
 						output.weaponBonus += 1; // bonus from equipment
@@ -320,6 +336,12 @@ Sint32 displayAttackPower(const int player, AttackHoverText_t& output)
 					}
 					output.totalAttack = attack;
 					output.weaponBonus = 0; // bonus from weapon
+
+					if ( stats[player]->weapon->type == TOOL_PICKAXE || stats[player]->weapon->type == MAGICSTAFF_SCEPTER )
+					{
+						output.weaponBonus = stats[player]->weapon->weaponGetAttack(stats[player]); // bonus from weapon
+					}
+
 					//output.mainAttributeBonus = statGetSTR(stats[player], entity); // bonus from main attribute
 					//if ( stats[player]->weapon->type == MAGICSTAFF_SCEPTER )
 					//{

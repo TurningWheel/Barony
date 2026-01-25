@@ -1789,7 +1789,7 @@ bool Stat::emptyLootingBag(const int player, Uint32 key)
 	return false;
 }
 
-real_t Stat::getEnsembleEffectBonus(Stat::EnsembleEffectsBonusType bonusType)
+real_t Stat::getEnsembleEffectBonus(Stat::EnsembleEffectsBonusType bonusType, int checkEffectStrength)
 {
 	static const Sint32 kBreakPoint4 = 41;
 	static const Sint32 kBreakPoint3 = 20;
@@ -1797,7 +1797,12 @@ real_t Stat::getEnsembleEffectBonus(Stat::EnsembleEffectsBonusType bonusType)
 	static const Sint32 kBreakPoint1 = 1;
 
 	real_t result = 0.0;
-	if ( Uint8 effectStrength = getEffectActive(EFF_ENSEMBLE_FLUTE) )
+	Uint8 effectStrength = getEffectActive(EFF_ENSEMBLE_FLUTE);
+	if ( checkEffectStrength >= 0 )
+	{
+		effectStrength = checkEffectStrength;
+	}
+	if ( effectStrength > 0 )
 	{
 		if ( effectStrength > 0 )
 		{
@@ -1855,7 +1860,13 @@ real_t Stat::getEnsembleEffectBonus(Stat::EnsembleEffectsBonusType bonusType)
 			}
 		}
 	}
-	if ( Uint8 effectStrength = getEffectActive(EFF_ENSEMBLE_LUTE) )
+
+	effectStrength = getEffectActive(EFF_ENSEMBLE_LUTE);
+	if ( checkEffectStrength >= 0 )
+	{
+		effectStrength = checkEffectStrength;
+	}
+	if ( effectStrength > 0 )
 	{
 		if ( effectStrength > 0 )
 		{
@@ -1913,7 +1924,13 @@ real_t Stat::getEnsembleEffectBonus(Stat::EnsembleEffectsBonusType bonusType)
 			}
 		}
 	}
-	if ( Uint8 effectStrength = getEffectActive(EFF_ENSEMBLE_DRUM) )
+
+	effectStrength = getEffectActive(EFF_ENSEMBLE_DRUM);
+	if ( checkEffectStrength >= 0 )
+	{
+		effectStrength = checkEffectStrength;
+	}
+	if ( effectStrength > 0 )
 	{
 		if ( effectStrength > 0 )
 		{
@@ -1971,7 +1988,13 @@ real_t Stat::getEnsembleEffectBonus(Stat::EnsembleEffectsBonusType bonusType)
 			}
 		}
 	}
-	if ( Uint8 effectStrength = getEffectActive(EFF_ENSEMBLE_HORN) )
+
+	effectStrength = getEffectActive(EFF_ENSEMBLE_HORN);
+	if ( checkEffectStrength >= 0 )
+	{
+		effectStrength = checkEffectStrength;
+	}
+	if ( effectStrength > 0 )
 	{
 		if ( effectStrength > 0 )
 		{
@@ -2029,7 +2052,13 @@ real_t Stat::getEnsembleEffectBonus(Stat::EnsembleEffectsBonusType bonusType)
 			}
 		}
 	}
-	if ( Uint8 effectStrength = getEffectActive(EFF_ENSEMBLE_LYRE) )
+
+	effectStrength = getEffectActive(EFF_ENSEMBLE_LYRE);
+	if ( checkEffectStrength >= 0 )
+	{
+		effectStrength = checkEffectStrength;
+	}
+	if ( effectStrength > 0 )
 	{
 		if ( effectStrength > 0 )
 		{

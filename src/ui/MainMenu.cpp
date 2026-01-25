@@ -36549,7 +36549,11 @@ failed:
 
 					Compendium_t::compendiumItem.type = (ItemType)id;
 					Compendium_t::compendiumItem.appearance = (modelRNGCycle + Compendium_t::compendiumEntityCurrent.modelRNG) % items[id].variations;
-					if ( id == TOOL_PLAYER_LOOT_BAG )
+					if ( id == MAGICSTAFF_SCEPTER )
+					{
+						Compendium_t::compendiumItem.appearance = 0;
+					}
+					else if ( id == TOOL_PLAYER_LOOT_BAG )
 					{
 						Compendium_t::compendiumItem.appearance = (modelRNGCycle + Compendium_t::compendiumEntityCurrent.modelRNG) % 4;
 					}

@@ -1310,6 +1310,7 @@ public:
 	Sint32 playerInsectoidHungerValueOfManaPoint(Stat& myStats);
 	void playerInsectoidIncrementHungerToMP(int mpAmount);
 	static real_t getDamageTableMultiplier(Entity* my, Stat& myStats, DamageTableType damageType, int* magicResistance = nullptr, int* outNumSources = nullptr);
+	static real_t getDamageTableEquipmentMod(Stat& myStats, Item& item, real_t base, real_t mod);
 	bool isBoulderSprite();
 	void createWorldUITooltip();
 	bool bEntityTooltipRequiresButtonHeld() const;

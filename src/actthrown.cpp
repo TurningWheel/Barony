@@ -1122,7 +1122,7 @@ void actThrown(Entity* my)
 					{
 						if ( entityWantsJewel(item->status, *hit.entity, *hit.entity->getStats(), false) )
 						{
-							if ( jewelItemRecruit(parent, hit.entity, nullptr) )
+							if ( jewelItemRecruit(parent, hit.entity, item->status, nullptr) )
 							{
 								free(item);
 								my->removeLightField();
@@ -1671,6 +1671,24 @@ void actThrown(Entity* my)
 									{
 										Uint32 color = makeColorRGB(0, 255, 0);
 										messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(6762), Language::get(6761), MSG_COMBAT);
+									}
+									if ( hit.entity->behavior == &actMonster )
+									{
+										disableAlertBlindStatus = true; // don't aggro target.
+									}
+								}
+								break;
+							case SLOP_BALL:
+								if ( hit.entity->setEffect(EFF_BLIND, true, 5 * TICKS_PER_SECOND, false) )
+								{
+									if ( hit.entity->behavior == &actPlayer )
+									{
+										messagePlayerColor(hit.entity->skill[2], MESSAGE_STATUS, makeColorRGB(255, 0, 0), Language::get(6990));
+									}
+									if ( parent && parent->behavior == &actPlayer )
+									{
+										Uint32 color = makeColorRGB(0, 255, 0);
+										messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(3878), Language::get(3879), MSG_COMBAT);
 									}
 									if ( hit.entity->behavior == &actMonster )
 									{
@@ -2423,7 +2441,8 @@ void actThrown(Entity* my)
 				(hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer) )
 			{
 				// become passable, go through creatures
-				my->flags[NOCLIP_CREATURES] = true;
+				//my->flags[NOCLIP_CREATURES] = true;
+				my->collisionIgnoreTargets.insert(hit.entity->getUID());
 			}
 			else
 			{

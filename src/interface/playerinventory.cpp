@@ -5752,7 +5752,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                 }
                 else if ( itemCategory(item) == WEAPON || itemCategory(item) == ARMOR || itemCategory(item) == TOOL
                          || itemCategory(item) == AMULET || itemCategory(item) == RING || itemTypeIsQuiver(item->type)
-                         || itemCategory(item) == GEM )
+                         || itemCategory(item) == GEM || itemCategory(item) == THROWN )
                 {
                     if ( tag.compare("weapon_durability") == 0 )
                     {
@@ -5897,6 +5897,11 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                             continue;
                         }
                     }
+					else if ( (tag == "thrown_atk_from_player_stat" || tag == "thrown_skill_modifier")
+						&& (itemTypeIsThrownBall(item->type) || item->type == BOLAS) )
+					{
+						continue;
+					}
                 }
                 else if ( itemCategory(item) == SPELLBOOK )
                 {

@@ -6998,6 +6998,15 @@ void GenericGUIMenu::alterItem(Item* item)
 				result = EXCELLENT;
 			}
 
+			if ( item->type == GEM_JEWEL )
+			{
+				Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_UPGRADED, GEM_JEWEL, 1);
+			}
+			else
+			{
+				Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_FORGED, GEM_JEWEL, 1);
+			}
+
 			Item* itemToPickup = newItem(GEM_JEWEL, result, 0, 1, 0, true, nullptr);
 			Item* pickedUp = itemPickup(gui_player, itemToPickup);
 			int oldCount = item->count;
@@ -8044,7 +8053,7 @@ void GenericGUIMenu::rechargeScepterUsingItem(Item* item)
 			messagePlayer(gui_player, MESSAGE_INTERACTION, Language::get(6836), spell->getSpellName());
 			messagePlayerColor(gui_player, MESSAGE_INTERACTION, makeColorRGB(0, 255, 0), Language::get(3730), items[itemEffectScrollItem->type].getIdentifiedName());
 			playSound(167, 64);
-			int difficulty = std::max(10, spell->difficulty);
+			int difficulty = 10 + spell->difficulty;
 			node_t* nextnode = nullptr;
 			for ( node_t* node = players[gui_player]->magic.spellList.first; node; node = nextnode )
 			{
@@ -8065,6 +8074,7 @@ void GenericGUIMenu::rechargeScepterUsingItem(Item* item)
 								players[gui_player]->magic.selected_spell_alternate[i] = nullptr;
 							}
 						}
+						Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_ARCHON_SPELLS_FORGOTTEN, MAGICSTAFF_SCEPTER, 1);
 						list_RemoveNode(node);
 						break;
 					}
@@ -9297,22 +9307,52 @@ void GenericGUIMenu::alchemyCookCombination()
 
 	if ( result == SLOP_BALL )
 	{
-		Compendium_t::Events_t::eventUpdateWorld(gui_player, Compendium_t::CPDM_COOK_SLOP_BALLS, "cauldron", createCount);
+		if ( alembicEntityUid != 0 && uidToEntity(alembicEntityUid) )
+		{
+			Compendium_t::Events_t::eventUpdateWorld(gui_player, Compendium_t::CPDM_COOK_SLOP_BALLS, "cauldron", createCount);
+		}
+		if ( alembicItem && alembicItem->type == TOOL_FRYING_PAN )
+		{
+			Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_COOK_SLOP_BALLS, TOOL_FRYING_PAN, createCount);
+		}
 	}
 	else if ( result == GREASE_BALL )
 	{
-		Compendium_t::Events_t::eventUpdateWorld(gui_player, Compendium_t::CPDM_COOK_GREASE_BALLS, "cauldron", createCount);
+		if ( alembicEntityUid != 0 && uidToEntity(alembicEntityUid) )
+		{
+			Compendium_t::Events_t::eventUpdateWorld(gui_player, Compendium_t::CPDM_COOK_GREASE_BALLS, "cauldron", createCount);
+		}
+		if ( alembicItem && alembicItem->type == TOOL_FRYING_PAN )
+		{
+			Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_COOK_GREASE_BALLS, TOOL_FRYING_PAN, createCount);
+		}
 	}
 
 	if ( isItemRation(result) )
 	{
 		if ( result == FOOD_RATION )
 		{
-			Compendium_t::Events_t::eventUpdateWorld(gui_player, Compendium_t::CPDM_COOK_MEALS, "cauldron", createCount);
+			if ( alembicEntityUid != 0 && uidToEntity(alembicEntityUid) )
+			{
+				Compendium_t::Events_t::eventUpdateWorld(gui_player, Compendium_t::CPDM_COOK_MEALS, "cauldron", createCount);
+			}
+			Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_COOK_MEALS, result, createCount);
+			if ( alembicItem && alembicItem->type == TOOL_FRYING_PAN )
+			{
+				Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_COOK_MEALS, TOOL_FRYING_PAN, createCount);
+			}
 		}
 		else
 		{
-			Compendium_t::Events_t::eventUpdateWorld(gui_player, Compendium_t::CPDM_COOK_FLAVORED_MEALS, "cauldron", createCount);
+			if ( alembicEntityUid != 0 && uidToEntity(alembicEntityUid) )
+			{
+				Compendium_t::Events_t::eventUpdateWorld(gui_player, Compendium_t::CPDM_COOK_FLAVORED_MEALS, "cauldron", createCount);
+			}
+			Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_COOK_MEALS, result, createCount);
+			if ( alembicItem && alembicItem->type == TOOL_FRYING_PAN )
+			{
+				Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_COOK_FLAVORED_MEALS, TOOL_FRYING_PAN, createCount);
+			}
 		}
 
 		bool raiseSkill = false;

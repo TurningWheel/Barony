@@ -1747,6 +1747,10 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 				HOLOGRAM,
 				EARTH_ELEMENTAL,
 				DUCK_SMALL,
+				MYCONID,
+				DRYAD,
+				GREMLIN,
+				SALAMANDER,
 				MONSTER_UNUSED_6,
 				MONSTER_UNUSED_7,
 				MONSTER_UNUSED_8,
@@ -4410,11 +4414,12 @@ int getSpellPropertyFromID(spell_t::SpellBasePropertiesInt prop, int spellID, En
 					real_t mult = 1.0;
 					if ( myStats )
 					{
-						real_t modifier = std::min(100, myStats->getModifiedProficiency(spell->skillID)) / 100.f;
+						real_t modifier = std::min(100, myStats->getModifiedProficiency(spell->skillID)) / 100.0;
 						modifier *= element->getChanneledManaMult();
-						modifier += 1.0;
-						modifier = std::max(0.0, modifier);
-						result *= modifier;
+						int percent = modifier * 100;
+						percent += 100;
+						percent = std::max(0, percent);
+						result *= percent / 100.0;
 					}
 				}
 			}

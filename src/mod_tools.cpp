@@ -2336,13 +2336,13 @@ int ItemTooltips_t::getSpellDamageOrHealAmount(const int player, spell_t* spell,
 		if ( player >= 0 && players[player] )
 		{
 			int bonus = 0;
-			if ( spellbook && itemCategory(spellbook) == MAGICSTAFF )
+			if ( spellbook && itemCategory(spellbook) == MAGICSTAFF && spellbook->type != MAGICSTAFF_SCEPTER )
 			{
 				// no modifier.
 			}
 			else
 			{
-				if ( spellbook && itemCategory(spellbook) == SPELLBOOK )
+				if ( spellbook && (itemCategory(spellbook) == SPELLBOOK || itemTypeIsFoci(spellbook->type)) )
 				{
 					bonus = getSpellbookBonusPercent(
 						excludePlayerStats ? nullptr : players[player]->entity, 
@@ -3164,6 +3164,8 @@ std::string& ItemTooltips_t::getItemProficiencyName(int proficiency)
 			return adjectives["proficiency_types"]["shield"];
 		case PRO_RANGED:
 			return adjectives["proficiency_types"]["ranged"];
+		case PRO_SORCERY:
+			return adjectives["proficiency_types"]["magic"];
 		default:
 			return defaultString;
 	}
@@ -4148,7 +4150,9 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 					|| (skill == PRO_MYSTICISM && (item.type == HAT_CIRCLET))
 					|| (skill == PRO_SORCERY && (item.type == HAT_CIRCLET_SORCERY))
 					|| (skill == PRO_THAUMATURGY && (item.type == HAT_CIRCLET_THAUMATURGY))
-					|| (skill == PRO_ALCHEMY && item.type == MASK_HAZARD_GOGGLES) )
+					|| (skill == PRO_ALCHEMY && item.type == MASK_HAZARD_GOGGLES)
+					|| ((skill == PRO_MYSTICISM || skill == PRO_SORCERY || skill == PRO_THAUMATURGY)
+						&& itemTypeIsFoci(item.type)) )
 				{
 					int bonus = 10;
 					if ( skill == PRO_MYSTICISM || skill == PRO_SORCERY || skill == PRO_THAUMATURGY )
@@ -4313,6 +4317,241 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 						getItemEquipmentEffectsForIconText(conditionalAttribute).c_str());
 				}
 			}
+			else if ( conditionalAttribute == "EFF_CHAIN_RESIST" || conditionalAttribute == "EFF_QUILT_RESIST"
+				|| conditionalAttribute == "EFF_BONE_RESIST" || conditionalAttribute == "EFF_BANDIT_LEATHER" )
+			{
+				real_t base = 0.1;
+				real_t bonus = 0.05;
+				if ( items[item.type].item_slot == ItemEquippableSlot::EQUIPPABLE_IN_SLOT_BREASTPLATE )
+				{
+					base = 0.2;
+				}
+				if ( item.type == BANDIT_BREASTPIECE )
+				{
+					base = 0.15;
+					real_t mod = 0.0;
+					if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+					{
+						mod = Entity::getDamageTableEquipmentMod(*stats[player], item, base, bonus);
+					}
+					else
+					{
+						mod = base;
+					}
+					snprintf(buf, sizeof(buf), str.c_str(), (int)(mod * 100));
+				}
+				else
+				{
+					real_t mod = 0.0;
+					if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+					{
+						mod = Entity::getDamageTableEquipmentMod(*stats[player], item, base, bonus);
+					}
+					else
+					{
+						mod = base;
+					}
+					char tmp[128] = "";
+					if ( ItemTooltips.templates["template_armor_resist_icon"].size() )
+					{
+						std::string skillnames = "";
+						if ( conditionalAttribute == "EFF_CHAIN_RESIST" )
+						{
+							skillnames += getItemProficiencyName(PRO_SWORD);
+							skillnames += "/";
+							skillnames += getItemProficiencyName(PRO_AXE);
+						}
+						else if ( conditionalAttribute == "EFF_QUILT_RESIST" )
+						{
+							skillnames += getItemProficiencyName(PRO_POLEARM);
+							skillnames += "/";
+							skillnames += getItemProficiencyName(PRO_RANGED);
+						}
+						else if ( conditionalAttribute == "EFF_BONE_RESIST" )
+						{
+							skillnames += getItemProficiencyName(PRO_UNARMED);
+							skillnames += "/";
+							skillnames += getItemProficiencyName(PRO_MACE);
+						}
+						snprintf(tmp, sizeof(tmp), ItemTooltips.templates["template_armor_resist_icon"][0].c_str(),
+							skillnames.c_str());
+					}
+					snprintf(buf, sizeof(buf), str.c_str(), (int)(mod * 100),
+						tmp);
+				}
+			}
+			else if ( conditionalAttribute.find("EFF_FOCI_MAGE") != std::string::npos )
+			{
+				int spellID = getSpellIDFromFoci(item.type);
+				if ( spellID != SPELL_NONE )
+				{
+					if ( auto spell = getSpellFromID(spellID) )
+					{
+						char buf[128];
+						memset(buf, 0, sizeof(buf));
+						snprintf(buf, sizeof(buf), str.c_str(), getSpellDamageOrHealAmount(player, spell, &item, compendiumTooltipIntro));
+						str = buf;
+					}
+				}
+				return;
+			}
+			else if ( conditionalAttribute == "EFF_INSTRUMENT_MP_COST" )
+			{
+				if ( itemTypeIsInstrument(item.type) )
+				{
+					snprintf(buf, sizeof(buf), str.c_str(), items[item.type].attributes[conditionalAttribute]);
+					str = buf;
+					return;
+				}
+			}
+			else if ( conditionalAttribute.find("EFF_INSTRUMENT") != std::string::npos )
+			{
+				Sint32 CHR = statGetCHR(stats[player], players[player]->entity);
+				if ( compendiumTooltipIntro ) { CHR = 0; }
+				Uint8 effectStrength = std::max(1, std::min(255, CHR + 1));
+				int tier = 1;
+				std::string tierString = "I";
+				int nextCHR = Stat::kEnsembleBreakPointTier2;
+				if ( effectStrength >= Stat::kEnsembleBreakPointTier4 )
+				{
+					nextCHR = 0;
+					tierString = "IV";
+					tier = 4;
+				}
+				else if ( effectStrength >= Stat::kEnsembleBreakPointTier3 )
+				{
+					nextCHR = Stat::kEnsembleBreakPointTier4;
+					tierString = "III";
+					tier = 3;
+
+				}
+				else if ( effectStrength >= Stat::kEnsembleBreakPointTier2 )
+				{
+					nextCHR = Stat::kEnsembleBreakPointTier3;
+					tierString = "II";
+					tier = 2;
+				}
+
+				int eff1_min = 0;
+				int eff2_min = 0;
+				int effTier_min = 0;
+				int eff1 = 0;
+				int eff2 = 0;
+				int effTier = 0;
+				if ( item.type == INSTRUMENT_FLUTE )
+				{
+					eff1 = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_FLUTE_EFF_1, effectStrength);
+					eff2 = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_FLUTE_EFF_2, effectStrength);
+					effTier = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_FLUTE_TIER, effectStrength);
+
+					eff1_min = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_FLUTE_EFF_1, 1);
+					eff2_min = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_FLUTE_EFF_2, 1);
+					effTier_min = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_FLUTE_TIER, 1);
+				}
+				else if ( item.type == INSTRUMENT_LUTE )
+				{
+					eff1 = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_LUTE_EFF_1, effectStrength);
+					eff2 = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_LUTE_EFF_2, effectStrength);
+					effTier = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_LUTE_TIER, effectStrength);
+
+					eff1_min = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_LUTE_EFF_1, 1);
+					eff2_min = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_LUTE_EFF_2, 1);
+					effTier_min = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_LUTE_TIER, 1);
+				}
+				else if ( item.type == INSTRUMENT_LYRE )
+				{
+					eff1 = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_LYRE_EFF_1, effectStrength);
+					eff2 = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_LYRE_EFF_2, effectStrength);
+					effTier = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_LYRE_TIER, effectStrength);
+
+					eff1_min = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_LYRE_EFF_1, 1);
+					eff2_min = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_LYRE_EFF_2, 1);
+					effTier_min = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_LYRE_TIER, 1);
+				}
+				else if ( item.type == INSTRUMENT_HORN )
+				{
+					eff1 = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_HORN_EFF_1, effectStrength);
+					eff2 = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_HORN_EFF_2, effectStrength);
+					effTier = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_HORN_TIER, effectStrength);
+
+					eff1_min = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_HORN_EFF_1, 1);
+					eff2_min = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_HORN_EFF_2, 1);
+					effTier_min = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_HORN_TIER, 1);
+				}
+				else if ( item.type == INSTRUMENT_DRUM )
+				{
+					eff1 = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_DRUM_EFF_1, effectStrength);
+					eff2 = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_DRUM_EFF_2, effectStrength);
+					effTier = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_DRUM_TIER, effectStrength);
+
+					eff1_min = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_DRUM_EFF_1, 1);
+					eff2_min = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_DRUM_EFF_2, 1);
+					effTier_min = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_DRUM_TIER, 1);
+				}
+
+				snprintf(buf, sizeof(buf), str.c_str(), tierString.c_str(), eff1_min, eff1, effTier_min, effTier);
+			}
+			else if ( conditionalAttribute.find("EFF_FOCI_") != std::string::npos )
+			{
+				Sint32 CHR = statGetCHR(stats[player], players[player]->entity);
+				if ( compendiumTooltipIntro ) { CHR = 0; }
+				int tier = 1;
+				std::string tierString = "I";
+				if ( CHR >= 3 && CHR <= 7 )
+				{
+					tier = 1;
+				}
+				else if ( CHR >= 8 && CHR <= 14 )
+				{
+					tierString = "II";
+					tier = 2;
+				}
+				else if ( CHR >= 15 && CHR <= 29 )
+				{
+					tierString = "III";
+					tier = 3;
+				}
+				else if ( CHR >= 30 )
+				{
+					tierString = "IV";
+					tier = 4;
+				}
+
+				if ( conditionalAttribute == "EFF_FOCI_PEACE" )
+				{
+					int effect = getSpellEffectDurationSecondaryFromID(SPELL_FOCI_LIGHT_PEACE, nullptr, nullptr, nullptr);
+					int effectMax = effect - (tier - 1) * getSpellDamageSecondaryFromID(SPELL_FOCI_LIGHT_PEACE, nullptr, nullptr, nullptr);
+					snprintf(buf, sizeof(buf), str.c_str(), tierString.c_str(), effect / TICKS_PER_SECOND, effectMax / TICKS_PER_SECOND);
+				}
+				else if ( conditionalAttribute == "EFF_FOCI_PURITY" )
+				{
+					int effect = getSpellEffectDurationSecondaryFromID(SPELL_FOCI_LIGHT_PURITY, nullptr, nullptr, nullptr);
+					int effectMax = effect - (tier - 1) * getSpellDamageSecondaryFromID(SPELL_FOCI_LIGHT_PURITY, nullptr, nullptr, nullptr);
+					snprintf(buf, sizeof(buf), str.c_str(), tierString.c_str(), effect / TICKS_PER_SECOND, effectMax / TICKS_PER_SECOND);
+				}
+				else if ( conditionalAttribute == "EFF_FOCI_JUSTICE" )
+				{
+					int effect = getSpellEffectDurationSecondaryFromID(SPELL_FOCI_LIGHT_JUSTICE, nullptr, nullptr, nullptr);
+					int effectMax = effect + (tier - 1) * getSpellDamageSecondaryFromID(SPELL_FOCI_LIGHT_JUSTICE, nullptr, nullptr, nullptr);
+					snprintf(buf, sizeof(buf), str.c_str(), tierString.c_str(), effect, effectMax);
+				}
+				else if ( conditionalAttribute == "EFF_FOCI_SANCTUARY" )
+				{
+					int effect = getSpellDamageFromID(SPELL_FOCI_LIGHT_SANCTUARY, nullptr, nullptr, nullptr);
+					int effectMax = effect + (tier - 1) * getSpellDamageSecondaryFromID(SPELL_FOCI_LIGHT_SANCTUARY, nullptr, nullptr, nullptr);
+					snprintf(buf, sizeof(buf), str.c_str(), tierString.c_str(), effect, effectMax);
+				}
+				else if ( conditionalAttribute == "EFF_FOCI_PROVIDENCE" )
+				{
+					int effect = getSpellEffectDurationSecondaryFromID(SPELL_FOCI_LIGHT_PROVIDENCE, nullptr, nullptr, nullptr);
+					int effectMax = effect + (tier - 1) * getSpellDamageSecondaryFromID(SPELL_FOCI_LIGHT_PROVIDENCE, nullptr, nullptr, nullptr);
+					snprintf(buf, sizeof(buf), str.c_str(), tierString.c_str(), effect, effectMax);
+				}
+				else
+				{
+					return;
+				}
+			}
 			else if ( conditionalAttribute.find("EFF_ARTIFACT_") != std::string::npos )
 			{
 				real_t amount = 0.0;
@@ -4353,6 +4592,20 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 			Sint32 AC = item.armorGetAC(stats[player]);
 			snprintf(buf, sizeof(buf), str.c_str(), AC, getItemStatFullName("AC").c_str());
 		}
+		else if ( conditionalAttribute == "FOCI_MP_COST" )
+		{
+			int mpCost = 0;
+			int spellID = getSpellIDFromFoci(item.type);
+			if ( spellID != SPELL_NONE )
+			{
+				if ( auto spell = getSpellFromID(spellID) )
+				{
+					mpCost = getCostOfSpell(spell, compendiumTooltipIntro ? nullptr : players[player]->entity);
+				}
+			}
+
+			snprintf(buf, sizeof(buf), str.c_str(), mpCost);
+		}
 		else
 		{
 			return;
@@ -4378,6 +4631,7 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 		|| tooltipType.find("tooltip_ranged") != std::string::npos
 		|| tooltipType.find("tooltip_quiver") != std::string::npos
 		|| tooltipType.compare("tooltip_tool_pickaxe") == 0 
+		|| tooltipType.compare("tooltip_magicstaff_scepter") == 0
 		)
 	{
 		Sint32 atk = item.weaponGetAttack(stats[player]);
@@ -4608,7 +4862,8 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		}
 		else if ( detailTag.compare("weapon_atk_from_player_stat") == 0 )
 		{
-			snprintf(buf, sizeof(buf), str.c_str(), (!compendiumTooltipIntro && stats[player]) ? statGetSTR(stats[player], players[player]->entity) : 0);
+			snprintf(buf, sizeof(buf), str.c_str(), 
+				(int)(((!compendiumTooltipIntro && stats[player]) ? statGetSTR(stats[player], players[player]->entity) : 0) * 100 * Entity::PlayerAttackMeleeStatFactor));
 		}
 		else if ( detailTag.compare("ring_unarmed_atk") == 0 )
 		{
@@ -4765,7 +5020,8 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		}
 		else if ( detailTag.compare("thrown_atk_from_player_stat") == 0 )
 		{
-			snprintf(buf, sizeof(buf), str.c_str(), (!compendiumTooltipIntro && stats[player]) ? (statGetDEX(stats[player], players[player]->entity) / 4) : 0);
+			snprintf(buf, sizeof(buf), str.c_str(), 
+				(int)(((!compendiumTooltipIntro && stats[player]) ? (statGetDEX(stats[player], players[player]->entity) / 4) : 0) * 100 * Entity::PlayerAttackThrownStatFactor));
 		}
 		else if ( detailTag.compare("thrown_skill_modifier") == 0 )
 		{
@@ -4847,7 +5103,8 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		}
 		else if ( detailTag.compare("thrown_atk_from_player_stat") == 0 )
 		{
-			snprintf(buf, sizeof(buf), str.c_str(), (!compendiumTooltipIntro && stats[player]) ? (statGetDEX(stats[player], players[player]->entity) / 4) : 0);
+			snprintf(buf, sizeof(buf), str.c_str(), 
+				(int)(((!compendiumTooltipIntro && stats[player]) ? (statGetDEX(stats[player], players[player]->entity) / 4) : 0) * 100 * Entity::PlayerAttackThrownStatFactor));
 		}
 		else if ( detailTag.compare("thrown_skill_modifier") == 0 )
 		{
@@ -4860,12 +5117,426 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 			return;
 		}
 	}
+	else if ( tooltipType == "tooltip_instrument" )
+	{
+		Entity* caster = compendiumTooltipIntro ? nullptr : players[player]->entity;
+		Stat* myStats = compendiumTooltipIntro ? nullptr : stats[player];
+		if ( detailTag == "armor_on_cursed_sideeffect" )
+		{
+			snprintf(buf, sizeof(buf), str.c_str(), getItemBeatitudeAdjective(item.beatitude).c_str());
+		}
+		else if ( detailTag == "instrument_duration" )
+		{
+			Sint32 CHR = statGetCHR(stats[player], players[player]->entity);
+			if ( compendiumTooltipIntro ) { CHR = 0; }
+
+			int skillLVL = std::max(0, myStats ? myStats->getModifiedProficiency(PRO_APPRAISAL) : 0);
+			int durationMinimum = TICKS_PER_SECOND;
+			durationMinimum += (skillLVL / 20) * TICKS_PER_SECOND;
+
+			int duration = 1;
+			duration += 4 * skillLVL * (TICKS_PER_SECOND / 25);
+			duration += (skillLVL / 20) * TICKS_PER_SECOND;
+
+			int durationMax = TICKS_PER_SECOND * 60 * 5;
+			duration = std::min(duration, durationMax);
+			duration = std::max(duration, durationMinimum);
+
+			int chargeTimeBase = 4 * TICKS_PER_SECOND;
+			int chargeTime = std::max(TICKS_PER_SECOND / 2,
+				chargeTimeBase - (TICKS_PER_SECOND / 20) * CHR);
+
+			real_t chargeRatio = (100.0 * chargeTimeBase / (real_t)chargeTime) - 100.0;
+
+			snprintf(buf, sizeof(buf), str.c_str(), 
+				chargeTime / (real_t)TICKS_PER_SECOND, duration / (real_t)TICKS_PER_SECOND);
+		}
+		else if ( detailTag == "instrument_casting" )
+		{
+			Sint32 CHR = statGetCHR(stats[player], players[player]->entity);
+			if ( compendiumTooltipIntro ) { CHR = 0; }
+			Uint8 effectStrength = std::max(1, std::min(255, CHR + 1));
+			int tier = 1;
+			std::string tierString = "I";
+			int nextCHR = Stat::kEnsembleBreakPointTier2;
+			if ( effectStrength >= Stat::kEnsembleBreakPointTier4 )
+			{
+				nextCHR = 0;
+				tier = 4;
+			}
+			else if ( effectStrength >= Stat::kEnsembleBreakPointTier3 )
+			{
+				nextCHR = Stat::kEnsembleBreakPointTier4;
+				tier = 3;
+
+			}
+			else if ( effectStrength >= Stat::kEnsembleBreakPointTier2 )
+			{
+				nextCHR = Stat::kEnsembleBreakPointTier3;
+				tier = 2;
+			}
+
+			char nextChrStr[64];
+			if ( nextCHR > 0 )
+			{
+				snprintf(nextChrStr, sizeof(nextChrStr), "%+d %s", nextCHR, ItemTooltips_t::getItemStatShortName("CHR").c_str());
+			}
+			else
+			{
+				snprintf(nextChrStr, sizeof(nextChrStr), "N/A");
+			}
+
+			char nextChrStatStr[64];
+			int nextCHRStat = effectStrength + 1;
+			int eff1 = 0;
+			if ( item.type == INSTRUMENT_FLUTE )
+			{
+				eff1 = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_FLUTE_EFF_1, effectStrength);
+			}
+			else if ( item.type == INSTRUMENT_LUTE )
+			{
+				eff1 = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_LUTE_EFF_1, effectStrength);
+			}
+			else if ( item.type == INSTRUMENT_LYRE )
+			{
+				eff1 = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_LYRE_EFF_1, effectStrength);
+			}
+			else if ( item.type == INSTRUMENT_HORN )
+			{
+				eff1 = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_HORN_EFF_1, effectStrength);
+			}
+			else if ( item.type == INSTRUMENT_DRUM )
+			{
+				eff1 = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_DRUM_EFF_1, effectStrength);
+			}
+			for ( int i = effectStrength + 1; i < effectStrength + 10 && i <= 255; ++i )
+			{
+				int eff1_test = 0;
+				if ( item.type == INSTRUMENT_FLUTE )
+				{
+					eff1_test = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_FLUTE_EFF_1, i);
+				}
+				else if ( item.type == INSTRUMENT_LUTE )
+				{
+					eff1_test = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_LUTE_EFF_1, i);
+				}
+				else if ( item.type == INSTRUMENT_LYRE )
+				{
+					eff1_test = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_LYRE_EFF_1, i);
+				}
+				else if ( item.type == INSTRUMENT_HORN )
+				{
+					eff1_test = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_HORN_EFF_1, i);
+				}
+				else if ( item.type == INSTRUMENT_DRUM )
+				{
+					eff1_test = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_DRUM_EFF_1, i);
+				}
+				if ( eff1_test > eff1 )
+				{
+					nextCHRStat = i;
+					break;
+				}
+			}
+
+			if ( nextCHRStat > 0 )
+			{
+				snprintf(nextChrStatStr, sizeof(nextChrStatStr), "%+d %s", nextCHRStat, ItemTooltips_t::getItemStatShortName("CHR").c_str());
+			}
+			else
+			{
+				snprintf(nextChrStatStr, sizeof(nextChrStatStr), "N/A");
+			}
+
+			snprintf(buf, sizeof(buf), str.c_str(), items[item.type].attributes["EFF_INSTRUMENT_MP_COST"], 
+				nextChrStatStr, nextChrStr);
+		}
+	}
+	else if ( tooltipType == "tooltip_foci_light"
+		|| tooltipType == "tooltip_foci_dark"
+		|| tooltipType == "tooltip_foci_mage" )
+	{
+		Entity* caster = compendiumTooltipIntro ? nullptr : players[player]->entity;
+		Stat* myStats = compendiumTooltipIntro ? nullptr : stats[player];
+		if ( detailTag.compare("armor_on_cursed_sideeffect") == 0 )
+		{
+			snprintf(buf, sizeof(buf), str.c_str(), getItemBeatitudeAdjective(item.beatitude).c_str());
+		}
+		else if ( detailTag == "spell_damage_bonus"
+			|| detailTag == "EFF_FOCI_MAGE_ARCS" )
+		{
+			int spellID = getSpellIDFromFoci(item.type);
+			if ( spellID != SPELL_NONE )
+			{
+				if ( auto spell = getSpellFromID(spellID) )
+				{
+					int baseDamage = getSpellDamageOrHealAmount(-1, spell, nullptr, compendiumTooltipIntro);
+					real_t bonusINTPercent = 100.0 * getBonusFromCasterOfSpellElement(
+						compendiumTooltipIntro ? nullptr : players[player]->entity,
+						compendiumTooltipIntro ? nullptr : stats[player],
+						nullptr, spell ? spell->ID : SPELL_NONE, spell->skillID);
+					real_t mult = 1.0;
+					if ( detailTag == "EFF_FOCI_MAGE_ARCS" )
+					{
+						spellElement_t* element = nullptr;
+						if ( spell->elements.first )
+						{
+							if ( element = (spellElement_t*)spell->elements.first->element )
+							{
+								if ( element->elements.first && element->elements.first->element )
+								{
+									element = (spellElement_t*)element->elements.first->element;
+								}
+							}
+						}
+						if ( element )
+						{
+							baseDamage = element->getDamageSecondary();
+						}
+						mult = getSpellPropertyFromID(spell_t::SPELLPROP_DAMAGE_SECONDARY_MULT, spell->ID, compendiumTooltipIntro ? nullptr : players[player]->entity, nullptr, nullptr);
+						snprintf(buf, sizeof(buf), str.c_str(), (int)(baseDamage * (1.0 + bonusINTPercent * mult / 100.0)));
+					}
+					else
+					{
+						mult = getSpellPropertyFromID(spell_t::SPELLPROP_DAMAGE_MULT, spell->ID, compendiumTooltipIntro ? nullptr : players[player]->entity, nullptr, nullptr);
+						std::string damageOrHealing = adjectives["spell_strings"]["damage"];
+						/*std::string statName = getItemStatShortName("INT");
+						if ( spell->skillID == PRO_MYSTICISM )
+						{
+							statName += '/';
+							statName += getItemStatShortName("CHR");
+						}
+						else if ( spell->skillID == PRO_THAUMATURGY )
+						{
+							statName += '/';
+							statName += getItemStatShortName("CON");
+						}*/
+
+						snprintf(buf, sizeof(buf), str.c_str(), damageOrHealing.c_str(), baseDamage, damageOrHealing.c_str(),
+							bonusINTPercent * mult, damageOrHealing.c_str());
+					}
+				}
+			}
+		}
+		else if ( detailTag == "mage_foci_bless_bonus" )
+		{
+			int bless = shouldInvertEquipmentBeatitude(myStats) ?
+				abs(item.beatitude) :
+				std::max((Sint16)0, item.beatitude);
+
+			int bonus = bless * 5;
+			snprintf(buf, sizeof(buf), str.c_str(), bonus, getItemBeatitudeAdjective(item.beatitude).c_str());
+		}
+		else if ( detailTag == "foci_mage_cast" )
+		{
+			int baseChargeTime = TICKS_PER_SECOND;
+			int effectDuration = TICKS_PER_SECOND;
+			int spellID = getSpellIDFromFoci(item.type);
+			if ( spellID != SPELL_NONE )
+			{
+				if ( auto spell = getSpellFromID(spellID) )
+				{
+					spellElement_t* element = nullptr;
+					if ( spell->elements.first )
+					{
+						if ( element = (spellElement_t*)spell->elements.first->element )
+						{
+							if ( element->elements.first && element->elements.first->element )
+							{
+								element = (spellElement_t*)element->elements.first->element;
+							}
+						}
+					}
+					if ( element )
+					{
+						baseChargeTime = element->getChanneledManaDuration();
+						effectDuration = element->duration;
+					}
+				}
+			}
+			snprintf(buf, sizeof(buf), str.c_str(), baseChargeTime / (real_t)TICKS_PER_SECOND, effectDuration / (real_t)TICKS_PER_SECOND);
+		}
+		else if ( detailTag == "foci_charge_text" )
+		{
+			int nextCHRBonus = 8;
+
+			int tier = 1;
+			Sint32 CHR = statGetCHR(myStats, caster);
+			if ( CHR >= 3 && CHR <= 7 )
+			{
+				nextCHRBonus = 8;
+			}
+			else if ( CHR >= 8 && CHR <= 14 )
+			{
+				nextCHRBonus = 15;
+			}
+			else if ( CHR >= 15 && CHR <= 29 )
+			{
+				nextCHRBonus = 30;
+			}
+			else if ( CHR >= 30 )
+			{
+				nextCHRBonus = 0;
+			}
+			char nextChrStr[64];
+			if ( nextCHRBonus > 0 )
+			{
+				snprintf(nextChrStr, sizeof(nextChrStr), "%+d %s", nextCHRBonus, ItemTooltips_t::getItemStatShortName("CHR").c_str());
+			}
+			else
+			{
+				snprintf(nextChrStr, sizeof(nextChrStr), "N/A");
+			}
+			int effectDuration = TICKS_PER_SECOND;
+			int baseChargeTime = TICKS_PER_SECOND;
+			int spellID = getSpellIDFromFoci(item.type);
+			if ( spellID != SPELL_NONE )
+			{
+				if ( auto spell = getSpellFromID(spellID) )
+				{
+					spellElement_t* element = nullptr;
+					if ( spell->elements.first )
+					{
+						if ( element = (spellElement_t*)spell->elements.first->element )
+						{
+							if ( element->elements.first && element->elements.first->element )
+							{
+								element = (spellElement_t*)element->elements.first->element;
+							}
+						}
+					}
+					if ( element )
+					{
+						effectDuration = element->duration;
+						baseChargeTime = element->getChanneledManaDuration();
+					}
+				}
+			}
+
+			snprintf(buf, sizeof(buf), str.c_str(), baseChargeTime / (real_t)TICKS_PER_SECOND, effectDuration / (real_t)TICKS_PER_SECOND, nextChrStr);
+		}
+		else if ( detailTag == "foci_mp_cost" )
+		{
+			int mpCost = 5;
+			int spellID = getSpellIDFromFoci(item.type);
+			int freeMPInterval1 = 0;
+			int freeMPInterval2 = 0;
+			int moveSpeed = 0;
+			std::string skillName = "";
+			int chargeRefire = 0;
+			int nextCHRBonus = 8;
+			if ( spellID != SPELL_NONE )
+			{
+				if ( auto spell = getSpellFromID(spellID) )
+				{
+					mpCost = getCostOfSpell(spell, caster);
+					int bless = shouldInvertEquipmentBeatitude(myStats) ?
+						abs(item.beatitude) :
+						std::max((Sint16)0, item.beatitude);
+
+					mpCost = getSpellPropertyFromID(spell_t::SPELLPROP_FOCI_SECONDARY_MANA_COST, spellID,
+						caster, myStats, caster);
+
+					int tier = bless > 0 ? std::min(2, bless) : 0;
+					Sint32 CHR = statGetCHR(myStats, caster);
+					if ( CHR > 0 )
+					{
+						if ( CHR >= 3 && CHR <= 7 )
+						{
+							tier += 1;
+							nextCHRBonus = 8;
+						}
+						else if ( CHR >= 8 && CHR <= 14 )
+						{
+							tier += 2;
+							nextCHRBonus = 15;
+						}
+						else if ( CHR >= 15 && CHR <= 29 )
+						{
+							tier += 3;
+							nextCHRBonus = 30;
+						}
+						else if ( CHR >= 30 && CHR <= 59 )
+						{
+							tier += 4;
+							nextCHRBonus = 60;
+						}
+						else if ( CHR >= 60 )
+						{
+							tier += 5;
+							nextCHRBonus = 0;
+						}
+					}
+					tier = std::min(tier, 5);
+					if ( tier == 1 ) { freeMPInterval1 = 1; freeMPInterval2 = 4; }
+					if ( tier == 2 ) { freeMPInterval1 = 1; freeMPInterval2 = 3; }
+					if ( tier == 3 ) { freeMPInterval1 = 1; freeMPInterval2 = 2; }
+					if ( tier == 4 ) { freeMPInterval1 = 2; freeMPInterval2 = 3; }
+					if ( tier == 5 ) { freeMPInterval1 = 3; freeMPInterval2 = 4; }
+
+					moveSpeed = !myStats ? 0 : myStats->getModifiedProficiency(spell->skillID);
+					skillName = Player::SkillSheet_t::getSkillNameFromID(spell->skillID);
+
+					real_t modifier = std::min(100, !myStats ? 0 : myStats->getModifiedProficiency(spell->skillID)) / 100.0;
+
+					spellElement_t* element = nullptr;
+					if ( spell->elements.first )
+					{
+						if ( element = (spellElement_t*)spell->elements.first->element )
+						{
+							if ( element->elements.first && element->elements.first->element )
+							{
+								element = (spellElement_t*)element->elements.first->element;
+							}
+						}
+					}
+
+					chargeRefire = 0;
+					if ( element )
+					{
+						int result = element->getChanneledManaDuration();
+						int modifiedResult = getSpellPropertyFromID(spell_t::SPELLPROP_FOCI_REFIRE_TICKS, spellID,
+							caster, myStats, caster);
+
+						chargeRefire = (100.0 - (100.0 * modifiedResult / (real_t)result));
+					}
+				}
+			}
+
+			std::string fmt1 = "-";
+			std::string fmt2 = "-";
+			if ( freeMPInterval1 > 0 && freeMPInterval2 > 0 )
+			{
+				fmt1 = std::to_string(freeMPInterval1);
+				fmt2 = std::to_string(freeMPInterval2);
+			}
+			char nextChrStr[64];
+			if ( nextCHRBonus > 0 )
+			{
+				snprintf(nextChrStr, sizeof(nextChrStr), "%+d %s", nextCHRBonus, ItemTooltips_t::getItemStatShortName("CHR").c_str());
+			}
+			else
+			{
+				snprintf(nextChrStr, sizeof(nextChrStr), "N/A");
+			}
+			snprintf(buf, sizeof(buf), str.c_str(),
+				mpCost, fmt1.c_str(), fmt2.c_str(), 
+				nextChrStr,
+				skillName.c_str(), 
+				chargeRefire, moveSpeed);
+		}
+		else
+		{
+			return;
+		}
+	}
 	else if ( tooltipType.find("tooltip_mace") != std::string::npos
 		|| tooltipType.find("tooltip_axe") != std::string::npos
 		|| tooltipType.find("tooltip_sword") != std::string::npos
 		|| tooltipType.find("tooltip_polearm") != std::string::npos
 		|| tooltipType.find("tooltip_whip") != std::string::npos
 		|| tooltipType.compare("tooltip_tool_pickaxe") == 0
+		|| tooltipType.compare("tooltip_magicstaff_scepter") == 0
 		|| tooltipType.find("tooltip_ranged") != std::string::npos
 		|| tooltipType.find("tooltip_quiver") != std::string::npos )
 	{
@@ -4959,15 +5630,28 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 				{
 					atk = 0;
 				}
-				snprintf(buf, sizeof(buf), str.c_str(), atk);
+				snprintf(buf, sizeof(buf), str.c_str(), (int)(atk * 100 * Entity::PlayerAttackMeleeStatFactor));
+			}
+			else if ( item.type == MAGICSTAFF_SCEPTER )
+			{
+				int atk = (stats[player] ? statGetSTR(stats[player], players[player]->entity) : 0);
+				atk = std::min(atk / 2, atk);
+				snprintf(buf, sizeof(buf), str.c_str(), (int)(atk * 100 * Entity::PlayerAttackMeleeStatFactor));
+			}
+			else if ( item.type == RAPIER )
+			{
+				int atk = (stats[player] ? statGetDEX(stats[player], players[player]->entity) : 0);
+				snprintf(buf, sizeof(buf), str.c_str(), (int)(atk * 100 * Entity::PlayerAttackMeleeStatFactor));
 			}
 			else if ( proficiency == PRO_RANGED )
 			{
-				snprintf(buf, sizeof(buf), str.c_str(), (!compendiumTooltipIntro && stats[player]) ? statGetDEX(stats[player], players[player]->entity) : 0);
+				snprintf(buf, sizeof(buf), str.c_str(), 
+					(int)(((!compendiumTooltipIntro && stats[player]) ? statGetDEX(stats[player], players[player]->entity) : 0) * 100 * Entity::PlayerAttackRangedStatFactor));
 			}
 			else
 			{
-				snprintf(buf, sizeof(buf), str.c_str(), (!compendiumTooltipIntro && stats[player]) ? statGetSTR(stats[player], players[player]->entity) : 0);
+				snprintf(buf, sizeof(buf), str.c_str(), 
+					(int)(((!compendiumTooltipIntro && stats[player]) ? statGetSTR(stats[player], players[player]->entity) : 0) * 100 * Entity::PlayerAttackMeleeStatFactor));
 			}
 		}
 		else if ( detailTag.compare("weapon_durability") == 0 )
@@ -5014,6 +5698,42 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 				rof -= 100;
 				rof *= -1;
 				snprintf(buf, sizeof(buf), str.c_str(), rof);
+			}
+		}
+		else if ( detailTag == "spell_damage_bonus" )
+		{
+			if ( item.type == MAGICSTAFF_SCEPTER )
+			{
+				if ( detailTag.compare("spell_damage_bonus") == 0 )
+				{
+					spell_t* spell = getSpellFromID(SPELL_SCEPTER_BLAST);
+					if ( !spell ) { return; }
+
+					int baseDamage = getSpellDamageOrHealAmount(-1, spell, nullptr, compendiumTooltipIntro);
+
+					real_t mult = getSpellPropertyFromID(spell_t::SPELLPROP_DAMAGE_MULT, spell->ID, compendiumTooltipIntro ? nullptr : players[player]->entity, nullptr, nullptr);
+
+					real_t bonusINTPercent = 100.0 * getBonusFromCasterOfSpellElement(
+						compendiumTooltipIntro ? nullptr : players[player]->entity,
+						compendiumTooltipIntro ? nullptr : stats[player],
+						nullptr, spell ? spell->ID : SPELL_NONE, spell->skillID);
+
+					std::string damageOrHealing = adjectives["spell_strings"]["damage"];
+					std::string statName = getItemStatShortName("INT");
+					if ( spell->skillID == PRO_MYSTICISM )
+					{
+						statName += '/';
+						statName += getItemStatShortName("CHR");
+					}
+					else if ( spell->skillID == PRO_THAUMATURGY )
+					{
+						statName += '/';
+						statName += getItemStatShortName("CON");
+					}
+
+					snprintf(buf, sizeof(buf), str.c_str(), damageOrHealing.c_str(), baseDamage, damageOrHealing.c_str(),
+						bonusINTPercent * mult, damageOrHealing.c_str());
+				}
 			}
 		}
 		else

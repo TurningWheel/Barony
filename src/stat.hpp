@@ -526,7 +526,7 @@ public:
 	static const Sint32 kEnsembleBreakPointTier3 = 20;
 	static const Sint32 kEnsembleBreakPointTier2 = 5;
 	static const Sint32 kEnsembleBreakPointTier1 = 0;
-	real_t getEnsembleEffectBonus(EnsembleEffectsBonusType bonusType);
+	real_t getEnsembleEffectBonus(EnsembleEffectsBonusType bonusType, int checkEffectStrength = -1);
 	Sint32 getThaumProficiencySpellStatBonus(int whichStat, Sint32 currentBonus);
 	static int getMaxAttackCharge(Stat* myStats);
 	struct MonsterRangedAccuracy

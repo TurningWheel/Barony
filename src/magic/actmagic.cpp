@@ -1582,6 +1582,14 @@ void magicOnEntityHit(Entity* parent, Entity* particle, Entity* hitentity, Stat*
 		else if ( particle->actmagicSpray == 2 && spellID != SPELL_BREATHE_FIRE )
 		{
 			// foci items
+			auto find = ItemTooltips.spellItems.find(spellID);
+			if ( find->second.fociId >= 0 && find->second.fociId < NUMITEMS && itemTypeIsFoci((ItemType)find->second.fociId) )
+			{
+				if ( damageTaken > 0 )
+				{
+					Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_SPELL_DMG, (ItemType)find->second.fociId, damageTaken);
+				}
+			}
 		}
 		else if ( particle->actmagicFromSpellbook != 0 )
 		{
@@ -3786,6 +3794,17 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( spell->ID == SPELL_SCEPTER_BLAST || spell->ID == SPELL_BLOOD_WAVES || spell->ID == SPELL_HOLY_BEAM )
 							{
 								my->collisionIgnoreTargets.insert(hit.entity->getUID());
+								particleTimerEmitterHitEntities[my->getUID()][my->getUID()].hits++;
+								if ( particleTimerEmitterHitEntities[my->getUID()][my->getUID()].hits == 2 )
+								{
+									if ( spell->ID == SPELL_SCEPTER_BLAST )
+									{
+										if ( parent && parent->behavior == &actPlayer )
+										{
+											Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_MULTI_HITS, MAGICSTAFF_SCEPTER, 1);
+										}
+									}
+								}
 							}
 
 							if ( my->actmagicIsOrbiting == 2 )
@@ -20609,6 +20628,20 @@ void actRadiusMagic(Entity* my)
 									}
 								}
 
+								if ( caster->behavior == &actPlayer )
+								{
+									if ( my->actRadiusMagicID == SPELL_FOCI_DARK_SUPPRESS )
+									{
+										Compendium_t::Events_t::eventUpdate(caster->skill[2], Compendium_t::CPDM_SPELL_TARGETS,
+											TOOL_FOCI_DARK_SUPPRESS, 1);
+									}
+									else if ( my->actRadiusMagicID == SPELL_FOCI_DARK_RIFT )
+									{
+										Compendium_t::Events_t::eventUpdate(caster->skill[2], Compendium_t::CPDM_SPELL_TARGETS,
+											TOOL_FOCI_DARK_RIFT, 1);
+									}
+								}
+
 								if ( firstEffect )
 								{
 									if ( caster )
@@ -21150,6 +21183,10 @@ void actParticleShatterEarth(Entity* my)
 										int maxlvl = getSpellDamageSecondaryFromID(SPELL_EARTH_ELEMENTAL, caster, nullptr, caster);
 										lvl = std::min(lvl, maxlvl);
 										monsterStats->LVL = lvl;
+									}
+									if ( caster->behavior == &actPlayer )
+									{
+										Compendium_t::Events_t::eventUpdateMonster(caster->skill[2], Compendium_t::CPDM_RECRUITED, monster, 1);
 									}
 									if ( multiplayer == SERVER )
 									{

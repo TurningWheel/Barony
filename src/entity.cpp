@@ -3806,6 +3806,52 @@ void Entity::handleEffects(Stat* myStats)
 		if ( myStats->getEffectActive(i) )
 		{
 			myStats->EFFECTS_ACCRETION_TIME[i]++;
+			if ( myStats->EFFECTS_ACCRETION_TIME[i] % TICKS_PER_SECOND == 0 )
+			{
+				if ( behavior == &actPlayer )
+				{
+					if ( i == EFF_FOCI_LIGHT_JUSTICE )
+					{
+						Compendium_t::Events_t::eventUpdate(skill[2], Compendium_t::CPDM_EFFECT_DURATION, TOOL_FOCI_LIGHT_JUSTICE, TICKS_PER_SECOND);
+					}
+					else if ( i == EFF_FOCI_LIGHT_PEACE )
+					{
+						Compendium_t::Events_t::eventUpdate(skill[2], Compendium_t::CPDM_EFFECT_DURATION, TOOL_FOCI_LIGHT_PEACE, TICKS_PER_SECOND);
+					}
+					else if ( i == EFF_FOCI_LIGHT_PROVIDENCE )
+					{
+						Compendium_t::Events_t::eventUpdate(skill[2], Compendium_t::CPDM_EFFECT_DURATION, TOOL_FOCI_LIGHT_PROVIDENCE, TICKS_PER_SECOND);
+					}
+					else if ( i == EFF_FOCI_LIGHT_PURITY )
+					{
+						Compendium_t::Events_t::eventUpdate(skill[2], Compendium_t::CPDM_EFFECT_DURATION, TOOL_FOCI_LIGHT_PURITY, TICKS_PER_SECOND);
+					}
+					else if ( i == EFF_FOCI_LIGHT_SANCTUARY )
+					{
+						Compendium_t::Events_t::eventUpdate(skill[2], Compendium_t::CPDM_EFFECT_DURATION, TOOL_FOCI_LIGHT_SANCTUARY, TICKS_PER_SECOND);
+					}
+					else if ( i == EFF_ENSEMBLE_DRUM )
+					{
+						Compendium_t::Events_t::eventUpdate(skill[2], Compendium_t::CPDM_EFFECT_DURATION, INSTRUMENT_DRUM, TICKS_PER_SECOND);
+					}
+					else if ( i == EFF_ENSEMBLE_FLUTE )
+					{
+						Compendium_t::Events_t::eventUpdate(skill[2], Compendium_t::CPDM_EFFECT_DURATION, INSTRUMENT_FLUTE, TICKS_PER_SECOND);
+					}
+					else if ( i == EFF_ENSEMBLE_LUTE )
+					{
+						Compendium_t::Events_t::eventUpdate(skill[2], Compendium_t::CPDM_EFFECT_DURATION, INSTRUMENT_LUTE, TICKS_PER_SECOND);
+					}
+					else if ( i == EFF_ENSEMBLE_LYRE )
+					{
+						Compendium_t::Events_t::eventUpdate(skill[2], Compendium_t::CPDM_EFFECT_DURATION, INSTRUMENT_LYRE, TICKS_PER_SECOND);
+					}
+					else if ( i == EFF_ENSEMBLE_HORN )
+					{
+						Compendium_t::Events_t::eventUpdate(skill[2], Compendium_t::CPDM_EFFECT_DURATION, INSTRUMENT_HORN, TICKS_PER_SECOND);
+					}
+				}
+			}
 		}
 		else
 		{
@@ -5675,6 +5721,7 @@ void Entity::handleEffects(Stat* myStats)
 								{
 									Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_OFFHAND_CHARGING_TIME, "offhand casting", chargeTime);
 									Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_OFFHAND_CHARGING_TIME_RUN, "offhand casting", chargeTime);
+									Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_OFFHAND_CHARGING_TIME, myStats->shield->type, chargeTime);
 								}
 
 								if ( auto spell = getSpellFromID(spellID) )
@@ -5708,19 +5755,19 @@ void Entity::handleEffects(Stat* myStats)
 											{
 												tier += 1;
 											}
-											else if ( CHR > 7 && CHR <= 15 )
+											else if ( CHR >= 8 && CHR <= 14 )
 											{
 												tier += 2;
 											}
-											else if ( CHR > 15 && CHR <= 30 )
+											else if ( CHR >= 15 && CHR <= 29 )
 											{
 												tier += 3;
 											}
-											else if ( CHR > 30 && CHR <= 60 )
+											else if ( CHR >= 30 && CHR <= 59 )
 											{
 												tier += 4;
 											}
-											else if ( CHR > 60 )
+											else if ( CHR >= 60 )
 											{
 												tier += 5;
 											}
@@ -5774,6 +5821,7 @@ void Entity::handleEffects(Stat* myStats)
 										if ( mpcost > 0 )
 										{
 											Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_OFFHAND_CASTING_MP, "offhand casting", mpcost);
+											Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_OFFHAND_CASTING_MP, myStats->shield->type, mpcost);
 										}
 
 										CastSpellProps_t props;
@@ -5895,7 +5943,6 @@ void Entity::handleEffects(Stat* myStats)
 						default:
 							break;
 						}
-						int duration = 1;
 						bool failedCast = false;
 						if ( players[player]->mechanics.ensembleRequireRecast )
 						{
@@ -5929,6 +5976,7 @@ void Entity::handleEffects(Stat* myStats)
 								{
 									players[player]->mechanics.ensembleTakenInitialMP = true;
 									Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_OFFHAND_CASTING_MP, "offhand casting", mpcost);
+									Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_OFFHAND_CASTING_MP, myStats->shield->type, mpcost);
 								}
 								if ( (effect >= 0 && previousEnsemblePlaying >= 0 && previousEnsemblePlaying != effect) )
 								{
@@ -5951,6 +5999,7 @@ void Entity::handleEffects(Stat* myStats)
 							{
 								players[player]->mechanics.ensembleTakenInitialMP = true;
 								Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_OFFHAND_CASTING_MP, "offhand casting", mpcost);
+								Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_OFFHAND_CASTING_MP, myStats->shield->type, mpcost);
 							}
 
 							if ( defendTime - chargeTimeInit > 0 )
@@ -5958,6 +6007,7 @@ void Entity::handleEffects(Stat* myStats)
 								Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_OFFHAND_CHARGING_TIME, "offhand casting", chargeTime);
 								Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_OFFHAND_CHARGING_TIME_RUN, "offhand casting", chargeTime);
 								Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_OFFHAND_CHR_MAX, "offhand casting", CHR);
+								Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_OFFHAND_CHARGING_TIME, myStats->shield->type, chargeTime);
 							}
 						}
 
@@ -5994,6 +6044,7 @@ void Entity::handleEffects(Stat* myStats)
 							int skillLVL = std::max(0, myStats->getModifiedProficiency(PRO_APPRAISAL));
 							int durationMinimum = TICKS_PER_SECOND;
 							durationMinimum += (skillLVL / 20) * TICKS_PER_SECOND;
+							int duration = 1;
 
 							bool guarantee = (ticks % (TICKS_PER_SECOND / 2) == 0);
 							bool doParticle = false;
@@ -12562,6 +12613,12 @@ void Entity::attack(int pose, int charge, Entity* target)
 									Entity::getAttack(hit.entity, hitstats, hit.entity->behavior == &actPlayer, 0) : 0;
 								parriedDamage = std::max(1, parriedDamage);
 								parriedSkill = getWeaponSkill(hitstats->weapon);
+
+								if ( hit.entity->behavior == &actPlayer && hitstats->weapon )
+								{
+									Compendium_t::Events_t::eventUpdate(hit.entity->skill[2],
+										Compendium_t::CPDM_PARRIES, hitstats->weapon->type, 1);
+								}
 							}
 						}
 					}
@@ -15422,8 +15479,17 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 						if ( hitstats->weapon && hitstats->weapon->type == RAPIER )
 						{
+							Sint32 oldHP = myStats->HP;
 							this->modHP(-parriedDamage);
-							if ( myStats->HP <= 0 && myStats->OLDHP > myStats->HP )
+							if ( oldHP > myStats->HP )
+							{
+								if ( hit.entity->behavior == &actPlayer )
+								{
+									Compendium_t::Events_t::eventUpdate(hit.entity->skill[2], 
+										Compendium_t::CPDM_PARRIES_DMG, RAPIER, oldHP - myStats->HP);
+								}
+							}
+							if ( myStats->HP <= 0 && oldHP > myStats->HP )
 							{
 								hit.entity->awardXP(this, true, true);
 							}
@@ -30630,7 +30696,7 @@ void Entity::playerInsectoidIncrementHungerToMP(int mpAmount)
 	}
 }
 
-real_t getDamageTableEquipmentMod(Stat& myStats, Item& item, real_t base, real_t mod)
+real_t Entity::getDamageTableEquipmentMod(Stat& myStats, Item& item, real_t base, real_t mod)
 {
 	real_t bonus = base;
 	if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(&myStats) )
@@ -30745,64 +30811,64 @@ real_t Entity::getDamageTableMultiplier(Entity* my, Stat& myStats, DamageTableTy
 		{
 			if ( myStats.breastplate && myStats.breastplate->type == CHAIN_HAUBERK )
 			{
-				allBonuses.push_back(-getDamageTableEquipmentMod(myStats, *myStats.breastplate, 0.2, 0.05));
+				allBonuses.push_back(-Entity::getDamageTableEquipmentMod(myStats, *myStats.breastplate, 0.2, 0.05));
 			}
 			if ( myStats.gloves && myStats.gloves->type == CHAIN_GLOVES )
 			{
-				allBonuses.push_back(-getDamageTableEquipmentMod(myStats, *myStats.gloves, 0.1, 0.05));
+				allBonuses.push_back(-Entity::getDamageTableEquipmentMod(myStats, *myStats.gloves, 0.1, 0.05));
 			}
 			if ( myStats.shoes && myStats.shoes->type == CHAIN_BOOTS )
 			{
-				allBonuses.push_back(-getDamageTableEquipmentMod(myStats, *myStats.shoes, 0.1, 0.05));
+				allBonuses.push_back(-Entity::getDamageTableEquipmentMod(myStats, *myStats.shoes, 0.1, 0.05));
 			}
 			if ( myStats.helmet && myStats.helmet->type == CHAIN_COIF )
 			{
-				allBonuses.push_back(-getDamageTableEquipmentMod(myStats, *myStats.helmet, 0.1, 0.05));
+				allBonuses.push_back(-Entity::getDamageTableEquipmentMod(myStats, *myStats.helmet, 0.1, 0.05));
 			}
 		}
 		if ( damageType == DAMAGE_TABLE_POLEARM || damageType == DAMAGE_TABLE_RANGED )
 		{
 			if ( myStats.breastplate && myStats.breastplate->type == QUILTED_GAMBESON )
 			{
-				allBonuses.push_back(-getDamageTableEquipmentMod(myStats, *myStats.breastplate, 0.2, 0.05));
+				allBonuses.push_back(-Entity::getDamageTableEquipmentMod(myStats, *myStats.breastplate, 0.2, 0.05));
 			}
 			if ( myStats.gloves && myStats.gloves->type == QUILTED_GLOVES )
 			{
-				allBonuses.push_back(-getDamageTableEquipmentMod(myStats, *myStats.gloves, 0.1, 0.05));
+				allBonuses.push_back(-Entity::getDamageTableEquipmentMod(myStats, *myStats.gloves, 0.1, 0.05));
 			}
 			if ( myStats.shoes && myStats.shoes->type == QUILTED_BOOTS )
 			{
-				allBonuses.push_back(-getDamageTableEquipmentMod(myStats, *myStats.shoes, 0.1, 0.05));
+				allBonuses.push_back(-Entity::getDamageTableEquipmentMod(myStats, *myStats.shoes, 0.1, 0.05));
 			}
 			if ( myStats.helmet && myStats.helmet->type == QUILTED_CAP )
 			{
-				allBonuses.push_back(-getDamageTableEquipmentMod(myStats, *myStats.helmet, 0.1, 0.05));
+				allBonuses.push_back(-Entity::getDamageTableEquipmentMod(myStats, *myStats.helmet, 0.1, 0.05));
 			}
 		}
 		if ( damageType == DAMAGE_TABLE_UNARMED || damageType == DAMAGE_TABLE_MACE )
 		{
 			if ( myStats.breastplate && myStats.breastplate->type == BONE_BREASTPIECE )
 			{
-				allBonuses.push_back(-getDamageTableEquipmentMod(myStats, *myStats.breastplate, 0.2, 0.05));
+				allBonuses.push_back(-Entity::getDamageTableEquipmentMod(myStats, *myStats.breastplate, 0.2, 0.05));
 			}
 			if ( myStats.gloves && myStats.gloves->type == BONE_BRACERS )
 			{
-				allBonuses.push_back(-getDamageTableEquipmentMod(myStats, *myStats.gloves, 0.1, 0.05));
+				allBonuses.push_back(-Entity::getDamageTableEquipmentMod(myStats, *myStats.gloves, 0.1, 0.05));
 			}
 			if ( myStats.shoes && myStats.shoes->type == BONE_BOOTS )
 			{
-				allBonuses.push_back(-getDamageTableEquipmentMod(myStats, *myStats.shoes, 0.1, 0.05));
+				allBonuses.push_back(-Entity::getDamageTableEquipmentMod(myStats, *myStats.shoes, 0.1, 0.05));
 			}
 			if ( myStats.helmet && myStats.helmet->type == BONE_HELM )
 			{
-				allBonuses.push_back(-getDamageTableEquipmentMod(myStats, *myStats.helmet, 0.1, 0.05));
+				allBonuses.push_back(-Entity::getDamageTableEquipmentMod(myStats, *myStats.helmet, 0.1, 0.05));
 			}
 		}
 		if ( damageType == DAMAGE_TABLE_MAGIC )
 		{
 			if ( myStats.breastplate && myStats.breastplate->type == BANDIT_BREASTPIECE )
 			{
-				allBonuses.push_back(-getDamageTableEquipmentMod(myStats, *myStats.breastplate, 0.15, 0.05));
+				allBonuses.push_back(-Entity::getDamageTableEquipmentMod(myStats, *myStats.breastplate, 0.15, 0.05));
 			}
 		}
 	}

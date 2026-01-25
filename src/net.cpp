@@ -7351,6 +7351,7 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 				{
 					messagePlayer(player, MESSAGE_INTERACTION, Language::get(6378), items[key].getIdentifiedName());
 					Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_KEYLOCK_UNLOCKED_KEY, "wall locks", 1);
+					Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_KEYLOCK_UNLOCKED_KEY, (ItemType)key, 1);
 					if ( key == KEY_IRON )
 					{
 						Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_KEYLOCK_UNLOCKED_KEY_IRON, "wall locks", 1);

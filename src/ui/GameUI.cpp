@@ -17016,7 +17016,8 @@ bool getAttackTooltipLines(int playernum, AttackHoverText_t& attackHoverTextInfo
 		}
 	}
 
-	if ( attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_MELEE_WEAPON )
+	if ( attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_MELEE_WEAPON
+		|| attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_RAPIER )
 	{
 		switch ( lineNumber )
 		{
@@ -17034,7 +17035,14 @@ bool getAttackTooltipLines(int playernum, AttackHoverText_t& attackHoverTextInfo
 					attackHoverTextInfo.attackMinRange, attackHoverTextInfo.attackMaxRange);
 				return true;
 			case 3:
-				snprintf(titleBuf, 127, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_attr_bonus_melee").c_str());
+				if ( attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_RAPIER )
+				{
+					snprintf(titleBuf, 127, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_attr_bonus_ranged").c_str());
+				}
+				else
+				{
+					snprintf(titleBuf, 127, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_attr_bonus_melee").c_str());
+				}
 				snprintf(valueBuf, 127,
 					Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
 					attackHoverTextInfo.mainAttributeBonus);
@@ -17186,6 +17194,7 @@ bool getAttackTooltipLines(int playernum, AttackHoverText_t& attackHoverTextInfo
 		}
 	}
 	else if ( attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_THROWN
+		|| attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_THROWN_MISC
 		|| attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_THROWN_GEM )
 	{
 		switch ( lineNumber )
@@ -17203,9 +17212,16 @@ bool getAttackTooltipLines(int playernum, AttackHoverText_t& attackHoverTextInfo
 				return true;
 			case 3:
 				snprintf(titleBuf, 127, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_attr_bonus_ranged").c_str());
-				snprintf(valueBuf, 127,
-					Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
-					attackHoverTextInfo.mainAttributeBonus);
+				if ( attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_THROWN_MISC )
+				{
+					snprintf(valueBuf, 127, "-");
+				}
+				else
+				{
+					snprintf(valueBuf, 127,
+						Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
+						attackHoverTextInfo.mainAttributeBonus);
+				}
 				return true;
 			case 4:
 				snprintf(titleBuf, 127, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_weapon_bonus").c_str());
@@ -17215,9 +17231,16 @@ bool getAttackTooltipLines(int playernum, AttackHoverText_t& attackHoverTextInfo
 				return true;
 			case 5:
 				snprintf(titleBuf, 127, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_skill_bonus").c_str());
-				snprintf(valueBuf, 127,
-					Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
-					attackHoverTextInfo.proficiencyBonus);
+				if ( attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_THROWN_MISC )
+				{
+					snprintf(valueBuf, 127, "-");
+				}
+				else
+				{
+					snprintf(valueBuf, 127,
+						Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
+						attackHoverTextInfo.proficiencyBonus);
+				}
 				return true;
 			case 6:
 				snprintf(titleBuf, 127, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_thrown_weapon_fully_charged").c_str());
@@ -17227,9 +17250,16 @@ bool getAttackTooltipLines(int playernum, AttackHoverText_t& attackHoverTextInfo
 				return true;
 			case 7:
 				snprintf(titleBuf, 127, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_thrown_weapon_base").c_str());
-				snprintf(valueBuf, 127,
-					Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
-					BASE_THROWN_DAMAGE);
+				if ( attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_THROWN_MISC )
+				{
+					snprintf(valueBuf, 127, "-");
+				}
+				else
+				{
+					snprintf(valueBuf, 127,
+						Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
+						BASE_THROWN_DAMAGE);
+				}
 				return true;
 			default:
 				return false;
@@ -18867,6 +18897,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 					}
 				}
 				if ( attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_MELEE_WEAPON
+					|| attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_RAPIER
 					|| attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_WHIP )
 				{
 					snprintf(descBuf, sizeof(descBuf), getHoverTextString("attributes_atk_melee_desc").c_str(), skillName.c_str());
@@ -18883,6 +18914,11 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 					descText = descBuf;
 				}
 				else if ( attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_THROWN )
+				{
+					snprintf(descBuf, sizeof(descBuf), getHoverTextString("attributes_atk_thrown_desc").c_str(), skillName.c_str());
+					descText = descBuf;
+				}
+				else if ( attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_THROWN_MISC )
 				{
 					snprintf(descBuf, sizeof(descBuf), getHoverTextString("attributes_atk_thrown_desc").c_str(), skillName.c_str());
 					descText = descBuf;
@@ -19275,6 +19311,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			if ( element == SHEET_ATK )
 			{
 				if ( attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_THROWN
+					|| attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_THROWN_MISC
 					|| attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_THROWN_GEM
 					|| attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_PICKAXE )
 				{
