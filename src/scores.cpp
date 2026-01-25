@@ -1797,7 +1797,7 @@ void loadAllScoresJSON(const std::string& scoresfilename)
 				{
 					if ( itemItr->value.IsUint() )
 					{
-						appearance = itemItr->value.IsUint();
+						appearance = itemItr->value.GetUint();
 					}
 					else if ( itemItr->value.IsInt() )
 					{
