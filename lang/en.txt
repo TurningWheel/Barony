@@ -7260,5 +7260,7 @@ to replay this challenge!
 6988 Claim#
 6989 Deserters and Disciples DLC
 has been unlocked!#
+6990 You are blinded by a flying slop ball!
+ *SPLAT*#
 
 6999 END#
