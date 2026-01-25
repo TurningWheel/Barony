@@ -3290,6 +3290,9 @@ void Player::cleanUpOnEntityRemoval()
 	client_selected[playernum] = nullptr;
 	magic.telekinesisTarget = 0;
 
+	cast_animation[playernum].overcharge = 0;
+	cast_animation[playernum].overcharge_init = 0;
+
 	mechanics.fociDarkChargeTime = 0;
 	mechanics.fociHolyChargeTime = 0;
 	mechanics.lastFociHeldType = 0;

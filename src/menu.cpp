@@ -8677,6 +8677,8 @@ void doNewGame(bool makeHighscore) {
 		players[i]->shootmode = true;
 		players[i]->magic.clearSelectedSpells();
 		spellcastingAnimationManager_deactivate(&cast_animation[i]);
+		cast_animation[i].overcharge = 0;
+		cast_animation[i].overcharge_init = 0;
 		players[i]->paperDoll.resetPortrait(); // reset paper doll camera view.
 		players[i]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
 	}
