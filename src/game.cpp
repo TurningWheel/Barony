@@ -5595,6 +5595,7 @@ void ingameHud()
 			bool hasSpellbook = false;
 			bool tryHotbarQuickCast = players[player]->hotbar.faceMenuQuickCast;
 			bool tryInventoryQuickCast = players[player]->magic.doQuickCastSpell();
+			bool tryTomeQuickCast = players[player]->magic.doQuickCastTome();
 			if ( stats[player]->shield && itemCategory(stats[player]->shield) == SPELLBOOK )
 			{
 				hasSpellbook = true;
@@ -5603,7 +5604,7 @@ void ingameHud()
 			players[player]->hotbar.faceMenuQuickCast = false;
 			bool allowCasting = false;
 			bool castAnimationTouch = false;
-			if ( tryInventoryQuickCast )
+			if ( tryInventoryQuickCast || tryTomeQuickCast )
 			{
 				allowCasting = true;
 			}
@@ -5631,7 +5632,7 @@ void ingameHud()
 						input.consumeBinaryToggle("Hotbar Up / Select");
 						input.consumeBinaryToggle("Hotbar Right");
 
-						castSpellInit(players[player]->entity->getUID(), players[player]->magic.selectedSpell(), false);
+						castSpellInit(players[player]->entity->getUID(), players[player]->magic.selectedSpell(), false, false);
 					}
 				}
 			    else if (tryHotbarQuickCast || castMemorizedSpell || castSpellbook )
@@ -5738,15 +5739,38 @@ void ingameHud()
 							}
 							if ( tryInventoryQuickCast )
 							{
-								castSpellInit(players[player]->entity->getUID(), players[player]->magic.quickCastSpell(), false);
+								castSpellInit(players[player]->entity->getUID(), players[player]->magic.quickCastSpell(), false, false);
+							}
+							else if ( tryTomeQuickCast )
+							{
+								if ( Item* item = uidToItem(players[player]->magic.quickCastTome()) )
+								{
+									if ( auto spellID = item->getTomeSpellID() )
+									{
+										if ( spellID != SPELL_NONE )
+										{
+											if ( auto spell = getSpellFromID(spellID) )
+											{
+												if ( !cast_animation[player].active && !cast_animation[player].active_spellbook )
+												{
+													castSpellInit(players[player]->entity->getUID(), spell, false, true);
+													if ( cast_animation[player].active )
+													{
+														list_RemoveNode(item->node);
+													}
+												}
+											}
+										}
+									}
+								}
 							}
 							else if ( hasSpellbook && input.consumeBinaryToggle("Defend") )
 							{
-								castSpellInit(players[player]->entity->getUID(), getSpellFromID(getSpellIDFromSpellbook(stats[player]->shield->type)), true);
+								castSpellInit(players[player]->entity->getUID(), getSpellFromID(getSpellIDFromSpellbook(stats[player]->shield->type)), true, false);
 							}
 							else
 							{
-								castSpellInit(players[player]->entity->getUID(), players[player]->magic.selectedSpell(), false);
+								castSpellInit(players[player]->entity->getUID(), players[player]->magic.selectedSpell(), false, false);
 							}
 							if ( players[player]->magic.selectedSpell() )
 							{
@@ -5758,15 +5782,38 @@ void ingameHud()
 					{
 						if ( tryInventoryQuickCast )
 						{
-							castSpellInit(players[player]->entity->getUID(), players[player]->magic.quickCastSpell(), false);
+							castSpellInit(players[player]->entity->getUID(), players[player]->magic.quickCastSpell(), false, false);
+						}
+						else if ( tryTomeQuickCast )
+						{
+							if ( Item* item = uidToItem(players[player]->magic.quickCastTome()) )
+							{
+								if ( auto spellID = item->getTomeSpellID() )
+								{
+									if ( spellID != SPELL_NONE )
+									{
+										if ( auto spell = getSpellFromID(spellID) )
+										{
+											if ( !cast_animation[player].active && !cast_animation[player].active_spellbook )
+											{
+												castSpellInit(players[player]->entity->getUID(), spell, false, true);
+												if ( cast_animation[player].active )
+												{
+													list_RemoveNode(item->node);
+												}
+											}
+										}
+									}
+								}
+							}
 						}
 						else if ( hasSpellbook && input.consumeBinaryToggle("Defend") )
 						{
-							castSpellInit(players[player]->entity->getUID(), getSpellFromID(getSpellIDFromSpellbook(stats[player]->shield->type)), true);
+							castSpellInit(players[player]->entity->getUID(), getSpellFromID(getSpellIDFromSpellbook(stats[player]->shield->type)), true, false);
 						}
 						else
 						{
-							castSpellInit(players[player]->entity->getUID(), players[player]->magic.selectedSpell(), false);
+							castSpellInit(players[player]->entity->getUID(), players[player]->magic.selectedSpell(), false, false);
 						}
 					}
 				}
@@ -5780,6 +5827,7 @@ void ingameHud()
 				}
 			}
 		}
+		players[player]->magic.resetQuickCastTome();
 		players[player]->magic.resetQuickCastSpell();
 
 		bool worldUIBlocksFollowerCycle = (

@@ -646,6 +646,7 @@ public:
 	Sint32& goldInContainer; //skill[4]
 	Sint32& goldTelepathy = skill[5];
 	Sint32& goldAmountBonus = skill[6];
+	Sint32& goldDroppedByPlayer = skill[7];
 
 	//--PUBLIC SOUND SOURCE SKILLS--
 	Sint32& soundSourceFired; //skill[0]

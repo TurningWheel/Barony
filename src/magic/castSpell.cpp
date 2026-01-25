@@ -29,18 +29,13 @@
 
 bool spellIsNaturallyLearnedByRaceOrClass(Entity& caster, Stat& stat, int spellID);
 
-void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook)
+void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook, bool usingTome)
 {
 	Entity* caster = uidToEntity(caster_uid);
 	node_t* node = NULL;
-	if ( !caster || !spell )
+	if ( !caster )
 	{
 		//Need a spell and caster to cast a spell.
-		return;
-	}
-
-	if ( !spell->elements.first )
-	{
 		return;
 	}
 
@@ -79,6 +74,16 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook)
 				playSoundEntityLocal(players[player]->entity, 163, 64);
 			}
 		}
+		return;
+	}
+
+	if ( !spell )
+	{
+		return;
+	}
+
+	if ( !spell->elements.first )
+	{
 		return;
 	}
 
@@ -196,7 +201,11 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook)
 	{
 		if ( players[player]->isLocalPlayer() )
 		{
-			if ( cast_animation[player].overcharge_init && !usingSpellbook && spell->ID != SPELL_OVERCHARGE )
+			if ( usingTome && spell->ID != SPELL_OVERCHARGE )
+			{
+				magiccost = std::max(1, magiccost / 2);
+			}
+			else if ( cast_animation[player].overcharge_init && !usingSpellbook && spell->ID != SPELL_OVERCHARGE )
 			{
 				magiccost = std::max(1, magiccost / 2);
 			}
@@ -205,25 +214,6 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook)
 		if ( stats[player]->type == SALAMANDER && stats[player]->getEffectActive(EFF_SALAMANDER_HEART) == 2 )
 		{
 			magiccost = 0;
-		}
-
-		int goldCost = getGoldCostOfSpell(spell, player);
-		if ( goldCost > 0 )
-		{
-			if ( goldCost > stat->GOLD )
-			{
-				if ( players[player]->isLocalPlayer() )
-				{
-					playSound(563, 64);
-				}
-				messagePlayer(player, MESSAGE_COMBAT, Language::get(6622));
-				return;
-			}
-			else if ( goldCost > 0 )
-			{
-				stat->GOLD -= goldCost;
-				stat->GOLD = std::max(0, stat->GOLD);
-			}
 		}
 
 		if ( spell->ID == SPELL_MUSHROOM || spell->ID == SPELL_SHRUB )
@@ -241,7 +231,7 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook)
 
 	}
 
-	if ( caster->behavior == &actPlayer && stat->type == VAMPIRE )
+	if ( (caster->behavior == &actPlayer && stat->type == VAMPIRE) || (usingTome && spell->ID != SPELL_OVERCHARGE) )
 	{
 		// allow overexpending.
 	}
@@ -273,8 +263,36 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook)
 		return;
 	}
 
+	if ( player >= 0 )
+	{
+		int goldCost = getGoldCostOfSpell(spell, player);
+		if ( goldCost > 0 )
+		{
+			if ( goldCost > stat->GOLD )
+			{
+				if ( players[player]->isLocalPlayer() )
+				{
+					playSound(563, 64);
+				}
+				messagePlayer(player, MESSAGE_COMBAT, Language::get(6622));
+				return;
+			}
+			else if ( goldCost > 0 )
+			{
+				stat->GOLD -= goldCost;
+				stat->GOLD = std::max(0, stat->GOLD);
+
+				if ( players[player]->isLocalPlayer() )
+				{
+					Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_GOLD_CASTED, "gold", goldCost);
+					Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_GOLD_CASTED_RUN, "gold", goldCost);
+				}
+			}
+		}
+	}
+
 	//Hand the torch off to the spell animator. And stuff. Stuff. I mean spell animation handler thingymabobber.
-	fireOffSpellAnimation(&cast_animation[player], caster->getUID(), spell, usingSpellbook);
+	fireOffSpellAnimation(&cast_animation[player], caster->getUID(), spell, usingSpellbook, usingTome);
 
 	//castSpell(caster, spell); //For now, do this while the spell animations are worked on.
 }
@@ -692,29 +710,32 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			//}
 			//else
 			{
-				int goldCost = getGoldCostOfSpell(spell, player);
-				if ( goldCost > 0 && player >= 0 )
+				if ( !players[player]->isLocalPlayer() )
 				{
-					if ( goldCost > stat->GOLD )
+					int goldCost = getGoldCostOfSpell(spell, player);
+					if ( goldCost > 0 && player >= 0 )
 					{
-						playSoundEntity(caster, 163, 128);
-						messagePlayer(player, MESSAGE_COMBAT, Language::get(6622));
-						return nullptr;
-					}
-					else if ( goldCost > 0 )
-					{
-						stat->GOLD -= goldCost;
-						stat->GOLD = std::max(0, stat->GOLD);
-
-						if ( player >= 1 )
+						if ( goldCost > stat->GOLD )
 						{
-							// send the client info on the gold it picked up
-							strcpy((char*)net_packet->data, "GOLD");
-							SDLNet_Write32(stats[player]->GOLD, &net_packet->data[4]);
-							net_packet->address.host = net_clients[player - 1].host;
-							net_packet->address.port = net_clients[player - 1].port;
-							net_packet->len = 8;
-							sendPacketSafe(net_sock, -1, net_packet, player - 1);
+							playSoundEntity(caster, 163, 128);
+							messagePlayer(player, MESSAGE_COMBAT, Language::get(6622));
+							return nullptr;
+						}
+						else if ( goldCost > 0 )
+						{
+							stat->GOLD -= goldCost;
+							stat->GOLD = std::max(0, stat->GOLD);
+
+							if ( player >= 1 )
+							{
+								// send the client info on the gold it picked up
+								strcpy((char*)net_packet->data, "GOLD");
+								SDLNet_Write32(stats[player]->GOLD, &net_packet->data[4]);
+								net_packet->address.host = net_clients[player - 1].host;
+								net_packet->address.port = net_clients[player - 1].port;
+								net_packet->len = 8;
+								sendPacketSafe(net_sock, -1, net_packet, player - 1);
+							}
 						}
 					}
 				}
@@ -852,8 +873,13 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		//Now, there's a chance they'll fumble the spell.
 		if ( fizzleSpell )
 		{
-			//bool doFizzle = usingSpellbook ? local_rng.rand() % 3 > 0 : local_rng.rand() % 3 == 0;
-			if ( local_rng.rand() % 3 == 1 )
+			int fizzleChance = 35;
+			if ( usingSpellbook )
+			{
+				fizzleChance += std::max(spell->difficulty - getEffectiveSpellcastingAbility(caster, stat, spell), 0) / 2;
+			}
+			int chance = local_rng.rand() % 100;
+			if ( chance <= fizzleChance )
 			{
 				//Fizzle the spell.
 				//TODO: Cool effects.
@@ -2737,7 +2763,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 										*target->getStats(), Language::get(6633), Language::get(6634), MSG_COMBAT);
 									playSoundEntity(caster, 167, 128);
 
-									magicOnEntityHit(caster, caster, target, target->getStats(), 0, 0, 0, spell ? spell->ID : SPELL_NONE);
+									magicOnEntityHit(caster, caster, target, target->getStats(), 0, 0, 0, spell ? spell->ID : SPELL_NONE, usingSpellbook ? SPELLBOOK_SEEK_ALLY : 0);
 
 									/*serverSpawnMiscParticles(target, PARTICLE_EFFECT_CONTROL, 2341);
 									for ( int i = 0; i < 4; ++i )
@@ -2877,6 +2903,11 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						getSpellEffectDurationFromID(SPELL_TURN_UNDEAD, caster, nullptr, caster), nullptr) )
 					{
 						playSoundEntity(fx, 166, 128);
+						if ( spellBookBonusPercent > 0 )
+						{
+							fx->actmagicSpellbookBonus = spellBookBonusPercent;
+						}
+						fx->actmagicFromSpellbook = usingSpellbook ? 1 : 0;
 					}
 				}
 				/*if ( !found )
@@ -2931,7 +2962,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 
 								spawnMagicEffectParticles(target->x, target->y, target->z, 2335);
 
-								magicOnEntityHit(caster, caster, target, targetStats, 0, 0, 0, spell ? spell->ID : SPELL_NONE);
+								magicOnEntityHit(caster, caster, target, targetStats, 0, 0, 0, spell ? spell->ID : SPELL_NONE, usingSpellbook ? SPELLBOOK_MAXIMISE : 0);
 
 								if ( !caster->checkFriend(target) )
 								{
@@ -3015,7 +3046,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 
 								spawnMagicEffectParticles(target->x, target->y, target->z, 2341);
 
-								magicOnEntityHit(caster, caster, target, targetStats, 0, 0, 0, spell ? spell->ID : SPELL_NONE);
+								magicOnEntityHit(caster, caster, target, targetStats, 0, 0, 0, spell ? spell->ID : SPELL_NONE, usingSpellbook ? SPELLBOOK_MINIMISE : 0);
 
 								if ( !caster->checkFriend(target) )
 								{
@@ -3122,7 +3153,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 								messagePlayerMonsterEvent(caster->isEntityPlayer(), makeColorRGB(0, 255, 0),
 									*targetStats, Language::get(6632), Language::get(6900), MSG_COMBAT);
 
-								magicOnEntityHit(caster, caster, target, targetStats, 0, 0, 0, spell ? spell->ID : SPELL_NONE);
+								magicOnEntityHit(caster, caster, target, targetStats, 0, 0, 0, spell ? spell->ID : SPELL_NONE, usingSpellbook ? SPELLBOOK_COWARDICE : 0);
 
 								applyGenericMagicDamage(caster, target, *caster, spell->ID, 0, true, false); // alert the target
 
@@ -3359,7 +3390,13 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					real_t y = floor(castSpellProps->target_y / 16) * 16 + 8.0;
 					if ( Entity* monster = spellEffectAdorcise(*caster, spellElementMap[SPELL_SPIRIT_WEAPON], x, y, nullptr) )
 					{
-						
+						if ( usingSpellbook )
+						{
+							if ( Stat* monsterStats = monster->getStats() )
+							{
+								monsterStats->setAttribute("SUMMON_BY_SPELLBOOK", std::to_string(SPELL_SPIRIT_WEAPON));
+							}
+						}
 					}
 					else
 					{
@@ -3537,6 +3574,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					{
 						spellTimer->actmagicSpellbookBonus = spellBookBonusPercent;
 					}
+					spellTimer->actmagicFromSpellbook = usingSpellbook ? 1 : 0;
 					floorMagicCreateLightningSequence(spellTimer, 0);
 				}
 				spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
@@ -3772,6 +3810,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						{
 							wave->actmagicSpellbookBonus = spellBookBonusPercent;
 						}
+						wave->actmagicFromSpellbook = usingSpellbook ? 1 : 0;
 						wave->flags[UPDATENEEDED] = true;
 					}
 				}
@@ -3885,6 +3924,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					{
 						spellTimer->actmagicSpellbookBonus = spellBookBonusPercent;
 					}
+					spellTimer->actmagicFromSpellbook = usingSpellbook ? 1 : 0;
 					int lifetime_tick = 0;
 					auto& timerEffects = particleTimerEffects[spellTimer->getUID()];
 
@@ -3947,6 +3987,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					{
 						spellTimer->actmagicSpellbookBonus = spellBookBonusPercent;
 					}
+					spellTimer->actmagicFromSpellbook = usingSpellbook ? 1 : 0;
 					int lifetime_tick = 0;
 					auto& timerEffects = particleTimerEffects[spellTimer->getUID()];
 
@@ -4024,6 +4065,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					{
 						spellTimer->actmagicSpellbookBonus = spellBookBonusPercent;
 					}
+					spellTimer->actmagicFromSpellbook = usingSpellbook ? 1 : 0;
 
 					if ( caster->behavior == &actMonster )
 					{
@@ -4321,7 +4363,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 									MESSAGE_HINT, makeColorRGB(0, 255, 0), Language::get(6557));
 								if ( target->chestVoidState == 0 )
 								{
-									magicOnEntityHit(caster, caster, target, nullptr, 0, 0, 0, spell ? spell->ID : SPELL_NONE);
+									magicOnEntityHit(caster, caster, target, nullptr, 0, 0, 0, spell ? spell->ID : SPELL_NONE, usingSpellbook ? SPELLBOOK_VOID_CHEST : 0);
 								}
 								target->chestVoidState = TICKS_PER_SECOND * 5;
 								serverUpdateEntitySkill(target, 17);
@@ -4351,7 +4393,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 
 							if ( !prevEffect )
 							{
-								magicOnEntityHit(caster, caster, target, target->getStats(), 0, 0, 0, spell ? spell->ID : SPELL_NONE);
+								magicOnEntityHit(caster, caster, target, target->getStats(), 0, 0, 0, spell ? spell->ID : SPELL_NONE, usingSpellbook ? SPELLBOOK_VOID_CHEST : 0);
 							}
 						}
 					}
@@ -4415,7 +4457,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 
 									if ( !previousEffect )
 									{
-										magicOnEntityHit(caster, caster, target, targetStats, 0, 0, 0, spell ? spell->ID : SPELL_NONE);
+										magicOnEntityHit(caster, caster, target, targetStats, 0, 0, 0, spell ? spell->ID : SPELL_NONE, usingSpellbook ? SPELLBOOK_COMMAND : 0);
 									}
 
 									//createParticleSpellPinpointTarget(target, caster->getUID(), 1774, duration, spell->ID);
@@ -4535,6 +4577,19 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 									fx->z = 7.5;
 									fx->yaw = target->yaw;
 									fx->ditheringOverride = 6;
+								}
+
+								applyGenericMagicDamage(caster, target, *caster, spell->ID, 0, true, true); // alert the target
+								if ( !using_magicstaff && !trap && caster->behavior == &actPlayer )
+								{
+									if ( usingSpellbook && spell->ID == SPELL_CURSE_FLESH )
+									{
+										Compendium_t::Events_t::eventUpdate(caster->skill[2], Compendium_t::CPDM_SPELL_TARGETS, SPELLBOOK_CURSE_FLESH, 1);
+									}
+									else
+									{
+										Compendium_t::Events_t::eventUpdate(caster->skill[2], Compendium_t::CPDM_SPELL_TARGETS, SPELL_ITEM, 1, false, spell->ID);
+									}
 								}
 
 								serverSpawnMiscParticles(target, PARTICLE_EFFECT_REVENANT_CURSE, 2353, 0, 2.5 * TICKS_PER_SECOND);
@@ -4794,7 +4849,8 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 									|| monsterIsImmobileTurret(target, targetStats)
 									)
 								{
-									if ( effect = applyGenericMagicDamage(caster, target, *caster, spell->ID, damage, true) )
+									Sint32 oldHP = targetStats->HP;
+									if ( effect = applyGenericMagicDamage(caster, target, *caster, spell->ID, damage, true, false, usingSpellbook ? SPELLBOOK_SABOTAGE : 0) )
 									{
 										spawnExplosion(target->x, target->y, 0.0);
 										messagePlayerMonsterEvent(caster->isEntityPlayer(), makeColorRGB(0, 255, 0),
@@ -5332,7 +5388,6 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							}
 							found = true;
 
-							applyGenericMagicDamage(caster, target, *caster, spell->ID, 0, true, false); // alert the target
 
 							spawnMagicEffectParticles(target->x, target->y, target->z, 171);
 							if ( !effect )
@@ -5342,7 +5397,17 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							}
 							else
 							{
-								magicOnSpellCastEvent(caster, caster, target, spell->ID, spellEventFlags | spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
+								applyGenericMagicDamage(caster, target, *caster, spell->ID, 0, true, false); // alert the target
+
+								if ( spell->ID == SPELL_DISARM )
+								{
+									magicOnEntityHit(caster, caster, target, targetStats, 0, 0, 0, spell ? spell->ID : SPELL_NONE, usingSpellbook ? SPELLBOOK_DISARM : 0);
+								}
+								else
+								{
+									magicOnEntityHit(caster, caster, target, targetStats, 0, 0, 0, spell ? spell->ID : SPELL_NONE);
+								}
+								//magicOnSpellCastEvent(caster, caster, target, spell->ID, spellEventFlags | spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
 
 								playSoundEntity(caster, 167, 128);
 								if ( spell->ID == SPELL_DISARM )
@@ -5527,6 +5592,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 								{
 									fx->actmagicSpellbookBonus = spellBookBonusPercent;
 								}
+								fx->actmagicFromSpellbook = usingSpellbook ? 1 : 0;
 							}
 							serverSpawnMiscParticles(entity, PARTICLE_EFFECT_PINPOINT, 1767, caster->getUID(), duration, spell->ID);
 
@@ -5840,6 +5906,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						if ( Entity* fx = createRadiusMagic(spell->ID, caster,
 							target->x, target->y, 16, amount, target) )
 						{
+							fx->actmagicFromSpellbook = usingSpellbook ? 1 : 0;
 							if ( spellBookBonusPercent > 0 )
 							{
 								fx->actmagicSpellbookBonus = spellBookBonusPercent;
@@ -7276,6 +7343,11 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				Entity* spellTimer = createParticleTimer(caster, 30, -1);
 				spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_MAGIC_SPRAY;
 				spellTimer->particleTimerCountdownSprite = particle;
+				spellTimer->actmagicFromSpellbook = usingSpellbook ? 1 : 0;
+				if ( spellBookBonusPercent > 0 )
+				{
+					spellTimer->actmagicSpellbookBonus = spellBookBonusPercent;
+				}
 				result = spellTimer;
 
 				if ( !(caster && caster->behavior == &actMonster && caster->getStats() && caster->getStats()->type == SLIME) )
@@ -7661,6 +7733,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					{
 						spellTimer->actmagicSpellbookBonus = spellBookBonusPercent;
 					}
+					spellTimer->actmagicFromSpellbook = usingSpellbook ? 1 : 0;
 					serverSpawnMiscParticles(caster, PARTICLE_EFFECT_SHATTER_OBJECTS, 0);
 				}
 

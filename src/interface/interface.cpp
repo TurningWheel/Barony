@@ -4302,6 +4302,14 @@ bool FollowerRadialMenu::allowedInteractEntity(Entity& selectedEntity, bool upda
 			strcat(interactText, Language::get(4044)); // "switch"
 		}
 	}
+	else if ( (selectedEntity.behavior == &actWallButton || selectedEntity.sprite == 1151
+		|| selectedEntity.sprite == 1152) && interactWorld )
+	{
+		if ( updateInteractText )
+		{
+			strcat(interactText, Language::get(6393)); // "button"
+		}
+	}
 	else if ( (selectedEntity.behavior == &actTeleportShrine ) && (interactWorld || interactItems || enableAttack) && followerStats->type != GYROBOT )
 	{
 		if ( updateInteractText )
@@ -6570,6 +6578,14 @@ bool GenericGUIMenu::ItemEffectGUI_t::consumeResourcesForTransmute()
 				{
 					playSound(89, 64); // earned money
 				}
+				else
+				{
+					if ( players[parentGUI.gui_player]->isLocalPlayer() )
+					{
+						Compendium_t::Events_t::eventUpdateCodex(parentGUI.gui_player, Compendium_t::CPDM_GOLD_CASTED, "gold", costEffectGoldAmount);
+						Compendium_t::Events_t::eventUpdateCodex(parentGUI.gui_player, Compendium_t::CPDM_GOLD_CASTED_RUN, "gold", costEffectGoldAmount);
+					}
+				}
 			}
 			if ( multiplayer != CLIENT )
 			{
@@ -7869,6 +7885,7 @@ void GenericGUIMenu::openGUI(int type, Entity* shrine)
 		if ( shrine )
 		{
 			alembicEntityUid = shrine->getUID();
+			Compendium_t::Events_t::eventUpdateWorld(gui_player, Compendium_t::CPDM_CAULDRON_INTERACTS, "cauldron", 1);
 		}
 	}
 	else if ( guiType == GUI_TYPE_MAILBOX )
@@ -7891,6 +7908,7 @@ void GenericGUIMenu::openGUI(int type, Entity* shrine)
 		if ( shrine )
 		{
 			workstationEntityUid = shrine->getUID();
+			Compendium_t::Events_t::eventUpdateWorld(gui_player, Compendium_t::CPDM_WORKBENCH_INTERACTS, "workbench", 1);
 		}
 	}
 
@@ -8245,7 +8263,14 @@ bool GenericGUIMenu::executeOnItemClick(Item* item)
 				{
 					if ( tinkeringRepairItem(item) )
 					{
-						Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_TINKERKIT_REPAIRS, TOOL_TINKERING_KIT, 1);
+						if ( workstationEntityUid != 0 && uidToEntity(workstationEntityUid) )
+						{
+							Compendium_t::Events_t::eventUpdateWorld(gui_player, Compendium_t::CPDM_WORKBENCH_REPAIRED, "workbench", 1);
+						}
+						else
+						{
+							Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_TINKERKIT_REPAIRS, TOOL_TINKERING_KIT, 1);
+						}
 					}
 				}
 			}
@@ -9270,8 +9295,26 @@ void GenericGUIMenu::alchemyCookCombination()
 		free(emptyBottle);
 	}
 
+	if ( result == SLOP_BALL )
+	{
+		Compendium_t::Events_t::eventUpdateWorld(gui_player, Compendium_t::CPDM_COOK_SLOP_BALLS, "cauldron", createCount);
+	}
+	else if ( result == GREASE_BALL )
+	{
+		Compendium_t::Events_t::eventUpdateWorld(gui_player, Compendium_t::CPDM_COOK_GREASE_BALLS, "cauldron", createCount);
+	}
+
 	if ( isItemRation(result) )
 	{
+		if ( result == FOOD_RATION )
+		{
+			Compendium_t::Events_t::eventUpdateWorld(gui_player, Compendium_t::CPDM_COOK_MEALS, "cauldron", createCount);
+		}
+		else
+		{
+			Compendium_t::Events_t::eventUpdateWorld(gui_player, Compendium_t::CPDM_COOK_FLAVORED_MEALS, "cauldron", createCount);
+		}
+
 		bool raiseSkill = false;
 		if ( result == FOOD_RATION && local_rng.rand() % 10 == 0 && stats[gui_player] 
 			&& stats[gui_player]->getProficiency(PRO_ALCHEMY) < SKILL_LEVEL_SKILLED )
@@ -9301,6 +9344,14 @@ void GenericGUIMenu::alchemyCookCombination()
 				if ( players[gui_player] && players[gui_player]->entity )
 				{
 					players[gui_player]->entity->increaseSkill(PRO_ALCHEMY);
+				}
+			}
+
+			if ( alembicEntityUid != 0 && uidToEntity(alembicEntityUid) )
+			{
+				if ( stats[gui_player]->getProficiency(PRO_ALCHEMY) < 100 && alchemyGUI.bOpen )
+				{
+					Compendium_t::Events_t::eventUpdateWorld(gui_player, Compendium_t::CPDM_CAULDRON_SKILLUPS, "cauldron", 1);
 				}
 			}
 		}
@@ -9893,7 +9944,14 @@ void GenericGUIMenu::alchemyCombinePotions()
 
 	if ( explodeSelf && players[gui_player] && players[gui_player]->entity )
 	{
-		Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_ALEMBIC_EXPLOSIONS, TOOL_ALEMBIC, 1);
+		if ( alembicEntityUid != 0 && uidToEntity(alembicEntityUid) )
+		{
+			Compendium_t::Events_t::eventUpdateWorld(gui_player, Compendium_t::CPDM_ALEMBIC_EXPLOSIONS, "cauldron", 1);
+		}
+		else
+		{
+			Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_ALEMBIC_EXPLOSIONS, TOOL_ALEMBIC, 1);
+		}
 
 		// hurt.
 		alchemyAddRecipe(gui_player, basePotionType, secondaryPotionType, TOOL_BOMB, true);
@@ -9978,7 +10036,14 @@ void GenericGUIMenu::alchemyCombinePotions()
 				if ( result == POTION_WATER && !duplicateSucceed )
 				{
 					messagePlayer(gui_player, MESSAGE_MISC, Language::get(3356));
-					Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_ALEMBIC_DUPLICATION_FAIL, TOOL_ALEMBIC, 1);
+					if ( alembicEntityUid != 0 && uidToEntity(alembicEntityUid) )
+					{
+						Compendium_t::Events_t::eventUpdateWorld(gui_player, Compendium_t::CPDM_ALEMBIC_DUPLICATION_FAIL, "cauldron", 1);
+					}
+					else
+					{
+						Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_ALEMBIC_DUPLICATION_FAIL, TOOL_ALEMBIC, 1);
+					}
 				}
 				else if ( newPotion )
 				{
@@ -9992,7 +10057,14 @@ void GenericGUIMenu::alchemyCombinePotions()
 					messagePlayer(gui_player, MESSAGE_MISC, Language::get(3352), newPotion->description());
 					if ( duplicateSucceed )
 					{
-						Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_ALEMBIC_DUPLICATED, TOOL_ALEMBIC, 1);
+						if ( alembicEntityUid != 0 && uidToEntity(alembicEntityUid) )
+						{
+							Compendium_t::Events_t::eventUpdateWorld(gui_player, Compendium_t::CPDM_ALEMBIC_DUPLICATED, "cauldron", 1);
+						}
+						else
+						{
+							Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_ALEMBIC_DUPLICATED, TOOL_ALEMBIC, 1);
+						}
 					}
 				}
 			}
@@ -10002,11 +10074,25 @@ void GenericGUIMenu::alchemyCombinePotions()
 				steamStatisticUpdate(STEAM_STAT_IN_THE_MIX, STEAM_STAT_INT, 1);
 				if ( samePotion )
 				{
-					Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_ALEMBIC_DECANTED, TOOL_ALEMBIC, 1);
+					if ( alembicEntityUid != 0 && uidToEntity(alembicEntityUid) )
+					{
+						Compendium_t::Events_t::eventUpdateWorld(gui_player, Compendium_t::CPDM_ALEMBIC_DECANTED, "cauldron", 1);
+					}
+					else
+					{
+						Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_ALEMBIC_DECANTED, TOOL_ALEMBIC, 1);
+					}
 				}
 				else
 				{
-					Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_ALEMBIC_BREWED, TOOL_ALEMBIC, 1);
+					if ( alembicEntityUid != 0 && uidToEntity(alembicEntityUid) )
+					{
+						Compendium_t::Events_t::eventUpdateWorld(gui_player, Compendium_t::CPDM_ALEMBIC_BREWED, "cauldron", 1);
+					}
+					else
+					{
+						Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_ALEMBIC_BREWED, TOOL_ALEMBIC, 1);
+					}
 
 					if ( result != POTION_SICKNESS && result != POTION_WATER )
 					{
@@ -10106,6 +10192,13 @@ void GenericGUIMenu::alchemyCombinePotions()
 						players[gui_player]->entity->increaseSkill(PRO_ALCHEMY);
 					}
 				}
+				if ( stats[gui_player]->getProficiency(PRO_ALCHEMY) < 100 && alchemyGUI.bOpen )
+				{
+					if ( alembicEntityUid != 0 && uidToEntity(alembicEntityUid) )
+					{
+						Compendium_t::Events_t::eventUpdateWorld(gui_player, Compendium_t::CPDM_CAULDRON_SKILLUPS, "cauldron", 1);
+					}
+				}
 			}
 			break;
 		}
@@ -10182,6 +10275,14 @@ bool GenericGUIMenu::alchemyLearnRecipe(int type, bool increaseskill, bool notif
 							players[gui_player]->entity->increaseSkill(PRO_ALCHEMY);
 						}
 					}
+
+					if ( stats[gui_player]->getProficiency(PRO_ALCHEMY) < 100 && alchemyGUI.bOpen )
+					{
+						if ( alembicEntityUid != 0 && uidToEntity(alembicEntityUid) )
+						{
+							Compendium_t::Events_t::eventUpdateWorld(gui_player, Compendium_t::CPDM_CAULDRON_SKILLUPS, "cauldron", 1);
+						}
+					}
 				}
 				gameStatistics[STATISTICS_ALCHEMY_RECIPES] |= (1 << index);
 				return true;
@@ -10208,6 +10309,13 @@ bool GenericGUIMenu::alchemyLearnRecipe(int type, bool increaseskill, bool notif
 						if ( players[gui_player] && players[gui_player]->entity )
 						{
 							players[gui_player]->entity->increaseSkill(PRO_ALCHEMY);
+						}
+					}
+					if ( stats[gui_player]->getProficiency(PRO_ALCHEMY) < 100 && alchemyGUI.bOpen )
+					{
+						if ( alembicEntityUid != 0 && uidToEntity(alembicEntityUid) )
+						{
+							Compendium_t::Events_t::eventUpdateWorld(gui_player, Compendium_t::CPDM_CAULDRON_SKILLUPS, "cauldron", 1);
 						}
 					}
 				}
@@ -10463,7 +10571,14 @@ bool GenericGUIMenu::tinkeringCraftItem(Item* item)
 	{
 		Item* pickedUp = itemPickup(gui_player, crafted);
 		messagePlayer(gui_player, MESSAGE_MISC, Language::get(3668), crafted->description());
-		Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_TINKERKIT_CRAFTS, TOOL_TINKERING_KIT, 1);
+		if ( workstationEntityUid != 0 && uidToEntity(workstationEntityUid) )
+		{
+			Compendium_t::Events_t::eventUpdateWorld(gui_player, Compendium_t::CPDM_WORKBENCH_CRAFTS, "workbench", 1);
+		}
+		else
+		{
+			Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_TINKERKIT_CRAFTS, TOOL_TINKERING_KIT, 1);
+		}
 		Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_GADGET_CRAFTED, crafted->type, 1);
 		free(crafted);
 		return true;
@@ -10749,12 +10864,27 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int
 					players[player]->entity->increaseSkill(PRO_LOCKPICKING);
 				}
 			}
+
+			if ( stats[gui_player]->getProficiency(PRO_LOCKPICKING) < 100 && tinkerGUI.bOpen )
+			{
+				if ( workstationEntityUid != 0 && uidToEntity(workstationEntityUid) )
+				{
+					Compendium_t::Events_t::eventUpdateWorld(gui_player, Compendium_t::CPDM_WORKBENCH_SKILLUPS, "workbench", 1);
+				}
+			}
 		}
 	}
 
 	if ( players[player]->isLocalPlayer() && didCraft )
 	{
-		Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_TINKERKIT_SALVAGED, TOOL_TINKERING_KIT, 1);
+		if ( workstationEntityUid != 0 && uidToEntity(workstationEntityUid) )
+		{
+			Compendium_t::Events_t::eventUpdateWorld(gui_player, Compendium_t::CPDM_WORKBENCH_SALVAGE, "workbench", 1);
+		}
+		else
+		{
+			Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_TINKERKIT_SALVAGED, TOOL_TINKERING_KIT, 1);
+		}
 		if ( item && item->type == TOOL_DETONATOR_CHARGE )
 		{
 			Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_DETONATOR_SCRAPPED, TOOL_DETONATOR_CHARGE, 1);
@@ -10949,6 +11079,14 @@ Item* GenericGUIMenu::tinkeringCraftItemAndConsumeMaterials(const Item* item)
 				if ( players[gui_player] && players[gui_player]->entity )
 				{
 					players[gui_player]->entity->increaseSkill(PRO_LOCKPICKING);
+				}
+			}
+
+			if ( stats[gui_player]->getProficiency(PRO_LOCKPICKING) < 100 && tinkerGUI.bOpen )
+			{
+				if ( workstationEntityUid != 0 && uidToEntity(workstationEntityUid) )
+				{
+					Compendium_t::Events_t::eventUpdateWorld(gui_player, Compendium_t::CPDM_WORKBENCH_SKILLUPS, "workbench", 1);
 				}
 			}
 		}
@@ -12617,6 +12755,14 @@ bool GenericGUIMenu::tinkeringConsumeMaterialsForRepair(Item* item, bool upgradi
 				if ( players[gui_player] && players[gui_player]->entity )
 				{
 					players[gui_player]->entity->increaseSkill(PRO_LOCKPICKING);
+				}
+			}
+
+			if ( stats[gui_player]->getProficiency(PRO_LOCKPICKING) < 100 && tinkerGUI.bOpen )
+			{
+				if ( workstationEntityUid != 0 && uidToEntity(workstationEntityUid) )
+				{
+					Compendium_t::Events_t::eventUpdateWorld(gui_player, Compendium_t::CPDM_WORKBENCH_SKILLUPS, "workbench", 1);
 				}
 			}
 		}
@@ -31562,6 +31708,7 @@ void GenericGUIMenu::AssistShrineGUI_t::openAssistShrine(Entity* shrine)
 	if ( shrine )
 	{
 		shrineUID = shrine->getUID();
+		Compendium_t::Events_t::eventUpdateWorld(parentGUI.gui_player, Compendium_t::CPDM_ASSIST_INTERACTS, "assist shrine", 1);
 	}
 	const int playernum = parentGUI.getPlayer();
 	auto player = players[playernum];
@@ -34273,6 +34420,7 @@ bool GenericGUIMenu::AssistShrineGUI_t::claimItems(bool* isEquipped)
 				}
 			}
 			claimedItems.insert(pickedUp->type);
+			Compendium_t::Events_t::eventUpdateWorld(parentGUI.gui_player, Compendium_t::CPDM_ASSIST_MASKS, "assist shrine", 1);
 		}
 		free(item);
 	}
@@ -34293,6 +34441,7 @@ bool GenericGUIMenu::AssistShrineGUI_t::claimItems(bool* isEquipped)
 				}
 			}
 			claimedItems.insert(pickedUp->type);
+			Compendium_t::Events_t::eventUpdateWorld(parentGUI.gui_player, Compendium_t::CPDM_ASSIST_AMULETS, "assist shrine", 1);
 		}
 		free(item);
 	}
@@ -34313,6 +34462,7 @@ bool GenericGUIMenu::AssistShrineGUI_t::claimItems(bool* isEquipped)
 				}
 			}
 			claimedItems.insert(pickedUp->type);
+			Compendium_t::Events_t::eventUpdateWorld(parentGUI.gui_player, Compendium_t::CPDM_ASSIST_CLOAKS, "assist shrine", 1);
 		}
 		free(item);
 	}
@@ -34333,6 +34483,7 @@ bool GenericGUIMenu::AssistShrineGUI_t::claimItems(bool* isEquipped)
 				}
 			}
 			claimedItems.insert(pickedUp->type);
+			Compendium_t::Events_t::eventUpdateWorld(parentGUI.gui_player, Compendium_t::CPDM_ASSIST_RINGS, "assist shrine", 1);
 		}
 		free(item);
 	}

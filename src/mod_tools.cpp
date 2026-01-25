@@ -4991,7 +4991,8 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 			snprintf(buf, sizeof(buf), str.c_str(),
 				items[item.type].hasAttribute("FRAGILE") ? -items[item.type].attributes["FRAGILE"] : 0);
 		}
-		else if ( detailTag.compare("weapon_ranged_armor_pierce") == 0 )
+		else if ( detailTag.compare("weapon_ranged_armor_pierce") == 0
+			|| detailTag.compare("whip_base_effects") == 0 )
 		{
 			int statChance = std::min(std::max((stats[player] ? statGetPER(stats[player], players[player]->entity) : 0), 0), 50); // 0 to 50 value.
 			if ( compendiumTooltipIntro )
@@ -14702,7 +14703,7 @@ std::string Compendium_t::Events_t::formatEventRecordText(Sint32 value, const ch
 					}
 					else if ( !strcmp(formatType, "skills") )
 					{
-						std::string tmp = getSkillLangEntry(formatVal);
+						std::string tmp = Player::SkillSheet_t::getSkillNameFromID(formatVal, true);
 						camelCaseString(tmp);
 						output += tmp;
 					}
@@ -15480,7 +15481,7 @@ void Compendium_t::Events_t::readEventsFromFile()
 				{
 					for ( int skillnum = 0; skillnum < 16; ++skillnum )
 					{
-						for ( int i = 0; i <= CLASS_HUNTER; ++i )
+						for ( int i = 0; i <= CLASS_PALADIN; ++i )
 						{
 							int index = i + skillnum * kEventClassesMax;
 							eventClassIds[id][index] = (classIdIndex + index);
@@ -15490,7 +15491,7 @@ void Compendium_t::Events_t::readEventsFromFile()
 				}
 				else
 				{
-					for ( int i = 0; i <= CLASS_HUNTER; ++i )
+					for ( int i = 0; i <= CLASS_PALADIN; ++i )
 					{
 						eventClassIds[id][i] = (classIdIndex + i);
 					}

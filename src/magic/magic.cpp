@@ -3593,6 +3593,7 @@ bool Entity::pinpointDamageProc(Entity* attacker, int damage)
 										real_t damageMult = getSpellDamageSecondaryFromID(SPELL_PINPOINT, caster, caster ? caster->getStats() : nullptr,
 											entity, entity->actmagicSpellbookBonus / 100.0) / 100.0;
 										fx1->skill[4] += std::max(0, (damage)) * damageMult;
+										fx1->actmagicFromSpellbook = entity->actmagicFromSpellbook;
 									}
 								}
 
@@ -3740,7 +3741,7 @@ bool Entity::mistFormDodge(bool checkEffectActiveOnly, Entity* attacker)
 }
 
 bool applyGenericMagicDamage(Entity* caster, Entity* hitentity, Entity& damageSourceProjectile, int spellID, 
-	int damage, bool alertMonsters, bool monsterCollisionOnly)
+	int damage, bool alertMonsters, bool monsterCollisionOnly, int usingSpellbookID)
 {
 	if ( !hitentity )
 	{
@@ -3841,7 +3842,9 @@ bool applyGenericMagicDamage(Entity* caster, Entity* hitentity, Entity& damageSo
 			|| spellID == SPELL_COWARDICE
 			|| spellID == SPELL_SEEK_ALLY
 			|| spellID == SPELL_SEEK_FOE
-			|| spellID == SPELL_COMMAND )
+			|| spellID == SPELL_COMMAND
+			|| spellID == SPELL_CURSE_FLESH
+			|| spellID == SPELL_REVENANT_CURSE )
 		{
 			// alert entities only
 			return true;
@@ -3909,7 +3912,7 @@ bool applyGenericMagicDamage(Entity* caster, Entity* hitentity, Entity& damageSo
 			Entity* gib = spawnGib(hitentity);
 			serverSpawnGibForClient(gib);
 		}
-		magicOnEntityHit(caster, &damageSourceProjectile, hitentity, targetStats, preResistanceDamage, damage, oldHP, spellID);
+		magicOnEntityHit(caster, &damageSourceProjectile, hitentity, targetStats, preResistanceDamage, damage, oldHP, spellID, usingSpellbookID);
 		magicTrapOnHit(caster, hitentity, targetStats, oldHP, spellID);
 
 		// write the obituary

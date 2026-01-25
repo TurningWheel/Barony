@@ -5872,6 +5872,32 @@ void Player::PaperDoll_t::drawSlots()
 	return;
 }
 
+bool Player::Magic_t::doQuickCastTome() { 
+	if ( quick_cast_tome != 0 )
+	{
+		if ( Item* item = uidToItem(quick_cast_tome) )
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+void Player::Magic_t::setQuickCastTomeFromInventory(Item* item)
+{
+	if ( item && itemCategory(item) == TOME_SPELL )
+	{
+		int spellID = item->getTomeSpellID();
+		if ( auto spell = getSpellFromID(spellID) )
+		{
+			if ( spell->ID > SPELL_NONE )
+			{
+				quick_cast_tome = item->uid;
+			}
+		}
+	}
+}
+
 void Player::Magic_t::setQuickCastSpellFromInventory(Item* item)
 {
 	if ( quick_cast_spell ) // spell already queued, ignore.

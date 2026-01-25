@@ -267,6 +267,32 @@ int initGame()
 				FileIO::close(fp);
 			}
 		}
+		if ( PHYSFS_getRealDir("desertersanddisciples.key") != NULL ) //TODO: NX PORT: Update for the Switch?
+		{
+			std::string serial = PHYSFS_getRealDir("desertersanddisciples.key");
+			serial.append(PHYSFS_getDirSeparator()).append("desertersanddisciples.key");
+			// open the serial file
+			File* fp = nullptr;
+			if ( (fp = FileIO::open(serial.c_str(), "rb")) != NULL )
+			{
+				char buf[64];
+				size_t len = fp->read(&buf, sizeof(char), 32);
+				buf[len] = '\0';
+				serial = buf;
+				// compute hash
+				size_t DLCHash = serialHash(serial);
+				if ( DLCHash == 121449 )
+				{
+					printlog("[LICENSE]: Deserters and Disciples DLC license key found.");
+					enabledDLCPack3 = true;
+				}
+				else
+				{
+					printlog("[LICENSE]: DLC license key invalid.");
+				}
+				FileIO::close(fp);
+			}
+		}
 #endif // !NINTENDO
 #endif
 

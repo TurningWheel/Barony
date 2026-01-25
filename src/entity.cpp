@@ -5671,6 +5671,12 @@ void Entity::handleEffects(Stat* myStats)
 
 							if ( (defendTime - chargeTimeInit) % chargeTime == 0 )
 							{
+								if ( defendTime - chargeTimeInit > 0 )
+								{
+									Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_OFFHAND_CHARGING_TIME, "offhand casting", chargeTime);
+									Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_OFFHAND_CHARGING_TIME_RUN, "offhand casting", chargeTime);
+								}
+
 								if ( auto spell = getSpellFromID(spellID) )
 								{
 									int mpcost = getCostOfSpell(spell, this);
@@ -5720,6 +5726,8 @@ void Entity::handleEffects(Stat* myStats)
 											}
 										}
 
+										Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_OFFHAND_CHR_MAX, "offhand casting", CHR);
+
 										tier = std::min(tier, 5);
 
 										switch ( tier )
@@ -5763,6 +5771,11 @@ void Entity::handleEffects(Stat* myStats)
 									bool failedCast = false;
 									if ( this->safeConsumeMP(mpcost) || mpcost == 0 )
 									{
+										if ( mpcost > 0 )
+										{
+											Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_OFFHAND_CASTING_MP, "offhand casting", mpcost);
+										}
+
 										CastSpellProps_t props;
 										if ( spell->ID == SPELL_FOCI_LIGHT_JUSTICE
 											|| spell->ID == SPELL_FOCI_LIGHT_PEACE
@@ -5915,6 +5928,7 @@ void Entity::handleEffects(Stat* myStats)
 								if ( takeMP )
 								{
 									players[player]->mechanics.ensembleTakenInitialMP = true;
+									Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_OFFHAND_CASTING_MP, "offhand casting", mpcost);
 								}
 								if ( (effect >= 0 && previousEnsemblePlaying >= 0 && previousEnsemblePlaying != effect) )
 								{
@@ -5936,6 +5950,14 @@ void Entity::handleEffects(Stat* myStats)
 							else
 							{
 								players[player]->mechanics.ensembleTakenInitialMP = true;
+								Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_OFFHAND_CASTING_MP, "offhand casting", mpcost);
+							}
+
+							if ( defendTime - chargeTimeInit > 0 )
+							{
+								Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_OFFHAND_CHARGING_TIME, "offhand casting", chargeTime);
+								Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_OFFHAND_CHARGING_TIME_RUN, "offhand casting", chargeTime);
+								Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_OFFHAND_CHR_MAX, "offhand casting", CHR);
 							}
 						}
 
@@ -16224,6 +16246,22 @@ void Entity::attack(int pose, int charge, Entity* target)
 									if ( local_rng.rand() % 8 == 0 )
 									{
 										magicOnSpellCastEvent(leader, nullptr, hit.entity, summonSpellID, spell_t::SPELL_LEVEL_EVENT_ASSIST | spell_t::SPELL_LEVEL_EVENT_MINOR_CHANCE, 1);
+									}
+
+									Sint32 damageTaken = oldHP - hitstats->HP;
+									if ( damageTaken > 0 && leader->behavior == &actPlayer && summonSpellID == SPELL_SPIRIT_WEAPON )
+									{
+										if ( myStats->getAttribute("SUMMON_BY_SPELLBOOK") != ""
+											&& std::stoi(myStats->getAttribute("SUMMON_BY_SPELLBOOK")) == summonSpellID )
+										{
+											Compendium_t::Events_t::eventUpdate(leader->skill[2], Compendium_t::CPDM_SPELL_DMG,
+												SPELLBOOK_SPIRIT_WEAPON, damageTaken);
+										}
+										else
+										{
+											Compendium_t::Events_t::eventUpdate(leader->skill[2], 
+												Compendium_t::CPDM_SPELL_DMG, SPELL_ITEM, damageTaken, false, summonSpellID);
+										}
 									}
 								}
 							}

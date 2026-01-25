@@ -1588,6 +1588,7 @@ void Entity::actWallButton()
 			}
 		}
 
+		Entity* monsterInteracting = nullptr;
 		for ( int i = 0; i < MAXPLAYERS; i++ )
 		{
 			if ( (client_selected[i] == this || selectedEntity[i] == this) )
@@ -1600,6 +1601,12 @@ void Entity::actWallButton()
 						interacted = true;
 					}
 				}
+			}
+			if ( this->isInteractWithMonster() )
+			{
+				monsterInteracting = uidToEntity(this->interactedByMonster);
+				interacted = true;
+				this->clearMonsterInteract();
 			}
 		}
 
@@ -1622,13 +1629,30 @@ void Entity::actWallButton()
 				serverUpdateEntitySkill(this, 0);
 				playSoundEntity(this, 248, 64);
 				playSoundEntity(this, 56, 64);
-				if ( shotByArrow )
+				if ( monsterInteracting )
 				{
-					messagePlayer(player, MESSAGE_INTERACTION, Language::get(6382));
+					if ( monsterInteracting->getMonsterTypeFromSprite() == GYROBOT )
+					{
+						Entity* leader = monsterInteracting->monsterAllyGetPlayerLeader();
+						if ( leader )
+						{
+							achievementObserver.playerAchievements[monsterInteracting->monsterAllyIndex].checkPathBetweenObjects(leader, this, AchievementObserver::BARONY_ACH_LEVITANT_LACKEY);
+						}
+					}
+					Compendium_t::Events_t::eventUpdateWorld(monsterInteracting->monsterAllyIndex, Compendium_t::CPDM_BUTTON_FOLLOWER_PRESSED, "button", 1);
 				}
 				else
 				{
-					messagePlayer(player, MESSAGE_INTERACTION, Language::get(6381));
+					if ( shotByArrow )
+					{
+						messagePlayer(player, MESSAGE_INTERACTION, Language::get(6382));
+						Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_BUTTON_SHOT, "button", 1);
+					}
+					else
+					{
+						messagePlayer(player, MESSAGE_INTERACTION, Language::get(6381));
+						Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_BUTTON_PRESSED, "button", 1);
+					}
 				}
 			}
 			else
@@ -1898,10 +1922,29 @@ void Entity::actWallLock()
 								{
 									if ( Item* foundWallLockKey = players[i]->inventoryUI.hasKeyForWallLock(*this) )
 									{
+										Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_KEYLOCK_UNLOCKED_KEY, "wall locks", 1);
+										if ( foundWallLockKey->type == KEY_IRON )
+										{
+											Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_KEYLOCK_UNLOCKED_KEY_IRON, "wall locks", 1);
+										}
+										else if ( foundWallLockKey->type == KEY_SILVER )
+										{
+											Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_KEYLOCK_UNLOCKED_KEY_SILVER, "wall locks", 1);
+										}
+										else if ( foundWallLockKey->type == KEY_GOLD )
+										{
+											Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_KEYLOCK_UNLOCKED_KEY_GOLD, "wall locks", 1);
+										}
+										else if ( foundWallLockKey->type == KEY_BRONZE )
+										{
+											Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_KEYLOCK_UNLOCKED_KEY_BRONZE, "wall locks", 1);
+										}
+
 										messagePlayer(i, MESSAGE_INTERACTION, Language::get(6378), foundWallLockKey->getName());
 										consumeItem(foundWallLockKey, i);
 										wallLockState = LOCK_KEY_START;
 										serverUpdateEntitySkill(this, 0);
+
 									}
 									else
 									{

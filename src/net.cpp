@@ -7350,7 +7350,25 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 				if ( key >= WOODEN_SHIELD && key < NUMITEMS )
 				{
 					messagePlayer(player, MESSAGE_INTERACTION, Language::get(6378), items[key].getIdentifiedName());
+					Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_KEYLOCK_UNLOCKED_KEY, "wall locks", 1);
+					if ( key == KEY_IRON )
+					{
+						Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_KEYLOCK_UNLOCKED_KEY_IRON, "wall locks", 1);
+					}
+					else if ( key == KEY_SILVER )
+					{
+						Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_KEYLOCK_UNLOCKED_KEY_SILVER, "wall locks", 1);
+					}
+					else if ( key == KEY_GOLD )
+					{
+						Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_KEYLOCK_UNLOCKED_KEY_GOLD, "wall locks", 1);
+					}
+					else if ( key == KEY_BRONZE )
+					{
+						Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_KEYLOCK_UNLOCKED_KEY_BRONZE, "wall locks", 1);
+					}
 				}
+
 				entity->wallLockState = Entity::WallLockStates::LOCK_KEY_START;
 				serverUpdateEntitySkill(entity, 0);
 			}
@@ -8731,6 +8749,7 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 			entity->flags[PASSABLE] = true;
 			entity->flags[UPDATENEEDED] = true;
 			entity->behavior = &actGoldBag;
+			entity->goldDroppedByPlayer = player + 1;
 		}
 	}},
 
@@ -9180,6 +9199,17 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		int pose = net_packet->data[5];
 		int charge = SDLNet_Read16(&net_packet->data[6]);
 		spellcastAnimationUpdateReceive(player, pose, charge);
+	} },
+
+	{ 'OVRC', []() {
+		int player = net_packet->data[4];
+		if ( player >= 1 && player < MAXPLAYERS && !players[player]->isLocalPlayer() )
+		{
+			if ( players[player] && players[player]->entity && stats[player] )
+			{
+				cast_animation[clientnum].overcharge_init = net_packet->data[5];
+			}
+		}
 	} },
 
 	{ 'SPLV',[]() { // player spell level proc

@@ -905,7 +905,7 @@ void spellcastAnimationUpdateReceive(int player, int attackPose, int castTime)
 	}
 }
 
-void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, Uint32 caster_uid, spell_t* spell, bool usingSpellbook)
+void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, Uint32 caster_uid, spell_t* spell, bool usingSpellbook, bool usingTome)
 {
 	//This function triggers the spellcasting animation and sets up everything.
 
@@ -991,6 +991,21 @@ void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, 
 	int spellCost = getCostOfSpell(spell, caster);
 	if ( !usingSpellbook && spell->ID != SPELL_OVERCHARGE )
 	{
+		if ( usingTome )
+		{
+			animation_manager->overcharge_init = 1;
+
+			if ( multiplayer == CLIENT )
+			{
+				strcpy((char*)net_packet->data, "OVRC");
+				net_packet->data[4] = clientnum;
+				net_packet->data[5] = 1;
+				net_packet->address.host = net_server.host;
+				net_packet->address.port = net_server.port;
+				net_packet->len = 6;
+				sendPacketSafe(net_sock, -1, net_packet, 0);
+			}
+		}
 		if ( animation_manager->overcharge_init )
 		{
 			animation_manager->overcharge = animation_manager->overcharge_init;
@@ -1781,7 +1796,7 @@ void actLeftHandMagic(Entity* my)
 							else
 							{
 								fireOffSpellAnimation(&cast_animation[HANDMAGIC_PLAYERNUM], cast_animation[HANDMAGIC_PLAYERNUM].caster, 
-									cast_animation[HANDMAGIC_PLAYERNUM].spell, cast_animation[HANDMAGIC_PLAYERNUM].active_spellbook);
+									cast_animation[HANDMAGIC_PLAYERNUM].spell, cast_animation[HANDMAGIC_PLAYERNUM].active_spellbook, false);
 							}
 						}
 					}

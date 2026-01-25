@@ -13,6 +13,7 @@
 
 #include "main.hpp"
 #include "prng.hpp"
+#include "game.hpp"
 
 class Entity; // forward declare
 class Stat; // forward declare

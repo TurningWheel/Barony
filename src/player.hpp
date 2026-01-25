@@ -1761,6 +1761,7 @@ public:
 		Player& player;
 		spell_t* selected_spell = nullptr; //The spell the player has currently selected.
 		spell_t* quick_cast_spell = nullptr; //Spell ready for quick-casting
+		Uint32 quick_cast_tome = 0; // Tome read for quick-casting
 	public:
 		spell_t* selected_spell_alternate[NUM_HOTBAR_ALTERNATES] = { nullptr, nullptr, nullptr, nullptr, nullptr };
 		int selected_spell_last_appearance = -1;
@@ -1796,8 +1797,12 @@ public:
 			selected_spell = spell; 
 		}
 		void setQuickCastSpellFromInventory(Item* item);
+		void setQuickCastTomeFromInventory(Item* item);
 		bool doQuickCastSpell() { return quick_cast_spell != nullptr; }
 		void resetQuickCastSpell() { quick_cast_spell = nullptr; }
+		void resetQuickCastTome() { quick_cast_tome = 0; }
+		Uint32 quickCastTome() { return quick_cast_tome; }
+		bool doQuickCastTome();
 		spell_t* selectedSpell() const { return selected_spell; }
 		spell_t* quickCastSpell() const { return quick_cast_spell; }
 

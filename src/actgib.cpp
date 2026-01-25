@@ -625,6 +625,7 @@ void actFociGib(Entity* my)
 							entity->actmagicOrbitHitTargetUID4 = targetUid;
 							entity->actmagicReflectionCount = my->actmagicReflectionCount;
 							entity->actmagicSpellbookBonus = my->actmagicSpellbookBonus;
+							entity->actmagicFromSpellbook = my->actmagicFromSpellbook;
 
 							node_t* node = list_AddNodeFirst(&entity->children);
 							node->element = copySpell(spell);

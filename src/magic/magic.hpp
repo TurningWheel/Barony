@@ -962,7 +962,7 @@ struct CastSpellProps_t
 void setupSpells();
 void equipSpell(spell_t* spell, int playernum, Item* spellItem);
 Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool trap, bool usingSpellbook = false, CastSpellProps_t* castSpellProps = nullptr, bool usingFoci = false);
-void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook); //Initiates the spell animation, then hands off the torch to it, which, when finished, calls castSpell.
+void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook, bool usingTome); //Initiates the spell animation, then hands off the torch to it, which, when finished, calls castSpell.
 int spellGetCastSound(spell_t* spell);
 #ifndef EDITOR // editor doesn't know about stat*
 int getSpellcastingAbilityFromUsingSpellbook(spell_t* spell, Entity* caster, Stat* casterStats);
@@ -974,7 +974,7 @@ int getSpellbookBaseINTBonus(Entity* caster, Stat* casterStats, int skillID);
 void magicOnEntityHit(Entity* parent, Entity* particle, Entity* hitentity, Stat* hitstats, Sint32 preResistanceDamage, Sint32 damage, Sint32 oldHP, int spellID, int selfCastUsingItem = 0);
 void magicTrapOnHit(Entity* parent, Entity* hitentity, Stat* hitstats, Sint32 oldHP, int spellID);
 bool applyGenericMagicDamage(Entity* caster, Entity* hitentity, Entity& damageSourceProjectile, int spellID, int damage, bool alertMonsters,
-	bool monsterCollisionOnly = false);
+	bool monsterCollisionOnly = false, int usingSpellbookID = 0);
 #endif
 bool isSpellcasterBeginner(int player, Entity* caster, int skillID);
 void actMagicTrap(Entity* my);
@@ -1154,7 +1154,7 @@ typedef struct spellcastingAnimationManager
 } spellcasting_animation_manager_t;
 extern spellcasting_animation_manager_t cast_animation[MAXPLAYERS];
 
-void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, Uint32 caster_uid, spell_t* spell, bool usingSpellbook);
+void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, Uint32 caster_uid, spell_t* spell, bool usingSpellbook, bool usingTome);
 void spellcastingAnimationManager_deactivate(spellcasting_animation_manager_t* animation_manager);
 void spellcastAnimationUpdateReceive(int player, int attackPose, int castTime);
 void spellcastAnimationUpdate(int player, int attackPose, int castTime);

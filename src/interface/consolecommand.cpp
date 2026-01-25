@@ -498,11 +498,11 @@ namespace ConsoleCommands {
 			Uint32 appearance = 0;
 			int pick = rng.rand() % chances.size();
 			int spellbookType = getSpellbookFromSpellID(chances[pick].second);
-			if ( items[spellbookType].category == SPELLBOOK )
+			/*if ( items[spellbookType].category == SPELLBOOK )
 			{
 				itemType = spellbookType;
 			}
-			else
+			else*/
 			{
 				itemType = TOME_SORCERY;
 				appearance = spellTomeIDToAppearance[chances[pick].second];
@@ -2420,6 +2420,7 @@ namespace ConsoleCommands {
 				entity->flags[PASSABLE] = true;
 				entity->flags[UPDATENEEDED] = true;
 				entity->behavior = &actGoldBag;
+				entity->goldDroppedByPlayer = player + 1;
 			}
 			messagePlayer(player, MESSAGE_INVENTORY, Language::get(2594), amount);
 		}

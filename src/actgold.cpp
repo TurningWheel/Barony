@@ -20,6 +20,7 @@
 #include "prng.hpp"
 #include "scores.hpp"
 #include "collision.hpp"
+#include "mod_tools.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -170,6 +171,12 @@ void actGoldBag(Entity* my)
 							players[player]->mechanics.updateSustainedSpellEvent(SPELL_DONATION, 150.0, 1.0, nullptr);
 							break;
 						}
+					}
+
+					if ( my->goldDroppedByPlayer == 0 )
+					{
+						Compendium_t::Events_t::eventUpdateCodex(i, Compendium_t::CPDM_GOLD_COLLECTED, "gold", my->goldAmount);
+						Compendium_t::Events_t::eventUpdateCodex(i, Compendium_t::CPDM_GOLD_COLLECTED_RUN, "gold", my->goldAmount);
 					}
 
 					// remove gold entity

@@ -80,6 +80,8 @@ void Item::applySkeletonKey(int player, Entity& entity)
 						Language::get(6383 + entity.wallLockMaterial));
 					interacted = true;
 					rollDegrade = true;
+
+					Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_KEYLOCK_SKELETON_KEY, "wall locks", 1);
 				}
 			}
 			else
@@ -720,6 +722,7 @@ void Item::applyLockpick(int player, Entity& entity)
 					entity.wallLockPower = 3; // turn on later in actWallLock
 					messagePlayer(player, MESSAGE_INTERACTION, Language::get(6426), items[TOOL_LOCKPICK].getIdentifiedName(),
 						Language::get(6383 + entity.wallLockMaterial));
+					Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_KEYLOCK_PICKED, "wall locks", 1);
 				}
 				else
 				{

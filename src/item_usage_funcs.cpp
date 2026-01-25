@@ -3075,6 +3075,11 @@ void item_ScrollEnchantWeapon(Item* item, int player)
 			if ( goldSubtract > 0 )
 			{
 				messagePlayer(player, MESSAGE_HINT, Language::get(6973));
+				if ( players[player]->isLocalPlayer() )
+				{
+					Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_GOLD_CASTED, "gold", goldSubtract);
+					Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_GOLD_CASTED_RUN, "gold", goldSubtract);
+				}
 			}
 
 			bool effect = false;
@@ -3315,6 +3320,11 @@ void item_ScrollEnchantArmor(Item* item, int player)
 			if ( goldSubtract > 0 )
 			{
 				messagePlayer(player, MESSAGE_HINT, Language::get(6973));
+				if ( players[player]->isLocalPlayer() )
+				{
+					Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_GOLD_CASTED, "gold", goldSubtract);
+					Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_GOLD_CASTED_RUN, "gold", goldSubtract);
+				}
 			}
 
 			bool effect = false;
@@ -5819,24 +5829,16 @@ void item_Spellbook(Item*& item, int player)
 {
 	node_t* node, *nextnode;
 
-	item->identified = true;
 	if ( players[player] && !players[player]->isLocalPlayer() )
 	{
 		return;
 	}
 
-	if ( players[player] && players[player]->entity && players[player]->entity->isBlind())
+	/*if ( itemCategory(item) == TOME_SPELL )
 	{
-		messagePlayer(player, MESSAGE_HINT, Language::get(970));
-		playSoundPlayer(player, 90, 64);
+		players[player]->magic.setQuickCastTomeFromInventory(item);
 		return;
-	}
-	if ( itemIsEquipped(item, player) )
-	{
-		messagePlayer(player, MESSAGE_MISC, Language::get(3460));
-		playSoundPlayer(player, 90, 64);
-		return;
-	}
+	}*/
 
 	if ( players[player] && players[player]->entity )
 	{
@@ -5852,6 +5854,20 @@ void item_Spellbook(Item*& item, int player)
 			playSoundPlayer(player, 90, 64);
 			return;
 		}
+	}
+
+	item->identified = true;
+	if ( itemIsEquipped(item, player) )
+	{
+		messagePlayer(player, MESSAGE_MISC, Language::get(3460));
+		playSoundPlayer(player, 90, 64);
+		return;
+	}
+	if ( players[player] && players[player]->entity && players[player]->entity->isBlind() )
+	{
+		messagePlayer(player, MESSAGE_HINT, Language::get(970));
+		playSoundPlayer(player, 90, 64);
+		return;
 	}
 
 	conductIlliterate = false;

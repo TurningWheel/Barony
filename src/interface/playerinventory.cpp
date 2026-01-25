@@ -5938,6 +5938,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                 else if ( itemCategory(item) == SPELL_CAT )
                 {
                     spell_t* spell = getSpellFromItem(player, item, false);
+					if ( !spell ) { continue; }
                     if ( tag.compare("spell_damage_bonus") == 0 )
                     {
                         if ( !ItemTooltips.bIsSpellDamageOrHealingType(spell) )

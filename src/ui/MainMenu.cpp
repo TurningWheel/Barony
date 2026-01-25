@@ -2035,9 +2035,15 @@ namespace MainMenu {
 		                        monoPrompt(text, Language::get(5009), [](Button&){
 		                            soundActivate();
 		                            closeMono();
-                                    auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
-                                    auto play = buttons->findButton("Play Game");
+									auto buttons = main_menu_frame->findFrame("buttons");
+									if ( buttons )
+									{
+										if ( auto play = buttons->findButton("Play Game") )
+										{
                                     play->select();
+										}
+									}
+									//assert(buttons);
 		                            });
 		                        };
 
@@ -2071,6 +2077,22 @@ namespace MainMenu {
                                     fp->write(text.c_str(), sizeof(char), text.size());
                                     FileIO::close(fp);
                                 }
+							}
+							else if ( DLCHash == 121449 ) {
+								playSound(402, 92);
+								printlog("[LICENSE]: Deserters and Disciples DLC license key found.");
+								prompt(Language::get(6989));
+								enabledDLCPack3 = true;
+
+								char path[PATH_MAX] = "";
+								completePath(path, "desertersanddisciples.key", outputdir);
+
+								// write the serial file
+								File* fp = nullptr;
+								if ( fp = FileIO::open(path, "wb") ) {
+									fp->write(text.c_str(), sizeof(char), text.size());
+									FileIO::close(fp);
+								}
 		                    } else {
 			                    printlog("[LICENSE]: DLC license key invalid.");
 		                        errorPrompt(Language::get(5017), Language::get(5009), [](Button&){
@@ -34619,7 +34641,11 @@ failed:
 						auto find = ItemTooltips.spellItems.find(spellID);
 						if ( find != ItemTooltips.spellItems.end() && spellID > SPELL_NONE )
 						{
-							if ( find->second.spellbookId == entryType )
+							if ( spellID == SPELL_STRIKE )
+							{
+								// ignore damage portion as cant track
+							}
+							else if ( find->second.spellbookId == entryType )
 							{
 								if ( find->second.spellTags.find(ItemTooltips_t::SpellTagTypes::SPELL_TAG_HEALING)
 									!= find->second.spellTags.end() )
@@ -34635,6 +34661,21 @@ failed:
 									!= find->second.spellTags.end() )
 								{
 									displayedEvents.push_back(Compendium_t::EventTags::CPDM_SPELL_TARGETS);
+								}
+							}
+
+							if ( spellID == SPELL_SHATTER_OBJECTS )
+							{
+								if ( displayedEvents.size() && displayedEvents.back() == Compendium_t::EventTags::CPDM_SPELL_DMG )
+								{
+									displayedEvents.back() = Compendium_t::EventTags::CPDM_SPELL_TARGETS;
+								}
+						}
+							else if ( spellID == SPELL_HOLY_BEAM )
+							{
+								if ( displayedEvents.size() && displayedEvents.back() == Compendium_t::EventTags::CPDM_SPELL_HEAL )
+								{
+									displayedEvents.back() = Compendium_t::EventTags::CPDM_SPELL_DMG;
 								}
 							}
 						}
@@ -34707,6 +34748,21 @@ failed:
 						{
 							displayedEvents.push_back(Compendium_t::EventTags::CPDM_SPELL_TARGETS);
 						}
+
+						if ( spellID == SPELL_SHATTER_OBJECTS )
+						{
+							if ( displayedEvents.size() && displayedEvents.back() == Compendium_t::EventTags::CPDM_SPELL_DMG )
+							{
+								displayedEvents.back() = Compendium_t::EventTags::CPDM_SPELL_TARGETS;
+							}
+						}
+						else if ( spellID == SPELL_HOLY_BEAM )
+						{
+							if ( displayedEvents.size() && displayedEvents.back() == Compendium_t::EventTags::CPDM_SPELL_HEAL )
+							{
+								displayedEvents.back() = Compendium_t::EventTags::CPDM_SPELL_DMG;
+							}
+					}
 					}
 					displayedEvents.push_back(Compendium_t::EventTags::CPDM_SPELL_CASTS);
 					displayedEvents.push_back(Compendium_t::EventTags::CPDM_SPELL_FAILURES);
@@ -35449,6 +35505,7 @@ failed:
 									if ( i.spellID >= 0 )
 									{
 										itemLookupIndex = Compendium_t::Events_t::kEventSpellOffset + i.spellID;
+										appearance = i.spellID;
 									}
 								}
 								break;
@@ -36227,6 +36284,14 @@ failed:
 													if ( frame->getUserData() )
 													{
 														Compendium_t::compendiumItem.appearance = (reinterpret_cast<intptr_t>(frame->getUserData()) & 0x7F);
+														if ( itemType == SPELL_ITEM )
+														{
+															auto find = ItemTooltips.spellNameStringToSpellID.find(widget.getName());
+															if ( find != ItemTooltips.spellNameStringToSpellID.end() )
+															{
+																Compendium_t::compendiumItem.appearance = find->second;
+															}
+														}
 													}
 
 													if ( Compendium_t::compendiumItem.type == SPELL_ITEM )

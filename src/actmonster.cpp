@@ -1789,6 +1789,34 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 					canAlly = true;
 				}
 			}
+			else if ( stats[monsterclicked]->type == DRYAD )
+			{
+				if ( race == DRYAD )
+				{
+					canAlly = true;
+				}
+			}
+			else if ( stats[monsterclicked]->type == MYCONID )
+			{
+				if ( race == MYCONID )
+				{
+					canAlly = true;
+				}
+			}
+			else if ( stats[monsterclicked]->type == SALAMANDER )
+			{
+				if ( race == SALAMANDER )
+				{
+					canAlly = true;
+				}
+			}
+			else if ( stats[monsterclicked]->type == GREMLIN )
+			{
+				if ( race == GREMLIN )
+				{
+					canAlly = true;
+				}
+			}
 			else if ( stats[monsterclicked]->type == CREATURE_IMP )
 			{
 				if ( race == CREATURE_IMP && !(!strncmp(map.name, "Boss", 4) || !strncmp(map.name, "Hell Boss", 9)) )
@@ -1959,6 +1987,34 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 					else if ( stats[monsterclicked]->type == TROLL )
 					{
 						if ( race == TROLL )
+						{
+							canAlly = true;
+						}
+					}
+					else if ( stats[monsterclicked]->type == DRYAD )
+					{
+						if ( race == DRYAD )
+						{
+							canAlly = true;
+						}
+					}
+					else if ( stats[monsterclicked]->type == MYCONID )
+					{
+						if ( race == MYCONID )
+						{
+							canAlly = true;
+						}
+					}
+					else if ( stats[monsterclicked]->type == SALAMANDER )
+					{
+						if ( race == SALAMANDER )
+						{
+							canAlly = true;
+						}
+					}
+					else if ( stats[monsterclicked]->type == GREMLIN )
+					{
+						if ( race == GREMLIN )
 						{
 							canAlly = true;
 						}

@@ -4029,7 +4029,7 @@ last of your magic is drained!#
 3660 %d complex #
 3661 %d intricate #
 3662 %d artisan #
-3663 Auto salvage...#
+3663 Salvage...#
 3664 You are unable to salvage %s.#
 3665 Salvaged %d %s.#
 3666 You have nothing else to learn from salvaging.#
@@ -7258,5 +7258,7 @@ to replay this challenge!
 6986 mailbox#
 6987 The mailbox is currently in use by someone else.#
 6988 Claim#
+6989 Deserters and Disciples DLC
+has been unlocked!#
 
 6999 END#

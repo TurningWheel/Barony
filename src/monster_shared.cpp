@@ -17,6 +17,7 @@
 #include "prng.hpp"
 #include "monster.hpp"
 #include "shops.hpp"
+#include "net.hpp"
 
 #include <cassert>
 

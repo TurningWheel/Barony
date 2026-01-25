@@ -396,7 +396,7 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 					entity->modHP(-damage);
 					if ( entity->behavior == &actPlayer && stats->HP < oldHP )
 					{
-						Compendium_t::Events_t::eventUpdateWorld(entity->skill[2], Compendium_t::CPDM_TRAP_DAMAGE, "boulder trap", oldHP - stats->HP);
+						Compendium_t::Events_t::eventUpdateWorld(entity->skill[2], Compendium_t::CPDM_TRAP_DAMAGE, "arcane boulder", oldHP - stats->HP);
 					}
 					entity->setObituary(Language::get(3899));
 					stats->killer = KilledBy::BOULDER;
@@ -461,6 +461,10 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 						if ( my->sprite == BOULDER_LAVA_SPRITE )
 						{
 							Compendium_t::Events_t::eventUpdateWorld(entity->skill[2], Compendium_t::CPDM_TRAP_KILLED_BY, "brimstone boulder", 1);
+						}
+						else if ( my->sprite == BOULDER_ARCANE_SPRITE )
+						{
+							Compendium_t::Events_t::eventUpdateWorld(entity->skill[2], Compendium_t::CPDM_TRAP_KILLED_BY, "arcane boulder", 1);
 						}
 						else
 						{
@@ -622,6 +626,10 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 						if ( my->sprite == BOULDER_LAVA_SPRITE )
 						{
 							Compendium_t::Events_t::eventUpdateWorld(entity->monsterAllyIndex, Compendium_t::CPDM_TRAP_FOLLOWERS_KILLED, "brimstone boulder", 1);
+						}
+						else if ( my->sprite == BOULDER_ARCANE_SPRITE )
+						{
+							Compendium_t::Events_t::eventUpdateWorld(entity->monsterAllyIndex, Compendium_t::CPDM_TRAP_FOLLOWERS_KILLED, "arcane boulder", 1);
 						}
 						else
 						{
@@ -1497,7 +1505,14 @@ void actBoulder(Entity* my)
 						}
 					}
 
-					Compendium_t::Events_t::eventUpdateWorld(BOULDER_SOUND_ON_PUSH - 1, Compendium_t::CPDM_BOULDERS_PUSHED, "boulder trap", 1);
+					if ( my->sprite == BOULDER_ARCANE_SPRITE )
+					{
+						Compendium_t::Events_t::eventUpdateWorld(BOULDER_SOUND_ON_PUSH - 1, Compendium_t::CPDM_BOULDERS_PUSHED, "arcane boulder", 1);
+					}
+					else
+					{
+						Compendium_t::Events_t::eventUpdateWorld(BOULDER_SOUND_ON_PUSH - 1, Compendium_t::CPDM_BOULDERS_PUSHED, "boulder trap", 1);
+					}
 					BOULDER_SOUND_ON_PUSH = 0;
 				}
 			}

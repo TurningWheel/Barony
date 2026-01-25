@@ -1079,7 +1079,12 @@ bool magicOnSpellCastEvent(Entity* parent, Entity* projectile, Entity* hitentity
 	bool magicstaff = eventType & spell_t::SPELL_LEVEL_EVENT_MAGICSTAFF;
 	bool spellbook = eventType & spell_t::SPELL_LEVEL_EVENT_SPELLBOOK;
 
-	if ( projectile && projectile->behavior == &actMagicMissile )
+	if ( projectile && 
+		(projectile->behavior == &actMagicMissile
+			|| projectile->behavior == &actParticleFloorMagic
+			|| projectile->behavior == &actParticleWave
+			|| projectile->behavior == &actParticleAestheticOrbit
+			|| projectile->behavior == &actParticleTimer) )
 	{
 		magicstaff = projectile->actmagicCastByMagicstaff == 1;
 		spellbook = projectile->actmagicFromSpellbook == 1;
@@ -1495,11 +1500,11 @@ void magicOnEntityHit(Entity* parent, Entity* particle, Entity* hitentity, Stat*
 						{
 							if ( damageTaken > 0 )
 							{
-								if ( find->second.spellTags.find(ItemTooltips_t::SpellTagTypes::SPELL_TAG_HEALING) != find->second.spellTags.end() )
+								/*if ( find->second.spellTags.find(ItemTooltips_t::SpellTagTypes::SPELL_TAG_HEALING) != find->second.spellTags.end() )
 								{
 									Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_SPELL_HEAL, (ItemType)find->second.spellbookId, damageTaken);
 								}
-								else
+								else*/
 								{
 									Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_SPELL_DMG, (ItemType)find->second.spellbookId, damageTaken);
 								}
@@ -1543,7 +1548,13 @@ void magicOnEntityHit(Entity* parent, Entity* particle, Entity* hitentity, Stat*
 				}
 			}
 		}
-		if ( !particle || (particle && particle->behavior != &actMagicMissile)) { return; }
+		if ( !particle 
+			|| (particle 
+				&& (particle->behavior != &actMagicMissile
+					&& particle->behavior != &actParticleFloorMagic
+					&& particle->behavior != &actParticleWave
+					&& particle->behavior != &actParticleAestheticOrbit
+					&& particle->behavior != &actParticleTimer))) { return; }
 		if ( particle->actmagicCastByMagicstaff == 1 )
 		{
 			auto find = ItemTooltips.spellItems.find(spellID);
@@ -1579,19 +1590,19 @@ void magicOnEntityHit(Entity* parent, Entity* particle, Entity* hitentity, Stat*
 			{
 				if ( find->second.spellbookId >= 0 && find->second.spellbookId < NUMITEMS && items[find->second.spellbookId].category == SPELLBOOK )
 				{
-					if ( damageTaken > 0 )
+					if ( damageTaken > 0 && spellID != SPELL_GREASE_SPRAY )
 					{
-						if ( find->second.spellTags.find(ItemTooltips_t::SpellTagTypes::SPELL_TAG_HEALING) != find->second.spellTags.end() )
+						/*if ( find->second.spellTags.find(ItemTooltips_t::SpellTagTypes::SPELL_TAG_HEALING) != find->second.spellTags.end() )
 						{
 							Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_SPELL_HEAL, (ItemType)find->second.spellbookId, damageTaken);
 						}
-						else
+						else*/
 						{
 							Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_SPELL_DMG, (ItemType)find->second.spellbookId, damageTaken);
 						}
 						magicOnSpellCastEvent(parent, particle, hitentity, spellID, additionalFlags | spell_t::SPELL_LEVEL_EVENT_DMG | spell_t::SPELL_LEVEL_EVENT_SPELLBOOK, damageTaken);
 					}
-					else if ( damage == 0 && oldHP == 0 )
+					else if ( (damage == 0 && oldHP == 0) || spellID == SPELL_GREASE_SPRAY )
 					{
 						if ( find->second.spellTags.find(ItemTooltips_t::SpellTagTypes::SPELL_TAG_TRACK_HITS) != find->second.spellTags.end() )
 						{
@@ -1644,12 +1655,12 @@ void magicOnEntityHit(Entity* parent, Entity* particle, Entity* hitentity, Stat*
 				{
 					if ( find->second.id > SPELL_NONE && find->second.id < NUM_SPELLS )
 					{
-						if ( damageTaken > 0 )
+						if ( damageTaken > 0 && spellID != SPELL_GREASE_SPRAY )
 						{
 							Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_SPELL_DMG, SPELL_ITEM, damageTaken, false, find->second.id);
 							magicOnSpellCastEvent(parent, particle, hitentity, spellID, additionalFlags | spell_t::SPELL_LEVEL_EVENT_DMG, damageTaken);
 						}
-						else if ( damage == 0 && oldHP == 0 )
+						else if ( (damage == 0 && oldHP == 0) || spellID == SPELL_GREASE_SPRAY )
 						{
 							if ( find->second.spellTags.find(ItemTooltips_t::SpellTagTypes::SPELL_TAG_TRACK_HITS) != find->second.spellTags.end() )
 							{
@@ -3802,6 +3813,22 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									{
 										serverUpdatePlayerGameplayStats(parent->skill[2], STATISTICS_HEAL_BOT, heal);
 										players[parent->skill[2]]->mechanics.updateSustainedSpellEvent(spell->ID, heal, 1.0, nullptr);
+
+										if ( my->actmagicFromSpellbook )
+										{
+											auto find = ItemTooltips.spellItems.find(spell->ID);
+											if ( find != ItemTooltips.spellItems.end() )
+											{
+												if ( find->second.spellbookId >= 0 && find->second.spellbookId < NUMITEMS && items[find->second.spellbookId].category == SPELLBOOK )
+												{
+													Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_SPELL_HEAL, (ItemType)find->second.spellbookId, heal);
+												}
+											}
+										}
+										else
+										{
+											Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_SPELL_HEAL, SPELL_ITEM, heal, false, spell->ID);
+										}
 									}
 								}
 							}
@@ -4070,7 +4097,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								&& explode )
 							{
 								Entity* caster = uidToEntity(spell->caster);
-								createSpellExplosionArea(spell->ID, caster, my->x, my->y, my->z, 32.0, preResistanceDamage, hit.entity);
+								if ( Entity* aoe = createSpellExplosionArea(spell->ID, caster, my->x, my->y, my->z, 32.0, preResistanceDamage, hit.entity) )
+								{
+									aoe->actmagicSpellbookBonus = my->actmagicSpellbookBonus;
+									aoe->actmagicFromSpellbook = my->actmagicFromSpellbook;
+								}
 							}
 							if ( !(my->actmagicIsOrbiting == 2) )
 							{
@@ -4245,7 +4276,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								&& explode )
 							{
 								Entity* caster = uidToEntity(spell->caster);
-								createSpellExplosionArea(spell->ID, caster, my->x, my->y, my->z, 32.0, preResistanceDamage, hit.entity);
+								if ( Entity* aoe = createSpellExplosionArea(spell->ID, caster, my->x, my->y, my->z, 32.0, preResistanceDamage, hit.entity) )
+								{
+									aoe->actmagicSpellbookBonus = my->actmagicSpellbookBonus;
+									aoe->actmagicFromSpellbook = my->actmagicFromSpellbook;
+								}
 							}
 							if ( !(my->actmagicIsOrbiting == 2) )
 							{
@@ -4278,7 +4313,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								&& explode )
 							{
 								Entity* caster = uidToEntity(spell->caster);
-								createSpellExplosionArea(spell->ID, caster, my->x, my->y, my->z, 32.0, preResistanceDamage, hit.entity);
+								if ( Entity* aoe = createSpellExplosionArea(spell->ID, caster, my->x, my->y, my->z, 32.0, preResistanceDamage, hit.entity) )
+								{
+									aoe->actmagicSpellbookBonus = my->actmagicSpellbookBonus;
+									aoe->actmagicFromSpellbook = my->actmagicFromSpellbook;
+								}
 							}
 							if ( !(my->actmagicIsOrbiting == 2) )
 							{
@@ -4310,7 +4349,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								&& explode )
 							{
 								Entity* caster = uidToEntity(spell->caster);
-								createSpellExplosionArea(spell->ID, caster, my->x, my->y, my->z, 32.0, preResistanceDamage, hit.entity);
+								if ( Entity* aoe = createSpellExplosionArea(spell->ID, caster, my->x, my->y, my->z, 32.0, preResistanceDamage, hit.entity) )
+								{
+									aoe->actmagicSpellbookBonus = my->actmagicSpellbookBonus;
+									aoe->actmagicFromSpellbook = my->actmagicFromSpellbook;
+								}
 							}
 							if ( !(my->actmagicIsOrbiting == 2) )
 							{
@@ -4342,7 +4385,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								&& explode )
 							{
 								Entity* caster = uidToEntity(spell->caster);
-								createSpellExplosionArea(spell->ID, caster, my->x, my->y, my->z, 32.0, preResistanceDamage, hit.entity);
+								if ( Entity* aoe = createSpellExplosionArea(spell->ID, caster, my->x, my->y, my->z, 32.0, preResistanceDamage, hit.entity) )
+								{
+									aoe->actmagicSpellbookBonus = my->actmagicSpellbookBonus;
+									aoe->actmagicFromSpellbook = my->actmagicFromSpellbook;
+								}
 							}
 							if ( !(my->actmagicIsOrbiting == 2) )
 							{
@@ -4635,6 +4682,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								fx->scaley = 0.0;
 								fx->scalez = 0.0;
 								fx->actmagicSpellbookBonus = my->actmagicSpellbookBonus;
+								fx->actmagicFromSpellbook = my->actmagicFromSpellbook;
 							}
 						}
 					}
@@ -4847,6 +4895,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									fx->skill[3] = spell->caster;
 									fx->flags[INVISIBLE] = true;
 									fx->actmagicSpellbookBonus = my->actmagicSpellbookBonus;
+									fx->actmagicFromSpellbook = my->actmagicFromSpellbook;
 								}
 
 								serverSpawnMiscParticles(hit.entity, PARTICLE_EFFECT_DEFY_FLESH_ORBIT, 2363, 0, element->duration);
@@ -6851,7 +6900,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					|| !strcmp(element->element_internal_name, spellElementMap[SPELL_METEOR].element_internal_name)) )
 				{
 					Entity* caster = uidToEntity(spell->caster);
-					createSpellExplosionArea(spell->ID, caster, my->x, my->y, my->z, 32.0, preResistanceDamage, hit.entity);
+					if ( Entity* aoe = createSpellExplosionArea(spell->ID, caster, my->x, my->y, my->z, 32.0, preResistanceDamage, hit.entity) )
+					{
+						aoe->actmagicSpellbookBonus = my->actmagicSpellbookBonus;
+						aoe->actmagicFromSpellbook = my->actmagicFromSpellbook;
+					}
 				}
 
 				if ( spell->ID == SPELL_SCEPTER_BLAST || spell->ID == SPELL_BLOOD_WAVES || spell->ID == SPELL_HOLY_BEAM )
@@ -8241,7 +8294,7 @@ void actParticleAestheticOrbit(Entity* my)
 					Entity* caster = uidToEntity(my->skill[3]);
 					int burnDamage = getSpellDamageFromID(SPELL_HOLY_FIRE, caster, caster ? caster->getStats() : nullptr,
 						caster);
-					applyGenericMagicDamage(caster, parent, caster ? *caster : *my, SPELL_HOLY_FIRE, burnDamage, true, true);
+					applyGenericMagicDamage(caster, parent, *my, SPELL_HOLY_FIRE, burnDamage, true, true);
 				}
 			}
 		}
@@ -8995,7 +9048,7 @@ void actParticleAestheticOrbit(Entity* my)
 						}
 					}
 
-					applyGenericMagicDamage(caster, parent, caster ? *caster : *my, SPELL_PSYCHIC_SPEAR, damage, true);
+					applyGenericMagicDamage(caster, parent, *my, SPELL_PSYCHIC_SPEAR, damage, true);
 
 					if ( Entity* fx = createParticleAOEIndicator(my, my->x, my->y, 0.0, TICKS_PER_SECOND, 16.0) )
 					{
@@ -9131,7 +9184,7 @@ void actParticleAestheticOrbit(Entity* my)
 													playSoundEntity(parent, 249, 64);
 												}
 												flatDamage += my->skill[4];
-												applyGenericMagicDamage(caster, parent, caster ? *caster : *my, SPELL_PINPOINT, flatDamage, true);
+												applyGenericMagicDamage(caster, parent, *my, SPELL_PINPOINT, flatDamage, true);
 												//spawnMagicEffectParticles(parent->x, parent->y, parent->z, 981);
 
 												if ( caster && parent->getStats() )
@@ -9143,8 +9196,8 @@ void actParticleAestheticOrbit(Entity* my)
 											else if ( my->skill[1] == PARTICLE_EFFECT_TURN_UNDEAD )
 											{
 												int damage = getSpellDamageFromID(SPELL_TURN_UNDEAD, caster, caster ? caster->getStats() : nullptr,
-													my);
-												applyGenericMagicDamage(caster, parent, caster ? *caster : *my, SPELL_TURN_UNDEAD, damage, true);
+													my, my->actmagicSpellbookBonus / 100.0);
+												applyGenericMagicDamage(caster, parent, *my, SPELL_TURN_UNDEAD, damage, true);
 
 												if ( my->skill[6] == EFF_HOLY_FIRE )
 												{
@@ -9338,6 +9391,7 @@ void actParticleAestheticOrbit(Entity* my)
 						fx->scaley = 0.0;
 						fx->scalez = 0.0;
 						fx->actmagicSpellbookBonus = my->actmagicSpellbookBonus;
+						fx->actmagicFromSpellbook = my->actmagicFromSpellbook;
 
 						serverSpawnMiscParticles(parent, PARTICLE_EFFECT_DEFY_FLESH, 2363, 0, 3 * TICKS_PER_SECOND, fx->yaw * 256.0);
 
@@ -9406,7 +9460,7 @@ void actParticleAestheticOrbit(Entity* my)
 						Entity* caster = uidToEntity(my->skill[3]);
 						int damage = getSpellDamageFromID(SPELL_DEFY_FLESH, caster, caster ? caster->getStats() : nullptr,
 							my, my->actmagicSpellbookBonus / 100.0);
-						applyGenericMagicDamage(caster, parent, caster ? *caster : *my, SPELL_DEFY_FLESH, damage, true);
+						applyGenericMagicDamage(caster, parent, *my, SPELL_DEFY_FLESH, damage, true);
 					}
 
 					for ( int i = 0; i < 1; ++i )
@@ -11425,6 +11479,8 @@ void actParticleTimer(Entity* my)
 							entity->actmagicSpray = 1;
 							entity->actmagicSprayGravity = 0.04;
 							entity->actmagicEmitter = my->getUID();
+							entity->actmagicFromSpellbook = my->actmagicFromSpellbook;
+							entity->actmagicSpellbookBonus = my->actmagicSpellbookBonus;
 							node_t* node = list_AddNodeFirst(&entity->children);
 							node->element = copySpell(spell);
 							((spell_t*)node->element)->caster = parent->getUID();
@@ -11914,7 +11970,7 @@ void actParticleTimer(Entity* my)
 											damage += perStatDmg;
 											real_t mult = 0.1 * (std::min(10, effectStrength - 3));
 											damage *= mult;
-											if ( applyGenericMagicDamage(parent, entity, parent ? *parent : *my, SPELL_SLAM, damage, true) )
+											if ( applyGenericMagicDamage(parent, entity, *my, SPELL_SLAM, damage, true) )
 											{
 												messagePlayerColor(entity->isEntityPlayer(), MESSAGE_STATUS, 
 													makeColorRGB(255, 0, 0), Language::get(6758));
@@ -12046,11 +12102,23 @@ void actParticleTimer(Entity* my)
 											|| entity->behavior == &::actFurniture )
 										{
 											int damage = getSpellDamageFromID(SPELL_SHATTER_OBJECTS, caster, nullptr, my, my->actmagicSpellbookBonus / 100.0);
-											if ( applyGenericMagicDamage(caster, entity, *caster, SPELL_SHATTER_OBJECTS, damage, true) )
+											if ( applyGenericMagicDamage(caster, entity, *my, SPELL_SHATTER_OBJECTS, damage, true) )
 											{
 												if ( entity->behavior != &::actIronDoor )
 												{
 													++numTargets;
+
+													if ( caster && caster->behavior == &actPlayer )
+													{
+														if ( my->actmagicFromSpellbook )
+														{
+															Compendium_t::Events_t::eventUpdate(caster->skill[2], Compendium_t::CPDM_SPELL_TARGETS, SPELLBOOK_SHATTER_OBJECTS, 1);
+														}
+														else
+														{
+															Compendium_t::Events_t::eventUpdate(caster->skill[2], Compendium_t::CPDM_SPELL_TARGETS, SPELL_ITEM, 1, false, SPELL_SHATTER_OBJECTS);
+														}
+													}
 												}
 											}
 										}
@@ -12062,7 +12130,7 @@ void actParticleTimer(Entity* my)
 									while ( numTargets > 0 )
 									{
 										--numTargets;
-										magicOnSpellCastEvent(caster, caster, nullptr, SPELL_SHATTER_OBJECTS, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
+										magicOnSpellCastEvent(caster, my, nullptr, SPELL_SHATTER_OBJECTS, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
 									}
 								}
 							}
@@ -12452,7 +12520,7 @@ void actParticleTimer(Entity* my)
 										{
 											damage *= 2;
 										}
-										applyGenericMagicDamage(caster, entity, *caster, SPELL_NONE, damage, true);
+										applyGenericMagicDamage(caster, entity, *my, SPELL_NONE, damage, true);
 										if ( entity->SetEntityOnFire(caster) )
 										{
 											if ( caster )
@@ -12472,7 +12540,7 @@ void actParticleTimer(Entity* my)
 								}
 								else
 								{
-									if ( applyGenericMagicDamage(caster, entity, *caster, SPELL_NONE, damage, true) )
+									if ( applyGenericMagicDamage(caster, entity, *my, SPELL_NONE, damage, true) )
 									{
 										entity->SetEntityOnFire(caster);
 									}
@@ -12680,6 +12748,7 @@ void actParticleTimer(Entity* my)
 							{
 								fx->actmagicSpellbookBonus = my->actmagicSpellbookBonus;
 							}
+							fx->actmagicFromSpellbook = my->actmagicFromSpellbook;
 
 							fx->actmagicOrbitHitTargetUID1 = my->actmagicOrbitHitTargetUID2;
 							if ( data.sfx )
@@ -12749,7 +12818,11 @@ void actParticleTimer(Entity* my)
 						|| my->ticks == 1 + 20 )
 					{
 						Entity* caster = uidToEntity(my->parent);
-						createSpellExplosionArea(SPELL_ETERNALS_GAZE, caster, my->x, my->y, my->z, 12.0, 0, nullptr);
+						if ( Entity* aoe = createSpellExplosionArea(SPELL_ETERNALS_GAZE, caster, my->x, my->y, my->z, 12.0, 0, nullptr) )
+						{
+							aoe->actmagicFromSpellbook = my->actmagicFromSpellbook;
+							aoe->actmagicSpellbookBonus = my->actmagicSpellbookBonus;
+						}
 					}
 
 					Entity* target = uidToEntity(my->actmagicOrbitHitTargetUID1);
@@ -13511,6 +13584,7 @@ void actParticleTimer(Entity* my)
 							{
 								fx->actmagicSpellbookBonus = my->actmagicSpellbookBonus;
 							}
+							fx->actmagicFromSpellbook = my->actmagicFromSpellbook;
 							if ( data.sfx )
 							{
 								playSoundEntity(fx, data.sfx, 64);
@@ -13535,6 +13609,7 @@ void actParticleTimer(Entity* my)
 									{
 										fx->actmagicSpellbookBonus = my->actmagicSpellbookBonus;
 									}
+									fx->actmagicFromSpellbook = my->actmagicFromSpellbook;
 									fx->sizex = 6;
 									fx->sizey = 6;
 									Uint32 nextTickEffect = std::numeric_limits<Uint32>::max();
@@ -13581,6 +13656,7 @@ void actParticleTimer(Entity* my)
 							{
 								fx->actmagicSpellbookBonus = my->actmagicSpellbookBonus;
 							}
+							fx->actmagicFromSpellbook = my->actmagicFromSpellbook;
 							if ( flickerLights )
 							{
 								fx->light = addLight(fx->x / 16, fx->y / 16, "explosion");
@@ -17381,7 +17457,7 @@ void actParticleFloorMagic(Entity* my)
 									if ( parentTimer && parentTimer->particleTimerVariable1 > 0 && my->ticks < 5 )
 									{
 										int damage = parentTimer->particleTimerVariable1;
-										applyGenericMagicDamage(caster, entity, caster ? *caster : *my, parentTimer->particleTimerVariable2, damage, true, true);
+										applyGenericMagicDamage(caster, entity, *my, parentTimer->particleTimerVariable2, damage, true, true);
 									}
 
 									particleEmitterHitPropsTimer->hits++;
@@ -17433,7 +17509,7 @@ void actParticleFloorMagic(Entity* my)
 										damage += std::max(1, extraDamage);
 									}
 								}
-								if ( applyGenericMagicDamage(caster, entity, caster ? *caster : *my, SPELL_LIGHTNING_BOLT, damage, true, true) )
+								if ( applyGenericMagicDamage(caster, entity, *my, SPELL_LIGHTNING_BOLT, damage, true, true) )
 								{
 									Uint8 effectStrength = stats->getEffectActive(EFF_STATIC);
 									if ( effectStrength < getSpellEffectDurationSecondaryFromID(SPELL_LIGHTNING_BOLT, caster, nullptr, my, my->actmagicSpellbookBonus / 100.0) )
@@ -17560,7 +17636,7 @@ void actParticleFloorMagic(Entity* my)
 
 									if ( damage > 0 )
 									{
-										if ( applyGenericMagicDamage(caster, entity, caster ? *caster : *my, spellID, damage, true) )
+										if ( applyGenericMagicDamage(caster, entity, *my, spellID, damage, true) )
 										{
 										}
 									}
@@ -17709,7 +17785,7 @@ void actParticleFloorMagic(Entity* my)
 											}
 										}
 
-										if ( applyGenericMagicDamage(caster, entity, caster ? *caster : *my, parentTimer->particleTimerVariable1, damage, true, true) )
+										if ( applyGenericMagicDamage(caster, entity, *my, parentTimer->particleTimerVariable1, damage, true, true) )
 										{
 											if ( entity->setEffect(EFF_ROOTED, true, TICKS_PER_SECOND, false) )
 											{
@@ -17804,7 +17880,7 @@ void actParticleFloorMagic(Entity* my)
 								}
 								if ( damage > 0 )
 								{
-									if ( applyGenericMagicDamage(caster, entity, caster ? *caster : *my, SPELL_ICE_WAVE, damage, true, true) )
+									if ( applyGenericMagicDamage(caster, entity, *my, SPELL_ICE_WAVE, damage, true, true) )
 									{
 										if ( stats->getEffectActive(EFF_SLOW) )
 										{
@@ -18476,7 +18552,7 @@ void actParticleWave(Entity* my)
 											Stat* stats = (entity->behavior == &actPlayer || entity->behavior == &actMonster) ? entity->getStats() : nullptr;
 											if ( !stats || entity->isInertMimic() )
 											{
-												if ( applyGenericMagicDamage(caster, entity, caster ? *caster : *my, SPELL_FIRE_WALL, damage, true) )
+												if ( applyGenericMagicDamage(caster, entity, *my, SPELL_FIRE_WALL, damage, true) )
 												{
 													if ( entity->flags[BURNABLE] && !entity->flags[BURNING] )
 													{
@@ -18522,7 +18598,7 @@ void actParticleWave(Entity* my)
 													}
 												}
 
-												if ( doDamage && applyGenericMagicDamage(caster, entity, caster ? *caster : *my, SPELL_FIRE_WALL, damage, true, true) )
+												if ( doDamage && applyGenericMagicDamage(caster, entity, *my, SPELL_FIRE_WALL, damage, true, true) )
 												{
 													particleEmitterHitProps->hits++;
 													particleEmitterHitProps->tick = ticks;
@@ -20446,6 +20522,8 @@ void actRadiusMagic(Entity* my)
 							{
 								fx1->skill[6] = EFF_HOLY_FIRE;
 							}
+							fx1->actmagicSpellbookBonus = my->actmagicSpellbookBonus;
+							fx1->actmagicFromSpellbook = my->actmagicFromSpellbook;
 						}
 
 						serverSpawnMiscParticles(ent, PARTICLE_EFFECT_TURN_UNDEAD, 2401);
@@ -20556,7 +20634,31 @@ void actRadiusMagic(Entity* my)
 			{
 				int player = caster ? caster->isEntityPlayer() : -1;
 				serverUpdatePlayerGameplayStats(player, STATISTICS_HEAL_BOT, totalHeal);
-				Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_SPELL_HEAL, SPELL_ITEM, totalHeal, false, my->actRadiusMagicID);
+				//Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_SPELL_HEAL, SPELL_ITEM, totalHeal, false, my->actRadiusMagicID);
+
+				if ( player >= 0 )
+				{
+					int healingSpellID = my->actRadiusMagicID;
+					if ( healingSpellID == SPELL_HEAL_PULSE )
+					{
+						healingSpellID = SPELL_SHRUB;
+					}
+					if ( my->actmagicFromSpellbook )
+					{
+						auto find = ItemTooltips.spellItems.find(healingSpellID);
+						if ( find != ItemTooltips.spellItems.end() )
+						{
+							if ( find->second.spellbookId >= 0 && find->second.spellbookId < NUMITEMS && items[find->second.spellbookId].category == SPELLBOOK )
+							{
+								Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_SPELL_HEAL, (ItemType)find->second.spellbookId, totalHeal);
+							}
+						}
+					}
+					else
+					{
+						Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_SPELL_HEAL, SPELL_ITEM, totalHeal, false, healingSpellID);
+					}
+				}
 			}
 		}
 	}
@@ -20852,7 +20954,7 @@ void doSpellExplosionArea(int spellID, Entity* my, Entity* caster, real_t x, rea
 						continue;
 					}
 				}
-				if ( applyGenericMagicDamage(caster, entity, caster ? *caster : *my, spellID, damage, true) )
+				if ( applyGenericMagicDamage(caster, entity, *my, spellID, damage, true) )
 				{
 					++hitProps->hits;
 					if ( spellID != SPELL_EARTH_ELEMENTAL && spellID != SPELL_PROJECT_SPIRIT )
