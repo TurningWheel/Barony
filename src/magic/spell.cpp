@@ -1059,7 +1059,7 @@ real_t getBonusFromCasterOfSpellElement(Entity* caster, Stat* casterStats, spell
 			if ( spellSkillID == PRO_SORCERY
 				|| spellSkillID == PRO_MYSTICISM )
 			{
-				bonus += 0.2 + (0.1 * std::max(0, (int)(casterStats->getEffectActive(EFF_COUNSEL) & 0xF)) - 1);
+				bonus += 0.2 + (0.1 * std::max(0, ((int)(casterStats->getEffectActive(EFF_COUNSEL) & 0xF) - 1)));
 			}
 		}
 		if ( casterStats->getEffectActive(EFF_RATION_SOUR) )
