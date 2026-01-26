@@ -155,9 +155,6 @@ bool gamemods_modPreload = false;
 sex_t lastSex = MALE;
 PlayerRaces lastRace = RACE_HUMAN;
 int lastAppearance = 0;
-bool enabledDLCPack1 = false;
-bool enabledDLCPack2 = false;
-bool enabledDLCPack3 = false;
 bool showRaceInfo = false;
 #ifdef STEAMWORKS
 std::vector<SteamUGCDetails_t *> workshopSubscribedItemList;
@@ -276,6 +273,10 @@ int fourthendmoviestage = 0;
 int fourthendmovietime = 0;
 int fourthEndNumLines = 13;
 bool losingConnection[MAXPLAYERS] = { false };
+
+bool enabledDLCPack1 = false;
+bool enabledDLCPack2 = false;
+bool enabledDLCPack3 = false;
 
 // new text crawls...
 int DLCendmoviealpha[8][30] = { 0 };

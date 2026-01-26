@@ -7786,14 +7786,18 @@ void actPlayer(Entity* my)
 			}
 		}
 
-		if ( players[PLAYER_NUM]->isLocalPlayer() && stats[PLAYER_NUM]->playerRace >= 13 && stats[PLAYER_NUM]->playerRace <= 17 )
+		/*if ( players[PLAYER_NUM]->isLocalPlayer() 
+			&& ((stats[PLAYER_NUM]->playerRace >= 13 && stats[PLAYER_NUM]->playerRace <= 17)
+			|| client_classes[PLAYER_NUM] >= 21) )
 		{
-			if ( !enabledDLCPack3 )
+#ifdef STEAMWORKS
+			if ( !enabledDLCPack3 || !SteamApps()->BIsDlcInstalled(1010822) )
 			{
 				int* potato = NULL;
 				(*potato) = 322;
 			}
-		}
+#endif
+		}*/
 
 		if ( players[PLAYER_NUM]->isLocalPlayer() && PLAYER_ALIVETIME == 1 && currentlevel > 0 )
 		{
@@ -11396,8 +11400,8 @@ void actPlayer(Entity* my)
 						if ( stats[PLAYER_NUM]->getEffectActive(EFF_FLUTTER) )
 						{
 							players[PLAYER_NUM]->mechanics.updateSustainedSpellEvent(SPELL_FLUTTER, dist, 0.5, nullptr);
+						}
 					}
-				}
 				}
 				if ( stats[PLAYER_NUM]->getEffectActive(EFF_LIGHTEN_LOAD) )
 				{
@@ -11416,7 +11420,7 @@ void actPlayer(Entity* my)
 							players[i]->mechanics.updateSustainedSpellEvent(SPELL_SPEED, dist, 0.025, nullptr);
 							break;
 						}
-			}
+					}
 				}
 				if ( Uint8 effectStrength = stats[PLAYER_NUM]->getEffectActive(EFF_NIMBLENESS) )
 				{
@@ -11697,8 +11701,8 @@ void actPlayer(Entity* my)
 						if ( stats[PLAYER_NUM]->getEffectActive(EFF_FLUTTER) )
 						{
 							players[PLAYER_NUM]->mechanics.updateSustainedSpellEvent(SPELL_FLUTTER, dist, 0.5, nullptr);
+						}
 					}
-				}
 				}
 				if ( stats[PLAYER_NUM]->getEffectActive(EFF_LIGHTEN_LOAD) )
 				{
@@ -11717,7 +11721,7 @@ void actPlayer(Entity* my)
 							players[i]->mechanics.updateSustainedSpellEvent(SPELL_SPEED, dist, 0.025, nullptr);
 							break;
 						}
-			}
+					}
 				}
 				if ( Uint8 effectStrength = stats[PLAYER_NUM]->getEffectActive(EFF_NIMBLENESS) )
 				{

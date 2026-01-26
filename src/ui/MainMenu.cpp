@@ -2040,7 +2040,7 @@ namespace MainMenu {
 									{
 										if ( auto play = buttons->findButton("Play Game") )
 										{
-                                    play->select();
+											play->select();
 										}
 									}
 									//assert(buttons);
@@ -26336,9 +26336,18 @@ failed:
 		enabledDLCPack3 = nxCheckDLC(2);
 #endif
 #ifdef STEAMWORKS
-		enabledDLCPack1 = SteamApps()->BIsDlcInstalled(1010820);
-		enabledDLCPack2 = SteamApps()->BIsDlcInstalled(1010821);
-		enabledDLCPack3 = SteamApps()->BIsDlcInstalled(1010822);
+		if ( !enabledDLCPack1 )
+		{
+			enabledDLCPack1 = SteamApps()->BIsDlcInstalled(1010820);
+		}
+		if ( !enabledDLCPack2 )
+		{
+			enabledDLCPack2 = SteamApps()->BIsDlcInstalled(1010821);
+		}
+		if ( !enabledDLCPack3 )
+		{
+			enabledDLCPack3 = SteamApps()->BIsDlcInstalled(1010822);
+		}
 #endif
 
         if (!ingame) {
@@ -34670,7 +34679,7 @@ failed:
 								{
 									displayedEvents.back() = Compendium_t::EventTags::CPDM_SPELL_TARGETS;
 								}
-						}
+							}
 							else if ( spellID == SPELL_HOLY_BEAM )
 							{
 								if ( displayedEvents.size() && displayedEvents.back() == Compendium_t::EventTags::CPDM_SPELL_HEAL )
@@ -34762,7 +34771,7 @@ failed:
 							{
 								displayedEvents.back() = Compendium_t::EventTags::CPDM_SPELL_DMG;
 							}
-					}
+						}
 					}
 					displayedEvents.push_back(Compendium_t::EventTags::CPDM_SPELL_CASTS);
 					displayedEvents.push_back(Compendium_t::EventTags::CPDM_SPELL_FAILURES);
