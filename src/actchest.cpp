@@ -493,7 +493,7 @@ void createChestInventory(Entity* my, int chestType)
 		 * * Wizard's chest, which will contain 1-2 scrolls, a magic book, a staff, and either a wizard/magician/whatever implement of some sort or a piece of armor.
 		 */
 		int magic_type = rng.rand() % 4;
-
+		bool doneFoci = false;
 		switch ( magic_type )
 		{
 		case 0:
@@ -591,7 +591,46 @@ void createChestInventory(Entity* my, int chestType)
 			{
 				itemLevelCurvePostProcess(my, item, rng);
 			}
-			switch ( rng.rand() % 9 )
+
+			if ( rng.rand() % 50 == 0 )
+			{
+				int limit = 5;
+				if ( rng.rand() % 10 == 0 )
+				{
+					// no limit
+				}
+				else if ( currentlevel <= 8 )
+				{
+					limit = 2;
+				}
+				else if ( currentlevel <= 12 )
+				{
+					limit = 2;
+				}
+				switch ( rng.rand() % limit )
+				{
+				case 0:
+					newItem(TOOL_FOCI_FIRE, static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
+					break;
+				case 1:
+					newItem(TOOL_FOCI_SNOW, static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
+					break;
+				case 2:
+					newItem(TOOL_FOCI_SAND, static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
+					break;
+				case 3:
+					newItem(TOOL_FOCI_ARCS, static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
+					break;
+				case 4:
+					newItem(TOOL_FOCI_NEEDLES, static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
+					break;
+				default:
+					break;
+				}
+				doneFoci = true;
+			}
+
+			switch ( rng.rand() % 10 )
 			{
 			case 0:
 				//A cloak. Item 24.
@@ -636,6 +675,32 @@ void createChestInventory(Entity* my, int chestType)
 				break;
 			case 8:
 				newItem(HAT_HEADDRESS, static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
+				break;
+			case 9:
+				if ( !doneFoci )
+				{
+					switch ( rng.rand() % 5 )
+					{
+					case 0:
+						newItem(TOOL_FOCI_FIRE, static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
+						break;
+					case 1:
+						newItem(TOOL_FOCI_SNOW, static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
+						break;
+					case 2:
+						newItem(TOOL_FOCI_SAND, static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
+						break;
+					case 3:
+						newItem(TOOL_FOCI_ARCS, static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
+						break;
+					case 4:
+						newItem(TOOL_FOCI_NEEDLES, static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
+						break;
+					default:
+						break;
+					}
+					doneFoci = true;
+				}
 				break;
 			default:
 				break;

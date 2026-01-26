@@ -341,6 +341,7 @@ void initShopkeeper(Entity* my, Stat* myStats)
 			bool doneLockpick = false;
 			bool doneBackpack = false;
 			bool doneTinkeringKit = false;
+			bool doneFoci = false;
 			if ( !strcmp(map.name, "Mages Guild") )
 			{
 				doneAlembic = true;
@@ -592,7 +593,44 @@ void initShopkeeper(Entity* my, Stat* myStats)
 					// staff shop
 					for ( c = 0; c < numitems; c++ )
 					{
-						if ( shoplevel >= 18 )
+						if ( !doneFoci && rng.rand() % 15 == 0 )
+						{
+							int limit = 5;
+							if ( rng.rand() % 10 == 0 )
+							{
+								// no limit
+							}
+							else if ( currentlevel <= 8 )
+							{
+								limit = 2;
+							}
+							else if ( currentlevel <= 12 )
+							{
+								limit = 2;
+							}
+							switch ( rng.rand() % limit )
+							{
+							case 0:
+								newItem(TOOL_FOCI_FIRE, static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), true, &myStats->inventory);
+								break;
+							case 1:
+								newItem(TOOL_FOCI_SNOW, static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), true, &myStats->inventory);
+								break;
+							case 2:
+								newItem(TOOL_FOCI_SAND, static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), true, &myStats->inventory);
+								break;
+							case 3:
+								newItem(TOOL_FOCI_ARCS, static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), true, &myStats->inventory);
+								break;
+							case 4:
+								newItem(TOOL_FOCI_NEEDLES, static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), true, &myStats->inventory);
+								break;
+							default:
+								break;
+							}
+							doneFoci = true;
+						}
+						else if ( shoplevel >= 18 )
 						{
 							tmpItem = newItem(itemLevelCurveEntity(*my, MAGICSTAFF, 0, shoplevel, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), true, &myStats->inventory);
 						}

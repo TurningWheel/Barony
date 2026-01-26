@@ -253,9 +253,33 @@ void initGnome(Entity* my, Stat* myStats)
 					case 2:
 						if ( rng.rand() % 10 == 0 )
 						{
-							if ( rng.rand() % 2 == 0 )
+							if ( rng.rand() % 5 == 0 )
 							{
 								newItem(MASK_PIPE, SERVICABLE, -1 + rng.rand() % 3, 1, rng.rand(), false, &myStats->inventory);
+							}
+							else if ( rng.rand() % 2 == 0 )
+							{
+								if ( gnome_type == "gnome2" || gnome_type == "gnome2F" )
+								{
+									newItem(BANDIT_BREASTPIECE, static_cast<Status>(1 + rng.rand() % 4), -1 + rng.rand() % 3, 1, rng.rand(), false, &myStats->inventory);
+								}
+								else
+								{
+									switch ( rng.rand() % 3 )
+									{
+									case 0:
+										newItem(HAT_FELT, static_cast<Status>(1 + rng.rand() % 4), -1 + rng.rand() % 3, 1, rng.rand(), false, &myStats->inventory);
+										break;
+									case 1:
+										newItem(LOAFERS, static_cast<Status>(1 + rng.rand() % 4), -1 + rng.rand() % 3, 1, rng.rand(), false, &myStats->inventory);
+										break;
+									case 2:
+										newItem(TUNIC_BLOUSE, static_cast<Status>(1 + rng.rand() % 4), -1 + rng.rand() % 3, 1, rng.rand(), false, &myStats->inventory);
+										break;
+									default:
+										break;
+									}
+								}
 							}
 							else
 							{
