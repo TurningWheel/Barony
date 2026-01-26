@@ -2530,7 +2530,9 @@ void Frame::drawImage(const image_t* image, const SDL_Rect& _size, const SDL_Rec
 			src.x = std::max((float)image->section.x, image->section.x + (_size.x - pos.x) * (w / (float)image->pos.w));
 			src.y = std::max((float)image->section.y, image->section.y + (_size.y - pos.y) * (h / (float)image->pos.h));
 			src.w = ((float)dest.w / pos.w) * w;
+			src.w = std::max(1, src.w);
 			src.h = ((float)dest.h / pos.h) * h;
+			src.h = std::max(1, src.h);
 			//src.x += image->section.x - std::min(0, _size.x - pos.x);
 			//src.y += image->section.y - std::min(0, _size.y - pos.y);
 		}

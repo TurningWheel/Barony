@@ -21,6 +21,8 @@ Global
 		EOS Debug|x64 = EOS Debug|x64
 		EOS|Win32 = EOS|Win32
 		EOS|x64 = EOS|x64
+		EOSDebugInstrumentation|Win32 = EOSDebugInstrumentation|Win32
+		EOSDebugInstrumentation|x64 = EOSDebugInstrumentation|x64
 		NODRM|Win32 = NODRM|Win32
 		NODRM|x64 = NODRM|x64
 		Release|Win32 = Release|Win32
@@ -55,6 +57,10 @@ Global
 		{A4A170FF-C081-4F33-94FE-5C60E89C5990}.EOS|Win32.Build.0 = EOS|Win32
 		{A4A170FF-C081-4F33-94FE-5C60E89C5990}.EOS|x64.ActiveCfg = EOS|x64
 		{A4A170FF-C081-4F33-94FE-5C60E89C5990}.EOS|x64.Build.0 = EOS|x64
+		{A4A170FF-C081-4F33-94FE-5C60E89C5990}.EOSDebugInstrumentation|Win32.ActiveCfg = EOSDebugInstrumentation|Win32
+		{A4A170FF-C081-4F33-94FE-5C60E89C5990}.EOSDebugInstrumentation|Win32.Build.0 = EOSDebugInstrumentation|Win32
+		{A4A170FF-C081-4F33-94FE-5C60E89C5990}.EOSDebugInstrumentation|x64.ActiveCfg = EOSDebugInstrumentation|x64
+		{A4A170FF-C081-4F33-94FE-5C60E89C5990}.EOSDebugInstrumentation|x64.Build.0 = EOSDebugInstrumentation|x64
 		{A4A170FF-C081-4F33-94FE-5C60E89C5990}.NODRM|Win32.ActiveCfg = NODRM|Win32
 		{A4A170FF-C081-4F33-94FE-5C60E89C5990}.NODRM|Win32.Build.0 = NODRM|Win32
 		{A4A170FF-C081-4F33-94FE-5C60E89C5990}.NODRM|x64.ActiveCfg = NODRM|x64
@@ -92,6 +98,8 @@ Global
 		{8D0CEB30-DFEC-462D-B107-1EA02D317151}.EOS|Win32.Build.0 = EOS|Win32
 		{8D0CEB30-DFEC-462D-B107-1EA02D317151}.EOS|x64.ActiveCfg = EOS|x64
 		{8D0CEB30-DFEC-462D-B107-1EA02D317151}.EOS|x64.Build.0 = EOS|x64
+		{8D0CEB30-DFEC-462D-B107-1EA02D317151}.EOSDebugInstrumentation|Win32.ActiveCfg = EOSDebugInstrumentation|Win32
+		{8D0CEB30-DFEC-462D-B107-1EA02D317151}.EOSDebugInstrumentation|x64.ActiveCfg = EOSDebugInstrumentation|x64
 		{8D0CEB30-DFEC-462D-B107-1EA02D317151}.NODRM|Win32.ActiveCfg = NODRM|Win32
 		{8D0CEB30-DFEC-462D-B107-1EA02D317151}.NODRM|Win32.Build.0 = NODRM|Win32
 		{8D0CEB30-DFEC-462D-B107-1EA02D317151}.NODRM|x64.ActiveCfg = NODRM|x64
@@ -103,6 +111,7 @@ Global
 		{8D0CEB30-DFEC-462D-B107-1EA02D317151}.Steam Crossplay|Win32.ActiveCfg = Steam Crossplay|Win32
 		{8D0CEB30-DFEC-462D-B107-1EA02D317151}.Steam Crossplay|Win32.Build.0 = Steam Crossplay|Win32
 		{8D0CEB30-DFEC-462D-B107-1EA02D317151}.Steam Crossplay|x64.ActiveCfg = Steam Crossplay|x64
+		{8D0CEB30-DFEC-462D-B107-1EA02D317151}.Steam Crossplay|x64.Build.0 = Steam Crossplay|x64
 		{8D0CEB30-DFEC-462D-B107-1EA02D317151}.Steam Debug|Win32.ActiveCfg = Steam Debug|Win32
 		{8D0CEB30-DFEC-462D-B107-1EA02D317151}.Steam Debug|x64.ActiveCfg = Steam Debug|x64
 	EndGlobalSection

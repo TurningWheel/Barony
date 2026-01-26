@@ -4,6 +4,8 @@
  * This code is free software, available under zlib/libpng license.
  * http://www.libpng.org/pub/png/src/libpng-LICENSE.txt
  */
+
+#include "main.hpp"
 #include "Config.hpp"
 #ifndef NINTENDO
 #ifdef APPLE

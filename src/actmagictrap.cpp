@@ -44,33 +44,44 @@ void actMagicTrapCeiling(Entity* my)
 
 void Entity::actMagicTrapCeiling()
 {
+	if ( actTrapSabotaged == 0 )
+	{
 #ifdef USE_FMOD
-	if ( spellTrapAmbience == 0 )
-	{
-		spellTrapAmbience--;
-		stopEntitySound();
-		entity_sound = playSoundEntityLocal(this, 149, 16);
-	}
-	if ( entity_sound )
-	{
-		bool playing = false;
-		entity_sound->isPlaying(&playing);
-		if ( !playing )
+		if ( spellTrapAmbience == 0 )
 		{
-			entity_sound = nullptr;
+			spellTrapAmbience--;
+			stopEntitySound();
+			entity_sound = playSoundEntityLocal(this, 149, 16);
 		}
-	}
+		if ( entity_sound )
+		{
+			bool playing = false;
+			entity_sound->isPlaying(&playing);
+			if ( !playing )
+			{
+				entity_sound = nullptr;
+			}
+		}
 #else
-	spellTrapAmbience--;
-	if ( spellTrapAmbience <= 0 )
-	{
-		spellTrapAmbience = TICKS_PER_SECOND * 30;
-		playSoundEntityLocal(this, 149, 16);
-	}
+		spellTrapAmbience--;
+		if ( spellTrapAmbience <= 0 )
+		{
+			spellTrapAmbience = TICKS_PER_SECOND * 30;
+			playSoundEntityLocal(this, 149, 16);
+		}
 #endif
+	}
+	else
+	{
+#ifdef USE_FMOD
+		stopEntitySound();
+#endif
+		return;
+	}
 
 	if ( multiplayer == CLIENT )
 	{
+		flags[NOUPDATE] = true;
 		return;
 	}
 	if ( circuit_status != CIRCUIT_ON )
@@ -166,7 +177,7 @@ void Entity::actMagicTrapCeiling()
 			entity->x = x;
 			entity->y = y;
 			entity->z = ceilingModel->z - 2;
-			double missile_speed = 4 * ((double)(((spellElement_t*)(getSpellFromID(spellTrapType)->elements.first->element))->mana) / ((spellElement_t*)(getSpellFromID(spellTrapType)->elements.first->element))->overload_multiplier);
+			double missile_speed = 4.0;
 			entity->vel_x = 0.0;
 			entity->vel_y = 0.0;
 			entity->vel_z = 0.5 * (missile_speed);
@@ -239,8 +250,15 @@ void actMagicTrap(Entity* my)
 		return;
 	}
 
+	if ( my->actTrapSabotaged > 0 )
+	{
+		my->removeLightField();
+		return;
+	}
+
 	if ( multiplayer == CLIENT )
 	{
+		my->flags[NOUPDATE] = true;
 		return;
 	}
 
@@ -284,7 +302,7 @@ void actMagicTrap(Entity* my)
 			entity->y = my->y + y;
 			entity->z = my->z;
 			entity->yaw = oldir * (PI / 2.f);
-			double missile_speed = 4 * ((double)(((spellElement_t*)(getSpellFromID(MAGICTRAP_SPELL)->elements.first->element))->mana) / ((spellElement_t*)(getSpellFromID(MAGICTRAP_SPELL)->elements.first->element))->overload_multiplier);
+			double missile_speed = 4.0;
 			entity->vel_x = cos(entity->yaw) * (missile_speed);
 			entity->vel_y = sin(entity->yaw) * (missile_speed);
 		}
@@ -605,7 +623,7 @@ void daedalusShrineInteract(Entity* my, Entity* touched)
 				if ( touched && touched->getStats() )
 				{
 					Stat* myStats = touched->getStats();
-					if ( myStats->EFFECTS[EFF_SLOW] )
+					if ( myStats->getEffectActive(EFF_SLOW) )
 					{
 						touched->setEffect(EFF_SLOW, false, 0, true);
 					}
@@ -742,7 +760,7 @@ void Entity::actDaedalusShrine()
 					if ( touched && touched->getStats() )
 					{
 						Stat* myStats = touched->getStats();
-						if ( myStats->EFFECTS[EFF_SLOW] )
+						if ( myStats->getEffectActive(EFF_SLOW) )
 						{
 							touched->setEffect(EFF_SLOW, false, 0, true);
 						}
@@ -1072,7 +1090,10 @@ void Entity::actAssistShrine()
 			}
 			else if ( multiplayer == SINGLE || playernum == 0 )
 			{
-				GenericGUI[playernum].assistShrineGUI.closeAssistShrine();
+				if ( playernum >= 0 && playernum < MAXPLAYERS )
+				{
+					GenericGUI[playernum].assistShrineGUI.closeAssistShrine();
+				}
 			}
 		}
 	}

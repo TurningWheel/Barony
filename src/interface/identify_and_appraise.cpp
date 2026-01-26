@@ -369,7 +369,60 @@ bool Player::Inventory_t::Appraisal_t::appraisalPossible(Item* item)
 
 	if ( stats[player.playernum]->getModifiedProficiency(PRO_APPRAISAL) < 100 )
 	{
-		if ( item->type == GEM_GLASS )
+		int value = item->type == GEM_GLASS ? 1000 : item->getGoldValue();
+
+		int skillLVL = stats[player.playernum]->getModifiedProficiency(PRO_APPRAISAL)
+			+ statGetPER(stats[player.playernum], player.entity) * Player::Inventory_t::Appraisal_t::perStatMult;
+
+		for ( auto& table : appraisal_tables )
+		{
+			if ( skillLVL >= table.skillLVL )
+			{
+				return value <= table.goldValueLimit;
+			}
+		}
+		/*if ( skillLVL >= 50 ) 
+		{ 
+			return true;
+		}
+		else if ( skillLVL >= 40 )
+		{
+			return value <= 1500;
+		}
+		else if ( skillLVL >= 35 )
+		{
+			return value <= 425;
+		}
+		else if ( skillLVL >= 30 )
+		{
+			return value <= 320;
+		}
+		else if ( skillLVL >= 25 )
+		{
+			return value <= 260;
+		}
+		else if ( skillLVL >= 20 )
+		{
+			return value <= 200;
+		}
+		else if ( skillLVL >= 15 )
+		{
+			return value <= 150;
+		}
+		else if ( skillLVL >= 10 )
+		{
+			return value <= 100;
+		}
+		else if ( skillLVL >= 5 )
+		{
+			return value <= 65;
+		}
+		else if ( skillLVL >= 0 )
+		{
+			return value <= 30;
+		}*/
+
+		/*if ( item->type == GEM_GLASS )
 		{
 			if ( (stats[player.playernum]->getModifiedProficiency(PRO_APPRAISAL)
 				+ statGetPER(stats[player.playernum], player.entity) * 5) >= 100 )
@@ -384,7 +437,7 @@ bool Player::Inventory_t::Appraisal_t::appraisalPossible(Item* item)
 			{
 				return true;
 			}
-		}
+		}*/
 	}
 	else
 	{
@@ -445,6 +498,7 @@ void Player::Inventory_t::Appraisal_t::appraiseItem(Item* item)
 			timer = 0;
 			current_item = 0;
 		}
+		Item::onItemIdentified(player.playernum, item);
 		if ( item->type == GEM_GLASS )
 		{
 			steamStatisticUpdate(STEAM_STAT_RHINESTONE_COWBOY, STEAM_STAT_INT, 1);
@@ -508,6 +562,11 @@ void Player::Inventory_t::Appraisal_t::appraiseItem(Item* item)
 			}
 		}
 		current_item = item->uid;
+		if ( appraisalProgressionItems.find(current_item) != appraisalProgressionItems.end() )
+		{
+			timer = std::min(appraisalProgressionItems[current_item], timer);
+		}
+
 		if ( doMessage )
 		{
 			animAppraisal = PI;
@@ -517,29 +576,181 @@ void Player::Inventory_t::Appraisal_t::appraiseItem(Item* item)
 	old_item = 0;
 }
 
+std::vector<std::pair<int, int>> Player::Inventory_t::Appraisal_t::appraisal_time_points;
+std::vector<Player::Inventory_t::Appraisal_t::AppraisalBreakpoint_t> Player::Inventory_t::Appraisal_t::appraisal_tables;
+int Player::Inventory_t::Appraisal_t::fastTimeAppraisal = 10 * TICKS_PER_SECOND;
+int Player::Inventory_t::Appraisal_t::perStatMult = 3;
+void Player::Inventory_t::Appraisal_t::readFromFile()
+{
+	std::string filename = "data/appraisal_tables.json";
+	if ( !PHYSFS_getRealDir(filename.c_str()) )
+	{
+		printlog("[JSON]: Error: Could not locate json file %s", filename.c_str());
+		return;
+	}
+
+	std::string inputPath = PHYSFS_getRealDir(filename.c_str());
+	inputPath.append(PHYSFS_getDirSeparator());
+	inputPath.append(filename.c_str());
+
+	File* fp = FileIO::open(inputPath.c_str(), "rb");
+	if ( !fp )
+	{
+		printlog("[JSON]: Error: Could not locate json file %s", inputPath.c_str());
+		return;
+	}
+
+	static char buf[32000];
+	int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
+	buf[count] = '\0';
+	rapidjson::StringStream is(buf);
+	FileIO::close(fp);
+
+	rapidjson::Document d;
+	d.ParseStream(is);
+	if ( !d.IsObject() )
+	{
+		return;
+	}
+	if ( !d.HasMember("version") 
+		|| !d.HasMember("appraisal_times") 
+		|| !d.HasMember("appraisal_tables")
+		|| !d.HasMember("fast_time_seconds") 
+		|| !d.HasMember("per_stat_mult") )
+	{
+		printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
+		return;
+	}
+
+	appraisal_time_points.clear();
+	appraisal_tables.clear();
+
+	fastTimeAppraisal = d["fast_time_seconds"].GetInt() * TICKS_PER_SECOND;
+	perStatMult = d["per_stat_mult"].GetInt();
+
+	for ( auto itr = d["appraisal_times"].Begin(); itr != d["appraisal_times"].End(); ++itr )
+	{
+		int value = (*itr)["value"].GetInt();
+		int slow_time = (*itr)["slow_time_seconds"].GetInt() * TICKS_PER_SECOND;
+
+		appraisal_time_points.push_back(std::make_pair(value, slow_time));
+	}
+
+	for ( auto itr = d["appraisal_tables"].Begin(); itr != d["appraisal_tables"].End(); ++itr )
+	{
+		int skill = (*itr)["skill"].GetInt();
+		int gold_value_limit = (*itr)["gold_value_limit"].GetInt();
+		int fast_time_gold = (*itr)["fast_time_gold"].GetInt();
+
+		appraisal_tables.push_back(AppraisalBreakpoint_t());
+		auto& table = appraisal_tables.back();
+
+		table.skillLVL = skill;
+		table.goldValueLimit = gold_value_limit;
+		table.fastTimeGold = fast_time_gold;
+	}
+}
+
 int Player::Inventory_t::Appraisal_t::getAppraisalTime(Item* item)
 {
-	int appraisal_time;
+	int appraisal_time = 0;
 
-	if ( item->type != GEM_GLASS )
+	//if ( item->type != GEM_GLASS )
 	{
-		appraisal_time = (items[item->type].value * 60) / (stats[this->player.playernum]->getModifiedProficiency(PRO_APPRAISAL) + 1);    // time in ticks until item is appraised
+		int skillLVL = stats[player.playernum]->getModifiedProficiency(PRO_APPRAISAL)
+			+ statGetPER(stats[player.playernum], player.entity) * Player::Inventory_t::Appraisal_t::perStatMult;
+		int value = item->type == GEM_GLASS ? 1000 : item->getGoldValue();
+
+		bool fast_time = false;
+
+		for ( auto& table : appraisal_tables )
+		{
+			if ( skillLVL >= table.skillLVL )
+			{
+				fast_time = value <= table.fastTimeGold;
+				break;
+			}
+		}
+
+		appraisal_time = Player::Inventory_t::Appraisal_t::fastTimeAppraisal;
+		if ( !fast_time )
+		{
+			for ( auto& pair : appraisal_time_points )
+			{
+				if ( value >= pair.first )
+				{
+					appraisal_time = pair.second;
+					break;
+				}
+			}
+		}
+
+		Category cat = itemCategory(item);
+		if ( cat == FOOD || cat == SCROLL || cat == POTION )
+		{
+			real_t ratio = std::max(0.2, 1.0 + (-skillLVL) / 100.0);
+			appraisal_time = std::max((real_t)Player::Inventory_t::Appraisal_t::fastTimeAppraisal * ratio, appraisal_time * ratio);
+			appraisal_time = std::max(2 * TICKS_PER_SECOND, appraisal_time);
+		}
+		else if ( skillLVL >= 50 )
+		{
+			real_t ratio = std::max(0.2, 0.5 + (100 - skillLVL) / 100.0);
+			appraisal_time = std::max((real_t)Player::Inventory_t::Appraisal_t::fastTimeAppraisal * ratio, appraisal_time * ratio);
+			appraisal_time = std::max(2 * TICKS_PER_SECOND, appraisal_time);
+		}
+		/*if ( fast_time )
+		{
+			appraisal_time = 10;
+		}
+		else if ( value > 3000 )
+		{
+			appraisal_time = 12 * 60;
+		}
+		else if ( value > 1000 )
+		{
+			appraisal_time = 6 * 60;
+		}
+		else if ( value > 500 )
+		{
+			appraisal_time = 3 * 60;
+		}
+		else if ( value > 250 )
+		{
+			appraisal_time = 2 * 60;
+		}
+		else if ( value > 100 )
+		{
+			appraisal_time = 1 * 60;
+		}
+		else if ( value > 50 )
+		{
+			appraisal_time = 30;
+		}
+		else
+		{
+			appraisal_time = 15;
+		}*/
+
+		//appraisal_time = (items[item->type].value * 60) / (stats[this->player.playernum]->getModifiedProficiency(PRO_APPRAISAL) + 1);    // time in ticks until item is appraised
 		if ( stats[player.playernum] && stats[player.playernum]->mask && stats[player.playernum]->mask->type == MONOCLE )
 		{
-			real_t mult = 1.0;
-			if ( stats[player.playernum]->mask->beatitude == 0 )
+			if ( cat == GEM )
 			{
-				mult = .5;
+				real_t mult = 1.0;
+				if ( stats[player.playernum]->mask->beatitude == 0 )
+				{
+					mult = .5;
+				}
+				else if ( stats[player.playernum]->mask->beatitude > 0 || shouldInvertEquipmentBeatitude(stats[player.playernum]) )
+				{
+					mult = .25;
+				}
+				else if ( stats[player.playernum]->mask->beatitude < 0 )
+				{
+					mult = 2.0;
+				}
+				appraisal_time *= mult;
 			}
-			else if ( stats[player.playernum]->mask->beatitude > 0 || shouldInvertEquipmentBeatitude(stats[player.playernum]) )
-			{
-				mult = .25;
-			}
-			else if ( stats[player.playernum]->mask->beatitude < 0 )
-			{
-				mult = 2.0;
-			}
-			appraisal_time *= mult;
 		}
 		int playerCount = 0;
 		for ( int i = 0; i < MAXPLAYERS; ++i )
@@ -559,43 +770,43 @@ int Player::Inventory_t::Appraisal_t::getAppraisalTime(Item* item)
 		}
 		//messagePlayer(clientnum, "time: %d", appraisal_time);
 	}
-	else
-	{
-		appraisal_time = (1000 * 60) / (stats[this->player.playernum]->getModifiedProficiency(PRO_APPRAISAL) + 1);    // time in ticks until item is appraised+-
-		if ( stats[player.playernum] && stats[player.playernum]->mask && stats[player.playernum]->mask->type == MONOCLE )
-		{
-			real_t mult = 1.0;
-			if ( stats[player.playernum]->mask->beatitude == 0 )
-			{
-				mult = .5;
-			}
-			else if ( stats[player.playernum]->mask->beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player.playernum]) )
-			{
-				mult = .25;
-			}
-			else if ( stats[player.playernum]->mask->beatitude < 0 )
-			{
-				mult = 2.0;
-			}
-			appraisal_time *= mult;
-		}
-		int playerCount = 0;
-		for ( int i = 0; i < MAXPLAYERS; ++i )
-		{
-			if ( !client_disconnected[i] )
-			{
-				++playerCount;
-			}
-		}
-		if ( playerCount == 3 )
-		{
-			appraisal_time /= 1.15;
-		}
-		else if ( playerCount == 4 )
-		{
-			appraisal_time /= 1.25;
-		}
-	}
+	//else
+	//{
+	//	appraisal_time = (1000 * 60) / (stats[this->player.playernum]->getModifiedProficiency(PRO_APPRAISAL) + 1);    // time in ticks until item is appraised+-
+	//	if ( stats[player.playernum] && stats[player.playernum]->mask && stats[player.playernum]->mask->type == MONOCLE )
+	//	{
+	//		real_t mult = 1.0;
+	//		if ( stats[player.playernum]->mask->beatitude == 0 )
+	//		{
+	//			mult = .5;
+	//		}
+	//		else if ( stats[player.playernum]->mask->beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player.playernum]) )
+	//		{
+	//			mult = .25;
+	//		}
+	//		else if ( stats[player.playernum]->mask->beatitude < 0 )
+	//		{
+	//			mult = 2.0;
+	//		}
+	//		appraisal_time *= mult;
+	//	}
+	//	int playerCount = 0;
+	//	for ( int i = 0; i < MAXPLAYERS; ++i )
+	//	{
+	//		if ( !client_disconnected[i] )
+	//		{
+	//			++playerCount;
+	//		}
+	//	}
+	//	if ( playerCount == 3 )
+	//	{
+	//		appraisal_time /= 1.15;
+	//	}
+	//	else if ( playerCount == 4 )
+	//	{
+	//		appraisal_time /= 1.25;
+	//	}
+	//}
 	appraisal_time = std::min(std::max(1, appraisal_time), 36000);
 	return appraisal_time;
 }

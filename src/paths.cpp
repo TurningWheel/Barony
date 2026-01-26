@@ -373,6 +373,8 @@ int pathCheckObstacle(int x, int y, Entity* my, Entity* target)
 			|| entity->sprite == 177	// shrine
 			|| entity->sprite == 178	// spell shrine
 			|| entity->sprite == 1481	// daedalus shrine
+			|| entity->sprite == 217	// iron door
+			|| entity->sprite == 218	// iron door
 			)
 		{
 			if ( (int)floor(entity->x / 16) == u && (int)floor(entity->y / 16) == v )
@@ -576,7 +578,7 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 		if ( entity->flags[PASSABLE] )
 		{
 			if ( entity->behavior == &actSpearTrap 
-				&& (my->getRace() == HUMAN || my->monsterAllyGetPlayerLeader()) )
+				&& ((my && my->getRace() == HUMAN) || my->monsterAllyGetPlayerLeader()) )
 			{
 				// humans/followers know better than that!
 
@@ -621,7 +623,10 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 				continue;
 			}
 		}
-		if ( entity->behavior == &actDoorFrame || entity->behavior == &actDoor || entity->behavior == &actMagicMissile )
+		if ( entity->behavior == &actDoorFrame 
+			|| entity->behavior == &actDoor 
+			|| (entity->behavior == &actIronDoor && (entity->doorLocked == 0))
+			|| entity->behavior == &actMagicMissile )
 		{
 			continue;
 		}
@@ -633,30 +638,40 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 		{
 			continue;
 		}
-		if ( entity->behavior == &actMonster && (!my->checkEnemy(entity) && !entity->isInertMimic()) )
+		if ( entity->behavior == &actMonster && 
+			((!my->checkEnemy(entity) && !entity->isInertMimic()) 
+				|| (my && my->getMonsterTypeFromSprite() == DUCK_SMALL) 
+				|| entity->sprite == 1822 /* fire sprite*/) )
 		{
 			continue;
 		}
 		if ( entity->behavior == &actPlayer && my->monsterAllyIndex >= 0 
-			&& (my->monsterTarget == 0 || my->monsterAllyState == ALLY_STATE_MOVETO) )
+			/*&& (my->monsterTarget == 0 || my->monsterAllyState == ALLY_STATE_MOVETO)*/ )
 		{
 			continue;
 		}
-		if ( lavaIsPassable &&
-			(entity->sprite == 41
-			|| lavatiles[map.tiles[static_cast<int>(entity->y / 16) * MAPLAYERS + static_cast<int>(entity->x / 16) * MAPLAYERS * map.height]]
-			|| swimmingtiles[map.tiles[static_cast<int>(entity->y / 16) * MAPLAYERS + static_cast<int>(entity->x / 16) * MAPLAYERS * map.height]])
-			)
+		if ( lavaIsPassable )
 		{
-			//Fix to make ladders generate in hell.
-			continue;
+			int x = std::min<unsigned int>(std::max<int>(0, entity->x / 16), map.width - 1);
+			int y = std::min<unsigned int>(std::max<int>(0, entity->y / 16), map.height - 1);
+			if ( entity->sprite == 41
+			|| lavatiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]]
+			|| swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] )
+			{
+				//Fix to make ladders generate in hell.
+				continue;
+			}
 		}
 		if (playerCheckAchievement && (entity->behavior == &actMonster || entity->behavior == &actPlayer))
 		{
 			continue;
 		}
-		if (stats && stats->type == MINOTAUR && (entity->behavior == &actBoulder || entity->behavior == &::actDaedalusShrine || (entity->isDamageableCollider()
-			&& (entity->colliderHasCollision & EditorEntityData_t::COLLIDER_COLLISION_FLAG_MINO))))
+		if (stats && stats->type == MINOTAUR 
+			&& (entity->behavior == &actBoulder 
+				|| entity->behavior == &::actDaedalusShrine
+				|| entity->behavior == &actIronDoor
+				|| (entity->isDamageableCollider()
+				&& (entity->colliderHasCollision & EditorEntityData_t::COLLIDER_COLLISION_FLAG_MINO))))
 		{
 			// minotaurs bust through boulders, not an obstacle
 			continue;
@@ -897,8 +912,8 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 		auto now = std::chrono::high_resolution_clock::now();
 		ms = std::chrono::duration_cast<std::chrono::microseconds>(now - pathtime);
 		DebugStats.gui2 = DebugStats.gui2 + ms;
-		messagePlayer(0, MESSAGE_DEBUG, "FAIL (%d) sprite: %d uid: %d : path tries: %d (%d, %d) to (%d, %d)",
-            (int)pathingType, my->sprite, my->getUID(), tries, x1, y1, x2, y2);
+		messagePlayer(0, MESSAGE_DEBUG, "FAIL (%d) sprite: %d uid: %d : path tries: %d (%d, %d) to (%d, %d) ms: %.2f",
+            (int)pathingType, my->sprite, my->getUID(), tries, x1, y1, x2, y2, ms);
 	}
 	lastGeneratePathTries = tries;
 	if (my->behavior == &actMonster) {

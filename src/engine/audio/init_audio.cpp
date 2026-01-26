@@ -62,7 +62,11 @@ bool initSoundEngine()
 
 	if (!no_sound)
 	{
-		fmod_result = fmod_system->init(fmod_maxchannels, FMOD_INIT_NORMAL | FMOD_INIT_3D_RIGHTHANDED | FMOD_INIT_VOL0_BECOMES_VIRTUAL | FMOD_INIT_STREAM_FROM_UPDATE | FMOD_INIT_THREAD_UNSAFE/* | FMOD_INIT_PROFILE_ENABLE | FMOD_INIT_PROFILE_METER_ALL*/, fmod_extraDriverData);
+		FMOD_INITFLAGS flags = FMOD_INIT_NORMAL | FMOD_INIT_3D_RIGHTHANDED | FMOD_INIT_VOL0_BECOMES_VIRTUAL | FMOD_INIT_STREAM_FROM_UPDATE | FMOD_INIT_THREAD_UNSAFE;
+#ifndef NDEBUG
+		flags |= FMOD_INIT_PROFILE_ENABLE | FMOD_INIT_PROFILE_METER_ALL;
+#endif
+		fmod_result = fmod_system->init(fmod_maxchannels, flags, fmod_extraDriverData);
 		if (FMODErrorCheck())
 		{
 			printlog("[FMOD]: Failed to initialize FMOD. DISABLING AUDIO.\n");
@@ -148,6 +152,158 @@ bool initSoundEngine()
 			no_sound = true;
 			return false;
 		}
+		fmod_result = fmod_system->createChannelGroup(nullptr, &music_ensemble_global_send_group);
+		if ( FMODErrorCheck() )
+		{
+			printlog("[FMOD]: Failed to create music channel group. DISABLING AUDIO.\n");
+			no_sound = true;
+			return false;
+		}
+		music_ensemble_global_send_group->setVolumeRamp(true);
+
+		fmod_result = fmod_system->createChannelGroup(nullptr, &music_ensemble_global_recv_group);
+		if ( FMODErrorCheck() )
+		{
+			printlog("[FMOD]: Failed to create music channel group. DISABLING AUDIO.\n");
+			no_sound = true;
+			return false;
+		}
+
+		fmod_result = fmod_system->createChannelGroup(nullptr, &music_ensemble_local_recv_group);
+		if ( FMODErrorCheck() )
+		{
+			printlog("[FMOD]: Failed to create music channel group. DISABLING AUDIO.\n");
+			no_sound = true;
+			return false;
+		}
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			fmod_result = fmod_system->createChannelGroup(nullptr, &music_ensemble_local_recv_player[i]);
+			if ( FMODErrorCheck() )
+			{
+				printlog("[FMOD]: Failed to create music channel group. DISABLING AUDIO.\n");
+				no_sound = true;
+				return false;
+			}
+			music_ensemble_local_recv_group->addGroup(music_ensemble_local_recv_player[i]);
+			music_ensemble_local_recv_player[i]->setMode(FMOD_3D | FMOD_3D_WORLDRELATIVE);
+		}
+		{
+			// add dsp
+
+			//FMOD::DSP* dspeq = 0;
+			//fmod_result = fmod_system->createDSPByType(FMOD_DSP_TYPE_MULTIBAND_EQ, &dspeq);
+			//FMODErrorCheck();
+			//
+			//fmod_result = music_ensemble_global_group->addDSP(0, dspeq);
+			//FMODErrorCheck();
+			//
+			//dspeq->setParameterInt(FMOD_DSP_MULTIBAND_EQ_A_FILTER, FMOD_DSP_MULTIBAND_EQ_FILTER_NOTCH);
+			//dspeq->setParameterFloat(FMOD_DSP_MULTIBAND_EQ_A_FREQUENCY, 2000);
+			//dspeq->setParameterFloat(FMOD_DSP_MULTIBAND_EQ_A_GAIN, -6);
+			//dspeq->setParameterFloat(FMOD_DSP_MULTIBAND_EQ_A_Q, 1.f);
+
+			// global sends
+			{
+				// send group does not output to master bus
+				FMOD::DSP* fader = nullptr;
+				fmod_result = fmod_system->createDSPByType(FMOD_DSP_TYPE_FADER, &fader);
+				fader->setParameterFloat(FMOD_DSP_FADER_GAIN, -80.f); // inaudible
+				music_ensemble_global_send_group->addDSP(0, fader);
+			}
+
+			// global recv transceivers
+			{
+				for ( int i = 0; i < NUMENSEMBLEMUSIC; ++i )
+				{
+					FMOD::DSP* transceiver = nullptr;
+					fmod_result = fmod_system->createDSPByType(FMOD_DSP_TYPE_TRANSCEIVER, &transceiver);
+					music_ensemble_global_recv_group->addDSP(1, transceiver);
+					transceiver->setParameterInt(FMOD_DSP_TRANSCEIVER_CHANNEL, i + 1); // receive on channel x
+					transceiver->setParameterFloat(FMOD_DSP_TRANSCEIVER_GAIN, -80.f); // inaudible
+					transceiver->setChannelFormat(0, 2, FMOD_SPEAKERMODE_STEREO); // force stereo on empty channel, otherwise defaults to mono
+				}
+			}
+
+			// player recv transceivers
+			{
+				for ( int c = 0; c < MAXPLAYERS; ++c )
+				{
+					for ( int i = 0; i < NUMENSEMBLEMUSIC; ++i )
+					{
+						FMOD::DSP* transceiver = nullptr;
+						fmod_result = fmod_system->createDSPByType(FMOD_DSP_TYPE_TRANSCEIVER, &transceiver);
+						music_ensemble_local_recv_player[c]->addDSP(1, transceiver);
+						transceiver->setParameterInt(FMOD_DSP_TRANSCEIVER_CHANNEL, i + 1); // receive on channel x
+						transceiver->setParameterFloat(FMOD_DSP_TRANSCEIVER_GAIN, -80.f); // inaudible
+						transceiver->setChannelFormat(0, 2, FMOD_SPEAKERMODE_STEREO); // force stereo on empty channel, otherwise defaults to mono
+					}
+				}
+			}
+
+			// global recv reverb
+			{
+				FMOD::DSP* dspreverb = 0;
+				fmod_result = fmod_system->createDSPByType(FMOD_DSP_TYPE_SFXREVERB, &dspreverb);
+				FMODErrorCheck();
+
+				fmod_result = music_ensemble_global_recv_group->addDSP(0, dspreverb);
+				dspreverb->setBypass(true);
+				FMODErrorCheck();
+
+				FMOD_REVERB_PROPERTIES props = FMOD_PRESET_OFF;
+				dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_DECAYTIME, props.DecayTime);
+				dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_EARLYDELAY, props.EarlyDelay);
+				dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_LATEDELAY, props.LateDelay);
+				dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_HFREFERENCE, props.HFReference);
+				dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_HFDECAYRATIO, props.HFDecayRatio);
+				dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_DIFFUSION, props.Diffusion);
+				dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_DENSITY, props.Density);
+				dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_LOWSHELFFREQUENCY, props.LowShelfFrequency);
+				dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_LOWSHELFGAIN, props.LowShelfGain);
+				dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_HIGHCUT, props.HighCut);
+				dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_EARLYLATEMIX, props.EarlyLateMix);
+				dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_WETLEVEL, props.WetLevel);
+				dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_DRYLEVEL, 0.f);
+			}
+		}
+		//{
+		//	// add dsp
+
+		//	//FMOD::DSP* dspeq = 0;
+		//	//fmod_result = fmod_system->createDSPByType(FMOD_DSP_TYPE_MULTIBAND_EQ, &dspeq);
+		//	//FMODErrorCheck();
+		//	//
+		//	//fmod_result = music_ensemble_local_group->addDSP(0, dspeq);
+		//	//FMODErrorCheck();
+		//	//
+		//	//dspeq->setParameterInt(FMOD_DSP_MULTIBAND_EQ_A_FILTER, FMOD_DSP_MULTIBAND_EQ_FILTER_NOTCH);
+		//	//dspeq->setParameterFloat(FMOD_DSP_MULTIBAND_EQ_A_FREQUENCY, 2000);
+		//	//dspeq->setParameterFloat(FMOD_DSP_MULTIBAND_EQ_A_GAIN, -6);
+		//	//dspeq->setParameterFloat(FMOD_DSP_MULTIBAND_EQ_A_Q, 1.f);
+
+		//	FMOD::DSP* dspreverb = 0;
+		//	fmod_result = fmod_system->createDSPByType(FMOD_DSP_TYPE_SFXREVERB, &dspreverb);
+		//	FMODErrorCheck();
+
+		//	fmod_result = music_ensemble_local_group->addDSP(0, dspreverb);
+		//	FMODErrorCheck();
+
+		//	FMOD_REVERB_PROPERTIES props = FMOD_PRESET_OFF;
+		//	dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_DECAYTIME, props.DecayTime);
+		//	dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_EARLYDELAY, props.EarlyDelay);
+		//	dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_LATEDELAY, props.LateDelay);
+		//	dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_HFREFERENCE, props.HFReference);
+		//	dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_HFDECAYRATIO, props.HFDecayRatio);
+		//	dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_DIFFUSION, props.Diffusion);
+		//	dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_DENSITY, props.Density);
+		//	dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_LOWSHELFFREQUENCY, props.LowShelfFrequency);
+		//	dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_LOWSHELFGAIN, props.LowShelfGain);
+		//	dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_HIGHCUT, props.HighCut);
+		//	dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_EARLYLATEMIX, props.EarlyLateMix);
+		//	dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_WETLEVEL, props.WetLevel);
+		//	dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_DRYLEVEL, 0.f);
+		//}
 
 #ifndef EDITOR
 		int selected_recording_driver = 0;
@@ -252,7 +408,7 @@ int loadSoundResources(real_t base_load_percent, real_t top_load_percent)
 		fp->gets2(name, 128);
 		completePath(full_path, name);
 		FMOD_MODE flags = FMOD_DEFAULT | FMOD_3D | FMOD_LOWMEM;
-		if ( c == 133 || c == 672 || c == 135 || c == 155 || c == 149 )
+		if ( c == 133 || c == 672 || c == 135 || c == 155 || c == 149 || c == 710 )
 		{
 			flags |= FMOD_LOOP_NORMAL;
 		}

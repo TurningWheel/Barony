@@ -846,10 +846,10 @@
             "This also reveals the map between the",
             "shrine and the exit!",
             "",
-            "If activated within 30 seconds of the",
-            "minotaur's arrival, the shrine boosts",
-            "user's escape with an additional",
-            "blessing of speed.",
+            "If activated within 30 seconds before",
+            "the minotaur's arrival, the shrine",
+            "boosts the user's escape with an",
+            "additional blessing of speed.",
             "",
             "Adventurers exploring together may",
             "find a bit more confidence splitting",
@@ -1986,19 +1986,16 @@
         ],
         "details": [
             "SECRET LEVEL TREASURES:",
-            "- Red Mystic Orb",
             "- Gungnir",
             "",
-            "For most, it is wise to grab the orb",
-            "and outrun the minotaur to the exit.",
             "Look for nearby gatehouse levers if",
             "closed gates block the way. A spell",
             "of opening, or digging, can help!",
             "",
-            "The pedestal at the end of the maze",
-            "cripples the minotaur temporarily",
-            "when the orb is placed upon it.",
-            "Don't forget to reclaim the orb!"
+            "The silver key at the start of the",
+            "maze gives access to Gungnir in the",
+            "center. But the key may be useful if",
+            "you don't have need of the spear!"
         ],
         "details_line_highlights": [
             {
@@ -2090,7 +2087,6 @@
         ],
         "details": [
             "SECRET LEVEL TREASURES:",
-            "- Blue Mystic Orb",
             "- Chests of random magic items",
             "- Several humans to recruit",
             "",
@@ -2504,7 +2500,7 @@
         ],
         "details": [
             "SECRET LEVEL TREASURES:",
-            "- Djinn's Brace",
+            "- Djinni's Brace",
             "- A fortune in gold pieces",
             "",
             "To solve this challenge, one must rid",
@@ -2672,13 +2668,12 @@
         ],
         "details": [
             "SECRET LEVEL TREASURES:",
-            "- Green Mystic Orb",
             "- 4 Potions of strength",
             "- A hoard of gold pieces",
             "- Several treasure chests",
             "",
-            "Hidden rooms make use of the orb's",
-            "power, revealing more treasures.",
+            "Hidden rooms make use of a silver",
+            "key, revealing more treasures.",
             "The Temple's traps may shut down",
             "access to secret areas if explorers",
             "are careless, or prisoners are freed.",
@@ -2800,7 +2795,7 @@
             "SECRET LEVEL TREASURES:",
             "- Khryselakatos (Lvl 7)",
             "",
-            "The underworld can be accessed tiwce",
+            "The underworld can be accessed twice",
             "via secret entrances on floor 5 and 18.",
             "In both cases, adventurers who find",
             "a trapdoor down to a second floor of",
@@ -2852,5 +2847,163 @@
                 }
             }
         ]
+    },
+    "cauldron": {
+        "blurb": [
+            "Whether you need to boil potion",
+            "mixtures, or cook up a hot meal,",
+            "the sturdy CAULDRON is a practical",
+            "fixture for any facility.",
+            "Shame it's too heavy",
+            "to take along with you!"
+        ],
+        "details": [
+            "Finding a cauldron is an opportunity",
+			"for any adventurer, whether or not",
+			"they are skilled in alchemy, to ease",
+			"pressure on inventory space. Cooking",
+			"consolidates any food into rations,",
+			"while decanting consolidates potions.",
+			"",
+            "Combining potions and rations allows",
+			"for the creation of flavored food",
+			"which can enhance adventurer stats.",
+			"",
+			"Those with 80 or more skill in alchemy",
+			"are able to make fresh rations, safe",
+			"from the perils of indigestion."
+        ],
+        "details_line_highlights": []
+    },
+    "workbench": {
+        "blurb": [
+            "While not as convenient as the portable",
+            "tinkering kit, the WORKBENCH has all the",
+            "same tools available for resourceful",
+            "adventurers to fashion useful items for",
+            "the obstacles which lie ahead."
+        ],
+        "details": [
+            "As a sturdier table and set of heftier",
+            "tools, workbenches do not degrade,",
+			"making it an efficient find, even if",
+			"carrying a tinkering kit.",
+			"",
+            "Many adventurers may benefit from",
+            "occasional tinkering, particularly",
+			"for keeping tools handly, like",
+            "empty flasks, lockpicks, or traps.",
+			"",
+            "As only the mechanist class starts with",
+            "the kit, but several others have some",
+            "tinkering skill, the workbench allows",
+            "broader use of tinkering tools."
+        ],
+        "details_line_highlights": []
+    },
+    "button": {
+        "blurb": [
+            "Like the lever, BUTTONS can be pressed",
+            "manually, but may also be struck from",
+            "afar with projectiles to activate",
+            "dungeon mechanisms.",
+            "Some are designed to reset after a time."
+        ],
+        "details": [
+            "Not much needs to be said about the",
+			"humble dungeon button.",
+            "",
+			"Architects may prefer buttons over",
+			"levers, as no clear floor space is",
+			"required, and buttons are easier",
+			"to hide on walls where outsiders",
+			"are not intended to access.",
+			"",
+            "Beware a button which resets, as",
+            "it usually heralds a puzzle, or",
+            "perhaps a trap for the careless."
+        ],
+        "details_line_highlights": []
+    },
+    "wall locks": {
+        "blurb": [
+            "Usually used to secure impenetrable iron",
+            "doors, the WALL LOCK requires a key made",
+            "from matching materials.",
+            "Locks may operate other dungeon gadgets",
+            "and, in some cases, may be toggled to",
+            "activate and deactivate a gadget."
+        ],
+        "details": [
+            "As iron doors are most often used to",
+            "guard precious items or gold, keys are",
+            "often traded for treasures.",
+            "Adventurers should make use of the",
+            "handy window installed in iron doors",
+            "to first peek at the prize within,",
+			"presuming they're tall enough.",
+            "",
+            "Iron, Bronze, and some Silver locks",
+			"may be picked by sufficiently skilled",
+			"Tinkerers, or with a Skeleton Key.",
+			"But as the value of the treasure",
+			"increases with the depth of the",
+			"dungeon, so too does security."
+        ],
+        "details_line_highlights": []
+    },
+    "arcane boulder": {
+        "blurb": [
+            "Though boulders are already a deadly",
+			"hazard, concentrations of crystal ",
+            "imbues them with dangerous magic.",
+			"",
+            "Arcane boulders roll with enhanced speed",
+            "and momentum, defying physical laws."
+        ],
+        "details": [
+            "The most deadly boulder trap, those",
+			"who live long enough to face these",
+            "imposing orbs should be adept at",
+            "avoiding them.",
+			"",
+            "Beware, they fall and roll much",
+			"faster, and can roll over liquid",
+			"and pits unimpeded, and their",
+			"crushing power is enhanced with",
+			"a magical detonation.",
+			"",
+			"Those with Push or Telekinesis may",
+			"be able to put these magical",
+			"qualities to use."
+        ],
+        "details_line_highlights": []
+    },
+    "assist shrine": {
+        "blurb": [
+            "The ASSIST SHRINE did not always grace",
+            "the Minehead entry. The Church claims the",
+			"Eternals placed it there to:",
+			"''Bless the courageous to defeat Herx and",
+            "end his curse; Give hope to the hopeless.''",
+            "(for better or worse)"
+        ],
+        "details": [
+            "When claiming items from the assist",
+			"shrine, a party should be aware that",
+            "they will be judged according to the",
+            "sum total of assistance taken.",
+            "For parties with mixed expertise, this",
+            "can allow stronger adventurers to bear",
+            "the full challenge, while novices face",
+            "a much less daunting challenge.",
+            "",
+            "Adventuring solo, even novice heroes",
+            "can accomplish great feats by taking",
+            "much more assistance.",
+			"",
+            "There is no shame in doing so!"
+        ],
+        "details_line_highlights": []
     }
 }

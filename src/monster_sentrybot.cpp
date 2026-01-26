@@ -298,7 +298,7 @@ void initGyroBot(Entity* my, Stat* myStats)
 			// apply random stat increases if set in stat_shared.cpp or editor
 			setRandomMonsterStats(myStats, rng);
 
-			myStats->EFFECTS[EFF_LEVITATING] = true;
+			myStats->setEffectActive(EFF_LEVITATING, 1);
 			myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
 
 			// generate 6 items max, less if there are any forced items from boss variants
@@ -542,6 +542,7 @@ void sentryBotAnimate(Entity* my, Stat* myStats, double dist)
 	if ( multiplayer != CLIENT )
 	{
 		my->z = limbs[race][11][2];
+		my->creatureHandleLiftZ();
 	}
 
 	if ( ticks % (3 * TICKS_PER_SECOND) == 0 && local_rng.rand() % 5 > 0 )
@@ -1081,9 +1082,11 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 							{
 								++foundBadSound;
 							}
-							if ( ent->entityShowOnMap < detectDuration )
+							if ( ent->getEntityShowOnMapDuration() == 0
+								|| (ent->getEntityShowOnMapSource() == Entity::SHOW_MAP_GYRO
+								&& ent->getEntityShowOnMapDuration() < detectDuration) )
 							{
-								ent->entityShowOnMap = detectDuration;
+								ent->setEntityShowOnMap(Entity::SHOW_MAP_GYRO, detectDuration);
 							}
 						}
 					}
@@ -1102,9 +1105,11 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 							{
 								foundBadSound = 3;
 							}
-							if ( ent->entityShowOnMap < detectDuration )
+							if ( ent->getEntityShowOnMapDuration() == 0
+								|| (ent->getEntityShowOnMapSource() == Entity::SHOW_MAP_GYRO
+									&& ent->getEntityShowOnMapDuration() < detectDuration) )
 							{
-								ent->entityShowOnMap = detectDuration;
+								ent->setEntityShowOnMap(Entity::SHOW_MAP_GYRO, detectDuration);
 							}
 						}
 					}
@@ -1119,9 +1124,11 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 							{
 								foundGoodSound = 5;
 							}
-							if ( ent->entityShowOnMap < detectDuration )
+							if ( ent->getEntityShowOnMapDuration() == 0
+								|| (ent->getEntityShowOnMapSource() == Entity::SHOW_MAP_GYRO
+									&& ent->getEntityShowOnMapDuration() < detectDuration) )
 							{
-								ent->entityShowOnMap = detectDuration;
+								ent->setEntityShowOnMap(Entity::SHOW_MAP_GYRO, detectDuration);
 							}
 						}
 					}
@@ -1147,9 +1154,11 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 									{
 										++foundGoodSound;
 									}
-									if ( ent->entityShowOnMap < detectDuration )
+									if ( ent->getEntityShowOnMapDuration() == 0
+										|| (ent->getEntityShowOnMapSource() == Entity::SHOW_MAP_GYRO
+											&& ent->getEntityShowOnMapDuration() < detectDuration) )
 									{
-										ent->entityShowOnMap = detectDuration;
+										ent->setEntityShowOnMap(Entity::SHOW_MAP_GYRO, detectDuration);
 									}
 								}
 								else if ( my->monsterAllyPickupItems == ALLY_GYRO_DETECT_ITEMS_MAGIC
@@ -1159,21 +1168,26 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 									{
 										++foundGoodSound;
 									}
-									if ( ent->entityShowOnMap < detectDuration )
+									if ( ent->getEntityShowOnMapDuration() == 0
+										|| (ent->getEntityShowOnMapSource() == Entity::SHOW_MAP_GYRO
+											&& ent->getEntityShowOnMapDuration() < detectDuration) )
 									{
-										ent->entityShowOnMap = detectDuration;
+										ent->setEntityShowOnMap(Entity::SHOW_MAP_GYRO, detectDuration);
 									}
 								}
 								else if ( my->monsterAllyPickupItems == ALLY_GYRO_DETECT_ITEMS_VALUABLE
-									&& items[itemOnGround->type].value >= 400 )
+									&& (itemOnGround->getGoldValue() >= 400
+										|| (itemOnGround->type >= KEY_STONE && itemOnGround->type <= KEY_MACHINE)) )
 								{
 									if ( gyroBotFoundNewEntity(*ent) )
 									{
 										foundGoodSound = 5;
 									}
-									if ( ent->entityShowOnMap < detectDuration )
+									if ( ent->getEntityShowOnMapDuration() == 0
+										|| (ent->getEntityShowOnMapSource() == Entity::SHOW_MAP_GYRO
+											&& ent->getEntityShowOnMapDuration() < detectDuration) )
 									{
-										ent->entityShowOnMap = detectDuration;
+										ent->setEntityShowOnMap(Entity::SHOW_MAP_GYRO, detectDuration);
 									}
 								}
 								free(itemOnGround);
@@ -1182,7 +1196,8 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 					}
 				}
 			}
-			if ( ent->entityShowOnMap > 0 )
+			if ( ent->getEntityShowOnMapSource() == Entity::SHOW_MAP_GYRO
+				&& ent->getEntityShowOnMapDuration() > 0 )
 			{
 				doPing = true;
 			}
@@ -1326,9 +1341,9 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 				}
 			}
 		}
-		if ( !myStats->EFFECTS[EFF_LEVITATING] )
+		if ( !myStats->getEffectActive(EFF_LEVITATING) )
 		{
-			myStats->EFFECTS[EFF_LEVITATING] = true;
+			myStats->setEffectActive(EFF_LEVITATING, 1);
 			myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
 		}
 	}
@@ -1875,6 +1890,7 @@ void dummyBotAnimate(Entity* my, Stat* myStats, double dist)
 	if ( multiplayer != CLIENT )
 	{
 		my->z = 0;
+		my->creatureHandleLiftZ();
 	}
 
 	//Move bodyparts
@@ -2150,7 +2166,7 @@ void dummyBotAnimate(Entity* my, Stat* myStats, double dist)
 			case DUMMY_BOX:
 				entity->x += limbs[DUMMYBOT][9][0] * cos(entity->yaw);
 				entity->y += limbs[DUMMYBOT][9][1] * sin(entity->yaw);
-				entity->z = limbs[DUMMYBOT][9][2];
+				entity->z = my->z + limbs[DUMMYBOT][9][2];
 				entity->focalx = limbs[DUMMYBOT][4][0];
 				entity->focaly = limbs[DUMMYBOT][4][1];
 				entity->focalz = limbs[DUMMYBOT][4][2];
@@ -2158,7 +2174,7 @@ void dummyBotAnimate(Entity* my, Stat* myStats, double dist)
 			case DUMMY_LID:
 				entity->x += limbs[DUMMYBOT][10][0] * cos(entity->yaw);
 				entity->y += limbs[DUMMYBOT][10][1] * sin(entity->yaw);
-				entity->z = limbs[DUMMYBOT][10][2];
+				entity->z = my->z + limbs[DUMMYBOT][10][2];
 				entity->focalx = limbs[DUMMYBOT][5][0];
 				entity->focaly = limbs[DUMMYBOT][5][1];
 				entity->focalz = limbs[DUMMYBOT][5][2];
@@ -2166,7 +2182,7 @@ void dummyBotAnimate(Entity* my, Stat* myStats, double dist)
 			case DUMMY_CRANK:
 				entity->x += limbs[DUMMYBOT][12][0] * cos(entity->yaw) + limbs[DUMMYBOT][12][1] * cos(entity->yaw + PI / 2);
 				entity->y += limbs[DUMMYBOT][12][0] * sin(entity->yaw) + limbs[DUMMYBOT][12][1] * sin(entity->yaw + PI / 2);
-				entity->z = limbs[DUMMYBOT][12][2];
+				entity->z = my->z + limbs[DUMMYBOT][12][2];
 				entity->focalx = limbs[DUMMYBOT][11][0];
 				entity->focaly = limbs[DUMMYBOT][11][1];
 				entity->focalz = limbs[DUMMYBOT][11][2];

@@ -1228,7 +1228,7 @@ void PlayfabUser_t::getLeaderboardTop100(std::string lid)
 
     if ( leaderboardData.leaderboards[lid].loading )
     {
-        for ( auto pair : leaderboardData.leaderboards[lid].awaitingResponse )
+        for ( auto& pair : leaderboardData.leaderboards[lid].awaitingResponse )
         {
             if ( (processTick - pair.second.first) < 5 * TICKS_PER_SECOND )
             {
@@ -1523,7 +1523,7 @@ bool PlayfabUser_t::PostScoreHandler_t::ScoreUpdate_t::saveToFile()
 
     d.AddMember("version", rapidjson::Value(1), d.GetAllocator());
     d.AddMember("hash", rapidjson::Value(hash.c_str(), d.GetAllocator()), d.GetAllocator());
-    d.AddMember("name", rapidjson::Value(hash.c_str(), d.GetAllocator()), d.GetAllocator());
+    d.AddMember("name", rapidjson::Value(name.c_str(), d.GetAllocator()), d.GetAllocator());
     d.AddMember("score", rapidjson::Value(score.c_str(), d.GetAllocator()), d.GetAllocator());
 
     File* fp = FileIO::open(outputPath.c_str(), "wb");
@@ -1560,9 +1560,10 @@ void PlayfabUser_t::PostScoreHandler_t::readFromFiles()
         return;
     }
 
-    for ( auto f : directoryContents("scores/processing/", false, true, outputdir) )
+    for ( auto& f : directoryContents("scores/processing/", false, true, outputdir) )
     {
         std::string inputPath = PHYSFS_getRealDir(baseDir.c_str());
+        inputPath.append(PHYSFS_getDirSeparator());
         inputPath += "scores/processing/";
         inputPath += f;
 
@@ -2015,7 +2016,7 @@ void PlayfabUser_t::LeaderboardSearch_t::applySavedChallengeSearchIfExists()
         return;
     }
 
-    auto lid = savedSearchesFromNotification[challengeBoard];
+    auto& lid = savedSearchesFromNotification[challengeBoard];
     scoresNearMe = true;
     win = lid.find("_victory_") != std::string::npos;
     //victory = win ? 3 : 0;

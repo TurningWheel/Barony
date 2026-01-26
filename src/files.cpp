@@ -9,6 +9,8 @@
 
 -------------------------------------------------------------------------------*/
 
+#include "main.hpp"
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <dirent.h>
@@ -19,7 +21,6 @@
 #include <thread>
 #include <future>
 
-#include "main.hpp"
 #include "files.hpp"
 #include "engine/audio/sound.hpp"
 #include "entity.hpp"
@@ -1738,9 +1739,17 @@ voxel_t* loadVoxel(char* filename)
 		{
 			return nullptr;
 		}
+		Sint32 header = 0;
+		file->read(&header, sizeof(Sint32), 1);
+		if ( header == 542658390 )
+		{
+			FileIO::close(file);
+			assert(false && "incorrect .vox file format, check log.txt");
+			printlog("error: loadVoxel file: %s is using magicavoxel .vox file format, export as slab .vox instead!", filename);
+			return nullptr;
+		}
 		model = (voxel_t*)malloc(sizeof(voxel_t));
-		model->sizex = 0;
-		file->read(&model->sizex, sizeof(Sint32), 1);
+		model->sizex = header;
 		model->sizey = 0;
 		file->read(&model->sizey, sizeof(Sint32), 1);
 		model->sizez = 0;
@@ -1769,6 +1778,7 @@ voxel_t* loadVoxel(char* filename)
 constexpr float hellAmbience = 32.f;
 #ifndef EDITOR
 static ConsoleVariable<float> cvar_hell_ambience("/hell_ambience", hellAmbience);
+static ConsoleVariable<Vector4> cvar_map_ambience("/map_ambience", { 0.f, 0.f, 0.f, 0.f });
 #endif
 
 /*-------------------------------------------------------------------------------
@@ -1855,7 +1865,22 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 
 	// read map version number
 	fp->read(valid_data, sizeof(char), strlen("BARONY LMPV2.0"));
-	if ( strncmp(valid_data, "BARONY LMPV2.9", strlen("BARONY LMPV2.0")) == 0 )
+	if ( strncmp(valid_data, "BARONY LMPV3.2", strlen("BARONY LMPV2.0")) == 0 )
+	{
+		// floor deco walls
+		editorVersion = 32;
+	}
+	else if ( strncmp(valid_data, "BARONY LMPV3.1", strlen("BARONY LMPV2.0")) == 0 )
+	{
+		// wall lock fix
+		editorVersion = 31;
+	}
+	else if ( strncmp(valid_data, "BARONY LMPV3.0", strlen("BARONY LMPV2.0")) == 0 )
+	{
+		// light source rgb
+		editorVersion = 30;
+	}
+	else if ( strncmp(valid_data, "BARONY LMPV2.9", strlen("BARONY LMPV2.0")) == 0 )
 	{
 		// V2.9 version of editor - chest mimic chance, and gates, pressure plate triggers
 		editorVersion = 29;
@@ -1955,6 +1980,7 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 			list_FreeAll(map.worldUI);
 		}
 		destmap->liquidSfxPlayedTiles.clear();
+		destmap->tileAttributes.clear();
 	}
 	if ( destmap->tiles != nullptr )
 	{
@@ -2069,415 +2095,449 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 	{
 		fp->read(&sprite, sizeof(Sint32), 1);
 		entity = newEntity(sprite, 0, entlist, nullptr); //TODO: Figure out when we need to assign an entity to the global monster list. And do it!
-		switch( editorVersion )
-		{	case 1:
-				// V1.0 of editor version
+		if ( editorVersion == 1 )
+		{
+			// V1.0 of editor version
+			switch ( checkSpriteType(sprite) )
+			{
+			case 1:
+			case 2:
+			case 3:
+			case 4:
+			case 5:
+			case 6:
+			case 7:
+				setSpriteAttributes(entity, nullptr, nullptr);
+				break;
+			default:
+				break;
+			}
+		}
+		else
+		{
+			// V2.0+ of editor version
 			switch ( checkSpriteType(sprite) )
 			{
 				case 1:
+					if ( multiplayer != CLIENT )
+					{
+						// need to give the entity its list stuff.
+						// create an empty first node for traversal purposes
+						node_t* node2 = list_AddNodeFirst(&entity->children);
+						node2->element = NULL;
+						node2->deconstructor = &emptyDeconstructor;
+
+						myStats = new Stat(entity->sprite);
+						node2 = list_AddNodeLast(&entity->children);
+						node2->element = myStats;
+						node2->size = sizeof(myStats);
+						node2->deconstructor = &statDeconstructor;
+
+						sex_t dummyVar = MALE; 
+						// we don't actually embed the sex from the editor
+						// advance the fp since we read in 0 always.
+						// otherwise it would overwrite the value of a handplaced succubus or a certain icey lich.
+						// certainly were a lot of male adventurers locked in cells...
+						fp->read(&dummyVar, sizeof(sex_t), 1);
+						fp->read(&myStats->name, sizeof(char[128]), 1);
+						fp->read(&myStats->HP, sizeof(Sint32), 1);
+						fp->read(&myStats->MAXHP, sizeof(Sint32), 1);
+						fp->read(&myStats->OLDHP, sizeof(Sint32), 1);
+						fp->read(&myStats->MP, sizeof(Sint32), 1);
+						fp->read(&myStats->MAXMP, sizeof(Sint32), 1);
+						fp->read(&myStats->STR, sizeof(Sint32), 1);
+						fp->read(&myStats->DEX, sizeof(Sint32), 1);
+						fp->read(&myStats->CON, sizeof(Sint32), 1);
+						fp->read(&myStats->INT, sizeof(Sint32), 1);
+						fp->read(&myStats->PER, sizeof(Sint32), 1);
+						fp->read(&myStats->CHR, sizeof(Sint32), 1);
+						fp->read(&myStats->LVL, sizeof(Sint32), 1);
+						fp->read(&myStats->GOLD, sizeof(Sint32), 1);
+
+						fp->read(&myStats->RANDOM_MAXHP, sizeof(Sint32), 1);
+						fp->read(&myStats->RANDOM_HP, sizeof(Sint32), 1);
+						fp->read(&myStats->RANDOM_MAXMP, sizeof(Sint32), 1);
+						fp->read(&myStats->RANDOM_MP, sizeof(Sint32), 1);
+						fp->read(&myStats->RANDOM_STR, sizeof(Sint32), 1);
+						fp->read(&myStats->RANDOM_CON, sizeof(Sint32), 1);
+						fp->read(&myStats->RANDOM_DEX, sizeof(Sint32), 1);
+						fp->read(&myStats->RANDOM_INT, sizeof(Sint32), 1);
+						fp->read(&myStats->RANDOM_PER, sizeof(Sint32), 1);
+						fp->read(&myStats->RANDOM_CHR, sizeof(Sint32), 1);
+						fp->read(&myStats->RANDOM_LVL, sizeof(Sint32), 1);
+						fp->read(&myStats->RANDOM_GOLD, sizeof(Sint32), 1);
+
+						if ( editorVersion >= 22 )
+						{
+							fp->read(&myStats->EDITOR_ITEMS, sizeof(Sint32), ITEM_SLOT_NUM);
+						}
+						else
+						{
+							// read old map formats
+							fp->read(&myStats->EDITOR_ITEMS, sizeof(Sint32), 96);
+						}
+						fp->read(&myStats->MISC_FLAGS, sizeof(Sint32), 32);
+					}
+					//Read dummy values to move fp for the client
+					else
+					{
+						dummyStats = new Stat(entity->sprite);
+						fp->read(&dummyStats->sex, sizeof(sex_t), 1);
+						fp->read(&dummyStats->name, sizeof(char[128]), 1);
+						fp->read(&dummyStats->HP, sizeof(Sint32), 1);
+						fp->read(&dummyStats->MAXHP, sizeof(Sint32), 1);
+						fp->read(&dummyStats->OLDHP, sizeof(Sint32), 1);
+						fp->read(&dummyStats->MP, sizeof(Sint32), 1);
+						fp->read(&dummyStats->MAXMP, sizeof(Sint32), 1);
+						fp->read(&dummyStats->STR, sizeof(Sint32), 1);
+						fp->read(&dummyStats->DEX, sizeof(Sint32), 1);
+						fp->read(&dummyStats->CON, sizeof(Sint32), 1);
+						fp->read(&dummyStats->INT, sizeof(Sint32), 1);
+						fp->read(&dummyStats->PER, sizeof(Sint32), 1);
+						fp->read(&dummyStats->CHR, sizeof(Sint32), 1);
+						fp->read(&dummyStats->LVL, sizeof(Sint32), 1);
+						fp->read(&dummyStats->GOLD, sizeof(Sint32), 1);
+
+						fp->read(&dummyStats->RANDOM_MAXHP, sizeof(Sint32), 1);
+						fp->read(&dummyStats->RANDOM_HP, sizeof(Sint32), 1);
+						fp->read(&dummyStats->RANDOM_MAXMP, sizeof(Sint32), 1);
+						fp->read(&dummyStats->RANDOM_MP, sizeof(Sint32), 1);
+						fp->read(&dummyStats->RANDOM_STR, sizeof(Sint32), 1);
+						fp->read(&dummyStats->RANDOM_CON, sizeof(Sint32), 1);
+						fp->read(&dummyStats->RANDOM_DEX, sizeof(Sint32), 1);
+						fp->read(&dummyStats->RANDOM_INT, sizeof(Sint32), 1);
+						fp->read(&dummyStats->RANDOM_PER, sizeof(Sint32), 1);
+						fp->read(&dummyStats->RANDOM_CHR, sizeof(Sint32), 1);
+						fp->read(&dummyStats->RANDOM_LVL, sizeof(Sint32), 1);
+						fp->read(&dummyStats->RANDOM_GOLD, sizeof(Sint32), 1);
+
+						if ( editorVersion >= 22 )
+						{
+							fp->read(&dummyStats->EDITOR_ITEMS, sizeof(Sint32), ITEM_SLOT_NUM);
+						}
+						else
+						{
+							fp->read(&dummyStats->EDITOR_ITEMS, sizeof(Sint32), 96);
+						}
+						fp->read(&dummyStats->MISC_FLAGS, sizeof(Sint32), 32);
+						delete dummyStats;
+					}
+					break;
 				case 2:
+					if ( editorVersion >= 29 )
+					{
+						fp->read(&entity->yaw, sizeof(real_t), 1);
+						fp->read(&entity->skill[9], sizeof(Sint32), 1);
+						fp->read(&entity->chestLocked, sizeof(Sint32), 1);
+						fp->read(&entity->chestMimicChance, sizeof(Sint32), 1);
+					}
+					else
+					{
+						setSpriteAttributes(entity, nullptr, nullptr);
+						fp->read(&entity->yaw, sizeof(real_t), 1);
+						fp->read(&entity->skill[9], sizeof(Sint32), 1);
+						fp->read(&entity->chestLocked, sizeof(Sint32), 1);
+					}
+					break;
 				case 3:
+					fp->read(&entity->skill[10], sizeof(Sint32), 1);
+					fp->read(&entity->skill[11], sizeof(Sint32), 1);
+					fp->read(&entity->skill[12], sizeof(Sint32), 1);
+					fp->read(&entity->skill[13], sizeof(Sint32), 1);
+					fp->read(&entity->skill[15], sizeof(Sint32), 1);
+					if ( editorVersion >= 22 )
+					{
+						fp->read(&entity->skill[16], sizeof(Sint32), 1);
+					}
+					break;
 				case 4:
+					fp->read(&entity->skill[0], sizeof(Sint32), 1);
+					fp->read(&entity->skill[1], sizeof(Sint32), 1);
+					fp->read(&entity->skill[2], sizeof(Sint32), 1);
+					fp->read(&entity->skill[3], sizeof(Sint32), 1);
+					fp->read(&entity->skill[4], sizeof(Sint32), 1);
+					fp->read(&entity->skill[5], sizeof(Sint32), 1);
+					if ( editorVersion >= 29 )
+					{
+						fp->read(&entity->skill[9], sizeof(Sint32), 1);
+					}
+					break;
 				case 5:
+					fp->read(&entity->yaw, sizeof(real_t), 1);
+					fp->read(&entity->crystalNumElectricityNodes, sizeof(Sint32), 1);
+					fp->read(&entity->crystalTurnReverse, sizeof(Sint32), 1);
+					fp->read(&entity->crystalSpellToActivate, sizeof(Sint32), 1);
+					break;
 				case 6:
+					fp->read(&entity->leverTimerTicks, sizeof(Sint32), 1);
+					break;
 				case 7:
-					setSpriteAttributes(entity, nullptr, nullptr);
+					if ( editorVersion >= 24 )
+					{
+						fp->read(&entity->boulderTrapRefireAmount, sizeof(Sint32), 1);
+						fp->read(&entity->boulderTrapRefireDelay, sizeof(Sint32), 1);
+						fp->read(&entity->boulderTrapPreDelay, sizeof(Sint32), 1);
+					}
+					else
+					{
+						setSpriteAttributes(entity, nullptr, nullptr);
+					}
+					break;
+				case 8:
+					fp->read(&entity->pedestalOrbType, sizeof(Sint32), 1);
+					fp->read(&entity->pedestalHasOrb, sizeof(Sint32), 1);
+					fp->read(&entity->pedestalInvertedPower, sizeof(Sint32), 1);
+					fp->read(&entity->pedestalInGround, sizeof(Sint32), 1);
+					fp->read(&entity->pedestalLockOrb, sizeof(Sint32), 1);
+					break;
+				case 9:
+					fp->read(&entity->teleporterX, sizeof(Sint32), 1);
+					fp->read(&entity->teleporterY, sizeof(Sint32), 1);
+					fp->read(&entity->teleporterType, sizeof(Sint32), 1);
+					break;
+				case 10:
+					if ( editorVersion >= 28 )
+					{
+						fp->read(&entity->ceilingTileModel, sizeof(Sint32), 1);
+						fp->read(&entity->ceilingTileDir, sizeof(Sint32), 1);
+						fp->read(&entity->ceilingTileAllowTrap, sizeof(Sint32), 1);
+						fp->read(&entity->ceilingTileBreakable, sizeof(Sint32), 1);
+					}
+					else
+					{
+						setSpriteAttributes(entity, nullptr, nullptr);
+						fp->read(&entity->ceilingTileModel, sizeof(Sint32), 1);
+					}
+					break;
+				case 11:
+					fp->read(&entity->spellTrapType, sizeof(Sint32), 1);
+					fp->read(&entity->spellTrapRefire, sizeof(Sint32), 1);
+					fp->read(&entity->spellTrapLatchPower, sizeof(Sint32), 1);
+					fp->read(&entity->spellTrapFloorTile, sizeof(Sint32), 1);
+					fp->read(&entity->spellTrapRefireRate, sizeof(Sint32), 1);
+					break;
+				case 12:
+					if ( entity->sprite == 60 ) // chair
+					{
+						if ( editorVersion >= 25 )
+						{
+							fp->read(&entity->furnitureDir, sizeof(Sint32), 1);
+						}
+						else
+						{
+							// don't read data, set default.
+							setSpriteAttributes(entity, nullptr, nullptr);
+						}
+					}
+					else
+					{
+						fp->read(&entity->furnitureDir, sizeof(Sint32), 1);
+					}
+					break;
+				case 13:
+					fp->read(&entity->floorDecorationModel, sizeof(Sint32), 1);
+					fp->read(&entity->floorDecorationRotation, sizeof(Sint32), 1);
+					fp->read(&entity->floorDecorationHeightOffset, sizeof(Sint32), 1);
+					if ( editorVersion >= 25 )
+					{
+						fp->read(&entity->floorDecorationXOffset, sizeof(Sint32), 1);
+						fp->read(&entity->floorDecorationYOffset, sizeof(Sint32), 1);
+						if ( editorVersion >= 32 )
+						{
+							fp->read(&entity->floorDecorationDestroyIfNoWall, sizeof(Sint32), 1);
+						}
+						else
+						{
+							entity->floorDecorationDestroyIfNoWall = -1;
+						}
+						for ( int i = 8; i < 60; ++i )
+						{
+							fp->read(&entity->skill[i], sizeof(Sint32), 1);
+						}
+					}
+					break;
+				case 14:
+					fp->read(&entity->soundSourceToPlay, sizeof(Sint32), 1);
+					fp->read(&entity->soundSourceVolume, sizeof(Sint32), 1);
+					fp->read(&entity->soundSourceLatchOn, sizeof(Sint32), 1);
+					fp->read(&entity->soundSourceDelay, sizeof(Sint32), 1);
+					fp->read(&entity->soundSourceOrigin, sizeof(Sint32), 1);
+					break;
+				case 15:
+					if ( editorVersion < 30 )
+					{
+						// set default data for rgb
+						setSpriteAttributes(entity, nullptr, nullptr);
+					}
+					fp->read(&entity->lightSourceAlwaysOn, sizeof(Sint32), 1);
+					fp->read(&entity->lightSourceBrightness, sizeof(Sint32), 1);
+					fp->read(&entity->lightSourceInvertPower, sizeof(Sint32), 1);
+					fp->read(&entity->lightSourceLatchOn, sizeof(Sint32), 1);
+					fp->read(&entity->lightSourceRadius, sizeof(Sint32), 1);
+					fp->read(&entity->lightSourceFlicker, sizeof(Sint32), 1);
+					fp->read(&entity->lightSourceDelay, sizeof(Sint32), 1);
+					if ( editorVersion >= 30 )
+					{
+						fp->read(&entity->lightSourceRGB, sizeof(Sint32), 1);
+					}
+					break;
+				case 16:
+				{
+					fp->read(&entity->textSourceColorRGB, sizeof(Sint32), 1);
+					fp->read(&entity->textSourceVariables4W, sizeof(Sint32), 1);
+					fp->read(&entity->textSourceDelay, sizeof(Sint32), 1);
+					fp->read(&entity->textSourceIsScript, sizeof(Sint32), 1);
+					for ( int i = 4; i < 60; ++i )
+					{
+						fp->read(&entity->skill[i], sizeof(Sint32), 1);
+					}
+					break;
+				}
+				case 17:
+					fp->read(&entity->signalInputDirection, sizeof(Sint32), 1);
+					fp->read(&entity->signalActivateDelay, sizeof(Sint32), 1);
+					fp->read(&entity->signalTimerInterval, sizeof(Sint32), 1);
+					fp->read(&entity->signalTimerRepeatCount, sizeof(Sint32), 1);
+					fp->read(&entity->signalTimerLatchInput, sizeof(Sint32), 1);
+					if ( editorVersion >= 29 )
+					{
+						fp->read(&entity->signalInvertOutput, sizeof(Sint32), 1);
+					}
+					break;
+				case 18:
+					fp->read(&entity->portalCustomSprite, sizeof(Sint32), 1);
+					fp->read(&entity->portalCustomSpriteAnimationFrames, sizeof(Sint32), 1);
+					fp->read(&entity->portalCustomZOffset, sizeof(Sint32), 1);
+					fp->read(&entity->portalCustomLevelsToJump, sizeof(Sint32), 1);
+					fp->read(&entity->portalNotSecret, sizeof(Sint32), 1);
+					fp->read(&entity->portalCustomRequiresPower, sizeof(Sint32), 1);
+					for ( int i = 11; i <= 18; ++i )
+					{
+						fp->read(&entity->skill[i], sizeof(Sint32), 1);
+					}
+					break;
+				case 19:
+					if ( editorVersion >= 25 )
+					{
+						fp->read(&entity->furnitureDir, sizeof(Sint32), 1);
+						fp->read(&entity->furnitureTableSpawnChairs, sizeof(Sint32), 1);
+						fp->read(&entity->furnitureTableRandomItemChance, sizeof(Sint32), 1);
+					}
+					else
+					{
+						// don't read data, set default.
+						setSpriteAttributes(entity, nullptr, nullptr);
+					}
+					break;
+				case 20:
+					fp->read(&entity->skill[11], sizeof(Sint32), 1);
+					fp->read(&entity->skill[12], sizeof(Sint32), 1);
+					fp->read(&entity->skill[15], sizeof(Sint32), 1);
+					for ( int i = 40; i <= 52; ++i )
+					{
+						fp->read(&entity->skill[i], sizeof(Sint32), 1);
+					}
+					break;
+				case 21:
+					if ( editorVersion >= 26 )
+					{
+						fp->read(&entity->doorForceLockedUnlocked, sizeof(Sint32), 1);
+						fp->read(&entity->doorDisableLockpicks, sizeof(Sint32), 1);
+						fp->read(&entity->doorDisableOpening, sizeof(Sint32), 1);
+					}
+					break;
+				case 32:
+					fp->read(&entity->doorUnlockWhenPowered, sizeof(Sint32), 1);
+					fp->read(&entity->doorDisableLockpicks, sizeof(Sint32), 1);
+					fp->read(&entity->doorDisableOpening, sizeof(Sint32), 1);
+					fp->read(&entity->doorForceLockedUnlocked, sizeof(Sint32), 1);
+					break;
+				case 22:
+					if ( editorVersion >= 26 )
+					{
+						fp->read(&entity->gateDisableOpening, sizeof(Sint32), 1);
+					}
+					break;
+				case 23:
+					if ( editorVersion >= 26 )
+					{
+						fp->read(&entity->playerStartDir, sizeof(Sint32), 1);
+					}
+					break;
+				case 24:
+					fp->read(&entity->statueDir, sizeof(Sint32), 1);
+					fp->read(&entity->statueId, sizeof(Sint32), 1);
+					break;
+				case 25:
+					fp->read(&entity->shrineDir, sizeof(Sint32), 1);
+					fp->read(&entity->shrineZ, sizeof(Sint32), 1);
+					if ( editorVersion >= 27 )
+					{
+						fp->read(&entity->shrineDestXOffset, sizeof(Sint32), 1);
+						fp->read(&entity->shrineDestYOffset, sizeof(Sint32), 1);
+					}
+					break;
+				case 26:
+					fp->read(&entity->shrineDir, sizeof(Sint32), 1);
+					fp->read(&entity->shrineZ, sizeof(Sint32), 1);
+					break;
+				case 27:
+					fp->read(&entity->colliderDecorationModel, sizeof(Sint32), 1);
+					fp->read(&entity->colliderDecorationRotation, sizeof(Sint32), 1);
+					fp->read(&entity->colliderDecorationHeightOffset, sizeof(Sint32), 1);
+					fp->read(&entity->colliderDecorationXOffset, sizeof(Sint32), 1);
+					fp->read(&entity->colliderDecorationYOffset, sizeof(Sint32), 1);
+					fp->read(&entity->colliderHasCollision, sizeof(Sint32), 1);
+					fp->read(&entity->colliderSizeX, sizeof(Sint32), 1);
+					fp->read(&entity->colliderSizeY, sizeof(Sint32), 1);
+					fp->read(&entity->colliderMaxHP, sizeof(Sint32), 1);
+					fp->read(&entity->colliderDiggable, sizeof(Sint32), 1);
+					fp->read(&entity->colliderDamageTypes, sizeof(Sint32), 1);
+					break;
+				case 28:
+					fp->read(&entity->signalInputDirection, sizeof(Sint32), 1);
+					fp->read(&entity->signalActivateDelay, sizeof(Sint32), 1);
+					fp->read(&entity->signalTimerInterval, sizeof(Sint32), 1);
+					fp->read(&entity->signalTimerRepeatCount, sizeof(Sint32), 1);
+					fp->read(&entity->signalTimerLatchInput, sizeof(Sint32), 1);
+					fp->read(&entity->signalInvertOutput, sizeof(Sint32), 1);
+					break;
+				case 29:
+					if ( editorVersion >= 29 )
+					{
+						fp->read(&entity->pressurePlateTriggerType, sizeof(Sint32), 1);
+					}
+					else
+					{
+						// don't read data, set default.
+						setSpriteAttributes(entity, nullptr, nullptr);
+					}
+					break;
+				case 30:
+					if ( editorVersion < 31 )
+					{
+						setSpriteAttributes(entity, nullptr, nullptr);
+					}
+					fp->read(&entity->wallLockMaterial, sizeof(Sint32), 1);
+					fp->read(&entity->wallLockInvertPower, sizeof(Sint32), 1);
+					fp->read(&entity->wallLockTurnable, sizeof(Sint32), 1);
+					if ( editorVersion >= 31 )
+					{
+						fp->read(&entity->wallLockPickable, sizeof(Sint32), 1);
+						fp->read(&entity->wallLockPickableSkeletonKey, sizeof(Sint32), 1);
+						fp->read(&entity->wallLockAutoGenKey, sizeof(Sint32), 1);
+					}
+					break;
+				case 31:
+					fp->read(&entity->wallLockInvertPower, sizeof(Sint32), 1);
+					fp->read(&entity->wallLockTimer, sizeof(Sint32), 1);
+					break;
+				case 33:
+					fp->read(&entity->skill[0], sizeof(Sint32), 1);
 					break;
 				default:
 					break;
 			}
-				break;
-			case 2:
-			case 21:
-			case 22:
-			case 23:
-			case 24:
-			case 25:
-			case 26:
-			case 27:
-			case 28:
-			case 29:
-				// V2.0+ of editor version
-				switch ( checkSpriteType(sprite) )
-				{
-					case 1:
-						if ( multiplayer != CLIENT )
-						{
-							// need to give the entity its list stuff.
-							// create an empty first node for traversal purposes
-							node_t* node2 = list_AddNodeFirst(&entity->children);
-							node2->element = NULL;
-							node2->deconstructor = &emptyDeconstructor;
-
-							myStats = new Stat(entity->sprite);
-							node2 = list_AddNodeLast(&entity->children);
-							node2->element = myStats;
-							node2->size = sizeof(myStats);
-							node2->deconstructor = &statDeconstructor;
-
-							sex_t dummyVar = MALE; 
-							// we don't actually embed the sex from the editor
-							// advance the fp since we read in 0 always.
-							// otherwise it would overwrite the value of a handplaced succubus or a certain icey lich.
-							// certainly were a lot of male adventurers locked in cells...
-							fp->read(&dummyVar, sizeof(sex_t), 1);
-							fp->read(&myStats->name, sizeof(char[128]), 1);
-							fp->read(&myStats->HP, sizeof(Sint32), 1);
-							fp->read(&myStats->MAXHP, sizeof(Sint32), 1);
-							fp->read(&myStats->OLDHP, sizeof(Sint32), 1);
-							fp->read(&myStats->MP, sizeof(Sint32), 1);
-							fp->read(&myStats->MAXMP, sizeof(Sint32), 1);
-							fp->read(&myStats->STR, sizeof(Sint32), 1);
-							fp->read(&myStats->DEX, sizeof(Sint32), 1);
-							fp->read(&myStats->CON, sizeof(Sint32), 1);
-							fp->read(&myStats->INT, sizeof(Sint32), 1);
-							fp->read(&myStats->PER, sizeof(Sint32), 1);
-							fp->read(&myStats->CHR, sizeof(Sint32), 1);
-							fp->read(&myStats->LVL, sizeof(Sint32), 1);
-							fp->read(&myStats->GOLD, sizeof(Sint32), 1);
-
-							fp->read(&myStats->RANDOM_MAXHP, sizeof(Sint32), 1);
-							fp->read(&myStats->RANDOM_HP, sizeof(Sint32), 1);
-							fp->read(&myStats->RANDOM_MAXMP, sizeof(Sint32), 1);
-							fp->read(&myStats->RANDOM_MP, sizeof(Sint32), 1);
-							fp->read(&myStats->RANDOM_STR, sizeof(Sint32), 1);
-							fp->read(&myStats->RANDOM_CON, sizeof(Sint32), 1);
-							fp->read(&myStats->RANDOM_DEX, sizeof(Sint32), 1);
-							fp->read(&myStats->RANDOM_INT, sizeof(Sint32), 1);
-							fp->read(&myStats->RANDOM_PER, sizeof(Sint32), 1);
-							fp->read(&myStats->RANDOM_CHR, sizeof(Sint32), 1);
-							fp->read(&myStats->RANDOM_LVL, sizeof(Sint32), 1);
-							fp->read(&myStats->RANDOM_GOLD, sizeof(Sint32), 1);
-
-							if ( editorVersion >= 22 )
-							{
-								fp->read(&myStats->EDITOR_ITEMS, sizeof(Sint32), ITEM_SLOT_NUM);
-							}
-							else
-							{
-								// read old map formats
-								fp->read(&myStats->EDITOR_ITEMS, sizeof(Sint32), 96);
-							}
-							fp->read(&myStats->MISC_FLAGS, sizeof(Sint32), 32);
-						}
-						//Read dummy values to move fp for the client
-						else
-						{
-							dummyStats = new Stat(entity->sprite);
-							fp->read(&dummyStats->sex, sizeof(sex_t), 1);
-							fp->read(&dummyStats->name, sizeof(char[128]), 1);
-							fp->read(&dummyStats->HP, sizeof(Sint32), 1);
-							fp->read(&dummyStats->MAXHP, sizeof(Sint32), 1);
-							fp->read(&dummyStats->OLDHP, sizeof(Sint32), 1);
-							fp->read(&dummyStats->MP, sizeof(Sint32), 1);
-							fp->read(&dummyStats->MAXMP, sizeof(Sint32), 1);
-							fp->read(&dummyStats->STR, sizeof(Sint32), 1);
-							fp->read(&dummyStats->DEX, sizeof(Sint32), 1);
-							fp->read(&dummyStats->CON, sizeof(Sint32), 1);
-							fp->read(&dummyStats->INT, sizeof(Sint32), 1);
-							fp->read(&dummyStats->PER, sizeof(Sint32), 1);
-							fp->read(&dummyStats->CHR, sizeof(Sint32), 1);
-							fp->read(&dummyStats->LVL, sizeof(Sint32), 1);
-							fp->read(&dummyStats->GOLD, sizeof(Sint32), 1);
-
-							fp->read(&dummyStats->RANDOM_MAXHP, sizeof(Sint32), 1);
-							fp->read(&dummyStats->RANDOM_HP, sizeof(Sint32), 1);
-							fp->read(&dummyStats->RANDOM_MAXMP, sizeof(Sint32), 1);
-							fp->read(&dummyStats->RANDOM_MP, sizeof(Sint32), 1);
-							fp->read(&dummyStats->RANDOM_STR, sizeof(Sint32), 1);
-							fp->read(&dummyStats->RANDOM_CON, sizeof(Sint32), 1);
-							fp->read(&dummyStats->RANDOM_DEX, sizeof(Sint32), 1);
-							fp->read(&dummyStats->RANDOM_INT, sizeof(Sint32), 1);
-							fp->read(&dummyStats->RANDOM_PER, sizeof(Sint32), 1);
-							fp->read(&dummyStats->RANDOM_CHR, sizeof(Sint32), 1);
-							fp->read(&dummyStats->RANDOM_LVL, sizeof(Sint32), 1);
-							fp->read(&dummyStats->RANDOM_GOLD, sizeof(Sint32), 1);
-
-							if ( editorVersion >= 22 )
-							{
-								fp->read(&dummyStats->EDITOR_ITEMS, sizeof(Sint32), ITEM_SLOT_NUM);
-							}
-							else
-							{
-								fp->read(&dummyStats->EDITOR_ITEMS, sizeof(Sint32), 96);
-							}
-							fp->read(&dummyStats->MISC_FLAGS, sizeof(Sint32), 32);
-							delete dummyStats;
-						}
-						break;
-					case 2:
-						if ( editorVersion >= 29 )
-						{
-							fp->read(&entity->yaw, sizeof(real_t), 1);
-							fp->read(&entity->skill[9], sizeof(Sint32), 1);
-							fp->read(&entity->chestLocked, sizeof(Sint32), 1);
-							fp->read(&entity->chestMimicChance, sizeof(Sint32), 1);
-						}
-						else
-						{
-							setSpriteAttributes(entity, nullptr, nullptr);
-							fp->read(&entity->yaw, sizeof(real_t), 1);
-							fp->read(&entity->skill[9], sizeof(Sint32), 1);
-							fp->read(&entity->chestLocked, sizeof(Sint32), 1);
-						}
-						break;
-					case 3:
-						fp->read(&entity->skill[10], sizeof(Sint32), 1);
-						fp->read(&entity->skill[11], sizeof(Sint32), 1);
-						fp->read(&entity->skill[12], sizeof(Sint32), 1);
-						fp->read(&entity->skill[13], sizeof(Sint32), 1);
-						fp->read(&entity->skill[15], sizeof(Sint32), 1);
-						if ( editorVersion >= 22 )
-						{
-							fp->read(&entity->skill[16], sizeof(Sint32), 1);
-						}
-						break;
-					case 4:
-						fp->read(&entity->skill[0], sizeof(Sint32), 1);
-						fp->read(&entity->skill[1], sizeof(Sint32), 1);
-						fp->read(&entity->skill[2], sizeof(Sint32), 1);
-						fp->read(&entity->skill[3], sizeof(Sint32), 1);
-						fp->read(&entity->skill[4], sizeof(Sint32), 1);
-						fp->read(&entity->skill[5], sizeof(Sint32), 1);
-						if ( editorVersion >= 29 )
-						{
-							fp->read(&entity->skill[9], sizeof(Sint32), 1);
-						}
-						break;
-					case 5:
-						fp->read(&entity->yaw, sizeof(real_t), 1);
-						fp->read(&entity->crystalNumElectricityNodes, sizeof(Sint32), 1);
-						fp->read(&entity->crystalTurnReverse, sizeof(Sint32), 1);
-						fp->read(&entity->crystalSpellToActivate, sizeof(Sint32), 1);
-						break;
-					case 6:
-						fp->read(&entity->leverTimerTicks, sizeof(Sint32), 1);
-						break;
-					case 7:
-						if ( editorVersion >= 24 )
-						{
-							fp->read(&entity->boulderTrapRefireAmount, sizeof(Sint32), 1);
-							fp->read(&entity->boulderTrapRefireDelay, sizeof(Sint32), 1);
-							fp->read(&entity->boulderTrapPreDelay, sizeof(Sint32), 1);
-						}
-						else
-						{
-							setSpriteAttributes(entity, nullptr, nullptr);
-						}
-						break;
-					case 8:
-						fp->read(&entity->pedestalOrbType, sizeof(Sint32), 1);
-						fp->read(&entity->pedestalHasOrb, sizeof(Sint32), 1);
-						fp->read(&entity->pedestalInvertedPower, sizeof(Sint32), 1);
-						fp->read(&entity->pedestalInGround, sizeof(Sint32), 1);
-						fp->read(&entity->pedestalLockOrb, sizeof(Sint32), 1);
-						break;
-					case 9:
-						fp->read(&entity->teleporterX, sizeof(Sint32), 1);
-						fp->read(&entity->teleporterY, sizeof(Sint32), 1);
-						fp->read(&entity->teleporterType, sizeof(Sint32), 1);
-						break;
-					case 10:
-						if ( editorVersion >= 28 )
-						{
-							fp->read(&entity->ceilingTileModel, sizeof(Sint32), 1);
-							fp->read(&entity->ceilingTileDir, sizeof(Sint32), 1);
-							fp->read(&entity->ceilingTileAllowTrap, sizeof(Sint32), 1);
-							fp->read(&entity->ceilingTileBreakable, sizeof(Sint32), 1);
-						}
-						else
-						{
-							setSpriteAttributes(entity, nullptr, nullptr);
-							fp->read(&entity->ceilingTileModel, sizeof(Sint32), 1);
-						}
-						break;
-					case 11:
-						fp->read(&entity->spellTrapType, sizeof(Sint32), 1);
-						fp->read(&entity->spellTrapRefire, sizeof(Sint32), 1);
-						fp->read(&entity->spellTrapLatchPower, sizeof(Sint32), 1);
-						fp->read(&entity->spellTrapFloorTile, sizeof(Sint32), 1);
-						fp->read(&entity->spellTrapRefireRate, sizeof(Sint32), 1);
-						break;
-					case 12:
-						if ( entity->sprite == 60 ) // chair
-						{
-							if ( editorVersion >= 25 )
-							{
-								fp->read(&entity->furnitureDir, sizeof(Sint32), 1);
-							}
-							else
-							{
-								// don't read data, set default.
-								setSpriteAttributes(entity, nullptr, nullptr);
-							}
-						}
-						else
-						{
-							fp->read(&entity->furnitureDir, sizeof(Sint32), 1);
-						}
-						break;
-					case 13:
-						fp->read(&entity->floorDecorationModel, sizeof(Sint32), 1);
-						fp->read(&entity->floorDecorationRotation, sizeof(Sint32), 1);
-						fp->read(&entity->floorDecorationHeightOffset, sizeof(Sint32), 1);
-						if ( editorVersion >= 25 )
-						{
-							fp->read(&entity->floorDecorationXOffset, sizeof(Sint32), 1);
-							fp->read(&entity->floorDecorationYOffset, sizeof(Sint32), 1);
-							for ( int i = 8; i < 60; ++i )
-							{
-								fp->read(&entity->skill[i], sizeof(Sint32), 1);
-							}
-						}
-						break;
-					case 14:
-						fp->read(&entity->soundSourceToPlay, sizeof(Sint32), 1);
-						fp->read(&entity->soundSourceVolume, sizeof(Sint32), 1);
-						fp->read(&entity->soundSourceLatchOn, sizeof(Sint32), 1);
-						fp->read(&entity->soundSourceDelay, sizeof(Sint32), 1);
-						fp->read(&entity->soundSourceOrigin, sizeof(Sint32), 1);
-						break;
-					case 15:
-						fp->read(&entity->lightSourceAlwaysOn, sizeof(Sint32), 1);
-						fp->read(&entity->lightSourceBrightness, sizeof(Sint32), 1);
-						fp->read(&entity->lightSourceInvertPower, sizeof(Sint32), 1);
-						fp->read(&entity->lightSourceLatchOn, sizeof(Sint32), 1);
-						fp->read(&entity->lightSourceRadius, sizeof(Sint32), 1);
-						fp->read(&entity->lightSourceFlicker, sizeof(Sint32), 1);
-						fp->read(&entity->lightSourceDelay, sizeof(Sint32), 1);
-						break;
-					case 16:
-					{
-						fp->read(&entity->textSourceColorRGB, sizeof(Sint32), 1);
-						fp->read(&entity->textSourceVariables4W, sizeof(Sint32), 1);
-						fp->read(&entity->textSourceDelay, sizeof(Sint32), 1);
-						fp->read(&entity->textSourceIsScript, sizeof(Sint32), 1);
-						for ( int i = 4; i < 60; ++i )
-						{
-							fp->read(&entity->skill[i], sizeof(Sint32), 1);
-						}
-						break;
-					}
-					case 17:
-						fp->read(&entity->signalInputDirection, sizeof(Sint32), 1);
-						fp->read(&entity->signalActivateDelay, sizeof(Sint32), 1);
-						fp->read(&entity->signalTimerInterval, sizeof(Sint32), 1);
-						fp->read(&entity->signalTimerRepeatCount, sizeof(Sint32), 1);
-						fp->read(&entity->signalTimerLatchInput, sizeof(Sint32), 1);
-						if ( editorVersion >= 29 )
-						{
-							fp->read(&entity->signalInvertOutput, sizeof(Sint32), 1);
-						}
-						break;
-					case 18:
-						fp->read(&entity->portalCustomSprite, sizeof(Sint32), 1);
-						fp->read(&entity->portalCustomSpriteAnimationFrames, sizeof(Sint32), 1);
-						fp->read(&entity->portalCustomZOffset, sizeof(Sint32), 1);
-						fp->read(&entity->portalCustomLevelsToJump, sizeof(Sint32), 1);
-						fp->read(&entity->portalNotSecret, sizeof(Sint32), 1);
-						fp->read(&entity->portalCustomRequiresPower, sizeof(Sint32), 1);
-						for ( int i = 11; i <= 18; ++i )
-						{
-							fp->read(&entity->skill[i], sizeof(Sint32), 1);
-						}
-						break;
-					case 19:
-						if ( editorVersion >= 25 )
-						{
-							fp->read(&entity->furnitureDir, sizeof(Sint32), 1);
-							fp->read(&entity->furnitureTableSpawnChairs, sizeof(Sint32), 1);
-							fp->read(&entity->furnitureTableRandomItemChance, sizeof(Sint32), 1);
-						}
-						else
-						{
-							// don't read data, set default.
-							setSpriteAttributes(entity, nullptr, nullptr);
-						}
-						break;
-					case 20:
-						fp->read(&entity->skill[11], sizeof(Sint32), 1);
-						fp->read(&entity->skill[12], sizeof(Sint32), 1);
-						fp->read(&entity->skill[15], sizeof(Sint32), 1);
-						for ( int i = 40; i <= 52; ++i )
-						{
-							fp->read(&entity->skill[i], sizeof(Sint32), 1);
-						}
-						break;
-					case 21:
-						if ( editorVersion >= 26 )
-						{
-							fp->read(&entity->doorForceLockedUnlocked, sizeof(Sint32), 1);
-							fp->read(&entity->doorDisableLockpicks, sizeof(Sint32), 1);
-							fp->read(&entity->doorDisableOpening, sizeof(Sint32), 1);
-						}
-						break;
-					case 22:
-						if ( editorVersion >= 26 )
-						{
-							fp->read(&entity->gateDisableOpening, sizeof(Sint32), 1);
-						}
-						break;
-					case 23:
-						if ( editorVersion >= 26 )
-						{
-							fp->read(&entity->playerStartDir, sizeof(Sint32), 1);
-						}
-						break;
-					case 24:
-						fp->read(&entity->statueDir, sizeof(Sint32), 1);
-						fp->read(&entity->statueId, sizeof(Sint32), 1);
-						break;
-					case 25:
-						fp->read(&entity->shrineDir, sizeof(Sint32), 1);
-						fp->read(&entity->shrineZ, sizeof(Sint32), 1);
-						if ( editorVersion >= 27 )
-						{
-							fp->read(&entity->shrineDestXOffset, sizeof(Sint32), 1);
-							fp->read(&entity->shrineDestYOffset, sizeof(Sint32), 1);
-						}
-						break;
-					case 26:
-						fp->read(&entity->shrineDir, sizeof(Sint32), 1);
-						fp->read(&entity->shrineZ, sizeof(Sint32), 1);
-						break;
-					case 27:
-						fp->read(&entity->colliderDecorationModel, sizeof(Sint32), 1);
-						fp->read(&entity->colliderDecorationRotation, sizeof(Sint32), 1);
-						fp->read(&entity->colliderDecorationHeightOffset, sizeof(Sint32), 1);
-						fp->read(&entity->colliderDecorationXOffset, sizeof(Sint32), 1);
-						fp->read(&entity->colliderDecorationYOffset, sizeof(Sint32), 1);
-						fp->read(&entity->colliderHasCollision, sizeof(Sint32), 1);
-						fp->read(&entity->colliderSizeX, sizeof(Sint32), 1);
-						fp->read(&entity->colliderSizeY, sizeof(Sint32), 1);
-						fp->read(&entity->colliderMaxHP, sizeof(Sint32), 1);
-						fp->read(&entity->colliderDiggable, sizeof(Sint32), 1);
-						fp->read(&entity->colliderDamageTypes, sizeof(Sint32), 1);
-						break;
-					case 28:
-						fp->read(&entity->signalInputDirection, sizeof(Sint32), 1);
-						fp->read(&entity->signalActivateDelay, sizeof(Sint32), 1);
-						fp->read(&entity->signalTimerInterval, sizeof(Sint32), 1);
-						fp->read(&entity->signalTimerRepeatCount, sizeof(Sint32), 1);
-						fp->read(&entity->signalTimerLatchInput, sizeof(Sint32), 1);
-						fp->read(&entity->signalInvertOutput, sizeof(Sint32), 1);
-						break;
-					case 29:
-						if ( editorVersion >= 29 )
-						{
-							fp->read(&entity->pressurePlateTriggerType, sizeof(Sint32), 1);
-						}
-						else
-						{
-							// don't read data, set default.
-							setSpriteAttributes(entity, nullptr, nullptr);
-						}
-						break;
-					default:
-						break;
-				}
-				break;
-			default:
-				break;
 		}
 		if ( entity->behavior == actMonster || entity->behavior == actPlayer )
 		{
@@ -2492,6 +2552,24 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 	}
 
 	FileIO::close(fp);
+
+	std::string mapShortName = filename2;
+	size_t found = mapShortName.rfind("/");
+	if ( found != std::string::npos )
+	{
+		mapShortName = mapShortName.substr(found + 1);
+	}
+	else
+	{
+		found = mapShortName.rfind("\\");
+		if ( found != std::string::npos )
+		{
+			mapShortName = mapShortName.substr(found + 1);
+		}
+	}
+	size_t size = std::min(mapShortName.size(), sizeof(destmap->filename) - 1);
+	memcpy(destmap->filename, mapShortName.c_str(), size);
+	destmap->filename[size] = '\0';
 
 	if ( destmap == &map )
 	{
@@ -2514,6 +2592,10 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 #endif
 #endif
 
+#ifndef EDITOR
+		map.setMapHDRSettings();
+#endif
+
 		// create new lightmap
         for (int c = 0; c < MAXPLAYERS + 1; ++c) {
             auto& lightmap = lightmaps[c];
@@ -2524,6 +2606,50 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
             {
                 memset(lightmap.data(), 0, sizeof(vec4_t) * map.width * map.height);
                 memset(lightmapSmoothed.data(), 0, sizeof(vec4_t) * (map.width + 2) * (map.height + 2));
+
+#ifndef EDITOR
+				if ( !strncmp(map.filename, "fortress", 8) )
+				{
+					Vector4 ambienceColor = {128.f, 128.f, 152.f, 1.f};
+					ambienceColor.x *= ambienceColor.w;
+					ambienceColor.y *= ambienceColor.w;
+					ambienceColor.z *= ambienceColor.w;
+					for ( int c = 0; c < destmap->width * destmap->height; c++ )
+					{
+						lightmap[c].x = ambienceColor.x;
+						lightmap[c].y = ambienceColor.y;
+						lightmap[c].z = ambienceColor.z;
+					}
+					for ( int c = 0; c < (destmap->width + 2) * (destmap->height + 2); c++ )
+					{
+						lightmapSmoothed[c].x = ambienceColor.x;
+						lightmapSmoothed[c].y = ambienceColor.y;
+						lightmapSmoothed[c].z = ambienceColor.z;
+					}
+				}
+				if ( (svFlags & SV_FLAG_CHEATS) && 
+					(cvar_map_ambience->x > 0.01
+						|| cvar_map_ambience->y > 0.01
+						|| cvar_map_ambience->z > 0.01) )
+				{
+					auto ambienceColor = *cvar_map_ambience;
+					ambienceColor.x *= ambienceColor.w;
+					ambienceColor.y *= ambienceColor.w;
+					ambienceColor.z *= ambienceColor.w;
+					for ( int c = 0; c < destmap->width * destmap->height; c++ )
+					{
+						lightmap[c].x = ambienceColor.x;
+						lightmap[c].y = ambienceColor.y;
+						lightmap[c].z = ambienceColor.z;
+					}
+					for ( int c = 0; c < (destmap->width + 2) * (destmap->height + 2); c++ )
+					{
+						lightmapSmoothed[c].x = ambienceColor.x;
+						lightmapSmoothed[c].y = ambienceColor.y;
+						lightmapSmoothed[c].z = ambienceColor.z;
+					}
+				}
+#endif
             }
             else
             {
@@ -2603,20 +2729,6 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 		}
 	}
 
-	std::string mapShortName = filename2;
-	size_t found = mapShortName.rfind("/");
-	if ( found != std::string::npos )
-	{
-		mapShortName = mapShortName.substr(found + 1);
-	}
-	else
-	{
-		found = mapShortName.rfind("\\");
-		if ( found != std::string::npos )
-		{
-			mapShortName = mapShortName.substr(found + 1);
-		}
-	}
 
 	for ( c = 0; c < 512; c++ )
 	{
@@ -2627,11 +2739,6 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 	{
 		*checkMapHash = mapHashData;
 	}
-
-    size_t size = std::min(mapShortName.size(), sizeof(destmap->filename) - 1);
-    memcpy(destmap->filename, mapShortName.c_str(), size);
-    destmap->filename[size] = '\0';
-
 	return numentities;
 }
 
@@ -2676,7 +2783,7 @@ int saveMap(const char* filename2)
 			return 1;
 		}
 
-		fp->write("BARONY LMPV2.9", sizeof(char), strlen("BARONY LMPV2.0")); // magic code
+		fp->write("BARONY LMPV3.2", sizeof(char), strlen("BARONY LMPV2.0")); // magic code
 		fp->write(map.name, sizeof(char), 32); // map filename
 		fp->write(map.author, sizeof(char), 32); // map author
 		fp->write(&map.width, sizeof(Uint32), 1); // map width
@@ -2805,6 +2912,7 @@ int saveMap(const char* filename2)
 					fp->write(&entity->floorDecorationHeightOffset, sizeof(Sint32), 1);
 					fp->write(&entity->floorDecorationXOffset, sizeof(Sint32), 1);
 					fp->write(&entity->floorDecorationYOffset, sizeof(Sint32), 1);
+					fp->write(&entity->floorDecorationDestroyIfNoWall, sizeof(Sint32), 1);
 					for ( int i = 8; i < 60; ++i )
 					{
 						fp->write(&entity->skill[i], sizeof(Sint32), 1);
@@ -2825,6 +2933,7 @@ int saveMap(const char* filename2)
 					fp->write(&entity->lightSourceRadius, sizeof(Sint32), 1);
 					fp->write(&entity->lightSourceFlicker, sizeof(Sint32), 1);
 					fp->write(&entity->lightSourceDelay, sizeof(Sint32), 1);
+					fp->write(&entity->lightSourceRGB, sizeof(Sint32), 1);
 					break;
 				case 16:
 				{
@@ -2877,6 +2986,12 @@ int saveMap(const char* filename2)
 					fp->write(&entity->doorDisableLockpicks, sizeof(Sint32), 1);
 					fp->write(&entity->doorDisableOpening, sizeof(Sint32), 1);
 					break;
+				case 32:
+					fp->write(&entity->doorUnlockWhenPowered, sizeof(Sint32), 1);
+					fp->write(&entity->doorDisableLockpicks, sizeof(Sint32), 1);
+					fp->write(&entity->doorDisableOpening, sizeof(Sint32), 1);
+					fp->write(&entity->doorForceLockedUnlocked, sizeof(Sint32), 1);
+					break;
 				case 22:
 					fp->write(&entity->gateDisableOpening, sizeof(Sint32), 1);
 					break;
@@ -2920,6 +3035,21 @@ int saveMap(const char* filename2)
 					break;
 				case 29:
 					fp->write(&entity->pressurePlateTriggerType, sizeof(Sint32), 1);
+					break;
+				case 30:
+					fp->write(&entity->wallLockMaterial, sizeof(Sint32), 1);
+					fp->write(&entity->wallLockInvertPower, sizeof(Sint32), 1);
+					fp->write(&entity->wallLockTurnable, sizeof(Sint32), 1);
+					fp->write(&entity->wallLockPickable, sizeof(Sint32), 1);
+					fp->write(&entity->wallLockPickableSkeletonKey, sizeof(Sint32), 1);
+					fp->write(&entity->wallLockAutoGenKey, sizeof(Sint32), 1);
+					break;
+				case 31:
+					fp->write(&entity->wallLockInvertPower, sizeof(Sint32), 1);
+					fp->write(&entity->wallLockTimer, sizeof(Sint32), 1);
+					break;
+				case 33:
+					fp->write(&entity->skill[0], sizeof(Sint32), 1);
 					break;
 				default:
 					break;
@@ -5283,7 +5413,7 @@ void physfsReloadMonsterLimbFiles()
 	for ( int c = 1; c < NUMMONSTERS; c++ )
 	{
 		// initialize all offsets to zero
-		for ( int x = 0; x < 20; x++ )
+		for ( int x = 0; x < 30; x++ )
 		{
 			limbs[c][x][0] = 0;
 			limbs[c][x][1] = 0;
@@ -5332,7 +5462,7 @@ void physfsReloadMonsterLimbFiles()
 			}
 
 			// process line
-			if ( sscanf(data, "%d", &limb) != 1 || limb >= 20 || limb < 0 )
+			if ( sscanf(data, "%d", &limb) != 1 || limb >= 30 || limb < 0 )
 			{
 				printlog("warning: syntax error in '%s':%d\n invalid limb index!\n", filename, line);
 				continue;

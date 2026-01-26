@@ -14,14 +14,19 @@ const Uint32 BinaryFormatTag = *"spff";
 class JsonFileWriter : public FileInterface {
 public:
 
-	JsonFileWriter()
+	JsonFileWriter(EFileFormat format)
 	: buffer()
 	, writer(buffer)
 	{
+		if ( format == EFileFormat::Json_Compact )
+		{
+			writer.SetIndent(' ', 2);
+			writer.SetFormatOptions(rapidjson::PrettyFormatOptions::kFormatSingleLineArray);
+		}
 	}
 
-	static bool writeObject(File* file, const FileHelper::SerializationFunc& serialize) {
-		JsonFileWriter jfw;
+	static bool writeObject(File* file, const FileHelper::SerializationFunc& serialize, EFileFormat format) {
+		JsonFileWriter jfw(format);
 
         bool result = false;
 		if (jfw.beginObject()) {
@@ -489,8 +494,8 @@ bool FileHelper::writeObjectInternal(const char * filename, EFileFormat format, 
 	if (format == EFileFormat::Binary) {
 		success = BinaryFileWriter::writeObject(file, serialize);
 	}
-	else if (format == EFileFormat::Json) {
-		success = JsonFileWriter::writeObject(file, serialize);
+	else if (format == EFileFormat::Json || format == EFileFormat::Json_Compact) {
+		success = JsonFileWriter::writeObject(file, serialize, format);
 	}
 	else {
 		assert(false);
@@ -517,7 +522,7 @@ bool FileHelper::readObjectInternal(const char * filename, const SerializationFu
 	if (format == EFileFormat::Binary) {
 		success = BinaryFileReader::readObject(file, serialize);
 	}
-	else if(format == EFileFormat::Json) {
+	else if(format == EFileFormat::Json || format == EFileFormat::Json_Compact) {
 		success = JsonFileReader::readObject(file, serialize);
 	}
 	else {

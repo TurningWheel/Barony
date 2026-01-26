@@ -182,6 +182,16 @@ namespace MainMenu {
 				return "goblin";
 			case RACE_INSECTOID:
 				return "insectoid";
+			case RACE_GREMLIN:
+				return "gremlin";
+			case RACE_DRYAD:
+				return "dryad";
+			case RACE_MYCONID:
+				return "myconid";
+			case RACE_SALAMANDER:
+				return "salamander";
+			case RACE_GNOME:
+				return "gnome";
 			default:
 				break;
 			}
@@ -206,7 +216,8 @@ namespace MainMenu {
 	enum class DLC {
 		Base,
 		MythsAndOutcasts,
-		LegendsAndPariahs
+		LegendsAndPariahs,
+		DesertersAndDisciples
 	};
 
 	struct Class {
@@ -343,6 +354,36 @@ namespace MainMenu {
 			"ClassSelect_Icon_HunterOn_00.png",
 			"ClassSelect_Icon_HunterLocked_00.png",
 			}},
+		{ "bard", {
+			DLC::DesertersAndDisciples,
+			"ClassSelect_Icon_Bard_00.png",
+			"ClassSelect_Icon_BardOn_00.png",
+			"ClassSelect_Icon_BardLocked_00.png",
+			}},
+		{ "sapper", {
+			DLC::DesertersAndDisciples,
+			"ClassSelect_Icon_Sapper_00.png",
+			"ClassSelect_Icon_SapperOn_00.png",
+			"ClassSelect_Icon_SapperLocked_00.png",
+			}},
+		{ "scion", {
+			DLC::DesertersAndDisciples,
+			"ClassSelect_Icon_Scion_00.png",
+			"ClassSelect_Icon_ScionOn_00.png",
+			"ClassSelect_Icon_ScionLocked_00.png",
+			}},
+		{ "hermit", {
+			DLC::DesertersAndDisciples,
+			"ClassSelect_Icon_Hermit_00.png",
+			"ClassSelect_Icon_HermitOn_00.png",
+			"ClassSelect_Icon_HermitLocked_00.png",
+			}},
+		{ "paladin", {
+			DLC::DesertersAndDisciples,
+			"ClassSelect_Icon_Paladin_00.png",
+			"ClassSelect_Icon_PaladinOn_00.png",
+			"ClassSelect_Icon_PaladinLocked_00.png",
+			}},
 	};
 
 	static const char* classes_in_order[] = {
@@ -351,6 +392,26 @@ namespace MainMenu {
 		"wizard", "arcanist", "joker", "sexton",
 		"ninja", "monk", "conjurer", "accursed",
 		"mesmer", "brewer", "mechanist", "punisher",
-		"shaman", "hunter"
+		"shaman", "hunter", "bard", "sapper", "scion", "hermit", "paladin"
 	};
+
+#ifdef STEAMWORKS
+	class RichPresence
+	{
+		int _currentlevel = 0;
+		int _secretlevel = 0;
+		int _classnum = 0;
+		int _level = 0;
+		bool _intro = false;
+		Uint32 lastUpdate = 0;
+		std::string levelStr = "";
+		std::string trimmedLevelStr = "";
+		bool init = false;
+		bool needsUpdate = true;
+		bool enabled = true;
+	public:
+		void process();
+	};
+	static RichPresence richPresence;
+#endif
 }

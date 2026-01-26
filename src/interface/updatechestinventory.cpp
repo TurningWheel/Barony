@@ -30,9 +30,9 @@ int numItemsInChest(const int player)
 	{
 		chestInventory = &chestInv[player];
 	}
-	else if (openedChest[player]->children.first && openedChest[player]->children.first->element)
+	else if ( openedChest[player] )
 	{
-		chestInventory = (list_t*)openedChest[player]->children.first->element;
+		chestInventory = openedChest[player]->getChestInventoryList();
 	}
 
 	int i = 0;
@@ -68,9 +68,9 @@ void updateChestInventory(const int player)
 	{
 		chest_inventory = &chestInv[player];
 	}
-	else if ( openedChest[player]->children.first && openedChest[player]->children.first->element )
+	else if ( openedChest[player] )
 	{
-		chest_inventory = (list_t*)openedChest[player]->children.first->element;
+		chest_inventory = openedChest[player]->getChestInventoryList();
 	}
 
 	if ( chest_inventory )

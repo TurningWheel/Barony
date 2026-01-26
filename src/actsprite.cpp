@@ -34,12 +34,43 @@
 #define SPRITE_FRAMES my->skill[1]
 #define SPRITE_ANIMSPEED my->skill[2]
 #define SPRITE_LIT my->skill[5]
+#define SPRITE_ROTATE my->fskill[0]
+#define SPRITE_CURRENT_ALPHA my->fskill[1]
+#define SPRITE_ALPHA_VAR my->fskill[2]
+#define SPRITE_ALPHA_ANIM_SIZE my->fskill[3]
+#define SPRITE_CHECK_PARENT_EXISTS my->skill[8]
 
 void actSprite(Entity* my)
 {
-	if ( !my->skill[6] && SPRITE_LIT )
+	if ( SPRITE_CHECK_PARENT_EXISTS > 0 )
 	{
-		my->skill[6] = 1;
+		if ( !uidToEntity(SPRITE_CHECK_PARENT_EXISTS) )
+		{
+			if ( my->actSpriteUseCustomSurface != 0 )
+			{
+				if ( auto fx = AOEIndicators_t::getIndicator(my->actSpriteUseCustomSurface) )
+				{
+					fx->expired = true;
+				}
+			}
+
+			my->removeLightField();
+			list_RemoveNode(my->mynode);
+			return;
+		}
+	}
+	if ( my->actSpriteFollowUID > 0 )
+	{
+		if ( Entity* parent = uidToEntity(my->actSpriteFollowUID) )
+		{
+			my->x = parent->x;
+			my->y = parent->y;
+		}
+	}
+
+	if ( !my->actSpriteHasLightInit && SPRITE_LIT )
+	{
+		my->actSpriteHasLightInit = 1;
 		my->light = addLight(my->x / 16, my->y / 16, "explosion");
 	}
 	else if ( !SPRITE_LIT )
@@ -63,6 +94,28 @@ void actSprite(Entity* my)
 				return;
 			}
 		}
+	}
+
+	if ( SPRITE_ROTATE > 0.0001 )
+	{
+		my->yaw += SPRITE_ROTATE;
+	}
+	if ( my->actSpritePitchRotate > 0.0001 )
+	{
+		my->pitch += my->actSpritePitchRotate;
+	}
+	if ( SPRITE_ALPHA_VAR > 0.0001 )
+	{
+		SPRITE_CURRENT_ALPHA = SPRITE_ALPHA_VAR + SPRITE_ALPHA_ANIM_SIZE * sin(2 * PI * (my->ticks % TICKS_PER_SECOND) / (real_t)(TICKS_PER_SECOND));
+	}
+	if ( abs(my->vel_z) > 0.001 )
+	{
+		my->z += my->vel_z;
+	}
+	if ( my->actSpriteVelXY != 0 )
+	{
+		my->x += my->vel_x;
+		my->y += my->vel_y;
 	}
 }
 
@@ -115,7 +168,7 @@ void actSpriteWorldTooltip(Entity* my)
 		my->x = parent->x;
 		my->y = parent->y;
 
-		if ( parent->behavior == &actDoor )
+		if ( parent->behavior == &actDoor || parent->behavior == &actIronDoor )
 		{
 			if ( parent->flags[PASSABLE] )
 			{

@@ -111,6 +111,10 @@ void clickDescription(int player, Entity* entity)
 				{
 					messagePlayer(player, MESSAGE_INSPECTION, Language::get(256));
 				}
+				else if ( entity->behavior == &actIronDoor )
+				{
+					messagePlayer(player, MESSAGE_INSPECTION, Language::get(6409));
+				}
 				else if ( entity->isDamageableCollider() )
 				{
 					messagePlayer(player, MESSAGE_INSPECTION, Language::get(254), Language::get(entity->getColliderLangName()));
@@ -142,6 +146,18 @@ void clickDescription(int player, Entity* entity)
 				else if ( entity->behavior == &actCampfire)
 				{
 					messagePlayer(player, MESSAGE_INSPECTION, Language::get(260));
+				}
+				else if ( entity->behavior == &actCauldron )
+				{
+					messagePlayer(player, MESSAGE_INSPECTION, Language::get(6976));
+				}
+				else if ( entity->behavior == &actWorkbench )
+				{
+					messagePlayer(player, MESSAGE_INSPECTION, Language::get(6980));
+				}
+				else if ( entity->behavior == &actMailbox )
+				{
+					messagePlayer(player, MESSAGE_INSPECTION, Language::get(6985));
 				}
 				else if ( entity->behavior == &actFountain)
 				{
@@ -271,10 +287,39 @@ void clickDescription(int player, Entity* entity)
 						(entity->sprite >= 278 && entity->sprite < 282) ||
 						(entity->sprite >= 614 && entity->sprite < 618) ||
 						(entity->sprite >= 992 && entity->sprite < 995) ||
-						(entity->sprite == 620))
+						(entity->sprite == 620) || entity->teleporterType == 3)
 					{
 						messagePlayer(player, MESSAGE_INSPECTION, Language::get(272));
 					}
+				}
+				else if ( entity->behavior == &::actWallLock
+					|| (entity->sprite >= 1585 && entity->sprite <= 1592) )
+				{
+					int wallLockState = entity->wallLockState;
+					int wallLockMaterial = entity->wallLockMaterial;
+					if ( entity->sprite >= 1585 && entity->sprite <= 1592 )
+					{
+						if ( Entity* parent = uidToEntity(entity->parent) )
+						{
+							wallLockState = parent->wallLockState;
+							wallLockMaterial = parent->wallLockMaterial;
+						}
+					}
+
+					if ( wallLockState == Entity::WallLockStates::LOCK_NO_KEY )
+					{
+						messagePlayer(player, MESSAGE_INSPECTION, Language::get(6394), Language::get(6383 + wallLockMaterial));
+					}
+					else
+					{
+							messagePlayer(player, MESSAGE_INSPECTION, Language::get(6395), Language::get(6383 + wallLockMaterial));
+					}
+				}
+				else if ( entity->behavior == &::actWallButton
+					|| entity->sprite == 1151
+					|| entity->sprite == 1152 )
+				{
+					messagePlayer(player, MESSAGE_INSPECTION, Language::get(6396));
 				}
 				else if ( entity->behavior == &actFloorDecoration )
 				{

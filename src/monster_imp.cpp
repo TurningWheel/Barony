@@ -56,12 +56,12 @@ void initImp(Entity* my, Stat* myStats)
 			// boss variants
 
 			// random effects
-			myStats->EFFECTS[EFF_LEVITATING] = true;
+			myStats->setEffectActive(EFF_LEVITATING, 1);
 			myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
 
-			if ( rng.rand() % 4 == 0 && strncmp(map.name, "Hell Boss", 9) )
+			if ( rng.rand() % 4 == 0 && strncmp(map.name, "Hell Boss", 9) && myStats->getAttribute("spawn_no_sleep") == "" )
 			{
-				myStats->EFFECTS[EFF_ASLEEP] = true;
+				myStats->setEffectActive(EFF_ASLEEP, 1);
 				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + rng.rand() % 3600;
 			}
 
@@ -284,7 +284,7 @@ void impMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	// set invisibility //TODO: isInvisible()?
 	if ( multiplayer != CLIENT )
 	{
-		if ( myStats->EFFECTS[EFF_INVISIBLE] == true )
+		if ( myStats->getEffectActive(EFF_INVISIBLE) )
 		{
 			my->flags[INVISIBLE] = true;
 			my->flags[BLOCKSIGHT] = false;
@@ -337,7 +337,7 @@ void impMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		}
 
 		// sleeping
-		if ( myStats->EFFECTS[EFF_ASLEEP] )
+		if ( myStats->getEffectActive(EFF_ASLEEP) )
 		{
 			my->pitch = PI / 4;
 		}
@@ -346,8 +346,11 @@ void impMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			my->pitch = 0;
 		}
 
+		my->z = -4.5;
+		my->creatureHandleLiftZ();
+
 		// imps are always flying
-		myStats->EFFECTS[EFF_LEVITATING] = true;
+		myStats->setEffectActive(EFF_LEVITATING, 1);
 		myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
 	}
 

@@ -57,15 +57,8 @@ void initCockatrice(Entity* my, Stat* myStats)
 			// boss variants
 
 			// random effects
-			myStats->EFFECTS[EFF_LEVITATING] = true;
+			myStats->setEffectActive(EFF_LEVITATING, 1);
 			myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
-
-			// cockatrices don't sleep!
-			/*if ( rng.rand() % 4 == 0 )
-			{
-				myStats->EFFECTS[EFF_ASLEEP] = true;
-				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + rng.rand() % 3600;
-			}*/
 
 			// generates equipment and weapons if available from editor
 			createMonsterEquipment(myStats, rng);
@@ -330,7 +323,7 @@ void cockatriceMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	// set invisibility //TODO: use isInvisible()?
 	if ( multiplayer != CLIENT )
 	{
-		if ( myStats->EFFECTS[EFF_INVISIBLE] == true )
+		if ( myStats->getEffectActive(EFF_INVISIBLE) )
 		{
 			my->flags[INVISIBLE] = true;
 			my->flags[BLOCKSIGHT] = false;
@@ -342,7 +335,7 @@ void cockatriceMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					bodypart++;
 					continue;
 				}
-				if ( bodypart >= 7 )
+				if ( bodypart >= 9 )
 				{
 					break;
 				}
@@ -367,7 +360,7 @@ void cockatriceMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					bodypart++;
 					continue;
 				}
-				if ( bodypart >= 7 )
+				if ( bodypart >= 9 )
 				{
 					break;
 				}
@@ -383,7 +376,7 @@ void cockatriceMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		}
 
 		// sleeping
-		if ( myStats->EFFECTS[EFF_ASLEEP] )
+		if ( myStats->getEffectActive(EFF_ASLEEP) )
 		{
 			my->pitch = PI / 4;
 		}
@@ -396,7 +389,7 @@ void cockatriceMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		}
 
 		// cockatrices are always flying
-		myStats->EFFECTS[EFF_LEVITATING] = true;
+		myStats->setEffectActive(EFF_LEVITATING, 1);
 		myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
 	}
 
@@ -412,14 +405,34 @@ void cockatriceMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					if ( my->monsterAnimationLimbOvershoot >= ANIMATE_OVERSHOOT_TO_SETPOINT )
 					{
 						// handle z movement on windup
+						if ( abs(my->creatureHoverZ) > 0.01 )
+						{
+							my->z = -4.5;
+							my->creatureHoverZ = 0.0;
+						}
 						limbAnimateWithOvershoot(my, ANIMATE_Z, 0.2, -3.5, 0.05, -5.5, ANIMATE_DIR_POSITIVE); // default z is -4.5 in actmonster.cpp
 					}
 				}
-				else if(MONSTER_ATTACK != MONSTER_POSE_MELEE_WINDUP3 )
+				else if ( MONSTER_ATTACK != MONSTER_POSE_MELEE_WINDUP3 )
 				{
 					// post-swing head animation. client doesn't need to adjust the entity pitch, server will handle.
 					limbAnimateWithOvershoot(my, ANIMATE_PITCH, 0.2, PI / 4, 0.1, 0, ANIMATE_DIR_POSITIVE);
-					limbAnimateToLimit(my, ANIMATE_Z, 0.2, -4.5, false, 0);
+
+					if ( myStats->getEffectActive(EFF_LIFT) )
+					{
+						my->z = -4.5;
+						my->creatureHandleLiftZ();
+					}
+					else
+					{
+						if ( abs(my->creatureHoverZ) > 0.01 )
+						{
+							my->z = -4.5;
+							my->creatureHoverZ = 0.0;
+						}
+						my->z = std::min(my->z, -4.5);
+						limbAnimateToLimit(my, ANIMATE_Z, 0.2, -4.5, false, 0);
+					}
 				}
 			}
 			
@@ -564,7 +577,7 @@ void cockatriceMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						if ( multiplayer != CLIENT )
 						{
 							// cockatrice can't be paralyzed, use EFF_STUNNED instead.
-							myStats->EFFECTS[EFF_STUNNED] = true;
+							myStats->setEffectActive(EFF_STUNNED, 1);
 							myStats->EFFECTS_TIMERS[EFF_STUNNED] = 20;
 						}
 						entity->skill[0] = 0;
@@ -649,7 +662,7 @@ void cockatriceMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						{
 							my->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_TO_SETPOINT;
 							// cockatrice can't be paralyzed, use EFF_STUNNED instead.
-							myStats->EFFECTS[EFF_STUNNED] = true;
+							myStats->setEffectActive(EFF_STUNNED, 1);
 							myStats->EFFECTS_TIMERS[EFF_STUNNED] = 50;
 						}
 					}

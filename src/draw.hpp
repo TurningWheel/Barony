@@ -440,4 +440,15 @@ extern bool hdrEnabled;
 extern ConsoleVariable<Vector4> cvar_hdrBrightness;
 extern ConsoleVariable<float> cvar_fogDistance;
 extern ConsoleVariable<Vector4> cvar_fogColor;
+extern ConsoleVariable<float> cvar_hdrExposure;
+extern ConsoleVariable<float> cvar_hdrGamma;
+extern ConsoleVariable<float> cvar_hdrAdjustment;
+extern ConsoleVariable<float> cvar_hdrLimitHigh;
+extern ConsoleVariable<float> cvar_hdrLimitLow;
+extern const Vector4 defaultBrightness;
+extern const float defaultGamma;
+extern const float defaultExposure;
+extern const float defaultAdjustmentRate;
+extern const float defaultLimitHigh;
+extern const float defaultLimitLow;
 #endif

@@ -24,6 +24,8 @@ extern std::string shopspeech[MAXPLAYERS];
 extern int shopkeepertype[MAXPLAYERS];
 extern std::string shopkeepername[MAXPLAYERS];
 extern char shopkeepername_client[MAXPLAYERS][64];
+extern std::map<Uint32, int> hamletShopkeeperSkillLimit[MAXPLAYERS];
+static const int hamletTradingSkillLimit = 7;
 
 void startTradingServer(Entity* entity, int player);
 bool isItemSellableToShop(const int player, Item* item);

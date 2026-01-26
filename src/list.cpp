@@ -91,9 +91,9 @@ void list_RemoveNode(node_t* node)
 			{
 				chest_inventory = &chestInv[i];
 			}
-			else if ( openedChest[i]->children.first && openedChest[i]->children.first->element )
+			else if ( openedChest[i] )
 			{
-				chest_inventory = (list_t*)openedChest[i]->children.first->element;
+				chest_inventory = openedChest[i]->getChestInventoryList();
 			}
 
 			if ( chest_inventory )

@@ -186,7 +186,7 @@ void slimeSetStats(Entity& my, Stat& myStats)
 	myStats.MAXHP = myStats.HP;
 	myStats.OLDHP = myStats.HP;
 
-	myStats.setProficiency(PRO_MAGIC, level * 10);
+	myStats.setProficiency(PRO_SORCERY, level * 10);
 }
 
 void initSlime(Entity* my, Stat* myStats)
@@ -456,7 +456,7 @@ void slimeAnimate(Entity* my, Stat* myStats, double dist)
 				{
 					if ( Stat* myStats = my->getStats() )
 					{
-						myStats->EFFECTS[EFF_STUNNED] = true;
+						myStats->setEffectActive(EFF_STUNNED, 1);
 						myStats->EFFECTS_TIMERS[EFF_STUNNED] = slimeSprayDelay / 2;
 					}
 				}
@@ -662,6 +662,7 @@ void slimeAnimate(Entity* my, Stat* myStats, double dist)
 		slimeWaterBob = 0.0;
 	}
 	my->focalz += (swimming && MONSTER_ATTACK == 0) ? (1.0 + slimeWaterBob) : 0.0;
+	my->creatureHandleLiftZ();
 }
 
 void slimeDie(Entity* my)

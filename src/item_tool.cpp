@@ -26,6 +26,10 @@
 
 void Item::applySkeletonKey(int player, Entity& entity)
 {
+	static std::pair<int, std::set<Uint32>> entitiesUnlockedFirstTime;
+	bool interacted = false;
+	bool rollDegrade = false;
+
 	if ( entity.behavior == &actChest )
 	{
 		playSoundEntity(&entity, 91, 64);
@@ -35,6 +39,7 @@ void Item::applySkeletonKey(int player, Entity& entity)
 			entity.unlockChest();
 			Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_CHESTS_UNLOCKED, "chest", 1);
 			Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_LOCKPICK_CHESTS_UNLOCK, TOOL_SKELETONKEY, 1);
+			rollDegrade = true;
 		}
 		else
 		{
@@ -42,30 +47,113 @@ void Item::applySkeletonKey(int player, Entity& entity)
 			entity.lockChest();
 			Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_LOCKPICK_CHESTS_LOCK, TOOL_SKELETONKEY, 1);
 		}
+		interacted = true;
 	}
-	else if ( entity.behavior == &actDoor )
+	else if ( entity.behavior == &actWallLock )
 	{
-		playSoundEntity(&entity, 91, 64);
+		if ( entity.wallLockState == Entity::WallLockStates::LOCK_NO_KEY )
+		{
+			if ( entity.wallLockPickableSkeletonKey == 1 )
+			{
+				if ( entity.wallLockPower == 1 )
+				{
+					if ( entity.wallLockTurnable == 0 )
+					{
+						// untoggleable
+						playSoundEntity(&entity, 92, 64);
+						messagePlayer(player, MESSAGE_INTERACTION, Language::get(6429), Language::get(6383 + entity.wallLockMaterial));
+					}
+					else
+					{
+						playSoundEntity(&entity, 57, 64);
+						entity.wallLockPower = 2; // turn off later in actWallLock
+						messagePlayer(player, MESSAGE_INTERACTION, Language::get(6427), items[TOOL_SKELETONKEY].getIdentifiedName(), 
+							Language::get(6383 + entity.wallLockMaterial));
+						interacted = true;
+					}
+				}
+				else if ( entity.wallLockPower == 0 )
+				{
+					playSoundEntity(&entity, 91, 64);
+					entity.wallLockPower = 3; // turn on later in actWallLock
+					messagePlayer(player, MESSAGE_INTERACTION, Language::get(6426), items[TOOL_SKELETONKEY].getIdentifiedName(), 
+						Language::get(6383 + entity.wallLockMaterial));
+					interacted = true;
+					rollDegrade = true;
+
+					Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_KEYLOCK_SKELETON_KEY, "wall locks", 1);
+				}
+			}
+			else
+			{
+				messagePlayer(player, MESSAGE_INTERACTION, Language::get(6425));
+				playSoundEntity(&entity, 92, 64);
+			}
+		}
+		else
+		{
+			messagePlayer(player, MESSAGE_INTERACTION, Language::get(6423), Language::get(6383 + entity.wallLockMaterial));
+			playSoundEntity(&entity, 92, 64);
+		}
+	}
+	else if ( entity.behavior == &actDoor || entity.behavior == &actIronDoor )
+	{
 		if ( entity.doorLocked )
 		{
 			if ( entity.doorDisableLockpicks == 1 )
 			{
-				Uint32 color = makeColorRGB(255, 0, 255);
-				messagePlayerColor(player, MESSAGE_INTERACTION, color, Language::get(3101)); // disabled.
+				if ( entity.behavior == &actIronDoor )
+				{
+					Uint32 color = makeColorRGB(255, 255, 255);
+					playSoundEntity(&entity, 92, 64);
+					messagePlayerColor(player, MESSAGE_INTERACTION, color, Language::get(6403)); // disabled.
+				}
+				else
+				{
+					Uint32 color = makeColorRGB(255, 0, 255);
+					playSoundEntity(&entity, 92, 64);
+					messagePlayerColor(player, MESSAGE_INTERACTION, color, Language::get(3101)); // disabled.
+				}
 			}
 			else
 			{
-				messagePlayer(player, MESSAGE_INTERACTION, Language::get(1099));
+				playSoundEntity(&entity, 91, 64);
+				if ( entity.behavior == &actIronDoor )
+				{
+					messagePlayer(player, MESSAGE_INTERACTION, Language::get(6415));
+					Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_DOOR_UNLOCKED, "iron door", 1);
+				}
+				else
+				{
+					messagePlayer(player, MESSAGE_INTERACTION, Language::get(1099));
+					Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_DOOR_UNLOCKED, "door", 1);
+				}
 				entity.doorLocked = 0;
-				Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_DOOR_UNLOCKED, "door", 1);
 				Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_LOCKPICK_DOOR_UNLOCK, TOOL_SKELETONKEY, 1);
 			}
 		}
 		else
 		{
-			messagePlayer(player, MESSAGE_INTERACTION, Language::get(1100));
-			entity.doorLocked = 1;
-			Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_LOCKPICK_DOOR_LOCK, TOOL_SKELETONKEY, 1);
+			if ( entity.doorDisableLockpicks == 1 && entity.behavior == &actIronDoor )
+			{
+				Uint32 color = makeColorRGB(255, 255, 255);
+				playSoundEntity(&entity, 92, 64);
+				messagePlayerColor(player, MESSAGE_INTERACTION, color, Language::get(6403)); // disabled.
+			}
+			else
+			{
+				playSoundEntity(&entity, 91, 64);
+				if ( entity.behavior == &actIronDoor )
+				{
+					messagePlayer(player, MESSAGE_INTERACTION, Language::get(6416));
+				}
+				else
+				{
+					messagePlayer(player, MESSAGE_INTERACTION, Language::get(1100));
+				}
+				entity.doorLocked = 1;
+				Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_LOCKPICK_DOOR_LOCK, TOOL_SKELETONKEY, 1);
+			}
 		}
 	}
 	else if ( entity.behavior == &actMonster && entity.getMonsterTypeFromSprite() == MIMIC )
@@ -75,7 +163,7 @@ void Item::applySkeletonKey(int player, Entity& entity)
 			if ( entity.isInertMimic() )
 			{
 				playSoundEntity(&entity, 91, 64);
-				if ( myStats->EFFECTS[EFF_MIMIC_LOCKED] )
+				if ( myStats->getEffectActive(EFF_MIMIC_LOCKED) )
 				{
 					messagePlayer(player, MESSAGE_INTERACTION, Language::get(1097));
 					entity.setEffect(EFF_MIMIC_LOCKED, false, 0, false);
@@ -85,14 +173,16 @@ void Item::applySkeletonKey(int player, Entity& entity)
 					messagePlayer(player, MESSAGE_INTERACTION, Language::get(1098));
 					entity.setEffect(EFF_MIMIC_LOCKED, true, -1, false);
 				}
+				interacted = true;
 			}
 			else
 			{
-				if ( myStats->EFFECTS[EFF_MIMIC_LOCKED] )
+				if ( myStats->getEffectActive(EFF_MIMIC_LOCKED) )
 				{
 					playSoundEntity(&entity, 91, 64);
 					messagePlayer(player, MESSAGE_INTERACTION, Language::get(1097));
 					entity.setEffect(EFF_MIMIC_LOCKED, false, 0, false);
+					interacted = true;
 				}
 				else
 				{
@@ -113,6 +203,7 @@ void Item::applySkeletonKey(int player, Entity& entity)
 						{
 							myStats->monsterMimicLockedBy = players[player]->entity ? players[player]->entity->getUID() : 0;
 						}
+						interacted = true;
 					}
 				}
 			}
@@ -121,6 +212,57 @@ void Item::applySkeletonKey(int player, Entity& entity)
 	else
 	{
 		messagePlayer(player, MESSAGE_INTERACTION, Language::get(1101), getName());
+	}
+
+	if ( entitiesUnlockedFirstTime.first != currentlevel )
+	{
+		entitiesUnlockedFirstTime.second.clear();
+	}
+	entitiesUnlockedFirstTime.first = currentlevel;
+	if ( interacted )
+	{
+		auto find = entitiesUnlockedFirstTime.second.find(entity.getUID());
+		if ( find == entitiesUnlockedFirstTime.second.end() )
+		{
+			if ( rollDegrade )
+			{
+				if ( stats[player]->weapon && stats[player]->weapon->type == TOOL_SKELETONKEY )
+				{
+					if ( local_rng.rand() % 1 == 0 && !(players[player]->entity && players[player]->entity->spellEffectPreserveItem(stats[player]->weapon)) )
+					{
+						if ( player >= 0 && players[player]->isLocalPlayer() )
+						{
+							if ( count > 1 )
+							{
+								newItem(type, status, beatitude, count - 1, appearance, identified, &stats[player]->inventory);
+							}
+						}
+						stats[player]->weapon->count = 1;
+						stats[player]->weapon->status = static_cast<Status>(stats[player]->weapon->status - 1);
+						if ( status != BROKEN )
+						{
+							messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(6960));
+						}
+						else
+						{
+							messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(6961));
+						}
+						if ( player > 0 && multiplayer == SERVER )
+						{
+							strcpy((char*)(net_packet->data), "ARMR");
+							net_packet->data[4] = 5;
+							net_packet->data[5] = stats[player]->weapon->status;
+							SDLNet_Write16((int)stats[player]->weapon->type, &net_packet->data[6]);
+							net_packet->address.host = net_clients[player - 1].host;
+							net_packet->address.port = net_clients[player - 1].port;
+							net_packet->len = 8;
+							sendPacketSafe(net_sock, -1, net_packet, player - 1);
+						}
+					}
+				}
+			}
+			entitiesUnlockedFirstTime.second.insert(entity.getUID());
+		}
 	}
 }
 
@@ -240,7 +382,10 @@ void Item::applyLockpick(int player, Entity& entity)
 				{
 					if ( stats[player]->getProficiency(PRO_LOCKPICKING) < SKILL_LEVEL_EXPERT )
 					{
-						players[player]->entity->increaseSkill(PRO_LOCKPICKING);
+						if ( players[player]->entity )
+						{
+							players[player]->entity->increaseSkill(PRO_LOCKPICKING);
+						}
 					}
 					else
 					{
@@ -255,9 +400,8 @@ void Item::applyLockpick(int player, Entity& entity)
 					{
 						int metalscrap = 5 + local_rng.rand() % 6;
 						int magicscrap = 5 + local_rng.rand() % 11;
-						if ( entity.children.first )
 						{
-							list_t* inventory = static_cast<list_t* >(entity.children.first->element);
+							list_t* inventory = entity.getChestInventoryList();
 							if ( inventory )
 							{
 								newItem(TOOL_METAL_SCRAP, DECREPIT, 0, metalscrap, 0, true, inventory);
@@ -282,7 +426,10 @@ void Item::applyLockpick(int player, Entity& entity)
 					{
 						if ( local_rng.rand() % 10 == 0 )
 						{
-							players[player]->entity->increaseSkill(PRO_LOCKPICKING);
+							if ( players[player]->entity )
+							{
+								players[player]->entity->increaseSkill(PRO_LOCKPICKING);
+							}
 							tryDegradeLockpick = false;
 						}
 					}
@@ -296,9 +443,9 @@ void Item::applyLockpick(int player, Entity& entity)
 					}
 				}
 				
-				if ( tryDegradeLockpick )
+				if ( tryDegradeLockpick && stats[player]->weapon && stats[player]->weapon->type == TOOL_LOCKPICK )
 				{
-					if ( local_rng.rand() % 5 == 0 )
+					if ( local_rng.rand() % 5 == 0 && !(players[player]->entity && players[player]->entity->spellEffectPreserveItem(stats[player]->weapon)) )
 					{
 						if ( player >= 0 && players[player]->isLocalPlayer() )
 						{
@@ -322,9 +469,10 @@ void Item::applyLockpick(int player, Entity& entity)
 							strcpy((char*) (net_packet->data), "ARMR");
 							net_packet->data[4] = 5;
 							net_packet->data[5] = stats[player]->weapon->status;
+							SDLNet_Write16((int)stats[player]->weapon->type, &net_packet->data[6]);
 							net_packet->address.host = net_clients[player - 1].host;
 							net_packet->address.port = net_clients[player - 1].port;
-							net_packet->len = 6;
+							net_packet->len = 8;
 							sendPacketSafe(net_sock, -1, net_packet, player - 1);
 						}
 					}
@@ -336,7 +484,7 @@ void Item::applyLockpick(int player, Entity& entity)
 			messagePlayer(player, MESSAGE_INTERACTION, Language::get(1105));
 		}
 	}
-	else if ( entity.behavior == &actDoor )
+	else if ( entity.behavior == &actDoor || entity.behavior == &actIronDoor )
 	{
 		if ( entity.doorLocked )
 		{
@@ -352,8 +500,18 @@ void Item::applyLockpick(int player, Entity& entity)
 
 			if ( entity.doorDisableLockpicks == 1 )
 			{
-				Uint32 color = makeColorRGB(255, 0, 255);
-				messagePlayerColor(player, MESSAGE_INTERACTION, color, Language::get(3101)); // disabled.
+				if ( entity.behavior == &actIronDoor )
+				{
+					Uint32 color = makeColorRGB(255, 255, 255);
+					playSoundEntity(&entity, 92, 64);
+					messagePlayerColor(player, MESSAGE_INTERACTION, color, Language::get(6403)); // disabled.
+				}
+				else
+				{
+					Uint32 color = makeColorRGB(255, 0, 255);
+					playSoundEntity(&entity, 92, 64);
+					messagePlayerColor(player, MESSAGE_INTERACTION, color, Language::get(3101)); // disabled.
+				}
 			}
 			else if ( capstoneUnlocked 
 				|| stats[player]->getModifiedProficiency(PRO_LOCKPICKING) > local_rng.rand() % 200
@@ -361,21 +519,33 @@ void Item::applyLockpick(int player, Entity& entity)
 			{
 				//Unlock door.
 				playSoundEntity(&entity, 91, 64);
-				messagePlayer(player, MESSAGE_INTERACTION, Language::get(1099));
-				Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_DOOR_UNLOCKED, "door", 1);
+				if ( entity.behavior == &actIronDoor )
+				{
+					messagePlayer(player, MESSAGE_INTERACTION, Language::get(6415));
+					Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_DOOR_UNLOCKED, "iron door", 1);
+				}
+				else
+				{
+					messagePlayer(player, MESSAGE_INTERACTION, Language::get(1099));
+					Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_DOOR_UNLOCKED, "door", 1);
+				}
 				Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_LOCKPICK_DOOR_UNLOCK, TOOL_LOCKPICK, 1);
 				entity.doorLocked = 0;
 				if ( !entity.doorPreventLockpickExploit )
 				{
 					if ( stats[player]->getProficiency(PRO_LOCKPICKING) < SKILL_LEVEL_SKILLED )
 					{
-						players[player]->entity->increaseSkill(PRO_LOCKPICKING);
+						if ( players[player]->entity )
+						{
+							players[player]->entity->increaseSkill(PRO_LOCKPICKING);
+						}
 					}
 					else
 					{
 						if ( local_rng.rand() % 20 == 0 )
 						{
-							messagePlayer(player, MESSAGE_INTERACTION, Language::get(3689), Language::get(674));
+							messagePlayer(player, MESSAGE_INTERACTION, Language::get(3689), 
+								entity.behavior == &actIronDoor ? Language::get(6414) : Language::get(674));
 						}
 					}
 				}
@@ -385,7 +555,14 @@ void Item::applyLockpick(int player, Entity& entity)
 			{
 				//Failed to unlock door.
 				playSoundEntity(&entity, 92, 64);
-				messagePlayer(player, MESSAGE_INTERACTION, Language::get(1106));
+				if ( entity.behavior == &actIronDoor )
+				{
+					messagePlayer(player, MESSAGE_INTERACTION, Language::get(6417));
+				}
+				else
+				{
+					messagePlayer(player, MESSAGE_INTERACTION, Language::get(1106));
+				}
 				bool tryDegradeLockpick = true;
 				if ( !entity.doorPreventLockpickExploit )
 				{
@@ -393,7 +570,10 @@ void Item::applyLockpick(int player, Entity& entity)
 					{
 						if ( local_rng.rand() % 10 == 0 )
 						{
-							players[player]->entity->increaseSkill(PRO_LOCKPICKING);
+							if ( players[player]->entity )
+							{
+								players[player]->entity->increaseSkill(PRO_LOCKPICKING);
+							}
 							tryDegradeLockpick = false;
 						}
 					}
@@ -401,15 +581,16 @@ void Item::applyLockpick(int player, Entity& entity)
 					{
 						if ( local_rng.rand() % 20 == 0 )
 						{
-							messagePlayer(player, MESSAGE_INTERACTION, Language::get(3689), Language::get(674));
+							messagePlayer(player, MESSAGE_INTERACTION, Language::get(3689), 
+								entity.behavior == &actIronDoor ? Language::get(6414) : Language::get(674));
 							tryDegradeLockpick = false;
 						}
 					}
 				}
 				
-				if ( tryDegradeLockpick )
+				if ( tryDegradeLockpick && stats[player]->weapon && stats[player]->weapon->type == TOOL_LOCKPICK )
 				{
-					if ( local_rng.rand() % 5 == 0 )
+					if ( local_rng.rand() % 5 == 0 && !(players[player]->entity && players[player]->entity->spellEffectPreserveItem(stats[player]->weapon)) )
 					{
 						if ( player >= 0 && players[player]->isLocalPlayer() )
 						{
@@ -433,9 +614,10 @@ void Item::applyLockpick(int player, Entity& entity)
 							strcpy((char*) (net_packet->data), "ARMR");
 							net_packet->data[4] = 5;
 							net_packet->data[5] = stats[player]->weapon->status;
+							SDLNet_Write16((int)stats[player]->weapon->type, &net_packet->data[6]);
 							net_packet->address.host = net_clients[player - 1].host;
 							net_packet->address.port = net_clients[player - 1].port;
-							net_packet->len = 6;
+							net_packet->len = 8;
 							sendPacketSafe(net_sock, -1, net_packet, player - 1);
 						}
 					}
@@ -444,7 +626,201 @@ void Item::applyLockpick(int player, Entity& entity)
 		}
 		else
 		{
-			messagePlayer(player, MESSAGE_INTERACTION, Language::get(1107));
+			if ( entity.behavior == &actIronDoor )
+			{
+				messagePlayer(player, MESSAGE_INTERACTION, Language::get(6418));
+			}
+			else
+			{
+				messagePlayer(player, MESSAGE_INTERACTION, Language::get(1107));
+			}
+		}
+	}
+	else if ( entity.behavior == &actWallLock )
+	{
+		if ( entity.wallLockState != Entity::WallLockStates::LOCK_NO_KEY )
+		{
+			playSoundEntity(&entity, 92, 64);
+			messagePlayer(player, MESSAGE_INTERACTION, Language::get(6423), Language::get(6383 + entity.wallLockMaterial));
+		}
+		else if ( entity.wallLockPickable == -1 )
+		{
+			// can't be picked
+			playSoundEntity(&entity, 92, 64);
+			messagePlayer(player, MESSAGE_INTERACTION, Language::get(6424), Language::get(6383 + entity.wallLockMaterial));
+		}
+		else if ( entity.wallLockPower == 0 )
+		{
+			// 3-17 damage on lockpick depending on skill
+			// 0 skill is 3 damage
+			// 20 skill is 4-5 damage
+			// 60 skill is 6-11 damage
+			// 100 skill is 8-17 damage
+			bool wasLocked = entity.wallLockPickHealth > 0;
+			int lockpickDamageToLock = 3 + stats[player]->getModifiedProficiency(PRO_LOCKPICKING) / 20
+				+ local_rng.rand() % std::max(1, stats[player]->getModifiedProficiency(PRO_LOCKPICKING) / 10);
+
+			int skillLVL = stats[player]->getModifiedProficiency(PRO_LOCKPICKING) + statGetPER(stats[player], players[player]->entity);
+			if ( wasLocked && (skillLVL < entity.wallLockPickable) )
+			{
+				// unable to lockpick
+				playSoundEntity(&entity, 92, 64);
+				messagePlayer(player, MESSAGE_INTERACTION, Language::get(6422), Language::get(6383 + entity.wallLockMaterial));
+			}
+			else
+			{
+				entity.wallLockPickHealth = std::max(0, entity.wallLockPickHealth - lockpickDamageToLock);
+				bool unlockedFromLockpickHealth = (entity.wallLockPickHealth == 0);
+
+				if ( capstoneUnlocked
+					|| stats[player]->getModifiedProficiency(PRO_LOCKPICKING) > local_rng.rand() % 200
+					|| unlockedFromLockpickHealth )
+				{
+					entity.wallLockPickHealth = 0;
+
+					//Unlock lock.
+					playSoundEntity(&entity, 91, 64);
+
+					if ( !entity.wallLockPreventLockpickExploit )
+					{
+						if ( players[player]->entity )
+						{
+							players[player]->entity->increaseSkill(PRO_LOCKPICKING);
+						}
+					}
+					entity.wallLockPreventLockpickExploit = 1;
+
+					// consume the lockpick
+					/*if ( player >= 0 && players[player]->isLocalPlayer() )
+					{
+						if ( count > 1 )
+						{
+							newItem(type, status, beatitude, count - 1, appearance, identified, &stats[player]->inventory);
+						}
+					}
+					stats[player]->weapon->count = 1;
+					stats[player]->weapon->status = BROKEN;
+					if ( status != BROKEN )
+					{
+						messagePlayer(player, MESSAGE_INTERACTION | MESSAGE_EQUIPMENT, Language::get(1103));
+					}
+					else
+					{
+						messagePlayer(player, MESSAGE_INTERACTION | MESSAGE_EQUIPMENT, Language::get(1104));
+					}
+					if ( player > 0 && multiplayer == SERVER )
+					{
+						strcpy((char*)(net_packet->data), "ARMR");
+						net_packet->data[4] = 5;
+						net_packet->data[5] = stats[player]->weapon->status;
+						net_packet->address.host = net_clients[player - 1].host;
+						net_packet->address.port = net_clients[player - 1].port;
+						net_packet->len = 6;
+						sendPacketSafe(net_sock, -1, net_packet, player - 1);
+					}*/
+
+					entity.wallLockPower = 3; // turn on later in actWallLock
+					messagePlayer(player, MESSAGE_INTERACTION, Language::get(6426), items[TOOL_LOCKPICK].getIdentifiedName(),
+						Language::get(6383 + entity.wallLockMaterial));
+					Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_KEYLOCK_PICKED, "wall locks", 1);
+				}
+				else
+				{
+					//Failed to unlock lock.
+					playSoundEntity(&entity, 92, 64);
+					messagePlayer(player, MESSAGE_INTERACTION, Language::get(6428), Language::get(6383 + entity.wallLockMaterial));
+
+					bool tryDegradeLockpick = true;
+					if ( !entity.wallLockPreventLockpickExploit )
+					{
+						int skillIncreaseMinimum = std::min(100, std::max(0, entity.wallLockPickable + 20));
+						if ( stats[player]->getProficiency(PRO_LOCKPICKING) < skillIncreaseMinimum )
+						{
+							if ( local_rng.rand() % 10 == 0 )
+							{
+								if ( players[player]->entity )
+								{
+									players[player]->entity->increaseSkill(PRO_LOCKPICKING);
+								}
+								tryDegradeLockpick = false;
+							}
+						}
+						else
+						{
+							if ( local_rng.rand() % 20 == 0 )
+							{
+								/*messagePlayer(player, MESSAGE_INTERACTION, Language::get(3689),
+									entity.behavior == &actIronDoor ? Language::get(6414) : Language::get(674));*/
+								tryDegradeLockpick = false;
+							}
+						}
+					}
+
+					if ( tryDegradeLockpick && stats[player]->weapon && stats[player]->weapon->type == TOOL_LOCKPICK )
+					{
+						if ( local_rng.rand() % 5 == 0 && !(players[player]->entity && players[player]->entity->spellEffectPreserveItem(stats[player]->weapon)) )
+						{
+							if ( player >= 0 && players[player]->isLocalPlayer() )
+							{
+								if ( count > 1 )
+								{
+									newItem(type, status, beatitude, count - 1, appearance, identified, &stats[player]->inventory);
+								}
+							}
+							stats[player]->weapon->count = 1;
+							stats[player]->weapon->status = static_cast<Status>(stats[player]->weapon->status - 1);
+							if ( status != BROKEN )
+							{
+								messagePlayer(player, MESSAGE_INTERACTION | MESSAGE_EQUIPMENT, Language::get(1103));
+							}
+							else
+							{
+								messagePlayer(player, MESSAGE_INTERACTION | MESSAGE_EQUIPMENT, Language::get(1104));
+							}
+							if ( player > 0 && multiplayer == SERVER )
+							{
+								strcpy((char*)(net_packet->data), "ARMR");
+								net_packet->data[4] = 5;
+								net_packet->data[5] = stats[player]->weapon->status;
+								SDLNet_Write16((int)stats[player]->weapon->type, &net_packet->data[6]);
+								net_packet->address.host = net_clients[player - 1].host;
+								net_packet->address.port = net_clients[player - 1].port;
+								net_packet->len = 8;
+								sendPacketSafe(net_sock, -1, net_packet, player - 1);
+							}
+						}
+					}
+				}
+			}
+		}
+		else
+		{
+			if ( entity.wallLockPower == 1 )
+			{
+				int skillLVL = stats[player]->getModifiedProficiency(PRO_LOCKPICKING) + statGetPER(stats[player], players[player]->entity);
+				if ( skillLVL < entity.wallLockPickable )
+				{
+					// unable to lockpick
+					playSoundEntity(&entity, 92, 64);
+					messagePlayer(player, MESSAGE_INTERACTION, Language::get(6422), Language::get(6383 + entity.wallLockMaterial));
+				}
+				else
+				{
+					if ( entity.wallLockTurnable == 0 )
+					{
+						// untoggleable
+						playSoundEntity(&entity, 92, 64);
+						messagePlayer(player, MESSAGE_INTERACTION, Language::get(6429), Language::get(6383 + entity.wallLockMaterial));
+					}
+					else
+					{
+						playSoundEntity(&entity, 57, 64);
+						entity.wallLockPower = 2; // turn off later in actWallLock
+						messagePlayer(player, MESSAGE_INTERACTION, Language::get(6427), items[TOOL_LOCKPICK].getIdentifiedName(),
+							Language::get(6383 + entity.wallLockMaterial));
+					}
+				}
+			}
 		}
 	}
 	else if ( entity.behavior == &actMonster )
@@ -452,13 +828,13 @@ void Item::applyLockpick(int player, Entity& entity)
 		Stat* myStats = entity.getStats();
 		if ( myStats && entity.isInertMimic() )
 		{
-			if ( myStats->EFFECTS[EFF_MIMIC_LOCKED] && local_rng.rand() % 4 > 0 )
+			if ( myStats->getEffectActive(EFF_MIMIC_LOCKED) && local_rng.rand() % 4 > 0 )
 			{
 				//Failed to unlock mimic
 				playSoundEntity(&entity, 92, 64);
 				messagePlayer(player, MESSAGE_INTERACTION, Language::get(1102));
 			}
-			else if ( players[player] && players[player]->entity && entity.disturbMimic(players[player]->entity, false, false) )
+			else if ( players[player] && players[player]->entity && entity.disturbMimic(players[player]->entity, false, true) )
 			{
 				playSoundEntity(&entity, 91, 64);
 				messagePlayer(player, MESSAGE_INTERACTION, Language::get(6081));
@@ -466,7 +842,7 @@ void Item::applyLockpick(int player, Entity& entity)
 		}
 		else if ( myStats && myStats->type == AUTOMATON 
 			&& entity.monsterSpecialState == 0
-			&& !myStats->EFFECTS[EFF_CONFUSED] )
+			&& !myStats->getEffectActive(EFF_CONFUSED) )
 		{
 			if ( players[player] && players[player]->entity )
 			{
@@ -485,7 +861,7 @@ void Item::applyLockpick(int player, Entity& entity)
 						entity.monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_AUTOMATON_MALFUNCTION;
 						serverUpdateEntitySkill(&entity, 33);
 
-						myStats->EFFECTS[EFF_PARALYZED] = true;
+						myStats->setEffectActive(EFF_PARALYZED, 1);
 						myStats->EFFECTS_TIMERS[EFF_PARALYZED] = -1;
 						playSoundEntity(&entity, 76, 128);
 						messagePlayer(player, MESSAGE_COMBAT, Language::get(2527), getMonsterLocalizedName(myStats->type).c_str());
@@ -523,9 +899,8 @@ void Item::applyLockpick(int player, Entity& entity)
 					else
 					{
 						messagePlayer(player, MESSAGE_COMBAT, Language::get(2526), getMonsterLocalizedName(myStats->type).c_str());
-						myStats->EFFECTS[EFF_CONFUSED] = true;
-						myStats->EFFECTS_TIMERS[EFF_CONFUSED] = -1;
-						myStats->EFFECTS[EFF_PARALYZED] = true;
+						entity.setEffect(EFF_CONFUSED, Uint8(MAXPLAYERS + 1), -1, true, true, true, true);
+						myStats->setEffectActive(EFF_PARALYZED, 1);
 						myStats->EFFECTS_TIMERS[EFF_PARALYZED] = 25;
 						playSoundEntity(&entity, 263, 128);
 						spawnMagicEffectParticles(entity.x, entity.y, entity.z, 170);
@@ -536,7 +911,8 @@ void Item::applyLockpick(int player, Entity& entity)
 							players[player]->entity->increaseSkill(PRO_LOCKPICKING);
 						}
 					}
-					if ( local_rng.rand() % 2 == 0 )
+					if ( local_rng.rand() % 2 == 0 && stats[player]->weapon && stats[player]->weapon->type == TOOL_LOCKPICK
+						&& !(players[player]->entity && players[player]->entity->spellEffectPreserveItem(stats[player]->weapon)) )
 					{
 						if ( player >= 0 && players[player]->isLocalPlayer() )
 						{
@@ -560,9 +936,10 @@ void Item::applyLockpick(int player, Entity& entity)
 							strcpy((char*)(net_packet->data), "ARMR");
 							net_packet->data[4] = 5;
 							net_packet->data[5] = stats[player]->weapon->status;
+							SDLNet_Write16((int)stats[player]->weapon->type, &net_packet->data[6]);
 							net_packet->address.host = net_clients[player - 1].host;
 							net_packet->address.port = net_clients[player - 1].port;
-							net_packet->len = 6;
+							net_packet->len = 8;
 							sendPacketSafe(net_sock, -1, net_packet, player - 1);
 						}
 					}
@@ -890,6 +1267,7 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 			{
 				if ( player > 0 && !splitscreen )
 				{
+					Entity* oldSelected = client_selected[player];
 					client_selected[player] = &entity;
 					bool oldInRange = inrange[player];
 					inrange[player] = true;
@@ -897,9 +1275,11 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 					actSink(&entity);
 					entity.skill[8] = 0;
 					inrange[player] = oldInRange;
+					client_selected[player] = oldSelected;
 				}
 				else if ( player == 0 || (player > 0 && splitscreen) )
 				{
+					Entity* oldSelected = selectedEntity[player];
 					selectedEntity[player] = &entity;
 					bool oldInRange = inrange[player];
 					inrange[player] = true;
@@ -907,6 +1287,7 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 					actSink(&entity);
 					entity.skill[8] = 0;
 					inrange[player] = oldInRange;
+					selectedEntity[player] = oldSelected;
 				}
 			}
 			else if ( entity.skill[0] > 1 )
@@ -1504,6 +1885,138 @@ void Item::applyBomb(Entity* parent, ItemType type, ItemBombPlacement placement,
 	}
 }
 
+void Item::applyDuck(Uint32 parentUid, real_t x, real_t y, Entity* hitentity, bool onLevelRespawn)
+{
+	bool tryExactLocation = true;
+
+	if ( !onLevelRespawn )
+	{
+		Entity* testEntity = newEntity(2225, 1, map.entities, nullptr);
+		if ( testEntity )
+		{
+			testEntity->flags[PASSABLE] = true;
+			testEntity->x = x;
+			testEntity->y = y;
+			testEntity->behavior = &actMonster;
+			testEntity->sizex = 4;
+			testEntity->sizey = 4;
+			if ( !entityInsideSomething(testEntity) )
+			{
+				for ( int i = -1; i <= 1; ++i )
+				{
+					for ( int j = -1; j <= 1; ++j )
+					{
+						int ix = static_cast<int>(x / 16);
+						int iy = static_cast<int>(y / 16);
+						if ( entityInsideTile(testEntity, ix + i, iy + j, OBSTACLELAYER) ) // check not clipping in surrounding walls
+						{
+							tryExactLocation = false;
+							break;
+						}
+					}
+					if ( !tryExactLocation )
+					{
+						break;
+					}
+				}
+			}
+
+			list_RemoveNode(testEntity->mynode);
+		}
+	}
+
+	Entity* summon = nullptr;
+	if ( tryExactLocation )
+	{
+		summon = summonMonster(DUCK_SMALL, x, y, true);
+	}
+	if ( !summon )
+	{
+		summon = summonMonster(DUCK_SMALL, floor(x / 16) * 16 + 8, floor(y / 16) * 16 + 8, false);
+	}
+	if ( summon )
+	{
+		Stat* summonedStats = summon->getStats();
+		Entity* parent = uidToEntity(parentUid);
+		if ( parent && parent->behavior == &actPlayer )
+		{
+			if ( parent && parent->behavior == &actPlayer )
+			{
+				Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_GADGET_DEPLOYED, this->type, 1);
+			}
+		}
+
+		if ( summonedStats )
+		{
+			//summon->yaw = thrown->yaw;
+			summon->monsterSpecialState = DUCK_INERT;
+			serverUpdateEntitySkill(summon, 33);
+			playSoundPos(summon->x, summon->y, 794 + local_rng.rand() % 2, 128);
+			//if ( forceFollower(*parent, *summon) )
+			//{
+			//	if ( parent->behavior == &actPlayer )
+			//	{
+			//		summon->monsterAllyIndex = parent->skill[2];
+			//		if ( multiplayer == SERVER )
+			//		{
+			//			serverUpdateEntitySkill(summon, 42); // update monsterAllyIndex for clients.
+			//		}
+			//	}
+			//	// change the color of the hit entity.
+			//	summon->flags[USERFLAG2] = true;
+			//	serverUpdateEntityFlag(summon, USERFLAG2);
+			//}
+
+			if ( hitentity && (hitentity->behavior == &actMonster || hitentity->behavior == &actPlayer) )
+			{
+				if ( parent )
+				{
+					if ( parent->checkEnemy(hitentity) )
+					{
+						summon->monsterTarget = hitentity->getUID();
+					}
+				}
+				else
+				{
+					summon->monsterTarget = hitentity->getUID();
+				}
+				playSoundPos(summon->x, summon->y, 786 + local_rng.rand() % 3, 128);
+			}
+			else
+			{
+				playSoundPos(summon->x, summon->y, 789 + local_rng.rand() % 5, 128);
+			}
+			int appearance = std::max(0, static_cast<int>(this->appearance % items[TOOL_DUCK].variations));
+			summonedStats->setAttribute("duck_type", std::to_string(appearance));
+			if ( onLevelRespawn )
+			{
+				summonedStats->setAttribute("duck_time", std::to_string(1 * TICKS_PER_SECOND));
+			}
+			else
+			{
+				if ( status == BROKEN )
+				{
+					summonedStats->setAttribute("duck_time", std::to_string(1 * TICKS_PER_SECOND));
+					summonedStats->setAttribute("duck_run", "1");
+				}
+				else
+				{
+					summonedStats->setAttribute("duck_time", std::to_string(15 * TICKS_PER_SECOND));
+				}
+			}
+			summonedStats->setAttribute("duck_bless", std::to_string(beatitude));
+			summonedStats->setAttribute("skip_obituary", "1");
+			summonedStats->MISC_FLAGS[STAT_FLAG_MONSTER_DISABLE_HC_SCALING] = 1;
+			int playerOwner = this->getDuckPlayer();
+			if ( playerOwner >= 0 && playerOwner < MAXPLAYERS )
+			{
+				summonedStats->leader_uid = achievementObserver.playerUids[playerOwner];
+				summon->parent = achievementObserver.playerUids[playerOwner];
+			}
+		}
+	}
+}
+
 void Item::applyTinkeringCreation(Entity* parent, Entity* thrown)
 {
 	if ( !thrown )
@@ -1586,7 +2099,7 @@ void Item::applyTinkeringCreation(Entity* parent, Entity* thrown)
 						summon->x = thrown->x;
 						summon->y = thrown->y;
 					}
-					summonedStats->EFFECTS[EFF_STUNNED] = true;
+					summonedStats->setEffectActive(EFF_STUNNED, 1);
 					summonedStats->EFFECTS_TIMERS[EFF_STUNNED] = 30;
 					playSoundEntity(summon, 453 + local_rng.rand() % 2, 192);
 				}

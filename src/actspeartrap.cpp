@@ -37,30 +37,37 @@
 
 void actSpearTrap(Entity* my)
 {
+	if ( my->actTrapSabotaged == 0 )
+	{
 #ifdef USE_FMOD
-	if ( SPEARTRAP_AMBIENCE == 0 )
-	{
-		SPEARTRAP_AMBIENCE--;
-		my->stopEntitySound();
-		my->entity_sound = playSoundEntityLocal(my, 149, 64);
-	}
-	if ( my->entity_sound )
-	{
-		bool playing = false;
-		my->entity_sound->isPlaying(&playing);
-		if ( !playing )
+		if ( SPEARTRAP_AMBIENCE == 0 )
 		{
-			my->entity_sound = nullptr;
+			SPEARTRAP_AMBIENCE--;
+			my->stopEntitySound();
+			my->entity_sound = playSoundEntityLocal(my, 149, 64);
 		}
-	}
+		if ( my->entity_sound )
+		{
+			bool playing = false;
+			my->entity_sound->isPlaying(&playing);
+			if ( !playing )
+			{
+				my->entity_sound = nullptr;
+			}
+		}
 #else
-	SPEARTRAP_AMBIENCE--;
-	if ( SPEARTRAP_AMBIENCE <= 0 )
-	{
-		SPEARTRAP_AMBIENCE = TICKS_PER_SECOND * 30;
-		playSoundEntityLocal( my, 149, 64 );
-	}
+		SPEARTRAP_AMBIENCE--;
+		if ( SPEARTRAP_AMBIENCE <= 0 )
+		{
+			SPEARTRAP_AMBIENCE = TICKS_PER_SECOND * 30;
+			playSoundEntityLocal(my, 149, 64);
+		}
 #endif
+	}
+	else
+	{
+		my->stopEntitySound();
+	}
 
 	if ( multiplayer != CLIENT )
 	{
@@ -69,7 +76,7 @@ void actSpearTrap(Entity* my)
 			return;
 		}
 
-		if (my->skill[28] == 2)
+		if (my->skill[28] == 2 && my->actTrapSabotaged == 0 )
 		{
 			// shoot out the spears
 			if (!SPEARTRAP_STATUS )
@@ -143,6 +150,13 @@ void actSpearTrap(Entity* my)
 						Stat* stats = entity->getStats();
 						if ( stats )
 						{
+							if ( stats->type == DUCK_SMALL && entityInsideEntity(my, entity) )
+							{
+								if ( entity->monsterAttack == 0 )
+								{
+									entity->attack(local_rng.rand() % 2 ? MONSTER_POSE_MELEE_WINDUP2 : MONSTER_POSE_MELEE_WINDUP3, 0, nullptr);
+								}
+							}
 							if ( !entity->flags[PASSABLE] && entityInsideEntity(my, entity) )
 							{
 								// do damage!
@@ -182,7 +196,16 @@ void actSpearTrap(Entity* my)
 									damage *= mult;
 								}
 
-								if ( damage > 0 )
+								if ( entity->onEntityTrapHitSacredPath(my) )
+								{
+									if ( entity->behavior == &actPlayer )
+									{
+										messagePlayerColor(entity->skill[2], MESSAGE_COMBAT, makeColorRGB(0, 255, 0),
+											Language::get(6492));
+									}
+									playSoundEntity(entity, 166, 128);
+								}
+								else if ( damage > 0 )
 								{
 									playSoundEntity(entity, 28, 64);
 									spawnGib(entity);

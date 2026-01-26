@@ -2761,7 +2761,13 @@ public:
 		SPELL_TYPE_PROJECTILE_SHORT_X3,
 		SPELL_TYPE_SELF,
 		SPELL_TYPE_AREA,
-		SPELL_TYPE_SELF_SUSTAIN
+		SPELL_TYPE_SELF_SUSTAIN,
+		SPELL_TYPE_TOUCH_FLOOR,
+		SPELL_TYPE_TOUCH_ALLY,
+		SPELL_TYPE_TOUCH_ENEMY,
+		SPELL_TYPE_TOUCH_ENTITY,
+		SPELL_TYPE_TOUCH_WALL,
+		SPELL_TYPE_DIVINE_TARGET
 	};
 	enum SpellTagTypes : int
 	{
@@ -2771,7 +2777,10 @@ public:
 		SPELL_TAG_HEALING,
 		SPELL_TAG_CURE,
 		SPELL_TAG_BASIC_HIT_MESSAGE,
-		SPELL_TAG_TRACK_HITS
+		SPELL_TAG_TRACK_HITS,
+		SPELL_TAG_BUFF,
+		SPELL_TAG_SPELLBOOK_SCALING,
+		SPELL_TAG_BONUS_AS_EFFECT_POWER
 	};
 private:
 	struct spellItem_t
@@ -2779,16 +2788,57 @@ private:
 		Sint32 id;
 		std::string internalName;
 		std::string name;
+		std::string name_lowercase;
 		std::string spellTypeStr;
 		SpellItemTypes spellType;
 		std::string spellbookInternalName;
 		std::string magicstaffInternalName;
-		Sint32 spellbookId;
-		Sint32 magicstaffId;
+		std::string fociInternalName;
+		Sint32 spellbookId = -1;
+		Sint32 magicstaffId = -1;
+		Sint32 fociId = -1;
 		std::vector<std::string> spellTagsStr;
 		std::set<SpellTagTypes> spellTags;
+		std::vector<std::string> spellFormatTags;
+		std::vector<int> spellbookItemIconPaddingLines;
+		std::set<spell_t::SpellOnCastEventTypes> spellLevelTags;
+
+		bool hasExpandedJSON = false;
+		int damage = 0;
+		int damage2 = 0;
+		real_t damage_mult = 1.0;
+		real_t damage2_mult = 1.0;
+		int duration = 0;
+		real_t duration_mult = 1.0;
+		int duration2 = 0;
+		real_t duration2_mult = 1.0;
+		int mana = 1;
+		real_t distance = 0.0;
+		real_t distance_mult = 1.0;
+		int life_time = 0;
+		real_t life_mult = 1.0;
+		real_t cast_time = 1.0;
+		real_t cast_time_mult = 1.0;
+		int skillID = PRO_SORCERY;
+		int difficulty = 100;
+		int sustain_mana = 0;
+		int sustain_duration = 0;
+		real_t sustain_mult = 1.0;
+		real_t radius = 0;
+		real_t radius_mult = 0.0;
+		int drop_table = -1;
 	};
 
+	Uint32 defaultHeadingTextColor = 0xFFFFFFFF;
+	Uint32 defaultIconTextColor = 0xFFFFFFFF;
+	Uint32 defaultDescriptionTextColor = 0xFFFFFFFF;
+	Uint32 defaultDetailsTextColor = 0xFFFFFFFF;
+	Uint32 defaultPositiveTextColor = 0xFFFFFFFF;
+	Uint32 defaultNegativeTextColor = 0xFFFFFFFF;
+	Uint32 defaultStatusEffectTextColor = 0xFFFFFFFF;
+	Uint32 defaultFaintTextColor = 0xFFFFFFFF;
+
+public:
 	struct ItemTooltipIcons_t
 	{
 		std::string iconPath = "";
@@ -2804,16 +2854,6 @@ private:
 		void setConditionalAttribute(std::string str) { conditionalAttribute = str; }
 	};
 
-	Uint32 defaultHeadingTextColor = 0xFFFFFFFF;
-	Uint32 defaultIconTextColor = 0xFFFFFFFF;
-	Uint32 defaultDescriptionTextColor = 0xFFFFFFFF;
-	Uint32 defaultDetailsTextColor = 0xFFFFFFFF;
-	Uint32 defaultPositiveTextColor = 0xFFFFFFFF;
-	Uint32 defaultNegativeTextColor = 0xFFFFFFFF;
-	Uint32 defaultStatusEffectTextColor = 0xFFFFFFFF;
-	Uint32 defaultFaintTextColor = 0xFFFFFFFF;
-
-public:
 	struct ItemTooltip_t
 	{
 		Uint32 headingTextColor = 0;
@@ -2838,6 +2878,8 @@ public:
 		void setColorStatus(Uint32 color) { statusEffectTextColor = color; }
 		void setColorFaintText(Uint32 color) { faintTextColor = color; }
 	};
+	void setSpellValueIfKeyPresent(spellItem_t& t, rapidjson::Value::ConstMemberIterator item_itr, Uint32& hash, Uint32& hashShift, const char* key, int& toSet);
+	void setSpellValueIfKeyPresent(spellItem_t& t, rapidjson::Value::ConstMemberIterator item_itr, Uint32& hash, Uint32& hashShift, const char* key, real_t& toSet);
 	void readItemsFromFile();
 	static const Uint32 kItemsJsonHash;
 	static Uint32 itemsJsonHashRead;
@@ -2878,6 +2920,7 @@ public:
 	std::string& getProficiencyLevelName(Sint32 proficiencyLevel);
 	std::string& getIconLabel(Item& item);
 	std::string getSpellIconText(const int player, Item& item, const bool excludePlayerStats);
+	std::string getSpellIconFormatText(const int player, Item& item, std::string& format, const spell_t* spell, const int iconIndex, const bool compendiumTooltipIntro);
 	std::string getSpellDescriptionText(const int player, Item& item);
 	std::string getSpellIconPath(const int player, Item& item, int spellID);
 	std::string getCostOfSpellString(const int player, Item& item);
@@ -3024,13 +3067,19 @@ public:
 	enum ObjectType_t : int {
 		OBJ_SIGN,
 		OBJ_MESSAGE,
-		OBJ_SCRIPT
+		OBJ_SCRIPT,
+		OBJ_BUBBLE_SIGN,
+		OBJ_BUBBLE_GRAVE,
+		OBJ_BUBBLE_DIALOGUE
 	};
 	enum VariableTypes : int {
 		TEXT,
 		GLYPH,
 		IMG,
-		SCRIPT
+		SCRIPT,
+		COLOR_R,
+		COLOR_G,
+		COLOR_B
 	};
 
 	struct Entry_t
@@ -3041,6 +3090,7 @@ public:
 		{
 			VariableTypes type = TEXT;
 			std::string value = "";
+			int numericValue = 0;
 			int sizex = 0;
 			int sizey = 0;
 		};
@@ -3343,6 +3393,9 @@ struct EditorEntityData_t
 		int hitMessageLangEntry = 2509;
 		int breakMessageLangEntry = 2510;
 		std::map<std::string, std::vector<int>> hideMonsters;
+		std::vector<int> spellTriggers;
+		std::set<int> pathableMonsters;
+		int colliderJumpLangEntry = 6234;
 		std::map<std::string, int> overrideProperties;
 		bool hasOverride(std::string key)
 		{
@@ -3384,6 +3437,16 @@ struct EditorEntityData_t
 	static std::map<std::string, ColliderDmgProperties_t> colliderDmgTypes;
 	static std::map<int, EntityColliderData_t> colliderData;
 	static std::map<std::string, std::map<int, int>> colliderRandomGenPool;
+	static std::map<std::string, int> colliderNameIndexes;
+	static int getColliderIndexFromName(std::string name)
+	{
+		auto find = colliderNameIndexes.find(name);
+		if ( find != colliderNameIndexes.end() )
+		{
+			return find->second;
+		}
+		return 0;
+	}
 	static void readFromFile();
 };
 extern EditorEntityData_t editorEntityData;
@@ -3488,6 +3551,9 @@ struct EquipmentModelOffsets_t
 		real_t scalez = 0.0;
 		real_t rotation = 0.0;
 		real_t pitch = 0.0;
+		real_t x = 0.0;
+		real_t y = 0.0;
+		real_t z = 0.0;
 		int limbsIndex = 0;
 		bool oversizedMask = false;
 		bool expandToFitMask = false;
@@ -3505,10 +3571,12 @@ struct EquipmentModelOffsets_t
 		std::map<int, AdditionalOffset_t> adjustToExpandedHelm;
 	};
 	std::map<int, std::map<int, ModelOffset_t>> monsterModelsMap;
+	std::map<int, ModelOffset_t> miscItemsBaseOffsets;
+	void readBaseItemsFromFile();
 	void readFromFile(std::string monsterName, int monsterType = NOTHING);
-	bool modelOffsetExists(int monster, int sprite);
-	bool expandHelmToFitMask(int monster, int helmSprite, int maskSprite);
-	bool maskHasAdjustmentForExpandedHelm(int monster, int helmSprite, int maskSprite);
+	int modelOffsetExists(int monster, int sprite, int monsterSprite);
+	int expandHelmToFitMask(int monster, int helmSprite, int maskSprite, int monsterSprite);
+	int maskHasAdjustmentForExpandedHelm(int monster, int helmSprite, int maskSprite, int monsterSprite);
 	ModelOffset_t::AdditionalOffset_t getExpandHelmOffset(int monster, int helmSprite, int maskSprite);
 	ModelOffset_t::AdditionalOffset_t getMaskOffsetForExpandHelm(int monster, int helmSprite, int maskSprite);
 	ModelOffset_t& getModelOffset(int monster, int sprite);
@@ -3575,7 +3643,8 @@ struct Compendium_t
 			ACH_TYPE_NORMAL,
 			ACH_TYPE_DLC1,
 			ACH_TYPE_DLC2,
-			ACH_TYPE_DLC1_DLC2
+			ACH_TYPE_DLC1_DLC2,
+			ACH_TYPE_DLC3
 		};
 		std::string name;
 		std::string desc;
@@ -3959,6 +4028,55 @@ struct Compendium_t
 		MONSTERS_LEFT_BEHIND,
 		ITEMS_LEFT_BEHIND,
 		ITEM_VALUE_LEFT_BEHIND,
+		CPDM_OFFHAND_CASTING_MP,
+		CPDM_OFFHAND_CHARGING_TIME,
+		CPDM_OFFHAND_CHARGING_TIME_RUN,
+		CPDM_OFFHAND_CHR_MAX,
+		CPDM_GOLD_COLLECTED,
+		CPDM_GOLD_COLLECTED_RUN,
+		CPDM_GOLD_CASTED,
+		CPDM_GOLD_CASTED_RUN,
+		CPDM_BUTTON_PRESSED,
+		CPDM_BUTTON_FOLLOWER_PRESSED,
+		CPDM_BUTTON_SHOT,
+		CPDM_KEYLOCK_UNLOCKED_KEY,
+		CPDM_KEYLOCK_PICKED,
+		CPDM_KEYLOCK_SKELETON_KEY,
+		CPDM_KEYLOCK_UNLOCKED_KEY_IRON,
+		CPDM_KEYLOCK_UNLOCKED_KEY_BRONZE,
+		CPDM_KEYLOCK_UNLOCKED_KEY_SILVER,
+		CPDM_KEYLOCK_UNLOCKED_KEY_GOLD,
+		CPDM_ASSIST_CLOAKS,
+		CPDM_ASSIST_RINGS,
+		CPDM_ASSIST_AMULETS,
+		CPDM_ASSIST_MASKS,
+		CPDM_ASSIST_INTERACTS,
+		CPDM_CAULDRON_INTERACTS,
+		CPDM_WORKBENCH_INTERACTS,
+		CPDM_WORKBENCH_SALVAGE,
+		CPDM_WORKBENCH_CRAFTS,
+		CPDM_WORKBENCH_REPAIRED,
+		CPDM_WORKBENCH_SKILLUPS,
+		CPDM_COOK_MEALS,
+		CPDM_COOK_FLAVORED_MEALS,
+		CPDM_CAULDRON_SKILLUPS,
+		CPDM_COOK_SLOP_BALLS,
+		CPDM_COOK_GREASE_BALLS,
+		CPDM_PARRIES,
+		CPDM_PARRIES_DMG,
+		CPDM_ARCHON_SPELLS_FORGOTTEN,
+		CPDM_MULTI_HITS,
+		CPDM_MAGIC_KILLS,
+		CPDM_EFFECT_DURATION,
+		CPDM_JEWEL_RECRUIT_DECREPIT,
+		CPDM_JEWEL_RECRUIT_WORN,
+		CPDM_JEWEL_RECRUIT_SERVICABLE,
+		CPDM_JEWEL_RECRUIT_EXCELLENT,
+		CPDM_FORGED,
+		CPDM_UPGRADED,
+		CPDM_XXX,
+		CPDM_DUCK_DODGE,
+		CPDM_DUCK_CAUGHT,
 		CPDM_EVENT_TAGS_MAX
 	};
 
@@ -4148,11 +4266,14 @@ struct Compendium_t
 		case PRO_LOCKPICKING: return "tinkering skill";
 		case PRO_STEALTH: return "stealth skill";
 		case PRO_TRADING: return "trading skill";
-		case PRO_APPRAISAL: return "appraisal skill";
-		case PRO_SWIMMING: return "swimming skill";
+		case PRO_APPRAISAL: return "lore skill";
+		case PRO_LEGACY_SWIMMING: return "swimming skill";
+		case PRO_THAUMATURGY: return "thaumaturgy skill";
 		case PRO_LEADERSHIP: return "leadership skill";
-		case PRO_SPELLCASTING: return "casting skill";
-		case PRO_MAGIC: return "magic skill";
+		case PRO_LEGACY_SPELLCASTING: return "casting skill";
+		case PRO_MYSTICISM: return "mysticism skill";
+		case PRO_LEGACY_MAGIC: return "magic skill";
+		case PRO_SORCERY: return "sorcery skill";
 		case PRO_RANGED: return "ranged skill";
 		case PRO_SWORD: return "sword skill";
 		case PRO_MACE: return "mace skill";
@@ -4286,3 +4407,14 @@ struct Compendium_t
 };
 
 extern Compendium_t CompendiumEntries;
+
+struct TreasureRoomGenerator
+{
+	BaronyRNG treasure_rng;
+	std::unordered_set<unsigned int> treasure_floors;
+	std::unordered_set<unsigned int> treasure_secret_floors;
+	std::map<unsigned int, std::string> orb_floors;
+	void init();
+	bool bForceSpawnForCurrentFloor(int secretlevelexit, bool minotaur, BaronyRNG& mapRNG);
+};
+extern TreasureRoomGenerator treasure_room_generator;

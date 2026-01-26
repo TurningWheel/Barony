@@ -106,6 +106,13 @@ list(APPEND GAME_SOURCES
 	"${CMAKE_CURRENT_SOURCE_DIR}/lobbies.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/shader.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/playfab.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/monster_d.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/monster_m.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/monster_s.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/monster_g.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/monster_summons.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/monster_moth.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/monster_duck.cpp"
 )
 
 list(APPEND EDITOR_SOURCES

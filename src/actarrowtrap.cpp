@@ -114,29 +114,45 @@ void actArrowTrap(Entity* my)
 		return;
 	}
 
+	if ( my->actTrapSabotaged == 0 )
+	{
 #ifdef USE_FMOD
-	if ( ARROWTRAP_AMBIENCE == 0 )
-	{
-		ARROWTRAP_AMBIENCE--;
-		my->entity_sound = playSoundEntityLocal(my, 149, 64);
-	}
-	if ( my->entity_sound )
-	{
-		bool playing = false;
-		my->entity_sound->isPlaying(&playing);
-		if ( !playing )
+		if ( ARROWTRAP_AMBIENCE == 0 )
 		{
-			my->entity_sound = nullptr;
+			ARROWTRAP_AMBIENCE--;
+			my->stopEntitySound();
+			my->entity_sound = playSoundEntityLocal(my, 149, 64);
 		}
-	}
+		if ( my->entity_sound )
+		{
+			bool playing = false;
+			my->entity_sound->isPlaying(&playing);
+			if ( !playing )
+			{
+				my->entity_sound = nullptr;
+			}
+		}
 #else
-	ARROWTRAP_AMBIENCE--;
-	if ( ARROWTRAP_AMBIENCE <= 0 )
-	{
-		ARROWTRAP_AMBIENCE = TICKS_PER_SECOND * 30;
-		playSoundEntityLocal( my, 149, 64 );
-	}
+		ARROWTRAP_AMBIENCE--;
+		if ( ARROWTRAP_AMBIENCE <= 0 )
+		{
+			ARROWTRAP_AMBIENCE = TICKS_PER_SECOND * 30;
+			playSoundEntityLocal( my, 149, 64 );
+		}
 #endif
+	}
+	else
+	{
+#ifdef USE_FMOD
+		my->stopEntitySound();
+#endif
+	}
+
+	if ( multiplayer == CLIENT )
+	{
+		my->flags[NOUPDATE] = true;
+		return;
+	}
 
 	if ( !my->skill[28] )
 	{
@@ -146,7 +162,7 @@ void actArrowTrap(Entity* my)
 	Entity* targetToAutoHit = nullptr;
 
 	// received on signal
-	if ( my->skill[28] == 2 || ARROWTRAP_DISABLED == -1 )
+	if ( (my->skill[28] == 2 || ARROWTRAP_DISABLED == -1) && my->actTrapSabotaged == 0 )
 	{
 		if ( ARROWTRAP_FIRED % 2 == 1 ) // not ready to fire.
 		{
@@ -273,6 +289,14 @@ void actArrowTrap(Entity* my)
 							entity->sprite = 930;
 							// causes poison for six seconds
 							entity->arrowPoisonTime = 360;
+							if ( stronger ) { ARROWTRAP_REFIRE = 25; }
+							break;
+						case QUIVER_BONE:
+							entity->sprite = 2304;
+							if ( stronger ) { ARROWTRAP_REFIRE = 25; }
+							break;
+						case QUIVER_BLACKIRON:
+							entity->sprite = 2305;
 							if ( stronger ) { ARROWTRAP_REFIRE = 25; }
 							break;
 						default:

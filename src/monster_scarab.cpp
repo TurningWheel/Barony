@@ -54,6 +54,10 @@ void initScarab(Entity* my, Stat* myStats)
 				myStats->DEX -= 4;
 			    myStats->LVL = 10;
 		    }
+			else if ( currentlevel >= 26 )
+			{
+				myStats->setAttribute("SCARAB_GREATER_CURSE", "1");
+			}
 			if ( !myStats->leader_uid )
 			{
 				myStats->leader_uid = 0;
@@ -244,7 +248,7 @@ void scarabAnimate(Entity* my, Stat* myStats, double dist)
 	// set invisibility //TODO: isInvisible()?
 	if ( multiplayer != CLIENT )
 	{
-		if ( myStats->EFFECTS[EFF_INVISIBLE] == true )
+		if ( myStats->getEffectActive(EFF_INVISIBLE) )
 		{
 			my->flags[INVISIBLE] = true;
 			my->flags[BLOCKSIGHT] = false;
@@ -575,6 +579,7 @@ void scarabAnimate(Entity* my, Stat* myStats, double dist)
 	        }
 	    }
         my->new_z = my->z = 6.0 - sin(scarabFly) * 6.0;
+		my->creatureHandleLiftZ();
 	}
 }
 

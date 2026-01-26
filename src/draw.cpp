@@ -150,199 +150,199 @@ static void buildSpriteShader(
 }
 
 void createCommonDrawResources() {
-    // framebuffer shader:
-    
-    framebuffer::mesh.init();
-    
+	// framebuffer shader:
+
+	framebuffer::mesh.init();
+
 	static const char fb_vertex_glsl[] =
 		"in vec3 iPosition;"
 		"in vec2 iTexCoord;"
-        "out vec2 TexCoord;"
+		"out vec2 TexCoord;"
 		"void main() {"
 		"gl_Position = vec4(iPosition, 1.0);"
-        "TexCoord = iTexCoord;"
+		"TexCoord = iTexCoord;"
 		"}";
 
 	static const char fb_fragment_glsl[] =
-        "in vec2 TexCoord;"
+		"in vec2 TexCoord;"
 		"uniform sampler2D uTexture;"
 		"uniform float uBrightness;"
-        "out vec4 FragColor;"
+		"out vec4 FragColor;"
 		"void main() {"
-        "vec4 color = texture(uTexture, TexCoord);"
+		"vec4 color = texture(uTexture, TexCoord);"
 		"FragColor = vec4(color.rgb * uBrightness, color.a);"
 		"}";
-    
-    framebuffer::shader.init("framebuffer");
-    framebuffer::shader.compile(fb_vertex_glsl, sizeof(fb_vertex_glsl), Shader::Type::Vertex);
-    framebuffer::shader.compile(fb_fragment_glsl, sizeof(fb_fragment_glsl), Shader::Type::Fragment);
-    framebuffer::shader.bindAttribLocation("iPosition", 0);
-    framebuffer::shader.bindAttribLocation("iTexCoord", 1);
-    framebuffer::shader.link();
-    framebuffer::shader.bind();
-    GL_CHECK_ERR(glUniform1i(framebuffer::shader.uniform("uTexture"), 0));
-    
-    static const char fb_hdr_fragment_glsl[] =
-        "in vec2 TexCoord;"
-        "uniform sampler2D uTexture;"
-        "uniform vec4 uBrightness;"
-        "uniform float uGamma;"
-        "uniform float uExposure;"
-        "out vec4 FragColor;"
-    
-        "void main() {"
-        "vec4 color = texture(uTexture, TexCoord);"
-        "vec3 mapped = color.rgb;"
-    
-        // reinhard tone-mapping
-        "mapped = vec3(1.0) - exp(-mapped * uExposure);"
-    
-        // another kind of reinhard tone mapping (pick one)
-        //"mapped = mapped * (uExposure / (1.0 + mapped / uExposure));"
 
-        // luma-based reinhard tone mapping (does not use exposure)
-        //"float luma = dot(mapped, vec3(0.2126, 0.7152, 0.0722));"
-        //"float toneMappedLuma = luma / (1.0 + luma);"
-        //"mapped = mapped * (toneMappedLuma / luma);"
-    
-        // additional tone-mapping examples
-        //https://www.shadertoy.com/view/lslGzl
-    
-        // gamma correction
-        "mapped = pow(mapped, vec3(1.0 / uGamma));"
-    
-        "FragColor = vec4(mapped, color.a) * uBrightness;"
-        "}";
-    
-    framebuffer::hdrShader.init("hdr framebuffer");
-    framebuffer::hdrShader.compile(fb_vertex_glsl, sizeof(fb_vertex_glsl), Shader::Type::Vertex);
-    framebuffer::hdrShader.compile(fb_hdr_fragment_glsl, sizeof(fb_hdr_fragment_glsl), Shader::Type::Fragment);
-    framebuffer::hdrShader.bindAttribLocation("iPosition", 0);
-    framebuffer::hdrShader.bindAttribLocation("iTexCoord", 1);
-    framebuffer::hdrShader.link();
-    framebuffer::hdrShader.bind();
-    GL_CHECK_ERR(glUniform1i(framebuffer::hdrShader.uniform("uTexture"), 0));
-    
-    // create lightmap textures
-    for (int c = 0; c < MAXPLAYERS + 1; ++c) {
-        lightmapTexture[c] = new TempTexture();
-    }
-    
-    // voxel shader:
-    
-    static const char vox_vertex_glsl[] =
-        "in vec3 iPosition;"
-        "in vec3 iColor;"
-        "in vec3 iNormal;"
-        "uniform mat4 uProj;"
-        "uniform mat4 uView;"
-        "uniform mat4 uModel;"
-        "out vec3 Color;"
-        "out vec4 WorldPos;"
-        "out vec3 Normal;"
-    
-        "void main() {"
-        "WorldPos = uModel * vec4(iPosition, 1.0);"
-        "gl_Position = uProj * uView * WorldPos;"
-        "Color = iColor;"
-        "Normal = (uModel * vec4(iNormal, 0.0)).xyz;"
-        "}";
+	framebuffer::shader.init("framebuffer");
+	framebuffer::shader.compile(fb_vertex_glsl, sizeof(fb_vertex_glsl), Shader::Type::Vertex);
+	framebuffer::shader.compile(fb_fragment_glsl, sizeof(fb_fragment_glsl), Shader::Type::Fragment);
+	framebuffer::shader.bindAttribLocation("iPosition", 0);
+	framebuffer::shader.bindAttribLocation("iTexCoord", 1);
+	framebuffer::shader.link();
+	framebuffer::shader.bind();
+	GL_CHECK_ERR(glUniform1i(framebuffer::shader.uniform("uTexture"), 0));
 
-    static const char vox_fragment_glsl[] =
-        "in vec3 Color;"
-        "in vec3 Normal;"
-        "in vec4 WorldPos;"
-        "uniform mat4 uColorRemap;"
-        "uniform vec4 uLightFactor;"
-        "uniform vec4 uLightColor;"
-        "uniform vec4 uColorAdd;"
-        "uniform vec4 uCameraPos;"
-        "uniform sampler2D uLightmap;"
-        "uniform vec2 uMapDims;"
-        "uniform float uFogDistance;"
-        "uniform vec4 uFogColor;"
-        "out vec4 FragColor;"
-    
-        "void main() {"
-        "vec3 Remapped ="
-        "    (uColorRemap[0].rgb * Color.r)+"
-        "    (uColorRemap[1].rgb * Color.g)+"
-        "    (uColorRemap[2].rgb * Color.b);"
-        "vec2 TexCoord = WorldPos.xz / (uMapDims.xy * 32.0);"
-        "vec4 Lightmap = texture(uLightmap, TexCoord);"
-        "FragColor = vec4(Remapped, 1.0) * uLightFactor * (Lightmap + uLightColor) + uColorAdd;"
-        
-        "if (uFogDistance > 0.0) {"
-        "float dist = length(uCameraPos.xyz - WorldPos.xyz);"
-        "float lerp = (min(dist, uFogDistance) / uFogDistance) * uFogColor.a;"
-        "vec3 mixed = mix(FragColor.rgb, uFogColor.rgb, lerp);"
-        "FragColor = vec4(mixed, FragColor.a);"
-        "}"
-        "}";
+	static const char fb_hdr_fragment_glsl[] =
+		"in vec2 TexCoord;"
+		"uniform sampler2D uTexture;"
+		"uniform vec4 uBrightness;"
+		"uniform float uGamma;"
+		"uniform float uExposure;"
+		"out vec4 FragColor;"
+
+		"void main() {"
+		"vec4 color = texture(uTexture, TexCoord);"
+		"vec3 mapped = color.rgb;"
+
+		// reinhard tone-mapping
+		"mapped = vec3(1.0) - exp(-mapped * uExposure);"
+
+		// another kind of reinhard tone mapping (pick one)
+		//"mapped = mapped * (uExposure / (1.0 + mapped / uExposure));"
+
+		// luma-based reinhard tone mapping (does not use exposure)
+		//"float luma = dot(mapped, vec3(0.2126, 0.7152, 0.0722));"
+		//"float toneMappedLuma = luma / (1.0 + luma);"
+		//"mapped = mapped * (toneMappedLuma / luma);"
+
+		// additional tone-mapping examples
+		//https://www.shadertoy.com/view/lslGzl
+
+		// gamma correction
+		"mapped = pow(mapped, vec3(1.0 / uGamma));"
+
+		"FragColor = vec4(mapped, color.a) * uBrightness;"
+		"}";
+
+	framebuffer::hdrShader.init("hdr framebuffer");
+	framebuffer::hdrShader.compile(fb_vertex_glsl, sizeof(fb_vertex_glsl), Shader::Type::Vertex);
+	framebuffer::hdrShader.compile(fb_hdr_fragment_glsl, sizeof(fb_hdr_fragment_glsl), Shader::Type::Fragment);
+	framebuffer::hdrShader.bindAttribLocation("iPosition", 0);
+	framebuffer::hdrShader.bindAttribLocation("iTexCoord", 1);
+	framebuffer::hdrShader.link();
+	framebuffer::hdrShader.bind();
+	GL_CHECK_ERR(glUniform1i(framebuffer::hdrShader.uniform("uTexture"), 0));
+
+	// create lightmap textures
+	for ( int c = 0; c < MAXPLAYERS + 1; ++c ) {
+		lightmapTexture[c] = new TempTexture();
+	}
+
+	// voxel shader:
+
+	static const char vox_vertex_glsl[] =
+		"in vec3 iPosition;"
+		"in vec3 iColor;"
+		"in vec3 iNormal;"
+		"uniform mat4 uProj;"
+		"uniform mat4 uView;"
+		"uniform mat4 uModel;"
+		"out vec3 Color;"
+		"out vec4 WorldPos;"
+		"out vec3 Normal;"
+
+		"void main() {"
+		"WorldPos = uModel * vec4(iPosition, 1.0);"
+		"gl_Position = uProj * uView * WorldPos;"
+		"Color = iColor;"
+		"Normal = (uModel * vec4(iNormal, 0.0)).xyz;"
+		"}";
+
+	static const char vox_fragment_glsl[] =
+		"in vec3 Color;"
+		"in vec3 Normal;"
+		"in vec4 WorldPos;"
+		"uniform mat4 uColorRemap;"
+		"uniform vec4 uLightFactor;"
+		"uniform vec4 uLightColor;"
+		"uniform vec4 uColorAdd;"
+		"uniform vec4 uCameraPos;"
+		"uniform sampler2D uLightmap;"
+		"uniform vec2 uMapDims;"
+		"uniform float uFogDistance;"
+		"uniform vec4 uFogColor;"
+		"out vec4 FragColor;"
+
+		"void main() {"
+		"vec3 Remapped ="
+		"    (uColorRemap[0].rgb * Color.r)+"
+		"    (uColorRemap[1].rgb * Color.g)+"
+		"    (uColorRemap[2].rgb * Color.b);"
+		"vec2 TexCoord = WorldPos.xz / (uMapDims.xy * 32.0);"
+		"vec4 Lightmap = texture(uLightmap, TexCoord);"
+		"FragColor = vec4(Remapped, 1.0) * uLightFactor * (Lightmap + uLightColor) + uColorAdd;"
+
+		"if (uFogDistance > 0.0) {"
+		"float dist = length(uCameraPos.xyz - WorldPos.xyz);"
+		"float lerp = (min(dist, uFogDistance) / uFogDistance) * uFogColor.a;"
+		"vec3 mixed = mix(FragColor.rgb, uFogColor.rgb, lerp);"
+		"FragColor = vec4(mixed, FragColor.a);"
+		"}"
+		"}";
 
 	buildVoxelShader(voxelShader, "voxelShader", true,
 		vox_vertex_glsl, sizeof(vox_vertex_glsl),
 		vox_fragment_glsl, sizeof(vox_fragment_glsl));
-    
-    static const char vox_bright_fragment_glsl[] =
-        "in vec3 Color;"
-        "in vec3 Normal;"
-        "in vec4 WorldPos;"
-        "uniform mat4 uColorRemap;"
-        "uniform vec4 uLightFactor;"
-        "uniform vec4 uLightColor;"
-        "uniform vec4 uColorAdd;"
-        "uniform vec4 uCameraPos;"
-        "uniform float uFogDistance;"
-        "uniform vec4 uFogColor;"
-        "out vec4 FragColor;"
-    
-        "void main() {"
-        "vec3 Remapped ="
-        "    (uColorRemap[0].rgb * Color.r)+"
-        "    (uColorRemap[1].rgb * Color.g)+"
-        "    (uColorRemap[2].rgb * Color.b);"
-        "FragColor = vec4(Remapped, 1.0) * uLightFactor * uLightColor + uColorAdd;"
-        
-        "if (uFogDistance > 0.0) {"
-        "float dist = length(uCameraPos.xyz - WorldPos.xyz);"
-        "float lerp = (min(dist, uFogDistance) / uFogDistance) * uFogColor.a;"
-        "vec3 mixed = mix(FragColor.rgb, uFogColor.rgb, lerp);"
-        "FragColor = vec4(mixed, FragColor.a);"
-        "}"
-        "}";
 
-    buildVoxelShader(voxelBrightShader, "voxelBrightShader", false,
-        vox_vertex_glsl, sizeof(vox_vertex_glsl),
-        vox_bright_fragment_glsl, sizeof(vox_bright_fragment_glsl));
+	static const char vox_bright_fragment_glsl[] =
+		"in vec3 Color;"
+		"in vec3 Normal;"
+		"in vec4 WorldPos;"
+		"uniform mat4 uColorRemap;"
+		"uniform vec4 uLightFactor;"
+		"uniform vec4 uLightColor;"
+		"uniform vec4 uColorAdd;"
+		"uniform vec4 uCameraPos;"
+		"uniform float uFogDistance;"
+		"uniform vec4 uFogColor;"
+		"out vec4 FragColor;"
+
+		"void main() {"
+		"vec3 Remapped ="
+		"    (uColorRemap[0].rgb * Color.r)+"
+		"    (uColorRemap[1].rgb * Color.g)+"
+		"    (uColorRemap[2].rgb * Color.b);"
+		"FragColor = vec4(Remapped, 1.0) * uLightFactor * uLightColor + uColorAdd;"
+
+		"if (uFogDistance > 0.0) {"
+		"float dist = length(uCameraPos.xyz - WorldPos.xyz);"
+		"float lerp = (min(dist, uFogDistance) / uFogDistance) * uFogColor.a;"
+		"vec3 mixed = mix(FragColor.rgb, uFogColor.rgb, lerp);"
+		"FragColor = vec4(mixed, FragColor.a);"
+		"}"
+		"}";
+
+	buildVoxelShader(voxelBrightShader, "voxelBrightShader", false,
+		vox_vertex_glsl, sizeof(vox_vertex_glsl),
+		vox_bright_fragment_glsl, sizeof(vox_bright_fragment_glsl));
 
 	static const char vox_dithered_fragment_glsl[] =
 		"in vec3 Color;"
-        "in vec3 Normal;"
+		"in vec3 Normal;"
 		"in vec4 WorldPos;"
-        "uniform float uDitherAmount;"
+		"uniform float uDitherAmount;"
 		"uniform mat4 uColorRemap;"
-        "uniform vec4 uLightFactor;"
-        "uniform vec4 uLightColor;"
-        "uniform vec4 uColorAdd;"
-        "uniform vec4 uCameraPos;"
-        "uniform sampler2D uLightmap;"
+		"uniform vec4 uLightFactor;"
+		"uniform vec4 uLightColor;"
+		"uniform vec4 uColorAdd;"
+		"uniform vec4 uCameraPos;"
+		"uniform sampler2D uLightmap;"
 		"uniform vec2 uMapDims;"
-        "uniform float uFogDistance;"
-        "uniform vec4 uFogColor;"
-        "out vec4 FragColor;"
-    
-        "void dither(ivec2 pos, float amount) {"
-        "if (amount > 1.0) {"
-        "int d = int(amount) - 1;"
-        "if ((pos.x & d) == 0 && (pos.y & d) == 0) { discard; }"
-        "} else if (amount == 1.0) {"
-        "if (((pos.x + pos.y) & 1) == 0) { discard; }"
-        "} else if (amount < 1.0) {"
-        "int d = int(1.0 / amount) - 1;"
-        "if ((pos.x & d) != 0 || (pos.y & d) != 0) { discard; }"
-        "}"
-        "}"
+		"uniform float uFogDistance;"
+		"uniform vec4 uFogColor;"
+		"out vec4 FragColor;"
+
+		"void dither(ivec2 pos, float amount) {"
+		"if (amount > 1.0) {"
+		"int d = int(amount) - 1;"
+		"if ((pos.x & d) == 0 && (pos.y & d) == 0) { discard; }"
+		"} else if (amount == 1.0) {"
+		"if (((pos.x + pos.y) & 1) == 0) { discard; }"
+		"} else if (amount < 1.0) {"
+		"int d = int(1.0 / amount) - 1;"
+		"if ((pos.x & d) != 0 || (pos.y & d) != 0) { discard; }"
+		"}"
+		"}"
 
 		"void main() {"
 		"dither(ivec2(gl_FragCoord), uDitherAmount);"
@@ -351,15 +351,15 @@ void createCommonDrawResources() {
 		"    (uColorRemap[1].rgb * Color.g)+"
 		"    (uColorRemap[2].rgb * Color.b);"
 		"vec2 TexCoord = WorldPos.xz / (uMapDims.xy * 32.0);"
-        "vec4 Lightmap = texture(uLightmap, TexCoord);"
-        "FragColor = vec4(Remapped, 1.0) * uLightFactor * (Lightmap + uLightColor) + uColorAdd;"
-        
-        "if (uFogDistance > 0.0) {"
-        "float dist = length(uCameraPos.xyz - WorldPos.xyz);"
-        "float lerp = (min(dist, uFogDistance) / uFogDistance) * uFogColor.a;"
-        "vec3 mixed = mix(FragColor.rgb, uFogColor.rgb, lerp);"
-        "FragColor = vec4(mixed, FragColor.a);"
-        "}"
+		"vec4 Lightmap = texture(uLightmap, TexCoord);"
+		"FragColor = vec4(Remapped, 1.0) * uLightFactor * (Lightmap + uLightColor) + uColorAdd;"
+
+		"if (uFogDistance > 0.0) {"
+		"float dist = length(uCameraPos.xyz - WorldPos.xyz);"
+		"float lerp = (min(dist, uFogDistance) / uFogDistance) * uFogColor.a;"
+		"vec3 mixed = mix(FragColor.rgb, uFogColor.rgb, lerp);"
+		"FragColor = vec4(mixed, FragColor.a);"
+		"}"
 		"}";
 
 	buildVoxelShader(voxelDitheredShader, "voxelDitheredShader", true,
@@ -413,126 +413,126 @@ void createCommonDrawResources() {
 	buildVoxelShader(voxelBrightDitheredShader, "voxelBrightDitheredShader", true,
 		vox_vertex_glsl, sizeof(vox_vertex_glsl),
 		vox_bright_dithered_fragment_glsl, sizeof(vox_bright_dithered_fragment_glsl));
-    
-    // world shader:
-    
-    static const char world_vertex_glsl[] =
-        "in vec3 iPosition;"
-        "in vec2 iTexCoord;"
-        "in vec3 iColor;"
-        "uniform mat4 uProj;"
-        "uniform mat4 uView;"
-        "out vec2 TexCoord;"
-        "out vec3 Color;"
-        "out vec4 WorldPos;"
-    
-        "void main() {"
-        "WorldPos = vec4(iPosition, 1.0);"
-        "gl_Position = uProj * uView * WorldPos;"
-        "TexCoord = iTexCoord;"
-        "Color = iColor;"
-        "}";
-    
-    static const char world_fragment_glsl[] =
-        "in vec2 TexCoord;"
-        "in vec3 Color;"
-        "in vec4 WorldPos;"
-        "uniform vec4 uLightFactor;"
-        "uniform sampler2D uTextures;"
-        "uniform sampler2D uLightmap;"
-        "uniform vec2 uMapDims;"
-        "uniform vec4 uCameraPos;"
-        "uniform float uFogDistance;"
-        "uniform vec4 uFogColor;"
-        "out vec4 FragColor;"
-    
-        "void main() {"
-        "vec2 LightCoord = WorldPos.xz / (uMapDims.xy * 32.0);"
-        "vec4 Lightmap = texture(uLightmap, LightCoord);"
-        "FragColor = texture(uTextures, TexCoord) * vec4(Color, 1.f) * uLightFactor * Lightmap;"
-        
-        "if (uFogDistance > 0.0) {"
-        "float dist = length(uCameraPos.xyz - WorldPos.xyz);"
-        "float lerp = (min(dist, uFogDistance) / uFogDistance) * uFogColor.a;"
-        "vec3 mixed = mix(FragColor.rgb, uFogColor.rgb, lerp);"
-        "FragColor = vec4(mixed, FragColor.a);"
-        "}"
-        "}";
-    
-    buildWorldShader(worldShader, "worldShader", true,
-        world_vertex_glsl, sizeof(world_vertex_glsl),
-        world_fragment_glsl, sizeof(world_fragment_glsl));
-    
-    static const char world_dithered_fragment_glsl[] =
-        "in vec2 TexCoord;"
-        "in vec3 Color;"
-        "in vec4 WorldPos;"
-        "uniform float uDitherAmount;"
-        "uniform vec4 uLightFactor;"
-        "uniform sampler2D uTextures;"
-        "uniform sampler2D uLightmap;"
-        "uniform vec2 uMapDims;"
-        "uniform vec4 uCameraPos;"
-        "uniform float uFogDistance;"
-        "uniform vec4 uFogColor;"
-        "out vec4 FragColor;"
-    
-        "void dither(ivec2 pos, float amount) {"
-        "if (amount > 1.0) {"
-        "int d = int(amount) - 1;"
-        "if ((pos.x & d) == 0 && (pos.y & d) == 0) { discard; }"
-        "} else if (amount == 1.0) {"
-        "if (((pos.x + pos.y) & 1) == 0) { discard; }"
-        "} else if (amount < 1.0) {"
-        "int d = int(1.0 / amount) - 1;"
-        "if ((pos.x & d) != 0 || (pos.y & d) != 0) { discard; }"
-        "}"
-        "}"
-    
-        "void main() {"
-        "dither(ivec2(gl_FragCoord), uDitherAmount);"
-        "vec2 LightCoord = WorldPos.xz / (uMapDims.xy * 32.0);"
-        "vec4 Lightmap = texture(uLightmap, LightCoord);"
-        "FragColor = texture(uTextures, TexCoord) * vec4(Color, 1.f) * uLightFactor * Lightmap;"
-        
-        "if (uFogDistance > 0.0) {"
-        "float dist = length(uCameraPos.xyz - WorldPos.xyz);"
-        "float lerp = (min(dist, uFogDistance) / uFogDistance) * uFogColor.a;"
-        "vec3 mixed = mix(FragColor.rgb, uFogColor.rgb, lerp);"
-        "FragColor = vec4(mixed, FragColor.a);"
-        "}"
-        "}";
-    
-    buildWorldShader(worldDitheredShader, "worldDitheredShader", true,
-        world_vertex_glsl, sizeof(world_vertex_glsl),
-        world_dithered_fragment_glsl, sizeof(world_dithered_fragment_glsl));
-    
-    static const char world_dark_fragment_glsl[] =
-        "in vec2 TexCoord;"
-        "in vec3 Color;"
-        "in vec4 WorldPos;"
-        "out vec4 FragColor;"
-        "void main() {"
-        "FragColor = vec4(0.0, 0.0, 0.0, 1.0);"
-        "}";
-    
-    buildWorldShader(worldDarkShader, "worldDarkShader", false,
-        world_vertex_glsl, sizeof(world_vertex_glsl),
-        world_dark_fragment_glsl, sizeof(world_dark_fragment_glsl));
-    
-    // sky shader:
-    
-    static const char sky_vertex_glsl[] =
-        "in vec3 iPosition;"
-        "in vec2 iTexCoord;"
-        "in vec4 iColor;"
-        "uniform mat4 uProj;"
-        "uniform mat4 uView;"
-        "uniform vec2 uScroll;"
-        "out vec2 TexCoord;"
-        "out vec2 Scroll;"
-        "out vec4 Color;"
-    
+
+	// world shader:
+
+	static const char world_vertex_glsl[] =
+		"in vec3 iPosition;"
+		"in vec2 iTexCoord;"
+		"in vec3 iColor;"
+		"uniform mat4 uProj;"
+		"uniform mat4 uView;"
+		"out vec2 TexCoord;"
+		"out vec3 Color;"
+		"out vec4 WorldPos;"
+
+		"void main() {"
+		"WorldPos = vec4(iPosition, 1.0);"
+		"gl_Position = uProj * uView * WorldPos;"
+		"TexCoord = iTexCoord;"
+		"Color = iColor;"
+		"}";
+
+	static const char world_fragment_glsl[] =
+		"in vec2 TexCoord;"
+		"in vec3 Color;"
+		"in vec4 WorldPos;"
+		"uniform vec4 uLightFactor;"
+		"uniform sampler2D uTextures;"
+		"uniform sampler2D uLightmap;"
+		"uniform vec2 uMapDims;"
+		"uniform vec4 uCameraPos;"
+		"uniform float uFogDistance;"
+		"uniform vec4 uFogColor;"
+		"out vec4 FragColor;"
+
+		"void main() {"
+		"vec2 LightCoord = WorldPos.xz / (uMapDims.xy * 32.0);"
+		"vec4 Lightmap = texture(uLightmap, LightCoord);"
+		"FragColor = texture(uTextures, TexCoord) * vec4(Color, 1.f) * uLightFactor * Lightmap;"
+
+		"if (uFogDistance > 0.0) {"
+		"float dist = length(uCameraPos.xyz - WorldPos.xyz);"
+		"float lerp = (min(dist, uFogDistance) / uFogDistance) * uFogColor.a;"
+		"vec3 mixed = mix(FragColor.rgb, uFogColor.rgb, lerp);"
+		"FragColor = vec4(mixed, FragColor.a);"
+		"}"
+		"}";
+
+	buildWorldShader(worldShader, "worldShader", true,
+		world_vertex_glsl, sizeof(world_vertex_glsl),
+		world_fragment_glsl, sizeof(world_fragment_glsl));
+
+	static const char world_dithered_fragment_glsl[] =
+		"in vec2 TexCoord;"
+		"in vec3 Color;"
+		"in vec4 WorldPos;"
+		"uniform float uDitherAmount;"
+		"uniform vec4 uLightFactor;"
+		"uniform sampler2D uTextures;"
+		"uniform sampler2D uLightmap;"
+		"uniform vec2 uMapDims;"
+		"uniform vec4 uCameraPos;"
+		"uniform float uFogDistance;"
+		"uniform vec4 uFogColor;"
+		"out vec4 FragColor;"
+
+		"void dither(ivec2 pos, float amount) {"
+		"if (amount > 1.0) {"
+		"int d = int(amount) - 1;"
+		"if ((pos.x & d) == 0 && (pos.y & d) == 0) { discard; }"
+		"} else if (amount == 1.0) {"
+		"if (((pos.x + pos.y) & 1) == 0) { discard; }"
+		"} else if (amount < 1.0) {"
+		"int d = int(1.0 / amount) - 1;"
+		"if ((pos.x & d) != 0 || (pos.y & d) != 0) { discard; }"
+		"}"
+		"}"
+
+		"void main() {"
+		"dither(ivec2(gl_FragCoord), uDitherAmount);"
+		"vec2 LightCoord = WorldPos.xz / (uMapDims.xy * 32.0);"
+		"vec4 Lightmap = texture(uLightmap, LightCoord);"
+		"FragColor = texture(uTextures, TexCoord) * vec4(Color, 1.f) * uLightFactor * Lightmap;"
+
+		"if (uFogDistance > 0.0) {"
+		"float dist = length(uCameraPos.xyz - WorldPos.xyz);"
+		"float lerp = (min(dist, uFogDistance) / uFogDistance) * uFogColor.a;"
+		"vec3 mixed = mix(FragColor.rgb, uFogColor.rgb, lerp);"
+		"FragColor = vec4(mixed, FragColor.a);"
+		"}"
+		"}";
+
+	buildWorldShader(worldDitheredShader, "worldDitheredShader", true,
+		world_vertex_glsl, sizeof(world_vertex_glsl),
+		world_dithered_fragment_glsl, sizeof(world_dithered_fragment_glsl));
+
+	static const char world_dark_fragment_glsl[] =
+		"in vec2 TexCoord;"
+		"in vec3 Color;"
+		"in vec4 WorldPos;"
+		"out vec4 FragColor;"
+		"void main() {"
+		"FragColor = vec4(0.0, 0.0, 0.0, 1.0);"
+		"}";
+
+	buildWorldShader(worldDarkShader, "worldDarkShader", false,
+		world_vertex_glsl, sizeof(world_vertex_glsl),
+		world_dark_fragment_glsl, sizeof(world_dark_fragment_glsl));
+
+	// sky shader:
+
+	static const char sky_vertex_glsl[] =
+		"in vec3 iPosition;"
+		"in vec2 iTexCoord;"
+		"in vec4 iColor;"
+		"uniform mat4 uProj;"
+		"uniform mat4 uView;"
+		"uniform vec2 uScroll;"
+		"out vec2 TexCoord;"
+		"out vec2 Scroll;"
+		"out vec4 Color;"
+
         "void main() {"
         "mat4 View = uView;"
         "View[3] = vec4(0.f, 0.f, 0.f, 1.f);"
@@ -1765,6 +1765,7 @@ void raycast(const view_t& camera, Sint8 (*minimap)[MINIMAP_MAX_DIMENSION], bool
         TimeTest = true;
     });
 #endif
+	static real_t raycastMaxDist = 16.0;
     
     // ray shooting functor
     struct outs_t {
@@ -1865,11 +1866,14 @@ void raycast(const view_t& camera, Sint8 (*minimap)[MINIMAP_MAX_DIMENSION], bool
                 // check against tiles in each map layer
                 bool zhit[MAPLAYERS] = { false };
                 for (int z = 0; z < MAPLAYERS; z++) {
-                    if (tiles[z + iny * MAPLAYERS + inx * MAPLAYERS * mh] && d > dstart) { // hit something solid
+                    if (tiles[z + iny * MAPLAYERS + inx * MAPLAYERS * mh]
+						&& !(z > 0 && tiles[z + iny * MAPLAYERS + inx * MAPLAYERS * mh] == TRANSPARENT_TILE)
+						&& d > dstart) { // hit something solid
                         zhit[z] = true;
                         
                         // collect light information
-                        if (tiles[z + iny2 * MAPLAYERS + inx2 * MAPLAYERS * mh]) {
+                        if (tiles[z + iny2 * MAPLAYERS + inx2 * MAPLAYERS * mh]
+							&& !(z > 0 && tiles[z + iny2 * MAPLAYERS + inx2 * MAPLAYERS * mh] == TRANSPARENT_TILE)) {
                             continue;
                         }
                         auto& l = lights[iny2 + inx2 * mh];
@@ -1886,7 +1890,7 @@ void raycast(const view_t& camera, Sint8 (*minimap)[MINIMAP_MAX_DIMENSION], bool
 						}
                         
                         // update minimap
-                        if (d < 16 && z == OBSTACLELAYER) {
+                        if (d < raycastMaxDist && z == OBSTACLELAYER) {
                             if ( visible ) {
                                 // wall space
                                 if (WriteOutsSequentially) {
@@ -1925,8 +1929,9 @@ void raycast(const view_t& camera, Sint8 (*minimap)[MINIMAP_MAX_DIMENSION], bool
 							}
 						}
 
-                        if (d < 16) {
-                            if ( visible && tiles[iny * MAPLAYERS + inx * MAPLAYERS * mh]) {
+                        if (d < raycastMaxDist ) {
+                            if ( visible && 
+								tiles[iny * MAPLAYERS + inx * MAPLAYERS * mh] ) {
                                 // walkable space
                                 if (WriteOutsSequentially) {
 									if ( ins.fillWithColor )
@@ -1947,7 +1952,8 @@ void raycast(const view_t& camera, Sint8 (*minimap)[MINIMAP_MAX_DIMENSION], bool
 										minimap[iny][inx] = 3;
 									}
                                 }
-                            } else if (tiles[z + iny * MAPLAYERS + inx * MAPLAYERS * mh]) {
+                            } else if (tiles[z + iny * MAPLAYERS + inx * MAPLAYERS * mh]
+								&& tiles[z + iny * MAPLAYERS + inx * MAPLAYERS * mh] != TRANSPARENT_TILE) {
                                 // no floor
                                 /*if (WriteOutsSequentially) {
                                     result.push_back({inx, iny, 0});
@@ -1979,12 +1985,30 @@ void raycast(const view_t& camera, Sint8 (*minimap)[MINIMAP_MAX_DIMENSION], bool
 
     // shoot the rays
     const vec4_t* lightmap = lightmaps[0].data();
+	int player = -1;
     for (int c = 0; c < MAXPLAYERS; ++c) {
         if (&camera == &cameras[c]) {
             lightmap = lightmaps[c + 1].data();
+			player = c;
             break;
         }
     }
+
+#ifndef EDITOR
+	raycastMaxDist = 16.0;
+	if ( player >= 0 )
+	{
+		if ( !strncmp(map.filename, "fortress", 8) )
+		{
+			raycastMaxDist = 6.0;
+		}
+		else if ( !strncmp(map.name, "Caves", 5) )
+		{
+			raycastMaxDist = 8.0;
+		}
+	}
+#endif
+
     if (DoRaysInParallel) {
         std::vector<std::future<std::vector<outs_t>>> tasks;
         for (int x = 0; x < NumRays; x += NumRaysPerJob) {
@@ -2128,10 +2152,12 @@ void drawEntities3D(view_t* camera, int mode)
                     }
                 }
                 else if ( entity->behavior == &actHudAdditional
+						 || entity->behavior == &actHudAdditional2
                          || entity->behavior == &actHudArrowModel
                          || entity->behavior == &actHudShield
                          || entity->behavior == &actLeftHandMagic
-                         || entity->behavior == &actRightHandMagic )
+                         || entity->behavior == &actRightHandMagic
+						 || entity->behavior == &actMagicRangefinder)
                 {
                     if ( entity->skill[2] != currentPlayerViewport )
                     {
@@ -2140,47 +2166,101 @@ void drawEntities3D(view_t* camera, int mode)
                 }
             }
         }
+
+#ifndef EDITOR
+		if ( currentPlayerViewport >= 0 )
+		{
+			if ( entity->behavior == &actTouchCastThirdPersonParticle )
+			{
+				if ( entity->skill[11] == currentPlayerViewport )
+				{
+					if ( !players[currentPlayerViewport]->entity
+						|| (players[currentPlayerViewport]->entity && !players[currentPlayerViewport]->entity->skill[3]) )
+					{
+						// gib don't draw for local player, if not third person
+						continue;
+					}
+				}
+			}
+			else if ( (entity->behavior == &actGib && entity->actGibDisableDrawForLocalPlayer > 0) )
+			{
+				if ( (entity->actGibDisableDrawForLocalPlayer - 1) == currentPlayerViewport )
+				{
+					if ( !players[currentPlayerViewport]->entity
+						|| (players[currentPlayerViewport]->entity && !players[currentPlayerViewport]->entity->skill[3]) )
+					{
+						// gib don't draw for local player, if not third person
+						continue;
+					}
+				}
+			}
+		}
+#endif
         
         // update dithering
         auto& dither = entity->dithering[camera];
         if (ticks != dither.lastUpdateTick) {
             dither.lastUpdateTick = ticks;
             bool decrease = false;
-            if ( !entity->flags[OVERDRAW] )
+            if ( !entity->flags[OVERDRAW] && !entity->flags[ENTITY_SKIP_CULLING] )
             {
                 const int x = entity->x / 16;
                 const int y = entity->y / 16;
                 if (x >= 0 && y >= 0 && x < map.width && y < map.height)
                 {
                     if ( !camera->vismap[y + x * map.height] 
-						&& entity->monsterEntityRenderAsTelepath != 1
+						&& entity->monsterEntityRenderAsTelepath == 0
+#ifndef EDITOR
+						&& !(!intro && entity->goldTelepathy > 0 && entity->behavior == &actGoldBag 
+							&& currentPlayerViewport >= 0 && currentPlayerViewport < MAXPLAYERS
+							&& entity->goldTelepathy & (1 << currentPlayerViewport))
+						&& !(!intro && entity->colliderTelepathy > 0 && entity->behavior == &actColliderDecoration
+							&& currentPlayerViewport >= 0 && currentPlayerViewport < MAXPLAYERS
+							&& entity->colliderTelepathy & (1 << currentPlayerViewport))
+#endif
 						&& !(entity->behavior == &actSpriteNametag && entity->ditheringDisabled) )
                     {
                         decrease = true;
                         goto end;
                     }
                 }
-                const real_t rx = entity->x / 16.0;
-                const real_t ry = entity->y / 16.0;
-                if ( behindCamera(*camera, rx, ry) )
-                {
-                    decrease = true;
-                    goto end;
-                }
+
+				const real_t rx = entity->x / 16.0;
+				const real_t ry = entity->y / 16.0;
+				if ( behindCamera(*camera, rx, ry) )
+				{
+					decrease = true;
+					goto end;
+				}
             }
-            end:
-            if (entity->ditheringDisabled) {
+			end:
+			if ( entity->ditheringOverride >= 0 )
+			{
+				dither.value = std::max(0, std::min(entity->ditheringOverride, Entity::Dither::MAX));
+			}
+            else if (entity->ditheringDisabled) {
                 dither.value = decrease ? 0 : Entity::Dither::MAX;
             } else {
                 if (ditheringDisabled) {
                     dither.value = decrease ? 0 : Entity::Dither::MAX;
                 } else {
-					if ( entity->flags[INVISIBLE] && entity->flags[INVISIBLE_DITHER] )
+					if ( (entity->flags[INVISIBLE] && entity->flags[INVISIBLE_DITHER]) || entity->flags[STASIS_DITHER] )
 					{
 #ifndef EDITOR
 						static ConsoleVariable<int> cvar_dither_invisibility("/dither_invisibility", 5);
 						dither.value = decrease ? std::max(0, dither.value - 2) :
 							std::min(*cvar_dither_invisibility, dither.value + 1);
+#else
+						dither.value = decrease ? std::max(0, dither.value - 2) :
+							dither.value + 1;
+#endif
+					}
+					else if ( entity->mistformGLRender >= 0.45 )
+					{
+#ifndef EDITOR
+						static ConsoleVariable<int> cvar_dither_mistform("/dither_mistform", 6);
+						dither.value = decrease ? std::max(0, dither.value - 2) :
+							std::min(*cvar_dither_mistform, dither.value + 1);
 #else
 						dither.value = decrease ? std::max(0, dither.value - 2) :
 							dither.value + 1;
@@ -2200,7 +2280,7 @@ void drawEntities3D(view_t* camera, int mode)
 
 		// don't draw hud weapons if we're being a telepath. they get in the way of world models
 		if (entity->flags[OVERDRAW] && currentPlayerViewport >= 0) {
-			if (stats[currentPlayerViewport]->EFFECTS[EFF_TELEPATH]) {
+			if (stats[currentPlayerViewport]->getEffectActive(EFF_TELEPATH)) {
 				continue;
 			}
 		}
@@ -2440,6 +2520,15 @@ void drawEntities3D(view_t* camera, int mode)
 					{
 						glDrawSprite(camera, entity, mode);
 					}
+					else if ( entity->skill[7] == 3 )
+					{
+						glDrawSpriteFromImage(camera, entity, Language::get(6464), mode);
+					}
+					else if ( entity->skill[7] == 4 )
+					{
+						snprintf(buf, sizeof(buf), "DPS: %d", entity->skill[0]);
+						glDrawSpriteFromImage(camera, entity, buf, mode);
+					}
 					else
 					{
 						snprintf(buf, sizeof(buf), "%d", entity->skill[0]);
@@ -2537,6 +2626,35 @@ void drawEntities2D(long camx, long camy)
 					drawImageScaled(itemSprite(tmpItem), nullptr, &pos);
 					free(tmpItem);
 				}
+				else if ( entity->sprite == 21 )
+				{
+					pos.y += sprites[entity->sprite]->h / 2;
+					pos.x += sprites[entity->sprite]->w / 2;
+					// chest
+					switch ( (int)entity->yaw )
+					{
+					case 0:
+						pos.y += pos.h;
+						drawImageRotatedAlpha(sprites[entity->sprite], nullptr, &pos, 3 * PI / 2, 255);
+						break;
+					case 1:
+						pos.x -= pos.w;
+						drawImageRotatedAlpha(sprites[entity->sprite], nullptr, &pos, 0.f, 255);
+						break;
+					case 2:
+						pos.y -= pos.h;
+						drawImageRotatedAlpha(sprites[entity->sprite], nullptr, &pos, PI / 2, 255);
+						break;
+					case 3:
+						pos.x += pos.w;
+						drawImageRotatedAlpha(sprites[entity->sprite], nullptr, &pos, PI, 255);
+						break;
+					default:
+						// draw sprite normally from sprites list
+						drawImageScaled(sprites[entity->sprite], nullptr, &pos);
+						break;
+					}
+				}
 				else if ( entity->sprite == 133 )
 				{
 					pos.y += sprites[entity->sprite]->h / 2;
@@ -2587,6 +2705,18 @@ void drawEntities2D(long camx, long camy)
 				}
 				else
 				{
+					if ( entity->sprite == 131 ) // light source draw rgb
+					{
+						box.w = 12;
+						box.h = 12;
+						box.x = pos.x + 16;
+						box.y = pos.y + 4;
+						drawRect(&box, makeColorRGB(
+							(entity->lightSourceRGB >> 0) & 0xFF,
+							(entity->lightSourceRGB >> 8) & 0xFF,
+							(entity->lightSourceRGB >> 16) & 0xFF), 255);
+					}
+
 					// draw sprite normally from sprites list
 					drawImageScaled(sprites[entity->sprite], nullptr, &pos);
 				}
@@ -2650,7 +2780,7 @@ void drawEntities2D(long camx, long camy)
 		pos.h = TEXTURESIZE;
 		//ttfPrintText(ttf8, 100, 100, inputstr); debug any errant text input in editor
 
-		if ( entity->sprite >= 0 && entity->sprite < numsprites )
+		if ( entity->sprite >= 0 && entity->sprite < numsprites && entity->sprite < spriteEditorNameStrings.size() )
 		{
 			if ( sprites[entity->sprite] != nullptr )
 			{
@@ -2677,8 +2807,17 @@ void drawEntities2D(long camx, long camy)
 								snprintf(tmpStr, 10, "Level: %d", entity->getStats()->LVL);
 								ttfPrintText(ttf8, padx, pady + 20, tmpStr);
 							}
+							break;
+						case 15: // light source
+							pady += 15;
+							strcpy(tmpStr, spriteEditorNameStrings[selectedEntity[0]->sprite]);
+							ttfPrintText(ttf8, padx, pady, tmpStr);
 
-
+							snprintf(tmpStr, sizeof(tmpStr), "R: %d G: %d B: %d",
+								(selectedEntity[0]->lightSourceRGB >> 0) & 0xFF,
+								(selectedEntity[0]->lightSourceRGB >> 8) & 0xFF,
+								(selectedEntity[0]->lightSourceRGB >> 16) & 0xFF);
+							ttfPrintText(ttf8, padx, pady + 10, tmpStr);
 							break;
 						case 2: //chest
 							pady += 5;
@@ -3115,6 +3254,7 @@ void drawEntities2D(long camx, long camy)
 				else if ( (omousex / TEXTURESIZE) * 32 == pos.x
 						&& (omousey / TEXTURESIZE) * 32 == pos.y
 						&& selectedEntity[0] == NULL
+						&& entity->sprite < spriteEditorNameStrings.size()
 						&& hovertext
 						)
 				{
@@ -3717,7 +3857,12 @@ static inline bool testTileOccludes(const map_t& map, int index) {
     assert(index >= 0 && index <= map.width * map.height * MAPLAYERS - MAPLAYERS);
     const Uint64& t0 = *(Uint64*)&map.tiles[index];
     const Uint32& t1 = *(Uint32*)&map.tiles[index + 2];
-    return (t0 & 0xffffffff00000000) && (t0 & 0x00000000ffffffff) && t1;
+    return (t0 & 0xffffffff00000000) // is floor != 0
+		&& (t0 & 0x00000000ffffffff) // is obstacle layer != 0
+		&& t1 // is ceiling != 0
+		&& (((t0 & 0xffffffff00000000) >> 32) != TRANSPARENT_TILE)  // is floor != TRANSPARENT_TILE
+		&& ((t0 & 0x00000000ffffffff) != TRANSPARENT_TILE)  // is obstacle layer != TRANSPARENT_TILE
+		&& (t1 != TRANSPARENT_TILE); // is ceiling != TRANSPARENT_TILE
 }
 
 void occlusionCulling(map_t& map, view_t& camera)

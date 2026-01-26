@@ -9,8 +9,8 @@
 
 -------------------------------------------------------------------------------*/
 
-#include <list>
 #include "main.hpp"
+#include <list>
 #include "draw.hpp"
 #include "game.hpp"
 #include "stat.hpp"
@@ -155,8 +155,6 @@ bool gamemods_modPreload = false;
 sex_t lastSex = MALE;
 PlayerRaces lastRace = RACE_HUMAN;
 int lastAppearance = 0;
-bool enabledDLCPack1 = false;
-bool enabledDLCPack2 = false;
 bool showRaceInfo = false;
 #ifdef STEAMWORKS
 std::vector<SteamUGCDetails_t *> workshopSubscribedItemList;
@@ -276,6 +274,10 @@ int fourthendmovietime = 0;
 int fourthEndNumLines = 13;
 bool losingConnection[MAXPLAYERS] = { false };
 
+bool enabledDLCPack1 = false;
+bool enabledDLCPack2 = false;
+bool enabledDLCPack3 = false;
+
 // new text crawls...
 int DLCendmoviealpha[8][30] = { 0 };
 int DLCendmovieStageAndTime[8][2] = { 0 };
@@ -392,6 +394,26 @@ bool isAchievementUnlockedForClassUnlock(int race)
 	{
 		return unlocked;
 	}
+	else if ( enabledDLCPack3 && race == RACE_DRYAD && SteamUserStats()->GetAchievement("BARONY_ACH_XXX", &unlocked) )
+	{
+		return unlocked;
+	}
+	else if ( enabledDLCPack3 && race == RACE_MYCONID && SteamUserStats()->GetAchievement("BARONY_ACH_XXX", &unlocked) )
+	{
+		return unlocked;
+	}
+	else if ( enabledDLCPack3 && race == RACE_GREMLIN && SteamUserStats()->GetAchievement("BARONY_ACH_XXX", &unlocked) )
+	{
+		return unlocked;
+	}
+	else if ( enabledDLCPack3 && race == RACE_SALAMANDER && SteamUserStats()->GetAchievement("BARONY_ACH_XXX", &unlocked) )
+	{
+		return unlocked;
+	}
+	else if ( enabledDLCPack3 && race == RACE_GNOME && SteamUserStats()->GetAchievement("BARONY_ACH_XXX", &unlocked) )
+	{
+		return unlocked;
+	}
 #elif (defined USE_EOS || defined LOCAL_ACHIEVEMENTS)
 	if ( enabledDLCPack1 && race == RACE_SKELETON && achievementUnlocked("BARONY_ACH_BONY_BARON") )
 	{
@@ -422,6 +444,26 @@ bool isAchievementUnlockedForClassUnlock(int race)
 		return true;
 	}
 	else if ( enabledDLCPack2 && race == RACE_INSECTOID && achievementUnlocked("BARONY_ACH_BUGGAR_BARON") )
+	{
+		return true;
+	}
+	else if ( enabledDLCPack3 && race == RACE_DRYAD && achievementUnlocked("BARONY_ACH_XXX") )
+	{
+		return true;
+	}
+	else if ( enabledDLCPack3 && race == RACE_MYCONID && achievementUnlocked("BARONY_ACH_XXX") )
+	{
+		return true;
+	}
+	else if ( enabledDLCPack3 && race == RACE_GREMLIN && achievementUnlocked("BARONY_ACH_XXX") )
+	{
+		return true;
+	}
+	else if ( enabledDLCPack3 && race == RACE_SALAMANDER && achievementUnlocked("BARONY_ACH_XXX") )
+	{
+		return true;
+	}
+	else if ( enabledDLCPack3 && race == RACE_GNOME && achievementUnlocked("BARONY_ACH_XXX") )
 	{
 		return true;
 	}
@@ -465,6 +507,17 @@ int isCharacterValidFromDLC(Stat& myStats, int characterClass)
 		}
 	}
 
+	if ( myStats.playerRace == RACE_RAT 
+		|| myStats.playerRace == RACE_TROLL
+		|| myStats.playerRace == RACE_IMP
+		|| myStats.playerRace == RACE_SPIDER )
+	{
+		if ( !enabledDLCPack2 )
+		{
+			return INVALID_REQUIREDLC2;
+		}
+	}
+
 	switch ( characterClass )
 	{
 		case CLASS_CONJURER:
@@ -488,6 +541,19 @@ int isCharacterValidFromDLC(Stat& myStats, int characterClass)
 				if ( !challengeClass )
 				{
 					return INVALID_REQUIREDLC2;
+				}
+			}
+			break;
+		case CLASS_BARD:
+		case CLASS_SAPPER:
+		case CLASS_SCION:
+		case CLASS_HERMIT:
+		case CLASS_PALADIN:
+			if ( !enabledDLCPack3 )
+			{
+				if ( !challengeClass )
+				{
+					return INVALID_REQUIREDLC3;
 				}
 			}
 			break;
@@ -518,6 +584,19 @@ int isCharacterValidFromDLC(Stat& myStats, int characterClass)
 				if ( !challengeRace )
 				{
 					return INVALID_REQUIREDLC2;
+				}
+			}
+			break;
+		case RACE_DRYAD:
+		case RACE_MYCONID:
+		case RACE_GREMLIN:
+		case RACE_SALAMANDER:
+		case RACE_GNOME:
+			if ( !enabledDLCPack3 )
+			{
+				if ( !challengeRace )
+				{
+					return INVALID_REQUIREDLC3;
 				}
 			}
 			break;
@@ -595,6 +674,41 @@ int isCharacterValidFromDLC(Stat& myStats, int characterClass)
 				return VALID_OK_CHARACTER;
 			}
 			return isAchievementUnlockedForClassUnlock(RACE_INSECTOID) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
+			break;
+		case CLASS_BARD:
+			if ( myStats.playerRace == RACE_GNOME )
+			{
+				return VALID_OK_CHARACTER;
+			}
+			return isAchievementUnlockedForClassUnlock(RACE_GNOME) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
+			break;
+		case CLASS_SAPPER:
+			if ( myStats.playerRace == RACE_GREMLIN )
+			{
+				return VALID_OK_CHARACTER;
+			}
+			return isAchievementUnlockedForClassUnlock(RACE_GREMLIN) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
+			break;
+		case CLASS_SCION:
+			if ( myStats.playerRace == RACE_DRYAD )
+			{
+				return VALID_OK_CHARACTER;
+			}
+			return isAchievementUnlockedForClassUnlock(RACE_DRYAD) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
+			break;
+		case CLASS_HERMIT:
+			if ( myStats.playerRace == RACE_MYCONID )
+			{
+				return VALID_OK_CHARACTER;
+			}
+			return isAchievementUnlockedForClassUnlock(RACE_MYCONID) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
+			break;
+		case CLASS_PALADIN:
+			if ( myStats.playerRace == RACE_SALAMANDER )
+			{
+				return VALID_OK_CHARACTER;
+			}
+			return isAchievementUnlockedForClassUnlock(RACE_SALAMANDER) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
 			break;
 		default:
 			break;
@@ -8544,9 +8658,18 @@ void doNewGame(bool makeHighscore) {
 	{
 	    client_keepalive[i] = ticks; // this way nobody times out when we reset ticks!
 		players[i]->init();
+		if ( !loadingsavegame )
+		{
+			players[i]->was_connected_to_game = !client_disconnected[i];
+		}
+		else if ( !client_disconnected[i] )
+		{
+			players[i]->was_connected_to_game = true;
+		}
 		players[i]->hud.reset();
 		players[i]->hud.followerBars.clear();
 		players[i]->hud.playerBars.clear();
+		players[i]->worldUI.tooltipsInRange.clear(); // fix bug if multiplayer was ghost and host disconnect, then start new solo game
 		deinitShapeshiftHotbar(i);
 		for ( int c = 0; c < NUM_HOTBAR_ALTERNATES; ++c )
 		{
@@ -8554,13 +8677,18 @@ void doNewGame(bool makeHighscore) {
 		}
 		players[i]->shootmode = true;
 		players[i]->magic.clearSelectedSpells();
+		spellcastingAnimationManager_deactivate(&cast_animation[i]);
+		cast_animation[i].overcharge = 0;
+		cast_animation[i].overcharge_init = 0;
 		players[i]->paperDoll.resetPortrait(); // reset paper doll camera view.
 		players[i]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
 	}
 	EnemyHPDamageBarHandler::dumpCache();
+	AOEIndicators_t::cleanup();
 	monsterAllyFormations.reset();
 	PingNetworkStatus_t::reset();
 	particleTimerEmitterHitEntities.clear();
+	particleTimerEffects.clear();
 	monsterTrapIgnoreEntities.clear();
 	minimapHighlights.clear();
 
@@ -8604,6 +8732,11 @@ void doNewGame(bool makeHighscore) {
         camera.luminance = defaultLuminance;
 	}
 	gameplayCustomManager.readFromFile();
+	if ( gameplayCustomManager.inUse() )
+	{
+		conductGameChallenges[CONDUCT_MODDED] = 1;
+		Mods::disableSteamAchievements = true;
+	}
 	textSourceScript.scriptVariables.clear();
 
 	if ( multiplayer == CLIENT )
@@ -8739,6 +8872,7 @@ void doNewGame(bool makeHighscore) {
 	// generate mimics
 	{
 		mimic_generator.init();
+		treasure_room_generator.init();
 	}
 
 	Compendium_t::Events_t::clientReceiveData.clear();
@@ -8780,6 +8914,7 @@ void doNewGame(bool makeHighscore) {
 		{
 			soundNotification_group->stop();
 		}
+		ensembleSounds.stopPlaying(true);
 		VoiceChat.deinitRecording(false);
 #elif defined USE_OPENAL
 		if ( sound_group )
@@ -8810,7 +8945,7 @@ void doNewGame(bool makeHighscore) {
 			Uint32 oldSvFlags = gameModeManager.currentSession.serverFlags;
 			bool bOldSvFlags = gameModeManager.currentSession.bHasSavedServerFlags;
 			for (int c = 0; c < MAXPLAYERS; ++c) {
-				if (!client_disconnected[c]) {
+				if (!client_disconnected[c] || players[c]->was_connected_to_game ) {
 					stats[c]->clearStats();
 					loadGame(c, saveGameInfo);
 				}
@@ -8852,6 +8987,7 @@ void doNewGame(bool makeHighscore) {
 			players[i]->hud.weapon = nullptr;
 			players[i]->hud.magicLeftHand = nullptr;
 			players[i]->hud.magicRightHand = nullptr;
+			players[i]->hud.magicRangefinder = nullptr;
 			players[i]->ghost.reset();
 			FollowerMenu[i].recentEntity = nullptr;
 			FollowerMenu[i].followerToCommand = nullptr;
@@ -8967,19 +9103,19 @@ void doNewGame(bool makeHighscore) {
 			{
 				if ( players[c] && players[c]->entity && !client_disconnected[c] )
 				{
-					if ( stats[c] && stats[c]->EFFECTS[EFF_POLYMORPH] && stats[c]->playerPolymorphStorage != NOTHING )
+					if ( stats[c] && stats[c]->getEffectActive(EFF_POLYMORPH) && stats[c]->playerPolymorphStorage != NOTHING )
 					{
 						players[c]->entity->effectPolymorph = stats[c]->playerPolymorphStorage;
 						serverUpdateEntitySkill(players[c]->entity, 50); // update visual polymorph effect for clients.
 						serverUpdateEffects(c);
 					}
-					if ( stats[c] && stats[c]->EFFECTS[EFF_SHAPESHIFT] && stats[c]->playerShapeshiftStorage != NOTHING )
+					if ( stats[c] && stats[c]->getEffectActive(EFF_SHAPESHIFT) && stats[c]->playerShapeshiftStorage != NOTHING )
 					{
 						players[c]->entity->effectShapeshift = stats[c]->playerShapeshiftStorage;
 						serverUpdateEntitySkill(players[c]->entity, 53); // update visual shapeshift effect for clients.
 						serverUpdateEffects(c);
 					}
-					if ( stats[c] && stats[c]->EFFECTS[EFF_VAMPIRICAURA] && stats[c]->EFFECTS_TIMERS[EFF_VAMPIRICAURA] == -2 )
+					if ( stats[c] && stats[c]->getEffectActive(EFF_VAMPIRICAURA) && stats[c]->EFFECTS_TIMERS[EFF_VAMPIRICAURA] == -2 )
 					{
 						players[c]->entity->playerVampireCurse = 1;
 						serverUpdateEntitySkill(players[c]->entity, 51); // update curse progression
@@ -9061,6 +9197,10 @@ void doNewGame(bool makeHighscore) {
 										else if ( stats[c]->playerSummon2PERCHR != 0 && MonsterData_t::nameMatchesSpecialNPCName(*monsterStats, "skeleton sentinel") )
 										{
 											monster->monsterAllySummonRank = (stats[c]->playerSummon2PERCHR & 0x0000FF00) >> 8;
+										}
+										else if ( monsterStats->getAttribute("SUMMONED_CREATURE") != "" )
+										{
+											monster->monsterAllySummonRank = std::stoi(monsterStats->getAttribute("SUMMONED_CREATURE"));
 										}
 										serverUpdateEntitySkill(monster, 46); // update monsterAllyClass
 										serverUpdateEntitySkill(monster, 44); // update monsterAllyPickupItems
@@ -9182,6 +9322,7 @@ void doNewGame(bool makeHighscore) {
 			players[i]->hud.weapon = nullptr;
 			players[i]->hud.magicLeftHand = nullptr;
 			players[i]->hud.magicRightHand = nullptr;
+			players[i]->hud.magicRangefinder = nullptr;
 			players[i]->ghost.reset();
 			FollowerMenu[i].recentEntity = nullptr;
 			FollowerMenu[i].followerToCommand = nullptr;
@@ -9253,6 +9394,7 @@ void doNewGame(bool makeHighscore) {
 		{
 			soundNotification_group->stop();
 		}
+		ensembleSounds.stopPlaying(true);
 		VoiceChat.deinitRecording(false);
 #elif defined USE_OPENAL
 		if ( sound_group )
@@ -9357,13 +9499,14 @@ void doNewGame(bool makeHighscore) {
 		steamAchievement("BARONY_ACH_SPICE_OF_LIFE");
 	}
 
-	if ( stats[clientnum]->playerRace >= 0 && stats[clientnum]->playerRace <= RACE_INSECTOID )
+	if ( (stats[clientnum]->playerRace >= 0 && stats[clientnum]->playerRace <= RACE_INSECTOID)
+		|| (stats[clientnum]->playerRace > RACE_IMP && stats[clientnum]->playerRace < RACE_ENUM_END) )
 	{
 		usedRace[stats[clientnum]->playerRace] = true;
 	}
 	// new achievement
 	usedAllClasses = true;
-	for ( int c = CLASS_CONJURER; c <= CLASS_HUNTER; ++c )
+	for ( int c = CLASS_CONJURER; c <= CLASS_PALADIN; ++c )
 	{
 		if ( !usedClass[c] )
 		{
@@ -9371,8 +9514,12 @@ void doNewGame(bool makeHighscore) {
 		}
 	}
 	bool usedAllRaces = true;
-	for ( int c = RACE_SKELETON; c <= RACE_INSECTOID; ++c )
+	for ( int c = RACE_SKELETON; c < RACE_ENUM_END; ++c )
 	{
+		if ( c > RACE_INSECTOID && c <= RACE_IMP )
+		{
+			continue;
+		}
 		if ( !usedRace[c] )
 		{
 			usedAllRaces = false;
@@ -9624,6 +9771,7 @@ void doEndgame(bool saveHighscore, bool onServerDisconnect) {
 	bool localScores = gameModeManager.allowsHiscores();
 	bool onlineScores = gameModeManager.allowsGlobalHiscores();
 	bool allowedSavegames = gameModeManager.allowsSaves();
+	bool customRun = gameModeManager.getMode() == GameModeManager_t::GAME_MODE_CUSTOM_RUN;
 	if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
 	{
 		victory = 0;
@@ -9661,7 +9809,7 @@ void doEndgame(bool saveHighscore, bool onServerDisconnect) {
 		{
 			if ( client_classes[clientnum] == CLASS_ACCURSED )
 			{
-				if ( stats[clientnum]->EFFECTS[EFF_VAMPIRICAURA] && stats[clientnum]->EFFECTS_TIMERS[EFF_VAMPIRICAURA] == -2 )
+				if ( stats[clientnum]->getEffectActive(EFF_VAMPIRICAURA) && stats[clientnum]->EFFECTS_TIMERS[EFF_VAMPIRICAURA] == -2 )
 				{
 					conductGameChallenges[CONDUCT_ACCURSED] = 1;
 				}
@@ -9760,6 +9908,7 @@ void doEndgame(bool saveHighscore, bool onServerDisconnect) {
 	{
 		soundNotification_group->stop();
 	}
+	ensembleSounds.stopPlaying(true);
 	VoiceChat.deinitRecording(true);
 #elif defined USE_OPENAL
 	if ( sound_group )
@@ -9822,8 +9971,13 @@ void doEndgame(bool saveHighscore, bool onServerDisconnect) {
 		}
 	}
 
+
 	if ( victory )
 	{
+		if ( customRun )
+		{
+			gameModeManager.setMode(GameModeManager_t::GAME_MODE_CUSTOM_RUN); // for the achievement checks
+		}
 		// conduct achievements
 		if ( (victory == 1 && currentlevel >= 20)
 			|| (victory == 2 && currentlevel >= 24)
@@ -9909,7 +10063,7 @@ void doEndgame(bool saveHighscore, bool onServerDisconnect) {
 						else if ( client_classes[i] == CLASS_ACCURSED )
 						{
 							steamAchievement("BARONY_ACH_POWER_HUNGRY");
-							if ( stats[i]->EFFECTS[EFF_VAMPIRICAURA] && stats[i]->EFFECTS_TIMERS[EFF_VAMPIRICAURA] == -2 )
+							if ( stats[i]->getEffectActive(EFF_VAMPIRICAURA) && stats[i]->EFFECTS_TIMERS[EFF_VAMPIRICAURA] == -2 )
 							{
 								if ( stats[i] && (svFlags & SV_FLAG_HUNGER) )
 								{
@@ -9970,6 +10124,21 @@ void doEndgame(bool saveHighscore, bool onServerDisconnect) {
 							case RACE_GOBLIN:
 								steamAchievement("BARONY_ACH_BAYOU_BARON");
 								break;
+							case RACE_DRYAD:
+								steamAchievement("BARONY_ACH_XXX");
+								break;
+							case RACE_MYCONID:
+								steamAchievement("BARONY_ACH_XXX");
+								break;
+							case RACE_GREMLIN:
+								steamAchievement("BARONY_ACH_XXX");
+								break;
+							case RACE_SALAMANDER:
+								steamAchievement("BARONY_ACH_XXX");
+								break;
+							case RACE_GNOME:
+								steamAchievement("BARONY_ACH_XXX");
+								break;
 							default:
 								break;
 							}
@@ -9978,6 +10147,8 @@ void doEndgame(bool saveHighscore, bool onServerDisconnect) {
 				}
 			}
 		}
+
+		gameModeManager.setMode(GameModeManager_t::GAME_MODE_DEFAULT);
 	}
 
 	if ( !endTutorial && victory > 0 && allowedSavegames )
@@ -10036,6 +10207,7 @@ void doEndgame(bool saveHighscore, bool onServerDisconnect) {
 		players[i]->hud.reset();
 		players[i]->hud.followerBars.clear();
 		players[i]->hud.playerBars.clear();
+		players[i]->worldUI.tooltipsInRange.clear(); // fix bug if multiplayer was ghost and host disconnect, then start new solo game
 		deinitShapeshiftHotbar(i);
 		for ( c = 0; c < NUM_HOTBAR_ALTERNATES; ++c )
 		{
@@ -10047,8 +10219,10 @@ void doEndgame(bool saveHighscore, bool onServerDisconnect) {
 		players[i]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
 	}
 	EnemyHPDamageBarHandler::dumpCache();
+	AOEIndicators_t::cleanup();
 	monsterAllyFormations.reset();
 	particleTimerEmitterHitEntities.clear();
+	particleTimerEffects.clear();
 	monsterTrapIgnoreEntities.clear();
 	minimapHighlights.clear();
 	PingNetworkStatus_t::reset();
@@ -10073,6 +10247,7 @@ void doEndgame(bool saveHighscore, bool onServerDisconnect) {
 	{
 		stats[c]->freePlayerEquipment();
 		list_FreeAll(&stats[c]->inventory);
+		list_FreeAll(&stats[c]->void_chest_inventory);
 		list_FreeAll(&stats[c]->FOLLOWERS);
 	}
 	list_FreeAll(&removedEntities);
@@ -10103,8 +10278,6 @@ void doEndgame(bool saveHighscore, bool onServerDisconnect) {
 		stats[c]->type = HUMAN;
 		stats[c]->playerRace = RACE_HUMAN;
 		stats[c]->clearStats();
-		entitiesToDelete[c].first = NULL;
-		entitiesToDelete[c].last = NULL;
 		if ( c == 0 )
 		{
 			initClass(c);
@@ -10118,12 +10291,14 @@ void doEndgame(bool saveHighscore, bool onServerDisconnect) {
 		players[i]->hud.weapon = nullptr;
 		players[i]->hud.magicLeftHand = nullptr;
 		players[i]->hud.magicRightHand = nullptr;
+		players[i]->hud.magicRangefinder = nullptr;
 		players[i]->ghost.reset();
 		FollowerMenu[i].recentEntity = nullptr;
 		FollowerMenu[i].followerToCommand = nullptr;
 		FollowerMenu[i].entityToInteractWith = nullptr;
 		CalloutMenu[i].closeCalloutMenuGUI();
 		CalloutMenu[i].callouts.clear();
+		players[i]->was_connected_to_game = false;
 	}
 
 	if ( !onServerDisconnect )
@@ -10479,10 +10654,10 @@ void openGameoverWindow()
 	snprintf(scorenum, 16, "%d\n\n", total);
 
 	bool madetop = false;
-	list_t* scoresPtr = &topscores;
+	list_t* scoresPtr = &topscores_json;
 	if ( score->conductGameChallenges[CONDUCT_MULTIPLAYER] )
 	{
-		scoresPtr = &topscoresMultiplayer;
+		scoresPtr = &topscoresMultiplayer_json;
 	}
 	if ( !list_Size(scoresPtr) )
 	{
@@ -11062,11 +11237,11 @@ void buttonScoreNext(button_t* my)
 {
 	if ( scoreDisplayMultiplayer )
 	{
-		score_window = std::min<int>(score_window + 1, std::max<Uint32>(1, list_Size(&topscoresMultiplayer)));
+		score_window = std::min<int>(score_window + 1, std::max<Uint32>(1, list_Size(&topscoresMultiplayer_json)));
 	}
 	else
 	{
-		score_window = std::min<int>(score_window + 1, std::max<Uint32>(1, list_Size(&topscores)));
+		score_window = std::min<int>(score_window + 1, std::max<Uint32>(1, list_Size(&topscores_json)));
 	}
 	loadScore(score_window - 1);
 	camera_charsheet_offsetyaw = (330) * PI / 180;
@@ -11236,35 +11411,6 @@ void buttonOpenSteamLeaderboards(button_t* my)
 	}
 }
 #endif
-
-void buttonOpenScoresWindow(button_t* my)
-{
-    // deprecated
-    return;
-}
-
-void buttonDeleteCurrentScore(button_t* my)
-{
-	node_t* node = nullptr;
-	if ( score_window_delete_multiplayer )
-	{
-		node = list_Node(&topscoresMultiplayer, score_window_to_delete - 1);
-		if ( node )
-		{
-			list_RemoveNode(node);
-			score_window_to_delete = std::max(score_window_to_delete - 1, 1);
-		}
-	}
-	else
-	{
-		node = list_Node(&topscores, score_window_to_delete - 1);
-		if ( node )
-		{
-			list_RemoveNode(node);
-			score_window_to_delete = std::max(score_window_to_delete - 1, 1);
-		}
-	}
-}
 
 // handles slider
 void doSlider(int x, int y, int dots, int minvalue, int maxvalue, int increment, int* var, SDL_Surface* slider_font, int slider_font_char_width)
@@ -11518,77 +11664,79 @@ void buttonLoadMultiplayerGame(button_t* button)
 
 void buttonRandomCharacter(button_t* my)
 {
-	playing_random_char = true;
-	charcreation_step = 4;
-	camera_charsheet_offsetyaw = (330) * PI / 180;
-	stats[0]->sex = static_cast<sex_t>(local_rng.rand() % 2);
-	client_classes[0] = local_rng.rand() % (CLASS_MONK + 1);//NUMCLASSES;
-	stats[0]->clearStats();
-	if ( enabledDLCPack1 || enabledDLCPack2 )
-	{
-		stats[0]->playerRace = local_rng.rand() % NUMPLAYABLERACES;
-		if ( !enabledDLCPack1 )
-		{
-			while ( stats[0]->playerRace == RACE_SKELETON || stats[0]->playerRace == RACE_VAMPIRE
-				|| stats[0]->playerRace == RACE_SUCCUBUS || stats[0]->playerRace == RACE_GOATMAN )
-			{
-				stats[0]->playerRace = local_rng.rand() % NUMPLAYABLERACES;
-			}
-		}
-		else if ( !enabledDLCPack2 )
-		{
-			while ( stats[0]->playerRace == RACE_AUTOMATON || stats[0]->playerRace == RACE_GOBLIN
-				|| stats[0]->playerRace == RACE_INCUBUS || stats[0]->playerRace == RACE_INSECTOID )
-			{
-				stats[0]->playerRace = local_rng.rand() % NUMPLAYABLERACES;
-			}
-		}
-		if ( stats[0]->playerRace == RACE_INCUBUS )
-		{
-			stats[0]->sex = MALE;
-		}
-		else if ( stats[0]->playerRace == RACE_SUCCUBUS )
-		{
-			stats[0]->sex = FEMALE;
-		}
+	return;
 
-		if ( stats[0]->playerRace == RACE_HUMAN )
-		{
-			client_classes[0] = local_rng.rand() % (NUMCLASSES);
-			if ( !enabledDLCPack1 )
-			{
-				while ( client_classes[0] == CLASS_CONJURER || client_classes[0] == CLASS_ACCURSED
-					|| client_classes[0] == CLASS_MESMER || client_classes[0] == CLASS_BREWER )
-				{
-					client_classes[0] = local_rng.rand() % (NUMCLASSES);
-				}
-			}
-			else if ( !enabledDLCPack2 )
-			{
-				while ( client_classes[0] == CLASS_HUNTER || client_classes[0] == CLASS_SHAMAN
-					|| client_classes[0] == CLASS_PUNISHER || client_classes[0] == CLASS_MACHINIST )
-				{
-					client_classes[0] = local_rng.rand() % (NUMCLASSES);
-				}
-			}
-			stats[0]->stat_appearance = local_rng.rand() % NUMAPPEARANCES;
-		}
-		else
-		{
-			client_classes[0] = local_rng.rand() % (CLASS_MONK + 2);
-			if ( client_classes[0] > CLASS_MONK )
-			{
-				client_classes[0] = CLASS_MONK + stats[0]->playerRace; // monster specific classes.
-			}
-			stats[0]->stat_appearance = 0;
-		}
-	}
-	else
-	{
-		stats[0]->playerRace = RACE_HUMAN;
-		stats[0]->stat_appearance = local_rng.rand() % NUMAPPEARANCES;
-	}
-	initClass(0);
+	//playing_random_char = true;
+	//charcreation_step = 4;
+	//camera_charsheet_offsetyaw = (330) * PI / 180;
+	//stats[0]->sex = static_cast<sex_t>(local_rng.rand() % 2);
+	//client_classes[0] = local_rng.rand() % (CLASS_MONK + 1);//NUMCLASSES;
+	//stats[0]->clearStats();
+	//if ( enabledDLCPack1 || enabledDLCPack2 )
+	//{
+	//	stats[0]->playerRace = local_rng.rand() % NUMPLAYABLERACES;
+	//	if ( !enabledDLCPack1 )
+	//	{
+	//		while ( stats[0]->playerRace == RACE_SKELETON || stats[0]->playerRace == RACE_VAMPIRE
+	//			|| stats[0]->playerRace == RACE_SUCCUBUS || stats[0]->playerRace == RACE_GOATMAN )
+	//		{
+	//			stats[0]->playerRace = local_rng.rand() % NUMPLAYABLERACES;
+	//		}
+	//	}
+	//	else if ( !enabledDLCPack2 )
+	//	{
+	//		while ( stats[0]->playerRace == RACE_AUTOMATON || stats[0]->playerRace == RACE_GOBLIN
+	//			|| stats[0]->playerRace == RACE_INCUBUS || stats[0]->playerRace == RACE_INSECTOID )
+	//		{
+	//			stats[0]->playerRace = local_rng.rand() % NUMPLAYABLERACES;
+	//		}
+	//	}
+	//	if ( stats[0]->playerRace == RACE_INCUBUS )
+	//	{
+	//		stats[0]->sex = MALE;
+	//	}
+	//	else if ( stats[0]->playerRace == RACE_SUCCUBUS )
+	//	{
+	//		stats[0]->sex = FEMALE;
+	//	}
+
+	//	if ( stats[0]->playerRace == RACE_HUMAN )
+	//	{
+	//		client_classes[0] = local_rng.rand() % (NUMCLASSES);
+	//		if ( !enabledDLCPack1 )
+	//		{
+	//			while ( client_classes[0] == CLASS_CONJURER || client_classes[0] == CLASS_ACCURSED
+	//				|| client_classes[0] == CLASS_MESMER || client_classes[0] == CLASS_BREWER )
+	//			{
+	//				client_classes[0] = local_rng.rand() % (NUMCLASSES);
+	//			}
+	//		}
+	//		else if ( !enabledDLCPack2 )
+	//		{
+	//			while ( client_classes[0] == CLASS_HUNTER || client_classes[0] == CLASS_SHAMAN
+	//				|| client_classes[0] == CLASS_PUNISHER || client_classes[0] == CLASS_MACHINIST )
+	//			{
+	//				client_classes[0] = local_rng.rand() % (NUMCLASSES);
+	//			}
+	//		}
+	//		stats[0]->stat_appearance = local_rng.rand() % NUMAPPEARANCES;
+	//	}
+	//	else
+	//	{
+	//		client_classes[0] = local_rng.rand() % (CLASS_MONK + 2);
+	//		if ( client_classes[0] > CLASS_MONK )
+	//		{
+	//			client_classes[0] = CLASS_MONK + stats[0]->playerRace; // monster specific classes.
+	//		}
+	//		stats[0]->stat_appearance = 0;
+	//	}
+	//}
+	//else
+	//{
+	//	stats[0]->playerRace = RACE_HUMAN;
+	//	stats[0]->stat_appearance = local_rng.rand() % NUMAPPEARANCES;
+	//}
+	//initClass(0);
 }
 
 bool replayLastCharacter(const int index, int multiplayer)
@@ -11632,9 +11780,9 @@ bool replayLastCharacter(const int index, int multiplayer)
 	if ( lastClass >= 0 && lastSex >= 0 && lastRace >= 0 && lastAppearance >= 0 && lastName != "" )
 	{
 		stats[index]->sex = static_cast<sex_t>(std::min(lastSex, (int)sex_t::FEMALE));
-		stats[index]->playerRace = std::min(std::max(static_cast<int>(RACE_HUMAN), lastRace), static_cast<int>(NUMPLAYABLERACES));
+		stats[index]->playerRace = std::min(std::max(static_cast<int>(RACE_HUMAN), lastRace), static_cast<int>(RACE_ENUM_END - 1));
 		stats[index]->stat_appearance = lastAppearance;
-		client_classes[index] = std::min(std::max(0, lastClass), static_cast<int>(CLASS_HUNTER));
+		client_classes[index] = std::min(std::max(0, lastClass), static_cast<int>(NUMCLASSES - 1));
 
 		switch ( isCharacterValidFromDLC(*stats[index], lastClass) )
 		{
@@ -11643,6 +11791,7 @@ bool replayLastCharacter(const int index, int multiplayer)
 				break;
 			case INVALID_REQUIREDLC1:
 			case INVALID_REQUIREDLC2:
+			case INVALID_REQUIREDLC3:
 				// class or race invalid.
 				if ( stats[index]->playerRace > RACE_HUMAN )
 				{

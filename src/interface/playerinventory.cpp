@@ -180,6 +180,10 @@ const char* itemEquipString(int player, const Item& item)
 			case STEEL_SHIELD_RESISTANCE:
 			case CRYSTAL_SHIELD:
 			case MIRROR_SHIELD:
+			case SCUTUM:
+			case BONE_SHIELD:
+			case BLACKIRON_SHIELD:
+			case SILVER_SHIELD:
 				if ( itemIsEquipped(&item, player) )
 				{
 					return Language::get(325);
@@ -370,7 +374,7 @@ const char* itemUseString(int player, const Item& item)
 	{
 		return Language::get(330);
 	}
-	else if ( itemCategory(&item) == SPELLBOOK )
+	else if ( itemCategory(&item) == SPELLBOOK || itemCategory(&item) == TOME_SPELL )
 	{
 		return Language::get(330);
 	}
@@ -887,6 +891,7 @@ bool moveInPaperDoll(int player, Player::PaperDoll_t::PaperDollSlotType paperDol
 	{
 		if ( GenericGUI[player].tinkerGUI.bOpen || GenericGUI[player].alchemyGUI.bOpen 
 			|| GenericGUI[player].featherGUI.bOpen
+			|| GenericGUI[player].mailboxGUI.bOpen
 			|| GenericGUI[player].assistShrineGUI.bOpen )
 		{
 			return false;
@@ -1462,6 +1467,62 @@ void select_assistshrine_slot(int player, int currentx, int currenty, int diffx,
 	}
 }
 
+void select_mail_slot(int player, int currentx, int currenty, int diffx, int diffy)
+{
+	int x = currentx + diffx;
+	int y = currenty + diffy;
+
+	auto& mailboxGUI = GenericGUI[player].mailboxGUI;
+	int lowestItemY = 0;
+
+	if ( currentx < 0 )
+	{
+		if ( diffy != 0 )
+		{
+			// main mail frame
+			if ( currentx == mailboxGUI.MAIL_SLOT_SEND )
+			{
+				x = mailboxGUI.MAIL_SLOT_RECV;
+			}
+			else if ( currentx == mailboxGUI.MAIL_SLOT_RECV )
+			{
+				x = mailboxGUI.MAIL_SLOT_SEND;
+			}
+			y = 0;
+		}
+		else if ( diffx != 0 )
+		{
+			if ( diffx > 0 )
+			{
+				if ( currentx == mailboxGUI.MAIL_SLOT_SEND )
+				{
+					players[player]->inventoryUI.selectSlot(0, 0);
+				}
+				else
+				{
+					players[player]->inventoryUI.selectSlot(0, 5);
+				}
+				players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
+				return;
+			}
+			else
+			{
+				if ( currentx == mailboxGUI.MAIL_SLOT_SEND )
+				{
+					players[player]->inventoryUI.selectSlot(players[player]->inventoryUI.getSizeX() - 1, 0);
+				}
+				else
+				{
+					players[player]->inventoryUI.selectSlot(players[player]->inventoryUI.getSizeX() - 1, 5);
+				}
+				players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
+				return;
+			}
+		}
+	}
+	mailboxGUI.selectMailSlot(x, y);
+}
+
 // only called by handleInventoryMovement in player.cpp
 void select_alchemy_slot(int player, int currentx, int currenty, int diffx, int diffy)
 {
@@ -1862,6 +1923,7 @@ void select_inventory_slot(int player, int currentx, int currenty, int diffx, in
 						bool skipPaperDollSelection = false;
 						if ( GenericGUI[player].tinkerGUI.bOpen 
 							|| GenericGUI[player].alchemyGUI.bOpen 
+							|| GenericGUI[player].mailboxGUI.bOpen
 							|| GenericGUI[player].assistShrineGUI.bOpen
 							|| GenericGUI[player].featherGUI.bOpen )
 						{
@@ -2024,6 +2086,19 @@ void select_inventory_slot(int player, int currentx, int currenty, int diffx, in
 				return;
 			}
 		}
+		else if ( !selectedItem && GenericGUI[player].mailboxGUI.bOpen )
+		{
+			if ( y >= 4 )
+			{
+				select_mail_slot(player, GenericGUI[player].mailboxGUI.MAIL_SLOT_RECV, 0, 0, 0);
+			}
+			else
+			{
+				select_mail_slot(player, GenericGUI[player].mailboxGUI.MAIL_SLOT_SEND, 0, 0, 0);
+			}
+			players[player]->GUI.activateModule(Player::GUI_t::MODULE_MAILBOX);
+			return;
+		}
 		else if ( !selectedItem && players[player]->gui_mode == GUI_MODE_SHOP && players[player]->shopGUI.bOpen )
 		{
 			if ( y >= players[player]->shopGUI.MAX_SHOP_Y )
@@ -2089,6 +2164,19 @@ void select_inventory_slot(int player, int currentx, int currenty, int diffx, in
 				players[player]->GUI.activateModule(Player::GUI_t::MODULE_ALCHEMY);
 				return;
 			}
+		}
+		else if ( !selectedItem && GenericGUI[player].mailboxGUI.bOpen )
+		{
+			if ( y >= 4 )
+			{
+				select_mail_slot(player, GenericGUI[player].mailboxGUI.MAIL_SLOT_RECV, 0, 0, 0);
+			}
+			else
+			{
+				select_mail_slot(player, GenericGUI[player].mailboxGUI.MAIL_SLOT_SEND, 0, 0, 0);
+			}
+			players[player]->GUI.activateModule(Player::GUI_t::MODULE_MAILBOX);
+			return;
 		}
 		else if ( !selectedItem && GenericGUI[player].assistShrineGUI.bOpen )
 		{
@@ -2234,6 +2322,29 @@ std::string getItemSpritePath(const int player, Item& item)
 				imagePathsNode = list_Node(&items[item.type].images, item.getLootBagPlayer());
 			}
 		}
+		else if ( item.type == MAGICSTAFF_SCEPTER )
+		{
+			if ( item.appearance % MAGICSTAFF_SCEPTER_CHARGE_MAX == 0 )
+			{
+				imagePathsNode = list_Node(&items[item.type].images, 1);
+			}
+			else
+			{
+				imagePathsNode = list_Node(&items[item.type].images, 0);
+			}
+		}
+		else if ( itemCategory(&item) == SPELLBOOK || itemCategory(&item) == TOME_SPELL )
+		{
+			int variation = getItemVariationFromSpellbookOrTome(item);
+			if ( variation >= 0 && variation < items[item.type].variations )
+			{
+				imagePathsNode = list_Node(&items[item.type].images, variation);
+			}
+			else
+			{
+				imagePathsNode = list_Node(&items[item.type].images, item.appearance % items[item.type].variations);
+			}
+		}
 		else
 		{
 			imagePathsNode = list_Node(&items[item.type].images, item.appearance % items[item.type].variations);
@@ -2258,9 +2369,9 @@ Item* takeItemFromChest(int player, Item* item, int amount, Item* addToSpecificI
 	{
 		chest_inventory = &chestInv[player];
 	}
-	else if ( openedChest[player]->children.first && openedChest[player]->children.first->element )
+	else if ( openedChest[player] )
 	{
-		chest_inventory = (list_t*)openedChest[player]->children.first->element;
+		chest_inventory = openedChest[player]->getChestInventoryList();
 	}
 
 	if ( !chest_inventory || !item->node || item->node->list != chest_inventory )
@@ -2304,9 +2415,9 @@ bool dragDropStackChestItems(const int player, Item*& selectedItem, Item* tempIt
 	{
 		chest_inventory = &chestInv[player];
 	}
-	else if ( openedChest[player]->children.first && openedChest[player]->children.first->element )
+	else if ( openedChest[player] )
 	{
-		chest_inventory = (list_t*)openedChest[player]->children.first->element;
+		chest_inventory = openedChest[player]->getChestInventoryList();
 	}
 
 	if ( !chest_inventory || !selectedItem->node || selectedItem->node->list != chest_inventory
@@ -2468,7 +2579,7 @@ bool dragDropStackInventoryItems(const int player, Item*& selectedItem, Item* te
 bool releaseInventoryItemIntoAlchemy(const int player)
 {
 	return false; // disable for now
-	Item*& selectedItem = inputs.getUIInteraction(player)->selectedItem;
+	/*Item*& selectedItem = inputs.getUIInteraction(player)->selectedItem;
 	if ( !selectedItem )
 	{
 		return false;
@@ -2519,7 +2630,7 @@ bool releaseInventoryItemIntoAlchemy(const int player)
 			return true;
 		}
 	}
-	return false;
+	return false;*/
 }
 
 void releaseChestItem(const int player)
@@ -2820,9 +2931,9 @@ void releaseChestItem(const int player)
 		{
 			chest_inventory = &chestInv[player];
 		}
-		else if ( openedChest[player]->children.first && openedChest[player]->children.first->element )
+		else if ( openedChest[player] )
 		{
-			chest_inventory = (list_t*)openedChest[player]->children.first->element;
+			chest_inventory = openedChest[player]->getChestInventoryList();
 		}
 
 		if ( chest_inventory )
@@ -3285,8 +3396,6 @@ void releaseItem(const int player)
 			bool mouseOverSlot = getSlotFrameXYFromMousePos(player, slotFrameX, slotFrameY, itemCategory(selectedItem) == SPELL_CAT);
 			bool mouseInInventory = mouseInsidePlayerInventory(player);
 			bool mouseInChest = false;
-			bool mouseInAlchemyBasePotion = false;
-			bool mouseInAlchemySecondaryPotion = false;
 			bool allowDropItems = players[player]->inventoryUI.guiAllowDropItems(selectedItem);
 			if ( !mouseInInventory )
 			{
@@ -3321,6 +3430,20 @@ void releaseItem(const int player)
 						if ( auto recipesFrame = GenericGUI[player].alchemyGUI.alchFrame->findFrame("player recipes") )
 						{
 							if ( !recipesFrame->isDisabled() && recipesFrame->capturesMouse() )
+							{
+								allowDropItems = false;
+							}
+						}
+					}
+				}
+				else if ( GenericGUI[player].mailboxGUI.bOpen )
+				{
+					if ( GenericGUI[player].mailboxGUI.mailFrame
+						&& !GenericGUI[player].mailboxGUI.mailFrame->isDisabled() )
+					{
+						if ( auto baseFrame = GenericGUI[player].mailboxGUI.mailFrame->findFrame("mail base") )
+						{
+							if ( !baseFrame->isDisabled() && baseFrame->capturesMouse() )
 							{
 								allowDropItems = false;
 							}
@@ -3606,9 +3729,9 @@ void releaseItem(const int player)
 				{
 					chest_inventory = &chestInv[player];
 				}
-				else if ( openedChest[player]->children.first && openedChest[player]->children.first->element )
+				else if ( openedChest[player] )
 				{
-					chest_inventory = (list_t*)openedChest[player]->children.first->element;
+					chest_inventory = openedChest[player]->getChestInventoryList();
 				}
 
 				if ( chest_inventory )
@@ -4175,6 +4298,7 @@ void Player::Inventory_t::cycleInventoryTab()
 			{
 				player.inventoryUI.selectSpell(selectedItem->x, selectedItem->y);
 			}
+			player.inventoryUI.spellPanel.currentScrollRow = player.inventoryUI.spellPanel.scrollSetpoint / player.inventoryUI.getSlotSize();
 			player.inventoryUI.spellPanel.scrollToSlot(player.inventoryUI.getSelectedSpellX(),
 				player.inventoryUI.getSelectedSpellY(), true);
 		}
@@ -4504,34 +4628,118 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
         if ( keystatus[SDLK_KP_5] )
         {
             keystatus[SDLK_KP_5] = 0;
-            if ( item->type == WOODEN_SHIELD )
-            {
-                item->type = static_cast<ItemType>(NUMITEMS - 1);
-            }
-            else
-            {
-                item->type = static_cast<ItemType>(item->type - 1);
-                if ( item->type == SPELL_ITEM )
-                {
-                    item->type = static_cast<ItemType>(item->type - 1);
-                }
-            }
+			if ( itemIsEquipped(item, player) )
+			{
+				ItemType prevType = item->type;
+				if ( item->type == WOODEN_SHIELD )
+				{
+					item->type = static_cast<ItemType>(NUMITEMS - 1);
+				}
+				else
+				{
+					item->type = static_cast<ItemType>(item->type - 1);
+					if ( item->type == SPELL_ITEM )
+					{
+						item->type = static_cast<ItemType>(item->type - 1);
+					}
+				}
+				bool found = false;
+				if ( items[prevType].item_slot == items[item->type].item_slot )
+				{
+					found = true;
+				}
+				while ( !found && item->type != prevType )
+				{
+					if ( item->type == WOODEN_SHIELD )
+					{
+						item->type = static_cast<ItemType>(NUMITEMS);
+					}
+					item->type = static_cast<ItemType>(item->type - 1);
+					if ( item->type == WOODEN_SHIELD )
+					{
+						item->type = static_cast<ItemType>(NUMITEMS - 1);
+					}
+					if ( item->type == SPELL_ITEM )
+					{
+						item->type = static_cast<ItemType>(item->type - 1);
+					}
+					if ( items[prevType].item_slot == items[item->type].item_slot )
+					{
+						break;
+					}
+				}
+			}
+			else
+			{
+				if ( item->type == WOODEN_SHIELD )
+				{
+					item->type = static_cast<ItemType>(NUMITEMS - 1);
+				}
+				else
+				{
+					item->type = static_cast<ItemType>(item->type - 1);
+					if ( item->type == SPELL_ITEM )
+					{
+						item->type = static_cast<ItemType>(item->type - 1);
+					}
+				}
+			}
         }
         if ( keystatus[SDLK_KP_8] )
         {
             keystatus[SDLK_KP_8] = 0;
-            if ( item->type == NUMITEMS - 1 )
-            {
-                item->type = WOODEN_SHIELD;
-            }
-            else
-            {
-                item->type = static_cast<ItemType>(item->type + 1);
-                if ( item->type == SPELL_ITEM )
-                {
-                    item->type = static_cast<ItemType>(item->type + 1);
-                }
-            }
+			if ( itemIsEquipped(item, player) )
+			{
+				ItemType prevType = item->type;
+				if ( item->type == NUMITEMS - 1 )
+				{
+					item->type = WOODEN_SHIELD;
+				}
+				else
+				{
+					item->type = static_cast<ItemType>(item->type + 1);
+					if ( item->type == SPELL_ITEM )
+					{
+						item->type = static_cast<ItemType>(item->type + 1);
+					}
+				}
+				bool found = false;
+				if ( items[prevType].item_slot == items[item->type].item_slot )
+				{
+					found = true;
+				}
+				while ( !found && item->type != prevType )
+				{
+					item->type = static_cast<ItemType>(item->type + 1);
+					if ( item->type == NUMITEMS - 1 )
+					{
+						item->type = WOODEN_SHIELD;
+					}
+					else if ( item->type == SPELL_ITEM )
+					{
+						item->type = static_cast<ItemType>(item->type + 1);
+					}
+					if ( items[prevType].item_slot == items[item->type].item_slot )
+					{
+						break;
+					}
+				}
+			}
+			else
+			{
+				if ( item->type == NUMITEMS - 1 )
+				{
+					item->type = WOODEN_SHIELD;
+				}
+				else
+				{
+					item->type = static_cast<ItemType>(item->type + 1);
+					if ( item->type == SPELL_ITEM )
+					{
+						item->type = static_cast<ItemType>(item->type + 1);
+					}
+				}
+			}
         }
     }
     
@@ -4690,6 +4898,11 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                     snprintf(buf, sizeof(buf), "%s %s (%d%%) (%+d)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(),
                              item->getName(), item->appearance % ENCHANTED_FEATHER_MAX_DURABILITY, item->beatitude);
                 }
+				else if ( item->type == MAGICSTAFF_SCEPTER )
+				{
+					snprintf(buf, sizeof(buf), "%s %s (%d%%) (%+d)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(),
+						item->getName(), item->appearance % MAGICSTAFF_SCEPTER_CHARGE_MAX, item->beatitude);
+				}
                 else if ( itemCategory(item) == BOOK )
                 {
                     snprintf(buf, sizeof(buf), "%s %s\n%s (%+d)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(),
@@ -5060,8 +5273,10 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
         if ( itemTooltip.icons.size() > 0 )
         {
             int index = 0;
+			int iconSpellIndex = -1;
             for ( auto& icon : itemTooltip.icons )
             {
+				ItemTooltips_t::ItemTooltipIcons_t* overrideIconType = nullptr;
                 if ( icon.conditionalAttribute.compare("") != 0 )
                 {
                     if ( itemCategory(item) == MAGICSTAFF )
@@ -5122,7 +5337,47 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                             spell_t* spell = getSpellFromItem(player, item, false);
                             if ( spell && ItemTooltips.spellItems[spell->ID].internalName == icon.conditionalAttribute )
                             {
+								++iconSpellIndex;
                                 // current spell uses this attribute
+
+								if ( index == 2 )
+								{
+									if ( spell->ID == SPELL_RAT_FORM || spell->ID == SPELL_SPIDER_FORM
+										|| spell->ID == SPELL_TROLL_FORM || spell->ID == SPELL_IMP_FORM )
+									{
+										if ( client_classes[player] != CLASS_SHAMAN )
+										{
+											continue; // ignore mentions of spells having access to
+										}
+									}
+								}
+								if ( spell->ID == SPELL_TURN_UNDEAD )
+								{
+									if ( index >= 1 )
+									{
+										int effectStrength = std::min(3, std::max(1, getSpellDamageSecondaryFromID(SPELL_TURN_UNDEAD, players[player]->entity, stats[player], players[player]->entity)));
+										if ( compendiumTooltip && intro )
+										{
+											effectStrength = 1;
+										}
+										if ( (effectStrength - 1) != iconSpellIndex )
+										{
+											continue;
+										}
+									}
+								}
+								else if ( spell->ID == SPELL_DASH )
+								{
+									int effectStrength = std::min(2, std::max(1, getSpellDamageFromID(SPELL_DASH, players[player]->entity, stats[player], players[player]->entity)));
+									if ( compendiumTooltip && intro )
+									{
+										effectStrength = 1;
+									}
+									if ( (effectStrength - 1) != iconSpellIndex )
+									{
+										continue;
+									}
+								}
                             }
                             else
                             {
@@ -5149,11 +5404,23 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 							}
 						}
 					}
-                    else if ( itemCategory(item) == SPELLBOOK
+                    else if ( (itemCategory(item) == SPELLBOOK || itemCategory(item) == TOME_SPELL)
                              && icon.conditionalAttribute.find("SPELLBOOK_") != std::string::npos )
                     {
-                        spell_t* spell = getSpellFromID(getSpellIDFromSpellbook(item->type));
-                        int skillLVL = std::min(100, stats[player]->getModifiedProficiency(PRO_MAGIC) + statGetINT(stats[player], players[player]->entity));
+						spell_t* spell = nullptr;
+						if ( itemCategory(item) == SPELLBOOK )
+						{
+							spell = getSpellFromID(getSpellIDFromSpellbook(item->type));
+						}
+						else if ( itemCategory(item) == TOME_SPELL )
+						{
+							spell = getSpellFromID(item->getTomeSpellID());
+						}
+						if ( !spell )
+						{
+							continue;
+						}
+                        int skillLVL = std::min(100, stats[player]->getModifiedProficiency(spell->skillID) + statGetINT(stats[player], players[player]->entity));
                         bool isGoblin = (stats[player]
                                          && (stats[player]->type == GOBLIN
                                              || (stats[player]->playerRace == RACE_GOBLIN && stats[player]->stat_appearance == 0)));
@@ -5163,7 +5430,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                             {
                                 continue;
                             }
-                            if ( spell->ID == SPELL_CUREAILMENT && getSpellbookBonusPercent(players[player]->entity, stats[player], item) < 25 )
+                            if ( spell->ID == SPELL_CUREAILMENT && getSpellbookBonusPercent(players[player]->entity, stats[player], item) < 10 )
                             {
                                 continue;
                             }
@@ -5194,8 +5461,17 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                                 continue;
                             }
                         }
+						else if ( icon.conditionalAttribute == "SPELLBOOK_ALREADY_LEARNED" )
+						{
+							if ( compendiumTooltip && intro ) { continue; }
+							if ( !playerLearnedSpellbook(player, item) )
+							{
+								continue;
+							}
+						}
                         else if ( icon.conditionalAttribute == "SPELLBOOK_SPELLINFO_UNLEARNED"
-                                 || icon.conditionalAttribute == "SPELLBOOK_SPELLINFO_LEARNED" )
+                                || icon.conditionalAttribute == "SPELLBOOK_SPELLINFO_LEARNED"
+								|| icon.conditionalAttribute == "SPELLBOOK_SPELLINFO_TOME" )
                         {
                             if ( icon.conditionalAttribute == "SPELLBOOK_SPELLINFO_LEARNED" )
                             {
@@ -5203,6 +5479,25 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                                 {
                                     continue;
                                 }
+
+								if ( index == 1 )
+								{
+									bool found = false;
+									auto& spellTooltip = ItemTooltips.tooltips["tooltip_spell_item"];
+									for ( auto& icon : spellTooltip.icons )
+									{
+										if ( icon.conditionalAttribute == spell->spell_internal_name )
+										{
+											found = true;
+											overrideIconType = &icon;
+											break;
+										}
+									}
+									if ( !found )
+									{
+										continue;
+									}
+								}
                             }
                             else if ( icon.conditionalAttribute == "SPELLBOOK_SPELLINFO_UNLEARNED" )
                             {
@@ -5276,9 +5571,9 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                 else if ( index == 1 )
                 {
                     imgSecondaryIcon->disabled = false;
-                    imgSecondaryIcon->path = icon.iconPath;
+                    imgSecondaryIcon->path = overrideIconType ? overrideIconType->iconPath : icon.iconPath;
                     
-                    std::string iconText = icon.text;
+                    std::string iconText = overrideIconType ? overrideIconType->text : icon.text;
                     ItemTooltips.formatItemIcon(player, tooltipType, *item, iconText, index, icon.conditionalAttribute, parentFrame);
                     
                     std::string bracketText = "";
@@ -5457,7 +5752,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                 }
                 else if ( itemCategory(item) == WEAPON || itemCategory(item) == ARMOR || itemCategory(item) == TOOL
                          || itemCategory(item) == AMULET || itemCategory(item) == RING || itemTypeIsQuiver(item->type)
-                         || itemCategory(item) == GEM )
+                         || itemCategory(item) == GEM || itemCategory(item) == THROWN )
                 {
                     if ( tag.compare("weapon_durability") == 0 )
                     {
@@ -5602,6 +5897,11 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                             continue;
                         }
                     }
+					else if ( (tag == "thrown_atk_from_player_stat" || tag == "thrown_skill_modifier")
+						&& (itemTypeIsThrownBall(item->type) || item->type == BOLAS) )
+					{
+						continue;
+					}
                 }
                 else if ( itemCategory(item) == SPELLBOOK )
                 {
@@ -5643,25 +5943,44 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                 else if ( itemCategory(item) == SPELL_CAT )
                 {
                     spell_t* spell = getSpellFromItem(player, item, false);
+					if ( !spell ) { continue; }
                     if ( tag.compare("spell_damage_bonus") == 0 )
                     {
                         if ( !ItemTooltips.bIsSpellDamageOrHealingType(spell) )
                         {
-                            continue;
+							if ( ItemTooltips.spellItems[spell->ID].spellTags.find(ItemTooltips_t::SPELL_TAG_BONUS_AS_EFFECT_POWER)
+								== ItemTooltips.spellItems[spell->ID].spellTags.end() )
+							{
+								continue;
+							}
                         }
                     }
                     else if ( tag.compare("spell_cast_success") == 0
+							 || tag.compare("spell_cast_success1") == 0
+							 || tag.compare("spell_cast_success2") == 0
                              || tag.compare("spell_extramana_chance") == 0 )
                     {
 						if ( compendiumTooltip && intro )
 						{
 							continue;
 						}
-                        bool newbie = isSpellcasterBeginner(player, players[player]->entity);
-                        if ( !newbie )
-                        {
-                            continue;
-                        }
+						if ( tag.compare("spell_cast_success2") == 0 )
+						{
+							bool newbie = std::min(std::max(0, 
+								stats[player]->getModifiedProficiency(spell->skillID) + statGetINT(stats[player], players[player]->entity)), 100) < SKILL_LEVEL_BASIC;
+							if ( !newbie )
+							{
+								continue;
+							}
+						}
+						else
+						{
+							bool newbie = isSpellcasterBeginner(player, players[player]->entity, spell->skillID);
+							if ( !newbie )
+							{
+								continue;
+							}
+						}
                     }
                     else if ( tag.compare("spell_newbie_newline") == 0 )
                     {
@@ -5669,7 +5988,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 						{
 							continue;
 						}
-                        bool newbie = isSpellcasterBeginner(player, players[player]->entity);
+                        bool newbie = isSpellcasterBeginner(player, players[player]->entity, spell->skillID);
                         if ( !newbie )
                         {
                             continue;
@@ -5679,6 +5998,34 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                             continue; // don't insert this newline
                         }
                     }
+					else if ( tag.compare("spell_nogain_newline") == 0 )
+					{
+						if ( compendiumTooltip && intro )
+						{
+							continue;
+						}
+
+						if ( item->spellNotifyIcon )
+						{
+							continue;
+						}
+						else if ( detailsTextString.compare("") == 0 )
+						{
+							continue; // don't insert this newline
+						}
+					}
+					else if ( tag.compare("spell_nogain_levels") == 0 )
+					{
+						if ( compendiumTooltip && intro )
+						{
+							continue;
+						}
+
+						if ( item->spellNotifyIcon )
+						{
+							continue;
+						}
+					}
                     else if ( tag.find("attribute_spell_") != std::string::npos )
                     {
                         spell_t* spell = getSpellFromItem(player, item, false);
@@ -6072,7 +6419,11 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
         auto txtGoldValue = frameValues->findField("inventory mouse tooltip gold value");
         auto txtWeightValue = frameValues->findField("inventory mouse tooltip weight value");
         auto txtIdentifiedValue = frameValues->findField("inventory mouse tooltip identified value");
-        
+		auto txtSpellSkillValue = frameValues->findField("inventory mouse tooltip spell skill value");
+		auto spellSkillImg = frameValues->findImage("inventory mouse tooltip spell skill image");
+		spellSkillImg->disabled = true;
+		txtSpellSkillValue->setDisabled(true);
+
         SDL_Rect frameValuesPos = frameDescPos;
         if ( !frameValues->isDisabled() )
         {
@@ -6093,6 +6444,38 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                     txtGoldValue->setText(spellCost.substr(0, spellCost.find('\n')).c_str());
                     txtWeightValue->setDisabled(false);
                 }
+
+				if ( auto spell = getSpellFromItem(player, item, false) )
+				{
+					for ( auto& skill : Player::SkillSheet_t::skillSheetData.skillEntries )
+					{
+						if ( skill.skillId == spell->skillID )
+						{
+							std::string spellSkillValue = skill.getSkillName();
+							char spellTierBuf[128];
+							snprintf(spellTierBuf, sizeof(spellTierBuf), ItemTooltips.adjectives["spell_prefixes"]["tier"].c_str(), spell->getSpellTierName());
+							spellSkillValue += spellTierBuf;
+
+							txtSpellSkillValue->setText(spellSkillValue.c_str());
+							txtSpellSkillValue->setDisabled(false);
+							spellSkillImg->path = skill.skillIconPath;
+							/*auto find = spellSkillImg->path.find('#');
+							if ( find != std::string::npos )
+							{
+								spellSkillImg->path.erase(find, 1);
+							}
+							find = spellSkillImg->path.find('*');
+							if ( find != std::string::npos )
+							{
+								spellSkillImg->path.erase(find, 1);
+							}*/
+							spellSkillImg->pos.h = 24;
+							spellSkillImg->pos.w = 24;
+							spellSkillImg->disabled = false;
+							break;
+						}
+					}
+				}
             }
             else
             {
@@ -6102,21 +6485,37 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 				}
 				else
 				{
-					if ( !item->identified && itemCategory(item) == GEM )
+					if ( !item->identified )
 					{
-						snprintf(valueBuf, sizeof(valueBuf), "%d", items[GEM_GLASS].value);
+						if ( itemCategory(item) == GEM && item->type != GEM_ROCK )
+						{
+							snprintf(valueBuf, sizeof(valueBuf), "%s", "???");
+						}
+						else
+						{
+							if ( item->getGoldValue() < 100 )
+							{
+								snprintf(valueBuf, sizeof(valueBuf), "%s", "?");
+							}
+							else if ( item->getGoldValue() < 1000 )
+							{
+								snprintf(valueBuf, sizeof(valueBuf), "%s", "??");
+							}
+							else
+							{
+								snprintf(valueBuf, sizeof(valueBuf), "%s", "???");
+							}
+						}
 					}
 					else
 					{
-						snprintf(valueBuf, sizeof(valueBuf), "%d", items[item->type].value);
+						snprintf(valueBuf, sizeof(valueBuf), "%d", item->getGoldValue());
 					}
 				}
                 txtGoldValue->setText(valueBuf);
             }
             txtGoldValue->setDisabled(false);
             
-            int charWidth = 8;
-            int charHeight = 13;
             const int lowerIconImgToTextOffset = 0;
             
             const std::string goldImagePath = "images/ui/Inventory/tooltips/HUD_Tooltip_Icon_Money_00.png";
@@ -6124,8 +6523,6 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
             const std::string spellMPCostImagePath = "images/ui/Inventory/tooltips/HUD_Tooltip_Icon_ManaRegen_00.png";
 			const std::string assistImagePath = "images/ui/Inventory/tooltips/HUD_Tooltip_Icon_Assistance_00.png";
             
-            Font::get(txtGoldValue->getFont())->sizeText("_", &charWidth, &charHeight);
-            Font::get(txtWeightValue->getFont())->sizeText("_", &charWidth, &charHeight);
             if ( tooltipType.find("tooltip_spell_") != std::string::npos )
             {
                 auto imgMPCost = imgGoldIcon;
@@ -6141,7 +6538,8 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                 txtMPCost->setSize(SDL_Rect{ imgMPCost->pos.x + imgMPCost->pos.w + padx,
                     imgMPCost->pos.y + lowerIconImgToTextOffset, txtHeader->getSize().w, imgMPCost->pos.h });
                 imgMPCost->path = spellMPCostImagePath;
-                
+				imgMPCost->pos.w = 16;
+				imgMPCost->pos.h = 16;
                 frameValuesPos.h += imgMPCost->disabled ? 0 : (imgMPCost->pos.y + imgMPCost->pos.h);
                 frameValuesPos.h += pady;
                 
@@ -6167,6 +6565,15 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                     imgMPCost->pos.y += imgMPCost->pos.h / 2;
                     imgMPCost->pos.x -= padx;
                 }
+				else
+				{
+					imgMPCost->pos.y += imgMPCost->pos.h / 2;
+					imgMPCost->pos.x -= padx;
+					SDL_Rect pos = txtMPCost->getSize();
+					pos.y += imgMPCost->pos.h / 2;
+					txtMPCost->setSize(pos);
+					frameValuesPos.h += imgSustainedMPCost->pos.h;
+				}
             }
             else
             {
@@ -6175,6 +6582,8 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                 
                 imgGoldIcon->pos.x = frameValuesPos.w - (textGetGoldValue->getWidth()) - (imgGoldIcon->pos.w + padx);
                 imgGoldIcon->pos.y = pady;
+				imgGoldIcon->pos.w = 16;
+				imgGoldIcon->pos.h = 16;
                 txtGoldValue->setSize(SDL_Rect{ imgGoldIcon->pos.x + imgGoldIcon->pos.w + padx,
                     imgGoldIcon->pos.y + lowerIconImgToTextOffset, txtHeader->getSize().w, imgGoldIcon->pos.h });
 				if ( GenericGUI[player].assistShrineGUI.bOpen && GenericGUI[player].assistShrineGUI.itemIsFromGUI(item) )
@@ -6201,6 +6610,51 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                 imgWeightIcon->path = weightImagePath;
                 frameValuesPos.h += imgGoldIcon->disabled ? 0 : (imgGoldIcon->pos.y + imgGoldIcon->pos.h);
                 frameValuesPos.h += pady;
+
+				if ( tooltipType.find("tooltip_spellbook") != std::string::npos
+					|| tooltipType.find("tooltip_tome") != std::string::npos )
+				{
+					spell_t* spell = itemCategory(item) == SPELLBOOK ? getSpellFromID(getSpellIDFromSpellbook(item->type))
+						: itemCategory(item) == TOME_SPELL ? getSpellFromID(item->getTomeSpellID()) : nullptr;
+					if ( spell )
+					{
+						for ( auto& skill : Player::SkillSheet_t::skillSheetData.skillEntries )
+						{
+							if ( skill.skillId == spell->skillID )
+							{
+								std::string spellSkillValue = skill.getSkillName();
+								char spellTierBuf[128];
+								snprintf(spellTierBuf, sizeof(spellTierBuf), ItemTooltips.adjectives["spell_prefixes"]["tier"].c_str(), spell->getSpellTierName());
+								spellSkillValue += spellTierBuf;
+
+								txtSpellSkillValue->setText(spellSkillValue.c_str());
+								txtSpellSkillValue->setDisabled(false);
+								spellSkillImg->path = skill.skillIconPath;
+								spellSkillImg->pos.h = 24;
+								spellSkillImg->pos.w = 24;
+								spellSkillImg->disabled = false;
+
+								SDL_Rect pos = txtSpellSkillValue->getSize();
+								spellSkillImg->pos.x = pos.x;
+								spellSkillImg->pos.y = pos.y + pos.h / 2 - spellSkillImg->pos.h / 2;
+								pos.x += spellSkillImg->pos.w;
+								txtSpellSkillValue->setSize(pos);
+
+								imgGoldIcon->pos.y += imgGoldIcon->pos.h / 2;
+								pos = txtGoldValue->getSize();
+								pos.y += imgGoldIcon->pos.h / 2;
+								txtGoldValue->setSize(pos);
+								frameValuesPos.h += imgGoldIcon->pos.h;
+
+								imgWeightIcon->pos.y += imgWeightIcon->pos.h / 2;
+								pos = txtWeightValue->getSize();
+								pos.y += imgGoldIcon->pos.h / 2;
+								txtWeightValue->setSize(pos);
+								break;
+							}
+						}
+					}
+				}
             }
             
             frameValues->setSize(frameValuesPos);
@@ -6209,6 +6663,19 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
             txtIdentifiedValue->setSize(SDL_Rect{ padx * 2, imgGoldIcon->pos.y + lowerIconImgToTextOffset,
                 frameValuesPos.w - padx, txtGoldValue->getSize().h });
             
+			if ( !txtSpellSkillValue->isDisabled() )
+			{
+				SDL_Rect pos = txtIdentifiedValue->getSize();
+				spellSkillImg->pos.x = pos.x;
+				spellSkillImg->pos.y = imgGoldIcon->pos.y + imgGoldIcon->pos.h / 2 - spellSkillImg->pos.h / 2;
+				pos.x += spellSkillImg->pos.w + padx;
+				pos.y -= 16 / 2 + 4;
+				pos.h = 24;
+				txtSpellSkillValue->setSize(pos);
+				pos.y += 16;
+				txtIdentifiedValue->setSize(pos);
+			}
+
             if ( tooltipType.find("tooltip_spell_") != std::string::npos )
             {
                 txtIdentifiedValue->setText(ItemTooltips.getSpellTypeString(player, *item).c_str());
@@ -6264,7 +6731,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
             framePromptPos.h = imgBottomBackground->pos.h;
             
             if ( (!item->identified
-                  && (!isItemFromInventory || (isItemFromInventory && inputs.getVirtualMouse(player)->draw_cursor && appraisal.current_item != item->uid)))
+                  && (!isItemFromInventory || (isItemFromInventory && false/*&& inputs.getVirtualMouse(player)->draw_cursor*/ && appraisal.current_item != item->uid)))
                 || doShortTooltip
                 || (frameDesc->isDisabled() && item->identified) )
             {
@@ -6470,10 +6937,31 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
         bool doAppraisalProgressPrompt = !item->identified && isItemFromInventory && appraisal.current_item == item->uid && !compendiumTooltip;
         if ( doAppraisalProgressPrompt )
         {
-            real_t percent = (((double)(appraisal.timermax - appraisal.timer)) / ((double)appraisal.timermax)) * 100;
-            char buf[32];
-            snprintf(buf, sizeof(buf), Language::get(4198), percent);
-            txtPrompt->setText(buf);
+			static ConsoleVariable<int> cvar_appraisal_display("/appraisal_display", 0);
+			if ( *cvar_appraisal_display == 0 )
+			{
+				char buf[64];
+				Uint32 sec = (appraisal.timer / TICKS_PER_SECOND) % 60;
+				Uint32 min = ((appraisal.timer / TICKS_PER_SECOND) / 60) % 60;
+				snprintf(buf, sizeof(buf), Language::get(6956), min, sec);
+				txtPrompt->setText(buf);
+			}
+			else if ( *cvar_appraisal_display == 1 )
+			{
+				real_t percent = (((double)(appraisal.timermax - appraisal.timer)) / ((double)appraisal.timermax)) * 100;
+				char buf[64];
+				snprintf(buf, sizeof(buf), Language::get(4198), percent);
+	            txtPrompt->setText(buf);
+			}
+			else if ( *cvar_appraisal_display == 2 )
+			{
+				Uint32 sec = (appraisal.timer / TICKS_PER_SECOND) % 60;
+				Uint32 min = ((appraisal.timer / TICKS_PER_SECOND) / 60) % 60;
+				real_t percent = (((double)(appraisal.timermax - appraisal.timer)) / ((double)appraisal.timermax)) * 100;
+				char buf[64];
+				snprintf(buf, sizeof(buf), Language::get(6957), min, sec, percent);
+				txtPrompt->setText(buf);
+			}
         }
         else if ( doAppraisalPrompt )
         {
@@ -7455,6 +7943,101 @@ void Player::Inventory_t::closeInventory()
 	itemTooltipDisplay.scrolledToMax = 0;
 }
 
+int Player::Inventory_t::getKeyAmountForWallLock(Entity& entity) const
+{
+	int num = 0;
+	ItemType key = WOODEN_SHIELD;
+	switch ( entity.wallLockMaterial )
+	{
+	case 0:
+		key = KEY_STONE;
+		break;
+	case 1:
+		key = KEY_BONE;
+		break;
+	case 2:
+		key = KEY_BRONZE;
+		break;
+	case 3:
+		key = KEY_IRON;
+		break;
+	case 4:
+		key = KEY_SILVER;
+		break;
+	case 5:
+		key = KEY_GOLD;
+		break;
+	case 6:
+		key = KEY_CRYSTAL;
+		break;
+	case 7:
+		key = KEY_MACHINE;
+		break;
+	default:
+		break;
+	}
+
+	if ( key == WOODEN_SHIELD ) { return num; }
+
+	for ( node_t* node = stats[player.playernum]->inventory.first; node != nullptr; node = node->next )
+	{
+		Item* tempItem = (Item*)(node->element);
+		if ( !tempItem ) { continue; }
+		if ( tempItem->type == key )
+		{
+			num += tempItem->count;
+		}
+	}
+	return num;
+}
+
+Item* Player::Inventory_t::hasKeyForWallLock(Entity& entity) const
+{
+	ItemType key = WOODEN_SHIELD;
+	switch ( entity.wallLockMaterial )
+	{
+	case 0:
+		key = KEY_STONE;
+		break;
+	case 1:
+		key = KEY_BONE;
+		break;
+	case 2:
+		key = KEY_BRONZE;
+		break;
+	case 3:
+		key = KEY_IRON;
+		break;
+	case 4:
+		key = KEY_SILVER;
+		break;
+	case 5:
+		key = KEY_GOLD;
+		break;
+	case 6:
+		key = KEY_CRYSTAL;
+		break;
+	case 7:
+		key = KEY_MACHINE;
+		break;
+	default:
+		break;
+	}
+
+	if ( key == WOODEN_SHIELD ) { return nullptr; }
+
+	for ( node_t* node = stats[player.playernum]->inventory.first; node != nullptr; node = node->next )
+	{
+		Item* tempItem = (Item*)(node->element);
+		if ( !tempItem ) { continue; }
+		if ( tempItem->type == key )
+		{
+			return tempItem;
+		}
+	}
+	return nullptr;
+}
+
 bool Player::Inventory_t::guiAllowDefaultRightClick() const
 {
 	if ( player.GUI.bModuleAccessibleWithMouse(player.GUI.activeModule) )
@@ -7523,6 +8106,7 @@ void Player::Inventory_t::updateInventory()
 	auto& shopGUI = this->player.shopGUI;
 	auto& tinkerGUI = GenericGUI[player].tinkerGUI;
 	auto& alchemyGUI = GenericGUI[player].alchemyGUI;
+	auto& mailboxGUI = GenericGUI[player].mailboxGUI;
 	auto& featherGUI = GenericGUI[player].featherGUI;
 	auto& itemfxGUI = GenericGUI[player].itemfxGUI;
 	auto& assistShrineGUI = GenericGUI[player].assistShrineGUI;
@@ -7714,6 +8298,10 @@ void Player::Inventory_t::updateInventory()
 			else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_ALCHEMY )
 			{
 				alchemyGUI.warpMouseToSelectedAlchemyItem(nullptr, (Inputs::SET_CONTROLLER));
+			}
+			else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_MAILBOX )
+			{
+				mailboxGUI.warpMouseToSelectedMailItem(nullptr, (Inputs::SET_CONTROLLER));
 			}
 			else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_FEATHER )
 			{
@@ -7914,6 +8502,7 @@ void Player::Inventory_t::updateInventory()
 	bool tinkeringSalvageOrRepairMenuActive = tinkerGUI.isSalvageOrRepairMenuActive();
 	bool featherDrawerOpen = featherGUI.isInscriptionDrawerOpen();
 	bool featherInscribeOrRepairActive = featherGUI.isInscribeOrRepairActive();
+	bool transmuteItemOpen = itemfxGUI.isItemEffectMenuActive() && GenericGUI[player].transmuteItemTarget && itemfxGUI.modeHasTransmuteMenu();
 	featherGUI.highlightedSlot = -1;
 
 	if ( true )
@@ -8107,6 +8696,55 @@ void Player::Inventory_t::updateInventory()
 			}
 		}
 
+		if ( mailboxGUI.bOpen && players[player]->inventory_mode == INVENTORY_MODE_ITEM
+			&& players[player]->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_MAILBOX) )
+		{
+			for ( int x = mailboxGUI.MAIL_SLOT_RECV; x <= mailboxGUI.MAIL_SLOT_SEND; ++x )
+			{
+				int y = 0;
+				bool slotVisible = false;
+				if ( x < 0 )
+				{
+					if ( mailboxGUI.animSendItem1 < 0.001 )
+					{
+						slotVisible = true;
+					}
+				}
+
+				if ( auto slotFrame = mailboxGUI.getMailSlotFrame(x, y) )
+				{
+					if ( !players[player]->GUI.isDropdownActive() ) // don't update selected slot while item menu open
+					{
+						if ( slotVisible && mailboxGUI.isInteractable && slotFrame->capturesMouseInRealtimeCoords() )
+						{
+							mailboxGUI.selectMailSlot(x, y);
+							if ( inputs.getVirtualMouse(player)->draw_cursor )
+							{
+								// mouse movement captures the inventory
+								players[player]->GUI.activateModule(Player::GUI_t::MODULE_MAILBOX);
+							}
+						}
+					}
+
+					bool hideCursor = false;
+					if ( x == mailboxGUI.getSelectedMailSlotX()
+						&& y == mailboxGUI.getSelectedMailSlotY()
+						&& !hideCursor
+						&& players[player]->GUI.activeModule == Player::GUI_t::MODULE_MAILBOX
+						&& mailboxGUI.isInteractable
+						&& !(x == mailboxGUI.MAIL_SLOT_RECV && mailboxGUI.animRecvItem > 0.001)
+						&& slotVisible )
+					{
+						slotFrameToHighlight = slotFrame;
+						startx = slotFrame->getAbsoluteSize().x;
+						starty = slotFrame->getAbsoluteSize().y;
+						startx -= players[player]->camera_virtualx1(); // offset any splitscreen camera positioning.
+						starty -= players[player]->camera_virtualy1();
+					}
+				}
+			}
+		}
+
 		if ( assistShrineGUI.bOpen && players[player]->inventory_mode == INVENTORY_MODE_ITEM
 			&& players[player]->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_ASSISTSHRINE) )
 		{
@@ -8225,6 +8863,7 @@ void Player::Inventory_t::updateInventory()
 			&& !tinkerCraftableListOpen
 			&& !featherDrawerOpen
 			&& !(alchemyGUI.bOpen && !alchemyGUI.isInteractable)
+			&& !(mailboxGUI.bOpen && !mailboxGUI.isInteractable)
 			&& players[player]->GUI.bModuleAccessibleWithMouse(Player::GUI_t::MODULE_INVENTORY) )
 		{
 			for ( int x = 0; x < getSizeX(); ++x )
@@ -8589,9 +9228,9 @@ void Player::Inventory_t::updateInventory()
 		{
 			chest_inventory = &chestInv[player];
 		}
-		else if ( openedChest[player]->children.first && openedChest[player]->children.first->element )
+		else if ( openedChest[player] )
 		{
-			chest_inventory = (list_t*)openedChest[player]->children.first->element;
+			chest_inventory = openedChest[player]->getChestInventoryList();
 		}
 
 		if ( chest_inventory )
@@ -8743,7 +9382,23 @@ void Player::Inventory_t::updateInventory()
 		{
 			if ( auto slotFrame = getItemSlotFrame(item, itemx, itemy) )
 			{
-				updateSlotFrameFromItem(slotFrame, item);
+				slotFrame->setUserData(&GAMEUI_FRAMEDATA_SPELL_LEARNABLE);
+				if ( spellPanel.spellFilterBySkill > 0 )
+				{
+					bool greyBackground = false;
+					if ( auto spell = getSpellFromItem(player, item, true) )
+					{
+						if ( spell->skillID != spellPanel.spellFilterBySkill )
+						{
+							greyBackground = true;
+						}
+					}
+					updateSlotFrameFromItem(slotFrame, item, greyBackground);
+				}
+				else
+				{
+					updateSlotFrameFromItem(slotFrame, item);
+				}
 			}
 		}
 		else if ( itemx >= 0 && itemx < getSizeX()
@@ -8771,7 +9426,8 @@ void Player::Inventory_t::updateInventory()
 				else if ( itemfxGUI.isItemEffectMenuActive() )
 				{
 					auto res = itemfxGUI.setItemDisplayNameAndPrice(item, true);
-					if ( res == GenericGUIMenu::ItemEffectGUI_t::ITEMFX_ACTION_OK )
+					if ( (res == GenericGUIMenu::ItemEffectGUI_t::ITEMFX_ACTION_OK
+						&& GenericGUI[player].transmuteItemTarget == nullptr) || GenericGUI[player].transmuteItemTarget == item )
 					{
 						updateSlotFrameFromItem(slotFrame, item);
 					}
@@ -8817,8 +9473,8 @@ void Player::Inventory_t::updateInventory()
 				}
 				else if ( alchemyGUI.bOpen )
 				{
-					if ( !(itemCategory(item) == POTION && item->type != POTION_EMPTY /*&& item != GenericGUI[player].alembicItem*/
-						&& item->identified && !itemIsEquipped(item, player)) )
+					if ( !(alchemyGUI.inventoryItemAllowedInGUI(item) /*&& item != GenericGUI[player].alembicItem*/
+						&& item->identified && !itemIsEquipped(item, player) && !(item->type == FOOD_TIN && !alchemyGUI.hasTinOpener)) )
 					{
 						updateSlotFrameFromItem(slotFrame, item, true);
 					}
@@ -8837,6 +9493,23 @@ void Player::Inventory_t::updateInventory()
 						item->count = oldCount;
 					}
 					else if ( (alchemyGUI.potion1Uid == item->uid || alchemyGUI.potion2Uid == item->uid) )
+					{
+						slotFrame->setUserData(&GAMEUI_FRAMEDATA_ALCHEMY_ITEM);
+						updateSlotFrameFromItem(slotFrame, item);
+					}
+					else
+					{
+						updateSlotFrameFromItem(slotFrame, item, !item->identified);
+					}
+				}
+				else if ( mailboxGUI.bOpen )
+				{
+					if ( !(mailboxGUI.inventoryItemAllowedInGUI(item)
+						&& item->identified && !itemIsEquipped(item, player)) )
+					{
+						updateSlotFrameFromItem(slotFrame, item, true);
+					}
+					else if ( (mailboxGUI.sendItem1Uid == item->uid) )
 					{
 						slotFrame->setUserData(&GAMEUI_FRAMEDATA_ALCHEMY_ITEM);
 						updateSlotFrameFromItem(slotFrame, item);
@@ -8903,7 +9576,11 @@ void Player::Inventory_t::updateInventory()
 	shopGUI.clearItemDisplayed();
 	tinkerGUI.clearItemDisplayed();
 	alchemyGUI.clearItemDisplayed();
-	itemfxGUI.clearItemDisplayed();
+	mailboxGUI.clearItemDisplayed();
+	if ( !transmuteItemOpen )
+	{
+		itemfxGUI.clearItemDisplayed();
+	}
 	if ( !featherDrawerOpen || (featherDrawerOpen && GenericGUI[player].scribingBlankScrollTarget == nullptr) )
 	{
 		featherGUI.clearItemDisplayed();
@@ -8956,7 +9633,7 @@ void Player::Inventory_t::updateInventory()
 					break;
 				}
 
-				if ( stats[player]->HP <= 0 )
+				if ( stats[player]->HP <= 0 || players[player]->ghost.isActive() )
 				{
 					break;
 				}
@@ -9016,7 +9693,7 @@ void Player::Inventory_t::updateInventory()
 					break;
 				}
 
-				if ( stats[player]->HP <= 0 )
+				if ( stats[player]->HP <= 0 || players[player]->ghost.isActive() )
 				{
 					break;
 				}
@@ -9067,7 +9744,7 @@ void Player::Inventory_t::updateInventory()
 				break;
 			}
 
-			if ( stats[player]->HP <= 0 )
+			if ( stats[player]->HP <= 0 || players[player]->ghost.isActive() )
 			{
 				break;
 			}
@@ -9102,9 +9779,9 @@ void Player::Inventory_t::updateInventory()
 		{
 			chest_inventory = &chestInv[player];
 		}
-		else if ( openedChest[player]->children.first && openedChest[player]->children.first->element )
+		else if ( openedChest[player] )
 		{
-			chest_inventory = (list_t*)openedChest[player]->children.first->element;
+			chest_inventory = openedChest[player]->getChestInventoryList();
 		}
 
 		if ( chest_inventory )
@@ -9214,7 +9891,7 @@ void Player::Inventory_t::updateInventory()
 						players[player]->hud.updateFrameTooltip(item, tooltipCoordX, tooltipCoordY, justify);
 					}
 
-					if ( stats[player]->HP <= 0 )
+					if ( stats[player]->HP <= 0 || players[player]->ghost.isActive() )
 					{
 						break;
 					}
@@ -9551,6 +10228,17 @@ void Player::Inventory_t::updateInventory()
 							tooltipCoordX -= alchemyGUI.alchFrame->getSize().w;
 						}
 					}
+					if ( mailboxGUI.mailFrame && mailboxGUI.bOpen && mailboxGUI.isInteractable )
+					{
+						if ( justify == PANEL_JUSTIFY_LEFT )
+						{
+							tooltipCoordX += mailboxGUI.mailFrame->getSize().w;
+						}
+						else
+						{
+							tooltipCoordX -= mailboxGUI.mailFrame->getSize().w;
+						}
+					}
 				}
 				else
 				{
@@ -9606,6 +10294,7 @@ void Player::Inventory_t::updateInventory()
 				bool sellingItemToShop = false;
 				bool tinkerOpen = false;
 				bool alchemyOpen = false;
+				bool mailboxOpen = false;
 				bool featherOpen = false;
 				bool itemfxOpen = false;
 				if ( featherInscribeOrRepairActive )
@@ -9621,7 +10310,10 @@ void Player::Inventory_t::updateInventory()
 				{
 					tooltipOpen = false;
 					itemfxOpen = true;
-					itemfxGUI.setItemDisplayNameAndPrice(item);
+					if ( !transmuteItemOpen )
+					{
+						itemfxGUI.setItemDisplayNameAndPrice(item);
+					}
 				}
 				else if ( tinkeringSalvageOrRepairMenuActive )
 				{
@@ -9640,9 +10332,17 @@ void Player::Inventory_t::updateInventory()
 				else if ( alchemyGUI.bOpen )
 				{
 					alchemyOpen = true;
-					if ( itemCategory(item) == POTION && item->type != POTION_EMPTY )
+					if ( alchemyGUI.inventoryItemAllowedInGUI(item) )
 					{
 						alchemyGUI.setItemDisplayNameAndPrice(item, false, false);
+					}
+				}
+				else if ( mailboxGUI.bOpen )
+				{
+					mailboxOpen = true;
+					if ( mailboxGUI.inventoryItemAllowedInGUI(item) )
+					{
+						mailboxGUI.setItemDisplayNameAndPrice(item, false);
 					}
 				}
 				else
@@ -9654,7 +10354,7 @@ void Player::Inventory_t::updateInventory()
 					}
 				}
 
-				if ( stats[player]->HP <= 0 )
+				if ( stats[player]->HP <= 0 || players[player]->ghost.isActive() )
 				{
 					break;
 				}
@@ -9670,6 +10370,7 @@ void Player::Inventory_t::updateInventory()
 					|| tinkerOpen
 					|| featherOpen
 					|| itemfxOpen
+					|| mailboxOpen
 					|| alchemyOpen)
 					&& inventoryControlActive
 					&& !selectedItem )
@@ -9880,10 +10581,10 @@ void Player::Inventory_t::updateInventory()
 						if ( guiAllowDefaultRightClick() )
 						{
 							// force equip potion/spellbook
-							playerTryEquipItemAndUpdateServer(player, item, false);
+							playerTryEquipItemAndUpdateServer(player, item, true);
 						}
 					}
-					else if ( !tinkeringSalvageOrRepairMenuActive && !alchemyOpen && !featherInscribeOrRepairActive && !itemfxOpen )
+					else if ( !tinkeringSalvageOrRepairMenuActive && !alchemyOpen && !mailboxOpen && !featherInscribeOrRepairActive && !itemfxOpen )
 					{
 						// open a drop-down menu of options for "using" the item
 						itemMenuOpen = true;
@@ -10075,7 +10776,7 @@ void Player::Inventory_t::updateInventory()
 		}
 	}
 
-	if ( !noPreviousSelectedItem && stats[player]->HP > 0 )
+	if ( !noPreviousSelectedItem && stats[player]->HP > 0 && !players[player]->ghost.isActive() )
 	{
 		// releasing items
 		Item* oldSelectedItem = selectedItem;
@@ -10196,7 +10897,22 @@ void Player::Inventory_t::updateInventory()
 				{
 					if ( auto slotFrame = getItemSlotFrame(item, itemx, itemy) )
 					{
-						updateSlotFrameFromItem(slotFrame, item);
+						if ( spellPanel.spellFilterBySkill > 0 )
+						{
+							bool greyBackground = false;
+							if ( auto spell = getSpellFromItem(player, item, true) )
+							{
+								if ( spell->skillID != spellPanel.spellFilterBySkill )
+								{
+									greyBackground = true;
+								}
+							}
+							updateSlotFrameFromItem(slotFrame, item, greyBackground);
+						}
+						else
+						{
+							updateSlotFrameFromItem(slotFrame, item);
+						}
 					}
 				}
 				else if ( itemx >= 0 && itemx < getSizeX()
@@ -10224,7 +10940,8 @@ void Player::Inventory_t::updateInventory()
 						else if ( itemfxGUI.isItemEffectMenuActive() )
 						{
 							auto res = itemfxGUI.setItemDisplayNameAndPrice(item, true);
-							if ( res == GenericGUIMenu::ItemEffectGUI_t::ITEMFX_ACTION_OK )
+							if ( (res == GenericGUIMenu::ItemEffectGUI_t::ITEMFX_ACTION_OK
+								&& GenericGUI[player].transmuteItemTarget == nullptr) || GenericGUI[player].transmuteItemTarget == item )
 							{
 								updateSlotFrameFromItem(slotFrame, item);
 							}
@@ -10268,8 +10985,8 @@ void Player::Inventory_t::updateInventory()
 						}
 						else if ( alchemyGUI.bOpen )
 						{
-							if ( !(itemCategory(item) == POTION && item->type != POTION_EMPTY /*&& item != GenericGUI[player].alembicItem*/
-								&& item->identified && !itemIsEquipped(item, player)) )
+							if ( !(alchemyGUI.inventoryItemAllowedInGUI(item) /*&& item != GenericGUI[player].alembicItem*/
+								&& item->identified && !itemIsEquipped(item, player) && !(item->type == FOOD_TIN && !alchemyGUI.hasTinOpener)) )
 							{
 								updateSlotFrameFromItem(slotFrame, item, true);
 							}
@@ -10297,6 +11014,23 @@ void Player::Inventory_t::updateInventory()
 								updateSlotFrameFromItem(slotFrame, item, !item->identified);
 							}
 						}
+						else if ( mailboxGUI.bOpen )
+						{
+							if ( !(mailboxGUI.inventoryItemAllowedInGUI(item)
+								&& item->identified && !itemIsEquipped(item, player)) )
+							{
+								updateSlotFrameFromItem(slotFrame, item, true);
+							}
+							else if ( (mailboxGUI.sendItem1Uid == item->uid) )
+							{
+								slotFrame->setUserData(&GAMEUI_FRAMEDATA_ALCHEMY_ITEM);
+								updateSlotFrameFromItem(slotFrame, item);
+							}
+							else
+							{
+								updateSlotFrameFromItem(slotFrame, item, !item->identified);
+							}
+						}
 						else
 						{
 							updateSlotFrameFromItem(slotFrame, item);
@@ -10312,9 +11046,9 @@ void Player::Inventory_t::updateInventory()
 				{
 					chest_inventory = &chestInv[player];
 				}
-				else if ( openedChest[player]->children.first && openedChest[player]->children.first->element )
+				else if ( openedChest[player] )
 				{
-					chest_inventory = (list_t*)openedChest[player]->children.first->element;
+					chest_inventory = openedChest[player]->getChestInventoryList();
 				}
 
 				if ( chest_inventory )
@@ -10504,6 +11238,7 @@ std::string getContextMenuOptionBindingName(const int player, const ItemContextM
 		case PROMPT_STORE_CHEST_ALL:
 		case PROMPT_CONSUME_ALTERNATE:
 		case PROMPT_INSPECT_ALTERNATE:
+		case PROMPT_SCEPTER_CHARGE:
 			if ( players[player]->inventoryUI.useItemDropdownOnGamepad == Player::Inventory_t::GAMEPAD_DROPDOWN_COMPACT )
 			{
 				return "MenuConfirm";
@@ -10515,10 +11250,12 @@ std::string getContextMenuOptionBindingName(const int player, const ItemContextM
 		case PROMPT_GRAB:
 			return "MenuAlt1";
 		case PROMPT_TINKER:
+		case PROMPT_COOK:
 		case PROMPT_INTERACT:
 		case PROMPT_INTERACT_SPELLBOOK_HOTBAR:
 		case PROMPT_EAT:
 		case PROMPT_SPELL_QUICKCAST:
+		case PROMPT_SPELL_CHANGE_FOCUS:
 		case PROMPT_CONSUME:
 		case PROMPT_SELL:
 		case PROMPT_BUY:
@@ -10557,8 +11294,12 @@ const char* getContextMenuLangEntry(const int player, const ItemContextMenuPromp
 			return itemUseString(player, item);
 		case PROMPT_SPELL_QUICKCAST:
 			return Language::get(4049);
+		case PROMPT_SPELL_CHANGE_FOCUS:
+			return Language::get(6556);
 		case PROMPT_TINKER:
 			return Language::get(3670);
+		case PROMPT_COOK:
+			return Language::get(6773);
 		case PROMPT_CLEAR_HOTBAR_SLOT:
 			return Language::get(3723);
 		case PROMPT_APPRAISE:
@@ -10588,6 +11329,8 @@ const char* getContextMenuLangEntry(const int player, const ItemContextMenuPromp
 			return Language::get(4050);
 		case PROMPT_DROPDOWN:
 			return Language::get(4040);
+		case PROMPT_SCEPTER_CHARGE:
+			return Language::get(6834);
 		default:
 			return "Invalid";
 	}
@@ -10596,7 +11339,7 @@ const char* getContextMenuLangEntry(const int player, const ItemContextMenuPromp
 
 std::vector<ItemContextMenuPrompts> getContextTooltipOptionsForItem(const int player, Item* item, int useDropdownMenu, bool hotbarItem)
 {
-	if ( stats[player] && stats[player]->HP <= 0 )
+	if ( (stats[player] && stats[player]->HP <= 0) || players[player]->ghost.isActive() )
 	{
 		// ded, cant do anything with items
 		return std::vector<ItemContextMenuPrompts>();
@@ -10690,7 +11433,17 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 	{
 		options.push_back(PROMPT_SPELL_EQUIP);
 		options.push_back(PROMPT_SPELL_QUICKCAST);
-		return options;
+		/*if ( spell_t* spell = getSpellFromItem(player, item, true) )
+		{
+			if ( spell->ID == SPELL_RESHAPE_WEAPON )
+			{
+				options.push_back(PROMPT_SPELL_CHANGE_FOCUS);
+			}
+		}*/
+		if ( !(GenericGUI[player].itemfxGUI.bOpen && GenericGUI[player].itemfxGUI.currentMode == GenericGUIMenu::ItemEffectGUI_t::ITEMFX_MODE_SCEPTER_CHARGE) )
+		{
+			return options;
+		}
 	}
 
 	if ( itemCategory(item) == POTION )
@@ -10734,6 +11487,20 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 	{
 		options.push_back(PROMPT_TINKER);
 		options.push_back(PROMPT_EQUIP);
+		options.push_back(PROMPT_APPRAISE);
+		options.push_back(PROMPT_DROP);
+	}
+	else if ( item->type == TOOL_FRYING_PAN )
+	{
+		options.push_back(PROMPT_COOK);
+		options.push_back(PROMPT_EQUIP);
+		options.push_back(PROMPT_APPRAISE);
+		options.push_back(PROMPT_DROP);
+	}
+	else if ( item->type == MAGICSTAFF_SCEPTER )
+	{
+		options.push_back(PROMPT_EQUIP);
+		options.push_back(PROMPT_SCEPTER_CHARGE);
 		options.push_back(PROMPT_APPRAISE);
 		options.push_back(PROMPT_DROP);
 	}
@@ -10842,6 +11609,7 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 	bool alembicOpen = false;
 	bool featherOpen = false;
 	bool itemfxOpen = false;
+	bool mailboxOpen = false;
 	if ( players[player]->gui_mode == GUI_MODE_SHOP && itemCategory(item) != SPELL_CAT )
 	{
 		if ( playerOwnedItem )
@@ -10857,6 +11625,10 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 	{
 		alembicOpen = true;
 	}
+	else if ( GenericGUI[player].mailboxGUI.bOpen )
+	{
+		mailboxOpen = true;
+	}
 	else if ( GenericGUI[player].featherGUI.bOpen )
 	{
 		featherOpen = true;
@@ -10868,7 +11640,7 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 
 	for ( auto it = options.begin(); it != options.end(); )
 	{
-		if ( sellingToShop || tinkerOpen || alembicOpen || featherOpen || itemfxOpen )
+		if ( sellingToShop || tinkerOpen || alembicOpen || featherOpen || itemfxOpen || mailboxOpen )
 		{
 			if ( getContextMenuOptionBindingName(player, *it) == "MenuConfirm"
 				|| getContextMenuOptionBindingName(player, *it) == "MenuCancel" )
@@ -10887,6 +11659,11 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 				continue;
 			}
 			if ( featherOpen && getContextMenuOptionBindingName(player, *it) == "MenuAlt2" )
+			{
+				it = options.erase(it);
+				continue;
+			}
+			if ( itemfxOpen && GenericGUI[player].itemfxGUI.modeHasTransmuteMenu() && getContextMenuOptionBindingName(player, *it) == "MenuAlt2" )
 			{
 				it = options.erase(it);
 				continue;
@@ -10936,80 +11713,6 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 #endif // NDEBUG
 
 	return options;
-}
-
-inline bool itemMenuSkipRow1ForShopsAndChests(const int player, const Item& item)
-{
-	if ( (openedChest[player] || players[player]->gui_mode == GUI_MODE_SHOP)
-		&& (itemCategory(&item) == POTION || item.type == TOOL_ALEMBIC || item.type == TOOL_TINKERING_KIT || itemCategory(&item) == SPELLBOOK) )
-	{
-		return true;
-	}
-	return false;
-}
-
-inline void drawItemMenuOptionAutomaton(const int player, const Item& item, int x, int y, int height, bool is_potion_bad)
-{
-	return;
-	int width = 0;
-
-	//Option 0.
-	if ( openedChest[player] )
-	{
-		//drawOptionStoreInChest(x, y);
-	}
-	else if ( players[player]->gui_mode == GUI_MODE_SHOP )
-	{
-		//drawOptionSell(x, y);
-	}
-	else
-	{
-		if ( !is_potion_bad )
-		{
-			if ( !itemIsConsumableByAutomaton(item) || (itemCategory(&item) != FOOD && item.type != TOOL_METAL_SCRAP && item.type != TOOL_MAGIC_SCRAP) )
-			{
-				//drawOptionUse(player, item, x, y);
-			}
-			else
-			{
-				getSizeOfText(ttf12, Language::get(3487), &width, nullptr);
-				ttfPrintText(ttf12, x + 50 - width / 2, y + 4, Language::get(3487));
-			}
-		}
-		else
-		{
-			if ( itemIsEquipped(&item, player) )
-			{
-				//drawOptionUnwield(x, y);
-			}
-			else
-			{
-				//drawOptionWield(x, y);
-			}
-		}
-	}
-	y += height;
-
-	//Option 1.
-	if ( item.type == TOOL_METAL_SCRAP || item.type == TOOL_MAGIC_SCRAP )
-	{
-		getSizeOfText(ttf12, Language::get(1881), &width, nullptr);
-		ttfPrintText(ttf12, x + 50 - width / 2, y + 4, Language::get(1881));
-		y += height;
-	}
-	else if ( itemCategory(&item) != FOOD )
-	{
-		getSizeOfText(ttf12, Language::get(3487), &width, nullptr);
-		ttfPrintText(ttf12, x + 50 - width / 2, y + 4, Language::get(3487));
-		y += height;
-	}
-
-	//Option 1.
-	//drawOptionAppraise(x, y);
-	y += height;
-
-	//Option 2.
-	//drawOptionDrop(x, y);
 }
 
 // filters out items excluded by auto_hotbar_categories
@@ -11063,6 +11766,26 @@ bool autoAddHotbarFilter(const Item& item)
 							case TOOL_TORCH:
 							case TOOL_LANTERN:
 							case TOOL_CRYSTALSHARD:
+							case INSTRUMENT_FLUTE:
+							case INSTRUMENT_LYRE:
+							case INSTRUMENT_DRUM:
+							case INSTRUMENT_LUTE:
+							case INSTRUMENT_HORN:
+							case TOOL_FOCI_FIRE:
+							case TOOL_FOCI_SNOW:
+							case TOOL_FOCI_NEEDLES:
+							case TOOL_FOCI_ARCS:
+							case TOOL_FOCI_SAND:
+							case TOOL_FOCI_DARK_LIFE:
+							case TOOL_FOCI_DARK_RIFT:
+							case TOOL_FOCI_DARK_SILENCE:
+							case TOOL_FOCI_DARK_VENGEANCE:
+							case TOOL_FOCI_DARK_SUPPRESS:
+							case TOOL_FOCI_LIGHT_PEACE:
+							case TOOL_FOCI_LIGHT_JUSTICE:
+							case TOOL_FOCI_LIGHT_PROVIDENCE:
+							case TOOL_FOCI_LIGHT_PURITY:
+							case TOOL_FOCI_LIGHT_SANCTUARY:
 								return true;
 								break;
 							default:
@@ -11072,7 +11795,7 @@ bool autoAddHotbarFilter(const Item& item)
 					break;
 				case 5: // thrown
 					if ( cat == THROWN || item.type == GEM_ROCK || itemTypeIsQuiver(item.type)
-						|| itemIsThrowableTinkerTool(&item) || item.type == TOOL_BEARTRAP )
+						|| itemIsThrowableTinkerTool(&item) || item.type == TOOL_BEARTRAP || item.type == TOOL_DUCK )
 					{
 						return true;
 					}
@@ -11207,6 +11930,7 @@ void autosortInventory(int player, bool sortPaperDoll)
 					break;
 				case 3: // books/spellbooks
 					sortInventoryItemsOfType(player, SPELLBOOK, invertSortDirection);
+					sortInventoryItemsOfType(player, TOME_SPELL, invertSortDirection);
 					sortInventoryItemsOfType(player, BOOK, invertSortDirection);
 					break;
 				case 4: // tools
@@ -11261,6 +11985,7 @@ void autosortInventory(int player, bool sortPaperDoll)
 					break;
 				case 3: // books/spellbooks
 					sortInventoryItemsOfType(player, SPELLBOOK, invertSortDirection);
+					sortInventoryItemsOfType(player, TOME_SPELL, invertSortDirection);
 					sortInventoryItemsOfType(player, BOOK, invertSortDirection);
 					break;
 				case 4: // tools
@@ -11503,13 +12228,13 @@ bool Player::Inventory_t::moveItemToFreeInventorySlot(Item* item)
 
 void sortInventoryItemsOfType(int player, int categoryInt, bool sortRightToLeft)
 {
-	node_t* node = nullptr;
-	Item* itemBeingSorted = nullptr;
 	Category cat = static_cast<Category>(categoryInt);
 
-	for ( node = stats[player]->inventory.first; node != NULL; node = node->next )
+	std::map<int, std::vector<Item*>> itemsToSort;
+	std::vector<int> itemTypeSortOrder;
+	for ( node_t* node = stats[player]->inventory.first; node != NULL; node = node->next )
 	{
-		itemBeingSorted = (Item*)node->element;
+		Item* itemBeingSorted = (Item*)node->element;
 		if ( itemBeingSorted && (itemBeingSorted->x == -1 || itemBeingSorted->x == Player::PaperDoll_t::ITEM_RETURN_TO_INVENTORY_COORDINATE) )
 		{
 			if ( itemCategory(itemBeingSorted) == SPELL_CAT )
@@ -11521,6 +12246,10 @@ void sortInventoryItemsOfType(int player, int categoryInt, bool sortRightToLeft)
 				if ( (itemBeingSorted->type == GEM_ROCK && categoryInt == THROWN) )
 				{
 					// exception for rocks as they are part of the thrown sort category...
+				}
+				else if ( categoryInt == MAGICSTAFF && itemTypeIsFoci(itemBeingSorted->type) )
+				{
+					// foci part of magicstaffs
 				}
 				else
 				{
@@ -11540,78 +12269,32 @@ void sortInventoryItemsOfType(int player, int categoryInt, bool sortRightToLeft)
 					continue;
 				}
 			}
-
-			// find a place...
-			int x, y;
-			bool notfree = false, foundaspot = false;
-
-			bool is_spell = false;
-			int inventory_y = std::min(players[player]->inventoryUI.getSizeY(), players[player]->inventoryUI.DEFAULT_INVENTORY_SIZEY); // only sort y values of 2-3, if extra row don't auto sort into it.
-
-			if ( sortRightToLeft )
+			if ( categoryInt == TOOL && itemTypeIsFoci(itemBeingSorted->type) )
 			{
-				x = players[player]->inventoryUI.getSizeX() - 1; // fill rightmost first.
-			}
-			else
-			{
-				x = 0; // fill leftmost first.
-			}
-			while ( 1 )
-			{
-				for ( y = 0; y < inventory_y; y++ )
-				{
-					node_t* node2 = nullptr;
-					for ( node2 = stats[player]->inventory.first; node2 != nullptr; node2 = node2->next )
-					{
-						Item* tempItem = (Item*)node2->element;
-						if ( tempItem == itemBeingSorted )
-						{
-							continue;
-						}
-						if ( tempItem )
-						{
-							if ( tempItem->x == x && tempItem->y == y )
-							{
-								if ( is_spell && itemCategory(tempItem) == SPELL_CAT )
-								{
-									notfree = true;  //Both spells. Can't fit in the same slot.
-								}
-								else if ( !is_spell && itemCategory(tempItem) != SPELL_CAT )
-								{
-									notfree = true;  //Both not spells. Can't fit in the same slot.
-								}
-							}
-						}
-					}
-					if ( notfree )
-					{
-						notfree = false;
-						continue;
-					}
-					itemBeingSorted->x = x;
-					itemBeingSorted->y = y;
-					foundaspot = true;
-					break;
-				}
-				if ( foundaspot )
-				{
-					break;
-				}
-				if ( sortRightToLeft )
-				{
-					--x; // fill rightmost first.
-				}
-				else
-				{
-					++x; // fill leftmost first.
-				}
+				continue;
 			}
 
-			// backpack sorting, sort into here as last priority.
-			if ( (x < 0 || x > players[player]->inventoryUI.getSizeX() - 1) && players[player]->inventoryUI.getSizeY() > players[player]->inventoryUI.DEFAULT_INVENTORY_SIZEY )
+			if ( itemsToSort.find(itemBeingSorted->type) == itemsToSort.end() )
 			{
-				foundaspot = false;
-				notfree = false;
+				itemTypeSortOrder.push_back(itemBeingSorted->type);
+			}
+			itemsToSort[itemBeingSorted->type].push_back(itemBeingSorted);
+		}
+	}
+
+	for ( auto type : itemTypeSortOrder )
+	{
+		for ( Item* itemBeingSorted : itemsToSort[type] )
+		{
+			if ( itemBeingSorted && (itemBeingSorted->x == -1 || itemBeingSorted->x == Player::PaperDoll_t::ITEM_RETURN_TO_INVENTORY_COORDINATE) )
+			{
+				// find a place...
+				int x, y;
+				bool notfree = false, foundaspot = false;
+
+				bool is_spell = false;
+				int inventory_y = std::min(players[player]->inventoryUI.getSizeY(), players[player]->inventoryUI.DEFAULT_INVENTORY_SIZEY); // only sort y values of 2-3, if extra row don't auto sort into it.
+
 				if ( sortRightToLeft )
 				{
 					x = players[player]->inventoryUI.getSizeX() - 1; // fill rightmost first.
@@ -11622,7 +12305,7 @@ void sortInventoryItemsOfType(int player, int categoryInt, bool sortRightToLeft)
 				}
 				while ( 1 )
 				{
-					for ( y = players[player]->inventoryUI.DEFAULT_INVENTORY_SIZEY; y < players[player]->inventoryUI.getSizeY(); y++ )
+					for ( y = 0; y < inventory_y; y++ )
 					{
 						node_t* node2 = nullptr;
 						for ( node2 = stats[player]->inventory.first; node2 != nullptr; node2 = node2->next )
@@ -11668,6 +12351,71 @@ void sortInventoryItemsOfType(int player, int categoryInt, bool sortRightToLeft)
 					else
 					{
 						++x; // fill leftmost first.
+					}
+				}
+
+				// backpack sorting, sort into here as last priority.
+				if ( (x < 0 || x > players[player]->inventoryUI.getSizeX() - 1) && players[player]->inventoryUI.getSizeY() > players[player]->inventoryUI.DEFAULT_INVENTORY_SIZEY )
+				{
+					foundaspot = false;
+					notfree = false;
+					if ( sortRightToLeft )
+					{
+						x = players[player]->inventoryUI.getSizeX() - 1; // fill rightmost first.
+					}
+					else
+					{
+						x = 0; // fill leftmost first.
+					}
+					while ( 1 )
+					{
+						for ( y = players[player]->inventoryUI.DEFAULT_INVENTORY_SIZEY; y < players[player]->inventoryUI.getSizeY(); y++ )
+						{
+							node_t* node2 = nullptr;
+							for ( node2 = stats[player]->inventory.first; node2 != nullptr; node2 = node2->next )
+							{
+								Item* tempItem = (Item*)node2->element;
+								if ( tempItem == itemBeingSorted )
+								{
+									continue;
+								}
+								if ( tempItem )
+								{
+									if ( tempItem->x == x && tempItem->y == y )
+									{
+										if ( is_spell && itemCategory(tempItem) == SPELL_CAT )
+										{
+											notfree = true;  //Both spells. Can't fit in the same slot.
+										}
+										else if ( !is_spell && itemCategory(tempItem) != SPELL_CAT )
+										{
+											notfree = true;  //Both not spells. Can't fit in the same slot.
+										}
+									}
+								}
+							}
+							if ( notfree )
+							{
+								notfree = false;
+								continue;
+							}
+							itemBeingSorted->x = x;
+							itemBeingSorted->y = y;
+							foundaspot = true;
+							break;
+						}
+						if ( foundaspot )
+						{
+							break;
+						}
+						if ( sortRightToLeft )
+						{
+							--x; // fill rightmost first.
+						}
+						else
+						{
+							++x; // fill leftmost first.
+						}
 					}
 				}
 			}
@@ -11730,7 +12478,7 @@ bool playerLearnedSpellbook(int player, Item* current_item)
 	{
 		return false;
 	}
-	if ( itemCategory(current_item) != SPELLBOOK )
+	if ( !(itemCategory(current_item) == SPELLBOOK || itemCategory(current_item) == TOME_SPELL) )
 	{
 		return false;
 	}
@@ -11756,10 +12504,21 @@ bool playerLearnedSpellbook(int player, Item* current_item)
 		{
 			continue;
 		}
-		if ( current_item->type == getSpellbookFromSpellID(spell->ID) )
+
+		if ( itemCategory(current_item) == SPELLBOOK )
 		{
-			// learned spell, default option is now equip spellbook.
-			return true;
+			if ( current_item->type == getSpellbookFromSpellID(spell->ID) )
+			{
+				// learned spell, default option is now equip spellbook.
+				return true;
+			}
+		}
+		else if ( itemCategory(current_item) == TOME_SPELL )
+		{
+			if ( spell->ID == current_item->getTomeSpellID() )
+			{
+				return true;
+			}
 		}
 	}
 	return false;

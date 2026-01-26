@@ -47,6 +47,316 @@
 #define ITEM_SPLOOSHED my->skill[27]
 #define ITEM_WATERBOB my->fskill[2]
 
+bool itemProcessReturnItemEffect(Entity* my, bool fallingIntoVoid)
+{
+	if ( Entity* returnToParent = uidToEntity(my->itemReturnUID) )
+	{
+		int returnTime = std::max(10, std::max(getSpellDamageSecondaryFromID(SPELL_RETURN_ITEMS, returnToParent, nullptr, returnToParent, 0.0, false),
+			getSpellDamageFromID(SPELL_RETURN_ITEMS, returnToParent, nullptr, returnToParent, 0.0, false)));
+		if ( fallingIntoVoid || (my->ticks >= returnTime && returnToParent->behavior == &actPlayer) )
+		{
+			int cost = std::max(1, getSpellEffectDurationSecondaryFromID(SPELL_RETURN_ITEMS, returnToParent, nullptr, returnToParent));
+			if ( cost > 0 && !returnToParent->safeConsumeMP(cost) )
+			{
+				Stat* returnStats = returnToParent->getStats();
+				if ( returnStats && returnStats->MP > 0 )
+				{
+					returnToParent->modMP(-returnStats->MP);
+				}
+				if ( spell_t* sustainSpell = returnToParent->getActiveMagicEffect(SPELL_RETURN_ITEMS) )
+				{
+					sustainSpell->sustain = false;
+				}
+				playSoundEntity(returnToParent, 163, 128);
+				if ( Item* item = newItemFromEntity(my, true) )
+				{
+					messagePlayerColor(returnToParent->skill[2], MESSAGE_COMBAT, makeColorRGB(255, 0, 0), Language::get(6813), item->getName());
+					free(item);
+				}
+				my->itemReturnUID = 0;
+			}
+			else
+			{
+				int i = returnToParent->skill[2];
+				Item* item2 = newItemFromEntity(my);
+				if ( item2 )
+				{
+					int pickedUpCount = item2->count;
+					Item* item = itemPickup(i, item2);
+					if ( item )
+					{
+						if ( players[i]->isLocalPlayer() )
+						{
+							// item is the new inventory stack for server, free the picked up items
+							free(item2);
+							int oldcount = item->count;
+							item->count = pickedUpCount;
+							messagePlayer(i, MESSAGE_INTERACTION | MESSAGE_INVENTORY, Language::get(3746), item->getName());
+							item->count = oldcount;
+						}
+						else
+						{
+							messagePlayer(i, MESSAGE_INTERACTION | MESSAGE_INVENTORY, Language::get(3746), item->getName());
+							free(item); // item is the picked up items (item == item2)
+						}
+
+						if ( returnToParent->behavior == &actPlayer )
+						{
+							if ( auto spell = getSpellFromID(SPELL_RETURN_ITEMS) )
+							{
+								players[returnToParent->skill[2]]->mechanics.sustainedSpellIncrementMP(cost, spell->skillID);
+							}
+							players[returnToParent->skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_RETURN_ITEMS, 10.0, 1.0, nullptr);
+						}
+
+						spawnMagicEffectParticles(my->x, my->y, my->z, 170);
+						my->removeLightField();
+						list_RemoveNode(my->mynode);
+						return true;
+					}
+				}
+			}
+		}
+	}
+	return false;
+}
+
+void onItemPickedUp(Entity& who, Uint32 itemUid)
+{
+	for ( int player = 0; player < MAXPLAYERS; ++player )
+	{
+		if ( players[player]->mechanics.donationRevealedOnFloor == itemUid )
+		{
+			if ( who.behavior == &actPlayer )
+			{
+				messagePlayerColor(who.skill[2], MESSAGE_HINT, makeColorRGB(255, 255, 0), Language::get(6943)); // you discovered a gift
+
+				for ( int player2 = 0; player2 < MAXPLAYERS; ++player2 ) // relay to other players
+				{
+					if ( player2 != who.skill[2] && !client_disconnected[player2] )
+					{
+						messagePlayerColor(player2, MESSAGE_HINT, makeColorRGB(255, 255, 0), Language::get(6944), stats[who.skill[2]]->name); // an ally discovered a gift
+					}
+				}
+			}
+			else if ( who.behavior == &actMonster && who.monsterAllyIndex >= 0 && who.monsterAllyIndex < MAXPLAYERS && who.getStats() )
+			{
+				std::string allyName = who.getStats()->name;
+				if ( allyName == "" )
+				{
+					allyName = getMonsterLocalizedName(who.getStats()->type);
+				}
+
+				messagePlayerColor(who.monsterAllyIndex, MESSAGE_HINT, makeColorRGB(255, 255, 0), Language::get(6944), allyName.c_str()); // your ally %s discovered a gift
+
+				for ( int player2 = 0; player2 < MAXPLAYERS; ++player2 ) // relay to other players
+				{
+					if ( player2 != who.monsterAllyIndex && !client_disconnected[player2] )
+					{
+						messagePlayerColor(player2, MESSAGE_HINT, makeColorRGB(255, 255, 0), Language::get(6945), stats[who.monsterAllyIndex]->name, allyName.c_str()); // %s's ally %s discovered a gift
+					}
+				}
+			}
+
+			players[player]->mechanics.updateSustainedSpellEvent(SPELL_DONATION, 150.0, 1.0, nullptr);
+			break;
+		}
+	}
+}
+
+bool entityWantsJewel(int tier, Entity& entity, Stat& stats, bool checkTypeOnly)
+{
+	int req = -1;
+	switch ( stats.type )
+	{
+		case GNOME:
+		case GOBLIN:
+			req = 1;
+			break;
+		case HUMAN:
+		case GREMLIN:
+		case SUCCUBUS:
+		case GOATMAN:
+			req = 2;
+			break;
+		case KOBOLD:
+		case INSECTOID:
+		case DRYAD:
+		case MYCONID:
+		case BUGBEAR:
+		case INCUBUS:
+			req = 3;
+			break;
+		case VAMPIRE:
+		case SALAMANDER:
+			req = 4;
+			break;
+		//case TROLL,
+		//case AUTOMATON,
+		default:
+			break;
+	}
+
+	if ( req < 0 )
+	{
+		return false;
+	}
+
+	if ( entity.behavior != &actMonster ) { return false; }
+	if ( !entity.monsterIsTargetable() || !entity.isMobile() ) { return false; }
+	if ( entity.isBossMonster() ) { return false; }
+	if ( entity.monsterAllyGetPlayerLeader() ) { return false; }
+	if ( stats.type == INCUBUS && !strncmp(stats.name, "inner demon", strlen("inner demon")) ) { return false; }
+	//if ( stats.leader_uid != 0 && uidToEntity(stats.leader_uid) ) { return false; }
+
+	if ( checkTypeOnly )
+	{
+		return req >= 0;
+	}
+	else if ( req >= 0 )
+	{
+		if ( (std::max(1, tier) * 5) >= currentlevel || tier == EXCELLENT )
+		{
+			return true;
+		}
+		//return tier >= req;
+	}
+
+	return false;
+}
+
+bool jewelItemRecruit(Entity* parent, Entity* entity, int itemStatus, const char** msg)
+{
+	if ( !(entity && parent) )
+	{
+		return false;
+	}
+
+	if ( parent->behavior != &actPlayer )
+	{
+		return false;
+	}
+
+	Stat* entitystats = entity->getStats();
+	if ( !entitystats ) 
+	{
+		return false;
+	}
+
+	int allowedFollowers = std::min(8, std::max(4, 2 * (stats[parent->skill[2]]->getModifiedProficiency(PRO_LEADERSHIP) / 20)));
+	int numFollowers = 0;
+	for ( node_t* node = stats[parent->skill[2]]->FOLLOWERS.first; node; node = node->next )
+	{
+		Entity* follower = nullptr;
+		if ( (Uint32*)node->element )
+		{
+			follower = uidToEntity(*((Uint32*)node->element));
+		}
+		if ( follower )
+		{
+			Stat* followerStats = follower->getStats();
+			if ( followerStats )
+			{
+				if ( !(followerStats->type == SENTRYBOT || followerStats->type == GYROBOT
+					|| followerStats->type == SPELLBOT || followerStats->type == DUMMYBOT) )
+				{
+					++numFollowers;
+				}
+			}
+		}
+	}
+
+	if ( numFollowers >= allowedFollowers )
+	{
+		if ( allowedFollowers >= 8 )
+		{
+			if ( msg )
+			{
+				*msg = Language::get(3482);
+			}
+		}
+		else
+		{
+			if ( msg )
+			{
+				*msg = Language::get(3480);
+			}
+		}
+		return false;
+	}
+	else if ( forceFollower(*parent, *entity) )
+	{
+		Entity* fx = createRadiusMagic(SPELL_FORGE_JEWEL, entity, entity->x, entity->y, 16, 2 * TICKS_PER_SECOND, entity);
+		spawnMagicEffectParticles(entity->x, entity->y, entity->z, 2410);
+		playSoundEntity(entity, 167, 64);
+
+		if ( parent->behavior == &actPlayer )
+		{
+			magicOnSpellCastEvent(parent, parent, entity, SPELL_FORGE_JEWEL, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
+			messagePlayerMonsterEvent(parent->skill[2], makeColorRGB(0, 255, 0), *entitystats, Language::get(6954), Language::get(6955), MSG_COMBAT);
+			Compendium_t::Events_t::eventUpdateMonster(parent->skill[2], Compendium_t::CPDM_RECRUITED, entity, 1);
+
+			if ( itemStatus == DECREPIT )
+			{
+				Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_JEWEL_RECRUIT_DECREPIT, GEM_JEWEL, 1);
+			}
+			else if ( itemStatus == WORN )
+			{
+				Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_JEWEL_RECRUIT_WORN, GEM_JEWEL, 1);
+			}
+			else if ( itemStatus == SERVICABLE )
+			{
+				Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_JEWEL_RECRUIT_SERVICABLE, GEM_JEWEL, 1);
+			}
+			else if ( itemStatus == EXCELLENT )
+			{
+				Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_JEWEL_RECRUIT_EXCELLENT, GEM_JEWEL, 1);
+			}
+			Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_RECRUITED, GEM_JEWEL, 1);
+
+			if ( entitystats->type == HUMAN && entitystats->getAttribute("special_npc") == "merlin" )
+			{
+				Compendium_t::Events_t::eventUpdateWorld(parent->skill[2], Compendium_t::CPDM_MERLINS, "magicians guild", 1);
+			}
+			entity->monsterAllyIndex = parent->skill[2];
+			if ( multiplayer == SERVER )
+			{
+				serverUpdateEntitySkill(entity, 42); // update monsterAllyIndex for clients.
+			}
+		}
+
+		if ( entity->monsterTarget == parent->getUID() )
+		{
+			entity->monsterReleaseAttackTarget();
+		}
+		entity->setEffect(EFF_CONFUSED, false, 0, true);
+
+		// change the color of the hit entity.
+		entity->flags[USERFLAG2] = true;
+		serverUpdateEntityFlag(entity, USERFLAG2);
+		if ( monsterChangesColorWhenAlly(entitystats) )
+		{
+			int bodypart = 0;
+			for ( node_t* node = (entity)->children.first; node != nullptr; node = node->next )
+			{
+				if ( bodypart >= LIMB_HUMANOID_TORSO )
+				{
+					Entity* tmp = (Entity*)node->element;
+					if ( tmp )
+					{
+						tmp->flags[USERFLAG2] = true;
+						//serverUpdateEntityFlag(tmp, USERFLAG2);
+					}
+				}
+				++bodypart;
+			}
+		}
+
+		return true;
+	}
+	return false;
+}
+
 void actItem(Entity* my)
 {
 	Item* item;
@@ -66,6 +376,25 @@ void actItem(Entity* my)
 	my->z -= ITEM_WATERBOB;
 	my->new_z -= ITEM_WATERBOB;
 	ITEM_WATERBOB = 0.0;
+
+	if ( my->sprite >= items[TOOL_DUCK].index && my->sprite < items[TOOL_DUCK].index + 4 )
+	{
+		if ( multiplayer == CLIENT )
+		{
+			my->flags[INVISIBLE] = true;
+		}
+		else
+		{
+			Item* item = newItemFromEntity(my, true);
+			if ( item )
+			{
+				item->applyDuck(my->parent, my->x, my->y, nullptr, false);
+			}
+			free(item);
+			list_RemoveNode(my->mynode);
+			return;
+		}
+	}
 
 	if ( multiplayer == CLIENT )
 	{
@@ -168,6 +497,20 @@ void actItem(Entity* my)
 			my->flags[INVISIBLE] = false;
 		}
 		item = newItemFromEntity(my, true);
+		/*if ( currentlevel > 0 && my->ticks == 1 )
+		{
+			if ( items[item->type].category != TOME_SPELL && items[item->type].category != SPELLBOOK )
+			{
+				if ( items[item->type].level < 0 )
+				{
+					if ( item->type != KEY_IRON && item->type != KEY_BRONZE && item->type != KEY_GOLD
+						&& item->type != KEY_SILVER )
+					{
+						printlog("%s", items[item->type].getIdentifiedName());
+					}
+				}
+			}
+		}*/
 		my->sprite = itemModel(item);
 		free(item);
 	}
@@ -182,6 +525,78 @@ void actItem(Entity* my)
 	// pick up item
 	if (multiplayer != CLIENT)
 	{
+		if ( my->skill[10] == GEM_JEWEL )
+		{
+			if ( Entity* parent = uidToEntity(my->parent) )
+			{
+				if ( parent && parent->behavior == &actPlayer )
+				{
+					int tier = my->skill[11];
+					auto entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 2);
+					for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
+					{
+						list_t* currentList = *it;
+						node_t* node;
+						for ( node = currentList->first; node != nullptr; node = node->next )
+						{
+							Entity* entity = (Entity*)node->element;
+							if ( entity && entity->behavior == &actMonster )
+							{
+								if ( Stat* entitystats = entity->getStats() )
+								{
+									auto hitProps = getParticleEmitterHitProps(my->getUID(), entity);
+									if ( hitProps->hits > 0 || (ticks - hitProps->tick) < TICKS_PER_SECOND )
+									{
+										continue;
+									}
+									if ( entity->getUID() % 10 == ticks % 10 )
+									{
+										hitProps->tick = ticks;
+										if ( entityWantsJewel(tier, *entity, *entitystats, true) )
+										{
+											if ( entityDist(my, entity) < 16.0 )
+											{
+												hitProps->hits++;
+												if ( entityWantsJewel(tier, *entity, *entitystats, false) )
+												{
+													const char* msg = nullptr;
+													if ( jewelItemRecruit(parent, entity, tier, &msg) )
+													{
+														my->clearMonsterInteract();
+														my->removeLightField();
+														list_RemoveNode(my->mynode);
+														return;
+													}
+													else
+													{
+														if ( msg )
+														{
+															auto hitProps = getParticleEmitterHitProps(my->getUID(), parent);
+															if ( hitProps && hitProps->hits == 0 )
+															{
+																++hitProps->hits;
+																messagePlayer(parent->isEntityPlayer(), MESSAGE_HINT, msg);
+															}
+														}
+													}
+												}
+												else
+												{
+													spawnFloatingSpriteMisc(134, entity->x + (-4 + local_rng.rand() % 9) + cos(entity->yaw) * 2,
+														entity->y + (-4 + local_rng.rand() % 9) + sin(entity->yaw) * 2, entity->z + local_rng.rand() % 4);
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+		Uint32 myUid = my->getUID();
 		if ( my->isInteractWithMonster() )
 		{
 			Entity* monsterInteracting = uidToEntity(my->interactedByMonster);
@@ -243,6 +658,7 @@ void actItem(Entity* my)
 							copyOfItem = nullptr;
 							if ( pickedUpItem && monsterInteracting->monsterAllyIndex >= 0 )
 							{
+								onItemPickedUp(*monsterInteracting, myUid);
 								FollowerMenu[monsterInteracting->monsterAllyIndex].entityToInteractWith = nullptr; // in lieu of my->clearMonsterInteract, my might have been deleted.
 								return;
 							}
@@ -252,6 +668,7 @@ void actItem(Entity* my)
 					{
 						if ( monsterInteracting->monsterConsumeFoodEntity(my, monsterInteracting->getStats()) && monsterInteracting->monsterAllyIndex >= 0 )
 						{
+							onItemPickedUp(*monsterInteracting, myUid);
 							FollowerMenu[monsterInteracting->monsterAllyIndex].entityToInteractWith = nullptr; // in lieu of my->clearMonsterInteract, my might have been deleted.
 							return;
 						}
@@ -260,6 +677,7 @@ void actItem(Entity* my)
 					{
 						if ( monsterInteracting->monsterAddNearbyItemToInventory(monsterInteracting->getStats(), 24, 9, my) && monsterInteracting->monsterAllyIndex >= 0 )
 						{
+							onItemPickedUp(*monsterInteracting, myUid);
 							FollowerMenu[monsterInteracting->monsterAllyIndex].entityToInteractWith = nullptr; // in lieu of my->clearMonsterInteract, my might have been deleted.
 							return;
 						}
@@ -270,6 +688,15 @@ void actItem(Entity* my)
 			}
 			my->clearMonsterInteract();
 		}
+
+		if ( my->itemReturnUID != 0 )
+		{
+			if ( itemProcessReturnItemEffect(my, false) )
+			{
+				return;
+			}
+		}
+
 		for ( i = 0; i < MAXPLAYERS; i++)
 		{
 			if ( selectedEntity[i] == my || client_selected[i] == my )
@@ -341,6 +768,7 @@ void actItem(Entity* my)
 
 							if ( salvaged )
 							{
+								onItemPickedUp(*players[i]->entity, myUid);
 								free(item2);
 								my->removeLightField();
 								list_RemoveNode(my->mynode);
@@ -396,6 +824,7 @@ void actItem(Entity* my)
 									}
 									free(item); // item is the picked up items (item == item2)
 								}
+								onItemPickedUp(*players[i]->entity, myUid);
 								my->removeLightField();
 								list_RemoveNode(my->mynode);
 								return;
@@ -464,8 +893,76 @@ void actItem(Entity* my)
 			my->light = addLight(my->x / 16, my->y / 16, "lootbag_white");
 		}
 		break;
+	case 2409: // jewel
+		if ( !my->light )
+		{
+			my->light = addLight(my->x / 16, my->y / 16, "jewel_yellow");
+		}
+		break;
 	default:
 		break;
+	}
+
+	bool levitating = false;
+	Entity* leader = nullptr;
+	if ( my->itemFollowUID != 0 )
+	{
+		if ( multiplayer != CLIENT )
+		{
+			if ( leader = uidToEntity(my->itemFollowUID) )
+			{
+				Stat* leaderStats = leader->getStats();
+				real_t dist = entityDist(leader, my);
+
+				real_t maxDist = std::max(16, std::min(getSpellDamageSecondaryFromID(SPELL_ATTRACT_ITEMS, leader, nullptr, leader),
+					getSpellDamageFromID(SPELL_ATTRACT_ITEMS, leader, nullptr, leader)));
+				if ( dist > maxDist + 4.0 || (leaderStats && !leaderStats->getEffectActive(EFF_ATTRACT_ITEMS)) )
+				{
+					my->itemFollowUID = 0;
+					serverUpdateEntitySkill(my, 30);
+					leader = nullptr;
+				}
+
+				if ( leader )
+				{
+					levitating = true;
+					const real_t followDist = 12.0;
+					if ( dist > 12.0 )
+					{
+						real_t tangent = atan2(leader->y - my->y, leader->x - my->x);
+						my->vel_x = cos(tangent) * ((dist - followDist) / MAGICLIGHTBALL_DIVIDE_CONSTANT);
+						my->vel_y = sin(tangent) * ((dist - followDist) / MAGICLIGHTBALL_DIVIDE_CONSTANT);
+						my->vel_x = (my->vel_x < MAGIC_LIGHTBALL_SPEEDLIMIT) ? my->vel_x : MAGIC_LIGHTBALL_SPEEDLIMIT;
+						my->vel_y = (my->vel_y < MAGIC_LIGHTBALL_SPEEDLIMIT) ? my->vel_y : MAGIC_LIGHTBALL_SPEEDLIMIT;
+					}
+					my->flags[UPDATENEEDED] = true;
+					my->flags[NOUPDATE] = false;
+				}
+			}
+		}
+		else
+		{
+			levitating = true;
+			my->itemNotMoving = 0;
+			my->itemNotMovingClient = 0;
+			my->flags[UPDATENEEDED] = true;
+			my->flags[NOUPDATE] = false;
+		}
+	}
+
+	if ( my->sprite == items[GEM_JEWEL].index )
+	{
+		if ( my->ticks % 25 == 0 || my->ticks % 40 == 0 )
+		{
+			if ( Entity* fx = spawnMagicParticleCustom(my, 2410, 1.0, 1.0) )
+			{
+				fx->vel_z = -0.2;
+				fx->yaw = (local_rng.rand() % 360) * PI / 180.0;
+				fx->x = my->x + 3.0 * cos(fx->yaw);
+				fx->y = my->y + 3.0 * sin(fx->yaw);
+				fx->focalz = 0.25;
+			}
+		}
 	}
 
 	if ( my->itemNotMoving )
@@ -541,7 +1038,26 @@ void actItem(Entity* my)
 
 	my->flags[BURNING] = false;
 
-	if ( my->z < groundheight )
+	if ( levitating )
+	{
+		/*ITEM_VELZ += 0.04;
+		ITEM_VELZ = std::min(0.0, ITEM_VELZ);
+		my->z += ITEM_VELZ;*/
+		my->z = my->itemLevitateStartZ * my->itemLevitate;
+		my->z = std::min(groundheight - 0.1, my->z);
+		my->z = std::max(my->z, -7.5);
+		my->vel_z = 0.0;
+		
+		real_t diff = std::max(0.025, my->itemLevitate / 10.0);
+		my->itemLevitate = std::max(0.0, my->itemLevitate - diff);
+
+		my->yaw += PI / (TICKS_PER_SECOND * 10);
+		my->new_yaw = my->yaw;
+		ITEM_WATERBOB = sin(((ticks % (TICKS_PER_SECOND * 2)) / ((real_t)TICKS_PER_SECOND * 2.0)) * (2.0 * PI)) * 0.5;
+		my->z += ITEM_WATERBOB;
+		my->new_z = my->z;
+	}
+	else if ( my->z < groundheight )
 	{
 		// fall
 		// chakram and shuriken lie flat, needs to use sprites for client
@@ -596,7 +1112,7 @@ void actItem(Entity* my)
 		if ( my->x >= 0 && my->y >= 0 && my->x < map.width << 4 && my->y < map.height << 4 )
 		{
 			const int tile = map.tiles[(int)(my->y / 16) * MAPLAYERS + (int)(my->x / 16) * MAPLAYERS * map.height];
-			if ( tile || (my->sprite >= 610 && my->sprite <= 613) || (my->sprite >= 1206 && my->sprite <= 1209) )
+			if ( tile || (my->sprite >= 610 && my->sprite <= 613) || (my->sprite >= 1206 && my->sprite <= 1210) )
 			{
 				onground = true;
 				if (!isArtifact && tile >= 64 && tile < 72) { // landing on lava
@@ -617,6 +1133,7 @@ void actItem(Entity* my)
 						if ( splash )
 						{
 							playSoundEntity(my, 136, 64);
+							createWaterSplash(my->x, my->y, 30);
 						}
 					}
 				}
@@ -722,8 +1239,15 @@ void actItem(Entity* my)
 					Compendium_t::Events_t::eventUpdateWorld(playerOwner, Compendium_t::CPDM_PITS_ITEMS_LOST, "pits", 1);
 					if ( ITEM_TYPE >= 0 && ITEM_TYPE < NUMITEMS )
 					{
-						Compendium_t::Events_t::eventUpdateWorld(playerOwner, Compendium_t::CPDM_PITS_ITEMS_VALUE_LOST, "pits", items[ITEM_TYPE].value);
+						Compendium_t::Events_t::eventUpdateWorld(playerOwner, Compendium_t::CPDM_PITS_ITEMS_VALUE_LOST, "pits", items[ITEM_TYPE].gold_value);
 					}
+				}
+			}
+			if ( my->itemReturnUID != 0 )
+			{
+				if ( itemProcessReturnItemEffect(my, true) )
+				{
+					return;
 				}
 			}
 		}
@@ -731,12 +1255,13 @@ void actItem(Entity* my)
 		{
 			steamAchievementEntity(uidToEntity(my->parent), "BARONY_ACH_STFU");
 		}
+		my->removeLightField();
 		list_RemoveNode(my->mynode);
 		return;
 	}
 
 	// don't perform unneeded computations on items that have basically no velocity
-	if (!overWater && onground &&
+	if (!overWater && onground && !levitating &&
 		my->z > groundheight - .0001 && my->z < groundheight + .0001 &&
 		fabs(ITEM_VELX) < 0.02 && fabs(ITEM_VELY) < 0.02)
 	{
@@ -769,6 +1294,15 @@ void actItem(Entity* my)
 	{
 		double result = clipMove(&my->x, &my->y, ITEM_VELX, ITEM_VELY, my);
 		my->yaw += result * .05;
+
+		if ( multiplayer != CLIENT )
+		{
+			if ( levitating && leader && leader->behavior == &actPlayer )
+			{
+				players[leader->skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_ATTRACT_ITEMS, result, 0.025, nullptr);
+			}
+		}
+
 		if ( result != sqrt( ITEM_VELX * ITEM_VELX + ITEM_VELY * ITEM_VELY ) )
 		{
 			if ( !hit.side )
@@ -786,6 +1320,54 @@ void actItem(Entity* my)
 			}
 		}
 	}
+
 	ITEM_VELX = ITEM_VELX * .925;
 	ITEM_VELY = ITEM_VELY * .925;
+}
+
+static Uint32 lastAttractTick = 0;
+void Entity::attractItem(Entity& itemEntity)
+{
+	if ( itemEntity.itemFollowUID != getUID() && itemEntity.z < 16.0 && itemEntity.ticks > TICKS_PER_SECOND )
+	{
+		if ( lastAttractTick != ::ticks )
+		{
+			spawnMagicEffectParticles(itemEntity.x, itemEntity.y, itemEntity.z, 170);
+			lastAttractTick = ::ticks;
+		}
+		itemEntity.itemFollowUID = getUID();
+
+		itemEntity.flags[USERFLAG1] = false;
+		itemEntity.itemNotMoving = 0;
+		itemEntity.itemNotMovingClient = 0;
+		itemEntity.z = std::max(itemEntity.z - 0.1, 0.0);
+		itemEntity.vel_z = -0.75;
+		itemEntity.itemLevitate = 1.0;
+		itemEntity.itemLevitateStartZ = itemEntity.z;
+		itemEntity.flags[UPDATENEEDED] = true;
+		itemEntity.flags[NOUPDATE] = false;
+		if ( multiplayer == SERVER )
+		{
+			for ( int c = 1; c < MAXPLAYERS; c++ )
+			{
+				if ( client_disconnected[c] || players[c]->isLocalPlayer() )
+				{
+					continue;
+				}
+				strcpy((char*)net_packet->data, "ATTI");
+				SDLNet_Write32(itemEntity.getUID(), &net_packet->data[4]);
+				SDLNet_Write16((Sint16)(itemEntity.x * 32), &net_packet->data[8]);
+				SDLNet_Write16((Sint16)(itemEntity.y * 32), &net_packet->data[10]);
+				SDLNet_Write16((Sint16)(itemEntity.z * 32), &net_packet->data[12]);
+				SDLNet_Write16((Sint16)(itemEntity.vel_x * 32), &net_packet->data[14]);
+				SDLNet_Write16((Sint16)(itemEntity.vel_y * 32), &net_packet->data[16]);
+				SDLNet_Write16((Sint16)(itemEntity.vel_z * 32), &net_packet->data[18]);
+				SDLNet_Write32(getUID(), & net_packet->data[20]);
+				net_packet->address.host = net_clients[c - 1].host;
+				net_packet->address.port = net_clients[c - 1].port;
+				net_packet->len = 24;
+				sendPacketSafe(net_sock, -1, net_packet, c - 1);
+			}
+		}
+	}
 }

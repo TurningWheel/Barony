@@ -16,6 +16,8 @@
 #include "entity.hpp"
 #include "prng.hpp"
 #include "monster.hpp"
+#include "shops.hpp"
+#include "net.hpp"
 
 #include <cassert>
 
@@ -84,6 +86,10 @@ void Entity::initMonster(int mySprite)
 		if ( monsterType == MIMIC )
 		{
 			z = limbs[MIMIC][5][2];
+		}
+		if ( monsterType == MINIMIMIC )
+		{
+			z = limbs[MINIMIMIC][5][2];
 		}
 	} else {
 		if (arachnophobia_filter)
@@ -165,6 +171,7 @@ void Entity::initMonster(int mySprite)
 			monsterSpellAnimation = MONSTER_SPELLCAST_HUMANOID;
 			break;
 		case MIMIC:
+		case MINIMIMIC:
 			monsterFootstepType = MONSTER_FOOTSTEP_NONE;
 			monsterSpellAnimation = MONSTER_SPELLCAST_NONE;
 			break;
@@ -239,6 +246,34 @@ void Entity::initMonster(int mySprite)
 			monsterFootstepType = MONSTER_FOOTSTEP_STOMP;
 			monsterSpellAnimation = MONSTER_SPELLCAST_NONE;
 			break;
+		case DRYAD:
+			monsterFootstepType = MONSTER_FOOTSTEP_USE_BOOTS;
+			monsterSpellAnimation = MONSTER_SPELLCAST_HUMANOID;
+			break;
+		case MYCONID:
+			monsterFootstepType = MONSTER_FOOTSTEP_USE_BOOTS;
+			monsterSpellAnimation = MONSTER_SPELLCAST_HUMANOID;
+			break;
+		case SALAMANDER:
+			monsterFootstepType = MONSTER_FOOTSTEP_USE_BOOTS;
+			monsterSpellAnimation = MONSTER_SPELLCAST_HUMANOID;
+			break;
+		case GREMLIN:
+			monsterFootstepType = MONSTER_FOOTSTEP_USE_BOOTS;
+			monsterSpellAnimation = MONSTER_SPELLCAST_HUMANOID;
+			break;
+		case REVENANT_SKULL:
+		case MONSTER_ADORCISED_WEAPON:
+		case FLAME_ELEMENTAL:
+		case HOLOGRAM:
+		case MOTH_SMALL:
+		case EARTH_ELEMENTAL:
+		case DUCK_SMALL:
+		case MONSTER_UNUSED_6:
+		case MONSTER_UNUSED_7:
+		case MONSTER_UNUSED_8:
+			// unused
+			break;
 		default:
 			monsterFootstepType = MONSTER_FOOTSTEP_NONE;
 			monsterSpellAnimation = MONSTER_SPELLCAST_NONE;
@@ -250,7 +285,18 @@ void Entity::initMonster(int mySprite)
 Monster Entity::getMonsterTypeFromSprite() const
 {
 	Sint32 mySprite = this->sprite;
-	return Entity::getMonsterTypeFromSprite(mySprite);
+	Monster result = Entity::getMonsterTypeFromSprite(mySprite);
+	if ( result != NOTHING )
+	{
+		if ( flags[SPRITE] )
+		{
+#ifndef NDEBUG
+			assert(true && "getMonsterTypeFromSprite found a conflicting SPRITE flag!");
+#endif
+			return NOTHING;
+		}
+	}
+	return result;
 }
 
 Monster Entity::getMonsterTypeFromSprite(const int sprite)
@@ -339,9 +385,9 @@ void Entity::actMonsterLimb(bool processLight)
 		}
 	}
 
-	if ( parentEnt && parentEnt->behavior == &actMonster && parentEnt->monsterEntityRenderAsTelepath == 1 )
+	if ( parentEnt && parentEnt->behavior == &actMonster && parentEnt->monsterEntityRenderAsTelepath != 0 )
 	{
-		monsterEntityRenderAsTelepath = 1;
+		monsterEntityRenderAsTelepath = parentEnt->monsterEntityRenderAsTelepath;
 	}
 	else
 	{
@@ -351,6 +397,27 @@ void Entity::actMonsterLimb(bool processLight)
 
 void Entity::removeMonsterDeathNodes()
 {
+	if ( monsterCanTradeWith(-1) )
+	{
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( players[i]->isLocalPlayer() && shopkeeper[i] == getUID() )
+			{
+				players[i]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
+			}
+			else if ( i > 0 && !client_disconnected[i] && multiplayer == SERVER && !players[i]->isLocalPlayer() )
+			{
+				// inform client of abandonment
+				strcpy((char*)net_packet->data, "SHPC");
+				SDLNet_Write32(getUID(), &net_packet->data[4]);
+				net_packet->address.host = net_clients[i - 1].host;
+				net_packet->address.port = net_clients[i - 1].port;
+				net_packet->len = 8;
+				sendPacketSafe(net_sock, -1, net_packet, i - 1);
+			}
+		}
+	}
+
 	removeLightField();
 	int i = 0;
 	node_t *nextnode = nullptr;

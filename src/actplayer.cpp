@@ -43,6 +43,9 @@ bool partymode = false;
 static ConsoleVariable<float> cvar_calloutStartZ("/callout_start_z", -2.5);
 static ConsoleVariable<float> cvar_calloutMoveTo("/callout_moveto_z", 0.1);
 static ConsoleVariable<float> cvar_calloutStartZLimit("/callout_start_z_limit", 7.5);
+static ConsoleVariable<float> cvar_followerStartZ("/follower_start_z", -2.5);
+static ConsoleVariable<float> cvar_followerMoveTo("/follower_moveto_z", 0.1);
+static ConsoleVariable<float> cvar_followerStartZLimit("/follower_start_z_limit", 7.5);
 
 /*-------------------------------------------------------------------------------
 
@@ -62,6 +65,8 @@ static ConsoleVariable<float> cvar_calloutStartZLimit("/callout_start_z_limit", 
 #define GHOSTCAM_DEACTIVATED my->skill[7]
 #define GHOSTCAM_SPAWN_ANIM my->skill[8]
 #define GHOSTCAM_SPAWN_ANIM_COMPLETE my->skill[9]
+#define GHOSTCAM_COSMETIC_SPRITE my->skill[10]
+#define GHOSTCAM_SPIRIT_HIGH_PROFILE my->skill[11]
 #define GHOSTCAM_BOB my->fskill[0]
 #define GHOSTCAM_BOBMOVE my->fskill[1]
 #define GHOSTCAM_DX my->fskill[3]
@@ -73,6 +78,7 @@ static ConsoleVariable<float> cvar_calloutStartZLimit("/callout_start_z_limit", 
 #define GHOSTCAM_SQUISH_ANGLE my->fskill[9]
 #define GHOSTCAM_WEAVE my->fskill[10]
 #define GHOSTCAM_HOVER my->fskill[11]
+#define GHOSTCAM_THIRD_PERSON_CUSTOM my->fskill[12]
 
 static ConsoleVariable<bool> cvar_player_can_move_in_gui("/player_can_move_in_gui", true);
 bool playerAllowedMovement(const int playernum)
@@ -115,20 +121,34 @@ void Player::Ghost_t::handleGhostCameraBobbing(bool useRefreshRateDelta)
 				&& ((input.binary("Move Forward") || input.binary("Move Backward"))
 					|| (input.binary("Move Left") - input.binary("Move Right"))))
 				|| (inputs.hasController(playernum)
-					&& (inputs.getController(playernum)->getLeftXPercentForPlayerMovement()
-						|| inputs.getController(playernum)->getLeftYPercentForPlayerMovement()))) )
+					&& (inputs.getController(playernum)->getLeftXPercentForPlayerMovement(playernum)
+						|| inputs.getController(playernum)->getLeftYPercentForPlayerMovement(playernum)))) )
 		{
 			if ( !player.usingCommand()
 				&& player.bControlEnabled )
 			{
-				if ( !GHOSTCAM_SNEAKING )
+				if ( player.ghost.isSpiritGhost() )
 				{
-					GHOSTCAM_BOBMOVE += 0.0125 * *cvar_ghostBobSpeed;
+					if ( GHOSTCAM_SPIRIT_HIGH_PROFILE )
+					{
+						reset = true;
+					}
+					else
+					{
+						GHOSTCAM_BOBMOVE += 0.0125 * *cvar_ghostBobSpeed;
+					}
 				}
 				else
 				{
-					//GHOSTCAM_BOBMOVE += 0.025;
-					reset = true;
+					if ( !GHOSTCAM_SNEAKING )
+					{
+						GHOSTCAM_BOBMOVE += 0.0125 * *cvar_ghostBobSpeed;
+					}
+					else
+					{
+						//GHOSTCAM_BOBMOVE += 0.025;
+						reset = true;
+					}
 				}
 			}
 			else
@@ -180,7 +200,7 @@ void Player::Ghost_t::handleGhostMovement(const bool useRefreshRateDelta)
 	bool allowMovement = isControllable() && playerAllowedMovement(player.playernum);
 	static ConsoleVariable<float> cvar_ghostSpeed("/ghost_speed", 1.5);
 	static ConsoleVariable<float> cvar_ghostDrag("/ghost_drag", 0.95);
-
+	real_t drag = *cvar_ghostDrag;
 	if ( ((!player.usingCommand() && player.bControlEnabled && !gamePaused))
 		&& allowMovement )
 	{
@@ -199,12 +219,12 @@ void Player::Ghost_t::handleGhostMovement(const bool useRefreshRateDelta)
 
 			if ( inputs.hasController(player.playernum) /*&& !input.binary("Move Left") && !input.binary("Move Right")*/ )
 			{
-				x_force = inputs.getController(player.playernum)->getLeftXPercentForPlayerMovement();
+				x_force = inputs.getController(player.playernum)->getLeftXPercentForPlayerMovement(player.playernum);
 			}
 
 			if ( inputs.hasController(player.playernum) /*&& !input.binary("Move Forward") && !input.binary("Move Backward")*/ )
 			{
-				y_force = inputs.getController(player.playernum)->getLeftYPercentForPlayerMovement();
+				y_force = inputs.getController(player.playernum)->getLeftYPercentForPlayerMovement(player.playernum);
 				if ( y_force < 0 )
 				{
 					y_force *= backpedalMultiplier;    //Move backwards more slowly.
@@ -212,16 +232,43 @@ void Player::Ghost_t::handleGhostMovement(const bool useRefreshRateDelta)
 			}
 		}
 
-		real_t speedFactor = *cvar_ghostSpeed;// getSpeedFactor(weightratio, statGetDEX(stats[PLAYER_NUM], players[PLAYER_NUM]->entity));
+		real_t speedFactor = *cvar_ghostSpeed;
+
+		int speedMult = 1;
+		bool isSpirit = isSpiritGhost();
+		if ( !isSpirit )
+		{
+			speedMult += GHOSTCAM_SNEAKING;
+		}
+		else
+		{
+			if ( node_t* node = list_Node(&my->children, 2) )
+			{
+				if ( Entity* entity = (Entity*)node->element )
+				{
+					if ( Entity::getMonsterTypeFromSprite(entity->sprite) == DUCK_SMALL )
+					{
+						if ( my->monsterSpecialState == DUCK_INERT )
+						{
+							speedMult += 1;
+							drag = 0.9;
+							speedFactor = 3.0;
+						}
+					}
+				}
+			}
+		}
+
 		speedFactor *= refreshRateDelta;
-		my->vel_x += y_force * cos(my->yaw) * .045 * speedFactor / (1 + GHOSTCAM_SNEAKING);
-		my->vel_y += y_force * sin(my->yaw) * .045 * speedFactor / (1 + GHOSTCAM_SNEAKING);
-		my->vel_x += x_force * cos(my->yaw + PI / 2) * .0225 * speedFactor / (1 + GHOSTCAM_SNEAKING);
-		my->vel_y += x_force * sin(my->yaw + PI / 2) * .0225 * speedFactor / (1 + GHOSTCAM_SNEAKING);
+
+		my->vel_x += y_force * cos(my->yaw) * .045 * speedFactor / (speedMult);
+		my->vel_y += y_force * sin(my->yaw) * .045 * speedFactor / (speedMult);
+		my->vel_x += x_force * cos(my->yaw + PI / 2) * .0225 * speedFactor / (speedMult);
+		my->vel_y += x_force * sin(my->yaw + PI / 2) * .0225 * speedFactor / (speedMult);
 
 	}
-	my->vel_x *= pow(*cvar_ghostDrag, refreshRateDelta);
-	my->vel_y *= pow(*cvar_ghostDrag, refreshRateDelta);
+	my->vel_x *= pow(drag, refreshRateDelta);
+	my->vel_y *= pow(drag, refreshRateDelta);
 
 	/*for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
@@ -371,6 +418,7 @@ bool Player::Ghost_t::allowedInteractEntity(Entity& entity)
 {
 	if ( entity.behavior == &actItem
 		|| entity.behavior == &actDoor
+		|| entity.behavior == &actIronDoor
 		|| entity.behavior == &actSwitch
 		|| entity.behavior == &actSwitchWithTimer
 		|| entity.behavior == &actPowerCrystal
@@ -392,6 +440,15 @@ bool Player::Ghost_t::isActive()
 		{
 			return true;
 		}
+	}
+	return false;
+}
+
+bool Player::Ghost_t::isSpiritGhost()
+{
+	if ( my )
+	{
+		return GHOSTCAM_COSMETIC_SPRITE != 0 && players[GHOSTCAM_PLAYERNUM]->entity && stats[GHOSTCAM_PLAYERNUM]->getEffectActive(EFF_PROJECT_SPIRIT);
 	}
 	return false;
 }
@@ -442,10 +499,13 @@ void Player::Ghost_t::handleAttack()
 		--errorFlashTeleportTicks;
 	}
 
+	bool spiritGhost = isSpiritGhost();
+
 	Input& input = Input::inputs[player.playernum];
 	bool attack = false;
 	bool useSpell = false;
 	bool defending = false;
+	bool highProfile = spiritGhost ? GHOSTCAM_SPIRIT_HIGH_PROFILE : false;
 	if ( !player.usingCommand() 
 		&& player.bControlEnabled 
 		&& !gamePaused
@@ -488,19 +548,35 @@ void Player::Ghost_t::handleAttack()
 				}
 			}
 		}
-		if ( input.binary("Defend") )
+
+		if ( spiritGhost )
 		{
-			defending = true;
+			if ( player.shootmode && !CalloutMenu[player.playernum].calloutMenuIsOpen() && !FollowerMenu[player.playernum].followerMenuIsOpen() )
+			{
+				if ( input.consumeBinaryToggle("Defend") )
+				{
+					highProfile = !highProfile;
+					playSoundEntityLocal(my, highProfile ? 794 : 795, 64);
+				}
+			}
+		}
+		else
+		{
+			if ( input.binary("Defend") )
+			{
+				defending = true;
+			}
 		}
 	}
 
-	if ( GHOSTCAM_SNEAKING != defending || ticks % 120 == 0 )
+	if ( GHOSTCAM_SNEAKING != defending || GHOSTCAM_SPIRIT_HIGH_PROFILE != highProfile || ticks % 120 == 0 )
 	{
 		if ( multiplayer == CLIENT )
 		{
 			strcpy((char*)net_packet->data, "GHOD");
 			net_packet->data[4] = player.playernum;
-			net_packet->data[5] = defending;
+			net_packet->data[5] = defending ? (1 << 0) : 0;
+			net_packet->data[5] |= highProfile ? (1 << 1) : 0;
 			net_packet->address.host = net_server.host;
 			net_packet->address.port = net_server.port;
 			net_packet->len = 6;
@@ -510,7 +586,8 @@ void Player::Ghost_t::handleAttack()
 		{
 			strcpy((char*)net_packet->data, "GHOD");
 			net_packet->data[4] = player.playernum;
-			net_packet->data[5] = defending;
+			net_packet->data[5] = defending ? (1 << 0) : 0;
+			net_packet->data[5] |= highProfile ? (1 << 1) : 0;
 			net_packet->len = 6;
 			for ( int c = 1; c < MAXPLAYERS; ++c )
 			{
@@ -526,6 +603,7 @@ void Player::Ghost_t::handleAttack()
 		}
 	}
 	GHOSTCAM_SNEAKING = defending;
+	GHOSTCAM_SPIRIT_HIGH_PROFILE = highProfile;
 
 	const int castLoopDuration = 4 * TICKS_PER_SECOND / 10;
 	bool finishSpell = false;
@@ -543,6 +621,13 @@ void Player::Ghost_t::handleAttack()
 			finishSpell = true;
 		}
 	}
+	else if ( castingSpellAnimation == GHOST_SPELL_QUACK )
+	{
+		if ( castingHeldDuration >= 1 )
+		{
+			finishSpell = true;
+		}
+	}
 
 	if ( finishSpell )
 	{
@@ -556,12 +641,17 @@ void Player::Ghost_t::handleAttack()
 			castSpell(uid, &spell_ghost_bolt, false, true);
 			castingSpellAnimation = GHOST_SPELL_POST_CASTING;
 		}
+		else if ( castingSpellAnimation == GHOST_SPELL_QUACK )
+		{
+			castSpell(uid, getSpellFromID(SPELL_PROJECT_SPIRIT), false, true);
+			castingSpellAnimation = GHOST_SPELL_POST_CASTING;
+		}
 		castingHeldDuration = 0;
 
 
 		for ( int i = 0; i < 5; ++i )
 		{
-			Entity* entity = spawnGib(my);
+			Entity* entity = spawnGib(my, 16);
 			entity->flags[INVISIBLE] = false;
 			entity->flags[SPRITE] = true;
 			entity->flags[NOUPDATE] = true;
@@ -604,10 +694,20 @@ void Player::Ghost_t::handleAttack()
 	{
 		if ( attack )
 		{
-			castingSpellAnimation = GHOST_SPELL_BOLT;
-			cooldownChill = cooldownChillDelay;
-			errorFlashChillTicks = 0;
-			playSoundEntity(my, 170, 128);
+			if ( spiritGhost )
+			{
+				castingSpellAnimation = GHOST_SPELL_QUACK;
+				cooldownChill = cooldownChillDelay;
+				errorFlashChillTicks = 0;
+				//playSoundEntity(my, 170, 128);
+			}
+			else
+			{
+				castingSpellAnimation = GHOST_SPELL_BOLT;
+				cooldownChill = cooldownChillDelay;
+				errorFlashChillTicks = 0;
+				playSoundEntity(my, 170, 128);
+			}
 		}
 		else if ( useSpell )
 		{
@@ -617,7 +717,8 @@ void Player::Ghost_t::handleAttack()
 			playSoundEntity(my, 170, 128);
 		}
 	}
-	else if ( castingSpellAnimation == GHOST_SPELL_TELEPORT || castingSpellAnimation == GHOST_SPELL_BOLT )
+	else if ( castingSpellAnimation == GHOST_SPELL_TELEPORT || castingSpellAnimation == GHOST_SPELL_BOLT
+		|| castingSpellAnimation == GHOST_SPELL_QUACK )
 	{
 		++castingHeldDuration;
 
@@ -665,7 +766,7 @@ void Player::Ghost_t::handleAttack()
 
 			if ( ticks % 5 == 0 )
 			{
-				Entity* entity = spawnGib(my);
+				Entity* entity = spawnGib(my, 16);
 				entity->flags[INVISIBLE] = false;
 				entity->flags[SPRITE] = true;
 				entity->flags[NOUPDATE] = true;
@@ -692,6 +793,13 @@ void Player::Ghost_t::handleAttack()
 				entity->vel_z = -.15;
 				entity->fskill[3] = 0.01;
 				entity->skill[11] = player.playernum;
+			}
+		}
+		else if ( castingSpellAnimation == GHOST_SPELL_QUACK )
+		{
+			if ( castingHeldDuration == 1 )
+			{
+				createEnsembleHUDParticleCircling(my);
 			}
 		}
 		else if ( castingSpellAnimation == GHOST_SPELL_BOLT )
@@ -763,11 +871,14 @@ void Player::Ghost_t::handleActions()
 
 	Input& input = Input::inputs[player.playernum];
 	CalloutRadialMenu& calloutMenu = CalloutMenu[player.playernum];
+	FollowerRadialMenu& followerMenu = FollowerMenu[player.playernum];
 	auto& b = (multiplayer != SINGLE && player.playernum != 0) ? Input::inputs[0].getBindings() : input.getBindings();
 
 	clickDescription(player.playernum, NULL); // inspecting objects
 
-	if ( !calloutMenu.calloutMenuIsOpen() )
+	bool enableFollowerMenu = my && isSpiritGhost();
+
+	if ( !followerMenu.followerMenuIsOpen() && !calloutMenu.calloutMenuIsOpen() )
 	{
 		bool clickedOnGUI = false;
 
@@ -836,6 +947,124 @@ void Player::Ghost_t::handleActions()
 			input.consumeBinaryToggle("Use");
 			//input.consumeBindingsSharedWithBinding("Use");
 			selectedEntity[player.playernum] = nullptr;
+		}
+	}
+	else if ( enableFollowerMenu && followerMenu.followerMenuIsOpen() )
+	{
+		selectedEntity[player.playernum] = NULL;
+
+		if ( !players[player.playernum]->usingCommand() && players[player.playernum]->bControlEnabled && !gamePaused && input.binaryToggle("Use") )
+		{
+			if ( !followerMenu.menuToggleClick && followerMenu.selectMoveTo )
+			{
+				if ( followerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT )
+				{
+					// we're selecting a point for the ally to move to.
+					input.consumeBinaryToggle("Use");
+					//input.consumeBindingsSharedWithBinding("Use");
+
+					// we're selecting a point for the ally to move to.
+					if ( my )
+					{
+						real_t startx = cameras[player.playernum].x * 16.0;
+						real_t starty = cameras[player.playernum].y * 16.0;
+						real_t startz = cameras[player.playernum].z + (4.5 - cameras[player.playernum].z) / 2.0 + *cvar_followerStartZ;
+						real_t pitch = cameras[player.playernum].vang;
+						if ( pitch < 0 || pitch > PI )
+						{
+							pitch = 0;
+						}
+
+						// draw line from the players height and direction until we hit the ground.
+						real_t previousx = startx;
+						real_t previousy = starty;
+						int index = 0;
+						const real_t yaw = cameras[player.playernum].ang;
+						for ( ; startz < *cvar_followerStartZLimit; startz += abs((*cvar_followerMoveTo) * tan(pitch)) )
+						{
+							startx += 0.1 * cos(yaw);
+							starty += 0.1 * sin(yaw);
+							const int index_x = static_cast<int>(startx) >> 4;
+							const int index_y = static_cast<int>(starty) >> 4;
+							index = (index_y)*MAPLAYERS + (index_x)*MAPLAYERS * map.height;
+							if ( map.tiles[index] && !map.tiles[OBSTACLELAYER + index] )
+							{
+								// store the last known good coordinate
+								previousx = startx;// + 16 * cos(yaw);
+								previousy = starty;// + 16 * sin(yaw);
+							}
+							if ( map.tiles[OBSTACLELAYER + index] )
+							{
+								break;
+							}
+						}
+
+						createParticleFollowerCommand(previousx, previousy, 0, FOLLOWER_TARGET_PARTICLE, 0);
+						followerMenu.optionSelected = ALLY_CMD_MOVETO_CONFIRM;
+						followerMenu.selectMoveTo = false;
+						followerMenu.moveToX = static_cast<int>(previousx) / 16;
+						followerMenu.moveToY = static_cast<int>(previousy) / 16;
+						//messagePlayer(PLAYER_NUM, "%d, %d, pitch: %f", followerMoveToX, followerMoveToY, players[PLAYER_NUM]->entity->pitch);
+					}
+				}
+				else if ( followerMenu.optionSelected == ALLY_CMD_ATTACK_SELECT )
+				{
+					// we're selecting a target for the ally.
+					Entity* target = entityClicked(nullptr, false, player.playernum, EntityClickType::ENTITY_CLICK_FOLLOWER_INTERACT);
+					input.consumeBinaryToggle("Use");
+					//input.consumeBindingsSharedWithBinding("Use");
+					if ( target && followerMenu.followerToCommand )
+					{
+						Entity* parent = uidToEntity(target->skill[2]);
+						if ( target->behavior == &actMonster || (parent && parent->behavior == &actMonster) )
+						{
+							// see if we selected a limb
+							if ( parent )
+							{
+								target = parent;
+							}
+						}
+						else if ( target->sprite == 184 || target->sprite == 585 ) // switch base.
+						{
+							parent = uidToEntity(target->parent);
+							if ( parent )
+							{
+								target = parent;
+							}
+						}
+						if ( followerMenu.allowedInteractEntity(*target) )
+						{
+							createParticleFollowerCommand(target->x, target->y, 0, FOLLOWER_TARGET_PARTICLE,
+								target->getUID());
+							followerMenu.optionSelected = ALLY_CMD_ATTACK_CONFIRM;
+							followerMenu.followerToCommand->monsterAllyInteractTarget = target->getUID();
+						}
+						else
+						{
+							messagePlayer(player.playernum, MESSAGE_HINT, Language::get(3094));
+							followerMenu.optionSelected = ALLY_CMD_CANCEL;
+							followerMenu.optionPrevious = ALLY_CMD_ATTACK_CONFIRM;
+							followerMenu.followerToCommand->monsterAllyInteractTarget = 0;
+						}
+					}
+					else
+					{
+						followerMenu.optionSelected = ALLY_CMD_CANCEL;
+						followerMenu.optionPrevious = ALLY_CMD_ATTACK_CONFIRM;
+						followerMenu.followerToCommand->monsterAllyInteractTarget = 0;
+					}
+
+					if ( players[player.playernum]->worldUI.isEnabled() )
+					{
+						players[player.playernum]->worldUI.reset();
+						players[player.playernum]->worldUI.tooltipView = Player::WorldUI_t::TooltipView::TOOLTIP_VIEW_RESCAN;
+						players[player.playernum]->worldUI.gimpDisplayTimer = 0;
+					}
+
+					followerMenu.selectMoveTo = false;
+					strcpy(followerMenu.interactText, "");
+				}
+			}
 		}
 	}
 	else if ( calloutMenu.calloutMenuIsOpen() )
@@ -952,6 +1181,7 @@ void Player::Ghost_t::handleActions()
 		}
 	}
 
+	bool skipFollowerMenu = false;
 	if ( !player.usingCommand() && player.bControlEnabled
 		&& !gamePaused && CalloutRadialMenu::calloutMenuEnabledForGamemode() )
 	{
@@ -991,6 +1221,7 @@ void Player::Ghost_t::handleActions()
 				calloutMenu.optionSelected = CalloutRadialMenu::CALLOUT_CMD_SELECT;
 				calloutMenu.lockOnEntityUid = 0;
 				Player::soundActivate();
+				skipFollowerMenu = true;
 
 				if ( player.worldUI.isEnabled() )
 				{
@@ -1029,6 +1260,7 @@ void Player::Ghost_t::handleActions()
 					{
 						calloutMenu.holdWheel = false;
 					}
+					skipFollowerMenu = true;
 					calloutMenu.selectMoveTo = false;
 					calloutMenu.bOpen = true;
 					calloutMenu.initCalloutMenuGUICursor(true);
@@ -1078,6 +1310,7 @@ void Player::Ghost_t::handleActions()
 						{
 							calloutMenu.holdWheel = false;
 						}
+						skipFollowerMenu = true;
 						calloutMenu.selectMoveTo = false;
 						calloutMenu.bOpen = true;
 						calloutMenu.lockOnEntityUid = 0;
@@ -1095,82 +1328,207 @@ void Player::Ghost_t::handleActions()
 		}
 	}
 
-	if ( selectedEntity[player.playernum] != nullptr )
+	if ( !players[player.playernum]->usingCommand() && players[player.playernum]->bControlEnabled
+		&& !gamePaused
+		&& !skipFollowerMenu
+		&& enableFollowerMenu
+		&& !followerMenu.followerToCommand && followerMenu.recentEntity )
 	{
-		Entity* parent = uidToEntity(selectedEntity[player.playernum]->skill[2]);
-		if ( selectedEntity[player.playernum]->behavior == &actItem && pushPoints == 0 )
+		auto& b = (multiplayer != SINGLE && player.playernum != 0) ? Input::inputs[0].getBindings() : input.getBindings();
+		bool showNPCCommandsOnGamepad = false;
+		auto showNPCCommandsFind = b.find("Show NPC Commands");
+		std::string showNPCCommandsInputStr = "";
+		std::string lastNPCCommandInputStr = "";
+		if ( showNPCCommandsFind != b.end() )
 		{
-			selectedEntity[player.playernum] = nullptr;
-			input.consumeBinaryToggle("Use");
-			if ( cooldownPush > 0 )
+			showNPCCommandsOnGamepad = (*showNPCCommandsFind).second.isBindingUsingGamepad();
+			showNPCCommandsInputStr = (*showNPCCommandsFind).second.input;
+		}
+		bool lastNPCCommandOnGamepad = false;
+		auto lastNPCCommandFind = b.find("Command NPC");
+		if ( lastNPCCommandFind != b.end() )
+		{
+			lastNPCCommandOnGamepad = (*lastNPCCommandFind).second.isBindingUsingGamepad();
+			lastNPCCommandInputStr = (*lastNPCCommandFind).second.input;
+		}
+
+		if ( players[player.playernum]->worldUI.bTooltipInView && players[player.playernum]->worldUI.tooltipsInRange.size() > 1 )
+		{
+			if ( showNPCCommandsOnGamepad &&
+				(showNPCCommandsInputStr == input.binding("Interact Tooltip Next")
+					|| showNPCCommandsInputStr == input.binding("Interact Tooltip Prev")) )
 			{
-				// no action
-				if ( errorFlashPushTicks == 0 && cooldownPush > (TICKS_PER_SECOND / 2) )
-				{
-					errorFlashPushTicks = errorFlashTicks;
-					playSound(563, 64);
-				}
+				input.consumeBinaryToggle("Show NPC Commands");
+				players[player.playernum]->hud.followerDisplay.bOpenFollowerMenuDisabled = true;
+			}
+			if ( lastNPCCommandOnGamepad &&
+				(lastNPCCommandInputStr == input.binding("Interact Tooltip Next")
+					|| lastNPCCommandInputStr == input.binding("Interact Tooltip Prev")) )
+			{
+				input.consumeBinaryToggle("Command NPC");
+				players[player.playernum]->hud.followerDisplay.bCommandNPCDisabled = true;
 			}
 		}
-		if ( selectedEntity[player.playernum] )
+
+		if ( !calloutMenu.calloutMenuIsOpen() )
 		{
-			input.consumeBinaryToggle("Use");
-			//input.consumeBindingsSharedWithBinding("Use");
-			if ( entityDist(my, selectedEntity[player.playernum]) <= TOUCHRANGE )
+			if ( (input.binaryToggle("Show NPC Commands") && !showNPCCommandsOnGamepad)
+				|| (input.binaryToggle("Show NPC Commands") && showNPCCommandsOnGamepad
+					&& players[player.playernum]->shootmode /*&& !players[player.playernum]->worldUI.bTooltipInView*/) )
 			{
-				inrange[player.playernum] = true;
-				if ( selectedEntity[player.playernum]->behavior == &actItem )
+				if ( players[player.playernum] && players[player.playernum]->entity
+					&& followerMenu.recentEntity->monsterTarget == players[player.playernum]->entity->getUID() )
 				{
-					--pushPoints;
-					pushPoints = std::max(0, pushPoints);
-					if ( pushPoints == 0 )
+					// your ally is angry at you!
+				}
+				else
+				{
+					selectedEntity[player.playernum] = followerMenu.recentEntity;
+					followerMenu.holdWheel = true;
+					if ( showNPCCommandsOnGamepad )
 					{
-						cooldownPush = cooldownPushDelay;
+						followerMenu.holdWheel = false;
 					}
 				}
 			}
-			else
+			else if ( (input.binaryToggle("Command NPC") && !lastNPCCommandOnGamepad)
+				|| (input.binaryToggle("Command NPC") && lastNPCCommandOnGamepad && players[player.playernum]->shootmode/*&& !players[PLAYER_NUM]->worldUI.bTooltipInView*/) )
 			{
-				inrange[player.playernum] = false;
+				if ( players[player.playernum] && players[player.playernum]->entity
+					&& followerMenu.recentEntity->monsterTarget == players[player.playernum]->entity->getUID() )
+				{
+					// your ally is angry at you!
+					input.consumeBinaryToggle("Command NPC");
+				}
+				else if ( followerMenu.optionPrevious != -1 )
+				{
+					followerMenu.followerToCommand = followerMenu.recentEntity;
+				}
+				else
+				{
+					input.consumeBinaryToggle("Command NPC");
+				}
 			}
-			if ( multiplayer == CLIENT )
+		}
+	}
+
+	if ( selectedEntity[player.playernum] != nullptr )
+	{
+		if ( enableFollowerMenu )
+		{
+			followerMenu.followerToCommand = nullptr;
+			Entity* parent = uidToEntity(selectedEntity[player.playernum]->skill[2]);
+			if ( selectedEntity[player.playernum]->behavior == &actMonster || (parent && parent->behavior == &actMonster) )
 			{
-				if ( inrange[player.playernum] )
+				// see if we selected a follower to process right click menu.
+				if ( parent && parent->monsterAllyIndex == player.playernum )
 				{
-					strcpy((char*)net_packet->data, "CKIR");
+					followerMenu.followerToCommand = parent;
+					//messagePlayer(0, "limb");
 				}
-				else
+				else if ( selectedEntity[player.playernum]->monsterAllyIndex == player.playernum )
 				{
-					strcpy((char*)net_packet->data, "CKOR");
+					followerMenu.followerToCommand = selectedEntity[player.playernum];
+					//messagePlayer(0, "head");
 				}
-				net_packet->data[4] = player.playernum;
-				if ( selectedEntity[player.playernum]->behavior == &actPlayerLimb )
+
+				if ( followerMenu.followerToCommand )
 				{
-					SDLNet_Write32((Uint32)players[selectedEntity[player.playernum]->skill[2]]->entity->getUID(), &net_packet->data[5]);
-				}
-				else
-				{
-					Entity* tempEntity = uidToEntity(selectedEntity[player.playernum]->skill[2]);
-					if ( tempEntity )
+					if ( players[player.playernum] && players[player.playernum]->entity
+						&& followerMenu.followerToCommand->monsterTarget == players[player.playernum]->entity->getUID() )
 					{
-						if ( tempEntity->behavior == &actMonster )
+						// your ally is angry at you!
+						followerMenu.followerToCommand = nullptr;
+						followerMenu.optionPrevious = -1;
+					}
+					else
+					{
+						followerMenu.recentEntity = followerMenu.followerToCommand;
+						followerMenu.initfollowerMenuGUICursor(true);
+						followerMenu.updateScrollPartySheet();
+						selectedEntity[player.playernum] = NULL;
+						Player::soundActivate();
+					}
+				}
+			}
+		}
+
+		if ( selectedEntity[player.playernum] )
+		{
+			if ( selectedEntity[player.playernum]->behavior == &actItem && pushPoints == 0 )
+			{
+				selectedEntity[player.playernum] = nullptr;
+				input.consumeBinaryToggle("Use");
+				if ( cooldownPush > 0 )
+				{
+					// no action
+					if ( errorFlashPushTicks == 0 && cooldownPush > (TICKS_PER_SECOND / 2) )
+					{
+						errorFlashPushTicks = errorFlashTicks;
+						playSound(563, 64);
+					}
+				}
+			}
+			if ( selectedEntity[player.playernum] )
+			{
+				input.consumeBinaryToggle("Use");
+				//input.consumeBindingsSharedWithBinding("Use");
+				if ( entityDist(my, selectedEntity[player.playernum]) <= TOUCHRANGE )
+				{
+					inrange[player.playernum] = true;
+					if ( selectedEntity[player.playernum]->behavior == &actItem )
+					{
+						--pushPoints;
+						pushPoints = std::max(0, pushPoints);
+						if ( pushPoints == 0 )
 						{
-							SDLNet_Write32((Uint32)tempEntity->getUID(), &net_packet->data[5]);
+							cooldownPush = cooldownPushDelay;
+						}
+					}
+				}
+				else
+				{
+					inrange[player.playernum] = false;
+				}
+				if ( multiplayer == CLIENT )
+				{
+					if ( inrange[player.playernum] )
+					{
+						strcpy((char*)net_packet->data, "CKIR");
+					}
+					else
+					{
+						strcpy((char*)net_packet->data, "CKOR");
+					}
+					net_packet->data[4] = player.playernum;
+					if ( selectedEntity[player.playernum]->behavior == &actPlayerLimb )
+					{
+						SDLNet_Write32((Uint32)players[selectedEntity[player.playernum]->skill[2]]->entity->getUID(), &net_packet->data[5]);
+					}
+					else
+					{
+						Entity* tempEntity = uidToEntity(selectedEntity[player.playernum]->skill[2]);
+						if ( tempEntity )
+						{
+							if ( tempEntity->behavior == &actMonster )
+							{
+								SDLNet_Write32((Uint32)tempEntity->getUID(), &net_packet->data[5]);
+							}
+							else
+							{
+								SDLNet_Write32((Uint32)selectedEntity[player.playernum]->getUID(), &net_packet->data[5]);
+							}
 						}
 						else
 						{
 							SDLNet_Write32((Uint32)selectedEntity[player.playernum]->getUID(), &net_packet->data[5]);
 						}
 					}
-					else
-					{
-						SDLNet_Write32((Uint32)selectedEntity[player.playernum]->getUID(), &net_packet->data[5]);
-					}
+					net_packet->address.host = net_server.host;
+					net_packet->address.port = net_server.port;
+					net_packet->len = 9;
+					sendPacketSafe(net_sock, -1, net_packet, 0);
 				}
-				net_packet->address.host = net_server.host;
-				net_packet->address.port = net_server.port;
-				net_packet->len = 9;
-				sendPacketSafe(net_sock, -1, net_packet, 0);
 			}
 		}
 	}
@@ -1317,6 +1675,177 @@ Entity* Player::Ghost_t::respawn()
 		player.ghost.reset();
 	}
 	return nullptr;
+}
+
+void actPlayerXP(Entity* my)
+{
+	if ( my->ticks >= 250 )
+	{
+		list_RemoveNode(my->mynode);
+		return;
+	}
+
+	auto& bounceFloor = my->fskill[0];
+	auto& hover = my->fskill[1];
+	auto& bounceAmount = my->fskill[2];
+	auto& hoverAmount = my->fskill[3];
+	auto& spawnBounce = my->skill[0];
+	auto& floatTimer = my->skill[1];
+	auto& numBounces = my->skill[3];
+
+	if ( spawnBounce == 0 )
+	{
+		my->vel_z += 0.04;
+		my->z += my->vel_z;
+		hoverAmount = 0.15;
+
+		if ( my->z < 0.0 )
+		{
+		}
+		else
+		{
+			my->z = bounceFloor;
+			bounceAmount = my->vel_z;
+			my->vel_z = 0.0;
+			spawnBounce = 1;
+		}
+		my->pitch += hoverAmount;
+		if ( ticks % 4 == 0 )
+		{
+			Entity* fx = spawnMagicParticleCustom(my, 261, my->scalex, 5.0);
+			fx->flags[SPRITE] = true;
+		}
+	}
+	else
+	{
+		++floatTimer;
+		hoverAmount = std::max(0.025, hoverAmount * 0.99);
+		hover += hoverAmount;
+		my->z = bounceFloor;
+		if ( hover >= 2 * PI )
+		{
+			hover -= 2 * PI;
+		}
+		bounceAmount *= 0.975;
+		bounceAmount = std::max(0.25, bounceAmount);
+		my->z += 3 * bounceAmount * sin(hover);
+		if ( ticks % 4 == 0 )
+		{
+			Entity* fx = spawnMagicParticleCustom(my, 225, 1.0, 1.0);
+			fx->flags[SPRITE] = true;
+		}
+	}
+
+	my->yaw += hoverAmount;
+
+}
+
+void spawnPlayerXP(real_t x, real_t y, int player, int xpAmount)
+{
+	if ( player < 0 || player >= MAXPLAYERS ) { return; }
+	if ( xpAmount <= 0 ) { return; }
+	//if ( players[player]->entity ) { return; }
+
+	int radius = 1;
+	std::set<int> goodspots;
+	std::set<int> okspots;
+
+	int sprite = 211; // Player::Ghost_t::getSpriteForPlayer(player);
+	Entity* entity = newEntity(sprite, 1, map.entities, nullptr); //Ghost entity.
+	entity->flags[PASSABLE] = true;
+	//entity->flags[INVISIBLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->flags[UPDATENEEDED] = true;
+	entity->flags[NOCLIP_CREATURES] = true;
+	entity->lightBonus = vec4{ 0.25f, 0.25f, 0.25f, 0.f };
+	entity->sizex = 4;
+	entity->sizex = 4;
+	entity->ditheringOverride = 6;
+	entity->vel_z = -1.0;
+	entity->behavior = &actPlayerXP;
+
+	for ( int ix = -1; ix <= 1; ++ix )
+	{
+		for ( int iy = -1; iy <= 1; ++iy )
+		{
+			int checkx = static_cast<int>(x / 16) + ix;
+			int checky = static_cast<int>(y / 16) + iy;
+			if ( checkx >= 0 && checkx < map.width && checky >= 0 && checky < map.height )
+			{
+				if ( !map.tiles[OBSTACLELAYER + checky * MAPLAYERS + checkx * MAPLAYERS * map.height] )
+				{
+					okspots.insert(checkx + 10000 * checky);
+					if ( !checkObstacle(checkx * 16.0 + 8.0, checky * 16.0 + 8.0, entity, nullptr, true, true, false, false) )
+					{
+						goodspots.insert(checkx + 10000 * checky);
+					}
+				}
+			}
+		}
+	}
+
+	int checkx = static_cast<int>(x / 16);
+	int checky = static_cast<int>(y / 16);
+	int destx = 0;
+	int desty = 0;
+	bool foundspot = false;
+	if ( goodspots.find(checkx + 10000 * checky) != goodspots.end() )
+	{
+		destx = checkx;
+		desty = checky;
+		foundspot = true;
+	}
+	else if ( goodspots.size() )
+	{
+		int pick = local_rng.rand() % goodspots.size();
+		int index = -1;
+		for ( auto spot : goodspots )
+		{
+			++index;
+			if ( pick == index )
+			{
+				destx = spot % 10000;
+				desty = spot / 10000;
+				foundspot = true;
+				break;
+			}
+		}
+	}
+
+	if ( !foundspot )
+	{
+		if ( okspots.find(checkx + 10000 * checky) != okspots.end() )
+		{
+			destx = checkx;
+			desty = checky;
+			foundspot = true;
+		}
+		else if ( okspots.size() )
+		{
+			int pick = local_rng.rand() % okspots.size();
+			int index = -1;
+			for ( auto spot : okspots )
+			{
+				++index;
+				if ( pick == index )
+				{
+					destx = spot % 10000;
+					desty = spot / 10000;
+					foundspot = true;
+					break;
+				}
+			}
+		}
+	}
+
+	if ( foundspot )
+	{
+		entity->x = destx * 16.0 + 8.0;
+		entity->y = desty * 16.0 + 8.0;
+		return;
+	}
+	list_RemoveNode(entity->mynode);
+	return;
 }
 
 Entity* Player::Ghost_t::spawnGhost()
@@ -1626,6 +2155,16 @@ void actDeathGhostLimb(Entity* my)
 
 	if ( !players[playernum] || !players[playernum]->ghost.my )
 	{
+		if ( my->monsterStoreType == 1 )
+		{
+			if ( Entity::getMonsterTypeFromSprite(my->sprite) == DUCK_SMALL )
+			{
+				duckSpawnFeather(my->sprite, my->x, my->y, my->z, my);
+				spawnPoof(my->x, my->y, 7.5, 0.5, false);
+
+				createParticleErupt(my, 593);
+			}
+		}
 		list_RemoveNode(my->mynode);
 		return;
 	}
@@ -1684,6 +2223,16 @@ void actDeathGhost(Entity* my)
 			my->removeLightField();
 			list_RemoveNode(my->mynode);
 			return;
+		}
+
+		if ( players[playernum]->entity )
+		{
+			if ( !stats[playernum]->getEffectActive(EFF_PROJECT_SPIRIT) )
+			{
+				my->removeLightField();
+				list_RemoveNode(my->mynode);
+				return;
+			}
 		}
 	}
 
@@ -1752,6 +2301,31 @@ void actDeathGhost(Entity* my)
 		{
 			players[playernum]->ghost.initTeleportLocations(my->x / 16, my->y / 16);
 		}
+
+		// extra cosmetic limbs
+		entity = newEntity(-1, 1, map.entities, nullptr);
+		entity->behavior = &actDeathGhostLimb;
+		entity->sizex = 4;
+		entity->sizey = 4;
+		entity->flags[PASSABLE] = true;
+		entity->flags[UPDATENEEDED] = false;
+		entity->flags[NOUPDATE] = true;
+		entity->flags[GENIUS] = true;
+		entity->monsterStoreType = 1; // cosmetic limb head flag
+		entity->skill[2] = GHOSTCAM_PLAYERNUM;
+		node = list_AddNodeLast(&my->children);
+		node->element = entity;
+		node->deconstructor = &emptyDeconstructor;
+		node->size = sizeof(Entity*);
+		my->bodyparts.push_back(entity);
+
+		if ( multiplayer == CLIENT && GHOSTCAM_PLAYERNUM == clientnum )
+		{
+			if ( GHOSTCAM_COSMETIC_SPRITE != 0 && players[clientnum]->entity )
+			{
+				players[clientnum]->entity->skill[3] = 2;
+			}
+		}
 	}
 
 	if ( GHOSTCAM_DEACTIVATED )
@@ -1769,6 +2343,23 @@ void actDeathGhost(Entity* my)
 	}
 	float floatAnimationPercent = std::min(1.f, (float)GHOSTCAM_SPAWN_ANIM / (spawnAnimationHalfway));
 	float thirdPersonAnimationPercent = 0.f;
+	if ( players[playernum]->ghost.isSpiritGhost() )
+	{
+		if ( node_t* node = list_Node(&my->children, 2) )
+		{
+			if ( Entity* entity = (Entity*)node->element )
+			{
+				if ( Entity::getMonsterTypeFromSprite(entity->sprite) == DUCK_SMALL )
+				{
+					if ( my->monsterSpecialState == DUCK_DIVE )
+					{
+						GHOSTCAM_THIRD_PERSON_CUSTOM = 1.0;
+					}
+					thirdPersonAnimationPercent = GHOSTCAM_THIRD_PERSON_CUSTOM;
+				}
+			}
+		}
+	}
 	if ( spawnAnimationPlaying )
 	{
 		thirdPersonAnimationPercent = 1.f;
@@ -1778,6 +2369,10 @@ void actDeathGhost(Entity* my)
 		}
 		thirdPersonAnimationPercent = std::max(0.f, thirdPersonAnimationPercent);
 	}
+	
+	GHOSTCAM_THIRD_PERSON_CUSTOM -= std::max(0.01, GHOSTCAM_THIRD_PERSON_CUSTOM / 20.0);
+	GHOSTCAM_THIRD_PERSON_CUSTOM = std::max(0.0, GHOSTCAM_THIRD_PERSON_CUSTOM);
+
 	if ( GHOSTCAM_SPAWN_ANIM < spawnAnimationDuration )
 	{
 		if ( !GHOSTCAM_DEACTIVATED )
@@ -1888,6 +2483,31 @@ void actDeathGhost(Entity* my)
 		camx = my->x / 16.f;
 		camy = my->y / 16.f;
 		camz = my->z * 2.f + GHOSTCAM_BOB;
+
+		if ( player->ghost.isSpiritGhost() )
+		{
+			if ( node_t* node = list_Node(&my->children, 2) )
+			{
+				if ( Entity* entity = (Entity*)node->element )
+				{
+					if ( node_t* innerNode = list_Node(&entity->children, 2) )
+					{
+						if ( Entity* entity2 = (Entity*)innerNode->element )
+						{
+							if ( GHOSTCAM_COSMETIC_SPRITE > 0 )
+							{
+								camz = entity2->fskill[18] * 2.f + GHOSTCAM_BOB;
+								if ( thirdPersonAnimationPercent > 0.01 )
+								{
+									camz = std::min(camz, 4.0 * 2.f);
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
 		camang = my->yaw;
 		camvang = my->pitch;
 
@@ -1897,10 +2517,10 @@ void actDeathGhost(Entity* my)
 			keystatus[SDLK_h] = 0;
 			player->ghost.setActive(false);
 		}*/
-		if ( *cvar_ghostThirdPerson || spawnAnimationPlaying )
+		if ( *cvar_ghostThirdPerson || spawnAnimationPlaying || thirdPersonAnimationPercent > 0.01 )
 		{
 			real_t dist = 1.0;
-			if ( spawnAnimationPlaying )
+			if ( spawnAnimationPlaying || thirdPersonAnimationPercent > 0.01 )
 			{
 				dist = cos((1.0 - thirdPersonAnimationPercent) * PI / 2);
 			}
@@ -1946,6 +2566,46 @@ void actDeathGhost(Entity* my)
 				diff += 2 * PI;
 			}
 			TimerExperiments::cameraCurrentState[playernum].pitch.velocity = diff * TimerExperiments::lerpFactor;
+		}
+	}
+
+	if ( multiplayer != CLIENT )
+	{
+		int cosmeticSprite = 0;
+		if ( player->entity && stats[GHOSTCAM_PLAYERNUM]->getEffectActive(EFF_PROJECT_SPIRIT) )
+		{
+			int appearance = GHOSTCAM_PLAYERNUM;
+			cosmeticSprite = 2225;
+			if ( player->mechanics.ducksInARow.size() )
+			{
+				appearance = player->mechanics.ducksInARow.at(0).first;
+			}
+			if ( appearance == 0 )
+			{
+				cosmeticSprite = 2225;
+			}
+			else if ( appearance == 1 )
+			{
+				cosmeticSprite = 2231;
+			}
+			else if ( appearance == 2 )
+			{
+				cosmeticSprite = 2237;
+			}
+			else if ( appearance == 3 )
+			{
+				cosmeticSprite = 2307;
+			}
+		}
+		bool update = false;
+		if ( GHOSTCAM_COSMETIC_SPRITE != cosmeticSprite || (my->getUID() % (TICKS_PER_SECOND * 3) == ticks % (TICKS_PER_SECOND * 3)) )
+		{
+			update = true;
+		}
+		GHOSTCAM_COSMETIC_SPRITE = cosmeticSprite;
+		if ( update )
+		{
+			serverUpdateEntitySkill(my, 10);
 		}
 	}
 
@@ -2218,6 +2878,92 @@ void actDeathGhost(Entity* my)
 			bodypart->z += 0.4 * sin(GHOSTCAM_HOVER);
 			bodypart->focalx = 2.25;
 		}
+		else if ( index == 2 )
+		{
+			if ( bodypart->sprite != GHOSTCAM_COSMETIC_SPRITE )
+			{
+				if ( GHOSTCAM_COSMETIC_SPRITE == 0 )
+				{
+					GHOSTCAM_SPAWN_ANIM = 0;
+					GHOSTCAM_SPAWN_ANIM_COMPLETE = 0;
+				}
+			}
+			bodypart->sprite = GHOSTCAM_COSMETIC_SPRITE;
+			if ( Entity::getMonsterTypeFromSprite(GHOSTCAM_COSMETIC_SPRITE) == DUCK_SMALL )
+			{
+				if ( !bodypart->skill[3] )
+				{
+					bodypart->skill[3] = 1;
+
+					// 2 empty nodes for stat struct
+					node_t* node2 = list_AddNodeFirst(&bodypart->children);
+					node2->element = nullptr;
+					node2->deconstructor = &emptyDeconstructor;
+					node2 = list_AddNodeFirst(&bodypart->children);
+					node2->element = nullptr;
+					node2->deconstructor = &emptyDeconstructor;
+
+					initDuck(bodypart, nullptr);
+				}
+
+				duckAnimate(bodypart, nullptr, dist);
+				if ( multiplayer != CLIENT )
+				{
+					if ( bodypart->monsterSpecialState != my->monsterSpecialState )
+					{
+						my->monsterSpecialState = bodypart->monsterSpecialState;
+						serverUpdateEntitySkill(my, 33);
+					}
+				}
+				if ( multiplayer == CLIENT )
+				{
+					bodypart->monsterSpecialState = my->monsterSpecialState;
+				}
+
+				node_t* node = nullptr;
+				int bodypartIndex = 0;
+				for ( bodypartIndex = 0, node = bodypart->children.first; node != nullptr; node = node->next, ++bodypartIndex )
+				{
+					if ( bodypartIndex < 2 )
+					{
+						continue;
+					}
+					if ( Entity* entity = (Entity*)node->element )
+					{
+						if ( !player->ghost.isActive() )
+						{
+							entity->flags[INVISIBLE] = true;
+							entity->flags[INVISIBLE_DITHER] = false;
+							entity->ditheringOverride = -1;
+						}
+					}
+				}
+
+				if ( my->bodyparts.size() >= 2 )
+				{
+					my->bodyparts.at(0)->flags[INVISIBLE] = true;
+					my->bodyparts.at(1)->flags[INVISIBLE] = true;
+				}
+			}
+			else
+			{
+				node_t* node = nullptr;
+				int bodypartIndex = 0;
+				for ( bodypartIndex = 0, node = bodypart->children.first; node != nullptr; node = node->next, ++bodypartIndex )
+				{
+					if ( bodypartIndex < 2 )
+					{
+						continue;
+					}
+					if ( Entity* entity = (Entity*)node->element )
+					{
+						entity->flags[INVISIBLE] = true;
+						entity->flags[INVISIBLE_DITHER] = false;
+						entity->ditheringOverride = -1;
+					}
+				}
+			}
+		}
 	}
 }
 
@@ -2235,6 +2981,263 @@ void actDeathGhost(Entity* my)
 #define DEATHCAM_IDLEPITCH_FLOAT_TO_ZERO my->fskill[4]
 #define DEATHCAM_IDLEYAWSPEED my->fskill[5]
 
+#define PROJECTCAM_EXPIRED my->skill[6]
+
+void actProjectSpiritCam(Entity* my)
+{
+	auto entityTarget = uidToEntity(DEATHCAM_PLAYERTARGET);
+	if ( !entityTarget || 
+		!(stats[DEATHCAM_PLAYERNUM]->getEffectActive(EFF_PROJECT_SPIRIT) && players[DEATHCAM_PLAYERNUM]->entity
+			&& players[DEATHCAM_PLAYERNUM]->entity->skill[3] == 2) )
+	{
+		if ( players[DEATHCAM_PLAYERNUM]->entity )
+		{
+			players[DEATHCAM_PLAYERNUM]->entity->skill[3] = 0;
+		}
+		my->removeLightField();
+		list_RemoveNode(my->mynode);
+		return;
+	}
+
+	DEATHCAM_TIME++;
+
+	real_t mousex_relative = mousexrel;
+	real_t mousey_relative = mouseyrel;
+
+	mousex_relative = inputs.getMouseFloat(DEATHCAM_PLAYERNUM, Inputs::ANALOGUE_XREL);
+	mousey_relative = inputs.getMouseFloat(DEATHCAM_PLAYERNUM, Inputs::ANALOGUE_YREL);
+
+	const bool smoothmouse = playerSettings[multiplayer ? 0 : DEATHCAM_PLAYERNUM].smoothmouse;
+	const bool reversemouse = playerSettings[multiplayer ? 0 : DEATHCAM_PLAYERNUM].reversemouse;
+	real_t mouse_speed = playerSettings[multiplayer ? 0 : DEATHCAM_PLAYERNUM].mousespeed;
+	if ( inputs.getVirtualMouse(DEATHCAM_PLAYERNUM)->lastMovementFromController )
+	{
+		mouse_speed = 32.0;
+	}
+
+	if ( DEATHCAM_TIME == 1 )
+	{
+		//DEATHCAM_PLAYERTARGET = DEATHCAM_PLAYERNUM;
+		DEATHCAM_IDLEROTATEDIRYAW = (local_rng.rand() % 2 == 0) ? 1 : -1;
+	}
+
+	bool shootmode = players[DEATHCAM_PLAYERNUM]->shootmode;
+	if ( shootmode && !gamePaused )
+	{
+		if ( smoothmouse )
+		{
+			DEATHCAM_ROTX += mousex_relative * .006 * (mouse_speed / 128.f);
+			DEATHCAM_ROTX = fmin(fmax(-0.35, DEATHCAM_ROTX), 0.35);
+		}
+		else
+		{
+			DEATHCAM_ROTX = std::min<float>(std::max<float>(-0.35f, mousex_relative * .01f * (mouse_speed / 128.f)), 0.35f);
+		}
+		my->yaw += DEATHCAM_ROTX;
+		if ( my->yaw >= PI * 2 )
+		{
+			my->yaw -= PI * 2;
+		}
+		else if ( my->yaw < 0 )
+		{
+			my->yaw += PI * 2;
+		}
+
+		if ( smoothmouse )
+		{
+			DEATHCAM_ROTY += mousey_relative * .006 * (mouse_speed / 128.f) * (reversemouse * 2 - 1);
+			DEATHCAM_ROTY = fmin(fmax(-0.35, DEATHCAM_ROTY), 0.35);
+		}
+		else
+		{
+			DEATHCAM_ROTY = std::min<float>(std::max<float>(-0.35f, mousey_relative * .01f * (mouse_speed / 128.f) * (reversemouse * 2 - 1)), 0.35f);
+		}
+		my->pitch -= DEATHCAM_ROTY;
+		if ( my->pitch > PI / 2 )
+		{
+			my->pitch = PI / 2;
+		}
+		else if ( my->pitch < -PI / 2 )
+		{
+			my->pitch = -PI / 2;
+		}
+
+		if ( abs(DEATHCAM_ROTX) < 0.0001 && abs(DEATHCAM_ROTY) < 0.0001
+			/*&& DEATHCAM_PLAYERTARGET == DEATHCAM_PLAYERNUM*/
+			&& (DEATHCAM_TIME >= TICKS_PER_SECOND * 3) )
+		{
+			++DEATHCAM_IDLETIME;
+			if ( DEATHCAM_IDLETIME >= TICKS_PER_SECOND * 3 )
+			{
+				my->yaw += DEATHCAM_IDLEYAWSPEED * DEATHCAM_IDLEROTATEDIRYAW;
+				if ( my->yaw >= PI * 2 )
+				{
+					my->yaw -= PI * 2;
+				}
+				else if ( my->yaw < 0 )
+				{
+					my->yaw += PI * 2;
+				}
+
+				if ( !DEATHCAM_IDLEROTATEPITCHINIT )
+				{
+					DEATHCAM_IDLEROTATEPITCHINIT = 1;
+					DEATHCAM_IDLEPITCH_START = my->pitch;
+					DEATHCAM_IDLEPITCH = 0.0;
+					DEATHCAM_IDLEPITCH_FLOAT_TO_ZERO = 0.0;
+					DEATHCAM_IDLEYAWSPEED = 0.0;
+				}
+				DEATHCAM_IDLEPITCH += PI / 1024;
+				if ( DEATHCAM_IDLEPITCH >= PI * 2 )
+				{
+					DEATHCAM_IDLEPITCH -= PI * 2;
+				}
+				else if ( DEATHCAM_IDLEPITCH < 0 )
+				{
+					DEATHCAM_IDLEPITCH += PI * 2;
+				}
+				if ( (DEATHCAM_IDLEPITCH_START - DEATHCAM_IDLEPITCH_FLOAT_TO_ZERO) > .001 )
+				{
+					DEATHCAM_IDLEPITCH_FLOAT_TO_ZERO += .0001;
+				}
+				else if ( (DEATHCAM_IDLEPITCH_START - DEATHCAM_IDLEPITCH_FLOAT_TO_ZERO) < .001 )
+				{
+					DEATHCAM_IDLEPITCH_FLOAT_TO_ZERO -= .0001;
+				}
+				my->pitch = -DEATHCAM_IDLEPITCH_FLOAT_TO_ZERO + DEATHCAM_IDLEPITCH_START + (PI / 64) * sin(DEATHCAM_IDLEPITCH);
+				if ( my->pitch > PI / 2 )
+				{
+					my->pitch = PI / 2;
+				}
+				else if ( my->pitch < -PI / 2 )
+				{
+					my->pitch = -PI / 2;
+				}
+
+				if ( DEATHCAM_IDLEYAWSPEED < .001 )
+				{
+					DEATHCAM_IDLEYAWSPEED += .00001;
+				}
+			}
+		}
+		else
+		{
+			DEATHCAM_IDLETIME = 0;
+			DEATHCAM_IDLEROTATEPITCHINIT = 0;
+			DEATHCAM_IDLEPITCH_FLOAT_TO_ZERO = 0.0;
+			DEATHCAM_IDLEYAWSPEED = 0.0;
+		}
+	}
+	if ( smoothmouse )
+	{
+		DEATHCAM_ROTX *= .5;
+		DEATHCAM_ROTY *= .5;
+	}
+	else
+	{
+		DEATHCAM_ROTX = 0;
+		DEATHCAM_ROTY = 0;
+	}
+
+	if ( shootmode
+		&& !players[DEATHCAM_PLAYERNUM]->GUI.isGameoverActive()
+		&& players[DEATHCAM_PLAYERNUM]->bControlEnabled
+		&& !players[DEATHCAM_PLAYERNUM]->usingCommand()
+		&& !gamePaused
+		&& (Input::inputs[DEATHCAM_PLAYERNUM].consumeBinaryToggle("Attack")
+			|| Input::inputs[DEATHCAM_PLAYERNUM].consumeBinaryToggle("MenuConfirm")) )
+	{
+		/*DEATHCAM_PLAYERTARGET++;
+		if ( DEATHCAM_PLAYERTARGET >= MAXPLAYERS )
+		{
+			DEATHCAM_PLAYERTARGET = 0;
+		}
+		int c = 0;
+		while ( !Player::getPlayerInteractEntity(DEATHCAM_PLAYERTARGET) )
+		{
+			if ( c > MAXPLAYERS )
+			{
+				break;
+			}
+			DEATHCAM_PLAYERTARGET++;
+			if ( DEATHCAM_PLAYERTARGET >= MAXPLAYERS )
+			{
+				DEATHCAM_PLAYERTARGET = 0;
+			}
+			c++;
+		}*/
+	}
+
+	if ( DEATHCAM_PLAYERTARGET >= 0 )
+	{
+		if ( entityTarget )
+		{
+			my->x = entityTarget->x;
+			my->y = entityTarget->y;
+			//my->z = entityTarget->z;
+		}
+		/*else
+		{
+			DEATHCAM_PLAYERTARGET = DEATHCAM_PLAYERNUM;
+		}*/
+	}
+
+	my->removeLightField();
+
+	my->light = addLight(my->x / 16, my->y / 16, "deathcam");
+
+	real_t camx, camy, camz, camang, camvang;
+	camx = my->x / 16.f;
+	camy = my->y / 16.f;
+	camz = my->z * 2.f;
+	camang = my->yaw;
+	camvang = my->pitch;
+
+	camx -= cos(my->yaw) * cos(my->pitch) * 1.5;
+	camy -= sin(my->yaw) * cos(my->pitch) * 1.5;
+	camz -= sin(my->pitch) * 16;
+
+	if ( !TimerExperiments::bUseTimerInterpolation )
+	{
+		cameras[DEATHCAM_PLAYERNUM].x = camx;
+		cameras[DEATHCAM_PLAYERNUM].y = camy;
+		cameras[DEATHCAM_PLAYERNUM].z = camz;
+		cameras[DEATHCAM_PLAYERNUM].ang = camang;
+		cameras[DEATHCAM_PLAYERNUM].vang = camvang;
+		return;
+	}
+	else
+	{
+		TimerExperiments::cameraCurrentState[DEATHCAM_PLAYERNUM].x.velocity =
+			TimerExperiments::lerpFactor * (camx - TimerExperiments::cameraCurrentState[DEATHCAM_PLAYERNUM].x.position);
+		TimerExperiments::cameraCurrentState[DEATHCAM_PLAYERNUM].y.velocity =
+			TimerExperiments::lerpFactor * (camy - TimerExperiments::cameraCurrentState[DEATHCAM_PLAYERNUM].y.position);
+		TimerExperiments::cameraCurrentState[DEATHCAM_PLAYERNUM].z.velocity =
+			TimerExperiments::lerpFactor * (camz - TimerExperiments::cameraCurrentState[DEATHCAM_PLAYERNUM].z.position);
+
+		real_t diff = camang - TimerExperiments::cameraCurrentState[DEATHCAM_PLAYERNUM].yaw.position;
+		if ( diff > PI )
+		{
+			diff -= 2 * PI;
+		}
+		else if ( diff < -PI )
+		{
+			diff += 2 * PI;
+		}
+		TimerExperiments::cameraCurrentState[DEATHCAM_PLAYERNUM].yaw.velocity = diff * TimerExperiments::lerpFactor;
+		diff = camvang - TimerExperiments::cameraCurrentState[DEATHCAM_PLAYERNUM].pitch.position;
+		if ( diff >= PI )
+		{
+			diff -= 2 * PI;
+		}
+		else if ( diff < -PI )
+		{
+			diff += 2 * PI;
+		}
+		TimerExperiments::cameraCurrentState[DEATHCAM_PLAYERNUM].pitch.velocity = diff * TimerExperiments::lerpFactor;
+	}
+}
+
 void actDeathCam(Entity* my)
 {
 	/*if ( keystatus[SDLK_F4] )
@@ -2246,6 +3249,17 @@ void actDeathCam(Entity* my)
 
 	Uint32 deathcamGameoverPromptTicks = *MainMenu::cvar_fastRestart ? TICKS_PER_SECOND :
 		(splitscreen ? TICKS_PER_SECOND * 3 : TICKS_PER_SECOND * 6);
+	if ( *MainMenu::cvar_fastRestart )
+	{
+		if ( players[DEATHCAM_PLAYERNUM]->entity && players[DEATHCAM_PLAYERNUM]->entity->playerCreatedDeathCam != 0 )
+		{
+			// automaton deaths, reverse the count while we're still alive
+			if ( DEATHCAM_TIME > 2 )
+			{
+				--DEATHCAM_TIME;
+			}
+		}
+	}
 	if ( gameModeManager.isFastDeathGrave() )
 	{
 		deathcamGameoverPromptTicks = TICKS_PER_SECOND * 3;
@@ -2272,7 +3286,8 @@ void actDeathCam(Entity* my)
 	}
 	else if ( DEATHCAM_TIME < deathcamGameoverPromptTicks )
 	{
-		if ( players[DEATHCAM_PLAYERNUM]->ghost.isActive() || players[DEATHCAM_PLAYERNUM]->entity )
+		if ( players[DEATHCAM_PLAYERNUM]->ghost.isActive() 
+			|| (players[DEATHCAM_PLAYERNUM]->entity && players[DEATHCAM_PLAYERNUM]->entity->playerCreatedDeathCam == 0) )
 		{
 			DEATHCAM_DISABLE_GAMEOVER = 1;
 		}
@@ -2283,7 +3298,8 @@ void actDeathCam(Entity* my)
 		{
 			gameModeManager.Tutorial.openGameoverWindow();
 		}
-		else if ( !(players[DEATHCAM_PLAYERNUM]->ghost.isActive() || players[DEATHCAM_PLAYERNUM]->entity) 
+		else if ( !(players[DEATHCAM_PLAYERNUM]->ghost.isActive() 
+			|| (players[DEATHCAM_PLAYERNUM]->entity && players[DEATHCAM_PLAYERNUM]->entity->playerCreatedDeathCam == 0) )
 			&& DEATHCAM_DISABLE_GAMEOVER == 0 )
 		{
 			MainMenu::openGameoverWindow(DEATHCAM_PLAYERNUM);
@@ -2300,7 +3316,8 @@ void actDeathCam(Entity* my)
 	}
 
 	bool shootmode = players[DEATHCAM_PLAYERNUM]->shootmode;
-	if ( shootmode && !gamePaused && !(players[DEATHCAM_PLAYERNUM]->ghost.isActive() || players[DEATHCAM_PLAYERNUM]->entity) )
+	if ( shootmode && !gamePaused && !(players[DEATHCAM_PLAYERNUM]->ghost.isActive() 
+		|| (players[DEATHCAM_PLAYERNUM]->entity && players[DEATHCAM_PLAYERNUM]->entity->playerCreatedDeathCam == 0)) )
 	{
 		if ( !players[DEATHCAM_PLAYERNUM]->GUI.isGameoverActive() )
 		{
@@ -2576,7 +3593,7 @@ bool Player::PlayerMovement_t::isPlayerSwimming()
 	}
 	bool swimming = false;
 	bool levitating = isLevitating(stats[PLAYER_NUM]);
-	if ( !levitating && !waterwalkingboots && !noclip && !skillCapstoneUnlocked(PLAYER_NUM, PRO_SWIMMING) )
+	if ( !levitating && !waterwalkingboots && !noclip /*&& !skillCapstoneUnlocked(PLAYER_NUM, PRO_LEGACY_SWIMMING)*/ )
 	{
 		int x = std::min(std::max<unsigned int>(0, floor(my->x / 16)), map.width - 1);
 		int y = std::min(std::max<unsigned int>(0, floor(my->y / 16)), map.height - 1);
@@ -2686,7 +3703,7 @@ void Player::PlayerMovement_t::startQuickTurn()
 	}
 
 	quickTurnRotation = PI * players[PLAYER_NUM]->settings.quickTurnDirection;
-	if ( stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] )
+	if ( stats[PLAYER_NUM]->getEffectActive(EFF_CONFUSED) )
 	{
 		quickTurnRotation = -quickTurnRotation;
 	}
@@ -2731,7 +3748,9 @@ void Player::PlayerMovement_t::startQuickTurn()
 
 void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta)
 {
-	if ( !players[player.playernum]->entity )
+	if ( !players[player.playernum]->entity || (players[player.playernum]->entity 
+		&& stats[player.playernum]->getEffectActive(EFF_PROJECT_SPIRIT)
+		&& players[player.playernum]->entity->skill[3] == 2) )
 	{
 		return;
 	}
@@ -2773,7 +3792,7 @@ void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta
 	if ( !player.usingCommand()
 		&& player.bControlEnabled && !gamePaused && my->isMobile() && !inputs.hasController(PLAYER_NUM) )
 	{
-		if ( !stats[playernum]->EFFECTS[EFF_CONFUSED] )
+		if ( !stats[playernum]->getEffectActive(EFF_CONFUSED) )
 		{
 			if ( noclip )
 			{
@@ -2797,7 +3816,7 @@ void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta
 	}
 	else if ( shootmode && !gamePaused )
 	{
-		if ( !stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] )
+		if ( !stats[PLAYER_NUM]->getEffectActive(EFF_CONFUSED) )
 		{
 			if ( smoothmouse )
 			{
@@ -2888,7 +3907,7 @@ void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta
 	if ( !player.usingCommand()
 		&& player.bControlEnabled && !gamePaused && my->isMobile() && !inputs.hasController(PLAYER_NUM) )
 	{
-		if ( !stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] )
+		if ( !stats[PLAYER_NUM]->getEffectActive(EFF_CONFUSED) )
 		{
 			my->pitch += (Input::inputs[playernum].analog("Look Down") - Input::inputs[playernum].analog("Look Up")) * .05 * refreshRateDelta;
 		}
@@ -2899,7 +3918,7 @@ void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta
 	}
 	if ( shootmode && !gamePaused )
 	{
-		if ( !stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] )
+		if ( !stats[PLAYER_NUM]->getEffectActive(EFF_CONFUSED) )
 		{
 			if ( smoothmouse )
 			{
@@ -2950,13 +3969,14 @@ void Player::PlayerMovement_t::handlePlayerCameraUpdate(bool useRefreshRateDelta
 	}
 	my->pitch -= PLAYER_ROTY * refreshRateDelta;
 
-	if ( my->pitch > PI / 3 )
+	static ConsoleVariable<float> cvar_player_cam_pitch("/player_cam_pitch", PI / 3);
+	if ( my->pitch > *cvar_player_cam_pitch )
 	{
-		my->pitch = PI / 3;
+		my->pitch = *cvar_player_cam_pitch;
 	}
-	if ( my->pitch < -PI / 3 )
+	if ( my->pitch < -*cvar_player_cam_pitch )
 	{
-		my->pitch = -PI / 3;
+		my->pitch = -*cvar_player_cam_pitch;
 	}
 
 	if ( smoothmouse )
@@ -3048,8 +4068,8 @@ void Player::PlayerMovement_t::handlePlayerCameraBobbing(bool useRefreshRateDelt
 				&& ((input.binary("Move Forward") || input.binary("Move Backward"))
 					|| (input.binary("Move Left") - input.binary("Move Right"))))
 			|| (inputs.hasController(PLAYER_NUM) 
-				&& (inputs.getController(PLAYER_NUM)->getLeftXPercentForPlayerMovement() 
-					|| inputs.getController(PLAYER_NUM)->getLeftYPercentForPlayerMovement()))) )
+				&& (inputs.getController(PLAYER_NUM)->getLeftXPercentForPlayerMovement(player.playernum)
+					|| inputs.getController(PLAYER_NUM)->getLeftYPercentForPlayerMovement(player.playernum)))) )
 		{
 			if ( !player.usingCommand()
 				&& player.bControlEnabled && !swimming )
@@ -3128,15 +4148,15 @@ void Player::PlayerMovement_t::handlePlayerCameraBobbing(bool useRefreshRateDelt
 		else if ( !player.usingCommand()
 			&& player.bControlEnabled
 			&& !gamePaused
-			&& !swimming && inputs.hasController(PLAYER_NUM) && abs(inputs.getController(PLAYER_NUM)->getLeftXPercentForPlayerMovement()) > 0.001 )
+			&& !swimming && inputs.hasController(PLAYER_NUM) && abs(inputs.getController(PLAYER_NUM)->getLeftXPercentForPlayerMovement(player.playernum)) > 0.001 )
 		{
 			auto controller = inputs.getController(PLAYER_NUM);
-			if ( (controller->getLeftXPercentForPlayerMovement() > 0.001 && controller->getLeftYPercentForPlayerMovement() >= 0.0)
-				|| (controller->getLeftXPercentForPlayerMovement() < -0.001 && controller->getLeftYPercentForPlayerMovement() < -0.001 ) )
+			if ( (controller->getLeftXPercentForPlayerMovement(player.playernum) > 0.001 && controller->getLeftYPercentForPlayerMovement(player.playernum) >= 0.0)
+				|| (controller->getLeftXPercentForPlayerMovement(player.playernum) < -0.001 && controller->getLeftYPercentForPlayerMovement(player.playernum) < -0.001 ) )
 			{
 				PLAYER_SIDEBOB += 0.01 * refreshRateDelta;
 				real_t angle = PI / 32;
-				if ( controller->getLeftYPercentForPlayerMovement() < 0.001 )
+				if ( controller->getLeftYPercentForPlayerMovement(player.playernum) < 0.001 )
 				{
 					angle = PI / 64;
 				}
@@ -3145,12 +4165,12 @@ void Player::PlayerMovement_t::handlePlayerCameraBobbing(bool useRefreshRateDelt
 					PLAYER_SIDEBOB = angle;
 				}
 			}
-			else if ( (controller->getLeftXPercentForPlayerMovement() < -0.001 && controller->getLeftYPercentForPlayerMovement() >= 0.0)
-				|| (controller->getLeftXPercentForPlayerMovement() > 0.001 && controller->getLeftYPercentForPlayerMovement() < -0.001) )
+			else if ( (controller->getLeftXPercentForPlayerMovement(player.playernum) < -0.001 && controller->getLeftYPercentForPlayerMovement(player.playernum) >= 0.0)
+				|| (controller->getLeftXPercentForPlayerMovement(player.playernum) > 0.001 && controller->getLeftYPercentForPlayerMovement(player.playernum) < -0.001) )
 			{
 				PLAYER_SIDEBOB -= 0.01 * refreshRateDelta;
 				real_t angle = -PI / 32;
-				if ( controller->getLeftYPercentForPlayerMovement() < 0.001 )
+				if ( controller->getLeftYPercentForPlayerMovement(player.playernum) < 0.001 )
 				{
 					angle = -PI / 64;
 				}
@@ -3290,9 +4310,13 @@ int Player::PlayerMovement_t::getCharacterModifiedWeight(int* customWeight)
 	{
 		weight = weight * (gameplayCustomManager.playerWeightPercent / 100.f);
 	}
-	if ( stats[player.playernum]->EFFECTS[EFF_FAST] && !stats[player.playernum]->EFFECTS[EFF_SLOW] )
+	if ( stats[player.playernum]->getEffectActive(EFF_FAST) && !stats[player.playernum]->getEffectActive(EFF_SLOW) )
 	{
 		weight = weight * 0.5;
+	}
+	if ( stats[player.playernum]->getEffectActive(EFF_LIGHTEN_LOAD) > 0 )
+	{
+		weight = weight * (100 - std::min(100, std::max(0, (int)stats[player.playernum]->getEffectActive(EFF_LIGHTEN_LOAD)))) / 100.0;
 	}
 	return weight;
 }
@@ -3320,26 +4344,105 @@ real_t Player::PlayerMovement_t::getSpeedFactor(real_t weightratio, Sint32 DEX)
 {
 	real_t slowSpeedPenalty = 0.0;
 	real_t maxSpeed = getMaximumSpeed();
-	if ( !stats[player.playernum]->EFFECTS[EFF_FAST] && stats[player.playernum]->EFFECTS[EFF_SLOW] )
+	if ( !stats[player.playernum]->getEffectActive(EFF_FAST) && stats[player.playernum]->getEffectActive(EFF_SLOW) )
 	{
 		DEX = std::min(DEX - 3, -2);
 		slowSpeedPenalty = 2.0;
 	}
-	else if ( stats[player.playernum]->EFFECTS[EFF_FAST] && !stats[player.playernum]->EFFECTS[EFF_SLOW] )
+	else if ( !stats[player.playernum]->getEffectActive(EFF_FAST) && stats[player.playernum]->getEffectActive(EFF_DISRUPTED) )
+	{
+		if ( stats[player.playernum]->getEffectActive(EFF_DISRUPTED) == 1 )
+		{
+			DEX = std::min(DEX - 3, -2);
+			slowSpeedPenalty = 1.0;
+		}
+		else
+		{
+			DEX = std::min(DEX - 3, -2);
+			slowSpeedPenalty = 2.0;
+		}
+	}
+	else if ( stats[player.playernum]->getEffectActive(EFF_FAST) 
+		&& !stats[player.playernum]->getEffectActive(EFF_SLOW)
+		&& !stats[player.playernum]->getEffectActive(EFF_DISRUPTED) )
 	{
 		maxSpeed += 1.0;
 	}
+	else if ( player.mechanics.getBreakableCounterTier() >= 4 )
+	{
+		maxSpeed += 1.0;
+	}
+
 	real_t speedFactor = std::min((((DEX) * .4) + 8.5 - slowSpeedPenalty) * weightratio, maxSpeed);
 	/*if ( DEX <= 5 )
 	{
 		speedFactor = std::min(((DEX * 0.5) + 8.5) * weightratio, maxSpeed);
 	}*/
 
-	if ( !stats[player.playernum]->EFFECTS[EFF_DASH] && stats[player.playernum]->EFFECTS[EFF_KNOCKBACK] )
+	if ( !stats[player.playernum]->getEffectActive(EFF_DASH) && stats[player.playernum]->getEffectActive(EFF_KNOCKBACK) )
 	{
 		speedFactor = std::min(speedFactor, 5.0);
 	}
+	if ( stats[player.playernum]->getEffectActive(EFF_BASTION_MUSHROOM)
+		|| stats[player.playernum]->getEffectActive(EFF_BASTION_ROOTS) )
+	{
+		speedFactor *= 0.3;
+	}
+	if ( stats[player.playernum]->type == SALAMANDER && stats[player.playernum]->getEffectActive(EFF_SALAMANDER_HEART) )
+	{
+		if ( Uint8 effectStrength = stats[player.playernum]->getEffectActive(EFF_SALAMANDER_HEART) )
+		{
+			if ( effectStrength == 2 )
+			{
+				speedFactor += std::max(1.0, (speedFactor * .1));
+			}
+			else
+			{
+				real_t ratioLimit = 0.5;
+				if ( effectStrength == 4 )
+				{
+					speedFactor *= ratioLimit;
+				}
+				else if ( effectStrength == 3 )
+				{
+					speedFactor *= 0.75;
+				}
+			}
+		}
+	}
 
+	if ( stats[player.playernum]->type == MYCONID
+		&& !stats[player.playernum]->helmet
+		&& stats[player.playernum]->getEffectActive(EFF_GROWTH) > 1 )
+	{
+		int bonus = std::min(3, stats[player.playernum]->getEffectActive(EFF_GROWTH) - 1);
+		speedFactor *= 1.0 - (bonus * 0.10);
+	}
+	if ( stats[player.playernum]->type == DRYAD
+		&& !stats[player.playernum]->helmet
+		&& stats[player.playernum]->getEffectActive(EFF_GROWTH) > 1 )
+	{
+		int bonus = std::min(3, stats[player.playernum]->getEffectActive(EFF_GROWTH) - 1);
+		speedFactor *= 1.0 - (bonus * 0.05);
+	}
+
+	if ( stats[player.playernum]->getEffectActive(EFF_NIMBLENESS) )
+	{
+		real_t bonus = 0.025 * (stats[player.playernum]->getEffectActive(EFF_NIMBLENESS) & 0xF);
+		speedFactor *= 1.0 + bonus;
+		speedFactor = std::min(speedFactor, maxSpeed);
+	}
+
+	if ( int effectStrength = player.mechanics.getBreakableCounterTier() )
+	{
+		speedFactor *= 1.0 + effectStrength * 0.05;
+		speedFactor = std::min(speedFactor, maxSpeed);
+	}
+
+	if ( stats[player.playernum]->getEffectActive(EFF_MAXIMISE) )
+	{
+		speedFactor *= 1.0 - 0.1 * std::min(5, (stats[player.playernum]->getEffectActive(EFF_MAXIMISE) & 0xF));
+	}
 
 	for ( node_t* node = stats[player.playernum]->inventory.first; node != NULL; node = node->next )
 	{
@@ -3391,22 +4494,87 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 	// calculate movement forces
 
 	bool allowMovement = my->isMobile() && playerAllowedMovement(player.playernum);
-	bool pacified = stats[PLAYER_NUM]->EFFECTS[EFF_PACIFY];
-	bool rooted = stats[PLAYER_NUM]->EFFECTS[EFF_ROOTED];
+	bool pacified = stats[PLAYER_NUM]->getEffectActive(EFF_PACIFY) > 0;
+	bool rooted = stats[PLAYER_NUM]->getEffectActive(EFF_ROOTED) > 0;
 	if ( rooted )
 	{
 		allowMovement = false;
 	}
 	if ( !allowMovement && pacified && !rooted )
 	{
-		if ( !stats[PLAYER_NUM]->EFFECTS[EFF_PARALYZED] && !stats[PLAYER_NUM]->EFFECTS[EFF_STUNNED]
-			&& !stats[PLAYER_NUM]->EFFECTS[EFF_ASLEEP] )
+		if ( !stats[PLAYER_NUM]->getEffectActive(EFF_PARALYZED) && !stats[PLAYER_NUM]->getEffectActive(EFF_STUNNED)
+			&& !stats[PLAYER_NUM]->getEffectActive(EFF_ASLEEP) )
 		{
 			allowMovement = true;
 		}
 	}
 
-	if ( ((!player.usingCommand() && player.bControlEnabled && !gamePaused) || pacified) 
+	static ConsoleVariable<float> cvar_map_tile_slippery("/map_tile_slippery", 0.99);
+	static ConsoleVariable<float> cvar_map_tile_greasy("/map_tile_greasy", 0.99);
+	static ConsoleVariable<float> cvar_map_tile_slow("/map_tile_slow", 0.25);
+	real_t movementDrag = 0.75;
+	{
+		if ( map.tileHasAttribute(static_cast<int>(my->x / 16), static_cast<int>(my->y / 16), 0, map_t::TILE_ATTRIBUTE_SLIPPERY) )
+		{
+			movementDrag = *cvar_map_tile_slippery;
+		}
+		else if ( map.tileHasAttribute(static_cast<int>(my->x / 16), static_cast<int>(my->y / 16), 0, map_t::TILE_ATTRIBUTE_GREASE) )
+		{
+			movementDrag = 0.99;
+		}
+		else if ( stats[PLAYER_NUM]->getEffectActive(EFF_MAGIC_GREASE) )
+		{
+			movementDrag = 0.95;
+		}
+	}
+
+	bool cleats = false;
+	if ( stats[PLAYER_NUM]->shoes && stats[PLAYER_NUM]->shoes->type == CLEAT_BOOTS
+		&& players[PLAYER_NUM]->entity && players[PLAYER_NUM]->entity->effectShapeshift == NOTHING )
+	{
+		cleats = true;
+		if ( movementDrag >= 0.85 )
+		{
+			movementDrag = 0.85;
+		}
+	}
+
+	static std::map<int, real_t> dragToSpeedFactor =
+	{
+		{99, 33},
+		{98, 16.33333},
+		{97, 10.77778},
+		{96, 8},
+		{95, 6.333333333},
+		{94, 5.222222222},
+		{93, 4.428571429},
+		{92, 3.833333333},
+		{91, 3.37037037},
+		{90, 3},
+		{89, 2.696969697},
+		{88, 2.444444444},
+		{87, 2.230769231},
+		{86, 2.047619048},
+		{85, 1.888888889},
+		{84, 1.75},
+		{83, 1.62745098},
+		{82, 1.518518519},
+		{81, 1.421052632},
+		{80, 1.333333333},
+		{79, 1.253968254},
+		{78, 1.181818182},
+		{77, 1.115942029},
+		{76, 1.055555556},
+		{75,  1}
+	};
+	real_t speedFactorMult = 1.0;
+	auto find = dragToSpeedFactor.find(static_cast<int>(100 * movementDrag));
+	if ( find != dragToSpeedFactor.end() )
+	{
+		speedFactorMult = 1 / find->second;
+	}
+
+	if ( ((!gamePaused) || pacified)
 		&& allowMovement )
 	{
 		//x_force and y_force represent the amount of percentage pushed on that respective axis. Given a keyboard, it's binary; either you're pushing "move left" or you aren't. On an analog stick, it can range from whatever value to whatever.
@@ -3417,7 +4585,7 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 		{
 			x_force = 0.f;
 			y_force = -0.1;
-			if ( stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] )
+			if ( stats[PLAYER_NUM]->getEffectActive(EFF_CONFUSED) )
 			{
 				y_force *= -1;
 			}
@@ -3442,59 +4610,62 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 					lateralMultiplier = 0.0;
 				}
 			}
-			if ( stats[PLAYER_NUM]->EFFECTS[EFF_DASH] )
+			if ( stats[PLAYER_NUM]->getEffectActive(EFF_DASH) )
 			{
 				backpedalMultiplier = 1.25;
 			}
 
-			if ( !inputs.hasController(PLAYER_NUM) )
+			if ( !player.usingCommand() && player.bControlEnabled )
 			{
-				if ( !stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] )
+				if ( !inputs.hasController(PLAYER_NUM) )
 				{
-					//Normal controls.
-					x_force = (input.binary("Move Right") - input.binary("Move Left"));
-					y_force = input.binary("Move Forward") - (double)input.binary("Move Backward") * backpedalMultiplier;
-					if ( noclip )
+					if ( !stats[PLAYER_NUM]->getEffectActive(EFF_CONFUSED) )
 					{
-						if ( keystatus[SDLK_LSHIFT] )
+						//Normal controls.
+						x_force = (input.binary("Move Right") - input.binary("Move Left"));
+						y_force = input.binary("Move Forward") - (double)input.binary("Move Backward") * backpedalMultiplier;
+						if ( noclip )
 						{
-							x_force = x_force * 0.5;
-							y_force = y_force * 0.5;
+							if ( keystatus[SDLK_LSHIFT] )
+							{
+								x_force = x_force * 0.5;
+								y_force = y_force * 0.5;
+							}
 						}
 					}
+					else
+					{
+						//Confused controls.
+						x_force = input.binary("Move Left") - input.binary("Move Right");
+						y_force = input.binary("Move Backward") - (double)input.binary("Move Forward") * backpedalMultiplier;
+					}
 				}
-				else
+
+				if ( inputs.hasController(PLAYER_NUM) /*&& !input.binary("Move Left") && !input.binary("Move Right")*/ )
 				{
-					//Confused controls.
-					x_force = input.binary("Move Left") - input.binary("Move Right");
-					y_force = input.binary("Move Backward") - (double)input.binary("Move Forward") * backpedalMultiplier;
+					x_force = inputs.getController(PLAYER_NUM)->getLeftXPercentForPlayerMovement(PLAYER_NUM);
+
+					if ( stats[PLAYER_NUM]->getEffectActive(EFF_CONFUSED) )
+					{
+						x_force *= -1;
+					}
 				}
+				if ( inputs.hasController(PLAYER_NUM) /*&& !input.binary("Move Forward") && !input.binary("Move Backward")*/ )
+				{
+					y_force = inputs.getController(PLAYER_NUM)->getLeftYPercentForPlayerMovement(PLAYER_NUM);
+
+					if ( stats[PLAYER_NUM]->getEffectActive(EFF_CONFUSED) )
+					{
+						y_force *= -1;
+					}
+
+					if ( y_force < 0 )
+					{
+						y_force *= backpedalMultiplier;    //Move backwards more slowly.
+					}
+				}
+				x_force *= lateralMultiplier;
 			}
-
-			if ( inputs.hasController(PLAYER_NUM) /*&& !input.binary("Move Left") && !input.binary("Move Right")*/ )
-			{
-				x_force = inputs.getController(PLAYER_NUM)->getLeftXPercentForPlayerMovement();
-
-				if ( stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] )
-				{
-					x_force *= -1;
-				}
-			}
-			if ( inputs.hasController(PLAYER_NUM) /*&& !input.binary("Move Forward") && !input.binary("Move Backward")*/ )
-			{
-				y_force = inputs.getController(PLAYER_NUM)->getLeftYPercentForPlayerMovement();
-
-				if ( stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] )
-				{
-					y_force *= -1;
-				}
-
-				if ( y_force < 0 )
-				{
-					y_force *= backpedalMultiplier;    //Move backwards more slowly.
-				}
-			}
-			x_force *= lateralMultiplier;
 		}
 
 		real_t speedFactor = getSpeedFactor(weightratio, statGetDEX(stats[PLAYER_NUM], players[PLAYER_NUM]->entity));
@@ -3527,17 +4698,35 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 			}
 			messagePlayer(0, MESSAGE_DEBUG, "New: %.3f | Old: %.3f | (%+.3f)", speedFactor, speedFactorOld, 100.0 * ((speedFactor / speedFactorOld) - 1.0));
 		}
-		if ( stats[PLAYER_NUM]->EFFECTS[EFF_DASH] )
+		if ( stats[PLAYER_NUM]->getEffectActive(EFF_DASH) )
 		{
 			PLAYER_VELX += my->monsterKnockbackVelocity * cos(my->monsterKnockbackTangentDir) * refreshRateDelta;
 			PLAYER_VELY += my->monsterKnockbackVelocity * sin(my->monsterKnockbackTangentDir) * refreshRateDelta;
-			my->monsterKnockbackVelocity *= pow(0.95, refreshRateDelta);
+			real_t rate = 0.95;
+			if ( movementDrag > 0.8 )
+			{
+				rate = 0.8;
+			}
+			/*if ( cleats )
+			{
+				rate *= 0.5;
+			}*/
+			my->monsterKnockbackVelocity *= pow(rate, refreshRateDelta);
 		}
-		else if ( stats[PLAYER_NUM]->EFFECTS[EFF_KNOCKBACK] )
+		else if ( stats[PLAYER_NUM]->getEffectActive(EFF_KNOCKBACK) )
 		{
 			PLAYER_VELX += my->monsterKnockbackVelocity * cos(my->monsterKnockbackTangentDir) * refreshRateDelta;
 			PLAYER_VELY += my->monsterKnockbackVelocity * sin(my->monsterKnockbackTangentDir) * refreshRateDelta;
-			my->monsterKnockbackVelocity *= pow(0.95, refreshRateDelta);
+			real_t rate = 0.95;
+			if ( movementDrag > 0.8 )
+			{
+				rate = 0.8;
+			}
+			if ( cleats )
+			{
+				rate *= 0.5;
+			}
+			my->monsterKnockbackVelocity *= pow(rate, refreshRateDelta);
 		}
 		else
 		{
@@ -3557,15 +4746,47 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 			my->playerStrafeVelocity = 0.0f;
 		}
 
+		if ( map.tileHasAttribute(static_cast<int>(my->x / 16), static_cast<int>(my->y / 16), 0, map_t::TILE_ATTRIBUTE_SLOW) )
+		{
+			if ( !isLevitating(stats[PLAYER_NUM]) )
+			{
+				speedFactor *= *cvar_map_tile_slow;
+			}
+		}
+
+		speedFactor *= speedFactorMult;
 		speedFactor *= refreshRateDelta;
-		PLAYER_VELX += y_force * cos(my->yaw) * .045 * speedFactor / (1 + (stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 1));
-		PLAYER_VELY += y_force * sin(my->yaw) * .045 * speedFactor / (1 + (stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 1));
-		PLAYER_VELX += x_force * cos(my->yaw + PI / 2) * .0225 * speedFactor / (1 + (stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 1));
-		PLAYER_VELY += x_force * sin(my->yaw + PI / 2) * .0225 * speedFactor / (1 + (stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 1));
+
+		real_t defendPenalty = (stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 1) ? 1.0 : 0.0;
+		if ( stats[PLAYER_NUM]->sneaking == 1 && !stats[PLAYER_NUM]->defending && stats[PLAYER_NUM]->type == GREMLIN )
+		{
+			defendPenalty = 0.5;
+		}
+		if ( stats[PLAYER_NUM]->defending && !stats[PLAYER_NUM]->sneaking 
+			&& stats[PLAYER_NUM]->shield && itemTypeIsFoci(stats[PLAYER_NUM]->shield->type) )
+		{
+			if ( int spellID = getSpellIDFromFoci(stats[PLAYER_NUM]->shield->type) )
+			{
+				if ( auto spell = getSpellFromID(spellID) )
+				{
+					real_t modifier = std::min(100, stats[PLAYER_NUM]->getModifiedProficiency(spell->skillID)) / 100.f;
+					defendPenalty *= std::max(0.0, 1.0 - modifier);
+				}
+			}
+		}
+
+		real_t defendSpeed = (1.0 + defendPenalty);
+		PLAYER_VELX += y_force * cos(my->yaw) * .045 * speedFactor / (defendSpeed);
+		PLAYER_VELY += y_force * sin(my->yaw) * .045 * speedFactor / (defendSpeed);
+		PLAYER_VELX += x_force * cos(my->yaw + PI / 2) * .0225 * speedFactor / (defendSpeed);
+		PLAYER_VELY += x_force * sin(my->yaw + PI / 2) * .0225 * speedFactor / (defendSpeed);
 
 	}
-	PLAYER_VELX *= pow(0.75, refreshRateDelta);
-	PLAYER_VELY *= pow(0.75, refreshRateDelta);
+
+	my->processEntityWind();
+
+	PLAYER_VELX *= pow(movementDrag, refreshRateDelta);
+	PLAYER_VELY *= pow(movementDrag, refreshRateDelta);
 
 	/*if ( keystatus[SDLK_g] )
 	{
@@ -3605,8 +4826,8 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 	bool swimming = isPlayerSwimming();
 	if ( swimming && !amuletwaterbreathing )
 	{
-		PLAYER_VELX *= (((stats[PLAYER_NUM]->getModifiedProficiency(PRO_SWIMMING) / 100.f) * 50.f) + 50) / 100.f;
-		PLAYER_VELY *= (((stats[PLAYER_NUM]->getModifiedProficiency(PRO_SWIMMING) / 100.f) * 50.f) + 50) / 100.f;
+		PLAYER_VELX *= (/*((stats[PLAYER_NUM]->getModifiedProficiency(PRO_LEGACY_SWIMMING) / 100.f) * 50.f) +*/ 50) / 100.f;
+		PLAYER_VELY *= (/*((stats[PLAYER_NUM]->getModifiedProficiency(PRO_LEGACY_SWIMMING) / 100.f) * 50.f) +*/ 50) / 100.f;
 
 		if ( stats[PLAYER_NUM]->type == SKELETON )
 		{
@@ -3622,8 +4843,11 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 	}
 }
 
+real_t Player::PlayerMovement_t::minimiseMaximiseCameraZ = 0.4;
+
 void Player::PlayerMovement_t::handlePlayerCameraPosition(bool useRefreshRateDelta)
 {
+	players[player.playernum]->worldUI.modifiedTooltipDrawHeight = 0.0;
 	if ( !players[player.playernum]->isLocalPlayer() )
 	{
 		return;
@@ -3672,9 +4896,51 @@ void Player::PlayerMovement_t::handlePlayerCameraPosition(bool useRefreshRateDel
 		{
 			cameraSetpointZ -= 2;
 		}
+		else if ( playerRace == GREMLIN )
+		{
+			cameraSetpointZ -= 1.0;
+			players[player.playernum]->worldUI.modifiedTooltipDrawHeight = 3.0;
+		}
+		else if ( playerRace == GNOME )
+		{
+			cameraSetpointZ -= 2.0;
+			players[player.playernum]->worldUI.modifiedTooltipDrawHeight = 3.0;
+		}
+		else if ( playerRace == DRYAD )
+		{
+			if ( my->z >= 1.5 )
+			{
+				cameraSetpointZ -= 3.0;
+				players[player.playernum]->worldUI.modifiedTooltipDrawHeight = 3.0;
+			}
+			else
+			{
+				cameraSetpointZ -= 2.0;
+			}
+		}
+		else if ( playerRace == MYCONID )
+		{
+			if ( my->z >= 0.5 )
+			{
+				cameraSetpointZ -= 1.0;
+				players[player.playernum]->worldUI.modifiedTooltipDrawHeight = 3.0;
+			}
+			else
+			{
+				cameraSetpointZ -= 1.0;
+			}
+		}
+		if ( stats[PLAYER_NUM]->getEffectActive(EFF_MINIMISE) )
+		{
+			cameraSetpointZ += Player::PlayerMovement_t::minimiseMaximiseCameraZ * (stats[PLAYER_NUM]->getEffectActive(EFF_MINIMISE) & 0xF);
+		}
+		if ( stats[PLAYER_NUM]->getEffectActive(EFF_MAXIMISE) )
+		{
+			cameraSetpointZ -= Player::PlayerMovement_t::minimiseMaximiseCameraZ * (stats[PLAYER_NUM]->getEffectActive(EFF_MAXIMISE) & 0xF);
+		}
 
 		real_t diff = abs(PLAYER_CAMERAZ_ACCEL - cameraSetpointZ);
-		if ( diff > 0.01 )
+		if ( diff > 0.01 && abs(my->creatureHoverZ) < 0.01 )
 		{
 			real_t rateChange = std::min(2.0, std::max(0.3, diff * 0.5)) * refreshRateDelta;
 
@@ -4437,7 +5703,7 @@ void doStatueEditor(int player)
 	}
 }
 
-int playerHeadSprite(Monster race, sex_t sex, int appearance, int frame) {
+int playerHeadSprite(Monster race, sex_t sex, int appearance, int frame, int player) {
     if (race == HUMAN) {
         if (appearance < 5) {
             return 113 + 12 * sex + appearance;
@@ -4494,9 +5760,351 @@ int playerHeadSprite(Monster race, sex_t sex, int appearance, int frame) {
     else if (race == AUTOMATON) {
         return sex == FEMALE ? 770 : 742;
     }
+	else if ( race == DRYAD ) {
+		return sex == FEMALE ? 1992 : 1963;
+	}
+	else if ( race == MYCONID ) {
+		return sex == MALE ? 1998 : 1997;
+	}
+	else if ( race == GREMLIN ) {
+		return sex == FEMALE ? 2048 : 2047;
+	}
+	else if ( race == SALAMANDER ) {
+		if ( player >= 0 && player < MAXPLAYERS )
+		{
+			Uint8 effectStrength = stats[player]->getEffectActive(EFF_SALAMANDER_HEART);
+			if ( effectStrength == 1 || effectStrength == 2 )
+			{
+				return sex == FEMALE ? 2017 : 2016;
+			}
+			else if ( effectStrength == 3 || effectStrength == 4 )
+			{
+				return sex == FEMALE ? 2019 : 2018;
+			}
+		}
+		return sex == FEMALE ? 2015 : 2014;
+	}
+	else if ( race == GNOME )
+	{
+		return sex == FEMALE ? 2214 : 2213;
+	}
     else {
         return 481; // shadow head due to unknown creature
     }
+}
+
+bool shieldSpriteIsSpellbook(int sprite)
+{
+	static std::set<int> spellbookSprites;
+	if ( spellbookSprites.size() == 0 )
+	{
+		for ( int i = 0; i < NUMITEMS; ++i )
+		{
+			if ( items[i].category == SPELLBOOK )
+			{
+				for ( int j = 0; j < items[i].variations; ++j )
+				{
+					spellbookSprites.insert(items[i].index + j);
+					if ( items[i].indexShort >= 0 )
+					{
+						spellbookSprites.insert(items[i].indexShort + j);
+					}
+				}
+			}
+		}
+	}
+
+	return spellbookSprites.find(sprite) != spellbookSprites.end();
+}
+
+bool shieldSpriteAllowedImpForm(int sprite)
+{
+	static std::set<int> allowedShieldSprites;
+	if ( allowedShieldSprites.size() == 0 )
+	{
+		for ( int i = 0; i < NUMITEMS; ++i )
+		{
+			if ( items[i].category == SPELLBOOK || itemTypeIsFoci(ItemType(i)) )
+			{
+				for ( int j = 0; j < items[i].variations; ++j )
+				{
+					allowedShieldSprites.insert(items[i].index + j);
+					if ( items[i].indexShort >= 0 )
+					{
+						allowedShieldSprites.insert(items[i].indexShort + j);
+					}
+				}
+			}
+		}
+	}
+
+	return allowedShieldSprites.find(sprite) != allowedShieldSprites.end();
+}
+
+bool weaponSpriteAllowedImpForm(int sprite)
+{
+	static std::set<int> allowedWeaponSprites;
+	if ( allowedWeaponSprites.size() == 0 )
+	{
+		for ( int i = 0; i < NUMITEMS; ++i )
+		{
+			if ( items[i].category == MAGICSTAFF )
+			{
+				for ( int j = 0; j < items[i].variations; ++j )
+				{
+					allowedWeaponSprites.insert(items[i].index + j);
+					if ( items[i].indexShort >= 0 )
+					{
+						allowedWeaponSprites.insert(items[i].indexShort + j);
+					}
+				}
+			}
+		}
+	}
+
+	return allowedWeaponSprites.find(sprite) != allowedWeaponSprites.end();
+}
+
+void playerDebugTests(Entity* my)
+{
+#ifndef NDEBUG
+	if ( !my ) { return; }
+	if ( !(svFlags & SV_FLAG_CHEATS) )
+	{
+		return;
+	}
+	if ( multiplayer == CLIENT || intro )
+	{
+		return;
+	}
+
+	static ConsoleVariable<bool> cvar_test_frameskip("/test_frameskip", false);
+	if ( *cvar_test_frameskip && ticks % (5 * TICKS_PER_SECOND) == 0 )
+	{
+		SDL_Delay(50);
+	}
+
+	static ConsoleVariable<int> cvar_test_xp("/test_xp", 0);
+	struct XPGain_t
+	{
+		int numKills = 0;
+		int numXP = 0;
+	};
+	static std::map<std::string, XPGain_t> xpGained;
+	static std::map<std::string, std::map<std::string, XPGain_t>> xpGainedBiome;
+	static std::map<int, bool> killingDoneLookup;
+	if ( currentlevel == 0 )
+	{
+		xpGained.clear();
+		killingDoneLookup.clear();
+		xpGainedBiome.clear();
+	}
+	else if ( *cvar_test_xp && ticks % 2 == 0 && ticks > 5 && my->skill[2] == 0 )
+	{
+		bool killingDone = true;
+		for ( auto node = map.entities->first; node; node = node->next )
+		{
+			if ( Entity* entity = (Entity*)node->element )
+			{
+				if ( entity->behavior == &actMonster )
+				{
+					if ( entity->getStats() && entity->getStats()->HP > 0 )
+					{
+						messagePlayer(0, MESSAGE_DEBUG, "Kill mon: %d", entity->getMonsterTypeFromSprite());
+						entity->setHP(0);
+						Sint32 oldXP = stats[0]->EXP;
+						if ( *cvar_test_xp == 3 || *cvar_test_xp == 5 )
+						{
+							if ( local_rng.rand() % 4 > 0 )
+							{
+								my->awardXP(entity, true, true);
+							}
+						}
+						else
+						{
+							my->awardXP(entity, true, true);
+						}
+						if ( stats[0]->EXP > oldXP )
+						{
+							xpGained[monstertypename[entity->getStats()->type]].numXP += stats[0]->EXP - oldXP;
+							xpGained[monstertypename[entity->getStats()->type]].numKills++;
+							xpGainedBiome[map.filename][monstertypename[entity->getStats()->type]].numXP += stats[0]->EXP - oldXP;
+							xpGainedBiome[map.filename][monstertypename[entity->getStats()->type]].numKills++;
+						}
+						killingDone = false;
+						break;
+					}
+				}
+				else if ( entity->behavior == &actColliderDecoration && entity->isDamageableCollider() )
+				{
+					entity->colliderCurrentHP = 0;
+					entity->colliderKillerUid = my->getUID();
+					killingDone = false;
+					break;
+				}
+				else if ( entity->behavior == &actHeadstone && !entity->skill[3] )
+				{
+					entity->flags[INVISIBLE] = false;
+					entity->skill[28] = 2;
+
+					/*Entity* oldSelected = selectedEntity[0];
+					selectedEntity[0] = entity;
+					bool oldInRange = inrange[0];
+					inrange[0] = true;
+					actSink(entity);
+					inrange[0] = oldInRange;
+					selectedEntity[0] = oldSelected;*/
+					killingDone = false;
+					break;
+				}
+				else if ( entity->behavior == &actSink )
+				{
+					if ( entity->skill[0] > 0 )
+					{
+						if ( *cvar_test_xp == 2 )
+						{
+							entity->skill[0]--;
+							if ( local_rng.rand() % 2 == 0 )
+							{
+								// spawn slime
+								int ox = entity->x / 16;
+								int oy = entity->y / 16;
+								Entity* monster = summonMonster(SLIME, ox * 16 + 8, oy * 16 + 8);
+								if ( monster )
+								{
+									auto& rng = entity->entity_rng ? *entity->entity_rng : local_rng;
+									monster->seedEntityRNG(rng.getU32());
+									slimeSetType(monster, monster->getStats(), true, &rng);
+								}
+							}
+						}
+						else
+						{
+							Entity* oldSelected = selectedEntity[0];
+							selectedEntity[0] = entity;
+							bool oldInRange = inrange[0];
+							inrange[0] = true;
+							actSink(entity);
+							inrange[0] = oldInRange;
+							selectedEntity[0] = oldSelected;
+						}
+						killingDone = false;
+						break;
+					}
+				}
+				else if ( entity->behavior == &actFountain )
+				{
+					if ( entity->skill[0] > 0 )
+					{
+						Entity* oldSelected = selectedEntity[0];
+						selectedEntity[0] = entity;
+						bool oldInRange = inrange[0];
+						inrange[0] = true;
+						actFountain(entity);
+						inrange[0] = oldInRange;
+						selectedEntity[0] = oldSelected;
+						killingDone = false;
+						break;
+					}
+				}
+				else if ( entity->behavior == &actSummonTrap )
+				{
+					if ( entity->skill[7] == 0 )
+					{
+						entity->skill[8] = 0;
+						if ( !entity->skill[4] )
+						{
+							entity->skill[28] = 2;
+						}
+						else
+						{
+							entity->skill[28] = 1;
+						}
+						killingDone = false;
+						break;
+					}
+				}
+			}
+		}
+		if ( killingDone && killingDoneLookup.find(currentlevel + (secretlevel ? 100 : 0)) == killingDoneLookup.end() )
+		{
+			killingDoneLookup[currentlevel + (secretlevel ? 100 : 0)] = true;
+
+			messagePlayer(0, MESSAGE_DEBUG, "Killing done");
+			if ( currentlevel == 35 )
+			{
+				std::vector<std::pair<std::string, real_t>> sortedXP;
+
+				for ( auto& pair : xpGained )
+				{
+					sortedXP.push_back(std::make_pair(pair.first, pair.second.numXP / (real_t)(std::max(1, pair.second.numKills))));
+				}
+				std::sort(sortedXP.begin(), sortedXP.end(), [](std::pair<std::string, real_t>& a, std::pair<std::string, real_t>& b) {
+					return a.second > b.second;
+					});
+				for ( auto& p : sortedXP )
+				{
+					auto pair = xpGained.find(p.first);
+					if ( pair != xpGained.end() )
+					{
+						printlog("Total XP: %s: XP: %d Kills: %d: Ratio: %.2f", pair->first.c_str(), pair->second.numXP, pair->second.numKills, (real_t)pair->second.numXP / (real_t)std::max(1, pair->second.numKills));
+					}
+				}
+				for ( auto& pair : xpGainedBiome )
+				{
+					sortedXP.clear();
+					for ( auto& pair2 : pair.second )
+					{
+						sortedXP.push_back(std::make_pair(pair2.first, pair2.second.numXP / (real_t)(std::max(1, pair2.second.numKills))));
+					}
+					std::sort(sortedXP.begin(), sortedXP.end(), [](std::pair<std::string, real_t>& a, std::pair<std::string, real_t>& b) {
+						return a.second > b.second;
+						});
+					for ( auto& p : sortedXP )
+					{
+						auto pair2 = pair.second.find(p.first);
+						if ( pair2 != pair.second.end() )
+						{
+							printlog("%s XP: %s: XP: %d Kills: %d: Ratio: %.2f", pair.first.c_str(), pair2->first.c_str(), pair2->second.numXP, pair2->second.numKills, (real_t)pair2->second.numXP / (real_t)std::max(1, pair2->second.numKills));
+						}
+					}
+				}
+			}
+			else
+			{
+				if ( currentlevel == 20 )
+				{
+					consoleCommand("/jumplevel 6");
+				}
+				else
+				{
+					if ( *cvar_test_xp == 4 || *cvar_test_xp == 5 )
+					{
+						if ( secretlevel )
+						{
+							consoleCommand("/togglesecretlevel");
+							consoleCommand("/jumplevel -1");
+						}
+						else
+						{
+							if ( currentlevel == 2 || currentlevel == 8 || currentlevel == 9 || currentlevel == 13
+								|| currentlevel == 16
+								|| currentlevel == 28 || currentlevel == 33 )
+							{
+								consoleCommand("/togglesecretlevel");
+							}
+							consoleCommand("/nextlevel");
+						}
+					}
+					else
+					{
+						consoleCommand("/nextlevel");
+					}
+				}
+			}
+		}
+	}
+#endif
 }
 
 void actPlayer(Entity* my)
@@ -4545,6 +6153,978 @@ void actPlayer(Entity* my)
 		}
 	}
 
+#ifndef NDEBUG
+	//if ( my->ticks == 1 )
+	//{
+	//	//consoleCommand("/allspells4");
+	//	//if ( PLAYER_NUM == 0 )
+	//	//{
+	//	//	//consoleCommand("/god");
+	//	//}
+	//}
+#endif
+
+	if ( svFlags & SV_FLAG_CHEATS )
+	{
+		if ( PLAYER_NUM == 0 )
+		{
+			playerDebugTests(my);
+		}
+	}
+	
+	static ConsoleVariable<int> cvar_pbaoe("/pbaoe", 15);
+	if ( keystatus[SDLK_x] && enableDebugKeys && (svFlags & SV_FLAG_CHEATS) )
+	{
+		//spawnPlayerXP(my->x + 16.0, my->y, 0, 10);
+		Entity* fx = spawnFlameSprites(my, 288);
+		/*for ( int i = 0; i < 3; ++i )
+		{
+			Entity* fx1 = createParticleAestheticOrbit(my, 2401, 5 * TICKS_PER_SECOND, PARTICLE_EFFECT_SMITE_PINPOINT);
+			fx1->yaw = my->yaw + PI / 2 + 2 * i * PI / 3;
+			fx1->fskill[6] = fx1->yaw;
+			fx1->skill[3] = my->getUID();
+			if ( i != 0 )
+			{
+				fx1->actmagicNoLight = 1;
+			}
+		}*/
+
+		keystatus[SDLK_x] = 0;
+		Uint32 color = makeColorRGB(255, 255, 255);
+		if ( *cvar_pbaoe == 0 )
+		{
+			Entity* spellTimer = createParticleTimer(my, 1.25 * TICKS_PER_SECOND, -1);
+			spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_IGNITE;
+			spellTimer->particleTimerCountdownSprite = -1;
+			color = makeColor(255, 128, 0, 255);
+		}
+		else if ( *cvar_pbaoe == 1 )
+		{
+			Entity* spellTimer = createParticleTimer(my, 1.25 * TICKS_PER_SECOND, -1);
+			spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_SHATTER;
+			spellTimer->particleTimerCountdownSprite = -1;
+			color = makeColor(255, 0, 255, 255);
+		}
+
+		if ( *cvar_pbaoe == 20 )
+		{
+			//Entity* fx = spawnFlameSprites(my, 263);
+			for ( int i = 0; i < 2; ++i )
+			{
+				if ( Entity* fx = createParticleAestheticOrbit(my, 263, TICKS_PER_SECOND / 2, PARTICLE_EFFECT_HEAT_ORBIT_SPIN) )
+				{
+					fx->flags[SPRITE] = true;
+					fx->x = my->x;
+					fx->y = my->y;
+					fx->z = 7.5;
+					fx->fskill[0] = fx->x;
+					fx->fskill[1] = fx->y;
+					fx->vel_z = -0.5;
+					fx->actmagicOrbitDist = 5;
+					fx->fskill[2] = my->yaw + PI / 4.0 + i * PI;
+					fx->yaw = fx->fskill[2];
+					fx->fskill[4] = 0.25;
+					fx->lightBonus = vec4{ 0.f, 0.f, 0.f, 0.f };
+					fx->actmagicNoLight = 1;
+
+					serverSpawnMiscParticles(my, PARTICLE_EFFECT_HEAT_ORBIT_SPIN, 263, 0, fx->skill[0]);
+				}
+			}
+		}
+		else if ( *cvar_pbaoe == 13 )
+		{
+			Entity* leaf = newEntity(1912, 1, map.entities, nullptr); //Gib entity.
+			if ( leaf != NULL )
+			{
+				leaf->x = my->x + 40.0 * cos(my->yaw);
+				leaf->y = my->y + 40.0 * sin(my->yaw);
+				leaf->z = 5.0;
+				leaf->fskill[6] = leaf->z;
+				leaf->fskill[7] = -7.5 - leaf->fskill[6];
+				leaf->vel_z = 0.0;
+				leaf->sizex = 2;
+				leaf->sizey = 2;
+				leaf->scalex = 0.5;
+				leaf->scaley = 0.5;
+				leaf->scalez = 0.5;
+				leaf->yaw = local_rng.rand() % 360 * (PI / 180.0);
+				leaf->skill[0] = 30 * TICKS_PER_SECOND;
+				leaf->fskill[4] = leaf->x;
+				leaf->fskill[5] = leaf->y;
+				leaf->fskill[8] = 12.0 + 0.25 * (local_rng.rand() % 13); // 12-15.0
+				leaf->parent = 0;
+				leaf->behavior = &actLeafParticle;
+				leaf->flags[NOCLIP_CREATURES] = true;
+				leaf->flags[UPDATENEEDED] = false;
+				leaf->flags[NOUPDATE] = true;
+				leaf->flags[PASSABLE] = true;
+				leaf->flags[UNCLICKABLE] = true;
+				if ( multiplayer != CLIENT )
+				{
+					--entity_uids;
+				}
+				leaf->setUID(-3);
+			}
+		}
+		else if ( *cvar_pbaoe == 14 )
+		{
+			spawnLeafPile(my->x + 40.0 * cos(my->yaw), my->y + 40.0 * sin(my->yaw), true);
+			//Entity* leaf = newEntity(1913, 1, map.entities, nullptr); //Gib entity.
+			//if ( leaf != NULL )
+			//{
+			//	leaf->x = my->x + 40.0 * cos(my->yaw);
+			//	leaf->y = my->y + 40.0 * sin(my->yaw);
+			//	leaf->z = 0.0;
+			//	leaf->yaw = local_rng.rand() % 360 * (PI / 180.0);
+			//	leaf->sizex = 4;
+			//	leaf->sizey = 4;
+			//	leaf->behavior = &actLeafPile;
+			//	leaf->skill[0] = 30 * TICKS_PER_SECOND;
+			//	leaf->flags[NOCLIP_CREATURES] = true;
+			//	leaf->flags[UPDATENEEDED] = true;
+			//	leaf->flags[NOUPDATE] = false;
+			//	leaf->flags[PASSABLE] = true;
+			//	leaf->flags[UNCLICKABLE] = true;
+			//}
+		}
+		else if ( *cvar_pbaoe == 15 )
+		{
+			/*Entity* spellTimer = createParticleTimer(my, TICKS_PER_SECOND, -1);
+			spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_BASTION_MUSHROOM;
+			spellTimer->particleTimerCountdownSprite = -1;
+
+			spellTimer->yaw = my->yaw;
+			spellTimer->x = my->x + 40.0 * cos(my->yaw);
+			spellTimer->y = my->y + 40.0 * sin(my->yaw);*/
+
+			//for ( int i = 0; i < 8; ++i )
+			//{
+			//	Entity* fx = createParticleAestheticOrbit(my, 1885, 3 * TICKS_PER_SECOND, PARTICLE_EFFECT_MUSHROOM_SPELL);
+			//	fx->x = my->x;
+			//	fx->y = my->y;
+			//	fx->actmagicOrbitDist = 32;
+			//	fx->yaw = my->yaw + (i * PI / 4.0);
+			//	fx->pitch = -PI;
+			//	fx->fskill[4] = fx->yaw;
+
+			//	Entity* gib = spawnGib(my, 1885);
+			//	gib->vel_x = 1.5 * cos(fx->yaw);
+			//	gib->vel_y = 1.5 * sin(fx->yaw);
+			//	gib->lightBonus = vec4{ 0.25f, 0.25f, 0.25f, 0.f };
+			//}
+
+			//if ( Entity* fx = createParticleAOEIndicator(my, my->x, my->y, 0.0, TICKS_PER_SECOND * 2, 32) )
+			//{
+			//	fx->actSpriteFollowUID = my->getUID();
+			//	fx->actSpriteCheckParentExists = 0;
+			//	//fx->scalex = 0.8;
+			//	//fx->scaley = 0.8;
+			//	if ( auto indicator = AOEIndicators_t::getIndicator(fx->skill[10]) )
+			//	{
+			//		//indicator->arc = PI / 2;
+			//		indicator->indicatorColor = makeColorRGB(0, 145, 16);
+			//		indicator->loop = false;
+			//		indicator->gradient = 4;
+			//		indicator->framesPerTick = 2;
+			//		indicator->ticksPerUpdate = 1;
+			//		indicator->delayTicks = 0;
+			//		indicator->expireAlphaRate = 0.95;
+			//	}
+			//}
+			//playSoundEntityLocal(my, 169, 128);
+			//playSoundEntityLocal(my, 717 + local_rng.rand() % 3, 128);
+		}
+		else if ( *cvar_pbaoe == 16 )
+		{
+			createParticleBolas(my, 1917, 2 * TICKS_PER_SECOND, nullptr);
+		}
+		else if ( *cvar_pbaoe == 7 )
+		{
+			Entity* spellTimer = createParticleTimer(my, 25, -1);
+			spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_BOOBY_TRAP;
+			spellTimer->particleTimerCountdownSprite = -1;
+			spellTimer->particleTimerVariable1 = 20;
+			spellTimer->particleTimerVariable2 = SPELL_BOOBY_TRAP;
+			color = makeColor(255, 0, 255, 255);
+			spellTimer->yaw = my->yaw;
+			spellTimer->x = my->x + 40.0 * cos(my->yaw);
+			spellTimer->y = my->y + 40.0 * sin(my->yaw);
+
+			if ( Entity* fx = createParticleAOEIndicator(spellTimer, spellTimer->x, spellTimer->y, 0.0, TICKS_PER_SECOND, 24) )
+			{
+				fx->actSpriteCheckParentExists = 0;
+				if ( auto indicator = AOEIndicators_t::getIndicator(fx->skill[10]) )
+				{
+					Uint8 r, g, b, a;
+					getColor(color, &r, &g, &b, &a);
+					a *= 0.5;
+					indicator->indicatorColor = makeColor(r, g, b, a);
+					indicator->loop = false;
+					indicator->framesPerTick = 4;
+					indicator->ticksPerUpdate = 1;
+					indicator->delayTicks = 0;
+				}
+			}
+			for ( int i = 0; i < 2; ++i )
+			{
+				if ( Entity* fx = createParticleAOEIndicator(spellTimer, spellTimer->x, spellTimer->y, -7.5, TICKS_PER_SECOND, 24) )
+				{
+					fx->actSpriteCheckParentExists = 0;
+					if ( i == 1 )
+					{
+						fx->pitch = PI;
+					}
+					if ( auto indicator = AOEIndicators_t::getIndicator(fx->skill[10]) )
+					{
+						indicator->indicatorColor = color;
+						indicator->loop = false;
+						indicator->framesPerTick = 4;
+						indicator->ticksPerUpdate = 1;
+						indicator->delayTicks = 15;
+					}
+				}
+			}
+		}
+		else if ( *cvar_pbaoe == 3 )
+		{
+			color = makeColor(255, 0, 255, 255);
+			if ( Entity* fx = createParticleAOEIndicator(my, my->x, my->y, -7.5, TICKS_PER_SECOND * 5, 8) )
+			{
+				fx->yaw = my->yaw;
+				fx->skill[7] = 0;
+				if ( auto indicator = AOEIndicators_t::getIndicator(fx->skill[10]) )
+				{
+					indicator->indicatorColor = color;
+					indicator->loop = false;
+					indicator->framesPerTick = 4;
+					indicator->ticksPerUpdate = 1;
+					indicator->delayTicks = TICKS_PER_SECOND;
+				}
+			}
+		}
+		else if ( *cvar_pbaoe == 2 )
+		{
+			color = makeColor(255, 0, 255, 255);
+			for ( int i = 0; i < 6; ++i )
+			{
+				if ( Entity* fx = createParticleAOEIndicator(my, my->x, my->y, -7.5, TICKS_PER_SECOND * 5, 16 + (i / 2) * 4) )
+				{
+					fx->yaw = my->yaw + PI / 2;
+					if ( i % 2 == 1 )
+					{
+						fx->pitch += PI;
+					}
+					fx->z += (i / 2) * 2.0;
+					if ( auto indicator = AOEIndicators_t::getIndicator(fx->skill[10]) )
+					{
+						indicator->arc = PI / 4;
+						indicator->indicatorColor = color;
+						indicator->loop = false;
+						indicator->framesPerTick = 4;
+						indicator->ticksPerUpdate = 1;
+						indicator->delayTicks = TICKS_PER_SECOND;
+					}
+				}
+			}
+		}
+		else if ( *cvar_pbaoe == 4 )
+		{
+			color = makeColor(255, 0, 255, 255);
+			for ( int i = 0; i < 6; ++i )
+			{
+				if ( Entity* fx = createParticleAOEIndicator(my, my->x, my->y, -7.5, TICKS_PER_SECOND * 5, 16 + (i / 2) * 4) )
+				{
+					fx->yaw = my->yaw + PI / 2;
+					if ( i % 2 == 1 )
+					{
+						fx->pitch += PI;
+					}
+					fx->z += (i / 2) * 2.0;
+					fx->fskill[0] = 0.2;
+					if ( auto indicator = AOEIndicators_t::getIndicator(fx->skill[10]) )
+					{
+						indicator->arc = PI / 4;
+						indicator->indicatorColor = color;
+						indicator->loop = false;
+						indicator->framesPerTick = 4;
+						indicator->ticksPerUpdate = 1;
+						indicator->delayTicks = TICKS_PER_SECOND;
+					}
+				}
+			}
+		}
+		else if ( *cvar_pbaoe == 6 )
+		{
+			Entity* spellTimer = createParticleTimer(my, 4 * TICKS_PER_SECOND, -1);
+			spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_VORTEX;
+			spellTimer->particleTimerCountdownSprite = -1;
+			spellTimer->particleTimerVariable2 = SPELL_LIFT;
+			spellTimer->flags[UPDATENEEDED] = true;
+			spellTimer->flags[NOUPDATE] = false;
+			spellTimer->yaw = my->yaw;
+			spellTimer->x = my->x + 16.0 * cos(my->yaw);
+			spellTimer->y = my->y + 16.0 * sin(my->yaw);
+			Sint32 val = (1 << 31);
+			val |= (Uint8)(19);
+			val |= (((Uint16)(spellTimer->particleTimerDuration) & 0xFFF) << 8);
+			val |= (Uint8)(spellTimer->particleTimerCountdownAction & 0xFF) << 20;
+			spellTimer->skill[2] = val;
+		}
+		else if ( *cvar_pbaoe == 8 )
+		{
+			color = makeColor(255, 128, 0, 255);
+			for ( int i = 0; i < 4; ++i )
+			{
+				real_t x = my->x + 16.0 * cos(my->yaw);
+				real_t y = my->y + 16.0 * sin(my->yaw);
+				if ( Entity* fx = createParticleAOEIndicator(my, x, y, -7.5, TICKS_PER_SECOND, 16) )
+				{
+					//fx->yaw = my->yaw + PI / 2;
+					if ( i == 0 )
+					{
+						spawnExplosion(fx->x, fx->y, 0.0);
+					}
+					if ( i >= 2 )
+					{
+						fx->pitch -= PI / 8;
+					}
+					else
+					{
+						fx->pitch += PI / 8;
+					}
+					static ConsoleVariable<float> cvar_pbaoe8_var1("/pbaoe8_var1", 0.25);
+					static ConsoleVariable<float> cvar_pbaoe8_var2("/pbaoe8_var2", 0.8);
+					/*if ( i >= 2 )
+					{
+						fx->yaw += PI;
+					}*/
+					if ( i % 2 == 1 )
+					{
+						fx->pitch += PI;
+					}
+					fx->z = 0.0;
+					fx->actSpriteFollowUID = 0;
+					//fx->vel_z -= *cvar_pbaoe5_velz;
+					fx->fskill[0] = *cvar_pbaoe8_var1; // rotate
+					if ( auto indicator = AOEIndicators_t::getIndicator(fx->skill[10]) )
+					{
+						//indicator->arc = PI / 2;
+						indicator->indicatorColor = color;
+						indicator->loop = false;
+						indicator->framesPerTick = 1;
+						indicator->ticksPerUpdate = 1;
+						indicator->delayTicks = 5;
+						indicator->expireAlphaRate = *cvar_pbaoe8_var2;
+					}
+				}
+			}
+		}
+		else if ( *cvar_pbaoe == 9 )
+		{
+			createParticleSpin(my);
+		}
+		else if ( *cvar_pbaoe == 10 )
+		{
+			Entity* spellTimer = createParticleTimer(my, 5 * TICKS_PER_SECOND + 10, -1);
+			spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_EARTH_ELEMENTAL;
+			spellTimer->particleTimerCountdownSprite = -1;
+			spellTimer->flags[UPDATENEEDED] = true;
+			spellTimer->flags[NOUPDATE] = false;
+			spellTimer->yaw = my->yaw;
+			spellTimer->x = my->x + 16.0 * cos(my->yaw);
+			spellTimer->y = my->y + 16.0 * sin(my->yaw);
+			Sint32 val = (1 << 31);
+			val |= (Uint8)(19);
+			val |= (((Uint16)(spellTimer->particleTimerDuration) & 0xFFF) << 8);
+			val |= (Uint8)(spellTimer->particleTimerCountdownAction & 0xFF) << 20;
+			spellTimer->skill[2] = val;
+		}
+		else if ( *cvar_pbaoe == 12 )
+		{
+			Entity* spellTimer = createParticleTimer(my, 5 * TICKS_PER_SECOND + 10, -1);
+			spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_SHATTER_EARTH;
+			spellTimer->particleTimerCountdownSprite = -1;
+			spellTimer->flags[UPDATENEEDED] = true;
+			spellTimer->flags[NOUPDATE] = false;
+			spellTimer->yaw = my->yaw;
+			spellTimer->x = my->x + 16.0 * cos(my->yaw);
+			spellTimer->y = my->y + 16.0 * sin(my->yaw);
+			Sint32 val = (1 << 31);
+			val |= (Uint8)(19);
+			val |= (((Uint16)(spellTimer->particleTimerDuration) & 0xFFF) << 8);
+			val |= (Uint8)(spellTimer->particleTimerCountdownAction & 0xFF) << 20;
+			spellTimer->skill[2] = val;
+		}
+		else if ( *cvar_pbaoe == 11 )
+		{
+			Entity* spellTimer = createParticleTimer(my, 3 * TICKS_PER_SECOND + 10, -1);
+			spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_ETERNALS_GAZE;
+			spellTimer->particleTimerCountdownSprite = -1;
+			spellTimer->flags[UPDATENEEDED] = true;
+			spellTimer->flags[NOUPDATE] = false;
+			spellTimer->yaw = my->yaw;
+			spellTimer->x = my->x + 16.0 * cos(my->yaw);
+			spellTimer->y = my->y + 16.0 * sin(my->yaw);
+			Sint32 val = (1 << 31);
+			val |= (Uint8)(19);
+			val |= (((Uint16)(spellTimer->particleTimerDuration) & 0xFFF) << 8);
+			val |= (Uint8)(spellTimer->particleTimerCountdownAction & 0xFF) << 20;
+			spellTimer->skill[2] = val;
+		}
+		else if ( *cvar_pbaoe == 5 || *cvar_pbaoe == 16 )
+		{
+			color = makeColor(255, 255, 255, 255);
+			for ( int i = 0; i < 24; ++i )
+			{
+				if ( Entity* fx = createParticleAOEIndicator(my, my->x, my->y, -7.5, TICKS_PER_SECOND * 5, 16 + (i / 2) * 2) )
+				{
+					fx->yaw = my->yaw + PI / 2 - (i / 2) * PI / 3;
+					fx->pitch += PI / 32;
+					if ( i % 2 == 1 )
+					{
+						fx->pitch += PI;
+					}
+					fx->z = 8.0;
+					fx->z -= (i / 2) * 0.5;
+					static ConsoleVariable<float> cvar_pbaoe5_velz("/pbaoe5_velz", 0.25);
+					static ConsoleVariable<float> cvar_pbaoe5_yaw("/pbaoe5_yaw", 0.3);
+					fx->vel_z -= *cvar_pbaoe5_velz;
+					fx->fskill[0] = *cvar_pbaoe5_yaw; // rotate
+					fx->scalex = 0.5;// + (i / 2) * 0.25 / 12;
+					fx->scaley = 0.5;// + (i / 2) * 0.25 / 12;
+					if ( auto indicator = AOEIndicators_t::getIndicator(fx->skill[10]) )
+					{
+						if ( *cvar_pbaoe == 16 )
+						{
+							indicator->cacheType = AOEIndicators_t::CACHE_CASTING;
+						}
+						indicator->arc = PI / 4;
+						indicator->indicatorColor = color;
+						indicator->loop = false;
+						indicator->framesPerTick = 1;
+						indicator->ticksPerUpdate = 1;
+						indicator->delayTicks = 0;
+					}
+				}
+			}
+		}
+		else
+		{
+			if ( Entity* fx = createParticleAOEIndicator(my, my->x, my->y, 0.0, TICKS_PER_SECOND * 5, 32) )
+			{
+				if ( auto indicator = AOEIndicators_t::getIndicator(fx->skill[10]) )
+				{
+					Uint8 r, g, b, a;
+					getColor(color, &r, &g, &b, &a);
+					a *= 0.25;
+					indicator->indicatorColor = makeColor(r, g, b, a);
+					indicator->loop = false;
+					indicator->framesPerTick = 4;
+					indicator->ticksPerUpdate = 4;
+					indicator->delayTicks = 0;
+				}
+			}
+			for ( int i = 0; i < 2; ++i )
+			{
+				if ( Entity* fx = createParticleAOEIndicator(my, my->x, my->y, -7.5, TICKS_PER_SECOND * 5, 32) )
+				{
+					if ( i == 1 )
+					{
+						fx->pitch = PI;
+					}
+					if ( auto indicator = AOEIndicators_t::getIndicator(fx->skill[10]) )
+					{
+						indicator->indicatorColor = color;
+						indicator->loop = false;
+						indicator->framesPerTick = 4;
+						indicator->ticksPerUpdate = 1;
+						indicator->delayTicks = TICKS_PER_SECOND;
+					}
+				}
+			}
+		}
+	}
+	if ( keystatus[SDLK_v] && enableDebugKeys && (svFlags & SV_FLAG_CHEATS) )
+	{
+		keystatus[SDLK_v] = 0;
+
+		static std::map<int, std::vector<ParticleTimerEffect_t::EffectLocations_t>> effLocations;
+
+		static ConsoleVariable<int> cvar_particle_sprite("/particle_sprite", 1718);
+		static ConsoleVariable<int> cvar_particle_test("/particle_test", 7);
+		int lifetime = TICKS_PER_SECOND * 2;
+		real_t dist = 64.0 * 1.25;
+		if ( *cvar_particle_test == 3 )
+		{
+			dist = 32.0;
+		}
+		else if ( *cvar_particle_test == 4 )
+		{
+			dist = 0.0;
+		}
+		else if ( *cvar_particle_test == ParticleTimerEffect_t::EffectType::EFFECT_SPORES )
+		{
+			floorMagicCreateSpores(my, 0.0, 0.0, my, 0, SPELL_SPORES);
+		}
+		else if ( *cvar_particle_test == ParticleTimerEffect_t::EffectType::EFFECT_ROOTS_SELF )
+		{
+			Entity* spellTimer = createParticleTimer(my, 5 * TICKS_PER_SECOND + 10, -1);
+			spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_ROOTS1;
+			spellTimer->particleTimerCountdownSprite = -1;
+			spellTimer->flags[UPDATENEEDED] = true;
+			spellTimer->flags[NOUPDATE] = false;
+			spellTimer->yaw = my->yaw;
+			spellTimer->x = my->x + 16.0 * cos(my->yaw);
+			spellTimer->y = my->y + 16.0 * sin(my->yaw);
+			Sint32 val = (1 << 31);
+			val |= (Uint8)(19);
+			val |= (((Uint16)(spellTimer->particleTimerDuration) & 0xFFF) << 8);
+			val |= (Uint8)(spellTimer->particleTimerCountdownAction & 0xFF) << 20;
+			spellTimer->skill[2] = val;
+		}
+		else if ( *cvar_particle_test == ParticleTimerEffect_t::EffectType::EFFECT_ROOTS_TILE )
+		{
+			Entity* spellTimer = createParticleTimer(my, 5 * TICKS_PER_SECOND + 10, -1);
+			spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_ROOTS_SINGLE_TILE;
+			spellTimer->particleTimerCountdownSprite = -1;
+			spellTimer->flags[UPDATENEEDED] = true;
+			spellTimer->flags[NOUPDATE] = false;
+			spellTimer->yaw = my->yaw;
+			spellTimer->x = my->x + 16.0 * cos(my->yaw);
+			spellTimer->y = my->y + 16.0 * sin(my->yaw);
+			Sint32 val = (1 << 31);
+			val |= (Uint8)(19);
+			val |= (((Uint16)(spellTimer->particleTimerDuration) & 0xFFF) << 8);
+			val |= (Uint8)(spellTimer->particleTimerCountdownAction & 0xFF) << 20;
+			spellTimer->skill[2] = val;
+		}
+		else if ( *cvar_particle_test == ParticleTimerEffect_t::EffectType::EFFECT_ROOTS_PATH )
+		{
+			Entity* spellTimer = createParticleTimer(my, 5 * TICKS_PER_SECOND + 10, -1);
+			spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_ROOTS_PATH;
+			spellTimer->particleTimerCountdownSprite = -1;
+			spellTimer->flags[UPDATENEEDED] = true;
+			spellTimer->flags[NOUPDATE] = false;
+			spellTimer->yaw = my->yaw;
+			spellTimer->x = my->x + 16.0 * cos(my->yaw);
+			spellTimer->y = my->y + 16.0 * sin(my->yaw);
+			Sint32 val = (1 << 31);
+			val |= (Uint8)(19);
+			val |= (((Uint16)(spellTimer->particleTimerDuration) & 0xFFF) << 8);
+			val |= (Uint8)(spellTimer->particleTimerCountdownAction & 0xFF) << 20;
+			spellTimer->skill[2] = val;
+		}
+		else if ( *cvar_particle_test == ParticleTimerEffect_t::EffectType::EFFECT_LIGHTNING_BOLT )
+		{
+			real_t dist = 40.0;
+			Uint32 lifetime = TICKS_PER_SECOND * 3;
+
+			Entity* spellTimer = createParticleTimer(my, lifetime + TICKS_PER_SECOND, -1);
+			spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_LIGHTNING;
+			spellTimer->particleTimerCountdownSprite = 1757;
+			spellTimer->yaw = my->yaw;
+			spellTimer->x = my->x + dist * cos(my->yaw);
+			spellTimer->y = my->y + dist * sin(my->yaw);
+			spellTimer->flags[NOUPDATE] = false; // spawn for client
+			spellTimer->flags[UPDATENEEDED] = true;
+			spellTimer->skill[2] = -18;
+			Sint32 val = (1 << 31);
+			val |= (Uint8)(19);
+			val |= (((Uint16)(spellTimer->particleTimerDuration) & 0xFFF) << 8);
+			val |= (Uint8)(spellTimer->particleTimerCountdownAction & 0xFF) << 20;
+			spellTimer->skill[2] = val;
+			spellTimer->particleTimerEffectLifetime = lifetime;
+			floorMagicCreateLightningSequence(spellTimer, 0);
+		}
+		else
+		{
+			Entity* spellTimer = createParticleTimer(my, lifetime + TICKS_PER_SECOND, -1);
+			spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_MAGIC_WAVE;
+			spellTimer->particleTimerCountdownSprite = *cvar_particle_sprite;
+			spellTimer->yaw = my->yaw;
+			spellTimer->x = my->x + dist * cos(my->yaw);
+			spellTimer->y = my->y + dist * sin(my->yaw);
+			int lifetime_tick = 0;
+			auto& timerEffects = particleTimerEffects[spellTimer->getUID()];
+
+
+			std::vector<float> locations = {
+				0 * PI / 4,
+				1 * PI / 4,
+				2 * PI / 4,
+				3 * PI / 4,
+				4 * PI / 4,
+				5 * PI / 4,
+				6 * PI / 4,
+				7 * PI / 4,
+			};
+
+			effLocations[ParticleTimerEffect_t::EffectType::EFFECT_ICE_WAVE] =
+			{
+				{0.0,		0.0, 0.25, 0.75,	172},
+				{PI / 16,	0.0, 0.0,	1.0,	172},
+				{-PI / 16,	0.0, 0.0,	1.0,	0},
+				{0.0,		0.0, 0.25,	1.0,	0},
+				{PI / 16,	0.0, 0.0,	1.25,	172},
+				{-PI / 16,	0.0, 0.0,	1.25,	0}
+			};
+
+			effLocations[ParticleTimerEffect_t::EffectType::EFFECT_DISRUPT_EARTH].clear();
+			int roll = local_rng.rand() % 8;
+			for ( int i = 0; i < 16; ++i )
+			{
+				effLocations[ParticleTimerEffect_t::EffectType::EFFECT_DISRUPT_EARTH].push_back(ParticleTimerEffect_t::EffectLocations_t());
+				auto& data = effLocations[ParticleTimerEffect_t::EffectType::EFFECT_DISRUPT_EARTH].back();
+				if ( i == 0 )
+				{
+					data.sfx = 151;
+				}
+				data.seconds = 1 / 16.0;
+				data.dist = 0.25 + (0.75 * i / 16.0);
+				real_t angle = (i / 8.0) * PI + ((roll) / 8.0) * PI;
+				data.xOffset = 8.0 * sin(angle);
+				data.xOffset += 2.0 * (local_rng.rand() % 16) / 16.0;
+				data.yawOffset = cos(angle) + ((local_rng.rand() % 4) / 4.0) * 2 * PI;
+			}
+
+			{
+				effLocations[ParticleTimerEffect_t::EffectType::EFFECT_ROOTS_SELF].clear();
+				{
+					effLocations[ParticleTimerEffect_t::EffectType::EFFECT_ROOTS_SELF] =
+					{
+						{ 0.0, 0.0, 0.1,    0.5,	0 },
+						/*{ 0.0, -8.0, 0.1,   0.5,	0 },
+						{ 0.0, 8.0, 0.1,	0.5,	0 },
+						{ 0.0, 0.0, 0.1,	0.25,	0 },
+						{ 0.0, -8.0, 0.1,	0.25,	0 },
+						{ 0.0, 8.0, 0.1,	0.25,	0 }*/
+					};
+				}
+			}
+
+			int index = -1;
+
+			if ( *cvar_particle_test == -1 )
+			{
+				static ConsoleVariable<float> c1("/c1", 1.0);
+				static ConsoleVariable<int> c2("/c2", 4);
+				static ConsoleVariable<float> c3("/c3", 13.75);
+				static ConsoleVariable<int> c4("/c4", 5);
+				real_t grouping = *c3;
+				real_t scale = *c1;
+				if ( *c4 == 3 )
+				{
+					Entity* wave = createParticleWave(ParticleTimerEffect_t::EFFECT_PULSE, 
+						1751, my->x + 16.0 * cos(my->yaw), my->y + 16.0 * sin(my->yaw), 6.25, PI / 2 + my->yaw, TICKS_PER_SECOND * 10, false);
+					wave->skill[1] = 6; // frames
+					wave->skill[5] = *c2; // frame time
+					wave->ditheringOverride = 6;
+					wave->scalex = scale;
+					wave->scalez = scale;
+					wave->parent = spellTimer->getUID();
+				}
+				else if ( *c4 == 2 )
+				{
+					Entity* wave = createParticleWave(ParticleTimerEffect_t::EFFECT_KINETIC_FIELD, 
+						1739, my->x + 16.0 * cos(my->yaw), my->y + 16.0 * sin(my->yaw), 6.25, PI / 2 + my->yaw, TICKS_PER_SECOND * 10, false);
+					wave->skill[1] = 12; // frames
+					wave->skill[5] = *c2; // frame time
+					wave->ditheringOverride = 6;
+					wave->parent = spellTimer->getUID();
+				}
+				else if ( *c4 == 9 )
+				{
+					Entity* wave = createParticleWave(ParticleTimerEffect_t::EFFECT_KINETIC_FIELD,
+						1857, my->x + 16.0 * cos(my->yaw), my->y + 16.0 * sin(my->yaw), 5.25, PI / 2 + my->yaw, TICKS_PER_SECOND * 10, false);
+					wave->skill[1] = 8; // frames
+					wave->skill[5] = *c2; // frame time
+					wave->ditheringOverride = 6;
+					wave->parent = spellTimer->getUID();
+				}
+				else if ( *c4 == 5 )
+				{
+					createRadiusMagic(SPELL_NULL_AREA, my, my->x + 32.0 * cos(my->yaw), my->y + 32.0 * sin(my->yaw), 24, 5 * TICKS_PER_SECOND, nullptr);
+				}
+				else if ( *c4 == 6 )
+				{
+					createRadiusMagic(SPELL_SPHERE_SILENCE, my, my->x + 32.0 * cos(my->yaw), my->y + 32.0 * sin(my->yaw), 24, 5 * TICKS_PER_SECOND, my);
+				}
+				else if ( *c4 == 7 )
+				{
+					for ( int i = 0; i < 3; ++i )
+					{
+						Entity* entity = newEntity(576, 1, map.entities, nullptr);
+						entity->yaw = i * 2 * PI / 3;
+						entity->x = my->x;
+						entity->y = my->y;
+						entity->z = 7.5;
+						double missile_speed = 4;
+						entity->vel_x = 0.0;
+						entity->vel_y = 0.0;
+						entity->actmagicIsOrbiting = 2;
+						entity->actmagicOrbitDist = 8.0;
+						entity->actmagicOrbitStationaryCurrentDist = 0.0;
+						entity->actmagicOrbitStartZ = entity->z;
+						//entity->roll -= (PI / 8);
+						entity->actmagicOrbitVerticalSpeed = -0.3;
+						entity->actmagicOrbitVerticalDirection = 1;
+						entity->actmagicOrbitLifetime = TICKS_PER_SECOND / 2;
+						entity->actmagicOrbitStationaryX = my->x;
+						entity->actmagicOrbitStationaryY = my->y;
+						entity->vel_z = -0.1;
+						entity->behavior = &actMagicParticleCircling2;
+
+						entity->flags[PASSABLE] = true;
+						entity->flags[NOUPDATE] = true;
+						entity->flags[UNCLICKABLE] = true;
+						entity->flags[UPDATENEEDED] = false;
+						if ( multiplayer != CLIENT )
+						{
+							entity_uids--;
+						}
+						entity->setUID(-3);
+					}
+				}
+				else if ( *c4 == 1 )
+				{
+					spellTimer->particleTimerDuration = TICKS_PER_SECOND * 5;
+					for ( int i = 0; i < 3; ++i )
+					{
+						if ( i == 0 || i == 2 ) { continue; }
+						bool light = false;
+						if ( i == 1 )
+						{
+							light = true;
+						}
+						Entity* wave = createParticleWave(ParticleTimerEffect_t::EFFECT_FIRE_WAVE, 
+							1733, my->x + 16.0 * cos(my->yaw), my->y + 16.0 * sin(my->yaw), 2.75, 
+							-PI / 2 + my->yaw - PI / 3 + i * PI / 3, 
+							spellTimer->particleTimerDuration, light);
+						wave->skill[1] = 6; // frames
+						wave->skill[5] = *c2; // frame time
+						wave->ditheringOverride = 6;
+						wave->parent = spellTimer->getUID();
+						real_t startScale = 0.1;
+						wave->scalex = startScale;
+						wave->scaley = startScale;
+						wave->scalez = startScale;
+						wave->focaly = startScale * grouping;
+						wave->fskill[0] = scale; // final scale
+						wave->fskill[1] = grouping; // final grouping
+						wave->skill[6] = 1; // grow to scale
+						wave->flags[UPDATENEEDED] = true;
+					}
+				}
+				else if ( *c4 == 4 )
+				{
+					spellTimer->particleTimerDuration = TICKS_PER_SECOND * 5;
+					bool light = true;
+					Entity* wave = createParticleWave(ParticleTimerEffect_t::EFFECT_TUNNEL,
+						1810, my->x + 16.0 * cos(my->yaw), my->y + 16.0 * sin(my->yaw), 2.75, my->yaw + PI / 2,
+						spellTimer->particleTimerDuration, light);
+					wave->skill[1] = 4; // frames
+					wave->skill[5] = *c2; // frame time
+					wave->ditheringOverride = 6;
+					wave->parent = spellTimer->getUID();
+					real_t startScale = 0.1;
+					wave->scalex = startScale;
+					wave->scaley = startScale;
+					wave->scalez = startScale;
+					wave->focaly = 0.0;
+					wave->fskill[0] = scale; // final scale
+					wave->fskill[1] = 0.0; // final grouping
+					wave->skill[6] = 1; // grow to scale
+					wave->flags[UPDATENEEDED] = true;
+				}
+				else
+				{
+					for ( int i = 0; i < 4; ++i )
+					{
+						Entity* wave = createParticleWave(ParticleTimerEffect_t::EFFECT_FIRE_WAVE, 1733, my->x + 16.0 * cos(my->yaw), my->y + 16.0 * sin(my->yaw), 2.75, my->yaw + i * PI / 2, TICKS_PER_SECOND * 20, false);
+						wave->skill[1] = 6; // frames
+						wave->skill[5] = *c2; // frame time
+						wave->ditheringOverride = 6;
+						/*if ( i == 4 ) { grouping -= 4.0; }
+						if ( i >= 4 )
+						{
+							static ConsoleVariable<float> c1("/c1", 1.0);
+							static ConsoleVariable<int> c2("/c2", 4);
+							wave->skill[5] = *c2;
+						}*/
+						if ( i >= 4 )
+						{
+							wave->z -= 8.0;
+						}
+						//wave->pitch = PI / 2;
+						wave->scalex = *c1;
+						wave->scaley = *c1;
+						//wave->scaley = *c1;
+						wave->focaly = grouping;
+						//wave->x += grouping * cos(wave->yaw - PI / 2);
+						//wave->y += grouping * sin(wave->yaw - PI / 2);
+					}
+				}
+				lifetime_tick = lifetime + 1;
+			}
+			else if ( *cvar_particle_test == -3 )
+			{
+				Entity* root = createParticleRoot(1766, my->x + 16.0 * cos(my->yaw), my->y + 16.0 * sin(my->yaw),
+					7.5, my->yaw, TICKS_PER_SECOND * 3);
+				root->focalz = -0.5;
+			}
+			//else if ( *cvar_particle_test == -2 )
+			//{
+			//	Entity* wave = createParticleWave(1721, my->x + 16.0 * cos(my->yaw), my->y + 16.0 * sin(my->yaw), 0.f, 0.f, TICKS_PER_SECOND * 20);
+			//	wave->skill[1] = 12; // frames
+			//	lifetime_tick = lifetime + 1;
+			//}
+			while ( lifetime_tick <= lifetime )
+			{
+				++index;
+				auto& effect = timerEffects.effectMap[lifetime_tick == 0 ? 1 : lifetime_tick]; // first behavior tick only occurs at 1
+				real_t ratio = lifetime_tick / (real_t)lifetime;
+				effect.effectType = (ParticleTimerEffect_t::EffectType)(*cvar_particle_test);
+				effect.x = my->x + dist * (0.75 * ratio + 0.25) * cos(my->yaw);
+				effect.y = my->y + dist * (0.75 * ratio + 0.25) * sin(my->yaw);
+				if ( effect.effectType == ParticleTimerEffect_t::EffectType::EFFECT_ICE_WAVE )
+				{
+					auto& data = effLocations[effect.effectType][index];
+					effect.sfx = data.sfx;
+					effect.yaw = my->yaw + data.yawOffset;
+					real_t dist = 40.0;
+					effect.x = my->x + dist * (data.dist) * cos(effect.yaw);
+					effect.y = my->y + dist * (data.dist) * sin(effect.yaw);
+					lifetime_tick += std::max(1.0, TICKS_PER_SECOND * data.seconds);
+					if ( index + 1 >= effLocations[effect.effectType].size() )
+					{
+						break;
+					}
+				}
+				else if ( effect.effectType == ParticleTimerEffect_t::EffectType::EFFECT_DISRUPT_EARTH )
+				{
+					auto& data = effLocations[effect.effectType][index];
+					effect.sfx = data.sfx;
+					effect.x = my->x + dist * (data.dist) * cos(my->yaw) + data.xOffset * cos(my->yaw + PI / 2);
+					effect.y = my->y + dist * (data.dist) * sin(my->yaw) + data.xOffset * sin(my->yaw + PI / 2);
+
+					effect.yaw = my->yaw + data.yawOffset;
+
+					lifetime_tick += std::max(1.0, TICKS_PER_SECOND * data.seconds);
+					if ( index + 1 >= effLocations[effect.effectType].size() )
+					{
+						break;
+					}
+				}
+				else if ( effect.effectType == ParticleTimerEffect_t::EffectType::EFFECT_LIGHTNING_BOLT )
+				{
+					auto& data = effLocations[effect.effectType][index];
+					effect.sfx = data.sfx;
+					effect.x = /*my->x + dist * (data.dist) * cos(my->yaw) +*/ data.xOffset * cos(my->yaw + PI / 2);
+					effect.y = /*my->y + dist * (data.dist) * sin(my->yaw) +*/ data.xOffset * sin(my->yaw + PI / 2);
+
+					effect.yaw = my->yaw + data.yawOffset;
+
+					if ( index == 0 )
+					{
+						//createParticleCircling(spellTimer, TICKS_PER_SECOND, 931);
+					}
+
+					lifetime_tick += std::max(1.0, TICKS_PER_SECOND * data.seconds);
+					if ( index + 1 >= effLocations[effect.effectType].size() )
+					{
+						break;
+					}
+				}
+				else if ( effect.effectType == ParticleTimerEffect_t::EffectType::EFFECT_ROOTS_SELF )
+				{
+					spellTimer->particleTimerCountdownSprite = 1765;
+
+					auto& data = effLocations[effect.effectType][index];
+					effect.sfx = data.sfx;
+					effect.x = my->x + dist * (data.dist) * cos(my->yaw) + data.xOffset * cos(my->yaw + PI / 2);
+					effect.y = my->y + dist * (data.dist) * sin(my->yaw) + data.xOffset * sin(my->yaw + PI / 2);
+
+					effect.yaw = my->yaw + data.yawOffset;
+
+					lifetime_tick += std::max(1.0, TICKS_PER_SECOND * data.seconds);
+					if ( index + 1 >= effLocations[effect.effectType].size() )
+					{
+						break;
+					}
+				}
+				else if ( effect.effectType == ParticleTimerEffect_t::EffectType::EFFECT_TEST_2 )
+				{
+					lifetime_tick += 2;
+				}
+				else if ( effect.effectType == ParticleTimerEffect_t::EffectType::EFFECT_TEST_3 )
+				{
+					if ( locations.size() > 0 )
+					{
+						int pick = local_rng.rand() % locations.size();
+						auto coord = locations[local_rng.rand() % locations.size()];
+						locations.erase(locations.begin() + pick);
+						effect.x = my->x + 16.0 * cos(my->yaw + coord);
+						effect.y = my->y + 16.0 * sin(my->yaw + coord);
+					}
+					else
+					{
+						timerEffects.effectMap.erase(lifetime_tick);
+					}
+					lifetime_tick += TICKS_PER_SECOND / 4;
+				}
+				else
+				{
+					lifetime_tick += TICKS_PER_SECOND / 4;
+				}
+			}
+		}
+
+		//for ( int i = 0; i < 8; ++i )
+		//{
+		//	Entity* entity = newEntity(i >= 4 ? 224 : 223, 1, map.entities, nullptr); //Sprite entity.
+		//	entity->x = my->x + 16.0 * cos(my->yaw);
+		//	entity->y = my->y + 16.0 * sin(my->yaw);
+		//	entity->z = 7.499;
+		//	static ConsoleVariable<float> cvar_sprite_scale("/sprite_scale", 1.0);
+		//	static ConsoleVariable<float> cvar_sprite_rotate("/sprite_rotate", 0.0);
+		//	static ConsoleVariable<float> cvar_sprite_alpha("/sprite_alpha", 1.0);
+		//	static ConsoleVariable<float> cvar_sprite_alpha_glow("/sprite_alpha_glow", 0.0);
+		//	static ConsoleVariable<float> cvar_sprite_grouping("/sprite_grouping", 8.0);
+		//	entity->ditheringDisabled = true;
+		//	entity->flags[SPRITE] = true;
+		//	entity->flags[PASSABLE] = true;
+		//	entity->flags[NOUPDATE] = true;
+		//	entity->flags[UNCLICKABLE] = true;
+		//	entity->flags[BRIGHT] = true;
+		//	entity->scalex = *cvar_sprite_scale;
+		//	entity->scaley = 2.0 * *cvar_sprite_scale;
+		//	//entity->scalex = *cvar_sprite_scale;
+		//	entity->behavior = &actSprite;
+		//	entity->yaw = my->yaw + PI / 2 + (i * PI / 2);
+		//	entity->x += *cvar_sprite_grouping * cos(entity->yaw - PI / 2);
+		//	entity->y += *cvar_sprite_grouping * sin(entity->yaw - PI / 2);
+		//	entity->pitch = 0.0;
+		//	entity->roll = 0.0;
+		//	if ( i >= 4 )
+		//	{
+		//		entity->roll = PI;
+		//	}
+		//	entity->skill[0] = 1;
+		//	entity->skill[1] = 1;
+		//	entity->skill[2] = 350;
+		//	entity->fskill[0] = *cvar_sprite_rotate;
+		//	entity->fskill[2] = *cvar_sprite_alpha; // alpha
+		//	entity->fskill[3] = *cvar_sprite_alpha_glow;
+		//	entity->skill[6] = 1; // use alpha
+		//	entity->skill[7] = 1; // no billboard
+		//	if ( multiplayer != CLIENT )
+		//	{
+		//		entity_uids--;
+		//	}
+		//	entity->setUID(-3);
+		//}
+	}
+
 	Entity* entity;
 	Entity* entity2 = nullptr;
 	Entity* rightbody = nullptr;
@@ -4577,7 +7157,7 @@ void actPlayer(Entity* my)
 		playerRace = static_cast<Monster>(my->effectShapeshift);
 		stats[PLAYER_NUM]->type = playerRace;
 	}
-	else if ( stats[PLAYER_NUM]->playerRace > 0 || stats[PLAYER_NUM]->EFFECTS[EFF_POLYMORPH] || my->effectPolymorph != NOTHING )
+	else if ( stats[PLAYER_NUM]->playerRace > 0 || stats[PLAYER_NUM]->getEffectActive(EFF_POLYMORPH) || my->effectPolymorph != NOTHING )
 	{
 		playerRace = my->getMonsterFromPlayerRace(stats[PLAYER_NUM]->playerRace);
 		if ( my->effectPolymorph != NOTHING )
@@ -4617,7 +7197,7 @@ void actPlayer(Entity* my)
 
 	if ( multiplayer != CLIENT )
 	{
-		if ( stats[PLAYER_NUM]->EFFECTS[EFF_SHAPESHIFT] )
+		if ( stats[PLAYER_NUM]->getEffectActive(EFF_SHAPESHIFT) )
 		{
 			stats[PLAYER_NUM]->playerShapeshiftStorage = my->effectShapeshift; // keep track of player shapeshift effects
 		}
@@ -4630,7 +7210,7 @@ void actPlayer(Entity* my)
 			}
 		}
 
-		if ( stats[PLAYER_NUM]->EFFECTS[EFF_POLYMORPH] )
+		if ( stats[PLAYER_NUM]->getEffectActive(EFF_POLYMORPH) )
 		{
 			stats[PLAYER_NUM]->playerPolymorphStorage = my->effectPolymorph; // keep track of player polymorph effects
 		}
@@ -4646,7 +7226,15 @@ void actPlayer(Entity* my)
 
 	if ( players[PLAYER_NUM]->isLocalPlayer() ) // TODO: hotbar code splitscreen
 	{
-		if ( stats[PLAYER_NUM]->type != HUMAN && stats[PLAYER_NUM]->EFFECTS[EFF_SHAPESHIFT] )
+		if ( !stats[PLAYER_NUM]->getEffectActive(EFF_PROJECT_SPIRIT) && !players[PLAYER_NUM]->ghost.isActive() )
+		{
+			if ( PLAYER_DEBUGCAM == 2 )
+			{
+				PLAYER_DEBUGCAM = 0;
+			}
+		}
+
+		if ( stats[PLAYER_NUM]->type != HUMAN && stats[PLAYER_NUM]->getEffectActive(EFF_SHAPESHIFT) )
 		{
 			if ( players[PLAYER_NUM]->hotbar.swapHotbarOnShapeshift == 0 )
 			{
@@ -4659,7 +7247,7 @@ void actPlayer(Entity* my)
 				initShapeshiftHotbar(PLAYER_NUM);
 			}
 		}
-		else if ( !stats[PLAYER_NUM]->EFFECTS[EFF_SHAPESHIFT] && players[PLAYER_NUM]->hotbar.swapHotbarOnShapeshift > 0 )
+		else if ( !stats[PLAYER_NUM]->getEffectActive(EFF_SHAPESHIFT) && players[PLAYER_NUM]->hotbar.swapHotbarOnShapeshift > 0 )
 		{
 			deinitShapeshiftHotbar(PLAYER_NUM);
 		}
@@ -4680,6 +7268,26 @@ void actPlayer(Entity* my)
 		my->scalex = 1.01;
 		my->scaley = 1.01;
 		my->scalez = 1.01;
+	}
+	else if ( playerRace == DRYAD )
+	{
+		if ( my->sprite == 1992 || my->sprite == 1993 )
+		{
+			my->focalz += 0.5;
+		}
+		my->scalex = 1.f;
+		my->scaley = 1.f;
+		my->scalez = 1.f;
+	}
+	else if ( playerRace == MYCONID )
+	{
+		if ( my->sprite == 1998 )
+		{
+			my->focalz += 0.5;
+		}
+		my->scalex = 1.f;
+		my->scaley = 1.f;
+		my->scalez = 1.f;
 	}
 	else
 	{
@@ -4820,6 +7428,27 @@ void actPlayer(Entity* my)
 			entity->skill[2] = PLAYER_NUM;
 			entity->behavior = &actHudArrowModel;
 			my->bodyparts.push_back(entity);
+
+			// hud magic rangefinder
+			entity = newEntity(-1, 1, map.entities, nullptr); //HUD entity.
+			entity->flags[PASSABLE] = true;
+			entity->flags[OVERDRAW] = false;
+			entity->flags[NOUPDATE] = true;
+			entity->flags[INVISIBLE] = true;
+			entity->skill[2] = PLAYER_NUM;
+			entity->behavior = &actMagicRangefinder;
+			players[PLAYER_NUM]->hud.magicRangefinder = entity;
+			my->bodyparts.push_back(entity);
+
+			// hud additional 2 limb
+			entity = newEntity(-1, 1, map.entities, nullptr); //HUD entity.
+			entity->flags[PASSABLE] = true;
+			entity->flags[OVERDRAW] = true;
+			entity->flags[NOUPDATE] = true;
+			entity->flags[INVISIBLE] = true;
+			entity->skill[2] = PLAYER_NUM;
+			entity->behavior = &actHudAdditional2;
+			my->bodyparts.push_back(entity);
 		}
 		else
 		{
@@ -4847,7 +7476,7 @@ void actPlayer(Entity* my)
 		node->deconstructor = &emptyDeconstructor;
 		node->size = sizeof(Entity*);
 		my->bodyparts.push_back(entity);
-		entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_TORSO);
+		entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_TORSO, my->sprite);
 
 		// right leg
 		entity = newEntity(spriteLegRight, 1, map.entities, nullptr); //Limb entity.
@@ -4867,7 +7496,7 @@ void actPlayer(Entity* my)
 		node->deconstructor = &emptyDeconstructor;
 		node->size = sizeof(Entity*);
 		my->bodyparts.push_back(entity);
-		entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_RIGHTLEG);
+		entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_RIGHTLEG, my->sprite);
 
 		// left leg
 		entity = newEntity(spriteLegLeft, 1, map.entities, nullptr); //Limb entity.
@@ -4887,7 +7516,7 @@ void actPlayer(Entity* my)
 		node->deconstructor = &emptyDeconstructor;
 		node->size = sizeof(Entity*);
 		my->bodyparts.push_back(entity);
-		entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_LEFTLEG);
+		entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_LEFTLEG, my->sprite);
 
 		// right arm
 		entity = newEntity(spriteArmRight, 1, map.entities, nullptr); //Limb entity.
@@ -4907,7 +7536,7 @@ void actPlayer(Entity* my)
 		node->deconstructor = &emptyDeconstructor;
 		node->size = sizeof(Entity*);
 		my->bodyparts.push_back(entity);
-		entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_RIGHTARM);
+		entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_RIGHTARM, my->sprite);
 
 		// left arm
 		entity = newEntity(spriteArmLeft, 1, map.entities, nullptr); //Limb entity.
@@ -4927,7 +7556,7 @@ void actPlayer(Entity* my)
 		node->deconstructor = &emptyDeconstructor;
 		node->size = sizeof(Entity*);
 		my->bodyparts.push_back(entity);
-		entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_LEFTARM);
+		entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_LEFTARM, my->sprite);
 
 		// world weapon
 		entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
@@ -4962,6 +7591,7 @@ void actPlayer(Entity* my)
 		entity->focaly = limbs[playerRace][7][1];
 		entity->focalz = limbs[playerRace][7][2];
 		entity->behavior = &actPlayerLimb;
+		entity->skill[4] = 1; // shield denote
 		entity->parent = my->getUID();
 		entity->focalx = 2;
 		node = list_AddNodeLast(&my->children);
@@ -5132,9 +7762,112 @@ void actPlayer(Entity* my)
 		if ( PLAYER_ALIVETIME == 0 )
 		{
 			my->createWorldUITooltip();
+			players[PLAYER_NUM]->mechanics.previouslyLevitating = false;
 		}
 
+		players[PLAYER_NUM]->player_last_x = my->x;
+		players[PLAYER_NUM]->player_last_y = my->y;
+
 		PLAYER_ALIVETIME++;
+
+		if ( multiplayer != CLIENT && PLAYER_ALIVETIME == 1 )
+		{
+			node_t* nextnode = nullptr;
+			for ( auto node = stats[PLAYER_NUM]->void_chest_inventory.first; node; node = nextnode )
+			{
+				nextnode = node->next;
+				if ( Item* item = (Item*)node->element )
+				{
+					if ( item->type == TOOL_DUCK )
+					{
+						list_RemoveNode(node);
+					}
+				}
+			}
+		}
+
+		/*if ( players[PLAYER_NUM]->isLocalPlayer() 
+			&& ((stats[PLAYER_NUM]->playerRace >= 13 && stats[PLAYER_NUM]->playerRace <= 17)
+			|| client_classes[PLAYER_NUM] >= 21) )
+		{
+#ifdef STEAMWORKS
+			if ( !enabledDLCPack3 || !SteamApps()->BIsDlcInstalled(1010822) )
+			{
+				int* potato = NULL;
+				(*potato) = 322;
+			}
+#endif
+		}*/
+
+		if ( players[PLAYER_NUM]->isLocalPlayer() && PLAYER_ALIVETIME == 1 && currentlevel > 0 )
+		{
+			for ( auto duck : players[PLAYER_NUM]->mechanics.ducksInARow )
+			{
+				bool birdInHand = false;
+				for ( auto node = stats[PLAYER_NUM]->inventory.first; node; node = node->next )
+				{
+					if ( Item* item = (Item*)node->element )
+					{
+						if ( item->type == TOOL_DUCK )
+						{
+							if ( item->getDuckPlayer() == PLAYER_NUM )
+							{
+								if ( ((item->appearance % items[TOOL_DUCK].variations) / MAXPLAYERS) == duck.first )
+								{
+									birdInHand = true;
+									break;
+								}
+							}
+						}
+					}
+				}
+
+				if ( !birdInHand )
+				{
+					if ( multiplayer == CLIENT )
+					{
+						// request duck
+						strcpy((char*)net_packet->data, "DUCK");
+						net_packet->data[4] = PLAYER_NUM;
+						net_packet->data[5] = duck.first;
+						net_packet->address.host = net_server.host;
+						net_packet->address.port = net_server.port;
+						net_packet->len = 6;
+						sendPacketSafe(net_sock, -1, net_packet, 0);
+					}
+					else
+					{
+						players[PLAYER_NUM]->mechanics.pendingDucks.push_back(
+							std::make_pair(duck.first, ticks + (3 + (local_rng.rand() % 30)) * TICKS_PER_SECOND));
+					}
+				}
+			}
+		}
+
+		if ( PLAYER_ALIVETIME > 300 && players[PLAYER_NUM]->mechanics.pendingDucks.size() )
+		{
+			for ( auto it = players[PLAYER_NUM]->mechanics.pendingDucks.begin(); it != players[PLAYER_NUM]->mechanics.pendingDucks.end(); )
+			{
+				if ( ticks >= it->second )
+				{
+					int dirx = local_rng.rand() % 2;
+					int diry = local_rng.rand() % 2;
+					int mapx = dirx ? 1 : map.width - 2;
+					int mapy = diry ? 1 : map.height - 2;
+
+					int appearance = it->first * MAXPLAYERS + PLAYER_NUM;
+					Item* duckItem = newItem(TOOL_DUCK, EXCELLENT, 0, 1, appearance, true, nullptr);
+					duckItem->applyDuck(0, mapx * 16 + 8.0, mapy * 16 + 8.0, nullptr, true);
+					free(duckItem);
+					it = players[PLAYER_NUM]->mechanics.pendingDucks.erase(it);
+				}
+				else
+				{
+					++it;
+				}
+			}
+		}
+
 		if ( PLAYER_NUM == clientnum ) // specifically the host - in splitscreen we only process this once for all players.
 		{
 			if ( PLAYER_ALIVETIME == 300 && gameModeManager.currentMode == GameModeManager_t::GameModes::GAME_MODE_DEFAULT )
@@ -5389,6 +8122,30 @@ void actPlayer(Entity* my)
 				}
 			}
 
+			if ( my->effectShapeshift == NOTHING && stats[PLAYER_NUM]->shield && stats[PLAYER_NUM]->shield->type == TOOL_DUCK )
+			{
+				if ( stats[PLAYER_NUM]->shield->getDuckPlayer() == PLAYER_NUM )
+				{
+					for ( auto& duck : players[PLAYER_NUM]->mechanics.ducksInARow )
+					{
+						if ( duck.first == ((stats[PLAYER_NUM]->shield->appearance % items[TOOL_DUCK].variations) / MAXPLAYERS) )
+						{
+							duck.second++;
+							if ( duck.second % (1 * TICKS_PER_SECOND) == 0 )
+							{
+								Compendium_t::Events_t::eventUpdate(PLAYER_NUM, Compendium_t::CPDM_GYROBOT_TIME_SPENT, TOOL_DUCK, (1 * TICKS_PER_SECOND));
+							}
+							if ( duck.second == 15 * 60 * TICKS_PER_SECOND )
+							{
+								createEnsembleHUDParticleCircling(my);
+								playSoundEntityLocal(my, 784 + local_rng.rand() % 2, 128);
+							}
+							break;
+						}
+					}
+				}
+			}
+
 			if ( players[PLAYER_NUM]->movement.monsterEmoteGimpTimer > 0 )
 			{
 				--players[PLAYER_NUM]->movement.monsterEmoteGimpTimer;
@@ -5405,10 +8162,27 @@ void actPlayer(Entity* my)
 				{
 					serverUpdateEntityBodypart(my, i);
 				}
+				// extra torso limb
+				serverUpdateEntityBodypart(my, 13);
 			}
 		}
 		if ( multiplayer != CLIENT )
 		{
+			if ( stats[PLAYER_NUM]->getEffectActive(EFF_PROJECT_SPIRIT) )
+			{
+				if ( PLAYER_ALIVETIME == 25 )
+				{
+					stats[PLAYER_NUM]->EFFECTS_TIMERS[EFF_PROJECT_SPIRIT] = 1;
+				}
+				else if ( PLAYER_ALIVETIME > 25 && !players[PLAYER_NUM]->ghost.isActive() )
+				{
+					if ( stats[PLAYER_NUM]->EFFECTS_ACCRETION_TIME[EFF_PROJECT_SPIRIT] >= 5 * TICKS_PER_SECOND )
+					{
+						stats[PLAYER_NUM]->EFFECTS_TIMERS[EFF_PROJECT_SPIRIT] = 1;
+					}
+				}
+			}
+
 			if ( PLAYER_ALIVETIME == 50 && currentlevel == 0 )
 			{
 				int monsterSquad = 0;
@@ -5466,7 +8240,7 @@ void actPlayer(Entity* my)
 						}
 					}
 				}
-				if ( stats[PLAYER_NUM]->EFFECTS[EFF_WITHDRAWAL] )
+				if ( stats[PLAYER_NUM]->getEffectActive(EFF_WITHDRAWAL) )
 				{
 					if ( PLAYER_ALIVETIME == 500 )
 					{
@@ -5613,14 +8387,44 @@ void actPlayer(Entity* my)
 		}
 	}
 
+	if ( players[PLAYER_NUM]->isLocalPlayer() && PLAYER_ALIVETIME == 10 && currentlevel > 0 && !intro )
+	{
+		auto& appraisal = players[PLAYER_NUM]->inventoryUI.appraisal;
+		real_t appraisalTimerReduce = 0.75 - 0.25 * std::max(0, std::min(100, (stats[PLAYER_NUM]->getModifiedProficiency(PRO_APPRAISAL) + statGetPER(stats[PLAYER_NUM], my)))) / 100.0;
+		for ( auto node = stats[PLAYER_NUM]->inventory.first; node; node = node->next )
+		{
+			if ( Item* item = (Item*)node->element )
+			{
+				if ( !item->identified )
+				{
+					auto find = appraisal.appraisalProgressionItems.find(item->uid);
+					if ( find == appraisal.appraisalProgressionItems.end() )
+					{
+						appraisal.appraisalProgressionItems[item->uid] = std::max((int)(appraisalTimerReduce * appraisal.getAppraisalTime(item)), 1);
+					}
+					else
+					{
+						appraisal.appraisalProgressionItems[item->uid] = std::max((int)(appraisalTimerReduce * appraisal.appraisalProgressionItems[item->uid]), 1);
+					}
+
+					if ( appraisal.current_item == item->uid )
+					{
+						appraisal.timer = std::max(1, std::min(appraisal.timer, appraisal.appraisalProgressionItems[item->uid]));
+					}
+				}
+			}
+		}
+	}
+
 	if ( players[PLAYER_NUM]->isLocalPlayer() 
-		&& players[PLAYER_NUM]->inventoryUI.appraisal.timer > 0 )
+		&& players[PLAYER_NUM]->inventoryUI.appraisal.timer > 0 && !intro )
 	{
 		Item* tempItem = uidToItem(players[PLAYER_NUM]->inventoryUI.appraisal.current_item);
 		if ( tempItem )
 		{
 			if ( tempItem->identified )
 			{
+				players[PLAYER_NUM]->inventoryUI.appraisal.appraisalProgressionItems.erase(players[PLAYER_NUM]->inventoryUI.appraisal.current_item);
 				players[PLAYER_NUM]->inventoryUI.appraisal.timer = 0;
 				players[PLAYER_NUM]->inventoryUI.appraisal.current_item = 0;
 			}
@@ -5634,6 +8438,7 @@ void actPlayer(Entity* my)
 				tempItem->identified = true;
 				tempItem->notifyIcon = true;
 				messagePlayer(PLAYER_NUM, MESSAGE_INVENTORY, Language::get(570), tempItem->description());
+				players[PLAYER_NUM]->inventoryUI.appraisal.appraisalProgressionItems.erase(players[PLAYER_NUM]->inventoryUI.appraisal.current_item);
 				players[PLAYER_NUM]->inventoryUI.appraisal.current_item = 0;
 				players[PLAYER_NUM]->inventoryUI.appraisal.timer = 0;
 
@@ -5698,43 +8503,7 @@ void actPlayer(Entity* my)
 				{
 					if ( !appearancesOfSimilarItems.empty() )
 					{
-						Uint32 originalAppearance = tempItem->appearance;
-						int originalVariation = originalAppearance % items[tempItem->type].variations;
-
-						int tries = 100;
-						// we need to find a unique appearance within the list.
-						tempItem->appearance = local_rng.rand();
-						if ( tempItem->appearance % items[tempItem->type].variations != originalVariation )
-						{
-							// we need to match the variation for the new appearance, take the difference so new varation matches
-							int change = (tempItem->appearance % items[tempItem->type].variations - originalVariation);
-							if ( tempItem->appearance < change ) // underflow protection
-							{
-								tempItem->appearance += items[tempItem->type].variations;
-							}
-							tempItem->appearance -= change;
-							int newVariation = tempItem->appearance % items[tempItem->type].variations;
-							assert(newVariation == originalVariation);
-						}
-						auto it = appearancesOfSimilarItems.find(tempItem->appearance);
-						while ( it != appearancesOfSimilarItems.end() && tries > 0 )
-						{
-							tempItem->appearance = local_rng.rand();
-							if ( tempItem->appearance % items[tempItem->type].variations != originalVariation )
-							{
-								// we need to match the variation for the new appearance, take the difference so new varation matches
-								int change = (tempItem->appearance % items[tempItem->type].variations - originalVariation);
-								if ( tempItem->appearance < change ) // underflow protection
-								{
-									tempItem->appearance += items[tempItem->type].variations;
-								}
-								tempItem->appearance -= change;
-								int newVariation = tempItem->appearance % items[tempItem->type].variations;
-								assert(newVariation == originalVariation);
-							}
-							it = appearancesOfSimilarItems.find(tempItem->appearance);
-							--tries;
-						}
+						Item::itemFindUniqueAppearance(tempItem, appearancesOfSimilarItems);
 					}
 
 					if ( multiplayer == CLIENT && itemIsEquipped(tempItem, PLAYER_NUM) && players[PLAYER_NUM]->paperDoll.isItemOnDoll(*tempItem) )
@@ -5746,22 +8515,30 @@ void actPlayer(Entity* my)
 			else
 			{
 				players[PLAYER_NUM]->inventoryUI.appraisal.timer -= 1; //De-increment appraisal timer.
+				int checkAppraiseTime = players[PLAYER_NUM]->inventoryUI.appraisal.getAppraisalTime(tempItem);
+				if ( checkAppraiseTime < players[PLAYER_NUM]->inventoryUI.appraisal.timer )
+				{
+					players[PLAYER_NUM]->inventoryUI.appraisal.timer = checkAppraiseTime;
+				}
+				players[PLAYER_NUM]->inventoryUI.appraisal.appraisalProgressionItems[players[PLAYER_NUM]->inventoryUI.appraisal.current_item] = players[PLAYER_NUM]->inventoryUI.appraisal.timer;
 				if ( players[PLAYER_NUM]->inventoryUI.appraisal.timer <= 0)
 				{
 					players[PLAYER_NUM]->inventoryUI.appraisal.timer = 0;
+					players[PLAYER_NUM]->inventoryUI.appraisal.appraisalProgressionItems.erase(players[PLAYER_NUM]->inventoryUI.appraisal.current_item);
 
 					//Cool. Time to identify the item.
 					bool success = false;
 					if ( stats[PLAYER_NUM]->getModifiedProficiency(PRO_APPRAISAL) < 100 )
 					{
-						if ( tempItem->type != GEM_GLASS )
+						/*if ( tempItem->type != GEM_GLASS )
 						{
-							success = (stats[PLAYER_NUM]->getModifiedProficiency(PRO_APPRAISAL) + my->getPER() * 5 >= items[tempItem->type].value / 10);
+							success = (stats[PLAYER_NUM]->getModifiedProficiency(PRO_APPRAISAL) + my->getPER() * 5 >= items[tempItem->type].gold_value / 10);
 						}
 						else
 						{
 							success = (stats[PLAYER_NUM]->getModifiedProficiency(PRO_APPRAISAL) + my->getPER() * 5 >= 100);
-						}
+						}*/
+						success = players[PLAYER_NUM]->inventoryUI.appraisal.appraisalPossible(tempItem);
 					}
 					else
 					{
@@ -5787,56 +8564,76 @@ void actPlayer(Entity* my)
 					}
 
 					//Attempt a level up.
-					if ( tempItem && items[tempItem->type].value > 0 && stats[PLAYER_NUM] )
+					if ( tempItem && tempItem->getGoldValue() > 0 && stats[PLAYER_NUM] )
 					{
 						if ( tempItem->identified )
 						{
 							int appraisalEaseOfDifficulty = 0;
-							if ( items[tempItem->type].value < 100 )
+							bool increaseSkill = false;
+							if ( stats[PLAYER_NUM]->getProficiency(PRO_APPRAISAL) < 50 )
 							{
-								// easy junk items
-								appraisalEaseOfDifficulty = 2;
-							}
-							else if ( items[tempItem->type].value < 200 )
-							{
-								// medium
-								appraisalEaseOfDifficulty = 1;
-							}
-							else if ( items[tempItem->type].value < 300 )
-							{
-								// medium
-								appraisalEaseOfDifficulty = 0;
-							}
-							else if ( items[tempItem->type].value < 400 )
-							{
-								// hardest
-								appraisalEaseOfDifficulty = -1;
-							}
-							else
-							{
-								// hardest
-								appraisalEaseOfDifficulty = -1;
-							}
-							appraisalEaseOfDifficulty += stats[PLAYER_NUM]->getProficiency(PRO_APPRAISAL) / 20;
-							// difficulty ranges from 1-in-1 to 1-in-6
-							appraisalEaseOfDifficulty = std::max(appraisalEaseOfDifficulty, 1);
-							//messagePlayer(0, "Appraisal level up chance: 1 in %d", appraisalEaseOfDifficulty);
-							if ( local_rng.rand() % appraisalEaseOfDifficulty == 0 )
-							{
-								if ( multiplayer == CLIENT )
+								if ( tempItem->getGoldValue() < 100 )
 								{
-									// request level up
-									strcpy((char*)net_packet->data, "CSKL");
-									net_packet->data[4] = PLAYER_NUM;
-									net_packet->data[5] = PRO_APPRAISAL;
-									net_packet->address.host = net_server.host;
-									net_packet->address.port = net_server.port;
-									net_packet->len = 6;
-									sendPacketSafe(net_sock, -1, net_packet, 0);
+									// easy junk items
+									appraisalEaseOfDifficulty = 2;
+								}
+								else if ( tempItem->getGoldValue() < 200 )
+								{
+									// medium
+									appraisalEaseOfDifficulty = 1;
+								}
+								else if ( tempItem->getGoldValue() < 300 )
+								{
+									// medium
+									appraisalEaseOfDifficulty = 0;
+								}
+								else if ( tempItem->getGoldValue() < 400 )
+								{
+									// hardest
+									appraisalEaseOfDifficulty = -1;
 								}
 								else
 								{
-									my->increaseSkill(PRO_APPRAISAL);
+									// hardest
+									appraisalEaseOfDifficulty = -1;
+								}
+								appraisalEaseOfDifficulty += stats[PLAYER_NUM]->getProficiency(PRO_APPRAISAL) / 20;
+								// difficulty ranges from 1-in-1 to 1-in-6
+								appraisalEaseOfDifficulty = std::max(appraisalEaseOfDifficulty, 1);
+								//messagePlayer(0, "Appraisal level up chance: 1 in %d", appraisalEaseOfDifficulty);
+								increaseSkill = true;
+							}
+
+							if ( tempItem->getGoldValue() > 300 || tempItem->type == GEM_GLASS )
+							{
+								appraisalEaseOfDifficulty = 1;
+								increaseSkill = true;
+							}
+
+							if ( increaseSkill && appraisalEaseOfDifficulty > 0 )
+							{
+								int attempts = itemTypeIsQuiver(tempItem->type) ? 1 : tempItem->count;
+								for ( int i = 0; i < attempts; ++i )
+								{
+									if ( local_rng.rand() % appraisalEaseOfDifficulty == 0 )
+									{
+										if ( multiplayer == CLIENT )
+										{
+											// request level up
+											strcpy((char*)net_packet->data, "CSKL");
+											net_packet->data[4] = PLAYER_NUM;
+											net_packet->data[5] = PRO_APPRAISAL;
+											net_packet->address.host = net_server.host;
+											net_packet->address.port = net_server.port;
+											net_packet->len = 6;
+											sendPacketSafe(net_sock, -1, net_packet, 0);
+										}
+										else
+										{
+											my->increaseSkill(PRO_APPRAISAL);
+										}
+										break;
+									}
 								}
 							}
 						}
@@ -5869,7 +8666,7 @@ void actPlayer(Entity* my)
 							Item* item2 = (Item*)node->element;
 							if ( item2 && item2 != tempItem && !itemCompare(tempItem, item2, false) )
 							{
-								if ( (itemTypeIsQuiver(item2->type) && (tempItem->count + item2->count) >= QUIVER_MAX_AMMO_QTY)
+								if ( ((itemTypeIsQuiver(item2->type) || itemTypeIsThrownBall(item2->type)) && (tempItem->count + item2->count) >= QUIVER_MAX_AMMO_QTY)
 									|| ((item2->type == TOOL_MAGIC_SCRAP || item2->type == TOOL_METAL_SCRAP)
 										&& (tempItem->count + item2->count) >= SCRAP_MAX_STACK_QTY) )
 								{
@@ -5920,18 +8717,20 @@ void actPlayer(Entity* my)
 									if ( multiplayer == CLIENT && itemIsEquipped(item2, PLAYER_NUM) )
 									{
 										// if incrementing qty and holding item, then send "equip" for server to update their count of your held item.
-										strcpy((char*)net_packet->data, "EQUS");
-										SDLNet_Write32((Uint32)item2->type, &net_packet->data[4]);
-										SDLNet_Write32((Uint32)item2->status, &net_packet->data[8]);
-										SDLNet_Write32((Uint32)item2->beatitude, &net_packet->data[12]);
-										SDLNet_Write32((Uint32)item2->count, &net_packet->data[16]);
-										SDLNet_Write32((Uint32)item2->appearance, &net_packet->data[20]);
-										net_packet->data[24] = item2->identified;
-										net_packet->data[25] = PLAYER_NUM;
-										net_packet->address.host = net_server.host;
-										net_packet->address.port = net_server.port;
-										net_packet->len = 27;
-										sendPacketSafe(net_sock, -1, net_packet, 0);
+										Item** slot = itemSlot(stats[PLAYER_NUM], item2);
+										if ( slot )
+										{
+											if ( slot == &stats[PLAYER_NUM]->weapon )
+											{
+												clientSendEquipUpdateToServer(EQUIP_ITEM_SLOT_WEAPON, EQUIP_ITEM_SUCCESS_UPDATE_QTY, PLAYER_NUM,
+													item2->type, item2->status, item2->beatitude, item2->count, item2->appearance, item2->identified);
+											}
+											else if ( slot == &stats[PLAYER_NUM]->shield )
+											{
+												clientSendEquipUpdateToServer(EQUIP_ITEM_SLOT_SHIELD, EQUIP_ITEM_SUCCESS_UPDATE_QTY, PLAYER_NUM,
+													item2->type, item2->status, item2->beatitude, item2->count, item2->appearance, item2->identified);
+											}
+										}
 									}
 									if ( tempItem->count <= 0 )
 									{
@@ -6016,61 +8815,7 @@ void actPlayer(Entity* my)
 						{
 							if ( !appearancesOfSimilarItems.empty() )
 							{
-								Uint32 originalAppearance = tempItem->appearance;
-								int originalVariation = originalAppearance % items[tempItem->type].variations;
-
-								int tries = 100;
-								bool robot = false;
-								// we need to find a unique appearance within the list.
-								if ( tempItem->type == TOOL_SENTRYBOT || tempItem->type == TOOL_SPELLBOT || tempItem->type == TOOL_GYROBOT
-									|| tempItem->type == TOOL_DUMMYBOT )
-								{
-									robot = true;
-									tempItem->appearance += (local_rng.rand() % 100000) * 10;
-								}
-								else
-								{
-									tempItem->appearance = local_rng.rand();
-									if ( tempItem->appearance % items[tempItem->type].variations != originalVariation )
-									{
-										// we need to match the variation for the new appearance, take the difference so new varation matches
-										int change = (tempItem->appearance % items[tempItem->type].variations - originalVariation);
-										if ( tempItem->appearance < change ) // underflow protection
-										{
-											tempItem->appearance += items[tempItem->type].variations;
-										}
-										tempItem->appearance -= change;
-										int newVariation = tempItem->appearance % items[tempItem->type].variations;
-										assert(newVariation == originalVariation);
-									}
-								}
-								auto it = appearancesOfSimilarItems.find(tempItem->appearance);
-								while ( it != appearancesOfSimilarItems.end() && tries > 0 )
-								{
-									if ( robot )
-									{
-										tempItem->appearance += (local_rng.rand() % 100000) * 10;
-									}
-									else
-									{
-										tempItem->appearance = local_rng.rand();
-										if ( tempItem->appearance % items[tempItem->type].variations != originalVariation )
-										{
-											// we need to match the variation for the new appearance, take the difference so new varation matches
-											int change = (tempItem->appearance % items[tempItem->type].variations - originalVariation);
-											if ( tempItem->appearance < change ) // underflow protection
-											{
-												tempItem->appearance += items[tempItem->type].variations;
-											}
-											tempItem->appearance -= change;
-											int newVariation = tempItem->appearance % items[tempItem->type].variations;
-											assert(newVariation == originalVariation);
-										}
-									}
-									it = appearancesOfSimilarItems.find(tempItem->appearance);
-									--tries;
-								}
-
+								Item::itemFindUniqueAppearance(tempItem, appearancesOfSimilarItems);
 							}
 							if ( multiplayer == CLIENT && itemIsEquipped(tempItem, PLAYER_NUM) && players[PLAYER_NUM]->paperDoll.isItemOnDoll(*tempItem) )
 							{
@@ -6253,6 +8998,27 @@ void actPlayer(Entity* my)
 					}
 				}
 			}
+
+			real_t renderSetpoint = 0.0;
+			if ( stats[PLAYER_NUM]->getEffectActive(EFF_MIST_FORM) )
+			{
+				renderSetpoint = 1.0;
+			}
+			if ( stats[PLAYER_NUM]->getEffectActive(EFF_FORCE_SHIELD) > 0 )
+			{
+				renderSetpoint += 0.1;
+			}
+			else if ( stats[PLAYER_NUM]->getEffectActive(EFF_REFLECTOR_SHIELD) > 0 )
+			{
+				renderSetpoint += 0.2;
+			}
+
+			if ( abs(my->mistformGLRender - renderSetpoint) > 0.05
+				|| (my->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10)) )
+			{
+				my->mistformGLRender = renderSetpoint;
+				serverUpdateEntityFSkill(my, 22);
+			}
 		}
 	}
 
@@ -6260,6 +9026,7 @@ void actPlayer(Entity* my)
 	bool oldInsectoidLevitate = players[PLAYER_NUM]->movement.insectoidLevitating;
 	bool& insectoidLevitating = players[PLAYER_NUM]->movement.insectoidLevitating;
 	insectoidLevitating = false;
+	bool shortModel = false;
 
 	if ( players[PLAYER_NUM]->isLocalPlayer() || multiplayer == SERVER )
 	{
@@ -6277,13 +9044,46 @@ void actPlayer(Entity* my)
 			case CREATURE_IMP:
 				zOffset = -3.5;
 				break;
+			case DRYAD:
+				if ( my->sprite == 1992 || my->sprite == 1993 )
+				{
+					zOffset = 2.5;
+					shortModel = true;
+				}
+				else
+				{
+					zOffset = 0.06;
+				}
+				break;
+			case MYCONID:
+				if ( my->sprite == 1998 )
+				{
+					zOffset = 1.5;
+					shortModel = true;
+				}
+				else
+				{
+					zOffset = -0.5;
+				}
+				break;
+			case GREMLIN:
+				zOffset = 1.5;
+				shortModel = true;
+				break;
+			case GNOME:
+				zOffset = 2.25;
+				shortModel = true;
+				break;
+			case SALAMANDER:
+				zOffset = -1.25;
+				break;
 			default:
 				break;
 		}
-		bool prevlevitating = false;
+		bool prevlevitating = players[PLAYER_NUM]->mechanics.previouslyLevitating;
 		if ( multiplayer != CLIENT )
 		{
-			if ( abs(zOffset) <= 0.05 )
+			/*if ( abs(zOffset) <= 0.05 )
 			{
 				if ( (my->z >= -2.05 && my->z <= -1.95 ) || (my->z >= -1.55 && my->z <= -1.45) )
 				{
@@ -6297,11 +9097,11 @@ void actPlayer(Entity* my)
 				{
 					prevlevitating = true;
 				}
-			}
+			}*/
 		}
 
 		// sleeping
-		if ( stats[PLAYER_NUM]->EFFECTS[EFF_ASLEEP] )
+		if ( stats[PLAYER_NUM]->getEffectActive(EFF_ASLEEP) || stats[PLAYER_NUM]->getEffectActive(EFF_PROJECT_SPIRIT) )
 		{
 			switch ( playerRace )
 			{
@@ -6320,6 +9120,35 @@ void actPlayer(Entity* my)
 				case SUCCUBUS:
 				case TROLL:
 					my->z = 1.5;
+					break;
+				case DRYAD:
+					if ( my->sprite == 1992 || my->sprite == 1993 )
+					{
+						my->z = 3.75;
+					}
+					else
+					{
+						my->z = 3.0;
+					}
+					break;
+				case MYCONID:
+					if ( my->sprite == 1998 )
+					{
+						my->z = 3.75;
+					}
+					else
+					{
+						my->z = 3.0;
+					}
+					break;
+				case GREMLIN:
+					my->z = 4.0;
+					break;
+				case GNOME:
+					my->z = 4.0;
+					break;
+				case SALAMANDER:
+					my->z = 3.0;
 					break;
 				default:
 					my->z = 1.5;
@@ -6342,11 +9171,18 @@ void actPlayer(Entity* my)
 
 		// levitation
 		levitating = isLevitating(stats[PLAYER_NUM]);
+		players[PLAYER_NUM]->mechanics.previouslyLevitating = levitating;
 
 		if ( levitating )
 		{
 			my->z -= 1; // floating
-			insectoidLevitating = (playerRace == INSECTOID && stats[PLAYER_NUM]->EFFECTS[EFF_FLUTTER]);
+			insectoidLevitating = (playerRace == INSECTOID && stats[PLAYER_NUM]->getEffectActive(EFF_FLUTTER));
+			if ( playerRace == SALAMANDER
+				&& stats[PLAYER_NUM]->getEffectActive(EFF_SALAMANDER_HEART) >= 1 && stats[PLAYER_NUM]->getEffectActive(EFF_SALAMANDER_HEART) <= 2 )
+			{
+				insectoidLevitating = true;
+				my->z += 1;
+			}
 			if ( players[PLAYER_NUM]->isLocalPlayer() )
 			{
 				int x = std::min(std::max<unsigned int>(1, my->x / 16), map.width - 2);
@@ -6357,6 +9193,24 @@ void actPlayer(Entity* my)
 				}
 			}
 		}
+		else
+		{
+			//if ( players[PLAYER_NUM]->isLocalPlayer() || multiplayer == SERVER )
+			//{
+			//	int x = std::min(std::max<unsigned int>(0, floor(my->x / 16)), map.width - 1);
+			//	int y = std::min(std::max<unsigned int>(0, floor(my->y / 16)), map.height - 1);
+			//	int mapTile = map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height];
+			//	if ( animatedtiles[mapTile] )
+			//	{
+			//		if ( mapTile >= 447 && mapTile <= 454 )
+			//		{
+			//			my->z += 1.0; // float a little lower in bog.
+			//		}
+			//	}
+			//}
+		}
+
+		my->creatureHandleLiftZ();
 
 		if ( !levitating && prevlevitating )
 		{
@@ -6487,7 +9341,13 @@ void actPlayer(Entity* my)
 	}
 	else
 	{
-		if ( playerRace == INSECTOID && stats[PLAYER_NUM]->EFFECTS[EFF_FLUTTER] && (my->z >= -2.05 && my->z <= -1.95) )
+		if ( playerRace == INSECTOID && stats[PLAYER_NUM]->getEffectActive(EFF_FLUTTER) && (my->z >= -2.05 && my->z <= -1.95) )
+		{
+			insectoidLevitating = true;
+		}
+		if ( playerRace == SALAMANDER
+			&& ((stats[PLAYER_NUM]->getEffectActive(EFF_SALAMANDER_HEART) >= 1 && stats[PLAYER_NUM]->getEffectActive(EFF_SALAMANDER_HEART) <= 2)
+				|| (my->sprite == 2016 || my->sprite == 2017)) )
 		{
 			insectoidLevitating = true;
 		}
@@ -6502,6 +9362,7 @@ void actPlayer(Entity* my)
 			waterwalkingboots = true;
 		}
 	}
+
 	bool swimming = players[PLAYER_NUM]->movement.isPlayerSwimming();
 	if ( players[PLAYER_NUM]->isLocalPlayer() || multiplayer == SERVER )
 	{
@@ -6511,7 +9372,7 @@ void actPlayer(Entity* my)
 			int y = std::min(std::max<unsigned int>(0, floor(my->y / 16)), map.height - 1);
 			if ( local_rng.rand() % 400 == 0 && multiplayer != CLIENT )
 			{
-				my->increaseSkill(PRO_SWIMMING);
+				my->increaseSkill(PRO_LEGACY_SWIMMING);
 			}
 			my->z = 7;
 			if ( playerRace == SPIDER || playerRace == RAT )
@@ -6552,15 +9413,18 @@ void actPlayer(Entity* my)
 					playSoundPlayer(PLAYER_NUM, 249, 128);
 					cameravars[PLAYER_NUM].shakex += .1;
 					cameravars[PLAYER_NUM].shakey += 10;
+					createWaterSplash(my->x, my->y, 30);
 				}
 				else if ( swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] && stats[PLAYER_NUM]->type == AUTOMATON )
 				{
 					messagePlayer(PLAYER_NUM, MESSAGE_STATUS, Language::get(3702));
 					playSound(136, 128);
+					createWaterSplash(my->x, my->y, 30);
 				}
 				else if ( swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] )
 				{
 					playSound(136, 128);
+					createWaterSplash(my->x, my->y, 30);
 				}
 			}
 
@@ -6589,16 +9453,16 @@ void actPlayer(Entity* my)
 
 						Compendium_t::Events_t::eventUpdateWorld(PLAYER_NUM, Compendium_t::CPDM_SWIM_BURN_CURED, "murky water", 1);
 					}
-					if ( stats[PLAYER_NUM]->EFFECTS[EFF_POLYMORPH] )
+					if ( stats[PLAYER_NUM]->getEffectActive(EFF_POLYMORPH) )
 					{
-						if ( stats[PLAYER_NUM]->EFFECTS[EFF_POLYMORPH] )
+						if ( stats[PLAYER_NUM]->getEffectActive(EFF_POLYMORPH) )
 						{
 							my->setEffect(EFF_POLYMORPH, false, 0, true);
 							my->effectPolymorph = 0;
 							serverUpdateEntitySkill(my, 50);
 
 							messagePlayer(PLAYER_NUM, MESSAGE_STATUS, Language::get(3192));
-							if ( !stats[PLAYER_NUM]->EFFECTS[EFF_SHAPESHIFT] )
+							if ( !stats[PLAYER_NUM]->getEffectActive(EFF_SHAPESHIFT) )
 							{
 								messagePlayer(PLAYER_NUM, MESSAGE_STATUS, Language::get(3185));
 							}
@@ -6662,7 +9526,7 @@ void actPlayer(Entity* my)
 					if ( !my->flags[BURNING] )
 					{
 						// Attempt to set the Entity on fire
-						my->SetEntityOnFire();
+						my->SetEntityOnFire(nullptr);
 					}
 					if ( stats[PLAYER_NUM]->type == AUTOMATON || stats[PLAYER_NUM]->type == SKELETON )
 					{
@@ -6704,7 +9568,7 @@ void actPlayer(Entity* my)
 		CalloutRadialMenu& calloutMenu = CalloutMenu[PLAYER_NUM];
 
 		// object interaction
-		if ( intro == false )
+		if ( intro == false && !players[PLAYER_NUM]->ghost.isActive() )
 		{
 			clickDescription(PLAYER_NUM, NULL); // inspecting objects
 			doStatueEditor(PLAYER_NUM);
@@ -6857,7 +9721,6 @@ void actPlayer(Entity* my)
 							{
 								real_t startx = cameras[PLAYER_NUM].x * 16.0;
 								real_t starty = cameras[PLAYER_NUM].y * 16.0;
-								static ConsoleVariable<float> cvar_followerStartZ("/follower_start_z", -2.5);
 								real_t startz = cameras[PLAYER_NUM].z + (4.5 - cameras[PLAYER_NUM].z) / 2.0 + *cvar_followerStartZ;
 								real_t pitch = cameras[PLAYER_NUM].vang;
 								if ( pitch < 0 || pitch > PI )
@@ -6865,8 +9728,6 @@ void actPlayer(Entity* my)
 									pitch = 0;
 								}
 
-								static ConsoleVariable<float> cvar_followerMoveTo("/follower_moveto_z", 0.1);
-								static ConsoleVariable<float> cvar_followerStartZLimit("/follower_start_z_limit", 7.5);
 								// draw line from the players height and direction until we hit the ground.
 								real_t previousx = startx;
 								real_t previousy = starty;
@@ -7306,53 +10167,101 @@ void actPlayer(Entity* my)
 					}
 				}
 			}
+
+			Entity* telekinesisTarget = nullptr;
+			if ( selectedEntity[PLAYER_NUM] == nullptr )
+			{
+				if ( players[PLAYER_NUM]->magic.telekinesisTarget != 0 )
+				{
+					telekinesisTarget = uidToEntity(players[PLAYER_NUM]->magic.telekinesisTarget);
+					selectedEntity[PLAYER_NUM] = telekinesisTarget;
+					players[PLAYER_NUM]->magic.telekinesisTarget = 0;
+				}
+			}
+
 			if ( selectedEntity[PLAYER_NUM] != NULL )
 			{
 				followerMenu.followerToCommand = nullptr;
 				Entity* parent = uidToEntity(selectedEntity[PLAYER_NUM]->skill[2]);
-				if ( selectedEntity[PLAYER_NUM]->behavior == &actMonster || (parent && parent->behavior == &actMonster) )
+				if ( !telekinesisTarget )
 				{
-					// see if we selected a follower to process right click menu.
-					if ( parent && parent->monsterAllyIndex == PLAYER_NUM )
+					if ( selectedEntity[PLAYER_NUM]->behavior == &actMonster || (parent && parent->behavior == &actMonster) )
 					{
-						followerMenu.followerToCommand = parent;
-						//messagePlayer(0, "limb");
-					}
-					else if ( selectedEntity[PLAYER_NUM]->monsterAllyIndex == PLAYER_NUM )
-					{
-						followerMenu.followerToCommand = selectedEntity[PLAYER_NUM];
-						//messagePlayer(0, "head");
-					}
-
-					if ( followerMenu.followerToCommand )
-					{
-						if ( players[PLAYER_NUM] && players[PLAYER_NUM]->entity
-							&& followerMenu.followerToCommand->monsterTarget == players[PLAYER_NUM]->entity->getUID() )
+						// see if we selected a follower to process right click menu.
+						if ( parent && parent->monsterAllyIndex == PLAYER_NUM )
 						{
-							// your ally is angry at you!
-							followerMenu.followerToCommand = nullptr;
-							followerMenu.optionPrevious = -1;
+							followerMenu.followerToCommand = parent;
+							//messagePlayer(0, "limb");
 						}
-						else
+						else if ( selectedEntity[PLAYER_NUM]->monsterAllyIndex == PLAYER_NUM )
 						{
-							followerMenu.recentEntity = followerMenu.followerToCommand;
-							followerMenu.initfollowerMenuGUICursor(true);
-							followerMenu.updateScrollPartySheet();
-							selectedEntity[PLAYER_NUM] = NULL;
-							Player::soundActivate();
+							followerMenu.followerToCommand = selectedEntity[PLAYER_NUM];
+							//messagePlayer(0, "head");
+						}
+
+						if ( followerMenu.followerToCommand )
+						{
+							if ( players[PLAYER_NUM] && players[PLAYER_NUM]->entity
+								&& followerMenu.followerToCommand->monsterTarget == players[PLAYER_NUM]->entity->getUID() )
+							{
+								// your ally is angry at you!
+								followerMenu.followerToCommand = nullptr;
+								followerMenu.optionPrevious = -1;
+							}
+							else
+							{
+								followerMenu.recentEntity = followerMenu.followerToCommand;
+								followerMenu.initfollowerMenuGUICursor(true);
+								followerMenu.updateScrollPartySheet();
+								selectedEntity[PLAYER_NUM] = NULL;
+								Player::soundActivate();
+							}
 						}
 					}
 				}
+
 				if ( selectedEntity[PLAYER_NUM] )
 				{
 					input.consumeBinaryToggle("Use");
 					//input.consumeBindingsSharedWithBinding("Use");
 					bool foundTinkeringKit = false;
-					if ( entityDist(my, selectedEntity[PLAYER_NUM]) <= TOUCHRANGE )
+					bool wallLockInteract = false;
+					Item* foundWallLockKey = nullptr;
+					if ( telekinesisTarget || entityDist(my, selectedEntity[PLAYER_NUM]) <= TOUCHRANGE )
 					{
 						inrange[PLAYER_NUM] = true;
+						if ( selectedEntity[PLAYER_NUM]->sprite >= 1585 && selectedEntity[PLAYER_NUM]->sprite <= 1592 )
+						{
+							// wall lock keys, overwrite selection to base
+							if ( Entity* parent = uidToEntity(selectedEntity[PLAYER_NUM]->parent) )
+							{
+								if ( parent->behavior == &actWallLock )
+								{
+									selectedEntity[PLAYER_NUM] = parent;
+								}
+							}
+						}
+						else if ( selectedEntity[PLAYER_NUM]->sprite == 1151 || selectedEntity[PLAYER_NUM]->sprite == 1152 )
+						{
+							// wall button, overwrite selection to base
+							if ( Entity* parent = uidToEntity(selectedEntity[PLAYER_NUM]->parent) )
+							{
+								if ( parent->behavior == &actWallButton )
+								{
+									selectedEntity[PLAYER_NUM] = parent;
+								}
+							}
+						}
 
-						if ( (selectedEntity[PLAYER_NUM]->behavior == &actItem
+						if ( selectedEntity[PLAYER_NUM]->behavior == &actWallLock )
+						{
+							wallLockInteract = true;
+							if ( selectedEntity[PLAYER_NUM]->wallLockState == 0 )
+							{
+								foundWallLockKey = players[PLAYER_NUM]->inventoryUI.hasKeyForWallLock(*selectedEntity[PLAYER_NUM]);
+							}
+						}
+						else if ( (selectedEntity[PLAYER_NUM]->behavior == &actItem
 							|| selectedEntity[PLAYER_NUM]->behavior == &actTorch
 							|| selectedEntity[PLAYER_NUM]->behavior == &actCrystalShard)
 							&& stats[PLAYER_NUM] && stats[PLAYER_NUM]->shield && stats[PLAYER_NUM]->defending
@@ -7373,7 +10282,15 @@ void actPlayer(Entity* my)
 					{
 						if ( inrange[PLAYER_NUM] )
 						{
-							if ( foundTinkeringKit )
+							if ( foundWallLockKey )
+							{
+								strcpy((char*)net_packet->data, "LKEY"); // has key
+							}
+							else if ( wallLockInteract )
+							{
+								strcpy((char*)net_packet->data, "LNOK"); // no key
+							}
+							else if ( foundTinkeringKit )
 							{
 								strcpy((char*)net_packet->data, "SALV");
 							}
@@ -7442,7 +10359,7 @@ void actPlayer(Entity* my)
 					messagePlayer(PLAYER_NUM, MESSAGE_INTERACTION, Language::get(576), stats[i]->name);
 					if ( players[PLAYER_NUM]->isLocalPlayer() && players[i] && players[i]->entity)
 					{
-						if ( !stats[PLAYER_NUM]->EFFECTS[EFF_ROOTED] )
+						if ( !stats[PLAYER_NUM]->getEffectActive(EFF_ROOTED) )
 						{
 							double tangent = atan2(my->y - players[i]->entity->y, my->x - players[i]->entity->x);
 							PLAYER_VELX += cos(tangent);
@@ -7475,6 +10392,11 @@ void actPlayer(Entity* my)
 		}
 		equipmentBonus = std::max(-6, std::min(equipmentBonus, 4));
 	}
+	if ( stats[PLAYER_NUM]->type == GREMLIN )
+	{
+		equipmentBonus += 2;
+	}
+	const int fociCastRange = -2;
 	if (!intro && *cvar_playerLight) {
         if (!players[PLAYER_NUM]->isLocalPlayer() && multiplayer == CLIENT) {
             switch (PLAYER_TORCH) {
@@ -7497,6 +10419,48 @@ void actPlayer(Entity* my)
                     ++range_bonus;
                 }
                 break;
+			case 4:
+				light_type = "magic_foci_idle_red";
+				if ( stats[PLAYER_NUM]->defending ) {
+					range_bonus += fociCastRange;
+				}
+				break;
+			case 5:
+				light_type = "magic_foci_idle_blue";
+				if ( stats[PLAYER_NUM]->defending ) {
+					range_bonus += fociCastRange;
+				}
+				break;
+			case 6:
+				light_type = "magic_foci_idle_purple";
+				if ( stats[PLAYER_NUM]->defending ) {
+					range_bonus += fociCastRange;
+				}
+				break;
+			case 7:
+				light_type = "magic_foci_idle_yellow";
+				if ( stats[PLAYER_NUM]->defending ) {
+					range_bonus += fociCastRange;
+				}
+				break;
+			case 8:
+				light_type = "magic_foci_idle_brown";
+				if ( stats[PLAYER_NUM]->defending ) {
+					range_bonus += fociCastRange;
+				}
+				break;
+			case 9:
+				light_type = "magic_foci_idle_dark";
+				if ( stats[PLAYER_NUM]->defending ) {
+					range_bonus += fociCastRange;
+				}
+				break;
+			case 10:
+				light_type = "magic_foci_idle_light";
+				if ( stats[PLAYER_NUM]->defending ) {
+					range_bonus += fociCastRange;
+				}
+				break;
             }
         } else { // multiplayer != CLIENT
             if (stats[PLAYER_NUM]->shield && showEquipment && isHumanoid) {
@@ -7518,8 +10482,62 @@ void actPlayer(Entity* my)
                         ++range_bonus;
                     }
                 }
+				else if ( stats[PLAYER_NUM]->shield->type == TOOL_FOCI_FIRE ) {
+					light_type = "magic_foci_idle_red";
+					if ( stats[PLAYER_NUM]->defending ) {
+						range_bonus += fociCastRange;
+					}
+				}
+				else if ( stats[PLAYER_NUM]->shield->type == TOOL_FOCI_SNOW ) {
+					light_type = "magic_foci_idle_blue";
+					if ( stats[PLAYER_NUM]->defending ) {
+						range_bonus += fociCastRange;
+					}
+				}
+				else if ( stats[PLAYER_NUM]->shield->type == TOOL_FOCI_NEEDLES ) {
+					light_type = "magic_foci_idle_purple";
+					if ( stats[PLAYER_NUM]->defending ) {
+						range_bonus += fociCastRange;
+					}
+				}
+				else if ( stats[PLAYER_NUM]->shield->type == TOOL_FOCI_ARCS ) {
+					light_type = "magic_foci_idle_yellow";
+					if ( stats[PLAYER_NUM]->defending ) {
+						range_bonus += fociCastRange;
+					}
+				}
+				else if ( stats[PLAYER_NUM]->shield->type == TOOL_FOCI_SAND ) {
+					light_type = "magic_foci_idle_brown";
+					if ( stats[PLAYER_NUM]->defending ) {
+						range_bonus += fociCastRange;
+					}
+				}
+				else if ( stats[PLAYER_NUM]->shield->type == TOOL_FOCI_DARK_LIFE
+					|| stats[PLAYER_NUM]->shield->type == TOOL_FOCI_DARK_RIFT 
+					|| stats[PLAYER_NUM]->shield->type == TOOL_FOCI_DARK_SILENCE 
+					|| stats[PLAYER_NUM]->shield->type == TOOL_FOCI_DARK_SUPPRESS 
+					|| stats[PLAYER_NUM]->shield->type == TOOL_FOCI_DARK_VENGEANCE ) {
+					light_type = "magic_foci_idle_dark";
+					if ( stats[PLAYER_NUM]->defending ) {
+						range_bonus += fociCastRange;
+					}
+				}
+				else if ( stats[PLAYER_NUM]->shield->type == TOOL_FOCI_LIGHT_JUSTICE
+					|| stats[PLAYER_NUM]->shield->type == TOOL_FOCI_LIGHT_PEACE
+					|| stats[PLAYER_NUM]->shield->type == TOOL_FOCI_LIGHT_PROVIDENCE
+					|| stats[PLAYER_NUM]->shield->type == TOOL_FOCI_LIGHT_PURITY
+					|| stats[PLAYER_NUM]->shield->type == TOOL_FOCI_LIGHT_SANCTUARY ) {
+					light_type = "magic_foci_idle_light";
+					if ( stats[PLAYER_NUM]->defending ) {
+						range_bonus += fociCastRange;
+					}
+				}
                 else if (players[PLAYER_NUM]->isLocalPlayer()) {
                     ambientLight = true;
+					if ( stats[PLAYER_NUM]->getEffectActive(EFF_ENSEMBLE_LYRE) )
+					{
+						range_bonus += static_cast<int>(stats[PLAYER_NUM]->getEnsembleEffectBonus(Stat::ENSEMBLE_LYRE_TIER_2));
+					}
 					if ( stats[PLAYER_NUM]->sneaking ) {
 						light_type = "player_sneaking";
 						range_bonus += equipmentBonus;
@@ -7527,13 +10545,20 @@ void actPlayer(Entity* my)
 					else
 					{
 						light_type = "player_ambient";
+						if ( stats[PLAYER_NUM]->getEffectActive(EFF_ENSEMBLE_LYRE) )
+						{
+							light_type = "player_ambient_ensemble";
+						}
 					}
 
                 }
             }
             else if (players[PLAYER_NUM]->isLocalPlayer()) {
                 ambientLight = true;
-                
+				if ( stats[PLAYER_NUM]->getEffectActive(EFF_ENSEMBLE_LYRE) )
+				{
+					range_bonus += static_cast<int>(stats[PLAYER_NUM]->getEnsembleEffectBonus(Stat::ENSEMBLE_LYRE_TIER_2));
+				}
                 // carrying no light source
                 if (playerRace == RAT) {
 					if ( stats[PLAYER_NUM]->sneaking )
@@ -7581,14 +10606,26 @@ void actPlayer(Entity* my)
                 }
                 else {
                     light_type = "player_ambient";
+					if ( stats[PLAYER_NUM]->getEffectActive(EFF_ENSEMBLE_LYRE) )
+					{
+						light_type = "player_ambient_ensemble";
+					}
                 }
             }
         }
 	}
     if (*cvar_playerLight) {
-        if (my->flags[BURNING]) {
+		if (my->flags[BURNING] ) {
             my->light = addLight(my->x / 16, my->y / 16, "player_burning");
         }
+		else if ( my->mistformGLRender > 0.9 )
+		{
+			my->light = addLight(my->x / 16, my->y / 16, "mistform_glow", range_bonus);
+		}
+		else if ( playerRace == SALAMANDER && (my->sprite == 2016 || my->sprite == 2017) )
+		{
+			my->light = addLight(my->x / 16, my->y / 16, "magic_foci_idle_red");
+		}
         else if (!my->light) {
             my->light = addLight(my->x / 16, my->y / 16, light_type, range_bonus, ambientLight ? PLAYER_NUM + 1 : 0);
         }
@@ -7599,7 +10636,7 @@ void actPlayer(Entity* my)
 	{
 		// set head model
         my->sprite = playerHeadSprite(playerRace, stats[PLAYER_NUM]->sex,
-            playerAppearance, PLAYER_ATTACK ? PLAYER_ATTACKTIME : 0);
+            playerAppearance, PLAYER_ATTACK ? PLAYER_ATTACKTIME : 0, PLAYER_NUM);
 	}
 	if ( multiplayer != CLIENT )
 	{
@@ -7685,6 +10722,39 @@ void actPlayer(Entity* my)
 					{
 						Compendium_t::Events_t::eventUpdateCodex(PLAYER_NUM, Compendium_t::CPDM_CLASS_WGT_SLOWEST, "wgt", players[PLAYER_NUM]->movement.getCharacterWeight());
 
+						if ( stats[PLAYER_NUM]->type == MYCONID )
+						{
+							Uint32 lifetime = TICKS_PER_SECOND * 3;
+							Entity* spellTimer = createParticleTimer(my, lifetime + TICKS_PER_SECOND, -1);
+							spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_SPORES_TRAIL;
+							spellTimer->particleTimerCountdownSprite = 248;
+							spellTimer->yaw = 0.0;
+							spellTimer->x = my->x;
+							spellTimer->y = my->y;
+							spellTimer->particleTimerVariable1 = 0;
+							spellTimer->particleTimerVariable2 = SPELL_MYCELIUM_SPORES;
+							spellTimer->particleTimerVariable4 = 0;
+
+							my->thrownProjectileParticleTimerUID = spellTimer->getUID();
+							particleTimerEffects.emplace(std::pair<Uint32, ParticleTimerEffect_t>(spellTimer->getUID(), ParticleTimerEffect_t()));
+
+							auto findEffects = particleTimerEffects.find(spellTimer->getUID());
+							auto& effect = findEffects->second.effectMap[spellTimer->ticks + 1]; // insert x ticks beyond last effect
+							if ( findEffects->second.effectMap.size() == 1 )
+							{
+								effect.firstEffect = true;
+							}
+							int spellID = spellTimer->particleTimerVariable2;
+							auto particleEffectType = (spellID == SPELL_MYCELIUM_BOMB || spellID == SPELL_MYCELIUM_SPORES)
+								? ParticleTimerEffect_t::EffectType::EFFECT_MYCELIUM
+								: ParticleTimerEffect_t::EffectType::EFFECT_SPORES;
+							effect.effectType = particleEffectType;
+							effect.x = static_cast<int>(my->x / 16) * 16.0 + 8.0;
+							effect.y = static_cast<int>(my->y / 16) * 16.0 + 8.0;
+							effect.yaw = 0.0;
+							//floorMagicCreateSpores(my, my->x, my->y, my, 5, SPELL_MYCELIUM_BOMB);
+						}
+
 						// die //TODO: Refactor.
 						playSoundEntity(my, 28, 128);
 						Entity* gib = spawnGib(my);
@@ -7719,6 +10789,16 @@ void actPlayer(Entity* my)
 							spellnode = spellnode->next;
 							spell_t* spell = (spell_t*)oldnode->element;
 							spell->magic_effects_node = NULL;
+							if ( spell->sustainEffectDissipate >= 0 )
+							{
+								if ( stats[PLAYER_NUM]->getEffectActive(spell->sustainEffectDissipate) )
+								{
+									if ( stats[PLAYER_NUM]->EFFECTS_TIMERS[spell->sustainEffectDissipate] > 0 )
+									{
+										stats[PLAYER_NUM]->EFFECTS_TIMERS[spell->sustainEffectDissipate] = 1;
+									}
+								}
+							}
 							list_RemoveNode(oldnode);
 						}
 						int c;
@@ -8004,8 +11084,16 @@ void actPlayer(Entity* my)
 									{
 										continue;
 									}
-									if ( item->type == ARTIFACT_ORB_PURPLE )
+									if ( item->type == ARTIFACT_ORB_PURPLE || item->type == TOOL_DUCK )
 									{
+										Item** slot = itemSlot(stats[PLAYER_NUM], item);
+										if ( slot != nullptr )
+										{
+											*slot = nullptr;
+										}
+
+										players[PLAYER_NUM]->paperDoll.updateSlots();
+
 										int c = item->count;
 										for ( c = item->count; c > 0; c-- )
 										{
@@ -8030,7 +11118,7 @@ void actPlayer(Entity* my)
 											entity->skill[14] = item->appearance;
 											entity->skill[15] = item->identified;
 										}
-										break;
+										list_RemoveNode(node);
 									}
 								}
 							}
@@ -8069,6 +11157,42 @@ void actPlayer(Entity* my)
                                         stats[0]->addItemToLootingBag(PLAYER_NUM, my->x, my->y, *slot);
                                     }
                                 }
+							}
+							else
+							{
+								Item** slots[] = {
+									&stats[PLAYER_NUM]->helmet,
+									&stats[PLAYER_NUM]->breastplate,
+									&stats[PLAYER_NUM]->gloves,
+									&stats[PLAYER_NUM]->shoes,
+									&stats[PLAYER_NUM]->shield,
+									&stats[PLAYER_NUM]->weapon,
+									&stats[PLAYER_NUM]->cloak,
+									&stats[PLAYER_NUM]->amulet,
+									&stats[PLAYER_NUM]->ring,
+									&stats[PLAYER_NUM]->mask,
+								};
+								constexpr int num_slots = sizeof(slots) / sizeof(slots[0]);
+								for ( int c = 0; c < num_slots; ++c ) {
+									if ( slots[c] )
+									{
+										if ( Item* item = *(slots[c]) )
+										{
+											if ( item->type == ARTIFACT_ORB_PURPLE || item->type == TOOL_DUCK )
+											{
+												*(slots[c]) = nullptr;
+												if ( item->node )
+												{
+													list_RemoveNode(item->node);
+												}
+												else
+												{
+													free(item);
+												}
+											}
+										}
+									}
+								}
 							}
 
 							deleteMultiplayerSaveGames(); //Will only delete save games if was last player alive.
@@ -8174,12 +11298,12 @@ void actPlayer(Entity* my)
 	if ( (players[PLAYER_NUM]->isLocalPlayer()) && intro == false )
 	{
 		// effects of drunkenness
-		if ( (stats[PLAYER_NUM]->EFFECTS[EFF_DRUNK] && (stats[PLAYER_NUM]->type != GOATMAN))
-			|| stats[PLAYER_NUM]->EFFECTS[EFF_WITHDRAWAL] )
+		if ( (stats[PLAYER_NUM]->getEffectActive(EFF_DRUNK) && (stats[PLAYER_NUM]->type != GOATMAN))
+			|| stats[PLAYER_NUM]->getEffectActive(EFF_WITHDRAWAL) )
 		{
 			my->char_drunk++;
 			int drunkInterval = TICKS_PER_SECOND * 6;
-			if ( stats[PLAYER_NUM]->EFFECTS[EFF_WITHDRAWAL] )
+			if ( stats[PLAYER_NUM]->getEffectActive(EFF_WITHDRAWAL) )
 			{
 				if ( PLAYER_ALIVETIME < TICKS_PER_SECOND * 16 )
 				{
@@ -8247,64 +11371,190 @@ void actPlayer(Entity* my)
 			// perform collision detection
 			dist = clipMove(&my->x, &my->y, PLAYER_VELX, PLAYER_VELY, my);
 
-			// bumping into monsters disturbs them
-			if ( hit.entity && !intro && multiplayer != CLIENT )
+			if ( multiplayer != CLIENT && !intro )
 			{
-				if ( !everybodyfriendly && hit.entity->behavior == &actMonster )
+				if ( stats[PLAYER_NUM]->getEffectActive(EFF_DASH) >= 2 )
 				{
-					bool enemy = my->checkEnemy(hit.entity);
-					if ( enemy && !hit.entity->isInertMimic() )
+					if ( hit.entity )
 					{
-						if ( hit.entity->monsterState == MONSTER_STATE_WAIT || (hit.entity->monsterState == MONSTER_STATE_HUNT && hit.entity->monsterTarget == 0) )
+						my->handleKnockbackDamage(*stats[PLAYER_NUM], hit.entity);
+					}
+				}
+
+				if ( my->isInvisible() && !assailant[PLAYER_NUM] )
+				{
+					players[PLAYER_NUM]->mechanics.updateSustainedSpellEvent(SPELL_INVISIBILITY, dist, 0.1, nullptr);
+				}
+				if ( levitating && !swimming )
+				{
+					const int index_x = static_cast<int>(my->x) >> 4;
+					const int index_y = static_cast<int>(my->y) >> 4;
+					int index = (index_y)*MAPLAYERS + (index_x)*MAPLAYERS * map.height;
+					if ( index_x >= 0 && index_x < map.width && index_y >= 0 && index_y < map.height )
+					{
+						if ( !map.tiles[index] || swimmingtiles[map.tiles[index_y * MAPLAYERS + index_x * MAPLAYERS * map.height]]
+							|| lavatiles[map.tiles[index_y * MAPLAYERS + index_x * MAPLAYERS * map.height]] )
 						{
-							hit.entity->lookAtEntity(*my);
+							players[PLAYER_NUM]->mechanics.updateSustainedSpellEvent(SPELL_LEVITATION, dist, 0.5, nullptr);
+						}
+						if ( stats[PLAYER_NUM]->getEffectActive(EFF_FLUTTER) )
+						{
+							players[PLAYER_NUM]->mechanics.updateSustainedSpellEvent(SPELL_FLUTTER, dist, 0.5, nullptr);
 						}
 					}
 				}
-				else if ( stats[PLAYER_NUM]->EFFECTS[EFF_DASH] && hit.entity->behavior == &actDoor )
+				if ( stats[PLAYER_NUM]->getEffectActive(EFF_LIGHTEN_LOAD) )
 				{
-					hit.entity->doorHealth = 0;
+					players[PLAYER_NUM]->mechanics.updateSustainedSpellEvent(SPELL_LIGHTEN_LOAD, dist, 0.1, nullptr);
 				}
-				//else if ( hit.entity->behavior == &actDoorFrame &&
-				//	hit.entity->flags[INVISIBLE] )
-				//{
-				//	// code that almost fixes door frame collision
-				//	if ( hit.entity->yaw >= -0.1 && hit.entity->yaw <= 0.1 )
-				//	{
-				//		// east/west doorway
-				//		if ( my->y < floor(hit.entity->y / 16) * 16 + 8 )
-				//		{
-				//			// slide south
-				//			PLAYER_VELX = 0;
-				//			PLAYER_VELY = .25;
-				//		}
-				//		else
-				//		{
-				//			// slide north
-				//			PLAYER_VELX = 0;
-				//			PLAYER_VELY = -.25;
-				//		}
-				//	}
-				//	else
-				//	{
-				//		// north/south doorway
-				//		if ( my->x < floor(hit.entity->x / 16) * 16 + 8 )
-				//		{
-				//			// slide east
-				//			PLAYER_VELX = .25;
-				//			PLAYER_VELY = 0;
-				//		}
-				//		else
-				//		{
-				//			// slide west
-				//			PLAYER_VELX = -.25;
-				//			PLAYER_VELY = 0;
-				//		}
-				//	}
-				//	my->x += PLAYER_VELX;
-				//	my->y += PLAYER_VELY;
-				//	dist = sqrt(PLAYER_VELX * PLAYER_VELX + PLAYER_VELY * PLAYER_VELY);
-				//}
+				if ( stats[PLAYER_NUM]->getEffectActive(EFF_DASH) )
+				{
+					players[PLAYER_NUM]->mechanics.updateSustainedSpellEvent(SPELL_DASH, dist, 0.4, nullptr);
+				}
+				if ( Uint8 effectStrength = stats[PLAYER_NUM]->getEffectActive(EFF_FAST) )
+				{
+					for ( int i = 0; i < MAXPLAYERS; ++i )
+					{
+						if ( effectStrength & (1 << (i + 1)) && players[i]->entity )
+						{
+							players[i]->mechanics.updateSustainedSpellEvent(SPELL_SPEED, dist, 0.025, nullptr);
+							break;
+						}
+					}
+				}
+				if ( Uint8 effectStrength = stats[PLAYER_NUM]->getEffectActive(EFF_NIMBLENESS) )
+				{
+					int caster = ((stats[PLAYER_NUM]->getEffectActive(EFF_NIMBLENESS) >> 4) & 0xF) - 1;
+					if ( caster >= 0 && caster < MAXPLAYERS )
+					{
+						if ( players[caster]->entity )
+						{
+							players[caster]->mechanics.updateSustainedSpellEvent(SPELL_PROF_NIMBLENESS, dist, 0.002, nullptr);
+						}
+					}
+				}
+				if ( Uint8 effectStrength = stats[PLAYER_NUM]->getEffectActive(EFF_GREATER_MIGHT) )
+				{
+					int caster = ((stats[PLAYER_NUM]->getEffectActive(EFF_GREATER_MIGHT) >> 4) & 0xF) - 1;
+					if ( caster >= 0 && caster < MAXPLAYERS )
+					{
+						if ( players[caster]->entity )
+						{
+							players[caster]->mechanics.updateSustainedSpellEvent(SPELL_PROF_GREATER_MIGHT, dist, 0.002, nullptr);
+						}
+					}
+				}
+				if ( Uint8 effectStrength = stats[PLAYER_NUM]->getEffectActive(EFF_COUNSEL) )
+				{
+					int caster = ((stats[PLAYER_NUM]->getEffectActive(EFF_COUNSEL) >> 4) & 0xF) - 1;
+					if ( caster >= 0 && caster < MAXPLAYERS )
+					{
+						if ( players[caster]->entity )
+						{
+							players[caster]->mechanics.updateSustainedSpellEvent(SPELL_PROF_COUNSEL, dist, 0.002, nullptr);
+						}
+					}
+				}
+				if ( Uint8 effectStrength = stats[PLAYER_NUM]->getEffectActive(EFF_STURDINESS) )
+				{
+					int caster = ((stats[PLAYER_NUM]->getEffectActive(EFF_STURDINESS) >> 4) & 0xF) - 1;
+					if ( caster >= 0 && caster < MAXPLAYERS )
+					{
+						if ( players[caster]->entity )
+						{
+							players[caster]->mechanics.updateSustainedSpellEvent(SPELL_PROF_STURDINESS, dist, 0.002, nullptr);
+						}
+					}
+				}
+			}
+
+			// bumping into monsters disturbs them
+			if ( hit.entity && !intro )
+			{
+				if ( multiplayer != CLIENT )
+				{
+					if ( !everybodyfriendly && hit.entity->behavior == &actMonster )
+					{
+						bool enemy = my->checkEnemy(hit.entity);
+						if ( enemy && !hit.entity->isInertMimic() )
+						{
+							if ( hit.entity->monsterState == MONSTER_STATE_WAIT || (hit.entity->monsterState == MONSTER_STATE_HUNT && hit.entity->monsterTarget == 0) )
+							{
+								hit.entity->lookAtEntity(*my);
+							}
+						}
+					}
+					else if ( stats[PLAYER_NUM]->getEffectActive(EFF_DASH) && hit.entity->behavior == &actDoor )
+					{
+						if ( hit.entity->doorHealth > 0 )
+						{
+							hit.entity->doorHealth = 0;
+							magicOnSpellCastEvent(my, my, nullptr,
+								SPELL_DASH, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
+						}
+					}
+				}
+
+				if ( hit.entity->behavior == &actDoorFrame &&
+					hit.entity->flags[INVISIBLE] )
+				{
+					// code that almost fixes door frame collision
+					bool doSlide = true;
+					if ( hit.entity->yaw >= -0.1 && hit.entity->yaw <= 0.1 )
+					{
+						// east/west doorway
+						if ( static_cast<int>(hit.entity->y / 16) != static_cast<int>(my->y / 16) )
+						{
+							doSlide = false;
+						}
+					}
+					else
+					{
+						// north/south doorway
+						if ( static_cast<int>(hit.entity->x / 16) != static_cast<int>(my->x / 16) )
+						{
+							doSlide = false;
+						}
+					}
+
+					if ( doSlide )
+					{
+						real_t centerx = floor(hit.entity->x / 16) * 16 + 8;
+						real_t centery = floor(hit.entity->y / 16) * 16 + 8;
+						real_t tangent = atan2(centery - my->y, centerx - my->x);
+						real_t dir = atan2(my->vel_y, my->vel_x);
+						real_t spd = sqrt(my->vel_x * my->vel_x + my->vel_y * my->vel_y);
+						//real_t dirx = cos(tangent - dir);
+						//real_t diry = sin(tangent - dir);
+						//real_t tangent2 = atan2(diry, dirx);
+						real_t diff = tangent - dir;
+						if ( diff >= PI )
+						{
+							diff -= 2 * PI;
+						}
+						else if ( diff < -PI )
+						{
+							diff += 2 * PI;
+						}
+						//messagePlayer(0, MESSAGE_DEBUG, "%.2f", diff);
+						if ( abs(diff) < PI / 2 )
+						{
+							dir += (tangent - dir);
+							my->vel_x = spd * cos(dir);
+							my->vel_y = spd * sin(dir);
+						}
+					}
+
+					/*if ( abs(slidex) > 0.0 )
+					{
+						PLAYER_VELX += slidex;
+					}
+					if ( abs(slidey) > 0.0 )
+					{
+						PLAYER_VELY += slidey;
+					}*/
+					//dist += clipMove(&my->x, &my->y, slidex, slidey, my);
+				}
 			}
 		}
 		else
@@ -8423,6 +11673,102 @@ void actPlayer(Entity* my)
 
 			dist = clipMove(&my->x, &my->y, PLAYER_VELX, PLAYER_VELY, my);
 
+			if ( multiplayer != CLIENT && !intro )
+			{
+				if ( stats[PLAYER_NUM]->getEffectActive(EFF_DASH) >= 2 )
+				{
+					if ( hit.entity )
+					{
+						my->handleKnockbackDamage(*stats[PLAYER_NUM], hit.entity);
+					}
+				}
+				if ( my->isInvisible() )
+				{
+					players[PLAYER_NUM]->mechanics.updateSustainedSpellEvent(SPELL_INVISIBILITY, dist, 0.1, nullptr);
+				}
+				if ( levitating && !swimming )
+				{
+					const int index_x = static_cast<int>(my->x) >> 4;
+					const int index_y = static_cast<int>(my->y) >> 4;
+					int index = (index_y)*MAPLAYERS + (index_x)*MAPLAYERS * map.height;
+					if ( index_x >= 0 && index_x < map.width && index_y >= 0 && index_y < map.height )
+					{
+						if ( !map.tiles[index] || swimmingtiles[map.tiles[index_y * MAPLAYERS + index_x * MAPLAYERS * map.height]]
+							|| lavatiles[map.tiles[index_y * MAPLAYERS + index_x * MAPLAYERS * map.height]] )
+						{
+							players[PLAYER_NUM]->mechanics.updateSustainedSpellEvent(SPELL_LEVITATION, dist, 0.5, nullptr);
+						}
+						if ( stats[PLAYER_NUM]->getEffectActive(EFF_FLUTTER) )
+						{
+							players[PLAYER_NUM]->mechanics.updateSustainedSpellEvent(SPELL_FLUTTER, dist, 0.5, nullptr);
+						}
+					}
+				}
+				if ( stats[PLAYER_NUM]->getEffectActive(EFF_LIGHTEN_LOAD) )
+				{
+					players[PLAYER_NUM]->mechanics.updateSustainedSpellEvent(SPELL_LIGHTEN_LOAD, dist, 0.1, nullptr);
+				}
+				if ( stats[PLAYER_NUM]->getEffectActive(EFF_DASH) )
+				{
+					players[PLAYER_NUM]->mechanics.updateSustainedSpellEvent(SPELL_DASH, dist, 0.4, nullptr);
+				}
+				if ( Uint8 effectStrength = stats[PLAYER_NUM]->getEffectActive(EFF_FAST) )
+				{
+					for ( int i = 0; i < MAXPLAYERS; ++i )
+					{
+						if ( effectStrength & (1 << (i + 1)) && players[i]->entity )
+						{
+							players[i]->mechanics.updateSustainedSpellEvent(SPELL_SPEED, dist, 0.025, nullptr);
+							break;
+						}
+					}
+				}
+				if ( Uint8 effectStrength = stats[PLAYER_NUM]->getEffectActive(EFF_NIMBLENESS) )
+				{
+					int caster = ((stats[PLAYER_NUM]->getEffectActive(EFF_NIMBLENESS) >> 4) & 0xF) - 1;
+					if ( caster >= 0 && caster < MAXPLAYERS )
+					{
+						if ( players[caster]->entity )
+						{
+							players[caster]->mechanics.updateSustainedSpellEvent(SPELL_PROF_NIMBLENESS, dist, 0.002, nullptr);
+						}
+					}
+				}
+				if ( Uint8 effectStrength = stats[PLAYER_NUM]->getEffectActive(EFF_GREATER_MIGHT) )
+				{
+					int caster = ((stats[PLAYER_NUM]->getEffectActive(EFF_GREATER_MIGHT) >> 4) & 0xF) - 1;
+					if ( caster >= 0 && caster < MAXPLAYERS )
+					{
+						if ( players[caster]->entity )
+						{
+							players[caster]->mechanics.updateSustainedSpellEvent(SPELL_PROF_GREATER_MIGHT, dist, 0.002, nullptr);
+						}
+					}
+				}
+				if ( Uint8 effectStrength = stats[PLAYER_NUM]->getEffectActive(EFF_COUNSEL) )
+				{
+					int caster = ((stats[PLAYER_NUM]->getEffectActive(EFF_COUNSEL) >> 4) & 0xF) - 1;
+					if ( caster >= 0 && caster < MAXPLAYERS )
+					{
+						if ( players[caster]->entity )
+						{
+							players[caster]->mechanics.updateSustainedSpellEvent(SPELL_PROF_COUNSEL, dist, 0.002, nullptr);
+						}
+					}
+				}
+				if ( Uint8 effectStrength = stats[PLAYER_NUM]->getEffectActive(EFF_STURDINESS) )
+				{
+					int caster = ((stats[PLAYER_NUM]->getEffectActive(EFF_STURDINESS) >> 4) & 0xF) - 1;
+					if ( caster >= 0 && caster < MAXPLAYERS )
+					{
+						if ( players[caster]->entity )
+						{
+							players[caster]->mechanics.updateSustainedSpellEvent(SPELL_PROF_STURDINESS, dist, 0.002, nullptr);
+						}
+					}
+				}
+			}
+
 			// bumping into monsters disturbs them
 			if ( hit.entity && !intro )
 			{
@@ -8437,9 +11783,14 @@ void actPlayer(Entity* my)
 						}
 					}
 				}
-				else if ( stats[PLAYER_NUM]->EFFECTS[EFF_DASH] && hit.entity->behavior == &actDoor )
+				else if ( stats[PLAYER_NUM]->getEffectActive(EFF_DASH) && hit.entity->behavior == &actDoor )
 				{
-					hit.entity->doorHealth = 0;
+					if ( hit.entity->doorHealth > 0 )
+					{
+						hit.entity->doorHealth = 0;
+						magicOnSpellCastEvent(my, my, nullptr,
+							SPELL_DASH, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
+					}
 				}
 			}
 		}
@@ -8456,17 +11807,27 @@ void actPlayer(Entity* my)
 		dist = sqrt(PLAYER_VELX * PLAYER_VELX + PLAYER_VELY * PLAYER_VELY);
 	}
 
-	if ( (players[PLAYER_NUM]->isLocalPlayer()) && ticks % 65 == 0 && stats[PLAYER_NUM]->EFFECTS[EFF_TELEPATH] )
+	if ( (players[PLAYER_NUM]->isLocalPlayer()) && ticks % 65 == 0 && stats[PLAYER_NUM]->getEffectActive(EFF_TELEPATH) )
 	{
 		for ( node_t* mapNode = map.creatures->first; mapNode != nullptr; mapNode = mapNode->next )
 		{
 			Entity* mapCreature = (Entity*)mapNode->element;
 			if ( mapCreature )
 			{
-				if ( stats[PLAYER_NUM]->EFFECTS[EFF_TELEPATH] && !intro )
+				if ( (stats[PLAYER_NUM]->getEffectActive(EFF_TELEPATH) 
+					/*|| (mapCreature->getStats() && mapCreature->getStats()->getEffectActive(EFF_DETECT_ENEMY))*/
+					)
+					&& !intro )
 				{
 					// periodically set the telepath rendering flag.
-					mapCreature->monsterEntityRenderAsTelepath = 1;
+					/*if ( (mapCreature->getStats() && mapCreature->getStats()->getEffectActive(EFF_DETECT_ENEMY)) )
+					{
+						mapCreature->monsterEntityRenderAsTelepath = 2;
+					}
+					else*/
+					{
+						mapCreature->monsterEntityRenderAsTelepath = 1;
+					}
 				}
 				else
 				{
@@ -8477,6 +11838,16 @@ void actPlayer(Entity* my)
 	}
 
 	Entity* helmet = nullptr;
+	bool ignoreHelmetOffsetFromMask = false;
+	Entity* legleft = nullptr;
+	Entity* legright = nullptr;
+	int torsoCovering = 0;
+
+	if ( auto node = list_Node(&my->children, 11) )
+	{
+		additionalLimb = (Entity*)node->element;
+	}
+
 
 	// move bodyparts
 	if ( isHumanoid )
@@ -8504,13 +11875,26 @@ void actPlayer(Entity* my)
 				{
 					entity->z += 0.25;
 				}
+				else if ( playerRace == GNOME )
+				{
+					entity->z += 0.5;
+				}
 			}
 
 			if ( bodypart > 12 )
 			{
+				// for GENIUS flag to not draw into the camera
+				entity->sizex = 4;
+				entity->sizey = 4;
+			}
+			if ( bodypart > 13 )
+			{
 				entity->flags[INVISIBLE] = true;
 				entity->flags[INVISIBLE_DITHER] = false;
-				continue;
+				if ( bodypart > 15 )
+				{
+					continue;
+				}
 			}
 
 			entity->yaw = my->yaw;
@@ -8519,6 +11903,7 @@ void actPlayer(Entity* my)
 				if ( bodypart == 2 )
 				{
 					rightbody = (Entity*)node->next->element;
+					legright = entity;
 				}
 				if ( bodypart == 5 )
 				{
@@ -8531,7 +11916,7 @@ void actPlayer(Entity* my)
 					limbSpeed = 1 / 12.f;
 					pitchLimit = PI / 8.f;
 				}
-				if ( stats[PLAYER_NUM]->EFFECTS[EFF_DASH] )
+				if ( stats[PLAYER_NUM]->getEffectActive(EFF_DASH) )
 				{
 					limbSpeed = 1 / 12.f;
 				}
@@ -8544,8 +11929,7 @@ void actPlayer(Entity* my)
 					{
 						bendArm = false;
 					}
-					else if ( shield->sprite >= items[SPELLBOOK_LIGHT].index
-						&& shield->sprite < (items[SPELLBOOK_LIGHT].index + items[SPELLBOOK_LIGHT].variations) )
+					else if ( shieldSpriteIsSpellbook(shield->sprite) )
 					{
 						bendArm = false;
 					}
@@ -8688,10 +12072,118 @@ void actPlayer(Entity* my)
 			}
 			else if ( bodypart == 3 || bodypart == 4 || bodypart == 8 ) // left leg, right arm, cloak
 			{
+				if ( bodypart == 3 )
+				{
+					legleft = entity;
+				}
+
 				if ( bodypart == 4 )
 				{
 					weaponarm = entity;
-					if ( PLAYER_ATTACK == 1 || PLAYER_ATTACK == PLAYER_POSE_GOLEM_SMASH )
+					if ( PLAYER_ATTACK == MONSTER_POSE_PARRY )
+					{
+						if ( PLAYER_ATTACKTIME == 0 )
+						{
+							PLAYER_ARMBENDED = 0;
+							PLAYER_WEAPONYAW = 0;
+							entity->pitch = 0;
+							entity->roll = -PI / 4;
+							entity->skill[1] = 0;
+						}
+						else
+						{
+							limbAnimateToLimit(my, ANIMATE_WEAPON_YAW, -0.15, 15 * PI / 8, false, 0.0);
+							limbAnimateToLimit(entity, ANIMATE_PITCH, -0.25, 15 * PI / 8, false, 0.0);
+							if ( PLAYER_ATTACKTIME >= 35 )
+							{
+								entity->skill[0] = rightbody->skill[0];
+								entity->skill[1] = 0;
+								PLAYER_WEAPONYAW = 0;
+								entity->pitch = rightbody->pitch;
+								entity->roll = 0;
+								PLAYER_ARMBENDED = 0;
+								PLAYER_ATTACK = 0;
+							}
+						}
+					}
+					else if ( PLAYER_ATTACK == MONSTER_POSE_MAGIC_WINDUP1 )
+					{
+						// magic wiggle hands
+						entity->skill[1] = 0;
+						PLAYER_ARMBENDED = 0;
+						PLAYER_WEAPONYAW = 0;
+						entity->roll = 0;
+						entity->pitch = 0;
+						entity->yaw = my->yaw;
+
+						real_t circleAmount = (1 * PI / 8);
+						if ( playerRace == TROLL || playerRace == CREATURE_IMP )
+						{
+							circleAmount *= 0.2;
+						}
+						real_t scaleDown = 1.0;
+						if ( (my->playerCastTimeAnim - PLAYER_ATTACKTIME) < 10 )
+						{
+							// scale down
+							scaleDown = 1.0 - (10 - (my->playerCastTimeAnim - PLAYER_ATTACKTIME)) / 10.0;
+						}
+						circleAmount *= scaleDown;
+						real_t circleTime = 20.0;
+						entity->pitch = circleAmount * cos(2 * PI * (PLAYER_ATTACKTIME / (real_t)circleTime));
+						if ( playerRace == TROLL )
+						{
+							entity->pitch -= scaleDown * (PI / 4) * std::min(1.0, (PLAYER_ATTACKTIME / (real_t)5));
+						}
+						else if ( playerRace == CREATURE_IMP )
+						{
+							entity->pitch -= scaleDown * (PI / 8) * std::min(1.0, (PLAYER_ATTACKTIME / (real_t)5));
+						}
+						PLAYER_WEAPONYAW = circleAmount * sin(2 * PI * (PLAYER_ATTACKTIME / (real_t)circleTime));
+						
+						if ( PLAYER_ATTACKTIME >= my->playerCastTimeAnim )
+						{
+							my->playerCastTimeAnim = 0;
+							entity->skill[0] = rightbody->skill[0];
+							PLAYER_WEAPONYAW = 0;
+							entity->pitch = rightbody->pitch;
+							entity->roll = 0;
+							PLAYER_ARMBENDED = 0;
+							PLAYER_ATTACK = 0;
+						}
+					}
+					else if ( PLAYER_ATTACK == MONSTER_POSE_MAGIC_WINDUP2 )
+					{
+						// touch spell intermission
+						my->playerCastTimeAnim = 0;
+						entity->skill[1] = 0;
+						PLAYER_ARMBENDED = 0;
+						PLAYER_WEAPONYAW = 0;
+						entity->roll = 0;
+						entity->pitch = 0;
+						entity->yaw = my->yaw;
+
+						if ( playerRace == TROLL )
+						{
+							entity->pitch -= (PI / 4) * std::min(1.0, (PLAYER_ATTACKTIME / (real_t)5));
+						}
+						else if ( playerRace == CREATURE_IMP )
+						{
+							entity->pitch -= (PI / 8) * std::min(1.0, (PLAYER_ATTACKTIME / (real_t)5));
+						}
+					}
+					else if ( PLAYER_ATTACK == MONSTER_POSE_MAGIC_CAST2 )
+					{
+						// cancelled spell
+						entity->skill[1] = 0;
+						my->playerCastTimeAnim = 0;
+						entity->skill[0] = rightbody->skill[0];
+						PLAYER_WEAPONYAW = 0;
+						entity->pitch = rightbody->pitch;
+						entity->roll = 0;
+						PLAYER_ARMBENDED = 0;
+						PLAYER_ATTACK = 0;
+					}
+					else if ( PLAYER_ATTACK == 1 || PLAYER_ATTACK == PLAYER_POSE_GOLEM_SMASH )
 					{
 						// vertical chop
 						if ( PLAYER_ATTACKTIME == 0 )
@@ -8934,7 +12426,9 @@ void actPlayer(Entity* my)
 						if ( weaponarm->skill[1] == 0 )
 						{
 							real_t targetPitch = 14 * PI / 8;
-							if ( weaponarm->sprite == items[CROSSBOW].index || weaponarm->sprite == items[HEAVY_CROSSBOW].index )
+							if ( weaponarm->sprite == items[CROSSBOW].index 
+								|| weaponarm->sprite == items[HEAVY_CROSSBOW].index
+								|| weaponarm->sprite == items[BLACKIRON_CROSSBOW].index )
 							{
 								targetPitch = 15 * PI / 8;
 							}
@@ -8974,6 +12468,36 @@ void actPlayer(Entity* my)
 								PLAYER_ARMBENDED = 0;
 								PLAYER_ATTACK = 0;
 							}
+						}
+					}
+					else if ( PLAYER_ATTACK == MONSTER_POSE_FLAIL_SWING )
+					{
+						if ( PLAYER_ATTACKTIME == 0 )
+						{
+							// init rotations
+							PLAYER_ARMBENDED = 1;
+							PLAYER_WEAPONYAW = 0;
+							entity->pitch = 13 * PI / 8;
+							entity->roll = 0;
+						}
+
+						entity->skill[1]++;
+						if ( PLAYER_ATTACKTIME >= TICKS_PER_SECOND * .75 )
+						{
+							PLAYER_ATTACK = MONSTER_POSE_FLAIL_SWING_RETURN;
+						}
+					}
+					else if ( PLAYER_ATTACK == MONSTER_POSE_FLAIL_SWING_RETURN )
+					{
+						if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, 0.15, 7 * PI / 4, false, 0.0) )
+						{
+							entity->skill[0] = rightbody->skill[0];
+							entity->skill[1] = 0;
+							PLAYER_WEAPONYAW = 0;
+							entity->pitch = rightbody->pitch;
+							entity->roll = 0;
+							PLAYER_ARMBENDED = 0;
+							PLAYER_ATTACK = 0;
 						}
 					}
 				}
@@ -9032,6 +12556,34 @@ void actPlayer(Entity* my)
 							}
 						}
 					}
+
+					if ( bodypart == 8 )
+					{
+						if ( fabs(PLAYER_VELX) > 0.1 || fabs(PLAYER_VELY) > 0.1 )
+						{
+							if ( entity->skill[0] == 0 )
+							{
+								entity->pitch -= dist * PLAYERWALKSPEED * 0.05;
+								if ( entity->pitch < -PI / 4.0 )
+								{
+									entity->skill[0] = 1;
+								}
+							}
+							else
+							{
+								entity->pitch += dist * PLAYERWALKSPEED * 0.05;
+								if ( entity->pitch > -PI / 8.0 )
+								{
+									entity->skill[0] = 0;
+								}
+							}
+						}
+						else
+						{
+							entity->pitch += PLAYERWALKSPEED / 5;
+							entity->pitch = std::min(entity->pitch, 0.0);
+						}
+					}
 				}
 				else if ( bodypart != 4 || (PLAYER_ATTACK == 0 && PLAYER_ATTACKTIME == 0) )
 				{
@@ -9050,7 +12602,7 @@ void actPlayer(Entity* my)
 						limbSpeed = 1 / 12.f;
 						pitchLimit = PI / 8.f;
 					}
-					if ( stats[PLAYER_NUM]->EFFECTS[EFF_DASH] )
+					if ( stats[PLAYER_NUM]->getEffectActive(EFF_DASH) )
 					{
 						limbSpeed = 1 / 12.f;
 					}
@@ -9109,834 +12661,1213 @@ void actPlayer(Entity* my)
 			switch ( bodypart )
 			{
 				// torso
-				case 1:
-					torso = entity;
-					entity->focalx = limbs[playerRace][1][0];
-					entity->focaly = limbs[playerRace][1][1];
-					entity->focalz = limbs[playerRace][1][2];
-					entity->flags[INVISIBLE_DITHER] = my->flags[INVISIBLE_DITHER];
-					if ( multiplayer != CLIENT )
-					{
-						if ( stats[PLAYER_NUM]->breastplate == NULL || !showEquipment )
-						{
-							entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_TORSO);
-						}
-						else
-						{
-							entity->sprite = itemModel(stats[PLAYER_NUM]->breastplate);
-						}
-						if ( multiplayer == SERVER )
-						{
-							// update sprites for clients
-							if ( entity->ticks >= *cvar_entity_bodypart_sync_tick )
-							{
-								bool updateBodypart = false;
-								if ( entity->skill[10] != entity->sprite )
-								{
-									entity->skill[10] = entity->sprite;
-									updateBodypart = true;
-								}
-								if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
-								{
-									updateBodypart = true;
-								}
-								if ( updateBodypart )
-								{
-									serverUpdateEntityBodypart(my, bodypart);
-								}
-							}
-						}
-					}
-					my->setHumanoidLimbOffset(entity, playerRace, LIMB_HUMANOID_TORSO);
-					break;
-					// right leg
-				case 2:
-					entity->focalx = limbs[playerRace][2][0];
-					entity->focaly = limbs[playerRace][2][1];
-					entity->focalz = limbs[playerRace][2][2];
-					entity->flags[INVISIBLE_DITHER] = my->flags[INVISIBLE_DITHER];
-					if ( multiplayer != CLIENT )
-					{
-						if ( stats[PLAYER_NUM]->shoes == NULL || !showEquipment )
-						{
-							entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_RIGHTLEG);
-						}
-						else
-						{
-							my->setBootSprite(entity, SPRITE_BOOT_RIGHT_OFFSET);
-						}
-						if ( multiplayer == SERVER )
-						{
-							// update sprites for clients
-							if ( entity->ticks >= *cvar_entity_bodypart_sync_tick )
-							{
-								bool updateBodypart = false;
-								if ( entity->skill[10] != entity->sprite )
-								{
-									entity->skill[10] = entity->sprite;
-									updateBodypart = true;
-								}
-								if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
-								{
-									updateBodypart = true;
-								}
-								if ( updateBodypart )
-								{
-									serverUpdateEntityBodypart(my, bodypart);
-								}
-							}
-						}
-					}
-					my->setHumanoidLimbOffset(entity, playerRace, LIMB_HUMANOID_RIGHTLEG);
-					break;
-					// left leg
-				case 3:
-					entity->focalx = limbs[playerRace][3][0];
-					entity->focaly = limbs[playerRace][3][1];
-					entity->focalz = limbs[playerRace][3][2];
-					entity->flags[INVISIBLE_DITHER] = my->flags[INVISIBLE_DITHER];
-					if ( multiplayer != CLIENT )
-					{
-						if ( stats[PLAYER_NUM]->shoes == NULL || !showEquipment )
-						{
-							entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_LEFTLEG);
-						}
-						else
-						{
-							my->setBootSprite(entity, SPRITE_BOOT_LEFT_OFFSET);
-						}
-						if ( multiplayer == SERVER )
-						{
-							// update sprites for clients
-							if ( entity->ticks >= *cvar_entity_bodypart_sync_tick )
-							{
-								bool updateBodypart = false;
-								if ( entity->skill[10] != entity->sprite )
-								{
-									entity->skill[10] = entity->sprite;
-									updateBodypart = true;
-								}
-								if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
-								{
-									updateBodypart = true;
-								}
-								if ( updateBodypart )
-								{
-									serverUpdateEntityBodypart(my, bodypart);
-								}
-							}
-						}
-					}
-					my->setHumanoidLimbOffset(entity, playerRace, LIMB_HUMANOID_LEFTLEG);
-					break;
-					// right arm
-				case 4:
+			case 1:
+				torso = entity;
+				entity->scalex = 1.0;
+				entity->scaley = 1.0;
+				entity->scalez = 1.0;
+				entity->focalx = limbs[playerRace][1][0];
+				entity->focaly = limbs[playerRace][1][1];
+				entity->focalz = limbs[playerRace][1][2];
+				entity->flags[INVISIBLE_DITHER] = my->flags[INVISIBLE_DITHER];
+				if ( multiplayer != CLIENT )
 				{
-					entity->flags[INVISIBLE_DITHER] = my->flags[INVISIBLE_DITHER];
-					if ( multiplayer != CLIENT )
+					if ( stats[PLAYER_NUM]->breastplate == NULL || !showEquipment )
 					{
-						if ( stats[PLAYER_NUM]->gloves == NULL || !showEquipment )
-						{
-							entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_RIGHTARM);
-						}
-						else
-						{
-							if ( setGloveSprite(stats[PLAYER_NUM], entity, SPRITE_GLOVE_RIGHT_OFFSET) != 0 )
-							{
-								// successfully set sprite for the human model
-							}
-						}
-						if ( (!PLAYER_ARMBENDED && showEquipment) || (insectoidLevitating && PLAYER_ATTACK == 0 && PLAYER_ATTACKTIME == 0) )
-						{
-							entity->sprite += 2 * (stats[PLAYER_NUM]->weapon != NULL);
-
-							if ( stats[PLAYER_NUM]->weapon == nullptr
-								&& insectoidLevitating )
-							{
-								entity->sprite += 2;
-							}
-						}
-						if ( multiplayer == SERVER )
-						{
-							// update sprites for clients
-							if ( entity->ticks >= *cvar_entity_bodypart_sync_tick )
-							{
-								bool updateBodypart = false;
-								if ( entity->skill[10] != entity->sprite )
-								{
-									entity->skill[10] = entity->sprite;
-									updateBodypart = true;
-								}
-								if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
-								{
-									updateBodypart = true;
-								}
-								if ( updateBodypart )
-								{
-									serverUpdateEntityBodypart(my, bodypart);
-								}
-							}
-						}
-					}
-					my->setHumanoidLimbOffset(entity, playerRace, LIMB_HUMANOID_RIGHTARM);
-					node_t* tempNode = list_Node(&my->children, 6);
-					if ( tempNode )
-					{
-						Entity* weapon = (Entity*)tempNode->element;
-						if ( (weapon->flags[INVISIBLE] && !weapon->flags[INVISIBLE_DITHER]) || PLAYER_ARMBENDED || playerRace == CREATURE_IMP )
-						{
-							if ( playerRace == INCUBUS || playerRace == SUCCUBUS )
-							{
-								entity->focalx = limbs[playerRace][4][0] - 0.25;
-								entity->focaly = limbs[playerRace][4][1] - 0.25;
-								entity->focalz = limbs[playerRace][4][2];
-							}
-							else
-							{
-								entity->focalx = limbs[playerRace][4][0]; // 0
-								entity->focaly = limbs[playerRace][4][1]; // 0
-								entity->focalz = limbs[playerRace][4][2]; // 1.5
-							}
-						}
-						else
-						{
-							if ( playerRace == INCUBUS || playerRace == SUCCUBUS )
-							{
-								entity->focalx = limbs[playerRace][4][0];
-								entity->focaly = limbs[playerRace][4][1];
-								entity->focalz = limbs[playerRace][4][2];
-							}
-							else if ( playerRace == AUTOMATON )
-							{
-								entity->focalx = limbs[playerRace][4][0] + 1.5; // 1
-								entity->focaly = limbs[playerRace][4][1] + 0.25; // 0
-								entity->focalz = limbs[playerRace][4][2] - 1; // 1
-							}
-							else
-							{
-								entity->focalx = limbs[playerRace][4][0] + 0.75;
-								entity->focaly = limbs[playerRace][4][1];
-								entity->focalz = limbs[playerRace][4][2] - 0.75;
-							}
-						}
-					}
-					entity->yaw += PLAYER_WEAPONYAW;
-					break;
-				}
-				// left arm
-				case 5:
-				{
-					entity->flags[INVISIBLE_DITHER] = my->flags[INVISIBLE_DITHER];
-					if ( multiplayer != CLIENT )
-					{
-						if ( stats[PLAYER_NUM]->gloves == NULL || !showEquipment )
-						{
-							entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_LEFTARM);
-						}
-						else
-						{
-							if ( setGloveSprite(stats[PLAYER_NUM], entity, SPRITE_GLOVE_LEFT_OFFSET) != 0 )
-							{
-								// successfully set sprite for the human model
-							}
-						}
-						if ( showEquipment )
-						{
-							bool bendArm = false;
-							if ( insectoidLevitating )
-							{
-								bendArm = true;
-							}
-							if ( stats[PLAYER_NUM]->shield != NULL )
-							{
-								if ( itemCategory(stats[PLAYER_NUM]->shield) == SPELLBOOK )
-								{
-									bendArm = false;
-								}
-								else
-								{
-									bendArm = true;
-								}
-							}
-							entity->sprite += 2 * (bendArm);
-						}
-						if ( multiplayer == SERVER )
-						{
-							// update sprites for clients
-							if ( entity->ticks >= *cvar_entity_bodypart_sync_tick )
-							{
-								bool updateBodypart = false;
-								if ( entity->skill[10] != entity->sprite )
-								{
-									entity->skill[10] = entity->sprite;
-									updateBodypart = true;
-								}
-								if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
-								{
-									updateBodypart = true;
-								}
-								if ( updateBodypart )
-								{
-									serverUpdateEntityBodypart(my, bodypart);
-								}
-							}
-						}
-					}
-					my->setHumanoidLimbOffset(entity, playerRace, LIMB_HUMANOID_LEFTARM);
-
-					if ( weaponarm && !showEquipment &&
-						(PLAYER_ATTACK == MONSTER_POSE_SPECIAL_WINDUP1 
-							|| PLAYER_ATTACK == MONSTER_POSE_SPECIAL_WINDUP2
-							|| PLAYER_ATTACK == PLAYER_POSE_GOLEM_SMASH))
-					{
-						// special swing - copy the right arm movements.
-						entity->pitch = weaponarm->pitch;
-						entity->roll = -weaponarm->roll;
+						entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_TORSO, my->sprite);
 					}
 					else
 					{
-						entity->roll = 0.f;
+						int torsoModel = itemModel(stats[PLAYER_NUM]->breastplate, shortModel);
+						if ( (torsoModel >= items[SHAWL].index && torsoModel < items[SHAWL].index + items[SHAWL].variations)
+							|| (torsoModel >= items[SHAWL].indexShort && torsoModel < items[SHAWL].indexShort + items[SHAWL].variations)
+							|| (torsoModel >= items[IRON_PAULDRONS].index && torsoModel < items[IRON_PAULDRONS].index + items[IRON_PAULDRONS].variations)
+							|| (torsoModel >= items[IRON_PAULDRONS].indexShort && torsoModel < items[IRON_PAULDRONS].indexShort + items[IRON_PAULDRONS].variations) )
+						{
+							torsoCovering = torsoModel;
+							entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_TORSO, my->sprite);
+						}
+						else
+						{
+							entity->sprite = torsoModel;
+						}
+					}
+					if ( multiplayer == SERVER )
+					{
+						// update sprites for clients
+						if ( entity->ticks >= *cvar_entity_bodypart_sync_tick )
+						{
+							bool updateBodypart = false;
+							if ( entity->skill[10] != entity->sprite )
+							{
+								entity->skill[10] = entity->sprite;
+								updateBodypart = true;
+							}
+							if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
+							{
+								updateBodypart = true;
+							}
+							if ( updateBodypart )
+							{
+								serverUpdateEntityBodypart(my, bodypart);
+							}
+						}
+					}
+				}
+				my->setHumanoidLimbOffset(entity, playerRace, LIMB_HUMANOID_TORSO);
+				break;
+				// right leg
+			case 2:
+			{
+				entity->focalx = limbs[playerRace][2][0];
+				entity->focaly = limbs[playerRace][2][1];
+				entity->focalz = limbs[playerRace][2][2];
+				entity->flags[INVISIBLE_DITHER] = my->flags[INVISIBLE_DITHER];
+				bool shortSprite = (torso->sprite == items[ROBE_WIZARD].index
+					|| torso->sprite == items[ROBE_HEALER].index
+					|| torso->sprite == items[ROBE_CULTIST].index
+					|| torso->sprite == items[ROBE_MONK].index)
+					&& !(entity->flags[INVISIBLE] && !entity->flags[INVISIBLE_DITHER]);
+				if ( multiplayer != CLIENT )
+				{
+					if ( stats[PLAYER_NUM]->shoes == NULL || !showEquipment )
+					{
+						entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_RIGHTLEG, my->sprite);
+					}
+					else
+					{
+						my->setBootSprite(entity, SPRITE_BOOT_RIGHT_OFFSET, shortSprite);
+					}
+					if ( multiplayer == SERVER )
+					{
+						// update sprites for clients
+						if ( entity->ticks >= *cvar_entity_bodypart_sync_tick )
+						{
+							bool updateBodypart = false;
+							if ( entity->skill[10] != entity->sprite )
+							{
+								entity->skill[10] = entity->sprite;
+								updateBodypart = true;
+							}
+							if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
+							{
+								updateBodypart = true;
+							}
+							if ( updateBodypart )
+							{
+								serverUpdateEntityBodypart(my, bodypart);
+							}
+						}
+					}
+				}
+				if ( shortSprite && Entity::isBootSpriteShortArmor(entity) )
+				{
+					entity->z += 0.75;
+				}
+				my->setHumanoidLimbOffset(entity, playerRace, LIMB_HUMANOID_RIGHTLEG);
+				break;
+			}
+			// left leg
+			case 3:
+			{
+				entity->focalx = limbs[playerRace][3][0];
+				entity->focaly = limbs[playerRace][3][1];
+				entity->focalz = limbs[playerRace][3][2];
+				entity->flags[INVISIBLE_DITHER] = my->flags[INVISIBLE_DITHER];
+				bool shortSprite = (torso->sprite == items[ROBE_WIZARD].index
+					|| torso->sprite == items[ROBE_HEALER].index
+					|| torso->sprite == items[ROBE_CULTIST].index
+					|| torso->sprite == items[ROBE_MONK].index)
+					&& !(entity->flags[INVISIBLE] && !entity->flags[INVISIBLE_DITHER]);
+				if ( multiplayer != CLIENT )
+				{
+					if ( stats[PLAYER_NUM]->shoes == NULL || !showEquipment )
+					{
+						entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_LEFTLEG, my->sprite);
+					}
+					else
+					{
+						my->setBootSprite(entity, SPRITE_BOOT_LEFT_OFFSET, shortSprite);
+					}
+					if ( multiplayer == SERVER )
+					{
+						// update sprites for clients
+						if ( entity->ticks >= *cvar_entity_bodypart_sync_tick )
+						{
+							bool updateBodypart = false;
+							if ( entity->skill[10] != entity->sprite )
+							{
+								entity->skill[10] = entity->sprite;
+								updateBodypart = true;
+							}
+							if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
+							{
+								updateBodypart = true;
+							}
+							if ( updateBodypart )
+							{
+								serverUpdateEntityBodypart(my, bodypart);
+							}
+						}
+					}
+				}
+				if ( shortSprite && Entity::isBootSpriteShortArmor(entity) )
+				{
+					entity->z += 0.75;
+				}
+				my->setHumanoidLimbOffset(entity, playerRace, LIMB_HUMANOID_LEFTLEG);
+				break;
+			}
+			// right arm
+			case 4:
+			{
+				entity->flags[INVISIBLE_DITHER] = my->flags[INVISIBLE_DITHER];
+				if ( multiplayer != CLIENT )
+				{
+					if ( stats[PLAYER_NUM]->gloves == NULL || !showEquipment )
+					{
+						entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_RIGHTARM, my->sprite);
+					}
+					else
+					{
+						if ( setGloveSprite(stats[PLAYER_NUM], entity, SPRITE_GLOVE_RIGHT_OFFSET) != 0 )
+						{
+							// successfully set sprite for the human model
+						}
+					}
+					if ( (!PLAYER_ARMBENDED && showEquipment) 
+						|| ((PLAYER_ATTACK == MONSTER_POSE_MAGIC_WINDUP1 || PLAYER_ATTACK == MONSTER_POSE_MAGIC_WINDUP2) && showEquipment)
+						|| (insectoidLevitating && PLAYER_ATTACK == 0 && PLAYER_ATTACKTIME == 0) )
+					{
+						entity->sprite += 2 * (stats[PLAYER_NUM]->weapon != NULL);
+
+						if ( stats[PLAYER_NUM]->weapon == nullptr
+							&& (insectoidLevitating || ((PLAYER_ATTACK == MONSTER_POSE_MAGIC_WINDUP1 || PLAYER_ATTACK == MONSTER_POSE_MAGIC_WINDUP2) && showEquipment)) )
+						{
+							entity->sprite += 2;
+						}
+					}
+					if ( multiplayer == SERVER )
+					{
+						// update sprites for clients
+						if ( entity->ticks >= *cvar_entity_bodypart_sync_tick )
+						{
+							bool updateBodypart = false;
+							if ( entity->skill[10] != entity->sprite )
+							{
+								entity->skill[10] = entity->sprite;
+								updateBodypart = true;
+							}
+							if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
+							{
+								updateBodypart = true;
+							}
+							if ( updateBodypart )
+							{
+								serverUpdateEntityBodypart(my, bodypart);
+							}
+						}
+					}
+				}
+				node_t* tempNode = list_Node(&my->children, 6);
+				if ( tempNode )
+				{
+					Entity* weapon = (Entity*)tempNode->element;
+
+					bool bendArm = PLAYER_ARMBENDED || playerRace == CREATURE_IMP;
+					if ( !((PLAYER_ATTACK == MONSTER_POSE_MAGIC_WINDUP1 || PLAYER_ATTACK == MONSTER_POSE_MAGIC_WINDUP2) 
+							&& showEquipment) )
+					{
+						bendArm |= (weapon->flags[INVISIBLE] && !weapon->flags[INVISIBLE_DITHER]);
 					}
 
-					node_t* tempNode = list_Node(&my->children, 7);
-					if ( tempNode )
+					if ( bendArm )
 					{
-						Entity* shield = (Entity*)tempNode->element;
-						bool bendArm = true;
-						if ( shield->flags[INVISIBLE] && !shield->flags[INVISIBLE_DITHER] )
+						if ( playerRace == INCUBUS || playerRace == SUCCUBUS )
 						{
-							bendArm = false;
-							if ( insectoidLevitating )
+							entity->focalx = limbs[playerRace][4][0] - 0.25;
+							entity->focaly = limbs[playerRace][4][1] - 0.25;
+							entity->focalz = limbs[playerRace][4][2];
+						}
+						else if ( playerRace == DRYAD )
+						{
+							entity->focalx = limbs[playerRace][4][0];
+							entity->focaly = limbs[playerRace][4][1] - 0.25;
+							entity->focalz = limbs[playerRace][4][2];
+
+							if ( entity->sprite == 1966
+								|| entity->sprite == 1970 )
 							{
-								bendArm = true;
+								entity->focaly += 0.25;
 							}
 						}
-						else if ( shield->sprite >= items[SPELLBOOK_LIGHT].index
-							&& shield->sprite < (items[SPELLBOOK_LIGHT].index + items[SPELLBOOK_LIGHT].variations) )
+						else if ( playerRace == MYCONID )
 						{
-							bendArm = false;
-						}
-						else if ( playerRace == CREATURE_IMP )
-						{
-							bendArm = false;
-						}
-						
-						if ( !bendArm )
-						{
-							if ( playerRace == INCUBUS || playerRace == SUCCUBUS )
+							entity->focalx = limbs[playerRace][4][0];
+							entity->focaly = limbs[playerRace][4][1];
+							entity->focalz = limbs[playerRace][4][2];
+
+							if ( entity->sprite == 2000 )
 							{
-								entity->focalx = limbs[playerRace][5][0] - 0.25;
-								entity->focaly = limbs[playerRace][5][1] + 0.25;
-								entity->focalz = limbs[playerRace][5][2];
-							}
-							else
-							{
-								entity->focalx = limbs[playerRace][5][0]; // 0
-								entity->focaly = limbs[playerRace][5][1]; // 0
-								entity->focalz = limbs[playerRace][5][2]; // 1.5
+								entity->focaly += 0.25;
 							}
 						}
 						else
 						{
-							if ( playerRace == INCUBUS || playerRace == SUCCUBUS )
+							entity->focalx = limbs[playerRace][4][0]; // 0
+							entity->focaly = limbs[playerRace][4][1]; // 0
+							entity->focalz = limbs[playerRace][4][2]; // 1.5
+						}
+					}
+					else
+					{
+						if ( playerRace == INCUBUS || playerRace == SUCCUBUS )
+						{
+							entity->focalx = limbs[playerRace][4][0];
+							entity->focaly = limbs[playerRace][4][1];
+							entity->focalz = limbs[playerRace][4][2];
+						}
+						else if ( playerRace == AUTOMATON )
+						{
+							entity->focalx = limbs[playerRace][4][0] + 1.5; // 1
+							entity->focaly = limbs[playerRace][4][1] + 0.25; // 0
+							entity->focalz = limbs[playerRace][4][2] - 1; // 1
+						}
+						else if ( playerRace == MYCONID || playerRace == SALAMANDER )
+						{
+							entity->focalx = limbs[playerRace][4][0] + 0.75;
+							entity->focaly = limbs[playerRace][4][1] + 0.25;
+							entity->focalz = limbs[playerRace][4][2] - 0.75;
+						}
+						else if ( playerRace == GREMLIN )
+						{
+							entity->focalx = limbs[playerRace][4][0] + 1;
+							entity->focaly = limbs[playerRace][4][1] + 0.25;
+							entity->focalz = limbs[playerRace][4][2] - 0.75;
+						}
+						else if ( playerRace == GNOME )
+						{
+							entity->focalx = limbs[playerRace][4][0] + 1;
+							entity->focaly = limbs[playerRace][4][1] + 0.25;
+							entity->focalz = limbs[playerRace][4][2] - 0.75;
+						}
+						else
+						{
+							entity->focalx = limbs[playerRace][4][0] + 0.75;
+							entity->focaly = limbs[playerRace][4][1];
+							entity->focalz = limbs[playerRace][4][2] - 0.75;
+						}
+					}
+				}
+				my->setHumanoidLimbOffset(entity, playerRace, LIMB_HUMANOID_RIGHTARM);
+				entity->yaw += PLAYER_WEAPONYAW;
+				break;
+			}
+			// left arm
+			case 5:
+			{
+				entity->flags[INVISIBLE_DITHER] = my->flags[INVISIBLE_DITHER];
+				if ( multiplayer != CLIENT )
+				{
+					if ( stats[PLAYER_NUM]->gloves == NULL || !showEquipment )
+					{
+						entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_LEFTARM, my->sprite);
+					}
+					else
+					{
+						if ( setGloveSprite(stats[PLAYER_NUM], entity, SPRITE_GLOVE_LEFT_OFFSET) != 0 )
+						{
+							// successfully set sprite for the human model
+						}
+					}
+					if ( showEquipment )
+					{
+						bool bendArm = false;
+						if ( insectoidLevitating )
+						{
+							bendArm = true;
+						}
+						if ( stats[PLAYER_NUM]->shield != NULL )
+						{
+							if ( itemCategory(stats[PLAYER_NUM]->shield) == SPELLBOOK )
 							{
-								entity->focalx = limbs[playerRace][5][0];
-								entity->focaly = limbs[playerRace][5][1];
-								entity->focalz = limbs[playerRace][5][2];
-							}
-							else if ( playerRace == AUTOMATON )
-							{
-								entity->focalx = limbs[playerRace][5][0] + 1.5; // 1
-								entity->focaly = limbs[playerRace][5][1] - 0.25; // 0
-								entity->focalz = limbs[playerRace][5][2] - 1; // 1
+								bendArm = false;
 							}
 							else
 							{
-								entity->focalx = limbs[playerRace][5][0] + 0.75;
-								entity->focaly = limbs[playerRace][5][1];
-								entity->focalz = limbs[playerRace][5][2] - 0.75;
+								bendArm = true;
+							}
+						}
+						entity->sprite += 2 * (bendArm);
+					}
+					if ( multiplayer == SERVER )
+					{
+						// update sprites for clients
+						if ( entity->ticks >= *cvar_entity_bodypart_sync_tick )
+						{
+							bool updateBodypart = false;
+							if ( entity->skill[10] != entity->sprite )
+							{
+								entity->skill[10] = entity->sprite;
+								updateBodypart = true;
+							}
+							if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
+							{
+								updateBodypart = true;
+							}
+							if ( updateBodypart )
+							{
+								serverUpdateEntityBodypart(my, bodypart);
 							}
 						}
 					}
-					if ( multiplayer != CLIENT )
+				}
+				if ( weaponarm && !showEquipment &&
+					(PLAYER_ATTACK == MONSTER_POSE_SPECIAL_WINDUP1
+						|| PLAYER_ATTACK == MONSTER_POSE_SPECIAL_WINDUP2
+						|| PLAYER_ATTACK == PLAYER_POSE_GOLEM_SMASH) )
+				{
+					// special swing - copy the right arm movements.
+					entity->pitch = weaponarm->pitch;
+					entity->roll = -weaponarm->roll;
+				}
+				else
+				{
+					entity->roll = 0.f;
+				}
+
+				node_t* tempNode = list_Node(&my->children, 7);
+				if ( tempNode )
+				{
+					Entity* shield = (Entity*)tempNode->element;
+					bool bendArm = true;
+					if ( shield->flags[INVISIBLE] && !shield->flags[INVISIBLE_DITHER] )
 					{
-						real_t prevYaw = PLAYER_SHIELDYAW;
-						if ( stats[PLAYER_NUM]->defending )
+						bendArm = false;
+						if ( insectoidLevitating )
+						{
+							bendArm = true;
+						}
+					}
+					else if ( shieldSpriteIsSpellbook(shield->sprite) )
+					{
+						bendArm = false;
+					}
+					else if ( playerRace == CREATURE_IMP )
+					{
+						bendArm = false;
+					}
+
+					if ( !bendArm )
+					{
+						if ( playerRace == INCUBUS || playerRace == SUCCUBUS )
+						{
+							entity->focalx = limbs[playerRace][5][0] - 0.25;
+							entity->focaly = limbs[playerRace][5][1] + 0.25;
+							entity->focalz = limbs[playerRace][5][2];
+						}
+						else if ( playerRace == DRYAD )
+						{
+							entity->focalx = limbs[playerRace][5][0]; // 0
+							entity->focaly = limbs[playerRace][5][1] + .25; // 0
+							entity->focalz = limbs[playerRace][5][2]; // 2
+
+							if ( entity->sprite == 1965
+								|| entity->sprite == 1969 )
+							{
+								entity->focaly -= 0.25;
+							}
+						}
+						else if ( playerRace == MYCONID )
+						{
+							entity->focalx = limbs[playerRace][5][0];
+							entity->focaly = limbs[playerRace][5][1];
+							entity->focalz = limbs[playerRace][5][2];
+
+							if ( entity->sprite == 1999 )
+							{
+								entity->focaly -= 0.25;
+							}
+						}
+						else
+						{
+							entity->focalx = limbs[playerRace][5][0]; // 0
+							entity->focaly = limbs[playerRace][5][1]; // 0
+							entity->focalz = limbs[playerRace][5][2]; // 1.5
+						}
+					}
+					else
+					{
+						if ( playerRace == INCUBUS || playerRace == SUCCUBUS )
+						{
+							entity->focalx = limbs[playerRace][5][0];
+							entity->focaly = limbs[playerRace][5][1];
+							entity->focalz = limbs[playerRace][5][2];
+						}
+						else if ( playerRace == AUTOMATON )
+						{
+							entity->focalx = limbs[playerRace][5][0] + 1.5; // 1
+							entity->focaly = limbs[playerRace][5][1] - 0.25; // 0
+							entity->focalz = limbs[playerRace][5][2] - 1; // 1
+						}
+						else if ( playerRace == MYCONID || playerRace == SALAMANDER )
+						{
+							entity->focalx = limbs[playerRace][5][0] + 0.75;
+							entity->focaly = limbs[playerRace][5][1] - 0.25;
+							entity->focalz = limbs[playerRace][5][2] - 0.75;
+						}
+						else if ( playerRace == GREMLIN )
+						{
+							entity->focalx = limbs[playerRace][5][0] + 1;
+							entity->focaly = limbs[playerRace][5][1] - 0.25;
+							entity->focalz = limbs[playerRace][5][2] - 0.75;
+						}
+						else if ( playerRace == GNOME )
+						{
+							entity->focalx = limbs[playerRace][5][0] + 1; // 1
+							entity->focaly = limbs[playerRace][5][1] - 0.25; // 0
+							entity->focalz = limbs[playerRace][5][2] - 0.75; // 1
+						}
+						else
+						{
+							entity->focalx = limbs[playerRace][5][0] + 0.75;
+							entity->focaly = limbs[playerRace][5][1];
+							entity->focalz = limbs[playerRace][5][2] - 0.75;
+						}
+					}
+				}
+				my->setHumanoidLimbOffset(entity, playerRace, LIMB_HUMANOID_LEFTARM);
+				if ( multiplayer != CLIENT )
+				{
+					real_t prevYaw = PLAYER_SHIELDYAW;
+					if ( stats[PLAYER_NUM]->defending )
+					{
+						if ( playerRace == CREATURE_IMP )
+						{
+							PLAYER_SHIELDYAW = PI / 25;
+						}
+						else
 						{
 							PLAYER_SHIELDYAW = PI / 5;
 						}
-						else
-						{
-							PLAYER_SHIELDYAW = 0;
-						}
-						if ( prevYaw != PLAYER_SHIELDYAW || ticks % 200 == 0 )
-						{
-							serverUpdateEntityFSkill(players[PLAYER_NUM]->entity, 8);
-						}
-					}
-					entity->yaw += PLAYER_SHIELDYAW;
-					break;
-				}
-				// weapon
-				case 6:
-					if ( multiplayer != CLIENT )
-					{
-						entity->flags[INVISIBLE_DITHER] = false;
-						if ( swimming )
-						{
-							entity->flags[INVISIBLE] = true;
-						}
-						else
-						{
-							if ( stats[PLAYER_NUM]->weapon == NULL )
-							{
-								entity->flags[INVISIBLE] = true;
-								entity->sprite = 0;
-							}
-							else
-							{
-								entity->sprite = itemModel(stats[PLAYER_NUM]->weapon);
-								if ( itemCategory(stats[PLAYER_NUM]->weapon) == SPELLBOOK )
-								{
-									entity->flags[INVISIBLE] = true;
-								}
-								else
-								{
-									entity->flags[INVISIBLE] = false;
-								}
-							}
-
-							if ( my->isInvisible() && stats[PLAYER_NUM]->weapon )
-							{
-								entity->flags[INVISIBLE] = true;
-								entity->flags[INVISIBLE_DITHER] = true;
-							}
-						}
-
-						if ( multiplayer == SERVER )
-						{
-							// update sprites for clients
-							if ( entity->ticks >= *cvar_entity_bodypart_sync_tick )
-							{
-								bool updateBodypart = false;
-								if ( entity->skill[10] != entity->sprite )
-								{
-									entity->skill[10] = entity->sprite;
-									updateBodypart = true;
-								}
-								if ( entity->skill[11] != ((entity->flags[INVISIBLE] ? 1 : 0) + (entity->flags[INVISIBLE_DITHER] ? 2 : 0)) )
-								{
-									entity->skill[11] = ((entity->flags[INVISIBLE] ? 1 : 0) + (entity->flags[INVISIBLE_DITHER] ? 2 : 0));
-									updateBodypart = true;
-								}
-								if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
-								{
-									updateBodypart = true;
-								}
-								if ( updateBodypart )
-								{
-									serverUpdateEntityBodypart(my, bodypart);
-								}
-							}
-						}
 					}
 					else
 					{
-						if ( entity->sprite <= 0 )
-						{
-							entity->flags[INVISIBLE] = true;
-							entity->flags[INVISIBLE_DITHER] = false;
-						}
+						PLAYER_SHIELDYAW = 0;
 					}
-					my->handleHumanoidWeaponLimb(entity, weaponarm);
-					break;
-				// shield
-				case 7:
-					if ( multiplayer != CLIENT )
+					if ( prevYaw != PLAYER_SHIELDYAW || ticks % 200 == 0 )
 					{
-						entity->flags[INVISIBLE_DITHER] = false;
-						if ( swimming )
+						serverUpdateEntityFSkill(players[PLAYER_NUM]->entity, 8);
+					}
+				}
+				entity->yaw += PLAYER_SHIELDYAW;
+				break;
+			}
+			// weapon
+			case 6:
+				if ( multiplayer != CLIENT )
+				{
+					entity->flags[INVISIBLE_DITHER] = false;
+					if ( swimming )
+					{
+						entity->flags[INVISIBLE] = true;
+					}
+					else if ( PLAYER_ATTACK == MONSTER_POSE_MAGIC_WINDUP2 )
+					{
+						entity->flags[INVISIBLE] = true;
+					}
+					else
+					{
+						if ( stats[PLAYER_NUM]->weapon == NULL )
 						{
 							entity->flags[INVISIBLE] = true;
+							entity->sprite = 0;
 						}
 						else
 						{
-							if ( stats[PLAYER_NUM]->shield == NULL )
+							entity->sprite = itemModel(stats[PLAYER_NUM]->weapon);
+							if ( itemCategory(stats[PLAYER_NUM]->weapon) == SPELLBOOK )
 							{
 								entity->flags[INVISIBLE] = true;
-								entity->sprite = 0;
 							}
 							else
 							{
 								entity->flags[INVISIBLE] = false;
-								entity->sprite = itemModel(stats[PLAYER_NUM]->shield);
+							}
+						}
+
+						if ( my->isInvisible() && stats[PLAYER_NUM]->weapon )
+						{
+							entity->flags[INVISIBLE] = true;
+							entity->flags[INVISIBLE_DITHER] = true;
+						}
+					}
+
+					if ( multiplayer == SERVER )
+					{
+						// update sprites for clients
+						if ( entity->ticks >= *cvar_entity_bodypart_sync_tick )
+						{
+							bool updateBodypart = false;
+							if ( entity->skill[10] != entity->sprite )
+							{
+								entity->skill[10] = entity->sprite;
+								updateBodypart = true;
+							}
+							if ( entity->skill[11] != ((entity->flags[INVISIBLE] ? 1 : 0) + (entity->flags[INVISIBLE_DITHER] ? 2 : 0)) )
+							{
+								entity->skill[11] = ((entity->flags[INVISIBLE] ? 1 : 0) + (entity->flags[INVISIBLE_DITHER] ? 2 : 0));
+								updateBodypart = true;
+							}
+							if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
+							{
+								updateBodypart = true;
+							}
+							if ( updateBodypart )
+							{
+								serverUpdateEntityBodypart(my, bodypart);
+							}
+						}
+					}
+				}
+				else
+				{
+					if ( entity->sprite <= 0 )
+					{
+						entity->flags[INVISIBLE] = true;
+						entity->flags[INVISIBLE_DITHER] = false;
+					}
+				}
+				my->handleHumanoidWeaponLimb(entity, weaponarm);
+
+				if ( entity->sprite >= items[STEEL_FLAIL].index && entity->sprite <= items[STEEL_FLAIL].index + 2 )
+				{
+					// slight GENIUS flag fix for clipping into camera
+					entity->sizex = 5;
+					entity->sizey = 5;
+				}
+				else
+				{
+					entity->sizex = 4;
+					entity->sizey = 4;
+				}
+				break;
+				// shield
+			case 7:
+				if ( multiplayer != CLIENT )
+				{
+					entity->flags[INVISIBLE_DITHER] = false;
+					if ( swimming )
+					{
+						entity->flags[INVISIBLE] = true;
+					}
+					else
+					{
+						if ( stats[PLAYER_NUM]->shield == NULL )
+						{
+							entity->flags[INVISIBLE] = true;
+							entity->sprite = 0;
+						}
+						else
+						{
+							entity->flags[INVISIBLE] = false;
+							entity->sprite = itemModel(stats[PLAYER_NUM]->shield);
+							if ( itemTypeIsQuiver(stats[PLAYER_NUM]->shield->type) )
+							{
 								if ( itemTypeIsQuiver(stats[PLAYER_NUM]->shield->type) )
 								{
-									if ( itemTypeIsQuiver(stats[PLAYER_NUM]->shield->type) )
-									{
-										entity->handleQuiverThirdPersonModel(*stats[PLAYER_NUM]);
-									}
+									entity->handleQuiverThirdPersonModel(*stats[PLAYER_NUM], my->sprite);
 								}
 							}
+						}
 
-							if ( my->isInvisible() && stats[PLAYER_NUM]->shield )
+						if ( my->isInvisible() && stats[PLAYER_NUM]->shield )
+						{
+							entity->flags[INVISIBLE] = true;
+							entity->flags[INVISIBLE_DITHER] = true;
+						}
+					}
+					if ( multiplayer == SERVER )
+					{
+						// update sprites for clients
+						if ( entity->ticks >= *cvar_entity_bodypart_sync_tick )
+						{
+							bool updateBodypart = false;
+							if ( entity->skill[10] != entity->sprite )
+							{
+								entity->skill[10] = entity->sprite;
+								updateBodypart = true;
+							}
+							if ( entity->skill[11] != ((entity->flags[INVISIBLE] ? 1 : 0) + (entity->flags[INVISIBLE_DITHER] ? 2 : 0)) )
+							{
+								entity->skill[11] = ((entity->flags[INVISIBLE] ? 1 : 0) + (entity->flags[INVISIBLE_DITHER] ? 2 : 0));
+								updateBodypart = true;
+							}
+							if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
+							{
+								updateBodypart = true;
+							}
+							if ( updateBodypart )
+							{
+								serverUpdateEntityBodypart(my, bodypart);
+							}
+						}
+					}
+				}
+				else
+				{
+					if ( entity->sprite <= 0 )
+					{
+						entity->flags[INVISIBLE] = true;
+						entity->flags[INVISIBLE_DITHER] = false;
+					}
+				}
+				my->handleHumanoidShieldLimb(entity, shieldarm);
+				break;
+				// cloak
+			case 8:
+				entity->focalx = limbs[playerRace][8][0];
+				entity->focaly = limbs[playerRace][8][1];
+				entity->focalz = limbs[playerRace][8][2];
+				entity->scalex = 1.01;
+				entity->scaley = 1.01;
+				if ( multiplayer != CLIENT )
+				{
+					entity->flags[INVISIBLE_DITHER] = false;
+					if ( stats[PLAYER_NUM]->cloak == NULL )
+					{
+						entity->flags[INVISIBLE] = true;
+					}
+					else
+					{
+						entity->flags[INVISIBLE] = false;
+						entity->sprite = itemModel(stats[PLAYER_NUM]->cloak);
+					}
+
+					if ( my->isInvisible() && stats[PLAYER_NUM]->cloak )
+					{
+						entity->flags[INVISIBLE] = true;
+						entity->flags[INVISIBLE_DITHER] = true;
+					}
+
+					if ( multiplayer == SERVER )
+					{
+						// update sprites for clients
+						if ( entity->ticks >= *cvar_entity_bodypart_sync_tick )
+						{
+							bool updateBodypart = false;
+							if ( entity->skill[10] != entity->sprite )
+							{
+								entity->skill[10] = entity->sprite;
+								updateBodypart = true;
+							}
+							if ( entity->skill[11] != ((entity->flags[INVISIBLE] ? 1 : 0) + (entity->flags[INVISIBLE_DITHER] ? 2 : 0)) )
+							{
+								entity->skill[11] = ((entity->flags[INVISIBLE] ? 1 : 0) + (entity->flags[INVISIBLE_DITHER] ? 2 : 0));
+								updateBodypart = true;
+							}
+							if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
+							{
+								updateBodypart = true;
+							}
+							if ( updateBodypart )
+							{
+								serverUpdateEntityBodypart(my, bodypart);
+							}
+						}
+					}
+				}
+				else
+				{
+					if ( entity->sprite <= 0 )
+					{
+						entity->flags[INVISIBLE] = true;
+						entity->flags[INVISIBLE_DITHER] = false;
+					}
+				}
+
+				if ( entity->sprite == items[CLOAK_BACKPACK].index )
+				{
+					// human
+					if ( playerRace == HUMAN || playerRace == VAMPIRE )
+					{
+						entity->focaly = limbs[playerRace][8][1] + 0.25;
+						entity->focalz = limbs[playerRace][8][2] - 0.3;
+					}
+					else if ( playerRace == SUCCUBUS || playerRace == INCUBUS )
+					{
+						// succubus/incubus
+						entity->focaly = limbs[playerRace][8][1] + 0.25;
+						entity->focalz = limbs[playerRace][8][2] - 0.7;
+					}
+					else if ( playerRace == SKELETON )
+					{
+						entity->focaly = limbs[playerRace][8][1] + 0.25;
+						entity->focalz = limbs[playerRace][8][2] - 0.5;
+					}
+					else if ( playerRace == AUTOMATON )
+					{
+						entity->focaly = limbs[playerRace][8][1] - 0.25;
+						entity->focalz = limbs[playerRace][8][2] - 0.5;
+					}
+					else if ( playerRace == GOATMAN || playerRace == INSECTOID || playerRace == GOBLIN )
+					{
+						entity->focaly = limbs[playerRace][8][1] - 0.25;
+						entity->focalz = limbs[playerRace][8][2] - 0.5;
+					}
+
+					entity->scalex = 0.99;
+					entity->scaley = 0.99;
+				}
+				entity->x -= cos(my->yaw);
+				entity->y -= sin(my->yaw);
+				entity->yaw += PI / 2;
+				my->setHumanoidLimbOffset(entity, playerRace, LIMB_HUMANOID_CLOAK);
+				break;
+				// helm
+			case 9:
+			{
+				helmet = entity;
+				entity->focalx = limbs[playerRace][9][0]; // 0
+				entity->focaly = limbs[playerRace][9][1]; // 0
+				entity->focalz = limbs[playerRace][9][2]; // -1.75
+				entity->pitch = my->pitch;
+				entity->roll = 0;
+				static int lastHelmSprite[MAXPLAYERS] = { 0 };
+				bool tryShake = false;
+				if ( entity->skill[1] == 1 )
+				{
+					tryShake = true;
+					entity->skill[1] = 0;
+				}
+				if ( multiplayer != CLIENT )
+				{
+					entity->sprite = itemModel(stats[PLAYER_NUM]->helmet);
+					entity->flags[INVISIBLE_DITHER] = false;
+					if ( stats[PLAYER_NUM]->helmet == NULL )
+					{
+						if ( playerRace == MYCONID && stats[PLAYER_NUM]->getEffectActive(EFF_GROWTH) >= 2 )
+						{
+							entity->sprite = 2003 + std::min(2, (stats[PLAYER_NUM]->getEffectActive(EFF_GROWTH) - 2));
+							entity->flags[INVISIBLE] = false;
+							if ( my->isInvisible() )
 							{
 								entity->flags[INVISIBLE] = true;
 								entity->flags[INVISIBLE_DITHER] = true;
 							}
 						}
-						if ( multiplayer == SERVER )
+						else if ( playerRace == DRYAD && stats[PLAYER_NUM]->getEffectActive(EFF_GROWTH) >= 2 )
 						{
-							// update sprites for clients
-							if ( entity->ticks >= *cvar_entity_bodypart_sync_tick )
+							if ( my->sprite == 1964 || my->sprite == 1993 )
 							{
-								bool updateBodypart = false;
-								if ( entity->skill[10] != entity->sprite )
-								{
-									entity->skill[10] = entity->sprite;
-									updateBodypart = true;
-								}
-								if ( entity->skill[11] != ((entity->flags[INVISIBLE] ? 1 : 0) + (entity->flags[INVISIBLE_DITHER] ? 2 : 0)) )
-								{
-									entity->skill[11] = ((entity->flags[INVISIBLE] ? 1 : 0) + (entity->flags[INVISIBLE_DITHER] ? 2 : 0));
-									updateBodypart = true;
-								}
-								if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
-								{
-									updateBodypart = true;
-								}
-								if ( updateBodypart )
-								{
-									serverUpdateEntityBodypart(my, bodypart);
-								}
-							}
-						}
-					}
-					else
-					{
-						if ( entity->sprite <= 0 )
-						{
-							entity->flags[INVISIBLE] = true;
-							entity->flags[INVISIBLE_DITHER] = false;
-						}
-					}
-					my->handleHumanoidShieldLimb(entity, shieldarm);
-					break;
-					// cloak
-				case 8:
-					entity->focalx = limbs[playerRace][8][0];
-					entity->focaly = limbs[playerRace][8][1];
-					entity->focalz = limbs[playerRace][8][2];
-					entity->scalex = 1.01;
-					entity->scaley = 1.01;
-					if ( multiplayer != CLIENT )
-					{
-						entity->flags[INVISIBLE_DITHER] = false;
-						if ( stats[PLAYER_NUM]->cloak == NULL )
-						{
-							entity->flags[INVISIBLE] = true;
-						}
-						else
-						{
-							entity->flags[INVISIBLE] = false;
-							entity->sprite = itemModel(stats[PLAYER_NUM]->cloak);
-						}
-
-						if ( my->isInvisible() && stats[PLAYER_NUM]->cloak )
-						{
-							entity->flags[INVISIBLE] = true;
-							entity->flags[INVISIBLE_DITHER] = true;
-						}
-
-						if ( multiplayer == SERVER )
-						{
-							// update sprites for clients
-							if ( entity->ticks >= *cvar_entity_bodypart_sync_tick )
-							{
-								bool updateBodypart = false;
-								if ( entity->skill[10] != entity->sprite )
-								{
-									entity->skill[10] = entity->sprite;
-									updateBodypart = true;
-								}
-								if ( entity->skill[11] != ((entity->flags[INVISIBLE] ? 1 : 0) + (entity->flags[INVISIBLE_DITHER] ? 2 : 0)) )
-								{
-									entity->skill[11] = ((entity->flags[INVISIBLE] ? 1 : 0) + (entity->flags[INVISIBLE_DITHER] ? 2 : 0));
-									updateBodypart = true;
-								}
-								if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
-								{
-									updateBodypart = true;
-								}
-								if ( updateBodypart )
-								{
-									serverUpdateEntityBodypart(my, bodypart);
-								}
-							}
-						}
-					}
-					else
-					{
-						if ( entity->sprite <= 0 )
-						{
-							entity->flags[INVISIBLE] = true;
-							entity->flags[INVISIBLE_DITHER] = false;
-						}
-					}
-
-					if ( entity->sprite == items[CLOAK_BACKPACK].index )
-					{
-						// human
-						if ( playerRace == HUMAN || playerRace == VAMPIRE )
-						{
-							entity->focaly = limbs[playerRace][8][1] + 0.25;
-							entity->focalz = limbs[playerRace][8][2] - 0.3;
-						}
-						else if ( playerRace == SUCCUBUS || playerRace == INCUBUS )
-						{
-							// succubus/incubus
-							entity->focaly = limbs[playerRace][8][1] + 0.25;
-							entity->focalz = limbs[playerRace][8][2] - 0.7;
-						}
-						else if ( playerRace == SKELETON )
-						{
-							entity->focaly = limbs[playerRace][8][1] + 0.25;
-							entity->focalz = limbs[playerRace][8][2] - 0.5;
-						}
-						else if ( playerRace == AUTOMATON )
-						{
-							entity->focaly = limbs[playerRace][8][1] - 0.25;
-							entity->focalz = limbs[playerRace][8][2] - 0.5;
-						}
-						else if ( playerRace == GOATMAN || playerRace == INSECTOID || playerRace == GOBLIN )
-						{
-							entity->focaly = limbs[playerRace][8][1] - 0.25;
-							entity->focalz = limbs[playerRace][8][2] - 0.5;
-						}
-
-						entity->scalex = 0.99;
-						entity->scaley = 0.99;
-					}
-					entity->x -= cos(my->yaw);
-					entity->y -= sin(my->yaw);
-					entity->yaw += PI / 2;
-					break;
-					// helm
-				case 9:
-					helmet = entity;
-					entity->focalx = limbs[playerRace][9][0]; // 0
-					entity->focaly = limbs[playerRace][9][1]; // 0
-					entity->focalz = limbs[playerRace][9][2]; // -1.75
-					entity->pitch = my->pitch;
-					entity->roll = 0;
-					if ( multiplayer != CLIENT )
-					{
-						entity->sprite = itemModel(stats[PLAYER_NUM]->helmet);
-						entity->flags[INVISIBLE_DITHER] = false;
-						if ( stats[PLAYER_NUM]->helmet == NULL )
-						{
-							entity->flags[INVISIBLE] = true;
-						}
-						else
-						{
-							entity->flags[INVISIBLE] = false;
-						}
-
-						if ( my->isInvisible() && stats[PLAYER_NUM]->helmet )
-						{
-							entity->flags[INVISIBLE] = true;
-							entity->flags[INVISIBLE_DITHER] = true;
-						}
-
-						if ( multiplayer == SERVER )
-						{
-							// update sprites for clients
-							if ( entity->ticks >= *cvar_entity_bodypart_sync_tick )
-							{
-								bool updateBodypart = false;
-								if ( entity->skill[10] != entity->sprite )
-								{
-									entity->skill[10] = entity->sprite;
-									updateBodypart = true;
-								}
-								if ( entity->skill[11] != ((entity->flags[INVISIBLE] ? 1 : 0) + (entity->flags[INVISIBLE_DITHER] ? 2 : 0)) )
-								{
-									entity->skill[11] = ((entity->flags[INVISIBLE] ? 1 : 0) + (entity->flags[INVISIBLE_DITHER] ? 2 : 0));
-									updateBodypart = true;
-								}
-								if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
-								{
-									updateBodypart = true;
-								}
-								if ( updateBodypart )
-								{
-									serverUpdateEntityBodypart(my, bodypart);
-								}
-							}
-						}
-					}
-					else
-					{
-						if ( entity->sprite <= 0 )
-						{
-							entity->flags[INVISIBLE] = true;
-							entity->flags[INVISIBLE_DITHER] = false;
-						}
-					}
-					my->setHelmetLimbOffset(entity);
-					break;
-					// mask
-				case 10:
-					entity->focalx = limbs[playerRace][10][0]; // 0
-					entity->focaly = limbs[playerRace][10][1]; // 0
-					entity->focalz = limbs[playerRace][10][2]; // .5
-					entity->pitch = my->pitch;
-					entity->roll = PI / 2;
-					if ( multiplayer != CLIENT )
-					{
-						entity->flags[INVISIBLE_DITHER] = false;
-						if ( stats[PLAYER_NUM]->mask == NULL )
-						{
-							entity->flags[INVISIBLE] = true;
-						}
-						else
-						{
-							entity->flags[INVISIBLE] = false;
-						}
-
-						if ( my->isInvisible() && stats[PLAYER_NUM]->mask )
-						{
-							entity->flags[INVISIBLE] = true;
-							entity->flags[INVISIBLE_DITHER] = true;
-						}
-
-						if ( stats[PLAYER_NUM]->mask != NULL )
-						{
-							if ( stats[PLAYER_NUM]->mask->type == TOOL_GLASSES )
-							{
-								entity->sprite = 165; // GlassesWorn.vox
-							}
-							else if ( stats[PLAYER_NUM]->mask->type == MONOCLE )
-							{
-								entity->sprite = 1196; // MonocleWorn.vox
+								entity->sprite = 1974 + std::min(2, (stats[PLAYER_NUM]->getEffectActive(EFF_GROWTH) - 2)) * 2;
 							}
 							else
 							{
-								entity->sprite = itemModel(stats[PLAYER_NUM]->mask);
+								entity->sprite = 1973 + std::min(2, (stats[PLAYER_NUM]->getEffectActive(EFF_GROWTH) - 2)) * 2;
 							}
-						}
-						if ( multiplayer == SERVER )
-						{
-							// update sprites for clients
-							if ( entity->ticks >= *cvar_entity_bodypart_sync_tick )
+							entity->flags[INVISIBLE] = false;
+							if ( my->isInvisible() )
 							{
-								bool updateBodypart = false;
-								if ( entity->skill[10] != entity->sprite )
-								{
-									entity->skill[10] = entity->sprite;
-									updateBodypart = true;
-								}
-								if ( entity->skill[11] != ((entity->flags[INVISIBLE] ? 1 : 0) + (entity->flags[INVISIBLE_DITHER] ? 2 : 0)) )
-								{
-									entity->skill[11] = ((entity->flags[INVISIBLE] ? 1 : 0) + (entity->flags[INVISIBLE_DITHER] ? 2 : 0));
-									updateBodypart = true;
-								}
-								if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
-								{
-									updateBodypart = true;
-								}
-								if ( updateBodypart )
-								{
-									serverUpdateEntityBodypart(my, bodypart);
-								}
+								entity->flags[INVISIBLE] = true;
+								entity->flags[INVISIBLE_DITHER] = true;
 							}
 						}
-					}
-					else
-					{
-						if ( entity->sprite <= 0 )
+						else
 						{
 							entity->flags[INVISIBLE] = true;
-							entity->flags[INVISIBLE_DITHER] = false;
 						}
-					}
-					entity->scalex = 0.99;
-					entity->scaley = 0.99;
-					entity->scalez = 0.99;
-					if ( entity->sprite == 165 || entity->sprite == 1196 )
-					{
-						entity->focalx = limbs[playerRace][10][0] + .25; // .25
-						entity->focaly = limbs[playerRace][10][1] - 2.5; // -2.25
-						entity->focalz = limbs[playerRace][10][2]; // .5
-						if ( entity->sprite == 1196 ) // MonocleWorn.vox
-						{
-							switch ( playerRace )
-							{
-								case INCUBUS:
-									entity->focalx -= .4;
-									break;
-								case SUCCUBUS:
-									entity->focalx -= .25;
-									break;
-								case GOBLIN:
-									entity->focalx -= .5;
-									entity->focalz -= .05;
-									break;
-								default:
-									break;
-							}
-						}
-						if ( helmet && !helmet->flags[INVISIBLE] && helmet->sprite == items[PUNISHER_HOOD].index )
-						{
-							switch ( playerRace )
-							{
-								case HUMAN:
-								case VAMPIRE:
-								case SHOPKEEPER:
-								case INSECTOID:
-									entity->focaly += 0.25; // lower glasses a bit.
-									break;
-								case INCUBUS:
-								case SUCCUBUS:
-								case AUTOMATON:
-								case GOBLIN:
-								case GOATMAN:
-								case SKELETON:
-									// no change.
-									break;
-								default:
-									break;
-							}
-						}
-					}
-					else if ( entity->sprite == items[MASK_SHAMAN].index )
-					{
-						entity->roll = 0;
-						my->setHelmetLimbOffset(entity);
-						my->setHelmetLimbOffsetWithMask(helmet, entity);
-					}
-					else if ( EquipmentModelOffsets.modelOffsetExists(playerRace, entity->sprite) )
-					{
-						my->setHelmetLimbOffset(entity);
-						my->setHelmetLimbOffsetWithMask(helmet, entity);
-					}
-					else if ( playerRace == INCUBUS
-						&& (entity->sprite == items[TOOL_BLINDFOLD].index
-							|| entity->sprite == items[TOOL_BLINDFOLD_FOCUS].index
-							|| entity->sprite == items[TOOL_BLINDFOLD_TELEPATHY].index) )
-					{
-						entity->focalx = limbs[playerRace][10][0] + .35; // .35
-						entity->focaly = limbs[playerRace][10][1] - 2.5; // -2
-						entity->focalz = limbs[playerRace][10][2]; // .5
 					}
 					else
 					{
-						entity->focalx = limbs[playerRace][10][0] + .35; // .35
-						entity->focaly = limbs[playerRace][10][1] - 2; // -2
-						entity->focalz = limbs[playerRace][10][2]; // .5
+						entity->flags[INVISIBLE] = false;
 					}
 
-					break;
+					if ( my->isInvisible() && stats[PLAYER_NUM]->helmet )
+					{
+						entity->flags[INVISIBLE] = true;
+						entity->flags[INVISIBLE_DITHER] = true;
+					}
+
+					if ( multiplayer == SERVER )
+					{
+						// update sprites for clients
+						if ( entity->ticks >= *cvar_entity_bodypart_sync_tick )
+						{
+							bool updateBodypart = false;
+							if ( entity->skill[10] != entity->sprite )
+							{
+								entity->skill[10] = entity->sprite;
+								updateBodypart = true;
+							}
+							if ( entity->skill[11] != ((entity->flags[INVISIBLE] ? 1 : 0) + (entity->flags[INVISIBLE_DITHER] ? 2 : 0)) )
+							{
+								entity->skill[11] = ((entity->flags[INVISIBLE] ? 1 : 0) + (entity->flags[INVISIBLE_DITHER] ? 2 : 0));
+								updateBodypart = true;
+							}
+							if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
+							{
+								updateBodypart = true;
+							}
+							if ( updateBodypart )
+							{
+								serverUpdateEntityBodypart(my, bodypart);
+							}
+						}
+					}
+				}
+				else
+				{
+					if ( entity->sprite <= 0 )
+					{
+						entity->flags[INVISIBLE] = true;
+						entity->flags[INVISIBLE_DITHER] = false;
+					}
+				}
+
+				if ( entity->sprite >= 1973 && entity->sprite <= 1978 )
+				{
+					entity->focalx = limbs[DRYAD][15][0];
+					entity->focaly = limbs[DRYAD][15][1];
+					entity->focalz = limbs[DRYAD][15][2];
+					entity->x += limbs[DRYAD][16][0] * cos(my->yaw + PI / 2) + limbs[DRYAD][16][1] * cos(my->yaw);
+					entity->y += limbs[DRYAD][16][0] * sin(my->yaw + PI / 2) + limbs[DRYAD][16][1] * sin(my->yaw);
+					entity->z += limbs[DRYAD][16][2];
+
+					if ( additionalLimb )
+					{
+						entity->scalez = 1.008 + 0.05 * sin(additionalLimb->fskill[0]);
+						entity->pitch -= 0.05 * sin(std::max(0.0, additionalLimb->fskill[0]) / 10);
+						entity->z -= 0.05 * sin(additionalLimb->fskill[0]);
+					}
+
+					entity->pitch += (entity->fskill[2]) * (PI / 64) * sin(entity->fskill[1]);
+					entity->roll = (entity->fskill[2]) * (PI / 64) * sin(entity->fskill[1] + PI / 2);
+
+					real_t bobScale = 0.08 * entity->skill[0];
+					entity->scalex = 1.01 + bobScale * sin(entity->fskill[3]);
+					entity->scaley = 1.01 + bobScale * sin(entity->fskill[3]);
+					if ( additionalLimb )
+					{
+						entity->scalez = 1.008 + 0.05 * sin(additionalLimb->fskill[0]) - bobScale * sin(entity->fskill[3]);
+					}
+					else
+					{
+						entity->scalez = 1.01 - bobScale * sin(entity->fskill[3]);
+					}
+
+					if ( lastHelmSprite[PLAYER_NUM] != entity->sprite || tryShake )
+					{
+						if ( !intro )
+						{
+							playSoundEntityLocal(my, 754 + local_rng.rand() % 2, 156);
+						}
+
+						entity->skill[0] = 3;
+
+						entity->fskill[3] = 0.0;
+						entity->fskill[1] = 2 * PI * 0.0;
+						entity->fskill[2] = 0.0;
+					}
+					ignoreHelmetOffsetFromMask = true;
+
+					if ( entity->skill[0] > 0 )
+					{
+						entity->fskill[2] = std::min(1.0, std::max(0.05, entity->fskill[2] * 1.15));
+						if ( entity->skill[0] == 4 ) // circle first
+						{
+							if ( entity->fskill[1] >= 2 * PI )
+							{
+								entity->skill[0]--;
+							}
+						}
+						else
+						{
+							entity->fskill[3] += 0.25;
+							if ( entity->fskill[3] >= 2 * PI )
+							{
+								entity->fskill[3] -= 2 * PI;
+								entity->skill[0]--;
+							}
+						}
+					}
+					else
+					{
+						entity->fskill[2] *= 0.95;
+					}
+					entity->fskill[1] += 0.125;
+				}
+				else if ( entity->sprite == 2003 || entity->sprite == 2004 || entity->sprite == 2005 )
+				{
+					entity->focalx = limbs[MYCONID][15][0];
+					entity->focaly = limbs[MYCONID][15][1];
+					entity->focalz = limbs[MYCONID][15][2];
+					entity->x += limbs[MYCONID][16][0] * cos(my->yaw + PI / 2) + limbs[MYCONID][16][1] * cos(my->yaw);
+					entity->y += limbs[MYCONID][16][0] * sin(my->yaw + PI / 2) + limbs[MYCONID][16][1] * sin(my->yaw);
+					entity->z += limbs[MYCONID][16][2] - 0.01;
+
+					if ( entity->sprite == 2004 )
+					{
+						entity->focalz -= .25;
+					}
+
+					entity->pitch += (entity->fskill[2]) * (PI / 64) * sin(entity->fskill[1]);
+					entity->roll = (entity->fskill[2]) * (PI / 64) * sin(entity->fskill[1] + PI / 2);
+
+					real_t bobScale = 0.08 * entity->skill[0];
+					entity->scalex = 1.01 + bobScale * sin(entity->fskill[3]);
+					entity->scaley = 1.01 + bobScale * sin(entity->fskill[3]);
+					entity->scalez = 1.01 - bobScale * sin(entity->fskill[3]);
+
+					if ( lastHelmSprite[PLAYER_NUM] != entity->sprite || tryShake )
+					{
+						if ( !intro )
+						{
+							if ( entity->sprite == 2003 )
+							{
+								playSoundEntityLocal(my, 714, 64);
+							}
+							else if ( entity->sprite == 2004 )
+							{
+								playSoundEntityLocal(my, 715, 64);
+							}
+							else if ( entity->sprite == 2005 )
+							{
+								playSoundEntityLocal(my, 716, 64);
+							}
+						}
+
+						entity->skill[0] = 3;
+
+						entity->fskill[3] = 0.0;
+						entity->fskill[1] = 2 * PI * 0.0;
+						entity->fskill[2] = 0.0;
+					}
+					ignoreHelmetOffsetFromMask = true;
+
+					if ( entity->skill[0] > 0 )
+					{
+						entity->fskill[2] = std::min(1.0, std::max(0.05, entity->fskill[2] * 1.15));
+						if ( entity->skill[0] == 4 ) // circle first
+						{
+							if ( entity->fskill[1] >= 2 * PI )
+							{
+								entity->skill[0]--;
+							}
+						}
+						else
+						{
+							entity->fskill[3] += 0.25;
+							if ( entity->fskill[3] >= 2 * PI )
+							{
+								entity->fskill[3] -= 2 * PI;
+								entity->skill[0]--;
+							}
+						}
+					}
+					else
+					{
+						entity->fskill[2] *= 0.95;
+					}
+					entity->fskill[1] += 0.125;
+				}
+				else
+				{
+					entity->skill[0] = 0;
+					entity->fskill[1] = 0.0;
+					entity->fskill[2] = 0.0;
+					my->setHelmetLimbOffset(entity);
+				}
+				lastHelmSprite[PLAYER_NUM] = entity->sprite;
+				break;
+				}
+					// mask
+			case 10:
+			{
+				entity->focalx = limbs[playerRace][10][0]; // 0
+				entity->focaly = limbs[playerRace][10][1]; // 0
+				entity->focalz = limbs[playerRace][10][2]; // .5
+				entity->pitch = my->pitch;
+				entity->roll = PI / 2;
+				if ( multiplayer != CLIENT )
+				{
+					entity->flags[INVISIBLE_DITHER] = false;
+					if ( stats[PLAYER_NUM]->mask == NULL )
+					{
+						entity->flags[INVISIBLE] = true;
+					}
+					else
+					{
+						entity->flags[INVISIBLE] = false;
+					}
+
+					if ( my->isInvisible() && stats[PLAYER_NUM]->mask )
+					{
+						entity->flags[INVISIBLE] = true;
+						entity->flags[INVISIBLE_DITHER] = true;
+					}
+
+					if ( stats[PLAYER_NUM]->mask != NULL )
+					{
+						if ( stats[PLAYER_NUM]->mask->type == TOOL_GLASSES )
+						{
+							entity->sprite = 165; // GlassesWorn.vox
+						}
+						else if ( stats[PLAYER_NUM]->mask->type == MONOCLE )
+						{
+							entity->sprite = 1196; // MonocleWorn.vox
+						}
+						else
+						{
+							entity->sprite = itemModel(stats[PLAYER_NUM]->mask);
+						}
+					}
+					if ( multiplayer == SERVER )
+					{
+						// update sprites for clients
+						if ( entity->ticks >= *cvar_entity_bodypart_sync_tick )
+						{
+							bool updateBodypart = false;
+							if ( entity->skill[10] != entity->sprite )
+							{
+								entity->skill[10] = entity->sprite;
+								updateBodypart = true;
+							}
+							if ( entity->skill[11] != ((entity->flags[INVISIBLE] ? 1 : 0) + (entity->flags[INVISIBLE_DITHER] ? 2 : 0)) )
+							{
+								entity->skill[11] = ((entity->flags[INVISIBLE] ? 1 : 0) + (entity->flags[INVISIBLE_DITHER] ? 2 : 0));
+								updateBodypart = true;
+							}
+							if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
+							{
+								updateBodypart = true;
+							}
+							if ( updateBodypart )
+							{
+								serverUpdateEntityBodypart(my, bodypart);
+							}
+						}
+					}
+				}
+				else
+				{
+					if ( entity->sprite <= 0 )
+					{
+						entity->flags[INVISIBLE] = true;
+						entity->flags[INVISIBLE_DITHER] = false;
+					}
+				}
+				entity->scalex = 0.99;
+				entity->scaley = 0.99;
+				entity->scalez = 0.99;
+
+				real_t helmscalex = 0.0;
+				real_t helmscaley = 0.0;
+				real_t helmscalez = 0.0;
+				if ( ignoreHelmetOffsetFromMask && helmet )
+				{
+					helmscalex = helmet->scalex;
+					helmscaley = helmet->scaley;
+					helmscalez = helmet->scalez;
+				}
+
+				if ( EquipmentModelOffsets.modelOffsetExists(playerRace, entity->sprite, my->sprite) )
+				{
+					my->setHelmetLimbOffset(entity);
+					my->setHelmetLimbOffsetWithMask(helmet, entity);
+				}
+				else if ( entity->sprite == items[MASK_SHAMAN].index )
+				{
+					entity->roll = 0;
+					my->setHelmetLimbOffset(entity);
+					my->setHelmetLimbOffsetWithMask(helmet, entity);
+				}
+				else if ( entity->sprite == 165 || entity->sprite == 1196 )
+				{
+					entity->focalx = limbs[playerRace][10][0] + .25; // .25
+					entity->focaly = limbs[playerRace][10][1] - 2.5; // -2.25
+					entity->focalz = limbs[playerRace][10][2]; // .5
+					if ( entity->sprite == 1196 ) // MonocleWorn.vox
+					{
+						switch ( playerRace )
+						{
+						case INCUBUS:
+							entity->focalx -= .4;
+							break;
+						case SUCCUBUS:
+							entity->focalx -= .25;
+							break;
+						case GOBLIN:
+							entity->focalx -= .5;
+							entity->focalz -= .05;
+							break;
+						default:
+							break;
+						}
+					}
+					if ( helmet && !helmet->flags[INVISIBLE] && 
+						(helmet->sprite == items[PUNISHER_HOOD].index
+							|| helmet->sprite == 201 // hood purple
+							|| helmet->sprite == items[HAT_HOOD_APPRENTICE].index) )
+					{
+						switch ( playerRace )
+						{
+						case HUMAN:
+						case VAMPIRE:
+						case SHOPKEEPER:
+						case INSECTOID:
+							entity->focaly += 0.25; // lower glasses a bit.
+							break;
+						case INCUBUS:
+						case SUCCUBUS:
+						case AUTOMATON:
+						case GOBLIN:
+						case GOATMAN:
+						case SKELETON:
+							// no change.
+							break;
+						default:
+							break;
+						}
+					}
+
+					if ( entity->sprite == 165 )
+					{
+						switch ( playerRace )
+						{
+						case HUMAN:
+						case VAMPIRE:
+							entity->focalx += 0.15;
+							break;
+						default:
+							break;
+						}
+					}
+				}
+				else if ( playerRace == INCUBUS
+					&& (entity->sprite == items[TOOL_BLINDFOLD].index
+						|| entity->sprite == items[TOOL_BLINDFOLD_FOCUS].index
+						|| entity->sprite == items[TOOL_BLINDFOLD_TELEPATHY].index) )
+				{
+					entity->focalx = limbs[playerRace][10][0] + .35; // .35
+					entity->focaly = limbs[playerRace][10][1] - 2.5; // -2
+					entity->focalz = limbs[playerRace][10][2]; // .5
+				}
+				else
+				{
+					entity->focalx = limbs[playerRace][10][0] + .35; // .35
+					entity->focaly = limbs[playerRace][10][1] - 2; // -2
+					entity->focalz = limbs[playerRace][10][2]; // .5
+				}
+
+				if ( ignoreHelmetOffsetFromMask && helmet )
+				{
+					helmet->scalex = helmscalex;
+					helmet->scaley = helmscaley;
+					helmet->scalez = helmscalez;
+				}
+				break;
+				}
 				case 11:
 					additionalLimb = entity;
 					entity->focalx = limbs[playerRace][11][0];
@@ -9944,7 +13875,243 @@ void actPlayer(Entity* my)
 					entity->focalz = limbs[playerRace][11][2];
 					entity->flags[INVISIBLE] = true;
 					entity->flags[INVISIBLE_DITHER] = false;
-					if ( playerRace == INSECTOID || playerRace == CREATURE_IMP )
+
+					if ( playerRace == SALAMANDER )
+					{
+						entity->focalx = limbs[SALAMANDER][11][0];
+						entity->focaly = limbs[SALAMANDER][11][1];
+						entity->focalz = limbs[SALAMANDER][11][2];
+						entity->x += limbs[SALAMANDER][12][0] * cos(my->yaw + PI / 2) + limbs[SALAMANDER][12][1] * cos(my->yaw);
+						entity->y += limbs[SALAMANDER][12][0] * sin(my->yaw + PI / 2) + limbs[SALAMANDER][12][1] * sin(my->yaw);
+						entity->z += limbs[SALAMANDER][12][2];
+						entity->pitch = 0.15;
+
+						entity->flags[INVISIBLE] = my->flags[INVISIBLE];
+						entity->flags[INVISIBLE_DITHER] = entity->flags[INVISIBLE];
+
+						entity->sprite = 2041;
+						switch ( my->sprite )
+						{
+						case 2014:
+							entity->sprite = 2041;
+							break;
+						case 2015:
+							entity->sprite = 2042;
+							break;
+						case 2016:
+							entity->sprite = 2043;
+							break;
+						case 2017:
+							entity->sprite = 2044;
+							break;
+						case 2018:
+							entity->sprite = 2045;
+							break;
+						case 2019:
+							entity->sprite = 2046;
+							break;
+						default:
+							break;
+						}
+
+						if ( entity->sprite == 2042
+							|| entity->sprite == 2044
+							|| entity->sprite == 2046 )
+						{
+							entity->focalx += 0.5;
+							entity->focalz -= 0.25;
+						}
+
+						bool moving = false;
+						if ( fabs(PLAYER_VELX) > 0.1 || fabs(PLAYER_VELY) > 0.1 || insectoidLevitating )
+						{
+							moving = true;
+						}
+						if ( entity->skill[0] == 0 )
+						{
+							if ( moving )
+							{
+								entity->fskill[0] += std::min(dist * PLAYERWALKSPEED, 2.f * PLAYERWALKSPEED); // move proportional to move speed
+							}
+							else if ( PLAYER_ATTACK != 0 )
+							{
+								entity->fskill[0] += PLAYERWALKSPEED; // move fixed speed when attacking if stationary
+							}
+							else
+							{
+								entity->fskill[0] += 0.01; // otherwise move slow idle
+							}
+
+							if ( entity->fskill[0] > PI / 3 || ((!moving || PLAYER_ATTACK != 0) && entity->fskill[0] > PI / 5) )
+							{
+								// switch direction if angle too great, angle is shorter if attacking or stationary
+								entity->skill[0] = 1;
+							}
+						}
+						else // reverse of the above
+						{
+							if ( moving )
+							{
+								if ( insectoidLevitating )
+								{
+									entity->fskill[0] -= std::min(std::max(0.15, dist * PLAYERWALKSPEED), 2.f * PLAYERWALKSPEED);
+								}
+								else
+								{
+									entity->fskill[0] -= std::min(dist * PLAYERWALKSPEED, 2.f * PLAYERWALKSPEED);
+								}
+							}
+							else if ( PLAYER_ATTACK != 0 )
+							{
+								entity->fskill[0] -= PLAYERWALKSPEED;
+							}
+							else
+							{
+								entity->fskill[0] -= 0.007;
+							}
+
+							if ( entity->fskill[0] < 0.0 )
+							{
+								entity->skill[0] = 0;
+								entity->skill[1] = entity->skill[1] != 0 ? 0 : 1;
+							}
+						}
+						//entity->yaw += -entity->fskill[0];
+						real_t dir = entity->skill[1] == 0 ? 1 : -1;
+						entity->pitch += 0.5 * sin(entity->fskill[0]);
+						entity->roll = dir * -0.25 * sin(entity->fskill[0]);
+					}
+					if ( playerRace == DRYAD )
+					{
+						entity->focalx = limbs[playerRace][11][0];
+						entity->focaly = limbs[playerRace][11][1];
+						entity->focalz = limbs[playerRace][11][2];
+						entity->x += limbs[playerRace][12][0] * cos(my->yaw + PI / 2) + limbs[playerRace][12][1] * cos(my->yaw);
+						entity->y += limbs[playerRace][12][0] * sin(my->yaw + PI / 2) + limbs[playerRace][12][1] * sin(my->yaw);
+						entity->z += limbs[playerRace][12][2];
+
+						entity->flags[INVISIBLE] = my->flags[INVISIBLE];
+						entity->flags[INVISIBLE_DITHER] = entity->flags[INVISIBLE];
+
+						entity->sprite = (my->sprite == 1963 || my->sprite == 1992) ? 1979 : 1980;
+
+						bool moving = false;
+						if ( fabs(PLAYER_VELX) > 0.1 || fabs(PLAYER_VELY) > 0.1 )
+						{
+							moving = true;
+						}
+
+						if ( entity->skill[0] == 0 )
+						{
+							if ( moving )
+							{
+								entity->fskill[0] += std::min(dist * PLAYERWALKSPEED, 0.35 * PLAYERWALKSPEED); // move proportional to move speed
+							}
+							else if ( PLAYER_ATTACK != 0 )
+							{
+								entity->fskill[0] += 0.5 * PLAYERWALKSPEED; // move fixed speed when attacking if stationary
+							}
+							else
+							{
+								entity->fskill[0] += 0.01; // otherwise move slow idle
+							}
+
+							if ( entity->fskill[0] > PI / 3 || ((!moving || PLAYER_ATTACK != 0) && entity->fskill[0] > PI / 5) )
+							{
+								// switch direction if angle too great, angle is shorter if attacking or stationary
+								entity->skill[0] = 1;
+							}
+						}
+						else // reverse of the above
+						{
+							if ( moving )
+							{
+								entity->fskill[0] -= std::min(dist * PLAYERWALKSPEED, 0.35 * PLAYERWALKSPEED);
+							}
+							else if ( PLAYER_ATTACK != 0 )
+							{
+								entity->fskill[0] -= PLAYERWALKSPEED;
+							}
+							else
+							{
+								entity->fskill[0] -= 0.007;
+							}
+
+							if ( entity->fskill[0] < -PI / 32 )
+							{
+								entity->skill[0] = 0;
+							}
+						}
+						//entity->yaw += -entity->fskill[0] / 4;
+						entity->pitch = 0.0;
+						entity->pitch -= entity->fskill[0] / 8;
+						entity->z -= 0.25 * sin(entity->fskill[0] * 5);
+						entity->roll = -entity->fskill[0] / 8;
+						entity->scalez = 1.00 + 0.1 * sin(entity->fskill[0]);
+					}
+					else if ( playerRace == MYCONID )
+					{
+						entity->x += limbs[playerRace][12][0] * cos(my->yaw + PI / 2) + limbs[playerRace][12][1] * cos(my->yaw);
+						entity->y += limbs[playerRace][12][0] * sin(my->yaw + PI / 2) + limbs[playerRace][12][1] * sin(my->yaw);
+						entity->z += limbs[playerRace][12][2];
+
+						entity->flags[INVISIBLE] = my->flags[INVISIBLE];
+						entity->flags[INVISIBLE_DITHER] = entity->flags[INVISIBLE];
+
+						entity->sprite = 2006;
+
+						bool moving = false;
+						if ( fabs(PLAYER_VELX) > 0.1 || fabs(PLAYER_VELY) > 0.1 )
+						{
+							moving = true;
+						}
+
+						if ( entity->skill[0] == 0 )
+						{
+							//if ( moving )
+							//{
+							//	entity->fskill[0] += std::min(dist * PLAYERWALKSPEED, 2.f * PLAYERWALKSPEED); // move proportional to move speed
+							//}
+							//else if ( PLAYER_ATTACK != 0 )
+							//{
+							//	entity->fskill[0] += PLAYERWALKSPEED; // move fixed speed when attacking if stationary
+							//}
+							//else
+							{
+								entity->fskill[0] += 0.01; // otherwise move slow idle
+							}
+
+							if ( entity->fskill[0] > PI / 3 || ((!moving || PLAYER_ATTACK != 0) && entity->fskill[0] > PI / 5) )
+							{
+								// switch direction if angle too great, angle is shorter if attacking or stationary
+								entity->skill[0] = 1;
+							}
+						}
+						else // reverse of the above
+						{
+							/*if ( moving )
+							{
+								entity->fskill[0] -= std::min(dist * PLAYERWALKSPEED, 2.f * PLAYERWALKSPEED);
+							}
+							else if ( PLAYER_ATTACK != 0 )
+							{
+								entity->fskill[0] -= PLAYERWALKSPEED;
+							}
+							else*/
+							{
+								entity->fskill[0] -= 0.007;
+							}
+
+							if ( entity->fskill[0] < -PI / 32 )
+							{
+								entity->skill[0] = 0;
+							}
+						}
+						entity->yaw += -entity->fskill[0] / 4;
+						//entity->pitch += entity->fskill[0] / 4;
+						entity->roll = -entity->fskill[0];
+					}
+					else if ( playerRace == INSECTOID || playerRace == CREATURE_IMP )
 					{
 						entity->flags[INVISIBLE] = my->flags[INVISIBLE];
 						entity->flags[INVISIBLE_DITHER] = entity->flags[INVISIBLE];
@@ -10048,6 +14215,8 @@ void actPlayer(Entity* my)
 							}
 						}
 						entity->yaw += entity->fskill[0];
+						entity->pitch = 0.0;
+						entity->roll = 0.0;
 					}
 					break;
 				case 12:
@@ -10056,7 +14225,53 @@ void actPlayer(Entity* my)
 					entity->focalz = limbs[playerRace][12][2];
 					entity->flags[INVISIBLE] = true;
 					entity->flags[INVISIBLE_DITHER] = false;
-					if ( playerRace == INSECTOID || playerRace == CREATURE_IMP )
+
+					if ( playerRace == DRYAD )
+					{
+						entity->focalx = limbs[playerRace][13][0];
+						entity->focaly = limbs[playerRace][13][1];
+						entity->focalz = limbs[playerRace][13][2];
+						entity->x += limbs[playerRace][14][0] * cos(my->yaw + PI / 2) + limbs[playerRace][14][1] * cos(my->yaw);
+						entity->y += limbs[playerRace][14][0] * sin(my->yaw + PI / 2) + limbs[playerRace][14][1] * sin(my->yaw);
+						entity->z += limbs[playerRace][14][2];
+
+						entity->flags[INVISIBLE] = my->flags[INVISIBLE];
+						entity->flags[INVISIBLE_DITHER] = entity->flags[INVISIBLE];
+
+						entity->sprite = (my->sprite == 1963 || my->sprite == 1992) ? 1981 : 1982;
+
+						if ( additionalLimb ) // follow the yaw of the previous limb.
+						{
+							//entity->yaw -= -additionalLimb->fskill[0] / 4;
+							entity->pitch = 0.0;
+							entity->pitch -= additionalLimb->fskill[0] / 8;
+							entity->z -= 0.25 * sin(additionalLimb->fskill[0] * 5);
+							entity->roll = additionalLimb->fskill[0] / 8;
+							entity->scalez = 1.00 + 0.1 * sin(additionalLimb->fskill[0]);
+						}
+					}
+					else if ( playerRace == MYCONID )
+					{
+						entity->focalx = limbs[playerRace][13][0];
+						entity->focaly = limbs[playerRace][13][1];
+						entity->focalz = limbs[playerRace][13][2];
+						entity->x += limbs[playerRace][14][0] * cos(my->yaw + PI / 2) + limbs[playerRace][14][1] * cos(my->yaw);
+						entity->y += limbs[playerRace][14][0] * sin(my->yaw + PI / 2) + limbs[playerRace][14][1] * sin(my->yaw);
+						entity->z += limbs[playerRace][14][2];
+
+						entity->flags[INVISIBLE] = my->flags[INVISIBLE];
+						entity->flags[INVISIBLE_DITHER] = entity->flags[INVISIBLE];
+
+						entity->sprite = 2007;
+
+						if ( additionalLimb ) // follow the yaw of the previous limb.
+						{
+							entity->yaw -= -additionalLimb->fskill[0] / 4;
+							//entity->pitch += additionalLimb->fskill[0] / 16;
+							entity->roll = additionalLimb->fskill[0];
+						}
+					}
+					else if ( playerRace == INSECTOID || playerRace == CREATURE_IMP )
 					{
 						entity->flags[INVISIBLE] = my->flags[INVISIBLE];
 						entity->flags[INVISIBLE_DITHER] = entity->flags[INVISIBLE];
@@ -10096,7 +14311,197 @@ void actPlayer(Entity* my)
 						{
 							entity->yaw -= additionalLimb->fskill[0];
 						}
+						entity->pitch = 0.0;
+						entity->roll = 0.0;
 					}
+					break;
+				case 13:
+					entity->scalex = 1.0;
+					entity->scaley = 1.0;
+					entity->scalez = 1.0;
+					entity->focalx = limbs[playerRace][1][0];
+					entity->focaly = limbs[playerRace][1][1];
+					entity->focalz = limbs[playerRace][1][2];
+					if ( multiplayer != CLIENT )
+					{
+						entity->flags[INVISIBLE_DITHER] = false;
+						entity->sprite = 0;
+						if ( torsoCovering > 0 )
+						{
+							entity->sprite = torsoCovering;
+							entity->flags[INVISIBLE] = my->flags[INVISIBLE];
+							entity->flags[INVISIBLE_DITHER] = entity->flags[INVISIBLE];
+						}
+						else
+						{
+							entity->flags[INVISIBLE] = true;
+						}
+						if ( multiplayer == SERVER )
+						{
+							// update sprites for clients
+							if ( entity->ticks >= *cvar_entity_bodypart_sync_tick )
+							{
+								bool updateBodypart = false;
+								if ( entity->skill[10] != entity->sprite )
+								{
+									entity->skill[10] = entity->sprite;
+									updateBodypart = true;
+								}
+								if ( entity->skill[11] != ((entity->flags[INVISIBLE] ? 1 : 0) + (entity->flags[INVISIBLE_DITHER] ? 2 : 0)) )
+								{
+									entity->skill[11] = ((entity->flags[INVISIBLE] ? 1 : 0) + (entity->flags[INVISIBLE_DITHER] ? 2 : 0));
+									updateBodypart = true;
+								}
+								if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
+								{
+									updateBodypart = true;
+								}
+								if ( updateBodypart )
+								{
+									serverUpdateEntityBodypart(my, bodypart);
+								}
+							}
+						}
+					}
+					else
+					{
+						if ( entity->sprite <= 0 )
+						{
+							entity->flags[INVISIBLE] = true;
+							entity->flags[INVISIBLE_DITHER] = false;
+						}
+					}
+					my->setHumanoidLimbOffset(entity, playerRace, LIMB_HUMANOID_TORSO);
+					break;
+				case 14: // robe leg left
+					entity->scalex = 1.025;
+					entity->scaley = 1.025;
+					entity->scalez = 1.025;
+					entity->focalx = limbs[HUMAN][26][0];
+					entity->focaly = limbs[HUMAN][26][1];
+					entity->focalz = limbs[HUMAN][26][2];
+					entity->x = torso->x;
+					entity->y = torso->y;
+					entity->z = torso->z;
+					entity->z += torso->focalz;
+
+					if ( playerRace == MYCONID || playerRace == GOATMAN )
+					{
+						entity->x += (-.2) * cos(my->yaw);
+						entity->y += (-.2) * sin(my->yaw);
+					}
+					entity->x += (limbs[HUMAN][28][0]) * cos(my->yaw) + limbs[HUMAN][28][1] * cos(my->yaw + PI / 2);
+					entity->y += (limbs[HUMAN][28][0]) * sin(my->yaw) + limbs[HUMAN][28][1] * sin(my->yaw + PI / 2);
+					entity->z += limbs[HUMAN][28][2];
+					entity->flags[INVISIBLE_DITHER] = false;
+					entity->sprite = 0;
+					if ( torso && !(torso->flags[INVISIBLE] && !torso->flags[INVISIBLE_DITHER]) )
+					{
+						if ( torso->sprite == items[ROBE_WIZARD].index )
+						{
+							entity->sprite = 2137;
+							entity->flags[INVISIBLE] = my->flags[INVISIBLE];
+							entity->flags[INVISIBLE_DITHER] = entity->flags[INVISIBLE];
+						}
+						else if ( torso->sprite == items[ROBE_CULTIST].index )
+						{
+							entity->sprite = 2368;
+							entity->flags[INVISIBLE] = my->flags[INVISIBLE];
+							entity->flags[INVISIBLE_DITHER] = entity->flags[INVISIBLE];
+						}
+						else if ( torso->sprite == items[ROBE_HEALER].index )
+						{
+							entity->sprite = 2370;
+							entity->flags[INVISIBLE] = my->flags[INVISIBLE];
+							entity->flags[INVISIBLE_DITHER] = entity->flags[INVISIBLE];
+						}
+						else if ( torso->sprite == items[ROBE_MONK].index )
+						{
+							entity->sprite = 2372;
+							entity->flags[INVISIBLE] = my->flags[INVISIBLE];
+							entity->flags[INVISIBLE_DITHER] = entity->flags[INVISIBLE];
+						}
+					}
+					/*else if ( torso && torso->sprite == items[ROBE_WIZARD].indexShort )
+					{
+						entity->sprite = 2139;
+						entity->flags[INVISIBLE] = my->flags[INVISIBLE];
+						entity->flags[INVISIBLE_DITHER] = entity->flags[INVISIBLE];
+					}*/
+					if ( entity->sprite <= 0 )
+					{
+						entity->flags[INVISIBLE] = true;
+						entity->flags[INVISIBLE_DITHER] = false;
+					}
+					entity->roll = 0.5 * abs(legleft->pitch);
+					entity->pitch = 0.0;
+					//entity->roll = 0.0;
+					//entity->pitch = legleft->pitch;
+					break;
+				case 15: // robe leg right
+					entity->scalex = 1.025;
+					entity->scaley = 1.025;
+					entity->scalez = 1.025;
+					entity->focalx = limbs[HUMAN][27][0];
+					entity->focaly = limbs[HUMAN][27][1];
+					entity->focalz = limbs[HUMAN][27][2];
+					entity->x = torso->x;
+					entity->y = torso->y;
+					entity->z = torso->z;
+					entity->z += torso->focalz;
+
+					if ( playerRace == MYCONID || playerRace == GOATMAN )
+					{
+						entity->x += (-.2) * cos(my->yaw);
+						entity->y += (-.2) * sin(my->yaw);
+					}
+					entity->x += (limbs[HUMAN][29][0]) * cos(my->yaw) + limbs[HUMAN][29][1] * cos(my->yaw + PI / 2);
+					entity->y += (limbs[HUMAN][29][0]) * sin(my->yaw) + limbs[HUMAN][29][1] * sin(my->yaw + PI / 2);
+					entity->z += limbs[HUMAN][29][2];
+					entity->flags[INVISIBLE_DITHER] = false;
+					entity->sprite = 0;
+					if ( torso && !(torso->flags[INVISIBLE] && !torso->flags[INVISIBLE_DITHER]) )
+					{
+						if ( torso->sprite == items[ROBE_WIZARD].index )
+						{
+							entity->sprite = 2138;
+							entity->flags[INVISIBLE] = my->flags[INVISIBLE];
+							entity->flags[INVISIBLE_DITHER] = entity->flags[INVISIBLE];
+						}
+						else if ( torso->sprite == items[ROBE_CULTIST].index )
+						{
+							entity->sprite = 2369;
+							entity->flags[INVISIBLE] = my->flags[INVISIBLE];
+							entity->flags[INVISIBLE_DITHER] = entity->flags[INVISIBLE];
+						}
+						else if ( torso->sprite == items[ROBE_HEALER].index )
+						{
+							entity->sprite = 2371;
+							entity->flags[INVISIBLE] = my->flags[INVISIBLE];
+							entity->flags[INVISIBLE_DITHER] = entity->flags[INVISIBLE];
+						}
+						else if ( torso->sprite == items[ROBE_MONK].index )
+						{
+							entity->sprite = 2373;
+							entity->flags[INVISIBLE] = my->flags[INVISIBLE];
+							entity->flags[INVISIBLE_DITHER] = entity->flags[INVISIBLE];
+						}
+					}
+					/*else if ( torso && torso->sprite == items[ROBE_WIZARD].indexShort )
+					{
+						entity->sprite = 2140;
+						entity->flags[INVISIBLE] = my->flags[INVISIBLE];
+						entity->flags[INVISIBLE_DITHER] = entity->flags[INVISIBLE];
+					}*/
+					if ( entity->sprite <= 0 )
+					{
+						entity->flags[INVISIBLE] = true;
+						entity->flags[INVISIBLE_DITHER] = false;
+					}
+					entity->roll = -0.5 * abs(legright->pitch);
+					entity->pitch = 0.0;
+					//entity->roll = 0.0;
+					//entity->pitch = legright->pitch;
 					break;
 				default:
 					break;
@@ -10105,14 +14510,13 @@ void actPlayer(Entity* my)
 
 			if ( !showEquipment )
 			{
-				if ( bodypart >= 6 && bodypart <= 10 )
+				if ( bodypart >= 6 && bodypart <= 10 || bodypart == 13 || bodypart == 14 || bodypart == 15 )
 				{
 					entity->flags[INVISIBLE] = true;
 					entity->flags[INVISIBLE_DITHER] = false;
 					if ( playerRace == CREATURE_IMP && bodypart == 7 )
 					{
-						if ( entity->sprite >= items[SPELLBOOK_LIGHT].index
-							&& entity->sprite < (items[SPELLBOOK_LIGHT].index + items[SPELLBOOK_LIGHT].variations) )
+						if ( shieldSpriteAllowedImpForm(entity->sprite) )
 						{
 							entity->flags[INVISIBLE] = my->flags[INVISIBLE]; // show spellbooks
 							entity->flags[INVISIBLE_DITHER] = entity->flags[INVISIBLE];
@@ -10120,7 +14524,7 @@ void actPlayer(Entity* my)
 					}
 					else if ( playerRace == CREATURE_IMP && bodypart == 6 )
 					{
-						if ( entity->sprite >= 59 && entity->sprite < 64 )
+						if ( weaponSpriteAllowedImpForm(entity->sprite) && !(PLAYER_ATTACK == MONSTER_POSE_MAGIC_WINDUP2) )
 						{
 							entity->flags[INVISIBLE] = my->flags[INVISIBLE]; // show magicstaffs
 							entity->flags[INVISIBLE_DITHER] = entity->flags[INVISIBLE];
@@ -10168,6 +14572,26 @@ void actPlayer(Entity* my)
 	if ( !usecamerasmoothing )
 	{
 		players[PLAYER_NUM]->movement.handlePlayerCameraPosition(false);
+	}
+}
+
+void Entity::playerShakeGrowthHelmet()
+{
+	if ( multiplayer == CLIENT ) { return; }
+	if ( behavior == &actPlayer )
+	{
+		Stat* myStats = getStats();
+		if ( myStats && (myStats->type == MYCONID || myStats->type == DRYAD) && !myStats->helmet && myStats->getEffectActive(EFF_GROWTH) > 1 )
+		{
+			if ( node_t* node = list_Node(&children, 9) )
+			{
+				if ( Entity* entity = (Entity*)node->element )
+				{
+					entity->skill[1] = 1;
+					serverUpdateEntitySkill(entity, 1);
+				}
+			}
+		}
 	}
 }
 
@@ -10225,14 +14649,50 @@ void actPlayerLimb(Entity* my)
 		}
 	}
 
-	if ( parent && parent->monsterEntityRenderAsTelepath == 1 )
+	if ( parent && parent->monsterEntityRenderAsTelepath != 0 )
 	{
-		my->monsterEntityRenderAsTelepath = 1;
+		my->monsterEntityRenderAsTelepath = parent->monsterEntityRenderAsTelepath;
 	}
 	else
 	{
 		my->monsterEntityRenderAsTelepath = 0;
 	}
+
+	if ( parent && parent->mistformGLRender > 0.05 )
+	{
+		if ( my->skill[4] == 1 ) // shields
+		{
+			real_t modulus = fmod(parent->mistformGLRender, 1.0);
+			if ( modulus >= 0.05 && modulus < 0.15 ) // force shield
+			{
+				my->mistformGLRender = 0.5;
+			}
+			else if ( modulus >= 0.15 && modulus < 0.25 ) // reflector shield
+			{
+				my->mistformGLRender = 0.6;
+			}
+			else
+			{
+				my->mistformGLRender = parent->mistformGLRender;
+			}
+		}
+		else
+		{
+			if ( parent->mistformGLRender > 0.9 )
+			{
+				my->mistformGLRender = parent->mistformGLRender;
+			}
+			else
+			{
+				my->mistformGLRender = 0.0;
+			}
+		}
+	}
+	else
+	{
+		my->mistformGLRender = 0.0;
+	}
+
 
 	if (multiplayer != CLIENT)
 	{
@@ -10282,8 +14742,51 @@ void actPlayerLimb(Entity* my)
 		players[my->skill[2]]->entity->skill[1] = 3;
         my->skill[4] = 1; // lets us know that this is indeed the off-hand item (shield)
 	}
+	else if ( my->sprite == items[TOOL_FOCI_FIRE].index )
+	{
+		players[my->skill[2]]->entity->skill[1] = 4;
+		my->skill[4] = 1; // lets us know that this is indeed the off-hand item (shield)
+	}
+	else if ( my->sprite == items[TOOL_FOCI_SNOW].index )
+	{
+		players[my->skill[2]]->entity->skill[1] = 5;
+		my->skill[4] = 1; // lets us know that this is indeed the off-hand item (shield)
+	}
+	else if ( my->sprite == items[TOOL_FOCI_NEEDLES].index )
+	{
+		players[my->skill[2]]->entity->skill[1] = 6;
+		my->skill[4] = 1; // lets us know that this is indeed the off-hand item (shield)
+	}
+	else if ( my->sprite == items[TOOL_FOCI_ARCS].index )
+	{
+		players[my->skill[2]]->entity->skill[1] = 7;
+		my->skill[4] = 1; // lets us know that this is indeed the off-hand item (shield)
+	}
+	else if ( my->sprite == items[TOOL_FOCI_SAND].index )
+	{
+		players[my->skill[2]]->entity->skill[1] = 8;
+		my->skill[4] = 1; // lets us know that this is indeed the off-hand item (shield)
+	}
+	else if ( my->sprite == items[TOOL_FOCI_DARK_LIFE].index
+		|| my->sprite == items[TOOL_FOCI_DARK_RIFT].index
+		|| my->sprite == items[TOOL_FOCI_DARK_SILENCE].index
+		|| my->sprite == items[TOOL_FOCI_DARK_SUPPRESS].index
+		|| my->sprite == items[TOOL_FOCI_DARK_VENGEANCE].index )
+	{
+		players[my->skill[2]]->entity->skill[1] = 9;
+		my->skill[4] = 1; // lets us know that this is indeed the off-hand item (shield)
+	}
+	else if ( my->sprite == items[TOOL_FOCI_LIGHT_JUSTICE].index
+		|| my->sprite == items[TOOL_FOCI_LIGHT_PEACE].index
+		|| my->sprite == items[TOOL_FOCI_LIGHT_PROVIDENCE].index
+		|| my->sprite == items[TOOL_FOCI_LIGHT_PURITY].index
+		|| my->sprite == items[TOOL_FOCI_LIGHT_SANCTUARY].index )
+	{
+		players[my->skill[2]]->entity->skill[1] = 10;
+		my->skill[4] = 1; // lets us know that this is indeed the off-hand item (shield)
+	}
 	else {
-        // PLAYER_TORCH = 4 aka none
+        // PLAYER_TORCH = aka none
         if (my->skill[4]) {
             // we have to check skill[4] because if this logic runs for every limb,
             // the others will override the PLAYER_TORCH value set by the shield.
@@ -10561,6 +15064,22 @@ bool Entity::isPlayerHeadSprite(const int sprite)
 		case 1043:
 		case 1044:
 		case 1049:
+		case 1963:
+		case 1964:
+		case 1992:
+		case 1993:
+		case 1997:
+		case 1998:
+		case 2014:
+		case 2015:
+		case 2016:
+		case 2017:
+		case 2018:
+		case 2019:
+		case 2047:
+		case 2048:
+		case 2213:
+		case 2214:
 			return true;
 			break;
 		default:
@@ -10617,6 +15136,21 @@ Monster getMonsterFromPlayerRace(int playerRace)
 		case RACE_IMP:
 			return CREATURE_IMP;
 			break;
+		case RACE_DRYAD:
+			return DRYAD;
+			break;
+		case RACE_MYCONID:
+			return MYCONID;
+			break;
+		case RACE_GREMLIN:
+			return GREMLIN;
+			break;
+		case RACE_SALAMANDER:
+			return SALAMANDER;
+			break;
+		case RACE_GNOME:
+			return GNOME;
+			break;
 		default:
 			return HUMAN;
 			break;
@@ -10629,7 +15163,7 @@ Monster Entity::getMonsterFromPlayerRace(int playerRace)
     return ::getMonsterFromPlayerRace(playerRace);
 }
 
-void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbType)
+void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbType, int headSprite)
 {
 	if ( !players[playernum] || !players[playernum]->entity )
 	{
@@ -10721,6 +15255,33 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 				case TROLL:
 					this->sprite = 818;
 					break;
+				case DRYAD:
+					this->sprite = stats[playernum]->sex == FEMALE ? 1991 : 1989;
+					if ( headSprite == 1964 || headSprite == 1993 )
+					{
+						this->sprite = stats[playernum]->sex == FEMALE ? 1994 : 1990;
+					}
+					break;
+				case MYCONID:
+					this->sprite = stats[playernum]->sex == MALE ? 2013 : 2012;
+					break;
+				case SALAMANDER:
+					this->sprite = 2038;
+					if ( headSprite == 2016 || headSprite == 2017 )
+					{
+						this->sprite = 2039;
+					}
+					else if ( headSprite == 2018 || headSprite == 2019 )
+					{
+						this->sprite = 2040;
+					}
+					break;
+				case GREMLIN:
+					this->sprite = stats[playernum]->sex == FEMALE ? 2062 : 2061;
+					break;
+				case GNOME:
+					this->sprite = stats[playernum]->sex == FEMALE ? 2216 : 2215;
+					break;
 				default:
 					break;
 			}
@@ -10797,6 +15358,33 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 					break;
 				case TROLL:
 					this->sprite = 822;
+					break;
+				case DRYAD:
+					this->sprite = stats[playernum]->sex == FEMALE ? 1988 : 1986;
+					if ( headSprite == 1964 || headSprite == 1993 )
+					{
+						this->sprite = stats[playernum]->sex == FEMALE ? 1996 : 1987;
+					}
+					break;
+				case MYCONID:
+					this->sprite = stats[playernum]->sex == MALE ? 2011 : 2010;
+					break;
+				case SALAMANDER:
+					this->sprite = 2033;
+					if ( headSprite == 2016 || headSprite == 2017 )
+					{
+						this->sprite = 2035;
+					}
+					else if ( headSprite == 2018 || headSprite == 2019 )
+					{
+						this->sprite = 2037;
+					}
+					break;
+				case GREMLIN:
+					this->sprite = stats[playernum]->sex == FEMALE ? 2060 : 2058;
+					break;
+				case GNOME:
+					this->sprite = stats[playernum]->sex == FEMALE ? 2219 : 2217;
 					break;
 				default:
 					break;
@@ -10875,6 +15463,33 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 				case TROLL:
 					this->sprite = 821;
 					break;
+				case DRYAD:
+					this->sprite = stats[playernum]->sex == FEMALE ? 1985 : 1983;
+					if ( headSprite == 1964 || headSprite == 1993 )
+					{
+						this->sprite = stats[playernum]->sex == FEMALE ? 1995 : 1984;
+					}
+					break;
+				case MYCONID:
+					this->sprite = stats[playernum]->sex == MALE ? 2009 : 2008;
+					break;
+				case SALAMANDER:
+					this->sprite = 2032;
+					if ( headSprite == 2016 || headSprite == 2017 )
+					{
+						this->sprite = 2034;
+					}
+					else if ( headSprite == 2018 || headSprite == 2019 )
+					{
+						this->sprite = 2036;
+					}
+					break;
+				case GREMLIN:
+					this->sprite = stats[playernum]->sex == FEMALE ? 2059 : 2057;
+					break;
+				case GNOME:
+					this->sprite = stats[playernum]->sex == FEMALE ? 2220 : 2218;
+					break;
 				default:
 					break;
 			}
@@ -10937,6 +15552,33 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 					break;
 				case TROLL:
 					this->sprite = 820;
+					break;
+				case DRYAD:
+					this->sprite = 1966;
+					if ( headSprite == 1964 || headSprite == 1993 )
+					{
+						this->sprite = 1970;
+					}
+					break;
+				case MYCONID:
+					this->sprite = 2000;
+					break;
+				case SALAMANDER:
+					this->sprite = 2021;
+					if ( headSprite == 2016 || headSprite == 2017 )
+					{
+						this->sprite = 2025;
+					}
+					else if ( headSprite == 2018 || headSprite == 2019 )
+					{
+						this->sprite = 2029;
+					}
+					break;
+				case GREMLIN:
+					this->sprite = stats[playernum]->sex == FEMALE ? 2054 : 2050;
+					break;
+				case GNOME:
+					this->sprite = 2221;
 					break;
 				default:
 					break;
@@ -11001,6 +15643,33 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 				case TROLL:
 					this->sprite = 819;
 					break;
+				case DRYAD:
+					this->sprite = 1965;
+					if ( headSprite == 1964 || headSprite == 1993 )
+					{
+						this->sprite = 1969;
+					}
+					break;
+				case MYCONID:
+					this->sprite = 1999;
+					break;
+				case SALAMANDER:
+					this->sprite = 2020;
+					if ( headSprite == 2016 || headSprite == 2017 )
+					{
+						this->sprite = 2024;
+					}
+					else if ( headSprite == 2018 || headSprite == 2019 )
+					{
+						this->sprite = 2028;
+					}
+					break;
+				case GREMLIN:
+					this->sprite = stats[playernum]->sex == FEMALE ? 2053 : 2049;
+					break;
+				case GNOME:
+					this->sprite = 2222;
+					break;
 				default:
 					break;
 			}
@@ -11023,7 +15692,7 @@ bool playerRequiresBloodToSustain(int player)
 	{
 		return true;
 	}
-	if ( stats[player]->EFFECTS[EFF_VAMPIRICAURA] || client_classes[player] == CLASS_ACCURSED )
+	if ( stats[player]->getEffectActive(EFF_VAMPIRICAURA) || client_classes[player] == CLASS_ACCURSED )
 	{
 		return true;
 	}
@@ -11048,6 +15717,52 @@ void playerAnimateRat(Entity* my)
 			my->scalex = 1.02;
 			my->scaley = 1.02;
 			my->scalez = 1.02;
+
+			if ( PLAYER_ATTACK == MONSTER_POSE_MAGIC_WINDUP1 )
+			{
+				// magic wiggle hands
+				if ( ticks % 10 == 0 )
+				{
+					Entity* gib = spawnGib(my, 16);
+					gib->flags[INVISIBLE] = false;
+					gib->flags[SPRITE] = true;
+					gib->flags[NOUPDATE] = true;
+					gib->flags[UPDATENEEDED] = false;
+					gib->lightBonus = vec4(0.2f, 0.2f, 0.2f, 0.f);
+					gib->x += 4.5 * cos(my->yaw);
+					gib->y += 4.5 * sin(my->yaw);
+					gib->z = my->z - 2.0;
+					gib->scalex = 0.25f; //MAKE 'EM SMALL PLEASE!
+					gib->scaley = 0.25f;
+					gib->scalez = 0.25f;
+					gib->sprite = 16; //TODO: Originally. 22. 16 -- spark sprite instead?
+					gib->yaw = ((local_rng.rand() % 6) * 60) * PI / 180.0;
+					gib->pitch = (local_rng.rand() % 360) * PI / 180.0;
+					gib->roll = (local_rng.rand() % 360) * PI / 180.0;
+					gib->vel_x = cos(my->yaw) * .1;
+					gib->vel_y = sin(my->yaw) * .1;
+					gib->vel_z = -.15;
+					gib->fskill[3] = 0.01;
+					gib->fskill[4] = 0.01; // GIB_SHRINK
+					gib->skill[4] = 25; // GIB_LIFESPAN
+					gib->skill[11] = my->skill[2];
+					gib->actGibDisableDrawForLocalPlayer = 1 + my->skill[2];
+				}
+
+				if ( PLAYER_ATTACKTIME >= my->playerCastTimeAnim )
+				{
+					PLAYER_ATTACK = 0;
+				}
+			}
+			else if ( PLAYER_ATTACK == MONSTER_POSE_MAGIC_WINDUP2 )
+			{
+				doParticleEffectForTouchSpell(*my, my, RAT);
+			}
+			else if ( PLAYER_ATTACK == MONSTER_POSE_MAGIC_CAST2 )
+			{
+				my->playerCastTimeAnim = 0;
+				PLAYER_ATTACK = 0;
+			}
 			continue;
 		}
 		Entity* entity = (Entity*)node->element;
@@ -11115,7 +15830,10 @@ void playerAnimateRat(Entity* my)
 
 	if ( PLAYER_ATTACKTIME >= 10 )
 	{
-		PLAYER_ATTACK = 0;
+		if ( !(PLAYER_ATTACK == MONSTER_POSE_MAGIC_WINDUP1 || PLAYER_ATTACK == MONSTER_POSE_MAGIC_WINDUP2) )
+		{
+			PLAYER_ATTACK = 0;
+		}
 	}
 }
 
@@ -11164,9 +15882,12 @@ void playerAnimateSpider(Entity* my)
 			continue;
 		}
 		Entity* previous = NULL; // previous part
-		if ( bodypart > 11 )
+		if ( bodypart > 12 )
 		{
 			previous = (Entity*)node->prev->element;
+			// for GENIUS flag to draw into the camera
+			entity->sizex = 1;
+			entity->sizey = 1;
 		}
 		entity->x = my->x;
 		entity->y = my->y;
@@ -11251,6 +15972,108 @@ void playerAnimateSpider(Entity* my)
 						}
 					}
 				}
+			}
+			else if ( PLAYER_ATTACK == MONSTER_POSE_MAGIC_WINDUP1 )
+			{
+				// magic wiggle hands
+				entity->skill[1] = 0;
+				PLAYER_ARMBENDED = 0;
+				PLAYER_WEAPONYAW = 0;
+				entity->roll = 0;
+				entity->pitch = 0;
+				entity->yaw = my->yaw;
+
+				real_t circleAmount = (1 * PI / 8);
+				circleAmount *= 0.5;
+				real_t scaleDown = 1.0;
+				if ( (my->playerCastTimeAnim - PLAYER_ATTACKTIME) < 10 )
+				{
+					// scale down
+					scaleDown = 1.0 - (10 - (my->playerCastTimeAnim - PLAYER_ATTACKTIME)) / 10.0;
+				}
+
+				circleAmount *= scaleDown;
+
+				real_t circleTime = 20.0;
+				entity->pitch = circleAmount * cos(2 * PI * (PLAYER_ATTACKTIME / (real_t)circleTime));
+				entity->pitch -= scaleDown * (PI / 2) * std::min(1.0, (PLAYER_ATTACKTIME / (real_t)5));
+
+				if ( bodypart == 11 )
+				{
+					entity->yaw -= circleAmount * sin(2 * PI * (PLAYER_ATTACKTIME / (real_t)circleTime));
+				}
+				else
+				{
+					entity->yaw += circleAmount * sin(2 * PI * (PLAYER_ATTACKTIME / (real_t)circleTime));
+				}
+
+				if ( ticks % 10 == 0 )
+				{
+					Entity* gib = spawnGib(entity, 16);
+					gib->flags[INVISIBLE] = false;
+					gib->flags[SPRITE] = true;
+					gib->flags[NOUPDATE] = true;
+					gib->flags[UPDATENEEDED] = false;
+					gib->lightBonus = vec4(0.2f, 0.2f, 0.2f, 0.f);
+					gib->x += 3.5 * cos(entity->yaw);
+					gib->y += 3.5 * sin(entity->yaw);
+					if ( bodypart == 11 )
+					{
+						gib->x += 3.0 * cos(entity->yaw + PI / 2);
+						gib->y += 3.0 * sin(entity->yaw + PI / 2);
+					}
+					else
+					{
+						gib->x -= 3.0 * cos(entity->yaw + PI / 2);
+						gib->y -= 3.0 * sin(entity->yaw + PI / 2);
+					}
+					gib->z = entity->z - 2.0;
+					gib->scalex = 0.25f; //MAKE 'EM SMALL PLEASE!
+					gib->scaley = 0.25f;
+					gib->scalez = 0.25f;
+					gib->sprite = 16; //TODO: Originally. 22. 16 -- spark sprite instead?
+					gib->yaw = ((local_rng.rand() % 6) * 60) * PI / 180.0;
+					gib->pitch = (local_rng.rand() % 360) * PI / 180.0;
+					gib->roll = (local_rng.rand() % 360) * PI / 180.0;
+					gib->vel_x = cos(entity->yaw) * .1;
+					gib->vel_y = sin(entity->yaw) * .1;
+					gib->vel_z = -.15;
+					gib->fskill[3] = 0.01;
+					gib->fskill[4] = 0.01; // GIB_SHRINK
+					gib->skill[4] = 25; // GIB_LIFESPAN
+					gib->skill[11] = my->skill[2];
+					gib->actGibDisableDrawForLocalPlayer = 1 + my->skill[2];
+				}
+
+				if ( PLAYER_ATTACKTIME >= my->playerCastTimeAnim )
+				{
+					my->playerCastTimeAnim = 0;
+					entity->skill[1] = 0;
+					PLAYER_WEAPONYAW = 0;
+					entity->roll = 0;
+					PLAYER_ARMBENDED = 0;
+					PLAYER_ATTACK = 0;
+				}
+			}
+			else if ( PLAYER_ATTACK == MONSTER_POSE_MAGIC_WINDUP2 )
+			{
+				// touch spell intermission
+				my->playerCastTimeAnim = 0;
+				entity->skill[1] = 0;
+				PLAYER_ARMBENDED = 0;
+				PLAYER_WEAPONYAW = 0;
+				entity->roll = 0;
+				entity->pitch = 0;
+				entity->yaw = my->yaw;
+
+				entity->pitch -= (PI / 2) * std::min(1.0, (PLAYER_ATTACKTIME / (real_t)5));
+
+				doParticleEffectForTouchSpell(*my, my, SPIDER);
+			}
+			else if ( PLAYER_ATTACK == MONSTER_POSE_MAGIC_CAST2 )
+			{
+				my->playerCastTimeAnim = 0;
+				PLAYER_ATTACK = 0;
 			}
 		}
 

@@ -77,7 +77,6 @@ void buttonDisconnect(button_t* my);
 void buttonScoreNext(button_t* my);
 void buttonScorePrev(button_t* my);
 void buttonScoreToggle(button_t* my);
-void buttonDeleteCurrentScore(button_t* my);
 void buttonOpenCharacterCreationWindow(button_t* my);
 void buttonDeleteSavedSoloGame(button_t* my);
 void buttonDeleteSavedMultiplayerGame(button_t* my);
@@ -87,7 +86,6 @@ void buttonLoadSingleplayerGame(button_t* my);
 void buttonLoadMultiplayerGame(button_t* my);
 void buttonRandomCharacter(button_t* my);
 bool replayLastCharacter(const int index, int multiplayer);
-void buttonOpenScoresWindow(button_t* my);
 void buttonRandomName(button_t* my);
 void buttonGamemodsOpenDirectory(button_t* my);
 void buttonGamemodsPrevDirectory(button_t* my);
@@ -314,7 +312,8 @@ enum CharacterDLCValidation : int
 	VALID_OK_CHARACTER,
 	INVALID_REQUIREDLC1,
 	INVALID_REQUIREDLC2,
-	INVALID_REQUIRE_ACHIEVEMENT
+	INVALID_REQUIRE_ACHIEVEMENT,
+	INVALID_REQUIREDLC3
 };
 
 struct LastCreatedCharacter {

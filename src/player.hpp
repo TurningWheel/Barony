@@ -59,6 +59,7 @@ struct PlayerSettings_t
     bool mkb_world_tooltips_enabled = true;
     bool gamepad_facehotbar = true;
     bool hotbar_numkey_quick_add = true;
+	bool hotbar_numkey_change_slot = true;
     bool reversemouse = 0;
     bool smoothmouse = false;
     real_t gamepad_rightx_sensitivity = 1.0;
@@ -67,6 +68,8 @@ struct PlayerSettings_t
     bool gamepad_righty_invert = false;
 	float quick_turn_speed = 1.f;
 	float quick_turn_speed_mkb = 1.f;
+	Sint32 leftStickDeadzone = 8000;
+	Sint32 rightStickDeadzone = 8000;
 	void init(const int _player)
 	{
 		player = _player;
@@ -109,7 +112,8 @@ public:
 			RUMBLE_BOULDER_BOUNCE,
 			RUMBLE_BOULDER_ROLLING,
 			RUMBLE_DEATH,
-			RUMBLE_TMP
+			RUMBLE_TMP,
+			RUMBLE_SPELL
 		};
 		int hapticEffectId = -1;
 		struct HapticEffect
@@ -272,33 +276,33 @@ public:
 	int getRightTrigger();
 
 	//The amount of movement of the given analog stick along its respective axis, with no gamepad sensitivity application. Deadzone is taken into account.
-	int getRawLeftXMove();
-	int getRawLeftYMove();
-	int getRawRightXMove();
-	int getRawRightYMove();
+	int getRawLeftXMove(int player);
+	int getRawLeftYMove(int player);
+	int getRawRightXMove(int player);
+	int getRawRightYMove(int player);
 
 	int getRawLeftTrigger();
 	int getRawRightTrigger();
 
 	//Gets the percentage the given stick is pressed along its current axis. From 0% after the deadzone to 100% all the way to the edge of the analog stick.
-	float getLeftXPercent();
-	float getLeftYPercent();
-	float getRightXPercent();
-	float getRightYPercent();
+	float getLeftXPercent(int player);
+	float getLeftYPercent(int player);
+	float getRightXPercent(int player);
+	float getRightYPercent(int player);
 
 	//Gets the percentage of the left stick for player movement, 100% input is multiplied by :
 	// x_forceMaxForwardThreshold, x_forceMaxBackwardThreshold, y_forceMaxStrafeThreshold
-	float getLeftXPercentForPlayerMovement();
-	float getLeftYPercentForPlayerMovement();
+	float getLeftXPercentForPlayerMovement(int player);
+	float getLeftYPercentForPlayerMovement(int player);
 
 	float getLeftTriggerPercent();
 	float getRightTriggerPercent();
 
 	//The maximum amount the given analog stick can move on its respective axis. After the gamepad deadzone is taken into account.
-	int maxLeftXMove();
-	int maxLeftYMove();
-	int maxRightXMove();
-	int maxRightYMove();
+	int maxLeftXMove(int player);
+	int maxLeftYMove(int player);
+	int maxRightXMove(int player);
+	int maxRightYMove(int player);
 
 	int maxLeftTrigger();
 	int maxRightTrigger();
@@ -311,9 +315,6 @@ public:
 	};
 	DeadZoneType leftStickDeadzoneType = DEADZONE_PER_AXIS;
 	DeadZoneType rightStickDeadzoneType = DEADZONE_MAGNITUDE_HALFPIPE;
-
-	Sint32 leftStickDeadzone = 8000;
-	Sint32 rightStickDeadzone = 8000;
 
 	real_t oldFloatRightX = 0.0; // current delta per frame right-stick analogue value
 	real_t oldFloatRightY = 0.0; // current delta per frame right-stick analogue value
@@ -658,7 +659,8 @@ class Player
 
 public:
 	Entity* entity;
-
+	real_t player_last_x = 0.0;
+	real_t player_last_y = 0.0;
 	enum SplitScreenTypes : int
 	{
 		SPLITSCREEN_DEFAULT,
@@ -668,6 +670,7 @@ public:
 	bool bSplitscreen = false;
 	SplitScreenTypes splitScreenType = SPLITSCREEN_DEFAULT;
 	bool bControlEnabled = true; // disabled if dead waiting for gameover prompt etc
+	bool was_connected_to_game = false;
 	Player(int playernum = 0, bool local_host = true);
 	~Player();
 
@@ -786,7 +789,8 @@ public:
 			MODULE_SIGN_VIEW,
 			MODULE_ITEMEFFECTGUI,
 			MODULE_PORTRAIT,
-			MODULE_ASSISTSHRINE
+			MODULE_ASSISTSHRINE,
+			MODULE_MAILBOX
 		};
 		GUIModules activeModule = MODULE_NONE;
 		GUIModules previousModule = MODULE_NONE;
@@ -922,6 +926,7 @@ public:
 			bool bOpen = false;
 			bool bFirstTimeSnapCursor = false;
 			int currentScrollRow = 0;
+			int spellFilterBySkill = 0;
 			const int kNumSpellsToDisplayVertical = 5;
 			int getNumSpellsToDisplayVertical() const;
 			void openSpellPanel();
@@ -949,9 +954,10 @@ public:
 			bool bOpen = false;
 			bool bFirstTimeSnapCursor = false;
 			int currentScrollRow = 0;
+			bool voidChest = false;
 			const int kNumItemsToDisplayVertical = 3;
 			int getNumItemsToDisplayVertical() const;
-			void openChest();
+			void openChest(bool _voidChest);
 			void closeChest();
 			void updateChest();
 			void scrollToSlot(int x, int y, bool instantly);
@@ -1078,6 +1084,8 @@ public:
 		bool warpMouseToSelectedChestSlot(Item* snapToItem, Uint32 flags);
 		bool guiAllowDropItems(Item* itemToDrop) const;
 		bool guiAllowDefaultRightClick() const;
+		Item* hasKeyForWallLock(Entity& entity) const;
+		int getKeyAmountForWallLock(Entity& entity) const;
 		void processInventory();
 		void updateInventory();
 		void updateCursor();
@@ -1149,6 +1157,7 @@ public:
 			int timer = 0; //There is a delay after the appraisal skill is activated before the item is identified.
 			int timermax = 0;
 			Uint32 current_item = 0; //The item being appraised (or rather its uid)
+			std::map<Uint32, int> appraisalProgressionItems;
 			Uint32 old_item = 0;
 			int getAppraisalTime(Item* item); // Return time in ticks needed to appraise an item
 			void appraiseItem(Item* item); // start appraise process
@@ -1157,6 +1166,7 @@ public:
 			Uint32 animStartTick = 0;
 			Uint32 itemNotifyUpdatedThisTick = 0;
 			int itemNotifyAnimState = 0;
+			real_t spellLearnAnim = 0.0;
 			enum ItemNotifyHoverStates : int
 			{
 				NOTIFY_ITEM_WAITING_TO_HOVER,
@@ -1165,6 +1175,17 @@ public:
 			};
 			std::unordered_map<Uint32, ItemNotifyHoverStates> itemsToNotify;
 			void updateAppraisalAnim();
+			static void readFromFile();
+			static std::vector<std::pair<int, int>> appraisal_time_points;
+			struct AppraisalBreakpoint_t
+			{
+				int skillLVL = 0;
+				int goldValueLimit = 0;
+				int fastTimeGold = 0;
+			};
+			static int fastTimeAppraisal;
+			static int perStatMult;
+			static std::vector<AppraisalBreakpoint_t> appraisal_tables;
 		} appraisal;
 		bool bNewInventoryLayout = true;
 	} inventoryUI;
@@ -1369,6 +1390,7 @@ public:
 		static real_t windowCompactHeightScaleX;
 		static real_t windowCompactHeightScaleY;
 		static bool generateFollowerTableForSkillsheet;
+		static std::string getSkillNameFromID(int skillID, bool shortName = false);
 		static struct SkillSheetData_t
 		{
 			Uint32 defaultTextColor = 0xFFFFFFFF;
@@ -1377,9 +1399,31 @@ public:
 			Uint32 legendTextColor = 0xFFFFFFFF;
 			struct SkillEntry_t
 			{
+			private:
+				std::string skillName = "";
+				std::string skillShortName = "";
+			public:
+				void setSkillName(std::string name)
+				{
+					skillName = name;
+				}
+				void setSkillShortName(std::string name)
+				{
+					skillShortName = name;
+				}
+				std::string getSkillName(bool shortName = false)
+				{
+					if ( shortName )
+					{
+						if ( skillShortName != "" )
+						{
+							return skillShortName;
+						}
+					}
+					return skillName;
+				}
 				SkillEntry_t() {};
 				~SkillEntry_t() {};
-				std::string name;
 				int skillId = -1;
 				std::string skillIconPath;
 				std::string skillIconPathLegend;
@@ -1398,6 +1442,7 @@ public:
 					~SkillEffect_t() {};
 					std::string tag;
 					std::string title;
+					std::string titleShort;
 					std::string rawValue;
 					std::string value;
 					int valueCustomWidthOffset = 0;
@@ -1481,6 +1526,7 @@ public:
 		Entity* arm = nullptr;
 		Entity* magicLeftHand = nullptr;
 		Entity* magicRightHand = nullptr;
+		Entity* magicRangefinder = nullptr;
 
 		bool weaponSwitch = false;
 		bool shieldSwitch = false;
@@ -1715,6 +1761,7 @@ public:
 		Player& player;
 		spell_t* selected_spell = nullptr; //The spell the player has currently selected.
 		spell_t* quick_cast_spell = nullptr; //Spell ready for quick-casting
+		Uint32 quick_cast_tome = 0; // Tome read for quick-casting
 	public:
 		spell_t* selected_spell_alternate[NUM_HOTBAR_ALTERNATES] = { nullptr, nullptr, nullptr, nullptr, nullptr };
 		int selected_spell_last_appearance = -1;
@@ -1723,6 +1770,7 @@ public:
 		Uint32 noManaFeedbackTicks = 0;
 		Uint32 noManaProcessedOnTick = 0;
 		Uint32 spellbookUidFromHotbarSlot = 0;
+		Uint32 telekinesisTarget = 0;
 		void flashNoMana()
 		{
 			noManaFeedbackTicks = 0;
@@ -1749,8 +1797,12 @@ public:
 			selected_spell = spell; 
 		}
 		void setQuickCastSpellFromInventory(Item* item);
+		void setQuickCastTomeFromInventory(Item* item);
 		bool doQuickCastSpell() { return quick_cast_spell != nullptr; }
 		void resetQuickCastSpell() { quick_cast_spell = nullptr; }
+		void resetQuickCastTome() { quick_cast_tome = 0; }
+		Uint32 quickCastTome() { return quick_cast_tome; }
+		bool doQuickCastTome();
 		spell_t* selectedSpell() const { return selected_spell; }
 		spell_t* quickCastSpell() const { return quick_cast_spell; }
 
@@ -1778,6 +1830,7 @@ public:
 		int monsterEmoteGimpTimer = 0;
 		int selectedEntityGimpTimer = 0;
 		bool insectoidLevitating = false;
+		static real_t minimiseMaximiseCameraZ;
 
 		bool handleQuickTurn(bool useRefreshRateDelta);
 		void startQuickTurn();
@@ -1806,6 +1859,7 @@ public:
 			GHOST_SPELL_NONE,
 			GHOST_SPELL_TELEPORT,
 			GHOST_SPELL_BOLT,
+			GHOST_SPELL_QUACK,
 			GHOST_SPELL_POST_CASTING
 		};
 		GhostSpells_t castingSpellAnimation = GHOST_SPELL_NONE;
@@ -1843,6 +1897,7 @@ public:
 		void handleGhostMovement(bool useRefreshRateDelta);
 		void handleActions();
 		void handleAttack();
+		bool isSpiritGhost();
 		bool isActive();
 		void setActive(bool active);
 		void initTeleportLocations(int x, int y);
@@ -2005,6 +2060,7 @@ public:
 				DialogueType_t dialogueType = DIALOGUE_NONE;
 				SDL_Surface* blitDialogueTooltip();
 				SDL_Surface* dialogueTooltipSurface = nullptr;
+				void updateWorldCoordinates();
 				Dialogue_t() {};
 				Dialogue_t(int player)
 				{
@@ -2061,6 +2117,7 @@ public:
 		TooltipView tooltipView = TOOLTIP_VIEW_FREE;
 		std::vector<std::pair<Entity*, real_t>> tooltipsInRange;
 		static real_t tooltipHeightOffsetZ;
+		real_t modifiedTooltipDrawHeight = 0.0;
 		real_t playerLastYaw = 0.0;
 		real_t playerLastPitch = 0.0;
 		int gimpDisplayTimer = 0;
@@ -2081,7 +2138,6 @@ public:
 		real_t tooltipInRange(Entity& tooltip); // returns distance of added tooltip, otherwise 0.
 		void cycleToNextTooltip();
 		void cycleToPreviousTooltip();
-
 	} worldUI;
 
 	class PaperDoll_t
@@ -2172,6 +2228,7 @@ public:
 		int swapHotbarOnShapeshift = 0;
 		bool hotbarHasFocus = false;
 		int magicBoomerangHotbarSlot = -1;
+		int magicDuckHotbarSlot = -1;
 		Uint32 hotbarTooltipLastGameTick = 0;
 		SDL_Rect hotbarBox;
 		Frame* hotbarFrame = nullptr;
@@ -2244,6 +2301,7 @@ public:
 			current_hotbar = 0;
 			//hotbarHasFocus = false;
 			magicBoomerangHotbarSlot = -1;
+			magicDuckHotbarSlot = -1;
 			hotbarTooltipLastGameTick = 0;
 			for ( int j = 0; j < NUM_HOTBAR_ALTERNATES; ++j )
 			{
@@ -2331,14 +2389,69 @@ public:
 		Player& player;
 	public:
 		std::map<int, int> itemDegradeRng;
+		std::set<int> learnedSpells;
+		std::vector<std::pair<int, int>> ducksInARow;
+		std::vector<std::pair<int, Uint32>> pendingDucks;
+		int numFishingCaught = 0;
 		bool itemDegradeRoll(Item* item, int* checkInterval = nullptr);
 		void onItemDegrade(Item* item);
-		int sustainedSpellMPUsed = 0;
+		int sustainedSpellMPUsedSorcery = 0;
+		int sustainedSpellMPUsedMysticism = 0;
+		int sustainedSpellMPUsedThaumaturgy = 0;
+		int baseSpellMPUsedSorcery = 0;
+		int baseSpellMPUsedMysticism = 0;
+		int baseSpellMPUsedThaumaturgy = 0;
 		Uint32 defendTicks = 0;
-		bool sustainedSpellLevelChance();
-		void sustainedSpellIncrementMP(int mpChange);
+		int fociHolyChargeTime = 0;
+		int fociDarkChargeTime = 0;
+		int lastFociHeldType = 0;
+		enum class RngRollTypes
+		{
+			RNG_ROLL_DEFAULT,
+			RNG_ROLL_EVASION,
+			RNG_ROLL_GROWTH,
+			RNG_ROLL_SILKEN_BOW,
+			RNG_ROLL_ENUM_END
+		};
+		std::map<int, int> escalatingRngRolls;
+		bool sustainedSpellLevelChance(int skillID);
+		int baseSpellLevelChance(int skillID);
+		int baseSpellMPSpent(int skillID);
+		void sustainedSpellIncrementMP(int mpChange, int skillID);
+		void baseSpellIncrementMP(int mpChange, int skillID);
+		void sustainedSpellClearMP(int skillID);
+		void baseSpellClearMP(int skillID);
+		std::map<int, int> baseSpellLevelUpProcs;
+		std::map<int, real_t> sustainedSpellIDCounter;
+		bool updateSustainedSpellEvent(int spellID, real_t value, real_t scaleValue, Entity* hitEntity);
+		bool rollRngProc(RngRollTypes rngType, int chance);
 		std::map<Uint32, int> enemyRaisedBlockingAgainst;
+		std::map<Uint32, int> enemyRaisedStealthAgainst;
 		bool allowedRaiseBlockingAgainstEntity(Entity& attacker);
+		bool allowedRaiseStealthAgainstEntity(Entity& attacker);
+		int getWealthTier();
+		int ensemblePlaying = -1;
+		bool ensembleRequireRecast = false;
+		bool ensembleTakenInitialMP = false;
+		bool previouslyLevitating = false;
+		Uint32 donationRevealedOnFloor = 0;
+		bool donationClaimed = false;
+		std::map<Uint32, std::map<Uint32, Uint32>> targetsCompelled;
+		std::set<Uint32> targetsRefuseCompel;
+		static void ensembleMusicUpdateServer();
+		static void ensembleMusicUpdate();
+		enum class BreakableEvent
+		{
+			GBREAK_COMMON,
+			GBREAK_KILL,
+			GBREAK_DEFACE,
+			GBREAK_DEGRADE
+		};
+		int gremlinBreakableCounter = 0;
+		void incrementBreakableCounter(BreakableEvent eventType, Entity* entity);
+		int getBreakableCounterTier();
+		void updateBreakableCounterServer();
+		Uint32 ensembleDataUpdate = 0;
 		PlayerMechanics_t(Player& p) : player(p)
 		{};
 		~PlayerMechanics_t() {};

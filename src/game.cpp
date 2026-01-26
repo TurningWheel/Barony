@@ -310,11 +310,13 @@ void TimerExperiments::updateEntityInterpolationPosition(Entity* entity)
 		|| entity->behavior == &actHudShield
 		|| entity->behavior == &actHudArm
 		|| entity->behavior == &actHudAdditional
+		|| entity->behavior == &actHudAdditional2
 		|| entity->behavior == &actHudArrowModel
 		|| entity->behavior == &actLeftHandMagic
 		|| entity->behavior == &actRightHandMagic
 		|| entity->behavior == &actCircuit
-		|| entity->behavior == &actDoor )
+		|| entity->behavior == &actDoor
+		|| entity->behavior == &actIronDoor )
 	{
 		entity->bUseRenderInterpolation = false;
 	}
@@ -389,7 +391,15 @@ void TimerExperiments::renderCameras(view_t& camera, int player)
 
 	if ( players[player]->entity )
 	{
-		if ( !(players[player]->entity->skill[3] == 1) ) // skill[3] is debug cam
+		if ( players[player]->entity->skill[3] == 2 )
+		{
+			camera.x = TimerExperiments::cameraRenderState[player].x.position;
+			camera.y = TimerExperiments::cameraRenderState[player].y.position;
+			camera.ang = TimerExperiments::cameraRenderState[player].yaw.position;
+			camera.vang = TimerExperiments::cameraRenderState[player].pitch.position;
+			camera.z = TimerExperiments::cameraRenderState[player].z.position; // this uses PLAYER_CAMERAZ_ACCEL, not entity Z
+		}
+		else if ( !(players[player]->entity->skill[3] != 0) ) // skill[3] is debug cam
 		{
 			if ( bDebug )
 			{
@@ -1092,7 +1102,7 @@ void gameLogic(void)
 	        {
 	            continue;
 	        }
-	        if ( stats[c]->EFFECTS[EFF_DRUNK] )
+	        if ( stats[c]->getEffectActive(EFF_DRUNK) )
 		    {
 			    // goat/drunkards no spin!
 			    if ( stats[c]->type == GOATMAN )
@@ -1121,7 +1131,7 @@ void gameLogic(void)
 		    }
 		    else
 		    {
-			    if ( stats[c]->EFFECTS[EFF_WITHDRAWAL] || stats[c]->EFFECTS[EFF_DISORIENTED] )
+			    if ( stats[c]->getEffectActive(EFF_WITHDRAWAL) || stats[c]->getEffectActive(EFF_DISORIENTED) )
 			    {
 				    // special widthdrawal shakes
 				    if ( drunkextend[c] < 0.2 )
@@ -1200,7 +1210,7 @@ void gameLogic(void)
 					entity->flags[BURNING] = false;
 					continue;
 				}
-	            if ( flickerLights || entity->ticks % TICKS_PER_SECOND == 1 )
+	            /*if ( flickerLights || entity->ticks % TICKS_PER_SECOND == 1 )
 	            {
 				    j = 1 + local_rng.rand() % 4;
 				    for ( c = 0; c < j; ++c )
@@ -1217,6 +1227,12 @@ void gameLogic(void)
 							}
 						}
 				    }
+				}*/
+				if ( entity->ticks % 10 == 0 )
+				{
+					if ( Entity* fx = spawnFlameSprites(entity, 233) )
+					{
+					}
 				}
 			}
 		}
@@ -1224,6 +1240,9 @@ void gameLogic(void)
 
 	// damage indicator timers
 	handleDamageIndicatorTicks();
+#ifdef STEAMWORKS
+	MainMenu::richPresence.process();
+#endif
 
 	if ( intro == true )
 	{
@@ -1297,52 +1316,6 @@ void gameLogic(void)
 	}
 	else
 	{
-		if ( multiplayer == SERVER )
-		{
-			if ( ticks % 4 == 0 )
-			{
-				// continue informing clients of entities they need to delete
-				for ( i = 1; i < MAXPLAYERS; i++ )
-				{
-					if ( players[i]->isLocalPlayer() )
-					{
-						continue;
-					}
-					j = 0;
-					for ( node = entitiesToDelete[i].first; node != NULL; node = nextnode )
-					{
-						nextnode = node->next;
-
-						deleteent_t* deleteent = nullptr;
-						if (net_packet && net_packet->data) {
-							// send the delete entity command to the client
-							strcpy((char*)net_packet->data, "ENTD");
-							deleteent = (deleteent_t*)node->element;
-							SDLNet_Write32(deleteent->uid, &net_packet->data[4]);
-							net_packet->address.host = net_clients[i - 1].host;
-							net_packet->address.port = net_clients[i - 1].port;
-							net_packet->len = 8;
-							sendPacket(net_sock, -1, net_packet, i - 1);
-
-							// quit reminding clients after a certain number of attempts]
-							if (deleteent) {
-								deleteent->tries++;
-								if (deleteent->tries >= MAXTRIES)
-								{
-									list_RemoveNode(node);
-								}
-							}
-						}
-
-						j++;
-						if ( j >= MAXDELETES )
-						{
-							break;
-						}
-					}
-				}
-			}
-		}
 		DebugStats.eventsT2 = std::chrono::high_resolution_clock::now();
 		if ( multiplayer != CLIENT )   // server/singleplayer code
 		{
@@ -1524,9 +1497,9 @@ void gameLogic(void)
 						steamAchievementClient(c, "BARONY_ACH_COMEDIAN");
 					}
 
-					if ( stats[c]->EFFECTS[EFF_SHRINE_RED_BUFF]
-						&& stats[c]->EFFECTS[EFF_SHRINE_GREEN_BUFF]
-						&& stats[c]->EFFECTS[EFF_SHRINE_BLUE_BUFF] )
+					if ( stats[c]->getEffectActive(EFF_SHRINE_RED_BUFF)
+						&& stats[c]->getEffectActive(EFF_SHRINE_GREEN_BUFF)
+						&& stats[c]->getEffectActive(EFF_SHRINE_BLUE_BUFF) )
 					{
 						steamAchievementClient(c, "BARONY_ACH_WELL_PREPARED");
 					}
@@ -1652,7 +1625,8 @@ void gameLogic(void)
 
 			//if( TICKS_PER_SECOND )
 			//generatePathMaps();
-			bool debugMonsterTimer = false && !gamePaused && keystatus[SDLK_g];
+			static ConsoleVariable<bool> cvar_debug_monster_timer("/debug_monster_timer", false);
+			bool debugMonsterTimer = *cvar_debug_monster_timer && !gamePaused && keystatus[SDLK_F1];
 			if ( debugMonsterTimer )
 			{
 				printlog("loop start");
@@ -1706,6 +1680,7 @@ void gameLogic(void)
 				}
 			}
 
+			bool loadedNextLevel = false;
 			for ( node = map.entities->first; node != nullptr; node = nextnode )
 			{
 				nextnode = node->next;
@@ -1725,6 +1700,7 @@ void gameLogic(void)
 							&& entity->behavior != &actHudWeapon
 							&& entity->behavior != &actHudShield
 							&& entity->behavior != &actHudAdditional
+							&& entity->behavior != &actHudAdditional2
 							&& entity->behavior != &actHudArrowModel
 							&& entity->behavior != &actLeftHandMagic
 							&& entity->behavior != &actRightHandMagic
@@ -1825,6 +1801,7 @@ void gameLogic(void)
 				{
 				    // when this flag is set, it's time to load the next level.
 					loadnextlevel = false;
+					loadedNextLevel = true;
 
 					int totalFloorGold = 0;
 					int totalFloorItems = 0;
@@ -1941,6 +1918,7 @@ void gameLogic(void)
 						players[i]->hud.weapon = nullptr;
 						players[i]->hud.magicLeftHand = nullptr;
 						players[i]->hud.magicRightHand = nullptr;
+						players[i]->hud.magicRangefinder = nullptr;
 						players[i]->ghost.reset();
 						FollowerMenu[i].recentEntity = nullptr;
 						FollowerMenu[i].followerToCommand = nullptr;
@@ -1967,6 +1945,7 @@ void gameLogic(void)
 					{
 						soundNotification_group->stop();
 					}
+					ensembleSounds.stopPlaying(true);
 					VoiceChat.deinitRecording(false);
 #elif defined USE_OPENAL
 					if ( sound_group )
@@ -2196,6 +2175,11 @@ void gameLogic(void)
 	                std::atomic_bool loading_done {false};
 	                auto loading_task = std::async(std::launch::async, [&loading_done](){
 					    gameplayCustomManager.readFromFile();
+						if ( gameplayCustomManager.inUse() )
+						{
+							conductGameChallenges[CONDUCT_MODDED] = 1;
+							Mods::disableSteamAchievements = true;
+						}
 					    textSourceScript.scriptVariables.clear();
 	                    updateLoadingScreen(10);
 
@@ -2245,10 +2229,13 @@ void gameLogic(void)
 							CalloutMenu[i].closeCalloutMenuGUI();
 						}
 						players[i]->hud.followerBars.clear();
+						spellcastingAnimationManager_deactivate(&cast_animation[i]);
 					}
 					EnemyHPDamageBarHandler::dumpCache();
+					AOEIndicators_t::cleanup();
 					monsterAllyFormations.reset();
 					particleTimerEmitterHitEntities.clear();
+					particleTimerEffects.clear();
 					monsterTrapIgnoreEntities.clear();
 					minimapHighlights.clear();
 
@@ -2388,17 +2375,17 @@ void gameLogic(void)
 					{
 						if (players[c] && players[c]->entity && !client_disconnected[c])
 						{
-							if ( stats[c] && stats[c]->EFFECTS[EFF_POLYMORPH] && stats[c]->playerPolymorphStorage != NOTHING )
+							if ( stats[c] && stats[c]->getEffectActive(EFF_POLYMORPH) && stats[c]->playerPolymorphStorage != NOTHING )
 							{
 								players[c]->entity->effectPolymorph = stats[c]->playerPolymorphStorage;
 								serverUpdateEntitySkill(players[c]->entity, 50); // update visual polymorph effect for clients.
 							}
-							if ( stats[c] && stats[c]->EFFECTS[EFF_SHAPESHIFT] && stats[c]->playerShapeshiftStorage != NOTHING )
+							if ( stats[c] && stats[c]->getEffectActive(EFF_SHAPESHIFT) && stats[c]->playerShapeshiftStorage != NOTHING )
 							{
 								players[c]->entity->effectShapeshift = stats[c]->playerShapeshiftStorage;
 								serverUpdateEntitySkill(players[c]->entity, 53); // update visual polymorph effect for clients.
 							}
-							if ( stats[c] && stats[c]->EFFECTS[EFF_VAMPIRICAURA] && stats[c]->EFFECTS_TIMERS[EFF_VAMPIRICAURA] == -2 )
+							if ( stats[c] && stats[c]->getEffectActive(EFF_VAMPIRICAURA) && stats[c]->EFFECTS_TIMERS[EFF_VAMPIRICAURA] == -2 )
 							{
 								players[c]->entity->playerVampireCurse = 1;
 								serverUpdateEntitySkill(players[c]->entity, 51); // update curse progression
@@ -2471,6 +2458,10 @@ void gameLogic(void)
 										else if ( stats[c]->playerSummon2PERCHR != 0 && MonsterData_t::nameMatchesSpecialNPCName(*monsterStats, "skeleton sentinel") )
 										{
 											monster->monsterAllySummonRank = (stats[c]->playerSummon2PERCHR & 0x0000FF00) >> 8;
+										}
+										else if ( monsterStats->getAttribute("SUMMONED_CREATURE") != "" )
+										{
+											monster->monsterAllySummonRank = std::stoi(monsterStats->getAttribute("SUMMONED_CREATURE"));
 										}
 										serverUpdateEntitySkill(monster, 46); // update monsterAllyClass
 										serverUpdateEntitySkill(monster, 44); // update monsterAllyPickupItems
@@ -2584,6 +2575,34 @@ void gameLogic(void)
 						Compendium_t::Events_t::onLevelChangeEvent(c, Compendium_t::Events_t::previousCurrentLevel, Compendium_t::Events_t::previousSecretlevel, prevmapname, playerDied[c]);
 						players[c]->compendiumProgress.playerAliveTimeTotal = 0;
 						players[c]->compendiumProgress.playerGameTimeTotal = 0;
+
+						// unsustain any previous effects
+						node_t* spellnode;
+						spellnode = stats[c]->magic_effects.first;
+						while ( spellnode )
+						{
+							node_t* oldnode = spellnode;
+							spellnode = spellnode->next;
+							if ( spell_t* spell = (spell_t*)oldnode->element )
+							{
+								spell->magic_effects_node = NULL;
+								if ( spell->sustainEffectDissipate >= 0 )
+								{
+									if ( stats[c]->getEffectActive(spell->sustainEffectDissipate) )
+									{
+										if ( stats[c]->EFFECTS_TIMERS[spell->sustainEffectDissipate] > 0 )
+										{
+											stats[c]->EFFECTS_TIMERS[spell->sustainEffectDissipate] = 1;
+										}
+									}
+									list_RemoveNode(oldnode);
+								}
+								else
+								{
+									spell->sustain = false;
+								}
+							}
+						}
 					}
 
                     // save at end of level change
@@ -2775,8 +2794,12 @@ void gameLogic(void)
 				client_selected[j] = NULL;
 			}
 
+			Player::PlayerMechanics_t::ensembleMusicUpdate();
+
 			// world UI
 			Player::WorldUI_t::handleTooltips();
+
+			AOEIndicators_t::update();
 
 			int backpack_sizey[MAXPLAYERS];
 
@@ -2826,9 +2849,21 @@ void gameLogic(void)
 						continue;
 					}
 
-					if ( item->notifyIcon && itemCategory(item) == SPELL_CAT )
+					if ( itemCategory(item) == SPELL_CAT )
 					{
-						players[player]->magic.bHasUnreadNewSpell = true;
+						if ( item->notifyIcon )
+						{
+							players[player]->magic.bHasUnreadNewSpell = true;
+						}
+						item->spellNotifyIcon = false;
+						if ( auto spell = getSpellFromItem(player, item, false) )
+						{
+							if ( stats[player]->getProficiency(spell->skillID) < SKILL_LEVEL_LEGENDARY
+								&& spell->difficulty > (stats[player]->getProficiency(spell->skillID) - 20) )
+							{
+								item->spellNotifyIcon = true;
+							}
+						}
 					}
 
 					// unlock achievements for special collected items
@@ -2896,6 +2931,21 @@ void gameLogic(void)
 						if ( !players[player]->inventoryUI.moveItemToFreeInventorySlot(item) )
 						{
 							item->x = players[player]->inventoryUI.getSizeX(); // force unequip below
+						}
+					}
+
+					if ( item->type == TOOL_DUCK && players[player]->entity )
+					{
+						if ( item->getDuckPlayer() != player || item->status == BROKEN )
+						{
+							messagePlayer(player, MESSAGE_INVENTORY, Language::get(6869));
+							bool droppedAll = false;
+							droppedAll = dropItem(item, player, false, true);
+							if ( droppedAll )
+							{
+								item = nullptr;
+								continue;
+							}
 						}
 					}
 
@@ -3240,6 +3290,7 @@ void gameLogic(void)
 							&& entity->behavior != &actHudWeapon
 							&& entity->behavior != &actHudShield
 							&& entity->behavior != &actHudAdditional
+							&& entity->behavior != &actHudAdditional2
 							&& entity->behavior != &actHudArrowModel
 							&& entity->behavior != &actLeftHandMagic
 							&& entity->behavior != &actRightHandMagic
@@ -3461,8 +3512,12 @@ void gameLogic(void)
 				entity->ranbehavior = false;
 			}
 
+			Player::PlayerMechanics_t::ensembleMusicUpdate();
+
 			// world UI
 			Player::WorldUI_t::handleTooltips();
+
+			AOEIndicators_t::update();
 
 			auto& playerInventory = players[clientnum]->inventoryUI;
 			const int inventorySizeX = playerInventory.getSizeX();
@@ -3492,9 +3547,22 @@ void gameLogic(void)
 				{
 					continue;
 				}
-				if ( item->notifyIcon && itemCategory(item) == SPELL_CAT )
+
+				if ( itemCategory(item) == SPELL_CAT )
 				{
-					players[clientnum]->magic.bHasUnreadNewSpell = true;
+					if ( item->notifyIcon )
+					{
+						players[clientnum]->magic.bHasUnreadNewSpell = true;
+					}
+					item->spellNotifyIcon = false;
+					if ( auto spell = getSpellFromItem(clientnum, item, false) )
+					{
+						if ( stats[clientnum]->getProficiency(spell->skillID) < SKILL_LEVEL_LEGENDARY
+							&& spell->difficulty > (stats[clientnum]->getProficiency(spell->skillID) - 20) )
+						{
+							item->spellNotifyIcon = true;
+						}
+					}
 				}
 
 				// unlock achievements for special collected items
@@ -3562,6 +3630,21 @@ void gameLogic(void)
 					if ( !players[clientnum]->inventoryUI.moveItemToFreeInventorySlot(item) )
 					{
 						item->x = players[clientnum]->inventoryUI.getSizeX(); // force unequip below
+					}
+				}
+
+				if ( item->type == TOOL_DUCK && players[clientnum]->entity )
+				{
+					if ( item->getDuckPlayer() != clientnum || item->status == BROKEN )
+					{
+						messagePlayer(clientnum, MESSAGE_INVENTORY, Language::get(6869));
+						bool droppedAll = false;
+						droppedAll = dropItem(item, clientnum, false, true);
+						if ( droppedAll )
+						{
+							item = nullptr;
+							continue;
+						}
 					}
 				}
 
@@ -4407,6 +4490,64 @@ bool handleEvents(void)
 				mousey = event.motion.y * factorY;
 				mousexrel += event.motion.xrel;
 				mouseyrel += event.motion.yrel;
+				
+				//{
+				// // debug code for checking checking mouse motions during lag
+				//static std::map < Uint32, std::vector<SDL_MouseMotionEvent>> evs;
+				//evs[event.motion.timestamp].push_back(event.motion);
+				//if ( evs[event.motion.timestamp].size() > 1 )
+				//{
+				//	static std::map<Uint32, std::map<Sint32, std::map<Sint32, std::map<Sint32, std::map<Sint32, int>>>>> ss;
+				//	auto& val = ss[event.motion.timestamp][event.motion.x][event.motion.y][event.motion.xrel][event.motion.yrel];
+				//	val++;
+				//	if ( evs[event.motion.timestamp].size() >= 2000 )
+				//	{
+				//		mousexrel -= event.motion.xrel;
+				//		mouseyrel -= event.motion.yrel;
+				//		messagePlayer(0, MESSAGE_DEBUG, "cleared");
+				//	}
+				//}
+				//if ( evs.size() > 100 )
+				//{
+				//	size_t m = 0;
+				//	for ( auto& v : evs )
+				//	{
+				//		m = std::max(v.second.size(), m);
+				//	}
+				//	//if ( m > 25 )
+				//	{
+				//		for ( auto& v : evs )
+				//		{
+				//			//if ( v.second.size() > 25 )
+				//			{
+				//				int netx = 0;
+				//				int nety = 0;
+				//				int dupes = 0;
+				//				std::map<Sint32, std::map<Sint32, std::map<Sint32, std::map<Sint32, int>>>> ss;
+				//				for ( auto& s : v.second )
+				//				{
+				//					ss[s.x][s.y][s.xrel][s.yrel]++;
+				//					if ( ss[s.x][s.y][s.xrel][s.yrel] > 1 )
+				//					{
+				//						++dupes;
+				//					}
+				//					netx += s.xrel;
+				//					nety += s.yrel;
+				//				}
+				//				if ( dupes > 0 )
+				//				{
+				//					int rx = 0;
+				//					int ry = 0;
+				//					SDL_GetRelativeMouseState(&rx, &ry);
+				//					messagePlayer(0, MESSAGE_DEBUG, "net x: %d y: %d | dupes: %d | rx: %d ry: %d", netx, nety, dupes, rx, ry);
+				//				}
+				//			}
+				//		}
+				//		messagePlayer(0, MESSAGE_DEBUG, "max dupe: %d", m);
+				//	}
+				//	evs.clear();
+				//}
+				//}
 
 				if (initialized)
 				{
@@ -5447,12 +5588,14 @@ void ingameHud()
 		// spellcasting
 		// player needs to be alive
 		if ( players[player]->isLocalPlayerAlive() 
-			&& !gamePaused )
+			&& !gamePaused
+			&& !players[player]->ghost.isActive() )
 		{
             const bool shootmode = players[player]->shootmode;
 			bool hasSpellbook = false;
 			bool tryHotbarQuickCast = players[player]->hotbar.faceMenuQuickCast;
 			bool tryInventoryQuickCast = players[player]->magic.doQuickCastSpell();
+			bool tryTomeQuickCast = players[player]->magic.doQuickCastTome();
 			if ( stats[player]->shield && itemCategory(stats[player]->shield) == SPELLBOOK )
 			{
 				hasSpellbook = true;
@@ -5460,7 +5603,8 @@ void ingameHud()
 
 			players[player]->hotbar.faceMenuQuickCast = false;
 			bool allowCasting = false;
-			if ( tryInventoryQuickCast )
+			bool castAnimationTouch = false;
+			if ( tryInventoryQuickCast || tryTomeQuickCast )
 			{
 				allowCasting = true;
 			}
@@ -5471,7 +5615,27 @@ void ingameHud()
 				bool castMemorizedSpell = input.binaryToggle("Cast Spell");
 				bool castSpellbook = (hasSpellbook && input.binaryToggle("Defend"));
 
-			    if (tryHotbarQuickCast || castMemorizedSpell || castSpellbook )
+				if ( inputs.hasController(player) && cast_animation[player].spellWaitingAttackInput() )
+				{
+					allowCasting = false;
+					castAnimationTouch = true;
+
+					if ( FollowerMenu[player].followerMenuIsOpen() || CalloutMenu[player].calloutMenuIsOpen() )
+					{
+						// nothing, let menucancel close them
+					}
+					else if ( input.binaryToggle("MenuCancel") )
+					{
+						input.consumeBinaryToggle("MenuCancel");
+						input.consumeBindingsSharedWithBinding("MenuCancel");
+						input.consumeBinaryToggle("Hotbar Left");
+						input.consumeBinaryToggle("Hotbar Up / Select");
+						input.consumeBinaryToggle("Hotbar Right");
+
+						castSpellInit(players[player]->entity->getUID(), players[player]->magic.selectedSpell(), false, false);
+					}
+				}
+			    else if (tryHotbarQuickCast || castMemorizedSpell || castSpellbook )
 			    {
 				    allowCasting = true;
 				    if ( tryHotbarQuickCast == false )
@@ -5575,15 +5739,38 @@ void ingameHud()
 							}
 							if ( tryInventoryQuickCast )
 							{
-								castSpellInit(players[player]->entity->getUID(), players[player]->magic.quickCastSpell(), false);
+								castSpellInit(players[player]->entity->getUID(), players[player]->magic.quickCastSpell(), false, false);
+							}
+							else if ( tryTomeQuickCast )
+							{
+								if ( Item* item = uidToItem(players[player]->magic.quickCastTome()) )
+								{
+									if ( auto spellID = item->getTomeSpellID() )
+									{
+										if ( spellID != SPELL_NONE )
+										{
+											if ( auto spell = getSpellFromID(spellID) )
+											{
+												if ( !cast_animation[player].active && !cast_animation[player].active_spellbook )
+												{
+													castSpellInit(players[player]->entity->getUID(), spell, false, true);
+													if ( cast_animation[player].active )
+													{
+														list_RemoveNode(item->node);
+													}
+												}
+											}
+										}
+									}
+								}
 							}
 							else if ( hasSpellbook && input.consumeBinaryToggle("Defend") )
 							{
-								castSpellInit(players[player]->entity->getUID(), getSpellFromID(getSpellIDFromSpellbook(stats[player]->shield->type)), true);
+								castSpellInit(players[player]->entity->getUID(), getSpellFromID(getSpellIDFromSpellbook(stats[player]->shield->type)), true, false);
 							}
 							else
 							{
-								castSpellInit(players[player]->entity->getUID(), players[player]->magic.selectedSpell(), false);
+								castSpellInit(players[player]->entity->getUID(), players[player]->magic.selectedSpell(), false, false);
 							}
 							if ( players[player]->magic.selectedSpell() )
 							{
@@ -5595,22 +5782,52 @@ void ingameHud()
 					{
 						if ( tryInventoryQuickCast )
 						{
-							castSpellInit(players[player]->entity->getUID(), players[player]->magic.quickCastSpell(), false);
+							castSpellInit(players[player]->entity->getUID(), players[player]->magic.quickCastSpell(), false, false);
+						}
+						else if ( tryTomeQuickCast )
+						{
+							if ( Item* item = uidToItem(players[player]->magic.quickCastTome()) )
+							{
+								if ( auto spellID = item->getTomeSpellID() )
+								{
+									if ( spellID != SPELL_NONE )
+									{
+										if ( auto spell = getSpellFromID(spellID) )
+										{
+											if ( !cast_animation[player].active && !cast_animation[player].active_spellbook )
+											{
+												castSpellInit(players[player]->entity->getUID(), spell, false, true);
+												if ( cast_animation[player].active )
+												{
+													list_RemoveNode(item->node);
+												}
+											}
+										}
+									}
+								}
+							}
 						}
 						else if ( hasSpellbook && input.consumeBinaryToggle("Defend") )
 						{
-							castSpellInit(players[player]->entity->getUID(), getSpellFromID(getSpellIDFromSpellbook(stats[player]->shield->type)), true);
+							castSpellInit(players[player]->entity->getUID(), getSpellFromID(getSpellIDFromSpellbook(stats[player]->shield->type)), true, false);
 						}
 						else
 						{
-							castSpellInit(players[player]->entity->getUID(), players[player]->magic.selectedSpell(), false);
+							castSpellInit(players[player]->entity->getUID(), players[player]->magic.selectedSpell(), false, false);
 						}
 					}
 				}
 				input.consumeBinaryToggle("Defend");
 			}
-			input.consumeBinaryToggle("Cast Spell");
+			if ( !castAnimationTouch )
+			{
+				if ( !(cast_animation[player].stage == 4 || cast_animation[player].stage == 9) ) // allow recast if pressed during touch throw window
+				{
+					input.consumeBinaryToggle("Cast Spell");
+				}
+			}
 		}
+		players[player]->magic.resetQuickCastTome();
 		players[player]->magic.resetQuickCastSpell();
 
 		bool worldUIBlocksFollowerCycle = (
@@ -5764,6 +5981,7 @@ void ingameHud()
 		GenericGUI[player].tinkerGUI.updateTinkerMenu();
 		GenericGUI[player].alchemyGUI.updateAlchemyMenu();
 		GenericGUI[player].assistShrineGUI.updateAssistShrine();
+		GenericGUI[player].mailboxGUI.updateMailMenu();
 		GenericGUI[player].featherGUI.updateFeatherMenu();
 		GenericGUI[player].itemfxGUI.updateItemEffectMenu();
 		players[player]->GUI.dropdownMenu.process();
@@ -5835,8 +6053,8 @@ void ingameHud()
 				printTextFormatted(font8x8_bmp, x, y + 72, "flx: %4f | fly: %4f",
 					inputs.getController(player)->oldFloatRightX, inputs.getController(player)->oldFloatRightY);
 				printTextFormatted(font8x8_bmp, x, y + 84, "deadzonex: %3.1f%% | deadzoney: %3.1f%%",
-					inputs.getController(player)->leftStickDeadzone * 100 / 32767.0,
-					inputs.getController(player)->rightStickDeadzone * 100 / 32767.0);
+					playerSettings[multiplayer ? 0 : player].leftStickDeadzone * 100 / 32767.0,
+					playerSettings[multiplayer ? 0 : player].rightStickDeadzone * 100 / 32767.0);
 			}
 			if ( players[player]->entity )
 			{
@@ -5846,8 +6064,8 @@ void ingameHud()
 			if ( inputs.hasController(player) )
 			{
 				printTextFormatted(font8x8_bmp, x, y + 112, "leftx: %4f | lefty: %4f",
-					inputs.getController(player)->getLeftXPercent(),
-					inputs.getController(player)->getLeftYPercent());
+					inputs.getController(player)->getLeftXPercent(player),
+					inputs.getController(player)->getLeftYPercent(player));
 			}
 			if ( players[player]->entity )
 			{
@@ -6215,8 +6433,16 @@ void drawAllPlayerCameras() {
             if (players[c]->ghost.isActive()) {
                 *cvar_hdrBrightness = {0.9f, 0.9f, 1.2f, 1.0f};
                 *cvar_fogColor = {0.7f, 0.7f, 1.1f, 0.25f};
+				if ( !strncmp(map.filename, "fortress", 8) )
+				{
+					cvar_fogColor->w = 1.f;
+				}
                 *cvar_fogDistance = 350.f;
             }
+			else if ( players[c] && players[c]->entity && players[c]->entity->isBlind() )
+			{
+				*cvar_fogDistance = 0.f; // no fog when blind to ensure black
+			}
 
 			// do occlusion culling from the perspective of this camera
 			DebugStats.drawWorldT2 = std::chrono::high_resolution_clock::now();
@@ -6263,22 +6489,36 @@ void drawAllPlayerCameras() {
 						globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_INUSE;
 						globalLightModifier = 0.f;
 						globalLightModifierEntities = 0.f;
-						if ( stats[c]->mask && stats[c]->mask->type == TOOL_BLINDFOLD_TELEPATHY )
+						if ( !intro )
 						{
-							for ( node_t* mapNode = map.creatures->first; mapNode != nullptr; mapNode = mapNode->next )
+							bool selfTelepath = stats[c]->mask && stats[c]->mask->type == TOOL_BLINDFOLD_TELEPATHY;
+							if ( selfTelepath )
 							{
-								Entity* mapCreature = (Entity*)mapNode->element;
-								if ( mapCreature && !intro )
+								for ( node_t* mapNode = map.creatures->first; mapNode != nullptr; mapNode = mapNode->next )
 								{
-									mapCreature->monsterEntityRenderAsTelepath = 1;
+									Entity* mapCreature = (Entity*)mapNode->element;
+									if ( mapCreature &&
+										(selfTelepath
+											/*|| (mapCreature->getStats() && mapCreature->getStats()->getEffectActive(EFF_DETECT_ENEMY))*/
+											) )
+									{
+										/*if ( mapCreature->getStats() && mapCreature->getStats()->getEffectActive(EFF_DETECT_ENEMY) )
+										{
+											mapCreature->monsterEntityRenderAsTelepath = 2;
+										}
+										else*/
+										{
+											mapCreature->monsterEntityRenderAsTelepath = 1;
+										}
+									}
 								}
 							}
 						}
 					}
 
 					int PERModifier = 0;
-					if ( stats[c] && stats[c]->EFFECTS[EFF_BLIND]
-						&& !stats[c]->EFFECTS[EFF_ASLEEP] && !stats[c]->EFFECTS[EFF_MESSY] )
+					if ( stats[c] && stats[c]->getEffectActive(EFF_BLIND)
+						&& !stats[c]->getEffectActive(EFF_ASLEEP) && !stats[c]->getEffectActive(EFF_MESSY) )
 					{
 						// blind but not messy or asleep = allow PER to let you see the world a little.
 						PERModifier = players[c]->entity->getPER() / 5;
@@ -6367,10 +6607,8 @@ void drawAllPlayerCameras() {
 			glEndCamera(&camera, true, map);
             
             // undo ghost fog
-            if (players[c]->ghost.isActive()) {
-                *cvar_hdrBrightness = {1.0f, 1.0f, 1.0f, 1.0f};
-                *cvar_fogColor = {0.0f, 0.0f, 0.0f, 1.0f};
-                *cvar_fogDistance = 0.0f;
+            if (players[c]->ghost.isActive() || (players[c]->entity && players[c]->entity->isBlind()) ) {
+				map.setMapHDRSettings();
             }
 
 			if (shaking && players[c] && players[c]->entity && !gamePaused)
@@ -6455,7 +6693,7 @@ static void doConsoleCommands() {
 
 		if (input.consumeBinaryToggle("Console Command")) {
 			input.consumeBindingsSharedWithBinding("Console Command");
-			if (!command) {
+			if (!command && !inputstr ) {
 				confirm = true;
 			}
 		}
@@ -6659,6 +6897,9 @@ int main(int argc, char** argv)
 {
 #ifdef WINDOWS
 	SetUnhandledExceptionFilter(unhandled_handler);
+#ifdef _DEBUG
+	//_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+#endif
 #endif // WINDOWS
 #ifdef NINTENDO
 	nxInit();
@@ -7080,6 +7321,7 @@ int main(int argc, char** argv)
 						players[i]->hud.weapon = nullptr;
 						players[i]->hud.magicLeftHand = nullptr;
 						players[i]->hud.magicRightHand = nullptr;
+						players[i]->hud.magicRangefinder = nullptr;
 						players[i]->ghost.reset();
 						FollowerMenu[i].recentEntity = nullptr;
 						FollowerMenu[i].followerToCommand = nullptr;
@@ -7483,12 +7725,23 @@ int main(int argc, char** argv)
 					auto& camera = cameras[c];
 					auto& cvars = cameravars[c];
 					TimerExperiments::renderCameras(camera, c);
-					camera.ang += cvars.shakex2;
-					camera.vang += cvars.shakey2 / 200.0;
+
+					real_t mult = 1.0;
+					if ( !intro && stats[c]->getEffectActive(EFF_DELAY_PAIN) )
+					{
+						mult = 0.25;
+					}
+					camera.ang += mult * cvars.shakex2;
+					camera.vang += mult * cvars.shakey2 / 200.0;
 
 					for ( auto& HPBar : enemyHPDamageBarHandler[c].HPBars )
 					{
 						HPBar.second.updateWorldCoordinates(); // update enemy bar world coordinates before drawEntities3D called
+					}
+					players[c]->worldUI.worldTooltipDialogue.playerDialogue.updateWorldCoordinates(); // update dialogue world coordinates before drawEntities3D called
+					for ( auto& worldTooltipDialogue : players[c]->worldUI.worldTooltipDialogue.sharedDialogues )
+					{
+						worldTooltipDialogue.second.updateWorldCoordinates();
 					}
 				}
 

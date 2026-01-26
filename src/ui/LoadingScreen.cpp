@@ -122,11 +122,11 @@ static void baseCreateLoadingScreen(real_t progress, const char* background_imag
 	}
 
 	// Loading... text
-	auto label = loading_frame->addField("loading_label", 128);
-    label->setSize(fullscreen);
-    label->setJustify(Field::justify_t::CENTER);
-	label->setFont("fonts/pixel_maz.ttf#64#2");
-	label->setText(Language::get(709));
+	//auto label = loading_frame->addField("loading_label", 128);
+    //label->setSize(fullscreen);
+    //label->setJustify(Field::justify_t::CENTER);
+	//label->setFont("fonts/pixel_maz.ttf#64#2");
+	//label->setText(Language::get(709));
 }
 
 void createLoadingScreen(real_t progress) {

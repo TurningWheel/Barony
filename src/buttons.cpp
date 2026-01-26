@@ -1753,6 +1753,95 @@ void buttonCloseSubwindow(button_t* my)
 	strcpy(filename, oldfilename);
 }
 
+void buttonOpenNextMap(button_t* my)
+{
+	buttonCloseSubwindow(my);
+	
+	updateMapNames();
+
+	std::string searchStr = filename;
+	auto find = searchStr.find(".lmp");
+	if ( find == std::string::npos )
+	{
+		searchStr += ".lmp";
+	}
+
+	for ( auto it = mapNames.begin(); it != mapNames.end(); )
+	{
+		if ( (*it) == searchStr )
+		{
+			++it;
+			if ( it != mapNames.end() )
+			{
+				if ( it->size() > 0 && it->front() != '.' )
+				{
+					std::string f = *it;
+					auto find = f.find(".lmp");
+					if ( find != std::string::npos )
+					{
+						f.erase(find, strlen(".lmp"));
+					}
+					strcpy(filename, f.c_str());
+					buttonOpenConfirm(my);
+					return;
+				}
+			}
+		}
+		else
+		{
+			++it;
+		}
+	}
+
+	strcpy(message, "Unable to open next map, end of list");
+	messagetime = 60; // 60*50 ms = 3000 ms (3 seconds)
+}
+
+void buttonOpenPrevMap(button_t* my)
+{
+	buttonCloseSubwindow(my);
+
+	updateMapNames();
+
+	std::string searchStr = filename;
+	auto find = searchStr.find(".lmp");
+	if ( find == std::string::npos )
+	{
+		searchStr += ".lmp";
+	}
+
+	for ( auto it = mapNames.rbegin(); it != mapNames.rend(); )
+	{
+		if ( (*it) == searchStr )
+		{
+			++it;
+			if ( it != mapNames.rend() )
+			{
+				if ( it->size() > 0 && it->front() != '.' )
+				{
+					std::string f = *it;
+					auto find = f.find(".lmp");
+					if ( find != std::string::npos )
+					{
+						f.erase(find, strlen(".lmp"));
+					}
+					strcpy(filename, f.c_str());
+					buttonOpenConfirm(my);
+					return;
+				}
+			}
+			break;
+		}
+		else
+		{
+			++it;
+		}
+	}
+
+	strcpy(message, "Unable to open prev map, first of list");
+	messagetime = 60; // 60*50 ms = 3000 ms (3 seconds)
+}
+
 void buttonSpriteProperties(button_t* my)
 {
 	button_t* button;
@@ -2004,6 +2093,7 @@ void buttonSpriteProperties(button_t* my)
 				snprintf(spriteProperties[2], 5, "%d", static_cast<int>(selectedEntity[0]->floorDecorationHeightOffset));
 				snprintf(spriteProperties[3], 5, "%d", static_cast<int>(selectedEntity[0]->floorDecorationXOffset));
 				snprintf(spriteProperties[4], 5, "%d", static_cast<int>(selectedEntity[0]->floorDecorationYOffset));
+				snprintf(spriteProperties[5], 5, "%d", static_cast<int>(selectedEntity[0]->floorDecorationDestroyIfNoWall));
 				char buf[256] = "";
 				int totalChars = 0;
 				for ( int i = 8; i < 60; ++i )
@@ -2029,10 +2119,10 @@ void buttonSpriteProperties(button_t* my)
 				{
 					buf[totalChars] = '\0';
 				}
-				strncpy(spriteProperties[5], buf, 48);
-				strncpy(spriteProperties[6], buf + 48, 48);
-				strncpy(spriteProperties[7], buf + 96, 48);
-				strncpy(spriteProperties[8], buf + 144, 48);
+				strncpy(spriteProperties[6], buf, 48);
+				strncpy(spriteProperties[7], buf + 48, 48);
+				strncpy(spriteProperties[8], buf + 96, 48);
+				strncpy(spriteProperties[9], buf + 144, 48);
 				inputstr = spriteProperties[0];
 				cursorflash = ticks;
 				menuVisible = 0;
@@ -2040,8 +2130,8 @@ void buttonSpriteProperties(button_t* my)
 				newwindow = 15;
 				subx1 = xres / 2 - 200;
 				subx2 = xres / 2 + 200;
-				suby1 = yres / 2 - 180;
-				suby2 = yres / 2 + 180;
+				suby1 = yres / 2 - 190;
+				suby2 = yres / 2 + 190;
 				strcpy(subtext, "Decoration Model Properties:");
 				break;
 			}
@@ -2070,6 +2160,9 @@ void buttonSpriteProperties(button_t* my)
 				snprintf(spriteProperties[4], 3, "%d", static_cast<int>(selectedEntity[0]->lightSourceRadius));
 				snprintf(spriteProperties[5], 2, "%d", static_cast<int>(selectedEntity[0]->lightSourceFlicker));
 				snprintf(spriteProperties[6], 5, "%d", static_cast<int>(selectedEntity[0]->lightSourceDelay));
+				snprintf(spriteProperties[7], 4, "%d", static_cast<int>((selectedEntity[0]->lightSourceRGB & 0xFF)));
+				snprintf(spriteProperties[8], 4, "%d", static_cast<int>((selectedEntity[0]->lightSourceRGB >> 8) & 0xFF));
+				snprintf(spriteProperties[9], 4, "%d", static_cast<int>((selectedEntity[0]->lightSourceRGB >> 16) & 0xFF));
 				inputstr = spriteProperties[0];
 				cursorflash = ticks;
 				menuVisible = 0;
@@ -2280,6 +2373,22 @@ void buttonSpriteProperties(button_t* my)
 				suby2 = yres / 2 + 100;
 				strcpy(subtext, "Door Properties:");
 				break;
+			case 32:
+				snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity[0]->doorUnlockWhenPowered));
+				snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity[0]->doorDisableLockpicks));
+				snprintf(spriteProperties[2], 4, "%d", static_cast<int>(selectedEntity[0]->doorDisableOpening));
+				snprintf(spriteProperties[3], 4, "%d", static_cast<int>(selectedEntity[0]->doorForceLockedUnlocked));
+				inputstr = spriteProperties[0];
+				cursorflash = ticks;
+				menuVisible = 0;
+				subwindow = 1;
+				newwindow = 36;
+				subx1 = xres / 2 - 170;
+				subx2 = xres / 2 + 170;
+				suby1 = yres / 2 - 100;
+				suby2 = yres / 2 + 100;
+				strcpy(subtext, "Iron Door Properties:");
+				break;
 			case 22:
 				snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity[0]->gateDisableOpening));
 				inputstr = spriteProperties[0];
@@ -2406,6 +2515,51 @@ void buttonSpriteProperties(button_t* my)
 				suby1 = yres / 2 - 60;
 				suby2 = yres / 2 + 60;
 				strcpy(subtext, "Pressure Plate Properties:");
+				break;
+			case 30:
+				snprintf(spriteProperties[0], 2, "%d", static_cast<int>(selectedEntity[0]->wallLockMaterial));
+				snprintf(spriteProperties[1], 2, "%d", static_cast<int>(selectedEntity[0]->wallLockInvertPower));
+				snprintf(spriteProperties[2], 2, "%d", static_cast<int>(selectedEntity[0]->wallLockTurnable));
+				snprintf(spriteProperties[3], 4, "%d", static_cast<int>(selectedEntity[0]->wallLockPickable));
+				snprintf(spriteProperties[4], 2, "%d", static_cast<int>(selectedEntity[0]->wallLockPickableSkeletonKey));
+				snprintf(spriteProperties[5], 2, "%d", static_cast<int>(selectedEntity[0]->wallLockAutoGenKey));
+				inputstr = spriteProperties[0];
+				cursorflash = ticks;
+				menuVisible = 0;
+				subwindow = 1;
+				newwindow = 34;
+				subx1 = xres / 2 - 170;
+				subx2 = xres / 2 + 170;
+				suby1 = yres / 2 - 120;
+				suby2 = yres / 2 + 120;
+				strcpy(subtext, "Wall Lock Properties:");
+				break;
+			case 31:
+				snprintf(spriteProperties[0], 2, "%d", static_cast<int>(selectedEntity[0]->wallLockInvertPower));
+				snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity[0]->wallLockTimer));
+				inputstr = spriteProperties[0];
+				cursorflash = ticks;
+				menuVisible = 0;
+				subwindow = 1;
+				newwindow = 35;
+				subx1 = xres / 2 - 170;
+				subx2 = xres / 2 + 170;
+				suby1 = yres / 2 - 90;
+				suby2 = yres / 2 + 90;
+				strcpy(subtext, "Wall Button Properties:");
+				break;
+			case 33:
+				snprintf(spriteProperties[0], 2, "%d", static_cast<int>(selectedEntity[0]->skill[0]));
+				inputstr = spriteProperties[0];
+				cursorflash = ticks;
+				menuVisible = 0;
+				subwindow = 1;
+				newwindow = 37;
+				subx1 = xres / 2 - 170;
+				subx2 = xres / 2 + 170;
+				suby1 = yres / 2 - 90;
+				suby2 = yres / 2 + 90;
+				strcpy(subtext, "Wind Properties:");
 				break;
 			default:
 				strcpy(message, "No properties available for current sprite.");
@@ -3270,6 +3424,7 @@ void buttonSpritePropertiesConfirm(button_t* my)
 				selectedEntity[0]->floorDecorationHeightOffset = (Sint32)atoi(spriteProperties[2]);
 				selectedEntity[0]->floorDecorationXOffset = (Sint32)atoi(spriteProperties[3]);
 				selectedEntity[0]->floorDecorationYOffset = (Sint32)atoi(spriteProperties[4]);
+				selectedEntity[0]->floorDecorationDestroyIfNoWall = (Sint32)atoi(spriteProperties[5]);
 
 				int totalChars = 0;
 				char checkChr = 'a';
@@ -3288,23 +3443,23 @@ void buttonSpritePropertiesConfirm(button_t* my)
 					{
 						if ( totalChars >= 144 )
 						{
-							selectedEntity[0]->skill[i] |= (spriteProperties[8][totalChars - 144]) << (c * 8);
-							checkChr = spriteProperties[8][totalChars - 144];
+							selectedEntity[0]->skill[i] |= (spriteProperties[9][totalChars - 144]) << (c * 8);
+							checkChr = spriteProperties[9][totalChars - 144];
 						}
 						else if ( totalChars >= 96 )
 						{
-							selectedEntity[0]->skill[i] |= (spriteProperties[7][totalChars - 96]) << (c * 8);
-							checkChr = spriteProperties[7][totalChars - 96];
+							selectedEntity[0]->skill[i] |= (spriteProperties[8][totalChars - 96]) << (c * 8);
+							checkChr = spriteProperties[8][totalChars - 96];
 						}
 						else if ( totalChars >= 48 )
 						{
-							selectedEntity[0]->skill[i] |= (spriteProperties[6][totalChars - 48]) << (c * 8);
-							checkChr = spriteProperties[6][totalChars - 48];
+							selectedEntity[0]->skill[i] |= (spriteProperties[7][totalChars - 48]) << (c * 8);
+							checkChr = spriteProperties[7][totalChars - 48];
 						}
 						else
 						{
-							selectedEntity[0]->skill[i] |= (spriteProperties[5][totalChars]) << (c * 8);
-							checkChr = spriteProperties[5][totalChars];
+							selectedEntity[0]->skill[i] |= (spriteProperties[6][totalChars]) << (c * 8);
+							checkChr = spriteProperties[6][totalChars];
 						}
 						if ( checkChr == '\0' )
 						{
@@ -3333,6 +3488,10 @@ void buttonSpritePropertiesConfirm(button_t* my)
 				selectedEntity[0]->lightSourceRadius = (Sint32)atoi(spriteProperties[4]);
 				selectedEntity[0]->lightSourceFlicker = (Sint32)atoi(spriteProperties[5]);
 				selectedEntity[0]->lightSourceDelay = (Sint32)atoi(spriteProperties[6]);
+				selectedEntity[0]->lightSourceRGB = 0;
+				selectedEntity[0]->lightSourceRGB |= std::max(0, std::min(255, (Sint32)atoi(spriteProperties[7])));
+				selectedEntity[0]->lightSourceRGB |= std::max(0, std::min(255, (Sint32)atoi(spriteProperties[8]))) << 8;
+				selectedEntity[0]->lightSourceRGB |= std::max(0, std::min(255, (Sint32)atoi(spriteProperties[9]))) << 16;
 				break;
 			case 16: // text source
 			{
@@ -3482,6 +3641,12 @@ void buttonSpritePropertiesConfirm(button_t* my)
 				selectedEntity[0]->doorDisableLockpicks = (Sint32)atoi(spriteProperties[1]);
 				selectedEntity[0]->doorDisableOpening = (Sint32)atoi(spriteProperties[2]);
 				break;
+			case 32:
+				selectedEntity[0]->doorUnlockWhenPowered = (Sint32)atoi(spriteProperties[0]);
+				selectedEntity[0]->doorDisableLockpicks = (Sint32)atoi(spriteProperties[1]);
+				selectedEntity[0]->doorDisableOpening = (Sint32)atoi(spriteProperties[2]);
+				selectedEntity[0]->doorForceLockedUnlocked = (Sint32)atoi(spriteProperties[3]);
+				break;
 			case 22: // gates
 				selectedEntity[0]->gateDisableOpening = (Sint32)atoi(spriteProperties[0]);
 				break;
@@ -3525,6 +3690,21 @@ void buttonSpritePropertiesConfirm(button_t* my)
 				break;
 			case 29: // pressure plate
 				selectedEntity[0]->pressurePlateTriggerType = (Sint32)atoi(spriteProperties[0]);
+				break;
+			case 30:
+				selectedEntity[0]->wallLockMaterial = (Sint32)atoi(spriteProperties[0]);
+				selectedEntity[0]->wallLockInvertPower = (Sint32)atoi(spriteProperties[1]);
+				selectedEntity[0]->wallLockTurnable = (Sint32)atoi(spriteProperties[2]);
+				selectedEntity[0]->wallLockPickable = (Sint32)atoi(spriteProperties[3]);
+				selectedEntity[0]->wallLockPickableSkeletonKey = (Sint32)atoi(spriteProperties[4]);
+				selectedEntity[0]->wallLockAutoGenKey = (Sint32)atoi(spriteProperties[5]);
+				break;
+			case 31:
+				selectedEntity[0]->wallLockInvertPower = (Sint32)atoi(spriteProperties[0]);
+				selectedEntity[0]->wallLockTimer = (Sint32)atoi(spriteProperties[1]);
+				break;
+			case 33:
+				selectedEntity[0]->skill[0] = (Sint32)atoi(spriteProperties[0]);
 				break;
 			default:
 				break;

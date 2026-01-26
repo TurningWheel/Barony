@@ -298,7 +298,22 @@ SteamStat_t g_SteamStats[NUM_STEAM_STATISTICS] =
 	{ 55, STEAM_STAT_INT, "STAT_DUNGEONSEED" },
 	{ 56, STEAM_STAT_INT, "STAT_PITCH_PERFECT" },
 	{ 57, STEAM_STAT_INT, "STAT_RUNG_OUT" },
-	{ 58, STEAM_STAT_INT, "STAT_SMASH_MELEE" }
+	{ 58, STEAM_STAT_INT, "STAT_SMASH_MELEE" },
+	{ 59, STEAM_STAT_INT, "STAT_CALL_LOCKSMITH" },
+	{ 60, STEAM_STAT_INT, "STAT_PREMIUM_LOOTBOX" },
+	{ 61, STEAM_STAT_INT, "STAT_WITCHES_BREW" },
+	{ 62, STEAM_STAT_INT, "STAT_HOBBYIST" },
+	{ 63, STEAM_STAT_INT, "STAT_BLESSED_ADDITION" },
+	{ 64, STEAM_STAT_INT, "STAT_THATS_A_WRAP" },
+	{ 65, STEAM_STAT_INT, "STAT_LET_HIM_COOK" },
+	{ 66, STEAM_STAT_INT, "STAT_TOUCHE" },
+	{ 67, STEAM_STAT_INT, "STAT_MERCENARY_ARMY" },
+	{ 68, STEAM_STAT_INT, "STAT_COLONIST" },
+	{ 69, STEAM_STAT_INT, "STAT_PRICKLY_PERSONALITY" },
+	{ 70, STEAM_STAT_INT, "STAT_BOOM_DYNAMITE" },
+	{ 71, STEAM_STAT_INT, "STAT_PAY_TO_WIN" },
+	{ 72, STEAM_STAT_INT, "STAT_DOESNT_COUNT" },
+	{ 73, STEAM_STAT_INT, "STAT_SOURCE_ENGINE" }
 };
 
 #ifdef STEAMWORKS
@@ -329,7 +344,6 @@ int fullscreen = 0;
 bool borderless = false;
 bool smoothlighting = true;
 list_t removedEntities;
-list_t entitiesToDelete[MAXPLAYERS];
 Entity* client_selected[MAXPLAYERS] = {nullptr, nullptr, nullptr, nullptr};
 bool inrange[MAXPLAYERS];
 Sint32 client_classes[MAXPLAYERS];
@@ -484,6 +498,8 @@ real_t sfxEnvironmentVolume = 1.0;
 real_t sfxNotificationVolume = 1.0;
 real_t musvolume = 1.0;
 bool musicPreload = false;
+bool instrument_bg_enabled = true;
+bool instrument_fg_enabled = true;
 
 // fun stuff
 SDL_Surface* title_bmp = nullptr;

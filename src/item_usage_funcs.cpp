@@ -28,6 +28,126 @@
 #include "mod_tools.hpp"
 #include "scrolls.hpp"
 
+bool potionUseAbundanceEffect(Item* item, Entity* entity, Entity* usedBy)
+{
+	bool result = false;
+	if ( item && itemCategory(item) == POTION )
+	{
+		if ( entity == usedBy && entity->behavior == &actPlayer )
+		{
+			int player = entity->skill[2];
+			if ( players[player]->isLocalPlayer() )
+			{
+				if ( stats[player]->getEffectActive(EFF_GREATER_ABUNDANCE) )
+				{
+					if ( !itemIsEquipped(item, player) )
+					{
+						int chance = getSpellDamageFromID(SPELL_GREATER_ABUNDANCE, entity, nullptr, entity);
+						int maxchance = getSpellDamageSecondaryFromID(SPELL_GREATER_ABUNDANCE, entity, nullptr, entity);
+						chance = std::min(chance, maxchance);
+						if ( local_rng.rand() % 100 < chance )
+						{
+							item->count++;
+							messagePlayerColor(player, MESSAGE_INTERACTION, makeColorRGB(0, 255, 0), Language::get(6652), item->getName());
+							result = true;
+						}
+					}
+				}
+			}
+		}
+	}
+	return result;
+}
+
+bool foodUseAbundanceEffect(Item* item, int player)
+{
+	bool result = false;
+	if ( player >= 0 )
+	{
+		if ( players[player]->isLocalPlayer() )
+		{
+			bool effect = false;
+			if ( stats[player]->getEffectActive(EFF_GREATER_ABUNDANCE) )
+			{
+				if ( !itemIsEquipped(item, player) )
+				{
+					int chance = getSpellDamageFromID(SPELL_GREATER_ABUNDANCE, players[player]->entity, stats[player], players[player]->entity);
+					int maxchance = getSpellDamageSecondaryFromID(SPELL_GREATER_ABUNDANCE, players[player]->entity, stats[player], players[player]->entity);
+					chance = std::min(chance, maxchance);
+					if ( local_rng.rand() % 100 < chance )
+					{
+						bool hasCost = false;
+						if ( auto spell = getSpellFromID(SPELL_GREATER_ABUNDANCE) )
+						{
+							real_t costPercent = getSpellEffectDurationSecondaryFromID(SPELL_GREATER_ABUNDANCE, players[player]->entity, stats[player], players[player]->entity) / 100.0;
+							if ( costPercent > 0.01 )
+							{
+								int cost = std::max(1.0, spell->mana * costPercent);
+								if ( stats[player]->MP >= cost )
+								{
+									hasCost = true;
+								}
+							}
+							else
+							{
+								hasCost = true;
+							}
+						}
+						if ( hasCost )
+						{
+							item->count++;
+							effect = true;
+							messagePlayerColor(player, MESSAGE_INTERACTION, makeColorRGB(0, 255, 0), Language::get(6652), item->getName());
+							result = true;
+
+							magicOnSpellCastEvent(players[player]->entity, players[player]->entity, nullptr, SPELL_GREATER_ABUNDANCE, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
+						}
+					}
+				}
+			}
+			if ( !effect && stats[player]->getEffectActive(EFF_ABUNDANCE) )
+			{
+				if ( !itemIsEquipped(item, player) )
+				{
+					int chance = getSpellDamageFromID(SPELL_ABUNDANCE, players[player]->entity, stats[player], players[player]->entity);
+					int maxchance = getSpellDamageSecondaryFromID(SPELL_ABUNDANCE, players[player]->entity, stats[player], players[player]->entity);
+					chance = std::min(chance, maxchance);
+					if ( local_rng.rand() % 100 < chance )
+					{
+						bool hasCost = false;
+						if ( auto spell = getSpellFromID(SPELL_ABUNDANCE) )
+						{
+							real_t costPercent = getSpellEffectDurationSecondaryFromID(SPELL_ABUNDANCE, players[player]->entity, stats[player], players[player]->entity) / 100.0;
+							if ( costPercent > 0.01 )
+							{
+								int cost = std::max(1.0, spell->mana * costPercent);
+								if ( stats[player]->MP >= cost )
+								{
+									hasCost = true;
+								}
+							}
+							else
+							{
+								hasCost = true;
+							}
+						}
+						if ( hasCost )
+						{
+							item->count++;
+							effect = true;
+							messagePlayerColor(player, MESSAGE_INTERACTION, makeColorRGB(0, 255, 0), Language::get(6653), item->getName());
+							result = true;
+
+							magicOnSpellCastEvent(players[player]->entity, players[player]->entity, nullptr, SPELL_ABUNDANCE, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
+						}
+					}
+				}
+			}
+		}
+	}
+	return result;
+}
+
 bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 {
 	if ( !entity )
@@ -72,7 +192,7 @@ bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 			return false;
 		}
 	}
-	if ( stats->EFFECTS[EFF_VOMITING] )
+	if ( stats->getEffectActive(EFF_VOMITING) )
 	{
 		if ( player >= 0 && players[player]->isLocalPlayer() )
 		{
@@ -137,16 +257,16 @@ bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 		}
 		if ( player >= 0 && player < MAXPLAYERS )
 		{
-			if ( stats && stats->EFFECTS[EFF_POLYMORPH] )
+			if ( stats && stats->getEffectActive(EFF_POLYMORPH) )
 			{
-				if ( stats->EFFECTS[EFF_POLYMORPH] )
+				if ( stats->getEffectActive(EFF_POLYMORPH) )
 				{
 					entity->setEffect(EFF_POLYMORPH, false, 0, true);
 					entity->effectPolymorph = 0;
 					serverUpdateEntitySkill(entity, 50);
 
 					messagePlayer(player, MESSAGE_STATUS, Language::get(3192));
-					if ( !stats->EFFECTS[EFF_SHAPESHIFT] )
+					if ( !stats->getEffectActive(EFF_SHAPESHIFT) )
 					{
 						messagePlayer(player, MESSAGE_STATUS, Language::get(3185));
 					}
@@ -172,9 +292,41 @@ bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 				players[player]->entity->modMP(mpAmount); //Raise temperature because steam.
 				serverUpdateHunger(player);
 			}
+
+			if ( stats->type == DRYAD )
+			{
+				if ( auto effectStrength = stats->getEffectActive(EFF_GROWTH) )
+				{
+					int chance = 10;
+					if ( (stats->type == DRYAD && stats->sex == FEMALE) )
+					{
+						chance = 20;
+					}
+					if ( item->beatitude >= 0 )
+					{
+						chance += 10 * item->beatitude;
+						if ( players[player]->mechanics.rollRngProc(Player::PlayerMechanics_t::RngRollTypes::RNG_ROLL_GROWTH, chance) )
+						{
+							if ( stats->getEffectActive(EFF_GROWTH) < 4 )
+							{
+								players[player]->entity->setEffect(EFF_GROWTH, (Uint8)(std::min(4, effectStrength + 1)), 15 * TICKS_PER_SECOND, false);
+								messagePlayerColor(player, MESSAGE_STATUS, makeColorRGB(0, 255, 0), Language::get(6924));
+							}
+						}
+					}
+				}
+			}
 		}
 		if ( player >= 0 && !players[player]->isLocalPlayer() )
 		{
+			potionUseAbundanceEffect(item, entity, usedBy);
+			consumeItem(item, player);
+			return true;
+		}
+
+		if ( entity->behavior == &actMonster )
+		{
+			potionUseAbundanceEffect(item, entity, usedBy);
 			consumeItem(item, player);
 			return true;
 		}
@@ -352,6 +504,7 @@ bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 				sendPacketSafe(net_sock, -1, net_packet, 0);
 				//messagePlayer(player, "sent server: %d, %d, %d", net_packet->data[4], net_packet->data[5], net_packet->data[6]);
 			}
+			potionUseAbundanceEffect(item, entity, usedBy);
 			consumeItem(item, player);
 			return true;
 		}
@@ -368,6 +521,7 @@ bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 		}
 		if ( items == 0 )
 		{
+			potionUseAbundanceEffect(item, entity, usedBy);
 			consumeItem(item, player);
 			return true;
 		}
@@ -399,6 +553,7 @@ bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 			}
 		}
 	}
+	potionUseAbundanceEffect(item, entity, usedBy);
 	consumeItem(item, player);
 	return true;
 }
@@ -446,7 +601,7 @@ bool item_PotionBooze(Item*& item, Entity* entity, Entity* usedBy, bool shouldCo
 			return false;
 		}
 	}
-	if ( stats->EFFECTS[EFF_VOMITING] )
+	if ( stats->getEffectActive(EFF_VOMITING) )
 	{
 		if ( player >= 0 && players[player]->isLocalPlayer() )
 		{
@@ -455,15 +610,17 @@ bool item_PotionBooze(Item*& item, Entity* entity, Entity* usedBy, bool shouldCo
 		}
 		return false;
 	}
+
 	if ( multiplayer == CLIENT )
 	{
+		potionUseAbundanceEffect(item, entity, usedBy);
 		consumeItem(item, player);
 		return true;
 	}
 
 	messagePlayer(player, MESSAGE_WORLD, Language::get(758));
 	messagePlayer(player, MESSAGE_STATUS, Language::get(759));
-	stats->EFFECTS[EFF_DRUNK] = true;
+	stats->setEffectActive(EFF_DRUNK, 1);
 	if ( player >= 0 )
 	{
 		if ( stats->type == GOATMAN )
@@ -475,7 +632,7 @@ bool item_PotionBooze(Item*& item, Entity* entity, Entity* usedBy, bool shouldCo
 			stats->EFFECTS_TIMERS[EFF_DRUNK] = item->potionGetEffectDurationRandom(entity, stats);
 			stats->EFFECTS_TIMERS[EFF_DRUNK] = std::max(300, stats->EFFECTS_TIMERS[EFF_DRUNK] - (entity->getPER() + entity->getCON()) * 40);
 		}
-		if ( stats->EFFECTS[EFF_WITHDRAWAL] )
+		if ( stats->getEffectActive(EFF_WITHDRAWAL) )
 		{
 			int hangoverReliefDuration = EFFECT_WITHDRAWAL_BASE_TIME; // 8 minutes
 			switch ( local_rng.rand() % 3 )
@@ -548,6 +705,7 @@ bool item_PotionBooze(Item*& item, Entity* entity, Entity* usedBy, bool shouldCo
 	spawnMagicEffectParticles(entity->x, entity->y, entity->z, 169);
 	if ( shouldConsumeItem )
 	{
+		potionUseAbundanceEffect(item, entity, usedBy);
 		consumeItem(item, player);
 		return true;
 	}
@@ -597,7 +755,7 @@ bool item_PotionJuice(Item*& item, Entity* entity, Entity* usedBy)
 			return false;
 		}
 	}
-	if ( stats->EFFECTS[EFF_VOMITING] )
+	if ( stats->getEffectActive(EFF_VOMITING) )
 	{
 		if ( player >= 0 && players[player]->isLocalPlayer() )
 		{
@@ -608,6 +766,7 @@ bool item_PotionJuice(Item*& item, Entity* entity, Entity* usedBy)
 	}
 	if ( multiplayer == CLIENT )
 	{
+		potionUseAbundanceEffect(item, entity, usedBy);
 		consumeItem(item, player);
 		return true;
 	}
@@ -618,7 +777,7 @@ bool item_PotionJuice(Item*& item, Entity* entity, Entity* usedBy)
 		messagePlayer(player, MESSAGE_HINT, Language::get(2900));
 		messagePlayer(player, MESSAGE_WORLD, Language::get(758));
 		messagePlayer(player, MESSAGE_HINT, Language::get(759));
-		stats->EFFECTS[EFF_DRUNK] = true;
+		stats->setEffectActive(EFF_DRUNK, 1);
 		if ( player >= 0 )
 		{
 			if ( stats->type == GOATMAN )
@@ -630,7 +789,7 @@ bool item_PotionJuice(Item*& item, Entity* entity, Entity* usedBy)
 				stats->EFFECTS_TIMERS[EFF_DRUNK] = item->potionGetCursedEffectDurationRandom(entity, stats);
 				stats->EFFECTS_TIMERS[EFF_DRUNK] = std::max(300, stats->EFFECTS_TIMERS[EFF_DRUNK] - (entity->getPER() + entity->getCON()) * 40);
 			}
-			if ( stats->EFFECTS[EFF_WITHDRAWAL] )
+			if ( stats->getEffectActive(EFF_WITHDRAWAL) )
 			{
 				int hangoverReliefDuration = EFFECT_WITHDRAWAL_BASE_TIME; // 8 minutes
 				switch ( local_rng.rand() % 3 )
@@ -735,6 +894,7 @@ bool item_PotionJuice(Item*& item, Entity* entity, Entity* usedBy)
 	playSoundEntity(entity, 52, 64);
 	playSoundEntity(entity, 168, 128);
 	spawnMagicEffectParticles(entity->x, entity->y, entity->z, 169);
+	potionUseAbundanceEffect(item, entity, usedBy);
 	consumeItem(item, player);
 	return true;
 }
@@ -789,7 +949,7 @@ bool item_PotionSickness(Item*& item, Entity* entity, Entity* usedBy)
 			return false;
 		}
 	}
-	if ( stats->EFFECTS[EFF_VOMITING] )
+	if ( stats->getEffectActive(EFF_VOMITING) )
 	{
 		if ( player >= 0 && players[player]->isLocalPlayer() )
 		{
@@ -798,12 +958,13 @@ bool item_PotionSickness(Item*& item, Entity* entity, Entity* usedBy)
 		}
 		return false;
 	}
-	if ( multiplayer == CLIENT || player == 0 )
+	if ( multiplayer == CLIENT || (player >= 0 && players[player]->isLocalPlayer()) )
 	{
 		camera_shakex += .1;
 		camera_shakey += 10;
 		if ( multiplayer == CLIENT )
 		{
+			potionUseAbundanceEffect(item, entity, usedBy);
 			consumeItem(item, player);
 			return true;
 		}
@@ -822,7 +983,7 @@ bool item_PotionSickness(Item*& item, Entity* entity, Entity* usedBy)
 	messagePlayer(player, MESSAGE_HINT, Language::get(761));
 	int oldHP = stats->HP;
 	entity->modHP(-damage);
-	stats->EFFECTS[EFF_POISONED] = true;
+	stats->setEffectActive(EFF_POISONED, 1);
 	if ( usedBy && usedBy != entity )
 	{
 		Stat* usedByStats = usedBy->getStats();
@@ -850,7 +1011,110 @@ bool item_PotionSickness(Item*& item, Entity* entity, Entity* usedBy)
 
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
+	potionUseAbundanceEffect(item, entity, usedBy);
 	consumeItem(item, player);
+	return true;
+}
+
+bool item_PotionGrease(Item*& item, Entity* entity, Entity* usedBy)
+{
+	if ( !entity )
+	{
+		return false;
+	}
+
+	/*int skillLVL = 0;
+	if ( multiplayer != CLIENT && usedBy && usedBy->behavior == &actPlayer )
+	{
+		Stat* usedByStats = usedBy->getStats();
+		if ( usedByStats )
+		{
+			skillLVL = usedByStats->getModifiedProficiency(PRO_ALCHEMY) / 20;
+		}
+	}*/
+
+	int player = -1;
+	Stat* stats;
+
+	if ( entity->behavior == &actPlayer )
+	{
+		player = entity->skill[2];
+	}
+	stats = entity->getStats();
+	if ( !stats )
+	{
+		return false;
+	}
+
+	/*if ( stats->amulet != NULL )
+	{
+		if ( stats->amulet->type == AMULET_STRANGULATION
+			&& stats->type != SKELETON )
+		{
+			if ( player >= 0 && players[player]->isLocalPlayer() )
+			{
+				messagePlayer(player, MESSAGE_HINT, Language::get(750));
+				playSoundPlayer(player, 90, 64);
+			}
+			return false;
+		}
+	}
+	if ( stats->getEffectActive(EFF_VOMITING) )
+	{
+		if ( player >= 0 && players[player]->isLocalPlayer() )
+		{
+			messagePlayer(player, MESSAGE_HINT, Language::get(751));
+			playSoundPlayer(player, 90, 64);
+		}
+		return false;
+	}*/
+	//if ( multiplayer == CLIENT )
+	//{
+	//	//potionUseAbundanceEffect(item, entity, usedBy);
+	//	consumeItem(item, player);
+	//	return true;
+	//}
+
+	//messagePlayer(player, MESSAGE_HINT, Language::get(6536));
+	int duration = 0;
+	if ( player >= 0 )
+	{
+		duration = std::max(300, item->potionGetEffectDurationRandom(entity, stats));
+	}
+	else
+	{
+		duration = item->potionGetEffectDurationRandom(entity, stats);
+	}
+	if ( entity->setEffect(EFF_MAGIC_GREASE, true, duration, true) )
+	{
+		entity->setEffect(EFF_GREASY, true, 5 * TICKS_PER_SECOND, false);
+		if ( usedBy && entity != usedBy )
+		{
+			if ( usedBy->behavior == &actPlayer )
+			{
+				Uint32 color = makeColorRGB(0, 255, 0);
+				messagePlayerMonsterEvent(usedBy->skill[2], color, *stats, Language::get(6244), Language::get(6243), MSG_COMBAT);
+			}
+			if ( entity->behavior == &actPlayer )
+			{
+				Uint32 color = makeColorRGB(255, 0, 0);
+				messagePlayerColor(entity->skill[2], MESSAGE_COMBAT, color, Language::get(6236));
+			}
+		}
+	}
+	else
+	{
+		/*if ( usedBy && entity != usedBy && usedBy->behavior == &actPlayer )
+		{
+			Uint32 color = makeColorRGB(255, 0, 0);
+			messagePlayerMonsterEvent(usedBy->skill[2], color, *stats, Language::get(4320), Language::get(4321), MSG_COMBAT);
+		}*/
+	}
+
+	// play drink sound
+	//playSoundEntity(entity, 52, 64);
+	//potionUseAbundanceEffect(item, entity, usedBy);
+	/*consumeItem(item, player);*/
 	return true;
 }
 
@@ -897,7 +1161,7 @@ bool item_PotionConfusion(Item*& item, Entity* entity, Entity* usedBy)
 			return false;
 		}
 	}
-	if ( stats->EFFECTS[EFF_VOMITING] )
+	if ( stats->getEffectActive(EFF_VOMITING) )
 	{
 		if ( player >= 0 && players[player]->isLocalPlayer() )
 		{
@@ -908,6 +1172,7 @@ bool item_PotionConfusion(Item*& item, Entity* entity, Entity* usedBy)
 	}
 	if ( multiplayer == CLIENT )
 	{
+		potionUseAbundanceEffect(item, entity, usedBy);
 		consumeItem(item, player);
 		return true;
 	}
@@ -922,7 +1187,19 @@ bool item_PotionConfusion(Item*& item, Entity* entity, Entity* usedBy)
 	{
 		duration = item->potionGetEffectDurationRandom(entity, stats);
 	}
-	if ( entity->setEffect(EFF_CONFUSED, true, duration, false) )
+	Uint8 effectStrength = MAXPLAYERS + 1;
+	if ( entity != usedBy )
+	{
+		if ( usedBy && usedBy->behavior == &actPlayer )
+		{
+			effectStrength = usedBy->skill[2] + 1;
+		}
+		else if ( usedBy && usedBy->monsterAllyGetPlayerLeader() )
+		{
+			effectStrength = usedBy->monsterAllyGetPlayerLeader()->skill[2] + 1;
+		}
+	}
+	if ( entity->setEffect(EFF_CONFUSED, effectStrength, duration, true, true, true) )
 	{
 		if ( entity->behavior == &actMonster )
 		{
@@ -945,6 +1222,7 @@ bool item_PotionConfusion(Item*& item, Entity* entity, Entity* usedBy)
 
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
+	potionUseAbundanceEffect(item, entity, usedBy);
 	consumeItem(item, player);
 	return true;
 }
@@ -993,7 +1271,7 @@ bool item_PotionCureAilment(Item*& item, Entity* entity, Entity* usedBy)
 			return false;
 		}
 	}
-	if ( stats->EFFECTS[EFF_VOMITING] )
+	if ( stats->getEffectActive(EFF_VOMITING) )
 	{
 		if ( player >= 0 && players[player]->isLocalPlayer() )
 		{
@@ -1013,6 +1291,7 @@ bool item_PotionCureAilment(Item*& item, Entity* entity, Entity* usedBy)
 	}
 	if ( multiplayer == CLIENT )
 	{
+		potionUseAbundanceEffect(item, entity, usedBy);
 		consumeItem(item, player);
 		return true;
 	}
@@ -1026,9 +1305,9 @@ bool item_PotionCureAilment(Item*& item, Entity* entity, Entity* usedBy)
 	{
 		if ( stats->statusEffectRemovedByCureAilment(c, entity) )
 		{
-			if ( stats->EFFECTS[c] )
+			if ( stats->getEffectActive(c) )
 			{
-				stats->EFFECTS[c] = false;
+				stats->clearEffect(c);
 				if ( stats->EFFECTS_TIMERS[c] > 0 )
 				{
 					stats->EFFECTS_TIMERS[c] = 1;
@@ -1038,7 +1317,7 @@ bool item_PotionCureAilment(Item*& item, Entity* entity, Entity* usedBy)
 		}
 	}
 
-	if ( stats->EFFECTS[EFF_WITHDRAWAL] )
+	if ( stats->getEffectActive(EFF_WITHDRAWAL) )
 	{
 		++numEffectsCured;
 		entity->setEffect(EFF_WITHDRAWAL, false, EFFECT_WITHDRAWAL_BASE_TIME, true);
@@ -1060,13 +1339,13 @@ bool item_PotionCureAilment(Item*& item, Entity* entity, Entity* usedBy)
 	if ( item->beatitude < 0 )
 	{
 		messagePlayer(player, MESSAGE_HINT, Language::get(2903));
-		stats->EFFECTS[EFF_POISONED] = true;
+		stats->setEffectActive(EFF_POISONED, 1);
 		stats->EFFECTS_TIMERS[EFF_POISONED] = item->potionGetCursedEffectDurationRandom(entity, stats);
 	}
 	else if ( item->beatitude > 0 )
 	{
-		stats->EFFECTS[EFF_HP_REGEN] = true;
-		stats->EFFECTS[EFF_MP_REGEN] = true;
+		stats->setEffectActive(EFF_HP_REGEN, 1);
+		stats->setEffectActive(EFF_MP_REGEN, 1);
 		stats->EFFECTS_TIMERS[EFF_HP_REGEN] += item->potionGetEffectDurationRandom(entity, stats);
 		stats->EFFECTS_TIMERS[EFF_MP_REGEN] += stats->EFFECTS_TIMERS[EFF_HP_REGEN];
 	}
@@ -1075,6 +1354,7 @@ bool item_PotionCureAilment(Item*& item, Entity* entity, Entity* usedBy)
 
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
+	potionUseAbundanceEffect(item, entity, usedBy);
 	consumeItem(item, player);
 	return true;
 }
@@ -1122,7 +1402,7 @@ bool item_PotionBlindness(Item*& item, Entity* entity, Entity* usedBy)
 			return false;
 		}
 	}
-	if ( stats->EFFECTS[EFF_VOMITING] )
+	if ( stats->getEffectActive(EFF_VOMITING) )
 	{
 		if ( player >= 0 && players[player]->isLocalPlayer() )
 		{
@@ -1133,6 +1413,7 @@ bool item_PotionBlindness(Item*& item, Entity* entity, Entity* usedBy)
 	}
 	if ( multiplayer == CLIENT )
 	{
+		potionUseAbundanceEffect(item, entity, usedBy);
 		consumeItem(item, player);
 		return true;
 	}
@@ -1154,6 +1435,7 @@ bool item_PotionBlindness(Item*& item, Entity* entity, Entity* usedBy)
 
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
+	potionUseAbundanceEffect(item, entity, usedBy);
 	consumeItem(item, player);
 	return true;
 }
@@ -1201,7 +1483,7 @@ bool item_PotionInvisibility(Item*& item, Entity* entity, Entity* usedBy)
 			return false;
 		}
 	}
-	if ( stats->EFFECTS[EFF_VOMITING] )
+	if ( stats->getEffectActive(EFF_VOMITING) )
 	{
 		if ( player >= 0 && players[player]->isLocalPlayer() )
 		{
@@ -1210,8 +1492,10 @@ bool item_PotionInvisibility(Item*& item, Entity* entity, Entity* usedBy)
 		}
 		return false;
 	}
+
 	if ( multiplayer == CLIENT )
 	{
+		potionUseAbundanceEffect(item, entity, usedBy);
 		consumeItem(item, player);
 		return true;
 	}
@@ -1238,13 +1522,14 @@ bool item_PotionInvisibility(Item*& item, Entity* entity, Entity* usedBy)
 			}
 		}
 	}
-	stats->EFFECTS[EFF_INVISIBLE] = true;
+	stats->setEffectActive(EFF_INVISIBLE, 1);
 	stats->EFFECTS_TIMERS[EFF_INVISIBLE] = item->potionGetEffectDurationRandom(entity, stats);
 
 	serverUpdateEffects(player);
 
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
+	potionUseAbundanceEffect(item, entity, usedBy);
 	consumeItem(item, player);
 	return true;
 }
@@ -1292,7 +1577,7 @@ bool item_PotionLevitation(Item*& item, Entity* entity, Entity* usedBy)
 			return false;
 		}
 	}
-	if ( stats->EFFECTS[EFF_VOMITING] )
+	if ( stats->getEffectActive(EFF_VOMITING) )
 	{
 		if ( player >= 0 && players[player]->isLocalPlayer() )
 		{
@@ -1303,6 +1588,7 @@ bool item_PotionLevitation(Item*& item, Entity* entity, Entity* usedBy)
 	}
 	if ( multiplayer == CLIENT )
 	{
+		potionUseAbundanceEffect(item, entity, usedBy);
 		consumeItem(item, player);
 		return true;
 	}
@@ -1312,19 +1598,20 @@ bool item_PotionLevitation(Item*& item, Entity* entity, Entity* usedBy)
 		//Cursed effect slows you.
 		messagePlayer(player, MESSAGE_HINT, Language::get(2900));
 		messagePlayer(player, MESSAGE_HINT, Language::get(2901));
-		stats->EFFECTS[EFF_SLOW] = true;
+		stats->setEffectActive(EFF_SLOW, 1);
 		stats->EFFECTS_TIMERS[EFF_SLOW] = item->potionGetCursedEffectDurationRandom(entity, stats);
 	}
 	else
 	{
 		messagePlayer(player, MESSAGE_STATUS, Language::get(767));
-		stats->EFFECTS[EFF_LEVITATING] = true;
+		stats->setEffectActive(EFF_LEVITATING, 1);
 		stats->EFFECTS_TIMERS[EFF_LEVITATING] = item->potionGetEffectDurationRandom(entity, stats);
 	}
 	serverUpdateEffects(player);
 
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
+	potionUseAbundanceEffect(item, entity, usedBy);
 	consumeItem(item, player);
 	return true;
 }
@@ -1372,7 +1659,7 @@ bool item_PotionSpeed(Item*& item, Entity* entity, Entity* usedBy)
 			return false;
 		}
 	}
-	if ( stats->EFFECTS[EFF_VOMITING] )
+	if ( stats->getEffectActive(EFF_VOMITING) )
 	{
 		if ( player >= 0 && players[player]->isLocalPlayer() )
 		{
@@ -1383,6 +1670,7 @@ bool item_PotionSpeed(Item*& item, Entity* entity, Entity* usedBy)
 	}
 	if ( multiplayer == CLIENT )
 	{
+		potionUseAbundanceEffect(item, entity, usedBy);
 		consumeItem(item, player);
 		return true;
 	}
@@ -1392,31 +1680,31 @@ bool item_PotionSpeed(Item*& item, Entity* entity, Entity* usedBy)
 	{
 		messagePlayer(player, MESSAGE_HINT, Language::get(2900));
 		//Cursed effect slows you.
-		if ( stats->EFFECTS[EFF_FAST] )
+		if ( stats->getEffectActive(EFF_FAST) )
 		{
 			messagePlayer(player, MESSAGE_STATUS, Language::get(769));
-			stats->EFFECTS[EFF_FAST] = false;
+			stats->clearEffect(EFF_FAST);
 			stats->EFFECTS_TIMERS[EFF_FAST] = 0;
 		}
 		else
 		{
 			messagePlayer(player, MESSAGE_HINT, Language::get(2902));
-			stats->EFFECTS[EFF_SLOW] = true;
+			stats->setEffectActive(EFF_SLOW, 1);
 			stats->EFFECTS_TIMERS[EFF_SLOW] = item->potionGetCursedEffectDurationRandom(entity, stats);
 		}
 	}
 	else
 	{
-		if ( !stats->EFFECTS[EFF_SLOW] )
+		if ( !stats->getEffectActive(EFF_SLOW) )
 		{
 			messagePlayer(player, MESSAGE_STATUS, Language::get(768));
-			stats->EFFECTS[EFF_FAST] = true;
+			stats->setEffectActive(EFF_FAST, 1);
 			stats->EFFECTS_TIMERS[EFF_FAST] += item->potionGetEffectDurationRandom(entity, stats);
 		}
 		else
 		{
 			messagePlayer(player, MESSAGE_STATUS, Language::get(769));
-			stats->EFFECTS[EFF_SLOW] = false;
+			stats->clearEffect(EFF_SLOW);
 			stats->EFFECTS_TIMERS[EFF_SLOW] = 0;
 		}
 	}
@@ -1424,6 +1712,7 @@ bool item_PotionSpeed(Item*& item, Entity* entity, Entity* usedBy)
 
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
+	potionUseAbundanceEffect(item, entity, usedBy);
 	consumeItem(item, player);
 	return true;
 }
@@ -1471,7 +1760,7 @@ bool item_PotionStrength(Item*& item, Entity* entity, Entity* usedBy)
 			return false;
 		}
 	}
-	if ( stats->EFFECTS[EFF_VOMITING] )
+	if ( stats->getEffectActive(EFF_VOMITING) )
 	{
 		if ( player >= 0 && players[player]->isLocalPlayer() )
 		{
@@ -1482,6 +1771,7 @@ bool item_PotionStrength(Item*& item, Entity* entity, Entity* usedBy)
 	}
 	if ( multiplayer == CLIENT )
 	{
+		potionUseAbundanceEffect(item, entity, usedBy);
 		consumeItem(item, player);
 		return true;
 	}
@@ -1504,13 +1794,14 @@ bool item_PotionStrength(Item*& item, Entity* entity, Entity* usedBy)
 	else
 	{
 		messagePlayer(player, MESSAGE_STATUS, Language::get(3354));
-		stats->EFFECTS[EFF_POTION_STR] = true;
+		stats->setEffectActive(EFF_POTION_STR, 1);
 		stats->EFFECTS_TIMERS[EFF_POTION_STR] = item->potionGetEffectDurationRandom(entity, stats);
 	}
 	serverUpdateEffects(player);
 
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
+	potionUseAbundanceEffect(item, entity, usedBy);
 	consumeItem(item, player);
 	return true;
 }
@@ -1565,7 +1856,7 @@ bool item_PotionAcid(Item*& item, Entity* entity, Entity* usedBy)
 			return false;
 		}
 	}
-	if ( stats->EFFECTS[EFF_VOMITING] )
+	if ( stats->getEffectActive(EFF_VOMITING) )
 	{
 		if ( player >= 0 && players[player]->isLocalPlayer() )
 		{
@@ -1574,12 +1865,13 @@ bool item_PotionAcid(Item*& item, Entity* entity, Entity* usedBy)
 		}
 		return false;
 	}
-	if ( multiplayer == CLIENT || player == 0 )
+	if ( multiplayer == CLIENT || (player >= 0 && players[player]->isLocalPlayer()) )
 	{
 		camera_shakex += .1;
 		camera_shakey += 10;
 		if ( multiplayer == CLIENT )
 		{
+			potionUseAbundanceEffect(item, entity, usedBy);
 			consumeItem(item, player);
 			return true;
 		}
@@ -1614,6 +1906,7 @@ bool item_PotionAcid(Item*& item, Entity* entity, Entity* usedBy)
 
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
+	potionUseAbundanceEffect(item, entity, usedBy);
 	consumeItem(item, player);
 	return true;
 }
@@ -1668,7 +1961,7 @@ bool item_PotionUnstableStorm(Item*& item, Entity* entity, Entity* usedBy, Entit
 			return false;
 		}
 	}
-	if ( stats->EFFECTS[EFF_VOMITING] )
+	if ( stats->getEffectActive(EFF_VOMITING) )
 	{
 		if ( player >= 0 && players[player]->isLocalPlayer() )
 		{
@@ -1686,6 +1979,7 @@ bool item_PotionUnstableStorm(Item*& item, Entity* entity, Entity* usedBy, Entit
 		}
 		if ( multiplayer == CLIENT )
 		{
+			potionUseAbundanceEffect(item, entity, usedBy);
 			consumeItem(item, player);
 			return true;
 		}
@@ -1750,7 +2044,7 @@ bool item_PotionUnstableStorm(Item*& item, Entity* entity, Entity* usedBy, Entit
 			Uint32 color = makeColorRGB(255, 128, 0);
 			messagePlayerColor(player, MESSAGE_STATUS, color, Language::get(3699)); // superheats
 			serverUpdateHunger(player);
-			for ( int c = 0; c < 100; c++ )
+			for ( int c = 0; c < 25; c++ )
 			{
 				if ( Entity* entity = spawnFlame(players[player]->entity, SPRITE_FLAME) )
 				{
@@ -1761,6 +2055,22 @@ bool item_PotionUnstableStorm(Item*& item, Entity* entity, Entity* usedBy, Entit
 					entity->vel_z = vel * sin(entity->pitch) * .2;
 					entity->skill[0] = 5 + local_rng.rand() % 10;
 				}
+			}
+
+			if ( Entity* fx = createParticleAestheticOrbit(players[player]->entity, 233, TICKS_PER_SECOND / 2, PARTICLE_EFFECT_IGNITE_ORBIT) )
+			{
+				fx->flags[SPRITE] = true;
+				fx->x = players[player]->entity->x;
+				fx->y = players[player]->entity->y;
+				fx->fskill[0] = fx->x;
+				fx->fskill[1] = fx->y;
+				fx->vel_z = -0.05;
+				fx->actmagicOrbitDist = 2;
+				fx->fskill[2] = players[player]->entity->yaw + (local_rng.rand() % 8) * PI / 4.0;
+				fx->yaw = fx->fskill[2];
+				fx->actmagicNoLight = 1;
+
+				serverSpawnMiscParticles(players[player]->entity, PARTICLE_EFFECT_FLAMES, 233, 0, fx->skill[0]);
 			}
 		}
 		else
@@ -1779,6 +2089,7 @@ bool item_PotionUnstableStorm(Item*& item, Entity* entity, Entity* usedBy, Entit
 
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
+	potionUseAbundanceEffect(item, entity, usedBy);
 	consumeItem(item, player);
 	return true;
 }
@@ -1826,7 +2137,7 @@ bool item_PotionParalysis(Item*& item, Entity* entity, Entity* usedBy)
 			return false;
 		}
 	}
-	if ( stats->EFFECTS[EFF_VOMITING] )
+	if ( stats->getEffectActive(EFF_VOMITING) )
 	{
 		if ( player >= 0 && players[player]->isLocalPlayer() )
 		{
@@ -1837,6 +2148,7 @@ bool item_PotionParalysis(Item*& item, Entity* entity, Entity* usedBy)
 	}
 	if ( multiplayer == CLIENT )
 	{
+		potionUseAbundanceEffect(item, entity, usedBy);
 		consumeItem(item, player);
 		return true;
 	}
@@ -1862,6 +2174,7 @@ bool item_PotionParalysis(Item*& item, Entity* entity, Entity* usedBy)
 
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
+	potionUseAbundanceEffect(item, entity, usedBy);
 	consumeItem(item, player);
 	return true;
 }
@@ -1909,7 +2222,7 @@ bool item_PotionHealing(Item*& item, Entity* entity, Entity* usedBy, bool should
 			return false;
 		}
 	}
-	if ( stats->EFFECTS[EFF_VOMITING] )
+	if ( stats->getEffectActive(EFF_VOMITING) )
 	{
 		if ( player >= 0 && players[player]->isLocalPlayer() )
 		{
@@ -1920,6 +2233,7 @@ bool item_PotionHealing(Item*& item, Entity* entity, Entity* usedBy, bool should
 	}
 	if ( multiplayer == CLIENT )
 	{
+		potionUseAbundanceEffect(item, entity, usedBy);
 		consumeItem(item, player);
 		return true;
 	}
@@ -1932,14 +2246,14 @@ bool item_PotionHealing(Item*& item, Entity* entity, Entity* usedBy, bool should
 		{
 			messagePlayer(player, MESSAGE_HINT, Language::get(2900));
 			messagePlayer(player, MESSAGE_HINT, Language::get(2903));
-			stats->EFFECTS[EFF_POISONED] = true;
+			stats->setEffectActive(EFF_POISONED, 1);
 			stats->EFFECTS_TIMERS[EFF_POISONED] = item->potionGetCursedEffectDurationRandom(entity, stats);
 		}
 		else
 		{
 			messagePlayer(player, MESSAGE_HINT, Language::get(772));
 			// stop bleeding
-			if ( stats->EFFECTS[EFF_BLEEDING] )
+			if ( stats->getEffectActive(EFF_BLEEDING) )
 			{
 				entity->setEffect(EFF_BLEEDING, false, 0, false);
 			}
@@ -1947,6 +2261,7 @@ bool item_PotionHealing(Item*& item, Entity* entity, Entity* usedBy, bool should
 		serverUpdateEffects(player);
 		if ( shouldConsumeItem )
 		{
+			potionUseAbundanceEffect(item, entity, usedBy);
 			consumeItem(item, player);
 			return true;
 		}
@@ -1958,7 +2273,7 @@ bool item_PotionHealing(Item*& item, Entity* entity, Entity* usedBy, bool should
 	if ( stats->type == GOATMAN && entity->behavior == &actMonster )
 	{
 		amount *= GOATMAN_HEALINGPOTION_MOD; //Goatman special.
-		stats->EFFECTS[EFF_FAST] = true;
+		stats->setEffectActive(EFF_FAST, 1);
 		stats->EFFECTS_TIMERS[EFF_FAST] = GOATMAN_HEALING_POTION_SPEED_BOOST_DURATION;
 	}
 
@@ -1967,6 +2282,9 @@ bool item_PotionHealing(Item*& item, Entity* entity, Entity* usedBy, bool should
 	{
 		amount += 2 * statGetCON(stats, entity);
 	}
+
+	real_t healMult = entity->getHealingSpellPotionModifierFromEffects(false);
+	amount *= healMult;
 
 	if ( item->beatitude < 0 )
 	{
@@ -1980,6 +2298,7 @@ bool item_PotionHealing(Item*& item, Entity* entity, Entity* usedBy, bool should
 	int heal = std::max(entity->getHP() - oldHP, 0);
 	if ( heal > 0 )
 	{
+		entity->getHealingSpellPotionModifierFromEffects(true);
 		serverUpdatePlayerGameplayStats(player, STATISTICS_HEAL_BOT, heal);
 	}
 
@@ -1993,14 +2312,14 @@ bool item_PotionHealing(Item*& item, Entity* entity, Entity* usedBy, bool should
 	{
 		messagePlayer(player, MESSAGE_HINT, Language::get(2900));
 		messagePlayer(player, MESSAGE_HINT, Language::get(2903));
-		stats->EFFECTS[EFF_POISONED] = true;
+		stats->setEffectActive(EFF_POISONED, 1);
 		stats->EFFECTS_TIMERS[EFF_POISONED] = item->potionGetCursedEffectDurationRandom(entity, stats);
 	}
 	else
 	{
 		messagePlayerColor(player, MESSAGE_STATUS, color, Language::get(773));
 		// stop bleeding
-		if ( stats->EFFECTS[EFF_BLEEDING] )
+		if ( stats->getEffectActive(EFF_BLEEDING) )
 		{
 			entity->setEffect(EFF_BLEEDING, false, 0, false);
 		}
@@ -2008,6 +2327,7 @@ bool item_PotionHealing(Item*& item, Entity* entity, Entity* usedBy, bool should
 	serverUpdateEffects(player);
 	if ( shouldConsumeItem )
 	{
+		potionUseAbundanceEffect(item, entity, usedBy);
 		consumeItem(item, player);
 		return true;
 	}
@@ -2057,7 +2377,7 @@ bool item_PotionExtraHealing(Item*& item, Entity* entity, Entity* usedBy, bool s
 			return false;
 		}
 	}
-	if ( stats->EFFECTS[EFF_VOMITING] )
+	if ( stats->getEffectActive(EFF_VOMITING) )
 	{
 		if ( player >= 0 && players[player]->isLocalPlayer() )
 		{
@@ -2068,6 +2388,7 @@ bool item_PotionExtraHealing(Item*& item, Entity* entity, Entity* usedBy, bool s
 	}
 	if ( multiplayer == CLIENT )
 	{
+		potionUseAbundanceEffect(item, entity, usedBy);
 		consumeItem(item, player);
 		return true;
 	}
@@ -2080,14 +2401,14 @@ bool item_PotionExtraHealing(Item*& item, Entity* entity, Entity* usedBy, bool s
 		{
 			messagePlayer(player, MESSAGE_HINT, Language::get(2900));
 			messagePlayer(player, MESSAGE_HINT, Language::get(2903));
-			stats->EFFECTS[EFF_POISONED] = true;
+			stats->setEffectActive(EFF_POISONED, 1);
 			stats->EFFECTS_TIMERS[EFF_POISONED] = item->potionGetCursedEffectDurationRandom(entity, stats);
 		}
 		else
 		{
 			messagePlayer(player, MESSAGE_HINT, Language::get(772));
 			// stop bleeding
-			if ( stats->EFFECTS[EFF_BLEEDING] )
+			if ( stats->getEffectActive(EFF_BLEEDING) )
 			{
 				entity->setEffect(EFF_BLEEDING, false, 0, false);
 			}
@@ -2095,6 +2416,7 @@ bool item_PotionExtraHealing(Item*& item, Entity* entity, Entity* usedBy, bool s
 		serverUpdateEffects(player);
 		if ( shouldConsumeItem )
 		{
+			potionUseAbundanceEffect(item, entity, usedBy);
 			consumeItem(item, player);
 			return true;
 		}
@@ -2106,7 +2428,7 @@ bool item_PotionExtraHealing(Item*& item, Entity* entity, Entity* usedBy, bool s
 	if ( stats->type == GOATMAN && entity->behavior == &actMonster )
 	{
 		amount *= GOATMAN_HEALINGPOTION_MOD; //Goatman special.
-		stats->EFFECTS[EFF_FAST] = true;
+		stats->setEffectActive(EFF_FAST, 1);
 		stats->EFFECTS_TIMERS[EFF_FAST] = GOATMAN_HEALING_POTION_SPEED_BOOST_DURATION;
 	}
 
@@ -2115,6 +2437,9 @@ bool item_PotionExtraHealing(Item*& item, Entity* entity, Entity* usedBy, bool s
 	{
 		amount += 4 * statGetCON(stats, entity);
 	}
+
+	real_t healMult = entity->getHealingSpellPotionModifierFromEffects(false);
+	amount *= healMult;
 
 	if ( item->beatitude < 0 )
 	{
@@ -2128,6 +2453,7 @@ bool item_PotionExtraHealing(Item*& item, Entity* entity, Entity* usedBy, bool s
 	int heal = std::max(entity->getHP() - oldHP, 0);
 	if ( heal > 0 )
 	{
+		entity->getHealingSpellPotionModifierFromEffects(true);
 		serverUpdatePlayerGameplayStats(player, STATISTICS_HEAL_BOT, heal);
 	}
 
@@ -2140,14 +2466,14 @@ bool item_PotionExtraHealing(Item*& item, Entity* entity, Entity* usedBy, bool s
 	{
 		messagePlayer(player, MESSAGE_HINT, Language::get(2900));
 		messagePlayer(player, MESSAGE_HINT, Language::get(2903));
-		stats->EFFECTS[EFF_POISONED] = true;
+		stats->setEffectActive(EFF_POISONED, 1);
 		stats->EFFECTS_TIMERS[EFF_POISONED] = item->potionGetCursedEffectDurationRandom(entity, stats);
 	}
 	else
 	{
 		messagePlayerColor(player, MESSAGE_STATUS, color, Language::get(773));
 		// stop bleeding
-		if ( stats->EFFECTS[EFF_BLEEDING] )
+		if ( stats->getEffectActive(EFF_BLEEDING) )
 		{
 			entity->setEffect(EFF_BLEEDING, false, 0, false);
 		}
@@ -2155,6 +2481,7 @@ bool item_PotionExtraHealing(Item*& item, Entity* entity, Entity* usedBy, bool s
 	serverUpdateEffects(player);
 	if ( shouldConsumeItem )
 	{
+		potionUseAbundanceEffect(item, entity, usedBy);
 		consumeItem(item, player);
 		return true;
 	}
@@ -2208,7 +2535,7 @@ bool item_PotionRestoreMagic(Item*& item, Entity* entity, Entity* usedBy)
 			return false;
 		}
 	}
-	if ( stats->EFFECTS[EFF_VOMITING] )
+	if ( stats->getEffectActive(EFF_VOMITING) )
 	{
 		if ( player >= 0 && players[player]->isLocalPlayer() )
 		{
@@ -2219,6 +2546,7 @@ bool item_PotionRestoreMagic(Item*& item, Entity* entity, Entity* usedBy)
 	}
 	if ( multiplayer == CLIENT )
 	{
+		potionUseAbundanceEffect(item, entity, usedBy);
 		consumeItem(item, player);
 		return true;
 	}
@@ -2229,13 +2557,14 @@ bool item_PotionRestoreMagic(Item*& item, Entity* entity, Entity* usedBy)
 		{
 			messagePlayer(player, MESSAGE_HINT, Language::get(774));
 			messagePlayer(player, MESSAGE_HINT | MESSAGE_STATUS, Language::get(2902));
-			stats->EFFECTS[EFF_SLOW] = true;
+			stats->setEffectActive(EFF_SLOW, 1);
 			stats->EFFECTS_TIMERS[EFF_SLOW] = item->potionGetCursedEffectDurationRandom(entity, stats);
 		}
 		else
 		{
 			messagePlayer(player, MESSAGE_HINT, Language::get(772));
 		}
+		potionUseAbundanceEffect(item, entity, usedBy);
 		consumeItem(item, player);
 		return true;
 	}
@@ -2252,7 +2581,7 @@ bool item_PotionRestoreMagic(Item*& item, Entity* entity, Entity* usedBy)
 		amount /= (std::abs(item->beatitude) * 2);
 		messagePlayer(player, MESSAGE_HINT, Language::get(774));
 		messagePlayer(player, MESSAGE_HINT | MESSAGE_STATUS, Language::get(2902));
-		stats->EFFECTS[EFF_SLOW] = true;
+		stats->setEffectActive(EFF_SLOW, 1);
 		stats->EFFECTS_TIMERS[EFF_SLOW] = item->potionGetCursedEffectDurationRandom(entity, stats);
 	}
 	else
@@ -2282,6 +2611,7 @@ bool item_PotionRestoreMagic(Item*& item, Entity* entity, Entity* usedBy)
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
 
+	potionUseAbundanceEffect(item, entity, usedBy);
 	consumeItem(item, player);
 	return true;
 }
@@ -2329,7 +2659,7 @@ Entity* item_PotionPolymorph(Item*& item, Entity* entity, Entity* usedBy)
 			return nullptr;
 		}
 	}
-	if ( stats->EFFECTS[EFF_VOMITING] )
+	if ( stats->getEffectActive(EFF_VOMITING) )
 	{
 		if ( player >= 0 && players[player]->isLocalPlayer() )
 		{
@@ -2340,6 +2670,7 @@ Entity* item_PotionPolymorph(Item*& item, Entity* entity, Entity* usedBy)
 	}
 	if ( multiplayer == CLIENT )
 	{
+		potionUseAbundanceEffect(item, entity, usedBy);
 		consumeItem(item, player);
 		return nullptr;
 	}
@@ -2360,6 +2691,7 @@ Entity* item_PotionPolymorph(Item*& item, Entity* entity, Entity* usedBy)
 		transformedEntity = spellEffectPolymorph(entity, usedBy, false);
 	}
 
+	potionUseAbundanceEffect(item, entity, usedBy);
 	consumeItem(item, player);
 
 	return transformedEntity;
@@ -2702,17 +3034,66 @@ void item_ScrollEnchantWeapon(Item* item, int player)
 		}
 		else 
 		{
-			if ( toEnchant == &stats[player]->gloves )
+			bool hasGold = false;
+			Sint32 goldSubtract = 0;
 			{
-				messagePlayer(player, MESSAGE_HINT, Language::get(858), (*toEnchant)->getName());
-			}
-			else
-			{
-				messagePlayer(player, MESSAGE_HINT, Language::get(854));
+				int goldCost = 75;
+				int bless = std::max(abs((int)(*toEnchant)->beatitude), 0);
+				if ( (*toEnchant)->beatitude > 0 )
+				{
+					bless = std::max(0, bless - 1);
+				}
+				for ( int i = 0; i < std::min(10, bless); ++i )
+				{
+					goldCost *= 2;
+				}
+				goldCost = std::min(10000, goldCost);
+
+				hasGold = stats[player]->GOLD >= goldCost;
+
+				goldSubtract = std::max(0, std::min(goldCost, stats[player]->GOLD));
+
+				stats[player]->GOLD -= goldCost;
+				stats[player]->GOLD = std::max(0, stats[player]->GOLD);
+
+				if ( multiplayer == CLIENT )
+				{
+					strcpy((char*)net_packet->data, "FXGD");
+					net_packet->data[4] = player;
+					SDLNet_Write32((Uint32)goldSubtract, &net_packet->data[5]);
+					SDLNet_Write32((Uint32)0, &net_packet->data[9]);
+
+					Uint16 spellID = SPELL_NONE;
+					SDLNet_Write16(spellID, &net_packet->data[13]);
+					net_packet->address.host = net_server.host;
+					net_packet->address.port = net_server.port;
+					net_packet->len = 15;
+					sendPacketSafe(net_sock, -1, net_packet, 0);
+				}
 			}
 
-			if ( (*toEnchant)->beatitude > 0 )
+			if ( goldSubtract > 0 )
 			{
+				messagePlayer(player, MESSAGE_HINT, Language::get(6973));
+				if ( players[player]->isLocalPlayer() )
+				{
+					Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_GOLD_CASTED, "gold", goldSubtract);
+					Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_GOLD_CASTED_RUN, "gold", goldSubtract);
+				}
+			}
+
+			bool effect = false;
+			if ( !hasGold )
+			{
+				if ( (*toEnchant)->beatitude > 0 )
+				{
+					(*toEnchant)->beatitude = 0;
+					effect = true;
+				}
+			}
+			else if ( (*toEnchant)->beatitude > 0 )
+			{
+				effect = true;
 				(*toEnchant)->beatitude = -(*toEnchant)->beatitude;
 				if ( stats[player]->type == SUCCUBUS )
 				{
@@ -2721,10 +3102,27 @@ void item_ScrollEnchantWeapon(Item* item, int player)
 			}
 			else
 			{
+				effect = true;
 				(*toEnchant)->beatitude -= 1;
 			}
 
-			if ( multiplayer == CLIENT )
+			if ( effect )
+			{
+				if ( toEnchant == &stats[player]->gloves )
+				{
+					messagePlayer(player, MESSAGE_HINT, Language::get(858), (*toEnchant)->getName());
+				}
+				else
+				{
+					messagePlayer(player, MESSAGE_HINT, Language::get(854));
+				}
+			}
+			else
+			{
+				messagePlayer(player, MESSAGE_HINT, Language::get(853));
+			}
+
+			if ( effect && multiplayer == CLIENT )
 			{
 				strcpy((char*)net_packet->data, "BEAT");
 				net_packet->data[4] = player;
@@ -2881,18 +3279,84 @@ void item_ScrollEnchantArmor(Item* item, int player)
 		}
 		else if ( armor != nullptr )
 		{
-			messagePlayer(player, MESSAGE_HINT, Language::get(858), armor->getName());
+			bool hasGold = false;
+			Sint32 goldSubtract = 0;
+			{
+				int goldCost = 75;
+				int bless = std::max(abs((int)armor->beatitude), 0);
+				if ( armor->beatitude > 0 )
+				{
+					bless = std::max(0, bless - 1);
+				}
+				for ( int i = 0; i < std::min(10, bless); ++i )
+				{
+					goldCost *= 2;
+				}
+				goldCost = std::min(10000, goldCost);
 
-			if ( armor->beatitude > 0 )
+				hasGold = stats[player]->GOLD >= goldCost;
+
+				goldSubtract = std::max(0, std::min(goldCost, stats[player]->GOLD));
+
+				stats[player]->GOLD -= goldCost;
+				stats[player]->GOLD = std::max(0, stats[player]->GOLD);
+
+				if ( multiplayer == CLIENT )
+				{
+					strcpy((char*)net_packet->data, "FXGD");
+					net_packet->data[4] = player;
+					SDLNet_Write32((Uint32)goldSubtract, &net_packet->data[5]);
+					SDLNet_Write32((Uint32)0, &net_packet->data[9]);
+
+					Uint16 spellID = SPELL_NONE;
+					SDLNet_Write16(spellID, &net_packet->data[13]);
+					net_packet->address.host = net_server.host;
+					net_packet->address.port = net_server.port;
+					net_packet->len = 15;
+					sendPacketSafe(net_sock, -1, net_packet, 0);
+				}
+			}
+
+			if ( goldSubtract > 0 )
+			{
+				messagePlayer(player, MESSAGE_HINT, Language::get(6973));
+				if ( players[player]->isLocalPlayer() )
+				{
+					Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_GOLD_CASTED, "gold", goldSubtract);
+					Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_GOLD_CASTED_RUN, "gold", goldSubtract);
+				}
+			}
+
+			bool effect = false;
+			if ( !hasGold )
+			{
+				if ( armor->beatitude > 0 )
+				{
+					armor->beatitude = 0;
+					effect = true;
+				}
+			}
+			else if ( armor->beatitude > 0 )
 			{
 				armor->beatitude = -armor->beatitude;
+				effect = true;
 			}
 			else
 			{
 				armor->beatitude -= 1;
+				effect = true;
 			}
 
-			if ( multiplayer == CLIENT )
+			if ( effect )
+			{
+				messagePlayer(player, MESSAGE_HINT, Language::get(858), armor->getName());
+			}
+			else
+			{
+				messagePlayer(player, MESSAGE_HINT, Language::get(857));
+			}
+
+			if ( effect && multiplayer == CLIENT )
 			{
 				strcpy((char*)net_packet->data, "BEAT");
 				net_packet->data[4] = player;
@@ -3134,13 +3598,20 @@ bool item_ScrollFire(Item* item, int player)
 	else
 	{
 		playSoundEntity(players[player]->entity, 153, 128); // "FireballExplode.ogg"
-		messagePlayer(player, MESSAGE_HINT | MESSAGE_STATUS, Language::get(864)); // "The scroll erupts in a tower of flame!"
+		if ( item->beatitude == 0 )
+		{
+			messagePlayer(player, MESSAGE_HINT | MESSAGE_STATUS, Language::get(864)); // "The scroll erupts in a tower of flame!"
+		}
+		else if ( item->beatitude > 0 )
+		{
+			messagePlayer(player, MESSAGE_HINT | MESSAGE_STATUS, Language::get(6861)); // "The scroll erupts in a cloak of flame!"
+		}
 
 		// Attempt to set the Player on fire
-		players[player]->entity->SetEntityOnFire();
+		players[player]->entity->SetEntityOnFire(nullptr);
 
 		int c;
-		for (c = 0; c < 100; c++)
+		for (c = 0; c < 25; c++)
 		{
 			if ( Entity* entity = spawnFlame(players[player]->entity, SPRITE_FLAME) )
 			{
@@ -3151,6 +3622,18 @@ bool item_ScrollFire(Item* item, int player)
 				entity->vel_z = vel * sin(entity->pitch) * .2;
 				entity->skill[0] = 5 + local_rng.rand() % 10;
 			}
+		}
+
+		if ( item->beatitude > 0 )
+		{
+			if ( players[player]->entity->setEffect(EFF_FLAME_CLOAK, (Uint8)75, 30 * TICKS_PER_SECOND, true) )
+			{
+				spawnMagicEffectParticles(players[player]->entity->x, players[player]->entity->y, players[player]->entity->z, 2207);
+			}
+		}
+		else
+		{
+			castSpell(players[player]->entity->getUID(), getSpellFromID(SPELL_IGNITE), true, true);
 		}
 
 		onScrollUseAppraisalIncrease(item, player);
@@ -3312,7 +3795,11 @@ void item_ScrollMagicMapping(Item* item, int player)
 	if ( item->beatitude >= 0 )
 	{
 		messagePlayer(player, MESSAGE_HINT, Language::get(868));
-		mapLevel(player);
+		mapLevel(player, 16 + 8 * item->beatitude, players[player]->entity->x / 16, players[player]->entity->y / 16, false);
+
+		/*int pingx = players[player]->entity->x / 16;
+		int pingy = players[player]->entity->y / 16;
+		sendMinimapPing(player, pingx, pingy, 0, true);*/
 	}
 	else
 	{
@@ -3462,7 +3949,8 @@ void item_ScrollRepair(Item* item, int player)
 		{
 			messagePlayer(player, MESSAGE_HINT, Language::get(870)); // you feel a tingling sensation
 		}
-		else if ( armor != nullptr )
+		else if ( armor != nullptr 
+			&& !players[player]->entity->spellEffectPreserveItem(armor) )
 		{
 			messagePlayer(player, MESSAGE_HINT, Language::get(871), armor->getName());
 			if ( item->type == SCROLL_CHARGING )
@@ -3643,7 +4131,8 @@ void item_ScrollDestroyArmor(Item* item, int player)
 	{
 		messagePlayer(player, MESSAGE_HINT, Language::get(873));
 	}
-	else if ( armor != nullptr )
+	else if ( armor != nullptr 
+		&& !players[player]->entity->spellEffectPreserveItem(armor) )
 	{
 		if ( item->beatitude < 0 )
 		{
@@ -3681,12 +4170,12 @@ void item_ScrollDestroyArmor(Item* item, int player)
 				if ( armor->type == TOOL_CRYSTALSHARD )
 				{
 					playSoundPlayer(player, 162, 64);
-					messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(2351), armor->getName());
+					//messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(2351), armor->getName());
 				}
 				else
 				{
 					playSoundPlayer(player, 76, 64);
-					messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(682), armor->getName());
+					//messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(682), armor->getName());
 				}
 			}
 		}
@@ -3963,31 +4452,33 @@ void item_ToolTowel(Item*& item, int player)
 	}
 	if ( multiplayer != CLIENT )
 	{
-		if ( stats[player]->EFFECTS[EFF_GREASY]
-			|| stats[player]->EFFECTS[EFF_MESSY]
-			|| stats[player]->EFFECTS[EFF_BLEEDING] )
+		if ( stats[player]->getEffectActive(EFF_GREASY)
+			|| stats[player]->getEffectActive(EFF_MAGIC_GREASE)
+			|| stats[player]->getEffectActive(EFF_MESSY)
+			|| stats[player]->getEffectActive(EFF_BLEEDING) )
 		{
 			steamAchievementClient(player, "BARONY_ACH_BRING_A_TOWEL");
-			if ( stats[player]->EFFECTS[EFF_GREASY] )
+			if ( stats[player]->getEffectActive(EFF_GREASY) || stats[player]->getEffectActive(EFF_MAGIC_GREASE) )
 			{
 				Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_TOWEL_GREASY, item->type, 1);
 			}
-			else if ( stats[player]->EFFECTS[EFF_MESSY] )
+			else if ( stats[player]->getEffectActive(EFF_MESSY) )
 			{
 				Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_TOWEL_MESSY, item->type, 1);
 			}
-			else if ( stats[player]->EFFECTS[EFF_BLEEDING] )
+			else if ( stats[player]->getEffectActive(EFF_BLEEDING) )
 			{
 				Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_TOWEL_BLEEDING, item->type, 1);
 			}
 			Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_TOWEL_USES, item->type, 1);
 		}
-		stats[player]->EFFECTS[EFF_GREASY] = false;
-		stats[player]->EFFECTS[EFF_MESSY] = false;
+		stats[player]->clearEffect(EFF_MAGIC_GREASE);
+		stats[player]->clearEffect(EFF_GREASY);
+		stats[player]->clearEffect(EFF_MESSY);
 	}
 
 	// stop bleeding
-	if ( stats[player]->EFFECTS[EFF_BLEEDING] )
+	if ( stats[player]->getEffectActive(EFF_BLEEDING) )
 	{
 		if ( players[player]->isLocalPlayer() )
 		{
@@ -3996,7 +4487,7 @@ void item_ToolTowel(Item*& item, int player)
 		}
 		if ( multiplayer != CLIENT )
 		{
-			stats[player]->EFFECTS[EFF_BLEEDING] = false;
+			stats[player]->clearEffect(EFF_BLEEDING);
 			stats[player]->EFFECTS_TIMERS[EFF_BLEEDING] = 0;
 		}
 		consumeItem(item, player);
@@ -4049,14 +4540,14 @@ void item_ToolMirror(Item*& item, int player)
 	// server/local side
 	if ( multiplayer != CLIENT )
 	{
-		if ( stats[player]->EFFECTS[EFF_GREASY] )
+		if ( stats[player]->getEffectActive(EFF_GREASY) )
 		{
 			messagePlayer(player, MESSAGE_WORLD, Language::get(887));
 			messagePlayer(player, MESSAGE_INVENTORY, Language::get(888));
 			playSoundEntity(players[player]->entity, 162, 64); // whoops, *break*
 			broken = true;
 		}
-		else if ( stats[player]->EFFECTS[EFF_BLIND] )
+		else if ( stats[player]->getEffectActive(EFF_BLIND) )
 		{
 			messagePlayer(player, MESSAGE_HINT, Language::get(892));
 		}
@@ -4086,7 +4577,7 @@ void item_ToolMirror(Item*& item, int player)
 		{
 			messagePlayer(player, MESSAGE_HINT, Language::get(3698));
 		}
-		else if ( stats[player]->EFFECTS[EFF_DRUNK] )
+		else if ( stats[player]->getEffectActive(EFF_DRUNK) )
 		{
 			if ( stats[player]->sex == MALE )
 			{
@@ -4097,19 +4588,19 @@ void item_ToolMirror(Item*& item, int player)
 				messagePlayer(player, MESSAGE_HINT, Language::get(895));
 			}
 		}
-		else if ( stats[player]->EFFECTS[EFF_CONFUSED] )
+		else if ( stats[player]->getEffectActive(EFF_CONFUSED) )
 		{
 			messagePlayer(player, MESSAGE_HINT, Language::get(896));
 		}
-		else if ( stats[player]->EFFECTS[EFF_POISONED] )
+		else if ( stats[player]->getEffectActive(EFF_POISONED) )
 		{
 			messagePlayer(player, MESSAGE_HINT, Language::get(897));
 		}
-		else if ( stats[player]->EFFECTS[EFF_VOMITING] )
+		else if ( stats[player]->getEffectActive(EFF_VOMITING) )
 		{
 			messagePlayer(player, MESSAGE_HINT, Language::get(898));
 		}
-		else if ( stats[player]->EFFECTS[EFF_MESSY] )
+		else if ( stats[player]->getEffectActive(EFF_MESSY) )
 		{
 			messagePlayer(player, MESSAGE_HINT, Language::get(899));
 		}
@@ -4140,11 +4631,11 @@ void item_ToolMirror(Item*& item, int player)
 
 	if ( players[player]->isLocalPlayer() && item )
 	{
-		if ( stats[player]->EFFECTS[EFF_GREASY] )
+		if ( stats[player]->getEffectActive(EFF_GREASY) )
 		{
 			broken = true;
 		}
-		else if ( stats[player]->EFFECTS[EFF_BLIND] )
+		else if ( stats[player]->getEffectActive(EFF_BLIND) )
 		{
 		}
 		else if ( players[player]->entity->isInvisible() || (stats[player]->type == VAMPIRE) )
@@ -4152,7 +4643,8 @@ void item_ToolMirror(Item*& item, int player)
 		}
 		else if ( beatitude > 0 )
 		{
-			if ( local_rng.rand() % 4 == 0 )
+			if ( local_rng.rand() % 4 == 0 
+				&& !players[player]->entity->spellEffectPreserveItem(item) )
 			{
 				if ( item->status > DECREPIT )
 				{
@@ -4365,6 +4857,52 @@ Entity* item_ToolBeartrap(Item*& item, Entity* usedBy)
 	return entity;
 }
 
+int Item::getBaseFoodSatiation(ItemType type)
+{
+	int hungerIncrease = 0;
+	switch ( type )
+	{
+		case FOOD_BREAD:
+			hungerIncrease = 400;
+			break;
+		case FOOD_CREAMPIE:
+			hungerIncrease = 200;
+			break;
+		case FOOD_CHEESE:
+			hungerIncrease = 100;
+			break;
+		case FOOD_APPLE:
+		case FOOD_SHROOM:
+		case FOOD_NUT:
+			hungerIncrease = 200;
+			break;
+		case FOOD_MEAT:
+			hungerIncrease = 600;
+			break;
+		case FOOD_FISH:
+			hungerIncrease = 500;
+			break;
+		case FOOD_TOMALLEY:
+			hungerIncrease = 400;
+			break;
+		case FOOD_TIN:
+			hungerIncrease = 600;
+			break;
+		case FOOD_RATION:
+		case FOOD_RATION_SPICY:
+		case FOOD_RATION_SOUR:
+		case FOOD_RATION_BITTER:
+		case FOOD_RATION_HEARTY:
+		case FOOD_RATION_HERBAL:
+		case FOOD_RATION_SWEET:
+			hungerIncrease = 200;
+			break;
+		default:
+			break;
+	}
+	return hungerIncrease;
+}
+
 void item_Food(Item*& item, int player)
 {
 	if ( !item )
@@ -4418,7 +4956,7 @@ void item_Food(Item*& item, int player)
 	}
 
 	// can't eat while vomiting
-	if ( stats[player]->EFFECTS[EFF_VOMITING] )
+	if ( stats[player]->getEffectActive(EFF_VOMITING) )
 	{
 		if ( players[player]->isLocalPlayer() )
 		{
@@ -4445,6 +4983,7 @@ void item_Food(Item*& item, int player)
 
 	if ( multiplayer == CLIENT )
 	{
+		foodUseAbundanceEffect(item, player);
 		consumeItem(item, player);
 		return;
 	}
@@ -4519,6 +5058,7 @@ void item_Food(Item*& item, int player)
 				}
 			}
 		}
+		foodUseAbundanceEffect(item, player);
 		consumeItem(item, player);
 		return;
 	}
@@ -4527,6 +5067,7 @@ void item_Food(Item*& item, int player)
 		if (players[player] && players[player]->entity && !(svFlags & SV_FLAG_HUNGER))
 		{
 			//if ( !(stats[player]->mask && stats[player]->mask->type == MASK_MARIGOLD) )
+			if ( stats[player]->type != MYCONID )
 			{
 				playSoundEntity(players[player]->entity, 28, 64);
 				players[player]->entity->modHP(-5);
@@ -4550,7 +5091,34 @@ void item_Food(Item*& item, int player)
 			{
 				players[player]->entity->char_gonnavomit = 40 + local_rng.rand() % 10;
 			}
+			else if ( stats[player]->type == MYCONID && local_rng.rand() % 3 == 0 )
+			{
+				// gain some mp regen
+				players[player]->entity->modMP(1 + local_rng.rand() % 2);
+				Uint32 color = makeColorRGB(0, 255, 0);
+				players[player]->entity->setEffect(EFF_MP_REGEN, true, std::max(stats[player]->EFFECTS_TIMERS[EFF_MP_REGEN], 10 * TICKS_PER_SECOND), false);
+				messagePlayerColor(player, MESSAGE_HINT, color, Language::get(6882));
+				playSoundEntity(players[player]->entity, 168, 128);
+
+				if ( auto effectStrength = stats[player]->getEffectActive(EFF_GROWTH) )
+				{
+					int chance = 25;
+					if ( (stats[player]->type == MYCONID && stats[player]->sex == MALE) )
+					{
+						chance = 50;
+					}
+					if ( players[player]->mechanics.rollRngProc(Player::PlayerMechanics_t::RngRollTypes::RNG_ROLL_GROWTH, chance) )
+					{
+						if ( stats[player]->getEffectActive(EFF_GROWTH) < 4 )
+						{
+							players[player]->entity->setEffect(EFF_GROWTH, (Uint8)(std::min(4, effectStrength + 1)), 15 * TICKS_PER_SECOND, false);
+							messagePlayerColor(player, MESSAGE_STATUS, makeColorRGB(0, 255, 0), Language::get(6924));
+						}
+					}
+				}
+			}
 		}
+		foodUseAbundanceEffect(item, player);
 		consumeItem(item, player);
 		return;
 	}
@@ -4584,25 +5152,22 @@ void item_Food(Item*& item, int player)
 		switch ( item->type )
 		{
 			case FOOD_BREAD:
-				hungerIncrease = 400;
-				break;
 			case FOOD_CREAMPIE:
-				hungerIncrease = 200;
-				break;
 			case FOOD_CHEESE:
-				hungerIncrease = 100;
-				break;
 			case FOOD_APPLE:
-				hungerIncrease = 200;
-				break;
 			case FOOD_MEAT:
-				hungerIncrease = 600;
-				break;
 			case FOOD_FISH:
-				hungerIncrease = 500;
-				break;
 			case FOOD_TOMALLEY:
-				hungerIncrease = 400;
+			case FOOD_RATION:
+			case FOOD_RATION_SPICY:
+			case FOOD_RATION_SOUR:
+			case FOOD_RATION_BITTER:
+			case FOOD_RATION_HEARTY:
+			case FOOD_RATION_HERBAL:
+			case FOOD_RATION_SWEET:
+			case FOOD_SHROOM:
+			case FOOD_NUT:
+				hungerIncrease = Item::getBaseFoodSatiation(item->type);
 				break;
 			case FOOD_BLOOD:
 				if ( players[player] && players[player]->entity 
@@ -4632,11 +5197,31 @@ void item_Food(Item*& item, int player)
 
 		stats[player]->HUNGER += hungerIncrease * foodMult;
 
-		if ( stats[player]->mask && stats[player]->mask->type == MASK_MARIGOLD )
+		if ( players[player] && players[player]->entity )
 		{
-			if ( players[player] && players[player]->entity )
+			if ( stats[player]->mask && stats[player]->mask->type == MASK_MARIGOLD )
 			{
 				players[player]->entity->setEffect(EFF_MARIGOLD, true, stats[player]->EFFECTS_TIMERS[EFF_MARIGOLD] + TICKS_PER_SECOND * 30, false);
+			}
+
+			if ( item->beatitude > 0 )
+			{
+				players[player]->entity->setEffect(EFF_HP_MP_REGEN, true, 
+					stats[player]->EFFECTS_TIMERS[EFF_HP_MP_REGEN] + TICKS_PER_SECOND * 30 * item->beatitude, false);
+			}
+			else if ( stats[player]->getEffectActive(EFF_BLESS_FOOD) )
+			{
+				players[player]->entity->setEffect(EFF_HP_MP_REGEN, true, 
+					stats[player]->EFFECTS_TIMERS[EFF_HP_MP_REGEN] + TICKS_PER_SECOND * 30, false);
+
+				int caster = (int)stats[player]->getEffectActive(EFF_BLESS_FOOD) - 1;
+				if ( caster >= 0 && caster < MAXPLAYERS )
+				{
+					if ( players[caster]->entity )
+					{
+						players[caster]->mechanics.updateSustainedSpellEvent(SPELL_BLESS_FOOD, 30.0, 1.0, nullptr);
+					}
+				}
 			}
 		}
 	}
@@ -4652,6 +5237,15 @@ void item_Food(Item*& item, int player)
 				{
 					foodMod += 3 * std::min(2, abs(stats[player]->mask->beatitude));
 				}
+			}
+
+			if ( item->beatitude > 0 )
+			{
+				foodMod += 3 * item->beatitude;
+			}
+			else if ( stats[player]->getEffectActive(EFF_BLESS_FOOD) )
+			{
+				foodMod += 3;
 			}
 
 			players[player]->entity->modHP(std::max(1, (int)(foodMod * foodMult)));
@@ -4674,11 +5268,22 @@ void item_Food(Item*& item, int player)
 						manaRegenPercent = 0.1;
 						break;
 					case FOOD_APPLE:
+					case FOOD_SHROOM:
+					case FOOD_NUT:
 						manaRegenPercent = 0.2;
 						break;
 					case FOOD_MEAT:
 					case FOOD_FISH:
 						manaRegenPercent = 0.5;
+						break;
+					case FOOD_RATION:
+					case FOOD_RATION_SPICY:
+					case FOOD_RATION_SOUR:
+					case FOOD_RATION_BITTER:
+					case FOOD_RATION_HEARTY:
+					case FOOD_RATION_HERBAL:
+					case FOOD_RATION_SWEET:
+						manaRegenPercent = 0.2;
 						break;
 					case FOOD_BLOOD:
 						if ( players[player] && players[player]->entity
@@ -4705,12 +5310,48 @@ void item_Food(Item*& item, int player)
 	{
 		serverUpdatePlayerGameplayStats(player, STATISTICS_TEMPT_FATE, 1);
 	}
+	else
+	{
+		int effectID = -1;
+		switch ( item->type )
+		{
+		case FOOD_RATION_SPICY:
+			effectID = EFF_RATION_SPICY;
+			break;
+		case FOOD_RATION_SOUR:
+			effectID = EFF_RATION_SOUR;
+			break;
+		case FOOD_RATION_BITTER:
+			effectID = EFF_RATION_BITTER;
+			break;
+		case FOOD_RATION_HEARTY:
+			effectID = EFF_RATION_HEARTY;
+			break;
+		case FOOD_RATION_HERBAL:
+			effectID = EFF_RATION_HERBAL;
+			break;
+		case FOOD_RATION_SWEET:
+			effectID = EFF_RATION_SWEET;
+			break;
+		default:
+			break;
+		}
+
+		if ( effectID >= 0 )
+		{
+			if ( players[player] && players[player]->entity )
+			{
+				players[player]->entity->setEffect(effectID, true, stats[player]->EFFECTS_TIMERS[effectID] + TICKS_PER_SECOND * 60, false);
+			}
+		}
+	}
 
 	// results of eating
 	if ( players[player] )
 	{
 		updateHungerMessages(players[player]->entity, stats[player], item);
 	}
+	foodUseAbundanceEffect(item, player);
 	consumeItem(item, player);
 }
 
@@ -4763,7 +5404,7 @@ void item_FoodTin(Item*& item, int player)
 	}
 
 	// can't eat while vomiting
-	if ( stats[player]->EFFECTS[EFF_VOMITING] )
+	if ( stats[player]->getEffectActive(EFF_VOMITING) )
 	{
 		if ( players[player]->isLocalPlayer() )
 		{
@@ -4778,7 +5419,7 @@ void item_FoodTin(Item*& item, int player)
 		conductFoodless = false;
 		conductVegetarian = false;
 		if ( stats[player]->playerRace == RACE_SKELETON && stats[player]->stat_appearance == 0
-			&& players[player] && players[player]->entity->effectPolymorph > NUMMONSTERS )
+			&& players[player] && players[player]->entity && players[player]->entity->effectPolymorph > NUMMONSTERS )
 		{
 			steamAchievement("BARONY_ACH_MUSCLE_MEMORY");
 		}
@@ -4791,6 +5432,7 @@ void item_FoodTin(Item*& item, int player)
 
 	if ( multiplayer == CLIENT )
 	{
+		foodUseAbundanceEffect(item, player);
 		consumeItem(item, player);
 		return;
 	}
@@ -4861,11 +5503,25 @@ void item_FoodTin(Item*& item, int player)
 	// chance of rottenness
 	pukeChance = item->foodGetPukeChance(stats[player]);
 
+	if ( players[player] && players[player]->entity && players[player]->entity->effectShapeshift != NOTHING )
+	{
+		pukeChance = 100; // shapeshifted players don't puke
+	}
+	else if ( player >= 0 && stats[player]->type == INSECTOID )
+	{
+		pukeChance = 100; // insectoids can eat anything.
+	}
+	else if ( item->beatitude < 0 && pukeChance == 100 )
+	{
+		pukeChance = 99; // make it so you will vomit
+	}
+
 	if ((item->beatitude < 0 || local_rng.rand() % pukeChance == 0) && pukeChance < 100)
 	{
 		if (players[player] && players[player]->entity && !(svFlags & SV_FLAG_HUNGER))
 		{
 			//if ( !(stats[player]->mask && stats[player]->mask->type == MASK_MARIGOLD) )
+			if ( stats[player]->type != MYCONID )
 			{
 				playSoundEntity(players[player]->entity, 28, 64);
 				players[player]->entity->modHP(-5);
@@ -4886,12 +5542,39 @@ void item_FoodTin(Item*& item, int player)
 			{
 				players[player]->entity->char_gonnavomit = 40 + local_rng.rand() % 10;
 			}
+			else if ( stats[player]->type == MYCONID && local_rng.rand() % 3 == 0 )
+			{
+				// gain some mp regen
+				players[player]->entity->modMP(1 + local_rng.rand() % 2);
+				Uint32 color = makeColorRGB(0, 255, 0);
+				players[player]->entity->setEffect(EFF_MP_REGEN, true, std::max(stats[player]->EFFECTS_TIMERS[EFF_MP_REGEN], 10 * TICKS_PER_SECOND), false);
+				messagePlayerColor(player, MESSAGE_HINT, color, Language::get(6882));
+				playSoundEntity(players[player]->entity, 168, 128);
+
+				if ( auto effectStrength = stats[player]->getEffectActive(EFF_GROWTH) )
+				{
+					int chance = 25;
+					if ( (stats[player]->type == MYCONID && stats[player]->sex == MALE) )
+					{
+						chance = 50;
+					}
+					if ( players[player]->mechanics.rollRngProc(Player::PlayerMechanics_t::RngRollTypes::RNG_ROLL_GROWTH, chance) )
+					{
+						if ( stats[player]->getEffectActive(EFF_GROWTH) < 4 )
+						{
+							players[player]->entity->setEffect(EFF_GROWTH, (Uint8)(std::min(4, effectStrength + 1)), 15 * TICKS_PER_SECOND, false);
+							messagePlayerColor(player, MESSAGE_STATUS, makeColorRGB(0, 255, 0), Language::get(6924));
+						}
+					}
+				}
+			}
 		}
+		foodUseAbundanceEffect(item, player);
 		consumeItem(item, player);
 		return;
 	}
 
-	int buffDuration = item->status * TICKS_PER_SECOND * 4; // (4 - 16 seconds)
+	int buffDuration = item->status * TICKS_PER_SECOND * 60;
 	if ( item->status > WORN )
 	{
 		buffDuration -= local_rng.rand() % ((buffDuration / 2) + 1); // 50-100% duration
@@ -4927,26 +5610,44 @@ void item_FoodTin(Item*& item, int player)
 	// replenish nutrition points
 	if (svFlags & SV_FLAG_HUNGER)
 	{
-		stats[player]->HUNGER += 600 * foodMult;
+		stats[player]->HUNGER += Item::getBaseFoodSatiation(item->type) * foodMult;
 
-		if ( stats[player]->mask && stats[player]->mask->type == MASK_MARIGOLD )
+		if ( players[player] && players[player]->entity )
 		{
-			if ( players[player] && players[player]->entity )
+			if ( stats[player]->mask && stats[player]->mask->type == MASK_MARIGOLD )
 			{
 				players[player]->entity->setEffect(EFF_MARIGOLD, true, stats[player]->EFFECTS_TIMERS[EFF_MARIGOLD] + TICKS_PER_SECOND * 30, false);
+			}
+
+			if ( item->beatitude > 0 )
+			{
+				players[player]->entity->setEffect(EFF_HP_MP_REGEN, true, stats[player]->EFFECTS_TIMERS[EFF_HP_MP_REGEN] + TICKS_PER_SECOND * 30 * item->beatitude, false);
+			}
+			else if ( stats[player]->getEffectActive(EFF_BLESS_FOOD) )
+			{
+				players[player]->entity->setEffect(EFF_HP_MP_REGEN, true, stats[player]->EFFECTS_TIMERS[EFF_HP_MP_REGEN] + TICKS_PER_SECOND * 30, false);
+
+				int caster = (int)stats[player]->getEffectActive(EFF_BLESS_FOOD) - 1;
+				if ( caster >= 0 && caster < MAXPLAYERS )
+				{
+					if ( players[caster]->entity )
+					{
+						players[caster]->mechanics.updateSustainedSpellEvent(SPELL_BLESS_FOOD, 30.0, 1.0, nullptr);
+					}
+				}
 			}
 		}
 
 		if ( hpBuff )
 		{
-			stats[player]->EFFECTS[EFF_HP_REGEN] = hpBuff;
-			stats[player]->EFFECTS_TIMERS[EFF_HP_REGEN] = buffDuration;
+			stats[player]->setEffectActive(EFF_HP_REGEN, 1);
+			stats[player]->EFFECTS_TIMERS[EFF_HP_REGEN] += buffDuration;
 			Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_TIN_REGEN_HP, FOOD_TIN, 1);
 		}
 		if ( mpBuff )
 		{
-			stats[player]->EFFECTS[EFF_MP_REGEN] = mpBuff;
-			stats[player]->EFFECTS_TIMERS[EFF_MP_REGEN] = buffDuration;
+			stats[player]->setEffectActive(EFF_MP_REGEN, 1);
+			stats[player]->EFFECTS_TIMERS[EFF_MP_REGEN] += buffDuration;
 			Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_TIN_REGEN_MP, FOOD_TIN, 1);
 		}
 	}
@@ -4962,6 +5663,14 @@ void item_FoodTin(Item*& item, int player)
 				{
 					foodMod += 3 * std::min(2, abs(stats[player]->mask->beatitude));
 				}
+			}
+			if ( item->beatitude > 0 )
+			{
+				foodMod += 3 * item->beatitude;
+			}
+			else if ( stats[player]->getEffectActive(EFF_BLESS_FOOD) )
+			{
+				foodMod += 3;
 			}
 
 			players[player]->entity->modHP(std::max(1, (int)(foodMod * foodMult)));
@@ -5008,7 +5717,7 @@ void item_FoodTin(Item*& item, int player)
 	{
 		messagePlayer(player, MESSAGE_WORLD, Language::get(911));
 	}
-
+	foodUseAbundanceEffect(item, player);
 	consumeItem(item, player);
 }
 
@@ -5078,7 +5787,33 @@ void item_AmuletSexChange(Item* item, int player)
 	}
 	else
 	{
-		if ( stats[player]->sex == MALE )
+		if ( stats[player]->type == AUTOMATON )
+		{
+			messagePlayer(player, MESSAGE_HINT | MESSAGE_STATUS, Language::get(6914));
+		}
+		else if ( stats[player]->type == DRYAD )
+		{
+			if ( stats[player]->sex == MALE )
+			{
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_STATUS, Language::get(6912));
+			}
+			else
+			{
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_STATUS, Language::get(6913));
+			}
+		}
+		else if ( stats[player]->type == MYCONID )
+		{
+			if ( stats[player]->sex == MALE )
+			{
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_STATUS, Language::get(6913));
+			}
+			else
+			{
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_STATUS, Language::get(6912));
+			}
+		}
+		else if ( stats[player]->sex == MALE )
 		{
 			messagePlayer(player, MESSAGE_HINT | MESSAGE_STATUS, Language::get(967));
 		}
@@ -5094,24 +5829,16 @@ void item_Spellbook(Item*& item, int player)
 {
 	node_t* node, *nextnode;
 
-	item->identified = true;
 	if ( players[player] && !players[player]->isLocalPlayer() )
 	{
 		return;
 	}
 
-	if ( players[player] && players[player]->entity && players[player]->entity->isBlind())
+	/*if ( itemCategory(item) == TOME_SPELL )
 	{
-		messagePlayer(player, MESSAGE_HINT, Language::get(970));
-		playSoundPlayer(player, 90, 64);
+		players[player]->magic.setQuickCastTomeFromInventory(item);
 		return;
-	}
-	if ( itemIsEquipped(item, player) )
-	{
-		messagePlayer(player, MESSAGE_MISC, Language::get(3460));
-		playSoundPlayer(player, 90, 64);
-		return;
-	}
+	}*/
 
 	if ( players[player] && players[player]->entity )
 	{
@@ -5127,6 +5854,20 @@ void item_Spellbook(Item*& item, int player)
 			playSoundPlayer(player, 90, 64);
 			return;
 		}
+	}
+
+	item->identified = true;
+	if ( itemIsEquipped(item, player) )
+	{
+		messagePlayer(player, MESSAGE_MISC, Language::get(3460));
+		playSoundPlayer(player, 90, 64);
+		return;
+	}
+	if ( players[player] && players[player]->entity && players[player]->entity->isBlind() )
+	{
+		messagePlayer(player, MESSAGE_HINT, Language::get(970));
+		playSoundPlayer(player, 90, 64);
+		return;
 	}
 
 	conductIlliterate = false;
@@ -5418,7 +6159,22 @@ void item_Spellbook(Item*& item, int player)
 				learned = addSpell(SPELL_CRAB_WEB, player);
 				break;
 			default:
-				learned = addSpell(SPELL_FORCEBOLT, player);
+				if ( items[item->type].category == SPELLBOOK )
+				{
+					int spellID = getSpellIDFromSpellbook(item->type);
+					if ( spellID > SPELL_NONE )
+					{
+						learned = addSpell(spellID, player);
+					}
+				}
+				else if ( items[item->type].category == TOME_SPELL )
+				{
+					int spellID = item->getTomeSpellID();
+					if ( auto spell = getSpellFromID(spellID) )
+					{
+						learned = addSpell(spell->ID, player);
+					}
+				}
 				break;
 		}
 
@@ -5429,9 +6185,19 @@ void item_Spellbook(Item*& item, int player)
 
 		if ( learned )
 		{
-			Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_SPELLBOOK_LEARNT, item->type, 1);
-			Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_SPELLBOOK_CAST_DEGRADES, item->type, 1);
-			if ( item->type >= SPELLBOOK_RAT_FORM && item->type <= SPELLBOOK_IMP_FORM )
+			int spellID = SPELL_NONE;
+			if ( itemCategory(item) == SPELLBOOK )
+			{
+				Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_SPELLBOOK_LEARNT, item->type, 1);
+				Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_SPELLBOOK_CAST_DEGRADES, item->type, 1);
+				spellID = getSpellIDFromSpellbook(item->type);
+			}
+			else if ( itemCategory(item) == TOME_SPELL )
+			{
+				spellID = item->getTomeSpellID();
+			}
+
+			if ( spellID >= SPELL_RAT_FORM && spellID <= SPELL_IMP_FORM )
 			{
 				ItemType originalSpellbook = item->type;
 				item->type = SPELLBOOK_REVERT_FORM;
@@ -5441,21 +6207,31 @@ void item_Spellbook(Item*& item, int player)
 				}
 				item->type = originalSpellbook;
 			}
-			item->status = static_cast<Status>(item->status - 1);
-			if ( item->status != BROKEN )
+
+			if ( itemCategory(item) == SPELLBOOK )
 			{
-				messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_EQUIPMENT, Language::get(2595));
+				item->status = static_cast<Status>(item->status - 1);
+				if ( item->status != BROKEN )
+				{
+					messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_EQUIPMENT, Language::get(2595));
+				}
+				else
+				{
+					messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_EQUIPMENT, Language::get(2596));
+					consumeItem(item, player);
+				}
+
+				if ( stats[player] && stats[player]->playerRace == RACE_INSECTOID && stats[player]->stat_appearance == 0 )
+				{
+					steamStatisticUpdate(STEAM_STAT_BOOKWORM, STEAM_STAT_INT, 1);
+				}
 			}
-			else
+			else if ( itemCategory(item) == TOME_SPELL )
 			{
-				messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_EQUIPMENT, Language::get(2596));
+				messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_EQUIPMENT, Language::get(6852), items[item->type].getUnidentifiedName());
 				consumeItem(item, player);
 			}
-
-			if ( stats[player] && stats[player]->playerRace == RACE_INSECTOID && stats[player]->stat_appearance == 0 )
-			{
-				steamStatisticUpdate(STEAM_STAT_BOOKWORM, STEAM_STAT_INT, 1);
-			}
+			
 			if ( list_Size(&players[player]->magic.spellList) >= 20 )
 			{
 				steamAchievement("BARONY_ACH_MAGIC_MASTERY");
@@ -5485,6 +6261,7 @@ void item_FoodAutomaton(Item*& item, int player)
 
 	if ( multiplayer == CLIENT )
 	{
+		foodUseAbundanceEffect(item, player);
 		consumeItem(item, player);
 		return;
 	}
@@ -5516,6 +6293,7 @@ void item_FoodAutomaton(Item*& item, int player)
 		{
 			messagePlayer(player, MESSAGE_COMBAT | MESSAGE_STATUS, Language::get(910));
 		}
+		foodUseAbundanceEffect(item, player);
 		consumeItem(item, player);
 		return;
 	}
@@ -5545,9 +6323,19 @@ void item_FoodAutomaton(Item*& item, int player)
 		case FOOD_MEAT:
 		case FOOD_FISH:
 		case FOOD_TIN:
+		case FOOD_RATION:
+		case FOOD_RATION_SPICY:
+		case FOOD_RATION_SOUR:
+		case FOOD_RATION_BITTER:
+		case FOOD_RATION_HEARTY:
+		case FOOD_RATION_HERBAL:
+		case FOOD_RATION_SWEET:
+		case FOOD_SHROOM:
+		case FOOD_NUT:
 			if ( svFlags & SV_FLAG_HUNGER )
 			{
 				messagePlayer(player, MESSAGE_STATUS, Language::get(3697)); // no effect.
+				foodUseAbundanceEffect(item, player);
 				consumeItem(item, player);
 				return;
 			}
@@ -5572,6 +6360,7 @@ void item_FoodAutomaton(Item*& item, int player)
 		case GEM_DIAMOND:
 		case GEM_JETSTONE:
 		case GEM_OBSIDIAN:
+		case GEM_JEWEL:
 			stats[player]->HUNGER += 1000;
 			players[player]->entity->modMP(10);
 			break;
@@ -5616,7 +6405,7 @@ void item_FoodAutomaton(Item*& item, int player)
 			}
 
 			playSoundEntity(players[player]->entity, 153, 128); // "FireballExplode.ogg"
-			for ( int c = 0; c < 100; c++ )
+			for ( int c = 0; c < 25; c++ )
 			{
 				if ( Entity* entity = spawnFlame(players[player]->entity, SPRITE_FLAME) )
 				{
@@ -5628,6 +6417,22 @@ void item_FoodAutomaton(Item*& item, int player)
 					entity->skill[0] = 5 + local_rng.rand() % 10;
 				}
 			}
+
+			if ( Entity* fx = createParticleAestheticOrbit(players[player]->entity, 233, TICKS_PER_SECOND / 2, PARTICLE_EFFECT_IGNITE_ORBIT) )
+			{
+				fx->flags[SPRITE] = true;
+				fx->x = players[player]->entity->x;
+				fx->y = players[player]->entity->y;
+				fx->fskill[0] = fx->x;
+				fx->fskill[1] = fx->y;
+				fx->vel_z = -0.05;
+				fx->actmagicOrbitDist = 2;
+				fx->fskill[2] = players[player]->entity->yaw + (local_rng.rand() % 8) * PI / 4.0;
+				fx->yaw = fx->fskill[2];
+				fx->actmagicNoLight = 1;
+
+				serverSpawnMiscParticles(players[player]->entity, PARTICLE_EFFECT_FLAMES, 233, 0, fx->skill[0]);
+			}
 			break;
 		}
 		case TOOL_METAL_SCRAP:
@@ -5638,6 +6443,7 @@ void item_FoodAutomaton(Item*& item, int player)
 			if ( stats[player]->HUNGER > 500 )
 			{
 				messagePlayer(player, MESSAGE_STATUS, Language::get(3707)); // fails to add any more heat.
+				foodUseAbundanceEffect(item, player);
 				consumeItem(item, player);
 				return;
 			}
@@ -5655,6 +6461,7 @@ void item_FoodAutomaton(Item*& item, int player)
 			if ( stats[player]->HUNGER > 1100 )
 			{
 				messagePlayer(player, MESSAGE_STATUS, Language::get(3707)); // fails to add any more heat.
+				foodUseAbundanceEffect(item, player);
 				consumeItem(item, player);
 				return;
 			}
@@ -5691,6 +6498,7 @@ void item_FoodAutomaton(Item*& item, int player)
 				playSoundEntity(players[player]->entity, 28, 64);
 				players[player]->entity->modHP(-5);
 				messagePlayer(player, MESSAGE_WORLD, Language::get(908)); // blecch! rotten food!
+				foodUseAbundanceEffect(item, player);
 				consumeItem(item, player);
 				return;
 			}
@@ -5728,6 +6536,7 @@ void item_FoodAutomaton(Item*& item, int player)
 	}
 
 	serverUpdateHunger(player);
+	foodUseAbundanceEffect(item, player);
 	consumeItem(item, player);
 }
 
@@ -5744,6 +6553,15 @@ bool itemIsConsumableByAutomaton(const Item& item)
 		case FOOD_MEAT:
 		case FOOD_FISH:
 		case FOOD_TIN:
+		case FOOD_RATION:
+		case FOOD_RATION_SPICY:
+		case FOOD_RATION_SOUR:
+		case FOOD_RATION_BITTER:
+		case FOOD_RATION_HEARTY:
+		case FOOD_RATION_HERBAL:
+		case FOOD_RATION_SWEET:
+		case FOOD_SHROOM:
+		case FOOD_NUT:
 
 		case GEM_ROCK:
 		case GEM_GLASS:
@@ -5763,6 +6581,7 @@ bool itemIsConsumableByAutomaton(const Item& item)
 		case GEM_DIAMOND:
 		case GEM_JETSTONE:
 		case GEM_OBSIDIAN:
+		case GEM_JEWEL:
 
 		case READABLE_BOOK:
 

@@ -122,7 +122,7 @@ bool BookParser_t::readCompiledBooks()
 		File* fp = FileIO::open(compiledBooksPath.c_str(), "rb");
 		if ( fp )
 		{
-			char buf[MAX_FILE_LENGTH];
+			static char buf[MAX_FILE_LENGTH];
 			int count = fp->read(buf, sizeof(buf[0]), sizeof(buf));
 			buf[count] = '\0';
 			rapidjson::StringStream is(buf);
@@ -170,7 +170,7 @@ bool BookParser_t::booksRequireCompiling()
 		File* fp = FileIO::open(compiledBooksPath.c_str(), "rb");
 		if ( fp )
 		{
-			char buf[MAX_FILE_LENGTH];
+			static char buf[MAX_FILE_LENGTH];
 			int count = fp->read(buf, sizeof(buf[0]), sizeof(buf));
 			buf[count] = '\0';
 			rapidjson::StringStream is(buf);
@@ -335,7 +335,12 @@ void BookParser_t::readBooksIntoTemp()
 
 			char bookChar[PATH_MAX];
 			strncpy(bookChar, bookPath.c_str(), PATH_MAX - 1);
-			entry = readFile(bookChar);
+			char* tmp = readFile(bookChar);
+			if ( tmp )
+			{
+				entry = tmp;
+			}
+			free(tmp);
 		}
 	}
 	else
@@ -584,7 +589,12 @@ void BookParser_t::createBook(std::string filename)
 
 	char bookChar[PATH_MAX];
 	strncpy(bookChar, tempstr.c_str(), PATH_MAX - 1);
-	newBook.text = readFile(bookChar);
+	char* tmp = readFile(bookChar);
+	if ( tmp )
+	{
+		newBook.text = tmp;
+	}
+	free(tmp);
 	if ( newBook.text == "" )
 	{
 		printlog( "error opening book \"%s\".\n", tempstr.c_str());
