@@ -22,6 +22,7 @@ See LICENSE for details.
 #include "shops.hpp"
 #include "interface/ui.hpp"
 #include "ui/GameUI.hpp"
+#include "playfab.hpp"
 #endif
 #include "init.hpp"
 #include "ui/LoadingScreen.hpp"
@@ -833,7 +834,7 @@ void IRCHandler_t::handleMessage(std::string& msg)
 #endif // !NINTENDO
 
 Uint32 ItemTooltips_t::itemsJsonHashRead = 0;
-
+const Uint32 ItemTooltips_t::kItemsJsonHash = 1748555711;
 void ItemTooltips_t::readItemsFromFile()
 {
 	printlog("loading items...\n");
@@ -2987,6 +2988,19 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 					snprintf(buf, sizeof(buf), str.c_str(), items[item.type].attributes["EFF_PARALYZE"] / TICKS_PER_SECOND);
 				}
 			}
+			else if ( conditionalAttribute == "EFF_LIFESAVING" )
+			{
+				if ( item.type == AMULET_LIFESAVING )
+				{
+					real_t restore = 0.5;
+					if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+					{
+						restore += 0.5 * std::min(2, abs(item.beatitude));
+					}
+					restore *= 100.0;
+					snprintf(buf, sizeof(buf), str.c_str(), (int)restore);
+				}
+			}
 			else if ( conditionalAttribute == "EFF_BLEEDING" )
 			{
 				if ( item.type == TOOL_BEARTRAP )
@@ -3013,6 +3027,47 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 			{
 				int manaring = 1;
 				snprintf(buf, sizeof(buf), str.c_str(), manaring,
+					getItemEquipmentEffectsForIconText(conditionalAttribute).c_str());
+			}
+			else if ( conditionalAttribute == "EFF_CLOAK_GUARDIAN1" )
+			{
+				real_t res = 0.75;
+				if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+				{
+					res = std::max(0.25, 0.75 - 0.25 * (abs(item.beatitude)));
+				}
+				snprintf(buf, sizeof(buf), str.c_str(), (int)((100 - (int)(res * 100))),
+					getItemEquipmentEffectsForIconText(conditionalAttribute).c_str());
+			}
+			else if ( conditionalAttribute == "EFF_CLOAK_GUARDIAN2" )
+			{
+				real_t res = 0.5;
+				if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+				{
+					res = std::max(0.25, 0.5 - 0.25 * (abs(item.beatitude)));
+				}
+				snprintf(buf, sizeof(buf), str.c_str(), (int)((100 - (int)(res * 100))),
+					getItemEquipmentEffectsForIconText(conditionalAttribute).c_str());
+			}
+			else if ( conditionalAttribute == "EFF_MARIGOLD1"
+				|| conditionalAttribute == "EFF_MARIGOLD1_HUNGER" )
+			{
+				int foodMod = (svFlags & SV_FLAG_HUNGER) ? 5 : 3;
+				if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+				{
+					foodMod += 3 * std::min(2, (int)abs(item.beatitude));
+				}
+				snprintf(buf, sizeof(buf), str.c_str(), foodMod,
+					getItemEquipmentEffectsForIconText(conditionalAttribute).c_str());
+			}
+			else if ( conditionalAttribute == "EFF_RING_RESOLVE" )
+			{
+				int effect = 10;
+				if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+				{
+					effect += 10 * std::min(2, (int)abs(item.beatitude));
+				}
+				snprintf(buf, sizeof(buf), str.c_str(), effect,
 					getItemEquipmentEffectsForIconText(conditionalAttribute).c_str());
 			}
 			else if ( conditionalAttribute == "EFF_COLDRESIST" )
@@ -8528,6 +8583,11 @@ void GameplayPreferences_t::process()
 		}
 	}
 
+	if ( player < 0 || player >= MAXPLAYERS )
+	{
+		return;
+	}
+
 	if ( players[player]->isLocalPlayer() )
 	{
 		int index = 0;
@@ -8540,6 +8600,37 @@ void GameplayPreferences_t::process()
 					break;
 				case GPREF_COLORBLIND:
 					pref.set(colorblind ? 1 : 0);
+					break;
+				case GPREF_VOICE_NO_RECV:
+					// we don't have voice receive volume set, drop packets
+#ifdef USE_FMOD
+					pref.set(((!VoiceChat.useSystem || !VoiceChat.getAudioSettingBool(VoiceChat_t::AudioSettingBool::VOICE_SETTING_ENABLE_VOICE_RECEIVE)) ? 1 : 0) << player);
+#else
+					pref.set(1 << player);
+#endif
+					break;
+				case GPREF_VOICE_NO_SEND:
+					// we don't have voice input device or otherwise don't want to use it
+#ifdef USE_FMOD
+					pref.set(((!VoiceChat.useSystem || !VoiceChat.bRecordingInit
+						|| (VoiceChat.mainMenuAudioTabOpen()
+							&& VoiceChat.getAudioSettingBool(VoiceChat_t::AudioSettingBool::VOICE_SETTING_LOOPBACK_LOCAL_RECORD))
+						|| !VoiceChat.getAudioSettingBool(VoiceChat_t::AudioSettingBool::VOICE_SETTING_ENABLE_VOICE_INPUT) 
+							|| !VoiceChat.getAudioSettingBool(VoiceChat_t::AudioSettingBool::VOICE_SETTING_ENABLE_VOICE_RECEIVE)) ? 1 : 0) << player);
+#elif defined(NINTENDO)
+					pref.set(1 << player);
+#else				
+					pref.set(1 << player);
+#endif
+					break;
+				case GPREF_VOICE_PTT:
+#ifdef USE_FMOD
+					pref.set((VoiceChat.getAudioSettingBool(VoiceChat_t::AudioSettingBool::VOICE_SETTING_PUSHTOTALK) ? 1 : 0) << player);
+#else
+					pref.set(1 << player);
+#endif
+
+					break;
 				default:
 					break;
 			}
@@ -8794,6 +8885,105 @@ void GameplayPreferences_t::serverProcessGameConfig()
 						}
 					}
 				}
+				break;
+			}
+			case GOPT_VOICE_NO_RECV:
+			{
+				int oldValue = getGameConfigValue(GameConfigIndexes(pref));
+
+				for ( int i = 0; i < MAXPLAYERS; ++i )
+				{
+					if ( !client_disconnected[i] && gameplayPreferences[i].isInit )
+					{
+						value |= gameplayPreferences[i].preferences[GPREF_VOICE_NO_RECV].value;
+					}
+				}
+				/*if ( value != oldValue )
+				{
+					if ( multiplayer == SERVER )
+					{
+						for ( int i = 0; i < MAXPLAYERS; ++i )
+						{
+							if ( !client_disconnected[i] )
+							{
+								if ( value != 0 )
+								{
+									messagePlayer(i, MESSAGE_HINT, Language::get(4342));
+								}
+								else
+								{
+									messagePlayer(i, MESSAGE_HINT, Language::get(4343));
+								}
+							}
+						}
+					}
+				}*/
+				break;
+			}
+			case GOPT_VOICE_NO_SEND:
+			{
+				int oldValue = getGameConfigValue(GameConfigIndexes(pref));
+
+				for ( int i = 0; i < MAXPLAYERS; ++i )
+				{
+					if ( !client_disconnected[i] && gameplayPreferences[i].isInit )
+					{
+						value |= gameplayPreferences[i].preferences[GPREF_VOICE_NO_SEND].value;
+					}
+				}
+				/*if ( value != oldValue )
+				{
+					if ( multiplayer == SERVER )
+					{
+						for ( int i = 0; i < MAXPLAYERS; ++i )
+						{
+							if ( !client_disconnected[i] )
+							{
+								if ( value != 0 )
+								{
+									messagePlayer(i, MESSAGE_HINT, Language::get(4342));
+								}
+								else
+								{
+									messagePlayer(i, MESSAGE_HINT, Language::get(4343));
+								}
+							}
+						}
+					}
+				}*/
+				break;
+			}
+			case GOPT_VOICE_PTT:
+			{
+				int oldValue = getGameConfigValue(GameConfigIndexes(pref));
+
+				for ( int i = 0; i < MAXPLAYERS; ++i )
+				{
+					if ( !client_disconnected[i] && gameplayPreferences[i].isInit )
+					{
+						value |= gameplayPreferences[i].preferences[GPREF_VOICE_PTT].value;
+					}
+				}
+				/*if ( value != oldValue )
+				{
+					if ( multiplayer == SERVER )
+					{
+						for ( int i = 0; i < MAXPLAYERS; ++i )
+						{
+							if ( !client_disconnected[i] )
+							{
+								if ( value != 0 )
+								{
+									messagePlayer(i, MESSAGE_HINT, Language::get(4342));
+								}
+								else
+								{
+									messagePlayer(i, MESSAGE_HINT, Language::get(4343));
+								}
+							}
+						}
+					}
+				}*/
 				break;
 			}
 			default:
@@ -13621,7 +13811,7 @@ std::vector<std::pair<std::string, Sint32>> Compendium_t::Events_t::getCustomEve
 											{
 												if ( specificClass >= 0 )
 												{
-													if ( classId.first != specificClass )
+													if ( (classId.first % kEventClassesMax) != specificClass )
 													{
 														continue;
 													}
@@ -15130,6 +15320,9 @@ void Compendium_t::Events_t::onLevelChangeEvent(const int playernum, const int p
 					if ( prevlevel == 4 )
 					{
 						eventUpdateWorld(playernum, Compendium_t::CPDM_LEVELS_BIOME_CLEAR, "mines", 1);
+#ifdef USE_PLAYFAB
+						playfabUser.biomeLeave();
+#endif
 						commitUniqueValue = true; // commit at end of biome to save to file
 					}
 					eventUpdateWorld(playernum, Compendium_t::CPDM_BIOMES_MIN_COMPLETION, "mines", 
@@ -15144,6 +15337,9 @@ void Compendium_t::Events_t::onLevelChangeEvent(const int playernum, const int p
 					if ( prevlevel == 9 )
 					{
 						eventUpdateWorld(playernum, Compendium_t::CPDM_LEVELS_BIOME_CLEAR, "swamps", 1);
+#ifdef USE_PLAYFAB
+						playfabUser.biomeLeave();
+#endif
 						commitUniqueValue = true; // commit at end of biome to save to file
 					}
 					eventUpdateWorld(playernum, Compendium_t::CPDM_BIOMES_MIN_COMPLETION, "swamps",
@@ -15158,6 +15354,9 @@ void Compendium_t::Events_t::onLevelChangeEvent(const int playernum, const int p
 					if ( prevlevel == 14 )
 					{
 						eventUpdateWorld(playernum, Compendium_t::CPDM_LEVELS_BIOME_CLEAR, "labyrinth", 1);
+#ifdef USE_PLAYFAB
+						playfabUser.biomeLeave();
+#endif
 						commitUniqueValue = true; // commit at end of biome to save to file
 					}
 					eventUpdateWorld(playernum, Compendium_t::CPDM_BIOMES_MIN_COMPLETION, "labyrinth",
@@ -15172,6 +15371,9 @@ void Compendium_t::Events_t::onLevelChangeEvent(const int playernum, const int p
 					if ( prevlevel == 19 )
 					{
 						eventUpdateWorld(playernum, Compendium_t::CPDM_LEVELS_BIOME_CLEAR, "ruins", 1);
+#ifdef USE_PLAYFAB
+						playfabUser.biomeLeave();
+#endif
 						commitUniqueValue = true; // commit at end of biome to save to file
 					}
 					eventUpdateWorld(playernum, Compendium_t::CPDM_BIOMES_MIN_COMPLETION, "ruins",
@@ -15190,6 +15392,9 @@ void Compendium_t::Events_t::onLevelChangeEvent(const int playernum, const int p
 					if ( prevlevel == 23 )
 					{
 						eventUpdateWorld(playernum, Compendium_t::CPDM_LEVELS_BIOME_CLEAR, "hell", 1);
+#ifdef USE_PLAYFAB
+						playfabUser.biomeLeave();
+#endif
 						commitUniqueValue = true; // commit at end of biome to save to file
 					}
 					eventUpdateWorld(playernum, Compendium_t::CPDM_BIOMES_MIN_COMPLETION, "hell",
@@ -15212,6 +15417,9 @@ void Compendium_t::Events_t::onLevelChangeEvent(const int playernum, const int p
 					if ( prevlevel == 29 )
 					{
 						eventUpdateWorld(playernum, Compendium_t::CPDM_LEVELS_BIOME_CLEAR, "crystal caves", 1);
+#ifdef USE_PLAYFAB
+						playfabUser.biomeLeave();
+#endif
 						commitUniqueValue = true; // commit at end of biome to save to file
 					}
 					eventUpdateWorld(playernum, Compendium_t::CPDM_BIOMES_MIN_COMPLETION, "crystal caves",
@@ -15226,6 +15434,9 @@ void Compendium_t::Events_t::onLevelChangeEvent(const int playernum, const int p
 					if ( prevlevel == 34 )
 					{
 						eventUpdateWorld(playernum, Compendium_t::CPDM_LEVELS_BIOME_CLEAR, "arcane citadel", 1);
+#ifdef USE_PLAYFAB
+						playfabUser.biomeLeave();
+#endif
 						commitUniqueValue = true; // commit at end of biome to save to file
 					}
 					eventUpdateWorld(playernum, Compendium_t::CPDM_BIOMES_MIN_COMPLETION, "arcane citadel",
@@ -16325,6 +16536,7 @@ void Compendium_t::readModelLimbsFromFile(std::string section)
 		std::string path = PHYSFS_getRealDir(inputPath.c_str()) ? PHYSFS_getRealDir(inputPath.c_str()) : "";
 		if ( path != "" )
 		{
+			path += PHYSFS_getDirSeparator();
 			inputPath = path + inputPath;
 			File* fp = FileIO::open(inputPath.c_str(), "rb");
 			if ( !fp )
@@ -17149,9 +17361,9 @@ std::vector<Sint32> Compendium_t::CompendiumMonsters_t::Monster_t::getDisplaySta
 				statMax = hp[1];
 			}
 
-			int statIncrease = ((abs(statMin) / 20) * 20);
+			int statIncrease = ((abs(statMin) / 20 + 1) * 20);
 			statMin += statIncrease - (statIncrease / 5);
-			statIncrease = ((abs(statMax) / 20) * 20);
+			statIncrease = ((abs(statMax) / 20 + 1) * 20);
 			statMax += statIncrease;
 			retVal.push_back(statMin);
 			if ( statMax != statMin )
@@ -17175,9 +17387,9 @@ std::vector<Sint32> Compendium_t::CompendiumMonsters_t::Monster_t::getDisplaySta
 				statMax = spd[1];
 			}
 
-			int statIncrease = std::min((abs(statMin) / 4) * 1, 8);
+			int statIncrease = std::min((abs(statMin) / 4 + 1) * 1, 8);
 			statMin += statIncrease - (statIncrease / 2);
-			statIncrease = std::min((abs(statMax) / 4) * 1, 8);
+			statIncrease = std::min((abs(statMax) / 4 + 1) * 1, 8);
 			statMax += statIncrease;
 			retVal.push_back(statMin);
 			if ( statMax != statMin )
@@ -17208,9 +17420,9 @@ std::vector<Sint32> Compendium_t::CompendiumMonsters_t::Monster_t::getDisplaySta
 			}
 		}
 
-		int statIncrease = (abs(statMin) / 5) * 1;
+		int statIncrease = (abs(statMin) / 5 + 1) * 1;
 		int minIncrease = statIncrease - (statIncrease / 2);
-		statIncrease = (abs(statMax) / 5) * 1;
+		statIncrease = (abs(statMax) / 5 + 1) * 1;
 		int maxIncrease = statIncrease;
 
 		if ( ac.size() > 0 )
@@ -17254,9 +17466,9 @@ std::vector<Sint32> Compendium_t::CompendiumMonsters_t::Monster_t::getDisplaySta
 			}
 		}
 
-		int statIncrease = (abs(statMin) / 5) * 5;
+		int statIncrease = (abs(statMin) / 5 + 1) * 5;
 		int minIncrease = statIncrease - (statIncrease / 4);
-		statIncrease = (abs(statMax) / 5) * 5;
+		statIncrease = (abs(statMax) / 5 + 1) * 5;
 		int maxIncrease = statIncrease;
 
 		if ( atk.size() > 0 )
@@ -17291,9 +17503,9 @@ std::vector<Sint32> Compendium_t::CompendiumMonsters_t::Monster_t::getDisplaySta
 		{
 			Sint32 statMinDEX = stats.DEX;
 			Sint32 statMaxDEX = stats.DEX + stats.RANDOM_DEX;
-			int statIncrease = std::min((abs(statMinDEX) / 4) * 1, 8);
+			int statIncrease = std::min((abs(statMinDEX) / 4 + 1) * 1, 8);
 			int minIncrease = (statIncrease / 2);
-			statIncrease = std::min((abs(statMaxDEX) / 4) * 1, 8);
+			statIncrease = std::min((abs(statMaxDEX) / 4 + 1) * 1, 8);
 			int maxIncrease = statIncrease;
 
 			statMinIncrease += minIncrease;
@@ -17302,9 +17514,9 @@ std::vector<Sint32> Compendium_t::CompendiumMonsters_t::Monster_t::getDisplaySta
 		{
 			Sint32 statMinPER = stats.PER;
 			Sint32 statMaxPER = stats.PER + stats.RANDOM_PER;
-			int statIncrease = (abs(statMinPER) / 5) * 5;
+			int statIncrease = (abs(statMinPER) / 5 + 1) * 5;
 			int minIncrease = statIncrease - (statIncrease / 4);
-			statIncrease = (abs(statMaxPER) / 5) * 5;
+			statIncrease = (abs(statMaxPER) / 5 + 1) * 5;
 			int maxIncrease = statIncrease;
 
 			statMinIncrease += minIncrease;

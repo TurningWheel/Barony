@@ -1967,6 +1967,7 @@ void gameLogic(void)
 					{
 						soundNotification_group->stop();
 					}
+					VoiceChat.deinitRecording(false);
 #elif defined USE_OPENAL
 					if ( sound_group )
 					{
@@ -5762,6 +5763,7 @@ void ingameHud()
 		players[player]->inventoryUI.processInventory();
 		GenericGUI[player].tinkerGUI.updateTinkerMenu();
 		GenericGUI[player].alchemyGUI.updateAlchemyMenu();
+		GenericGUI[player].assistShrineGUI.updateAssistShrine();
 		GenericGUI[player].featherGUI.updateFeatherMenu();
 		GenericGUI[player].itemfxGUI.updateItemEffectMenu();
 		players[player]->GUI.dropdownMenu.process();
@@ -7797,6 +7799,10 @@ int main(int argc, char** argv)
 		if ( !load_successful ) {
 			skipintro = true;
 		}
+
+		// if alt+f4 or closing window suddenly this will restore flags to lobby settings
+		gameModeManager.currentSession.restoreSavedServerFlags();
+
 		saveConfig("default.cfg");
 		MainMenu::settingsMount(false);
 		(void)MainMenu::settingsSave();

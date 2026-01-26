@@ -106,8 +106,11 @@ void initGameDatafiles(bool moddedReload)
 	CompendiumEntries.readMagicTranslationsFromFile();
 	Compendium_t::AchievementData_t::readContentsLang();
 	Compendium_t::Events_t::readEventsTranslations();
-	Compendium_t::readUnlocksSaveData();
-	Compendium_t::Events_t::loadItemsSaveData();
+	if ( !moddedReload )
+	{
+		Compendium_t::readUnlocksSaveData();
+		Compendium_t::Events_t::loadItemsSaveData();
+	}
 	CompendiumEntries.readModelLimbsFromFile("monster");
 	CompendiumEntries.readModelLimbsFromFile("world");
 	CompendiumEntries.readModelLimbsFromFile("codex");
@@ -404,6 +407,12 @@ int initGame()
 #ifdef LOCAL_ACHIEVEMENTS
 		LocalAchievements.readFromFile();
 #endif
+
+#ifndef EDITOR
+#ifdef USE_FMOD
+		VoiceChat.init();
+#endif
+#endif
 #ifdef NINTENDO
 		nxPostSDLInit();
 #endif
@@ -675,6 +684,15 @@ void deinitGame()
 #ifdef USE_OPENAL
 #undef FMOD_Channel_Stop
 #undef FMOD_Sound_Release
+#endif
+#endif
+
+#ifdef USE_FMOD
+#ifndef EDITOR
+	VoiceChat.deinit();
+#ifdef USE_OPUS
+	OpusAudioCodec.deinit();
+#endif
 #endif
 #endif
 

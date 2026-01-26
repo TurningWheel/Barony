@@ -2619,7 +2619,7 @@ public:
 		{
 #ifndef EDITOR
 			achievementObserver.updateGlobalStat(
-				std::min(STEAM_GSTAT_TUTORIAL1_ATTEMPTS - 1 + levelNum, static_cast<int>(STEAM_GSTAT_TUTORIAL10_ATTEMPTS)));
+				std::min(STEAM_GSTAT_TUTORIAL1_ATTEMPTS - 1 + levelNum, static_cast<int>(STEAM_GSTAT_TUTORIAL10_ATTEMPTS)), -1);
 #endif // !EDITOR
 		}
 
@@ -2839,7 +2839,7 @@ public:
 		void setColorFaintText(Uint32 color) { faintTextColor = color; }
 	};
 	void readItemsFromFile();
-	static const Uint32 kItemsJsonHash = 2419644190;
+	static const Uint32 kItemsJsonHash;
 	static Uint32 itemsJsonHashRead;
 	void readItemLocalizationsFromFile(bool forceLoadBaseDirectory = false);
 	void readTooltipsFromFile(bool forceLoadBaseDirectory = false);
@@ -3271,6 +3271,9 @@ public:
 	{
 		GPREF_ARACHNOPHOBIA = 0,
 		GPREF_COLORBLIND,
+		GPREF_VOICE_NO_SEND,
+		GPREF_VOICE_NO_RECV,
+		GPREF_VOICE_PTT,
 		GPREF_ENUM_END
 	};
 	struct GameplayPreference_t
@@ -3301,6 +3304,9 @@ public:
 	{
 		GOPT_ARACHNOPHOBIA = 0,
 		GOPT_COLORBLIND,
+		GOPT_VOICE_NO_SEND,
+		GOPT_VOICE_NO_RECV,
+		GOPT_VOICE_PTT,
 		GOPT_ENUM_END
 	};
 	static GameplayPreference_t gameConfig[GOPT_ENUM_END];

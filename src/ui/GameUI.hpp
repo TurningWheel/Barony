@@ -85,6 +85,7 @@ extern ConsoleVariable<bool> shareMinimap;
 extern Frame::result_t framesProcResult;
 extern ConsoleVariable<bool> framesEatMouse;
 
+Frame* createPauseMenuPlayerBars();
 void openMinimap(int player);
 
 struct StatusEffectQueueEntry_t
@@ -176,6 +177,7 @@ struct StatusEffectQueue_t
 	static const int kEffectBountyTarget;
 	static const int kEffectInspiration;
 	static const int kEffectRetaliation;
+	static const int kEffectAssistance;
 	
 	Frame* statusEffectFrame = nullptr;
 	Frame* statusEffectTooltipFrame = nullptr;

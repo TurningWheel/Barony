@@ -834,6 +834,7 @@ void steamAchievement(const char* achName)
 		if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] 
 			|| conductGameChallenges[CONDUCT_LIFESAVING]
 			|| conductGameChallenges[CONDUCT_MODDED_NO_ACHIEVEMENTS]
+			|| conductGameChallenges[CONDUCT_ASSISTANCE_CLAIMED] >= GenericGUIMenu::AssistShrineGUI_t::achievementDisabledLimit
 			|| Mods::disableSteamAchievements )
 		{
 		// cheats/mods have been enabled on savefile, disallow achievements.
@@ -979,6 +980,7 @@ void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value)
 		}
 		if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED]
 			|| conductGameChallenges[CONDUCT_LIFESAVING]
+			|| conductGameChallenges[CONDUCT_ASSISTANCE_CLAIMED] >= GenericGUIMenu::AssistShrineGUI_t::achievementDisabledLimit
 			|| conductGameChallenges[CONDUCT_MODDED_NO_ACHIEVEMENTS]
 			|| Mods::disableSteamAchievements )
 		{
@@ -1212,7 +1214,7 @@ void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value)
 						std::min(g_SteamStats[statisticNum].m_iValue, steamStatAchStringsAndMaxVals[statisticNum].second);
 					if ( oldValue == 0 )
 					{
-						achievementObserver.updateGlobalStat(STEAM_GSTAT_TUTORIAL_ENTERED);
+						achievementObserver.updateGlobalStat(STEAM_GSTAT_TUTORIAL_ENTERED, -1);
 					}
 					indicateProgress = false;
 					break;
@@ -1278,6 +1280,7 @@ void steamStatisticUpdateClient(int player, int statisticNum, ESteamStatTypes ty
 		if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] 
 			|| conductGameChallenges[CONDUCT_LIFESAVING]
 			|| conductGameChallenges[CONDUCT_MODDED_NO_ACHIEVEMENTS]
+			|| conductGameChallenges[CONDUCT_ASSISTANCE_CLAIMED] >= GenericGUIMenu::AssistShrineGUI_t::achievementDisabledLimit
 			|| Mods::disableSteamAchievements )
 		{
 			// cheats/mods have been enabled on savefile, disallow statistics update.

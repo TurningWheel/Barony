@@ -431,6 +431,22 @@ bool isAchievementUnlockedForClassUnlock(int race)
 	return false;
 }
 
+int isCharacterValidFromDLC(int player, int characterClass, int race, int appearance)
+{
+	if ( player < 0 || player >= MAXPLAYERS )
+	{
+		return INVALID_CHARACTER;
+	}
+	auto oldAppearance = stats[player]->stat_appearance;
+	auto oldRace = stats[player]->playerRace;
+	stats[player]->stat_appearance = appearance;
+	stats[player]->playerRace = race;
+	auto result = isCharacterValidFromDLC(*stats[player], characterClass);
+	stats[player]->stat_appearance = oldAppearance;
+	stats[player]->playerRace = oldRace;
+	return result;
+}
+
 int isCharacterValidFromDLC(Stat& myStats, int characterClass)
 {
 	bool challengeClass = false;
@@ -8493,6 +8509,7 @@ void doNewGame(bool makeHighscore) {
 				{
 					playfabUser.postScore(clientnum);
 				}
+				playfabUser.gameEnd();
 #endif
             }
             saveAllScores(SCORESFILE);
@@ -8615,6 +8632,7 @@ void doNewGame(bool makeHighscore) {
 		svFlags &= ~(SV_FLAG_HARDCORE);
 		svFlags &= ~(SV_FLAG_CHEATS);
 		svFlags &= ~(SV_FLAG_LIFESAVING);
+		svFlags &= ~(SV_FLAG_ASSIST_ITEMS);
 		svFlags &= ~(SV_FLAG_CLASSIC);
 		svFlags &= ~(SV_FLAG_KEEPINVENTORY);
 		svFlags |= SV_FLAG_HUNGER;
@@ -8762,6 +8780,7 @@ void doNewGame(bool makeHighscore) {
 		{
 			soundNotification_group->stop();
 		}
+		VoiceChat.deinitRecording(false);
 #elif defined USE_OPENAL
 		if ( sound_group )
 		{
@@ -8809,11 +8828,19 @@ void doNewGame(bool makeHighscore) {
 					secretlevel = true;
 				}
 			}
+			for ( int c = 0; c < MAXPLAYERS; ++c ) {
+				GenericGUI[c].assistShrineGUI.resetSavedCharacterChanges();
+			}
 		} else {
 			for (int c = 0; c < MAXPLAYERS; ++c) {
 				if (!client_disconnected[c]) {
+					GenericGUI[c].assistShrineGUI.onGameStart();
 					stats[c]->clearStats();
 					initClass(c);
+				}
+				else
+				{
+					GenericGUI[c].assistShrineGUI.resetSavedCharacterChanges();
 				}
 			}
 		}
@@ -9169,6 +9196,7 @@ void doNewGame(bool makeHighscore) {
 		if ( !loadingsavegame )
 		{
 			for (int c = 0; c < MAXPLAYERS; ++c) {
+				GenericGUI[c].assistShrineGUI.onGameStart();
 				stats[c]->clearStats();
 				initClass(c);
 			}
@@ -9196,6 +9224,9 @@ void doNewGame(bool makeHighscore) {
 					secretlevel = true;
 				}
 			}
+			for ( int c = 0; c < MAXPLAYERS; ++c ) {
+				GenericGUI[c].assistShrineGUI.resetSavedCharacterChanges();
+			}
 		}
 
 		players[clientnum]->hud.resetBars();
@@ -9222,6 +9253,7 @@ void doNewGame(bool makeHighscore) {
 		{
 			soundNotification_group->stop();
 		}
+		VoiceChat.deinitRecording(false);
 #elif defined USE_OPENAL
 		if ( sound_group )
 		{
@@ -9572,6 +9604,7 @@ void doEndgameOnDisconnect()
 	}
 	for ( int c = 0; c < MAXPLAYERS; ++c ) {
 		cameras[c].vang = 0;
+		GenericGUI[c].assistShrineGUI.onMainMenuEnd();
 	}
 	numplayers = 0;
 	assignActions(&map);
@@ -9637,7 +9670,7 @@ void doEndgame(bool saveHighscore, bool onServerDisconnect) {
 			{
 				conductGameChallenges[CONDUCT_BOOTS_SPEED] = 1;
 			}
-			achievementObserver.updateGlobalStat(STEAM_GSTAT_GAMES_WON);
+			achievementObserver.updateGlobalStat(STEAM_GSTAT_GAMES_WON, clientnum);
 
 			for ( int c = 0; c < MAXPLAYERS; ++c )
 			{
@@ -9697,6 +9730,7 @@ void doEndgame(bool saveHighscore, bool onServerDisconnect) {
 			{
 				playfabUser.postScore(clientnum);
 			}
+			playfabUser.gameEnd();
 #endif
         }
         saveAllScores(SCORESFILE);
@@ -9726,6 +9760,7 @@ void doEndgame(bool saveHighscore, bool onServerDisconnect) {
 	{
 		soundNotification_group->stop();
 	}
+	VoiceChat.deinitRecording(true);
 #elif defined USE_OPENAL
 	if ( sound_group )
 	{
@@ -10141,6 +10176,7 @@ void doEndgame(bool saveHighscore, bool onServerDisconnect) {
 	Compendium_t::Events_t::clientReceiveData.clear();
 	for ( int c = 0; c < MAXPLAYERS; ++c )
 	{
+		GenericGUI[c].assistShrineGUI.onMainMenuEnd();
 		Compendium_t::Events_t::clientDataStrings[c].clear();
 		players[c]->compendiumProgress.itemEvents.clear();
 		players[c]->compendiumProgress.floorEvents.clear();

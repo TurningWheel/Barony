@@ -945,25 +945,25 @@ Sint32 itemModel(const Item* const item, bool shortModel)
 		if ( colorblind_lobby )
 		{
 			int playerOwner = item->getLootBagPlayer();
-			Uint32 index = 4;
+			Uint32 playerIndex = 4;
 			switch ( playerOwner )
 			{
 			case 0:
-				index = 2;
+				playerIndex = 2;
 				break;
 			case 1:
-				index = 3;
+				playerIndex = 3;
 				break;
 			case 2:
-				index = 1;
+				playerIndex = 1;
 				break;
 			case 3:
-				index = 4;
+				playerIndex = 4;
 				break;
 			default:
 				break;
 			}
-			return index + index;
+			return index + playerIndex;
 		}
 		else
 		{
@@ -2316,6 +2316,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		case ARTIFACT_CLOAK:
 		case CLOAK_BACKPACK:
 		case CLOAK_SILVER:
+		case CLOAK_GUARDIAN:
 			equipItemResult = equipItem(item, &stats[player]->cloak, player, checkInventorySpaceForPaperDoll);
 			break;
 		case LEATHER_BOOTS:
@@ -2623,6 +2624,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		case RING_LEVITATION:
 		case RING_REGENERATION:
 		case RING_TELEPORTATION:
+		case RING_RESOLVE:
 			equipItemResult = equipItem(item, &stats[player]->ring, player, checkInventorySpaceForPaperDoll);
 			break;
 		case SPELLBOOK_FORCEBOLT:
@@ -2754,6 +2756,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		case MASK_EYEPATCH:
 		case MASK_MASQUERADE:
 		case MASK_MOUTH_ROSE:
+		case MASK_MARIGOLD:
 		case MASK_GOLDEN:
 		case MASK_SPOOKY:
 		case MASK_TECH_GOGGLES:

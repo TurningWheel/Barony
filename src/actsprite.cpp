@@ -71,23 +71,30 @@ void actSpriteNametag(Entity* my)
 	Entity* parent = uidToEntity(my->parent);
 	if ( parent )
 	{
+        my->flags[INVISIBLE] = false;
 		if ( hide_playertags )
 		{
-            my->flags[INVISIBLE] = true;
+			if ( my->skill[3] == 0 )
+			{
+				my->skill[3] = 1; // keep track but don't draw for voice icons
+			}
 		}
 		else
 		{
-            my->flags[INVISIBLE] = false;
-            my->x = parent->x;
-            my->y = parent->y;
-            my->z = parent->z - 6;
-			if ( parent->getMonsterTypeFromSprite() == SLIME )
+			if ( my->skill[3] == 1 )
 			{
-				my->z -= 3.0;
-				if ( parent->monsterAttack == MONSTER_POSE_MAGIC_WINDUP2 )
-				{
-					my->z += parent->focalz / 2;
-				}
+				my->skill[3] = 0;
+			}
+		}
+        my->x = parent->x;
+        my->y = parent->y;
+        my->z = parent->z - 6;
+		if ( parent->getMonsterTypeFromSprite() == SLIME )
+		{
+			my->z -= 3.0;
+			if ( parent->monsterAttack == MONSTER_POSE_MAGIC_WINDUP2 )
+			{
+				my->z += parent->focalz / 2;
 			}
 		}
 	}

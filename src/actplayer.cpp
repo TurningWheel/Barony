@@ -1253,6 +1253,72 @@ bool Player::Ghost_t::gameoverOnDismiss(const int player)
 	return false;
 }
 
+Entity* Player::Ghost_t::respawn()
+{
+	if ( !player.isLocalPlayer() )
+	{
+		return nullptr;
+	}
+
+	if ( player.ghost.my )
+	{
+		player.ghost.setActive(false);
+		list_RemoveNode(player.ghost.my->mynode);
+		player.ghost.my = nullptr;
+	}
+
+	if ( multiplayer != CLIENT )
+	{
+		Entity* entity = newEntity(113, 1, map.entities, nullptr); //Player entity.
+		entity->x = spawnX * 16.0 + 8;
+		entity->y = spawnY * 16.0 + 8;
+		entity->z = -1;
+		entity->flags[INVISIBLE] = false;
+		entity->flags[GENIUS] = true;
+		entity->behavior = &actPlayer;
+		entity->skill[2] = player.playernum;
+		entity->focalx = limbs[HUMAN][0][0]; // 0
+		entity->focaly = limbs[HUMAN][0][1]; // 0
+		entity->focalz = limbs[HUMAN][0][2]; // -1.5
+		entity->sizex = 4;
+		entity->sizey = 4;
+		entity->yaw = 0.0;
+		entity->addToCreatureList(map.creatures);
+		if ( player.playernum == clientnum && multiplayer == CLIENT )
+		{
+			entity->flags[UPDATENEEDED] = false;
+		}
+		else
+		{
+			entity->flags[UPDATENEEDED] = true;
+		}
+		entity->flags[BLOCKSIGHT] = true;
+		players[player.playernum]->entity = entity;
+		stats[player.playernum]->HP = stats[player.playernum]->MAXHP / 2;
+		player.ghost.reset();
+		return entity;
+	}
+
+	if ( multiplayer == CLIENT )
+	{
+		strcpy((char*)net_packet->data, "REZZ");
+		net_packet->data[4] = player.playernum;
+		net_packet->data[5] = currentlevel;
+
+		int x = (spawnX);
+		int y = (spawnY);
+		SDLNet_Write16((Sint16)(x), &net_packet->data[6]);
+		SDLNet_Write16((Sint16)(y), &net_packet->data[8]);
+		net_packet->data[10] = secretlevel;
+		net_packet->address.host = net_server.host;
+		net_packet->address.port = net_server.port;
+		net_packet->len = 11;
+		sendPacketSafe(net_sock, -1, net_packet, 0);
+		player.ghost.reset();
+	}
+	return nullptr;
+}
+
 Entity* Player::Ghost_t::spawnGhost()
 {
 	if ( !player.isLocalPlayer() )
@@ -1659,6 +1725,28 @@ void actDeathGhost(Entity* my)
 		node->deconstructor = &emptyDeconstructor;
 		node->size = sizeof(Entity*);
 		my->bodyparts.push_back(entity);
+
+		// nametag (for voice)
+		Entity* nametag = newEntity(-1, 1, map.entities, nullptr);
+		nametag->x = my->x;
+		nametag->y = my->y;
+		nametag->z = my->z - 6;
+		nametag->sizex = 1;
+		nametag->sizey = 1;
+		nametag->flags[NOUPDATE] = true;
+		nametag->flags[PASSABLE] = true;
+		nametag->flags[SPRITE] = true;
+		nametag->flags[UNCLICKABLE] = true;
+		nametag->flags[BRIGHT] = true;
+		nametag->behavior = &actSpriteNametag;
+		nametag->parent = my->getUID();
+		nametag->scalex = 0.2;
+		nametag->scaley = 0.2;
+		nametag->scalez = 0.2;
+		nametag->ditheringDisabled = true;
+		nametag->skill[0] = GHOSTCAM_PLAYERNUM;
+		nametag->skill[1] = playerColor(GHOSTCAM_PLAYERNUM, colorblind_lobby, false);
+		nametag->skill[3] = 2; // mode 2 doesn't draw but keeps position
 
 		if ( multiplayer == SERVER )
 		{
@@ -2184,7 +2272,7 @@ void actDeathCam(Entity* my)
 	}
 	else if ( DEATHCAM_TIME < deathcamGameoverPromptTicks )
 	{
-		if ( players[DEATHCAM_PLAYERNUM]->ghost.isActive() )
+		if ( players[DEATHCAM_PLAYERNUM]->ghost.isActive() || players[DEATHCAM_PLAYERNUM]->entity )
 		{
 			DEATHCAM_DISABLE_GAMEOVER = 1;
 		}
@@ -2195,7 +2283,8 @@ void actDeathCam(Entity* my)
 		{
 			gameModeManager.Tutorial.openGameoverWindow();
 		}
-		else if ( !players[DEATHCAM_PLAYERNUM]->ghost.isActive() && DEATHCAM_DISABLE_GAMEOVER == 0 )
+		else if ( !(players[DEATHCAM_PLAYERNUM]->ghost.isActive() || players[DEATHCAM_PLAYERNUM]->entity) 
+			&& DEATHCAM_DISABLE_GAMEOVER == 0 )
 		{
 			MainMenu::openGameoverWindow(DEATHCAM_PLAYERNUM);
 		}
@@ -2211,7 +2300,7 @@ void actDeathCam(Entity* my)
 	}
 
 	bool shootmode = players[DEATHCAM_PLAYERNUM]->shootmode;
-	if ( shootmode && !gamePaused && !players[DEATHCAM_PLAYERNUM]->ghost.isActive() )
+	if ( shootmode && !gamePaused && !(players[DEATHCAM_PLAYERNUM]->ghost.isActive() || players[DEATHCAM_PLAYERNUM]->entity) )
 	{
 		if ( !players[DEATHCAM_PLAYERNUM]->GUI.isGameoverActive() )
 		{
@@ -2340,7 +2429,7 @@ void actDeathCam(Entity* my)
 		&& players[DEATHCAM_PLAYERNUM]->bControlEnabled
 		&& !players[DEATHCAM_PLAYERNUM]->usingCommand()
 		&& !gamePaused
-		&& !players[DEATHCAM_PLAYERNUM]->ghost.isActive()
+		&& !(players[DEATHCAM_PLAYERNUM]->ghost.isActive() || players[DEATHCAM_PLAYERNUM]->entity)
 		&& (Input::inputs[DEATHCAM_PLAYERNUM].consumeBinaryToggle("Attack")
 			|| Input::inputs[DEATHCAM_PLAYERNUM].consumeBinaryToggle("MenuConfirm")) )
 	{
@@ -2380,7 +2469,7 @@ void actDeathCam(Entity* my)
 
 	my->removeLightField();
 
-	if ( players[DEATHCAM_PLAYERNUM]->ghost.isActive() )
+	if ( players[DEATHCAM_PLAYERNUM]->ghost.isActive() || players[DEATHCAM_PLAYERNUM]->entity )
 	{
 		return;
 	}
@@ -3535,6 +3624,10 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 
 void Player::PlayerMovement_t::handlePlayerCameraPosition(bool useRefreshRateDelta)
 {
+	if ( !players[player.playernum]->isLocalPlayer() )
+	{
+		return;
+	}
 	if ( !players[player.playernum]->entity )
 	{
 		return;
@@ -3630,7 +3723,7 @@ void Player::PlayerMovement_t::handlePlayerCameraPosition(bool useRefreshRateDel
 			}
 		}
 
-		//messagePlayer(0, "Z: %.2f | %.2f | %.2f", my->z, PLAYER_CAMERAZ_ACCEL, cameraSetpointZ);
+		//messagePlayer(clientnum, MESSAGE_DEBUG, "Z: %.2f | %.2f | %.2f", my->z, PLAYER_CAMERAZ_ACCEL, cameraSetpointZ);
 
 		if ( !TimerExperiments::bUseTimerInterpolation )
 		{
@@ -4622,6 +4715,7 @@ void actPlayer(Entity* my)
 		PLAYER_INIT = 1;
 		my->flags[BURNABLE] = true;
 
+		// todo
 		players[PLAYER_NUM]->compendiumProgress.playerDistAccum = 0.0;
 		players[PLAYER_NUM]->compendiumProgress.playerSneakTime = 0;
 		players[PLAYER_NUM]->compendiumProgress.playerAliveTimeMoving = 0;
@@ -5034,6 +5128,7 @@ void actPlayer(Entity* my)
 
 	if ( !intro )
 	{
+		// todo
 		if ( PLAYER_ALIVETIME == 0 )
 		{
 			my->createWorldUITooltip();

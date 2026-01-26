@@ -185,6 +185,10 @@ bool doesEntityStopBoulder(Entity* entity)
 	{
 		return true;
 	}
+	else if ( entity->behavior == &::actAssistShrine )
+	{
+		return true;
+	}
 	return false;
 }
 
@@ -249,7 +253,7 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 					damage = 50;
 				}
 
-				int trapResist = entity->getFollowerBonusTrapResist();
+				int trapResist = entity->getEntityBonusTrapResist();
 				if ( trapResist != 0 )
 				{
 					real_t mult = std::max(0.0, 1.0 - (trapResist / 100.0));
@@ -390,7 +394,7 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 						{
 							Compendium_t::Events_t::eventUpdateWorld(entity->skill[2], Compendium_t::CPDM_TRAP_KILLED_BY, "boulder trap", 1);
 						}
-						achievementObserver.updateGlobalStat(STEAM_GSTAT_BOULDER_DEATHS);
+						achievementObserver.updateGlobalStat(STEAM_GSTAT_BOULDER_DEATHS, entity->skill[2]);
 					}
 				}
 				if ( BOULDER_PLAYERPUSHED >= 0 && oldHP > 0 && stats->HP <= 0 )

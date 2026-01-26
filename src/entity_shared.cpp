@@ -11,7 +11,56 @@ See LICENSE for details.
 
 
 #include "entity.hpp"
-
+Monster editorSpriteTypeToMonster(Sint32 sprite)
+{
+	Monster monsterType = NOTHING;
+	switch ( sprite )
+	{
+	case 27: monsterType = HUMAN; break;
+	case 30: monsterType = TROLL; break;
+	case 35: monsterType = SHOPKEEPER; break;
+	case 36: monsterType = GOBLIN; break;
+	case 48: monsterType = SPIDER; break;
+	case 62: monsterType = LICH; break;
+	case 70: monsterType = GNOME; break;
+	case 71: monsterType = DEVIL; break;
+	case 75: monsterType = DEMON; break;
+	case 76: monsterType = CREATURE_IMP; break;
+	case 77: monsterType = MINOTAUR; break;
+	case 78: monsterType = SCORPION; break;
+	case 79: monsterType = SLIME; break;
+	case 193: monsterType = SLIME; break;
+	case 194: monsterType = SLIME; break;
+	case 195: monsterType = SLIME; break;
+	case 196: monsterType = SLIME; break;
+	case 197: monsterType = SLIME; break;
+	case 80: monsterType = SUCCUBUS; break;
+	case 81: monsterType = RAT; break;
+	case 82: monsterType = GHOUL; break;
+	case 83: monsterType = SKELETON; break;
+	case 84: monsterType = KOBOLD; break;
+	case 85: monsterType = SCARAB; break;
+	case 86: monsterType = CRYSTALGOLEM; break;
+	case 87: monsterType = INCUBUS; break;
+	case 88: monsterType = VAMPIRE; break;
+	case 89: monsterType = SHADOW; break;
+	case 90: monsterType = COCKATRICE; break;
+	case 91: monsterType = INSECTOID; break;
+	case 92: monsterType = GOATMAN; break;
+	case 93: monsterType = AUTOMATON; break;
+	case 94: monsterType = LICH_ICE; break;
+	case 95: monsterType = LICH_FIRE; break;
+	case 163: monsterType = SENTRYBOT; break;
+	case 164: monsterType = SPELLBOT; break;
+	case 165: monsterType = DUMMYBOT; break;
+	case 166: monsterType = GYROBOT; break;
+	case 188: monsterType = BAT_SMALL; break;
+	case 189: monsterType = BUGBEAR; break;
+	default:
+		break;
+	}
+	return monsterType;
+}
 
 int checkSpriteType(Sint32 sprite)
 {
@@ -510,6 +559,9 @@ char itemNameStrings[NUM_ITEM_STRINGS][32] =
 	"hat_hood_apprentice",
 	"hat_hood_assassin",
 	"hat_hood_whispers",
+	"ring_resolve",
+	"cloak_guardian",
+	"mask_marigold"
 	""
 };
 
@@ -757,6 +809,7 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"ring_levitation",
 		"ring_regeneration",
 		"ring_teleportation",
+		"ring_resolve",
 		""
 	},
 	{
@@ -781,6 +834,7 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"cloak_protection",
 		"artifact_cloak",
 		"cloak_backpack",
+		"cloak_guardian",
 		""
 	},
 	{
@@ -807,6 +861,7 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"mask_steel_visor",
 		"mask_crystal_visor",
 		"mask_artifact_visor",
+		"mask_marigold",
 		""
 	},
 	{
@@ -1031,7 +1086,8 @@ char spriteEditorNameStrings[NUM_EDITOR_SPRITES][64] =
 	"SLIME (METAL)",
 	"NOT USED",
 	"NOT USED",
-	"NOT USED"
+	"NOT USED",
+	"ASSIST SHRINE"
 };
 
 char monsterEditorNameStrings[NUMMONSTERS][16] =

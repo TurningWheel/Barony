@@ -198,7 +198,8 @@ bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, En
 		if ( casterStats && casterStats->HP <= 0 )
 		{
 			// uh oh..
-			if ( casterStats->amulet && casterStats->amulet->type == AMULET_LIFESAVING && casterStats->amulet->beatitude >= 0 )
+			if ( casterStats->amulet && casterStats->amulet->type == AMULET_LIFESAVING 
+				&& (casterStats->amulet->beatitude >= 0 || shouldInvertEquipmentBeatitude(casterStats)) )
 			{
 				// we're good!
 				steamAchievementEntity(&caster, "BARONY_ACH_LIFE_FOR_A_LIFE");

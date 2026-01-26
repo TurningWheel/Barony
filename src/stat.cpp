@@ -617,10 +617,6 @@ Stat* Stat::copyStats()
 	newStat->FOLLOWERS.first = NULL;
 	newStat->FOLLOWERS.last = NULL;
 	list_Copy(&newStat->FOLLOWERS, &this->FOLLOWERS);
-	newStat->stache_x1 = this->stache_x1;
-	newStat->stache_x2 = this->stache_x2;
-	newStat->stache_y1 = this->stache_y1;
-	newStat->stache_y2 = this->stache_y2;
 
 	newStat->inventory.first = NULL;
 	newStat->inventory.last = NULL;

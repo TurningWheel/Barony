@@ -680,15 +680,21 @@ bool MonsterAllyFormation_t::getFollowLocation(Uint32 uid, Uint32 leaderUid, std
 	bool found = false;
 	if ( findMelee != leaderUnits.meleeUnits.end() )
 	{
-		outPos.first = findMelee->second.x;
-		outPos.second = findMelee->second.y;
-		found = true;
+		if ( findMelee->second.init )
+		{
+			outPos.first = findMelee->second.x;
+			outPos.second = findMelee->second.y;
+			found = true;
+		}
 	}
 	if ( findRanged != leaderUnits.rangedUnits.end() )
 	{
-		outPos.first = findRanged->second.x;
-		outPos.second = findRanged->second.y;
-		found = true;
+		if ( findRanged->second.init )
+		{
+			outPos.first = findRanged->second.x;
+			outPos.second = findRanged->second.y;
+			found = true;
+		}
 	}
 
 	return found;
@@ -2388,7 +2394,9 @@ void actMonster(Entity* my)
 	// however, there is a small part for clients:
 	if ( multiplayer == CLIENT )
 	{
-		if ( !MONSTER_INIT && my->getMonsterTypeFromSprite() != NOTHING && checkSpriteType(my->sprite) != 1 )
+		if ( !MONSTER_INIT && my->getMonsterTypeFromSprite() != NOTHING 
+			&& (checkSpriteType(my->sprite) != 1 || my->skill[2] == -4) ) 
+			// if checkSpriteType == 1, skill[2] -4 means server has sent model details so no longer editor sprite (blue slime 189 conflicts editor bugbear 189 fix)
 		{
 			MONSTER_INIT = 1;
 
@@ -7648,9 +7656,55 @@ timeToGoAgain:
 				}
 				if ( creature != DEMON )
 				{
-					summonMonster(creature, ((int)(my->x / 16)) * 16 + 8, ((int)(my->y / 16)) * 16 + 8);
+					if ( Entity* summon = summonMonster(creature, ((int)(my->x / 16)) * 16 + 8, ((int)(my->y / 16)) * 16 + 8) )
+					{
+						if ( Stat* summonStats = summon->getStats() )
+						{
+							summonStats->monsterNoDropItems = 1;
+							summonStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] = 1;
+							summonStats->LVL = 5;
+							std::string lich_num_summons = myStats->getAttribute("lich_num_summons");
+							if ( lich_num_summons == "" )
+							{
+								myStats->setAttribute("lich_num_summons", "1");
+							}
+							else
+							{
+								int numSummons = std::stoi(myStats->getAttribute("lich_num_summons"));
+								if ( numSummons >= 25 )
+								{
+									summonStats->MISC_FLAGS[STAT_FLAG_XP_PERCENT_AWARD] = 1;
+								}
+								++numSummons;
+								myStats->setAttribute("lich_num_summons", std::to_string(numSummons));
+							}
+						}
+					}
 				}
-				summonMonster(creature, ((int)(my->x / 16)) * 16 + 8, ((int)(my->y / 16)) * 16 + 8);
+				if ( Entity* summon = summonMonster(creature, ((int)(my->x / 16)) * 16 + 8, ((int)(my->y / 16)) * 16 + 8) )
+				{
+					if ( Stat* summonStats = summon->getStats() )
+					{
+						summonStats->monsterNoDropItems = 1;
+						summonStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] = 1;
+						summonStats->LVL = 5;
+						std::string lich_num_summons = myStats->getAttribute("lich_num_summons");
+						if ( lich_num_summons == "" )
+						{
+							myStats->setAttribute("lich_num_summons", "1");
+						}
+						else
+						{
+							int numSummons = std::stoi(myStats->getAttribute("lich_num_summons"));
+							if ( numSummons >= 25 )
+							{
+								summonStats->MISC_FLAGS[STAT_FLAG_XP_PERCENT_AWARD] = 1;
+							}
+							++numSummons;
+							myStats->setAttribute("lich_num_summons", std::to_string(numSummons));
+						}
+					}
+				}
 			}
 		}
 		else if ( my->monsterState == MONSTER_STATE_LICH_DEATH )     // lich death state

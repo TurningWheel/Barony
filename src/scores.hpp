@@ -36,6 +36,7 @@ static const int CONDUCT_LIFESAVING = 9; // 1 = lifesaving server flag, 0 = not.
 static const int CONDUCT_ACCURSED = 10; // 1 = cursed, 0 = not
 static const int CONDUCT_RANGED_ONLY = 11; // 1 = ranged only, 0 = not.
 static const int CONDUCT_MODDED_NO_ACHIEVEMENTS = 12; // 1 = mods have disabled achievements
+static const int CONDUCT_ASSISTANCE_CLAIMED = 13; // how many assistance points claimed for the party
 
 static const int STATISTICS_BOMB_SQUAD = 0;
 static const int STATISTICS_SITTING_DUCK = 1;
@@ -923,7 +924,7 @@ public:
 	void updateClientBounties(bool firstSend);
 	void clearPlayerAchievementData();
 	void checkMapScriptsOnVariableSet();
-	void updateGlobalStat(int index, int value = 1);
+	void updateGlobalStat(int index, int player);
 };
 extern AchievementObserver achievementObserver;
 #endif

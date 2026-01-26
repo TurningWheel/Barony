@@ -4526,8 +4526,11 @@ void item_Food(Item*& item, int player)
 	{
 		if (players[player] && players[player]->entity && !(svFlags & SV_FLAG_HUNGER))
 		{
-			playSoundEntity(players[player]->entity, 28, 64);
-			players[player]->entity->modHP(-5);
+			//if ( !(stats[player]->mask && stats[player]->mask->type == MASK_MARIGOLD) )
+			{
+				playSoundEntity(players[player]->entity, 28, 64);
+				players[player]->entity->modHP(-5);
+			}
 		}
 		if ( stats[player]->type == VAMPIRE )
 		{
@@ -4616,13 +4619,42 @@ void item_Food(Item*& item, int player)
 				hungerIncrease = 10;
 				break;
 		}
+
+		/*if ( stats[player]->playerRace == RACE_INSECTOID && stats[player]->stat_appearance == 0 )
+		{
+			if ( stats[player]->MAXMP >= 50 )
+			{
+				real_t nominalIncrease = 50 * (hungerIncrease / 1000.0);
+				real_t currentIncrease = stats[player]->MAXMP * (hungerIncrease / 1000.0);
+				hungerIncrease = hungerIncrease * (nominalIncrease / currentIncrease);
+			}
+		}*/
+
 		stats[player]->HUNGER += hungerIncrease * foodMult;
+
+		if ( stats[player]->mask && stats[player]->mask->type == MASK_MARIGOLD )
+		{
+			if ( players[player] && players[player]->entity )
+			{
+				players[player]->entity->setEffect(EFF_MARIGOLD, true, stats[player]->EFFECTS_TIMERS[EFF_MARIGOLD] + TICKS_PER_SECOND * 30, false);
+			}
+		}
 	}
 	else
 	{
 		if (players[player] && players[player]->entity)
 		{
-			players[player]->entity->modHP(std::max(1, (int)(5 * foodMult)));
+			int foodMod = 5;
+			if ( stats[player]->mask && stats[player]->mask->type == MASK_MARIGOLD )
+			{
+				foodMod += 3;
+				if ( stats[player]->mask->beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+				{
+					foodMod += 3 * std::min(2, abs(stats[player]->mask->beatitude));
+				}
+			}
+
+			players[player]->entity->modHP(std::max(1, (int)(foodMod * foodMult)));
 			messagePlayer(player, MESSAGE_WORLD, Language::get(911));
 
 
@@ -4833,7 +4865,11 @@ void item_FoodTin(Item*& item, int player)
 	{
 		if (players[player] && players[player]->entity && !(svFlags & SV_FLAG_HUNGER))
 		{
-			players[player]->entity->modHP(-5);
+			//if ( !(stats[player]->mask && stats[player]->mask->type == MASK_MARIGOLD) )
+			{
+				playSoundEntity(players[player]->entity, 28, 64);
+				players[player]->entity->modHP(-5);
+			}
 		}
 		if ( stats[player]->type == VAMPIRE )
 		{
@@ -4892,6 +4928,15 @@ void item_FoodTin(Item*& item, int player)
 	if (svFlags & SV_FLAG_HUNGER)
 	{
 		stats[player]->HUNGER += 600 * foodMult;
+
+		if ( stats[player]->mask && stats[player]->mask->type == MASK_MARIGOLD )
+		{
+			if ( players[player] && players[player]->entity )
+			{
+				players[player]->entity->setEffect(EFF_MARIGOLD, true, stats[player]->EFFECTS_TIMERS[EFF_MARIGOLD] + TICKS_PER_SECOND * 30, false);
+			}
+		}
+
 		if ( hpBuff )
 		{
 			stats[player]->EFFECTS[EFF_HP_REGEN] = hpBuff;
@@ -4909,7 +4954,17 @@ void item_FoodTin(Item*& item, int player)
 	{
 		if (players[player] && players[player]->entity)
 		{
-			players[player]->entity->modHP(std::max(1, (int)(5 * foodMult)));
+			int foodMod = 10;
+			if ( stats[player]->mask && stats[player]->mask->type == MASK_MARIGOLD )
+			{
+				foodMod += 3;
+				if ( stats[player]->mask->beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+				{
+					foodMod += 3 * std::min(2, abs(stats[player]->mask->beatitude));
+				}
+			}
+
+			players[player]->entity->modHP(std::max(1, (int)(foodMod * foodMult)));
 			messagePlayer(player, MESSAGE_WORLD, Language::get(911));
 			if ( stats[player]->playerRace == RACE_INSECTOID && stats[player]->stat_appearance == 0 )
 			{
@@ -5778,9 +5833,9 @@ void updateHungerMessages(Entity* my, Stat* myStats, Item* eaten)
 			}
 			else
 			{
-				messagePlayer(my->skill[2], MESSAGE_STATUS, Language::get(917));
 				if ( my->entityCanVomit() )
 				{
+					messagePlayer(my->skill[2], MESSAGE_STATUS, Language::get(917));
 					my->char_gonnavomit = 40 + local_rng.rand() % 10;
 				}
 			}

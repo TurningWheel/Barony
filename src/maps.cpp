@@ -4482,17 +4482,13 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		int dir;
 		int id = -1;
 	};
-	auto compFuncBreakable = [](BreakableNode_t& lhs, BreakableNode_t& rhs)
-	{
-		return lhs.walls < rhs.walls;
-	};
 	auto findBreakables = EditorEntityData_t::colliderRandomGenPool.find(map.name);
 	if ( findBreakables == EditorEntityData_t::colliderRandomGenPool.end() )
 	{
 		numBreakables = 0;
 	}
 	int numOpenAreaBreakables = 0;
-	std::priority_queue<BreakableNode_t, std::vector<BreakableNode_t>, decltype(compFuncBreakable)> breakableLocations(compFuncBreakable);
+	std::vector<BreakableNode_t> breakableLocations;
 	if ( findBreakables->first == "Underworld" )
 	{
 		numOpenAreaBreakables = 10;
@@ -4544,7 +4540,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 
 				if ( obstacles == 0 )
 				{
-					breakableLocations.push(BreakableNode_t(1, x, y, map_rng.rand() % 4, 
+					breakableLocations.push_back(BreakableNode_t(1, x, y, map_rng.rand() % 4, 
 						map_rng.rand() % 2 ? 14 : 40)); // random dir, hanging cage ids
 					--numOpenAreaBreakables;
 
@@ -4801,7 +4797,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 						}
 					}
 					int picked = dirs[map_rng.rand() % dirs.size()];
-					breakableLocations.push(BreakableNode_t(walls.size(), x, y, picked));
+					breakableLocations.push_back(BreakableNode_t(walls.size(), x, y, picked));
 					foundSpace = true;
 					break;
 				}
@@ -4835,7 +4831,21 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		Monster lastMonsterEvent = NOTHING;
 		while ( !breakableLocations.empty() )
 		{
-			auto& top = breakableLocations.top();
+			int maxNumWalls = 0;
+			for ( auto& b : breakableLocations )
+			{
+				maxNumWalls = std::max(b.walls, maxNumWalls);
+			}
+			std::vector<unsigned int> posChances;
+			int pickedPos = 0;
+			for ( auto& b : breakableLocations )
+			{
+				posChances.push_back(b.walls == maxNumWalls ? 1 : 0);
+			}
+
+			pickedPos = map_rng.discrete(posChances.data(), posChances.size());
+
+			auto& top = breakableLocations.at(pickedPos);
 			int x = top.x;
 			int y = top.y;
 
@@ -5008,7 +5018,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				ent->z = 24.0;
 				ent->flags[PASSABLE] = true;
 			}
-			breakableLocations.pop();
+			breakableLocations.erase(breakableLocations.begin() + pickedPos);
 		}
 	}
 
@@ -6138,51 +6148,11 @@ void assignActions(map_t* map)
 				//Assign entity creature list pointer.
 				entity->addToCreatureList(map->creatures);
 
-				Monster monsterType = SKELETON;
+				Monster monsterType = editorSpriteTypeToMonster(entity->sprite);
 				bool monsterIsFixedSprite = true;
 
-                switch (entity->sprite) {
-                case 27: monsterType = HUMAN; break;
-                case 30: monsterType = TROLL; break;
-                case 35: monsterType = SHOPKEEPER; break;
-                case 36: monsterType = GOBLIN; break;
-                case 48: monsterType = SPIDER; break;
-                case 62: monsterType = LICH; break;
-                case 70: monsterType = GNOME; break;
-                case 71: monsterType = DEVIL; break;
-                case 75: monsterType = DEMON; break;
-                case 76: monsterType = CREATURE_IMP; break;
-                case 77: monsterType = MINOTAUR; break;
-                case 78: monsterType = SCORPION; break;
-                case 79: monsterType = SLIME; break;
-				case 193: monsterType = SLIME; break;
-				case 194: monsterType = SLIME; break;
-				case 195: monsterType = SLIME; break;
-				case 196: monsterType = SLIME; break;
-				case 197: monsterType = SLIME; break;
-                case 80: monsterType = SUCCUBUS; break;
-                case 81: monsterType = RAT; break;
-                case 82: monsterType = GHOUL; break;
-                case 83: monsterType = SKELETON; break;
-                case 84: monsterType = KOBOLD; break;
-                case 85: monsterType = SCARAB; break;
-                case 86: monsterType = CRYSTALGOLEM; break;
-                case 87: monsterType = INCUBUS; break;
-                case 88: monsterType = VAMPIRE; break;
-                case 89: monsterType = SHADOW; break;
-                case 90: monsterType = COCKATRICE; break;
-                case 91: monsterType = INSECTOID; break;
-                case 92: monsterType = GOATMAN; break;
-                case 93: monsterType = AUTOMATON; break;
-                case 94: monsterType = LICH_ICE; break;
-                case 95: monsterType = LICH_FIRE; break;
-                case 163: monsterType = SENTRYBOT; break;
-                case 164: monsterType = SPELLBOT; break;
-                case 165: monsterType = DUMMYBOT; break;
-                case 166: monsterType = GYROBOT; break;
-				case 188: monsterType = BAT_SMALL; break;
-				case 189: monsterType = BUGBEAR; break;
-                default:
+				if ( monsterType == NOTHING )
+				{
 					monsterIsFixedSprite = false;
 					monsterType = static_cast<Monster>(monsterCurve(currentlevel));
 					if ( customMonsterCurveExists )
@@ -6197,7 +6167,6 @@ void assignActions(map_t* map)
 							customMonsterCurveExists = false;
 						}
 					}
-					break;
 				}
 
 				if ( monsterType == MIMIC )
@@ -8602,6 +8571,19 @@ void assignActions(map_t* map)
 					entity->skill[1] = goldEntity->getUID();
 				}
 			}
+				break;
+			case 201:
+				entity->x += 8;
+				entity->y += 8;
+				entity->sizex = 4;
+				entity->sizey = 4;
+				entity->behavior = &actAssistShrine;
+				entity->flags[PASSABLE] = false;
+				entity->z = 8.0;
+				entity->sprite = 1484;
+				//entity->focalx = 0.75;
+				entity->yaw = 0.0;// (270)* PI / 180.0;
+				entity->seedEntityRNG(map_rng.getU32());
 				break;
             default:
                 break;

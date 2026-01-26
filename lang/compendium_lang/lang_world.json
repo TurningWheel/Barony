@@ -705,10 +705,10 @@
             "out.",
             "",
             "Strong enchantments prevent",
-            "prevent teleporting, dig, open, and",
-            "levitation. Those seeking treasure",
-            "must navigate these tunnels the hard",
-            "way, and hope they can escape."
+            "teleporting, dig, open, and levitation.",
+            "Those seeking treasure must navigate",
+            "these tunnels the hard way, and hope",
+            "they can escape."
         ],
         "details_line_highlights": [
             {
@@ -1753,9 +1753,9 @@
         ],
         "details": [
             "Agents of the magicians' guild are",
-            "are adaptable spellcasters, able",
-            "to read and memorize most spells,",
-            "as long as they have been practicing.",
+            "adaptable spellcasters, able to",
+            "read and memorize most spells, as",
+            "long as they have been practicing.",
             "",
             "Most magicians have secondary skills",
             "which allow them to reserve magic for",

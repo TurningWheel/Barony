@@ -175,7 +175,7 @@ void actSpearTrap(Entity* my)
 								{
 									damage *= 1.5;
 								}
-								int trapResist = entity->getFollowerBonusTrapResist();
+								int trapResist = entity->getEntityBonusTrapResist();
 								if ( trapResist != 0 )
 								{
 									real_t mult = std::max(0.0, 1.0 - (trapResist / 100.0));
