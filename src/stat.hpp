@@ -484,7 +484,7 @@ public:
 	};
 	int getPassiveShieldBonus(bool checkShield, bool excludeSkill) const;
 	int getActiveShieldBonus(bool checkShield, bool excludeSkill, Item* shieldItem = nullptr, bool checkNonShieldBonus = false) const;
-	int getParryingACBonus(bool checkWeapon, bool excludeSkill, int weaponSkill) const;
+	static int getParryingACBonus(Stat* myStats, Item* myWeapon, bool checkWeapon, bool excludeSkill, int weaponSkill);
 	std::string getAttribute(std::string key) const
 	{ 
 		if ( attributes.find(key) != attributes.end() )

@@ -2520,6 +2520,7 @@ void actThrown(Entity* my)
 					{
 						duration = hit.entity->getStats()->EFFECTS_TIMERS[EFF_ROOTED];
 					}
+					item->ownerUid = parent ? parent->getUID() : 0;
 					createParticleBolas(hit.entity, 1917, duration, item);
 					serverSpawnMiscParticles(hit.entity, PARTICLE_EFFECT_BOLAS, 1917, 0, duration, 0);
 				}

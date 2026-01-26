@@ -215,7 +215,7 @@ bool entityWantsJewel(int tier, Entity& entity, Stat& stats, bool checkTypeOnly)
 	}
 	else if ( req >= 0 )
 	{
-		if ( (tier * 5) >= currentlevel )
+		if ( (std::max(1, tier) * 5) >= currentlevel || tier == EXCELLENT )
 		{
 			return true;
 		}

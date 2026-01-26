@@ -2390,7 +2390,7 @@ public:
 	public:
 		std::map<int, int> itemDegradeRng;
 		std::set<int> learnedSpells;
-		std::vector<int> ducksInARow;
+		std::vector<std::pair<int, int>> ducksInARow;
 		std::vector<std::pair<int, Uint32>> pendingDucks;
 		int numFishingCaught = 0;
 		bool itemDegradeRoll(Item* item, int* checkInterval = nullptr);

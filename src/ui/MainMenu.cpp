@@ -36557,6 +36557,11 @@ failed:
 					{
 						Compendium_t::compendiumItem.appearance = (modelRNGCycle + Compendium_t::compendiumEntityCurrent.modelRNG) % 4;
 					}
+					else if ( id == TOOL_DUCK )
+					{
+						Compendium_t::compendiumItem.appearance = (modelRNGCycle + Compendium_t::compendiumEntityCurrent.modelRNG * 4) % items[id].variations;
+						Compendium_t::compendiumItem.appearance /= MAXPLAYERS;
+					}
 					else if ( id == READABLE_BOOK )
 					{
 						Compendium_t::compendiumItem.appearance = getBook("My Journal") % items[id].variations;

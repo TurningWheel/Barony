@@ -5272,7 +5272,8 @@ void SaveGameInfo::computeHash(const int playernum, Uint32& hash)
 	}
 	for ( auto& val : players[playernum].ducksInARow )
 	{
-		hash += (Uint32)((Uint32)val << (shift % 32)); ++shift;
+		hash += (Uint32)((Uint32)val.first << (shift % 32)); ++shift;
+		hash += (Uint32)((Uint32)val.second << (shift % 32)); ++shift;
 	}
 	hash += (Uint32)((Uint32)players[playernum].sustainedSpellMPUsedSorcery << (shift % 32)); ++shift;
 	hash += (Uint32)((Uint32)players[playernum].sustainedSpellMPUsedMysticism << (shift % 32)); ++shift;
@@ -5536,9 +5537,9 @@ int SaveGameInfo::populateFromSession(const int playernum)
 			{
 				player.sustainedSpellIDCounter.push_back(pair);
 			}
-			for ( auto val : ::players[c]->mechanics.ducksInARow )
+			for ( auto& pair : ::players[c]->mechanics.ducksInARow )
 			{
-				player.ducksInARow.push_back(val);
+				player.ducksInARow.push_back(pair);
 			}
 			for ( auto& pair : ::players[c]->mechanics.escalatingRngRolls )
 			{
@@ -6523,7 +6524,7 @@ int loadGame(int player, const SaveGameInfo& info) {
 		{
 			mechanics.learnedSpells.insert(learnedSpell);
 		}
-		for ( auto duck : info.players[player].ducksInARow )
+		for ( auto& duck : info.players[player].ducksInARow )
 		{
 			mechanics.ducksInARow.push_back(duck);
 		}

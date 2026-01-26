@@ -512,7 +512,7 @@ struct SaveGameInfo {
 		std::vector<std::pair<int, int>> appraisal_item_progress;
 		std::vector<int> learnedSpells;
 		std::vector<std::pair<int, int>> sustainedSpellIDCounter;
-		std::vector<int> ducksInARow;
+		std::vector<std::pair<int, int>> ducksInARow;
 		int sustainedSpellMPUsedSorcery = 0;
 		int sustainedSpellMPUsedMysticism = 0;
 		int sustainedSpellMPUsedThaumaturgy = 0;

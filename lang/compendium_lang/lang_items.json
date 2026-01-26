@@ -681,5 +681,105 @@
             "The traveler carried the spirit out,",
             "but only its clothes crossed over."
         ]
+    },
+    "quilted armor": {
+        "blurb": [
+            "While often used for padding underneath",
+            "metal armors, tightly stitched layers",
+            "of fine cloth make for good protection",
+            "on their own.",
+            "Stacks of fabric can reduce the",
+            "penetration of arrows and spearheads."
+        ]
+    },
+    "chain armor": {
+        "blurb": [
+            "Fashioned by the finest smiths, chain armor",
+            "is a rare commodity.",
+            "While its flexibility makes it less protective",
+            "than other metal armors, it is particularly",
+            "adept at deflecting the cutting edges of ",
+            "swords and axes."
+        ]
+    },
+    "frypan": {
+        "blurb": [
+            "Frontier cooks swear by this iron",
+            "cookware's indestructibility, so long",
+            "as the metal is treated properly!",
+            "A campfire is all that's needed for",
+            "this portable kitchen to function.",
+            "While unwieldy, it can be used as a shield!"
+        ]
+    },
+    "rations": {
+        "blurb": [
+            "Connoisseurs of the humble ration are",
+            "content not knowing what goes into",
+            "their ready-packed meals.",
+			"",
+            "A skilled cook can make them tastier,",
+            "even for the pickiest of palates."
+        ]
+    },
+    "sludge balls": {
+        "blurb": [
+            "Despite being a byproduct of food,",
+            "SLUDGE BALLS have no nutritional value.",
+			"",
+            "Resourceful adventurers use them",
+            "as thrown ammunition to humiliate and",
+            "debilitate their foes simultaneously."
+        ]
+    },
+    "keys": {
+        "blurb": [
+            "While KEYS are typically found somewhere",
+            "near their matching lock, some rare",
+            "keys are hidden much more carefully.",
+            "",
+            "Those made from more precious metals",
+            "give access to more precious treasures."
+        ]
+    },
+    "flails": {
+        "blurb": [
+            "Long-chain varieties of FLAIL are",
+            "rare, but the extra range provided is a",
+            "substantial advantage for a mace.",
+            "While whirling it overhead to build",
+            "momentum for a critical strike,",
+            "enemies face rapid light attacks."
+        ]
+    },
+    "greatswords": {
+        "blurb": [
+            "Larger blades like the claymore",
+            "are made of fine, sturdy steel,",
+            "whose weight can parry other attacks.",
+            "Their broad and heavy cutting blades",
+            "can be used to cleave through multiple",
+            "nearby foes with a critical strike."
+        ]
+    },
+    "rapier": {
+        "blurb": [
+            "In the hands of a dextrous fencer, the",
+            "nimble RAPIER can riposte when parrying,",
+            "allowing a talented swordsman to defeat",
+            "foes with a patient and consistent defense.",
+            "Their fine craftsmanship makes them an",
+            "exceptionally rare favorite of Bards."
+        ]
+    },
+	"duck": {
+        "blurb": [
+            "Like many birds, DUCKS are territorial",
+			"and loyal to their partners for life. They'll",
+			"courageously pester deadly threats, and",
+			"are surprisingly deft at avoiding harm.",
+			"They may become distracted by fishing",
+			"opportunities."
+        ]
     }
 }

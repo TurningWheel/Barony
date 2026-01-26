@@ -781,7 +781,9 @@
             "Their slimy meat is unappealing to some",
             "but it is quite nutritious."
         ],
-        "abilities": [],
+        "abilities": [
+		"- Weakness Cursing Attacks"
+		],
         "inventory": [
             "- Tomalleys",
             "- Low value gemstones"
@@ -1045,5 +1047,149 @@
             "- Tomalleys",
             "- Low value gemstones"
         ]
-    }
+    },
+    "gremlin": {
+        "blurb": [
+            "GREMLINS are creatures with such taste",
+            "for chaos that they could not coexist",
+            "with the denizens of Hell itself.",
+            "Only goblins suffer their company,",
+            "and even then, at arm's length.",
+            "NOT TO BE TRUSTED."
+        ],
+        "abilities": [
+            "- Deface",
+            "- Vandalize"
+        ],
+        "inventory": [
+            "- Bone and Blackiron Weapons",
+            "- Shawls and Hoods"
+        ]
+    },
+    "dryad": {
+        "blurb": [
+            "While the origins are unclear, a forest",
+            "of sufficient size and age is often under",
+            "the protection of DRYAD conservators.",
+            "Sightings in any realm are rare, but it",
+            "is best to remain in their good",
+			"graces if one finds you."
+        ],
+        "abilities": [
+            "- Roots",
+            "- Thorns"
+        ],
+        "inventory": [
+            "- Nuts",
+            "- Branch Weapons"
+        ]
+    },
+    "myconid": {
+        "blurb": [
+            "Wherever you find decay in dryad-",
+            "protected forests, there you will also",
+            "find MYCONIDS. While the two aren't",
+            "hostile to one another, they also do",
+            "not appear to cohabitate. Beware caves",
+            "full of mushrooms that may be guarded."
+        ],
+        "abilities": [
+            "- Spores"
+        ],
+        "inventory": [
+            "- Mushroom Slices",
+            "- Bone Weapons"
+        ]
+    },
+    "salamander": {
+        "blurb": [
+            "Legends say that SALAMANDERS carry the",
+            "fires of loyalty and justice with fierce",
+            "devotion to the Eternals in their hearts.",
+            "When enraged, they appear as blazing",
+            "angels, but rely on sturdy tradition",
+            "during times of lower passion."
+        ],
+        "abilities": [
+            "- Breathe Fire",
+            "- Radiant Form",
+			"- Stone Form"
+        ],
+        "inventory": [
+            "- Silver Weapons and Armor",
+			"- Claymores",
+            "- Holy Symbols"
+        ]
+    },
+    "revenant_skull": {
+        "blurb": [
+            "A product of dark mysticism, the",
+            "REVENANT SKULL is summoned by piercing",
+            "void just as a cursed soul crosses over.",
+            "Though useful, it's considered by the",
+            "cult of sorcerers to be an",
+            "incomplete spell."
+        ],
+        "abilities": [
+            "- Levitate",
+			"- Slow"
+        ],
+        "inventory": [
+            
+        ]
+    },
+    "fire sprite": {
+        "blurb": [
+            "Whether through naivety or mischief,",
+            "FIRE SPRITES like to bless others with",
+            "a gift of burning flames. Novice",
+            "sorcerers can learn a lot from them, as",
+            "their temprament is the calmest of the",
+            "fire spirits. A slow burn, if you will."
+        ],
+        "abilities": [
+            "- Levitate",
+            "- Fire Dart"
+        ],
+        "inventory": [
+            
+        ]
+    },
+    "earth_elemental": {
+        "blurb": [
+            "The stubborn EARTH SPRITE requires the",
+            "talents of a skilled mystic to conjure.",
+            "After being lured into local earth, it",
+            "crashes down and serves as a",
+            "durable guardian for as long",
+            "as its form holds shape."
+        ],
+        "abilities": [
+            "- Cave In",
+            "- Levitation",
+			"- Spin (self)",
+			"- Block"
+        ],
+        "inventory": [
+            
+        ]
+    },
+    "duck": {
+        "blurb": [
+            "Like many birds, DUCKS are territorial,",
+            "and loyal to their partners for life.",
+            "They will courageously pester deadly",
+            "threats, and are surprisingly deft at",
+            "avoiding harm. Ducks may become",
+            "distracted by fishing opportunities."
+        ],
+        "abilities": [
+            "- Distract",
+			"- Levitation",
+            "- Invulnerable"
+        ],
+        "inventory": [
+            
+        ]
+    }	
 }

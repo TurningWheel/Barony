@@ -13,7 +13,7 @@
         "blurb": [
             "While most magic could be described as",
             "breaking the rules of reality, the study",
-            "of CONTRAVENTION allows sorcerors to",
+            "of CONTRAVENTION allows sorcerers to",
             "change how rules effect one's self.",
             "This requires ongoing magic energy to",
             "sustain, but can be disabled at will."
@@ -71,7 +71,7 @@
     },
     "evocation": {
         "blurb": [
-            "Sorcerors practice EVOCATION to conjure",
+            "Sorcerers practice EVOCATION to conjure",
             "energies and material using their minds.",
             "Largely this is used to launch harmful",
             "projectiles at enemies by adventurers,",
@@ -84,7 +84,7 @@
             "Mystics who practice IMPETURIA do so by",
             "calling to the spirit of the object they",
             "wish to manipulate, and compel it to alter",
-            "its state. Sorcerors attempting to do the",
+            "its state. Sorcerers attempting to do the",
             "same thing with kinesis have so far been",
             "unsuccessful."
         ]
@@ -164,8 +164,68 @@
             "not simply hurl one force at another.",
             "The study of TEMULTURGY is specialized",
             "toward disrupting an object's structure.",
-            "So far sorcerors haven't figured out",
+            "So far sorcerers haven't figured out",
             "how to practice this on living targets."
         ]
-    }
+    },
+    "scepter": {
+        "blurb": [
+            "With its incredible destructive potential",
+            "the ARCHON SCEPTER is fed by the wielder's",
+            "surrendered memories.",
+            "Those found wielding one usually claim",
+            "they own it by birthright. Others cannot",
+            "recall where they obtained it."
+        ]
+    },
+    "source_foci": {
+        "blurb": [
+            "Sorcerers often carry raw elemental",
+            "manifestations as SOURCE FOCI, improving",
+            "their connection to magical energies.",
+            "Each one emits a glow, and readily",
+            "provides a channel for rapid evocation",
+            "when needed for dealing with threats."
+        ]
+    },
+    "holy_symbols": {
+        "blurb": [
+            "Casting out darkness wherever they go,",
+            "devout thaumaturgists wield HOLY SYMBOLS.",
+            "Dedicating a prayer with one of these in",
+            "hand provides its blessing to any willing",
+            "soul when the magical chant concludes.",
+            "Taking more time improves the effect."
+        ]
+    },
+    "dark_icons": {
+        "blurb": [
+            "DARK ICONS are used by mystics to",
+            "channel their magical arts to lay",
+            "curses against their enemies.",
+            "Each one provides its own malus that",
+            "the caster invokes with whispers,",
+            "hindering enemies from some distance."
+        ]
+    },
+    "instruments": {
+        "blurb": [
+            "While mundane on their own, MUSICAL",
+            "INSTRUMENTS channel magic from the",
+            "musician's spirit, uplifting friends",
+            "who are present to hear it.",
+            "When played with dedication and care,",
+            "songs hang in the air for a while."
+        ]
+    },
+    "jewels": {
+        "blurb": [
+            "JEWELS are valuable and alluring to",
+            "most intelligent creatures, serving",
+            "as fine payment for loyal followers.",
+			"Many jewelers embed their gemstones",
+			"in gold, enhancing their beauty",
+			"in addition to their value."
+        ]
+    }	
 }

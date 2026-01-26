@@ -1527,7 +1527,7 @@ int Stat::getActiveShieldBonus(bool checkShield, bool excludeSkill, Item* shield
 	}
 }
 
-int Stat::getParryingACBonus(bool checkWeapon, bool excludeSkill, int weaponSkill) const
+int Stat::getParryingACBonus(Stat* myStats, Item* myWeapon, bool checkWeapon, bool excludeSkill, int weaponSkill)
 {
 	if ( !checkWeapon )
 	{
@@ -1535,12 +1535,12 @@ int Stat::getParryingACBonus(bool checkWeapon, bool excludeSkill, int weaponSkil
 		{
 			return 0;
 		}
-		return (getModifiedProficiency(weaponSkill) / 25);
+		return (myStats ? myStats->getModifiedProficiency(weaponSkill) / 25 : 0);
 	}
 
-	if ( weapon )
+	if ( myWeapon )
 	{
-		if ( itemCategory(weapon) != WEAPON )
+		if ( itemCategory(myWeapon) != WEAPON )
 		{
 			return 0;
 		}
@@ -1548,9 +1548,9 @@ int Stat::getParryingACBonus(bool checkWeapon, bool excludeSkill, int weaponSkil
 		{
 			return 0;
 		}
-		int bonus = (getModifiedProficiency(weaponSkill) / 25);
-		bonus += weapon->weaponGetAttack(this);
-		bonus += (5 + (excludeSkill ? 0 : std::min(SKILL_LEVEL_SKILLED, getModifiedProficiency(weaponSkill)) / 5));
+		int bonus = (myStats ? myStats->getModifiedProficiency(weaponSkill) / 25 : 0);
+		bonus += myWeapon->weaponGetAttack(myStats);
+		bonus += (5 + (excludeSkill ? 0 : std::min(SKILL_LEVEL_SKILLED, myStats ? myStats->getModifiedProficiency(weaponSkill) : 0) / 5));
 		return bonus;
 	}
 	else

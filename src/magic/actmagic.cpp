@@ -8213,6 +8213,17 @@ void actParticleBolas(Entity* my)
 			}
 		}
 
+		if ( multiplayer != CLIENT )
+		{
+			if ( Entity* parent = uidToEntity(my->skill[16]) )
+			{
+				if ( parent->behavior == &actPlayer )
+				{
+					Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_EFFECT_DURATION, BOLAS, my->ticks);
+				}
+			}
+		}
+
 		list_RemoveNode(my->mynode);
 		return;
 	}

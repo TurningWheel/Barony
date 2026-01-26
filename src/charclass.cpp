@@ -3443,7 +3443,7 @@ void initClass(const int player)
 	players[player]->mechanics.ducksInARow.clear();
 	if ( client_classes[player] == CLASS_HERMIT )
 	{
-		players[player]->mechanics.ducksInARow.push_back(((uniqueGameKey + player) % MAXPLAYERS));
+		players[player]->mechanics.ducksInARow.push_back(std::make_pair(((uniqueGameKey + player) % MAXPLAYERS), 0));
 	}
 
 	if ( stats[player]->playerRace == RACE_SALAMANDER && stats[player]->stat_appearance == 0 )

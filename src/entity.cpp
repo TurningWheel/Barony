@@ -12611,8 +12611,21 @@ void Entity::attack(int pose, int charge, Entity* target)
 							{
 								parriedDamage = hitstats->weapon && hitstats->weapon->type == RAPIER ?
 									Entity::getAttack(hit.entity, hitstats, hit.entity->behavior == &actPlayer, 0) : 0;
-								parriedDamage = std::max(1, parriedDamage);
+
 								parriedSkill = getWeaponSkill(hitstats->weapon);
+								if ( hitstats->weapon && hitstats->weapon->type == RAPIER )
+								{
+									real_t variance = 20;
+									real_t baseSkillModifier = 50.0; // 40-60 base
+									Entity::setMeleeDamageSkillModifiers(hit.entity, hitstats, parriedSkill, baseSkillModifier, variance, nullptr);
+									real_t skillModifier = baseSkillModifier - (variance / 2) + (hitstats->getModifiedProficiency(parriedSkill) / 2.0);
+									skillModifier += (local_rng.rand() % (1 + static_cast<int>(variance)));
+									skillModifier /= 100.0;
+									skillModifier = std::min(skillModifier, 1.0);
+									parriedDamage = parriedDamage - static_cast<int>((1.0 - skillModifier) * parriedDamage);
+								}
+
+								parriedDamage = std::max(1, parriedDamage);
 
 								if ( hit.entity->behavior == &actPlayer && hitstats->weapon )
 								{
@@ -16803,7 +16816,7 @@ int AC(Stat* stat)
 
 	if ( stat->parrying && stat->weapon )
 	{
-		armor += stat->getParryingACBonus(true, false, getWeaponSkill(stat->weapon));
+		armor += Stat::getParryingACBonus(stat, stat->weapon, true, false, getWeaponSkill(stat->weapon));
 	}
 	else if ( stat->shield )
 	{

@@ -601,6 +601,17 @@ bool duckAreaQuck(Entity* my)
 					anyTarget = true;
 					++numEffected;
 					target->setEffect(EFF_DISTRACTED_COOLDOWN, true, TICKS_PER_SECOND * 2 + 25, false);
+					if ( my->behavior == &actMonster )
+					{
+						if ( Stat* myStats = my->getStats() )
+						{
+							int owner = achievementObserver.checkUidIsFromPlayer(myStats->leader_uid);
+							if ( owner >= 0 )
+							{
+								Compendium_t::Events_t::eventUpdate(owner, Compendium_t::CPDM_SPELL_TARGETS, TOOL_DUCK, 1);
+							}
+						}
+					}
 				}
 			}
 		}
@@ -1102,6 +1113,14 @@ void duckAnimate(Entity* my, Stat* myStats, double dist)
 					{
 						myStats->setEffectActive(EFF_STUNNED, 1);
 						myStats->EFFECTS_TIMERS[EFF_STUNNED] = 50;
+
+						if ( Entity* leader = uidToEntity(myStats->leader_uid) )
+						{
+							if ( leader->behavior == &actPlayer )
+							{
+								Compendium_t::Events_t::eventUpdate(leader->skill[2], Compendium_t::CPDM_DUCK_DODGE, TOOL_DUCK, 1);
+							}
+						}
 					}
 					playSoundEntityLocal(my, 794 + local_rng.rand() % 2, 128);
 					playSoundEntityLocal(my, 786 + local_rng.rand() % 3, 128);
@@ -1123,6 +1142,14 @@ void duckAnimate(Entity* my, Stat* myStats, double dist)
 					{
 						myStats->setEffectActive(EFF_STUNNED, 1);
 						myStats->EFFECTS_TIMERS[EFF_STUNNED] = 50;
+
+						if ( Entity* leader = uidToEntity(myStats->leader_uid) )
+						{
+							if ( leader->behavior == &actPlayer )
+							{
+								Compendium_t::Events_t::eventUpdate(leader->skill[2], Compendium_t::CPDM_DUCK_DODGE, TOOL_DUCK, 1);
+							}
+						}
 					}
 					playSoundEntityLocal(my, 794 + local_rng.rand() % 2, 128);
 					playSoundEntityLocal(my, 786 + local_rng.rand() % 3, 128);
@@ -1391,6 +1418,10 @@ void duckAnimate(Entity* my, Stat* myStats, double dist)
 											if ( leader->behavior == &actPlayer )
 											{
 												players[leader->skill[2]]->mechanics.numFishingCaught++;
+												if ( item->type == FOOD_FISH )
+												{
+													Compendium_t::Events_t::eventUpdate(leader->skill[2], Compendium_t::CPDM_DUCK_CAUGHT, TOOL_DUCK, 1);
+												}
 											}
 										}
 									}

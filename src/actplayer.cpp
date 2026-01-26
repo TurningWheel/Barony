@@ -2578,7 +2578,7 @@ void actDeathGhost(Entity* my)
 			cosmeticSprite = 2225;
 			if ( player->mechanics.ducksInARow.size() )
 			{
-				appearance = player->mechanics.ducksInARow.at(0);
+				appearance = player->mechanics.ducksInARow.at(0).first;
 			}
 			if ( appearance == 0 )
 			{
@@ -7808,7 +7808,7 @@ void actPlayer(Entity* my)
 						{
 							if ( item->getDuckPlayer() == PLAYER_NUM )
 							{
-								if ( ((item->appearance % items[TOOL_DUCK].variations) / MAXPLAYERS) == duck )
+								if ( ((item->appearance % items[TOOL_DUCK].variations) / MAXPLAYERS) == duck.first )
 								{
 									birdInHand = true;
 									break;
@@ -7825,7 +7825,7 @@ void actPlayer(Entity* my)
 						// request duck
 						strcpy((char*)net_packet->data, "DUCK");
 						net_packet->data[4] = PLAYER_NUM;
-						net_packet->data[5] = duck;
+						net_packet->data[5] = duck.first;
 						net_packet->address.host = net_server.host;
 						net_packet->address.port = net_server.port;
 						net_packet->len = 6;
@@ -7834,7 +7834,7 @@ void actPlayer(Entity* my)
 					else
 					{
 						players[PLAYER_NUM]->mechanics.pendingDucks.push_back(
-							std::make_pair(duck, ticks + (3 + (local_rng.rand() % 30)) * TICKS_PER_SECOND));
+							std::make_pair(duck.first, ticks + (3 + (local_rng.rand() % 30)) * TICKS_PER_SECOND));
 					}
 				}
 			}
@@ -8114,6 +8114,30 @@ void actPlayer(Entity* my)
 					if ( PLAYER_ALIVETIME % 420 == 0 )
 					{
 						messagePlayerColor(PLAYER_NUM, MESSAGE_WORLD, color, Language::get(538 + local_rng.rand() % 32));
+					}
+				}
+			}
+
+			if ( my->effectShapeshift == NOTHING && stats[PLAYER_NUM]->shield && stats[PLAYER_NUM]->shield->type == TOOL_DUCK )
+			{
+				if ( stats[PLAYER_NUM]->shield->getDuckPlayer() == PLAYER_NUM )
+				{
+					for ( auto& duck : players[PLAYER_NUM]->mechanics.ducksInARow )
+					{
+						if ( duck.first == ((stats[PLAYER_NUM]->shield->appearance % items[TOOL_DUCK].variations) / MAXPLAYERS) )
+						{
+							duck.second++;
+							if ( duck.second % (1 * TICKS_PER_SECOND) == 0 )
+							{
+								Compendium_t::Events_t::eventUpdate(PLAYER_NUM, Compendium_t::CPDM_GYROBOT_TIME_SPENT, TOOL_DUCK, (1 * TICKS_PER_SECOND));
+							}
+							if ( duck.second == 15 * 60 * TICKS_PER_SECOND )
+							{
+								createEnsembleHUDParticleCircling(my);
+								playSoundEntityLocal(my, 784 + local_rng.rand() % 2, 128);
+							}
+							break;
+						}
 					}
 				}
 			}

@@ -4582,6 +4582,23 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 					snprintf(buf, sizeof(buf), str.c_str(), percent, amount);
 				}
 			}
+			else if ( conditionalAttribute == "EFF_FLAIL" )
+			{
+				int percent = (50 + (compendiumTooltipIntro ? 0 : stats[player]->getModifiedProficiency(PRO_MACE) * 25 / 100.0)) - 100;
+				snprintf(buf, sizeof(buf), str.c_str(), percent);
+			}
+			else if ( conditionalAttribute == "EFF_SHILLELAGH" )
+			{
+				real_t variance = 20;
+				real_t baseSkillModifier = 50.0; // 40-60 base
+				real_t skillModifier = baseSkillModifier - (variance / 2) + (compendiumTooltipIntro ? 0 : stats[player]->getModifiedProficiency(PRO_MYSTICISM) / 2.0);
+
+				int valueLow = skillModifier;
+				int valueHigh = skillModifier + variance;
+				valueHigh = std::min(100, valueHigh);
+
+				snprintf(buf, sizeof(buf), str.c_str(), valueLow, valueHigh);
+			}
 			else
 			{
 				snprintf(buf, sizeof(buf), str.c_str(), getItemEquipmentEffectsForIconText(conditionalAttribute).c_str());
@@ -4720,6 +4737,11 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 	{
 		const int atk = 10 + 3 * (item.status + item.beatitude);
 		snprintf(buf, sizeof(buf), str.c_str(), atk);
+	}
+	else if ( tooltipType.find("tooltip_jewel") != std::string::npos )
+	{
+		int tier = std::max(DECREPIT, item.status);
+		snprintf(buf, sizeof(buf), str.c_str(), adjectives["jewel_levels"][std::to_string(tier)].c_str(), getItemStatusAdjective(item.type, item.status).c_str());
 	}
 	else if ( tooltipType.find("tooltip_scroll") != std::string::npos )
 	{
@@ -5080,6 +5102,18 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		{
 			int statusModifier = item.status * 3;
 			snprintf(buf, sizeof(buf), str.c_str(), statusModifier, getItemStatusAdjective(item.type, item.status).c_str());
+		}
+		else
+		{
+			return;
+		}
+	}
+	else if ( tooltipType == "tooltip_jewel" )
+	{
+		if ( detailTag == "jewel_limit" )
+		{
+			int allowedFollowers = std::min(8, std::max(4, compendiumTooltipIntro ? 0 : 2 * (stats[player]->getModifiedProficiency(PRO_LEADERSHIP) / 20)));
+			snprintf(buf, sizeof(buf), str.c_str(), allowedFollowers);
 		}
 		else
 		{
@@ -5736,6 +5770,13 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 				}
 			}
 		}
+		else if ( detailTag == "weapon_parry_ac" )
+		{
+			Entity* my = compendiumTooltipIntro ? nullptr : players[player]->entity;
+			Stat* myStats = compendiumTooltipIntro ? nullptr : stats[player];
+			int parryBonus = Stat::getParryingACBonus(myStats, &item, true, false, proficiency);
+			snprintf(buf, sizeof(buf), str.c_str(), parryBonus);
+		}
 		else
 		{
 			return;
@@ -6380,6 +6421,43 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		{
 			return;
 		}
+	}
+	else if ( detailTag == "duck_info" )
+	{
+		std::string ownerName = adjectives["duck_default"]["unknown"];
+		std::string duckName = adjectives["duck_default"]["unknown"];
+		int owner = item.getDuckPlayer();
+		if ( owner >= 0 && owner < MAXPLAYERS && !compendiumTooltipIntro )
+		{
+			if ( !client_disconnected[owner] && stats[owner] )
+			{
+				ownerName = stats[owner]->name;
+			}
+		}
+		if ( owner == player && !compendiumTooltipIntro )
+		{
+			for ( auto& duck : players[player]->mechanics.ducksInARow )
+			{
+				if ( duck.first == ((item.appearance % items[TOOL_DUCK].variations) / MAXPLAYERS) )
+				{
+					if ( duck.second >= 15 * 60 * TICKS_PER_SECOND )
+					{
+						if ( adjectives["duck_titles"].size() >= 1 )
+						{
+							int index = uniqueGameKey % adjectives["duck_titles"].size();
+							index += 8 * player;
+							if ( index >= adjectives["duck_titles"].size() )
+							{
+								index = index % adjectives["duck_titles"].size();
+							}
+							duckName = adjectives["duck_titles"][std::to_string(index)];
+						}
+					}
+					break;
+				}
+			}
+		}
+		snprintf(buf, sizeof(buf), str.c_str(), ownerName.c_str(), duckName.c_str());
 	}
 	else
 	{
