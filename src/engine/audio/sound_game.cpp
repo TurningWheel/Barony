@@ -1235,6 +1235,7 @@ FMOD_RESULT F_CALLBACK pcmreadcallback(FMOD_SOUND* sound, void* data, unsigned i
 	}
 
 	VoiceChat.PlayerChannels[player].audio_queue_mutex.lock();
+    
 	auto& audioQueue = VoiceChat.PlayerChannels[player].audioQueue;
 	unsigned int bytesRead = std::min(datalen, (unsigned int)audioQueue.size());
 

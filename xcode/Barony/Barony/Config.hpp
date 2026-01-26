@@ -2,13 +2,14 @@
 
 #ifndef EDITOR
 #define USE_FMOD
-//#define STEAMWORKS
-//#define USE_EOS
+#define USE_OPUS
+#define STEAMWORKS
+#define USE_EOS
 //#define BARONY_SUPER_MULTIPLAYER
 #define USE_THEORA_VIDEO
 #define GL_SILENCE_DEPRECATION
 //#define USE_IMGUI
-//#define USE_PLAYFAB
+#define USE_PLAYFAB
 #endif
 
 // defines tags necessary for USE_EOS,
