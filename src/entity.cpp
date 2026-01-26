@@ -8109,7 +8109,7 @@ real_t Entity::getACEffectiveness(Entity* my, Stat* myStats, bool isPlayer, Enti
 }
 
 real_t Entity::PlayerAttackMeleeStatFactor = 0.055;
-real_t Entity::PlayerAttackRangedStatFactor = 0.06;
+real_t Entity::PlayerAttackRangedStatFactor = 0.055;
 real_t Entity::PlayerAttackThrownStatFactor = 0.0625;
 
 /*-------------------------------------------------------------------------------
