@@ -1097,6 +1097,14 @@ bool magicOnSpellCastEvent(Entity* parent, Entity* projectile, Entity* hitentity
 			if ( spellID == SPELL_BREATHE_FIRE )
 			{
 			}
+			else if ( spellID == SPELL_FOCI_ARCS
+				|| spellID == SPELL_FOCI_NEEDLES
+				|| spellID == SPELL_FOCI_FIRE
+				|| spellID == SPELL_FOCI_SNOW
+				|| spellID == SPELL_FOCI_SANDBLAST )
+			{
+				magicstaff = true;
+			}
 			else
 			{
 				allowedLevelup = false; // foci/sprays
@@ -1588,6 +1596,11 @@ void magicOnEntityHit(Entity* parent, Entity* particle, Entity* hitentity, Stat*
 				if ( damageTaken > 0 )
 				{
 					Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_SPELL_DMG, (ItemType)find->second.fociId, damageTaken);
+					magicOnSpellCastEvent(parent, particle, hitentity, spellID, 
+						additionalFlags 
+						| spell_t::SPELL_LEVEL_EVENT_DMG 
+						| spell_t::SPELL_LEVEL_EVENT_MINOR_CHANCE
+						| spell_t::SPELL_LEVEL_EVENT_MAGICSTAFF, 1);
 				}
 			}
 		}
@@ -2278,6 +2291,18 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 
 							magicOnSpellCastEvent(hit.entity, hit.entity, parent, SPELL_MAGICIANS_ARMOR, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
+							if ( hit.entity->behavior == &actPlayer )
+							{
+								steamStatisticUpdateClient(hit.entity->skill[2], STEAM_STAT_DOESNT_COUNT, STEAM_STAT_INT, 1);
+								if ( parent && parent->behavior == &actMonster )
+								{
+									int type = parent->getMonsterTypeFromSprite();
+									if ( type == LICH || type == LICH_FIRE || type == LICH_ICE )
+									{
+										serverUpdatePlayerGameplayStats(hit.entity->skill[2], STATISTICS_THATS_CHEATING, 1);
+									}
+								}
+							}
 
 							if ( (parent && parent->behavior == &actPlayer) || (parent && parent->behavior == &actMonster && parent->monsterAllyGetPlayerLeader())
 								|| hit.entity->behavior == &actPlayer || hit.entity->monsterAllyGetPlayerLeader() )
@@ -4063,7 +4088,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 
 						// Attempt to set the Entity on fire
 						int prevBurningCounter = hit.entity->flags[BURNING] ? hit.entity->char_fire : 0;
-						hit.entity->SetEntityOnFire((parent&& parent->getStats()) ? parent : nullptr);
+						hit.entity->SetEntityOnFire((parent && parent->getStats()) ? parent : nullptr);
 						if ( hit.entity->flags[BURNING] 
 							&& (prevBurningCounter == 0 || (spell->ID == SPELL_FOCI_FIRE || spell->ID == SPELL_BREATHE_FIRE)) )
 						{
@@ -4267,6 +4292,28 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									{
 										steamAchievementClient(parent->skill[2], "BARONY_ACH_TIME_TO_PLAN");
 									}
+
+									if ( spell->ID == SPELL_BREATHE_FIRE && hitstats )
+									{
+										if ( parent && parent->behavior == &actPlayer )
+										{
+											if ( (hitstats->type == SLIME && hitstats->getAttribute("slime_type") == "slime red")
+												|| hitstats->type == LICH_FIRE
+												|| hitstats->type == DEVIL
+												|| hitstats->type == DEMON
+												|| hitstats->type == CREATURE_IMP )
+											{
+												if ( Stat* parentStats = parent->getStats() )
+												{
+													if ( parentStats->playerRace == RACE_SALAMANDER && parentStats->stat_appearance == 0 )
+													{
+														steamAchievementClient(parent->skill[2], "BARONY_ACH_FIGHT_FIRE_WITH");
+													}
+												}
+											}
+										}
+									}
+
 									parent->awardXP( hit.entity, true, true );
 									spawnBloodVialOnMonsterDeath(hit.entity, hitstats, parent);
 								}
@@ -12428,10 +12475,18 @@ void actParticleTimer(Entity* my)
 
 							{
 								int damage = std::max(10, statGetCON(parentStats, parent));
-								if ( entity->getStats() )
+								if ( Stat* entityStats = entity->getStats() )
 								{
+									Sint32 oldHP = entityStats->HP;
 									if ( applyGenericMagicDamage(parent, entity, *parent, SPELL_NONE, damage, true, true) )
 									{
+										if ( entityStats->HP == 0 && oldHP > entityStats->HP )
+										{
+											if ( Entity* leader = parent->monsterAllyGetPlayerLeader() )
+											{
+												steamAchievementClient(leader->skill[2], "BARONY_ACH_BOLDER_BOULDER");
+											}
+										}
 										++hitProps->hits;
 										hitProps->tick = ticks;
 									}
@@ -12550,7 +12605,7 @@ void actParticleTimer(Entity* my)
 										{
 											damage *= 2;
 										}
-										applyGenericMagicDamage(caster, entity, *my, SPELL_NONE, damage, true);
+										applyGenericMagicDamage(caster, entity, *my, SPELL_BOOBY_TRAP, damage, true);
 										if ( entity->SetEntityOnFire(caster) )
 										{
 											if ( caster )
@@ -12570,7 +12625,7 @@ void actParticleTimer(Entity* my)
 								}
 								else
 								{
-									if ( applyGenericMagicDamage(caster, entity, *my, SPELL_NONE, damage, true) )
+									if ( applyGenericMagicDamage(caster, entity, *my, SPELL_BOOBY_TRAP, damage, true) )
 									{
 										entity->SetEntityOnFire(caster);
 									}
@@ -20438,6 +20493,30 @@ void actRadiusMagic(Entity* my)
 					{
 						magicOnSpellCastEvent(caster, caster, uidToEntity(ent->parent), my->actRadiusMagicID, 
 							spell_t::SPELL_LEVEL_EVENT_DEFAULT | spell_t::SPELL_LEVEL_EVENT_MINOR_CHANCE, 1);
+
+						if ( caster->behavior == &actPlayer )
+						{
+							if ( ent->behavior == &actMagicMissile )
+							{
+								if ( ent->children.first )
+								{
+									if ( spell_t* spell = (spell_t*)ent->children.first->element )
+									{
+										if ( Entity* spellCaster = uidToEntity(spell->caster) )
+										{
+											if ( spellCaster->behavior == &actMonster )
+											{
+												int type = spellCaster->getMonsterTypeFromSprite();
+												if ( type == LICH || type == LICH_FIRE || type == LICH_ICE )
+												{
+													serverUpdatePlayerGameplayStats(caster->skill[2], STATISTICS_THATS_CHEATING, 1);
+												}
+											}
+										}
+									}
+								}
+							}
+						}
 					}
 
 					ent->removeLightField();

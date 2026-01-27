@@ -3950,6 +3950,12 @@ bool applyGenericMagicDamage(Entity* caster, Entity* hitentity, Entity& damageSo
 			{
 				caster->awardXP(hitentity, true, true);
 			}
+
+			if ( spellID == SPELL_BOOBY_TRAP && caster->behavior == &actPlayer )
+			{
+				steamStatisticUpdateClient(caster->skill[2], STEAM_STAT_BOOM_DYNAMITE, STEAM_STAT_INT, 1);
+			}
+
 			spawnBloodVialOnMonsterDeath(hitentity, targetStats, caster);
 		}
 

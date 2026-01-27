@@ -577,6 +577,7 @@ public:
 	Sint32& itemContainer; //skill[29]
 	Sint32& itemFollowUID = skill[30];
 	Sint32& itemReturnUID = skill[31];
+	Sint32& itemGerminateResult = skill[32];
 	real_t& itemWaterBob; //fskill[2]
 	real_t& itemLevitate = fskill[3];
 	real_t& itemLevitateStartZ = fskill[4];

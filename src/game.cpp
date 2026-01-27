@@ -1469,6 +1469,34 @@ void gameLogic(void)
 						steamAchievementClient(c, "BARONY_ACH_GILDED");
 					}
 
+					{
+						int numsongs = 0;
+						if ( ((int)stats[c]->getEffectActive(EFF_ENSEMBLE_FLUTE) - 1) >= Stat::kEnsembleBreakPointTier4 )
+						{
+							++numsongs;
+						}
+						if ( ((int)stats[c]->getEffectActive(EFF_ENSEMBLE_LUTE) - 1) >= Stat::kEnsembleBreakPointTier4 )
+						{
+							++numsongs;
+						}
+						if ( ((int)stats[c]->getEffectActive(EFF_ENSEMBLE_LYRE) - 1) >= Stat::kEnsembleBreakPointTier4 )
+						{
+							++numsongs;
+						}
+						if ( ((int)stats[c]->getEffectActive(EFF_ENSEMBLE_HORN) - 1) >= Stat::kEnsembleBreakPointTier4 )
+						{
+							++numsongs;
+						}
+						if ( ((int)stats[c]->getEffectActive(EFF_ENSEMBLE_DRUM) - 1) >= Stat::kEnsembleBreakPointTier4 )
+						{
+							++numsongs;
+						}
+						if ( numsongs >= 4 )
+						{
+							steamAchievementClient(c, "BARONY_ACH_POWER_BALLAD");
+						}
+					}
+
 					if ( stats[c]->helmet && stats[c]->helmet->type == HAT_WOLF_HOOD
 						&& stats[c]->helmet->beatitude > 0 )
 					{
@@ -2576,6 +2604,60 @@ void gameLogic(void)
 						players[c]->compendiumProgress.playerAliveTimeTotal = 0;
 						players[c]->compendiumProgress.playerGameTimeTotal = 0;
 
+						if ( c == clientnum && !playerDied[c] )
+						{
+							if ( stats[c]->type == MYCONID && stats[c]->playerRace == RACE_MYCONID && stats[c]->stat_appearance == 0
+								&& stats[c]->helmet && gameStatistics[STATISTICS_NO_CAP] >= 0 )
+							{
+								gameStatistics[STATISTICS_NO_CAP]++;
+								if ( gameStatistics[STATISTICS_NO_CAP] >= 5 )
+								{
+									steamAchievement("BARONY_ACH_NO_CAP");
+								}
+							}
+							if ( stats[c]->getEffectActive(EFF_GROWTH) >= 2
+								&& ((stats[c]->type == MYCONID && stats[c]->playerRace == RACE_MYCONID)
+									|| (stats[c]->type == DRYAD && stats[c]->playerRace == RACE_DRYAD)) && stats[c]->stat_appearance == 0
+								&& !stats[c]->helmet && gameStatistics[STATISTICS_DONT_TOUCH_HAIR] >= 0 )
+							{
+								gameStatistics[STATISTICS_DONT_TOUCH_HAIR]++;
+								if ( gameStatistics[STATISTICS_DONT_TOUCH_HAIR] >= 25 )
+								{
+									steamAchievement("BARONY_ACH_DONT_TOUCH_HAIR");
+								}
+							}
+							if ( stats[c]->type == SALAMANDER && stats[c]->playerRace == RACE_SALAMANDER && stats[c]->stat_appearance == 0
+								&& stats[c]->getEffectActive(EFF_SALAMANDER_HEART) >= 3 && stats[c]->getEffectActive(EFF_SALAMANDER_HEART) <= 4
+								&& gameStatistics[STATISTICS_GARGOYLES_QUEST] >= 0 )
+							{
+								gameStatistics[STATISTICS_GARGOYLES_QUEST]++;
+								if ( gameStatistics[STATISTICS_GARGOYLES_QUEST] >= 10 )
+								{
+									steamAchievement("BARONY_ACH_GARGOYLES_QUEST");
+								}
+							}
+							if ( stats[c]->type == SALAMANDER && stats[c]->playerRace == RACE_SALAMANDER && stats[c]->stat_appearance == 0
+								&& stats[c]->getEffectActive(EFF_SALAMANDER_HEART) >= 1 && stats[c]->getEffectActive(EFF_SALAMANDER_HEART) <= 2
+								&& gameStatistics[STATISTICS_FIRE_FIGHTER] >= 0 )
+							{
+								gameStatistics[STATISTICS_FIRE_FIGHTER]++;
+								if ( gameStatistics[STATISTICS_FIRE_FIGHTER] >= 5 )
+								{
+									steamAchievement("BARONY_ACH_FIRE_FIGHTER");
+								}
+							}
+							if ( stats[c]->type == SALAMANDER && stats[c]->playerRace == RACE_SALAMANDER && stats[c]->stat_appearance == 0
+								&& !stats[c]->getEffectActive(EFF_SALAMANDER_HEART)
+								&& gameStatistics[STATISTICS_DISCIPLINE] >= 0 )
+							{
+								gameStatistics[STATISTICS_DISCIPLINE]++;
+								if ( gameStatistics[STATISTICS_DISCIPLINE] >= 25 )
+								{
+									steamAchievement("BARONY_ACH_DISCIPLINE");
+								}
+							}
+						}
+
 						// unsustain any previous effects
 						node_t* spellnode;
 						spellnode = stats[c]->magic_effects.first;
@@ -2840,6 +2922,7 @@ void gameLogic(void)
 				}
 
 				int bloodCount = 0;
+				std::map<int, int> numKeys;
 				for ( node = stats[player]->inventory.first; node != NULL; node = nextnode )
 				{
 					nextnode = node->next;
@@ -2880,6 +2963,16 @@ void gameLogic(void)
 							break;
 						case ARTIFACT_SPEAR:
 							steamAchievement("BARONY_ACH_SPEAR_OF_DESTINY");
+							break;
+						case KEY_STONE:
+						case KEY_BONE:
+						case KEY_BRONZE:
+						case KEY_IRON:
+						case KEY_SILVER:
+						case KEY_GOLD:
+						case KEY_CRYSTAL:
+						case KEY_MACHINE:
+							numKeys[item->type]++;
 							break;
 						default:
 							break;
@@ -2983,6 +3076,11 @@ void gameLogic(void)
 							}
 						}
 					}
+				}
+
+				if ( numKeys.size() >= 4 )
+				{
+					steamAchievement("BARONY_ACH_JANITOR");
 				}
 			}
 
@@ -3538,6 +3636,7 @@ void gameLogic(void)
 			}
 
 			int bloodCount = 0;
+			std::map<int, int> numKeys;
 			players[clientnum]->magic.bHasUnreadNewSpell = false;
 			for ( node = stats[clientnum]->inventory.first; node != NULL; node = nextnode )
 			{
@@ -3579,6 +3678,16 @@ void gameLogic(void)
 						break;
 					case ARTIFACT_SPEAR:
 						steamAchievement("BARONY_ACH_SPEAR_OF_DESTINY");
+						break;
+					case KEY_STONE:
+					case KEY_BONE:
+					case KEY_BRONZE:
+					case KEY_IRON:
+					case KEY_SILVER:
+					case KEY_GOLD:
+					case KEY_CRYSTAL:
+					case KEY_MACHINE:
+						numKeys[item->type]++;
 						break;
 					default:
 						break;
@@ -3682,6 +3791,11 @@ void gameLogic(void)
 						}
 					}
 				}
+			}
+
+			if ( numKeys.size() >= 4 )
+			{
+				steamAchievement("BARONY_ACH_JANITOR");
 			}
 
 			if ( kills[SHOPKEEPER] >= 3 )

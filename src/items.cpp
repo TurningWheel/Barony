@@ -4687,7 +4687,7 @@ Sint32 Item::weaponGetAttack(const Stat* const wielder) const
 	}
 	else if ( type == HEAVY_CROSSBOW )
 	{
-		attack += 12;
+		attack += 14;
 	}
 	else if ( type == COMPOUND_BOW )
 	{

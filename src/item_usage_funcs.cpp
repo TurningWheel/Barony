@@ -3079,6 +3079,8 @@ void item_ScrollEnchantWeapon(Item* item, int player)
 				{
 					Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_GOLD_CASTED, "gold", goldSubtract);
 					Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_GOLD_CASTED_RUN, "gold", goldSubtract);
+
+					steamStatisticUpdate(STEAM_STAT_PAY_TO_WIN, STEAM_STAT_INT, goldSubtract);
 				}
 			}
 
@@ -3324,6 +3326,8 @@ void item_ScrollEnchantArmor(Item* item, int player)
 				{
 					Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_GOLD_CASTED, "gold", goldSubtract);
 					Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_GOLD_CASTED_RUN, "gold", goldSubtract);
+
+					steamStatisticUpdate(STEAM_STAT_PAY_TO_WIN, STEAM_STAT_INT, goldSubtract);
 				}
 			}
 
@@ -5317,21 +5321,27 @@ void item_Food(Item*& item, int player)
 		{
 		case FOOD_RATION_SPICY:
 			effectID = EFF_RATION_SPICY;
+			serverUpdatePlayerGameplayStats(player, STATISTICS_FLAVORTOWN, 1 << 0);
 			break;
 		case FOOD_RATION_SOUR:
 			effectID = EFF_RATION_SOUR;
+			serverUpdatePlayerGameplayStats(player, STATISTICS_FLAVORTOWN, 1 << 1);
 			break;
 		case FOOD_RATION_BITTER:
 			effectID = EFF_RATION_BITTER;
+			serverUpdatePlayerGameplayStats(player, STATISTICS_FLAVORTOWN, 1 << 2);
 			break;
 		case FOOD_RATION_HEARTY:
 			effectID = EFF_RATION_HEARTY;
+			serverUpdatePlayerGameplayStats(player, STATISTICS_FLAVORTOWN, 1 << 3);
 			break;
 		case FOOD_RATION_HERBAL:
 			effectID = EFF_RATION_HERBAL;
+			serverUpdatePlayerGameplayStats(player, STATISTICS_FLAVORTOWN, 1 << 4);
 			break;
 		case FOOD_RATION_SWEET:
 			effectID = EFF_RATION_SWEET;
+			serverUpdatePlayerGameplayStats(player, STATISTICS_FLAVORTOWN, 1 << 5);
 			break;
 		default:
 			break;

@@ -1011,7 +1011,14 @@ void loadAchievementData(const char* path) {
 						}
 						else if ( !strcmp(it->GetString(), "deserters_disciples") )
 						{
-							achData.dlcType = Compendium_t::AchievementData_t::ACH_TYPE_DLC3;
+							if ( achData.dlcType == Compendium_t::AchievementData_t::ACH_TYPE_DLC1_DLC2 )
+							{
+								achData.dlcType = Compendium_t::AchievementData_t::ACH_TYPE_DLC1_DLC2_DLC3;
+							}
+							else
+							{
+								achData.dlcType = Compendium_t::AchievementData_t::ACH_TYPE_DLC3;
+							}
 						}
 					}
 				}

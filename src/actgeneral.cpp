@@ -1217,11 +1217,19 @@ void Entity::colliderOnDestroy()
 			{
 				if ( local_rng.rand() % 10 == 0 )
 				{
-					dropItemMonster(newItem(DUST_BALL, SERVICABLE, 0, 1, 0, true, nullptr), this, nullptr);
+					if ( Entity* ent = dropItemMonster(newItem(DUST_BALL, SERVICABLE, 0, 1, 0, true, nullptr), this, nullptr) )
+					{
+						ent->itemOriginalOwner = colliderCreatedParent;
+						ent->itemGerminateResult = 1;
+					}
 				}
 				else
 				{
-					dropItemMonster(newItem(FOOD_SHROOM, SERVICABLE, 0, 1, 0, true, nullptr), this, nullptr);
+					if ( Entity* ent = dropItemMonster(newItem(FOOD_SHROOM, SERVICABLE, 0, 1, 0, true, nullptr), this, nullptr) )
+					{
+						ent->itemOriginalOwner = colliderCreatedParent;
+						ent->itemGerminateResult = 1;
+					}
 				}
 			}
 			Entity* parent = uidToEntity(this->colliderCreatedParent);
@@ -1231,7 +1239,11 @@ void Entity::colliderOnDestroy()
 		{
 			for ( int i = 0; i < this->colliderDropVariable; ++i )
 			{
-				dropItemMonster(newItem(FOOD_NUT, SERVICABLE, 0, 1, 0, true, nullptr), this, nullptr);
+				if ( Entity* ent = dropItemMonster(newItem(FOOD_NUT, SERVICABLE, 0, 1, 0, true, nullptr), this, nullptr) )
+				{
+					ent->itemOriginalOwner = colliderCreatedParent;
+					ent->itemGerminateResult = 1;
+				}
 			}
 		}
 	}

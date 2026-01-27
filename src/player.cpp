@@ -3259,6 +3259,7 @@ void Player::init() // for use on new/restart game, UI related
 	mechanics.ensembleDataUpdate = 0;
 	mechanics.gremlinBreakableCounter = 0;
 	mechanics.escalatingRngRolls.clear();
+	mechanics.favoriteBooksAchievement.clear();
 
 	mechanics.fociDarkChargeTime = 0;
 	mechanics.fociHolyChargeTime = 0;

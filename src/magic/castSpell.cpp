@@ -286,6 +286,8 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook, bool 
 				{
 					Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_GOLD_CASTED, "gold", goldCost);
 					Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_GOLD_CASTED_RUN, "gold", goldCost);
+
+					steamStatisticUpdate(STEAM_STAT_PAY_TO_WIN, STEAM_STAT_INT, goldCost);
 				}
 			}
 		}
@@ -4246,6 +4248,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 
 							if ( caster->behavior == &actPlayer )
 							{
+								steamStatisticUpdateClient(caster->skill[2], STEAM_STAT_COLONIST, STEAM_STAT_INT, 1);
 								if ( Stat* casterStats = caster->getStats() )
 								{
 									if ( Uint8 effectStrength = casterStats->getEffectActive(EFF_GROWTH) )
@@ -4312,6 +4315,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 
 							if ( caster->behavior == &actPlayer )
 							{
+								steamStatisticUpdateClient(caster->skill[2], STEAM_STAT_COLONIST, STEAM_STAT_INT, 1);
 								if ( Stat* casterStats = caster->getStats() )
 								{
 									if ( Uint8 effectStrength = casterStats->getEffectActive(EFF_GROWTH) )
@@ -4324,6 +4328,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 											caster->flags[BURNING] = false;
 											serverUpdateEntityFlag(caster, BURNING);
 											messagePlayerColor(caster->isEntityPlayer(), MESSAGE_HINT, makeColorRGB(0, 255, 0), Language::get(6883));
+											steamAchievementClient(caster->isEntityPlayer(), "BARONY_ACH_MAKE_SMOKEY_PROUD");
 										}
 									}
 								}
@@ -5071,6 +5076,16 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 									{
 										monster->seedEntityRNG(rng.rand());
 										monster->monsterAcquireAttackTarget(*caster, MONSTER_STATE_PATH, true);
+										if ( itemPool[pick].type == SHADOW )
+										{
+											if ( Stat* monsterStats = monster->getStats() )
+											{
+												if ( caster->behavior == &actPlayer )
+												{
+													monsterStats->setAttribute("deface_spawn", std::to_string(caster->skill[2]));
+												}
+											}
+										}
 										if ( itemPool[pick].type == SLIME )
 										{
 											slimeSetType(monster, monster->getStats(), true, &rng);
@@ -5090,6 +5105,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							if ( caster->behavior == &actPlayer )
 							{
 								players[caster->skill[2]]->mechanics.incrementBreakableCounter(Player::PlayerMechanics_t::BreakableEvent::GBREAK_DEFACE, target);
+								serverUpdatePlayerGameplayStats(caster->skill[2], STATISTICS_WRECKING_CREW, 1);
 							}
 
 							if ( multiplayer == SERVER )

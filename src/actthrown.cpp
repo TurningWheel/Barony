@@ -1679,6 +1679,12 @@ void actThrown(Entity* my)
 								}
 								break;
 							case SLOP_BALL:
+							{
+								bool wasBlind = false;
+								if ( hitstats )
+								{
+									wasBlind = hitstats->getEffectActive(EFF_BLIND) > 0;
+								}
 								if ( hit.entity->setEffect(EFF_BLIND, true, 5 * TICKS_PER_SECOND, false) )
 								{
 									if ( hit.entity->behavior == &actPlayer )
@@ -1689,6 +1695,11 @@ void actThrown(Entity* my)
 									{
 										Uint32 color = makeColorRGB(0, 255, 0);
 										messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(3878), Language::get(3879), MSG_COMBAT);
+										if ( !wasBlind )
+										{
+											achievementObserver.addEntityAchievementTimer(parent, AchievementObserver::BARONY_ACH_FOOD_FIGHT, 5 * TICKS_PER_SECOND, false, 1);
+											achievementObserver.awardAchievementIfActive(parent->skill[2], parent, AchievementObserver::BARONY_ACH_FOOD_FIGHT);
+										}
 									}
 									if ( hit.entity->behavior == &actMonster )
 									{
@@ -1696,6 +1707,7 @@ void actThrown(Entity* my)
 									}
 								}
 								break;
+							}
 							case BOLAS:
 							{
 								int duration = 3 * TICKS_PER_SECOND;
@@ -1714,6 +1726,8 @@ void actThrown(Entity* my)
 								}
 								if ( hit.entity->setEffect(EFF_ROOTED, true, duration, false) )
 								{
+									achievementObserver.addEntityAchievementTimer(hit.entity, AchievementObserver::BARONY_ACH_THATS_A_WRAP, duration, true, 0);
+
 									if ( hit.entity->behavior == &actPlayer )
 									{
 										messagePlayerColor(hit.entity->skill[2], MESSAGE_STATUS, makeColorRGB(255, 0, 0), Language::get(6763));

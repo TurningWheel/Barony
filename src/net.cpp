@@ -1214,6 +1214,32 @@ void serverUpdatePlayerGameplayStats(int player, int gameplayStat, int changeval
 				gameStatistics[gameplayStat] |= shifted;
 			}
 		}
+		else if ( gameplayStat == STATISTICS_FLAVORTOWN )
+		{
+			gameStatistics[gameplayStat] |= changeval;
+		}
+		else if ( gameplayStat == STATISTICS_BARDIC_INSPIRATION )
+		{
+			if ( changeval == 0 )
+			{
+				gameStatistics[gameplayStat] = 0;
+			}
+			else
+			{
+				gameStatistics[gameplayStat] += changeval;
+			}
+		}
+		else if ( gameplayStat == STATISTICS_PARRY_TANK )
+		{
+			if ( changeval == 0 )
+			{
+				gameStatistics[gameplayStat] = 0;
+			}
+			else
+			{
+				gameStatistics[gameplayStat] += changeval;
+			}
+		}
 		else
 		{
 			gameStatistics[gameplayStat] += changeval;
@@ -2528,6 +2554,60 @@ static void changeLevel() {
 	if ( MFLAG_DISABLEHUNGER )
 	{
 		Player::Minimap_t::mapDetails.push_back(std::make_pair("map_flag_disable_hunger", ""));
+	}
+
+	if ( !died )
+	{
+		if ( stats[clientnum]->type == MYCONID && stats[clientnum]->playerRace == RACE_MYCONID && stats[clientnum]->stat_appearance == 0
+			&& stats[clientnum]->helmet && gameStatistics[STATISTICS_NO_CAP] >= 0 )
+		{
+			gameStatistics[STATISTICS_NO_CAP]++;
+			if ( gameStatistics[STATISTICS_NO_CAP] >= 5 )
+			{
+				steamAchievement("BARONY_ACH_NO_CAP");
+			}
+		}
+		if ( stats[clientnum]->getEffectActive(EFF_GROWTH) >= 2
+			&& ((stats[clientnum]->type == MYCONID && stats[clientnum]->playerRace == RACE_MYCONID)
+				|| (stats[clientnum]->type == DRYAD && stats[clientnum]->playerRace == RACE_DRYAD)) && stats[clientnum]->stat_appearance == 0
+			&& !stats[clientnum]->helmet && gameStatistics[STATISTICS_DONT_TOUCH_HAIR] >= 0 )
+		{
+			gameStatistics[STATISTICS_DONT_TOUCH_HAIR]++;
+			if ( gameStatistics[STATISTICS_DONT_TOUCH_HAIR] >= 25 )
+			{
+				steamAchievement("BARONY_ACH_DONT_TOUCH_HAIR");
+			}
+		}
+		if ( stats[clientnum]->type == SALAMANDER && stats[clientnum]->playerRace == RACE_SALAMANDER && stats[clientnum]->stat_appearance == 0
+			&& stats[clientnum]->getEffectActive(EFF_SALAMANDER_HEART) >= 3 && stats[clientnum]->getEffectActive(EFF_SALAMANDER_HEART) <= 4
+			&& gameStatistics[STATISTICS_GARGOYLES_QUEST] >= 0 )
+		{
+			gameStatistics[STATISTICS_GARGOYLES_QUEST]++;
+			if ( gameStatistics[STATISTICS_GARGOYLES_QUEST] >= 10 )
+			{
+				steamAchievement("BARONY_ACH_GARGOYLES_QUEST");
+			}
+		}
+		if ( stats[clientnum]->type == SALAMANDER && stats[clientnum]->playerRace == RACE_SALAMANDER && stats[clientnum]->stat_appearance == 0
+			&& stats[clientnum]->getEffectActive(EFF_SALAMANDER_HEART) >= 1 && stats[clientnum]->getEffectActive(EFF_SALAMANDER_HEART) <= 2
+			&& gameStatistics[STATISTICS_FIRE_FIGHTER] >= 0 )
+		{
+			gameStatistics[STATISTICS_FIRE_FIGHTER]++;
+			if ( gameStatistics[STATISTICS_FIRE_FIGHTER] >= 5 )
+			{
+				steamAchievement("BARONY_ACH_FIRE_FIGHTER");
+			}
+		}
+		if ( stats[clientnum]->type == SALAMANDER && stats[clientnum]->playerRace == RACE_SALAMANDER && stats[clientnum]->stat_appearance == 0
+			&& !stats[clientnum]->getEffectActive(EFF_SALAMANDER_HEART)
+			&& gameStatistics[STATISTICS_DISCIPLINE] >= 0 )
+		{
+			gameStatistics[STATISTICS_DISCIPLINE]++;
+			if ( gameStatistics[STATISTICS_DISCIPLINE] >= 25 )
+			{
+				steamAchievement("BARONY_ACH_DISCIPLINE");
+			}
+		}
 	}
 
 	Compendium_t::Events_t::onLevelChangeEvent(clientnum, prevcurrentlevel, prevsecretfloor, prevmapname, died);
@@ -5229,6 +5309,32 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 				gameStatistics[gameplayStat] |= shifted;
 			}
 		}
+		else if ( gameplayStat == STATISTICS_FLAVORTOWN )
+		{
+			gameStatistics[gameplayStat] |= changeval;
+		}
+		else if ( gameplayStat == STATISTICS_BARDIC_INSPIRATION )
+		{
+			if ( changeval == 0 )
+			{
+				gameStatistics[gameplayStat] = 0;
+			}
+			else
+			{
+				gameStatistics[gameplayStat] += changeval;
+			}
+		}
+		else if ( gameplayStat == STATISTICS_PARRY_TANK )
+		{
+			if ( changeval == 0 )
+			{
+				gameStatistics[gameplayStat] = 0;
+			}
+			else
+			{
+				gameStatistics[gameplayStat] += changeval;
+			}
+		}
 		else
 		{
 			gameStatistics[gameplayStat] += changeval;
@@ -7359,14 +7465,17 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 					else if ( key == KEY_SILVER )
 					{
 						Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_KEYLOCK_UNLOCKED_KEY_SILVER, "wall locks", 1);
+						steamStatisticUpdateClient(player, STEAM_STAT_PREMIUM_LOOTBOX, STEAM_STAT_INT, 1);
 					}
 					else if ( key == KEY_GOLD )
 					{
 						Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_KEYLOCK_UNLOCKED_KEY_GOLD, "wall locks", 1);
+						steamStatisticUpdateClient(player, STEAM_STAT_PREMIUM_LOOTBOX, STEAM_STAT_INT, 1);
 					}
 					else if ( key == KEY_BRONZE )
 					{
 						Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_KEYLOCK_UNLOCKED_KEY_BRONZE, "wall locks", 1);
+						steamStatisticUpdateClient(player, STEAM_STAT_PREMIUM_LOOTBOX, STEAM_STAT_INT, 1);
 					}
 				}
 

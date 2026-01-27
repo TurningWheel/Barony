@@ -683,6 +683,10 @@ bool Entity::collisionProjectileMiss(Entity* parent, Entity* projectile)
 				}
 
 				magicOnSpellCastEvent(this, this, parent, SPELL_MAGICIANS_ARMOR, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
+				if ( this->behavior == &actPlayer )
+				{
+					steamStatisticUpdateClient(this->skill[2], STEAM_STAT_DOESNT_COUNT, STEAM_STAT_INT, 1);
+				}
 
 				if ( projectile->collisionIgnoreTargets.find(getUID()) == projectile->collisionIgnoreTargets.end() )
 				{

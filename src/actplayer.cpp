@@ -2920,6 +2920,21 @@ void actDeathGhost(Entity* my)
 					bodypart->monsterSpecialState = my->monsterSpecialState;
 				}
 
+				if ( playernum == clientnum )
+				{
+					if ( player->ghost.isActive() )
+					{
+						if ( my->ticks % (5 * TICKS_PER_SECOND) == 0 )
+						{
+							gameStatistics[STATISTICS_QUACKERY] += 5;
+							if ( gameStatistics[STATISTICS_QUACKERY] >= 5 * 60 )
+							{
+								steamAchievement("BARONY_ACH_QUACKERY");
+							}
+						}
+					}
+				}
+
 				node_t* node = nullptr;
 				int bodypartIndex = 0;
 				for ( bodypartIndex = 0, node = bodypart->children.first; node != nullptr; node = node->next, ++bodypartIndex )
@@ -10630,6 +10645,57 @@ void actPlayer(Entity* my)
             my->light = addLight(my->x / 16, my->y / 16, light_type, range_bonus, ambientLight ? PLAYER_NUM + 1 : 0);
         }
     }
+
+	if ( !intro && PLAYER_NUM == clientnum )
+	{
+		if ( stats[clientnum]->type == MYCONID && stats[clientnum]->playerRace == RACE_MYCONID && stats[clientnum]->stat_appearance == 0
+			&& stats[clientnum]->helmet )
+		{
+			gameStatistics[STATISTICS_NO_CAP] = std::max(0, gameStatistics[STATISTICS_NO_CAP]);
+		}
+		else
+		{
+			gameStatistics[STATISTICS_NO_CAP] = -1;
+		}
+		if ( stats[clientnum]->getEffectActive(EFF_GROWTH) >= 2
+			&& ((stats[clientnum]->type == MYCONID && stats[clientnum]->playerRace == RACE_MYCONID)
+				|| (stats[clientnum]->type == DRYAD && stats[clientnum]->playerRace == RACE_DRYAD)) && stats[clientnum]->stat_appearance == 0
+			&& !stats[clientnum]->helmet )
+		{
+			gameStatistics[STATISTICS_DONT_TOUCH_HAIR] = std::max(0, gameStatistics[STATISTICS_DONT_TOUCH_HAIR]);
+		}
+		else
+		{
+			gameStatistics[STATISTICS_DONT_TOUCH_HAIR] = -1;
+		}
+		if ( stats[clientnum]->type == SALAMANDER && stats[clientnum]->playerRace == RACE_SALAMANDER && stats[clientnum]->stat_appearance == 0
+			&& stats[clientnum]->getEffectActive(EFF_SALAMANDER_HEART) >= 3 && stats[clientnum]->getEffectActive(EFF_SALAMANDER_HEART) <= 4 )
+		{
+			gameStatistics[STATISTICS_GARGOYLES_QUEST] = std::max(0, gameStatistics[STATISTICS_GARGOYLES_QUEST]);
+		}
+		else
+		{
+			gameStatistics[STATISTICS_GARGOYLES_QUEST] = -1;
+		}
+		if ( stats[clientnum]->type == SALAMANDER && stats[clientnum]->playerRace == RACE_SALAMANDER && stats[clientnum]->stat_appearance == 0
+			&& stats[clientnum]->getEffectActive(EFF_SALAMANDER_HEART) >= 1 && stats[clientnum]->getEffectActive(EFF_SALAMANDER_HEART) <= 2 )
+		{
+			gameStatistics[STATISTICS_FIRE_FIGHTER] = std::max(0, gameStatistics[STATISTICS_FIRE_FIGHTER]);
+		}
+		else
+		{
+			gameStatistics[STATISTICS_FIRE_FIGHTER] = -1;
+		}
+		if ( stats[clientnum]->type == SALAMANDER && stats[clientnum]->playerRace == RACE_SALAMANDER && stats[clientnum]->stat_appearance == 0
+			&& !stats[clientnum]->getEffectActive(EFF_SALAMANDER_HEART) )
+		{
+			gameStatistics[STATISTICS_DISCIPLINE] = std::max(0, gameStatistics[STATISTICS_DISCIPLINE]);
+		}
+		else
+		{
+			gameStatistics[STATISTICS_DISCIPLINE] = -1;
+		}
+	}
 
 	// server controls players primarily
 	if ( players[PLAYER_NUM]->isLocalPlayer() || multiplayer == SERVER || StatueManager.activeEditing )

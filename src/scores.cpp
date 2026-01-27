@@ -2855,6 +2855,13 @@ void updatePlayerConductsInMainLoop()
 
 	achievementObserver.updateClientBounties(false);
 
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		if ( achievementObserver.playerAchievements[i].hellsKitchen >= 0 )
+		{
+			achievementObserver.playerAchievements[i].hellsKitchen = 0;
+		}
+	}
 	achievementObserver.achievementTimersTickDown();
 }
 
@@ -2900,6 +2907,38 @@ void updateGameplayStatisticsInMainLoop()
 	if ( gameStatistics[STATISTICS_TRIBE_SUBSCRIBE] >= 4 )
 	{
 		steamAchievement("BARONY_ACH_TRIBE_SUBSCRIBE");
+	}
+	if ( gameStatistics[STATISTICS_SKID_ROW] >= 50 )
+	{
+		steamAchievement("BARONY_ACH_SKID_ROW");
+	}
+	if ( gameStatistics[STATISTICS_WRECKING_CREW] >= 20 )
+	{
+		steamAchievement("BARONY_ACH_WRECKING_CREW");
+	}
+	if ( gameStatistics[STATISTICS_EAT_ME] >= 50 )
+	{
+		steamAchievement("BARONY_ACH_EAT_ME");
+	}
+	if ( gameStatistics[STATISTICS_BONK] >= 20 )
+	{
+		steamAchievement("BARONY_ACH_BONK");
+	}
+	if ( gameStatistics[STATISTICS_RIGHTEOUS_FURY] >= 50 )
+	{
+		steamAchievement("BARONY_ACH_RIGHTEOUS_FURY");
+	}
+	if ( gameStatistics[STATISTICS_BARDIC_INSPIRATION] >= 10 )
+	{
+		steamAchievement("BARONY_ACH_BARDIC_INSPIRATION");
+	}
+	if ( gameStatistics[STATISTICS_PARRY_TANK] >= 20 )
+	{
+		steamAchievement("BARONY_ACH_PARRY_TANK");
+	}
+	if ( gameStatistics[STATISTICS_THATS_CHEATING] >= 10 )
+	{
+		steamAchievement("BARONY_ACH_THATS_CHEATING");
 	}
 	if ( gameStatistics[STATISTICS_FORUM_TROLL] > 0 )
 	{
@@ -2962,22 +3001,48 @@ void updateGameplayStatisticsInMainLoop()
 		}
 	}
 
-	if ( (ticks % (TICKS_PER_SECOND * 8) == 0) && (gameStatistics[STATISTICS_POP_QUIZ_1] != 0 || gameStatistics[STATISTICS_POP_QUIZ_2] != 0) )
+	if ( (ticks % (TICKS_PER_SECOND * 8) == 0) )
 	{
-		int numSpellsCast = 0;
-		int stat1 = gameStatistics[STATISTICS_POP_QUIZ_1];
-		int stat2 = gameStatistics[STATISTICS_POP_QUIZ_1];
-		for ( int i = 0; i < 30; ++i )
+		if ( stats[clientnum]->getProficiency(PRO_SORCERY) >= SKILL_LEVEL_LEGENDARY
+			&& stats[clientnum]->getProficiency(PRO_MYSTICISM) >= SKILL_LEVEL_LEGENDARY
+			&& stats[clientnum]->getProficiency(PRO_THAUMATURGY) >= SKILL_LEVEL_LEGENDARY )
 		{
-			// count the bits set.
-			numSpellsCast += (stat1 & 1);
-			numSpellsCast += (stat2 & 1);
-			stat1 = stat1 >> 1;
-			stat2 = stat2 >> 1;
+			steamAchievement("BARONY_ACH_MASTER_MAGIC");
 		}
-		if ( numSpellsCast >= 20 )
+
+		if ( gameStatistics[STATISTICS_FLAVORTOWN] != 0 )
 		{
-			steamAchievement("BARONY_ACH_POP_QUIZ");
+			int numflavors = 0;
+			for ( int i = 0; i < 6; ++i )
+			{
+				if ( gameStatistics[STATISTICS_FLAVORTOWN] & (1 << i) )
+				{
+					++numflavors;
+				}
+			}
+			if ( numflavors >= 6 )
+			{
+				steamAchievement("BARONY_ACH_FLAVORTOWN");
+			}
+		}
+
+		if ( (gameStatistics[STATISTICS_POP_QUIZ_1] != 0 || gameStatistics[STATISTICS_POP_QUIZ_2] != 0) )
+		{
+			int numSpellsCast = 0;
+			int stat1 = gameStatistics[STATISTICS_POP_QUIZ_1];
+			int stat2 = gameStatistics[STATISTICS_POP_QUIZ_2];
+			for ( int i = 0; i < 30; ++i )
+			{
+				// count the bits set.
+				numSpellsCast += (stat1 & 1);
+				numSpellsCast += (stat2 & 1);
+				stat1 = stat1 >> 1;
+				stat2 = stat2 >> 1;
+			}
+			if ( numSpellsCast >= 20 )
+			{
+				steamAchievement("BARONY_ACH_POP_QUIZ");
+			}
 		}
 	}
 
@@ -3128,6 +3193,36 @@ void updateGameplayStatisticsInMainLoop()
 				{
 					steamStatisticUpdateClient(i, STEAM_STAT_TRASH_COMPACTOR, STEAM_STAT_INT, achievementObserver.playerAchievements[i].trashCompactor);
 					achievementObserver.playerAchievements[i].trashCompactor = 0;
+				}
+				if ( achievementObserver.playerAchievements[i].sourceEngine > 0 )
+				{
+					steamStatisticUpdateClient(i, STEAM_STAT_SOURCE_ENGINE, STEAM_STAT_INT, achievementObserver.playerAchievements[i].sourceEngine);
+					achievementObserver.playerAchievements[i].sourceEngine = 0;
+				}
+				if ( achievementObserver.playerAchievements[i].skidRow > 0 )
+				{
+					serverUpdatePlayerGameplayStats(i, STATISTICS_SKID_ROW, achievementObserver.playerAchievements[i].skidRow);
+					achievementObserver.playerAchievements[i].skidRow = 0;
+				}
+				if ( achievementObserver.playerAchievements[i].bonk > 0 )
+				{
+					serverUpdatePlayerGameplayStats(i, STATISTICS_BONK, achievementObserver.playerAchievements[i].bonk);
+					achievementObserver.playerAchievements[i].bonk = 0;
+				}
+				if ( achievementObserver.playerAchievements[i].righteousFury > 0 )
+				{
+					serverUpdatePlayerGameplayStats(i, STATISTICS_RIGHTEOUS_FURY, achievementObserver.playerAchievements[i].righteousFury);
+					achievementObserver.playerAchievements[i].righteousFury = 0;
+				}
+				if ( achievementObserver.playerAchievements[i].eatMe > 0 )
+				{
+					serverUpdatePlayerGameplayStats(i, STATISTICS_EAT_ME, achievementObserver.playerAchievements[i].eatMe);
+					achievementObserver.playerAchievements[i].eatMe = 0;
+				}
+				if ( achievementObserver.playerAchievements[i].parryTank > 0 )
+				{
+					serverUpdatePlayerGameplayStats(i, STATISTICS_PARRY_TANK, achievementObserver.playerAchievements[i].parryTank);
+					achievementObserver.playerAchievements[i].parryTank = 0;
 				}
 			}
 		}
@@ -4365,6 +4460,13 @@ void AchievementObserver::awardAchievementIfActive(int player, Entity* entity, i
 					awardAchievement(player, achievement);
 				}
 			}
+			else if ( achievement == BARONY_ACH_FOOD_FIGHT )
+			{
+				if ( (*it).second[achievement].second >= 4 )
+				{
+					awardAchievement(player, achievement);
+				}
+			}
 			else if ( achievement == BARONY_ACH_OHAI_MARK )
 			{
 				serverUpdatePlayerGameplayStats(player, STATISTICS_OHAI_MARK, 1);
@@ -4376,6 +4478,10 @@ void AchievementObserver::awardAchievementIfActive(int player, Entity* entity, i
 			else if ( achievement == BARONY_ACH_COWBOY_FROM_HELL )
 			{
 				steamStatisticUpdateClient(player, STEAM_STAT_COWBOY_FROM_HELL, STEAM_STAT_INT, 1);
+			}
+			else if ( achievement == BARONY_ACH_THATS_A_WRAP )
+			{
+				steamStatisticUpdateClient(player, STEAM_STAT_THATS_A_WRAP, STEAM_STAT_INT, 1);
 			}
 			else
 			{
@@ -4681,6 +4787,7 @@ void AchievementObserver::updatePlayerAchievement(int player, Achievement achiev
 		case BARONY_ACH_COOP_ESCAPE_MINES:
 		{
 			std::unordered_set<int> races;
+			std::unordered_set<int> short_races;
 			std::unordered_set<int> classes;
 			std::vector<int> awardAchievementsToAllPlayers;
 			int num = 0;
@@ -4691,8 +4798,16 @@ void AchievementObserver::updatePlayerAchievement(int player, Achievement achiev
 					if ( stats[i] && stats[i]->playerRace != RACE_HUMAN && stats[i]->stat_appearance == 0 )
 					{
 						races.insert(stats[i]->playerRace);
+
+						if ( stats[i]->playerRace == RACE_GNOME
+							|| stats[i]->playerRace == RACE_GREMLIN
+							|| (stats[i]->playerRace == RACE_DRYAD && stats[i]->sex == FEMALE)
+							|| (stats[i]->playerRace == RACE_MYCONID && stats[i]->sex == MALE) )
+						{
+							short_races.insert(stats[i]->playerRace);
+						}
 					}
-					if ( client_classes[i] > CLASS_MONK )
+					//if ( client_classes[i] > CLASS_MONK )
 					{
 						classes.insert(client_classes[i]);
 					}
@@ -4721,6 +4836,33 @@ void AchievementObserver::updatePlayerAchievement(int player, Achievement achiev
 				{
 					awardAchievementsToAllPlayers.push_back(BARONY_ACH_TRIBAL);
 				}
+
+				std::set<int> expansions;
+				for ( auto race : races )
+				{
+					if ( race >= RACE_SKELETON && race <= RACE_GOATMAN )
+					{
+						expansions.insert(1);
+					}
+					if ( race >= RACE_AUTOMATON && race <= RACE_INSECTOID )
+					{
+						expansions.insert(2);
+					}
+					if ( race >= RACE_GNOME && race <= RACE_SALAMANDER )
+					{
+						expansions.insert(3);
+					}
+				}
+
+				if ( expansions.size() == 3 )
+				{
+					awardAchievementsToAllPlayers.push_back(BARONY_ACH_FOREIGN_EXCHANGE);
+				}
+
+				if ( races.size() >= 3 && short_races.size() == races.size() )
+				{
+					awardAchievementsToAllPlayers.push_back(BARONY_ACH_SHORT_SHORTS);
+				}
 			}
 
 			if ( !classes.empty() )
@@ -4740,6 +4882,62 @@ void AchievementObserver::updatePlayerAchievement(int player, Achievement achiev
 				if ( classes.find(CLASS_HUNTER) != classes.end() && classes.find(CLASS_BREWER) != classes.end() )
 				{
 					awardAchievementsToAllPlayers.push_back(BARONY_ACH_SURVIVALISTS);
+				}
+
+				if ( classes.find(CLASS_SCION) != classes.end()
+					&& (classes.find(CLASS_WIZARD) != classes.end()
+						|| classes.find(CLASS_HEALER) != classes.end()
+						|| classes.find(CLASS_ARCANIST) != classes.end()) )
+				{
+					awardAchievementsToAllPlayers.push_back(BARONY_ACH_APPRENTICES);
+				}
+				if ( classes.find(CLASS_PALADIN) != classes.end()
+					&& (classes.find(CLASS_MONK) != classes.end()
+						|| classes.find(CLASS_SEXTON) != classes.end()
+						|| classes.find(CLASS_CLERIC) != classes.end()) )
+				{
+					awardAchievementsToAllPlayers.push_back(BARONY_ACH_HOLY_ORDER);
+				}
+				if ( classes.find(CLASS_SAPPER) != classes.end()
+					&& (classes.find(CLASS_WARRIOR) != classes.end()
+						|| classes.find(CLASS_BARBARIAN) != classes.end()) )
+				{
+					awardAchievementsToAllPlayers.push_back(BARONY_ACH_CONSCRIPTED);
+				}
+				if ( classes.find(CLASS_BARD) != classes.end()
+					&& (classes.find(CLASS_ROGUE) != classes.end()
+						|| classes.find(CLASS_MERCHANT) != classes.end()
+						|| classes.find(CLASS_JOKER) != classes.end()) )
+				{
+					awardAchievementsToAllPlayers.push_back(BARONY_ACH_RIZZLERS);
+				}
+				if ( classes.find(CLASS_HERMIT) != classes.end()
+					&& (classes.find(CLASS_WANDERER) != classes.end()
+						|| classes.find(CLASS_NINJA) != classes.end()) )
+				{
+					awardAchievementsToAllPlayers.push_back(BARONY_ACH_LONER_LEAGUE);
+				}
+
+				std::set<int> expansions;
+				for ( auto classnum : classes )
+				{
+					if ( classnum >= CLASS_CONJURER && classnum <= CLASS_BREWER )
+					{
+						expansions.insert(1);
+					}
+					if ( classnum >= CLASS_MACHINIST && classnum <= CLASS_HUNTER )
+					{
+						expansions.insert(2);
+					}
+					if ( classnum >= CLASS_BARD && classnum <= CLASS_PALADIN )
+					{
+						expansions.insert(3);
+					}
+				}
+
+				if ( expansions.size() == 3 )
+				{
+					awardAchievementsToAllPlayers.push_back(BARONY_ACH_STUDY_ABROAD);
 				}
 			}
 			if ( !awardAchievementsToAllPlayers.empty() )
@@ -4790,6 +4988,13 @@ void AchievementObserver::clearPlayerAchievementData()
 		playerAchievements[i].socialButterfly = 0;
 		playerAchievements[i].rollTheBones = 0;
 		playerAchievements[i].trashCompactor = 0;
+		playerAchievements[i].skidRow = 0;
+		playerAchievements[i].bonk = 0;
+		playerAchievements[i].righteousFury = 0;
+		playerAchievements[i].hellsKitchen = 0;
+		playerAchievements[i].eatMe = 0;
+		playerAchievements[i].sourceEngine = 0;
+		playerAchievements[i].parryTank = 0;
 
 		playerAchievements[i].realBoy = std::make_pair(0, 0);
 		playerAchievements[i].caughtInAMoshTargets.clear();
@@ -4877,6 +5082,36 @@ void AchievementObserver::awardAchievement(int player, int achievement)
 			break;
 		case BARONY_ACH_BY_THE_BOOK:
 			steamAchievementClient(player, "BARONY_ACH_BY_THE_BOOK");
+			break;
+		case BARONY_ACH_THATS_A_WRAP:
+			steamAchievementClient(player, "BARONY_ACH_THATS_A_WRAP");
+			break;
+		case BARONY_ACH_APPRENTICES:
+			steamAchievementClient(player, "BARONY_ACH_APPRENTICES");
+			break;
+		case BARONY_ACH_SHORT_SHORTS:
+			steamAchievementClient(player, "BARONY_ACH_SHORT_SHORTS");
+			break;
+		case BARONY_ACH_HOLY_ORDER:
+			steamAchievementClient(player, "BARONY_ACH_HOLY_ORDER");
+			break;
+		case BARONY_ACH_CONSCRIPTED:
+			steamAchievementClient(player, "BARONY_ACH_CONSCRIPTED");
+			break;
+		case BARONY_ACH_LONER_LEAGUE:
+			steamAchievementClient(player, "BARONY_ACH_LONER_LEAGUE");
+			break;
+		case BARONY_ACH_RIZZLERS:
+			steamAchievementClient(player, "BARONY_ACH_RIZZLERS");
+			break;
+		case BARONY_ACH_FOREIGN_EXCHANGE:
+			steamAchievementClient(player, "BARONY_ACH_FOREIGN_EXCHANGE");
+			break;
+		case BARONY_ACH_STUDY_ABROAD:
+			steamAchievementClient(player, "BARONY_ACH_STUDY_ABROAD");
+			break;
+		case BARONY_ACH_FOOD_FIGHT:
+			steamAchievementClient(player, "BARONY_ACH_FOOD_FIGHT");
 			break;
 		default:
 			messagePlayer(player, MESSAGE_DEBUG, "[WARNING]: Unhandled achievement: %d", achievement);
@@ -5275,6 +5510,11 @@ void SaveGameInfo::computeHash(const int playernum, Uint32& hash)
 		hash += (Uint32)((Uint32)val.first << (shift % 32)); ++shift;
 		hash += (Uint32)((Uint32)val.second << (shift % 32)); ++shift;
 	}
+	for ( auto& val : players[playernum].favoriteBooksAchievement )
+	{
+		hash += (Uint32)((Uint32)val.first << (shift % 32)); ++shift;
+		hash += (Uint32)((Uint32)val.second << (shift % 32)); ++shift;
+	}
 	hash += (Uint32)((Uint32)players[playernum].sustainedSpellMPUsedSorcery << (shift % 32)); ++shift;
 	hash += (Uint32)((Uint32)players[playernum].sustainedSpellMPUsedMysticism << (shift % 32)); ++shift;
 	hash += (Uint32)((Uint32)players[playernum].sustainedSpellMPUsedThaumaturgy << (shift % 32)); ++shift;
@@ -5540,6 +5780,10 @@ int SaveGameInfo::populateFromSession(const int playernum)
 			for ( auto& pair : ::players[c]->mechanics.ducksInARow )
 			{
 				player.ducksInARow.push_back(pair);
+			}
+			for ( auto& pair : ::players[c]->mechanics.favoriteBooksAchievement )
+			{
+				player.favoriteBooksAchievement.push_back(pair);
 			}
 			for ( auto& pair : ::players[c]->mechanics.escalatingRngRolls )
 			{
@@ -6512,6 +6756,7 @@ int loadGame(int player, const SaveGameInfo& info) {
 		mechanics.itemDegradeRng.clear();
 		mechanics.learnedSpells.clear();
 		mechanics.ducksInARow.clear();
+		mechanics.favoriteBooksAchievement.clear();
 		mechanics.sustainedSpellIDCounter.clear();
 		hamletShopkeeperSkillLimit[statsPlayer].clear();
 		mechanics.baseSpellLevelUpProcs.clear();
@@ -6527,6 +6772,10 @@ int loadGame(int player, const SaveGameInfo& info) {
 		for ( auto& duck : info.players[player].ducksInARow )
 		{
 			mechanics.ducksInARow.push_back(duck);
+		}
+		for ( auto& pair : info.players[player].favoriteBooksAchievement )
+		{
+			mechanics.favoriteBooksAchievement[pair.first] = pair.second;
 		}
 		for ( auto& pair : info.players[player].sustainedSpellIDCounter )
 		{
