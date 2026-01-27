@@ -1115,6 +1115,7 @@ void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value)
 					}
 					break;
 				case STEAM_STAT_SOURCE_ENGINE:
+				case STEAM_STAT_TOUCHE:
 					indicateProgress = false;
 					g_SteamStats[statisticNum].m_iValue =
 						std::min(g_SteamStats[statisticNum].m_iValue, steamStatAchStringsAndMaxVals[statisticNum].second);
@@ -1158,7 +1159,6 @@ void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value)
 					break;
 				case STEAM_STAT_SUPER_SHREDDER:
 				case STEAM_STAT_SMASH_MELEE:
-				case STEAM_STAT_TOUCHE:
 					indicateProgress = false;
 					g_SteamStats[statisticNum].m_iValue =
 						std::min(g_SteamStats[statisticNum].m_iValue, steamStatAchStringsAndMaxVals[statisticNum].second);

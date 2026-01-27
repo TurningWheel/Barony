@@ -4802,12 +4802,19 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 
 	PLAYER_VELX *= pow(movementDrag, refreshRateDelta);
 	PLAYER_VELY *= pow(movementDrag, refreshRateDelta);
+	real_t magnitude = sqrt(pow(PLAYER_VELX, 2) + pow(PLAYER_VELY, 2));
+	const real_t magnitudeMax = 5.0;
+	if ( magnitude > magnitudeMax )
+	{
+		PLAYER_VELX *= (magnitudeMax / magnitude);
+		PLAYER_VELY *= (magnitudeMax / magnitude);
+	}
 
-	/*if ( keystatus[SDLK_g] )
+	if ( keystatus[SDLK_g] )
 	{
 		messagePlayer(0, MESSAGE_DEBUG, "X: %5.5f, Y: %5.5f, Total: %5.5f", PLAYER_VELX, PLAYER_VELY, sqrt(pow(PLAYER_VELX, 2) + pow(PLAYER_VELY, 2)));
 		messagePlayer(0, MESSAGE_DEBUG, "Vel: %5.5f", getCurrentMovementSpeed());
-	}*/
+	}
 
 	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
