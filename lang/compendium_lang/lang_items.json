@@ -781,5 +781,25 @@
 			"They may become distracted by fishing",
 			"opportunities."
         ]
+    },
+	"bolas": {
+		"blurb": [
+			"Simple BOLAS are a favorite tool for",
+            "guerilla skirmishers, using weights at",
+            "the end of cord to make a projectile",
+            "with one job: Entangling its target.",
+            "While they deal little damage, victims",
+            "are very vulnerable while wrapped."
+		]
+	},
+	"shillelagh": {
+        "blurb": [
+            "A knobby length of wood is cured",
+            "according to folk tradition, making",
+            "SHILLELAGHS nearly unbreakable.",
+            "Hermits hollow and fill the clubbed",
+            "end with dense magically-reactive metal,",
+            "empowering strikes against hindered foes."
+        ]
     }
 }
