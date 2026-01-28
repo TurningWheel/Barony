@@ -9109,6 +9109,38 @@ void GenericGUIMenu::alchemyCookCombination()
 
 	int appearance = 0;
 	int blessing = 0;
+	if ( isItemRation(result) )
+	{
+		if ( basePotion->beatitude > 0 && secondaryPotion->beatitude > 0 )
+		{
+			blessing = std::min(basePotion->beatitude, secondaryPotion->beatitude); // take least blessed
+		}
+		else if ( basePotion->beatitude < 0 && secondaryPotion->beatitude < 0 )
+		{
+			blessing = std::min(basePotion->beatitude, secondaryPotion->beatitude); // take most cursed
+		}
+		else if ( (basePotion->beatitude < 0 && secondaryPotion->beatitude > 0)
+			|| (secondaryPotion->beatitude < 0 && basePotion->beatitude > 0) )
+		{
+			blessing = 0;
+		}
+		else if ( basePotion->beatitude < 0 && secondaryPotion->beatitude == 0 )
+		{
+			blessing = basePotion->beatitude; // curse the result
+		}
+		else if ( basePotion->beatitude == 0 && secondaryPotion->beatitude < 0 )
+		{
+			blessing = secondaryPotion->beatitude; // curse the result
+		}
+		else if ( basePotion->beatitude > 0 && secondaryPotion->beatitude == 0 )
+		{
+			blessing = 0; // negate the blessing
+		}
+		else if ( basePotion->beatitude == 0 && secondaryPotion->beatitude > 0 )
+		{
+			blessing = 0; // negate the blessing
+		}
+	}
 
 	bool emptyBottle = false;
 	{
@@ -17861,7 +17893,39 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 			alchemyResultPotion.identified = true;
 			int appearance = 0;
 			int blessing = 0;
-			alchemyResultPotion.beatitude = 0;
+			if ( isItemRation(res) )
+			{
+				if ( potion1Item->beatitude > 0 && potion2Item->beatitude > 0 )
+				{
+					blessing = std::min(potion1Item->beatitude, potion2Item->beatitude); // take least blessed
+				}
+				else if ( potion1Item->beatitude < 0 && potion2Item->beatitude < 0 )
+				{
+					blessing = std::min(potion1Item->beatitude, potion2Item->beatitude); // take most cursed
+				}
+				else if ( (potion1Item->beatitude < 0 && potion2Item->beatitude > 0)
+					|| (potion2Item->beatitude < 0 && potion1Item->beatitude > 0) )
+				{
+					blessing = 0;
+				}
+				else if ( potion1Item->beatitude < 0 && potion2Item->beatitude == 0 )
+				{
+					blessing = potion1Item->beatitude; // curse the result
+				}
+				else if ( potion1Item->beatitude == 0 && potion2Item->beatitude < 0 )
+				{
+					blessing = potion2Item->beatitude; // curse the result
+				}
+				else if ( potion1Item->beatitude > 0 && potion2Item->beatitude == 0 )
+				{
+					blessing = 0; // negate the blessing
+				}
+				else if ( potion1Item->beatitude == 0 && potion2Item->beatitude > 0 )
+				{
+					blessing = 0; // negate the blessing
+				}
+			}
+			alchemyResultPotion.beatitude = blessing;
 			alchemyResultPotion.appearance = 0;
 			alchemyResultPotion.appearance |= (missingPotion1Count & 0xFF) << 0;
 			alchemyResultPotion.appearance |= (missingPotion2Count & 0xFF) << 8;
