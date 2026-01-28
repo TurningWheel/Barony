@@ -4079,6 +4079,14 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			}
 			else
 			{
+				// determine if ladder inside treasure room
+				if ( treasureRoomLocations[x + y * map.width] )
+				{
+					// try again, treasure room area
+					c--;
+					entity = NULL;
+					continue;
+				}
 
 				if ( secretlevelexittile[y + x * map.height] && secretExitLadderTries > 0 )
 				{
