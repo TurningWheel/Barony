@@ -3441,7 +3441,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 
 							if (parent)
 							{
-								parent->killedByMonsterObituary(hit.entity);
+								parent->killedByMonsterObituary(hit.entity, true);
 							}
 
 
@@ -3895,7 +3895,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								// write the obituary
 								if ( parent )
 								{
-									parent->killedByMonsterObituary(hit.entity);
+									parent->killedByMonsterObituary(hit.entity, true);
 								}
 
 								// update enemy bar for attacker
@@ -4254,7 +4254,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								}
 								else
 								{
-									parent->killedByMonsterObituary(hit.entity);
+									parent->killedByMonsterObituary(hit.entity, true);
 								}
 							}
 							if ( hitstats )
@@ -4583,7 +4583,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							// write the obituary
 							if ( parent )
 							{
-								parent->killedByMonsterObituary(hit.entity);
+								parent->killedByMonsterObituary(hit.entity, true);
 							}
 
 							// update enemy bar for attacker
@@ -5022,7 +5022,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							// write the obituary
 							if (parent)
 							{
-								parent->killedByMonsterObituary(hit.entity);
+								parent->killedByMonsterObituary(hit.entity, true);
 							}
 
 							if ( spell->ID == SPELL_LIGHTNING )
@@ -5558,7 +5558,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							// write the obituary
 							if ( parent )
 							{
-								parent->killedByMonsterObituary(hit.entity);
+								parent->killedByMonsterObituary(hit.entity, true);
 							}
 
 							if ( damage > 0 )
@@ -6508,7 +6508,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							// write the obituary
 							if ( parent )
 							{
-								parent->killedByMonsterObituary(hit.entity);
+								parent->killedByMonsterObituary(hit.entity, true);
 							}
 
 							int bleedDuration = element->duration;
@@ -6562,7 +6562,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							// write the obituary
 							if ( parent )
 							{
-								parent->killedByMonsterObituary(hit.entity);
+								parent->killedByMonsterObituary(hit.entity, true);
 							}
 
 							// update enemy bar for attacker

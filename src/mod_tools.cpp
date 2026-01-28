@@ -6151,7 +6151,44 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 	}
 	else if ( tooltipType.compare("tooltip_spell_item") == 0 )
 	{
-		if ( detailTag.compare("spell_damage_bonus") == 0 )
+		if ( detailTag == "spell_cast_time" )
+		{
+			spell_t* spell = getSpellFromItem(player, &item, false);
+			if ( !spell ) { return; }
+
+			Entity* caster = compendiumTooltipIntro ? nullptr : players[player]->entity;
+			Stat* casterStats = compendiumTooltipIntro ? nullptr : stats[player];
+			real_t baseCastTime = spell->cast_time * 20;
+			real_t modifiedCastTime = getSpellPropertyFromID(spell_t::SPELLPROP_MODIFIED_SPELL_CAST_TIME, spell->ID, caster, casterStats, nullptr) * 20;
+			real_t diff = -(baseCastTime - modifiedCastTime);
+			if ( abs(diff) < 0.001 )
+			{
+				diff = 0.0;
+			}
+			snprintf(buf, sizeof(buf), str.c_str(), baseCastTime / (real_t)TICKS_PER_SECOND, (diff) / (real_t)TICKS_PER_SECOND);
+		}
+		else if ( detailTag == "spell_distance" )
+		{
+			spell_t* spell = getSpellFromItem(player, &item, false);
+			if ( !spell ) { return; }
+
+			real_t dist = 0.0;
+			real_t diff = 0.0;
+			if ( spell->rangefinder != SpellRangefinderType::RANGEFINDER_NONE )
+			{
+				Entity* caster = compendiumTooltipIntro ? nullptr : players[player]->entity;
+				Stat* casterStats = compendiumTooltipIntro ? nullptr : stats[player];
+				dist = spell->distance;
+				real_t modifiedDistance = getSpellPropertyFromID(spell_t::SPELLPROP_MODIFIED_DISTANCE, spell->ID, caster, casterStats, nullptr);
+				diff = (modifiedDistance - dist);
+				if ( abs(diff) < 0.001 )
+				{
+					diff = 0.0;
+				}
+			}
+			snprintf(buf, sizeof(buf), str.c_str(), dist / 16.0, (diff) / 16.0);
+		}
+		else if ( detailTag.compare("spell_damage_bonus") == 0 )
 		{
 			spell_t* spell = getSpellFromItem(player, &item, false);
 			if ( !spell ) { return; }

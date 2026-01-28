@@ -40956,7 +40956,8 @@ bool Player::WorldUI_t::WorldTooltipItem_t::isItemSameAsCurrent(Item* item)
 		&& item->beatitude == beatitude
 		&& item->count == count
 		&& item->appearance == appearance
-		&& item->identified == identified )
+		&& item->identified == identifiedItem
+		&& hasAppraiseCapstone == stats[player.playernum]->getModifiedProficiency(PRO_APPRAISAL) >= SKILL_LEVEL_LEGENDARY )
 	{
 		return true;
 	}
@@ -40981,7 +40982,8 @@ SDL_Surface* Player::WorldUI_t::WorldTooltipItem_t::blitItemWorldTooltip(Item* i
 	beatitude = item->beatitude;
 	count = item->count;
 	appearance = item->appearance;
-	identified = item->identified;
+	identifiedItem = item->identified;
+	hasAppraiseCapstone = stats[player.playernum]->getModifiedProficiency(PRO_APPRAISAL) >= SKILL_LEVEL_LEGENDARY;
 
 	SDL_Rect tooltip;
 	char buf[1024] = "";
@@ -41377,7 +41379,7 @@ SDL_Surface* Player::WorldUI_t::WorldTooltipItem_t::blitItemWorldTooltip(Item* i
 			SDL_BlitScaled(srcSurf, nullptr, itemWorldTooltipSurface, &goldPos);
 
 			char goldBuf[32];
-			if ( !item->identified )
+			if ( !item->identified && stats[player.playernum]->getModifiedProficiency(PRO_APPRAISAL) < SKILL_LEVEL_LEGENDARY )
 			{
 				if ( itemCategory(item) == GEM && item->type != GEM_ROCK )
 				{

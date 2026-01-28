@@ -300,7 +300,7 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player, E
 					sfx = 843 + local_rng.rand() % 3;
 					break;
 				case SALAMANDER:
-					sfx = 0; // 846 + local_rng.rand() % 3
+					sfx = 846 + local_rng.rand() % 3;
 					break;
 				case MYCONID:
 					sfx = 832 + local_rng.rand() % 3;

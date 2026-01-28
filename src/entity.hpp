@@ -841,7 +841,7 @@ public:
 
 	void setObituary(const char* obituary);
 
-	void killedByMonsterObituary(Entity* victim);
+	void killedByMonsterObituary(Entity* victim, bool fromSpell = false);
 
 	Sint32 getSTR();
 	Sint32 getDEX();

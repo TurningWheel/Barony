@@ -3424,10 +3424,6 @@ bool monsterIsFriendlyForTooltip(const int player, Entity& entity)
 	{
 		return true;
 	}
-	else if ( targetEntityType == GNOME && (playerRace == GNOME) )
-	{
-		return true;
-	}
 	else if ( targetEntityType == HUMAN && (playerRace == GNOME) )
 	{
 		return true;
@@ -7346,9 +7342,13 @@ void Player::PlayerMechanics_t::onItemDegrade(Item* item)
 	{
 		itemDegradeRng[item->type] = 0;
 	}
+	else if ( items[item->type].item_slot != ItemEquippableSlot::EQUIPPABLE_IN_SLOT_SHIELD )
+	{
+		itemDegradeRng[item->type] = 0;
+	}
 }
 
-bool Player::PlayerMechanics_t::itemDegradeRoll(Item* item, int* checkInterval)
+bool Player::PlayerMechanics_t::itemDegradeRoll(Item* item, int skillID, int* checkInterval)
 {
 	if ( !item )
 	{
@@ -7384,45 +7384,75 @@ bool Player::PlayerMechanics_t::itemDegradeRoll(Item* item, int* checkInterval)
 	}
 	else
 	{
-		switch ( item->type )
+		if ( items[item->type].item_slot == ItemEquippableSlot::EQUIPPABLE_IN_SLOT_SHIELD )
 		{
-		case WOODEN_SHIELD:
-			interval = 10;
-			break;
-		case BRONZE_SHIELD:
-			interval = 20;
-			break;
-		case IRON_SHIELD:
-		case BONE_SHIELD:
-			interval = 20;
-			break;
-		case STEEL_SHIELD:
-			interval = 30;
-			break;
-		case STEEL_SHIELD_RESISTANCE:
-			interval = 30;
-			break;
-		case SILVER_SHIELD:
-		case BLACKIRON_SHIELD:
-		case SCUTUM:
-			interval = 30;
-			break;
-		case CRYSTAL_SHIELD:
-			interval = 20;
-			break;
-		default:
-			break;
+			switch ( item->type )
+			{
+			case WOODEN_SHIELD:
+				interval = 10;
+				break;
+			case BRONZE_SHIELD:
+				interval = 20;
+				break;
+			case IRON_SHIELD:
+			case BONE_SHIELD:
+				interval = 20;
+				break;
+			case STEEL_SHIELD:
+				interval = 30;
+				break;
+			case STEEL_SHIELD_RESISTANCE:
+				interval = 30;
+				break;
+			case SILVER_SHIELD:
+			case BLACKIRON_SHIELD:
+			case SCUTUM:
+				interval = 30;
+				break;
+			case CRYSTAL_SHIELD:
+				interval = 20;
+				break;
+			default:
+				break;
+			}
+			if ( item->beatitude < 0
+				&& !intro && !shouldInvertEquipmentBeatitude(stats[player.playernum]) )
+			{
+				interval = 0;
+			}
+			else if ( item->beatitude > 0
+				|| (item->beatitude < 0
+					&& !intro && shouldInvertEquipmentBeatitude(stats[player.playernum])) )
+			{
+				interval += std::min(abs(item->beatitude), 5);
+			}
 		}
-		if ( item->beatitude < 0
-			&& !intro && !shouldInvertEquipmentBeatitude(stats[player.playernum]) )
+		else
 		{
-			interval = 0;
-		}
-		else if ( item->beatitude > 0
-			|| (item->beatitude < 0
-				&& !intro && shouldInvertEquipmentBeatitude(stats[player.playernum])) )
-		{
-			interval += std::min(abs(item->beatitude), 5);
+			interval = 4 + item->status;
+			if ( item->beatitude < 0
+				&& !intro && !shouldInvertEquipmentBeatitude(stats[player.playernum]) )
+			{
+				interval = 0;
+			}
+			else
+			{
+				if ( item->beatitude > 0
+					|| (item->beatitude < 0
+						&& !intro && shouldInvertEquipmentBeatitude(stats[player.playernum])) )
+				{
+					interval += std::min(abs(item->beatitude), 1);
+				}
+				if ( skillID >= 0 )
+				{
+					if ( skillID == PRO_SWORD || skillID == PRO_RANGED || skillID == PRO_AXE
+						|| skillID == PRO_MACE || skillID == PRO_POLEARM || skillID == PRO_UNARMED )
+					{
+						int bonus = (stats[player.playernum]->getModifiedProficiency(skillID) / 20);
+						interval += bonus;
+					}
+				}
+			}
 		}
 	}
 
@@ -7437,6 +7467,10 @@ bool Player::PlayerMechanics_t::itemDegradeRoll(Item* item, int* checkInterval)
 	if ( counter >= interval )
 	{
 		if ( itemCategory(item) == SPELLBOOK )
+		{
+			// dont decrement until degraded
+		}
+		else if ( items[item->type].item_slot != ItemEquippableSlot::EQUIPPABLE_IN_SLOT_SHIELD )
 		{
 			// dont decrement until degraded
 		}

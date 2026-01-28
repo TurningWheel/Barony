@@ -384,6 +384,18 @@ bool itemLevelCurvePostProcess(Entity* my, Item* item, BaronyRNG& rng, int itemL
 			item->status = static_cast<Status>(itemStatus);
 		}
 	}
+	if ( itemType == BOLAS )
+	{
+		itemStatus = SERVICABLE;
+		if ( my && my->behavior == &actItem )
+		{
+			my->skill[11] = itemStatus;
+		}
+		else
+		{
+			item->status = static_cast<Status>(itemStatus);
+		}
+	}
 	if ( itemType >= 0 && itemType < NUMITEMS )
 	{
 		if ( items[itemType].category == SPELLBOOK )
@@ -629,6 +641,12 @@ ItemType itemLevelCurve(const Category cat, const int minLevel, const int maxLev
 							break;
 						case TOOL_LANTERN:
 							if ( rng.rand() % 4 == 0 )   // 25% chance
+							{
+								chances[c] = false;
+							}
+							break;
+						case TOOL_FRYING_PAN:
+							if ( rng.rand() % 4 )   // 75% chance
 							{
 								chances[c] = false;
 							}
@@ -3747,7 +3765,7 @@ Item* itemPickup(const int player, Item* const item, Item* addToSpecificInventor
 	}
 	Item* item2;
 
-	if ( stats[player]->getProficiency(PRO_APPRAISAL) >= CAPSTONE_UNLOCK_LEVEL[PRO_APPRAISAL] )
+	/*if ( stats[player]->getProficiency(PRO_APPRAISAL) >= CAPSTONE_UNLOCK_LEVEL[PRO_APPRAISAL] )
 	{
 		if ( !(player != 0 && multiplayer == SERVER && !players[player]->isLocalPlayer()) )
 		{
@@ -3762,7 +3780,7 @@ Item* itemPickup(const int player, Item* const item, Item* addToSpecificInventor
 				}
 			}
 		}
-	}
+	}*/
 
 	if ( item->identified && !intro )
 	{

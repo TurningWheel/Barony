@@ -5910,9 +5910,9 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		case RACE_TROLL: victoryType = 3; break;
 		case RACE_SPIDER: victoryType = 3; break;
 		case RACE_IMP: victoryType = 5; break;
-		case RACE_DRYAD: victoryType = 3; break;
-		case RACE_MYCONID: victoryType = 3; break;
-		case RACE_SALAMANDER: victoryType = 3; break;
+		case RACE_DRYAD: victoryType = 4; break;
+		case RACE_MYCONID: victoryType = 4; break;
+		case RACE_SALAMANDER: victoryType = 4; break;
 		case RACE_GREMLIN: victoryType = 5; break;
 		case RACE_GNOME: victoryType = 4; break;
 		}
@@ -5922,14 +5922,14 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 	        default:
 	        case RACE_HUMAN:
 			case RACE_GNOME:
+			case RACE_DRYAD:
+			case RACE_MYCONID:
+			case RACE_SALAMANDER:
 	            MainMenu::beginFade(MainMenu::FadeDestination::EndingHuman);
 	            break;
 	        case RACE_AUTOMATON:
 	            MainMenu::beginFade(MainMenu::FadeDestination::EndingAutomaton);
 	            break;
-			case RACE_DRYAD:
-			case RACE_MYCONID:
-			case RACE_SALAMANDER:
 	        case RACE_GOATMAN:
 	        case RACE_GOBLIN:
 	        case RACE_INSECTOID:
@@ -5950,6 +5950,9 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 	        default:
 	        case RACE_HUMAN:
 			case RACE_GNOME:
+			case RACE_DRYAD:
+			case RACE_MYCONID:
+			case RACE_SALAMANDER:
 	            MainMenu::beginFade(MainMenu::FadeDestination::ClassicEndingHuman);
 	            break;
 	        case RACE_AUTOMATON:
@@ -5958,9 +5961,6 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 	        case RACE_GOATMAN:
 	        case RACE_GOBLIN:
 	        case RACE_INSECTOID:
-			case RACE_DRYAD:
-			case RACE_MYCONID:
-			case RACE_SALAMANDER:
 	            MainMenu::beginFade(MainMenu::FadeDestination::ClassicEndingBeast);
 	            break;
 	        case RACE_SKELETON:
@@ -5978,6 +5978,9 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 	        default:
 	        case RACE_HUMAN:
 			case RACE_GNOME:
+			case RACE_DRYAD:
+			case RACE_MYCONID:
+			case RACE_SALAMANDER:
 	            MainMenu::beginFade(MainMenu::FadeDestination::ClassicBaphometEndingHuman);
 	            break;
 	        case RACE_AUTOMATON:
@@ -5986,9 +5989,6 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 	        case RACE_GOATMAN:
 	        case RACE_GOBLIN:
 	        case RACE_INSECTOID:
-			case RACE_DRYAD:
-			case RACE_MYCONID:
-			case RACE_SALAMANDER:
 	            MainMenu::beginFade(MainMenu::FadeDestination::ClassicBaphometEndingBeast);
 	            break;
 	        case RACE_SKELETON:

@@ -617,6 +617,9 @@ void actWinningPortal(Entity* my)
 	                default:
 	                case RACE_HUMAN:
 					case RACE_GNOME:
+					case RACE_DRYAD:
+					case RACE_MYCONID:
+					case RACE_SALAMANDER:
 	                    MainMenu::beginFade(MainMenu::FadeDestination::ClassicEndingHuman);
 	                    break;
 	                case RACE_AUTOMATON:
@@ -625,9 +628,6 @@ void actWinningPortal(Entity* my)
 	                case RACE_GOATMAN:
 	                case RACE_GOBLIN:
 	                case RACE_INSECTOID:
-					case RACE_DRYAD:
-					case RACE_MYCONID:
-					case RACE_SALAMANDER:
 	                    MainMenu::beginFade(MainMenu::FadeDestination::ClassicEndingBeast);
 	                    break;
 	                case RACE_SKELETON:
@@ -650,6 +650,9 @@ void actWinningPortal(Entity* my)
 	                default:
 	                case RACE_HUMAN:
 					case RACE_GNOME:
+					case RACE_DRYAD:
+					case RACE_MYCONID:
+					case RACE_SALAMANDER:
 	                    MainMenu::beginFade(MainMenu::FadeDestination::ClassicBaphometEndingHuman);
 	                    break;
 	                case RACE_AUTOMATON:
@@ -658,9 +661,6 @@ void actWinningPortal(Entity* my)
 	                case RACE_GOATMAN:
 	                case RACE_GOBLIN:
 	                case RACE_INSECTOID:
-					case RACE_DRYAD:
-					case RACE_MYCONID:
-					case RACE_SALAMANDER:
 	                    MainMenu::beginFade(MainMenu::FadeDestination::ClassicBaphometEndingBeast);
 	                    break;
 	                case RACE_SKELETON:
@@ -856,6 +856,9 @@ void Entity::actExpansionEndGamePortal()
                 default:
                 case RACE_HUMAN:
 				case RACE_GNOME:
+				case RACE_DRYAD:
+				case RACE_MYCONID:
+				case RACE_SALAMANDER:
                     MainMenu::beginFade(MainMenu::FadeDestination::EndingHuman);
                     break;
                 case RACE_AUTOMATON:
@@ -864,9 +867,6 @@ void Entity::actExpansionEndGamePortal()
                 case RACE_GOATMAN:
                 case RACE_GOBLIN:
                 case RACE_INSECTOID:
-				case RACE_DRYAD:
-				case RACE_MYCONID:
-				case RACE_SALAMANDER:
                     MainMenu::beginFade(MainMenu::FadeDestination::EndingBeast);
                     break;
                 case RACE_SKELETON:

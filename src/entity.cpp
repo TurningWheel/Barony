@@ -261,7 +261,7 @@ Sets the obituary to that of a mon
 
 -------------------------------------------------------------------------------*/
 
-void Entity::killedByMonsterObituary(Entity* victim)
+void Entity::killedByMonsterObituary(Entity* victim, bool fromSpell)
 {
 	if ( !victim )
 	{
@@ -317,6 +317,20 @@ void Entity::killedByMonsterObituary(Entity* victim)
 	Stat* myStats = this->getStats();
 	if ( !myStats )
 	{
+		return;
+	}
+
+	if ( this == victim && fromSpell )
+	{
+		if ( hitstats->sex == MALE )
+		{
+			victim->setObituary(Language::get(1528));
+		}
+		else
+		{
+			victim->setObituary(Language::get(1529));
+		}
+		hitstats->killer = KilledBy::FAILED_INVOCATION;
 		return;
 	}
 
@@ -10780,11 +10794,24 @@ void Entity::attack(int pose, int charge, Entity* target)
 				{
 					bowDegradeChance = 100;
 				}
+				if ( player >= 0 )
+				{
+					if ( !players[player]->mechanics.itemDegradeRoll(myStats->weapon, PRO_RANGED) )
+					{
+						bowDegradeChance = 100;
+					}
+				}
+
 				if ( bowDegradeChance < 100 && local_rng.rand() % bowDegradeChance == 0 && myStats->weapon->type != ARTIFACT_BOW
 					&& !spellEffectPreserveItem(myStats->weapon) )
 				{
 					if ( myStats->weapon != NULL )
 					{
+						if ( player >= 0 )
+						{
+							players[player]->mechanics.onItemDegrade(myStats->weapon);
+						}
+
 						if ( player >= 0 && players[player]->isLocalPlayer() )
 						{
 							if ( myStats->weapon->count > 1 )
@@ -13317,6 +13344,13 @@ void Entity::attack(int pose, int charge, Entity* target)
 								degradeWeapon = true;
 							}
 
+							if ( player >= 0 )
+							{
+								if ( !players[player]->mechanics.itemDegradeRoll(*weaponToBreak, weaponskill) )
+								{
+									degradeWeapon = false;
+								}
+							}
 							if ( behavior == &actPlayer && skillCapstoneUnlocked(skill[2], weaponskill) )
 							{
 								// don't degrade on capstone skill.
@@ -13357,6 +13391,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 							if ( degradeWeapon && !spellEffectPreserveItem(*weaponToBreak) )
 							{
+								if ( player >= 0 )
+								{
+									players[player]->mechanics.onItemDegrade(*weaponToBreak);
+								}
+
 								if ( (player >= 0 && players[player]->isLocalPlayer()) || player < 0 )
 								{
 									if ( (*weaponToBreak)->count > 1 )
@@ -19078,7 +19117,7 @@ bool Entity::checkEnemy(Entity* your)
 							}
 							break;
 						case GNOME:
-							if ( yourStats->type == TROLL || yourStats->type == GNOME )
+							if ( yourStats->type == TROLL )
 							{
 								result = false;
 							}
@@ -19220,7 +19259,7 @@ bool Entity::checkEnemy(Entity* your)
 							}
 							break;
 						case GNOME:
-							if ( myStats->type == TROLL || myStats->type == GNOME )
+							if ( myStats->type == TROLL )
 							{
 								result = false;
 							}
@@ -26039,7 +26078,7 @@ void Entity::playerStatIncrease(int playerClass, int chosenStats[3])
 	//{
 	//	messagePlayer(0, "%2d, ", *i);
 	//}
-	if ( behavior == &actPlayer && playerClass == CLASS_SHAMAN && stats[skill[2]] )
+	if ( behavior == &actPlayer /*&& playerClass == CLASS_SHAMAN*/ && stats[skill[2]] )
 	{
 		if ( stats[skill[2]]->type == RAT )
 		{
