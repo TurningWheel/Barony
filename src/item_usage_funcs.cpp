@@ -5081,6 +5081,10 @@ void item_Food(Item*& item, int player)
 		{
 			messagePlayer(player, MESSAGE_STATUS, Language::get(3201));
 		}
+		else if ( stats[player]->type == MYCONID )
+		{
+			messagePlayer(player, MESSAGE_STATUS, Language::get(6991));
+		}
 		else if ( item->type == FOOD_BLOOD )
 		{
 			messagePlayer(player, MESSAGE_STATUS, Language::get(3203));
@@ -5122,9 +5126,12 @@ void item_Food(Item*& item, int player)
 				}
 			}
 		}
-		foodUseAbundanceEffect(item, player);
-		consumeItem(item, player);
-		return;
+		if ( stats[player]->type != MYCONID )
+		{
+			foodUseAbundanceEffect(item, player);
+			consumeItem(item, player);
+			return;
+		}
 	}
 
 	real_t foodMult = 1.0;
@@ -5287,7 +5294,7 @@ void item_Food(Item*& item, int player)
 					case FOOD_RATION_HEARTY:
 					case FOOD_RATION_HERBAL:
 					case FOOD_RATION_SWEET:
-						manaRegenPercent = 0.2;
+						manaRegenPercent = 0.1;
 						break;
 					case FOOD_BLOOD:
 						if ( players[player] && players[player]->entity
@@ -5351,7 +5358,10 @@ void item_Food(Item*& item, int player)
 		{
 			if ( players[player] && players[player]->entity )
 			{
-				players[player]->entity->setEffect(effectID, true, stats[player]->EFFECTS_TIMERS[effectID] + TICKS_PER_SECOND * 60, false);
+				if ( item->beatitude >= 0 || (item->beatitude < 0 && stats[player]->type == MYCONID) )
+				{
+					players[player]->entity->setEffect(effectID, true, stats[player]->EFFECTS_TIMERS[effectID] + TICKS_PER_SECOND * 60, false);
+				}
 			}
 		}
 	}
@@ -5541,6 +5551,10 @@ void item_FoodTin(Item*& item, int player)
 		{
 			messagePlayer(player, MESSAGE_STATUS | MESSAGE_HINT, Language::get(3201));
 		}
+		else if ( stats[player]->type == MYCONID )
+		{
+			messagePlayer(player, MESSAGE_STATUS | MESSAGE_HINT, Language::get(6991));
+		}
 		else
 		{
 			messagePlayer(player, MESSAGE_STATUS | MESSAGE_HINT, Language::get(908));
@@ -5579,9 +5593,13 @@ void item_FoodTin(Item*& item, int player)
 				}
 			}
 		}
-		foodUseAbundanceEffect(item, player);
-		consumeItem(item, player);
-		return;
+
+		if ( stats[player]->type != MYCONID )
+		{
+			foodUseAbundanceEffect(item, player);
+			consumeItem(item, player);
+			return;
+		}
 	}
 
 	int buffDuration = item->status * TICKS_PER_SECOND * 60;

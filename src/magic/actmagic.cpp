@@ -1360,6 +1360,14 @@ void magicOnEntityHit(Entity* parent, Entity* particle, Entity* hitentity, Stat*
 				hitentity->defyFleshProc(parent);
 			}
 			hitentity->pinpointDamageProc(parent, damageTaken);
+			if ( hitstats->getEffectActive(EFF_SPORES) )
+			{
+				if ( hitentity->behavior == &actPlayer 
+					&& hitstats->type == MYCONID && hitstats->getEffectActive(EFF_GROWTH) >= 4 )
+				{
+					floorMagicCreateSpores(hitentity, hitentity->x, hitentity->y, hitentity, 0, SPELL_SPORES);
+				}
+			}
 		}
 	}
 
@@ -10634,8 +10642,31 @@ void floorMagicCreateSpores(Entity* spawnOnEntity, real_t x, real_t y, Entity* c
 	spellTimer->y = y;
 	spellTimer->particleTimerVariable1 = damage;
 	spellTimer->particleTimerVariable2 = spellID;
+	spellTimer->particleTimerVariable4 = 0;
 
 	auto& timerEffects = particleTimerEffects[spellTimer->getUID()];
+
+	if ( caster && caster->behavior == &actPlayer && spellID == SPELL_SPORES )
+	{
+		if ( Stat* casterStats = caster->getStats() )
+		{
+			if ( casterStats->getEffectActive(EFF_GROWTH) >= 2 && casterStats->type == MYCONID )
+			{
+				if ( casterStats->getEffectActive(EFF_GROWTH) == 2 )
+				{
+					spellTimer->particleTimerVariable4 = 1;
+				}
+				else if ( casterStats->getEffectActive(EFF_GROWTH) == 3 )
+				{
+					spellTimer->particleTimerVariable4 = 2;
+				}
+				else if ( casterStats->getEffectActive(EFF_GROWTH) == 4 )
+				{
+					spellTimer->particleTimerVariable4 = 3;
+				}
+			}
+		}
+	}
 
 	std::vector<std::pair<int, int>> coords;
 	std::map<int, std::vector<ParticleTimerEffect_t::EffectLocations_t>> effLocations;
@@ -10655,6 +10686,21 @@ void floorMagicCreateSpores(Entity* spawnOnEntity, real_t x, real_t y, Entity* c
 			else
 			{
 				data.seconds = 1 / 4.0;
+				if ( spellID == SPELL_SPORES )
+				{
+					if ( spellTimer->particleTimerVariable4 == 1 )
+					{
+						data.seconds = 0.2;
+					}
+					else if ( spellTimer->particleTimerVariable4 == 2 )
+					{
+						data.seconds = 0.16;
+					}
+					else if ( spellTimer->particleTimerVariable4 == 3 )
+					{
+						data.seconds = 0.12;
+					}
+				}
 			}
 		}
 	}
@@ -17404,7 +17450,15 @@ void actParticleFloorMagic(Entity* my)
 							}
 							if ( particleEmitterHitPropsTimer->hits > 0 )
 							{
-								continue;
+								if ( parentTimer && parentTimer->particleTimerVariable4 > 0
+									&& particleEmitterHitPropsTimer->hits > 0 && (ticks - particleEmitterHitPropsTimer->tick) >= TICKS_PER_SECOND )
+								{
+									// allow re-apply
+								}
+								else
+								{
+									continue;
+								}
 							}
 
 							if ( caster && caster->behavior == &actMonster )
@@ -17462,6 +17516,10 @@ void actParticleFloorMagic(Entity* my)
 										{
 											effected = true;
 											stats->poisonKiller = caster ? caster->getUID() : 0;
+											if ( parentTimer && parentTimer->particleTimerVariable4 > 0 )
+											{
+												entity->char_poison = std::max(TICKS_PER_SECOND, entity->char_poison);
+											}
 											if ( !prevEff )
 											{
 												rollLevel = true;
@@ -17475,6 +17533,14 @@ void actParticleFloorMagic(Entity* my)
 											if ( !prevEff )
 											{
 												rollLevel = true;
+											}
+										}
+
+										if ( particleEmitterHitPropsTimer->hits > 0 )
+										{
+											if ( rollLevel )
+											{
+												rollLevel = false;
 											}
 										}
 
@@ -17522,19 +17588,23 @@ void actParticleFloorMagic(Entity* my)
 											alertTarget = false;
 										}
 
-										// alert the monster!
-										if ( entity->monsterState != MONSTER_STATE_ATTACK && (stats->type < LICH || stats->type >= SHOPKEEPER) )
+										if ( particleEmitterHitPropsTimer->hits == 0
+											|| particleEmitterHitPropsTimer->hits % 4 == 0 )
 										{
+											// alert the monster!
+											if ( entity->monsterState != MONSTER_STATE_ATTACK && (stats->type < LICH || stats->type >= SHOPKEEPER) )
+											{
+												if ( alertTarget )
+												{
+													entity->monsterAcquireAttackTarget(*caster, MONSTER_STATE_PATH, true);
+												}
+											}
+
+											// alert other monsters too
 											if ( alertTarget )
 											{
-												entity->monsterAcquireAttackTarget(*caster, MONSTER_STATE_PATH, true);
+												entity->alertAlliesOnBeingHit(caster);
 											}
-										}
-
-										// alert other monsters too
-										if ( alertTarget )
-										{
-											entity->alertAlliesOnBeingHit(caster);
 										}
 										entity->updateEntityOnHit(caster, alertTarget);
 									}

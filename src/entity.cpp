@@ -6457,6 +6457,39 @@ void Entity::handleEffects(Stat* myStats)
 		}
 
 		this->char_poison++;
+		int poisonDamageBonus = 0;
+		if ( myStats->poisonKiller != getUID() )
+		{
+			Entity* poisonKillerInflicted = uidToEntity(myStats->poisonKiller);
+			if ( poisonKillerInflicted && poisonKillerInflicted->behavior == &actPlayer
+				&& stats[poisonKillerInflicted->skill[2]]->type == MYCONID
+				&& stats[poisonKillerInflicted->skill[2]]->getEffectActive(EFF_GROWTH) >= 2 )
+			{
+				Uint8 effectStrength = stats[poisonKillerInflicted->skill[2]]->getEffectActive(EFF_GROWTH);
+				if ( effectStrength == 2 )
+				{
+					if ( ticks % 5 == 0 )
+					{
+						this->char_poison++;
+					}
+					poisonDamageBonus += 1;
+				}
+				else if ( effectStrength == 3 )
+				{
+					if ( ticks % 2 == 0 )
+					{
+						this->char_poison++;
+					}
+					poisonDamageBonus += 2;
+				}
+				else if ( effectStrength == 4 )
+				{
+					this->char_poison++;
+					poisonDamageBonus += 3;
+				}
+			}
+		}
+
 		if ( myStats->getEffectActive(EFF_BLOOD_WARD) )
 		{
 			if ( this->char_poison > 150 )
@@ -6485,6 +6518,7 @@ void Entity::handleEffects(Stat* myStats)
 			{
 				poisonhurt = std::min(poisonhurt, 15); // prevent doing 50+ dmg
 			}
+			poisonhurt += poisonDamageBonus;
 			if ( poisonhurt > 3 )
 			{
 				poisonhurt -= local_rng.rand() % (std::max(1, poisonhurt / 4));
@@ -10189,6 +10223,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						if ( myStats->HP <= 0 && oldHP > 0 )
 						{
+							killer->killedByMonsterObituary(this);
 							killer->awardXP(this, true, true);
 							steamAchievementEntity(killer, "BARONY_ACH_LOCKJAW");
 						}
@@ -12277,6 +12312,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						{
 							if ( colliderParent && (colliderParent->behavior == &actMonster || colliderParent->behavior == &actPlayer) )
 							{
+								colliderParent->killedByMonsterObituary(this);
 								colliderParent->awardXP(this, true, true);
 							}
 						}
@@ -12353,6 +12389,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					if ( hitstats->HP == 0 && oldHP > 0 )
 					{
 						messagePlayerMonsterEvent(player, makeColorRGB(0, 255, 0), *hitstats, Language::get(692), Language::get(692), MSG_COMBAT);
+						this->killedByMonsterObituary(hit.entity);
 						awardXP(hit.entity, true, true);
 					}
 				}
@@ -15608,6 +15645,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							}
 							if ( myStats->HP <= 0 && oldHP > myStats->HP )
 							{
+								hit.entity->killedByMonsterObituary(this);
 								hit.entity->awardXP(this, true, true);
 							}
 						}
@@ -15804,6 +15842,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						this->modHP(-abs(thornsEffect));
 						if ( myStats->HP <= 0 && oldHP > myStats->HP )
 						{
+							hit.entity->killedByMonsterObituary(this);
 							hit.entity->awardXP(this, true, true);
 
 							if ( hit.entity->behavior == &actPlayer && hitstats->playerRace == RACE_DRYAD && hitstats->stat_appearance == 0 )
@@ -15904,6 +15943,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						{
 							if ( myStats->HP <= 0 )
 							{
+								illusionParent->killedByMonsterObituary(this);
 								illusionParent->awardXP(this, true, true);
 								if ( illusionParent->behavior == &actPlayer )
 								{
@@ -30910,7 +30950,7 @@ real_t Entity::getDamageTableMultiplier(Entity* my, Stat& myStats, DamageTableTy
 		}
 	}
 
-	if ( damageType != DAMAGE_TABLE_MAGIC && damageType != DAMAGE_TABLE_RANGED )
+	if ( damageType != DAMAGE_TABLE_MAGIC )
 	{
 		if ( myStats.type == MYCONID )
 		{

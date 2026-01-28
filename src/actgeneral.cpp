@@ -1002,12 +1002,51 @@ void actColliderMushroomCap(Entity* my)
 						}
 
 						int damage = 5;
+						bool alertTarget = true;
+						bool friendlyFireTarget = false;
 						if ( effectType == 6 || effectType == 7 ) // player casted
 						{
 							damage = getSpellDamageFromID(SPELL_MUSHROOM, caster, nullptr, my);
+
+							int bonusEffect = 0;
+							if ( parent && parent->colliderDropVariable > 0 )
+							{
+								bonusEffect = parent->colliderDropVariable;
+							}
+							if ( caster && caster->behavior == &actPlayer )
+							{
+								if ( Stat* casterStats = caster->getStats() )
+								{
+									if ( casterStats->type == MYCONID && casterStats->getEffectActive(EFF_GROWTH) >= 2 )
+									{
+										bonusEffect = std::max(bonusEffect, casterStats->getEffectActive(EFF_GROWTH) - 1);
+									}
+								}
+							}
+							damage += damage * (bonusEffect * 1.0);
+
+							if ( caster && caster->behavior == &actPlayer )
+							{
+								if ( caster->checkFriend(entity) && caster->friendlyFireProtection(entity) )
+								{
+									damage = 0;
+									alertTarget = false;
+									friendlyFireTarget = true;
+								}
+							}
+							else if ( achievementObserver.checkUidIsFromPlayer(parent->colliderCreatedParent) >= 0 )
+							{
+								if ( (entity->behavior == &actMonster && entity->monsterAllyGetPlayerLeader())
+									|| entity->behavior == &actPlayer )
+								{
+									damage = 0;
+									alertTarget = false;
+									friendlyFireTarget = true;
+								}
+							}
 						}
 
-						if ( applyGenericMagicDamage(caster ? caster : parent, entity, caster ? *caster : *parent, SPELL_MUSHROOM, damage, true, true) )
+						if ( applyGenericMagicDamage(caster ? caster : parent, entity, caster ? *caster : *parent, SPELL_MUSHROOM, damage, alertTarget, true) )
 						{
 							stats->killer = KilledBy::MUSHROOM;
 							entity->setObituary(Language::get(6753));
@@ -1044,13 +1083,16 @@ void actColliderMushroomCap(Entity* my)
 
 								if ( effectType == 3 || effectType == 6 || effectType == 7 )
 								{
-									bool wasEffected = stats->getEffectActive(EFF_POISONED);
-									if ( entity->setEffect(EFF_POISONED, true, 3 * TICKS_PER_SECOND + 10, false) )
+									if ( !friendlyFireTarget )
 									{
-										spawnMagicEffectParticles(entity->x, entity->y, entity->z, 944);
-										if ( caster )
+										bool wasEffected = stats->getEffectActive(EFF_POISONED);
+										if ( entity->setEffect(EFF_POISONED, true, 3 * TICKS_PER_SECOND + 10, false) )
 										{
-											stats->poisonKiller = caster->getUID();
+											spawnMagicEffectParticles(entity->x, entity->y, entity->z, 944);
+											if ( caster )
+											{
+												stats->poisonKiller = caster->getUID();
+											}
 										}
 									}
 								}

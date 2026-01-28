@@ -2363,6 +2363,21 @@ int ItemTooltips_t::getSpellDamageOrHealAmount(const int player, spell_t* spell,
 		{
 			damage = heal;
 		}
+		if ( spell->ID == SPELL_MUSHROOM )
+		{
+			if ( !excludePlayerStats )
+			{
+				if ( player >= 0 && players[player] )
+				{
+					int bonusEffect = 0;
+					if ( stats[player]->type == MYCONID && stats[player]->getEffectActive(EFF_GROWTH) >= 2 )
+					{
+						bonusEffect = std::max(bonusEffect, stats[player]->getEffectActive(EFF_GROWTH) - 1);
+					}
+					damage += damage * (bonusEffect * 1.0);
+				}
+			}
+		}
 	}
 	return damage;
 #endif
