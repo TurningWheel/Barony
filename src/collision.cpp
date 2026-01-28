@@ -214,7 +214,8 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player, E
 	if ( !entity && !mute_player_monster_sounds && !clickCheckOverride 
 		&& clicktype != ENTITY_CLICK_CALLOUT )
 	{
-		if ( players[player] && players[player]->entity && players[player]->movement.monsterEmoteGimpTimer == 0 )
+		if ( players[player] && players[player]->entity && players[player]->movement.monsterEmoteGimpTimer == 0
+			&& !players[player]->ghost.isActive() )
 		{
 			players[player]->movement.monsterEmoteGimpTimer = TICKS_PER_SECOND * 5;
 			int sfx = 0;
