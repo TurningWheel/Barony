@@ -2749,7 +2749,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 
 					if ( spellIsReflectingMagic )
 					{
-						int spellCost = getCostOfSpell(spell);
+						int spellCost = getCostOfSpell(spell) + 5 + local_rng.rand() % 6;
 						bool unsustain = false;
 						if ( spellCost >= hit.entity->getMP() ) //Unsustain the spell if expended all mana.
 						{
