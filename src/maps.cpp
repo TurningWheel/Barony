@@ -39,6 +39,8 @@ void TreasureRoomGenerator::init()
 {
 	treasure_floors.clear();
 	treasure_secret_floors.clear();
+	station_floors.clear();
+	station_secret_floors.clear();
 	Uint32 seed = uniqueGameKey;
 	if ( seed < (0xFFFFFFFF - 64) )
 	{
@@ -50,38 +52,129 @@ void TreasureRoomGenerator::init()
 	}
 	treasure_rng.seedBytes(&seed, sizeof(seed));
 
+	std::string previous_station[2] = { "", "" };
 	for ( int i = 0; i <= 35; i += 5 )
 	{
 		for ( int j = 0; j < 2; ++j )
 		{
-			auto& floors = (j == 0) ? treasure_floors : treasure_secret_floors;
-			std::vector<unsigned int> chances = { 0, 10, 7, 7, 10 };
-			if ( i == 0 && j == 0 )
 			{
-				chances[0] = 0;
-				chances[1] = 0;
-			}
-			if ( j == 1 && i == 1 )
-			{
-				chances = { 0, 10, 7, 0, 0 }; // underworld
+				auto& floors = (j == 0) ? treasure_floors : treasure_secret_floors;
+				std::vector<unsigned int> chances = { 0, 10, 7, 7, 10 };
+				if ( i == 0 && j == 0 )
+				{
+					chances[0] = 0;
+					chances[1] = 0;
+				}
+				if ( j == 1 && i == 1 )
+				{
+					chances = { 0, 10, 7, 0, 0 }; // underworld
+				}
+
+				unsigned int res1 = treasure_rng.discrete(chances.data(), chances.size());
+				chances[res1] = 0;
+				unsigned int res2 = treasure_rng.discrete(chances.data(), chances.size());
+
+				//if ( treasure_rng.rand() % 3 == 0 )
+				{
+					// do both
+					floors.insert(i + res1);
+					floors.insert(i + res2);
+				}
+				//else
+				//{
+				//	// only 1
+				//	auto chosen = treasure_rng.rand() % 2 == 0 ? res1 : res2;
+				//	floors.insert(i + chosen);
+				//}
 			}
 
-			unsigned int res1 = treasure_rng.discrete(chances.data(), chances.size());
-			chances[res1] = 0;
-			unsigned int res2 = treasure_rng.discrete(chances.data(), chances.size());
-
-			//if ( treasure_rng.rand() % 3 == 0 )
 			{
-				// do both
-				floors.insert(i + res1);
-				floors.insert(i + res2);
+				auto& floors_stations = (j == 0) ? station_floors : station_secret_floors;
+				std::vector<unsigned int> chances = { 0, 7, 10, 10, 10 };
+				if ( i == 0 && j == 0 )
+				{
+					chances[0] = 0;
+					chances[1] = 0;
+				}
+				if ( j == 1 && i == 5 )
+				{
+					chances = { 0, 7, 10, 0, 0 }; // underworld
+				}
+				unsigned int res1 = treasure_rng.discrete(chances.data(), chances.size());
+				chances[res1] = 0;
+				unsigned int res2 = treasure_rng.discrete(chances.data(), chances.size());
+
+				if ( true /*(treasure_rng.rand() % 4 > 0) || (i >= 5 && i <= 10) || i >= 15*/ )
+				{
+					std::vector<unsigned int> chances_level;
+					chances_level.push_back(1);
+					chances_level.push_back(1);
+					auto chosen_level = treasure_rng.discrete(chances_level.data(), chances_level.size());
+					chances_level[chosen_level] = 0;
+
+					std::vector<std::string> strs = { "cauldron", "workbench" };
+
+					int numStations = 1;
+
+					if ( abs((int)res1) - abs((int)res2) >= 1 ) // x level distance
+					{
+						if ( treasure_rng.rand() % 3 == 0 )
+						{
+							numStations = 2;
+						}
+					}
+
+					while ( numStations > 0 )
+					{
+						--numStations;
+
+						std::vector<unsigned int> chances_strs;
+						for ( auto& str : strs )
+						{
+							if ( j == 1 && (i == 5 || i == 20) ) // underworld/hell
+							{
+								if ( str == "cauldron" )
+								{
+									chances_strs.push_back(1);
+								}
+								else
+								{
+									chances_strs.push_back(0);
+								}
+							}
+							else if ( str != previous_station[j] )
+							{
+								chances_strs.push_back(1);
+							}
+							else
+							{
+								chances_strs.push_back(0);
+							}
+						}
+						unsigned int station_name_pick = treasure_rng.discrete(chances_strs.data(), chances_strs.size());
+						floors_stations[i + (chosen_level == 0 ? res1 : res2)] = strs[station_name_pick];
+						previous_station[j] = strs[station_name_pick];
+
+						bool anyChances = false;
+						for ( auto val : chances_level )
+						{
+							if ( val > 0 )
+							{
+								anyChances = true;
+								break;
+							}
+						}
+
+						if ( !anyChances )
+						{
+							break;
+						}
+
+						chosen_level = treasure_rng.discrete(chances_level.data(), chances_level.size());
+						chances_level[chosen_level] = 0;
+					}
+				}
 			}
-			//else
-			//{
-			//	// only 1
-			//	auto chosen = treasure_rng.rand() % 2 == 0 ? res1 : res2;
-			//	floors.insert(i + chosen);
-			//}
 		}
 	}
 
@@ -89,6 +182,13 @@ void TreasureRoomGenerator::init()
 	orb_floors[8] = "orb_green";
 	orb_floors[13] = "orb_red";
 	orb_floors[18] = "orb_blue";
+}
+
+bool TreasureRoomGenerator::bForceStationSpawnForCurrentFloor(int secretlevelexit)
+{
+	auto& floor = secretlevel ? station_secret_floors : station_floors;
+
+	return floor.find(currentlevel) != floor.end();
 }
 
 bool TreasureRoomGenerator::bForceSpawnForCurrentFloor(int secretlevelexit, bool minotaur, BaronyRNG& mapRNG)
@@ -4988,6 +5088,375 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		int dir;
 		int id = -1;
 	};
+
+	static ConsoleVariable<bool> cvar_debug_station_spawn("/debug_station_spawn", false);
+	if ( treasure_room_generator.bForceStationSpawnForCurrentFloor(secretlevelexit) )
+	{
+		bool* possibleLocationsStations = (bool*)malloc(sizeof(bool) * map.width * map.height);
+		memcpy(possibleLocationsStations, possiblelocations, map.width * map.height * sizeof(bool));
+		int numpossibleStationLocations = numpossiblelocations;
+
+		std::vector<BreakableNode_t> stationLocations;
+		std::set<int> obstacleLocations;
+		for ( int c = 0; c < std::min(30, numpossibleStationLocations); ++c )
+		{
+			// choose a random location from those available
+			pickedlocation = map_rng.rand() % numpossibleStationLocations;
+			i = -1;
+			int x = 0;
+			int y = 0;
+			while ( 1 )
+			{
+				if ( possibleLocationsStations[y + x * map.height] == true )
+				{
+					++i;
+					if ( i == pickedlocation )
+					{
+						break;
+					}
+				}
+				++x;
+				if ( x >= map.width )
+				{
+					x = 0;
+					++y;
+					if ( y >= map.height )
+					{
+						y = 0;
+					}
+				}
+			}
+
+			if ( decorationexcludelocations[x + y * map.width]
+				|| treasureRoomLocations[x + y * map.width]
+				|| secretlevelexittile[y + x * map.height] )
+			{
+				--c;
+				possibleLocationsStations[y + x * map.height] = false;
+				numpossibleStationLocations--;
+				continue;
+			}
+
+			std::set<int> walls;
+			std::set<int> corners;
+			int maxContinuousTiles = 0;
+
+			std::vector<std::pair<int, int>> coordsToCheck = // spiral
+			{
+				{ -1, -1 },
+				{ 0, -1 },
+				{ 1, -1 },
+				{ 1, 0 },
+				{ 1, 1 },
+				{ 0, 1 },
+				{-1, 1 },
+				{-1, 0 }
+			};
+
+			int numContinuousTiles = 0;
+			for ( auto& pair : coordsToCheck )
+			{
+				int x2 = pair.first;
+				int y2 = pair.second;
+				if ( x2 == 0 && y2 == 0 )
+				{
+					continue;
+				}
+
+				int checkx = x + x2;
+				int checky = y + y2;
+				if ( checkx >= 0 && checkx < map.width )
+				{
+					if ( checky >= 0 && checky < map.height )
+					{
+						int index = (checky)*MAPLAYERS + (checkx)*MAPLAYERS * map.height;
+						if ( map.tiles[OBSTACLELAYER + index] )
+						{
+							if ( (x2 == -1 && y2 == -1) || (x2 == 1 && y2 == 1)
+								|| (x2 == -1 && y2 == 1) || (x2 == 1 && y2 == -1) )
+							{
+								corners.insert(checkx + checky * 1000);
+							}
+							else
+							{
+								walls.insert(checkx + checky * 1000);
+							}
+							numContinuousTiles = 0;
+						}
+						else
+						{
+							++numContinuousTiles;
+							maxContinuousTiles = std::max(maxContinuousTiles, numContinuousTiles);
+						}
+					}
+					else
+					{
+						numContinuousTiles = 0;
+					}
+				}
+				else
+				{
+					numContinuousTiles = 0;
+				}
+			}
+
+			possibleLocationsStations[y + x * map.height] = false;
+			numpossibleStationLocations--;
+
+			if ( walls.size() == 2 )
+			{
+				int tmpx1 = 0;
+				int tmpy1 = 0;
+				int tmpx2 = 0;
+				int tmpy2 = 0;
+				int index = -1;
+				for ( auto val : walls )
+				{
+					++index;
+					if ( index == 0 )
+					{
+						tmpx1 = val % 1000;
+						tmpy1 = val / 1000;
+					}
+					else if ( index == 1 )
+					{
+						tmpx2 = val % 1000;
+						tmpy2 = val / 1000;
+					}
+				}
+				if ( tmpx1 == tmpx2 || tmpy1 == tmpy2 )
+				{
+					// try again, can't be on same axis, needs to be corner config
+					--c;
+					continue;
+				}
+			}
+			if ( !((walls.size() == 1 && corners.size() == 2 && maxContinuousTiles >= 5)
+				|| (walls.size() == 1 && corners.size() == 0 && maxContinuousTiles >= 7)
+				|| (walls.size() == 2 && maxContinuousTiles >= 3)
+				|| (walls.size() == 3)) )
+			{
+				// try again
+				--c;
+				continue;
+			}
+
+			std::set<int> freespaces;
+			numContinuousTiles = 0;
+			maxContinuousTiles = 0;
+			int freeAxisSpaces = 0;
+			for ( auto& pair : coordsToCheck )
+			{
+				int x2 = pair.first;
+				int y2 = pair.second;
+				if ( x2 == 0 && y2 == 0 ) { continue; }
+				if ( walls.size() == 3 )
+				{
+					// ignore corners
+					if ( x2 != 0 && y2 != 0 )
+					{
+						numContinuousTiles = 0;
+						continue;
+					}
+				}
+
+				int checkx = x + x2;
+				int checky = y + y2;
+				if ( walls.find(checkx + checky * 1000) != walls.end()
+					|| corners.find(checkx + checky * 1000) != corners.end() )
+				{
+					numContinuousTiles = 0;
+					continue;
+				}
+
+				if ( checkx >= 0 && checkx < map.width )
+				{
+					if ( checky >= 0 && checky < map.height )
+					{
+						int index = (checky)*MAPLAYERS + (checkx)*MAPLAYERS * map.height;
+						if ( swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]] )
+						{
+							numContinuousTiles = 0;
+							continue;
+						}
+						if ( obstacleLocations.find(checkx + checky * 1000) != obstacleLocations.end() )
+						{
+							numContinuousTiles = 0;
+							continue;
+						}
+						else if ( !checkObstacle((checkx) * 16, (checky) * 16, NULL, NULL, false, false) )
+						{
+							obstacleLocations.insert(checkx + checky * 1000);
+							freespaces.insert(checkx + checky * 1000);
+							if ( x2 == 0 || y2 == 0 )
+							{
+								++freeAxisSpaces;
+							}
+							++numContinuousTiles;
+							maxContinuousTiles = std::max(maxContinuousTiles, numContinuousTiles);
+						}
+						else
+						{
+							numContinuousTiles = 0;
+						}
+					}
+					else
+					{
+						numContinuousTiles = 0;
+					}
+				}
+				else
+				{
+					numContinuousTiles = 0;
+				}
+			}
+
+			if ( walls.size() == 2 && freeAxisSpaces != 2 ) // need 2 axis aligned spaces
+			{
+				freespaces.clear();
+			}
+
+			bool foundSpace = false;
+			if ( (walls.size() == 1 && corners.size() == 2 && maxContinuousTiles >= 5 && freespaces.size() >= 5)
+				|| (walls.size() == 1 && corners.size() == 0 && maxContinuousTiles >= 7 && freespaces.size() >= 7)
+				|| (walls.size() == 2 && maxContinuousTiles >= 3 && freespaces.size() >= 3)
+				|| (walls.size() == 3 && freespaces.size() > 0) )
+			{
+				std::vector<unsigned int> dirs;
+				if ( walls.size() == 3 )
+				{
+					if ( walls.find((x + 1) + (y + 0) * 1000) == walls.end() )
+					{
+						dirs.push_back(0);
+					}
+					else if ( walls.find((x - 1) + (y + 0) * 1000) == walls.end() )
+					{
+						dirs.push_back(4);
+					}
+					else if ( walls.find((x + 0) + (y + 1) * 1000) == walls.end() )
+					{
+						dirs.push_back(2);
+					}
+					else if ( walls.find((x + 0) + (y - 1) * 1000) == walls.end() )
+					{
+						dirs.push_back(6);
+					}
+				}
+				else
+				{
+					if ( walls.find((x + 1) + (y + 0) * 1000) != walls.end() )
+					{
+						dirs.push_back(4);
+					}
+					else if ( walls.find((x - 1) + (y + 0) * 1000) != walls.end() )
+					{
+						dirs.push_back(0);
+					}
+					else if ( walls.find((x + 0) + (y + 1) * 1000) != walls.end() )
+					{
+						dirs.push_back(6);
+					}
+					else if ( walls.find((x + 0) + (y - 1) * 1000) != walls.end() )
+					{
+						dirs.push_back(2);
+					}
+				}
+				if ( dirs.size() )
+				{
+					int picked = dirs[map_rng.rand() % dirs.size()];
+
+					int priority = 10;
+					if ( walls.size() == 1 && corners.size() == 2 )
+					{
+						priority = 15;
+					}
+					else if ( walls.size() == 3 )
+					{
+						priority = 15;
+					}
+					stationLocations.push_back(BreakableNode_t(priority, x, y, picked));
+					foundSpace = true;
+				}
+			}
+
+			if ( !foundSpace )
+			{
+				--c;
+				continue;
+			}
+		}
+
+		free(possibleLocationsStations);
+		possibleLocationsStations = nullptr;
+
+		while ( !stationLocations.empty() )
+		{
+			std::vector<unsigned int> posChances;
+			int pickedPos = 0;
+			for ( auto& b : stationLocations )
+			{
+				posChances.push_back(b.walls);
+			}
+
+			pickedPos = map_rng.discrete(posChances.data(), posChances.size());
+
+			auto& top = stationLocations.at(pickedPos);
+			int x = top.x;
+			int y = top.y;
+
+			auto& station = secretlevel ? treasure_room_generator.station_secret_floors : treasure_room_generator.station_floors;
+			if ( station[currentlevel] == "cauldron" )
+			{
+				Entity* stationEntity = newEntity(300, 1, map.entities, nullptr); // cauldron
+				stationEntity->x = x * 16.0;
+				stationEntity->y = y * 16.0;
+				stationEntity->yaw = top.dir / 2;
+
+				stationLocations.erase(stationLocations.begin() + pickedPos);
+				possiblelocations[y + x * map.height] = false;
+				--numpossiblelocations;
+
+				if ( *cvar_debug_station_spawn )
+				{
+					if ( (svFlags & SV_FLAG_CHEATS) )
+					{
+						messagePlayer(clientnum, MESSAGE_DEBUG, "[STATIONS]: %s generated at x:%d y:%d", station[currentlevel].c_str(), x, y);
+					}
+				}
+			}
+			else if ( station[currentlevel] == "workbench" )
+			{
+				Entity* stationEntity = newEntity(301, 1, map.entities, nullptr); // workbench
+				stationEntity->x = x * 16.0;
+				stationEntity->y = y * 16.0;
+				stationEntity->yaw = top.dir / 2;
+
+				stationLocations.erase(stationLocations.begin() + pickedPos);
+				possiblelocations[y + x * map.height] = false;
+				--numpossiblelocations;
+
+				if ( *cvar_debug_station_spawn )
+				{
+					if ( (svFlags & SV_FLAG_CHEATS) )
+					{
+						messagePlayer(clientnum, MESSAGE_DEBUG, "[STATIONS]: %s generated at x:%d y:%d", station[currentlevel].c_str(), x, y);
+					}
+				}
+			}
+			else
+			{
+				if ( *cvar_debug_station_spawn )
+				{
+					if ( (svFlags & SV_FLAG_CHEATS) )
+					{
+						messagePlayer(clientnum, MESSAGE_DEBUG, "[STATIONS]: nothing generated at x:%d y:%d", x, y);
+					}
+				}
+			}
+			break;
+		}
+	}
+
 	auto findBreakables = EditorEntityData_t::colliderRandomGenPool.find(map.name);
 	if ( findBreakables == EditorEntityData_t::colliderRandomGenPool.end() )
 	{
@@ -10116,6 +10585,7 @@ void assignActions(map_t* map)
 				entity->z = 7.5;
 				entity->flags[PASSABLE] = false;
 				entity->behavior = &actCauldron;
+				entity->yaw = entity->yaw * (PI / 2); // rotate as set in editor
 				entity->sprite = 1622; // firepit
 				entity->seedEntityRNG(map_rng.getU32());
 				break;
@@ -10127,6 +10597,7 @@ void assignActions(map_t* map)
 				entity->z = 7.5;
 				entity->flags[PASSABLE] = false;
 				entity->behavior = &actWorkbench;
+				entity->yaw = entity->yaw * (PI / 2); // rotate as set in editor
 				entity->sprite = 1617;
 				entity->seedEntityRNG(map_rng.getU32());
 				break;
@@ -10138,6 +10609,7 @@ void assignActions(map_t* map)
 				entity->z = 7.5;
 				entity->flags[PASSABLE] = false;
 				entity->behavior = &actMailbox;
+				entity->yaw = entity->yaw * (PI / 2); // rotate as set in editor
 				entity->sprite = 1619;
 				entity->seedEntityRNG(map_rng.getU32());
 				break;
@@ -10149,6 +10621,7 @@ void assignActions(map_t* map)
 				entity->z = 7.5;
 				entity->flags[PASSABLE] = false;
 				entity->behavior = &actMailbox;
+				entity->yaw = entity->yaw * (PI / 2); // rotate as set in editor
 				entity->sprite = 1620;
 				entity->seedEntityRNG(map_rng.getU32());
 				break;

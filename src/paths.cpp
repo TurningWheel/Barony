@@ -375,6 +375,10 @@ int pathCheckObstacle(int x, int y, Entity* my, Entity* target)
 			|| entity->sprite == 1481	// daedalus shrine
 			|| entity->sprite == 217	// iron door
 			|| entity->sprite == 218	// iron door
+			|| entity->sprite == 300	// cauldron
+			|| entity->sprite == 301	// workbench
+			|| entity->sprite == 302	// mailbox
+			|| entity->sprite == 303	// mailbox
 			)
 		{
 			if ( (int)floor(entity->x / 16) == u && (int)floor(entity->y / 16) == v )
@@ -1293,6 +1297,18 @@ bool isPathObstacle(Entity* entity)
 			// not on ceiling layer
 			return true;
 		}
+	}
+	else if ( entity->behavior == &actCauldron )
+	{
+		return false;
+	}
+	else if ( entity->behavior == &actWorkbench )
+	{
+		return false;
+	}
+	else if ( entity->behavior == &actMailbox )
+	{
+		return false;
 	}
 	return false;
 }

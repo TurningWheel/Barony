@@ -4416,7 +4416,10 @@ struct TreasureRoomGenerator
 	std::unordered_set<unsigned int> treasure_floors;
 	std::unordered_set<unsigned int> treasure_secret_floors;
 	std::map<unsigned int, std::string> orb_floors;
+	std::map<unsigned int, std::string> station_floors;
+	std::map<unsigned int, std::string> station_secret_floors;
 	void init();
 	bool bForceSpawnForCurrentFloor(int secretlevelexit, bool minotaur, BaronyRNG& mapRNG);
+	bool bForceStationSpawnForCurrentFloor(int secretlevelexit);
 };
 extern TreasureRoomGenerator treasure_room_generator;

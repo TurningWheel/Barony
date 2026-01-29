@@ -5188,6 +5188,26 @@ namespace ConsoleCommands {
 #endif
 	});
 
+	static ConsoleCommand ccmd_map_debug_stations("/map_debug_stations", "", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+
+	for ( int j = 0; j < 2; ++j )
+	{
+		auto& floors_stations = (j == 0) ? treasure_room_generator.station_floors : treasure_room_generator.station_secret_floors;
+		for ( int i = 0; i <= 35; ++i )
+		{
+			if ( floors_stations.find(i) != floors_stations.end() )
+			{
+				messagePlayer(clientnum, MESSAGE_DEBUG, "[STATIONS]: [%d]: %s", i, floors_stations[i].c_str());
+			}
+		}
+	}
+	});
+
 	static ConsoleCommand ccmd_map_debug_door("/map_debug_door", "", []CCMD{
 #ifndef NINTENDO
 		if ( !(svFlags & SV_FLAG_CHEATS) )
