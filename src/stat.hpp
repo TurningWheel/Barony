@@ -371,7 +371,7 @@ public:
 		PROFICIENCIES[skill] = value;
 	}
 	int getGoldWeight() const;
-	static const Uint8 nullEffectValue = 0;
+	static constexpr Uint8 nullEffectValue = 0;
 	const Uint8& getEffectActive(int effect) const
 	{
 		if ( effect >= 0 && effect < NUMEFFECTS )

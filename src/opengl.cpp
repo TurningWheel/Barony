@@ -2061,13 +2061,13 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
         if ( entity->actSpriteUseAlpha != 0 && entity->behavior == &actSprite )
         {
             // use alpha
-            const GLfloat light[4] = { b, b, b, entity->fskill[1]};
+            const GLfloat light[4] = { b, b, b, (float)entity->fskill[1]};
             GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightColor"), 1, light));
         }
         else if ( entity->behavior == &actMagicRangefinder )
         {
             // use alpha
-            const GLfloat light[4] = { b * entity->fskill[1], b * entity->fskill[2], b * entity->fskill[3], entity->fskill[0]};
+            const GLfloat light[4] = { b * (float)entity->fskill[1], b * (float)entity->fskill[2], b * (float)entity->fskill[3], (float)entity->fskill[0]};
             GL_CHECK_ERR(glUniform4fv(shader.uniform("uLightColor"), 1, light));
         }
         else
