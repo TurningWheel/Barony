@@ -394,23 +394,23 @@ bool isAchievementUnlockedForClassUnlock(int race)
 	{
 		return unlocked;
 	}
-	else if ( enabledDLCPack3 && race == RACE_DRYAD && SteamUserStats()->GetAchievement("BARONY_ACH_XXX", &unlocked) )
+	else if ( enabledDLCPack3 && race == RACE_DRYAD && SteamUserStats()->GetAchievement("BARONY_ACH_BARKSKIN_BARON", &unlocked) )
 	{
 		return unlocked;
 	}
-	else if ( enabledDLCPack3 && race == RACE_MYCONID && SteamUserStats()->GetAchievement("BARONY_ACH_XXX", &unlocked) )
+	else if ( enabledDLCPack3 && race == RACE_MYCONID && SteamUserStats()->GetAchievement("BARONY_ACH_BOLETE_BARON", &unlocked) )
 	{
 		return unlocked;
 	}
-	else if ( enabledDLCPack3 && race == RACE_GREMLIN && SteamUserStats()->GetAchievement("BARONY_ACH_XXX", &unlocked) )
+	else if ( enabledDLCPack3 && race == RACE_GREMLIN && SteamUserStats()->GetAchievement("BARONY_ACH_BONKERS_BARON", &unlocked) )
 	{
 		return unlocked;
 	}
-	else if ( enabledDLCPack3 && race == RACE_SALAMANDER && SteamUserStats()->GetAchievement("BARONY_ACH_XXX", &unlocked) )
+	else if ( enabledDLCPack3 && race == RACE_SALAMANDER && SteamUserStats()->GetAchievement("BARONY_ACH_BURNINATION_BARON", &unlocked) )
 	{
 		return unlocked;
 	}
-	else if ( enabledDLCPack3 && race == RACE_GNOME && SteamUserStats()->GetAchievement("BARONY_ACH_XXX", &unlocked) )
+	else if ( enabledDLCPack3 && race == RACE_GNOME && SteamUserStats()->GetAchievement("BARONY_ACH_BITTY_BARON", &unlocked) )
 	{
 		return unlocked;
 	}
@@ -447,23 +447,23 @@ bool isAchievementUnlockedForClassUnlock(int race)
 	{
 		return true;
 	}
-	else if ( enabledDLCPack3 && race == RACE_DRYAD && achievementUnlocked("BARONY_ACH_XXX") )
+	else if ( enabledDLCPack3 && race == RACE_DRYAD && achievementUnlocked("BARONY_ACH_BARKSKIN_BARON") )
 	{
 		return true;
 	}
-	else if ( enabledDLCPack3 && race == RACE_MYCONID && achievementUnlocked("BARONY_ACH_XXX") )
+	else if ( enabledDLCPack3 && race == RACE_MYCONID && achievementUnlocked("BARONY_ACH_BOLETE_BARON") )
 	{
 		return true;
 	}
-	else if ( enabledDLCPack3 && race == RACE_GREMLIN && achievementUnlocked("BARONY_ACH_XXX") )
+	else if ( enabledDLCPack3 && race == RACE_GREMLIN && achievementUnlocked("BARONY_ACH_BONKERS_BARON") )
 	{
 		return true;
 	}
-	else if ( enabledDLCPack3 && race == RACE_SALAMANDER && achievementUnlocked("BARONY_ACH_XXX") )
+	else if ( enabledDLCPack3 && race == RACE_SALAMANDER && achievementUnlocked("BARONY_ACH_BURNINATION_BARON") )
 	{
 		return true;
 	}
-	else if ( enabledDLCPack3 && race == RACE_GNOME && achievementUnlocked("BARONY_ACH_XXX") )
+	else if ( enabledDLCPack3 && race == RACE_GNOME && achievementUnlocked("BARONY_ACH_BITTY_BARON") )
 	{
 		return true;
 	}
@@ -10095,6 +10095,26 @@ void doEndgame(bool saveHighscore, bool onServerDisconnect) {
 						{
 							steamAchievement("BARONY_ACH_LIKE_CLOCKWORK");
 						}
+						else if ( client_classes[i] == CLASS_BARD )
+						{
+							steamAchievement("BARONY_ACH_SWAN_SONG");
+						}
+						else if ( client_classes[i] == CLASS_SAPPER )
+						{
+							steamAchievement("BARONY_ACH_DUNGEON_SEIGE");
+						}
+						else if ( client_classes[i] == CLASS_SCION )
+						{
+							steamAchievement("BARONY_ACH_NEPO_BABY");
+						}
+						else if ( client_classes[i] == CLASS_HERMIT )
+						{
+							steamAchievement("BARONY_ACH_REINTEGRATED");
+						}
+						else if ( client_classes[i] == CLASS_PALADIN )
+						{
+							steamAchievement("BARONY_ACH_MISSION_GOD");
+						}
 
 						if ( stats[i] && stats[i]->stat_appearance == 0 )
 						{
@@ -10125,19 +10145,19 @@ void doEndgame(bool saveHighscore, bool onServerDisconnect) {
 								steamAchievement("BARONY_ACH_BAYOU_BARON");
 								break;
 							case RACE_DRYAD:
-								steamAchievement("BARONY_ACH_XXX");
+								steamAchievement("BARONY_ACH_BARKSKIN_BARON");
 								break;
 							case RACE_MYCONID:
-								steamAchievement("BARONY_ACH_XXX");
+								steamAchievement("BARONY_ACH_BOLETE_BARON");
 								break;
 							case RACE_GREMLIN:
-								steamAchievement("BARONY_ACH_XXX");
+								steamAchievement("BARONY_ACH_BONKERS_BARON");
 								break;
 							case RACE_SALAMANDER:
-								steamAchievement("BARONY_ACH_XXX");
+								steamAchievement("BARONY_ACH_BURNINATION_BARON");
 								break;
 							case RACE_GNOME:
-								steamAchievement("BARONY_ACH_XXX");
+								steamAchievement("BARONY_ACH_BITTY_BARON");
 								break;
 							default:
 								break;

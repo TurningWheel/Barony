@@ -1931,14 +1931,17 @@ void Entity::actWallLock()
 										else if ( foundWallLockKey->type == KEY_SILVER )
 										{
 											Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_KEYLOCK_UNLOCKED_KEY_SILVER, "wall locks", 1);
+											steamStatisticUpdate(STEAM_STAT_PREMIUM_LOOTBOX, STEAM_STAT_INT, 1);
 										}
 										else if ( foundWallLockKey->type == KEY_GOLD )
 										{
 											Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_KEYLOCK_UNLOCKED_KEY_GOLD, "wall locks", 1);
+											steamStatisticUpdate(STEAM_STAT_PREMIUM_LOOTBOX, STEAM_STAT_INT, 1);
 										}
 										else if ( foundWallLockKey->type == KEY_BRONZE )
 										{
 											Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_KEYLOCK_UNLOCKED_KEY_BRONZE, "wall locks", 1);
+											steamStatisticUpdate(STEAM_STAT_PREMIUM_LOOTBOX, STEAM_STAT_INT, 1);
 										}
 
 										messagePlayer(i, MESSAGE_INTERACTION, Language::get(6378), foundWallLockKey->getName());

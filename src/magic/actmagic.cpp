@@ -1097,6 +1097,14 @@ bool magicOnSpellCastEvent(Entity* parent, Entity* projectile, Entity* hitentity
 			if ( spellID == SPELL_BREATHE_FIRE )
 			{
 			}
+			else if ( spellID == SPELL_FOCI_ARCS
+				|| spellID == SPELL_FOCI_NEEDLES
+				|| spellID == SPELL_FOCI_FIRE
+				|| spellID == SPELL_FOCI_SNOW
+				|| spellID == SPELL_FOCI_SANDBLAST )
+			{
+				magicstaff = true;
+			}
 			else
 			{
 				allowedLevelup = false; // foci/sprays
@@ -1352,6 +1360,14 @@ void magicOnEntityHit(Entity* parent, Entity* particle, Entity* hitentity, Stat*
 				hitentity->defyFleshProc(parent);
 			}
 			hitentity->pinpointDamageProc(parent, damageTaken);
+			if ( hitstats->getEffectActive(EFF_SPORES) )
+			{
+				if ( hitentity->behavior == &actPlayer 
+					&& hitstats->type == MYCONID && hitstats->getEffectActive(EFF_GROWTH) >= 4 )
+				{
+					floorMagicCreateSpores(hitentity, hitentity->x, hitentity->y, hitentity, 0, SPELL_SPORES);
+				}
+			}
 		}
 	}
 
@@ -1588,6 +1604,11 @@ void magicOnEntityHit(Entity* parent, Entity* particle, Entity* hitentity, Stat*
 				if ( damageTaken > 0 )
 				{
 					Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_SPELL_DMG, (ItemType)find->second.fociId, damageTaken);
+					magicOnSpellCastEvent(parent, particle, hitentity, spellID, 
+						additionalFlags 
+						| spell_t::SPELL_LEVEL_EVENT_DMG 
+						| spell_t::SPELL_LEVEL_EVENT_MINOR_CHANCE
+						| spell_t::SPELL_LEVEL_EVENT_MAGICSTAFF, 1);
 				}
 			}
 		}
@@ -2278,6 +2299,18 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 
 							magicOnSpellCastEvent(hit.entity, hit.entity, parent, SPELL_MAGICIANS_ARMOR, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
+							if ( hit.entity->behavior == &actPlayer )
+							{
+								steamStatisticUpdateClient(hit.entity->skill[2], STEAM_STAT_DOESNT_COUNT, STEAM_STAT_INT, 1);
+								if ( parent && parent->behavior == &actMonster )
+								{
+									int type = parent->getMonsterTypeFromSprite();
+									if ( type == LICH || type == LICH_FIRE || type == LICH_ICE )
+									{
+										serverUpdatePlayerGameplayStats(hit.entity->skill[2], STATISTICS_THATS_CHEATING, 1);
+									}
+								}
+							}
 
 							if ( (parent && parent->behavior == &actPlayer) || (parent && parent->behavior == &actMonster && parent->monsterAllyGetPlayerLeader())
 								|| hit.entity->behavior == &actPlayer || hit.entity->monsterAllyGetPlayerLeader() )
@@ -2724,7 +2757,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 
 					if ( spellIsReflectingMagic )
 					{
-						int spellCost = getCostOfSpell(spell);
+						int spellCost = getCostOfSpell(spell) + 5 + local_rng.rand() % 6;
 						bool unsustain = false;
 						if ( spellCost >= hit.entity->getMP() ) //Unsustain the spell if expended all mana.
 						{
@@ -3416,7 +3449,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 
 							if (parent)
 							{
-								parent->killedByMonsterObituary(hit.entity);
+								parent->killedByMonsterObituary(hit.entity, true);
 							}
 
 
@@ -3870,7 +3903,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								// write the obituary
 								if ( parent )
 								{
-									parent->killedByMonsterObituary(hit.entity);
+									parent->killedByMonsterObituary(hit.entity, true);
 								}
 
 								// update enemy bar for attacker
@@ -4063,7 +4096,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 
 						// Attempt to set the Entity on fire
 						int prevBurningCounter = hit.entity->flags[BURNING] ? hit.entity->char_fire : 0;
-						hit.entity->SetEntityOnFire((parent&& parent->getStats()) ? parent : nullptr);
+						hit.entity->SetEntityOnFire((parent && parent->getStats()) ? parent : nullptr);
 						if ( hit.entity->flags[BURNING] 
 							&& (prevBurningCounter == 0 || (spell->ID == SPELL_FOCI_FIRE || spell->ID == SPELL_BREATHE_FIRE)) )
 						{
@@ -4229,7 +4262,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								}
 								else
 								{
-									parent->killedByMonsterObituary(hit.entity);
+									parent->killedByMonsterObituary(hit.entity, true);
 								}
 							}
 							if ( hitstats )
@@ -4267,6 +4300,28 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									{
 										steamAchievementClient(parent->skill[2], "BARONY_ACH_TIME_TO_PLAN");
 									}
+
+									if ( spell->ID == SPELL_BREATHE_FIRE && hitstats )
+									{
+										if ( parent && parent->behavior == &actPlayer )
+										{
+											if ( (hitstats->type == SLIME && hitstats->getAttribute("slime_type") == "slime red")
+												|| hitstats->type == LICH_FIRE
+												|| hitstats->type == DEVIL
+												|| hitstats->type == DEMON
+												|| hitstats->type == CREATURE_IMP )
+											{
+												if ( Stat* parentStats = parent->getStats() )
+												{
+													if ( parentStats->playerRace == RACE_SALAMANDER && parentStats->stat_appearance == 0 )
+													{
+														steamAchievementClient(parent->skill[2], "BARONY_ACH_FIGHT_FIRE_WITH");
+													}
+												}
+											}
+										}
+									}
+
 									parent->awardXP( hit.entity, true, true );
 									spawnBloodVialOnMonsterDeath(hit.entity, hitstats, parent);
 								}
@@ -4536,7 +4591,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							// write the obituary
 							if ( parent )
 							{
-								parent->killedByMonsterObituary(hit.entity);
+								parent->killedByMonsterObituary(hit.entity, true);
 							}
 
 							// update enemy bar for attacker
@@ -4975,7 +5030,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							// write the obituary
 							if (parent)
 							{
-								parent->killedByMonsterObituary(hit.entity);
+								parent->killedByMonsterObituary(hit.entity, true);
 							}
 
 							if ( spell->ID == SPELL_LIGHTNING )
@@ -5511,7 +5566,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							// write the obituary
 							if ( parent )
 							{
-								parent->killedByMonsterObituary(hit.entity);
+								parent->killedByMonsterObituary(hit.entity, true);
 							}
 
 							if ( damage > 0 )
@@ -6461,7 +6516,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							// write the obituary
 							if ( parent )
 							{
-								parent->killedByMonsterObituary(hit.entity);
+								parent->killedByMonsterObituary(hit.entity, true);
 							}
 
 							int bleedDuration = element->duration;
@@ -6515,7 +6570,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							// write the obituary
 							if ( parent )
 							{
-								parent->killedByMonsterObituary(hit.entity);
+								parent->killedByMonsterObituary(hit.entity, true);
 							}
 
 							// update enemy bar for attacker
@@ -10587,8 +10642,31 @@ void floorMagicCreateSpores(Entity* spawnOnEntity, real_t x, real_t y, Entity* c
 	spellTimer->y = y;
 	spellTimer->particleTimerVariable1 = damage;
 	spellTimer->particleTimerVariable2 = spellID;
+	spellTimer->particleTimerVariable4 = 0;
 
 	auto& timerEffects = particleTimerEffects[spellTimer->getUID()];
+
+	if ( caster && caster->behavior == &actPlayer && spellID == SPELL_SPORES )
+	{
+		if ( Stat* casterStats = caster->getStats() )
+		{
+			if ( casterStats->getEffectActive(EFF_GROWTH) >= 2 && casterStats->type == MYCONID )
+			{
+				if ( casterStats->getEffectActive(EFF_GROWTH) == 2 )
+				{
+					spellTimer->particleTimerVariable4 = 1;
+				}
+				else if ( casterStats->getEffectActive(EFF_GROWTH) == 3 )
+				{
+					spellTimer->particleTimerVariable4 = 2;
+				}
+				else if ( casterStats->getEffectActive(EFF_GROWTH) == 4 )
+				{
+					spellTimer->particleTimerVariable4 = 3;
+				}
+			}
+		}
+	}
 
 	std::vector<std::pair<int, int>> coords;
 	std::map<int, std::vector<ParticleTimerEffect_t::EffectLocations_t>> effLocations;
@@ -10608,6 +10686,21 @@ void floorMagicCreateSpores(Entity* spawnOnEntity, real_t x, real_t y, Entity* c
 			else
 			{
 				data.seconds = 1 / 4.0;
+				if ( spellID == SPELL_SPORES )
+				{
+					if ( spellTimer->particleTimerVariable4 == 1 )
+					{
+						data.seconds = 0.2;
+					}
+					else if ( spellTimer->particleTimerVariable4 == 2 )
+					{
+						data.seconds = 0.16;
+					}
+					else if ( spellTimer->particleTimerVariable4 == 3 )
+					{
+						data.seconds = 0.12;
+					}
+				}
 			}
 		}
 	}
@@ -12428,10 +12521,18 @@ void actParticleTimer(Entity* my)
 
 							{
 								int damage = std::max(10, statGetCON(parentStats, parent));
-								if ( entity->getStats() )
+								if ( Stat* entityStats = entity->getStats() )
 								{
+									Sint32 oldHP = entityStats->HP;
 									if ( applyGenericMagicDamage(parent, entity, *parent, SPELL_NONE, damage, true, true) )
 									{
+										if ( entityStats->HP == 0 && oldHP > entityStats->HP )
+										{
+											if ( Entity* leader = parent->monsterAllyGetPlayerLeader() )
+											{
+												steamAchievementClient(leader->skill[2], "BARONY_ACH_BOLDER_BOULDER");
+											}
+										}
 										++hitProps->hits;
 										hitProps->tick = ticks;
 									}
@@ -12550,7 +12651,7 @@ void actParticleTimer(Entity* my)
 										{
 											damage *= 2;
 										}
-										applyGenericMagicDamage(caster, entity, *my, SPELL_NONE, damage, true);
+										applyGenericMagicDamage(caster, entity, *my, SPELL_BOOBY_TRAP, damage, true);
 										if ( entity->SetEntityOnFire(caster) )
 										{
 											if ( caster )
@@ -12570,7 +12671,7 @@ void actParticleTimer(Entity* my)
 								}
 								else
 								{
-									if ( applyGenericMagicDamage(caster, entity, *my, SPELL_NONE, damage, true) )
+									if ( applyGenericMagicDamage(caster, entity, *my, SPELL_BOOBY_TRAP, damage, true) )
 									{
 										entity->SetEntityOnFire(caster);
 									}
@@ -17349,7 +17450,15 @@ void actParticleFloorMagic(Entity* my)
 							}
 							if ( particleEmitterHitPropsTimer->hits > 0 )
 							{
-								continue;
+								if ( parentTimer && parentTimer->particleTimerVariable4 > 0
+									&& particleEmitterHitPropsTimer->hits > 0 && (ticks - particleEmitterHitPropsTimer->tick) >= TICKS_PER_SECOND )
+								{
+									// allow re-apply
+								}
+								else
+								{
+									continue;
+								}
 							}
 
 							if ( caster && caster->behavior == &actMonster )
@@ -17407,6 +17516,10 @@ void actParticleFloorMagic(Entity* my)
 										{
 											effected = true;
 											stats->poisonKiller = caster ? caster->getUID() : 0;
+											if ( parentTimer && parentTimer->particleTimerVariable4 > 0 )
+											{
+												entity->char_poison = std::max(TICKS_PER_SECOND, entity->char_poison);
+											}
 											if ( !prevEff )
 											{
 												rollLevel = true;
@@ -17420,6 +17533,14 @@ void actParticleFloorMagic(Entity* my)
 											if ( !prevEff )
 											{
 												rollLevel = true;
+											}
+										}
+
+										if ( particleEmitterHitPropsTimer->hits > 0 )
+										{
+											if ( rollLevel )
+											{
+												rollLevel = false;
 											}
 										}
 
@@ -17467,19 +17588,23 @@ void actParticleFloorMagic(Entity* my)
 											alertTarget = false;
 										}
 
-										// alert the monster!
-										if ( entity->monsterState != MONSTER_STATE_ATTACK && (stats->type < LICH || stats->type >= SHOPKEEPER) )
+										if ( particleEmitterHitPropsTimer->hits == 0
+											|| particleEmitterHitPropsTimer->hits % 4 == 0 )
 										{
+											// alert the monster!
+											if ( entity->monsterState != MONSTER_STATE_ATTACK && (stats->type < LICH || stats->type >= SHOPKEEPER) )
+											{
+												if ( alertTarget )
+												{
+													entity->monsterAcquireAttackTarget(*caster, MONSTER_STATE_PATH, true);
+												}
+											}
+
+											// alert other monsters too
 											if ( alertTarget )
 											{
-												entity->monsterAcquireAttackTarget(*caster, MONSTER_STATE_PATH, true);
+												entity->alertAlliesOnBeingHit(caster);
 											}
-										}
-
-										// alert other monsters too
-										if ( alertTarget )
-										{
-											entity->alertAlliesOnBeingHit(caster);
 										}
 										entity->updateEntityOnHit(caster, alertTarget);
 									}
@@ -20438,6 +20563,30 @@ void actRadiusMagic(Entity* my)
 					{
 						magicOnSpellCastEvent(caster, caster, uidToEntity(ent->parent), my->actRadiusMagicID, 
 							spell_t::SPELL_LEVEL_EVENT_DEFAULT | spell_t::SPELL_LEVEL_EVENT_MINOR_CHANCE, 1);
+
+						if ( caster->behavior == &actPlayer )
+						{
+							if ( ent->behavior == &actMagicMissile )
+							{
+								if ( ent->children.first )
+								{
+									if ( spell_t* spell = (spell_t*)ent->children.first->element )
+									{
+										if ( Entity* spellCaster = uidToEntity(spell->caster) )
+										{
+											if ( spellCaster->behavior == &actMonster )
+											{
+												int type = spellCaster->getMonsterTypeFromSprite();
+												if ( type == LICH || type == LICH_FIRE || type == LICH_ICE )
+												{
+													serverUpdatePlayerGameplayStats(caster->skill[2], STATISTICS_THATS_CHEATING, 1);
+												}
+											}
+										}
+									}
+								}
+							}
+						}
 					}
 
 					ent->removeLightField();

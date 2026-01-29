@@ -687,6 +687,8 @@ void Item::applyLockpick(int player, Entity& entity)
 						{
 							players[player]->entity->increaseSkill(PRO_LOCKPICKING);
 						}
+						Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_KEYLOCK_PICKED, "wall locks", 1);
+						steamStatisticUpdateClient(player, STEAM_STAT_CALL_LOCKSMITH, STEAM_STAT_INT, 1);
 					}
 					entity.wallLockPreventLockpickExploit = 1;
 
@@ -722,7 +724,6 @@ void Item::applyLockpick(int player, Entity& entity)
 					entity.wallLockPower = 3; // turn on later in actWallLock
 					messagePlayer(player, MESSAGE_INTERACTION, Language::get(6426), items[TOOL_LOCKPICK].getIdentifiedName(),
 						Language::get(6383 + entity.wallLockMaterial));
-					Compendium_t::Events_t::eventUpdateWorld(player, Compendium_t::CPDM_KEYLOCK_PICKED, "wall locks", 1);
 				}
 				else
 				{

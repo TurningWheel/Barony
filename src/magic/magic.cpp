@@ -336,7 +336,7 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int da
 			// write the obituary
 			if ( parent )
 			{
-				parent->killedByMonsterObituary(hit.entity);
+				parent->killedByMonsterObituary(hit.entity, true);
 			}
 
 			int previousDuration = hitstats->EFFECTS_TIMERS[EFF_POISONED];
@@ -536,7 +536,7 @@ void spellEffectPoison(Entity& my, spellElement_t& element, Entity* parent, int 
 			// write the obituary
 			if ( parent )
 			{
-				parent->killedByMonsterObituary(hit.entity);
+				parent->killedByMonsterObituary(hit.entity, true);
 			}
 
 			if ( !hasamulet )
@@ -1059,7 +1059,7 @@ void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, i
 			// write the obituary
 			if ( parent )
 			{
-				parent->killedByMonsterObituary(hit.entity);
+				parent->killedByMonsterObituary(hit.entity, true);
 			}
 
 			// update enemy bar for attacker
@@ -3922,7 +3922,7 @@ bool applyGenericMagicDamage(Entity* caster, Entity* hitentity, Entity& damageSo
 		// write the obituary
 		if ( caster )
 		{
-			caster->killedByMonsterObituary(hitentity);
+			caster->killedByMonsterObituary(hitentity, true);
 		}
 
 		// update enemy bar for attacker
@@ -3950,6 +3950,12 @@ bool applyGenericMagicDamage(Entity* caster, Entity* hitentity, Entity& damageSo
 			{
 				caster->awardXP(hitentity, true, true);
 			}
+
+			if ( spellID == SPELL_BOOBY_TRAP && caster->behavior == &actPlayer )
+			{
+				steamStatisticUpdateClient(caster->skill[2], STEAM_STAT_BOOM_DYNAMITE, STEAM_STAT_INT, 1);
+			}
+
 			spawnBloodVialOnMonsterDeath(hitentity, targetStats, caster);
 		}
 
@@ -4298,6 +4304,13 @@ real_t getSpellPropertyFromID(spell_t::SpellBasePropertiesFloat prop, int spellI
 					equipmentModifier += 0.05 * players[parent->skill[2]]->mechanics.getBreakableCounterTier();
 				}
 				real_t bonus = (getBonusFromCasterOfSpellElement(parent, myStats, element, spellID, spell->skillID));
+				if ( spell->skillID == PRO_MYSTICISM || spell->skillID == PRO_SORCERY || spell->skillID == PRO_THAUMATURGY )
+				{
+					if ( myStats && myStats->getModifiedProficiency(spell->skillID) >= SKILL_LEVEL_LEGENDARY )
+					{
+						bonus += 1.0;
+					}
+				}
 				real_t modifier = (statGetDEX(myStats, parent) * (1.0 + std::max(0.0, bonus)) * spell->cast_time_mult) / 100.0;
 				result += -modifier;
 				if ( bonus < -0.05 )

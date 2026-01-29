@@ -13838,19 +13838,19 @@ failed:
 			achName = Compendium_t::achievements["BARONY_ACH_BUGGAR_BARON"].name;
 			break;
 		case CLASS_BARD:
-			achName = Compendium_t::achievements["BARONY_ACH_XXX"].name;
+			achName = Compendium_t::achievements["BARONY_ACH_BITTY_BARON"].name;
 			break;
 		case CLASS_SAPPER:
-			achName = Compendium_t::achievements["BARONY_ACH_XXX"].name;
+			achName = Compendium_t::achievements["BARONY_ACH_BONKERS_BARON"].name;
 			break;
 		case CLASS_SCION:
-			achName = Compendium_t::achievements["BARONY_ACH_XXX"].name;
+			achName = Compendium_t::achievements["BARONY_ACH_BARKSKIN_BARON"].name;
 			break;
 		case CLASS_HERMIT:
-			achName = Compendium_t::achievements["BARONY_ACH_XXX"].name;
+			achName = Compendium_t::achievements["BARONY_ACH_BOLETE_BARON"].name;
 			break;
 		case CLASS_PALADIN:
-			achName = Compendium_t::achievements["BARONY_ACH_XXX"].name;
+			achName = Compendium_t::achievements["BARONY_ACH_BURNINATION_BARON"].name;
 			break;
 		default:
 			break;
@@ -38828,11 +38828,11 @@ failed:
 				{
 					"*#images/ui/Main Menus/AdventureArchives/A_AchBox_Locked_00.png",
 					"*#images/ui/Main Menus/AdventureArchives/A_AchBox_DLCCompleted_00.png",
-					"*#images/ui/Main Menus/AdventureArchives/A_AchBox_Locked_Legends_Badge_00.png",
+					"*#images/ui/Main Menus/AdventureArchives/A_AchBox_Locked_Deserters_Badge_00.png",
 					"*#images/ui/Main Menus/AdventureArchives/A_AchBox_Locked_Badge_00.png",
-					"*#images/ui/Main Menus/AdventureArchives/A_Icon_Legends_Colored_00.png",
-					"*#images/ui/Main Menus/AdventureArchives/A_Icon_Legends_Gold_00.png",
-					"*#images/ui/Main Menus/AdventureArchives/A_Icon_Legends_Grey_00.png"
+					"*#images/ui/Main Menus/AdventureArchives/A_Icon_Deserters_Colored_00.png",
+					"*#images/ui/Main Menus/AdventureArchives/A_Icon_Deserters_Gold_00.png",
+					"*#images/ui/Main Menus/AdventureArchives/A_Icon_Deserters_Grey_00.png"
 				}
 			},
 			{
@@ -38849,6 +38849,18 @@ failed:
 			},
 			{
 				Compendium_t::AchievementData_t::AchievementDLCType::ACH_TYPE_DLC1_DLC2,
+				{
+					"*#images/ui/Main Menus/AdventureArchives/A_AchBox_Locked_00.png",
+					"*#images/ui/Main Menus/AdventureArchives/A_AchBox_DLCCompleted_00.png",
+					"*#images/ui/Main Menus/AdventureArchives/A_AchBox_Locked_Badge_00.png",
+					"*#images/ui/Main Menus/AdventureArchives/A_AchBox_Locked_Badge_00.png",
+					"",
+					"",
+					""
+				}
+			},
+			{
+				Compendium_t::AchievementData_t::AchievementDLCType::ACH_TYPE_DLC1_DLC2_DLC3,
 				{
 					"*#images/ui/Main Menus/AdventureArchives/A_AchBox_Locked_00.png",
 					"*#images/ui/Main Menus/AdventureArchives/A_AchBox_DLCCompleted_00.png",
@@ -39090,6 +39102,11 @@ failed:
 				{
 					dlc_badge_2->disabled = true;
 				}
+				auto dlc_badge_3 = ach->findImage("dlc_badge_3");
+				if ( dlc_badge_3 )
+				{
+					dlc_badge_3->disabled = true;
+				}
 				auto dlc_badge_icon_1 = ach->findImage("dlc_badge_icon_1");
 				if ( dlc_badge_icon_1 )
 				{
@@ -39100,6 +39117,11 @@ failed:
 				{
 					dlc_badge_icon_2->disabled = true;
 				}
+				auto dlc_badge_icon_3 = ach->findImage("dlc_badge_icon_3");
+				if ( dlc_badge_icon_3 )
+				{
+					dlc_badge_icon_3->disabled = true;
+				}
 				if ( auto dlc_badge = ach->findImage("dlc_badge") )
 				{
 					dlc_badge->disabled = true;
@@ -39107,7 +39129,34 @@ failed:
 					{
 						if ( !hiddenGroup )
 						{
-							if ( achData.dlcType == Compendium_t::AchievementData_t::ACH_TYPE_DLC1_DLC2 )
+							if ( achData.dlcType == Compendium_t::AchievementData_t::ACH_TYPE_DLC1_DLC2_DLC3 )
+							{
+								if ( achData.unlocked )
+								{
+									dlc_badge_3->path = backingImgs.at(Compendium_t::AchievementData_t::ACH_TYPE_DLC1)[2];
+									dlc_badge_2->path = backingImgs.at(Compendium_t::AchievementData_t::ACH_TYPE_DLC3)[2];
+									dlc_badge_1->path = backingImgs.at(Compendium_t::AchievementData_t::ACH_TYPE_DLC2)[2];
+								}
+								else
+								{
+									dlc_badge_3->path = backingImgs.at(Compendium_t::AchievementData_t::ACH_TYPE_DLC1)[3];
+									dlc_badge_2->path = backingImgs.at(Compendium_t::AchievementData_t::ACH_TYPE_DLC3)[3];
+									dlc_badge_1->path = backingImgs.at(Compendium_t::AchievementData_t::ACH_TYPE_DLC2)[3];
+								}
+								if ( dlc_badge_1->path != "" )
+								{
+									dlc_badge_1->disabled = false;
+								}
+								if ( dlc_badge_2->path != "" )
+								{
+									dlc_badge_2->disabled = false;
+								}
+								if ( dlc_badge_3->path != "" )
+								{
+									dlc_badge_3->disabled = false;
+								}
+							}
+							else if ( achData.dlcType == Compendium_t::AchievementData_t::ACH_TYPE_DLC1_DLC2 )
 							{
 								if ( achData.unlocked )
 								{
@@ -39153,7 +39202,34 @@ failed:
 					{
 						if ( !hiddenGroup )
 						{
-							if ( achData.dlcType == Compendium_t::AchievementData_t::ACH_TYPE_DLC1_DLC2 )
+							if ( achData.dlcType == Compendium_t::AchievementData_t::ACH_TYPE_DLC1_DLC2_DLC3 )
+							{
+								if ( achData.unlocked )
+								{
+									dlc_badge_icon_3->path = backingImgs.at(Compendium_t::AchievementData_t::ACH_TYPE_DLC1)[4];
+									dlc_badge_icon_2->path = backingImgs.at(Compendium_t::AchievementData_t::ACH_TYPE_DLC3)[4];
+									dlc_badge_icon_1->path = backingImgs.at(Compendium_t::AchievementData_t::ACH_TYPE_DLC2)[4];
+								}
+								else
+								{
+									dlc_badge_icon_3->path = backingImgs.at(Compendium_t::AchievementData_t::ACH_TYPE_DLC1)[6];
+									dlc_badge_icon_2->path = backingImgs.at(Compendium_t::AchievementData_t::ACH_TYPE_DLC3)[6];
+									dlc_badge_icon_1->path = backingImgs.at(Compendium_t::AchievementData_t::ACH_TYPE_DLC2)[6];
+								}
+								if ( dlc_badge_icon_1->path != "" )
+								{
+									dlc_badge_icon_1->disabled = false;
+								}
+								if ( dlc_badge_icon_2->path != "" )
+								{
+									dlc_badge_icon_2->disabled = false;
+								}
+								if ( dlc_badge_icon_3->path != "" )
+								{
+									dlc_badge_icon_3->disabled = false;
+								}
+							}
+							else if ( achData.dlcType == Compendium_t::AchievementData_t::ACH_TYPE_DLC1_DLC2 )
 							{
 								if ( achData.unlocked )
 								{
@@ -39478,6 +39554,14 @@ failed:
 			dlc_badge_icon->disabled = true;
 
 			{
+				auto dlc_badge_stack_3 = ach->addImage(SDL_Rect{ bg->pos.x - 16, bg->pos.y - 4, 38, 38 }, 0xFFFFFFFF,
+					"*#images/ui/Main Menus/AdventureArchives/A_AchBox_Locked_Badge_00.png", "dlc_badge_3");
+				dlc_badge_stack_3->disabled = true;
+
+				auto dlc_badge_icon_3 = ach->addImage(SDL_Rect{ dlc_badge_stack_3->pos.x + 2, dlc_badge_stack_3->pos.y + 2, 34, 34 }, 0xFFFFFFFF,
+					"", "dlc_badge_icon_3");
+				dlc_badge_icon_3->disabled = true;
+
 				auto dlc_badge_stack_1 = ach->addImage(SDL_Rect{ bg->pos.x + 4, bg->pos.y - 4, 38, 38 }, 0xFFFFFFFF,
 					"*#images/ui/Main Menus/AdventureArchives/A_AchBox_Locked_Badge_00.png", "dlc_badge_1");
 				dlc_badge_stack_1->disabled = true;

@@ -1608,10 +1608,27 @@ int Stat::numShillelaghDebuffsActive(Entity* my)
 		EFF_ROOTED,
 		EFF_STATIC,
 		EFF_DRUNK,
-		EFF_DUCKED
+		EFF_WEAKNESS,
+		EFF_INCOHERENCE,
+		EFF_MINIMISE,
+		EFF_DUCKED,
+		EFF_MAGIC_GREASE,
+		EFF_NUMBING_BOLT,
+		EFF_CURSE_FLESH,
+		EFF_TABOO,
+		EFF_COWARDICE,
+		EFF_DIZZY,
+		EFF_SPIN,
+		EFF_DUSTED,
+		EFF_DISRUPTED,
+		EFF_FROST,
+		EFF_HOLY_FIRE
 	};
-
 	int result = 0;
+	if ( my && my->flags[BURNING] )
+	{
+		++result;
+	}
 	for ( auto eff : effs )
 	{
 		if ( getEffectActive(eff) )
@@ -1644,6 +1661,18 @@ bool Stat::statusEffectRemovedByCureAilment(const int effect, Entity* my)
 		case EFF_STATIC:
 		case EFF_WEAKNESS:
 		case EFF_INCOHERENCE:
+		case EFF_MINIMISE:
+		case EFF_NUMBING_BOLT:
+		case EFF_CURSE_FLESH:
+		case EFF_TABOO:
+		case EFF_COWARDICE:
+		case EFF_DIZZY:
+		case EFF_SPIN:
+		case EFF_DUSTED:
+		case EFF_STASIS:
+		case EFF_DISRUPTED:
+		case EFF_FROST:
+		case EFF_HOLY_FIRE:
 			return true;
 			break;
 		case EFF_DRUNK:

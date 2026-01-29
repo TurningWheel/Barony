@@ -43,10 +43,10 @@ void initMonsterS(Entity* my, Stat* myStats)
 
 	if ( multiplayer != CLIENT )
 	{
-		MONSTER_SPOTSND = 335;
+		MONSTER_SPOTSND = 853;
 		MONSTER_SPOTVAR = 3;
-		MONSTER_IDLESND = 332;
-		MONSTER_IDLEVAR = 2;
+		MONSTER_IDLESND = 850;
+		MONSTER_IDLEVAR = 3;
 	}
 
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
@@ -738,7 +738,7 @@ void monsterSDie(Entity* my)
 
 	my->spawnBlood();
 
-	playSoundEntity(my, 338 + local_rng.rand() % 2, 128);
+	playSoundEntity(my, 856 + local_rng.rand() % 4, 128);
 
 	my->removeMonsterDeathNodes();
 

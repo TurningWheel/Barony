@@ -484,7 +484,7 @@ void Player::Inventory_t::Appraisal_t::appraiseItem(Item* item)
 	//Appraising.
 
 	//If appraisal skill >= LEGENDARY, then auto-complete appraisal. Else, do the normal routine.
-	if ( stats[player.playernum]->getProficiency(PRO_APPRAISAL) >= CAPSTONE_UNLOCK_LEVEL[PRO_APPRAISAL] )
+	/*if ( stats[player.playernum]->getProficiency(PRO_APPRAISAL) >= CAPSTONE_UNLOCK_LEVEL[PRO_APPRAISAL] )
 	{
 		if ( !item->identified )
 		{
@@ -504,7 +504,7 @@ void Player::Inventory_t::Appraisal_t::appraiseItem(Item* item)
 			steamStatisticUpdate(STEAM_STAT_RHINESTONE_COWBOY, STEAM_STAT_INT, 1);
 		}
 	}
-	else
+	else*/
 	{
 		Item* oldItemToUpdate = nullptr;
 		bool doMessage = true;
@@ -529,10 +529,10 @@ void Player::Inventory_t::Appraisal_t::appraiseItem(Item* item)
 		//Once the timer hits zero, roll to see if the item is identified.
 		//If it is identified, identify it and print out a message for the player.
 		timer = getAppraisalTime(item);
-		if ( stats[player.playernum]->getModifiedProficiency(PRO_APPRAISAL) >= CAPSTONE_UNLOCK_LEVEL[PRO_APPRAISAL] )
-		{
-			timer = 1; // our modified proficiency is legendary, so make a really short timer to almost be instant
-		}
+		//if ( stats[player.playernum]->getModifiedProficiency(PRO_APPRAISAL) >= CAPSTONE_UNLOCK_LEVEL[PRO_APPRAISAL] )
+		//{
+		//	timer = 1; // our modified proficiency is legendary, so make a really short timer to almost be instant
+		//}
 		timermax = timer;
 		if ( oldItemToUpdate && current_item != item->uid )
 		{
@@ -767,6 +767,10 @@ int Player::Inventory_t::Appraisal_t::getAppraisalTime(Item* item)
 		else if ( playerCount == 4 )
 		{
 			appraisal_time /= 1.5;
+		}
+		if ( stats[player.playernum]->getModifiedProficiency(PRO_APPRAISAL) >= SKILL_LEVEL_LEGENDARY )
+		{
+			appraisal_time *= 0.75;
 		}
 		//messagePlayer(clientnum, "time: %d", appraisal_time);
 	}

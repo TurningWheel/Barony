@@ -19,6 +19,7 @@
 #include "player.hpp"
 #include "prng.hpp"
 #include "ui/GameUI.hpp"
+#include "scores.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -1711,6 +1712,23 @@ void actGreasePuddleSpawner(Entity* my)
 	int y = my->y / 16;
 	if ( multiplayer != CLIENT )
 	{
+		if ( my->flags[BURNING] )
+		{
+			int player = achievementObserver.checkUidIsFromPlayer(my->parent);
+			if ( player >= 0 )
+			{
+				if ( achievementObserver.playerAchievements[player].hellsKitchen >= 0 )
+				{
+					achievementObserver.playerAchievements[player].hellsKitchen++;
+					if ( achievementObserver.playerAchievements[player].hellsKitchen >= 25 )
+					{
+						achievementObserver.playerAchievements[player].hellsKitchen = -1;
+						steamAchievementClient(player, "BARONY_ACH_HELLS_KITCHEN");
+					}
+				}
+			}
+		}
+
 		--my->skill[0];
 		if ( my->skill[0] <= 0 )
 		{

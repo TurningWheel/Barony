@@ -214,7 +214,8 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player, E
 	if ( !entity && !mute_player_monster_sounds && !clickCheckOverride 
 		&& clicktype != ENTITY_CLICK_CALLOUT )
 	{
-		if ( players[player] && players[player]->entity && players[player]->movement.monsterEmoteGimpTimer == 0 )
+		if ( players[player] && players[player]->entity && players[player]->movement.monsterEmoteGimpTimer == 0
+			&& !players[player]->ghost.isActive() )
 		{
 			players[player]->movement.monsterEmoteGimpTimer = TICKS_PER_SECOND * 5;
 			int sfx = 0;
@@ -300,7 +301,7 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride, int player, E
 					sfx = 843 + local_rng.rand() % 3;
 					break;
 				case SALAMANDER:
-					sfx = 0; // 846 + local_rng.rand() % 3
+					sfx = 846 + local_rng.rand() % 3;
 					break;
 				case MYCONID:
 					sfx = 832 + local_rng.rand() % 3;
@@ -683,6 +684,10 @@ bool Entity::collisionProjectileMiss(Entity* parent, Entity* projectile)
 				}
 
 				magicOnSpellCastEvent(this, this, parent, SPELL_MAGICIANS_ARMOR, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
+				if ( this->behavior == &actPlayer )
+				{
+					steamStatisticUpdateClient(this->skill[2], STEAM_STAT_DOESNT_COUNT, STEAM_STAT_INT, 1);
+				}
 
 				if ( projectile->collisionIgnoreTargets.find(getUID()) == projectile->collisionIgnoreTargets.end() )
 				{

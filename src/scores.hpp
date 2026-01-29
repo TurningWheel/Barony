@@ -55,7 +55,22 @@ static const int STATISTICS_TRIBE_SUBSCRIBE = 13;
 static const int STATISTICS_POP_QUIZ_1 = 14;
 static const int STATISTICS_POP_QUIZ_2 = 15;
 static const int STATISTICS_TOTAL_KILLS = 16;
+static const int STATISTICS_FLAVORTOWN = 17;
+static const int STATISTICS_BARDIC_INSPIRATION = 18;
+static const int STATISTICS_SKID_ROW = 19;
+static const int STATISTICS_WRECKING_CREW = 20;
+static const int STATISTICS_RIGHTEOUS_FURY = 21;
+static const int STATISTICS_PARRY_TANK = 22;
+static const int STATISTICS_EAT_ME = 23;
+static const int STATISTICS_BONK = 24;
+static const int STATISTICS_NO_CAP = 25;
+static const int STATISTICS_DONT_TOUCH_HAIR = 26;
+static const int STATISTICS_GARGOYLES_QUEST = 27;
+static const int STATISTICS_QUACKERY = 28;
+static const int STATISTICS_THATS_CHEATING = 29;
+static const int STATISTICS_DISCIPLINE = 30;
 static const int STATISTICS_DISABLE_UPLOAD = 31;
+static const int STATISTICS_FIRE_FIGHTER = 32;
 
 enum SteamStatIndexes : int
 {
@@ -354,12 +369,12 @@ static const std::pair<std::string, int> steamStatAchStringsAndMaxVals[] =
 	std::make_pair("BARONY_ACH_LET_HIM_COOK", 100),			// STEAM_STAT_LET_HIM_COOK,
 	std::make_pair("BARONY_ACH_TOUCHE", 1000),				// STEAM_STAT_TOUCHE,
 	std::make_pair("BARONY_ACH_MERCENARY_ARMY", 20),		// STEAM_STAT_MERCENARY_ARMY,
-	std::make_pair("BARONY_ACH_COLONIST", 20),				// STEAM_STAT_COLONIST,
+	std::make_pair("BARONY_ACH_COLONIST", 50),				// STEAM_STAT_COLONIST,
 	std::make_pair("BARONY_ACH_PRICKLY_PERSONALITY", 20),	// STEAM_STAT_PRICKLY_PERSONALITY,
 	std::make_pair("BARONY_ACH_BOOM_DYNAMITE", 50),			// STEAM_STAT_BOOM_DYNAMITE,
 	std::make_pair("BARONY_ACH_PAY_TO_WIN", 5000),			// STEAM_STAT_PAY_TO_WIN,
 	std::make_pair("BARONY_ACH_DOESNT_COUNT", 50),			// STEAM_STAT_DOESNT_COUNT,
-	std::make_pair("BARONY_ACH_SOURCE_ENGINE", 2000)		// STEAM_STAT_SOURCE_ENGINE
+	std::make_pair("BARONY_ACH_SOURCE_ENGINE", 1000)		// STEAM_STAT_SOURCE_ENGINE
 };
 
 typedef struct score_t
@@ -544,6 +559,7 @@ struct SaveGameInfo {
 		std::vector<int> learnedSpells;
 		std::vector<std::pair<int, int>> sustainedSpellIDCounter;
 		std::vector<std::pair<int, int>> ducksInARow;
+		std::vector<std::pair<int, int>> favoriteBooksAchievement;
 		int sustainedSpellMPUsedSorcery = 0;
 		int sustainedSpellMPUsedMysticism = 0;
 		int sustainedSpellMPUsedThaumaturgy = 0;
@@ -745,6 +761,7 @@ struct SaveGameInfo {
 			fp->property("base_mp_used_thaumaturgy", baseSpellMPUsedThaumaturgy);
 			fp->property("learned_spells", learnedSpells);
 			fp->property("ducks_in_a_row", ducksInARow);
+			fp->property("favorite_books_achievement", favoriteBooksAchievement);
 			fp->property("sustained_spell_id_counters", sustainedSpellIDCounter);
 			fp->property("escalating_rng_rolls", escalatingRngRolls);
 			fp->property("appraisal_time_progress", appraisal_item_progress);
@@ -858,7 +875,17 @@ public:
 		BARONY_ACH_MASTER,
 		BARONY_ACH_DAPPER,
 		BARONY_ACH_SPROUTS,
-		BARONY_ACH_BY_THE_BOOK
+		BARONY_ACH_BY_THE_BOOK,
+		BARONY_ACH_THATS_A_WRAP,
+		BARONY_ACH_APPRENTICES,
+		BARONY_ACH_SHORT_SHORTS,
+		BARONY_ACH_HOLY_ORDER,
+		BARONY_ACH_CONSCRIPTED,
+		BARONY_ACH_LONER_LEAGUE,
+		BARONY_ACH_RIZZLERS,
+		BARONY_ACH_FOREIGN_EXCHANGE,
+		BARONY_ACH_STUDY_ABROAD,
+		BARONY_ACH_FOOD_FIGHT
 	};
 	enum AchievementEvent : int
 	{
@@ -949,6 +976,14 @@ public:
 		bool totalKillsTickUpdate = false;
 		Uint32 ticksByTheBookViewed = 0;
 		static bool allPlayersDeadEvent;
+
+		int skidRow = 0;
+		int bonk = 0;
+		int righteousFury = 0;
+		int hellsKitchen = 0;
+		int eatMe = 0;
+		int sourceEngine = 0;
+		int parryTank = 0;
 
 		std::pair<int, int> realBoy;
 		std::unordered_map<Uint32, int> caughtInAMoshTargets;

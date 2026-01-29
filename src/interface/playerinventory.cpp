@@ -5998,6 +5998,31 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                             continue; // don't insert this newline
                         }
                     }
+					else if ( tag == "spell_cast_time_newline" )
+					{
+						if ( detailsTextString.compare("") == 0 )
+						{
+							continue; // don't insert this newline
+						}
+					}
+					else if ( tag == "spell_distance_newline" )
+					{
+						if ( spell->rangefinder == SpellRangefinderType::RANGEFINDER_NONE )
+						{
+							continue;
+						}
+						if ( detailsTextString.compare("") == 0 )
+						{
+							continue; // don't insert this newline
+						}
+					}
+					else if ( tag == "spell_distance" )
+					{
+						if ( spell->rangefinder == SpellRangefinderType::RANGEFINDER_NONE )
+						{
+							continue;
+						}
+					}
 					else if ( tag.compare("spell_nogain_newline") == 0 )
 					{
 						if ( compendiumTooltip && intro )
@@ -6485,7 +6510,7 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
 				}
 				else
 				{
-					if ( !item->identified )
+					if ( !item->identified && stats[player]->getModifiedProficiency(PRO_APPRAISAL) < SKILL_LEVEL_LEGENDARY )
 					{
 						if ( itemCategory(item) == GEM && item->type != GEM_ROCK )
 						{

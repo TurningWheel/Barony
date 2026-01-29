@@ -4079,6 +4079,14 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 			}
 			else
 			{
+				// determine if ladder inside treasure room
+				if ( treasureRoomLocations[x + y * map.width] )
+				{
+					// try again, treasure room area
+					c--;
+					entity = NULL;
+					continue;
+				}
 
 				if ( secretlevelexittile[y + x * map.height] && secretExitLadderTries > 0 )
 				{
@@ -9377,10 +9385,10 @@ void assignActions(map_t* map)
 	            case RACE_TROLL: victoryType = 3; break;
 	            case RACE_SPIDER: victoryType = 3; break;
 	            case RACE_IMP: victoryType = 5; break;
-				case RACE_DRYAD: victoryType = 3; break;
-				case RACE_MYCONID: victoryType = 3; break;
+				case RACE_DRYAD: victoryType = 4; break;
+				case RACE_MYCONID: victoryType = 4; break;
 				case RACE_GREMLIN: victoryType = 5; break;
-				case RACE_SALAMANDER: victoryType = 3; break;
+				case RACE_SALAMANDER: victoryType = 4; break;
 				case RACE_GNOME: victoryType = 4; break;
 				}
 				entity->portalVictoryType = victoryType;

@@ -261,7 +261,7 @@ Sets the obituary to that of a mon
 
 -------------------------------------------------------------------------------*/
 
-void Entity::killedByMonsterObituary(Entity* victim)
+void Entity::killedByMonsterObituary(Entity* victim, bool fromSpell)
 {
 	if ( !victim )
 	{
@@ -317,6 +317,20 @@ void Entity::killedByMonsterObituary(Entity* victim)
 	Stat* myStats = this->getStats();
 	if ( !myStats )
 	{
+		return;
+	}
+
+	if ( this == victim && fromSpell )
+	{
+		if ( hitstats->sex == MALE )
+		{
+			victim->setObituary(Language::get(1528));
+		}
+		else
+		{
+			victim->setObituary(Language::get(1529));
+		}
+		hitstats->killer = KilledBy::FAILED_INVOCATION;
 		return;
 	}
 
@@ -4064,6 +4078,21 @@ void Entity::handleEffects(Stat* myStats)
 			myStats->LVL++;
 		}
 
+		if ( player >= 0 )
+		{
+			if ( myStats->getEffectActive(EFF_ENSEMBLE_FLUTE)
+				|| myStats->getEffectActive(EFF_ENSEMBLE_LUTE)
+				|| myStats->getEffectActive(EFF_ENSEMBLE_LYRE)
+				|| myStats->getEffectActive(EFF_ENSEMBLE_HORN)
+				|| myStats->getEffectActive(EFF_ENSEMBLE_DRUM) )
+			{
+				serverUpdatePlayerGameplayStats(player, STATISTICS_BARDIC_INSPIRATION, 1);
+			}
+			else
+			{
+				serverUpdatePlayerGameplayStats(player, STATISTICS_BARDIC_INSPIRATION, 0);
+			}
+		}
 		if ( player >= 0 && players[player]->isLocalPlayer() )
 		{
 			players[player]->hud.xpBar.animateState = Player::HUD_t::AnimateStates::ANIMATE_LEVELUP_RISING;
@@ -5822,6 +5851,14 @@ void Entity::handleEffects(Stat* myStats)
 										{
 											Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_OFFHAND_CASTING_MP, "offhand casting", mpcost);
 											Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_OFFHAND_CASTING_MP, myStats->shield->type, mpcost);
+
+											if ( spell->skillID == PRO_SORCERY )
+											{
+												if ( player >= 0 )
+												{
+													achievementObserver.playerAchievements[player].sourceEngine += mpcost;
+												}
+											}
 										}
 
 										CastSpellProps_t props;
@@ -6086,6 +6123,7 @@ void Entity::handleEffects(Stat* myStats)
 							{
 								effectStrength = std::max(1, std::min(static_cast<int>(effectStrength), (1 + 5 * (castCycle - 1))));
 							}
+
 							for ( node_t* node = map.creatures->first; node && effect >= 0; node = node->next )
 							{
 								if ( Entity* entity = (Entity*)(node->element) )
@@ -6419,6 +6457,39 @@ void Entity::handleEffects(Stat* myStats)
 		}
 
 		this->char_poison++;
+		int poisonDamageBonus = 0;
+		if ( myStats->poisonKiller != getUID() )
+		{
+			Entity* poisonKillerInflicted = uidToEntity(myStats->poisonKiller);
+			if ( poisonKillerInflicted && poisonKillerInflicted->behavior == &actPlayer
+				&& stats[poisonKillerInflicted->skill[2]]->type == MYCONID
+				&& stats[poisonKillerInflicted->skill[2]]->getEffectActive(EFF_GROWTH) >= 2 )
+			{
+				Uint8 effectStrength = stats[poisonKillerInflicted->skill[2]]->getEffectActive(EFF_GROWTH);
+				if ( effectStrength == 2 )
+				{
+					if ( ticks % 5 == 0 )
+					{
+						this->char_poison++;
+					}
+					poisonDamageBonus += 1;
+				}
+				else if ( effectStrength == 3 )
+				{
+					if ( ticks % 2 == 0 )
+					{
+						this->char_poison++;
+					}
+					poisonDamageBonus += 2;
+				}
+				else if ( effectStrength == 4 )
+				{
+					this->char_poison++;
+					poisonDamageBonus += 3;
+				}
+			}
+		}
+
 		if ( myStats->getEffectActive(EFF_BLOOD_WARD) )
 		{
 			if ( this->char_poison > 150 )
@@ -6447,6 +6518,7 @@ void Entity::handleEffects(Stat* myStats)
 			{
 				poisonhurt = std::min(poisonhurt, 15); // prevent doing 50+ dmg
 			}
+			poisonhurt += poisonDamageBonus;
 			if ( poisonhurt > 3 )
 			{
 				poisonhurt -= local_rng.rand() % (std::max(1, poisonhurt / 4));
@@ -8012,6 +8084,7 @@ void Entity::handleEffects(Stat* myStats)
 	if ( myStats->OLDHP > myStats->HP && myStats->getEffectActive(EFF_PROJECT_SPIRIT) )
 	{
 		myStats->EFFECTS_TIMERS[EFF_PROJECT_SPIRIT] = 1;
+		steamAchievementClient(player, "BARONY_ACH_DISTRACTED");
 		serverUpdateEffects(player);
 	}
 
@@ -8109,7 +8182,7 @@ real_t Entity::getACEffectiveness(Entity* my, Stat* myStats, bool isPlayer, Enti
 }
 
 real_t Entity::PlayerAttackMeleeStatFactor = 0.055;
-real_t Entity::PlayerAttackRangedStatFactor = 0.06;
+real_t Entity::PlayerAttackRangedStatFactor = 0.055;
 real_t Entity::PlayerAttackThrownStatFactor = 0.0625;
 
 /*-------------------------------------------------------------------------------
@@ -10150,6 +10223,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						if ( myStats->HP <= 0 && oldHP > 0 )
 						{
+							killer->killedByMonsterObituary(this);
 							killer->awardXP(this, true, true);
 							steamAchievementEntity(killer, "BARONY_ACH_LOCKJAW");
 						}
@@ -10755,11 +10829,24 @@ void Entity::attack(int pose, int charge, Entity* target)
 				{
 					bowDegradeChance = 100;
 				}
+				if ( player >= 0 )
+				{
+					if ( !players[player]->mechanics.itemDegradeRoll(myStats->weapon, PRO_RANGED) )
+					{
+						bowDegradeChance = 100;
+					}
+				}
+
 				if ( bowDegradeChance < 100 && local_rng.rand() % bowDegradeChance == 0 && myStats->weapon->type != ARTIFACT_BOW
 					&& !spellEffectPreserveItem(myStats->weapon) )
 				{
 					if ( myStats->weapon != NULL )
 					{
+						if ( player >= 0 )
+						{
+							players[player]->mechanics.onItemDegrade(myStats->weapon);
+						}
+
 						if ( player >= 0 && players[player]->isLocalPlayer() )
 						{
 							if ( myStats->weapon->count > 1 )
@@ -11249,6 +11336,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 
 					magicOnSpellCastEvent(hit.entity, hit.entity, this, SPELL_MAGICIANS_ARMOR, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
+					if ( hit.entity->behavior == &actPlayer )
+					{
+						steamStatisticUpdateClient(hit.entity->skill[2], STEAM_STAT_DOESNT_COUNT, STEAM_STAT_INT, 1);
+					}
 
 					Entity* fx = createParticleAestheticOrbit(hit.entity, 1817, TICKS_PER_SECOND / 4, PARTICLE_EFFECT_NULL_PARTICLE);
 					fx->x = hit.entity->x;
@@ -12221,6 +12312,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						{
 							if ( colliderParent && (colliderParent->behavior == &actMonster || colliderParent->behavior == &actPlayer) )
 							{
+								colliderParent->killedByMonsterObituary(this);
 								colliderParent->awardXP(this, true, true);
 							}
 						}
@@ -12297,6 +12389,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					if ( hitstats->HP == 0 && oldHP > 0 )
 					{
 						messagePlayerMonsterEvent(player, makeColorRGB(0, 255, 0), *hitstats, Language::get(692), Language::get(692), MSG_COMBAT);
+						this->killedByMonsterObituary(hit.entity);
 						awardXP(hit.entity, true, true);
 					}
 				}
@@ -13288,6 +13381,13 @@ void Entity::attack(int pose, int charge, Entity* target)
 								degradeWeapon = true;
 							}
 
+							if ( player >= 0 )
+							{
+								if ( !players[player]->mechanics.itemDegradeRoll(*weaponToBreak, weaponskill) )
+								{
+									degradeWeapon = false;
+								}
+							}
 							if ( behavior == &actPlayer && skillCapstoneUnlocked(skill[2], weaponskill) )
 							{
 								// don't degrade on capstone skill.
@@ -13328,6 +13428,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 							if ( degradeWeapon && !spellEffectPreserveItem(*weaponToBreak) )
 							{
+								if ( player >= 0 )
+								{
+									players[player]->mechanics.onItemDegrade(*weaponToBreak);
+								}
+
 								if ( (player >= 0 && players[player]->isLocalPlayer()) || player < 0 )
 								{
 									if ( (*weaponToBreak)->count > 1 )
@@ -13670,6 +13775,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					bool knockbackInflicted = false;
 					bool dyrnwynBurn = false;
 					int shillelaghDamage = 0;
+					int shillelaghDebuffs = 0;
 					/*if ( thornsEffect < 0 )
 					{
 						hit.entity->modHP(thornsEffect);
@@ -13725,6 +13831,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							int numDebuffs = hitstats->numShillelaghDebuffsActive(hit.entity);
 							if ( numDebuffs > 0 )
 							{
+								shillelaghDebuffs = numDebuffs;
 								real_t scale = 0.25 + numDebuffs * 0.25;
 								int bonusDamage = attackAfterReductions * scale * Entity::getDamageTableMultiplier(hit.entity, *hitstats, DAMAGE_TABLE_MAGIC);
 								if ( bonusDamage > 0 )
@@ -13739,6 +13846,9 @@ void Entity::attack(int pose, int charge, Entity* target)
 									//messagePlayer(0, MESSAGE_DEBUG, "Shill: %d", bonusDamage);
 									shillelaghDamage = bonusDamage;
 
+									Compendium_t::Events_t::eventUpdate(skill[2], Compendium_t::CPDM_SHILLELAGH_DEBUFFS_MAX, SHILLELAGH_MACE, numDebuffs);
+									Compendium_t::Events_t::eventUpdate(skill[2], Compendium_t::CPDM_DMG_MAX, SHILLELAGH_MACE, damage + shillelaghDamage);
+
 									Sint32 prevHP = hitstats->HP;
 									hit.entity->modHP(-shillelaghDamage);
 									Sint32 newHP = hitstats->HP;
@@ -13751,7 +13861,6 @@ void Entity::attack(int pose, int charge, Entity* target)
 								}
 							}
 						}
-
 					}
 
 					if ( (hitstats->getEffectActive(EFF_WEBBED) || hitstats->getEffectActive(EFF_MAGIC_GREASE) 
@@ -13769,6 +13878,14 @@ void Entity::attack(int pose, int charge, Entity* target)
 						else if ( (hitstats->getEffectActive(EFF_WEBBED) || hitstats->getEffectActive(EFF_MAGIC_GREASE)) )
 						{
 							baseMultiplier = 0.7;
+
+							if ( hitstats->getEffectActive(EFF_MAGIC_GREASE) )
+							{
+								if ( behavior == &actPlayer )
+								{
+									achievementObserver.playerAchievements[skill[2]].skidRow++;
+								}
+							}
 						}
 						else if ( (myStats->type == GNOME && myStats->weapon && !shapeshifted && myStats->weapon->type == TOOL_PICKAXE) )
 						{
@@ -14783,6 +14900,21 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 							if ( player >= 0 && myStats->weapon && this->checkEnemy(hit.entity) )
 							{
+								if ( myStats->weapon && myStats->weapon->type == STEEL_FLAIL && weaponskill == PRO_MACE )
+								{
+									achievementObserver.awardAchievementIfActive(player, hit.entity, AchievementObserver::BARONY_ACH_THATS_A_WRAP);
+								}
+								if ( myStats->weapon && myStats->weapon->type == SHILLELAGH_MACE && weaponskill == PRO_MACE )
+								{
+									if ( shillelaghDebuffs >= 3 )
+									{
+										achievementObserver.playerAchievements[player].bonk++;
+									}
+								}
+								if ( zealSmite && myStats->getEffectActive(EFF_DIVINE_ZEAL) )
+								{
+									achievementObserver.playerAchievements[player].righteousFury++;
+								}
 								if ( myStats->weapon->ownerUid == hit.entity->getUID() )
 								{
 									achievementObserver.awardAchievementIfActive(player, hit.entity, AchievementObserver::BARONY_ACH_IRONIC_PUNISHMENT);
@@ -15441,6 +15573,13 @@ void Entity::attack(int pose, int charge, Entity* target)
 							dmgGib);
 					}
 
+					if ( parriedDamage == 0 && damage > 0 && playerhit >= 0 )
+					{
+						if ( achievementObserver.playerAchievements[playerhit].parryTank > 0 )
+						{
+							achievementObserver.playerAchievements[playerhit].parryTank = -1;
+						}
+					}
 					if ( parriedDamage > 0 )
 					{
 						real_t parriedWeaponMultipliers = 0.0;
@@ -15500,10 +15639,12 @@ void Entity::attack(int pose, int charge, Entity* target)
 								{
 									Compendium_t::Events_t::eventUpdate(hit.entity->skill[2], 
 										Compendium_t::CPDM_PARRIES_DMG, RAPIER, oldHP - myStats->HP);
+									steamStatisticUpdateClient(hit.entity->skill[2], STEAM_STAT_TOUCHE, STEAM_STAT_INT, oldHP - myStats->HP);
 								}
 							}
 							if ( myStats->HP <= 0 && oldHP > myStats->HP )
 							{
+								hit.entity->killedByMonsterObituary(this);
 								hit.entity->awardXP(this, true, true);
 							}
 						}
@@ -15558,6 +15699,17 @@ void Entity::attack(int pose, int charge, Entity* target)
 							else
 							{
 								messagePlayerColor(playerhit, MESSAGE_COMBAT, color, msg, myStats->name);
+							}
+							if ( damage == 0 )
+							{
+								achievementObserver.playerAchievements[playerhit].parryTank += 1;
+							}
+							else
+							{
+								if ( achievementObserver.playerAchievements[playerhit].parryTank > 0 )
+								{
+									achievementObserver.playerAchievements[playerhit].parryTank = -1;
+								}
 							}
 						}
 
@@ -15684,11 +15836,17 @@ void Entity::attack(int pose, int charge, Entity* target)
 								}
 							}
 						}
-
+						Sint32 oldHP = myStats->HP;
 						this->modHP(-abs(thornsEffect));
-						if ( myStats->HP <= 0 && myStats->OLDHP > myStats->HP )
+						if ( myStats->HP <= 0 && oldHP > myStats->HP )
 						{
+							hit.entity->killedByMonsterObituary(this);
 							hit.entity->awardXP(this, true, true);
+
+							if ( hit.entity->behavior == &actPlayer && hitstats->playerRace == RACE_DRYAD && hitstats->stat_appearance == 0 )
+							{
+								steamStatisticUpdateClient(hit.entity->skill[2], STEAM_STAT_PRICKLY_PERSONALITY, STEAM_STAT_INT, 1);
+							}
 						}
 						if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
 						{
@@ -15783,6 +15941,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						{
 							if ( myStats->HP <= 0 )
 							{
+								illusionParent->killedByMonsterObituary(this);
 								illusionParent->awardXP(this, true, true);
 								if ( illusionParent->behavior == &actPlayer )
 								{
@@ -18048,6 +18207,13 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 			{
 				steamAchievementClient(src->skill[2], "BARONY_ACH_ETERNAL_REWARD");
 			}
+			if ( destStats->type == SHADOW )
+			{
+				if ( destStats->getAttribute("deface_spawn") == std::to_string(src->skill[2]) )
+				{
+					steamAchievementClient(src->skill[2], "BARONY_ACH_HAUNTED");
+				}
+			}
 		}
 		else if ( src->behavior == &actMonster && this->behavior == &actPlayer )
 		{
@@ -18129,6 +18295,15 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 		}
 		if ( root )
 		{
+			if ( stats[player]->getEffectActive(EFF_FOCI_LIGHT_JUSTICE)
+				|| stats[player]->getEffectActive(EFF_FOCI_LIGHT_PEACE)
+				|| stats[player]->getEffectActive(EFF_FOCI_LIGHT_PROVIDENCE)
+				|| stats[player]->getEffectActive(EFF_FOCI_LIGHT_PURITY)
+				|| stats[player]->getEffectActive(EFF_FOCI_LIGHT_SANCTUARY) )
+			{
+				steamStatisticUpdateClient(player, STEAM_STAT_BLESSED_ADDITION, STEAM_STAT_INT, 1);
+			}
+
 			achievementObserver.awardAchievementIfActive(player, src, AchievementObserver::BARONY_ACH_TELEFRAG);
 			if ( stats[player]->playerRace == RACE_INCUBUS && stats[player]->stat_appearance == 0 )
 			{
@@ -18980,7 +19155,7 @@ bool Entity::checkEnemy(Entity* your)
 							}
 							break;
 						case GNOME:
-							if ( yourStats->type == TROLL || yourStats->type == GNOME )
+							if ( yourStats->type == TROLL )
 							{
 								result = false;
 							}
@@ -19122,7 +19297,7 @@ bool Entity::checkEnemy(Entity* your)
 							}
 							break;
 						case GNOME:
-							if ( myStats->type == TROLL || myStats->type == GNOME )
+							if ( myStats->type == TROLL )
 							{
 								result = false;
 							}
@@ -25941,7 +26116,7 @@ void Entity::playerStatIncrease(int playerClass, int chosenStats[3])
 	//{
 	//	messagePlayer(0, "%2d, ", *i);
 	//}
-	if ( behavior == &actPlayer && playerClass == CLASS_SHAMAN && stats[skill[2]] )
+	if ( behavior == &actPlayer /*&& playerClass == CLASS_SHAMAN*/ && stats[skill[2]] )
 	{
 		if ( stats[skill[2]]->type == RAT )
 		{
@@ -30773,7 +30948,7 @@ real_t Entity::getDamageTableMultiplier(Entity* my, Stat& myStats, DamageTableTy
 		}
 	}
 
-	if ( damageType != DAMAGE_TABLE_MAGIC && damageType != DAMAGE_TABLE_RANGED )
+	if ( damageType != DAMAGE_TABLE_MAGIC )
 	{
 		if ( myStats.type == MYCONID )
 		{

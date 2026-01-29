@@ -1908,7 +1908,11 @@ void earthElementalAnimate(Entity* my, Stat* myStats, double dist)
 				}
 				else
 				{
-					my->flags[PASSABLE] = false;
+					if ( my->flags[PASSABLE] )
+					{
+						my->flags[PASSABLE] = false;
+						serverUpdateEntityFlag(my, 12);
+					}
 				}
 			}
 			//if ( keystatus[SDLK_u] )

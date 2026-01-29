@@ -1049,6 +1049,17 @@ void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value)
 				case STEAM_STAT_I_NEEDED_THAT:
 				case STEAM_STAT_DUNGEONSEED:
 				case STEAM_STAT_RUNG_OUT:
+				case STEAM_STAT_CALL_LOCKSMITH:
+				case STEAM_STAT_PREMIUM_LOOTBOX:
+				case STEAM_STAT_WITCHES_BREW:
+				case STEAM_STAT_HOBBYIST:
+				case STEAM_STAT_BLESSED_ADDITION:
+				case STEAM_STAT_THATS_A_WRAP:
+				case STEAM_STAT_MERCENARY_ARMY:
+				case STEAM_STAT_COLONIST:
+				case STEAM_STAT_PRICKLY_PERSONALITY:
+				case STEAM_STAT_BOOM_DYNAMITE:
+				case STEAM_STAT_DOESNT_COUNT:
 					g_SteamStats[statisticNum].m_iValue =
 						std::min(g_SteamStats[statisticNum].m_iValue, steamStatAchStringsAndMaxVals[statisticNum].second);
 					break;
@@ -1103,6 +1114,49 @@ void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value)
 						indicateProgress = true;
 					}
 					break;
+				case STEAM_STAT_SOURCE_ENGINE:
+				case STEAM_STAT_TOUCHE:
+					indicateProgress = false;
+					g_SteamStats[statisticNum].m_iValue =
+						std::min(g_SteamStats[statisticNum].m_iValue, steamStatAchStringsAndMaxVals[statisticNum].second);
+					if ( g_SteamStats[statisticNum].m_iValue == steamStatAchStringsAndMaxVals[statisticNum].second )
+					{
+						indicateProgress = true;
+					}
+					else if ( oldValue == 0 && g_SteamStats[statisticNum].m_iValue > 0 )
+					{
+						indicateProgress = true;
+					}
+					else if ( oldValue < 100 && ((oldValue / 100) < (g_SteamStats[statisticNum].m_iValue / 100)) )
+					{
+						indicateProgress = true;
+					}
+					else if ( ((oldValue / 200) < (g_SteamStats[statisticNum].m_iValue / 200)) )
+					{
+						indicateProgress = true;
+					}
+					break;
+				case STEAM_STAT_PAY_TO_WIN:
+					indicateProgress = false;
+					g_SteamStats[statisticNum].m_iValue =
+						std::min(g_SteamStats[statisticNum].m_iValue, steamStatAchStringsAndMaxVals[statisticNum].second);
+					if ( g_SteamStats[statisticNum].m_iValue == steamStatAchStringsAndMaxVals[statisticNum].second )
+					{
+						indicateProgress = true;
+					}
+					else if ( oldValue == 0 && g_SteamStats[statisticNum].m_iValue > 0 )
+					{
+						indicateProgress = true;
+					}
+					else if ( oldValue < 100 && ((oldValue / 100) < (g_SteamStats[statisticNum].m_iValue / 100)) )
+					{
+						indicateProgress = true;
+					}
+					else if ( ((oldValue / 500) < (g_SteamStats[statisticNum].m_iValue / 500)) )
+					{
+						indicateProgress = true;
+					}
+					break;
 				case STEAM_STAT_SUPER_SHREDDER:
 				case STEAM_STAT_SMASH_MELEE:
 					indicateProgress = false;
@@ -1150,6 +1204,7 @@ void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value)
 				case STEAM_STAT_TRASH_COMPACTOR:
 				case STEAM_STAT_TORCHERER:
 				case STEAM_STAT_FIXER_UPPER:
+				case STEAM_STAT_LET_HIM_COOK:
 					indicateProgress = false;
 					g_SteamStats[statisticNum].m_iValue =
 						std::min(g_SteamStats[statisticNum].m_iValue, steamStatAchStringsAndMaxVals[statisticNum].second);
@@ -1386,6 +1441,13 @@ void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type)
 			case STEAM_STAT_ITS_A_LIVING:
 			case STEAM_STAT_CHOPPING_BLOCK:
 			case STEAM_STAT_MANY_PEDI_PALP:
+			case STEAM_STAT_WITCHES_BREW:
+			case STEAM_STAT_HOBBYIST:
+			case STEAM_STAT_BLESSED_ADDITION:
+			case STEAM_STAT_THATS_A_WRAP:
+			case STEAM_STAT_BOOM_DYNAMITE:
+			case STEAM_STAT_COLONIST:
+			case STEAM_STAT_DOESNT_COUNT:
 				if ( !achievementUnlocked(steamStatAchStringsAndMaxVals[statisticNum].first.c_str()) )
 				{
 					if ( iVal == 1 || (iVal > 0 && iVal % 5 == 0) )
@@ -1405,6 +1467,10 @@ void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type)
 			case STEAM_STAT_RAGE_AGAINST:
 			case STEAM_STAT_GUERILLA_RADIO:
 			case STEAM_STAT_RUNG_OUT:
+			case STEAM_STAT_CALL_LOCKSMITH:
+			case STEAM_STAT_PREMIUM_LOOTBOX:
+			case STEAM_STAT_MERCENARY_ARMY:
+			case STEAM_STAT_PRICKLY_PERSONALITY:
 				if ( !achievementUnlocked(steamStatAchStringsAndMaxVals[statisticNum].first.c_str()) )
 				{
 					if ( iVal == 1 || (iVal > 0 && iVal % 4 == 0) )
@@ -1416,6 +1482,8 @@ void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type)
 				break;
 			case STEAM_STAT_BAD_BLOOD:
 			case STEAM_STAT_ALTER_EGO:
+			case STEAM_STAT_PAY_TO_WIN:
+			case STEAM_STAT_SOURCE_ENGINE:
 				if ( !achievementUnlocked(steamStatAchStringsAndMaxVals[statisticNum].first.c_str()) )
 				{
 					indicateAchievementProgressAndUnlock(steamStatAchStringsAndMaxVals[statisticNum].first.c_str(),
@@ -1429,8 +1497,10 @@ void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type)
 			case STEAM_STAT_FIXER_UPPER:
 			case STEAM_STAT_SMASH_MELEE:
 			case STEAM_STAT_PITCH_PERFECT:
+			case STEAM_STAT_LET_HIM_COOK:
 			// below are 1000 max value
 			case STEAM_STAT_SUPER_SHREDDER:
+			case STEAM_STAT_TOUCHE:
 				if ( !achievementUnlocked(steamStatAchStringsAndMaxVals[statisticNum].first.c_str()) )
 				{
 					indicateAchievementProgressAndUnlock(steamStatAchStringsAndMaxVals[statisticNum].first.c_str(),

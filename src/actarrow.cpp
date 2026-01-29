@@ -977,6 +977,14 @@ void actArrow(Entity* my)
 							}
 							hit.entity->pinpointDamageProc(parent, damageTaken);
 						}
+						if ( hitstats->getEffectActive(EFF_SPORES) )
+						{
+							if ( hit.entity->behavior == &actPlayer 
+								&& hitstats->type == MYCONID && hitstats->getEffectActive(EFF_GROWTH) >= 4 )
+							{
+								floorMagicCreateSpores(hit.entity, hit.entity->x, hit.entity->y, hit.entity, 0, SPELL_SPORES);
+							}
+						}
 					}
 
 					// write obituary

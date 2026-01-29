@@ -3079,6 +3079,8 @@ void item_ScrollEnchantWeapon(Item* item, int player)
 				{
 					Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_GOLD_CASTED, "gold", goldSubtract);
 					Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_GOLD_CASTED_RUN, "gold", goldSubtract);
+
+					steamStatisticUpdate(STEAM_STAT_PAY_TO_WIN, STEAM_STAT_INT, goldSubtract);
 				}
 			}
 
@@ -3324,6 +3326,8 @@ void item_ScrollEnchantArmor(Item* item, int player)
 				{
 					Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_GOLD_CASTED, "gold", goldSubtract);
 					Compendium_t::Events_t::eventUpdateCodex(player, Compendium_t::CPDM_GOLD_CASTED_RUN, "gold", goldSubtract);
+
+					steamStatisticUpdate(STEAM_STAT_PAY_TO_WIN, STEAM_STAT_INT, goldSubtract);
 				}
 			}
 
@@ -5077,6 +5081,10 @@ void item_Food(Item*& item, int player)
 		{
 			messagePlayer(player, MESSAGE_STATUS, Language::get(3201));
 		}
+		else if ( stats[player]->type == MYCONID )
+		{
+			messagePlayer(player, MESSAGE_STATUS, Language::get(6991));
+		}
 		else if ( item->type == FOOD_BLOOD )
 		{
 			messagePlayer(player, MESSAGE_STATUS, Language::get(3203));
@@ -5118,9 +5126,12 @@ void item_Food(Item*& item, int player)
 				}
 			}
 		}
-		foodUseAbundanceEffect(item, player);
-		consumeItem(item, player);
-		return;
+		if ( stats[player]->type != MYCONID )
+		{
+			foodUseAbundanceEffect(item, player);
+			consumeItem(item, player);
+			return;
+		}
 	}
 
 	real_t foodMult = 1.0;
@@ -5283,7 +5294,7 @@ void item_Food(Item*& item, int player)
 					case FOOD_RATION_HEARTY:
 					case FOOD_RATION_HERBAL:
 					case FOOD_RATION_SWEET:
-						manaRegenPercent = 0.2;
+						manaRegenPercent = 0.1;
 						break;
 					case FOOD_BLOOD:
 						if ( players[player] && players[player]->entity
@@ -5317,21 +5328,27 @@ void item_Food(Item*& item, int player)
 		{
 		case FOOD_RATION_SPICY:
 			effectID = EFF_RATION_SPICY;
+			serverUpdatePlayerGameplayStats(player, STATISTICS_FLAVORTOWN, 1 << 0);
 			break;
 		case FOOD_RATION_SOUR:
 			effectID = EFF_RATION_SOUR;
+			serverUpdatePlayerGameplayStats(player, STATISTICS_FLAVORTOWN, 1 << 1);
 			break;
 		case FOOD_RATION_BITTER:
 			effectID = EFF_RATION_BITTER;
+			serverUpdatePlayerGameplayStats(player, STATISTICS_FLAVORTOWN, 1 << 2);
 			break;
 		case FOOD_RATION_HEARTY:
 			effectID = EFF_RATION_HEARTY;
+			serverUpdatePlayerGameplayStats(player, STATISTICS_FLAVORTOWN, 1 << 3);
 			break;
 		case FOOD_RATION_HERBAL:
 			effectID = EFF_RATION_HERBAL;
+			serverUpdatePlayerGameplayStats(player, STATISTICS_FLAVORTOWN, 1 << 4);
 			break;
 		case FOOD_RATION_SWEET:
 			effectID = EFF_RATION_SWEET;
+			serverUpdatePlayerGameplayStats(player, STATISTICS_FLAVORTOWN, 1 << 5);
 			break;
 		default:
 			break;
@@ -5341,7 +5358,10 @@ void item_Food(Item*& item, int player)
 		{
 			if ( players[player] && players[player]->entity )
 			{
-				players[player]->entity->setEffect(effectID, true, stats[player]->EFFECTS_TIMERS[effectID] + TICKS_PER_SECOND * 60, false);
+				if ( item->beatitude >= 0 || (item->beatitude < 0 && stats[player]->type == MYCONID) )
+				{
+					players[player]->entity->setEffect(effectID, true, stats[player]->EFFECTS_TIMERS[effectID] + TICKS_PER_SECOND * 60, false);
+				}
 			}
 		}
 	}
@@ -5531,6 +5551,10 @@ void item_FoodTin(Item*& item, int player)
 		{
 			messagePlayer(player, MESSAGE_STATUS | MESSAGE_HINT, Language::get(3201));
 		}
+		else if ( stats[player]->type == MYCONID )
+		{
+			messagePlayer(player, MESSAGE_STATUS | MESSAGE_HINT, Language::get(6991));
+		}
 		else
 		{
 			messagePlayer(player, MESSAGE_STATUS | MESSAGE_HINT, Language::get(908));
@@ -5569,9 +5593,13 @@ void item_FoodTin(Item*& item, int player)
 				}
 			}
 		}
-		foodUseAbundanceEffect(item, player);
-		consumeItem(item, player);
-		return;
+
+		if ( stats[player]->type != MYCONID )
+		{
+			foodUseAbundanceEffect(item, player);
+			consumeItem(item, player);
+			return;
+		}
 	}
 
 	int buffDuration = item->status * TICKS_PER_SECOND * 60;
@@ -5856,16 +5884,17 @@ void item_Spellbook(Item*& item, int player)
 		}
 	}
 
+	if ( players[player] && players[player]->entity && players[player]->entity->isBlind() )
+	{
+		messagePlayer(player, MESSAGE_HINT, Language::get(970));
+		playSoundPlayer(player, 90, 64);
+		return;
+	}
+
 	item->identified = true;
 	if ( itemIsEquipped(item, player) )
 	{
 		messagePlayer(player, MESSAGE_MISC, Language::get(3460));
-		playSoundPlayer(player, 90, 64);
-		return;
-	}
-	if ( players[player] && players[player]->entity && players[player]->entity->isBlind() )
-	{
-		messagePlayer(player, MESSAGE_HINT, Language::get(970));
 		playSoundPlayer(player, 90, 64);
 		return;
 	}

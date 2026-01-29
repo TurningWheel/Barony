@@ -989,6 +989,10 @@ real_t getSpellBonusFromCasterINT(Entity* caster, Stat* casterStats, int skillID
 				real_t ratio = (casterStats->getModifiedProficiency(skillID) - SKILL_LEVEL_EXPERT) / (real_t)40.0;
 				mult += (ratio * (60 / 100.0)); // 0.6 max
 			}
+			if ( casterStats->getModifiedProficiency(skillID) >= SKILL_LEVEL_LEGENDARY )
+			{
+				mult += 0.4;
+			}
 			bonus *= mult;
 		}
 	}

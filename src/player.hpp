@@ -2009,7 +2009,8 @@ public:
 			int beatitude = -99;
 			int count = 0;
 			Uint32 appearance = 0;
-			bool identified = false;
+			bool identifiedItem = false;
+			bool hasAppraiseCapstone = false;
 			bool isItemSameAsCurrent(Item* item);
 			SDL_Surface* blitItemWorldTooltip(Item* item);
 			SDL_Surface* itemWorldTooltipSurface = nullptr;
@@ -2392,8 +2393,9 @@ public:
 		std::set<int> learnedSpells;
 		std::vector<std::pair<int, int>> ducksInARow;
 		std::vector<std::pair<int, Uint32>> pendingDucks;
+		std::map<int, int> favoriteBooksAchievement;
 		int numFishingCaught = 0;
-		bool itemDegradeRoll(Item* item, int* checkInterval = nullptr);
+		bool itemDegradeRoll(Item* item, int skillID = -1, int* checkInterval = nullptr);
 		void onItemDegrade(Item* item);
 		int sustainedSpellMPUsedSorcery = 0;
 		int sustainedSpellMPUsedMysticism = 0;

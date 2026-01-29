@@ -296,6 +296,11 @@ bool jewelItemRecruit(Entity* parent, Entity* entity, int itemStatus, const char
 			messagePlayerMonsterEvent(parent->skill[2], makeColorRGB(0, 255, 0), *entitystats, Language::get(6954), Language::get(6955), MSG_COMBAT);
 			Compendium_t::Events_t::eventUpdateMonster(parent->skill[2], Compendium_t::CPDM_RECRUITED, entity, 1);
 
+			if ( stats[parent->skill[2]]->playerRace == RACE_GNOME && stats[parent->skill[2]]->stat_appearance == 0 )
+			{
+				steamStatisticUpdateClient(parent->skill[2], STEAM_STAT_MERCENARY_ARMY, STEAM_STAT_INT, 1);
+			}
+
 			if ( itemStatus == DECREPIT )
 			{
 				Compendium_t::Events_t::eventUpdate(parent->skill[2], Compendium_t::CPDM_JEWEL_RECRUIT_DECREPIT, GEM_JEWEL, 1);
@@ -751,6 +756,27 @@ void actItem(Entity* my)
 					{
 						steamAchievementClient(i, "BARONY_ACH_REPOSSESSION");
 					}
+					if ( my->itemGerminateResult == 1 )
+					{
+						if ( item2->type == FOOD_NUT || item2->type == FOOD_SHROOM )
+						{
+							if ( achievementObserver.checkUidIsFromPlayer(my->itemOriginalOwner) >= 0 )
+							{
+								int owner = achievementObserver.checkUidIsFromPlayer(my->itemOriginalOwner);
+								achievementObserver.playerAchievements[owner].eatMe++;
+							}
+						}
+					}
+					if ( GenericGUI[i].isItemRation(item2->type)
+						&& stats[i]->HUNGER <= getEntityHungerInterval(i, nullptr, stats[i], HUNGER_INTERVAL_HUNGRY) )
+					{
+						if ( achievementObserver.checkUidIsFromPlayer(my->itemOriginalOwner) >= 0
+							&& achievementObserver.checkUidIsFromPlayer(my->itemOriginalOwner) != i )
+						{
+							steamAchievementClient(i, "BARONY_ACH_SECOND_BREAKFAST");
+						}
+					}
+
 					//messagePlayer(i, "old owner: %d", item2->ownerUid);
 					if (item2)
 					{

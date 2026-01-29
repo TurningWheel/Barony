@@ -423,6 +423,8 @@ void initHuman(Entity* my, Stat* myStats)
 							break;
 						}
 					}
+					myStats->HP += HP_MOD;
+					myStats->MAXHP += HP_MOD;
 					myStats->EXP -= 100;
 				}
 			}

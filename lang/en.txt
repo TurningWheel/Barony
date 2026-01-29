@@ -7262,5 +7262,6 @@ to replay this challenge!
 has been unlocked!#
 6990 You are blinded by a flying slop ball!
  *SPLAT*#
+6991 Yum! Rotten food!#
 
 6999 END#

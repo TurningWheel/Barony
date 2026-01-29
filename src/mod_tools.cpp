@@ -838,7 +838,7 @@ void IRCHandler_t::handleMessage(std::string& msg)
 #endif // !NINTENDO
 
 Uint32 ItemTooltips_t::itemsJsonHashRead = 0;
-const Uint32 ItemTooltips_t::kItemsJsonHash = 1748555711;
+const Uint32 ItemTooltips_t::kItemsJsonHash = 944394643;
 
 void ItemTooltips_t::setSpellValueIfKeyPresent(ItemTooltips_t::spellItem_t& t, rapidjson::Value::ConstMemberIterator item_itr, Uint32& hash, Uint32& hashShift, const char* key, int& toSet)
 {
@@ -2362,6 +2362,21 @@ int ItemTooltips_t::getSpellDamageOrHealAmount(const int player, spell_t* spell,
 		if ( spell->ID == SPELL_HEALING || spell->ID == SPELL_EXTRAHEALING )
 		{
 			damage = heal;
+		}
+		if ( spell->ID == SPELL_MUSHROOM )
+		{
+			if ( !excludePlayerStats )
+			{
+				if ( player >= 0 && players[player] )
+				{
+					int bonusEffect = 0;
+					if ( stats[player]->type == MYCONID && stats[player]->getEffectActive(EFF_GROWTH) >= 2 )
+					{
+						bonusEffect = std::max(bonusEffect, stats[player]->getEffectActive(EFF_GROWTH) - 1);
+					}
+					damage += damage * (bonusEffect * 1.0);
+				}
+			}
 		}
 	}
 	return damage;
@@ -6151,7 +6166,44 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 	}
 	else if ( tooltipType.compare("tooltip_spell_item") == 0 )
 	{
-		if ( detailTag.compare("spell_damage_bonus") == 0 )
+		if ( detailTag == "spell_cast_time" )
+		{
+			spell_t* spell = getSpellFromItem(player, &item, false);
+			if ( !spell ) { return; }
+
+			Entity* caster = compendiumTooltipIntro ? nullptr : players[player]->entity;
+			Stat* casterStats = compendiumTooltipIntro ? nullptr : stats[player];
+			real_t baseCastTime = spell->cast_time * 20;
+			real_t modifiedCastTime = getSpellPropertyFromID(spell_t::SPELLPROP_MODIFIED_SPELL_CAST_TIME, spell->ID, caster, casterStats, nullptr) * 20;
+			real_t diff = -(baseCastTime - modifiedCastTime);
+			if ( abs(diff) < 0.001 )
+			{
+				diff = 0.0;
+			}
+			snprintf(buf, sizeof(buf), str.c_str(), baseCastTime / (real_t)TICKS_PER_SECOND, (diff) / (real_t)TICKS_PER_SECOND);
+		}
+		else if ( detailTag == "spell_distance" )
+		{
+			spell_t* spell = getSpellFromItem(player, &item, false);
+			if ( !spell ) { return; }
+
+			real_t dist = 0.0;
+			real_t diff = 0.0;
+			if ( spell->rangefinder != SpellRangefinderType::RANGEFINDER_NONE )
+			{
+				Entity* caster = compendiumTooltipIntro ? nullptr : players[player]->entity;
+				Stat* casterStats = compendiumTooltipIntro ? nullptr : stats[player];
+				dist = spell->distance;
+				real_t modifiedDistance = getSpellPropertyFromID(spell_t::SPELLPROP_MODIFIED_DISTANCE, spell->ID, caster, casterStats, nullptr);
+				diff = (modifiedDistance - dist);
+				if ( abs(diff) < 0.001 )
+				{
+					diff = 0.0;
+				}
+			}
+			snprintf(buf, sizeof(buf), str.c_str(), dist / 16.0, (diff) / 16.0);
+		}
+		else if ( detailTag.compare("spell_damage_bonus") == 0 )
 		{
 			spell_t* spell = getSpellFromItem(player, &item, false);
 			if ( !spell ) { return; }
@@ -16350,6 +16402,12 @@ void Compendium_t::Events_t::loadItemsSaveData()
 		return;
 	}
 
+	int version = 0;
+	if ( d.HasMember("version") )
+	{
+		version = d["version"].GetInt();
+	}
+
 	playerEvents.clear();
 	for ( auto itr = d["items"].MemberBegin(); itr != d["items"].MemberEnd(); ++itr )
 	{
@@ -16392,6 +16450,35 @@ void Compendium_t::Events_t::loadItemsSaveData()
 			}
 		}
 	}
+
+	CompendiumEntries.migrateOldSkillIndexes = false;
+	if ( version == 1 )
+	{
+		CompendiumEntries.migrateOldSkillIndexes = true;
+	}
+	if ( CompendiumEntries.migrateOldSkillIndexes )
+	{
+		int oldClass = client_classes[0];
+		std::vector<int> skillIndexes = { PRO_MYSTICISM, PRO_SORCERY, PRO_THAUMATURGY };
+		for ( int i = 0; i < NUMCLASSES; ++i )
+		{
+			client_classes[0] = i;
+			for ( auto skillID : skillIndexes )
+			{
+				const char* skillstr = Compendium_t::getSkillStringForCompendium(skillID);
+				if ( strcmp(skillstr, "") )
+				{
+					Compendium_t::Events_t::eventUpdateCodex(0, Compendium_t::CPDM_CLASS_SKILL_LEGENDS, skillstr, 0, true);
+					Compendium_t::Events_t::eventUpdateCodex(0, Compendium_t::CPDM_CLASS_SKILL_NOVICES, skillstr, 0, true);
+					Compendium_t::Events_t::eventUpdateCodex(0, Compendium_t::CPDM_CLASS_SKILL_UPS, skillstr, 0, true);
+					Compendium_t::Events_t::eventUpdateCodex(0, Compendium_t::CPDM_CLASS_SKILL_UPS_RUN_MAX, skillstr, 0, true);
+					Compendium_t::Events_t::eventUpdateCodex(0, Compendium_t::CPDM_CLASS_SKILL_MAX, skillstr, 0, true);
+				}
+			}
+		}
+		client_classes[0] = oldClass;
+	}
+	CompendiumEntries.migrateOldSkillIndexes = false;
 }
 
 static ConsoleVariable<bool> cvar_compendiumClientSave("/compendium_client_save", false);
@@ -16773,7 +16860,7 @@ void Compendium_t::Events_t::writeItemsSaveData()
 	rapidjson::Document exportDocument;
 	exportDocument.SetObject();
 
-	const int VERSION = 1;
+	const int VERSION = 2;
 
 	CustomHelpers::addMemberToRoot(exportDocument, "version", rapidjson::Value(VERSION));
 	rapidjson::Value itemsObj(rapidjson::kObjectType);
