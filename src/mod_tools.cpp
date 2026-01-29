@@ -838,7 +838,7 @@ void IRCHandler_t::handleMessage(std::string& msg)
 #endif // !NINTENDO
 
 Uint32 ItemTooltips_t::itemsJsonHashRead = 0;
-const Uint32 ItemTooltips_t::kItemsJsonHash = 944394643;
+const Uint32 ItemTooltips_t::kItemsJsonHash = 4177373252;
 
 void ItemTooltips_t::setSpellValueIfKeyPresent(ItemTooltips_t::spellItem_t& t, rapidjson::Value::ConstMemberIterator item_itr, Uint32& hash, Uint32& hashShift, const char* key, int& toSet)
 {
@@ -846,7 +846,7 @@ void ItemTooltips_t::setSpellValueIfKeyPresent(ItemTooltips_t::spellItem_t& t, r
 	{
 		t.hasExpandedJSON = true;
 		toSet = item_itr->value[key].GetInt();
-		hash += (Uint32)((Uint32)toSet << (hashShift % 32)); ++hashShift;
+		//hash += (Uint32)((Uint32)toSet << (hashShift % 32)); ++hashShift;
 	}
 }
 void ItemTooltips_t::setSpellValueIfKeyPresent(ItemTooltips_t::spellItem_t& t, rapidjson::Value::ConstMemberIterator item_itr, Uint32& hash, Uint32& hashShift, const char* key, real_t& toSet)
@@ -855,7 +855,7 @@ void ItemTooltips_t::setSpellValueIfKeyPresent(ItemTooltips_t::spellItem_t& t, r
 	{
 		t.hasExpandedJSON = true;
 		toSet = item_itr->value[key].GetFloat();
-		hash += (Uint32)(static_cast<Uint32>(toSet * 100000) << (hashShift % 32)); ++hashShift;
+		//hash += (Uint32)(static_cast<Uint32>(toSet * 100000) << (hashShift % 32)); ++hashShift;
 	}
 }
 
@@ -872,6 +872,16 @@ void lowercaseString(std::string& str)
 	}
 }
 #endif
+
+void hashSpellProp(Uint32& hash, Uint32& hashShift, int& toSet)
+{
+	hash += (Uint32)((Uint32)toSet << (hashShift % 32)); ++hashShift;
+}
+
+void hashSpellProp(Uint32& hash, Uint32& hashShift, real_t& toSet)
+{
+	hash += (Uint32)(static_cast<Uint32>(toSet * 100000) << (hashShift % 32)); ++hashShift;
+}
 
 void ItemTooltips_t::readItemsFromFile()
 {
@@ -1145,12 +1155,12 @@ void ItemTooltips_t::readItemsFromFile()
 	{
 		spellItem_t t;
 		t.internalName = spell_itr->name.GetString();
-		hash += djb2Hash(const_cast<char*>(t.internalName.c_str()));
+		//hash += djb2Hash(const_cast<char*>(t.internalName.c_str()));
 		t.name = spell_itr->value["spell_name"].GetString();
 		t.name_lowercase = t.name;
 		lowercaseString(t.name_lowercase);
 		t.id = spell_itr->value["spell_id"].GetInt();
-		hash += (Uint32)((Uint32)t.id << (shift % 32)); ++shift;
+		//hash += (Uint32)((Uint32)t.id << (shift % 32)); ++shift;
 		t.spellTypeStr = spell_itr->value["spell_type"].GetString();
 		t.spellType = SPELL_TYPE_DEFAULT;
 		if ( t.spellTypeStr == "PROJECTILE" )
@@ -1198,7 +1208,7 @@ void ItemTooltips_t::readItemsFromFile()
 			t.spellType = SPELL_TYPE_DIVINE_TARGET;
 		}
 
-		hash += djb2Hash(const_cast<char*>(t.spellTypeStr.c_str()));
+		//hash += djb2Hash(const_cast<char*>(t.spellTypeStr.c_str()));
 
 		if ( spell_itr->value.HasMember("format_tags") )
 		{
@@ -1222,7 +1232,7 @@ void ItemTooltips_t::readItemsFromFile()
 			arr_itr != spell_itr->value["effect_tags"].End(); ++arr_itr )
 		{
 			t.spellTagsStr.push_back(arr_itr->GetString());
-			hash += djb2Hash(const_cast<char*>(t.spellTagsStr.back().c_str()));
+			//hash += djb2Hash(const_cast<char*>(t.spellTagsStr.back().c_str()));
 			if ( t.spellTagsStr[t.spellTagsStr.size() - 1] == "DAMAGE" )
 			{
 				t.spellTags.insert(SPELL_TAG_DAMAGE);
@@ -1326,9 +1336,9 @@ void ItemTooltips_t::readItemsFromFile()
 			}
 		}
 
-		hash += djb2Hash(const_cast<char*>(t.spellbookInternalName.c_str()));
-		hash += djb2Hash(const_cast<char*>(t.magicstaffInternalName.c_str()));
-		hash += djb2Hash(const_cast<char*>(t.fociInternalName.c_str()));
+		//hash += djb2Hash(const_cast<char*>(t.spellbookInternalName.c_str()));
+		//hash += djb2Hash(const_cast<char*>(t.magicstaffInternalName.c_str()));
+		//hash += djb2Hash(const_cast<char*>(t.fociInternalName.c_str()));
 		
 		t.hasExpandedJSON = false;
 
@@ -1365,22 +1375,22 @@ void ItemTooltips_t::readItemsFromFile()
 			if ( school == "sorcery" )
 			{
 				t.skillID = PRO_SORCERY;
-				hash += (Uint32)((Uint32)t.skillID << (shift % 32)); ++shift;
+				//hash += (Uint32)((Uint32)t.skillID << (shift % 32)); ++shift;
 			}
 			else if ( school == "mysticism" )
 			{
 				t.skillID = PRO_MYSTICISM;
-				hash += (Uint32)((Uint32)t.skillID << (shift % 32)); ++shift;
+				//hash += (Uint32)((Uint32)t.skillID << (shift % 32)); ++shift;
 			}
 			else if ( school == "thaumaturgy" )
 			{
 				t.skillID = PRO_THAUMATURGY;
-				hash += (Uint32)((Uint32)t.skillID << (shift % 32)); ++shift;
+				//hash += (Uint32)((Uint32)t.skillID << (shift % 32)); ++shift;
 			}
 			else
 			{
 				assert(false && "invalid school from items.json!");
-				hash += (Uint32)((Uint32)1 << (shift % 32)); ++shift;
+				//hash += (Uint32)((Uint32)1 << (shift % 32)); ++shift;
 			}
 		}
 
@@ -1390,6 +1400,59 @@ void ItemTooltips_t::readItemsFromFile()
 		++spellsRead;
 	}
 	printlog("[JSON]: Successfully read %d spells from '%s'", spellsRead, inputPath.c_str());
+
+	for ( int i = 0; i < NUM_SPELLS; ++i )
+	{
+		auto find = spellItems.find(i);
+		if ( find != spellItems.end() )
+		{
+			spellItem_t& t = find->second;
+			hash += djb2Hash(const_cast<char*>(t.internalName.c_str()));
+			hash += (Uint32)((Uint32)t.id << (shift % 32)); ++shift;
+			hash += djb2Hash(const_cast<char*>(t.spellTypeStr.c_str()));
+			for ( auto& tag : t.spellTagsStr )
+			{
+				hash += djb2Hash(const_cast<char*>(tag.c_str()));
+			}
+
+			hash += djb2Hash(const_cast<char*>(t.spellbookInternalName.c_str()));
+			hash += djb2Hash(const_cast<char*>(t.magicstaffInternalName.c_str()));
+			hash += djb2Hash(const_cast<char*>(t.fociInternalName.c_str()));
+
+			hashSpellProp(hash, shift, t.mana);
+			hashSpellProp(hash, shift, t.duration);
+			hashSpellProp(hash, shift, t.duration_mult);
+			hashSpellProp(hash, shift, t.duration2);
+			hashSpellProp(hash, shift, t.duration2_mult);
+			hashSpellProp(hash, shift, t.damage);
+			hashSpellProp(hash, shift, t.damage_mult);
+			hashSpellProp(hash, shift, t.damage2);
+			hashSpellProp(hash, shift, t.damage2_mult);
+			hashSpellProp(hash, shift, t.distance);
+			hashSpellProp(hash, shift, t.distance_mult);
+			hashSpellProp(hash, shift, t.life_time);
+			hashSpellProp(hash, shift, t.life_mult);
+			hashSpellProp(hash, shift, t.cast_time);
+			hashSpellProp(hash, shift, t.cast_time_mult);
+			hashSpellProp(hash, shift, t.radius);
+			hashSpellProp(hash, shift, t.radius_mult);
+			hashSpellProp(hash, shift, t.difficulty);
+			hashSpellProp(hash, shift, t.sustain_mana);
+
+			hashSpellProp(hash, shift, t.sustain_duration);
+			hashSpellProp(hash, shift, t.sustain_mult);
+			hashSpellProp(hash, shift, t.drop_table);
+
+			if ( t.skillID >= 0 )
+			{
+				hash += (Uint32)((Uint32)t.skillID << (shift % 32)); ++shift;
+			}
+			else
+			{
+				hash += (Uint32)((Uint32)1 << (shift % 32)); ++shift;
+			}
+		}
+	}
 
 	itemsJsonHashRead = hash;
 	if ( itemsJsonHashRead != kItemsJsonHash )
