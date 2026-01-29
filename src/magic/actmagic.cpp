@@ -21351,6 +21351,7 @@ void actParticleShatterEarth(Entity* my)
 									if ( multiplayer == SERVER )
 									{
 										serverUpdateEntitySkill(monster, 42); // update monsterAllyIndex for clients.
+										serverUpdateEntitySkill(monster, 50); // update monsterAllySummonRank
 									}
 								}
 							}
