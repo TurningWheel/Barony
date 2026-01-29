@@ -15577,9 +15577,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						if ( achievementObserver.playerAchievements[playerhit].parryTank > 0 )
 						{
-							serverUpdatePlayerGameplayStats(playerhit, STATISTICS_PARRY_TANK, 0);
+							achievementObserver.playerAchievements[playerhit].parryTank = -1;
 						}
-						achievementObserver.playerAchievements[playerhit].parryTank = 0;
 					}
 					if ( parriedDamage > 0 )
 					{
@@ -15709,11 +15708,9 @@ void Entity::attack(int pose, int charge, Entity* target)
 							{
 								if ( achievementObserver.playerAchievements[playerhit].parryTank > 0 )
 								{
-									serverUpdatePlayerGameplayStats(playerhit, STATISTICS_PARRY_TANK, 0);
+									achievementObserver.playerAchievements[playerhit].parryTank = -1;
 								}
-								achievementObserver.playerAchievements[playerhit].parryTank = 0;
 							}
-						}
 
 						for ( int i = 0; i < 2; ++i )
 						{

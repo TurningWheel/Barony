@@ -1233,7 +1233,10 @@ void serverUpdatePlayerGameplayStats(int player, int gameplayStat, int changeval
 		{
 			if ( changeval == 0 )
 			{
-				gameStatistics[gameplayStat] = 0;
+				if ( gameStatistics[gameplayStat] < 20 )
+				{
+					gameStatistics[gameplayStat] = 0;
+				}
 			}
 			else
 			{
@@ -5328,7 +5331,10 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		{
 			if ( changeval == 0 )
 			{
-				gameStatistics[gameplayStat] = 0;
+				if ( gameStatistics[gameplayStat] < 20 )
+				{
+					gameStatistics[gameplayStat] = 0;
+				}
 			}
 			else
 			{

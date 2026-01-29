@@ -3094,6 +3094,24 @@ void updateGameplayStatisticsInMainLoop()
 		}
 	}
 
+	if ( multiplayer != CLIENT && ticks % (TICKS_PER_SECOND / 2) == 0 )
+	{
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( achievementObserver.playerAchievements[i].parryTank > 0 )
+			{
+				serverUpdatePlayerGameplayStats(i, STATISTICS_PARRY_TANK, achievementObserver.playerAchievements[i].parryTank);
+				achievementObserver.playerAchievements[i].parryTank = 0;
+			}
+			else if ( achievementObserver.playerAchievements[i].parryTank < 0 )
+			{
+				serverUpdatePlayerGameplayStats(i, STATISTICS_PARRY_TANK, 0);
+				achievementObserver.playerAchievements[i].parryTank = 0;
+			}
+		}
+	}
+
+
 	if ( ticks % (TICKS_PER_SECOND * 5) == 0 )
 	{
 		std::unordered_set<int> potionList;
@@ -3218,11 +3236,6 @@ void updateGameplayStatisticsInMainLoop()
 				{
 					serverUpdatePlayerGameplayStats(i, STATISTICS_EAT_ME, achievementObserver.playerAchievements[i].eatMe);
 					achievementObserver.playerAchievements[i].eatMe = 0;
-				}
-				if ( achievementObserver.playerAchievements[i].parryTank > 0 )
-				{
-					serverUpdatePlayerGameplayStats(i, STATISTICS_PARRY_TANK, achievementObserver.playerAchievements[i].parryTank);
-					achievementObserver.playerAchievements[i].parryTank = 0;
 				}
 			}
 		}
