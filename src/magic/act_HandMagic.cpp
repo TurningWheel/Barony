@@ -345,7 +345,11 @@ bool rangefinderTargetEnemyType(spell_t& spell, Entity& entity)
 	}
 	else if ( spell.ID == SPELL_DEFACE )
 	{
-		return (!entity.flags[INVISIBLE] && entity.behavior == &actHeadstone) || entity.behavior == &actSink;
+		return (!entity.flags[INVISIBLE] && entity.behavior == &actHeadstone) 
+			|| entity.behavior == &actSink
+			|| entity.behavior == &actCauldron
+			|| entity.behavior == &actMailbox
+			|| entity.behavior == &actWorkbench;
 	}
 	else if ( spell.ID == SPELL_DEMESNE_DOOR )
 	{

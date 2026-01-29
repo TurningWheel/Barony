@@ -195,6 +195,18 @@ bool doesEntityStopBoulder(Entity* entity)
 	{
 		return true;
 	}
+	else if ( entity->behavior == &actCauldron )
+	{
+		return true;
+	}
+	else if ( entity->behavior == &actWorkbench )
+	{
+		return true;
+	}
+	else if ( entity->behavior == &actMailbox )
+	{
+		return true;
+	}
 	return false;
 }
 

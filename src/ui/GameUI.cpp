@@ -7837,6 +7837,73 @@ bool StatusEffectQueue_t::doStatusEffectTooltip(StatusEffectQueueEntry_t& entry,
 				{
 					variation = std::min(3, std::max(0, (int)entry.customVariable - 1));
 				}
+				else if ( effectID == EFF_GROWTH )
+				{
+					variation = std::min(2, std::max(0, (int)entry.customVariable - 2));
+
+					int tier = variation + 1;
+
+					std::string newHeader = definition.getName(variation).c_str();
+					uppercaseString(newHeader);
+					tooltipHeader->setText(newHeader.c_str());
+
+					std::string newDesc = "";
+					if ( stats[player]->type == DRYAD )
+					{
+						newDesc = definition.getDesc(1).c_str();
+
+						char buf[128] = "";
+						snprintf(buf, sizeof(buf), definition.getDesc(6).c_str(), 10 * tier); // +PWR
+						newDesc += '\n';
+						newDesc += buf;
+
+						snprintf(buf, sizeof(buf), definition.getDesc(7).c_str(), 10 * tier); // +MP RGN
+						newDesc += '\n';
+						newDesc += buf;
+
+						snprintf(buf, sizeof(buf), definition.getDesc(8).c_str(), -5 * tier); // +Movespeed
+						newDesc += '\n';
+						newDesc += buf;
+
+						snprintf(buf, sizeof(buf), definition.getDesc(11).c_str(), 5 * tier); // +Fire dmg
+						newDesc += '\n';
+						newDesc += buf;
+					}
+					else if ( stats[player]->type == MYCONID )
+					{
+						newDesc = definition.getDesc(0).c_str();
+						newDesc += '\n';
+						newDesc += definition.getDesc(2).c_str();
+						if ( variation == 2 )
+						{
+							newDesc += '\n';
+							newDesc += definition.getDesc(3).c_str();
+						}
+						char buf[128] = "";
+						snprintf(buf, sizeof(buf), definition.getDesc(4).c_str(), tier); // +AC
+						newDesc += '\n';
+						newDesc += buf;
+
+						snprintf(buf, sizeof(buf), definition.getDesc(5).c_str(), tier * 5); // +RES
+						newDesc += '\n';
+						newDesc += buf;
+
+						snprintf(buf, sizeof(buf), definition.getDesc(9).c_str(), 20 + 15 * (tier - 1)); // +Poison dmg
+						newDesc += '\n';
+						newDesc += buf;
+
+						snprintf(buf, sizeof(buf), definition.getDesc(10).c_str(), 100 * tier); // +Germinate dmg
+						newDesc += '\n';
+						newDesc += buf;
+
+						snprintf(buf, sizeof(buf), definition.getDesc(8).c_str(), -10 * tier); // +Movespeed
+						newDesc += '\n';
+						newDesc += buf;
+					}
+
+					tooltipDesc->setText(newDesc.c_str());
+					tooltipInnerWidth = definition.tooltipWidth;
+				}
 				else if ( effectID == EFF_ENSEMBLE_DRUM
 					|| effectID == EFF_ENSEMBLE_FLUTE
 					|| effectID == EFF_ENSEMBLE_LUTE
@@ -7863,43 +7930,57 @@ bool StatusEffectQueue_t::doStatusEffectTooltip(StatusEffectQueueEntry_t& entry,
 					std::string newHeader = definition.getName(variation).c_str();
 					uppercaseString(newHeader);
 					tooltipHeader->setText(newHeader.c_str());
-					std::string newDesc = definition.getDesc(variation).c_str();
-					newDesc += '\n';
-					newDesc += "Scaled Stat: ";
+					std::string newDesc = "";// definition.getDesc(variation).c_str();
+					char buf[128] = "";
 					if ( effectID == EFF_ENSEMBLE_DRUM )
 					{
-						newDesc += std::to_string(stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_DRUM_EFF_1));
+						snprintf(buf, sizeof(buf), definition.getDesc(0).c_str(), 
+							(int)stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_DRUM_EFF_1));
+						newDesc = buf;
 						newDesc += '\n';
-						newDesc += "Tier Stat: ";
-						newDesc += std::to_string(stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_DRUM_TIER));
+						snprintf(buf, sizeof(buf), definition.getDesc(1).c_str(),
+							(int)stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_DRUM_TIER));
+						newDesc += buf;
 					}
 					else if ( effectID == EFF_ENSEMBLE_FLUTE )
 					{
-						newDesc += std::to_string(stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_FLUTE_EFF_1));
+						snprintf(buf, sizeof(buf), definition.getDesc(0).c_str(),
+							(int)stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_FLUTE_EFF_1));
+						newDesc = buf;
 						newDesc += '\n';
-						newDesc += "Tier Stat: ";
-						newDesc += std::to_string(stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_FLUTE_TIER));
+						snprintf(buf, sizeof(buf), definition.getDesc(1).c_str(),
+							(int)stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_FLUTE_TIER));
+						newDesc += buf;
 					}
 					else if ( effectID == EFF_ENSEMBLE_LUTE )
 					{
-						newDesc += std::to_string(stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_LUTE_EFF_1));
+						snprintf(buf, sizeof(buf), definition.getDesc(0).c_str(),
+							(int)stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_LUTE_EFF_1));
+						newDesc = buf;
 						newDesc += '\n';
-						newDesc += "Tier Stat: ";
-						newDesc += std::to_string(stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_LUTE_TIER));
+						snprintf(buf, sizeof(buf), definition.getDesc(1).c_str(),
+							(int)stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_LUTE_TIER));
+						newDesc += buf;
 					}
 					else if ( effectID == EFF_ENSEMBLE_HORN )
 					{
-						newDesc += std::to_string(stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_HORN_EFF_1));
+						snprintf(buf, sizeof(buf), definition.getDesc(0).c_str(),
+							(int)stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_HORN_EFF_1));
+						newDesc = buf;
 						newDesc += '\n';
-						newDesc += "Tier Stat: ";
-						newDesc += std::to_string(stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_HORN_TIER));
+						snprintf(buf, sizeof(buf), definition.getDesc(1).c_str(),
+							(int)stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_HORN_TIER));
+						newDesc += buf;
 					}
 					else if ( effectID == EFF_ENSEMBLE_LYRE )
 					{
-						newDesc += std::to_string(stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_LYRE_EFF_1));
+						snprintf(buf, sizeof(buf), definition.getDesc(0).c_str(),
+							(int)stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_LYRE_EFF_1));
+						newDesc = buf;
 						newDesc += '\n';
-						newDesc += "Tier Stat: ";
-						newDesc += std::to_string(stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_LYRE_TIER));
+						snprintf(buf, sizeof(buf), definition.getDesc(1).c_str(),
+							(int)stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_LYRE_TIER));
+						newDesc += buf;
 					}
 					tooltipDesc->setText(newDesc.c_str());
 					tooltipInnerWidth = definition.tooltipWidth;
@@ -8142,7 +8223,8 @@ bool StatusEffectQueue_t::doStatusEffectTooltip(StatusEffectQueueEntry_t& entry,
 						|| effectID == EFF_ENSEMBLE_FLUTE
 						|| effectID == EFF_ENSEMBLE_LUTE
 						|| effectID == EFF_ENSEMBLE_HORN
-						|| effectID == EFF_ENSEMBLE_LYRE) )
+						|| effectID == EFF_ENSEMBLE_LYRE
+						|| effectID == EFF_GROWTH) )
 				{
 					std::string newHeader = definition.getName(variation).c_str();
 					uppercaseString(newHeader);
@@ -9244,6 +9326,10 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 						else if ( effectID == StatusEffectQueue_t::kEffectVandal )
 						{
 							variation = 0;
+						}
+						else if ( effectID == EFF_GROWTH )
+						{
+							variation = std::min(2, std::max(0, (int)notif.customVariable - 2));
 						}
 						else if ( effectID == StatusEffectQueue_t::kEffectWealth )
 						{

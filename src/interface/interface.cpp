@@ -7829,6 +7829,56 @@ void GenericGUIMenu::openGUI(int type, Item* itemOpenedWith)
 	rebuildGUIInventory();
 }
 
+void stationOpenSound(int player, int type)
+{
+	int sfx = -1;
+	int vol = 0;
+	if ( type == GUI_TYPE_ALCHEMY )
+	{
+		vol = 64;
+		sfx = 774 + local_rng.rand() % 2;
+		//sfx = 401;
+	}
+	else if ( type == GUI_TYPE_TINKERING )
+	{
+		vol = 64;
+		sfx = 421 + (local_rng.rand() % 2) * 3;
+	}
+
+	if ( sfx > 0 )
+	{
+		playSoundEntityLocal(players[player]->entity, sfx, vol);
+		if ( multiplayer == CLIENT )
+		{
+			strcpy((char*)net_packet->data, "EMOT");
+			net_packet->data[4] = player;
+			SDLNet_Write16(sfx, &net_packet->data[5]);
+			net_packet->data[7] = vol;
+			net_packet->address.host = net_server.host;
+			net_packet->address.port = net_server.port;
+			net_packet->len = 8;
+			sendPacketSafe(net_sock, -1, net_packet, 0);
+		}
+		else if ( multiplayer != CLIENT )
+		{
+			for ( int c = 1; c < MAXPLAYERS; ++c )
+			{
+				if ( !client_disconnected[c] && !players[c]->isLocalPlayer() )
+				{
+					strcpy((char*)net_packet->data, "SNEL");
+					SDLNet_Write16(sfx, &net_packet->data[4]);
+					SDLNet_Write32((Uint32)players[player]->entity->getUID(), &net_packet->data[6]);
+					SDLNet_Write16(vol, &net_packet->data[10]);
+					net_packet->address.host = net_clients[c - 1].host;
+					net_packet->address.port = net_clients[c - 1].port;
+					net_packet->len = 12;
+					sendPacketSafe(net_sock, -1, net_packet, c - 1);
+				}
+			}
+		}
+	}
+}
+
 void GenericGUIMenu::openGUI(int type, Entity* shrine)
 {
 	// close existing guis
@@ -7897,6 +7947,7 @@ void GenericGUIMenu::openGUI(int type, Entity* shrine)
 		{
 			alembicEntityUid = shrine->getUID();
 			Compendium_t::Events_t::eventUpdateWorld(gui_player, Compendium_t::CPDM_CAULDRON_INTERACTS, "cauldron", 1);
+			stationOpenSound(gui_player, GUI_TYPE_ALCHEMY);
 		}
 	}
 	else if ( guiType == GUI_TYPE_MAILBOX )
@@ -7920,6 +7971,7 @@ void GenericGUIMenu::openGUI(int type, Entity* shrine)
 		{
 			workstationEntityUid = shrine->getUID();
 			Compendium_t::Events_t::eventUpdateWorld(gui_player, Compendium_t::CPDM_WORKBENCH_INTERACTS, "workbench", 1);
+			stationOpenSound(gui_player, GUI_TYPE_TINKERING);
 		}
 	}
 
