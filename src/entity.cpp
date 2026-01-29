@@ -11379,9 +11379,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 						else
 						{
-							if ( previousMonsterState == MONSTER_STATE_WAIT
+							if ( (previousMonsterState == MONSTER_STATE_WAIT
 								|| previousMonsterState == MONSTER_STATE_PATH
-								|| (previousMonsterState == MONSTER_STATE_HUNT && uidToEntity(monsterTarget) == nullptr) )
+								|| (previousMonsterState == MONSTER_STATE_HUNT && uidToEntity(hit.entity->monsterTarget) == nullptr))
+								&& !hitstats->getEffectActive(EFF_ROOTED) )
 							{
 								// unaware monster, get backstab damage.
 								backstab = true;
@@ -12863,9 +12864,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 								skillChanceIncrease = false;
 							}
 
-							if ( previousMonsterState == MONSTER_STATE_WAIT
+							if ( (previousMonsterState == MONSTER_STATE_WAIT
 								|| previousMonsterState == MONSTER_STATE_PATH
-								|| (previousMonsterState == MONSTER_STATE_HUNT && uidToEntity(monsterTarget) == nullptr) )
+								|| (previousMonsterState == MONSTER_STATE_HUNT && uidToEntity(hit.entity->monsterTarget) == nullptr))
+								&& !hitstats->getEffectActive(EFF_ROOTED) )
 							{
 								// unaware monster, get backstab damage.
 								backstab = true;
