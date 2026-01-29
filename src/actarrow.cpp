@@ -827,9 +827,10 @@ void actArrow(Entity* my)
 									}
 								}
 
-								if ( hit.entity->monsterState == MONSTER_STATE_WAIT
+								if ( (hit.entity->monsterState == MONSTER_STATE_WAIT
 									|| hit.entity->monsterState == MONSTER_STATE_PATH
-									|| (hit.entity->monsterState == MONSTER_STATE_HUNT && uidToEntity(hit.entity->monsterTarget) == nullptr) )
+									|| (hit.entity->monsterState == MONSTER_STATE_HUNT && uidToEntity(hit.entity->monsterTarget) == nullptr))
+									&& !hitstats->getEffectActive(EFF_ROOTED) )
 								{
 									// unaware monster, get backstab damage.
 									int bonus = (parentStats->getModifiedProficiency(PRO_STEALTH) / 20 + 2) * (2 * stealthCapstoneBonus);

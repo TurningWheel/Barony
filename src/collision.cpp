@@ -788,9 +788,10 @@ bool Entity::collisionProjectileMiss(Entity* parent, Entity* projectile)
 					}
 					else
 					{
-						if ( monsterState == MONSTER_STATE_WAIT
+						if ( (monsterState == MONSTER_STATE_WAIT
 							|| monsterState == MONSTER_STATE_PATH
-							|| (monsterState == MONSTER_STATE_HUNT && uidToEntity(monsterTarget) == nullptr) )
+							|| (monsterState == MONSTER_STATE_HUNT && uidToEntity(monsterTarget) == nullptr))
+							&& !myStats->getEffectActive(EFF_ROOTED) )
 						{
 							// unaware monster, get backstab damage.
 							backstab = true;
