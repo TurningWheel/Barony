@@ -5884,16 +5884,17 @@ void item_Spellbook(Item*& item, int player)
 		}
 	}
 
+	if ( players[player] && players[player]->entity && players[player]->entity->isBlind() )
+	{
+		messagePlayer(player, MESSAGE_HINT, Language::get(970));
+		playSoundPlayer(player, 90, 64);
+		return;
+	}
+
 	item->identified = true;
 	if ( itemIsEquipped(item, player) )
 	{
 		messagePlayer(player, MESSAGE_MISC, Language::get(3460));
-		playSoundPlayer(player, 90, 64);
-		return;
-	}
-	if ( players[player] && players[player]->entity && players[player]->entity->isBlind() )
-	{
-		messagePlayer(player, MESSAGE_HINT, Language::get(970));
 		playSoundPlayer(player, 90, 64);
 		return;
 	}
