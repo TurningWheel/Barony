@@ -193,7 +193,7 @@
             "Gaining early access to a shopkeeper's",
             "private stock can mean the difference",
             "between a great adventure and a",
-            "desparate one."
+            "desperate one."
         ],
         "details_line_highlights": []
     },
@@ -1339,12 +1339,12 @@
             "The SORCERY SKILL allows casters to",
             "learn more advanced Sorcery spells and",
             "increases PWR using them.",
-            "",
 			"A Legend in Sorcery has increased",
-            "PWR with all kinds of spells."
+            "casting speeds and even greater PWR",
+			"while using their Sorcery spells."
         ],
         "details": [
-            "Sorcerery is the most direct of all",
+            "Sorcery is the most direct of all",
 			"magic disciplines for adventuring.",
 			"No other school provides such",
             "prolific access to combat spells",
@@ -1365,9 +1365,9 @@
             "The THAUMATURGY SKILL allows casters",
             "to learn more advanced Thaumaturgy",
             "spells and increases PWR using them.",
-            "",
-			"A Legend in Thaumaturgy may cast all",
-            "spells more efficiently, restoring MP."
+			"A Legend in Thaumaturgy has increased",
+            "casting speeds and even greater PWR",
+			"while using their Thaumaturgy spells."
         ],
         "details": [
             "The preferred school for devout",
@@ -1378,7 +1378,7 @@
 			"adventurers and their parties.",
             "",
             "Though most reliable for utility uses,",
-            "some spells offer divie wrath against",
+            "some spells offer divine wrath against",
             "undead and demonic foes.",
             "",
 			"Thaumaturges tend to succeed when",
@@ -1392,9 +1392,9 @@
             "The MYSTICISM SKILL allows casters",
             "to learn more advanced Mysticism",
             "spells and increases PWR using them.",
-            "",
-			"A Legend in Mysticism is capable of",
-            "casting all spells more quickly."
+			"A Legend in Mysticism has increased",
+            "casting speeds and even greater PWR",
+			"while using their Mysticism spells."
         ],
         "details": [
             "Spells available to mystics tend to",
@@ -1419,7 +1419,7 @@
             "Different kinds of magic items can be",
             "held for OFF-HAND CASTING, allowing the",
             "wielder to channel a magic effect.",
-			"Channeling may rapidcly recast the item's",
+			"Channeling may rapidly recast the item's",
             "effect, or build up a spell's charge,",
 			"until channeling is released."
         ],
