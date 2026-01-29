@@ -16402,6 +16402,12 @@ void Compendium_t::Events_t::loadItemsSaveData()
 		return;
 	}
 
+	int version = 0;
+	if ( d.HasMember("version") )
+	{
+		version = d["version"].GetInt();
+	}
+
 	playerEvents.clear();
 	for ( auto itr = d["items"].MemberBegin(); itr != d["items"].MemberEnd(); ++itr )
 	{
@@ -16444,6 +16450,35 @@ void Compendium_t::Events_t::loadItemsSaveData()
 			}
 		}
 	}
+
+	CompendiumEntries.migrateOldSkillIndexes = false;
+	if ( version == 1 )
+	{
+		CompendiumEntries.migrateOldSkillIndexes = true;
+	}
+	if ( CompendiumEntries.migrateOldSkillIndexes )
+	{
+		int oldClass = client_classes[0];
+		std::vector<int> skillIndexes = { PRO_MYSTICISM, PRO_SORCERY, PRO_THAUMATURGY };
+		for ( int i = 0; i < NUMCLASSES; ++i )
+		{
+			client_classes[0] = i;
+			for ( auto skillID : skillIndexes )
+			{
+				const char* skillstr = Compendium_t::getSkillStringForCompendium(skillID);
+				if ( strcmp(skillstr, "") )
+				{
+					Compendium_t::Events_t::eventUpdateCodex(0, Compendium_t::CPDM_CLASS_SKILL_LEGENDS, skillstr, 0, true);
+					Compendium_t::Events_t::eventUpdateCodex(0, Compendium_t::CPDM_CLASS_SKILL_NOVICES, skillstr, 0, true);
+					Compendium_t::Events_t::eventUpdateCodex(0, Compendium_t::CPDM_CLASS_SKILL_UPS, skillstr, 0, true);
+					Compendium_t::Events_t::eventUpdateCodex(0, Compendium_t::CPDM_CLASS_SKILL_UPS_RUN_MAX, skillstr, 0, true);
+					Compendium_t::Events_t::eventUpdateCodex(0, Compendium_t::CPDM_CLASS_SKILL_MAX, skillstr, 0, true);
+				}
+			}
+		}
+		client_classes[0] = oldClass;
+	}
+	CompendiumEntries.migrateOldSkillIndexes = false;
 }
 
 static ConsoleVariable<bool> cvar_compendiumClientSave("/compendium_client_save", false);
@@ -16825,7 +16860,7 @@ void Compendium_t::Events_t::writeItemsSaveData()
 	rapidjson::Document exportDocument;
 	exportDocument.SetObject();
 
-	const int VERSION = 1;
+	const int VERSION = 2;
 
 	CustomHelpers::addMemberToRoot(exportDocument, "version", rapidjson::Value(VERSION));
 	rapidjson::Value itemsObj(rapidjson::kObjectType);

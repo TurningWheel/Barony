@@ -4201,6 +4201,7 @@ struct Compendium_t
 		static int numUnread;
 	};
 	std::map<std::string, CompendiumCodex_t::Codex_t> codex;
+	bool migrateOldSkillIndexes = false;
 	void readCodexFromFile(bool forceLoadBaseDirectory = false);
 	void readCodexTranslationsFromFile(bool forceLoadBaseDirectory = false);
 	static const char* compendiumCurrentLevelToWorldString(const int currentlevel, const bool secretlevel);
