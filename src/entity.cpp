@@ -15711,6 +15711,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 									achievementObserver.playerAchievements[playerhit].parryTank = -1;
 								}
 							}
+						}
 
 						for ( int i = 0; i < 2; ++i )
 						{
