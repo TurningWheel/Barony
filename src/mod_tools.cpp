@@ -4490,20 +4490,20 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 				int tier = 1;
 				std::string tierString = "I";
 				int nextCHR = Stat::kEnsembleBreakPointTier2;
-				if ( effectStrength >= Stat::kEnsembleBreakPointTier4 )
+				if ( effectStrength - 1 >= Stat::kEnsembleBreakPointTier4 )
 				{
 					nextCHR = 0;
 					tierString = "IV";
 					tier = 4;
 				}
-				else if ( effectStrength >= Stat::kEnsembleBreakPointTier3 )
+				else if ( effectStrength - 1 >= Stat::kEnsembleBreakPointTier3 )
 				{
 					nextCHR = Stat::kEnsembleBreakPointTier4;
 					tierString = "III";
 					tier = 3;
 
 				}
-				else if ( effectStrength >= Stat::kEnsembleBreakPointTier2 )
+				else if ( effectStrength - 1 >= Stat::kEnsembleBreakPointTier2 )
 				{
 					nextCHR = Stat::kEnsembleBreakPointTier3;
 					tierString = "II";
@@ -5271,18 +5271,18 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 			int tier = 1;
 			std::string tierString = "I";
 			int nextCHR = Stat::kEnsembleBreakPointTier2;
-			if ( effectStrength >= Stat::kEnsembleBreakPointTier4 )
+			if ( effectStrength - 1 >= Stat::kEnsembleBreakPointTier4 )
 			{
 				nextCHR = 0;
 				tier = 4;
 			}
-			else if ( effectStrength >= Stat::kEnsembleBreakPointTier3 )
+			else if ( effectStrength - 1 >= Stat::kEnsembleBreakPointTier3 )
 			{
 				nextCHR = Stat::kEnsembleBreakPointTier4;
 				tier = 3;
 
 			}
-			else if ( effectStrength >= Stat::kEnsembleBreakPointTier2 )
+			else if ( effectStrength - 1 >= Stat::kEnsembleBreakPointTier2 )
 			{
 				nextCHR = Stat::kEnsembleBreakPointTier3;
 				tier = 2;

@@ -7913,15 +7913,15 @@ bool StatusEffectQueue_t::doStatusEffectTooltip(StatusEffectQueueEntry_t& entry,
 					int variation = 0;
 					if ( Uint8 effectStrength = stats[player]->getEffectActive(effectID) )
 					{
-						if ( effectStrength >= 40 )
+						if ( effectStrength - 1 >= Stat::kEnsembleBreakPointTier4 )
 						{
 							variation = 3;
 						}
-						else if ( effectStrength >= 20 )
+						else if ( effectStrength - 1 >= Stat::kEnsembleBreakPointTier3 )
 						{
 							variation = 2;
 						}
-						else if ( effectStrength >= 5 )
+						else if ( effectStrength - 1 >= Stat::kEnsembleBreakPointTier2 )
 						{
 							variation = 1;
 						}
