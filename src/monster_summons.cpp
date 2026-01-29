@@ -1913,6 +1913,12 @@ void earthElementalAnimate(Entity* my, Stat* myStats, double dist)
 						my->flags[PASSABLE] = false;
 						serverUpdateEntityFlag(my, 12);
 					}
+
+					if ( my->ticks == 2 * TICKS_PER_SECOND )
+					{
+						my->flags[PASSABLE] = false; // reupdate for clients for new floor spawn
+						serverUpdateEntityFlag(my, 12);
+					}
 				}
 			}
 			//if ( keystatus[SDLK_u] )
