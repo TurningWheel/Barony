@@ -916,7 +916,12 @@ void Entity::actChest()
 			{
 				nextnode = node->next;
 				item = (Item*)node->element;
-				if ( rng.rand() % 2 == 0 || (item && item->type >= WOODEN_SHIELD && item->type < NUMITEMS && items[item->type].hasAttribute("UNVOIDABLE")) )
+				if ( rng.rand() % 2 == 0 || (item && item->type >= WOODEN_SHIELD && item->type < NUMITEMS 
+					&& (items[item->type].hasAttribute("UNVOIDABLE") 
+						|| item->type == KEY_IRON 
+						|| item->type == KEY_BRONZE 
+						|| item->type == KEY_SILVER
+						|| item->type == KEY_GOLD)) )
 				{
 					dropItemMonster(item, this, NULL);
 				}

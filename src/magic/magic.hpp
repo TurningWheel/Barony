@@ -1206,6 +1206,7 @@ void createParticleFociLight(Entity* entity, int spellID, bool updateClients);
 void createParticleFociDark(Entity* entity, int spellID, bool updateClients);
 bool jewelItemRecruit(Entity* parent, Entity* entity, int itemStatus, const char** msg);
 bool entityWantsJewel(int tier, Entity& entity, Stat& stats, bool checkTypeOnly);
+bool spellIsNaturallyLearnedByRaceOrClass(Entity* caster, Stat& stat, int spellID, int player = -1);
 
 struct AOEIndicators_t
 {

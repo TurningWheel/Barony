@@ -27,8 +27,6 @@
 #include "../mod_tools.hpp"
 #include "../paths.hpp"
 
-bool spellIsNaturallyLearnedByRaceOrClass(Entity& caster, Stat& stat, int spellID);
-
 void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook, bool usingTome)
 {
 	Entity* caster = uidToEntity(caster_uid);
@@ -866,7 +864,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		// Check for natural monster spells - we won't fizzle those.
 		if ( caster->behavior == &actPlayer )
 		{
-			if ( spellIsNaturallyLearnedByRaceOrClass(*caster, *stat, spell->ID) )
+			if ( spellIsNaturallyLearnedByRaceOrClass(caster, *stat, spell->ID) )
 			{
 				fizzleSpell = false;
 			}
@@ -5006,6 +5004,27 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 
 							playSoundEntity(target, 67, 128);
 						}
+						else if ( target->behavior == &actMailbox )
+						{
+							found = true;
+							messagePlayerColor(caster->isEntityPlayer(), MESSAGE_HINT,
+								makeColorRGB(0, 255, 0),
+								Language::get(6688), Language::get(6986));
+						}
+						else if ( target->behavior == &actCauldron )
+						{
+							found = true;
+							messagePlayerColor(caster->isEntityPlayer(), MESSAGE_HINT,
+								makeColorRGB(0, 255, 0),
+								Language::get(6688), Language::get(6974));
+						}
+						else if ( target->behavior == &actWorkbench )
+						{
+							found = true;
+							messagePlayerColor(caster->isEntityPlayer(), MESSAGE_HINT,
+								makeColorRGB(0, 255, 0),
+								Language::get(6688), Language::get(6981));
+						}
 						else if ( target->behavior == &actHeadstone )
 						{
 							found = true;
@@ -8105,7 +8124,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							if ( elementNode = element->elements.first )
 							{
 								element = (spellElement_t*)elementNode->element;
-								element->setDamage(element->getDamage() / 2);
+								if ( element )
+								{
+									element->setDamage(element->getDamage() / 2);
+								}
 							}
 						}
 					}
@@ -8118,11 +8140,30 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						{
 							if ( elementNode = element->elements.first )
 							{
-								element = (spellElement_t*)elementNode->element;
-								element->setDamage(std::max(1, casterStats->INT));
+								if ( element = (spellElement_t*)elementNode->element )
+								{
+									element->setDamage(std::max(1, casterStats->INT));
+								}
 								if ( Entity* leader = caster->monsterAllyGetPlayerLeader() )
 								{
 									element->duration = getSpellEffectDurationFromID(SPELL_FIRE_SPRITE, leader, nullptr, nullptr);
+								}
+							}
+						}
+					}
+				}
+
+				if ( casterStats->type == SHOPKEEPER && spell->ID == SPELL_BLEED )
+				{
+					if ( node_t* elementNode = ((spell_t*)node->element)->elements.first )
+					{
+						if ( auto element = (spellElement_t*)elementNode->element )
+						{
+							if ( elementNode = element->elements.first )
+							{
+								if ( element = (spellElement_t*)elementNode->element )
+								{
+									element->setDamage(element->getDamage() * 2);
 								}
 							}
 						}
@@ -8138,9 +8179,11 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							if ( elementNode = element->elements.first )
 							{
 								element = (spellElement_t*)elementNode->element;
-
-								int ratioINT = getSpellDamageSecondaryFromID(SPELL_BLOOD_WAVES, caster, casterStats, missileEntity);
-								element->setDamage(element->getDamage() + std::max(1, ratioINT * statGetINT(casterStats, caster)));
+								if ( element )
+								{
+									int ratioINT = getSpellDamageSecondaryFromID(SPELL_BLOOD_WAVES, caster, casterStats, missileEntity);
+									element->setDamage(element->getDamage() + std::max(1, ratioINT * statGetINT(casterStats, caster)));
+								}
 							}
 						}
 					}
@@ -9147,9 +9190,9 @@ int spellGetCastSound(spell_t* spell)
 	return 0;
 }
 
-bool spellIsNaturallyLearnedByRaceOrClass(Entity& caster, Stat& stat, int spellID)
+bool spellIsNaturallyLearnedByRaceOrClass(Entity* caster, Stat& stat, int spellID, int player)
 {
-	if ( caster.behavior != &actPlayer )
+	if ( caster && caster->behavior != &actPlayer )
 	{
 		return false;
 	}
@@ -9197,7 +9240,8 @@ bool spellIsNaturallyLearnedByRaceOrClass(Entity& caster, Stat& stat, int spellI
 	}
 	
 	// class specific:
-	int playernum = caster.skill[2];
+	int playernum = caster ? caster->skill[2] : player;
+	if ( playernum < 0 ) { return false; }
 	if ( client_classes[playernum] == CLASS_PUNISHER && (spellID == SPELL_TELEPULL || spellID == SPELL_DEMON_ILLUSION) )
 	{
 		return true;
