@@ -27,8 +27,6 @@
 #include "../mod_tools.hpp"
 #include "../paths.hpp"
 
-bool spellIsNaturallyLearnedByRaceOrClass(Entity& caster, Stat& stat, int spellID);
-
 void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook, bool usingTome)
 {
 	Entity* caster = uidToEntity(caster_uid);
@@ -866,7 +864,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		// Check for natural monster spells - we won't fizzle those.
 		if ( caster->behavior == &actPlayer )
 		{
-			if ( spellIsNaturallyLearnedByRaceOrClass(*caster, *stat, spell->ID) )
+			if ( spellIsNaturallyLearnedByRaceOrClass(caster, *stat, spell->ID) )
 			{
 				fizzleSpell = false;
 			}
@@ -9147,9 +9145,9 @@ int spellGetCastSound(spell_t* spell)
 	return 0;
 }
 
-bool spellIsNaturallyLearnedByRaceOrClass(Entity& caster, Stat& stat, int spellID)
+bool spellIsNaturallyLearnedByRaceOrClass(Entity* caster, Stat& stat, int spellID, int player)
 {
-	if ( caster.behavior != &actPlayer )
+	if ( caster && caster->behavior != &actPlayer )
 	{
 		return false;
 	}
@@ -9197,7 +9195,8 @@ bool spellIsNaturallyLearnedByRaceOrClass(Entity& caster, Stat& stat, int spellI
 	}
 	
 	// class specific:
-	int playernum = caster.skill[2];
+	int playernum = caster ? caster->skill[2] : player;
+	if ( playernum < 0 ) { return false; }
 	if ( client_classes[playernum] == CLASS_PUNISHER && (spellID == SPELL_TELEPULL || spellID == SPELL_DEMON_ILLUSION) )
 	{
 		return true;

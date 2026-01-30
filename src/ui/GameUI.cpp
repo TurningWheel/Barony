@@ -36879,7 +36879,15 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 							|| spell->ID == SPELL_SLIME_METAL
 							|| spell->hide_from_ui == true )
 						{
-							continue;
+							if ( spellIsNaturallyLearnedByRaceOrClass(players[playernum]->entity, 
+								*stats[playernum], spell->ID, playernum) )
+							{
+								// show these spells
+							}
+							else
+							{
+								continue;
+							}
 						}
 						if ( skillLVL < std::min(SKILL_LEVEL_LEGENDARY, (spell->difficulty + 20)) )
 						{
@@ -36945,8 +36953,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 					{
 						continue;
 					}
-					if ( spellEntry->ID == SPELL_WEAKNESS 
-						|| spellEntry->ID == SPELL_GHOST_BOLT
+					if ( spellEntry->ID == SPELL_GHOST_BOLT
 						|| spellEntry->ID == SPELL_SLIME_ACID 
 						|| spellEntry->ID == SPELL_SLIME_FIRE 
 						|| spellEntry->ID == SPELL_SLIME_WATER 
@@ -36954,7 +36961,15 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 						|| spellEntry->ID == SPELL_SLIME_METAL
 						|| spellEntry->hide_from_ui == true )
 					{
-						continue;
+						if ( spellIsNaturallyLearnedByRaceOrClass(players[playernum]->entity,
+							*stats[playernum], spellEntry->ID, playernum) )
+						{
+							// show these spells
+						}
+						else
+						{
+							continue;
+						}
 					}
 					if ( spellEntry && spellEntry->difficulty == (skillLVL * 20) )
 					{
