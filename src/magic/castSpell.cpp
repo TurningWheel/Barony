@@ -5004,6 +5004,27 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 
 							playSoundEntity(target, 67, 128);
 						}
+						else if ( target->behavior == &actMailbox )
+						{
+							found = true;
+							messagePlayerColor(caster->isEntityPlayer(), MESSAGE_HINT,
+								makeColorRGB(0, 255, 0),
+								Language::get(6688), Language::get(6986));
+						}
+						else if ( target->behavior == &actCauldron )
+						{
+							found = true;
+							messagePlayerColor(caster->isEntityPlayer(), MESSAGE_HINT,
+								makeColorRGB(0, 255, 0),
+								Language::get(6688), Language::get(6974));
+						}
+						else if ( target->behavior == &actWorkbench )
+						{
+							found = true;
+							messagePlayerColor(caster->isEntityPlayer(), MESSAGE_HINT,
+								makeColorRGB(0, 255, 0),
+								Language::get(6688), Language::get(6981));
+						}
 						else if ( target->behavior == &actHeadstone )
 						{
 							found = true;
@@ -8105,11 +8126,11 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 								element = (spellElement_t*)elementNode->element;
 								if ( element )
 								{
-								element->setDamage(element->getDamage() / 2);
+									element->setDamage(element->getDamage() / 2);
+								}
 							}
 						}
 					}
-				}
 				}
 				if ( casterStats->type == MOTH_SMALL && casterStats->getAttribute("special_npc") == "fire sprite" )
 				{
@@ -8121,7 +8142,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							{
 								if ( element = (spellElement_t*)elementNode->element )
 								{
-								element->setDamage(std::max(1, casterStats->INT));
+									element->setDamage(std::max(1, casterStats->INT));
 								}
 								if ( Entity* leader = caster->monsterAllyGetPlayerLeader() )
 								{
@@ -8158,9 +8179,11 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							if ( elementNode = element->elements.first )
 							{
 								element = (spellElement_t*)elementNode->element;
-
-								int ratioINT = getSpellDamageSecondaryFromID(SPELL_BLOOD_WAVES, caster, casterStats, missileEntity);
-								element->setDamage(element->getDamage() + std::max(1, ratioINT * statGetINT(casterStats, caster)));
+								if ( element )
+								{
+									int ratioINT = getSpellDamageSecondaryFromID(SPELL_BLOOD_WAVES, caster, casterStats, missileEntity);
+									element->setDamage(element->getDamage() + std::max(1, ratioINT * statGetINT(casterStats, caster)));
+								}
 							}
 						}
 					}
