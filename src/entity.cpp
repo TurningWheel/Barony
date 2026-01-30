@@ -26168,6 +26168,13 @@ void Entity::playerStatIncrease(int playerClass, int chosenStats[3])
 					{
 						statWeights[i] *= 3;
 					}
+					else
+					{
+						if ( stat->DEX < 5 )
+						{
+							statWeights[i] *= 3;
+						}
+					}
 				}
 			}
 			if ( stat->type == GNOME )
@@ -26177,6 +26184,13 @@ void Entity::playerStatIncrease(int playerClass, int chosenStats[3])
 					if ( i != STAT_STR )
 					{
 						statWeights[i] *= 3;
+					}
+					else
+					{
+						if ( stat->STR < 5 )
+						{
+							statWeights[i] *= 3;
+						}
 					}
 				}
 			}
@@ -26188,6 +26202,13 @@ void Entity::playerStatIncrease(int playerClass, int chosenStats[3])
 					{
 						statWeights[i] *= 3;
 					}
+					else
+					{
+						if ( stat->CON < 5 )
+						{
+							statWeights[i] *= 3;
+						}
+					}
 				}
 			}
 			if ( stat->type == DRYAD )
@@ -26197,6 +26218,13 @@ void Entity::playerStatIncrease(int playerClass, int chosenStats[3])
 					if ( i != STAT_CHR )
 					{
 						statWeights[i] *= 3;
+					}
+					else
+					{
+						if ( stat->CHR < 5 )
+						{
+							statWeights[i] *= 3;
+						}
 					}
 				}
 			}
