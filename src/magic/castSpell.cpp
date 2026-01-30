@@ -8103,10 +8103,13 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							if ( elementNode = element->elements.first )
 							{
 								element = (spellElement_t*)elementNode->element;
+								if ( element )
+								{
 								element->setDamage(element->getDamage() / 2);
 							}
 						}
 					}
+				}
 				}
 				if ( casterStats->type == MOTH_SMALL && casterStats->getAttribute("special_npc") == "fire sprite" )
 				{
@@ -8116,11 +8119,30 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						{
 							if ( elementNode = element->elements.first )
 							{
-								element = (spellElement_t*)elementNode->element;
+								if ( element = (spellElement_t*)elementNode->element )
+								{
 								element->setDamage(std::max(1, casterStats->INT));
+								}
 								if ( Entity* leader = caster->monsterAllyGetPlayerLeader() )
 								{
 									element->duration = getSpellEffectDurationFromID(SPELL_FIRE_SPRITE, leader, nullptr, nullptr);
+								}
+							}
+						}
+					}
+				}
+
+				if ( casterStats->type == SHOPKEEPER && spell->ID == SPELL_BLEED )
+				{
+					if ( node_t* elementNode = ((spell_t*)node->element)->elements.first )
+					{
+						if ( auto element = (spellElement_t*)elementNode->element )
+						{
+							if ( elementNode = element->elements.first )
+							{
+								if ( element = (spellElement_t*)elementNode->element )
+								{
+									element->setDamage(element->getDamage() * 2);
 								}
 							}
 						}

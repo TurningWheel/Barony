@@ -21338,6 +21338,8 @@ void actParticleShatterEarth(Entity* my)
 									//Compendium_t::Events_t::eventUpdateMonster(caster->skill[2], Compendium_t::CPDM_RECRUITED, monster, 1);
 									monster->monsterAllyIndex = caster->skill[2];
 									monster->monsterAllySummonRank = 1;
+									monster->flags[USERFLAG2] = true;
+									serverUpdateEntityFlag(monster, USERFLAG2);
 									if ( Stat* monsterStats = monster->getStats() )
 									{
 										monsterStats->setAttribute("SUMMONED_CREATURE", "1");

@@ -1356,6 +1356,10 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 					{
 						continue;
 					}
+					if ( yourStats->type == SHOPKEEPER && yourStats->MISC_FLAGS[STAT_FLAG_MYSTERIOUS_SHOPKEEP] > 0 )
+					{
+						continue;
+					}
 					if ( yourStats->type == EARTH_ELEMENTAL && entityInsideEntity(my, entity) )
 					{
 						continue;
