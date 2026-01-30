@@ -36522,7 +36522,40 @@ failed:
 						char buf[128];
 						if ( items[id].level >= 0 )
 						{
-							snprintf(buf, sizeof(buf), "\n%s %d", Language::get(6173), items[id].level);
+							if ( items[id].category == SPELLBOOK )
+							{
+								snprintf(buf, sizeof(buf), "\n%s ???", Language::get(6173));
+								int spellID = getSpellIDFromSpellbook(id);
+								if ( spellID > SPELL_NONE )
+								{
+									if ( auto spell = getSpellFromID(spellID) )
+									{
+										if ( spell->drop_table >= 0 )
+										{
+											if ( spell->difficulty <= 20 )
+											{
+												snprintf(buf, sizeof(buf), "\n%s %d", Language::get(6173), 1);
+											}
+											else if ( spell->difficulty <= 40 )
+											{
+												snprintf(buf, sizeof(buf), "\n%s %d", Language::get(6173), 6);
+											}
+											else if ( spell->difficulty <= 60 )
+											{
+												snprintf(buf, sizeof(buf), "\n%s %d", Language::get(6173), 11);
+											}
+											else if ( spell->difficulty >= 80 )
+											{
+												snprintf(buf, sizeof(buf), "\n%s %d", Language::get(6173), 16);
+											}
+										}
+									}
+								}
+							}
+							else
+							{
+								snprintf(buf, sizeof(buf), "\n%s %d", Language::get(6173), items[id].level);
+							}
 						}
 						else
 						{
