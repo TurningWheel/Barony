@@ -12530,7 +12530,10 @@ void actParticleTimer(Entity* my)
 										{
 											if ( Entity* leader = parent->monsterAllyGetPlayerLeader() )
 											{
-												steamAchievementClient(leader->skill[2], "BARONY_ACH_BOLDER_BOULDER");
+												if ( leader->checkEnemy(entity) )
+												{
+													steamAchievementClient(leader->skill[2], "BARONY_ACH_BOLDER_BOULDER");
+												}
 											}
 										}
 										++hitProps->hits;
