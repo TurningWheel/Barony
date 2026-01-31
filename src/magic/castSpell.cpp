@@ -4981,21 +4981,41 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 								makeColorRGB(0, 255, 0),
 								Language::get(6688), Language::get(4354));
 
-							itemPool.reserve(4);
+							itemPool.reserve(8);
 							itemPool.emplace_back(
 								NOTHING, 
 								newItem(TOOL_METAL_SCRAP, DECREPIT, 0, 5 + rng.rand() % 11, 0, false, nullptr), 
-								10);
+								8);
 
 							itemPool.emplace_back(
 								NOTHING,
 								newItem(TOOL_MAGIC_SCRAP, DECREPIT, 0, 5 + rng.rand() % 11, 0, false, nullptr),
+								8);
+
+							itemPool.emplace_back(
+								NOTHING,
+								newItem(POTION_SICKNESS, DECREPIT, 0, 2 + rng.rand() % 4, rng.rand(), false, nullptr),
 								10);
 
 							itemPool.emplace_back(
 								NOTHING,
-								newItem(POTION_SICKNESS, DECREPIT, 0, 2 + rng.rand() % 4, 0, false, nullptr),
+								newItem(GREASE_BALL, WORN, 0, 4 + rng.rand() % 5, 0, false, nullptr),
 								10);
+
+							itemPool.emplace_back(
+								NOTHING,
+								newItem(SLOP_BALL, WORN, 0, 4 + rng.rand() % 5, 0, false, nullptr),
+								10);
+
+							itemPool.emplace_back(
+								NOTHING,
+								newItem(GEM_OBSIDIAN, DECREPIT, 0, 1, 0, false, nullptr),
+								2);
+
+							itemPool.emplace_back(
+								NOTHING,
+								newItem(TOOL_MIRROR, DECREPIT, -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr),
+								4);
 
 							itemPool.emplace_back(
 								SLIME, 
@@ -5010,6 +5030,8 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							messagePlayerColor(caster->isEntityPlayer(), MESSAGE_HINT,
 								makeColorRGB(0, 255, 0),
 								Language::get(6688), Language::get(6986));
+
+							playSoundEntity(target, 67, 128);
 						}
 						else if ( target->behavior == &actCauldron )
 						{
@@ -5017,6 +5039,60 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							messagePlayerColor(caster->isEntityPlayer(), MESSAGE_HINT,
 								makeColorRGB(0, 255, 0),
 								Language::get(6688), Language::get(6974));
+
+							itemPool.reserve(8);
+							itemPool.emplace_back(
+								NOTHING,
+								newItem(GREASE_BALL, WORN, 0, 4 + rng.rand() % 5, rng.rand(), false, nullptr),
+								10);
+
+							itemPool.emplace_back(
+								NOTHING,
+								newItem(SLOP_BALL, WORN, 0, 4 + rng.rand() % 5, rng.rand(), false, nullptr),
+								10);
+
+							itemPool.emplace_back(
+								NOTHING,
+								newItem(FOOD_RATION, DECREPIT, -1, 2 + rng.rand() % 5, 0, false, nullptr),
+								10);
+
+							itemPool.emplace_back(
+								NOTHING,
+								newItem(TOOL_FRYING_PAN, DECREPIT, -1 + rng.rand() % 3, 2 + rng.rand() % 3, rng.rand(), false, nullptr),
+								1);
+
+							itemPool.emplace_back(
+								NOTHING,
+								newItem(GEM_LUCK, DECREPIT, 0, 1, rng.rand(), false, nullptr),
+								2);
+
+							itemPool.emplace_back(
+								NOTHING,
+								newItem(TOOL_TORCH, WORN, 0, 2 + rng.rand() % 3, rng.rand(), false, nullptr),
+								10);
+
+							itemPool.emplace_back(
+								NOTHING,
+								newItem(WOODEN_SHIELD, WORN, 0, 1, rng.rand(), false, nullptr),
+								10);
+
+							ItemType potionType = static_cast<ItemType>(POTION_WATER + rng.rand() % 15);
+							int potionAppearance = 0;
+							for ( size_t p = 0; p < potionStandardAppearanceMap.size(); ++p )
+							{
+								if ( potionStandardAppearanceMap[p].first == potionType )
+								{
+									potionAppearance = potionStandardAppearanceMap[p].second;
+								}
+							}
+
+							itemPool.emplace_back(
+								NOTHING,
+								newItem(static_cast<ItemType>(POTION_WATER + rng.rand() % 15), SERVICABLE,
+									-1 + rng.rand() % 3, 1 + rng.rand() % 4, potionAppearance, false, nullptr),
+								10);
+
+							playSoundEntity(target, 67, 128);
 						}
 						else if ( target->behavior == &actWorkbench )
 						{
@@ -5024,6 +5100,49 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							messagePlayerColor(caster->isEntityPlayer(), MESSAGE_HINT,
 								makeColorRGB(0, 255, 0),
 								Language::get(6688), Language::get(6981));
+
+							itemPool.reserve(8);
+							itemPool.emplace_back(
+								NOTHING,
+								newItem(TOOL_METAL_SCRAP, DECREPIT, 0, 10 + rng.rand() % 31, 0, false, nullptr),
+								10);
+
+							itemPool.emplace_back(
+								NOTHING,
+								newItem(TOOL_MAGIC_SCRAP, DECREPIT, 0, 10 + rng.rand() % 21, 0, false, nullptr),
+								10);
+
+							itemPool.emplace_back(
+								NOTHING,
+								newItem(TOOL_LOCKPICK, EXCELLENT, 0, 1 + rng.rand() % 3, 0, false, nullptr),
+								8);
+
+							itemPool.emplace_back(
+								NOTHING,
+								newItem(TOOL_SKELETONKEY, DECREPIT, 0, 1, 0, false, nullptr),
+								2);
+
+							itemPool.emplace_back(
+								NOTHING,
+								newItem(TOOL_DECOY, SERVICABLE, 0, 1 + rng.rand() % 2, 0, false, nullptr),
+								4);
+
+							itemPool.emplace_back(
+								NOTHING,
+								newItem(QUIVER_KNOCKBACK, SERVICABLE, 0, 6 + rng.rand() % 7, 0, false, nullptr),
+								4);
+
+							itemPool.emplace_back(
+								NOTHING,
+								newItem(SCROLL_BLANK, SERVICABLE, 0, 1, 0, false, nullptr),
+								4);
+
+							itemPool.emplace_back(
+								NOTHING,
+								newItem(SCROLL_REPAIR, SERVICABLE, 0, 1, 0, false, nullptr),
+								1);
+
+							playSoundEntity(target, 67, 128);
 						}
 						else if ( target->behavior == &actHeadstone )
 						{
@@ -5032,7 +5151,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 								makeColorRGB(0, 255, 0), 
 								Language::get(6688), Language::get(4357));
 
-							itemPool.reserve(5);
+							itemPool.reserve(17);
 							itemPool.emplace_back(
 								NOTHING,
 								newItem(GEM_ROCK, DECREPIT, -1, 2 + rng.rand() % 4, rng.rand(), false, nullptr),
@@ -5040,13 +5159,75 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 
 							itemPool.emplace_back(
 								NOTHING,
-								newItem(FOOD_MEAT, DECREPIT, -1, 1 + rng.rand() % 2, rng.rand(), false, nullptr),
-								10);
+								newItem(GEM_LUCK, DECREPIT, -1, 2 + rng.rand() % 4, rng.rand(), false, nullptr),
+								2);
 
 							itemPool.emplace_back(
 								NOTHING,
-								newItem(TUNIC, DECREPIT, -1, 1, rng.rand(), false, nullptr),
+								newItem(FOOD_MEAT, DECREPIT, -1, 1 + rng.rand() % 2, rng.rand(), false, nullptr),
 								10);
+
+							{
+								itemPool.emplace_back(
+									NOTHING,
+									newItem(TUNIC, DECREPIT, -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr),
+									2);
+
+								itemPool.emplace_back(
+									NOTHING,
+									newItem(SUEDE_BOOTS, DECREPIT, -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr),
+									2);
+
+								itemPool.emplace_back(
+									NOTHING,
+									newItem(SUEDE_GLOVES, DECREPIT, -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr),
+									2);
+
+								itemPool.emplace_back(
+									NOTHING,
+									newItem(SHAWL, DECREPIT, -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr),
+									2);
+
+								itemPool.emplace_back(
+									NOTHING,
+									newItem(ROBE_CULTIST, DECREPIT, -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr),
+									2);
+
+								itemPool.emplace_back(
+									NOTHING,
+									newItem(ROBE_HEALER, DECREPIT, -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr),
+									2);
+
+								itemPool.emplace_back(
+									NOTHING,
+									newItem(ROBE_MONK, DECREPIT, -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr),
+									2);
+
+								itemPool.emplace_back(
+									NOTHING,
+									newItem(ROBE_WIZARD, DECREPIT, -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr),
+									2);
+							}
+
+							itemPool.emplace_back(
+								NOTHING,
+								newItem(RING_ADORNMENT, DECREPIT, -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr),
+								4);
+
+							itemPool.emplace_back(
+								NOTHING,
+								newItem(MASK_SPOOKY, DECREPIT, -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr),
+								4);
+
+							itemPool.emplace_back(
+								NOTHING,
+								newItem(SCROLL_REMOVECURSE, DECREPIT, -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr),
+								4);
+
+							itemPool.emplace_back(
+								NOTHING,
+								newItem(SCROLL_TELEPORTATION, DECREPIT, -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr),
+								4);
 
 							itemPool.emplace_back(
 								SHADOW,
@@ -5054,7 +5235,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 								10);
 
 							itemPool.emplace_back(
-								GHOUL,
+								BAT_SMALL,
 								nullptr,
 								10);
 
@@ -5091,28 +5272,43 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 								}
 								else if ( itemPool[pick].type != NOTHING )
 								{
-									if ( Entity* monster = summonMonster(itemPool[pick].type, target->x, target->y) )
+									Monster toSpawn = itemPool[pick].type;
+									int numSpawns = 1;
+									if ( toSpawn == GHOUL )
 									{
-										monster->seedEntityRNG(rng.rand());
-										monster->monsterAcquireAttackTarget(*caster, MONSTER_STATE_PATH, true);
-										if ( itemPool[pick].type == SHADOW )
+										if ( rng.rand() % 2 == 0 )
 										{
-											if ( Stat* monsterStats = monster->getStats() )
+											toSpawn = BAT_SMALL;
+											numSpawns = 2 + rng.rand() % 3;
+										}
+									}
+
+									for ( int i = 0; i < numSpawns; ++i )
+									{
+										if ( Entity* monster = summonMonster(toSpawn, target->x, target->y) )
+										{
+											monster->seedEntityRNG(rng.rand());
+											monster->monsterAcquireAttackTarget(*caster, MONSTER_STATE_PATH, true);
+											if ( toSpawn == SHADOW )
 											{
-												if ( caster->behavior == &actPlayer )
+												if ( Stat* monsterStats = monster->getStats() )
 												{
-													monsterStats->setAttribute("deface_spawn", std::to_string(caster->skill[2]));
+													if ( caster->behavior == &actPlayer )
+													{
+														monsterStats->setAttribute("deface_spawn", std::to_string(caster->skill[2]));
+													}
 												}
 											}
+											if ( toSpawn == SLIME )
+											{
+												slimeSetType(monster, monster->getStats(), true, &rng);
+											}
 										}
-										if ( itemPool[pick].type == SLIME )
-										{
-											slimeSetType(monster, monster->getStats(), true, &rng);
-										}
-										messagePlayerColor(caster->isEntityPlayer(), MESSAGE_HINT,
-											makeColorRGB(255, 0, 0),
-											Language::get(6689), getMonsterLocalizedName(itemPool[pick].type).c_str());
 									}
+
+									messagePlayerColor(caster->isEntityPlayer(), MESSAGE_HINT,
+										makeColorRGB(255, 0, 0),
+										Language::get(6689), getMonsterLocalizedName(toSpawn).c_str());
 								}
 							}
 
