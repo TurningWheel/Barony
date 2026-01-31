@@ -5364,7 +5364,10 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 			// the server's just doing a routine check
 			return;
 		}
-
+		if ( net_packet->data[13] == 0 )
+		{
+			return; // dont warp back to start level
+		}
 		changeLevel();
 	}},
 

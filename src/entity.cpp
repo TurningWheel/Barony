@@ -2465,6 +2465,10 @@ bool Entity::increaseSkill(int skill, bool notify)
 {
 	Stat* myStats = this->getStats();
 	int player = -1;
+	if ( this->behavior == &actPlayer )
+	{
+		player = this->skill[2];
+	}
 
 	if ( myStats == NULL )
 	{
@@ -2487,8 +2491,6 @@ bool Entity::increaseSkill(int skill, bool notify)
 
 	if ( this->behavior == &actPlayer )
 	{
-		player = this->skill[2];
-
 		if ( gameModeManager.currentSession.challengeRun.isActive()
 			&& gameModeManager.currentSession.challengeRun.eventType == GameModeManager_t::CurrentSession_t::ChallengeRun_t::CHEVENT_NOSKILLS )
 		{
