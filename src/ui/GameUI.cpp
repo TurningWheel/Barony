@@ -36448,11 +36448,11 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		}
 		else if ( tag == "APPRAISE_MAX_GOLD_VALUE" )
 		{
-			if ( skillCapstoneUnlocked(playernum, proficiency) )
-			{
-				snprintf(buf, sizeof(buf), "%s", Language::get(6965)); // "any"
-			}
-			else
+			//if ( skillCapstoneUnlocked(playernum, proficiency) )
+			//{
+			//	snprintf(buf, sizeof(buf), "%s", Language::get(6965)); // "any"
+			//}
+			//else
 			{
 				int skillLVL = (stats[playernum]->getModifiedProficiency(proficiency) + (statGetPER(stats[playernum], player) * Player::Inventory_t::Appraisal_t::perStatMult)); // max gold value can appraise
 				if ( skillLVL < 0 )
@@ -36482,11 +36482,11 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		}
 		else if ( tag == "APPRAISE_GOLD_FAST" )
 		{
-			if ( skillCapstoneUnlocked(playernum, proficiency) )
-			{
-				snprintf(buf, sizeof(buf), "%s", Language::get(4065)); // "any"
-			}
-			else
+			//if ( skillCapstoneUnlocked(playernum, proficiency) )
+			//{
+			//	snprintf(buf, sizeof(buf), "%s", Language::get(4065)); // "any"
+			//}
+			//else
 			{
 				int skillLVL = (stats[playernum]->getModifiedProficiency(proficiency) + (statGetPER(stats[playernum], player) * Player::Inventory_t::Appraisal_t::perStatMult)); // max gold value can appraise
 				if ( skillLVL < 0 )
@@ -36510,14 +36510,17 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		else if ( tag == "APPRAISE_SPEEDUP" )
 		{
 			int skillLVL = (stats[playernum]->getModifiedProficiency(proficiency) + (statGetPER(stats[playernum], player) * Player::Inventory_t::Appraisal_t::perStatMult));
-			if ( skillCapstoneUnlocked(playernum, proficiency) )
+			/*if ( skillCapstoneUnlocked(playernum, proficiency) )
 			{
 				val = 100.0;
 			}
-			else if ( skillLVL >= 50 )
+			else */
+			if ( skillLVL >= 50 )
 			{
-				real_t ratio = (1.0 - std::max(0.2, 0.5 + (100 - skillLVL) / 100.0)) * 100.0;
+				real_t capstone = skillCapstoneUnlocked(playernum, proficiency) ? 0.75 : 1.0;
+				real_t ratio = (1.0 - capstone * std::max(0.2, 0.5 + (100 - skillLVL) / 100.0)) * 100.0;
 				val = ratio;
+				val = std::min(100.0, val);
 			}
 			else
 			{
@@ -36528,14 +36531,17 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		else if ( tag == "APPRAISE_SPEEDUP_CONSUMABLES" )
 		{
 			int skillLVL = (stats[playernum]->getModifiedProficiency(proficiency) + (statGetPER(stats[playernum], player) * Player::Inventory_t::Appraisal_t::perStatMult));
-			if ( skillCapstoneUnlocked(playernum, proficiency) )
+			/*if ( skillCapstoneUnlocked(playernum, proficiency) )
 			{
 				val = 100.0;
 			}
-			else if ( skillLVL >= 0 )
+			else */
+			if ( skillLVL >= 0 )
 			{
-				real_t ratio = (1.0 - std::max(0.2, 1.0 + (-skillLVL) / 100.0)) * 100.0;
+				real_t capstone = skillCapstoneUnlocked(playernum, proficiency) ? 0.75 : 1.0;
+				real_t ratio = (1.0 - capstone * std::max(0.2, 1.0 + (-skillLVL) / 100.0)) * 100.0;
 				val = ratio;
+				val = std::min(100.0, val);
 			}
 			else
 			{
@@ -36546,11 +36552,12 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		else if ( tag == "APPRAISE_FLOOR_BONUS" )
 		{
 			int skillLVL = std::min(100, std::max(0, (stats[playernum]->getModifiedProficiency(proficiency) + (statGetPER(stats[playernum], player) * Player::Inventory_t::Appraisal_t::perStatMult))));
-			if ( skillCapstoneUnlocked(playernum, proficiency) )
+			/*if ( skillCapstoneUnlocked(playernum, proficiency) )
 			{
 				val = 100.0;
 			}
-			else if ( skillLVL >= 0 )
+			else */
+			if ( skillLVL >= 0 )
 			{
 				real_t appraisalTimerReduce = (1.0 - (0.75 - (0.25 * skillLVL) / 100.0)) * 100.0;
 				val = appraisalTimerReduce;
