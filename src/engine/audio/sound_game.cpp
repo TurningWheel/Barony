@@ -3442,7 +3442,7 @@ void EnsembleSounds_t::setup()
 			exploreSound[i]->getNumSyncPoints(&syncPoints);
 			for ( int point = 0; point < syncPoints; ++point )
 			{
-				FMOD_SYNCPOINT* syncpoint;
+				FMOD_SYNCPOINT* syncpoint = nullptr;
 				fmod_result = exploreSound[i]->getSyncPoint(point, &syncpoint);
 				if ( syncpoint )
 				{
@@ -3536,7 +3536,7 @@ void EnsembleSounds_t::setup()
 			combatSound[i]->getNumSyncPoints(&syncPoints);
 			for ( int point = 0; point < syncPoints; ++point )
 			{
-				FMOD_SYNCPOINT* syncpoint;
+				FMOD_SYNCPOINT* syncpoint = nullptr;
 				combatSound[i]->getSyncPoint(point, &syncpoint);
 				if ( syncpoint )
 				{
@@ -3588,7 +3588,7 @@ void EnsembleSounds_t::setup()
 			exploreTransSound[j][i]->getNumSyncPoints(&syncPoints);
 			for ( int point = 0; point < syncPoints; ++point )
 			{
-				FMOD_SYNCPOINT* syncpoint;
+				FMOD_SYNCPOINT* syncpoint = nullptr;
 				fmod_result = exploreTransSound[j][i]->getSyncPoint(point, &syncpoint);
 				if ( syncpoint )
 				{
@@ -3629,7 +3629,7 @@ void EnsembleSounds_t::setup()
 			combatTransSound[j][i]->getNumSyncPoints(&syncPoints);
 			for ( int point = 0; point < syncPoints; ++point )
 			{
-				FMOD_SYNCPOINT* syncpoint;
+				FMOD_SYNCPOINT* syncpoint = nullptr;
 				fmod_result = combatTransSound[j][i]->getSyncPoint(point, &syncpoint);
 				if ( syncpoint )
 				{

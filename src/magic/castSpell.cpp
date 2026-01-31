@@ -5235,7 +5235,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 								10);
 
 							itemPool.emplace_back(
-								BAT_SMALL,
+								GHOUL,
 								nullptr,
 								10);
 
