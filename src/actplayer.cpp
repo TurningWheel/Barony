@@ -9053,7 +9053,7 @@ void actPlayer(Entity* my)
 
 	if ( players[PLAYER_NUM]->isLocalPlayer() || multiplayer == SERVER )
 	{
-		switch ( stats[PLAYER_NUM]->type )
+		switch ( playerRace )
 		{
 			case RAT:
 				zOffset = 6;
