@@ -8107,7 +8107,7 @@ void GenericGUIMenu::rechargeScepterUsingItem(Item* item)
 			messagePlayer(gui_player, MESSAGE_INTERACTION, Language::get(6836), spell->getSpellName());
 			messagePlayerColor(gui_player, MESSAGE_INTERACTION, makeColorRGB(0, 255, 0), Language::get(3730), items[itemEffectScrollItem->type].getIdentifiedName());
 			playSound(167, 64);
-			int difficulty = 10 + spell->difficulty;
+			int difficulty = 10 + spell->difficulty / 4;
 			node_t* nextnode = nullptr;
 			for ( node_t* node = players[gui_player]->magic.spellList.first; node; node = nextnode )
 			{
