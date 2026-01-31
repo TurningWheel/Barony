@@ -20495,8 +20495,32 @@ bool Entity::setBootSprite(Entity* leg, int spriteOffset, bool forceShort)
 		return false;
 	}
 
+	Monster monsterType = myStats->type;
+	if ( behavior == &actPlayer )
+	{
+		if ( effectShapeshift != NOTHING )
+		{
+			monsterType = static_cast<Monster>(effectShapeshift);
+		}
+		else if ( myStats->playerRace > 0 || myStats->getEffectActive(EFF_POLYMORPH) || effectPolymorph != NOTHING )
+		{
+			monsterType = getMonsterFromPlayerRace(myStats->playerRace);
+			if ( effectPolymorph != NOTHING )
+			{
+				if ( effectPolymorph > NUMMONSTERS )
+				{
+					monsterType = HUMAN;
+				}
+				else
+				{
+					monsterType = static_cast<Monster>(effectPolymorph);
+				}
+			}
+		}
+	}
+
 	bool shortSprite = forceShort;
-	switch ( myStats->type )
+	switch ( monsterType )
 	{
 		case HUMAN:
 			if ( !shortSprite )
@@ -20575,11 +20599,11 @@ bool Entity::setBootSprite(Entity* leg, int spriteOffset, bool forceShort)
 		case DRYAD:
 		case MYCONID:
 		case SALAMANDER:
-			if ( myStats->type == DRYAD && (sprite == 1514 || sprite == 1515 || sprite == 1992 || sprite == 1993) )
+			if ( monsterType == DRYAD && (sprite == 1514 || sprite == 1515 || sprite == 1992 || sprite == 1993) )
 			{
 				shortSprite = true;
 			}
-			if ( myStats->type == MYCONID && (sprite == 1520 || sprite == 1998) )
+			if ( monsterType == MYCONID && (sprite == 1520 || sprite == 1998) )
 			{
 				shortSprite = true;
 			}
@@ -30788,9 +30812,34 @@ void Entity::handleQuiverThirdPersonModel(Stat& myStats, int mySprite)
 	{
 		return;
 	}
+
+	Monster monsterType = myStats.type;
+	if ( behavior == &actPlayer )
+	{
+		if ( effectShapeshift != NOTHING )
+		{
+			monsterType = static_cast<Monster>(effectShapeshift);
+		}
+		else if ( myStats.playerRace > 0 || myStats.getEffectActive(EFF_POLYMORPH) || effectPolymorph != NOTHING )
+		{
+			monsterType = getMonsterFromPlayerRace(myStats.playerRace);
+			if ( effectPolymorph != NOTHING )
+			{
+				if ( effectPolymorph > NUMMONSTERS )
+				{
+					monsterType = HUMAN;
+				}
+				else
+				{
+					monsterType = static_cast<Monster>(effectPolymorph);
+				}
+			}
+		}
+	}
+
 	if ( !myStats.breastplate )
 	{
-		switch ( myStats.type )
+		switch ( monsterType )
 		{
 			case SKELETON:
 			case AUTOMATON:
@@ -30805,11 +30854,11 @@ void Entity::handleQuiverThirdPersonModel(Stat& myStats, int mySprite)
 			case MYCONID:
 			{
 				bool shortSprite = false;
-				if ( myStats.type == DRYAD && (mySprite == 1514 || mySprite == 1515 || mySprite == 1992 || mySprite == 1993) )
+				if ( monsterType == DRYAD && (mySprite == 1514 || mySprite == 1515 || mySprite == 1992 || mySprite == 1993) )
 				{
 					shortSprite = true;
 				}
-				if ( myStats.type == MYCONID && (mySprite == 1520 || mySprite == 1998) )
+				if ( monsterType == MYCONID && (mySprite == 1520 || mySprite == 1998) )
 				{
 					shortSprite = true;
 				}
@@ -30830,7 +30879,7 @@ void Entity::handleQuiverThirdPersonModel(Stat& myStats, int mySprite)
 	}
 	else
 	{
-		switch ( myStats.type )
+		switch ( monsterType )
 		{
 			case SKELETON:
 			case AUTOMATON:
@@ -30845,11 +30894,11 @@ void Entity::handleQuiverThirdPersonModel(Stat& myStats, int mySprite)
 			case MYCONID:
 			{
 				bool shortSprite = false;
-				if ( myStats.type == DRYAD && (mySprite == 1514 || mySprite == 1515 || mySprite == 1992 || mySprite == 1993) )
+				if ( monsterType == DRYAD && (mySprite == 1514 || mySprite == 1515 || mySprite == 1992 || mySprite == 1993) )
 				{
 					shortSprite = true;
 				}
-				if ( myStats.type == MYCONID && (mySprite == 1520 || mySprite == 1998) )
+				if ( monsterType == MYCONID && (mySprite == 1520 || mySprite == 1998) )
 				{
 					shortSprite = true;
 				}
