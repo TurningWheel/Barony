@@ -3069,6 +3069,11 @@ void gameLogic(void)
 							&& !(item->identified) && players[player]->inventoryUI.appraisal.appraisalPossible(item) )
 						{
 							int appraisal_time = players[player]->inventoryUI.appraisal.getAppraisalTime(item);
+							if ( players[player]->inventoryUI.appraisal.appraisalProgressionItems.find(item->uid)
+								!= players[player]->inventoryUI.appraisal.appraisalProgressionItems.end() )
+							{
+								appraisal_time = std::min(appraisal_time, players[player]->inventoryUI.appraisal.appraisalProgressionItems[item->uid]);
+							}
 							if ( appraisal_time < auto_appraise_lowest_time[player] )
 							{
 								auto_appraise_target[player] = item;
@@ -3784,6 +3789,11 @@ void gameLogic(void)
 						&& !(item->identified) && players[clientnum]->inventoryUI.appraisal.appraisalPossible(item) )
 					{
 						int appraisal_time = players[clientnum]->inventoryUI.appraisal.getAppraisalTime(item);
+						if ( players[clientnum]->inventoryUI.appraisal.appraisalProgressionItems.find(item->uid)
+							!= players[clientnum]->inventoryUI.appraisal.appraisalProgressionItems.end() )
+						{
+							appraisal_time = std::min(appraisal_time, players[clientnum]->inventoryUI.appraisal.appraisalProgressionItems[item->uid]);
+						}
 						if (appraisal_time < auto_appraise_lowest_time[clientnum])
 						{
 							auto_appraise_target[clientnum] = item;
