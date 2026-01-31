@@ -7159,6 +7159,11 @@ real_t rangedAttackGetSpeedModifier(const Stat* const myStats)
 		bowModifier = 0.75;
 		arrowModifier = 0.0; // no impact on slings.
 	}
+	else if ( myStats->weapon->type == CROSSBOW
+		|| myStats->weapon->type == BLACKIRON_CROSSBOW )
+	{
+		arrowModifier /= 2;
+	}
 	else if ( myStats->weapon->type == HEAVY_CROSSBOW )
 	{
 		bowModifier = 0.4;
