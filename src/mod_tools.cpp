@@ -838,7 +838,7 @@ void IRCHandler_t::handleMessage(std::string& msg)
 #endif // !NINTENDO
 
 Uint32 ItemTooltips_t::itemsJsonHashRead = 0;
-const Uint32 ItemTooltips_t::kItemsJsonHash = 4177373252;
+const Uint32 ItemTooltips_t::kItemsJsonHash = 3757883972;
 
 void ItemTooltips_t::setSpellValueIfKeyPresent(ItemTooltips_t::spellItem_t& t, rapidjson::Value::ConstMemberIterator item_itr, Uint32& hash, Uint32& hashShift, const char* key, int& toSet)
 {

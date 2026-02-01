@@ -1094,8 +1094,10 @@ bool magicOnSpellCastEvent(Entity* parent, Entity* projectile, Entity* hitentity
 		}
 		if ( projectile->actmagicSpray > 0 )
 		{
-			if ( spellID == SPELL_BREATHE_FIRE )
+			if ( spellID == SPELL_BREATHE_FIRE
+				|| spellID == SPELL_GREASE_SPRAY )
 			{
+				eventType |= spell_t::SPELL_LEVEL_EVENT_MINOR_CHANCE;
 			}
 			else if ( spellID == SPELL_FOCI_ARCS
 				|| spellID == SPELL_FOCI_NEEDLES
@@ -1126,6 +1128,9 @@ bool magicOnSpellCastEvent(Entity* parent, Entity* projectile, Entity* hitentity
 		return false;
 	}
 	auto& spellDef = findSpellDef->second;
+	int& procsToLevel = players[player]->mechanics.baseSpellLevelUpProcs[spell->ID];
+	int highSkillProcsToLevel = std::max(0, stats[player]->getProficiency(spell->skillID) - spell->difficulty) / 5;
+
 	bool skillTooHigh = false;
 	if ( allowedLevelup )
 	{
@@ -1154,7 +1159,10 @@ bool magicOnSpellCastEvent(Entity* parent, Entity* projectile, Entity* hitentity
 				{
 					if ( parent->isInvisible() )
 					{
-						players[player]->mechanics.updateSustainedSpellEvent(SPELL_INVISIBILITY, 10.0, 1.0, hitentity);
+						if ( spellID != SPELL_INVISIBILITY )
+						{
+							players[player]->mechanics.updateSustainedSpellEvent(SPELL_INVISIBILITY, 10.0, 1.0, hitentity);
+						}
 					}
 					if ( projectile && projectile->behavior == &actMagicMissile && projectile->actmagicOrbitCastFromSpell == 1 )
 					{
@@ -1169,32 +1177,28 @@ bool magicOnSpellCastEvent(Entity* parent, Entity* projectile, Entity* hitentity
 
 		if ( magicstaff )
 		{
-			if ( stats[player]->getProficiency(spell->skillID) >= SKILL_LEVEL_BASIC )
+			if ( stats[player]->getProficiency(spell->skillID) >= std::min(SKILL_LEVEL_LEGENDARY, (spell->difficulty + 20)) )
 			{
-				if ( stats[player]->getProficiency(spell->skillID) >= std::min(SKILL_LEVEL_LEGENDARY, (spell->difficulty + 20)) )
+				//allowedLevelup = false;
+				skillTooHigh = true;
+			}
+			else
+			{
+				/*if ( procsToLevel < 2 + (spell->difficulty / 30) )
 				{
 					allowedLevelup = false;
-					skillTooHigh = true;
-				}
-				else
-				{
-					int& procsToLevel = players[player]->mechanics.baseSpellLevelUpProcs[spell->ID];
-					if ( procsToLevel < 2 + (spell->difficulty / 30) )
+					if ( local_rng.rand() % 4 == 0 )
 					{
-						allowedLevelup = false;
-						if ( local_rng.rand() % 4 == 0 )
-						{
-							++procsToLevel;
-						}
+						++procsToLevel;
 					}
-				}
+				}*/
 			}
 		}
 		else
 		{
 			if ( stats[player]->getProficiency(spell->skillID) >= std::min(SKILL_LEVEL_LEGENDARY, (spell->difficulty + 20)) )
 			{
-				allowedLevelup = false;
+				//allowedLevelup = false;
 				skillTooHigh = true;
 			}
 		}
@@ -1227,12 +1231,22 @@ bool magicOnSpellCastEvent(Entity* parent, Entity* projectile, Entity* hitentity
 	{
 		if ( magicstaff )
 		{
-			if ( (local_rng.rand() % ((eventType & spell_t::SPELL_LEVEL_EVENT_MINOR_CHANCE) ? 12 : 8)) == 0 ) //16.67%
+			real_t percentChance = 100.0 / (real_t)((eventType & spell_t::SPELL_LEVEL_EVENT_MINOR_CHANCE) ? 12 : 8);
+			if ( players[player]->mechanics.rollRngProc(Player::PlayerMechanics_t::RngRollTypes::RNG_ROLL_SPELL_LEVELS, 
+				std::max(1, std::min(100, (int)percentChance)), spellID) ) //16.67%
 			{
 				if ( allowedLevelup )
 				{
-					parent->increaseSkill(spell->skillID);
-					skillIncreased = true;
+					if ( (procsToLevel < ((skillTooHigh ? highSkillProcsToLevel : 0) + 2 + (spell->difficulty / 30))) )
+					{
+						++procsToLevel;
+					}
+					else
+					{
+						parent->increaseSkill(spell->skillID);
+						skillIncreased = true;
+						procsToLevel = 0;
+					}
 				}
 				else
 				{
@@ -1259,14 +1273,25 @@ bool magicOnSpellCastEvent(Entity* parent, Entity* projectile, Entity* hitentity
 				}
 				chance = std::max(2, chance - baseSpellChance);
 
-				if ( sustainedChance && (local_rng.rand() % chance == 0) )
+				real_t percentChance = 100.0 / chance;
+				if ( sustainedChance 
+					&& players[player]->mechanics.rollRngProc(Player::PlayerMechanics_t::RngRollTypes::RNG_ROLL_SPELL_LEVELS, 
+						std::max(1, std::min(100, (int)percentChance)), spellID) )
 				{
 					if ( allowedLevelup )
 					{
-						players[player]->mechanics.sustainedSpellClearMP(spell->skillID);
-						players[player]->mechanics.baseSpellClearMP(spell->skillID);
-						parent->increaseSkill(spell->skillID);
-						skillIncreased = true;
+						if ( skillTooHigh && (procsToLevel < highSkillProcsToLevel) )
+						{
+							++procsToLevel;
+						}
+						else
+						{
+							players[player]->mechanics.sustainedSpellClearMP(spell->skillID);
+							players[player]->mechanics.baseSpellClearMP(spell->skillID);
+							parent->increaseSkill(spell->skillID);
+							skillIncreased = true;
+							procsToLevel = 0;
+						}
 					}
 					else
 					{
@@ -1287,27 +1312,29 @@ bool magicOnSpellCastEvent(Entity* parent, Entity* projectile, Entity* hitentity
 					chance = 1;
 				}
 
-				if ( local_rng.rand() % chance == 0 )
+				real_t percentChance = 100.0 / chance;
+				if ( players[player]->mechanics.rollRngProc(Player::PlayerMechanics_t::RngRollTypes::RNG_ROLL_SPELL_LEVELS, 
+					std::max(1, std::min(100, (int)percentChance)), spellID) )
 				{
 					if ( allowedLevelup )
 					{
-						int& procsToLevel = players[player]->mechanics.baseSpellLevelUpProcs[spell->ID];
 						int mpSpent = players[player]->mechanics.baseSpellMPSpent(spell->skillID);
 						int threshold = 5 + 5 * (stats[player]->getProficiency(spell->skillID) / 20);
-						if ( (/*procsToLevel == 0 &&*/ mpSpent >= threshold) || (eventType & spell_t::SPELL_LEVEL_EVENT_ALWAYS) )
+
+						if ( skillTooHigh && (procsToLevel < highSkillProcsToLevel) )
+						{
+							++procsToLevel;
+							players[player]->mechanics.baseSpellIncrementMP(5 + (spell->difficulty / 20), spell->skillID);
+						}
+						else if ( (mpSpent >= threshold) || (eventType & spell_t::SPELL_LEVEL_EVENT_ALWAYS) )
 						{
 							players[player]->mechanics.baseSpellClearMP(spell->skillID);
 							parent->increaseSkill(spell->skillID);
 							skillIncreased = true;
-							//++procsToLevel;
+							procsToLevel = 0;
 						}
 						else
 						{
-							/*++procsToLevel;
-							if ( procsToLevel >= (2 - (spell->difficulty / 20)) )
-							{
-								procsToLevel = 0;
-							}*/
 							players[player]->mechanics.baseSpellIncrementMP(5 + (spell->difficulty / 20), spell->skillID);
 						}
 					}
@@ -17500,7 +17527,7 @@ void actParticleFloorMagic(Entity* my)
 								bool isEnemy = false;
 								if ( targetNonPlayer )
 								{
-									isEnemy = entity->behavior == &actMonster && !entity->monsterAllyGetPlayerLeader();
+									isEnemy = entity->behavior == &actMonster && !entity->monsterAllyGetPlayerLeader() && achievementObserver.checkUidIsFromPlayer(stats->leader_uid) < 0;
 								}
 								else
 								{

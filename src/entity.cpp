@@ -19362,7 +19362,11 @@ bool Entity::checkEnemy(Entity* your)
 bool Entity::friendlyFireProtection(Entity* your)
 {
 	if ( !your ) { return false; }
-	if ( behavior == &actPlayer && (your->behavior == &actPlayer || your->monsterAllyGetPlayerLeader()) )
+	if ( behavior == &actPlayer && (your->behavior == &actPlayer 
+		|| your->monsterAllyGetPlayerLeader()
+		|| (your->behavior == &actMonster 
+			&& your->getStats() 
+			&& achievementObserver.checkUidIsFromPlayer(your->getStats()->leader_uid) >= 0)) )
 	{
 		return true;
 	}
@@ -32490,7 +32494,7 @@ bool Entity::modifyDamageMultipliersFromEffects(Entity* hitentity, Entity* attac
 				damageMultiplier += 0.1 + (0.1 * (int)(hitstats->getEffectActive(EFF_SIGIL) & 0xF));
 				if ( players[caster]->entity )
 				{
-					players[caster]->mechanics.updateSustainedSpellEvent(SPELL_SIGIL, 10.0, 1.0, hitentity);
+					players[caster]->mechanics.updateSustainedSpellEvent(SPELL_SIGIL, 30.0, 1.0, hitentity);
 				}
 				result = true;
 			}
@@ -32506,7 +32510,7 @@ bool Entity::modifyDamageMultipliersFromEffects(Entity* hitentity, Entity* attac
 		{
 			if ( players[caster]->entity )
 			{
-				players[caster]->mechanics.updateSustainedSpellEvent(SPELL_SANCTUARY, 5.0, 1.0, hitentity);
+				players[caster]->mechanics.updateSustainedSpellEvent(SPELL_SANCTUARY, 30.0, 1.0, hitentity);
 				players[caster]->entity->safeConsumeMP(1);
 			}
 		}
@@ -32534,7 +32538,7 @@ real_t Entity::getHealingSpellPotionModifierFromEffects(bool processLevelup)
 					{
 						if ( players[caster]->entity )
 						{
-							players[caster]->mechanics.updateSustainedSpellEvent(SPELL_SIGIL, 10.0, 1.0, nullptr);
+							players[caster]->mechanics.updateSustainedSpellEvent(SPELL_SIGIL, 30.0, 1.0, nullptr);
 						}
 					}
 				}
