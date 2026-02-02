@@ -1316,7 +1316,7 @@ void gameLogic(void)
 	}
 	else
 	{
-		static ConsoleVariable<bool> cvar_appraisal_auto_switch("/appraisal_auto_switch", false);
+		static ConsoleVariable<bool> cvar_appraisal_auto_switch("/appraisal_auto_switch", true);
 		DebugStats.eventsT2 = std::chrono::high_resolution_clock::now();
 		if ( multiplayer != CLIENT )   // server/singleplayer code
 		{

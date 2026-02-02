@@ -8414,12 +8414,14 @@ void actPlayer(Entity* my)
 	{
 		auto& appraisal = players[PLAYER_NUM]->inventoryUI.appraisal;
 		real_t appraisalTimerReduce = 0.75 - 0.25 * std::max(0, std::min(100, (stats[PLAYER_NUM]->getModifiedProficiency(PRO_APPRAISAL) + statGetPER(stats[PLAYER_NUM], my)))) / 100.0;
+		bool anyUnid = false;
 		for ( auto node = stats[PLAYER_NUM]->inventory.first; node; node = node->next )
 		{
 			if ( Item* item = (Item*)node->element )
 			{
 				if ( !item->identified )
 				{
+					anyUnid = true;
 					auto find = appraisal.appraisalProgressionItems.find(item->uid);
 					if ( find == appraisal.appraisalProgressionItems.end() )
 					{
@@ -8436,6 +8438,11 @@ void actPlayer(Entity* my)
 					}
 				}
 			}
+		}
+
+		if ( anyUnid )
+		{
+			messagePlayerColor(PLAYER_NUM, MESSAGE_INVENTORY | MESSAGE_HINT, makeColorRGB(255, 255, 0), Language::get(6992));
 		}
 	}
 
