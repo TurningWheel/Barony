@@ -26,13 +26,16 @@
 #include "collision.hpp"
 #include "mod_tools.hpp"
 #include "lobbies.hpp"
+#include "shops.hpp"
 #ifdef USE_PLAYFAB
 #include "playfab.hpp"
 #endif
 
 // definitions
-list_t topscores;
-list_t topscoresMultiplayer;
+list_t topscores_json;
+list_t topscoresMultiplayer_json;
+list_t topscores_legacy;
+list_t topscoresMultiplayer_legacy;
 int victory = 0;
 Uint32 completionTime = 0;
 bool conductPenniless = true;
@@ -132,7 +135,7 @@ score_t* scoreConstructor(int player)
 	}
 	for ( int c = 0; c < NUMEFFECTS; c++ )
 	{
-		score->stats->EFFECTS[c] = stats[player]->EFFECTS[c];
+		score->stats->setEffectValueUnsafe(c, stats[player]->getEffectActive(c));
 		score->stats->EFFECTS_TIMERS[c] = stats[player]->EFFECTS_TIMERS[c];
 	}
 	score->stats->leader_uid = 0;
@@ -140,6 +143,8 @@ score_t* scoreConstructor(int player)
 	score->stats->FOLLOWERS.last = NULL;
 	score->stats->inventory.first = NULL;
 	score->stats->inventory.last = NULL;
+	score->stats->void_chest_inventory.first = NULL;
+	score->stats->void_chest_inventory.last = NULL;
 	score->stats->helmet = NULL;
 	score->stats->breastplate = NULL;
 	score->stats->gloves = NULL;
@@ -152,6 +157,12 @@ score_t* scoreConstructor(int player)
 	score->stats->mask = NULL;
 	list_Copy(&score->stats->inventory, &stats[player]->inventory);
 	for ( node = score->stats->inventory.first; node != NULL; node = node->next )
+	{
+		Item* item = (Item*)node->element;
+		item->node = node;
+	}
+	list_Copy(&score->stats->void_chest_inventory, &stats[player]->void_chest_inventory);
+	for ( node = score->stats->void_chest_inventory.first; node != NULL; node = node->next )
 	{
 		Item* item = (Item*)node->element;
 		item->node = node;
@@ -297,10 +308,10 @@ int saveScore(int player)
         return -1;
     }
 	score_t* currentscore = scoreConstructor(player);
-	list_t* scoresPtr = &topscores;
+	list_t* scoresPtr = &topscores_json;
 	if ( conductGameChallenges[CONDUCT_MULTIPLAYER] )
 	{
-		scoresPtr = &topscoresMultiplayer;
+		scoresPtr = &topscoresMultiplayer_json;
 	}
 
     int c;
@@ -350,7 +361,7 @@ int totalScore(score_t* score)
 	for ( node_t* node = score->stats->inventory.first; node != NULL; node = node->next )
 	{
 		Item* item = (Item*)node->element;
-		amount += items[item->type].value;
+		amount += items[item->type].gold_value;
 	}
 	amount += score->stats->GOLD;
 	amount += score->stats->EXP;
@@ -364,7 +375,18 @@ int totalScore(score_t* score)
 	{
 		if ( c != HUMAN )
 		{
-			amount += score->kills[c] * 100;
+			if ( c == DEVIL || c == LICH_ICE || c == LICH_FIRE )
+			{
+				amount += std::min(1, score->kills[c]) * 100;
+			}
+			else if ( c == LICH )
+			{
+				amount += std::min(3, score->kills[c]) * 100;
+			}
+			else
+			{
+				amount += score->kills[c] * 100;
+			}
 		}
 		else
 		{
@@ -491,13 +513,20 @@ void loadScore(score_t* score)
 	}
 	for ( int c = 0; c < NUMEFFECTS; c++ )
 	{
-		stats[0]->EFFECTS[c] = score->stats->EFFECTS[c];
+		stats[0]->setEffectValueUnsafe(c, score->stats->getEffectActive(c));
 		stats[0]->EFFECTS_TIMERS[c] = score->stats->EFFECTS_TIMERS[c];
+		stats[0]->EFFECTS_ACCRETION_TIME[c] = score->stats->EFFECTS_ACCRETION_TIME[c];
 	}
 	list_FreeAll(&stats[0]->inventory);
 	list_Copy(&stats[0]->inventory, &score->stats->inventory);
-
 	for ( node_t* node = stats[0]->inventory.first; node != NULL; node = node->next )
+	{
+		Item* item = (Item*)node->element;
+		item->node = node;
+	}
+	list_FreeAll(&stats[0]->void_chest_inventory);
+	list_Copy(&stats[0]->void_chest_inventory, &score->stats->void_chest_inventory);
+	for ( node_t* node = stats[0]->void_chest_inventory.first; node != NULL; node = node->next )
 	{
 		Item* item = (Item*)node->element;
 		item->node = node;
@@ -586,11 +615,11 @@ void loadScore(int scorenum)
 	node_t* node = nullptr;
 	if ( scoreDisplayMultiplayer )
 	{
-		node = list_Node(&topscoresMultiplayer, scorenum);
+		node = list_Node(&topscoresMultiplayer_json, scorenum);
 	}
 	else
 	{
-		node = list_Node(&topscores, scorenum);
+		node = list_Node(&topscores_json, scorenum);
 	}
 	if ( !node )
 	{
@@ -607,10 +636,13 @@ void loadScore(int scorenum)
 	saves all highscores to the scores data file
 
 -------------------------------------------------------------------------------*/
-
+static ConsoleVariable<bool> cvar_scores_json("/scores_json", true);
 void saveAllScoresJSON(const std::string& scoresfilename)
 {
-	return;
+	if ( !*cvar_scores_json )
+	{
+		return;
+	}
 	char path[PATH_MAX] = "";
 	completePath(path, scoresfilename.c_str(), outputdir);
 
@@ -638,43 +670,16 @@ void saveAllScoresJSON(const std::string& scoresfilename)
 	versionNumber = atoi(versionStr); // convert from string to int.
 
 	// header info
-	{
-		rapidjson::Value books_read(rapidjson::kArrayType);
-		for ( node_t* node = booksRead.first; node != NULL; node = node->next )
-		{
-			char* book = (char*)node->element;
-			books_read.PushBack(rapidjson::Value(book, d.GetAllocator()), d.GetAllocator());
-		}
-		d.AddMember("books_read", books_read, d.GetAllocator());
-	}
-
-	{
-		rapidjson::Value used_class(rapidjson::kArrayType);
-		for ( int c = 0; c < NUMCLASSES; c++ )
-		{
-			used_class.PushBack(rapidjson::Value(usedClass[c]), d.GetAllocator());
-		}
-		d.AddMember("used_class", used_class, d.GetAllocator());
-	}
-
-	{
-		rapidjson::Value used_race(rapidjson::kArrayType);
-		for ( int c = 0; c < NUMRACES; c++ )
-		{
-			used_race.PushBack(rapidjson::Value(usedRace[c]), d.GetAllocator());
-		}
-		d.AddMember("used_race", used_race, d.GetAllocator());
-	}
 
 	// score list
 	node_t* node = nullptr;
-	if ( scoresfilename == "scores.json" )
+	if ( scoresfilename == SCORESFILE )
 	{
-		node = topscores.first;
+		node = topscores_json.first;
 	}
-	else if ( scoresfilename == "scores_multiplayer.json" )
+	else if ( scoresfilename == SCORESFILE_MULTIPLAYER )
 	{
-		node = topscoresMultiplayer.first;
+		node = topscoresMultiplayer_json.first;
 	}
 	else
 	{
@@ -687,34 +692,26 @@ void saveAllScoresJSON(const std::string& scoresfilename)
 		score_t* score = (score_t*)node->element;
 		rapidjson::Value entry(rapidjson::kObjectType);
 
-		{
-			rapidjson::Value kills_num(rapidjson::kArrayType);
-			for ( int c = 0; c < NUMMONSTERS; c++ )
-			{
-				kills_num.PushBack(kills[c], d.GetAllocator());
-			}
-			entry.AddMember("kills", kills_num, d.GetAllocator());
-		}
+		entry.AddMember("name", rapidjson::Value(score->stats->name, d.GetAllocator()), d.GetAllocator());
+		entry.AddMember("type", score->stats->type, d.GetAllocator());
+		entry.AddMember("sex", score->stats->sex, d.GetAllocator());
+		entry.AddMember("race", score->stats->playerRace, d.GetAllocator());
+		entry.AddMember("appearance", score->stats->stat_appearance, d.GetAllocator());
+
+		entry.AddMember("classnum", score->classnum, d.GetAllocator());
+		entry.AddMember("dungeonlevel", score->dungeonlevel, d.GetAllocator());
+		entry.AddMember("victory", score->victory, d.GetAllocator());
 
 		entry.AddMember("completionTime", score->completionTime, d.GetAllocator());
 		entry.AddMember("conductPenniless", score->conductPenniless, d.GetAllocator());
 		entry.AddMember("conductFoodless", score->conductFoodless, d.GetAllocator());
 		entry.AddMember("conductVegetarian", score->conductVegetarian, d.GetAllocator());
 		entry.AddMember("conductIlliterate", score->conductIlliterate, d.GetAllocator());
-		entry.AddMember("type", score->stats->type, d.GetAllocator());
-		entry.AddMember("sex", score->stats->sex, d.GetAllocator());
-		entry.AddMember("race", score->stats->playerRace, d.GetAllocator());
-		entry.AddMember("appearance", score->stats->stat_appearance, d.GetAllocator());
-		entry.AddMember("name", rapidjson::Value(score->stats->name, d.GetAllocator()), d.GetAllocator());
 
 		entry.AddMember("killer_monster", score->stats->killer_monster, d.GetAllocator());
 		entry.AddMember("killer_item", score->stats->killer_item, d.GetAllocator());
 		entry.AddMember("killer", score->stats->killer, d.GetAllocator());
 		entry.AddMember("killer_name", rapidjson::Value(score->stats->killer_name.c_str(), d.GetAllocator()), d.GetAllocator());
-
-		entry.AddMember("classnum", score->classnum, d.GetAllocator());
-		entry.AddMember("dungeonlevel", score->dungeonlevel, d.GetAllocator());
-		entry.AddMember("victory", score->victory, d.GetAllocator());
 
 		entry.AddMember("HP", score->stats->HP, d.GetAllocator());
 		entry.AddMember("MAXHP", score->stats->MAXHP, d.GetAllocator());
@@ -732,6 +729,15 @@ void saveAllScoresJSON(const std::string& scoresfilename)
 		entry.AddMember("HUNGER", score->stats->HUNGER, d.GetAllocator());
 		
 		{
+			rapidjson::Value kills_num(rapidjson::kArrayType);
+			for ( int c = 0; c < NUMMONSTERS; c++ )
+			{
+				kills_num.PushBack(score->kills[c], d.GetAllocator());
+			}
+			entry.AddMember("kills", kills_num, d.GetAllocator());
+		}
+
+		{
 			rapidjson::Value proficiencies(rapidjson::kArrayType);
 			for ( int c = 0; c < NUMPROFICIENCIES; c++ )
 			{
@@ -744,7 +750,7 @@ void saveAllScoresJSON(const std::string& scoresfilename)
 			rapidjson::Value effects(rapidjson::kArrayType);
 			for ( int c = 0; c < NUMEFFECTS; c++ )
 			{
-				effects.PushBack(score->stats->EFFECTS[c], d.GetAllocator());
+				effects.PushBack(score->stats->getEffectActive(c), d.GetAllocator());
 			}
 			entry.AddMember("effects", effects, d.GetAllocator());
 		}
@@ -755,6 +761,14 @@ void saveAllScoresJSON(const std::string& scoresfilename)
 				effects_timers.PushBack(score->stats->EFFECTS_TIMERS[c], d.GetAllocator());
 			}
 			entry.AddMember("effects_timers", effects_timers, d.GetAllocator());
+		}
+		{
+			rapidjson::Value effects_accretion_time(rapidjson::kArrayType);
+			for ( int c = 0; c < NUMEFFECTS; c++ )
+			{
+				effects_accretion_time.PushBack(score->stats->EFFECTS_ACCRETION_TIME[c], d.GetAllocator());
+			}
+			entry.AddMember("effects_accretion_time", effects_accretion_time, d.GetAllocator());
 		}
 
 
@@ -787,7 +801,7 @@ void saveAllScoresJSON(const std::string& scoresfilename)
 				inv_item.AddMember("status", item->status, d.GetAllocator());
 				inv_item.AddMember("beatitude", item->beatitude, d.GetAllocator());
 				inv_item.AddMember("count", item->count, d.GetAllocator());
-				inv_item.AddMember("appearance", item->appearance, d.GetAllocator());
+				inv_item.AddMember("appearance", rapidjson::Value(item->appearance), d.GetAllocator());
 				inv_item.AddMember("identified", item->identified, d.GetAllocator());
 
 				inventory.PushBack(inv_item, d.GetAllocator());
@@ -896,6 +910,34 @@ void saveAllScoresJSON(const std::string& scoresfilename)
 
 	d.AddMember("scores_list", scores_list, d.GetAllocator());
 
+	{
+		rapidjson::Value books_read(rapidjson::kArrayType);
+		for ( node_t* node = booksRead.first; node != NULL; node = node->next )
+		{
+			char* book = (char*)node->element;
+			books_read.PushBack(rapidjson::Value(book, d.GetAllocator()), d.GetAllocator());
+		}
+		d.AddMember("books_read", books_read, d.GetAllocator());
+	}
+
+	{
+		rapidjson::Value used_class(rapidjson::kArrayType);
+		for ( int c = 0; c < NUMCLASSES; c++ )
+		{
+			used_class.PushBack(rapidjson::Value(usedClass[c]), d.GetAllocator());
+		}
+		d.AddMember("used_class", used_class, d.GetAllocator());
+	}
+
+	{
+		rapidjson::Value used_race(rapidjson::kArrayType);
+		for ( int c = 0; c < NUMRACES; c++ )
+		{
+			used_race.PushBack(rapidjson::Value(usedRace[c]), d.GetAllocator());
+		}
+		d.AddMember("used_race", used_race, d.GetAllocator());
+	}
+
 	// open file
 	File* fp = FileIO::open(path, "wb");
 	if ( !fp )
@@ -906,6 +948,8 @@ void saveAllScoresJSON(const std::string& scoresfilename)
 
 	rapidjson::StringBuffer os;
 	rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(os);
+	writer.SetIndent(' ', 2);
+	writer.SetFormatOptions(rapidjson::PrettyFormatOptions::kFormatSingleLineArray);
 	d.Accept(writer);
 	fp->write(os.GetString(), sizeof(char), os.GetSize());
 	FileIO::close(fp);
@@ -916,15 +960,27 @@ void saveAllScoresJSON(const std::string& scoresfilename)
 
 void saveAllScores(const std::string& scoresfilename)
 {
+	if ( *cvar_scores_json )
+	{
+		saveAllScoresJSON(scoresfilename);
+		return;
+	}
+
+	std::string filename = "scores.dat";
+	if ( scoresfilename == SCORESFILE_MULTIPLAYER )
+	{
+		filename = "scores_multiplayer.dat";
+	}
+
 	File* fp;
 
 	char path[PATH_MAX] = "";
-	completePath(path, scoresfilename.c_str(), outputdir);
+	completePath(path, filename.c_str(), outputdir);
 
 	// open file
 	if ( (fp = FileIO::open(path, "wb")) == NULL )
 	{
-		printlog("error: failed to save '%s!'\n", scoresfilename.c_str());
+		printlog("error: failed to save '%s!'\n", filename.c_str());
 		return;
 	}
 
@@ -972,15 +1028,15 @@ void saveAllScores(const std::string& scoresfilename)
 	// score list
 	node_t* node;
 	int numScoresInFile;
-	if ( scoresfilename.compare(SCORESFILE) == 0 )
+	if ( filename == "scores.dat" )
 	{
-		numScoresInFile = list_Size(&topscores);
-		node = topscores.first;
+		numScoresInFile = list_Size(&topscores_legacy);
+		node = topscores_legacy.first;
 	}
 	else
 	{
-		numScoresInFile = list_Size(&topscoresMultiplayer);
-		node = topscoresMultiplayer.first;
+		numScoresInFile = list_Size(&topscoresMultiplayer_legacy);
+		node = topscoresMultiplayer_legacy.first;
 	}
 	fp->write(&numScoresInFile, sizeof(Uint32), 1);
 
@@ -1044,8 +1100,10 @@ void saveAllScores(const std::string& scoresfilename)
 		}
 		for ( int c = 0; c < NUMEFFECTS; c++ )
 		{
-			fp->write(&score->stats->EFFECTS[c], sizeof(bool), 1);
+			Uint8 effectVal = score->stats->getEffectActive(c);
+			fp->write(&effectVal, sizeof(Uint8), 1);
 			fp->write(&score->stats->EFFECTS_TIMERS[c], sizeof(Sint32), 1);
+			fp->write(&score->stats->EFFECTS_ACCRETION_TIME[c], sizeof(Sint32), 1);
 		}
 		for ( int c = 0; c < NUM_CONDUCT_CHALLENGES; ++c )
 		{
@@ -1173,23 +1231,12 @@ void saveAllScores(const std::string& scoresfilename)
 	}
 
 	FileIO::close(fp);
-
-	/*if ( scoresfilename == "scores.dat" )
-	{
-		std::string scoresjson = "scores.json";
-		saveAllScoresJSON(scoresjson);
-	}
-	else if ( scoresfilename == "scores_multiplayer.dat" )
-	{
-		std::string scoresjson = "scores_multiplayer.json";
-		saveAllScoresJSON(scoresjson);
-	}*/
 }
 
 bool deleteScore(bool multiplayer, int index)
 {
     auto node = list_Node(multiplayer ?
-        &topscoresMultiplayer : &topscores, index);
+        &topscoresMultiplayer_json : &topscores_json, index);
     if (node) {
         list_RemoveNode(node);
         return true;
@@ -1232,17 +1279,234 @@ const char* jsonGetStr(rapidjson::Value& d, const char* key)
 	return "";
 }
 
+bool verifyScoreStruct(score_t* score, score_t* score2)
+{
+	assert(totalScore(score) == totalScore(score2));
+
+	for ( int c = 0; c < NUMMONSTERS; c++ )
+	{
+		assert(score->kills[c] == score2->kills[c]);
+	}
+	assert(score->stats->type == score2->stats->type);
+	assert(score->stats->sex == score2->stats->sex);
+	assert(score->stats->stat_appearance == score2->stats->stat_appearance);
+	assert(score->stats->playerRace == score2->stats->playerRace);
+	std::string name1 = score->stats->name;
+	std::string name2 = score2->stats->name;
+	assert(name1 == name2);
+	assert(score->classnum == score2->classnum);
+	assert(score->victory == score2->victory);
+	assert(score->dungeonlevel == score2->dungeonlevel);
+
+	assert(score->completionTime == score2->completionTime);
+	assert(score->conductPenniless == score2->conductPenniless);
+	assert(score->conductFoodless == score2->conductFoodless);
+	assert(score->conductVegetarian == score2->conductVegetarian);
+	assert(score->conductIlliterate == score2->conductIlliterate);
+
+	assert(score->stats->HP == score2->stats->HP);
+	assert(score->stats->MAXHP == score2->stats->MAXHP);
+	assert(score->stats->MP == score2->stats->MP);
+	assert(score->stats->MAXMP == score2->stats->MAXMP);
+	assert(score->stats->STR == score2->stats->STR);
+	assert(score->stats->DEX == score2->stats->DEX);
+	assert(score->stats->CON == score2->stats->CON);
+	assert(score->stats->INT == score2->stats->INT);
+	assert(score->stats->PER == score2->stats->PER);
+	assert(score->stats->CHR == score2->stats->CHR);
+	assert(score->stats->EXP == score2->stats->EXP);
+	assert(score->stats->LVL == score2->stats->LVL);
+	assert(score->stats->GOLD == score2->stats->GOLD);
+	assert(score->stats->HUNGER == score2->stats->HUNGER);
+
+	assert(score->stats->killer == score2->stats->killer);
+	assert(score->stats->killer_monster == score2->stats->killer_monster );
+	assert(score->stats->killer_item == score2->stats->killer_item);
+	assert(score->stats->killer_name == score2->stats->killer_name);
+
+	for ( int c = 0; c < NUMPROFICIENCIES; c++ )
+	{
+		assert(score->stats->getProficiency(c) == score2->stats->getProficiency(c));
+	}
+	for ( int c = 0; c < NUMEFFECTS; c++ )
+	{
+		assert(score->stats->getEffectActive(c) == score2->stats->getEffectActive(c));
+		assert(score->stats->EFFECTS_TIMERS[c] == score2->stats->EFFECTS_TIMERS[c]);
+		assert(score->stats->EFFECTS_ACCRETION_TIME[c] == score2->stats->EFFECTS_ACCRETION_TIME[c]);
+	}
+
+	for ( int c = 0; c < NUM_CONDUCT_CHALLENGES; ++c )
+	{
+		assert(score->conductGameChallenges[c] == score2->conductGameChallenges[c]);
+	}
+
+	for ( int c = 0; c < NUM_GAMEPLAY_STATISTICS; ++c )
+	{
+		assert(score->gameStatistics[c] == score2->gameStatistics[c]);
+	}
+
+	assert(list_Size(&score->stats->inventory) == list_Size(&score2->stats->inventory));
+	int inventory_items = list_Size(&score->stats->inventory);
+	for ( int i = 0; i < inventory_items; ++i )
+	{
+		node_t* node1 = list_Node(&score->stats->inventory, i);
+		node_t* node2 = list_Node(&score2->stats->inventory, i);
+
+		assert(node1 && node2);
+
+		if ( node1 && node2 )
+		{
+			Item* item1 = (Item*)node1->element;
+			Item* item2 = (Item*)node2->element;
+
+			assert(item1->type == item2->type);
+			assert(item1->status == item2->status);
+			assert(item1->beatitude == item2->beatitude);
+			assert(item1->count == item2->count);
+			assert(item1->appearance == item2->appearance);
+			assert(item1->identified == item2->identified);
+
+			assert((item1 == score->stats->helmet) == (item2 == score2->stats->helmet));
+			assert((item1 == score->stats->breastplate) == (item2 == score2->stats->breastplate));
+			assert((item1 == score->stats->gloves) == (item2 == score2->stats->gloves));
+			assert((item1 == score->stats->shoes) == (item2 == score2->stats->shoes));
+			assert((item1 == score->stats->shield) == (item2 == score2->stats->shield));
+			assert((item1 == score->stats->weapon) == (item2 == score2->stats->weapon));
+			assert((item1 == score->stats->cloak) == (item2 == score2->stats->cloak));
+			assert((item1 == score->stats->amulet) == (item2 == score2->stats->amulet));
+			assert((item1 == score->stats->ring) == (item2 == score2->stats->ring));
+			assert((item1 == score->stats->mask) == (item2 == score2->stats->mask));
+		}
+	}
+
+	assert(list_Size(&score->stats->void_chest_inventory) == list_Size(&score2->stats->void_chest_inventory));
+	inventory_items = list_Size(&score->stats->void_chest_inventory);
+	for ( int i = 0; i < inventory_items; ++i )
+	{
+		node_t* node1 = list_Node(&score->stats->void_chest_inventory, i);
+		node_t* node2 = list_Node(&score2->stats->void_chest_inventory, i);
+
+		assert(node1 && node2);
+
+		if ( node1 && node2 )
+		{
+			Item* item1 = (Item*)node1->element;
+			Item* item2 = (Item*)node2->element;
+
+			assert(item1->type == item2->type);
+			assert(item1->status == item2->status);
+			assert(item1->beatitude == item2->beatitude);
+			assert(item1->count == item2->count);
+			assert(item1->appearance == item2->appearance);
+			assert(item1->identified == item2->identified);
+		}
+	}
+
+	return true;
+}
+
+bool verifyScoreLoader()
+{
+	int numScores = list_Size(&topscores_legacy);
+	int numScores2 = list_Size(&topscores_json);
+	assert(numScores == numScores2);
+	for ( int i = 0; i < numScores; ++i )
+	{
+		node_t* score1 = list_Node(&topscores_legacy, i);
+		node_t* score2 = list_Node(&topscores_json, i);
+		assert(score1 && score2);
+		if ( score1 && score2 )
+		{
+			verifyScoreStruct((score_t*)score1->element, (score_t*)score2->element);
+		}
+	}
+
+	numScores = list_Size(&topscoresMultiplayer_legacy);
+	numScores2 = list_Size(&topscoresMultiplayer_json);
+	assert(numScores == numScores2);
+	for ( int i = 0; i < numScores; ++i )
+	{
+		node_t* score1 = list_Node(&topscoresMultiplayer_legacy, i);
+		node_t* score2 = list_Node(&topscoresMultiplayer_json, i);
+		assert(score1 && score2);
+		if ( score1 && score2 )
+		{
+			verifyScoreStruct((score_t*)score1->element, (score_t*)score2->element);
+		}
+	}
+
+	return true;
+}
+
+class FileReadStreamCustomWrapper {
+public:
+	typedef char Ch;    //!< Character type (byte).
+
+	//! Constructor.
+	/*!
+		\param fp File pointer opened for read.
+		\param buffer user-supplied buffer.
+		\param bufferSize size of buffer in bytes. Must >=4 bytes.
+	*/
+	FileReadStreamCustomWrapper(File* fp, char* buffer, size_t bufferSize) : fp_(fp), buffer_(buffer), bufferSize_(bufferSize), bufferLast_(0), current_(buffer_), readCount_(0), count_(0), eof_(false) {
+		RAPIDJSON_ASSERT(fp_ != 0);
+		RAPIDJSON_ASSERT(bufferSize >= 4);
+		Read();
+	}
+
+	Ch Peek() const { return *current_; }
+	Ch Take() { Ch c = *current_; Read(); return c; }
+	size_t Tell() const { return count_ + static_cast<size_t>(current_ - buffer_); }
+
+	// Not implemented
+	void Put(Ch) { RAPIDJSON_ASSERT(false); }
+	void Flush() { RAPIDJSON_ASSERT(false); }
+	Ch* PutBegin() { RAPIDJSON_ASSERT(false); return 0; }
+	size_t PutEnd(Ch*) { RAPIDJSON_ASSERT(false); return 0; }
+
+	// For encoding detection only.
+	const Ch* Peek4() const {
+		return (current_ + 4 <= bufferLast_) ? current_ : 0;
+	}
+
+private:
+	void Read() {
+		if ( current_ < bufferLast_ )
+			++current_;
+		else if ( !eof_ ) {
+			count_ += readCount_;
+			readCount_ = fp_->read(buffer_, 1, bufferSize_);
+			bufferLast_ = buffer_ + readCount_ - 1;
+			current_ = buffer_;
+
+			if ( readCount_ < bufferSize_ ) {
+				buffer_[readCount_] = '\0';
+				++bufferLast_;
+				eof_ = true;
+			}
+		}
+	}
+
+	File* fp_;
+	Ch* buffer_;
+	size_t bufferSize_;
+	Ch* bufferLast_;
+	Ch* current_;
+	size_t readCount_;
+	size_t count_;  //!< Number of characters read
+	bool eof_;
+};
+
 void loadAllScoresJSON(const std::string& scoresfilename)
 {
-	return;
 	// clear top scores
-	if ( scoresfilename == "scores.json" )
+	if ( scoresfilename == SCORESFILE )
 	{
-		list_FreeAll(&topscores);
+		list_FreeAll(&topscores_json);
 	}
-	else if ( scoresfilename == "scores_multiplayer.json" )
+	else if ( scoresfilename == SCORESFILE_MULTIPLAYER )
 	{
-		list_FreeAll(&topscoresMultiplayer);
+		list_FreeAll(&topscoresMultiplayer_json);
 	}
 	else
 	{
@@ -1261,14 +1525,16 @@ void loadAllScoresJSON(const std::string& scoresfilename)
 		return;
 	}
 
-	static char buf[2000000];
-	int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
-	buf[count] = '\0';
-	rapidjson::StringStream is(buf);
-	FileIO::close(fp);
+	static char buf[65536];
+	memset(buf, 0, sizeof(buf));
+	//int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
+	//buf[count] = '\0';
+	FileReadStreamCustomWrapper is(fp, buf, sizeof(buf));
 
 	rapidjson::Document d;
 	d.ParseStream(is);
+	FileIO::close(fp);
+
 	if ( !d.HasMember("version") )
 	{
 		printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", path);
@@ -1320,6 +1586,10 @@ void loadAllScoresJSON(const std::string& scoresfilename)
 		}
 	}
 
+	for ( int c = 0; c < NUMCLASSES; ++c )
+	{
+		usedClass[c] = false;
+	}
 	int c = 0;
 	for ( auto itr = d["used_class"].Begin(); itr != d["used_class"].End(); ++itr )
 	{
@@ -1328,6 +1598,10 @@ void loadAllScoresJSON(const std::string& scoresfilename)
 		++c;
 	}
 
+	for ( int c = 0; c < NUMRACES; ++c )
+	{
+		usedRace[c] = false;
+	}
 	c = 0;
 	for ( auto itr = d["used_race"].Begin(); itr != d["used_race"].End(); ++itr )
 	{
@@ -1345,13 +1619,13 @@ void loadAllScoresJSON(const std::string& scoresfilename)
 	for ( auto itr = d["scores_list"].Begin(); itr != d["scores_list"].End(); ++itr )
 	{
 		node_t* node = nullptr;
-		if ( scoresfilename == "scores.json" )
+		if ( scoresfilename == SCORESFILE )
 		{
-			node = list_AddNodeLast(&topscores);
+			node = list_AddNodeLast(&topscores_json);
 		}
-		else if ( scoresfilename == "scores_multiplayer.json" )
+		else if ( scoresfilename == SCORESFILE_MULTIPLAYER )
 		{
-			node = list_AddNodeLast(&topscoresMultiplayer);
+			node = list_AddNodeLast(&topscoresMultiplayer_json);
 		}
 		else
 		{
@@ -1376,6 +1650,10 @@ void loadAllScoresJSON(const std::string& scoresfilename)
 		node->deconstructor = &scoreDeconstructor;
 		node->size = sizeof(score_t);
 
+		for ( int c = 0; c < NUMMONSTERS; ++c )
+		{
+			score->kills[c] = false;
+		}
 		c = 0;
 		for ( auto itr2 = (*itr)["kills"].Begin(); itr2 != (*itr)["kills"].End(); ++itr2 )
 		{
@@ -1418,25 +1696,207 @@ void loadAllScoresJSON(const std::string& scoresfilename)
 		score->stats->LVL = jsonGetInt(*itr, "LVL");
 		score->stats->GOLD = jsonGetInt(*itr, "GOLD");
 		score->stats->HUNGER = jsonGetInt(*itr, "HUNGER");
+
+		c = 0;
+		for ( auto itr2 = (*itr)["proficiencies"].Begin(); itr2 != (*itr)["proficiencies"].End(); ++itr2 )
+		{
+			if ( c >= NUMPROFICIENCIES ) { break; }
+			score->stats->setProficiency(c, itr2->GetInt());
+			++c;
+		}
+
+		c = 0;
+		for ( auto itr2 = (*itr)["effects"].Begin(); itr2 != (*itr)["effects"].End(); ++itr2 )
+		{
+			if ( c >= NUMEFFECTS ) { break; }
+			score->stats->setEffectValueUnsafe(c, itr2->GetInt());
+			++c;
+		}
+
+		c = 0;
+		for ( auto itr2 = (*itr)["effects_timers"].Begin(); itr2 != (*itr)["effects_timers"].End(); ++itr2 )
+		{
+			if ( c >= NUMEFFECTS ) { break; }
+			score->stats->EFFECTS_TIMERS[c] = itr2->GetInt();
+			++c;
+		}
+
+		c = 0;
+		for ( auto itr2 = (*itr)["effects_accretion_time"].Begin(); itr2 != (*itr)["effects_accretion_time"].End(); ++itr2 )
+		{
+			if ( c >= NUMEFFECTS ) { break; }
+			score->stats->EFFECTS_ACCRETION_TIME[c] = itr2->GetInt();
+			++c;
+		}
+
+		for ( int c = 0; c < NUM_CONDUCT_CHALLENGES; ++c )
+		{
+			score->conductGameChallenges[c] = 0;
+		}
+		c = 0;
+		for ( auto itr2 = (*itr)["conducts"].Begin(); itr2 != (*itr)["conducts"].End(); ++itr2 )
+		{
+			if ( c >= NUM_CONDUCT_CHALLENGES ) { break; }
+			score->conductGameChallenges[c] = itr2->GetInt();
+			++c;
+		}
+
+		for ( int c = 0; c < NUM_GAMEPLAY_STATISTICS; ++c )
+		{
+			score->gameStatistics[c] = 0;
+		}
+		c = 0;
+		for ( auto itr2 = (*itr)["statistics"].Begin(); itr2 != (*itr)["statistics"].End(); ++itr2 )
+		{
+			if ( c >= NUM_GAMEPLAY_STATISTICS ) { break; }
+			score->gameStatistics[c] = itr2->GetInt();
+			++c;
+		}
+
+		score->stats->leader_uid = 0;
+		score->stats->FOLLOWERS.first = NULL;
+		score->stats->FOLLOWERS.last = NULL;
+
+		c = 0;
+		for ( auto itr2 = (*itr)["inventory"].Begin(); itr2 != (*itr)["inventory"].End(); ++itr2 )
+		{
+			ItemType type = WOODEN_SHIELD;
+			Status status = EXCELLENT;
+			Sint16 beatitude = 0;
+			Sint16 count = 1;
+			Uint32 appearance = 0;
+			bool identified = true;
+
+			for ( auto itemItr = itr2->MemberBegin(); itemItr != itr2->MemberEnd(); ++itemItr )
+			{
+				if ( !strcmp(itemItr->name.GetString(), "type") && itemItr->value.IsInt() )
+				{
+					int val = itemItr->value.GetInt();
+					if ( val >= 0 && val < NUMITEMS )
+					{
+						type = static_cast<ItemType>(val);
+					}
+				}
+				if ( !strcmp(itemItr->name.GetString(), "status") && itemItr->value.IsInt() )
+				{
+					int val = itemItr->value.GetInt();
+					if ( val >= 0 && val <= EXCELLENT )
+					{
+						status = static_cast<Status>(val);
+					}
+				}
+				if ( !strcmp(itemItr->name.GetString(), "beatitude") && itemItr->value.IsInt() )
+				{
+					beatitude = itemItr->value.GetInt();
+				}
+				if ( !strcmp(itemItr->name.GetString(), "count") && itemItr->value.IsInt() )
+				{
+					count = itemItr->value.GetInt();
+				}
+				if ( !strcmp(itemItr->name.GetString(), "appearance") )
+				{
+					if ( itemItr->value.IsUint() )
+					{
+						appearance = itemItr->value.GetUint();
+					}
+					else if ( itemItr->value.IsInt() )
+					{
+						appearance = itemItr->value.GetInt();
+					}
+				}
+				if ( !strcmp(itemItr->name.GetString(), "identified") )
+				{
+					if ( itemItr->value.IsInt() )
+					{
+						identified = itemItr->value.GetInt() ? true : 0;
+					}
+					else if ( itemItr->value.IsBool() )
+					{
+						identified = itemItr->value.GetBool();
+					}
+				}
+			}
+			newItem(type, status, beatitude, count, appearance, identified, &score->stats->inventory);
+			++c;
+		}
+
+		int num_inventory_items = c;
+		c = 0;
+		const std::vector<std::pair<std::string, Item**>> player_slots = {
+				{"helmet", &score->stats->helmet},
+				{"breastplate", &score->stats->breastplate},
+				{"gloves", &score->stats->gloves},
+				{"shoes", &score->stats->shoes},
+				{"shield", &score->stats->shield},
+				{"weapon", &score->stats->weapon},
+				{"cloak", &score->stats->cloak},
+				{"amulet", &score->stats->amulet},
+				{"ring", &score->stats->ring},
+				{"mask", &score->stats->mask},
+		};
+		for ( auto equip_slot : player_slots )
+		{
+			equip_slot.second = nullptr;
+		}
+		for ( auto itr2 = (*itr)["equipped"].Begin(); itr2 != (*itr)["equipped"].End(); ++itr2 )
+		{
+			if ( itr2->IsInt() )
+			{
+				int inventory_item_num = itr2->GetInt();
+				if ( inventory_item_num >= 0 && inventory_item_num < num_inventory_items )
+				{
+					if ( node_t* node = list_Node(&score->stats->inventory, inventory_item_num) )
+					{
+						if ( c >= 0 && c < player_slots.size() )
+						{
+							*(player_slots[c].second) = (Item*)node->element;
+						}
+					}
+				}
+			}
+			++c;
+		}
+
+		score->stats->monster_sound = NULL;
+		score->stats->monster_idlevar = 0;
 	}
 }
 
 void loadAllScores(const std::string& scoresfilename)
 {
+	// clear top scores
+	if ( scoresfilename == SCORESFILE )
+	{
+		list_FreeAll(&topscores_legacy);
+	}
+	else if ( scoresfilename == SCORESFILE_MULTIPLAYER )
+	{
+		list_FreeAll(&topscoresMultiplayer_legacy);
+	}
+
+	std::string filename = "scores.dat";
+	if ( scoresfilename == SCORESFILE_MULTIPLAYER )
+	{
+		filename = "scores_multiplayer.dat";
+	}
+
 	File* fp;
 	Uint32 c, i;
 	char path[PATH_MAX] = "";
-	completePath(path, scoresfilename.c_str(), outputdir);
 
-	// clear top scores
-	if ( scoresfilename.compare(SCORESFILE) == 0 )
+	// check for existence of new JSON format
 	{
-		list_FreeAll(&topscores);
+		completePath(path, scoresfilename.c_str(), outputdir);
+		if ( (fp = FileIO::open(path, "rb")) != NULL )
+		{
+			// found new json file, let's read that instead
+			FileIO::close(fp);
+			loadAllScoresJSON(scoresfilename);
+			return;
+		}
 	}
-	else
-	{
-		list_FreeAll(&topscoresMultiplayer);
-	}
+
+	completePath(path, filename.c_str(), outputdir);
 
 	// open file
 	if ( (fp = FileIO::open(path, "rb")) == NULL )
@@ -1444,12 +1904,14 @@ void loadAllScores(const std::string& scoresfilename)
 		return;
 	}
 
+	printlog("notice: reading legacy scoresfile: '%s'...", filename.c_str());
+
 	// magic number
 	char checkstr[64];
 	fp->read(checkstr, sizeof(char), strlen("BARONYSCORES"));
 	if ( strncmp(checkstr, "BARONYSCORES", strlen("BARONYSCORES")) )
 	{
-		printlog("error: '%s' is corrupt!\n", scoresfilename.c_str());
+		printlog("error: '%s' is corrupt!\n", filename.c_str());
 		FileIO::close(fp);
 		return;
 	}
@@ -1473,11 +1935,11 @@ void loadAllScores(const std::string& scoresfilename)
 		}
 	}
 	versionNumber = atoi(versionStr); // convert from string to int.
-	printlog("notice: '%s' version number %d", scoresfilename.c_str(), versionNumber);
+	printlog("notice: '%s' version number %d", filename.c_str(), versionNumber);
 	if ( versionNumber < 200 || versionNumber > 999 )
 	{
 		// if version number less than v2.0.0, or more than 3 digits, abort and rebuild scores file.
-		printlog("error: '%s' is corrupt!\n", scoresfilename.c_str());
+		printlog("error: '%s' is corrupt!\n", filename.c_str());
 		FileIO::close(fp);
 		return;
 	}
@@ -1487,6 +1949,12 @@ void loadAllScores(const std::string& scoresfilename)
 	fp->read(&c, sizeof(Uint32), 1);
 	for ( int i = 0; i < c; i++ )
 	{
+		if ( i >= 1000 )
+		{
+			// break early, probably something went tremendously wrong
+			break;
+		}
+
 		// to investigate
 		Uint32 booknamelen = 0;
 		fp->read(&booknamelen, sizeof(Uint32), 1);
@@ -1529,6 +1997,17 @@ void loadAllScores(const std::string& scoresfilename)
 				usedClass[c] = false;
 			}
 		}
+		else if ( versionNumber <= 432 )
+		{
+			if ( c < 21 )
+			{
+				fp->read(&usedClass[c], sizeof(bool), 1);
+			}
+			else
+			{
+				usedClass[c] = false;
+			}
+		}
 		else
 		{
 			fp->read(&usedClass[c], sizeof(bool), 1);
@@ -1542,6 +2021,17 @@ void loadAllScores(const std::string& scoresfilename)
 			// don't read race info.
 			usedRace[c] = false;
 		}
+		else if ( versionNumber <= 432 )
+		{
+			if ( c < 13 )
+			{
+				fp->read(&usedRace[c], sizeof(bool), 1);
+			}
+			else
+			{
+				usedRace[c] = false;
+			}
+		}
 		else
 		{
 			fp->read(&usedRace[c], sizeof(bool), 1);
@@ -1553,14 +2043,36 @@ void loadAllScores(const std::string& scoresfilename)
 	fp->read(&numscores, sizeof(Uint32), 1);
 	for ( int i = 0; i < numscores; i++ )
 	{
+		if ( i >= 1000 )
+		{
+			// break early, probably something went tremendously wrong
+			break;
+		}
+
 		node_t* node = nullptr;
 		if ( scoresfilename.compare(SCORESFILE) == 0 )
 		{
-			node = list_AddNodeLast(&topscores);
+			if ( *cvar_scores_json )
+			{
+				// we're migrating to new format
+				node = list_AddNodeLast(&topscores_json);
+			}
+			else
+			{
+				node = list_AddNodeLast(&topscores_legacy);
+			}
 		}
 		else
 		{
-			node = list_AddNodeLast(&topscoresMultiplayer);
+			if ( *cvar_scores_json )
+			{
+				// we're migrating to new format
+				node = list_AddNodeLast(&topscoresMultiplayer_json);
+			}
+			else
+			{
+				node = list_AddNodeLast(&topscoresMultiplayer_legacy);
+			}
 		}
 		score_t* score = (score_t*) malloc(sizeof(score_t));
 		if ( !score )
@@ -1616,6 +2128,21 @@ void loadAllScores(const std::string& scoresfilename)
 			for ( int c = 0; c < NUMMONSTERS; c++ )
 			{
 				if ( c < 37 )
+				{
+					fp->read(&score->kills[c], sizeof(Sint32), 1);
+				}
+				else
+				{
+					score->kills[c] = 0;
+				}
+			}
+		}
+		else if ( versionNumber <= 432 )
+		{
+			// legacy nummonsters
+			for ( int c = 0; c < NUMMONSTERS; c++ )
+			{
+				if ( c <= 37 )
 				{
 					fp->read(&score->kills[c], sizeof(Sint32), 1);
 				}
@@ -1700,14 +2227,17 @@ void loadAllScores(const std::string& scoresfilename)
 			{
 				if ( c < 16 )
 				{
-					fp->read(&score->stats->EFFECTS[c], sizeof(bool), 1);
+					bool effectVal = false;
+					fp->read(&effectVal, sizeof(bool), 1);
+					score->stats->setEffectValueUnsafe(c, effectVal ? 1 : 0);
 					fp->read(&score->stats->EFFECTS_TIMERS[c], sizeof(Sint32), 1);
 				}
 				else
 				{
-					score->stats->EFFECTS[c] = false;
+					score->stats->clearEffect(c);
 					score->stats->EFFECTS_TIMERS[c] = 0;
 				}
+				score->stats->EFFECTS_ACCRETION_TIME[c] = 0;
 			}
 		}
 		else if ( versionNumber < 302 )
@@ -1716,14 +2246,17 @@ void loadAllScores(const std::string& scoresfilename)
 			{
 				if ( c < 19 )
 				{
-					fp->read(&score->stats->EFFECTS[c], sizeof(bool), 1);
+					bool effectVal = false;
+					fp->read(&effectVal, sizeof(bool), 1);
+					score->stats->setEffectValueUnsafe(c, effectVal ? 1 : 0);
 					fp->read(&score->stats->EFFECTS_TIMERS[c], sizeof(Sint32), 1);
 				}
 				else
 				{
-					score->stats->EFFECTS[c] = false;
+					score->stats->clearEffect(c);
 					score->stats->EFFECTS_TIMERS[c] = 0;
 				}
+				score->stats->EFFECTS_ACCRETION_TIME[c] = 0;
 			}
 		}
 		else if ( versionNumber <= 323 )
@@ -1732,14 +2265,17 @@ void loadAllScores(const std::string& scoresfilename)
 			{
 				if ( c < 32 )
 				{
-					fp->read(&score->stats->EFFECTS[c], sizeof(bool), 1);
+					bool effectVal = false;
+					fp->read(&effectVal, sizeof(bool), 1);
+					score->stats->setEffectValueUnsafe(c, effectVal ? 1 : 0);
 					fp->read(&score->stats->EFFECTS_TIMERS[c], sizeof(Sint32), 1);
 				}
 				else
 				{
-					score->stats->EFFECTS[c] = false;
+					score->stats->clearEffect(c);
 					score->stats->EFFECTS_TIMERS[c] = 0;
 				}
+				score->stats->EFFECTS_ACCRETION_TIME[c] = 0;
 			}
 		}
 		else if ( versionNumber <= 411 )
@@ -1748,22 +2284,50 @@ void loadAllScores(const std::string& scoresfilename)
 			{
 				if ( c < 40 )
 				{
-					fp->read(&score->stats->EFFECTS[c], sizeof(bool), 1);
+					bool effectVal = false;
+					fp->read(&effectVal, sizeof(bool), 1);
+					score->stats->setEffectValueUnsafe(c, effectVal ? 1 : 0);
 					fp->read(&score->stats->EFFECTS_TIMERS[c], sizeof(Sint32), 1);
 				}
 				else
 				{
-					score->stats->EFFECTS[c] = false;
+					score->stats->clearEffect(c);
 					score->stats->EFFECTS_TIMERS[c] = 0;
 				}
+				score->stats->EFFECTS_ACCRETION_TIME[c] = 0;
+			}
+		}
+		else if ( versionNumber <= 432 )
+		{
+			for ( int c = 0; c < 64; c++ )
+			{
+				bool effectVal = false;
+				fp->read(&effectVal, sizeof(bool), 1);
+				score->stats->setEffectValueUnsafe(c, effectVal ? 1 : 0);
+				fp->read(&score->stats->EFFECTS_TIMERS[c], sizeof(Sint32), 1);
+				score->stats->EFFECTS_ACCRETION_TIME[c] = 0;
+			}
+		}
+		else if ( versionNumber <= 433 )
+		{
+			for ( int c = 0; c < 128; c++ )
+			{
+				bool effectVal = false;
+				fp->read(&effectVal, sizeof(bool), 1);
+				score->stats->setEffectValueUnsafe(c, effectVal ? 1 : 0);
+				fp->read(&score->stats->EFFECTS_TIMERS[c], sizeof(Sint32), 1);
+				fp->read(&score->stats->EFFECTS_ACCRETION_TIME[c], sizeof(Sint32), 1);
 			}
 		}
 		else
 		{
 			for ( int c = 0; c < NUMEFFECTS; c++ )
 			{
-				fp->read(&score->stats->EFFECTS[c], sizeof(bool), 1);
+				Uint8 effectVal = 0;
+				fp->read(&effectVal, sizeof(Uint8), 1);
+				score->stats->setEffectValueUnsafe(c, effectVal);
 				fp->read(&score->stats->EFFECTS_TIMERS[c], sizeof(Sint32), 1);
+				fp->read(&score->stats->EFFECTS_ACCRETION_TIME[c], sizeof(Sint32), 1);
 			}
 		}
 
@@ -1796,6 +2360,12 @@ void loadAllScores(const std::string& scoresfilename)
 		score->stats->inventory.last = NULL;
 		for ( int c = 0; c < numitems; c++ )
 		{
+			if ( c >= 1000 )
+			{
+				// break early, probably something went tremendously wrong
+				break;
+			}
+
 			ItemType type;
 			Status status;
 			Sint16 beatitude;
@@ -1810,6 +2380,8 @@ void loadAllScores(const std::string& scoresfilename)
 			fp->read(&identified, sizeof(bool), 1);
 			newItem(type, status, beatitude, count, appearance, identified, &score->stats->inventory);
 		}
+		score->stats->void_chest_inventory.first = NULL;
+		score->stats->void_chest_inventory.last = NULL;
 		fp->read(&c, sizeof(Uint32), 1);
 		node = list_Node(&score->stats->inventory, c);
 		if ( node )
@@ -1916,1815 +2488,6 @@ void loadAllScores(const std::string& scoresfilename)
 	}
 
 	FileIO::close(fp);
-}
-
-/*-------------------------------------------------------------------------------
-
-	saveGameOld
-
-	Saves the player character as they were at the start of the
-	last level
-
--------------------------------------------------------------------------------*/
-
-int saveGameOld(int saveIndex)
-{
-	if ( gameModeManager.getMode() != GameModeManager_t::GAME_MODE_DEFAULT )
-	{
-		return 1;
-	}
-
-	File* fp;
-	char savefile[PATH_MAX] = "";
-	char path[PATH_MAX] = "";
-
-	// open file
-	if ( !intro )
-	{
-		messagePlayer(clientnum, MESSAGE_MISC, Language::get(1121));
-	}
-
-	if ( multiplayer == SINGLE )
-	{
-		strncpy(savefile, setSaveGameFileName(true, SaveFileType::MAIN, saveIndex).c_str(), PATH_MAX - 1);
-	}
-	else
-	{
-		strncpy(savefile, setSaveGameFileName(false, SaveFileType::MAIN, saveIndex).c_str(), PATH_MAX - 1);
-	}
-	completePath(path, savefile, outputdir);
-
-	if ( (fp = FileIO::open(path, "wb")) == NULL )
-	{
-		printlog("warning: failed to save '%s'!\n", path);
-		return 1;
-	}
-
-	// write header info
-	fp->printf("BARONYSAVEGAME");
-	fp->printf(VERSION);
-	fp->write(&uniqueGameKey, sizeof(Uint32), 1);
-
-	Uint32 hash = 0;
-#ifdef WINDOWS
-	struct _stat result;
-	if ( _stat(path, &result) == 0 )
-	{
-		struct tm *tm = localtime(&result.st_mtime);
-		if ( tm )
-		{
-			hash = tm->tm_hour + tm->tm_mday * tm->tm_year + tm->tm_wday + tm->tm_yday;
-		}
-	}
-#else
-	struct stat result;
-	if ( stat(path, &result) == 0 )
-	{
-		struct tm *tm = localtime(&result.st_mtime);
-		if ( tm )
-		{
-			hash = tm->tm_hour + tm->tm_mday * tm->tm_year + tm->tm_wday + tm->tm_yday;
-		}
-	}
-#endif // WINDOWS
-	hash += (stats[clientnum]->STR + stats[clientnum]->LVL + stats[clientnum]->DEX * stats[clientnum]->INT);
-	hash += (stats[clientnum]->CON * stats[clientnum]->PER + std::min(stats[clientnum]->GOLD, 5000) - stats[clientnum]->CON);
-	hash += (stats[clientnum]->HP - stats[clientnum]->MP);
-	hash += (currentlevel);
-	Uint32 writeCurrentLevel = (hash << 8);
-	writeCurrentLevel |= (currentlevel & 0xFF);
-
-	Sint16 players_connected = 0;
-	for (int c = 0; c < MAXPLAYERS; ++c) {
-	    if (!client_disconnected[c]) {
-            players_connected |= 1 << c;
-        }
-	}
-	fp->write(&players_connected, sizeof(Sint16), 1);
-
-	Sint16 mul = 0;
-	if ( multiplayer == SINGLE ) {
-	    if (splitscreen) {
-	        mul = SPLITSCREEN;
-	    } else {
-		    mul = SINGLE;
-		}
-	} else {
-	    if (multiplayer == SERVER && directConnect) {
-	        mul = DIRECTSERVER;
-	    }
-	    else if (multiplayer == SERVER && LobbyHandler.hostingType == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
-			mul = SERVERCROSSPLAY;
-		}
-	    else if (multiplayer == SERVER || multiplayer == CLIENT) {
-	        mul = directConnect ? multiplayer + 2 : multiplayer;
-	    }
-		else {
-		    assert(0 && "Unknown game save type!");
-		}
-	}
-	fp->write(&mul, sizeof(Sint16), 1);
-
-	fp->write(&clientnum, sizeof(Uint32), 1);
-	fp->write(&mapseed, sizeof(Uint32), 1);
-	fp->write(&writeCurrentLevel, sizeof(Uint32), 1);
-	fp->write(&secretlevel, sizeof(bool), 1);
-	fp->write(&completionTime, sizeof(Uint32), 1);
-	fp->write(&conductPenniless, sizeof(bool), 1);
-	fp->write(&conductFoodless, sizeof(bool), 1);
-	fp->write(&conductVegetarian, sizeof(bool), 1);
-	fp->write(&conductIlliterate, sizeof(bool), 1);
-	for ( int c = 0; c < NUM_CONDUCT_CHALLENGES; ++c )
-	{
-		fp->write(&conductGameChallenges[c], sizeof(Sint32), 1);
-	}
-	for ( int c = 0; c < NUM_GAMEPLAY_STATISTICS; ++c )
-	{
-		fp->write(&gameStatistics[c], sizeof(Sint32), 1);
-	}
-	fp->write(&svFlags, sizeof(Uint32), 1);
-
-    if (splitscreen)
-    {
-	    for ( int player = 0; player < MAXPLAYERS; player++ )
-	    {
-	        // write hotbar items
-	        for ( auto& hotbarSlot : players[player]->hotbar.slots() )
-	        {
-		        int index = list_Size(&stats[player]->inventory);
-		        Item* item = uidToItem(hotbarSlot.item);
-		        if ( item )
-		        {
-			        index = list_Index(item->node);
-		        }
-		        fp->write(&index, sizeof(Uint32), 1);
-	        }
-
-	        // write spells
-	        Uint32 numspells = list_Size(&players[player]->magic.spellList);
-	        fp->write(&numspells, sizeof(Uint32), 1);
-	        for ( node_t* node = players[player]->magic.spellList.first; node != NULL; node = node->next )
-	        {
-		        spell_t* spell = (spell_t*)node->element;
-		        fp->write(&spell->ID, sizeof(Uint32), 1);
-	        }
-
-			// write alchemy recipes
-			Uint32 numrecipes = clientLearnedAlchemyRecipes[player].size();
-			fp->write(&numrecipes, sizeof(Uint32), 1);
-			for ( auto& entry : clientLearnedAlchemyRecipes[player] )
-			{
-				fp->write(&entry.first, sizeof(Sint32), 1);
-				fp->write(&entry.second.first, sizeof(Sint32), 1);
-				fp->write(&entry.second.second, sizeof(Sint32), 1);
-			}
-
-			// write scrolls known
-			Uint32 numscrolls = clientLearnedScrollLabels[player].size();
-			fp->write(&numscrolls, sizeof(Uint32), 1);
-			for ( auto& entry : clientLearnedScrollLabels[player] )
-			{
-				fp->write(&entry, sizeof(Sint32), 1);
-			}
-	    }
-    }
-    else
-    {
-	    // write hotbar items
-	    for ( auto& hotbarSlot : players[clientnum]->hotbar.slots() )
-	    {
-		    int index = list_Size(&stats[clientnum]->inventory);
-		    Item* item = uidToItem(hotbarSlot.item);
-		    if ( item )
-		    {
-			    index = list_Index(item->node);
-		    }
-		    fp->write(&index, sizeof(Uint32), 1);
-	    }
-
-	    // write spells
-	    Uint32 numspells = list_Size(&players[clientnum]->magic.spellList);
-	    fp->write(&numspells, sizeof(Uint32), 1);
-	    for ( node_t* node = players[clientnum]->magic.spellList.first; node != NULL; node = node->next )
-	    {
-		    spell_t* spell = (spell_t*)node->element;
-		    fp->write(&spell->ID, sizeof(Uint32), 1);
-	    }
-
-		// write alchemy recipes
-		Uint32 numrecipes = clientLearnedAlchemyRecipes[clientnum].size();
-		fp->write(&numrecipes, sizeof(Uint32), 1);
-		for ( auto& entry : clientLearnedAlchemyRecipes[clientnum] )
-		{
-			fp->write(&entry.first, sizeof(Sint32), 1);
-			fp->write(&entry.second.first, sizeof(Sint32), 1);
-			fp->write(&entry.second.second, sizeof(Sint32), 1);
-		}
-
-		// write scrolls known
-		Uint32 numscrolls = clientLearnedScrollLabels[clientnum].size();
-		fp->write(&numscrolls, sizeof(Uint32), 1);
-		for ( auto& entry : clientLearnedScrollLabels[clientnum] )
-		{
-			fp->write(&entry, sizeof(Sint32), 1);
-		}
-    }
-
-	// player data
-	for ( int player = 0; player < MAXPLAYERS; player++ )
-	{
-		fp->write(&client_classes[player], sizeof(Uint32), 1);
-		for ( int c = 0; c < NUMMONSTERS; c++ )
-		{
-			fp->write(&kills[c], sizeof(Sint32), 1);
-		}
-		fp->write(&stats[player]->type, sizeof(Monster), 1);
-		fp->write(&stats[player]->sex, sizeof(sex_t), 1);
-		Uint32 raceAndAppearance = 0;
-		raceAndAppearance |= (stats[player]->playerRace << 8);
-		raceAndAppearance |= (stats[player]->stat_appearance);
-		fp->write(&raceAndAppearance, sizeof(Uint32), 1);
-		fp->write(stats[player]->name, sizeof(char), 32);
-		fp->write(&stats[player]->HP, sizeof(Sint32), 1);
-		fp->write(&stats[player]->MAXHP, sizeof(Sint32), 1);
-		fp->write(&stats[player]->MP, sizeof(Sint32), 1);
-		fp->write(&stats[player]->MAXMP, sizeof(Sint32), 1);
-		fp->write(&stats[player]->STR, sizeof(Sint32), 1);
-		fp->write(&stats[player]->DEX, sizeof(Sint32), 1);
-		fp->write(&stats[player]->CON, sizeof(Sint32), 1);
-		fp->write(&stats[player]->INT, sizeof(Sint32), 1);
-		fp->write(&stats[player]->PER, sizeof(Sint32), 1);
-		fp->write(&stats[player]->CHR, sizeof(Sint32), 1);
-		fp->write(&stats[player]->EXP, sizeof(Sint32), 1);
-		fp->write(&stats[player]->LVL, sizeof(Sint32), 1);
-		fp->write(&stats[player]->GOLD, sizeof(Sint32), 1);
-		fp->write(&stats[player]->HUNGER, sizeof(Sint32), 1);
-		for ( int c = 0; c < NUMPROFICIENCIES; c++ )
-		{
-			Sint32 val = stats[player]->getProficiency(c);
-			fp->write(&val, sizeof(Sint32), 1);
-		}
-		for ( int c = 0; c < NUMEFFECTS; c++ )
-		{
-			fp->write(&stats[player]->EFFECTS[c], sizeof(bool), 1);
-			fp->write(&stats[player]->EFFECTS_TIMERS[c], sizeof(Sint32), 1);
-		}
-		for ( int c = 0; c < 32; c++ )
-		{
-			fp->write(&stats[player]->MISC_FLAGS[c], sizeof(Sint32), 1);
-		}
-
-		// inventory
-		if ( player == clientnum || splitscreen )
-		{
-			int c = list_Size(&stats[player]->inventory);
-			fp->write(&c, sizeof(Uint32), 1);
-			for ( node_t* node = stats[player]->inventory.first; node != NULL; node = node->next )
-			{
-				Item* item = (Item*)node->element;
-				fp->write(&item->type, sizeof(ItemType), 1);
-				fp->write(&item->status, sizeof(Status), 1);
-				fp->write(&item->beatitude, sizeof(Sint16), 1);
-				fp->write(&item->count, sizeof(Sint16), 1);
-				fp->write(&item->appearance, sizeof(Uint32), 1);
-				fp->write(&item->identified, sizeof(bool), 1);
-				fp->write(&item->x, sizeof(Sint32), 1);
-				fp->write(&item->y, sizeof(Sint32), 1);
-			}
-			if ( stats[player]->helmet )
-			{
-				c = list_Index(stats[player]->helmet->node);
-				fp->write(&c, sizeof(Uint32), 1);
-			}
-			else
-			{
-				c = list_Size(&stats[player]->inventory);
-				fp->write(&c, sizeof(Uint32), 1);
-			}
-			if ( stats[player]->breastplate )
-			{
-				c = list_Index(stats[player]->breastplate->node);
-				fp->write(&c, sizeof(Uint32), 1);
-			}
-			else
-			{
-				c = list_Size(&stats[player]->inventory);
-				fp->write(&c, sizeof(Uint32), 1);
-			}
-			if ( stats[player]->gloves )
-			{
-				c = list_Index(stats[player]->gloves->node);
-				fp->write(&c, sizeof(Uint32), 1);
-			}
-			else
-			{
-				c = list_Size(&stats[player]->inventory);
-				fp->write(&c, sizeof(Uint32), 1);
-			}
-			if ( stats[player]->shoes )
-			{
-				c = list_Index(stats[player]->shoes->node);
-				fp->write(&c, sizeof(Uint32), 1);
-			}
-			else
-			{
-				c = list_Size(&stats[player]->inventory);
-				fp->write(&c, sizeof(Uint32), 1);
-			}
-			if ( stats[player]->shield )
-			{
-				c = list_Index(stats[player]->shield->node);
-				fp->write(&c, sizeof(Uint32), 1);
-			}
-			else
-			{
-				c = list_Size(&stats[player]->inventory);
-				fp->write(&c, sizeof(Uint32), 1);
-			}
-			if ( stats[player]->weapon )
-			{
-				c = list_Index(stats[player]->weapon->node);
-				fp->write(&c, sizeof(Uint32), 1);
-			}
-			else
-			{
-				c = list_Size(&stats[player]->inventory);
-				fp->write(&c, sizeof(Uint32), 1);
-			}
-			if ( stats[player]->cloak )
-			{
-				c = list_Index(stats[player]->cloak->node);
-				fp->write(&c, sizeof(Uint32), 1);
-			}
-			else
-			{
-				c = list_Size(&stats[player]->inventory);
-				fp->write(&c, sizeof(Uint32), 1);
-			}
-			if ( stats[player]->amulet )
-			{
-				c = list_Index(stats[player]->amulet->node);
-				fp->write(&c, sizeof(Uint32), 1);
-			}
-			else
-			{
-				c = list_Size(&stats[player]->inventory);
-				fp->write(&c, sizeof(Uint32), 1);
-			}
-			if ( stats[player]->ring )
-			{
-				c = list_Index(stats[player]->ring->node);
-				fp->write(&c, sizeof(Uint32), 1);
-			}
-			else
-			{
-				c = list_Size(&stats[player]->inventory);
-				fp->write(&c, sizeof(Uint32), 1);
-			}
-			if ( stats[player]->mask )
-			{
-				c = list_Index(stats[player]->mask->node);
-				fp->write(&c, sizeof(Uint32), 1);
-			}
-			else
-			{
-				c = list_Size(&stats[player]->inventory);
-				fp->write(&c, sizeof(Uint32), 1);
-			}
-		}
-		else
-		{
-			if ( multiplayer == SERVER )
-			{
-				if ( stats[player]->helmet )
-				{
-					Item* item = stats[player]->helmet;
-					fp->write(&item->type, sizeof(ItemType), 1);
-					fp->write(&item->status, sizeof(Status), 1);
-					fp->write(&item->beatitude, sizeof(Sint16), 1);
-					fp->write(&item->count, sizeof(Sint16), 1);
-					fp->write(&item->appearance, sizeof(Uint32), 1);
-					fp->write(&item->identified, sizeof(bool), 1);
-				}
-				else
-				{
-					int c = NUMITEMS;
-					fp->write(&c, sizeof(ItemType), 1);
-				}
-				if ( stats[player]->breastplate )
-				{
-					Item* item = stats[player]->breastplate;
-					fp->write(&item->type, sizeof(ItemType), 1);
-					fp->write(&item->status, sizeof(Status), 1);
-					fp->write(&item->beatitude, sizeof(Sint16), 1);
-					fp->write(&item->count, sizeof(Sint16), 1);
-					fp->write(&item->appearance, sizeof(Uint32), 1);
-					fp->write(&item->identified, sizeof(bool), 1);
-				}
-				else
-				{
-					int c = NUMITEMS;
-					fp->write(&c, sizeof(ItemType), 1);
-				}
-				if ( stats[player]->gloves )
-				{
-					Item* item = stats[player]->gloves;
-					fp->write(&item->type, sizeof(ItemType), 1);
-					fp->write(&item->status, sizeof(Status), 1);
-					fp->write(&item->beatitude, sizeof(Sint16), 1);
-					fp->write(&item->count, sizeof(Sint16), 1);
-					fp->write(&item->appearance, sizeof(Uint32), 1);
-					fp->write(&item->identified, sizeof(bool), 1);
-				}
-				else
-				{
-					int c = NUMITEMS;
-					fp->write(&c, sizeof(ItemType), 1);
-				}
-				if ( stats[player]->shoes )
-				{
-					Item* item = stats[player]->shoes;
-					fp->write(&item->type, sizeof(ItemType), 1);
-					fp->write(&item->status, sizeof(Status), 1);
-					fp->write(&item->beatitude, sizeof(Sint16), 1);
-					fp->write(&item->count, sizeof(Sint16), 1);
-					fp->write(&item->appearance, sizeof(Uint32), 1);
-					fp->write(&item->identified, sizeof(bool), 1);
-				}
-				else
-				{
-					int c = NUMITEMS;
-					fp->write(&c, sizeof(ItemType), 1);
-				}
-				if ( stats[player]->shield )
-				{
-					Item* item = stats[player]->shield;
-					fp->write(&item->type, sizeof(ItemType), 1);
-					fp->write(&item->status, sizeof(Status), 1);
-					fp->write(&item->beatitude, sizeof(Sint16), 1);
-					fp->write(&item->count, sizeof(Sint16), 1);
-					fp->write(&item->appearance, sizeof(Uint32), 1);
-					fp->write(&item->identified, sizeof(bool), 1);
-				}
-				else
-				{
-					int c = NUMITEMS;
-					fp->write(&c, sizeof(ItemType), 1);
-				}
-				if ( stats[player]->weapon )
-				{
-					Item* item = stats[player]->weapon;
-					fp->write(&item->type, sizeof(ItemType), 1);
-					fp->write(&item->status, sizeof(Status), 1);
-					fp->write(&item->beatitude, sizeof(Sint16), 1);
-					fp->write(&item->count, sizeof(Sint16), 1);
-					fp->write(&item->appearance, sizeof(Uint32), 1);
-					fp->write(&item->identified, sizeof(bool), 1);
-				}
-				else
-				{
-					int c = NUMITEMS;
-					fp->write(&c, sizeof(ItemType), 1);
-				}
-				if ( stats[player]->cloak )
-				{
-					Item* item = stats[player]->cloak;
-					fp->write(&item->type, sizeof(ItemType), 1);
-					fp->write(&item->status, sizeof(Status), 1);
-					fp->write(&item->beatitude, sizeof(Sint16), 1);
-					fp->write(&item->count, sizeof(Sint16), 1);
-					fp->write(&item->appearance, sizeof(Uint32), 1);
-					fp->write(&item->identified, sizeof(bool), 1);
-				}
-				else
-				{
-					int c = NUMITEMS;
-					fp->write(&c, sizeof(ItemType), 1);
-				}
-				if ( stats[player]->amulet )
-				{
-					Item* item = stats[player]->amulet;
-					fp->write(&item->type, sizeof(ItemType), 1);
-					fp->write(&item->status, sizeof(Status), 1);
-					fp->write(&item->beatitude, sizeof(Sint16), 1);
-					fp->write(&item->count, sizeof(Sint16), 1);
-					fp->write(&item->appearance, sizeof(Uint32), 1);
-					fp->write(&item->identified, sizeof(bool), 1);
-				}
-				else
-				{
-					int c = NUMITEMS;
-					fp->write(&c, sizeof(ItemType), 1);
-				}
-				if ( stats[player]->ring )
-				{
-					Item* item = stats[player]->ring;
-					fp->write(&item->type, sizeof(ItemType), 1);
-					fp->write(&item->status, sizeof(Status), 1);
-					fp->write(&item->beatitude, sizeof(Sint16), 1);
-					fp->write(&item->count, sizeof(Sint16), 1);
-					fp->write(&item->appearance, sizeof(Uint32), 1);
-					fp->write(&item->identified, sizeof(bool), 1);
-				}
-				else
-				{
-					int c = NUMITEMS;
-					fp->write(&c, sizeof(ItemType), 1);
-				}
-				if ( stats[player]->mask )
-				{
-					Item* item = stats[player]->mask;
-					fp->write(&item->type, sizeof(ItemType), 1);
-					fp->write(&item->status, sizeof(Status), 1);
-					fp->write(&item->beatitude, sizeof(Sint16), 1);
-					fp->write(&item->count, sizeof(Sint16), 1);
-					fp->write(&item->appearance, sizeof(Uint32), 1);
-					fp->write(&item->identified, sizeof(bool), 1);
-				}
-				else
-				{
-					int c = NUMITEMS;
-					fp->write(&c, sizeof(ItemType), 1);
-				}
-			}
-			else
-			{
-				int c = NUMITEMS;
-				fp->write(&c, sizeof(ItemType), 1);
-			}
-		}
-	}
-	FileIO::close(fp);
-
-	// clients don't save follower info
-	if ( multiplayer == CLIENT )
-	{
-		return 0;
-	}
-
-	if ( multiplayer == SINGLE )
-	{
-		strncpy(savefile, setSaveGameFileName(true, SaveFileType::FOLLOWERS, saveIndex).c_str(), PATH_MAX - 1);
-	}
-	else
-	{
-		strncpy(savefile, setSaveGameFileName(false, SaveFileType::FOLLOWERS, saveIndex).c_str(), PATH_MAX - 1);
-	}
-	completePath(path, savefile, outputdir);
-
-	// now we save the follower information
-	if ( (fp = FileIO::open(path, "wb")) == NULL )
-	{
-		printlog("warning: failed to save '%s'!\n", path);
-		return 1;
-	}
-	fp->printf("BARONYSAVEGAMEFOLLOWERS");
-	fp->printf(VERSION);
-
-	// write follower information
-	for ( int c = 0; c < MAXPLAYERS; c++ )
-	{
-		// record number of followers for this player
-		Uint32 size = list_Size(&stats[c]->FOLLOWERS);
-		fp->write(&size, sizeof(Uint32), 1);
-
-		// get followerStats
-		for ( int i = 0; i < size; i++ )
-		{
-			node_t* node = list_Node(&stats[c]->FOLLOWERS, i);
-			if ( node )
-			{
-				Entity* follower = uidToEntity(*((Uint32*)node->element));
-				Stat* followerStats = (follower) ? follower->getStats() : NULL;
-				if ( followerStats )
-				{
-					// record follower stats
-					fp->write(&followerStats->type, sizeof(Monster), 1);
-					fp->write(&followerStats->sex, sizeof(sex_t), 1);
-					fp->write(&followerStats->stat_appearance, sizeof(Uint32), 1);
-					fp->write(followerStats->name, sizeof(char), 32);
-					fp->write(&followerStats->HP, sizeof(Sint32), 1);
-					fp->write(&followerStats->MAXHP, sizeof(Sint32), 1);
-					fp->write(&followerStats->MP, sizeof(Sint32), 1);
-					fp->write(&followerStats->MAXMP, sizeof(Sint32), 1);
-					fp->write(&followerStats->STR, sizeof(Sint32), 1);
-					fp->write(&followerStats->DEX, sizeof(Sint32), 1);
-					fp->write(&followerStats->CON, sizeof(Sint32), 1);
-					fp->write(&followerStats->INT, sizeof(Sint32), 1);
-					fp->write(&followerStats->PER, sizeof(Sint32), 1);
-					fp->write(&followerStats->CHR, sizeof(Sint32), 1);
-					fp->write(&followerStats->EXP, sizeof(Sint32), 1);
-					fp->write(&followerStats->LVL, sizeof(Sint32), 1);
-					fp->write(&followerStats->GOLD, sizeof(Sint32), 1);
-					fp->write(&followerStats->HUNGER, sizeof(Sint32), 1);
-
-					for ( int j = 0; j < NUMPROFICIENCIES; j++ )
-					{
-						Sint32 val = followerStats->getProficiency(j);
-						fp->write(&val, sizeof(Sint32), 1);
-					}
-					for ( int j = 0; j < NUMEFFECTS; j++ )
-					{
-						fp->write(&followerStats->EFFECTS[j], sizeof(bool), 1);
-						fp->write(&followerStats->EFFECTS_TIMERS[j], sizeof(Sint32), 1);
-					}
-					for ( int j = 0; j < 32; ++j )
-					{
-						fp->write(&followerStats->MISC_FLAGS[j], sizeof(Sint32), 1);
-					}
-
-					Uint32 numAttributes = followerStats->attributes.size();
-					fp->write(&numAttributes, sizeof(Uint32), 1);
-					for ( auto& attribute : followerStats->attributes )
-					{
-						fp->write(attribute.first.c_str(), sizeof(char), 32);
-						fp->write(attribute.second.c_str(), sizeof(char), 32);
-					}
-
-					// record follower inventory
-					Uint32 invSize = list_Size(&followerStats->inventory);
-					fp->write(&invSize, sizeof(Uint32), 1);
-					for ( node_t* node = followerStats->inventory.first; node != NULL; node = node->next )
-					{
-						Item* item = (Item*)node->element;
-						fp->write(&item->type, sizeof(ItemType), 1);
-						fp->write(&item->status, sizeof(Status), 1);
-						fp->write(&item->beatitude, sizeof(Sint16), 1);
-						fp->write(&item->count, sizeof(Sint16), 1);
-						fp->write(&item->appearance, sizeof(Uint32), 1);
-						fp->write(&item->identified, sizeof(bool), 1);
-						fp->write(&item->x, sizeof(Sint32), 1);
-						fp->write(&item->y, sizeof(Sint32), 1);
-					}
-
-					// record follower equipment (since NPCs never store equipment as inventory)
-					if ( followerStats->helmet )
-					{
-						Item* item = followerStats->helmet;
-						fp->write(&item->type, sizeof(ItemType), 1);
-						fp->write(&item->status, sizeof(Status), 1);
-						fp->write(&item->beatitude, sizeof(Sint16), 1);
-						fp->write(&item->count, sizeof(Sint16), 1);
-						fp->write(&item->appearance, sizeof(Uint32), 1);
-						fp->write(&item->identified, sizeof(bool), 1);
-					}
-					else
-					{
-						ItemType tempItem = static_cast<ItemType>(NUMITEMS);
-						fp->write(&tempItem, sizeof(ItemType), 1);
-					}
-					if ( followerStats->breastplate )
-					{
-						Item* item = followerStats->breastplate;
-						fp->write(&item->type, sizeof(ItemType), 1);
-						fp->write(&item->status, sizeof(Status), 1);
-						fp->write(&item->beatitude, sizeof(Sint16), 1);
-						fp->write(&item->count, sizeof(Sint16), 1);
-						fp->write(&item->appearance, sizeof(Uint32), 1);
-						fp->write(&item->identified, sizeof(bool), 1);
-					}
-					else
-					{
-						ItemType tempItem = static_cast<ItemType>(NUMITEMS);
-						fp->write(&tempItem, sizeof(ItemType), 1);
-					}
-					if ( followerStats->gloves )
-					{
-						Item* item = followerStats->gloves;
-						fp->write(&item->type, sizeof(ItemType), 1);
-						fp->write(&item->status, sizeof(Status), 1);
-						fp->write(&item->beatitude, sizeof(Sint16), 1);
-						fp->write(&item->count, sizeof(Sint16), 1);
-						fp->write(&item->appearance, sizeof(Uint32), 1);
-						fp->write(&item->identified, sizeof(bool), 1);
-					}
-					else
-					{
-						ItemType tempItem = static_cast<ItemType>(NUMITEMS);
-						fp->write(&tempItem, sizeof(ItemType), 1);
-					}
-					if ( followerStats->shoes )
-					{
-						Item* item = followerStats->shoes;
-						fp->write(&item->type, sizeof(ItemType), 1);
-						fp->write(&item->status, sizeof(Status), 1);
-						fp->write(&item->beatitude, sizeof(Sint16), 1);
-						fp->write(&item->count, sizeof(Sint16), 1);
-						fp->write(&item->appearance, sizeof(Uint32), 1);
-						fp->write(&item->identified, sizeof(bool), 1);
-					}
-					else
-					{
-						ItemType tempItem = static_cast<ItemType>(NUMITEMS);
-						fp->write(&tempItem, sizeof(ItemType), 1);
-					}
-					if ( followerStats->shield )
-					{
-						Item* item = followerStats->shield;
-						fp->write(&item->type, sizeof(ItemType), 1);
-						fp->write(&item->status, sizeof(Status), 1);
-						fp->write(&item->beatitude, sizeof(Sint16), 1);
-						fp->write(&item->count, sizeof(Sint16), 1);
-						fp->write(&item->appearance, sizeof(Uint32), 1);
-						fp->write(&item->identified, sizeof(bool), 1);
-					}
-					else
-					{
-						ItemType tempItem = static_cast<ItemType>(NUMITEMS);
-						fp->write(&tempItem, sizeof(ItemType), 1);
-					}
-					if ( followerStats->weapon )
-					{
-						Item* item = followerStats->weapon;
-						fp->write(&item->type, sizeof(ItemType), 1);
-						fp->write(&item->status, sizeof(Status), 1);
-						fp->write(&item->beatitude, sizeof(Sint16), 1);
-						fp->write(&item->count, sizeof(Sint16), 1);
-						fp->write(&item->appearance, sizeof(Uint32), 1);
-						fp->write(&item->identified, sizeof(bool), 1);
-					}
-					else
-					{
-						ItemType tempItem = static_cast<ItemType>(NUMITEMS);
-						fp->write(&tempItem, sizeof(ItemType), 1);
-					}
-					if ( followerStats->cloak )
-					{
-						Item* item = followerStats->cloak;
-						fp->write(&item->type, sizeof(ItemType), 1);
-						fp->write(&item->status, sizeof(Status), 1);
-						fp->write(&item->beatitude, sizeof(Sint16), 1);
-						fp->write(&item->count, sizeof(Sint16), 1);
-						fp->write(&item->appearance, sizeof(Uint32), 1);
-						fp->write(&item->identified, sizeof(bool), 1);
-					}
-					else
-					{
-						ItemType tempItem = static_cast<ItemType>(NUMITEMS);
-						fp->write(&tempItem, sizeof(ItemType), 1);
-					}
-					if ( followerStats->amulet )
-					{
-						Item* item = followerStats->amulet;
-						fp->write(&item->type, sizeof(ItemType), 1);
-						fp->write(&item->status, sizeof(Status), 1);
-						fp->write(&item->beatitude, sizeof(Sint16), 1);
-						fp->write(&item->count, sizeof(Sint16), 1);
-						fp->write(&item->appearance, sizeof(Uint32), 1);
-						fp->write(&item->identified, sizeof(bool), 1);
-					}
-					else
-					{
-						ItemType tempItem = static_cast<ItemType>(NUMITEMS);
-						fp->write(&tempItem, sizeof(ItemType), 1);
-					}
-					if ( followerStats->ring )
-					{
-						Item* item = followerStats->ring;
-						fp->write(&item->type, sizeof(ItemType), 1);
-						fp->write(&item->status, sizeof(Status), 1);
-						fp->write(&item->beatitude, sizeof(Sint16), 1);
-						fp->write(&item->count, sizeof(Sint16), 1);
-						fp->write(&item->appearance, sizeof(Uint32), 1);
-						fp->write(&item->identified, sizeof(bool), 1);
-					}
-					else
-					{
-						ItemType tempItem = static_cast<ItemType>(NUMITEMS);
-						fp->write(&tempItem, sizeof(ItemType), 1);
-					}
-					if ( followerStats->mask )
-					{
-						Item* item = followerStats->mask;
-						fp->write(&item->type, sizeof(ItemType), 1);
-						fp->write(&item->status, sizeof(Status), 1);
-						fp->write(&item->beatitude, sizeof(Sint16), 1);
-						fp->write(&item->count, sizeof(Sint16), 1);
-						fp->write(&item->appearance, sizeof(Uint32), 1);
-						fp->write(&item->identified, sizeof(bool), 1);
-					}
-					else
-					{
-						ItemType tempItem = static_cast<ItemType>(NUMITEMS);
-						fp->write(&tempItem, sizeof(ItemType), 1);
-					}
-				}
-			}
-		}
-	}
-
-
-	FileIO::close(fp);
-	return 0;
-}
-
-/*-------------------------------------------------------------------------------
-
-	loadGameOld
-
-	Loads a character savegame stored in SAVEGAMEFILE
-
--------------------------------------------------------------------------------*/
-
-int loadGameOld(int player, int saveIndex)
-{
-	File* fp;
-
-	char savefile[PATH_MAX] = "";
-	char path[PATH_MAX] = "";
-	if ( multiplayer == SINGLE )
-	{
-		strncpy(savefile, setSaveGameFileName(true, SaveFileType::MAIN, saveIndex).c_str(), PATH_MAX - 1);
-	}
-	else
-	{
-		strncpy(savefile, setSaveGameFileName(false, SaveFileType::MAIN, saveIndex).c_str(), PATH_MAX - 1);
-	}
-	completePath(path, savefile, outputdir);
-
-	// open file
-	if ( (fp = FileIO::open(path, "rb")) == NULL )
-	{
-		printlog("error: failed to load '%s'!\n", path);
-		return 1;
-	}
-
-	// read from file
-	char checkstr[64];
-	fp->read(checkstr, sizeof(char), strlen("BARONYSAVEGAME"));
-	if ( strncmp(checkstr, "BARONYSAVEGAME", strlen("BARONYSAVEGAME")) )
-	{
-		printlog("error: '%s' is corrupt!\n", path);
-		FileIO::close(fp);
-		return 1;
-	}
-	fp->read(checkstr, sizeof(char), strlen(VERSION));
-	int versionNumber = getSavegameVersion(checkstr);
-	printlog("loadGameOld: '%s' version number %d", savefile, versionNumber);
-	if ( versionNumber == -1 )
-	{
-		// if getSavegameVersion returned -1, abort.
-		printlog("error: '%s' is corrupt!\n", path);
-		FileIO::close(fp);
-		return 1;
-	}
-
-	// assemble string
-	Uint32 hash = 0;
-	Uint32 loadedHash = 0;
-#ifdef WINDOWS
-	struct _stat result;
-	if ( _stat(path, &result) == 0 )
-	{
-		struct tm *tm = localtime(&result.st_mtime);
-		if ( tm )
-		{
-			hash = tm->tm_hour + tm->tm_mday * tm->tm_year + tm->tm_wday + tm->tm_yday;
-		}
-	}
-#else
-	struct stat result;
-	if ( stat(path, &result) == 0 )
-	{
-		struct tm *tm = localtime(&result.st_mtime);
-		if ( tm )
-		{
-			hash = tm->tm_hour + tm->tm_mday * tm->tm_year + tm->tm_wday + tm->tm_yday;
-		}
-	}
-#endif // WINDOWS
-
-	// read basic header info
-	fp->read(&uniqueGameKey, sizeof(Uint32), 1);
-	local_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
-	net_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
-
-	Sint16 players_connected;
-	fp->read(&players_connected, sizeof(Sint16), 1);
-	Sint16 mul;
-	fp->read(&mul, sizeof(Sint16), 1);
-
-	if (players_connected == 0) {
-	    if (mul == SINGLE) {
-	        players_connected = 1;
-	    } else {
-	        players_connected =
-	            (1 << 0) |
-	            (1 << 1) |
-	            (1 << 2) |
-	            (1 << 3);
-	    }
-	}
-	switch (mul) {
-	default:
-	case SINGLE: multiplayer = SINGLE; splitscreen = false; directConnect = false; break;
-	case SERVER: multiplayer = SERVER; splitscreen = false; directConnect = false; break;
-	case CLIENT: multiplayer = CLIENT; splitscreen = false; directConnect = false; break;
-	case DIRECTSERVER: multiplayer = SERVER; splitscreen = false; directConnect = true; break;
-	case DIRECTCLIENT: multiplayer = CLIENT; splitscreen = false; directConnect = true; break;
-	case SERVERCROSSPLAY: multiplayer = SERVER; splitscreen = false; directConnect = false; break; // TODO!
-	case SPLITSCREEN: multiplayer = SINGLE; splitscreen = true; directConnect = false; break;
-	}
-
-	if ( multiplayer == SINGLE )
-	{
-		for (int c = 0; c < MAXPLAYERS; ++c) {
-			client_disconnected[c] = !(players_connected & (1<<c));
-		}
-	}
-
-	fp->read(&clientnum, sizeof(Uint32), 1);
-	fp->read(&mapseed, sizeof(Uint32), 1);
-	fp->read(&currentlevel, sizeof(Uint32), 1);
-	if ( versionNumber >= 323 )
-	{
-		loadedHash = (currentlevel & 0xFFFFFF00) >> 8;
-		currentlevel = currentlevel & 0xFF;
-	}
-	fp->read(&secretlevel, sizeof(bool), 1);
-	fp->read(&completionTime, sizeof(Uint32), 1);
-	fp->read(&conductPenniless, sizeof(bool), 1);
-	fp->read(&conductFoodless, sizeof(bool), 1);
-	fp->read(&conductVegetarian, sizeof(bool), 1);
-	fp->read(&conductIlliterate, sizeof(bool), 1);
-	if ( versionNumber >= 310 )
-	{
-		for ( int c = 0; c < NUM_CONDUCT_CHALLENGES; ++c )
-		{
-			fp->read(&conductGameChallenges[c], sizeof(Sint32), 1);
-		}
-		for ( int c = 0; c < NUM_GAMEPLAY_STATISTICS; ++c )
-		{
-			fp->read(&gameStatistics[c], sizeof(Sint32), 1);
-		}
-	}
-	if ( versionNumber >= 335 )
-	{
-		gameModeManager.currentSession.saveServerFlags();
-		if ( multiplayer == CLIENT )
-		{
-			fp->read(&lobbyWindowSvFlags, sizeof(Uint32), 1);
-		}
-		else
-		{
-			fp->read(&svFlags, sizeof(Uint32), 1);
-		}
-		printlog("[SESSION]: Using savegame server flags");
-	}
-
-    // load hotbar and spells list
-    Uint32 temp_hotbar[NUM_HOTBAR_SLOTS];
-    if (splitscreen)
-    {
-        for (int c = 0; c < MAXPLAYERS; ++c)
-        {
-            if (c == player)
-            {
-	            // read hotbar item offsets
-	            for ( int i = 0; i < NUM_HOTBAR_SLOTS; i++ )
-	            {
-		            fp->read(&temp_hotbar[i], sizeof(Uint32), 1);
-	            }
-
-	            // read spells
-	            list_FreeAll(&players[c]->magic.spellList);
-	            Uint32 numspells = 0;
-	            fp->read(&numspells, sizeof(Uint32), 1);
-	            for ( int s = 0; s < numspells; ++s )
-	            {
-		            int spellnum = 0;
-		            fp->read(&spellnum, sizeof(Uint32), 1);
-		            spell_t* spell = copySpell(getSpellFromID(spellnum));
-
-		            node_t* node = list_AddNodeLast(&players[c]->magic.spellList);
-		            node->element = spell;
-		            node->deconstructor = &spellDeconstructor;
-		            node->size = sizeof(spell);
-	            }
-
-				clientLearnedAlchemyRecipes[c].clear();
-				if ( versionNumber >= 381 )
-				{
-					// read alchemy recipes
-					Uint32 numrecipes = 0;
-					fp->read(&numrecipes, sizeof(Uint32), 1);
-					for ( int r = 0; r < numrecipes; ++r )
-					{
-						std::pair<int, std::pair<int, int>> recipeEntry;
-						fp->read(&recipeEntry.first, sizeof(Sint32), 1);
-						fp->read(&recipeEntry.second.first, sizeof(Sint32), 1);
-						fp->read(&recipeEntry.second.second, sizeof(Sint32), 1);
-						clientLearnedAlchemyRecipes[c].push_back(recipeEntry);
-					}
-				}
-
-				clientLearnedScrollLabels[c].clear();
-				if ( versionNumber >= 382 )
-				{
-					// read scroll labels
-					Uint32 numscrolls = 0;
-					fp->read(&numscrolls, sizeof(Uint32), 1);
-					for ( int s = 0; s < numscrolls; ++s )
-					{
-						int scroll = 0;
-						fp->read(&scroll, sizeof(Sint32), 1);
-						clientLearnedScrollLabels[c].insert(scroll);
-					}
-				}
-            }
-            else
-            {
-	            fp->seek(sizeof(Uint32) * NUM_HOTBAR_SLOTS, File::SeekMode::ADD);
-
-                int numspells = 0;
-                fp->read(&numspells, sizeof(Uint32), 1);
-                for ( int i = 0; i < numspells; i++ )
-                {
-	                fp->seek(sizeof(Uint32), File::SeekMode::ADD);
-                }
-
-				if ( versionNumber >= 381 )
-				{
-					// read alchemy recipes
-					Uint32 numrecipes = 0;
-					fp->read(&numrecipes, sizeof(Uint32), 1);
-					for ( int r = 0; r < numrecipes; ++r )
-					{
-						fp->seek(sizeof(Sint32), File::SeekMode::ADD);
-						fp->seek(sizeof(Sint32), File::SeekMode::ADD);
-						fp->seek(sizeof(Sint32), File::SeekMode::ADD);
-					}
-				}
-
-				if ( versionNumber >= 382 )
-				{
-					// read scroll labels
-					Uint32 numscrolls = 0;
-					fp->read(&numscrolls, sizeof(Uint32), 1);
-					for ( int s = 0; s < numscrolls; ++s )
-					{
-						fp->seek(sizeof(Sint32), File::SeekMode::ADD);
-					}
-				}
-            }
-        }
-    }
-    else
-    {
-	    // read hotbar item offsets
-	    for ( int c = 0; c < NUM_HOTBAR_SLOTS; c++ )
-	    {
-		    fp->read(&temp_hotbar[c], sizeof(Uint32), 1);
-	    }
-
-	    // read spells
-	    list_FreeAll(&players[player]->magic.spellList);
-	    Uint32 numspells = 0;
-	    fp->read(&numspells, sizeof(Uint32), 1);
-	    for ( int c = 0; c < numspells; c++ )
-	    {
-		    int spellnum = 0;
-		    fp->read(&spellnum, sizeof(Uint32), 1);
-		    spell_t* spell = copySpell(getSpellFromID(spellnum));
-
-		    node_t* node = list_AddNodeLast(&players[player]->magic.spellList);
-		    node->element = spell;
-		    node->deconstructor = &spellDeconstructor;
-		    node->size = sizeof(spell);
-	    }
-
-		clientLearnedAlchemyRecipes[player].clear();
-		if ( versionNumber >= 381 )
-		{
-			// read alchemy recipes
-			Uint32 numrecipes = 0;
-			fp->read(&numrecipes, sizeof(Uint32), 1);
-			for ( int r = 0; r < numrecipes; ++r )
-			{
-				std::pair<int, std::pair<int, int>> recipeEntry;
-				fp->read(&recipeEntry.first, sizeof(Sint32), 1);
-				fp->read(&recipeEntry.second.first, sizeof(Sint32), 1);
-				fp->read(&recipeEntry.second.second, sizeof(Sint32), 1);
-				clientLearnedAlchemyRecipes[player].push_back(recipeEntry);
-			}
-		}
-
-		clientLearnedScrollLabels[player].clear();
-		if ( versionNumber >= 382 )
-		{
-			// read scroll labels
-			Uint32 numscrolls = 0;
-			fp->read(&numscrolls, sizeof(Uint32), 1);
-			for ( int s = 0; s < numscrolls; ++s )
-			{
-				int scroll = 0;
-				fp->read(&scroll, sizeof(Sint32), 1);
-				clientLearnedScrollLabels[player].insert(scroll);
-			}
-		}
-    }
-
-	int monsters = NUMMONSTERS;
-	if ( versionNumber < 325 )
-	{
-		monsters = 33;
-	}
-
-	// skip through other player data until you get to the correct player
-	for ( int c = 0; c < player; c++ )
-	{
-		fp->seek(sizeof(Uint32), File::SeekMode::ADD);
-		fp->seek(monsters * sizeof(Sint32), File::SeekMode::ADD);
-		fp->seek(sizeof(Monster), File::SeekMode::ADD);
-		fp->seek(sizeof(sex_t), File::SeekMode::ADD);
-		fp->seek(sizeof(Uint32), File::SeekMode::ADD);
-		fp->seek(sizeof(char) * 32, File::SeekMode::ADD);
-		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
-		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
-		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
-		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
-		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
-		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
-		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
-		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
-		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
-		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
-		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
-		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
-		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
-		fp->seek(sizeof(Sint32), File::SeekMode::ADD);
-
-		if ( versionNumber >= 323 )
-		{
-			fp->seek( sizeof(Sint32)*NUMPROFICIENCIES, File::SeekMode::ADD);
-		}
-		else
-		{
-			fp->seek(sizeof(Sint32)*14, File::SeekMode::ADD);
-		}
-
-		if ( versionNumber <= 323 ) // legacy
-		{
-			fp->seek(sizeof(bool)*32, File::SeekMode::ADD);
-			fp->seek(sizeof(Sint32)*32, File::SeekMode::ADD);
-		}
-		else
-		{
-			fp->seek(sizeof(bool)*NUMEFFECTS, File::SeekMode::ADD);
-			fp->seek(sizeof(Sint32)*NUMEFFECTS, File::SeekMode::ADD);
-		}
-
-		if ( versionNumber >= 323 )
-		{
-			fp->seek(sizeof(Sint32)*32, File::SeekMode::ADD); // stat flags
-		}
-
-        if ( multiplayer == SINGLE )
-        {
-			int numitems = 0;
-			fp->read(&numitems, sizeof(Uint32), 1);
-			for ( int i = 0; i < numitems; i++ )
-			{
-				fp->seek(sizeof(ItemType), File::SeekMode::ADD);
-				fp->seek(sizeof(Status), File::SeekMode::ADD);
-				fp->seek(sizeof(Sint16), File::SeekMode::ADD);
-				fp->seek(sizeof(Sint16), File::SeekMode::ADD);
-				fp->seek(sizeof(Uint32), File::SeekMode::ADD);
-				fp->seek(sizeof(bool), File::SeekMode::ADD);
-				fp->seek(sizeof(Sint32), File::SeekMode::ADD);
-				fp->seek(sizeof(Sint32), File::SeekMode::ADD);
-			}
-			fp->seek(sizeof(Uint32) * 10, File::SeekMode::ADD); // equipment slots
-        }
-		else if ( multiplayer == SERVER )
-		{
-		    if ( c == 0 ) {
-				// server needs to skip past its own inventory
-				int numitems = 0;
-				fp->read(&numitems, sizeof(Uint32), 1);
-
-				for ( int i = 0; i < numitems; i++ )
-				{
-					fp->seek(sizeof(ItemType), File::SeekMode::ADD);
-					fp->seek(sizeof(Status), File::SeekMode::ADD);
-					fp->seek(sizeof(Sint16), File::SeekMode::ADD);
-					fp->seek(sizeof(Sint16), File::SeekMode::ADD);
-					fp->seek(sizeof(Uint32), File::SeekMode::ADD);
-					fp->seek(sizeof(bool), File::SeekMode::ADD);
-					fp->seek(sizeof(Sint32), File::SeekMode::ADD);
-					fp->seek(sizeof(Sint32), File::SeekMode::ADD);
-				}
-				fp->seek(sizeof(Uint32) * 10, File::SeekMode::ADD); // equipment slots
-		    } else {
-			    // server needs to skip past other players' equipment
-			    // (this is stored differently)
-			    for ( int i = 0; i < 10; i++ )
-			    {
-				    int itemtype = NUMITEMS;
-				    fp->read(&itemtype, sizeof(ItemType), 1);
-				    if ( itemtype < NUMITEMS )
-				    {
-					    fp->seek(sizeof(Status), File::SeekMode::ADD);
-					    fp->seek(sizeof(Sint16), File::SeekMode::ADD);
-					    fp->seek(sizeof(Sint16), File::SeekMode::ADD);
-					    fp->seek(sizeof(Uint32), File::SeekMode::ADD);
-					    fp->seek(sizeof(bool), File::SeekMode::ADD);
-				    }
-			    }
-			}
-		}
-		else if ( multiplayer == CLIENT )
-		{
-			// client needs only to skip the dummy byte
-			fp->seek(sizeof(ItemType), File::SeekMode::ADD);
-		}
-	}
-
-	// read in player data
-	stats[player]->clearStats();
-	fp->read(&client_classes[player], sizeof(Uint32), 1);
-	for ( int c = 0; c < monsters; c++ )
-	{
-		fp->read(&kills[c], sizeof(Sint32), 1);
-	}
-	fp->read(&stats[player]->type, sizeof(Monster), 1);
-	fp->read(&stats[player]->sex, sizeof(sex_t), 1);
-	fp->read(&stats[player]->stat_appearance, sizeof(Uint32), 1);
-	if ( versionNumber >= 323 )
-	{
-		stats[player]->playerRace = ((stats[player]->stat_appearance & 0xFF00) >> 8);
-		stats[player]->stat_appearance = (stats[player]->stat_appearance & 0xFF);
-	}
-	fp->read(&stats[player]->name, sizeof(char), 32);
-	fp->read(&stats[player]->HP, sizeof(Sint32), 1);
-	fp->read(&stats[player]->MAXHP, sizeof(Sint32), 1);
-	fp->read(&stats[player]->MP, sizeof(Sint32), 1);
-	fp->read(&stats[player]->MAXMP, sizeof(Sint32), 1);
-	fp->read(&stats[player]->STR, sizeof(Sint32), 1);
-	fp->read(&stats[player]->DEX, sizeof(Sint32), 1);
-	fp->read(&stats[player]->CON, sizeof(Sint32), 1);
-	fp->read(&stats[player]->INT, sizeof(Sint32), 1);
-	fp->read(&stats[player]->PER, sizeof(Sint32), 1);
-	fp->read(&stats[player]->CHR, sizeof(Sint32), 1);
-	fp->read(&stats[player]->EXP, sizeof(Sint32), 1);
-	fp->read(&stats[player]->LVL, sizeof(Sint32), 1);
-	fp->read(&stats[player]->GOLD, sizeof(Sint32), 1);
-	fp->read(&stats[player]->HUNGER, sizeof(Sint32), 1);
-	for ( int c = 0; c < NUMPROFICIENCIES; c++ )
-	{
-		if ( versionNumber < 323 && c >= PRO_UNARMED )
-		{
-			stats[player]->setProficiency(c, 0);
-		}
-		else
-		{
-			Sint32 val = 0;
-			fp->read(&val, sizeof(Sint32), 1);
-			stats[player]->setProficiency(c, val);
-		}
-	}
-	for ( int c = 0; c < NUMEFFECTS; c++ )
-	{
-		if ( versionNumber <= 323 ) // legacy
-		{
-			if ( c < 32 )
-			{
-				fp->read(&stats[player]->EFFECTS[c], sizeof(bool), 1);
-				fp->read(&stats[player]->EFFECTS_TIMERS[c], sizeof(Sint32), 1);
-			}
-			else
-			{
-				stats[player]->EFFECTS[c] = false;
-				stats[player]->EFFECTS_TIMERS[c] = 0;
-			}
-		}
-		else
-		{
-			fp->read(&stats[player]->EFFECTS[c], sizeof(bool), 1);
-			fp->read(&stats[player]->EFFECTS_TIMERS[c], sizeof(Sint32), 1);
-		}
-	}
-	if ( versionNumber >= 323 )
-	{
-		for ( int c = 0; c < 32; c++ )
-		{
-			fp->read(&stats[player]->MISC_FLAGS[c], sizeof(Sint32), 1);
-			if ( c < STAT_FLAG_PLAYER_RACE )
-			{
-				stats[player]->MISC_FLAGS[c] = 0; // we don't really need these on load.
-			}
-		}
-	}
-
-	if ( players[player]->isLocalPlayer() )
-	{
-		// inventory
-		int numitems = 0;
-		fp->read(&numitems, sizeof(Uint32), 1);
-		stats[player]->inventory.first = NULL;
-		stats[player]->inventory.last = NULL;
-		for ( int c = 0; c < numitems; c++ )
-		{
-			ItemType type;
-			Status status;
-			Sint16 beatitude;
-			Sint16 count;
-			Uint32 appearance;
-			bool identified;
-			fp->read(&type, sizeof(ItemType), 1);
-			fp->read(&status, sizeof(Status), 1);
-			fp->read(&beatitude, sizeof(Sint16), 1);
-			fp->read(&count, sizeof(Sint16), 1);
-			fp->read(&appearance, sizeof(Uint32), 1);
-			fp->read(&identified, sizeof(bool), 1);
-			Item* item = newItem(type, status, beatitude, count, appearance, identified, &stats[player]->inventory);
-			fp->read(&item->x, sizeof(Sint32), 1);
-			fp->read(&item->y, sizeof(Sint32), 1);
-		}
-
-		int c;
-		node_t* node;
-
-		// equipment
-		fp->read(&c, sizeof(Uint32), 1);
-		node = list_Node(&stats[player]->inventory, c);
-		if ( node )
-		{
-			stats[player]->helmet = (Item*)node->element;
-		}
-		else
-		{
-			stats[player]->helmet = NULL;
-		}
-		fp->read(&c, sizeof(Uint32), 1);
-		node = list_Node(&stats[player]->inventory, c);
-		if ( node )
-		{
-			stats[player]->breastplate = (Item*)node->element;
-		}
-		else
-		{
-			stats[player]->breastplate = NULL;
-		}
-		fp->read(&c, sizeof(Uint32), 1);
-		node = list_Node(&stats[player]->inventory, c);
-		if ( node )
-		{
-			stats[player]->gloves = (Item*)node->element;
-		}
-		else
-		{
-			stats[player]->gloves = NULL;
-		}
-		fp->read(&c, sizeof(Uint32), 1);
-		node = list_Node(&stats[player]->inventory, c);
-		if ( node )
-		{
-			stats[player]->shoes = (Item*)node->element;
-		}
-		else
-		{
-			stats[player]->shoes = NULL;
-		}
-		fp->read(&c, sizeof(Uint32), 1);
-		node = list_Node(&stats[player]->inventory, c);
-		if ( node )
-		{
-			stats[player]->shield = (Item*)node->element;
-		}
-		else
-		{
-			stats[player]->shield = NULL;
-		}
-		fp->read(&c, sizeof(Uint32), 1);
-		node = list_Node(&stats[player]->inventory, c);
-		if ( node )
-		{
-			stats[player]->weapon = (Item*)node->element;
-		}
-		else
-		{
-			stats[player]->weapon = NULL;
-		}
-		fp->read(&c, sizeof(Uint32), 1);
-		node = list_Node(&stats[player]->inventory, c);
-		if ( node )
-		{
-			stats[player]->cloak = (Item*)node->element;
-		}
-		else
-		{
-			stats[player]->cloak = NULL;
-		}
-		fp->read(&c, sizeof(Uint32), 1);
-		node = list_Node(&stats[player]->inventory, c);
-		if ( node )
-		{
-			stats[player]->amulet = (Item*)node->element;
-		}
-		else
-		{
-			stats[player]->amulet = NULL;
-		}
-		fp->read(&c, sizeof(Uint32), 1);
-		node = list_Node(&stats[player]->inventory, c);
-		if ( node )
-		{
-			stats[player]->ring = (Item*)node->element;
-		}
-		else
-		{
-			stats[player]->ring = NULL;
-		}
-		fp->read(&c, sizeof(Uint32), 1);
-		node = list_Node(&stats[player]->inventory, c);
-		if ( node )
-		{
-			stats[player]->mask = (Item*)node->element;
-		}
-		else
-		{
-			stats[player]->mask = NULL;
-		}
-	}
-	else
-	{
-		stats[player]->inventory.first = NULL;
-		stats[player]->inventory.last = NULL;
-		stats[player]->helmet = NULL;
-		stats[player]->breastplate = NULL;
-		stats[player]->gloves = NULL;
-		stats[player]->shoes = NULL;
-		stats[player]->shield = NULL;
-		stats[player]->weapon = NULL;
-		stats[player]->cloak = NULL;
-		stats[player]->amulet = NULL;
-		stats[player]->ring = NULL;
-		stats[player]->mask = NULL;
-
-		if ( multiplayer == SERVER )
-		{
-			for ( int c = 0; c < 10; c++ )
-			{
-				ItemType type;
-				Status status;
-				Sint16 beatitude;
-				Sint16 count;
-				Uint32 appearance;
-				bool identified;
-
-				fp->read(&type, sizeof(ItemType), 1);
-				if ( (int)type < NUMITEMS )
-				{
-					fp->read(&status, sizeof(Status), 1);
-					fp->read(&beatitude, sizeof(Sint16), 1);
-					fp->read(&count, sizeof(Sint16), 1);
-					fp->read(&appearance, sizeof(Uint32), 1);
-					fp->read(&identified, sizeof(bool), 1);
-
-					Item* item = newItem(type, status, beatitude, count, appearance, identified, NULL);
-
-					switch ( c )
-					{
-						case 0:
-							stats[player]->helmet = item;
-							break;
-						case 1:
-							stats[player]->breastplate = item;
-							break;
-						case 2:
-							stats[player]->gloves = item;
-							break;
-						case 3:
-							stats[player]->shoes = item;
-							break;
-						case 4:
-							stats[player]->shield = item;
-							break;
-						case 5:
-							stats[player]->weapon = item;
-							break;
-						case 6:
-							stats[player]->cloak = item;
-							break;
-						case 7:
-							stats[player]->amulet = item;
-							break;
-						case 8:
-							stats[player]->ring = item;
-							break;
-						case 9:
-							stats[player]->mask = item;
-							break;
-					}
-				}
-			}
-		}
-	}
-
-	// assign hotbar items
-	auto& hotbar = players[player]->hotbar.slots();
-	auto& hotbar_alternate = players[player]->hotbar.slotsAlternate();
-	for ( int c = 0; c < NUM_HOTBAR_SLOTS; c++ )
-	{
-		node_t* node = list_Node(&stats[player]->inventory, temp_hotbar[c]);
-		if ( node )
-		{
-			Item* item = (Item*)node->element;
-			hotbar[c].item = item->uid;
-		}
-		else
-		{
-			hotbar[c].item = 0;
-			hotbar[c].resetLastItem();
-			for ( int d = 0; d < NUM_HOTBAR_ALTERNATES; ++d )
-			{
-				hotbar_alternate[d][c].item = 0;
-				hotbar_alternate[d][c].resetLastItem();
-			}
-		}
-	}
-
-	// reset some unused variables
-	stats[player]->monster_sound = NULL;
-	stats[player]->monster_idlevar = 0;
-	stats[player]->leader_uid = 0;
-	stats[player]->FOLLOWERS.first = NULL;
-	stats[player]->FOLLOWERS.last = NULL;
-
-
-	hash += (stats[clientnum]->STR + stats[clientnum]->LVL + stats[clientnum]->DEX * stats[clientnum]->INT);
-	hash += (stats[clientnum]->CON * stats[clientnum]->PER + std::min(stats[clientnum]->GOLD, 5000) - stats[clientnum]->CON);
-	hash += (stats[clientnum]->HP - stats[clientnum]->MP);
-	hash += (currentlevel);
-
-	if ( hash != loadedHash )
-	{
-		gameStatistics[STATISTICS_DISABLE_UPLOAD] = 1;
-	}
-	//printlog("%d, %d", hash, loadedHash);
-
-    {
-	    enchantedFeatherScrollsShuffled.clear();
-	    enchantedFeatherScrollsShuffled.reserve(enchantedFeatherScrollsFixedList.size());
-	    auto shuffle = enchantedFeatherScrollsFixedList;
-		BaronyRNG feather_rng;
-		feather_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
-	    while (!shuffle.empty()) {
-	        int index = feather_rng.getU8() % shuffle.size();
-	        enchantedFeatherScrollsShuffled.push_back(shuffle[index]);
-	        shuffle.erase(shuffle.begin() + index);
-	    }
-	}
-
-	FileIO::close(fp);
-	return 0;
-}
-
-/*-------------------------------------------------------------------------------
-
-	loadGameFollowersOld
-
-	Loads follower data from a save game file
-
--------------------------------------------------------------------------------*/
-
-list_t* loadGameFollowersOld(int saveIndex)
-{
-	File* fp;
-	int c;
-
-	char savefile[PATH_MAX] = "";
-	char path[PATH_MAX] = "";
-	if ( multiplayer == SINGLE )
-	{
-		strncpy(savefile, setSaveGameFileName(true, SaveFileType::FOLLOWERS, saveIndex).c_str(), PATH_MAX - 1);
-	}
-	else
-	{
-		strncpy(savefile, setSaveGameFileName(false, SaveFileType::FOLLOWERS, saveIndex).c_str(), PATH_MAX - 1);
-	}
-	completePath(path, savefile, outputdir);
-
-	// open file
-	if ( (fp = FileIO::open(path, "rb")) == NULL )
-	{
-		printlog("error: failed to load '%s'!\n", path);
-		return NULL;
-	}
-
-	// read from file
-	char checkstr[64];
-	fp->read(checkstr, sizeof(char), strlen("BARONYSAVEGAMEFOLLOWERS"));
-	if ( strncmp(checkstr, "BARONYSAVEGAMEFOLLOWERS", strlen("BARONYSAVEGAMEFOLLOWERS")) )
-	{
-		printlog("error: '%s' is corrupt!\n", path);
-		FileIO::close(fp);
-		return NULL;
-	}
-	fp->read(checkstr, sizeof(char), strlen(VERSION));
-	int versionNumber = getSavegameVersion(checkstr);
-	printlog("loadGameFollowersOld: '%s' version number %d", savefile, versionNumber);
-	if ( versionNumber == -1 )
-	{
-		// if version number returned is invalid, abort
-		printlog("error: '%s' is corrupt!\n", path);
-		FileIO::close(fp);
-		return nullptr;
-	}
-
-	// create followers list
-	list_t* followers = (list_t*) malloc(sizeof(list_t));
-	followers->first = NULL;
-	followers->last = NULL;
-
-	// read the follower data
-	for ( int c = 0; c < MAXPLAYERS; c++ )
-	{
-		list_t* followerList = (list_t*) malloc(sizeof(list_t));
-		followerList->first = NULL;
-		followerList->last = NULL;
-		node_t* node = list_AddNodeLast(followers);
-		node->element = followerList;
-		node->deconstructor = &listDeconstructor;
-		node->size = sizeof(list_t);
-
-		// number of followers for this player
-		Uint32 numFollowers = 0;
-		fp->read(&numFollowers, sizeof(Uint32), 1);
-
-		for ( int i = 0; i < numFollowers; i++ )
-		{
-			// Stat set to 0 as monster type not needed, values will be overwritten by the saved follower data
-			Stat* followerStats = new Stat(0);
-
-			node_t* node = list_AddNodeLast(followerList);
-			node->element = followerStats;
-			node->deconstructor = &statDeconstructor;
-			node->size = sizeof(followerStats);
-
-			// read follower attributes
-			fp->read(&followerStats->type, sizeof(Monster), 1);
-			fp->read(&followerStats->sex, sizeof(sex_t), 1);
-			fp->read(&followerStats->stat_appearance, sizeof(Uint32), 1);
-			fp->read(&followerStats->name, sizeof(char), 32);
-			fp->read(&followerStats->HP, sizeof(Sint32), 1);
-			fp->read(&followerStats->MAXHP, sizeof(Sint32), 1);
-			fp->read(&followerStats->MP, sizeof(Sint32), 1);
-			fp->read(&followerStats->MAXMP, sizeof(Sint32), 1);
-			fp->read(&followerStats->STR, sizeof(Sint32), 1);
-			fp->read(&followerStats->DEX, sizeof(Sint32), 1);
-			fp->read(&followerStats->CON, sizeof(Sint32), 1);
-			fp->read(&followerStats->INT, sizeof(Sint32), 1);
-			fp->read(&followerStats->PER, sizeof(Sint32), 1);
-			fp->read(&followerStats->CHR, sizeof(Sint32), 1);
-			fp->read(&followerStats->EXP, sizeof(Sint32), 1);
-			fp->read(&followerStats->LVL, sizeof(Sint32), 1);
-			fp->read(&followerStats->GOLD, sizeof(Sint32), 1);
-			fp->read(&followerStats->HUNGER, sizeof(Sint32), 1);
-
-			for ( int j = 0; j < NUMPROFICIENCIES; j++ )
-			{
-				if ( versionNumber < 323 && j >= PRO_UNARMED )
-				{
-					followerStats->setProficiency(j, 0);
-				}
-				else
-				{
-					Sint32 val = 0;
-					fp->read(&val, sizeof(Sint32), 1);
-					followerStats->setProficiency(j, val);
-				}
-			}
-			for ( int j = 0; j < NUMEFFECTS; j++ )
-			{
-				if ( versionNumber <= 323 ) // legacy
-				{
-					if ( c < 32 )
-					{
-						fp->read(&followerStats->EFFECTS[j], sizeof(bool), 1);
-						fp->read(&followerStats->EFFECTS_TIMERS[j], sizeof(Sint32), 1);
-					}
-					else
-					{
-						followerStats->EFFECTS[j] = false;
-						followerStats->EFFECTS_TIMERS[j] = 0;
-					}
-				}
-				else
-				{
-					fp->read(&followerStats->EFFECTS[j], sizeof(bool), 1);
-					fp->read(&followerStats->EFFECTS_TIMERS[j], sizeof(Sint32), 1);
-				}
-			}
-			if ( versionNumber >= 323 )
-			{
-				for ( int j = 0; j < 32; ++j )
-				{
-					fp->read(&followerStats->MISC_FLAGS[j], sizeof(Sint32), 1);
-				}
-			}
-			if ( versionNumber >= 384 )
-			{
-				Uint32 numAttributes = 0;
-				fp->read(&numAttributes, sizeof(Uint32), 1);
-				while ( numAttributes > 0 )
-				{
-					char key[32];
-					memset(key, 0, sizeof(key));
-					char value[32];
-					memset(value, 0, sizeof(value));
-					fp->read(&key, sizeof(char), 32);
-					fp->read(&value, sizeof(char), 32);
-					followerStats->attributes.emplace(std::make_pair(key, value));
-					--numAttributes;
-				}
-			}
-
-			/*printlog("\n\n ** FOLLOWER #%d **\n", i + 1);
-			printlog("Follower stats: \n");
-			followerStats->printStats();
-			printlog("\n\n");*/
-
-			// item variables
-			ItemType type;
-			Status status;
-			Sint16 beatitude;
-			Sint16 count;
-			Uint32 appearance;
-			bool identified;
-
-			// read follower inventory
-			Uint32 invSize = 0;
-			fp->read(&invSize, sizeof(Uint32), 1);
-			for ( int j = 0; j < invSize; j++ )
-			{
-				fp->read(&type, sizeof(ItemType), 1);
-				fp->read(&status, sizeof(Status), 1);
-				fp->read(&beatitude, sizeof(Sint16), 1);
-				fp->read(&count, sizeof(Sint16), 1);
-				fp->read(&appearance, sizeof(Uint32), 1);
-				fp->read(&identified, sizeof(bool), 1);
-
-				Item* item = newItem(type, status, beatitude, count, appearance, identified, &followerStats->inventory);
-				fp->read(&item->x, sizeof(Sint32), 1);
-				fp->read(&item->y, sizeof(Sint32), 1);
-			}
-
-			// read follower equipment
-			for ( int b = 0; b < 10; b++ )
-			{
-				fp->read(&type, sizeof(ItemType), 1);
-				if ( (int)type < NUMITEMS )
-				{
-					fp->read(&status, sizeof(Status), 1);
-					fp->read(&beatitude, sizeof(Sint16), 1);
-					fp->read(&count, sizeof(Sint16), 1);
-					fp->read(&appearance, sizeof(Uint32), 1);
-					fp->read(&identified, sizeof(bool), 1);
-
-					Item* item = newItem(type, status, beatitude, count, appearance, identified, NULL);
-
-					switch ( b )
-					{
-						case 0:
-							followerStats->helmet = item;
-							break;
-						case 1:
-							followerStats->breastplate = item;
-							break;
-						case 2:
-							followerStats->gloves = item;
-							break;
-						case 3:
-							followerStats->shoes = item;
-							break;
-						case 4:
-							followerStats->shield = item;
-							break;
-						case 5:
-							followerStats->weapon = item;
-							break;
-						case 6:
-							followerStats->cloak = item;
-							break;
-						case 7:
-							followerStats->amulet = item;
-							break;
-						case 8:
-							followerStats->ring = item;
-							break;
-						case 9:
-							followerStats->mask = item;
-							break;
-					}
-				}
-			}
-		}
-	}
-
-	FileIO::close(fp);
-	return followers;
 }
 
 /*-------------------------------------------------------------------------------
@@ -4061,10 +2824,14 @@ void updatePlayerConductsInMainLoop()
 	}
 	if ( !conductGameChallenges[CONDUCT_CLASSIC_MODE] )
 	{
-		if ( (svFlags & SV_FLAG_CLASSIC) )
+		if ( (svFlags & SV_FLAG_CLASSIC) && currentlevel < 25 )
 		{
 			conductGameChallenges[CONDUCT_CLASSIC_MODE] = 1;
 		}
+	}
+	else if ( currentlevel >= 25 )
+	{
+		conductGameChallenges[CONDUCT_CLASSIC_MODE] = 0;
 	}
 	if ( !conductGameChallenges[CONDUCT_MODDED] )
 	{
@@ -4088,6 +2855,13 @@ void updatePlayerConductsInMainLoop()
 
 	achievementObserver.updateClientBounties(false);
 
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		if ( achievementObserver.playerAchievements[i].hellsKitchen >= 0 )
+		{
+			achievementObserver.playerAchievements[i].hellsKitchen = 0;
+		}
+	}
 	achievementObserver.achievementTimersTickDown();
 }
 
@@ -4133,6 +2907,38 @@ void updateGameplayStatisticsInMainLoop()
 	if ( gameStatistics[STATISTICS_TRIBE_SUBSCRIBE] >= 4 )
 	{
 		steamAchievement("BARONY_ACH_TRIBE_SUBSCRIBE");
+	}
+	if ( gameStatistics[STATISTICS_SKID_ROW] >= 50 )
+	{
+		steamAchievement("BARONY_ACH_SKID_ROW");
+	}
+	if ( gameStatistics[STATISTICS_WRECKING_CREW] >= 20 )
+	{
+		steamAchievement("BARONY_ACH_WRECKING_CREW");
+	}
+	if ( gameStatistics[STATISTICS_EAT_ME] >= 50 )
+	{
+		steamAchievement("BARONY_ACH_EAT_ME");
+	}
+	if ( gameStatistics[STATISTICS_BONK] >= 20 )
+	{
+		steamAchievement("BARONY_ACH_BONK");
+	}
+	if ( gameStatistics[STATISTICS_RIGHTEOUS_FURY] >= 50 )
+	{
+		steamAchievement("BARONY_ACH_RIGHTEOUS_FURY");
+	}
+	if ( gameStatistics[STATISTICS_BARDIC_INSPIRATION] >= 10 )
+	{
+		steamAchievement("BARONY_ACH_BARDIC_INSPIRATION");
+	}
+	if ( gameStatistics[STATISTICS_PARRY_TANK] >= 20 )
+	{
+		steamAchievement("BARONY_ACH_PARRY_TANK");
+	}
+	if ( gameStatistics[STATISTICS_THATS_CHEATING] >= 10 )
+	{
+		steamAchievement("BARONY_ACH_THATS_CHEATING");
 	}
 	if ( gameStatistics[STATISTICS_FORUM_TROLL] > 0 )
 	{
@@ -4195,22 +3001,48 @@ void updateGameplayStatisticsInMainLoop()
 		}
 	}
 
-	if ( (ticks % (TICKS_PER_SECOND * 8) == 0) && (gameStatistics[STATISTICS_POP_QUIZ_1] != 0 || gameStatistics[STATISTICS_POP_QUIZ_2] != 0) )
+	if ( (ticks % (TICKS_PER_SECOND * 8) == 0) )
 	{
-		int numSpellsCast = 0;
-		int stat1 = gameStatistics[STATISTICS_POP_QUIZ_1];
-		int stat2 = gameStatistics[STATISTICS_POP_QUIZ_1];
-		for ( int i = 0; i < 30; ++i )
+		if ( stats[clientnum]->getProficiency(PRO_SORCERY) >= SKILL_LEVEL_LEGENDARY
+			&& stats[clientnum]->getProficiency(PRO_MYSTICISM) >= SKILL_LEVEL_LEGENDARY
+			&& stats[clientnum]->getProficiency(PRO_THAUMATURGY) >= SKILL_LEVEL_LEGENDARY )
 		{
-			// count the bits set.
-			numSpellsCast += (stat1 & 1);
-			numSpellsCast += (stat2 & 1);
-			stat1 = stat1 >> 1;
-			stat2 = stat2 >> 1;
+			steamAchievement("BARONY_ACH_MASTER_MAGIC");
 		}
-		if ( numSpellsCast >= 20 )
+
+		if ( gameStatistics[STATISTICS_FLAVORTOWN] != 0 )
 		{
-			steamAchievement("BARONY_ACH_POP_QUIZ");
+			int numflavors = 0;
+			for ( int i = 0; i < 6; ++i )
+			{
+				if ( gameStatistics[STATISTICS_FLAVORTOWN] & (1 << i) )
+				{
+					++numflavors;
+				}
+			}
+			if ( numflavors >= 6 )
+			{
+				steamAchievement("BARONY_ACH_FLAVORTOWN");
+			}
+		}
+
+		if ( (gameStatistics[STATISTICS_POP_QUIZ_1] != 0 || gameStatistics[STATISTICS_POP_QUIZ_2] != 0) )
+		{
+			int numSpellsCast = 0;
+			int stat1 = gameStatistics[STATISTICS_POP_QUIZ_1];
+			int stat2 = gameStatistics[STATISTICS_POP_QUIZ_2];
+			for ( int i = 0; i < 30; ++i )
+			{
+				// count the bits set.
+				numSpellsCast += (stat1 & 1);
+				numSpellsCast += (stat2 & 1);
+				stat1 = stat1 >> 1;
+				stat2 = stat2 >> 1;
+			}
+			if ( numSpellsCast >= 20 )
+			{
+				steamAchievement("BARONY_ACH_POP_QUIZ");
+			}
 		}
 	}
 
@@ -4262,6 +3094,24 @@ void updateGameplayStatisticsInMainLoop()
 		}
 	}
 
+	if ( multiplayer != CLIENT && ticks % (TICKS_PER_SECOND / 2) == 0 )
+	{
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( achievementObserver.playerAchievements[i].parryTank > 0 )
+			{
+				serverUpdatePlayerGameplayStats(i, STATISTICS_PARRY_TANK, achievementObserver.playerAchievements[i].parryTank);
+				achievementObserver.playerAchievements[i].parryTank = 0;
+			}
+			else if ( achievementObserver.playerAchievements[i].parryTank < 0 )
+			{
+				serverUpdatePlayerGameplayStats(i, STATISTICS_PARRY_TANK, 0);
+				achievementObserver.playerAchievements[i].parryTank = 0;
+			}
+		}
+	}
+
+
 	if ( ticks % (TICKS_PER_SECOND * 5) == 0 )
 	{
 		std::unordered_set<int> potionList;
@@ -4305,11 +3155,12 @@ void updateGameplayStatisticsInMainLoop()
 				}
 				else if ( client_classes[clientnum] == CLASS_HUNTER && isRangedWeapon(*item) )
 				{
-					if ( item->type == CROSSBOW || item->type == HEAVY_CROSSBOW )
+					if ( item->type == CROSSBOW || item->type == HEAVY_CROSSBOW || item->type == BLACKIRON_CROSSBOW )
 					{
 						bowList.insert(CROSSBOW);
 					}
-					else if ( item->type == SHORTBOW || item->type == LONGBOW || item->type == COMPOUND_BOW )
+					else if ( item->type == SHORTBOW || item->type == LONGBOW || item->type == COMPOUND_BOW
+						|| item->type == BRANCH_BOW || item->type == BRANCH_BOW_INFECTED || item->type == BONE_SHORTBOW )
 					{
 						bowList.insert(SHORTBOW);
 					}
@@ -4360,6 +3211,31 @@ void updateGameplayStatisticsInMainLoop()
 				{
 					steamStatisticUpdateClient(i, STEAM_STAT_TRASH_COMPACTOR, STEAM_STAT_INT, achievementObserver.playerAchievements[i].trashCompactor);
 					achievementObserver.playerAchievements[i].trashCompactor = 0;
+				}
+				if ( achievementObserver.playerAchievements[i].sourceEngine > 0 )
+				{
+					steamStatisticUpdateClient(i, STEAM_STAT_SOURCE_ENGINE, STEAM_STAT_INT, achievementObserver.playerAchievements[i].sourceEngine);
+					achievementObserver.playerAchievements[i].sourceEngine = 0;
+				}
+				if ( achievementObserver.playerAchievements[i].skidRow > 0 )
+				{
+					serverUpdatePlayerGameplayStats(i, STATISTICS_SKID_ROW, achievementObserver.playerAchievements[i].skidRow);
+					achievementObserver.playerAchievements[i].skidRow = 0;
+				}
+				if ( achievementObserver.playerAchievements[i].bonk > 0 )
+				{
+					serverUpdatePlayerGameplayStats(i, STATISTICS_BONK, achievementObserver.playerAchievements[i].bonk);
+					achievementObserver.playerAchievements[i].bonk = 0;
+				}
+				if ( achievementObserver.playerAchievements[i].righteousFury > 0 )
+				{
+					serverUpdatePlayerGameplayStats(i, STATISTICS_RIGHTEOUS_FURY, achievementObserver.playerAchievements[i].righteousFury);
+					achievementObserver.playerAchievements[i].righteousFury = 0;
+				}
+				if ( achievementObserver.playerAchievements[i].eatMe > 0 )
+				{
+					serverUpdatePlayerGameplayStats(i, STATISTICS_EAT_ME, achievementObserver.playerAchievements[i].eatMe);
+					achievementObserver.playerAchievements[i].eatMe = 0;
 				}
 			}
 		}
@@ -5235,6 +4111,8 @@ bool AchievementObserver::updateOnLevelChange()
 			playerAchievements[i].updatedBountyTargets = false;
 			playerAchievements[i].wearingBountyHat = false;
 			playerAchievements[i].totalKillsTickUpdate = false;
+			playerAchievements[i].manifestDestinyChests.clear();
+			playerAchievements[i].manifestDestinyChestSequence = 0;
 		}
 		levelObserved = currentlevel;
 		return true;
@@ -5244,6 +4122,7 @@ bool AchievementObserver::updateOnLevelChange()
 
 int AchievementObserver::checkUidIsFromPlayer(Uint32 uid)
 {
+	if ( uid == 0 ) { return -1; }
 	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
 		if ( achievementObserver.playerUids[i] == uid )
@@ -5396,6 +4275,39 @@ void AchievementObserver::updateData()
 				}
 			}
 			monstersGeneratedOnLevel.push_back(mapCreature);
+		}
+	}
+
+
+	if ( multiplayer != CLIENT )
+	{
+		std::vector<Uint32> chestsOnLevel;
+		for ( node_t* node = map.entities->first; node; node = node->next )
+		{
+			Entity* entity = (Entity*)node->element;
+			if ( entity && (entity->behavior == &actChest || (entity->behavior == &actMonster && entity->getStats() && entity->getStats()->type == MIMIC) ) )
+			{
+				chestsOnLevel.push_back(entity->getUID());
+			}
+		}
+		if ( chestsOnLevel.size() )
+		{
+			BaronyRNG chestSeed;
+			chestSeed.seedBytes(&mapseed, sizeof(mapseed));
+
+			std::vector<unsigned int> chances(chestsOnLevel.size());
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				playerAchievements[i].manifestDestinyChests.clear();
+				std::fill(chances.begin(), chances.end(), 1);
+				while ( playerAchievements[i].manifestDestinyChests.size() < chestsOnLevel.size() )
+				{
+					int pick = chestSeed.discrete(chances.data(), chances.size());
+					playerAchievements[i].manifestDestinyChests.push_back(chestsOnLevel[pick]);
+					chances[pick] = 0;
+				}
+				playerAchievements[i].manifestDestinyChestSequence = chestSeed.rand() % playerAchievements[i].manifestDestinyChests.size();
+			}
 		}
 	}
 
@@ -5561,6 +4473,13 @@ void AchievementObserver::awardAchievementIfActive(int player, Entity* entity, i
 					awardAchievement(player, achievement);
 				}
 			}
+			else if ( achievement == BARONY_ACH_FOOD_FIGHT )
+			{
+				if ( (*it).second[achievement].second >= 4 )
+				{
+					awardAchievement(player, achievement);
+				}
+			}
 			else if ( achievement == BARONY_ACH_OHAI_MARK )
 			{
 				serverUpdatePlayerGameplayStats(player, STATISTICS_OHAI_MARK, 1);
@@ -5572,6 +4491,10 @@ void AchievementObserver::awardAchievementIfActive(int player, Entity* entity, i
 			else if ( achievement == BARONY_ACH_COWBOY_FROM_HELL )
 			{
 				steamStatisticUpdateClient(player, STEAM_STAT_COWBOY_FROM_HELL, STEAM_STAT_INT, 1);
+			}
+			else if ( achievement == BARONY_ACH_THATS_A_WRAP )
+			{
+				steamStatisticUpdateClient(player, STEAM_STAT_THATS_A_WRAP, STEAM_STAT_INT, 1);
 			}
 			else
 			{
@@ -5617,7 +4540,14 @@ std::set<ItemType> AchievementObserver::PlayerAchievements::startingClassItems =
 	PUNISHER_HOOD,
 	MASK_SHAMAN,
 	TOOL_BLINDFOLD_TELEPATHY,
-	TOOL_BLINDFOLD
+	TOOL_BLINDFOLD,
+	MASK_EYEPATCH,
+	HOOD_TEAL,
+	MASK_PIPE,
+	HAT_PLUMED_CAP,
+	CHAIN_COIF
+	/*,
+	HAT_CIRCLET_WISDOM*/
 };
 
 int AchievementObserver::PlayerAchievements::getItemIndexForDapperAchievement(Item* item)
@@ -5870,6 +4800,7 @@ void AchievementObserver::updatePlayerAchievement(int player, Achievement achiev
 		case BARONY_ACH_COOP_ESCAPE_MINES:
 		{
 			std::unordered_set<int> races;
+			std::unordered_set<int> short_races;
 			std::unordered_set<int> classes;
 			std::vector<int> awardAchievementsToAllPlayers;
 			int num = 0;
@@ -5880,8 +4811,16 @@ void AchievementObserver::updatePlayerAchievement(int player, Achievement achiev
 					if ( stats[i] && stats[i]->playerRace != RACE_HUMAN && stats[i]->stat_appearance == 0 )
 					{
 						races.insert(stats[i]->playerRace);
+
+						if ( stats[i]->playerRace == RACE_GNOME
+							|| stats[i]->playerRace == RACE_GREMLIN
+							|| (stats[i]->playerRace == RACE_DRYAD && stats[i]->sex == FEMALE)
+							|| (stats[i]->playerRace == RACE_MYCONID && stats[i]->sex == MALE) )
+						{
+							short_races.insert(stats[i]->playerRace);
+						}
 					}
-					if ( client_classes[i] > CLASS_MONK )
+					//if ( client_classes[i] > CLASS_MONK )
 					{
 						classes.insert(client_classes[i]);
 					}
@@ -5910,6 +4849,33 @@ void AchievementObserver::updatePlayerAchievement(int player, Achievement achiev
 				{
 					awardAchievementsToAllPlayers.push_back(BARONY_ACH_TRIBAL);
 				}
+
+				std::set<int> expansions;
+				for ( auto race : races )
+				{
+					if ( race >= RACE_SKELETON && race <= RACE_GOATMAN )
+					{
+						expansions.insert(1);
+					}
+					if ( race >= RACE_AUTOMATON && race <= RACE_INSECTOID )
+					{
+						expansions.insert(2);
+					}
+					if ( race >= RACE_GNOME && race <= RACE_SALAMANDER )
+					{
+						expansions.insert(3);
+					}
+				}
+
+				if ( expansions.size() == 3 )
+				{
+					awardAchievementsToAllPlayers.push_back(BARONY_ACH_FOREIGN_EXCHANGE);
+				}
+
+				if ( races.size() >= 3 && short_races.size() == races.size() )
+				{
+					awardAchievementsToAllPlayers.push_back(BARONY_ACH_SHORT_SHORTS);
+				}
 			}
 
 			if ( !classes.empty() )
@@ -5929,6 +4895,62 @@ void AchievementObserver::updatePlayerAchievement(int player, Achievement achiev
 				if ( classes.find(CLASS_HUNTER) != classes.end() && classes.find(CLASS_BREWER) != classes.end() )
 				{
 					awardAchievementsToAllPlayers.push_back(BARONY_ACH_SURVIVALISTS);
+				}
+
+				if ( classes.find(CLASS_SCION) != classes.end()
+					&& (classes.find(CLASS_WIZARD) != classes.end()
+						|| classes.find(CLASS_HEALER) != classes.end()
+						|| classes.find(CLASS_ARCANIST) != classes.end()) )
+				{
+					awardAchievementsToAllPlayers.push_back(BARONY_ACH_APPRENTICES);
+				}
+				if ( classes.find(CLASS_PALADIN) != classes.end()
+					&& (classes.find(CLASS_MONK) != classes.end()
+						|| classes.find(CLASS_SEXTON) != classes.end()
+						|| classes.find(CLASS_CLERIC) != classes.end()) )
+				{
+					awardAchievementsToAllPlayers.push_back(BARONY_ACH_HOLY_ORDER);
+				}
+				if ( classes.find(CLASS_SAPPER) != classes.end()
+					&& (classes.find(CLASS_WARRIOR) != classes.end()
+						|| classes.find(CLASS_BARBARIAN) != classes.end()) )
+				{
+					awardAchievementsToAllPlayers.push_back(BARONY_ACH_CONSCRIPTED);
+				}
+				if ( classes.find(CLASS_BARD) != classes.end()
+					&& (classes.find(CLASS_ROGUE) != classes.end()
+						|| classes.find(CLASS_MERCHANT) != classes.end()
+						|| classes.find(CLASS_JOKER) != classes.end()) )
+				{
+					awardAchievementsToAllPlayers.push_back(BARONY_ACH_RIZZLERS);
+				}
+				if ( classes.find(CLASS_HERMIT) != classes.end()
+					&& (classes.find(CLASS_WANDERER) != classes.end()
+						|| classes.find(CLASS_NINJA) != classes.end()) )
+				{
+					awardAchievementsToAllPlayers.push_back(BARONY_ACH_LONER_LEAGUE);
+				}
+
+				std::set<int> expansions;
+				for ( auto classnum : classes )
+				{
+					if ( classnum >= CLASS_CONJURER && classnum <= CLASS_BREWER )
+					{
+						expansions.insert(1);
+					}
+					if ( classnum >= CLASS_MACHINIST && classnum <= CLASS_HUNTER )
+					{
+						expansions.insert(2);
+					}
+					if ( classnum >= CLASS_BARD && classnum <= CLASS_PALADIN )
+					{
+						expansions.insert(3);
+					}
+				}
+
+				if ( expansions.size() == 3 )
+				{
+					awardAchievementsToAllPlayers.push_back(BARONY_ACH_STUDY_ABROAD);
 				}
 			}
 			if ( !awardAchievementsToAllPlayers.empty() )
@@ -5979,6 +5001,13 @@ void AchievementObserver::clearPlayerAchievementData()
 		playerAchievements[i].socialButterfly = 0;
 		playerAchievements[i].rollTheBones = 0;
 		playerAchievements[i].trashCompactor = 0;
+		playerAchievements[i].skidRow = 0;
+		playerAchievements[i].bonk = 0;
+		playerAchievements[i].righteousFury = 0;
+		playerAchievements[i].hellsKitchen = 0;
+		playerAchievements[i].eatMe = 0;
+		playerAchievements[i].sourceEngine = 0;
+		playerAchievements[i].parryTank = 0;
 
 		playerAchievements[i].realBoy = std::make_pair(0, 0);
 		playerAchievements[i].caughtInAMoshTargets.clear();
@@ -6066,6 +5095,36 @@ void AchievementObserver::awardAchievement(int player, int achievement)
 			break;
 		case BARONY_ACH_BY_THE_BOOK:
 			steamAchievementClient(player, "BARONY_ACH_BY_THE_BOOK");
+			break;
+		case BARONY_ACH_THATS_A_WRAP:
+			steamAchievementClient(player, "BARONY_ACH_THATS_A_WRAP");
+			break;
+		case BARONY_ACH_APPRENTICES:
+			steamAchievementClient(player, "BARONY_ACH_APPRENTICES");
+			break;
+		case BARONY_ACH_SHORT_SHORTS:
+			steamAchievementClient(player, "BARONY_ACH_SHORT_SHORTS");
+			break;
+		case BARONY_ACH_HOLY_ORDER:
+			steamAchievementClient(player, "BARONY_ACH_HOLY_ORDER");
+			break;
+		case BARONY_ACH_CONSCRIPTED:
+			steamAchievementClient(player, "BARONY_ACH_CONSCRIPTED");
+			break;
+		case BARONY_ACH_LONER_LEAGUE:
+			steamAchievementClient(player, "BARONY_ACH_LONER_LEAGUE");
+			break;
+		case BARONY_ACH_RIZZLERS:
+			steamAchievementClient(player, "BARONY_ACH_RIZZLERS");
+			break;
+		case BARONY_ACH_FOREIGN_EXCHANGE:
+			steamAchievementClient(player, "BARONY_ACH_FOREIGN_EXCHANGE");
+			break;
+		case BARONY_ACH_STUDY_ABROAD:
+			steamAchievementClient(player, "BARONY_ACH_STUDY_ABROAD");
+			break;
+		case BARONY_ACH_FOOD_FIGHT:
+			steamAchievementClient(player, "BARONY_ACH_FOOD_FIGHT");
 			break;
 		default:
 			messagePlayer(player, MESSAGE_DEBUG, "[WARNING]: Unhandled achievement: %d", achievement);
@@ -6411,6 +5470,10 @@ void SaveGameInfo::computeHash(const int playernum, Uint32& hash)
 		{
 			item.computeHash(hash, shift);
 		}
+		for ( auto& item : stats->void_chest_inventory )
+		{
+			item.computeHash(hash, shift);
+		}
 		for ( auto& bag : stats->player_lootbags )
 		{
 			hash += (Uint32)((Uint32)bag.first << (shift % 32)); ++shift;
@@ -6430,6 +5493,52 @@ void SaveGameInfo::computeHash(const int playernum, Uint32& hash)
 		hash += djb2Hash(const_cast<char*>(pair.first.c_str()));
 		hash += djb2Hash(const_cast<char*>(pair.second.c_str()));
 	}
+
+	for ( auto& val : players[playernum].itemDegradeRNG )
+	{
+		hash += (Uint32)((Uint32)val.first << (shift % 32)); ++shift;
+		hash += (Uint32)((Uint32)val.second << (shift % 32)); ++shift;
+	}
+	for ( auto& val : players[playernum].escalatingRngRolls )
+	{
+		hash += (Uint32)((Uint32)val.first << (shift % 32)); ++shift;
+		hash += (Uint32)((Uint32)val.second << (shift % 32)); ++shift;
+	}
+	for ( auto& val : players[playernum].escalatingSpellRngRolls )
+	{
+		hash += (Uint32)((Uint32)val.first << (shift % 32)); ++shift;
+		hash += (Uint32)((Uint32)val.second << (shift % 32)); ++shift;
+	}
+	for ( auto& val : players[playernum].appraisal_item_progress )
+	{
+		hash += (Uint32)((Uint32)val.first << (shift % 32)); ++shift;
+		hash += (Uint32)((Uint32)val.second << (shift % 32)); ++shift;
+	}
+	for ( auto& val : players[playernum].learnedSpells )
+	{
+		hash += (Uint32)((Uint32)val << (shift % 32)); ++shift;
+	}
+	for ( auto& val : players[playernum].sustainedSpellIDCounter )
+	{
+		hash += (Uint32)((Uint32)val.first << (shift % 32)); ++shift;
+		hash += (Uint32)((Uint32)val.second << (shift % 32)); ++shift;
+	}
+	for ( auto& val : players[playernum].ducksInARow )
+	{
+		hash += (Uint32)((Uint32)val.first << (shift % 32)); ++shift;
+		hash += (Uint32)((Uint32)val.second << (shift % 32)); ++shift;
+	}
+	for ( auto& val : players[playernum].favoriteBooksAchievement )
+	{
+		hash += (Uint32)((Uint32)val.first << (shift % 32)); ++shift;
+		hash += (Uint32)((Uint32)val.second << (shift % 32)); ++shift;
+	}
+	hash += (Uint32)((Uint32)players[playernum].sustainedSpellMPUsedSorcery << (shift % 32)); ++shift;
+	hash += (Uint32)((Uint32)players[playernum].sustainedSpellMPUsedMysticism << (shift % 32)); ++shift;
+	hash += (Uint32)((Uint32)players[playernum].sustainedSpellMPUsedThaumaturgy << (shift % 32)); ++shift;
+	hash += (Uint32)((Uint32)players[playernum].baseSpellMPUsedSorcery << (shift % 32)); ++shift;
+	hash += (Uint32)((Uint32)players[playernum].baseSpellMPUsedMysticism << (shift % 32)); ++shift;
+	hash += (Uint32)((Uint32)players[playernum].baseSpellMPUsedThaumaturgy << (shift % 32)); ++shift;
 }
 
 void SaveGameInfo::Player::stat_t::item_t::computeHash(Uint32& hash, Uint32& shift)
@@ -6508,7 +5617,7 @@ int SaveGameInfo::populateFromSession(const int playernum)
 	info->players_connected.resize(MAXPLAYERS);
 	info->players.resize(MAXPLAYERS);
 	for ( int c = 0; c < MAXPLAYERS; ++c ) {
-		info->players_connected[c] = client_disconnected[c] ? 0 : 1;
+		info->players_connected[c] = client_disconnected[c] && !::players[c]->was_connected_to_game ? 0 : 1;
 		if ( info->players_connected[c] ) {
 			auto& player = info->players[c];
 			player.char_class = client_classes[c];
@@ -6648,9 +5757,11 @@ int SaveGameInfo::populateFromSession(const int playernum)
 			}
 			player.stats.EFFECTS.resize(NUMEFFECTS);
 			player.stats.EFFECTS_TIMERS.resize(NUMEFFECTS);
+			player.stats.EFFECTS_ACCRETION_TIME.resize(NUMEFFECTS);
 			for ( int i = 0; i < NUMEFFECTS; ++i ) {
-				player.stats.EFFECTS[i] = stats[c]->EFFECTS[i];
+				player.stats.EFFECTS[i] = stats[c]->getEffectActive(i);
 				player.stats.EFFECTS_TIMERS[i] = stats[c]->EFFECTS_TIMERS[i];
+				player.stats.EFFECTS_ACCRETION_TIME[i] = stats[c]->EFFECTS_ACCRETION_TIME[i];
 			}
 			constexpr int NUMMISCFLAGS = sizeof(Stat::MISC_FLAGS) / sizeof(Stat::MISC_FLAGS[0]);
 			player.stats.MISC_FLAGS.resize(NUMMISCFLAGS);
@@ -6676,7 +5787,37 @@ int SaveGameInfo::populateFromSession(const int playernum)
 			{
 				player.itemDegradeRNG.push_back(pair);
 			}
-			player.sustainedSpellMPUsed = ::players[c]->mechanics.sustainedSpellMPUsed;
+			for ( auto learnedSpell : ::players[c]->mechanics.learnedSpells )
+			{
+				player.learnedSpells.push_back(learnedSpell);
+			}
+			for ( auto& pair : ::players[c]->mechanics.sustainedSpellIDCounter )
+			{
+				player.sustainedSpellIDCounter.push_back(pair);
+			}
+			for ( auto& pair : ::players[c]->mechanics.ducksInARow )
+			{
+				player.ducksInARow.push_back(pair);
+			}
+			for ( auto& pair : ::players[c]->mechanics.favoriteBooksAchievement )
+			{
+				player.favoriteBooksAchievement.push_back(pair);
+			}
+			for ( auto& pair : ::players[c]->mechanics.escalatingRngRolls )
+			{
+				player.escalatingRngRolls.push_back(pair);
+			}
+			for ( auto& pair : ::players[c]->mechanics.escalatingSpellRngRolls )
+			{
+				player.escalatingSpellRngRolls.push_back(pair);
+			}
+			player.sustainedSpellMPUsedSorcery = ::players[c]->mechanics.sustainedSpellMPUsedSorcery;
+			player.sustainedSpellMPUsedMysticism = ::players[c]->mechanics.sustainedSpellMPUsedMysticism;
+			player.sustainedSpellMPUsedThaumaturgy = ::players[c]->mechanics.sustainedSpellMPUsedThaumaturgy;
+
+			player.baseSpellMPUsedSorcery = ::players[c]->mechanics.baseSpellMPUsedSorcery;
+			player.baseSpellMPUsedMysticism = ::players[c]->mechanics.baseSpellMPUsedMysticism;
+			player.baseSpellMPUsedThaumaturgy = ::players[c]->mechanics.baseSpellMPUsedThaumaturgy;
 
 			for ( auto& pair : ::players[c]->compendiumProgress.itemEvents )
 			{
@@ -6759,7 +5900,30 @@ int SaveGameInfo::populateFromSession(const int playernum)
 			for ( node_t* node = stats[c]->inventory.first;
 				node != nullptr; node = node->next ) {
 				auto item = (Item*)node->element;
+				if ( ::players[c]->inventoryUI.appraisal.appraisalProgressionItems.find(item->uid)
+					!= ::players[c]->inventoryUI.appraisal.appraisalProgressionItems.end() )
+				{
+					player.appraisal_item_progress.push_back(std::make_pair(player.stats.inventory.size(), 
+						::players[c]->inventoryUI.appraisal.appraisalProgressionItems[item->uid]));
+				}
 				player.stats.inventory.push_back(
+					SaveGameInfo::Player::stat_t::item_t{
+					(Uint32)item->type,
+					(Uint32)item->status,
+					item->appearance,
+					item->beatitude,
+					item->count,
+					item->identified,
+					item->x,
+					item->y,
+					});
+			}
+
+			// void chest inventory
+			for ( node_t* node = stats[c]->void_chest_inventory.first;
+				node != nullptr; node = node->next ) {
+				auto item = (Item*)node->element;
+				player.stats.void_chest_inventory.push_back(
 					SaveGameInfo::Player::stat_t::item_t{
 					(Uint32)item->type,
 					(Uint32)item->status,
@@ -6803,9 +5967,11 @@ int SaveGameInfo::populateFromSession(const int playernum)
 					}
 					stats.EFFECTS.resize(NUMEFFECTS);
 					stats.EFFECTS_TIMERS.resize(NUMEFFECTS);
+					stats.EFFECTS_ACCRETION_TIME.resize(NUMEFFECTS);
 					for ( int i = 0; i < NUMEFFECTS; ++i ) {
-						stats.EFFECTS[i] = follower->EFFECTS[i];
+						stats.EFFECTS[i] = follower->getEffectActive(i);
 						stats.EFFECTS_TIMERS[i] = follower->EFFECTS_TIMERS[i];
+						stats.EFFECTS_ACCRETION_TIME[i] = follower->EFFECTS_ACCRETION_TIME[i];
 					}
 					stats.MISC_FLAGS.resize(NUMMISCFLAGS);
 					for ( int i = 0; i < NUMMISCFLAGS; ++i ) {
@@ -6901,7 +6067,7 @@ int saveGame(int saveIndex) {
 	char path[PATH_MAX] = "";
 	std::string savefile = setSaveGameFileName(multiplayer == SINGLE, SaveFileType::JSON, saveIndex);
 	completePath(path, savefile.c_str(), outputdir);
-	auto result = FileHelper::writeObject(path, *cvar_saveText ? EFileFormat::Json : EFileFormat::Binary, info);
+	auto result = FileHelper::writeObject(path, *cvar_saveText ? EFileFormat::Json_Compact : EFileFormat::Binary, info);
 	return result == true ? 0 : 1;
 }
 
@@ -6913,7 +6079,7 @@ int SaveGameInfo::getTotalScore(const int playernum, const int victory)
 
 	for ( auto& item : stats->inventory )
 	{
-		amount += items[item.type].value;
+		amount += items[item.type].gold_value;
 	}
 	amount += stats->GOLD;
 	amount += stats->EXP;
@@ -6927,7 +6093,18 @@ int SaveGameInfo::getTotalScore(const int playernum, const int victory)
 	{
 		if ( c != HUMAN )
 		{
-			amount += player.kills[c] * 100;
+			if ( c == DEVIL || c == LICH_ICE || c == LICH_FIRE )
+			{
+				amount += std::min(1, player.kills[c]) * 100;
+			}
+			else if ( c == LICH )
+			{
+				amount += std::min(3, player.kills[c]) * 100;
+			}
+			else
+			{
+				amount += player.kills[c] * 100;
+			}
 		}
 		else
 		{
@@ -7108,6 +6285,16 @@ std::string SaveGameInfo::serializeToOnlineHiscore(const int playernum, const in
 			statisticsArr.PushBack(player.gameStatistics[i], d.GetAllocator());
 		}
 		attrObj.AddMember("statistics", statisticsArr, d.GetAllocator());
+
+		rapidjson::Value effectsObj(rapidjson::kObjectType);
+		for ( int i = 0; i < NUMEFFECTS; ++i )
+		{
+			if ( myStats.EFFECTS[i] > 0 )
+			{
+				effectsObj.AddMember(rapidjson::Value(std::to_string(i).c_str(), d.GetAllocator()), rapidjson::Value(myStats.EFFECTS[i]), d.GetAllocator());
+			}
+		}
+		attrObj.AddMember("effects", effectsObj, d.GetAllocator());
 
 		character.AddMember("attributes", attrObj, d.GetAllocator());
 	}
@@ -7342,13 +6529,28 @@ int loadGame(int player, const SaveGameInfo& info) {
 	for (int c = 0; c < NUMEFFECTS; ++c) {
 		if ( c < p.EFFECTS.size() )
 		{
-			stats[statsPlayer]->EFFECTS[c] = p.EFFECTS[c];
-			stats[statsPlayer]->EFFECTS_TIMERS[c] = p.EFFECTS_TIMERS[c];
+			stats[statsPlayer]->setEffectValueUnsafe(c, (Uint8)p.EFFECTS[c]);
+			if ( c < p.EFFECTS_TIMERS.size() )
+			{
+				stats[statsPlayer]->EFFECTS_TIMERS[c] = p.EFFECTS_TIMERS[c];
+			}
+			else
+			{
+				stats[statsPlayer]->EFFECTS_TIMERS[c] = 0;
+			}
 		}
 		else
 		{
-			stats[statsPlayer]->EFFECTS[c] = 0;
+			stats[statsPlayer]->clearEffect(c);
 			stats[statsPlayer]->EFFECTS_TIMERS[c] = 0;
+		}
+		if ( c < p.EFFECTS_ACCRETION_TIME.size() )
+		{
+			stats[statsPlayer]->EFFECTS_ACCRETION_TIME[c] = p.EFFECTS_ACCRETION_TIME[c];
+		}
+		else
+		{
+			stats[statsPlayer]->EFFECTS_ACCRETION_TIME[c] = 0;
 		}
 	}
 	constexpr int NUMMISCFLAGS = sizeof(Stat::MISC_FLAGS) / sizeof(Stat::MISC_FLAGS[0]);
@@ -7378,8 +6580,21 @@ int loadGame(int player, const SaveGameInfo& info) {
 		}
 	}
 
+	players[statsPlayer]->inventoryUI.appraisal.appraisalProgressionItems.clear();
+	bool checkAppraisalProgress = players[statsPlayer]->isLocalPlayer();
+	std::map<int, int> appraisalMap;
+	if ( checkAppraisalProgress )
+	{
+		for ( auto& pair : info.players[player].appraisal_item_progress )
+		{
+			appraisalMap[pair.first] = pair.second;
+		}
+	}
+
 	// inventory
+	int inventory_index = -1;
 	for (auto& item : p.inventory) {
+		++inventory_index;
 		ItemType type = static_cast<ItemType>(item.type);
 		Status status = static_cast<Status>(item.status);
 		Sint16 beatitude = item.beatitude;
@@ -7388,6 +6603,25 @@ int loadGame(int player, const SaveGameInfo& info) {
 		bool identified = item.identified;
 		Item* i = newItem(type, status, beatitude, count,
 			appearance, identified, &stats[statsPlayer]->inventory);
+		i->x = item.x;
+		i->y = item.y;
+
+		if ( appraisalMap.find(inventory_index) != appraisalMap.end() )
+		{
+			players[statsPlayer]->inventoryUI.appraisal.appraisalProgressionItems[i->uid] = appraisalMap[inventory_index];
+		}
+	}
+
+	// void chest inventory
+	for ( auto& item : p.void_chest_inventory ) {
+		ItemType type = static_cast<ItemType>(item.type);
+		Status status = static_cast<Status>(item.status);
+		Sint16 beatitude = item.beatitude;
+		Sint16 count = item.count;
+		Uint32 appearance = item.appearance;
+		bool identified = item.identified;
+		Item* i = newItem(type, status, beatitude, count,
+			appearance, identified, &stats[statsPlayer]->void_chest_inventory);
 		i->x = item.x;
 		i->y = item.y;
 	}
@@ -7408,6 +6642,7 @@ int loadGame(int player, const SaveGameInfo& info) {
 	if (players[statsPlayer]->isLocalPlayer()) {
 		// if this is a local player, we have their inventory, and can
 		// restore equipment using item indexes in the player_equipment table
+
 		for (auto& item : p.player_equipment) {
 			auto find = slots.find(item.first);
 			if (find != slots.end()) {
@@ -7497,6 +6732,7 @@ int loadGame(int player, const SaveGameInfo& info) {
 	// generate mimics
 	{
 		mimic_generator.init();
+		treasure_room_generator.init();
 	}
 
 	// shopkeeper hostility
@@ -7557,12 +6793,54 @@ int loadGame(int player, const SaveGameInfo& info) {
 	{
 		auto& mechanics = players[statsPlayer]->mechanics;
 		mechanics.itemDegradeRng.clear();
+		mechanics.learnedSpells.clear();
+		mechanics.ducksInARow.clear();
+		mechanics.favoriteBooksAchievement.clear();
+		mechanics.sustainedSpellIDCounter.clear();
+		hamletShopkeeperSkillLimit[statsPlayer].clear();
+		mechanics.baseSpellLevelUpProcs.clear();
+		mechanics.escalatingRngRolls.clear();
+		mechanics.escalatingSpellRngRolls.clear();
 		for ( auto& pair : info.players[player].itemDegradeRNG )
 		{
 			mechanics.itemDegradeRng[pair.first] = pair.second;
 		}
-		mechanics.sustainedSpellMPUsed = 0;
-		mechanics.sustainedSpellMPUsed = info.players[player].sustainedSpellMPUsed;
+		for ( auto learnedSpell : info.players[player].learnedSpells )
+		{
+			mechanics.learnedSpells.insert(learnedSpell);
+		}
+		for ( auto& duck : info.players[player].ducksInARow )
+		{
+			mechanics.ducksInARow.push_back(duck);
+		}
+		for ( auto& pair : info.players[player].favoriteBooksAchievement )
+		{
+			mechanics.favoriteBooksAchievement[pair.first] = pair.second;
+		}
+		for ( auto& pair : info.players[player].sustainedSpellIDCounter )
+		{
+			mechanics.sustainedSpellIDCounter[pair.first] = pair.second;
+		}
+		for ( auto& pair : info.players[player].escalatingRngRolls )
+		{
+			mechanics.escalatingRngRolls[pair.first] = pair.second;
+		}
+		for ( auto& pair : info.players[player].escalatingSpellRngRolls )
+		{
+			mechanics.escalatingSpellRngRolls[pair.first] = pair.second;
+		}
+		mechanics.sustainedSpellMPUsedSorcery = 0;
+		mechanics.sustainedSpellMPUsedMysticism = 0;
+		mechanics.sustainedSpellMPUsedThaumaturgy = 0;
+		mechanics.baseSpellMPUsedSorcery = 0;
+		mechanics.baseSpellMPUsedMysticism = 0;
+		mechanics.baseSpellMPUsedThaumaturgy = 0;
+		mechanics.sustainedSpellMPUsedSorcery = info.players[player].sustainedSpellMPUsedSorcery;
+		mechanics.sustainedSpellMPUsedMysticism = info.players[player].sustainedSpellMPUsedMysticism;
+		mechanics.sustainedSpellMPUsedThaumaturgy = info.players[player].sustainedSpellMPUsedThaumaturgy;
+		mechanics.baseSpellMPUsedSorcery = info.players[player].baseSpellMPUsedSorcery;
+		mechanics.baseSpellMPUsedMysticism = info.players[player].baseSpellMPUsedMysticism;
+		mechanics.baseSpellMPUsedThaumaturgy = info.players[player].baseSpellMPUsedThaumaturgy;
 	}
 
 	Player::Minimap_t::mapDetails = info.map_messages;
@@ -7646,13 +6924,21 @@ list_t* loadGameFollowers(const SaveGameInfo& info) {
 			for (int c = 0; c < NUMEFFECTS; ++c) {
 				if ( c < follower.EFFECTS.size() )
 				{
-					stats->EFFECTS[c] = follower.EFFECTS[c];
+					stats->setEffectValueUnsafe(c, (Uint8)follower.EFFECTS[c]);
 					stats->EFFECTS_TIMERS[c] = follower.EFFECTS_TIMERS[c];
 				}
 				else
 				{
-					stats->EFFECTS[c] = 0;
+					stats->clearEffect(c);
 					stats->EFFECTS_TIMERS[c] = 0;
+				}
+				if ( c < follower.EFFECTS_ACCRETION_TIME.size() )
+				{
+					stats->EFFECTS_ACCRETION_TIME[c] = follower.EFFECTS_ACCRETION_TIME[c];
+				}
+				else
+				{
+					stats->EFFECTS_ACCRETION_TIME[c] = 0;
 				}
 			}
 			constexpr int NUMMISCFLAGS = sizeof(Stat::MISC_FLAGS) / sizeof(Stat::MISC_FLAGS[0]);
@@ -7721,6 +7007,14 @@ list_t* loadGameFollowers(const SaveGameInfo& info) {
 
 int SaveGameInfo::Player::isCharacterValidFromDLC()
 {
+	if ( this->race == RACE_RAT || this->race == RACE_TROLL || this->race == RACE_IMP || this->race == RACE_SPIDER )
+	{
+		if ( !enabledDLCPack2 )
+		{
+			return INVALID_REQUIREDLC2;
+		}
+	}
+
 	switch ( this->char_class )
 	{
 	case CLASS_CONJURER:
@@ -7739,6 +7033,16 @@ int SaveGameInfo::Player::isCharacterValidFromDLC()
 		if ( !enabledDLCPack2 )
 		{
 			return INVALID_REQUIREDLC2;
+		}
+		break;
+	case CLASS_BARD:
+	case CLASS_SAPPER:
+	case CLASS_SCION:
+	case CLASS_HERMIT:
+	case CLASS_PALADIN:
+		if ( !enabledDLCPack3 )
+		{
+			return INVALID_REQUIREDLC3;
 		}
 		break;
 	default:
@@ -7763,6 +7067,16 @@ int SaveGameInfo::Player::isCharacterValidFromDLC()
 		if ( !enabledDLCPack2 )
 		{
 			return INVALID_REQUIREDLC2;
+		}
+		break;
+	case RACE_DRYAD:
+	case RACE_MYCONID:
+	case RACE_GREMLIN:
+	case RACE_SALAMANDER:
+	case RACE_GNOME:
+		if ( !enabledDLCPack3 )
+		{
+			return INVALID_REQUIREDLC3;
 		}
 		break;
 	default:
@@ -7839,6 +7153,41 @@ int SaveGameInfo::Player::isCharacterValidFromDLC()
 			return VALID_OK_CHARACTER;
 		}
 		return isAchievementUnlockedForClassUnlock(RACE_INSECTOID) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
+		break;
+	case CLASS_BARD:
+		if ( this->race == RACE_GNOME )
+		{
+			return VALID_OK_CHARACTER;
+		}
+		return isAchievementUnlockedForClassUnlock(RACE_GNOME) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
+		break;
+	case CLASS_SAPPER:
+		if ( this->race == RACE_GREMLIN )
+		{
+			return VALID_OK_CHARACTER;
+		}
+		return isAchievementUnlockedForClassUnlock(RACE_GREMLIN) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
+		break;
+	case CLASS_SCION:
+		if ( this->race == RACE_DRYAD )
+		{
+			return VALID_OK_CHARACTER;
+		}
+		return isAchievementUnlockedForClassUnlock(RACE_DRYAD) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
+		break;
+	case CLASS_HERMIT:
+		if ( this->race == RACE_MYCONID )
+		{
+			return VALID_OK_CHARACTER;
+		}
+		return isAchievementUnlockedForClassUnlock(RACE_MYCONID) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
+		break;
+	case CLASS_PALADIN:
+		if ( this->race == RACE_SALAMANDER )
+		{
+			return VALID_OK_CHARACTER;
+		}
+		return isAchievementUnlockedForClassUnlock(RACE_SALAMANDER) ? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
 		break;
 	default:
 		break;

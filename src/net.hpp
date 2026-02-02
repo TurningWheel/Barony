@@ -39,9 +39,10 @@ void serverUpdateEntitySprite(Entity* entity);
 void serverUpdateEntitySkill(Entity* entity, int skill);
 void serverUpdateEntityFSkill(Entity* entity, int fskill);
 void serverUpdateEntityStatFlag(Entity* entity, int flag);
-void serverSpawnMiscParticles(Entity* entity, int particleType, int particleSprite, Uint32 optionalUid = 0);
-void serverSpawnMiscParticlesAtLocation(Sint16 x, Sint16 y, Sint16 z, int particleType, int particleSprite);
+void serverSpawnMiscParticles(Entity* entity, int particleType, int particleSprite, Uint32 optionalUid = 0, Uint32 duration = 0, Uint32 optionalData = 0);
+void serverSpawnMiscParticlesAtLocation(Sint16 x, Sint16 y, Sint16 z, int particleType, int particleSprite, Uint32 duration = 0, Uint32 optionalData = 0, Uint32 optionalUid = 0);
 void serverUpdateEntityFlag(Entity* entity, int flag);
+void serverUpdateMapTileFlag(Sint16 x, Sint16 y, int layer, Uint32 flagSet, Uint32 flagRemove);
 void serverUpdateBodypartIDs(Entity* entity);
 void serverUpdateEntityBodypart(Entity* entity, int bodypart);
 void serverUpdateEffects(int player);
@@ -56,7 +57,7 @@ void serverSendItemToPickupAndEquip(int player, Item* item);
 void serverUpdateAllyStat(int player, Uint32 uidToUpdate, int LVL, int HP, int MAXHP, int type);
 void serverUpdatePlayerSummonStrength(int player);
 void serverUpdateAllyHP(int player, Uint32 uidToUpdate, int HP, int MAXHP, bool guarantee = false);
-void sendMinimapPing(Uint8 player, Uint8 x, Uint8 y, Uint8 pingType = 0);
+void sendMinimapPing(Uint8 player, Uint8 x, Uint8 y, Uint8 pingType = 0, bool radius = false);
 void sendAllyCommandClient(int player, Uint32 uid, int command, Uint8 x, Uint8 y, Uint32 targetUid = 0);
 enum NetworkingLobbyJoinRequestResult : int
 {

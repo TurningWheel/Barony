@@ -127,6 +127,91 @@ void actFurniture(Entity* my)
 	my->actFurniture();
 }
 
+void Entity::furnitureHandleDamageMagic(int damage, Entity& magicProjectile, Entity* caster, bool messages, bool doSound)
+{
+	updateEntityOldHPBeforeMagicHit(*this, magicProjectile);
+	int oldHP = this->furnitureHealth;
+	this->furnitureHealth -= damage;
+	if ( caster )
+	{
+		if ( caster->behavior == &actPlayer )
+		{
+			bool destroyed = oldHP > 0 && this->furnitureHealth <= 0;
+			if ( destroyed )
+			{
+				gameModeManager.currentSession.challengeRun.updateKillEvent(this);
+				players[caster->skill[2]]->mechanics.incrementBreakableCounter(Player::PlayerMechanics_t::BreakableEvent::GBREAK_COMMON, this);
+			}
+			switch ( this->furnitureType )
+			{
+			case FURNITURE_CHAIR:
+				if ( destroyed && messages )
+				{
+					messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(388));
+				}
+				break;
+			case FURNITURE_TABLE:
+				if ( destroyed && messages )
+				{
+					messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(389));
+				}
+				break;
+			case FURNITURE_BED:
+				if ( destroyed && messages )
+				{
+					messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2505));
+				}
+				break;
+			case FURNITURE_BUNKBED:
+				if ( destroyed && messages )
+				{
+					messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2506));
+				}
+				break;
+			case FURNITURE_PODIUM:
+				if ( destroyed && messages )
+				{
+					messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(2507));
+				}
+				break;
+			default:
+				break;
+			}
+		}
+
+		switch ( this->furnitureType )
+		{
+		case FURNITURE_CHAIR:
+			updateEnemyBar(caster, this, Language::get(677), this->furnitureHealth, this->furnitureMaxHealth,
+				false, DamageGib::DMG_DEFAULT);
+			break;
+		case FURNITURE_TABLE:
+			updateEnemyBar(caster, this, Language::get(676), this->furnitureHealth, this->furnitureMaxHealth,
+				false, DamageGib::DMG_DEFAULT);
+			break;
+		case FURNITURE_BED:
+			updateEnemyBar(caster, this, Language::get(2505), this->furnitureHealth, this->furnitureMaxHealth,
+				false, DamageGib::DMG_DEFAULT);
+			break;
+		case FURNITURE_BUNKBED:
+			updateEnemyBar(caster, this, Language::get(2506), this->furnitureHealth, this->furnitureMaxHealth,
+				false, DamageGib::DMG_DEFAULT);
+			break;
+		case FURNITURE_PODIUM:
+			updateEnemyBar(caster, this, Language::get(2507), this->furnitureHealth, this->furnitureMaxHealth,
+				false, DamageGib::DMG_DEFAULT);
+			break;
+		default:
+			break;
+		}
+	}
+
+	if ( doSound )
+	{
+		playSoundEntity(this, 28, 128);
+	}
+}
+
 void Entity::actFurniture()
 {
 
@@ -589,6 +674,473 @@ void Entity::actPistonCam()
 	}
 }
 
+int colliderGetSpellRange(Entity* my)
+{
+	if ( my->colliderSpellEvent % 1000 == 0 ) { return 0; }
+	int range = 32;
+	int effectType = my->colliderSpellEvent % 1000;
+	switch ( effectType )
+	{
+	case 3:
+	case 4:
+	case 7:
+		range = 128;
+		break;
+	default:
+		break;
+	}
+	return range;
+}
+
+void actColliderMushroomCap(Entity* my)
+{
+	Entity* parent = uidToEntity(my->parent);
+	if ( !parent )
+	{
+		Entity* gib = spawnGib(my);
+		gib->sprite = my->sprite;
+		gib->z = my->z;
+		gib->skill[5] = 1; // poof
+		list_RemoveNode(my->mynode);
+		return;
+	}
+
+	my->z = parent->z - 7.0 + 1.5;
+	my->pitch = (my->fskill[2]) * (PI / 24) * sin(my->fskill[1]);
+	my->roll =  (my->fskill[2]) * (PI / 24) * sin(my->fskill[1] + PI / 2);
+
+	real_t bobScale = 0.08 * my->skill[0];
+	my->scalex = 1.0 + bobScale * sin(my->fskill[0]);
+	my->scaley = 1.0 + bobScale * sin(my->fskill[0]);
+	my->scalez = 1.0 - bobScale * sin(my->fskill[0]);
+
+	parent->scalex = 1.0 - bobScale * 0.25 * sin(my->fskill[0]);
+	parent->scaley = 1.0 - bobScale * 0.25 * sin(my->fskill[0]);
+	parent->scalez = 1.0 + bobScale * 0.25 * sin(my->fskill[0]);
+
+	int trigger = 0;
+	if ( parent->colliderSpellEventTrigger != 0 )
+	{
+		trigger = parent->colliderSpellEventTrigger;
+		parent->colliderSpellEventTrigger = 0;
+	}
+
+	auto& friendlyFire = my->skill[1];
+
+	if ( trigger > 0 )
+	{
+		real_t percent = (trigger % 100) / 100.0;
+		my->skill[0] = 4;
+
+		if ( percent < 0.5 )
+		{
+			playSoundEntityLocal(parent, 711 + local_rng.rand() % 3, 128);
+		}
+		else
+		{
+			playSoundEntityLocal(parent, 714 + local_rng.rand() % 3, 128);
+		}
+		my->fskill[0] = 0.0;
+		my->fskill[1] = 2 * PI * percent;
+		my->fskill[2] = 0.0;
+
+		if ( trigger >= 100 )
+		{
+			friendlyFire = 1;
+			/*if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
+			{
+				friendlyFire = 0;
+			}*/
+		}
+		else
+		{
+			friendlyFire = 0;
+		}
+	}
+
+	if ( my->skill[0] > 0 )
+	{
+		int range = colliderGetSpellRange(parent);
+		int effectType = parent->colliderSpellEvent % 1000;
+		if ( effectType == 3 || effectType == 4 || effectType == 7 )
+		{
+			range = 32;
+		}
+
+		auto cacheType = AOEIndicators_t::CACHE_MUSHROOM_1;
+		Uint32 color = makeColorRGB(0, 145, 16);
+		int gibSprite = 1885;
+		switch ( effectType )
+		{
+		case 4:
+			color = makeColorRGB(206, 162, 146);
+			cacheType = AOEIndicators_t::CACHE_MUSHROOM_2;
+			gibSprite = 1887;
+			break;
+		case 5:
+			color = makeColorRGB(116, 128, 180);
+			cacheType = AOEIndicators_t::CACHE_MUSHROOM_3;
+			gibSprite = 1888;
+			break;
+		case 2:
+			color = makeColorRGB(180, 116, 160);
+			cacheType = AOEIndicators_t::CACHE_MUSHROOM_4;
+			gibSprite = 1889;
+			break;
+		default:
+			break;
+		}
+
+		my->fskill[2] = std::min(1.0, std::max(0.05, my->fskill[2] * 1.15));
+		if ( my->skill[0] == 4 ) // circle first
+		{
+			if ( my->fskill[1] >= 2 * PI )
+			{
+				my->skill[0]--;
+
+				if ( (effectType == 3 || effectType == 4 || effectType == 7) && multiplayer != CLIENT )
+				{
+					if ( Entity* target = uidToEntity(parent->colliderSpellTarget) )
+					{
+						real_t tangent = atan2(target->y - parent->y, target->x - parent->x);
+
+						Entity* caster = parent;
+						if ( parent->colliderCreatedParent != 0 )
+						{
+							if ( Entity* ent = uidToEntity(parent->colliderCreatedParent) )
+							{
+								caster = ent;
+							}
+						}
+						if ( Entity* missile = castSpell(
+							caster ? caster->getUID() : 0,
+							getSpellFromID(
+								(effectType == 3 || effectType == 7) ? SPELL_SPORE_BOMB : SPELL_MYCELIUM_BOMB
+							), false, true) )
+						{
+							missile->collisionIgnoreTargets.insert(parent->getUID());
+							missile->x = parent->x;
+							missile->y = parent->y;
+							missile->z = 6.0;
+							real_t vel = sqrt(pow(missile->vel_x, 2) + pow(missile->vel_y, 2));
+							missile->vel_z = -1.2;
+							missile->vel_x = vel * cos(tangent);
+							missile->vel_y = vel * sin(tangent);
+						}
+					}
+				}
+
+				for ( int i = 0; i < 8; ++i )
+				{
+					Entity* fx = createParticleAestheticOrbit(parent, gibSprite, 3 * TICKS_PER_SECOND, PARTICLE_EFFECT_MUSHROOM_SPELL);
+					fx->x = parent->x;
+					fx->y = parent->y;
+					fx->actmagicOrbitDist = range;
+					fx->yaw = parent->yaw + (i * PI / 4.0);
+					fx->pitch = -PI;
+					fx->fskill[4] = fx->yaw;
+
+					Entity* gib = spawnGib(parent);
+					gib->sprite = gibSprite;
+					gib->vel_x = 1.5 * cos(fx->yaw);
+					gib->vel_y = 1.5 * sin(fx->yaw);
+					gib->lightBonus = vec4{ 0.25f, 0.25f, 0.25f, 0.f };
+				}
+
+				if ( Entity* fx = createParticleAOEIndicator(parent, parent->x, parent->y, 0.0, TICKS_PER_SECOND * 2, range) )
+				{
+					//fx->actSpriteFollowUID = 0;
+					fx->actSpriteCheckParentExists = 0;
+					//fx->scalex = 0.8;
+					//fx->scaley = 0.8;
+					if ( auto indicator = AOEIndicators_t::getIndicator(fx->skill[10]) )
+					{
+						//indicator->arc = PI / 2;
+						indicator->indicatorColor = color;
+						indicator->loop = false;
+						indicator->gradient = 4;
+						indicator->framesPerTick = 2;
+						indicator->ticksPerUpdate = 1;
+						indicator->delayTicks = 0;
+						indicator->expireAlphaRate = 0.95;
+						indicator->cacheType = cacheType;
+					}
+				}
+				playSoundEntityLocal(parent, 169, 128);
+				playSoundEntityLocal(parent, 717 + local_rng.rand() % 3, 128);
+			}
+		}
+		else
+		{
+			my->fskill[0] += 0.25;
+			if ( my->fskill[0] >= 2 * PI )
+			{
+				my->fskill[0] -= 2 * PI;
+				my->skill[0]--;
+				if ( my->skill[0] == 1 )
+				{
+					auto& colliderData = EditorEntityData_t::colliderData[parent->colliderDamageTypes];
+					if ( (effectType == 3 || effectType == 4) &&
+						colliderData.name.find("_fragile") != std::string::npos )
+					{
+						if ( multiplayer != CLIENT )
+						{
+							parent->colliderCurrentHP = 0;
+							parent->colliderKillerUid = 0;
+						}
+					}
+					else
+					{
+						playSoundEntityLocal(parent, 717 + local_rng.rand() % 3, 128);
+						for ( int i = 0; i < 8; ++i )
+						{
+							Entity* fx = createParticleAestheticOrbit(parent, gibSprite, 3 * TICKS_PER_SECOND, PARTICLE_EFFECT_MUSHROOM_SPELL);
+							fx->x = parent->x;
+							fx->y = parent->y;
+							fx->actmagicOrbitDist = range;
+							fx->yaw = parent->yaw + (i * PI / 4.0) + PI / 8;
+							fx->pitch = -PI;
+							fx->fskill[4] = fx->yaw;
+
+							Entity* gib = spawnGib(parent);
+							gib->sprite = gibSprite;
+							gib->vel_x = 1.0 * cos(fx->yaw);
+							gib->vel_y = 1.0 * sin(fx->yaw);
+							gib->lightBonus = vec4{ 0.25f, 0.25f, 0.25f, 0.f };
+						}
+					}
+				}
+				else if ( friendlyFire == 0 )
+				{
+					auto& colliderData = EditorEntityData_t::colliderData[parent->colliderDamageTypes];
+					if ( !(effectType == 3 || effectType == 4) &&
+						colliderData.name.find("_fragile") != std::string::npos )
+					{
+						if ( multiplayer != CLIENT )
+						{
+							parent->colliderCurrentHP = 0;
+							parent->colliderKillerUid = 0;
+						}
+					}
+				}
+			}
+
+			if ( multiplayer != CLIENT )
+			{
+				Entity* caster = uidToEntity(parent->colliderCreatedParent);
+				std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 1 + (range / 16));
+				for ( auto it : entLists )
+				{
+					node_t* node;
+					for ( node = it->first; node != nullptr; node = node->next )
+					{
+						Entity* entity = (Entity*)node->element;
+						if ( !(entity->behavior == &actPlayer || entity->behavior == &actMonster) )
+						{
+							continue;
+						}
+						if ( !entity->monsterIsTargetable() )
+						{
+							continue;
+						}
+						if ( entityDist(my, entity) > (real_t)(range + 4.0) )
+						{
+							continue;
+						}
+						Stat* stats = entity->getStats();
+						if ( !stats ) { continue; }
+
+						if ( caster && caster->behavior == &actMonster )
+						{
+							if ( caster == entity )
+							{
+								continue;
+							}
+							if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
+							{
+								if ( caster->checkFriend(entity) && caster->friendlyFireProtection(entity) )
+								{
+									continue;
+								}
+							}
+						}
+						if ( caster && caster->behavior == &actPlayer )
+						{
+							if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
+							{
+								if ( caster->checkFriend(entity) && caster->friendlyFireProtection(entity) )
+								{
+									continue;
+								}
+							}
+						}
+
+						if ( entity->behavior == &actMonster 
+							&& stats->type == MYCONID )
+						{
+							continue;
+						}
+
+						auto props = getParticleEmitterHitProps(parent->getUID(), entity);
+						if ( !props )
+						{
+							continue;
+						}
+						if ( props->hits > 0 && (ticks - props->tick) < 50 )
+						{
+							continue;
+						}
+
+						real_t tangent = atan2(entity->y - parent->y, entity->x - parent->x);
+						bool oldPassable = entity->flags[PASSABLE];
+						entity->flags[PASSABLE] = false;
+						real_t d = lineTraceTarget(parent, parent->x, parent->y, tangent, (real_t)(range + 4.0), 0, false, entity);
+						entity->flags[PASSABLE] = oldPassable;
+						if ( hit.entity != entity )
+						{
+							continue;
+						}
+
+						int damage = 5;
+						bool alertTarget = true;
+						bool friendlyFireTarget = false;
+						if ( effectType == 6 || effectType == 7 ) // player casted
+						{
+							damage = getSpellDamageFromID(SPELL_MUSHROOM, caster, nullptr, my);
+
+							int bonusEffect = 0;
+							if ( parent && parent->colliderDropVariable > 0 )
+							{
+								bonusEffect = parent->colliderDropVariable;
+							}
+							if ( caster && caster->behavior == &actPlayer )
+							{
+								if ( Stat* casterStats = caster->getStats() )
+								{
+									if ( casterStats->type == MYCONID && casterStats->getEffectActive(EFF_GROWTH) >= 2 )
+									{
+										bonusEffect = std::max(bonusEffect, casterStats->getEffectActive(EFF_GROWTH) - 1);
+									}
+								}
+							}
+							damage += damage * (bonusEffect * 1.0);
+
+							if ( caster && caster->behavior == &actPlayer )
+							{
+								if ( caster->checkFriend(entity) && caster->friendlyFireProtection(entity) )
+								{
+									damage = 0;
+									alertTarget = false;
+									friendlyFireTarget = true;
+								}
+							}
+							else if ( achievementObserver.checkUidIsFromPlayer(parent->colliderCreatedParent) >= 0 )
+							{
+								if ( (entity->behavior == &actMonster && entity->monsterAllyGetPlayerLeader())
+									|| entity->behavior == &actPlayer )
+								{
+									damage = 0;
+									alertTarget = false;
+									friendlyFireTarget = true;
+								}
+							}
+						}
+
+						if ( applyGenericMagicDamage(caster ? caster : parent, entity, caster ? *caster : *parent, SPELL_MUSHROOM, damage, alertTarget, true) )
+						{
+							stats->killer = KilledBy::MUSHROOM;
+							entity->setObituary(Language::get(6753));
+
+							props->hits++;
+							props->tick = ticks;
+							if ( effectType == 1 )
+							{
+								bool wasEffected = stats->getEffectActive(EFF_POISONED);
+								if ( entity->setEffect(EFF_POISONED, true, 3 * TICKS_PER_SECOND + 10, false) )
+								{
+									spawnMagicEffectParticles(entity->x, entity->y, entity->z, 944);
+									if ( caster )
+									{
+										stats->poisonKiller = caster->getUID();
+									}
+								}
+							}
+							else if ( effectType == 5 )
+							{
+								bool wasEffected = stats->getEffectActive(EFF_DUSTED);
+								if ( entity->setEffect(EFF_DUSTED, true, 10 * TICKS_PER_SECOND + 10, true) )
+								{
+									spawnMagicEffectParticles(entity->x, entity->y, entity->z, 944);
+									if ( !wasEffected )
+									{
+										messagePlayerColor(entity->isEntityPlayer(), MESSAGE_STATUS, makeColorRGB(255, 0, 0), Language::get(6752));
+									}
+								}
+							}
+							else if ( effectType == 2 || effectType == 3 || effectType == 4 || effectType == 6 || effectType == 7 )
+							{
+								spawnMagicEffectParticles(entity->x, entity->y, entity->z, 944);
+
+								if ( effectType == 3 || effectType == 6 || effectType == 7 )
+								{
+									if ( !friendlyFireTarget )
+									{
+										bool wasEffected = stats->getEffectActive(EFF_POISONED);
+										if ( entity->setEffect(EFF_POISONED, true, 3 * TICKS_PER_SECOND + 10, false) )
+										{
+											spawnMagicEffectParticles(entity->x, entity->y, entity->z, 944);
+											if ( caster )
+											{
+												stats->poisonKiller = caster->getUID();
+											}
+										}
+									}
+								}
+
+								if ( entity->setEffect(EFF_KNOCKBACK, true, 30, false) )
+								{
+									real_t pushbackMultiplier = 0.9;
+									real_t tangent = atan2(entity->y - parent->y, entity->x - parent->x);
+									if ( entity->behavior == &actPlayer )
+									{
+										if ( !players[entity->skill[2]]->isLocalPlayer() )
+										{
+											entity->monsterKnockbackVelocity = pushbackMultiplier;
+											entity->monsterKnockbackTangentDir = tangent;
+											serverUpdateEntityFSkill(entity, 11);
+											serverUpdateEntityFSkill(entity, 9);
+										}
+										else
+										{
+											entity->monsterKnockbackVelocity = pushbackMultiplier;
+											entity->monsterKnockbackTangentDir = tangent;
+										}
+									}
+									else if ( entity->behavior == &actMonster )
+									{
+										entity->vel_x = cos(tangent) * pushbackMultiplier;
+										entity->vel_y = sin(tangent) * pushbackMultiplier;
+										entity->monsterKnockbackVelocity = 0.01;
+										entity->monsterKnockbackUID = parent->colliderCreatedParent;
+										entity->monsterKnockbackTangentDir = tangent;
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	else
+	{
+		my->fskill[2] *= 0.95;
+	}
+
+	my->fskill[1] += 0.125;
+	my->focalz = -1.5;
+}
+
 bool Entity::isColliderShownAsWallOnMinimap() const
 {
 	if ( !isDamageableCollider() ) { return false; }
@@ -645,6 +1197,13 @@ bool Entity::isColliderAttachableToBombs() const
 	return colliderDmgType.bombsAttach;
 }
 
+bool Entity::isColliderPathableMonster(Monster type) const
+{
+	if ( !isDamageableCollider() ) { return false; }
+	auto& colliderData = EditorEntityData_t::colliderData[colliderDamageTypes];
+	return colliderData.pathableMonsters.find(type) != colliderData.pathableMonsters.end();
+}
+
 bool Entity::isDamageableCollider() const 
 { 
 	return behavior == &actColliderDecoration && colliderMaxHP > 0;
@@ -674,6 +1233,7 @@ bool Entity::isColliderBreakableContainer() const
 
 void Entity::colliderOnDestroy()
 {
+	removeLightField();
 	if ( multiplayer == CLIENT ) { return; }
 	flags[PASSABLE] = true;
 
@@ -686,6 +1246,46 @@ void Entity::colliderOnDestroy()
 			if ( isColliderBreakableContainer() )
 			{
 				Compendium_t::Events_t::eventUpdateWorld(killer->skill[2], Compendium_t::CPDM_CONTAINER_BROKEN, "containers", 1);
+			}
+		}
+	}
+
+	auto find = EditorEntityData_t::colliderData.find(colliderDamageTypes);
+	if ( find != EditorEntityData_t::colliderData.end() )
+	{
+		if ( find->second.name == "mushroom_spell_casted" )
+		{
+			for ( int i = 0; i < this->colliderDropVariable; ++i )
+			{
+				if ( local_rng.rand() % 10 == 0 )
+				{
+					if ( Entity* ent = dropItemMonster(newItem(DUST_BALL, SERVICABLE, 0, 1, 0, true, nullptr), this, nullptr) )
+					{
+						ent->itemOriginalOwner = colliderCreatedParent;
+						ent->itemGerminateResult = 1;
+					}
+				}
+				else
+				{
+					if ( Entity* ent = dropItemMonster(newItem(FOOD_SHROOM, SERVICABLE, 0, 1, 0, true, nullptr), this, nullptr) )
+					{
+						ent->itemOriginalOwner = colliderCreatedParent;
+						ent->itemGerminateResult = 1;
+					}
+				}
+			}
+			Entity* parent = uidToEntity(this->colliderCreatedParent);
+			floorMagicCreateSpores(this, this->x, this->y, parent ? parent : this, 0, SPELL_SPORES);
+		}
+		else if ( find->second.name == "germinate_spell_casted" )
+		{
+			for ( int i = 0; i < this->colliderDropVariable; ++i )
+			{
+				if ( Entity* ent = dropItemMonster(newItem(FOOD_NUT, SERVICABLE, 0, 1, 0, true, nullptr), this, nullptr) )
+				{
+					ent->itemOriginalOwner = colliderCreatedParent;
+					ent->itemGerminateResult = 1;
+				}
 			}
 		}
 	}
@@ -711,7 +1311,8 @@ void Entity::colliderOnDestroy()
 						strcpy(stats->name, "enslaved ghoul");
 						stats->setAttribute("special_npc", "enslaved ghoul");
 					}
-					if ( stats->type == AUTOMATON )
+					stats->setAttribute("spawn_no_sleep", "1");
+					if ( stats->type == AUTOMATON && strcmp(map.filename, "automat.lmp") )
 					{
 						monster->monsterStoreType = 1; // damaged
 					}
@@ -731,8 +1332,16 @@ void Entity::colliderOnDestroy()
 				}
 				if ( successes == 1 )
 				{
-					messagePlayer(killer->skill[2], MESSAGE_INTERACTION, Language::get(6234),
-						getMonsterLocalizedName((Monster)type).c_str(), Language::get(getColliderLangName()));
+					if ( getColliderOnJumpLangEntry() == 6815 )
+					{
+						messagePlayer(killer->skill[2], MESSAGE_INTERACTION, Language::get(getColliderOnJumpLangEntry()),
+							Language::get(getColliderLangName()));
+					}
+					else
+					{
+						messagePlayer(killer->skill[2], MESSAGE_INTERACTION, Language::get(getColliderOnJumpLangEntry()),
+							getMonsterLocalizedName((Monster)type).c_str(), Language::get(getColliderLangName()));
+					}
 				}
 				else if ( successes > 1 )
 				{
@@ -758,6 +1367,7 @@ void Entity::colliderOnDestroy()
 						entity->goldBouncing = 0;
 						entity->z = 0.0 - (local_rng.rand() % 3);
 						entity->flags[INVISIBLE] = false;
+						entity->goldAmountBonus = entity->goldAmount;
 
 						if ( multiplayer == SERVER )
 						{
@@ -796,6 +1406,7 @@ void Entity::colliderOnDestroy()
 									ent->goldInContainer = 0;
 									ent->z = 0.0 - (local_rng.rand() % 3);
 									ent->flags[INVISIBLE] = false;
+									ent->goldAmountBonus = ent->goldAmount;
 
 									if ( multiplayer == SERVER )
 									{
@@ -889,6 +1500,13 @@ int Entity::getColliderOnBreakLangEntry() const
 	return colliderData.breakMessageLangEntry;
 }
 
+int Entity::getColliderOnJumpLangEntry() const
+{
+	if ( !isDamageableCollider() ) { return 1; }
+	auto& colliderData = EditorEntityData_t::colliderData[colliderDamageTypes];
+	return colliderData.colliderJumpLangEntry;
+}
+
 int Entity::getColliderSfxOnHit() const
 {
 	if ( !isDamageableCollider() ) { return 0; }
@@ -904,6 +1522,331 @@ int Entity::getColliderSfxOnBreak() const
 	return colliderData.sfxBreak[local_rng.rand() % colliderData.sfxBreak.size()];
 }
 
+Entity* Entity::createBreakableCollider(int colliderDamageType, real_t _x, real_t _y, Entity* parent)
+{
+	if ( colliderDamageType == 0 )
+	{
+		return nullptr;
+	}
+	int x = static_cast<int>(_x) >> 4;
+	int y = static_cast<int>(_y) >> 4;
+	if ( !(x > 0 && x < map.width - 1 && y > 0 && y < map.height - 1) )
+	{
+		return nullptr;
+	}
+	int mapIndex = (y)*MAPLAYERS + (x)*MAPLAYERS * map.height;
+	if ( !map.tiles[mapIndex] || swimmingtiles[map.tiles[mapIndex]] || lavatiles[map.tiles[mapIndex]] )
+	{
+		return nullptr;
+	}
+
+	auto find = EditorEntityData_t::colliderData.find(colliderDamageType);
+	if ( find == EditorEntityData_t::colliderData.end() )
+	{
+		return nullptr;
+	}
+
+
+	Entity* breakable = newEntity(-1, 1, map.entities, nullptr);
+	breakable->x = x * 16.0 + 8.0;
+	breakable->y = y * 16.0 + 8.0;
+	std::vector<std::pair<int, int>> coords =
+	{
+		{0, 1},
+		{0, -1},
+		{1, 0},
+		{1, 1},
+		{1, -1},
+		{-1, 0},
+		{-1, 1},
+		{-1, -1}
+	};
+
+	bool goodspot = false;
+	if ( checkObstacle(breakable->x, breakable->y, breakable, nullptr, true, true, true, false) )
+	{
+		while ( coords.size() > 0 )
+		{
+			int pick = local_rng.rand() % coords.size();
+			if ( checkObstacle(breakable->x + coords[pick].first * 16, breakable->y + coords[pick].second * 16, breakable, nullptr, true, true, true, false) )
+			{
+				coords.erase(coords.begin() + pick);
+			}
+			else
+			{
+				goodspot = true;
+				breakable->x += coords[pick].first * 16;
+				breakable->y += coords[pick].second * 16;
+				break;
+			}
+		}
+
+		if ( !goodspot )
+		{
+			list_RemoveNode(breakable->mynode);
+			return nullptr;
+		}
+	}
+
+	breakable->colliderDamageTypes = colliderDamageType;
+	breakable->colliderCreatedParent = parent ? parent->getUID() : 0;
+	breakable->colliderDecorationRotation = 2 * (local_rng.rand() % 3);
+	Entity::colliderAssignProperties(breakable, false, &map);
+
+	breakable->colliderSetServerSkillOnSpawned();
+	breakable->flags[UPDATENEEDED] = true;
+	breakable->flags[NOUPDATE] = false;
+	return breakable;
+}
+
+void Entity::colliderSetServerSkillOnSpawned()
+{
+	Sint32 val = (1 << 31);
+	val |= (Uint8)(25);
+	val |= (Uint8)(colliderDamageTypes) << 8;
+	val |= (Uint8)(colliderSpellEvent % 1000) << 16;
+	skill[2] = val;
+}
+
+void Entity::colliderAssignProperties(Entity* entity, bool mapGeneration, map_t* whichMap)
+{
+	auto& rng = mapGeneration ? map_rng : local_rng;
+
+	entity->seedEntityRNG(rng.getU32());
+
+	if ( mapGeneration || multiplayer != CLIENT )
+	{
+		int dir = entity->colliderDecorationRotation;
+		if ( dir == -1 )
+		{
+			dir = rng.rand() % 8;
+			entity->colliderDecorationRotation = dir;
+		}
+		entity->yaw = dir * (PI / 4);
+	}
+	/*static ConsoleVariable<int> debugColliderType("/collider_type", 14);
+	entity->colliderDamageTypes = *debugColliderType;*/
+	auto find = EditorEntityData_t::colliderData.find(entity->colliderDamageTypes);
+	if ( find != EditorEntityData_t::colliderData.end() )
+	{
+		auto& data = find->second;
+		if ( data.hasOverride("dir_offset") )
+		{
+			if ( mapGeneration || multiplayer != CLIENT )
+			{
+				entity->yaw = ((entity->colliderDecorationRotation + data.getOverride("dir_offset")) * (PI / 4));
+			}
+		}
+		if ( data.hasOverride("model") )
+		{
+			entity->colliderDecorationModel = data.getOverride("model");
+		}
+		if ( data.hasOverride("height") )
+		{
+			entity->colliderDecorationHeightOffset = data.getOverride("height");
+		}
+		if ( entity->colliderDecorationRotation == 0 )
+		{
+			if ( data.hasOverride("east_x") )
+			{
+				entity->colliderDecorationXOffset = data.getOverride("east_x");
+			}
+			if ( data.hasOverride("east_y") )
+			{
+				entity->colliderDecorationYOffset = data.getOverride("east_y");
+			}
+		}
+		else if ( entity->colliderDecorationRotation == 2 )
+		{
+			if ( data.hasOverride("south_x") )
+			{
+				entity->colliderDecorationXOffset = data.getOverride("south_x");
+			}
+			if ( data.hasOverride("south_y") )
+			{
+				entity->colliderDecorationYOffset = data.getOverride("south_y");
+			}
+		}
+		else if ( entity->colliderDecorationRotation == 4 )
+		{
+			if ( data.hasOverride("west_x") )
+			{
+				entity->colliderDecorationXOffset = data.getOverride("west_x");
+			}
+			if ( data.hasOverride("west_y") )
+			{
+				entity->colliderDecorationYOffset = data.getOverride("west_y");
+			}
+		}
+		else if ( entity->colliderDecorationRotation == 6 )
+		{
+			if ( data.hasOverride("north_x") )
+			{
+				entity->colliderDecorationXOffset = data.getOverride("north_x");
+			}
+			if ( data.hasOverride("north_y") )
+			{
+				entity->colliderDecorationYOffset = data.getOverride("north_y");
+			}
+		}
+		if ( data.hasOverride("collision") )
+		{
+			entity->colliderHasCollision = data.getOverride("collision");
+		}
+		if ( data.hasOverride("collision_x") )
+		{
+			entity->colliderSizeX = data.getOverride("collision_x");
+		}
+		if ( data.hasOverride("collision_y") )
+		{
+			entity->colliderSizeY = data.getOverride("collision_y");
+		}
+		if ( data.hasOverride("hp") )
+		{
+			entity->colliderMaxHP = data.getOverride("hp");
+		}
+		if ( data.hasOverride("diggable") )
+		{
+			entity->colliderDiggable = data.getOverride("diggable");
+		}
+
+		if ( entity->colliderIsMapGenerated == 0 && (mapGeneration || multiplayer != CLIENT)
+			&& entity->entity_rng )
+		{
+			static int lastSpellEvent = 0;
+			if ( data.spellTriggers.size() > 0 )
+			{
+				std::vector<unsigned int> chances;
+				bool avoidLastSpell = false;
+				for ( auto s : data.spellTriggers )
+				{
+					chances.push_back(1);
+					if ( lastSpellEvent != 0 && s != lastSpellEvent )
+					{
+						avoidLastSpell = true;
+					}
+				}
+
+				if ( avoidLastSpell )
+				{
+					int unusedChances = 0;
+					for ( size_t i = 0; i < chances.size(); ++i )
+					{
+						if ( chances[i] != lastSpellEvent )
+						{
+							++unusedChances;
+						}
+					}
+					if ( unusedChances > 0 )
+					{
+						for ( size_t i = 0; i < chances.size(); ++i )
+						{
+							if ( data.spellTriggers[i] == lastSpellEvent )
+							{
+								chances[i] = 0;
+							}
+						}
+					}
+				}
+
+				int pickIndex = entity->entity_rng->discrete(chances.data(), chances.size());
+				int picked = data.spellTriggers[pickIndex];
+				if ( picked > 0 )
+				{
+					if ( entity->entity_rng->rand() % 5 > 0 )
+					{
+						picked += 1000;
+					}
+					entity->colliderSpellEvent = picked;
+					lastSpellEvent = picked % 1000;
+				}
+			}
+		}
+	}
+
+	entity->sprite = entity->colliderDecorationModel;
+	entity->sizex = entity->colliderSizeX;
+	entity->sizey = entity->colliderSizeY;
+
+	if ( mapGeneration || multiplayer != CLIENT )
+	{
+		entity->x += entity->colliderDecorationXOffset * 0.25;
+		entity->y += entity->colliderDecorationYOffset * 0.25;
+		entity->z = 7.5 - entity->colliderDecorationHeightOffset * 0.25;
+		bool modifiedFocal = false;
+		if ( entity->x < 0.0 )
+		{
+			while ( entity->x < 0.0 )
+			{
+				entity->x += 16.0;
+				entity->focalx -= 16.0;
+			}
+			modifiedFocal = true;
+		}
+		if ( entity->y < 0 )
+		{
+			while ( entity->y < 0.0 )
+			{
+				entity->y += 16.0;
+				entity->focaly -= 16.0;
+			}
+			modifiedFocal = true;
+		}
+		if ( static_cast<int>(entity->x) >= whichMap->width * 16 )
+		{
+			while ( static_cast<int>(entity->x) >= whichMap->width * 16 )
+			{
+				entity->x -= 16.0;
+				entity->focalx += 16.0;
+			}
+			modifiedFocal = true;
+		}
+		if ( static_cast<int>(entity->y) >= whichMap->height * 16 )
+		{
+			while ( static_cast<int>(entity->y) >= whichMap->height * 16 )
+			{
+				entity->y -= 16.0;
+				entity->focaly += 16.0;
+			}
+			modifiedFocal = true;
+		}
+		if ( modifiedFocal )
+		{
+			real_t fx = entity->focalx;
+			real_t fy = entity->focaly;
+			entity->focalx = fx * cos(entity->yaw) - fy * cos(entity->yaw + PI / 2);
+			entity->focaly = -fx * sin(entity->yaw) + fy * sin(entity->yaw + PI / 2);
+		}
+	}
+
+	if ( mapGeneration )
+	{
+		entity->flags[PASSABLE] = entity->colliderHasCollision == 0;
+	}
+	else
+	{
+		entity->flags[PASSABLE] = true; // set later in act()
+	}
+	entity->flags[BLOCKSIGHT] = false;
+	entity->behavior = &actColliderDecoration;
+	entity->colliderCurrentHP = entity->colliderMaxHP;
+	entity->colliderOldHP = entity->colliderMaxHP;
+	if ( entity->isDamageableCollider() )
+	{
+		entity->flags[UNCLICKABLE] = false;
+	}
+	else
+	{
+		entity->flags[UNCLICKABLE] = true;
+	}
+	/*if ( multiplayer != CLIENT )
+	{
+	entity_uids--;
+	}
+	entity->setUID(-3);*/
+}
+
+std::set<Uint32> collidersToRaiseToHeight;
 void actColliderDecoration(Entity* my)
 {
 	if ( !my )
@@ -934,10 +1877,111 @@ void actColliderDecoration(Entity* my)
 			{
 				my->colliderHasCollision |= EditorEntityData_t::COLLIDER_COLLISION_FLAG_NPC;
 			}
+
+			if ( colliderData.name.find("mushroom_spell") != std::string::npos )
+			{
+				collidersToRaiseToHeight.insert(my->getUID());
+				my->z = 16.0;
+				Entity* entity = newEntity(my->sprite + 1, 1, map.entities, nullptr); //Sprite entity.
+				entity->x = my->x;
+				entity->y = my->y;
+				entity->z = my->z - 7.0;
+				entity->behavior = &actColliderMushroomCap;
+				entity->flags[PASSABLE] = true;
+				entity->flags[NOUPDATE] = true;
+				entity->flags[UPDATENEEDED] = false;
+				entity->flags[UNCLICKABLE] = true;
+				entity->yaw = my->yaw;
+				entity->parent = my->getUID();
+				if ( multiplayer != CLIENT )
+				{
+					entity_uids--;
+				}
+				entity->setUID(-3);
+			}
+			else if ( colliderData.name.find("germinate_spell") != std::string::npos )
+			{
+				collidersToRaiseToHeight.insert(my->getUID());
+				my->z = 16.0;
+			}
 		}
 	}
 
-	my->flags[PASSABLE] = (my->colliderHasCollision == 0);
+	if ( collidersToRaiseToHeight.find(my->getUID()) != collidersToRaiseToHeight.end() )
+	{
+		// mushroom_spell
+		my->z = std::max(8.0, my->z - 0.25);
+		if ( my->z <= 8.0 )
+		{
+			collidersToRaiseToHeight.erase(my->getUID());
+
+			if ( multiplayer != CLIENT )
+			{
+				auto& colliderData = EditorEntityData_t::colliderData[my->colliderDamageTypes];
+				if ( colliderData.name.find("germinate_spell") != std::string::npos )
+				{
+					Entity* caster = my->colliderCreatedParent != 0 ? uidToEntity(my->colliderCreatedParent) : my;
+					createRadiusMagic(SPELL_HEAL_PULSE, caster,
+						my->x, my->y, 24, 10 * TICKS_PER_SECOND, nullptr);
+				}
+			}
+		}
+		if ( my->z > 8.5 )
+		{
+			if ( my->ticks % 2 == 0 ) {
+				const int x = my->x + local_rng.uniform(-3, 3);
+				const int y = my->y + local_rng.uniform(-3, 3);
+				auto poof = spawnPoof(x, y, 6, 0.33);
+			}
+		}
+	}
+
+	my->removeLightField();
+	if ( my->flags[BURNABLE] && my->flags[BURNING] )
+	{
+		my->light = addLight(my->x / 16, my->y / 16, "object_burning");
+	}
+
+	if ( (my->colliderHasCollision == 0) )
+	{
+		my->flags[PASSABLE] = true;
+	}
+	else if ( my->flags[PASSABLE] )
+	{
+		// check inside
+		std::vector<list_t*> entLists;
+		if ( multiplayer == CLIENT )
+		{
+			entLists.push_back(map.entities); // clients use old map.entities method
+		}
+		else
+		{
+			entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 1);
+		}
+		bool somebodyinside = false;
+		for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end() && !somebodyinside; ++it )
+		{
+			list_t* currentList = *it;
+			for ( node_t* node = currentList->first; node != nullptr; node = node->next )
+			{
+				Entity* entity = (Entity*)node->element;
+				if ( !(entity->behavior == &actPlayer || entity->behavior == &actMonster) )
+				{
+					continue;
+				}
+				if ( entityInsideEntity(my, entity) )
+				{
+					somebodyinside = true;
+					break;
+				}
+			}
+		}
+		if ( !somebodyinside )
+		{
+			my->flags[PASSABLE] = false;
+		}
+	}
+
 	if ( multiplayer != CLIENT )
 	{
 		bool checkWallDeletion = false;
@@ -965,6 +2009,7 @@ void actColliderDecoration(Entity* my)
 			if ( !map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height] )
 			{
 				//messagePlayer(0, MESSAGE_DEBUG, "[Collider]: Destroyed self at x: %d, y: %d", x, y);
+				my->removeLightField();
 				list_RemoveNode(my->mynode);
 				return;
 			}
@@ -978,6 +2023,35 @@ void actColliderDecoration(Entity* my)
 		if ( my->ticks == 1 )
 		{
 			my->createWorldUITooltip();
+		}
+
+		my->colliderTelepathy = 0;
+		if ( my->colliderContainedEntity != 0 )
+		{
+			Sint32 telepathy = 0;
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				if ( players[i]->isLocalPlayer() )
+				{
+					if ( players[i]->entity && players[i]->entity->isBlind() )
+					{
+						if ( stats[i]->type == GNOME )
+						{
+							telepathy |= (1 << i);
+						}
+					}
+				}
+			}
+			if ( telepathy )
+			{
+				if ( Entity* containedEntity = uidToEntity(my->colliderContainedEntity) )
+				{
+					if ( containedEntity->behavior == &actGoldBag )
+					{
+						my->colliderTelepathy = telepathy;
+					}
+				}
+			}
 		}
 
 		if ( multiplayer != CLIENT )
@@ -995,10 +2069,165 @@ void actColliderDecoration(Entity* my)
 				}
 			}
 
+			auto prevOldHP = my->colliderOldHP;
 			my->colliderOldHP = my->colliderCurrentHP;
 
 			if ( my->colliderCurrentHP > 0 )
 			{
+				if ( my->colliderSpellEvent > 0 )
+				{
+					if ( my->colliderCreatedParent != 0 && my->ticks >= 10 * TICKS_PER_SECOND )
+					{
+						// destroy self
+						my->colliderCurrentHP = 0;
+						my->colliderKillerUid = 0;
+					}
+					else if ( my->colliderSpellEventCooldown > 0 )
+					{
+						my->colliderSpellEventCooldown--;
+					}
+					else if ( (my->colliderSpellEvent % 1000) != 8 && (my->colliderSpellEvent % 1000) != 9 )
+					{
+						Entity* found = nullptr;
+						bool rescan = false;
+						int effectType = my->colliderSpellEvent % 1000;
+						if ( prevOldHP != my->colliderCurrentHP )
+						{
+							my->colliderSpellEventCooldown = 4 * TICKS_PER_SECOND;
+							my->colliderSpellEventTrigger = 100 + 75 + local_rng.rand() % 21;
+							serverUpdateEntitySkill(my, 21);
+							if ( effectType == 3 || effectType == 4 || effectType == 7 )
+							{
+								rescan = true; // look for a random target
+							}
+						}
+
+						if ( (my->colliderSpellEventCooldown == 0 && (my->ticks % TICKS_PER_SECOND == 0 && my->colliderSpellEvent >= 1000) 
+							|| rescan) )
+						{
+							Entity* caster = (my->colliderCreatedParent != 0 ? uidToEntity(my->colliderCreatedParent) : nullptr);
+							bool targetNonPlayer = false;
+							if ( !caster && achievementObserver.checkUidIsFromPlayer(my->colliderCreatedParent) >= 0 )
+							{
+								targetNonPlayer = true;
+							}
+							int range = colliderGetSpellRange(my);
+							auto entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 1 + (range / 16));
+							std::vector<Entity*> entitiesInRange;
+							for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end() && !found; ++it )
+							{
+								list_t* currentList = *it;
+								node_t* node;
+								for ( node = currentList->first; node != nullptr; node = node->next )
+								{
+									Entity* entity = (Entity*)node->element;
+									if ( !entity || !(entity->behavior == &actPlayer || entity->behavior == &actMonster) ) { continue; }
+									if ( !entity->monsterIsTargetable() ) { continue; }
+									if ( caster )
+									{
+										if ( caster == entity 
+											|| (caster->checkFriend(entity) 
+												&& !(caster->behavior == &actMonster && 
+													(caster->monsterTarget == entity->getUID() // caster targeting this
+														|| (entity->behavior == &actMonster && entity->monsterTarget == caster->getUID())))) ) // entity targeting caster
+										{
+											continue;
+										}
+									}
+									else
+									{
+										if ( targetNonPlayer )
+										{
+											if ( entity->behavior == &actMonster && !entity->monsterAllyGetPlayerLeader() )
+											{
+												// allowed to target
+											}
+											else
+											{
+												continue;
+											}
+										}
+										else if ( !(entity->behavior == &actPlayer || (entity->behavior == &actMonster && entity->monsterAllyGetPlayerLeader())) )
+										{
+											continue;
+										}
+									}
+									real_t targetDist = entityDist(entity, my);
+									if ( targetDist >= (range + 4.0) )
+									{
+										continue;
+									}
+									real_t tangent = atan2(entity->y - my->y, entity->x - my->x);
+									real_t traceDist = range;
+									if ( Stat* entitystats = entity->getStats() )
+									{
+										int light = entity->entityLightAfterReductions(*entitystats, my);
+										if ( targetDist > light )
+										{
+											continue;
+										}
+									}
+									lineTraceTarget(my, my->x, my->y, tangent, traceDist, 0, false, entity);
+									if ( hit.entity == entity )
+									{
+										if ( effectType == 3 || effectType == 4 || effectType == 7 )
+										{
+											entitiesInRange.push_back(entity);
+										}
+										else
+										{
+											found = entity;
+											break;
+										}
+									}
+								}
+							}
+
+							if ( effectType == 3 || effectType == 4 || effectType == 7 )
+							{
+								if ( entitiesInRange.size() > 0 )
+								{
+									if ( caster && caster->behavior == &actMonster && caster->monsterTarget != 0 )
+									{
+										for ( auto ent : entitiesInRange )
+										{
+											if ( ent->getUID() == caster->monsterTarget )
+											{
+												found = ent;
+												break;
+											}
+										}
+									}
+									if ( !found )
+									{
+										if ( caster )
+										{
+											for ( auto ent : entitiesInRange )
+											{
+												if ( ent->behavior == &actMonster && ent->monsterTarget == caster->getUID() )
+												{
+													found = ent;
+													break;
+												}
+											}
+										}
+									}
+									if ( !found )
+									{
+										found = entitiesInRange[local_rng.rand() % entitiesInRange.size()];
+									}
+									my->colliderSpellTarget = found->getUID();
+								}
+							}
+						}
+						if ( found )
+						{
+							my->colliderSpellEventCooldown = 4 * TICKS_PER_SECOND;
+							my->colliderSpellEventTrigger = 1 + local_rng.rand() % 75;
+							serverUpdateEntitySkill(my, 21);
+						}
+					}
+				}
 				if ( my->colliderHideMonster >= 1000 ) // summon a monster when player is near
 				{
 					Entity* found = nullptr;
@@ -1015,11 +2244,14 @@ void actColliderDecoration(Entity* my)
 								if ( entity && (entity->behavior == &actPlayer || (entity->behavior == &actMonster && entity->monsterAllyGetPlayerLeader())) )
 								{
 									real_t tangent = atan2(entity->y - my->y, entity->x - my->x);
-									lineTraceTarget(my, my->x, my->y, tangent, 32.0, 0, false, entity);
-									if ( hit.entity == entity )
+									if ( entityDist(entity, my) < 40.0 )
 									{
-										found = entity;
-										break;
+										lineTraceTarget(my, my->x, my->y, tangent, 32.0, 0, false, entity);
+										if ( hit.entity == entity )
+										{
+											found = entity;
+											break;
+										}
 									}
 								}
 							}
@@ -1057,7 +2289,8 @@ void actColliderDecoration(Entity* my)
 										strcpy(stats->name, "enslaved ghoul");
 										stats->setAttribute("special_npc", "enslaved ghoul");
 									}
-									if ( stats->type == AUTOMATON )
+									stats->setAttribute("spawn_no_sleep", "1");
+									if ( stats->type == AUTOMATON && strcmp(map.filename, "automat.lmp") )
 									{
 										monster->monsterStoreType = 1; // damaged
 									}
@@ -1074,8 +2307,16 @@ void actColliderDecoration(Entity* my)
 							}
 							if ( successes == 1 )
 							{
-								messagePlayer(found->skill[2], MESSAGE_INTERACTION, Language::get(6234),
-									getMonsterLocalizedName((Monster)type).c_str(), Language::get(my->getColliderLangName()));
+								if ( my->getColliderOnJumpLangEntry() == 6815 )
+								{
+									messagePlayer(found->skill[2], MESSAGE_INTERACTION, Language::get(my->getColliderOnJumpLangEntry()),
+										Language::get(my->getColliderLangName()));
+								}
+								else
+								{
+									messagePlayer(found->skill[2], MESSAGE_INTERACTION, Language::get(6234),
+										getMonsterLocalizedName((Monster)type).c_str(), Language::get(my->getColliderLangName()));
+								}
 							}
 							else if ( successes > 1 )
 							{
@@ -1108,8 +2349,9 @@ void actColliderDecoration(Entity* my)
 	}
 }
 
-void Entity::colliderHandleDamageMagic(int damage, Entity &magicProjectile, Entity *caster)
+void Entity::colliderHandleDamageMagic(int damage, Entity &magicProjectile, Entity *caster, bool messages, bool doSound)
 {
+	updateEntityOldHPBeforeMagicHit(*this, magicProjectile);
 	auto oldHP = colliderCurrentHP;
 	colliderCurrentHP -= damage; //Decrease object health.
 	if ( caster )
@@ -1124,34 +2366,42 @@ void Entity::colliderHandleDamageMagic(int damage, Entity &magicProjectile, Enti
 			{
 				if ( oldHP > 0 )
 				{
-					if ( magicProjectile.behavior == &actBomb )
+					if ( messages )
 					{
-						messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(3617), items[magicProjectile.skill[21]].getIdentifiedName(), Language::get(getColliderLangName()));
-					}
-					else
-					{
-						messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(getColliderLangName()));
+						if ( magicProjectile.behavior == &actBomb )
+						{
+							messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(3617), items[magicProjectile.skill[21]].getIdentifiedName(), Language::get(getColliderLangName()));
+						}
+						else
+						{
+							messagePlayer(caster->skill[2], MESSAGE_COMBAT, Language::get(2508), Language::get(getColliderLangName()));
+						}
 					}
 					if ( isColliderWall() )
 					{
 						Compendium_t::Events_t::eventUpdateWorld(caster->skill[2], Compendium_t::CPDM_BARRIER_DESTROYED, "breakable barriers", 1);
 					}
+
+					players[caster->skill[2]]->mechanics.incrementBreakableCounter(Player::PlayerMechanics_t::BreakableEvent::GBREAK_COMMON, this);
 				}
 			}
 			else
 			{
-				if ( magicProjectile.behavior == &actBomb )
+				if ( messages )
 				{
-					messagePlayer(caster->skill[2], MESSAGE_COMBAT_BASIC, Language::get(3618), items[magicProjectile.skill[21]].getIdentifiedName(), Language::get(getColliderLangName()));
-				}
-				else
-				{
-					messagePlayer(caster->skill[2], MESSAGE_COMBAT_BASIC, Language::get(378), Language::get(getColliderLangName()));
+					if ( magicProjectile.behavior == &actBomb )
+					{
+						messagePlayer(caster->skill[2], MESSAGE_COMBAT_BASIC, Language::get(3618), items[magicProjectile.skill[21]].getIdentifiedName(), Language::get(getColliderLangName()));
+					}
+					else
+					{
+						messagePlayer(caster->skill[2], MESSAGE_COMBAT_BASIC, Language::get(378), Language::get(getColliderLangName()));
+					}
 				}
 			}
-			updateEnemyBar(caster, this, Language::get(getColliderLangName()), colliderCurrentHP, colliderMaxHP,
-				false, DamageGib::DMG_DEFAULT);
 		}
+		updateEnemyBar(caster, this, Language::get(getColliderLangName()), colliderCurrentHP, colliderMaxHP,
+			false, DamageGib::DMG_DEFAULT);
 	}
 
 	int sound = 28; //damage.ogg
@@ -1159,7 +2409,10 @@ void Entity::colliderHandleDamageMagic(int damage, Entity &magicProjectile, Enti
 	{
 		sound = getColliderSfxOnHit();
 	}
-	playSoundEntity(this, sound, 64);
+	if ( doSound )
+	{
+		playSoundEntity(this, sound, 64);
+	}
 }
 
 void actFloorDecoration(Entity* my)
@@ -1180,6 +2433,68 @@ void actFloorDecoration(Entity* my)
 	if ( multiplayer == CLIENT )
 	{
 		return;
+	}
+
+	if ( my->floorDecorationDestroyIfNoWall >= 0 )
+	{
+		int x = static_cast<int>(my->x) >> 4;
+		int y = static_cast<int>(my->y) >> 4;
+		std::vector<std::pair<int, int>> coords;
+		switch ( my->floorDecorationDestroyIfNoWall )
+		{
+		case 0:
+			// east
+			coords.push_back(std::make_pair(x + 1, y));
+			break;
+		case 1:
+			// southeast
+			coords.push_back(std::make_pair(x + 1, y));
+			coords.push_back(std::make_pair(x, y + 1));
+			break;
+		case 2:
+			// south
+			coords.push_back(std::make_pair(x, y + 1));
+			break;
+		case 3:
+			// southwest
+			coords.push_back(std::make_pair(x, y + 1));
+			coords.push_back(std::make_pair(x - 1, y));
+			break;
+		case 4:
+			// west
+			coords.push_back(std::make_pair(x - 1, y));
+			break;
+		case 5:
+			// northwest
+			coords.push_back(std::make_pair(x, y - 1));
+			coords.push_back(std::make_pair(x - 1, y));
+			break;
+		case 6:
+			// north
+			coords.push_back(std::make_pair(x, y - 1));
+			break;
+		case 7:
+			// northeast
+			coords.push_back(std::make_pair(x, y - 1));
+			coords.push_back(std::make_pair(x + 1, y));
+			break;
+		default:
+			break;
+		}
+
+		for ( auto& pair : coords )
+		{
+			int x = pair.first;
+			int y = pair.second;
+			if ( x >= 0 && x < map.width && y >= 0 && y < map.height )
+			{
+				if ( !map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height] )
+				{
+					list_RemoveNode(my->mynode);
+					return;
+				}
+			}
+		}
 	}
 
 	if ( my->floorDecorationInteractText1 == 0 )
@@ -1231,26 +2546,71 @@ void actFloorDecoration(Entity* my)
 						if ( charIsWordSeparator(c) ) { break; }
 						key += c;
 					}
-					if ( ScriptTextParser.allEntries.find(key) != ScriptTextParser.allEntries.end() )
+					auto find = ScriptTextParser.allEntries.find(key);
+					if ( find != ScriptTextParser.allEntries.end() )
 					{
-						if ( players[i]->isLocalPlayer() )
+						if ( find->second.objectType == ScriptTextParser_t::OBJ_SIGN )
 						{
-							if ( players[i]->isLocalPlayerAlive() )
+							if ( players[i]->isLocalPlayer() )
 							{
-								players[i]->signGUI.openSign(key, my->getUID());
+								if ( players[i]->isLocalPlayerAlive() )
+								{
+									players[i]->signGUI.openSign(key, my->getUID());
+								}
 							}
+							else if ( multiplayer == SERVER && i > 0 && !client_disconnected[i] )
+							{
+								strcpy((char*)net_packet->data, "SIGN");
+								SDLNet_Write32(my->getUID(), &net_packet->data[4]);
+								strcpy((char*)(&net_packet->data[8]), key.c_str());
+								net_packet->address.host = net_clients[i - 1].host;
+								net_packet->address.port = net_clients[i - 1].port;
+								net_packet->len = 8 + strlen(key.c_str()) + 1;
+								sendPacketSafe(net_sock, -1, net_packet, i - 1);
+							}
+							return;
 						}
-						else if ( multiplayer == SERVER && i > 0 && !client_disconnected[i] )
+						else if ( find->second.objectType == ScriptTextParser_t::OBJ_MESSAGE )
 						{
-							strcpy((char*)net_packet->data, "SIGN");
-							SDLNet_Write32(my->getUID(), &net_packet->data[4]);
-							strcpy((char*)(&net_packet->data[8]), key.c_str());
-							net_packet->address.host = net_clients[i - 1].host;
-							net_packet->address.port = net_clients[i - 1].port;
-							net_packet->len = 8 + strlen(key.c_str()) + 1;
-							sendPacketSafe(net_sock, -1, net_packet, i - 1);
+							Uint8 r = 255;
+							Uint8 g = 255;
+							Uint8 b = 255;
+							for ( auto& var : find->second.variables )
+							{
+								if ( var.type == ScriptTextParser_t::VariableTypes::COLOR_R )
+								{
+									r = var.numericValue;
+								}
+								else if ( var.type == ScriptTextParser_t::VariableTypes::COLOR_G )
+								{
+									g = var.numericValue;
+								}
+								else if ( var.type == ScriptTextParser_t::VariableTypes::COLOR_B )
+								{
+									b = var.numericValue;
+								}
+							}
+							messagePlayerColor(i, MESSAGE_INSPECTION, makeColorRGB(r, g, b), find->second.formattedText.c_str());
+							return;
 						}
-						return;
+						else if ( find->second.objectType == ScriptTextParser_t::OBJ_BUBBLE_SIGN )
+						{
+							players[i]->worldUI.worldTooltipDialogue.createDialogueTooltip(my->getUID(),
+								Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_SIGNPOST, find->second.formattedText.c_str());
+							return;
+						}
+						else if ( find->second.objectType == ScriptTextParser_t::OBJ_BUBBLE_GRAVE )
+						{
+							players[i]->worldUI.worldTooltipDialogue.createDialogueTooltip(my->getUID(),
+								Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_GRAVE, find->second.formattedText.c_str());
+							return;
+						}
+						else if ( find->second.objectType == ScriptTextParser_t::OBJ_BUBBLE_DIALOGUE )
+						{
+							players[i]->worldUI.worldTooltipDialogue.createDialogueTooltip(my->getUID(),
+								Player::WorldUI_t::WorldTooltipDialogue_t::DIALOGUE_NPC, find->second.formattedText.c_str());
+							return;
+						}
 					}
 				}
 
@@ -1418,6 +2778,18 @@ int TextSourceScript::textSourceProcessScriptTag(std::string& input, std::string
 			x2 = std::min(std::max(x1, x2), (int)map.width - 1);
 			y2 = std::min(std::max(y1, y2), (int)map.height - 1);
 
+			if ( findTag.compare("@explode=") == 0 )
+			{
+				int explosionSprite = 0;
+				size_t foundSeperator = tagValue.find(";");
+				if ( foundSeperator != std::string::npos )
+				{
+					std::string first_str = tagValue.substr(foundSeperator + 1, tagValue.length() - foundSeperator);
+					explosionSprite = std::stoi(first_str);
+				}
+				return ((x1 & 0xFF) << 16) + ((y1 & 0xFF) << 24) + ((explosionSprite & 0xFFFF) << 0);
+			}
+
 			return (x1 & 0xFF) + ((x2 & 0xFF) << 8) + ((y1 & 0xFF) << 16) + ((y2 & 0xFF) << 24);
 		}
 		else
@@ -1495,9 +2867,25 @@ int TextSourceScript::textSourceProcessScriptTag(std::string& input, std::string
 			{
 				return TO_ITEMS;
 			}
+			else if ( !tagValue.compare("gold") )
+			{
+				return TO_GOLD;
+			}
+			else if ( !tagValue.compare("bell") )
+			{
+				return TO_BELL;
+			}
 			else if ( !tagValue.compare("players") )
 			{
 				return TO_PLAYERS;
+			}
+			else if ( !tagValue.compare("breakable") )
+			{
+				return TO_BREAKABLE;
+			}
+			else if ( !tagValue.compare("collider") )
+			{
+				return TO_COLLIDER;
 			}
 			else
 			{
@@ -1529,6 +2917,10 @@ int TextSourceScript::textSourceProcessScriptTag(std::string& input, std::string
 			{
 				return TRIGGER_ATTACHED_VISIBLE;
 			}
+			else if ( !tagValue.compare("attached#interacted") )
+			{
+				return TRIGGER_ATTACHED_INTERACTED;
+			}
 			else if ( !tagValue.compare("always") )
 			{
 				return TRIGGER_ATTACHED_ALWAYS;
@@ -1537,6 +2929,17 @@ int TextSourceScript::textSourceProcessScriptTag(std::string& input, std::string
 			{
 				return k_ScriptError;
 			}
+		}
+		else if ( findTag.compare("@breakablespawn=") == 0 || findTag.compare("@breakablejumpspawn=") == 0 )
+		{
+			for ( int i = 0; i < NUMMONSTERS; ++i )
+			{
+				if ( !tagValue.compare(monstertypename[i]) )
+				{
+					return TO_NOTHING + i;
+				}
+			}
+			return k_ScriptError;
 		}
 
 		return std::stoi(tagValue);
@@ -1633,8 +3036,12 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 					if ( (entity->behavior == &actMonster && attachTo == TO_MONSTERS)
 						|| (entity->behavior == &actPlayer && attachTo == TO_PLAYERS)
 						|| (entity->behavior == &actItem && attachTo == TO_ITEMS)
+						|| (entity->behavior == &actGoldBag && attachTo == TO_GOLD)
+						|| (entity->behavior == &actBell && attachTo == TO_BELL)
+						|| (entity->isColliderBreakableContainer() && attachTo == TO_BREAKABLE)
+						|| (entity->isDamageableCollider() && attachTo == TO_COLLIDER)
 						|| (entity->behavior == &actMonster
-							&& attachTo >= TO_NOTHING && attachTo <= TO_DUMMYBOT
+							&& attachTo >= TO_NOTHING && attachTo < TO_MONSTER_MAX
 							&& entity->getRace() == (attachTo - TO_NOTHING)) )
 					{
 						// found our entity.
@@ -1713,6 +3120,10 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 					result = CLASS_BARBARIAN;
 				}
 				if ( !enabledDLCPack2 && result >= CLASS_MACHINIST && result <= CLASS_HUNTER )
+				{
+					result = CLASS_BARBARIAN;
+				}
+				if ( !enabledDLCPack3 && result >= CLASS_BARD && result <= CLASS_PALADIN )
 				{
 					result = CLASS_BARBARIAN;
 				}
@@ -2150,6 +3561,10 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 						}
 						if ( multiplayer == SERVER )
 						{
+							if ( entity->behavior == &actPlayer && entity->skill[2] > 0 )
+							{
+								serverUpdateEffects(entity->skill[2]);
+							}
 							entity->serverUpdateEffectsForEntity(true);
 						}
 					}
@@ -2177,6 +3592,10 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 						}
 						if ( multiplayer == SERVER )
 						{
+							if ( entity->behavior == &actPlayer && entity->skill[2] > 0 )
+							{
+								serverUpdateEffects(entity->skill[2]);
+							}
 							entity->serverUpdateEffectsForEntity(true);
 						}
 					}
@@ -2325,6 +3744,75 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 								entity->setHP(0);
 							}
 						}
+					}
+				}
+			}
+		}
+		else if ( (*it).find("@damage=") != std::string::npos )
+		{
+			int result = textSourceProcessScriptTag(input, "@damage=", src);
+			if ( result != k_ScriptError )
+			{
+				int damage = result;
+				if ( processOnAttachedEntity )
+				{
+					for ( auto entity : attachedEntities )
+					{
+						if ( entity->behavior == &actChest )
+						{
+							entity->chestHealth -= damage;
+						}
+						else if ( entity->behavior == &actMonster )
+						{
+							entity->modHP(-damage);
+						}
+						else if ( entity->behavior == &actDoor )
+						{
+							entity->doorHealth -= damage;
+						}
+						else if ( entity->behavior == &actFurniture )
+						{
+							entity->furnitureHealth -= damage;
+						}
+						else if ( entity->isDamageableCollider() )
+						{
+							entity->colliderCurrentHP -= damage;
+						}
+					}
+				}
+			}
+		}
+		else if ( (*it).find("@explode=") != std::string::npos )
+		{
+			int result = textSourceProcessScriptTag(input, "@explode=", src);
+			if ( result != k_ScriptError )
+			{
+				int explosionSprite = (result >> 0) & 0xFFFF;
+				int x1 = (result >> 16) & 0xFF;
+				int y1 = (result >> 24) & 0xFF;
+				if ( processOnAttachedEntity )
+				{
+					for ( auto entity : attachedEntities )
+					{
+						if ( explosionSprite > 0 )
+						{
+							spawnExplosionFromSprite(explosionSprite, entity->x, entity->y, -4 + local_rng.rand() % 8);
+						}
+						else
+						{
+							spawnExplosion(entity->x, entity->y, -4 + local_rng.rand() % 8);
+						}
+					}
+				}
+				else
+				{
+					if ( explosionSprite > 0 )
+					{
+						spawnExplosionFromSprite(explosionSprite, x1 * 16.0 + 8.0, y1 * 16.0 + 8.0, -4 + local_rng.rand() % 8);
+					}
+					else
+					{
+						spawnExplosion(x1 * 16.0 + 8.0, y1 * 16.0 + 8.0, -4 + local_rng.rand() % 8);
 					}
 				}
 			}
@@ -2907,6 +4395,149 @@ void TextSourceScript::handleTextSourceScript(Entity& src, std::string input)
 				}
 			}
 		}
+		else if ( (*it).find("@addtobreakable=") != std::string::npos )
+		{
+			int result = textSourceProcessScriptTag(input, "@addtobreakable=", src);
+			if ( result != k_ScriptError )
+			{
+				int x1 = result & 0xFF;
+				int x2 = (result >> 8) & 0xFF;
+				int y1 = (result >> 16) & 0xFF;
+				int y2 = (result >> 24) & 0xFF;
+				std::vector<Entity*> applyToEntities;
+				if ( processOnAttachedEntity 
+					&& (textSourceScript.getAttachedToEntityType(src.textSourceIsScript) == textSourceScript.TO_ITEMS
+						|| textSourceScript.getAttachedToEntityType(src.textSourceIsScript) == textSourceScript.TO_GOLD) )
+				{
+					for ( auto entity : attachedEntities )
+					{
+						if ( textSourceScript.getAttachedToEntityType(src.textSourceIsScript) == textSourceScript.TO_ITEMS )
+						{
+							if ( entity->behavior == &actItem )
+							{
+								applyToEntities.push_back(entity);
+							}
+						}
+						else if ( textSourceScript.getAttachedToEntityType(src.textSourceIsScript) == textSourceScript.TO_GOLD )
+						{
+							if ( entity->behavior == &actGoldBag )
+							{
+								applyToEntities.push_back(entity);
+							}
+						}
+					}
+					Entity* breakable = nullptr;
+					for ( node_t* node = map.entities->first; node; node = node->next )
+					{
+						Entity* entity = (Entity*)node->element;
+						if ( entity && entity->isColliderBreakableContainer() )
+						{
+							int findx = static_cast<int>(entity->x) >> 4;
+							int findy = static_cast<int>(entity->y) >> 4;
+							if ( findx >= x1 && findx <= x2 && findy >= y1 && findy <= y2 )
+							{
+								breakable = entity;
+							}
+						}
+					}
+					if ( breakable )
+					{
+						for ( auto entity : applyToEntities )
+						{
+							if ( entity->behavior == &actItem )
+							{
+								if ( breakable->colliderContainedEntity != 0 )
+								{
+									break; // only 1 item
+								}
+								entity->itemContainer = breakable->getUID();
+							}
+							else
+							{
+								entity->goldInContainer = breakable->getUID();
+							}
+							entity->flags[INVISIBLE] = true;
+							serverUpdateEntityFlag(entity, INVISIBLE);
+							breakable->colliderContainedEntity = entity->getUID();
+						}
+					}
+				}
+				else
+				{
+					// not implemented, needs to be attached to items.
+				}
+			}
+		}
+		else if ( (*it).find("@breakablespawn=") != std::string::npos )
+		{
+			int result = textSourceProcessScriptTag(input, "@breakablespawn=", src);
+			if ( result != k_ScriptError )
+			{
+				std::vector<Entity*> applyToEntities;
+				if ( processOnAttachedEntity && textSourceScript.getAttachedToEntityType(src.textSourceIsScript) == textSourceScript.TO_BREAKABLE )
+				{
+					for ( auto entity : attachedEntities )
+					{
+						if ( entity->isColliderBreakableContainer() )
+						{
+							applyToEntities.push_back(entity);
+						}
+					}
+
+					if ( result >= TO_NOTHING && result < TO_MONSTER_MAX )
+					{
+						int monsterType = NOTHING + (result - TO_NOTHING);
+						for ( auto entity : applyToEntities )
+						{
+							if ( entity->colliderHideMonster != 0 )
+							{
+								continue;
+							}
+							entity->colliderHideMonster = monsterType;
+						}
+					}
+				}
+				else
+				{
+					// not implemented, needs to be attached to breakables.
+				}
+			}
+		}
+		else if ( (*it).find("@breakablejumpspawn=") != std::string::npos )
+		{
+			int result = textSourceProcessScriptTag(input, "@breakablejumpspawn=", src);
+			if ( result != k_ScriptError )
+			{
+				std::vector<Entity*> applyToEntities;
+				if ( processOnAttachedEntity && textSourceScript.getAttachedToEntityType(src.textSourceIsScript) == textSourceScript.TO_BREAKABLE )
+				{
+					for ( auto entity : attachedEntities )
+					{
+						if ( entity->isColliderBreakableContainer() )
+						{
+							applyToEntities.push_back(entity);
+						}
+					}
+
+					if ( result >= TO_NOTHING && result < TO_MONSTER_MAX )
+					{
+						int monsterType = NOTHING + (result - TO_NOTHING);
+						for ( auto entity : applyToEntities )
+						{
+							if ( entity->colliderHideMonster != 0 )
+							{
+								continue;
+							}
+							entity->colliderHideMonster = 1000 + monsterType;
+						}
+					}
+				}
+				else
+				{
+					// not implemented, needs to be attached to breakables.
+				}
+			}
+		}
 		else
 		{
 			for ( int i = 0; i < NUMSTATS; ++i )
@@ -3250,6 +4881,35 @@ void Entity::actTextSource()
 		}
 		else
 		{
+			if ( textSourceScript.getTriggerType(textSourceIsScript) == textSourceScript.TRIGGER_ATTACHED_INTERACTED )
+			{
+				if ( textSourceScript.getAttachedToEntityType(textSourceIsScript) == textSourceScript.TO_BELL )
+				{
+					bool doEffect = false;
+					for ( node_t* node = children.first; node; node = node->next )
+					{
+						Uint32 entityUid = *((Uint32*)node->element);
+						Entity* child = uidToEntity(entityUid);
+						if ( child )
+						{
+							if ( child->behavior == &actBell )
+							{
+								if ( (child->skill[0] & 0xFF) // BELL_ACTIVE_TIMER countdown
+									|| child->skill[10] > 0 )  // BELL_BULB_BROKEN
+								{
+									doEffect = true;
+								}
+							}
+						}
+					}
+					if ( doEffect )
+					{
+						textSourceScript.setScriptType(textSourceIsScript, textSourceScript.SCRIPT_ATTACHED_FIRED);
+						powered = true;
+					}
+				}
+			}
+
 			if ( textSourceScript.getTriggerType(textSourceIsScript) == textSourceScript.TRIGGER_ATTACHED_EXISTS )
 			{
 				textSourceScript.setScriptType(textSourceIsScript, textSourceScript.SCRIPT_ATTACHED_FIRED);
@@ -3494,6 +5154,7 @@ void TextSourceScript::playerClearInventory(bool clearStats)
 	spellcastingAnimationManager_deactivate(&cast_animation[clientnum]);
 	stats[clientnum]->freePlayerEquipment();
 	list_FreeAll(&stats[clientnum]->inventory);
+	list_FreeAll(&stats[clientnum]->void_chest_inventory);
 	players[clientnum]->shootmode = true;
 	players[clientnum]->inventoryUI.appraisal.timer = 0;
 	players[clientnum]->inventoryUI.appraisal.current_item = 0;
@@ -3548,6 +5209,52 @@ std::string TextSourceScript::getScriptFromEntity(Entity& src)
 		}
 	}
 	return buf;
+}
+
+Entity* TextSourceScript::createScriptEntityInMapGen(int x, int y, const char* text)
+{
+	Entity* scriptEntity = newEntity(132, 1, map.entities, nullptr); // text script
+	setSpriteAttributes(scriptEntity, nullptr, nullptr);
+	scriptEntity->x = x * 16.0;
+	scriptEntity->y = y * 16.0;
+	scriptEntity->textSourceDelay = 1;
+
+	if ( text )
+	{
+		addScriptToTextSource(*scriptEntity, text);
+	}
+
+	return scriptEntity;
+}
+
+void TextSourceScript::addScriptToTextSource(Entity& src, const char* text)
+{
+	if ( !text ) { return; }
+
+	for ( int skill = 4; skill < 60; ++skill )
+	{
+		if ( skill == 28 ) { continue; }
+		src.skill[skill] = 0;
+	}
+
+	int skillnum = 4;
+	int len = strlen(text);
+	int encodeIndex = 0;
+	for ( int s = 0; s < len; ++s )
+	{
+		src.skill[skillnum] |= ((text[s]) << (encodeIndex * 8));
+		++encodeIndex;
+		if ( encodeIndex == 4 )
+		{
+			encodeIndex = 0;
+			++skillnum;
+			if ( skillnum == 28 ) { ++skillnum; }
+		}
+		if ( skillnum >= 60 )
+		{
+			break;
+		}
+	}
 }
 
 void TextSourceScript::parseScriptInMapGeneration(Entity& src)
@@ -3620,8 +5327,12 @@ void TextSourceScript::parseScriptInMapGeneration(Entity& src)
 				if ( (entity->behavior == &actMonster && attachTo == TO_MONSTERS)
 					|| (entity->behavior == &actPlayer && attachTo == TO_PLAYERS)
 					|| (entity->behavior == &actItem && attachTo == TO_ITEMS)
+					|| (entity->behavior == &actGoldBag && attachTo == TO_GOLD)
+					|| (entity->behavior == &actBell && attachTo == TO_BELL)
+					|| (entity->isColliderBreakableContainer() && attachTo == TO_BREAKABLE)
+					|| (entity->isDamageableCollider() && attachTo == TO_COLLIDER)
 					|| (entity->behavior == &actMonster 
-						&& attachTo >= TO_NOTHING && attachTo <= TO_DUMMYBOT 
+						&& attachTo >= TO_NOTHING && attachTo < TO_MONSTER_MAX
 						&& entity->getRace() == (attachTo - TO_NOTHING)) )
 				{
 					// found our entity.
@@ -3669,7 +5380,7 @@ void bellAttractMonsters(Entity* my)
 						&& myStats
 						&& entityDist(my, entity) > TOUCHRANGE )
 					{
-						if ( !myStats->EFFECTS[EFF_DISTRACTED_COOLDOWN]
+						if ( !myStats->getEffectActive(EFF_DISTRACTED_COOLDOWN)
 							&& entity->monsterSetPathToLocation(my->x / 16, my->y / 16, 1,
 								GeneratePathTypes::GENERATE_PATH_DEFAULT, true) && entity->children.first )
 						{
@@ -3721,7 +5432,16 @@ int getBellDmgOnEntity(Entity* entity)
 		damage *= mult;
 	}
 
-	if ( stats->helmet )
+	if ( entity->onEntityTrapHitSacredPath(nullptr) )
+	{
+		if ( entity->behavior == &actPlayer )
+		{
+			messagePlayerColor(entity->skill[2], MESSAGE_COMBAT, makeColorRGB(0, 255, 0),
+				Language::get(6491));
+		}
+		playSoundEntity(entity, 166, 128);
+	}
+	else if ( stats->helmet )
 	{
 		bool shapeshifted = (entity->behavior == &actPlayer && entity->effectShapeshift != NOTHING);
 
@@ -3740,7 +5460,10 @@ int getBellDmgOnEntity(Entity* entity)
 					}
 					damage = 0;
 				}
-				stats->helmet->status = BROKEN;
+				if ( !entity->spellEffectPreserveItem(stats->helmet) )
+				{
+					stats->helmet->status = BROKEN;
+				}
 			}
 			else if ( stats->helmet->type == HELM_MINING )
 			{
@@ -3766,9 +5489,12 @@ int getBellDmgOnEntity(Entity* entity)
 					}
 				}
 				damage *= mult;
-				if ( stats->helmet->status > BROKEN )
+				if ( !entity->spellEffectPreserveItem(stats->helmet) )
 				{
-					stats->helmet->status = (Status)((int)stats->helmet->status - 1);
+					if ( stats->helmet->status > BROKEN )
+					{
+						stats->helmet->status = (Status)((int)stats->helmet->status - 1);
+					}
 				}
 			}
 
@@ -3791,9 +5517,10 @@ int getBellDmgOnEntity(Entity* entity)
 					strcpy((char*)net_packet->data, "ARMR");
 					net_packet->data[4] = 0;
 					net_packet->data[5] = stats->helmet->status;
+					SDLNet_Write16((int)stats->helmet->type, &net_packet->data[6]);
 					net_packet->address.host = net_clients[player - 1].host;
 					net_packet->address.port = net_clients[player - 1].port;
-					net_packet->len = 6;
+					net_packet->len = 8;
 					sendPacketSafe(net_sock, -1, net_packet, player - 1);
 				}
 			}
@@ -4233,8 +5960,8 @@ void actBell(Entity* my)
 				bellBreakBulb(my, true);
 				my->flags[BURNING] = false;
 				my->flags[INVISIBLE] = true;
-				serverUpdateEntitySkill(my, INVISIBLE);
-				serverUpdateEntitySkill(my, BURNING);
+				serverUpdateEntityFlag(my, INVISIBLE);
+				serverUpdateEntityFlag(my, BURNING);
 
 				if ( BELL_PULLED_TO_BREAK != 0 )
 				{
@@ -4254,9 +5981,11 @@ void actBell(Entity* my)
 	if ( my->flags[INVISIBLE] && my->flags[BURNING] )
 	{
 		my->flags[BURNING] = false;
+		my->flags[BURNABLE] = false;
 		if ( multiplayer != CLIENT )
 		{
-			serverUpdateEntitySkill(my, BURNING);
+			serverUpdateEntityFlag(my, BURNING);
+			serverUpdateEntityFlag(my, BURNABLE);
 		}
 	}
 
@@ -4849,17 +6578,9 @@ void actBell(Entity* my)
 									{
 										int amount = 15;
 										entity->modHP(amount);
-										entity->modMP(amount);
-										if ( svFlags & SV_FLAG_HUNGER )
-										{
-											if ( entity->behavior == &actPlayer && stats->playerRace == RACE_INSECTOID && stats->stat_appearance == 0 )
-											{
-												Sint32 hungerPointPerMana = entity->playerInsectoidHungerValueOfManaPoint(*stats);
-												stats->HUNGER += amount * hungerPointPerMana;
-												stats->HUNGER = std::min(999, stats->HUNGER);
-												serverUpdateHunger(entity->skill[2]);
-											}
-										}
+										int mpAmount = entity->modMP(amount);
+										entity->playerInsectoidIncrementHungerToMP(mpAmount);
+
 										playSoundEntity(entity, 168, 128);
 										spawnDamageGib(entity, NOTE_DOUBLE_EIGHTH, DamageGib::DMG_STRONGEST, DamageGibDisplayType::DMG_GIB_SPRITE, true);
 										spawnMagicEffectParticles(entity->x, entity->y, entity->z, 169);

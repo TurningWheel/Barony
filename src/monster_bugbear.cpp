@@ -401,7 +401,7 @@ void bugbearMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			{
 				wearingring = true;
 			}
-		if ( myStats->EFFECTS[EFF_INVISIBLE] == true || wearingring == true )
+		if ( myStats->getEffectActive(EFF_INVISIBLE) || wearingring == true )
 		{
 			my->flags[INVISIBLE] = true;
 			my->flags[BLOCKSIGHT] = false;
@@ -454,7 +454,7 @@ void bugbearMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		}
 
 		// sleeping
-		if ( myStats->EFFECTS[EFF_ASLEEP] )
+		if ( myStats->getEffectActive(EFF_ASLEEP) )
 		{
 			my->z = limbs[BUGBEAR][11][0];
 		}
@@ -462,6 +462,7 @@ void bugbearMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		{
 			my->z = limbs[BUGBEAR][11][2];
 		}
+		my->creatureHandleLiftZ();
 	}
 
 	Entity* weaponarm = nullptr;
@@ -954,7 +955,7 @@ void bugbearMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						}
 					}*/
 
-					if ( myStats->weapon == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					if ( myStats->weapon == nullptr || myStats->getEffectActive(EFF_INVISIBLE) || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -1096,7 +1097,7 @@ void bugbearMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							entity->flags[INVISIBLE] = true;
 						}
 					}
-					if ( myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					if ( myStats->getEffectActive(EFF_INVISIBLE) || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}

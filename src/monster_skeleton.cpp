@@ -661,7 +661,7 @@ void skeletonDie(Entity* my)
 			{
 				// refund mana to caster.
 				int spellCost = getCostOfSpell(&spell_summon, leader);
-				if ( (leader->getINT() + leaderStats->getModifiedProficiency(PRO_MAGIC)) >= SKILL_LEVEL_EXPERT )
+				if ( (leader->getINT() + leaderStats->getModifiedProficiency(spell_summon.skillID)) >= SKILL_LEVEL_EXPERT )
 				{
 					// we summoned 2 units, halve the return rate.
 					spellCost /= 2;
@@ -793,7 +793,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			{
 				wearingring = true;
 			}
-		if ( myStats->EFFECTS[EFF_INVISIBLE] == true || wearingring == true )
+		if ( myStats->getEffectActive(EFF_INVISIBLE) || wearingring == true )
 		{
 			my->flags[INVISIBLE] = true;
 			my->flags[BLOCKSIGHT] = false;
@@ -846,7 +846,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		}
 
 		// sleeping
-		if ( myStats->EFFECTS[EFF_ASLEEP] )
+		if ( myStats->getEffectActive(EFF_ASLEEP) )
 		{
 			my->z = 2;
 			my->pitch = PI / 4;
@@ -855,6 +855,33 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		{
 			my->z = -.5;
 			my->pitch = 0;
+		}
+
+		my->creatureHandleLiftZ();
+
+		if ( myStats->getAttribute("revenant_skeleton") != "" )
+		{
+			if ( my->parent != 0 )
+			{
+				Entity* parent = uidToEntity(my->parent);
+				if ( !parent )
+				{
+					my->setHP(0);
+					my->setObituary(Language::get(6806));
+				}
+			}
+
+			int lifetime = std::stoi(myStats->getAttribute("revenant_skeleton"));
+			--lifetime;
+			if ( lifetime <= 0 )
+			{
+				my->setHP(0);
+				my->setObituary(Language::get(6806));
+			}
+			else
+			{
+				myStats->setAttribute("revenant_skeleton", std::to_string(lifetime));
+			}
 		}
 	}
 
@@ -912,15 +939,21 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		{
 			// torso
 			case LIMB_HUMANOID_TORSO:
+				entity->scalex = 1.0;
+				entity->scaley = 1.0;
+				entity->scalez = 1.0;
+				entity->focalx = limbs[SKELETON][1][0];
+				entity->focaly = limbs[SKELETON][1][1];
+				entity->focalz = limbs[SKELETON][1][2];
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->breastplate == nullptr )
+					if ( myStats->breastplate == nullptr || !itemModel(myStats->breastplate, false, my) )
 					{
 						entity->sprite = my->sprite == 1103 ? 1106 : 230;
 					}
 					else
 					{
-						entity->sprite = itemModel(myStats->breastplate);
+						entity->sprite = itemModel(myStats->breastplate, false, my);
 					}
 					if ( multiplayer == SERVER )
 					{
@@ -1225,7 +1258,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			case LIMB_HUMANOID_WEAPON:
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->weapon == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					if ( myStats->weapon == nullptr || myStats->getEffectActive(EFF_INVISIBLE) || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -1298,7 +1331,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							entity->handleQuiverThirdPersonModel(*myStats);
 						}
 					}
-					if ( myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					if ( myStats->getEffectActive(EFF_INVISIBLE) || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -1342,7 +1375,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			case LIMB_HUMANOID_CLOAK:
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->cloak == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					if ( myStats->cloak == nullptr || myStats->getEffectActive(EFF_INVISIBLE) || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -1400,7 +1433,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				if ( multiplayer != CLIENT )
 				{
 					entity->sprite = itemModel(myStats->helmet);
-					if ( myStats->helmet == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					if ( myStats->helmet == nullptr || myStats->getEffectActive(EFF_INVISIBLE) || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -1453,17 +1486,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->roll = PI / 2;
 				if ( multiplayer != CLIENT )
 				{
-					bool hasSteelHelm = false;
-					/*if ( myStats->helmet )
-					{
-						if ( myStats->helmet->type == STEEL_HELM
-							|| myStats->helmet->type == CRYSTAL_HELM
-							|| myStats->helmet->type == ARTIFACT_HELM )
-						{
-							hasSteelHelm = true;
-						}
-					}*/
-					if ( myStats->mask == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring || hasSteelHelm ) //TODO: isInvisible()?
+					if ( myStats->mask == nullptr || myStats->getEffectActive(EFF_INVISIBLE) || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -1528,7 +1551,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						my->setHelmetLimbOffset(entity);
 						my->setHelmetLimbOffsetWithMask(helmet, entity);
 					}
-					else if ( EquipmentModelOffsets.modelOffsetExists(SKELETON, entity->sprite) )
+					else if ( EquipmentModelOffsets.modelOffsetExists(SKELETON, entity->sprite, my->sprite) )
 					{
 						my->setHelmetLimbOffset(entity);
 						my->setHelmetLimbOffsetWithMask(helmet, entity);

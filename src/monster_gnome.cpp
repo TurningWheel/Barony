@@ -210,9 +210,9 @@ void initGnome(Entity* my, Stat* myStats)
 			// boss variants
 
 			// random effects
-			if ( rng.rand() % 8 == 0 )
+			if ( rng.rand() % 8 == 0 && myStats->getAttribute("spawn_no_sleep") == "" )
 			{
-				myStats->EFFECTS[EFF_ASLEEP] = true;
+				myStats->setEffectActive(EFF_ASLEEP, 1);
 				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + rng.rand() % 1800;
 			}
 
@@ -253,9 +253,33 @@ void initGnome(Entity* my, Stat* myStats)
 					case 2:
 						if ( rng.rand() % 10 == 0 )
 						{
-							if ( rng.rand() % 2 == 0 )
+							if ( rng.rand() % 5 == 0 )
 							{
 								newItem(MASK_PIPE, SERVICABLE, -1 + rng.rand() % 3, 1, rng.rand(), false, &myStats->inventory);
+							}
+							else if ( rng.rand() % 2 == 0 )
+							{
+								if ( gnome_type == "gnome2" || gnome_type == "gnome2F" )
+								{
+									newItem(BANDIT_BREASTPIECE, static_cast<Status>(1 + rng.rand() % 4), -1 + rng.rand() % 3, 1, rng.rand(), false, &myStats->inventory);
+								}
+								else
+								{
+									switch ( rng.rand() % 3 )
+									{
+									case 0:
+										newItem(HAT_FELT, static_cast<Status>(1 + rng.rand() % 4), -1 + rng.rand() % 3, 1, rng.rand(), false, &myStats->inventory);
+										break;
+									case 1:
+										newItem(LOAFERS, static_cast<Status>(1 + rng.rand() % 4), -1 + rng.rand() % 3, 1, rng.rand(), false, &myStats->inventory);
+										break;
+									case 2:
+										newItem(TUNIC_BLOUSE, static_cast<Status>(1 + rng.rand() % 4), -1 + rng.rand() % 3, 1, rng.rand(), false, &myStats->inventory);
+										break;
+									default:
+										break;
+									}
+								}
 							}
 							else
 							{
@@ -902,6 +926,7 @@ void gnomeMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	int bodypart;
 	bool wearingring = false;
 
+	bool debugModel = monsterDebugModels(my, &dist);
 	GnomeVariant gnomeVariant = GNOME_DEFAULT;
 	if ( myStats )
 	{
@@ -913,264 +938,7 @@ void gnomeMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		{
 			gnomeVariant = GNOME_THIEF_MELEE;
 		}
-//#ifndef NDEBUG
-//		static bool forceWalk = false;
-//		if ( keystatus[SDLK_KP_5] )
-//		{
-//			keystatus[SDLK_KP_5] = 0;
-//			forceWalk = !forceWalk;
-//		}
-//		if ( keystatus[SDLK_KP_6] )
-//		{
-//			myStats->EFFECTS[EFF_STUNNED] = !myStats->EFFECTS[EFF_STUNNED];
-//		}
-//		if ( forceWalk )
-//		{
-//			dist = 0.15;
-//		}
-//
-//		if ( keystatus[SDLK_9] )
-//		{
-//			keystatus[SDLK_9] = 0;
-//			if ( myStats->helmet )
-//			{
-//				myStats->helmet->appearance++;
-//			}
-//		}
-//		if ( keystatus[SDLK_0] )
-//		{
-//			keystatus[SDLK_0] = 0;
-//			if ( myStats->mask )
-//			{
-//				myStats->mask->appearance++;
-//			}
-//		}
-//		if ( keystatus[SDLK_6] )
-//		{
-//			keystatus[SDLK_6] = 0;
-//			if ( my->sprite == 295 )
-//			{
-//				my->sprite = 1426;
-//			}
-//			else if ( my->sprite == 1426 )
-//			{
-//				my->sprite = 1430;
-//			}
-//			else
-//			{
-//				my->sprite = 295;
-//			}
-//		}
-//		if ( keystatus[SDLK_7] )
-//		{
-//			keystatus[SDLK_7] = 0;
-//			if ( myStats->shoes )
-//			{
-//				while ( true )
-//				{
-//					int type = myStats->shoes->type;
-//					type++;
-//					if ( type >= NUMITEMS )
-//					{
-//						if ( myStats->shoes->node )
-//						{
-//							list_RemoveNode(myStats->shoes->node);
-//						}
-//						else
-//						{
-//							free(myStats->shoes);
-//						}
-//						myStats->shoes = nullptr;
-//						break;
-//					}
-//					myStats->shoes->type = (ItemType)type;
-//					if ( items[myStats->shoes->type].item_slot == ItemEquippableSlot::EQUIPPABLE_IN_SLOT_BOOTS )
-//					{
-//						break;
-//					}
-//				}
-//			}
-//			else
-//			{
-//				myStats->shoes = newItem(LEATHER_BOOTS, EXCELLENT, 0, 1, 0, true, nullptr);
-//			}
-//		}
-//		if ( keystatus[SDLK_8] )
-//		{
-//			keystatus[SDLK_8] = 0;
-//			if ( myStats->gloves )
-//			{
-//				while ( true )
-//				{
-//					int type = myStats->gloves->type;
-//					type++;
-//					if ( type >= NUMITEMS )
-//					{
-//						if ( myStats->gloves->node )
-//						{
-//							list_RemoveNode(myStats->gloves->node);
-//						}
-//						else
-//						{
-//							free(myStats->gloves);
-//						}
-//						myStats->gloves = nullptr;
-//						break;
-//					}
-//					myStats->gloves->type = (ItemType)type;
-//					if ( items[myStats->gloves->type].item_slot == ItemEquippableSlot::EQUIPPABLE_IN_SLOT_GLOVES )
-//					{
-//						break;
-//					}
-//				}
-//			}
-//			else
-//			{
-//				myStats->gloves = newItem(GLOVES, EXCELLENT, 0, 1, 0, true, nullptr);
-//			}
-//		}
-//		if ( keystatus[SDLK_g] )
-//		{
-//			keystatus[SDLK_g] = 0;
-//			if ( myStats->helmet )
-//			{
-//				if ( keystatus[SDLK_LSHIFT] )
-//				{
-//					while ( true )
-//					{
-//						int type = myStats->helmet->type;
-//						type--;
-//						if ( type < 0 )
-//						{
-//							type = NUMITEMS - 1;
-//						}
-//						myStats->helmet->type = (ItemType)type;
-//						if ( items[myStats->helmet->type].item_slot == ItemEquippableSlot::EQUIPPABLE_IN_SLOT_HELM )
-//						{
-//							break;
-//						}
-//					}
-//				}
-//				else
-//				{
-//					while ( true )
-//					{
-//						int type = myStats->helmet->type;
-//						type++;
-//						if ( type >= NUMITEMS )
-//						{
-//							type = 0;
-//						}
-//						myStats->helmet->type = (ItemType)type;
-//						if ( items[myStats->helmet->type].item_slot == ItemEquippableSlot::EQUIPPABLE_IN_SLOT_HELM )
-//						{
-//							break;
-//						}
-//					}
-//				}
-//			}
-//			else
-//			{
-//				myStats->helmet = newItem(LEATHER_HELM, EXCELLENT, 0, 1, 0, true, nullptr);
-//			}
-//		}
-//		if ( keystatus[SDLK_j] )
-//		{
-//			keystatus[SDLK_j] = 0;
-//			if ( myStats->breastplate )
-//			{
-//				if ( keystatus[SDLK_LSHIFT] )
-//				{
-//					while ( true )
-//					{
-//						int type = myStats->breastplate->type;
-//						type--;
-//						if ( type < 0 )
-//						{
-//							type = NUMITEMS - 1;
-//						}
-//						myStats->breastplate->type = (ItemType)type;
-//						if ( items[myStats->breastplate->type].item_slot == ItemEquippableSlot::EQUIPPABLE_IN_SLOT_BREASTPLATE )
-//						{
-//							break;
-//						}
-//					}
-//				}
-//				else
-//				{
-//					while ( true )
-//					{
-//						int type = myStats->breastplate->type;
-//						type++;
-//						if ( type >= NUMITEMS )
-//						{
-//							if ( myStats->breastplate->node )
-//							{
-//								list_RemoveNode(myStats->breastplate->node);
-//							}
-//							else
-//							{
-//								free(myStats->breastplate);
-//							}
-//							myStats->breastplate = nullptr;
-//							break;
-//						}
-//						myStats->breastplate->type = (ItemType)type;
-//						if ( items[myStats->breastplate->type].item_slot == ItemEquippableSlot::EQUIPPABLE_IN_SLOT_BREASTPLATE )
-//						{
-//							break;
-//						}
-//					}
-//				}
-//			}
-//			else
-//			{
-//				myStats->breastplate = newItem(LEATHER_BREASTPIECE, EXCELLENT, 0, 1, 0, true, nullptr);
-//			}
-//		}
-//		if ( keystatus[SDLK_h] )
-//		{
-//			keystatus[SDLK_h] = 0;
-//			if ( myStats->mask )
-//			{
-//				if ( keystatus[SDLK_LSHIFT] )
-//				{
-//					while ( true )
-//					{
-//						int type = myStats->mask->type;
-//						type--;
-//						if ( type < 0 )
-//						{
-//							type = NUMITEMS - 1;
-//						}
-//						myStats->mask->type = (ItemType)type;
-//						if ( items[myStats->mask->type].item_slot == ItemEquippableSlot::EQUIPPABLE_IN_SLOT_MASK )
-//						{
-//							break;
-//						}
-//					}
-//				}
-//				else
-//				{
-//					while ( true )
-//					{
-//						int type = myStats->mask->type;
-//						type++;
-//						if ( type >= NUMITEMS )
-//						{
-//							type = 0;
-//						}
-//						myStats->mask->type = (ItemType)type;
-//						if ( items[myStats->mask->type].item_slot == ItemEquippableSlot::EQUIPPABLE_IN_SLOT_MASK )
-//						{
-//							break;
-//						}
-//					}
-//				}
-//			}
-//		}
-//#endif	
-}
+	}
 
 	my->focalx = limbs[GNOME][0][0];
 	my->focaly = limbs[GNOME][0][1];
@@ -1198,7 +966,7 @@ void gnomeMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			{
 				wearingring = true;
 			}
-		if ( myStats->EFFECTS[EFF_INVISIBLE] == true || wearingring == true )
+		if ( myStats->getEffectActive(EFF_INVISIBLE) || wearingring == true )
 		{
 			my->flags[INVISIBLE] = true;
 			my->flags[BLOCKSIGHT] = false;
@@ -1251,20 +1019,22 @@ void gnomeMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		}
 
 		// sleeping
-		if ( myStats->EFFECTS[EFF_ASLEEP] )
+		if ( myStats->getEffectActive(EFF_ASLEEP) )
 		{
 			my->z = 4;
 			my->pitch = PI / 4;
 		}
 		else
 		{
-			my->z = 2.75;
+			my->z = 2.25;
 			my->pitch = 0;
 		}
+		my->creatureHandleLiftZ();
 	}
 
 	Entity* shieldarm = nullptr;
 	Entity* helmet = nullptr;
+	Entity* torso = nullptr;
 
 	std::string gnome_type = my->sprite == 1426 ? "gnome2" : my->sprite == 1430 ? "gnome2F" : "";
 
@@ -1279,6 +1049,12 @@ void gnomeMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		entity->x = my->x;
 		entity->y = my->y;
 		entity->z = my->z;
+
+		if ( bodypart <= LIMB_HUMANOID_CLOAK )
+		{
+			entity->z += 0.5;
+		}
+
 		if ( MONSTER_ATTACK == MONSTER_POSE_MAGIC_WINDUP1 && bodypart == LIMB_HUMANOID_RIGHTARM )
 		{
 			// don't let the creatures's yaw move the casting arm
@@ -1320,12 +1096,16 @@ void gnomeMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		{
 			// torso
 			case LIMB_HUMANOID_TORSO:
+				entity->scalex = 1.0;
+				entity->scaley = 1.0;
+				entity->scalez = 1.0;
 				entity->focalx = limbs[GNOME][1][0];
 				entity->focaly = limbs[GNOME][1][1];
 				entity->focalz = limbs[GNOME][1][2];
+				torso = entity;
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->breastplate == nullptr )
+					if ( myStats->breastplate == nullptr || !itemModel(myStats->breastplate, true, my) )
 					{
 						if ( gnomeVariant == GNOME_THIEF_MELEE )
 						{
@@ -1342,7 +1122,7 @@ void gnomeMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 					else
 					{
-						entity->sprite = itemModel(myStats->breastplate, true);
+						entity->sprite = itemModel(myStats->breastplate, true, my);
 					}
 					if ( multiplayer == SERVER )
 					{
@@ -1662,7 +1442,7 @@ void gnomeMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			case LIMB_HUMANOID_WEAPON:
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->weapon == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					if ( myStats->weapon == nullptr || myStats->getEffectActive(EFF_INVISIBLE) || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -1735,7 +1515,7 @@ void gnomeMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							entity->handleQuiverThirdPersonModel(*myStats);
 						}
 					}
-					if ( myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					if ( myStats->getEffectActive(EFF_INVISIBLE) || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -1782,7 +1562,7 @@ void gnomeMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->focalz = limbs[GNOME][8][2];
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->cloak == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					if ( myStats->cloak == nullptr || myStats->getEffectActive(EFF_INVISIBLE) || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -1825,16 +1605,14 @@ void gnomeMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->flags[INVISIBLE] = true;
 					}
 				}
-				entity->x -= cos(my->yaw) * 1.5;
-				entity->y -= sin(my->yaw) * 1.5;
-				entity->yaw += PI / 2;
-
-				if ( entity->sprite != 1427 && entity->sprite != 1431 && entity->sprite != 296 )
+				if ( torso->sprite != 1427 && torso->sprite != 1431 && torso->sprite != 296 )
 				{
 					// push back for larger armors
 					entity->x -= cos(my->yaw) * 1.0;
 					entity->y -= sin(my->yaw) * 1.0;
 				}
+				entity->yaw += PI / 2;
+				my->setHumanoidLimbOffset(entity, GNOME, LIMB_HUMANOID_CLOAK);
 				break;
 				// helm
 			case LIMB_HUMANOID_HELMET:
@@ -1847,7 +1625,7 @@ void gnomeMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				if ( multiplayer != CLIENT )
 				{
 					entity->sprite = itemModel(myStats->helmet);
-					if ( myStats->helmet == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					if ( myStats->helmet == nullptr || myStats->getEffectActive(EFF_INVISIBLE) || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -1900,7 +1678,7 @@ void gnomeMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->roll = PI / 2;
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->mask == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					if ( myStats->mask == nullptr || myStats->getEffectActive(EFF_INVISIBLE) || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -1964,7 +1742,7 @@ void gnomeMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					my->setHelmetLimbOffset(entity);
 					my->setHelmetLimbOffsetWithMask(helmet, entity);
 				}
-				else if ( EquipmentModelOffsets.modelOffsetExists(GNOME, entity->sprite) )
+				else if ( EquipmentModelOffsets.modelOffsetExists(GNOME, entity->sprite, my->sprite) )
 				{
 					my->setHelmetLimbOffset(entity);
 					my->setHelmetLimbOffsetWithMask(helmet, entity);

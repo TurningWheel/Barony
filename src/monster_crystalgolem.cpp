@@ -57,9 +57,9 @@ void initCrystalgolem(Entity* my, Stat* myStats)
 			// boss variants
 
 			// random effects
-			if ( rng.rand() % 8 == 0 )
+			if ( rng.rand() % 8 == 0 && myStats->getAttribute("spawn_no_sleep") == "" )
 			{
-				myStats->EFFECTS[EFF_ASLEEP] = true;
+				myStats->setEffectActive(EFF_ASLEEP, 1);
 				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + rng.rand() % 3600;
 			}
 
@@ -264,7 +264,7 @@ void crystalgolemMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	// set invisibility //TODO: isInvisible()?
 	if ( multiplayer != CLIENT )
 	{
-		if ( myStats->EFFECTS[EFF_INVISIBLE] == true )
+		if ( myStats->getEffectActive(EFF_INVISIBLE) )
 		{
 			my->flags[INVISIBLE] = true;
 			my->flags[BLOCKSIGHT] = false;
@@ -317,7 +317,7 @@ void crystalgolemMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		}
 
 		// sleeping
-		if ( myStats->EFFECTS[EFF_ASLEEP] )
+		if ( myStats->getEffectActive(EFF_ASLEEP) )
 		{
 			my->z = 1.5;
 		}
@@ -325,6 +325,7 @@ void crystalgolemMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		{
 			my->z = -1.5;
 		}
+		my->creatureHandleLiftZ();
 	}
 
 	//Move bodyparts
@@ -504,7 +505,7 @@ void crystalgolemMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						createParticleDot(my);
 						if ( multiplayer != CLIENT )
 						{
-							myStats->EFFECTS[EFF_PARALYZED] = true;
+							myStats->setEffectActive(EFF_PARALYZED, 1);
 							myStats->EFFECTS_TIMERS[EFF_PARALYZED] = 60;
 						}
 					}
@@ -543,9 +544,9 @@ void crystalgolemMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->roll = 0;
 						if ( multiplayer != CLIENT )
 						{
-							if ( myStats->EFFECTS[EFF_PARALYZED] == true )
+							if ( myStats->getEffectActive(EFF_PARALYZED) )
 							{
-								myStats->EFFECTS[EFF_PARALYZED] = false;
+								myStats->clearEffect(EFF_PARALYZED);
 								myStats->EFFECTS_TIMERS[EFF_PARALYZED] = 0;
 							}
 						}

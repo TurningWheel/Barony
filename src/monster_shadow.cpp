@@ -111,7 +111,7 @@ void initShadow(Entity* my, Stat* myStats)
 			}
 
 			// random effects
-			myStats->EFFECTS[EFF_LEVITATING] = true;
+			myStats->setEffectActive(EFF_LEVITATING, 1);
 			myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
 
 			// generates equipment and weapons if available from editor
@@ -414,7 +414,7 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			{
 				wearingring = true;
 			}
-		if ( myStats->EFFECTS[EFF_INVISIBLE] == true || wearingring == true )
+		if ( myStats->getEffectActive(EFF_INVISIBLE) || wearingring == true )
 		{
 			my->flags[INVISIBLE] = true;
 			my->flags[BLOCKSIGHT] = false;
@@ -468,15 +468,25 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 
 		if ( multiplayer != CLIENT )
 		{
-			if ( my->monsterAnimationLimbOvershoot == ANIMATE_OVERSHOOT_NONE )
+			if ( myStats->getEffectActive(EFF_LIFT) )
 			{
 				my->z = -1.2;
-				my->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_TO_SETPOINT;
+				my->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_NONE;
+				my->creatureHandleLiftZ();
 			}
-			if ( dist < 0.1 )
+			else
 			{
-				// not moving, float.
-				limbAnimateWithOvershoot(my, ANIMATE_Z, 0.005, -2, 0.005, -1.2, ANIMATE_DIR_NEGATIVE);
+				my->creatureHoverZ = 0.0;
+				if ( my->monsterAnimationLimbOvershoot == ANIMATE_OVERSHOOT_NONE )
+				{
+					my->z = -1.2;
+					my->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_TO_SETPOINT;
+				}
+				if ( dist < 0.1 )
+				{
+					// not moving, float.
+					limbAnimateWithOvershoot(my, ANIMATE_Z, 0.005, -2, 0.005, -1.2, ANIMATE_DIR_NEGATIVE);
+				}
 			}
 		}
 	}
@@ -504,7 +514,7 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			if ( multiplayer != CLIENT && bodypart == 1 )
 			{
 				// sleeping
-				if ( myStats->EFFECTS[EFF_ASLEEP] )
+				if ( myStats->getEffectActive(EFF_ASLEEP) )
 				{
 					//my->z = 2.5;
 					my->pitch = PI / 4;
@@ -684,7 +694,7 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							if ( multiplayer != CLIENT )
 							{
 								// freeze in place.
-								myStats->EFFECTS[EFF_PARALYZED] = true;
+								myStats->setEffectActive(EFF_PARALYZED, 1);
 								myStats->EFFECTS_TIMERS[EFF_PARALYZED] = 100;
 							}
 						}
@@ -872,14 +882,14 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			case LIMB_HUMANOID_TORSO:
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->breastplate == NULL )
+					if ( myStats->breastplate == NULL || !itemModel(myStats->breastplate, false, my) )
 					{
 						entity->sprite = my->sprite == 1087 ? 1090 :
 						    (my->sprite == 1095 ? 1098 : 482);
 					}
 					else
 					{
-						entity->sprite = itemModel(myStats->breastplate);
+						entity->sprite = itemModel(myStats->breastplate, false, my);
 					}
 					if ( multiplayer == SERVER )
 					{
@@ -1026,7 +1036,7 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			case LIMB_HUMANOID_WEAPON:
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->weapon == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					if ( myStats->weapon == NULL || myStats->getEffectActive(EFF_INVISIBLE) || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -1095,7 +1105,7 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->flags[INVISIBLE] = false;
 						entity->sprite = itemModel(myStats->shield);
 					}
-					if ( myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					if ( myStats->getEffectActive(EFF_INVISIBLE) || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -1191,7 +1201,7 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			case LIMB_HUMANOID_CLOAK:
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->cloak == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					if ( myStats->cloak == NULL || myStats->getEffectActive(EFF_INVISIBLE) || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -1248,7 +1258,7 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				if ( multiplayer != CLIENT )
 				{
 					entity->sprite = itemModel(myStats->helmet);
-					if ( myStats->helmet == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					if ( myStats->helmet == NULL || myStats->getEffectActive(EFF_INVISIBLE) || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -1301,17 +1311,7 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->roll = PI / 2;
 				if ( multiplayer != CLIENT )
 				{
-					bool hasSteelHelm = false;
-					/*if ( myStats->helmet )
-					{
-						if ( myStats->helmet->type == STEEL_HELM
-							|| myStats->helmet->type == CRYSTAL_HELM
-							|| myStats->helmet->type == ARTIFACT_HELM )
-						{
-							hasSteelHelm = true;
-						}
-					}*/
-					if ( myStats->mask == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring || hasSteelHelm ) //TODO: isInvisible()?
+					if ( myStats->mask == nullptr || myStats->getEffectActive(EFF_INVISIBLE) || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -1461,7 +1461,7 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 	}
 
 	//1. Turn invisible.
-	//myStats->EFFECTS[EFF_INVISIBLE] = true;
+	//myStats->setEffectActive(EFF_INVISIBLE, 1);
 	//myStats->EFFECTS_TIMERS[EFF_INVISIBLE] = 0; //Does not deactivate until it attacks.
 	//messagePlayer(clientnum, "Turned invisible!");
 

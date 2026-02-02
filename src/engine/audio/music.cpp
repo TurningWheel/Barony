@@ -75,6 +75,11 @@ bool loadMusic()
         intromusic = (FMOD::Sound**)malloc(sizeof(FMOD::Sound*) * NUMINTROMUSIC);
         memset(intromusic, 0, sizeof(FMOD::Sound*) * NUMINTROMUSIC);
     }
+	if ( NUMFORTRESSMUSIC > 0 )
+	{
+		fortressmusic = (FMOD::Sound**)malloc(sizeof(FMOD::Sound*) * NUMINTROMUSIC);
+		memset(fortressmusic, 0, sizeof(FMOD::Sound*) * NUMINTROMUSIC);
+	}
 #endif
 
     bool introMusicChanged;
@@ -426,6 +431,19 @@ void handleLevelMusic()
 			}
 			playMusic(citadelmusic[currenttrack], false, true, true);
 		}
+		else if ( !strncmp(map.filename, "fortress", 8) )
+		{
+			if ( !playing )
+			{
+				currenttrack = 1 + local_rng.rand() % (NUMFORTRESSMUSIC - 1);
+			}
+			currenttrack = currenttrack % NUMFORTRESSMUSIC;
+			if ( currenttrack == 0 )
+			{
+				currenttrack = 1;
+			}
+			playMusic(fortressmusic[currenttrack], false, true, true);
+		}
 		else if ( !strcmp(map.name, "Mages Guild") )
 		{
 			if ( hamletmusic )
@@ -538,6 +556,10 @@ void handleLevelMusic()
 		else if ( !strncmp(map.name, "Citadel", 7) || !strcmp(map.name, "Bram's Castle") )
 		{
 			playMusic(citadelmusic[0], true, true, true);
+		}
+		else if ( !strncmp(map.filename, "fortress", 8) )
+		{
+			playMusic(fortressmusic[0], true, true, true);
 		}
 		else
 		{

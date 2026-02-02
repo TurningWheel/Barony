@@ -10,6 +10,15 @@
 -------------------------------------------------------------------------------*/
 
 #pragma once
+#include "Config.hpp"
+
+#include <stdlib.h>
+//#ifdef WINDOWS
+//#ifdef _DEBUG
+//#define _CRTDBG_MAP_ALLOC
+//#include <crtdbg.h>
+//#endif
+//#endif
 
 #ifdef __arm__
 typedef float real_t;
@@ -50,12 +59,12 @@ char* stringStr(char* str1, const char* str2, size_t str1_size, size_t str2_size
 //using namespace std; //For C++ strings //This breaks messages on certain systems, due to template<class _CharT> class std::__cxx11::messages
 using std::string; //Instead of including an entire namespace, please explicitly include only the parts you need, and check for conflicts as reasonably possible.
 #include <map>
+#include <variant>
 #include <unordered_map>
 #include <unordered_set>
 #include <set>
 #include <functional>
 #include "physfs.h"
-#include "Config.hpp"
 
 #ifdef NINTENDO
 #include "nintendo/baronynx.hpp"
@@ -91,7 +100,6 @@ extern bool logCheckMainLoopTimers;
 extern bool autoLimbReload;
 
 #include <dirent.h>
-#include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
 #include <time.h>
@@ -463,6 +471,14 @@ typedef struct map_t
 	bool* monsterexcludelocations = nullptr;
 	bool* lootexcludelocations = nullptr;
 	std::set<int> liquidSfxPlayedTiles;
+	std::map<int, Uint32> tileAttributes;
+	static const Uint32 TILE_ATTRIBUTE_NODIG = 1 << 0;
+	static const Uint32 TILE_ATTRIBUTE_SLIPPERY = 1 << 1;
+	static const Uint32 TILE_ATTRIBUTE_SLOW = 1 << 2;
+	static const Uint32 TILE_ATTRIBUTE_GREASE = 1 << 3;
+	static const Uint32 TILE_ATTRIBUTE_TREASURE_ROOM = 1 << 4;
+	bool tileHasAttribute(int x, int y, int layer, Uint32 attribute);
+	void setMapHDRSettings();
 	char filename[256];
 	~map_t()
 	{
@@ -814,6 +830,8 @@ extern real_t sfxvolume;
 extern real_t sfxAmbientVolume;
 extern real_t sfxEnvironmentVolume;
 extern real_t sfxNotificationVolume;
+extern bool instrument_bg_enabled;
+extern bool instrument_fg_enabled;
 extern bool musicPreload;
 extern bool *animatedtiles, *swimmingtiles, *lavatiles;
 extern char tempstr[1024];
@@ -890,7 +908,7 @@ extern bool initialized; //So that messagePlayer doesn't explode before the game
 
 void GO_SwapBuffers(SDL_Window* screen);
 
-static const int NUM_STEAM_STATISTICS = 58;
+static const int NUM_STEAM_STATISTICS = 73;
 extern SteamStat_t g_SteamStats[NUM_STEAM_STATISTICS];
 
 #ifdef STEAMWORKS

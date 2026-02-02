@@ -22,6 +22,7 @@
 #include "magic/magic.hpp"
 #include "prng.hpp"
 #include "mod_tools.hpp"
+#include "shops.hpp"
 
 void initAutomaton(Entity* my, Stat* myStats)
 {
@@ -78,18 +79,27 @@ void initAutomaton(Entity* my, Stat* myStats)
 			else if ( !strncmp(myStats->name, "corrupted automaton", strlen("corrupted automaton")) )
 			{
 				greaterMonster = true;
-				myStats->HP = 150;
-				myStats->MAXHP = 150;
+				myStats->HP = 200;
+				myStats->MAXHP = 200;
 				myStats->RANDOM_MAXHP = 0;
 				myStats->RANDOM_HP = 0;
-				myStats->OLDHP = myStats->HP;
 				myStats->STR = 35;
 				myStats->DEX = 13;
-				myStats->CON = 8;
+				myStats->CON = 10;
 				myStats->INT = 10;
 				myStats->PER = 25;
 				myStats->CHR = -3;
 				myStats->LVL = 30;
+				for ( int c = 1; c < MAXPLAYERS; ++c )
+				{
+					if ( !client_disconnected[c] )
+					{
+						myStats->MAXHP += 50;
+						myStats->HP = myStats->MAXHP;
+						myStats->CON += 2;
+					}
+				}
+				myStats->OLDHP = myStats->HP;
 				myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] = 1;
 				myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] = 1;
 				myStats->EDITOR_ITEMS[ITEM_SLOT_ARMOR] = 1;
@@ -578,7 +588,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			{
 				wearingring = true;
 			}
-		if ( myStats->EFFECTS[EFF_INVISIBLE] == true || wearingring == true )
+		if ( myStats->getEffectActive(EFF_INVISIBLE) || wearingring == true )
 		{
 			my->flags[INVISIBLE] = true;
 			my->flags[BLOCKSIGHT] = false;
@@ -631,7 +641,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		}
 
 		// sleeping
-		if ( myStats->EFFECTS[EFF_ASLEEP] 
+		if ( myStats->getEffectActive(EFF_ASLEEP) 
 			&& (my->monsterSpecialState != AUTOMATON_MALFUNCTION_START && my->monsterSpecialState != AUTOMATON_MALFUNCTION_RUN) )
 		{
 			my->z = 2;
@@ -640,36 +650,46 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		else
 		{
 			if ( my->monsterSpecialState != AUTOMATON_MALFUNCTION_START 
-				&& my->monsterSpecialState != AUTOMATON_MALFUNCTION_RUN
-				&& !(myStats->amulet && myStats->amulet->type == AMULET_LIFESAVING && myStats->amulet->beatitude >= 0) )
+				&& my->monsterSpecialState != AUTOMATON_MALFUNCTION_RUN )
 			{
 				my->z = -.5;
 				my->pitch = 0;
-				if ( (myStats->HP < 25 && !myStats->EFFECTS[EFF_CONFUSED])
-					|| (myStats->HP < 50 && !strncmp(myStats->name, "corrupted automaton", strlen("corrupted automaton")))
-					)
+				if ( !(myStats->amulet && myStats->amulet->type == AMULET_LIFESAVING && myStats->amulet->beatitude >= 0) )
 				{
-					// threshold for boom boom
-					if ( local_rng.rand() % 4 > 0 ) // 3/4
+					if ( (myStats->HP < 25 && !myStats->getEffectActive(EFF_CONFUSED))
+						|| (myStats->HP < 50 && !strncmp(myStats->name, "corrupted automaton", strlen("corrupted automaton")))
+						)
 					{
-						my->monsterSpecialState = AUTOMATON_MALFUNCTION_START;
-						my->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_AUTOMATON_MALFUNCTION;
-						serverUpdateEntitySkill(my, 33);
+						// threshold for boom boom
+						if ( local_rng.rand() % 4 > 0 ) // 3/4
+						{
+							my->monsterSpecialState = AUTOMATON_MALFUNCTION_START;
+							my->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_AUTOMATON_MALFUNCTION;
+							serverUpdateEntitySkill(my, 33);
 
-						myStats->EFFECTS[EFF_PARALYZED] = true;
-						myStats->EFFECTS_TIMERS[EFF_PARALYZED] = -1;
-					}
-					else
-					{
-						myStats->EFFECTS[EFF_CONFUSED] = true;
-						myStats->EFFECTS_TIMERS[EFF_CONFUSED] = -1;
-						myStats->EFFECTS[EFF_PARALYZED] = true;
-						myStats->EFFECTS_TIMERS[EFF_PARALYZED] = 25;
-						playSoundEntity(my, 263, 128);
-						spawnMagicEffectParticles(my->x, my->y, my->z, 170);
+							myStats->setEffectActive(EFF_PARALYZED, 1);
+							myStats->EFFECTS_TIMERS[EFF_PARALYZED] = -1;
+						}
+						else
+						{
+							if ( strncmp(myStats->name, "corrupted automaton", strlen("corrupted automaton")) )
+							{
+								my->setEffect(EFF_CONFUSED, Uint8(MAXPLAYERS + 1), -1, true, true, true, true);
+							}
+							myStats->setEffectActive(EFF_PARALYZED, 1);
+							myStats->EFFECTS_TIMERS[EFF_PARALYZED] = 25;
+							playSoundEntity(my, 263, 128);
+							spawnMagicEffectParticles(my->x, my->y, my->z, 170);
+						}
 					}
 				}
 			}
+		}
+
+		if ( my->monsterSpecialState != AUTOMATON_MALFUNCTION_START
+			&& my->monsterSpecialState != AUTOMATON_MALFUNCTION_RUN )
+		{
+			my->creatureHandleLiftZ();
 		}
 	}
 
@@ -679,6 +699,27 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		{
 			my->monsterSpecialState = AUTOMATON_MALFUNCTION_RUN;
 			createParticleExplosionCharge(my, 174, 100, 0.1);
+
+			if ( multiplayer != CLIENT && my->monsterCanTradeWith(-1) )
+			{
+				for ( int i = 0; i < MAXPLAYERS; ++i )
+				{
+					if ( players[i]->isLocalPlayer() && shopkeeper[i] == my->getUID() )
+					{
+						players[i]->closeAllGUIs(CLOSEGUI_ENABLE_SHOOTMODE, CLOSEGUI_CLOSE_ALL);
+					}
+					else if ( i > 0 && !client_disconnected[i] && multiplayer == SERVER && !players[i]->isLocalPlayer() )
+					{
+						// inform client of abandonment
+						strcpy((char*)net_packet->data, "SHPC");
+						SDLNet_Write32(my->getUID(), &net_packet->data[4]);
+						net_packet->address.host = net_clients[i - 1].host;
+						net_packet->address.port = net_clients[i - 1].port;
+						net_packet->len = 8;
+						sendPacketSafe(net_sock, -1, net_packet, i - 1);
+					}
+				}
+			}
 		}
 		if ( multiplayer != CLIENT )
 		{
@@ -686,7 +727,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			{
 				my->attack(MONSTER_POSE_AUTOMATON_MALFUNCTION, 0, my);
 				spawnExplosion(my->x, my->y, my->z);
-				my->modHP(-1000);
+				my->setHP(0);
 			}
 		}
 	}
@@ -802,7 +843,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							playSoundEntityLocal(my, 170, 32);
 							if ( multiplayer != CLIENT )
 							{
-								myStats->EFFECTS[EFF_PARALYZED] = true;
+								myStats->setEffectActive(EFF_PARALYZED, 1);
 								myStats->EFFECTS_TIMERS[EFF_PARALYZED] = 30;
 							}
 						}
@@ -891,15 +932,21 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		{
 			// torso
 			case LIMB_HUMANOID_TORSO:
+				entity->scalex = 1.0;
+				entity->scaley = 1.0;
+				entity->scalez = 1.0;
+				entity->focalx = limbs[AUTOMATON][1][0];
+				entity->focaly = limbs[AUTOMATON][1][1];
+				entity->focalz = limbs[AUTOMATON][1][2];
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->breastplate == nullptr )
+					if ( myStats->breastplate == nullptr || !itemModel(myStats->breastplate, false, my) )
 					{
 						entity->sprite = 468;
 					}
 					else
 					{
-						entity->sprite = itemModel(myStats->breastplate);
+						entity->sprite = itemModel(myStats->breastplate, false, my);
 						entity->scalex = 1;
 						// shrink the width of the breastplate
 						entity->scaley = 0.8;
@@ -1083,7 +1130,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			case LIMB_HUMANOID_WEAPON:
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->weapon == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					if ( myStats->weapon == NULL || myStats->getEffectActive(EFF_INVISIBLE) || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -1156,7 +1203,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							entity->handleQuiverThirdPersonModel(*myStats);
 						}
 					}
-					if ( myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					if ( myStats->getEffectActive(EFF_INVISIBLE) || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -1200,7 +1247,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			case LIMB_HUMANOID_CLOAK:
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->cloak == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					if ( myStats->cloak == NULL || myStats->getEffectActive(EFF_INVISIBLE) || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -1258,7 +1305,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				if ( multiplayer != CLIENT )
 				{
 					entity->sprite = itemModel(myStats->helmet);
-					if ( myStats->helmet == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					if ( myStats->helmet == NULL || myStats->getEffectActive(EFF_INVISIBLE) || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -1311,17 +1358,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->roll = PI / 2;
 				if ( multiplayer != CLIENT )
 				{
-					bool hasSteelHelm = false;
-					/*if ( myStats->helmet )
-					{
-						if ( myStats->helmet->type == STEEL_HELM
-							|| myStats->helmet->type == CRYSTAL_HELM
-							|| myStats->helmet->type == ARTIFACT_HELM )
-						{
-							hasSteelHelm = true;
-						}
-					}*/
-					if ( myStats->mask == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring || hasSteelHelm ) //TODO: isInvisible()?
+					if ( myStats->mask == NULL || myStats->getEffectActive(EFF_INVISIBLE) || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -1386,7 +1423,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						my->setHelmetLimbOffset(entity);
 						my->setHelmetLimbOffsetWithMask(helmet, entity);
 					}
-					else if ( EquipmentModelOffsets.modelOffsetExists(AUTOMATON, entity->sprite) )
+					else if ( EquipmentModelOffsets.modelOffsetExists(AUTOMATON, entity->sprite, my->sprite) )
 					{
 						my->setHelmetLimbOffset(entity);
 						my->setHelmetLimbOffsetWithMask(helmet, entity);
@@ -1479,6 +1516,11 @@ void Entity::automatonRecycleItem()
 {
 	Stat* myStats = getStats();
 	if ( !myStats )
+	{
+		return;
+	}
+
+	if ( monsterCanTradeWith(-1) )
 	{
 		return;
 	}
@@ -1584,12 +1626,12 @@ void Entity::automatonRecycleItem()
 
 	//messagePlayer(0, "made it past");
 
-	int maxGoldValue = ((items[item1->type].value + items[item2->type].value) * 2) / 3;
+	int maxGoldValue = ((item1->getGoldValue() + item2->getGoldValue()) * 2) / 3;
 	if ( local_rng.rand() % 2 == 0 )
 	{
-		maxGoldValue = ((items[item1->type].value + items[item2->type].value) * 1) / 2;
+		maxGoldValue = ((item1->getGoldValue() + item2->getGoldValue()) * 1) / 2;
 	}
-	int minGoldValue = ((items[item1->type].value + items[item2->type].value) * 1) / 3;
+	int minGoldValue = ((item1->getGoldValue() + item2->getGoldValue()) * 1) / 3;
 	ItemType type;
 	// generate a weapon/armor piece and add it into the inventory.
 	switch ( local_rng.rand() % 10 )

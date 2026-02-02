@@ -49,28 +49,30 @@
         ],
         "details_line_highlights": []
     },
-    "appraisal skill": {
+    "lore skill": {
         "blurb": [
-            "While any adventurer can see what an item",
-            "is just by looking at it, APPRAISAL reveals",
-            "details, especially magical ones. The more",
-            "valuable the item, the more challenging it",
-            "is to appraise."
+            "While any adventurer can see what an",
+            "item is just by looking at it, skill in LORE",
+            "can reveal important magical details.",
+            "The more valuable the item, the more",
+            "challenging it is to appraise.",
+			"Skilled loremasters are great with song."
         ],
         "details": [
-            "Appraising inexpensive items, like",
-            "cheese or leather items, is usually",
-            "great for untrained practice.",
+            "As adventurers grow in Lore skill,",
+			"manually managing which items are",
+			"selected for appraisal can become",
+			"more important. Higher value items",
+			"may take much more time to identify.",
+			"Focus on items that may be of actual",
+			"use and discard the rest to spend",
+			"less time fiddling with inventory.",
             "",
-            "A few classes start without the ability",
+            "A few classes start with poor ability",
             "to appraise, thanks to very poor",
-            "perception.",
-            "",
-            "Using unidentified potions or scrolls",
-            "may also yield an increase to",
-            "appraisal skill, up to Basic (20) skill.",
-            "",
-            "Glasses may also help."
+            "perception. Using unidentified potions",
+            "or scrolls may yield an increase to",
+            "lore skill, up to Basic (20) skill."
         ],
         "details_line_highlights": []
     },
@@ -167,26 +169,6 @@
         ],
         "details_line_highlights": []
     },
-    "casting skill": {
-        "blurb": [
-            "Improving CASTING SKILL reduces the",
-            "chances that a spell fizzles, and increases",
-            "MP RGN. Upon reaching legendary casting,",
-            "an adventurer gains the forcebolt",
-            "spell as a cantrip."
-        ],
-        "details": [
-            "When your casting skill is low, casting",
-            "low-cost spells will be the most",
-            "reliable path to growth.",
-            "",
-            "It may be tempting to cast a big spell,",
-            "but it may fizzle and rob you of many",
-            "chances to cast more, cheaper spells",
-            "by emptying your MP/EN/ST supply."
-        ],
-        "details_line_highlights": []
-    },
     "chr": {
         "blurb": [
             "Each point in CHARISMA (CHR) improves the",
@@ -211,7 +193,7 @@
             "Gaining early access to a shopkeeper's",
             "private stock can mean the difference",
             "between a great adventure and a",
-            "desparate one."
+            "desperate one."
         ],
         "details_line_highlights": []
     },
@@ -502,27 +484,6 @@
             "may very well help you live long",
             "enough to become a master in other",
             "arts."
-        ],
-        "details_line_highlights": []
-    },
-    "magic skill": {
-        "blurb": [
-            "Improving MAGIC SKILL allows an",
-            "adventurer to learn more advanced spells",
-            "and increases PWR. A legend in magic",
-            "also learns the dominate spell."
-        ],
-        "details": [
-            "A good spellcaster always stays in",
-            "practice!",
-            "",
-            "For those with MP/ST regeneration, a",
-            "full bar means you're losing out on",
-            "mana you could be recuperating.",
-            "",
-            "While it's good to save it for when you",
-            "need it, chip away at the top of a full",
-            "bar to keep training."
         ],
         "details_line_highlights": []
     },
@@ -898,16 +859,16 @@
             "and penalties."
         ],
         "details": [
-            "Most monster races can recruit their",
-            "own kind. Only humans and automatons",
-            "are welcome inside human-run shops.",
-            "",
-            "When selecting your race during",
-            "character creation, use the \"Show",
-            "Race Info\" button to reveal all of",
-            "your strengths, weaknesses, abilities,",
-            "and allegiances.",
-            "",
+            "Most races can recruit their own kind.",
+            "While human shopkeepers will",
+            "attack threats on sight, salamanders,",
+			"myconids, dryads, gnomes, and",
+			"automatons are welcome in shops.",
+			"",
+            "When selecting your race, use",
+            "the \"Show Race Info\" button to",
+            "reveal all strengths, weaknesses,",
+            "abilities, and allegiances.",
             "To make the dungeons easier, pair",
             "each race with a class that minimizes",
             "the downsides, and doubles-down on",
@@ -1150,26 +1111,6 @@
         ],
         "details_line_highlights": []
     },
-    "swimming skill": {
-        "blurb": [
-            "Swimming isn't usually the most important",
-            "skill, but when you're fleeing from a",
-            "dangerous threat, it might just be the most",
-            "important skill of your life. Especially",
-            "useful in the swamps."
-        ],
-        "details": [
-            "While the waterwalking provided by",
-            "the swimming skill's legendary bonus",
-            "can be useful in many situations, some",
-            "adventurers may find themselves",
-            "wishing they could take a quick dip to",
-            "put out burning flames.",
-            "",
-            "Consider your next soak carefully!"
-        ],
-        "details_line_highlights": []
-    },
     "sword skill": {
         "blurb": [
             "Slashing against foes with a sword",
@@ -1390,6 +1331,371 @@
             "If you already have a skill maxed out,",
             "consider training a different skill so",
             "you can keep gaining experience."
+        ],
+        "details_line_highlights": []
+    },
+    "sorcery skill": {
+        "blurb": [
+            "The SORCERY SKILL allows casters to",
+            "learn more advanced Sorcery spells and",
+            "increases PWR using them.",
+			"A Legend in Sorcery has increased",
+            "casting speeds and even greater PWR",
+			"while using their Sorcery spells."
+        ],
+        "details": [
+            "Sorcery is the most direct of all",
+			"magic disciplines for adventuring.",
+			"No other school provides such",
+            "prolific access to combat spells",
+            "at all levels of skill. In addition,",
+            "powerful utility and defensive magic",
+            "are found in the sorcerer's grimoire.",
+            "",
+            "Like all magic users, sorcerers",
+            "should trade out spells as they grow",
+			"in skill. But they'll do well to",
+			"remember their most reliable spells",
+			"when facing greater challenges."
+        ],
+        "details_line_highlights": []
+    },
+	    "thaumaturgy skill": {
+        "blurb": [
+            "The THAUMATURGY SKILL allows casters",
+            "to learn more advanced Thaumaturgy",
+            "spells and increases PWR using them.",
+			"A Legend in Thaumaturgy has increased",
+            "casting speeds and even greater PWR",
+			"while using their Thaumaturgy spells."
+        ],
+        "details": [
+            "The preferred school for devout",
+            "adventurers, thaumaturges provide",
+            "protection, restoration, and access to",
+            "divine wisdom or providence. These",
+			"offer assistance both to individual",
+			"adventurers and their parties.",
+            "",
+            "Though most reliable for utility uses,",
+            "some spells offer divine wrath against",
+            "undead and demonic foes.",
+            "",
+			"Thaumaturges tend to succeed when",
+			"magic is used to supplement other",
+			"practical adventuring skills."
+        ],
+        "details_line_highlights": []
+    },
+	    "mysticism skill": {
+        "blurb": [
+            "The MYSTICISM SKILL allows casters",
+            "to learn more advanced Mysticism",
+            "spells and increases PWR using them.",
+			"A Legend in Mysticism has increased",
+            "casting speeds and even greater PWR",
+			"while using their Mysticism spells."
+        ],
+        "details": [
+            "Spells available to mystics tend to",
+            "provide methods of control. Though",
+            "often indirect compared to the other",
+            "schools, a successful mystic prefers",
+            "to create and exploit opportunity.",
+            "",
+            "While not as reliable as sorcery for",
+            "combat spells, mysticism attack spells",
+            "may open up or pay off on other kinds",
+            "of opportunities to devastating effect.",
+            "",
+			"Mysticism reliably allows dominion",
+			"over objects and minds for the",
+			"more strategic adventurer."
+        ],
+        "details_line_highlights": []
+    },
+	    "offhand casting": {
+        "blurb": [
+            "Different kinds of magic items can be",
+            "held for OFF-HAND CASTING, allowing the",
+            "wielder to channel a magic effect.",
+			"Channeling may rapidly recast the item's",
+            "effect, or build up a spell's charge,",
+			"until channeling is released."
+        ],
+        "details": [
+            "Three categories of off-hand casting",
+            "items align with the three main schools",
+            "of magic. These benefit the spells cast",
+			"from that school with additional PWR,",
+			"but they also provide their own magic",
+			"effects. The fourth category benefits",
+			"from the Lore skill.",
+            "",
+            "SOURCE FOCI:",
+            "Particularly for sorcerers who like",
+            "to keep cleverer spells prepared, an",
+            "elemental source focus provides fast",
+            "access to quick blasts of damage.",
+			"",
+			"HOLY SYMBOL:",
+			"Carried faithfully by thaumaturges,",
+			"holy symbols reward preparation with",
+			"largely preventative benefits.",
+			"",
+			"DARK ICON:",
+			"Ideal for when one might have allies",
+			"to buy time in a fight, dark icons",
+			"afflict powerful curses at some",
+			"distance. The curse applies to an",
+			"area, potentially giving greater",
+			"control over enemy combatants.",
+			"",
+			"BARD INSTRUMENTS:",
+			"Continually adding powerful buffs",
+			"to the player and any nearby allies",
+			"or followers, Lore and Charisma aids",
+			"the musician as they pour MP into",
+			"their song for supernatural benefits."
+        ],
+        "details_line_highlights": [
+            {},
+            {},
+            {},
+            {},
+            {},
+			{},
+            {},
+            {},
+            {
+                "color": {
+                    "r": 198,
+                    "g": 190,
+                    "b": 179,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {},
+            {
+                "color": {
+                    "r": 198,
+                    "g": 190,
+                    "b": 179,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {},
+            {
+                "color": {
+                    "r": 198,
+                    "g": 190,
+                    "b": 179,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 198,
+                    "g": 190,
+                    "b": 179,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            },
+            {
+                "color": {
+                    "r": 157,
+                    "g": 129,
+                    "b": 93,
+                    "a": 255
+                }
+            }			
+        ]
+    },
+	    "gold": {
+        "blurb": [
+            "GOLD is a resource used most often",
+            "by adventurers for trade at shops.",
+            "It has weight, so it's wise not to",
+			"lug it around without intention.",
+            "Some spells can consume gold to",
+			"power a material-altering effect."
+        ],
+        "details": [
+            "Gold may often purchase great",
+			"opportunity for victory. Whether",
+			"an adventurer is in need of healing,",
+			"a new spell, food, or a new piece of",
+			"equipment, gold may be the sole",
+			"resource which could solve all of",
+			"these problems, with the right vendor.",
+			"",
+            "While gold contributes to the score",
+            "of any given run at the dungeon,",
+            "monster races may find little use for",
+            "the beloved metal, given how rarely",
+            "they may be able to interact with",
+			"shops."
+
         ],
         "details_line_highlights": []
     }

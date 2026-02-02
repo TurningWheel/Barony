@@ -14,12 +14,13 @@ You will need the following libraries to build Barony:
  * CMake (on Windows, use versions at least as new as 3.8.0)
 
 OPTIONAL dependencies:
- * One of FMOD Core API 2.00.08 or OpenAL for audio support.
+ * FMOD Core API 2.02.14.
 
 FMOD Studio API can be downloaded at https://www.fmod.com/download (you do need an account to download it).
 You can disable FMOD by running cmake with -DFMOD_ENABLED=OFF (it's also disabled if not found).
 
 OpenAL can be used with -DOPENAL_ENABLED
+ * Note - OpenAL support has been deprecated and is currently unmaintained.
  
 You will also need the following tools:
 

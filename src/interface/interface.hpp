@@ -72,12 +72,16 @@ enum DamageGib {
 	DMG_POISON,
 	DMG_HEAL,
 	DMG_MISS,
-	DMG_TODO
+	DMG_GUARD,
+	DMG_TODO,
+	DMG_DETECT_MONSTER
 };
 enum DamageGibDisplayType {
 	DMG_GIB_NUMBER,
 	DMG_GIB_MISS,
-	DMG_GIB_SPRITE
+	DMG_GIB_SPRITE,
+	DMG_GIB_GUARD,
+	DMG_GIB_DPS_CHECK
 };
 class EnemyHPDamageBarHandler
 {
@@ -131,13 +135,20 @@ public:
 		Uint32 enemy_uid = 0;
 		Uint32 enemy_statusEffects1 = 0;
 		Uint32 enemy_statusEffects2 = 0;
+		Uint32 enemy_statusEffects3 = 0;
+		Uint32 enemy_statusEffects4 = 0;
+		Uint32 enemy_statusEffects5 = 0;
 		Uint32 enemy_statusEffectsLowDuration1 = 0;
 		Uint32 enemy_statusEffectsLowDuration2 = 0;
+		Uint32 enemy_statusEffectsLowDuration3 = 0;
+		Uint32 enemy_statusEffectsLowDuration4 = 0;
+		Uint32 enemy_statusEffectsLowDuration5 = 0;
 		bool lowPriorityTick = false;
 		bool shouldDisplay = true;
 		bool hasDistanceCheck = false;
 		bool displayOnHUD = false;
 		bool expired = false;
+		bool detectMonsterCheckStatus = false;
 		real_t depletionAnimationPercent = 100.0;
 		EnemyHPDetails() {};
 		EnemyHPDetails(Uint32 uid, Sint32 HP, Sint32 maxHP, Sint32 oldHP, const char* name, bool isLowPriority)
@@ -215,6 +226,7 @@ void select_tinkering_slot(int player, int currentx, int currenty, int diffx, in
 void select_alchemy_slot(int player, int currentx, int currenty, int diffx, int diffy);
 void select_feather_slot(int player, int currentx, int currenty, int diffx, int diffy);
 void select_assistshrine_slot(int player, int currentx, int currenty, int diffx, int diffy);
+void select_mail_slot(int player, int currentx, int currenty, int diffx, int diffy);
 
 extern Entity* openedChest[MAXPLAYERS]; //One for each client. //TODO: Clientside, [0] will always point to something other than NULL when a chest is open and it will be NULL when a chest is closed.
 extern list_t chestInv[MAXPLAYERS]; //This is just for the client, so that it can populate the chest inventory on its end.
@@ -313,7 +325,8 @@ enum GUICurrentType
 	GUI_TYPE_TINKERING,
 	GUI_TYPE_SCRIBING,
 	GUI_TYPE_ITEMFX,
-	GUI_TYPE_ASSIST
+	GUI_TYPE_ASSIST,
+	GUI_TYPE_MAILBOX
 };
 
 // Generic GUI Stuff (repair/alchemy)
@@ -329,8 +342,14 @@ public:
 	Item* basePotion;
 	Item* secondaryPotion;
 	Item* alembicItem;
+	Uint32 alembicEntityUid = 0;
 	bool experimentingAlchemy;
 	
+	bool isItemMailable(const Item* item);
+	Uint32 mailboxEntityUid = 0;
+	void mailboxClaimItem();
+	bool mailboxSendItem();
+
 	// Misc item/spell effects
 	Item* itemEffectScrollItem;
 	bool itemEffectUsingSpell;
@@ -358,6 +377,7 @@ public:
 	bool tinkeringBulkSalvage = false;
 	Sint32 tinkeringBulkSalvageMetalScrap = 0;
 	Sint32 tinkeringBulkSalvageMagicScrap = 0;
+	Uint32 workstationEntityUid = 0;
 
 	// Scribing
 	Item* scribingToolItem;
@@ -370,6 +390,9 @@ public:
 		SCRIBING_FILTER_REPAIRABLE
 	};
 	ScribingFilter scribingFilter;
+
+	Item* transmuteItemTarget = nullptr;
+	int transmuteItemScroll = 0;
 
 	GenericGUIMenu() :
 		guiActive(false),
@@ -397,7 +420,8 @@ public:
 		alchemyGUI(*this),
 		featherGUI(*this),
 		itemfxGUI(*this),
-		assistShrineGUI(*this)
+		assistShrineGUI(*this),
+		mailboxGUI(*this)
 	{
 		tinkeringTotalItems.first = nullptr;
 		tinkeringTotalItems.last = nullptr;
@@ -434,12 +458,42 @@ public:
 	bool isItemEnchantArmorable(const Item* item);
 	void enchantItem(Item* item);
 
+	// transmute
+	bool isItemAlterable(const Item* item);
+	void alterItem(Item* item);
+	int getAlterItemResultAtCycle(Item* item);
+
+	// void
+	bool isItemVoidable(const Item* item);
+	void sendItemToVoid(Item* item);
+
+	// adorcise
+	bool isItemAdorcisable(const Item* item);
+	void adorciseItem(Item* item);
+
+	// scepter charge
+	bool isItemScepterChargeable(const Item* item);
+	void rechargeScepterUsingItem(Item* item);
+
+	// misc
+	bool isItemDesecratable(const Item* item);
+	void desecrateItem(Item* item);
+	bool isItemBlessWaterable(const Item* item);
+	void blessWater(Item* item);
+	bool isItemSanctifiable(const Item* item);
+	void sanctifyItem(Item* item);
+	bool isItemCleaseFoodable(const Item* item);
+	void cleanseFood(Item* item);
+
 	//alchemy menu funcs
 	bool isItemMixable(const Item* item);
 	void alchemyCombinePotions();
+	void alchemyCookCombination();
 	bool alchemyLearnRecipe(int type, bool increaseskill, bool notify = true);
 	bool isItemBaseIngredient(int type);
 	bool isItemSecondaryIngredient(int type);
+	static int isItemRationSeasoning(int type);
+	static bool isItemRation(int type);
 	void alchemyLearnRecipeOnLevelUp(int skill);
 
 	// tinkering menu foncs
@@ -501,6 +555,7 @@ public:
 	{
 		if ( &item == scribingToolItem || &item == tinkeringKitItem || &item == alembicItem
 			|| &item == scribingBlankScrollTarget
+			|| &item == transmuteItemTarget
 			|| &item == basePotion || &item == secondaryPotion || &item == itemEffectScrollItem )
 		{
 			return true;
@@ -512,6 +567,10 @@ public:
 		if ( &item == scribingToolItem )
 		{
 			scribingToolItem = nullptr;
+		}
+		if ( &item == transmuteItemTarget )
+		{
+			transmuteItemTarget = nullptr;
 		}
 		if ( &item == scribingBlankScrollTarget )
 		{
@@ -644,6 +703,18 @@ public:
 		bool isInteractable = true;
 		bool bOpen = false;
 		bool bFirstTimeSnapCursor = false;
+		enum CostEffectTypes
+		{
+			COST_EFFECT_NONE,
+			COST_EFFECT_GOLD,
+			COST_EFFECT_MANA,
+			COST_EFFECT_MANA_RETURN_GOLD,
+			COST_EFFECT_MANA_AND_GOLD
+		};
+		CostEffectTypes modeHasCostEffect = COST_EFFECT_NONE;
+		bool modeHasTransmuteMenu();
+		int costEffectGoldAmount = 0;
+		int costEffectMPAmount = 0;
 		enum ItemEffectModes : int
 		{
 			ITEMFX_MODE_NONE,
@@ -654,7 +725,25 @@ public:
 			ITEMFX_MODE_SPELL_IDENTIFY,
 			ITEMFX_MODE_SPELL_REMOVECURSE,
 			ITEMFX_MODE_SCROLL_ENCHANT_WEAPON,
-			ITEMFX_MODE_SCROLL_ENCHANT_ARMOR
+			ITEMFX_MODE_SCROLL_ENCHANT_ARMOR,
+			ITEMFX_MODE_ALTER_INSTRUMENT,
+			ITEMFX_MODE_METALLURGY,
+			ITEMFX_MODE_GEOMANCY,
+			ITEMFX_MODE_FORGE_KEY,
+			ITEMFX_MODE_FORGE_JEWEL,
+			ITEMFX_MODE_ENHANCE_WEAPON,
+			ITEMFX_MODE_RESHAPE_WEAPON,
+			ITEMFX_MODE_ALTER_ARROW,
+			ITEMFX_MODE_PUNCTURE_VOID,
+			ITEMFX_MODE_ADORCISE_WEAPON,
+			ITEMFX_MODE_RESTORE,
+			ITEMFX_MODE_VANDALISE,
+			ITEMFX_MODE_DESECRATE,
+			ITEMFX_MODE_SANCTIFY,
+			ITEMFX_MODE_SANCTIFY_WATER,
+			ITEMFX_MODE_CLEANSE_FOOD,
+			ITEMFX_MODE_ADORCISE_INSTRUMENT,
+			ITEMFX_MODE_SCEPTER_CHARGE
 		};
 		void openItemEffectMenu(ItemEffectModes mode);
 		ItemEffectModes currentMode = ITEMFX_MODE_NONE;
@@ -667,6 +756,7 @@ public:
 		std::string itemDesc = "";
 		int itemType = -1;
 		int itemRequirement = -1;
+		int confirmActionSteps = 0;
 		enum ItemEffectActions_t : int
 		{
 			ITEMFX_ACTION_NONE,
@@ -677,8 +767,15 @@ public:
 			ITEMFX_ACTION_ITEM_IDENTIFIED,
 			ITEMFX_ACTION_MUST_BE_UNEQUIPPED,
 			ITEMFX_ACTION_NOT_IDENTIFIED_YET,
-			ITEMFX_ACTION_NOT_CURSED
+			ITEMFX_ACTION_CANT_AFFORD_GOLD,
+			ITEMFX_ACTION_CANT_AFFORD_MANA,
+			ITEMFX_ACTION_NOT_CURSED,
+			ITEMFX_ACTION_UNVOIDABLE,
+			ITEMFX_ACTION_AT_MAX_BLESSING,
+			ITEMFX_ACTION_NEED_SKILL_LVLS,
+			ITEMFX_ACTION_CANT_AFFORD_MANA_AND_GOLD
 		};
+		std::pair<Uint32, int> confirmActionOnItemSteps;
 		ItemEffectActions_t itemActionType = ITEMFX_ACTION_NONE;
 		bool itemRequiresTitleReflow = true;
 		real_t animTooltip = 0.0;
@@ -699,7 +796,8 @@ public:
 
 		ItemEffectActions_t setItemDisplayNameAndPrice(Item* item, bool checkResultOnly = false);
 		void clearItemDisplayed();
-
+		bool consumeResourcesForTransmute();
+		void getItemEffectCost(Item* itemUsedWith, int& goldCost, int& manaCost);
 		static int heightOffsetWhenNotCompact;
 	};
 	ItemEffectGUI_t itemfxGUI;
@@ -873,6 +971,93 @@ public:
 		void clearItemDisplayed();
 	};
 	AssistShrineGUI_t assistShrineGUI;
+
+	struct MailboxGui_t
+	{
+		GenericGUIMenu& parentGUI;
+
+		static const int MAIL_SLOT_SEND = -1;
+		static const int MAIL_SLOT_RECV = -2;
+
+		Item mailReceiveItem;
+		MailboxGui_t(GenericGUIMenu& g) :
+			parentGUI(g)
+		{
+			mailReceiveItem.appearance = 0;
+			mailReceiveItem.type = POTION_EMPTY;
+			mailReceiveItem.node = nullptr;
+			mailReceiveItem.status = SERVICABLE;
+			mailReceiveItem.beatitude = 0;
+			mailReceiveItem.count = 1;
+			mailReceiveItem.appearance = 0;
+			mailReceiveItem.identified = false;
+			mailReceiveItem.uid = 0;
+			mailReceiveItem.isDroppable = false;
+			mailReceiveItem.x = MAIL_SLOT_RECV;
+			mailReceiveItem.y = 0;
+		}
+
+		enum MailActions_t : int
+		{
+			MAIL_ACTION_NONE,
+			MAIL_ACTION_OK,
+			MAIL_ACTION_INVALID_ITEM,
+			MAIL_ACTION_UNIDENTIFIED
+		};
+		MailActions_t itemActionType = MAIL_ACTION_NONE;
+		/*enum AlchemyView_t : int
+		{
+			ALCHEMY_VIEW_BREW,
+			ALCHEMY_VIEW_RECIPES,
+			ALCHEMY_VIEW_COOK,
+			ALCHEMY_VIEW_RECIPES_COOK
+		};*/
+		//AlchemyView_t currentView = ALCHEMY_VIEW_BREW;
+		Frame* mailFrame = nullptr;
+		real_t animx = 0.0;
+		real_t animTooltip = 0.0;
+		Uint32 animTooltipTicks = 0;
+		real_t animSendItem1 = 0.0;
+		int animSendItem1StartX = 0;
+		int animSendItem1StartY = 0;
+		int animSendItem1DestX = 0;
+		int animSendItem1DestY = 0;
+		Uint32 sendItem1Uid = 0;
+		real_t animRecvItem = 0.0;
+		int animRecvItemStartX = 0;
+		int animRecvItemStartY = 0;
+		int animRecvItemDestX = 0;
+		int animRecvItemDestY = 0;
+		Uint32 recvItemUid = 0;
+		//int animRecvItemCount = 1;
+		bool isInteractable = true;
+		bool bOpen = false;
+		bool bFirstTimeSnapCursor = false;
+		void openMailMenu(/*AlchemyView_t view*/);
+		//void changeCurrentView(AlchemyView_t view);
+		void closeMailMenu();
+		void updateMailMenu();
+		void createMailMenu();
+		bool mailGUIHasBeenCreated() const;
+		std::string itemDesc = "";
+		int itemType = -1;
+		bool itemRequiresTitleReflow = true;
+		int selectedMailSlotX = -1;
+		int selectedMailSlotY = -1;
+		std::unordered_map<int, Frame*> mailSlotFrames;
+		void selectMailSlot(const int x, const int y);
+		const int getSelectedMailSlotX() const { return selectedMailSlotX; }
+		const int getSelectedMailSlotY() const { return selectedMailSlotY; }
+		Frame* getMailSlotFrame(int x, int y) const;
+		void setItemDisplayNameAndPrice(Item* item, const bool isTooltipForRecvItem);
+		//void setItemDisplayNameAndPriceBrew(Item* item, const bool isTooltipForResultPotion, const bool isTooltipForRecipe);
+		//void setItemDisplayNameAndPriceCook(Item* item, const bool isTooltipForResultPotion, const bool isTooltipForRecipe);
+		bool inventoryItemAllowedInGUI(Item* item);
+		bool warpMouseToSelectedMailItem(Item* snapToItem, Uint32 flags);
+		void clearItemDisplayed();
+		static int heightOffsetWhenNotCompact;
+	};
+	MailboxGui_t mailboxGUI;
 
 	struct FeatherGUI_t
 	{
@@ -1096,6 +1281,7 @@ public:
 
 		Item alchemyResultPotion;
 		Item emptyBottleCount;
+		Item torchCount;
 		AlchemyGUI_t(GenericGUIMenu& g) :
 			parentGUI(g),
 			recipes(*this)
@@ -1125,6 +1311,19 @@ public:
 			emptyBottleCount.isDroppable = false;
 			emptyBottleCount.x = 0;
 			emptyBottleCount.y = 0;
+
+			torchCount.appearance = 0;
+			torchCount.type = TOOL_TORCH;
+			torchCount.node = nullptr;
+			torchCount.status = SERVICABLE;
+			torchCount.beatitude = 0;
+			torchCount.count = 0;
+			torchCount.appearance = 0;
+			torchCount.identified = true;
+			torchCount.uid = 0;
+			torchCount.isDroppable = false;
+			torchCount.x = 0;
+			torchCount.y = 0;
 		}
 		enum AlchemyActions_t : int
 		{
@@ -1137,7 +1336,9 @@ public:
 		enum AlchemyView_t : int
 		{
 			ALCHEMY_VIEW_BREW,
-			ALCHEMY_VIEW_RECIPES
+			ALCHEMY_VIEW_RECIPES,
+			ALCHEMY_VIEW_COOK,
+			ALCHEMY_VIEW_RECIPES_COOK
 		};
 		struct AlchNotification_t
 		{
@@ -1155,6 +1356,7 @@ public:
 		};
 		std::vector<std::pair<Uint32, AlchNotification_t>> notifications;
 		AlchemyView_t currentView = ALCHEMY_VIEW_BREW;
+		bool hasTinOpener = false;
 		Frame* alchFrame = nullptr;
 		real_t animx = 0.0;
 		real_t animTooltip = 0.0;
@@ -1186,7 +1388,8 @@ public:
 		bool isInteractable = true;
 		bool bOpen = false;
 		bool bFirstTimeSnapCursor = false;
-		void openAlchemyMenu();
+		void openAlchemyMenu(AlchemyView_t view);
+		void changeCurrentView(AlchemyView_t view);
 		void closeAlchemyMenu();
 		void updateAlchemyMenu();
 		void createAlchemyMenu();
@@ -1208,9 +1411,13 @@ public:
 		const int getSelectedAlchemySlotX() const { return selectedAlchemySlotX; }
 		const int getSelectedAlchemySlotY() const { return selectedAlchemySlotY; }
 		Frame* getAlchemySlotFrame(int x, int y) const;
-		void setItemDisplayNameAndPrice(Item* item, bool isTooltipForResultPotion, bool isTooltipForRecipe);
+		void setItemDisplayNameAndPrice(Item* item, const bool isTooltipForResultPotion, const bool isTooltipForRecipe);
+		void setItemDisplayNameAndPriceBrew(Item* item, const bool isTooltipForResultPotion, const bool isTooltipForRecipe);
+		void setItemDisplayNameAndPriceCook(Item* item, const bool isTooltipForResultPotion, const bool isTooltipForRecipe);
+		bool inventoryItemAllowedInGUI(Item* item);
 		bool warpMouseToSelectedAlchemyItem(Item* snapToItem, Uint32 flags);
 		void clearItemDisplayed();
+		bool alchemyMissingIngredientQty(Item* item);
 		static int heightOffsetWhenNotCompact;
 	};
 	AlchemyGUI_t alchemyGUI;
@@ -1336,7 +1543,9 @@ struct AttackHoverText_t
 		ATK_HOVER_TYPE_MAGICSTAFF,
 		ATK_HOVER_TYPE_TOOL,
 		ATK_HOVER_TYPE_PICKAXE,
-		ATK_HOVER_TYPE_TOOL_TRAP
+		ATK_HOVER_TYPE_TOOL_TRAP,
+		ATK_HOVER_TYPE_THROWN_MISC,
+		ATK_HOVER_TYPE_RAPIER
 	};
 	HoverTypes hoverType = ATK_HOVER_TYPE_DEFAULT;
 	Sint32 totalAttack = 0;
@@ -1676,7 +1885,12 @@ struct CalloutRadialMenu
 		CALLOUT_TYPE_COLLIDER_BREAKABLE,
 		CALLOUT_TYPE_BELL,
 		CALLOUT_TYPE_DAEDALUS,
-		CALLOUT_TYPE_ASSIST_SHRINE
+		CALLOUT_TYPE_ASSIST_SHRINE,
+		CALLOUT_TYPE_WALL_LOCK,
+		CALLOUT_TYPE_WALL_LOCK_ON,
+		CALLOUT_TYPE_WALL_LOCK_OFF,
+		CALLOUT_TYPE_WALL_BUTTON_ON,
+		CALLOUT_TYPE_WALL_BUTTON_OFF
 		/*,CALLOUT_TYPE_PEDESTAL*/
 	};
 	enum CalloutHelpFlags : int
@@ -1793,6 +2007,7 @@ enum ItemContextMenuPrompts {
 	PROMPT_UNEQUIP,
 	PROMPT_SPELL_EQUIP,
 	PROMPT_SPELL_QUICKCAST,
+	PROMPT_SPELL_CHANGE_FOCUS,
 	PROMPT_APPRAISE,
 	PROMPT_DROPDOWN,
 	PROMPT_INTERACT,
@@ -1812,7 +2027,9 @@ enum ItemContextMenuPrompts {
 	PROMPT_TINKER,
 	PROMPT_GRAB,
 	PROMPT_UNEQUIP_FOR_DROP,
-	PROMPT_CLEAR_HOTBAR_SLOT
+	PROMPT_CLEAR_HOTBAR_SLOT,
+	PROMPT_COOK,
+	PROMPT_SCEPTER_CHARGE
 };
 
 std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int player, Item* item);

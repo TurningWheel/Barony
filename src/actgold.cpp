@@ -20,6 +20,7 @@
 #include "prng.hpp"
 #include "scores.hpp"
 #include "collision.hpp"
+#include "mod_tools.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -33,6 +34,7 @@
 void actGoldBag(Entity* my)
 {
 	int i;
+	my->goldTelepathy = 0;
 
 	if ( my->ticks == 1 )
 	{
@@ -93,6 +95,20 @@ void actGoldBag(Entity* my)
 	}
 #endif
 
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		if ( players[i]->isLocalPlayer() )
+		{
+			if ( players[i]->entity && players[i]->entity->isBlind() )
+			{
+				if ( stats[i]->type == GNOME )
+				{
+					my->goldTelepathy |= (1 << i);
+				}
+			}
+		}
+	}
+
 	// pick up gold
 	if ( multiplayer != CLIENT )
 	{
@@ -110,6 +126,11 @@ void actGoldBag(Entity* my)
 					if (players[i] && players[i]->entity)
 					{
 						playSoundEntity(players[i]->entity, 242 + local_rng.rand() % 4, 64 );
+					}
+					if ( stats[i]->type == GNOME )
+					{
+						my->goldAmount += my->goldAmountBonus;
+						my->goldAmountBonus = 0;
 					}
 					stats[i]->GOLD += my->goldAmount;
 					if ( multiplayer == SERVER && i > 0 && !players[i]->isLocalPlayer() )
@@ -133,6 +154,31 @@ void actGoldBag(Entity* my)
 						messagePlayer(i, MESSAGE_INTERACTION | MESSAGE_INVENTORY, Language::get(484), my->goldAmount);
 					}
 
+					for ( int player = 0; player < MAXPLAYERS; ++player )
+					{
+						if ( players[player]->mechanics.donationRevealedOnFloor == my->getUID() )
+						{
+							messagePlayerColor(i, MESSAGE_HINT, makeColorRGB(255, 255, 0), Language::get(6943)); // you discovered a gift
+
+							for ( int player2 = 0; player2 < MAXPLAYERS; ++player2 ) // relay to other players
+							{
+								if ( player2 != i && !client_disconnected[player2] )
+								{
+									messagePlayerColor(player2, MESSAGE_HINT, makeColorRGB(255, 255, 0), Language::get(6944), stats[i]->name); // an ally discovered a gift
+								}
+							}
+
+							players[player]->mechanics.updateSustainedSpellEvent(SPELL_DONATION, 150.0, 1.0, nullptr);
+							break;
+						}
+					}
+
+					if ( my->goldDroppedByPlayer == 0 )
+					{
+						Compendium_t::Events_t::eventUpdateCodex(i, Compendium_t::CPDM_GOLD_COLLECTED, "gold", my->goldAmount);
+						Compendium_t::Events_t::eventUpdateCodex(i, Compendium_t::CPDM_GOLD_COLLECTED_RUN, "gold", my->goldAmount);
+					}
+
 					// remove gold entity
 					list_RemoveNode(my->mynode);
 					return;
@@ -150,6 +196,7 @@ void actGoldBag(Entity* my)
 	real_t groundheight = my->sprite == 1379 ? 7.75 : 6.25;
 
 	my->flags[BURNING] = false;
+	my->flags[NOCLIP_CREATURES] = true;
 
 	if ( my->goldBouncing == 0 )
 	{

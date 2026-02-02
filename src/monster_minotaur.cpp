@@ -70,14 +70,14 @@ void initMinotaur(Entity* my, Stat* myStats)
 				myStats->STR = 60;
 				myStats->DEX = 20;
 				myStats->CON = 20;
-				myStats->EFFECTS[EFF_VAMPIRICAURA] = true;
+				myStats->setEffectActive(EFF_VAMPIRICAURA, 1);
 				myStats->EFFECTS_TIMERS[EFF_VAMPIRICAURA] = -1;
 			}
 
 
 			// random effects
 			// minotaurs can traverse waters and pits (pits with magic :))
-			myStats->EFFECTS[EFF_LEVITATING] = true;
+			myStats->setEffectActive(EFF_LEVITATING, 1);
 			myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
 
 			// generates equipment and weapons if available from editor
@@ -303,7 +303,7 @@ void minotaurMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	// set invisibility //TODO: isInvisible()?
 	if ( multiplayer != CLIENT )
 	{
-		if ( myStats->EFFECTS[EFF_INVISIBLE] == true )
+		if ( myStats->getEffectActive(EFF_INVISIBLE) )
 		{
 			my->flags[INVISIBLE] = true;
 			my->flags[BLOCKSIGHT] = false;
@@ -354,6 +354,9 @@ void minotaurMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				bodypart++;
 			}
 		}
+
+		my->z = -6;
+		my->creatureHandleLiftZ();
 	}
 
 	//Move bodyparts
@@ -716,7 +719,7 @@ void actMinotaurTimer(Entity* my)
 
 		if ( spawnedsomebody )
 		{
-			playSoundNotification(175, 128);
+			playSoundNotification(175, 64);
 			for ( c = 0; c < MAXPLAYERS; c++ )
 			{
 				Uint32 color = makeColorRGB(0, 255, 255);
@@ -883,7 +886,7 @@ void actMinotaurCeilingBuster(Entity* my)
 						if ( myStats )
 						{
 							// easy hack to stop the minotaur while he breaks stuff
-							myStats->EFFECTS[EFF_PARALYZED] = true;
+							myStats->setEffectActive(EFF_PARALYZED, 1);
 							myStats->EFFECTS_TIMERS[EFF_PARALYZED] = 10;
 						}
 					}
@@ -968,7 +971,7 @@ void actMinotaurCeilingBuster(Entity* my)
 								}
 								list_RemoveNode(entity->mynode);
 							}
-							else if ( entity->behavior == &actDoor )
+							else if ( entity->behavior == &actDoor || entity->behavior == &actIronDoor )
 							{
 								if ( multiplayer != CLIENT )
 								{

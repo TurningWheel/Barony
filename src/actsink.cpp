@@ -122,15 +122,15 @@ void actSink(Entity* my)
 						serverUpdateEntityFlag(players[i]->entity, BURNING);
 						steamAchievementClient(i, "BARONY_ACH_HOT_SHOWER");
 					}
-					if ( stats[i] && stats[i]->EFFECTS[EFF_POLYMORPH] && (SINK_DISABLE_POLYMORPH_WASHING == 0) )
+					if ( stats[i] && stats[i]->getEffectActive(EFF_POLYMORPH) && (SINK_DISABLE_POLYMORPH_WASHING == 0) )
 					{
-						if ( stats[i]->EFFECTS[EFF_POLYMORPH] )
+						if ( stats[i]->getEffectActive(EFF_POLYMORPH) )
 						{
 							players[i]->entity->setEffect(EFF_POLYMORPH, false, 0, true);
 							players[i]->entity->effectPolymorph = 0;
 							serverUpdateEntitySkill(players[i]->entity, 50);
 							messagePlayer(i, MESSAGE_INTERACTION, Language::get(3192));
-							if ( !stats[i]->EFFECTS[EFF_SHAPESHIFT] )
+							if ( !stats[i]->getEffectActive(EFF_SHAPESHIFT) )
 							{
 								messagePlayer(i, MESSAGE_INTERACTION, Language::get(3185));
 							}
@@ -229,11 +229,37 @@ void actSink(Entity* my)
 								playSoundEntity(players[i]->entity, 52, 64);
 								if ( stats[i]->type != SKELETON )
 								{
-									stats[i]->HUNGER += 50; //Less nutrition than the refreshing fountain.
-									serverUpdateHunger(i);
+									if ( !((svFlags & SV_FLAG_HUNGER) && stats[i]->playerRace == RACE_INSECTOID && stats[i]->stat_appearance == 0) )
+									{
+										stats[i]->HUNGER += 50; //Less nutrition than the refreshing fountain.
+										serverUpdateHunger(i);
+									}
 								}
-								players[i]->entity->modHP(1);
+								players[i]->entity->modHP(2 + local_rng.rand() % 2);
+
+								int mpAmount = players[i]->entity->modMP(1 + local_rng.rand() % 2);
+								players[i]->entity->playerInsectoidIncrementHungerToMP(mpAmount);
 								Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_SINKS_HEALTH_RESTORED, "sink", 1);
+
+								if ( stats[i]->type == DRYAD )
+								{
+									if ( auto effectStrength = stats[i]->getEffectActive(EFF_GROWTH) )
+									{
+										int chance = 5;
+										if ( (stats[i]->type == DRYAD && stats[i]->sex == FEMALE) )
+										{
+											chance = 10;
+										}
+										if ( players[i]->mechanics.rollRngProc(Player::PlayerMechanics_t::RngRollTypes::RNG_ROLL_GROWTH, chance) )
+										{
+											if ( stats[i]->getEffectActive(EFF_GROWTH) < 4 )
+											{
+												players[i]->entity->setEffect(EFF_GROWTH, (Uint8)(std::min(4, effectStrength + 1)), 15 * TICKS_PER_SECOND, false);
+												messagePlayerColor(i, MESSAGE_STATUS, makeColorRGB(0, 255, 0), Language::get(6924));
+											}
+										}
+									}
+								}
 							}
 							else
 							{
@@ -277,7 +303,7 @@ void actSink(Entity* my)
 								messagePlayerColor(i, MESSAGE_STATUS, color, Language::get(3701));
 								playSoundEntity(players[i]->entity, 52, 64);
 								stats[i]->HUNGER += 200; //Gain boiler
-								players[i]->entity->modMP(2);
+								players[i]->entity->modMP(4);
 								serverUpdateHunger(i);
 								break;
 							}

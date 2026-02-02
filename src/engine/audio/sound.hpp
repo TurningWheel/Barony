@@ -36,6 +36,7 @@ typedef int16_t opus_int16;
 #include <opus/opus.h>
 #endif
 #endif
+#include "../../interface/consolecommand.hpp"
 
 extern Uint32 numsounds;
 bool initSoundEngine(); //If it fails to initialize the sound engine, it'll just disable audio.
@@ -99,15 +100,86 @@ extern FMOD::Sound* sokobanmusic;
 extern FMOD::Sound* caveslairmusic;
 extern FMOD::Sound* bramscastlemusic;
 extern FMOD::Sound* hamletmusic;
+extern FMOD::Sound** fortressmusic;
 #define NUMCAVESMUSIC 3
 #define NUMCITADELMUSIC 3
 #define NUMINTROMUSIC 3
+#define NUMFORTRESSMUSIC 2
 //TODO: Automatically scan the music folder for a mines subdirectory and use all the music for the mines or something like that. I'd prefer something neat like for that loading music for a level, anyway. And I can just reuse the code I had for ORR.
 
 extern FMOD::Channel* music_channel, *music_channel2, *music_resume; //TODO: List of music, play first one, fade out all the others? Eh, maybe some other day. //music_resume is the music to resume after, say, combat or shops. //TODO: Clear music_resume every biome change. Or otherwise validate it for that level set.
 
 extern FMOD::ChannelGroup* sound_group, *music_group;
 extern FMOD::ChannelGroup* soundAmbient_group, *soundEnvironment_group, *music_notification_group, *soundNotification_group;
+
+#define NUMENSEMBLEMUSIC 8
+extern FMOD::ChannelGroup* music_ensemble_global_send_group;
+extern FMOD::ChannelGroup* music_ensemble_global_recv_group;
+extern FMOD::ChannelGroup* music_ensemble_local_recv_player[MAXPLAYERS];
+extern FMOD::ChannelGroup* music_ensemble_local_recv_group;
+#ifndef EDITOR
+extern ConsoleVariable<float> cvar_ensemble_vol_bg;
+extern ConsoleVariable<int> cvar_ensemble_explore_seek;
+extern ConsoleVariable<int> cvar_ensemble_combat_seek;
+#endif
+struct EnsembleSounds_t
+{
+    float ensemble_recv_global_volume = 0.f;
+    float ensemble_recv_player_volume = 0.f;
+    static const int NUM_EXPLORE_TRANS = 4;
+    static const int NUM_COMBAT_TRANS = 4;
+    FMOD::Sound* exploreSound[NUMENSEMBLEMUSIC] = { nullptr };
+    FMOD::Channel* exploreChannel[NUMENSEMBLEMUSIC] = { nullptr };
+
+    FMOD::Sound* combatSound[NUMENSEMBLEMUSIC] = { nullptr };
+    FMOD::Channel* combatChannel[NUMENSEMBLEMUSIC] = { nullptr };
+
+    FMOD::Sound* exploreTransSound[NUM_EXPLORE_TRANS][NUMENSEMBLEMUSIC] = { nullptr };
+    FMOD::Channel* exploreTransChannel[NUM_EXPLORE_TRANS][NUMENSEMBLEMUSIC] = { nullptr };
+
+    FMOD::Sound* combatTransSound[NUM_COMBAT_TRANS][NUMENSEMBLEMUSIC] = { nullptr };
+    FMOD::Channel* combatTransChannel[NUM_COMBAT_TRANS][NUMENSEMBLEMUSIC] = { nullptr };
+
+    FMOD::ChannelGroup* transceiver_group[NUMENSEMBLEMUSIC] = { nullptr };
+
+    enum SongTransitionState
+    {
+        TRANSITION_EXPLORE,
+        TRANSITION_COMBAT_START,
+        TRANSITION_COMBAT,
+        TRANSITION_COMBAT_ENDING,
+        TRANSITION_COMBAT_ENDED
+    };
+    SongTransitionState songTransitionState = TRANSITION_EXPLORE;
+    enum TransitionMode
+    {
+        TRANSITION_MODE_FULL,
+        TRANSITION_MODE_FADE,
+        TRANSITION_MODE_FADE_HALF,
+        TRANSITION_MODE_DEFAULT
+    };
+    TransitionMode songTransitionMode = TRANSITION_MODE_DEFAULT;
+    void setup();
+    void playSong();
+    void deinit();
+    void stopPlaying(bool setCombatDelay);
+    unsigned int exploreSoundSyncPointInterval = 0;
+    unsigned int combatSoundSyncPointInterval = 0;
+    int exploreSongSeek = 0;
+    int combatSongSeek = 0;
+    std::vector<unsigned int> exploreSyncPoints;
+    std::vector<int> exploreSyncPointsToSeek;
+    std::vector<int> exploreSyncPointsUnique;
+    std::vector<unsigned int> combatSyncPoints;
+    void updatePlayingChannelVolumes();
+    int combatBeat = 0;
+    Uint32 ticksCombatPlaying = 0;
+    Uint32 lastTickCombatPlaying = 0;
+    Uint32 combatDelay = 0;
+    Uint32 lastUpdateTick = 0;
+};
+extern EnsembleSounds_t ensembleSounds;
+
 
 /*
  * Checks for FMOD errors. Store return value of all FMOD functions in fmod_result so that this funtion can access it and check for errors.

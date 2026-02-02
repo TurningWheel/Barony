@@ -29,6 +29,7 @@ std::string shopspeech[MAXPLAYERS] = { "" };
 int shopkeepertype[MAXPLAYERS] = { 0 };
 std::string shopkeepername[MAXPLAYERS] = { "" };
 char shopkeepername_client[MAXPLAYERS][64];
+std::map<Uint32, int> hamletShopkeeperSkillLimit[MAXPLAYERS];
 
 std::unordered_map<int, std::unordered_set<int>> shopkeeperMysteriousItems(
 {
@@ -211,7 +212,7 @@ bool buyItemFromShop(const int player, Item* item, bool& bOutConsumedEntireStack
 		{
 			shopspeech[player] = Language::get(4255 + local_rng.rand() % 5);
 		}
-		else if ( items[item->type].value * 1.5 >= item->buyValue(player) )
+		else if ( item->getGoldValue() * 1.5 >= item->buyValue(player) )
 		{
 			shopspeech[player] = Language::get(200 + local_rng.rand() % 3);
 		}
@@ -273,9 +274,25 @@ bool buyItemFromShop(const int player, Item* item, bool& bOutConsumedEntireStack
 				}
 				else
 				{
-					if ( rand() % 100 <= (std::max(10, buyValue)) ) // 10% to 100% from 1-100 gold
+					if ( local_rng.rand() % 100 <= (std::max(10, buyValue)) ) // 10% to 100% from 1-100 gold
 					{
 						increaseSkill = true;
+					}
+				}
+
+				if ( increaseSkill && entity )
+				{
+					if ( !strcmp(map.name, "Mages Guild") )
+					{
+						int increases = hamletShopkeeperSkillLimit[player][entity->getUID()];
+						if ( increases >= hamletTradingSkillLimit )
+						{
+							increaseSkill = false;
+							if ( local_rng.rand() % 2 )
+							{
+								messagePlayer(player, MESSAGE_HINT | MESSAGE_INTERACTION, Language::get(6868));
+							}
+						}
 					}
 				}
 
@@ -286,11 +303,25 @@ bool buyItemFromShop(const int player, Item* item, bool& bOutConsumedEntireStack
 						if ( stats[player]->getProficiency(PRO_TRADING) < SKILL_LEVEL_SKILLED )
 						{
 							players[player]->entity->increaseSkill(PRO_TRADING);
+							if ( entity )
+							{
+								if ( !strcmp(map.name, "Mages Guild") )
+								{
+									hamletShopkeeperSkillLimit[player][entity->getUID()]++;
+								}
+							}
 						}
 					}
 					else
 					{
 						players[player]->entity->increaseSkill(PRO_TRADING);
+						if ( entity )
+						{
+							if ( !strcmp(map.name, "Mages Guild") )
+							{
+								hamletShopkeeperSkillLimit[player][entity->getUID()]++;
+							}
+						}
 					}
 				}
 				//if ( local_rng.rand() % 2 )
@@ -440,7 +471,7 @@ bool isItemSellableToShop(const int player, Item* item)
 				}
 				break;
 			case 3: // bookstore
-				if ( itemCategory(item) != SPELLBOOK && itemCategory(item) != SCROLL && itemCategory(item) != BOOK )
+				if ( itemCategory(item) != SPELLBOOK && itemCategory(item) != SCROLL && itemCategory(item) != BOOK && itemCategory(item) != TOME_SPELL )
 				{
 					deal = false;
 				}
@@ -456,6 +487,10 @@ bool isItemSellableToShop(const int player, Item* item)
 				{
 					deal = false;
 				}
+				if ( itemTypeIsFoci(item->type) )
+				{
+					deal = true;
+				}
 				break;
 			case 6: // food
 				if ( itemCategory(item) != FOOD )
@@ -465,6 +500,10 @@ bool isItemSellableToShop(const int player, Item* item)
 				break;
 			case 7: // tools
 				if ( itemCategory(item) != TOOL && itemCategory(item) != THROWN )
+				{
+					deal = false;
+				}
+				if ( itemTypeIsFoci(item->type) || itemTypeIsInstrument(item->type) )
 				{
 					deal = false;
 				}
@@ -552,7 +591,8 @@ bool sellItemToShop(const int player, Item* item)
 		}
 		else if ( itemCategory(item) == SPELLBOOK 
 			|| itemCategory(item) == BOOK
-			|| itemCategory(item) == SCROLL )
+			|| itemCategory(item) == SCROLL
+			|| itemCategory(item) == TOME_SPELL )
 		{
 			shopspeech[player] = Language::get(3915);
 		}
@@ -583,7 +623,7 @@ bool sellItemToShop(const int player, Item* item)
 		return false;
 	}
 
-	if ( items[item->type].value * .75 <= item->sellValue(player) )
+	if ( item->getGoldValue() * .75 <= item->sellValue(player) )
 	{
 		shopspeech[player] = Language::get(209 + local_rng.rand() % 3);
 	}

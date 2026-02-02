@@ -286,7 +286,7 @@ void actPortal(Entity* my)
 				&& !entity->monsterAllyGetPlayerLeader() )
 			{
 				Stat* stats = entity->getStats();
-				if ( stats && MonsterData_t::nameMatchesSpecialNPCName(*stats, "bram kindly") )
+				if ( stats && (stats->getAttribute("special_npc") == "bram kindly") )
 				{
 					bossAlive = true;
 				}
@@ -616,6 +616,10 @@ void actWinningPortal(Entity* my)
 	                switch ( race ) {
 	                default:
 	                case RACE_HUMAN:
+					case RACE_GNOME:
+					case RACE_DRYAD:
+					case RACE_MYCONID:
+					case RACE_SALAMANDER:
 	                    MainMenu::beginFade(MainMenu::FadeDestination::ClassicEndingHuman);
 	                    break;
 	                case RACE_AUTOMATON:
@@ -630,6 +634,7 @@ void actWinningPortal(Entity* my)
 	                case RACE_VAMPIRE:
 	                case RACE_SUCCUBUS:
 	                case RACE_INCUBUS:
+					case RACE_GREMLIN:
 	                    MainMenu::beginFade(MainMenu::FadeDestination::ClassicEndingEvil);
 	                    break;
 	                }
@@ -644,6 +649,10 @@ void actWinningPortal(Entity* my)
 	                switch ( race ) {
 	                default:
 	                case RACE_HUMAN:
+					case RACE_GNOME:
+					case RACE_DRYAD:
+					case RACE_MYCONID:
+					case RACE_SALAMANDER:
 	                    MainMenu::beginFade(MainMenu::FadeDestination::ClassicBaphometEndingHuman);
 	                    break;
 	                case RACE_AUTOMATON:
@@ -658,6 +667,7 @@ void actWinningPortal(Entity* my)
 	                case RACE_VAMPIRE:
 	                case RACE_SUCCUBUS:
 	                case RACE_INCUBUS:
+					case RACE_GREMLIN:
 	                    MainMenu::beginFade(MainMenu::FadeDestination::ClassicBaphometEndingEvil);
 	                    break;
 	                }
@@ -845,6 +855,10 @@ void Entity::actExpansionEndGamePortal()
                 switch ( race ) {
                 default:
                 case RACE_HUMAN:
+				case RACE_GNOME:
+				case RACE_DRYAD:
+				case RACE_MYCONID:
+				case RACE_SALAMANDER:
                     MainMenu::beginFade(MainMenu::FadeDestination::EndingHuman);
                     break;
                 case RACE_AUTOMATON:
@@ -859,6 +873,7 @@ void Entity::actExpansionEndGamePortal()
                 case RACE_VAMPIRE:
                 case RACE_SUCCUBUS:
                 case RACE_INCUBUS:
+				case RACE_GREMLIN:
                     MainMenu::beginFade(MainMenu::FadeDestination::EndingEvil);
                     break;
                 }
@@ -1055,6 +1070,7 @@ void Entity::actMidGamePortal()
 	                switch ( race ) { // herx midpoint
 	                default:
 	                case RACE_HUMAN:
+					case RACE_GNOME:
 	                    MainMenu::beginFade(MainMenu::FadeDestination::HerxMidpointHuman);
 	                    break;
 	                case RACE_AUTOMATON:
@@ -1063,12 +1079,16 @@ void Entity::actMidGamePortal()
 	                case RACE_GOATMAN:
 	                case RACE_GOBLIN:
 	                case RACE_INSECTOID:
+					case RACE_DRYAD:
+					case RACE_MYCONID:
+					case RACE_SALAMANDER:
 	                    MainMenu::beginFade(MainMenu::FadeDestination::HerxMidpointBeast);
 	                    break;
 	                case RACE_SKELETON:
 	                case RACE_VAMPIRE:
 	                case RACE_SUCCUBUS:
 	                case RACE_INCUBUS:
+					case RACE_GREMLIN:
 	                    MainMenu::beginFade(MainMenu::FadeDestination::HerxMidpointEvil);
 	                    break;
 	                }
@@ -1077,6 +1097,7 @@ void Entity::actMidGamePortal()
 	                switch ( race ) {
 	                default:
 	                case RACE_HUMAN:
+					case RACE_GNOME:
 	                    MainMenu::beginFade(MainMenu::FadeDestination::BaphometMidpointHuman);
 	                    break;
 	                case RACE_AUTOMATON:
@@ -1085,12 +1106,16 @@ void Entity::actMidGamePortal()
 	                case RACE_GOATMAN:
 	                case RACE_GOBLIN:
 	                case RACE_INSECTOID:
+					case RACE_DRYAD:
+					case RACE_MYCONID:
+					case RACE_SALAMANDER:
 	                    MainMenu::beginFade(MainMenu::FadeDestination::BaphometMidpointBeast);
 	                    break;
 	                case RACE_SKELETON:
 	                case RACE_VAMPIRE:
 	                case RACE_SUCCUBUS:
 	                case RACE_INCUBUS:
+					case RACE_GREMLIN:
 	                    MainMenu::beginFade(MainMenu::FadeDestination::BaphometMidpointEvil);
 	                    break;
 	                }

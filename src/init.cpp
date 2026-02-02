@@ -9,12 +9,13 @@
 
 -------------------------------------------------------------------------------*/
 
+#include "main.hpp"
+
 #include <memory>
 #include <ctime>
 #include <sys/stat.h>
 #include <sstream>
 
-#include "main.hpp"
 #ifdef NINTENDO
  #include "nintendo/nxplatform.hpp"
 #endif // NINTENDO

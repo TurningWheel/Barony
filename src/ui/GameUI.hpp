@@ -67,6 +67,7 @@ struct CustomColors_t
 	Uint32 characterBaseClassText = 0xFFFFFFFF;
 	Uint32 characterDLC1ClassText = 0xFFFFFFFF;
 	Uint32 characterDLC2ClassText = 0xFFFFFFFF;
+	Uint32 characterDLC3ClassText = makeColorRGB(0, 255, 0);
 };
 extern CustomColors_t hudColors;
 
@@ -76,6 +77,8 @@ extern int GAMEUI_FRAMEDATA_ALCHEMY_RECIPE_SLOT; // displaying in main alchemy g
 extern int GAMEUI_FRAMEDATA_ALCHEMY_RECIPE_ENTRY; // the recipe icon
 extern int GAMEUI_FRAMEDATA_WORLDTOOLTIP_ITEM;
 extern int GAMEUI_FRAMEDATA_SHOP_ITEM;
+extern int GAMEUI_FRAMEDATA_ALCHEMY_MISSING_QTY; // alchemy ingredient missing quantity
+extern int GAMEUI_FRAMEDATA_SPELL_LEARNABLE; // if spell provides skill xp
 
 // if true, use the new user interface
 extern bool newui;
@@ -178,6 +181,11 @@ struct StatusEffectQueue_t
 	static const int kEffectInspiration;
 	static const int kEffectRetaliation;
 	static const int kEffectAssistance;
+	static const int kEffectStability;
+	static const int kEffectVandal;
+	static const int kEffectOvercharge;
+	static const int kEffectWealth;
+	static const int kEffectEnd;
 	
 	Frame* statusEffectFrame = nullptr;
 	Frame* statusEffectTooltipFrame = nullptr;
@@ -328,6 +336,7 @@ void openMapWindow(int player);
 void openLogWindow(int player);
 
 void capitalizeString(std::string& str);
+void lowercaseString(std::string& str);
 void uppercaseString(std::string& str);
 void camelCaseString(std::string& str);
 bool stringStartsWithVowel(std::string& str);

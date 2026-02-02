@@ -58,12 +58,15 @@ enum ArrowSpriteTypes : int
 	PROJECTILE_FIRE_SPRITE,
 	PROJECTILE_HEAVY_SPRITE,
 	PROJECTILE_CRYSTAL_SPRITE,
-	PROJECTILE_HUNTING_SPRITE
+	PROJECTILE_HUNTING_SPRITE,
+	PROJECTILE_SEED_ROOT_SPRITE = 1881,
+	PROJECTILE_SEED_POISON_SPRITE = 1882,
+	PROJECTILE_BONE_SPRITE = 2304,
+	PROJECTILE_BLACKIRON_SPRITE = 2305
 };
 
 void actArrow(Entity* my)
 {
-	double dist = 0.0;
 	node_t* node = nullptr;
 
 	// lifespan
@@ -83,7 +86,64 @@ void actArrow(Entity* my)
 		return;
 	}
 
-	if ( my->arrowQuiverType == QUIVER_FIRE || my->sprite == PROJECTILE_FIRE_SPRITE )
+	if ( my->sprite == PROJECTILE_SEED_ROOT_SPRITE
+		|| my->sprite == PROJECTILE_SEED_POISON_SPRITE )
+	{
+		if ( ARROW_LIFE > 1 )
+		{
+			if ( ARROW_STUCK == 0 )
+			{
+				my->light = addLight(my->x / 16, my->y / 16, "magic_green");
+				if ( flickerLights )
+				{
+					//Torches will never flicker if this setting is disabled.
+					ARROW_FLICKER++;
+				}
+				if ( ARROW_FLICKER > 5 )
+				{
+					ARROW_LIGHTING = (ARROW_LIGHTING == 1) + 1;
+
+					if ( ARROW_LIGHTING == 1 )
+					{
+						my->removeLightField();
+						my->light = addLight(my->x / 16, my->y / 16, "magic_green");
+					}
+					else
+					{
+						my->removeLightField();
+						my->light = addLight(my->x / 16, my->y / 16, "magic_green_flicker");
+					}
+					ARROW_FLICKER = 0;
+				}
+			}
+
+			if ( ARROW_STUCK == 0 )
+			{
+				my->removeLightField();
+				Entity* particle = spawnMagicParticleCustom(my, 1816, 0.5, 4);
+				if ( particle )
+				{
+					particle->lightBonus = vec4(0.5f, 0.5f, 0.5f, 0.f);
+					//particle->flags[SPRITE] = true;
+					particle->ditheringDisabled = true;
+				}
+			}
+		}
+	}
+	else if ( (my->arrowQuiverType == QUIVER_PIERCE || my->sprite == PROJECTILE_PIERCE_SPRITE) )
+	{
+		if ( ARROW_STUCK == 0 )
+		{
+			Entity* particle = spawnMagicParticleCustom(my, 158, 0.5, 4);
+			if ( particle )
+			{
+				particle->lightBonus = vec4(0.5f, 0.5f, 0.5f, 0.f);
+				particle->flags[SPRITE] = true;
+				particle->ditheringDisabled = true;
+			}
+		}
+	}
+	else if ( my->arrowQuiverType == QUIVER_FIRE || my->sprite == PROJECTILE_FIRE_SPRITE )
 	{
 		if ( ARROW_LIFE > 1 )
 		{
@@ -178,19 +238,6 @@ void actArrow(Entity* my)
 			}
 		}
 	}
-	else if ( my->arrowQuiverType == QUIVER_PIERCE || my->sprite == PROJECTILE_PIERCE_SPRITE )
-	{
-		if ( ARROW_STUCK == 0 )
-		{
-			Entity* particle = spawnMagicParticleCustom(my, 158, 0.5, 4);
-			if ( particle )
-			{
-				particle->lightBonus = vec4(0.5f, 0.5f, 0.5f, 0.f);
-				particle->flags[SPRITE] = true;
-                particle->ditheringDisabled = true;
-			}
-		}
-	}
 	else if ( my->arrowQuiverType == QUIVER_LIGHTWEIGHT || my->sprite == PROJECTILE_SWIFT_SPRITE )
 	{
 		if ( ARROW_STUCK == 0 )
@@ -215,6 +262,43 @@ void actArrow(Entity* my)
 				particle->flags[SPRITE] = true;
                 particle->ditheringDisabled = true;
 			}
+		}
+	}
+	else if ( my->arrowQuiverType == QUIVER_BLACKIRON || my->sprite == PROJECTILE_BLACKIRON_SPRITE )
+	{
+		if ( ARROW_STUCK == 0 )
+		{
+			Entity* particle = spawnMagicParticleCustom(my, 155, 0.5, 4);
+			if ( particle )
+			{
+				particle->lightBonus = vec4(0.5f, 0.5f, 0.5f, 0.f);
+				particle->flags[SPRITE] = true;
+				particle->ditheringDisabled = true;
+			}
+		}
+	}
+	else if ( my->arrowQuiverType == QUIVER_BONE || my->sprite == PROJECTILE_BONE_SPRITE )
+	{
+		if ( ARROW_STUCK == 0 )
+		{
+			Entity* particle = spawnMagicParticleCustom(my, 155, 0.5, 4);
+			if ( particle )
+			{
+				particle->lightBonus = vec4(0.5f, 0.5f, 0.5f, 0.f);
+				particle->flags[SPRITE] = true;
+				particle->ditheringDisabled = true;
+			}
+		}
+	}
+
+	if ( my->arrowArmorPierce > 0 && ARROW_STUCK == 0 && !(my->arrowQuiverType == QUIVER_PIERCE || my->sprite == PROJECTILE_PIERCE_SPRITE) )
+	{
+		Entity* particle = spawnMagicParticleCustom(my, 158, 0.5, 4);
+		if ( particle )
+		{
+			particle->lightBonus = vec4(0.5f, 0.5f, 0.5f, 0.f);
+			particle->flags[SPRITE] = true;
+			particle->ditheringDisabled = true;
 		}
 	}
 
@@ -260,7 +344,8 @@ void actArrow(Entity* my)
 		if ( my->arrowFallSpeed > 0 )
 		{
 			real_t pitchChange = 0.02;
-			if ( my->arrowShotByWeapon == LONGBOW )
+			if ( my->arrowShotByWeapon == LONGBOW || my->arrowShotByWeapon == BRANCH_BOW 
+				|| my->arrowShotByWeapon == BRANCH_BOW_INFECTED )
 			{
 				pitchChange = 0.005;
 			}
@@ -302,6 +387,7 @@ void actArrow(Entity* my)
 			}
 		}
 
+		bool hitSomething = false;
 		if ( multiplayer != CLIENT )
 		{
 			// horizontal motion
@@ -309,7 +395,55 @@ void actArrow(Entity* my)
 			ARROW_VELY = sin(my->yaw) * my->arrowSpeed;
 			ARROW_OLDX = my->x;
 			ARROW_OLDY = my->y;
-			dist = clipMove(&my->x, &my->y, ARROW_VELX, ARROW_VELY, my);
+
+			my->processEntityWind();
+			bool halfSpeedCheck = false;
+			static ConsoleVariable<bool> cvar_arrow_clip("/arrow_clip_test", true);
+			if ( my->arrowSpeed > 4.0 ) // can clip through thin gates
+			{
+				auto entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 1);
+				for ( auto it : entLists )
+				{
+					if ( !*cvar_arrow_clip && (svFlags & SV_FLAG_CHEATS) )
+					{
+						break;
+					}
+					for ( node_t* node = it->first; node != nullptr; node = node->next )
+					{
+						Entity* entity = (Entity*)node->element;
+						if ( entity->behavior == &actGate || entity->behavior == &actDoor || entity->behavior == &actIronDoor )
+						{
+							if ( entityDist(my, entity) <= my->arrowSpeed )
+							{
+								halfSpeedCheck = true;
+								break;
+							}
+						}
+					}
+					if ( halfSpeedCheck )
+					{
+						break;
+					}
+				}
+			}
+			
+			if ( !halfSpeedCheck )
+			{
+				real_t dist = clipMove(&my->x, &my->y, ARROW_VELX, ARROW_VELY, my);
+				hitSomething = dist != sqrt(ARROW_VELX * ARROW_VELX + ARROW_VELY * ARROW_VELY);
+			}
+			else
+			{
+				real_t vel_x = ARROW_VELX / 2.0;
+				real_t vel_y = ARROW_VELY / 2.0;
+				real_t dist = clipMove(&my->x, &my->y, vel_x, vel_y, my);
+				hitSomething = dist != sqrt(vel_x * vel_x + vel_y * vel_y);
+				if ( !hitSomething )
+				{
+					dist = clipMove(&my->x, &my->y, vel_x, vel_y, my);
+					hitSomething = dist != sqrt(vel_x * vel_x + vel_y * vel_y);
+				}
+			}
 		}
 
 		bool arrowInGround = false;
@@ -370,17 +504,32 @@ void actArrow(Entity* my)
 		}
 
 		// damage monsters
-		if ( arrowSpawnedInsideEntity || dist != sqrt(ARROW_VELX * ARROW_VELX + ARROW_VELY * ARROW_VELY) || arrowInGround )
+		if ( arrowSpawnedInsideEntity || hitSomething || arrowInGround )
 		{
 			if ( arrowInGround )
 			{
 				ARROW_STUCK = 2;
+				serverUpdateEntitySkill(my, 0);
 			}
 			else
 			{
 				ARROW_STUCK = 1;
+				if ( !arrowSpawnedInsideEntity && !arrowInGround && hitSomething && hit.entity )
+				{
+					if ( my->arrowArmorPierce > 0 && hit.entity && hit.entity->getUID() > 0 )
+					{
+						if ( hit.entity->getStats() || hit.entity->isDamageableCollider() )
+						{
+							ARROW_STUCK = 0;
+							my->collisionIgnoreTargets.insert(hit.entity->getUID());
+						}
+					}
+				}
+				if ( ARROW_STUCK > 0 )
+				{
+					serverUpdateEntitySkill(my, 0);
+				}
 			}
-			serverUpdateEntitySkill(my, 0);
 			my->x = ARROW_OLDX;
 			my->y = ARROW_OLDY;
 
@@ -397,6 +546,10 @@ void actArrow(Entity* my)
 			ARROW_VELY = 0;
 			ARROW_VELZ = 0;
 			my->entityCheckIfTriggeredBomb(true);
+			if ( !hit.entity )
+			{
+				my->entityCheckIfTriggeredWallButton();
+			}
 			if ( hit.entity != NULL )
 			{
 				Entity* parent = uidToEntity(my->parent);
@@ -476,11 +629,28 @@ void actArrow(Entity* my)
 						hit.entity->colliderKillerUid = parent ? parent->getUID() : 0;
 						if ( parent && parent->behavior == &actPlayer )
 						{
-							messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(hit.entity->getColliderOnBreakLangEntry()),
-								Language::get(hit.entity->getColliderLangName()));
+							if ( oldHP > 0 )
+							{
+								if ( parent->getStats() && parent->getStats()->getProficiency(PRO_RANGED) < SKILL_LEVEL_BASIC
+									&& local_rng.rand() % 20 == 0 )
+								{
+									parent->increaseSkill(PRO_RANGED);
+								}
+							}
+
+							if ( hit.entity->getColliderOnBreakLangEntry() != 0 )
+							{
+								messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(hit.entity->getColliderOnBreakLangEntry()),
+									Language::get(hit.entity->getColliderLangName()));
+							}
 							if ( hit.entity->isColliderWall() )
 							{
 								Compendium_t::Events_t::eventUpdateWorld(parent->skill[2], Compendium_t::CPDM_BARRIER_DESTROYED, "breakable barriers", 1);
+							}
+
+							if ( hit.entity->colliderOldHP > 0 )
+							{
+								players[parent->skill[2]]->mechanics.incrementBreakableCounter(Player::PlayerMechanics_t::BreakableEvent::GBREAK_COMMON, hit.entity);
 							}
 						}
 					}
@@ -496,39 +666,72 @@ void actArrow(Entity* my)
 					if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
 					{
 						// test for friendly fire
-						if ( parent && parent->checkFriend(hit.entity) )
+						if ( parent && parent->checkFriend(hit.entity) && parent->friendlyFireProtection(hit.entity) )
 						{
-							my->removeLightField();
-							list_RemoveNode(my->mynode);
+							if ( ARROW_STUCK > 0 )
+							{
+								my->removeLightField();
+								list_RemoveNode(my->mynode);
+							}
 							return;
 						}
 					}
+
+					//if ( hit.entity && hitstats )
+					//{
+					//	if ( hitstats->getEffectActive(EFF_NULL_RANGED) )
+					//	{
+					//		Uint8 effectStrength = hitstats->getEffectActive(EFF_NULL_RANGED);
+					//		int duration = hitstats->EFFECTS_TIMERS[EFF_NULL_RANGED];
+					//		if ( effectStrength == 1 )
+					//		{
+					//			if ( hitstats->EFFECTS_TIMERS[EFF_NULL_RANGED] > 0 )
+					//			{
+					//				hitstats->EFFECTS_TIMERS[EFF_NULL_RANGED] = 1;
+					//			}
+					//		}
+					//		else if ( effectStrength > 1 )
+					//		{
+					//			--effectStrength;
+					//			hitstats->setEffectValueUnsafe(EFF_NULL_RANGED, effectStrength);
+					//			hit.entity->setEffect(EFF_NULL_RANGED, effectStrength, hitstats->EFFECTS_TIMERS[EFF_NULL_RANGED], false);
+					//		}
+					//		if ( (parent && parent->behavior == &actPlayer) || (parent && parent->behavior == &actMonster && parent->monsterAllyGetPlayerLeader())
+					//			|| hit.entity->behavior == &actPlayer || hit.entity->monsterAllyGetPlayerLeader() )
+					//		{
+					//			spawnDamageGib(hit.entity, 0, DamageGib::DMG_GUARD, DamageGibDisplayType::DMG_GIB_GUARD, true);
+					//		}
+
+					//		if ( hit.entity->behavior == &actPlayer )
+					//		{
+					//			messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, makeColorRGB(0, 255, 0), Language::get(6465));
+					//		}
+					//		if ( parent && parent->behavior == &actPlayer )
+					//		{
+					//			messagePlayerMonsterEvent(parent->skill[2], makeColorRGB(255, 255, 255),
+					//				*hitstats, Language::get(6468), Language::get(6469), MSG_COMBAT); // %s guards the attack
+					//		}
+					//		playSoundEntity(hit.entity, 166, 128);
+					//		my->removeLightField();
+					//		list_RemoveNode(my->mynode);
+					//		return;
+					//	}
+					//}
 
 					bool silverDamage = false;
 					bool huntingDamage = false;
 					if ( my->arrowQuiverType == QUIVER_SILVER )
 					{
-						switch ( hitstats->type )
+						if ( hit.entity->isSmiteWeakMonster() )
 						{
-							case SKELETON:
-							case CREATURE_IMP:
-							case GHOUL:
-							case DEMON:
-							case SUCCUBUS:
-							case INCUBUS:
-							case VAMPIRE:
-							case LICH:
-							case LICH_ICE:
-							case LICH_FIRE:
-							case DEVIL:
-								// smite these creatures
-								silverDamage = true;
-								spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, 981);
-								playSoundEntity(hit.entity, 249, 64);
-								break;
-							default:
-								silverDamage = false;
-								break;
+							// smite these creatures
+							silverDamage = true;
+							spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, 981);
+							playSoundEntity(hit.entity, 249, 64);
+						}
+						else
+						{
+							silverDamage = false;
 						}
 					}
 					else if ( my->arrowQuiverType == QUIVER_HUNTING )
@@ -595,7 +798,10 @@ void actArrow(Entity* my)
 					{
 						Stat* parentStats = parent->getStats();
 						if ( parentStats->helmet && parentStats->helmet->type == HAT_HOOD_WHISPERS 
-							&& !monsterIsImmobileTurret(hit.entity, hitstats) && !(hitstats->type == MIMIC) )
+							&& !monsterIsImmobileTurret(hit.entity, hitstats) && !hitstats->getEffectActive(EFF_STASIS) 
+							&& !(hitstats->type == MIMIC
+								|| hitstats->type == MINIMIMIC 
+								|| hitstats->type == MONSTER_ADORCISED_WEAPON) )
 						{
 							real_t hitAngle = hit.entity->yawDifferenceFromEntity(my);
 							if ( (hitAngle >= 0 && hitAngle <= 2 * PI / 3) ) // 120 degree arc
@@ -621,16 +827,23 @@ void actArrow(Entity* my)
 									}
 								}
 
-								if ( hit.entity->monsterState == MONSTER_STATE_WAIT
+								if ( (hit.entity->monsterState == MONSTER_STATE_WAIT
 									|| hit.entity->monsterState == MONSTER_STATE_PATH
-									|| (hit.entity->monsterState == MONSTER_STATE_HUNT && uidToEntity(hit.entity->monsterTarget) == nullptr) )
+									|| (hit.entity->monsterState == MONSTER_STATE_HUNT && uidToEntity(hit.entity->monsterTarget) == nullptr))
+									&& !hitstats->getEffectActive(EFF_ROOTED) )
 								{
 									// unaware monster, get backstab damage.
 									int bonus = (parentStats->getModifiedProficiency(PRO_STEALTH) / 20 + 2) * (2 * stealthCapstoneBonus);
 									damage += ((bonus * equipmentModifier) * bonusModifier);
-									if ( local_rng.rand() % 10 == 0 && hit.entity->behavior != &actPlayer )
+									if ( local_rng.rand() % 4 == 0 
+										&& hit.entity->behavior != &actPlayer
+										&& !(parent->behavior == &actPlayer && hit.entity->monsterAllyGetPlayerLeader()) )
 									{
-										parent->increaseSkill(PRO_STEALTH);
+										if ( parent->behavior == &actPlayer && players[parent->skill[2]]->mechanics.allowedRaiseStealthAgainstEntity(*hit.entity) )
+										{
+											parent->increaseSkill(PRO_STEALTH);
+											players[parent->skill[2]]->mechanics.enemyRaisedStealthAgainst[hit.entity->getUID()]++;
+										}
 									}
 									backstab = true;
 								}
@@ -640,9 +853,15 @@ void actArrow(Entity* my)
 									// 1 in 2 chance to flank defenses.
 									int bonus = (parentStats->getModifiedProficiency(PRO_STEALTH) / 20 + 1) * (stealthCapstoneBonus);
 									damage += ((bonus * equipmentModifier) * bonusModifier);
-									if ( local_rng.rand() % 20 == 0 && hit.entity->behavior != &actPlayer )
+									if ( local_rng.rand() % 20 == 0 
+										&& hit.entity->behavior != &actPlayer
+										&& !(parent->behavior == &actPlayer && hit.entity->monsterAllyGetPlayerLeader()) )
 									{
-										parent->increaseSkill(PRO_STEALTH);
+										if ( parent->behavior == &actPlayer && players[parent->skill[2]]->mechanics.allowedRaiseStealthAgainstEntity(*hit.entity) )
+										{
+											parent->increaseSkill(PRO_STEALTH);
+											players[parent->skill[2]]->mechanics.enemyRaisedStealthAgainst[hit.entity->getUID()]++;
+										}
 									}
 									flanking = true;
 								}
@@ -689,6 +908,28 @@ void actArrow(Entity* my)
 						damageMultiplier = std::max(0.75, damageMultiplier);
 					}
 
+					Entity::modifyDamageMultipliersFromEffects(hit.entity, parent, damageMultiplier, DAMAGE_TABLE_RANGED, my);
+
+					if ( my->arrowArmorPierce > 0 && parent && parent->behavior == &actPlayer )
+					{
+						if ( parent->getStats() )
+						{
+							/*real_t mult = 1.0;
+							if ( parent->getStats()->getModifiedProficiency(PRO_RANGED) >= SKILL_LEVEL_LEGENDARY )
+							{
+								mult = 2.0;
+							}*/
+							if ( parent->behavior == &actMonster )
+							{
+								damageMultiplier += std::min(25, std::max(0, statGetPER(parent->getStats(), parent))) / 100.0;
+							}
+							else
+							{
+								damageMultiplier += std::max(0, statGetPER(parent->getStats(), parent)) / 100.0;
+							}
+						}
+					}
+
 					if ( hitWeaklyOnTarget )
 					{
 						damage = damage * (std::max(0.1, damageMultiplier - 0.5));
@@ -712,10 +953,41 @@ void actArrow(Entity* my)
 						}
 					}
 
+					if ( hitstats && hitstats->getEffectActive(EFF_GUARD_BODY) )
+					{
+						thaumSpellArmorProc(hit.entity, *hitstats, false, parent, EFF_GUARD_BODY);
+					}
+					if ( hitstats && hitstats->getEffectActive(EFF_DIVINE_GUARD) )
+					{
+						thaumSpellArmorProc(hit.entity, *hitstats, false, parent, EFF_DIVINE_GUARD);
+					}
+
 					/*messagePlayer(0, "My damage: %d, AC: %d, Pierce: %d", my->arrowPower, AC(hitstats), my->arrowArmorPierce);
 					messagePlayer(0, "Resolved to %d damage.", damage);*/
 					Sint32 oldHP = hitstats->HP;
 					hit.entity->modHP(-damage);
+
+					if ( hitstats )
+					{
+						Sint32 damageTaken = oldHP - hitstats->HP;
+						if ( damageTaken > 0 )
+						{
+							if ( hitstats->getEffectActive(EFF_DEFY_FLESH) )
+							{
+								hit.entity->defyFleshProc(parent);
+							}
+							hit.entity->pinpointDamageProc(parent, damageTaken);
+						}
+						if ( hitstats->getEffectActive(EFF_SPORES) )
+						{
+							if ( hit.entity->behavior == &actPlayer 
+								&& hitstats->type == MYCONID && hitstats->getEffectActive(EFF_GROWTH) >= 4 )
+							{
+								floorMagicCreateSpores(hit.entity, hit.entity->x, hit.entity->y, hit.entity, 0, SPELL_SPORES);
+							}
+						}
+					}
+
 					// write obituary
 					if ( parent )
 					{
@@ -741,6 +1013,16 @@ void actArrow(Entity* my)
 										Compendium_t::Events_t::eventUpdateWorld(hit.entity->monsterAllyIndex, Compendium_t::CPDM_TRAP_FOLLOWERS_KILLED, "arrow trap", 1);
 									}
 								}
+							}
+
+							if ( hit.entity->onEntityTrapHitSacredPath(parent) )
+							{
+								if ( hit.entity->behavior == &actPlayer )
+								{
+									messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, makeColorRGB(0, 255, 0), 
+										Language::get(6472), Language::get(6291));
+								}
+								playSoundEntity(hit.entity, 166, 128);
 							}
 						}
 						else
@@ -855,10 +1137,29 @@ void actArrow(Entity* my)
 								doSkillIncrease = false; // no skill for killing/hurting other turrets.
 							}
 						}
+						else if ( hit.entity->behavior == &actMonster 
+							&& (hit.entity->monsterAllyGetPlayerLeader() || (hitstats && achievementObserver.checkUidIsFromPlayer(hitstats->leader_uid) >= 0))
+							&& parent && parent->behavior == &actPlayer )
+						{
+							doSkillIncrease = false; // no level up on allies
+						}
 						if ( hit.entity->behavior == &actPlayer && parent && parent->behavior == &actPlayer )
 						{
 							doSkillIncrease = false; // no skill for killing/hurting players
 						}
+						if ( hitstats->getEffectActive(EFF_STASIS) )
+						{
+							doSkillIncrease = false;
+						}
+
+						if ( doSkillIncrease && parent && parent->behavior == &actPlayer )
+						{
+							if ( parent->isInvisible() && parent->checkEnemy(hit.entity) )
+							{
+								players[parent->skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_INVISIBILITY, 10.0, 1.0, hit.entity);
+							}
+						}
+
 						int chance = 10;
 						if ( doSkillIncrease && (local_rng.rand() % chance == 0) && parent && parent->getStats() )
 						{
@@ -895,6 +1196,47 @@ void actArrow(Entity* my)
 						}
 					}
 
+					bool envenomWeapon = false;
+					if ( parent )
+					{
+						Stat* parentStats = parent->getStats();
+						if ( parentStats && parentStats->getEffectActive(EFF_ENVENOM_WEAPON) && hitstats )
+						{
+							if ( local_rng.rand() % 2 == 0 )
+							{
+								int envenomDamage = std::min(
+									getSpellDamageSecondaryFromID(SPELL_ENVENOM_WEAPON, parent, parentStats, parent),
+									getSpellDamageFromID(SPELL_ENVENOM_WEAPON, parent, parentStats, parent));
+
+								hit.entity->modHP(-envenomDamage); // do the damage
+								for ( int tmp = 0; tmp < 3; ++tmp )
+								{
+									Entity* gib = spawnGib(hit.entity, 211);
+									serverSpawnGibForClient(gib);
+								}
+								if ( !hitstats->getEffectActive(EFF_POISONED) )
+								{
+									envenomWeapon = true;
+									hitstats->setEffectActive(EFF_POISONED, 1);
+
+									int duration = 160 * envenomDamage;
+									hitstats->EFFECTS_TIMERS[EFF_POISONED] = std::max(200, duration - hit.entity->getCON() * 20);
+									hitstats->poisonKiller = parent->getUID();
+									if ( hit.entity->isEntityPlayer() )
+									{
+										messagePlayerMonsterEvent(hit.entity->isEntityPlayer(), makeColorRGB(255, 0, 0), *parentStats, Language::get(6531), Language::get(6532), MSG_COMBAT);
+										serverUpdateEffects(hit.entity->isEntityPlayer());
+									}
+
+									if ( parent->behavior == &actPlayer )
+									{
+										players[parent->skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_ENVENOM_WEAPON, 50.0, 1.0, hit.entity);
+									}
+								}
+							}
+						}
+					}
+
 					if ( hitstats->HP <= 0 && parent)
 					{
 						parent->awardXP( hit.entity, true, true );
@@ -909,15 +1251,7 @@ void actArrow(Entity* my)
 					// alert the monster
 					if ( hit.entity->behavior == &actMonster && parent != nullptr )
 					{
-						bool alertTarget = true;
-						if ( parent->behavior == &actMonster && parent->monsterAllyIndex != -1 )
-						{
-							if ( hit.entity->behavior == &actMonster && hit.entity->monsterAllyIndex != -1 )
-							{
-								// if a player ally + hit another ally, don't aggro back
-								alertTarget = false;
-							}
-						}
+						bool alertTarget = hit.entity->monsterAlertBeforeHit(parent);
 
 						if ( alertTarget && hit.entity->monsterState != MONSTER_STATE_ATTACK && (hitstats->type < LICH || hitstats->type >= SHOPKEEPER) )
 						{
@@ -967,7 +1301,7 @@ void actArrow(Entity* my)
 								// you shot the %s!
 								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(446), Language::get(448), MSG_COMBAT_BASIC);
 							}
-							if ( my->arrowArmorPierce > 0 && AC(hitstats) > 0 )
+							if ( my->arrowArmorPierce > 0 /*&& AC(hitstats) > 0*/ )
 							{
 								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(2513), Language::get(2514), MSG_COMBAT);
 							}
@@ -1019,10 +1353,19 @@ void actArrow(Entity* my)
 							}
 						}
 
-						if ( my->arrowArmorPierce > 0 && AC(hitstats) > 0 )
+						if ( my->arrowArmorPierce > 0 /*&& AC(hitstats) > 0*/ )
 						{
 							messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, color, Language::get(2515));
 						}
+					}
+
+					if ( my->sprite == PROJECTILE_SEED_POISON_SPRITE )
+					{
+						floorMagicCreateSpores(nullptr, hit.entity->x, hit.entity->y, parent, 15, SPELL_SPORES);
+					}
+					else if ( my->sprite == PROJECTILE_SEED_ROOT_SPRITE )
+					{
+						floorMagicCreateRoots(hit.entity->x, hit.entity->y, parent, 3, SPELL_ROOTS, 3 * TICKS_PER_SECOND, PARTICLE_TIMER_ACTION_ROOTS_SINGLE_TILE);
 					}
 
 					bool statusEffectApplied = false;
@@ -1036,7 +1379,61 @@ void actArrow(Entity* my)
 								procEffect = false;
 							}
 						}
-						if ( my->arrowQuiverType == QUIVER_FIRE && procEffect )
+
+						if ( hitstats->HP > 0 && hitstats->OLDHP > hitstats->HP && parent )
+						{
+							// assist damage from summons
+							if ( parent->behavior == &actMonster )
+							{
+								int summonSpellID = getSpellFromSummonedEntityForSpellEvent(parent);
+								if ( summonSpellID != SPELL_NONE )
+								{
+									if ( Stat* parentStats = parent->getStats() )
+									{
+										if ( Entity* leader = uidToEntity(parentStats->leader_uid) )
+										{
+											if ( local_rng.rand() % 8 == 0 )
+											{
+												magicOnSpellCastEvent(leader, nullptr, hit.entity, summonSpellID, spell_t::SPELL_LEVEL_EVENT_ASSIST | spell_t::SPELL_LEVEL_EVENT_MINOR_CHANCE, 1);
+											}
+										}
+									}
+								}
+							}
+						}
+
+						if ( my->sprite == PROJECTILE_SEED_ROOT_SPRITE )
+						{
+							if ( hit.entity->setEffect(EFF_ROOTED, true, TICKS_PER_SECOND, false) )
+							{
+								statusEffectApplied = true;
+							}
+							if ( parent && parent->behavior == &actPlayer )
+							{
+								Uint32 color = makeColorRGB(0, 255, 0);
+								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(6743), Language::get(6742), MSG_COMBAT);
+							}
+							if ( hit.entity->behavior == &actPlayer )
+							{
+								Uint32 color = makeColorRGB(255, 0, 0);
+								messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, color, Language::get(6744));
+							}
+						}
+						else if ( my->sprite == PROJECTILE_SEED_POISON_SPRITE )
+						{
+							statusEffectApplied = true;
+							if ( parent && parent->behavior == &actPlayer )
+							{
+								Uint32 color = makeColorRGB(0, 255, 0);
+								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(6746), Language::get(6745), MSG_COMBAT);
+							}
+							if ( hit.entity->behavior == &actPlayer )
+							{
+								Uint32 color = makeColorRGB(255, 0, 0);
+								messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, color, Language::get(6747));
+							}
+						}
+						else if ( my->arrowQuiverType == QUIVER_FIRE && procEffect )
 						{
 							bool burning = hit.entity->flags[BURNING];
 							hit.entity->SetEntityOnFire(my);
@@ -1149,11 +1546,11 @@ void actArrow(Entity* my)
 						else if ( my->arrowQuiverType == QUIVER_HUNTING && !(hitstats->amulet && hitstats->amulet->type == AMULET_POISONRESISTANCE)
 							&& !(hitstats->type == INSECTOID) && procEffect )
 						{
-							if ( !hitstats->EFFECTS[EFF_POISONED] )
+							if ( !hitstats->getEffectActive(EFF_POISONED) )
 							{
 								hitstats->poisonKiller = my->parent;
-								hitstats->EFFECTS[EFF_POISONED] = true;
-								hitstats->EFFECTS[EFF_SLOW] = true;
+								hitstats->setEffectActive(EFF_POISONED, 1);
+								hitstats->setEffectActive(EFF_SLOW, 1);
 								if ( my->arrowPoisonTime > 0 )
 								{
 									hitstats->EFFECTS_TIMERS[EFF_POISONED] = my->arrowPoisonTime;
@@ -1178,7 +1575,7 @@ void actArrow(Entity* my)
 								}
 								if ( hit.entity->behavior == &actPlayer )
 								{
-									if ( local_rng.rand() % 8 == 0 && hit.entity->char_gonnavomit == 0 && !hitstats->EFFECTS[EFF_VOMITING] )
+									if ( local_rng.rand() % 8 == 0 && hit.entity->char_gonnavomit == 0 && !hitstats->getEffectActive(EFF_VOMITING) )
 									{
 										// maybe vomit
 										messagePlayer(hit.entity->skill[2], MESSAGE_STATUS, Language::get(634));
@@ -1196,6 +1593,20 @@ void actArrow(Entity* my)
 								Uint32 color = makeColorRGB(255, 0, 0);
 								messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT_BASIC, color, Language::get(451)); // you are hit by an arrow!
 							}
+						}
+						else if ( envenomWeapon )
+						{
+							statusEffectApplied = true;
+							if ( parent && parent->behavior == &actPlayer )
+							{
+								Uint32 color = makeColorRGB(0, 255, 0);
+								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(6533), Language::get(6534), MSG_COMBAT);
+							}
+						}
+
+						if ( my->arrowQuiverType == QUIVER_HUNTING && procEffect )
+						{
+							hit.entity->degradeAmuletProc(hitstats, AMULET_POISONRESISTANCE);
 						}
 					}
 					else
@@ -1302,7 +1713,9 @@ void actArrow(Entity* my)
 						// if nothing chosen to degrade, check extra shield chances to degrade
 						if ( hitstats->shield != NULL && hitstats->shield->status > BROKEN && armor == NULL
 							&& !itemTypeIsQuiver(hitstats->shield->type) && itemCategory(hitstats->shield) != SPELLBOOK
-							&& hitstats->shield->type != TOOL_TINKERING_KIT )
+							&& !itemTypeIsFoci(hitstats->shield->type)
+							&& !(hitstats->shield->type >= INSTRUMENT_FLUTE && hitstats->shield->type <= INSTRUMENT_HORN)
+							&& hitstats->shield->type != TOOL_TINKERING_KIT && hitstats->shield->type != TOOL_FRYING_PAN )
 						{
 							if ( hitstats->shield->type == TOOL_CRYSTALSHARD && hitstats->defending )
 							{
@@ -1359,7 +1772,7 @@ void actArrow(Entity* my)
 											{
 												increaseSkill = false;
 											}
-											else if ( hitstats->EFFECTS[EFF_SHAPESHIFT] )
+											else if ( hitstats->getEffectActive(EFF_SHAPESHIFT) )
 											{
 												increaseSkill = false;
 											}
@@ -1390,6 +1803,7 @@ void actArrow(Entity* my)
 								{
 									shieldDegradeChance += 10;
 								}
+
 								if ( hit.entity->behavior == &actPlayer )
 								{
 									if ( itemCategory(hitstats->shield) == ARMOR )
@@ -1421,13 +1835,16 @@ void actArrow(Entity* my)
 
 						if ( armor != NULL && armor->status > BROKEN )
 						{
-							hit.entity->degradeArmor(*hitstats, *armor, armornum);
-							armorDegraded = true;
+							if ( hit.entity->degradeArmor(*hitstats, *armor, armornum) )
+							{
+								armorDegraded = true;
+							}
 							if ( armor->status == BROKEN )
 							{
 								if ( parent && parent->behavior == &actPlayer && hit.entity->behavior == &actMonster )
 								{
 									steamStatisticUpdateClient(parent->skill[2], STEAM_STAT_UNSTOPPABLE_FORCE, STEAM_STAT_INT, 1);
+									players[parent->skill[2]]->mechanics.incrementBreakableCounter(Player::PlayerMechanics_t::BreakableEvent::GBREAK_DEGRADE, hit.entity);
 									if ( armornum == 4 && hitstats->type == BUGBEAR
 										&& (hitstats->defending || hit.entity->monsterAttack == MONSTER_POSE_BUGBEAR_SHIELD) )
 									{
@@ -1497,13 +1914,43 @@ void actArrow(Entity* my)
 						updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP,
 							false, dmgGib);
 					}
-
 				}
-				my->removeLightField();
-				list_RemoveNode(my->mynode);
+
+				if ( ARROW_STUCK > 0 )
+				{
+					if ( my->sprite == PROJECTILE_SEED_POISON_SPRITE )
+					{
+						if ( !hitstats || hit.entity->isInertMimic() )
+						{
+							floorMagicCreateSpores(nullptr, hit.entity->x, hit.entity->y, parent, 15, SPELL_SPORES);
+						}
+					}
+					else if ( my->sprite == PROJECTILE_SEED_ROOT_SPRITE )
+					{
+						if ( !hitstats || hit.entity->isInertMimic() )
+						{
+							floorMagicCreateRoots(hit.entity->x, hit.entity->y, parent, 3, SPELL_ROOTS, 3 * TICKS_PER_SECOND, PARTICLE_TIMER_ACTION_ROOTS_SINGLE_TILE);
+						}
+					}
+
+					my->removeLightField();
+					list_RemoveNode(my->mynode);
+				}
 			}
 			else if ( my->sprite == PROJECTILE_ROCK_SPRITE )
 			{
+				my->removeLightField();
+				list_RemoveNode(my->mynode); // rocks don't stick to walls...
+			}
+			else if ( my->sprite == PROJECTILE_SEED_POISON_SPRITE )
+			{
+				floorMagicCreateSpores(nullptr, my->x, my->y, uidToEntity(my->parent), 15, SPELL_SPORES);
+				my->removeLightField();
+				list_RemoveNode(my->mynode); // rocks don't stick to walls...
+			}
+			else if ( my->sprite == PROJECTILE_SEED_ROOT_SPRITE )
+			{
+				floorMagicCreateRoots(my->x, my->y, uidToEntity(my->parent), 3, SPELL_ROOTS, 3 * TICKS_PER_SECOND, PARTICLE_TIMER_ACTION_ROOTS_SINGLE_TILE);
 				my->removeLightField();
 				list_RemoveNode(my->mynode); // rocks don't stick to walls...
 			}

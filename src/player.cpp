@@ -54,7 +54,7 @@ bool gamepad_menux_invert = false;
 bool gamepad_menuy_invert = false;
 
 const int Player::Inventory_t::MAX_SPELLS_X = 4;
-const int Player::Inventory_t::MAX_SPELLS_Y = 20;
+const int Player::Inventory_t::MAX_SPELLS_Y = 70;
 const int Player::Inventory_t::MAX_CHEST_X = 4;
 const int Player::Inventory_t::MAX_CHEST_Y = 3;
 
@@ -306,10 +306,13 @@ void GameController::handleAnalog(int player)
 		virtualDpad.padVirtualDpad = DpadDirection::CENTERED;
 	}
 
+	auto& leftStickDeadzone = playerSettings[multiplayer ? 0 : player].leftStickDeadzone;
+	auto& rightStickDeadzone = playerSettings[multiplayer ? 0 : player].rightStickDeadzone;
+
 	if (!players[player]->shootmode || gamePaused)
 	{
-        const auto rawx = getRawRightXMove() * (playerSettings[multiplayer ? 0 : player].gamepad_rightx_invert * -2 + 1);
-        const auto rawy = getRawRightYMove() * (playerSettings[multiplayer ? 0 : player].gamepad_righty_invert * -2 + 1);
+        const auto rawx = getRawRightXMove(player) * (playerSettings[multiplayer ? 0 : player].gamepad_rightx_invert * -2 + 1);
+        const auto rawy = getRawRightYMove(player) * (playerSettings[multiplayer ? 0 : player].gamepad_righty_invert * -2 + 1);
 		int rightx = rawx * getGamepadMenuXSensitivity(player);
 		int righty = rawy * getGamepadMenuYSensitivity(player);
 
@@ -334,8 +337,8 @@ void GameController::handleAnalog(int player)
 
 		if ( radialMenuOpen )
 		{
-            const auto rawx = getRawRightXMove();
-            const auto rawy = getRawRightYMove();
+            const auto rawx = getRawRightXMove(player);
+            const auto rawy = getRawRightYMove(player);
 			const real_t floatx = rawx;
 			const real_t floaty = rawy;
 
@@ -386,8 +389,8 @@ void GameController::handleAnalog(int player)
 		}
 		else if ( rightStickDeadzoneType != DEADZONE_PER_AXIS )
 		{
-            const auto rawx = getRawRightXMove() * (playerSettings[multiplayer ? 0 : player].gamepad_rightx_invert * -2 + 1);
-            const auto rawy = getRawRightYMove() * (playerSettings[multiplayer ? 0 : player].gamepad_righty_invert * -2 + 1);
+            const auto rawx = getRawRightXMove(player) * (playerSettings[multiplayer ? 0 : player].gamepad_rightx_invert * -2 + 1);
+            const auto rawy = getRawRightYMove(player) * (playerSettings[multiplayer ? 0 : player].gamepad_righty_invert * -2 + 1);
 			rightx = rawx;
 			righty = rawy;
 
@@ -458,8 +461,8 @@ void GameController::handleAnalog(int player)
 		}
 		else if ( rightStickDeadzoneType == DEADZONE_MAGNITUDE_LINEAR || rightStickDeadzoneType == DEADZONE_MAGNITUDE_HALFPIPE )
 		{
-            const auto rawx = getRawRightXMove() * (playerSettings[multiplayer ? 0 : player].gamepad_rightx_invert * -2 + 1);
-            const auto rawy = getRawRightYMove() * (playerSettings[multiplayer ? 0 : player].gamepad_righty_invert * -2 + 1);
+            const auto rawx = getRawRightXMove(player) * (playerSettings[multiplayer ? 0 : player].gamepad_rightx_invert * -2 + 1);
+            const auto rawy = getRawRightYMove(player) * (playerSettings[multiplayer ? 0 : player].gamepad_righty_invert * -2 + 1);
 			floatx = rawx;
 			floaty = rawy;
 
@@ -560,7 +563,7 @@ int GameController::getRightXMove(int player) // with sensitivity
 	{
 		return 0;
 	}
-	int x = getRawRightXMove();
+	int x = getRawRightXMove(player);
     x *= playerSettings[multiplayer ? 0 : player].gamepad_rightx_invert * -2 + 1;
 	x *= getGamepadRightXSensitivity(player);
 	return x;
@@ -572,7 +575,7 @@ int GameController::getRightYMove(int player) // with sensitivity
 	{
 		return 0;
 	}
-	int y = getRawRightYMove();
+	int y = getRawRightYMove(player);
     y *= playerSettings[multiplayer ? 0 : player].gamepad_righty_invert * -2 + 1;
 	y *= getGamepadRightYSensitivity(player);
 	return y;
@@ -581,7 +584,7 @@ int GameController::getRightYMove(int player) // with sensitivity
 int GameController::getLeftTrigger() { return getRawLeftTrigger(); } //No sensitivity taken into account (yet)
 int GameController::getRightTrigger() { return getRawRightTrigger(); } //No sensitivity taken into account (yet)
 
-int GameController::getRawLeftXMove() // no sensitivity
+int GameController::getRawLeftXMove(int player) // no sensitivity
 {
 	if (!isActive())
 	{
@@ -592,6 +595,7 @@ int GameController::getRawLeftXMove() // no sensitivity
 #else
 	int x = SDL_GameControllerGetAxis(sdl_device, SDL_CONTROLLER_AXIS_LEFTX);
 #endif
+	auto& leftStickDeadzone = playerSettings[multiplayer ? 0 : player].leftStickDeadzone;
 	if ( leftStickDeadzoneType == DEADZONE_PER_AXIS )
 	{
 		if (x < leftStickDeadzone && x > -leftStickDeadzone )
@@ -610,7 +614,7 @@ int GameController::getRawLeftXMove() // no sensitivity
 	return (!gamepad_leftx_invert) ? x : -x;
 }
 
-int GameController::getRawLeftYMove() // no sensitivity
+int GameController::getRawLeftYMove(int player) // no sensitivity
 {
 	if (!isActive())
 	{
@@ -621,6 +625,7 @@ int GameController::getRawLeftYMove() // no sensitivity
 #else
 	int y = SDL_GameControllerGetAxis(sdl_device, SDL_CONTROLLER_AXIS_LEFTY);
 #endif
+	auto& leftStickDeadzone = playerSettings[multiplayer ? 0 : player].leftStickDeadzone;
 	if ( leftStickDeadzoneType == DEADZONE_PER_AXIS )
 	{
 		if (y < leftStickDeadzone && y > -leftStickDeadzone )
@@ -639,7 +644,7 @@ int GameController::getRawLeftYMove() // no sensitivity
 	return (!gamepad_lefty_invert) ? -y : y;
 }
 
-int GameController::getRawRightXMove() // no sensitivity
+int GameController::getRawRightXMove(int player) // no sensitivity
 {
 	if (!isActive())
 	{
@@ -650,6 +655,7 @@ int GameController::getRawRightXMove() // no sensitivity
 #else
 	int x = SDL_GameControllerGetAxis(sdl_device, SDL_CONTROLLER_AXIS_RIGHTX);
 #endif
+	auto& rightStickDeadzone = playerSettings[multiplayer ? 0 : player].rightStickDeadzone;
 	if ( rightStickDeadzoneType == DEADZONE_PER_AXIS )
 	{
 		if (x < rightStickDeadzone && x > -rightStickDeadzone )
@@ -668,7 +674,7 @@ int GameController::getRawRightXMove() // no sensitivity
 	return (!gamepad_rightx_invert) ? x : -x;
 }
 
-int GameController::getRawRightYMove() // no sensitivity
+int GameController::getRawRightYMove(int player) // no sensitivity
 {
 	if (!isActive())
 	{
@@ -679,6 +685,7 @@ int GameController::getRawRightYMove() // no sensitivity
 #else
 	int y = SDL_GameControllerGetAxis(sdl_device, SDL_CONTROLLER_AXIS_RIGHTY);
 #endif
+	auto& rightStickDeadzone = playerSettings[multiplayer ? 0 : player].rightStickDeadzone;
 	if ( rightStickDeadzoneType == DEADZONE_PER_AXIS )
 	{
 		if (y < rightStickDeadzone && y > -rightStickDeadzone )
@@ -735,9 +742,9 @@ int GameController::getRawRightTrigger()
 	return n;
 }
 
-float GameController::getLeftXPercentForPlayerMovement()
+float GameController::getLeftXPercentForPlayerMovement(int player)
 {
-	float x_force = getLeftXPercent();
+	float x_force = getLeftXPercent(player);
 	if ( x_force > 0 )
 	{
 		x_force = std::min(x_force / x_forceMaxForwardThreshold, 1.f);
@@ -748,9 +755,9 @@ float GameController::getLeftXPercentForPlayerMovement()
 	}
 	return x_force;
 }
-float GameController::getLeftYPercentForPlayerMovement()
+float GameController::getLeftYPercentForPlayerMovement(int player)
 {
-	float y_force = getLeftYPercent();
+	float y_force = getLeftYPercent(player);
 	if ( y_force > 0 )
 	{
 		y_force = std::min(y_force / y_forceMaxStrafeThreshold, 1.f);
@@ -762,19 +769,19 @@ float GameController::getLeftYPercentForPlayerMovement()
 	return y_force;
 }
 
-float GameController::getLeftXPercent() { return (float)getRawLeftXMove() / (float)maxLeftXMove(); }
-float GameController::getLeftYPercent() { return (float)getRawLeftYMove() / (float)maxLeftYMove(); }
-float GameController::getRightXPercent() { return (float)getRawRightXMove() / (float)maxRightXMove(); }
-float GameController::getRightYPercent() { return (float)getRawRightYMove() / (float)maxRightYMove(); }
+float GameController::getLeftXPercent(int player) { return (float)getRawLeftXMove(player) / (float)maxLeftXMove(player); }
+float GameController::getLeftYPercent(int player) { return (float)getRawLeftYMove(player) / (float)maxLeftYMove(player); }
+float GameController::getRightXPercent(int player) { return (float)getRawRightXMove(player) / (float)maxRightXMove(player); }
+float GameController::getRightYPercent(int player) { return (float)getRawRightYMove(player) / (float)maxRightYMove(player); }
 
 float GameController::getLeftTriggerPercent() { return (float)getRawLeftTrigger() / (float)maxLeftTrigger(); }
 float GameController::getRightTriggerPercent() { return (float)getRawRightTrigger() / (float)maxRightTrigger(); }
 
 //Ya, it's pretty constant in SDL2.
-int GameController::maxLeftXMove() { return 32767 - (leftStickDeadzoneType == DEADZONE_PER_AXIS ? leftStickDeadzone : 0); }
-int GameController::maxLeftYMove() { return 32767 - (leftStickDeadzoneType == DEADZONE_PER_AXIS ? leftStickDeadzone : 0); }
-int GameController::maxRightXMove() { return 32767 - (rightStickDeadzoneType == DEADZONE_PER_AXIS ? rightStickDeadzone : 0); }
-int GameController::maxRightYMove() { return 32767 - (rightStickDeadzoneType == DEADZONE_PER_AXIS ? rightStickDeadzone : 0); }
+int GameController::maxLeftXMove(int player) { return 32767 - (leftStickDeadzoneType == DEADZONE_PER_AXIS ? playerSettings[multiplayer ? 0 : player].leftStickDeadzone : 0); }
+int GameController::maxLeftYMove(int player) { return 32767 - (leftStickDeadzoneType == DEADZONE_PER_AXIS ? playerSettings[multiplayer ? 0 : player].leftStickDeadzone : 0); }
+int GameController::maxRightXMove(int player) { return 32767 - (rightStickDeadzoneType == DEADZONE_PER_AXIS ? playerSettings[multiplayer ? 0 : player].rightStickDeadzone : 0); }
+int GameController::maxRightYMove(int player) { return 32767 - (rightStickDeadzoneType == DEADZONE_PER_AXIS ? playerSettings[multiplayer ? 0 : player].rightStickDeadzone : 0); }
 int GameController::maxLeftTrigger() { return 32767 - gamepad_deadzone; }
 int GameController::maxRightTrigger() {	return 32767 - gamepad_deadzone; }
 
@@ -1192,6 +1199,7 @@ bool Player::GUI_t::bModuleAccessibleWithMouse(GUIModules moduleToAccess)
 		|| moduleToAccess == MODULE_SHOP || moduleToAccess == MODULE_TINKERING
 		|| moduleToAccess == MODULE_FEATHER
 		|| moduleToAccess == MODULE_ALCHEMY
+		|| moduleToAccess == MODULE_MAILBOX
 		|| moduleToAccess == MODULE_ASSISTSHRINE
 		|| moduleToAccess == MODULE_ITEMEFFECTGUI )
 	{
@@ -1333,11 +1341,23 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 			{
 				return MODULE_NONE;
 			}
+			else if ( GenericGUI[player.playernum].itemfxGUI.bOpen )
+			{
+				return MODULE_NONE;
+			}
 			else if ( GenericGUI[player.playernum].featherGUI.bOpen )
 			{
 				return MODULE_NONE;
 			}
 			else if ( GenericGUI[player.playernum].assistShrineGUI.bOpen )
+			{
+				return MODULE_NONE;
+			}
+			else if ( GenericGUI[player.playernum].alchemyGUI.bOpen )
+			{
+				return MODULE_NONE;
+			}
+			else if ( GenericGUI[player.playernum].mailboxGUI.bOpen )
 			{
 				return MODULE_NONE;
 			}
@@ -1458,6 +1478,14 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 				soundModuleNavigation();
 			}
 			return MODULE_INVENTORY;
+		}
+		else if ( activeModule == MODULE_ALCHEMY )
+		{
+			return MODULE_NONE;
+		}
+		else if ( activeModule == MODULE_MAILBOX )
+		{
+			return MODULE_NONE;
 		}
 		else if ( activeModule == MODULE_ALCHEMY
 			&& (GenericGUI[player.playernum].alchemyGUI.bFirstTimeSnapCursor || checkDestinationOnly) )
@@ -1698,11 +1726,23 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 			{
 				return MODULE_NONE;
 			}
+			else if ( GenericGUI[player.playernum].itemfxGUI.bOpen )
+			{
+				return MODULE_NONE;
+			}
 			else if ( GenericGUI[player.playernum].featherGUI.bOpen )
 			{
 				return MODULE_NONE;
 			}
 			else if ( GenericGUI[player.playernum].assistShrineGUI.bOpen )
+			{
+				return MODULE_NONE;
+			}
+			else if ( GenericGUI[player.playernum].alchemyGUI.bOpen )
+			{
+				return MODULE_NONE;
+			}
+			else if ( GenericGUI[player.playernum].mailboxGUI.bOpen )
 			{
 				return MODULE_NONE;
 			}
@@ -1823,6 +1863,14 @@ Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestin
 				soundModuleNavigation();
 			}
 			return MODULE_INVENTORY;
+		}
+		else if ( activeModule == MODULE_ALCHEMY )
+		{
+			return MODULE_NONE;
+		}
+		else if ( activeModule == MODULE_MAILBOX )
+		{
+			return MODULE_NONE;
 		}
 		else if ( activeModule == MODULE_ALCHEMY
 			&& (GenericGUI[player.playernum].alchemyGUI.bFirstTimeSnapCursor || checkDestinationOnly) )
@@ -2153,6 +2201,13 @@ bool Player::GUI_t::handleInventoryMovement()
 				GenericGUI[player].alchemyGUI.getSelectedAlchemySlotY(),
 				-1, 0);
 		}
+		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_MAILBOX )
+		{
+			select_mail_slot(player,
+				GenericGUI[player].mailboxGUI.getSelectedMailSlotX(),
+				GenericGUI[player].mailboxGUI.getSelectedMailSlotY(),
+				-1, 0);
+		}
 		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_ASSISTSHRINE )
 		{
 			select_assistshrine_slot(player,
@@ -2258,6 +2313,13 @@ bool Player::GUI_t::handleInventoryMovement()
 			select_alchemy_slot(player,
 				GenericGUI[player].alchemyGUI.getSelectedAlchemySlotX(),
 				GenericGUI[player].alchemyGUI.getSelectedAlchemySlotY(),
+				1, 0);
+		}
+		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_MAILBOX )
+		{
+			select_mail_slot(player,
+				GenericGUI[player].mailboxGUI.getSelectedMailSlotX(),
+				GenericGUI[player].mailboxGUI.getSelectedMailSlotY(),
 				1, 0);
 		}
 		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_ASSISTSHRINE )
@@ -2419,6 +2481,13 @@ bool Player::GUI_t::handleInventoryMovement()
 				GenericGUI[player].alchemyGUI.getSelectedAlchemySlotY(),
 				0, -1);
 		}
+		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_MAILBOX )
+		{
+			select_mail_slot(player,
+				GenericGUI[player].mailboxGUI.getSelectedMailSlotX(),
+				GenericGUI[player].mailboxGUI.getSelectedMailSlotY(),
+				0, -1);
+		}
 		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_ASSISTSHRINE )
 		{
 			select_assistshrine_slot(player,
@@ -2576,6 +2645,13 @@ bool Player::GUI_t::handleInventoryMovement()
 			select_alchemy_slot(player,
 				GenericGUI[player].alchemyGUI.getSelectedAlchemySlotX(),
 				GenericGUI[player].alchemyGUI.getSelectedAlchemySlotY(),
+				0, 1);
+		}
+		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_MAILBOX )
+		{
+			select_mail_slot(player,
+				GenericGUI[player].mailboxGUI.getSelectedMailSlotX(),
+				GenericGUI[player].mailboxGUI.getSelectedMailSlotY(),
 				0, 1);
 		}
 		else if ( players[player]->GUI.activeModule == Player::GUI_t::MODULE_ASSISTSHRINE )
@@ -2812,7 +2888,8 @@ GameController::Haptic_t::HapticEffect* GameController::handleRumble()
 			|| rumbleToPlay->second.pattern == Haptic_t::RUMBLE_BOULDER 
 			|| rumbleToPlay->second.pattern == Haptic_t::RUMBLE_BOULDER_BOUNCE
 			|| rumbleToPlay->second.pattern == Haptic_t::RUMBLE_DEATH
-			|| rumbleToPlay->second.pattern == Haptic_t::RUMBLE_TMP))
+			|| rumbleToPlay->second.pattern == Haptic_t::RUMBLE_TMP
+			|| rumbleToPlay->second.pattern == Haptic_t::RUMBLE_SPELL))
 #endif
 	{
 		Uint32 newStartTime = (haptics.hapticTick - rumbleToPlay->second.startTick);
@@ -2851,6 +2928,10 @@ void GameController::addRumble(Haptic_t::RumblePattern pattern, Uint16 smallMagn
 		priority = 1;
 	}
 	else if ( pattern == Haptic_t::RumblePattern::RUMBLE_TMP )
+	{
+		priority = 5;
+	}
+	else if ( pattern == Haptic_t::RumblePattern::RUMBLE_SPELL )
 	{
 		priority = 5;
 	}
@@ -3045,6 +3126,13 @@ GameController::Haptic_t::HapticEffect* GameController::doRumble(Haptic_t::Rumbl
 		haptics.hapticEffect.large_magnitude = r->largeMagnitude * r->customEffect;
 		haptics.hapticEffect.small_magnitude = r->smallMagnitude * r->customEffect;
 	}
+	else if ( r->pattern == Haptic_t::RUMBLE_SPELL )
+	{
+		real_t currentPlayheadPercent = r->startTime / static_cast<real_t>(r->length);
+		r->customEffect = sin(currentPlayheadPercent * PI);
+		haptics.hapticEffect.large_magnitude = r->largeMagnitude * r->customEffect;
+		haptics.hapticEffect.small_magnitude = r->smallMagnitude * r->customEffect;
+	}
 	else if ( r->pattern == Haptic_t::RUMBLE_DEATH )
 	{
 		real_t currentPlayheadPercent = r->startTime / static_cast<real_t>(r->length);
@@ -3152,7 +3240,37 @@ void Player::init() // for use on new/restart game, UI related
 	levelUpAnimation[playernum].lvlUps.clear();
 	skillUpAnimation[playernum].skillUps.clear();
 	mechanics.itemDegradeRng.clear();
-	mechanics.sustainedSpellMPUsed = 0;
+	mechanics.sustainedSpellIDCounter.clear();
+	hamletShopkeeperSkillLimit[playernum].clear();
+	mechanics.baseSpellLevelUpProcs.clear();
+	mechanics.learnedSpells.clear();
+	mechanics.ducksInARow.clear();
+	mechanics.pendingDucks.clear();
+	mechanics.numFishingCaught = 0;
+	mechanics.sustainedSpellMPUsedSorcery = 0;
+	mechanics.sustainedSpellMPUsedMysticism = 0;
+	mechanics.sustainedSpellMPUsedThaumaturgy = 0;
+	mechanics.baseSpellMPUsedSorcery = 0;
+	mechanics.baseSpellMPUsedMysticism = 0;
+	mechanics.baseSpellMPUsedThaumaturgy = 0;
+	mechanics.ensemblePlaying = -1;
+	mechanics.ensembleRequireRecast = false;
+	mechanics.ensembleTakenInitialMP = false;
+	mechanics.ensembleDataUpdate = 0;
+	mechanics.gremlinBreakableCounter = 0;
+	mechanics.escalatingRngRolls.clear();
+	mechanics.escalatingSpellRngRolls.clear();
+	mechanics.favoriteBooksAchievement.clear();
+
+	mechanics.fociDarkChargeTime = 0;
+	mechanics.fociHolyChargeTime = 0;
+	mechanics.lastFociHeldType = 0;
+
+	mechanics.donationRevealedOnFloor = 0;
+	mechanics.donationClaimed = false;
+
+	inventoryUI.appraisal.appraisalProgressionItems.clear();
+	inventoryUI.appraisal.manual_appraised_item = 0;
 }
 
 void Player::cleanUpOnEntityRemoval()
@@ -3164,8 +3282,33 @@ void Player::cleanUpOnEntityRemoval()
 		worldUI.reset();
 	}
 	mechanics.enemyRaisedBlockingAgainst.clear();
+	mechanics.enemyRaisedStealthAgainst.clear();
+	mechanics.targetsCompelled.clear();
+	mechanics.targetsRefuseCompel.clear();
+	mechanics.ensemblePlaying = -1;
+	mechanics.ensembleRequireRecast = false;
+	mechanics.ensembleTakenInitialMP = false;
+	mechanics.ensembleDataUpdate = 0;
 	selectedEntity[playernum] = nullptr;
 	client_selected[playernum] = nullptr;
+	magic.telekinesisTarget = 0;
+
+	cast_animation[playernum].overcharge = 0;
+	cast_animation[playernum].overcharge_init = 0;
+
+	mechanics.fociDarkChargeTime = 0;
+	mechanics.fociHolyChargeTime = 0;
+	mechanics.lastFociHeldType = 0;
+
+	mechanics.pendingDucks.clear();
+	mechanics.numFishingCaught = 0;
+
+	mechanics.gremlinBreakableCounter = 0;
+
+	mechanics.previouslyLevitating = false;
+
+	mechanics.donationRevealedOnFloor = 0;
+	mechanics.donationClaimed = false;
 }
 
 const bool Player::isLocalPlayer() const
@@ -3236,15 +3379,35 @@ bool monsterIsFriendlyForTooltip(const int player, Entity& entity)
 	{
 		return true; // this is my follower
 	}
+	if ( entity.getStats() )
+	{
+		if ( entity.getStats()->getEffectActive(EFF_PENANCE) >= 1 && entity.getStats()->getEffectActive(EFF_PENANCE) < 1 + MAXPLAYERS )
+		{
+			return true;
+		}
+	}
 
 	Monster playerRace = stats[player]->type;
 	Monster targetEntityType = entity.getMonsterTypeFromSprite();
 	if ( targetEntityType == SHOPKEEPER )
 	{
-		if ( shopIsMysteriousShopkeeper(&entity) || !ShopkeeperPlayerHostility.isPlayerEnemy(player) )
+		if ( shopIsMysteriousShopkeeper(&entity) )
 		{
 			return true;
 		}
+		bool hostile = ShopkeeperPlayerHostility.isPlayerEnemy(player);
+		if ( !hostile && !(entity.getStats() && entity.getStats()->getEffectActive(EFF_CONFUSED)) )
+		{
+			return true;
+		}
+		else if ( hostile && (entity.getStats() && entity.getStats()->getEffectActive(EFF_CONFUSED)) )
+		{
+			return true;
+		}
+	}
+	else if ( entity.monsterCanTradeWith(player) )
+	{
+		return true;
 	}
 	else if ( targetEntityType == SUCCUBUS || targetEntityType == INCUBUS )
 	{
@@ -3254,6 +3417,22 @@ bool monsterIsFriendlyForTooltip(const int player, Entity& entity)
 		{
 			return true;
 		}
+	}
+	else if ( targetEntityType == HUMAN && (playerRace == MYCONID || playerRace == DRYAD || playerRace == SALAMANDER) )
+	{
+		return true;
+	}
+	else if ( targetEntityType == GOBLIN && (playerRace == GREMLIN) )
+	{
+		return true;
+	}
+	else if ( targetEntityType == HUMAN && (playerRace == GNOME) )
+	{
+		return true;
+	}
+	else if ( targetEntityType == TROLL && (playerRace == GNOME) )
+	{
+		return true;
 	}
 	if ( targetEntityType != NOTHING )
 	{
@@ -3330,6 +3509,7 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 
 	bool selectInteract = false;
 	bool callout = false;
+	bool spellInteract = false;
 	if ( FollowerMenu[player.playernum].followerMenuIsOpen() && FollowerMenu[player.playernum].selectMoveTo )
 	{
 		selectInteract = (FollowerMenu[player.playernum].optionSelected == ALLY_CMD_ATTACK_SELECT);
@@ -3341,8 +3521,15 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 		callout = true;
 		maxDist = 256;
 	}
+	else if ( cast_animation[player.playernum].active && cast_animation[player.playernum].rangefinder == RANGEFINDER_TOUCH_INTERACT_TEST )
+	{
+		selectInteract = true;
+		spellInteract = true;
+		maxDist = 64.0;
+	}
 	else if ( parent 
 		&& (parent->getMonsterTypeFromSprite() == SHOPKEEPER 
+			|| parent->monsterCanTradeWith(player.playernum)
 			|| (parent->behavior == &actFloorDecoration && parent->sprite == 991 /* sign */)
 			|| (parent->behavior == &actMonster && (monsterIsFriendlyForTooltip(player.playernum, *parent)))
 			|| (parent->monsterAllyGetPlayerLeader()
@@ -3350,7 +3537,7 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 	{
 		maxDist = TOUCHRANGE;
 	}
-	if ( parent && parent->behavior == &actDoor && parent->doorStatus == 0 ) // min dist 0.0 when door closed, just in case we're stuck inside.
+	if ( parent && (parent->behavior == &actDoor || parent->behavior == &actIronDoor) && parent->doorStatus == 0 ) // min dist 0.0 when door closed, just in case we're stuck inside.
 	{
 		minDist = 0.0;
 	}
@@ -3443,6 +3630,14 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 			{
 				return 0.0;
 			}
+			else if ( parent->behavior == &actWallLock )
+			{
+				if ( parent->wallLockState == Entity::WallLockStates::LOCK_KEY_START
+					|| parent->wallLockState == Entity::WallLockStates::LOCK_KEY_ENTER )
+				{
+					return 0.0;
+				}
+			}
 			else if ( player.ghost.isActive() && !player.ghost.allowedInteractEntity(*parent) )
 			{
 				return 0.0;
@@ -3474,10 +3669,29 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 			{
 				if ( !shopIsMysteriousShopkeeper(parent) && ShopkeeperPlayerHostility.isPlayerEnemy(player.playernum) )
 				{
-					return 0.0;
+					bool hostile = ShopkeeperPlayerHostility.isPlayerEnemy(player.playernum);
+					if ( !hostile && (parent->getStats() && parent->getStats()->getEffectActive(EFF_CONFUSED)) )
+					{
+						return 0.0;
+					}
+					else if ( hostile && !(parent->getStats() && parent->getStats()->getEffectActive(EFF_CONFUSED)) )
+					{
+						return 0.0;
+					}
 				}
 			}
+			if ( parent->monsterCanTradeWith(player.playernum) && !selectInteract )
+			{
+				/*if ( !shopIsMysteriousShopkeeper(parent) && ShopkeeperPlayerHostility.isPlayerEnemy(player.playernum) )
+				{
+					return 0.0;
+				}*/
+			}
 			if ( parent->getMonsterTypeFromSprite() == BAT_SMALL && !selectInteract )
+			{
+				return 0.0;
+			}
+			if ( parent->getMonsterTypeFromSprite() == HOLOGRAM && !selectInteract )
 			{
 				return 0.0;
 			}
@@ -3526,7 +3740,7 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 			}
 			else if ( (parent->behavior == &actTorch || parent->behavior == &actCrystalShard) )
 			{
-				if ( callout )
+				if ( callout || spellInteract )
 				{
 					dist += 8.0; // distance penalty when calling out
 				}
@@ -3575,7 +3789,7 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 				{
 					playerEntity->flags[PASSABLE] = false; // hack to make ghosts linetraceable
 				}
-				lineTraceTarget(&tooltip, tooltip.x, tooltip.y, tangent2, maxDist, 0, false, playerEntity);
+				lineTraceTarget(&tooltip, tooltip.x, tooltip.y, tangent2, maxDist, LINETRACE_TOOLTIP_INTERACT, false, playerEntity);
 				playerEntity->flags[PASSABLE] = oldPassable;
 				if ( hit.entity != playerEntity )
 				{
@@ -3741,7 +3955,7 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 					}
 
 					real_t lookDist = sqrt(pow(previousx - playerEntity->x, 2) + pow(previousy - playerEntity->y, 2));
-					if ( callout )
+					if ( callout || spellInteract )
 					{
 						if ( parent )
 						{
@@ -3825,7 +4039,7 @@ void Player::WorldUI_t::setTooltipActive(Entity& tooltip)
 				return;
 			}
 		}
-		else if ( player.ghost.isActive() && !CalloutMenu[player.playernum].calloutMenuIsOpen() )
+		else if ( player.ghost.isActive() && !CalloutMenu[player.playernum].calloutMenuIsOpen() && !FollowerMenu[player.playernum].followerMenuIsOpen() )
 		{
 			if ( !player.ghost.allowedInteractEntity(*parent) )
 			{
@@ -3967,6 +4181,10 @@ void Player::WorldUI_t::setTooltipActive(Entity& tooltip)
 				{
 					interactText = Language::get(4013) + name; // "Trade with "
 				}
+				else if ( parent->monsterCanTradeWith(player.playernum) )
+				{
+					interactText = Language::get(4013) + name; // "Trade with "
+				}
 				else
 				{
 					interactText = Language::get(4014) + name; // "Interact with "
@@ -3982,6 +4200,17 @@ void Player::WorldUI_t::setTooltipActive(Entity& tooltip)
 			else
 			{
 				interactText = Language::get(4016); // "Open door" 
+			}
+		}
+		else if ( parent->behavior == &actIronDoor )
+		{
+			if ( parent->doorStatus != 0 )
+			{
+				interactText = Language::get(6420); // "Close door" 
+			}
+			else
+			{
+				interactText = Language::get(6421); // "Open door" 
 			}
 		}
 		else if ( parent->behavior == &actGate )
@@ -4021,6 +4250,18 @@ void Player::WorldUI_t::setTooltipActive(Entity& tooltip)
 		else if ( parent->behavior == &actCampfire )
 		{
 			interactText = Language::get(4024); // "Pull torch" 
+		}
+		else if ( parent->behavior == &actCauldron )
+		{
+			interactText = Language::get(6977); // "Use cauldron" 
+		}
+		else if ( parent->behavior == &actWorkbench )
+		{
+			interactText = Language::get(6979); // "Use workbench"
+		}
+		else if ( parent->behavior == &actMailbox )
+		{
+			interactText = Language::get(6984); // "Use mailbox"
 		}
 		else if ( parent->behavior == &actFurniture || parent->behavior == &actMCaxe )
 		{
@@ -4130,7 +4371,7 @@ void Player::WorldUI_t::setTooltipActive(Entity& tooltip)
 		}
 		else if ( parent->behavior == &actTeleporter )
 		{
-			if ( parent->teleporterType == 2 ) // portal
+			if ( parent->teleporterType == 2 || parent->teleporterType == 3 ) // portal
 			{
 				interactText += Language::get(4035); // "Enter portal";
 			}
@@ -4154,6 +4395,34 @@ void Player::WorldUI_t::setTooltipActive(Entity& tooltip)
 		else if ( parent->behavior == &::actAssistShrine )
 		{
 			interactText += Language::get(6354); // "use shrine";
+		}
+		else if ( parent->behavior == &::actWallLock )
+		{
+			static char buf[256] = "";
+			int wallLockState = parent->wallLockState;
+			if ( wallLockState == Entity::WallLockStates::LOCK_NO_KEY )
+			{
+				snprintf(buf, sizeof(buf), Language::get(6397), Language::get(6383 + parent->wallLockMaterial));
+				interactText = buf;
+				snprintf(buf, sizeof(buf), Language::get(6402), player.inventoryUI.getKeyAmountForWallLock(*parent));
+				interactText += buf;
+			}
+			else if ( wallLockState == Entity::WallLockStates::LOCK_KEY_ACTIVE_START
+				|| wallLockState == Entity::WallLockStates::LOCK_KEY_ACTIVE	)
+			{
+				snprintf(buf, sizeof(buf), Language::get(6399), Language::get(6383 + parent->wallLockMaterial));
+				interactText = buf; // deactivate lock
+			}
+			else if ( wallLockState == Entity::WallLockStates::LOCK_KEY_INACTIVE_START
+				|| wallLockState == Entity::WallLockStates::LOCK_KEY_INACTIVE )
+			{
+				snprintf(buf, sizeof(buf), Language::get(6400), Language::get(6383 + parent->wallLockMaterial));
+				interactText = buf; // deactivate lock
+			}
+		}
+		else if ( parent->behavior == &::actWallButton )
+		{
+			interactText += Language::get(6401); // press button
 		}
 		else if ( parent->behavior == &actBomb && parent->skill[21] != 0 ) //skill[21] item type
 		{
@@ -4313,7 +4582,21 @@ bool entityBlocksTooltipInteraction(const int player, Entity& entity)
 	{
 		return false;
 	}
-	else if ( entity.behavior == &actDoor || entity.behavior == &actFountain || entity.behavior == &actSink
+	else if ( entity.behavior == &actCauldron )
+	{
+		return false;
+	}
+	else if ( entity.behavior == &actWorkbench )
+	{
+		return false;
+	}
+	else if ( entity.behavior == &actMailbox )
+	{
+		return false;
+	}
+	else if ( entity.behavior == &actDoor 
+		|| entity.behavior == &actIronDoor
+		|| entity.behavior == &actFountain || entity.behavior == &actSink
 		|| entity.behavior == &actHeadstone || entity.behavior == &actChest || entity.behavior == &actChestLid
 		|| entity.behavior == &actBoulder || entity.behavior == &actPlayer || entity.behavior == &actPedestalOrb || entity.behavior == &actPowerCrystalBase
 		|| entity.behavior == &actPowerCrystal
@@ -4394,6 +4677,7 @@ void Player::WorldUI_t::handleTooltips()
 		}
 
 		bool foundTinkeringKit = false;
+		bool foundInstrument = false;
 		bool radialMenuOpen = FollowerMenu[player].followerMenuIsOpen();
 		bool selectInteract = false;
 		if ( radialMenuOpen )
@@ -4418,6 +4702,13 @@ void Player::WorldUI_t::handleTooltips()
 				}
 				radialMenuOpen = false;
 				selectInteract = (CalloutMenu[player].optionSelected == CalloutRadialMenu::CALLOUT_CMD_SELECT);
+			}
+			else
+			{
+				if ( cast_animation[player].active && cast_animation[player].rangefinder == RANGEFINDER_TOUCH_INTERACT_TEST )
+				{
+					selectInteract = true;
+				}
 			}
 		}
 
@@ -4444,7 +4735,8 @@ void Player::WorldUI_t::handleTooltips()
 		{
 			bDoingActionHideTooltips = true;
 		}
-		else if ( (cast_animation[player].active || cast_animation[player].active_spellbook) && !selectInteract && players[player]->entity )
+		else if ( ((cast_animation[player].active && !cast_animation[player].spellWaitingAttackInput()) 
+			|| cast_animation[player].active_spellbook) && !selectInteract && players[player]->entity )
 		{
 			// spells
 			bDoingActionHideTooltips = true;
@@ -4455,6 +4747,12 @@ void Player::WorldUI_t::handleTooltips()
 			{
 				// don't ignore
 				foundTinkeringKit = true;
+			}
+			else if ( stats[player]->shield &&
+				((itemTypeIsInstrument(stats[player]->shield->type)
+					|| itemTypeIsFoci(stats[player]->shield->type))) )
+			{
+				foundInstrument = true;
 			}
 			else
 			{
@@ -4470,7 +4768,7 @@ void Player::WorldUI_t::handleTooltips()
 		{
 			Entity* ohitentity = hit.entity;
 			lineTrace(playerEntity, playerEntity->x, playerEntity->y,
-				playerEntity->yaw, STRIKERANGE, 0, true);
+				playerEntity->yaw, STRIKERANGE, 0, false);
 			if ( hit.entity )
 			{
 				if ( hit.entity->behavior == &actMonster && selectInteract
@@ -4524,7 +4822,15 @@ void Player::WorldUI_t::handleTooltips()
 
 			if ( bDoingActionHideTooltips )
 			{
-				players[player]->worldUI.gimpDisplayTimer = 10;
+				if ( stats[player]->weapon && (stats[player]->weapon->type == TOOL_LOCKPICK || stats[player]->weapon->type == TOOL_SKELETONKEY) )
+				{
+					// shorter sequence to allow lockpicking bombs/wall locks faster
+					players[player]->worldUI.gimpDisplayTimer = 1;
+				}
+				else
+				{
+					players[player]->worldUI.gimpDisplayTimer = 10;
+				}
 				continue;
 			}
 
@@ -4551,11 +4857,24 @@ void Player::WorldUI_t::handleTooltips()
 				parent = uidToEntity(tooltip->parent);
 				if ( parent && parent->flags[INVISIBLE] 
 					&& !(parent->behavior == &actMonster && 
-						(parent->getMonsterTypeFromSprite() == DUMMYBOT || parent->getMonsterTypeFromSprite() == MIMIC || parent->getMonsterTypeFromSprite() == BAT_SMALL)) )
+						(parent->getMonsterTypeFromSprite() == DUMMYBOT 
+							|| parent->getMonsterTypeFromSprite() == MIMIC 
+							|| parent->getMonsterTypeFromSprite() == REVENANT_SKULL
+							|| parent->getMonsterTypeFromSprite() == MINIMIMIC
+							|| parent->getMonsterTypeFromSprite() == FLAME_ELEMENTAL
+							|| parent->getMonsterTypeFromSprite() == EARTH_ELEMENTAL
+							|| parent->getMonsterTypeFromSprite() == MONSTER_ADORCISED_WEAPON
+							|| parent->getMonsterTypeFromSprite() == MOTH_SMALL
+							|| parent->getMonsterTypeFromSprite() == BAT_SMALL)) )
 				{
 					continue;
 				}
 				if ( parent && parent->flags[PASSABLE] && parent->behavior == &actBoulder )
+				{
+					continue;
+				}
+				if ( parent && parent->flags[PASSABLE] && parent->behavior == &actMonster 
+					&& parent->getMonsterTypeFromSprite() == MONSTER_ADORCISED_WEAPON )
 				{
 					continue;
 				}
@@ -4647,8 +4966,8 @@ void Player::WorldUI_t::handleTooltips()
 			real_t pitchDiff = players[player]->worldUI.playerLastPitch - currentPitch;
 			if ( inputs.hasController(player) )
 			{
-				real_t floatx = inputs.getController(player)->getLeftXPercent();
-				real_t floaty = inputs.getController(player)->getLeftYPercent();
+				real_t floatx = inputs.getController(player)->getLeftXPercent(player);
+				real_t floaty = inputs.getController(player)->getLeftYPercent(player);
 				real_t magnitude = sqrt(pow(floaty, 2) + pow(floatx, 2));
 				if ( magnitude > 0.0 )
 				{
@@ -4701,37 +5020,87 @@ void Player::WorldUI_t::handleTooltips()
 				continue;
 			}
 
-			std::array<const char*, 2> switchStrings = { Language::get(4018), Language::get(4019) };
-			bool foundSwitchString = false;
-			for ( auto s : switchStrings )
-			{
-				if ( players[player]->worldUI.interactText.find(s) != std::string::npos )
-				{
-					foundSwitchString = true;
-					break;
-				}
-			}
-
 			for ( auto& tooltip : players[player]->worldUI.tooltipsInRange )
 			{
-				if ( players[player]->worldUI.bTooltipActiveForPlayer(*tooltip.first) && foundSwitchString )
+				if ( players[player]->worldUI.bTooltipActiveForPlayer(*tooltip.first) )
 				{
 					if ( Entity* parent = uidToEntity(tooltip.first->parent) )
 					{
 						if ( parent->behavior == &actSwitch || parent->behavior == &actSwitchWithTimer )
 						{
-							if ( parent->skill[0] == 1 )
+							std::array<const char*, 2> switchStrings = { Language::get(4018), Language::get(4019) };
+							bool foundSwitchString = false;
+							for ( auto s : switchStrings )
 							{
-								if ( players[player]->worldUI.interactText.find(Language::get(4019)) != std::string::npos )
+								if ( players[player]->worldUI.interactText.find(s) != std::string::npos )
+								{
+									foundSwitchString = true;
+									break;
+								}
+							}
+							if ( foundSwitchString )
+							{
+								if ( parent->skill[0] == 1 )
+								{
+									if ( players[player]->worldUI.interactText.find(Language::get(4019)) != std::string::npos )
+									{
+										// rescan, out of date string.
+										players[player]->worldUI.tooltipView = TOOLTIP_VIEW_RESCAN;
+										break;
+									}
+								}
+								else
+								{
+									if ( players[player]->worldUI.interactText.find(Language::get(4018)) != std::string::npos )
+									{
+										// rescan, out of date string.
+										players[player]->worldUI.tooltipView = TOOLTIP_VIEW_RESCAN;
+										break;
+									}
+								}
+							}
+						}
+						else if ( parent->behavior == &actWallLock )
+						{
+							std::string wallLockStringNoKey;
+							std::string wallLockStringActivate;
+							std::string wallLockStringDeactivate;
+							static char buf[256];
+							snprintf(buf, sizeof(buf), Language::get(6397), Language::get(6383 + parent->wallLockMaterial));
+							wallLockStringNoKey = buf;
+							snprintf(buf, sizeof(buf), Language::get(6402), players[player]->inventoryUI.getKeyAmountForWallLock(*parent));
+							wallLockStringNoKey += buf;
+
+							snprintf(buf, sizeof(buf), Language::get(6400), Language::get(6383 + parent->wallLockMaterial));
+							wallLockStringActivate = buf;
+
+							snprintf(buf, sizeof(buf), Language::get(6399), Language::get(6383 + parent->wallLockMaterial));
+							wallLockStringDeactivate = buf;
+
+							int wallLockState = parent->wallLockState;
+							if ( wallLockState == Entity::WallLockStates::LOCK_NO_KEY )
+							{
+								if ( players[player]->worldUI.interactText != wallLockStringNoKey )
 								{
 									// rescan, out of date string.
 									players[player]->worldUI.tooltipView = TOOLTIP_VIEW_RESCAN;
 									break;
 								}
 							}
-							else
+							else if ( wallLockState == Entity::WallLockStates::LOCK_KEY_ACTIVE_START
+								|| wallLockState == Entity::WallLockStates::LOCK_KEY_ACTIVE )
 							{
-								if ( players[player]->worldUI.interactText.find(Language::get(4018)) != std::string::npos )
+								if ( players[player]->worldUI.interactText != wallLockStringDeactivate )
+								{
+									// rescan, out of date string.
+									players[player]->worldUI.tooltipView = TOOLTIP_VIEW_RESCAN;
+									break;
+								}
+							}
+							else if ( wallLockState == Entity::WallLockStates::LOCK_KEY_INACTIVE_START
+								|| wallLockState == Entity::WallLockStates::LOCK_KEY_INACTIVE )
+							{
+								if ( players[player]->worldUI.interactText != wallLockStringActivate )
 								{
 									// rescan, out of date string.
 									players[player]->worldUI.tooltipView = TOOLTIP_VIEW_RESCAN;
@@ -4976,16 +5345,37 @@ const int Player::HUD_t::getActionIconForPlayer(ActionPrompts prompt, std::strin
 		switch ( prompt )
 		{
 			case ACTION_PROMPT_MAGIC:
-				promptString = Language::get(6047); // Haunt
+				if ( player.ghost.isSpiritGhost() )
+				{
+					promptString = Language::get(6879); // Return
+				}
+				else
+				{
+					promptString = Language::get(6047); // Haunt
+				}
 				break;
 			case ACTION_PROMPT_MAINHAND:
-				promptString = Language::get(6046); // Chill
+				if ( player.ghost.isSpiritGhost() )
+				{
+					promptString = Language::get(6878); // Distract
+				}
+				else
+				{
+					promptString = Language::get(6046); // Chill
+				}
 				break;
 			case ACTION_PROMPT_OFFHAND:
 				promptString = Language::get(6048); // Push
 				break;
 			case ACTION_PROMPT_SNEAK:
-				promptString = Language::get(4077); // Sneak
+				if ( player.ghost.isSpiritGhost() )
+				{
+					promptString = Language::get(6877); // Profile
+				}
+				else
+				{
+					promptString = Language::get(4077); // Sneak
+				}
 				break;
 			default:
 				break;
@@ -4996,7 +5386,7 @@ const int Player::HUD_t::getActionIconForPlayer(ActionPrompts prompt, std::strin
 	if ( prompt == ACTION_PROMPT_MAGIC ) 
 	{ 
 		promptString = Language::get(4078);
-		return PRO_SPELLCASTING;
+		return PRO_LEGACY_SPELLCASTING;
 	}
 
 	bool shapeshifted = false;
@@ -5028,10 +5418,24 @@ const int Player::HUD_t::getActionIconForPlayer(ActionPrompts prompt, std::strin
 				bool hasSpellBook = itemCategory(stats[player.playernum]->shield) == SPELLBOOK;
 				bool allowCasting = true;
 				bool allowDefending = true;
-				if ( shapeshifted && playerRace == CREATURE_IMP )
+				if ( shapeshifted && playerRace != CREATURE_IMP )
 				{
 					// imp allowed to cast via spellbook.
 					allowCasting = false;
+				}
+				if ( !shapeshifted && itemTypeIsInstrument(stats[player.playernum]->shield->type) )
+				{
+					promptString = Language::get(6844);
+					return PRO_APPRAISAL;
+				}
+				if ( allowCasting && itemTypeIsFoci(stats[player.playernum]->shield->type) )
+				{
+					if ( auto spell = getSpellFromID(getSpellIDFromFoci(stats[player.playernum]->shield->type)) )
+					{
+						return spell->skillID;
+					}
+					promptString = Language::get(6843);
+					return PRO_SORCERY;
 				}
 				if ( hasSpellBook && allowCasting )
 				{
@@ -5043,7 +5447,11 @@ const int Player::HUD_t::getActionIconForPlayer(ActionPrompts prompt, std::strin
 					{
 						promptString = Language::get(4079);
 					}
-					return PRO_MAGIC;
+					if ( auto spell = getSpellFromID(getSpellIDFromSpellbook(stats[player.playernum]->shield->type)) )
+					{
+						return spell->skillID;
+					}
+					return PRO_SORCERY;
 				}
 
 				if ( shapeshifted || itemTypeIsQuiver(stats[player.playernum]->shield->type) )
@@ -5087,7 +5495,7 @@ const int Player::HUD_t::getActionIconForPlayer(ActionPrompts prompt, std::strin
 				{
 					if ( !shapeshifted || (shapeshifted && playerRace == CREATURE_IMP) )
 					{
-						skill = PRO_SPELLCASTING;
+						skill = PRO_LEGACY_MAGIC;
 						promptString = Language::get(4083);
 					}
 				}
@@ -5356,7 +5764,7 @@ Frame* Player::Inventory_t::getSpellSlotFrame(int x, int y) const
 	{
 		if ( x >= 0 && y >= 0 && x < MAX_SPELLS_X && y < MAX_SPELLS_Y )
 		{
-			return spellSlotFrames.at(x + y * 100);
+			return spellSlotFrames.at(x + y * 1000);
 		}
 	}
 	return nullptr;
@@ -5464,6 +5872,32 @@ void Player::PaperDoll_t::drawSlots()
 {
 	updateSlots();
 	return;
+}
+
+bool Player::Magic_t::doQuickCastTome() { 
+	if ( quick_cast_tome != 0 )
+	{
+		if ( Item* item = uidToItem(quick_cast_tome) )
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+void Player::Magic_t::setQuickCastTomeFromInventory(Item* item)
+{
+	if ( item && itemCategory(item) == TOME_SPELL )
+	{
+		int spellID = item->getTomeSpellID();
+		if ( auto spell = getSpellFromID(spellID) )
+		{
+			if ( spell->ID > SPELL_NONE )
+			{
+				quick_cast_tome = item->uid;
+			}
+		}
+	}
 }
 
 void Player::Magic_t::setQuickCastSpellFromInventory(Item* item)
@@ -6783,6 +7217,9 @@ void Player::clearGUIPointers()
 	genericGUI.alchemyGUI.alchFrame = nullptr;
 	genericGUI.alchemyGUI.alchemySlotFrames.clear();
 	genericGUI.alchemyGUI.itemRequiresTitleReflow = true;
+	genericGUI.mailboxGUI.mailFrame = nullptr;
+	genericGUI.mailboxGUI.mailSlotFrames.clear();
+	genericGUI.mailboxGUI.itemRequiresTitleReflow = true;
 	genericGUI.assistShrineGUI.assistShrineFrame = nullptr;
 	genericGUI.assistShrineGUI.assistShrineSlotFrames.clear();
 	genericGUI.featherGUI.featherFrame = nullptr;
@@ -6907,9 +7344,13 @@ void Player::PlayerMechanics_t::onItemDegrade(Item* item)
 	{
 		itemDegradeRng[item->type] = 0;
 	}
+	else if ( items[item->type].item_slot != ItemEquippableSlot::EQUIPPABLE_IN_SLOT_SHIELD )
+	{
+		itemDegradeRng[item->type] = 0;
+	}
 }
 
-bool Player::PlayerMechanics_t::itemDegradeRoll(Item* item, int* checkInterval)
+bool Player::PlayerMechanics_t::itemDegradeRoll(Item* item, int skillID, int* checkInterval)
 {
 	if ( !item )
 	{
@@ -6926,54 +7367,94 @@ bool Player::PlayerMechanics_t::itemDegradeRoll(Item* item, int* checkInterval)
 	if ( itemCategory(item) == SPELLBOOK )
 	{
 		// 10 max base interval
-		interval = (1 + item->status) + stats[player.playernum]->getModifiedProficiency(PRO_SPELLCASTING) / 20;
-		if ( item->beatitude < 0
-			&& !intro && !shouldInvertEquipmentBeatitude(stats[player.playernum]) )
+		auto spellID = getSpellIDFromSpellbook(item->type);
+		if ( auto spell = getSpellFromID(spellID) )
 		{
-			interval = 0;
-		}
-		else if ( item->beatitude > 0
-			|| (item->beatitude < 0 
-				&& !intro && shouldInvertEquipmentBeatitude(stats[player.playernum])) )
-		{
-			interval += std::min(abs(item->beatitude), 2);
+			interval = (1 + item->status) + stats[player.playernum]->getModifiedProficiency(spell->skillID) / 20;
+			if ( item->beatitude < 0
+				&& !intro && !shouldInvertEquipmentBeatitude(stats[player.playernum]) )
+			{
+				interval = 0;
+			}
+			else if ( item->beatitude > 0
+				|| (item->beatitude < 0 
+					&& !intro && shouldInvertEquipmentBeatitude(stats[player.playernum])) )
+			{
+				interval += std::min(abs(item->beatitude), 2);
+			}
 		}
 	}
 	else
 	{
-		switch ( item->type )
+		if ( items[item->type].item_slot == ItemEquippableSlot::EQUIPPABLE_IN_SLOT_SHIELD )
 		{
-		case WOODEN_SHIELD:
-			interval = 10;
-			break;
-		case BRONZE_SHIELD:
-			interval = 20;
-			break;
-		case IRON_SHIELD:
-			interval = 20;
-			break;
-		case STEEL_SHIELD:
-			interval = 30;
-			break;
-		case STEEL_SHIELD_RESISTANCE:
-			interval = 30;
-			break;
-		case CRYSTAL_SHIELD:
-			interval = 20;
-			break;
-		default:
-			break;
+			switch ( item->type )
+			{
+			case WOODEN_SHIELD:
+				interval = 10;
+				break;
+			case BRONZE_SHIELD:
+				interval = 20;
+				break;
+			case IRON_SHIELD:
+			case BONE_SHIELD:
+				interval = 20;
+				break;
+			case STEEL_SHIELD:
+				interval = 30;
+				break;
+			case STEEL_SHIELD_RESISTANCE:
+				interval = 30;
+				break;
+			case SILVER_SHIELD:
+			case BLACKIRON_SHIELD:
+			case SCUTUM:
+				interval = 30;
+				break;
+			case CRYSTAL_SHIELD:
+				interval = 20;
+				break;
+			default:
+				break;
+			}
+			if ( item->beatitude < 0
+				&& !intro && !shouldInvertEquipmentBeatitude(stats[player.playernum]) )
+			{
+				interval = 0;
+			}
+			else if ( item->beatitude > 0
+				|| (item->beatitude < 0
+					&& !intro && shouldInvertEquipmentBeatitude(stats[player.playernum])) )
+			{
+				interval += std::min(abs(item->beatitude), 5);
+			}
 		}
-		if ( item->beatitude < 0
-			&& !intro && !shouldInvertEquipmentBeatitude(stats[player.playernum]) )
+		else
 		{
-			interval = 0;
-		}
-		else if ( item->beatitude > 0
-			|| (item->beatitude < 0
-				&& !intro && shouldInvertEquipmentBeatitude(stats[player.playernum])) )
-		{
-			interval += std::min(abs(item->beatitude), 5);
+			interval = 4 + item->status;
+			if ( item->beatitude < 0
+				&& !intro && !shouldInvertEquipmentBeatitude(stats[player.playernum]) )
+			{
+				interval = 0;
+			}
+			else
+			{
+				if ( item->beatitude > 0
+					|| (item->beatitude < 0
+						&& !intro && shouldInvertEquipmentBeatitude(stats[player.playernum])) )
+				{
+					interval += std::min(abs(item->beatitude), 1);
+				}
+				if ( skillID >= 0 )
+				{
+					if ( skillID == PRO_SWORD || skillID == PRO_RANGED || skillID == PRO_AXE
+						|| skillID == PRO_MACE || skillID == PRO_POLEARM || skillID == PRO_UNARMED )
+					{
+						int bonus = (stats[player.playernum]->getModifiedProficiency(skillID) / 20);
+						interval += bonus;
+					}
+				}
+			}
 		}
 	}
 
@@ -6991,6 +7472,10 @@ bool Player::PlayerMechanics_t::itemDegradeRoll(Item* item, int* checkInterval)
 		{
 			// dont decrement until degraded
 		}
+		else if ( items[item->type].item_slot != ItemEquippableSlot::EQUIPPABLE_IN_SLOT_SHIELD )
+		{
+			// dont decrement until degraded
+		}
 		else
 		{
 			counter = 0;
@@ -7001,25 +7486,316 @@ bool Player::PlayerMechanics_t::itemDegradeRoll(Item* item, int* checkInterval)
 	return false;
 }
 
-void Player::PlayerMechanics_t::sustainedSpellIncrementMP(int mpChange)
+void Player::PlayerMechanics_t::sustainedSpellIncrementMP(int mpChange, int skillID)
 {
-	sustainedSpellMPUsed += std::max(0, mpChange);
+	if ( skillID == PRO_SORCERY )
+	{
+		sustainedSpellMPUsedSorcery += std::max(0, mpChange);
+	}
+	else if ( skillID == PRO_MYSTICISM )
+	{
+		sustainedSpellMPUsedMysticism += std::max(0, mpChange);
+	}
+	else if ( skillID == PRO_THAUMATURGY )
+	{
+		sustainedSpellMPUsedThaumaturgy += std::max(0, mpChange);
+	}
 }
 
-bool Player::PlayerMechanics_t::sustainedSpellLevelChance()
+void Player::PlayerMechanics_t::baseSpellIncrementMP(int mpChange, int skillID)
+{
+	if ( skillID == PRO_SORCERY )
+	{
+		baseSpellMPUsedSorcery += std::max(0, mpChange);
+	}
+	else if ( skillID == PRO_MYSTICISM )
+	{
+		baseSpellMPUsedMysticism += std::max(0, mpChange);
+	}
+	else if ( skillID == PRO_THAUMATURGY )
+	{
+		baseSpellMPUsedThaumaturgy += std::max(0, mpChange);
+	}
+}
+
+bool Player::PlayerMechanics_t::sustainedSpellLevelChance(int skillID)
 {
 	int threshold = 10;
-	if ( stats[player.playernum]->getProficiency(PRO_SPELLCASTING) < SKILL_LEVEL_BASIC )
+	/*if ( stats[player.playernum]->getProficiency(skillID) < SKILL_LEVEL_BASIC )
 	{
 		threshold = 5;
 	}
-	if ( sustainedSpellMPUsed >= threshold )
+	else
 	{
-		return true;
+	}*/
+	threshold = 5 + 5 * (stats[player.playernum]->getProficiency(skillID) / 20); // 5-25
+
+	if ( skillID == PRO_SORCERY )
+	{
+		return sustainedSpellMPUsedSorcery >= threshold;
+	}
+	else if ( skillID == PRO_MYSTICISM )
+	{
+		return sustainedSpellMPUsedMysticism >= threshold;
+	}
+	else if ( skillID == PRO_THAUMATURGY )
+	{
+		return sustainedSpellMPUsedThaumaturgy >= threshold;
+	}
+
+	return false;
+}
+
+int Player::PlayerMechanics_t::baseSpellMPSpent(int skillID)
+{
+	int counter = 0;
+	if ( skillID == PRO_SORCERY )
+	{
+		counter = baseSpellMPUsedSorcery;
+	}
+	else if ( skillID == PRO_MYSTICISM )
+	{
+		counter = baseSpellMPUsedMysticism;
+	}
+	else if ( skillID == PRO_THAUMATURGY )
+	{
+		counter = baseSpellMPUsedThaumaturgy;
 	}
 	else
 	{
-		return false;
+		return 0;
+	}
+
+	return counter;
+}
+
+int Player::PlayerMechanics_t::baseSpellLevelChance(int skillID)
+{
+	int counter = 0;
+	if ( skillID == PRO_SORCERY )
+	{
+		counter = baseSpellMPUsedSorcery;
+	}
+	else if ( skillID == PRO_MYSTICISM )
+	{
+		counter = baseSpellMPUsedMysticism;
+	}
+	else if ( skillID == PRO_THAUMATURGY )
+	{
+		counter = baseSpellMPUsedThaumaturgy;
+	}
+	else
+	{
+		return 0;
+	}
+	int threshold = 20 + stats[player.playernum]->getProficiency(skillID) / 5; //20-40
+
+	return counter / threshold;
+}
+
+void Player::PlayerMechanics_t::sustainedSpellClearMP(int skillID)
+{
+	if ( skillID == PRO_SORCERY )
+	{
+		sustainedSpellMPUsedSorcery = 0;
+	}
+	else if ( skillID == PRO_MYSTICISM )
+	{
+		sustainedSpellMPUsedMysticism = 0;
+	}
+	else if ( skillID == PRO_THAUMATURGY )
+	{
+		sustainedSpellMPUsedThaumaturgy = 0;
+	}
+}
+
+bool Player::PlayerMechanics_t::updateSustainedSpellEvent(int spellID, real_t value, real_t scaleValue, Entity* hitentity)
+{
+	if ( value < 0.05 ) { return false; }
+
+	if ( hitentity && multiplayer != CLIENT )
+	{
+		if ( Stat* hitstats = hitentity->getStats() )
+		{
+			if ( hitstats->getEffectActive(EFF_STASIS) )
+			{
+				return false;
+			}
+			else if ( (hitentity->behavior == &actMonster
+				&& (hitentity->monsterAllyGetPlayerLeader() || (hitstats && achievementObserver.checkUidIsFromPlayer(hitstats->leader_uid) >= 0)))
+				|| hitentity->behavior == &actPlayer )
+			{
+				return false;
+			}
+		}
+	}
+
+	if ( spellID == SPELL_MAGICMAPPING && multiplayer == CLIENT )
+	{
+		sustainedSpellIDCounter[spellID] += value * scaleValue;
+		if ( players[player.playernum]->entity && sustainedSpellIDCounter[spellID] > 8 * 16.0 )
+		{
+			sustainedSpellIDCounter[spellID] = 0.0;
+			Uint32 flags = spell_t::SPELL_LEVEL_EVENT_DEFAULT;
+			magicOnSpellCastEvent(players[player.playernum]->entity, players[player.playernum]->entity,
+				nullptr, spellID, flags, 1);
+			return true;
+		}
+	}
+
+	if ( multiplayer == CLIENT ) { return false; }
+	if ( intro ) { return false; }
+	//if ( auto spell = getSpellFromID(spellID) )
+	{
+		if ( spellID == SPELL_LIGHT || spellID == SPELL_DEEP_SHADE )
+		{
+			sustainedSpellIDCounter[spellID] += value * scaleValue;
+			if ( players[player.playernum]->entity && sustainedSpellIDCounter[spellID] > 8 * 16.0 )
+			{
+				Uint32 flags = spell_t::SPELL_LEVEL_EVENT_SUSTAIN;
+				sustainedSpellIDCounter[spellID] = 0.0;
+				if ( magicOnSpellCastEvent(players[player.playernum]->entity, players[player.playernum]->entity,
+					nullptr, spellID, flags, 1) )
+				{
+					return true;
+				}
+			}
+			return false;
+		}
+		else if ( spellID == SPELL_PINPOINT || spellID == SPELL_PENANCE || spellID == SPELL_TURN_UNDEAD
+			|| spellID == SPELL_SIGIL
+			|| spellID == SPELL_SANCTUARY
+			|| spellID == SPELL_HEALING
+			|| spellID == SPELL_EXTRAHEALING
+			|| spellID == SPELL_HOLY_BEAM 
+			|| spellID == SPELL_MAGICMAPPING
+			|| spellID == SPELL_WINDGATE
+			|| spellID == SPELL_DEMON_ILLUSION
+			|| spellID == SPELL_DASH
+			|| spellID == SPELL_HEAL_MINOR
+			|| spellID == SPELL_HEAL_OTHER
+			|| spellID == SPELL_HEAL_PULSE
+			|| spellID == SPELL_SPEED
+			|| spellID == SPELL_DETECT_FOOD
+			|| spellID == SPELL_COMMAND
+			|| spellID == SPELL_FLUTTER
+			|| spellID == SPELL_DIG )
+		{
+			sustainedSpellIDCounter[spellID] += value * scaleValue;
+			if ( players[player.playernum]->entity && sustainedSpellIDCounter[spellID] > 8 * 16.0 )
+			{
+				sustainedSpellIDCounter[spellID] = 0.0;
+				Uint32 flags = spell_t::SPELL_LEVEL_EVENT_DEFAULT;
+				if ( magicOnSpellCastEvent(players[player.playernum]->entity, players[player.playernum]->entity,
+					nullptr, spellID, flags, 1) )
+				{
+					return true;
+				}
+			}
+		}
+		else if ( spellID == SPELL_PROF_NIMBLENESS || spellID == SPELL_PROF_STURDINESS
+			|| spellID == SPELL_PROF_GREATER_MIGHT || spellID == SPELL_PROF_COUNSEL )
+		{
+			sustainedSpellIDCounter[spellID] += value * scaleValue;
+			if ( players[player.playernum]->entity && sustainedSpellIDCounter[spellID] > 8 * 16.0 )
+			{
+				Uint32 flags = spell_t::SPELL_LEVEL_EVENT_SUMMON;
+				if ( magicOnSpellCastEvent(players[player.playernum]->entity, players[player.playernum]->entity,
+					nullptr, spellID, flags, 1) )
+				{
+					sustainedSpellIDCounter[spellID] = 0.0;
+					return true;
+				}
+			}
+		}
+		else if ( spellID == SPELL_BLESS_FOOD
+			|| spellID == SPELL_SCRY_TRAPS
+			|| spellID == SPELL_SCRY_SHRINES
+			|| spellID == SPELL_SCRY_TREASURES
+			|| spellID == SPELL_DONATION )
+		{
+			sustainedSpellIDCounter[spellID] += value * scaleValue;
+			if ( players[player.playernum]->entity && sustainedSpellIDCounter[spellID] > 8 * 16.0 )
+			{
+				Uint32 flags = spell_t::SPELL_LEVEL_EVENT_DEFAULT;
+				if ( spellID == SPELL_DONATION )
+				{
+					flags |= spell_t::SPELL_LEVEL_EVENT_ALWAYS;
+				}
+				if ( magicOnSpellCastEvent(players[player.playernum]->entity, players[player.playernum]->entity,
+					nullptr, spellID, flags, 1) )
+				{
+					sustainedSpellIDCounter[spellID] = 0.0;
+					return true;
+				}
+			}
+		}
+
+		for ( node_t* node = stats[player.playernum]->magic_effects.first; node; node = node->next )
+		{
+			if ( spell_t* sustainedSpell = (spell_t*)node->element )
+			{
+				if ( sustainedSpell->ID == spellID )
+				{
+					sustainedSpellIDCounter[spellID] += value * scaleValue;
+					if ( players[player.playernum]->entity && sustainedSpellIDCounter[spellID] > 8 * 16.0 )
+					{
+						Uint32 flags = spell_t::SPELL_LEVEL_EVENT_SUSTAIN;
+						if ( sustainedSpell->spellbook )
+						{
+							flags |= spell_t::SPELL_LEVEL_EVENT_SPELLBOOK;
+						}
+						else if ( sustainedSpell->magicstaff )
+						{
+							flags |= spell_t::SPELL_LEVEL_EVENT_MAGICSTAFF;
+						}
+
+						bool resetOnProc = false;
+						if ( spellID == SPELL_BLOOD_WARD )
+						{
+							resetOnProc = true;
+						}
+						if ( !resetOnProc )
+						{
+							sustainedSpellIDCounter[spellID] = 0.0;
+						}
+						if ( magicOnSpellCastEvent(players[player.playernum]->entity, players[player.playernum]->entity,
+							nullptr, spellID, flags, 1) )
+						{
+							if ( resetOnProc )
+							{
+								sustainedSpellIDCounter[spellID] = 0.0;
+							}
+							return true;
+						}
+					}
+					break;
+				}
+			}
+		}
+	}
+
+	return false;
+}
+
+void Player::PlayerMechanics_t::baseSpellClearMP(int skillID)
+{
+	int threshold = 20 + stats[player.playernum]->getProficiency(skillID) / 5;
+	int leftoverCap = threshold * 4;
+	if ( skillID == PRO_SORCERY )
+	{
+		baseSpellMPUsedSorcery = std::max(0, baseSpellMPUsedSorcery - 4 * threshold);
+		baseSpellMPUsedSorcery = std::min(baseSpellMPUsedSorcery, leftoverCap);
+	}
+	else if ( skillID == PRO_MYSTICISM )
+	{
+		baseSpellMPUsedMysticism = std::max(0, baseSpellMPUsedMysticism - 4 * threshold);
+		baseSpellMPUsedMysticism = std::min(baseSpellMPUsedMysticism, leftoverCap);
+	}
+	else if ( skillID == PRO_THAUMATURGY )
+	{
+		baseSpellMPUsedThaumaturgy = std::max(0, baseSpellMPUsedThaumaturgy - 4 * threshold);
+		baseSpellMPUsedThaumaturgy = std::min(baseSpellMPUsedThaumaturgy, leftoverCap);
 	}
 }
 
@@ -7029,5 +7805,914 @@ bool Player::PlayerMechanics_t::allowedRaiseBlockingAgainstEntity(Entity& attack
 	{
 		return false;
 	}
+	else if ( attacker.behavior == &actMonster
+		&& (attacker.monsterAllyGetPlayerLeader() 
+			|| (attacker.getStats() && achievementObserver.checkUidIsFromPlayer(attacker.getStats()->leader_uid) >= 0)) )
+	{
+		return false;
+	}
 	return enemyRaisedBlockingAgainst[attacker.getUID()] < 1;
+}
+
+bool Player::PlayerMechanics_t::allowedRaiseStealthAgainstEntity(Entity& attacker)
+{
+	if ( attacker.behavior != &actMonster )
+	{
+		return false;
+	}
+	return enemyRaisedStealthAgainst[attacker.getUID()] < 1;
+}
+
+void Player::PlayerMechanics_t::ensembleMusicUpdateServer()
+{
+	if ( multiplayer != CLIENT )
+	{
+		bool forceUpdate = false;
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			Uint32 data = (i + 1) & 0x7F;
+			if ( players[i]->entity )
+			{
+				if ( players[i]->mechanics.ensemblePlaying >= 0 )
+				{
+					Uint8 playingData = 0;
+					switch ( players[i]->mechanics.ensemblePlaying )
+					{
+					case EFF_ENSEMBLE_DRUM:
+						playingData = 1;
+						break;
+					case EFF_ENSEMBLE_FLUTE:
+						playingData = 2;
+						break;
+					case EFF_ENSEMBLE_LUTE:
+						playingData = 4;
+						break;
+					case EFF_ENSEMBLE_LYRE:
+						playingData = 5;
+						break;
+					case EFF_ENSEMBLE_HORN:
+						playingData = 3;
+						break;
+					default:
+						break;
+					}
+					data |= (0xFF & playingData) << 8;
+				}
+
+				Uint16 effectData = 0;
+				if ( Uint8 effectStrength = stats[i]->getEffectActive(EFF_ENSEMBLE_DRUM) )
+				{
+					effectData |= (1 << 0);
+					if ( effectStrength >= Stat::kEnsembleBreakPointTier4 )
+					{
+						effectData |= (1 << 7); // beb 2
+					}
+					if ( effectStrength >= Stat::kEnsembleBreakPointTier3 )
+					{
+						effectData |= (1 << 6); // beb 1
+					}
+				}
+				if ( Uint8 effectStrength = stats[i]->getEffectActive(EFF_ENSEMBLE_FLUTE) )
+				{
+					effectData |= (1 << 1);
+					if ( effectStrength >= Stat::kEnsembleBreakPointTier4 )
+					{
+						effectData |= (1 << 7); // beb 2
+					}
+					if ( effectStrength >= Stat::kEnsembleBreakPointTier3 )
+					{
+						effectData |= (1 << 6); // beb 1
+					}
+				}
+				if ( Uint8 effectStrength = stats[i]->getEffectActive(EFF_ENSEMBLE_LUTE) )
+				{
+					effectData |= (1 << 3);
+					if ( effectStrength >= Stat::kEnsembleBreakPointTier4 )
+					{
+						effectData |= (1 << 7); // beb 2
+					}
+					if ( effectStrength >= Stat::kEnsembleBreakPointTier3 )
+					{
+						effectData |= (1 << 6); // beb 1
+					}
+				}
+				if ( Uint8 effectStrength = stats[i]->getEffectActive(EFF_ENSEMBLE_LYRE) )
+				{
+					effectData |= (1 << 4);
+					if ( effectStrength >= Stat::kEnsembleBreakPointTier4 )
+					{
+						effectData |= (1 << 7); // beb 2
+					}
+					if ( effectStrength >= Stat::kEnsembleBreakPointTier3 )
+					{
+						effectData |= (1 << 6); // beb 1
+					}
+				}
+				if ( Uint8 effectStrength = stats[i]->getEffectActive(EFF_ENSEMBLE_HORN) )
+				{
+					effectData |= (1 << 2);
+					if ( effectStrength >= Stat::kEnsembleBreakPointTier4 )
+					{
+						effectData |= (1 << 7); // beb 2
+					}
+					if ( effectStrength >= Stat::kEnsembleBreakPointTier3 )
+					{
+						effectData |= (1 << 6); // beb 1
+					}
+				}
+				if ( effectData )
+				{
+					effectData |= (1 << 5); // tambo
+				}
+				data |= (0xFF & effectData) << 16;
+			}
+			if ( players[i]->mechanics.ensembleDataUpdate != data )
+			{
+				forceUpdate = true;
+			}
+			players[i]->mechanics.ensembleDataUpdate = data;
+		}
+
+		if ( multiplayer == SERVER )
+		{
+			if ( forceUpdate || ((ticks % static_cast<int>(TICKS_PER_SECOND * 5.2) == 0)) )
+			{
+				strcpy((char*)net_packet->data, "ENSM");
+				for ( int i = 0; i < MAXPLAYERS; ++i )
+				{
+					SDLNet_Write32(players[i]->mechanics.ensembleDataUpdate, &net_packet->data[4 + i * 4]);
+				}
+				net_packet->len = 4 + MAXPLAYERS * 4;
+				for ( int i = 1; i < MAXPLAYERS; ++i )
+				{
+					if ( !client_disconnected[i] )
+					{
+						net_packet->address.host = net_clients[i - 1].host;
+						net_packet->address.port = net_clients[i - 1].port;
+						sendPacketSafe(net_sock, -1, net_packet, i - 1);
+					}
+				}
+			}
+		}
+	}
+}
+
+#ifdef USE_FMOD
+static ConsoleCommand ccmd_ensemble_pitch("/ensemble_pitch", "",
+	[](int argc, const char** argv) {
+		if ( argc < 2 )
+		{
+			return;
+		}
+	music_ensemble_global_send_group->setPitch(atoi(argv[1]) / 100.f);
+	});
+
+static ConsoleCommand ccmd_ensemble_reverb("/ensemble_reverb", "",
+	[](int argc, const char** argv) {
+
+		if ( argc < 3 )
+		{
+			return;
+		}
+	FMOD::DSP* dspreverb = nullptr;
+	music_ensemble_global_recv_group->getDSP(0, &dspreverb);
+	dspreverb->setBypass(false);
+	int reverbType = atoi(argv[1]);
+	float dryLevel = atoi(argv[2]);
+	if ( reverbType >= 24 )
+	{
+		reverbType = 0;
+	}
+	FMOD_REVERB_PROPERTIES props = FMOD_PRESET_OFF;
+	switch ( reverbType )
+	{
+	case 0:
+		props = FMOD_PRESET_OFF;
+		break;
+	case 1:
+		props = FMOD_PRESET_GENERIC;
+		break;
+	case 2:
+		props = FMOD_PRESET_PADDEDCELL;
+		break;
+	case 3:
+		props = FMOD_PRESET_ROOM;
+		break;
+	case 4:
+		props = FMOD_PRESET_BATHROOM;
+		break;
+	case 5:
+		props = FMOD_PRESET_LIVINGROOM;
+		break;
+	case 6:
+		props = FMOD_PRESET_STONEROOM;
+		break;
+	case 7:
+		props = FMOD_PRESET_AUDITORIUM;
+		break;
+	case 8:
+		props = FMOD_PRESET_CONCERTHALL;
+		break;
+	case 9:
+		props = FMOD_PRESET_CAVE;
+		break;
+	case 10:
+		props = FMOD_PRESET_ARENA;
+		break;
+	case 11:
+		props = FMOD_PRESET_HANGAR;
+		break;
+	case 12:
+		props = FMOD_PRESET_CARPETTEDHALLWAY;
+		break;
+	case 13:
+		props = FMOD_PRESET_HALLWAY;
+		break;
+	case 14:
+		props = FMOD_PRESET_STONECORRIDOR;
+		break;
+	case 15:
+		props = FMOD_PRESET_ALLEY;
+		break;
+	case 16:
+		props = FMOD_PRESET_FOREST;
+		break;
+	case 17:
+		props = FMOD_PRESET_CITY;
+		break;
+	case 18:
+		props = FMOD_PRESET_MOUNTAINS;
+		break;
+	case 19:
+		props = FMOD_PRESET_QUARRY;
+		break;
+	case 20:
+		props = FMOD_PRESET_PLAIN;
+		break;
+	case 21:
+		props = FMOD_PRESET_PARKINGLOT;
+		break;
+	case 22:
+		props = FMOD_PRESET_SEWERPIPE;
+		break;
+	case 23:
+		props = FMOD_PRESET_UNDERWATER;
+		break;
+	}
+
+	dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_DECAYTIME, props.DecayTime);
+	dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_EARLYDELAY, props.EarlyDelay);
+	dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_LATEDELAY, props.LateDelay);
+	dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_HFREFERENCE, props.HFReference);
+	dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_HFDECAYRATIO, props.HFDecayRatio);
+	dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_DIFFUSION, props.Diffusion);
+	dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_DENSITY, props.Density);
+	dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_LOWSHELFFREQUENCY, props.LowShelfFrequency);
+	dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_LOWSHELFGAIN, props.LowShelfGain);
+	dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_HIGHCUT, props.HighCut);
+	dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_EARLYLATEMIX, props.EarlyLateMix);
+	dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_WETLEVEL, props.WetLevel);
+	dspreverb->setParameterFloat(FMOD_DSP_SFXREVERB_DRYLEVEL, dryLevel);
+});
+
+
+ConsoleVariable<float> cvar_ensemble_vol_bg("/ensemble_vol_bg", -6.f);
+#endif
+
+void Player::PlayerMechanics_t::ensembleMusicUpdate()
+{
+	if ( multiplayer != CLIENT )
+	{
+		ensembleMusicUpdateServer();
+	}
+
+#ifdef USE_FMOD
+	static ConsoleVariable<int> cvar_ensemble_pitch_base("/ensemble_pitch_base", 0);
+	static ConsoleVariable<int> cvar_ensemble_pitch_combat("/ensemble_pitch_combat", 0);
+	static ConsoleVariable<float> cvar_ensemble_vol_fg("/ensemble_vol_fg", 0.25f);
+	if ( *cvar_ensemble_pitch_base > 0 && *cvar_ensemble_pitch_combat > 0 )
+	{
+		if ( combat )
+		{
+			music_ensemble_global_send_group->setPitch(*cvar_ensemble_pitch_combat / 100.f);
+		}
+		else
+		{
+			music_ensemble_global_send_group->setPitch(*cvar_ensemble_pitch_base / 100.f);
+		}
+	}
+
+	bool notificationPlaying = false;
+	if ( music_notification_group )
+	{
+		music_notification_group->isPlaying(&notificationPlaying);
+	}
+
+	if ( music_ensemble_global_recv_group )
+	{
+		float volume = 0.f;
+		music_ensemble_global_recv_group->getVolume(&volume);
+
+		if ( notificationPlaying && volume > 0.0f )
+		{
+			volume -= fadeout_increment * 5;
+			if ( volume < ensembleSounds.ensemble_recv_global_volume * 0.5f )
+			{
+				volume = ensembleSounds.ensemble_recv_global_volume * 0.5f;
+			}
+			music_ensemble_global_recv_group->setVolume(volume);
+		}
+		else
+		{
+			volume += fadein_increment * 2;
+			if ( volume > ensembleSounds.ensemble_recv_global_volume )
+			{
+				volume = ensembleSounds.ensemble_recv_global_volume;
+			}
+			music_ensemble_global_recv_group->setVolume(volume);
+		}
+	}
+	if ( music_ensemble_local_recv_group )
+	{
+		float volume = 0.f;
+		music_ensemble_local_recv_group->getVolume(&volume);
+		if ( notificationPlaying && volume > 0.0f )
+		{
+			volume -= fadeout_increment * 5;
+			if ( volume < ensembleSounds.ensemble_recv_player_volume * 0.5f )
+			{
+				volume = ensembleSounds.ensemble_recv_player_volume * 0.5f;
+			}
+			music_ensemble_local_recv_group->setVolume(volume);
+		}
+		else
+		{
+			volume += fadein_increment * 2;
+			if ( volume > ensembleSounds.ensemble_recv_player_volume )
+			{
+				volume = ensembleSounds.ensemble_recv_player_volume;
+			}
+			music_ensemble_local_recv_group->setVolume(volume);
+		}
+	}
+
+	// global tracks
+	if ( music_ensemble_global_send_group )
+	{
+		bool isPlaying = false;
+		bool isPaused = false;
+		music_ensemble_global_send_group->isPlaying(&isPlaying);
+		if ( isPlaying )
+		{
+			music_ensemble_global_send_group->getPaused(&isPaused);
+		}
+
+		bool active = !isPaused && isPlaying;
+		/*std::string debugPlaying = "";
+		for ( int i = 0; i < NUMENSEMBLEMUSIC; ++i )
+		{
+			bool channelPlaying = false;
+			music_ensemble_global_channel[i]->isPlaying(&channelPlaying);
+			float volume = 0.f;
+			music_ensemble_global_channel[i]->getVolume(&volume);
+			debugPlaying += channelPlaying ? "(1 " : "(0 ";
+			debugPlaying += "Vol: " + std::to_string(volume) + ") ";
+		}
+		messagePlayer(0, MESSAGE_DEBUG, "%s", debugPlaying.c_str());*/
+		//float defaultVolume = 0.5f * *cvar_ensemble_vol_bg;
+
+		Uint32 trackstatus = 0;
+		Uint32 trackstatusLocal = 0;
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( players[i]->isLocalPlayer() )
+			{
+				trackstatusLocal |= (players[i]->mechanics.ensembleDataUpdate >> 16) & 0xFFFF;
+			}
+			trackstatus |= (players[i]->mechanics.ensembleDataUpdate >> 16) & 0xFFFF;
+		}
+
+		if ( trackstatus == 0 ) // nothing playing
+		{
+			if ( active )
+			{
+				bool allStopped = true;
+				for ( int i = 0; i < NUMENSEMBLEMUSIC; ++i )
+				{
+					if ( ensembleSounds.transceiver_group[i] )
+					{
+						float volume = 0.f;
+						ensembleSounds.transceiver_group[i]->getVolume(&volume);
+						volume = std::max(0.f, volume - fadeout_increment * 5);
+						ensembleSounds.transceiver_group[i]->setVolume(volume);
+						if ( volume < 0.0001f )
+						{
+							// wait until all tracks 0 volume
+						}
+						else
+						{
+							allStopped = false;
+						}
+					}
+				}
+				if ( allStopped )
+				{
+					ensembleSounds.stopPlaying(false);
+					if ( music_ensemble_global_send_group )
+					{
+						music_ensemble_global_send_group->setPaused(true);
+					}
+
+					for ( int c = 0; c < MAXPLAYERS; ++c )
+					{
+						FMOD::DSP* channelFader = nullptr;
+						fmod_result = music_ensemble_local_recv_player[c]->getDSP(FMOD_CHANNELCONTROL_DSP_FADER, &channelFader);
+						channelFader->setActive(false);
+					}
+				}
+			}
+			else
+			{
+				for ( int c = 0; c < MAXPLAYERS; ++c )
+				{
+					FMOD::DSP* channelFader = nullptr;
+					fmod_result = music_ensemble_local_recv_player[c]->getDSP(FMOD_CHANNELCONTROL_DSP_FADER, &channelFader);
+					channelFader->setActive(false);
+				}
+			}
+		}
+		else
+		{
+			if ( !active )
+			{
+				// restart channels
+				ensembleSounds.stopPlaying(false);
+				ensembleSounds.playSong();
+				for ( int i = 0; i < NUMENSEMBLEMUSIC; ++i )
+				{
+					/*if ( music_ensemble_global_channel[i] )
+					{
+						fmod_result = music_ensemble_global_channel[i]->stop();
+					}
+  					fmod_result = fmod_system->playSound(music_ensemble_global_sound[i], music_ensemble_global_send_group,
+						false, &music_ensemble_global_channel[i]);*/
+
+
+					//if ( music_ensemble_global_channel[i] )
+					//{
+					//	music_ensemble_global_channel[i]->setVolume(0.f);
+					//	music_ensemble_global_channel[i]->setVolumeRamp(true);
+
+					//	static ConsoleVariable<float> cvar_ensemble_global_x("/ensemble_global_x", 0.f);
+					//	static ConsoleVariable<float> cvar_ensemble_global_y("/ensemble_global_y", 0.f);
+					//	static ConsoleVariable<float> cvar_ensemble_global_z("/ensemble_global_z", 0.f);
+					//	FMOD_VECTOR position;
+					//	position.x = *cvar_ensemble_global_x;
+					//	position.y = *cvar_ensemble_global_y;
+					//	position.z = *cvar_ensemble_global_z;
+					//	fmod_result = music_ensemble_global_channel[i]->setMode(FMOD_3D_HEADRELATIVE);
+					//	fmod_result = music_ensemble_global_channel[i]->set3DAttributes(&position, nullptr);
+
+					//	{
+					//		FMOD::DSP* tranceiver = nullptr;
+					//		fmod_result = music_ensemble_global_channel[i]->getDSP(0, &tranceiver);
+					//		FMOD_DSP_TYPE dspType = FMOD_DSP_TYPE::FMOD_DSP_TYPE_UNKNOWN;
+					//		if ( tranceiver )
+					//		{
+					//			tranceiver->getType(&dspType);
+					//		}
+					//		if ( dspType != FMOD_DSP_TYPE_TRANSCEIVER )
+					//		{
+					//			fmod_result = fmod_system->createDSPByType(FMOD_DSP_TYPE_TRANSCEIVER, &tranceiver);
+					//			fmod_result = music_ensemble_global_channel[i]->addDSP(0, tranceiver);
+					//		}
+					//		fmod_result = tranceiver->setParameterBool(FMOD_DSP_TRANSCEIVER_TRANSMIT, true); // sending signal
+					//		fmod_result = tranceiver->setParameterInt(FMOD_DSP_TRANSCEIVER_CHANNEL, 1 + i); // sending on channel x
+					//	}
+					//}
+				}
+				if ( music_ensemble_global_send_group )
+				{
+					music_ensemble_global_send_group->setPaused(false);
+				}
+			}
+
+			static float trackZeroVolumes[NUMENSEMBLEMUSIC] = { 0.f };
+			static ConsoleCommand ccmd_ensemble_zero_vol("/ensemble_zero_vol", "",
+				[](int argc, const char** argv) {
+					if ( argc < 3 )
+					{
+						return;
+					}
+					if ( atoi(argv[1]) < NUMENSEMBLEMUSIC )
+					{
+						trackZeroVolumes[atoi(argv[1])] = atoi(argv[2]) / 100.f;
+					}
+			});
+
+			/*if ( ensembleSounds.exploreChannel[0] )
+			{
+				bool playing = false;
+				ensembleSounds.exploreChannel[0]->isPlaying(&playing);
+				if ( playing )
+				{
+					unsigned int songPos = 0;
+					fmod_result = ensembleSounds.exploreChannel[0]->getPosition(&songPos, FMOD_TIMEUNIT_PCM);
+
+				}
+			}*/
+
+			if ( combat && ensembleSounds.songTransitionState == EnsembleSounds_t::TRANSITION_COMBAT_ENDING )
+			{
+				// haven't triggered combat end yet, so continue combat
+				ensembleSounds.songTransitionState = EnsembleSounds_t::TRANSITION_COMBAT;
+			}
+			else if ( combat && ensembleSounds.combatDelay == 0 )
+			{
+				if ( ensembleSounds.songTransitionState == EnsembleSounds_t::TRANSITION_EXPLORE )
+				{
+					ensembleSounds.songTransitionState = EnsembleSounds_t::TRANSITION_COMBAT_START;
+				}
+			}
+			else
+			{
+				if ( ensembleSounds.songTransitionState == EnsembleSounds_t::TRANSITION_COMBAT )
+				{
+					ensembleSounds.songTransitionState = EnsembleSounds_t::TRANSITION_COMBAT_ENDING;
+				}
+			}
+
+			for ( int i = 0; i < NUMENSEMBLEMUSIC; ++i )
+			{
+				if ( ensembleSounds.transceiver_group[i] )
+				{
+					float targetVolume = 1.f;
+					if ( trackstatus & (1 << i) )
+					{
+						if ( (!active || true) && !(i == 6 || i == 7) ) 
+						{
+							// no ramp up
+							fmod_result = ensembleSounds.transceiver_group[i]->setVolume(targetVolume);
+						}
+						else
+						{
+							float volume = 0.f;
+							fmod_result = ensembleSounds.transceiver_group[i]->getVolume(&volume);
+							volume = std::min(targetVolume, volume + fadein_increment * 5);
+							fmod_result = ensembleSounds.transceiver_group[i]->setVolume(volume);
+						}
+					}
+					else
+					{
+						// fade out
+						float volume = 0.f;
+						fmod_result = ensembleSounds.transceiver_group[i]->getVolume(&volume);
+						volume = std::max(0.f + trackZeroVolumes[i], volume - fadeout_increment * 5);
+						fmod_result = ensembleSounds.transceiver_group[i]->setVolume(volume);
+					}
+				}
+
+				{
+					// global recv transceivers
+					FMOD::DSP* transceiver = nullptr;
+					fmod_result = music_ensemble_global_recv_group->getDSP(2 + ((NUMENSEMBLEMUSIC - 1) - i), &transceiver);
+					FMOD_DSP_TYPE dspType = FMOD_DSP_TYPE::FMOD_DSP_TYPE_UNKNOWN;
+					int channel = -1;
+					if ( transceiver )
+					{
+						transceiver->getType(&dspType);
+						transceiver->getParameterInt(FMOD_DSP_TRANSCEIVER_CHANNEL, &channel, nullptr, 0);
+					}
+					if ( dspType != FMOD_DSP_TYPE_TRANSCEIVER )
+					{
+						transceiver = nullptr;
+					}
+
+					float bg_volume = instrument_bg_enabled ? *cvar_ensemble_vol_bg : -80.f;
+					if ( transceiver )
+					{
+						if ( trackstatusLocal & (1 << i) )
+						{
+							if ( (!active || true) && !(i == 6 || i == 7) )
+							{
+								// no ramp up
+								transceiver->setParameterFloat(FMOD_DSP_TRANSCEIVER_GAIN, bg_volume);
+							}
+							else
+							{
+								float volume = 0.f;
+								transceiver->getParameterFloat(FMOD_DSP_TRANSCEIVER_GAIN, &volume, nullptr, 0);
+								volume = std::min(bg_volume, volume + fadein_increment * 5 * 0.8f * 100.f);
+								transceiver->setParameterFloat(FMOD_DSP_TRANSCEIVER_GAIN, volume);
+							}
+						}
+						else
+						{
+							// fade out
+							float volume = 0.f;
+							transceiver->getParameterFloat(FMOD_DSP_TRANSCEIVER_GAIN, &volume, nullptr, 0);
+							volume = std::max(-80.f + trackZeroVolumes[i] * 80.f, volume - fadeout_increment * 50);
+							transceiver->setParameterFloat(FMOD_DSP_TRANSCEIVER_GAIN, volume);
+						}
+					}
+				}
+			}
+
+			for ( int c = 0; c < MAXPLAYERS; ++c )
+			{
+				if ( !music_ensemble_local_recv_player[c] )
+				{
+					continue;
+				}
+				Uint32 trackStatusLocal = (players[c]->mechanics.ensembleDataUpdate >> 8) & 0xFF;
+
+				FMOD::DSP* channelFader = nullptr;
+				fmod_result = music_ensemble_local_recv_player[c]->getDSP(FMOD_CHANNELCONTROL_DSP_FADER, &channelFader);
+
+				if ( players[c]->entity )
+				{
+					FMOD_VECTOR position;
+					position.x = (float)(players[c]->entity->x / (real_t)16.0);
+					position.y = (float)(0.0);
+					position.z = (float)(players[c]->entity->y / (real_t)16.0);
+					fmod_result = music_ensemble_local_recv_player[c]->set3DAttributes(&position, nullptr); // update to player position
+					channelFader->setActive(true);
+				}
+				else
+				{
+					channelFader->setActive(false);
+				}
+				music_ensemble_local_recv_player[c]->setVolume((instrument_bg_enabled ? 0.5f : 4.f) * *cvar_ensemble_vol_fg);
+
+				FMOD::DSP* transceivers[NUMENSEMBLEMUSIC] = { nullptr };
+				for ( int i = 0; i < NUMENSEMBLEMUSIC; ++i )
+				{
+					fmod_result = music_ensemble_local_recv_player[c]->getDSP(1 + ((NUMENSEMBLEMUSIC - 1) - i), &transceivers[i]);
+					FMOD_DSP_TYPE dspType = FMOD_DSP_TYPE::FMOD_DSP_TYPE_UNKNOWN;
+					int channel = -1;
+					if ( transceivers[i] )
+					{
+						transceivers[i]->getType(&dspType);
+						transceivers[i]->getParameterInt(FMOD_DSP_TRANSCEIVER_CHANNEL, &channel, nullptr, 0);
+					}
+					if ( dspType != FMOD_DSP_TYPE_TRANSCEIVER )
+					{
+						transceivers[i] = nullptr;
+					}
+				}
+
+				for ( int i = 0; i < NUMENSEMBLEMUSIC; ++i )
+				{
+					bool localTrackPlaying = false;
+					if ( trackStatusLocal > 0 && (((trackStatusLocal - 1) == i) || i == 5) )
+					{
+						localTrackPlaying = true;
+					}
+
+					if ( localTrackPlaying )
+					{
+						if ( !active || true )
+						{
+							// no ramp up
+							if ( i == 5 )
+							{
+								transceivers[i]->setParameterFloat(FMOD_DSP_TRANSCEIVER_GAIN, -6.f);
+							}
+							else
+							{
+								transceivers[i]->setParameterFloat(FMOD_DSP_TRANSCEIVER_GAIN, 0.f);
+							}
+						}
+						else
+						{
+							float volume = 0.f;
+							transceivers[i]->getParameterFloat(FMOD_DSP_TRANSCEIVER_GAIN, &volume, nullptr, 0);
+							volume = std::min(0.f, volume + fadein_increment * 50);
+							transceivers[i]->setParameterFloat(FMOD_DSP_TRANSCEIVER_GAIN, volume);
+						}
+					}
+					else
+					{
+						// fade out
+						float volume = 0.f;
+						transceivers[i]->getParameterFloat(FMOD_DSP_TRANSCEIVER_GAIN, &volume, nullptr, 0);
+						volume = std::max(-80.f, volume - fadeout_increment * 50);
+						transceivers[i]->setParameterFloat(FMOD_DSP_TRANSCEIVER_GAIN, volume);
+					}
+				}
+			}
+		}
+
+		ensembleSounds.updatePlayingChannelVolumes();
+	}
+#endif
+}
+
+int Player::PlayerMechanics_t::getBreakableCounterTier()
+{
+	if ( stats[player.playernum]->type == GREMLIN )
+	{
+		if ( gremlinBreakableCounter >= 50 )
+		{
+			return 4;
+		}
+		else if ( gremlinBreakableCounter >= 30 )
+		{
+			return 3;
+		}
+		else if ( gremlinBreakableCounter >= 20 )
+		{
+			return 2;
+		}
+		else if ( gremlinBreakableCounter >= 10 )
+		{
+			return 1;
+		}
+		else if ( gremlinBreakableCounter > 0 )
+		{
+			return 0;
+		}
+	}
+
+	return 0;
+}
+
+void Player::PlayerMechanics_t::incrementBreakableCounter(Player::PlayerMechanics_t::BreakableEvent eventType, Entity* entity)
+{
+	if ( stats[player.playernum]->type == GREMLIN )
+	{
+		int amount = 0;
+		if ( eventType == BreakableEvent::GBREAK_COMMON )
+		{
+			amount = 1;
+			if ( entity && entity->behavior == &actChest )
+			{
+				amount = 3;
+			}
+		}
+		else if ( eventType == BreakableEvent::GBREAK_DEGRADE )
+		{
+			amount += 3;
+		}
+		else if ( eventType == BreakableEvent::GBREAK_KILL )
+		{
+			if ( entity && entity->behavior == &actMonster && players[player.playernum]->entity )
+			{
+				if ( Stat* targetStats = entity->getStats() )
+				{
+					if ( targetStats->type == CRYSTALGOLEM
+						|| targetStats->type == AUTOMATON
+						|| targetStats->type == MINIMIMIC
+						|| targetStats->type == MIMIC
+						|| monsterIsImmobileTurret(entity, targetStats) )
+					{
+						amount = 3;
+					}
+				}
+			}
+		}
+		else if ( eventType == BreakableEvent::GBREAK_DEFACE )
+		{
+			amount += 5;
+		}
+		int prevTier = getBreakableCounterTier();
+		gremlinBreakableCounter += amount;
+		gremlinBreakableCounter = std::min(50, gremlinBreakableCounter);
+		if ( getBreakableCounterTier() > prevTier )
+		{
+			if ( player.entity )
+			{
+				player.entity->modMP(getBreakableCounterTier() + local_rng.rand() % 2);
+				int duration = (5 + (getBreakableCounterTier() * 5)) * TICKS_PER_SECOND;
+				player.entity->setEffect(EFF_MP_REGEN, true, stats[player.playernum]->EFFECTS_TIMERS[EFF_MP_REGEN] + duration, false);
+				messagePlayerColor(player.playernum, MESSAGE_HINT, makeColorRGB(0, 255, 0), Language::get(6886));
+				playSoundEntity(player.entity, 168, 128);
+			}
+			updateBreakableCounterServer();
+		}
+	}
+}
+
+void Player::PlayerMechanics_t::updateBreakableCounterServer()
+{
+	if ( multiplayer == SERVER && player.playernum > 0 && !player.isLocalPlayer() && !client_disconnected[player.playernum] )
+	{
+		int i = player.playernum;
+		strcpy((char*)net_packet->data, "GBRK");
+		net_packet->data[4] = std::min(255, gremlinBreakableCounter);
+		net_packet->len = 5;
+		net_packet->address.host = net_clients[i - 1].host;
+		net_packet->address.port = net_clients[i - 1].port;
+		sendPacketSafe(net_sock, -1, net_packet, i - 1);
+	}
+}
+
+std::map<int, real_t> prng_tables
+{
+	{0,		0.0},
+	{5,		0.0038},
+	{10,	0.0147},
+	{15,	0.0322},
+	{20,	0.0557},
+	{25,	0.0847},
+	{30,	0.1189},
+	{35,	0.1579},
+	{40,	0.2015},
+	{45,	0.2493},
+	{50,	0.3021},
+	{55,	0.3604},
+	{60,	0.4226},
+	{65,	0.4811},
+	{70,	0.5714},
+	{75,	0.6667},
+	{80,	0.7500},
+	{85,	0.8235},
+	{90,	0.8889},
+	{95,	0.9474},
+};
+
+// escalating rng
+bool Player::PlayerMechanics_t::rollRngProc(Player::PlayerMechanics_t::RngRollTypes rngType, int chance, int spellID)
+{
+	chance = std::min(95, chance);
+	if ( chance <= 0 )
+	{
+		return false;
+	}
+	int breakpoint = (chance / 5) * 5;
+	auto find = prng_tables.find(breakpoint);
+	if ( find != prng_tables.end() )
+	{
+		real_t c = find->second;
+		if ( chance < 5 )
+		{
+			c = (chance / 5.0) * prng_tables[5];
+		}
+		else if ( chance % 5 > 0 )
+		{
+			// find next breakpoint, lerp
+			auto find2 = prng_tables.find(breakpoint + 5);
+			if ( find2 != prng_tables.end() )
+			{
+				real_t c2 = find2->second;
+				c += (c2 - c) * ((chance % 5) / 5.0);
+			}
+		}
+
+		int pityCap = 20;
+		if ( chance < 5 )
+		{
+			int oneInRoll = 1 / (chance / 100.0);
+			pityCap = std::max(pityCap, oneInRoll);
+		}
+
+		auto& rng_counter = rngType == RngRollTypes::RNG_ROLL_SPELL_LEVELS ? escalatingSpellRngRolls[spellID] : escalatingRngRolls[(int)rngType];
+
+		if ( c * rng_counter >= 1.0
+			|| (rng_counter >= pityCap) )
+		{
+			// success
+			rng_counter = 0;
+			return true;
+		}
+
+		real_t roll = (local_rng.rand() % 10000) / 10000.0;
+		if ( roll <= c * (rng_counter + 1) )
+		{
+			// success
+			rng_counter = 0;
+			return true;
+		}
+
+		++rng_counter;
+	}
+	else
+	{
+		return local_rng.rand() % 100 < chance; // default to basic 1-100
+	}
+	return false;
+}
+
+int Player::PlayerMechanics_t::getWealthTier()
+{
+	if ( stats[player.playernum]->type == GNOME )
+	{
+		if ( stats[player.playernum]->GOLD >= 100 && stats[player.playernum]->GOLD < 1000 )
+		{
+			return 1;
+		}
+		else if ( stats[player.playernum]->GOLD >= 1000 && stats[player.playernum]->GOLD < 5000 )
+		{
+			return 2;
+		}
+		else if ( stats[player.playernum]->GOLD >= 5000 && stats[player.playernum]->GOLD < 20000 )
+		{
+			return 3;
+		}
+		else if ( stats[player.playernum]->GOLD >= 20000 )
+		{
+			return 4;
+		}
+	}
+	return 0;
 }

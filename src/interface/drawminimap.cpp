@@ -144,6 +144,13 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 	for ( node_t* node = map.entities->first; node != NULL; node = node->next )
 	{
 		Entity* entity = (Entity*)node->element;
+		if ( entity->flags[SPRITE] )
+		{
+			if ( entity->getEntityShowOnMapDuration() == 0 )
+			{
+				continue;
+			}
+		}
 		if ( entity->sprite == 161 || (entity->sprite >= 254 && entity->sprite < 258)
 			|| entity->behavior == &actCustomPortal )   // ladder or portal models
 		{
@@ -205,16 +212,16 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 			{
 				entityPointsOfInterest.push_back(entity);
 			}
-			else if ( entity->entityShowOnMap > 0 )
+			else if ( entity->getEntityShowOnMapDuration() > 0 )
 			{
 				entityPointsOfInterest.push_back(entity);
 			}
 		}
-		if ( entity->entityShowOnMap > 0 && lastMapTick != ticks )
+		if ( entity->getEntityShowOnMapDuration() > 0 && lastMapTick != ticks )
 		{
 			// only decrease the entities' shown duration when the global game timer passes a tick
 			// (drawMinimap doesn't follow game tick intervals)
-			--entity->entityShowOnMap;
+			entity->entityShowOnMapTickDuration();
 		}
 	}
 
@@ -499,7 +506,7 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 			{
 				int x = floor(entity->x / 16);
 				int y = floor(entity->y / 16);
-				if ( minimap[y][x] || (entity->entityShowOnMap > 0 && !(entity->behavior == &actCustomPortal)) )
+				if ( minimap[y][x] || (entity->getEntityShowOnMapDuration() > 0 && !(entity->behavior == &actCustomPortal)) )
 				{
 					if ( ticks % 40 - ticks % 20 )
 					{
@@ -572,7 +579,7 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 
 							if ( (players[i] && players[i]->entity
 								&& players[i]->entity->creatureShadowTaggedThisUid == entity->getUID())
-								|| (entity->getStats() && entity->getStats()->EFFECTS[EFF_SHADOW_TAGGED]) )
+								|| (entity->getStats() && entity->getStats()->getEffectActive(EFF_SHADOW_TAGGED)) )
 							{
 								warningEffect = true;
 								int x = std::min<int>(std::max<int>(0, entity->x / 16), map.width - 1);
@@ -587,7 +594,7 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 						const int i = player;
 						if ( (players[i] && players[i]->entity
 							&& players[i]->entity->creatureShadowTaggedThisUid == entity->getUID())
-							|| (entity->getStats() && entity->getStats()->EFFECTS[EFF_SHADOW_TAGGED]) )
+							|| (entity->getStats() && entity->getStats()->getEffectActive(EFF_SHADOW_TAGGED)) )
 						{
 							warningEffect = true;
 							int x = std::min<int>(std::max<int>(0, entity->x / 16), map.width - 1);
@@ -605,7 +612,7 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 								if ( !players[i]->isLocalPlayer() || client_disconnected[i] ) { continue; }
 
 								if ( (stats[i]->ring && stats[i]->ring->type == RING_WARNING)
-									|| (entity->entityShowOnMap > 0) )
+									|| (entity->getEntityShowOnMapDuration() > 0) )
 								{
 									int beatitude = 0;
 									if ( stats[i]->ring && stats[i]->ring->type == RING_WARNING )
@@ -619,7 +626,7 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 									}
 
 									bool doEffect = false;
-									if ( entity->entityShowOnMap > 0 )
+									if ( entity->getEntityShowOnMapDuration() > 0 )
 									{
 										doEffect = true;
 									}
@@ -632,7 +639,24 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 									{
 										int x = std::min<int>(std::max<int>(0, entity->x / 16), map.width - 1);
 										int y = std::min<int>(std::max<int>(0, entity->y / 16), map.height - 1);
-										drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(191, 127, 191, 255));
+										if ( entity->getEntityShowOnMapSource() == Entity::SHOW_MAP_SCRY )
+										{
+											if ( ticks % 40 - ticks % 20 )
+											{
+												drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(200, 200, 255, 255));
+											}
+										}
+										else
+										{
+											if ( entity->getEntityShowOnMapSource() == Entity::SHOW_MAP_PINPOINT )
+											{
+												drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(240, 228, 66, 255));
+											}
+											else
+											{
+												drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(191, 127, 191, 255));
+											}
+										}
 										warningEffect = true;
 										break;
 									}
@@ -643,7 +667,7 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 						{
 							const int i = player;
 							if ( (stats[i]->ring && stats[i]->ring->type == RING_WARNING)
-									|| (entity->entityShowOnMap > 0) )
+									|| (entity->getEntityShowOnMapDuration() > 0) )
 							{
 								int beatitude = 0;
 								if ( stats[i]->ring && stats[i]->ring->type == RING_WARNING )
@@ -657,7 +681,7 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 								}
 
 								bool doEffect = false;
-								if ( entity->entityShowOnMap > 0 )
+								if ( entity->getEntityShowOnMapDuration() > 0 )
 								{
 									doEffect = true;
 								}
@@ -670,7 +694,24 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 								{
 									int x = std::min<int>(std::max<int>(0, entity->x / 16), map.width - 1);
 									int y = std::min<int>(std::max<int>(0, entity->y / 16), map.height - 1);
-									drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(191, 127, 191, 255));
+									if ( entity->getEntityShowOnMapSource() == Entity::SHOW_MAP_SCRY )
+									{
+										if ( ticks % 40 - ticks % 20 )
+										{
+											drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(200, 200, 255, 255));
+										}
+									}
+									else
+									{
+										if ( entity->getEntityShowOnMapSource() == Entity::SHOW_MAP_PINPOINT )
+										{
+											drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(240, 228, 66, 255));
+										}
+										else
+										{
+											drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(191, 127, 191, 255));
+										}
+									}
 									warningEffect = true;
 								}
 							}
@@ -693,7 +734,7 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 											&& players[i] && players[i]->entity
 											&& entityDist(players[i]->entity, entity) < 16.0 * 20 )
 										{
-											entity->entityShowOnMap = std::max(entity->entityShowOnMap, TICKS_PER_SECOND * 5);
+											entity->setEntityShowOnMap(Entity::SHOW_MAP_DEFAULT, std::max(entity->getEntityShowOnMapDuration(), TICKS_PER_SECOND * 5));
 											int x = std::min<int>(std::max<int>(0, entity->x / 16), map.width - 1);
 											int y = std::min<int>(std::max<int>(0, entity->y / 16), map.height - 1);
 											drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(191, 127, 191, 255));
@@ -716,7 +757,7 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 										&& players[i] && players[i]->entity
 										&& entityDist(players[i]->entity, entity) < 16.0 * 20 )
 									{
-										entity->entityShowOnMap = std::max(entity->entityShowOnMap, TICKS_PER_SECOND * 5);
+										entity->setEntityShowOnMap(Entity::SHOW_MAP_DEFAULT, std::max(entity->getEntityShowOnMapDuration(), TICKS_PER_SECOND * 5));
 										int x = std::min<int>(std::max<int>(0, entity->x / 16), map.width - 1);
 										int y = std::min<int>(std::max<int>(0, entity->y / 16), map.height - 1);
 										drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(191, 127, 191, 255));
@@ -779,13 +820,32 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 					drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(240, 228, 66, 255));
 				}
 			}
-			else if ( entity->entityShowOnMap > 0 )
+			else if ( entity->getEntityShowOnMapDuration() > 0 )
 			{
 				int x = std::min<int>(std::max<int>(0, entity->x / 16), map.width - 1);
 				int y = std::min<int>(std::max<int>(0, entity->y / 16), map.height - 1);
-				if ( ticks % 40 - ticks % 20 )
+				if ( entity->getEntityShowOnMapSource() == Entity::SHOW_MAP_DETECT_MONSTER )
 				{
-					drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(255, 168, 200, 255));
+					drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(191, 127, 191, 255));
+				}
+				else if ( entity->getEntityShowOnMapSource() == Entity::SHOW_MAP_PINPOINT )
+				{
+					drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(240, 228, 66, 255));
+				}
+				else if ( (ticks % 40 - ticks % 20) )
+				{
+					if ( entity->getEntityShowOnMapSource() == Entity::SHOW_MAP_SCRY )
+					{
+						drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(200, 200, 255, 255));
+					}
+					else if ( entity->getEntityShowOnMapSource() == Entity::SHOW_MAP_DONATION )
+					{
+						drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(240, 228, 66, 255));
+					}
+					else
+					{
+						drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(255, 168, 200, 255));
+					}
 				}
 			}
 		}

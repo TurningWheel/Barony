@@ -9,10 +9,10 @@
 
 -------------------------------------------------------------------------------*/
 
+#include "../main.hpp"
 #include "consolecommand.hpp"
 
 #include <sstream>
-#include "../main.hpp"
 #include "../files.hpp"
 #include "../game.hpp"
 #include "../stat.hpp"
@@ -320,6 +320,14 @@ namespace ConsoleCommands {
 		messagePlayer(clientnum, MESSAGE_MISC, "Type \"/listcmds %d\" for more", pagenum + 1);
 		});
 
+	static ConsoleCommand ccmd_listcmds_all("/listcmds_all", "list all console commands", []CCMD{
+		auto & map = getConsoleCommands();
+		for ( auto& pair : map ) {
+			auto& cmd = pair.second;
+			messagePlayer(clientnum, MESSAGE_MISC, "%s", cmd.name);
+		}
+		});
+
 	static ConsoleCommand ccmd_mousecapture("/mousecapture", "toggle mouse capture enabled", []CCMD{
 		if (EnableMouseCapture == SDL_TRUE) {
 			EnableMouseCapture = SDL_FALSE;
@@ -420,6 +428,105 @@ namespace ConsoleCommands {
 		}
 		lastname = name.c_str();
 		});
+
+	static ConsoleCommand ccmd_spawntome("/spawntome", "spawn an item (cheat)", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+		if ( argc < 2 )
+		{
+			return;
+		}
+		std::string name = argv[1];
+		for ( int arg = 2; arg < argc; ++arg ) {
+			name.append(" ");
+			name.append(argv[arg]);
+		}
+		auto& rng = local_rng;
+
+		int skillID = 0;
+		switch ( rng.rand() % 3 )
+		{
+		case 0:
+			skillID = PRO_MYSTICISM;
+			break;
+		case 1:
+			skillID = PRO_SORCERY;
+			break;
+		case 2:
+			skillID = PRO_THAUMATURGY;
+			break;
+		default:
+			break;
+		}
+		if ( strstr("mysticism", name.c_str()) )
+		{
+			skillID = PRO_MYSTICISM;
+		}
+		else if ( strstr("sorcery", name.c_str()) )
+		{
+			skillID = PRO_SORCERY;
+		}
+		else if ( strstr("thaumaturgy", name.c_str()) )
+		{
+			skillID = PRO_THAUMATURGY;
+		}
+
+		int itemType = SPELLBOOK_FORCEBOLT;
+		std::vector<std::pair<int, int>> chances;
+		int minDifficulty = std::min(60, (currentlevel / 5) * 20);
+		for ( auto& def : allGameSpells )
+		{
+			if ( auto spell = def.second )
+			{
+				if ( spell->ID != SPELL_NONE && !spell->hide_from_ui && currentlevel >= spell->drop_table )
+				{
+					if ( (spell->difficulty / 20) <= (1 + (currentlevel / 5))
+						&& (spell->difficulty >= minDifficulty)
+						&& spell->skillID == skillID )
+					{
+						chances.push_back(std::make_pair(spell->skillID, spell->ID));
+					}
+				}
+			}
+		}
+
+		if ( chances.size() )
+		{
+			Uint32 appearance = 0;
+			int pick = rng.rand() % chances.size();
+			int spellbookType = getSpellbookFromSpellID(chances[pick].second);
+			/*if ( items[spellbookType].category == SPELLBOOK )
+			{
+				itemType = spellbookType;
+			}
+			else*/
+			{
+				itemType = TOME_SORCERY;
+				appearance = spellTomeIDToAppearance[chances[pick].second];
+				if ( chances[pick].first == PRO_MYSTICISM )
+				{
+					itemType = TOME_MYSTICISM;
+				}
+				else if ( chances[pick].first == PRO_THAUMATURGY )
+				{
+					itemType = TOME_THAUMATURGY;
+				}
+			}
+			bool identified = true;
+			if ( argc >= 3 )
+			{
+				std::string str = argv[2];
+				if ( str == "0" )
+				{
+					identified = false;
+				}
+			}
+			dropItem(newItem(static_cast<ItemType>(itemType), EXCELLENT, 0, 1, appearance, identified, &stats[clientnum]->inventory), 0);
+		}
+	});
 
 	static ConsoleCommand ccmd_spawnitem("/spawnitem", "spawn an item (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
@@ -837,8 +944,8 @@ namespace ConsoleCommands {
 			// this is definitely considered a cheat.
 			// otherwise it's a major gameplay exploit.
 			// do not disable this code block.
-			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
-			return;
+			//messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			//return;
 		}
 		if (players[clientnum] != nullptr && players[clientnum]->entity != nullptr)
 		{
@@ -1284,7 +1391,7 @@ namespace ConsoleCommands {
 			Stat* tempStats = players[clientnum]->entity->getStats();
 			if (tempStats)
 			{
-				tempStats->EFFECTS[EFF_POISONED] = true;
+				tempStats->setEffectActive(EFF_POISONED, 1);
 				tempStats->EFFECTS_TIMERS[EFF_POISONED] = 600;
 			}
 		}
@@ -1306,6 +1413,18 @@ namespace ConsoleCommands {
 		skipintro = (skipintro == false);
 		});
 
+#ifndef NDEBUG
+	static ConsoleCommand ccmd_test_story("/test_story", "test cutscene", []CCMD{
+		if ( argc < 2 ) {
+			return;
+		}
+		int num = atoi(argv[1]);
+		MainMenu::beginFade((MainMenu::FadeDestination)num);
+		movie = true;
+		pauseGame(2, false);
+		});
+#endif
+
 	static ConsoleCommand ccmd_levelmagic("/levelmagic", "level up magic skills (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
@@ -1318,8 +1437,9 @@ namespace ConsoleCommands {
 			int i = 0;
 			for (; i < 10; ++i)
 			{
-				players[clientnum]->entity->increaseSkill(PRO_MAGIC);
-				players[clientnum]->entity->increaseSkill(PRO_SPELLCASTING);
+				players[clientnum]->entity->increaseSkill(PRO_SORCERY);
+				players[clientnum]->entity->increaseSkill(PRO_MYSTICISM);
+				players[clientnum]->entity->increaseSkill(PRO_THAUMATURGY);
 			}
 		}
 		else
@@ -1410,6 +1530,16 @@ namespace ConsoleCommands {
 				if (entity->behavior == &actMonster)
 				{
 					entity->setHP(0);
+					if ( argc >= 2 )
+					{
+						if ( atoi(argv[1]) == 1 )
+						{
+							if ( players[clientnum]->entity )
+							{
+								players[clientnum]->entity->awardXP(entity, true, true);
+							}
+						}
+					}
 					c++;
 				}
 			}
@@ -1506,7 +1636,7 @@ namespace ConsoleCommands {
 		}
 
 		// Attempt to set the Player on fire
-		players[clientnum]->entity->SetEntityOnFire();
+		players[clientnum]->entity->SetEntityOnFire(nullptr);
 
 		for (int c = 0; c < 100; c++)
 		{
@@ -1545,11 +1675,12 @@ namespace ConsoleCommands {
 			if (!(c == EFF_VAMPIRICAURA && players[clientnum]->entity->getStats()->EFFECTS_TIMERS[c] == -2)
 				&& c != EFF_WITHDRAWAL && c != EFF_SHAPESHIFT)
 			{
-				players[clientnum]->entity->getStats()->EFFECTS[c] = false;
+				players[clientnum]->entity->getStats()->clearEffect(c);
 				players[clientnum]->entity->getStats()->EFFECTS_TIMERS[c] = 0;
+				players[clientnum]->entity->getStats()->EFFECTS_ACCRETION_TIME[c] = 0;
 			}
 		}
-		if (players[clientnum]->entity->getStats()->EFFECTS[EFF_WITHDRAWAL])
+		if (players[clientnum]->entity->getStats()->getEffectActive(EFF_WITHDRAWAL))
 		{
 			players[clientnum]->entity->setEffect(EFF_WITHDRAWAL, false, EFFECT_WITHDRAWAL_BASE_TIME, true);
 		}
@@ -1818,8 +1949,12 @@ namespace ConsoleCommands {
 		}
 		});
 
-	static ConsoleCommand ccmd_mapseed("/mapseed", "display map seed", []CCMD{
-		messagePlayer(clientnum, MESSAGE_MISC, "Mapseed: %d | Gamekey: %lu | Lobby: %lu", mapseed, uniqueGameKey, uniqueLobbyKey);
+	static ConsoleCommand ccmd_mapseed("/mapseed", "display game seed", []CCMD{
+		messagePlayer(clientnum, MESSAGE_MISC, "Game seed: %lu", uniqueGameKey);
+		});
+
+	static ConsoleCommand ccmd_gameseeds("/mapseed2", "display game seeds", []CCMD{
+		messagePlayer(clientnum, MESSAGE_MISC, "Mapseed: %d | Game seed: %lu | Lobby: %lu", mapseed, uniqueGameKey, uniqueLobbyKey);
 		});
 
 	static ConsoleCommand ccmd_seedgame("/seedgame", "set custom seed", []CCMD{
@@ -1844,6 +1979,7 @@ namespace ConsoleCommands {
 
 	static ConsoleCommand ccmd_reloadlang("/reloadlang", "reload language file", []CCMD{
 		Language::reloadLanguage();
+		ItemTooltips.readItemLocalizationsFromFile();
 		});
 
 	static ConsoleCommand ccmd_disablemessages("/disablemessages", "disable all messages", []CCMD{
@@ -1978,25 +2114,35 @@ namespace ConsoleCommands {
 				stats[i]->clearStats();
 				client_classes[i] = local_rng.rand() % (CLASS_MONK + 1);//NUMCLASSES;
 				stats[i]->playerRace = RACE_HUMAN;
-				if (enabledDLCPack1 || enabledDLCPack2)
+				if (enabledDLCPack1 || enabledDLCPack2 || enabledDLCPack3)
 				{
-					stats[i]->playerRace = local_rng.rand() % NUMPLAYABLERACES;
-					if (!enabledDLCPack1)
+					std::vector<unsigned int> chances;
+					chances.resize(NUMRACES);
+					chances[RACE_HUMAN] = 1;
+					if ( enabledDLCPack1 )
 					{
-						while (stats[i]->playerRace == RACE_SKELETON || stats[i]->playerRace == RACE_VAMPIRE
-							|| stats[i]->playerRace == RACE_SUCCUBUS || stats[i]->playerRace == RACE_GOATMAN)
-						{
-							stats[i]->playerRace = local_rng.rand() % NUMPLAYABLERACES;
-						}
+						chances[RACE_SKELETON] = 1;
+						chances[RACE_VAMPIRE] = 1;
+						chances[RACE_GOATMAN] = 1;
+						chances[RACE_SUCCUBUS] = 1;
 					}
-					else if (!enabledDLCPack2)
+					if ( enabledDLCPack2 )
 					{
-						while (stats[i]->playerRace == RACE_AUTOMATON || stats[i]->playerRace == RACE_GOBLIN
-							|| stats[i]->playerRace == RACE_INCUBUS || stats[i]->playerRace == RACE_INSECTOID)
-						{
-							stats[i]->playerRace = local_rng.rand() % NUMPLAYABLERACES;
-						}
+						chances[RACE_INSECTOID] = 1;
+						chances[RACE_INCUBUS] = 1;
+						chances[RACE_INSECTOID] = 1;
+						chances[RACE_AUTOMATON] = 1;
 					}
+					if ( enabledDLCPack3 )
+					{
+						chances[RACE_GREMLIN] = 1;
+						chances[RACE_MYCONID] = 1;
+						chances[RACE_DRYAD] = 1;
+						chances[RACE_GNOME] = 1;
+						chances[RACE_SALAMANDER] = 1;
+					}
+
+					stats[i]->playerRace = local_rng.discrete(chances.data(), chances.size());
 					if (stats[i]->playerRace == RACE_INCUBUS)
 					{
 						stats[i]->sex = MALE;
@@ -2009,21 +2155,15 @@ namespace ConsoleCommands {
 					if (stats[i]->playerRace == RACE_HUMAN)
 					{
 						client_classes[i] = local_rng.rand() % (NUMCLASSES);
-						if (!enabledDLCPack1)
+						while ( 
+							(!enabledDLCPack1 && (client_classes[i] == CLASS_CONJURER || client_classes[i] == CLASS_ACCURSED
+								|| client_classes[i] == CLASS_MESMER || client_classes[i] == CLASS_BREWER))
+							|| (!enabledDLCPack2 && (client_classes[i] == CLASS_HUNTER || client_classes[i] == CLASS_SHAMAN
+								|| client_classes[i] == CLASS_PUNISHER || client_classes[i] == CLASS_MACHINIST))
+							|| (!enabledDLCPack3 && (client_classes[i] == CLASS_BARD || client_classes[i] == CLASS_SAPPER
+								|| client_classes[i] == CLASS_SCION || client_classes[i] == CLASS_HERMIT || client_classes[i] == CLASS_PALADIN)) )
 						{
-							while (client_classes[i] == CLASS_CONJURER || client_classes[i] == CLASS_ACCURSED
-								|| client_classes[i] == CLASS_MESMER || client_classes[i] == CLASS_BREWER)
-							{
-								client_classes[i] = local_rng.rand() % (NUMCLASSES);
-							}
-						}
-						else if (!enabledDLCPack2)
-						{
-							while (client_classes[i] == CLASS_HUNTER || client_classes[i] == CLASS_SHAMAN
-								|| client_classes[i] == CLASS_PUNISHER || client_classes[i] == CLASS_MACHINIST)
-							{
-								client_classes[i] = local_rng.rand() % (NUMCLASSES);
-							}
+							client_classes[i] = local_rng.rand() % (NUMCLASSES);
 						}
 						stats[i]->stat_appearance = local_rng.rand() % 18;
 					}
@@ -2280,6 +2420,7 @@ namespace ConsoleCommands {
 				entity->flags[PASSABLE] = true;
 				entity->flags[UPDATENEEDED] = true;
 				entity->behavior = &actGoldBag;
+				entity->goldDroppedByPlayer = player + 1;
 			}
 			messagePlayer(player, MESSAGE_INVENTORY, Language::get(2594), amount);
 		}
@@ -2342,11 +2483,11 @@ namespace ConsoleCommands {
 			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
-		if (multiplayer != SINGLE)
+		/*if (multiplayer != SINGLE)
 		{
 			messagePlayer(clientnum, MESSAGE_MISC, Language::get(299));
 			return;
-		}
+		}*/
 
 		if (argc < 2)
 		{
@@ -2359,9 +2500,25 @@ namespace ConsoleCommands {
 		}
 		else
 		{
-			for (int i = 0; i < 10; ++i)
+			if ( multiplayer == CLIENT )
 			{
-				players[clientnum]->entity->increaseSkill(skill);
+				for ( int i = 0; i < 10; ++i )
+				{
+					strcpy((char*)net_packet->data, "CSKL");
+					net_packet->data[4] = clientnum;
+					net_packet->data[5] = skill;
+					net_packet->address.host = net_server.host;
+					net_packet->address.port = net_server.port;
+					net_packet->len = 6;
+					sendPacketSafe(net_sock, -1, net_packet, 0);
+				}
+			}
+			else
+			{
+				for (int i = 0; i < 10; ++i)
+				{
+					players[clientnum]->entity->increaseSkill(skill);
+				}
 			}
 		}
 		});
@@ -2380,7 +2537,7 @@ namespace ConsoleCommands {
 
 		messagePlayer(clientnum, MESSAGE_MISC, Language::get(412));
 
-		mapLevel(clientnum);
+		mapLevel(clientnum, 0, 0, 0, false);
 		});
 
 	static ConsoleCommand ccmd_maplevel2("/maplevel2", "magic mapping for the level (cheat)", []CCMD{
@@ -2431,14 +2588,14 @@ namespace ConsoleCommands {
 			return;
 		}
 
-		if (!players[clientnum]->entity->getStats()->EFFECTS[EFF_DRUNK])
+		if (!players[clientnum]->entity->getStats()->getEffectActive(EFF_DRUNK))
 		{
-			players[clientnum]->entity->getStats()->EFFECTS[EFF_DRUNK] = true;
+			players[clientnum]->entity->getStats()->setEffectActive(EFF_DRUNK, 1);
 			players[clientnum]->entity->getStats()->EFFECTS_TIMERS[EFF_DRUNK] = -1;
 		}
 		else
 		{
-			players[clientnum]->entity->getStats()->EFFECTS[EFF_DRUNK] = false;
+			players[clientnum]->entity->getStats()->clearEffect(EFF_DRUNK);
 			players[clientnum]->entity->getStats()->EFFECTS_TIMERS[EFF_DRUNK] = 0;
 		}
 		});
@@ -2486,7 +2643,7 @@ namespace ConsoleCommands {
 		for (int c = 1; c < NUMMONSTERS; c++)
 		{
 			// initialize all offsets to zero
-			for (x = 0; x < 20; x++)
+			for (x = 0; x < 30; x++)
 			{
 				limbs[c][x][0] = 0;
 				limbs[c][x][1] = 0;
@@ -2521,7 +2678,7 @@ namespace ConsoleCommands {
 				}
 
 				// process line
-				if (sscanf(data, "%d", &limb) != 1 || limb >= 20 || limb < 0)
+				if (sscanf(data, "%d", &limb) != 1 || limb >= 30 || limb < 0)
 				{
 					messagePlayer(clientnum, MESSAGE_MISC, "warning: syntax error in '%s':%d\n invalid limb index!", filename, line);
 					printlog("warning: syntax error in '%s':%d\n invalid limb index!\n", filename, line);
@@ -2722,6 +2879,27 @@ namespace ConsoleCommands {
 		secretlevel = (secretlevel == false);
 		});
 
+	static ConsoleCommand ccmd_setlvl("/setlvl", "set character lvl", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+
+		if ( multiplayer != SINGLE )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(299));
+			return;
+		}
+
+		if ( argc < 2 )
+		{
+			return;
+		}
+		int lvl = atoi(argv[1]);
+		stats[clientnum]->LVL = lvl;
+		});
+
 	static ConsoleCommand ccmd_seteffect("/seteffect", "give the player the specified effect (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
@@ -2746,11 +2924,16 @@ namespace ConsoleCommands {
 		else
 		{
 			int duration = 500;
+			Uint8 strength = 1;
 			if ( argc >= 3 )
 			{
 				duration = atoi(argv[2]);
 			}
-			players[clientnum]->entity->setEffect(effect, true, duration, true);
+			if ( argc >= 4 )
+			{
+				strength = atoi(argv[3]);
+			}
+			players[clientnum]->entity->setEffect(effect, strength, duration, true, true, true);
 		}
 		});
 
@@ -3062,8 +3245,8 @@ namespace ConsoleCommands {
 		}
 
 		messagePlayer(clientnum, MESSAGE_MISC, "Hungover Active: %d, Time to go: %d, Drunk Active: %d, Drunk time: %d",
-			stats[clientnum]->EFFECTS[EFF_WITHDRAWAL], stats[clientnum]->EFFECTS_TIMERS[EFF_WITHDRAWAL],
-			stats[clientnum]->EFFECTS[EFF_DRUNK], stats[clientnum]->EFFECTS_TIMERS[EFF_DRUNK]);
+			stats[clientnum]->getEffectActive(EFF_WITHDRAWAL), stats[clientnum]->EFFECTS_TIMERS[EFF_WITHDRAWAL],
+			stats[clientnum]->getEffectActive(EFF_DRUNK), stats[clientnum]->EFFECTS_TIMERS[EFF_DRUNK]);
 		return;
 		});
 
@@ -3095,6 +3278,30 @@ namespace ConsoleCommands {
 		disableFPSLimitOnNetworkMessages = !disableFPSLimitOnNetworkMessages;
 		});
 
+	static ConsoleCommand ccmd_addspell("/addspell", "teach player some spells (cheat)", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+
+		if ( argc < 2 )
+		{
+			return;
+		}
+		int spellID = atoi(argv[1]);
+		if ( allGameSpells.find(spellID) != allGameSpells.end() )
+		{
+			if ( spell_t* spell = allGameSpells[spellID] )
+			{
+				bool oldIntro = intro;
+				intro = true;
+				bool learned = addSpell(spell->ID, clientnum, true);
+				intro = oldIntro;
+			}
+		}
+	});
+
 	static ConsoleCommand ccmd_allspells1("/allspells1", "teach player some spells (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
@@ -3102,13 +3309,18 @@ namespace ConsoleCommands {
 			return;
 		}
 
-		for (auto it = allGameSpells.begin(); it != allGameSpells.begin() + 29; ++it)
+		for ( int i = SPELL_NONE + 1; i <= 29 && i < NUM_SPELLS; ++i )
 		{
-			spell_t* spell = *it;
-			bool oldIntro = intro;
-			intro = true;
-			bool learned = addSpell(spell->ID, clientnum, true);
-			intro = oldIntro;
+			if ( allGameSpells.find(i) != allGameSpells.end() )
+			{
+				if ( spell_t* spell = allGameSpells[i] )
+				{
+					bool oldIntro = intro;
+					intro = true;
+					bool learned = addSpell(spell->ID, clientnum, true);
+					intro = oldIntro;
+				}
+			}
 		}
 		return;
 		});
@@ -3229,10 +3441,15 @@ namespace ConsoleCommands {
 			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
+
 		for (int i = 0; i < NUM_SPELLS; ++i)
 		{
+			if ( i == SPELL_CRAB_FORM || i == SPELL_CRAB_WEB ) { continue; }
 			int spellbook = getSpellbookFromSpellID(i);
-			dropItem(newItem(static_cast<ItemType>(spellbook), DECREPIT, -1, 1, local_rng.rand(), true, &stats[clientnum]->inventory), 0);
+			if ( spellbook >= 0 && spellbook < NUMITEMS && items[spellbook].category == SPELLBOOK )
+			{
+				dropItem(newItem(static_cast<ItemType>(spellbook), DECREPIT, 0, 1, local_rng.rand(), true, &stats[clientnum]->inventory), 0);
+			}
 		}
 		});
 
@@ -3588,8 +3805,16 @@ namespace ConsoleCommands {
 		{
 			if (inputs.hasController(i))
 			{
-				inputs.getController(i)->addRumble(GameController::Haptic_t::RUMBLE_NORMAL,
-					8000, 0, TICKS_PER_SECOND, 0);
+				if ( argc >= 4 )
+				{
+					inputs.getController(i)->addRumble(GameController::Haptic_t::RUMBLE_SPELL,
+						atoi(argv[1]), atoi(argv[2]), atoi(argv[3]), 0);
+				}
+				else
+				{
+					inputs.getController(i)->addRumble(GameController::Haptic_t::RUMBLE_NORMAL,
+						8000, 0, TICKS_PER_SECOND, 0);
+				}
 			}
 		}
 		});
@@ -3782,7 +4007,107 @@ namespace ConsoleCommands {
 
 	static ConsoleCommand ccmd_loaditems("/loaditems", "", []CCMD{
 		ItemTooltips.readItemsFromFile();
+		setupSpells();
 		messagePlayer(clientnum, MESSAGE_MISC, "Reloaded items.json");
+		});
+
+	static ConsoleCommand ccmd_reloadsound("/reloadsound", "reloads specific sounds.txt index", []CCMD{
+		if ( argc > 1 )
+		{
+			int soundIndex = atoi(argv[1]);
+			if ( soundIndex < numsounds )
+			{
+				Mods::soundsListModifiedIndexes.push_back(soundIndex);
+				physfsReloadSounds(false);
+			}
+		}
+	});
+
+	static ConsoleCommand ccmd_reloadsprite("/reloadsprite", "reloads specific sprites.txt index", []CCMD{
+		if ( argc > 1 )
+		{
+			int reloadSpriteIndex = atoi(argv[1]);
+		
+			std::string spritesDirectory = PHYSFS_getRealDir("images/sprites.txt");
+			spritesDirectory.append(PHYSFS_getDirSeparator()).append("images/sprites.txt");
+			printlog("[PhysFS]: Loading sprites from directory %s...\n", spritesDirectory.c_str());
+			File* fp = openDataFile(spritesDirectory.c_str(), "rb");
+			char name[PATH_MAX];
+			for ( int c = 0; !fp->eof(); ++c )
+			{
+				fp->gets2(name, PATH_MAX);
+				if ( c != reloadSpriteIndex ) { continue; }
+				if ( PHYSFS_getRealDir(name) != nullptr )
+				{
+					std::string spriteFile = PHYSFS_getRealDir(name);
+					spriteFile.append(PHYSFS_getDirSeparator()).append(name);
+					if ( sprites[c] )
+					{
+						SDL_FreeSurface(sprites[c]);
+					}
+					char fullname[PATH_MAX];
+					strncpy(fullname, spriteFile.c_str(), PATH_MAX - 1);
+					sprites[c] = loadImage(fullname);
+					if ( nullptr != sprites[c] )
+					{
+						//Whee
+					}
+					else
+					{
+						printlog("warning: failed to load '%s' listed at line %d in %s\n", name, c + 1, spritesDirectory.c_str());
+						if ( 0 == c )
+						{
+							printlog("sprite 0 cannot be NULL!\n");
+							FileIO::close(fp);
+							return;
+						}
+					}
+				}
+				break;
+			}
+			FileIO::close(fp);
+		}
+	});
+
+	static ConsoleCommand ccmd_reloadspells("/reloadspells", "reload spells definitions and player owned spells (cheat)", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+
+		consoleCommand("/loaditems");
+		node_t* nextnode = nullptr;
+		players[clientnum]->magic.clearSelectedSpells();
+		std::vector<int> relearnSpells;
+		for ( auto node = stats[clientnum]->inventory.first; node; node = nextnode )
+		{
+			nextnode = node->next;
+			if ( Item* item = (Item*)node->element )
+			{
+				if ( getSpellFromItem(clientnum, item, true) )
+				{
+					list_RemoveNode(item->node);
+				}
+			}
+		}
+
+		for ( auto node = players[clientnum]->magic.spellList.first; node; node = nextnode )
+		{
+			nextnode = node->next;
+			int spellID = ((spell_t*)(node->element))->ID;
+			relearnSpells.push_back(spellID);
+			list_RemoveNode(node);
+		}
+
+
+		for ( auto spellID : relearnSpells )
+		{
+			bool oldIntro = intro;
+			intro = true;
+			bool learned = addSpell(spellID, clientnum, true);
+			intro = oldIntro;
+		}
 		});
 
 	static ConsoleCommand ccmd_gimmeallpotions("/gimmeallpotions", "give all potions (cheat)", []CCMD{
@@ -3858,13 +4183,18 @@ namespace ConsoleCommands {
 			return;
 		}
 
-		for (auto it = allGameSpells.begin() + 29; it != allGameSpells.end(); ++it)
+		for ( int i = 30; i < NUM_SPELLS; ++i )
 		{
-			spell_t* spell = *it;
-			bool oldIntro = intro;
-			intro = true;
-			bool learned = addSpell(spell->ID, clientnum, true);
-			intro = oldIntro;
+			if ( allGameSpells.find(i) != allGameSpells.end() )
+			{
+				if ( spell_t* spell = allGameSpells[i] )
+				{
+					bool oldIntro = intro;
+					intro = true;
+					bool learned = addSpell(spell->ID, clientnum, true);
+					intro = oldIntro;
+				}
+			}
 		}
 		return;
 		});
@@ -3876,15 +4206,293 @@ namespace ConsoleCommands {
 			return;
 		}
 
-		for (auto it = allGameSpells.begin(); it != allGameSpells.end(); ++it)
+		for ( int i = SPELL_NONE + 1; i < NUM_SPELLS; ++i )
 		{
-			spell_t* spell = *it;
-			bool oldIntro = intro;
-			intro = true;
-			bool learned = addSpell(spell->ID, clientnum, true);
-			intro = oldIntro;
+			if ( allGameSpells.find(i) != allGameSpells.end() )
+			{
+				if ( spell_t* spell = allGameSpells[i] )
+				{
+					bool oldIntro = intro;
+					intro = true;
+					bool learned = addSpell(spell->ID, clientnum, true);
+					intro = oldIntro;
+				}
+			}
 		}
 		return;
+		});
+
+	static ConsoleCommand ccmd_allspells4("/allspells4", "teach the player some spells (cheat)", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+
+		/*rapidjson::Document d;
+		d.SetObject();
+		CustomHelpers::addMemberToRoot(d, "item_names", rapidjson::Value(rapidjson::kObjectType));*/
+
+		for ( int i = SPELL_NONE + 50; i < NUM_SPELLS; ++i )
+		{
+			if ( allGameSpells.find(i) != allGameSpells.end() )
+			{
+				if ( spell_t* spell = allGameSpells[i] )
+				{
+					bool oldIntro = intro;
+					intro = true;
+					bool learned = addSpell(spell->ID, clientnum, true);
+					intro = oldIntro;
+
+					/*int spellbookId = getSpellbookFromSpellID(spell->ID);
+					if ( items[spellbookId].category == SPELLBOOK )
+					{
+						d["item_names"].AddMember(rapidjson::Value(ItemTooltips.tmpItems[spellbookId].internalName.c_str(), d.GetAllocator()), rapidjson::Value(rapidjson::kObjectType),
+							d.GetAllocator());
+						std::string str = "spellbook of ";
+						str += spell->getSpellName(true);
+						d["item_names"][ItemTooltips.tmpItems[spellbookId].internalName.c_str()].AddMember("name_identified", rapidjson::Value(str.c_str(), d.GetAllocator()), d.GetAllocator());
+						d["item_names"][ItemTooltips.tmpItems[spellbookId].internalName.c_str()].AddMember("name_unidentified", rapidjson::Value("spellbook", d.GetAllocator()), d.GetAllocator());
+					}*/
+				}
+			}
+		}
+
+		/*File* fp = FileIO::open("lang/stuff.json", "wb");
+		if ( !fp )
+		{
+			return;
+		}
+		rapidjson::StringBuffer os;
+		rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(os);
+		d.Accept(writer);
+		fp->write(os.GetString(), sizeof(char), os.GetSize());
+		FileIO::close(fp);*/
+
+		return;
+		});
+
+	static ConsoleCommand ccmd_levelspells_sorcery("/levelspells_sorcery", "teach the player some spells (cheat)", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+		
+		std::vector<std::pair<int, std::pair<int, const char*>>> orderedSpells;
+
+		for ( int i = 0; i < NUM_SPELLS; ++i )
+		{
+			if ( allGameSpells.find(i) != allGameSpells.end() )
+			{
+				if ( spell_t* spell = allGameSpells[i] )
+				{
+					bool oldIntro = intro;
+					intro = true;
+					if ( spell->skillID == PRO_SORCERY
+						&& spell->difficulty <= stats[clientnum]->getProficiency(PRO_SORCERY)
+						&& !spell->hide_from_ui && spell->drop_table >= 0 )
+					{
+						bool learned = addSpell(spell->ID, clientnum, true);
+						if ( argc >= 2 )
+						{
+							orderedSpells.push_back(std::make_pair(spell->ID, std::make_pair(spell->difficulty, spell->spell_internal_name)));
+						}
+					}
+					intro = oldIntro;
+				}
+			}
+		}
+
+		for ( auto& spell : orderedSpells )
+		{
+			printlog("%d %d %s", spell.first, spell.second.first, spell.second.second);
+		}
+
+		return;
+		});
+
+	static ConsoleCommand ccmd_levelspells_mysticism("/levelspells_mysticism", "teach the player some spells (cheat)", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+
+		std::vector<std::pair<int, std::pair<int, const char*>>> orderedSpells;
+
+		for ( int i = 0; i < NUM_SPELLS; ++i )
+		{
+			if ( allGameSpells.find(i) != allGameSpells.end() )
+			{
+				if ( spell_t* spell = allGameSpells[i] )
+				{
+					bool oldIntro = intro;
+					intro = true;
+					if ( spell->skillID == PRO_MYSTICISM
+						&& spell->difficulty <= stats[clientnum]->getProficiency(PRO_MYSTICISM)
+						&& !spell->hide_from_ui && spell->drop_table >= 0 )
+					{
+						bool learned = addSpell(spell->ID, clientnum, true);
+						if ( argc >= 2 )
+						{
+							orderedSpells.push_back(std::make_pair(spell->ID, std::make_pair(spell->difficulty, spell->spell_internal_name)));
+						}
+					}
+					intro = oldIntro;
+				}
+			}
+		}
+
+		for ( auto& spell : orderedSpells )
+		{
+			printlog("%d %d %s", spell.first, spell.second.first, spell.second.second);
+		}
+
+		return;
+		});
+
+	static ConsoleCommand ccmd_collect_spellbooks("/collect_spellbooks", "collect some spells (cheat)", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+
+		node_t* nextnode = nullptr;
+		for ( auto node = map.entities->first; node; node = nextnode )
+		{
+			nextnode = node->next;
+			if ( Entity* entity = (Entity*)node->element )
+			{
+				if ( entity->behavior == &actItem && (items[entity->skill[10]].category == SPELLBOOK || items[entity->skill[10]].category == TOME_SPELL) )
+				{
+					Entity* oldSelected = selectedEntity[0];
+					selectedEntity[0] = entity;
+					bool oldInRange = inrange[0];
+					inrange[0] = true;
+					actItem(entity);
+					inrange[0] = oldInRange;
+					selectedEntity[0] = oldSelected;
+				}
+			}
+		}
+	});
+
+	static ConsoleCommand ccmd_levelspells_thaumaturgy("/levelspells_thaumaturgy", "teach the player some spells (cheat)", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+
+		std::vector<std::pair<int, std::pair<int, const char*>>> orderedSpells;
+
+		for ( int i = 0; i < NUM_SPELLS; ++i )
+		{
+			if ( allGameSpells.find(i) != allGameSpells.end() )
+			{
+				if ( spell_t* spell = allGameSpells[i] )
+				{
+					bool oldIntro = intro;
+					intro = true;
+					if ( spell->skillID == PRO_THAUMATURGY
+						&& spell->difficulty <= stats[clientnum]->getProficiency(PRO_THAUMATURGY)
+						&& !spell->hide_from_ui && spell->drop_table >= 0 )
+					{
+						bool learned = addSpell(spell->ID, clientnum, true);
+						if ( argc >= 2 )
+						{
+							orderedSpells.push_back(std::make_pair(spell->ID, std::make_pair(spell->difficulty, spell->spell_internal_name)));
+						}
+					}
+					intro = oldIntro;
+				}
+			}
+		}
+
+		for ( auto& spell : orderedSpells )
+		{
+			printlog("%d %d %s", spell.first, spell.second.first, spell.second.second);
+		}
+		return;
+		});
+
+	static ConsoleCommand ccmd_levelspells_cast("/levelspells_cast", "teach the player some spells (cheat)", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+		
+		if ( argc > 1 )
+		{
+			int type = atoi(argv[1]);
+			int spellID = SPELL_FORCEBOLT;
+			if ( type == 1 )
+			{
+				spellID = SPELL_LIGHTNING;
+			}
+			else if ( type == 2 )
+			{
+				spellID = SPELL_FIREBALL;
+			}
+			else if ( type == 3 )
+			{
+				spellID = SPELL_COLD;
+			}
+			else if ( type == 4 )
+			{
+				spellID = SPELL_MAGICMISSILE;
+			}
+			else if ( type == 5 )
+			{
+				spellID = SPELL_METEOR;
+			}
+
+			static int mana = 0;
+			static int rolls = 0;
+			static int longestDryStreak = 0;
+			static int currentStreak = 0;
+			messagePlayer(0, MESSAGE_DEBUG, "Mana: %d | Rolls: %d | Longest Streak: %d", mana, rolls, longestDryStreak);
+			if ( type == -1 )
+			{
+				mana = 0;
+				rolls = 0;
+				longestDryStreak = 0;
+				currentStreak = 0;
+				stats[clientnum]->setProficiencyUnsafe(getSpellFromID(spellID)->skillID, 0);
+				return;
+			}
+			stats[clientnum]->setProficiencyUnsafe(getSpellFromID(spellID)->skillID,
+				std::max(getSpellFromID(spellID)->difficulty, stats[clientnum]->getProficiency(getSpellFromID(spellID)->skillID)));
+			for ( int i = 0; i < 10; ++i )
+			{
+				int baseMana = getSpellFromID(spellID)->mana;
+				if ( argc > 2 )
+				{
+					baseMana = atoi(argv[2]);
+				}
+				players[clientnum]->mechanics.baseSpellIncrementMP(baseMana, getSpellFromID(spellID)->skillID);
+				mana += baseMana;
+				//castSpell(players[clientnum]->entity->getUID(), getSpellFromID(spellID), false, false);
+				int prevLvl = stats[clientnum]->getProficiency(getSpellFromID(spellID)->skillID);
+				magicOnSpellCastEvent(players[clientnum]->entity, nullptr, nullptr, spellID, spell_t::SPELL_LEVEL_EVENT_DMG, 1);
+				if ( stats[clientnum]->getProficiency(getSpellFromID(spellID)->skillID) == prevLvl )
+				{
+					++currentStreak;
+				}
+				else
+				{
+					currentStreak = 0;
+				}
+				if ( currentStreak > longestDryStreak )
+				{
+					longestDryStreak = currentStreak;
+				}
+				++rolls;
+			}
+		}
 		});
 
 	static ConsoleCommand ccmd_gimmexp("/gimmexp", "give the player some XP (cheat)", []CCMD{
@@ -3941,10 +4549,22 @@ namespace ConsoleCommands {
 			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
+#ifndef NDEBUG
 		if (players[clientnum]->entity)
 		{
-			spellEffectPolymorph(players[clientnum]->entity, players[clientnum]->entity, true, TICKS_PER_SECOND * 60 * 2);
+			spellEffectPolymorph(players[clientnum]->entity, players[clientnum]->entity, true, TICKS_PER_SECOND * 60 * 5);
+			if ( argc > 1 )
+			{
+				int type = std::min(NUMMONSTERS - 1, std::max((int)HUMAN, atoi(argv[1])));
+				players[clientnum]->entity->effectPolymorph = type;
+			}
 		}
+#else
+		if ( players[clientnum]->entity )
+		{
+			spellEffectPolymorph(players[clientnum]->entity, players[clientnum]->entity, true, TICKS_PER_SECOND * 60 * 1);
+		}
+#endif
 		});
 
 	static ConsoleCommand ccmd_sexchange("/sexchange", "fix yourself (cheat)", []CCMD{
@@ -4310,9 +4930,11 @@ namespace ConsoleCommands {
 		}
 
 		int cat = atoi(argv[1]);
-		cat = std::min(std::max(0, cat), NUMCATEGORIES - 1);
+		cat = std::min(std::max(0, cat), Category::CATEGORY_MAX - 2);
 		ItemType type = itemLevelCurve((Category)cat, 0, currentlevel, local_rng);
-		dropItem(newItem(type, EXCELLENT, 0, 1, local_rng.rand(), true, &stats[clientnum]->inventory), 0);
+		Item* item = newItem(type, EXCELLENT, 0, 1, local_rng.rand(), true, &stats[clientnum]->inventory);
+		itemLevelCurvePostProcess(nullptr, item, local_rng);
+		dropItem(item, 0);
 	});
 
 	static ConsoleCommand ccmd_spawnitem2("/spawnitem2", "spawn an item with beatitude and status (/spawnitem -2 5 wooden shield) (cheat)", []CCMD{
@@ -4566,6 +5188,266 @@ namespace ConsoleCommands {
 #endif
 	});
 
+	static ConsoleCommand ccmd_map_debug_stations("/map_debug_stations", "", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+
+	for ( int j = 0; j < 2; ++j )
+	{
+		auto& floors_stations = (j == 0) ? treasure_room_generator.station_floors : treasure_room_generator.station_secret_floors;
+		for ( int i = 0; i <= 35; ++i )
+		{
+			if ( floors_stations.find(i) != floors_stations.end() )
+			{
+				messagePlayer(clientnum, MESSAGE_DEBUG, "[STATIONS]: [%d]: %s", i, floors_stations[i].c_str());
+			}
+		}
+	}
+	});
+
+	static ConsoleCommand ccmd_map_debug_door("/map_debug_door", "", []CCMD{
+#ifndef NINTENDO
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+		for ( auto f : directoryContents(".\\maps\\", false, true) )
+		{
+			std::string mapPath = "maps/";
+			mapPath += f;
+			bool foundNumber = std::find_if(f.begin(), f.end(), ::isdigit) != f.end();
+			if ( foundNumber && PHYSFS_getRealDir(mapPath.c_str()) )
+			{
+				int maphash = 0;
+				std::string fullMapPath = PHYSFS_getRealDir(mapPath.c_str());
+				fullMapPath += PHYSFS_getDirSeparator();
+				fullMapPath += mapPath;
+				loadMap(fullMapPath.c_str(), &map, map.entities, map.creatures, nullptr);
+				for ( node_t* node = map.entities->first; node; node = node->next )
+				{
+					if ( Entity* entity = (Entity*)node->element )
+					{
+						if ( entity->sprite == 217 || entity->sprite == 218 )
+						{
+							printlog("Iron door: Lockpick state: %d, opening: %d", entity->doorDisableLockpicks, entity->doorDisableOpening);
+						}
+					}
+				}
+				// will crash the game but will show results of every map load :)
+			}
+		}
+#endif
+		});
+
+	static ConsoleCommand ccmd_map_debug_floor_interact("/map_debug_floor_interact", "", []CCMD{
+#ifndef NINTENDO
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+		for ( auto f : directoryContents(".\\maps\\", false, true) )
+		{
+			std::string mapPath = "maps/";
+			mapPath += f;
+			/*bool foundNumber = std::find_if(f.begin(), f.end(), ::isdigit) != f.end();*/
+			if ( /*foundNumber &&*/ PHYSFS_getRealDir(mapPath.c_str()) )
+			{
+				int maphash = 0;
+				std::string fullMapPath = PHYSFS_getRealDir(mapPath.c_str());
+				fullMapPath += PHYSFS_getDirSeparator();
+				fullMapPath += mapPath;
+				loadMap(fullMapPath.c_str(), &map, map.entities, map.creatures, nullptr);
+				for ( node_t* node = map.entities->first; node; node = node->next )
+				{
+					if ( Entity* entity = (Entity*)node->element )
+					{
+						if ( entity->sprite == 127 && entity->floorDecorationInteractText1 != 0 )
+						{
+							char buf[256] = "";
+							int totalChars = 0;
+							for ( int i = 8; i < 60; ++i )
+							{
+								if ( i == 28 ) // circuit_status
+								{
+									continue;
+								}
+								if ( entity->skill[i] != 0 )
+								{
+									for ( int c = 0; c < 4; ++c )
+									{
+										buf[totalChars] = static_cast<char>((entity->skill[i] >> (c * 8)) & 0xFF);
+										//messagePlayer(0, "%d %d", i, c);
+										++totalChars;
+									}
+								}
+							}
+							if ( buf[totalChars] != '\0' )
+							{
+								buf[totalChars] = '\0';
+							}
+							std::string output = buf;
+							printlog("Map: %s, floor interaction: %s", f.c_str(), output.c_str());
+						}
+					}
+				}
+				// will crash the game but will show results of every map load :)
+			}
+		}
+#endif
+		});
+
+	static ConsoleCommand ccmd_map_debug_treasure("/map_debug_treasure", "", []CCMD{
+#ifndef NINTENDO
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+		std::map<std::string, std::vector<std::string>> treasureLoot;
+		for ( auto f : directoryContents(".\\maps\\", false, true) )
+		{
+			std::string mapPath = "maps/";
+			mapPath += f;
+			if ( mapPath.find("_lock") != std::string::npos && PHYSFS_getRealDir(mapPath.c_str()) )
+			{
+				int maphash = 0;
+				std::string fullMapPath = PHYSFS_getRealDir(mapPath.c_str());
+				fullMapPath += PHYSFS_getDirSeparator();
+				fullMapPath += mapPath;
+				loadMap(fullMapPath.c_str(), &map, map.entities, map.creatures, nullptr);
+				auto& loot = treasureLoot[mapPath];
+				for ( node_t* node = map.entities->first; node; node = node->next )
+				{
+					if ( Entity* entity = (Entity*)node->element )
+					{
+						int x = entity->x / 16;
+						int y = entity->y / 16;
+						std::string coord = "@[x:";
+						coord += (std::to_string(x));
+						coord += (",y:");
+						coord += (std::to_string(y));
+						coord += ("], ");
+
+						if ( entity->sprite == 9 )
+						{
+							loot.push_back(coord + "gold");
+						}
+						else if ( entity->sprite == 8 )
+						{
+							{
+								std::string item = "item, [x";
+								item += std::to_string(std::max(1, entity->skill[13]));
+								item += "], ";
+								item += "(";
+								if ( entity->skill[12] == 10 )
+								{
+									item += "+?";
+								}
+								else
+								{
+									item += entity->skill[12] >= 0 ? "+" : "";
+									item += std::to_string(entity->skill[12]);
+								}
+								item += "), ";
+								if ( entity->skill[11] == 0 )
+								{
+									item += "[rand]";
+								}
+								else
+								{
+									switch ( (Status)(entity->skill[11]) )
+									{
+									case BROKEN:
+										item += "[broken]";
+										break;
+									case DECREPIT:
+										item += "[decrepit]";
+										break;
+									case WORN:
+										item += "[worn]";
+										break;
+									case SERVICABLE:
+										item += "[serviceable]";
+										break;
+									case EXCELLENT:
+										item += "[excellent]";
+										break;
+									default:
+										item += "[?]";
+									}
+								}
+								item += ", ";
+								if ( entity->skill[10] == 0 )
+								{
+									item += "\"random item\"";
+								}
+								else if ( entity->skill[10] == 1 )
+								{
+									if ( entity->skill[16] > 0 && entity->skill[16] <= 13 )
+									{
+										static char itemCategoryNames[17][32] =
+										{
+											"random",
+											"weapon",
+											"armor",
+											"amulet",
+											"potion",
+											"scroll",
+											"magicstaff",
+											"ring",
+											"spellbook",
+											"gem",
+											"thrown",
+											"tool",
+											"food",
+											"book",
+											"equipment",
+											"jewelry",
+											"magical"
+										};
+										item += std::string("\"category: ") + std::string(itemCategoryNames[entity->skill[16]]) + "\"";
+									}
+									else
+									{
+										item += std::string("\"random category\"");
+									}
+								}
+								else
+								{
+									item += "\"";
+									item += items[entity->skill[10] - 2].getIdentifiedName();
+									item += "\"";
+								}
+								item += ", (";
+								item += entity->skill[15] == 1 ? "id'd)" : "unid'd)";
+								if ( entity->skill[10] > 1 )
+								{
+									item += ", [value: " + std::to_string(items[entity->skill[10] - 2].gold_value) + "G]";
+								}
+								else
+								{
+									item += ", [value: ?G]";
+								}
+								loot.push_back(coord + item);
+							}
+						}
+					}
+				}
+				// will crash the game but will show results of every map load :)
+				for ( auto& s : loot )
+				{
+					printlog("[%s], %s", mapPath.c_str(), s.c_str());
+				}
+			}
+		}
+#endif
+		});
+
 	static ConsoleCommand ccmd_exportitemlang("/exportitemlang", "", []CCMD{
 #ifndef EDITOR
 #ifndef NINTENDO
@@ -4645,6 +5527,7 @@ namespace ConsoleCommands {
 					stat->MAXHP = 5000;
 					stat->CON = 0;
 					stat->LVL = 50;
+					stat->setAttribute("dummy_target", "0");
 					stat->monsterForceAllegiance = Stat::MONSTER_FORCE_PLAYER_ENEMY;
 					serverUpdateEntityStatFlag(monster, 20);
 				}
@@ -4674,7 +5557,8 @@ namespace ConsoleCommands {
 					stat->CON = 0;
 					stat->RANDOM_CON = 0;
 					stat->LVL = 50;
-					stat->EFFECTS[EFF_STUNNED] = true;
+					stat->setEffectActive(EFF_STUNNED, 1);
+					stat->setAttribute("dummy_target", "0");
 					stat->monsterForceAllegiance = Stat::MONSTER_FORCE_PLAYER_ENEMY;
 					serverUpdateEntityStatFlag(monster, 20);
 					stat->EDITOR_ITEMS[ITEM_SLOT_HELM] = 0;
@@ -4695,6 +5579,11 @@ namespace ConsoleCommands {
 	static ConsoleCommand ccmd_mesh_collider_debug("/mesh_collider_debug", "", []CCMD{
 		node_t* tmpNode = NULL;
 		Entity* tmpEnt = NULL;
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
 		for ( tmpNode = map.entities->first; tmpNode != NULL; tmpNode = tmpNode->next )
 		{
 			tmpEnt = (Entity*)tmpNode->element;
@@ -4709,8 +5598,241 @@ namespace ConsoleCommands {
 		}
 	});
 
+	static ConsoleCommand ccmd_debug_claim_items("/debug_claim_items", "", []CCMD{
+		node_t * tmpNode = NULL;
+		Entity* tmpEnt = NULL;
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+
+		if ( multiplayer != CLIENT )
+		{
+			node_t* nextnode = nullptr;
+			for ( tmpNode = map.entities->first; tmpNode != NULL; tmpNode = nextnode )
+			{
+				nextnode = tmpNode->next;
+				tmpEnt = (Entity*)tmpNode->element;
+				if ( tmpEnt->behavior == &actItem )
+				{
+					Item* item2 = newItemFromEntity(tmpEnt);
+					int pickedUpCount = item2->count;
+					Item* item = itemPickup(clientnum, item2);
+					if ( item )
+					{
+						if ( players[clientnum]->isLocalPlayer() )
+						{
+							// item is the new inventory stack for server, free the picked up items
+							free(item2);
+						}
+						list_RemoveNode(tmpEnt->mynode);
+					}
+				}
+			}
+		}
+	});
+
+	static ConsoleCommand ccmd_debug_heal_items("/debug_heal_items", "", []CCMD{
+		node_t * tmpNode = NULL;
+		Entity* tmpEnt = NULL;
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+		int healing = 0;
+		int mana = 0;
+		int items = 0;
+		int monsterinv = 0;
+		int monsterinvheal = 0;
+		int monsterinvmana = 0;
+		int chestinv = 0;
+		int chestheal = 0;
+		int chestmana = 0;
+		int monsterShopPrivStock = 0;
+		int monsterShopPrivStockHeal = 0;
+		int monsterShopPrivStockMana = 0;
+		int magicScrap = 0;
+		std::map<int, int> allitems;
+		for ( tmpNode = map.entities->first; tmpNode != NULL; tmpNode = tmpNode->next )
+		{
+			tmpEnt = (Entity*)tmpNode->element;
+			if ( tmpEnt->behavior == &actItem )
+			{
+				if ( Item* item = newItemFromEntity(tmpEnt) )
+				{
+					int metal = 0;
+					int magic = 0;
+					GenericGUIMenu::tinkeringGetItemValue(item, &metal, &magic);
+					magicScrap += magic;
+					allitems[item->type] += item->count;
+					if ( int heal = item->potionGetEffectHealth(players[clientnum]->entity, stats[clientnum]) )
+					{
+						if ( item->type == POTION_EXTRAHEALING )
+						{
+							if ( statGetCON(stats[clientnum], players[clientnum]->entity) > 0 )
+							{
+								heal += 4 * statGetCON(stats[clientnum], players[clientnum]->entity);
+							}
+						}
+						if ( item->type == POTION_HEALING )
+						{
+							if ( statGetCON(stats[clientnum], players[clientnum]->entity) > 0 )
+							{
+								heal += 2 * statGetCON(stats[clientnum], players[clientnum]->entity);
+							}
+						}
+
+						if ( item->type == POTION_RESTOREMAGIC )
+						{
+							if ( statGetINT(stats[clientnum], players[clientnum]->entity) > 0 )
+							{
+								heal += std::min(30, 2 * statGetINT(stats[clientnum], players[clientnum]->entity)); // extra mana scaling from 1 to 15 INT, capped at +30 MP
+							}
+							mana += heal * item->count;
+						}
+						else
+						{
+							healing += heal * item->count;
+						}
+						items += item->count;
+					}
+					free(item);
+				}
+			}
+			else if ( tmpEnt->behavior == &actMonster )
+			{
+				list_t* inventory = &tmpEnt->getStats()->inventory;
+				if ( inventory )
+				{
+					for ( node_t* node = inventory->first; node; node = node->next )
+					{
+						if ( Item* item = (Item*)node->element )
+						{
+							int metal = 0;
+							int magic = 0;
+							GenericGUIMenu::tinkeringGetItemValue(item, &metal, &magic);
+							magicScrap += magic;
+							allitems[item->type] += item->count;
+							if ( int heal = item->potionGetEffectHealth(players[clientnum]->entity, stats[clientnum]) )
+							{
+								if ( item->type == POTION_EXTRAHEALING )
+								{
+									if ( statGetCON(stats[clientnum], players[clientnum]->entity) > 0 )
+									{
+										heal += 4 * statGetCON(stats[clientnum], players[clientnum]->entity);
+									}
+								}
+								if ( item->type == POTION_HEALING )
+								{
+									if ( statGetCON(stats[clientnum], players[clientnum]->entity) > 0 )
+									{
+										heal += 2 * statGetCON(stats[clientnum], players[clientnum]->entity);
+									}
+								}
+
+								if ( item->type == POTION_RESTOREMAGIC )
+								{
+									if ( statGetINT(stats[clientnum], players[clientnum]->entity) > 0 )
+									{
+										heal += std::min(30, 2 * statGetINT(stats[clientnum], players[clientnum]->entity)); // extra mana scaling from 1 to 15 INT, capped at +30 MP
+									}
+									mana += heal * item->count;
+									monsterinvmana = heal * item->count;
+									if ( item->itemSpecialShopConsumable )
+									{
+										monsterShopPrivStockMana += heal * item->count;
+										monsterShopPrivStock += item->count;
+									}
+								}
+								else
+								{
+									healing += heal * item->count;
+									monsterinvheal += heal * item->count;
+									if ( item->itemSpecialShopConsumable )
+									{
+										monsterShopPrivStockHeal += heal * item->count;
+										monsterShopPrivStock += item->count;
+									}
+								}
+								items += item->count;
+								monsterinv += item->count;
+							}
+						}
+					}
+				}
+			}
+			else if ( tmpEnt->behavior == &actChest )
+			{
+				list_t* inventory = tmpEnt->getChestInventoryList();
+				if ( inventory )
+				{
+					for ( node_t* node = inventory->first; node; node = node->next )
+					{
+						if ( Item* item = (Item*)node->element )
+						{
+							int metal = 0;
+							int magic = 0;
+							GenericGUIMenu::tinkeringGetItemValue(item, &metal, &magic);
+							magicScrap += magic;
+							allitems[item->type] += item->count;
+							if ( int heal = item->potionGetEffectHealth(players[clientnum]->entity, stats[clientnum]) )
+							{
+								if ( item->type == POTION_EXTRAHEALING )
+								{
+									if ( statGetCON(stats[clientnum], players[clientnum]->entity) > 0 )
+									{
+										heal += 4 * statGetCON(stats[clientnum], players[clientnum]->entity);
+									}
+								}
+								if ( item->type == POTION_HEALING )
+								{
+									if ( statGetCON(stats[clientnum], players[clientnum]->entity) > 0 )
+									{
+										heal += 2 * statGetCON(stats[clientnum], players[clientnum]->entity);
+									}
+								}
+
+								if ( item->type == POTION_RESTOREMAGIC )
+								{
+									if ( statGetINT(stats[clientnum], players[clientnum]->entity) > 0 )
+									{
+										heal += std::min(30, 2 * statGetINT(stats[clientnum], players[clientnum]->entity)); // extra mana scaling from 1 to 15 INT, capped at +30 MP
+									}
+									mana += heal * item->count;
+									chestmana += heal * item->count;
+								}
+								else
+								{
+									healing += heal * item->count;
+									chestheal += heal * item->count;
+								}
+								items += item->count;
+								chestinv += item->count;
+							}
+						}
+					}
+				}
+			}
+		}
+		messagePlayer(clientnum, MESSAGE_MISC, "Total Items: %d | heal: %d | mana: %d", items, healing, mana);
+		messagePlayer(clientnum, MESSAGE_MISC, "Monsters: %d | heal: %d | mana: %d", monsterinv, monsterinvheal, monsterinvmana);
+		messagePlayer(clientnum, MESSAGE_MISC, "Shop Specials: %d | heal: %d | mana: %d", monsterShopPrivStock, monsterShopPrivStockHeal, monsterShopPrivStockMana);
+		messagePlayer(clientnum, MESSAGE_MISC, "Chests: %d | heal: %d | mana: %d", chestinv, chestheal, chestmana);
+		for ( auto& i : allitems )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, "[Gen]: %s : %d", ::items[i.first].getIdentifiedName(), i.second);
+		}
+	});
+
 	static ConsoleCommand ccmd_mesh_collider_verify_and_crash_game("/mesh_collider_verify_and_crash_game", "", []CCMD{
 #ifndef NINTENDO
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
 		for ( auto f : directoryContents(".\\maps\\", false, true) )
 		{
 			std::string mapPath = "maps/";
@@ -4777,7 +5899,7 @@ namespace ConsoleCommands {
         const auto r = argc >= 2 ? strtof(argv[1], nullptr) : 1.f;
         const auto g = argc >= 3 ? strtof(argv[2], nullptr) : 1.f;
         const auto b = argc >= 4 ? strtof(argv[3], nullptr) : 1.f;
-        (void)lightSphereShadow(0, cameras[0].x, cameras[0].y, 4, r, g, b, 0.5f);
+        (void)lightSphereShadow(0, cameras[0].x, cameras[0].y, 4, r, g, b, 0.f, 0.5f);
     });
 
     static ConsoleCommand ccmd_test_model("/test_model", "spawn an entity using a specific model", []CCMD{
@@ -4947,6 +6069,33 @@ namespace ConsoleCommands {
 		players[clientnum]->ghost.respawn();
 		});
 
+	static ConsoleCommand ccmd_spawnghost3("/respawnasghost3", "respawn as a ghost", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+
+		/*if ( players[clientnum]->ghost.my )
+		{
+			players[clientnum]->ghost.setActive(!players[clientnum]->ghost.isActive());
+			return;
+		}
+
+		if ( stats[clientnum]->HP > 0 )
+		{
+			stats[clientnum]->HP = 0;
+		}*/
+
+		if ( players[clientnum]->entity )
+		{
+			players[clientnum]->ghost.initTeleportLocations(players[clientnum]->entity->x / 16, players[clientnum]->entity->y / 16);
+			players[clientnum]->entity->skill[3] = 2;
+			players[clientnum]->entity->setEffect(EFF_PROJECT_SPIRIT, true, 30 * TICKS_PER_SECOND, false);
+			players[clientnum]->ghost.spawnGhost();
+		}
+	});
+
 	static ConsoleCommand ccmd_spawnghost("/respawnasghost", "respawn as a ghost", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
@@ -4978,6 +6127,7 @@ namespace ConsoleCommands {
 
 	static ConsoleCommand ccmd_reloadequipmentoffsets("/reloadequipmentoffsets", "reloads equipment model offsets", []CCMD{
 		EquipmentModelOffsets.readFromFile(monstertypename[stats[clientnum]->type]);
+		EquipmentModelOffsets.readBaseItemsFromFile();
 	});
 
 	static ConsoleCommand ccmd_classstatrolls("/classstatrolls", "debug class stats", []CCMD{
@@ -5042,6 +6192,215 @@ namespace ConsoleCommands {
 				stats[clientnum]->PER,
 				stats[clientnum]->CHR);
 		}
+		stats[clientnum]->STR = 0;
+		stats[clientnum]->DEX = 0;
+		stats[clientnum]->CON = 0;
+		stats[clientnum]->INT = 0;
+		stats[clientnum]->PER = 0;
+		stats[clientnum]->CHR = 0;
+	});
+
+	static ConsoleCommand ccmd_classstatrolls2("/classstatrolls2", "debug current class stats", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+
+		if ( multiplayer != SINGLE )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(299));
+			return;
+		}
+		if ( !players[clientnum]->entity ) { return; }
+
+		//for ( int i = 0; i < NUMCLASSES; ++i )
+		{
+			stats[clientnum]->STR = 0;
+			stats[clientnum]->DEX = 0;
+			stats[clientnum]->CON = 0;
+			stats[clientnum]->INT = 0;
+			stats[clientnum]->PER = 0;
+			stats[clientnum]->CHR = 0;
+			for ( int lv = 0; lv < 50; ++lv )
+			{
+				int increasestat[3] = { 0, 0, 0 };
+				players[clientnum]->entity->playerStatIncrease(client_classes[clientnum], increasestat);
+				for ( int i = 0; i < 3; i++ )
+				{
+					switch ( increasestat[i] )
+					{
+					case STAT_STR:
+						stats[clientnum]->STR++;
+						break;
+					case STAT_DEX:
+						stats[clientnum]->DEX++;
+						break;
+					case STAT_CON:
+						stats[clientnum]->CON++;
+						break;
+					case STAT_INT:
+						stats[clientnum]->INT++;
+						break;
+					case STAT_PER:
+						stats[clientnum]->PER++;
+						break;
+					case STAT_CHR:
+						stats[clientnum]->CHR++;
+						break;
+					default:
+						break;
+					}
+				}
+			}
+			printlog("%d: %d %d %d %d %d %d",
+				client_classes[clientnum],
+				stats[clientnum]->STR,
+				stats[clientnum]->DEX,
+				stats[clientnum]->CON,
+				stats[clientnum]->INT,
+				stats[clientnum]->PER,
+				stats[clientnum]->CHR);
+			char buf[128];
+			snprintf(buf, sizeof(buf), "%d %d %d %d %d %d",
+				stats[clientnum]->STR,
+				stats[clientnum]->DEX,
+				stats[clientnum]->CON,
+				stats[clientnum]->INT,
+				stats[clientnum]->PER,
+				stats[clientnum]->CHR);
+			SDL_SetClipboardText(buf);
+		}
+		stats[clientnum]->STR = 0;
+		stats[clientnum]->DEX = 0;
+		stats[clientnum]->CON = 0;
+		stats[clientnum]->INT = 0;
+		stats[clientnum]->PER = 0;
+		stats[clientnum]->CHR = 0;
+	});
+
+	static ConsoleCommand ccmd_classstatrolls3("/classstatrolls3", "debug current class stats", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+
+		if ( multiplayer != SINGLE )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(299));
+			return;
+		}
+		if ( !players[clientnum]->entity ) { return; }
+
+		int numStatRolls = 0;
+		int attr[6] = { 0, 0, 0, 0, 0, 0 };
+		int attr2[6] = { 0, 0, 0, 0, 0, 0 };
+		Monster prevType = stats[clientnum]->type;
+		for ( int i = 0; i < 1000; ++i )
+		{
+			stats[clientnum]->STR = 0;
+			stats[clientnum]->DEX = 0;
+			stats[clientnum]->CON = 0;
+			stats[clientnum]->INT = 0;
+			stats[clientnum]->PER = 0;
+			stats[clientnum]->CHR = 0;
+			for ( int lv = 0; lv < 50; ++lv )
+			{
+				int increasestat[3] = { 0, 0, 0 };
+				stats[clientnum]->type = prevType;
+				players[clientnum]->entity->playerStatIncrease(client_classes[clientnum], increasestat);
+				for ( int i = 0; i < 3; i++ )
+				{
+					switch ( increasestat[i] )
+					{
+					case STAT_STR:
+						stats[clientnum]->STR++;
+						break;
+					case STAT_DEX:
+						stats[clientnum]->DEX++;
+						break;
+					case STAT_CON:
+						stats[clientnum]->CON++;
+						break;
+					case STAT_INT:
+						stats[clientnum]->INT++;
+						break;
+					case STAT_PER:
+						stats[clientnum]->PER++;
+						break;
+					case STAT_CHR:
+						stats[clientnum]->CHR++;
+						break;
+					default:
+						break;
+					}
+					++attr[increasestat[i]];
+					++numStatRolls;
+				}
+
+				increasestat[0] = 0; increasestat[1] = 0; increasestat[2] = 0;
+				stats[clientnum]->type = HUMAN;
+				players[clientnum]->entity->playerStatIncrease(client_classes[clientnum], increasestat);
+				for ( int i = 0; i < 3; i++ )
+				{
+					switch ( increasestat[i] )
+					{
+					case STAT_STR:
+						stats[clientnum]->STR++;
+						break;
+					case STAT_DEX:
+						stats[clientnum]->DEX++;
+						break;
+					case STAT_CON:
+						stats[clientnum]->CON++;
+						break;
+					case STAT_INT:
+						stats[clientnum]->INT++;
+						break;
+					case STAT_PER:
+						stats[clientnum]->PER++;
+						break;
+					case STAT_CHR:
+						stats[clientnum]->CHR++;
+						break;
+					default:
+						break;
+					}
+					++attr2[increasestat[i]];
+					//++numStatRolls;
+				}
+			}
+		}
+		char buf[128];
+		snprintf(buf, sizeof(buf), "%.2f %.2f %.2f %.2f %.2f %.2f",
+			3 * attr[0] / float(numStatRolls),
+			3 * attr[1] / float(numStatRolls),
+			3 * attr[2] / float(numStatRolls),
+			3 * attr[3] / float(numStatRolls),
+			3 * attr[4] / float(numStatRolls),
+			3 * attr[5] / float(numStatRolls));
+		messagePlayer(clientnum, MESSAGE_STATUS, "%s", buf);
+
+		snprintf(buf, sizeof(buf), "%.2f %.2f %.2f %.2f %.2f %.2f",
+			3 * attr2[0] / float(numStatRolls),
+			3 * attr2[1] / float(numStatRolls),
+			3 * attr2[2] / float(numStatRolls),
+			3 * attr2[3] / float(numStatRolls),
+			3 * attr2[4] / float(numStatRolls),
+			3 * attr2[5] / float(numStatRolls));
+		messagePlayer(clientnum, MESSAGE_STATUS, "%s", buf);
+
+		snprintf(buf, sizeof(buf), "%.2f%% %.2f%% %.2f%% %.2f%% %.2f%% %.2f%%",
+			100.0 * 3 * (attr[0] - attr2[0]) / float(numStatRolls),
+			100.0 * 3 * (attr[1] - attr2[1]) / float(numStatRolls),
+			100.0 * 3 * (attr[2] - attr2[2]) / float(numStatRolls),
+			100.0 * 3 * (attr[3] - attr2[3]) / float(numStatRolls),
+			100.0 * 3 * (attr[4] - attr2[4]) / float(numStatRolls),
+			100.0 * 3 * (attr[5] - attr2[5]) / float(numStatRolls));
+		messagePlayer(clientnum, MESSAGE_STATUS, "%s", buf);
+
+		SDL_SetClipboardText(buf);
 		stats[clientnum]->STR = 0;
 		stats[clientnum]->DEX = 0;
 		stats[clientnum]->CON = 0;
@@ -5165,6 +6524,12 @@ namespace ConsoleCommands {
 						case 166: monsterType = GYROBOT; break;
 						case 188: monsterType = BAT_SMALL; break;
 						case 189: monsterType = BUGBEAR; break;
+						case 204: monsterType = DRYAD; break;
+						case 205: monsterType = MYCONID; break;
+						case 206: monsterType = SALAMANDER; break;
+						case 207: monsterType = GREMLIN; break;
+						case 246: monsterType = REVENANT_SKULL; break;
+						case 247: monsterType = MONSTER_ADORCISED_WEAPON; break;
 						default:
 							break;
 						}
@@ -5179,5 +6544,260 @@ namespace ConsoleCommands {
 		}
 #endif
 		});
+
+	static ConsoleCommand ccmd_shader_test("/shader_test", "", []CCMD{
+		{
+			std::string filePath = "/data/shaders/";
+			filePath.append("sprite");
+			if ( filePath.find(".json") == std::string::npos )
+			{
+				filePath.append(".json");
+			}
+			if ( PHYSFS_getRealDir(filePath.c_str()) )
+			{
+				std::string inputPath = PHYSFS_getRealDir(filePath.c_str());
+				inputPath.append(filePath);
+
+				File* fp = FileIO::open(inputPath.c_str(), "rb");
+				if ( !fp )
+				{
+					printlog("[JSON]: Error: Could not locate json file %s", inputPath.c_str());
+					return;
+				}
+
+				char buf[65536];
+				int count = fp->read(buf, sizeof(buf[0]), sizeof(buf));
+				buf[count] = '\0';
+				rapidjson::StringStream is(buf);
+				FileIO::close(fp);
+
+				rapidjson::Document d;
+				d.ParseStream(is);
+
+				if ( !d.IsObject() || !d.HasMember("version") )
+				{
+					printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
+					return;
+				}
+
+				std::string vertex;
+				std::string fragment;
+
+				for ( auto itr = d["vertex"].Begin(); itr != d["vertex"].End(); ++itr )
+				{
+					if ( vertex.size() != 0 )
+					{
+						vertex += '\n';
+					}
+					vertex += itr->GetString();
+				}
+				for ( auto itr = d["fragment"].Begin(); itr != d["fragment"].End(); ++itr )
+				{
+					if ( fragment.size() != 0 )
+					{
+						fragment += '\n';
+					}
+					fragment += itr->GetString();
+				}
+
+				auto& shader = spriteBrightShader;
+				shader.destroy();
+				shader.init("spriteBrightShader");
+
+				shader.compile(vertex.c_str(), vertex.size(), Shader::Type::Vertex);
+				shader.compile(fragment.c_str(), fragment.size(), Shader::Type::Fragment);
+				shader.bindAttribLocation("iPosition", 0);
+				shader.bindAttribLocation("iTexCoord", 1);
+				shader.bindAttribLocation("iColor", 2);
+				shader.link();
+				shader.bind();
+				GL_CHECK_ERR(glUniform1i(shader.uniform("uTexture"), 0));
+				GL_CHECK_ERR(glUniform1i(shader.uniform("uLightmap"), 1));
+			}
+		}
+		{
+			std::string filePath = "/data/shaders/";
+			filePath.append("voxel");
+			if ( filePath.find(".json") == std::string::npos )
+			{
+				filePath.append(".json");
+			}
+			if ( PHYSFS_getRealDir(filePath.c_str()) )
+			{
+				std::string inputPath = PHYSFS_getRealDir(filePath.c_str());
+				inputPath.append(filePath);
+
+				File* fp = FileIO::open(inputPath.c_str(), "rb");
+				if ( !fp )
+				{
+					printlog("[JSON]: Error: Could not locate json file %s", inputPath.c_str());
+					return;
+				}
+
+				char buf[65536];
+				int count = fp->read(buf, sizeof(buf[0]), sizeof(buf));
+				buf[count] = '\0';
+				rapidjson::StringStream is(buf);
+				FileIO::close(fp);
+
+				rapidjson::Document d;
+				d.ParseStream(is);
+
+				if ( !d.IsObject() || !d.HasMember("version") )
+				{
+					printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
+					return;
+				}
+
+				std::string vertex;
+				std::string fragment;
+
+				for ( auto itr = d["vertex"].Begin(); itr != d["vertex"].End(); ++itr )
+				{
+					if ( vertex.size() != 0 )
+					{
+						vertex += '\n';
+					}
+					vertex += itr->GetString();
+				}
+				for ( auto itr = d["fragment"].Begin(); itr != d["fragment"].End(); ++itr )
+				{
+					if ( fragment.size() != 0 )
+					{
+						fragment += '\n';
+					}
+					fragment += itr->GetString();
+				}
+
+				auto& shader = voxelShader;
+				shader.destroy();
+				shader.init("voxelShader");
+
+				shader.compile(vertex.c_str(), vertex.size(), Shader::Type::Vertex);
+				shader.compile(fragment.c_str(), fragment.size(), Shader::Type::Fragment);
+				shader.bindAttribLocation("iPosition", 0);
+				shader.bindAttribLocation("iColor", 1);
+				shader.bindAttribLocation("iNormal", 2);
+				shader.link();
+				shader.bind();
+				GL_CHECK_ERR(glUniform1i(shader.uniform("uLightmap"), 1));
+				GL_CHECK_ERR(glUniform1i(shader.uniform("uTexturemap"), 2));
+			}
+		}
+	});
+
+	real_t testPFromC(real_t c, int iterations, int chance)
+	{
+		int rollsRequired = 0;
+		int max_n = 0;
+		std::map<int, int> buckets;
+		for ( int i = 0; i < iterations; ++i )
+		{
+			int n = 1;
+			while ( c * n < 1.0 )
+			{
+				real_t roll = (local_rng.rand() % 100) / 100.0;
+				if ( roll <= (c * n) || n >= 20 )
+				{
+					break;
+				}
+				++n;
+			}
+			max_n = std::max(max_n, n);
+			buckets[n / 5]++;
+			rollsRequired += n;
+		}
+		real_t res = rollsRequired / (real_t)iterations;
+		messagePlayer(0, MESSAGE_DEBUG, "Rolls avg: %.2f%%, max_n: %d", 100.0 / (rollsRequired / (real_t)iterations), max_n);
+		for ( int i = 0; i < buckets.size(); ++i )
+		{
+			messagePlayer(0, MESSAGE_DEBUG, "Bucket: %d-%d: %.2f", i, i + 4, buckets[i] / (real_t)iterations);
+		}
+
+		rollsRequired = 0;
+		int n = 1;
+		max_n = 0;
+		for ( int i = 0; i < iterations; ++i )
+		{
+			bool success = players[0]->mechanics.rollRngProc(Player::PlayerMechanics_t::RngRollTypes::RNG_ROLL_DEFAULT, chance);
+			if ( success )
+			{
+				++rollsRequired;
+				max_n = std::max(max_n, n);
+				n = 0;
+			}
+			else
+			{
+				++n;
+			}
+		}
+
+		messagePlayer(0, MESSAGE_DEBUG, "Rolls new: %.2f%%, max_n: %d", (100.0 * rollsRequired / (real_t)iterations), max_n);
+
+		return res;
+	}
+
+	static ConsoleCommand ccmd_test_rand_prng("/test_rand_prng", "", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+		if ( argc < 2 )
+		{
+			return;
+		}
+		std::string str_c = argv[1];
+		real_t c = std::stof(str_c);
+		int chance = 5;
+		if ( argc >= 3 )
+		{
+			chance = atoi(argv[2]);
+		}
+		testPFromC(c, 100000, chance);
+	});
+
+	static ConsoleCommand ccmd_appraisal_table("/appraisal_table", "", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+		std::vector<std::tuple<int, int, int>> appraisalValues;
+		std::set<int> sortedItems;
+		Item* item = newItem(WOODEN_SHIELD, EXCELLENT, 0, 0, 0, false, nullptr);
+		for ( int i = 0; i < NUMITEMS; ++i )
+		{
+			item->type = (ItemType)i;
+			for ( int skill = 0; skill <= 100; ++skill )
+			{
+				stats[0]->setProficiencyUnsafe(PRO_APPRAISAL, 0);
+				stats[0]->PER = skill;
+				if ( players[0]->inventoryUI.appraisal.appraisalPossible(item) )
+				{
+					appraisalValues.push_back(std::make_tuple(skill, players[0]->inventoryUI.appraisal.getAppraisalTime(item), i));
+					break;
+				}
+			}
+		}
+
+		std::sort(appraisalValues.begin(), appraisalValues.end());
+		for ( auto& pair : appraisalValues )
+		{
+			printlog("%d, %.2f, %d, %d, \"%s\"", std::get<0>(pair), std::get<1>(pair) / (real_t)TICKS_PER_SECOND, items[std::get<2>(pair)].gold_value, (int)items[std::get<2>(pair)].category, items[std::get<2>(pair)].getIdentifiedName());
+		}
+
+		/*for ( auto& pair : allGameSpells )
+		{
+			printlog("\"template_icon_%s\": [\"%%+d Magic Damage\"],", pair.second->spell_internal_name);
+			printlog("\"template_desc_%s\": [\"Press[Cast] while equipped\", \"to cast the[Projectile].\"],", pair.second->spell_internal_name);
+		}*/
+
+		free(item);
+	});
+
+	static ConsoleCommand ccmd_reloadappraisal("/reloadappraisal", "reloads appraisal entries", []CCMD{
+		Player::Inventory_t::Appraisal_t::readFromFile();
+	});
 }
 

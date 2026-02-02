@@ -480,6 +480,15 @@ int parseOnlineHiscore(SaveGameInfo& info, Json::Value score)
     {
         player.selected_spell_alternate[i] = UINT32_MAX;
     }
+    player.stats.EFFECTS.resize(NUMEFFECTS);
+    player.stats.EFFECTS_TIMERS.resize(NUMEFFECTS);
+    player.stats.EFFECTS_ACCRETION_TIME.resize(NUMEFFECTS);
+    for ( int i = 0; i < NUMEFFECTS; ++i )
+    {
+        player.stats.EFFECTS[i] = 0;
+        player.stats.EFFECTS_TIMERS[i] = 0;
+        player.stats.EFFECTS_ACCRETION_TIME[i] = 0;
+    }
 
     for ( auto& m : score.getMemberNames() )
     {
@@ -645,6 +654,29 @@ int parseOnlineHiscore(SaveGameInfo& info, Json::Value score)
                     for ( Json::ArrayIndex i = 0; i < score[m][s].size() && i < NUMPROFICIENCIES; ++i )
                     {
                         jsonArrayToInt(score[m][s], i, player.stats.PROFICIENCIES[i]);
+                    }
+                }
+                else if ( s == "effects" )
+                {
+                    if ( score[m][s].isObject() )
+                    {
+                        for ( auto& eff : score[m][s].getMemberNames() )
+                        {
+                            if ( score[m][s][eff].isInt() )
+                            {
+                                try
+                                {
+                                    int effIndex = std::stoi(eff);
+                                    if ( effIndex >= 0 && effIndex < NUMEFFECTS )
+                                    {
+                                        player.stats.EFFECTS[effIndex] = score[m][s][eff].asInt();
+                                    }
+                                }
+                                catch (...)
+                                {
+                                }
+                            }
+                        }
                     }
                 }
                 else if ( s == "conducts" )
@@ -1228,7 +1260,7 @@ void PlayfabUser_t::getLeaderboardTop100(std::string lid)
 
     if ( leaderboardData.leaderboards[lid].loading )
     {
-        for ( auto pair : leaderboardData.leaderboards[lid].awaitingResponse )
+        for ( auto& pair : leaderboardData.leaderboards[lid].awaitingResponse )
         {
             if ( (processTick - pair.second.first) < 5 * TICKS_PER_SECOND )
             {
@@ -1523,7 +1555,7 @@ bool PlayfabUser_t::PostScoreHandler_t::ScoreUpdate_t::saveToFile()
 
     d.AddMember("version", rapidjson::Value(1), d.GetAllocator());
     d.AddMember("hash", rapidjson::Value(hash.c_str(), d.GetAllocator()), d.GetAllocator());
-    d.AddMember("name", rapidjson::Value(hash.c_str(), d.GetAllocator()), d.GetAllocator());
+    d.AddMember("name", rapidjson::Value(name.c_str(), d.GetAllocator()), d.GetAllocator());
     d.AddMember("score", rapidjson::Value(score.c_str(), d.GetAllocator()), d.GetAllocator());
 
     File* fp = FileIO::open(outputPath.c_str(), "wb");
@@ -1560,9 +1592,10 @@ void PlayfabUser_t::PostScoreHandler_t::readFromFiles()
         return;
     }
 
-    for ( auto f : directoryContents("scores/processing/", false, true, outputdir) )
+    for ( auto& f : directoryContents("scores/processing/", false, true, outputdir) )
     {
         std::string inputPath = PHYSFS_getRealDir(baseDir.c_str());
+        inputPath.append(PHYSFS_getDirSeparator());
         inputPath += "scores/processing/";
         inputPath += f;
 
@@ -2015,7 +2048,7 @@ void PlayfabUser_t::LeaderboardSearch_t::applySavedChallengeSearchIfExists()
         return;
     }
 
-    auto lid = savedSearchesFromNotification[challengeBoard];
+    auto& lid = savedSearchesFromNotification[challengeBoard];
     scoresNearMe = true;
     win = lid.find("_victory_") != std::string::npos;
     //victory = win ? 3 : 0;

@@ -150,6 +150,10 @@ void autoHotbarTryAdd(const int player, Item& item)
 		{
 			players[player]->hotbar.magicBoomerangHotbarSlot = index;
 		}
+		if ( item.type == TOOL_DUCK )
+		{
+			players[player]->hotbar.magicDuckHotbarSlot = index;
+		}
 		return;
 	}
 
@@ -218,6 +222,7 @@ Item* newItem(const ItemType type, const Status status, const Sint16 beatitude, 
 	item->itemSpecialShopConsumable = false;
 	item->interactNPCUid = 0;
 	item->notifyIcon = false;
+	item->spellNotifyIcon = false;
 	if ( inventory )
 	{
 		Player::Inventory_t* playerInventoryUI = nullptr;
@@ -326,7 +331,7 @@ ItemType itemLevelCurveEntity(Entity& my, Category cat, int minLevel, int maxLev
 {
 	itemLevelCurveType = ITEM_LEVEL_CURVE_TYPE_DEFAULT;
 	itemLevelCurveShop = -1;
-	if ( my.behavior == &actMonster && my.getMonsterTypeFromSprite() == SHOPKEEPER )
+	if ( my.behavior == &actMonster && (my.getMonsterTypeFromSprite() == SHOPKEEPER || my.monsterCanTradeWith(-1)) )
 	{
 		itemLevelCurveType = ITEM_LEVEL_CURVE_TYPE_SHOP;
 		itemLevelCurveShop = my.monsterStoreType;
@@ -340,6 +345,173 @@ ItemType itemLevelCurveEntity(Entity& my, Category cat, int minLevel, int maxLev
 	itemLevelCurveType = ITEM_LEVEL_CURVE_TYPE_DEFAULT;
 	itemLevelCurveShop = -1;
 	return result;
+}
+
+bool itemLevelCurvePostProcess(Entity* my, Item* item, BaronyRNG& rng, int itemLevel)
+{
+	if ( !((my && my->behavior == &actItem) || item) )
+	{
+		return false;
+	}
+
+	bool modified = false;
+	itemLevelCurveType = ITEM_LEVEL_CURVE_TYPE_DEFAULT;
+	if ( my )
+	{
+		if ( my->behavior == &actMonster && (my->getMonsterTypeFromSprite() == SHOPKEEPER || my->monsterCanTradeWith(-1)) )
+		{
+			itemLevelCurveType = ITEM_LEVEL_CURVE_TYPE_SHOP;
+			itemLevelCurveShop = my->monsterStoreType;
+		}
+		else if ( my->behavior == &actChest )
+		{
+			itemLevelCurveType = ITEM_LEVEL_CURVE_TYPE_CHEST;
+		}
+	}
+
+	int itemType = (my && my->behavior == &actItem) ? my->skill[10] : item->type;
+	int itemStatus = (my && my->behavior == &actItem) ? my->skill[11] : item->type;
+	if ( itemType >= BRONZE_TOMAHAWK && itemType <= CRYSTAL_SHURIKEN )
+	{
+		// thrown weapons always fixed status. (tomahawk = decrepit, shuriken = excellent)
+		itemStatus = std::min(static_cast<Status>(DECREPIT + (itemType - BRONZE_TOMAHAWK)), EXCELLENT);
+		if ( my && my->behavior == &actItem )
+		{
+			my->skill[11] = itemStatus;
+		}
+		else
+		{
+			item->status = static_cast<Status>(itemStatus);
+		}
+	}
+	if ( itemType == BOLAS )
+	{
+		itemStatus = SERVICABLE;
+		if ( my && my->behavior == &actItem )
+		{
+			my->skill[11] = itemStatus;
+		}
+		else
+		{
+			item->status = static_cast<Status>(itemStatus);
+		}
+	}
+	if ( itemType >= 0 && itemType < NUMITEMS )
+	{
+		if ( items[itemType].category == SPELLBOOK )
+		{
+			//if ( itemLevelCurveType == ITEM_LEVEL_CURVE_TYPE_DEFAULT )
+			{
+				std::vector<std::pair<int, int>> chances;
+				chances.reserve(NUM_SPELLS);
+				std::vector<unsigned int> chanceWeights;
+				chanceWeights.reserve(NUM_SPELLS);
+				int minDifficulty = std::min(60, (itemLevel / 5) * 20);
+#ifndef NDEBUG
+				std::map<int, int> debugChances;
+				std::map<int, int> debugChancesNum;
+#endif
+				for ( int i = 0; i < NUM_SPELLS; ++i )
+				{
+					auto find = allGameSpells.find(i);
+					if ( find != allGameSpells.end() )
+					{
+						if ( auto spell = find->second )
+						{
+							if ( spell->ID != SPELL_NONE && !spell->hide_from_ui && itemLevel >= spell->drop_table )
+							{
+								if ( (spell->difficulty / 20) <= (1 + (itemLevel / 5))
+									/*&& (spell->difficulty >= minDifficulty)*/ )
+								{
+									chances.push_back(std::make_pair(spell->skillID, spell->ID));
+									if ( spell->difficulty == minDifficulty )
+									{
+										chanceWeights.push_back(40);
+									}
+									else if ( spell->difficulty > minDifficulty )
+									{
+										chanceWeights.push_back(30);
+									}
+									else if ( spell->difficulty == 40 )
+									{
+										chanceWeights.push_back(10);
+									}
+									else if ( spell->difficulty == 20 )
+									{
+										chanceWeights.push_back(10);
+									}
+									else if ( spell->difficulty == 0 )
+									{
+										chanceWeights.push_back(10);
+									}
+
+									if ( spell->difficulty == 0 )
+									{
+										if ( minDifficulty == 0 )
+										{
+											chanceWeights.back() += 20;
+										}
+										else if ( minDifficulty == 20 )
+										{
+											chanceWeights.back() += 20;
+										}
+										chanceWeights.back() *= 2;
+									}
+									else if ( spell->difficulty >= 80 )
+									{
+										chanceWeights.back() *= 2;
+									}
+#ifndef NDEBUG
+									debugChances[spell->difficulty] += chanceWeights.back();
+									debugChancesNum[spell->difficulty] += 1;
+#endif
+								}
+							}
+						}
+					}
+				}
+				assert(chances.size() == chanceWeights.size());
+				if ( chances.size() )
+				{
+					Uint32 appearance = (my && my->behavior == &actItem) ? my->skill[14] : item->appearance;
+					int pick = rng.discrete(chanceWeights.data(), chanceWeights.size());
+					int spellbookType = getSpellbookFromSpellID(chances[pick].second);
+					if ( items[spellbookType].category == SPELLBOOK )
+					{
+						itemType = spellbookType;
+					}
+					else
+					{
+						itemType = TOME_SORCERY;
+						appearance = spellTomeIDToAppearance[chances[pick].second];
+						if ( chances[pick].first == PRO_MYSTICISM )
+						{
+							itemType = TOME_MYSTICISM;
+						}
+						else if ( chances[pick].first == PRO_THAUMATURGY )
+						{
+							itemType = TOME_THAUMATURGY;
+						}
+					}
+					if ( my && my->behavior == &actItem )
+					{
+						my->skill[10] = itemType;
+						my->skill[14] = appearance;
+					}
+					else
+					{
+						item->type = static_cast<ItemType>(itemType);
+						item->appearance = appearance;
+					}
+				}
+			}
+		}
+	}
+
+	itemLevelCurveType = ITEM_LEVEL_CURVE_TYPE_DEFAULT;
+	itemLevelCurveShop = -1;
+
+	return modified;
 }
 
 bool isHatShopItem(ItemType hat)
@@ -390,6 +562,10 @@ bool isHatShopItem(ItemType hat)
 	case HAT_HOOD_APPRENTICE:
 	case HAT_HOOD_ASSASSIN:
 	case HAT_HOOD_WHISPERS:
+	case HAT_FELT:
+	case HOOD_TEAL:
+	case HAT_CIRCLET_SORCERY:
+	case HAT_CIRCLET_THAUMATURGY:
 		return true;
 		default:
 			break;
@@ -403,7 +579,7 @@ ItemType itemLevelCurve(const Category cat, const int minLevel, const int maxLev
 	bool chances[NUMITEMS];
 	int c;
 
-	if ( cat < 0 || cat >= NUMCATEGORIES )
+	if ( cat < 0 || cat >= Category::CATEGORY_MAX )
 	{
 		printlog("warning: itemLevelCurve() called with bad category value!\n");
 		return GEM_ROCK;
@@ -422,6 +598,11 @@ ItemType itemLevelCurve(const Category cat, const int minLevel, const int maxLev
 
 				if ( itemLevelCurveType == ITEM_LEVEL_CURVE_TYPE_SHOP )
 				{
+					if ( c == READABLE_BOOK )
+					{
+						continue;
+					}
+
 					if ( itemLevelCurveShop == 1 ) // hat store
 					{
 						if ( !isHatShopItem(static_cast<ItemType>(c)) )
@@ -460,6 +641,12 @@ ItemType itemLevelCurve(const Category cat, const int minLevel, const int maxLev
 							break;
 						case TOOL_LANTERN:
 							if ( rng.rand() % 4 == 0 )   // 25% chance
+							{
+								chances[c] = false;
+							}
+							break;
+						case TOOL_FRYING_PAN:
+							if ( rng.rand() % 4 )   // 75% chance
 							{
 								chances[c] = false;
 							}
@@ -591,12 +778,16 @@ char* Item::description() const
 					//No fancy descriptives for empty potions.
 					snprintf(tempstr, 1024, Language::get(982 + status), beatitude);
 				}
+				/*else if ( type == POTION_GREASE )
+				{
+					snprintf(tempstr, 1024, Language::get(992 + status), Language::get(975), beatitude);
+				}*/
 				else
 				{
 					snprintf(tempstr, 1024, Language::get(992 + status), Language::get(974 + items[type].index + appearance % items[type].variations - 50), beatitude);
 				}
 			}
-			else if ( itemCategory(this) == SCROLL || itemCategory(this) == SPELLBOOK || itemCategory(this) == BOOK )
+			else if ( itemCategory(this) == SCROLL || itemCategory(this) == SPELLBOOK || itemCategory(this) == BOOK || itemCategory(this) == TOME_SPELL )
 			{
 				snprintf(tempstr, 1024, Language::get(997 + status), beatitude);
 			}
@@ -618,6 +809,10 @@ char* Item::description() const
 				if ( itemCategory(this) == BOOK )
 				{
 					snprintf(&tempstr[c], 1024 - c, Language::get(1007), getBookLocalizedNameFromIndex(appearance % numbooks).c_str());
+				}
+				else if ( itemCategory(this) == TOME_SPELL )
+				{
+					snprintf(&tempstr[c], 1024 - c, Language::get(6850), getTomeLabel());
 				}
 				else
 				{
@@ -661,12 +856,16 @@ char* Item::description() const
 					//No fancy descriptives for empty potions.
 					snprintf(tempstr, 1024, Language::get(1008 + status), count, beatitude);
 				}
+				/*else if ( type == POTION_GREASE )
+				{
+					snprintf(tempstr, 1024, Language::get(1018 + status), count, Language::get(975), beatitude);
+				}*/
 				else
 				{
 					snprintf(tempstr, 1024, Language::get(1018 + status), count, Language::get(974 + items[type].index + appearance % items[type].variations - 50), beatitude);
 				}
 			}
-			else if ( itemCategory(this) == SCROLL || itemCategory(this) == SPELLBOOK || itemCategory(this) == BOOK )
+			else if ( itemCategory(this) == SCROLL || itemCategory(this) == SPELLBOOK || itemCategory(this) == BOOK || itemCategory(this) == TOME_SPELL )
 			{
 				snprintf(tempstr, 1024, Language::get(1023 + status), count, beatitude);
 			}
@@ -688,6 +887,10 @@ char* Item::description() const
 				if ( itemCategory(this) == BOOK )
 				{
 					snprintf(&tempstr[c], 1024 - c, Language::get(1033), count, getBookLocalizedNameFromIndex(appearance % numbooks).c_str());
+				}
+				else if ( itemCategory(this) == TOME_SPELL )
+				{
+					snprintf(&tempstr[c], 1024 - c, Language::get(6851), getTomeLabel());
 				}
 				else
 				{
@@ -734,12 +937,16 @@ char* Item::description() const
 					//No fancy descriptives for empty potions.
 					snprintf(tempstr, 1024, Language::get(1034 + status), beatitude);
 				}
+				/*else if ( type == POTION_GREASE )
+				{
+					snprintf(tempstr, 1024, Language::get(1044 + status), Language::get(975), beatitude);
+				}*/
 				else
 				{
 					snprintf(tempstr, 1024, Language::get(1044 + status), Language::get(974 + items[type].index + appearance % items[type].variations - 50));
 				}
 			}
-			else if ( itemCategory(this) == SCROLL || itemCategory(this) == SPELLBOOK || itemCategory(this) == BOOK )
+			else if ( itemCategory(this) == SCROLL || itemCategory(this) == SPELLBOOK || itemCategory(this) == BOOK || itemCategory(this) == TOME_SPELL )
 			{
 				strncpy(tempstr, Language::get(1049 + status), 1024);
 			}
@@ -811,12 +1018,16 @@ char* Item::description() const
 					//No fancy descriptives for empty potions.
 					snprintf(tempstr, 1024, Language::get(1060 + status), count);
 				}
+				/*else if ( type == POTION_GREASE )
+				{
+					snprintf(tempstr, 1024, Language::get(1070 + status), count, Language::get(975), beatitude);
+				}*/
 				else
 				{
 					snprintf(tempstr, 1024, Language::get(1070 + status), count, Language::get(974 + items[type].index + appearance % items[type].variations - 50));
 				}
 			}
-			else if ( itemCategory(this) == SCROLL || itemCategory(this) == SPELLBOOK || itemCategory(this) == BOOK )
+			else if ( itemCategory(this) == SCROLL || itemCategory(this) == SPELLBOOK || itemCategory(this) == BOOK || itemCategory(this) == TOME_SPELL )
 			{
 				snprintf(tempstr, 1024, Language::get(1075 + status), count);
 			}
@@ -895,6 +1106,10 @@ char* Item::getName() const
 			{
 				snprintf(tempstr, sizeof(tempstr), Language::get(1007), getBookLocalizedNameFromIndex(appearance % numbooks).c_str());
 			}
+			else if ( itemCategory(this) == TOME_SPELL )
+			{
+				snprintf(tempstr, sizeof(tempstr), Language::get(6850), getTomeLabel());
+			}
 			else
 			{
 				strcpy(tempstr, items[type].getIdentifiedName());
@@ -923,6 +1138,76 @@ char* Item::getName() const
 	return tempstr;
 }
 
+int getItemVariationFromSpellbookOrTome(const Item& item)
+{
+	int spellID = SPELL_NONE;
+	if ( itemCategory(&item) == SPELLBOOK )
+	{
+		spellID = getSpellIDFromSpellbook(item.type);
+	}
+	else if ( itemCategory(&item) == TOME_SPELL )
+	{
+		spellID = item.getTomeSpellID();
+	}
+	if ( spellID <= SPELL_NONE )
+	{
+		return -1;
+	}
+	if ( auto spell = getSpellFromID(spellID) )
+	{
+		int index = -1;
+		switch ( spell->skillID )
+		{
+		case PRO_SORCERY:
+			if ( spell->difficulty <= 20 )
+			{
+				index = SPELLBOOK_COLOR_SORCERY_1;
+			}
+			else if ( spell->difficulty <= 60 )
+			{
+				index = SPELLBOOK_COLOR_SORCERY_2;
+			}
+			else
+			{
+				index = SPELLBOOK_COLOR_SORCERY_3;
+			}
+			break;
+		case PRO_MYSTICISM:
+			if ( spell->difficulty <= 20 )
+			{
+				index = SPELLBOOK_COLOR_MYSTICISM_1;
+			}
+			else if ( spell->difficulty <= 60 )
+			{
+				index = SPELLBOOK_COLOR_MYSTICISM_2;
+			}
+			else
+			{
+				index = SPELLBOOK_COLOR_MYSTICISM_3;
+			}
+			break;
+		case PRO_THAUMATURGY:
+			if ( spell->difficulty <= 20 )
+			{
+				index = SPELLBOOK_COLOR_THAUM_1;
+			}
+			else if ( spell->difficulty <= 60 )
+			{
+				index = SPELLBOOK_COLOR_THAUM_2;
+			}
+			else
+			{
+				index = SPELLBOOK_COLOR_THAUM_3;
+			}
+			break;
+		default:
+			break;
+		}
+		return index;
+	}
+	return -1;
+}
+
 /*-------------------------------------------------------------------------------
 
 	itemModel
@@ -931,11 +1216,68 @@ char* Item::getName() const
 
 -------------------------------------------------------------------------------*/
 
-Sint32 itemModel(const Item* const item, bool shortModel)
+Sint32 itemModel(const Item* const item, bool shortModel, Entity* creature)
 {
 	if ( !item || item->type < 0 || item->type >= NUMITEMS )
 	{
 		return 0;
+	}
+
+	if ( creature && creature->behavior == &actMonster )
+	{
+		if ( item->type == IRON_PAULDRONS )
+		{
+			if ( creature->sprite == 1569 )
+			{
+				return 2142;
+			}
+			else if ( creature->sprite == 1570 )
+			{
+				return 2143;
+			}
+			return 0;
+		}
+		else if ( item->type == SHAWL )
+		{
+			if ( creature->sprite == 1569 )
+			{
+				if ( item->appearance % items[item->type].variations < 2 )
+				{
+					return 2144 + item->appearance % items[item->type].variations;
+				}
+			}
+			else if ( creature->sprite == 1570 )
+			{
+				if ( item->appearance % items[item->type].variations < 2 )
+				{
+					return 2146 + item->appearance % items[item->type].variations;
+				}
+			}
+			return 0;
+		}
+		else if ( !shortModel &&
+			(item->type == ROBE_WIZARD
+				|| item->type == ROBE_MONK
+				|| item->type == ROBE_CULTIST
+				|| item->type == ROBE_HEALER) )
+		{
+			if ( item->type == ROBE_WIZARD )
+			{
+				return 2148;
+			}
+			else if ( item->type == ROBE_MONK )
+			{
+				return 2151;
+			}
+			else if ( item->type == ROBE_CULTIST )
+			{
+				return 2149;
+			}
+			else if ( item->type == ROBE_HEALER )
+			{
+				return 2150;
+			}
+		}
 	}
 
 	int index = shortModel ? items[item->type].indexShort : items[item->type].index;
@@ -970,6 +1312,29 @@ Sint32 itemModel(const Item* const item, bool shortModel)
 			return index + item->getLootBagPlayer();
 		}
 	}
+	else if ( item->type == MAGICSTAFF_SCEPTER )
+	{
+		if ( item->appearance % MAGICSTAFF_SCEPTER_CHARGE_MAX == 0 )
+		{
+			return index + 2;
+		}
+		else
+		{
+			return index;
+		}
+	}
+	else if ( item->type == TOOL_DUCK )
+	{
+		return items[TOOL_DUCK].index + (item->appearance % items[item->type].variations) / MAXPLAYERS;
+	}
+	else if ( itemCategory(item) == SPELLBOOK || itemCategory(item) == TOME_SPELL )
+	{
+		int variation = getItemVariationFromSpellbookOrTome(*item);
+		if ( variation >= 0 && variation < items[item->type].variations )
+		{
+			return index + variation;
+		}
+	}
 	return index + item->appearance % items[item->type].variations;
 }
 
@@ -987,90 +1352,31 @@ Sint32 itemModelFirstperson(const Item* const item)
 	{
 		return 0;
 	}
-	return items[item->type].fpindex + item->appearance % items[item->type].variations;
-}
 
-/*-------------------------------------------------------------------------------
-
-	itemSprite
-
-	returns a pointer to the SDL_Surface used to represent the item
-
--------------------------------------------------------------------------------*/
-
-SDL_Surface* itemSprite(Item* const item)
-{
-	if ( !item || item->type < 0 || item->type >= NUMITEMS )
+	if ( item->type == MAGICSTAFF_SCEPTER )
 	{
-		return nullptr;
-	}
-	if (itemCategory(item) == SPELL_CAT)
-	{
-		spell_t* spell = nullptr;
-		for ( int i = 0; i < MAXPLAYERS; ++i )
+		if ( item->appearance % MAGICSTAFF_SCEPTER_CHARGE_MAX == 0 )
 		{
-			spell = getSpellFromItem(i, item, false);
-			if ( spell )
-			{
-				break;
-			}
-		}
-		if (spell)
-		{
-			node_t* node = list_Node(&items[item->type].surfaces, spell->ID);
-			if ( !node )
-			{
-				return nullptr;
-			}
-			SDL_Surface** surface = static_cast<SDL_Surface**>(node->element);
-			return *surface;
-		}
-	}
-	else
-	{
-		node_t* node = nullptr;
-		if ( item->type == TOOL_PLAYER_LOOT_BAG )
-		{
-			if ( colorblind_lobby )
-			{
-				int playerOwner = item->getLootBagPlayer();
-				Uint32 index = 4;
-				switch ( playerOwner )
-				{
-					case 0:
-						index = 2;
-						break;
-					case 1:
-						index = 3;
-						break;
-					case 2:
-						index = 1;
-						break;
-					case 3:
-						index = 4;
-						break;
-					default:
-						break;
-				}
-				node = list_Node(&items[item->type].surfaces, index);
-			}
-			else
-			{
-				node = list_Node(&items[item->type].surfaces, item->getLootBagPlayer());
-			}
+			return items[item->type].fpindex + 2;
 		}
 		else
 		{
-			node = list_Node(&items[item->type].surfaces, item->appearance % items[item->type].variations);
+			return items[item->type].fpindex;
 		}
-		if ( !node )
-		{
-			return nullptr;
-		}
-		SDL_Surface** surface = static_cast<SDL_Surface**>(node->element);
-		return *surface;
 	}
-	return nullptr;
+	else if ( itemCategory(item) == SPELLBOOK || itemCategory(item) == TOME_SPELL )
+	{
+		int variation = getItemVariationFromSpellbookOrTome(*item);
+		if ( variation >= 0 && variation < items[item->type].variations )
+		{
+			return items[item->type].fpindex + variation;
+		}
+	}
+	else if ( item->type == TOOL_DUCK )
+	{
+		return items[TOOL_DUCK].fpindex + (item->appearance % items[item->type].variations) / MAXPLAYERS;
+	}
+	return items[item->type].fpindex + item->appearance % items[item->type].variations;
 }
 
 /*-------------------------------------------------------------------------------
@@ -1131,6 +1437,7 @@ int itemCompare(const Item* const item1, const Item* const item2, bool checkAppe
 		return 1;
 	}
 	else if ( item1->type == SCROLL_MAIL || item1->type == READABLE_BOOK || items[item1->type].category == SPELL_CAT
+		|| items[item1->type].category == TOME_SPELL
 		|| item1->type == TOOL_PLAYER_LOOT_BAG )
 	{
 		if ( comparisonUsedForStacking )
@@ -1175,13 +1482,113 @@ int itemCompare(const Item* const item1, const Item* const item2, bool checkAppe
 -------------------------------------------------------------------------------*/
 Uint32 dropItemSfxTicks[MAXPLAYERS] = { 0 };
 
+bool playerThrowDuck(const int player, Item* const item, int charge)
+{
+	if ( !item || item->count == 0 ) { return false; }
+	if ( player < 0 || player >= MAXPLAYERS ) { return false; }
+	if ( !players[player]->entity ) { return false; }
+
+	if ( players[player]->isLocalPlayer() )
+	{
+		if ( itemIsEquipped(item, player) )
+		{
+			if ( multiplayer == CLIENT )
+			{
+				strcpy((char*)net_packet->data, "DCKA");
+				SDLNet_Write32(static_cast<Uint32>(item->type), &net_packet->data[4]);
+				SDLNet_Write32(static_cast<Uint32>(item->status), &net_packet->data[8]);
+				SDLNet_Write32(static_cast<Uint32>(item->beatitude), &net_packet->data[12]);
+				SDLNet_Write32(static_cast<Uint32>(item->count), &net_packet->data[16]);
+				SDLNet_Write32(static_cast<Uint32>(item->appearance), &net_packet->data[20]);
+				net_packet->data[24] = item->identified;
+				net_packet->data[25] = clientnum;
+				net_packet->data[26] = charge;
+				net_packet->address.host = net_server.host;
+				net_packet->address.port = net_server.port;
+				net_packet->len = 27;
+				sendPacketSafe(net_sock, -1, net_packet, 0);
+
+				Item** slot = itemSlot(stats[player], item);
+				if ( slot != nullptr )
+				{
+					*slot = nullptr;
+				}
+
+				players[player]->paperDoll.updateSlots();
+
+				if ( item->node != nullptr )
+				{
+					list_RemoveNode(item->node);
+				}
+				else
+				{
+					free(item);
+				}
+
+				return true;
+			}
+		}
+	}
+
+	if ( multiplayer != CLIENT && players[player]->entity )
+	{
+		playSoundEntity(players[player]->entity, 75, 64);
+
+		Entity* entity = newEntity(itemModel(item), 1, map.entities, nullptr); // thrown item
+		entity->parent = players[player]->entity->getUID();
+		entity->x = players[player]->entity->x;
+		entity->y = players[player]->entity->y;
+		entity->z = players[player]->entity->z;
+		entity->yaw = players[player]->entity->yaw;
+		entity->sizex = 2;
+		entity->sizey = 2;
+		entity->behavior = &actThrown;
+		entity->flags[UPDATENEEDED] = true;
+		entity->flags[PASSABLE] = true;
+		entity->skill[10] = item->type;
+		entity->skill[11] = item->status;
+		entity->skill[12] = item->beatitude;
+		entity->skill[13] = 1;
+		entity->skill[14] = item->appearance;
+		entity->skill[15] = item->identified;
+
+		real_t speed = 1.f + 4.f * (-30 + std::min(50, std::max(30, charge))) / (real_t)(20);
+		entity->vel_x = speed * cos(players[player]->entity->yaw);
+		entity->vel_y = speed * sin(players[player]->entity->yaw);
+		entity->vel_z = -.5;
+
+		Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_THROWN,
+			item->type, 1);
+
+		Item** slot = itemSlot(stats[player], item);
+
+		if ( slot != nullptr )
+		{
+			*slot = nullptr;
+		}
+		players[player]->paperDoll.updateSlots();
+
+		if ( item->node != nullptr )
+		{
+			list_RemoveNode(item->node);
+		}
+		else
+		{
+			free(item);
+		}
+		return true;
+	}
+
+	return false;
+}
+
 bool playerGreasyDropItem(const int player, Item* const item)
 {
 	if ( !item || item->count == 0 ) { return false; }
 	if ( player < 0 || player >= MAXPLAYERS ) { return false; }
 	if ( players[player]->isLocalPlayer() )
 	{
-		if ( !stats[player]->EFFECTS[EFF_GREASY] ) { return false; }
+		if ( !stats[player]->getEffectActive(EFF_GREASY) ) { return false; }
 		if ( itemIsEquipped(item, player) )
 		{
 			Item** slot = itemSlot(stats[player], item);
@@ -1727,6 +2134,19 @@ Entity* dropItemMonster(Item* const item, Entity* const monster, Stat* const mon
 				entity->vel_y *= 0.1;
 				entity->vel_z = -.5;
 			}
+			else if ( monsterStats->type == DUCK_SMALL )
+			{
+				// drop in center of tile
+				int ix = static_cast<int>(std::floor(monster->x)) >> 4;
+				int iy = static_cast<int>(std::floor(monster->y)) >> 4;
+				entity->x = ix * 16.0 + 8.0;
+				entity->y = iy * 16.0 + 8.0;
+				entity->z = 4;
+				entity->vel_x *= 0.1;
+				entity->vel_y *= 0.1;
+				entity->vel_z = -.5;
+				entity->pitch = -PI / 8;
+			}
 			else if ( item->type == ARTIFACT_ORB_PURPLE && monsterStats->type == LICH )
 			{
 				entity->vel_x = 0.0;
@@ -1903,7 +2323,12 @@ EquipItemResult equipItem(Item* const item, Item** const slot, const int player,
 							Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_APPRAISED, (*slot)->type, 1);
 						}
 					}
+					bool prevIdentified = (*slot)->identified;
 					(*slot)->identified = true;
+					if ( !prevIdentified )
+					{
+						Item::onItemIdentified(player, item);
+					}
 					return EQUIP_ITEM_FAIL_CANT_UNEQUIP;
 				}
 			}
@@ -1918,7 +2343,7 @@ EquipItemResult equipItem(Item* const item, Item** const slot, const int player,
 					{
 						playSoundEntity(players[player]->entity, 33 + local_rng.rand() % 2, 64);
 					}
-					else if ( item->type == BOOMERANG )
+					else if ( item->type == BOOMERANG || itemTypeIsThrownBall(item->type) )
 					{
 					}
 					else if ( itemCategory(item) == WEAPON || itemCategory(item) == THROWN )
@@ -1927,6 +2352,7 @@ EquipItemResult equipItem(Item* const item, Item** const slot, const int player,
 					}
 					else if ( itemCategory(item) == ARMOR 
 						|| item->type == TOOL_TINKERING_KIT 
+						|| item->type == TOOL_FRYING_PAN
 						|| itemTypeIsQuiver(item->type) )
 					{
 						playSoundEntity(players[player]->entity, 44 + local_rng.rand() % 3, 64);
@@ -2015,7 +2441,12 @@ EquipItemResult equipItem(Item* const item, Item** const slot, const int player,
 							Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_APPRAISED, (*slot)->type, 1);
 						}
 					}
+					bool prevIdentified = (*slot)->identified;
 					(*slot)->identified = true;
+					if ( !prevIdentified )
+					{
+						Item::onItemIdentified(player, item);
+					}
 					return EQUIP_ITEM_FAIL_CANT_UNEQUIP;
 				}
 
@@ -2264,6 +2695,10 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 			equipItemResult = equipItem(item, &stats[player]->weapon, player, checkInventorySpaceForPaperDoll);
 			break;
 		case IRON_SHIELD:
+		case SCUTUM:
+		case BONE_SHIELD:
+		case BLACKIRON_SHIELD:
+		case SILVER_SHIELD:
 			equipItemResult = equipItem(item, &stats[player]->shield, player, checkInventorySpaceForPaperDoll);
 			break;
 		case SHORTBOW:
@@ -2280,6 +2715,35 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		case STEEL_CHAKRAM:
 		case CRYSTAL_SHURIKEN:
 		case BOOMERANG:
+		case RAPIER:
+		case GREASE_BALL:
+		case DUST_BALL:
+		case BOLAS:
+		case STEEL_FLAIL:
+		case SLOP_BALL:
+		case SHILLELAGH_MACE:
+		case CLAYMORE_SWORD:
+		case ANELACE_SWORD:
+		case LANCE_SPEAR:
+		case STEEL_FALSHION:
+		case STEEL_GREATAXE:
+		case BLACKIRON_AXE:
+		case BLACKIRON_CROSSBOW:
+		case BLACKIRON_DART:
+		case BLACKIRON_MACE:
+		case BLACKIRON_SWORD:
+		case BLACKIRON_TRIDENT:
+		case BONE_AXE:
+		case BONE_MACE:
+		case BONE_SHORTBOW:
+		case BONE_SPEAR:
+		case BONE_SWORD:
+		case BONE_THROWING:
+		case SILVER_AXE:
+		case SILVER_GLAIVE:
+		case SILVER_MACE:
+		case SILVER_PLUMBATA:
+		case SILVER_SWORD:
 			equipItemResult = equipItem(item, &stats[player]->weapon, player, checkInventorySpaceForPaperDoll);
 			break;
 		case STEEL_SHIELD:
@@ -2292,6 +2756,8 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		case LONGBOW:
 		case COMPOUND_BOW:
 		case HEAVY_CROSSBOW:
+		case BRANCH_BOW:
+		case BRANCH_BOW_INFECTED:
 			equipItemResult = equipItem(item, &stats[player]->weapon, player, checkInventorySpaceForPaperDoll);
 			break;
 		case GLOVES:
@@ -2306,6 +2772,11 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		case IRON_KNUCKLES:
 		case SPIKED_GAUNTLETS:
 		case SUEDE_GLOVES:
+		case BONE_BRACERS:
+		case BLACKIRON_GAUNTLETS:
+		case SILVER_GAUNTLETS:
+		case QUILTED_GLOVES:
+		case CHAIN_GLOVES:
 			equipItemResult = equipItem(item, &stats[player]->gloves, player, checkInventorySpaceForPaperDoll);
 			break;
 		case CLOAK:
@@ -2317,6 +2788,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		case CLOAK_BACKPACK:
 		case CLOAK_SILVER:
 		case CLOAK_GUARDIAN:
+		case CLOAK_DENDRITE:
 			equipItemResult = equipItem(item, &stats[player]->cloak, player, checkInventorySpaceForPaperDoll);
 			break;
 		case LEATHER_BOOTS:
@@ -2329,6 +2801,13 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		case ARTIFACT_BOOTS:
 		case CRYSTAL_BOOTS:
 		case SUEDE_BOOTS:
+		case CLEAT_BOOTS:
+		case BONE_BOOTS:
+		case BLACKIRON_BOOTS:
+		case SILVER_BOOTS:
+		case QUILTED_BOOTS:
+		case LOAFERS:
+		case CHAIN_BOOTS:
 			equipItemResult = equipItem(item, &stats[player]->shoes, player, checkInventorySpaceForPaperDoll);
 			break;
 		case LEATHER_BREASTPIECE:
@@ -2342,6 +2821,19 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		case ARTIFACT_BREASTPIECE:
 		case TUNIC:
 		case MACHINIST_APRON:
+		case BANDIT_BREASTPIECE:
+		case TUNIC_BLOUSE:
+		case BONE_BREASTPIECE:
+		case BLACKIRON_BREASTPIECE:
+		case SILVER_BREASTPIECE:
+		case IRON_PAULDRONS:
+		case QUILTED_GAMBESON:
+		case ROBE_CULTIST:
+		case ROBE_HEALER:
+		case ROBE_MONK:
+		case ROBE_WIZARD:
+		case SHAWL:
+		case CHAIN_HAUBERK:
 			equipItemResult = equipItem(item, &stats[player]->breastplate, player, checkInventorySpaceForPaperDoll);
 			break;
 		case HAT_PHRYGIAN:
@@ -2381,6 +2873,15 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		case HAT_HOOD_APPRENTICE:
 		case HAT_HOOD_ASSASSIN:
 		case HAT_HOOD_WHISPERS:
+		case BONE_HELM:
+		case BLACKIRON_HELM:
+		case SILVER_HELM:
+		case QUILTED_CAP:
+		case CHAIN_COIF:
+		case HAT_FELT:
+		case HOOD_TEAL:
+		case HAT_CIRCLET_SORCERY:
+		case HAT_CIRCLET_THAUMATURGY:
 			equipItemResult = equipItem(item, &stats[player]->helmet, player, checkInventorySpaceForPaperDoll);
 			break;
 		case AMULET_SEXCHANGE:
@@ -2410,6 +2911,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		}
 			break;
 		case AMULET_POISONRESISTANCE:
+		case AMULET_BURNINGRESIST:
 			equipItemResult = equipItem(item, &stats[player]->amulet, player, checkInventorySpaceForPaperDoll);
 			break;
 		case POTION_WATER:
@@ -2610,6 +3112,8 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		case MAGICSTAFF_SUMMON:
 		case MAGICSTAFF_CHARM:
 		case MAGICSTAFF_POISON:
+		case BRANCH_STAFF:
+		case MAGICSTAFF_SCEPTER:
 			equipItemResult = equipItem(item, &stats[player]->weapon, player, checkInventorySpaceForPaperDoll);
 			break;
 		case RING_ADORNMENT:
@@ -2678,6 +3182,85 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		case SPELLBOOK_FLUTTER:
 		case SPELLBOOK_DASH:
 		case SPELLBOOK_SELF_POLYMORPH:
+		case SPELLBOOK_METEOR:
+		case SPELLBOOK_ICE_WAVE:
+		case SPELLBOOK_GUARD_BODY:
+		case SPELLBOOK_GUARD_SPIRIT:
+		case SPELLBOOK_DIVINE_GUARD:
+		case SPELLBOOK_PROF_NIMBLENESS:
+		case SPELLBOOK_PROF_GREATER_MIGHT:
+		case SPELLBOOK_PROF_COUNSEL:
+		case SPELLBOOK_PROF_STURDINESS:
+		case SPELLBOOK_BLESS_FOOD:
+		case SPELLBOOK_PINPOINT:
+		case SPELLBOOK_DONATION:
+		case SPELLBOOK_SCRY_ALLIES:
+		case SPELLBOOK_SCRY_TRAPS:
+		case SPELLBOOK_SCRY_TREASURES:
+		case SPELLBOOK_DETECT_ENEMY:
+		case SPELLBOOK_TURN_UNDEAD:
+		case SPELLBOOK_HEAL_OTHER:
+		case SPELLBOOK_BLOOD_WARD:
+		case SPELLBOOK_DIVINE_ZEAL:
+		case SPELLBOOK_MAXIMISE:
+		case SPELLBOOK_MINIMISE:
+		case SPELLBOOK_INCOHERENCE:
+		case SPELLBOOK_OVERCHARGE:
+		case SPELLBOOK_ENVENOM_WEAPON:
+		case SPELLBOOK_PSYCHIC_SPEAR:
+		case SPELLBOOK_DEFY_FLESH:
+		case SPELLBOOK_GREASE_SPRAY:
+		case SPELLBOOK_BLOOD_WAVES:
+		case SPELLBOOK_COMMAND:
+		case SPELLBOOK_METALLURGY:
+		case SPELLBOOK_FORGE_KEY:
+		case SPELLBOOK_RESHAPE_WEAPON:
+		case SPELLBOOK_ALTER_ARROW:
+		case SPELLBOOK_VOID_CHEST:
+		case SPELLBOOK_LEAD_BOLT:
+		case SPELLBOOK_NUMBING_BOLT:
+		case SPELLBOOK_CURSE_FLESH:
+		case SPELLBOOK_COWARDICE:
+		case SPELLBOOK_SEEK_ALLY:
+		case SPELLBOOK_DEEP_SHADE:
+		case SPELLBOOK_SPIRIT_WEAPON:
+		case SPELLBOOK_SPORES:
+		case SPELLBOOK_WINDGATE:
+		case SPELLBOOK_TELEKINESIS:
+		case SPELLBOOK_DISARM:
+		case SPELLBOOK_ABUNDANCE:
+		case SPELLBOOK_PRESERVE:
+		case SPELLBOOK_SABOTAGE:
+		case SPELLBOOK_MIST_FORM:
+		case SPELLBOOK_FORCE_SHIELD:
+		case SPELLBOOK_SPLINTER_GEAR:
+		case SPELLBOOK_ATTRACT_ITEMS:
+		case SPELLBOOK_ABSORB_MAGIC:
+		case SPELLBOOK_TUNNEL:
+		case SPELLBOOK_NULL_AREA:
+		case SPELLBOOK_FIRE_SPRITE:
+		case SPELLBOOK_SPIN:
+		case SPELLBOOK_CLEANSE_FOOD:
+		case SPELLBOOK_FLAME_CLOAK:
+		case SPELLBOOK_LIGHTNING_BOLT:
+		case SPELLBOOK_DISRUPT_EARTH:
+		case SPELLBOOK_FIRE_WALL:
+		case SPELLBOOK_SLAM:
+		case SPELLBOOK_IGNITE:
+		case SPELLBOOK_SHATTER_OBJECTS:
+		case SPELLBOOK_KINETIC_FIELD:
+		case SPELLBOOK_THORNS:
+		case SPELLBOOK_MAGICIANS_ARMOR:
+		case SPELLBOOK_HEAL_MINOR:
+		case SPELLBOOK_SIGIL:
+		case SPELLBOOK_SANCTUARY:
+		case SPELLBOOK_HOLY_BEAM:
+		case SPELLBOOK_DOMINATE:
+			item_Spellbook(item, player);
+			break;
+		case TOME_SORCERY:
+		case TOME_MYSTICISM:
+		case TOME_THAUMATURGY:
 			item_Spellbook(item, player);
 			break;
 		case GEM_ROCK:
@@ -2698,6 +3281,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		case GEM_JETSTONE:
 		case GEM_OBSIDIAN:
 		case GEM_GLASS:
+		case GEM_JEWEL:
 			equipItemResult = equipItem(item, &stats[player]->weapon, player, checkInventorySpaceForPaperDoll);
 			break;
 		case TOOL_PICKAXE:
@@ -2734,6 +3318,30 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		case QUIVER_KNOCKBACK:
 		case QUIVER_CRYSTAL:
 		case QUIVER_HUNTING:
+		case QUIVER_BONE:
+		case QUIVER_BLACKIRON:
+		case TOOL_FOCI_FIRE:
+		case TOOL_FOCI_SNOW:
+		case TOOL_FOCI_NEEDLES:
+		case TOOL_FOCI_ARCS:
+		case TOOL_FOCI_SAND:
+		case TOOL_FOCI_DARK_LIFE:
+		case TOOL_FOCI_DARK_RIFT:
+		case TOOL_FOCI_DARK_SILENCE:
+		case TOOL_FOCI_DARK_VENGEANCE:
+		case TOOL_FOCI_DARK_SUPPRESS:
+		case TOOL_FOCI_LIGHT_PEACE:
+		case TOOL_FOCI_LIGHT_JUSTICE:
+		case TOOL_FOCI_LIGHT_PROVIDENCE:
+		case TOOL_FOCI_LIGHT_PURITY:
+		case TOOL_FOCI_LIGHT_SANCTUARY:
+		case INSTRUMENT_FLUTE:
+		case INSTRUMENT_LYRE:
+		case INSTRUMENT_DRUM:
+		case INSTRUMENT_LUTE:
+		case INSTRUMENT_HORN:
+		case TOOL_FRYING_PAN:
+		case TOOL_DUCK:
 			equipItemResult = equipItem(item, &stats[player]->shield, player, checkInventorySpaceForPaperDoll);
 			break;
 		case TOOL_BLINDFOLD:
@@ -2744,7 +3352,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		case TOOL_TOWEL:
 			item_ToolTowel(item, player);
 			if ( multiplayer == CLIENT )
-				if ( stats[player]->EFFECTS[EFF_BLEEDING] )
+				if ( stats[player]->getEffectActive(EFF_BLEEDING) )
 				{
 					consumeItem(item, player);
 				}
@@ -2816,6 +3424,15 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		case FOOD_FISH:
 		case FOOD_TOMALLEY:
 		case FOOD_BLOOD:
+		case FOOD_RATION:
+		case FOOD_RATION_SPICY:
+		case FOOD_RATION_SOUR:
+		case FOOD_RATION_BITTER:
+		case FOOD_RATION_HEARTY:
+		case FOOD_RATION_HERBAL:
+		case FOOD_RATION_SWEET:
+		case FOOD_SHROOM:
+		case FOOD_NUT:
 			item_Food(item, player);
 			break;
 		case FOOD_TIN:
@@ -3057,6 +3674,9 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 			case AMULET_POISONRESISTANCE:
 				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2492));
 				break;
+			case AMULET_BURNINGRESIST:
+				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(6535));
+				break;
 			case RING_ADORNMENT:
 				messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(2384));
 				break;
@@ -3145,7 +3765,7 @@ Item* itemPickup(const int player, Item* const item, Item* addToSpecificInventor
 	}
 	Item* item2;
 
-	if ( stats[player]->getProficiency(PRO_APPRAISAL) >= CAPSTONE_UNLOCK_LEVEL[PRO_APPRAISAL] )
+	/*if ( stats[player]->getProficiency(PRO_APPRAISAL) >= CAPSTONE_UNLOCK_LEVEL[PRO_APPRAISAL] )
 	{
 		if ( !(player != 0 && multiplayer == SERVER && !players[player]->isLocalPlayer()) )
 		{
@@ -3160,7 +3780,7 @@ Item* itemPickup(const int player, Item* const item, Item* addToSpecificInventor
 				}
 			}
 		}
-	}
+	}*/
 
 	if ( item->identified && !intro )
 	{
@@ -3242,7 +3862,7 @@ Item* itemPickup(const int player, Item* const item, Item* addToSpecificInventor
 
 			if (!itemCompare(item, item2, false))
 			{
-				if ( (itemTypeIsQuiver(item2->type) && (item->count + item2->count) >= QUIVER_MAX_AMMO_QTY)
+				if ( ((itemTypeIsQuiver(item2->type) || itemTypeIsThrownBall(item2->type)) && (item->count + item2->count) >= QUIVER_MAX_AMMO_QTY)
 					|| ((item2->type == TOOL_MAGIC_SCRAP || item2->type == TOOL_METAL_SCRAP)
 						&& (item->count + item2->count) >= SCRAP_MAX_STACK_QTY) )
 				{
@@ -3273,18 +3893,20 @@ Item* itemPickup(const int player, Item* const item, Item* addToSpecificInventor
 					if ( multiplayer == CLIENT && player >= 0 && players[player]->isLocalPlayer() && itemIsEquipped(item2, player) )
 					{
 						// if incrementing qty and holding item, then send "equip" for server to update their count of your held item.
-						strcpy((char*)net_packet->data, "EQUS");
-						SDLNet_Write32(static_cast<Uint32>(item2->type), &net_packet->data[4]);
-						SDLNet_Write32(static_cast<Uint32>(item2->status), &net_packet->data[8]);
-						SDLNet_Write32(static_cast<Uint32>(item2->beatitude), &net_packet->data[12]);
-						SDLNet_Write32(static_cast<Uint32>(item2->count), &net_packet->data[16]);
-						SDLNet_Write32(static_cast<Uint32>(item2->appearance), &net_packet->data[20]);
-						net_packet->data[24] = item2->identified;
-						net_packet->data[25] = player;
-						net_packet->address.host = net_server.host;
-						net_packet->address.port = net_server.port;
-						net_packet->len = 27;
-						sendPacketSafe(net_sock, -1, net_packet, 0);
+						Item** slot = itemSlot(stats[player], item2);
+						if ( slot )
+						{
+							if ( slot == &stats[player]->weapon )
+							{
+								clientSendEquipUpdateToServer(EQUIP_ITEM_SLOT_WEAPON, EQUIP_ITEM_SUCCESS_UPDATE_QTY, player,
+									item2->type, item2->status, item2->beatitude, item2->count, item2->appearance, item2->identified);
+							}
+							else if ( slot == &stats[player]->shield )
+							{
+								clientSendEquipUpdateToServer(EQUIP_ITEM_SLOT_SHIELD, EQUIP_ITEM_SUCCESS_UPDATE_QTY, player,
+									item2->type, item2->status, item2->beatitude, item2->count, item2->appearance, item2->identified);
+							}
+						}
 					}
 					item2->ownerUid = item->ownerUid;
 					if ( item->count <= 0 )
@@ -3338,65 +3960,41 @@ Item* itemPickup(const int player, Item* const item, Item* addToSpecificInventor
 		}
 		if ( !appearancesOfSimilarItems.empty() && item && item->type >= 0 && item->type < NUMITEMS )
 		{
-			Uint32 originalAppearance = item->appearance;
-			int originalVariation = originalAppearance % items[item->type].variations;
-
-			int tries = 100;
-			bool robot = false;
-			// we need to find a unique appearance within the list.
-			if ( item->type == TOOL_SENTRYBOT || item->type == TOOL_SPELLBOT || item->type == TOOL_GYROBOT
-				|| item->type == TOOL_DUMMYBOT )
-			{
-				robot = true;
-				item->appearance += (local_rng.rand() % 100000) * 10;
-			}
-			else
-			{
-				item->appearance = local_rng.rand();
-				if ( item->appearance % items[item->type].variations != originalVariation )
-				{
-					// we need to match the variation for the new appearance, take the difference so new varation matches
-					int change = (item->appearance % items[item->type].variations - originalVariation);
-					if ( item->appearance < change ) // underflow protection
-					{
-						item->appearance += items[item->type].variations;
-					}
-					item->appearance -= change;
-					int newVariation = item->appearance % items[item->type].variations;
-					assert(newVariation == originalVariation);
-				}
-			}
-			auto it = appearancesOfSimilarItems.find(item->appearance);
-			while ( it != appearancesOfSimilarItems.end() && tries > 0 )
-			{
-				if ( robot )
-				{
-					item->appearance += (local_rng.rand() % 100000) * 10;
-				}
-				else
-				{
-					item->appearance = local_rng.rand();
-					if ( item->appearance % items[item->type].variations != originalVariation )
-					{
-						// we need to match the variation for the new appearance, take the difference so new varation matches
-						int change = (item->appearance % items[item->type].variations - originalVariation);
-						if ( item->appearance < change ) // underflow protection
-						{
-							item->appearance += items[item->type].variations;
-						}
-						item->appearance -= change;
-						int newVariation = item->appearance % items[item->type].variations;
-						assert(newVariation == originalVariation);
-					}
-				}
-				it = appearancesOfSimilarItems.find(item->appearance);
-				--tries;
-			}
+			Item::itemFindUniqueAppearance(item, appearancesOfSimilarItems);
 		}
 
 		item2 = newItem(item->type, item->status, item->beatitude, item->count, item->appearance, item->identified, &stats[player]->inventory);
 		item2->ownerUid = item->ownerUid;
 		item2->notifyIcon = item->notifyIcon;
+
+		if ( item2->type == TOOL_DUCK && !stats[player]->shield )
+		{
+			bool shapeshifted = false;
+			if ( players[player] && players[player]->entity && players[player]->entity->effectShapeshift != NOTHING )
+			{
+				shapeshifted = true;
+			}
+
+			if ( !shapeshifted && !intro )
+			{
+				useItem(item2, player);
+				auto& hotbar_t = players[player]->hotbar;
+				auto& hotbar = hotbar_t.slots();
+				if ( hotbar_t.magicDuckHotbarSlot >= 0 )
+				{
+					hotbar[hotbar_t.magicDuckHotbarSlot].item = item2->uid;
+					for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
+					{
+						if ( i != hotbar_t.magicDuckHotbarSlot && hotbar[i].item == item2->uid )
+						{
+							hotbar[i].item = 0;
+							hotbar[i].resetLastItem();
+						}
+					}
+				}
+			}
+		}
+
 		return item2;
 	}
 
@@ -3411,7 +4009,11 @@ int Item::getMaxStackLimit(int player) const
 	}
 
 	int maxStack = 100;
-	if ( itemCategory(this) == THROWN || itemCategory(this) == GEM )
+	if ( itemTypeIsThrownBall(this->type) )
+	{
+		maxStack = QUIVER_MAX_AMMO_QTY - 1;
+	}
+	else if ( itemCategory(this) == THROWN || itemCategory(this) == GEM )
 	{
 		maxStack = THROWN_GEM_MAX_STACK_QTY;
 	}
@@ -3439,7 +4041,7 @@ ItemStackResult getItemStackingBehaviorIndividualItemCheck(const int player, Ite
 
 	if ( !itemCompare(itemToCheck, itemDestinationStack, false) )
 	{
-		if ( (itemTypeIsQuiver(itemDestinationStack->type) && (itemToCheck->count + itemDestinationStack->count) >= QUIVER_MAX_AMMO_QTY)
+		if ( ((itemTypeIsQuiver(itemDestinationStack->type) || itemTypeIsThrownBall(itemDestinationStack->type)) && (itemToCheck->count + itemDestinationStack->count) >= QUIVER_MAX_AMMO_QTY)
 			|| ((itemDestinationStack->type == TOOL_MAGIC_SCRAP || itemDestinationStack->type == TOOL_METAL_SCRAP)
 				&& (itemToCheck->count + itemDestinationStack->count) >= SCRAP_MAX_STACK_QTY) )
 		{
@@ -3554,9 +4156,9 @@ ItemStackResult getItemStackingBehaviorIntoChest(const int player, Item* itemToC
 	{
 		chest_inventory = &chestInv[player];
 	}
-	else if ( openedChest[player]->children.first && openedChest[player]->children.first->element )
+	else if ( openedChest[player] )
 	{
-		chest_inventory = (list_t*)openedChest[player]->children.first->element;
+		chest_inventory = openedChest[player]->getChestInventoryList();
 	}
 	if ( !chest_inventory )
 	{
@@ -3915,7 +4517,7 @@ Sint32 Item::weaponGetAttack(const Stat* const wielder) const
 	}
 	if ( itemCategory(this) == MAGICSTAFF )
 	{
-		attack += 6;
+		attack += 1;
 	}
 	else if ( itemCategory(this) == GEM )
 	{
@@ -3928,6 +4530,10 @@ Sint32 Item::weaponGetAttack(const Stat* const wielder) const
 	else if ( type == QUARTERSTAFF )
 	{
 		attack += 4;
+	}
+	else if ( type == ANELACE_SWORD )
+	{
+		attack += 1;
 	}
 	else if ( type == BRONZE_SWORD )
 	{
@@ -3949,11 +4555,35 @@ Sint32 Item::weaponGetAttack(const Stat* const wielder) const
 	{
 		attack += 5;
 	}
+	else if ( type == RAPIER )
+	{
+		attack += 7;
+	}
 	else if ( type == IRON_MACE )
 	{
 		attack += 5;
 	}
 	else if ( type == IRON_AXE )
+	{
+		attack += 5;
+	}
+	else if ( type == SHILLELAGH_MACE )
+	{
+		attack += 5;
+	}
+	else if ( type == BONE_AXE )
+	{
+		attack += 5;
+	}
+	else if ( type == BONE_SWORD )
+	{
+		attack += 5;
+	}
+	else if ( type == BONE_MACE )
+	{
+		attack += 5;
+	}
+	else if ( type == BONE_SPEAR )
 	{
 		attack += 5;
 	}
@@ -3970,6 +4600,58 @@ Sint32 Item::weaponGetAttack(const Stat* const wielder) const
 		attack += 6;
 	}
 	else if ( type == STEEL_AXE )
+	{
+		attack += 6;
+	}
+	else if ( type == STEEL_FLAIL )
+	{
+		attack += 6;
+	}
+	else if ( type == CLAYMORE_SWORD )
+	{
+		attack += 6;
+	}
+	else if ( type == STEEL_FALSHION )
+	{
+		attack += 6;
+	}
+	else if ( type == STEEL_GREATAXE )
+	{
+		attack += 6;
+	}
+	else if ( type == LANCE_SPEAR )
+	{
+		attack += 6;
+	}
+	else if ( type == BLACKIRON_AXE )
+	{
+		attack += 6;
+	}
+	else if ( type == BLACKIRON_MACE )
+	{
+		attack += 6;
+	}
+	else if ( type == BLACKIRON_SWORD )
+	{
+		attack += 6;
+	}
+	else if ( type == BLACKIRON_TRIDENT )
+	{
+		attack += 6;
+	}
+	else if ( type == SILVER_AXE )
+	{
+		attack += 6;
+	}
+	else if ( type == SILVER_MACE )
+	{
+		attack += 6;
+	}
+	else if ( type == SILVER_SWORD )
+	{
+		attack += 6;
+	}
+	else if ( type == SILVER_GLAIVE )
 	{
 		attack += 6;
 	}
@@ -3997,7 +4679,15 @@ Sint32 Item::weaponGetAttack(const Stat* const wielder) const
 	{
 		attack += 6;
 	}
+	else if ( type == BONE_SHORTBOW )
+	{
+		attack += 6;
+	}
 	else if ( type == CROSSBOW )
+	{
+		attack += 7;
+	}
+	else if ( type == BLACKIRON_CROSSBOW )
 	{
 		attack += 7;
 	}
@@ -4005,9 +4695,17 @@ Sint32 Item::weaponGetAttack(const Stat* const wielder) const
 	{
 		attack += 10;
 	}
+	else if ( type == BRANCH_BOW )
+	{
+		attack += 6;
+	}
+	else if ( type == BRANCH_BOW_INFECTED )
+	{
+		attack += 8;
+	}
 	else if ( type == HEAVY_CROSSBOW )
 	{
-		attack += 16;
+		attack += 14;
 	}
 	else if ( type == COMPOUND_BOW )
 	{
@@ -4033,6 +4731,22 @@ Sint32 Item::weaponGetAttack(const Stat* const wielder) const
 	{
 		attack += 6;
 	}
+	else if ( type == BONE_THROWING )
+	{
+		attack += 6;
+	}
+	else if ( type == BOLAS )
+	{
+		attack += 3;
+	}
+	else if ( type == GREASE_BALL || type == DUST_BALL )
+	{
+		attack += 3;
+	}
+	else if ( type == SLOP_BALL )
+	{
+		attack += 3;
+	}
 	else if ( type == IRON_DAGGER )
 	{
 		attack += 8;
@@ -4045,13 +4759,21 @@ Sint32 Item::weaponGetAttack(const Stat* const wielder) const
 	{
 		attack += 10;
 	}
+	else if ( type == SILVER_PLUMBATA )
+	{
+		attack += 10;
+	}
+	else if ( type == BLACKIRON_DART )
+	{
+		attack += 10;
+	}
 	else if ( type == CRYSTAL_SHURIKEN )
 	{
 		attack += 12;
 	}
 	else if ( type == TOOL_WHIP )
 	{
-		attack += 2;
+		attack += 6;
 	}
 	else if ( type == QUIVER_SILVER )
 	{
@@ -4084,7 +4806,8 @@ Sint32 Item::weaponGetAttack(const Stat* const wielder) const
 	// old formula
 	//attack *= (double)(status / 5.0);
 	//
-	if ( itemCategory(this) != TOOL && itemCategory(this) != THROWN && itemCategory(this) != GEM && itemCategory(this) != POTION )
+	if ( itemCategory(this) != TOOL && itemCategory(this) != THROWN && itemCategory(this) != GEM && itemCategory(this) != POTION
+		&& itemCategory(this) != MAGICSTAFF )
 	{
 		// new formula
 		attack += status - 3;
@@ -4096,6 +4819,9 @@ Sint32 Item::weaponGetAttack(const Stat* const wielder) const
 bool Item::doesItemProvideBeatitudeAC(ItemType type)
 {
 	if ( itemTypeIsQuiver(type) || items[type].category == SPELLBOOK
+		|| itemTypeIsFoci(type)
+		|| itemTypeIsInstrument(type)
+		|| type == TOOL_DUCK
 		|| items[type].category == AMULET )
 	{
 		return false;
@@ -4106,6 +4832,8 @@ bool Item::doesItemProvideBeatitudeAC(ItemType type)
 			|| type == HAT_PLUMED_CAP
 			|| type == HAT_BYCOCKET
 			|| type == HAT_CIRCLET
+			|| type == HAT_CIRCLET_SORCERY
+			|| type == HAT_CIRCLET_THAUMATURGY
 			|| type == HAT_CIRCLET_WISDOM
 			|| type == HAT_CROWN 
 			|| type == HAT_LAURELS 
@@ -4126,15 +4854,6 @@ bool Item::doesItemProvideBeatitudeAC(ItemType type)
 		{
 			return true;
 		}
-		return false;
-	}
-	return true;
-}
-
-bool Item::doesItemProvidePassiveShieldBonus() const
-{
-	if ( itemTypeIsQuiver(type) || itemCategory(this) == SPELLBOOK )
-	{
 		return false;
 	}
 	return true;
@@ -4243,6 +4962,11 @@ Sint32 Item::potionGetEffectDamage(Entity* my, Stat* myStats) const
 
 Sint32 Item::potionGetEffectDurationMinimum(Entity* my, Stat* myStats) const
 {
+	if ( type == GREASE_BALL )
+	{
+		return 500;
+	}
+
 	if ( itemCategory(this) != POTION )
 	{
 		return 1;
@@ -4316,6 +5040,11 @@ Sint32 Item::potionGetEffectDurationMinimum(Entity* my, Stat* myStats) const
 
 Sint32 Item::potionGetEffectDurationMaximum(Entity* my, Stat* myStats) const
 {
+	if ( type == GREASE_BALL )
+	{
+		return 750;
+	}
+
 	if ( itemCategory(this) != POTION )
 	{
 		return 1;
@@ -4527,6 +5256,70 @@ Sint32 Item::potionGetCursedEffectDurationRandom(Entity* my, Stat* myStats) cons
 	return potionGetCursedEffectDurationMinimum(my, myStats) + (local_rng.rand() % (range));
 }
 
+Sint32 Item::getGoldValue() const
+{
+	if ( type >= 0 && type < NUMITEMS )
+	{
+		if ( items[type].category == TOME_SPELL )
+		{
+			int spellID = getTomeSpellID();
+			if ( spellID > SPELL_NONE )
+			{
+				if ( auto spell = getSpellFromID(spellID) )
+				{
+					if ( spell->difficulty >= 100 )
+					{
+						return items[type].gold_value + 950;
+					}
+					else if ( spell->difficulty >= 80 )
+					{
+						return items[type].gold_value + 550;
+					}
+					else if ( spell->difficulty >= 60 )
+					{
+						return items[type].gold_value + 350;
+					}
+					else if ( spell->difficulty >= 40 )
+					{
+						return items[type].gold_value + 150;
+					}
+					else if ( spell->difficulty >= 20 )
+					{
+						return items[type].gold_value + 50;
+					}
+				}
+			}
+		}
+		if ( type == GEM_JEWEL )
+		{
+			int value = items[type].gold_value;
+			if ( status == BROKEN )
+			{
+				value = 0;
+			}
+			else if ( status == DECREPIT )
+			{
+				value = 250;
+			}
+			else if ( status == WORN )
+			{
+				value = 500;
+			}
+			else if ( status == SERVICABLE )
+			{
+				value = 1000;
+			}
+			else if ( status == EXCELLENT )
+			{
+				value = 2000;
+			}
+			return value;
+		}
+		return items[type].gold_value;
+	}
+	return 0;
+}
+
 Sint32 Item::getWeight() const
 {
 	if ( type >= 0 && type < NUMITEMS )
@@ -4642,6 +5435,34 @@ Sint32 Item::armorGetAC(const Stat* const wielder) const
 	{
 		armor += 3;
 	}
+	else if ( type == BONE_HELM )
+	{
+		armor += 1;
+	}
+	else if ( type == BLACKIRON_HELM )
+	{
+		armor += 3;
+	}
+	else if ( type == SILVER_HELM )
+	{
+		armor += 3;
+	}
+	else if ( type == QUILTED_CAP )
+	{
+		armor += 1;
+	}
+	else if ( type == CHAIN_COIF )
+	{
+		armor += 1;
+	}
+	else if ( type == HAT_FELT )
+	{
+		armor += 0;
+	}
+	else if ( type == HOOD_TEAL )
+	{
+		armor += 0;
+	}
 	else if ( type == LEATHER_BREASTPIECE )
 	{
 		armor += 2;
@@ -4707,13 +5528,57 @@ Sint32 Item::armorGetAC(const Stat* const wielder) const
 	{
 		armor += 1;
 	}
-	else if ( type == IRON_BOOTS || type == IRON_BOOTS_WATERWALKING )
+	else if ( type == IRON_BOOTS || type == IRON_BOOTS_WATERWALKING || type == CLEAT_BOOTS || type == TOOL_FRYING_PAN )
 	{
 		armor += 2;
 	}
 	else if ( type == STEEL_BOOTS || type == STEEL_BOOTS_LEVITATION || type == STEEL_BOOTS_FEATHER )
 	{
 		armor += 3;
+	}
+	else if ( type == BONE_BRACERS )
+	{
+		armor += 1;
+	}
+	else if ( type == BLACKIRON_GAUNTLETS )
+	{
+		armor += 3;
+	}
+	else if ( type == SILVER_GAUNTLETS )
+	{
+		armor += 3;
+	}
+	else if ( type == QUILTED_GLOVES )
+	{
+		armor += 1;
+	}
+	else if ( type == CHAIN_GLOVES )
+	{
+		armor += 1;
+	}
+	else if ( type == BONE_BOOTS )
+	{
+		armor += 1;
+	}
+	else if ( type == BLACKIRON_BOOTS )
+	{
+		armor += 3;
+	}
+	else if ( type == SILVER_BOOTS )
+	{
+		armor += 3;
+	}
+	else if ( type == QUILTED_BOOTS )
+	{
+		armor += 1;
+	}
+	else if ( type == LOAFERS )
+	{
+		armor += 0;
+	}
+	else if ( type == CHAIN_BOOTS )
+	{
+		armor += 1;
 	}
 	else if ( type == WOODEN_SHIELD )
 	{
@@ -4728,6 +5593,22 @@ Sint32 Item::armorGetAC(const Stat* const wielder) const
 		armor += 3;
 	}
 	else if ( type == STEEL_SHIELD || type == STEEL_SHIELD_RESISTANCE )
+	{
+		armor += 4;
+	}
+	else if ( type == SCUTUM )
+	{
+		armor += 6;
+	}
+	else if ( type == BONE_SHIELD )
+	{
+		armor += 2;
+	}
+	else if ( type == BLACKIRON_SHIELD )
+	{
+		armor += 4;
+	}
+	else if ( type == SILVER_SHIELD )
 	{
 		armor += 4;
 	}
@@ -4779,6 +5660,10 @@ Sint32 Item::armorGetAC(const Stat* const wielder) const
 	{
 		armor += 0;
 	}
+	else if ( type == CLOAK_DENDRITE )
+	{
+		armor += 1;
+	}
 	else if ( type == MIRROR_SHIELD )
 	{
 		armor += 0;
@@ -4794,6 +5679,58 @@ Sint32 Item::armorGetAC(const Stat* const wielder) const
 	else if ( type == SPIKED_GAUNTLETS )
 	{
 		armor += 3;
+	}
+	else if ( type == BANDIT_BREASTPIECE )
+	{
+		armor += 2;
+	}
+	else if ( type == TUNIC_BLOUSE)
+	{
+		armor += 0;
+	}
+	else if ( type == BONE_BREASTPIECE)
+	{
+		armor += 2;
+	}
+	else if ( type == BLACKIRON_BREASTPIECE)
+	{
+		armor += 4;
+	}
+	else if ( type == SILVER_BREASTPIECE)
+	{
+		armor += 4;
+	}
+	else if ( type == IRON_PAULDRONS)
+	{
+		armor += 2;
+	}
+	else if ( type == QUILTED_GAMBESON)
+	{
+		armor += 2;
+	}
+	else if ( type == ROBE_CULTIST)
+	{
+		armor += 1;
+	}
+	else if ( type == ROBE_HEALER)
+	{
+		armor += 1;
+	}
+	else if ( type == ROBE_MONK)
+	{
+		armor += 1;
+	}
+	else if ( type == ROBE_WIZARD)
+	{
+		armor += 1;
+	}
+	else if ( type == SHAWL)
+	{
+		armor += 1;
+	}
+	else if ( type == CHAIN_HAUBERK)
+	{
+		armor += 2;
 	}
 	//armor *= (double)(item->status/5.0);
 
@@ -4844,6 +5781,11 @@ bool Item::canUnequip(const Stat* const wielder)
 		}
 	}
 
+	if ( type == TOOL_DUCK )
+	{
+		return true;
+	}
+
 	if ( wielder )
 	{
 		if ( wielder->type == AUTOMATON )
@@ -4861,7 +5803,12 @@ bool Item::canUnequip(const Stat* const wielder)
 						Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_APPRAISED, type, 1);
 					}
 				}
+				bool prevIdentified = identified;
 				identified = true;
+				if ( !prevIdentified )
+				{
+					Item::onItemIdentified(player, this);
+				}
 				return false;
 			}
 			else
@@ -4880,7 +5827,12 @@ bool Item::canUnequip(const Stat* const wielder)
 				Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_APPRAISED, type, 1);
 			}
 		}
+		bool prevIdentified = identified;
 		identified = true;
+		if ( !prevIdentified )
+		{
+			Item::onItemIdentified(player, this);
+		}
 		return false;
 	}
 
@@ -4897,7 +5849,7 @@ bool Item::canUnequip(const Stat* const wielder)
 
 int Item::buyValue(const int player) const
 {
-	int value = items[type].value; // base value
+	int value = this->getGoldValue(); // base value
 
 	// identified bonus
 	if ( identified )
@@ -4949,10 +5901,10 @@ int Item::buyValue(const int player) const
 
 	if ( itemTypeIsQuiver(type) )
 	{
-		return std::max(value, items[type].value) * count;
+		return std::max(value, this->getGoldValue()) * count;
 	}
 
-	return std::max(value, items[type].value);
+	return std::max(value, this->getGoldValue());
 }
 
 /*-------------------------------------------------------------------------------
@@ -4965,7 +5917,7 @@ int Item::buyValue(const int player) const
 
 int Item::sellValue(const int player) const
 {
-	int value = items[type].value; // base value
+	int value = this->getGoldValue(); // base value
 
 	// identified bonus
 	if ( identified )
@@ -4976,7 +5928,7 @@ int Item::sellValue(const int player) const
 	{
 		if ( itemCategory(this) == GEM )
 		{
-			value = items[GEM_GLASS].value;
+			value = items[GEM_GLASS].gold_value;
 		}
 		else
 		{
@@ -4988,21 +5940,24 @@ int Item::sellValue(const int player) const
 	value *= 1.f + beatitude / 20.f;
 	value *= (static_cast<int>(status) + 5) / 10.f;
 
-	// trading bonus
-	value *= (50 + stats[player]->getModifiedProficiency(PRO_TRADING)) / 150.f;
+	if ( player >= 0 )
+	{
+		// trading bonus
+		value *= (50 + stats[player]->getModifiedProficiency(PRO_TRADING)) / 150.f;
 
-	// charisma bonus
-	value *= 1.f + statGetCHR(stats[player], players[player]->entity) / 20.f;
+		// charisma bonus
+		value *= 1.f + statGetCHR(stats[player], players[player]->entity) / 20.f;
+	}
 
 	// result
 	value = std::max(1, value);
 
 	if ( itemTypeIsQuiver(type) )
 	{
-		return std::min(value, items[type].value) * count;
+		return std::min(value, this->getGoldValue()) * count;
 	}
 
-	return std::min(value, items[type].value);
+	return std::min(value, this->getGoldValue());
 }
 
 /*-------------------------------------------------------------------------------
@@ -5106,16 +6061,19 @@ void Item::applyLockpickToWall(const int player, const int x, const int y) const
 				{
 					const int skill = std::max(1, stats[player]->getModifiedProficiency(PRO_LOCKPICKING) / 10);
 					bool failed = false;
-					if ( skill < 2 || local_rng.rand() % skill == 0 ) // 20 skill requirement.
+					if ( entity->actTrapSabotaged == 0 )
 					{
-						// failed.
-						const Uint32 color = makeColorRGB(255, 0, 0);
-						messagePlayerColor(player, MESSAGE_INTERACTION, color, Language::get(3871)); // trap fires.
-						if ( skill < 2 )
+						if ( skill < 2 || local_rng.rand() % skill == 0 ) // 20 skill requirement.
 						{
-							messagePlayer(player, MESSAGE_INTERACTION, Language::get(3887)); // not skilled enough.
+							// failed.
+							const Uint32 color = makeColorRGB(255, 0, 0);
+							messagePlayerColor(player, MESSAGE_INTERACTION, color, Language::get(3871)); // trap fires.
+							if ( skill < 2 )
+							{
+								messagePlayer(player, MESSAGE_INTERACTION, Language::get(3887)); // not skilled enough.
+							}
+							failed = true;
 						}
-						failed = true;
 					}
 
 					if ( failed )
@@ -5134,7 +6092,8 @@ void Item::applyLockpickToWall(const int player, const int x, const int y) const
 					}
 
 					// degrade lockpick.
-					if ( !(stats[player]->weapon->type == TOOL_SKELETONKEY) && (local_rng.rand() % 10 == 0 || (failed && local_rng.rand() % 4 == 0)) )
+					if ( !(stats[player]->weapon->type == TOOL_SKELETONKEY) && (local_rng.rand() % 10 == 0 || (failed && local_rng.rand() % 4 == 0))
+						&& !(players[player]->entity && players[player]->entity->spellEffectPreserveItem(stats[player]->weapon)) )
 					{
 						if ( players[player]->isLocalPlayer() )
 						{
@@ -5159,9 +6118,10 @@ void Item::applyLockpickToWall(const int player, const int x, const int y) const
 							strcpy((char*)net_packet->data, "ARMR");
 							net_packet->data[4] = 5;
 							net_packet->data[5] = stats[player]->weapon->status;
+							SDLNet_Write16((int)stats[player]->weapon->type, &net_packet->data[6]);
 							net_packet->address.host = net_clients[player - 1].host;
 							net_packet->address.port = net_clients[player - 1].port;
-							net_packet->len = 6;
+							net_packet->len = 8;
 							sendPacketSafe(net_sock, -1, net_packet, player - 1);
 						}
 					}
@@ -5335,7 +6295,7 @@ void createCustomInventory(Stat* const stats, const int itemLimit, BaronyRNG& rn
 	}
 }
 
-node_t* itemNodeInInventory(const Stat* const myStats, Sint32 itemToFind, const Category cat)
+node_t* itemNodeInInventory(const Stat* const myStats, Sint32 itemToFind, const Category cat, bool randomSlot)
 {
 	if ( myStats == nullptr )
 	{
@@ -5344,7 +6304,7 @@ node_t* itemNodeInInventory(const Stat* const myStats, Sint32 itemToFind, const 
 
 	node_t* node = nullptr;
 	node_t* nextnode = nullptr;
-
+	std::vector<node_t*> allNodes;
 	for ( node = myStats->inventory.first; node != nullptr; node = nextnode )
 	{
 		nextnode = node->next;
@@ -5353,12 +6313,34 @@ node_t* itemNodeInInventory(const Stat* const myStats, Sint32 itemToFind, const 
 		{
 			if ( cat >= WEAPON && itemCategory(item) == cat )
 			{
-				return node;
+				if ( randomSlot )
+				{
+					allNodes.push_back(node);
+				}
+				else
+				{
+					return node;
+				}
 			}
 			else if ( itemToFind >= 0 && item->type == static_cast<ItemType>(itemToFind) )
 			{
-				return node;
+				if ( randomSlot )
+				{
+					allNodes.push_back(node);
+				}
+				else
+				{
+					return node;
+				}
 			}
+		}
+	}
+
+	if ( randomSlot )
+	{
+		if ( allNodes.size() > 0 )
+		{
+			return allNodes.at(local_rng.rand() % allNodes.size());
 		}
 	}
 
@@ -5463,6 +6445,10 @@ bool isRangedWeapon(const ItemType type)
 	case LONGBOW:
 	case COMPOUND_BOW:
 	case HEAVY_CROSSBOW:
+	case BRANCH_BOW:
+	case BRANCH_BOW_INFECTED:
+	case BLACKIRON_CROSSBOW:
+	case BONE_SHORTBOW:
 		return true;
 	default:
 		return false;
@@ -5656,7 +6642,7 @@ ItemType itemTypeWithinGoldValue(const int cat, const int minValue, const int ma
 	bool pickAnyCategory = false;
 	int c;
 
-	if ( cat < -1 || cat >= NUMCATEGORIES )
+	if ( cat < -1 || cat >= Category::CATEGORY_MAX )
 	{
 		printlog("warning: pickItemWithinGoldValue() called with bad category value!\n");
 		return GEM_ROCK;
@@ -5670,9 +6656,9 @@ ItemType itemTypeWithinGoldValue(const int cat, const int minValue, const int ma
 	// find highest value of items in category
 	for ( c = 0; c < NUMITEMS; ++c )
 	{
-		if ( items[c].category == cat || (pickAnyCategory && items[c].category != SPELL_CAT) )
+		if ( items[c].category == cat || (pickAnyCategory && items[c].category < Category::CATEGORY_MAX - 2) )
 		{
-			if ( items[c].value >= minValue && items[c].value <= maxValue && items[c].level != -1 )
+			if ( items[c].gold_value >= minValue && items[c].gold_value <= maxValue && items[c].level != -1 )
 			{
 				// chance true for an item if it's not forbidden from the global item list.
 				chances[c] = true;
@@ -5776,6 +6762,7 @@ bool Item::shouldItemStack(const int player, bool ignoreStackLimit) const
 				&& this->type != TOOL_PICKAXE
 				&& this->type != TOOL_ALEMBIC
 				&& this->type != TOOL_TINKERING_KIT
+				&& this->type != TOOL_FRYING_PAN
 				&& this->type != ENCHANTED_FEATHER
 				&& this->type != TOOL_LANTERN
 				&& this->type != TOOL_GLASSES
@@ -5790,6 +6777,7 @@ bool Item::shouldItemStack(const int player, bool ignoreStackLimit) const
 				&& this->type != TOOL_PICKAXE 
 				&& this->type != TOOL_ALEMBIC 
 				&& this->type != TOOL_TINKERING_KIT
+				&& this->type != TOOL_FRYING_PAN
 				&& this->type != ENCHANTED_FEATHER
 				&& this->type != TOOL_LANTERN
 				&& this->type != TOOL_GLASSES
@@ -5801,6 +6789,14 @@ bool Item::shouldItemStack(const int player, bool ignoreStackLimit) const
 		{
 			// THROWN, GEM, TOOLS, POTIONS should stack when equipped.
 			// otherwise most equippables should not stack.
+			if ( itemTypeIsThrownBall(this->type) )
+			{
+				if ( !ignoreStackLimit && count >= QUIVER_MAX_AMMO_QTY - 1 )
+				{
+					return false;
+				}
+				return true;
+			}
 			if ( itemCategory(this) == THROWN || itemCategory(this) == GEM )
 			{
 				if ( !ignoreStackLimit && count >= THROWN_GEM_MAX_STACK_QTY )
@@ -5825,6 +6821,10 @@ bool Item::shouldItemStack(const int player, bool ignoreStackLimit) const
 				return true;
 			}
 			else if ( type == TOOL_SPELLBOT || type == TOOL_DUMMYBOT || type == TOOL_SENTRYBOT || type == TOOL_GYROBOT )
+			{
+				return false;
+			}
+			else if ( items[type].hasAttribute("no_stack") )
 			{
 				return false;
 			}
@@ -5861,28 +6861,11 @@ bool isItemEquippableInShieldSlot(const Item* const item)
 		return false;
 	}
 
-	if ( itemTypeIsQuiver(item->type) )
+	if ( item->type < 0 || item->type >= NUMITEMS )
 	{
-		return true;
+		return false;
 	}
-
-	switch ( item->type )
-	{
-		case WOODEN_SHIELD:
-		case BRONZE_SHIELD:
-		case IRON_SHIELD:
-		case STEEL_SHIELD:
-		case STEEL_SHIELD_RESISTANCE:
-		case MIRROR_SHIELD:
-		case CRYSTAL_SHIELD:
-		case TOOL_TORCH:
-		case TOOL_LANTERN:
-		case TOOL_CRYSTALSHARD:
-			return true;
-		default:
-			break;
-	}
-	return false;
+	return (items[item->type].item_slot == EQUIPPABLE_IN_SLOT_SHIELD);
 }
 
 bool Item::usableWhileShapeshifted(const Stat* const wielder) const
@@ -5900,9 +6883,14 @@ bool Item::usableWhileShapeshifted(const Stat* const wielder) const
 		case TOOL:
 		case BOOK:
 		case SCROLL:
+			if ( wielder->type == CREATURE_IMP && itemTypeIsFoci(type) )
+			{
+				return true;
+			}
 			return false;
 		case MAGICSTAFF:
 		case SPELLBOOK:
+		case TOME_SPELL:
 		{
 			if (wielder->type == CREATURE_IMP)
 			{
@@ -5929,6 +6917,51 @@ bool Item::usableWhileShapeshifted(const Stat* const wielder) const
 			break;
 	}
 	return false;
+}
+
+int Item::getTomeSpellID() const
+{
+	if ( type == TOME_SORCERY )
+	{
+		auto find = spellTomeAppearanceToID[PRO_SORCERY].find(appearance % TOME_APPEARANCE_MAX);
+		if ( find == spellTomeAppearanceToID[PRO_SORCERY].end() )
+		{
+			return SPELL_FORCEBOLT;
+		}
+		return find->second;
+	}
+	else if ( type == TOME_MYSTICISM )
+	{
+		auto find = spellTomeAppearanceToID[PRO_MYSTICISM].find(appearance % TOME_APPEARANCE_MAX);
+		if ( find == spellTomeAppearanceToID[PRO_MYSTICISM].end() )
+		{
+			return SPELL_SLOW;
+		}
+		return find->second;
+	}
+	else if ( type == TOME_THAUMATURGY )
+	{
+		auto find = spellTomeAppearanceToID[PRO_THAUMATURGY].find(appearance % TOME_APPEARANCE_MAX);
+		if ( find == spellTomeAppearanceToID[PRO_THAUMATURGY].end() )
+		{
+			return SPELL_LIGHT;
+		}
+		return find->second;
+	}
+	return SPELL_NONE;
+}
+
+const char* Item::getTomeLabel() const
+{
+	if ( itemCategory(this) == TOME_SPELL )
+	{
+		int spellID = getTomeSpellID();
+		if ( auto spell = getSpellFromID(spellID) )
+		{
+			return spell->getSpellName(true);
+		}
+	}
+	return "";
 }
 
 char* Item::getScrollLabel() const
@@ -5964,9 +6997,40 @@ char* Item::getScrollLabel() const
 	return scroll_label[chosenLabel];
 }
 
+bool itemSpriteIsFociThirdPersonModel(const int sprite)
+{
+	static std::set<int> fociModels;
+	if ( fociModels.size() == 0 )
+	{
+		for ( int i = 0; i < NUMITEMS; ++i )
+		{
+			if ( itemTypeIsFoci((ItemType)i) )
+			{
+				fociModels.insert(items[i].index);
+				if ( items[i].indexShort >= 0 )
+				{
+					fociModels.insert(items[i].indexShort);
+				}
+			}
+		}
+	}
+
+	return fociModels.find(sprite) != fociModels.end();
+}
+
 bool itemSpriteIsQuiverThirdPersonModel(const int sprite)
 {
 	for ( int i = QUIVER_SILVER; i <= QUIVER_HUNTING; ++i )
+	{
+		if ( sprite == items[i].index
+			|| sprite == items[i].index + 1
+			|| sprite == items[i].index + 2
+			|| sprite == items[i].index + 3 )
+		{
+			return true;
+		}
+	}
+	for ( int i = QUIVER_BONE; i <= QUIVER_BLACKIRON; ++i )
 	{
 		if ( sprite == items[i].index
 			|| sprite == items[i].index + 1
@@ -5988,12 +7052,56 @@ bool itemSpriteIsQuiverBaseThirdPersonModel(const int sprite)
 			return true;
 		}
 	}
+	for ( int i = QUIVER_BONE; i <= QUIVER_BLACKIRON; ++i )
+	{
+		if ( sprite == items[i].index + 1 )
+		{
+			return true;
+		}
+	}
 	return false;
 }
 
 bool itemTypeIsQuiver(const ItemType type)
 {
-	return (type >= QUIVER_SILVER && type <= QUIVER_HUNTING);
+	return (type >= QUIVER_SILVER && type <= QUIVER_HUNTING) || (type >= QUIVER_BONE && type <= QUIVER_BLACKIRON);
+}
+
+bool itemTypeIsFoci(const ItemType type)
+{
+	switch ( type )
+	{
+	case TOOL_FOCI_FIRE:
+	case TOOL_FOCI_SNOW:
+	case TOOL_FOCI_NEEDLES:
+	case TOOL_FOCI_ARCS:
+	case TOOL_FOCI_SAND:
+	case TOOL_FOCI_DARK_LIFE:
+	case TOOL_FOCI_DARK_RIFT:
+	case TOOL_FOCI_DARK_SILENCE:
+	case TOOL_FOCI_DARK_VENGEANCE:
+	case TOOL_FOCI_DARK_SUPPRESS:
+	case TOOL_FOCI_LIGHT_PEACE:
+	case TOOL_FOCI_LIGHT_JUSTICE:
+	case TOOL_FOCI_LIGHT_PROVIDENCE:
+	case TOOL_FOCI_LIGHT_PURITY:
+	case TOOL_FOCI_LIGHT_SANCTUARY:
+		return true;
+		break;
+	default:
+		break;
+	}
+	return false;
+}
+
+bool itemTypeIsInstrument(const ItemType type)
+{
+	return (type >= INSTRUMENT_FLUTE && type <= INSTRUMENT_HORN);
+}
+
+bool itemTypeIsThrownBall(const ItemType type)
+{
+	return type == DUST_BALL || type == GREASE_BALL || type == SLOP_BALL;
 }
 
 real_t rangedAttackGetSpeedModifier(const Stat* const myStats)
@@ -6031,6 +7139,12 @@ real_t rangedAttackGetSpeedModifier(const Stat* const myStats)
 	{
 		bowModifier = 1.25;
 	}
+	else if ( myStats->weapon->type == BRANCH_BOW 
+		|| myStats->weapon->type == BRANCH_BOW_INFECTED
+		|| myStats->weapon->type == BONE_SHORTBOW )
+	{
+		bowModifier = 1.0;
+	}
 	else if ( myStats->weapon->type == ARTIFACT_BOW )
 	{
 		bowModifier = 0.75;
@@ -6044,6 +7158,11 @@ real_t rangedAttackGetSpeedModifier(const Stat* const myStats)
 	{
 		bowModifier = 0.75;
 		arrowModifier = 0.0; // no impact on slings.
+	}
+	else if ( myStats->weapon->type == CROSSBOW
+		|| myStats->weapon->type == BLACKIRON_CROSSBOW )
+	{
+		arrowModifier /= 2;
 	}
 	else if ( myStats->weapon->type == HEAVY_CROSSBOW )
 	{
@@ -6093,7 +7212,7 @@ real_t getArtifactWeaponEffectChance(const ItemType type, Stat& wielder, real_t*
 		const real_t percent = (wielder.getModifiedProficiency(PRO_SWORD)); //0-100%
 		if ( effectAmount )
 		{
-			*effectAmount = (wielder.getModifiedProficiency(PRO_SWORD)) / 200.f + 0.5; //0.5x-1.0x add to weapon multiplier
+			*effectAmount = (wielder.getModifiedProficiency(PRO_SWORD)) / 400.f + 0.25; //0.25x-0.5x add to weapon multiplier
 		}
 
 		return percent;
@@ -6353,6 +7472,29 @@ void clientSendAppearanceUpdateToServer(const int player, Item* item, const bool
 	sendPacketSafe(net_sock, -1, net_packet, 0);
 }
 
+void clientSendItemTypeUpdateToServer(const int player, Item* item, ItemType prevItemType)
+{
+	if ( multiplayer != CLIENT ) { return; }
+	if ( !item || !itemIsEquipped(item, player) || items[item->type].item_slot == NO_EQUIP )
+	{
+		return;
+	}
+	strcpy((char*)net_packet->data, "EQUT");
+	SDLNet_Write32(static_cast<Uint32>(prevItemType), &net_packet->data[4]);
+	SDLNet_Write32(static_cast<Uint32>(item->status), &net_packet->data[8]);
+	SDLNet_Write32(static_cast<Uint32>(item->beatitude), &net_packet->data[12]);
+	SDLNet_Write32(static_cast<Uint32>(item->count), &net_packet->data[16]);
+	SDLNet_Write32(static_cast<Uint32>(item->appearance), &net_packet->data[20]);
+	net_packet->data[24] = item->identified;
+	net_packet->data[25] = player;
+	net_packet->data[26] = items[item->type].item_slot;
+	SDLNet_Write32(static_cast<Uint32>(item->type), &net_packet->data[27]);
+	net_packet->address.host = net_server.host;
+	net_packet->address.port = net_server.port;
+	net_packet->len = 31;
+	sendPacketSafe(net_sock, -1, net_packet, 0);
+}
+
 void clientSendEquipUpdateToServer(const EquipItemSendToServerSlot slot, const EquipItemResult equipType, const int player,
 	const ItemType type, const Status status, const Sint16 beatitude, const int count, const Uint32 appearance, const bool identified)
 {
@@ -6432,6 +7574,11 @@ void clientUnequipSlotAndUpdateServer(const int player, const EquipItemSendToSer
 		item->type, item->status, item->beatitude, item->count, item->appearance, item->identified);
 }
 
+int Item::getDuckPlayer() const
+{
+	return (int)(appearance % items[type].variations) % MAXPLAYERS;
+}
+
 int Item::getLootBagPlayer() const
 {
 	return (int)(appearance & 0xF) % MAXPLAYERS;
@@ -6453,4 +7600,106 @@ int Item::getLootBagNumItems() const
 		return 0;
 	}
 	return 0;
+}
+
+void Item::itemFindUniqueAppearance(Item* tempItem, std::unordered_set<Uint32>& appearancesOfSimilarItems)
+{
+	if ( !appearancesOfSimilarItems.empty() && tempItem )
+	{
+		Uint32 originalAppearance = tempItem->appearance;
+		int originalVariation = originalAppearance % items[tempItem->type].variations;
+
+		int tries = 100;
+		bool robot = false;
+		// we need to find a unique appearance within the list.
+		if ( tempItem->type == TOOL_SENTRYBOT || tempItem->type == TOOL_SPELLBOT || tempItem->type == TOOL_GYROBOT
+			|| tempItem->type == TOOL_DUMMYBOT )
+		{
+			robot = true;
+			tempItem->appearance += (local_rng.rand() % 100000) * 10;
+		}
+		else if ( tempItem->type == MAGICSTAFF_SCEPTER )
+		{
+			tempItem->appearance = ((local_rng.rand() % 10000) * (MAGICSTAFF_SCEPTER_CHARGE_MAX)) + (originalAppearance % MAGICSTAFF_SCEPTER_CHARGE_MAX);
+		}
+		else if ( itemCategory(tempItem) == TOME_SPELL )
+		{
+			tempItem->appearance = ((local_rng.rand() % 10000) * (TOME_APPEARANCE_MAX)) + (originalAppearance % TOME_APPEARANCE_MAX);
+		}
+		else
+		{
+			tempItem->appearance = local_rng.rand();
+			if ( tempItem->appearance % items[tempItem->type].variations != originalVariation )
+			{
+				// we need to match the variation for the new appearance, take the difference so new varation matches
+				int change = (tempItem->appearance % items[tempItem->type].variations - originalVariation);
+				if ( tempItem->appearance < change ) // underflow protection
+				{
+					tempItem->appearance += items[tempItem->type].variations;
+				}
+				tempItem->appearance -= change;
+				int newVariation = tempItem->appearance % items[tempItem->type].variations;
+				assert(newVariation == originalVariation);
+			}
+		}
+		auto it = appearancesOfSimilarItems.find(tempItem->appearance);
+		while ( it != appearancesOfSimilarItems.end() && tries > 0 )
+		{
+			if ( robot )
+			{
+				tempItem->appearance += (local_rng.rand() % 100000) * 10;
+			}
+			else if ( tempItem->type == MAGICSTAFF_SCEPTER )
+			{
+				tempItem->appearance = ((local_rng.rand() % 10000) * (MAGICSTAFF_SCEPTER_CHARGE_MAX)) + (originalAppearance % MAGICSTAFF_SCEPTER_CHARGE_MAX);
+			}
+			else if ( itemCategory(tempItem) == TOME_SPELL )
+			{
+				tempItem->appearance = ((local_rng.rand() % 10000) * (TOME_APPEARANCE_MAX)) + (originalAppearance % TOME_APPEARANCE_MAX);
+			}
+			else
+			{
+				tempItem->appearance = local_rng.rand();
+				if ( tempItem->appearance % items[tempItem->type].variations != originalVariation )
+				{
+					// we need to match the variation for the new appearance, take the difference so new varation matches
+					int change = (tempItem->appearance % items[tempItem->type].variations - originalVariation);
+					if ( tempItem->appearance < change ) // underflow protection
+					{
+						tempItem->appearance += items[tempItem->type].variations;
+					}
+					tempItem->appearance -= change;
+					int newVariation = tempItem->appearance % items[tempItem->type].variations;
+					assert(newVariation == originalVariation);
+				}
+			}
+			it = appearancesOfSimilarItems.find(tempItem->appearance);
+			--tries;
+		}
+	}
+}
+
+void Item::onItemIdentified(int player, Item* tempItem)
+{
+	if ( player >= 0 && player < MAXPLAYERS && players[player]->isLocalPlayer() && stats[player] )
+	{
+		std::unordered_set<Uint32> appearancesOfSimilarItems;
+		for ( node_t* node = stats[player]->inventory.first; node != NULL; node = node->next )
+		{
+			Item* item2 = static_cast<Item*>(node->element);
+			if ( item2 && item2 != tempItem && !itemCompare(tempItem, item2, true) )
+			{
+				// items are the same (incl. appearance!)
+				// if they shouldn't stack, we need to change appearance of the new item.
+				appearancesOfSimilarItems.insert(item2->appearance);
+			}
+		}
+
+		Item::itemFindUniqueAppearance(tempItem, appearancesOfSimilarItems);
+
+		if ( multiplayer == CLIENT && itemIsEquipped(tempItem, player) && players[player]->paperDoll.isItemOnDoll(*tempItem) )
+		{
+			clientSendAppearanceUpdateToServer(player, tempItem, true);
+		}
+	}
 }

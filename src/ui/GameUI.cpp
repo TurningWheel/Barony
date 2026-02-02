@@ -300,6 +300,8 @@ int GAMEUI_FRAMEDATA_ALCHEMY_RECIPE_SLOT = 3;
 int GAMEUI_FRAMEDATA_ALCHEMY_RECIPE_ENTRY = 4;
 int GAMEUI_FRAMEDATA_WORLDTOOLTIP_ITEM = 5;
 int GAMEUI_FRAMEDATA_SHOP_ITEM = 6;
+int GAMEUI_FRAMEDATA_ALCHEMY_MISSING_QTY = 7;
+int GAMEUI_FRAMEDATA_SPELL_LEARNABLE = 8;
 
 MinotaurWarning_t minotaurWarning[MAXPLAYERS];
 
@@ -325,6 +327,18 @@ void uppercaseString(std::string& str)
 		if ( letter >= 'a' && letter <= 'z' )
 		{
 			letter = toupper(letter);
+		}
+	}
+}
+
+void lowercaseString(std::string& str)
+{
+	if ( str.size() < 1 ) { return; }
+	for ( auto& letter : str )
+	{
+		if ( letter >= 'A' && letter <= 'Z' )
+		{
+			letter = tolower(letter);
 		}
 	}
 }
@@ -387,6 +401,10 @@ std::string EnemyBarSettings_t::getEnemyBarSpriteName(Entity* entity)
 	else if ( entity->behavior == &actDoor )
 	{
 		return "door";
+	}
+	else if ( entity->behavior == &actIronDoor )
+	{
+		return "iron_door";
 	}
 	else if ( entity->behavior == &actChest )
 	{
@@ -506,6 +524,10 @@ struct MPBarPaths_t
 				return automatonHTBars;
 			}*/
 			return automatonSTBars;
+		}
+		else if ( stats[player]->type == SALAMANDER || (stats[player]->playerRace == RACE_SALAMANDER && stats[player]->stat_appearance == 0) )
+		{
+			return automatonHTBars;
 		}
 		else if ( stats[player]->playerRace == RACE_INSECTOID && stats[player]->stat_appearance == 0 )
 		{
@@ -1339,7 +1361,7 @@ Frame* createAllyPlayerFrame(const int player, Frame* baseFrame)
 }
 
 static ConsoleVariable<int> cvar_assist_icon_txt_x("/assist_icon_txt_x", 0);
-static ConsoleVariable<int> cvar_assist_icon_txt_y("/assist_icon_txt_y", 8);
+static ConsoleVariable<int> cvar_assist_icon_txt_y("/assist_icon_txt_y", 14);
 
 Frame* createAllyPlayerEntry(const int player, Frame* baseFrame)
 {
@@ -1469,7 +1491,6 @@ Frame* createAllyPlayerEntry(const int player, Frame* baseFrame)
 			Image* warningImg = nullptr;
 			if ( value > 0 )
 			{
-				char buf[32];
 				if ( value < PingNetworkStatus_t::pingLimitGreen )
 				{
 					if ( PingNetworkStatus[player].hudDisplayOKTicks == 0 )
@@ -3555,7 +3576,11 @@ Frame* createPauseMenuPlayerBars()
 		frame->setInvisible(false);
 
 		if ( clientnum < 0 || players[clientnum]->hud.playerBars.size() == 0
-			|| voice_no_recv & (1 << clientnum) || !voice_any_send )
+			|| voice_no_recv & (1 << clientnum) || !voice_any_send 
+#ifdef NINTENDO
+			|| directConnect
+#endif
+			)
 		{
 			//frame->setOpacity(0.0);
 			//frame->setInheritParentFrameOpacity(false);
@@ -5098,6 +5123,7 @@ void Player::HUD_t::updateUINavigation()
 			if ( !GenericGUI[player.playernum].tinkerGUI.bOpen && !GenericGUI[player.playernum].alchemyGUI.bOpen
 				&& !GenericGUI[player.playernum].featherGUI.bOpen
 				&& !GenericGUI[player.playernum].assistShrineGUI.bOpen
+				&& !GenericGUI[player.playernum].mailboxGUI.bOpen
 				&& !GenericGUI[player.playernum].itemfxGUI.bOpen )
 			{
 				justify = PANEL_JUSTIFY_LEFT;
@@ -5153,6 +5179,7 @@ void Player::HUD_t::updateUINavigation()
 			if ( !player.inventoryUI.chestGUI.bOpen && !player.shopGUI.bOpen
 				&& !GenericGUI[player.playernum].tinkerGUI.bOpen && !GenericGUI[player.playernum].alchemyGUI.bOpen
 				&& !GenericGUI[player.playernum].featherGUI.bOpen
+				&& !GenericGUI[player.playernum].mailboxGUI.bOpen
 				&& !GenericGUI[player.playernum].assistShrineGUI.bOpen
 				&& !GenericGUI[player.playernum].itemfxGUI.bOpen )
 			{
@@ -6091,6 +6118,7 @@ int StatusEffectQueue_t::getBaseEffectPosY()
 	return statusEffectFrame->getSize().h / 2 - 50;
 }
 
+static ConsoleVariable<int> cvar_statusfx_spell_size("/statusfx_spell_size", 36);
 int StatusEffectQueueEntry_t::getEffectSpriteNormalWidth()
 {
 	if ( effect == StatusEffectQueue_t::kEffectBread
@@ -6101,6 +6129,27 @@ int StatusEffectQueueEntry_t::getEffectSpriteNormalWidth()
 	else if ( effect == StatusEffectQueue_t::kEffectAutomatonHunger )
 	{
 		return 64;
+	}
+
+	if ( effect >= StatusEffectQueue_t::kSpellEffectOffset )
+	{
+		int effectID = effect - StatusEffectQueue_t::kSpellEffectOffset;
+		if ( StatusEffectQueue_t::StatusEffectDefinitions_t::sustainedSpellDefinitionExists(effectID) )
+		{
+			auto& definition = StatusEffectQueue_t::StatusEffectDefinitions_t::getSustainedSpell(effectID);
+			if ( definition.useSpellIDForImg >= 0 || definition.useSpellIDForImgVariations.size() > 0 )
+			{
+				return *cvar_statusfx_spell_size;
+			}
+		}
+	}
+	else if ( StatusEffectQueue_t::StatusEffectDefinitions_t::effectDefinitionExists(effect) )
+	{
+		auto& definition = StatusEffectQueue_t::StatusEffectDefinitions_t::getEffect(effect);
+		if ( definition.useSpellIDForImg >= 0 || definition.useSpellIDForImgVariations.size() > 0 )
+		{
+			return *cvar_statusfx_spell_size;
+		}
 	}
 	return 32;
 }
@@ -6114,6 +6163,26 @@ int StatusEffectQueueEntry_t::getEffectSpriteNormalHeight()
 	else if ( effect == StatusEffectQueue_t::kEffectAutomatonHunger )
 	{
 		return 64;
+	}
+	if ( effect >= StatusEffectQueue_t::kSpellEffectOffset )
+	{
+		int effectID = effect - StatusEffectQueue_t::kSpellEffectOffset;
+		if ( StatusEffectQueue_t::StatusEffectDefinitions_t::sustainedSpellDefinitionExists(effectID) )
+		{
+			auto& definition = StatusEffectQueue_t::StatusEffectDefinitions_t::getSustainedSpell(effectID);
+			if ( definition.useSpellIDForImg >= 0 || definition.useSpellIDForImgVariations.size() > 0 )
+			{
+				return *cvar_statusfx_spell_size;
+			}
+		}
+	}
+	else if ( StatusEffectQueue_t::StatusEffectDefinitions_t::effectDefinitionExists(effect) )
+	{
+		auto& definition = StatusEffectQueue_t::StatusEffectDefinitions_t::getEffect(effect);
+		if ( definition.useSpellIDForImg >= 0 || definition.useSpellIDForImgVariations.size() > 0 )
+		{
+			return *cvar_statusfx_spell_size;
+		}
 	}
 	return 32;
 }
@@ -6261,6 +6330,7 @@ void StatusEffectQueueEntry_t::animateNotification(int player)
 	pos.h = animateStartH + destH * animateH;
 }
 
+static ConsoleVariable<bool> cvar_statusfx_align_text_right("/statusfx_align_text_right", false);
 void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 	Frame* frame = (Frame*)&widget;
 	if ( auto parent = frame->getParent() )
@@ -6268,23 +6338,803 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 		int player = parent->getOwner();
 		if ( player >= 0 && player < MAXPLAYERS )
 		{
-			if ( stats[player]->MISC_FLAGS[STAT_FLAG_ASSISTANCE_PLAYER_PTS] > 0 )
+			if ( stats[player]->MISC_FLAGS[STAT_FLAG_ASSISTANCE_PLAYER_PTS] > 0
+				|| stats[player]->getEffectActive(EFF_ENSEMBLE_FLUTE)
+				|| stats[player]->getEffectActive(EFF_ENSEMBLE_LUTE) 
+				|| stats[player]->getEffectActive(EFF_ENSEMBLE_LYRE) 
+				|| stats[player]->getEffectActive(EFF_ENSEMBLE_DRUM) 
+				|| stats[player]->getEffectActive(EFF_ENSEMBLE_HORN)
+				|| stats[player]->getEffectActive(EFF_GUARD_SPIRIT)
+				|| stats[player]->getEffectActive(EFF_GUARD_BODY)
+				|| stats[player]->getEffectActive(EFF_DIVINE_GUARD)
+				|| stats[player]->getEffectActive(EFF_DELAY_PAIN)
+				|| stats[player]->getEffectActive(EFF_ABSORB_MAGIC)
+				|| stats[player]->getEffectActive(EFF_STATIC)
+				|| stats[player]->getEffectActive(EFF_MAGICIANS_ARMOR)
+				|| stats[player]->getEffectActive(EFF_SACRED_PATH)
+				|| stats[player]->getEffectActive(EFF_MAGIC_WELL)
+				|| stats[player]->getEffectActive(EFF_FOCI_LIGHT_JUSTICE)
+				|| stats[player]->getEffectActive(EFF_FOCI_LIGHT_PEACE)
+				|| stats[player]->getEffectActive(EFF_FOCI_LIGHT_PROVIDENCE)
+				|| stats[player]->getEffectActive(EFF_FOCI_LIGHT_PURITY)
+				|| stats[player]->getEffectActive(EFF_FOCI_LIGHT_SANCTUARY)
+				|| stats[player]->getEffectActive(EFF_NIMBLENESS)
+				|| stats[player]->getEffectActive(EFF_GREATER_MIGHT)
+				|| stats[player]->getEffectActive(EFF_COUNSEL)
+				|| stats[player]->getEffectActive(EFF_STURDINESS)
+				|| stats[player]->getEffectActive(EFF_GROWTH)
+				|| stats[player]->getEffectActive(EFF_SIGIL)
+				|| stats[player]->getEffectActive(EFF_SANCTUARY)
+				|| (cast_animation[player].overcharge > 0 || cast_animation[player].overcharge_init > 0)
+				|| (players[player]->mechanics.gremlinBreakableCounter > 0 && stats[player]->type == GREMLIN)
+				|| players[player]->mechanics.getWealthTier() > 0 )
 			{
 				for ( auto img : frame->getImages() )
 				{
-					if ( !img->disabled && img->path.find("assistance.png") != std::string::npos )
+					bool alignRight = *cvar_statusfx_align_text_right;
+					if ( !img->disabled )
 					{
-						if ( auto text = Text::get(std::to_string(stats[player]->MISC_FLAGS[STAT_FLAG_ASSISTANCE_PLAYER_PTS]).c_str(), 
-							"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+						if ( img->path.find("assistance.png") != std::string::npos )
 						{
-							text->drawColor(SDL_Rect{ 0,0,0,0 },
-								SDL_Rect{ pos.x + img->pos.x + img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x,
-								pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
-								0, 0 },
-								SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
-								makeColor(255, 255, 255, 255));
+							if ( auto text = Text::get(std::to_string(stats[player]->MISC_FLAGS[STAT_FLAG_ASSISTANCE_PLAYER_PTS]).c_str(), 
+								"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+							{
+								text->drawColor(SDL_Rect{ 0,0,0,0 },
+									SDL_Rect{ pos.x + img->pos.x + img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x,
+									pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
+									0, 0 },
+									SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+									makeColor(255, 255, 255, 255));
+							}
 						}
-						break;
+						else if ( img->path.find("ensemble_flute.png") != std::string::npos )
+						{
+							alignRight = true;
+							std::string val = "I";
+							Uint8 effectStrength = stats[player]->getEffectActive(EFF_ENSEMBLE_FLUTE);
+							if ( effectStrength >= 1 )
+							{
+								if ( effectStrength - 1 >= Stat::kEnsembleBreakPointTier4 )
+								{
+									val = "IV";
+								}
+								else if ( effectStrength - 1 >= Stat::kEnsembleBreakPointTier3 )
+								{
+									val = "III";
+								}
+								else if ( effectStrength - 1 >= Stat::kEnsembleBreakPointTier2 )
+								{
+									val = "II";
+								}
+							}
+							if ( auto text = Text::get(val.c_str(),
+								"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+							{
+								text->drawColor(SDL_Rect{ 0,0,0,0 },
+									SDL_Rect{ pos.x + img->pos.x + (alignRight ? (img->pos.w - (int)text->getWidth()) : (img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x)),
+									pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
+									0, 0 },
+									SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+									makeColor(255, 255, 255, 255));
+							}
+						}
+						else if ( img->path.find("ensemble_lute.png") != std::string::npos )
+						{
+							alignRight = true;
+							std::string val = "I";
+							Uint8 effectStrength = stats[player]->getEffectActive(EFF_ENSEMBLE_LUTE);
+							if ( effectStrength >= 1 )
+							{
+								if ( effectStrength - 1 >= Stat::kEnsembleBreakPointTier4 )
+								{
+									val = "IV";
+								}
+								else if ( effectStrength - 1 >= Stat::kEnsembleBreakPointTier3 )
+								{
+									val = "III";
+								}
+								else if ( effectStrength - 1 >= Stat::kEnsembleBreakPointTier2 )
+								{
+									val = "II";
+								}
+							}
+							if ( auto text = Text::get(val.c_str(),
+								"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+							{
+								text->drawColor(SDL_Rect{ 0,0,0,0 },
+									SDL_Rect{ pos.x + img->pos.x + (alignRight ? (img->pos.w - (int)text->getWidth()) : (img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x)),
+									pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
+									0, 0 },
+									SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+									makeColor(255, 255, 255, 255));
+							}
+						}
+						else if ( img->path.find("ensemble_lyre.png") != std::string::npos )
+						{
+							alignRight = true;
+							std::string val = "I";
+							Uint8 effectStrength = stats[player]->getEffectActive(EFF_ENSEMBLE_LYRE);
+							if ( effectStrength >= 1 )
+							{
+								if ( effectStrength - 1 >= Stat::kEnsembleBreakPointTier4 )
+								{
+									val = "IV";
+								}
+								else if ( effectStrength - 1 >= Stat::kEnsembleBreakPointTier3 )
+								{
+									val = "III";
+								}
+								else if ( effectStrength - 1 >= Stat::kEnsembleBreakPointTier2 )
+								{
+									val = "II";
+								}
+							}
+							if ( auto text = Text::get(val.c_str(),
+								"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+							{
+								text->drawColor(SDL_Rect{ 0,0,0,0 },
+									SDL_Rect{ pos.x + img->pos.x + (alignRight ? (img->pos.w - (int)text->getWidth()) : (img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x)),
+									pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
+									0, 0 },
+									SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+									makeColor(255, 255, 255, 255));
+							}
+						}
+						else if ( img->path.find("ensemble_drum.png") != std::string::npos )
+						{
+							alignRight = true;
+							std::string val = "I";
+							Uint8 effectStrength = stats[player]->getEffectActive(EFF_ENSEMBLE_DRUM);
+							if ( effectStrength >= 1 )
+							{
+								if ( effectStrength - 1 >= Stat::kEnsembleBreakPointTier4 )
+								{
+									val = "IV";
+								}
+								else if ( effectStrength - 1 >= Stat::kEnsembleBreakPointTier3 )
+								{
+									val = "III";
+								}
+								else if ( effectStrength - 1 >= Stat::kEnsembleBreakPointTier2 )
+								{
+									val = "II";
+								}
+							}
+							if ( auto text = Text::get(val.c_str(),
+								"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+							{
+								text->drawColor(SDL_Rect{ 0,0,0,0 },
+									SDL_Rect{ pos.x + img->pos.x + (alignRight ? (img->pos.w - (int)text->getWidth()) : (img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x)),
+									pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
+									0, 0 },
+									SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+									makeColor(255, 255, 255, 255));
+							}
+							}
+						else if ( img->path.find("ensemble_horn.png") != std::string::npos )
+						{
+							alignRight = true;
+							std::string val = "I";
+							Uint8 effectStrength = stats[player]->getEffectActive(EFF_ENSEMBLE_HORN);
+							if ( effectStrength >= 1 )
+							{
+								if ( effectStrength - 1 >= Stat::kEnsembleBreakPointTier4 )
+								{
+									val = "IV";
+								}
+								else if ( effectStrength - 1 >= Stat::kEnsembleBreakPointTier3 )
+								{
+									val = "III";
+								}
+								else if ( effectStrength - 1 >= Stat::kEnsembleBreakPointTier2 )
+								{
+									val = "II";
+								}
+							}
+							if ( auto text = Text::get(val.c_str(),
+								"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+							{
+								text->drawColor(SDL_Rect{ 0,0,0,0 },
+									SDL_Rect{ pos.x + img->pos.x + (alignRight ? (img->pos.w - (int)text->getWidth()) : (img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x)),
+									pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
+									0, 0 },
+									SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+									makeColor(255, 255, 255, 255));
+							}
+						}
+						else if ( img->path.find("battle_guard.png") != std::string::npos )
+						{
+							Uint8 effectStrength = stats[player]->getEffectActive(EFF_GUARD_BODY);
+							if ( auto text = Text::get(std::to_string(effectStrength).c_str(),
+								"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+							{
+								text->drawColor(SDL_Rect{ 0,0,0,0 },
+									SDL_Rect{ pos.x + img->pos.x + (alignRight ? (img->pos.w - (int)text->getWidth()) : (img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x)),
+									pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
+									0, 0 },
+									SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+									makeColor(255, 255, 255, 255));
+							}
+						}
+						else if ( img->path.find("missile_guard.png") != std::string::npos )
+						{
+							Uint8 effectStrength = stats[player]->getEffectActive(EFF_DIVINE_GUARD);
+							if ( auto text = Text::get(std::to_string(effectStrength).c_str(),
+								"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+							{
+								text->drawColor(SDL_Rect{ 0,0,0,0 },
+									SDL_Rect{ pos.x + img->pos.x + (alignRight ? (img->pos.w - (int)text->getWidth()) : (img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x)),
+									pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
+									0, 0 },
+									SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+									makeColor(255, 255, 255, 255));
+							}
+						}
+						else if ( img->path.find("spell_guard.png") != std::string::npos )
+						{
+							Uint8 effectStrength = stats[player]->getEffectActive(EFF_GUARD_SPIRIT);
+							if ( auto text = Text::get(std::to_string(effectStrength).c_str(),
+								"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+							{
+								text->drawColor(SDL_Rect{ 0,0,0,0 },
+									SDL_Rect{ pos.x + img->pos.x + (alignRight ? (img->pos.w - (int)text->getWidth()) : (img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x)),
+									pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
+									0, 0 },
+									SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+									makeColor(255, 255, 255, 255));
+							}
+						}
+						else if ( img->path.find("sacred_path.png") != std::string::npos )
+						{
+							Uint8 effectStrength = stats[player]->getEffectActive(EFF_SACRED_PATH);
+							if ( auto text = Text::get(std::to_string(effectStrength).c_str(),
+								"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+							{
+								text->drawColor(SDL_Rect{ 0,0,0,0 },
+									SDL_Rect{ pos.x + img->pos.x + (alignRight ? (img->pos.w - (int)text->getWidth()) : (img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x)),
+									pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
+									0, 0 },
+									SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+									makeColor(255, 255, 255, 255));
+							}
+						}
+						else if ( img->path.find("delay_pain.png") != std::string::npos )
+						{
+							Uint8 effectStrength = stats[player]->getEffectActive(EFF_DELAY_PAIN);
+							if ( effectStrength > 1 )
+							{
+								if ( auto text = Text::get(std::to_string(effectStrength - 1).c_str(),
+									"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+								{
+									text->drawColor(SDL_Rect{ 0,0,0,0 },
+										SDL_Rect{ pos.x + img->pos.x + (alignRight ? (img->pos.w - (int)text->getWidth()) : (img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x)),
+										pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
+										0, 0 },
+										SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+										makeColor(255, 255, 255, 255));
+								}
+							}
+						}
+						else if ( img->path.find("asborb_magic.png") != std::string::npos )
+						{
+							Uint8 effectStrength = stats[player]->getEffectActive(EFF_ABSORB_MAGIC);
+							if ( effectStrength > 1 )
+							{
+								if ( auto text = Text::get(std::to_string(effectStrength - 1).c_str(),
+									"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+								{
+									text->drawColor(SDL_Rect{ 0,0,0,0 },
+										SDL_Rect{ pos.x + img->pos.x + (alignRight ? (img->pos.w - (int)text->getWidth()) : (img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x)),
+										pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
+										0, 0 },
+										SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+										makeColor(255, 255, 255, 255));
+								}
+							}
+						}
+						else if ( img->path.find("static.png") != std::string::npos )
+						{
+							Uint8 effectStrength = stats[player]->getEffectActive(EFF_STATIC);
+							if ( effectStrength >= 1 )
+							{
+								if ( auto text = Text::get(std::to_string(effectStrength).c_str(),
+									"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+								{
+									text->drawColor(SDL_Rect{ 0,0,0,0 },
+										SDL_Rect{ pos.x + img->pos.x + (alignRight ? (img->pos.w - (int)text->getWidth()) : (img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x)),
+										pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
+										0, 0 },
+										SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+										makeColor(255, 255, 255, 255));
+								}
+							}
+						}
+						else if ( img->path.find("magicians_armor.png") != std::string::npos )
+						{
+							Uint8 effectStrength = stats[player]->getEffectActive(EFF_MAGICIANS_ARMOR);
+							if ( effectStrength >= 1 )
+							{
+								if ( auto text = Text::get(std::to_string(effectStrength).c_str(),
+									"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+								{
+									text->drawColor(SDL_Rect{ 0,0,0,0 },
+										SDL_Rect{ pos.x + img->pos.x + (alignRight ? (img->pos.w - (int)text->getWidth()) : (img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x)),
+										pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
+										0, 0 },
+										SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+										makeColor(255, 255, 255, 255));
+								}
+							}
+						}
+						else if ( img->path.find("magic_well.png") != std::string::npos )
+						{
+							Uint8 effectStrength = stats[player]->getEffectActive(EFF_MAGIC_WELL);
+							if ( effectStrength > 1 )
+							{
+								if ( auto text = Text::get(std::to_string(effectStrength - 1).c_str(),
+									"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+								{
+									text->drawColor(SDL_Rect{ 0,0,0,0 },
+										SDL_Rect{ pos.x + img->pos.x + (alignRight ? (img->pos.w - (int)text->getWidth()) : (img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x)),
+										pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
+										0, 0 },
+										SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+										makeColor(255, 255, 255, 255));
+								}
+							}
+						}
+						else if ( img->path.find("symbol_justice.png") != std::string::npos )
+						{
+							alignRight = true;
+							Uint8 effectStrength = stats[player]->getEffectActive(EFF_FOCI_LIGHT_JUSTICE);
+							if ( effectStrength >= 1 )
+							{
+								std::string val = "I";
+								if ( effectStrength >= 4 )
+								{
+									val = "IV";
+								}
+								else if ( effectStrength >= 3 )
+								{
+									val = "III";
+								}
+								else if ( effectStrength >= 2 )
+								{
+									val = "II";
+								}
+								if ( auto text = Text::get(val.c_str(),
+									"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+								{
+									text->drawColor(SDL_Rect{ 0,0,0,0 },
+										SDL_Rect{ pos.x + img->pos.x + (alignRight ? (img->pos.w - (int)text->getWidth()) : (img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x)),
+										pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
+										0, 0 },
+										SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+										makeColor(255, 255, 255, 255));
+								}
+							}
+						}
+						else if ( img->path.find("symbol_peace.png") != std::string::npos )
+						{
+							alignRight = true;
+							Uint8 effectStrength = stats[player]->getEffectActive(EFF_FOCI_LIGHT_PEACE);
+							if ( effectStrength >= 1 )
+							{
+								std::string val = "I";
+								if ( effectStrength >= 4 )
+								{
+									val = "IV";
+								}
+								else if ( effectStrength >= 3 )
+								{
+									val = "III";
+								}
+								else if ( effectStrength >= 2 )
+								{
+									val = "II";
+								}
+								if ( auto text = Text::get(val.c_str(),
+									"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+								{
+									text->drawColor(SDL_Rect{ 0,0,0,0 },
+										SDL_Rect{ pos.x + img->pos.x + (alignRight ? (img->pos.w - (int)text->getWidth()) : (img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x)),
+										pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
+										0, 0 },
+										SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+										makeColor(255, 255, 255, 255));
+								}
+							}
+						}
+						else if ( img->path.find("symbol_providence.png") != std::string::npos )
+						{
+							alignRight = true;
+							Uint8 effectStrength = stats[player]->getEffectActive(EFF_FOCI_LIGHT_PROVIDENCE);
+							if ( effectStrength >= 1 )
+							{
+								std::string val = "I";
+								if ( effectStrength >= 4 )
+								{
+									val = "IV";
+								}
+								else if ( effectStrength >= 3 )
+								{
+									val = "III";
+								}
+								else if ( effectStrength >= 2 )
+								{
+									val = "II";
+								}
+								if ( auto text = Text::get(val.c_str(),
+									"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+								{
+									text->drawColor(SDL_Rect{ 0,0,0,0 },
+										SDL_Rect{ pos.x + img->pos.x + (alignRight ? (img->pos.w - (int)text->getWidth()) : (img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x)),
+										pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
+										0, 0 },
+										SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+										makeColor(255, 255, 255, 255));
+								}
+							}
+						}
+						else if ( img->path.find("symbol_purity.png") != std::string::npos )
+						{
+							alignRight = true;
+							Uint8 effectStrength = stats[player]->getEffectActive(EFF_FOCI_LIGHT_PURITY);
+							if ( effectStrength >= 1 )
+							{
+								std::string val = "I";
+								if ( effectStrength >= 4 )
+								{
+									val = "IV";
+								}
+								else if ( effectStrength >= 3 )
+								{
+									val = "III";
+								}
+								else if ( effectStrength >= 2 )
+								{
+									val = "II";
+								}
+								if ( auto text = Text::get(val.c_str(),
+									"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+								{
+									text->drawColor(SDL_Rect{ 0,0,0,0 },
+										SDL_Rect{ pos.x + img->pos.x + (alignRight ? (img->pos.w - (int)text->getWidth()) : (img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x)),
+										pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
+										0, 0 },
+										SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+										makeColor(255, 255, 255, 255));
+								}
+							}
+						}
+						else if ( img->path.find("symbol_sanctuary.png") != std::string::npos )
+						{
+							alignRight = true;
+							Uint8 effectStrength = stats[player]->getEffectActive(EFF_FOCI_LIGHT_SANCTUARY);
+							if ( effectStrength >= 1 )
+							{
+								std::string val = "I";
+								if ( effectStrength >= 4 )
+								{
+									val = "IV";
+								}
+								else if ( effectStrength >= 3 )
+								{
+									val = "III";
+								}
+								else if ( effectStrength >= 2 )
+								{
+									val = "II";
+								}
+								if ( auto text = Text::get(val.c_str(),
+									"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+								{
+									text->drawColor(SDL_Rect{ 0,0,0,0 },
+										SDL_Rect{ pos.x + img->pos.x + (alignRight ? (img->pos.w - (int)text->getWidth()) : (img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x)),
+										pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
+										0, 0 },
+										SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+										makeColor(255, 255, 255, 255));
+								}
+							}
+						}
+						else if ( img->path.find("divine_sanctuary.png") != std::string::npos )
+						{
+							alignRight = true;
+							Uint8 effectStrength = stats[player]->getEffectActive(EFF_SANCTUARY) & 0xF;
+							if ( effectStrength >= 1 )
+							{
+								std::string val = "I";
+								if ( effectStrength >= 4 )
+								{
+									val = "IV";
+								}
+								else if ( effectStrength >= 3 )
+								{
+									val = "III";
+								}
+								else if ( effectStrength >= 2 )
+								{
+									val = "II";
+								}
+								if ( auto text = Text::get(val.c_str(),
+									"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+								{
+									text->drawColor(SDL_Rect{ 0,0,0,0 },
+										SDL_Rect{ pos.x + img->pos.x + (alignRight ? (img->pos.w - (int)text->getWidth()) : (img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x)),
+										pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
+										0, 0 },
+										SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+										makeColor(255, 255, 255, 255));
+								}
+							}
+						}
+						else if ( img->path.find("sigil.png") != std::string::npos )
+						{
+							alignRight = true;
+							Uint8 effectStrength = stats[player]->getEffectActive(EFF_SIGIL) & 0xF;
+							if ( effectStrength >= 1 )
+							{
+								std::string val = "I";
+								if ( effectStrength >= 4 )
+								{
+									val = "IV";
+								}
+								else if ( effectStrength >= 3 )
+								{
+									val = "III";
+								}
+								else if ( effectStrength >= 2 )
+								{
+									val = "II";
+								}
+								if ( auto text = Text::get(val.c_str(),
+									"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+								{
+									text->drawColor(SDL_Rect{ 0,0,0,0 },
+										SDL_Rect{ pos.x + img->pos.x + (alignRight ? (img->pos.w - (int)text->getWidth()) : (img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x)),
+										pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
+										0, 0 },
+										SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+										makeColor(255, 255, 255, 255));
+								}
+							}
+						}
+						else if ( img->path.find("greater_might.png") != std::string::npos )
+						{
+							alignRight = true;
+							Uint8 effectStrength = stats[player]->getEffectActive(EFF_GREATER_MIGHT) & 0xF;
+							if ( effectStrength >= 1 )
+							{
+								std::string val = "I";
+								if ( effectStrength >= 4 )
+								{
+									val = "IV";
+								}
+								else if ( effectStrength >= 3 )
+								{
+									val = "III";
+								}
+								else if ( effectStrength >= 2 )
+								{
+									val = "II";
+								}
+								if ( auto text = Text::get(val.c_str(),
+									"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+								{
+									text->drawColor(SDL_Rect{ 0,0,0,0 },
+										SDL_Rect{ pos.x + img->pos.x + (alignRight ? (img->pos.w - (int)text->getWidth()) : (img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x)),
+										pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
+										0, 0 },
+										SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+										makeColor(255, 255, 255, 255));
+								}
+							}
+						}
+						else if ( img->path.find("counsel.png") != std::string::npos )
+						{
+							alignRight = true;
+							Uint8 effectStrength = stats[player]->getEffectActive(EFF_COUNSEL) & 0xF;
+							if ( effectStrength >= 1 )
+							{
+								std::string val = "I";
+								if ( effectStrength >= 4 )
+								{
+									val = "IV";
+								}
+								else if ( effectStrength >= 3 )
+								{
+									val = "III";
+								}
+								else if ( effectStrength >= 2 )
+								{
+									val = "II";
+								}
+								if ( auto text = Text::get(val.c_str(),
+									"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+								{
+									text->drawColor(SDL_Rect{ 0,0,0,0 },
+										SDL_Rect{ pos.x + img->pos.x + (alignRight ? (img->pos.w - (int)text->getWidth()) : (img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x)),
+										pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
+										0, 0 },
+										SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+										makeColor(255, 255, 255, 255));
+								}
+							}
+						}
+						else if ( img->path.find("nimbleness.png") != std::string::npos )
+						{
+							alignRight = true;
+							Uint8 effectStrength = stats[player]->getEffectActive(EFF_NIMBLENESS) & 0xF;
+							if ( effectStrength >= 1 )
+							{
+								std::string val = "I";
+								if ( effectStrength >= 4 )
+								{
+									val = "IV";
+								}
+								else if ( effectStrength >= 3 )
+								{
+									val = "III";
+								}
+								else if ( effectStrength >= 2 )
+								{
+									val = "II";
+								}
+								if ( auto text = Text::get(val.c_str(),
+									"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+								{
+									text->drawColor(SDL_Rect{ 0,0,0,0 },
+										SDL_Rect{ pos.x + img->pos.x + (alignRight ? (img->pos.w - (int)text->getWidth()) : (img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x)),
+										pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
+										0, 0 },
+										SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+										makeColor(255, 255, 255, 255));
+								}
+							}
+						}
+						else if ( img->path.find("sturdiness.png") != std::string::npos )
+						{
+							alignRight = true;
+							Uint8 effectStrength = stats[player]->getEffectActive(EFF_STURDINESS) & 0xF;
+							if ( effectStrength >= 1 )
+							{
+								std::string val = "I";
+								if ( effectStrength >= 4 )
+								{
+									val = "IV";
+								}
+								else if ( effectStrength >= 3 )
+								{
+									val = "III";
+								}
+								else if ( effectStrength >= 2 )
+								{
+									val = "II";
+								}
+								if ( auto text = Text::get(val.c_str(),
+									"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+								{
+									text->drawColor(SDL_Rect{ 0,0,0,0 },
+										SDL_Rect{ pos.x + img->pos.x + (alignRight ? (img->pos.w - (int)text->getWidth()) : (img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x)),
+										pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
+										0, 0 },
+										SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+										makeColor(255, 255, 255, 255));
+								}
+							}
+						}
+						else if ( img->path.find("growth_dryad") != std::string::npos
+							|| img->path.find("growth_myconid") != std::string::npos )
+						{
+							alignRight = true;
+							Uint8 effectStrength = stats[player]->getEffectActive(EFF_GROWTH);
+							if ( effectStrength >= 1 )
+							{
+								std::string val = "I";
+								if ( effectStrength >= 4 )
+								{
+									val = "III";
+								}
+								else if ( effectStrength >= 3 )
+								{
+									val = "II";
+								}
+								if ( auto text = Text::get(val.c_str(),
+									"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+								{
+									text->drawColor(SDL_Rect{ 0,0,0,0 },
+										SDL_Rect{ pos.x + img->pos.x + (alignRight ? (img->pos.w - (int)text->getWidth()) : (img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x)),
+										pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
+										0, 0 },
+										SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+										makeColor(255, 255, 255, 255));
+								}
+							}
+						}
+						else if ( img->path.find("vandal.png") != std::string::npos )
+						{
+							alignRight = true;
+							int effectStrength = players[player]->mechanics.getBreakableCounterTier();
+							if ( effectStrength > 0 )
+							{
+								std::string val = "I";
+								if ( effectStrength >= 5 )
+								{
+									val = "V";
+								}
+								else if ( effectStrength >= 4 )
+								{
+									val = "IV";
+								}
+								else if ( effectStrength >= 3 )
+								{
+									val = "III";
+								}
+								else if ( effectStrength >= 2 )
+								{
+									val = "II";
+								}
+								if ( auto text = Text::get(val.c_str(),
+									"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+								{
+									text->drawColor(SDL_Rect{ 0,0,0,0 },
+										SDL_Rect{ pos.x + img->pos.x + (alignRight ? (img->pos.w - (int)text->getWidth()) : (img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x)),
+										pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
+										0, 0 },
+										SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+										makeColor(255, 255, 255, 255));
+								}
+							}
+						}
+						else if ( img->path.find("wealth") != std::string::npos )
+						{
+							alignRight = true;
+							int effectStrength = players[player]->mechanics.getWealthTier();
+							if ( effectStrength > 0 )
+							{
+								std::string val = "I";
+								if ( effectStrength >= 4 )
+								{
+									val = "IV";
+								}
+								else if ( effectStrength >= 3 )
+								{
+									val = "III";
+								}
+								else if ( effectStrength >= 2 )
+								{
+									val = "II";
+								}
+								if ( auto text = Text::get(val.c_str(),
+									"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+								{
+									text->drawColor(SDL_Rect{ 0,0,0,0 },
+										SDL_Rect{ pos.x + img->pos.x + (alignRight ? (img->pos.w - (int)text->getWidth()) : (img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x)),
+										pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
+										0, 0 },
+										SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+										makeColor(255, 255, 255, 255));
+								}
+							}
+						}
+						else if ( img->path.find("overcharge.png") != std::string::npos )
+						{
+							int charges = std::max(cast_animation[player].overcharge, cast_animation[player].overcharge_init);
+							if ( charges > 0 )
+							{
+								if ( auto text = Text::get(std::to_string(charges).c_str(),
+									"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+								{
+									text->drawColor(SDL_Rect{ 0,0,0,0 },
+										SDL_Rect{ pos.x + img->pos.x + (alignRight ? (img->pos.w - (int)text->getWidth()) : (img->pos.w / 2 - (int)text->getWidth() / 2 + *cvar_assist_icon_txt_x)),
+										pos.y + img->pos.y + img->pos.h / 2 - (int)text->getHeight() / 2 - 3 + *cvar_assist_icon_txt_y,
+										0, 0 },
+										SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+										makeColor(255, 255, 255, 255));
+								}
+							}
+						}
 					}
 				}
 			}
@@ -6983,6 +7833,158 @@ bool StatusEffectQueue_t::doStatusEffectTooltip(StatusEffectQueueEntry_t& entry,
 						}
 					}
 				}
+				else if ( effectID == EFF_SALAMANDER_HEART )
+				{
+					variation = std::min(3, std::max(0, (int)entry.customVariable - 1));
+				}
+				else if ( effectID == EFF_GROWTH )
+				{
+					variation = std::min(2, std::max(0, (int)entry.customVariable - 2));
+
+					int tier = variation + 1;
+
+					std::string newHeader = definition.getName(variation).c_str();
+					uppercaseString(newHeader);
+					tooltipHeader->setText(newHeader.c_str());
+
+					std::string newDesc = "";
+					if ( stats[player]->type == DRYAD )
+					{
+						newDesc = definition.getDesc(1).c_str();
+
+						char buf[128] = "";
+						snprintf(buf, sizeof(buf), definition.getDesc(6).c_str(), 10 * tier); // +PWR
+						newDesc += '\n';
+						newDesc += buf;
+
+						snprintf(buf, sizeof(buf), definition.getDesc(7).c_str(), 10 * tier); // +MP RGN
+						newDesc += '\n';
+						newDesc += buf;
+
+						snprintf(buf, sizeof(buf), definition.getDesc(8).c_str(), -5 * tier); // +Movespeed
+						newDesc += '\n';
+						newDesc += buf;
+
+						snprintf(buf, sizeof(buf), definition.getDesc(11).c_str(), 5 * tier); // +Fire dmg
+						newDesc += '\n';
+						newDesc += buf;
+					}
+					else if ( stats[player]->type == MYCONID )
+					{
+						newDesc = definition.getDesc(0).c_str();
+						newDesc += '\n';
+						newDesc += definition.getDesc(2).c_str();
+						if ( variation == 2 )
+						{
+							newDesc += '\n';
+							newDesc += definition.getDesc(3).c_str();
+						}
+						char buf[128] = "";
+						snprintf(buf, sizeof(buf), definition.getDesc(4).c_str(), tier); // +AC
+						newDesc += '\n';
+						newDesc += buf;
+
+						snprintf(buf, sizeof(buf), definition.getDesc(5).c_str(), tier * 5); // +RES
+						newDesc += '\n';
+						newDesc += buf;
+
+						snprintf(buf, sizeof(buf), definition.getDesc(9).c_str(), 20 + 15 * (tier - 1)); // +Poison dmg
+						newDesc += '\n';
+						newDesc += buf;
+
+						snprintf(buf, sizeof(buf), definition.getDesc(10).c_str(), 100 * tier); // +Germinate dmg
+						newDesc += '\n';
+						newDesc += buf;
+
+						snprintf(buf, sizeof(buf), definition.getDesc(8).c_str(), -10 * tier); // +Movespeed
+						newDesc += '\n';
+						newDesc += buf;
+					}
+
+					tooltipDesc->setText(newDesc.c_str());
+					tooltipInnerWidth = definition.tooltipWidth;
+				}
+				else if ( effectID == EFF_ENSEMBLE_DRUM
+					|| effectID == EFF_ENSEMBLE_FLUTE
+					|| effectID == EFF_ENSEMBLE_LUTE
+					|| effectID == EFF_ENSEMBLE_HORN
+					|| effectID == EFF_ENSEMBLE_LYRE )
+				{
+					int variation = 0;
+					if ( Uint8 effectStrength = stats[player]->getEffectActive(effectID) )
+					{
+						if ( effectStrength - 1 >= Stat::kEnsembleBreakPointTier4 )
+						{
+							variation = 3;
+						}
+						else if ( effectStrength - 1 >= Stat::kEnsembleBreakPointTier3 )
+						{
+							variation = 2;
+						}
+						else if ( effectStrength - 1 >= Stat::kEnsembleBreakPointTier2 )
+						{
+							variation = 1;
+						}
+					}
+
+					std::string newHeader = definition.getName(variation).c_str();
+					uppercaseString(newHeader);
+					tooltipHeader->setText(newHeader.c_str());
+					std::string newDesc = "";// definition.getDesc(variation).c_str();
+					char buf[128] = "";
+					if ( effectID == EFF_ENSEMBLE_DRUM )
+					{
+						snprintf(buf, sizeof(buf), definition.getDesc(0).c_str(), 
+							(int)stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_DRUM_EFF_1));
+						newDesc = buf;
+						newDesc += '\n';
+						snprintf(buf, sizeof(buf), definition.getDesc(1).c_str(),
+							(int)stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_DRUM_TIER));
+						newDesc += buf;
+					}
+					else if ( effectID == EFF_ENSEMBLE_FLUTE )
+					{
+						snprintf(buf, sizeof(buf), definition.getDesc(0).c_str(),
+							(int)stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_FLUTE_EFF_1));
+						newDesc = buf;
+						newDesc += '\n';
+						snprintf(buf, sizeof(buf), definition.getDesc(1).c_str(),
+							(int)stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_FLUTE_TIER));
+						newDesc += buf;
+					}
+					else if ( effectID == EFF_ENSEMBLE_LUTE )
+					{
+						snprintf(buf, sizeof(buf), definition.getDesc(0).c_str(),
+							(int)stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_LUTE_EFF_1));
+						newDesc = buf;
+						newDesc += '\n';
+						snprintf(buf, sizeof(buf), definition.getDesc(1).c_str(),
+							(int)stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_LUTE_TIER));
+						newDesc += buf;
+					}
+					else if ( effectID == EFF_ENSEMBLE_HORN )
+					{
+						snprintf(buf, sizeof(buf), definition.getDesc(0).c_str(),
+							(int)stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_HORN_EFF_1));
+						newDesc = buf;
+						newDesc += '\n';
+						snprintf(buf, sizeof(buf), definition.getDesc(1).c_str(),
+							(int)stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_HORN_TIER));
+						newDesc += buf;
+					}
+					else if ( effectID == EFF_ENSEMBLE_LYRE )
+					{
+						snprintf(buf, sizeof(buf), definition.getDesc(0).c_str(),
+							(int)stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_LYRE_EFF_1));
+						newDesc = buf;
+						newDesc += '\n';
+						snprintf(buf, sizeof(buf), definition.getDesc(1).c_str(),
+							(int)stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_LYRE_TIER));
+						newDesc += buf;
+					}
+					tooltipDesc->setText(newDesc.c_str());
+					tooltipInnerWidth = definition.tooltipWidth;
+				}
 				else if ( effectID == EFF_VAMPIRICAURA )
 				{
 					bool sustained = false;
@@ -7115,6 +8117,59 @@ bool StatusEffectQueue_t::doStatusEffectTooltip(StatusEffectQueueEntry_t& entry,
 					tooltipDesc->setText(definition.getDesc(variation).c_str());
 					tooltipInnerWidth = definition.tooltipWidth;
 				}
+				else if ( effectID == StatusEffectQueue_t::kEffectVandal )
+				{
+					int tier = players[player]->mechanics.getBreakableCounterTier();
+					variation = tier;
+
+					std::string newHeader = definition.getName(variation).c_str();
+					uppercaseString(newHeader);
+					tooltipHeader->setText(newHeader.c_str());
+
+					std::string descStr = definition.getDesc(0);
+					char buf[128];
+					memset(buf, 0, sizeof(buf));
+					int dmg = 1 + tier;
+					int speed = tier * 5;
+					int castspeed = tier * 5;
+
+					snprintf(buf, sizeof(buf), definition.getDesc(1).c_str(), dmg);
+					if ( descStr != "" ) { descStr += '\n'; }
+					descStr += buf;
+
+					snprintf(buf, sizeof(buf), definition.getDesc(2).c_str(), speed);
+					if ( descStr != "" ) { descStr += '\n'; }
+					descStr += buf;
+
+					snprintf(buf, sizeof(buf), definition.getDesc(3).c_str(), castspeed);
+					if ( descStr != "" ) { descStr += '\n'; }
+					descStr += buf;
+
+					tooltipDesc->setText(descStr.c_str());
+					tooltipInnerWidth = definition.tooltipWidth;
+				}
+				else if ( effectID == StatusEffectQueue_t::kEffectWealth )
+				{
+					int tier = players[player]->mechanics.getWealthTier();
+					variation = tier;
+					std::string newHeader = definition.getName(variation).c_str();
+					uppercaseString(newHeader);
+					tooltipHeader->setText(newHeader.c_str());
+
+
+					std::string descStr = "";
+					char buf[128];
+					memset(buf, 0, sizeof(buf));
+					snprintf(buf, sizeof(buf), definition.getDesc(0).c_str(), tier * 10);
+					if ( descStr != "" ) { descStr += '\n'; }
+					descStr += buf;
+
+					if ( descStr != "" ) { descStr += '\n'; }
+					descStr += definition.getDesc(1);
+
+					tooltipDesc->setText(descStr.c_str());
+					tooltipInnerWidth = definition.tooltipWidth;
+				}
 				else if ( effectID == StatusEffectQueue_t::kEffectAssistance )
 				{
 					std::string newHeader = definition.getName(-1).c_str();
@@ -7161,7 +8216,15 @@ bool StatusEffectQueue_t::doStatusEffectTooltip(StatusEffectQueueEntry_t& entry,
 					&& effectID != StatusEffectQueue_t::kEffectWantedInShop
 					&& effectID != StatusEffectQueue_t::kEffectBountyTarget
 					&& effectID != StatusEffectQueue_t::kEffectDisabledHPRegen
-					&& effectID != StatusEffectQueue_t::kEffectAssistance )
+					&& effectID != StatusEffectQueue_t::kEffectAssistance
+					&& effectID != StatusEffectQueue_t::kEffectVandal
+					&& effectID != StatusEffectQueue_t::kEffectWealth
+					&& !(effectID == EFF_ENSEMBLE_DRUM
+						|| effectID == EFF_ENSEMBLE_FLUTE
+						|| effectID == EFF_ENSEMBLE_LUTE
+						|| effectID == EFF_ENSEMBLE_HORN
+						|| effectID == EFF_ENSEMBLE_LYRE
+						|| effectID == EFF_GROWTH) )
 				{
 					std::string newHeader = definition.getName(variation).c_str();
 					uppercaseString(newHeader);
@@ -7253,6 +8316,11 @@ const int StatusEffectQueue_t::kEffectBountyTarget = -23;
 const int StatusEffectQueue_t::kEffectInspiration = -24;
 const int StatusEffectQueue_t::kEffectRetaliation = -25;
 const int StatusEffectQueue_t::kEffectAssistance = -26;
+const int StatusEffectQueue_t::kEffectStability = -27;
+const int StatusEffectQueue_t::kEffectVandal = -28;
+const int StatusEffectQueue_t::kEffectOvercharge = -29;
+const int StatusEffectQueue_t::kEffectWealth = -30;
+const int StatusEffectQueue_t::kEffectEnd = -31;
 const int StatusEffectQueue_t::kSpellEffectOffset = 10000;
 
 Frame* StatusEffectQueue_t::getStatusEffectFrame()
@@ -7456,7 +8524,6 @@ void StatusEffectQueue_t::handleNavigation(std::map<int, StatusEffectQueueEntry_
 		if ( q.index == selectedElement )
 		{
 			SDL_Rect size = statusEffectFrame->getAbsoluteSize();
-			int mouseDetectionPadding = 2;
 
 			SDL_Rect frameImgPos = frameImg->pos;
 			bool oldDisabled = frameImg->disabled;
@@ -7465,6 +8532,7 @@ void StatusEffectQueue_t::handleNavigation(std::map<int, StatusEffectQueueEntry_
 			frameImgPos.x = q.animateSetpointX;
 			frameImgPos.y = q.animateSetpointY;
 
+			int mouseDetectionPadding = frameImg->pos.w == 36 ? 0 : 2;
 			size.x += frameImgPos.x - (mouseDetectionPadding);
 			size.y += frameImgPos.y - (mouseDetectionPadding);
 			size.w = frameImgPos.w + (mouseDetectionPadding * 2);
@@ -7477,7 +8545,7 @@ void StatusEffectQueue_t::handleNavigation(std::map<int, StatusEffectQueueEntry_
 			size.y -= players[player]->camera_virtualy1();
 
 			players[player]->hud.updateCursorAnimation(size.x - 1 + mouseDetectionPadding, size.y - 1 + mouseDetectionPadding,
-				frameImgPos.w, frameImgPos.h, inputs.getVirtualMouse(player)->draw_cursor);
+				frameImgPos.w + mouseDetectionPadding * 2, frameImgPos.h + mouseDetectionPadding * 2, inputs.getVirtualMouse(player)->draw_cursor);
 			break;
 		}
 
@@ -7499,7 +8567,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 		effectsEnabled = false;
 		resetQueue();
 	}
-	if ( players[player]->ghost.isActive() && !kAllowGhostStatusEffects )
+	if ( players[player]->ghost.isActive() && !kAllowGhostStatusEffects && !players[player]->entity )
 	{
 		effectsEnabled = false;
 		resetQueue();
@@ -7590,13 +8658,13 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 	    else
 	    {
 			bool skipAnim = false;
-			bool effectActive = stats[player]->EFFECTS[i];
+			bool effectActive = stats[player]->getEffectActive(i) > 0;
 			if ( i == EFF_LEVITATING && !effectActive )
 			{
-				bool tmp = stats[player]->EFFECTS[EFF_FLUTTER];
-				stats[player]->EFFECTS[EFF_FLUTTER] = false;
+				Uint8 tmp = stats[player]->getEffectActive(EFF_FLUTTER);
+				stats[player]->clearEffect(EFF_FLUTTER);
 				effectActive = isLevitating(stats[player]);
-				stats[player]->EFFECTS[EFF_FLUTTER] = tmp;
+				stats[player]->setEffectValueUnsafe(EFF_FLUTTER, tmp);
 			}
 			else if ( i == EFF_MAGICREFLECT && !effectActive )
 			{
@@ -7633,6 +8701,64 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 				skipAnim = true;
 				effectsToSkipAnim.insert(i);
 			}
+			else if ( i == EFF_GROWTH )
+			{
+				if ( !(stats[player]->type == MYCONID || stats[player]->type == DRYAD)
+					|| stats[player]->helmet )
+				{
+					effectActive = false;
+				}
+				else
+				{
+					if ( stats[player]->getEffectActive(i) <= 1 )
+					{
+						effectActive = false;
+					}
+					else
+					{
+						for ( auto it = effectQueue.rbegin(); it != effectQueue.rend(); ++it )
+						{
+							if ( (*it).effect == EFF_GROWTH )
+							{
+								if ( (*it).customVariable != stats[player]->getEffectActive(i) )
+								{
+									deleteEffect(EFF_GROWTH);
+									break;
+								}
+							}
+						}
+					}
+				}
+			}
+			else if ( i == EFF_SALAMANDER_HEART )
+			{
+				if ( !(stats[player]->type == SALAMANDER) )
+				{
+					effectActive = false;
+				}
+				else
+				{
+					for ( auto it = effectQueue.rbegin(); it != effectQueue.rend(); ++it )
+					{
+						if ( (*it).effect == EFF_SALAMANDER_HEART )
+						{
+							if ( (*it).customVariable != stats[player]->getEffectActive(i) )
+							{
+								if ( stats[player]->getEffectActive(i) == 1 || stats[player]->getEffectActive(i) == 3 )
+								{
+									// don't re-trigger
+									(*it).customVariable = stats[player]->getEffectActive(i);
+								}
+								else
+								{
+									deleteEffect(EFF_SALAMANDER_HEART);
+								}
+								break;
+							}
+						}
+					}
+				}
+			}
 			else if ( i == EFF_BLIND )
 			{
 				if ( stats[player]->mask && stats[player]->mask->type == TOOL_BLINDFOLD_TELEPATHY )
@@ -7640,6 +8766,15 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 					skipAnim = true;
 					effectsToSkipAnim.insert(i);
 				}
+			}
+			else if ( i == EFF_ENSEMBLE_DRUM
+				|| i == EFF_ENSEMBLE_HORN
+				|| i == EFF_ENSEMBLE_LUTE
+				|| i == EFF_ENSEMBLE_FLUTE
+				|| i == EFF_ENSEMBLE_LYRE )
+			{
+				skipAnim = true;
+				effectsToSkipAnim.insert(i);
 			}
 			else if ( i == EFF_DRUNK && stats[player]->type == GOATMAN )
 			{
@@ -7660,6 +8795,22 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 						if ( players[player] && players[player]->entity )
 						{
 							insertEffect(i, -1);
+						}
+					}
+					else if ( i == EFF_GROWTH )
+					{
+						if ( insertEffect(i, -1) )
+						{
+							effectQueue.back().customVariable = stats[player]->getEffectActive(EFF_GROWTH);
+							notificationQueue.back().customVariable = stats[player]->getEffectActive(EFF_GROWTH);
+						}
+					}
+					else if ( i == EFF_SALAMANDER_HEART )
+					{
+						if ( insertEffect(i, -1) )
+						{
+							effectQueue.back().customVariable = stats[player]->getEffectActive(EFF_SALAMANDER_HEART);
+							notificationQueue.back().customVariable = stats[player]->getEffectActive(EFF_SALAMANDER_HEART);
 						}
 					}
 					else
@@ -7695,7 +8846,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 	bool inshop = false;
 
 	std::map<int, bool> miscEffects;
-	for ( int i = kEffectBurning; i >= kEffectAssistance; --i )
+	for ( int i = kEffectBurning; i >= kEffectEnd; --i )
 	{
 		miscEffects[i] = false;
 	}
@@ -7720,11 +8871,11 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 		{
 			bool cursedItemIsBuff = shouldInvertEquipmentBeatitude(stats[player]);
 			if ( ((stats[player]->mask && stats[player]->mask->type == TOOL_BLINDFOLD_FOCUS)
-				|| (stats[player]->type == GOATMAN && stats[player]->EFFECTS[EFF_DRUNK])) )
+				|| (stats[player]->type == GOATMAN && stats[player]->getEffectActive(EFF_DRUNK))) )
 			{
 				miscEffects[kEffectFreeAction] = true;
 			}
-			if ( stats[player]->type == GOATMAN && stats[player]->EFFECTS[EFF_DRUNK] )
+			if ( stats[player]->type == GOATMAN && stats[player]->getEffectActive(EFF_DRUNK) )
 			{
 				miscEffects[kEffectDrunkGoatman] = true;
 			}
@@ -7758,6 +8909,35 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 			{
 				miscEffects[kEffectLesserWarning] = true;
 			}
+			if ( stats[player]->shoes && stats[player]->shoes->type == CLEAT_BOOTS
+				&& players[player]->entity && players[player]->entity->effectShapeshift == NOTHING )
+			{
+				miscEffects[kEffectStability] = true;
+			}
+			if ( stats[player]->type == GREMLIN && players[player]->mechanics.gremlinBreakableCounter >= 0 )
+			{
+				miscEffects[kEffectVandal] = true;
+			}
+			if ( players[player]->mechanics.getWealthTier() > 0 )
+			{
+				miscEffects[kEffectWealth] = true;
+
+				for ( auto it = effectQueue.rbegin(); it != effectQueue.rend(); ++it )
+				{
+					if ( (*it).effect == kEffectWealth )
+					{
+						if ( (*it).customVariable != players[player]->mechanics.getWealthTier() )
+						{
+							deleteEffect(kEffectWealth);
+							break;
+						}
+					}
+				}
+			}
+			if ( cast_animation[player].overcharge_init > 0 || cast_animation[player].overcharge > 0 )
+			{
+				miscEffects[kEffectOvercharge] = true;
+			}
 			if ( stats[player]->breastplate && stats[player]->breastplate->type == VAMPIRE_DOUBLET )
 			{
 				if ( (svFlags & SV_FLAG_HUNGER) )
@@ -7766,6 +8946,10 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 				}
 			}
 			if ( stats[player]->breastplate && stats[player]->breastplate->type == MACHINIST_APRON )
+			{
+				miscEffects[kEffectResistBurning] = true;
+			}
+			if ( stats[player]->amulet && stats[player]->amulet->type == AMULET_BURNINGRESIST )
 			{
 				miscEffects[kEffectResistBurning] = true;
 			}
@@ -7800,12 +8984,13 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 			}
 			if ( (stats[player]->ring && stats[player]->ring->type == RING_STRENGTH)
 				|| (stats[player]->gloves && stats[player]->gloves->type == GAUNTLETS_STRENGTH)
-				|| stats[player]->EFFECTS[EFF_POTION_STR] )
+				|| stats[player]->getEffectActive(EFF_GREATER_MIGHT)
+				|| stats[player]->getEffectActive(EFF_POTION_STR) )
 			{
 				miscEffects[kEffectPush] = true;
 			}
 			if ( (stats[player]->shoes && stats[player]->shoes->type == IRON_BOOTS_WATERWALKING)
-				|| skillCapstoneUnlocked(player, PRO_SWIMMING) )
+				/*|| skillCapstoneUnlocked(player, PRO_LEGACY_SWIMMING)*/ )
 			{
 				miscEffects[kEffectWaterWalking] = true;
 			}
@@ -7870,7 +9055,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 		}
 	}
 
-	for ( int i = kEffectBurning; i >= kEffectAssistance; --i )
+	for ( int i = kEffectBurning; i >= kEffectEnd; --i )
 	{
 		if ( miscEffects[i] == false )
 		{
@@ -7881,7 +9066,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 		}
 		else
 		{
-			if ( !players[player]->entity )
+			if ( players[player] && !players[player]->entity )
 			{
 				effectsToSkipAnim.insert(i);
 			}
@@ -7891,11 +9076,19 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 			}
 			if ( effectSet.find(i) == effectSet.end() )
 			{
-				insertEffect(i, -1);
+				bool inserted = insertEffect(i, -1);
 
 				if ( i == kEffectSneak )
 				{
 					effectsToSkipAnimThisFrame.push_back(i);
+				}
+				else if ( i == kEffectWealth )
+				{
+					if ( inserted )
+					{
+						effectQueue.back().customVariable = players[player]->mechanics.getWealthTier();
+						notificationQueue.back().customVariable = players[player]->mechanics.getWealthTier();
+					}
 				}
 			}
 		}
@@ -7937,7 +9130,8 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 	automatonHungerFrame->setDisabled(true);
 	auto automatonFlameImg = automatonHungerFrame->findImage("flame");
 
-	int iconSize = 32;
+	static ConsoleVariable<int> cvar_statusfx_iconsize("/statusfx_iconsize", 36);
+	int iconSize = *cvar_statusfx_iconsize;
 	int movex = splitscreen ? 4 : 0;
 	if ( hungerIconActive )
 	{
@@ -8129,6 +9323,22 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 						{
 							variation = 0;
 						}
+						else if ( effectID == StatusEffectQueue_t::kEffectVandal )
+						{
+							variation = 0;
+						}
+						else if ( effectID == EFF_GROWTH )
+						{
+							variation = std::min(2, std::max(0, (int)notif.customVariable - 2));
+						}
+						else if ( effectID == StatusEffectQueue_t::kEffectWealth )
+						{
+							variation = 0;
+						}
+						else if ( effectID == EFF_SALAMANDER_HEART )
+						{
+							variation = std::min(3, std::max(0, (int)notif.customVariable - 1));
+						}
 						else if ( effectID == EFF_VAMPIRICAURA )
 						{
 							bool sustained = false;
@@ -8300,7 +9510,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 			if ( bFrameCapturesMouse && !tooltipShowing )
 			{
 				SDL_Rect size = statusEffectFrame->getAbsoluteSize();
-				int mouseDetectionPadding = 2;
+				int mouseDetectionPadding = frameImg->pos.w == 36 ? 0 : 2;
 				size.x += frameImg->pos.x - (mouseDetectionPadding);
 				size.y += frameImg->pos.y - (mouseDetectionPadding);
 				size.w = frameImg->pos.w + (mouseDetectionPadding * 2);
@@ -8318,8 +9528,8 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 					size.x -= players[player]->camera_virtualx1();
 					size.y -= players[player]->camera_virtualy1();
 
-					players[player]->hud.updateCursorAnimation(size.x - 1 + mouseDetectionPadding, size.y - 1 + mouseDetectionPadding, 
-						frameImg->pos.w, frameImg->pos.h, inputs.getVirtualMouse(player)->draw_cursor);
+					players[player]->hud.updateCursorAnimation(size.x - 1, size.y - 1, 
+						frameImg->pos.w + mouseDetectionPadding * 2, frameImg->pos.h + mouseDetectionPadding * 2, inputs.getVirtualMouse(player)->draw_cursor);
 				}
 			}
 		}
@@ -8589,6 +9799,11 @@ void StatusEffectQueue_t::updateEntryImage(StatusEffectQueueEntry_t& entry, Fram
 			}
 			img->path = StatusEffectDefinitions_t::getEffectImgPath(StatusEffectDefinitions_t::getEffect(entry.effect), variation);
 		}
+		else if ( entry.effect == kEffectWealth )
+		{
+			int variation = std::max(0, std::min(3, (int)entry.customVariable - 1));
+			img->path = StatusEffectDefinitions_t::getEffectImgPath(StatusEffectDefinitions_t::getEffect(entry.effect), variation);
+		}
 		else
 		{
 			if ( entry.effect >= kSpellEffectOffset )
@@ -8636,6 +9851,11 @@ void StatusEffectQueue_t::updateEntryImage(StatusEffectQueueEntry_t& entry, Fram
 							img->path = StatusEffectDefinitions_t::getEffectImgPath(StatusEffectDefinitions_t::getEffect(effectID), variation);
 						}
 					}
+					else if ( effectID == EFF_SALAMANDER_HEART )
+					{
+						variation = std::min(3, std::max(0, (int)entry.customVariable - 1));
+						img->path = StatusEffectDefinitions_t::getEffectImgPath(StatusEffectDefinitions_t::getEffect(effectID), variation);
+					}
 					else
 					{
 						img->path = StatusEffectDefinitions_t::getEffectImgPath(StatusEffectDefinitions_t::getEffect(effectID), variation);
@@ -8648,6 +9868,14 @@ void StatusEffectQueue_t::updateEntryImage(StatusEffectQueueEntry_t& entry, Fram
 		dest.x = entry.pos.x;
 		dest.y = entry.pos.y;
 		img->pos = dest;
+		if ( img->pos.w < 36 )
+		{
+			img->pos.x += (36 - img->pos.w) / 2;
+		}
+		if ( img->pos.h < 36 )
+		{
+			img->pos.y += (36 - img->pos.h) / 2;
+		}
 		img->disabled = false;
 
 		if ( img->path.size() > 1 && img->path[0] != '*' )
@@ -9159,6 +10387,28 @@ void createWorldTooltipPrompts(const int player)
 		0xFFFFFFFF, "images/system/white.png", "glyph img 4");
 	glyphAdditional3->disabled = true;
 
+	{
+		auto glyphSpellTarget = worldTooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+			0xFFFFFFFF, "images/system/white.png", "glyph img spell");
+		glyphSpellTarget->disabled = true;
+		auto glyphSpellCancel = worldTooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+			0xFFFFFFFF, "images/system/white.png", "glyph img spell cancel");
+		glyphSpellCancel->disabled = true;
+		auto iconSpellTarget = worldTooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
+			0xFFFFFFFF, "images/system/white.png", "spell icon img");
+		iconSpellTarget->disabled = true;
+		auto textSpellTarget = worldTooltipFrame->addField("prompt spell target text", 256);
+		textSpellTarget->setFont(promptFont);
+		textSpellTarget->setText("");
+		textSpellTarget->setDisabled(true);
+		textSpellTarget->setSize(SDL_Rect{ 0, 0, 0, 0 });
+		auto textSpellCancelTarget = worldTooltipFrame->addField("prompt spell cancel text", 256);
+		textSpellCancelTarget->setFont(promptFont);
+		textSpellCancelTarget->setText("");
+		textSpellCancelTarget->setDisabled(true);
+		textSpellCancelTarget->setSize(SDL_Rect{ 0, 0, 0, 0 });
+	}
+
 	auto cursor = worldTooltipFrame->addImage(SDL_Rect{ 0, 0, 0, 0 },
 		0xFFFFFFFF, "images/system/white.png", "cursor img");
 	cursor->disabled = true;
@@ -9255,6 +10505,17 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 	auto glyphCallout = worldTooltipFrame->findImage("glyph img 4");
 	glyphCallout->disabled = true;
 
+	auto textSpellTarget = worldTooltipFrame->findField("prompt spell target text");
+	textSpellTarget->setDisabled(true);
+	auto textSpellCancelTarget = worldTooltipFrame->findField("prompt spell cancel text");
+	textSpellCancelTarget->setDisabled(true);
+	auto glyphSpellTarget = worldTooltipFrame->findImage("glyph img spell");
+	glyphSpellTarget->disabled = true;
+	auto iconSpellTarget = worldTooltipFrame->findImage("spell icon img");
+	iconSpellTarget->disabled = true;
+	auto glyphSpellCancel = worldTooltipFrame->findImage("glyph img spell cancel");
+	glyphSpellCancel->disabled = true;
+
 	SDL_Rect textPos{ 0, 0, 0, 0 };
 	const int skillIconToGlyphPadding = 4;
 	const int nominalGlyphHeight = 26;
@@ -9262,7 +10523,15 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 	bool usingTinkeringKit = false;
 	bool useBracketsReticle = false;
 	bool useSneakingReticle = false;
-	if ( player.entity && stats[player.playernum] ) {
+
+	if ( player.ghost.isActive() )
+	{
+		if ( player.ghost.my->skill[3] == 1 )
+		{
+			useSneakingReticle = true;
+		}
+	}
+	else if ( player.entity && stats[player.playernum] ) {
 		if ( stats[player.playernum]->defending ) {
 			auto shield = stats[player.playernum]->shield;
 			if ( shield && shield->type == TOOL_TINKERING_KIT ) {
@@ -9275,14 +10544,15 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 			useSneakingReticle = true;
 		}
 	}
-	else if ( player.ghost.isActive() )
+
+	bool spellTarget = cast_animation[player.playernum].spellWaitingAttackInput();
+	if ( spellTarget )
 	{
-		if ( player.ghost.my->skill[3] == 1 )
+		if ( cast_animation[player.playernum].rangefinder == SpellRangefinderType::RANGEFINDER_NONE )
 		{
-			useSneakingReticle = true;
+			spellTarget = false;
 		}
 	}
-
 	bool followerInteract = followerMenu.selectMoveTo && (followerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT
 		|| followerMenu.optionSelected == ALLY_CMD_ATTACK_SELECT);
 	bool calloutInteract = calloutMenu.selectMoveTo && (calloutMenu.optionSelected == CalloutRadialMenu::CALLOUT_CMD_SELECT);
@@ -9547,7 +10817,12 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 					if ( followerMenu.followerToCommand )
 					{
 						int type = followerMenu.followerToCommand->getMonsterTypeFromSprite();
-						if ( followerMenu.allowedInteractItems(type)
+						if ( followerMenu.attackCommandOnly(type) )
+						{
+							text->setDisabled(false);
+							text->setText(Language::get(4042)); // "Attack..."
+						}
+						else if ( followerMenu.allowedInteractItems(type)
 							|| followerMenu.allowedInteractFood(type)
 							|| followerMenu.allowedInteractWorld(type)
 							)
@@ -9596,6 +10871,292 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 				textPos.x -= glyphAdditional->pos.w + skillIconToGlyphPadding;
 				icon->pos.x -= glyphAdditional->pos.w + skillIconToGlyphPadding;
 				//textPos.x -= icon->pos.w + skillIconToGlyphPadding;
+			}
+		}
+	}
+	else if ( spellTarget )
+	{
+		cursor->path = getCrosshairPath();
+		Entity* target = uidToEntity(cast_animation[player.playernum].targetUid);
+		if ( target )
+		{
+			cursor->path = "images/system/selectedcursor.png";
+		}
+		if ( auto imgGet = Image::get(cursor->path.c_str()) )
+		{
+			cursor->disabled = false;
+			promptPos.x -= (int)imgGet->getWidth() / 2;
+			promptPos.y -= (int)imgGet->getHeight() / 2;
+			SDL_Rect cursorPos{ 0, 0, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
+			cursor->pos = cursorPos;
+			cursor->color = makeColor(255, 255, 255, 255 * playerSettings[multiplayer ? 0 : player.playernum].shootmodeCrosshairOpacity / 100.f);
+		}
+
+		textPos.x = cursor->pos.x + cursor->pos.w / 2;
+		textPos.y = cursor->pos.y + cursor->pos.h / 2;
+		if ( auto imgGet = Image::get("images/system/selectedcursor.png") )
+		{
+			textPos.x -= (int)imgGet->getWidth() / 2;
+			textPos.y -= (int)imgGet->getHeight() / 2;
+		}
+
+		textPos.x += 40;
+		textPos.y += 20;
+		const char* inputstr = "Attack";
+		if ( inputs.hasController(player.playernum) )
+		{
+			inputstr = "Cast Spell";
+		}
+		auto glyphPathPressed = Input::inputs[player.playernum].getGlyphPathForBinding(inputstr, true);
+		auto glyphPathUnpressed = Input::inputs[player.playernum].getGlyphPathForBinding(inputstr, false);
+		if ( ticks % 50 < 25 )
+		{
+			glyphSpellTarget->path = glyphPathPressed;
+			if ( auto imgGet = Image::get(glyphSpellTarget->path.c_str()) )
+			{
+				glyphSpellTarget->disabled = false;
+				SDL_Rect glyphPos{ textPos.x, textPos.y, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
+				glyphSpellTarget->pos = glyphPos;
+				if ( auto imgGetUnpressed = Image::get(glyphPathUnpressed.c_str()) )
+				{
+					const int unpressedHeight = imgGetUnpressed->getHeight();
+					if ( unpressedHeight != glyphSpellTarget->pos.h )
+					{
+						glyphSpellTarget->pos.y -= (glyphSpellTarget->pos.h - unpressedHeight);
+					}
+
+					if ( unpressedHeight != nominalGlyphHeight )
+					{
+						glyphSpellTarget->pos.y -= (unpressedHeight - nominalGlyphHeight) / 2;
+					}
+				}
+				textPos.x += glyphSpellTarget->pos.w;
+			}
+		}
+		else
+		{
+			glyphSpellTarget->path = glyphPathUnpressed;
+			if ( auto imgGet = Image::get(glyphSpellTarget->path.c_str()) )
+			{
+				glyphSpellTarget->disabled = false;
+				SDL_Rect glyphPos{ textPos.x, textPos.y, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
+				glyphSpellTarget->pos = glyphPos;
+				textPos.x += glyphSpellTarget->pos.w;
+
+				if ( glyphSpellTarget->pos.h != nominalGlyphHeight )
+				{
+					glyphSpellTarget->pos.y -= (glyphSpellTarget->pos.h - nominalGlyphHeight) / 2;
+				}
+			}
+		}
+		textPos.x += skillIconToGlyphPadding;
+
+		if ( true || target )
+		{
+			char buf[128] = "";
+			snprintf(buf, sizeof(buf), "#*images/ui/HUD/Casting%02d.png", ticks % 50 < 25 ? 1 : 2);
+			iconSpellTarget->path = buf;
+
+			if ( auto imgGet = Image::get(iconSpellTarget->path.c_str()) )
+			{
+				iconSpellTarget->disabled = false;
+				SDL_Rect iconPos{ textPos.x, textPos.y, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
+				iconSpellTarget->pos = iconPos;
+				textPos.x += iconSpellTarget->pos.w + skillIconToGlyphPadding;
+			}
+		}
+
+		textSpellTarget->setDisabled(false);
+		/*if ( cast_animation[player.playernum].rangefinder == SpellRangefinderType::RANGEFINDER_NONE )
+		{
+			textSpellTarget->setDisabled(true);
+		}*/
+		if ( target )
+		{
+			std::string interactText = Language::get(6500);
+			if ( target->behavior == &actMonster )
+			{
+				if ( target->isInertMimic() )
+				{
+					interactText += Language::get(675);
+				}
+				else
+				{
+					int monsterType = target->getMonsterTypeFromSprite();
+					interactText += getMonsterLocalizedName((Monster)monsterType).c_str();
+				}
+			}
+			else if ( target->isDamageableCollider() )
+			{
+				interactText += Language::get(target->getColliderLangName());
+			}
+			else if ( target->behavior == &actDoor )
+			{
+				interactText += Language::get(674);
+			}
+			else if ( target->behavior == &actIronDoor )
+			{
+				interactText += Language::get(6414);
+			}
+			else if ( target->behavior == &::actFurniture )
+			{
+				switch ( target->furnitureType )
+				{
+				case FURNITURE_CHAIR:
+					interactText += Language::get(677);
+					break;
+				case FURNITURE_TABLE:
+					interactText += Language::get(676);
+					break;
+				case FURNITURE_BED:
+					interactText += Language::get(2505);
+					break;
+				case FURNITURE_BUNKBED:
+					interactText += Language::get(2506);
+					break;
+				case FURNITURE_PODIUM:
+					interactText += Language::get(2507);
+					break;
+				default:
+					break;
+				}
+			}
+			else if ( target->behavior == &actChest )
+			{
+				interactText += Language::get(675);
+			}
+			else if ( target->behavior == &actSpearTrap )
+			{
+				interactText += Language::get(4350);
+			}
+			else if ( target->behavior == &actArrowTrap )
+			{
+				interactText += Language::get(4351);
+			}
+			else if ( target->behavior == &actDoorFrame )
+			{
+				interactText += Language::get(6693);
+			}
+			else if ( target->behavior == &actMagicTrap || target->behavior == &actMagicTrapCeiling )
+			{
+				interactText += Language::get(4352);
+			}
+			else if ( target->behavior == &actPlayer || target->behavior == &actDeathGhost )
+			{
+				int playernum = target->skill[2];
+				if ( playernum >= 0 && playernum < MAXPLAYERS )
+				{
+					char shortname[32];
+					stringCopy(shortname, stats[playernum]->name, sizeof(shortname), 22);
+					std::string nameStr = shortname;
+					nameStr = messageSanitizePercentSign(nameStr, nullptr);
+					interactText += nameStr;
+				}
+			}
+			else
+			{
+				std::string txt = CalloutMenu[player.playernum].interactText;
+				auto prevCmd = CalloutMenu[player.playernum].optionSelected;
+				CalloutMenu[player.playernum].optionSelected = CalloutRadialMenu::CALLOUT_CMD_SELECT;
+				if ( CalloutMenu[player.playernum].allowedInteractEntity(*target) )
+				{
+					std::string str = CalloutMenu[player.playernum].interactText;
+					if ( str.length() > strlen(Language::get(4347)) )
+					{
+						str.erase(str.begin(), str.begin() + strlen(Language::get(4347)));
+					}
+					interactText += str;
+				}
+				strcpy(CalloutMenu[player.playernum].interactText, txt.c_str());
+				CalloutMenu[player.playernum].optionSelected = prevCmd;
+			}
+			textSpellTarget->setText(interactText.c_str());
+		}
+		else
+		{
+			textSpellTarget->setText(Language::get(6499));
+		}
+
+		textPos.w = textSpellTarget->getTextObject()->getWidth();
+		textPos.h = Font::get(textSpellTarget->getFont())->height() + 8;
+		textPos.y -= 1;
+		textSpellTarget->setVJustify(Field::justify_t::CENTER);
+		textSpellTarget->setSize(textPos);
+
+		if ( false )
+		{
+			auto glyphPathUnpressed = Input::inputs[player.playernum].getGlyphPathForBinding("Cast Spell", false);
+			auto glyphPathPressed = Input::inputs[player.playernum].getGlyphPathForBinding("Cast Spell", true);
+			auto prevGlyphPos = glyphSpellTarget->pos;
+			if ( ticks % 50 < 25 )
+			{
+				glyphSpellCancel->path = glyphPathPressed;
+				if ( auto imgGet = Image::get(glyphSpellCancel->path.c_str()) )
+				{
+					glyphSpellCancel->disabled = false;
+					glyphSpellCancel->pos = SDL_Rect{ 0, 0, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
+					glyphSpellCancel->pos.y = prevGlyphPos.y + prevGlyphPos.h + 4;
+					glyphSpellCancel->pos.x = prevGlyphPos.x + prevGlyphPos.w / 2 - glyphSpellCancel->pos.w / 2;
+					if ( glyphSpellCancel->pos.x % 2 == 1 )
+					{
+						++glyphSpellCancel->pos.x;
+					}
+					if ( auto imgGetUnpressed = Image::get(glyphPathUnpressed.c_str()) )
+					{
+						const int unpressedHeight = imgGetUnpressed->getHeight();
+						if ( unpressedHeight != glyphSpellCancel->pos.h )
+						{
+							glyphSpellCancel->pos.y -= (glyphSpellCancel->pos.h - unpressedHeight);
+						}
+					}
+					textPos.x += prevGlyphPos.w;
+				}
+			}
+			else
+			{
+				glyphSpellCancel->path = glyphPathUnpressed;
+				if ( auto imgGet = Image::get(glyphSpellCancel->path.c_str()) )
+				{
+					glyphSpellCancel->disabled = false;
+					glyphSpellCancel->pos = SDL_Rect{ 0, 0, (int)imgGet->getWidth(), (int)imgGet->getHeight() };
+					glyphSpellCancel->pos.y = prevGlyphPos.y + prevGlyphPos.h + 4;
+					glyphSpellCancel->pos.x = prevGlyphPos.x + prevGlyphPos.w / 2 - glyphSpellCancel->pos.w / 2;
+					if ( glyphSpellCancel->pos.x % 2 == 1 )
+					{
+						++glyphSpellCancel->pos.x;
+					}
+				}
+			}
+
+			if ( !glyphSpellCancel->disabled )
+			{
+				glyphSpellCancel->color = makeColor(255, 255, 255, 255);
+				textSpellCancelTarget->setText(Language::get(6501));
+				textSpellCancelTarget->setColor(makeColor(255, 255, 255, 255));
+				SDL_Rect textPos = textSpellCancelTarget->getSize();
+				textPos.x = glyphSpellCancel->pos.x + glyphSpellCancel->pos.w + 4;
+				textPos.y = glyphSpellCancel->pos.y + 2;
+				textPos.h = textSpellTarget->getSize().h;
+
+				if ( auto imgGet = Image::get(glyphPathPressed.c_str()) )
+				{
+					if ( imgGet->getHeight() != glyphSpellCancel->pos.h )
+					{
+						textPos.y += (glyphSpellCancel->pos.h - imgGet->getHeight()) / 2;
+					}
+				}
+				if ( glyphSpellCancel->pos.h != nominalGlyphHeight )
+				{
+					textPos.y += (glyphSpellCancel->pos.h - nominalGlyphHeight) / 2;
+				}
+				textPos.w = textSpellCancelTarget->getTextObject()->getWidth();
+				textSpellCancelTarget->setSize(textPos);
+				textSpellCancelTarget->setDisabled(false);
+
+				promptPos.w = std::max(textPos.x + textPos.w, promptPos.w);
+				promptPos.h = std::max(textPos.y + textPos.h, promptPos.h);
+				promptPos.w = std::max(glyphSpellCancel->pos.x + glyphSpellCancel->pos.w, promptPos.w);
+				promptPos.h = std::max(glyphSpellCancel->pos.y + glyphSpellCancel->pos.h, promptPos.h);
 			}
 		}
 	}
@@ -9821,9 +11382,9 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 				}
 				else
 				{
-					textPos.x = cursor->pos.x + 15;
-					textPos.y = cursor->pos.y + 11;
-
+					textPos.x += 40;
+					textPos.y += 20;
+					
 					text->setDisabled(false);
 					text->setText(Language::get(3663));
 				}
@@ -9831,6 +11392,21 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 		}
 	}
 
+	if ( !textSpellTarget->isDisabled() )
+	{
+		promptPos.w = std::max(textSpellTarget->getSize().x + textSpellTarget->getSize().w, promptPos.w);
+		promptPos.h = std::max(textSpellTarget->getSize().y + textSpellTarget->getSize().h, promptPos.h);
+	}
+	if ( !glyphSpellTarget->disabled )
+	{
+		promptPos.w = std::max(glyphSpellTarget->pos.x + glyphSpellTarget->pos.w, promptPos.w);
+		promptPos.h = std::max(glyphSpellTarget->pos.y + glyphSpellTarget->pos.h, promptPos.h);
+	}
+	if ( !iconSpellTarget->disabled )
+	{
+		promptPos.w = std::max(iconSpellTarget->pos.x + iconSpellTarget->pos.w, promptPos.w);
+		promptPos.h = std::max(iconSpellTarget->pos.y + iconSpellTarget->pos.h, promptPos.h);
+	}
 	if ( !text->isDisabled() )
 	{
 		textPos.w = text->getTextObject()->getWidth();
@@ -9839,8 +11415,8 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 		text->setVJustify(Field::justify_t::CENTER);
 		text->setSize(textPos);
 
-		promptPos.w = text->getSize().x + text->getSize().w;
-		promptPos.h = text->getSize().y + text->getSize().h;
+		promptPos.w = std::max(text->getSize().x + text->getSize().w, promptPos.w);
+		promptPos.h = std::max(text->getSize().y + text->getSize().h, promptPos.h);
 	}
 	if ( !glyph->disabled )
 	{
@@ -10528,7 +12104,7 @@ void Player::HUD_t::updateActionPrompts()
 					promptText->getTextColor(),
 					promptText->getOutlineColor());
 				textPos.w = textGetLongestLine->getWidth();
-				textPos.h = promptText->getNumTextLines() * Font::get(promptText->getFont())->height();
+				textPos.h = promptText->getNumTextLines() * Font::get(promptText->getFont())->height() + 4;
 				textPos.x = promptPos.x + promptPos.w / 2 - textPos.w / 2;
 				//textPos.y = promptPos.y + imgBacking->pos.y - textPos.h - 4; -- top aligned
 				textPos.y = promptPos.y + imgBacking->pos.y + imgBacking->pos.h + 1;
@@ -10570,39 +12146,86 @@ void Player::HUD_t::updateActionPrompts()
 					imgBacking->path = actionPromptBackingIconPath00;
 				}
 			}
+			else if ( skillForPrompt == PRO_LEGACY_MAGIC || skillForPrompt == PRO_LEGACY_SPELLCASTING )
+			{
+				imgBacking->path = actionPromptBackingIconPath00;
+				for ( auto& skill : player.skillSheet.skillSheetData.skillEntries )
+				{
+					if ( skill.skillId == skillForPrompt )
+					{
+						skillImg = skill.skillIconPath32px;
+						break;
+					}
+				}
+			}
 			else if ( ghostPrompts )
 			{
 				imgBacking->path = actionPromptBackingIconPath00;
 				switch ( promptInfo.promptType )
 				{
 					case ACTION_PROMPT_MAGIC:
-						skillImg = "*images/ui/HUD/HUD_Ghost_Haunt.png";
+						if ( player.ghost.isSpiritGhost() )
+						{
+							skillImg = "*images/ui/HUD/HUD_Ghost_Spirit_Return.png";
+						}
+						else
+						{
+							skillImg = "*images/ui/HUD/HUD_Ghost_Haunt.png";
+						}
 						img->pos.x -= 2;
 						img->pos.y -= 2;
 						img->pos.w = 36;
 						img->pos.h = 36;
 						break;
 					case ACTION_PROMPT_MAINHAND:
-						skillImg = "*images/ui/HUD/HUD_Ghost_Chill.png";
+						if ( player.ghost.isSpiritGhost() )
+						{
+							skillImg = "*images/ui/HUD/HUD_Ghost_Spirit_Attack.png";
+						}
+						else
+						{
+							skillImg = "*images/ui/HUD/HUD_Ghost_Chill.png";
+						}
 						img->pos.x -= 2;
 						img->pos.y -= 2;
 						img->pos.w = 36;
 						img->pos.h = 36;
 						break;
 					case ACTION_PROMPT_OFFHAND:
-						skillImg = "*images/ui/HUD/HUD_Ghost_Push.png";
+						if ( player.ghost.isSpiritGhost() )
+						{
+							skillImg = "*images/ui/HUD/HUD_Ghost_Spirit_Push.png";
+						}
+						else
+						{
+							skillImg = "*images/ui/HUD/HUD_Ghost_Push.png";
+						}
 						img->pos.x -= 2;
 						img->pos.y -= 2;
 						img->pos.w = 36;
 						img->pos.h = 36;
 						break;
 					case ACTION_PROMPT_SNEAK:
-						for ( auto& skill : player.skillSheet.skillSheetData.skillEntries )
+						if ( player.ghost.isSpiritGhost() )
 						{
-							if ( skill.skillId == PRO_STEALTH )
+							if ( player.ghost.my && player.ghost.my->skill[11] == 0 ) // low profile
 							{
-								skillImg = skill.skillIconPath32px;
-								break;
+								skillImg = "*images/ui/HUD/HUD_Ghost_Spirit_LowProfile.png";
+							}
+							else
+							{
+								skillImg = "*images/ui/HUD/HUD_Ghost_Spirit_HighProfile.png";
+							}
+						}
+						else
+						{
+							for ( auto& skill : player.skillSheet.skillSheetData.skillEntries )
+							{
+								if ( skill.skillId == PRO_STEALTH )
+								{
+									skillImg = skill.skillIconPath32px;
+									break;
+								}
 							}
 						}
 						break;
@@ -10893,6 +12516,18 @@ void Player::HUD_t::processHUD()
 		hudFrame->setOwner(player.playernum);
 		hudFrame->setDrawCallback([](const Widget& widget, SDL_Rect rect) {
 			HUDDrawGameEndHint(widget.getOwner(), rect);
+
+			//if ( keystatus[SDLK_c] )
+			//{
+			//	// debug stuff
+			//	if ( auto tex = AOEIndicators_t::getTexture(AOEIndicators_t::uids - 1) )
+			//	{
+			//	Image::draw(tex->texid, tex->w, tex->h, nullptr, SDL_Rect{
+			//		Frame::virtualScreenX / 2 - 128 * 2, Frame::virtualScreenY / 2 - 128 * 2, 128 * 4, 128 * 4
+			//		},
+			//		SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY }, 0xffffffff);
+			//	}
+			//}
 		});
 	}
 
@@ -14494,9 +16129,9 @@ void Player::GUIDropdown_t::process()
 			{
 				chest_inventory = &chestInv[player.playernum];
 			}
-			else if ( openedChest[player.playernum]->children.first && openedChest[player.playernum]->children.first->element )
+			else if ( openedChest[player.playernum] )
 			{
-				chest_inventory = (list_t*)openedChest[player.playernum]->children.first->element;
+				chest_inventory = openedChest[player.playernum]->getChestInventoryList();
 			}
 		}
 
@@ -15461,13 +17096,14 @@ bool getAttackTooltipLines(int playernum, AttackHoverText_t& attackHoverTextInfo
 	{
 		if ( skill.skillId == attackHoverTextInfo.proficiency )
 		{
-			skillName = skill.name;
+			skillName = skill.getSkillName();
 			skillLVL = stats[playernum]->getModifiedProficiency(attackHoverTextInfo.proficiency);
 			break;
 		}
 	}
 
-	if ( attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_MELEE_WEAPON )
+	if ( attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_MELEE_WEAPON
+		|| attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_RAPIER )
 	{
 		switch ( lineNumber )
 		{
@@ -15485,7 +17121,14 @@ bool getAttackTooltipLines(int playernum, AttackHoverText_t& attackHoverTextInfo
 					attackHoverTextInfo.attackMinRange, attackHoverTextInfo.attackMaxRange);
 				return true;
 			case 3:
-				snprintf(titleBuf, 127, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_attr_bonus_melee").c_str());
+				if ( attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_RAPIER )
+				{
+					snprintf(titleBuf, 127, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_attr_bonus_ranged").c_str());
+				}
+				else
+				{
+					snprintf(titleBuf, 127, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_attr_bonus_melee").c_str());
+				}
 				snprintf(valueBuf, 127,
 					Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
 					attackHoverTextInfo.mainAttributeBonus);
@@ -15637,6 +17280,7 @@ bool getAttackTooltipLines(int playernum, AttackHoverText_t& attackHoverTextInfo
 		}
 	}
 	else if ( attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_THROWN
+		|| attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_THROWN_MISC
 		|| attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_THROWN_GEM )
 	{
 		switch ( lineNumber )
@@ -15654,9 +17298,16 @@ bool getAttackTooltipLines(int playernum, AttackHoverText_t& attackHoverTextInfo
 				return true;
 			case 3:
 				snprintf(titleBuf, 127, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_attr_bonus_ranged").c_str());
-				snprintf(valueBuf, 127,
-					Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
-					attackHoverTextInfo.mainAttributeBonus);
+				if ( attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_THROWN_MISC )
+				{
+					snprintf(valueBuf, 127, "-");
+				}
+				else
+				{
+					snprintf(valueBuf, 127,
+						Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
+						attackHoverTextInfo.mainAttributeBonus);
+				}
 				return true;
 			case 4:
 				snprintf(titleBuf, 127, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_weapon_bonus").c_str());
@@ -15666,9 +17317,16 @@ bool getAttackTooltipLines(int playernum, AttackHoverText_t& attackHoverTextInfo
 				return true;
 			case 5:
 				snprintf(titleBuf, 127, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_skill_bonus").c_str());
-				snprintf(valueBuf, 127,
-					Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
-					attackHoverTextInfo.proficiencyBonus);
+				if ( attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_THROWN_MISC )
+				{
+					snprintf(valueBuf, 127, "-");
+				}
+				else
+				{
+					snprintf(valueBuf, 127,
+						Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
+						attackHoverTextInfo.proficiencyBonus);
+				}
 				return true;
 			case 6:
 				snprintf(titleBuf, 127, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_thrown_weapon_fully_charged").c_str());
@@ -15678,9 +17336,16 @@ bool getAttackTooltipLines(int playernum, AttackHoverText_t& attackHoverTextInfo
 				return true;
 			case 7:
 				snprintf(titleBuf, 127, "%s", Player::CharacterSheet_t::getHoverTextString("attributes_atk_entry_thrown_weapon_base").c_str());
-				snprintf(valueBuf, 127,
-					Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
-					BASE_THROWN_DAMAGE);
+				if ( attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_THROWN_MISC )
+				{
+					snprintf(valueBuf, 127, "-");
+				}
+				else
+				{
+					snprintf(valueBuf, 127,
+						Player::CharacterSheet_t::getHoverTextString("attributes_atk_bonus_format").c_str(),
+						BASE_THROWN_DAMAGE);
+				}
 				return true;
 			default:
 				return false;
@@ -15783,7 +17448,7 @@ bool getAttackTooltipLines(int playernum, AttackHoverText_t& attackHoverTextInfo
 	return false;
 }
 
-real_t getDisplayedHPRegen(Entity* my, Stat& myStats, Uint32* outColor, char buf[32])
+real_t getDisplayedHPRegen(Entity* my, Stat& myStats, Uint32* outColor, char buf[32], bool excludeItemsEffectsBonus = false)
 {
 	real_t regen = 0.0;
 	if ( outColor )
@@ -15793,7 +17458,7 @@ real_t getDisplayedHPRegen(Entity* my, Stat& myStats, Uint32* outColor, char buf
 	if ( myStats.HP > 0 )
 	{
 		regen = (static_cast<real_t>(Entity::getHealthRegenInterval(my,
-			myStats, true)) / TICKS_PER_SECOND);
+			myStats, true, excludeItemsEffectsBonus)) / TICKS_PER_SECOND);
 		/*if ( myStats.type == SKELETON )
 		{
 			if ( !(svFlags & SV_FLAG_HUNGER) )
@@ -15819,11 +17484,16 @@ real_t getDisplayedHPRegen(Entity* my, Stat& myStats, Uint32* outColor, char buf
 				}
 			}
 		}
-		else if ( regen < HEAL_TIME / TICKS_PER_SECOND )
+		else
 		{
 			if ( outColor )
 			{
-				*outColor = hudColors.characterSheetGreen;
+				real_t regenWithoutItems = (static_cast<real_t>(Entity::getHealthRegenInterval(my,
+					myStats, true, true)) / TICKS_PER_SECOND);
+				if ( regen < (regenWithoutItems - 0.001) )
+				{
+					*outColor = hudColors.characterSheetGreen;
+				}
 			}
 		}
 	}
@@ -15851,14 +17521,14 @@ real_t getDisplayedHPRegen(Entity* my, Stat& myStats, Uint32* outColor, char buf
 	return regen * 100.0;
 }
 
-real_t getDisplayedMPRegen(Entity* my, Stat& myStats, Uint32* outColor, char buf[32])
+real_t getDisplayedMPRegen(Entity* my, Stat& myStats, Uint32* outColor, char buf[32], bool excludeItemsEffectsBonus = false)
 {
 	real_t regen = 0.0;
 	bool isNegative = false;
 	bool isInsectoid = false;
 	if ( /*players[player.playernum]->entity*/ true )
 	{
-		regen = (static_cast<real_t>(Entity::getManaRegenInterval(my, myStats, true)) / TICKS_PER_SECOND);
+		regen = (static_cast<real_t>(Entity::getManaRegenInterval(my, myStats, true, excludeItemsEffectsBonus)) / TICKS_PER_SECOND);
 		if ( myStats.type == AUTOMATON )
 		{
 			if ( myStats.HUNGER <= 300 )
@@ -15923,11 +17593,18 @@ real_t getDisplayedMPRegen(Entity* my, Stat& myStats, Uint32* outColor, char buf
 				}
 			}
 		}
-		else if ( regen < static_cast<real_t>(getBaseManaRegen(my, myStats)) / TICKS_PER_SECOND )
+		else
 		{
-			if ( outColor )
+			int baseRegen = static_cast<real_t>(getBaseManaRegen(my, myStats));
+			real_t regenPerMinute = 60 * TICKS_PER_SECOND / (real_t)(baseRegen);
+			const int regenTicks = TICKS_PER_SECOND * 60 / regenPerMinute;
+			real_t compareRegen = regenTicks / (real_t)TICKS_PER_SECOND;
+			if ( regen < (compareRegen - 0.001) )
 			{
-				*outColor = hudColors.characterSheetGreen;
+				if ( outColor )
+				{
+					*outColor = hudColors.characterSheetGreen;
+				}
 			}
 		}
 	}
@@ -16023,6 +17700,8 @@ struct CharacterSheetTooltipCache_t
 		std::string entry10 = "";
 		std::string entry11 = "";
 		std::string entry12 = "";
+		std::string entry13 = "";
+		std::string entry14 = "";
 	};
 	TextEntries_t textEntries[Player::CharacterSheet_t::SHEET_ENUM_END];
 	bool needsUpdate(const int player)
@@ -16103,6 +17782,90 @@ struct CharacterSheetTooltipCache_t
 		weapontype = getWeaponSkill(stats[player]->weapon);
 	}
 };
+
+void characterSheetTooltipSetZeroStat(Entity* entity, Stat* myStats, Sint32* LVL, Sint32 oldStats[NUMSTATS])
+{
+	if ( !myStats ) { return; }
+	if ( LVL )
+	{
+		*LVL = myStats->LVL;
+		myStats->LVL = 1;
+	}
+	if ( oldStats )
+	{
+		for ( int i = 0; i < NUMSTATS; ++i )
+		{
+			switch ( i )
+			{
+			case STAT_STR:
+				oldStats[i] = myStats->STR;
+				myStats->STR += -statGetSTR(myStats, entity);
+				break;
+			case STAT_DEX:
+				oldStats[i] = myStats->DEX;
+				myStats->DEX += -statGetDEX(myStats, entity);
+				break;
+			case STAT_CON:
+				oldStats[i] = myStats->CON;
+				myStats->CON += -statGetCON(myStats, entity);
+				break;
+			case STAT_INT:
+				oldStats[i] = myStats->INT;
+				myStats->INT += -statGetINT(myStats, entity);
+				break;
+			case STAT_PER:
+				oldStats[i] = myStats->PER;
+				myStats->PER += -statGetPER(myStats, entity);
+				break;
+			case STAT_CHR:
+				oldStats[i] = myStats->CHR;
+				myStats->CHR += -statGetCHR(myStats, entity);
+				break;
+			default:
+				break;
+			}
+		}
+	}
+}
+
+void characterSheetTooltipRestoreStats(Stat* myStats, Sint32* LVL, Sint32 oldStats[NUMSTATS])
+{
+	if ( !myStats ) { return; }
+	if ( LVL )
+	{
+		myStats->LVL = *LVL;
+	}
+	if ( oldStats )
+	{
+		for ( int i = 0; i < NUMSTATS; ++i )
+		{
+			switch ( i )
+			{
+			case STAT_STR:
+				myStats->STR = oldStats[i];
+				break;
+			case STAT_DEX:
+				myStats->DEX = oldStats[i];
+				break;
+			case STAT_CON:
+				myStats->CON = oldStats[i];
+				break;
+			case STAT_INT:
+				myStats->INT = oldStats[i];
+				break;
+			case STAT_PER:
+				myStats->PER = oldStats[i];
+				break;
+			case STAT_CHR:
+				myStats->CHR = oldStats[i];
+				break;
+			default:
+				break;
+			}
+		}
+	}
+}
+
 bool blitCharacterSheetTooltipToSurf = false;
 CharacterSheetTooltipCache_t charsheetTooltipCache[MAXPLAYERS];
 void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element, SDL_Rect pos, Player::PanelJustify_t tooltipJustify)
@@ -16598,13 +18361,13 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 				case SHEET_STR:
 				{
 					Sint32 STR = statGetSTR(stats[player.playernum], players[player.playernum]->entity);
-					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_atk_value_format").c_str(), STR);
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_atk_percent_format").c_str(), STR * 100 * Entity::PlayerAttackMeleeStatFactor);
 				}
 					break;
 				case SHEET_DEX:
 				{
 					Sint32 DEX = statGetDEX(stats[player.playernum], players[player.playernum]->entity);
-					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_atk_value_format").c_str(), DEX);
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_atk_percent_format").c_str(), DEX * 100 * Entity::PlayerAttackRangedStatFactor);
 				}
 					break;
 				case SHEET_CON:
@@ -16616,14 +18379,23 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 				case SHEET_INT:
 				{
 					//real_t val = getBonusFromCasterOfSpellElement(players[player.playernum]->entity, stats[player.playernum], nullptr, SPELL_NONE) * 100.0;
-					real_t bonus = getSpellBonusFromCasterINT(players[player.playernum]->entity, stats[player.playernum]);
+					/*if ( auto spell = player.magic.selectedSpell() )
+					{
+						real_t bonus = getSpellBonusFromCasterINT(players[player.playernum]->entity, stats[player.playernum], spell->skillID);
+						real_t val = bonus * 100.0;
+						snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_pwr_value_format").c_str(), val);
+					}
+					else
+					{
+					}*/
+					real_t bonus = getSpellBonusFromCasterINT(players[player.playernum]->entity, stats[player.playernum], NUMPROFICIENCIES);
 					real_t val = bonus * 100.0;
 					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_pwr_value_format").c_str(), val);
 				}
 					break;
 				case SHEET_PER:
 				{
-					real_t val = std::min(std::max(statGetPER(stats[player.playernum], players[player.playernum]->entity) / 2, 0), 50);
+					real_t val = std::min(std::max(statGetPER(stats[player.playernum], players[player.playernum]->entity), 0), 50);
 					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_pierce_value_format").c_str(), val);
 				}
 					break;
@@ -16672,7 +18444,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			valueSizes[3] = std::make_pair(entryValue, backingFramePos);
 			txtValueBackingFrame->setDisabled(false);
 		}
-		if ( element == SHEET_STR || element == SHEET_DEX || element == SHEET_INT || element == SHEET_PER || element == SHEET_CHR )
+		if ( element == SHEET_STR || element == SHEET_DEX || element == SHEET_INT || element == SHEET_PER || element == SHEET_CHR || element == SHEET_CON )
 		{
 			// stat extra number display
 			currentHeight += padyMid;
@@ -16688,9 +18460,14 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			{
 				snprintf(buf, sizeof(buf), "%s", getHoverTextString("stat_dex_thrown_atk_bonus").c_str());
 			}
+			else if ( element == SHEET_CON )
+			{
+				snprintf(buf, sizeof(buf), "%s", getHoverTextString("stat_con_pwr_bonus").c_str());
+			}
 			else if ( element == SHEET_INT )
 			{
-				snprintf(buf, sizeof(buf), "%s", getHoverTextString("stat_int_mp_regen_bonus").c_str());
+				//snprintf(buf, sizeof(buf), "%s", getHoverTextString("stat_int_mp_regen_bonus").c_str());
+				snprintf(buf, sizeof(buf), "%s", getHoverTextString("stat_int_pwr_bonus2").c_str());
 			}
 			else if ( element == SHEET_PER )
 			{
@@ -16744,30 +18521,40 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 				case SHEET_DEX:
 				{
 					Sint32 DEX = statGetDEX(stats[player.playernum], players[player.playernum]->entity);
-					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_atk_value_format").c_str(), DEX / 4);
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_atk_percent_format").c_str(), (DEX / 4) * 100 * Entity::PlayerAttackThrownStatFactor);
 				}
 					break;
 				case SHEET_CON:
+				{
+					real_t bonus = getSpellBonusFromCasterINT(players[player.playernum]->entity, stats[player.playernum], PRO_THAUMATURGY);
+					bonus -= getSpellBonusFromCasterINT(players[player.playernum]->entity, stats[player.playernum], NUMPROFICIENCIES);
+					real_t val = bonus * 100.0;
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_pwr_value_format").c_str(), val);
 					break;
+				}
 				case SHEET_INT:
 				{
-					Sint32 oldINT = stats[player.playernum]->INT;
-					stats[player.playernum]->INT += -statGetINT(stats[player.playernum], player.entity);
-					real_t regenWithoutINT = getDisplayedMPRegen(player.entity, *stats[player.playernum], nullptr, nullptr);
-					stats[player.playernum]->INT = oldINT;
-
-					real_t regenTotal = getDisplayedMPRegen(player.entity, *stats[player.playernum], nullptr, nullptr);
-					real_t regenStatSkill = regenTotal - regenWithoutINT;
-					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_mp_regen_value_format").c_str(), regenStatSkill);
-				}
+					//Sint32 oldINT = stats[player.playernum]->INT;
+					//stats[player.playernum]->INT += -statGetINT(stats[player.playernum], player.entity);
+					//real_t regenWithoutINT = getDisplayedMPRegen(player.entity, *stats[player.playernum], nullptr, nullptr);
+					//stats[player.playernum]->INT = oldINT;
+					//
+					//real_t regenTotal = getDisplayedMPRegen(player.entity, *stats[player.playernum], nullptr, nullptr);
+					//real_t regenStatSkill = regenTotal - regenWithoutINT;
+					//snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_mp_regen_value_format").c_str(), regenStatSkill);
+					real_t bonus = getSpellBonusFromCasterINT(players[player.playernum]->entity, stats[player.playernum], PRO_SORCERY);
+					bonus -= getSpellBonusFromCasterINT(players[player.playernum]->entity, stats[player.playernum], NUMPROFICIENCIES);
+					real_t val = bonus * 100.0;
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_pwr_value_format").c_str(), val);
 					break;
+				}
 				case SHEET_PER:
 				{
 					const int PER = statGetPER(stats[player.playernum], players[player.playernum]->entity);
 					const int range_bonus = std::min(std::max(0, PER / 5), 2);
 					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_light_value_format").c_str(), range_bonus);
-				}
 					break;
+				}
 				case SHEET_CHR:
 				{
 					real_t val = (50 + stats[player.playernum]->getModifiedProficiency(PRO_TRADING)) / 150.f; // sell value
@@ -16784,8 +18571,8 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 					stats[player.playernum]->CHR = stat;
 
 					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_selling_value_format").c_str(), (normalVal - zeroVal) * 100.0);
-				}
 					break;
+				}
 				default:
 					break;
 			}
@@ -16813,7 +18600,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			valueSizes[4] = std::make_pair(entryValue, backingFramePos);
 			txtValueBackingFrame->setDisabled(false);
 		}
-		if ( element == SHEET_PER || element == SHEET_DEX )
+		if ( element == SHEET_PER || element == SHEET_DEX || element == SHEET_CHR || element == SHEET_INT )
 		{
 			// stat extra number display
 			currentHeight += padyMid;
@@ -16827,6 +18614,14 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			else if ( element == SHEET_PER )
 			{
 				snprintf(buf, sizeof(buf), "%s", getHoverTextString("stat_per_sneaking_bonus").c_str());
+			}
+			else if ( element == SHEET_INT )
+			{
+				snprintf(buf, sizeof(buf), "%s", getHoverTextString("stat_int_res_bonus").c_str());
+			}
+			else if ( element == SHEET_CHR )
+			{
+				snprintf(buf, sizeof(buf), "%s", getHoverTextString("stat_chr_pwr_bonus").c_str());
 			}
 			entry->setText(buf);
 			entry->setVJustify(Field::justify_t::TOP);
@@ -16874,7 +18669,11 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 				case SHEET_CON:
 					break;
 				case SHEET_INT:
+				{
+					Sint32 INT = std::max(0, std::min(90, statGetINT(stats[player.playernum], players[player.playernum]->entity)));
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_int_res_value_format").c_str(), INT);
 					break;
+				}
 				case SHEET_PER:
 				{
 					const int PER = statGetPER(stats[player.playernum], players[player.playernum]->entity);
@@ -16884,7 +18683,13 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 				}
 				break;
 				case SHEET_CHR:
+				{
+					real_t bonus = getSpellBonusFromCasterINT(players[player.playernum]->entity, stats[player.playernum], PRO_MYSTICISM);
+					bonus -= getSpellBonusFromCasterINT(players[player.playernum]->entity, stats[player.playernum], NUMPROFICIENCIES);
+					real_t val = bonus * 100.0;
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_pwr_value_format").c_str(), val);
 					break;
+				}
 				default:
 					break;
 			}
@@ -16910,6 +18715,83 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			backingFramePos.x = backingFramePos.x + backingFramePos.w;
 			backingFramePos.h = actualFont->height(true) + extraTextHeightForLowerCharacters - 2;
 			valueSizes[5] = std::make_pair(entryValue, backingFramePos);
+			txtValueBackingFrame->setDisabled(false);
+		}
+		if ( element == SHEET_CHR )
+		{
+			// stat extra number display
+			currentHeight += padyMid;
+			auto entry = characterSheetTooltipTextFields[player.playernum][11]; assert(entry);
+			entry->setDisabled(false);
+			char buf[128] = "";
+			if ( element == SHEET_CHR )
+			{
+				snprintf(buf, sizeof(buf), "%s", getHoverTextString("stat_chr_restore_bonus").c_str());
+			}
+			entry->setText(buf);
+			entry->setVJustify(Field::justify_t::TOP);
+
+			SDL_Rect entryPos = entry->getSize();
+			entryPos.x = padx + padxMid;
+			entryPos.y = currentHeight;
+			entryPos.w = txtPos.w - (padxMid * 2);
+			entry->setSize(entryPos);
+			if ( charsheetTooltipCache[player.playernum].textEntries[element].entry11 != entry->getText() )
+			{
+				entry->reflowTextToFit(0);
+				charsheetTooltipCache[player.playernum].textEntries[element].entry11 = entry->getText();
+			}
+			entryPos.h = actualFont->height(true) * entry->getNumTextLines() + extraTextHeightForLowerCharacters;
+			entry->setSize(entryPos);
+			entry->setColor(defaultColor);
+			currentHeight = std::max(entryPos.y + entryPos.h - extraTextHeightForLowerCharacters, 0);
+			tooltipPos.h = pady1 + currentHeight + pady2;
+
+			auto entryValue = characterSheetTooltipTextFields[player.playernum][12]; assert(entry);
+			entryValue->setDisabled(false);
+			char valueBuf[128] = "";
+			int value = 0;
+			switch ( element )
+			{
+			case SHEET_STR:
+				break;
+			case SHEET_CON:
+				break;
+			case SHEET_INT:
+				break;
+			case SHEET_PER:
+				break;
+			case SHEET_CHR:
+			{
+				int val = Entity::getMPRestoreOnLevelUp(player.entity, stats[player.playernum], MP_MOD, true);
+				snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("stat_chr_restore_format").c_str(), val);
+				break;
+			}
+			default:
+				break;
+			}
+			entryValue->setColor(hudColors.characterSheetNeutral);
+			if ( value < 0 )
+			{
+				entryValue->setColor(hudColors.characterSheetRed);
+			}
+			else if ( value > 0 )
+			{
+				entryValue->setColor(hudColors.characterSheetGreen);
+			}
+			entryValue->setText(valueBuf);
+			entryValue->setSize(entry->getSize());
+			entryValue->setHJustify(Frame::justify_t::LEFT);
+			entryValue->setVJustify(Field::justify_t::TOP);
+
+			auto txtValueBackingFrame = characterSheetTooltipTextBackingFrames[player.playernum][6];
+			SDL_Rect backingFramePos = entryValue->getSize();
+			auto txtValueGet = Text::get(entryValue->getText(), entryValue->getFont(),
+				entryValue->getTextColor(), entryValue->getOutlineColor());
+			longestValue = std::max(longestValue, txtValueGet->getWidth());
+			backingFramePos.x = backingFramePos.x + backingFramePos.w;
+			backingFramePos.h = actualFont->height(true) + extraTextHeightForLowerCharacters - 2;
+			valueSizes[6] = std::make_pair(entryValue, backingFramePos);
 			txtValueBackingFrame->setDisabled(false);
 		}
 
@@ -16954,7 +18836,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 
 			currentHeight += padyMid;
 
-			auto entry = characterSheetTooltipTextFields[player.playernum][11]; assert(entry);
+			auto entry = characterSheetTooltipTextFields[player.playernum][13]; assert(entry);
 			entry->setDisabled(false);
 			char buf[512] = "";
 
@@ -16976,10 +18858,10 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			entryPos.y = currentHeight;
 			entryPos.w = txtPos.w;
 			entry->setSize(entryPos);
-			if ( charsheetTooltipCache[player.playernum].textEntries[element].entry11 != entry->getText() )
+			if ( charsheetTooltipCache[player.playernum].textEntries[element].entry13 != entry->getText() )
 			{
 				entry->reflowTextToFit(0);
-				charsheetTooltipCache[player.playernum].textEntries[element].entry11 = entry->getText();
+				charsheetTooltipCache[player.playernum].textEntries[element].entry13 = entry->getText();
 			}
 			entryPos.h = actualFont->height(true) * entry->getNumTextLines() + extraTextHeightForLowerCharacters;
 			entry->setSize(entryPos);
@@ -17068,7 +18950,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 				{
 					if ( skill.skillId == attackHoverTextInfo.proficiency )
 					{
-						skillName = skill.name;
+						skillName = skill.getSkillName();
 						break;
 					}
 				}
@@ -17101,6 +18983,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 					}
 				}
 				if ( attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_MELEE_WEAPON
+					|| attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_RAPIER
 					|| attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_WHIP )
 				{
 					snprintf(descBuf, sizeof(descBuf), getHoverTextString("attributes_atk_melee_desc").c_str(), skillName.c_str());
@@ -17117,6 +19000,11 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 					descText = descBuf;
 				}
 				else if ( attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_THROWN )
+				{
+					snprintf(descBuf, sizeof(descBuf), getHoverTextString("attributes_atk_thrown_desc").c_str(), skillName.c_str());
+					descText = descBuf;
+				}
+				else if ( attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_THROWN_MISC )
 				{
 					snprintf(descBuf, sizeof(descBuf), getHoverTextString("attributes_atk_thrown_desc").c_str(), skillName.c_str());
 					descText = descBuf;
@@ -17163,6 +19051,19 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 				break;
 			case SHEET_POW:
 				titleText = getHoverTextString("attributes_pwr_title");
+				if ( auto spell = player.magic.selectedSpell() )
+				{
+					for ( auto& skill : player.skillSheet.skillSheetData.skillEntries )
+					{
+						if ( skill.skillId == spell->skillID )
+						{
+							char buf[128];
+							snprintf(buf, sizeof(buf), getHoverTextString("attributes_pwr_title_skill").c_str(), skill.getSkillName().c_str());
+							titleText = buf;
+							break;
+						}
+					}
+				}
 				descText = getHoverTextString("attributes_pwr_desc");
 				break;
 			case SHEET_RES:
@@ -17272,7 +19173,15 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_pwr_base").c_str());
 					std::string tag = "MAGIC_SPELLPOWER_TOTAL";
 					std::string formatValue = "%d";
-					std::string pwrBonus = formatSkillSheetEffects(player.playernum, PRO_MAGIC, tag, formatValue);
+					std::string pwrBonus = "";
+					if ( auto spell = player.magic.selectedSpell() )
+					{
+						pwrBonus = formatSkillSheetEffects(player.playernum, spell->skillID, tag, formatValue);
+					}
+					else
+					{
+						pwrBonus = formatSkillSheetEffects(player.playernum, NUMPROFICIENCIES, tag, formatValue);
+					}
 					Sint32 pwr = 100 + std::stoi(pwrBonus);
 					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_pwr_nobonus_format").c_str(), pwr);
 				}
@@ -17281,7 +19190,6 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 				{
 					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_res_base").c_str());
 					real_t resistance = 100.0 * Entity::getDamageTableMultiplier(player.entity, *stats[player.playernum], DAMAGE_TABLE_MAGIC);
-					resistance /= (Entity::getMagicResistance(stats[player.playernum]) + 1);
 					resistance = 100.0 - resistance;
 					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_res_nobonus_format").c_str(), (int)resistance);
 				}
@@ -17395,6 +19303,18 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 							glyphBacking->path = actionPromptBackingIconPath00;
 						}
 					}
+					else if ( attackHoverTextInfo.proficiency == PRO_LEGACY_MAGIC || attackHoverTextInfo.proficiency == PRO_LEGACY_SPELLCASTING )
+					{
+						glyphBacking->path = actionPromptBackingIconPath00;
+						for ( auto& skill : player.skillSheet.skillSheetData.skillEntries )
+						{
+							if ( skill.skillId == attackHoverTextInfo.proficiency )
+							{
+								glyphIcon->path = skill.skillIconPath;
+								break;
+							}
+						}
+					}
 					break;
 				case SHEET_AC:
 					glyphIcon->path = getHoverTextString("icon_ac_path");
@@ -17477,6 +19397,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			if ( element == SHEET_ATK )
 			{
 				if ( attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_THROWN
+					|| attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_THROWN_MISC
 					|| attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_THROWN_GEM
 					|| attackHoverTextInfo.hoverType == AttackHoverText_t::ATK_HOVER_TYPE_PICKAXE )
 				{
@@ -17571,7 +19492,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 					{
 						if ( skill.skillId == PRO_SHIELD )
 						{
-							skillName = skill.name;
+							skillName = skill.getSkillName();
 							skillLVL = stats[player.playernum]->getModifiedProficiency(skill.skillId);
 							break;
 						}
@@ -17591,7 +19512,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_pwr_spellbook").c_str());
 					std::string tag = "MAGIC_SPELLPOWER_INT";
 					std::string formatValue = "%d";
-					std::string pwrBonus = formatSkillSheetEffects(player.playernum, PRO_MAGIC, tag, formatValue);
+					std::string pwrBonus = formatSkillSheetEffects(player.playernum, NUMPROFICIENCIES, tag, formatValue);
 					Sint32 pwr = std::stoi(pwrBonus) / 2;
 					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_pwr_bonus_format").c_str(), pwr);
 				}
@@ -17599,7 +19520,8 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 				case SHEET_RES:
 				{
 					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_res_sources").c_str());
-					int sources = Entity::getMagicResistance(stats[player.playernum]);
+					int sources = 0;
+					Entity::getDamageTableMultiplier(player.entity, *stats[player.playernum], DAMAGE_TABLE_MAGIC, nullptr, &sources);
 					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_res_sources_format").c_str(), sources);
 				}
 					break;
@@ -17867,7 +19789,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 					capitalizeString(race);
 
 					snprintf(buf, sizeof(buf), getHoverTextString("attributes_rgn_base_value").c_str(), race.c_str());
-					real_t regen = 100.0;
+					/*real_t regen = 100.0;
 					if ( !(svFlags & SV_FLAG_HUNGER) )
 					{
 						regen = 0.0;
@@ -17875,8 +19797,21 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 					if ( type == SKELETON )
 					{
 						regen = 25.0;
-					}
-					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_rgn_bonus_format").c_str(), regen);
+					}*/
+
+					Sint32 oldLVL = 0;
+					Sint32 oldStats[NUMSTATS];
+					//characterSheetTooltipSetZeroStat(player.entity, stats[player.playernum], &oldLVL, oldStats);
+					//real_t baseRegen = getDisplayedMPRegen(player.entity, *stats[player.playernum], nullptr, nullptr, true);
+					//characterSheetTooltipRestoreStats(stats[player.playernum], &oldLVL, oldStats);
+
+					characterSheetTooltipSetZeroStat(player.entity, stats[player.playernum], nullptr, oldStats);
+					real_t regenWithoutStats = getDisplayedHPRegen(player.entity, *stats[player.playernum], nullptr, nullptr, true);
+					characterSheetTooltipRestoreStats(stats[player.playernum], nullptr, oldStats);
+
+					real_t displayedValue = regenWithoutStats;
+
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_rgn_bonus_format").c_str(), displayedValue);
 				}
 					break;
 				case SHEET_RGN_MP:
@@ -17884,7 +19819,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 					if ( isAutomatonHTRegen )
 					{
 						snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_rgn_ht_base_bonus").c_str());
-						real_t baseHTModifier = 100.f;
+						real_t baseHTModifier = 100.0 / (MAGIC_REGEN_AUTOMATON_TIME / (real_t)MAGIC_REGEN_TIME);
 						if ( stats[player.playernum]->HUNGER <= 300 )
 						{
 							int baseTime = getBaseManaRegen(player.entity, *stats[player.playernum]);
@@ -17948,12 +19883,24 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 						capitalizeString(race);
 
 						snprintf(buf, sizeof(buf), getHoverTextString("attributes_rgn_base_value").c_str(), race.c_str());
-						real_t regen = 100.0;
+						/*real_t regen = 100.0;
 						if ( type == SKELETON )
 						{
 							regen = 25.0;
-						}
-						snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_rgn_bonus_format").c_str(), regen);
+						}*/
+
+						Sint32 oldLVL = 0;
+						Sint32 oldStats[NUMSTATS];
+						//characterSheetTooltipSetZeroStat(player.entity, stats[player.playernum], &oldLVL, oldStats);
+						//real_t baseRegen = getDisplayedMPRegen(player.entity, *stats[player.playernum], nullptr, nullptr, true);
+						//characterSheetTooltipRestoreStats(stats[player.playernum], &oldLVL, oldStats);
+
+						characterSheetTooltipSetZeroStat(player.entity, stats[player.playernum], nullptr, oldStats);
+						real_t regenWithoutStats = getDisplayedMPRegen(player.entity, *stats[player.playernum], nullptr, nullptr, true);
+						characterSheetTooltipRestoreStats(stats[player.playernum], nullptr, oldStats);
+
+						real_t displayedValue = regenWithoutStats;
+						snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_rgn_bonus_format").c_str(), displayedValue);
 					}
 				}
 				break;
@@ -18090,19 +20037,46 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 				{
 					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_pwr_entry_attr_bonus").c_str());
 					std::string tag = "MAGIC_SPELLPOWER_INT";
-					std::string pwrINTBonus = formatSkillSheetEffects(player.playernum, PRO_MAGIC, tag, getHoverTextString("attributes_pwr_bonus_format"));
+					std::string pwrINTBonus = "";
+					if ( auto spell = player.magic.selectedSpell() )
+					{
+						pwrINTBonus = formatSkillSheetEffects(player.playernum, spell->skillID, tag, getHoverTextString("attributes_pwr_bonus_format"));
+						if ( spell->skillID == PRO_MYSTICISM )
+						{
+							snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_pwr_entry_attr_bonus_mysticism").c_str());
+						}
+						else if ( spell->skillID == PRO_THAUMATURGY )
+						{
+							snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_pwr_entry_attr_bonus_thaumaturgy").c_str());
+						}
+					}
+					else
+					{
+						pwrINTBonus = formatSkillSheetEffects(player.playernum, NUMPROFICIENCIES, tag, getHoverTextString("attributes_pwr_bonus_format"));
+					}
 					snprintf(valueBuf, sizeof(valueBuf), "%s", pwrINTBonus.c_str());
 				}
 					break;
 				case SHEET_RES:
 				{
-					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_res_entry_items_bonus").c_str());
-					Sint32 baseResist = 100 * damagetables[stats[player.playernum]->type][DAMAGE_TABLE_MAGIC];
-					baseResist = 100 - baseResist;
-					real_t resistance = 100.0 * Entity::getDamageTableMultiplier(player.entity, *stats[player.playernum], DAMAGE_TABLE_MAGIC);
-					resistance /= (Entity::getMagicResistance(stats[player.playernum]) + 1);
-					resistance = (100.0 - resistance);
-					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_res_bonus_format").c_str(), (int)resistance - baseResist);
+					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_res_entry_int_bonus").c_str());
+
+					//Sint32 oldStats[NUMSTATS];
+					//characterSheetTooltipSetZeroStat(player.entity, stats[player.playernum], nullptr, oldStats);
+					//real_t resistanceNoINT = 100.0 * Entity::getDamageTableMultiplier(player.entity, *stats[player.playernum], DAMAGE_TABLE_MAGIC);
+					//characterSheetTooltipRestoreStats(stats[player.playernum], nullptr, oldStats);
+
+					//real_t resistance = 100.0 * Entity::getDamageTableMultiplier(player.entity, *stats[player.playernum], DAMAGE_TABLE_MAGIC);
+
+					real_t damageMultiplier = damagetables[stats[player.playernum]->type][DAMAGE_TABLE_MAGIC];
+
+					real_t resistanceFromINT = std::max(0, std::min(90, statGetINT(stats[player.playernum], player.entity)));
+					if ( damageMultiplier < 1.0 )
+					{
+						resistanceFromINT *= (1 - std::max(1.0 - damageMultiplier, 0.0));
+					}
+					
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_res_bonus_format").c_str(), (int)resistanceFromINT);
 				}
 					break;
 				case SHEET_RGN:
@@ -18120,7 +20094,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 							}
 						}
 					}
-					real_t baseRegen = 100.0;
+					/*/real_t baseRegen = 100.0;
 					if ( !(svFlags & SV_FLAG_HUNGER) )
 					{
 						baseRegen = 0.0;
@@ -18128,11 +20102,15 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 					if ( type == SKELETON )
 					{
 						baseRegen = 25.0;
-					}
+					}*/
 
 					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_rgn_entry_items_bonus").c_str());
-					real_t regen = getDisplayedHPRegen(player.entity, *stats[player.playernum], nullptr, nullptr);
-					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_rgn_bonus_format").c_str(), regen - baseRegen);
+
+					real_t regenWithoutItems = getDisplayedHPRegen(player.entity, *stats[player.playernum], nullptr, nullptr, true);
+					real_t regenTotal = getDisplayedHPRegen(player.entity, *stats[player.playernum], nullptr, nullptr);
+
+					real_t regenItemsEffects = regenTotal - regenWithoutItems;
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_rgn_bonus_format").c_str(), regenItemsEffects);
 				}
 					break;
 				case SHEET_RGN_MP:
@@ -18140,7 +20118,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 					if ( isAutomatonHTRegen )
 					{
 						snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_rgn_entry_items_bonus").c_str());
-						real_t baseHTModifier = 100.f;
+						real_t baseHTModifier = 100.0 / (MAGIC_REGEN_AUTOMATON_TIME / (real_t)MAGIC_REGEN_TIME);
 						if ( stats[player.playernum]->HUNGER <= 300 )
 						{
 							int baseTime = getBaseManaRegen(player.entity, *stats[player.playernum]);
@@ -18202,21 +20180,13 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 								}
 							}
 						}
-						real_t baseRegen = 100.0;
-						if ( type == SKELETON )
-						{
-							baseRegen = 25.0;
-						}
 
 						snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_rgn_entry_items_bonus").c_str());
-						Sint32 oldINT = stats[player.playernum]->INT;
-						stats[player.playernum]->INT += -statGetINT(stats[player.playernum], player.entity);
-						real_t regenWithoutINT = getDisplayedMPRegen(player.entity, *stats[player.playernum], nullptr, nullptr);
-						stats[player.playernum]->INT = oldINT;
-						real_t regenTotal = getDisplayedMPRegen(player.entity, *stats[player.playernum], nullptr, nullptr);
-						real_t regenStatSkill = regenTotal - regenWithoutINT;
 
-						real_t regenItemsEffects = regenTotal - regenStatSkill - baseRegen;
+						real_t regenWithoutItems = getDisplayedMPRegen(player.entity, *stats[player.playernum], nullptr, nullptr, true);
+						real_t regenTotal = getDisplayedMPRegen(player.entity, *stats[player.playernum], nullptr, nullptr);
+
+						real_t regenItemsEffects = regenTotal - regenWithoutItems;
 						snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_rgn_bonus_format").c_str(), regenItemsEffects);
 					}
 				}
@@ -18318,7 +20288,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 
 		if ( element == SHEET_ATK && getAttackTooltipLines(player.playernum, attackHoverTextInfo, 5, buf, valueBuf)
 			|| (element != SHEET_ATK 
-				&& element != SHEET_RES 
+				/*&& element != SHEET_RES */
 				&& !(element == SHEET_RGN && false/*&& !(svFlags & SV_FLAG_HUNGER) && stats[player.playernum]->type != SKELETON*/)
 				&& !(element == SHEET_RGN_MP && isInsectoidENRegen && !(svFlags & SV_FLAG_HUNGER))
 				) 
@@ -18357,26 +20327,58 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 				{
 					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_pwr_entry_items_bonus").c_str());
 					std::string tag = "MAGIC_SPELLPOWER_EQUIPMENT";
-					std::string pwrINTBonus = formatSkillSheetEffects(player.playernum, PRO_MAGIC, tag, getHoverTextString("attributes_pwr_bonus_format"));
+					std::string pwrINTBonus = "";
+					if ( auto spell = player.magic.selectedSpell() )
+					{
+						pwrINTBonus = formatSkillSheetEffects(player.playernum, spell->skillID, tag, getHoverTextString("attributes_pwr_bonus_format"));
+					}
+					else
+					{
+						pwrINTBonus = formatSkillSheetEffects(player.playernum, NUMPROFICIENCIES, tag, getHoverTextString("attributes_pwr_bonus_format"));
+					}
 					snprintf(valueBuf, sizeof(valueBuf), "%s", pwrINTBonus.c_str());
 				}
 					break;
 				case SHEET_RES:
+				{
+					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_res_entry_items_bonus").c_str());
+					Sint32 baseResist = 100 * damagetables[stats[player.playernum]->type][DAMAGE_TABLE_MAGIC];
+					baseResist = 100 - baseResist;
+					
+					//Sint32 oldStats[NUMSTATS];
+					//characterSheetTooltipSetZeroStat(player.entity, stats[player.playernum], nullptr, oldStats);
+					//real_t resistanceNoINT = 100.0 * Entity::getDamageTableMultiplier(player.entity, *stats[player.playernum], DAMAGE_TABLE_MAGIC);
+					//characterSheetTooltipRestoreStats(stats[player.playernum], nullptr, oldStats);
+					//
+					//real_t resistanceFromINT = (100.0 - resistance) - (100.0 - resistanceNoINT);
+
+					real_t resistance = 100.0 * Entity::getDamageTableMultiplier(player.entity, *stats[player.playernum], DAMAGE_TABLE_MAGIC);
+					real_t damageMultiplier = damagetables[stats[player.playernum]->type][DAMAGE_TABLE_MAGIC];
+
+					real_t resistanceFromINT = std::max(0, std::min(90, statGetINT(stats[player.playernum], player.entity)));
+					if ( damageMultiplier < 1.0 )
+					{
+						resistanceFromINT *= (1 - std::max(1.0 - damageMultiplier, 0.0));
+					}
+
+					resistance = (100.0 - resistance) - resistanceFromINT - baseResist;
+
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_res_bonus_format").c_str(), (int)resistance);
 					break;
+				}
 				case SHEET_RGN:
 				{
-					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_rgn_plain_display").c_str());
-					real_t regen = (static_cast<real_t>(Entity::getHealthRegenInterval(player.entity, *stats[player.playernum], true)) / TICKS_PER_SECOND);
-					if ( regen <= 0.0 )
-					{
-						snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_rgn_hp_per_second_format_zero").c_str(),
-							(static_cast<real_t>(HEAL_TIME) / TICKS_PER_SECOND));
-					}
-					else
-					{
-						snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_rgn_hp_per_second_format").c_str(),
-							regen);
-					}
+					Sint32 oldStats[NUMSTATS];
+					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_rgn_hp_entry_statskill_bonus").c_str());
+
+					characterSheetTooltipSetZeroStat(player.entity, stats[player.playernum], nullptr, oldStats);
+					real_t regenWithoutStats = getDisplayedHPRegen(player.entity, *stats[player.playernum], nullptr, nullptr, true);
+					characterSheetTooltipRestoreStats(stats[player.playernum], nullptr, oldStats);
+
+					real_t regenTotal = getDisplayedHPRegen(player.entity, *stats[player.playernum], nullptr, nullptr, true);
+					real_t regenStatSkill = regenTotal - regenWithoutStats;
+
+					snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_rgn_bonus_format").c_str(), regenStatSkill);
 				}
 					break;
 				case SHEET_RGN_MP:
@@ -18421,20 +20423,26 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 								}
 							}
 						}
-						real_t baseRegen = 100.0;
+						/*real_t baseRegen = 100.0;
 						if ( type == SKELETON )
 						{
 							baseRegen = 25.0;
-						}
+						}*/
+						//real_t baseRegen = 100.0;
+						//Sint32 oldLVL = 0;
+						//characterSheetTooltipSetZeroStat(player.entity, stats[player.playernum], nullptr, oldStats);
+						//baseRegen = getDisplayedMPRegen(player.entity, *stats[player.playernum], nullptr, nullptr);
+						//characterSheetTooltipRestoreStats(stats[player.playernum], nullptr, oldStats);
 
+						Sint32 oldStats[NUMSTATS];
 						snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_rgn_entry_statskill_bonus").c_str());
-						Sint32 oldINT = stats[player.playernum]->INT;
-						stats[player.playernum]->INT += -statGetINT(stats[player.playernum], player.entity);
-						real_t regenWithoutINT = getDisplayedMPRegen(player.entity, *stats[player.playernum], nullptr, nullptr);
-						stats[player.playernum]->INT = oldINT;
 
-						real_t regenTotal = getDisplayedMPRegen(player.entity, *stats[player.playernum], nullptr, nullptr);
-						real_t regenStatSkill = regenTotal - regenWithoutINT;
+						characterSheetTooltipSetZeroStat(player.entity, stats[player.playernum], nullptr, oldStats);
+						real_t regenWithoutStats = getDisplayedMPRegen(player.entity, *stats[player.playernum], nullptr, nullptr, true);
+						characterSheetTooltipRestoreStats(stats[player.playernum], nullptr, oldStats);
+
+						real_t regenTotal = getDisplayedMPRegen(player.entity, *stats[player.playernum], nullptr, nullptr, true);
+						real_t regenStatSkill = regenTotal - regenWithoutStats;
 
 						snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_rgn_bonus_format").c_str(), regenStatSkill);
 					}
@@ -18540,7 +20548,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			entryValue->setHJustify(Frame::justify_t::LEFT);
 			entryValue->setVJustify(Field::justify_t::TOP);
 
-			if ( element == SHEET_RGN || (element == SHEET_RGN_MP && (isAutomatonHTRegen || isInsectoidENRegen)) )
+			if ( /*element == SHEET_RGN ||*/ (element == SHEET_RGN_MP && (isAutomatonHTRegen || isInsectoidENRegen)) )
 			{
 				// special rule here to ignore size of this long line
 				auto txtValueBackingFrame = characterSheetTooltipTextBackingFrames[player.playernum][currentTextBackingFrameIndex];
@@ -18575,7 +20583,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		}
 
 		if ( element == SHEET_ATK && getAttackTooltipLines(player.playernum, attackHoverTextInfo, 6, buf, valueBuf)
-			|| (element == SHEET_RGN_MP && !isInsectoidENRegen) || element == SHEET_WGT )
+			|| (element == SHEET_RGN_MP && !isInsectoidENRegen) || element == SHEET_WGT || element == SHEET_RGN )
 		{
 			// extra number display - line 6
 			hasEntryInfoLines = true;
@@ -18592,6 +20600,22 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 				case SHEET_POW:
 					break;
 				case SHEET_RES:
+					break;
+				case SHEET_RGN:
+				{
+					snprintf(buf, sizeof(buf), "%s", getHoverTextString("attributes_rgn_plain_display").c_str());
+					real_t regen = (static_cast<real_t>(Entity::getHealthRegenInterval(player.entity, *stats[player.playernum], true)) / TICKS_PER_SECOND);
+					if ( regen <= 0.0 )
+					{
+						snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_rgn_hp_per_second_format_zero").c_str(),
+							(static_cast<real_t>(HEAL_TIME) / TICKS_PER_SECOND));
+					}
+					else
+					{
+						snprintf(valueBuf, sizeof(valueBuf), getHoverTextString("attributes_rgn_hp_per_second_format").c_str(),
+							regen);
+					}
+				}
 					break;
 				case SHEET_RGN_MP:
 				{
@@ -18725,7 +20749,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			entryValue->setHJustify(Frame::justify_t::LEFT);
 			entryValue->setVJustify(Field::justify_t::TOP);
 
-			if ( element == SHEET_RGN_MP )
+			if ( element == SHEET_RGN_MP || element == SHEET_RGN )
 			{
 				// special rule here to ignore size of this long line
 				auto txtValueBackingFrame = characterSheetTooltipTextBackingFrames[player.playernum][currentTextBackingFrameIndex];
@@ -18976,7 +21000,7 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 		
 		std::string descriptionText = mapDisplayNamesDescriptions[map.name].second.c_str();
 		std::string mapDetailsText = "";
-		auto mapDetails = Player::Minimap_t::mapDetails;
+		auto& mapDetails = Player::Minimap_t::mapDetails;
 		for ( auto& detail : mapDetails )
 		{
 			if ( mapDetailsText != "" )
@@ -19143,7 +21167,6 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			}
 		}
 
-		char titleBuf[64];
 		std::string titleText = getHoverTextString("race_title_normal");
 		if ( players[player.playernum]->entity )
 		{
@@ -19300,7 +21323,6 @@ void Player::CharacterSheet_t::updateCharacterSheetTooltip(SheetElements element
 			}
 		}
 
-		char titleBuf[64];
 		if ( player.entity && player.entity->effectShapeshift != 0 )
 		{
 			txt->setText(getHoverTextString("class_title_shapeshift").c_str());
@@ -19537,6 +21559,10 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 		{
 			className->setTextColor(hudColors.characterDLC2ClassText);
 		}
+		else if ( client_classes[player.playernum] >= CLASS_BARD && client_classes[player.playernum] <= CLASS_PALADIN )
+		{
+			className->setTextColor(hudColors.characterDLC3ClassText);
+		}
 		else
 		{
 			className->setTextColor(hudColors.characterBaseClassText);
@@ -19659,6 +21685,14 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 				{
 					sexImg->path = "*#images/ui/CharSheet/HUD_CharSheet_Sex_AutomatonM_02.png";
 				}
+				else if ( type == DRYAD )
+				{
+					sexImg->path = "*#images/ui/CharSheet/HUD_CharSheet_Height_T_00.png";
+				}
+				else if ( type == MYCONID )
+				{
+					sexImg->path = "*#images/ui/CharSheet/HUD_CharSheet_Height_S_00.png";
+				}
 				else
 				{
 					sexImg->path = "*#images/ui/CharSheet/HUD_CharSheet_Sex_M_02.png";
@@ -19671,6 +21705,14 @@ void Player::CharacterSheet_t::updateCharacterInfo()
 				if ( type == AUTOMATON )
 				{
 					sexImg->path = "*#images/ui/CharSheet/HUD_CharSheet_Sex_AutomatonF_02.png";
+				}
+				else if ( type == DRYAD )
+				{
+					sexImg->path = "*#images/ui/CharSheet/HUD_CharSheet_Height_S_00.png";
+				}
+				else if ( type == MYCONID )
+				{
+					sexImg->path = "*#images/ui/CharSheet/HUD_CharSheet_Height_T_00.png";
 				}
 				else
 				{
@@ -20240,7 +22282,15 @@ void Player::CharacterSheet_t::updateAttributes()
 
 	if ( auto field = attributesInnerFrame->findField("pwr text stat") )
 	{
-		real_t spellPower = (getBonusFromCasterOfSpellElement(player.entity, stats[player.playernum], nullptr, SPELL_NONE) * 100.0) + 100.0;
+		real_t spellPower = 0.0;
+		if ( auto spell = player.magic.selectedSpell() )
+		{
+			spellPower = (getBonusFromCasterOfSpellElement(player.entity, stats[player.playernum], nullptr, spell->ID, spell->skillID) * 100.0) + 100.0;
+		}
+		else
+		{
+			spellPower = (getBonusFromCasterOfSpellElement(player.entity, stats[player.playernum], nullptr, SPELL_NONE, NUMPROFICIENCIES) * 100.0) + 100.0;
+		}
 		snprintf(buf, sizeof(buf), "%.f%%", spellPower);
 		if ( strcmp(buf, field->getText()) )
 		{
@@ -20265,8 +22315,15 @@ void Player::CharacterSheet_t::updateAttributes()
 	if ( auto field = attributesInnerFrame->findField("res text stat") )
 	{
 		real_t resistance = 100.0 * Entity::getDamageTableMultiplier(player.entity, *stats[player.playernum], DAMAGE_TABLE_MAGIC);
-		resistance /= (Entity::getMagicResistance(stats[player.playernum]) + 1);
+
+		Sint32 oldStats[NUMSTATS];
+		characterSheetTooltipSetZeroStat(player.entity, stats[player.playernum], nullptr, oldStats);
+		real_t resistanceNoINT = 100.0 * Entity::getDamageTableMultiplier(player.entity, *stats[player.playernum], DAMAGE_TABLE_MAGIC);
+		characterSheetTooltipRestoreStats(stats[player.playernum], nullptr, oldStats);
+		
 		resistance = -(resistance - 100.0);
+		resistanceNoINT = -(resistanceNoINT - 100.0);
+
 		snprintf(buf, sizeof(buf), "%d%%", (int)resistance);
 		if ( strcmp(buf, field->getText()) )
 		{
@@ -20274,11 +22331,11 @@ void Player::CharacterSheet_t::updateAttributes()
 			charsheetTooltipCache[player.playernum].manualUpdate = true;
 		}
 		field->setColor(hudColors.characterSheetNeutral);
-		if ( resistance > 0.01 )
+		if ( (int)resistance > 0 && (int)resistanceNoINT > 0 )
 		{
 			field->setColor(hudColors.characterSheetGreen);
 		}
-		else if ( resistance < -0.01 )
+		else if ( (int)resistance < 0 )
 		{
 			field->setColor(hudColors.characterSheetRed);
 		}
@@ -20448,6 +22505,13 @@ void Player::Inventory_t::Appraisal_t::updateAppraisalAnim()
 			itemNotifyAnimState = 0;
 		}
 	}
+
+	spellLearnAnim = 1.0;
+	int interval = 2 * TICKS_PER_SECOND;
+	if ( ticks % (2 * interval) <= interval )
+	{
+		spellLearnAnim = 1.0 - 0.25 * std::max(0.0, sin((ticks % interval) * PI / (real_t)interval));
+	}
 }
 
 void drawClockwiseSquareMesh(const char* texture, float lerp, SDL_Rect rect, Uint32 color) {
@@ -20480,9 +22544,19 @@ void drawUnidentifiedItemEffectHotbarCallback(const Widget& widget, SDL_Rect rec
 			opacity *= parent->getOpacity() / 100.0;
 		}
         const auto& appraisal = players[player]->inventoryUI.appraisal;
-        drawClockwiseSquareMesh("images/ui/HUD/hotbar/Appraisal_Icon_OutlineHotbar.png",
-            (appraisal.timermax - appraisal.timer) / (float)appraisal.timermax,
-            drawRect, makeColor(255, 255, 255, opacity));
+
+		if ( appraisal.current_item == appraisal.manual_appraised_item )
+		{
+			drawClockwiseSquareMesh("images/ui/HUD/hotbar/Appraisal_Icon_OutlineHotbar_Manual.png",
+			    (appraisal.timermax - appraisal.timer) / (float)appraisal.timermax,
+			    drawRect, makeColor(255, 255, 255, opacity));
+		}
+		else
+		{
+			drawClockwiseSquareMesh("images/ui/HUD/hotbar/Appraisal_Icon_OutlineHotbar.png",
+				(appraisal.timermax - appraisal.timer) / (float)appraisal.timermax,
+				drawRect, makeColor(255, 255, 255, opacity));
+		}
 	}
 
 	auto drawMesh = [](real_t x, real_t y, real_t size, SDL_Rect rect, Uint32 color) {
@@ -20537,9 +22611,19 @@ void drawUnidentifiedItemEffectCallback(const Widget& widget, SDL_Rect rect)
 		{
 			opacity *= parent->getOpacity() / 100.0;
 		}
-		drawClockwiseSquareMesh("images/ui/Inventory/Appraisal_Icon_Outline.png",
-            (appraisal.timermax - appraisal.timer) / (float)appraisal.timermax,
-            drawRect, makeColor(255, 255, 255, opacity));
+
+		if ( appraisal.current_item == appraisal.manual_appraised_item )
+		{
+			drawClockwiseSquareMesh("images/ui/Inventory/Appraisal_Icon_Outline_Manual.png",
+				(appraisal.timermax - appraisal.timer) / (float)appraisal.timermax,
+				drawRect, makeColor(255, 255, 255, opacity));
+		}
+		else
+		{
+			drawClockwiseSquareMesh("images/ui/Inventory/Appraisal_Icon_Outline.png",
+			    (appraisal.timermax - appraisal.timer) / (float)appraisal.timermax,
+			    drawRect, makeColor(255, 255, 255, opacity));
+		}
 	}
     
     auto drawMesh = [](real_t x, real_t y, real_t size, SDL_Rect rect, Uint32 color) {
@@ -20943,6 +23027,10 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 			if ( iconLabelImg->path != "" )
 			{
 				iconLabelImg->disabled = (!item->identified || hiddenItemInGUI);
+				if ( item->type == SPELL_ITEM && !(slotType && *slotType == GAMEUI_FRAMEDATA_SPELL_LEARNABLE) )
+				{
+					iconLabelImg->disabled = true;
+				}
 			}
 			iconLabelImg->color = spriteImage->color;
 			if ( auto iconLabelBgImg = spriteImageFrame->getImages()[SLOTFRAME_ITEMSPRITE_LABELBG_IMG]/*spriteImageFrame->findImage("icon label bg img")*/ )
@@ -20953,6 +23041,14 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 				iconLabelBgImg->pos.y = 1;
 				iconLabelBgImg->disabled = iconLabelImg->disabled || disableBackgrounds;
 				iconLabelBgImg->color = makeColor(255, 255, 255, 255);
+				if ( item->type == SPELL_ITEM )
+				{
+					iconLabelBgImg->disabled = true;
+					SDL_Color color;
+					getColor(iconLabelImg->color, &color.r, &color.g, &color.b, &color.a);
+					color.a *= (players[player]->inventoryUI.appraisal.spellLearnAnim);
+					iconLabelImg->color = makeColor(color.r, color.g, color.b, color.a);
+				}
 			}
 		}
 		if ( slotFrame->getUserData() )
@@ -20971,15 +23067,35 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 	{
 		qtyFrame->setDisabled(true);
 		bool drawQty = (item->count > 1) ? true : false;
+		Uint32 qtyColor = 0xFFFFFFFF;
 		if ( !drawQty && GenericGUI[player].isNodeTinkeringCraftableItem(item->node) )
 		{
 			drawQty = true;
 		}
 		else if ( slotType && *slotType == GAMEUI_FRAMEDATA_ALCHEMY_RECIPE_ENTRY )
 		{
-			drawQty = true;
+			if ( item == &GenericGUI[player].alchemyGUI.torchCount )
+			{
+				if ( item->count >= 0 )
+				{
+					drawQty = true;
+					if ( item->count < 4 )
+					{
+						qtyColor = hudColors.characterSheetRed;
+					}
+				}
+			}
+			else
+			{
+				drawQty = true;
+			}
 		}
-		Uint32 qtyColor = 0xFFFFFFFF;
+		else if ( slotType && *slotType == GAMEUI_FRAMEDATA_ALCHEMY_MISSING_QTY )
+		{
+			drawQty = true;
+			qtyColor = hudColors.characterSheetRed;
+		}
+
 		bool stackable = false;
 		Item*& selectedItem = inputs.getUIInteraction(player)->selectedItem;
 		if ( selectedItem && !isHotbarIcon && !alchemyResultIcon 
@@ -21030,6 +23146,33 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 					qtyText->setText(qtybuf);
 				}
 				qtyText->setColor(qtyColor);
+			}
+		}
+		else
+		{
+			if ( item->type == SPELL_ITEM 
+				&& (item->appearance == SPELL_LEAD_BOLT || item->appearance == SPELL_MERCURY_BOLT
+					|| item->appearance == SPELL_FORGE_METAL_SCRAP || item->appearance == SPELL_FORGE_MAGIC_SCRAP) )
+			{
+				if ( spell_t* spell = getSpellFromItem(player, item, true) )
+				{
+					qtyFrame->setDisabled(false);
+					if ( auto qtyText = qtyFrame->getFields()[SLOTFRAME_QTY_TEXT]/*qtyFrame->findField("quantity text")*/ )
+					{
+						char qtybuf[32] = "";
+						int cost = getGoldCostOfSpell(spell, player);
+						if ( cost > stats[player]->GOLD )
+						{
+							qtyColor = hudColors.characterSheetRed;
+						}
+						snprintf(qtybuf, sizeof(qtybuf), "%d", cost);
+						if ( strcmp(qtyText->getText(), qtybuf) )
+						{
+							qtyText->setText(qtybuf);
+						}
+						qtyText->setColor(qtyColor);
+					}
+				}
 			}
 		}
 	}
@@ -21712,6 +23855,21 @@ void createInventoryTooltipFrame(const int player,
 		tooltipTextField->setHJustify(Field::justify_t::LEFT);
 		tooltipTextField->setVJustify(Field::justify_t::CENTER);
 		tooltipTextField->setColor(makeColor( 188, 154, 114, 255));
+
+		auto spellImg = valueFrame->addImage(SDL_Rect{ 0, 0, 16, 16 },
+			0xFFFFFFFF,
+			"*#images/ui/Inventory/tooltips/HUD_Tooltip_Icon_WGT_00.png",
+			"inventory mouse tooltip spell skill image");
+		spellImg->disabled = true;
+
+		tooltipTextField = valueFrame->addField("inventory mouse tooltip spell skill value", 64);
+		tooltipTextField->setText("Nothing");
+		tooltipTextField->setSize(SDL_Rect{ 0, 0, 0, 0 });
+		tooltipTextField->setFont(bodyFont.c_str());
+		tooltipTextField->setHJustify(Field::justify_t::LEFT);
+		tooltipTextField->setVJustify(Field::justify_t::CENTER);
+		tooltipTextField->setColor(makeColor(188, 154, 114, 255));
+		tooltipTextField->setDisabled(true);
 	}
 	if ( auto promptFrame = tooltipFrame->addFrame("inventory mouse tooltip prompt frame") )
 	{
@@ -22983,6 +25141,10 @@ void drawObjectPreview(std::string modelsPath, Entity* object, SDL_Rect pos, rea
 						{
 							entity = newEntity(989, 0, &limb.children, nullptr);
 						}
+						else if ( modelsPath == "arcane_boulder" )
+						{
+							entity = newEntity(990, 0, &limb.children, nullptr);
+						}
 						else
 						{
 							entity = newEntity(245, 0, &limb.children, nullptr);
@@ -23203,6 +25365,19 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 
 	//TempTexture* minimapTexture = new TempTexture();
 	auto playerEntity = Player::getPlayerInteractEntity(player);
+	if ( playerEntity && playerEntity->behavior == &actDeathGhost )
+	{
+		if ( playerEntity->skill[10] != 0 ) // cosmetic ghost
+		{
+			if ( auto node = list_Node(&playerEntity->children, 2) )
+			{
+				if ( Entity* entity = (Entity*)node->element )
+				{
+					playerEntity = entity;
+				}
+			}
+		}
+	}
 
 	if ( playerEntity )
 	{
@@ -23214,6 +25389,22 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 		view.y = playerEntity->y / 16.0 + (.92 * sin(offsetyaw
 			+ (*cvar_char_portrait_static_angle ? playerEntity->yaw : 0)));
 		view.z = playerEntity->z * 2;
+		if ( playerEntity->behavior == &actDeathGhostLimb )
+		{
+			if ( auto node = list_Node(&playerEntity->children, 2) )
+			{
+				if ( Entity* entity = (Entity*)node->element )
+				{
+					view.z = entity->z * 2;
+				}
+			}
+		}
+		else if ( playerEntity->behavior == &actPlayer )
+		{
+			real_t nominalHeight = 0.0;
+			view.z = std::min(nominalHeight, view.z);
+		}
+
 		view.ang = (offsetyaw - PI
 			+ (*cvar_char_portrait_static_angle ? playerEntity->yaw : 0)); //5 * PI / 4;
 		view.vang = PI / 20;
@@ -23256,6 +25447,14 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 						continue;
 					}
 				}
+				else if ( playerEntity->behavior == &actDeathGhostLimb )
+				{
+					if ( c < 2 )
+					{
+						c++;
+						continue;
+					}
+				}
 				Entity* entity = (Entity*)node->element;
 				if ( !entity->flags[INVISIBLE] || (entity->flags[INVISIBLE] && entity->flags[INVISIBLE_DITHER]) )
 				{
@@ -23263,7 +25462,11 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
                     if (!dark) { entity->flags[BRIGHT] = true; }
 
 					int oldDither = entity->dithering[&view].value;
-					if ( entity->flags[INVISIBLE] && entity->flags[INVISIBLE_DITHER] )
+					if ( entity->ditheringOverride >= 0 )
+					{
+						entity->dithering[&view].value = entity->ditheringOverride;
+					}
+					else if ( entity->flags[INVISIBLE] && entity->flags[INVISIBLE_DITHER] )
 					{
 						entity->dithering[&view].value = ditherVal;
 						//entity->flags[BRIGHT] = false;
@@ -23274,27 +25477,30 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 				}
 				c++;
 			}
-			for ( node_t* node = map.entities->first; node != NULL; node = node->next )
+			if ( playerEntity->behavior == &actPlayer )
 			{
-				Entity* entity = (Entity*)node->element;
-				if ( (Sint32)entity->getUID() == -4 ) // torch sprites
+				for ( node_t* node = map.entities->first; node != NULL; node = node->next )
 				{
-					if ( (entity->skill[1] - 1) != player )
+					Entity* entity = (Entity*)node->element;
+					if ( (Sint32)entity->getUID() == -4 ) // torch sprites
 					{
-						continue;
-					}
-                    bool b = entity->flags[BRIGHT];
-                    if (!dark) { entity->flags[BRIGHT] = true; }
+						if ( (entity->skill[1] - 1) != player )
+						{
+							continue;
+						}
+						bool b = entity->flags[BRIGHT];
+						if (!dark) { entity->flags[BRIGHT] = true; }
 
-					int oldDither = entity->dithering[&view].value;
-					if ( entity->flags[INVISIBLE] && entity->flags[INVISIBLE_DITHER] )
-					{
-						entity->dithering[&view].value = ditherVal;
-						//entity->flags[BRIGHT] = false;
+						int oldDither = entity->dithering[&view].value;
+						if ( entity->flags[INVISIBLE] && entity->flags[INVISIBLE_DITHER] )
+						{
+							entity->dithering[&view].value = ditherVal;
+							//entity->flags[BRIGHT] = false;
+						}
+						glDrawSprite(&view, entity, REALCOLORS);
+						entity->flags[BRIGHT] = b;
+						entity->dithering[&view].value = oldDither;
 					}
-					glDrawSprite(&view, entity, REALCOLORS);
-                    entity->flags[BRIGHT] = b;
-					entity->dithering[&view].value = oldDither;
 				}
 			}
 		}
@@ -23308,7 +25514,7 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 					if ( (entity->behavior == &actPlayerLimb && entity->skill[2] == player 
 						&& (!entity->flags[INVISIBLE] || (entity->flags[INVISIBLE] && entity->flags[INVISIBLE_DITHER]))) || (Sint32)entity->getUID() == -4 )
 					{
-						if ( (Sint32)entity->getUID() == -4 ) // torch sprites
+						if ( (Sint32)entity->getUID() == -4 && playerEntity->behavior == &actPlayer ) // torch sprites
 						{
 							if ( (entity->skill[1] - 1) != player )
 							{
@@ -23334,7 +25540,11 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 							if (!dark) { entity->flags[BRIGHT] = true; }
 
 							int oldDither = entity->dithering[&view].value;
-							if ( entity->flags[INVISIBLE] && entity->flags[INVISIBLE_DITHER] )
+							if ( entity->ditheringOverride >= 0 )
+							{
+								entity->dithering[&view].value = entity->ditheringOverride;
+							}
+							else if ( entity->flags[INVISIBLE] && entity->flags[INVISIBLE_DITHER] )
 							{
 								entity->dithering[&view].value = ditherVal;
 								//entity->flags[BRIGHT] = false;
@@ -23347,7 +25557,7 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 
 					}
 				}
-				else if ( playerEntity->behavior == &actDeathGhost )
+				else if ( playerEntity->behavior == &actDeathGhost || playerEntity->behavior == &actDeathGhostLimb )
 				{
 					if ( entity->behavior == &actDeathGhostLimb && entity->skill[2] == player 
 						&& (!entity->flags[INVISIBLE] || (entity->flags[INVISIBLE] && entity->flags[INVISIBLE_DITHER])) )
@@ -23419,9 +25629,15 @@ void Player::SkillSheet_t::loadSkillSheetJSON()
 					{
 						allEntries.push_back(SkillSheetData_t::SkillEntry_t());
 						auto& entry = allEntries[allEntries.size() - 1];
+						entry.setSkillName("");
+						entry.setSkillShortName("");
 						if ( (*itr).HasMember("name") )
 						{
-							entry.name = (*itr)["name"].GetString();
+							entry.setSkillName((*itr)["name"].GetString());
+						}
+						if ( (*itr).HasMember("shortname") )
+						{
+							entry.setSkillShortName((*itr)["shortname"].GetString());
 						}
 						if ( (*itr).HasMember("id") )
 						{
@@ -23467,6 +25683,10 @@ void Player::SkillSheet_t::loadSkillSheetJSON()
 								auto& effect = entry.effects[entry.effects.size() - 1];
 								effect.tag = (*eff_itr)["tag"].GetString();
 								effect.title = (*eff_itr)["title"].GetString();
+								if ( (*eff_itr).HasMember("title_short") )
+								{
+									effect.titleShort = (*eff_itr)["title_short"].GetString();
+								}
 								effect.rawValue = (*eff_itr)["value"].GetString();
 								effect.valueCustomWidthOffset = 0;
 								if ( (*eff_itr).HasMember("custom_value_width_offset") )
@@ -24928,6 +27148,14 @@ void loadHUDSettingsJSON()
 							d["colors"]["charsheet_dlc2_text"]["b"].GetInt(),
 							d["colors"]["charsheet_dlc2_text"]["a"].GetInt());
 					}
+					if ( d["colors"].HasMember("charsheet_dlc3_text") )
+					{
+						hudColors.characterDLC3ClassText = makeColor(
+							d["colors"]["charsheet_dlc3_text"]["r"].GetInt(),
+							d["colors"]["charsheet_dlc3_text"]["g"].GetInt(),
+							d["colors"]["charsheet_dlc3_text"]["b"].GetInt(),
+							d["colors"]["charsheet_dlc3_text"]["a"].GetInt());
+					}
 				}
 				if ( d.HasMember("dropdowns") )
 				{
@@ -25102,7 +27330,7 @@ void createPlayerSpellList(const int player)
 				snprintf(slotname, sizeof(slotname), "spell %d %d", x, y);
 
 				auto slotFrame = spellSlotsFrame->addFrame(slotname);
-				players[player]->inventoryUI.spellSlotFrames[x + y * 100] = slotFrame;
+				players[player]->inventoryUI.spellSlotFrames[x + y * 1000] = slotFrame;
 				SDL_Rect slotPos{ currentSlotPos.x, currentSlotPos.y, inventorySlotSize, inventorySlotSize };
 				slotFrame->setSize(slotPos);
 
@@ -25158,6 +27386,26 @@ void createPlayerSpellList(const int player)
 		titleText->setSize(SDL_Rect{ 56, 12, 96, 24 });
 		titleText->setColor(makeColor(236, 175, 28, 255));
 
+		auto filterTooltipFrame = bgFrame->addFrame("filter frame");
+		filterTooltipFrame->setSize(SDL_Rect{ 0, bg->pos.h - 50, bg->pos.w, 50 });
+		filterTooltipFrame->setHollow(true);
+		filterTooltipFrame->setInheritParentFrameOpacity(false);
+
+		auto filterText = filterTooltipFrame->addField("filter txt", 64);
+		filterText->setFont(smallfont_outline);
+		filterText->setText(Language::get(6842));
+		filterText->setHJustify(Field::justify_t::CENTER);
+		filterText->setVJustify(Field::justify_t::TOP);
+		filterText->setSize(SDL_Rect{ 0, 3, filterTooltipFrame->getSize().w, 48});
+		filterText->setColor(makeColor(236, 175, 28, 255));
+		filterText->setDisabled(true);
+
+		auto filterTooltipImg = filterTooltipFrame->addImage(
+			SDL_Rect{ filterTooltipFrame->getSize().w / 2 - 154 / 2, filterTooltipFrame->getSize().h - 50, 154, 50 },
+			makeColor(255, 255, 255, 128),
+			"*#images/ui/Inventory/HUD_Magic_Filter_Tooltip.png", "spell filter tooltip img");
+		filterTooltipImg->disabled = true;
+
 		auto closeBtn = bgFrame->addButton("close spell button");
 		SDL_Rect closeBtnPos;
 		closeBtnPos.x = 180;
@@ -25194,18 +27442,64 @@ void createPlayerSpellList(const int player)
 			}
 		});
 
-		auto skillBg = bgFrame->addImage(SDL_Rect{ 6, 6, 32, 32 },
+		/*auto skillBg = bgFrame->addImage(SDL_Rect{ 14, 6, 32, 32 },
 			makeColor(255, 255, 255, 255),
-			"*#images/ui/Inventory/HUD_Magic_Casting_BG_01.png", "spell skill bg");
+			"*#images/ui/Inventory/HUD_Magic_Casting_BG_01.png", "spell skill bg");*/
 
-		auto skillIcon = bgFrame->addImage(SDL_Rect{ skillBg->pos.x + 4, skillBg->pos.y + 4, 24, 24 },
+		auto filterBtn = bgFrame->addButton("spell filter button");
+		SDL_Rect filterBtnPos;
+		filterBtnPos.x = 14;
+		filterBtnPos.y = 6;
+		filterBtnPos.w = 32;
+		filterBtnPos.h = 32;
+		filterBtn->setSize(filterBtnPos);
+		filterBtn->setColor(makeColor(255, 255, 255, 255));
+		filterBtn->setHighlightColor(makeColor(255, 255, 255, 255));
+		filterBtn->setTextHighlightColor(makeColor(201, 162, 100, 255));
+		filterBtn->setText("");
+		filterBtn->setFont(font);
+		filterBtn->setHideGlyphs(true);
+		filterBtn->setHideKeyboardGlyphs(true);
+		filterBtn->setHideSelectors(true);
+		filterBtn->setMenuConfirmControlType(0);
+		filterBtn->setBackground("*#images/ui/Inventory/HUD_Magic_Casting_BG_01.png");
+		filterBtn->setBackgroundHighlighted("*#images/ui/Inventory/HUD_Magic_Casting_BG_High_01.png");
+		filterBtn->setBackgroundActivated("*#images/ui/Inventory/HUD_Magic_Casting_BG_Press_01.png");
+		filterBtn->setCallback([](Button& button) {
+			auto& val = players[button.getOwner()]->inventoryUI.spellPanel.spellFilterBySkill;
+			if ( val == 0 ) { val = PRO_SORCERY; }
+			else if ( val == PRO_SORCERY ) { val = PRO_MYSTICISM; }
+			else if ( val == PRO_MYSTICISM ) { val = PRO_THAUMATURGY; }
+			else
+			{
+				val = 0;
+			}
+			Player::soundActivate();
+			});
+		filterBtn->setTickCallback([](Widget& widget) {
+			if ( widget.isSelected() )
+			{
+				if ( !inputs.getVirtualMouse(widget.getOwner())->draw_cursor )
+				{
+					widget.deselect();
+				}
+			}
+		});
+
+		auto skillIcon = bgFrame->addImage(SDL_Rect{ filterBtnPos.x + 4, filterBtnPos.y + 4, 24, 24 },
 			makeColor(255, 255, 255, 255),
 			"", "spell skill icon");
+		skillIcon->ontop = true;
 
 		auto closeGlyph = bgFrame->addImage(SDL_Rect{ 0, 0, 24, 24 },
 			makeColor(255, 255, 255, 255),
 			"", "close spell glyph");
 		closeGlyph->disabled = true;
+
+		auto filterGlyph = bgFrame->addImage(SDL_Rect{ 0, 0, 24, 24 },
+			makeColor(255, 255, 255, 255),
+			"", "filter spell glyph");
+		filterGlyph->disabled = true;
 	}
 }
 
@@ -25243,9 +27537,9 @@ bool takeAllChestGUIAction(const int player)
 	{
 		chest_inventory = &chestInv[player];
 	}
-	else if ( openedChest[player]->children.first && openedChest[player]->children.first->element )
+	else if ( openedChest[player] )
 	{
-		chest_inventory = (list_t*)openedChest[player]->children.first->element;
+		chest_inventory = openedChest[player]->getChestInventoryList();
 	}
 	if ( !chest_inventory )
 	{
@@ -26352,6 +28646,13 @@ void createPlayerInventory(const int player)
 		GenericGUI[player].assistShrineGUI.assistShrineFrame->setInheritParentFrameOpacity(false);
 		GenericGUI[player].assistShrineGUI.assistShrineFrame->setDisabled(true);
 
+		GenericGUI[player].mailboxGUI.mailFrame = frame->addFrame("mail");
+		GenericGUI[player].mailboxGUI.mailFrame->setHollow(true);
+		GenericGUI[player].mailboxGUI.mailFrame->setBorder(0);
+		GenericGUI[player].mailboxGUI.mailFrame->setOwner(player);
+		GenericGUI[player].mailboxGUI.mailFrame->setInheritParentFrameOpacity(false);
+		GenericGUI[player].mailboxGUI.mailFrame->setDisabled(true);
+
 		auto oldCursorFrame = frame->addFrame("inventory old item cursor");
 		oldCursorFrame->setSize(SDL_Rect{ 0, 0, inventorySlotSize + 16, inventorySlotSize + 16 });
 		oldCursorFrame->setDisabled(true);
@@ -26464,9 +28765,9 @@ void Player::Inventory_t::updateItemContextMenu()
 			{
 				chest_inventory = &chestInv[player.playernum];
 			}
-			else if ( openedChest[player.playernum]->children.first && openedChest[player.playernum]->children.first->element )
+			else if ( openedChest[player.playernum] )
 			{
-				chest_inventory = (list_t*)openedChest[player.playernum]->children.first->element;
+				chest_inventory = openedChest[player.playernum]->getChestInventoryList();
 			}
 			if ( chest_inventory )
 			{
@@ -26969,7 +29270,19 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 	}
 	if ( prompt == PROMPT_APPRAISE )
 	{
+		int prevAppraisedManual = players[player]->inventoryUI.appraisal.manual_appraised_item;
 		players[player]->inventoryUI.appraisal.appraiseItem(item);
+		if ( players[player]->inventoryUI.appraisal.current_item == item->uid )
+		{
+			if ( prevAppraisedManual == item->uid )
+			{
+				players[player]->inventoryUI.appraisal.manual_appraised_item = 0;
+			}
+			else
+			{
+				players[player]->inventoryUI.appraisal.manual_appraised_item = item->uid;
+			}
+		}
 		return;
 	}
 	else if ( prompt == PROMPT_DROP )
@@ -27351,7 +29664,9 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 		|| prompt == PROMPT_INTERACT_SPELLBOOK_HOTBAR
 		|| prompt == PROMPT_INSPECT 
 		|| prompt == PROMPT_INSPECT_ALTERNATE 
-		|| prompt == PROMPT_TINKER )
+		|| prompt == PROMPT_TINKER
+		|| prompt == PROMPT_COOK
+		|| prompt == PROMPT_SCEPTER_CHARGE )
 	{
 		if ( item->type == TOOL_PLAYER_LOOT_BAG )
 		{
@@ -27364,6 +29679,31 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 				useItem(item, player);
 			}
 		}
+		else if ( item->type == MAGICSTAFF_SCEPTER )
+		{
+			if ( !disableItemUsage )
+			{
+				if ( item->appearance % MAGICSTAFF_SCEPTER_CHARGE_MAX >= MAGICSTAFF_SCEPTER_CHARGE_MAX - 1 )
+				{
+					messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(6838), item->getName()); // fully charged!
+					playSoundPlayer(player, 90, 64);
+				}
+				else if ( true /*item->status > BROKEN*/ ) // allow broken tinker kit
+				{
+					GenericGUI[player].openGUI(GUI_TYPE_ITEMFX, item, item->beatitude, item->type, 0);
+				}
+				else
+				{
+					messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(1092), item->getName()); // this is useless!
+					playSoundPlayer(player, 90, 64);
+				}
+			}
+			else
+			{
+				messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(3432)); // unable to use in current form message.
+				playSoundPlayer(player, 90, 64);
+			}
+		}
 		else if ( item->type == TOOL_ALEMBIC )
 		{
 			// not experimenting
@@ -27372,6 +29712,26 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 				GenericGUI[player].closeGUI();
 			}
 			else if ( !disableItemUsage )
+			{
+				if ( item->status > BROKEN )
+				{
+					GenericGUI[player].openGUI(GUI_TYPE_ALCHEMY, true, item);
+				}
+				else
+				{
+					messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(1092), item->getName()); // this is useless!
+					playSoundPlayer(player, 90, 64);
+				}
+			}
+			else
+			{
+				messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(3432)); // unable to use in current form message.
+				playSoundPlayer(player, 90, 64);
+			}
+		}
+		else if ( item->type == TOOL_FRYING_PAN )
+		{
+			if ( !disableItemUsage )
 			{
 				if ( item->status > BROKEN )
 				{
@@ -27413,7 +29773,7 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 		{
 			if ( !disableItemUsage && prompt == PROMPT_INTERACT_SPELLBOOK_HOTBAR )
 			{
-				if ( itemCategory(item) == SPELLBOOK )
+				if ( itemCategory(item) == SPELLBOOK || itemCategory(item) == TOME_SPELL )
 				{
 					players[player]->magic.spellbookUidFromHotbarSlot = item->uid;
 				}
@@ -27967,6 +30327,21 @@ void Player::Inventory_t::updateCursor()
 				cursor.queuedModule = Player::GUI_t::MODULE_NONE;
 			}
 			else if ( alchemyGUI.isInteractable )
+			{
+				moveMouse = true;
+				cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+			}
+		}
+		else if ( cursor.queuedModule == Player::GUI_t::MODULE_MAILBOX )
+		{
+			auto& mailboxGUI = GenericGUI[player.playernum].mailboxGUI;
+			if ( !mailboxGUI.mailGUIHasBeenCreated()
+				|| mailboxGUI.mailFrame->isDisabled() )
+			{
+				// cancel
+				cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+			}
+			else if ( mailboxGUI.isInteractable )
 			{
 				moveMouse = true;
 				cursor.queuedModule = Player::GUI_t::MODULE_NONE;
@@ -29225,6 +31600,10 @@ void Player::HUD_t::updateXPBar()
 			{
 				textClass->setColor(hudColors.characterDLC2ClassText);
 			}
+			else if ( client_classes[player.playernum] >= CLASS_BARD && client_classes[player.playernum] <= CLASS_PALADIN )
+			{
+				textClass->setColor(hudColors.characterDLC3ClassText);
+			}
 			else
 			{
 				textClass->setColor(hudColors.characterBaseClassText);
@@ -29344,20 +31723,40 @@ struct enemybarMapLowDurationTick_k {
 		}
 	};
 };
-struct enemybarEffectMapFx2_lowDuration_k {
+struct enemybarEffectMapFx5_lowDuration_k {
 	std::map<Uint32, enemybarMapLowDurationTick_k> m;
+};
+struct enemybarEffectMapFx4_lowDuration_k {
+	std::map<Uint32, enemybarEffectMapFx5_lowDuration_k> m;
+};
+struct enemybarEffectMapFx3_lowDuration_k {
+	std::map<Uint32, enemybarEffectMapFx4_lowDuration_k> m;
+};
+struct enemybarEffectMapFx2_lowDuration_k {
+	std::map<Uint32, enemybarEffectMapFx3_lowDuration_k> m;
 };
 struct enemybarEffectMapFx1_lowDuration_k {
 	std::map<Uint32, enemybarEffectMapFx2_lowDuration_k> m;
 };
-struct enemybarEffectMapFx2_k {
+struct enemybarEffectMapFx5_k {
 	std::map<Uint32, enemybarEffectMapFx1_lowDuration_k> m;
+};
+struct enemybarEffectMapFx4_k {
+	std::map<Uint32, enemybarEffectMapFx5_k> m;
+};
+struct enemybarEffectMapFx3_k {
+	std::map<Uint32, enemybarEffectMapFx4_k> m;
+};
+struct enemybarEffectMapFx2_k {
+	std::map<Uint32, enemybarEffectMapFx3_k> m;
 };
 struct enemybarEffectMapFx1_k {
 	std::map<Uint32, enemybarEffectMapFx2_k> m;
 };
 enemybarEffectMapFx1_k enemyBarEffectMap;
-SDL_Surface* enemyBarEffectMapExists(Uint32 fx1, Uint32 fx2, Uint32 fx_lowDuration1, Uint32 fx_lowDuration2, bool lowDurationTicks)
+SDL_Surface* enemyBarEffectMapExists(Uint32 fx1, Uint32 fx2, Uint32 fx3, Uint32 fx4, Uint32 fx5,
+	Uint32 fx_lowDuration1, Uint32 fx_lowDuration2, Uint32 fx_lowDuration3, Uint32 fx_lowDuration4, Uint32 fx_lowDuration5,
+	bool lowDurationTicks)
 {
 	if ( enemyBarEffectMap.m.find(fx1) != enemyBarEffectMap.m.end() )
 	{
@@ -29365,15 +31764,39 @@ SDL_Surface* enemyBarEffectMapExists(Uint32 fx1, Uint32 fx2, Uint32 fx_lowDurati
 		if ( m1.m.find(fx2) != m1.m.end() )
 		{
 			auto& m2 = m1.m[fx2];
-			if ( m2.m.find(fx_lowDuration1) != m2.m.end() )
+			if ( m2.m.find(fx3) != m2.m.end() )
 			{
-				auto& m3 = m2.m[fx_lowDuration1];
-				if ( m3.m.find(fx_lowDuration2) != m3.m.end() )
+				auto& m3 = m2.m[fx3];
+				if ( m3.m.find(fx4) != m3.m.end() )
 				{
-					auto& m4 = m3.m[fx_lowDuration2];
-					if ( m4.m.find(lowDurationTicks) != m4.m.end() )
+					auto& m4 = m3.m[fx4];
+					if ( m4.m.find(fx5) != m4.m.end() )
 					{
-						return m4.m[lowDurationTicks];
+						auto& m5 = m4.m[fx5];
+						if ( m5.m.find(fx_lowDuration1) != m5.m.end() )
+						{
+							auto& m6 = m5.m[fx_lowDuration1];
+							if ( m6.m.find(fx_lowDuration2) != m6.m.end() )
+							{
+								auto& m7 = m6.m[fx_lowDuration2];
+								if ( m7.m.find(fx_lowDuration3) != m7.m.end() )
+								{
+									auto& m8 = m7.m[fx_lowDuration3];
+									if ( m8.m.find(fx_lowDuration4) != m8.m.end() )
+									{
+										auto& m9 = m8.m[fx_lowDuration4];
+										if ( m9.m.find(fx_lowDuration5) != m9.m.end() )
+										{
+											auto& m10 = m9.m[fx_lowDuration5];
+											if ( m10.m.find(lowDurationTicks) != m10.m.end() )
+											{
+												return m10.m[lowDurationTicks];
+											}
+										}
+									}
+								}
+							}
+						}
 					}
 				}
 			}
@@ -29381,16 +31804,20 @@ SDL_Surface* enemyBarEffectMapExists(Uint32 fx1, Uint32 fx2, Uint32 fx_lowDurati
 	}
 	return nullptr;
 }
-void enemyBarEffectMapInsert(Uint32 fx1, Uint32 fx2, Uint32 fx_lowDuration1, Uint32 fx_lowDuration2, bool lowDurationTicks,
+void enemyBarEffectMapInsert(Uint32 fx1, Uint32 fx2, Uint32 fx3, Uint32 fx4, Uint32 fx5,
+	Uint32 fx_lowDuration1, Uint32 fx_lowDuration2, Uint32 fx_lowDuration3, Uint32 fx_lowDuration4, Uint32 fx_lowDuration5,
+	bool lowDurationTicks,
 	SDL_Surface* surf)
 {
-	enemyBarEffectMap.m[fx1].m[fx2].m[fx_lowDuration1].m[fx_lowDuration2].m[lowDurationTicks] = surf;
+	enemyBarEffectMap.m[fx1].m[fx2].m[fx3].m[fx4].m[fx5].m[fx_lowDuration1]
+		.m[fx_lowDuration2].m[fx_lowDuration3].m[fx_lowDuration4].m[fx_lowDuration5]
+			.m[lowDurationTicks] = surf;
 }
 
 // to nest deep maps and suppress visual studio warnings
-struct enemybarMapFx2_lowDuration_k {
+struct enemybarMapFx5_lowDuration_k {
 	std::map<Uint32, SDL_Surface*> m;
-	~enemybarMapFx2_lowDuration_k()
+	~enemybarMapFx5_lowDuration_k()
 	{
 		if ( EnemyHPDamageBarHandler::bEnemyBarSimpleBlit )
 		{
@@ -29405,11 +31832,29 @@ struct enemybarMapFx2_lowDuration_k {
 		}
 	};
 };
+struct enemybarMapFx4_lowDuration_k {
+	std::map<Uint32, enemybarMapFx5_lowDuration_k> m;
+};
+struct enemybarMapFx3_lowDuration_k {
+	std::map<Uint32, enemybarMapFx4_lowDuration_k> m;
+};
+struct enemybarMapFx2_lowDuration_k {
+	std::map<Uint32, enemybarMapFx3_lowDuration_k> m;
+};
 struct enemybarMapFx1_lowDuration_k {
 	std::map<Uint32, enemybarMapFx2_lowDuration_k> m;
 };
-struct enemybarMapFx2_k {
+struct enemybarMapFx5_k {
 	std::map<Uint32, enemybarMapFx1_lowDuration_k> m;
+};
+struct enemybarMapFx4_k {
+	std::map<Uint32, enemybarMapFx5_k> m;
+};
+struct enemybarMapFx3_k {
+	std::map<Uint32, enemybarMapFx4_k> m;
+};
+struct enemybarMapFx2_k {
+	std::map<Uint32, enemybarMapFx3_k> m;
 };
 struct enemybarMapFx1_k {
 	std::map<Uint32, enemybarMapFx2_k> m;
@@ -29426,7 +31871,8 @@ struct enemybarMapName_k {
 enemybarMapName_k enemyBarMap;
 SDL_Surface* enemyBarMapExists(std::string name, int baseWidth, int baseHeight,
 	int progressWidth, int damageWidth,
-	Uint32 fx1, Uint32 fx2, Uint32 fx_lowDuration1, Uint32 fx_lowDuration2)
+	Uint32 fx1, Uint32 fx2, Uint32 fx3, Uint32 fx4, Uint32 fx5,
+	Uint32 fx_lowDuration1, Uint32 fx_lowDuration2, Uint32 fx_lowDuration3, Uint32 fx_lowDuration4, Uint32 fx_lowDuration5)
 {
 	if ( enemyBarMap.m.find(name) != enemyBarMap.m.end() )
 	{
@@ -29448,12 +31894,36 @@ SDL_Surface* enemyBarMapExists(std::string name, int baseWidth, int baseHeight,
 					if ( m4.m.find(fx2) != m4.m.end() )
 					{
 						auto& m5 = m4.m[fx2];
-						if ( m5.m.find(fx_lowDuration1) != m5.m.end() )
+						if ( m5.m.find(fx3) != m5.m.end() )
 						{
-							auto& m6 = m5.m[fx_lowDuration1];
-							if ( m6.m.find(fx_lowDuration2) != m6.m.end() )
+							auto& m6 = m5.m[fx3];
+							if ( m6.m.find(fx4) != m6.m.end() )
 							{
-								return m6.m[fx_lowDuration2];
+								auto& m7 = m6.m[fx4];
+								if ( m7.m.find(fx5) != m7.m.end() )
+								{
+									auto& m8 = m7.m[fx5];
+									if ( m8.m.find(fx_lowDuration1) != m8.m.end() )
+									{
+										auto& m9 = m8.m[fx_lowDuration1];
+										if ( m9.m.find(fx_lowDuration2) != m9.m.end() )
+										{
+											auto& m10 = m9.m[fx_lowDuration2];
+											if ( m10.m.find(fx_lowDuration3) != m10.m.end() )
+											{
+												auto& m11 = m10.m[fx_lowDuration3];
+												if ( m11.m.find(fx_lowDuration4) != m11.m.end() )
+												{
+													auto& m12 = m11.m[fx_lowDuration4];
+													if ( m12.m.find(fx_lowDuration5) != m12.m.end() )
+													{
+														return m12.m[fx_lowDuration5];
+													}
+												}
+											}
+										}
+									}
+								}
 							}
 						}
 					}
@@ -29464,8 +31934,8 @@ SDL_Surface* enemyBarMapExists(std::string name, int baseWidth, int baseHeight,
 	return nullptr;
 }
 static void  enemyBarMapInsert(std::string name, int baseWidth, int baseHeight, int progressWidth, int damageWidth,
-	Uint32 statusfx1, Uint32 statusfx2,
-	Uint32 statusfx_lowDuration1, Uint32 statusfx_lowDuration2,
+	Uint32 statusfx1, Uint32 statusfx2, Uint32 statusfx3, Uint32 statusfx4, Uint32 statusfx5,
+	Uint32 statusfx_lowDuration1, Uint32 statusfx_lowDuration2, Uint32 statusfx_lowDuration3, Uint32 statusfx_lowDuration4, Uint32 statusfx_lowDuration5,
 	SDL_Surface* surf)
 {
 	Uint32 totalSizeKey = baseWidth & 0xFFFF;
@@ -29473,7 +31943,9 @@ static void  enemyBarMapInsert(std::string name, int baseWidth, int baseHeight, 
 	totalSizeKey |= (((ticks % 25) >= 12) << 24) & 0xFF000000;
 	Uint32 progressDamageKey = progressWidth & 0xFFFF;
 	progressDamageKey |= ((damageWidth & 0xFFFF) << 16);
-	enemyBarMap.m[name].m[totalSizeKey].m[progressDamageKey].m[statusfx1].m[statusfx2].m[statusfx_lowDuration1].m[statusfx_lowDuration2] = surf;
+	enemyBarMap.m[name].m[totalSizeKey].m[progressDamageKey]
+		.m[statusfx1].m[statusfx2].m[statusfx3].m[statusfx4].m[statusfx5]
+			.m[statusfx_lowDuration1].m[statusfx_lowDuration2].m[statusfx_lowDuration3].m[statusfx_lowDuration4].m[statusfx_lowDuration5] = surf;
 }
 
 SDL_Surface* EnemyHPDamageBarHandler::EnemyHPDetails::blitEnemyBar(const int player, SDL_Surface* statusEffectSprite)
@@ -29522,8 +31994,14 @@ SDL_Surface* EnemyHPDamageBarHandler::EnemyHPDetails::blitEnemyBar(const int pla
 			dmgProgress->pos.w, hpProgress->pos.w,
 			enemy_statusEffects1,
 			enemy_statusEffects2,
+			enemy_statusEffects3,
+			enemy_statusEffects4,
+			enemy_statusEffects5,
 			enemy_statusEffectsLowDuration1,
-			enemy_statusEffectsLowDuration2);
+			enemy_statusEffectsLowDuration2,
+			enemy_statusEffectsLowDuration3,
+			enemy_statusEffectsLowDuration4,
+			enemy_statusEffectsLowDuration5);
 		if ( !hashSurf )
 		{
 			//messagePlayer(0, MESSAGE_DEBUG, "Hash for enemy bar not found!");
@@ -29617,8 +32095,14 @@ SDL_Surface* EnemyHPDamageBarHandler::EnemyHPDetails::blitEnemyBar(const int pla
 			dmgProgress->pos.w, hpProgress->pos.w, 
 			enemy_statusEffects1,
 			enemy_statusEffects2,
+			enemy_statusEffects3,
+			enemy_statusEffects4,
+			enemy_statusEffects5,
 			enemy_statusEffectsLowDuration1,
 			enemy_statusEffectsLowDuration2,
+			enemy_statusEffectsLowDuration3,
+			enemy_statusEffectsLowDuration4,
+			enemy_statusEffectsLowDuration5,
 			sprite);
 	}
 	return sprite;
@@ -29636,7 +32120,11 @@ SDL_Surface* EnemyHPDamageBarHandler::EnemyHPDetails::blitEnemyBarStatusEffects(
 	{
 		return nullptr;
 	}
-	if ( enemy_statusEffects1 == 0 && enemy_statusEffects2 == 0 )
+	if ( enemy_statusEffects1 == 0 
+		&& enemy_statusEffects2 == 0 
+		&& enemy_statusEffects3 == 0
+		&& enemy_statusEffects4 == 0
+		&& enemy_statusEffects5 == 0 )
 	{
 		return nullptr;
 	}
@@ -29652,8 +32140,14 @@ SDL_Surface* EnemyHPDamageBarHandler::EnemyHPDetails::blitEnemyBarStatusEffects(
 		hashSurf = enemyBarEffectMapExists(
 			enemy_statusEffects1,
 			enemy_statusEffects2,
+			enemy_statusEffects3,
+			enemy_statusEffects4,
+			enemy_statusEffects5,
 			enemy_statusEffectsLowDuration1,
 			enemy_statusEffectsLowDuration2,
+			enemy_statusEffectsLowDuration3,
+			enemy_statusEffectsLowDuration4,
+			enemy_statusEffectsLowDuration5,
 			(ticks % 25) >= 12);
 		if ( !hashSurf )
 		{
@@ -29798,6 +32292,190 @@ SDL_Surface* EnemyHPDamageBarHandler::EnemyHPDetails::blitEnemyBarStatusEffects(
 			}
 		}
 	}
+	if ( enemy_statusEffects3 != 0 )
+	{
+		for ( int i = 0; i < 32; ++i )
+		{
+			if ( (enemy_statusEffects3 & (1 << i)) != 0 )
+			{
+				int effectID = i + 64;
+				if ( StatusEffectQueue_t::StatusEffectDefinitions_t::effectDefinitionExists(effectID) )
+				{
+					int variation = -1;
+					SDL_Surface* srcSurf = nullptr;
+					if ( i == EFF_SHAPESHIFT )
+					{
+						if ( entity && entity->behavior == &actPlayer )
+						{
+							switch ( entity->effectShapeshift )
+							{
+							case RAT:
+								variation = 0;
+								break;
+							case SPIDER:
+								variation = 1;
+								break;
+							case TROLL:
+								variation = 2;
+								break;
+							case CREATURE_IMP:
+								variation = 3;
+								break;
+							default:
+								break;
+							}
+						}
+					}
+					auto& definition = StatusEffectQueue_t::StatusEffectDefinitions_t::getEffect(effectID);
+					if ( !definition.neverDisplay )
+					{
+						std::string imgPath;
+						if ( i == EFF_SHAPESHIFT && variation == -1 )
+						{
+							imgPath = "";
+						}
+						else
+						{
+							imgPath = StatusEffectQueue_t::StatusEffectDefinitions_t::getEffectImgPath(definition, variation);
+						}
+						if ( imgPath != "" )
+						{
+							srcSurf = const_cast<SDL_Surface*>(Image::get(imgPath.c_str())->getSurf());
+
+							bool blinking = false;
+							if ( (enemy_statusEffectsLowDuration3 & (1 << i)) != 0 )
+							{
+								blinking = true;
+							}
+							statusEffectIcons.push_back(std::make_pair(srcSurf, blinking));
+						}
+					}
+				}
+			}
+		}
+	}
+	if ( enemy_statusEffects4 != 0 )
+	{
+		for ( int i = 0; i < 32; ++i )
+		{
+			if ( (enemy_statusEffects4 & (1 << i)) != 0 )
+			{
+				int effectID = i + 96;
+				if ( StatusEffectQueue_t::StatusEffectDefinitions_t::effectDefinitionExists(effectID) )
+				{
+					int variation = -1;
+					SDL_Surface* srcSurf = nullptr;
+					if ( i == EFF_SHAPESHIFT )
+					{
+						if ( entity && entity->behavior == &actPlayer )
+						{
+							switch ( entity->effectShapeshift )
+							{
+							case RAT:
+								variation = 0;
+								break;
+							case SPIDER:
+								variation = 1;
+								break;
+							case TROLL:
+								variation = 2;
+								break;
+							case CREATURE_IMP:
+								variation = 3;
+								break;
+							default:
+								break;
+							}
+						}
+					}
+					auto& definition = StatusEffectQueue_t::StatusEffectDefinitions_t::getEffect(effectID);
+					if ( !definition.neverDisplay )
+					{
+						std::string imgPath;
+						if ( i == EFF_SHAPESHIFT && variation == -1 )
+						{
+							imgPath = "";
+						}
+						else
+						{
+							imgPath = StatusEffectQueue_t::StatusEffectDefinitions_t::getEffectImgPath(definition, variation);
+						}
+						if ( imgPath != "" )
+						{
+							srcSurf = const_cast<SDL_Surface*>(Image::get(imgPath.c_str())->getSurf());
+
+							bool blinking = false;
+							if ( (enemy_statusEffectsLowDuration4 & (1 << i)) != 0 )
+							{
+								blinking = true;
+							}
+							statusEffectIcons.push_back(std::make_pair(srcSurf, blinking));
+						}
+					}
+				}
+			}
+		}
+	}
+	if ( enemy_statusEffects5 != 0 )
+	{
+		for ( int i = 0; i < 32; ++i )
+		{
+			if ( (enemy_statusEffects5 & (1 << i)) != 0 )
+			{
+				int effectID = i + 128;
+				if ( StatusEffectQueue_t::StatusEffectDefinitions_t::effectDefinitionExists(effectID) )
+				{
+					int variation = -1;
+					SDL_Surface* srcSurf = nullptr;
+					if ( effectID == EFF_SALAMANDER_HEART )
+					{
+						variation = -1;
+						if ( entity )
+						{
+							if ( (entity->sprite == 2018 || entity->sprite == 2019)
+								|| (entity->sprite == 1540 || entity->sprite == 1541) )
+							{
+								variation = 2;
+							}
+							else if ( (entity->sprite == 2016 || entity->sprite == 2017)
+								|| (entity->sprite == 1538 || entity->sprite == 1539) )
+							{
+								variation = 0;
+							}
+						}
+					}
+					auto& definition = StatusEffectQueue_t::StatusEffectDefinitions_t::getEffect(effectID);
+					if ( !definition.neverDisplay )
+					{
+						std::string imgPath;
+						if ( effectID == EFF_SHAPESHIFT && variation == -1 )
+						{
+							imgPath = "";
+						}
+						else if ( effectID == EFF_SALAMANDER_HEART && variation == -1 )
+						{
+							imgPath = "";
+						}
+						else
+						{
+							imgPath = StatusEffectQueue_t::StatusEffectDefinitions_t::getEffectImgPath(definition, variation);
+						}
+						if ( imgPath != "" )
+						{
+							srcSurf = const_cast<SDL_Surface*>(Image::get(imgPath.c_str())->getSurf());
+
+							bool blinking = false;
+							if ( (enemy_statusEffectsLowDuration5 & (1 << i)) != 0 )
+							{
+								blinking = true;
+							}
+							statusEffectIcons.push_back(std::make_pair(srcSurf, blinking));
+						}
+					}
+				}
+			}
+		}
+	}
 
 	//const int numIcons = statusEffectIcons.size();
 	//const int iconTotalWidth = iconWidth + 2;
@@ -29844,8 +32522,14 @@ SDL_Surface* EnemyHPDamageBarHandler::EnemyHPDetails::blitEnemyBarStatusEffects(
 		enemyBarEffectMapInsert(
 			enemy_statusEffects1,
 			enemy_statusEffects2,
+			enemy_statusEffects3,
+			enemy_statusEffects4,
+			enemy_statusEffects5,
 			enemy_statusEffectsLowDuration1,
 			enemy_statusEffectsLowDuration2,
+			enemy_statusEffectsLowDuration3,
+			enemy_statusEffectsLowDuration4,
+			enemy_statusEffectsLowDuration5,
 			(ticks % 25) >= 12,
 			sprite);
 	}
@@ -31119,7 +33803,7 @@ void Player::HUD_t::updateHPBar()
 		}
 	}
 
-	hpFrame->setDisabled(player.ghost.isActive());
+	hpFrame->setDisabled(player.ghost.isActive() && !player.entity);
 }
 
 void Player::HUD_t::updateMPBar()
@@ -31157,6 +33841,7 @@ void Player::HUD_t::updateMPBar()
 		mpForegroundFrame->setSize(_pos);
 	}
 
+	std::vector<Frame::image_t*> allMPBarImages;
 	auto mpBg = mpFrame->findImage("mp img base");
 	auto mpEndcap = mpForegroundFrame->findImage("mp img endcap");
 	auto mpProgressBot = mpForegroundFrame->findImage("mp img progress bot");
@@ -31206,6 +33891,7 @@ void Player::HUD_t::updateMPBar()
 
 	MPBar.animateSetpoint = stats[player.playernum]->MP;
 
+	bool forceLoop = false;
 	bool flashAnimationPreviouslyPlaying = MPBar.flashTicks > 0;
 	if ( MPBar.animateSetpoint < MPBar.animatePreviousSetpoint ) // insta-change as losing health
 	{
@@ -31217,6 +33903,24 @@ void Player::HUD_t::updateMPBar()
 		MPBar.flashProcessedOnTick = 0;
 		MPBar.flashAnimState = -1;
 		MPBar.flashType = FLASH_ON_DAMAGE;
+	}
+
+	if ( &MPBarPaths_t::getMPBar(player.playernum) == &MPBarPaths_t::automatonHTBars )
+	{
+		if ( stats[player.playernum]->getEffectActive(EFF_SALAMANDER_HEART) == 2 )
+		{
+			forceLoop = true; 
+			// flash for taking damage
+			if ( MPBar.flashTicks <= 0 )
+			{
+				MPBar.animateTicks = ticks;
+
+				// flash for taking damage
+				MPBar.flashTicks = ticks;
+				MPBar.flashProcessedOnTick = 0;
+				MPBar.flashType = FLASH_ON_DAMAGE;
+			}
+		}
 	}
 
 	if ( MPBar.maxValue > stats[player.playernum]->MAXMP )
@@ -31255,7 +33959,7 @@ void Player::HUD_t::updateMPBar()
 		mpFadedValue = mpForegroundValue;
 		MPBar.animateTicks = ticks;
 	}
-	else if ( mpFadedValue > MPBar.animateSetpoint )
+	else if ( mpFadedValue > MPBar.animateSetpoint || forceLoop )
 	{
 		if ( ticks - MPBar.animateTicks > 30 /*|| stats[player.playernum]->MP <= 0*/ ) // fall after x ticks
 		{
@@ -31351,7 +34055,11 @@ void Player::HUD_t::updateMPBar()
 	mpProgressEndCap->path = MPBarPaths_t::get(player.playernum, "mp img progress endcap");
 	auto mpProgressEndCapFlash = mpForegroundFrame->findImage("mp img progress endcap flash");
 	mpProgressEndCapFlash->disabled = true;
-	const int framesPerAnimation = (MPBar.flashType == FLASH_ON_DAMAGE ? 1 : 2)/* * *cvar_hpanimdebug*/;
+	int framesPerAnimation = (MPBar.flashType == FLASH_ON_DAMAGE ? 1 : 2)/* * *cvar_hpanimdebug*/;
+	if ( forceLoop )
+	{
+		framesPerAnimation = 4;
+	}
 	const int numAnimationFrames = (MPBar.flashType == FLASH_ON_DAMAGE ? 30 : 2)/* * *cvar_hpanimdebug*/;
 	if ( MPBar.flashTicks > 0 )
 	{
@@ -31400,6 +34108,10 @@ void Player::HUD_t::updateMPBar()
 
 				if ( MPBar.flashAnimState <= 9 )
 				{
+					if ( forceLoop && MPBar.flashAnimState == 9 )
+					{
+						MPBar.flashAnimState = 1;
+					}
 					if ( MPBar.flashAnimState == 7 )
 					{
 						// we need the MP bar to flash long enough for long spellcast times
@@ -31520,6 +34232,73 @@ void Player::HUD_t::updateMPBar()
 		}
 	}
 
+	//allMPBarImages.push_back(mpBg);
+	//allMPBarImages.push_back(mpEndcap);
+	allMPBarImages.push_back(mpProgressBot);
+	allMPBarImages.push_back(mpProgress);
+	allMPBarImages.push_back(mpProgressEndCap);
+	allMPBarImages.push_back(mpFadedBase);
+	allMPBarImages.push_back(mpFaded);
+	allMPBarImages.push_back(mpFadedEndCap);
+	allMPBarImages.push_back(mpBase);
+	allMPBarImages.push_back(mpProgressEndCapFlash);
+	static ConsoleVariable<Vector4> cvar_mp_color_ht("/mp_color_ht", { 0.85, 0.85, 1.0, 1.0 });
+	static ConsoleVariable<Vector4> cvar_mp_color_ht_high("/mp_color_ht_high", { 1.0, 1.0, 1.0, 1.0 });
+	static ConsoleVariable<Vector4> cvar_mp_color_default("/mp_color_default", { 1.0, 1.0, 1.0, 1.0 });
+	Vector4 mpColor = *cvar_mp_color_default;
+	if ( &MPBarPaths_t::getMPBar(player.playernum) == &MPBarPaths_t::automatonHTBars )
+	{
+		mpColor = *cvar_mp_color_ht;
+		if ( stats[player.playernum]->getEffectActive(EFF_SALAMANDER_HEART) == 2 )
+		{
+			mpColor = *cvar_mp_color_ht_high;
+		}
+	}
+
+	/*if ( keystatus[SDLK_KP_7] )
+	{
+		keystatus[SDLK_KP_7] = 0;
+		cvar_mp_color->x = std::min(1.f, cvar_mp_color->x + 0.01f);
+	}
+	if ( keystatus[SDLK_KP_4] )
+	{
+		keystatus[SDLK_KP_4] = 0;
+		cvar_mp_color->x = std::max(0.f, cvar_mp_color->x - 0.01f);
+	}
+	if ( keystatus[SDLK_KP_8] )
+	{
+		keystatus[SDLK_KP_8] = 0;
+		cvar_mp_color->y = std::min(1.f, cvar_mp_color->y + 0.01f);
+	}
+	if ( keystatus[SDLK_KP_5] )
+	{
+		keystatus[SDLK_KP_5] = 0;
+		cvar_mp_color->y = std::max(0.f, cvar_mp_color->y - 0.01f);
+	}
+	if ( keystatus[SDLK_KP_9] )
+	{
+		keystatus[SDLK_KP_9] = 0;
+		cvar_mp_color->z = std::min(1.f, cvar_mp_color->z + 0.01f);
+	}
+	if ( keystatus[SDLK_KP_6] )
+	{
+		keystatus[SDLK_KP_6] = 0;
+		cvar_mp_color->z = std::max(0.f, cvar_mp_color->z - 0.01f);
+	}*/
+	for ( auto img : allMPBarImages )
+	{
+		if ( img )
+		{
+			Uint8 r, g, b, a;
+			getColor(img->color, &r, &g, &b, &a);
+			r = 255 * mpColor.x;
+			g = 255 * mpColor.y;
+			b = 255 * mpColor.z;
+			//a *= 255 * cvar_mp_color->w;
+			img->color = makeColor(r, g, b, a);
+		}
+	}
+
 	if ( player.magic.noManaProcessedOnTick != 0 )
 	{
 		if ( ticks != player.magic.noManaProcessedOnTick )
@@ -31534,7 +34313,7 @@ void Player::HUD_t::updateMPBar()
 		}
 	}
 
-	mpFrame->setDisabled(player.ghost.isActive());
+	mpFrame->setDisabled(player.ghost.isActive() && !player.entity);
 }
 
 bool hotbar_slot_t::matchesExactLastItem(int player, Item* item)
@@ -31906,7 +34685,7 @@ void Player::Hotbar_t::updateHotbar()
 			if ( controller )
 			{
 				glyph->disabled = slot->isDisabled();
-				if ( !player.shootmode || !player.entity )
+				if ( !player.shootmode || !player.entity || player.ghost.isActive() )
 				{
 					glyph->disabled = true;
 				}
@@ -32116,6 +34895,13 @@ void Player::Hotbar_t::updateHotbar()
 			}
 		}
 
+		Item* hotbarItem = uidToItem(hotbar[num].item);
+		slotItem->setUserData(nullptr);
+		if ( hotbarItem && hotbarItem->type == SPELL_ITEM )
+		{
+			slotItem->setUserData(&GAMEUI_FRAMEDATA_SPELL_LEARNABLE);
+		}
+
 		if ( current_hotbar == num )
 		{
 			bool showHighlightedSlot = true;
@@ -32145,7 +34931,12 @@ void Player::Hotbar_t::updateHotbar()
 
 				highlightSlot->setSize(pos); // this follows the slots around
 				highlightSlotImg->disabled = false;
-				updateSlotFrameFromItem(highlightSlotItem, uidToItem(hotbar[num].item));
+				highlightSlotItem->setUserData(nullptr);
+				if ( hotbarItem && hotbarItem->type == SPELL_ITEM )
+				{
+					highlightSlotItem->setUserData(&GAMEUI_FRAMEDATA_SPELL_LEARNABLE);
+				}
+				updateSlotFrameFromItem(highlightSlotItem, hotbarItem);
 
 				if ( player.inventoryUI.frame )
 				{
@@ -32203,18 +34994,18 @@ void Player::Hotbar_t::updateHotbar()
 					{
 						highlightSlotImg->disabled = true;
 						highlightSlotItem->setDisabled(true);
-						updateSlotFrameFromItem(slotItem, uidToItem(hotbar[num].item));
+						updateSlotFrameFromItem(slotItem, hotbarItem);
 					}
 				}
 			}
 			else
 			{
-				updateSlotFrameFromItem(slotItem, uidToItem(hotbar[num].item));
+				updateSlotFrameFromItem(slotItem, hotbarItem);
 			}
 		}
 		else
 		{
-			updateSlotFrameFromItem(slotItem, uidToItem(hotbar[num].item));
+			updateSlotFrameFromItem(slotItem, hotbarItem);
 		}
 	}
 }
@@ -32464,7 +35255,7 @@ void Player::SkillSheet_t::createSkillSheet()
 		profName->setTextColor(skillSheetData.defaultTextColor);
 		if ( i < skillSheetData.skillEntries.size() )
 		{
-			profName->setText(skillSheetData.skillEntries[i].name.c_str());
+			profName->setText(skillSheetData.skillEntries[i].getSkillName(true).c_str());
 		}
 		else
 		{
@@ -32515,7 +35306,7 @@ void Player::SkillSheet_t::createSkillSheet()
 		profName->setTextColor(skillSheetData.defaultTextColor);
 		if ( i < skillSheetData.skillEntries.size() )
 		{
-			profName->setText(skillSheetData.skillEntries[i].name.c_str());
+			profName->setText(skillSheetData.skillEntries[i].getSkillName(true).c_str());
 		}
 		else
 		{
@@ -32618,7 +35409,7 @@ void Player::SkillSheet_t::createSkillSheet()
 	auto scrollAreaFrame = scrollAreaOuterFrame->addFrame("skill scroll area");
 	scrollAreaFrame->setHollow(true);
 	skillSheetEntryFrames[player.playernum].scrollArea = scrollAreaFrame;
-	scrollAreaFrame->setSize(SDL_Rect{ 0, 0, scrollAreaOuterFrame->getSize().w, 1000 });
+	scrollAreaFrame->setSize(SDL_Rect{ 0, 0, scrollAreaOuterFrame->getSize().w, 4000 });
 
 	SDL_Rect txtPos{ 0, 0, scrollAreaFrame->getSize().w, scrollAreaFrame->getSize().h };
 	{
@@ -32703,7 +35494,6 @@ void Player::SkillSheet_t::createSkillSheet()
 		char effectFrameName[64] = "";
 		char effectFieldName[64] = "";
 		char effectFieldVal[64] = "";
-		char effectBgName[64];
 		int effectXOffset = 72; // tmp paramters - configured in skillsheet json
 		int effectBackgroundXOffset = 8;
 		int effectBackgroundWidth = 80;
@@ -32766,7 +35556,7 @@ void Player::SkillSheet_t::createSkillSheet()
 			auto effectValFrame = effectFrame->addFrame("effect val frame");
 			effectValFrame->setHollow(true);
 			effectValFrame->setSize(SDL_Rect{ valueX, 0, effectXOffset, effectFrame->getSize().h - 4 });
-			auto effectVal = effectValFrame->addField("effect val", 1024);
+			auto effectVal = effectValFrame->addField("effect val", 2048);
 			effectVal->setFont(descFont);
 			effectVal->setSize(SDL_Rect{ 0, 0, 1000, effectValFrame->getSize().h }); // large 1000px to handle large text length marquee
 			effectVal->setVJustify(Field::justify_t::CENTER);
@@ -32969,7 +35759,7 @@ void Player::SkillSheet_t::openSkillSheet()
 
 std::string formatSkillSheetEffects(int playernum, int proficiency, std::string& tag, std::string& rawValue)
 {
-	char buf[1024] = "";
+	char buf[2048] = "";
 	if ( !players[playernum] ) { return ""; }
 	Entity* player = players[playernum]->entity;
 	real_t val = 0.0;
@@ -33089,7 +35879,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		}
 		else if ( tag == "RANGED_PIERCE_CHANCE" )
 		{
-			val = std::min(std::max(statGetPER(stats[playernum], player) / 2, 0), 50);
+			val = std::min(std::max(statGetPER(stats[playernum], player), 0), 50);
 			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 		}
 		return buf;
@@ -33530,37 +36320,37 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		}
 		return buf;
 	}
-	else if ( proficiency == PRO_SWIMMING )
-	{
-		if ( tag == "SWIM_SPEED_TOTAL" )
-		{
-			val = (((stats[playernum]->getModifiedProficiency(proficiency) / 100.f) * 50.f) + 50); // water movement speed
-			if ( stats[playernum]->type == SKELETON )
-			{
-				val *= .5;
-			}
-			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
-		}
-		else if ( tag == "SWIM_SPEED_BASE" )
-		{
-			val = -50.0; // water movement speed
-			if ( stats[playernum]->type == SKELETON )
-			{
-				val -= 25.0;
-			}
-			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
-		}
-		else if ( tag == "SWIM_SPEED_BONUS" )
-		{
-			val = (((stats[playernum]->getModifiedProficiency(proficiency) / 100.f) * 50.f)); // water movement speed
-			if ( stats[playernum]->type == SKELETON )
-			{
-				val *= .5;
-			}
-			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
-		}
-		return buf;
-	}
+	//else if ( proficiency == PRO_LEGACY_SWIMMING )
+	//{
+	//	if ( tag == "SWIM_SPEED_TOTAL" )
+	//	{
+	//		val = (((stats[playernum]->getModifiedProficiency(proficiency) / 100.f) * 50.f) + 50); // water movement speed
+	//		if ( stats[playernum]->type == SKELETON )
+	//		{
+	//			val *= .5;
+	//		}
+	//		snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+	//	}
+	//	else if ( tag == "SWIM_SPEED_BASE" )
+	//	{
+	//		val = -50.0; // water movement speed
+	//		if ( stats[playernum]->type == SKELETON )
+	//		{
+	//			val -= 25.0;
+	//		}
+	//		snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+	//	}
+	//	else if ( tag == "SWIM_SPEED_BONUS" )
+	//	{
+	//		val = (((stats[playernum]->getModifiedProficiency(proficiency) / 100.f) * 50.f)); // water movement speed
+	//		if ( stats[playernum]->type == SKELETON )
+	//		{
+	//			val *= .5;
+	//		}
+	//		snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+	//	}
+	//	return buf;
+	//}
 	else if ( proficiency == PRO_LEADERSHIP )
 	{
 		if ( tag == "LEADER_MAX_FOLLOWERS" )
@@ -33690,31 +36480,129 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		}
 		else if ( tag == "APPRAISE_MAX_GOLD_VALUE" )
 		{
-			if ( skillCapstoneUnlocked(playernum, proficiency) )
+			//if ( skillCapstoneUnlocked(playernum, proficiency) )
+			//{
+			//	snprintf(buf, sizeof(buf), "%s", Language::get(6965)); // "any"
+			//}
+			//else
 			{
-				snprintf(buf, sizeof(buf), "%s", Language::get(4065)); // "any"
-			}
-			else
-			{
-				val = 10 * (stats[playernum]->getModifiedProficiency(proficiency) + (statGetPER(stats[playernum], player) * 5)); // max gold value can appraise
-				if ( val < 0.0 )
+				int skillLVL = (stats[playernum]->getModifiedProficiency(proficiency) + (statGetPER(stats[playernum], player) * Player::Inventory_t::Appraisal_t::perStatMult)); // max gold value can appraise
+				if ( skillLVL < 0 )
 				{
 					snprintf(buf, sizeof(buf), "??? Gold");
 				}
-				else if ( val < 0.1 )
+				else
 				{
-					val = 9;
-					snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+					for ( auto& table : Player::Inventory_t::Appraisal_t::appraisal_tables )
+					{
+						if ( skillLVL >= table.skillLVL )
+						{
+							val = table.goldValueLimit;
+							break;
+						}
+					}
+					if ( val > 99999 )
+					{
+						snprintf(buf, sizeof(buf), "%s", Language::get(4065)); // "any"
+					}
+					else
+					{
+						snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+					}
+				}
+			}
+		}
+		else if ( tag == "APPRAISE_GOLD_FAST" )
+		{
+			//if ( skillCapstoneUnlocked(playernum, proficiency) )
+			//{
+			//	snprintf(buf, sizeof(buf), "%s", Language::get(4065)); // "any"
+			//}
+			//else
+			{
+				int skillLVL = (stats[playernum]->getModifiedProficiency(proficiency) + (statGetPER(stats[playernum], player) * Player::Inventory_t::Appraisal_t::perStatMult)); // max gold value can appraise
+				if ( skillLVL < 0 )
+				{
+					snprintf(buf, sizeof(buf), "??? Gold");
 				}
 				else
 				{
+					for ( auto& table : Player::Inventory_t::Appraisal_t::appraisal_tables )
+					{
+						if ( skillLVL >= table.skillLVL )
+						{
+							val = table.fastTimeGold;
+							break;
+						}
+					}
 					snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
 				}
 			}
 		}
+		else if ( tag == "APPRAISE_SPEEDUP" )
+		{
+			int skillLVL = (stats[playernum]->getModifiedProficiency(proficiency) + (statGetPER(stats[playernum], player) * Player::Inventory_t::Appraisal_t::perStatMult));
+			/*if ( skillCapstoneUnlocked(playernum, proficiency) )
+			{
+				val = 100.0;
+			}
+			else */
+			if ( skillLVL >= 50 )
+			{
+				real_t capstone = skillCapstoneUnlocked(playernum, proficiency) ? 0.75 : 1.0;
+				real_t ratio = (1.0 - capstone * std::max(0.2, 0.5 + (100 - skillLVL) / 100.0)) * 100.0;
+				val = ratio;
+				val = std::min(100.0, val);
+			}
+			else
+			{
+				val = 0.0;
+			}
+			snprintf(buf, sizeof(buf), rawValue.c_str(), val);
+		}
+		else if ( tag == "APPRAISE_SPEEDUP_CONSUMABLES" )
+		{
+			int skillLVL = (stats[playernum]->getModifiedProficiency(proficiency) + (statGetPER(stats[playernum], player) * Player::Inventory_t::Appraisal_t::perStatMult));
+			/*if ( skillCapstoneUnlocked(playernum, proficiency) )
+			{
+				val = 100.0;
+			}
+			else */
+			if ( skillLVL >= 0 )
+			{
+				real_t capstone = skillCapstoneUnlocked(playernum, proficiency) ? 0.75 : 1.0;
+				real_t ratio = (1.0 - capstone * std::max(0.2, 1.0 + (-skillLVL) / 100.0)) * 100.0;
+				val = ratio;
+				val = std::min(100.0, val);
+			}
+			else
+			{
+				val = 0.0;
+			}
+			snprintf(buf, sizeof(buf), rawValue.c_str(), val);
+		}
+		else if ( tag == "APPRAISE_FLOOR_BONUS" )
+		{
+			int skillLVL = std::min(100, std::max(0, (stats[playernum]->getModifiedProficiency(proficiency) + (statGetPER(stats[playernum], player) * Player::Inventory_t::Appraisal_t::perStatMult))));
+			/*if ( skillCapstoneUnlocked(playernum, proficiency) )
+			{
+				val = 100.0;
+			}
+			else */
+			if ( skillLVL >= 0 )
+			{
+				real_t appraisalTimerReduce = (1.0 - (0.75 - (0.25 * skillLVL) / 100.0)) * 100.0;
+				val = appraisalTimerReduce;
+			}
+			else
+			{
+				val = 0.0;
+			}
+			snprintf(buf, sizeof(buf), rawValue.c_str(), val);
+		}
 		else if ( tag == "APPRAISE_WORTHLESS_GLASS" )
 		{
-			if ( (stats[playernum]->getModifiedProficiency(proficiency) + (statGetPER(stats[playernum], player) * 5)) >= 100 )
+			if ( (stats[playernum]->getModifiedProficiency(proficiency) + (statGetPER(stats[playernum], player) * Player::Inventory_t::Appraisal_t::perStatMult)) >= 40 )
 			{
 				snprintf(buf, sizeof(buf), rawValue.c_str(), Language::get(1314)); // yes
 			}
@@ -33923,8 +36811,241 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		}
 		return buf;
 	}
-	else if ( proficiency == PRO_SPELLCASTING )
+	/*else if ( proficiency == PRO_LEGACY_SPELLCASTING )
 	{
+		return buf;
+	}*/
+	else if ( proficiency == PRO_SORCERY || proficiency == PRO_MYSTICISM || proficiency == PRO_THAUMATURGY || proficiency == NUMPROFICIENCIES )
+	{
+		static ConsoleVariable<int> cvar_skillsheet_magic_namelen("/skillsheet_magic_namelen", 14);
+		snprintf(buf, sizeof(buf), "%d", 0);
+		if ( tag == "MAGIC_CURRENT_TIER" )
+		{
+			std::string tierName = Language::get(4061);
+			int skillLVL = std::min(stats[playernum]->getModifiedProficiency(proficiency) + statGetINT(stats[playernum], player), 100);
+			if ( skillLVL < 0 )
+			{
+				tierName = Language::get(4057); // none
+			}
+			else
+			{
+				skillLVL /= 20;
+				tierName += " ";
+				if ( skillLVL == 0 )
+				{
+					tierName += "I";
+				}
+				else if ( skillLVL == 1 )
+				{
+					tierName += "II";
+				}
+				else if ( skillLVL == 2 )
+				{
+					tierName += "III";
+				}
+				else if ( skillLVL == 3 )
+				{
+					tierName += "IV";
+				}
+				else if ( skillLVL == 4 )
+				{
+					tierName += "V";
+				}
+				else if ( skillLVL >= 5 )
+				{
+					tierName += "VI";
+				}
+			}
+			snprintf(buf, sizeof(buf), rawValue.c_str(), tierName.c_str());
+		}
+		else if ( tag == "MAGIC_SPELLPOWER_TOTAL" )
+		{
+			if ( auto spell = players[playernum]->magic.selectedSpell() )
+			{
+				val = (getBonusFromCasterOfSpellElement(player, stats[playernum], nullptr, spell->ID, proficiency) * 100.0);
+			}
+			else
+			{
+				val = (getBonusFromCasterOfSpellElement(player, stats[playernum], nullptr, SPELL_NONE, proficiency) * 100.0);
+			}
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		else if ( tag == "MAGIC_SPELLPOWER_INT" )
+		{
+			//val = (getBonusFromCasterOfSpellElement(player, stats[playernum], nullptr, SPELL_NONE) * 100.0);
+			real_t bonus = getSpellBonusFromCasterINT(players[playernum]->entity, stats[playernum], proficiency);
+			val = bonus * 100.0;
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		else if ( tag == "MAGIC_SPELLPOWER_EQUIPMENT" )
+		{
+			if ( auto spell = players[playernum]->magic.selectedSpell() )
+			{
+				val = (getBonusFromCasterOfSpellElement(player, stats[playernum], nullptr, spell->ID, proficiency) * 100.0);
+			}
+			else
+			{
+				val = (getBonusFromCasterOfSpellElement(player, stats[playernum], nullptr, SPELL_NONE, proficiency) * 100.0);
+			}
+			real_t bonus = getSpellBonusFromCasterINT(players[playernum]->entity, stats[playernum], proficiency);
+			val -= bonus * 100.0;
+			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
+		}
+		else if ( tag == "MAGIC_MEMORIZED_LEVEL_SPELLS" )
+		{
+			int skillLVL = stats[playernum]->getProficiency(proficiency);
+			std::string magics = "";
+			std::set<int> inserted;
+			for ( node_t* node = players[playernum]->magic.spellList.first; node; node = node->next )
+			{
+				if ( skillLVL >= SKILL_LEVEL_LEGENDARY )
+				{
+					break;
+				}
+				if ( node && node->element )
+				{
+					if ( spell_t* spell = (spell_t*)node->element )
+					{
+						if ( spell->skillID != proficiency )
+						{
+							continue;
+						}
+						if ( spell->ID == SPELL_GHOST_BOLT
+							|| spell->ID == SPELL_SLIME_ACID
+							|| spell->ID == SPELL_SLIME_FIRE
+							|| spell->ID == SPELL_SLIME_WATER
+							|| spell->ID == SPELL_SLIME_TAR
+							|| spell->ID == SPELL_SLIME_METAL
+							|| spell->hide_from_ui == true )
+						{
+							if ( spellIsNaturallyLearnedByRaceOrClass(players[playernum]->entity, 
+								*stats[playernum], spell->ID, playernum) )
+							{
+								// show these spells
+							}
+							else
+							{
+								continue;
+							}
+						}
+						if ( skillLVL < std::min(SKILL_LEVEL_LEGENDARY, (spell->difficulty + 20)) )
+						{
+							if ( inserted.find(spell->ID) != inserted.end() )
+							{
+								continue;
+							}
+							inserted.insert(spell->ID);
+							if ( strcmp(spell->getSpellName(), "") )
+							{
+								if ( magics != "" )
+								{
+									magics += '\n';
+								}
+								magics += "\x1E ";
+								if ( players[playernum]->bUseCompactGUIHeight() || players[playernum]->bUseCompactGUIWidth() )
+								{
+									std::string name = spell->getSpellName();
+									if ( name.size() > *cvar_skillsheet_magic_namelen )
+									{
+										name = name.substr(0, *cvar_skillsheet_magic_namelen - 1);
+										name += "..";
+										magics += name;
+									}
+									else
+									{
+										magics += name;
+									}
+								}
+								else
+								{
+									magics += spell->getSpellName();
+								}
+							}
+						}
+					}
+				}
+			}
+
+			if ( magics == "" ) { magics = "-"; }
+			snprintf(buf, sizeof(buf), rawValue.c_str(), magics.c_str());
+		}
+		else if ( tag == "MAGIC_CURRENT_TIER_SPELLS" )
+		{
+			int skillLVL = std::min(stats[playernum]->getModifiedProficiency(proficiency) + statGetINT(stats[playernum], player), 100);
+			if ( skillLVL >= 0 )
+			{
+				skillLVL /= 20;
+			}
+			std::string magics = "";
+			std::set<int> inserted;
+			for ( int i = SPELL_NONE + 1; i < NUM_SPELLS; ++i )
+			{
+				auto find = allGameSpells.find(i);
+				if ( find != allGameSpells.end() )
+				{
+					auto spellEntry = find->second;
+					if ( !spellEntry )
+					{
+						continue;
+					}
+					if ( spellEntry->skillID != proficiency )
+					{
+						continue;
+					}
+					if ( spellEntry->ID == SPELL_GHOST_BOLT
+						|| spellEntry->ID == SPELL_SLIME_ACID 
+						|| spellEntry->ID == SPELL_SLIME_FIRE 
+						|| spellEntry->ID == SPELL_SLIME_WATER 
+						|| spellEntry->ID == SPELL_SLIME_TAR
+						|| spellEntry->ID == SPELL_SLIME_METAL
+						|| spellEntry->hide_from_ui == true )
+					{
+						if ( spellIsNaturallyLearnedByRaceOrClass(players[playernum]->entity,
+							*stats[playernum], spellEntry->ID, playernum) )
+						{
+							// show these spells
+						}
+						else
+						{
+							continue;
+						}
+					}
+					if ( spellEntry && spellEntry->difficulty == (skillLVL * 20) )
+					{
+						if ( inserted.find(spellEntry->ID) != inserted.end() )
+						{
+							continue;
+						}
+						inserted.insert(spellEntry->ID);
+						if ( magics != "" )
+						{
+							magics += '\n';
+						}
+						magics += "\x1E ";
+						if ( players[playernum]->bUseCompactGUIHeight() || players[playernum]->bUseCompactGUIWidth() )
+						{
+							std::string name = spellEntry->getSpellName();
+							if ( name.size() > *cvar_skillsheet_magic_namelen )
+							{
+								name = name.substr(0, *cvar_skillsheet_magic_namelen - 1);
+								name += "..";
+								magics += name;
+							}
+							else
+							{
+								magics += name;
+							}
+						}
+						else
+						{
+							magics += spellEntry->getSpellName();
+						}
+					}
+				}
+			}
+			if ( magics == "" ) { magics = "-"; }
+			snprintf(buf, sizeof(buf), rawValue.c_str(), magics.c_str());
+		}
 		if ( tag == "CASTING_MP_REGEN" )
 		{
 			if ( (stats[playernum])->playerRace == RACE_INSECTOID && (stats[playernum])->stat_appearance == 0 )
@@ -33974,7 +37095,7 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 			stats[playernum]->setProficiencyUnsafe(proficiency, -999);
 			real_t zeroValue = getBaseManaRegen(player, *(stats[playernum])) / (TICKS_PER_SECOND * 1.f);
 			stats[playernum]->setProficiency(proficiency, skill);
-				
+
 			val = (100 * zeroValue / normalValue) - 100;
 			snprintf(buf, sizeof(buf), rawValue.c_str(), val);
 		}
@@ -33992,7 +37113,9 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		}
 		else if ( tag == "CASTING_BEGINNER" )
 		{
-			if ( isSpellcasterBeginner(playernum, player) )
+			//if ( isSpellcasterBeginner(playernum, player, proficiency) )
+			int skillLVL = std::min(std::max(0, stats[playernum]->getModifiedProficiency(proficiency) + statGetINT(stats[playernum], player)), 100);
+			if ( skillLVL < SKILL_LEVEL_BASIC )
 			{
 				snprintf(buf, sizeof(buf), rawValue.c_str(), Language::get(1314)); // yes
 			}
@@ -34035,113 +37158,20 @@ std::string formatSkillSheetEffects(int playernum, int proficiency, std::string&
 		}
 		return buf;
 	}
-	else if ( proficiency == PRO_MAGIC )
-	{
-		if ( tag == "MAGIC_CURRENT_TIER" )
-		{
-			std::string tierName = Language::get(4061);
-			int skillLVL = std::min(stats[playernum]->getModifiedProficiency(proficiency) + statGetINT(stats[playernum], player), 100);
-			if ( skillLVL < 0 )
-			{
-				tierName = Language::get(4057); // none
-			}
-			else
-			{
-				skillLVL /= 20;
-				tierName += " ";
-				if ( skillLVL == 0 )
-				{
-					tierName += "I";
-				}
-				else if ( skillLVL == 1 )
-				{
-					tierName += "II";
-				}
-				else if ( skillLVL == 2 )
-				{
-					tierName += "III";
-				}
-				else if ( skillLVL == 3 )
-				{
-					tierName += "IV";
-				}
-				else if ( skillLVL == 4 )
-				{
-					tierName += "V";
-				}
-				else if ( skillLVL >= 5 )
-				{
-					tierName += "VI";
-				}
-			}
-			snprintf(buf, sizeof(buf), rawValue.c_str(), tierName.c_str());
-		}
-		else if ( tag == "MAGIC_SPELLPOWER_TOTAL" )
-		{
-			val = (getBonusFromCasterOfSpellElement(player, stats[playernum], nullptr, SPELL_NONE) * 100.0);
-			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
-		}
-		else if ( tag == "MAGIC_SPELLPOWER_INT" )
-		{
-			//val = (getBonusFromCasterOfSpellElement(player, stats[playernum], nullptr, SPELL_NONE) * 100.0);
-			real_t bonus = getSpellBonusFromCasterINT(players[playernum]->entity, stats[playernum]);
-			val = bonus * 100.0;
-			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
-		}
-		else if ( tag == "MAGIC_SPELLPOWER_EQUIPMENT" )
-		{
-			val = (getBonusFromCasterOfSpellElement(player, stats[playernum], nullptr, SPELL_NONE) * 100.0);
-			real_t bonus = getSpellBonusFromCasterINT(players[playernum]->entity, stats[playernum]);
-			val -= bonus * 100.0;
-			snprintf(buf, sizeof(buf), rawValue.c_str(), (int)val);
-		}
-		else if ( tag == "MAGIC_CURRENT_TIER_SPELLS" )
-		{
-			int skillLVL = std::min(stats[playernum]->getModifiedProficiency(proficiency) + statGetINT(stats[playernum], player), 100);
-			if ( skillLVL >= 0 )
-			{
-				skillLVL /= 20;
-			}
-			std::string magics = "";
-			std::set<int> inserted;
-			for ( auto it = allGameSpells.begin(); it != allGameSpells.end(); ++it )
-			{
-				auto spellEntry = *it;
-				if ( !spellEntry )
-				{
-					continue;
-				}
-				if ( spellEntry->ID == SPELL_WEAKNESS 
-					|| spellEntry->ID == SPELL_GHOST_BOLT
-					|| spellEntry->ID == SPELL_SLIME_ACID 
-					|| spellEntry->ID == SPELL_SLIME_FIRE 
-					|| spellEntry->ID == SPELL_SLIME_WATER 
-					|| spellEntry->ID == SPELL_SLIME_TAR
-					|| spellEntry->ID == SPELL_SLIME_METAL )
-				{
-					continue;
-				}
-				if ( spellEntry && spellEntry->difficulty == (skillLVL * 20) )
-				{
-					if ( inserted.find(spellEntry->ID) != inserted.end() )
-					{
-						continue;
-					}
-					inserted.insert(spellEntry->ID);
-					if ( magics != "" )
-					{
-						magics += '\n';
-					}
-					magics += "\x1E ";
-					magics += spellEntry->getSpellName();
-				}
-			}
-			if ( magics == "" ) { magics = "-"; }
-			snprintf(buf, sizeof(buf), rawValue.c_str(), magics.c_str());
-		}
-		return buf;
-	}
 	
+	return "";
+}
+
+std::string Player::SkillSheet_t::getSkillNameFromID(int skillID, bool shortName)
+{
+	for ( auto& entry : Player::SkillSheet_t::skillSheetData.skillEntries )
+	{
+		if ( entry.skillId == skillID )
+		{
+			return entry.getSkillName(shortName);
+		}
+	}
+
 	return "";
 }
 
@@ -34697,14 +37727,14 @@ void Player::SkillSheet_t::processSkillSheet()
 		std::string rightBinary = "00000000";
 		for ( auto& skillEntry : skillSheetData.skillEntries )
 		{
-			if ( index >= 8 )
+			if ( index >= 8 && index < 16 )
 			{
 				if ( stats[player.playernum]->getModifiedProficiency(skillEntry.skillId) >= SKILL_LEVEL_LEGENDARY )
 				{
 					leftBinary[7 - (index - 8)] = '1';
 				}
 			}
-			else
+			else if ( index < 8 )
 			{
 				if ( stats[player.playernum]->getModifiedProficiency(skillEntry.skillId) >= SKILL_LEVEL_LEGENDARY )
 				{
@@ -35279,7 +38309,7 @@ void Player::SkillSheet_t::processSkillSheet()
 
 		//DebugTimers.addTimePoint("skill", "post resize");
 
-		if ( selectedSkill >= 0 && selectedSkill < skillSheetData.skillEntries.size() )
+		if ( selectedSkill >= 0 && selectedSkill < skillSheetData.skillEntries.size() && selectedSkill < NUMPROFICIENCIES )
 		{
 			int proficiency = skillSheetData.skillEntries[selectedSkill].skillId;
 			int proficiencyValue = stats[player.playernum]->getModifiedProficiency(proficiency);
@@ -35357,7 +38387,7 @@ void Player::SkillSheet_t::processSkillSheet()
 				if ( !bSkillSheetEntryLoaded )
 				{
 					auto skillTitleTxt = innerFrame->findField("skill title txt");
-					skillTitleTxt->setText(skillSheetData.skillEntries[selectedSkill].name.c_str());
+					skillTitleTxt->setText(skillSheetData.skillEntries[selectedSkill].getSkillName().c_str());
 
 					auto statTypeTxt = scrollArea->findField("stat type txt");
 					auto statIcon = scrollArea->findImage("stat icon");
@@ -35453,6 +38483,8 @@ void Player::SkillSheet_t::processSkillSheet()
 			auto effectFrameBgImgTmp = scrollArea->findImage("effect frame bg tmp");
 			effectFrameBgImgTmp->disabled = false;
 
+			static ConsoleVariable<bool> cvar_skillsheet_skip_spell_list("/skillsheet_skip_spell_list", true);
+
 			for ( int eff = 0; eff < 10; ++eff )
 			{
 				auto effectFrame = skillSheetEntryFrames[player.playernum].effectFrames[eff];
@@ -35470,11 +38502,18 @@ void Player::SkillSheet_t::processSkillSheet()
 					{
 						effectFramePos.y += moveEffectsOffsetY;
 					}
-					effectFrame->setSize(effectFramePos);
-
-					effectFrame->setDisabled(false);
 
 					auto& effect_t = skillSheetData.skillEntries[selectedSkill].effects[eff];
+					if ( proficiency == PRO_SORCERY || proficiency == PRO_THAUMATURGY || proficiency == PRO_MYSTICISM )
+					{
+						if ( *cvar_skillsheet_skip_spell_list && effect_t.tag == "MAGIC_CURRENT_TIER_SPELLS" )
+						{
+							continue;
+						}
+					}
+
+					effectFrame->setSize(effectFramePos);
+					effectFrame->setDisabled(false);
 
 					bool bEffUpdated = false;
 					if ( (effect_t.bAllowRealtimeUpdate && (ticks % (std::max(TICKS_PER_SECOND, MAXPLAYERS * 10))) == (player.playernum * 10))
@@ -35522,7 +38561,15 @@ void Player::SkillSheet_t::processSkillSheet()
 						auto effectTxtFrame = effectFrame->findFrame("effect txt frame");
 						auto effectTxt = effectTxtFrame->findField("effect txt");
 						auto effectBgImgFrame = effectFrame->findFrame("effect val bg frame");
+
 						effectTxt->setText(effect_t.title.c_str());
+						if ( player.bUseCompactGUIHeight() || player.bUseCompactGUIWidth() )
+						{
+							if ( effect_t.titleShort != "" )
+							{
+								effectTxt->setText(effect_t.titleShort.c_str());
+							}
+						}
 
 						{
 							// adjust position to match width of container
@@ -36390,9 +39437,9 @@ void Player::Inventory_t::SpellPanel_t::updateSpellPanel()
 		sliderCapBot->pos.y = sliderPos.y + sliderPos.h - sliderCapBot->pos.h;
 	}
 
-	auto skillBg = baseFrame->findImage("spell skill bg");
+	/*auto skillBg = baseFrame->findImage("spell skill bg");
 	skillBg->pos.x = 14;
-	skillBg->pos.y = 6;
+	skillBg->pos.y = 6;*/
 
 	int lowestItemY = getNumSpellsToDisplayVertical() - 1;
 	for ( node_t* node = stats[player.playernum]->inventory.first; node != NULL; node = node->next )
@@ -36470,23 +39517,98 @@ void Player::Inventory_t::SpellPanel_t::updateSpellPanel()
 		}
 	}
 
-	auto skillIcon = baseFrame->findImage("spell skill icon");
-	skillIcon->pos.x = skillBg->pos.x + 4;
-	skillIcon->pos.y = skillBg->pos.y + 4;
-	for ( auto& skillEntry : Player::SkillSheet_t::skillSheetData.skillEntries )
+	auto filterGlyph = baseFrame->findImage("filter spell glyph");
+	filterGlyph->disabled = true;
+	auto filterBtn = baseFrame->findButton("spell filter button");
+	filterBtn->setDisabled(true);
+	SDL_Rect filterBtnPos = filterBtn->getSize();
+	filterBtnPos.x = 14;
+	filterBtnPos.y = 6;
+	filterBtn->setSize(filterBtnPos);
+	if ( inputs.getVirtualMouse(player.playernum)->draw_cursor )
 	{
-		if ( skillEntry.skillId == PRO_MAGIC )
+		filterBtn->setDisabled(!isInteractable);
+		if ( isInteractable )
 		{
-			if ( skillCapstoneUnlocked(player.playernum, PRO_MAGIC) )
-			{
-				skillIcon->path = skillEntry.skillIconPathLegend.c_str();
-			}
-			else
-			{
-				skillIcon->path = skillEntry.skillIconPath.c_str();
-			}
-			break;
+			buttonSpellUpdateSelectorOnHighlight(player.playernum, filterBtn);
 		}
+	}
+	else if ( filterBtn->isSelected() )
+	{
+		filterBtn->deselect();
+	}
+	if ( filterBtn->isDisabled() && usingGamepad )
+	{
+		SDL_Rect filterBtnPos = filterBtn->getSize();
+		filterBtnPos.x -= 8;
+		filterBtn->setSize(filterBtnPos);
+
+		filterGlyph->path = Input::inputs[player.playernum].getGlyphPathForBinding("MenuAlt2");
+		if ( auto imgGet = Image::get(filterGlyph->path.c_str()) )
+		{
+			filterGlyph->pos.w = imgGet->getWidth();
+			filterGlyph->pos.h = imgGet->getHeight();
+			filterGlyph->disabled = false;
+		}
+		filterGlyph->pos.x = filterBtn->getSize().x + filterBtn->getSize().w;
+		if ( filterGlyph->pos.x % 2 == 1 )
+		{
+			++filterGlyph->pos.x;
+		}
+		filterGlyph->pos.y = filterBtn->getSize().y + filterBtn->getSize().h / 2 - filterGlyph->pos.h / 2;
+		if ( filterGlyph->pos.y % 2 == 1 )
+		{
+			++filterGlyph->pos.y;
+		}
+	}
+
+	auto skillIcon = baseFrame->findImage("spell skill icon");
+	auto filterFrame = baseFrame->findFrame("filter frame");
+	auto filterText = filterFrame->findField("filter txt");
+	filterText->setDisabled(true);
+	auto filterTooltipImg = filterFrame->findImage("spell filter tooltip img");
+	filterTooltipImg->disabled = true;
+	if ( spellFilterBySkill > 0 )
+	{
+		skillIcon->pos.x = filterBtn->getSize().x + 4;
+		skillIcon->pos.y = filterBtn->getSize().y + 4;
+		skillIcon->pos.w = 24;
+		skillIcon->pos.h = 24;
+		for ( auto& skillEntry : Player::SkillSheet_t::skillSheetData.skillEntries )
+		{
+			if ( skillEntry.skillId == spellFilterBySkill )
+			{
+				if ( skillCapstoneUnlocked(player.playernum, skillEntry.skillId) )
+				{
+					skillIcon->path = skillEntry.skillIconPathLegend.c_str();
+				}
+				else
+				{
+					skillIcon->path = skillEntry.skillIconPath.c_str();
+				}
+				char buf[128];
+				snprintf(buf, sizeof(buf), Language::get(6842), skillEntry.getSkillName().c_str());
+				filterText->setText(buf);
+				filterText->setDisabled(false);
+				filterTooltipImg->disabled = false;
+				filterFrame->setDisabled(false);
+				real_t opacity = filterFrame->getOpacity() / 100.0;
+				real_t opacityChange = .05 * getFPSScale(144.0);
+				opacity = std::min(opacity + opacityChange, 1.0);
+				filterFrame->setOpacity(opacity * 100.0);
+				break;
+			}
+		}
+	}
+	else
+	{
+		skillIcon->pos.x = filterBtn->getSize().x;
+		skillIcon->pos.y = filterBtn->getSize().y;
+		skillIcon->path = "#*images/ui/Inventory/HUD_Magic_Filter_All.png";
+		skillIcon->pos.w = 32;
+		skillIcon->pos.h = 32;
+		filterFrame->setDisabled(true);
+		filterFrame->setOpacity(0.0);
 	}
 
 	if ( bOpen && isInteractable )
@@ -36512,20 +39634,23 @@ void Player::Inventory_t::SpellPanel_t::updateSpellPanel()
 						}
 					}
 
-					if ( input.consumeBinaryToggle("MenuScrollDown") )
+					if ( abs(scrollSetpoint - scrollAnimateX) < 0.00001 )
 					{
-						scrollSetpoint = std::max(scrollSetpoint + player.inventoryUI.getSlotSize(), 0);
-						if ( player.inventoryUI.cursor.queuedModule == Player::GUI_t::MODULE_SPELLS )
+						if ( input.binaryToggle("MenuScrollDown") )
 						{
-							player.inventoryUI.cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+							scrollSetpoint = std::max(scrollSetpoint + player.inventoryUI.getSlotSize(), 0);
+							if ( player.inventoryUI.cursor.queuedModule == Player::GUI_t::MODULE_SPELLS )
+							{
+								player.inventoryUI.cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+							}
 						}
-					}
-					else if ( input.consumeBinaryToggle("MenuScrollUp") )
-					{
-						scrollSetpoint = std::max(scrollSetpoint - player.inventoryUI.getSlotSize(), 0);
-						if ( player.inventoryUI.cursor.queuedModule == Player::GUI_t::MODULE_SPELLS )
+						else if ( input.binaryToggle("MenuScrollUp") )
 						{
-							player.inventoryUI.cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+							scrollSetpoint = std::max(scrollSetpoint - player.inventoryUI.getSlotSize(), 0);
+							if ( player.inventoryUI.cursor.queuedModule == Player::GUI_t::MODULE_SPELLS )
+							{
+								player.inventoryUI.cursor.queuedModule = Player::GUI_t::MODULE_NONE;
+							}
 						}
 					}
 				}
@@ -36544,7 +39669,7 @@ void Player::Inventory_t::SpellPanel_t::updateSpellPanel()
 
 			// slightly faster on gamepad
 			static ConsoleVariable<float> cvar_spell_slider_speed("/spell_slider_speed", 1.f);
-			const real_t factor = (3.0 * (*cvar_spell_slider_speed + (usingGamepad ? -.25f : 0.f)));
+			const real_t factor = (3.0 * (*cvar_spell_slider_speed + (usingGamepad ? -.5f : 0.f)));
 			if ( scrollSetpoint - scrollAnimateX > 0.0 )
 			{
 				setpointDiff = fpsScale * std::max(3.0, (scrollSetpoint - scrollAnimateX)) / factor;
@@ -36579,6 +39704,14 @@ void Player::Inventory_t::SpellPanel_t::updateSpellPanel()
 				player.GUI.activateModule(Player::GUI_t::MODULE_SPELLS);
 				player.inventoryUI.cycleInventoryTab();
 				player.inventoryUI.spellPanel.closeSpellPanel();
+			}
+			if ( Input::inputs[player.playernum].binaryToggle("MenuAlt2") )
+			{
+				Input::inputs[player.playernum].consumeBinaryToggle("MenuAlt2");
+				if ( filterBtn )
+				{
+					filterBtn->getCallback()(*filterBtn);
+				}
 			}
 		}
 	}
@@ -36686,7 +39819,7 @@ void Player::Inventory_t::SpellPanel_t::scrollToSlot(int x, int y, bool instantl
 	}
 }
 
-void Player::Inventory_t::ChestGUI_t::openChest()
+void Player::Inventory_t::ChestGUI_t::openChest(bool _voidChest)
 {
 	if ( player.inventoryUI.chestFrame )
 	{
@@ -36709,6 +39842,7 @@ void Player::Inventory_t::ChestGUI_t::openChest()
 		player.hud.compactLayoutMode = Player::HUD_t::COMPACT_LAYOUT_INVENTORY;
 		player.inventory_mode = INVENTORY_MODE_ITEM;
 		bOpen = true;
+		voidChest = _voidChest;
 	}
 	if ( inputs.getUIInteraction(player.playernum)->selectedItem )
 	{
@@ -36750,6 +39884,7 @@ void Player::Inventory_t::ChestGUI_t::closeChest()
 	scrollInertia = 0.0;
 	scrollAnimateX = scrollSetpoint;
 	bOpen = false;
+	voidChest = false;
 	bFirstTimeSnapCursor = false;
 	if ( inputs.getUIInteraction(player.playernum)->selectedItemFromChest > 0 )
 	{
@@ -36802,9 +39937,9 @@ const bool Player::Inventory_t::isItemFromChest(Item* item) const
 	{
 		chest_inventory = &chestInv[player.playernum];
 	}
-	else if ( openedChest[player.playernum]->children.first && openedChest[player.playernum]->children.first->element )
+	else if ( openedChest[player.playernum] )
 	{
-		chest_inventory = (list_t*)openedChest[player.playernum]->children.first->element;
+		chest_inventory = openedChest[player.playernum]->getChestInventoryList();
 	}
 
 	if ( item->node && item->node->list == chest_inventory )
@@ -36855,6 +39990,16 @@ void Player::Inventory_t::ChestGUI_t::updateChest()
 	auto chestFramePos = chestFrame->getSize();
 	auto baseBackgroundImg = baseFrame->findImage("chest base img");
 	auto lidBackgroundImg = baseFrame->findImage("chest lid img");
+	if ( voidChest )
+	{
+		baseBackgroundImg->path = "*#images/ui/Inventory/chests/Chest_Main_Void_00.png";
+		lidBackgroundImg->path = "*#images/ui/Inventory/chests/Chest_Top_Void_00.png";
+	}
+	else
+	{
+		baseBackgroundImg->path = "*#images/ui/Inventory/chests/Chest_Main_00.png";
+		lidBackgroundImg->path = "*#images/ui/Inventory/chests/Chest_Top_00.png";
+	}
 
 	int playercount = 0;
 	for ( int c = 0; c < MAXPLAYERS; ++c ) {
@@ -37951,7 +41096,8 @@ bool Player::WorldUI_t::WorldTooltipItem_t::isItemSameAsCurrent(Item* item)
 		&& item->beatitude == beatitude
 		&& item->count == count
 		&& item->appearance == appearance
-		&& item->identified == identified )
+		&& item->identified == identifiedItem
+		&& hasAppraiseCapstone == stats[player.playernum]->getModifiedProficiency(PRO_APPRAISAL) >= SKILL_LEVEL_LEGENDARY )
 	{
 		return true;
 	}
@@ -37976,7 +41122,8 @@ SDL_Surface* Player::WorldUI_t::WorldTooltipItem_t::blitItemWorldTooltip(Item* i
 	beatitude = item->beatitude;
 	count = item->count;
 	appearance = item->appearance;
-	identified = item->identified;
+	identifiedItem = item->identified;
+	hasAppraiseCapstone = stats[player.playernum]->getModifiedProficiency(PRO_APPRAISAL) >= SKILL_LEVEL_LEGENDARY;
 
 	SDL_Rect tooltip;
 	char buf[1024] = "";
@@ -38038,6 +41185,11 @@ SDL_Surface* Player::WorldUI_t::WorldTooltipItem_t::blitItemWorldTooltip(Item* i
 			{
 				snprintf(buf, sizeof(buf), "%s %s (%d%%) (%+d)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(),
 					item->getName(), item->appearance % ENCHANTED_FEATHER_MAX_DURABILITY, item->beatitude);
+			}
+			else if ( item->type == MAGICSTAFF_SCEPTER && item->identified )
+			{
+				snprintf(buf, sizeof(buf), "%s %s (%d%%) (%+d)", ItemTooltips.getItemStatusAdjective(item->type, item->status).c_str(),
+					item->getName(), item->appearance % MAGICSTAFF_SCEPTER_CHARGE_MAX, item->beatitude);
 			}
 			else if ( itemCategory(item) == BOOK )
 			{
@@ -38367,13 +41519,31 @@ SDL_Surface* Player::WorldUI_t::WorldTooltipItem_t::blitItemWorldTooltip(Item* i
 			SDL_BlitScaled(srcSurf, nullptr, itemWorldTooltipSurface, &goldPos);
 
 			char goldBuf[32];
-			if ( !item->identified && itemCategory(item) == GEM )
+			if ( !item->identified && stats[player.playernum]->getModifiedProficiency(PRO_APPRAISAL) < SKILL_LEVEL_LEGENDARY )
 			{
-				snprintf(goldBuf, sizeof(goldBuf), "%d", items[GEM_GLASS].value);
+				if ( itemCategory(item) == GEM && item->type != GEM_ROCK )
+				{
+					snprintf(goldBuf, sizeof(goldBuf), "%s", "???");
+				}
+				else
+				{
+					if ( item->getGoldValue() < 100 )
+					{
+						snprintf(goldBuf, sizeof(goldBuf), "%s", "?");
+					}
+					else if ( item->getGoldValue() < 1000 )
+					{
+						snprintf(goldBuf, sizeof(goldBuf), "%s", "??");
+					}
+					else
+					{
+						snprintf(goldBuf, sizeof(goldBuf), "%s", "???");
+					}
+				}
 			}
 			else
 			{
-				snprintf(goldBuf, sizeof(goldBuf), "%d", items[item->type].value);
+				snprintf(goldBuf, sizeof(goldBuf), "%d", item->getGoldValue());
 			}
 			if ( SDL_Surface* textSurf = const_cast<SDL_Surface*>(Text::get(goldBuf, font->getName(),
 				hudColors.characterSheetNeutral, 0)->getSurf()) )
@@ -38437,6 +41607,33 @@ void Player::WorldUI_t::WorldTooltipDialogue_t::update()
 	}
 }
 
+void Player::WorldUI_t::WorldTooltipDialogue_t::Dialogue_t::updateWorldCoordinates()
+{
+	auto& setting = WorldDialogueSettings_t::settings[dialogueType];
+	Entity* parentEnt = uidToEntity(parent);
+	if ( parentEnt && setting.followEntity )
+	{
+		if ( TimerExperiments::bUseTimerInterpolation && parentEnt->bUseRenderInterpolation )
+		{
+			x = parentEnt->lerpRenderState.x.position * 16.0;
+			y = parentEnt->lerpRenderState.y.position * 16.0;
+			z = parentEnt->lerpRenderState.z.position + setting.offsetZ;
+		}
+		else
+		{
+			x = parentEnt->x;
+			y = parentEnt->y;
+			z = parentEnt->z + setting.offsetZ;
+		}
+	}
+	else if ( parentEnt )
+	{
+		x = parentEnt->x;
+		y = parentEnt->y;
+		z = parentEnt->z + setting.offsetZ;
+	}
+}
+
 void Player::WorldUI_t::WorldTooltipDialogue_t::Dialogue_t::update()
 {
 	if ( !init )
@@ -38469,21 +41666,7 @@ void Player::WorldUI_t::WorldTooltipDialogue_t::Dialogue_t::update()
 
 
 	auto& setting = WorldDialogueSettings_t::settings[dialogueType];
-	if ( parentEnt && setting.followEntity )
-	{
-		/*if ( parentEnt->bUseRenderInterpolation )
-		{
-			x = parentEnt->lerpRenderState.x.position * 16.0;
-			y = parentEnt->lerpRenderState.y.position * 16.0;
-			z = parentEnt->lerpRenderState.z.position + setting.offsetZ;
-		}
-		else*/
-		{
-			x = parentEnt->x;
-			y = parentEnt->y;
-			z = parentEnt->z + setting.offsetZ;
-		}
-	}
+	updateWorldCoordinates();
 
 	real_t dx, dy;
 	auto& camera = cameras[player];
@@ -38636,18 +41819,8 @@ void Player::WorldUI_t::WorldTooltipDialogue_t::createDialogueTooltip(Uint32 uid
 
 	auto& setting = WorldDialogueSettings_t::settings[d->dialogueType];
 
-	/*if ( parentEnt->bUseRenderInterpolation )
-	{
-		d->x = parentEnt->lerpRenderState.x.position * 16.0;
-		d->y = parentEnt->lerpRenderState.y.position * 16.0;
-		d->z = parentEnt->lerpRenderState.z.position + setting.offsetZ;
-	}
-	else*/
-	{
-		d->x = parentEnt->x;
-		d->y = parentEnt->y;
-		d->z = parentEnt->z + setting.offsetZ;
-	}
+	d->updateWorldCoordinates();
+	
 	d->animZ = 1.5;
 	d->drawScale = 0.1 + setting.scaleMod;
 
@@ -39447,7 +42620,7 @@ bool SkillUpAnimation_t::soundIndexUsedForNotification(const int index)
 	}
 	else
 	{
-		for ( auto skill : Player::SkillSheet_t::skillSheetData.skillEntries )
+		for ( auto& skill : Player::SkillSheet_t::skillSheetData.skillEntries )
 		{
 			if ( index == skill.skillSfx )
 			{
@@ -40298,8 +43471,9 @@ size_t SkillUpAnimation_t::getSkillUpIndexToDisplay()
 				case PRO_UNARMED:
 					priority.push(std::make_pair(10, index));
 					break;
-				case PRO_MAGIC:
-				case PRO_SPELLCASTING:
+				case PRO_SORCERY:
+				case PRO_MYSTICISM:
+				case PRO_THAUMATURGY:
 					priority.push(std::make_pair(5, index));
 					break;
 				case PRO_STEALTH:
@@ -40310,9 +43484,6 @@ size_t SkillUpAnimation_t::getSkillUpIndexToDisplay()
 				case PRO_LEADERSHIP:
 				case PRO_ALCHEMY:
 					priority.push(std::make_pair(2, index));
-					break;
-				case PRO_SWIMMING:
-					priority.push(std::make_pair(1, index));
 					break;
 				case PRO_APPRAISAL:
 				default:
@@ -40389,18 +43560,16 @@ void SkillUpAnimation_t::addSkillUp(const int _numSkill, const int _currentSkill
 		case PRO_STEALTH:
 			ticksToLive = 4 * TICKS_PER_SECOND;
 			break;
-		case PRO_MAGIC:
-		case PRO_SPELLCASTING:
-			ticksToLive = 2 * TICKS_PER_SECOND;
+		case PRO_SORCERY:
+		case PRO_MYSTICISM:
+		case PRO_THAUMATURGY:
+			ticksToLive = 3 * TICKS_PER_SECOND;
 			break;
 		case PRO_LOCKPICKING:
 		case PRO_TRADING:
 		case PRO_LEADERSHIP:
 		case PRO_ALCHEMY:
 			ticksToLive = 3 * TICKS_PER_SECOND;
-			break;
-		case PRO_SWIMMING:
-			ticksToLive = 2 * TICKS_PER_SECOND;
 			break;
 		case PRO_APPRAISAL:
 		default:
@@ -40794,7 +43963,7 @@ void updateSkillUpFrame(const int player)
 			else
 			{
 				char buf[128];
-				snprintf(buf, sizeof(buf), Language::get(4327), Player::SkillSheet_t::skillSheetData.skillEntries[skillsheetIndex].name.c_str());
+				snprintf(buf, sizeof(buf), Language::get(4327), Player::SkillSheet_t::skillSheetData.skillEntries[skillsheetIndex].getSkillName().c_str());
 				skillNameTxt->setText(buf);
 			}
 			if ( auto textGet = skillNameTxt->getTextObject() )
@@ -40838,7 +44007,7 @@ void updateSkillUpFrame(const int player)
 			}
 			else
 			{
-				for ( auto skill : Player::SkillSheet_t::skillSheetData.skillEntries )
+				for ( auto& skill : Player::SkillSheet_t::skillSheetData.skillEntries )
 				{
 					if ( skill.skillId == skillUp.whichSkill )
 					{

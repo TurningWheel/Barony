@@ -91,6 +91,7 @@ void initGameDatafiles(bool moddedReload)
 	{
 		EquipmentModelOffsets.readFromFile(monstertypename[c], c);
 	}
+	EquipmentModelOffsets.readBaseItemsFromFile();
 	setupSpells();
 	CompendiumEntries.readMonstersFromFile();
 	Compendium_t::Events_t::itemDisplayedEventsList.clear();
@@ -115,6 +116,7 @@ void initGameDatafiles(bool moddedReload)
 	CompendiumEntries.readModelLimbsFromFile("world");
 	CompendiumEntries.readModelLimbsFromFile("codex");
 	MainMenu::MainMenuBanners_t::readFromFile();
+	Player::Inventory_t::Appraisal_t::readFromFile();
 }
 
 void initGameDatafilesAsync(bool moddedReload)
@@ -265,6 +267,32 @@ int initGame()
 				FileIO::close(fp);
 			}
 		}
+		if ( PHYSFS_getRealDir("desertersanddisciples.key") != NULL ) //TODO: NX PORT: Update for the Switch?
+		{
+			std::string serial = PHYSFS_getRealDir("desertersanddisciples.key");
+			serial.append(PHYSFS_getDirSeparator()).append("desertersanddisciples.key");
+			// open the serial file
+			File* fp = nullptr;
+			if ( (fp = FileIO::open(serial.c_str(), "rb")) != NULL )
+			{
+				char buf[64];
+				size_t len = fp->read(&buf, sizeof(char), 32);
+				buf[len] = '\0';
+				serial = buf;
+				// compute hash
+				size_t DLCHash = serialHash(serial);
+				if ( DLCHash == 121449 )
+				{
+					printlog("[LICENSE]: Deserters and Disciples DLC license key found.");
+					enabledDLCPack3 = true;
+				}
+				else
+				{
+					printlog("[LICENSE]: DLC license key invalid.");
+				}
+				FileIO::close(fp);
+			}
+		}
 #endif // !NINTENDO
 #endif
 
@@ -276,10 +304,16 @@ int initGame()
 		{
 			safePacketsReceivedMap[c].clear();
 		}
-		topscores.first = NULL;
-		topscores.last = NULL;
-		topscoresMultiplayer.first = NULL;
-		topscoresMultiplayer.last = NULL;
+		topscores_legacy.first = NULL;
+		topscores_legacy.last = NULL;
+		topscoresMultiplayer_legacy.first = NULL;
+		topscoresMultiplayer_legacy.last = NULL;
+
+		topscores_json.first = nullptr;
+		topscores_json.last = nullptr;
+		topscoresMultiplayer_json.first = nullptr;
+		topscoresMultiplayer_json.last = nullptr;
+
 		messages.first = NULL;
 		messages.last = NULL;
 		for ( int i = 0; i < MAXPLAYERS; ++i )
@@ -320,11 +354,11 @@ int initGame()
 			stats[c]->FOLLOWERS.last = nullptr;
 			stats[c]->inventory.first = nullptr;
 			stats[c]->inventory.last = nullptr;
+			stats[c]->void_chest_inventory.first = nullptr;
+			stats[c]->void_chest_inventory.last = nullptr;
 			stats[c]->clearStats();
-			entitiesToDelete[c].first = nullptr;
-			entitiesToDelete[c].last = nullptr;
-			initClass(c);
 			GenericGUI[c].setPlayer(c);
+			initClass(c);
 			FollowerMenu[c].setPlayer(c);
 			CalloutMenu[c].setPlayer(c);
 			cameras[c].winx = 0;
@@ -447,6 +481,7 @@ void deinitGame()
 
 	// destroy enemy hp bar textures
 	EnemyHPDamageBarHandler::dumpCache();
+	AOEIndicators_t::cleanup();
 
 	// send disconnect messages
 	if (multiplayer != SINGLE) {
@@ -502,8 +537,10 @@ void deinitGame()
 
 	saveAllScores(SCORESFILE);
 	saveAllScores(SCORESFILE_MULTIPLAYER);
-	list_FreeAll(&topscores);
-	list_FreeAll(&topscoresMultiplayer);
+	list_FreeAll(&topscores_json);
+	list_FreeAll(&topscoresMultiplayer_json);
+	list_FreeAll(&topscores_legacy);
+	list_FreeAll(&topscoresMultiplayer_legacy);
 	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
 		players[i]->messageZone.deleteAllNotificationMessages();
@@ -521,6 +558,7 @@ void deinitGame()
 		players[c]->inventoryUI.appraisal.timer = 0;
 		players[c]->inventoryUI.appraisal.current_item = 0;
 		list_FreeAll(&stats[c]->inventory);
+		list_FreeAll(&stats[c]->void_chest_inventory);
 		list_FreeAll(&stats[c]->FOLLOWERS);
 		if ( multiplayer == CLIENT )
 		{
@@ -542,7 +580,7 @@ void deinitGame()
 		list_FreeAll(map.worldUI); //TODO: Need to do this?
 	}
 	list_FreeAll(&messages);
-	if ( multiplayer == SINGLE )
+	/*if ( multiplayer == SINGLE )
 	{
 		list_FreeAll(&channeledSpells[0]);
 	}
@@ -556,6 +594,10 @@ void deinitGame()
 		{
 			list_FreeAll(&channeledSpells[c]);
 		}
+	}*/
+	for ( int c = 0; c < MAXPLAYERS; ++c )
+	{
+		list_FreeAll(&channeledSpells[c]);
 	}
 
 	for ( int c = 0; c < MAXPLAYERS; c++ )
@@ -599,6 +641,9 @@ void deinitGame()
 		tutorialmusic->release();
 		gameovermusic->release();
 		introstorymusic->release();
+#ifdef USE_FMOD
+		ensembleSounds.deinit();
+#endif
 
 		for ( int c = 0; c < NUMMINESMUSIC; c++ )
 		{
@@ -679,6 +724,14 @@ void deinitGame()
 		if ( intromusic )
 		{
 			free(intromusic);
+		}
+		for ( int c = 0; c < NUMFORTRESSMUSIC; c++ )
+		{
+			fortressmusic[c]->release();
+		}
+		if ( fortressmusic )
+		{
+			free(fortressmusic);
 		}
 	}
 #ifdef USE_OPENAL
@@ -790,6 +843,18 @@ void deinitGame()
 	{
 		free(CompendiumEntries.compendiumMap.tiles);
 	}
+
+	for ( auto it : allGameSpells )
+	{
+		spell_t* spell = it.second;
+		list_RemoveNode(spell->sustain_node);
+		list_FreeAll(&spell->elements);
+		if ( spell->needsDataFreed )
+		{
+			free(spell);
+		}
+	}
+
 	for (int i = 0; i < MAXPLAYERS; ++i)
 	{
 		delete players[i];
@@ -823,7 +888,7 @@ void loadAchievementData(const char* path) {
 		return;
 	}
 
-	char buf[120000];
+	static char buf[120000];
 	int count = (int)fp->read(buf, sizeof(buf[0]), sizeof(buf));
 	buf[count] = '\0';
 	rapidjson::StringStream is(buf);
@@ -911,6 +976,10 @@ void loadAchievementData(const char* path) {
 				{
 					achData.dlcType = Compendium_t::AchievementData_t::ACH_TYPE_DLC2;
 				}
+				else if ( !strcmp(ach["dlc"].GetString(), "deserters_disciples") )
+				{
+					achData.dlcType = Compendium_t::AchievementData_t::ACH_TYPE_DLC3;
+				}
 			}
 			else if ( ach["dlc"].IsArray() )
 			{
@@ -940,6 +1009,17 @@ void loadAchievementData(const char* path) {
 								achData.dlcType = Compendium_t::AchievementData_t::ACH_TYPE_DLC2;
 							}
 						}
+						else if ( !strcmp(it->GetString(), "deserters_disciples") )
+						{
+							if ( achData.dlcType == Compendium_t::AchievementData_t::ACH_TYPE_DLC1_DLC2 )
+							{
+								achData.dlcType = Compendium_t::AchievementData_t::ACH_TYPE_DLC1_DLC2_DLC3;
+							}
+							else
+							{
+								achData.dlcType = Compendium_t::AchievementData_t::ACH_TYPE_DLC3;
+							}
+						}
 					}
 				}
 			}
@@ -967,7 +1047,7 @@ void sortAchievementsForDisplay()
 #ifdef STEAMWORKS
 	if ( Compendium_t::AchievementData_t::achievementsNeedFirstData )
 	{
-		if ( SteamUser()->BLoggedOn() )
+		//if ( SteamUser()->BLoggedOn() )
 		{
 			Compendium_t::AchievementData_t::achievementsNeedFirstData = false;
 

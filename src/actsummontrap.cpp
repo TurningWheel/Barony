@@ -114,7 +114,18 @@ void actSummonTrap(Entity* my)
 					{
 	                    LICH, SHOPKEEPER, DEVIL, MIMIC, CRAB, BAT_SMALL,
 	                    MINOTAUR, LICH_FIRE, LICH_ICE, NOTHING,
-	                    SENTRYBOT, SPELLBOT, GYROBOT, DUMMYBOT
+	                    SENTRYBOT, SPELLBOT, GYROBOT, DUMMYBOT,
+						REVENANT_SKULL,
+						MINIMIMIC,
+						MONSTER_ADORCISED_WEAPON,
+						FLAME_ELEMENTAL,
+						HOLOGRAM,
+						EARTH_ELEMENTAL,
+						DUCK_SMALL,
+						MONSTER_UNUSED_6,
+						MONSTER_UNUSED_7,
+						MONSTER_UNUSED_8,
+						MOTH_SMALL
 	                };
 	                
 					std::vector<Monster> possibleTypes;
@@ -174,6 +185,7 @@ void actSummonTrap(Entity* my)
 						{
 							monster->getStats()->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS] = 1; // disable champion normally.
 						}
+						monster->getStats()->setAttribute("spawn_no_sleep", "1");
 
 						if ( foundTriggerEntity )
 						{

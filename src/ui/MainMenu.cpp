@@ -1,3 +1,4 @@
+#include "../main.hpp"
 #include "MainMenu.hpp"
 #include "Frame.hpp"
 #include "Image.hpp"
@@ -557,6 +558,7 @@ namespace MainMenu {
     // Controls options
     struct Controls {
         bool numkeys_in_inventory_enabled = true;
+		bool numkeys_change_hotbar_slot_enabled = true;
         bool mkb_world_tooltips_enabled = true;
         bool gamepad_facehotbar = true;
         float mouse_sensitivity = 32.f;
@@ -566,6 +568,8 @@ namespace MainMenu {
         float turn_sensitivity_y = 50.f;
         bool gamepad_camera_invert_x = false;
         bool gamepad_camera_invert_y = false;
+		float gamepad_deadzone_left = 25.f;
+		float gamepad_deadzone_right = 25.f;
 		float quick_turn_speed_control = 1.f;
 		float quick_turn_speed_mkb_control = 1.f;
         inline void save(int index);
@@ -636,6 +640,8 @@ namespace MainMenu {
 		float environment_volume = 100.f;
 		float notification_volume = 100.f;
 		float music_volume = 100.f;
+		bool set_instrument_bg_enabled = true;
+		bool set_instrument_fg_enabled = true;
 		bool minimap_pings_enabled = true;
 		bool player_monster_sounds_enabled = true;
 		bool out_of_focus_audio_enabled = true;
@@ -2029,9 +2035,15 @@ namespace MainMenu {
 		                        monoPrompt(text, Language::get(5009), [](Button&){
 		                            soundActivate();
 		                            closeMono();
-                                    auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
-                                    auto play = buttons->findButton("Play Game");
-                                    play->select();
+									auto buttons = main_menu_frame->findFrame("buttons");
+									if ( buttons )
+									{
+										if ( auto play = buttons->findButton("Play Game") )
+										{
+											play->select();
+										}
+									}
+									//assert(buttons);
 		                            });
 		                        };
 
@@ -2065,6 +2077,22 @@ namespace MainMenu {
                                     fp->write(text.c_str(), sizeof(char), text.size());
                                     FileIO::close(fp);
                                 }
+							}
+							else if ( DLCHash == 121449 ) {
+								playSound(402, 92);
+								printlog("[LICENSE]: Deserters and Disciples DLC license key found.");
+								prompt(Language::get(6989));
+								enabledDLCPack3 = true;
+
+								char path[PATH_MAX] = "";
+								completePath(path, "desertersanddisciples.key", outputdir);
+
+								// write the serial file
+								File* fp = nullptr;
+								if ( fp = FileIO::open(path, "wb") ) {
+									fp->write(text.c_str(), sizeof(char), text.size());
+									FileIO::close(fp);
+								}
 		                    } else {
 			                    printlog("[LICENSE]: DLC license key invalid.");
 		                        errorPrompt(Language::get(5017), Language::get(5009), [](Button&){
@@ -2774,6 +2802,7 @@ namespace MainMenu {
         settings.mkb_world_tooltips_enabled = mkb_world_tooltips_enabled;
         settings.gamepad_facehotbar = gamepad_facehotbar;
         settings.hotbar_numkey_quick_add = numkeys_in_inventory_enabled;
+		settings.hotbar_numkey_change_slot = numkeys_change_hotbar_slot_enabled;
         settings.mousespeed = std::min(std::max(0.f, mouse_sensitivity), 100.f);
         settings.reversemouse = reverse_mouse_enabled;
         settings.smoothmouse = smooth_mouse_enabled;
@@ -2781,6 +2810,8 @@ namespace MainMenu {
         settings.gamepad_righty_sensitivity = std::min(std::max(25.f / 32768.f, turn_sensitivity_y / 32768.f), 200.f / 32768.f);
         settings.gamepad_rightx_invert = gamepad_camera_invert_x;
         settings.gamepad_righty_invert = gamepad_camera_invert_y;
+		settings.leftStickDeadzone = (32000.f / 100.f) * std::min(50.f, std::max(5.f, gamepad_deadzone_left));
+		settings.rightStickDeadzone = (32000.f / 100.f) * std::min(50.f, std::max(5.f, gamepad_deadzone_right));
 		settings.quick_turn_speed = std::max(1.f, std::min(5.f, quick_turn_speed_control));
 		settings.quick_turn_speed_mkb = std::max(1.f, std::min(5.f, quick_turn_speed_mkb_control));
     }
@@ -2792,6 +2823,7 @@ namespace MainMenu {
         controls.mkb_world_tooltips_enabled = settings.mkb_world_tooltips_enabled;
         controls.gamepad_facehotbar = settings.gamepad_facehotbar;
         controls.numkeys_in_inventory_enabled = settings.hotbar_numkey_quick_add;
+		controls.numkeys_change_hotbar_slot_enabled = settings.hotbar_numkey_change_slot;
         controls.mouse_sensitivity = settings.mousespeed;
         controls.reverse_mouse_enabled = settings.reversemouse;
         controls.smooth_mouse_enabled = settings.smoothmouse;
@@ -2799,6 +2831,8 @@ namespace MainMenu {
         controls.turn_sensitivity_y = settings.gamepad_righty_sensitivity * 32768.0;
         controls.gamepad_camera_invert_x = settings.gamepad_rightx_invert;
         controls.gamepad_camera_invert_y = settings.gamepad_righty_invert;
+		controls.gamepad_deadzone_left = 100.f * settings.leftStickDeadzone / 32000.f;
+		controls.gamepad_deadzone_right = 100.f * settings.rightStickDeadzone / 32000.f;
 		controls.quick_turn_speed_control = settings.quick_turn_speed;
 		controls.quick_turn_speed_mkb_control = settings.quick_turn_speed_mkb;
         return controls;
@@ -2809,11 +2843,12 @@ namespace MainMenu {
     }
 
     bool Controls::serialize(FileInterface* file) {
-        int version = 1;
+        int version = 3;
         file->property("version", version);
         file->property("mkb_world_tooltips_enabled", mkb_world_tooltips_enabled);
         file->property("gamepad_facehotbar", gamepad_facehotbar);
         file->property("numkeys_in_inventory_enabled", numkeys_in_inventory_enabled);
+		file->propertyVersion("numkeys_change_hotbar_slot_enabled", version >= 3, numkeys_change_hotbar_slot_enabled);
         file->property("mouse_sensitivity", mouse_sensitivity);
         file->property("reverse_mouse_enabled", reverse_mouse_enabled);
         file->property("smooth_mouse_enabled", smooth_mouse_enabled);
@@ -2821,6 +2856,8 @@ namespace MainMenu {
         file->property("turn_sensitivity_y", turn_sensitivity_y);
         file->property("gamepad_camera_invert_x", gamepad_camera_invert_x);
         file->property("gamepad_camera_invert_y", gamepad_camera_invert_y);
+		file->propertyVersion("gamepad_deadzone_left", version >= 2, gamepad_deadzone_left);
+		file->propertyVersion("gamepad_deadzone_right", version >= 2, gamepad_deadzone_right);
 		file->property("quick_turn_speed_control", quick_turn_speed_control);
 		file->property("quick_turn_speed_mkb_control", quick_turn_speed_mkb_control);
         return true;
@@ -2900,18 +2937,22 @@ namespace MainMenu {
         }
 		current_recording_audio_device = recording_audio_device;
 		current_audio_device = audio_device;
+#ifdef USE_FMOD
         if (fmod_speakermode != speaker_mode) {
             fmod_speakermode = (FMOD_SPEAKERMODE)speaker_mode;
             if (initialized) {
                 restartPromptRequired = true;
             }
         }
+#endif
 		MainMenu::master_volume = std::min(std::max(0.f, master_volume / 100.f), 1.f);
 		sfxvolume = std::min(std::max(0.f, gameplay_volume / 100.f), 1.f);
 		sfxAmbientVolume = std::min(std::max(0.f, ambient_volume / 100.f), 1.f);
 		sfxEnvironmentVolume = std::min(std::max(0.f, environment_volume / 100.f), 1.f);
 		sfxNotificationVolume = std::min(std::max(0.f, notification_volume / 100.f), 1.f);
 		musvolume = std::min(std::max(0.f, music_volume / 100.f), 1.f);
+		instrument_bg_enabled = set_instrument_bg_enabled;
+		instrument_fg_enabled = set_instrument_fg_enabled;
 		minimapPingMute = !minimap_pings_enabled;
 		mute_player_monster_sounds = !player_monster_sounds_enabled;
 		mute_audio_on_focus_lost = !out_of_focus_audio_enabled;
@@ -3029,14 +3070,16 @@ namespace MainMenu {
 		settings.enable_voice_receive = VoiceChat.activeSettings.enable_voice_receive;
 		settings.use_voice_custom_rolloff = VoiceChat.activeSettings.use_custom_rolloff;
 		VoiceChat.mainmenuSettings = VoiceChat.activeSettings;
-#endif
         settings.speaker_mode = (int)fmod_speakermode;
+#endif
 		settings.master_volume = MainMenu::master_volume * 100.f;
 		settings.gameplay_volume = (float)sfxvolume * 100.f;
 		settings.ambient_volume = (float)sfxAmbientVolume * 100.f;
 		settings.environment_volume = (float)sfxEnvironmentVolume * 100.f;
 		settings.notification_volume = (float)sfxNotificationVolume * 100.f;
 		settings.music_volume = (float)musvolume * 100.f;
+		settings.set_instrument_bg_enabled = instrument_bg_enabled;
+		settings.set_instrument_fg_enabled = instrument_fg_enabled;
 		settings.minimap_pings_enabled = !minimapPingMute;
 		settings.player_monster_sounds_enabled = !mute_player_monster_sounds;
 		settings.out_of_focus_audio_enabled = !mute_audio_on_focus_lost;
@@ -3074,7 +3117,7 @@ namespace MainMenu {
 	}
 
 	bool AllSettings::serialize(FileInterface* file) {
-	    int version = 22;
+	    int version = 23;
 	    file->property("version", version);
 	    file->property("mods", mods);
 		file->property("crossplay_enabled", crossplay_enabled);
@@ -3166,6 +3209,8 @@ namespace MainMenu {
 			file->property("notification_volume", notification_volume);
 		}
 		file->property("music_volume", music_volume);
+		file->propertyVersion("instrument_fg_enabled", version >= 23, set_instrument_fg_enabled);
+		file->propertyVersion("instrument_bg_enabled", version >= 23, set_instrument_bg_enabled);
 		file->property("minimap_pings_enabled", minimap_pings_enabled);
 		file->property("player_monster_sounds_enabled", player_monster_sounds_enabled);
 		file->property("out_of_focus_audio_enabled", out_of_focus_audio_enabled);
@@ -3559,7 +3604,7 @@ namespace MainMenu {
 					auto textbox2 = textbox1->findFrame("story_text_box");
 					assert(textbox2);
 					auto size = textbox2->getActualSize();
-					++size.y;
+					size.y += std::max(0, (old_story_text_scroll - (int)story_text_scroll));
 					textbox2->setActualSize(size);
 				}
 			} else {
@@ -3722,7 +3767,7 @@ namespace MainMenu {
 		auto font = Font::get(bigfont_outline); assert(font);
 
 		static float credits_scroll = 0.f;
-		constexpr int num_credits_lines = 83;
+		constexpr int num_credits_lines = 90;
 
 		auto credits = main_menu_frame->addFrame("credits");
 		credits->setSize(SDL_Rect{0, 0, Frame::virtualScreenX, Frame::virtualScreenY});
@@ -3775,6 +3820,9 @@ namespace MainMenu {
 			u8"Additional writing\n"
 			u8" \n"
 			u8" \n \n \n \n \n"
+			u8"Additional music and sound design\n"
+			u8" \n"
+			u8" \n \n \n \n \n"
 			u8"Special thanks\n"
 			u8" \n"
 			u8" \n"
@@ -3821,6 +3869,9 @@ namespace MainMenu {
 			u8" \n \n \n \n \n"
 			u8" \n"
 			u8"Frasier Panton\n"
+			u8" \n \n \n \n \n"
+			u8" \n"
+			u8"Garrett Williamson\n"
 			u8" \n \n \n \n \n"
 			u8" \n"
 			u8"Our Kickstarter Backers\n"
@@ -3908,10 +3959,18 @@ namespace MainMenu {
 			messagePlayer(clientnum, MESSAGE_MISC, Language::get(276));
 		}
 
+		// update map HDR
+		if ( initialized )
+		{
+			map.setMapHDRSettings();
+		}
+
 		// set volume and sound driver
 		if (initialized) {
 			setAudioDevice(current_audio_device);
+#ifdef USE_FMOD
 			setRecordDevice(current_recording_audio_device);
+#endif
 		    setGlobalVolume(master_volume, musvolume, sfxvolume, sfxAmbientVolume, sfxEnvironmentVolume, sfxNotificationVolume);
 		}
 	}
@@ -5659,7 +5718,7 @@ namespace MainMenu {
 					}
 				}
 
-				auto prompt = binaryPrompt(Language::get(5052),
+				auto prompt = binaryPrompt(Language::get(5029),
 					Language::get(5030), Language::get(5008),
 					[](Button& button) {
 						closeBinary();
@@ -6478,9 +6537,9 @@ bind_failed:
 		}
 		int y = 0;
 
+		int num_drivers = 0;
 #if !defined(NINTENDO) && defined(USE_FMOD)
 		int selected_device = 0;
-		int num_drivers = 0;
 		(void)fmod_system->getNumDrivers(&num_drivers);
 		audio_drivers.clear();
 		audio_drivers.reserve(num_drivers);
@@ -6758,6 +6817,8 @@ bind_failed:
 			allSettings.minimap_pings_enabled, [](Button& button){soundToggleSetting(button); allSettings.minimap_pings_enabled = button.isPressed();});
 		y += settingsAddBooleanOption(*settings_subwindow, y, "player_monster_sounds", Language::get(5201), Language::get(5202),
 			allSettings.player_monster_sounds_enabled, [](Button& button){soundToggleSetting(button); allSettings.player_monster_sounds_enabled = button.isPressed();});
+		y += settingsAddBooleanOption(*settings_subwindow, y, "instrument_bg_enabled", Language::get(6870), Language::get(6871),
+			allSettings.set_instrument_bg_enabled, [](Button& button) {soundToggleSetting(button); allSettings.set_instrument_bg_enabled = button.isPressed(); });
 #ifndef NINTENDO
 		y += settingsAddBooleanOption(*settings_subwindow, y, "out_of_focus_audio", Language::get(5203),
 			Language::get(5204),
@@ -6795,6 +6856,7 @@ bind_failed:
 #endif
 					{Setting::Type::Boolean, "minimap_pings"},
 					{Setting::Type::Boolean, "player_monster_sounds"},
+					{Setting::Type::Boolean, "instrument_bg_enabled"},
 					{Setting::Type::Boolean, "out_of_focus_audio"},
 					{Setting::Type::Boolean, "music_preload"} });
 		}
@@ -6819,6 +6881,7 @@ bind_failed:
 #endif
 				{Setting::Type::Boolean, "minimap_pings"},
 				{Setting::Type::Boolean, "player_monster_sounds"},
+				{Setting::Type::Boolean, "instrument_bg_enabled"},
 				{Setting::Type::Boolean, "out_of_focus_audio"},
 				{Setting::Type::Boolean, "music_preload"}});
 		}
@@ -6839,6 +6902,7 @@ bind_failed:
 #endif
 				{Setting::Type::Boolean, "minimap_pings"},
 				{Setting::Type::Boolean, "player_monster_sounds"},
+				{Setting::Type::Boolean, "instrument_bg_enabled"},
 				{Setting::Type::Boolean, "out_of_focus_audio"},
 				{Setting::Type::Boolean, "music_preload"}});
 		}
@@ -6856,7 +6920,9 @@ bind_failed:
 			{Setting::Type::Boolean, "use_custom_rolloff"},
 #endif
 			{Setting::Type::Boolean, "minimap_pings"},
-			{Setting::Type::Boolean, "player_monster_sounds"}});
+			{Setting::Type::Boolean, "player_monster_sounds"},
+			{Setting::Type::Boolean, "instrument_bg_enabled"},
+			});
 #endif
 
 #if !defined(NINTENDO) && defined(USE_FMOD)
@@ -7279,9 +7345,6 @@ bind_failed:
             y += settingsAddSlider(*settings_subwindow, y, "mouse_sensitivity", Language::get(5218), Language::get(5219),
                 allSettings.controls[bound_player].mouse_sensitivity, 0, 100, nullptr, [](Slider& slider)
                 {soundSliderSetting(slider, true); allSettings.controls[bound_player].mouse_sensitivity = slider.getValue();});
-            y += settingsAddBooleanOption(*settings_subwindow, y, "numkeys_in_inventory", Language::get(5220), Language::get(5221),
-                allSettings.controls[bound_player].numkeys_in_inventory_enabled, [](Button& button)
-                {soundToggleSetting(button); allSettings.controls[bound_player].numkeys_in_inventory_enabled = button.isPressed();});
             y += settingsAddBooleanOption(*settings_subwindow, y, "reverse_mouse", Language::get(5222), Language::get(5223),
                 allSettings.controls[bound_player].reverse_mouse_enabled, [](Button& button)
                 {soundToggleSetting(button); allSettings.controls[bound_player].reverse_mouse_enabled = button.isPressed();});
@@ -7291,6 +7354,12 @@ bind_failed:
             y += settingsAddBooleanOption(*settings_subwindow, y, "mkb_world_tooltips", Language::get(5226), Language::get(5227),
                 allSettings.controls[bound_player].mkb_world_tooltips_enabled, [](Button& button)
                 {soundToggleSetting(button); allSettings.controls[bound_player].mkb_world_tooltips_enabled = button.isPressed();});
+            y += settingsAddBooleanOption(*settings_subwindow, y, "numkeys_in_inventory", Language::get(5220), Language::get(5221),
+                allSettings.controls[bound_player].numkeys_in_inventory_enabled, [](Button& button)
+                {soundToggleSetting(button); allSettings.controls[bound_player].numkeys_in_inventory_enabled = button.isPressed();});
+			y += settingsAddBooleanOption(*settings_subwindow, y, "numkeys_change_slot", Language::get(6880), Language::get(6881),
+				allSettings.controls[bound_player].numkeys_change_hotbar_slot_enabled, [](Button& button)
+				{soundToggleSetting(button); allSettings.controls[bound_player].numkeys_change_hotbar_slot_enabled = button.isPressed(); });
 			y += settingsAddSlider(*settings_subwindow, y, "quick_turn_speed_mkb_control", Language::get(6310), Language::get(6311),
 				allSettings.controls[bound_player].quick_turn_speed_mkb_control, 1.f, 5.f, sliderFloorInt, [](Slider& slider)
 				{soundSliderSetting(slider, true); allSettings.controls[bound_player].quick_turn_speed_mkb_control = slider.getValue(); });
@@ -7298,10 +7367,11 @@ bind_failed:
             hookSettings(*settings_subwindow,
                 {{Setting::Type::Customize, "bindings"},
                 {Setting::Type::Slider, "mouse_sensitivity"},
-                {Setting::Type::Boolean, "numkeys_in_inventory"},
                 {Setting::Type::Boolean, "reverse_mouse"},
                 {Setting::Type::Boolean, "smooth_mouse"},
                 {Setting::Type::Boolean, "mkb_world_tooltips"},
+                {Setting::Type::Boolean, "numkeys_in_inventory"},
+				{Setting::Type::Boolean, "numkeys_change_slot"},
 				{Setting::Type::Slider, "quick_turn_speed_mkb_control"},
             });
         }
@@ -7319,6 +7389,13 @@ bind_failed:
                 allSettings.controls[bound_player].turn_sensitivity_y, 25.f, 200.f, sliderPercent, [](Slider& slider)
                 {soundSliderSetting(slider, true); allSettings.controls[bound_player].turn_sensitivity_y = slider.getValue();});
 
+			y += settingsAddSlider(*settings_subwindow, y, "gamepad_deadzone_left", Language::get(6846), Language::get(6847),
+				allSettings.controls[bound_player].gamepad_deadzone_left, 5.f, 50.f, sliderPercent, [](Slider& slider)
+				{soundSliderSetting(slider, true); allSettings.controls[bound_player].gamepad_deadzone_left = slider.getValue(); });
+			y += settingsAddSlider(*settings_subwindow, y, "gamepad_deadzone_right", Language::get(6848), Language::get(6849),
+				allSettings.controls[bound_player].gamepad_deadzone_right, 5.f, 50.f, sliderPercent, [](Slider& slider)
+				{soundSliderSetting(slider, true); allSettings.controls[bound_player].gamepad_deadzone_right = slider.getValue(); });
+
             y += settingsAddBooleanOption(*settings_subwindow, y, "gamepad_camera_invert_x", Language::get(5237), Language::get(5238),
                 allSettings.controls[bound_player].gamepad_camera_invert_x, [](Button& button)
                 {soundToggleSetting(button); allSettings.controls[bound_player].gamepad_camera_invert_x = button.isPressed();});
@@ -7335,6 +7412,8 @@ bind_failed:
                 {Setting::Type::Dropdown, "gamepad_facehotbar"},
                 {Setting::Type::Slider, "turn_sensitivity_x"},
                 {Setting::Type::Slider, "turn_sensitivity_y"},
+				{Setting::Type::Slider, "gamepad_deadzone_left"},
+				{Setting::Type::Slider, "gamepad_deadzone_right"},
                 {Setting::Type::Boolean, "gamepad_camera_invert_x"},
                 {Setting::Type::Boolean, "gamepad_camera_invert_y"},
 				{Setting::Type::Slider, "quick_turn_speed_control"},
@@ -8476,7 +8555,35 @@ bind_failed:
 		}
 #endif
 	}
+
+	// number of player selectable races
+	constexpr int num_races = 14;
+
 /******************************************************************************/
+	int getLangEntryForMainMenuRaceName(int race)
+	{
+		if ( race >= 9 && race < num_races )
+		{
+			return (race - 9) + 6779;
+		}
+		else if ( race >= 0 && race < 9 )
+		{
+			return 5369 + race;
+		}
+		return 5369;
+	}
+	int getLangEntryForPlayerRaceName(int race)
+	{
+		if ( race > RACE_IMP && race < NUMRACES )
+		{
+			return (race - RACE_IMP - 1) + 6779;
+		}
+		else if ( race >= 0 && race < 9 )
+		{
+			return 5369 + race;
+		}
+		return 5369;
+	}
 
     static void createLeaderboards(std::string leaderboard_type) {
         assert(main_menu_frame);
@@ -8801,7 +8908,7 @@ bind_failed:
 			char buf[1024];
 			if ( kills_show_proficiencies )
 			{
-				size_t numEntries = Player::SkillSheet_t::skillSheetData.skillEntries.size();
+				size_t numEntries = std::min((size_t)NUMPROFICIENCIES, Player::SkillSheet_t::skillSheetData.skillEntries.size());
 				for ( size_t index = 0; index < NUMPROFICIENCIES / 2; ++index )
 				{
 					int loops = 1;
@@ -8814,7 +8921,7 @@ bind_failed:
 						}
 						int c = Player::SkillSheet_t::skillSheetData.skillEntries[index + loops * (NUMPROFICIENCIES / 2)].skillId;
 						int val = score->stats->getProficiency(c);
-						snprintf(buf, sizeof(buf), "%3d %s", val, Player::SkillSheet_t::skillSheetData.skillEntries[index + loops * (NUMPROFICIENCIES / 2)].name.c_str());
+						snprintf(buf, sizeof(buf), "%3d %s", val, Player::SkillSheet_t::skillSheetData.skillEntries[index + loops * (NUMPROFICIENCIES / 2)].getSkillName(true).c_str());
 						auto skill = kills->addEntry(buf, true);
 						//skill->color = makeColor(203, 171, 101, 255);
 						if ( val >= SKILL_LEVEL_LEGENDARY )
@@ -9150,6 +9257,15 @@ bind_failed:
 					case KilledBy::BELL:
 						cause_of_death = Language::get(6278);
 						break;
+					case KilledBy::MUSHROOM:
+						cause_of_death = Language::get(6754);
+						break;
+					case KilledBy::LEAVES:
+						cause_of_death = Language::get(6759);
+						break;
+					case KilledBy::DEATH_KNOCKBACK:
+						cause_of_death = Language::get(6854);
+						break;
 					default: 
 					{
 						cause_of_death = Language::get(5794 + (int)score->stats->killer);
@@ -9262,7 +9378,7 @@ bind_failed:
             assert(character_title);
             snprintf(buf, sizeof(buf), Language::get(5298),
                 score->stats->LVL,
-                Language::get(5369 + score->stats->playerRace),
+                Language::get(getLangEntryForPlayerRaceName(score->stats->playerRace)),
                 playerClassLangEntry(score->classnum, 0));
             character_title->setText(buf);
 
@@ -9350,7 +9466,8 @@ bind_failed:
 				}
 				statChecks.clear();
 			});
-
+		static ConsoleVariable<bool> cvar_leaderboard_show_id("/leaderboard_show_id", false);
+		static ConsoleVariable<bool> cvar_leaderboard_copy_id("/leaderboard_copy_id", false);
         static auto add_score = [](score_t* score, const char* name, const char* prev, const char* next, int index,
 			int rank, int selectIndex){
             auto window = main_menu_frame->findFrame("leaderboards"); assert(window);
@@ -9417,6 +9534,15 @@ bind_failed:
                 selectedScore = score;
                 updateStats(button, score);
                 loadScore(score);
+#ifndef NDEBUG
+				if ( *cvar_leaderboard_copy_id && *cvar_leaderboard_show_id )
+				{
+					if ( score && score->stats )
+					{
+						SDL_SetClipboardText(score->stats->name);
+					}
+				}
+#endif
                 });
             button->setTickCallback([](Widget& widget){
                 auto button = static_cast<Button*>(&widget);
@@ -9500,7 +9626,7 @@ bind_failed:
 
             if (boardType == BoardType::LOCAL_SINGLE || boardType == BoardType::LOCAL_MULTI) {
                 auto scores = boardType == BoardType::LOCAL_SINGLE ?
-                    &topscores : &topscoresMultiplayer;
+                    &topscores_json : &topscoresMultiplayer_json;
                 if (scores->first) {
                     (void)window->remove("wait_message");
                     int index = 0;
@@ -9671,7 +9797,6 @@ bind_failed:
 
         // poll for downloaded scores
 #ifdef USE_PLAYFAB
-		static ConsoleVariable<bool> cvar_leaderboard_show_id("/leaderboard_show_id", false);
 		list->setTickCallback([](Widget& widget) {
 			bool tryRefresh = false;
 			if ( playfabUser.leaderboardSearch.requiresRefresh )
@@ -10136,7 +10261,7 @@ bind_failed:
 		delete_entry->setTickCallback([](Widget& widget){
             if (boardType == BoardType::LOCAL_SINGLE || boardType == BoardType::LOCAL_MULTI) {
                 auto scores = boardType == BoardType::LOCAL_SINGLE ?
-                    &topscores : &topscoresMultiplayer;
+                    &topscores_json : &topscoresMultiplayer_json;
                 widget.setInvisible(scores->first == nullptr);
             }
             else
@@ -10189,7 +10314,7 @@ bind_failed:
                         }
                         });
                 auto scores = boardType == BoardType::LOCAL_SINGLE ?
-                    &topscores : &topscoresMultiplayer;
+                    &topscores_json : &topscoresMultiplayer_json;
             } else {
                 errorPrompt(Language::get(5316), Language::get(5317),
                     [](Button& button){
@@ -13011,9 +13136,6 @@ failed:
 
 /******************************************************************************/
 
-    // number of player selectable races
-	constexpr int num_races = 9;
-
 	bool ClassDescriptions::init = false;
 	std::unordered_map<int, ClassDescriptions::DescData_t> ClassDescriptions::data;
 
@@ -13362,7 +13484,7 @@ failed:
 	std::vector<const char*> reducedClassList(int index) {
 		std::vector<const char*> result;
 		result.reserve(num_classes);
-		for (int c = CLASS_BARBARIAN; c <= CLASS_HUNTER; ++c) {
+		for (int c = CLASS_BARBARIAN; c <= CLASS_PALADIN; ++c) {
 			if (isCharacterValidFromDLC(*stats[index], c) == VALID_OK_CHARACTER) {
 				result.emplace_back(classes_in_order[c]);
 			}
@@ -13559,6 +13681,11 @@ failed:
 				break;
 		}
 
+		if ( ClassDescriptions::data.find(classnum) == ClassDescriptions::data.end() )
+		{
+			return;
+		}
+
 		for ( int c = 0; c < num_class_stats; ++c )
 		{
 			static char buf[16];
@@ -13629,6 +13756,9 @@ failed:
 	    else if (race >= RACE_AUTOMATON && race <= RACE_INSECTOID) {
 	        color_race = color_dlc2;
 	    }
+		else if ( race > RACE_IMP && race < RACE_ENUM_END ) {
+			color_race = hudColors.characterDLC3ClassText;
+		}
 	    else {
 	        color_race = color_dlc0;
 	    }
@@ -13707,6 +13837,21 @@ failed:
 		case CLASS_HUNTER:
 			achName = Compendium_t::achievements["BARONY_ACH_BUGGAR_BARON"].name;
 			break;
+		case CLASS_BARD:
+			achName = Compendium_t::achievements["BARONY_ACH_BITTY_BARON"].name;
+			break;
+		case CLASS_SAPPER:
+			achName = Compendium_t::achievements["BARONY_ACH_BONKERS_BARON"].name;
+			break;
+		case CLASS_SCION:
+			achName = Compendium_t::achievements["BARONY_ACH_BARKSKIN_BARON"].name;
+			break;
+		case CLASS_HERMIT:
+			achName = Compendium_t::achievements["BARONY_ACH_BOLETE_BARON"].name;
+			break;
+		case CLASS_PALADIN:
+			achName = Compendium_t::achievements["BARONY_ACH_BURNINATION_BARON"].name;
+			break;
 		default:
 			break;
 		}
@@ -13768,6 +13913,26 @@ failed:
 		{
 			allowPick = isAchievementUnlockedForClassUnlock(RACE_INSECTOID);
 		}
+		else if ( race != RACE_GNOME && challengeClass == CLASS_BARD )
+		{
+			allowPick = isAchievementUnlockedForClassUnlock(RACE_GNOME);
+		}
+		else if ( race != RACE_GREMLIN && challengeClass == CLASS_SAPPER )
+		{
+			allowPick = isAchievementUnlockedForClassUnlock(RACE_GREMLIN);
+		}
+		else if ( race != RACE_DRYAD && challengeClass == CLASS_SCION )
+		{
+			allowPick = isAchievementUnlockedForClassUnlock(RACE_DRYAD);
+		}
+		else if ( race != RACE_MYCONID && challengeClass == CLASS_HERMIT )
+		{
+			allowPick = isAchievementUnlockedForClassUnlock(RACE_MYCONID);
+		}
+		else if ( race != RACE_SALAMANDER && challengeClass == CLASS_PALADIN )
+		{
+			allowPick = isAchievementUnlockedForClassUnlock(RACE_SALAMANDER);
+		}
 		return allowPick;
 	}
 
@@ -13782,7 +13947,7 @@ failed:
 			&& gameModeManager.currentSession.challengeRun.classnum >= 0 && gameModeManager.currentSession.challengeRun.classnum <= NUMCLASSES;
 
 		for (int c = 0; c < num_races; ++c) {
-			auto race = Language::get(5369 + c);
+			auto race = Language::get(getLangEntryForMainMenuRaceName(c));
 			if (strcmp(button.getName(), race) == 0) {
 				if ( fixedRace && !override_dlc && gameModeManager.currentSession.challengeRun.race != c )
 				{
@@ -13797,10 +13962,11 @@ failed:
 				}
 				else if ( !override_dlc && !fixedRace &&
 					((!enabledDLCPack1 && c >= 1 && c <= 4) ||
-						(!enabledDLCPack2 && c >= 5 && c <= 8)) ) {
+						(!enabledDLCPack2 && c >= 5 && c <= 8) || 
+						(!enabledDLCPack3 && c >= 9 && c <= 13)) ) {
 					// this class is not available to the player
 					button.setPressed(false);
-					openDLCPrompt(c >= 5 ? 1 : 0);
+					openDLCPrompt(c >= 9 ? 2 : (c >= 5 ? 1 : 0));
 					return;
 				}
 				else if ( fixedClass && !override_dlc && c >= 1
@@ -13813,8 +13979,14 @@ failed:
 				else 
 				{
                     success = true;
-                    if (stats[index]->playerRace != c) {
-                        stats[index]->playerRace = c;
+
+					int pickedRace = RACE_HUMAN + c;
+					if ( pickedRace > RACE_INSECTOID )
+					{
+						pickedRace += 4;
+					}
+                    if (stats[index]->playerRace != pickedRace ) {
+                        stats[index]->playerRace = pickedRace;
                         if (!inputs.hasController(index)) {
                             soundToggle();
                         }
@@ -13884,7 +14056,7 @@ failed:
 		}
 		for (int c = 0; c < num_races; ++c) {
 			// clear other buttons
-			auto race = Language::get(5369 + c);
+			auto race = Language::get(getLangEntryForMainMenuRaceName(c));
 			auto other_button = frame->findButton(race);
 			if (other_button != &button) {
 				other_button->setPressed(false);
@@ -15474,10 +15646,10 @@ failed:
 				(svFlags & SV_FLAG_LIFESAVING) ||
 				Mods::disableSteamAchievements ) {
 				achievements->setColor(makeColor(180, 37, 37, 255));
-				achievements->setText("ACHIEVEMENTS DISABLED");
+				achievements->setText(Language::get(5389));
 			} else {
 				achievements->setColor(makeColor(37, 90, 255, 255));
-				achievements->setText("ACHIEVEMENTS ENABLED");
+				achievements->setText(Language::get(5390));
 			}
 			});
 		(*achievements->getTickCallback())(*achievements);
@@ -15737,7 +15909,7 @@ failed:
 		gradient->ontop = true;
 
         for (int c = 0; c < num_races; ++c) {
-		    auto race = subframe->addButton(Language::get(5369 + c));
+		    auto race = subframe->addButton(Language::get(getLangEntryForMainMenuRaceName(c)));
 		    race->setSize(SDL_Rect{0, c * 36 + 2, 30, 30});
 
 			bool fixedRace = gameModeManager.currentSession.challengeRun.isActive()
@@ -15763,6 +15935,9 @@ failed:
 		    else if (!enabledDLCPack2 && c >= 5 && c <= 8) {
 		        race->setBackground("*#images/ui/Main Menus/sublist_item-locked.png");
 		    }
+			else if ( !enabledDLCPack3 && c >= 9 && c <= 13 ) {
+				race->setBackground("*#images/ui/Main Menus/sublist_item-locked.png");
+			}
 			else if ( fixedClass && c >= 1 && !race_button_challenge_check_fn(c, gameModeManager.currentSession.challengeRun.classnum) )
 			{
 				race->setBackground("*#images/ui/Main Menus/sublist_item-locked.png");
@@ -15791,13 +15966,13 @@ failed:
 		    race->addWidgetAction("MenuPageLeftAlt", "privacy");
 		    race->setWidgetBack("back_button");
 		    if (c < num_races - 1) {
-		        race->setWidgetDown(Language::get(5369 + c + 1));
+		        race->setWidgetDown(Language::get(getLangEntryForMainMenuRaceName(c + 1)));
 		    }
 		    /*else {
 		        race->setWidgetDown("disable_abilities");
 		    }*/
 		    if (c > 0) {
-		        race->setWidgetUp(Language::get(5369 + c - 1));
+		        race->setWidgetUp(Language::get(getLangEntryForMainMenuRaceName(c - 1)));
 		    }
 		    race->setGlyphPosition(Widget::glyph_position_t::CENTERED);
 		    race->addWidgetAction("MenuPageLeft", "male");
@@ -15807,10 +15982,16 @@ failed:
             race->setCallback([](Button& button){
                 race_button_fn(button, false);
                 });
-		    if (stats[index]->playerRace == c) {
+
+			int pickedRace = RACE_HUMAN + c;
+			if ( pickedRace > RACE_INSECTOID )
+			{
+				pickedRace += 4;
+			}
+		    if (stats[index]->playerRace == pickedRace ) {
 			    race->setPressed(true);
 		    }
-		    if ((stats[index]->playerRace == c && selection == -1) ||
+		    if ((stats[index]->playerRace == pickedRace && selection == -1) ||
 		        (selection >= 0 && selection == c)) {
 			    race->select();
 			    race->scrollParent();
@@ -15842,17 +16023,26 @@ failed:
                 }
 		        });
 
-		    auto label = subframe->addField((std::string(Language::get(5369 + c)) + "_label").c_str(), 64);
-		    if (c >= 1 && c <= 4) {
+		    auto label = subframe->addField((std::string(Language::get(getLangEntryForMainMenuRaceName(c))) + "_label").c_str(), 64);
+		    if (c >= 1 && c <= 4) 
+			{
 		        label->setColor(color_dlc1);
-		    } else if (c >= 5 && c <= 8) {
+		    } 
+			else if (c >= 5 && c <= 8) 
+			{
 		        label->setColor(color_dlc2);
-		    } else {
+			}
+			else if ( c >= 9 && c <= 13 )
+			{
+				label->setColor(hudColors.characterDLC3ClassText);
+		    } 
+			else 
+			{
 		        label->setColor(color_dlc0);
 		    }
-		    label->setText(Language::get(5369 + c));
+		    label->setText(Language::get(getLangEntryForMainMenuRaceName(c)));
 		    label->setFont(smallfont_outline);
-		    label->setSize(SDL_Rect{32, c * 36, 96, 36});
+		    label->setSize(SDL_Rect{32, c * 36, 108, 36});
 		    label->setHJustify(Field::justify_t::LEFT);
 		    label->setVJustify(Field::justify_t::CENTER);
 		}
@@ -16120,7 +16310,7 @@ failed:
 		disable_abilities->addWidgetAction("MenuPageLeftAlt", "privacy");
 		disable_abilities->setWidgetBack("back_button");
 		disable_abilities->setWidgetDown("show_race_info");
-		disable_abilities->setWidgetUp(Language::get(5369 + num_races - 1));
+		disable_abilities->setWidgetUp(Language::get(getLangEntryForMainMenuRaceName(num_races - 1)));
 		if (stats[index]->playerRace != RACE_HUMAN) {
 			disable_abilities->setPressed(stats[index]->stat_appearance != 0);
 		}
@@ -16169,7 +16359,23 @@ failed:
 			male_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAuto_00.png");
 			male_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAutoHigh_00.png");
 			male_button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAutoPress_00.png");
-		} else {
+		}
+		else if ( stats[index]->playerRace == RACE_MYCONID )
+		{
+			male_button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortOn_00.png");
+			male_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShort_00.png");
+			male_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortHigh_00.png");
+			male_button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortPress_00.png");
+		}
+		else if ( stats[index]->playerRace == RACE_DRYAD )
+		{
+			male_button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallOn_00.png");
+			male_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTall_00.png");
+			male_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallHigh_00.png");
+			male_button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallPress_00.png");
+		}
+		else 
+		{
 			male_button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMaleOn_00.png");
 			male_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMale_00.png");
 			male_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMaleHigh_00.png");
@@ -16203,12 +16409,29 @@ failed:
 		male_button->setTickCallback([](Widget& widget){
 			const int index = widget.getOwner();
 			auto button = static_cast<Button*>(&widget); assert(button);
-			if (stats[index]->playerRace == RACE_AUTOMATON) {
+			if (stats[index]->playerRace == RACE_AUTOMATON) 
+			{
 				button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAutoOn_00.png");
 				button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAuto_00.png");
 				button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAutoHigh_00.png");
 				button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAutoPress_00.png");
-			} else {
+			}
+			else if ( stats[index]->playerRace == RACE_MYCONID )
+			{
+				button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortOn_00.png");
+				button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShort_00.png");
+				button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortHigh_00.png");
+				button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortPress_00.png");
+			}
+			else if ( stats[index]->playerRace == RACE_DRYAD )
+			{
+				button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallOn_00.png");
+				button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTall_00.png");
+				button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallHigh_00.png");
+				button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallPress_00.png");
+			}
+			else 
+			{
 				button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMaleOn_00.png");
 				button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMale_00.png");
 				button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMaleHigh_00.png");
@@ -16221,12 +16444,28 @@ failed:
 		female_button->setColor(stats[index]->sex == FEMALE ? makeColorRGB(255, 255, 255) : makeColorRGB(127, 127, 127));
 		female_button->setHighlightColor(stats[index]->sex == FEMALE ? makeColorRGB(255, 255, 255) : makeColorRGB(127, 127, 127));
 		female_button->setStyle(Button::style_t::STYLE_RADIO);
-		if (stats[index]->playerRace == RACE_AUTOMATON) {
+		if ( stats[index]->playerRace == RACE_AUTOMATON ) {
 			female_button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAutoOn_00.png");
 			female_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAuto_00.png");
 			female_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAutoHigh_00.png");
 			female_button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAutoPress_00.png");
-		} else {
+		}
+		else if ( stats[index]->playerRace == RACE_MYCONID )
+		{
+			female_button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallOn_00.png");
+			female_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTall_00.png");
+			female_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallHigh_00.png");
+			female_button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallPress_00.png");
+		}
+		else if ( stats[index]->playerRace == RACE_DRYAD )
+		{
+			female_button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortOn_00.png");
+			female_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShort_00.png");
+			female_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortHigh_00.png");
+			female_button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortPress_00.png");
+		}
+		else 
+		{
 			female_button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFemaleOn_00.png");
 			female_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFemale_00.png");
 			female_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFemaleHigh_00.png");
@@ -16266,7 +16505,23 @@ failed:
 				button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAuto_00.png");
 				button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAutoHigh_00.png");
 				button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAutoPress_00.png");
-			} else {
+			} 
+			else if ( stats[index]->playerRace == RACE_MYCONID )
+			{
+				button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallOn_00.png");
+				button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTall_00.png");
+				button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallHigh_00.png");
+				button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallPress_00.png");
+			}
+			else if ( stats[index]->playerRace == RACE_DRYAD )
+			{
+				button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortOn_00.png");
+				button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShort_00.png");
+				button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortHigh_00.png");
+				button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortPress_00.png");
+			}
+			else 
+			{
 				button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFemaleOn_00.png");
 				button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFemale_00.png");
 				button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFemaleHigh_00.png");
@@ -16321,6 +16576,19 @@ failed:
 		confirm->setCallback([](Button& button){soundActivate(); back_fn(button.getOwner());});*/
 	}
 
+	int playerClassLangEntryCapitalized(int classnum)
+	{
+		if ( classnum >= CLASS_BARBARIAN && classnum <= CLASS_HUNTER )
+		{
+			return 5348 + classnum;
+		}
+		else if ( classnum >= CLASS_BARD && classnum <= CLASS_PALADIN )
+		{
+			return 6789 + (classnum - CLASS_BARD);
+		}
+		return 5348;
+	}
+
 	static void characterCardClassMenu(int index, bool details, int selection) {
         static int class_selection[MAXPLAYERS];
         
@@ -16370,9 +16638,13 @@ failed:
 			        field.addColorToLine(0, color_dlc0);
 			    } else if (i < CLASS_MACHINIST) {
 			        field.addColorToLine(0, color_dlc1);
-			    } else {
+			    } else if (i <= CLASS_HUNTER ) {
 			        field.addColorToLine(0, color_dlc2);
 			    }
+				else
+				{
+					field.addColorToLine(0, hudColors.characterDLC3ClassText);
+				}
 
 				field.clearIndividualLinePadding();
 				for ( auto line = 0; line < ClassDescriptions::data[i].linePaddings.size(); ++line )
@@ -16567,14 +16839,18 @@ failed:
         } else {
 		    static auto class_name_fn = [](Field& field, int index){
 			    const int i = std::min(std::max(0, client_classes[index]), num_classes - 1);
-			    field.setText(Language::get(5348 + i));
+			    field.setText(Language::get(playerClassLangEntryCapitalized(i)));
 			    if (i < CLASS_CONJURER) {
 			        field.setColor(color_dlc0);
 			    } else if (i < CLASS_MACHINIST) {
 			        field.setColor(color_dlc1);
-			    } else {
+			    } else if (i <= CLASS_HUNTER ){
 			        field.setColor(color_dlc2);
 			    }
+				else
+				{
+					field.setColor(hudColors.characterDLC3ClassText);
+				}
 		    };
 
 		    auto class_name = card->addField("class_name", 64);
@@ -16759,6 +17035,11 @@ failed:
 				button->setBackgroundHighlighted((prefix + "ClassSelect_IconBGLegendsHigh_00.png").c_str());
 				button->setBackgroundActivated((prefix + "ClassSelect_IconBGLegendsPress_00.png").c_str());
 				break;
+			case DLC::DesertersAndDisciples:
+				button->setBackground((prefix + "ClassSelect_IconBGDeserters_00.png").c_str());
+				button->setBackgroundHighlighted((prefix + "ClassSelect_IconBGDesertersHigh_00.png").c_str());
+				button->setBackgroundActivated((prefix + "ClassSelect_IconBGDesertersPress_00.png").c_str());
+				break;
 			}
 			if (isCharacterValidFromDLC(*stats[index], c) == VALID_OK_CHARACTER) {
 				if (strcmp(name, current_class_name) == 0) {
@@ -16878,6 +17159,9 @@ failed:
 								break;
 							case INVALID_REQUIREDLC2:
 								openDLCPrompt(1);
+								break;
+							case INVALID_REQUIREDLC3:
+								openDLCPrompt(2);
 								break;
 							}
 						} else {
@@ -17264,7 +17548,23 @@ failed:
 			male_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAuto_00.png");
 			male_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAutoHigh_00.png");
 			male_button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAutoPress_00.png");
-		} else {
+		} 
+		else if ( stats[index]->playerRace == RACE_MYCONID )
+		{
+			male_button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortOn_00.png");
+			male_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShort_00.png");
+			male_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortHigh_00.png");
+			male_button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortPress_00.png");
+		}
+		else if ( stats[index]->playerRace == RACE_DRYAD )
+		{
+			male_button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallOn_00.png");
+			male_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTall_00.png");
+			male_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallHigh_00.png");
+			male_button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallPress_00.png");
+		}
+		else 
+		{
 			male_button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMaleOn_00.png");
 			male_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMale_00.png");
 			male_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMaleHigh_00.png");
@@ -17299,7 +17599,23 @@ failed:
 				button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAuto_00.png");
 				button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAutoHigh_00.png");
 				button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAutoPress_00.png");
-			} else {
+			} 
+			else if ( stats[index]->playerRace == RACE_MYCONID )
+			{
+				button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortOn_00.png");
+				button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShort_00.png");
+				button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortHigh_00.png");
+				button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortPress_00.png");
+			}
+			else if ( stats[index]->playerRace == RACE_DRYAD )
+			{
+				button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallOn_00.png");
+				button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTall_00.png");
+				button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallHigh_00.png");
+				button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallPress_00.png");
+			}
+			else 
+			{
 				button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMaleOn_00.png");
 				button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMale_00.png");
 				button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMaleHigh_00.png");
@@ -17317,7 +17633,23 @@ failed:
 			female_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAuto_00.png");
 			female_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAutoHigh_00.png");
 			female_button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAutoPress_00.png");
-		} else {
+		} 
+		else if ( stats[index]->playerRace == RACE_MYCONID )
+		{
+			female_button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallOn_00.png");
+			female_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTall_00.png");
+			female_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallHigh_00.png");
+			female_button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallPress_00.png");
+		}
+		else if ( stats[index]->playerRace == RACE_DRYAD )
+		{
+			female_button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortOn_00.png");
+			female_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShort_00.png");
+			female_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortHigh_00.png");
+			female_button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortPress_00.png");
+		}
+		else 
+		{
 			female_button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFemaleOn_00.png");
 			female_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFemale_00.png");
 			female_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFemaleHigh_00.png");
@@ -17353,7 +17685,23 @@ failed:
 				button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAuto_00.png");
 				button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAutoHigh_00.png");
 				button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAutoPress_00.png");
-			} else {
+			}
+			else if ( stats[index]->playerRace == RACE_MYCONID )
+			{
+				button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallOn_00.png");
+				button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTall_00.png");
+				button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallHigh_00.png");
+				button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteTallPress_00.png");
+			}
+			else if ( stats[index]->playerRace == RACE_DRYAD )
+			{
+				button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortOn_00.png");
+				button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShort_00.png");
+				button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortHigh_00.png");
+				button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonDendriteShortPress_00.png");
+			}
+			else 
+			{
 				button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFemaleOn_00.png");
 				button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFemale_00.png");
 				button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFemaleHigh_00.png");
@@ -17365,7 +17713,7 @@ failed:
 		race_button->setColor(makeColor(255, 255, 255, 255));
 		race_button->setHighlightColor(makeColor(255, 255, 255, 255));
 		race_button->setSize(SDL_Rect{166, 166, 108, 52});
-		race_button->setText(Language::get(5369 + stats[index]->playerRace));
+		race_button->setText(Language::get(getLangEntryForPlayerRaceName(stats[index]->playerRace)));
 		race_button->setFont(smallfont_outline);
 		race_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/Finalize_Button_RaceBase_00.png");
 		race_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/Finalize_Button_RaceBaseHigh_00.png");
@@ -17414,14 +17762,19 @@ failed:
 				if ( forcedClass )
 				{
 					std::vector<unsigned int> chances;
-					chances.resize(RACE_INSECTOID + 1);
+					chances.resize(NUMRACES);
 					auto oldRace = stats[index]->playerRace;
 					Uint32 oldAppearance = stats[index]->stat_appearance;
 					stats[index]->stat_appearance = 0;
 
 					bool chanceFound = false;
-					for ( int race = RACE_HUMAN; race <= RACE_INSECTOID; ++race )
+					for ( int race = RACE_HUMAN; race < RACE_ENUM_END; ++race )
 					{
+						if ( race > RACE_INSECTOID && race <= RACE_IMP )
+						{
+							chances[race] = 0;
+							continue;
+						}
 						stats[index]->playerRace = race;
 						chances[race] = 0;
 						if ( isCharacterValidFromDLC(*stats[index], index) == VALID_OK_CHARACTER )
@@ -17443,24 +17796,38 @@ failed:
 				else
 				{
 					// select a random race
-					// there are 9 legal races that the player can select from the start.
-					if (enabledDLCPack1 && enabledDLCPack2) {
-						stats[index]->playerRace = RNG.uniform(0, NUMPLAYABLERACES - 1);
-					} else if (enabledDLCPack1) {
-						stats[index]->playerRace = RNG.uniform(0, 4);
-					} else if (enabledDLCPack2) {
-						stats[index]->playerRace = RNG.uniform(0, 4);
-						if (stats[index]->playerRace > 0) {
-							stats[index]->playerRace += 4;
-						}
-					} else {
-						stats[index]->playerRace = RACE_HUMAN;
+					// there are x legal races that the player can select from the start.
+					std::vector<unsigned int> chances;
+					chances.resize(NUMRACES);
+					chances[RACE_HUMAN] = 1;
+					if ( enabledDLCPack1 )
+					{
+						chances[RACE_SKELETON] = 1;
+						chances[RACE_VAMPIRE] = 1;
+						chances[RACE_GOATMAN] = 1;
+						chances[RACE_SUCCUBUS] = 1;
 					}
+					if ( enabledDLCPack2 )
+					{
+						chances[RACE_INSECTOID] = 1;
+						chances[RACE_INCUBUS] = 1;
+						chances[RACE_INSECTOID] = 1;
+						chances[RACE_AUTOMATON] = 1;
+					}
+					if ( enabledDLCPack3 )
+					{
+						chances[RACE_GREMLIN] = 1;
+						chances[RACE_MYCONID] = 1;
+						chances[RACE_DRYAD] = 1;
+						chances[RACE_GNOME] = 1;
+						chances[RACE_SALAMANDER] = 1;
+					}
+					stats[index]->playerRace = RNG.discrete(chances.data(), chances.size());
 				}
 			}
 
 			auto race_button = card->findButton("race");
-			race_button->setText(Language::get(5369 + stats[index]->playerRace));
+			race_button->setText(Language::get(getLangEntryForPlayerRaceName(stats[index]->playerRace)));
 
 			// choose a random appearance
 			const int appearance_choice = RNG.uniform(0, NUMAPPEARANCES - 1);
@@ -17543,7 +17910,7 @@ failed:
 		class_text->setSize(SDL_Rect{96, 236, 138, 32});
 		static auto class_text_fn = [](Field& field, int index){
 			int i = std::min(std::max(0, client_classes[index]), num_classes - 1);
-            field.setText(Language::get(5348 + i));
+            field.setText(Language::get(playerClassLangEntryCapitalized(i)));
 		};
 		class_text->setFont(smallfont_outline);
 		class_text->setJustify(Field::justify_t::CENTER);
@@ -17570,6 +17937,11 @@ failed:
 					button.setBackground("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_IconBGLegends_00.png");
 					button.setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_IconBGLegendsHigh_00.png");
 					button.setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_IconBGLegendsPress_00.png");
+					break;
+				case DLC::DesertersAndDisciples:
+					button.setBackground("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_IconBGDeserters_00.png");
+					button.setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_IconBGDesertersHigh_00.png");
+					button.setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/ClassSelect_IconBGDesertersPress_00.png");
 					break;
 				}
 				button.setIcon((std::string("*images/ui/Main Menus/Play/PlayerCreation/ClassSelection/") + find->second.image_highlighted).c_str());
@@ -18407,6 +18779,8 @@ failed:
 			}
 			uniqueLobbyKey = local_rng.getU32();
 	        net_rng.seedBytes(&uniqueGameKey, sizeof(uniqueGameKey));
+
+			printlog("Starting game, game seed: %lu", uniqueGameKey);
 
 	        // send start signal to each player
 	        if (multiplayer == SERVER) {
@@ -25003,7 +25377,9 @@ failed:
 				{
 					soundCancel();
 					setAudioDevice(current_audio_device);
+#ifdef USE_FMOD
 					setRecordDevice(current_recording_audio_device);
+#endif
 					setGlobalVolume(master_volume, musvolume, sfxvolume, sfxAmbientVolume, sfxEnvironmentVolume, sfxNotificationVolume);
 					if (main_menu_frame) {
 						auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
@@ -25028,7 +25404,9 @@ failed:
 					soundActivate();
 
 					setAudioDevice(current_audio_device);
+#ifdef USE_FMOD
 					setRecordDevice(current_recording_audio_device);
+#endif
 					setGlobalVolume(master_volume, musvolume, sfxvolume, sfxAmbientVolume, sfxEnvironmentVolume, sfxNotificationVolume);
 					if ( main_menu_frame ) {
 						auto buttons = main_menu_frame->findFrame("buttons"); assert(buttons);
@@ -25955,10 +26333,21 @@ failed:
 #ifdef NINTENDO
 		enabledDLCPack1 = nxCheckDLC(0);
 		enabledDLCPack2 = nxCheckDLC(1);
+		enabledDLCPack3 = nxCheckDLC(2);
 #endif
 #ifdef STEAMWORKS
-		enabledDLCPack1 = SteamApps()->BIsDlcInstalled(1010820);
-		enabledDLCPack2 = SteamApps()->BIsDlcInstalled(1010821);
+		if ( !enabledDLCPack1 )
+		{
+			enabledDLCPack1 = SteamApps()->BIsDlcInstalled(1010820);
+		}
+		if ( !enabledDLCPack2 )
+		{
+			enabledDLCPack2 = SteamApps()->BIsDlcInstalled(1010821);
+		}
+		if ( !enabledDLCPack3 )
+		{
+			enabledDLCPack3 = SteamApps()->BIsDlcInstalled(1010822);
+		}
 #endif
 
         if (!ingame) {
@@ -26272,6 +26661,78 @@ failed:
         }
     };
     static GetPlayersOnline getPlayersOnline;
+
+	void MainMenu::RichPresence::process()
+	{
+		if ( loading )
+		{
+			return;
+		}
+		if ( !init )
+		{
+			needsUpdate = true;
+		}
+		if ( ticks - lastUpdate >= 10 * TICKS_PER_SECOND )
+		{
+			needsUpdate = true;
+			lastUpdate = ticks;
+		}
+		if ( _intro != intro )
+		{
+			_intro = intro;
+			needsUpdate = true;
+		}
+		if ( levelStr != map.name )
+		{
+			levelStr = map.name;
+			needsUpdate = true;
+		}
+		if ( clientnum >= 0 && clientnum < MAXPLAYERS && stats )
+		{
+			if ( _classnum != client_classes[clientnum] )
+			{
+				_classnum = client_classes[clientnum];
+				needsUpdate = true;
+			}
+			if ( _level != stats[clientnum]->LVL )
+			{
+				_level = stats[clientnum]->LVL;
+				needsUpdate = true;
+			}
+		}
+
+		if ( needsUpdate )
+		{
+			bool result = false;
+			if ( intro == true )
+			{
+				result = SteamFriends()->SetRichPresence("steam_display", "#Status_AtMainMenu");
+			}
+			else if ( clientnum >= 0 && clientnum < MAXPLAYERS && stats )
+			{
+				auto find = Player::CharacterSheet_t::mapDisplayNamesDescriptions.find(map.name);
+				if ( find == Player::CharacterSheet_t::mapDisplayNamesDescriptions.end() )
+				{
+					result = SteamFriends()->SetRichPresence("steam_display", "#Status_Nolocation");
+				}
+				else
+				{
+					trimmedLevelStr = map.name;
+					trimmedLevelStr.erase(std::remove(trimmedLevelStr.begin(), trimmedLevelStr.end(), ' '), trimmedLevelStr.end()); // trim whitespace
+					result = SteamFriends()->SetRichPresence("location", trimmedLevelStr.c_str());
+					result = SteamFriends()->SetRichPresence("class", std::to_string(client_classes[clientnum]).c_str());
+					result = SteamFriends()->SetRichPresence("level", std::to_string(stats[clientnum]->LVL).c_str());
+					result = SteamFriends()->SetRichPresence("steam_display", "#Status_Ingame");
+				}
+			}
+			else
+			{
+				SteamFriends()->ClearRichPresence();
+			}
+			needsUpdate = false;
+		}
+		init = true;
+	}
 #endif
 
 	std::string MainMenuBanners_t::updateBannerImg = "";
@@ -26571,7 +27032,7 @@ failed:
                 button->setWidgetUp(options[back].name);
             }
 #ifdef NINTENDO
-            if (ingame || c + 1 < num_options || (enabledDLCPack1 && enabledDLCPack2)) {
+            if (ingame || c + 1 < num_options || (enabledDLCPack1 && enabledDLCPack2 && enabledDLCPack3)) {
                 button->setWidgetDown(options[forward].name);
             } else {
                 button->setWidgetDown("banner1");
@@ -26751,9 +27212,21 @@ failed:
             // customize DLC banner.
             {
                 if (!enabledDLCPack1 && !enabledDLCPack2) {
-                    banner_images[0][0] = "*#images/ui/Main Menus/Banners/UI_MainMenu_ComboBanner1_base.png";
-                    banner_images[0][1] = "*#images/ui/Main Menus/Banners/UI_MainMenu_ComboBanner1_high.png";
+					if ( !enabledDLCPack3 )
+					{
+						banner_images[0][0] = "*#images/ui/Main Menus/Banners/UI_MainMenu_DnDBanner1_base.png";
+						banner_images[0][1] = "*#images/ui/Main Menus/Banners/UI_MainMenu_DnDBanner1_high.png";
+					}
+					else
+					{
+						banner_images[0][0] = "*#images/ui/Main Menus/Banners/UI_MainMenu_ComboBanner1_base.png";
+						banner_images[0][1] = "*#images/ui/Main Menus/Banners/UI_MainMenu_ComboBanner1_high.png";
+					}
                 }
+				else if ( !enabledDLCPack3 ) {
+					banner_images[0][0] = "*#images/ui/Main Menus/Banners/UI_MainMenu_DnDBanner1_base.png";
+					banner_images[0][1] = "*#images/ui/Main Menus/Banners/UI_MainMenu_DnDBanner1_high.png";
+				}
                 else if (!enabledDLCPack1) {
                     banner_images[0][0] = "*#images/ui/Main Menus/Banners/UI_MainMenu_MnOBanner1_base.png";
                     banner_images[0][1] = "*#images/ui/Main Menus/Banners/UI_MainMenu_MnOBanner1_high.png";
@@ -26770,7 +27243,7 @@ failed:
 		        }
 		    };
             
-			const int num_banners = (enabledDLCPack1 && enabledDLCPack2) ?
+			const int num_banners = (enabledDLCPack1 && enabledDLCPack2 && enabledDLCPack3) ?
                 0 : 1;
 #else
 			const char* banner_images[][2] = {
@@ -26795,9 +27268,21 @@ failed:
             // customize DLC banner.
             {
                 if (!enabledDLCPack1 && !enabledDLCPack2) {
-                    banner_images[1][0] = "*#images/ui/Main Menus/Banners/UI_MainMenu_ComboBanner1_base.png";
-                    banner_images[1][1] = "*#images/ui/Main Menus/Banners/UI_MainMenu_ComboBanner1_high.png";
+					if ( !enabledDLCPack3 )
+					{
+						banner_images[1][0] = "*#images/ui/Main Menus/Banners/UI_MainMenu_DnDBanner1_base.png";
+						banner_images[1][1] = "*#images/ui/Main Menus/Banners/UI_MainMenu_DnDBanner1_high.png";
+					}
+					else
+					{
+						banner_images[1][0] = "*#images/ui/Main Menus/Banners/UI_MainMenu_ComboBanner1_base.png";
+						banner_images[1][1] = "*#images/ui/Main Menus/Banners/UI_MainMenu_ComboBanner1_high.png";
+					}
                 }
+				else if ( !enabledDLCPack3 ) {
+					banner_images[1][0] = "*#images/ui/Main Menus/Banners/UI_MainMenu_DnDBanner1_base.png";
+					banner_images[1][1] = "*#images/ui/Main Menus/Banners/UI_MainMenu_DnDBanner1_high.png";
+				}
                 else if (!enabledDLCPack1) {
                     banner_images[1][0] = "*#images/ui/Main Menus/Banners/UI_MainMenu_MnOBanner1_base.png";
                     banner_images[1][1] = "*#images/ui/Main Menus/Banners/UI_MainMenu_MnOBanner1_high.png";
@@ -26817,7 +27302,7 @@ failed:
 				},
 			};
             
-		    const int num_banners = (enabledDLCPack1 && enabledDLCPack2) ? 1 : sizeof(banner_funcs) / sizeof(banner_funcs[0]);
+		    const int num_banners = (enabledDLCPack1 && enabledDLCPack2 && enabledDLCPack3) ? 1 : sizeof(banner_funcs) / sizeof(banner_funcs[0]);
 #endif
 		    auto banners = main_menu_frame->addFrame("banners");
 		    banners->setSize(SDL_Rect{(Frame::virtualScreenX - 472) / 2, y, 472, Frame::virtualScreenY - y});
@@ -26947,6 +27432,7 @@ failed:
 			    auto online_players = static_cast<Field*>(&widget);
                 if (ticks % (TICKS_PER_SECOND * 5) == 0) {
                     getPlayersOnline();
+					richPresence.process();
                 }
                 int players = getPlayersOnline.current();
                 if (players == 0) {
@@ -27072,7 +27558,7 @@ failed:
         int placement = 1;
 	    score_t* score = scoreConstructor(player);
 	    Uint32 total = totalScore(score);
-	    list_t* scoresPtr = multiplayer == SINGLE ? &topscores : &topscoresMultiplayer;
+	    list_t* scoresPtr = multiplayer == SINGLE ? &topscores_json : &topscoresMultiplayer_json;
         for (auto node = scoresPtr->first; node != nullptr; node = node->next) {
             if (total > totalScore((score_t*)node->element)) {
                 break;
@@ -27189,6 +27675,15 @@ failed:
 			break;
 		case KilledBy::BELL:
 			cause_of_death = Language::get(6278);
+			break;
+		case KilledBy::MUSHROOM:
+			cause_of_death = Language::get(6754);
+			break;
+		case KilledBy::LEAVES:
+			cause_of_death = Language::get(6759);
+			break;
+		case KilledBy::DEATH_KNOCKBACK:
+			cause_of_death = Language::get(6854);
 			break;
         default: {
             cause_of_death = Language::get(5794 + (int)stats[player]->killer);
@@ -31845,6 +32340,16 @@ failed:
 							check = INVALID_REQUIREDLC2;
 						}
 						break;
+					case CLASS_BARD:
+					case CLASS_SAPPER:
+					case CLASS_SCION:
+					case CLASS_HERMIT:
+					case CLASS_PALADIN:
+						if ( !enabledDLCPack3 )
+						{
+							check = INVALID_REQUIREDLC3;
+						}
+						break;
 					default:
 						break;
 					}
@@ -31868,6 +32373,16 @@ failed:
 							check = INVALID_REQUIREDLC2;
 						}
 						break;
+					case RACE_GREMLIN:
+					case RACE_DRYAD:
+					case RACE_MYCONID:
+					case RACE_SALAMANDER:
+					case RACE_GNOME:
+						if ( !enabledDLCPack3 )
+						{
+							check = INVALID_REQUIREDLC3;
+						}
+						break;
 					default:
 						break;
 					}
@@ -31887,12 +32402,17 @@ failed:
 			txt = Language::get(6127);
 			txt += Language::get(5002);
 		}
+		else if ( check == INVALID_REQUIREDLC3 )
+		{
+			txt = Language::get(6778);
+			txt += Language::get(5002);
+		}
 		else
 		{
 			txt = Language::get(6125);
 		}
 
-		if ( check == INVALID_REQUIREDLC1 || check == INVALID_REQUIREDLC2 )
+		if ( check == INVALID_REQUIREDLC1 || check == INVALID_REQUIREDLC2 || check == INVALID_REQUIREDLC3 )
 		{
 			auto prompt = binaryPromptXL(
 				txt.c_str(),
@@ -34130,7 +34650,11 @@ failed:
 						auto find = ItemTooltips.spellItems.find(spellID);
 						if ( find != ItemTooltips.spellItems.end() && spellID > SPELL_NONE )
 						{
-							if ( find->second.spellbookId == entryType )
+							if ( spellID == SPELL_STRIKE )
+							{
+								// ignore damage portion as cant track
+							}
+							else if ( find->second.spellbookId == entryType )
 							{
 								if ( find->second.spellTags.find(ItemTooltips_t::SpellTagTypes::SPELL_TAG_HEALING)
 									!= find->second.spellTags.end() )
@@ -34146,6 +34670,21 @@ failed:
 									!= find->second.spellTags.end() )
 								{
 									displayedEvents.push_back(Compendium_t::EventTags::CPDM_SPELL_TARGETS);
+								}
+							}
+
+							if ( spellID == SPELL_SHATTER_OBJECTS )
+							{
+								if ( displayedEvents.size() && displayedEvents.back() == Compendium_t::EventTags::CPDM_SPELL_DMG )
+								{
+									displayedEvents.back() = Compendium_t::EventTags::CPDM_SPELL_TARGETS;
+								}
+							}
+							else if ( spellID == SPELL_HOLY_BEAM )
+							{
+								if ( displayedEvents.size() && displayedEvents.back() == Compendium_t::EventTags::CPDM_SPELL_HEAL )
+								{
+									displayedEvents.back() = Compendium_t::EventTags::CPDM_SPELL_DMG;
 								}
 							}
 						}
@@ -34217,6 +34756,21 @@ failed:
 							!= find->second.spellTags.end() )
 						{
 							displayedEvents.push_back(Compendium_t::EventTags::CPDM_SPELL_TARGETS);
+						}
+
+						if ( spellID == SPELL_SHATTER_OBJECTS )
+						{
+							if ( displayedEvents.size() && displayedEvents.back() == Compendium_t::EventTags::CPDM_SPELL_DMG )
+							{
+								displayedEvents.back() = Compendium_t::EventTags::CPDM_SPELL_TARGETS;
+							}
+						}
+						else if ( spellID == SPELL_HOLY_BEAM )
+						{
+							if ( displayedEvents.size() && displayedEvents.back() == Compendium_t::EventTags::CPDM_SPELL_HEAL )
+							{
+								displayedEvents.back() = Compendium_t::EventTags::CPDM_SPELL_DMG;
+							}
 						}
 					}
 					displayedEvents.push_back(Compendium_t::EventTags::CPDM_SPELL_CASTS);
@@ -34960,6 +35514,7 @@ failed:
 									if ( i.spellID >= 0 )
 									{
 										itemLookupIndex = Compendium_t::Events_t::kEventSpellOffset + i.spellID;
+										appearance = i.spellID;
 									}
 								}
 								break;
@@ -35738,6 +36293,14 @@ failed:
 													if ( frame->getUserData() )
 													{
 														Compendium_t::compendiumItem.appearance = (reinterpret_cast<intptr_t>(frame->getUserData()) & 0x7F);
+														if ( itemType == SPELL_ITEM )
+														{
+															auto find = ItemTooltips.spellNameStringToSpellID.find(widget.getName());
+															if ( find != ItemTooltips.spellNameStringToSpellID.end() )
+															{
+																Compendium_t::compendiumItem.appearance = find->second;
+															}
+														}
 													}
 
 													if ( Compendium_t::compendiumItem.type == SPELL_ITEM )
@@ -35959,7 +36522,40 @@ failed:
 						char buf[128];
 						if ( items[id].level >= 0 )
 						{
-							snprintf(buf, sizeof(buf), "\n%s %d", Language::get(6173), items[id].level);
+							if ( items[id].category == SPELLBOOK )
+							{
+								snprintf(buf, sizeof(buf), "\n%s ???", Language::get(6173));
+								int spellID = getSpellIDFromSpellbook(id);
+								if ( spellID > SPELL_NONE )
+								{
+									if ( auto spell = getSpellFromID(spellID) )
+									{
+										if ( spell->drop_table >= 0 )
+										{
+											if ( spell->difficulty <= 20 )
+											{
+												snprintf(buf, sizeof(buf), "\n%s %d", Language::get(6173), 1);
+											}
+											else if ( spell->difficulty <= 40 )
+											{
+												snprintf(buf, sizeof(buf), "\n%s %d", Language::get(6173), 6);
+											}
+											else if ( spell->difficulty <= 60 )
+											{
+												snprintf(buf, sizeof(buf), "\n%s %d", Language::get(6173), 11);
+											}
+											else if ( spell->difficulty >= 80 )
+											{
+												snprintf(buf, sizeof(buf), "\n%s %d", Language::get(6173), 16);
+											}
+										}
+									}
+								}
+							}
+							else
+							{
+								snprintf(buf, sizeof(buf), "\n%s %d", Language::get(6173), items[id].level);
+							}
 						}
 						else
 						{
@@ -35995,13 +36591,30 @@ failed:
 
 					Compendium_t::compendiumItem.type = (ItemType)id;
 					Compendium_t::compendiumItem.appearance = (modelRNGCycle + Compendium_t::compendiumEntityCurrent.modelRNG) % items[id].variations;
-					if ( id == TOOL_PLAYER_LOOT_BAG )
+					if ( id == MAGICSTAFF_SCEPTER )
+					{
+						Compendium_t::compendiumItem.appearance = 0;
+					}
+					else if ( id == TOOL_PLAYER_LOOT_BAG )
 					{
 						Compendium_t::compendiumItem.appearance = (modelRNGCycle + Compendium_t::compendiumEntityCurrent.modelRNG) % 4;
+					}
+					else if ( id == TOOL_DUCK )
+					{
+						Compendium_t::compendiumItem.appearance = (modelRNGCycle + Compendium_t::compendiumEntityCurrent.modelRNG * 4) % items[id].variations;
+						Compendium_t::compendiumItem.appearance /= MAXPLAYERS;
 					}
 					else if ( id == READABLE_BOOK )
 					{
 						Compendium_t::compendiumItem.appearance = getBook("My Journal") % items[id].variations;
+					}
+					else if ( itemCategory(&Compendium_t::compendiumItem) == SPELLBOOK || itemCategory(&Compendium_t::compendiumItem) == TOME_SPELL )
+					{
+						int variation = getItemVariationFromSpellbookOrTome(Compendium_t::compendiumItem);
+						if ( variation >= 0 )
+						{
+							Compendium_t::compendiumItem.appearance = variation;
+						}
 					}
 
 					if ( unlockStatus == Compendium_t::CompendiumUnlockStatus::LOCKED_UNKNOWN )
@@ -37755,7 +38368,7 @@ failed:
 					myStats->setAttribute("monster_portrait", "true");
 					(void)actMonster(monster);
 					monster->yaw = 0.0;
-					myStats->EFFECTS[EFF_ASLEEP] = false;
+					myStats->clearEffect(EFF_ASLEEP);
 					monsterAnimate(compendiumMonster, myStats, 0.0);
 					monsterAnimate(compendiumMonster, myStats, 0.0);
 				}
@@ -38244,6 +38857,18 @@ failed:
 				}
 			},
 			{
+				Compendium_t::AchievementData_t::AchievementDLCType::ACH_TYPE_DLC3,
+				{
+					"*#images/ui/Main Menus/AdventureArchives/A_AchBox_Locked_00.png",
+					"*#images/ui/Main Menus/AdventureArchives/A_AchBox_DLCCompleted_00.png",
+					"*#images/ui/Main Menus/AdventureArchives/A_AchBox_Locked_Deserters_Badge_00.png",
+					"*#images/ui/Main Menus/AdventureArchives/A_AchBox_Locked_Badge_00.png",
+					"*#images/ui/Main Menus/AdventureArchives/A_Icon_Deserters_Colored_00.png",
+					"*#images/ui/Main Menus/AdventureArchives/A_Icon_Deserters_Gold_00.png",
+					"*#images/ui/Main Menus/AdventureArchives/A_Icon_Deserters_Grey_00.png"
+				}
+			},
+			{
 				Compendium_t::AchievementData_t::AchievementDLCType::ACH_TYPE_NORMAL,
 				{ 
 					"*#images/ui/Main Menus/AdventureArchives/A_AchBox_Locked_00.png", 
@@ -38257,6 +38882,18 @@ failed:
 			},
 			{
 				Compendium_t::AchievementData_t::AchievementDLCType::ACH_TYPE_DLC1_DLC2,
+				{
+					"*#images/ui/Main Menus/AdventureArchives/A_AchBox_Locked_00.png",
+					"*#images/ui/Main Menus/AdventureArchives/A_AchBox_DLCCompleted_00.png",
+					"*#images/ui/Main Menus/AdventureArchives/A_AchBox_Locked_Badge_00.png",
+					"*#images/ui/Main Menus/AdventureArchives/A_AchBox_Locked_Badge_00.png",
+					"",
+					"",
+					""
+				}
+			},
+			{
+				Compendium_t::AchievementData_t::AchievementDLCType::ACH_TYPE_DLC1_DLC2_DLC3,
 				{
 					"*#images/ui/Main Menus/AdventureArchives/A_AchBox_Locked_00.png",
 					"*#images/ui/Main Menus/AdventureArchives/A_AchBox_DLCCompleted_00.png",
@@ -38498,6 +39135,11 @@ failed:
 				{
 					dlc_badge_2->disabled = true;
 				}
+				auto dlc_badge_3 = ach->findImage("dlc_badge_3");
+				if ( dlc_badge_3 )
+				{
+					dlc_badge_3->disabled = true;
+				}
 				auto dlc_badge_icon_1 = ach->findImage("dlc_badge_icon_1");
 				if ( dlc_badge_icon_1 )
 				{
@@ -38508,6 +39150,11 @@ failed:
 				{
 					dlc_badge_icon_2->disabled = true;
 				}
+				auto dlc_badge_icon_3 = ach->findImage("dlc_badge_icon_3");
+				if ( dlc_badge_icon_3 )
+				{
+					dlc_badge_icon_3->disabled = true;
+				}
 				if ( auto dlc_badge = ach->findImage("dlc_badge") )
 				{
 					dlc_badge->disabled = true;
@@ -38515,7 +39162,34 @@ failed:
 					{
 						if ( !hiddenGroup )
 						{
-							if ( achData.dlcType == Compendium_t::AchievementData_t::ACH_TYPE_DLC1_DLC2 )
+							if ( achData.dlcType == Compendium_t::AchievementData_t::ACH_TYPE_DLC1_DLC2_DLC3 )
+							{
+								if ( achData.unlocked )
+								{
+									dlc_badge_3->path = backingImgs.at(Compendium_t::AchievementData_t::ACH_TYPE_DLC1)[2];
+									dlc_badge_2->path = backingImgs.at(Compendium_t::AchievementData_t::ACH_TYPE_DLC3)[2];
+									dlc_badge_1->path = backingImgs.at(Compendium_t::AchievementData_t::ACH_TYPE_DLC2)[2];
+								}
+								else
+								{
+									dlc_badge_3->path = backingImgs.at(Compendium_t::AchievementData_t::ACH_TYPE_DLC1)[3];
+									dlc_badge_2->path = backingImgs.at(Compendium_t::AchievementData_t::ACH_TYPE_DLC3)[3];
+									dlc_badge_1->path = backingImgs.at(Compendium_t::AchievementData_t::ACH_TYPE_DLC2)[3];
+								}
+								if ( dlc_badge_1->path != "" )
+								{
+									dlc_badge_1->disabled = false;
+								}
+								if ( dlc_badge_2->path != "" )
+								{
+									dlc_badge_2->disabled = false;
+								}
+								if ( dlc_badge_3->path != "" )
+								{
+									dlc_badge_3->disabled = false;
+								}
+							}
+							else if ( achData.dlcType == Compendium_t::AchievementData_t::ACH_TYPE_DLC1_DLC2 )
 							{
 								if ( achData.unlocked )
 								{
@@ -38561,7 +39235,34 @@ failed:
 					{
 						if ( !hiddenGroup )
 						{
-							if ( achData.dlcType == Compendium_t::AchievementData_t::ACH_TYPE_DLC1_DLC2 )
+							if ( achData.dlcType == Compendium_t::AchievementData_t::ACH_TYPE_DLC1_DLC2_DLC3 )
+							{
+								if ( achData.unlocked )
+								{
+									dlc_badge_icon_3->path = backingImgs.at(Compendium_t::AchievementData_t::ACH_TYPE_DLC1)[4];
+									dlc_badge_icon_2->path = backingImgs.at(Compendium_t::AchievementData_t::ACH_TYPE_DLC3)[4];
+									dlc_badge_icon_1->path = backingImgs.at(Compendium_t::AchievementData_t::ACH_TYPE_DLC2)[4];
+								}
+								else
+								{
+									dlc_badge_icon_3->path = backingImgs.at(Compendium_t::AchievementData_t::ACH_TYPE_DLC1)[6];
+									dlc_badge_icon_2->path = backingImgs.at(Compendium_t::AchievementData_t::ACH_TYPE_DLC3)[6];
+									dlc_badge_icon_1->path = backingImgs.at(Compendium_t::AchievementData_t::ACH_TYPE_DLC2)[6];
+								}
+								if ( dlc_badge_icon_1->path != "" )
+								{
+									dlc_badge_icon_1->disabled = false;
+								}
+								if ( dlc_badge_icon_2->path != "" )
+								{
+									dlc_badge_icon_2->disabled = false;
+								}
+								if ( dlc_badge_icon_3->path != "" )
+								{
+									dlc_badge_icon_3->disabled = false;
+								}
+							}
+							else if ( achData.dlcType == Compendium_t::AchievementData_t::ACH_TYPE_DLC1_DLC2 )
 							{
 								if ( achData.unlocked )
 								{
@@ -38886,6 +39587,14 @@ failed:
 			dlc_badge_icon->disabled = true;
 
 			{
+				auto dlc_badge_stack_3 = ach->addImage(SDL_Rect{ bg->pos.x - 16, bg->pos.y - 4, 38, 38 }, 0xFFFFFFFF,
+					"*#images/ui/Main Menus/AdventureArchives/A_AchBox_Locked_Badge_00.png", "dlc_badge_3");
+				dlc_badge_stack_3->disabled = true;
+
+				auto dlc_badge_icon_3 = ach->addImage(SDL_Rect{ dlc_badge_stack_3->pos.x + 2, dlc_badge_stack_3->pos.y + 2, 34, 34 }, 0xFFFFFFFF,
+					"", "dlc_badge_icon_3");
+				dlc_badge_icon_3->disabled = true;
+
 				auto dlc_badge_stack_1 = ach->addImage(SDL_Rect{ bg->pos.x + 4, bg->pos.y - 4, 38, 38 }, 0xFFFFFFFF,
 					"*#images/ui/Main Menus/AdventureArchives/A_AchBox_Locked_Badge_00.png", "dlc_badge_1");
 				dlc_badge_stack_1->disabled = true;

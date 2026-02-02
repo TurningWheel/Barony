@@ -59,6 +59,21 @@ enum Monster : int
 	GYROBOT,
 	DUMMYBOT,
 	BUGBEAR,
+	DRYAD,
+	MYCONID,
+	SALAMANDER,
+	GREMLIN,
+	REVENANT_SKULL,
+	MINIMIMIC,
+	MONSTER_ADORCISED_WEAPON,
+	FLAME_ELEMENTAL,
+	HOLOGRAM,
+	MOTH_SMALL,
+	EARTH_ELEMENTAL,
+	DUCK_SMALL,
+	MONSTER_UNUSED_6,
+	MONSTER_UNUSED_7,
+	MONSTER_UNUSED_8,
 	MAX_MONSTER
 };
 const int NUMMONSTERS = MAX_MONSTER;
@@ -160,7 +175,7 @@ static std::vector<Sint32> monsterSprites[NUMMONSTERS] = {
 
     // GNOME
     {
-        295, 1426, 1430
+        295, 1426, 1430, 2213, 2214
     },
 
     // DEMON
@@ -178,7 +193,8 @@ static std::vector<Sint32> monsterSprites[NUMMONSTERS] = {
 
     // MIMIC
     {
-		1247
+		1247,
+		1792
     },
 
     // LICH
@@ -220,7 +236,7 @@ static std::vector<Sint32> monsterSprites[NUMMONSTERS] = {
 
     // INCUBUS
     {
-        445, 702,
+        445, 702, 1826
     },
 
     // VAMPIRE
@@ -293,9 +309,68 @@ static std::vector<Sint32> monsterSprites[NUMMONSTERS] = {
 	{
 		1412,
 	},
+
+	//DRYAD
+	{
+		1485, 1486, 1514, 1515,
+		1963, 1964, 1992, 1993
+	},
+	//MYCONID
+	{
+		1519, 1520,
+		1997, 1998
+	},
+	//SALAMANDER
+	{
+		1536, 1538, 1540, 1537, 1539, 1541,
+		2014, 2015, 2016, 2017, 2018, 2019
+	},
+	//GREMLIN
+	{
+		1569, 1570, 2047, 2048
+	},
+	//REVENANT_SKULL
+	{
+		1796
+	},
+	//MINIMIMIC
+	{
+		1794
+	},
+	//MONSTER_ADORCISED_WEAPON
+	{
+		1797
+	},
+	//FLAME_ELEMENTAL
+	{
+		1804
+	},
+	//HOLOGRAM
+	{
+		1803
+	},
+	//MOTH__SMALL
+	{
+		1819, 1822
+	},
+	//EARTH_ELEMENTAL
+	{
+		1871, 1876
+	},
+	// DUCK_SMALL
+	{
+		2225, 2226, 2231, 2232, 2237, 2238, 2307, 2308
+	},
+	//MONSTER_UNUSED_6
+	{
+	},
+	//MONSTER_UNUSED_7
+	{
+	},
+	//MONSTER_UNUSED_8
 };
 
-static char monstertypename[][15] =
+static char monstertypename[][32] =
 {
 	"nothing",
 	"human",
@@ -334,53 +409,26 @@ static char monstertypename[][15] =
 	"spellbot",
 	"gyrobot",
 	"dummybot",
-	"bugbear"
-};
-
-static char monstertypenamecapitalized[][15] =
-{
-	"Nothing",
-	"Human",
-	"Rat",
-	"Goblin",
-	"Slime",
-	"Troll",
-	"Bat",
-	"Spider",
-	"Ghoul",
-	"Skeleton",
-	"Scorpion",
-	"Imp",
-	"Crab",
-	"Gnome",
-	"Demon",
-	"Succubus",
-	"Mimic",
-	"Lich",
-	"Minotaur",
-	"Devil",
-	"Shopkeeper",
-	"Kobold",
-	"Scarab",
-	"Crystalgolem",
-	"Incubus",
-	"Vampire",
-	"Shadow",
-	"Cockatrice",
-	"Insectoid",
-	"Goatman",
-	"Automaton",
-	"Lichice",
-	"Lichfire",
-	"Sentrybot",
-	"Spellbot",
-	"Gyrobot",
-	"Dummybot",
-	"Bugbear"
+	"bugbear",
+	"dryad",
+	"myconid",
+	"salamander",
+	"gremlin",
+	"revenant_skull",
+	"minimimic",
+	"monster_adorcised_weapon",
+	"flame_elemental",
+	"hologram",
+	"moth",
+	"earth_elemental",
+	"duck_small",
+	"monster_unused_6",
+	"monster_unused_7",
+	"monster_unused_8"
 };
 
 // body part focal points
-extern float limbs[NUMMONSTERS][20][3];
+extern float limbs[NUMMONSTERS][30][3];
 
 // 0: nothing
 // 1: red blood
@@ -425,7 +473,22 @@ static char gibtype[NUMMONSTERS] =
 	0,	//SPELLBOT
 	0,  //GYROBOT
 	0,	//DUMMYBOT
-	1	//BUGBEAR
+	1,	//BUGBEAR
+	1,	//DRYAD
+	1,	//MYCONID
+	1,	//SALAMANDER
+	1,	//GREMLIN
+	5,  //REVENANT_SKULL
+	1,  //MINIMIMIC
+	0,  //MONSTER_ADORCISED_WEAPON
+	0,  //FLAME_ELEMENTAL
+	0,  //HOLOGRAM
+	2,  //MOTH_SMALL
+	0,  //EARTH_ELEMENTAL
+	0,  //DUCK_SMALL
+	1,  //MONSTER_UNUSED_6
+	1,  //MONSTER_UNUSED_7
+	1   //MONSTER_UNUSED_8
 };
 
 // columns go like this:
@@ -470,7 +533,22 @@ static double damagetables[NUMMONSTERS][7] =
 	{ 1.f, 1.f, 1.f, 1.f, 0.5, 0.5, 1.f }, // sentrybot
 	{ 1.f, 1.f, 1.f, 1.f, 0.5, 0.5, 1.f }, // gyrobot
 	{ 1.f, 1.f, 1.f, 1.f, 0.5, 1.2, 0.5 }, // dummybot
-	{ 1.3, 1.2, 1.2, 0.7, 0.8, 1.f, 0.7 }  // bugbear
+	{ 1.3, 1.2, 1.2, 0.7, 0.8, 1.f, 0.7 }, // bugbear
+	{ 1.3, 1.f, 1.3, 0.9, 0.7, 1.1, 0.8 }, // monster_d
+	{ 1.3, 0.7, 1.1, 1.f, 1.f, 0.7, 1.f }, // monster_m
+	{ 0.8, 1.f, 1.f, 1.2, 1.1, 1.f, 0.9 }, // monster_s
+	{ 1.3, 0.9, 1.1, 0.8, 0.9, 0.8, 0.9 }, // monster_g
+	{ 0.7, 1.5, 0.8, 0.8, 0.8, 1.3, 0.7 }, // revenant_skull
+	{ 0.5, 0.5, 1.0, 0.5, 0.5, 1.3, 0.5 }, // minimimic
+	{ 0.5, 1.f, 0.7, 0.5, 0.5, 1.5, 0.5 }, // monster_adorcised_weapon
+	{ 0.5, 0.5, 0.5, 0.5, 0.5, 1.5, 0.5 }, // flame_elemental
+	{ 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f }, // hologram
+	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // moth_small
+	{ 0.7, 1.5, 1.f, 1.f, 0.7, 1.5, 0.7 }, // earth_elemental
+	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // duck_small
+	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // monster_unused_6
+	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // monster_unused_7
+	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }  // monster_unused_8
 };
 
 enum DamageTableType : int
@@ -489,7 +567,7 @@ static std::vector<std::vector<unsigned int>> classStatGrowth =
 {
 	// stat weightings for classes on level up
 	//	STR	DEX	CON	INT	PER	CHR -- sum is approx 24.
-	{	6,	5,	2,	2,	4,	5 }, // BARB 0
+	{	6,	5,	5,	2,	4,	2 }, // BARB 0
 	{	7,	2,	6,	1,	2,	6 }, // WARRIOR 1
 	{	3,	3,	4,	6,	5,	3 }, // HEALER 2
 	{	2,	7,	1,	2,	7,	5 }, // ROGUE 3
@@ -499,8 +577,8 @@ static std::vector<std::vector<unsigned int>> classStatGrowth =
 	{	1,	3,	2,	7,	6,	5 }, // WIZARD 7
 	{	2,	6,	2,	6,	6,	2 }, // ARCANIST 8
 	{	4,	4,	4,	4,	4,	4 }, // JOKER 9
-	{	4,	4,	2,	4,	2,	2 }, // SEXTON 10
-	{	5,	5,	3,	2,	2,	1 }, // NINJA 11
+	{	3,	4,	2,	4,	2,	3 }, // SEXTON 10
+	{	4,	6,	3,	2,	4,	1 }, // NINJA 11
 	{	4,	2,	5,	3,	2,	2 }, // MONK 12
 	{	3,	2,	4,	6,	4,	4 }, // CONJURER 13
 	{	3,	3,	1,	6,	6,	3 }, // ACCURSED 14
@@ -509,7 +587,12 @@ static std::vector<std::vector<unsigned int>> classStatGrowth =
 	{	2,	5,	2,	4,	7,	4 }, // MACHINIST 17
 	{	4,	3,	2,	3,	4,	4 }, // PUNISHER 18
 	{	4,	4,	4,	4,	4,	4 }, // SHAMAN 19
-	{	1,	7,	1,	4,	7,	4 }  // HUNTER 20
+	{	1,	7,	1,	4,	7,	4 }, // HUNTER 20
+	{	2,	5,	3,	4,	3,	7 },
+	{	5,	5,	5,	4,	3,	2 },
+	{	2,	3,	2,	8,	4,	5 },
+	{	4,	2,	3,	6,	3,	5 },
+	{	6,	3,	5,	3,	2,	5 }
 };
 
 enum AllyNPCCommand : int
@@ -625,7 +708,8 @@ enum AllyNPCChatter : int
 	ALLY_EVENT_SPOT_ENEMY,
 	ALLY_EVENT_WAIT,
 	ALLY_EVENT_FOLLOW,
-	ALLY_EVENT_REST
+	ALLY_EVENT_REST,
+	ALLY_EVENT_DROP_FAILED
 };
 
 enum AllyNPCSpecialCmd : int
@@ -710,6 +794,18 @@ void initDummyBot(Entity* my, Stat* myStats);
 void initMimic(Entity* my, Stat* myStats);
 void initBat(Entity* my, Stat* myStats);
 void initBugbear(Entity* my, Stat* myStats);
+void initMonsterD(Entity* my, Stat* myStats);
+void initMonsterM(Entity* my, Stat* myStats);
+void initMonsterS(Entity* my, Stat* myStats);
+void initMonsterG(Entity* my, Stat* myStats);
+void initRevenantSkull(Entity* my, Stat* myStats);
+void initAdorcisedWeapon(Entity* my, Stat* myStats);
+void initMiniMimic(Entity* my, Stat* myStats);
+void initFlameElemental(Entity* my, Stat* myStats);
+void initHologram(Entity* my, Stat* myStats);
+void initMoth(Entity* my, Stat* myStats);
+void initEarthElemental(Entity* my, Stat* myStats);
+void initDuck(Entity* my, Stat* myStats);
 
 //--act*Limb functions--
 void actHumanLimb(Entity* my);
@@ -745,6 +841,18 @@ void actDummyBotLimb(Entity* my);
 void actMimicLimb(Entity* my);
 void actBatLimb(Entity* my);
 void actBugbearLimb(Entity* my);
+void actMonsterDLimb(Entity* my);
+void actMonsterMLimb(Entity* my);
+void actMonsterSLimb(Entity* my);
+void actMonsterGLimb(Entity* my);
+void actRevenantSkullLimb(Entity* my);
+void actMiniMimicLimb(Entity* my);
+void actAdorcisedWeaponLimb(Entity* my);
+void actFlameElementalLimb(Entity* my);
+void actHologramLimb(Entity* my);
+void actMothLimb(Entity* my);
+void actEarthElementalLimb(Entity* my);
+void actDuckLimb(Entity* my);
 
 //--*Die functions--
 void humanDie(Entity* my);
@@ -782,6 +890,18 @@ void dummyBotDie(Entity* my);
 void mimicDie(Entity* my);
 void batDie(Entity* my);
 void bugbearDie(Entity* my);
+void monsterDDie(Entity* my);
+void monsterMDie(Entity* my);
+void monsterSDie(Entity* my);
+void monsterGDie(Entity* my);
+void revenantSkullDie(Entity* my);
+void miniMimicDie(Entity* my);
+void adorcisedWeaponDie(Entity* my);
+void flameElementalDie(Entity* my);
+void hologramDie(Entity* my);
+void mothDie(Entity* my);
+void earthElementalDie(Entity* my);
+void duckDie(Entity* my);
 
 void monsterAnimate(Entity* my, Stat* myStats, double dist);
 //--*MoveBodyparts functions--
@@ -822,6 +942,18 @@ void dummyBotAnimate(Entity* my, Stat* myStats, double dist);
 void mimicAnimate(Entity* my, Stat* myStats, double dist);
 void batAnimate(Entity* my, Stat* myStats, double dist);
 void bugbearMoveBodyparts(Entity* my, Stat* myStats, double dist);
+void monsterDMoveBodyparts(Entity* my, Stat* myStats, double dist);
+void monsterMMoveBodyparts(Entity* my, Stat* myStats, double dist);
+void monsterSMoveBodyparts(Entity* my, Stat* myStats, double dist);
+void monsterGMoveBodyparts(Entity* my, Stat* myStats, double dist);
+void revenantSkullAnimate(Entity* my, Stat* myStats, double dist);
+void hologramAnimate(Entity* my, Stat* myStats, double dist);
+int mothGetAttackPose(Entity* my, int basePose);
+void mothAnimate(Entity* my, Stat* myStats, double dist);
+void earthElementalAnimate(Entity* my, Stat* myStats, double dist);
+void duckAnimate(Entity* my, Stat* myStats, double dist);
+void duckSpawnFeather(int sprite, real_t x, real_t y, real_t z, Entity* my);
+bool duckAreaQuck(Entity* my);
 
 //--misc functions--
 void actMinotaurTrap(Entity* my);
@@ -905,6 +1037,12 @@ static const int MONSTER_POSE_MIMIC_LOCKED2 = 38;
 static const int MONSTER_POSE_MIMIC_MAGIC1 = 39;
 static const int MONSTER_POSE_MIMIC_MAGIC2 = 40;
 static const int MONSTER_POSE_BUGBEAR_SHIELD = 41;
+static const int MONSTER_POSE_PARRY = 42;
+static const int MONSTER_POSE_EARTH_ELEMENTAL_ROLL = 43;
+static const int MONSTER_POSE_FLAIL_SWING = 44;
+static const int MONSTER_POSE_FLAIL_SWING_RETURN = 45;
+static const int MONSTER_POSE_FLAIL_SWING_WINDUP = 46;
+static const int MONSTER_POSE_SWEEP_ATTACK_NO_UPDATE = 47;
 
 //--monster special cooldowns
 static const int MONSTER_SPECIAL_COOLDOWN_GOLEM = 150;
@@ -932,7 +1070,16 @@ static const int MONSTER_SPECIAL_COOLDOWN_VAMPIRE_DRAIN = 300;
 static const int MONSTER_SPECIAL_COOLDOWN_SUCCUBUS_CHARM = 400;
 static const int MONSTER_SPECIAL_COOLDOWN_MIMIC_EAT = 500;
 static const int MONSTER_SPECIAL_COOLDOWN_SLIME_SPRAY = 250;
+static const int MONSTER_SPECIAL_COOLDOWN_SKULL_CAST = 250;
+static const int MONSTER_SPECIAL_COOLDOWN_MOTH_CAST = 250;
 static const int MONSTER_SPECIAL_COOLDOWN_BUGBEAR = 500;
+static const int MONSTER_SPECIAL_COOLDOWN_MONSTER_D = 250;
+static const int MONSTER_SPECIAL_COOLDOWN_MONSTER_D_PUSH = 75;
+static const int MONSTER_SPECIAL_COOLDOWN_MONSTER_M_THROW = 500;
+static const int MONSTER_SPECIAL_COOLDOWN_MONSTER_M_CAST_SHORT = 300;
+static const int MONSTER_SPECIAL_COOLDOWN_MONSTER_M_CAST_LONG = 550;
+static const int MONSTER_SPECIAL_COOLDOWN_MONSTER_G_THROW = 500;
+static const int MONSTER_SPECIAL_COOLDOWN_MONSTER_G_CAST = 550;
 
 //--monster target search types
 static const int MONSTER_TARGET_ENEMY = 0;
@@ -1003,7 +1150,7 @@ bool handleMonsterChatter(int monsterclicked, bool ringconflict, char namesays[6
 // check qty of a certain creature race alive on a map
 int numMonsterTypeAliveOnMap(Monster creature, Entity*& lastMonster);
 // get monster strings from language file
-std::string getMonsterLocalizedName(Monster creature);
+std::string getMonsterLocalizedName(Monster creature, Stat* optionalStats = nullptr);
 std::string getMonsterLocalizedPlural(Monster creature);
 std::string getMonsterLocalizedInjury(Monster creature);
 
@@ -1045,6 +1192,12 @@ static const int SPIDER_CAST = 1;
 
 //--Slime--
 static const int SLIME_CAST = 1;
+
+//--Skull
+static const int SKULL_CAST = 1;
+
+//--Moth
+static const int MOTH_CAST = 1;
 
 //--Shadow--
 static const int SHADOW_SPELLCAST = 1;
@@ -1099,6 +1252,23 @@ static const int BAT_REST_DISTURBED = 2;
 
 //-Bugbear--
 static const int BUGBEAR_DEFENSE = 1;
+
+static const int MONSTER_D_SPECIAL_CAST1 = 1;
+static const int MONSTER_D_SPECIAL_CAST2 = 2;
+static const int MONSTER_D_SPECIAL_CAST3 = 3;
+
+static const int MONSTER_M_SPECIAL_THROW = 1;
+static const int MONSTER_M_SPECIAL_CAST1 = 2;
+static const int MONSTER_M_SPECIAL_CAST2 = 3;
+static const int MONSTER_M_SPECIAL_CAST3 = 4;
+
+static const int MONSTER_G_SPECIAL_THROW = 1;
+static const int MONSTER_G_SPECIAL_CAST1 = 2;
+
+//-Duck--
+static const int DUCK_DIVE = 1;
+static const int DUCK_INERT = 2;
+static const int DUCK_RETURN = 3;
 
 struct MonsterData_t
 {
@@ -1272,3 +1442,7 @@ struct MimicGenerator
 	bool bForceSpawnForCurrentFloor();
 };
 extern MimicGenerator mimic_generator;
+
+bool monsterDebugModels(Entity* my, real_t* dist);
+
+extern double sightranges[NUMMONSTERS];

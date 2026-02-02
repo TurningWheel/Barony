@@ -83,6 +83,65 @@ void actFlame(Entity* my)
 
 static ConsoleVariable<bool> cvar_flame_use_vismap("/flame_use_vismap", true);
 
+Entity* spawnFlameSprites(Entity* parentent, Sint32 sprite)
+{
+	if ( !parentent )
+	{
+		return nullptr;
+	}
+	/*if ( *cvar_flame_use_vismap && !intro )
+	{
+		if ( parentent->behavior != actPlayer
+			&& parentent->behavior != actPlayerLimb
+			&& !parentent->flags[OVERDRAW]
+			&& !parentent->flags[GENIUS] )
+		{
+			int x = parentent->x / 16.0;
+			int y = parentent->y / 16.0;
+			if ( x >= 0 && x < map.width && y >= 0 && y < map.height )
+			{
+				bool anyVismap = false;
+				for ( int i = 0; i < MAXPLAYERS; ++i )
+				{
+					if ( !client_disconnected[i] && players[i]->isLocalPlayer() )
+					{
+						if ( cameras[i].vismap && cameras[i].vismap[y + x * map.height] )
+						{
+							anyVismap = true;
+							break;
+						}
+					}
+				}
+				if ( !anyVismap )
+				{
+					return nullptr;
+				}
+			}
+		}
+	}*/
+
+	if ( Entity* fx = createParticleAestheticOrbit(parentent, sprite, 10, PARTICLE_EFFECT_FLAMES_BURNING) )
+	{
+		fx->flags[SPRITE] = true;
+		fx->flags[INVISIBLE] = true;
+		fx->x = parentent->x;
+		fx->y = parentent->y;
+		fx->z = parentent->z;
+		fx->scalex = 1.0;
+		fx->scaley = fx->scalex;
+		fx->scalez = fx->scalex;
+		fx->fskill[0] = fx->x;
+		fx->fskill[1] = fx->y;
+		fx->vel_z = -0.25;
+		fx->actmagicOrbitDist = 0;
+		fx->fskill[2] = parentent->yaw + (local_rng.rand() % 8) * PI / 4.0;
+		fx->yaw = fx->fskill[2];
+		fx->actmagicNoLight = 1;
+		return fx;
+	}
+	return nullptr;
+}
+
 Entity* spawnFlame(Entity* parentent, Sint32 sprite )
 {
 	if ( !parentent )

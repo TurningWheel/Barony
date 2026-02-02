@@ -33,6 +33,54 @@
 
 -------------------------------------------------------------------------------*/
 
+static ConsoleVariable<float> cvar_hudweapon_yaw_ang("/hudweapon_yaw_ang", 0.0);
+static ConsoleVariable<float> cvar_hudweapon_yaw_spd("/hudweapon_yaw_spd", 0.0);
+static ConsoleVariable<float> cvar_hudweapon_pitch_ang("/hudweapon_pitch_ang", 0.0);
+static ConsoleVariable<float> cvar_hudweapon_pitch_spd("/hudweapon_pitch_spd", 0.0);
+static ConsoleVariable<float> cvar_hudweapon_roll_ang("/hudweapon_roll_ang", 0.0);
+static ConsoleVariable<float> cvar_hudweapon_roll_spd("/hudweapon_roll_spd", 1.0);
+static ConsoleVariable<float> cvar_hudweapon_x_ang("/hudweapon_x_ang", 2.0);
+static ConsoleVariable<float> cvar_hudweapon_x_spd("/hudweapon_x_spd", 0.5);
+static ConsoleVariable<float> cvar_hudweapon_y_ang("/hudweapon_y_ang", -4.0);
+static ConsoleVariable<float> cvar_hudweapon_y_spd("/hudweapon_y_spd", 1.0);
+static ConsoleVariable<float> cvar_hudweapon_z_ang("/hudweapon_z_ang", 0.0);
+static ConsoleVariable<float> cvar_hudweapon_z_spd("/hudweapon_z_spd", 0.0);
+static ConsoleVariable<float> cvar_hudweapon_timescale("/hudweapon_timescale", 0.5);
+static ConsoleVariable<float> cvar_hudweapon_timescale2("/hudweapon_timescale2", 0.675);
+static ConsoleVariable<float> cvar_hudweapon_timescale3("/hudweapon_timescale3", 1.0);
+//static ConsoleVariable<int> cvar_claymore_toggle("/claymore_toggle", 0);
+void hudWeaponAnimateVariable(real_t& variable, real_t target, real_t speed)
+{
+	if ( variable < target )
+	{
+		variable = std::min(variable + speed * *cvar_hudweapon_timescale, target);
+	}
+	else if ( variable > target )
+	{
+		variable = std::max(variable - speed * *cvar_hudweapon_timescale, target);
+	}
+}
+
+struct HUDFlail_t
+{
+	real_t pitch = 0.0;
+	real_t roll = 0.0;
+	real_t yaw = 0.0;
+	real_t spin = 0.0;
+	real_t spin2 = 0.0;
+	real_t bounce = 0.0;
+	real_t rollSpin = 2 * PI;
+	real_t prevYaw = 0.0;
+	int spinState = 0;
+	bool needsInit = true;
+
+	static void reset(HUDFlail_t& my)
+	{
+		my = HUDFlail_t();
+	}
+};
+HUDFlail_t HUDFlail[MAXPLAYERS];
+
 #define HUDARM_PLAYERNUM my->skill[11]
 #define HUD_SHAPESHIFT_HIDE my->skill[12]
 #define HUD_LASTSHAPESHIFT_FORM my->skill[13]
@@ -72,6 +120,9 @@ void actHudArm(Entity* my)
 	my->x = parent->x;
 	my->y = parent->y;
 	my->z = parent->z - 2.5;
+
+	my->mistformGLRender = players[HUDARM_PLAYERNUM]->entity->mistformGLRender > 0.9 ? players[HUDARM_PLAYERNUM]->entity->mistformGLRender
+		: 0.0;
 
 	Monster playerRace = players[HUDARM_PLAYERNUM]->entity->getMonsterFromPlayerRace(stats[HUDARM_PLAYERNUM]->playerRace);
 	int playerAppearance = stats[HUDARM_PLAYERNUM]->stat_appearance;
@@ -157,6 +208,26 @@ void actHudArm(Entity* my)
 		{
 			my->sprite = 802;
 		}
+		else if ( stats[HUDARM_PLAYERNUM]->gloves->type == BONE_BRACERS )
+		{
+			my->sprite = 2107;
+		}
+		else if ( stats[HUDARM_PLAYERNUM]->gloves->type == BLACKIRON_GAUNTLETS )
+		{
+			my->sprite = 2109;
+		}
+		else if ( stats[HUDARM_PLAYERNUM]->gloves->type == SILVER_GAUNTLETS )
+		{
+			my->sprite = 2111;
+		}
+		else if ( stats[HUDARM_PLAYERNUM]->gloves->type == QUILTED_GLOVES )
+		{
+			my->sprite = 2113;
+		}
+		else if ( stats[HUDARM_PLAYERNUM]->gloves->type == CHAIN_GLOVES )
+		{
+			my->sprite = 2115;
+		}
 		if ( stats[HUDARM_PLAYERNUM]->weapon == nullptr )
 		{
 			my->scalex = 0.5f;
@@ -229,6 +300,28 @@ void actHudArm(Entity* my)
 			case RAT:
 				my->sprite = 859;
 				break;
+			case DRYAD:
+				my->sprite = 2320;
+				break;
+			case MYCONID:
+				my->sprite = 2328;
+				break;
+			case GREMLIN:
+				if ( stats[HUDARM_PLAYERNUM]->sex == FEMALE )
+				{
+					my->sprite = 2324;
+				}
+				else
+				{
+					my->sprite = 2326;
+				}
+				break;
+			case SALAMANDER:
+				my->sprite = 2330;
+				break;
+			case GNOME:
+				my->sprite = 2322;
+				break;
 			default:
 				my->sprite = 634;
 				break;
@@ -294,6 +387,8 @@ void actHudArm(Entity* my)
 #define HUDWEAPON_BOW_HAS_QUIVER my->skill[9]
 #define HUDWEAPON_BOW_FORCE_RELOAD my->skill[10]
 #define HUDWEAPON_PLAYERNUM my->skill[11]
+#define HUDWEAPON_DELAY_TICK my->skill[14]
+#define HUDWEAPON_PARRY_TICK my->skill[15]
 #define HUDWEAPON_MOVEX my->fskill[0]
 #define HUDWEAPON_MOVEY my->fskill[1]
 #define HUDWEAPON_MOVEZ my->fskill[2]
@@ -303,7 +398,6 @@ void actHudArm(Entity* my)
 #define HUDWEAPON_OLDVIBRATEX my->fskill[6]
 #define HUDWEAPON_OLDVIBRATEY my->fskill[7]
 #define HUDWEAPON_OLDVIBRATEZ my->fskill[8]
-
 enum CrossbowAnimState : int
 {
 	CROSSBOW_ANIM_NONE,
@@ -369,6 +463,11 @@ void actHudWeapon(Entity* my)
 		return;
 	}
 
+	if ( HUDWEAPON_DELAY_TICK > 0 )
+	{
+		--HUDWEAPON_DELAY_TICK;
+	}
+
 	if ( multiplayer == CLIENT )
 	{
 		if ( stats[HUDWEAPON_PLAYERNUM]->HP <= 0 )
@@ -404,6 +503,9 @@ void actHudWeapon(Entity* my)
 		list_RemoveNode(my->mynode);
 		return;
 	}
+
+	my->mistformGLRender = players[HUDWEAPON_PLAYERNUM]->entity->mistformGLRender > 0.9 ? players[HUDWEAPON_PLAYERNUM]->entity->mistformGLRender
+		: 0.0;
 
 	// reduce throwGimpTimer (allows player to throw items again)
 	if ( throwGimpTimer > 0 )
@@ -484,6 +586,11 @@ void actHudWeapon(Entity* my)
 		}
 	}
 
+	if ( HUDWEAPON_CHOP >= 10 && HUDWEAPON_CHOP <= 12 ) // power strike charge
+	{
+		hideWeapon = true;
+	}
+
 	HUDWEAPON_HIDEWEAPON = hideWeapon;
 	HUDWEAPON_SHOOTING_RANGED_WEAPON = RANGED_ANIM_IDLE;
 
@@ -498,7 +605,7 @@ void actHudWeapon(Entity* my)
 
 	my->flags[INVISIBLE_DITHER] = false;
 
-	if ( players[HUDWEAPON_PLAYERNUM]->entity->skill[3] == 1 )   // debug cam or player invisible
+	if ( players[HUDWEAPON_PLAYERNUM]->entity->skill[3] != 0 )   // debug cam or player invisible
 	{
 		my->flags[INVISIBLE] = true;
 		if (parent != nullptr)
@@ -580,7 +687,8 @@ void actHudWeapon(Entity* my)
 					if ( rangedweapon )
 					{
 						if ( stats[HUDWEAPON_PLAYERNUM]->weapon
-							&& stats[HUDWEAPON_PLAYERNUM]->weapon->type != CROSSBOW )
+							&& stats[HUDWEAPON_PLAYERNUM]->weapon->type != CROSSBOW
+							&& stats[HUDWEAPON_PLAYERNUM]->weapon->type != BLACKIRON_CROSSBOW )
 						{
 							my->sprite++;
 						}
@@ -588,7 +696,10 @@ void actHudWeapon(Entity* my)
 					}
 				}
 			}
-			else if ( stats[HUDWEAPON_PLAYERNUM]->weapon && (stats[HUDWEAPON_PLAYERNUM]->weapon->type == CROSSBOW || stats[HUDWEAPON_PLAYERNUM]->weapon->type == HEAVY_CROSSBOW) )
+			else if ( stats[HUDWEAPON_PLAYERNUM]->weapon 
+				&& (stats[HUDWEAPON_PLAYERNUM]->weapon->type == CROSSBOW 
+					|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == HEAVY_CROSSBOW
+					|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == BLACKIRON_CROSSBOW) )
 			{
 				HUDWEAPON_SHOOTING_RANGED_WEAPON = RANGED_ANIM_BEING_DRAWN;
 				if ( rangedWeaponUseQuiverOnAttack(stats[HUDWEAPON_PLAYERNUM]) )
@@ -623,6 +734,10 @@ void actHudWeapon(Entity* my)
 						else if ( stats[HUDWEAPON_PLAYERNUM]->weapon->type == HEAVY_CROSSBOW )
 						{
 							my->sprite = 987;
+						}
+						else if ( stats[HUDWEAPON_PLAYERNUM]->weapon->type == BLACKIRON_CROSSBOW )
+						{
+							my->sprite = 2260;
 						}
 					}
 					else if ( HUDWEAPON_CHOP == CROSSBOW_CHOP_RELOAD_ENDING )
@@ -695,12 +810,14 @@ void actHudWeapon(Entity* my)
 
 	bool swingweapon = false;
 	if ( players[HUDWEAPON_PLAYERNUM]->entity
-		&& input.binaryToggle("Attack")
+		&& (input.binaryToggle("Attack") 
+			|| (cast_animation[HUDWEAPON_PLAYERNUM].spellWaitingAttackInput() 
+				&& inputs.hasController(HUDWEAPON_PLAYERNUM) && input.binaryToggle("Cast Spell")) )
 		&& shootmode 
 		&& !gamePaused
 		&& players[HUDWEAPON_PLAYERNUM]->entity->isMobile()
-		&& !(input.binaryToggle("Defend") && stats[HUDWEAPON_PLAYERNUM]->defending)
-		&& HUDWEAPON_OVERCHARGE < MAXCHARGE )
+		&& (!(input.binaryToggle("Defend") && stats[HUDWEAPON_PLAYERNUM]->defending) || cast_animation[HUDWEAPON_PLAYERNUM].spellWaitingAttackInput() )
+		&& HUDWEAPON_OVERCHARGE < Stat::getMaxAttackCharge(stats[HUDWEAPON_PLAYERNUM]) )
 	{
 		swingweapon = true;
 	}
@@ -721,8 +838,9 @@ void actHudWeapon(Entity* my)
 
 	bool thrownWeapon = stats[HUDWEAPON_PLAYERNUM]->weapon
 		&& (itemCategory(stats[HUDWEAPON_PLAYERNUM]->weapon) == THROWN || itemCategory(stats[HUDWEAPON_PLAYERNUM]->weapon) == GEM
-			|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == FOOD_CREAMPIE);
+			|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == FOOD_CREAMPIE || stats[HUDWEAPON_PLAYERNUM]->weapon->type == TOOL_DUCK);
 	bool castStrikeAnimation = (players[HUDWEAPON_PLAYERNUM]->entity->skill[9] == MONSTER_POSE_SPECIAL_WINDUP1);
+	bool flail = !hideWeapon && stats[HUDWEAPON_PLAYERNUM]->weapon && stats[HUDWEAPON_PLAYERNUM]->weapon->type == STEEL_FLAIL;
 
 	// weapon switch animation
 	if ( players[HUDWEAPON_PLAYERNUM]->hud.weaponSwitch )
@@ -730,7 +848,10 @@ void actHudWeapon(Entity* my)
 		players[HUDWEAPON_PLAYERNUM]->hud.weaponSwitch = false;
 		if ( !hideWeapon )
 		{
-			if ( stats[HUDWEAPON_PLAYERNUM]->weapon && (stats[HUDWEAPON_PLAYERNUM]->weapon->type == CROSSBOW || stats[HUDWEAPON_PLAYERNUM]->weapon->type == HEAVY_CROSSBOW) )
+			if ( stats[HUDWEAPON_PLAYERNUM]->weapon 
+				&& (stats[HUDWEAPON_PLAYERNUM]->weapon->type == CROSSBOW 
+					|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == HEAVY_CROSSBOW
+					|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == BLACKIRON_CROSSBOW) )
 			{
 				swingweapon = false;
 				HUDWEAPON_CHARGE = 0;
@@ -785,6 +906,13 @@ void actHudWeapon(Entity* my)
 				HUDWEAPON_CHOP = 0;
 			}
 
+			if ( flail )
+			{
+				swingweapon = false;
+				HUDWEAPON_CHOP = 0;
+				HUDWEAPON_CHARGE = 0;
+				HUDWEAPON_OVERCHARGE = 0;
+			}
 			if ( thrownWeapon && HUDWEAPON_CHOP > 3 )
 			{
 				// prevent thrown weapon rapid firing.
@@ -798,6 +926,7 @@ void actHudWeapon(Entity* my)
 			if ( rangedweapon && stats[HUDWEAPON_PLAYERNUM]->weapon
 				&& stats[HUDWEAPON_PLAYERNUM]->weapon->type != CROSSBOW
 				&& stats[HUDWEAPON_PLAYERNUM]->weapon->type != HEAVY_CROSSBOW
+				&& stats[HUDWEAPON_PLAYERNUM]->weapon->type != BLACKIRON_CROSSBOW
 				)
 			{
 				HUDWEAPON_BOW_FORCE_RELOAD = 1;
@@ -841,6 +970,7 @@ void actHudWeapon(Entity* my)
 	if ( rangedweapon && stats[HUDWEAPON_PLAYERNUM]->weapon
 		&& stats[HUDWEAPON_PLAYERNUM]->weapon->type != CROSSBOW
 		&& stats[HUDWEAPON_PLAYERNUM]->weapon->type != HEAVY_CROSSBOW
+		&& stats[HUDWEAPON_PLAYERNUM]->weapon->type != BLACKIRON_CROSSBOW
 		&& !hideWeapon )
 	{
 		bowFireRate = bowDrawBaseTicks * (rangedAttackGetSpeedModifier(stats[HUDWEAPON_PLAYERNUM]));
@@ -972,8 +1102,10 @@ void actHudWeapon(Entity* my)
 		}
 	}
 
-	bool whip = stats[HUDWEAPON_PLAYERNUM]->weapon && stats[HUDWEAPON_PLAYERNUM]->weapon->type == TOOL_WHIP;
+	bool whip = !hideWeapon && stats[HUDWEAPON_PLAYERNUM]->weapon && stats[HUDWEAPON_PLAYERNUM]->weapon->type == TOOL_WHIP;
 	bool bearTrap = !hideWeapon && stats[HUDWEAPON_PLAYERNUM]->weapon && stats[HUDWEAPON_PLAYERNUM]->weapon->type == TOOL_BEARTRAP;
+	bool rapier = stats[HUDWEAPON_PLAYERNUM]->weapon && !hideWeapon && stats[HUDWEAPON_PLAYERNUM]->weapon->type == RAPIER;
+	bool claymore = stats[HUDWEAPON_PLAYERNUM]->weapon && !hideWeapon && stats[HUDWEAPON_PLAYERNUM]->weapon->type == CLAYMORE_SWORD;
 
 	// main animation
 	if ( HUDWEAPON_CHOP == 0 )
@@ -985,8 +1117,21 @@ void actHudWeapon(Entity* my)
 			HUDWEAPON_CROSSBOW_RELOAD_ANIMATION = CROSSBOW_ANIM_NONE;
 		}
 		bool ignoreAttack = false;
-		if ( swingweapon && throwGimpTimer > 0 && stats[HUDWEAPON_PLAYERNUM]->weapon &&
+		if ( !castStrikeAnimation && (cast_animation[HUDWEAPON_PLAYERNUM].spellWaitingAttackInput()
+			|| cast_animation[HUDWEAPON_PLAYERNUM].spellIgnoreAttack()
+			|| cast_animation[HUDWEAPON_PLAYERNUM].active
+			|| cast_animation[HUDWEAPON_PLAYERNUM].active_spellbook )
+			)
+		{
+			ignoreAttack = true;
+			if ( cast_animation[HUDWEAPON_PLAYERNUM].spellWaitingAttackInput() )
+			{
+				cast_animation[HUDWEAPON_PLAYERNUM].executeAttackSpell(swingweapon);
+			}
+		}
+		else if ( swingweapon && throwGimpTimer > 0 && stats[HUDWEAPON_PLAYERNUM]->weapon && !hideWeapon &&
 			( stats[HUDWEAPON_PLAYERNUM]->weapon->type == CROSSBOW
+				|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == BLACKIRON_CROSSBOW
 				|| itemCategory(stats[HUDWEAPON_PLAYERNUM]->weapon) == POTION
 				|| itemCategory(stats[HUDWEAPON_PLAYERNUM]->weapon) == GEM
 				|| itemCategory(stats[HUDWEAPON_PLAYERNUM]->weapon) == THROWN
@@ -998,6 +1143,7 @@ void actHudWeapon(Entity* my)
 		else if ( swingweapon && bowGimpTimer > 0 && rangedweapon && stats[HUDWEAPON_PLAYERNUM]->weapon
 			&& stats[HUDWEAPON_PLAYERNUM]->weapon->type != CROSSBOW
 			&& stats[HUDWEAPON_PLAYERNUM]->weapon->type != HEAVY_CROSSBOW
+			&& stats[HUDWEAPON_PLAYERNUM]->weapon->type != BLACKIRON_CROSSBOW
 			&& !hideWeapon )
 		{
 			ignoreAttack = true;
@@ -1069,7 +1215,11 @@ void actHudWeapon(Entity* my)
 					{
 						pickaxeGimpTimer = 40;
 					}
-					if ( stats[HUDWEAPON_PLAYERNUM]->weapon->type == IRON_SPEAR || stats[HUDWEAPON_PLAYERNUM]->weapon->type == ARTIFACT_SPEAR )
+					if ( stats[HUDWEAPON_PLAYERNUM]->weapon->type == IRON_SPEAR 
+						|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == ARTIFACT_SPEAR
+						|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == BONE_SPEAR
+						|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == SILVER_GLAIVE
+						|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == BLACKIRON_TRIDENT )
 					{
 						HUDWEAPON_CHOP = 7; // spear lunges
 					}
@@ -1078,12 +1228,20 @@ void actHudWeapon(Entity* my)
 						HUDWEAPON_CHOP = 4;
 						pickaxeGimpTimer = 20;
 					}
+					else if ( rapier )
+					{
+						HUDWEAPON_CHOP = 7; // lunges
+						HUDWEAPON_DELAY_TICK = 0;
+					}
 					else if ( rangedweapon )
 					{
 						if ( stats[HUDWEAPON_PLAYERNUM]->weapon->type == SLING
 							|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == SHORTBOW
+							|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == BONE_SHORTBOW
 							|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == ARTIFACT_BOW
 							|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == LONGBOW
+							|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == BRANCH_BOW
+							|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == BRANCH_BOW_INFECTED
 							|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == COMPOUND_BOW )
 						{
 							if ( !stats[HUDWEAPON_PLAYERNUM]->defending && !throwGimpTimer )
@@ -1249,7 +1407,8 @@ void actHudWeapon(Entity* my)
 
 									// set delay before crossbow can fire again
 									throwGimpTimer = 40;
-									if ( stats[HUDWEAPON_PLAYERNUM]->weapon->type == CROSSBOW )
+									if ( stats[HUDWEAPON_PLAYERNUM]->weapon->type == CROSSBOW
+										|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == BLACKIRON_CROSSBOW )
 									{
 										throwGimpTimer *= rangedAttackGetSpeedModifier(stats[HUDWEAPON_PLAYERNUM]);
 									}
@@ -1377,7 +1536,8 @@ void actHudWeapon(Entity* my)
 						{
 							HUDWEAPON_CHOP = 7; // magicstaffs lunge
 						}
-						else if ( itemCategory(item) == THROWN || itemCategory(item) == GEM || item->type == FOOD_CREAMPIE )
+						else if ( itemCategory(item) == THROWN || itemCategory(item) == GEM || item->type == FOOD_CREAMPIE
+							|| item->type == TOOL_DUCK )
 						{
 							if ( !throwGimpTimer )
 							{
@@ -1394,8 +1554,12 @@ void actHudWeapon(Entity* my)
 							// keys and lockpicks
 							HUDWEAPON_MOVEX = 5;
 							HUDWEAPON_CHOP = 3;
+							if ( pickaxeGimpTimer < TICKS_PER_SECOND / 2 )
+							{
+								pickaxeGimpTimer = TICKS_PER_SECOND / 2; // fix for swapping weapon causing issues.
+							}
 							Entity* player = players[HUDWEAPON_PLAYERNUM]->entity;
-							bool foundBomb = false;
+							bool foundPassableObject = false;
 							if ( stats[HUDWEAPON_PLAYERNUM]->weapon )
 							{
 								bool clickedOnGUI = false;
@@ -1411,14 +1575,15 @@ void actHudWeapon(Entity* my)
 
 								inputs.setMouse(HUDWEAPON_PLAYERNUM, Inputs::OX, tmpmousex);
 								inputs.setMouse(HUDWEAPON_PLAYERNUM, Inputs::OX, tmpmousey);
-								if ( clickedOn && clickedOn->behavior == &actBomb && entityDist(clickedOn, players[HUDWEAPON_PLAYERNUM]->entity) < STRIKERANGE )
+								if ( clickedOn && (clickedOn->behavior == &actBomb || clickedOn->behavior == &actWallLock)
+									&& entityDist(clickedOn, players[HUDWEAPON_PLAYERNUM]->entity) < STRIKERANGE )
 								{
 									// found something
 									stats[HUDWEAPON_PLAYERNUM]->weapon->apply(HUDWEAPON_PLAYERNUM, clickedOn);
-									foundBomb = true;
+									foundPassableObject = true;
 								}
 							}
-							if ( !foundBomb )
+							if ( !foundPassableObject )
 							{
 								real_t dist = lineTrace(player, player->x, player->y, player->yaw, STRIKERANGE, 0, false);
 								if ( hit.entity && stats[HUDWEAPON_PLAYERNUM]->weapon )
@@ -1449,6 +1614,10 @@ void actHudWeapon(Entity* my)
 						{
 							HUDWEAPON_MOVEX = 5;
 							HUDWEAPON_CHOP = 3;
+							if ( pickaxeGimpTimer < TICKS_PER_SECOND / 2 )
+							{
+								pickaxeGimpTimer = TICKS_PER_SECOND / 2; // fix for swapping weapon causing issues.
+							}
 							Entity* player = players[HUDWEAPON_PLAYERNUM]->entity;
 							lineTrace(player, player->x, player->y, player->yaw, STRIKERANGE, 0, false);
 							if ( hit.entity && stats[HUDWEAPON_PLAYERNUM]->weapon )
@@ -1484,9 +1653,14 @@ void actHudWeapon(Entity* my)
 									messagePlayer(HUDWEAPON_PLAYERNUM, MESSAGE_HINT, Language::get(3336));
 								}
 								throwGimpTimer = TICKS_PER_SECOND / 2;
+								if ( pickaxeGimpTimer < TICKS_PER_SECOND / 2 )
+								{
+									pickaxeGimpTimer = TICKS_PER_SECOND / 2; // fix for swapping weapon causing issues.
+								}
 							}
 						}
-						else if ((itemCategory(item) == POTION || itemCategory(item) == GEM || itemCategory(item) == THROWN || item->type == FOOD_CREAMPIE ) 
+						else if ((itemCategory(item) == POTION || itemCategory(item) == GEM || itemCategory(item) == THROWN || item->type == FOOD_CREAMPIE
+							|| item->type == TOOL_DUCK)
 							&& !throwGimpTimer)
 						{
 							if ( itemCategory(item) == THROWN )
@@ -1531,8 +1705,11 @@ void actHudWeapon(Entity* my)
 					if ( !hideWeapon &&
 						(stats[HUDWEAPON_PLAYERNUM]->weapon->type == SLING
 							|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == SHORTBOW
+							|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == BONE_SHORTBOW
 							|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == ARTIFACT_BOW
 							|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == LONGBOW
+							|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == BRANCH_BOW
+							|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == BRANCH_BOW_INFECTED
 							|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == COMPOUND_BOW) )
 					{
 						// not drawing bow anymore, reset.
@@ -1732,39 +1909,66 @@ void actHudWeapon(Entity* my)
 		{
 			HUDWEAPON_YAW = 0;
 		}
-		HUDWEAPON_PITCH -= .1;
-		if ( HUDWEAPON_PITCH < -PI / 4)
-		{
-			result = -PI / 4;
-			HUDWEAPON_PITCH = result;
-		}
 		HUDWEAPON_ROLL += .25;
 		if ( HUDWEAPON_ROLL > 0 )
 		{
 			HUDWEAPON_ROLL = 0;
 		}
 		int targetY = -2;
-		if ( thrownWeapon )
+		int targetX = -1;
+		real_t targetPitch = -PI / 4;
+		if ( flail )
 		{
-			targetY = -1;
-			HUDWEAPON_MOVEY -= .25;
-			HUDWEAPON_MOVEX -= .15;
+			targetX = 2;
+			HUDWEAPON_MOVEX += .15;
+			HUDWEAPON_MOVEY -= .45;
+			if ( HUDWEAPON_MOVEX > targetX )
+			{
+				HUDWEAPON_MOVEX = targetX;
+			}
+
+			targetPitch = -PI / 32;
+			HUDWEAPON_PITCH -= .1;
+			if ( HUDWEAPON_PITCH < targetPitch )
+			{
+				HUDWEAPON_PITCH = targetPitch;
+			}
 		}
 		else
 		{
-			HUDWEAPON_MOVEY -= .45;
-			HUDWEAPON_MOVEX -= .35;
-		}
-		if ( HUDWEAPON_MOVEX < -1 )
-		{
-			HUDWEAPON_MOVEX = -1;
+			HUDWEAPON_PITCH -= .1;
+			if ( HUDWEAPON_PITCH < targetPitch )
+			{
+				HUDWEAPON_PITCH = targetPitch;
+			}
+
+			if ( thrownWeapon )
+			{
+				targetY = -1;
+				HUDWEAPON_MOVEY -= .25;
+				HUDWEAPON_MOVEX -= .15;
+			}
+			else
+			{
+				HUDWEAPON_MOVEY -= .45;
+				HUDWEAPON_MOVEX -= .35;
+			}
+			if ( HUDWEAPON_MOVEX < targetX )
+			{
+				HUDWEAPON_MOVEX = targetX;
+			}
 		}
 		if ( HUDWEAPON_MOVEY < targetY )
 		{
 			HUDWEAPON_MOVEY = targetY;
 		}
 		int targetZ = -6;
-		if ( whip )
+		if ( flail )
+		{
+			targetZ = -5;
+			HUDWEAPON_MOVEZ -= .65;
+		}
+		else if ( whip )
 		{
 			targetZ = -6;
 			HUDWEAPON_MOVEZ -= .32;
@@ -1782,50 +1986,88 @@ void actHudWeapon(Entity* my)
 		{
 			HUDWEAPON_MOVEZ -= .65;
 		}
+
+		bool parry = (claymore) && input.binaryToggle("Defend");
+
 		if ( HUDWEAPON_MOVEZ < targetZ )
 		{
 			HUDWEAPON_MOVEZ = targetZ;
-			if ( HUDWEAPON_PITCH == result && HUDWEAPON_ROLL == 0 && HUDWEAPON_YAW == 0 && HUDWEAPON_MOVEX == -1 && HUDWEAPON_MOVEY == targetY )
+			if ( HUDWEAPON_PITCH == targetPitch && HUDWEAPON_ROLL == 0 && HUDWEAPON_YAW == 0 && HUDWEAPON_MOVEX == targetX && HUDWEAPON_MOVEY == targetY )
 			{
-				if ( !swingweapon )
+				if ( claymore && (HUDWEAPON_OVERCHARGE > 0 
+					/*|| (*cvar_claymore_toggle == 2 && HUDWEAPON_CHARGE >= Stat::getMaxAttackCharge(stats[HUDWEAPON_PLAYERNUM]) / 2)*/) )
+				{
+					/*if ( *cvar_claymore_toggle == 2 )
+					{
+						HUDWEAPON_CHARGE = Stat::getMaxAttackCharge(stats[HUDWEAPON_PLAYERNUM]);
+					}*/
+					HUDWEAPON_CHOP = 4;
+					HUDWEAPON_OVERCHARGE = 0;
+				}
+				else if ( !swingweapon && flail && HUDWEAPON_OVERCHARGE == 0 )
+				{
+					HUDWEAPON_CHARGE = 0;
+					HUDWEAPON_OVERCHARGE = 0;
+					HUDWEAPON_CHOP = 24;
+				}
+				else if ( !swingweapon || parry )
 				{
 					HUDWEAPON_CHOP++;
-					if ( !bearTrap )
+					if ( parry )
 					{
-						players[HUDWEAPON_PLAYERNUM]->entity->attack(1, HUDWEAPON_CHARGE, nullptr);
+						input.consumeBinaryToggle("Defend");
+						HUDWEAPON_CHOP = 21;
+						pickaxeGimpTimer = 40;
+						HUDWEAPON_PARRY_TICK = my->ticks;
+						players[HUDWEAPON_PLAYERNUM]->entity->attack(MONSTER_POSE_PARRY, 35, nullptr);
+						HUDWEAPON_MOVEX = 0.0;
+						HUDWEAPON_MOVEY = -1;
+						HUDWEAPON_MOVEZ = -2;
+						HUDWEAPON_YAW = 2 * PI / 5;
+						HUDWEAPON_PITCH = 0.2;
+						HUDWEAPON_ROLL = -2 * PI / 5;
 					}
-					if ( stats[HUDWEAPON_PLAYERNUM]->weapon
-						&& (stats[HUDWEAPON_PLAYERNUM]->weapon->type == CROSSBOW || stats[HUDWEAPON_PLAYERNUM]->weapon->type == HEAVY_CROSSBOW) )
+					else
 					{
-						throwGimpTimer = 40; // fix for swapping weapon to crossbow while charging.
-					}
-					else if ( (stats[HUDWEAPON_PLAYERNUM]->weapon
-						&& stats[HUDWEAPON_PLAYERNUM]->weapon->type == TOOL_PICKAXE) || whip )
-					{
-						if ( pickaxeGimpTimer < 20 )
+						if ( !bearTrap )
 						{
-							pickaxeGimpTimer = 20; // fix for swapping weapon from pickaxe causing issues.
+							players[HUDWEAPON_PLAYERNUM]->entity->attack(1, HUDWEAPON_CHARGE, nullptr);
 						}
-					}
-
-
-					if ( multiplayer == CLIENT && (thrownWeapon || (stats[HUDWEAPON_PLAYERNUM]->weapon && itemCategory(stats[HUDWEAPON_PLAYERNUM]->weapon) == POTION)) )
-					{
-						Item* item = stats[HUDWEAPON_PLAYERNUM]->weapon;
-						if ( item )
+						if ( stats[HUDWEAPON_PLAYERNUM]->weapon
+							&& (stats[HUDWEAPON_PLAYERNUM]->weapon->type == CROSSBOW 
+								|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == HEAVY_CROSSBOW
+								|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == BLACKIRON_CROSSBOW) )
 						{
-							item->count--;
-							if ( item->count <= 0 )
+							throwGimpTimer = 40; // fix for swapping weapon to crossbow while charging.
+						}
+						else if ( (stats[HUDWEAPON_PLAYERNUM]->weapon
+							&& stats[HUDWEAPON_PLAYERNUM]->weapon->type == TOOL_PICKAXE) || whip )
+						{
+							if ( pickaxeGimpTimer < 20 )
 							{
-								if ( item->node )
+								pickaxeGimpTimer = 20; // fix for swapping weapon from pickaxe causing issues.
+							}
+						}
+
+
+						if ( multiplayer == CLIENT && (thrownWeapon || (stats[HUDWEAPON_PLAYERNUM]->weapon && itemCategory(stats[HUDWEAPON_PLAYERNUM]->weapon) == POTION)) )
+						{
+							Item* item = stats[HUDWEAPON_PLAYERNUM]->weapon;
+							if ( item )
+							{
+								item->count--;
+								if ( item->count <= 0 )
 								{
-									list_RemoveNode(item->node);
+									if ( item->node )
+									{
+										list_RemoveNode(item->node);
+									}
+									else
+									{
+										free(item);
+									}
+									stats[HUDWEAPON_PLAYERNUM]->weapon = NULL;
 								}
-								else
-								{
-									free(item);
-								}
-								stats[HUDWEAPON_PLAYERNUM]->weapon = NULL;
 							}
 						}
 					}
@@ -1839,7 +2081,14 @@ void actHudWeapon(Entity* my)
 				}
 				else
 				{
-					HUDWEAPON_CHARGE = std::min<real_t>(HUDWEAPON_CHARGE + 1, MAXCHARGE);
+					if ( flail )
+					{
+						HUDWEAPON_CHARGE = std::min<real_t>(HUDWEAPON_CHARGE + (ticks % 4 == 0 ? 1 : 0), Stat::getMaxAttackCharge(stats[HUDWEAPON_PLAYERNUM]));
+					}
+					else
+					{
+						HUDWEAPON_CHARGE = std::min<real_t>(HUDWEAPON_CHARGE + 1, Stat::getMaxAttackCharge(stats[HUDWEAPON_PLAYERNUM]));
+					}
 				}
 			}
 		}
@@ -1886,6 +2135,30 @@ void actHudWeapon(Entity* my)
 				HUDWEAPON_CHOP++;
 			}
 		}
+		else if ( flail )
+		{
+			static ConsoleVariable<float> cvar_anim_flail("/anim_flail", 1.0);
+			static ConsoleVariable<float> cvar_anim_flail_x1("/anim_flail_x1", 0.3);
+			static ConsoleVariable<float> cvar_anim_flail_x2("/anim_flail_x2", 8.0);
+			static ConsoleVariable<float> cvar_anim_flail_x3("/anim_flail_x3", 0.0);
+			HUDWEAPON_PITCH += .55 * *cvar_anim_flail;
+			if ( HUDWEAPON_PITCH >= PI * *cvar_anim_flail_x1 )
+			{
+				HUDWEAPON_PITCH = PI * *cvar_anim_flail_x1;
+			}
+			HUDWEAPON_MOVEX += 1.5 * *cvar_anim_flail;
+			if ( HUDWEAPON_MOVEX > *cvar_anim_flail_x2 )
+			{
+				HUDWEAPON_MOVEX = *cvar_anim_flail_x2;
+			}
+			HUDWEAPON_MOVEZ += .8;
+
+			if ( HUDWEAPON_MOVEZ > 0.0 )
+			{
+				HUDWEAPON_MOVEZ = 0.0;
+				HUDWEAPON_CHOP++;
+			}
+		}
 		else
 		{
 			HUDWEAPON_PITCH += .75;
@@ -1923,11 +2196,27 @@ void actHudWeapon(Entity* my)
 					&& item->type != FOOD_CREAMPIE
 					&& !(item->type >= ARTIFACT_ORB_BLUE && item->type <= ARTIFACT_ORB_GREEN)
 					&& !(itemIsThrowableTinkerTool(item))
-					&& item->type != TOOL_WHIP )
+					&& item->type != TOOL_DUCK
+					&& item->type != RAPIER
+					&& item->type != TOOL_WHIP
+					&& item->type != STEEL_FLAIL )
 				{
 					if ( stats[HUDWEAPON_PLAYERNUM]->weapon->type != TOOL_PICKAXE && itemCategory(item) != THROWN )
 					{
-						HUDWEAPON_CHOP = 4;
+						if ( claymore )
+						{
+							HUDWEAPON_CHOP = 7;
+							HUDWEAPON_YAW = 3 * PI / 4;
+							HUDWEAPON_MOVEX = sin(HUDWEAPON_YAW) * 1;
+							HUDWEAPON_MOVEY = cos(HUDWEAPON_YAW) * -6;
+							HUDWEAPON_MOVEZ = -4;
+							HUDWEAPON_PITCH = 0.0;
+							HUDWEAPON_ROLL = - PI / 2;
+						}
+						else
+						{
+							HUDWEAPON_CHOP = 4;
+						}
 					}
 					else
 					{
@@ -1954,8 +2243,11 @@ void actHudWeapon(Entity* my)
 			{
 				if ( stats[HUDWEAPON_PLAYERNUM]->weapon->type == SLING
 					|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == SHORTBOW
+					|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == BONE_SHORTBOW
 					|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == ARTIFACT_BOW
 					|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == LONGBOW
+					|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == BRANCH_BOW
+					|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == BRANCH_BOW_INFECTED
 					|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == COMPOUND_BOW )
 				{
 					if (bowFire)
@@ -2047,7 +2339,9 @@ void actHudWeapon(Entity* my)
 		{
 			HUDWEAPON_MOVEY = 0;
 		}
+
 		HUDWEAPON_MOVEZ -= .35;
+
 		if ( HUDWEAPON_MOVEZ < 0 )
 		{
 			HUDWEAPON_MOVEZ = 0;
@@ -2082,6 +2376,22 @@ void actHudWeapon(Entity* my)
 			rateY = .55;
 			rateRoll = .35;
 		}
+		else if ( claymore )
+		{
+			real_t factor = 0.75;
+			rateY *= factor;
+			rateRoll *= factor;
+			HUDWEAPON_PITCH -= 0.25 * factor;
+			if ( HUDWEAPON_PITCH < targetPitch )
+			{
+				HUDWEAPON_PITCH = targetPitch;
+			}
+			HUDWEAPON_YAW -= 0.25;
+			if ( HUDWEAPON_YAW < 0.0 )
+			{
+				HUDWEAPON_YAW = 0.0;
+			}
+		}
 		else
 		{
 			HUDWEAPON_YAW = 0;
@@ -2113,7 +2423,7 @@ void actHudWeapon(Entity* my)
 			HUDWEAPON_ROLL = targetRoll;
 			if (HUDWEAPON_PITCH == targetPitch && HUDWEAPON_MOVEX == 0 && HUDWEAPON_MOVEY == targetY && HUDWEAPON_MOVEZ == targetZ)
 			{
-				if (!swingweapon)
+				if (!swingweapon || claymore )
 				{
 					HUDWEAPON_CHOP++;
 					if ( !bearTrap )
@@ -2121,7 +2431,9 @@ void actHudWeapon(Entity* my)
 						players[HUDWEAPON_PLAYERNUM]->entity->attack(2, HUDWEAPON_CHARGE, nullptr);
 					}
 					if ( stats[HUDWEAPON_PLAYERNUM]->weapon
-						&& (stats[HUDWEAPON_PLAYERNUM]->weapon->type == CROSSBOW || stats[HUDWEAPON_PLAYERNUM]->weapon->type == HEAVY_CROSSBOW) )
+						&& (stats[HUDWEAPON_PLAYERNUM]->weapon->type == CROSSBOW 
+							|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == HEAVY_CROSSBOW
+							|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == BLACKIRON_CROSSBOW) )
 					{
 						throwGimpTimer = 40; // fix for swapping weapon to crossbow while charging.
 					}
@@ -2130,6 +2442,10 @@ void actHudWeapon(Entity* my)
 					if (players[HUDWEAPON_PLAYERNUM]->entity->skill[3] == 0)   // debug cam OFF
 					{
 						camera_shakex += .07;
+						if ( claymore )
+						{
+							camera_shakex += .07;
+						}
 					}
 					if ( whip && pickaxeGimpTimer < 20 )
 					{
@@ -2138,7 +2454,7 @@ void actHudWeapon(Entity* my)
 				}
 				else
 				{
-					HUDWEAPON_CHARGE = std::min<real_t>(HUDWEAPON_CHARGE + 1, MAXCHARGE);
+					HUDWEAPON_CHARGE = std::min<real_t>(HUDWEAPON_CHARGE + 1, Stat::getMaxAttackCharge(stats[HUDWEAPON_PLAYERNUM]));
 				}
 			}
 		}
@@ -2175,6 +2491,17 @@ void actHudWeapon(Entity* my)
 				HUDWEAPON_MOVEY += 10;
 			}
 		}
+		else if ( claymore )
+		{
+			HUDWEAPON_MOVEX = sin(HUDWEAPON_YAW) * 1;
+			HUDWEAPON_MOVEY = cos(HUDWEAPON_YAW) * -6;
+			HUDWEAPON_YAW += .25;
+			if ( HUDWEAPON_YAW > (3 * PI) / 4 )
+			{
+				HUDWEAPON_YAW = (3 * PI) / 4;
+				HUDWEAPON_CHOP++;
+			}
+		}
 		else
 		{
 			HUDWEAPON_MOVEX = sin(HUDWEAPON_YAW) * 1;
@@ -2195,6 +2522,11 @@ void actHudWeapon(Entity* my)
 			if ( stats[HUDWEAPON_PLAYERNUM]->weapon && !hideWeapon )
 			{
 				int weaponSkill = getWeaponSkill(stats[HUDWEAPON_PLAYERNUM]->weapon);
+				/*if ( claymore && *cvar_claymore_toggle == 1 )
+				{
+					HUDWEAPON_CHOP = 1;
+				}
+				else*/ 
 				if ( weaponSkill == PRO_SWORD || stats[HUDWEAPON_PLAYERNUM]->weapon->type == STEEL_HALBERD )
 				{
 					HUDWEAPON_CHOP = 7;  // swords + halberds can stab
@@ -2267,6 +2599,7 @@ void actHudWeapon(Entity* my)
 	}
 	else if ( HUDWEAPON_CHOP == 7 )     // prepare for third swing
 	{
+		real_t pitchLimit = .2;
 		HUDWEAPON_MOVEX -= .35;
 		if ( HUDWEAPON_MOVEX < 0 )
 		{
@@ -2282,13 +2615,7 @@ void actHudWeapon(Entity* my)
 		{
 			HUDWEAPON_MOVEZ = -2;
 		}
-		HUDWEAPON_YAW -= .15;
-		if ( HUDWEAPON_YAW < 2 * PI / 5 )
-		{
-			result = 2 * PI / 5;
-			HUDWEAPON_YAW = result;
-		}
-		real_t pitchLimit = .2;
+
 		if ( playerRace == SPIDER )
 		{
 			pitchLimit = -PI / 2;
@@ -2302,21 +2629,73 @@ void actHudWeapon(Entity* my)
 		{
 			HUDWEAPON_PITCH = pitchLimit;
 		}
+
+		HUDWEAPON_YAW -= .15;
+		if ( HUDWEAPON_YAW < 2 * PI / 5 )
+		{
+			result = 2 * PI / 5;
+			HUDWEAPON_YAW = result;
+		}
 		HUDWEAPON_ROLL -= .15;
+
+		bool parry = (rapier || claymore) && input.binaryToggle("Defend");
+
 		if (HUDWEAPON_ROLL < -2 * PI / 5)
 		{
 			HUDWEAPON_ROLL = -2 * PI / 5;
 			if (HUDWEAPON_PITCH == pitchLimit && HUDWEAPON_YAW == result 
 				&& HUDWEAPON_MOVEX == 0 && HUDWEAPON_MOVEY == -1 && (HUDWEAPON_MOVEZ == -2))
 			{
-				if (!swingweapon)
+				if ( claymore 
+					&& (HUDWEAPON_OVERCHARGE > 0 
+						/*|| (*cvar_claymore_toggle == 2 && HUDWEAPON_CHARGE >= Stat::getMaxAttackCharge(stats[HUDWEAPON_PLAYERNUM]) / 2)*/) )
+				{
+					/*if ( *cvar_claymore_toggle == 2 )
+					{
+						HUDWEAPON_CHARGE = Stat::getMaxAttackCharge(stats[HUDWEAPON_PLAYERNUM]);
+					}*/
+					HUDWEAPON_CHOP = 4;
+					HUDWEAPON_OVERCHARGE = 0;
+				}
+				else if ( (!swingweapon || parry) && HUDWEAPON_DELAY_TICK == 0)
 				{
 					HUDWEAPON_CHOP++;
-					if ( !bearTrap )
+					if ( parry )
+					{
+						input.consumeBinaryToggle("Defend");
+						HUDWEAPON_CHOP = 21;
+						pickaxeGimpTimer = 40;
+						HUDWEAPON_PARRY_TICK = my->ticks;
+						players[HUDWEAPON_PLAYERNUM]->entity->attack(MONSTER_POSE_PARRY, 35, nullptr);
+					}
+					else if ( rapier )
+					{
+						players[HUDWEAPON_PLAYERNUM]->entity->attack(3, HUDWEAPON_CHARGE, nullptr);
+					}
+					else if ( !bearTrap && !flail )
 					{
 						if ( stats[HUDWEAPON_PLAYERNUM]->weapon && hideWeapon )
 						{
 							players[HUDWEAPON_PLAYERNUM]->entity->attack(1, HUDWEAPON_CHARGE, nullptr);
+						}
+						else if ( !hideWeapon && stats[HUDWEAPON_PLAYERNUM]->weapon && stats[HUDWEAPON_PLAYERNUM]->weapon->type == MAGICSTAFF_SCEPTER )
+						{
+							int chargeAmount = HUDWEAPON_CHARGE;
+							if ( HUDWEAPON_OVERCHARGE >= (Stat::getMaxAttackCharge(stats[HUDWEAPON_PLAYERNUM]) - 3) )
+							{
+								int staffCharge = stats[HUDWEAPON_PLAYERNUM]->weapon->appearance % MAGICSTAFF_SCEPTER_CHARGE_MAX;
+								if ( staffCharge > 0 )
+								{
+									int decrement = std::min(staffCharge, 5);
+									stats[HUDWEAPON_PLAYERNUM]->weapon->appearance -= decrement;
+									chargeAmount = 100;
+								}
+								else
+								{
+									chargeAmount = 99;
+								}
+							}
+							players[HUDWEAPON_PLAYERNUM]->entity->attack(3, chargeAmount, nullptr);
 						}
 						else
 						{
@@ -2324,7 +2703,9 @@ void actHudWeapon(Entity* my)
 						}
 					}
 					if ( stats[HUDWEAPON_PLAYERNUM]->weapon
-						&& (stats[HUDWEAPON_PLAYERNUM]->weapon->type == CROSSBOW || stats[HUDWEAPON_PLAYERNUM]->weapon->type == HEAVY_CROSSBOW) )
+						&& (stats[HUDWEAPON_PLAYERNUM]->weapon->type == CROSSBOW 
+							|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == HEAVY_CROSSBOW
+							|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == BLACKIRON_CROSSBOW) )
 					{
 						throwGimpTimer = 40; // fix for swapping weapon to crossbow while charging.
 					}
@@ -2338,7 +2719,7 @@ void actHudWeapon(Entity* my)
 				}
 				else
 				{
-					HUDWEAPON_CHARGE = std::min<real_t>(HUDWEAPON_CHARGE + 1, MAXCHARGE);
+					HUDWEAPON_CHARGE = std::min<real_t>(HUDWEAPON_CHARGE + 1, Stat::getMaxAttackCharge(stats[HUDWEAPON_PLAYERNUM]));
 				}
 			}
 		}
@@ -2404,9 +2785,24 @@ void actHudWeapon(Entity* my)
 				}
 				else if ( !(stats[HUDWEAPON_PLAYERNUM]->weapon && stats[HUDWEAPON_PLAYERNUM]->weapon->type == TOOL_BEARTRAP) )
 				{
-					if ( itemCategory(stats[HUDWEAPON_PLAYERNUM]->weapon) != MAGICSTAFF 
+					/*if ( claymore && *cvar_claymore_toggle == 1 )
+					{
+						HUDWEAPON_CHARGE = Stat::getMaxAttackCharge(stats[HUDWEAPON_PLAYERNUM]);
+						HUDWEAPON_CHOP = 4;
+						HUDWEAPON_OVERCHARGE = 0;
+					}
+					else*/ 
+					if ( rapier )
+					{
+						HUDWEAPON_CHOP = 7;
+					}
+					else if ( stats[HUDWEAPON_PLAYERNUM]->weapon
+						&& itemCategory(stats[HUDWEAPON_PLAYERNUM]->weapon) != MAGICSTAFF
 						&& stats[HUDWEAPON_PLAYERNUM]->weapon->type != CRYSTAL_SPEAR 
 						&& stats[HUDWEAPON_PLAYERNUM]->weapon->type != IRON_SPEAR 
+						&& stats[HUDWEAPON_PLAYERNUM]->weapon->type != BLACKIRON_TRIDENT
+						&& stats[HUDWEAPON_PLAYERNUM]->weapon->type != BONE_SPEAR
+						&& stats[HUDWEAPON_PLAYERNUM]->weapon->type != SILVER_GLAIVE
 						&& stats[HUDWEAPON_PLAYERNUM]->weapon->type != ARTIFACT_SPEAR )
 					{
 						HUDWEAPON_CHOP = 1;
@@ -2483,7 +2879,10 @@ void actHudWeapon(Entity* my)
 				}
 				if ( !bearTrap )
 				{
+					Item* tmp = stats[HUDWEAPON_PLAYERNUM]->weapon;
+					stats[HUDWEAPON_PLAYERNUM]->weapon = nullptr;
 					players[HUDWEAPON_PLAYERNUM]->entity->attack(PLAYER_POSE_GOLEM_SMASH, MAXCHARGE, nullptr);
+					stats[HUDWEAPON_PLAYERNUM]->weapon = tmp;
 				}
 			}
 		}
@@ -2533,6 +2932,7 @@ void actHudWeapon(Entity* my)
 				if ( HUDWEAPON_YAW == -.1 && HUDWEAPON_PITCH == 0 && HUDWEAPON_MOVEZ == 0 && HUDWEAPON_MOVEY == 0 && HUDWEAPON_MOVEX == 0 )
 				{
 					HUDWEAPON_CHOP = 0;
+					players[HUDWEAPON_PLAYERNUM]->hud.weaponSwitch = true;
 				}
 			}
 		}
@@ -2646,7 +3046,7 @@ void actHudWeapon(Entity* my)
 				}
 				else
 				{
-					HUDWEAPON_CHARGE = std::min<real_t>(HUDWEAPON_CHARGE + 1, MAXCHARGE);
+					HUDWEAPON_CHARGE = std::min<real_t>(HUDWEAPON_CHARGE + 1, Stat::getMaxAttackCharge(stats[HUDWEAPON_PLAYERNUM]));
 				}
 			}
 		}
@@ -2717,7 +3117,14 @@ void actHudWeapon(Entity* my)
 		}
 		else if ( HUDWEAPON_MOVEX < 0 )
 		{
-			HUDWEAPON_MOVEX = std::min<real_t>(HUDWEAPON_MOVEX + .15, 0.0);
+			real_t reloadSpeed = 1.0;
+			if ( stats[HUDWEAPON_PLAYERNUM]->weapon 
+				&& (stats[HUDWEAPON_PLAYERNUM]->weapon->type == CROSSBOW
+					|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == BLACKIRON_CROSSBOW) )
+			{
+				reloadSpeed += 5 * std::max(0.0, 1.0 - rangedAttackGetSpeedModifier(stats[HUDWEAPON_PLAYERNUM]));
+			}
+			HUDWEAPON_MOVEX = std::min<real_t>(HUDWEAPON_MOVEX + .15 * reloadSpeed, 0.0);
 			if ( HUDWEAPON_MOVEX > -1 )
 			{
 				if ( HUDWEAPON_CROSSBOW_RELOAD_ANIMATION == CROSSBOW_ANIM_SHOOT
@@ -2993,7 +3400,7 @@ void actHudWeapon(Entity* my)
 				}
 				else
 				{
-					HUDWEAPON_CHARGE = std::min<real_t>(HUDWEAPON_CHARGE + 1, MAXCHARGE);
+					HUDWEAPON_CHARGE = std::min<real_t>(HUDWEAPON_CHARGE + 1, Stat::getMaxAttackCharge(stats[HUDWEAPON_PLAYERNUM]));
 				}
 			}
 		}
@@ -3049,8 +3456,191 @@ void actHudWeapon(Entity* my)
 			}
 		}
 	}
+	else if ( HUDWEAPON_CHOP == 21 )     // parry
+	{
+		//HUDWEAPON_MOVEX = std::min(static_cast<real_t>(1.0), HUDWEAPON_MOVEX + .15); // forward/back
+		//HUDWEAPON_MOVEY = std::min(static_cast<real_t>(1.0), HUDWEAPON_MOVEY + .25); // left/right
+		//HUDWEAPON_MOVEZ = std::min(static_cast<real_t>(0.0), HUDWEAPON_MOVEZ + .05); // up/down
+		real_t spd = 1.0;
 
-	if ( HUDWEAPON_CHARGE == MAXCHARGE || castStrikeAnimation 
+		real_t z_ang = *cvar_hudweapon_z_ang;
+		real_t z_spd = *cvar_hudweapon_z_spd;
+		real_t roll_ang = *cvar_hudweapon_roll_ang;
+		if ( rapier )
+		{
+			z_ang -= 4.0;
+			z_spd = 1.0;
+			roll_ang += -1.0;
+		}
+
+		hudWeaponAnimateVariable(HUDWEAPON_MOVEX, *cvar_hudweapon_x_ang, *cvar_hudweapon_x_spd * spd);
+		hudWeaponAnimateVariable(HUDWEAPON_MOVEY, *cvar_hudweapon_y_ang, *cvar_hudweapon_y_spd * spd);
+		hudWeaponAnimateVariable(HUDWEAPON_MOVEZ, z_ang, z_spd * spd);
+		hudWeaponAnimateVariable(HUDWEAPON_PITCH, *cvar_hudweapon_pitch_ang, *cvar_hudweapon_pitch_spd * spd);
+		hudWeaponAnimateVariable(HUDWEAPON_ROLL, roll_ang, *cvar_hudweapon_roll_spd * spd);
+		hudWeaponAnimateVariable(HUDWEAPON_YAW, *cvar_hudweapon_yaw_ang, *cvar_hudweapon_yaw_spd * spd);
+		if ( (abs(HUDWEAPON_ROLL - roll_ang) < 0.001 || *cvar_hudweapon_roll_spd == 0.f)
+			&& (abs(HUDWEAPON_PITCH - *cvar_hudweapon_pitch_ang) < 0.001 || *cvar_hudweapon_pitch_spd == 0.f)
+			&& (abs(HUDWEAPON_YAW - *cvar_hudweapon_yaw_ang) < 0.001 || *cvar_hudweapon_yaw_spd == 0.f)
+			&& (abs(HUDWEAPON_MOVEX - *cvar_hudweapon_x_ang) < 0.001 || *cvar_hudweapon_x_spd == 0.f)
+			&& (abs(HUDWEAPON_MOVEY - *cvar_hudweapon_y_ang) < 0.001 || *cvar_hudweapon_y_spd == 0.f)
+			&& (abs(HUDWEAPON_MOVEZ - z_ang) < 0.001 || z_spd == 0.f) )
+		{
+			HUDWEAPON_CHOP = 22;
+		}
+	}
+	else if ( HUDWEAPON_CHOP == 22 )
+	{
+		hudWeaponAnimateVariable(HUDWEAPON_MOVEX, 1.0, 0.15);
+		if ( abs(HUDWEAPON_MOVEX - 1.0) < 0.001 )
+		{
+			HUDWEAPON_CHOP = 23;
+		}
+	}
+	else if ( HUDWEAPON_CHOP == 23 )
+	{
+		/*if ( swingweapon )
+		{
+			HUDWEAPON_CHOP = 7;
+		}
+		else*/
+		{
+			real_t scale = *cvar_hudweapon_timescale2;
+			real_t scaleRoll = *cvar_hudweapon_timescale3;
+			//hudWeaponAnimateVariable(HUDWEAPON_MOVEX, 0.0, 0.25 * scale);
+			//hudWeaponAnimateVariable(HUDWEAPON_MOVEY, 0.0, 1.0 * scale);
+			//hudWeaponAnimateVariable(HUDWEAPON_MOVEZ, 0.0, 0.25 * scale);
+			//hudWeaponAnimateVariable(HUDWEAPON_PITCH, 0.0, 0.1 * scale);
+			//hudWeaponAnimateVariable(HUDWEAPON_ROLL, 0.0, 0.025 * scaleRoll);
+			//hudWeaponAnimateVariable(HUDWEAPON_YAW, -.1, 0.2 * scale);
+			HUDWEAPON_MOVEX *= scale;
+			HUDWEAPON_MOVEY *= scale;
+			HUDWEAPON_MOVEZ *= scale;
+			HUDWEAPON_YAW = HUDWEAPON_YAW + (-.1 - HUDWEAPON_YAW) * (1.0 - scale);
+			HUDWEAPON_PITCH *= scale;
+			HUDWEAPON_ROLL *= scale;
+			if ( abs(HUDWEAPON_MOVEX) < 0.01 )
+			{
+				HUDWEAPON_MOVEX = 0;
+			}
+			if ( abs(HUDWEAPON_MOVEY) < 0.01 )
+			{
+				HUDWEAPON_MOVEY = 0;
+			}
+			if ( abs(HUDWEAPON_MOVEZ) < 0.01 )
+			{
+				HUDWEAPON_MOVEZ = 0;
+			}
+			if ( abs(-.1 - HUDWEAPON_YAW) < 0.01 )
+			{
+				HUDWEAPON_YAW = -.1;
+			}
+			if ( abs(HUDWEAPON_PITCH) < 0.01 )
+			{
+				HUDWEAPON_PITCH = 0;
+			}
+			if ( abs(HUDWEAPON_ROLL) < 0.01 )
+			{
+				HUDWEAPON_ROLL = 0;
+			}
+			if ( (HUDWEAPON_YAW == -.1 && HUDWEAPON_ROLL == 0 && HUDWEAPON_PITCH == 0 && HUDWEAPON_MOVEZ == 0 && HUDWEAPON_MOVEY == 0 && HUDWEAPON_MOVEX == 0)
+				|| ((my->ticks - HUDWEAPON_PARRY_TICK) > TICKS_PER_SECOND) )
+			{
+				//messagePlayer(0, MESSAGE_DEBUG, "Parry ticks: %d", my->ticks - HUDWEAPON_PARRY_TICK);
+
+				HUDWEAPON_YAW = -.1;
+				HUDWEAPON_ROLL = 0;
+				HUDWEAPON_PITCH = 0;
+				HUDWEAPON_MOVEX = 0;
+				HUDWEAPON_MOVEY = 0;
+				HUDWEAPON_MOVEZ = 0;
+
+				HUDWEAPON_PARRY_TICK = 0;
+				HUDWEAPON_CHARGE = 0;
+				HUDWEAPON_OVERCHARGE = 0;
+				if ( pickaxeGimpTimer > 2 )
+				{
+					pickaxeGimpTimer = 2;
+				}
+				if ( swingweapon && (rapier || claymore) )
+				{
+					/*if ( claymore && *cvar_claymore_toggle == 1)
+					{
+						HUDWEAPON_CHOP = 1;
+					}
+					else*/
+					{
+						HUDWEAPON_CHOP = 7;
+					}
+				}
+				else
+				{
+					HUDWEAPON_CHOP = 0;
+				}
+			}
+		}
+	}
+	else if ( HUDWEAPON_CHOP == 24 )
+	{
+		//static ConsoleVariable<float> cvar_anim_flail2("/anim_flail2", 0.25);
+		real_t rate = 0.25;
+		if ( HUDWEAPON_MOVEX > 0 )
+		{
+			HUDWEAPON_MOVEX = std::max<real_t>(HUDWEAPON_MOVEX - 1 * rate, 0.0);
+		}
+		else if ( HUDWEAPON_MOVEX < 0 )
+		{
+			HUDWEAPON_MOVEX = std::min<real_t>(HUDWEAPON_MOVEX + 1 * rate, 0.0);
+		}
+		if ( HUDWEAPON_MOVEY > 0 )
+		{
+			HUDWEAPON_MOVEY = std::max<real_t>(HUDWEAPON_MOVEY - 1 * rate, 0.0);
+		}
+		else if ( HUDWEAPON_MOVEY < 0 )
+		{
+			HUDWEAPON_MOVEY = std::min<real_t>(HUDWEAPON_MOVEY + 1 * rate, 0.0);
+		}
+		if ( HUDWEAPON_MOVEZ > 0 )
+		{
+			HUDWEAPON_MOVEZ = std::max<real_t>(HUDWEAPON_MOVEZ - 1 * rate, 0.0);
+		}
+		else if ( HUDWEAPON_MOVEZ < 0 )
+		{
+			HUDWEAPON_MOVEZ = std::min<real_t>(HUDWEAPON_MOVEZ + 1 * rate, 0.0);
+		}
+		if ( HUDWEAPON_YAW > -.1 )
+		{
+			HUDWEAPON_YAW = std::max<real_t>(HUDWEAPON_YAW - .1 * rate, -.1);
+		}
+		else if ( HUDWEAPON_YAW < -.1 )
+		{
+			HUDWEAPON_YAW = std::min<real_t>(HUDWEAPON_YAW + .1 * rate, -.1);
+		}
+		if ( HUDWEAPON_PITCH > 0 )
+		{
+			HUDWEAPON_PITCH = std::max<real_t>(HUDWEAPON_PITCH - .1 * rate, 0.0);
+		}
+		else if ( HUDWEAPON_PITCH < 0 )
+		{
+			HUDWEAPON_PITCH = std::min<real_t>(HUDWEAPON_PITCH + .1 * rate, 0.0);
+		}
+		if ( HUDWEAPON_ROLL > 0 )
+		{
+			HUDWEAPON_ROLL = std::max<real_t>(HUDWEAPON_ROLL - .1 * rate, 0.0);
+		}
+		else if ( HUDWEAPON_ROLL < 0 )
+		{
+			HUDWEAPON_ROLL = std::min<real_t>(HUDWEAPON_ROLL + .1 * rate, 0.0);
+		}
+
+		if ( HUDWEAPON_MOVEX == 0 && HUDWEAPON_MOVEY == 0 && HUDWEAPON_MOVEZ == 0
+			&& HUDWEAPON_YAW == -.1 && HUDWEAPON_PITCH == 0 && HUDWEAPON_ROLL == 0 )
+		{
+			HUDWEAPON_CHOP = 0;
+		}
+	}
+
+	if ( HUDWEAPON_CHARGE == Stat::getMaxAttackCharge(stats[HUDWEAPON_PLAYERNUM]) || castStrikeAnimation
 		|| players[HUDWEAPON_PLAYERNUM]->entity->skill[9] == MONSTER_POSE_SPECIAL_WINDUP2
 		|| shakeRangedWeapon )
 	{
@@ -3097,7 +3687,7 @@ void actHudWeapon(Entity* my)
 	{
 		if ( ticks % 5 == 0 )
 		{
-			Entity* entity = spawnGib(my);
+			Entity* entity = spawnGib(my, 16);
 			entity->flags[INVISIBLE] = false;
 			entity->flags[SPRITE] = true;
 			entity->flags[NOUPDATE] = true;
@@ -3118,12 +3708,18 @@ void actHudWeapon(Entity* my)
 		}
 	}
 
+	// init defaults
+	my->focalx = 0.0;
+	my->focaly = 0.0;
+	my->focalz = -4.0;
+
 	// move the weapon
 	if (players[HUDWEAPON_PLAYERNUM] == nullptr || players[HUDWEAPON_PLAYERNUM]->entity == nullptr)
 	{
 		return;
 	}
 	double defaultpitch = PI / 8.f;
+
 	if (stats[HUDWEAPON_PLAYERNUM]->weapon == nullptr || hideWeapon)
 	{
 		if ( playerRace == RAT )
@@ -3168,6 +3764,38 @@ void actHudWeapon(Entity* my)
 		{
 			my->z -= -2 * .5;
 		}
+		else if ( playerRace == GREMLIN )
+		{
+			my->z -= -1 * .5;
+		}
+		else if ( playerRace == GNOME )
+		{
+			my->z -= -2 * .5;
+		}
+		else if ( playerRace == DRYAD )
+		{
+			if ( players[HUDWEAPON_PLAYERNUM]->entity->z >= 1.5 )
+			{
+				my->z -= -3.0 * .5;
+			}
+			else
+			{
+				my->z -= -2.0 * .5;
+			}
+		}
+		else if ( playerRace == MYCONID )
+		{
+			my->z -= -1.0 * .5;
+		}
+
+		if ( stats[HUDWEAPON_PLAYERNUM]->getEffectActive(EFF_MINIMISE) )
+		{
+			my->z += -Player::PlayerMovement_t::minimiseMaximiseCameraZ * (stats[HUDWEAPON_PLAYERNUM]->getEffectActive(EFF_MINIMISE) & 0xF) * .5;
+		}
+		if ( stats[HUDWEAPON_PLAYERNUM]->getEffectActive(EFF_MAXIMISE) )
+		{
+			my->z -= -Player::PlayerMovement_t::minimiseMaximiseCameraZ * (stats[HUDWEAPON_PLAYERNUM]->getEffectActive(EFF_MAXIMISE) & 0xF) * .5;
+		}
 	}
 	else
 	{
@@ -3183,7 +3811,7 @@ void actHudWeapon(Entity* my)
 			{
 				defaultpitch = -PI / 8.f;
 			}
-			if ( item->type == CROSSBOW || item->type == HEAVY_CROSSBOW )
+			if ( item->type == CROSSBOW || item->type == HEAVY_CROSSBOW || item->type == BLACKIRON_CROSSBOW )
 			{
 				my->x = 6 + HUDWEAPON_MOVEX;
 				my->y = 1.5 + HUDWEAPON_MOVEY;
@@ -3205,8 +3833,11 @@ void actHudWeapon(Entity* my)
 			}
 			else if ( item->type == SLING
 				|| item->type == SHORTBOW
+				|| item->type == BONE_SHORTBOW
 				|| item->type == ARTIFACT_BOW
 				|| item->type == LONGBOW
+				|| item->type == BRANCH_BOW
+				|| item->type == BRANCH_BOW_INFECTED
 				|| item->type == COMPOUND_BOW )
 			{
 				my->x = 6 + HUDWEAPON_MOVEX;
@@ -3241,6 +3872,62 @@ void actHudWeapon(Entity* my)
 				}
 				my->roll = HUDWEAPON_ROLL;
 			}
+			else if ( item->type == BOLAS )
+			{
+				my->x = 6 + HUDWEAPON_MOVEX + 3 * (itemCategory(item) == POTION);
+				my->y = 3 + HUDWEAPON_MOVEY - 3 * (itemCategory(item) == POTION);
+				my->z = (cameras[HUDWEAPON_PLAYERNUM].z * .5 - players[HUDWEAPON_PLAYERNUM]->entity->z) + 7 + HUDWEAPON_MOVEZ - 3 * (itemCategory(item) == POTION);
+				my->yaw = HUDWEAPON_YAW - camera_shakex2;
+				my->pitch = defaultpitch + HUDWEAPON_PITCH - camera_shakey2 / 200.f;
+				my->roll = HUDWEAPON_ROLL + (PI / 2) * (itemCategory(item) == POTION);
+
+				static real_t bolasSpinVars[MAXPLAYERS] = { 0.0 };
+				static real_t bolasSpinVars2[MAXPLAYERS] = { 0.0 };
+				real_t& bolasSpinScale = bolasSpinVars[HUDWEAPON_PLAYERNUM];
+				real_t& bolasSpinYaw = bolasSpinVars2[HUDWEAPON_PLAYERNUM];
+				if ( HUDWEAPON_CHOP == 1 || HUDWEAPON_CHOP == 4	|| HUDWEAPON_CHOP == 7 )
+				{
+					bolasSpinScale += 0.05;
+					if ( bolasSpinScale >= 1.0 )
+					{
+						bolasSpinScale = 1.0;
+					}
+					real_t prev = fmod(bolasSpinYaw, 2 * PI);
+					bolasSpinYaw += bolasSpinScale * -0.35;
+					real_t next = fmod(bolasSpinYaw, 2 * PI);
+					if ( (prev > -PI / 4 && next < -PI / 4)
+						|| (prev > -5 * PI / 4 && next < -5 * PI / 4))
+					{
+						playSoundEntityLocal(players[HUDWEAPON_PLAYERNUM]->entity, 765 + local_rng.rand() % 2, 64);
+					}
+				}
+				else
+				{
+					bolasSpinScale *= 0.95;
+					if ( bolasSpinScale < 0.0 )
+					{
+						bolasSpinScale = 0.0;
+					}
+					if ( bolasSpinYaw < 0.0 )
+					{
+						bolasSpinYaw = fmod(bolasSpinYaw, 2 * PI); // restrict to -2PI
+						bolasSpinYaw *= 0.9; // return to 0
+					}
+				}
+
+
+				my->pitch *= (1.0 - bolasSpinScale); // keep less of original pitch as start spinning
+				my->pitch += bolasSpinScale * -(PI / 2 - PI / 32); // move to this pitch as more spinning
+
+				my->yaw += bolasSpinYaw;
+
+				my->y += 1 * std::min(bolasSpinScale, 1.0); // move right as max spin
+				my->z += -5;
+				my->z -= 3 * sin(HUDWEAPON_ROLL); // weaponswitch animation make rise from bottom
+				my->focalx = 0.0;
+				my->focaly = -0.125;
+				my->focalz = 2.25;
+			}
 			else
 			{
 				my->x = 6 + HUDWEAPON_MOVEX + 3 * (itemCategory(item) == POTION);
@@ -3249,6 +3936,11 @@ void actHudWeapon(Entity* my)
 				my->yaw = HUDWEAPON_YAW - camera_shakex2;
 				my->pitch = defaultpitch + HUDWEAPON_PITCH - camera_shakey2 / 200.f;
 				my->roll = HUDWEAPON_ROLL + (PI / 2) * (itemCategory(item) == POTION);
+				if ( flail )
+				{
+					my->roll += 0.05 * sin(HUDFlail[HUDWEAPON_PLAYERNUM].rollSpin);
+					my->pitch += -0.05 * cos(HUDFlail[HUDWEAPON_PLAYERNUM].rollSpin);
+				}
 				my->focalx = 0;
 			}
 
@@ -3267,6 +3959,38 @@ void actHudWeapon(Entity* my)
 		{
 			my->z -= -2 * .5;
 		}
+		else if ( playerRace == GREMLIN )
+		{
+			my->z -= -1 * .5;
+		}
+		else if ( playerRace == GNOME )
+		{
+			my->z -= -2 * .5;
+		}
+		else if ( playerRace == DRYAD )
+		{
+			if ( players[HUDWEAPON_PLAYERNUM]->entity->z >= 1.5 )
+			{
+				my->z -= -3.0 * .5;
+			}
+			else
+			{
+				my->z -= -2.0 * .5;
+			}
+		}
+		else if ( playerRace == MYCONID )
+		{
+			my->z -= -1.0 * .5;
+		}
+
+		if ( stats[HUDWEAPON_PLAYERNUM]->getEffectActive(EFF_MINIMISE) )
+		{
+			my->z += -Player::PlayerMovement_t::minimiseMaximiseCameraZ * (stats[HUDWEAPON_PLAYERNUM]->getEffectActive(EFF_MINIMISE) & 0xF) * .5;
+		}
+		if ( stats[HUDWEAPON_PLAYERNUM]->getEffectActive(EFF_MAXIMISE) )
+		{
+			my->z -= -Player::PlayerMovement_t::minimiseMaximiseCameraZ * (stats[HUDWEAPON_PLAYERNUM]->getEffectActive(EFF_MAXIMISE) & 0xF) * .5;
+		}
 	}
 	if ( !my->flags[OVERDRAW] )
 	{
@@ -3274,17 +3998,113 @@ void actHudWeapon(Entity* my)
 		my->y += 32;
 		my->z -= 3.5;
 	}
+
+	//Entity* particle = spawnMagicParticle(my);
+	//particle->flags[OVERDRAW] = true;
+	//particle->sprite = 942;
+	//particle->x = my->x;
+	//particle->y = my->y;
+	//particle->z = my->z;
+	//particle->focalx = limbs[HUMAN][22][0];
+	//particle->focaly = limbs[HUMAN][22][1];
+	//particle->focalz = limbs[HUMAN][22][2];
+
+	//static real_t p = 0.0;
+	//if ( keystatus[SDLK_F1] )
+	//{
+	//	if ( keystatus[SDLK_LSHIFT] )
+	//	{
+	//		p -= 0.1;
+	//	}
+	//	else
+	//	{
+	//		p += 0.1;
+	//	}
+	//}
+	//static real_t r = 0.0;
+	//if ( keystatus[SDLK_F2] )
+	//{
+	//	if ( keystatus[SDLK_LSHIFT] )
+	//	{
+	//		r -= 0.1;
+	//	}
+	//	else
+	//	{
+	//		r += 0.1;
+	//	}
+	//}
+	//static real_t y = 0.0;
+	//if ( keystatus[SDLK_F3] )
+	//{
+	//	if ( keystatus[SDLK_LSHIFT] )
+	//	{
+	//		y -= 0.1;
+	//	}
+	//	else
+	//	{
+	//		y += 0.1;
+	//	}
+	//}
+	//my->pitch += p;
+	//my->roll += r;
+	//my->yaw += y;
+
+	//particle->yaw = my->yaw;
+	//particle->pitch = my->pitch;
+	//particle->roll = my->roll;
+
+
+	//real_t focalx = limbs[HUMAN][20][0];
+	//real_t focaly = limbs[HUMAN][20][1];
+	//real_t focalz = (limbs[HUMAN][20][2] + my->focalz);
+
+	//// magic code to translate focals into pure coords (doesn't include focaly)
+	//real_t xoffset = focalz * sin(my->pitch + PI) * cos(my->roll) * cos(my->yaw);
+	//real_t yoffset = focalz * sin(my->pitch + PI) * cos(my->roll) * sin(my->yaw);
+	//xoffset += focalz * sin(my->roll + PI) * cos(my->yaw + PI / 2);
+	//yoffset += focalz * sin(my->roll + PI) * sin(my->yaw + PI / 2);
+
+	//xoffset += focalx * cos(my->yaw) * sin(my->pitch + PI / 2) + focaly * cos(my->yaw + PI / 2);
+	//yoffset += focalx * sin(my->yaw) * sin(my->pitch + PI / 2) + focaly * sin(my->yaw + PI / 2);
+
+	//real_t zoffset = focalz * cos(my->pitch) * cos(my->roll);
+	//zoffset += focalx * sin(my->pitch);
+	//particle->x += xoffset;
+	//particle->y += yoffset;
+	//particle->z += zoffset;
+	////particle->flags[OVERDRAW] = true;
+
+	//// true particle left to opengl to translate position to check accuracy
+	//particle = spawnMagicParticle(my);
+	//particle->flags[OVERDRAW] = true;
+	//particle->sprite = 943;
+	//particle->x = my->x;
+	//particle->y = my->y;
+	//particle->z = my->z;
+	//particle->focalx = my->focalx + limbs[HUMAN][20][0];
+	//particle->focaly = my->focaly + limbs[HUMAN][20][1];
+	//particle->focalz = my->focalz + limbs[HUMAN][20][2];
+	//particle->yaw = my->yaw;
+	//particle->pitch = my->pitch;
+	//particle->roll = my->roll;
 }
 
 #define HUDSHIELD_DEFEND my->skill[0]
 #define HUDSHIELD_SNEAKING my->skill[1]
 #define HUDSHIELD_PLAYERNUM my->skill[2]
+#define HUDSHIELD_DEFEND_DELAY_TICK my->skill[3]
+#define HUDSHIELD_DEFEND_TIME my->skill[4]
 #define HUDSHIELD_MOVEX my->fskill[0]
 #define HUDSHIELD_MOVEY my->fskill[1]
 #define HUDSHIELD_MOVEZ my->fskill[2]
 #define HUDSHIELD_YAW my->fskill[3]
 #define HUDSHIELD_PITCH my->fskill[4]
 #define HUDSHIELD_ROLL my->fskill[5]
+#define HUDSHIELD_FOCI_SPIN my->fskill[6]
+#define HUDSHIELD_FOCI_EASE my->fskill[7]
+#define HUDSHIELD_FOCI_BOB my->fskill[8]
+#define HUDSHIELD_DUCK_CHARGE my->fskill[9]
+static ConsoleVariable<bool> cvar_hud_toggle_defend("/hud_toggle_defend", false);
 
 void actHudShield(Entity* my)
 {
@@ -3342,6 +4162,32 @@ void actHudShield(Entity* my)
 		}
 	}
 
+	my->mistformGLRender = 0.0;
+	if ( playerRace != SPIDER )
+	{
+		if ( players[HUDSHIELD_PLAYERNUM]->entity->mistformGLRender > 0.05 )
+		{
+			real_t modulus = fmod(players[HUDSHIELD_PLAYERNUM]->entity->mistformGLRender, 1.0);
+			if ( modulus >= 0.05 && modulus < 0.15 ) // force shield
+			{
+				my->mistformGLRender = 0.5;
+			}
+			else if ( modulus >= 0.15 && modulus < 0.25 ) // reflector shield
+			{
+				my->mistformGLRender = 0.6;
+			}
+			else
+			{
+				my->mistformGLRender = players[HUDSHIELD_PLAYERNUM]->entity->mistformGLRender;
+			}
+		}
+	}
+	else if ( playerRace == SPIDER )
+	{
+		my->mistformGLRender = players[HUDSHIELD_PLAYERNUM]->entity->mistformGLRender > 0.9 ? players[HUDSHIELD_PLAYERNUM]->entity->mistformGLRender
+			: 0.0;
+	}
+
 	bool hideShield = false;
 	if ( playerRace == RAT
 		|| playerRace == CREATURE_IMP
@@ -3352,6 +4198,8 @@ void actHudShield(Entity* my)
 
 	bool spellbook = false;
 	bool quiver = false;
+	bool foci = false;
+	bool duck = false;
 	if ( stats[HUDSHIELD_PLAYERNUM]->shield && itemCategory(stats[HUDSHIELD_PLAYERNUM]->shield) == SPELLBOOK )
 	{
 		spellbook = true;
@@ -3363,6 +4211,18 @@ void actHudShield(Entity* my)
 	else if ( stats[HUDSHIELD_PLAYERNUM]->shield && itemTypeIsQuiver(stats[HUDSHIELD_PLAYERNUM]->shield->type) )
 	{
 		quiver = true;
+	}
+	else if ( stats[HUDSHIELD_PLAYERNUM]->shield && itemTypeIsFoci(stats[HUDSHIELD_PLAYERNUM]->shield->type) )
+	{
+		foci = true;
+		if ( playerRace == CREATURE_IMP )
+		{
+			hideShield = false;
+		}
+	}
+	else if ( stats[HUDSHIELD_PLAYERNUM]->shield && stats[HUDSHIELD_PLAYERNUM]->shield->type == TOOL_DUCK )
+	{
+		duck = true;
 	}
 
 	// when reverting form, render shield as invisible for 2 ticks as it's position needs to settle.
@@ -3376,7 +4236,7 @@ void actHudShield(Entity* my)
 	}
 	HUD_LASTSHAPESHIFT_FORM = playerRace;
 
-	if ( players[HUDSHIELD_PLAYERNUM]->entity->skill[3] == 1 )   // debug cam or player invisible
+	if ( players[HUDSHIELD_PLAYERNUM]->entity->skill[3] != 0 )   // debug cam or player invisible
 	{
 		my->flags[INVISIBLE] = true;
 	}
@@ -3451,7 +4311,7 @@ void actHudShield(Entity* my)
 		my->flags[INVISIBLE] = true;
 		my->flags[INVISIBLE_DITHER] = false;
 	}
-	else if ( cast_animation[HUDSHIELD_PLAYERNUM].active )
+	else if ( cast_animation[HUDSHIELD_PLAYERNUM].hideShieldFromBasicCast() )
 	{
 		my->flags[INVISIBLE] = true;
 		my->flags[INVISIBLE_DITHER] = false;
@@ -3483,21 +4343,34 @@ void actHudShield(Entity* my)
 			{
 				allowDefend = false;
 			}
+			else if ( players[HUDSHIELD_PLAYERNUM]->hud.weapon->skill[6] == 0 // hideWeapon == false
+				&& stats[HUDSHIELD_PLAYERNUM]->weapon /*&& stats[HUDSHIELD_PLAYERNUM]->weapon->type == RAPIER*/
+				&& (players[HUDSHIELD_PLAYERNUM]->hud.weapon->skill[0] == 21
+					|| players[HUDSHIELD_PLAYERNUM]->hud.weapon->skill[0] == 22) )
+			{
+				allowDefend = false;
+			}
 		}
 
 
 		if ( players[HUDSHIELD_PLAYERNUM] && players[HUDSHIELD_PLAYERNUM]->entity 
 			&& allowDefend
 			&& players[HUDSHIELD_PLAYERNUM]->entity->isMobile() 
-			&& !cast_animation[HUDSHIELD_PLAYERNUM].active
+			&& !cast_animation[HUDSHIELD_PLAYERNUM].hideShieldFromBasicCast()
 			&& !cast_animation[HUDSHIELD_PLAYERNUM].active_spellbook
-			&& (!spellbook || (spellbook && hideShield)) )
+			&& (!spellbook || (spellbook && (hideShield || playerRace == SPIDER)))
+			&& HUDSHIELD_DEFEND_DELAY_TICK == 0
+			&& !((foci || duck) && !hideShield && players[HUDSHIELD_PLAYERNUM]->hud.shieldSwitch) )
 		{
 			if ( stats[HUDSHIELD_PLAYERNUM]->shield )
 			{
 				if ( (players[HUDSHIELD_PLAYERNUM]->hud.weapon->skill[0] % 3 == 0) )
 				{
 					if (input.binaryToggle("Defend"))
+					{
+						defending = true;
+					}
+					else if ( *cvar_hud_toggle_defend )
 					{
 						defending = true;
 					}
@@ -3511,6 +4384,11 @@ void actHudShield(Entity* my)
 		}
 	}
 
+	if ( HUDSHIELD_DEFEND_DELAY_TICK > 0 )
+	{
+		--HUDSHIELD_DEFEND_DELAY_TICK;
+	}
+
 	if ( stats[HUDSHIELD_PLAYERNUM]->shield && itemTypeIsQuiver(stats[HUDSHIELD_PLAYERNUM]->shield->type) )
 	{
 		// can't defend with quivers.
@@ -3522,8 +4400,25 @@ void actHudShield(Entity* my)
 		|| playerRace == TROLL
 		|| playerRace == SPIDER )
 	{
-		defending = false;
-		wouldBeDefending = false;
+		if ( !(playerRace == CREATURE_IMP && foci) )
+		{
+			defending = false;
+			wouldBeDefending = false;
+		}
+	}
+
+	if ( defending )
+	{
+		if ( foci 
+			|| (stats[HUDSHIELD_PLAYERNUM]->shield && itemTypeIsInstrument(stats[HUDSHIELD_PLAYERNUM]->shield->type))
+			|| duck )
+		{
+			if ( players[HUDSHIELD_PLAYERNUM]->messageZone.logWindow || players[HUDSHIELD_PLAYERNUM]->minimap.mapWindow
+				|| FollowerMenu[HUDSHIELD_PLAYERNUM].followerMenuIsOpen() || CalloutMenu[HUDSHIELD_PLAYERNUM].calloutMenuIsOpen() )
+			{
+				defending = false;
+			}
+		}
 	}
 
 	bool dropShield = false;
@@ -3537,10 +4432,12 @@ void actHudShield(Entity* my)
 	if (defending)
 	{
 		stats[HUDSHIELD_PLAYERNUM]->defending = true;
+		HUDSHIELD_DEFEND_TIME++;
 	}
 	else
 	{
 		stats[HUDSHIELD_PLAYERNUM]->defending = false;
+		HUDSHIELD_DEFEND_TIME = 0;
 	}
 	if ( sneaking && (!defending && !wouldBeDefending) )
 	{
@@ -3550,9 +4447,10 @@ void actHudShield(Entity* my)
 	{
 		stats[HUDSHIELD_PLAYERNUM]->sneaking = false;
 	}
+
 	if (multiplayer == CLIENT)
 	{
-		if (HUDSHIELD_DEFEND != defending || ticks % 120 == 0)
+		if ((HUDSHIELD_DEFEND > 0 ? true : false) != defending || ticks % 120 == 0)
 		{
 			strcpy((char*)net_packet->data, "SHLD");
 			net_packet->data[4] = HUDSHIELD_PLAYERNUM;
@@ -3573,7 +4471,7 @@ void actHudShield(Entity* my)
 			sendPacketSafe(net_sock, -1, net_packet, 0);
 		}
 	}
-	HUDSHIELD_DEFEND = defending;
+	HUDSHIELD_DEFEND = (defending == false) ? 0 : (HUDSHIELD_DEFEND + 1);
 	HUDSHIELD_SNEAKING = sneaking;
 
 	if ( dropShield )
@@ -3583,7 +4481,9 @@ void actHudShield(Entity* my)
 		return;
 	}
 
-	bool crossbow = (stats[HUDSHIELD_PLAYERNUM]->weapon && (stats[HUDSHIELD_PLAYERNUM]->weapon->type == CROSSBOW || stats[HUDSHIELD_PLAYERNUM]->weapon->type == HEAVY_CROSSBOW) );
+	bool crossbow = (stats[HUDSHIELD_PLAYERNUM]->weapon 
+		&& (stats[HUDSHIELD_PLAYERNUM]->weapon->type == CROSSBOW || stats[HUDSHIELD_PLAYERNUM]->weapon->type == HEAVY_CROSSBOW
+			|| stats[HUDSHIELD_PLAYERNUM]->weapon->type == BLACKIRON_CROSSBOW) );
 	bool doCrossbowReloadAnimation = false;
 	bool doBowReload = false;
 
@@ -3616,6 +4516,10 @@ void actHudShield(Entity* my)
 			}
 		}
 
+		if ( (foci || duck) && !hideShield )
+		{
+			HUDSHIELD_DEFEND_DELAY_TICK = 10;
+		}
 		if ( !spellbook )
 		{
 			players[HUDSHIELD_PLAYERNUM]->hud.shieldSwitch = false;
@@ -3646,7 +4550,10 @@ void actHudShield(Entity* my)
 	// main animation
 	if ( defending || cast_animation[HUDSHIELD_PLAYERNUM].active_spellbook )
 	{
-		if ( !spellbook )
+		if ( duck )
+		{
+		}
+		else if ( !spellbook )
 		{
 			if ( HUDSHIELD_MOVEY < 3 )
 			{
@@ -3674,7 +4581,8 @@ void actHudShield(Entity* my)
 			}
 			if ( stats[HUDSHIELD_PLAYERNUM]->shield )
 			{
-				if ( stats[HUDSHIELD_PLAYERNUM]->shield->type == TOOL_TORCH || stats[HUDSHIELD_PLAYERNUM]->shield->type == TOOL_CRYSTALSHARD )
+				if ( stats[HUDSHIELD_PLAYERNUM]->shield->type == TOOL_TORCH 
+					|| stats[HUDSHIELD_PLAYERNUM]->shield->type == TOOL_CRYSTALSHARD )
 				{
 					if ( HUDSHIELD_MOVEX < 1.5 )
 					{
@@ -3692,6 +4600,25 @@ void actHudShield(Entity* my)
 							HUDSHIELD_ROLL = PI / 5;
 						}
 					}
+				}
+				else if ( itemTypeIsFoci(stats[HUDSHIELD_PLAYERNUM]->shield->type) )
+				{
+					if ( HUDSHIELD_MOVEX < 1.5 )
+					{
+						HUDSHIELD_MOVEX += .5;
+						if ( HUDSHIELD_MOVEX > 1.5 )
+						{
+							HUDSHIELD_MOVEX = 1.5;
+						}
+					}
+					/*if ( HUDSHIELD_ROLL < PI / 5 )
+					{
+						HUDSHIELD_ROLL += .15;
+						if ( HUDSHIELD_ROLL > PI / 5 )
+						{
+							HUDSHIELD_ROLL = PI / 5;
+						}
+					}*/
 				}
 			}
 		}
@@ -3713,7 +4640,9 @@ void actHudShield(Entity* my)
 	}
 	else if ( !hideShield && quiver && hudweapon && rangedWeaponUseQuiverOnAttack(stats[HUDSHIELD_PLAYERNUM])
 		&& hudweapon->skill[7] != RANGED_ANIM_IDLE
-		&& (!crossbow || (crossbow && crossbowReloadAnimation && hudweapon->skill[8] != CROSSBOW_ANIM_RELOAD_START)) )
+		&& (!crossbow 
+			|| (crossbow && crossbowReloadAnimation && hudweapon->skill[8] != CROSSBOW_ANIM_RELOAD_START
+				&& !cast_animation[HUDSHIELD_PLAYERNUM].spellWaitingAttackInput() && !cast_animation[HUDSHIELD_PLAYERNUM].spellIgnoreAttack()) ))
 	{
 		// skill[7] == 1 is hudweapon bow drawing, skill[8] is the crossbow reload animation state.
 		if ( hudweapon->skill[7] == RANGED_ANIM_FIRED && (!crossbow || (crossbow && hudweapon->skill[8] == CROSSBOW_ANIM_SHOOT)) )
@@ -3975,6 +4904,119 @@ void actHudShield(Entity* my)
 		my->yaw += PI / 2 - HUDSHIELD_YAW / 4;
 		my->focalz -= 0.5;
 	}
+	else if ( my->sprite == items[TOOL_FRYING_PAN].fpindex && !hideShield )
+	{
+		my->roll += PI / 8;
+	}
+	else if ( duck && !hideShield )
+	{
+		my->z += -1;
+		my->yaw += (PI / 3) + -HUDSHIELD_YAW;
+		if ( defending && HUDSHIELD_DEFEND_TIME > 0 )
+		{
+			HUDSHIELD_DUCK_CHARGE += 1.0;
+		}
+
+		real_t chargeAnim = std::min(1.0, HUDSHIELD_DUCK_CHARGE / 10.0);
+
+		if ( HUDSHIELD_DUCK_CHARGE >= 1.0 )
+		{
+			my->pitch += (-PI / 16) * chargeAnim;
+			my->y += (3 - 3) * chargeAnim;
+			my->x += 2 * chargeAnim;
+			//my->yaw += (PI / 3) * chargeAnim;
+			my->z += -1 * chargeAnim;
+
+			if ( ticks % 2 && HUDSHIELD_DUCK_CHARGE >= 30.0 )
+			{
+				my->x += (local_rng.rand() % 30 - 10) / 80.f;
+				my->y += (local_rng.rand() % 30 - 10) / 80.f;
+				my->z += (local_rng.rand() % 30 - 10) / 80.f;
+			}
+		}
+
+		if ( HUDSHIELD_DUCK_CHARGE >= 60.0 || (!defending && HUDSHIELD_DUCK_CHARGE >= 30.0) )
+		{
+			if ( playerThrowDuck(HUDSHIELD_PLAYERNUM, stats[HUDSHIELD_PLAYERNUM]->shield, std::min(50, (int)HUDSHIELD_DUCK_CHARGE)) )
+			{
+				my->flags[INVISIBLE] = true;
+				my->flags[INVISIBLE_DITHER] = false;
+				return;
+			}
+		}
+	}
+	else if ( foci && !hideShield )
+	{
+		//my->yaw += PI / 2 - HUDSHIELD_YAW / 4;
+		my->focalz -= 1.5;
+		if ( defending )
+		{
+			int rate = 20;
+			int chargeTimeInit = (float)(TICKS_PER_SECOND / 4);
+			chargeTimeInit *= getSpellPropertyFromID(spell_t::SPELLPROP_MODIFIED_FOCI_CAST_TIME, getSpellIDFromFoci(stats[HUDSHIELD_PLAYERNUM]->shield->type),
+				nullptr, stats[HUDSHIELD_PLAYERNUM], nullptr);
+			chargeTimeInit = std::max(TICKS_PER_SECOND, chargeTimeInit + TICKS_PER_SECOND);
+			if ( HUDSHIELD_DEFEND_TIME < chargeTimeInit )
+			{
+				rate = 10;
+				if ( (chargeTimeInit - HUDSHIELD_DEFEND_TIME) > TICKS_PER_SECOND )
+				{
+					HUDSHIELD_FOCI_SPIN += 0.3;
+				}
+				else
+				{
+					HUDSHIELD_FOCI_SPIN += 0.15 + 0.25 * (chargeTimeInit - HUDSHIELD_DEFEND_TIME) / (real_t)TICKS_PER_SECOND;
+				}
+
+			}
+			else
+			{
+				HUDSHIELD_FOCI_SPIN += 0.15;
+			}
+			if ( my->ticks % rate == 0 )
+			{
+				Entity* entity = spawnGib(my, 16);
+				entity->flags[INVISIBLE] = false;
+				entity->flags[SPRITE] = true;
+				entity->flags[NOUPDATE] = true;
+				entity->flags[UPDATENEEDED] = false;
+				entity->flags[OVERDRAW] = true;
+				entity->lightBonus = vec4(0.2f, 0.2f, 0.2f, 0.f);
+				entity->z = std::max(my->z, entity->z);
+				entity->z -= 2.0;
+				//entity->sizex = 1; //MAKE 'EM SMALL PLEASE!
+				//entity->sizey = 1;
+				entity->scalex = 0.25f; //MAKE 'EM SMALL PLEASE!
+				entity->scaley = 0.25f;
+				entity->scalez = 0.25f;
+				entity->sprite = 16; //TODO: Originally. 22. 16 -- spark sprite instead?
+				entity->yaw = ((local_rng.rand() % 6) * 60) * PI / 180.0;
+				entity->pitch = (local_rng.rand() % 360) * PI / 180.0;
+				entity->roll = (local_rng.rand() % 360) * PI / 180.0;
+				entity->vel_x = cos(entity->yaw) * .1;
+				entity->vel_y = sin(entity->yaw) * .1;
+				entity->vel_z = -.15;
+				entity->fskill[3] = 0.01;
+				entity->skill[11] = HUDSHIELD_PLAYERNUM;
+			}
+			HUDSHIELD_FOCI_EASE = std::min(1.0, HUDSHIELD_FOCI_EASE + 0.05);
+			HUDSHIELD_FOCI_BOB += 0.05;
+			my->z += 0.5 * sin(HUDSHIELD_FOCI_BOB);
+		}
+		my->yaw += HUDSHIELD_FOCI_SPIN * sin(HUDSHIELD_FOCI_EASE * PI / 2);
+	}
+
+	if ( !foci || hideShield || !defending )
+	{
+		HUDSHIELD_FOCI_SPIN = 0.0;
+		HUDSHIELD_FOCI_EASE = 0.0;
+		HUDSHIELD_FOCI_BOB = 0.0;
+	}
+
+	if ( !duck || hideShield || !defending )
+	{
+		HUDSHIELD_DUCK_CHARGE = 0.0;
+	}
 
 	Entity*& hudarm = players[HUDSHIELD_PLAYERNUM]->hud.arm;
 	if ( playerRace == SPIDER && hudarm && players[HUDSHIELD_PLAYERNUM]->entity->bodyparts.at(0) )
@@ -4001,6 +5043,38 @@ void actHudShield(Entity* my)
 	{
 		my->z -= -2 * .5;
 	}
+	else if ( playerRace == GREMLIN )
+	{
+		my->z -= -1 * .5;
+	}
+	else if ( playerRace == GNOME )
+	{
+		my->z -= -2 * .5;
+	}
+	else if ( playerRace == DRYAD )
+	{
+		if ( players[HUDSHIELD_PLAYERNUM]->entity->z >= 1.5 )
+		{
+			my->z -= -3.0 * .5;
+		}
+		else
+		{
+			my->z -= -2.0 * .5;
+		}
+	}
+	else if ( playerRace == MYCONID )
+	{
+		my->z -= -1.0 * .5;
+	}
+
+	if ( stats[HUDSHIELD_PLAYERNUM]->getEffectActive(EFF_MINIMISE) )
+	{
+		my->z += -Player::PlayerMovement_t::minimiseMaximiseCameraZ * (stats[HUDSHIELD_PLAYERNUM]->getEffectActive(EFF_MINIMISE) & 0xF) * .5;
+	}
+	if ( stats[HUDSHIELD_PLAYERNUM]->getEffectActive(EFF_MAXIMISE) )
+	{
+		my->z -= -Player::PlayerMovement_t::minimiseMaximiseCameraZ * (stats[HUDSHIELD_PLAYERNUM]->getEffectActive(EFF_MAXIMISE) & 0xF) * .5;
+	}
 
 	// torch/lantern flames
 	if ( playerRace == TROLL || playerRace == SPIDER || playerRace == CREATURE_IMP || playerRace == RAT )
@@ -4010,51 +5084,324 @@ void actHudShield(Entity* my)
 	}
 	if (stats[HUDSHIELD_PLAYERNUM]->shield 
 		&& !swimming 
-		&& players[HUDSHIELD_PLAYERNUM]->entity->skill[3] == 0 
-		&& !cast_animation[HUDSHIELD_PLAYERNUM].active 
+		&& !cast_animation[HUDSHIELD_PLAYERNUM].hideShieldFromBasicCast()
 		&& !cast_animation[HUDSHIELD_PLAYERNUM].active_spellbook
 		&& !players[HUDSHIELD_PLAYERNUM]->hud.shieldSwitch)
 	{
 		if (itemCategory(stats[HUDSHIELD_PLAYERNUM]->shield) == TOOL)
 		{
-		    if (stats[HUDSHIELD_PLAYERNUM]->shield->type == TOOL_TORCH)
-		    {
-                if ( flickerLights || my->ticks % TICKS_PER_SECOND == 1 )
-                {
-					if ( Entity* entity = spawnFlame(my, SPRITE_FLAME) )
+			if ( players[HUDSHIELD_PLAYERNUM]->entity->skill[3] == 0 )
+			{
+				if (stats[HUDSHIELD_PLAYERNUM]->shield->type == TOOL_TORCH)
+				{
+					if ( flickerLights || my->ticks % TICKS_PER_SECOND == 1 )
 					{
+						if ( Entity* entity = spawnFlame(my, SPRITE_FLAME) )
+						{
+							entity->flags[OVERDRAW] = true;
+							entity->z -= 2.5 * cos(HUDSHIELD_ROLL);
+							entity->y += 2.5 * sin(HUDSHIELD_ROLL);
+							entity->skill[11] = HUDSHIELD_PLAYERNUM;
+						}
+					}
+				}
+				else if ( stats[HUDSHIELD_PLAYERNUM]->shield->type == TOOL_CRYSTALSHARD )
+				{
+					if ( flickerLights || my->ticks % TICKS_PER_SECOND == 1 )
+					{
+						/*Entity* entity = spawnFlame(my, SPRITE_CRYSTALFLAME);
 						entity->flags[OVERDRAW] = true;
 						entity->z -= 2.5 * cos(HUDSHIELD_ROLL);
 						entity->y += 2.5 * sin(HUDSHIELD_ROLL);
-						entity->skill[11] = HUDSHIELD_PLAYERNUM;
+						entity->skill[11] = HUDSHIELD_PLAYERNUM;*/
 					}
-			    }
-		    }
-		    else if ( stats[HUDSHIELD_PLAYERNUM]->shield->type == TOOL_CRYSTALSHARD )
-		    {
-                if ( flickerLights || my->ticks % TICKS_PER_SECOND == 1 )
-                {
-			        /*Entity* entity = spawnFlame(my, SPRITE_CRYSTALFLAME);
-			        entity->flags[OVERDRAW] = true;
-			        entity->z -= 2.5 * cos(HUDSHIELD_ROLL);
-			        entity->y += 2.5 * sin(HUDSHIELD_ROLL);
-			        entity->skill[11] = HUDSHIELD_PLAYERNUM;*/
-			    }
-		    }
-		    else if (stats[HUDSHIELD_PLAYERNUM]->shield->type == TOOL_LANTERN)
-		    {
-                if ( flickerLights || my->ticks % TICKS_PER_SECOND == 1 )
-                {
-					if ( Entity* entity = spawnFlame(my, SPRITE_FLAME) )
+				}
+				else if (stats[HUDSHIELD_PLAYERNUM]->shield->type == TOOL_LANTERN)
+				{
+					if ( flickerLights || my->ticks % TICKS_PER_SECOND == 1 )
 					{
-						entity->flags[OVERDRAW] = true;
-						entity->skill[11] = HUDSHIELD_PLAYERNUM;
-						entity->z += 1;
+						if ( Entity* entity = spawnFlame(my, SPRITE_FLAME) )
+						{
+							entity->flags[OVERDRAW] = true;
+							entity->skill[11] = HUDSHIELD_PLAYERNUM;
+							entity->z += 1;
+						}
 					}
-			    }
-		    }
+				}
+			}
+
+			/*if ( multiplayer != CLIENT )
+			{
+				if ( stats[HUDSHIELD_PLAYERNUM]->shield->type == TOOL_FOCI_FIRE )
+				{
+					static ConsoleVariable<float> cvar_foci_charge_init("/foci_charge_init", 1.f);
+					int chargeTimeInit = (float)(TICKS_PER_SECOND / 4) * *cvar_foci_charge_init;
+					if ( HUDSHIELD_DEFEND >= chargeTimeInit )
+					{
+						static ConsoleVariable<float> cvar_foci_charge("/foci_charge", 1.f);
+						int chargeTime = (float)(TICKS_PER_SECOND / 4) * *cvar_foci_charge;
+						if ( (HUDSHIELD_DEFEND - chargeTimeInit) % chargeTime == 0 )
+						{
+							auto spell = getSpellFromID(SPELL_FOCI_FIRE);
+							int mpcost = getCostOfSpell(spell, players[HUDSHIELD_PLAYERNUM]->entity);
+							if ( mpcost <= stats[HUDSHIELD_PLAYERNUM]->MP )
+							{
+								if ( players[HUDSHIELD_PLAYERNUM]->entity->safeConsumeMP(mpcost) )
+								{
+  									castSpell(players[HUDSHIELD_PLAYERNUM]->entity->getUID(), spell, false, false);
+								}
+							}
+						}
+					}
+				}
+			}*/
 		}
 	}
+}
+
+#define HUDADDITIONAL_PLAYERNUM my->skill[2]
+void actHudAdditional2(Entity* my)
+{
+	my->flags[UNCLICKABLE] = true;
+
+	auto& camera_shakex2 = cameravars[HUDADDITIONAL_PLAYERNUM].shakex2;
+	auto& camera_shakey2 = cameravars[HUDADDITIONAL_PLAYERNUM].shakey2;
+	auto& hudFlail = HUDFlail[HUDADDITIONAL_PLAYERNUM];
+
+	my->flags[INVISIBLE_DITHER] = false;
+
+	// isn't active during intro/menu sequence
+	if ( intro == true )
+	{
+		my->flags[INVISIBLE] = true;
+		hudFlail.needsInit = true;
+		return;
+	}
+	else
+	{
+		if ( multiplayer == CLIENT )
+		{
+			if ( stats[HUDADDITIONAL_PLAYERNUM]->HP <= 0 )
+			{
+				my->flags[INVISIBLE] = true;
+				my->flags[INVISIBLE_DITHER] = false;
+				hudFlail.needsInit = true;
+				return;
+			}
+		}
+
+		// this entity only exists so long as the player exists
+		if ( players[HUDADDITIONAL_PLAYERNUM] == nullptr || players[HUDADDITIONAL_PLAYERNUM]->entity == nullptr || !players[HUDADDITIONAL_PLAYERNUM]->hud.weapon )
+		{
+			list_RemoveNode(my->mynode);
+			hudFlail.needsInit = true;
+			return;
+		}
+
+		if ( !(stats[HUDADDITIONAL_PLAYERNUM]->weapon && stats[HUDADDITIONAL_PLAYERNUM]->weapon->type == STEEL_FLAIL) )
+		{
+			my->flags[INVISIBLE] = true;
+			my->flags[INVISIBLE_DITHER] = false;
+			hudFlail.needsInit = true;
+			return;
+		}
+	}
+
+	my->flags[INVISIBLE] = players[HUDADDITIONAL_PLAYERNUM]->hud.weapon->flags[INVISIBLE];
+	my->flags[INVISIBLE_DITHER] = players[HUDADDITIONAL_PLAYERNUM]->hud.weapon->flags[INVISIBLE_DITHER];
+
+	auto& weaponLimb = players[HUDADDITIONAL_PLAYERNUM]->hud.weapon;
+	if ( (my->flags[INVISIBLE] && !my->flags[INVISIBLE_DITHER]) || weaponLimb->skill[6] != 0 ) // HUDWEAPON_HIDEWEAPON
+	{
+		hudFlail.needsInit = true;
+		return;
+	}
+
+	if ( hudFlail.needsInit )
+	{
+		HUDFlail_t::reset(hudFlail);
+		hudFlail.needsInit = false;
+	}
+
+	my->mistformGLRender = weaponLimb->mistformGLRender;
+	my->sprite = 1922;
+	//my->flags[OVERDRAW] = false;
+	my->x = weaponLimb->x;
+	my->y = weaponLimb->y;
+	my->z = weaponLimb->z;
+	my->focalx = 0;
+	my->focaly = 0;
+	my->focalz = 4;
+
+	/*static ConsoleVariable<float> cvar_bounce("/bounce", 1.f);
+	if ( keystatus[SDLK_F1] )
+	{
+		keystatus[SDLK_F1] = 0;
+		bounce = *cvar_bounce * ((local_rng.rand() % 2) ? 1 : -1);
+	}
+	static ConsoleCommand ccmd_bounce_start("/bounce_start", "", 
+		[](int argc, const char* argv[]) {
+			if ( argc >= 2 )
+			{
+				real_t var = atoi(argv[1]);
+				bounce = var / 100.0;
+			}
+		});*/
+	auto& bounce = hudFlail.bounce;
+	auto& prevYaw = hudFlail.prevYaw;
+
+	if ( players[HUDADDITIONAL_PLAYERNUM]->entity )
+	{
+		real_t newYaw = atan2(players[HUDADDITIONAL_PLAYERNUM]->entity->vel_y, players[HUDADDITIONAL_PLAYERNUM]->entity->vel_x);
+		newYaw = fmod(newYaw, 2 * PI);
+		prevYaw = fmod(prevYaw, 2 * PI);
+		int diff = static_cast<int>((newYaw - prevYaw) * 180.0 / PI) % 360;
+		if ( diff < 0 )
+		{
+			diff += 360;
+		}
+		if ( diff > 180 )
+		{
+			diff -= 360;
+		}
+		// move dir to bounce effect
+
+		real_t mult = 1.0;
+		{
+			int diff = static_cast<int>((newYaw - fmod(players[HUDADDITIONAL_PLAYERNUM]->entity->yaw, 2 * PI)) * 180.0 / PI) % 360;
+			if ( diff < 0 )
+			{
+				diff += 360;
+			}
+			if ( diff > 180 )
+			{
+				diff -= 360;
+			}
+			if ( abs(diff) > 90 ) // backwards
+			{
+				mult *= -1;
+			}
+		}
+
+		if ( diff > 0 )
+		{
+			bounce += 0.05f * mult;
+		}
+		else if ( diff < 0 )
+		{
+			bounce += -0.05f * mult;
+		}
+		prevYaw = newYaw;
+	}
+	
+	static ConsoleVariable<float> cvar_anim_flail_damp("/anim_flail_damp", 2.f);
+	static ConsoleVariable<float> cvar_anim_flail_mass("/anim_flail_mass", 5.f);
+	static ConsoleVariable<float> cvar_anim_flail_spring("/anim_flail_spring", 5.f);
+	static ConsoleVariable<float> cvar_anim_flail_mult("/anim_flail_mult", .1f);
+	// spring motion
+	{
+		real_t accel = (-*cvar_anim_flail_damp * bounce - *cvar_anim_flail_spring * hudFlail.roll) / *cvar_anim_flail_mass;
+		bounce += accel * *cvar_anim_flail_mult;
+		hudFlail.roll += bounce * *cvar_anim_flail_mult;
+	}
+
+	auto& spin = hudFlail.spin;
+	auto& spin2 = hudFlail.spin2;
+	auto& rollSpin = hudFlail.rollSpin;
+	auto& spinState = hudFlail.spinState;
+
+	if ( weaponLimb->skill[0] == 1 ) // HUDWEAPON_CHOP
+	{
+		spinState = 1;
+		spin += std::max(0.01, (1.0 - spin) / 20);
+		spin = std::min(1.0, spin);
+
+		real_t prevRollSpin = rollSpin;
+		rollSpin += spin / 3;
+
+		if ( weaponLimb->skill[0] == 1 )
+		{
+			if ( fmod(prevRollSpin, 2 * PI) > PI && fmod(rollSpin, 2 * PI) < PI ) // crossing the 0.0 angle boundary after first swing
+			{
+				players[HUDADDITIONAL_PLAYERNUM]->entity->attack(MONSTER_POSE_FLAIL_SWING, 0, nullptr);
+			}
+		}
+	}
+	else
+	{
+		if ( spinState == 1 )
+		{
+			rollSpin = 2 * PI - 0.01; // immediately jump to end of circle
+			if ( fmod(rollSpin, 2 * PI) >= PI )
+			{
+				spinState = 2;
+				static ConsoleVariable<float> cvar_anim_flail_atk_spin("/anim_flail_atk_spin", 2.5);
+				spin2 = 1.0;
+				spin = *cvar_anim_flail_atk_spin;
+
+				if ( weaponLimb->skill[0] == 2 )
+				{
+					bounce = 1.f;
+				}
+				else
+				{
+					bounce = -0.5f;
+				}
+			}
+			else
+			{
+				spin += std::max(0.01, (1.0 - spin) / 20);
+				spin = std::min(1.0, spin);
+				rollSpin += spin / 3;
+			}
+		}
+
+		if ( spinState != 1 )
+		{
+			spin -= std::max(0.01, (spin) / 20);
+			spin = std::max(0.0, spin);
+			if ( rollSpin > 2 * PI + 0.001 )
+			{
+				rollSpin = fmod(rollSpin, 2 * PI);
+			}
+			rollSpin += std::max(0.01, (2 * PI - rollSpin) / 10);
+			rollSpin = std::min(2 * PI, rollSpin);
+			if ( rollSpin >= 2 * PI )
+			{
+				spinState = 0;
+			}
+		}
+	}
+
+	spin2 -= std::max(0.01, (spin2) / 20);
+	spin2 = std::max(0.0, spin2);
+
+	hudFlail.pitch = -(4 * PI / 8) * spin;
+
+	float basePitch = 0.15;
+	my->pitch = hudFlail.pitch - (1.0 - spin) * (PI * basePitch);
+	my->roll = hudFlail.roll + rollSpin;
+	my->yaw = hudFlail.yaw + sin(spin2 * PI / 2);
+
+	// target focal x/y/z relative to weapon's position
+	real_t focalx = 1.5 + weaponLimb->focalx;
+	real_t focaly = 0.0 + weaponLimb->focaly;
+	real_t focalz = -0.9 + weaponLimb->focalz;
+
+	// magic code to translate focals into pure coords (doesn't include focaly)
+	real_t xoffset = focalz * sin(weaponLimb->pitch + PI) * cos(weaponLimb->roll) * cos(weaponLimb->yaw);
+	real_t yoffset = focalz * sin(weaponLimb->pitch + PI) * cos(weaponLimb->roll) * sin(weaponLimb->yaw);
+	xoffset += focalz * sin(weaponLimb->roll + PI) * cos(weaponLimb->yaw + PI / 2);
+	yoffset += focalz * sin(weaponLimb->roll + PI) * sin(weaponLimb->yaw + PI / 2);
+
+	xoffset += focalx * cos(weaponLimb->yaw) * sin(weaponLimb->pitch + PI / 2) + focaly * cos(weaponLimb->yaw + PI / 2);
+	yoffset += focalx * sin(weaponLimb->yaw) * sin(weaponLimb->pitch + PI / 2) + focaly * sin(weaponLimb->yaw + PI / 2);
+
+	real_t zoffset = focalz * cos(weaponLimb->pitch) * cos(weaponLimb->roll);
+	zoffset += focalx * sin(weaponLimb->pitch);
+	my->x += xoffset;
+	my->y += yoffset;
+	my->z += zoffset;
 }
 
 void actHudAdditional(Entity* my)
@@ -4094,6 +5441,24 @@ void actHudAdditional(Entity* my)
 	{
 		list_RemoveNode(my->mynode);
 		return;
+	}
+
+	my->mistformGLRender = 0.0;
+	if ( players[HUDSHIELD_PLAYERNUM]->entity->mistformGLRender > 0.05 )
+	{
+		real_t modulus = fmod(players[HUDSHIELD_PLAYERNUM]->entity->mistformGLRender, 1.0);
+		if ( modulus >= 0.05 && modulus < 0.15 ) // force shield
+		{
+			my->mistformGLRender = 0.5;
+		}
+		else if ( modulus >= 0.15 && modulus < 0.25 ) // reflector shield
+		{
+			my->mistformGLRender = 0.6;
+		}
+		else
+		{
+			my->mistformGLRender = players[HUDSHIELD_PLAYERNUM]->entity->mistformGLRender;
+		}
 	}
 
 	if ( !spellbook )
@@ -4161,7 +5526,7 @@ void actHudAdditional(Entity* my)
 		return;
 	}
 
-	if ( cast_animation[HUDSHIELD_PLAYERNUM].active )
+	if ( cast_animation[HUDSHIELD_PLAYERNUM].hideShieldFromBasicCast() )
 	{
 		my->flags[INVISIBLE] = true;
 		my->flags[INVISIBLE_DITHER] = false;
@@ -4299,6 +5664,38 @@ void actHudAdditional(Entity* my)
 	{
 		my->z -= -2 * .5;
 	}
+	else if ( stats[HUDSHIELD_PLAYERNUM]->type == GREMLIN )
+	{
+		my->z -= -1 * .5;
+	}
+	else if ( stats[HUDSHIELD_PLAYERNUM]->type == GNOME )
+	{
+		my->z -= -2 * .5;
+	}
+	else if ( stats[HUDSHIELD_PLAYERNUM]->type == DRYAD )
+	{
+		if ( players[HUDSHIELD_PLAYERNUM]->entity->z >= 1.5 )
+		{
+			my->z -= -3.0 * .5;
+		}
+		else
+		{
+			my->z -= -2.0 * .5;
+		}
+	}
+	else if ( stats[HUDSHIELD_PLAYERNUM]->type == MYCONID )
+	{
+		my->z -= -1.0 * .5;
+	}
+
+	if ( stats[HUDSHIELD_PLAYERNUM]->getEffectActive(EFF_MINIMISE) )
+	{
+		my->z += -Player::PlayerMovement_t::minimiseMaximiseCameraZ * (stats[HUDSHIELD_PLAYERNUM]->getEffectActive(EFF_MINIMISE) & 0xF) * .5;
+	}
+	if ( stats[HUDSHIELD_PLAYERNUM]->getEffectActive(EFF_MAXIMISE) )
+	{
+		my->z -= -Player::PlayerMovement_t::minimiseMaximiseCameraZ * (stats[HUDSHIELD_PLAYERNUM]->getEffectActive(EFF_MAXIMISE) & 0xF) * .5;
+	}
 }
 
 void actHudArrowModel(Entity* my)
@@ -4307,7 +5704,10 @@ void actHudArrowModel(Entity* my)
 	bool crossbow = false;
 	if ( stats[HUDSHIELD_PLAYERNUM]->weapon
 		&& (stats[HUDSHIELD_PLAYERNUM]->weapon->type == SHORTBOW
+			|| stats[HUDSHIELD_PLAYERNUM]->weapon->type == BONE_SHORTBOW
 			|| stats[HUDSHIELD_PLAYERNUM]->weapon->type == LONGBOW
+			|| stats[HUDSHIELD_PLAYERNUM]->weapon->type == BRANCH_BOW
+			|| stats[HUDSHIELD_PLAYERNUM]->weapon->type == BRANCH_BOW_INFECTED
 			|| stats[HUDSHIELD_PLAYERNUM]->weapon->type == ARTIFACT_BOW
 			|| stats[HUDSHIELD_PLAYERNUM]->weapon->type == COMPOUND_BOW )
 		)
@@ -4315,7 +5715,9 @@ void actHudArrowModel(Entity* my)
 		bow = true;
 	}
 	else if ( stats[HUDSHIELD_PLAYERNUM]->weapon
-		&& (stats[HUDSHIELD_PLAYERNUM]->weapon->type == CROSSBOW || stats[HUDSHIELD_PLAYERNUM]->weapon->type == HEAVY_CROSSBOW) )
+		&& (stats[HUDSHIELD_PLAYERNUM]->weapon->type == CROSSBOW 
+			|| stats[HUDSHIELD_PLAYERNUM]->weapon->type == HEAVY_CROSSBOW
+			|| stats[HUDSHIELD_PLAYERNUM]->weapon->type == BLACKIRON_CROSSBOW) )
 	{
 		crossbow = true;
 	}
@@ -4349,7 +5751,27 @@ void actHudArrowModel(Entity* my)
 		return;
 	}
 
-	if ( (!crossbow && !bow) || cast_animation[HUDSHIELD_PLAYERNUM].active || cast_animation[HUDSHIELD_PLAYERNUM].active_spellbook )
+	my->mistformGLRender = 0.0;
+	if ( players[HUDSHIELD_PLAYERNUM]->entity->mistformGLRender > 0.05 )
+	{
+		real_t modulus = fmod(players[HUDSHIELD_PLAYERNUM]->entity->mistformGLRender, 1.0);
+		if ( modulus >= 0.05 && modulus < 0.15 ) // force shield
+		{
+			my->mistformGLRender = 0.5;
+		}
+		else if ( modulus >= 0.15 && modulus < 0.25 ) // reflector shield
+		{
+			my->mistformGLRender = 0.6;
+		}
+		else
+		{
+			my->mistformGLRender = players[HUDSHIELD_PLAYERNUM]->entity->mistformGLRender;
+		}
+	}
+
+	if ( (!crossbow && !bow) 
+		|| cast_animation[HUDSHIELD_PLAYERNUM].hideShieldFromBasicCast() 
+		|| cast_animation[HUDSHIELD_PLAYERNUM].active_spellbook )
 	{
 		my->flags[INVISIBLE] = true;
 		return;
@@ -4378,6 +5800,14 @@ void actHudArrowModel(Entity* my)
 		if ( stats[HUDSHIELD_PLAYERNUM]->weapon->type == HEAVY_CROSSBOW )
 		{
 			if ( hudweapon->sprite == items[HEAVY_CROSSBOW].fpindex + 1 )
+			{
+				my->flags[INVISIBLE] = true;
+				return;
+			}
+		}
+		if ( stats[HUDSHIELD_PLAYERNUM]->weapon->type == BLACKIRON_CROSSBOW )
+		{
+			if ( hudweapon->sprite != items[BLACKIRON_CROSSBOW].fpindex )
 			{
 				my->flags[INVISIBLE] = true;
 				return;
@@ -4437,6 +5867,12 @@ void actHudArrowModel(Entity* my)
 			case QUIVER_HUNTING:
 				my->sprite = 941;
 				break;
+			case QUIVER_BONE:
+				my->sprite = 2302;
+				break;
+			case QUIVER_BLACKIRON:
+				my->sprite = 2303;
+				break;
 			default:
 				break;
 		}
@@ -4462,6 +5898,12 @@ void actHudArrowModel(Entity* my)
 	if ( crossbow )
 	{
 		if ( hudweapon->sprite == items[CROSSBOW].fpindex )
+		{
+			my->focalx += 3.5;
+			my->focaly += 0.25;
+			my->focalz += -0.25;
+		}
+		else if ( hudweapon->sprite == items[BLACKIRON_CROSSBOW].fpindex )
 		{
 			my->focalx += 3.5;
 			my->focaly += 0.25;

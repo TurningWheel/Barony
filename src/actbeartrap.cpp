@@ -133,7 +133,7 @@ void actBeartrap(Entity* my)
 				{
 					continue;
 				}
-				if ( stat->type == GYROBOT || entity->isUntargetableBat() )
+				if ( !entity->monsterIsTargetable() )
 				{
 					continue;
 				}
@@ -155,7 +155,25 @@ void actBeartrap(Entity* my)
 				if ( entityDist(my, entity) < 6.5 )
 				{
 					entity->setEffect(EFF_PARALYZED, true, 200, false);
-					entity->setEffect(EFF_BLEEDING, true, 300, false);
+					if ( entity->setEffect(EFF_BLEEDING, true, 300, false) )
+					{
+						if ( parent && parent->behavior == &actPlayer )
+						{
+							if ( stats[parent->skill[2]]->helmet && stats[parent->skill[2]]->helmet->type == PUNISHER_HOOD )
+							{
+								int mpAmount = parent->modMP(1 + local_rng.rand() % 2);
+								parent->playerInsectoidIncrementHungerToMP(mpAmount);
+								Uint32 color = makeColorRGB(0, 255, 0);
+								parent->setEffect(EFF_MP_REGEN, true, std::max(stats[parent->skill[2]]->EFFECTS_TIMERS[EFF_MP_REGEN], 10 * TICKS_PER_SECOND), false);
+								if ( parent->behavior == &actPlayer )
+								{
+									messagePlayerColor(parent->skill[2], MESSAGE_HINT, color, Language::get(3753));
+									steamStatisticUpdateClient(parent->skill[2], STEAM_STAT_ITS_A_LIVING, STEAM_STAT_INT, 1);
+								}
+								playSoundEntity(parent, 168, 128);
+							}
+						}
+					}
 					int damage = 10 + 3 * (BEARTRAP_STATUS + BEARTRAP_BEATITUDE);
 					if ( parent )
 					{
@@ -236,7 +254,8 @@ void actBeartrap(Entity* my)
 								{
 									messagePlayer(player, MESSAGE_HINT, Language::get(2522));
 								}
-								if ( local_rng.rand() % 10 == 0 )
+								if ( local_rng.rand() % 10 == 0 && !stat->getEffectActive(EFF_STASIS)
+									&& !monsterIsImmobileTurret(entity, stat) )
 								{
 									parent->increaseSkill(PRO_LOCKPICKING);
 								}
@@ -383,7 +402,7 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 	bool wasAsleep = false;
 	if ( stat )
 	{
-		wasAsleep = stat->EFFECTS[EFF_ASLEEP];
+		wasAsleep = stat->getEffectActive(EFF_ASLEEP);
 	}
 	if ( damage > 0 )
 	{
@@ -646,23 +665,42 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 			}
 			if ( triggered->behavior == &actMonster )
 			{
-				if ( oldHP > 0 && stat->HP == 0 ) // got a kill
+				bool doSkillIncrease = true;
+				Stat* triggeredStats = triggered->getStats();
+				if ( monsterIsImmobileTurret(triggered, triggeredStats) )
 				{
-					if ( local_rng.rand() % 5 == 0 )
+					doSkillIncrease = false;
+				}
+				else if ( triggered->monsterAllyGetPlayerLeader() 
+					|| (triggeredStats && achievementObserver.checkUidIsFromPlayer(triggeredStats->leader_uid) >= 0) )
+				{
+					doSkillIncrease = false;
+				}
+				else if ( triggeredStats && triggeredStats->getEffectActive(EFF_STASIS) )
+				{
+					doSkillIncrease = false;
+				}
+
+				if ( doSkillIncrease )
+				{
+					if ( oldHP > 0 && stat->HP == 0 ) // got a kill
+					{
+						if ( local_rng.rand() % 5 == 0 )
+						{
+							parent->increaseSkill(PRO_LOCKPICKING);
+						}
+					}
+					else if ( oldHP > stat->HP )
+					{
+						if ( local_rng.rand() % 20 == 0 ) // wounded
+						{
+							parent->increaseSkill(PRO_LOCKPICKING);
+						}
+					}
+					else if( local_rng.rand() % 20 == 0) // any other effect
 					{
 						parent->increaseSkill(PRO_LOCKPICKING);
 					}
-				}
-				else if ( oldHP > stat->HP )
-				{
-					if ( local_rng.rand() % 20 == 0 ) // wounded
-					{
-						parent->increaseSkill(PRO_LOCKPICKING);
-					}
-				}
-				else if( local_rng.rand() % 20 == 0) // any other effect
-				{
-					parent->increaseSkill(PRO_LOCKPICKING);
 				}
 
 				if ( !achievementObserver.playerAchievements[player].bombTrack )
@@ -884,7 +922,7 @@ void actBomb(Entity* my)
 		}
 		else if ( onEntity )
 		{
-			if ( onEntity->behavior == &actDoor )
+			if ( onEntity->behavior == &actDoor || onEntity->behavior == &actIronDoor )
 			{
 				if ( onEntity->doorHealth < BOMB_ENTITY_ATTACHED_START_HP || onEntity->flags[PASSABLE] || cursedExplode
 					|| BOMB_HIT_BY_PROJECTILE == 1 )
@@ -1005,7 +1043,7 @@ void actBomb(Entity* my)
 				{
 					continue;
 				}
-				if ( stat->type == GYROBOT || entity->isUntargetableBat() )
+				if ( !entity->monsterIsTargetable() )
 				{
 					continue;
 				}
@@ -1170,6 +1208,63 @@ void actBomb(Entity* my)
 	}
 }
 
+bool Entity::entityCheckIfTriggeredWallButton()
+{
+	if ( multiplayer == CLIENT )
+	{
+		return false;
+	}
+	if ( this->behavior != &actThrown && this->behavior != &actArrow )
+	{
+		return false;
+	}
+
+	bool foundButton = false;
+
+	real_t height_limit_low = (behavior == &actThrown) ? 5.0 : 4.0;
+	real_t height_limit_high = -8.0;
+
+	// check for wall buttons
+	if ( z < height_limit_low && z > height_limit_high )
+	{
+		std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(this, 1);
+		for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
+		{
+			list_t* currentList = *it;
+			node_t* node;
+			for ( node = currentList->first; node != nullptr; node = node->next )
+			{
+				if ( Entity* entity = ((Entity*)node->element) )
+				{
+					if ( entity->behavior == &::actWallButton )
+					{
+						Sint32 tmpsizex = sizex;
+						Sint32 tmpsizey = sizey;
+						sizex = std::max(sizex, 2);
+						sizey = std::max(sizey, 2);
+						if ( entityInsideEntity(this, entity) )
+						{
+							entity->wallLockPlayerInteracting = MAXPLAYERS + 1;
+							foundButton = true;
+							if ( Entity* parent = uidToEntity(this->parent) )
+							{
+								if ( parent->behavior == &actPlayer )
+								{
+									entity->wallLockPlayerInteracting = 1 + parent->skill[2];
+								}
+							}
+						}
+						sizex = tmpsizex;
+						sizey = tmpsizey;
+					}
+				}
+			}
+		}
+	}
+
+	return foundButton;
+}
+
 bool Entity::entityCheckIfTriggeredBomb(bool triggerBomb)
 {
 	if ( multiplayer == CLIENT )
@@ -1313,8 +1408,8 @@ void actDecoyBox(Entity* my)
 							{
 								// ignore pathing to this noisemaker as we're already distracted by it.
 								if ( entityDist(entity, my) < TOUCHRANGE 
-									&& !myStats->EFFECTS[EFF_DISORIENTED]
-									&& !myStats->EFFECTS[EFF_DISTRACTED_COOLDOWN] )
+									&& !myStats->getEffectActive(EFF_DISORIENTED)
+									&& !myStats->getEffectActive(EFF_DISTRACTED_COOLDOWN) )
 								{
 									// if we pathed within range
 									detected = false; // skip the message.
@@ -1347,7 +1442,7 @@ void actDecoyBox(Entity* my)
 							{
 								break;
 							}
-							if ( !myStats->EFFECTS[EFF_DISTRACTED_COOLDOWN] 
+							if ( !myStats->getEffectActive(EFF_DISTRACTED_COOLDOWN) 
 								&& entity->monsterSetPathToLocation(my->x / 16, my->y / 16, 2,
 									GeneratePathTypes::GENERATE_PATH_DEFAULT) && entity->children.first )
 							{
@@ -1360,8 +1455,8 @@ void actDecoyBox(Entity* my)
 								++lured;
 
 								if ( entityDist(entity, my) < TOUCHRANGE 
-									&& !myStats->EFFECTS[EFF_DISORIENTED]
-									&& !myStats->EFFECTS[EFF_DISTRACTED_COOLDOWN] )
+									&& !myStats->getEffectActive(EFF_DISORIENTED)
+									&& !myStats->getEffectActive(EFF_DISTRACTED_COOLDOWN) )
 								{
 									detected = false; // skip the message.
 
@@ -1396,9 +1491,11 @@ void actDecoyBox(Entity* my)
 										Entity* gyrobot = uidToEntity(*c);
 										if ( gyrobot && gyrobot->getRace() == GYROBOT )
 										{
-											if ( entity->entityShowOnMap < 250 )
+											if ( entity->getEntityShowOnMapDuration() == 0
+												|| (entity->getEntityShowOnMapSource() == Entity::SHOW_MAP_GYRO
+													&& entity->getEntityShowOnMapDuration() < TICKS_PER_SECOND * 5) )
 											{
-												entity->entityShowOnMap = TICKS_PER_SECOND * 5;
+												entity->setEntityShowOnMap(Entity::SHOW_MAP_GYRO, TICKS_PER_SECOND * 5);
 												if ( parent->skill[2] != 0 )
 												{
 													serverUpdateEntitySkill(entity, 59);

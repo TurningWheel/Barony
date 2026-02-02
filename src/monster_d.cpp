@@ -1,0 +1,2485 @@
+/*-------------------------------------------------------------------------------
+
+	BARONY
+	File: monster_goatman.cpp
+	Desc: implements all of the goatman monster's code
+
+	Copyright 2013-2016 (c) Turning Wheel LLC, all rights reserved.
+	See LICENSE for details.
+
+-------------------------------------------------------------------------------*/
+
+#include "main.hpp"
+#include "game.hpp"
+#include "stat.hpp"
+#include "entity.hpp"
+#include "items.hpp"
+#include "monster.hpp"
+#include "engine/audio/sound.hpp"
+#include "net.hpp"
+#include "collision.hpp"
+#include "player.hpp"
+#include "prng.hpp"
+#include "scores.hpp"
+#include "mod_tools.hpp"
+
+real_t getNormalHeightMonsterD(Entity& my)
+{
+	if ( my.sprite == 1514 || my.sprite == 1515 )
+	{
+		return 2.5;
+	}
+	return -0.0;
+}
+
+void initMonsterD(Entity* my, Stat* myStats)
+{
+	if ( !my )
+	{
+		return;
+	}
+	node_t* node;
+	bool spawnedBoss = false;
+
+	my->flags[BURNABLE] = true;
+	//my->initMonster(1485);
+	my->initMonster(1514);
+	my->z = getNormalHeightMonsterD(*my);
+
+	if ( multiplayer != CLIENT )
+	{
+		MONSTER_SPOTSND = 725;
+		MONSTER_SPOTVAR = 2;
+		MONSTER_IDLESND = 720;
+		MONSTER_IDLEVAR = 3;
+	}
+
+	if ( multiplayer != CLIENT && !MONSTER_INIT )
+	{
+		auto& rng = my->entity_rng ? *my->entity_rng : local_rng;
+
+		if ( myStats != nullptr )
+		{
+		    if (myStats->sex == FEMALE)
+		    {
+		        my->sprite = 1486;
+		    }
+			if ( !myStats->leader_uid )
+			{
+				myStats->leader_uid = 0;
+			}
+
+			// apply random stat increases if set in stat_shared.cpp or editor
+			setRandomMonsterStats(myStats, rng);
+
+			// generate 6 items max, less if there are any forced items from boss variants
+			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
+
+
+			// boss variants
+			//const bool boss =
+			//    rng.rand() % 50 == 0 &&
+			//    !my->flags[USERFLAG2] &&
+			//    !myStats->MISC_FLAGS[STAT_FLAG_DISABLE_MINIBOSS];
+			//if ( (boss || (*cvar_summonBosses && conductGameChallenges[CONDUCT_CHEATS_ENABLED])) && myStats->leader_uid == 0 )
+			//{
+			//	myStats->setAttribute("special_npc", "gharbad");
+			//	strcpy(myStats->name, MonsterData_t::getSpecialNPCName(*myStats).c_str());
+			//	my->sprite = MonsterData_t::getSpecialNPCBaseModel(*myStats);
+			//	myStats->sex = MALE;
+			//	myStats->STR += 10;
+			//	myStats->DEX += 2;
+			//	myStats->MAXHP += 75;
+			//	myStats->HP = myStats->MAXHP;
+			//	myStats->OLDHP = myStats->MAXHP;
+			//	myStats->CHR = -1;
+			//	spawnedBoss = true;
+			//	//TODO: Boss stats
+
+			//	//Spawn in potions.
+			//	int end = rng.rand()%NUM_GOATMAN_BOSS_GHARBAD_POTIONS + 5;
+			//	for ( int i = 0; i < end; ++i )
+			//	{
+			//		switch ( rng.rand()%10 )
+			//		{
+			//			case 0:
+			//			case 1:
+			//			case 2:
+			//			case 3:
+			//			case 4:
+			//			case 5:
+			//			case 6:
+			//			case 7:
+			//			case 8:
+			//				newItem(POTION_BOOZE, EXCELLENT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
+			//				break;
+			//			case 9:
+			//				newItem(POTION_HEALING, EXCELLENT, 0, 1, rng.rand(), false, &myStats->inventory);
+			//				break;
+			//			default:
+			//				printlog("Tried to spawn goatman boss \"Gharbad\" invalid potion.");
+			//				break;
+			//		}
+			//	}
+
+			//	newItem(CRYSTAL_SHURIKEN, EXCELLENT, 1 + rng.rand()%1, rng.rand()%NUM_GOATMAN_BOSS_GHARBAD_THROWN_WEAPONS + 2, rng.rand(), true, &myStats->inventory);
+			//}
+
+			// random effects
+			/*if ( rng.rand() % 8 == 0 )
+			{
+				my->setEffect(EFF_ASLEEP, true, 1800 + rng.rand() % 1800, false);
+			}*/
+
+			// generates equipment and weapons if available from editor
+			createMonsterEquipment(myStats, rng);
+
+			// create any custom inventory items from editor if available
+			createCustomInventory(myStats, customItemsToGenerate, rng);
+
+			// count if any custom inventory items from editor
+			int customItems = countCustomItems(myStats); //max limit of 6 custom items per entity.
+
+			// count any inventory items set to default in edtior
+			int defaultItems = countDefaultItems(myStats);
+
+			my->setHardcoreStats(*myStats);
+
+			if ( rng.rand() % 2 == 0 )
+			{
+				myStats->setAttribute("monster_d_type", "watcher");
+			}
+			else
+			{
+				myStats->setAttribute("monster_d_type", "nymph");
+			}
+
+			//bool isShaman = false;
+			//if ( rng.rand() % 2 && !spawnedBoss && !minion )
+			//{
+			//	isShaman = true;
+			//	if ( myStats->leader_uid == 0 && !my->flags[USERFLAG2] && rng.rand() % 2 == 0 )
+			//	{
+			//		Entity* entity = summonMonster(GOATMAN, my->x, my->y);
+			//		if ( entity )
+			//		{
+			//			entity->parent = my->getUID();
+			//			if ( Stat* followerStats = entity->getStats() )
+			//			{
+			//				followerStats->leader_uid = entity->parent;
+			//			}
+			//			entity->seedEntityRNG(rng.getU32());
+			//		}
+			//		if ( rng.rand() % 5 == 0 )
+			//		{
+			//			// summon second ally randomly.
+			//			entity = summonMonster(GOATMAN, my->x, my->y);
+			//			if ( entity )
+			//			{
+			//				entity->parent = my->getUID();
+			//				if ( Stat* followerStats = entity->getStats() )
+			//				{
+			//					followerStats->leader_uid = entity->parent;
+			//				}
+			//				entity->seedEntityRNG(rng.getU32());
+			//			}
+			//		}
+			//	}
+			//}
+			//else
+			//{
+			//	myStats->DEX += 1; // more speed for brawlers.
+			//}
+			
+			// generate the default inventory items for the monster, provided the editor sprite allowed enough default slots
+			//switch ( defaultItems )
+			//{
+			//	case 6:
+			//	case 5:
+			//	case 4:
+			//	case 3:
+			//	case 2:
+			//	case 1:
+			//		if ( isShaman && rng.rand() % 10 == 0 )
+			//		{
+			//			switch ( rng.rand() % 4 )
+			//			{
+			//				case 0:
+			//					newItem(SPELLBOOK_SLOW, static_cast<Status>(rng.rand() % 3 + DECREPIT), -1 + rng.rand() % 3, 1, rng.rand(), false, &myStats->inventory);
+			//					break;
+			//				case 1:
+			//					newItem(SPELLBOOK_FIREBALL, static_cast<Status>(rng.rand() % 3 + DECREPIT), -1 + rng.rand() % 3, 1, rng.rand(), false, &myStats->inventory);
+			//					break;
+			//				case 2:
+			//					newItem(SPELLBOOK_COLD, static_cast<Status>(rng.rand() % 3 + DECREPIT), -1 + rng.rand() % 3, 1, rng.rand(), false, &myStats->inventory);
+			//					break;
+			//				case 3:
+			//					newItem(SPELLBOOK_FORCEBOLT, static_cast<Status>(rng.rand() % 3 + DECREPIT), -1 + rng.rand() % 3, 1, rng.rand(), false, &myStats->inventory);
+			//					break;
+			//			}
+			//		}
+			//		break;
+			//	default:
+			//		break;
+			//}
+
+
+			////Give weapons.
+			//if ( !spawnedBoss )
+			//{
+			//	if ( !isShaman && rng.rand() % 3 > 0 )
+			//	{
+			//		newItem(STEEL_CHAKRAM, SERVICABLE, 0, rng.rand()%NUM_GOATMAN_THROWN_WEAPONS + 1, rng.rand(), false, &myStats->inventory);
+			//	}
+			//	int numpotions = rng.rand() % NUM_GOATMAN_POTIONS + 2;
+			//	if ( rng.rand() % 3 == 0 )
+			//	{
+			//		int numhealpotion = rng.rand() % 2 + 1;
+			//		newItem(POTION_HEALING, static_cast<Status>(rng.rand() % 3 + DECREPIT), 0, numhealpotion, rng.rand(), false, &myStats->inventory);
+			//		numpotions -= numhealpotion;
+			//	}
+			//	if ( rng.rand() % 4 > 0 )
+			//	{
+			//		// undroppable
+			//		newItem(POTION_BOOZE, static_cast<Status>(rng.rand() % 3 + DECREPIT), 0, numpotions, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
+			//	}
+			//}
+
+			//if ( isShaman )
+			//{
+			//	//give shield
+			//	if ( myStats->shield == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
+			//	{
+			//		// give shield
+			//		switch ( rng.rand() % 20 )
+			//		{
+			//			case 0:
+			//			case 1:
+			//			case 2:
+			//			case 3:
+			//			case 4:
+			//			case 5:
+			//			case 6:
+			//			case 7:
+			//				myStats->shield = newItem(TOOL_CRYSTALSHARD, static_cast<Status>(rng.rand() % 3 + WORN), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+			//				break;
+			//			case 8:
+			//				myStats->shield = newItem(MIRROR_SHIELD, static_cast<Status>(rng.rand() % 4 + DECREPIT), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+			//				break;
+			//			default:
+			//				myStats->shield = newItem(TOOL_LANTERN, static_cast<Status>(rng.rand() % 3 + WORN), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+			//				break;
+			//		}
+			//	}
+			//	// give cloak
+			//	if ( myStats->cloak == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] == 1 )
+			//	{
+			//		switch ( rng.rand() % 10 )
+			//		{
+			//			case 0:
+			//			case 1:
+			//				break;
+			//			default:
+			//				myStats->cloak = newItem(CLOAK, WORN, -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+			//				break;
+			//		}
+			//	}
+			//	// give helmet
+			//	if ( myStats->helmet == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_HELM] == 1 )
+			//	{
+			//		switch ( rng.rand() % 10 )
+			//		{
+			//			case 0:
+			//			case 1:
+			//				myStats->helmet = newItem(HAT_HOOD, WORN, -1 + rng.rand() % 3, 1, 0, false, nullptr);
+			//				break;
+			//			default:
+			//				myStats->helmet = newItem(HAT_WIZARD, static_cast<Status>(rng.rand() % 3 + WORN), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+			//				break;
+			//		}
+			//	}
+			//	// give armor
+			//	if ( myStats->breastplate == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_ARMOR] == 1 )
+			//	{
+			//		switch ( rng.rand() % 10 )
+			//		{
+			//			case 0:
+			//			case 1:
+			//				myStats->breastplate = newItem(WIZARD_DOUBLET, static_cast<Status>(rng.rand() % 3 + WORN), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+			//				break;
+			//			case 2:
+			//				myStats->breastplate = newItem(LEATHER_BREASTPIECE, static_cast<Status>(rng.rand() % 3 + DECREPIT), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+			//				break;
+			//			default:
+			//				break;
+			//		}
+			//	}
+			//	// give booties
+			//	if ( myStats->shoes == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_BOOTS] == 1 )
+			//	{
+			//		switch ( rng.rand() % 20 )
+			//		{
+			//			case 0:
+			//			case 1:
+			//			case 2:
+			//			case 3:
+			//				myStats->shoes = newItem(IRON_BOOTS, static_cast<Status>(rng.rand() % 3 + DECREPIT), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+			//				break;
+			//			case 19:
+			//				myStats->shoes = newItem(CRYSTAL_BOOTS, static_cast<Status>(rng.rand() % 4 + DECREPIT), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+			//				break;
+			//			default:
+			//				myStats->shoes = newItem(STEEL_BOOTS, static_cast<Status>(rng.rand() % 3 + WORN), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+			//				break;
+			//		}
+			//	}
+			// give weapon
+			if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
+			{
+				if ( myStats->getAttribute("monster_d_type") == "nymph" )
+				{
+					switch ( rng.rand() % 10 )
+					{
+					case 0:
+					case 1:
+					case 2:
+					case 3:
+					case 4:
+						myStats->weapon = newItem(BRANCH_BOW, static_cast<Status>(rng.rand() % 2 + SERVICABLE), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+						break;
+					case 5:
+					case 6:
+					case 7:
+					case 8:
+					case 9:
+						myStats->weapon = newItem(BRANCH_BOW_INFECTED, static_cast<Status>(rng.rand() % 2 + SERVICABLE), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+						break;
+					default:
+						break;
+					}
+				}
+				else if ( myStats->getAttribute("monster_d_type") == "watcher" )
+				{
+					myStats->weapon = newItem(BRANCH_STAFF, static_cast<Status>(rng.rand() % 2 + SERVICABLE), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+				}
+			}
+
+			//give shield
+			if ( myStats->shield == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
+			{
+				if ( myStats->weapon && isRangedWeapon(*myStats->weapon) )
+				{
+					my->monsterGenerateQuiverItem(myStats);
+				}
+				else
+				{
+					/*switch ( rng.rand() % 10 )
+					{
+					case 0:
+					case 1:
+					case 2:
+					case 3:
+					case 4:
+					case 5:
+						break;
+					case 6:
+					case 7:
+						myStats->shield = newItem(WOODEN_SHIELD, DECREPIT, -1 + rng.rand() % 2, 1, rng.rand(), false, nullptr);
+						break;
+					case 8:
+						myStats->shield = newItem(BRONZE_SHIELD, DECREPIT, -1 + rng.rand() % 2, 1, rng.rand(), false, nullptr);
+						break;
+					case 9:
+						myStats->shield = newItem(IRON_SHIELD, DECREPIT, -1 + rng.rand() % 2, 1, rng.rand(), false, nullptr);
+						break;
+					}*/
+				}
+			}
+			//	}
+			//}
+			//else
+			//{
+			//	////give shield
+			//	//if ( myStats->shield == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
+			//	//{
+			//	//	switch ( rng.rand() % 20 )
+			//	//	{
+			//	//	case 0:
+			//	//	case 1:
+			//	//	case 2:
+			//	//	case 3:
+			//	//	case 4:
+			//	//	case 5:
+			//	//	case 6:
+			//	//	case 7:
+			//	//		myStats->shield = newItem(TOOL_CRYSTALSHARD, static_cast<Status>(rng.rand() % 3 + WORN), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+			//	//		break;
+			//	//	case 8:
+			//	//		myStats->shield = newItem(MIRROR_SHIELD, static_cast<Status>(rng.rand() % 4 + DECREPIT), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+			//	//		break;
+			//	//	default:
+			//	//		myStats->shield = newItem(TOOL_LANTERN, static_cast<Status>(rng.rand() % 3 + WORN), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+			//	//		break;
+			//	//	}
+			//	//}
+			//	// give cloak
+			//	/*if ( myStats->cloak == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] == 1 )
+			//	{
+			//		switch ( rng.rand() % 10 )
+			//		{
+			//		case 0:
+			//		case 1:
+			//			break;
+			//		default:
+			//			myStats->cloak = newItem(CLOAK, WORN, -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+			//			break;
+			//		}
+			//	}*/
+			//	//// give helmet
+			//	//if ( myStats->helmet == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_HELM] == 1 )
+			//	//{
+			//	//	switch ( rng.rand() % 10 )
+			//	//	{
+			//	//	case 0:
+			//	//	case 1:
+			//	//		myStats->helmet = newItem(HAT_HOOD, WORN, -1 + rng.rand() % 3, 1, 0, false, nullptr);
+			//	//		break;
+			//	//	default:
+			//	//		myStats->helmet = newItem(HAT_WIZARD, static_cast<Status>(rng.rand() % 3 + WORN), -1 + rng.rand() % 3, 1, 0, false, nullptr);
+			//	//		break;
+			//	//	}
+			//	//}
+			//	// give armor
+			//	if ( myStats->breastplate == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_ARMOR] == 1 )
+			//	{
+			//		switch ( rng.rand() % 20 )
+			//		{
+			//		case 0:
+			//		case 1:
+			//		case 2:
+			//			myStats->breastplate = newItem(STEEL_BREASTPIECE, static_cast<Status>(rng.rand() % 4 + DECREPIT), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+			//			break;
+			//		case 3:
+			//		case 4:
+			//			myStats->breastplate = newItem(LEATHER_BREASTPIECE, static_cast<Status>(rng.rand() % 3 + WORN), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+			//			break;
+			//		case 5:
+			//		case 6:
+			//			myStats->breastplate = newItem(IRON_BREASTPIECE, static_cast<Status>(rng.rand() % 3 + WORN), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+			//			break;
+			//		case 19:
+			//			myStats->breastplate = newItem(CRYSTAL_BREASTPIECE, static_cast<Status>(rng.rand() % 3 + WORN), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+			//			break;
+			//		default:
+			//			break;
+			//		}
+			//	}
+			//	// give booties
+			//	if ( myStats->shoes == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_BOOTS] == 1 )
+			//	{
+			//		switch ( rng.rand() % 20 )
+			//		{
+			//		case 0:
+			//		case 1:
+			//		case 2:
+			//		case 3:
+			//			myStats->shoes = newItem(IRON_BOOTS, static_cast<Status>(rng.rand() % 3 + DECREPIT), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+			//			break;
+			//		case 19:
+			//			myStats->shoes = newItem(CRYSTAL_BOOTS, static_cast<Status>(rng.rand() % 4 + DECREPIT), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+			//			break;
+			//		default:
+			//			myStats->shoes = newItem(STEEL_BOOTS, static_cast<Status>(rng.rand() % 3 + WORN), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+			//			break;
+			//		}
+			//	}
+			//	// give weapon
+			//	if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
+			//	{
+			//		switch ( rng.rand() % 20 )
+			//		{
+			//		case 0:
+			//		case 1:
+			//		case 2:
+			//		case 3:
+			//		case 4:
+			//		case 5:
+			//		case 6:
+			//		case 7:
+			//			myStats->weapon = newItem(STEEL_AXE, static_cast<Status>(rng.rand() % 3 + WORN), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+			//			break;
+			//		case 18:
+			//			myStats->weapon = newItem(CRYSTAL_BATTLEAXE, static_cast<Status>(rng.rand() % 3 + WORN), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+			//			break;
+			//		case 19:
+			//			myStats->weapon = newItem(CRYSTAL_MACE, static_cast<Status>(rng.rand() % 3 + WORN), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+			//			break;
+			//		default:
+			//			myStats->weapon = newItem(STEEL_MACE, static_cast<Status>(rng.rand() % 3 + WORN), -1 + rng.rand() % 3, 1, rng.rand(), false, nullptr);
+			//			break;
+			//		}
+			//	}
+			//}
+		}
+	}
+
+	// torso
+	const int torso_sprite = my->sprite == 1514 ? 1513 : 
+		(my->sprite == 1515 ? 1516 :
+			(my->sprite == 1485 ? 1511 : 1512));
+	Entity* entity = newEntity(torso_sprite, 1, map.entities, nullptr); //Limb entity.
+	entity->sizex = 4;
+	entity->sizey = 4;
+	entity->skill[2] = my->getUID();
+	entity->scalex = 1.01;
+	entity->scaley = 1.01;
+	entity->scalez = 1.01;
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->focalx = limbs[DRYAD][1][0]; // 0
+	entity->focaly = limbs[DRYAD][1][1]; // 0
+	entity->focalz = limbs[DRYAD][1][2]; // 0
+	entity->behavior = &actMonsterDLimb;
+	entity->parent = my->getUID();
+	node = list_AddNodeLast(&my->children);
+	node->element = entity;
+	node->deconstructor = &emptyDeconstructor;
+	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
+
+	// right leg
+	entity = newEntity(my->sprite == 1514 ? 1510 :
+		(my->sprite == 1515 ? 1518 :
+			(my->sprite == 1485 ? 1508 : 1509)), 1, map.entities, nullptr); //Limb entity.
+	entity->sizex = 4;
+	entity->sizey = 4;
+	entity->skill[2] = my->getUID();
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->focalx = limbs[DRYAD][2][0]; // 0
+	entity->focaly = limbs[DRYAD][2][1]; // 0
+	entity->focalz = limbs[DRYAD][2][2]; // 2
+	entity->behavior = &actMonsterDLimb;
+	entity->parent = my->getUID();
+	node = list_AddNodeLast(&my->children);
+	node->element = entity;
+	node->deconstructor = &emptyDeconstructor;
+	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
+
+	// left leg
+	entity = newEntity(my->sprite == 1514 ? 1507 :
+		(my->sprite == 1515 ? 1517 :
+			(my->sprite == 1485 ? 1505 : 1506)), 1, map.entities, nullptr); //Limb entity.
+	entity->sizex = 4;
+	entity->sizey = 4;
+	entity->skill[2] = my->getUID();
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->focalx = limbs[DRYAD][3][0]; // 0
+	entity->focaly = limbs[DRYAD][3][1]; // 0
+	entity->focalz = limbs[DRYAD][3][2]; // 2
+	entity->behavior = &actMonsterDLimb;
+	entity->parent = my->getUID();
+	node = list_AddNodeLast(&my->children);
+	node->element = entity;
+	node->deconstructor = &emptyDeconstructor;
+	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
+
+	// right arm
+	entity = newEntity((my->sprite == 1485 || my->sprite == 1514) ? 1491 : 1493, 1, map.entities, nullptr); //Limb entity.
+	entity->sizex = 4;
+	entity->sizey = 4;
+	entity->skill[2] = my->getUID();
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->focalx = limbs[DRYAD][4][0]; // 0
+	entity->focaly = limbs[DRYAD][4][1]; // 0
+	entity->focalz = limbs[DRYAD][4][2]; // 1.5
+	entity->behavior = &actMonsterDLimb;
+	entity->parent = my->getUID();
+	node = list_AddNodeLast(&my->children);
+	node->element = entity;
+	node->deconstructor = &emptyDeconstructor;
+	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
+
+	// left arm
+	entity = newEntity((my->sprite == 1485 || my->sprite == 1514) ? 1487 : 1489, 1, map.entities, nullptr); //Limb entity.
+	entity->sizex = 4;
+	entity->sizey = 4;
+	entity->skill[2] = my->getUID();
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->focalx = limbs[DRYAD][5][0]; // 0
+	entity->focaly = limbs[DRYAD][5][1]; // 0
+	entity->focalz = limbs[DRYAD][5][2]; // 1.5
+	entity->behavior = &actMonsterDLimb;
+	entity->parent = my->getUID();
+	node = list_AddNodeLast(&my->children);
+	node->element = entity;
+	node->deconstructor = &emptyDeconstructor;
+	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
+
+	// world weapon
+	entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
+	entity->sizex = 4;
+	entity->sizey = 4;
+	entity->skill[2] = my->getUID();
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
+	entity->focalx = limbs[DRYAD][6][0]; // 1.5
+	entity->focaly = limbs[DRYAD][6][1]; // 0
+	entity->focalz = limbs[DRYAD][6][2]; // -.5
+	entity->behavior = &actMonsterDLimb;
+	entity->parent = my->getUID();
+	entity->pitch = .25;
+	node = list_AddNodeLast(&my->children);
+	node->element = entity;
+	node->deconstructor = &emptyDeconstructor;
+	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
+
+	// shield
+	entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
+	entity->sizex = 4;
+	entity->sizey = 4;
+	entity->skill[2] = my->getUID();
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
+	entity->focalx = limbs[DRYAD][7][0]; // 2
+	entity->focaly = limbs[DRYAD][7][1]; // 0
+	entity->focalz = limbs[DRYAD][7][2]; // 0
+	entity->behavior = &actMonsterDLimb;
+	entity->parent = my->getUID();
+	node = list_AddNodeLast(&my->children);
+	node->element = entity;
+	node->deconstructor = &emptyDeconstructor;
+	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
+
+	// cloak
+	entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
+	entity->sizex = 4;
+	entity->sizey = 4;
+	entity->skill[2] = my->getUID();
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
+	entity->focalx = limbs[DRYAD][8][0]; // 0
+	entity->focaly = limbs[DRYAD][8][1]; // 0
+	entity->focalz = limbs[DRYAD][8][2]; // 4
+	entity->behavior = &actMonsterDLimb;
+	entity->parent = my->getUID();
+	node = list_AddNodeLast(&my->children);
+	node->element = entity;
+	node->deconstructor = &emptyDeconstructor;
+	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
+
+	// helmet
+	entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
+	entity->sizex = 4;
+	entity->sizey = 4;
+	entity->skill[2] = my->getUID();
+	entity->scalex = 1.01;
+	entity->scaley = 1.01;
+	entity->scalez = 1.01;
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
+	entity->focalx = limbs[DRYAD][9][0]; // 0
+	entity->focaly = limbs[DRYAD][9][1]; // 0
+	entity->focalz = limbs[DRYAD][9][2]; // -2
+	entity->behavior = &actMonsterDLimb;
+	entity->parent = my->getUID();
+	node = list_AddNodeLast(&my->children);
+	node->element = entity;
+	node->deconstructor = &emptyDeconstructor;
+	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
+
+	// mask
+	entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
+	entity->sizex = 4;
+	entity->sizey = 4;
+	entity->skill[2] = my->getUID();
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->noColorChangeAllyLimb = 1.0;
+	entity->focalx = limbs[DRYAD][10][0]; // 0
+	entity->focaly = limbs[DRYAD][10][1]; // 0
+	entity->focalz = limbs[DRYAD][10][2]; // .25
+	entity->behavior = &actMonsterDLimb;
+	entity->parent = my->getUID();
+	node = list_AddNodeLast(&my->children);
+	node->element = entity;
+	node->deconstructor = &emptyDeconstructor;
+	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
+
+	// head left
+	entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
+	entity->sizex = 4;
+	entity->sizey = 4;
+	entity->skill[2] = my->getUID();
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->focalx = limbs[DRYAD][11][0];
+	entity->focaly = limbs[DRYAD][11][1];
+	entity->focalz = limbs[DRYAD][11][2];
+	entity->behavior = &actMonsterDLimb;
+	entity->parent = my->getUID();
+	node = list_AddNodeLast(&my->children);
+	node->element = entity;
+	node->deconstructor = &emptyDeconstructor;
+	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
+
+	// head right
+	entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
+	entity->sizex = 4;
+	entity->sizey = 4;
+	entity->skill[2] = my->getUID();
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->focalx = limbs[DRYAD][13][0];
+	entity->focaly = limbs[DRYAD][13][1];
+	entity->focalz = limbs[DRYAD][13][2];
+	entity->behavior = &actMonsterDLimb;
+	entity->parent = my->getUID();
+	node = list_AddNodeLast(&my->children);
+	node->element = entity;
+	node->deconstructor = &emptyDeconstructor;
+	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
+
+	// head center
+	entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
+	entity->sizex = 4;
+	entity->sizey = 4;
+	entity->skill[2] = my->getUID();
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->focalx = limbs[DRYAD][15][0];
+	entity->focaly = limbs[DRYAD][15][1];
+	entity->focalz = limbs[DRYAD][15][2];
+	entity->scalex = 1.008;
+	entity->scaley = 1.008;
+	entity->scalez = 1.008;
+	entity->behavior = &actMonsterDLimb;
+	entity->parent = my->getUID();
+	node = list_AddNodeLast(&my->children);
+	node->element = entity;
+	node->deconstructor = &emptyDeconstructor;
+	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
+
+	if ( multiplayer == CLIENT || MONSTER_INIT )
+	{
+		return;
+	}
+}
+
+void actMonsterDLimb(Entity* my)
+{
+	my->actMonsterLimb(true);
+}
+
+void monsterDDie(Entity* my)
+{
+	Entity* gib = spawnGib(my);
+	gib->skill[5] = 1; // poof
+	gib->sprite = my->sprite;
+	serverSpawnGibForClient(gib);
+	for ( int c = 0; c < 8; c++ )
+	{
+		Entity* gib = spawnGib(my);
+		serverSpawnGibForClient(gib);
+	}
+
+	my->spawnBlood();
+	spawnLeafPile(my->x, my->y, local_rng.rand() % 4);
+
+	playSoundEntity(my, 723 + local_rng.rand() % 2, 128);
+
+	my->removeMonsterDeathNodes();
+
+	list_RemoveNode(my->mynode);
+	return;
+}
+
+#define MONSTER_DWALKSPEED .13
+
+void monsterDMoveBodyparts(Entity* my, Stat* myStats, double dist)
+{
+	node_t* node;
+	Entity* entity = nullptr, *entity2 = nullptr;
+	Entity* additionalLimb = nullptr;
+	Entity* rightbody = nullptr;
+	Entity* weaponarm = nullptr;
+	int bodypart;
+	bool wearingring = false;
+
+	my->focalx = limbs[DRYAD][0][0];
+	my->focaly = limbs[DRYAD][0][1];
+	my->focalz = limbs[DRYAD][0][2];
+
+	if ( my->sprite == 1514 || my->sprite == 1515 )
+	{
+		my->focalz += 0.5;
+		my->monsterSpellAnimation = MONSTER_SPELLCAST_SMALL_HUMANOID;
+	}
+
+	bool debugModel = monsterDebugModels(my, &dist);
+	/*if ( keystatus[SDLK_n] )
+	{
+		keystatus[SDLK_n] = 0;
+		my->monsterAttack = MONSTER_POSE_RANGED_WINDUP3;
+	}*/
+	/*if ( keystatus[SDLK_n] )
+	{
+		dist = 0.5;
+	}
+	static real_t distAccum = 0.0;
+	if ( dist > distAccum )
+	{
+		distAccum = dist;
+	}
+	else
+	{
+		distAccum = std::max(dist, distAccum * 0.9);
+	}
+	dist = distAccum;*/
+
+	// set invisibility //TODO: isInvisible()?
+	if ( multiplayer != CLIENT )
+	{
+		if ( myStats->ring != nullptr )
+			if ( myStats->ring->type == RING_INVISIBILITY )
+			{
+				wearingring = true;
+			}
+		if ( myStats->cloak != nullptr )
+			if ( myStats->cloak->type == CLOAK_INVISIBILITY )
+			{
+				wearingring = true;
+			}
+		if ( myStats->getEffectActive(EFF_INVISIBLE) || wearingring == true )
+		{
+			my->flags[INVISIBLE] = true;
+			my->flags[BLOCKSIGHT] = false;
+			bodypart = 0;
+			for (node = my->children.first; node != nullptr; node = node->next)
+			{
+				if ( bodypart < LIMB_HUMANOID_TORSO )
+				{
+					bodypart++;
+					continue;
+				}
+				if ( bodypart >= 7 )
+				{
+					break;
+				}
+				entity = (Entity*)node->element;
+				if ( !entity->flags[INVISIBLE] )
+				{
+					entity->flags[INVISIBLE] = true;
+					serverUpdateEntityBodypart(my, bodypart);
+				}
+				bodypart++;
+			}
+		}
+		else
+		{
+			my->flags[INVISIBLE] = false;
+			my->flags[BLOCKSIGHT] = true;
+			bodypart = 0;
+			for (node = my->children.first; node != nullptr; node = node->next)
+			{
+				if ( bodypart < LIMB_HUMANOID_TORSO )
+				{
+					bodypart++;
+					continue;
+				}
+				if ( bodypart >= 7 )
+				{
+					break;
+				}
+				entity = (Entity*)node->element;
+				if ( entity->flags[INVISIBLE] )
+				{
+					entity->flags[INVISIBLE] = false;
+					serverUpdateEntityBodypart(my, bodypart);
+					serverUpdateEntityFlag(my, INVISIBLE);
+				}
+				bodypart++;
+			}
+		}
+
+		// sleeping
+		if ( myStats->getEffectActive(EFF_ASLEEP) )
+		{
+			if ( my->sprite == 1514 || my->sprite == 1515 )
+			{
+				my->z = 3.75;
+			}
+			else
+			{
+				my->z = 3.0;
+			}
+			my->pitch = PI / 4;
+		}
+		else
+		{
+			my->z = getNormalHeightMonsterD(*my);
+			if ( my->monsterAttack == 0 )
+			{
+				if ( debugModel )
+				{
+					my->pitch = my->fskill[0];
+				}
+				else
+				{
+					my->pitch = 0;
+				}
+			}
+		}
+		my->creatureHandleLiftZ();
+	}
+
+	Entity* shieldarm = nullptr;
+	Entity* helmet = nullptr;
+
+	//Move bodyparts
+	for (bodypart = 0, node = my->children.first; node != nullptr; node = node->next, bodypart++)
+	{
+		if ( bodypart < LIMB_HUMANOID_TORSO )
+		{
+			// post-swing head animation. client doesn't need to adjust the entity pitch, server will handle.
+			if ( my->monsterAttack != MONSTER_POSE_RANGED_WINDUP3 && bodypart == 1 && multiplayer != CLIENT )
+			{
+				limbAnimateToLimit(my, ANIMATE_PITCH, 0.1, 0, false, 0.0);
+			}
+			continue;
+		}
+		entity = (Entity*)node->element;
+		entity->x = my->x;
+		entity->y = my->y;
+		entity->z = my->z;
+		if ( MONSTER_ATTACK == MONSTER_POSE_MAGIC_WINDUP1 && bodypart == LIMB_HUMANOID_RIGHTARM )
+		{
+			// don't let the creatures's yaw move the casting arm
+		}
+		else
+		{
+			entity->yaw = my->yaw;
+		}
+
+		if ( bodypart == LIMB_HUMANOID_RIGHTLEG || bodypart == LIMB_HUMANOID_LEFTARM )
+		{
+			my->humanoidAnimateWalk(entity, node, bodypart, MONSTER_DWALKSPEED, dist, 0.4);
+		}
+		else if ( bodypart == LIMB_HUMANOID_LEFTLEG || bodypart == LIMB_HUMANOID_RIGHTARM || bodypart == LIMB_HUMANOID_CLOAK )
+		{
+			// left leg, right arm, cloak.
+			if ( bodypart == LIMB_HUMANOID_RIGHTARM )
+			{
+				weaponarm = entity;
+				if ( MONSTER_ATTACK > 0 )
+				{
+					if ( my->monsterAttack == MONSTER_POSE_RANGED_WINDUP3 )
+					{
+						Entity* rightbody = nullptr;
+						// set rightbody to left leg.
+						node_t* rightbodyNode = list_Node(&my->children, LIMB_HUMANOID_LEFTLEG);
+						if ( rightbodyNode )
+						{
+							rightbody = (Entity*)rightbodyNode->element;
+						}
+						else
+						{
+							return;
+						}
+
+						if ( my->monsterAttackTime == 0 )
+						{
+							// init rotations
+							weaponarm->pitch = 0;
+							my->monsterArmbended = 0;
+							my->monsterWeaponYaw = 0;
+							weaponarm->roll = 0;
+							weaponarm->skill[1] = 0;
+							playSoundEntityLocal(my, 170, 32);
+							createParticleDot(my);
+							if ( multiplayer != CLIENT )
+							{
+								myStats->setEffectActive(EFF_PARALYZED, 1);
+								myStats->EFFECTS_TIMERS[EFF_PARALYZED] = 40;
+							}
+						}
+						if ( multiplayer != CLIENT )
+						{
+							// move the head and weapon yaw
+							limbAnimateToLimit(my, ANIMATE_PITCH, -0.1, 11 * PI / 6, false, 0.0);
+							limbAnimateToLimit(my, ANIMATE_WEAPON_YAW, 0.05, 2 * PI / 8, false, 0.0);
+						}
+						limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.25, 7 * PI / 4, true, 0.0);
+						//limbAnimateToLimit(weaponarm, ANIMATE_ROLL, -0.25, 7 * PI / 4, false, 0.0);
+
+						if ( my->monsterAttackTime >= 8 * ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
+						{
+							if ( multiplayer != CLIENT )
+							{
+								my->attack(MONSTER_POSE_MAGIC_WINDUP3, 0, nullptr);
+							}
+						}
+					}
+					else if ( my->monsterAttack == MONSTER_POSE_MAGIC_WINDUP3 )
+					{
+						if ( multiplayer != CLIENT )
+						{
+							if ( my->monsterAttackTime == 1 )
+							{
+								int spellID = SPELL_LIGHTNING_BOLT;
+
+								if ( my->monsterSpecialState == MONSTER_D_SPECIAL_CAST3 )
+								{
+									real_t oldYaw = my->yaw;
+									real_t dist = 100.0;
+									if ( Entity* target = uidToEntity(my->monsterTarget) )
+									{
+										real_t tangent = atan2(target->y - my->y,
+											target->x - my->x);
+										my->yaw = tangent;
+										dist = entityDist(my, target);
+									}
+
+									if ( dist < TOUCHRANGE )
+									{
+										if ( floorMagicCreateRoots(my->x, my->y, my, 0, SPELL_ROOTS, 5 * TICKS_PER_SECOND, PARTICLE_TIMER_ACTION_ROOTS1) )
+										{
+											spawnMagicEffectParticles(my->x, my->y, my->z, 171);
+											playSoundEntity(my, 171, 128);
+										}
+									}
+									else
+									{
+										if ( floorMagicCreateRoots(my->x, my->y, my, 0, SPELL_ROOTS, 5 * TICKS_PER_SECOND, PARTICLE_TIMER_ACTION_ROOTS_PATH) )
+										{
+											spawnMagicEffectParticles(my->x, my->y, my->z, 171);
+											playSoundEntity(my, 171, 128);
+										}
+									}
+									my->yaw = oldYaw;
+								}
+								else
+								{
+									bool setProps = false;
+									CastSpellProps_t props;
+									if ( my->monsterSpecialState == MONSTER_D_SPECIAL_CAST2 )
+									{
+										spellID = SPELL_KINETIC_PUSH;
+										setProps = props.setToMonsterCast(my, spellID);
+									}
+									if ( !setProps )
+									{
+										switch ( local_rng.rand() % 3 )
+										{
+										case 0:
+											spellID = SPELL_LIGHTNING_BOLT;
+											break;
+										case 1:
+											spellID = SPELL_DISRUPT_EARTH;
+											break;
+										case 2:
+											spellID = SPELL_SLAM;
+											break;
+										default:
+											break;
+										}
+										setProps = props.setToMonsterCast(my, spellID);
+									}
+
+									if ( setProps )
+									{
+										castSpell(my->getUID(), getSpellFromID(spellID), true, false, false, &props);
+										/*if ( spellID == SPELL_ROOTS )
+										{
+											my->setEffect(EFF_ROOTED, true, 5 * TICKS_PER_SECOND, false);
+										}*/
+									}
+								}
+							}
+						}
+						if ( weaponarm->pitch >= 3 * PI / 2 )
+						{
+							my->monsterArmbended = 1;
+						}
+
+						if ( weaponarm->skill[1] == 0 )
+						{
+							// chop forwards
+							if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, 0.4, PI / 3, false, 0.0) )
+							{
+								weaponarm->skill[1] = 1;
+							}
+						}
+						else if ( weaponarm->skill[1] >= 1 )
+						{
+							if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.25, 7 * PI / 4, false, 0.0) )
+							{
+								Entity* rightbody = nullptr;
+								// set rightbody to left leg.
+								node_t* rightbodyNode = list_Node(&my->children, LIMB_HUMANOID_LEFTLEG);
+								if ( rightbodyNode )
+								{
+									rightbody = (Entity*)rightbodyNode->element;
+								}
+								if ( rightbody )
+								{
+									weaponarm->skill[0] = rightbody->skill[0];
+									weaponarm->pitch = rightbody->pitch;
+								}
+								my->monsterWeaponYaw = 0;
+								weaponarm->roll = 0;
+								my->monsterArmbended = 0;
+								my->monsterAttack = 0;
+							}
+						}
+					}
+					else
+					{
+						my->handleWeaponArmAttack(entity);
+					}
+				}
+			}
+			else if ( bodypart == LIMB_HUMANOID_CLOAK )
+			{
+				entity->pitch = entity->fskill[0];
+			}
+
+			my->humanoidAnimateWalk(entity, node, bodypart, MONSTER_DWALKSPEED, dist, 0.4);
+
+			if ( bodypart == LIMB_HUMANOID_CLOAK )
+			{
+				entity->fskill[0] = entity->pitch;
+				entity->roll = my->roll - fabs(entity->pitch) / 2;
+				entity->pitch = 0;
+			}
+		}
+		switch ( bodypart )
+		{
+			// torso
+			case LIMB_HUMANOID_TORSO:
+				entity->scalex = 1.0;
+				entity->scaley = 1.0;
+				entity->scalez = 1.0;
+				entity->focalx = limbs[DRYAD][1][0];
+				entity->focaly = limbs[DRYAD][1][1];
+				entity->focalz = limbs[DRYAD][1][2];
+				if ( multiplayer != CLIENT )
+				{
+					if ( myStats->breastplate == nullptr 
+						|| !itemModel(myStats->breastplate, my->sprite == 1514 || my->sprite == 1515, my) )
+					{
+						entity->sprite =
+							my->sprite == 1514 ? 1513 :
+								(my->sprite == 1515 ? 1516 :
+									(my->sprite == 1485 ? 1511 : 1512));
+					}
+					else
+					{
+						entity->sprite = itemModel(myStats->breastplate, my->sprite == 1514 || my->sprite == 1515, my);
+					}
+					if ( multiplayer == SERVER )
+					{
+						// update sprites for clients
+						if ( entity->ticks >= *cvar_entity_bodypart_sync_tick )
+						{
+							bool updateBodypart = false;
+							if ( entity->skill[10] != entity->sprite )
+							{
+								entity->skill[10] = entity->sprite;
+								updateBodypart = true;
+							}
+							if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+							{
+								updateBodypart = true;
+							}
+							if ( updateBodypart )
+							{
+								serverUpdateEntityBodypart(my, bodypart);
+							}
+						}
+					}
+				}
+				my->setHumanoidLimbOffset(entity, DRYAD, LIMB_HUMANOID_TORSO);
+				break;
+			// right leg
+			case LIMB_HUMANOID_RIGHTLEG:
+				entity->focalx = limbs[DRYAD][2][0];
+				entity->focaly = limbs[DRYAD][2][1];
+				entity->focalz = limbs[DRYAD][2][2];
+				if ( multiplayer != CLIENT )
+				{
+					if ( myStats->shoes == nullptr )
+					{
+						entity->sprite = 
+							my->sprite == 1514 ? 1510 :
+								(my->sprite == 1515 ? 1518 :
+									(my->sprite == 1485 ? 1508 : 1509));
+					}
+					else
+					{
+						my->setBootSprite(entity, SPRITE_BOOT_RIGHT_OFFSET);
+					}
+					if ( multiplayer == SERVER )
+					{
+						// update sprites for clients
+						if ( entity->ticks >= *cvar_entity_bodypart_sync_tick )
+						{
+							bool updateBodypart = false;
+							if ( entity->skill[10] != entity->sprite )
+							{
+								entity->skill[10] = entity->sprite;
+								updateBodypart = true;
+							}
+							if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+							{
+								updateBodypart = true;
+							}
+							if ( updateBodypart )
+							{
+								serverUpdateEntityBodypart(my, bodypart);
+							}
+						}
+					}
+				}
+				my->setHumanoidLimbOffset(entity, DRYAD, LIMB_HUMANOID_RIGHTLEG);
+				break;
+			// left leg
+			case LIMB_HUMANOID_LEFTLEG:
+				entity->focalx = limbs[DRYAD][3][0];
+				entity->focaly = limbs[DRYAD][3][1];
+				entity->focalz = limbs[DRYAD][3][2];
+				if ( multiplayer != CLIENT )
+				{
+					if ( myStats->shoes == nullptr )
+					{
+						entity->sprite =
+							my->sprite == 1514 ? 1507 :
+								(my->sprite == 1515 ? 1517 :
+									(my->sprite == 1485 ? 1505 : 1506));
+					}
+					else
+					{
+						my->setBootSprite(entity, SPRITE_BOOT_LEFT_OFFSET);
+					}
+					if ( multiplayer == SERVER )
+					{
+						// update sprites for clients
+						if ( entity->ticks >= *cvar_entity_bodypart_sync_tick )
+						{
+							bool updateBodypart = false;
+							if ( entity->skill[10] != entity->sprite )
+							{
+								entity->skill[10] = entity->sprite;
+								updateBodypart = true;
+							}
+							if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+							{
+								updateBodypart = true;
+							}
+							if ( updateBodypart )
+							{
+								serverUpdateEntityBodypart(my, bodypart);
+							}
+						}
+					}
+				}
+				my->setHumanoidLimbOffset(entity, DRYAD, LIMB_HUMANOID_LEFTLEG);
+				break;
+			// right arm
+			case LIMB_HUMANOID_RIGHTARM:
+			{
+				if ( multiplayer != CLIENT )
+				{
+					if ( myStats->gloves == nullptr )
+					{
+						entity->sprite = (my->sprite == 1485 || my->sprite == 1514) ? 1491 : 1493;
+					}
+					else
+					{
+						if ( setGloveSprite(myStats, entity, SPRITE_GLOVE_RIGHT_OFFSET) != 0 )
+						{
+							// successfully set sprite for the human model
+						}
+					}
+					if ( multiplayer == SERVER )
+					{
+						// update sprites for clients
+						if ( entity->ticks >= *cvar_entity_bodypart_sync_tick )
+						{
+							bool updateBodypart = false;
+							if ( entity->skill[10] != entity->sprite )
+							{
+								entity->skill[10] = entity->sprite;
+								updateBodypart = true;
+							}
+							if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+							{
+								updateBodypart = true;
+							}
+							if ( updateBodypart )
+							{
+								serverUpdateEntityBodypart(my, bodypart);
+							}
+						}
+					}
+				}
+
+				if ( multiplayer == CLIENT )
+				{
+					if ( entity->skill[7] == 0 )
+					{
+						if ( entity->sprite == 1491 || entity->sprite == 1493 )
+						{
+							// these are the default arms.
+							// chances are they may be wrong if sent by the server, 
+						}
+						else
+						{
+							// otherwise we're being sent gloves armor etc so it's probably right.
+							entity->skill[7] = entity->sprite;
+						}
+					}
+					if ( entity->skill[7] == 0 )
+					{
+						// we set this ourselves until proper initialisation.
+						entity->sprite = (my->sprite == 1485 || my->sprite == 1514) ? 1491 : 1493;
+					}
+					else
+					{
+						entity->sprite = entity->skill[7];
+					}
+				}
+
+				node_t* weaponNode = list_Node(&my->children, 7);
+				if ( weaponNode )
+				{
+					Entity* weapon = (Entity*)weaponNode->element;
+					if ( MONSTER_ARMBENDED || (weapon->flags[INVISIBLE] && my->monsterState == MONSTER_STATE_WAIT) )
+					{
+						// if weapon invisible and I'm not attacking, relax arm.
+						entity->focalx = limbs[DRYAD][4][0]; // 0
+						entity->focaly = limbs[DRYAD][4][1] - 0.25; // 0
+						entity->focalz = limbs[DRYAD][4][2]; // 2
+
+						if ( entity->sprite == 1491
+							|| entity->sprite == 1493 )
+						{
+							entity->focaly += 0.25;
+						}
+					}
+					else
+					{
+						// else flex arm.
+						entity->focalx = limbs[DRYAD][4][0] + 0.75;
+						entity->focaly = limbs[DRYAD][4][1];
+						entity->focalz = limbs[DRYAD][4][2] - 0.75;
+						if ( entity->sprite == 1491 || entity->sprite == 1493 )
+						{
+							entity->sprite += 1;
+						}
+						else
+						{
+							entity->sprite += 2;
+						}
+					}
+				}
+				my->setHumanoidLimbOffset(entity, DRYAD, LIMB_HUMANOID_RIGHTARM);
+				entity->yaw += MONSTER_WEAPONYAW;
+				break;
+				// left arm
+			}
+			case LIMB_HUMANOID_LEFTARM:
+			{
+				if ( multiplayer != CLIENT )
+				{
+					if ( myStats->gloves == nullptr )
+					{
+						entity->sprite = (my->sprite == 1485 || my->sprite == 1514) ? 1487 : 1489;
+					}
+					else
+					{
+						if ( setGloveSprite(myStats, entity, SPRITE_GLOVE_LEFT_OFFSET) != 0 )
+						{
+							// successfully set sprite for the human model
+						}
+					}
+					if ( multiplayer == SERVER )
+					{
+						// update sprites for clients
+						if ( entity->ticks >= *cvar_entity_bodypart_sync_tick )
+						{
+							bool updateBodypart = false;
+							if ( entity->skill[10] != entity->sprite )
+							{
+								entity->skill[10] = entity->sprite;
+								updateBodypart = true;
+							}
+							if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+							{
+								updateBodypart = true;
+							}
+							if ( updateBodypart )
+							{
+								serverUpdateEntityBodypart(my, bodypart);
+							}
+						}
+					}
+				}
+
+				if ( multiplayer == CLIENT )
+				{
+					if ( entity->skill[7] == 0 )
+					{
+						if ( entity->sprite == 1487 || entity->sprite == 1489 )
+						{
+							// these are the default arms.
+							// chances are they may be wrong if sent by the server, 
+						}
+						else
+						{
+							// otherwise we're being sent gloves armor etc so it's probably right.
+							entity->skill[7] = entity->sprite;
+						}
+					}
+					if ( entity->skill[7] == 0 )
+					{
+						// we set this ourselves until proper initialisation.
+						entity->sprite = (my->sprite == 1485 || my->sprite == 1514) ? 1487 : 1489;
+					}
+					else
+					{
+						entity->sprite = entity->skill[7];
+					}
+				}
+
+				shieldarm = entity;
+				node_t* shieldNode = list_Node(&my->children, 8);
+				if ( shieldNode )
+				{
+					Entity* shield = (Entity*)shieldNode->element;
+					if ( shield->flags[INVISIBLE] && my->monsterState == MONSTER_STATE_WAIT )
+					{
+						entity->focalx = limbs[DRYAD][5][0]; // 0
+						entity->focaly = limbs[DRYAD][5][1] + .25; // 0
+						entity->focalz = limbs[DRYAD][5][2]; // 2
+
+						if ( entity->sprite == 1487
+							|| entity->sprite == 1489 )
+						{
+							entity->focaly -= 0.25;
+						}
+					}
+					else
+					{
+						entity->focalx = limbs[DRYAD][5][0] + 0.75;
+						entity->focaly = limbs[DRYAD][5][1];
+						entity->focalz = limbs[DRYAD][5][2] - 0.75;
+						if ( entity->sprite == 1487 || entity->sprite == 1489 )
+						{
+							entity->sprite += 1;
+						}
+						else
+						{
+							entity->sprite += 2;
+						}
+					}
+				}
+				my->setHumanoidLimbOffset(entity, DRYAD, LIMB_HUMANOID_LEFTARM);
+				if ( my->monsterDefend && my->monsterAttack == 0 )
+				{
+					MONSTER_SHIELDYAW = PI / 5;
+				}
+				else
+				{
+					MONSTER_SHIELDYAW = 0;
+				}
+				entity->yaw += MONSTER_SHIELDYAW;
+				break;
+			}
+			// weapon
+			case LIMB_HUMANOID_WEAPON:
+				if ( multiplayer != CLIENT )
+				{
+					if ( myStats->weapon == nullptr || myStats->getEffectActive(EFF_INVISIBLE) || wearingring ) //TODO: isInvisible()?
+					{
+						entity->flags[INVISIBLE] = true;
+					}
+					else
+					{
+						entity->sprite = itemModel(myStats->weapon);
+						if ( itemCategory(myStats->weapon) == SPELLBOOK )
+						{
+							entity->flags[INVISIBLE] = true;
+						}
+						else
+						{
+							entity->flags[INVISIBLE] = false;
+						}
+					}
+					if ( multiplayer == SERVER )
+					{
+						// update sprites for clients
+						if ( entity->ticks >= *cvar_entity_bodypart_sync_tick )
+						{
+							bool updateBodypart = false;
+							if ( entity->skill[10] != entity->sprite )
+							{
+								entity->skill[10] = entity->sprite;
+								updateBodypart = true;
+							}
+							if ( entity->skill[11] != entity->flags[INVISIBLE] )
+							{
+								entity->skill[11] = entity->flags[INVISIBLE];
+								updateBodypart = true;
+							}
+							if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+							{
+								updateBodypart = true;
+							}
+							if ( updateBodypart )
+							{
+								serverUpdateEntityBodypart(my, bodypart);
+							}
+						}
+					}
+				}
+				else
+				{
+					if ( entity->sprite <= 0 )
+					{
+						entity->flags[INVISIBLE] = true;
+					}
+				}
+				if ( weaponarm != nullptr )
+				{
+					my->handleHumanoidWeaponLimb(entity, weaponarm);
+				}
+				break;
+			// shield
+			case LIMB_HUMANOID_SHIELD:
+				if ( multiplayer != CLIENT )
+				{
+					if ( myStats->shield == nullptr )
+					{
+						entity->flags[INVISIBLE] = true;
+						entity->sprite = 0;
+					}
+					else
+					{
+						entity->flags[INVISIBLE] = false;
+						entity->sprite = itemModel(myStats->shield);
+						if ( itemTypeIsQuiver(myStats->shield->type) )
+						{
+							entity->handleQuiverThirdPersonModel(*myStats, my->sprite);
+						}
+					}
+					if ( myStats->getEffectActive(EFF_INVISIBLE) || wearingring ) //TODO: isInvisible()?
+					{
+						entity->flags[INVISIBLE] = true;
+					}
+					if ( multiplayer == SERVER )
+					{
+						// update sprites for clients
+						if ( entity->ticks >= *cvar_entity_bodypart_sync_tick )
+						{
+							bool updateBodypart = false;
+							if ( entity->skill[10] != entity->sprite )
+							{
+								entity->skill[10] = entity->sprite;
+								updateBodypart = true;
+							}
+							if ( entity->skill[11] != entity->flags[INVISIBLE] )
+							{
+								entity->skill[11] = entity->flags[INVISIBLE];
+								updateBodypart = true;
+							}
+							if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+							{
+								updateBodypart = true;
+							}
+							if ( updateBodypart )
+							{
+								serverUpdateEntityBodypart(my, bodypart);
+							}
+						}
+					}
+				}
+				else
+				{
+					if ( entity->sprite <= 0 )
+					{
+						entity->flags[INVISIBLE] = true;
+					}
+				}
+				my->handleHumanoidShieldLimb(entity, shieldarm);
+				break;
+			// cloak
+			case LIMB_HUMANOID_CLOAK:
+				entity->focalx = limbs[DRYAD][8][0];
+				entity->focaly = limbs[DRYAD][8][1];
+				entity->focalz = limbs[DRYAD][8][2];
+				if ( multiplayer != CLIENT )
+				{
+					if ( myStats->cloak == nullptr || myStats->getEffectActive(EFF_INVISIBLE) || wearingring ) //TODO: isInvisible()?
+					{
+						entity->flags[INVISIBLE] = true;
+					}
+					else
+					{
+						entity->flags[INVISIBLE] = false;
+						entity->sprite = itemModel(myStats->cloak);
+					}
+					if ( multiplayer == SERVER )
+					{
+						// update sprites for clients
+						if ( entity->ticks >= *cvar_entity_bodypart_sync_tick )
+						{
+							bool updateBodypart = false;
+							if ( entity->skill[10] != entity->sprite )
+							{
+								entity->skill[10] = entity->sprite;
+								updateBodypart = true;
+							}
+							if ( entity->skill[11] != entity->flags[INVISIBLE] )
+							{
+								entity->skill[11] = entity->flags[INVISIBLE];
+								updateBodypart = true;
+							}
+							if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+							{
+								updateBodypart = true;
+							}
+							if ( updateBodypart )
+							{
+								serverUpdateEntityBodypart(my, bodypart);
+							}
+						}
+					}
+				}
+				else
+				{
+					if ( entity->sprite <= 0 )
+					{
+						entity->flags[INVISIBLE] = true;
+					}
+				}
+				entity->x -= cos(my->yaw);
+				entity->y -= sin(my->yaw);
+				entity->yaw += PI / 2;
+				break;
+			// helm
+			case LIMB_HUMANOID_HELMET:
+				helmet = entity;
+				entity->focalx = limbs[DRYAD][9][0]; // 0
+				entity->focaly = limbs[DRYAD][9][1]; // 0
+				entity->focalz = limbs[DRYAD][9][2]; // -2
+				entity->pitch = my->pitch;
+				entity->roll = 0;
+				if ( multiplayer != CLIENT )
+				{
+					entity->sprite = itemModel(myStats->helmet);
+					if ( myStats->helmet == nullptr || myStats->getEffectActive(EFF_INVISIBLE) || wearingring ) //TODO: isInvisible()?
+					{
+						entity->flags[INVISIBLE] = true;
+					}
+					else
+					{
+						entity->flags[INVISIBLE] = false;
+					}
+					if ( multiplayer == SERVER )
+					{
+						// update sprites for clients
+						if ( entity->ticks >= *cvar_entity_bodypart_sync_tick )
+						{
+							bool updateBodypart = false;
+							if ( entity->skill[10] != entity->sprite )
+							{
+								entity->skill[10] = entity->sprite;
+								updateBodypart = true;
+							}
+							if ( entity->skill[11] != entity->flags[INVISIBLE] )
+							{
+								entity->skill[11] = entity->flags[INVISIBLE];
+								updateBodypart = true;
+							}
+							if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+							{
+								updateBodypart = true;
+							}
+							if ( updateBodypart )
+							{
+								serverUpdateEntityBodypart(my, bodypart);
+							}
+						}
+					}
+				}
+				else
+				{
+					if ( entity->sprite <= 0 )
+					{
+						entity->flags[INVISIBLE] = true;
+					}
+				}
+				my->setHelmetLimbOffset(entity);
+				break;
+			// mask
+			case LIMB_HUMANOID_MASK:
+				entity->focalx = limbs[DRYAD][10][0]; // 0
+				entity->focaly = limbs[DRYAD][10][1]; // 0
+				entity->focalz = limbs[DRYAD][10][2]; // .25
+				entity->pitch = my->pitch;
+				entity->roll = PI / 2;
+				if ( multiplayer != CLIENT )
+				{
+					if ( myStats->mask == nullptr || myStats->getEffectActive(EFF_INVISIBLE) || wearingring ) //TODO: isInvisible()?
+					{
+						entity->flags[INVISIBLE] = true;
+					}
+					else
+					{
+						entity->flags[INVISIBLE] = false;
+					}
+					if ( myStats->mask != nullptr )
+					{
+						if ( myStats->mask->type == TOOL_GLASSES )
+						{
+							entity->sprite = 165; // GlassesWorn.vox
+						}
+						else if ( myStats->mask->type == MONOCLE )
+						{
+							entity->sprite = 1196; // monocleWorn.vox
+						}
+						else
+						{
+							entity->sprite = itemModel(myStats->mask);
+						}
+					}
+					if ( multiplayer == SERVER )
+					{
+						// update sprites for clients
+						if ( entity->ticks >= *cvar_entity_bodypart_sync_tick )
+						{
+							bool updateBodypart = false;
+							if ( entity->skill[10] != entity->sprite )
+							{
+								entity->skill[10] = entity->sprite;
+								updateBodypart = true;
+							}
+							if ( entity->skill[11] != entity->flags[INVISIBLE] )
+							{
+								entity->skill[11] = entity->flags[INVISIBLE];
+								updateBodypart = true;
+							}
+							if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+							{
+								updateBodypart = true;
+							}
+							if ( updateBodypart )
+							{
+								serverUpdateEntityBodypart(my, bodypart);
+							}
+						}
+					}
+				}
+				else
+				{
+					if ( entity->sprite <= 0 )
+					{
+						entity->flags[INVISIBLE] = true;
+					}
+				}
+				if ( EquipmentModelOffsets.modelOffsetExists(DRYAD, entity->sprite, my->sprite) )
+				{
+					my->setHelmetLimbOffset(entity);
+					my->setHelmetLimbOffsetWithMask(helmet, entity);
+				}
+				else
+				{
+					entity->focalx = limbs[DRYAD][10][0] + .35; // .35
+					entity->focaly = limbs[DRYAD][10][1] - 2; // -2
+					entity->focalz = limbs[DRYAD][10][2]; // .25
+				}
+				break;
+			// head left
+			case 12:
+			{
+				entity->focalx = limbs[DRYAD][11][0];
+				entity->focaly = limbs[DRYAD][11][1];
+				entity->focalz = limbs[DRYAD][11][2];
+				entity->x += limbs[DRYAD][12][0] * cos(my->yaw + PI / 2) + limbs[DRYAD][12][1] * cos(my->yaw);
+				entity->y += limbs[DRYAD][12][0] * sin(my->yaw + PI / 2) + limbs[DRYAD][12][1] * sin(my->yaw);
+				entity->z += limbs[DRYAD][12][2];
+				entity->pitch = my->pitch;
+				if ( multiplayer != CLIENT )
+				{
+					entity->sprite = (my->sprite == 1485 || my->sprite == 1514) ? 1501 : 1502;
+					if ( myStats->getEffectActive(EFF_INVISIBLE) || wearingring ) //TODO: isInvisible()?
+					{
+						entity->flags[INVISIBLE] = true;
+					}
+					else
+					{
+						entity->flags[INVISIBLE] = false;
+					}
+					if ( multiplayer == SERVER )
+					{
+						// update sprites for clients
+						if ( entity->ticks >= *cvar_entity_bodypart_sync_tick )
+						{
+							bool updateBodypart = false;
+							if ( entity->skill[10] != entity->sprite )
+							{
+								entity->skill[10] = entity->sprite;
+								updateBodypart = true;
+							}
+							if ( entity->skill[11] != entity->flags[INVISIBLE] )
+							{
+								entity->skill[11] = entity->flags[INVISIBLE];
+								updateBodypart = true;
+							}
+							if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+							{
+								updateBodypart = true;
+							}
+							if ( updateBodypart )
+							{
+								serverUpdateEntityBodypart(my, bodypart);
+							}
+						}
+					}
+				}
+				else
+				{
+					if ( entity->sprite <= 0 )
+					{
+						entity->flags[INVISIBLE] = true;
+					}
+				}
+
+				additionalLimb = entity;
+				bool moving = false;
+				if ( dist > 0.1 )
+				{
+					moving = true;
+				}
+				if ( entity->skill[0] == 0 )
+				{
+					if ( moving )
+					{
+						entity->fskill[0] += std::min(dist * MONSTER_DWALKSPEED, 0.5 * MONSTER_DWALKSPEED); // move proportional to move speed
+					}
+					else if ( my->monsterAttack != 0 )
+					{
+						entity->fskill[0] += 0.5 * MONSTER_DWALKSPEED; // move fixed speed when attacking if stationary
+					}
+					else
+					{
+						entity->fskill[0] += 0.01; // otherwise move slow idle
+					}
+
+					if ( entity->fskill[0] > PI / 3 || ((!moving || my->monsterAttack != 0) && entity->fskill[0] > PI / 5) )
+					{
+						// switch direction if angle too great, angle is shorter if attacking or stationary
+						entity->skill[0] = 1;
+					}
+				}
+				else // reverse of the above
+				{
+					if ( moving )
+					{
+						entity->fskill[0] -= std::min(dist * MONSTER_DWALKSPEED, 2.f * MONSTER_DWALKSPEED);
+					}
+					else if ( my->monsterAttack != 0 )
+					{
+						entity->fskill[0] -= MONSTER_DWALKSPEED;
+					}
+					else
+					{
+						entity->fskill[0] -= 0.007;
+					}
+
+					if ( entity->fskill[0] < -PI / 32 )
+					{
+						entity->skill[0] = 0;
+					}
+				}
+				//entity->yaw += -entity->fskill[0] / 4;
+				entity->pitch -= entity->fskill[0] / 2;
+				entity->z -= 0.25 * sin(entity->fskill[0] * 5);
+				entity->roll = -entity->fskill[0] / 8;
+				entity->scalez = 1.00 + 0.1 * sin(entity->fskill[0]);
+			}
+				break;
+			// head right
+			case 13:
+			{
+				entity->focalx = limbs[DRYAD][13][0];
+				entity->focaly = limbs[DRYAD][13][1];
+				entity->focalz = limbs[DRYAD][13][2];
+				entity->x += limbs[DRYAD][14][0] * cos(my->yaw + PI / 2) + limbs[DRYAD][14][1] * cos(my->yaw);
+				entity->y += limbs[DRYAD][14][0] * sin(my->yaw + PI / 2) + limbs[DRYAD][14][1] * sin(my->yaw);
+				entity->z += limbs[DRYAD][14][2];
+				entity->pitch = my->pitch;
+				if ( multiplayer != CLIENT )
+				{
+					entity->sprite = (my->sprite == 1485 || my->sprite == 1514) ? 1503 : 1504;
+					if ( myStats->getEffectActive(EFF_INVISIBLE) || wearingring ) //TODO: isInvisible()?
+					{
+						entity->flags[INVISIBLE] = true;
+					}
+					else
+					{
+						entity->flags[INVISIBLE] = false;
+					}
+					if ( multiplayer == SERVER )
+					{
+						// update sprites for clients
+						if ( entity->ticks >= *cvar_entity_bodypart_sync_tick )
+						{
+							bool updateBodypart = false;
+							if ( entity->skill[10] != entity->sprite )
+							{
+								entity->skill[10] = entity->sprite;
+								updateBodypart = true;
+							}
+							if ( entity->skill[11] != entity->flags[INVISIBLE] )
+							{
+								entity->skill[11] = entity->flags[INVISIBLE];
+								updateBodypart = true;
+							}
+							if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+							{
+								updateBodypart = true;
+							}
+							if ( updateBodypart )
+							{
+								serverUpdateEntityBodypart(my, bodypart);
+							}
+						}
+					}
+				}
+				else
+				{
+					if ( entity->sprite <= 0 )
+					{
+						entity->flags[INVISIBLE] = true;
+					}
+				}
+
+				if ( additionalLimb ) // follow the yaw of the previous limb.
+				{
+					//entity->yaw -= -additionalLimb->fskill[0] / 4;
+					entity->pitch -= additionalLimb->fskill[0] / 2;
+					entity->z -= 0.25 * sin(additionalLimb->fskill[0] * 5);
+					entity->roll = additionalLimb->fskill[0] / 8;
+					entity->scalez = 1.00 + 0.1 * sin(additionalLimb->fskill[0]);
+				}
+			}
+				break;
+			// head center
+			case 14:
+				entity->focalx = limbs[DRYAD][15][0];
+				entity->focaly = limbs[DRYAD][15][1];
+				entity->focalz = limbs[DRYAD][15][2];
+				entity->x += limbs[DRYAD][16][0] * cos(my->yaw + PI / 2) + limbs[DRYAD][16][1] * cos(my->yaw);
+				entity->y += limbs[DRYAD][16][0] * sin(my->yaw + PI / 2) + limbs[DRYAD][16][1] * sin(my->yaw);
+				entity->z += limbs[DRYAD][16][2];
+				entity->pitch = my->pitch;
+				/*if ( keystatus[SDLK_h] )
+				{
+					entity->fskill[0] += 0.05;
+				}*/
+				//entity->scalex = 1.0 + std::max(0.0, 0.05 * sin(entity->fskill[0]));
+				//entity->scaley = 1.0 + std::max(0.0, 0.05 * sin(entity->fskill[0]));
+				//entity->scalez = 1.008 + 0.05 * sin(entity->fskill[0]);
+				entity->scalez = 1.008 + 0.05 * sin(additionalLimb->fskill[0]);
+				entity->pitch -= 0.05 * sin(std::max(0.0, additionalLimb->fskill[0]) / 10);
+				entity->z -= 0.05 * sin(additionalLimb->fskill[0]);
+				if ( multiplayer != CLIENT )
+				{
+					int stage = 0;
+					/*if ( keystatus[SDLK_g] )
+					{
+						keystatus[SDLK_g] = 0;
+						stage += 1;
+						if ( stage > 2 )
+						{
+							stage = 0;
+						}
+					}*/
+					if ( stage == 0 )
+					{
+						entity->sprite = (my->sprite == 1485 || my->sprite == 1514) ? 1495 : 1496;
+					}
+					else if ( stage == 1 )
+					{
+						entity->sprite = (my->sprite == 1485 || my->sprite == 1514) ? 1497 : 1498;
+					}
+					else if ( stage == 2 )
+					{
+						entity->sprite = (my->sprite == 1485 || my->sprite == 1514) ? 1499 : 1500;
+					}
+					if ( myStats->getEffectActive(EFF_INVISIBLE) || wearingring
+						|| (helmet && helmet->sprite > 0 && !helmet->flags[INVISIBLE])) //TODO: isInvisible()?
+					{
+						entity->flags[INVISIBLE] = true;
+					}
+					else
+					{
+						entity->flags[INVISIBLE] = false;
+					}
+					if ( multiplayer == SERVER )
+					{
+						// update sprites for clients
+						if ( entity->ticks >= *cvar_entity_bodypart_sync_tick )
+						{
+							bool updateBodypart = false;
+							if ( entity->skill[10] != entity->sprite )
+							{
+								entity->skill[10] = entity->sprite;
+								updateBodypart = true;
+							}
+							if ( entity->skill[11] != entity->flags[INVISIBLE] )
+							{
+								entity->skill[11] = entity->flags[INVISIBLE];
+								updateBodypart = true;
+							}
+							if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+							{
+								updateBodypart = true;
+							}
+							if ( updateBodypart )
+							{
+								serverUpdateEntityBodypart(my, bodypart);
+							}
+						}
+					}
+				}
+				else
+				{
+					if ( entity->sprite <= 0 )
+					{
+						entity->flags[INVISIBLE] = true;
+					}
+				}
+				break;
+		}
+	}
+	// rotate shield a bit
+	node_t* shieldNode = list_Node(&my->children, 8);
+	if ( shieldNode )
+	{
+		Entity* shieldEntity = (Entity*)shieldNode->element;
+		if ( shieldEntity->sprite != items[TOOL_TORCH].index && shieldEntity->sprite != items[TOOL_LANTERN].index && shieldEntity->sprite != items[TOOL_CRYSTALSHARD].index )
+		{
+			shieldEntity->yaw -= PI / 6;
+		}
+	}
+	if ( MONSTER_ATTACK > 0 && MONSTER_ATTACK <= MONSTER_POSE_MAGIC_CAST3 )
+	{
+		MONSTER_ATTACKTIME++;
+	}
+	else if ( MONSTER_ATTACK == 0 )
+	{
+		MONSTER_ATTACKTIME = 0;
+	}
+	else
+	{
+		// do nothing, don't reset attacktime or increment it.
+	}
+}
+
+void Entity::monsterDChooseWeapon(const Entity* target, double dist)
+{
+	Stat* myStats = getStats();
+	if ( !myStats )
+	{
+		return;
+	}
+
+	if ( myStats->getAttribute("monster_d_type") == "watcher" )
+	{
+		if ( monsterStrafeDirection == 0 )
+		{
+			if ( dist < 64.0 )
+			{
+				if ( local_rng.rand() % 3 == 0 )
+				{
+					monsterStrafeDirection = TICKS_PER_SECOND * 5;
+				}
+			}
+		}
+		else
+		{
+			if ( monsterStrafeDirection > 0 )
+			{
+				monsterStrafeDirection = std::max(0, monsterStrafeDirection - 1);
+				if ( monsterStrafeDirection == 0 )
+				{
+					monsterStrafeDirection = -TICKS_PER_SECOND * 5; // cooldown direction
+				}
+			}
+			else if ( monsterStrafeDirection < 0 )
+			{
+				monsterStrafeDirection = std::min(0, monsterStrafeDirection + 1);
+			}
+		}
+	}
+
+	if ( monsterSpecialState != 0 || monsterSpecialTimer != 0 || monsterAttack != 0 )
+	{
+		return;
+	}
+
+	int roll = 4;
+	if ( target && target->hasRangedWeapon() && dist > TOUCHRANGE * 1.5 )
+	{
+		roll = 2;
+	}
+
+	if ( local_rng.rand() % roll == 0 
+		&& monsterStrafeDirection <= 0
+		&& dist > TOUCHRANGE 
+		&& myStats && myStats->getAttribute("monster_d_type") == "watcher" )
+	{
+		monsterSpecialState = MONSTER_D_SPECIAL_CAST1;
+	}
+	else
+	{
+		if ( myStats && myStats->weapon && myStats->weapon->type == BRANCH_STAFF )
+		{
+			if ( dist < 48.0 )
+			{
+				int roll = 5;
+				if ( target && dist < TOUCHRANGE )
+				{
+					roll = 3;
+				}
+				if ( local_rng.rand() % roll == 0 )
+				{
+					monsterSpecialState = MONSTER_D_SPECIAL_CAST2; // push
+				}
+			}
+		}
+
+		if ( monsterSpecialState == 0 )
+		{
+			if ( target && dist < 64.0 )
+			{
+				int roll = 5;
+				if ( local_rng.rand() % roll == 0 )
+				{
+					monsterSpecialState = MONSTER_D_SPECIAL_CAST3;
+				}
+			}
+		}
+	}
+}
+
+//void Entity::goatmanChooseWeapon(const Entity* target, double dist)
+//{
+//	if ( monsterSpecialState != 0 )
+//	{
+//		//Holding a weapon assigned from the special attack. Don't switch weapons.
+//		//messagePlayer()
+//		return;
+//	}
+//
+//	//TODO: I don't like this function getting called every frame. Find a better place to put it.
+//	//Although if I do that, can't do this dirty little hack for the goatman's special...
+//
+//	//TODO: If applying attack animations that will involve holding a potion for several frames while this code has a chance to run, do a check here to cancel the function if holding a potion.
+//
+//	Stat *myStats = getStats();
+//	if ( !myStats )
+//	{
+//		return;
+//	}
+//
+//	if ( myStats->weapon && (itemCategory(myStats->weapon) == SPELLBOOK) )
+//	{
+//		return;
+//	}
+//
+//	int specialRoll = -1;
+//	bool usePotionSpecial = false;
+//
+//	/*
+//	 * For the goatman's special:
+//	 * * If specialRoll == 0, want to use a booze or healing potion (prioritize healing potion if damaged enough).
+//	 * * If no have potion, try to use THROWN in melee.
+//	 * * If in melee, if potion is not a healing potion, check if have any THROWN and then 50% chance to use those instead.
+//	 */
+//
+//	node_t* hasPotion = nullptr;
+//	bool isHealingPotion = false;
+//
+//	if ( monsterSpecialTimer == 0 && (ticks % 10 == 0) && monsterAttack == 0 )
+//	{
+//		//messagePlayer(clientnum, "Cooldown done!");
+//		specialRoll = local_rng.rand()%10;
+//
+//		if ( specialRoll == 0 )
+//		{
+//			if ( myStats->HP <= myStats->MAXHP / 3 * 2 )
+//			{
+//				//Try to get a health potion.
+//				hasPotion = itemNodeInInventory(myStats, POTION_EXTRAHEALING, static_cast<Category>(-1));
+//				if ( !hasPotion )
+//				{
+//					hasPotion = itemNodeInInventory(myStats, POTION_HEALING, static_cast<Category>(-1));
+//					if ( hasPotion )
+//					{
+//						//Equip and chuck it now.
+//						bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, hasPotion, false, false);
+//						if ( !swapped )
+//						{
+//							//printlog("Error in Entity::goatmanChooseWeapon(): failed to swap healing potion into hand!");
+//							//Don't return, want to try equipping either a potion of booze, or one of the other weapon routes (e.h. a THROWN special if in melee or just an axe if worst comes to worst).
+//						}
+//						else
+//						{
+//							monsterSpecialState = GOATMAN_POTION;
+//							//monsterHitTime = 2 * HITRATE;
+//							return;
+//						}
+//					}
+//				}
+//				else
+//				{
+//					//Equip and chuck it now.
+//					bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, hasPotion, false, false);
+//					if ( !swapped )
+//					{
+//						//printlog("Error in Entity::goatmanChooseWeapon(): failed to swap healing potion into hand!");
+//						//Don't return, want to try equipping either a potion of booze, or one of the other weapon routes (e.h. a THROWN special if in melee or just an axe if worst comes to worst).
+//					}
+//					else
+//					{
+//						monsterSpecialState = GOATMAN_POTION;
+//						//monsterHitTime = 2 * HITRATE;
+//						return;
+//					}
+//				}
+//			}
+//
+//			if ( !hasPotion )
+//			{
+//				//Couldn't find a healing potion? Try for a potion of booze.
+//				hasPotion = itemNodeInInventory(myStats, POTION_BOOZE, static_cast<Category>(-1));
+//				if ( hasPotion )
+//				{
+//					//Equip and chuck it now.
+//					bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, hasPotion, false, false);
+//					if ( !swapped )
+//					{
+//						//printlog("Error in Entity::goatmanChooseWeapon(): failed to swap healing potion into hand!");
+//						//Don't return, want to try equipping either a potion of booze, or one of the other weapon routes (e.h. a THROWN special if in melee or just an axe if worst comes to worst).
+//					}
+//					else
+//					{
+//						monsterSpecialState = GOATMAN_POTION;
+//						//monsterHitTime = 2 * HITRATE;
+//						return;
+//					}
+//				}
+//			}
+//		}
+//	}
+//
+//	bool inMeleeRange = monsterInMeleeRange(target, dist);
+//
+//	if ( inMeleeRange )
+//	{
+//		if ( monsterSpecialTimer == 0 && (ticks % 10 == 0) && monsterAttack == 0 && specialRoll == 0 )
+//		{
+//			bool tryChakram = true;
+//			if ( hasPotion && local_rng.rand()%10 )
+//			{
+//				tryChakram = false;
+//			}
+//
+//			if ( tryChakram )
+//			{
+//				//Grab a chakram instead.
+//				node_t* thrownNode = itemNodeInInventory(myStats, -1, THROWN);
+//				if ( thrownNode )
+//				{
+//					bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, thrownNode, false, false);
+//					if ( !swapped )
+//					{
+//						//printlog("Error in Entity::goatmanChooseWeapon(): failed to swap THROWN into hand! Cursed? (%d)", myStats->weapon->beatitude);
+//						//Don't return, make sure holding a melee weapon at least.
+//					}
+//					else
+//					{
+//						monsterSpecialState = GOATMAN_THROW;
+//						return;
+//					}
+//				}
+//			}
+//		}
+//
+//		//Switch to a melee weapon if not already wielding one. Unless monster special state is overriding the AI.
+//		if ( !myStats->weapon || !isMeleeWeapon(*myStats->weapon) )
+//		{
+//			node_t* weaponNode = getMeleeWeaponItemNodeInInventory(myStats);
+//			if ( !weaponNode )
+//			{
+//				if ( myStats->weapon && myStats->weapon->type == MAGICSTAFF_SLOW )
+//				{
+//					monsterUnequipSlotFromCategory(myStats, &myStats->weapon, MAGICSTAFF);
+//				}
+//				return; //Resort to fists.
+//			}
+//
+//			bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, weaponNode, false, false);
+//			if ( !swapped )
+//			{
+//				//printlog("Error in Entity::goatmanChooseWeapon(): failed to swap melee weapon into hand! Cursed? (%d)", myStats->weapon->beatitude);
+//				//Don't return so that monsters will at least equip ranged weapons in melee range if they don't have anything else.
+//			}
+//			else
+//			{
+//				return;
+//			}
+//		}
+//		else
+//		{
+//			return;
+//		}
+//	}
+//
+//	//if ( hasPotion )
+//	//{
+//	//	//Try to equip the potion first. If fails, then equip normal ranged.
+//	//	bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, hasPotion, false, false);
+//	//	if ( !swapped )
+//	//	{
+//	//		printlog("Error in Entity::goatmanChooseWeapon(): failed to swap non-healing potion into hand! (non-melee block) Cursed? (%d)", myStats->weapon->beatitude);
+//	//	}
+//	//	else
+//	//	{
+//	//		monsterSpecialState = GOATMAN_POTION;
+//	//		return;
+//	//	}
+//	//}
+//
+//	//Switch to a thrown weapon or a ranged weapon. Potions are reserved as a special attack.
+//	if ( !myStats->weapon || isMeleeWeapon(*myStats->weapon) )
+//	{
+//		//First search the inventory for a THROWN weapon.
+//		node_t *weaponNode = nullptr;
+//		if ( monsterSpecialTimer == 0 && (ticks % 10 == 0) && monsterAttack == 0 && local_rng.rand() % 10 == 0 )
+//		{
+//			weaponNode = itemNodeInInventory(myStats, -1, THROWN);
+//			if ( weaponNode )
+//			{
+//				if ( swapMonsterWeaponWithInventoryItem(this, myStats, weaponNode, false, false) )
+//				{
+//					monsterSpecialState = GOATMAN_THROW;
+//					return;
+//				}
+//			}
+//		}
+//		if ( !weaponNode )
+//		{
+//			//If couldn't find any, search the inventory for a ranged weapon.
+//			weaponNode = getRangedWeaponItemNodeInInventory(myStats, true);
+//		}
+//
+//		bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, weaponNode, false, false);
+//		return;
+//	}
+//
+//	return;
+//}
+//
+//bool Entity::goatmanCanWieldItem(const Item& item) const
+//{
+//	Stat* myStats = getStats();
+//	if ( !myStats )
+//	{
+//		return false;
+//	}
+//
+//	if ( monsterAllyIndex >= 0 && (monsterAllyClass != ALLY_CLASS_MIXED || item.interactNPCUid == getUID()) )
+//	{
+//		return monsterAllyEquipmentInClass(item);
+//	}
+//
+//	switch ( itemCategory(&item) )
+//	{
+//		case WEAPON:
+//			return true;
+//		case POTION:
+//			switch ( item.type )
+//			{
+//				case POTION_BOOZE:
+//					return true;
+//				case POTION_HEALING:
+//					return true;
+//				default:
+//					return false;
+//			}
+//			break;
+//		case TOOL:
+//			if ( itemTypeIsQuiver(item.type) )
+//			{
+//				return true;
+//			}
+//			break;
+//		case THROWN:
+//			return true;
+//		case ARMOR:
+//			{ //Little baby compiler stop whining, wah wah.
+//				int equipType = checkEquipType(&item);
+//				if ( equipType == TYPE_HAT || equipType == TYPE_HELM )
+//				{
+//					return false; //No can wear hats, because horns.
+//				}
+//				return true; //Can wear all other armor.
+//			}
+//		default:
+//			return false;
+//	}
+//
+//	return false;
+//}
+//
+
+
+
+

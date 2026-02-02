@@ -49,6 +49,96 @@
 #define THROWN_BOOMERANG_STOP_Z my->skill[21]
 
 #define BOOMERANG_PARTICLE 977
+#define BOLAS_PARTICLE 1916
+
+void onThrownLandingParticle(Entity* my)
+{
+	if ( my )
+	{
+		int itemType = THROWN_TYPE;
+		if ( itemType >= WOODEN_SHIELD && itemType < NUMITEMS )
+		{
+			if ( items[itemType].category == POTION )
+			{
+				int gibsprite = -1;
+				if ( my->sprite >= 50 && my->sprite <= 58 )
+				{
+					gibsprite = 1895 + my->sprite - 50;
+				}
+				if ( itemType == POTION_EMPTY )
+				{
+					gibsprite = 1911;
+				}
+				if ( gibsprite >= 0 )
+				{
+					for ( int i = 0; i < 5; ++i )
+					{
+						if ( Entity* gib = spawnGib(hit.entity ? hit.entity : my, gibsprite) )
+						{
+							gib->sprite = gibsprite;
+							if ( !hit.entity )
+							{
+								gib->z = my->z;
+							}
+							serverSpawnGibForClient(gib);
+						}
+					}
+				}
+			}
+			else
+			{
+				switch ( itemType )
+				{
+				case GREASE_BALL:
+					for ( int i = 0; i < 5; ++i )
+					{
+						if ( Entity* gib = spawnGib(hit.entity ? hit.entity : my, 245) )
+						{
+							gib->sprite = 245;
+							gib->flags[SPRITE] = true;
+							if ( !hit.entity )
+							{
+								gib->z = my->z;
+							}
+							serverSpawnGibForClient(gib);
+						}
+					}
+					break;
+				case DUST_BALL:
+					for ( int i = 0; i < 5; ++i )
+					{
+						if ( Entity* gib = spawnGib(hit.entity ? hit.entity : my, 1886) )
+						{
+							gib->sprite = 1886;
+							if ( !hit.entity )
+							{
+								gib->z = my->z;
+							}
+							serverSpawnGibForClient(gib);
+						}
+					}
+					break;
+				case SLOP_BALL:
+					for ( int i = 0; i < 5; ++i )
+					{
+						if ( Entity* gib = spawnGib(hit.entity ? hit.entity : my, 1926) )
+						{
+							gib->sprite = 1926;
+							if ( !hit.entity )
+							{
+								gib->z = my->z;
+							}
+							serverSpawnGibForClient(gib);
+						}
+					}
+					break;
+				default:
+					break;
+				}
+			}
+		}
+	}
+}
 
 void actThrown(Entity* my)
 {
@@ -65,6 +155,8 @@ void actThrown(Entity* my)
 		free(item);
 		item = nullptr;
 	}
+
+	my->removeLightField();
 
 	if ( multiplayer == CLIENT )
 	{
@@ -126,6 +218,81 @@ void actThrown(Entity* my)
 				playSoundEntityLocal(my, 434 + local_rng.rand() % 10, 64);
 			}
 		}
+
+		if ( my->sprite == items[GREASE_BALL].index )
+		{
+			if ( Entity* fx = spawnMagicParticleCustom(my, 245, 1.0, 1.0) )
+			{
+				fx->ditheringDisabled = true;
+				real_t dir = atan2(my->vel_y, my->vel_x);
+				//dir += local_rng.rand() % 2 == 0 ? PI / 32 : -PI / 32;
+				real_t spd = sqrt(my->vel_x * my->vel_x + my->vel_y * my->vel_y);
+				fx->vel_x = spd * 0.05 * cos(dir);
+				fx->vel_y = spd * 0.05 * sin(dir);
+				fx->flags[BRIGHT] = true;
+				fx->pitch = PI / 2;
+				fx->roll = 0.0;
+				fx->yaw = dir;
+				fx->vel_z = 0.0;
+				fx->flags[SPRITE] = true;
+			}
+		}
+		else if ( my->sprite == items[DUST_BALL].index )
+		{
+			if ( Entity* fx = spawnMagicParticleCustom(my, 1886, 1.0, 1.0) )
+			{
+				fx->ditheringDisabled = true;
+				real_t dir = atan2(my->vel_y, my->vel_x);
+				//dir += local_rng.rand() % 2 == 0 ? PI / 32 : -PI / 32;
+				real_t spd = sqrt(my->vel_x * my->vel_x + my->vel_y * my->vel_y);
+				fx->vel_x = spd * 0.05 * cos(dir);
+				fx->vel_y = spd * 0.05 * sin(dir);
+				fx->lightBonus = vec4{ 0.25f, 0.25f, 0.25f, 0.f };
+				fx->pitch = PI / 2;
+				fx->roll = 0.0;
+				fx->yaw = dir;
+				fx->vel_z = 0.0;
+			}
+		}
+		else if ( my->sprite == items[SLOP_BALL].index )
+		{
+			if ( Entity* fx = spawnMagicParticleCustom(my, 1926, 1.0, 1.0) )
+			{
+				fx->ditheringDisabled = true;
+				real_t dir = atan2(my->vel_y, my->vel_x);
+				//dir += local_rng.rand() % 2 == 0 ? PI / 32 : -PI / 32;
+				real_t spd = sqrt(my->vel_x * my->vel_x + my->vel_y * my->vel_y);
+				fx->vel_x = spd * 0.05 * cos(dir);
+				fx->vel_y = spd * 0.05 * sin(dir);
+				fx->lightBonus = vec4{ 0.25f, 0.25f, 0.25f, 0.f };
+				fx->pitch = PI / 2;
+				fx->roll = 0.0;
+				fx->yaw = dir;
+				fx->vel_z = 0.0;
+			}
+		}
+		else if ( my->sprite == items[GEM_JEWEL].index )
+		{
+			if ( my->ticks % 4 == 0 )
+			{
+				if ( Entity* fx = spawnMagicParticleCustom(my, 2410, 1.0, 1.0) )
+				{
+					fx->ditheringDisabled = true;
+					fx->focalz = 0.25;
+					fx->vel_z = 0.04;
+					fx->fskill[0] = 0.04;
+					real_t dir = atan2(my->vel_y, my->vel_x);
+					if ( local_rng.rand() % 2 )
+					{
+						dir += PI;
+					}
+					real_t spd = sqrt(my->vel_x * my->vel_x + my->vel_y * my->vel_y);
+					fx->vel_x = spd * 0.05 * cos(dir + PI / 2);
+					fx->vel_y = spd * 0.05 * sin(dir + PI / 2);
+				}
+			}
+			my->light = addLight(my->x / 16, my->y / 16, "jewel_yellow");
+		}
 	}
 	else
 	{
@@ -144,6 +311,10 @@ void actThrown(Entity* my)
 					playSoundEntityLocal(my, 434 + local_rng.rand() % 10, 64);
 				}
 			}
+			else if ( item->type == BOLAS )
+			{
+				my->sprite = BOLAS_PARTICLE;
+			}
 			free(item);
 			item = nullptr;
 		}
@@ -161,6 +332,7 @@ void actThrown(Entity* my)
 	{
 		if ( my->ticks > (THROWN_LINGER + 1) )
 		{
+			my->removeLightField();
 			list_RemoveNode(my->mynode);
 			return;
 		}
@@ -238,10 +410,14 @@ void actThrown(Entity* my)
 			/*THROWN_VELX = 0.f;
 			THROWN_VELY = 0.f;
 			THROWN_VELZ = 0.f;*/
-			if ( type == BRONZE_TOMAHAWK || type == IRON_DAGGER )
+			if ( type == BRONZE_TOMAHAWK || type == IRON_DAGGER || type == BONE_THROWING )
 			{
 				// axe and dagger spin vertically
 				my->pitch += 0.2;
+			}
+			else if ( type == BLACKIRON_DART || type == SILVER_PLUMBATA )
+			{
+				my->roll += 0.2;
 			}
 			else
 			{
@@ -289,11 +465,114 @@ void actThrown(Entity* my)
 			my->z += THROWN_VELZ;
 			my->roll += 0.04;
 		}
+
+		if ( my->sprite == items[GREASE_BALL].index )
+		{
+			if ( my->ticks % 5 == 0 )
+			{
+				spawnGreasePuddleSpawner(my->parent == 0 ? nullptr : uidToEntity(my->parent), my->x, my->y, 30 * TICKS_PER_SECOND);
+			}
+			if ( Entity* fx = spawnMagicParticleCustom(my, 245, 1.0, 1.0) )
+			{
+				fx->ditheringDisabled = true;
+				real_t dir = atan2(my->vel_y, my->vel_x);
+				//dir += local_rng.rand() % 2 == 0 ? PI / 32 : -PI / 32;
+				real_t spd = sqrt(my->vel_x * my->vel_x + my->vel_y * my->vel_y);
+				fx->vel_x = spd * 0.05 * cos(dir);
+				fx->vel_y = spd * 0.05 * sin(dir);
+				fx->flags[BRIGHT] = true;
+				fx->pitch = PI / 2;
+				fx->roll = 0.0;
+				fx->yaw = dir;
+				fx->vel_z = 0.0;
+				fx->flags[SPRITE] = true;
+			}
+		}
+		else if ( my->sprite == items[DUST_BALL].index )
+		{
+			if ( my->ticks == 1 )
+			{
+				Uint32 lifetime = TICKS_PER_SECOND * 3;
+				Entity* spellTimer = createParticleTimer(my->parent == 0 ? nullptr : uidToEntity(my->parent), lifetime + TICKS_PER_SECOND, -1);
+				spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_SPORES_TRAIL;
+				spellTimer->particleTimerCountdownSprite = 248;
+				spellTimer->yaw = 0.0;
+				spellTimer->x = my->x;
+				spellTimer->y = my->y;
+				spellTimer->particleTimerVariable1 = 0;
+				spellTimer->particleTimerVariable2 = SPELL_MYCELIUM_SPORES;
+				spellTimer->particleTimerVariable4 = my->getUID();
+
+				my->thrownProjectileParticleTimerUID = spellTimer->getUID();
+				particleTimerEffects.emplace(std::pair<Uint32, ParticleTimerEffect_t>(spellTimer->getUID(), ParticleTimerEffect_t()));
+			}
+			if ( Entity* fx = spawnMagicParticleCustom(my, 1886, 1.0, 1.0) )
+			{
+				fx->ditheringDisabled = true;
+				real_t dir = atan2(my->vel_y, my->vel_x);
+				//dir += local_rng.rand() % 2 == 0 ? PI / 32 : -PI / 32;
+				real_t spd = sqrt(my->vel_x * my->vel_x + my->vel_y * my->vel_y);
+				fx->vel_x = spd * 0.05 * cos(dir);
+				fx->vel_y = spd * 0.05 * sin(dir);
+				fx->lightBonus = vec4{ 0.25f, 0.25f, 0.25f, 0.f };
+				fx->roll = 0.0;
+				fx->yaw = dir;
+				fx->vel_z = 0.0;
+			}
+			thrownItemUpdateSpellTrail(*my, my->x, my->y);
+		}
+		else if ( my->sprite == items[SLOP_BALL].index )
+		{
+			if ( Entity* fx = spawnMagicParticleCustom(my, 1926, 1.0, 1.0) )
+			{
+				fx->ditheringDisabled = true;
+				real_t dir = atan2(my->vel_y, my->vel_x);
+				//dir += local_rng.rand() % 2 == 0 ? PI / 32 : -PI / 32;
+				real_t spd = sqrt(my->vel_x * my->vel_x + my->vel_y * my->vel_y);
+				fx->vel_x = spd * 0.05 * cos(dir);
+				fx->vel_y = spd * 0.05 * sin(dir);
+				fx->lightBonus = vec4{ 0.25f, 0.25f, 0.25f, 0.f };
+				fx->roll = 0.0;
+				fx->yaw = dir;
+				fx->vel_z = 0.0;
+			}
+		}
+		else if ( my->sprite == items[GEM_JEWEL].index )
+		{
+			if ( my->ticks % 4 == 0 )
+			{
+				if ( Entity* fx = spawnMagicParticleCustom(my, 2410, 1.0, 1.0) )
+				{
+					fx->ditheringDisabled = true;
+					fx->focalz = 0.25;
+					fx->vel_z = 0.04;
+					fx->fskill[0] = 0.04;
+					real_t dir = atan2(my->vel_y, my->vel_x);
+					if ( local_rng.rand() % 2 )
+					{
+						dir += PI;
+					}
+					real_t spd = sqrt(my->vel_x * my->vel_x + my->vel_y * my->vel_y);
+					fx->vel_x = spd * 0.05 * cos(dir + PI / 2);
+					fx->vel_y = spd * 0.05 * sin(dir + PI / 2);
+				}
+			}
+			my->light = addLight(my->x / 16, my->y / 16, "jewel_yellow");
+		}
 	}
 	else
 	{
 		if ( my->x >= 0 && my->y >= 0 && my->x < map.width << 4 && my->y < map.height << 4 )
 		{
+			if ( my->sprite == items[GREASE_BALL].index )
+			{
+				spawnGreasePuddleSpawner(my->parent == 0 ? nullptr : uidToEntity(my->parent), my->x, my->y, 30 * TICKS_PER_SECOND);
+			}
+			if ( my->sprite == items[DUST_BALL].index )
+			{
+				thrownItemUpdateSpellTrail(*my, my->x, my->y);
+			}
+
 			// landing on the ground.
 			int index = (int)(my->y / 16)*MAPLAYERS + (int)(my->x / 16)*MAPLAYERS * map.height;
 			if ( map.tiles[index] )
@@ -323,6 +602,15 @@ void actThrown(Entity* my)
 						item->applyTinkeringCreation(parent, my);
 					}
 					free(item);
+					my->removeLightField();
+					list_RemoveNode(my->mynode);
+					return;
+				}
+				else if ( item && item->type == TOOL_DUCK )
+				{
+					item->applyDuck(my->parent, my->x, my->y, nullptr, false);
+					free(item);
+					my->removeLightField();
 					list_RemoveNode(my->mynode);
 					return;
 				}
@@ -344,21 +632,37 @@ void actThrown(Entity* my)
 					}
 					playSoundEntity(my, 162, 64);
 					free(item);
+					onThrownLandingParticle(my);
+					my->removeLightField();
 					list_RemoveNode(my->mynode);
 					return;
 				}
 				else if ( specialMonster )
 				{
 					free(item);
+					my->removeLightField();
 					list_RemoveNode(my->mynode);
 					return;
 				}
-				else if ( itemCategory(item) == GEM && (item->beatitude < 0 || local_rng.rand() % 5 == 0) )
+				else if ( item && (item->type == DUST_BALL 
+					|| item->type == GREASE_BALL
+					|| item->type == SLOP_BALL) )
+				{
+					free(item);
+					onThrownLandingParticle(my);
+					playSoundEntity(my, 764, 64);
+					my->removeLightField();
+					list_RemoveNode(my->mynode);
+					return;
+				}
+				else if ( itemCategory(item) == GEM && (item->beatitude < 0 || local_rng.rand() % 5 == 0)
+					&& item->type != GEM_JEWEL )
 				{
 					// cursed gem, explode
 					createParticleShatteredGem(my->x, my->y, 7.5, my->sprite, nullptr);
 					serverSpawnMiscParticlesAtLocation(my->x, my->y, 7.5, PARTICLE_EFFECT_SHATTERED_GEM, my->sprite);
 					free(item);
+					my->removeLightField();
 					list_RemoveNode(my->mynode);
 					return;
 				}
@@ -387,6 +691,7 @@ void actThrown(Entity* my)
 						item->applyBomb(parent, item->type, Item::ItemBombPlacement::BOMB_FLOOR, Item::ItemBombFacingDirection::BOMB_UP, my, nullptr);
 					}
 					free(item);
+					my->removeLightField();
 					list_RemoveNode(my->mynode);
 					return;
 				}
@@ -411,6 +716,7 @@ void actThrown(Entity* my)
 						return;
 					}
 					free(item);
+					my->removeLightField();
 					list_RemoveNode(my->mynode);
 					return;
 				}
@@ -457,12 +763,27 @@ void actThrown(Entity* my)
 					entity->skill[13] = item->count;
 					entity->skill[14] = item->appearance;
 					entity->skill[15] = item->identified;
+					if ( item->type == GEM_JEWEL )
+					{
+						entity->parent = my->parent;
+					}
 					if ( itemCategory(item) == THROWN )
 					{
 						//Hack to make monsters stop catching your shurikens and chakrams.
 						entity->parent = my->parent;
+						if ( parent )
+						{
+							if ( Stat* parentStats = parent->getStats() )
+							{
+								if ( parentStats->getEffectActive(EFF_RETURN_ITEM) )
+								{
+									entity->itemReturnUID = parent->getUID();
+								}
+							}
+						}
 					}
 					free(item);
+					my->removeLightField();
 					list_RemoveNode(my->mynode);
 					return;
 				}
@@ -493,6 +814,16 @@ void actThrown(Entity* my)
 						item->applyTinkeringCreation(parent, my);
 					}
 					free(item);
+					my->removeLightField();
+					list_RemoveNode(my->mynode);
+					return;
+				}
+				else if ( my->skill[10] == TOOL_DUCK )
+				{
+					item = newItemFromEntity(my);
+					item->applyDuck(my->parent, my->x, my->y, nullptr, false);
+					free(item);
+					my->removeLightField();
 					list_RemoveNode(my->mynode);
 					return;
 				}
@@ -572,6 +903,7 @@ void actThrown(Entity* my)
 							{
 								free(item);
 							}
+							my->removeLightField();
 							list_RemoveNode(my->mynode);
 							return;
 						}
@@ -605,6 +937,47 @@ void actThrown(Entity* my)
 			}
 			free(item);
 		}
+		else if ( my->skill[10] >= WOODEN_SHIELD && my->skill[10] < NUMITEMS && items[my->skill[10]].category == THROWN )
+		{
+			if ( parent )
+			{
+				if ( Stat* parentStats = parent->getStats() )
+				{
+					if ( parentStats->getEffectActive(EFF_RETURN_ITEM) )
+					{
+						if ( Item* item = newItemFromEntity(my, true) )
+						{
+							Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
+							entity->flags[INVISIBLE] = true;
+							entity->flags[UPDATENEEDED] = true;
+							entity->flags[PASSABLE] = true;
+							entity->x = my->x;
+							entity->y = my->y;
+							entity->z = my->z;
+							entity->sizex = my->sizex;
+							entity->sizey = my->sizey;
+							entity->yaw = my->yaw;
+							entity->pitch = my->pitch;
+							entity->roll = my->roll;
+							entity->vel_x = THROWN_VELX;
+							entity->vel_y = THROWN_VELY;
+							entity->vel_z = my->vel_z;
+							entity->behavior = &actItem;
+							entity->skill[10] = item->type;
+							entity->skill[11] = item->status;
+							entity->skill[12] = item->beatitude;
+							entity->skill[13] = item->count;
+							entity->skill[14] = item->appearance;
+							entity->skill[15] = item->identified;
+							entity->itemReturnUID = parent->getUID();
+
+							free(item);
+						}
+					}
+				}
+			}
+		}
+		my->removeLightField();
 		list_RemoveNode(my->mynode);
 		return;
 	}
@@ -618,8 +991,61 @@ void actThrown(Entity* my)
 	{
 		return;
 	}
-	double result = clipMove(&my->x, &my->y, THROWN_VELX, THROWN_VELY, my);
-	if ( processXYCollision && result != sqrt(THROWN_VELX * THROWN_VELX + THROWN_VELY * THROWN_VELY) )
+	my->processEntityWind();
+
+	bool hitSomething = false;
+	real_t result = 0.0;
+	bool halfSpeedCheck = false;
+	static ConsoleVariable<bool> cvar_thrown_clip("/thrown_clip_test", true);
+	real_t speed = sqrt(THROWN_VELX * THROWN_VELX + THROWN_VELY * THROWN_VELY);
+	if ( speed > 4.0 ) // can clip through thin gates
+	{
+		auto entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 1);
+		for ( auto it : entLists )
+		{
+			if ( !*cvar_thrown_clip && (svFlags & SV_FLAG_CHEATS) )
+			{
+				break;
+			}
+			for ( node_t* node = it->first; node != nullptr; node = node->next )
+			{
+				Entity* entity = (Entity*)node->element;
+				if ( entity->behavior == &actGate || entity->behavior == &actDoor || entity->behavior == &actIronDoor )
+				{
+					if ( entityDist(my, entity) <= speed )
+					{
+						halfSpeedCheck = true;
+						break;
+					}
+				}
+			}
+			if ( halfSpeedCheck )
+			{
+				break;
+			}
+		}
+	}
+
+	if ( !halfSpeedCheck )
+	{
+		result = clipMove(&my->x, &my->y, THROWN_VELX, THROWN_VELY, my);
+		hitSomething = result != sqrt(THROWN_VELX * THROWN_VELX + THROWN_VELY * THROWN_VELY);
+	}
+	else
+	{
+		real_t vel_x = THROWN_VELX / 2.0;
+		real_t vel_y = THROWN_VELY / 2.0;
+		real_t dist = clipMove(&my->x, &my->y, vel_x, vel_y, my);
+		result = dist;
+		hitSomething = dist != sqrt(vel_x * vel_x + vel_y * vel_y);
+		if ( !hitSomething )
+		{
+			dist = clipMove(&my->x, &my->y, vel_x, vel_y, my);
+			result += dist;
+			hitSomething = dist != sqrt(vel_x * vel_x + vel_y * vel_y);
+		}
+	}
+	if ( processXYCollision && hitSomething )
 	{
 		item = newItemFromEntity(my);
 		if ( !item )
@@ -674,11 +1100,56 @@ void actThrown(Entity* my)
 		if ( itemCategory(item) == THROWN || itemCategory(item) == GEM || itemCategory(item) == POTION )
 		{
 			my->entityCheckIfTriggeredBomb(true);
+			if ( !hit.entity )
+			{
+				my->entityCheckIfTriggeredWallButton();
+			}
 		}
 		bool tryHitEntity = true;
 		if ( itemIsThrowableTinkerTool(item) && !(item->type >= TOOL_BOMB && item->type <= TOOL_TELEPORT_BOMB) )
 		{
 			tryHitEntity = false;
+		}
+		if ( item->type == GEM_JEWEL )
+		{
+			tryHitEntity = false;
+			if ( hit.entity != nullptr )
+			{
+				if ( hit.entity->behavior == &actMonster && hit.entity->getStats() )
+				{
+					Entity* parent = uidToEntity(my->parent);
+					if ( parent && parent->behavior == &actPlayer )
+					{
+						if ( entityWantsJewel(item->status, *hit.entity, *hit.entity->getStats(), false) )
+						{
+							if ( jewelItemRecruit(parent, hit.entity, item->status, nullptr) )
+							{
+								free(item);
+								my->removeLightField();
+								list_RemoveNode(my->mynode);
+								return;
+							}
+						}
+					}
+				}
+			}
+		}
+
+		if ( my->sprite == items[GREASE_BALL].index )
+		{
+			spawnGreasePuddleSpawner(my->parent == 0 ? nullptr : uidToEntity(my->parent), my->x, my->y, 30 * TICKS_PER_SECOND);
+			if ( hit.entity != nullptr && tryHitEntity )
+			{
+				spawnGreasePuddleSpawner(my->parent == 0 ? nullptr : uidToEntity(my->parent), hit.entity->x, hit.entity->y, 30 * TICKS_PER_SECOND);
+			}
+		}
+		if ( my->sprite == items[DUST_BALL].index )
+		{
+			thrownItemUpdateSpellTrail(*my, my->x, my->y);
+			if ( hit.entity != nullptr && tryHitEntity )
+			{
+				thrownItemUpdateSpellTrail(*my, hit.entity->x, hit.entity->y);
+			}
 		}
 
 		if ( hit.entity != nullptr && tryHitEntity )
@@ -694,7 +1165,7 @@ void actThrown(Entity* my)
 			if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
 			{
 				// test for friendly fire
-				if ( parent && parent->checkFriend(hit.entity) )
+				if ( parent && parent->checkFriend(hit.entity) && parent->friendlyFireProtection(hit.entity) )
 				{
 					friendlyHit = true;
 				}
@@ -705,13 +1176,15 @@ void actThrown(Entity* my)
 				{
 					item->applyBomb(parent, item->type, Item::ItemBombPlacement::BOMB_CHEST, Item::ItemBombFacingDirection::BOMB_UP, my, hit.entity);
 					free(item);
+					my->removeLightField();
 					list_RemoveNode(my->mynode);
 					return;
 				}
-				else if ( hit.entity->behavior == &actDoor )
+				else if ( hit.entity->behavior == &actDoor || hit.entity->behavior == &actIronDoor )
 				{
 					item->applyBomb(parent, item->type, Item::ItemBombPlacement::BOMB_DOOR, Item::ItemBombFacingDirection::BOMB_UP, my, hit.entity);
 					free(item);
+					my->removeLightField();
 					list_RemoveNode(my->mynode);
 					return;
 				}
@@ -720,6 +1193,7 @@ void actThrown(Entity* my)
 				{
 					item->applyBomb(parent, item->type, Item::ItemBombPlacement::BOMB_COLLIDER, Item::ItemBombFacingDirection::BOMB_UP, my, hit.entity);
 					free(item);
+					my->removeLightField();
 					list_RemoveNode(my->mynode);
 					return;
 				}
@@ -730,6 +1204,7 @@ void actThrown(Entity* my)
 				int oldHP = 0;
 				oldHP = hit.entity->getHP();
 				int damage = (BASE_THROWN_DAMAGE + item->weaponGetAttack(parentStats));
+				bool thrownTypeWeapon = false;
 				if ( parentStats )
 				{
 					if ( itemCategory(item) == POTION )
@@ -742,7 +1217,10 @@ void actThrown(Entity* my)
 					}
 					else
 					{
-						if ( itemCategory(item) == THROWN )
+						if ( itemCategory(item) == THROWN 
+							&& !(item->type == DUST_BALL
+							|| item->type == SLOP_BALL
+							|| item->type == GREASE_BALL) )
 						{
 							int enemyAC = AC(hitstats);
 							damage = my->thrownProjectilePower;
@@ -761,6 +1239,8 @@ void actThrown(Entity* my)
 							real_t targetACEffectiveness = Entity::getACEffectiveness(hit.entity, hitstats, hit.entity->behavior == &actPlayer, parent, parentStats, numBlessings);
 							int attackAfterReductions = static_cast<int>(std::max(0.0, ((damage * targetACEffectiveness - enemyAC))) + (1.0 - targetACEffectiveness) * damage);
 							damage = attackAfterReductions;
+
+							thrownTypeWeapon = true;
 						}
 						else
 						{
@@ -770,6 +1250,15 @@ void actThrown(Entity* my)
 								damage += my->thrownProjectileCharge / 5;
 							}
 							damage -= (AC(hit.entity->getStats()) * .5);
+						}
+
+						if ( hitstats && hitstats->getEffectActive(EFF_GUARD_BODY) )
+						{
+							thaumSpellArmorProc(hit.entity, *hitstats, false, parent, EFF_GUARD_BODY);
+						}
+						if ( hitstats && hitstats->getEffectActive(EFF_DIVINE_GUARD) )
+						{
+							thaumSpellArmorProc(hit.entity, *hitstats, false, parent, EFF_DIVINE_GUARD);
 						}
 					}
 				}
@@ -796,6 +1285,9 @@ void actThrown(Entity* my)
 					case FOOD_CREAMPIE:
 						damage = 0;
 						break;
+					case TOOL_DUCK:
+						damage = 1;
+						break;
 					default:
 						break;
 				}
@@ -810,11 +1302,65 @@ void actThrown(Entity* my)
 					damage = std::min(10, damage); // impact damage is 10 max on allies.
 				}
 
+				bool envenomWeapon = false;
+				if ( parent )
+				{
+					Stat* parentStats = parent->getStats();
+					if ( parentStats && parentStats->getEffectActive(EFF_ENVENOM_WEAPON) && hitstats )
+					{
+						if ( local_rng.rand() % 2 == 0 )
+						{
+							int envenomDamage = std::min(
+								getSpellDamageSecondaryFromID(SPELL_ENVENOM_WEAPON, parent, parentStats, parent),
+								getSpellDamageFromID(SPELL_ENVENOM_WEAPON, parent, parentStats, parent));
+
+							hit.entity->modHP(-envenomDamage); // do the damage
+							for ( int tmp = 0; tmp < 3; ++tmp )
+							{
+								Entity* gib = spawnGib(hit.entity, 211);
+								serverSpawnGibForClient(gib);
+							}
+							if ( !hitstats->getEffectActive(EFF_POISONED) )
+							{
+								envenomWeapon = true;
+								hitstats->setEffectActive(EFF_POISONED, 1);
+
+								int duration = 160 * envenomDamage;
+								hitstats->EFFECTS_TIMERS[EFF_POISONED] = std::max(200, duration - hit.entity->getCON() * 20);
+								hitstats->poisonKiller = parent->getUID();
+								if ( hit.entity->isEntityPlayer() )
+								{
+									messagePlayerMonsterEvent(hit.entity->isEntityPlayer(), makeColorRGB(255, 0, 0), *parentStats, Language::get(6531), Language::get(6532), MSG_COMBAT);
+									serverUpdateEffects(hit.entity->isEntityPlayer());
+								}
+
+								if ( parent->behavior == &actPlayer )
+								{
+									players[parent->skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_ENVENOM_WEAPON, 50.0, 1.0, hit.entity);
+								}
+							}
+						}
+					}
+				}
+
 				char whatever[256] = "";
 				if ( !friendlyHit )
 				{
 					Sint32 oldHP = hitstats->HP;
 					hit.entity->modHP(-damage);
+
+					if ( hitstats )
+					{
+						Sint32 damageTaken = oldHP - hitstats->HP;
+						if ( damageTaken > 0 )
+						{
+							if ( hitstats->getEffectActive(EFF_DEFY_FLESH) )
+							{
+								hit.entity->defyFleshProc(parent);
+							}
+							hit.entity->pinpointDamageProc(parent, damageTaken);
+						}
+					}
 
 					if ( hit.entity->behavior == &actPlayer )
 					{
@@ -861,7 +1407,8 @@ void actThrown(Entity* my)
 				bool ignorePotion = false;
 				bool wasPotion = itemCategory(item) == POTION;
 				ItemType itemType = item->type;
-				bool wasConfused = (hitstats && hitstats->EFFECTS[EFF_CONFUSED]);
+				bool wasConfused = (hitstats && hitstats->getEffectActive(EFF_CONFUSED));
+				Uint32 prevTarget = hit.entity->behavior == &actMonster ? hit.entity->monsterTarget : 0;
 				bool healingPotion = false;
 
 				if ( hitstats )
@@ -879,11 +1426,11 @@ void actThrown(Entity* my)
 							case POTION_ICESTORM:
 							case POTION_THUNDERSTORM:
 							case POTION_POLYMORPH:
+							case POTION_WATER:
 								ignorePotion = false;
 								break;
 							case POTION_EXTRAHEALING:
 							case POTION_HEALING:
-							case POTION_WATER:
 							case POTION_BOOZE:
 							case POTION_JUICE:
 							case POTION_CONFUSION:
@@ -895,6 +1442,7 @@ void actThrown(Entity* my)
 							case POTION_STRENGTH:
 							case POTION_PARALYSIS:
 							case FOOD_CREAMPIE:
+							case TOOL_DUCK:
 								ignorePotion = true;
 								break;
 							default:
@@ -947,7 +1495,7 @@ void actThrown(Entity* my)
 								break;
 							case POTION_BOOZE:
 								item_PotionBooze(item, hit.entity, parent);
-								if ( parentStats && parentStats->EFFECTS[EFF_DRUNK] )
+								if ( parentStats && parentStats->getEffectActive(EFF_DRUNK) )
 								{
 									steamAchievementEntity(parent, "BARONY_ACH_CHEERS");
 									if ( hit.entity->behavior == &actMonster && parent && parent->behavior == &actPlayer )
@@ -1108,6 +1656,128 @@ void actThrown(Entity* my)
 								item_PotionParalysis(item, hit.entity, parent);
 								usedpotion = true;
 								break;
+							case GREASE_BALL:
+								item_PotionGrease(item, hit.entity, parent);
+								//usedpotion = true;
+								break;
+							case DUST_BALL:
+								if ( hit.entity->setEffect(EFF_DUSTED, true, 5 * TICKS_PER_SECOND + 10, true) )
+								{
+									if ( hit.entity->behavior == &actPlayer )
+									{
+										messagePlayerColor(hit.entity->skill[2], MESSAGE_STATUS, makeColorRGB(255, 0, 0), Language::get(6752));
+									}
+									if ( parent && parent->behavior == &actPlayer )
+									{
+										Uint32 color = makeColorRGB(0, 255, 0);
+										messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(6762), Language::get(6761), MSG_COMBAT);
+									}
+									if ( hit.entity->behavior == &actMonster )
+									{
+										disableAlertBlindStatus = true; // don't aggro target.
+									}
+								}
+								break;
+							case SLOP_BALL:
+							{
+								bool wasBlind = false;
+								if ( hitstats )
+								{
+									wasBlind = hitstats->getEffectActive(EFF_BLIND) > 0;
+								}
+								if ( hit.entity->setEffect(EFF_BLIND, true, 5 * TICKS_PER_SECOND, false) )
+								{
+									if ( hit.entity->behavior == &actPlayer )
+									{
+										messagePlayerColor(hit.entity->skill[2], MESSAGE_STATUS, makeColorRGB(255, 0, 0), Language::get(6990));
+									}
+									if ( parent && parent->behavior == &actPlayer )
+									{
+										Uint32 color = makeColorRGB(0, 255, 0);
+										messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(3878), Language::get(3879), MSG_COMBAT);
+										if ( !wasBlind )
+										{
+											achievementObserver.addEntityAchievementTimer(parent, AchievementObserver::BARONY_ACH_FOOD_FIGHT, 5 * TICKS_PER_SECOND, false, 1);
+											achievementObserver.awardAchievementIfActive(parent->skill[2], parent, AchievementObserver::BARONY_ACH_FOOD_FIGHT);
+										}
+									}
+									if ( hit.entity->behavior == &actMonster )
+									{
+										disableAlertBlindStatus = true; // don't aggro target.
+									}
+								}
+								break;
+							}
+							case BOLAS:
+							{
+								int duration = 3 * TICKS_PER_SECOND;
+								if ( parent && parentStats )
+								{
+									duration += statGetPER(parentStats, parent) * 5;
+									duration += statGetDEX(parentStats, parent) * 5;
+									duration -= statGetSTR(hitstats, hit.entity) * 5;
+									duration -= statGetDEX(hitstats, hit.entity) * 5;
+									duration = std::max(1 * TICKS_PER_SECOND, duration);
+									if ( parent->behavior == &actPlayer )
+									{
+										real_t charge = my->thrownProjectileCharge / 15.0; // 0-1
+										duration *= (0.25 + 1.25 * charge); // 0.25-1.5
+									}
+								}
+								if ( hit.entity->setEffect(EFF_ROOTED, true, duration, false) )
+								{
+									achievementObserver.addEntityAchievementTimer(hit.entity, AchievementObserver::BARONY_ACH_THATS_A_WRAP, duration, true, 0);
+
+									if ( hit.entity->behavior == &actPlayer )
+									{
+										messagePlayerColor(hit.entity->skill[2], MESSAGE_STATUS, makeColorRGB(255, 0, 0), Language::get(6763));
+									}
+									if ( parent && parent->behavior == &actPlayer )
+									{
+										Uint32 color = makeColorRGB(0, 255, 0);
+										messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(6764), Language::get(6765), MSG_COMBAT);
+									}
+									playSoundEntity(hit.entity, 763, 128);
+								}
+								else
+								{
+									if ( parent && parent->behavior == &actPlayer )
+									{
+										Uint32 color = makeColorRGB(255, 0, 0);
+										messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(6766), Language::get(6767), MSG_COMBAT);
+									}
+								}
+								break;
+							}
+							case TOOL_DUCK:
+							{
+								// set disoriented and start a cooldown on being distracted.
+								if ( hit.entity->behavior == &actMonster && hitstats
+									&& !hitstats->getEffectActive(EFF_DISORIENTED)
+									&& !hitstats->getEffectActive(EFF_DISTRACTED_COOLDOWN) )
+								{
+									if ( hit.entity->monsterReleaseAttackTarget() )
+									{
+										hit.entity->monsterLookDir = hit.entity->yaw;
+										hit.entity->monsterLookDir += (PI - PI / 4 + (local_rng.rand() % 10) * PI / 40);
+										if ( hit.entity->monsterState == MONSTER_STATE_WAIT || hit.entity->monsterTarget == 0 )
+										{
+											// not attacking, duration longer.
+											hit.entity->setEffect(EFF_DISORIENTED, true, TICKS_PER_SECOND * 2, false);
+											hit.entity->setEffect(EFF_DISTRACTED_COOLDOWN, true, TICKS_PER_SECOND * 3, false);
+										}
+										else
+										{
+											hit.entity->setEffect(EFF_DISORIENTED, true, TICKS_PER_SECOND * 1, false);
+											hit.entity->setEffect(EFF_DISTRACTED_COOLDOWN, true, TICKS_PER_SECOND * 3, false);
+										}
+									}
+									spawnFloatingSpriteMisc(134, hit.entity->x + (-4 + local_rng.rand() % 9) + cos(hit.entity->yaw) * 2,
+										hit.entity->y + (-4 + local_rng.rand() % 9) + sin(hit.entity->yaw) * 2, hit.entity->z + local_rng.rand() % 4);
+								}
+								usedpotion = true;
+								break;
+							}
 							case FOOD_CREAMPIE:
 							{
 								skipMessage = true;
@@ -1245,7 +1915,9 @@ void actThrown(Entity* my)
 
 				if ( friendlyHit && !usedpotion )
 				{
-					if ( item && itemCategory(item) != POTION && item->type != BOOMERANG )
+					if ( item && itemCategory(item) != POTION && item->type != BOOMERANG
+						&& item->type != GREASE_BALL && item->type != DUST_BALL 
+						&& item->type != SLOP_BALL )
 					{
 						Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
 						entity->flags[INVISIBLE] = true;
@@ -1269,13 +1941,28 @@ void actThrown(Entity* my)
 						entity->skill[13] = item->count;
 						entity->skill[14] = item->appearance;
 						entity->skill[15] = item->identified;
+						if ( item->type == GEM_JEWEL )
+						{
+							entity->parent = my->parent;
+						}
 						if ( itemCategory(item) == THROWN )
 						{
 							//Hack to make monsters stop catching your shurikens and chakrams.
 							entity->parent = my->parent;
+							if ( parent )
+							{
+								if ( Stat* parentStats = parent->getStats() )
+								{
+									if ( parentStats->getEffectActive(EFF_RETURN_ITEM) )
+									{
+										entity->itemReturnUID = parent->getUID();
+									}
+								}
+							}
 						}
 					}
 					free(item);
+					my->removeLightField();
 					list_RemoveNode(my->mynode);
 					return;
 				}
@@ -1316,10 +2003,25 @@ void actThrown(Entity* my)
 							doSkillIncrease = false; // no skill for killing/hurting other turrets.
 						}
 					}
+					else if ( hit.entity->behavior == &actMonster
+						&& (hit.entity->monsterAllyGetPlayerLeader() || (hitstats && achievementObserver.checkUidIsFromPlayer(hitstats->leader_uid) >= 0))
+						&& parent && parent->behavior == &actPlayer )
+					{
+						doSkillIncrease = false; // no level up on allies
+					}
 					if ( hit.entity->behavior == &actPlayer && parent && parent->behavior == &actPlayer )
 					{
 						doSkillIncrease = false; // no skill for killing/hurting players
 					}
+
+					if ( doSkillIncrease && parent && parent->behavior == &actPlayer )
+					{
+						if ( parent->isInvisible() && parent->checkEnemy(hit.entity) )
+						{
+							players[parent->skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_INVISIBILITY, 10.0, 1.0, hit.entity);
+						}
+					}
+
 					int chance = 5;
 					if ( doSkillIncrease && (local_rng.rand() % chance == 0) && parent && parent->getStats() )
 					{
@@ -1332,7 +2034,10 @@ void actThrown(Entity* my)
 				}
 				else
 				{
-					if ( cat == THROWN )
+					if ( cat == THROWN 
+						&& !(item && (item->type == GREASE_BALL 
+							|| item->type == DUST_BALL
+							|| item->type == SLOP_BALL)) )
 					{
 						playSoundEntity(hit.entity, 66, 64); //*tink*
 					}
@@ -1383,10 +2088,10 @@ void actThrown(Entity* my)
 
 				bool doAlert = true;
 				// fix for confuse potion aggro'ing monsters on impact.
-				if ( !wasConfused && hitstats && hitstats->EFFECTS[EFF_CONFUSED] && hit.entity->behavior == &actMonster && parent )
+				if ( !wasConfused && hitstats && hitstats->getEffectActive(EFF_CONFUSED) && hit.entity->behavior == &actMonster && parent )
 				{
 					doAlert = false;
-					if ( hit.entity->monsterTarget == parent->getUID() )
+					if ( hit.entity->monsterTarget == parent->getUID() || prevTarget == parent->getUID() )
 					{
 						hit.entity->monsterReleaseAttackTarget();
 					}
@@ -1395,21 +2100,13 @@ void actThrown(Entity* my)
 				// alert the monster
 				if ( hit.entity->behavior == &actMonster && hitstats && parent != nullptr && doAlert )
 				{
-					bool alertTarget = true;
+					bool alertTarget = hit.entity->monsterAlertBeforeHit(parent);
 					bool targetHealed = false;
-					if ( parent->behavior == &actMonster && parent->monsterAllyIndex != -1 )
-					{
-						if ( hit.entity->behavior == &actMonster && hit.entity->monsterAllyIndex != -1 )
-						{
-							// if a player ally + hit another ally, don't aggro back
-							alertTarget = false;
-						}
-					}
 
 					if ( disableAlertBlindStatus )
 					{
 						alertTarget = false;
-						if ( hitstats->EFFECTS[EFF_BLIND] )
+						if ( hitstats->getEffectActive(EFF_BLIND) || hitstats->getEffectActive(EFF_DUSTED) )
 						{
 							hit.entity->monsterReleaseAttackTarget();
 						}
@@ -1512,6 +2209,11 @@ void actThrown(Entity* my)
 					{
 						messagePlayerColor(hit.entity->skill[2], MESSAGE_STATUS, makeColorRGB(0, 255, 0), Language::get(6088));
 					}
+				}
+				if ( parent && parent->behavior == &actPlayer && envenomWeapon && hitstats && hitstats->HP > 0 )
+				{
+					Uint32 color = makeColorRGB(0, 255, 0);
+					messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(6533), Language::get(6534), MSG_COMBAT);
 				}
 			}
 			else
@@ -1624,8 +2326,11 @@ void actThrown(Entity* my)
 								hit.entity->colliderKillerUid = parent ? parent->getUID() : 0;
 								if ( parent && parent->behavior == &actPlayer )
 								{
-									messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(hit.entity->getColliderOnBreakLangEntry()),
-										Language::get(hit.entity->getColliderLangName()));
+									if ( hit.entity->getColliderOnBreakLangEntry() != 0 )
+									{
+										messagePlayer(parent->skill[2], MESSAGE_COMBAT, Language::get(hit.entity->getColliderOnBreakLangEntry()),
+											Language::get(hit.entity->getColliderLangName()));
+									}
 									if ( hit.entity->isColliderWall() )
 									{
 										Compendium_t::Events_t::eventUpdateWorld(parent->skill[2], Compendium_t::CPDM_BARRIER_DESTROYED, "breakable barriers", 1);
@@ -1701,6 +2406,7 @@ void actThrown(Entity* my)
 						}
 					}
 					free(item);
+					my->removeLightField();
 					list_RemoveNode(my->mynode);
 					return;
 					break;
@@ -1716,10 +2422,12 @@ void actThrown(Entity* my)
 			{
 				free(item);
 			}
+			onThrownLandingParticle(my);
+			my->removeLightField();
 			list_RemoveNode(my->mynode);
 			return;
 		}
-		else if ( item->type == FOOD_CREAMPIE )
+		else if ( item && item->type == FOOD_CREAMPIE )
 		{
 			if ( !usedpotion )
 			{
@@ -1731,8 +2439,31 @@ void actThrown(Entity* my)
 			}
 			free(item);
 			item = nullptr;
+			my->removeLightField();
 			list_RemoveNode(my->mynode);
 			return;
+		}
+		else if ( item && (item->type == DUST_BALL 
+			|| item->type == GREASE_BALL
+			|| item->type == SLOP_BALL) )
+		{
+			free(item);
+			item = nullptr;
+			onThrownLandingParticle(my);
+			playSoundEntity(my, 764, 64);
+			if ( hit.entity &&
+				(hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer) )
+			{
+				// become passable, go through creatures
+				//my->flags[NOCLIP_CREATURES] = true;
+				my->collisionIgnoreTargets.insert(hit.entity->getUID());
+			}
+			else
+			{
+				my->removeLightField();
+				list_RemoveNode(my->mynode);
+				return;
+			}
 		}
 		else if ( itemCategory(item) == THROWN && (item->type == STEEL_CHAKRAM 
 			|| item->type == CRYSTAL_SHURIKEN || (item->type == BOOMERANG && uidToEntity(my->parent))) 
@@ -1744,6 +2475,7 @@ void actThrown(Entity* my)
 			{
 				// boomerang always tink and return to owner.
 				free(item);
+				my->removeLightField();
 				list_RemoveNode(my->mynode);
 				return;
 			}
@@ -1752,12 +2484,25 @@ void actThrown(Entity* my)
 		{
 			// boomerang always return to owner.
 			free(item);
+			my->removeLightField();
 			list_RemoveNode(my->mynode);
 			return;
 		}
 		else if ( item && itemIsThrowableTinkerTool(item) /*&& !(item->type >= TOOL_BOMB && item->type <= TOOL_TELEPORT_BOMB)*/ )
 		{
 			// non-bomb tools will fall to the ground and get placed.
+		}
+		else if ( item && item->type == GEM_JEWEL )
+		{
+			// will fall to the ground and get placed.
+		}
+		else if ( item && item->type == TOOL_DUCK )
+		{
+			item->applyDuck(my->parent, my->x, my->y, hit.entity, false);
+			free(item);
+			my->removeLightField();
+			list_RemoveNode(my->mynode);
+			return;
 		}
 		else
 		{
@@ -1777,6 +2522,21 @@ void actThrown(Entity* my)
 						createParticleShatteredGem(my->x, my->y, my->z, my->sprite, nullptr);
 						serverSpawnMiscParticlesAtLocation(my->x, my->y, my->z, PARTICLE_EFFECT_SHATTERED_GEM, my->sprite);
 					}
+				}
+			}
+			else if ( item && item->type == BOLAS )
+			{
+				if ( hit.entity && !hit.entity->isInertMimic() && hit.entity->getStats() )
+				{
+					dropItem = false;
+					int duration = 3 * TICKS_PER_SECOND;
+					if ( hit.entity->getStats()->getEffectActive(EFF_ROOTED) )
+					{
+						duration = hit.entity->getStats()->EFFECTS_TIMERS[EFF_ROOTED];
+					}
+					item->ownerUid = parent ? parent->getUID() : 0;
+					createParticleBolas(hit.entity, 1917, duration, item);
+					serverSpawnMiscParticles(hit.entity, PARTICLE_EFFECT_BOLAS, 1917, 0, duration, 0);
 				}
 			}
 			if ( dropItem )
@@ -1803,13 +2563,28 @@ void actThrown(Entity* my)
 				entity->skill[13] = item->count;
 				entity->skill[14] = item->appearance;
 				entity->skill[15] = item->identified;
+				if ( item->type == GEM_JEWEL )
+				{
+					entity->parent = my->parent;
+				}
 				if ( itemCategory(item) == THROWN )
 				{
 					//Hack to make monsters stop catching your shurikens and chakrams.
 					entity->parent = my->parent;
+					if ( parent )
+					{
+						if ( Stat* parentStats = parent->getStats() )
+						{
+							if ( parentStats->getEffectActive(EFF_RETURN_ITEM) )
+							{
+								entity->itemReturnUID = parent->getUID();
+							}
+						}
+					}
 				}
 			}
 			free(item);
+			my->removeLightField();
 			list_RemoveNode(my->mynode);
 			return;
 		}
@@ -1854,6 +2629,49 @@ void actThrown(Entity* my)
 		else
 		{
 			my->pitch += result * .01;
+		}
+	}
+}
+
+void thrownItemUpdateSpellTrail(Entity& my, real_t _x, real_t _y)
+{
+	if ( my.sprite == items[DUST_BALL].index )
+	{
+		auto findEffects = particleTimerEffects.find(my.thrownProjectileParticleTimerUID);
+		if ( findEffects != particleTimerEffects.end() )
+		{
+			if ( auto spellTimer = uidToEntity(my.thrownProjectileParticleTimerUID) )
+			{
+				int x = static_cast<int>(_x) / 16;
+				int y = static_cast<int>(_y) / 16;
+				bool freeSpot = true;
+				Uint32 lastTick = 1;
+				for ( auto& eff : findEffects->second.effectMap )
+				{
+					if ( static_cast<int>(eff.second.x) / 16 == x
+						&& static_cast<int>(eff.second.y) / 16 == y )
+					{
+						freeSpot = false;
+					}
+					lastTick = std::max(eff.first, lastTick);
+				}
+				if ( freeSpot )
+				{
+					auto& effect = findEffects->second.effectMap[std::max(spellTimer->ticks + 1, lastTick + 2)]; // insert x ticks beyond last effect
+					if ( findEffects->second.effectMap.size() == 1 )
+					{
+						effect.firstEffect = true;
+					}
+					int spellID = spellTimer->particleTimerVariable2;
+					auto particleEffectType = (spellID == SPELL_MYCELIUM_BOMB || spellID == SPELL_MYCELIUM_SPORES)
+						? ParticleTimerEffect_t::EffectType::EFFECT_MYCELIUM
+						: ParticleTimerEffect_t::EffectType::EFFECT_SPORES;
+					effect.effectType = particleEffectType;
+					effect.x = x * 16.0 + 8.0;
+					effect.y = y * 16.0 + 8.0;
+					effect.yaw = 0.0;
+				}
+			}
 		}
 	}
 }

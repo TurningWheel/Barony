@@ -9,8 +9,8 @@
 
 -------------------------------------------------------------------------------*/
 
-#include <new>
 #include "main.hpp"
+#include <new>
 #include "entity.hpp"
 #include "messages.hpp"
 

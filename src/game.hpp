@@ -25,9 +25,9 @@
 
 // REMEMBER TO CHANGE THIS WITH EVERY NEW OFFICIAL VERSION!!!
 #ifdef NINTENDO
-static const char VERSION[] = "v4.3.2";
+static const char VERSION[] = "v5.0.1";
 #else
-static const char VERSION[] = "v4.3.2";
+static const char VERSION[] = "v5.0.1";
 #endif
 #define GAME_CODE
 
@@ -83,7 +83,6 @@ extern bool oassailant[MAXPLAYERS];
 extern int assailantTimer[MAXPLAYERS];
 static const int COMBAT_MUSIC_COOLDOWN = 200; // 200 ticks of combat music before it fades away.
 extern list_t removedEntities;
-extern list_t entitiesToDelete[MAXPLAYERS];
 extern char maptoload[256], configtoload[256];
 extern bool loadingmap, loadingconfig;
 extern int startfloor;
@@ -99,9 +98,9 @@ extern real_t time_diff;
 extern real_t t, ot, frameval[AVERAGEFRAMES];
 extern Uint32 cycles, pingtime;
 extern real_t fps;
-static const int NUMCLASSES = 21;
-#define NUMRACES 13
-#define NUMPLAYABLERACES 9
+static const int NUMCLASSES = 26;
+#define NUMRACES 18
+#define NUMPLAYABLERACES 14
 extern char address[64];
 extern bool loadnextlevel;
 extern int skipLevelsOnLoad;
@@ -155,7 +154,12 @@ enum PlayerClasses : int
 	CLASS_MACHINIST,
 	CLASS_PUNISHER,
 	CLASS_SHAMAN,
-	CLASS_HUNTER
+	CLASS_HUNTER,
+	CLASS_BARD,
+	CLASS_SAPPER,
+	CLASS_SCION,
+	CLASS_HERMIT,
+	CLASS_PALADIN
 };
 
 static const std::vector<std::string> playerClassInternalNames = {
@@ -179,7 +183,12 @@ static const std::vector<std::string> playerClassInternalNames = {
 	"class_machinist",
 	"class_punisher",
 	"class_shaman",
-	"class_hunter"
+	"class_hunter",
+	"class_bard",
+	"class_sapper",
+	"class_scion",
+	"class_hermit",
+	"class_paladin"
 };
 
 static const int CLASS_SHAMAN_NUM_STARTING_SPELLS = 15;
@@ -198,7 +207,13 @@ enum PlayerRaces : int
 	RACE_RAT,
 	RACE_TROLL,
 	RACE_SPIDER,
-	RACE_IMP
+	RACE_IMP,
+	RACE_GNOME,
+	RACE_GREMLIN,
+	RACE_DRYAD,
+	RACE_MYCONID,
+	RACE_SALAMANDER,
+	RACE_ENUM_END
 };
 
 bool achievementUnlocked(const char* achName);
@@ -209,7 +224,6 @@ void steamAchievementEntity(Entity* my, const char* achName); // give steam achi
 void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value);
 void steamStatisticUpdateClient(int player, int statisticNum, ESteamStatTypes type, int value);
 void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type);
-void freePlayerEquipment(int x);
 void pauseGame(int mode, int ignoreplayer);
 int initGame();
 void initGameDatafiles(bool moddedReload);
@@ -229,6 +243,7 @@ void actStatueAnimator(Entity* my);
 void actStatue(Entity* my);
 void actDoorFrame(Entity* my);
 void actDeathCam(Entity* my);
+void actProjectSpiritCam(Entity* my);
 void actDeathGhost(Entity* my);
 void actDeathGhostLimb(Entity* my);
 void actPlayerLimb(Entity* my);
@@ -240,13 +255,21 @@ void actHudArm(Entity* my);
 void actHudShield(Entity* my);
 void actHudAdditional(Entity* my);
 void actHudArrowModel(Entity* my);
+void actHudAdditional2(Entity* my);
 void actItem(Entity* my);
 void actGoldBag(Entity* my);
 void actGib(Entity* my);
+void actGreasePuddleSpawner(Entity* my);
+void actGreasePuddle(Entity* my);
+void actMiscPuddle(Entity* my);
+void spawnGreasePuddleSpawner(Entity* caster, real_t x, real_t y, int duration);
 void actDamageGib(Entity* my);
+void actFociGib(Entity* my);
+Entity* spawnFociGib(real_t x, real_t y, real_t z, real_t dir, real_t velocityBonus, Uint32 parentUid, int sprite, Uint32 seed);
 Entity* spawnGib(Entity* parentent, int customGibSprite = -1);
 Entity* spawnDamageGib(Entity* parentent, Sint32 dmgAmount, int gibDmgType, int displayType = 0, bool updateClients = false);
 Entity* spawnGibClient(Sint16 x, Sint16 y, Sint16 z, Sint16 sprite);
+Entity* spawnMiscPuddle(Entity* parentent, real_t x, real_t y, int sprite, bool updateClients = false);
 void serverSpawnGibForClient(Entity* gib);
 void actLadder(Entity* my);
 void actLadderUp(Entity* my);
@@ -254,7 +277,11 @@ void actPortal(Entity* my);
 void actWinningPortal(Entity* my);
 void actFlame(Entity* my);
 void actCampfire(Entity* my);
+void actCauldron(Entity* my);
+void actWorkbench(Entity* my);
+void actMailbox(Entity* my);
 Entity* spawnFlame(Entity* parentent, Sint32 sprite);
+Entity* spawnFlameSprites(Entity* parentent, Sint32 sprite);
 Entity* castMagic(Entity* parentent);
 void actSprite(Entity* my);
 void actSpriteNametag(Entity* my);
@@ -304,6 +331,10 @@ void actSoundSource(Entity* my);
 void actLightSource(Entity* my);
 void actSignalTimer(Entity* my);
 void actSignalGateAND(Entity* my);
+void actWallLock(Entity* my);
+void actWallButton(Entity* my);
+void actWind(Entity* my);
+void createWaterSplash(real_t x, real_t y, int lifetime);
 
 void startMessages();
 bool frameRateLimit(Uint32 maxFrameRate, bool resetAccumulator = true, bool sleep = false);
@@ -329,8 +360,9 @@ extern char last_port[64];
 
 //TODO: Maybe increase with level or something?
 //TODO: Pause health regen during combat?
-#define HEAL_TIME 600 //10 seconds. //Original time: 3600 (1 minute)
-#define MAGIC_REGEN_TIME 300 // 5 seconds
+#define HEAL_TIME 600 //12 seconds. //Original time: 3600 (1 minute)
+#define MAGIC_REGEN_TIME 600 // 12 seconds
+#define MAGIC_REGEN_AUTOMATON_TIME 300
 
 #define DEFAULT_HP 30
 #define DEFAULT_MP 30
@@ -368,9 +400,10 @@ extern std::vector<std::string> randomNPCNamesMale;
 extern std::vector<std::string> randomNPCNamesFemale;
 extern bool enabledDLCPack1;
 extern bool enabledDLCPack2;
+extern bool enabledDLCPack3;
 extern std::vector<std::string> physFSFilesInDirectory;
 void loadRandomNames();
-void mapLevel(int player);
+int mapLevel(int player, int radius, int _x, int _y, bool usingSpell);
 void mapLevel2(int player);
 void mapFoodOnLevel(int player);
 bool mapTileDiggable(const int x, const int y);

@@ -69,6 +69,13 @@
 		845F4BC52920302F00D6B9D7 /* SDL2_ttf.framework in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 84C3D8F3291F5DEB0084EAD5 /* SDL2_ttf.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		845F4BC62920302F00D6B9D7 /* SDL2.framework in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 84C3D8F1291F5D370084EAD5 /* SDL2.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		845F4BCD292051C000D6B9D7 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 845F4BCC292051C000D6B9D7 /* Assets.xcassets */; };
+		846DBD0E2F2B1EEA0064BF2C /* monster_summons.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 846DBD0D2F2B1EEA0064BF2C /* monster_summons.cpp */; };
+		846DBD0F2F2B1EEA0064BF2C /* monster_duck.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 846DBD082F2B1EEA0064BF2C /* monster_duck.cpp */; };
+		846DBD102F2B1EEA0064BF2C /* monster_g.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 846DBD092F2B1EEA0064BF2C /* monster_g.cpp */; };
+		846DBD112F2B1EEA0064BF2C /* monster_s.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 846DBD0C2F2B1EEA0064BF2C /* monster_s.cpp */; };
+		846DBD122F2B1EEA0064BF2C /* monster_d.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 846DBD072F2B1EEA0064BF2C /* monster_d.cpp */; };
+		846DBD132F2B1EEA0064BF2C /* monster_moth.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 846DBD0B2F2B1EEA0064BF2C /* monster_moth.cpp */; };
+		846DBD142F2B1EEA0064BF2C /* monster_m.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 846DBD0A2F2B1EEA0064BF2C /* monster_m.cpp */; };
 		847B3BF0296BF890002D8852 /* libpng16.16.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 847B3BEF296BF890002D8852 /* libpng16.16.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		847B3BF2296BF89F002D8852 /* libphysfs.1.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 847B3BF1296BF89F002D8852 /* libphysfs.1.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		847B3BF3296BF8B5002D8852 /* libpng16.16.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 847B3BEF296BF890002D8852 /* libpng16.16.dylib */; };
@@ -347,6 +354,13 @@
 		8453695A29B09C36007AC397 /* imgui_impl_opengl3_loader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = imgui_impl_opengl3_loader.h; path = ../../src/imgui/imgui_impl_opengl3_loader.h; sourceTree = "<group>"; };
 		8453695B29B09C36007AC397 /* imgui_impl_opengl3.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = imgui_impl_opengl3.h; path = ../../src/imgui/imgui_impl_opengl3.h; sourceTree = "<group>"; };
 		845F4BCC292051C000D6B9D7 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		846DBD072F2B1EEA0064BF2C /* monster_d.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = monster_d.cpp; path = /Users/sheridan/Work/Barony/src/monster_d.cpp; sourceTree = "<absolute>"; };
+		846DBD082F2B1EEA0064BF2C /* monster_duck.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = monster_duck.cpp; path = /Users/sheridan/Work/Barony/src/monster_duck.cpp; sourceTree = "<absolute>"; };
+		846DBD092F2B1EEA0064BF2C /* monster_g.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = monster_g.cpp; path = /Users/sheridan/Work/Barony/src/monster_g.cpp; sourceTree = "<absolute>"; };
+		846DBD0A2F2B1EEA0064BF2C /* monster_m.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = monster_m.cpp; path = /Users/sheridan/Work/Barony/src/monster_m.cpp; sourceTree = "<absolute>"; };
+		846DBD0B2F2B1EEA0064BF2C /* monster_moth.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = monster_moth.cpp; path = /Users/sheridan/Work/Barony/src/monster_moth.cpp; sourceTree = "<absolute>"; };
+		846DBD0C2F2B1EEA0064BF2C /* monster_s.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = monster_s.cpp; path = /Users/sheridan/Work/Barony/src/monster_s.cpp; sourceTree = "<absolute>"; };
+		846DBD0D2F2B1EEA0064BF2C /* monster_summons.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = monster_summons.cpp; path = /Users/sheridan/Work/Barony/src/monster_summons.cpp; sourceTree = "<absolute>"; };
 		847B3BEF296BF890002D8852 /* libpng16.16.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libpng16.16.dylib; path = ../../../lpng1639/libpng16.16.dylib; sourceTree = "<group>"; };
 		847B3BF1296BF89F002D8852 /* libphysfs.1.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libphysfs.1.dylib; path = "../../../physfs-3.0.2/build/libphysfs.1.dylib"; sourceTree = "<group>"; };
 		847C6CBD2DFC9D34003F2A37 /* libopus.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libopus.0.dylib; path = "../../../opus-1.5.2/lib/libopus.0.dylib"; sourceTree = "<group>"; };
@@ -811,8 +825,11 @@
 				84FDF0632CC9A9D500AE8639 /* monster_bugbear.cpp */,
 				84C3DA6F291F78F00084EAD5 /* monster_cockatrice.cpp */,
 				84C3DA81291F78F00084EAD5 /* monster_crystalgolem.cpp */,
+				846DBD072F2B1EEA0064BF2C /* monster_d.cpp */,
 				84C3DA70291F78F00084EAD5 /* monster_demon.cpp */,
 				84C3DA73291F78F00084EAD5 /* monster_devil.cpp */,
+				846DBD082F2B1EEA0064BF2C /* monster_duck.cpp */,
+				846DBD092F2B1EEA0064BF2C /* monster_g.cpp */,
 				84C3DA65291F78EF0084EAD5 /* monster_ghoul.cpp */,
 				84C3DA6B291F78EF0084EAD5 /* monster_gnome.cpp */,
 				84C3DA6E291F78EF0084EAD5 /* monster_goatman.cpp */,
@@ -825,9 +842,12 @@
 				84C3DA62291F78EF0084EAD5 /* monster_lich.cpp */,
 				84C3DA69291F78EF0084EAD5 /* monster_lichfire.cpp */,
 				84C3DA75291F78F00084EAD5 /* monster_lichice.cpp */,
+				846DBD0A2F2B1EEA0064BF2C /* monster_m.cpp */,
 				84B4ACC92B8E991B00027417 /* monster_mimic.cpp */,
 				84C3DA7F291F78F00084EAD5 /* monster_minotaur.cpp */,
+				846DBD0B2F2B1EEA0064BF2C /* monster_moth.cpp */,
 				84C3DA6D291F78EF0084EAD5 /* monster_rat.cpp */,
+				846DBD0C2F2B1EEA0064BF2C /* monster_s.cpp */,
 				84C3DA7E291F78F00084EAD5 /* monster_scarab.cpp */,
 				84C3DA67291F78EF0084EAD5 /* monster_scorpion.cpp */,
 				84C3DA7A291F78F00084EAD5 /* monster_sentrybot.cpp */,
@@ -838,6 +858,7 @@
 				84C3DA6A291F78EF0084EAD5 /* monster_slime.cpp */,
 				84C3DA68291F78EF0084EAD5 /* monster_spider.cpp */,
 				84C3DA80291F78F00084EAD5 /* monster_succubus.cpp */,
+				846DBD0D2F2B1EEA0064BF2C /* monster_summons.cpp */,
 				84C3DA79291F78F00084EAD5 /* monster_troll.cpp */,
 				84C3DA82291F78F10084EAD5 /* monster_vampire.cpp */,
 				84C3DACA291F79310084EAD5 /* music.cpp */,
@@ -1238,6 +1259,13 @@
 				84C3DAEE291F79510084EAD5 /* updatecharactersheet.cpp in Sources */,
 				84C3DAEF291F79510084EAD5 /* ui_general.cpp in Sources */,
 				84C3DACC291F79320084EAD5 /* sound.cpp in Sources */,
+				846DBD0E2F2B1EEA0064BF2C /* monster_summons.cpp in Sources */,
+				846DBD0F2F2B1EEA0064BF2C /* monster_duck.cpp in Sources */,
+				846DBD102F2B1EEA0064BF2C /* monster_g.cpp in Sources */,
+				846DBD112F2B1EEA0064BF2C /* monster_s.cpp in Sources */,
+				846DBD122F2B1EEA0064BF2C /* monster_d.cpp in Sources */,
+				846DBD132F2B1EEA0064BF2C /* monster_moth.cpp in Sources */,
+				846DBD142F2B1EEA0064BF2C /* monster_m.cpp in Sources */,
 				84C3DACD291F79320084EAD5 /* defines.cpp in Sources */,
 				84C3DACE291F79320084EAD5 /* init_audio.cpp in Sources */,
 				84C3DACF291F79320084EAD5 /* music.cpp in Sources */,

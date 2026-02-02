@@ -84,7 +84,11 @@ void GameModeManager_t::Tutorial_t::startTutorial(std::string mapToSet)
 		}
 		setTutorialMap(mapToSet);
 	}
+#ifndef EDITOR
 	gameModeManager.setMode(gameModeManager.GameModes::GAME_MODE_TUTORIAL);
+	GameplayPreferences_t::reset();
+	gameplayPreferences[0].process();
+#endif
 	stats[0]->clearStats();
 	strcpy(stats[0]->name, "Player");
 	stats[0]->sex = static_cast<sex_t>(local_rng.rand() % 2);
@@ -834,7 +838,51 @@ void IRCHandler_t::handleMessage(std::string& msg)
 #endif // !NINTENDO
 
 Uint32 ItemTooltips_t::itemsJsonHashRead = 0;
-const Uint32 ItemTooltips_t::kItemsJsonHash = 1748555711;
+const Uint32 ItemTooltips_t::kItemsJsonHash = 3757883972;
+
+void ItemTooltips_t::setSpellValueIfKeyPresent(ItemTooltips_t::spellItem_t& t, rapidjson::Value::ConstMemberIterator item_itr, Uint32& hash, Uint32& hashShift, const char* key, int& toSet)
+{
+	if ( item_itr->value.HasMember(key) )
+	{
+		t.hasExpandedJSON = true;
+		toSet = item_itr->value[key].GetInt();
+		//hash += (Uint32)((Uint32)toSet << (hashShift % 32)); ++hashShift;
+	}
+}
+void ItemTooltips_t::setSpellValueIfKeyPresent(ItemTooltips_t::spellItem_t& t, rapidjson::Value::ConstMemberIterator item_itr, Uint32& hash, Uint32& hashShift, const char* key, real_t& toSet)
+{
+	if ( item_itr->value.HasMember(key) )
+	{
+		t.hasExpandedJSON = true;
+		toSet = item_itr->value[key].GetFloat();
+		//hash += (Uint32)(static_cast<Uint32>(toSet * 100000) << (hashShift % 32)); ++hashShift;
+	}
+}
+
+#ifdef EDITOR
+void lowercaseString(std::string& str)
+{
+	if ( str.size() < 1 ) { return; }
+	for ( auto& letter : str )
+	{
+		if ( letter >= 'A' && letter <= 'Z' )
+		{
+			letter = tolower(letter);
+		}
+	}
+}
+#endif
+
+void hashSpellProp(Uint32& hash, Uint32& hashShift, int& toSet)
+{
+	hash += (Uint32)((Uint32)toSet << (hashShift % 32)); ++hashShift;
+}
+
+void hashSpellProp(Uint32& hash, Uint32& hashShift, real_t& toSet)
+{
+	hash += (Uint32)(static_cast<Uint32>(toSet * 100000) << (hashShift % 32)); ++hashShift;
+}
+
 void ItemTooltips_t::readItemsFromFile()
 {
 	printlog("loading items...\n");
@@ -854,8 +902,8 @@ void ItemTooltips_t::readItemsFromFile()
 		return;
 	}
 
-	const int bufSize = 360000;
-	char buf[bufSize];
+	const int bufSize = 600000;
+	static char buf[bufSize];
 	int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
 	buf[count] = '\0';
 	//rapidjson::FileReadStream is(fp, buf, sizeof(buf)); - use this for large chunks.
@@ -936,7 +984,7 @@ void ItemTooltips_t::readItemsFromFile()
 	{
 		assert(i == tmpItems[i].itemId);
 		items[i].level = tmpItems[i].itemLevel;
-		items[i].value = tmpItems[i].gold;
+		items[i].gold_value = tmpItems[i].gold;
 		items[i].weight = tmpItems[i].weight;
 		items[i].fpindex = tmpItems[i].fpIndex;
 		items[i].index = tmpItems[i].tpIndex;
@@ -1026,6 +1074,10 @@ void ItemTooltips_t::readItemsFromFile()
 		{
 			items[i].category = SPELL_CAT;
 		}
+		else if ( tmpItems[i].category.compare("TOME_SPELL") == 0 )
+		{
+			items[i].category = TOME_SPELL;
+		}
 		else
 		{
 			items[i].category = GEM;
@@ -1074,7 +1126,7 @@ void ItemTooltips_t::readItemsFromFile()
 		}
 
 		hash += (Uint32)((Uint32)items[i].weight << (shift % 32)); ++shift;
-		hash += (Uint32)((Uint32)items[i].value << (shift % 32)); ++shift;
+		hash += (Uint32)((Uint32)items[i].gold_value << (shift % 32)); ++shift;
 		hash += (Uint32)((Uint32)items[i].level << (shift % 32)); ++shift;
 		/*{
 			auto pair = std::make_pair(items[i].value, i);
@@ -1095,16 +1147,6 @@ void ItemTooltips_t::readItemsFromFile()
 		}*/
 	}
 
-	itemsJsonHashRead = hash;
-	if ( itemsJsonHashRead != kItemsJsonHash )
-	{
-		printlog("[JSON]: Notice: items.json unknown hash, achievements are disabled: %d", itemsJsonHashRead);
-	}
-	else
-	{
-		printlog("[JSON]: items.json hash verified successfully.");
-	}
-
 	spellItems.clear();
 
 	int spellsRead = 0;
@@ -1113,8 +1155,12 @@ void ItemTooltips_t::readItemsFromFile()
 	{
 		spellItem_t t;
 		t.internalName = spell_itr->name.GetString();
+		//hash += djb2Hash(const_cast<char*>(t.internalName.c_str()));
 		t.name = spell_itr->value["spell_name"].GetString();
+		t.name_lowercase = t.name;
+		lowercaseString(t.name_lowercase);
 		t.id = spell_itr->value["spell_id"].GetInt();
+		//hash += (Uint32)((Uint32)t.id << (shift % 32)); ++shift;
 		t.spellTypeStr = spell_itr->value["spell_type"].GetString();
 		t.spellType = SPELL_TYPE_DEFAULT;
 		if ( t.spellTypeStr == "PROJECTILE" )
@@ -1137,11 +1183,56 @@ void ItemTooltips_t::readItemsFromFile()
 		{
 			t.spellType = SPELL_TYPE_PROJECTILE_SHORT_X3;
 		}
+		else if ( t.spellTypeStr == "TOUCH_FLOOR" )
+		{
+			t.spellType = SPELL_TYPE_TOUCH_FLOOR;
+		}
+		else if ( t.spellTypeStr == "TOUCH_WALL" )
+		{
+			t.spellType = SPELL_TYPE_TOUCH_WALL;
+		}
+		else if ( t.spellTypeStr == "TOUCH_ENEMY" )
+		{
+			t.spellType = SPELL_TYPE_TOUCH_ENEMY;
+		}
+		else if ( t.spellTypeStr == "TOUCH_ALLY" )
+		{
+			t.spellType = SPELL_TYPE_TOUCH_ALLY;
+		}
+		else if ( t.spellTypeStr == "TOUCH_ENTITY" )
+		{
+			t.spellType = SPELL_TYPE_TOUCH_ENTITY;
+		}
+		else if ( t.spellTypeStr == "DIVINE_TARGET" )
+		{
+			t.spellType = SPELL_TYPE_DIVINE_TARGET;
+		}
+
+		//hash += djb2Hash(const_cast<char*>(t.spellTypeStr.c_str()));
+
+		if ( spell_itr->value.HasMember("format_tags") )
+		{
+			for ( rapidjson::Value::ConstValueIterator arr_itr = spell_itr->value["format_tags"].Begin();
+				arr_itr != spell_itr->value["format_tags"].End(); ++arr_itr )
+			{
+				t.spellFormatTags.push_back(arr_itr->GetString());
+			}
+		}
+
+		if ( spell_itr->value.HasMember("spellbook_item_icon_padding") )
+		{
+			for ( rapidjson::Value::ConstValueIterator arr_itr = spell_itr->value["spellbook_item_icon_padding"].Begin();
+				arr_itr != spell_itr->value["spellbook_item_icon_padding"].End(); ++arr_itr )
+			{
+				t.spellbookItemIconPaddingLines.push_back(arr_itr->GetInt());
+			}
+		}
 
 		for ( rapidjson::Value::ConstValueIterator arr_itr = spell_itr->value["effect_tags"].Begin();
 			arr_itr != spell_itr->value["effect_tags"].End(); ++arr_itr )
 		{
 			t.spellTagsStr.push_back(arr_itr->GetString());
+			//hash += djb2Hash(const_cast<char*>(t.spellTagsStr.back().c_str()));
 			if ( t.spellTagsStr[t.spellTagsStr.size() - 1] == "DAMAGE" )
 			{
 				t.spellTags.insert(SPELL_TAG_DAMAGE);
@@ -1162,6 +1253,10 @@ void ItemTooltips_t::readItemsFromFile()
 			{
 				t.spellTags.insert(SPELL_TAG_CURE);
 			}
+			else if ( t.spellTagsStr[t.spellTagsStr.size() - 1] == "BUFF" )
+			{
+				t.spellTags.insert(SPELL_TAG_BUFF);
+			}
 			else if ( t.spellTagsStr[t.spellTagsStr.size() - 1] == "BASIC_HIT_MESSAGE" )
 			{
 				t.spellTags.insert(SPELL_TAG_BASIC_HIT_MESSAGE);
@@ -1170,24 +1265,132 @@ void ItemTooltips_t::readItemsFromFile()
 			{
 				t.spellTags.insert(SPELL_TAG_TRACK_HITS);
 			}
+			else if ( t.spellTagsStr[t.spellTagsStr.size() - 1] == "SPELL_SCALE_SPELLBOOK" )
+			{
+				t.spellTags.insert(SPELL_TAG_SPELLBOOK_SCALING);
+			}
+			else if ( t.spellTagsStr[t.spellTagsStr.size() - 1] == "BONUS_AS_EFFECT_POWER" )
+			{
+				t.spellTags.insert(SPELL_TAG_BONUS_AS_EFFECT_POWER);
+			}
+			else if ( t.spellTagsStr[t.spellTagsStr.size() - 1] == "SPELL_LEVEL_EVENT" )
+			{
+				t.spellLevelTags.insert(spell_t::SPELL_LEVEL_EVENT_DEFAULT);
+			}
+			else if ( t.spellTagsStr[t.spellTagsStr.size() - 1] == "SPELL_LEVEL_DMG" )
+			{
+				t.spellLevelTags.insert(spell_t::SPELL_LEVEL_EVENT_DMG);
+			}
+			else if ( t.spellTagsStr[t.spellTagsStr.size() - 1] == "SPELL_LEVEL_EFFECT" )
+			{
+				t.spellLevelTags.insert(spell_t::SPELL_LEVEL_EVENT_EFFECT);
+			}
+			else if ( t.spellTagsStr[t.spellTagsStr.size() - 1] == "SPELL_LEVEL_SUMMON" )
+			{
+				t.spellLevelTags.insert(spell_t::SPELL_LEVEL_EVENT_SUMMON);
+			}
+			else if ( t.spellTagsStr[t.spellTagsStr.size() - 1] == "SPELL_LEVEL_SHAPESHIFT" )
+			{
+				t.spellLevelTags.insert(spell_t::SPELL_LEVEL_EVENT_SHAPESHIFT);
+			}
+			else if ( t.spellTagsStr[t.spellTagsStr.size() - 1] == "SPELL_LEVEL_SUSTAIN" )
+			{
+				t.spellLevelTags.insert(spell_t::SPELL_LEVEL_EVENT_SUSTAIN);
+			}
+			else if ( t.spellTagsStr[t.spellTagsStr.size() - 1] == "SPELL_LEVEL_ASSIST" )
+			{
+				t.spellLevelTags.insert(spell_t::SPELL_LEVEL_EVENT_ASSIST);
+			}
 		}
 
 		t.spellbookInternalName = spell_itr->value["spellbook_internal_name"].GetString();
 		t.magicstaffInternalName = spell_itr->value["magicstaff_internal_name"].GetString();
-
+		t.fociInternalName = "";
+		if ( spell_itr->value.HasMember("foci_internal_name") )
+		{
+			t.fociInternalName = spell_itr->value["foci_internal_name"].GetString();
+		}
 		for ( int i = 0; i < NUMITEMS; ++i )
 		{
-			if ( items[i].category != SPELLBOOK && items[i].category != MAGICSTAFF )
+			if ( items[i].category != SPELLBOOK && items[i].category != MAGICSTAFF && !itemTypeIsFoci((ItemType)i) )
 			{
 				continue;
 			}
 			if ( t.spellbookInternalName == tmpItems[i].internalName )
 			{
 				t.spellbookId = i;
+				if ( !items[i].hasAttribute("spellbook_spell") )
+				{
+					items[i].attributes["spellbook_spell"] = t.id;
+				}
 			}
 			if ( t.magicstaffInternalName == tmpItems[i].internalName )
 			{
 				t.magicstaffId = i;
+				items[i].attributes["magicstaff_spell"] = t.id;
+			}
+			if ( t.fociInternalName == tmpItems[i].internalName )
+			{
+				t.fociId = i;
+				items[i].attributes["foci_spell"] = t.id;
+			}
+		}
+
+		//hash += djb2Hash(const_cast<char*>(t.spellbookInternalName.c_str()));
+		//hash += djb2Hash(const_cast<char*>(t.magicstaffInternalName.c_str()));
+		//hash += djb2Hash(const_cast<char*>(t.fociInternalName.c_str()));
+		
+		t.hasExpandedJSON = false;
+
+		setSpellValueIfKeyPresent(t, spell_itr, hash, shift, "mana", t.mana);
+		setSpellValueIfKeyPresent(t, spell_itr, hash, shift, "duration", t.duration);
+		setSpellValueIfKeyPresent(t, spell_itr, hash, shift, "duration_mult", t.duration_mult);
+		setSpellValueIfKeyPresent(t, spell_itr, hash, shift, "duration2", t.duration2);
+		setSpellValueIfKeyPresent(t, spell_itr, hash, shift, "duration2_mult", t.duration2_mult);
+		setSpellValueIfKeyPresent(t, spell_itr, hash, shift, "damage", t.damage);
+		setSpellValueIfKeyPresent(t, spell_itr, hash, shift, "damage_mult", t.damage_mult);
+		setSpellValueIfKeyPresent(t, spell_itr, hash, shift, "damage2", t.damage2);
+		setSpellValueIfKeyPresent(t, spell_itr, hash, shift, "damage2_mult", t.damage2_mult);
+		setSpellValueIfKeyPresent(t, spell_itr, hash, shift, "distance", t.distance);
+		setSpellValueIfKeyPresent(t, spell_itr, hash, shift, "distance_mult", t.distance_mult);
+		setSpellValueIfKeyPresent(t, spell_itr, hash, shift, "life_time", t.life_time);
+		setSpellValueIfKeyPresent(t, spell_itr, hash, shift, "life_mult", t.life_mult);
+		setSpellValueIfKeyPresent(t, spell_itr, hash, shift, "cast_time", t.cast_time);
+		setSpellValueIfKeyPresent(t, spell_itr, hash, shift, "cast_time_mult", t.cast_time_mult);
+		setSpellValueIfKeyPresent(t, spell_itr, hash, shift, "radius", t.radius);
+		setSpellValueIfKeyPresent(t, spell_itr, hash, shift, "radius_mult", t.radius_mult);
+		setSpellValueIfKeyPresent(t, spell_itr, hash, shift, "difficulty", t.difficulty);
+		setSpellValueIfKeyPresent(t, spell_itr, hash, shift, "sustain_mana", t.sustain_mana);
+		if ( t.sustain_mana > 0 )
+		{
+			t.sustain_duration = std::max(1, t.duration); // set a sane default
+		}
+		setSpellValueIfKeyPresent(t, spell_itr, hash, shift, "sustain_duration", t.sustain_duration);
+		setSpellValueIfKeyPresent(t, spell_itr, hash, shift, "sustain_mult", t.sustain_mult);
+		setSpellValueIfKeyPresent(t, spell_itr, hash, shift, "drop_table", t.drop_table);
+
+		if ( spell_itr->value.HasMember("school") )
+		{
+			std::string school = spell_itr->value["school"].GetString();
+			if ( school == "sorcery" )
+			{
+				t.skillID = PRO_SORCERY;
+				//hash += (Uint32)((Uint32)t.skillID << (shift % 32)); ++shift;
+			}
+			else if ( school == "mysticism" )
+			{
+				t.skillID = PRO_MYSTICISM;
+				//hash += (Uint32)((Uint32)t.skillID << (shift % 32)); ++shift;
+			}
+			else if ( school == "thaumaturgy" )
+			{
+				t.skillID = PRO_THAUMATURGY;
+				//hash += (Uint32)((Uint32)t.skillID << (shift % 32)); ++shift;
+			}
+			else
+			{
+				assert(false && "invalid school from items.json!");
+				//hash += (Uint32)((Uint32)1 << (shift % 32)); ++shift;
 			}
 		}
 
@@ -1197,6 +1400,69 @@ void ItemTooltips_t::readItemsFromFile()
 		++spellsRead;
 	}
 	printlog("[JSON]: Successfully read %d spells from '%s'", spellsRead, inputPath.c_str());
+
+	for ( int i = 0; i < NUM_SPELLS; ++i )
+	{
+		auto find = spellItems.find(i);
+		if ( find != spellItems.end() )
+		{
+			spellItem_t& t = find->second;
+			hash += djb2Hash(const_cast<char*>(t.internalName.c_str()));
+			hash += (Uint32)((Uint32)t.id << (shift % 32)); ++shift;
+			hash += djb2Hash(const_cast<char*>(t.spellTypeStr.c_str()));
+			for ( auto& tag : t.spellTagsStr )
+			{
+				hash += djb2Hash(const_cast<char*>(tag.c_str()));
+			}
+
+			hash += djb2Hash(const_cast<char*>(t.spellbookInternalName.c_str()));
+			hash += djb2Hash(const_cast<char*>(t.magicstaffInternalName.c_str()));
+			hash += djb2Hash(const_cast<char*>(t.fociInternalName.c_str()));
+
+			hashSpellProp(hash, shift, t.mana);
+			hashSpellProp(hash, shift, t.duration);
+			hashSpellProp(hash, shift, t.duration_mult);
+			hashSpellProp(hash, shift, t.duration2);
+			hashSpellProp(hash, shift, t.duration2_mult);
+			hashSpellProp(hash, shift, t.damage);
+			hashSpellProp(hash, shift, t.damage_mult);
+			hashSpellProp(hash, shift, t.damage2);
+			hashSpellProp(hash, shift, t.damage2_mult);
+			hashSpellProp(hash, shift, t.distance);
+			hashSpellProp(hash, shift, t.distance_mult);
+			hashSpellProp(hash, shift, t.life_time);
+			hashSpellProp(hash, shift, t.life_mult);
+			hashSpellProp(hash, shift, t.cast_time);
+			hashSpellProp(hash, shift, t.cast_time_mult);
+			hashSpellProp(hash, shift, t.radius);
+			hashSpellProp(hash, shift, t.radius_mult);
+			hashSpellProp(hash, shift, t.difficulty);
+			hashSpellProp(hash, shift, t.sustain_mana);
+
+			hashSpellProp(hash, shift, t.sustain_duration);
+			hashSpellProp(hash, shift, t.sustain_mult);
+			hashSpellProp(hash, shift, t.drop_table);
+
+			if ( t.skillID >= 0 )
+			{
+				hash += (Uint32)((Uint32)t.skillID << (shift % 32)); ++shift;
+			}
+			else
+			{
+				hash += (Uint32)((Uint32)1 << (shift % 32)); ++shift;
+			}
+		}
+	}
+
+	itemsJsonHashRead = hash;
+	if ( itemsJsonHashRead != kItemsJsonHash )
+	{
+		printlog("[JSON]: Notice: items.json unknown hash, achievements are disabled: %d", itemsJsonHashRead);
+	}
+	else
+	{
+		printlog("[JSON]: items.json hash verified successfully.");
+	}
 
 	// validation against old items.txt
 	/*for ( int i = 0; i < NUMITEMS; ++i )
@@ -1336,7 +1602,9 @@ void ItemTooltips_t::readItemLocalizationsFromFile(bool forceLoadBaseDirectory)
 
 	printlog("[JSON]: Successfully read %d item names, %d spell names from '%s'", itemNameLocalizations.size(), spellNameLocalizations.size(), inputPath.c_str());
 	assert(itemNameLocalizations.size() == (NUMITEMS));
-	assert(spellNameLocalizations.size() == (NUM_SPELLS - 1)); // ignore SPELL_NONE
+#ifndef NDEBUG
+	//assert(spellNameLocalizations.size() == (NUM_SPELLS - 1)); // ignore SPELL_NONE
+#endif
 
 	// apply localizations
 	for ( int i = 0; i < NUMITEMS; ++i )
@@ -1355,6 +1623,8 @@ void ItemTooltips_t::readItemLocalizationsFromFile(bool forceLoadBaseDirectory)
 	for ( auto& spell : spellItems )
 	{
 		spell.second.name = spellNameLocalizations[spell.second.internalName];
+		spell.second.name_lowercase = spell.second.name;
+		lowercaseString(spell.second.name_lowercase);
 	}
 
 	/*for ( auto i : itemValueTable )
@@ -1457,7 +1727,7 @@ void ItemTooltips_t::readTooltipsFromFile(bool forceLoadBaseDirectory)
 {
 	if ( !PHYSFS_getRealDir("/items/item_tooltips.json") )
 	{
-		printlog("[JSON]: Error: Could not find file: items/items.json");
+		printlog("[JSON]: Error: Could not find file: items/item_tooltips.json");
 		return;
 	}
 
@@ -1917,6 +2187,7 @@ std::string& ItemTooltips_t::getItemStatusAdjective(Uint32 itemType, Status stat
 	}
 	else if ( items[itemType].category == SCROLL
 		|| items[itemType].category == SPELLBOOK
+		|| items[itemType].category == TOME_SPELL
 		|| items[itemType].category == BOOK )
 	{
 		if ( adjectives.find("book_status") == adjectives.end() )
@@ -2105,48 +2376,70 @@ int ItemTooltips_t::getSpellDamageOrHealAmount(const int player, spell_t* spell,
 	int mana = 0;
 	int heal = 0;
 	spellElement_t* primaryElement = nullptr;
+	real_t damageMult = 1.0;
 	if ( elementRoot )
 	{
 		node_t* primaryNode = elementRoot->elements.first;
-		mana = elementRoot->mana;
-		heal = mana;
 		if ( primaryNode )
 		{
 			primaryElement = (spellElement_t*)(primaryNode->element);
 			if ( primaryElement )
 			{
-				damage = primaryElement->damage;
+				damage = primaryElement->getDamage();
+				heal = primaryElement->getDamage();
+				damageMult = primaryElement->getDamageMult();
 			}
+		}
+		else
+		{
+			damage = elementRoot->getDamage();
+			heal = elementRoot->getDamage();
+			damageMult = elementRoot->getDamageMult();
 		}
 		if ( player >= 0 && players[player] )
 		{
 			int bonus = 0;
-			if ( spellbook && itemCategory(spellbook) == MAGICSTAFF )
+			if ( spellbook && itemCategory(spellbook) == MAGICSTAFF && spellbook->type != MAGICSTAFF_SCEPTER )
 			{
 				// no modifier.
 			}
 			else
 			{
-				if ( spellbook && itemCategory(spellbook) == SPELLBOOK )
+				if ( spellbook && (itemCategory(spellbook) == SPELLBOOK || itemTypeIsFoci(spellbook->type)) )
 				{
 					bonus = getSpellbookBonusPercent(
 						excludePlayerStats ? nullptr : players[player]->entity, 
 						excludePlayerStats ? nullptr : stats[player], 
 						spellbook);
 				}
-				damage += (damage * (bonus * 0.01 
+				damage += damageMult * (damage * (bonus * 0.01
 					+ getBonusFromCasterOfSpellElement(
 						excludePlayerStats ? nullptr : players[player]->entity,
-						excludePlayerStats ? nullptr : stats[player], primaryElement, spell ? spell->ID : SPELL_NONE)));
-				heal += (heal * (bonus * 0.01 
+						excludePlayerStats ? nullptr : stats[player], primaryElement, spell ? spell->ID : SPELL_NONE, spell->skillID)));
+				heal += damageMult * (heal * (bonus * 0.01
 					+ getBonusFromCasterOfSpellElement(
 						excludePlayerStats ? nullptr : players[player]->entity,
-						excludePlayerStats ? nullptr : stats[player], primaryElement, spell ? spell->ID : SPELL_NONE)));
+						excludePlayerStats ? nullptr : stats[player], primaryElement, spell ? spell->ID : SPELL_NONE, spell->skillID)));
 			}
 		}
 		if ( spell->ID == SPELL_HEALING || spell->ID == SPELL_EXTRAHEALING )
 		{
 			damage = heal;
+		}
+		if ( spell->ID == SPELL_MUSHROOM )
+		{
+			if ( !excludePlayerStats )
+			{
+				if ( player >= 0 && players[player] )
+				{
+					int bonusEffect = 0;
+					if ( stats[player]->type == MYCONID && stats[player]->getEffectActive(EFF_GROWTH) >= 2 )
+					{
+						bonusEffect = std::max(bonusEffect, stats[player]->getEffectActive(EFF_GROWTH) - 1);
+					}
+					damage += damage * (bonusEffect * 1.0);
+				}
+			}
 		}
 	}
 	return damage;
@@ -2188,8 +2481,295 @@ std::string ItemTooltips_t::getSpellDescriptionText(const int player, Item& item
 std::string& ItemTooltips_t::getIconLabel(Item& item)
 {
 #ifndef EDITOR
+	if ( item.type == SPELL_ITEM && !item.spellNotifyIcon ) { return defaultString; }
 	return tmpItems[item.type].iconLabelPath;
 #endif
+}
+
+const char* spellValueToTier(int val)
+{
+	if ( val == 1 ) { return "I"; }
+	if ( val == 2 ) { return "II"; }
+	if ( val == 3 ) { return "III"; }
+	if ( val == 4 ) { return "IV"; }
+	if ( val == 5 ) { return "V"; }
+	return "I";
+}
+
+std::string ItemTooltips_t::getSpellIconFormatText(const int player, Item& item, std::string& format, const spell_t* spell, const int iconIndex, const bool compendiumTooltipIntro)
+{
+	if ( !spell ) { return defaultString; }
+	auto def = spellItems.find(spell->ID);
+	if ( def == spellItems.end() )
+	{
+		return defaultString;
+	}
+
+	enum Comparators
+	{
+		COMP_NONE,
+		COMP_MIN,
+		COMP_MAX,
+		COMP_HEAL_OTHER,
+		COMP_INCOHERENCE,
+		COMP_WEAKNESS,
+		COMP_BLOOD_WAVES,
+		COMP_MAGICIANS_ARMOR,
+		COMP_BREATHE_FIRE,
+		COMP_BREATHE_FIRE2,
+		COMP_SIGIL,
+		COMP_SANCTUARY
+	};
+	enum Values
+	{
+		VAL_NUM,
+		VAL_TIER
+	};
+	Values valueType = VAL_NUM;
+	Comparators comparator = COMP_NONE;
+	Entity* caster = compendiumTooltipIntro ? nullptr : players[player]->entity;
+	Stat* myStats = compendiumTooltipIntro ? nullptr : stats[player];
+
+	real_t bonusPercent = 0.0;
+	if ( itemCategory(&item) == SPELLBOOK )
+	{
+		bonusPercent = getSpellbookBonusPercent(
+			caster,
+			myStats,
+			&item) / 100.0;
+	}
+
+	for ( auto& formatTag : def->second.spellFormatTags )
+	{
+		if ( formatTag.size() == 0 ) { continue; }
+		if ( (formatTag.at(0) - '1') != iconIndex ) { continue; }
+		std::vector<int> vals;
+		size_t index = 2;
+		std::string str;
+		size_t offset = 1;
+		while ( index + offset < formatTag.size() )
+		{
+			if ( (index + offset == (formatTag.size() - 1)) || formatTag[index + offset] == ' ' )
+			{
+				std::string key = (index + offset == (formatTag.size() - 1)) ? formatTag.substr(index) : formatTag.substr(index, offset);
+				if ( key == "min" )
+				{
+					comparator = COMP_MIN;
+				}
+				else if ( key == "dmg" )
+				{
+					vals.push_back(getSpellDamageFromID(spell->ID, caster, myStats, caster, bonusPercent, false));
+				}
+				else if ( key == "dmg2" )
+				{
+					vals.push_back(getSpellDamageSecondaryFromID(spell->ID, caster, myStats, caster, bonusPercent, false));
+				}
+				else if ( key == "dur" )
+				{
+					vals.push_back(getSpellEffectDurationFromID(spell->ID, caster, myStats, caster, bonusPercent));
+				}
+				else if ( key == "dur2" )
+				{
+					vals.push_back(getSpellEffectDurationSecondaryFromID(spell->ID, caster, myStats, caster, bonusPercent));
+				}
+				else if ( key == "tier" )
+				{
+					valueType = VAL_TIER;
+				}
+				else if ( key == "comp_heal_other" )
+				{
+					comparator = COMP_HEAL_OTHER;
+				}
+				else if ( key == "comp_incoherence" )
+				{
+					comparator = COMP_INCOHERENCE;
+				}
+				else if ( key == "comp_weakness" )
+				{
+					comparator = COMP_WEAKNESS;
+				}
+				else if ( key == "comp_blood_waves" )
+				{
+					comparator = COMP_BLOOD_WAVES;
+				}
+				else if ( key == "comp_magicians_armor" )
+				{
+					comparator = COMP_MAGICIANS_ARMOR;
+				}
+				else if ( key == "comp_breathe_fire" )
+				{
+					comparator = COMP_BREATHE_FIRE;
+				}
+				else if ( key == "comp_breathe_fire2" )
+				{
+					comparator = COMP_BREATHE_FIRE2;
+				}
+				else if ( key == "comp_sigil" )
+				{
+					comparator = COMP_SIGIL;
+				}
+				else if ( key == "comp_sanctuary" )
+				{
+					comparator = COMP_SANCTUARY;
+				}
+				index += offset + 1;
+				offset = 1;
+			}
+			else
+			{
+				++offset;
+			}
+		}
+
+		if ( vals.size() )
+		{
+			if ( comparator == COMP_HEAL_OTHER && vals.size() >= 4 )
+			{
+				char buf[128];
+				memset(buf, 0, sizeof(buf));
+				real_t healTicks = vals[0] * (vals[1] / 100.0) * vals[2];
+				snprintf(buf, sizeof(buf), format.c_str(), (int)(healTicks / vals[3]));
+				str = buf;
+			}
+			else if ( (comparator == COMP_INCOHERENCE || comparator == COMP_WEAKNESS) && vals.size() >= 2 )
+			{
+				char buf[128];
+				memset(buf, 0, sizeof(buf));
+				int effectStrength = std::min(vals[0], vals[1]);
+				int reduction = 100.0 * std::min(0.9, 0.2 + (effectStrength - 1) * 0.1);
+				snprintf(buf, sizeof(buf), format.c_str(), -reduction);
+				str = buf;
+			}
+			else if ( comparator == COMP_MAGICIANS_ARMOR && vals.size() >= 3 )
+			{
+				char buf[128];
+				memset(buf, 0, sizeof(buf));
+
+				int instances = vals[2];
+				instances *= ((myStats ? myStats->getModifiedProficiency(spell->skillID) : 0) + statGetINT(myStats, caster)) / std::max(1, vals[1]);
+				int maxInstances = vals[0];
+				instances = std::min(std::max(1, instances), maxInstances);
+
+				snprintf(buf, sizeof(buf), format.c_str(), instances);
+				str = buf;
+			}
+			else if ( comparator == COMP_BREATHE_FIRE && vals.size() >= 2 )
+			{
+				char buf[128];
+				memset(buf, 0, sizeof(buf));
+
+				snprintf(buf, sizeof(buf), format.c_str(), std::min(10, vals[1]), vals[0]);
+				str = buf;
+			}
+			else if ( comparator == COMP_BREATHE_FIRE2 )
+			{
+				int maxStrength = 10;
+				int minStrength = 2;
+				if ( myStats )
+				{
+					if ( myStats->type == SALAMANDER
+						&& myStats->getEffectActive(EFF_SALAMANDER_HEART) == 2 )
+					{
+						minStrength += 3;
+					}
+					maxStrength = std::min(maxStrength, minStrength + std::max(0, statGetCHR(myStats, caster)) / 5);
+				}
+				else
+				{
+					maxStrength = minStrength;
+				}
+
+				snprintf(buf, sizeof(buf), format.c_str(), maxStrength);
+				str = buf;
+			}
+			else if ( comparator == COMP_SIGIL && vals.size() >= 2 )
+			{
+				char buf[128];
+				memset(buf, 0, sizeof(buf));
+
+				int tier = std::min(vals[0], vals[1]);
+				int dmgMult = 10 + 10 * tier;
+				int healMult = 10 + 10 * tier;
+
+				snprintf(buf, sizeof(buf), format.c_str(), healMult, dmgMult);
+				str = buf;
+			}
+			else if ( comparator == COMP_SANCTUARY && vals.size() >= 2 )
+			{
+				char buf[128];
+				memset(buf, 0, sizeof(buf));
+
+				int tier = std::min(vals[0], vals[1]);
+				int reduction = std::min(80, std::max(0, 10 + (15 * tier)));
+
+				snprintf(buf, sizeof(buf), format.c_str(), reduction);
+				str = buf;
+			}
+			else if ( (comparator == COMP_BLOOD_WAVES) && vals.size() >= 2 )
+			{
+				char buf[128];
+				memset(buf, 0, sizeof(buf));
+				spellElement_t* element = nullptr;
+				if ( spell->elements.first )
+				{
+					if ( element = (spellElement_t*)spell->elements.first->element )
+					{
+						if ( element->elements.first && element->elements.first->element )
+						{
+							element = (spellElement_t*)element->elements.first->element;
+						}
+					}
+				}
+				int damage = vals[0] + std::max(1, vals[1] * statGetINT(myStats, caster)) * (1.0 + bonusPercent + getBonusFromCasterOfSpellElement(caster, myStats, element, spell->ID, spell->skillID));
+				snprintf(buf, sizeof(buf), format.c_str(), damage);
+				str = buf;
+			}
+			else if ( vals.size() == 1 || comparator == COMP_MIN || comparator == COMP_MAX )
+			{
+				char buf[128];
+				memset(buf, 0, sizeof(buf));
+				if ( vals.size() == 2 )
+				{
+					if ( comparator == COMP_MIN )
+					{
+						if ( valueType == VAL_TIER )
+						{
+							snprintf(buf, sizeof(buf), format.c_str(), spellValueToTier(std::min(vals[0], vals[1])));
+						}
+						else
+						{
+							snprintf(buf, sizeof(buf), format.c_str(), std::min(vals[0], vals[1]));
+						}
+					}
+					else if ( comparator == COMP_MAX )
+					{
+						snprintf(buf, sizeof(buf), format.c_str(), std::max(vals[0], vals[1]));
+					}
+				}
+				else
+				{
+					if ( valueType == VAL_TIER )
+					{
+						snprintf(buf, sizeof(buf), format.c_str(), spellValueToTier(vals[0]));
+					}
+					else
+					{
+						snprintf(buf, sizeof(buf), format.c_str(), vals[0]);
+					}
+				}
+				str = buf;
+			}
+			else if ( vals.size() == 2 )
+			{
+				char buf[128];
+				memset(buf, 0, sizeof(buf));
+				snprintf(buf, sizeof(buf), format.c_str(), vals[0], vals[1]);
+				str = buf;
+			}
+			return str;
+		}
+	}
+	return defaultString;
 }
 
 std::string ItemTooltips_t::getSpellIconText(const int player, Item& item, const bool compendiumTooltipIntro)
@@ -2245,7 +2825,7 @@ std::string ItemTooltips_t::getSpellIconText(const int player, Item& item, const
 		if ( !compendiumTooltipIntro )
 		{
 			if ( (statGetINT(stats[player], players[player]->entity)
-				+ stats[player]->getModifiedProficiency(PRO_MAGIC)) >= SKILL_LEVEL_EXPERT )
+				+ stats[player]->getModifiedProficiency(spell->skillID)) >= SKILL_LEVEL_EXPERT )
 			{
 				numSummons = 2;
 			}
@@ -2255,6 +2835,14 @@ std::string ItemTooltips_t::getSpellIconText(const int player, Item& item, const
 		snprintf(buf, sizeof(buf), str.c_str(), numSummons);
 		str = buf;
 	}
+	else if ( spell->ID == SPELL_BREATHE_FIRE )
+	{
+		std::string result = getSpellIconFormatText(player, item, str, spell, 0, compendiumTooltipIntro);
+		if ( result != "" )
+		{
+			str = result;
+		}
+	}
 	else if ( spellItems[spell->ID].spellTags.find(SpellTagTypes::SPELL_TAG_HEALING) != spellItems[spell->ID].spellTags.end()
 		|| spellItems[spell->ID].spellTags.find(SpellTagTypes::SPELL_TAG_DAMAGE) != spellItems[spell->ID].spellTags.end() )
 	{
@@ -2262,6 +2850,14 @@ std::string ItemTooltips_t::getSpellIconText(const int player, Item& item, const
 		memset(buf, 0, sizeof(buf));
 		snprintf(buf, sizeof(buf), str.c_str(), getSpellDamageOrHealAmount(player, spell, &item, compendiumTooltipIntro));
 		str = buf;
+	}
+	else if ( spellItems[spell->ID].spellFormatTags.size() )
+	{
+		std::string result = getSpellIconFormatText(player, item, str, spell, 0, compendiumTooltipIntro);
+		if ( result != "" )
+		{
+			str = result;
+		}
 	}
 
 	return str;
@@ -2273,7 +2869,23 @@ std::string ItemTooltips_t::getSpellIconText(const int player, Item& item, const
 real_t ItemTooltips_t::getSpellSustainCostPerSecond(int spellID)
 {
 	real_t cost = 0.0;
-	switch ( spellID )
+	if ( auto spell = getSpellFromID(spellID) )
+	{
+		if ( spell_isChanneled(spell) )
+		{
+			if ( spell->elements.first )
+			{
+				if ( spellElement_t* element = (spellElement_t*)spell->elements.first->element )
+				{
+					if ( element->channeledMana > 0 )
+					{
+						return element->duration / (real_t)TICKS_PER_SECOND;
+					}
+				}
+			}
+		}
+	}
+	/*switch ( spellID )
 	{
 		case SPELL_REFLECT_MAGIC:
 			cost = 6.0;
@@ -2295,7 +2907,7 @@ real_t ItemTooltips_t::getSpellSustainCostPerSecond(int spellID)
 			break;
 		default:
 			break;
-	}
+	}*/
 	return cost;
 }
 
@@ -2325,6 +2937,24 @@ std::string& ItemTooltips_t::getSpellTypeString(const int player, Item& item)
 			break;
 		case SPELL_TYPE_PROJECTILE_SHORT_X3:
 			return adjectives["spell_strings"]["spell_type_projectile_3x"];
+			break;
+		case SPELL_TYPE_TOUCH_FLOOR:
+			return adjectives["spell_strings"]["spell_type_touch_floor"];
+			break;
+		case SPELL_TYPE_TOUCH_WALL:
+			return adjectives["spell_strings"]["spell_type_touch_wall"];
+			break;
+		case SPELL_TYPE_TOUCH_ENEMY:
+			return adjectives["spell_strings"]["spell_type_touch_enemy"];
+			break;
+		case SPELL_TYPE_TOUCH_ALLY:
+			return adjectives["spell_strings"]["spell_type_touch_ally"];
+			break;
+		case SPELL_TYPE_TOUCH_ENTITY:
+			return adjectives["spell_strings"]["spell_type_touch_entity"];
+			break;
+		case SPELL_TYPE_DIVINE_TARGET:
+			return adjectives["spell_strings"]["spell_type_divine_target"];
 			break;
 		case SPELL_TYPE_DEFAULT:
 		default:
@@ -2375,6 +3005,22 @@ std::string ItemTooltips_t::getCostOfSpellString(const int player, Item& item)
 			}
 		}
 		snprintf(buf, sizeof(buf), str.c_str(), getCostOfSpell(spell));
+	}
+	else if ( spell->ID == SPELL_LEAD_BOLT || spell->ID == SPELL_MERCURY_BOLT
+		|| spell->ID == SPELL_FORGE_METAL_SCRAP || spell->ID == SPELL_FORGE_MAGIC_SCRAP )
+	{
+		std::string templateName = "template_spell_cost_gold";
+		std::string str;
+		for ( auto it = templates[templateName].begin();
+			it != templates[templateName].end(); ++it )
+		{
+			str += *it;
+			if ( std::next(it) != ItemTooltips.templates[templateName].end() )
+			{
+				str += '\n';
+			}
+		}
+		snprintf(buf, sizeof(buf), str.c_str(), getCostOfSpell(spell), getGoldCostOfSpell(spell, player));
 	}
 	else
 	{
@@ -2484,6 +3130,10 @@ std::string ItemTooltips_t::getSpellIconPath(const int player, Item& item, int s
 	{
 		spellImageNode = list_Node(&items[SPELL_ITEM].images, getSpellIDFromSpellbook(item.type));
 	}
+	else if ( itemCategory(&item) == TOME_SPELL )
+	{
+		spellImageNode = list_Node(&items[SPELL_ITEM].images, item.getTomeSpellID());
+	}
 	else if ( item.type == TOOL_SPELLBOT )
 	{
 		spellImageNode = list_Node(&items[SPELL_ITEM].images, item.status < EXCELLENT ? SPELL_FORCEBOLT : SPELL_MAGICMISSILE);
@@ -2592,6 +3242,8 @@ std::string& ItemTooltips_t::getItemProficiencyName(int proficiency)
 			return adjectives["proficiency_types"]["shield"];
 		case PRO_RANGED:
 			return adjectives["proficiency_types"]["ranged"];
+		case PRO_SORCERY:
+			return adjectives["proficiency_types"]["magic"];
 		default:
 			return defaultString;
 	}
@@ -2732,7 +3384,7 @@ Sint32 getStatAttributeBonusFromItem(const int player, Item& item, std::string& 
 void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, Item& item, std::string& str, int iconIndex, std::string& conditionalAttribute, Frame* parentFrame)
 {
 #ifndef EDITOR
-	auto itemTooltip = tooltips[tooltipType];
+	//auto itemTooltip = tooltips[tooltipType];
 	static Stat itemDummyStat(0);
 	static char buf[1024];
 	memset(buf, 0, sizeof(buf));
@@ -2768,16 +3420,78 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 		}
 		return;
 	}
+	else if ( item.type == SPELL_ITEM && conditionalAttribute.find("spell_") != std::string::npos )
+	{
+		if ( auto spell = getSpellFromItem(player, &item, false) )
+		{
+			auto def = spellItems.find(spell->ID);
+			if ( def != spellItems.end() )
+			{
+				if ( def->second.spellFormatTags.size() )
+				{
+					std::string result = getSpellIconFormatText(player, item, str, spell, iconIndex, compendiumTooltipIntro);
+					if ( result != "" )
+					{
+						str = result;
+					}
+				}
+			}
+		}
+		return;
+	}
 	else if ( conditionalAttribute.find("SPELLBOOK_") != std::string::npos )
 	{
 		if ( conditionalAttribute == "SPELLBOOK_SPELLINFO_LEARNED" )
 		{
-			str = getSpellIconText(player, item, compendiumTooltipIntro);
+			if ( iconIndex == 1 )
+			{
+				if ( auto spell = getSpellFromID(getSpellIDFromSpellbook(item.type)) )
+				{
+					auto def = spellItems.find(spell->ID);
+					if ( def != spellItems.end() )
+					{
+						if ( def->second.spellFormatTags.size() )
+						{
+							std::string result = getSpellIconFormatText(player, item, str, spell, iconIndex, compendiumTooltipIntro);
+							if ( result != "" )
+							{
+								str = result;
+							}
+						}
+					}
+				}
+			}
+			else
+			{
+				str = getSpellIconText(player, item, compendiumTooltipIntro);
+				if ( itemCategory(&item) == SPELLBOOK )
+				{
+					if ( auto spell = getSpellFromID(getSpellIDFromSpellbook(item.type)) )
+					{
+						if ( iconIndex < ItemTooltips.spellItems[spell->ID].spellbookItemIconPaddingLines.size() )
+						{
+							for ( int i = 0; i < ItemTooltips.spellItems[spell->ID].spellbookItemIconPaddingLines[iconIndex]; ++i )
+							{
+								str += '\n';
+							}
+						}
+					}
+				}
+			}
 			return;
 		}
-		else if ( conditionalAttribute == "SPELLBOOK_SPELLINFO_UNLEARNED" )
+		else if ( conditionalAttribute == "SPELLBOOK_SPELLINFO_UNLEARNED"
+			|| conditionalAttribute == "SPELLBOOK_SPELLINFO_TOME" )
 		{
-			spell_t* spell = getSpellFromID(getSpellIDFromSpellbook(item.type));
+			spell_t* spell = nullptr;
+			if ( itemCategory(&item) == SPELLBOOK )
+			{
+				spell = getSpellFromID(getSpellIDFromSpellbook(item.type));
+			}
+			else if ( itemCategory(&item) == TOME_SPELL )
+			{
+				spell = getSpellFromID(item.getTomeSpellID());
+			}
 			if ( spell )
 			{
 				snprintf(buf, sizeof(buf), str.c_str(), spell->getSpellName());
@@ -2792,14 +3506,27 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 				compendiumTooltipIntro ? nullptr : stats[player], &item);
 			spellBookBonusPercent *= ((items[item.type].attributes["SPELLBOOK_CAST_BONUS"]) / 100.0);
 
-			int spellID = getSpellIDFromSpellbook(item.type);
+			int spellID = itemCategory(&item) == SPELLBOOK ? getSpellIDFromSpellbook(item.type) : item.getTomeSpellID();
 			if ( spellItems.find(spellID) == spellItems.end() )
 			{
 				return;
 			}
 			SpellItemTypes spellType = spellItems[spellID].spellType;
 
-			if ( spellItems[spellID].spellTags.find(SPELL_TAG_DAMAGE) != spellItems[spellID].spellTags.end() )
+			if ( spellItems[spellID].spellTags.find(SPELL_TAG_BONUS_AS_EFFECT_POWER) != spellItems[spellID].spellTags.end() )
+			{
+				str = "";
+				for ( auto it = ItemTooltips.templates["template_spellbook_icon_pwr_bonus"].begin();
+					it != ItemTooltips.templates["template_spellbook_icon_pwr_bonus"].end(); ++it )
+				{
+					str += *it;
+					if ( std::next(it) != ItemTooltips.templates["template_spellbook_icon_pwr_bonus"].end() )
+					{
+						str += '\n';
+					}
+				}
+			}
+			else if ( spellItems[spellID].spellTags.find(SPELL_TAG_DAMAGE) != spellItems[spellID].spellTags.end() )
 			{
 				str = "";
 				for ( auto it = ItemTooltips.templates["template_spellbook_icon_damage_bonus"].begin();
@@ -3498,28 +4225,29 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 					|| (skill == PRO_LEADERSHIP && item.type == HAT_PLUMED_CAP)
 					|| (skill == PRO_RANGED && item.type == HAT_BOUNTYHUNTER)
 					|| (skill == PRO_STEALTH && item.type == HAT_HOOD_WHISPERS)
-					|| (skill == PRO_SPELLCASTING && (item.type == HAT_CIRCLET || item.type == HAT_CIRCLET_WISDOM))
-					|| (skill == PRO_ALCHEMY && item.type == MASK_HAZARD_GOGGLES) )
+					|| (skill == PRO_MYSTICISM && (item.type == HAT_CIRCLET))
+					|| (skill == PRO_SORCERY && (item.type == HAT_CIRCLET_SORCERY))
+					|| (skill == PRO_THAUMATURGY && (item.type == HAT_CIRCLET_THAUMATURGY))
+					|| (skill == PRO_ALCHEMY && item.type == MASK_HAZARD_GOGGLES)
+					|| ((skill == PRO_MYSTICISM || skill == PRO_SORCERY || skill == PRO_THAUMATURGY)
+						&& itemTypeIsFoci(item.type)) )
 				{
+					int bonus = 10;
+					if ( skill == PRO_MYSTICISM || skill == PRO_SORCERY || skill == PRO_THAUMATURGY )
+					{
+						bonus = 5;
+					}
 					if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
 					{
-						equipmentBonus += std::min(Stat::maxEquipmentBonusToSkill, (1 + abs(item.beatitude)) * 10);
+						equipmentBonus += std::min(Stat::maxEquipmentBonusToSkill, (1 + abs(item.beatitude)) * bonus);
 					}
 					else
 					{
-						equipmentBonus += 10;
+						equipmentBonus += bonus;
 					}
 				}
 
-				std::string skillName = "";
-				for ( auto s : Player::SkillSheet_t::skillSheetData.skillEntries )
-				{
-					if ( s.skillId == skill )
-					{
-						skillName = s.name;
-						break;
-					}
-				}
+				std::string skillName = Player::SkillSheet_t::getSkillNameFromID(skill);
 				snprintf(buf, sizeof(buf), str.c_str(), equipmentBonus, skillName.c_str());
 			}
 			else if ( conditionalAttribute == "EFF_BOULDER_RES" )
@@ -3545,12 +4273,67 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 				}
 				snprintf(buf, sizeof(buf), str.c_str(), 100 - (int)(mult * 100));
 			}
+			else if ( conditionalAttribute.find("EFF_CAST_TOUCHSPEED_") != std::string::npos
+				|| conditionalAttribute.find("EFF_CAST_TOUCH_") != std::string::npos )
+			{
+				real_t bonus = 0.0;
+				if ( (item.type == ROBE_HEALER)
+					|| (item.type == ROBE_WIZARD)
+					|| (item.type == ROBE_CULTIST)
+					|| (item.type == ROBE_MONK) )
+				{
+					if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+					{
+						bonus = std::min(0.5, 0.2 + 0.1 * abs(item.beatitude));
+					}
+					else
+					{
+						bonus = 0.2;
+					}
+				}
+				else if ( item.type == SHAWL )
+				{
+					if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+					{
+						bonus = std::min(1.0, 0.35 + 0.35 * abs(item.beatitude));
+					}
+					else
+					{
+						bonus = 0.35;
+					}
+				}
+
+				std::string skillName = "";
+				if ( conditionalAttribute.find("SORCERY") != std::string::npos )
+				{
+					skillName = Player::SkillSheet_t::getSkillNameFromID(PRO_SORCERY);
+				}
+				else if ( conditionalAttribute.find("MYSTICISM") != std::string::npos )
+				{
+					skillName = Player::SkillSheet_t::getSkillNameFromID(PRO_MYSTICISM);
+				}
+				else if ( conditionalAttribute.find("THAUMATURGY") != std::string::npos )
+				{
+					skillName = Player::SkillSheet_t::getSkillNameFromID(PRO_THAUMATURGY);
+				}
+				if ( skillName != "" )
+				{
+					snprintf(buf, sizeof(buf), str.c_str(), (int)(bonus * 100),
+						skillName.c_str());
+				}
+				else
+				{
+					snprintf(buf, sizeof(buf), str.c_str(), (int)(bonus * 100));
+				}
+			}
 			else if ( conditionalAttribute.find("EFF_PWR") != std::string::npos )
 			{
 				real_t bonus = 0.0;
 				if ( conditionalAttribute == "EFF_PWR" )
 				{
 					if ( item.type == HAT_CIRCLET
+						|| item.type == HAT_CIRCLET_SORCERY
+						|| item.type == HAT_CIRCLET_THAUMATURGY
 						|| item.type == HAT_CIRCLET_WISDOM )
 					{
 						if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
@@ -3576,7 +4359,10 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 					snprintf(buf, sizeof(buf), str.c_str(), (int)(bonus * 100),
 						getItemEquipmentEffectsForIconText(conditionalAttribute).c_str());
 				}
-				else if ( conditionalAttribute == "EFF_PWR_DMG" )
+				else if ( conditionalAttribute == "EFF_PWR_DMG"
+					|| conditionalAttribute == "EFF_PWR_SORCERY"
+					|| conditionalAttribute == "EFF_PWR_MYSTICISM"
+					|| conditionalAttribute == "EFF_PWR_THAUMATURGY" )
 				{
 					if ( item.type == HAT_MITER || item.type == HAT_HEADDRESS )
 					{
@@ -3609,6 +4395,241 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 						getItemEquipmentEffectsForIconText(conditionalAttribute).c_str());
 				}
 			}
+			else if ( conditionalAttribute == "EFF_CHAIN_RESIST" || conditionalAttribute == "EFF_QUILT_RESIST"
+				|| conditionalAttribute == "EFF_BONE_RESIST" || conditionalAttribute == "EFF_BANDIT_LEATHER" )
+			{
+				real_t base = 0.1;
+				real_t bonus = 0.05;
+				if ( items[item.type].item_slot == ItemEquippableSlot::EQUIPPABLE_IN_SLOT_BREASTPLATE )
+				{
+					base = 0.2;
+				}
+				if ( item.type == BANDIT_BREASTPIECE )
+				{
+					base = 0.15;
+					real_t mod = 0.0;
+					if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+					{
+						mod = Entity::getDamageTableEquipmentMod(*stats[player], item, base, bonus);
+					}
+					else
+					{
+						mod = base;
+					}
+					snprintf(buf, sizeof(buf), str.c_str(), (int)(mod * 100));
+				}
+				else
+				{
+					real_t mod = 0.0;
+					if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+					{
+						mod = Entity::getDamageTableEquipmentMod(*stats[player], item, base, bonus);
+					}
+					else
+					{
+						mod = base;
+					}
+					char tmp[128] = "";
+					if ( ItemTooltips.templates["template_armor_resist_icon"].size() )
+					{
+						std::string skillnames = "";
+						if ( conditionalAttribute == "EFF_CHAIN_RESIST" )
+						{
+							skillnames += getItemProficiencyName(PRO_SWORD);
+							skillnames += "/";
+							skillnames += getItemProficiencyName(PRO_AXE);
+						}
+						else if ( conditionalAttribute == "EFF_QUILT_RESIST" )
+						{
+							skillnames += getItemProficiencyName(PRO_POLEARM);
+							skillnames += "/";
+							skillnames += getItemProficiencyName(PRO_RANGED);
+						}
+						else if ( conditionalAttribute == "EFF_BONE_RESIST" )
+						{
+							skillnames += getItemProficiencyName(PRO_UNARMED);
+							skillnames += "/";
+							skillnames += getItemProficiencyName(PRO_MACE);
+						}
+						snprintf(tmp, sizeof(tmp), ItemTooltips.templates["template_armor_resist_icon"][0].c_str(),
+							skillnames.c_str());
+					}
+					snprintf(buf, sizeof(buf), str.c_str(), (int)(mod * 100),
+						tmp);
+				}
+			}
+			else if ( conditionalAttribute.find("EFF_FOCI_MAGE") != std::string::npos )
+			{
+				int spellID = getSpellIDFromFoci(item.type);
+				if ( spellID != SPELL_NONE )
+				{
+					if ( auto spell = getSpellFromID(spellID) )
+					{
+						char buf[128];
+						memset(buf, 0, sizeof(buf));
+						snprintf(buf, sizeof(buf), str.c_str(), getSpellDamageOrHealAmount(player, spell, &item, compendiumTooltipIntro));
+						str = buf;
+					}
+				}
+				return;
+			}
+			else if ( conditionalAttribute == "EFF_INSTRUMENT_MP_COST" )
+			{
+				if ( itemTypeIsInstrument(item.type) )
+				{
+					snprintf(buf, sizeof(buf), str.c_str(), items[item.type].attributes[conditionalAttribute]);
+					str = buf;
+					return;
+				}
+			}
+			else if ( conditionalAttribute.find("EFF_INSTRUMENT") != std::string::npos )
+			{
+				Sint32 CHR = statGetCHR(stats[player], players[player]->entity);
+				if ( compendiumTooltipIntro ) { CHR = 0; }
+				Uint8 effectStrength = std::max(1, std::min(255, CHR + 1));
+				int tier = 1;
+				std::string tierString = "I";
+				int nextCHR = Stat::kEnsembleBreakPointTier2;
+				if ( effectStrength - 1 >= Stat::kEnsembleBreakPointTier4 )
+				{
+					nextCHR = 0;
+					tierString = "IV";
+					tier = 4;
+				}
+				else if ( effectStrength - 1 >= Stat::kEnsembleBreakPointTier3 )
+				{
+					nextCHR = Stat::kEnsembleBreakPointTier4;
+					tierString = "III";
+					tier = 3;
+
+				}
+				else if ( effectStrength - 1 >= Stat::kEnsembleBreakPointTier2 )
+				{
+					nextCHR = Stat::kEnsembleBreakPointTier3;
+					tierString = "II";
+					tier = 2;
+				}
+
+				int eff1_min = 0;
+				int eff2_min = 0;
+				int effTier_min = 0;
+				int eff1 = 0;
+				int eff2 = 0;
+				int effTier = 0;
+				if ( item.type == INSTRUMENT_FLUTE )
+				{
+					eff1 = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_FLUTE_EFF_1, effectStrength);
+					eff2 = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_FLUTE_EFF_2, effectStrength);
+					effTier = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_FLUTE_TIER, effectStrength);
+
+					eff1_min = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_FLUTE_EFF_1, 1);
+					eff2_min = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_FLUTE_EFF_2, 1);
+					effTier_min = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_FLUTE_TIER, 1);
+				}
+				else if ( item.type == INSTRUMENT_LUTE )
+				{
+					eff1 = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_LUTE_EFF_1, effectStrength);
+					eff2 = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_LUTE_EFF_2, effectStrength);
+					effTier = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_LUTE_TIER, effectStrength);
+
+					eff1_min = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_LUTE_EFF_1, 1);
+					eff2_min = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_LUTE_EFF_2, 1);
+					effTier_min = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_LUTE_TIER, 1);
+				}
+				else if ( item.type == INSTRUMENT_LYRE )
+				{
+					eff1 = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_LYRE_EFF_1, effectStrength);
+					eff2 = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_LYRE_EFF_2, effectStrength);
+					effTier = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_LYRE_TIER, effectStrength);
+
+					eff1_min = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_LYRE_EFF_1, 1);
+					eff2_min = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_LYRE_EFF_2, 1);
+					effTier_min = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_LYRE_TIER, 1);
+				}
+				else if ( item.type == INSTRUMENT_HORN )
+				{
+					eff1 = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_HORN_EFF_1, effectStrength);
+					eff2 = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_HORN_EFF_2, effectStrength);
+					effTier = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_HORN_TIER, effectStrength);
+
+					eff1_min = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_HORN_EFF_1, 1);
+					eff2_min = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_HORN_EFF_2, 1);
+					effTier_min = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_HORN_TIER, 1);
+				}
+				else if ( item.type == INSTRUMENT_DRUM )
+				{
+					eff1 = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_DRUM_EFF_1, effectStrength);
+					eff2 = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_DRUM_EFF_2, effectStrength);
+					effTier = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_DRUM_TIER, effectStrength);
+
+					eff1_min = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_DRUM_EFF_1, 1);
+					eff2_min = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_DRUM_EFF_2, 1);
+					effTier_min = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_DRUM_TIER, 1);
+				}
+
+				snprintf(buf, sizeof(buf), str.c_str(), tierString.c_str(), eff1_min, eff1, effTier_min, effTier);
+			}
+			else if ( conditionalAttribute.find("EFF_FOCI_") != std::string::npos )
+			{
+				Sint32 CHR = statGetCHR(stats[player], players[player]->entity);
+				if ( compendiumTooltipIntro ) { CHR = 0; }
+				int tier = 1;
+				std::string tierString = "I";
+				if ( CHR >= 3 && CHR <= 7 )
+				{
+					tier = 1;
+				}
+				else if ( CHR >= 8 && CHR <= 14 )
+				{
+					tierString = "II";
+					tier = 2;
+				}
+				else if ( CHR >= 15 && CHR <= 29 )
+				{
+					tierString = "III";
+					tier = 3;
+				}
+				else if ( CHR >= 30 )
+				{
+					tierString = "IV";
+					tier = 4;
+				}
+
+				if ( conditionalAttribute == "EFF_FOCI_PEACE" )
+				{
+					int effect = getSpellEffectDurationSecondaryFromID(SPELL_FOCI_LIGHT_PEACE, nullptr, nullptr, nullptr);
+					int effectMax = effect - (tier - 1) * getSpellDamageSecondaryFromID(SPELL_FOCI_LIGHT_PEACE, nullptr, nullptr, nullptr);
+					snprintf(buf, sizeof(buf), str.c_str(), tierString.c_str(), effect / TICKS_PER_SECOND, effectMax / TICKS_PER_SECOND);
+				}
+				else if ( conditionalAttribute == "EFF_FOCI_PURITY" )
+				{
+					int effect = getSpellEffectDurationSecondaryFromID(SPELL_FOCI_LIGHT_PURITY, nullptr, nullptr, nullptr);
+					int effectMax = effect - (tier - 1) * getSpellDamageSecondaryFromID(SPELL_FOCI_LIGHT_PURITY, nullptr, nullptr, nullptr);
+					snprintf(buf, sizeof(buf), str.c_str(), tierString.c_str(), effect / TICKS_PER_SECOND, effectMax / TICKS_PER_SECOND);
+				}
+				else if ( conditionalAttribute == "EFF_FOCI_JUSTICE" )
+				{
+					int effect = getSpellEffectDurationSecondaryFromID(SPELL_FOCI_LIGHT_JUSTICE, nullptr, nullptr, nullptr);
+					int effectMax = effect + (tier - 1) * getSpellDamageSecondaryFromID(SPELL_FOCI_LIGHT_JUSTICE, nullptr, nullptr, nullptr);
+					snprintf(buf, sizeof(buf), str.c_str(), tierString.c_str(), effect, effectMax);
+				}
+				else if ( conditionalAttribute == "EFF_FOCI_SANCTUARY" )
+				{
+					int effect = getSpellDamageFromID(SPELL_FOCI_LIGHT_SANCTUARY, nullptr, nullptr, nullptr);
+					int effectMax = effect + (tier - 1) * getSpellDamageSecondaryFromID(SPELL_FOCI_LIGHT_SANCTUARY, nullptr, nullptr, nullptr);
+					snprintf(buf, sizeof(buf), str.c_str(), tierString.c_str(), effect, effectMax);
+				}
+				else if ( conditionalAttribute == "EFF_FOCI_PROVIDENCE" )
+				{
+					int effect = getSpellEffectDurationSecondaryFromID(SPELL_FOCI_LIGHT_PROVIDENCE, nullptr, nullptr, nullptr);
+					int effectMax = effect + (tier - 1) * getSpellDamageSecondaryFromID(SPELL_FOCI_LIGHT_PROVIDENCE, nullptr, nullptr, nullptr);
+					snprintf(buf, sizeof(buf), str.c_str(), tierString.c_str(), effect, effectMax);
+				}
+				else
+				{
+					return;
+				}
+			}
 			else if ( conditionalAttribute.find("EFF_ARTIFACT_") != std::string::npos )
 			{
 				real_t amount = 0.0;
@@ -3639,6 +4660,23 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 					snprintf(buf, sizeof(buf), str.c_str(), percent, amount);
 				}
 			}
+			else if ( conditionalAttribute == "EFF_FLAIL" )
+			{
+				int percent = (50 + (compendiumTooltipIntro ? 0 : stats[player]->getModifiedProficiency(PRO_MACE) * 25 / 100.0)) - 100;
+				snprintf(buf, sizeof(buf), str.c_str(), percent);
+			}
+			else if ( conditionalAttribute == "EFF_SHILLELAGH" )
+			{
+				real_t variance = 20;
+				real_t baseSkillModifier = 50.0; // 40-60 base
+				real_t skillModifier = baseSkillModifier - (variance / 2) + (compendiumTooltipIntro ? 0 : stats[player]->getModifiedProficiency(PRO_MYSTICISM) / 2.0);
+
+				int valueLow = skillModifier;
+				int valueHigh = skillModifier + variance;
+				valueHigh = std::min(100, valueHigh);
+
+				snprintf(buf, sizeof(buf), str.c_str(), valueLow, valueHigh);
+			}
 			else
 			{
 				snprintf(buf, sizeof(buf), str.c_str(), getItemEquipmentEffectsForIconText(conditionalAttribute).c_str());
@@ -3648,6 +4686,20 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 		{
 			Sint32 AC = item.armorGetAC(stats[player]);
 			snprintf(buf, sizeof(buf), str.c_str(), AC, getItemStatFullName("AC").c_str());
+		}
+		else if ( conditionalAttribute == "FOCI_MP_COST" )
+		{
+			int mpCost = 0;
+			int spellID = getSpellIDFromFoci(item.type);
+			if ( spellID != SPELL_NONE )
+			{
+				if ( auto spell = getSpellFromID(spellID) )
+				{
+					mpCost = getCostOfSpell(spell, compendiumTooltipIntro ? nullptr : players[player]->entity);
+				}
+			}
+
+			snprintf(buf, sizeof(buf), str.c_str(), mpCost);
 		}
 		else
 		{
@@ -3674,6 +4726,7 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 		|| tooltipType.find("tooltip_ranged") != std::string::npos
 		|| tooltipType.find("tooltip_quiver") != std::string::npos
 		|| tooltipType.compare("tooltip_tool_pickaxe") == 0 
+		|| tooltipType.compare("tooltip_magicstaff_scepter") == 0
 		)
 	{
 		Sint32 atk = item.weaponGetAttack(stats[player]);
@@ -3763,6 +4816,11 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 		const int atk = 10 + 3 * (item.status + item.beatitude);
 		snprintf(buf, sizeof(buf), str.c_str(), atk);
 	}
+	else if ( tooltipType.find("tooltip_jewel") != std::string::npos )
+	{
+		int tier = std::max(DECREPIT, item.status);
+		snprintf(buf, sizeof(buf), str.c_str(), adjectives["jewel_levels"][std::to_string(tier)].c_str(), getItemStatusAdjective(item.type, item.status).c_str());
+	}
 	else if ( tooltipType.find("tooltip_scroll") != std::string::npos )
 	{
 		if ( conditionalAttribute == "SCROLL_LABEL" )
@@ -3840,7 +4898,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		}
 	}
 
-	auto itemTooltip = ItemTooltips.tooltips[tooltipType];
+	//auto itemTooltip = ItemTooltips.tooltips[tooltipType];
 
 	memset(buf, 0, sizeof(buf));
 
@@ -3904,7 +4962,8 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		}
 		else if ( detailTag.compare("weapon_atk_from_player_stat") == 0 )
 		{
-			snprintf(buf, sizeof(buf), str.c_str(), (!compendiumTooltipIntro && stats[player]) ? statGetSTR(stats[player], players[player]->entity) : 0);
+			snprintf(buf, sizeof(buf), str.c_str(), 
+				(int)(((!compendiumTooltipIntro && stats[player]) ? statGetSTR(stats[player], players[player]->entity) : 0) * 100 * Entity::PlayerAttackMeleeStatFactor));
 		}
 		else if ( detailTag.compare("ring_unarmed_atk") == 0 )
 		{
@@ -3991,15 +5050,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 				//}
 				//val = ((val * equipmentModifier) * bonusModifier);
 
-				std::string skillName = "";
-				for ( auto s : Player::SkillSheet_t::skillSheetData.skillEntries )
-				{
-					if ( s.skillId == PRO_STEALTH )
-					{
-						skillName = s.name;
-						break;
-					}
-				}
+				std::string skillName = Player::SkillSheet_t::getSkillNameFromID(PRO_STEALTH);
 				snprintf(buf, sizeof(buf), str.c_str(), skillName.c_str());
 			}
 			else if ( detailTag == "EFF_SILKEN_BOW" )
@@ -4028,15 +5079,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 					}
 				}
 
-				std::string skillName = "";
-				for ( auto s : Player::SkillSheet_t::skillSheetData.skillEntries )
-				{
-					if ( s.skillId == PRO_LEADERSHIP )
-					{
-						skillName = s.name;
-						break;
-					}
-				}
+				std::string skillName = Player::SkillSheet_t::getSkillNameFromID(PRO_LEADERSHIP);
 				snprintf(buf, sizeof(buf), str.c_str(), baseBonus,
 					chanceBonus, skillName.c_str(), getItemStatShortName("CHR").c_str());
 			}
@@ -4077,7 +5120,8 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		}
 		else if ( detailTag.compare("thrown_atk_from_player_stat") == 0 )
 		{
-			snprintf(buf, sizeof(buf), str.c_str(), (!compendiumTooltipIntro && stats[player]) ? (statGetDEX(stats[player], players[player]->entity) / 4) : 0);
+			snprintf(buf, sizeof(buf), str.c_str(), 
+				(int)(((!compendiumTooltipIntro && stats[player]) ? (statGetDEX(stats[player], players[player]->entity) / 4) : 0) * 100 * Entity::PlayerAttackThrownStatFactor));
 		}
 		else if ( detailTag.compare("thrown_skill_modifier") == 0 )
 		{
@@ -4142,6 +5186,18 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 			return;
 		}
 	}
+	else if ( tooltipType == "tooltip_jewel" )
+	{
+		if ( detailTag == "jewel_limit" )
+		{
+			int allowedFollowers = std::min(8, std::max(4, compendiumTooltipIntro ? 0 : 2 * (stats[player]->getModifiedProficiency(PRO_LEADERSHIP) / 20)));
+			snprintf(buf, sizeof(buf), str.c_str(), allowedFollowers);
+		}
+		else
+		{
+			return;
+		}
+	}
 	else if ( tooltipType.find("tooltip_thrown") != std::string::npos
 		|| tooltipType.find("tooltip_boomerang") != std::string::npos )
 	{
@@ -4159,7 +5215,8 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		}
 		else if ( detailTag.compare("thrown_atk_from_player_stat") == 0 )
 		{
-			snprintf(buf, sizeof(buf), str.c_str(), (!compendiumTooltipIntro && stats[player]) ? (statGetDEX(stats[player], players[player]->entity) / 4) : 0);
+			snprintf(buf, sizeof(buf), str.c_str(), 
+				(int)(((!compendiumTooltipIntro && stats[player]) ? (statGetDEX(stats[player], players[player]->entity) / 4) : 0) * 100 * Entity::PlayerAttackThrownStatFactor));
 		}
 		else if ( detailTag.compare("thrown_skill_modifier") == 0 )
 		{
@@ -4172,12 +5229,426 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 			return;
 		}
 	}
+	else if ( tooltipType == "tooltip_instrument" )
+	{
+		Entity* caster = compendiumTooltipIntro ? nullptr : players[player]->entity;
+		Stat* myStats = compendiumTooltipIntro ? nullptr : stats[player];
+		if ( detailTag == "armor_on_cursed_sideeffect" )
+		{
+			snprintf(buf, sizeof(buf), str.c_str(), getItemBeatitudeAdjective(item.beatitude).c_str());
+		}
+		else if ( detailTag == "instrument_duration" )
+		{
+			Sint32 CHR = statGetCHR(stats[player], players[player]->entity);
+			if ( compendiumTooltipIntro ) { CHR = 0; }
+
+			int skillLVL = std::max(0, myStats ? myStats->getModifiedProficiency(PRO_APPRAISAL) : 0);
+			int durationMinimum = TICKS_PER_SECOND;
+			durationMinimum += (skillLVL / 20) * TICKS_PER_SECOND;
+
+			int duration = 1;
+			duration += 4 * skillLVL * (TICKS_PER_SECOND / 25);
+			duration += (skillLVL / 20) * TICKS_PER_SECOND;
+
+			int durationMax = TICKS_PER_SECOND * 60 * 5;
+			duration = std::min(duration, durationMax);
+			duration = std::max(duration, durationMinimum);
+
+			int chargeTimeBase = 4 * TICKS_PER_SECOND;
+			int chargeTime = std::max(TICKS_PER_SECOND / 2,
+				chargeTimeBase - (TICKS_PER_SECOND / 20) * CHR);
+
+			real_t chargeRatio = (100.0 * chargeTimeBase / (real_t)chargeTime) - 100.0;
+
+			snprintf(buf, sizeof(buf), str.c_str(), 
+				chargeTime / (real_t)TICKS_PER_SECOND, duration / (real_t)TICKS_PER_SECOND);
+		}
+		else if ( detailTag == "instrument_casting" )
+		{
+			Sint32 CHR = statGetCHR(stats[player], players[player]->entity);
+			if ( compendiumTooltipIntro ) { CHR = 0; }
+			Uint8 effectStrength = std::max(1, std::min(255, CHR + 1));
+			int tier = 1;
+			std::string tierString = "I";
+			int nextCHR = Stat::kEnsembleBreakPointTier2;
+			if ( effectStrength - 1 >= Stat::kEnsembleBreakPointTier4 )
+			{
+				nextCHR = 0;
+				tier = 4;
+			}
+			else if ( effectStrength - 1 >= Stat::kEnsembleBreakPointTier3 )
+			{
+				nextCHR = Stat::kEnsembleBreakPointTier4;
+				tier = 3;
+
+			}
+			else if ( effectStrength - 1 >= Stat::kEnsembleBreakPointTier2 )
+			{
+				nextCHR = Stat::kEnsembleBreakPointTier3;
+				tier = 2;
+			}
+
+			char nextChrStr[64];
+			if ( nextCHR > 0 )
+			{
+				snprintf(nextChrStr, sizeof(nextChrStr), "%+d %s", nextCHR, ItemTooltips_t::getItemStatShortName("CHR").c_str());
+			}
+			else
+			{
+				snprintf(nextChrStr, sizeof(nextChrStr), "N/A");
+			}
+
+			char nextChrStatStr[64];
+			int nextCHRStat = effectStrength + 1;
+			int eff1 = 0;
+			if ( item.type == INSTRUMENT_FLUTE )
+			{
+				eff1 = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_FLUTE_EFF_1, effectStrength);
+			}
+			else if ( item.type == INSTRUMENT_LUTE )
+			{
+				eff1 = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_LUTE_EFF_1, effectStrength);
+			}
+			else if ( item.type == INSTRUMENT_LYRE )
+			{
+				eff1 = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_LYRE_EFF_1, effectStrength);
+			}
+			else if ( item.type == INSTRUMENT_HORN )
+			{
+				eff1 = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_HORN_EFF_1, effectStrength);
+			}
+			else if ( item.type == INSTRUMENT_DRUM )
+			{
+				eff1 = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_DRUM_EFF_1, effectStrength);
+			}
+			for ( int i = effectStrength + 1; i < effectStrength + 10 && i <= 255; ++i )
+			{
+				int eff1_test = 0;
+				if ( item.type == INSTRUMENT_FLUTE )
+				{
+					eff1_test = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_FLUTE_EFF_1, i);
+				}
+				else if ( item.type == INSTRUMENT_LUTE )
+				{
+					eff1_test = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_LUTE_EFF_1, i);
+				}
+				else if ( item.type == INSTRUMENT_LYRE )
+				{
+					eff1_test = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_LYRE_EFF_1, i);
+				}
+				else if ( item.type == INSTRUMENT_HORN )
+				{
+					eff1_test = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_HORN_EFF_1, i);
+				}
+				else if ( item.type == INSTRUMENT_DRUM )
+				{
+					eff1_test = stats[player]->getEnsembleEffectBonus(Stat::ENSEMBLE_DRUM_EFF_1, i);
+				}
+				if ( eff1_test > eff1 )
+				{
+					nextCHRStat = i;
+					break;
+				}
+			}
+
+			if ( nextCHRStat > 0 )
+			{
+				snprintf(nextChrStatStr, sizeof(nextChrStatStr), "%+d %s", nextCHRStat, ItemTooltips_t::getItemStatShortName("CHR").c_str());
+			}
+			else
+			{
+				snprintf(nextChrStatStr, sizeof(nextChrStatStr), "N/A");
+			}
+
+			snprintf(buf, sizeof(buf), str.c_str(), items[item.type].attributes["EFF_INSTRUMENT_MP_COST"], 
+				nextChrStatStr, nextChrStr);
+		}
+	}
+	else if ( tooltipType == "tooltip_foci_light"
+		|| tooltipType == "tooltip_foci_dark"
+		|| tooltipType == "tooltip_foci_mage" )
+	{
+		Entity* caster = compendiumTooltipIntro ? nullptr : players[player]->entity;
+		Stat* myStats = compendiumTooltipIntro ? nullptr : stats[player];
+		if ( detailTag.compare("armor_on_cursed_sideeffect") == 0 )
+		{
+			snprintf(buf, sizeof(buf), str.c_str(), getItemBeatitudeAdjective(item.beatitude).c_str());
+		}
+		else if ( detailTag == "spell_damage_bonus"
+			|| detailTag == "EFF_FOCI_MAGE_ARCS" )
+		{
+			int spellID = getSpellIDFromFoci(item.type);
+			if ( spellID != SPELL_NONE )
+			{
+				if ( auto spell = getSpellFromID(spellID) )
+				{
+					int baseDamage = getSpellDamageOrHealAmount(-1, spell, nullptr, compendiumTooltipIntro);
+					real_t bonusINTPercent = 100.0 * getBonusFromCasterOfSpellElement(
+						compendiumTooltipIntro ? nullptr : players[player]->entity,
+						compendiumTooltipIntro ? nullptr : stats[player],
+						nullptr, spell ? spell->ID : SPELL_NONE, spell->skillID);
+					real_t mult = 1.0;
+					if ( detailTag == "EFF_FOCI_MAGE_ARCS" )
+					{
+						spellElement_t* element = nullptr;
+						if ( spell->elements.first )
+						{
+							if ( element = (spellElement_t*)spell->elements.first->element )
+							{
+								if ( element->elements.first && element->elements.first->element )
+								{
+									element = (spellElement_t*)element->elements.first->element;
+								}
+							}
+						}
+						if ( element )
+						{
+							baseDamage = element->getDamageSecondary();
+						}
+						mult = getSpellPropertyFromID(spell_t::SPELLPROP_DAMAGE_SECONDARY_MULT, spell->ID, compendiumTooltipIntro ? nullptr : players[player]->entity, nullptr, nullptr);
+						snprintf(buf, sizeof(buf), str.c_str(), (int)(baseDamage * (1.0 + bonusINTPercent * mult / 100.0)));
+					}
+					else
+					{
+						mult = getSpellPropertyFromID(spell_t::SPELLPROP_DAMAGE_MULT, spell->ID, compendiumTooltipIntro ? nullptr : players[player]->entity, nullptr, nullptr);
+						std::string damageOrHealing = adjectives["spell_strings"]["damage"];
+						/*std::string statName = getItemStatShortName("INT");
+						if ( spell->skillID == PRO_MYSTICISM )
+						{
+							statName += '/';
+							statName += getItemStatShortName("CHR");
+						}
+						else if ( spell->skillID == PRO_THAUMATURGY )
+						{
+							statName += '/';
+							statName += getItemStatShortName("CON");
+						}*/
+
+						snprintf(buf, sizeof(buf), str.c_str(), damageOrHealing.c_str(), baseDamage, damageOrHealing.c_str(),
+							bonusINTPercent * mult, damageOrHealing.c_str());
+					}
+				}
+			}
+		}
+		else if ( detailTag == "mage_foci_bless_bonus" )
+		{
+			int bless = shouldInvertEquipmentBeatitude(myStats) ?
+				abs(item.beatitude) :
+				std::max((Sint16)0, item.beatitude);
+
+			int bonus = bless * 5;
+			snprintf(buf, sizeof(buf), str.c_str(), bonus, getItemBeatitudeAdjective(item.beatitude).c_str());
+		}
+		else if ( detailTag == "foci_mage_cast" )
+		{
+			int baseChargeTime = TICKS_PER_SECOND;
+			int effectDuration = TICKS_PER_SECOND;
+			int spellID = getSpellIDFromFoci(item.type);
+			if ( spellID != SPELL_NONE )
+			{
+				if ( auto spell = getSpellFromID(spellID) )
+				{
+					spellElement_t* element = nullptr;
+					if ( spell->elements.first )
+					{
+						if ( element = (spellElement_t*)spell->elements.first->element )
+						{
+							if ( element->elements.first && element->elements.first->element )
+							{
+								element = (spellElement_t*)element->elements.first->element;
+							}
+						}
+					}
+					if ( element )
+					{
+						baseChargeTime = element->getChanneledManaDuration();
+						effectDuration = element->duration;
+					}
+				}
+			}
+			snprintf(buf, sizeof(buf), str.c_str(), baseChargeTime / (real_t)TICKS_PER_SECOND, effectDuration / (real_t)TICKS_PER_SECOND);
+		}
+		else if ( detailTag == "foci_charge_text" )
+		{
+			int nextCHRBonus = 8;
+
+			int tier = 1;
+			Sint32 CHR = statGetCHR(myStats, caster);
+			if ( CHR >= 3 && CHR <= 7 )
+			{
+				nextCHRBonus = 8;
+			}
+			else if ( CHR >= 8 && CHR <= 14 )
+			{
+				nextCHRBonus = 15;
+			}
+			else if ( CHR >= 15 && CHR <= 29 )
+			{
+				nextCHRBonus = 30;
+			}
+			else if ( CHR >= 30 )
+			{
+				nextCHRBonus = 0;
+			}
+			char nextChrStr[64];
+			if ( nextCHRBonus > 0 )
+			{
+				snprintf(nextChrStr, sizeof(nextChrStr), "%+d %s", nextCHRBonus, ItemTooltips_t::getItemStatShortName("CHR").c_str());
+			}
+			else
+			{
+				snprintf(nextChrStr, sizeof(nextChrStr), "N/A");
+			}
+			int effectDuration = TICKS_PER_SECOND;
+			int baseChargeTime = TICKS_PER_SECOND;
+			int spellID = getSpellIDFromFoci(item.type);
+			if ( spellID != SPELL_NONE )
+			{
+				if ( auto spell = getSpellFromID(spellID) )
+				{
+					spellElement_t* element = nullptr;
+					if ( spell->elements.first )
+					{
+						if ( element = (spellElement_t*)spell->elements.first->element )
+						{
+							if ( element->elements.first && element->elements.first->element )
+							{
+								element = (spellElement_t*)element->elements.first->element;
+							}
+						}
+					}
+					if ( element )
+					{
+						effectDuration = element->duration;
+						baseChargeTime = element->getChanneledManaDuration();
+					}
+				}
+			}
+
+			snprintf(buf, sizeof(buf), str.c_str(), baseChargeTime / (real_t)TICKS_PER_SECOND, effectDuration / (real_t)TICKS_PER_SECOND, nextChrStr);
+		}
+		else if ( detailTag == "foci_mp_cost" )
+		{
+			int mpCost = 5;
+			int spellID = getSpellIDFromFoci(item.type);
+			int freeMPInterval1 = 0;
+			int freeMPInterval2 = 0;
+			int moveSpeed = 0;
+			std::string skillName = "";
+			int chargeRefire = 0;
+			int nextCHRBonus = 8;
+			if ( spellID != SPELL_NONE )
+			{
+				if ( auto spell = getSpellFromID(spellID) )
+				{
+					mpCost = getCostOfSpell(spell, caster);
+					int bless = shouldInvertEquipmentBeatitude(myStats) ?
+						abs(item.beatitude) :
+						std::max((Sint16)0, item.beatitude);
+
+					mpCost = getSpellPropertyFromID(spell_t::SPELLPROP_FOCI_SECONDARY_MANA_COST, spellID,
+						caster, myStats, caster);
+
+					int tier = bless > 0 ? std::min(2, bless) : 0;
+					Sint32 CHR = statGetCHR(myStats, caster);
+					if ( CHR > 0 )
+					{
+						if ( CHR >= 3 && CHR <= 7 )
+						{
+							tier += 1;
+							nextCHRBonus = 8;
+						}
+						else if ( CHR >= 8 && CHR <= 14 )
+						{
+							tier += 2;
+							nextCHRBonus = 15;
+						}
+						else if ( CHR >= 15 && CHR <= 29 )
+						{
+							tier += 3;
+							nextCHRBonus = 30;
+						}
+						else if ( CHR >= 30 && CHR <= 59 )
+						{
+							tier += 4;
+							nextCHRBonus = 60;
+						}
+						else if ( CHR >= 60 )
+						{
+							tier += 5;
+							nextCHRBonus = 0;
+						}
+					}
+					tier = std::min(tier, 5);
+					if ( tier == 1 ) { freeMPInterval1 = 1; freeMPInterval2 = 4; }
+					if ( tier == 2 ) { freeMPInterval1 = 1; freeMPInterval2 = 3; }
+					if ( tier == 3 ) { freeMPInterval1 = 1; freeMPInterval2 = 2; }
+					if ( tier == 4 ) { freeMPInterval1 = 2; freeMPInterval2 = 3; }
+					if ( tier == 5 ) { freeMPInterval1 = 3; freeMPInterval2 = 4; }
+
+					moveSpeed = !myStats ? 0 : myStats->getModifiedProficiency(spell->skillID);
+					skillName = Player::SkillSheet_t::getSkillNameFromID(spell->skillID);
+
+					real_t modifier = std::min(100, !myStats ? 0 : myStats->getModifiedProficiency(spell->skillID)) / 100.0;
+
+					spellElement_t* element = nullptr;
+					if ( spell->elements.first )
+					{
+						if ( element = (spellElement_t*)spell->elements.first->element )
+						{
+							if ( element->elements.first && element->elements.first->element )
+							{
+								element = (spellElement_t*)element->elements.first->element;
+							}
+						}
+					}
+
+					chargeRefire = 0;
+					if ( element )
+					{
+						int result = element->getChanneledManaDuration();
+						int modifiedResult = getSpellPropertyFromID(spell_t::SPELLPROP_FOCI_REFIRE_TICKS, spellID,
+							caster, myStats, caster);
+
+						chargeRefire = (100.0 - (100.0 * modifiedResult / (real_t)result));
+					}
+				}
+			}
+
+			std::string fmt1 = "-";
+			std::string fmt2 = "-";
+			if ( freeMPInterval1 > 0 && freeMPInterval2 > 0 )
+			{
+				fmt1 = std::to_string(freeMPInterval1);
+				fmt2 = std::to_string(freeMPInterval2);
+			}
+			char nextChrStr[64];
+			if ( nextCHRBonus > 0 )
+			{
+				snprintf(nextChrStr, sizeof(nextChrStr), "%+d %s", nextCHRBonus, ItemTooltips_t::getItemStatShortName("CHR").c_str());
+			}
+			else
+			{
+				snprintf(nextChrStr, sizeof(nextChrStr), "N/A");
+			}
+			snprintf(buf, sizeof(buf), str.c_str(),
+				mpCost, fmt1.c_str(), fmt2.c_str(), 
+				nextChrStr,
+				skillName.c_str(), 
+				chargeRefire, moveSpeed);
+		}
+		else
+		{
+			return;
+		}
+	}
 	else if ( tooltipType.find("tooltip_mace") != std::string::npos
 		|| tooltipType.find("tooltip_axe") != std::string::npos
 		|| tooltipType.find("tooltip_sword") != std::string::npos
 		|| tooltipType.find("tooltip_polearm") != std::string::npos
 		|| tooltipType.find("tooltip_whip") != std::string::npos
 		|| tooltipType.compare("tooltip_tool_pickaxe") == 0
+		|| tooltipType.compare("tooltip_magicstaff_scepter") == 0
 		|| tooltipType.find("tooltip_ranged") != std::string::npos
 		|| tooltipType.find("tooltip_quiver") != std::string::npos )
 	{
@@ -4271,15 +5742,28 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 				{
 					atk = 0;
 				}
-				snprintf(buf, sizeof(buf), str.c_str(), atk);
+				snprintf(buf, sizeof(buf), str.c_str(), (int)(atk * 100 * Entity::PlayerAttackMeleeStatFactor));
+			}
+			else if ( item.type == MAGICSTAFF_SCEPTER )
+			{
+				int atk = (stats[player] ? statGetSTR(stats[player], players[player]->entity) : 0);
+				atk = std::min(atk / 2, atk);
+				snprintf(buf, sizeof(buf), str.c_str(), (int)(atk * 100 * Entity::PlayerAttackMeleeStatFactor));
+			}
+			else if ( item.type == RAPIER )
+			{
+				int atk = (stats[player] ? statGetDEX(stats[player], players[player]->entity) : 0);
+				snprintf(buf, sizeof(buf), str.c_str(), (int)(atk * 100 * Entity::PlayerAttackMeleeStatFactor));
 			}
 			else if ( proficiency == PRO_RANGED )
 			{
-				snprintf(buf, sizeof(buf), str.c_str(), (!compendiumTooltipIntro && stats[player]) ? statGetDEX(stats[player], players[player]->entity) : 0);
+				snprintf(buf, sizeof(buf), str.c_str(), 
+					(int)(((!compendiumTooltipIntro && stats[player]) ? statGetDEX(stats[player], players[player]->entity) : 0) * 100 * Entity::PlayerAttackRangedStatFactor));
 			}
 			else
 			{
-				snprintf(buf, sizeof(buf), str.c_str(), (!compendiumTooltipIntro && stats[player]) ? statGetSTR(stats[player], players[player]->entity) : 0);
+				snprintf(buf, sizeof(buf), str.c_str(), 
+					(int)(((!compendiumTooltipIntro && stats[player]) ? statGetSTR(stats[player], players[player]->entity) : 0) * 100 * Entity::PlayerAttackMeleeStatFactor));
 			}
 		}
 		else if ( detailTag.compare("weapon_durability") == 0 )
@@ -4303,9 +5787,10 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 			snprintf(buf, sizeof(buf), str.c_str(),
 				items[item.type].hasAttribute("FRAGILE") ? -items[item.type].attributes["FRAGILE"] : 0);
 		}
-		else if ( detailTag.compare("weapon_ranged_armor_pierce") == 0 )
+		else if ( detailTag.compare("weapon_ranged_armor_pierce") == 0
+			|| detailTag.compare("whip_base_effects") == 0 )
 		{
-			int statChance = std::min(std::max((stats[player] ? statGetPER(stats[player], players[player]->entity) : 0) / 2, 0), 50); // 0 to 50 value.
+			int statChance = std::min(std::max((stats[player] ? statGetPER(stats[player], players[player]->entity) : 0), 0), 50); // 0 to 50 value.
 			if ( compendiumTooltipIntro )
 			{
 				statChance = 0;
@@ -4326,6 +5811,49 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 				rof *= -1;
 				snprintf(buf, sizeof(buf), str.c_str(), rof);
 			}
+		}
+		else if ( detailTag == "spell_damage_bonus" )
+		{
+			if ( item.type == MAGICSTAFF_SCEPTER )
+			{
+				if ( detailTag.compare("spell_damage_bonus") == 0 )
+				{
+					spell_t* spell = getSpellFromID(SPELL_SCEPTER_BLAST);
+					if ( !spell ) { return; }
+
+					int baseDamage = getSpellDamageOrHealAmount(-1, spell, nullptr, compendiumTooltipIntro);
+
+					real_t mult = getSpellPropertyFromID(spell_t::SPELLPROP_DAMAGE_MULT, spell->ID, compendiumTooltipIntro ? nullptr : players[player]->entity, nullptr, nullptr);
+
+					real_t bonusINTPercent = 100.0 * getBonusFromCasterOfSpellElement(
+						compendiumTooltipIntro ? nullptr : players[player]->entity,
+						compendiumTooltipIntro ? nullptr : stats[player],
+						nullptr, spell ? spell->ID : SPELL_NONE, spell->skillID);
+
+					std::string damageOrHealing = adjectives["spell_strings"]["damage"];
+					std::string statName = getItemStatShortName("INT");
+					if ( spell->skillID == PRO_MYSTICISM )
+					{
+						statName += '/';
+						statName += getItemStatShortName("CHR");
+					}
+					else if ( spell->skillID == PRO_THAUMATURGY )
+					{
+						statName += '/';
+						statName += getItemStatShortName("CON");
+					}
+
+					snprintf(buf, sizeof(buf), str.c_str(), damageOrHealing.c_str(), baseDamage, damageOrHealing.c_str(),
+						bonusINTPercent * mult, damageOrHealing.c_str());
+				}
+			}
+		}
+		else if ( detailTag == "weapon_parry_ac" )
+		{
+			Entity* my = compendiumTooltipIntro ? nullptr : players[player]->entity;
+			Stat* myStats = compendiumTooltipIntro ? nullptr : stats[player];
+			int parryBonus = Stat::getParryingACBonus(myStats, &item, true, false, proficiency);
+			snprintf(buf, sizeof(buf), str.c_str(), parryBonus);
 		}
 		else
 		{
@@ -4538,16 +6066,26 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 			return;
 		}
 	}
-	else if ( tooltipType.find("tooltip_spellbook") != std::string::npos )
+	else if ( tooltipType.find("tooltip_spellbook") != std::string::npos
+		|| tooltipType.find("tooltip_tome") != std::string::npos )
 	{
 		if ( detailTag.compare("spellbook_cast_bonus") == 0 )
 		{
-			spell_t* spell = getSpellFromID(getSpellIDFromSpellbook(item.type));
+			spell_t* spell = nullptr;
+			if ( itemCategory(&item) == SPELLBOOK )
+			{
+				spell = getSpellFromID(getSpellIDFromSpellbook(item.type));
+			}
+			else if ( itemCategory(&item) == TOME_SPELL )
+			{
+				spell = getSpellFromID(item.getTomeSpellID());
+			}
 			if ( !spell ) { return; }
 
-			int intBonus = (statGetINT(
-				compendiumTooltipIntro ? nullptr : stats[player], 
-				compendiumTooltipIntro ? nullptr : players[player]->entity) * 0.5);
+			int intBonus = getSpellbookBaseINTBonus(
+				compendiumTooltipIntro ? nullptr : players[player]->entity,
+				compendiumTooltipIntro ? nullptr : stats[player],
+				spell->skillID);
 			real_t mult = ((items[item.type].attributes["SPELLBOOK_CAST_BONUS"]) / 100.0);
 			intBonus *= mult;
 			int beatitudeBonus = (mult * getSpellbookBonusPercent(
@@ -4570,14 +6108,39 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 			{
 				damageOrHealing = adjectives["spell_strings"]["duration"];
 			}
+			if ( spellItems[spell->ID].spellTags.find(SpellTagTypes::SPELL_TAG_BONUS_AS_EFFECT_POWER)
+				!= spellItems[spell->ID].spellTags.end() )
+			{
+				damageOrHealing = adjectives["spell_strings"]["effect"];
+			}
+
+			std::string statName = getItemStatShortName("INT");
+			if ( spell->skillID == PRO_MYSTICISM )
+			{
+				statName += '/';
+				statName += getItemStatShortName("CHR");
+			}
+			else if ( spell->skillID == PRO_THAUMATURGY )
+			{
+				statName += '/';
+				statName += getItemStatShortName("CON");
+			}
 
 			snprintf(buf, sizeof(buf), str.c_str(),
-				intBonus, damageOrHealing.c_str(), getItemStatShortName("INT").c_str(),
+				intBonus, damageOrHealing.c_str(), statName.c_str(),
 				beatitudeBonus, damageOrHealing.c_str(), getItemBeatitudeAdjective(item.beatitude).c_str());
 		}
 		else if ( detailTag.compare("spellbook_cast_success") == 0 )
 		{
-			spell_t* spell = getSpellFromID(getSpellIDFromSpellbook(item.type));
+			spell_t* spell = nullptr;
+			if ( itemCategory(&item) == SPELLBOOK )
+			{
+				spell = getSpellFromID(getSpellIDFromSpellbook(item.type));
+			}
+			else if ( itemCategory(&item) == TOME_SPELL )
+			{
+				spell = getSpellFromID(item.getTomeSpellID());
+			}
 			if ( !spell ) { return; }
 
 			int spellcastingAbility = getSpellcastingAbilityFromUsingSpellbook(spell, players[player]->entity, stats[player]);
@@ -4586,7 +6149,15 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		}
 		else if ( detailTag.compare("spellbook_extramana_chance") == 0 )
 		{
-			spell_t* spell = getSpellFromID(getSpellIDFromSpellbook(item.type));
+			spell_t* spell = nullptr;
+			if ( itemCategory(&item) == SPELLBOOK )
+			{
+				spell = getSpellFromID(getSpellIDFromSpellbook(item.type));
+			}
+			else if ( itemCategory(&item) == TOME_SPELL )
+			{
+				spell = getSpellFromID(item.getTomeSpellID());
+			}
 			if ( !spell ) { return; }
 
 			int spellcastingAbility = getSpellcastingAbilityFromUsingSpellbook(spell, players[player]->entity, stats[player]);
@@ -4595,10 +6166,18 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		}
 		else if ( detailTag.compare("spellbook_magic_requirement") == 0 )
 		{
-			spell_t* spell = getSpellFromID(getSpellIDFromSpellbook(item.type));
+			spell_t* spell = nullptr;
+			if ( itemCategory(&item) == SPELLBOOK )
+			{
+				spell = getSpellFromID(getSpellIDFromSpellbook(item.type));
+			}
+			else if ( itemCategory(&item) == TOME_SPELL )
+			{
+				spell = getSpellFromID(item.getTomeSpellID());
+			}
 			if ( !spell ) { return; }
 
-			int skillLVL = std::min(100, stats[player]->getModifiedProficiency(PRO_MAGIC) + statGetINT(stats[player], players[player]->entity));
+			int skillLVL = std::min(100, stats[player]->getModifiedProficiency(spell->skillID) + statGetINT(stats[player], players[player]->entity));
 			if ( !playerLearnedSpellbook(player, &item) && (spell && spell->difficulty > skillLVL) )
 			{
 				str.insert((size_t)0, 1, '^'); // red line character
@@ -4615,18 +6194,33 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		}
 		else if ( detailTag.compare("spellbook_magic_current") == 0 )
 		{
-			spell_t* spell = getSpellFromID(getSpellIDFromSpellbook(item.type));
+			spell_t* spell = nullptr;
+			if ( itemCategory(&item) == SPELLBOOK )
+			{
+				spell = getSpellFromID(getSpellIDFromSpellbook(item.type));
+			}
+			else if ( itemCategory(&item) == TOME_SPELL )
+			{
+				spell = getSpellFromID(item.getTomeSpellID());
+			}
 			if ( !spell ) { return; }
 
-			int skillLVL = std::min(100, stats[player]->getModifiedProficiency(PRO_MAGIC) + statGetINT(stats[player], players[player]->entity));
+			int skillLVL = std::min(100, stats[player]->getModifiedProficiency(spell->skillID) + statGetINT(stats[player], players[player]->entity));
 			if ( !playerLearnedSpellbook(player, &item) && (spell && spell->difficulty > skillLVL) )
 			{
 				str.insert((size_t)0, 1, '^'); // red line character
 			}
 			Sint32 INT = stats[player] ? statGetINT(stats[player], players[player]->entity) : 0;
-			Sint32 skill = stats[player] ? stats[player]->getModifiedProficiency(PRO_MAGIC) : 0;
+			Sint32 skill = stats[player] ? stats[player]->getModifiedProficiency(spell->skillID) : 0;
 			Sint32 total = std::min(SKILL_LEVEL_LEGENDARY, INT + skill);
-			snprintf(buf, sizeof(buf), str.c_str(), INT + skill, getProficiencyLevelName(INT + skill).c_str());
+			if ( str.find("%s") != std::string::npos )
+			{
+				snprintf(buf, sizeof(buf), str.c_str(), Player::SkillSheet_t::getSkillNameFromID(spell->skillID, true).c_str(), INT + skill, getProficiencyLevelName(INT + skill).c_str());
+			}
+			else
+			{
+				snprintf(buf, sizeof(buf), str.c_str(), INT + skill, getProficiencyLevelName(INT + skill).c_str());
+			}
 		}
 		else
 		{
@@ -4635,23 +6229,74 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 	}
 	else if ( tooltipType.compare("tooltip_spell_item") == 0 )
 	{
-		if ( detailTag.compare("spell_damage_bonus") == 0 )
+		if ( detailTag == "spell_cast_time" )
+		{
+			spell_t* spell = getSpellFromItem(player, &item, false);
+			if ( !spell ) { return; }
+
+			Entity* caster = compendiumTooltipIntro ? nullptr : players[player]->entity;
+			Stat* casterStats = compendiumTooltipIntro ? nullptr : stats[player];
+			real_t baseCastTime = spell->cast_time * 20;
+			real_t modifiedCastTime = getSpellPropertyFromID(spell_t::SPELLPROP_MODIFIED_SPELL_CAST_TIME, spell->ID, caster, casterStats, nullptr) * 20;
+			real_t diff = -(baseCastTime - modifiedCastTime);
+			if ( abs(diff) < 0.001 )
+			{
+				diff = 0.0;
+			}
+			snprintf(buf, sizeof(buf), str.c_str(), baseCastTime / (real_t)TICKS_PER_SECOND, (diff) / (real_t)TICKS_PER_SECOND);
+		}
+		else if ( detailTag == "spell_distance" )
+		{
+			spell_t* spell = getSpellFromItem(player, &item, false);
+			if ( !spell ) { return; }
+
+			real_t dist = 0.0;
+			real_t diff = 0.0;
+			if ( spell->rangefinder != SpellRangefinderType::RANGEFINDER_NONE )
+			{
+				Entity* caster = compendiumTooltipIntro ? nullptr : players[player]->entity;
+				Stat* casterStats = compendiumTooltipIntro ? nullptr : stats[player];
+				dist = spell->distance;
+				real_t modifiedDistance = getSpellPropertyFromID(spell_t::SPELLPROP_MODIFIED_DISTANCE, spell->ID, caster, casterStats, nullptr);
+				diff = (modifiedDistance - dist);
+				if ( abs(diff) < 0.001 )
+				{
+					diff = 0.0;
+				}
+			}
+			snprintf(buf, sizeof(buf), str.c_str(), dist / 16.0, (diff) / 16.0);
+		}
+		else if ( detailTag.compare("spell_damage_bonus") == 0 )
 		{
 			spell_t* spell = getSpellFromItem(player, &item, false);
 			if ( !spell ) { return; }
 
 			//int totalDamage = getSpellDamageOrHealAmount(player, spell, nullptr);
-			Sint32 oldINT = stats[player]->INT;
+			/*Sint32 oldINT = stats[player]->INT;
+			Sint32 oldCHR = stats[player]->CHR;
+			Sint32 oldCON = stats[player]->CON;
 			stats[player]->INT = 0;
+			stats[player]->CHR = 0;
+			stats[player]->CON = 0;*/
 
 			int baseDamage = getSpellDamageOrHealAmount(-1, spell, nullptr, compendiumTooltipIntro);
 
-			real_t bonusEquipPercent = 100.0 * getBonusFromCasterOfSpellElement(players[player]->entity, stats[player], nullptr, spell ? spell->ID : SPELL_NONE);
+			real_t mult = getSpellPropertyFromID(spell_t::SPELLPROP_DAMAGE_MULT, spell->ID, compendiumTooltipIntro ? nullptr : players[player]->entity, nullptr, nullptr);
+
+			/*real_t bonusEquipPercent = 100.0 * getBonusFromCasterOfSpellElement(
+				compendiumTooltipIntro ? nullptr : players[player]->entity, 
+				compendiumTooltipIntro ? nullptr : stats[player], 
+				nullptr, spell ? spell->ID : SPELL_NONE, spell->skillID);
 
 			stats[player]->INT = oldINT;
+			stats[player]->CHR = oldCHR;
+			stats[player]->CON = oldCON;*/
 
-			real_t bonusINTPercent = 100.0 * getBonusFromCasterOfSpellElement(players[player]->entity, stats[player], nullptr, spell ? spell->ID : SPELL_NONE);
-			bonusINTPercent -= bonusEquipPercent;
+			real_t bonusINTPercent = 100.0 * getBonusFromCasterOfSpellElement(
+				compendiumTooltipIntro ? nullptr : players[player]->entity,
+				compendiumTooltipIntro ? nullptr : stats[player],
+				nullptr, spell ? spell->ID : SPELL_NONE, spell->skillID);
+			//bonusINTPercent -= bonusEquipPercent;
 
 			std::string damageOrHealing = adjectives["spell_strings"]["damage"];
 			if ( spellItems[spell->ID].spellTags.find(SpellTagTypes::SPELL_TAG_HEALING)
@@ -4659,19 +6304,84 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 			{
 				damageOrHealing = adjectives["spell_strings"]["healing"];
 			}
-			snprintf(buf, sizeof(buf), str.c_str(), damageOrHealing.c_str(), baseDamage, damageOrHealing.c_str(), 
-				bonusINTPercent, damageOrHealing.c_str(), getItemStatShortName("INT").c_str(), bonusEquipPercent, damageOrHealing.c_str());
+			if ( spellItems[spell->ID].spellTags.find(SpellTagTypes::SPELL_TAG_BONUS_AS_EFFECT_POWER)
+				!= spellItems[spell->ID].spellTags.end() )
+			{
+				damageOrHealing = adjectives["spell_strings"]["effect"];
+			}
+
+			std::string statName = getItemStatShortName("INT");
+			if ( spell->skillID == PRO_MYSTICISM )
+			{
+				statName += '/';
+				statName += getItemStatShortName("CHR");
+			}
+			else if ( spell->skillID == PRO_THAUMATURGY )
+			{
+				statName += '/';
+				statName += getItemStatShortName("CON");
+			}
+
+			if ( spell->ID == SPELL_HOLY_BEAM && templates["template_spell_damage_bonus_pwr_dual"].size() )
+			{
+				int damage = getSpellDamageFromID(SPELL_HOLY_BEAM, nullptr, nullptr, nullptr, 0.0, false);
+				real_t damageMult = mult;
+				int healing = getSpellDamageSecondaryFromID(SPELL_HOLY_BEAM, nullptr, nullptr, nullptr, 0.0, false);
+				real_t healingMult = getSpellPropertyFromID(spell_t::SPELLPROP_DAMAGE_SECONDARY_MULT, spell->ID, compendiumTooltipIntro ? nullptr : players[player]->entity, nullptr, nullptr);
+				snprintf(buf, sizeof(buf), templates["template_spell_damage_bonus_pwr_dual"][0].c_str(), adjectives["spell_strings"]["effect"].c_str(), damage, adjectives["spell_strings"]["damage"].c_str(),
+					bonusINTPercent * damageMult, adjectives["spell_strings"]["damage"].c_str(),
+					healing, adjectives["spell_strings"]["healing"].c_str(),
+					bonusINTPercent * healingMult, adjectives["spell_strings"]["healing"].c_str());
+			}
+			else
+			{
+				snprintf(buf, sizeof(buf), str.c_str(), damageOrHealing.c_str(), baseDamage, damageOrHealing.c_str(), 
+					bonusINTPercent * mult, damageOrHealing.c_str());// , statName.c_str(), bonusEquipPercent* mult, damageOrHealing.c_str());
+			}
 		}
 		else if ( detailTag.compare("spell_cast_success") == 0 )
 		{
-			int spellcastingAbility = std::min(std::max(0, stats[player]->getModifiedProficiency(PRO_SPELLCASTING)
+			spell_t* spell = getSpellFromItem(player, &item, false);
+			if ( !spell ) { return; }
+
+			int spellcastingAbility = std::min(std::max(0, stats[player]->getModifiedProficiency(spell->skillID)
 				+ statGetINT(stats[player], players[player]->entity)), 100);
-			int chance = ((10 - (spellcastingAbility / 10)) * 20 / 3.0); // 33% after rolling to fizzle, 66% success
+			int chance = ((100 - (spellcastingAbility)) / 3.0); // 33% after rolling to fizzle, 66% success
+			if ( str.find("%s") != std::string::npos )
+			{
+				snprintf(buf, sizeof(buf), str.c_str(), Player::SkillSheet_t::getSkillNameFromID(spell->skillID, true).c_str(), chance);
+			}
+			else
+			{
+				snprintf(buf, sizeof(buf), str.c_str(), chance);
+			}
+		}
+		else if ( detailTag.compare("spell_cast_success1") == 0 )
+		{
+			spell_t* spell = getSpellFromItem(player, &item, false);
+			if ( !spell ) { return; }
+
+			if ( str.find("%s") != std::string::npos )
+			{
+				snprintf(buf, sizeof(buf), str.c_str(), Player::SkillSheet_t::getSkillNameFromID(spell->skillID, true).c_str());
+			}
+		}
+		else if ( detailTag.compare("spell_cast_success2") == 0 )
+		{
+			spell_t* spell = getSpellFromItem(player, &item, false);
+			if ( !spell ) { return; }
+
+			int spellcastingAbility = std::min(std::max(0, stats[player]->getModifiedProficiency(spell->skillID)
+				+ statGetINT(stats[player], players[player]->entity)), 100);
+			int chance = ((100 - (spellcastingAbility)) / 3.0); // 33% after rolling to fizzle, 66% success
 			snprintf(buf, sizeof(buf), str.c_str(), chance);
 		}
 		else if ( detailTag.compare("spell_extramana_chance") == 0 )
 		{
-			int spellcastingAbility = std::min(std::max(0, stats[player]->getModifiedProficiency(PRO_SPELLCASTING)
+			spell_t* spell = getSpellFromItem(player, &item, false);
+			if ( !spell ) { return; }
+
+			int spellcastingAbility = std::min(std::max(0, stats[player]->getModifiedProficiency(spell->skillID)
 				+ statGetINT(stats[player], players[player]->entity)), 100);
 			int chance = (10 - (spellcastingAbility / 10)) * 10;
 			snprintf(buf, sizeof(buf), str.c_str(), chance);
@@ -4826,6 +6536,43 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 		{
 			return;
 		}
+	}
+	else if ( detailTag == "duck_info" )
+	{
+		std::string ownerName = adjectives["duck_default"]["unknown"];
+		std::string duckName = adjectives["duck_default"]["unknown"];
+		int owner = item.getDuckPlayer();
+		if ( owner >= 0 && owner < MAXPLAYERS && !compendiumTooltipIntro )
+		{
+			if ( !client_disconnected[owner] && stats[owner] )
+			{
+				ownerName = stats[owner]->name;
+			}
+		}
+		if ( owner == player && !compendiumTooltipIntro )
+		{
+			for ( auto& duck : players[player]->mechanics.ducksInARow )
+			{
+				if ( duck.first == ((item.appearance % items[TOOL_DUCK].variations) / MAXPLAYERS) )
+				{
+					if ( duck.second >= 15 * 60 * TICKS_PER_SECOND )
+					{
+						if ( adjectives["duck_titles"].size() >= 1 )
+						{
+							int index = uniqueGameKey % adjectives["duck_titles"].size();
+							index += 8 * player;
+							if ( index >= adjectives["duck_titles"].size() )
+							{
+								index = index % adjectives["duck_titles"].size();
+							}
+							duckName = adjectives["duck_titles"][std::to_string(index)];
+						}
+					}
+					break;
+				}
+			}
+		}
+		snprintf(buf, sizeof(buf), str.c_str(), ownerName.c_str(), duckName.c_str());
 	}
 	else
 	{
@@ -5288,7 +7035,7 @@ void StatueManager_t::readAllStatues()
 {
 	std::string baseDir = "data/statues";
 	auto files = physfsGetFileNamesInDirectory(baseDir.c_str());
-	for ( auto file : files )
+	for ( auto& file : files )
 	{
 		std::string checkFile = baseDir + '/' + file;
 		PHYSFS_Stat stat;
@@ -5297,7 +7044,7 @@ void StatueManager_t::readAllStatues()
 		if ( stat.filetype == PHYSFS_FileType::PHYSFS_FILETYPE_DIRECTORY )
 		{
 			auto files2 = physfsGetFileNamesInDirectory(checkFile.c_str());
-			for ( auto file2 : files2 )
+			for ( auto& file2 : files2 )
 			{
 				std::string checkFile2 = checkFile + '/' + file2;
 				if ( PHYSFS_stat(checkFile2.c_str(), &stat) == 0 ) { continue; }
@@ -5765,7 +7512,7 @@ void ScriptTextParser_t::readAllScripts()
 
 	std::string baseDir = "/data/scripts";
 	auto files = physfsGetFileNamesInDirectory(baseDir.c_str());
-	for ( auto file : files )
+	for ( auto& file : files )
 	{
 		std::string checkFile = baseDir + '/' + file;
 		PHYSFS_Stat stat;
@@ -5774,7 +7521,7 @@ void ScriptTextParser_t::readAllScripts()
 		if ( stat.filetype == PHYSFS_FileType::PHYSFS_FILETYPE_DIRECTORY )
 		{
 			auto files2 = physfsGetFileNamesInDirectory(checkFile.c_str());
-			for ( auto file2 : files2 )
+			for ( auto& file2 : files2 )
 			{
 				std::string checkFile2 = checkFile + '/' + file2;
 				if ( PHYSFS_stat(checkFile2.c_str(), &stat) == 0 ) { continue; }
@@ -6094,12 +7841,72 @@ bool ScriptTextParser_t::readFromFile(const std::string& filename)
 				entry.objectType = OBJ_SCRIPT;
 				entry.formattedText = entry_itr->value["script"].GetString();
 			}
+			else if ( entry_itr->value.HasMember("bubble_sign") )
+			{
+				entry.objectType = OBJ_BUBBLE_SIGN;
+				for ( rapidjson::Value::ConstValueIterator text_itr = entry_itr->value["bubble_sign"].Begin(); text_itr != entry_itr->value["bubble_sign"].End(); ++text_itr )
+				{
+					entry.rawText.push_back(text_itr->GetString());
+				}
+				entry.formattedText = "";
+				for ( auto& str : entry.rawText )
+				{
+					if ( entry.formattedText != "" )
+					{
+						entry.formattedText += '\n';
+					}
+					entry.formattedText += str;
+				}
+			}
+			else if ( entry_itr->value.HasMember("bubble_grave") )
+			{
+				entry.objectType = OBJ_BUBBLE_GRAVE;
+				for ( rapidjson::Value::ConstValueIterator text_itr = entry_itr->value["bubble_grave"].Begin(); text_itr != entry_itr->value["bubble_grave"].End(); ++text_itr )
+				{
+					entry.rawText.push_back(text_itr->GetString());
+				}
+				entry.formattedText = "";
+				for ( auto& str : entry.rawText )
+				{
+					if ( entry.formattedText != "" )
+					{
+						entry.formattedText += '\n';
+					}
+					entry.formattedText += str;
+				}
+			}
+			else if ( entry_itr->value.HasMember("bubble_dialogue") )
+			{
+				entry.objectType = OBJ_BUBBLE_DIALOGUE;
+				for ( rapidjson::Value::ConstValueIterator text_itr = entry_itr->value["bubble_dialogue"].Begin(); text_itr != entry_itr->value["bubble_dialogue"].End(); ++text_itr )
+				{
+					entry.rawText.push_back(text_itr->GetString());
+				}
+				entry.formattedText = "";
+				for ( auto& str : entry.rawText )
+				{
+					if ( entry.formattedText != "" )
+					{
+						entry.formattedText += '\n';
+					}
+					entry.formattedText += str;
+				}
+			}
 			else if ( entry_itr->value.HasMember("message") )
 			{
 				entry.objectType = OBJ_MESSAGE;
 				for ( rapidjson::Value::ConstValueIterator text_itr = entry_itr->value["message"].Begin(); text_itr != entry_itr->value["message"].End(); ++text_itr )
 				{
 					entry.rawText.push_back(text_itr->GetString());
+				}
+				entry.formattedText = "";
+				for ( auto& str : entry.rawText )
+				{
+					if ( entry.formattedText != "" )
+					{
+						entry.formattedText += '\n';
+					}
+					entry.formattedText += str;
 				}
 				if ( entry_itr->value.HasMember("variables") )
 				{
@@ -6111,22 +7918,29 @@ bool ScriptTextParser_t::readFromFile(const std::string& filename)
 						if ( (*var_itr).HasMember("type") )
 						{
 							std::string typeTxt = (*var_itr)["type"].GetString();
-							if ( typeTxt == "text" )
+							if ( typeTxt == "color_r" )
 							{
-								variable.type = TEXT;
+								variable.type = COLOR_R;
 							}
-							else if ( typeTxt == "input_glyph" )
+							else if ( typeTxt == "color_g" )
 							{
-								variable.type = GLYPH;
+								variable.type = COLOR_G;
 							}
-							else if ( typeTxt == "image" )
+							else if ( typeTxt == "color_b" )
 							{
-								variable.type = IMG;
+								variable.type = COLOR_B;
 							}
 						}
 						if ( (*var_itr).HasMember("value") )
 						{
-							variable.value = (*var_itr)["value"].GetString();
+							if ( (*var_itr)["value"].IsInt() )
+							{
+								variable.numericValue = (*var_itr)["value"].GetInt();
+							}
+							else if ( (*var_itr)["value"].IsString() )
+							{
+								variable.value = (*var_itr)["value"].GetString();
+							}
 						}
 						entry.variables.push_back(variable);
 					}
@@ -7927,7 +9741,7 @@ void ClassHotbarConfig_t::writeToFile(HotbarConfigType fileWriteType, HotbarConf
 		CustomHelpers::addMemberToRoot(exportDocument, "classes", allClassesObject);
 
 		int classIndex = -1;
-		for ( auto classname : playerClassInternalNames )
+		for ( auto& classname : playerClassInternalNames )
 		{
 			++classIndex;
 			rapidjson::Value classObj(rapidjson::kObjectType);
@@ -7937,7 +9751,7 @@ void ClassHotbarConfig_t::writeToFile(HotbarConfigType fileWriteType, HotbarConf
 			auto& hotbar_t = players[clientnum]->hotbar;
 
 			std::vector<std::string> layoutTypes = { "classic", "modern" };
-			for ( auto layout : layoutTypes )
+			for ( auto& layout : layoutTypes )
 			{
 				if ( layout == "classic" )
 				{
@@ -8040,7 +9854,7 @@ void ClassHotbarConfig_t::readFromFile(ClassHotbarConfig_t::HotbarConfigType fil
 		return;
 	}
 
-	char buf[80000];
+	static char buf[140000];
 	int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
 	buf[count] = '\0';
 	rapidjson::StringStream is(buf);
@@ -8057,7 +9871,7 @@ void ClassHotbarConfig_t::readFromFile(ClassHotbarConfig_t::HotbarConfigType fil
 	for ( auto classes = d["classes"].MemberBegin(); classes != d["classes"].MemberEnd(); ++classes )
 	{
 		int classIndex = -1;
-		for ( auto s : playerClassInternalNames )
+		for ( auto& s : playerClassInternalNames )
 		{
 			++classIndex;
 			if ( s == classes->name.GetString() )
@@ -8088,6 +9902,10 @@ void ClassHotbarConfig_t::readFromFile(ClassHotbarConfig_t::HotbarConfigType fil
 			for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
 			{
 				std::string slotnum = std::to_string(i);
+				if ( !layout->value.HasMember(slotnum.c_str()) )
+				{
+					continue;
+				}
 				auto& slot = layout->value[slotnum.c_str()];
 				if ( slot.HasMember("items") )
 				{
@@ -8317,7 +10135,7 @@ void LocalAchievements_t::readFromFile()
 		return;
 	}
 
-	char buf[65536];
+	static char buf[65536 * 2];
 	int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
 	buf[count] = '\0';
 	rapidjson::StringStream is(buf);
@@ -9018,6 +10836,7 @@ EditorEntityData_t editorEntityData;
 std::map<int, EditorEntityData_t::EntityColliderData_t> EditorEntityData_t::colliderData;
 std::map<std::string, EditorEntityData_t::ColliderDmgProperties_t> EditorEntityData_t::colliderDmgTypes;
 std::map<std::string, std::map<int, int>> EditorEntityData_t::colliderRandomGenPool;
+std::map<std::string, int> EditorEntityData_t::colliderNameIndexes;
 void EditorEntityData_t::readFromFile()
 {
 	const std::string filename = "data/entity_data.json";
@@ -9055,6 +10874,7 @@ void EditorEntityData_t::readFromFile()
 	colliderData.clear();
 	colliderDmgTypes.clear();
 	colliderRandomGenPool.clear();
+	colliderNameIndexes.clear();
 	auto& entityTypes = d["entities"];
 	if ( entityTypes.HasMember("collider_dmg_calcs") )
 	{
@@ -9100,7 +10920,9 @@ void EditorEntityData_t::readFromFile()
 					}
 					else if ( s == "PRO_MAGIC" )
 					{
-						colliderDmg.proficiencyBonusDamage.insert(PRO_MAGIC);
+						colliderDmg.proficiencyBonusDamage.insert(PRO_SORCERY);
+						colliderDmg.proficiencyBonusDamage.insert(PRO_MYSTICISM);
+						colliderDmg.proficiencyBonusDamage.insert(PRO_THAUMATURGY);
 					}
 					else if ( s == "PRO_RANGED" )
 					{
@@ -9135,7 +10957,9 @@ void EditorEntityData_t::readFromFile()
 					}
 					else if ( s == "PRO_MAGIC" )
 					{
-						colliderDmg.proficiencyResistDamage.insert(PRO_MAGIC);
+						colliderDmg.proficiencyResistDamage.insert(PRO_SORCERY);
+						colliderDmg.proficiencyResistDamage.insert(PRO_MYSTICISM);
+						colliderDmg.proficiencyResistDamage.insert(PRO_THAUMATURGY);
 					}
 					else if ( s == "PRO_RANGED" )
 					{
@@ -9154,6 +10978,8 @@ void EditorEntityData_t::readFromFile()
 			int index = std::stoi(indexStr);
 			auto& collider = colliderData[index];
 			collider.name = itr->value["name"].GetString();
+			assert(colliderNameIndexes.find(collider.name) == colliderNameIndexes.end());
+			colliderNameIndexes[collider.name] = index;
 			collider.gib = itr->value["gib_model"].GetInt();
 			collider.gib_hit.clear();
 			if ( itr->value.HasMember("gib_hit_model") )
@@ -9194,8 +11020,14 @@ void EditorEntityData_t::readFromFile()
 			collider.entityLangEntry = itr->value["entity_lang_entry"].GetInt();
 			collider.hitMessageLangEntry = itr->value["hit_message"].GetInt();
 			collider.breakMessageLangEntry = itr->value["break_message"].GetInt();
+			if ( itr->value.HasMember("jump_message") )
+			{
+				collider.colliderJumpLangEntry = itr->value["jump_message"].GetInt();
+			}
 			collider.hpbarLookupName = itr->value["hp_bar_lookup_name"].GetString();
 			collider.hideMonsters.clear();
+			collider.spellTriggers.clear();
+			collider.pathableMonsters.clear();
 			if ( itr->value.HasMember("random_gen_pool") )
 			{
 				if ( itr->value["random_gen_pool"].IsObject() )
@@ -9216,6 +11048,43 @@ void EditorEntityData_t::readFromFile()
 				for ( auto itr2 = itr->value["events"].MemberBegin();
 					itr2 != itr->value["events"].MemberEnd(); ++itr2 )
 				{
+					if ( !strcmp(itr2->name.GetString(), "spell_trigger") )
+					{
+						auto& data = collider.spellTriggers;
+						if ( itr2->value.IsArray() )
+						{
+							for ( auto val = itr2->value.Begin(); val != itr2->value.End(); ++val )
+							{
+								if ( val->IsInt() )
+								{
+									data.push_back(val->GetInt());
+								}
+							}
+						}
+						continue;
+					}
+					if ( !strcmp(itr2->name.GetString(), "pathable") )
+					{
+						auto& data = collider.pathableMonsters;
+						if ( itr2->value.IsArray() )
+						{
+							for ( auto val = itr2->value.Begin(); val != itr2->value.End(); ++val )
+							{
+								if ( val->IsString() )
+								{
+									for ( int i = 0; i < NUMMONSTERS; ++i )
+									{
+										if ( !strcmp(val->GetString(), monstertypename[i]) )
+										{
+											data.insert(i);
+											break;
+										}
+									}
+								}
+							}
+						}
+						continue;
+					}
 					std::string mapname = itr2->name.GetString();
 					for ( auto itr3 = itr2->value.MemberBegin();
 						itr3 != itr2->value.MemberEnd(); ++itr3 )
@@ -9466,7 +11335,7 @@ bool Mods::verifyMapFiles(const char* folder, bool ignoreBaseFolder)
 		fullpath += PHYSFS_getDirSeparator();
 		fullpath += "maps/";
 	}
-	for ( auto f : directoryContents(fullpath.c_str(), false, true) )
+	for ( auto& f : directoryContents(fullpath.c_str(), false, true) )
 	{
 		const std::string mapPath = "maps/" + f;
 		auto path = PHYSFS_getRealDir(mapPath.c_str());
@@ -10278,18 +12147,32 @@ int Mods::createBlankModDirectory(std::string foldername)
 
 EquipmentModelOffsets_t EquipmentModelOffsets;
 
-bool EquipmentModelOffsets_t::modelOffsetExists(int monster, int sprite)
+int EquipmentModelOffsets_t::modelOffsetExists(int monster, int sprite, int monsterSprite)
 {
-	auto find = monsterModelsMap.find(monster);
-	if ( find != monsterModelsMap.end() )
+	if ( monsterSprite >= NUMMONSTERS )
 	{
-		auto find2 = find->second.find(sprite);
-		if ( find2 != find->second.end() )
+		auto find = monsterModelsMap.find(monsterSprite);
+		if ( find != monsterModelsMap.end() )
 		{
-			return true;
+			auto find2 = find->second.find(sprite);
+			if ( find2 != find->second.end() )
+			{
+				return monsterSprite;
+			}
 		}
 	}
-	return false;
+	{
+		auto find = monsterModelsMap.find(monster);
+		if ( find != monsterModelsMap.end() )
+		{
+			auto find2 = find->second.find(sprite);
+			if ( find2 != find->second.end() )
+			{
+				return monster;
+			}
+		}
+	}
+	return 0;
 }
 
 EquipmentModelOffsets_t::ModelOffset_t& EquipmentModelOffsets_t::getModelOffset(int monster, int sprite)
@@ -10297,49 +12180,49 @@ EquipmentModelOffsets_t::ModelOffset_t& EquipmentModelOffsets_t::getModelOffset(
 	return monsterModelsMap[monster][sprite];
 }
 
-bool EquipmentModelOffsets_t::expandHelmToFitMask(int monster, int helmSprite, int maskSprite)
+int EquipmentModelOffsets_t::expandHelmToFitMask(int monster, int helmSprite, int maskSprite, int monsterSprite)
 {
-	if ( modelOffsetExists(monster, maskSprite) )
+	if ( int resultMonsterSprite = modelOffsetExists(monster, maskSprite, monsterSprite) )
 	{
-		auto& maskOffset = getModelOffset(monster, maskSprite);
+		auto& maskOffset = getModelOffset(resultMonsterSprite, maskSprite);
 		if ( maskOffset.oversizedMask )
 		{
-			if ( modelOffsetExists(monster, helmSprite) )
+			if ( modelOffsetExists(resultMonsterSprite, helmSprite, 0) )
 			{
-				auto& helmOffset = getModelOffset(monster, helmSprite);
+				auto& helmOffset = getModelOffset(resultMonsterSprite, helmSprite);
 				if ( helmOffset.expandToFitMask )
 				{
-					return true;
+					return resultMonsterSprite;
 				}
 			}
 		}
 	}
-	return false;
+	return 0;
 }
 
-bool EquipmentModelOffsets_t::maskHasAdjustmentForExpandedHelm(int monster, int helmSprite, int maskSprite)
+int EquipmentModelOffsets_t::maskHasAdjustmentForExpandedHelm(int monster, int helmSprite, int maskSprite, int monsterSprite)
 {
-	if ( modelOffsetExists(monster, maskSprite) )
+	if ( int resultMonsterSprite = modelOffsetExists(monster, maskSprite, monsterSprite) )
 	{
-		auto& maskOffset = getModelOffset(monster, maskSprite);
+		auto& maskOffset = getModelOffset(resultMonsterSprite, maskSprite);
 		if ( maskOffset.adjustToExpandedHelm.find(helmSprite) != maskOffset.adjustToExpandedHelm.end() )
 		{
-			return true;
+			return resultMonsterSprite;
 		}
 		else if ( maskOffset.adjustToExpandedHelm.find(-1) != maskOffset.adjustToExpandedHelm.end() )
 		{
-			return true;
+			return resultMonsterSprite;
 		}
 	}
-	return false;
+	return 0;
 }
 
 EquipmentModelOffsets_t::ModelOffset_t::AdditionalOffset_t EquipmentModelOffsets_t::getExpandHelmOffset(int monster, 
 	int helmSprite, int maskSprite)
 {
-	if ( modelOffsetExists(monster, helmSprite) )
+	if ( int resultMonsterSprite = modelOffsetExists(monster, helmSprite, 0) )
 	{
-		auto& helmOffset = getModelOffset(monster, helmSprite);
+		auto& helmOffset = getModelOffset(resultMonsterSprite, helmSprite);
 		if ( helmOffset.adjustToOversizeMask.find(maskSprite) != helmOffset.adjustToOversizeMask.end() )
 		{
 			return helmOffset.adjustToOversizeMask[maskSprite];
@@ -10355,9 +12238,9 @@ EquipmentModelOffsets_t::ModelOffset_t::AdditionalOffset_t EquipmentModelOffsets
 EquipmentModelOffsets_t::ModelOffset_t::AdditionalOffset_t EquipmentModelOffsets_t::getMaskOffsetForExpandHelm(int monster, 
 	int helmSprite, int maskSprite)
 {
-	if ( modelOffsetExists(monster, maskSprite) )
+	if ( int resultMonsterSprite = modelOffsetExists(monster, maskSprite, 0) )
 	{
-		auto& maskOffset = getModelOffset(monster, maskSprite);
+		auto& maskOffset = getModelOffset(resultMonsterSprite, maskSprite);
 		if ( maskOffset.adjustToExpandedHelm.find(helmSprite) != maskOffset.adjustToExpandedHelm.end() )
 		{
 			return maskOffset.adjustToExpandedHelm[helmSprite];
@@ -10368,6 +12251,118 @@ EquipmentModelOffsets_t::ModelOffset_t::AdditionalOffset_t EquipmentModelOffsets
 		}
 	}
 	return EquipmentModelOffsets_t::ModelOffset_t::AdditionalOffset_t();
+}
+
+void EquipmentModelOffsets_t::readBaseItemsFromFile()
+{
+	std::string filename = "models/creatures/";
+	filename += "item_model_positions.json";
+
+	if ( !PHYSFS_getRealDir(filename.c_str()) )
+	{
+		//printlog("[JSON]: Error: Could not locate json file %s", filename.c_str());
+		return;
+	}
+
+	std::string inputPath = PHYSFS_getRealDir(filename.c_str());
+	inputPath.append(PHYSFS_getDirSeparator());
+	inputPath.append(filename.c_str());
+
+	File* fp = FileIO::open(inputPath.c_str(), "rb");
+	if ( !fp )
+	{
+		printlog("[JSON]: Error: Could not locate json file %s", inputPath.c_str());
+		return;
+	}
+
+	static char buf[32000];
+	int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
+	buf[count] = '\0';
+	rapidjson::StringStream is(buf);
+	FileIO::close(fp);
+
+	rapidjson::Document d;
+	d.ParseStream(is);
+	if ( !d.IsObject() )
+	{
+		return;
+	}
+	if ( !d.HasMember("version") || !d.HasMember("items") )
+	{
+		printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
+		return;
+	}
+
+	int version = d["version"].GetInt();
+
+	miscItemsBaseOffsets.clear();
+
+	auto& itemsArr = d["items"];
+	for ( auto it = itemsArr.Begin(); it != itemsArr.End(); ++it )
+	{
+		for ( auto it2 = it->MemberBegin(); it2 != it->MemberEnd(); ++it2 )
+		{
+			std::string itemName = it2->name.GetString();
+			if ( ItemTooltips.itemNameStringToItemID.find(itemName) == ItemTooltips.itemNameStringToItemID.end() )
+			{
+				continue;
+			}
+			ItemType itemType = (ItemType)ItemTooltips.itemNameStringToItemID[itemName];
+			std::vector<int> models;
+			if ( it2->value.HasMember("models") )
+			{
+				if ( it2->value["models"].IsArray() )
+				{
+					if ( it2->value["models"].Size() == 0 )
+					{
+						for ( int i = items[itemType].index; i < items[itemType].index + items[itemType].variations; ++i )
+						{
+							models.push_back(i);
+						}
+					}
+					else
+					{
+						for ( auto itArr = it2->value["models"].Begin(); itArr != it2->value["models"].End(); ++itArr )
+						{
+							if ( itArr->IsInt() )
+							{
+								models.push_back(itArr->GetInt());
+							}
+						}
+					}
+				}
+			}
+
+			real_t focalx = it2->value.HasMember("focalx") ? it2->value["focalx"].GetDouble() : 0.0;
+			real_t focaly = it2->value.HasMember("focaly") ? it2->value["focaly"].GetDouble() : 0.0;
+			real_t focalz = it2->value.HasMember("focalz") ? it2->value["focalz"].GetDouble() : 0.0;
+			real_t scalex = 0.0;
+			if ( it2->value.HasMember("scalex") )
+			{
+				scalex = it2->value["scalex"].GetDouble();
+			}
+			real_t scaley = 0.0;
+			if ( it2->value.HasMember("scaley") )
+			{
+				scaley = it2->value["scaley"].GetDouble();
+			}
+			real_t scalez = 0.0;
+			if ( it2->value.HasMember("scalez") )
+			{
+				scalez = it2->value["scalez"].GetDouble();
+			}
+			for ( auto index : models )
+			{
+				auto& entry = miscItemsBaseOffsets[index];
+				entry.focalx = focalx;
+				entry.focaly = focaly;
+				entry.focalz = focalz;
+				entry.scalex = scalex;
+				entry.scaley = scaley;
+				entry.scalez = scalez;
+			}
+		}
+	}
 }
 
 void EquipmentModelOffsets_t::readFromFile(std::string monsterName, int monsterType)
@@ -10428,11 +12423,15 @@ void EquipmentModelOffsets_t::readFromFile(std::string monsterName, int monsterT
 		return;
 	}
 
+	int version = d["version"].GetInt();
 	monsterModelsMap[monsterType].clear();
 
 	real_t baseFocalX = 0.0;
 	real_t baseFocalY = 0.0;
 	real_t baseFocalZ = 0.0;
+	real_t baseFocalX_rot1 = 0.0;
+	real_t baseFocalY_rot1 = 0.0;
+	real_t baseFocalZ_rot1 = 0.0;
 	if ( d.HasMember("base_offsets") )
 	{
 		if ( d["base_offsets"].HasMember("focalx") )
@@ -10446,6 +12445,18 @@ void EquipmentModelOffsets_t::readFromFile(std::string monsterName, int monsterT
 		if ( d["base_offsets"].HasMember("focalz") )
 		{
 			baseFocalZ = d["base_offsets"]["focalz"].GetDouble();
+		}
+		if ( d["base_offsets"].HasMember("focalx_rot1") )
+		{
+			baseFocalX_rot1 = d["base_offsets"]["focalx_rot1"].GetDouble();
+		}
+		if ( d["base_offsets"].HasMember("focaly_rot1") )
+		{
+			baseFocalY_rot1 = d["base_offsets"]["focaly_rot1"].GetDouble();
+		}
+		if ( d["base_offsets"].HasMember("focalz_rot1") )
+		{
+			baseFocalZ_rot1 = d["base_offsets"]["focalz_rot1"].GetDouble();
 		}
 	}
 
@@ -10515,13 +12526,28 @@ void EquipmentModelOffsets_t::readFromFile(std::string monsterName, int monsterT
 			for ( auto index : models )
 			{
 				auto& entry = monsterModelsMap[monsterType][index];
-				entry.focalx = focalx + baseFocalX;
-				entry.focaly = focaly + baseFocalY;
-				entry.focalz = focalz + baseFocalZ;
+				entry.rotation = rotation * (PI / 2);
+				entry.focalx = focalx;
+				entry.focaly = focaly;
+				entry.focalz = focalz;
+				if ( items[itemType].item_slot == EQUIPPABLE_IN_SLOT_BREASTPLATE )
+				{
+				}
+				else if ( static_cast<int>(entry.rotation) == 1 && version >= 2 )
+				{
+					entry.focalx += baseFocalX_rot1;
+					entry.focaly += baseFocalY_rot1;
+					entry.focalz += baseFocalZ_rot1;
+				}
+				else
+				{
+					entry.focalx += baseFocalX;
+					entry.focaly += baseFocalY;
+					entry.focalz += baseFocalZ;
+				}
 				entry.scalex = scalex;
 				entry.scaley = scaley;
 				entry.scalez = scalez;
-				entry.rotation = rotation * (PI / 2);
 				entry.pitch = pitch * (PI / 2);
 				entry.limbsIndex = limbsIndex;
 				entry.expandToFitMask = expandToFitMask;
@@ -10618,6 +12644,66 @@ void EquipmentModelOffsets_t::readFromFile(std::string monsterName, int monsterT
 								entry.adjustToExpandedHelm[model].scalez = (*adjItr)["scalez"].GetDouble();
 							}
 						}
+					}
+				}
+			}
+		}
+	}
+
+	if ( d.HasMember("base_offsets") && d["base_offsets"].HasMember("sprite_adjust") && d["base_offsets"]["sprite_adjust"].IsArray() )
+	{
+		for ( auto itr = d["base_offsets"]["sprite_adjust"].Begin(); itr != d["base_offsets"]["sprite_adjust"].End(); ++itr )
+		{
+			if ( (*itr).HasMember("sprite") )
+			{
+				int customSprite = (*itr)["sprite"].GetInt();
+				monsterModelsMap[customSprite] = monsterModelsMap[monsterType];
+
+				real_t baseFocalX = 0.0;
+				real_t baseFocalY = 0.0;
+				real_t baseFocalZ = 0.0;
+				real_t baseFocalX_rot1 = 0.0;
+				real_t baseFocalY_rot1 = 0.0;
+				real_t baseFocalZ_rot1 = 0.0;
+				if ( (*itr).HasMember("focalx") )
+				{
+					baseFocalX = (*itr)["focalx"].GetDouble();
+				}
+				if ( (*itr).HasMember("focaly") )
+				{
+					baseFocalY = (*itr)["focaly"].GetDouble();
+				}
+				if ( (*itr).HasMember("focalz") )
+				{
+					baseFocalZ = (*itr)["focalz"].GetDouble();
+				}
+				if ( (*itr).HasMember("focalx_rot1") )
+				{
+					baseFocalX_rot1 = (*itr)["focalx_rot1"].GetDouble();
+				}
+				if ( (*itr).HasMember("focaly_rot1") )
+				{
+					baseFocalY_rot1 = (*itr)["focaly_rot1"].GetDouble();
+				}
+				if ( (*itr).HasMember("focalz_rot1") )
+				{
+					baseFocalZ_rot1 = (*itr)["focalz_rot1"].GetDouble();
+				}
+
+				for ( auto& model : monsterModelsMap[customSprite] )
+				{
+					auto& entry = model.second;
+					if ( static_cast<int>(entry.rotation) == 1 && version >= 2 )
+					{
+						entry.focalx += baseFocalX_rot1;
+						entry.focaly += baseFocalY_rot1;
+						entry.focalz += baseFocalZ_rot1;
+					}
+					else
+					{
+						entry.focalx += baseFocalX;
+						entry.focaly += baseFocalY;
+						entry.focalz += baseFocalZ;
 					}
 				}
 			}
@@ -11769,11 +13855,11 @@ void Compendium_t::readMagicFromFile(bool forceLoadBaseDirectory)
 				}
 				if ( item.name.find("spell_") != std::string::npos )
 				{
-					for ( auto spell : allGameSpells )
+					for ( auto& spell : allGameSpells )
 					{
-						if ( item.name == spell->spell_internal_name )
+						if ( item.name == spell.second->spell_internal_name )
 						{
-							item.spellID = spell->ID;
+							item.spellID = spell.second->ID;
 							objSpellsLookup.insert(item.name);
 							break;
 						}
@@ -11781,14 +13867,14 @@ void Compendium_t::readMagicFromFile(bool forceLoadBaseDirectory)
 				}
 				else if ( item.name.find("spellbook_") != std::string::npos )
 				{
-					for ( auto spell : allGameSpells )
+					for ( auto& spell : allGameSpells )
 					{
-						int book = getSpellbookFromSpellID(spell->ID);
+						int book = getSpellbookFromSpellID(spell.second->ID);
 						if ( book >= WOODEN_SHIELD && book < NUMITEMS && ::items[book].category == SPELLBOOK )
 						{
 							if ( item.name == itemNameStrings[book + 2] )
 							{
-								item.spellID = spell->ID;
+								item.spellID = spell.second->ID;
 								break;
 							}
 						}
@@ -13037,7 +15123,7 @@ void Compendium_t::readMonstersFromFile(bool forceLoadBaseDirectory)
 
 		Compendium_t::Events_t::monsterIDToString[type] = monstertypename[i];
 	}
-	for ( auto pair : Compendium_t::Events_t::monsterUniqueIDLookup )
+	for ( auto& pair : Compendium_t::Events_t::monsterUniqueIDLookup )
 	{
 		int type = pair.second + Compendium_t::Events_t::kEventMonsterOffset;
 		Compendium_t::Events_t::monsterIDToString[type] = pair.first;
@@ -13530,7 +15616,7 @@ std::string Compendium_t::Events_t::formatEventRecordText(Sint32 value, const ch
 					}
 					else if ( !strcmp(formatType, "skills") )
 					{
-						std::string tmp = getSkillLangEntry(formatVal);
+						std::string tmp = Player::SkillSheet_t::getSkillNameFromID(formatVal, true);
 						camelCaseString(tmp);
 						output += tmp;
 					}
@@ -13793,17 +15879,32 @@ std::vector<std::pair<std::string, Sint32>> Compendium_t::Events_t::getCustomEve
 									int startOffsetId = -1;
 									if ( def.attributes.find("skills") != def.attributes.end() )
 									{
-										for ( int i = 0; i < NUMPROFICIENCIES; ++i )
+										if ( cat == "magic skill" )
 										{
-											if ( cat == getSkillStringForCompendium(i) )
+											startOffsetId = findClassTag->second[0] + PRO_SORCERY * kEventClassesMax;
+										}
+										else if ( cat == "casting skill" )
+										{
+											startOffsetId = findClassTag->second[0] + PRO_MYSTICISM * kEventClassesMax;
+										}
+										else if ( cat == "swimming skill" )
+										{
+											startOffsetId = findClassTag->second[0] + PRO_THAUMATURGY * kEventClassesMax;
+										}
+										else
+										{
+											for ( int i = 0; i < NUMPROFICIENCIES; ++i )
 											{
-												startOffsetId = findClassTag->second[0] + i * kEventClassesMax;
-												break;
+												if ( cat == getSkillStringForCompendium(i) )
+												{
+													startOffsetId = findClassTag->second[0] + i * kEventClassesMax;
+													break;
+												}
 											}
 										}
 									}
 
-									for ( auto classId : findClassTag->second )
+									for ( auto& classId : findClassTag->second )
 									{
 										if ( startOffsetId >= 0 )
 										{
@@ -13852,7 +15953,7 @@ std::vector<std::pair<std::string, Sint32>> Compendium_t::Events_t::getCustomEve
 								if ( findClassTag != eventClassIds.end() )
 								{
 									// iterate through classes
-									for ( auto classId : findClassTag->second )
+									for ( auto& classId : findClassTag->second )
 									{
 										codexIDs.push_back(classId);
 									}
@@ -13866,12 +15967,27 @@ std::vector<std::pair<std::string, Sint32>> Compendium_t::Events_t::getCustomEve
 
 								if ( formatType == "skills" )
 								{
-									for ( int i = 0; i < NUMPROFICIENCIES; ++i )
+									if ( cat == "magic skill" )
 									{
-										if ( cat == getSkillStringForCompendium(i) )
+										classnum = PRO_SORCERY;
+									}
+									else if ( cat == "casting skill" )
+									{
+										classnum = PRO_MYSTICISM;
+									}
+									else if ( cat == "swimming skill" )
+									{
+										classnum = PRO_THAUMATURGY;
+									}
+									else
+									{
+										for ( int i = 0; i < NUMPROFICIENCIES; ++i )
 										{
-											classnum = i;
-											break;
+											if ( cat == getSkillStringForCompendium(i) )
+											{
+												classnum = i;
+												break;
+											}
 										}
 									}
 								}
@@ -13906,12 +16022,27 @@ std::vector<std::pair<std::string, Sint32>> Compendium_t::Events_t::getCustomEve
 									int categoryValue = foundId;
 									if ( formatType == "skills" )
 									{
-										for ( int i = 0; i < NUMPROFICIENCIES; ++i )
+										if ( cat == "magic skill" )
 										{
-											if ( cat == getSkillStringForCompendium(i) )
+											categoryValue = PRO_SORCERY;
+										}
+										else if ( cat == "casting skill" )
+										{
+											categoryValue = PRO_MYSTICISM;
+										}
+										else if ( cat == "swimming skill" )
+										{
+											categoryValue = PRO_THAUMATURGY;
+										}
+										else
+										{
+											for ( int i = 0; i < NUMPROFICIENCIES; ++i )
 											{
-												categoryValue = i;
-												break;
+												if ( cat == getSkillStringForCompendium(i) )
+												{
+													categoryValue = i;
+													break;
+												}
 											}
 										}
 									}
@@ -14263,7 +16394,7 @@ void Compendium_t::Events_t::readEventsFromFile()
 				{
 					for ( int skillnum = 0; skillnum < 16; ++skillnum )
 					{
-						for ( int i = 0; i <= CLASS_HUNTER; ++i )
+						for ( int i = 0; i <= CLASS_PALADIN; ++i )
 						{
 							int index = i + skillnum * kEventClassesMax;
 							eventClassIds[id][index] = (classIdIndex + index);
@@ -14273,7 +16404,7 @@ void Compendium_t::Events_t::readEventsFromFile()
 				}
 				else
 				{
-					for ( int i = 0; i <= CLASS_HUNTER; ++i )
+					for ( int i = 0; i <= CLASS_PALADIN; ++i )
 					{
 						eventClassIds[id][i] = (classIdIndex + i);
 					}
@@ -14334,6 +16465,12 @@ void Compendium_t::Events_t::loadItemsSaveData()
 		return;
 	}
 
+	int version = 0;
+	if ( d.HasMember("version") )
+	{
+		version = d["version"].GetInt();
+	}
+
 	playerEvents.clear();
 	for ( auto itr = d["items"].MemberBegin(); itr != d["items"].MemberEnd(); ++itr )
 	{
@@ -14376,6 +16513,35 @@ void Compendium_t::Events_t::loadItemsSaveData()
 			}
 		}
 	}
+
+	CompendiumEntries.migrateOldSkillIndexes = false;
+	if ( version == 1 )
+	{
+		CompendiumEntries.migrateOldSkillIndexes = true;
+	}
+	if ( CompendiumEntries.migrateOldSkillIndexes )
+	{
+		int oldClass = client_classes[0];
+		std::vector<int> skillIndexes = { PRO_MYSTICISM, PRO_SORCERY, PRO_THAUMATURGY };
+		for ( int i = 0; i < NUMCLASSES; ++i )
+		{
+			client_classes[0] = i;
+			for ( auto skillID : skillIndexes )
+			{
+				const char* skillstr = Compendium_t::getSkillStringForCompendium(skillID);
+				if ( strcmp(skillstr, "") )
+				{
+					Compendium_t::Events_t::eventUpdateCodex(0, Compendium_t::CPDM_CLASS_SKILL_LEGENDS, skillstr, 0, true);
+					Compendium_t::Events_t::eventUpdateCodex(0, Compendium_t::CPDM_CLASS_SKILL_NOVICES, skillstr, 0, true);
+					Compendium_t::Events_t::eventUpdateCodex(0, Compendium_t::CPDM_CLASS_SKILL_UPS, skillstr, 0, true);
+					Compendium_t::Events_t::eventUpdateCodex(0, Compendium_t::CPDM_CLASS_SKILL_UPS_RUN_MAX, skillstr, 0, true);
+					Compendium_t::Events_t::eventUpdateCodex(0, Compendium_t::CPDM_CLASS_SKILL_MAX, skillstr, 0, true);
+				}
+			}
+		}
+		client_classes[0] = oldClass;
+	}
+	CompendiumEntries.migrateOldSkillIndexes = false;
 }
 
 static ConsoleVariable<bool> cvar_compendiumClientSave("/compendium_client_save", false);
@@ -14415,7 +16581,7 @@ void Compendium_t::Events_t::createDummyClientData(const int playernum)
 	}
 	for ( auto& pair : eventWorldLookup )
 	{
-		for ( auto world : pair.second )
+		for ( auto& world : pair.second )
 		{
 			eventUpdateWorld(playernum, pair.first, world.c_str(), 1);
 		}
@@ -14428,7 +16594,7 @@ void Compendium_t::Events_t::createDummyClientData(const int playernum)
 			for ( int c = 0; c < NUMCLASSES; ++c )
 			{
 				client_classes[playernum] = c;
-				for ( auto world : pair.second )
+				for ( auto& world : pair.second )
 				{
 					eventUpdateCodex(playernum, pair.first, world.c_str(), 1);
 				}
@@ -14437,7 +16603,7 @@ void Compendium_t::Events_t::createDummyClientData(const int playernum)
 		}
 		else
 		{
-			for ( auto world : pair.second )
+			for ( auto& world : pair.second )
 			{
 				eventUpdateCodex(playernum, pair.first, world.c_str(), 1);
 			}
@@ -14757,7 +16923,7 @@ void Compendium_t::Events_t::writeItemsSaveData()
 	rapidjson::Document exportDocument;
 	exportDocument.SetObject();
 
-	const int VERSION = 1;
+	const int VERSION = 2;
 
 	CustomHelpers::addMemberToRoot(exportDocument, "version", rapidjson::Value(VERSION));
 	rapidjson::Value itemsObj(rapidjson::kObjectType);
@@ -14893,7 +17059,6 @@ void Compendium_t::Events_t::updateEventsInMainLoop(const int playernum)
 		auto myStats = stats[playernum];
 		{
 			real_t resistance = 100.0 * Entity::getDamageTableMultiplier(entity, *myStats, DAMAGE_TABLE_MAGIC);
-			resistance /= (Entity::getMagicResistance(myStats) + 1);
 			resistance = -(resistance - 100.0);
 			eventUpdateCodex(playernum, CPDM_RES_MAX, "res", (int)resistance);
 			eventUpdateCodex(playernum, CPDM_CLASS_RES_MAX, "res", (int)resistance);
@@ -14982,20 +17147,32 @@ void Compendium_t::Events_t::updateEventsInMainLoop(const int playernum)
 		}
 
 		{
+			int skillID = NUMPROFICIENCIES;
+			if ( auto spell = players[playernum]->magic.selectedSpell() )
+			{
+				skillID = spell->skillID;
+			}
+
 			{
 				// base PWR INT Bonus
-				real_t bonus = getSpellBonusFromCasterINT(entity, myStats) * 100.0;
+				real_t bonus = getSpellBonusFromCasterINT(entity, myStats, skillID) * 100.0;
 				real_t val = bonus;
 				eventUpdateCodex(playernum, CPDM_CLASS_PWR_MAX, "pwr", (int)val);
 			}
 
 			// equip/effect bonus (minus INT)
 			{
-				real_t val = (getBonusFromCasterOfSpellElement(entity, myStats, nullptr, SPELL_NONE) * 100.0);
+				real_t val = (getBonusFromCasterOfSpellElement(entity, myStats, nullptr, SPELL_NONE, NUMPROFICIENCIES) * 100.0);
 				// look for damage/healing spell bonus for mitre/magus hat
-				val = std::max(val, getBonusFromCasterOfSpellElement(entity, myStats, nullptr, SPELL_FIREBALL) * 100.0);
-				val = std::max(val, getBonusFromCasterOfSpellElement(entity, myStats, nullptr, SPELL_HEALING) * 100.0);
-				real_t bonus = getSpellBonusFromCasterINT(entity, myStats);
+				if ( auto spell = getSpellFromID(SPELL_FIREBALL) )
+				{
+					val = std::max(val, getBonusFromCasterOfSpellElement(entity, myStats, nullptr, SPELL_FIREBALL, spell->skillID) * 100.0);
+				}
+				if ( auto spell = getSpellFromID(SPELL_HEALING) )
+				{
+					val = std::max(val, getBonusFromCasterOfSpellElement(entity, myStats, nullptr, SPELL_HEALING, spell->skillID) * 100.0);
+				}
+				real_t bonus = getSpellBonusFromCasterINT(entity, myStats, skillID);
 				val -= bonus * 100.0;
 				eventUpdateCodex(playernum, CPDM_PWR_MAX_EQUIP, "pwr", (int)val);
 			}
@@ -16530,7 +18707,7 @@ void Compendium_t::Events_t::sendClientDataOverNet(const int playernum)
 void Compendium_t::readModelLimbsFromFile(std::string section)
 {
 	std::string fullpath = "data/compendium/" + section + "_models/";
-	for ( auto f : directoryContents(fullpath.c_str(), false, true) )
+	for ( auto& f : directoryContents(fullpath.c_str(), false, true) )
 	{
 		std::string inputPath = fullpath + f;
 		std::string path = PHYSFS_getRealDir(inputPath.c_str()) ? PHYSFS_getRealDir(inputPath.c_str()) : "";
@@ -16544,7 +18721,7 @@ void Compendium_t::readModelLimbsFromFile(std::string section)
 				printlog("[JSON]: Error: Could not locate json file %s", inputPath.c_str());
 				return;
 			}
-			char buf[65536];
+			static char buf[65536];
 			int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
 			buf[count] = '\0';
 			rapidjson::StringStream is(buf);
