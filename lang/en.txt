@@ -7263,5 +7263,6 @@ has been unlocked!#
 6990 You are blinded by a flying slop ball!
  *SPLAT*#
 6991 Yum! Rotten food!#
+6992 Your unidentified items are further appraised!#
 
 6999 END#
