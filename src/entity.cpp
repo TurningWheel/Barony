@@ -15437,7 +15437,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						{
 							steamAchievementClient(playerhit, "BARONY_ACH_COCK_BLOCK");
 						}
-						else if ( myStats->type == MINOTAUR && !hitstats->defending )
+						else if ( myStats->type == MINOTAUR && !hitstats->defending && parriedDamage == 0 )
 						{
 							steamAchievementClient(playerhit, "BARONY_ACH_ONE_WHO_KNOCKS");
 						}
