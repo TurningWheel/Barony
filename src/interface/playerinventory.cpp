@@ -10622,14 +10622,23 @@ void Player::Inventory_t::updateInventory()
 						}
 					}
 					else if ( !disableItemUsage
-						&& (itemCategory(item) == POTION || itemCategory(item) == SPELLBOOK || item->type == FOOD_CREAMPIE) &&
+						&& (itemCategory(item) == POTION 
+							|| itemCategory(item) == SPELL_CAT
+							|| itemCategory(item) == SPELLBOOK || item->type == FOOD_CREAMPIE) &&
 						(keystatus[SDLK_LALT] || keystatus[SDLK_RALT]) )
 					{
 						Input::inputs[player].consumeBinaryToggle("MenuRightClick");
 						if ( guiAllowDefaultRightClick() )
 						{
-							// force equip potion/spellbook
-							playerTryEquipItemAndUpdateServer(player, item, true);
+							if ( itemCategory(item) == SPELL_CAT )
+							{
+								players[player]->inventoryUI.activateItemContextMenuOption(item, ItemContextMenuPrompts::PROMPT_SPELL_QUICKCAST);
+							}
+							else
+							{
+								// force equip potion/spellbook
+								playerTryEquipItemAndUpdateServer(player, item, true);
+							}
 						}
 					}
 					else if ( !tinkeringSalvageOrRepairMenuActive && !alchemyOpen && !mailboxOpen && !featherInscribeOrRepairActive && !itemfxOpen )
