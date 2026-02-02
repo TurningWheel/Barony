@@ -6286,6 +6286,16 @@ std::string SaveGameInfo::serializeToOnlineHiscore(const int playernum, const in
 		}
 		attrObj.AddMember("statistics", statisticsArr, d.GetAllocator());
 
+		rapidjson::Value effectsObj(rapidjson::kObjectType);
+		for ( int i = 0; i < NUMEFFECTS; ++i )
+		{
+			if ( myStats.EFFECTS[i] > 0 )
+			{
+				effectsObj.AddMember(rapidjson::Value(std::to_string(i).c_str(), d.GetAllocator()), rapidjson::Value(myStats.EFFECTS[i]), d.GetAllocator());
+			}
+		}
+		attrObj.AddMember("effects", effectsObj, d.GetAllocator());
+
 		character.AddMember("attributes", attrObj, d.GetAllocator());
 	}
 
@@ -6520,7 +6530,14 @@ int loadGame(int player, const SaveGameInfo& info) {
 		if ( c < p.EFFECTS.size() )
 		{
 			stats[statsPlayer]->setEffectValueUnsafe(c, (Uint8)p.EFFECTS[c]);
-			stats[statsPlayer]->EFFECTS_TIMERS[c] = p.EFFECTS_TIMERS[c];
+			if ( c < p.EFFECTS_TIMERS.size() )
+			{
+				stats[statsPlayer]->EFFECTS_TIMERS[c] = p.EFFECTS_TIMERS[c];
+			}
+			else
+			{
+				stats[statsPlayer]->EFFECTS_TIMERS[c] = 0;
+			}
 		}
 		else
 		{
