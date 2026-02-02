@@ -6964,7 +6964,14 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
         {
 			if ( expandBindingPressed )
 			{
-				players[player]->inventoryUI.appraisal.manual_appraised_item = item->uid;
+				if ( players[player]->inventoryUI.appraisal.manual_appraised_item == item->uid )
+				{
+					players[player]->inventoryUI.appraisal.manual_appraised_item = 0;
+				}
+				else
+				{
+					players[player]->inventoryUI.appraisal.manual_appraised_item = item->uid;
+				}
 			}
 			static ConsoleVariable<int> cvar_appraisal_display("/appraisal_display", 0);
 			if ( *cvar_appraisal_display == 0 )
@@ -10598,10 +10605,18 @@ void Player::Inventory_t::updateInventory()
 						if ( guiAllowDefaultRightClick() )
 						{
 							// auto-appraise the item
+							int prevAppraisedManual = players[player]->inventoryUI.appraisal.manual_appraised_item;
 							appraisal.appraiseItem(item);
 							if ( appraisal.current_item == item->uid )
 							{
-								appraisal.manual_appraised_item = item->uid;
+								if ( prevAppraisedManual == item->uid )
+								{
+									appraisal.manual_appraised_item = 0;
+								}
+								else
+								{
+									appraisal.manual_appraised_item = item->uid;
+								}
 							}
 							Input::inputs[player].consumeBinaryToggle("MenuRightClick");
 						}
