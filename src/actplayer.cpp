@@ -4849,8 +4849,19 @@ void Player::PlayerMovement_t::handlePlayerMovement(bool useRefreshRateDelta)
 	bool swimming = isPlayerSwimming();
 	if ( swimming && !amuletwaterbreathing )
 	{
-		PLAYER_VELX *= (/*((stats[PLAYER_NUM]->getModifiedProficiency(PRO_LEGACY_SWIMMING) / 100.f) * 50.f) +*/ 50) / 100.f;
-		PLAYER_VELY *= (/*((stats[PLAYER_NUM]->getModifiedProficiency(PRO_LEGACY_SWIMMING) / 100.f) * 50.f) +*/ 50) / 100.f;
+		//PLAYER_VELX *= (/*((stats[PLAYER_NUM]->getModifiedProficiency(PRO_LEGACY_SWIMMING) / 100.f) * 50.f) +*/ 50) / 100.f;
+		//PLAYER_VELY *= (/*((stats[PLAYER_NUM]->getModifiedProficiency(PRO_LEGACY_SWIMMING) / 100.f) * 50.f) +*/ 50) / 100.f;
+		if ( stats[PLAYER_NUM]->type == HUMAN
+			|| stats[PLAYER_NUM]->type == RAT )
+		{
+			PLAYER_VELX *= (((50 / 100.f) * 50.f) + 50) / 100.f;
+			PLAYER_VELY *= (((50 / 100.f) * 50.f) + 50) / 100.f;
+		}
+		else
+		{
+			PLAYER_VELX *= (((25 / 100.f) * 50.f) + 50) / 100.f;
+			PLAYER_VELY *= (((25 / 100.f) * 50.f) + 50) / 100.f;
+		}
 
 		if ( stats[PLAYER_NUM]->type == SKELETON )
 		{
