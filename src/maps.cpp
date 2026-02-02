@@ -7156,7 +7156,17 @@ void assignActions(map_t* map)
 					entity->focalx = limbs[HUMAN][0][0]; // 0
 					entity->focaly = limbs[HUMAN][0][1]; // 0
 					entity->focalz = limbs[HUMAN][0][2]; // -1.5
-					entity->sprite = 113; // head model
+					//entity->sprite = 113; // head model
+					if ( multiplayer == CLIENT )
+					{
+						entity->sprite = playerHeadSprite(getMonsterFromPlayerRace(stats[numplayers]->playerRace),
+							stats[numplayers]->sex, stats[numplayers]->stat_appearance);
+					}
+					else
+					{
+						entity->sprite = playerHeadSprite(getMonsterFromPlayerRace(stats[numplayers]->playerRace),
+							stats[numplayers]->sex, stats[numplayers]->stat_appearance);
+					}
 					entity->sizex = 4;
 					entity->sizey = 4;
 					entity->flags[GENIUS] = true;
