@@ -1316,6 +1316,7 @@ void gameLogic(void)
 	}
 	else
 	{
+		ConsoleVariable<bool> cvar_appraisal_auto_switch("/appraisal_auto_switch", false);
 		DebugStats.eventsT2 = std::chrono::high_resolution_clock::now();
 		if ( multiplayer != CLIENT )   // server/singleplayer code
 		{
@@ -2923,6 +2924,20 @@ void gameLogic(void)
 
 				int bloodCount = 0;
 				std::map<int, int> numKeys;
+
+				Item* previousAppraiseItem = nullptr;
+				bool updateItemToAppraise = false;
+				if ( players[player]->inventoryUI.appraisal.current_item != 0 && *cvar_appraisal_auto_switch )
+				{
+					if ( previousAppraiseItem = uidToItem(players[player]->inventoryUI.appraisal.current_item) )
+					{
+						if ( previousAppraiseItem->uid != players[player]->inventoryUI.appraisal.manual_appraised_item )
+						{
+							updateItemToAppraise = true;
+						}
+					}
+				}
+
 				for ( node = stats[player]->inventory.first; node != NULL; node = nextnode )
 				{
 					nextnode = node->next;
@@ -3065,7 +3080,8 @@ void gameLogic(void)
 					}
 					else
 					{
-						if ( auto_appraise_new_items && players[player]->inventoryUI.appraisal.timer == 0 
+						if ( auto_appraise_new_items 
+							&& (players[player]->inventoryUI.appraisal.timer == 0 || (ticks % 10 == 0 && updateItemToAppraise) )
 							&& !(item->identified) && players[player]->inventoryUI.appraisal.appraisalPossible(item) )
 						{
 							int appraisal_time = players[player]->inventoryUI.appraisal.getAppraisalTime(item);
@@ -3643,6 +3659,18 @@ void gameLogic(void)
 			int bloodCount = 0;
 			std::map<int, int> numKeys;
 			players[clientnum]->magic.bHasUnreadNewSpell = false;
+			Item* previousAppraiseItem = nullptr;
+			bool updateItemToAppraise = false;
+			if ( players[clientnum]->inventoryUI.appraisal.current_item != 0 && *cvar_appraisal_auto_switch )
+			{
+				if ( previousAppraiseItem = uidToItem(players[clientnum]->inventoryUI.appraisal.current_item) )
+				{
+					if ( previousAppraiseItem->uid != players[clientnum]->inventoryUI.appraisal.manual_appraised_item )
+					{
+						updateItemToAppraise = true;
+					}
+				}
+			}
 			for ( node = stats[clientnum]->inventory.first; node != NULL; node = nextnode )
 			{
 				nextnode = node->next;
@@ -3785,7 +3813,8 @@ void gameLogic(void)
 				}
 				else
 				{
-					if ( auto_appraise_new_items && players[clientnum]->inventoryUI.appraisal.timer == 0 
+					if ( auto_appraise_new_items && 
+						(players[clientnum]->inventoryUI.appraisal.timer == 0 || (ticks % 10 == 0 && updateItemToAppraise)) 
 						&& !(item->identified) && players[clientnum]->inventoryUI.appraisal.appraisalPossible(item) )
 					{
 						int appraisal_time = players[clientnum]->inventoryUI.appraisal.getAppraisalTime(item);
@@ -3825,7 +3854,11 @@ void gameLogic(void)
 			{
 				if ( auto_appraise_target[i] != NULL )
 				{
-					players[i]->inventoryUI.appraisal.appraiseItem(auto_appraise_target[i]);
+					if ( (auto_appraise_target[i]->uid != players[i]->inventoryUI.appraisal.current_item)
+						|| players[i]->inventoryUI.appraisal.timer == 0 )
+					{
+						players[i]->inventoryUI.appraisal.appraiseItem(auto_appraise_target[i]);
+					}
 				}
 			}
 		}

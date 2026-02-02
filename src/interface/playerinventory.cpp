@@ -10595,6 +10595,10 @@ void Player::Inventory_t::updateInventory()
 						{
 							// auto-appraise the item
 							appraisal.appraiseItem(item);
+							if ( appraisal.current_item == item->uid )
+							{
+								appraisal.manual_appraised_item = item->uid;
+							}
 							Input::inputs[player].consumeBinaryToggle("MenuRightClick");
 						}
 					}

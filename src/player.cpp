@@ -3270,6 +3270,7 @@ void Player::init() // for use on new/restart game, UI related
 	mechanics.donationClaimed = false;
 
 	inventoryUI.appraisal.appraisalProgressionItems.clear();
+	inventoryUI.appraisal.manual_appraised_item = 0;
 }
 
 void Player::cleanUpOnEntityRemoval()

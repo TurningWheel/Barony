@@ -1159,6 +1159,7 @@ public:
 			Uint32 current_item = 0; //The item being appraised (or rather its uid)
 			std::map<Uint32, int> appraisalProgressionItems;
 			Uint32 old_item = 0;
+			Uint32 manual_appraised_item = 0;
 			int getAppraisalTime(Item* item); // Return time in ticks needed to appraise an item
 			void appraiseItem(Item* item); // start appraise process
 			bool appraisalPossible(Item* item); // if possible with current skill and stats

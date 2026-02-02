@@ -29251,6 +29251,10 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 	if ( prompt == PROMPT_APPRAISE )
 	{
 		players[player]->inventoryUI.appraisal.appraiseItem(item);
+		if ( players[player]->inventoryUI.appraisal.current_item == item->uid )
+		{
+			players[player]->inventoryUI.appraisal.manual_appraised_item = item->uid;
+		}
 		return;
 	}
 	else if ( prompt == PROMPT_DROP )
