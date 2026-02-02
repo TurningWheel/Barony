@@ -29270,10 +29270,18 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 	}
 	if ( prompt == PROMPT_APPRAISE )
 	{
+		int prevAppraisedManual = players[player]->inventoryUI.appraisal.manual_appraised_item;
 		players[player]->inventoryUI.appraisal.appraiseItem(item);
 		if ( players[player]->inventoryUI.appraisal.current_item == item->uid )
 		{
-			players[player]->inventoryUI.appraisal.manual_appraised_item = item->uid;
+			if ( prevAppraisedManual == item->uid )
+			{
+				players[player]->inventoryUI.appraisal.manual_appraised_item = 0;
+			}
+			else
+			{
+				players[player]->inventoryUI.appraisal.manual_appraised_item = item->uid;
+			}
 		}
 		return;
 	}

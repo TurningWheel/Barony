@@ -2245,10 +2245,18 @@ void drawStatusNew(const int player)
 						if ( (keystatus[SDLK_LSHIFT] || keystatus[SDLK_RSHIFT]) ) //TODO: selected shop slot, identify, remove curse?
 						{
 							// auto-appraise the item
+							int prevAppraisedManual = players[player]->inventoryUI.appraisal.manual_appraised_item;
 							players[player]->inventoryUI.appraisal.appraiseItem(item);
 							if ( players[player]->inventoryUI.appraisal.current_item == item->uid )
 							{
-								players[player]->inventoryUI.appraisal.manual_appraised_item = item->uid;
+								if ( prevAppraisedManual == item->uid )
+								{
+									players[player]->inventoryUI.appraisal.manual_appraised_item = 0;
+								}
+								else
+								{
+									players[player]->inventoryUI.appraisal.manual_appraised_item = item->uid;
+								}
 							}
 							Input::inputs[player].consumeBinaryToggle("MenuRightClick");
 						}
