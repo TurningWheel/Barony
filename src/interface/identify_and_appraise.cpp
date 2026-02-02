@@ -572,6 +572,8 @@ void Player::Inventory_t::Appraisal_t::appraiseItem(Item* item)
 			animAppraisal = PI;
 			animStartTick = ticks;
 		}
+
+		manual_appraised_item = 0;
 	}
 	old_item = 0;
 }

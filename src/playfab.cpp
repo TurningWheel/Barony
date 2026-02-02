@@ -480,6 +480,15 @@ int parseOnlineHiscore(SaveGameInfo& info, Json::Value score)
     {
         player.selected_spell_alternate[i] = UINT32_MAX;
     }
+    player.stats.EFFECTS.resize(NUMEFFECTS);
+    player.stats.EFFECTS_TIMERS.resize(NUMEFFECTS);
+    player.stats.EFFECTS_ACCRETION_TIME.resize(NUMEFFECTS);
+    for ( int i = 0; i < NUMEFFECTS; ++i )
+    {
+        player.stats.EFFECTS[i] = 0;
+        player.stats.EFFECTS_TIMERS[i] = 0;
+        player.stats.EFFECTS_ACCRETION_TIME[i] = 0;
+    }
 
     for ( auto& m : score.getMemberNames() )
     {
@@ -645,6 +654,29 @@ int parseOnlineHiscore(SaveGameInfo& info, Json::Value score)
                     for ( Json::ArrayIndex i = 0; i < score[m][s].size() && i < NUMPROFICIENCIES; ++i )
                     {
                         jsonArrayToInt(score[m][s], i, player.stats.PROFICIENCIES[i]);
+                    }
+                }
+                else if ( s == "effects" )
+                {
+                    if ( score[m][s].isObject() )
+                    {
+                        for ( auto& eff : score[m][s].getMemberNames() )
+                        {
+                            if ( score[m][s][eff].isInt() )
+                            {
+                                try
+                                {
+                                    int effIndex = std::stoi(eff);
+                                    if ( effIndex >= 0 && effIndex < NUMEFFECTS )
+                                    {
+                                        player.stats.EFFECTS[effIndex] = score[m][s][eff].asInt();
+                                    }
+                                }
+                                catch (...)
+                                {
+                                }
+                            }
+                        }
                     }
                 }
                 else if ( s == "conducts" )

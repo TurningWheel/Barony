@@ -555,6 +555,7 @@ struct SaveGameInfo {
 		std::vector<std::pair<std::string, std::vector<int>>> compendium_item_events;
 		std::vector<std::pair<int, int>> itemDegradeRNG;
 		std::vector<std::pair<int, int>> escalatingRngRolls;
+		std::vector<std::pair<int, int>> escalatingSpellRngRolls;
 		std::vector<std::pair<int, int>> appraisal_item_progress;
 		std::vector<int> learnedSpells;
 		std::vector<std::pair<int, int>> sustainedSpellIDCounter;
@@ -764,6 +765,7 @@ struct SaveGameInfo {
 			fp->property("favorite_books_achievement", favoriteBooksAchievement);
 			fp->property("sustained_spell_id_counters", sustainedSpellIDCounter);
 			fp->property("escalating_rng_rolls", escalatingRngRolls);
+			fp->property("escalating_spell_rng_rolls", escalatingSpellRngRolls);
 			fp->property("appraisal_time_progress", appraisal_item_progress);
 			return true;
 		}

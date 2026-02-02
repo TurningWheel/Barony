@@ -2246,6 +2246,10 @@ void drawStatusNew(const int player)
 						{
 							// auto-appraise the item
 							players[player]->inventoryUI.appraisal.appraiseItem(item);
+							if ( players[player]->inventoryUI.appraisal.current_item == item->uid )
+							{
+								players[player]->inventoryUI.appraisal.manual_appraised_item = item->uid;
+							}
 							Input::inputs[player].consumeBinaryToggle("MenuRightClick");
 						}
 						else if ( !disableItemUsage && (itemCategory(item) == POTION || itemCategory(item) == SPELLBOOK || item->type == FOOD_CREAMPIE) &&

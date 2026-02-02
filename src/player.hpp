@@ -1159,6 +1159,7 @@ public:
 			Uint32 current_item = 0; //The item being appraised (or rather its uid)
 			std::map<Uint32, int> appraisalProgressionItems;
 			Uint32 old_item = 0;
+			Uint32 manual_appraised_item = 0;
 			int getAppraisalTime(Item* item); // Return time in ticks needed to appraise an item
 			void appraiseItem(Item* item); // start appraise process
 			bool appraisalPossible(Item* item); // if possible with current skill and stats
@@ -2413,9 +2414,11 @@ public:
 			RNG_ROLL_EVASION,
 			RNG_ROLL_GROWTH,
 			RNG_ROLL_SILKEN_BOW,
+			RNG_ROLL_SPELL_LEVELS,
 			RNG_ROLL_ENUM_END
 		};
 		std::map<int, int> escalatingRngRolls;
+		std::map<int, int> escalatingSpellRngRolls;
 		bool sustainedSpellLevelChance(int skillID);
 		int baseSpellLevelChance(int skillID);
 		int baseSpellMPSpent(int skillID);
@@ -2426,7 +2429,7 @@ public:
 		std::map<int, int> baseSpellLevelUpProcs;
 		std::map<int, real_t> sustainedSpellIDCounter;
 		bool updateSustainedSpellEvent(int spellID, real_t value, real_t scaleValue, Entity* hitEntity);
-		bool rollRngProc(RngRollTypes rngType, int chance);
+		bool rollRngProc(RngRollTypes rngType, int chance, int spellID = -1);
 		std::map<Uint32, int> enemyRaisedBlockingAgainst;
 		std::map<Uint32, int> enemyRaisedStealthAgainst;
 		bool allowedRaiseBlockingAgainstEntity(Entity& attacker);

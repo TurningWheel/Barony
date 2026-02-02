@@ -3259,6 +3259,7 @@ void Player::init() // for use on new/restart game, UI related
 	mechanics.ensembleDataUpdate = 0;
 	mechanics.gremlinBreakableCounter = 0;
 	mechanics.escalatingRngRolls.clear();
+	mechanics.escalatingSpellRngRolls.clear();
 	mechanics.favoriteBooksAchievement.clear();
 
 	mechanics.fociDarkChargeTime = 0;
@@ -3269,6 +3270,7 @@ void Player::init() // for use on new/restart game, UI related
 	mechanics.donationClaimed = false;
 
 	inventoryUI.appraisal.appraisalProgressionItems.clear();
+	inventoryUI.appraisal.manual_appraised_item = 0;
 }
 
 void Player::cleanUpOnEntityRemoval()
@@ -8630,7 +8632,7 @@ std::map<int, real_t> prng_tables
 };
 
 // escalating rng
-bool Player::PlayerMechanics_t::rollRngProc(Player::PlayerMechanics_t::RngRollTypes rngType, int chance)
+bool Player::PlayerMechanics_t::rollRngProc(Player::PlayerMechanics_t::RngRollTypes rngType, int chance, int spellID)
 {
 	chance = std::min(95, chance);
 	if ( chance <= 0 )
@@ -8664,7 +8666,7 @@ bool Player::PlayerMechanics_t::rollRngProc(Player::PlayerMechanics_t::RngRollTy
 			pityCap = std::max(pityCap, oneInRoll);
 		}
 
-		auto& rng_counter = escalatingRngRolls[(int)rngType];
+		auto& rng_counter = rngType == RngRollTypes::RNG_ROLL_SPELL_LEVELS ? escalatingSpellRngRolls[spellID] : escalatingRngRolls[(int)rngType];
 
 		if ( c * rng_counter >= 1.0
 			|| (rng_counter >= pityCap) )

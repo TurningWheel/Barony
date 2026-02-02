@@ -22544,9 +22544,19 @@ void drawUnidentifiedItemEffectHotbarCallback(const Widget& widget, SDL_Rect rec
 			opacity *= parent->getOpacity() / 100.0;
 		}
         const auto& appraisal = players[player]->inventoryUI.appraisal;
-        drawClockwiseSquareMesh("images/ui/HUD/hotbar/Appraisal_Icon_OutlineHotbar.png",
-            (appraisal.timermax - appraisal.timer) / (float)appraisal.timermax,
-            drawRect, makeColor(255, 255, 255, opacity));
+
+		if ( appraisal.current_item == appraisal.manual_appraised_item )
+		{
+			drawClockwiseSquareMesh("images/ui/HUD/hotbar/Appraisal_Icon_OutlineHotbar_Manual.png",
+			    (appraisal.timermax - appraisal.timer) / (float)appraisal.timermax,
+			    drawRect, makeColor(255, 255, 255, opacity));
+		}
+		else
+		{
+			drawClockwiseSquareMesh("images/ui/HUD/hotbar/Appraisal_Icon_OutlineHotbar.png",
+				(appraisal.timermax - appraisal.timer) / (float)appraisal.timermax,
+				drawRect, makeColor(255, 255, 255, opacity));
+		}
 	}
 
 	auto drawMesh = [](real_t x, real_t y, real_t size, SDL_Rect rect, Uint32 color) {
@@ -22601,9 +22611,19 @@ void drawUnidentifiedItemEffectCallback(const Widget& widget, SDL_Rect rect)
 		{
 			opacity *= parent->getOpacity() / 100.0;
 		}
-		drawClockwiseSquareMesh("images/ui/Inventory/Appraisal_Icon_Outline.png",
-            (appraisal.timermax - appraisal.timer) / (float)appraisal.timermax,
-            drawRect, makeColor(255, 255, 255, opacity));
+
+		if ( appraisal.current_item == appraisal.manual_appraised_item )
+		{
+			drawClockwiseSquareMesh("images/ui/Inventory/Appraisal_Icon_Outline_Manual.png",
+				(appraisal.timermax - appraisal.timer) / (float)appraisal.timermax,
+				drawRect, makeColor(255, 255, 255, opacity));
+		}
+		else
+		{
+			drawClockwiseSquareMesh("images/ui/Inventory/Appraisal_Icon_Outline.png",
+			    (appraisal.timermax - appraisal.timer) / (float)appraisal.timermax,
+			    drawRect, makeColor(255, 255, 255, opacity));
+		}
 	}
     
     auto drawMesh = [](real_t x, real_t y, real_t size, SDL_Rect rect, Uint32 color) {
@@ -29251,6 +29271,10 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 	if ( prompt == PROMPT_APPRAISE )
 	{
 		players[player]->inventoryUI.appraisal.appraiseItem(item);
+		if ( players[player]->inventoryUI.appraisal.current_item == item->uid )
+		{
+			players[player]->inventoryUI.appraisal.manual_appraised_item = item->uid;
+		}
 		return;
 	}
 	else if ( prompt == PROMPT_DROP )

@@ -3419,6 +3419,10 @@ bool Entity::spellEffectPreserveItem(Item* item)
 				{
 					cost *= 10;
 				}
+				if ( item->type == AMULET_MAGICREFLECTION || item->type == CLOAK_MAGICREFLECTION )
+				{
+					cost *= 2;
+				}
 				if ( !safeConsumeMP(cost) )
 				{
 					if ( myStats->MP > 0 )

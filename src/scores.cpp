@@ -5504,6 +5504,11 @@ void SaveGameInfo::computeHash(const int playernum, Uint32& hash)
 		hash += (Uint32)((Uint32)val.first << (shift % 32)); ++shift;
 		hash += (Uint32)((Uint32)val.second << (shift % 32)); ++shift;
 	}
+	for ( auto& val : players[playernum].escalatingSpellRngRolls )
+	{
+		hash += (Uint32)((Uint32)val.first << (shift % 32)); ++shift;
+		hash += (Uint32)((Uint32)val.second << (shift % 32)); ++shift;
+	}
 	for ( auto& val : players[playernum].appraisal_item_progress )
 	{
 		hash += (Uint32)((Uint32)val.first << (shift % 32)); ++shift;
@@ -5801,6 +5806,10 @@ int SaveGameInfo::populateFromSession(const int playernum)
 			for ( auto& pair : ::players[c]->mechanics.escalatingRngRolls )
 			{
 				player.escalatingRngRolls.push_back(pair);
+			}
+			for ( auto& pair : ::players[c]->mechanics.escalatingSpellRngRolls )
+			{
+				player.escalatingSpellRngRolls.push_back(pair);
 			}
 			player.sustainedSpellMPUsedSorcery = ::players[c]->mechanics.sustainedSpellMPUsedSorcery;
 			player.sustainedSpellMPUsedMysticism = ::players[c]->mechanics.sustainedSpellMPUsedMysticism;
@@ -6277,6 +6286,16 @@ std::string SaveGameInfo::serializeToOnlineHiscore(const int playernum, const in
 		}
 		attrObj.AddMember("statistics", statisticsArr, d.GetAllocator());
 
+		rapidjson::Value effectsObj(rapidjson::kObjectType);
+		for ( int i = 0; i < NUMEFFECTS; ++i )
+		{
+			if ( myStats.EFFECTS[i] > 0 )
+			{
+				effectsObj.AddMember(rapidjson::Value(std::to_string(i).c_str(), d.GetAllocator()), rapidjson::Value(myStats.EFFECTS[i]), d.GetAllocator());
+			}
+		}
+		attrObj.AddMember("effects", effectsObj, d.GetAllocator());
+
 		character.AddMember("attributes", attrObj, d.GetAllocator());
 	}
 
@@ -6511,7 +6530,14 @@ int loadGame(int player, const SaveGameInfo& info) {
 		if ( c < p.EFFECTS.size() )
 		{
 			stats[statsPlayer]->setEffectValueUnsafe(c, (Uint8)p.EFFECTS[c]);
-			stats[statsPlayer]->EFFECTS_TIMERS[c] = p.EFFECTS_TIMERS[c];
+			if ( c < p.EFFECTS_TIMERS.size() )
+			{
+				stats[statsPlayer]->EFFECTS_TIMERS[c] = p.EFFECTS_TIMERS[c];
+			}
+			else
+			{
+				stats[statsPlayer]->EFFECTS_TIMERS[c] = 0;
+			}
 		}
 		else
 		{
@@ -6774,6 +6800,7 @@ int loadGame(int player, const SaveGameInfo& info) {
 		hamletShopkeeperSkillLimit[statsPlayer].clear();
 		mechanics.baseSpellLevelUpProcs.clear();
 		mechanics.escalatingRngRolls.clear();
+		mechanics.escalatingSpellRngRolls.clear();
 		for ( auto& pair : info.players[player].itemDegradeRNG )
 		{
 			mechanics.itemDegradeRng[pair.first] = pair.second;
@@ -6797,6 +6824,10 @@ int loadGame(int player, const SaveGameInfo& info) {
 		for ( auto& pair : info.players[player].escalatingRngRolls )
 		{
 			mechanics.escalatingRngRolls[pair.first] = pair.second;
+		}
+		for ( auto& pair : info.players[player].escalatingSpellRngRolls )
+		{
+			mechanics.escalatingSpellRngRolls[pair.first] = pair.second;
 		}
 		mechanics.sustainedSpellMPUsedSorcery = 0;
 		mechanics.sustainedSpellMPUsedMysticism = 0;
