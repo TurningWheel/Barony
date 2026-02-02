@@ -2260,12 +2260,21 @@ void drawStatusNew(const int player)
 							}
 							Input::inputs[player].consumeBinaryToggle("MenuRightClick");
 						}
-						else if ( !disableItemUsage && (itemCategory(item) == POTION || itemCategory(item) == SPELLBOOK || item->type == FOOD_CREAMPIE) &&
+						else if ( !disableItemUsage && (itemCategory(item) == POTION || itemCategory(item) == SPELLBOOK 
+							|| itemCategory(item) == SPELL_CAT
+							|| item->type == FOOD_CREAMPIE) &&
 							(keystatus[SDLK_LALT] || keystatus[SDLK_RALT]) )
 						{
 							Input::inputs[player].consumeBinaryToggle("MenuRightClick");
-							// force equip potion/spellbook
-							playerTryEquipItemAndUpdateServer(player, item, true);
+							if ( itemCategory(item) == SPELL_CAT )
+							{
+								players[player]->inventoryUI.activateItemContextMenuOption(item, ItemContextMenuPrompts::PROMPT_SPELL_QUICKCAST);
+							}
+							else
+							{
+								// force equip potion/spellbook
+								playerTryEquipItemAndUpdateServer(player, item, true);
+							}
 						}
 						else
 						{
@@ -3246,12 +3255,14 @@ void drawStatusNew(const int player)
 				learnedSpell = (playerLearnedSpellbook(player, item) || itemIsEquipped(item, player));
 			}
 
-			if ( ((keystatus[SDLK_LALT] || keystatus[SDLK_RALT])
-				&& (itemCategory(item) == POTION || itemCategory(item) == SPELLBOOK)) 
-				|| item->type == FOOD_CREAMPIE )
+			bool altUse = false;
+			if ( (keystatus[SDLK_LALT] || keystatus[SDLK_RALT])
+				&& (itemCategory(item) == POTION || itemCategory(item) == SPELLBOOK || itemCategory(item) == SPELL_CAT
+				|| item->type == FOOD_CREAMPIE) )
 			{
 				badpotion = true;
 				learnedSpell = true;
+				altUse = true;
 			}
 
 			if ( !learnedSpell && item->identified
@@ -3314,7 +3325,11 @@ void drawStatusNew(const int player)
 
 			if ( !disableItemUsage )
 			{
-				if ( !badpotion && !learnedSpell )
+				if ( altUse && itemCategory(item) == SPELL_CAT )
+				{
+					players[player]->inventoryUI.activateItemContextMenuOption(item, ItemContextMenuPrompts::PROMPT_SPELL_QUICKCAST);
+				}
+				else if ( !badpotion && !learnedSpell )
 				{
 					if ( !(isItemEquippableInShieldSlot(item) && cast_animation[player].active_spellbook) )
 					{
