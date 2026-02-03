@@ -3094,7 +3094,7 @@ void updateGameplayStatisticsInMainLoop()
 		}
 	}
 
-	if ( multiplayer != CLIENT && ticks % (TICKS_PER_SECOND / 2) == 0 )
+	/*if ( multiplayer != CLIENT && ticks % (TICKS_PER_SECOND / 2) == 0 )
 	{
 		for ( int i = 0; i < MAXPLAYERS; ++i )
 		{
@@ -3109,7 +3109,7 @@ void updateGameplayStatisticsInMainLoop()
 				achievementObserver.playerAchievements[i].parryTank = 0;
 			}
 		}
-	}
+	}*/
 
 
 	if ( ticks % (TICKS_PER_SECOND * 5) == 0 )
