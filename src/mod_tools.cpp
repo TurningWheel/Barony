@@ -838,7 +838,7 @@ void IRCHandler_t::handleMessage(std::string& msg)
 #endif // !NINTENDO
 
 Uint32 ItemTooltips_t::itemsJsonHashRead = 0;
-const Uint32 ItemTooltips_t::kItemsJsonHash = 3757883972;
+const Uint32 ItemTooltips_t::kItemsJsonHash = 2032888212;
 
 void ItemTooltips_t::setSpellValueIfKeyPresent(ItemTooltips_t::spellItem_t& t, rapidjson::Value::ConstMemberIterator item_itr, Uint32& hash, Uint32& hashShift, const char* key, int& toSet)
 {
@@ -875,12 +875,12 @@ void lowercaseString(std::string& str)
 
 void hashSpellProp(Uint32& hash, Uint32& hashShift, int& toSet)
 {
-	hash += (Uint32)((Uint32)toSet << (hashShift % 32)); ++hashShift;
+	hash += (Uint32)((Uint32)abs(toSet) << (hashShift % 32)); ++hashShift;
 }
 
 void hashSpellProp(Uint32& hash, Uint32& hashShift, real_t& toSet)
 {
-	hash += (Uint32)(static_cast<Uint32>(toSet * 100000) << (hashShift % 32)); ++hashShift;
+	hash += (Uint32)(static_cast<Uint32>(abs(toSet) * 100000) << (hashShift % 32)); ++hashShift;
 }
 
 void ItemTooltips_t::readItemsFromFile()
@@ -1451,6 +1451,8 @@ void ItemTooltips_t::readItemsFromFile()
 			{
 				hash += (Uint32)((Uint32)1 << (shift % 32)); ++shift;
 			}
+
+			printlog("%d: %lu", i, hash);
 		}
 	}
 
