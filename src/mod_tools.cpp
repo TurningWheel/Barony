@@ -1451,8 +1451,6 @@ void ItemTooltips_t::readItemsFromFile()
 			{
 				hash += (Uint32)((Uint32)1 << (shift % 32)); ++shift;
 			}
-
-			printlog("%d: %lu", i, hash);
 		}
 	}
 
