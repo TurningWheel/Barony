@@ -7686,6 +7686,10 @@ bool Player::PlayerMechanics_t::updateSustainedSpellEvent(int spellID, real_t va
 			{
 				sustainedSpellIDCounter[spellID] = 0.0;
 				Uint32 flags = spell_t::SPELL_LEVEL_EVENT_DEFAULT;
+				if ( spellID == SPELL_FLUTTER )
+				{
+					flags = spell_t::SPELL_LEVEL_EVENT_EFFECT;
+				}
 				if ( magicOnSpellCastEvent(players[player.playernum]->entity, players[player.playernum]->entity,
 					nullptr, spellID, flags, 1) )
 				{

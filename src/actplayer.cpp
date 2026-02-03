@@ -11488,10 +11488,10 @@ void actPlayer(Entity* my)
 							|| lavatiles[map.tiles[index_y * MAPLAYERS + index_x * MAPLAYERS * map.height]] )
 						{
 							players[PLAYER_NUM]->mechanics.updateSustainedSpellEvent(SPELL_LEVITATION, dist, 0.5, nullptr);
-						}
-						if ( stats[PLAYER_NUM]->getEffectActive(EFF_FLUTTER) )
-						{
-							players[PLAYER_NUM]->mechanics.updateSustainedSpellEvent(SPELL_FLUTTER, dist, 0.5, nullptr);
+							if ( stats[PLAYER_NUM]->getEffectActive(EFF_FLUTTER) )
+							{
+								players[PLAYER_NUM]->mechanics.updateSustainedSpellEvent(SPELL_FLUTTER, dist, 0.5, nullptr);
+							}
 						}
 					}
 				}
@@ -11789,10 +11789,10 @@ void actPlayer(Entity* my)
 							|| lavatiles[map.tiles[index_y * MAPLAYERS + index_x * MAPLAYERS * map.height]] )
 						{
 							players[PLAYER_NUM]->mechanics.updateSustainedSpellEvent(SPELL_LEVITATION, dist, 0.5, nullptr);
-						}
-						if ( stats[PLAYER_NUM]->getEffectActive(EFF_FLUTTER) )
-						{
-							players[PLAYER_NUM]->mechanics.updateSustainedSpellEvent(SPELL_FLUTTER, dist, 0.5, nullptr);
+							if ( stats[PLAYER_NUM]->getEffectActive(EFF_FLUTTER) )
+							{
+								players[PLAYER_NUM]->mechanics.updateSustainedSpellEvent(SPELL_FLUTTER, dist, 0.5, nullptr);
+							}
 						}
 					}
 				}
