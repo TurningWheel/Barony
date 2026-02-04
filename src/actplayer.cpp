@@ -9702,6 +9702,27 @@ void actPlayer(Entity* my)
 					skipUse = true;
 				}
 
+				if ( players[PLAYER_NUM]->shootmode 
+					&& stats[PLAYER_NUM]->defending
+					&& !gamePaused 
+					&& !movie
+					&& !fadeout
+					&& !players[PLAYER_NUM]->usingCommand() && players[PLAYER_NUM]->bControlEnabled
+					&& input.binaryToggle("Use")
+					&& input.binaryToggle("Defend") )
+				{
+					if ( stats[PLAYER_NUM]->shield && stats[PLAYER_NUM]->shield->type == TOOL_FRYING_PAN )
+					{
+						if ( !GenericGUI[PLAYER_NUM].isGUIOpen() )
+						{
+							input.consumeBinaryToggle("Use");
+							input.consumeBindingsSharedWithBinding("Use");
+							GenericGUI[PLAYER_NUM].openGUI(GUI_TYPE_ALCHEMY, true, stats[PLAYER_NUM]->shield);
+							skipUse = true;
+						}
+					}
+				}
+
 				if ( !skipUse )
 				{
 					if ( tempDisableWorldUI )
