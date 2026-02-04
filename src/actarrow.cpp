@@ -829,13 +829,19 @@ void actArrow(Entity* my)
 
 								if ( (hit.entity->monsterState == MONSTER_STATE_WAIT
 									|| hit.entity->monsterState == MONSTER_STATE_PATH
-									|| (hit.entity->monsterState == MONSTER_STATE_HUNT && uidToEntity(hit.entity->monsterTarget) == nullptr))
+									|| (hit.entity->monsterState == MONSTER_STATE_HUNT /*&& uidToEntity(hit.entity->monsterTarget) == nullptr*/))
 									&& !hitstats->getEffectActive(EFF_ROOTED) )
 								{
 									// unaware monster, get backstab damage.
 									int bonus = (parentStats->getModifiedProficiency(PRO_STEALTH) / 20 + 2) * (2 * stealthCapstoneBonus);
+									int chance = 4;
+									if ( hit.entity->monsterState == MONSTER_STATE_HUNT && uidToEntity(hit.entity->monsterTarget) != nullptr )
+									{
+										chance = 8;
+										bonus = (parentStats->getModifiedProficiency(PRO_STEALTH) / 20 + 1) * (stealthCapstoneBonus);
+									}
 									damage += ((bonus * equipmentModifier) * bonusModifier);
-									if ( local_rng.rand() % 4 == 0 
+									if ( local_rng.rand() % chance == 0
 										&& hit.entity->behavior != &actPlayer
 										&& !(parent->behavior == &actPlayer && hit.entity->monsterAllyGetPlayerLeader()) )
 									{

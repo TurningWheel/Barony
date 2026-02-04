@@ -11383,7 +11383,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						{
 							if ( (previousMonsterState == MONSTER_STATE_WAIT
 								|| previousMonsterState == MONSTER_STATE_PATH
-								|| (previousMonsterState == MONSTER_STATE_HUNT && uidToEntity(hit.entity->monsterTarget) == nullptr))
+								|| (previousMonsterState == MONSTER_STATE_HUNT /*&& uidToEntity(hit.entity->monsterTarget) == nullptr*/))
 								&& !hitstats->getEffectActive(EFF_ROOTED) )
 							{
 								// unaware monster, get backstab damage.
@@ -12868,12 +12868,20 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 							if ( (previousMonsterState == MONSTER_STATE_WAIT
 								|| previousMonsterState == MONSTER_STATE_PATH
-								|| (previousMonsterState == MONSTER_STATE_HUNT && uidToEntity(hit.entity->monsterTarget) == nullptr))
+								|| (previousMonsterState == MONSTER_STATE_HUNT /*&& uidToEntity(hit.entity->monsterTarget) == nullptr*/))
 								&& !hitstats->getEffectActive(EFF_ROOTED) )
 							{
 								// unaware monster, get backstab damage.
 								backstab = true;
 								int bonus = (stats[player]->getModifiedProficiency(PRO_STEALTH) / 20 + 2) * (2 * stealthCapstoneBonus);
+								int chance = 0; // 3 in 4
+								if ( previousMonsterState == MONSTER_STATE_HUNT && uidToEntity(hit.entity->monsterTarget) != nullptr )
+								{
+									// reduced damage
+									chance = 2; // 1 in 4
+									bonus = (stats[player]->getModifiedProficiency(PRO_STEALTH) / 20 + 1) * (stealthCapstoneBonus);
+								}
+
 								if ( myStats->helmet && myStats->helmet->type == HAT_HOOD_ASSASSIN )
 								{
 									if ( myStats->helmet->beatitude >= 0 || shouldInvertEquipmentBeatitude(myStats) )
@@ -12901,7 +12909,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 									}
 									else
 									{
-										if ( local_rng.rand() % 4 > 0 )
+										if ( local_rng.rand() % 4 > chance )
 										{
 											this->increaseSkill(PRO_STEALTH);
 											if ( player >= 0 )
