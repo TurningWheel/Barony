@@ -2382,7 +2382,17 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 								{
 									if ( entityDist(caster, entity) < 10000.0 )
 									{
-										breakables.push_back(entity);
+										int mapx = entity->x / 16;
+										int mapy = entity->y / 16;
+										if ( mapx > 0 && mapx < map.width
+											&& mapy > 0 && mapy < map.height )
+										{
+											int mapIndex = (mapy)*MAPLAYERS + (mapx)*MAPLAYERS * map.height;
+											if ( map.tiles[mapIndex] ) // don't spawn over pit because gravity
+											{
+												breakables.push_back(entity); 
+											}
+										}
 									}
 								}
 							}
