@@ -1346,6 +1346,7 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 			bool allowStealFollowers = false;
 			Stat* casterStats = nullptr;
 			int currentCharmedFollowerCount = 0;
+			int numFollowers = 0;
 			if ( parent )
 			{
 				casterStats = parent->getStats();
@@ -1380,6 +1381,27 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 						else if ( difficulty <= 2 )
 						{
 							chance = 60; // special base chance for monsters.
+						}
+
+						if ( Entity* leader = parent->monsterAllyGetPlayerLeader() )
+						{
+							if ( Stat* leaderStats = leader->getStats() )
+							{
+								// search followers for charmed.
+								for ( node_t* node = leaderStats->FOLLOWERS.first; node != NULL; node = node->next )
+								{
+									Uint32* c = (Uint32*)node->element;
+									Entity* follower = nullptr;
+									if ( c )
+									{
+										follower = uidToEntity(*c);
+									}
+									if ( follower )
+									{
+										++numFollowers;
+									}
+								}
+							}
 						}
 					}
 					else if ( parent->behavior == &actPlayer )
@@ -1511,6 +1533,11 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 								// i am their leader, ignore
 								doPacify = true;
 							}
+						}
+
+						if ( numFollowers >= 8 )
+						{
+							doPacify = true; // stop after a point
 						}
 					}
 				}
