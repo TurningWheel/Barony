@@ -4232,18 +4232,33 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 					|| ((skill == PRO_MYSTICISM || skill == PRO_SORCERY || skill == PRO_THAUMATURGY)
 						&& itemTypeIsFoci(item.type)) )
 				{
-					int bonus = 10;
-					if ( skill == PRO_MYSTICISM || skill == PRO_SORCERY || skill == PRO_THAUMATURGY )
+					if ( itemTypeIsFoci(item.type) )
 					{
-						bonus = 5;
-					}
-					if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
-					{
-						equipmentBonus += std::min(Stat::maxEquipmentBonusToSkill, (1 + abs(item.beatitude)) * bonus);
+						if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+						{
+							equipmentBonus = 10;
+							equipmentBonus += 5 * std::min(10, abs(item.beatitude));
+						}
+						else
+						{
+							equipmentBonus = 10;
+						}
 					}
 					else
 					{
-						equipmentBonus += bonus;
+						int bonus = 10;
+						if ( skill == PRO_MYSTICISM || skill == PRO_SORCERY || skill == PRO_THAUMATURGY )
+						{
+							bonus = 5;
+						}
+						if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+						{
+							equipmentBonus += std::min(Stat::maxEquipmentBonusToSkill, (1 + abs(item.beatitude)) * bonus);
+						}
+						else
+						{
+							equipmentBonus += bonus;
+						}
 					}
 				}
 
