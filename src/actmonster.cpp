@@ -1614,7 +1614,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 
 	Monster race = my->getRace();
 
-	if ( myStats->leader_uid != 0 )
+	if ( myStats->leader_uid != 0 && uidToEntity(myStats->leader_uid) )
 	{
 		//Handle the "I have a leader!" situation.
 		if ( myStats->leader_uid == players[monsterclicked]->entity->getUID() )
@@ -1696,7 +1696,9 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 			//TODO: Control humanoids in general? Or otherwise something from each tileset.
 			if ( (stats[monsterclicked]->type == HUMAN && race == HUMAN)
 				|| race == GOBLIN
-				|| race == AUTOMATON
+				|| (race == AUTOMATON && !(stats[monsterclicked]->type == DRYAD 
+											|| stats[monsterclicked]->type == MYCONID
+											|| stats[monsterclicked]->type == GREMLIN))
 				|| race == GOATMAN
 				|| race == INSECTOID
 				|| race == GYROBOT )
@@ -1900,7 +1902,13 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 				}
 				if ( allowedFollowers > numFollowers )
 				{
-					if ( race == AUTOMATON || race == GYROBOT )
+					if ( race == AUTOMATON && !(stats[monsterclicked]->type == DRYAD
+						|| stats[monsterclicked]->type == MYCONID
+						|| stats[monsterclicked]->type == GREMLIN) )
+					{
+						canAlly = true;
+					}
+					if ( race == GYROBOT )
 					{
 						canAlly = true;
 					}
