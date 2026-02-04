@@ -5233,7 +5233,13 @@ namespace ConsoleCommands {
 					{
 						if ( entity->sprite == 217 || entity->sprite == 218 )
 						{
-							printlog("Iron door: Lockpick state: %d, opening: %d", entity->doorDisableLockpicks, entity->doorDisableOpening);
+							printlog("Map: %s Iron door: Lockpick state: %d, opening: %d", f.c_str(), entity->doorDisableLockpicks, entity->doorDisableOpening);
+						}
+						else if ( entity->sprite == 208 || entity->sprite == 209
+							|| entity->sprite == 210 || entity->sprite == 211 )
+						{
+							printlog("Map: %s Wall lock: Material: %s, pickable: %d, skeleton key: %d", f.c_str(), Language::get(6383 + entity->wallLockMaterial), entity->wallLockPickable,
+								entity->wallLockPickableSkeletonKey);
 						}
 					}
 				}
