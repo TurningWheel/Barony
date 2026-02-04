@@ -2473,7 +2473,12 @@ EquipItemResult equipItem(Item* const item, Item** const slot, const int player,
 				// the same as unequipping the slot since they are the same item, barring the quantity. So the client would appear to
 				// the server as empty handed, while the client holds 2 rocks, and when thrown on client end, the server never sees the item
 				// and the client "throws" nothing, but actually loses their thrown items into nothingness. This fixes that issue.
-				(*slot)->count = item->count; // update quantity. 
+				int newCount = item->count;
+				if ( players[player]->isLocalPlayer() )
+				{
+					item->count = (*slot)->count;
+				}
+				(*slot)->count = newCount; // update quantity. 
 				return EQUIP_ITEM_SUCCESS_UPDATE_QTY;
 			}
 		}
@@ -4086,6 +4091,16 @@ ItemStackResult getItemStackingBehaviorIndividualItemCheck(const int player, Ite
 			int maxStack = itemDestinationStack->getMaxStackLimit(player);
 
 			const int total = itemToCheck->count + itemDestinationStack->count;
+			if ( itemDestinationStack->count >= maxStack )
+			{
+				// can't add anymore to this stack, let's skip over this.
+				newQtyForDestItem = itemDestinationStack->count;
+				newQtyForCheckedItem = itemToCheck->count;
+				itemStackResult.resultType = ITEM_DESTINATION_STACK_IS_FULL;
+				itemStackResult.itemToStackInto = itemDestinationStack;
+				return itemStackResult;
+			}
+
 			if ( total > maxStack )
 			{
 				newQtyForDestItem = maxStack;

@@ -4784,6 +4784,8 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								fx->scalez = 0.0;
 								fx->actmagicSpellbookBonus = my->actmagicSpellbookBonus;
 								fx->actmagicFromSpellbook = my->actmagicFromSpellbook;
+
+								serverSpawnMiscParticles(hit.entity, PARTICLE_EFFECT_PSYCHIC_SPEAR, 2362, 0, 5 * TICKS_PER_SECOND, fx->yaw * 256.0);
 							}
 						}
 					}
@@ -9147,20 +9149,23 @@ void actParticleAestheticOrbit(Entity* my)
 				{
 					playSoundEntityLocal(my, 821, 92);
 
-					Entity* caster = uidToEntity(my->skill[3]);
-					int damage = getSpellDamageFromID(SPELL_PSYCHIC_SPEAR, caster, caster ? caster->getStats() : nullptr, my, my->actmagicSpellbookBonus / 100.0);
-					if ( Stat* parentStats = parent->getStats() )
+					if ( multiplayer != CLIENT )
 					{
-						real_t hpThreshold = getSpellEffectDurationSecondaryFromID(SPELL_PSYCHIC_SPEAR, caster, caster ? caster->getStats() : nullptr, my, my->actmagicSpellbookBonus / 100.0) / 100.0;
-						real_t parentHPRatio = std::min(1.0, parentStats->HP / std::max(1.0, (real_t)parentStats->MAXHP));
-						if ( parentHPRatio >= hpThreshold )
+						Entity* caster = uidToEntity(my->skill[3]);
+						int damage = getSpellDamageFromID(SPELL_PSYCHIC_SPEAR, caster, caster ? caster->getStats() : nullptr, my, my->actmagicSpellbookBonus / 100.0);
+						if ( Stat* parentStats = parent->getStats() )
 						{
-							real_t scale = std::min(1.0, std::max(0.0, (parentHPRatio - hpThreshold) / (1.0 - hpThreshold)));
-							damage += scale * getSpellDamageSecondaryFromID(SPELL_PSYCHIC_SPEAR, caster, caster ? caster->getStats() : nullptr, my, my->actmagicSpellbookBonus / 100.0);
+							real_t hpThreshold = getSpellEffectDurationSecondaryFromID(SPELL_PSYCHIC_SPEAR, caster, caster ? caster->getStats() : nullptr, my, my->actmagicSpellbookBonus / 100.0) / 100.0;
+							real_t parentHPRatio = std::min(1.0, parentStats->HP / std::max(1.0, (real_t)parentStats->MAXHP));
+							if ( parentHPRatio >= hpThreshold )
+							{
+								real_t scale = std::min(1.0, std::max(0.0, (parentHPRatio - hpThreshold) / (1.0 - hpThreshold)));
+								damage += scale * getSpellDamageSecondaryFromID(SPELL_PSYCHIC_SPEAR, caster, caster ? caster->getStats() : nullptr, my, my->actmagicSpellbookBonus / 100.0);
+							}
 						}
-					}
 
-					applyGenericMagicDamage(caster, parent, *my, SPELL_PSYCHIC_SPEAR, damage, true);
+						applyGenericMagicDamage(caster, parent, *my, SPELL_PSYCHIC_SPEAR, damage, true);
+					}
 
 					if ( Entity* fx = createParticleAOEIndicator(my, my->x, my->y, 0.0, TICKS_PER_SECOND, 16.0) )
 					{

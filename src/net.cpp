@@ -3402,6 +3402,26 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 					}
 					break;
 				}
+				case PARTICLE_EFFECT_PSYCHIC_SPEAR:
+				{
+					int duration = SDLNet_Read32(&net_packet->data[15]);
+					Sint32 dir = SDLNet_Read32(&net_packet->data[19]);
+					if ( Entity* fx = createParticleAestheticOrbit(entity, 2362, duration, PARTICLE_EFFECT_PSYCHIC_SPEAR) )
+					{
+						fx->yaw = dir / 256.0;
+						//fx->skill[3] = spell->caster;
+						fx->pitch = 0;// PI / 4;
+						fx->fskill[0] = fx->yaw + PI / 2 + (local_rng.rand() % 6) * PI / 3;
+						fx->fskill[1] = PI / 4 + PI / 8;// +(i + 1) * 2 * PI / 3;
+						fx->x = entity->x - 8.0 * cos(fx->yaw);
+						fx->y = entity->y - 8.0 * sin(fx->yaw);
+						fx->z = entity->z;// -8.0;
+						fx->scalex = 0.0;
+						fx->scaley = 0.0;
+						fx->scalez = 0.0;
+					}
+					break;
+				}
 				case PARTICLE_EFFECT_FOCI_LIGHT:
 				{
 					createParticleFociLight(entity, sprite, false);
@@ -4306,6 +4326,32 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 			if ( item->status == BROKEN && net_packet->data[4] == 4 && itemCategory(item) == SPELLBOOK )
 			{
 				consumeItem(item, clientnum);
+			}
+			else if ( item )
+			{
+				if ( players[clientnum]->isLocalPlayer() )
+				{
+					std::unordered_set<Uint32> appearancesOfSimilarItems;
+					std::vector<Item*> itemsToReroll;
+					for ( node_t* node = stats[clientnum]->inventory.first; node != NULL; node = node->next )
+					{
+						Item* item2 = static_cast<Item*>(node->element);
+						if ( item2 && item2 != item && !itemCompare(item, item2, true) )
+						{
+							itemsToReroll.push_back(item2);
+
+							// items are the same (incl. appearance!)
+							// if they shouldn't stack, we need to change appearance of the new item.
+							appearancesOfSimilarItems.insert(item2->appearance);
+						}
+					}
+
+					for ( auto rerollItem : itemsToReroll )
+					{
+						Item::itemFindUniqueAppearance(rerollItem, appearancesOfSimilarItems);
+						appearancesOfSimilarItems.insert(rerollItem->appearance);
+					}
+				}
 			}
 		}
 	}},

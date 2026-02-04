@@ -25840,6 +25840,31 @@ bool Entity::degradeArmor(Stat& hitstats, Item& armor, int armornum)
 			Compendium_t::Events_t::eventUpdate(playerhit, Compendium_t::CPDM_BROKEN, armor.type, 1);
 		}
 	}
+
+	if ( playerhit >= 0 && players[playerhit]->isLocalPlayer() )
+	{
+		std::unordered_set<Uint32> appearancesOfSimilarItems;
+		std::vector<Item*> itemsToReroll;
+		for ( node_t* node = stats[playerhit]->inventory.first; node != NULL; node = node->next )
+		{
+			Item* item2 = static_cast<Item*>(node->element);
+			if ( item2 && item2 != &armor && !itemCompare(&armor, item2, true) )
+			{
+				itemsToReroll.push_back(item2);
+
+				// items are the same (incl. appearance!)
+				// if they shouldn't stack, we need to change appearance of the new item.
+				appearancesOfSimilarItems.insert(item2->appearance);
+			}
+		}
+
+		for ( auto rerollItem : itemsToReroll )
+		{
+			Item::itemFindUniqueAppearance(rerollItem, appearancesOfSimilarItems);
+			appearancesOfSimilarItems.insert(rerollItem->appearance);
+		}
+	}
+
 	if ( playerhit > 0 && multiplayer == SERVER && !players[playerhit]->isLocalPlayer() )
 	{
 		strcpy((char*)net_packet->data, "ARMR");
