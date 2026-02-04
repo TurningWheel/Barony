@@ -7264,5 +7264,8 @@ has been unlocked!#
  *SPLAT*#
 6991 Yum! Rotten food!#
 6992 Your unidentified items are further appraised!#
+6993 Alternate Item Use Modifier#
+6994 Hotbar Quickcast Spells#
+6995 When enabled, activating spells from the hotbar will immediately attempt to cast them.#
 
 6999 END#

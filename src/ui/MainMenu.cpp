@@ -144,6 +144,7 @@ namespace MainMenu {
 #endif
                 {"Interact Tooltip Prev", emptyBinding, emptyBinding, emptyBinding },
                 {"Expand Inventory Tooltip", "X", hiddenBinding, emptyBinding },
+				{"Alternate Use Modifier", "Left Alt", hiddenBinding, emptyBinding },
                 {"Quick Turn", emptyBinding, "ButtonRightBumper", emptyBinding },
                 {"Chat", "Return", hiddenBinding, emptyBinding},
 #ifndef NINTENDO
@@ -212,6 +213,7 @@ namespace MainMenu {
 #endif
                 {"Interact Tooltip Prev", emptyBinding, emptyBinding, emptyBinding },
                 {"Expand Inventory Tooltip", "X", hiddenBinding, emptyBinding },
+				{"Alternate Use Modifier", "Left Alt", hiddenBinding, emptyBinding },
                 {"Quick Turn", emptyBinding, "ButtonLeftStick", emptyBinding },
                 {"Chat", "Return", hiddenBinding, emptyBinding},
 #ifndef NINTENDO
@@ -272,6 +274,7 @@ namespace MainMenu {
                 {"Interact Tooltip Next", "R", "ButtonB", emptyBinding },
                 {"Interact Tooltip Prev", emptyBinding, emptyBinding, emptyBinding },
                 {"Expand Inventory Tooltip", "X", hiddenBinding, emptyBinding },
+				{"Alternate Use Modifier", "Left Alt", hiddenBinding, emptyBinding },
                 {"Quick Turn", emptyBinding, "ButtonRightBumper", emptyBinding },
                 {"Chat", "Return", hiddenBinding, emptyBinding},
 #ifndef NINTENDO
@@ -336,6 +339,7 @@ namespace MainMenu {
                 {"Interact Tooltip Next", "R", "ButtonB", emptyBinding },
                 {"Interact Tooltip Prev", emptyBinding, emptyBinding, emptyBinding },
                 {"Expand Inventory Tooltip", "X", hiddenBinding, emptyBinding },
+				{"Alternate Use Modifier", "Left Alt", hiddenBinding, emptyBinding },
                 {"Quick Turn", emptyBinding, emptyBinding, emptyBinding },
                 {"Chat", "Return", hiddenBinding, emptyBinding},
 #ifndef NINTENDO
@@ -572,6 +576,8 @@ namespace MainMenu {
 		float gamepad_deadzone_right = 25.f;
 		float quick_turn_speed_control = 1.f;
 		float quick_turn_speed_mkb_control = 1.f;
+		bool spell_quickcast_mkb_enabled = false;
+		bool spell_quickcast_controller_enabled = false;
         inline void save(int index);
         static inline Controls load(int index);
         static inline Controls reset();
@@ -2814,6 +2820,8 @@ namespace MainMenu {
 		settings.rightStickDeadzone = (32000.f / 100.f) * std::min(50.f, std::max(5.f, gamepad_deadzone_right));
 		settings.quick_turn_speed = std::max(1.f, std::min(5.f, quick_turn_speed_control));
 		settings.quick_turn_speed_mkb = std::max(1.f, std::min(5.f, quick_turn_speed_mkb_control));
+		settings.spell_quickcast_mkb = spell_quickcast_mkb_enabled;
+		settings.spell_quickcast_controller = spell_quickcast_controller_enabled;
     }
 
     inline Controls Controls::load(int index) {
@@ -2835,6 +2843,8 @@ namespace MainMenu {
 		controls.gamepad_deadzone_right = 100.f * settings.rightStickDeadzone / 32000.f;
 		controls.quick_turn_speed_control = settings.quick_turn_speed;
 		controls.quick_turn_speed_mkb_control = settings.quick_turn_speed_mkb;
+		controls.spell_quickcast_mkb_enabled = settings.spell_quickcast_mkb;
+		controls.spell_quickcast_controller_enabled = settings.spell_quickcast_controller;
         return controls;
     }
 
@@ -2843,7 +2853,7 @@ namespace MainMenu {
     }
 
     bool Controls::serialize(FileInterface* file) {
-        int version = 3;
+        int version = 4;
         file->property("version", version);
         file->property("mkb_world_tooltips_enabled", mkb_world_tooltips_enabled);
         file->property("gamepad_facehotbar", gamepad_facehotbar);
@@ -2860,6 +2870,8 @@ namespace MainMenu {
 		file->propertyVersion("gamepad_deadzone_right", version >= 2, gamepad_deadzone_right);
 		file->property("quick_turn_speed_control", quick_turn_speed_control);
 		file->property("quick_turn_speed_mkb_control", quick_turn_speed_mkb_control);
+		file->propertyVersion("spell_quickcast_mkb_enabled", version >= 4, spell_quickcast_mkb_enabled);
+		file->propertyVersion("spell_quickcast_controller_enabled", version >= 4, spell_quickcast_controller_enabled);
         return true;
     }
 
@@ -3117,7 +3129,7 @@ namespace MainMenu {
 	}
 
 	bool AllSettings::serialize(FileInterface* file) {
-	    int version = 23;
+	    int version = 24;
 	    file->property("version", version);
 	    file->property("mods", mods);
 		file->property("crossplay_enabled", crossplay_enabled);
@@ -3237,6 +3249,8 @@ namespace MainMenu {
             }
 			file->propertyVersion("quick_turn_speed_control", version >= 21, controls.quick_turn_speed_control);
 			file->propertyVersion("quick_turn_speed_mkb_control", version >= 21, controls.quick_turn_speed_mkb_control);
+			file->propertyVersion("spell_quickcast_mkb_enabled", version >= 24, controls.spell_quickcast_mkb_enabled);
+			file->propertyVersion("spell_quickcast_controller_enabled", version >= 24, controls.spell_quickcast_controller_enabled);
             for (int c = 0; c < MAX_SPLITSCREEN; ++c) {
                 this->controls[c] = controls;
             }
@@ -4826,6 +4840,10 @@ namespace MainMenu {
 		{
 			return Language::get(6451);
 		}
+		else if ( !strcmp(binding, "Alternate Use Modifier") )
+		{
+			return Language::get(6993);
+		}
 
         for (auto& b : defaultBindings[0].bindings) {
             if (b.action == binding) {
@@ -4840,6 +4858,10 @@ namespace MainMenu {
 				continue; // don't increment c, not in the linear language entries
 			}
 			else if ( b.action == "Voice Chat" )
+			{
+				continue; // don't increment c, not in the linear language entries
+			}
+			else if ( b.action == "Alternate Use Modifier" )
 			{
 				continue; // don't increment c, not in the linear language entries
 			}
@@ -7354,6 +7376,11 @@ bind_failed:
             y += settingsAddBooleanOption(*settings_subwindow, y, "mkb_world_tooltips", Language::get(5226), Language::get(5227),
                 allSettings.controls[bound_player].mkb_world_tooltips_enabled, [](Button& button)
                 {soundToggleSetting(button); allSettings.controls[bound_player].mkb_world_tooltips_enabled = button.isPressed();});
+
+			y += settingsAddBooleanOption(*settings_subwindow, y, "spell_quickcast_mkb_enabled", Language::get(6994), Language::get(6995),
+				allSettings.controls[bound_player].spell_quickcast_mkb_enabled, [](Button& button)
+				{soundToggleSetting(button); allSettings.controls[bound_player].spell_quickcast_mkb_enabled = button.isPressed(); });
+
             y += settingsAddBooleanOption(*settings_subwindow, y, "numkeys_in_inventory", Language::get(5220), Language::get(5221),
                 allSettings.controls[bound_player].numkeys_in_inventory_enabled, [](Button& button)
                 {soundToggleSetting(button); allSettings.controls[bound_player].numkeys_in_inventory_enabled = button.isPressed();});
@@ -7370,6 +7397,7 @@ bind_failed:
                 {Setting::Type::Boolean, "reverse_mouse"},
                 {Setting::Type::Boolean, "smooth_mouse"},
                 {Setting::Type::Boolean, "mkb_world_tooltips"},
+				{Setting::Type::Boolean, "spell_quickcast_mkb_enabled"},
                 {Setting::Type::Boolean, "numkeys_in_inventory"},
 				{Setting::Type::Boolean, "numkeys_change_slot"},
 				{Setting::Type::Slider, "quick_turn_speed_mkb_control"},
@@ -7403,6 +7431,10 @@ bind_failed:
                 allSettings.controls[bound_player].gamepad_camera_invert_y, [](Button& button)
                 {soundToggleSetting(button); allSettings.controls[bound_player].gamepad_camera_invert_y = button.isPressed();});
 
+			y += settingsAddBooleanOption(*settings_subwindow, y, "spell_quickcast_controller_enabled", Language::get(6994), Language::get(6995),
+				allSettings.controls[bound_player].spell_quickcast_controller_enabled, [](Button& button)
+				{soundToggleSetting(button); allSettings.controls[bound_player].spell_quickcast_controller_enabled = button.isPressed(); });
+
 			y += settingsAddSlider(*settings_subwindow, y, "quick_turn_speed_control", Language::get(6310), Language::get(6311),
 				allSettings.controls[bound_player].quick_turn_speed_control, 1.f, 5.f, sliderFloorInt, [](Slider& slider)
 				{soundSliderSetting(slider, true); allSettings.controls[bound_player].quick_turn_speed_control = slider.getValue(); });
@@ -7416,6 +7448,7 @@ bind_failed:
 				{Setting::Type::Slider, "gamepad_deadzone_right"},
                 {Setting::Type::Boolean, "gamepad_camera_invert_x"},
                 {Setting::Type::Boolean, "gamepad_camera_invert_y"},
+				{Setting::Type::Boolean, "spell_quickcast_controller_enabled"},
 				{Setting::Type::Slider, "quick_turn_speed_control"},
             });
         }

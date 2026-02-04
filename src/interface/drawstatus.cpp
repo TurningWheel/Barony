@@ -2263,7 +2263,7 @@ void drawStatusNew(const int player)
 						else if ( !disableItemUsage && (itemCategory(item) == POTION || itemCategory(item) == SPELLBOOK 
 							|| itemCategory(item) == SPELL_CAT
 							|| item->type == FOOD_CREAMPIE) &&
-							(keystatus[SDLK_LALT] || keystatus[SDLK_RALT]) )
+							(/*keystatus[SDLK_LALT] || keystatus[SDLK_RALT]*/Input::inputs[player].binary("Alternate Use Modifier") ))
 						{
 							Input::inputs[player].consumeBinaryToggle("MenuRightClick");
 							if ( itemCategory(item) == SPELL_CAT )
@@ -2949,6 +2949,18 @@ void drawStatusNew(const int player)
 					{
 						hotbar_t.selectHotbarSlot(centerSlot);
 					}
+
+					/*if ( pressed != Player::Hotbar_t::GROUP_NONE )
+					{
+						// up arrow possibility to alt use
+						if ( Input::inputs[player].binaryToggle("Cycle NPCs") )
+						{
+							Input::inputs[player].consumeBinaryToggle("Cycle NPCs");
+							Input::inputs[player].consumeBinaryToggle(inputName.c_str());
+							Input::inputs[player].consumeBindingsSharedWithBinding("Cycle NPCs");
+							pressed = Player::Hotbar_t::GROUP_NONE;
+						}
+					}*/
 					break;
 				}
 			}
@@ -3255,8 +3267,33 @@ void drawStatusNew(const int player)
 				learnedSpell = (playerLearnedSpellbook(player, item) || itemIsEquipped(item, player));
 			}
 
+			bool quickcastSpell = false;
+			if ( inputs.hasController(player) )
+			{
+				quickcastSpell = playerSettings[multiplayer ? 0 : player].spell_quickcast_controller;
+			}
+			else if ( inputs.bPlayerUsingKeyboardControl(player) )
+			{
+				quickcastSpell = playerSettings[multiplayer ? 0 : player].spell_quickcast_mkb;
+			}
+			else
+			{
+				quickcastSpell = playerSettings[multiplayer ? 0 : player].spell_quickcast_controller;
+			}
+
 			bool altUse = false;
-			if ( (keystatus[SDLK_LALT] || keystatus[SDLK_RALT])
+			if ( itemCategory(item) == SPELL_CAT && quickcastSpell )
+			{
+				if ( input.binary("Alternate Use Modifier") )
+				{
+					// normal equip cycle
+				}
+				else
+				{
+					altUse = true;
+				}
+			}
+			else if ( (/*keystatus[SDLK_LALT] || keystatus[SDLK_RALT]*/ input.binary("Alternate Use Modifier"))
 				&& (itemCategory(item) == POTION || itemCategory(item) == SPELLBOOK || itemCategory(item) == SPELL_CAT
 				|| item->type == FOOD_CREAMPIE) )
 			{
