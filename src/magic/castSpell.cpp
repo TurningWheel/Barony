@@ -7205,6 +7205,14 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						{
 							if ( stats[i]->getEffectActive(c) )
 							{
+								if ( c == EFF_BLIND && players[i]->entity->effectShapeshift == NOTHING 
+									&& stats[i]->mask
+									&& (stats[i]->mask->type == TOOL_BLINDFOLD
+										|| stats[i]->mask->type == TOOL_BLINDFOLD_TELEPATHY
+										|| stats[i]->mask->type == TOOL_BLINDFOLD_FOCUS) )
+								{
+									continue;
+								}
 								stats[i]->clearEffect(c);
 								if ( stats[i]->EFFECTS_TIMERS[c] > 0 )
 								{
@@ -7265,6 +7273,15 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 									{
 										if ( target_stat->getEffectActive(c) )
 										{
+											if ( c == EFF_BLIND && (entity->behavior == &actMonster
+													|| (entity->behavior == &actPlayer && entity->effectShapeshift == NOTHING))
+												&& target_stat->mask
+												&& (target_stat->mask->type == TOOL_BLINDFOLD
+													|| target_stat->mask->type == TOOL_BLINDFOLD_TELEPATHY
+													|| target_stat->mask->type == TOOL_BLINDFOLD_FOCUS) )
+											{
+												continue;
+											}
 											target_stat->clearEffect(c);
 											if ( target_stat->EFFECTS_TIMERS[c] > 0 )
 											{
