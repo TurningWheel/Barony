@@ -5327,7 +5327,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							{
 								serverSpawnMiscParticles(target, PARTICLE_EFFECT_ABILITY_ROCK, 78);
 							}
+							target->removeLightField();
 							list_RemoveNode(target->mynode);
+
+							generatePathMaps();
 						}
 						itemPool.clear();
 					}
