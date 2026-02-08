@@ -1,5 +1,8 @@
 **/books/*
 build/*
+build-mac/
+build-mac-steamcheck/
+docker/
 **/data/*
 **/fonts/*
 **/images/*
