@@ -29499,6 +29499,14 @@ std::string& CalloutRadialMenu::WorldIconEntry_t::getPlayerIconPath(const int pl
 			return pathPlayer2;
 		case 3:
 			return pathPlayerX;
+		case 4:
+			return pathPlayerX;
+		case 5:
+			return pathPlayer3;
+		case 6:
+			return pathPlayer4;
+		case 7:
+			return pathPlayerX;
 		default:
 			return pathPlayerX;
 			break;
@@ -29515,6 +29523,14 @@ std::string& CalloutRadialMenu::WorldIconEntry_t::getPlayerIconPath(const int pl
 		case 2:
 			return pathPlayer3;
 		case 3:
+			return pathPlayer4;
+		case 4:
+			return pathPlayer4;
+		case 5:
+			return pathPlayer2;
+		case 6:
+			return pathPlayer3;
+		case 7:
 			return pathPlayer4;
 		default:
 			return pathPlayerX;

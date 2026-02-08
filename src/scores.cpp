@@ -2587,6 +2587,36 @@ SaveGameInfo getSaveGameInfo(bool singleplayer, int saveIndex)
 	if (!result) {
 		info.game_version = -1;
 	}
+
+	// Compatibility for legacy saves that do not serialize players_connected.
+	if ( result && !info.players.empty() )
+	{
+		const size_t playerCount = info.players.size();
+		if ( info.players_connected.empty() )
+		{
+			info.players_connected.assign(playerCount, 0);
+			if ( info.multiplayer_type == SINGLE )
+			{
+				info.players_connected[0] = 1;
+			}
+			else
+			{
+				for ( size_t i = 0; i < playerCount; ++i )
+				{
+					info.players_connected[i] = 1;
+				}
+			}
+		}
+		else if ( info.players_connected.size() != playerCount )
+		{
+			const int fillValue = info.multiplayer_type == SINGLE ? 0 : 1;
+			info.players_connected.resize(playerCount, fillValue);
+			if ( info.multiplayer_type == SINGLE && !info.players_connected.empty() )
+			{
+				info.players_connected[0] = 1;
+			}
+		}
+	}
 	
 	// check hash
 	Uint32 hash = 0;

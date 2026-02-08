@@ -2123,27 +2123,51 @@ int Player::Ghost_t::getSpriteForPlayer(const int player)
 {
 	if ( !colorblind_lobby )
 	{
-		return ((player < 4) ? (GHOST_MODEL_P1 + player) : GHOST_MODEL_PX);
+		// Reuse existing ghost palettes for players 5-8 when unique assets are unavailable.
+		switch ( player )
+		{
+			case 0:
+				return GHOST_MODEL_P1;
+			case 1:
+				return GHOST_MODEL_P2;
+			case 2:
+				return GHOST_MODEL_P3;
+			case 3:
+				return GHOST_MODEL_P4;
+			case 4:
+				return GHOST_MODEL_PX;
+			case 5:
+				return GHOST_MODEL_P2;
+			case 6:
+				return GHOST_MODEL_P3;
+			case 7:
+				return GHOST_MODEL_P4;
+			default:
+				return GHOST_MODEL_PX;
+		}
 	}
-	Uint32 index = 4;
+
 	switch ( player )
 	{
-	case 0:
-		index = 2;
-		break;
-	case 1:
-		index = 3;
-		break;
-	case 2:
-		index = 1;
-		break;
-	case 3:
-		index = 4;
-		break;
-	default:
-		break;
+		case 0:
+			return GHOST_MODEL_P3;
+		case 1:
+			return GHOST_MODEL_P4;
+		case 2:
+			return GHOST_MODEL_P2;
+		case 3:
+			return GHOST_MODEL_PX;
+		case 4:
+			return GHOST_MODEL_PX;
+		case 5:
+			return GHOST_MODEL_P3;
+		case 6:
+			return GHOST_MODEL_P4;
+		case 7:
+			return GHOST_MODEL_PX;
+		default:
+			return GHOST_MODEL_PX;
 	}
-	return GHOST_MODEL_P1 + index;
 }
 
 void actDeathGhostLimb(Entity* my)

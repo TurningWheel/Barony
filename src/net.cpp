@@ -398,13 +398,17 @@ bool messagePlayerColor(int player, Uint32 type, Uint32 color, char const * cons
 		return true;
 	}
     
-    // don't bother printing any message if we're not in game, it just clutters the log
-    if (intro) {
-        return false;
-    }
+	// don't bother printing any message if we're not in game, it just clutters the log
+	if (intro) {
+		return false;
+	}
+	if ( !players[player] )
+	{
+		return false;
+	}
 
-    // if this is for a local player, but we've disabled this message type, don't print it!
-    const bool localPlayer = players[player]->isLocalPlayer();
+	// if this is for a local player, but we've disabled this message type, don't print it!
+	const bool localPlayer = players[player]->isLocalPlayer();
 
 	bool result = false;
 	if ( localPlayer )
@@ -446,7 +450,7 @@ bool messagePlayerColor(int player, Uint32 type, Uint32 color, char const * cons
 	char tempstr[256];
 	for ( c = 0; c < MAXPLAYERS; c++ )
 	{
-		if ( client_disconnected[c] )
+		if ( client_disconnected[c] || !stats[c] )
 		{
 			continue;
 		}
@@ -1392,11 +1396,11 @@ void serverUpdatePlayerSummonStrength(int player)
 	{
 		return;
 	}
-	if ( player <= 0 || player > MAXPLAYERS )
+	if ( player <= 0 || player >= MAXPLAYERS )
 	{
 		return;
 	}
-	if ( client_disconnected[player] || !stats[player] || players[player]->isLocalPlayer() )
+	if ( client_disconnected[player] || !players[player] || !stats[player] || players[player]->isLocalPlayer() )
 	{
 		return;
 	}
@@ -1522,7 +1526,7 @@ void sendAllyCommandClient(int player, Uint32 uid, int command, Uint8 x, Uint8 y
 	sendPacket(net_sock, -1, net_packet, 0);
 }
 
-NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest(int& outResult, bool lockedSlots[4])
+NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest(int& outResult, bool lockedSlots[MAXPLAYERS])
 {
     printlog("processing lobby join request\n");
 
@@ -2109,7 +2113,7 @@ void clientActions(Entity* entity)
 				playernum = SDLNet_Read32(&net_packet->data[30]);
 				if ( playernum >= 0 && playernum < MAXPLAYERS )
 				{
-					if ( players[playernum] && players[playernum]->entity )
+					if ( players[playernum] )
 					{
 						players[playernum]->entity = entity;
 					}
@@ -6931,15 +6935,15 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 
 	// pause game
 	{'PAUS', [](){
-		messagePlayer(clientnum, MESSAGE_MISC, Language::get(1118), stats[net_packet->data[4]]->name);
 		const int j = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
+		messagePlayer(clientnum, MESSAGE_MISC, Language::get(1118), stats[j] ? stats[j]->name : "Unknown");
 		pauseGame(2, j);
 	}},
 
 	// unpause game
 	{'UNPS', [](){
-		messagePlayer(clientnum, MESSAGE_MISC, Language::get(1119), stats[net_packet->data[4]]->name);
 		const int j = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
+		messagePlayer(clientnum, MESSAGE_MISC, Language::get(1119), stats[j] ? stats[j]->name : "Unknown");
 		pauseGame(1, j);
 	}},
 
@@ -7517,12 +7521,13 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 
 	// clicked entity out of range
 	{'CKOR', [](){
+		const int player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
 		Uint32 uid = SDLNet_Read32(&net_packet->data[5]);
 		Entity* entity = uidToEntity(uid);
 		if ( entity )
 		{
-			client_selected[net_packet->data[4]] = entity;
-			inrange[net_packet->data[4]] = false;
+			client_selected[player] = entity;
+			inrange[player] = false;
 		}
 	}},
 
@@ -9506,6 +9511,11 @@ bool handleSafePacket()
 		{
 			int receivedPacketNum = SDLNet_Read32(&net_packet->data[5]);
 			Uint8 fromClientnum = net_packet->data[4];
+			if ( fromClientnum >= MAXPLAYERS )
+			{
+				printlog("[NET]: Ignoring SAFE packet from invalid client index %u", static_cast<unsigned>(fromClientnum));
+				return true;
+			}
 
 			if ( ticks > (60 * TICKS_PER_SECOND) && (ticks % (TICKS_PER_SECOND / 2) == 0) )
 			{
@@ -9548,7 +9558,7 @@ bool handleSafePacket()
 			}
 			else
 			{
-				if ( j > 0 )
+				if ( j > 0 && j < MAXPLAYERS )
 				{
 					net_packet->address.host = net_clients[j - 1].host;
 					net_packet->address.port = net_clients[j - 1].port;
@@ -9562,7 +9572,7 @@ bool handleSafePacket()
 			}
 			else
 			{
-				if ( j > 0 )
+				if ( j > 0 && j < MAXPLAYERS )
 				{
 					sendPacket(net_sock, -1, net_packet, j - 1);
 				}

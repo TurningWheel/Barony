@@ -1282,10 +1282,10 @@ Sint32 itemModel(const Item* const item, bool shortModel, Entity* creature)
 
 	int index = shortModel ? items[item->type].indexShort : items[item->type].index;
 
-	if ( item->type == TOOL_PLAYER_LOOT_BAG )
-	{
-		if ( colorblind_lobby )
+		if ( item->type == TOOL_PLAYER_LOOT_BAG )
 		{
+			if ( colorblind_lobby )
+			{
 			int playerOwner = item->getLootBagPlayer();
 			Uint32 playerIndex = 4;
 			switch ( playerOwner )
@@ -1302,16 +1302,44 @@ Sint32 itemModel(const Item* const item, bool shortModel, Entity* creature)
 			case 3:
 				playerIndex = 4;
 				break;
+			case 4:
+				playerIndex = 5;
+				break;
+			case 5:
+				playerIndex = 6;
+				break;
+			case 6:
+				playerIndex = 7;
+				break;
+			case 7:
+				playerIndex = 8;
+				break;
 			default:
 				break;
 			}
-			return index + playerIndex;
+				return index + playerIndex;
+			}
+			else
+			{
+				int playerOwner = item->getLootBagPlayer();
+				Uint32 playerIndex = playerOwner;
+				switch ( playerOwner )
+				{
+				case 5:
+					playerIndex = 2;
+					break;
+				case 6:
+					playerIndex = 3;
+					break;
+				case 7:
+					playerIndex = 4;
+					break;
+				default:
+					break;
+				}
+				return index + playerIndex;
+			}
 		}
-		else
-		{
-			return index + item->getLootBagPlayer();
-		}
-	}
 	else if ( item->type == MAGICSTAFF_SCEPTER )
 	{
 		if ( item->appearance % MAGICSTAFF_SCEPTER_CHARGE_MAX == 0 )

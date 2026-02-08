@@ -2293,11 +2293,11 @@ std::string getItemSpritePath(const int player, Item& item)
 		node_t* imagePathsNode = nullptr;
 		if ( item.type == TOOL_PLAYER_LOOT_BAG )
 		{
-			if ( colorblind_lobby )
-			{
-				int playerOwner = item.getLootBagPlayer();
-				Uint32 index = 4;
-				switch ( playerOwner )
+				if ( colorblind_lobby )
+				{
+					int playerOwner = item.getLootBagPlayer();
+					Uint32 index = 4;
+					switch ( playerOwner )
 				{
 					case 0:
 						index = 2;
@@ -2308,20 +2308,48 @@ std::string getItemSpritePath(const int player, Item& item)
 					case 2:
 						index = 1;
 						break;
-					case 3:
-						index = 4;
-						break;
-					default:
-						break;
-				}
+						case 3:
+							index = 4;
+							break;
+						case 4:
+							index = 5;
+							break;
+						case 5:
+							index = 6;
+							break;
+						case 6:
+							index = 7;
+							break;
+						case 7:
+							index = 8;
+							break;
+						default:
+							break;
+					}
 
-				imagePathsNode = list_Node(&items[item.type].images, index);
+					imagePathsNode = list_Node(&items[item.type].images, index);
+				}
+				else
+				{
+					int playerOwner = item.getLootBagPlayer();
+					Uint32 index = playerOwner;
+					switch ( playerOwner )
+					{
+						case 5:
+							index = 2;
+							break;
+						case 6:
+							index = 3;
+							break;
+						case 7:
+							index = 4;
+							break;
+						default:
+							break;
+					}
+					imagePathsNode = list_Node(&items[item.type].images, index);
+				}
 			}
-			else
-			{
-				imagePathsNode = list_Node(&items[item.type].images, item.getLootBagPlayer());
-			}
-		}
 		else if ( item.type == MAGICSTAFF_SCEPTER )
 		{
 			if ( item.appearance % MAGICSTAFF_SCEPTER_CHARGE_MAX == 0 )

@@ -1,6 +1,8 @@
-# MOD WIP
+# 8-Player Mod
 
-This is an attempt at modding the original Barony executable to allow for additional player count. It is not yet functional.
+This branch enables 8-player multiplayer support on top of the latest open-source Barony build.
+
+8-player mode is treated as the default target in this branch across CMake, Visual Studio, and Xcode project configs.
 
 ---
 

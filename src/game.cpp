@@ -4076,7 +4076,7 @@ static void bindControllerToPlayer(int id, int player) {
     inputs.getVirtualMouse(player)->draw_cursor = false;
     inputs.getVirtualMouse(player)->lastMovementFromController = true;
     printlog("(Device %d bound to player %d)", id, player);
-    for (int c = 0; c < 4; ++c) {
+    for (int c = 0; c < MAX_SPLITSCREEN; ++c) {
         auto& input = Input::inputs[c];
 	    input.refresh();
     }
@@ -4991,7 +4991,7 @@ bool handleEvents(void)
 					printlog("Device %d successfully initialized as game controller in slot %d.\n", sdl_device_index, id);
 					controller.initBindings();
 					Input::gameControllers[id] = controller.getControllerDevice();
-					for (int c = 0; c < 4; ++c) {
+					for (int c = 0; c < MAX_SPLITSCREEN; ++c) {
 						Input::inputs[c].refresh();
 					}
 					break;
@@ -5034,7 +5034,7 @@ bool handleEvents(void)
 						printlog("Device %d removed as game controller (it was in slot %d).\n", instanceID, id);
 						controller.close();
 						Input::gameControllers.erase(id);
-						for ( int c = 0; c < 4; ++c ) {
+						for ( int c = 0; c < MAX_SPLITSCREEN; ++c ) {
 							Input::inputs[c].refresh();
 						}
 					}
@@ -5066,7 +5066,7 @@ bool handleEvents(void)
 					printlog(" NumAxes: %d", SDL_JoystickNumAxes(joystick));
 					printlog(" NumButtons: %d", SDL_JoystickNumButtons(joystick));
 					printlog(" NumHats: %d", SDL_JoystickNumHats(joystick));
-					for (int c = 0; c < 4; ++c) {
+					for (int c = 0; c < MAX_SPLITSCREEN; ++c) {
 						Input::inputs[c].refresh();
 					}
 				}
@@ -5154,7 +5154,7 @@ bool handleEvents(void)
 							index = pair.first;
 							printlog("Removed joystick with device index (%d), instance id (%d)", index, event.jdevice.which);
 							Input::joysticks.erase(index);
-							for ( int c = 0; c < 4; ++c ) {
+							for ( int c = 0; c < MAX_SPLITSCREEN; ++c ) {
 								Input::inputs[c].refresh();
 							}
 							break;
@@ -5352,7 +5352,7 @@ void pauseGame(int mode /* 0 == toggle, 1 == force unpause, 2 == force pause */,
 	    playSound(500, 96);
 		gamePaused = true;
 		bool noOneUsingKeyboard = true;
-		for (int c = 0; c < 4; ++c)
+		for (int c = 0; c < MAX_SPLITSCREEN; ++c)
 		{
 		    if (inputs.bPlayerUsingKeyboardControl(c) && MainMenu::isPlayerSignedIn(c) && players[c]->isLocalPlayer()) {
 		        noOneUsingKeyboard = false;
@@ -7341,7 +7341,7 @@ int main(int argc, char** argv)
 		if (!nxIsHandheldMode()) {
 			nxAssignControllers(1, 1, true, false, true, false, nullptr);
 		}
-		for (int c = 0; c < 4; ++c) {
+		for (int c = 0; c < MAX_SPLITSCREEN; ++c) {
 			game_controllers[c].open(0, c); // first parameter is not used by Nintendo.
 			bindControllerToPlayer(c, c);
 		}

@@ -17,6 +17,20 @@ if (NOT DEFINED STEAMWORKS_ENABLED)
 	endif()
 endif()
 
+if (DEFINED ENV{BARONY_SUPER_MULTIPLAYER} AND NOT DEFINED BARONY_SUPER_MULTIPLAYER)
+	set (BARONY_SUPER_MULTIPLAYER $ENV{BARONY_SUPER_MULTIPLAYER})
+endif()
+
+if (NOT DEFINED BARONY_SUPER_MULTIPLAYER)
+	option(BARONY_SUPER_MULTIPLAYER "Enable 8 Player Multiplayer" ON)
+endif()
+
+if (BARONY_SUPER_MULTIPLAYER)
+	set (BARONY_SUPER_MULTIPLAYER 1)
+else()
+	set (BARONY_SUPER_MULTIPLAYER 0)
+endif()
+
 if (DEFINED ENV{OPTIMIZATION_LEVEL})
 	set (OPTIMIZATION_LEVEL $ENV{OPTIMIZATION_LEVEL})
 else()
@@ -193,7 +207,13 @@ endif()
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
-set(CMAKE_OSX_ARCHITECTURES x86_64)
+if (APPLE AND NOT DEFINED CMAKE_OSX_ARCHITECTURES)
+	if (CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "arm64|aarch64")
+		set(CMAKE_OSX_ARCHITECTURES arm64 CACHE STRING "Build architectures for macOS")
+	else()
+		set(CMAKE_OSX_ARCHITECTURES x86_64 CACHE STRING "Build architectures for macOS")
+	endif()
+endif()
 
 if (EDITOR_ENABLED)
 	set(EDITOR_EXE_NAME "editor" CACHE STRING "Editor executable name")
@@ -204,6 +224,12 @@ if (STEAMWORKS_ENABLED)
 	message("Building with steamworks")
 else()
 	message("Building without steamworks")
+endif()
+
+if (BARONY_SUPER_MULTIPLAYER)
+	message("Building with Barony Super Multiplayer")
+else()
+	message("Building without Barony Super Multiplayer")
 endif()
 
 if (EOS_ENABLED)

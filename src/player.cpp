@@ -7279,13 +7279,20 @@ void Player::clearGUIPointers()
 const char* Player::getAccountName() const {
     const char* unknown = "...";
     if (directConnect) {
-	    switch (playernum) {
-	    case 0: return "Player 1";
-	    case 1: return "Player 2";
-	    case 2: return "Player 3";
-	    case 3: return "Player 4";
-	    default: return unknown;
-	    }
+		static std::array<std::array<char, 16>, MAXPLAYERS> directConnectNames = []()
+		{
+			std::array<std::array<char, 16>, MAXPLAYERS> result{};
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				snprintf(result[i].data(), result[i].size(), "Player %d", i + 1);
+			}
+			return result;
+		}();
+		if ( playernum >= 0 && playernum < MAXPLAYERS )
+		{
+			return directConnectNames[playernum].data();
+		}
+		return unknown;
     } else {
 		if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
 #ifdef STEAMWORKS

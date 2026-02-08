@@ -4412,6 +4412,54 @@ std::vector<std::vector<std::string>> playerXPCapPaths = {
 	}
 };
 
+static int getXPBarThemeIndex(const int player)
+{
+	if ( !colorblind_lobby )
+	{
+		switch ( player )
+		{
+			case 0:
+			default:
+				return 0;
+			case 1:
+				return 1;
+			case 2:
+				return 2;
+			case 3:
+				return 3;
+			case 4:
+				return 4;
+			case 5:
+				return 2;
+			case 6:
+				return 3;
+			case 7:
+				return 4;
+		}
+	}
+
+	switch ( player )
+	{
+		case 0:
+		default:
+			return 2;
+		case 1:
+			return 3;
+		case 2:
+			return 1;
+		case 3:
+			return 4;
+		case 4:
+			return 4;
+		case 5:
+			return 2;
+		case 6:
+			return 3;
+		case 7:
+			return 4;
+	}
+}
+
 void createXPBar(const int player)
 {
 	auto& hud_t = players[player]->hud;
@@ -4439,50 +4487,14 @@ void createXPBar(const int player)
 	progressClipFrame->setSize(SDL_Rect{ 0, 6, 1, progressBarHeight });
 
 	std::string bodyPath = "*#images/ui/HUD/xpbar/HUD_Exp_SandBody2_";
-	int xpPathNum = player;
-	if ( !colorblind_lobby )
+	int xpPathNum = getXPBarThemeIndex(player);
+	static const char* xpBodySuffixes[] = { "00.png", "01.png", "02.png", "03.png", "04.png" };
+	if ( xpPathNum < 0 || xpPathNum >= static_cast<int>(sizeof(xpBodySuffixes) / sizeof(xpBodySuffixes[0])) )
 	{
-		switch ( player )
-		{
-			case 0:
-			default:
-				bodyPath += "00.png";
-				break;
-			case 1:
-				bodyPath += "01.png";
-				break;
-			case 2:
-				bodyPath += "02.png";
-				break;
-			case 3:
-				bodyPath += "03.png";
-				break;
-		}
+		xpPathNum = 0;
 	}
-	else
-	{
-		switch ( player )
-		{
-			case 0:
-			default:
-				bodyPath += "02.png";
-				xpPathNum = 2;
-				break;
-			case 1:
-				bodyPath += "03.png";
-				xpPathNum = 3;
-				break;
-			case 2:
-				bodyPath += "01.png";
-				xpPathNum = 1;
-				break;
-			case 3:
-				bodyPath += "04.png";
-				xpPathNum = 4;
-				break;
-		}
-	}
-	if ( player >= playerXPCapPaths.size() )
+	bodyPath += xpBodySuffixes[xpPathNum];
+	if ( xpPathNum >= static_cast<int>(playerXPCapPaths.size()) )
 	{
 		xpPathNum = 0;
 	}
@@ -31654,24 +31666,8 @@ void Player::HUD_t::updateXPBar()
 		if ( ticks % 5 == 0 )
 		{
 			bool moving = (xpBar.animateSetpoint * 10.0 - xpBar.animateValue != 0);
-			std::string playerStr = "00";
-			switch ( player.playernum )
-			{
-				case 0:
-				default:
-					break;
-				case 1:
-					playerStr = "01";
-					break;
-				case 2:
-					playerStr = "02";
-					break;
-				case 3:
-					playerStr = "03";
-					break;
-			}
-			int xpPathNum = player.playernum;
-			if ( player.playernum >= playerXPCapPaths.size() )
+			int xpPathNum = getXPBarThemeIndex(player.playernum);
+			if ( xpPathNum < 0 || xpPathNum >= static_cast<int>(playerXPCapPaths.size()) )
 			{
 				xpPathNum = 0;
 			}
