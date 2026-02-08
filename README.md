@@ -1,3 +1,13 @@
+# MOD WIP
+
+This is an attempt at modding the original Barony executable to allow for additional player count. It is not yet functional.
+
+---
+
+# ORIGINAL README BELOW
+
+---
+
 ![Linux-CI_fmod_steam](https://github.com/TurningWheel/Barony/workflows/Linux-CI_fmod_steam/badge.svg) ![Linux-CI_fmod_steam_eos](https://github.com/TurningWheel/Barony/workflows/Linux-CI_fmod_steam_eos/badge.svg)
 
 # Update - 3rd October 2023
