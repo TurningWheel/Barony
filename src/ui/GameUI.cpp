@@ -27,6 +27,7 @@
 #include "../shops.hpp"
 #include "../colors.hpp"
 #include "../book.hpp"
+#include "../player_slot_map.hpp"
 #include "../ui/MainMenu.hpp"
 
 #include <assert.h>
@@ -4414,48 +4415,14 @@ std::vector<std::vector<std::string>> playerXPCapPaths = {
 
 static int getXPBarThemeIndex(const int player)
 {
-	static int normalThemeByPlayer[MAXPLAYERS];
-	static int colorblindThemeByPlayer[MAXPLAYERS];
-	static bool initialized = false;
-	if ( !initialized )
-	{
-		const int normalPrimary[] = { 0, 1, 2, 3, 4 };
-		const int normalCycle[] = { 2, 3, 4 };
-		const int colorblindPrimary[] = { 2, 3, 1, 4, 4 };
-		const int colorblindCycle[] = { 2, 3, 4 };
-		auto buildThemeMap = [](int* outMap,
-			const int* primary, const int primaryCount,
-			const int* cycle, const int cycleCount)
-		{
-			for ( int i = 0; i < MAXPLAYERS; ++i )
-			{
-				if ( i < primaryCount )
-				{
-					outMap[i] = primary[i];
-				}
-				else if ( cycleCount > 0 )
-				{
-					outMap[i] = cycle[(i - primaryCount) % cycleCount];
-				}
-				else if ( primaryCount > 0 )
-				{
-					outMap[i] = primary[primaryCount - 1];
-				}
-				else
-				{
-					outMap[i] = 0;
-				}
-			}
-		};
-
-		buildThemeMap(normalThemeByPlayer,
-			normalPrimary, static_cast<int>(sizeof(normalPrimary) / sizeof(normalPrimary[0])),
-			normalCycle, static_cast<int>(sizeof(normalCycle) / sizeof(normalCycle[0])));
-		buildThemeMap(colorblindThemeByPlayer,
-			colorblindPrimary, static_cast<int>(sizeof(colorblindPrimary) / sizeof(colorblindPrimary[0])),
-			colorblindCycle, static_cast<int>(sizeof(colorblindCycle) / sizeof(colorblindCycle[0])));
-		initialized = true;
-	}
+	static const int normalPrimary[] = { 0, 1, 2, 3, 4 };
+	static const int normalCycle[] = { 2, 3, 4 };
+	static const int colorblindPrimary[] = { 2, 3, 1, 4, 4 };
+	static const int colorblindCycle[] = { 2, 3, 4 };
+	static const PlayerSlotLookup<int, MAXPLAYERS> normalThemeByPlayer =
+		buildPlayerSlotLookup<int, MAXPLAYERS>(normalPrimary, normalCycle, 0);
+	static const PlayerSlotLookup<int, MAXPLAYERS> colorblindThemeByPlayer =
+		buildPlayerSlotLookup<int, MAXPLAYERS>(colorblindPrimary, colorblindCycle, 0);
 
 	if ( player < 0 || player >= MAXPLAYERS )
 	{

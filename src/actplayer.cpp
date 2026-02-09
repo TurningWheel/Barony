@@ -28,6 +28,7 @@
 #include "draw.hpp"
 #include "mod_tools.hpp"
 #include "classdescriptions.hpp"
+#include "player_slot_map.hpp"
 #include "ui/MainMenu.hpp"
 #include "interface/consolecommand.hpp"
 #ifdef USE_PLAYFAB
@@ -2121,52 +2122,19 @@ Uint32 Player::Ghost_t::cooldownTeleportDelay = TICKS_PER_SECOND * 3;
 
 int Player::Ghost_t::getSpriteForPlayer(const int player)
 {
-	static int normalGhostModelByPlayer[MAXPLAYERS];
-	static int colorblindGhostModelByPlayer[MAXPLAYERS];
-	static bool initialized = false;
-	if ( !initialized )
-	{
-		const int normalPrimary[] = {
-			GHOST_MODEL_P1, GHOST_MODEL_P2, GHOST_MODEL_P3, GHOST_MODEL_P4, GHOST_MODEL_PX
-		};
-		const int normalCycle[] = { GHOST_MODEL_P2, GHOST_MODEL_P3, GHOST_MODEL_P4 };
-		const int colorblindPrimary[] = {
-			GHOST_MODEL_P3, GHOST_MODEL_P4, GHOST_MODEL_P2, GHOST_MODEL_PX, GHOST_MODEL_PX
-		};
-		const int colorblindCycle[] = { GHOST_MODEL_P3, GHOST_MODEL_P4, GHOST_MODEL_PX };
-		auto buildModelMap = [](int* outMap,
-			const int* primary, const int primaryCount,
-			const int* cycle, const int cycleCount)
-		{
-			for ( int i = 0; i < MAXPLAYERS; ++i )
-			{
-				if ( i < primaryCount )
-				{
-					outMap[i] = primary[i];
-				}
-				else if ( cycleCount > 0 )
-				{
-					outMap[i] = cycle[(i - primaryCount) % cycleCount];
-				}
-				else if ( primaryCount > 0 )
-				{
-					outMap[i] = primary[primaryCount - 1];
-				}
-				else
-				{
-					outMap[i] = GHOST_MODEL_PX;
-				}
-			}
-		};
+	static const int normalPrimary[] = {
+		GHOST_MODEL_P1, GHOST_MODEL_P2, GHOST_MODEL_P3, GHOST_MODEL_P4, GHOST_MODEL_PX
+	};
+	static const int normalCycle[] = { GHOST_MODEL_P2, GHOST_MODEL_P3, GHOST_MODEL_P4 };
+	static const int colorblindPrimary[] = {
+		GHOST_MODEL_P3, GHOST_MODEL_P4, GHOST_MODEL_P2, GHOST_MODEL_PX, GHOST_MODEL_PX
+	};
+	static const int colorblindCycle[] = { GHOST_MODEL_P3, GHOST_MODEL_P4, GHOST_MODEL_PX };
 
-		buildModelMap(normalGhostModelByPlayer,
-			normalPrimary, static_cast<int>(sizeof(normalPrimary) / sizeof(normalPrimary[0])),
-			normalCycle, static_cast<int>(sizeof(normalCycle) / sizeof(normalCycle[0])));
-		buildModelMap(colorblindGhostModelByPlayer,
-			colorblindPrimary, static_cast<int>(sizeof(colorblindPrimary) / sizeof(colorblindPrimary[0])),
-			colorblindCycle, static_cast<int>(sizeof(colorblindCycle) / sizeof(colorblindCycle[0])));
-		initialized = true;
-	}
+	static const PlayerSlotLookup<int, MAXPLAYERS> normalGhostModelByPlayer =
+		buildPlayerSlotLookup<int, MAXPLAYERS>(normalPrimary, normalCycle, GHOST_MODEL_PX);
+	static const PlayerSlotLookup<int, MAXPLAYERS> colorblindGhostModelByPlayer =
+		buildPlayerSlotLookup<int, MAXPLAYERS>(colorblindPrimary, colorblindCycle, GHOST_MODEL_PX);
 
 	if ( player < 0 || player >= MAXPLAYERS )
 	{

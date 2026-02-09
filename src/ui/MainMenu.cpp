@@ -409,6 +409,9 @@ namespace MainMenu {
 	static bool playersInLobby[MAXPLAYERS];
 	static bool playerSlotsLocked[MAXPLAYERS];
 	static bool newPlayer[MAXPLAYERS];
+	static bool pendingReadyStateSync[MAXPLAYERS];
+	static Uint32 pendingReadyStateSyncTick[MAXPLAYERS];
+	static Uint8 pendingReadyStateSyncAttempts[MAXPLAYERS];
 	static void* saved_invite_lobby = nullptr;
 
     bool story_active = false;
@@ -949,10 +952,13 @@ namespace MainMenu {
 	static void createLocalOrNetworkMenu();
 	static void refreshLobbyBrowser();
 
-    static void sendPlayerOverNet();
-    static void sendReadyOverNet(int index, bool ready);
-    static void checkReadyStates();
-    static void sendChatMessageOverNet(Uint32 color, const char* msg, size_t len);
+	static void sendPlayerOverNet();
+	static void sendReadyOverNet(int index, bool ready);
+	static void checkReadyStates();
+	static bool sendReadyStateSnapshotToPlayer(int player);
+	static void queueReadyStateSnapshotForPlayer(int player);
+	static void flushPendingReadyStateSnapshots();
+	static void sendChatMessageOverNet(Uint32 color, const char* msg, size_t len);
     static void sendSvFlagsOverNet();
     static void doKeepAlive();
 	static void handleNetwork();
@@ -10791,9 +10797,9 @@ bind_failed:
     }
 
     static Frame* toggleLobbyChatWindow() {
-		if (!main_menu_frame) {
-			return nullptr;
-		}
+        if (!main_menu_frame) {
+            return nullptr;
+        }
         auto lobby = main_menu_frame->findFrame("lobby"); assert(lobby);
         auto frame = lobby->findFrame("chat window");
         if (frame) {
@@ -10806,12 +10812,13 @@ bind_failed:
         const SDL_Rect size = lobby->getSize();
         const int w = 848;
         const int h = 320;
+        const int pageX = lobby->getActualSize().x;
 
         static ConsoleVariable<Vector4> chatBgColor("/chat_background_color", Vector4{22.f, 24.f, 29.f, 223.f});
 
         frame = lobby->addFrame("chat window");
-		frame->setOwner(clientnum);
-        frame->setSize(SDL_Rect{(size.w - w) - 16, 64, w, h});
+        frame->setOwner(clientnum);
+        frame->setSize(SDL_Rect{pageX + (size.w - w) - 16, 64, w, h});
         frame->setBorderColor(makeColor(51, 33, 26, 255));
         frame->setColor(makeColor(chatBgColor->x, chatBgColor->y, chatBgColor->z, chatBgColor->w));
         frame->setBorder(0);
@@ -10819,9 +10826,12 @@ bind_failed:
             const int player = clientnum;
             auto frame = static_cast<Frame*>(&widget);
             auto lobby = static_cast<Frame*>(frame->getParent());
+            SDL_Rect framePos = frame->getSize();
+            framePos.x = lobby->getActualSize().x + (Frame::virtualScreenX - framePos.w) - 16;
+            frame->setSize(framePos);
 
-            const int w = frame->getSize().w;
-            const int h = frame->getSize().h;
+            const int w = framePos.w;
+            const int h = framePos.h;
 
             auto subframe = frame->findFrame("subframe"); assert(subframe);
             auto subframe_size = subframe->getActualSize();
@@ -11081,6 +11091,11 @@ bind_failed:
 	    for ( int c = 1; c < MAXPLAYERS; c++ ) {
 		    client_disconnected[c] = true;
 	    }
+		for (int c = 0; c < MAXPLAYERS; ++c) {
+			pendingReadyStateSync[c] = false;
+			pendingReadyStateSyncTick[c] = 0;
+			pendingReadyStateSyncAttempts[c] = 0;
+		}
 		currentLobbyType = LobbyType::None;
 
 		lobbyCustomScenarioClient.clear();
@@ -11455,8 +11470,8 @@ bind_failed:
 			std::string promptText;
 			if (targetCount > 4)
 			{
-				promptText = "WARNING: Above 4 players is experimental.\n"
-					"Desyncs and balance issues are possible.\n"
+				promptText = "WARNING: 5+ players\n"
+					"may desync or break.\n"
 					"Continue?";
 			}
 
@@ -11514,6 +11529,116 @@ bind_failed:
 			pendingKickPlayerSelection = targetPlayer;
 			binaryPrompt(prompt, Language::get(5400), Language::get(5401),
 				confirmLobbyKickSelection, cancelLobbyKickSelection);
+		}
+
+		static bool sendReadyStateSnapshotToPlayer(int player)
+		{
+			if ( multiplayer != SERVER )
+			{
+				return false;
+			}
+			if ( player <= 0 || player >= MAXPLAYERS || client_disconnected[player] )
+			{
+				return true;
+			}
+			if ( !main_menu_frame || main_menu_frame->isToBeDeleted() )
+			{
+				return false;
+			}
+
+			auto lobby = main_menu_frame->findFrame("lobby");
+			if ( !lobby || lobby->isToBeDeleted() )
+			{
+				return false;
+			}
+
+			// A newly joined client can miss historical REDY packets while it is still waiting for HELO.
+			// Mirror the host's current ready cards so the countdown logic starts from the correct state.
+			for ( int index = 0; index < MAXPLAYERS; ++index )
+			{
+				if ( client_disconnected[index] )
+				{
+					continue;
+				}
+
+				auto card = lobby->findFrame((std::string("card") + std::to_string(index)).c_str());
+				if ( !card )
+				{
+					continue;
+				}
+				auto backdrop = card->findImage("backdrop");
+				if ( !backdrop || backdrop->path != "*images/ui/Main Menus/Play/PlayerCreation/UI_Ready_Window00.png" )
+				{
+					continue;
+				}
+
+				memcpy(net_packet->data, "REDY", 4);
+				net_packet->data[4] = static_cast<Uint8>(index);
+				net_packet->data[5] = 1;
+				net_packet->len = 6;
+				net_packet->address.host = net_clients[player - 1].host;
+				net_packet->address.port = net_clients[player - 1].port;
+				sendPacketSafe(net_sock, -1, net_packet, player - 1);
+			}
+			return true;
+		}
+
+		static void queueReadyStateSnapshotForPlayer(int player)
+		{
+			if ( player <= 0 || player >= MAXPLAYERS )
+			{
+				return;
+			}
+			pendingReadyStateSync[player] = true;
+			pendingReadyStateSyncTick[player] = ticks + TICKS_PER_SECOND / 2;
+			pendingReadyStateSyncAttempts[player] = 3;
+		}
+
+		static void flushPendingReadyStateSnapshots()
+		{
+			if ( multiplayer != SERVER )
+			{
+				return;
+			}
+
+			for ( int player = 1; player < MAXPLAYERS; ++player )
+			{
+				if ( !pendingReadyStateSync[player] )
+				{
+					continue;
+				}
+				if ( client_disconnected[player] )
+				{
+					pendingReadyStateSync[player] = false;
+					pendingReadyStateSyncTick[player] = 0;
+					pendingReadyStateSyncAttempts[player] = 0;
+					continue;
+				}
+				if ( ticks < pendingReadyStateSyncTick[player] )
+				{
+					continue;
+				}
+
+				if ( !sendReadyStateSnapshotToPlayer(player) )
+				{
+					pendingReadyStateSyncTick[player] = ticks + TICKS_PER_SECOND / 2;
+					continue;
+				}
+
+				if ( pendingReadyStateSyncAttempts[player] > 0 )
+				{
+					--pendingReadyStateSyncAttempts[player];
+				}
+				if ( pendingReadyStateSyncAttempts[player] == 0 )
+				{
+					pendingReadyStateSync[player] = false;
+					pendingReadyStateSyncTick[player] = 0;
+				}
+				else
+				{
+					pendingReadyStateSyncTick[player] = ticks + TICKS_PER_SECOND;
+				}
+			}
 		}
 
 		static void sendReadyOverNet(int index, bool ready)
@@ -12015,11 +12140,20 @@ bind_failed:
 			sendCustomSeedOverNet();
 		}},
 
-		// keepalive
-		{'KPAL', [](){
-			const Uint8 player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
-			client_keepalive[player] = ticks;
-		}},
+			// keepalive
+			{'KPAL', [](){
+				const Uint8 player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
+				client_keepalive[player] = ticks;
+				if ( player > 0 && pendingReadyStateSync[player] )
+				{
+					if ( sendReadyStateSnapshotToPlayer(player) )
+					{
+						pendingReadyStateSync[player] = false;
+						pendingReadyStateSyncTick[player] = 0;
+						pendingReadyStateSyncAttempts[player] = 0;
+					}
+				}
+			}},
 
 		// the client sent a gameplayer preferences update
 		{'GPPR', []() {
@@ -12042,7 +12176,8 @@ bind_failed:
 		EOS_ProductUserId newRemoteProductId = nullptr;
 #endif
 
-        updateLobby();
+	        updateLobby();
+			flushPendingReadyStateSnapshots();
 
 		for (int numpacket = 0; numpacket < PACKET_LIMIT; numpacket++) {
 			if (directConnect) {
@@ -12188,11 +12323,12 @@ bind_failed:
 			        printlog("Player failed to join lobby");
 			    }
 
-			    // finally, open a player card!
-			    if (playerNum >= 1 && playerNum < MAXPLAYERS) {
-		            createReadyStone(playerNum, false, false);
-			    }
-			}
+				    // finally, open a player card!
+				    if (playerNum >= 1 && playerNum < MAXPLAYERS) {
+			            createReadyStone(playerNum, false, false);
+						queueReadyStateSnapshotForPlayer(playerNum);
+				    }
+				}
 
 		    auto find = serverPacketHandlers.find(packetId);
 		    if (find == serverPacketHandlers.end()) {
@@ -18925,6 +19061,16 @@ failed:
 		auto frame = lobby->addFrame("countdown");
 		frame->setSize(SDL_Rect{(Frame::virtualScreenX - 300) / 2, 64, 300, 120});
 		frame->setHollow(true);
+		frame->setTickCallback([](Widget& widget) {
+			auto frame = static_cast<Frame*>(&widget);
+			auto lobby = static_cast<Frame*>(widget.getParent());
+			if (!lobby) {
+				return;
+			}
+			SDL_Rect size = frame->getSize();
+			size.x = lobby->getActualSize().x + (Frame::virtualScreenX - size.w) / 2;
+			frame->setSize(size);
+		});
 
         static Uint32 countdown_end;
         countdown_end = ticks + TICKS_PER_SECOND * 3;
@@ -19239,11 +19385,10 @@ failed:
 				auto card = lobby->findFrame((std::string("card") + std::to_string(index)).c_str());
 				if (card) {
 					const int paperdollWidth = Frame::virtualScreenX / getLobbySlotsPerPage();
-					constexpr int paperdollPaddingX = 24;
 					paperdoll->setSize(SDL_Rect{
-						getLobbySlotCenterX(index) - paperdollWidth / 2 - paperdollPaddingX,
+						getLobbySlotCenterX(index) - paperdollWidth / 2,
 						0,
-						paperdollWidth + paperdollPaddingX * 2,
+						paperdollWidth,
 						Frame::virtualScreenY * 3 / 4
 						});
 					bool showPaperdoll = false;
@@ -19374,6 +19519,11 @@ failed:
 			}
 
 			SDL_Rect pos = frame.getSize();
+			const int pageX = frame.getActualSize().x;
+			const int visiblePage = std::max(0, pageX / Frame::virtualScreenX);
+			const int slotsPerPage = getLobbySlotsPerPage();
+			const int slotSpacing = Frame::virtualScreenX / slotsPerPage;
+			pos.x = pageX;
 			pos.y = 60 + 24 + 22;
 			pos.h = 60;
 
@@ -19387,7 +19537,12 @@ failed:
 			}
 			for ( int i = 0; i < MAXPLAYERS; ++i )
 			{
-				const int x = i * (Frame::virtualScreenX / 4) + 32; /*(Frame::virtualScreenX / 8) * (i * 2 + 1)*/;
+				if (getLobbySlotPage(i) != visiblePage)
+				{
+					continue;
+				}
+				const int slotInPage = std::max(0, i) % slotsPerPage;
+				const int x = slotInPage * slotSpacing + 32;
 				if ( !client_disconnected[i] && isPlayerSignedIn(i) )
 				{
 					auto& images = lobbyVoice->getImages();
@@ -19584,6 +19739,7 @@ failed:
 
 			SDL_Rect pos = frame.getSize();
 			pos.y = 60;
+			pos.x = frame.getActualSize().x;
 			lobbyWarnings->setSize(pos);
 
 			int customRunType = 0;
@@ -19684,7 +19840,7 @@ failed:
 					totalWidth += f->getSize().w;
 				}
 			}
-			pos.x = pos.w / 2 - totalWidth / 2;
+			pos.x = frame.getActualSize().x + pos.w / 2 - totalWidth / 2;
 			totalWidth += 8;
 			if ( pos.x % 2 == 1 )
 			{

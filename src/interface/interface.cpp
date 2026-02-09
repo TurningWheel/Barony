@@ -40,6 +40,7 @@
 #include "../ui/Slider.hpp"
 #include "../collision.hpp"
 #include "../classdescriptions.hpp"
+#include "../player_slot_map.hpp"
 
 Uint32 svFlags = 30;
 Uint32 settings_svFlags = svFlags;
@@ -29487,48 +29488,15 @@ void CalloutRadialMenu::closeCalloutMenuGUI()
 
 std::string& CalloutRadialMenu::WorldIconEntry_t::getPlayerIconPath(const int playernum)
 {
-	static int normalPaletteByPlayer[MAXPLAYERS];
-	static int colorblindPaletteByPlayer[MAXPLAYERS];
-	static bool initialized = false;
-	if ( !initialized )
-	{
-		const int normalPrimary[] = { 1, 2, 3, 4, 4 };
-		const int normalCycle[] = { 2, 3, 4 };
-		const int colorblindPrimary[] = { 3, 4, 2, 0, 0 };
-		const int colorblindCycle[] = { 3, 4, 0 };
-		auto buildPaletteMap = [](int* outMap,
-			const int* primary, const int primaryCount,
-			const int* cycle, const int cycleCount)
-		{
-			for ( int i = 0; i < MAXPLAYERS; ++i )
-			{
-				if ( i < primaryCount )
-				{
-					outMap[i] = primary[i];
-				}
-				else if ( cycleCount > 0 )
-				{
-					outMap[i] = cycle[(i - primaryCount) % cycleCount];
-				}
-				else if ( primaryCount > 0 )
-				{
-					outMap[i] = primary[primaryCount - 1];
-				}
-				else
-				{
-					outMap[i] = 0;
-				}
-			}
-		};
+	static const int normalPrimary[] = { 1, 2, 3, 4, 4 };
+	static const int normalCycle[] = { 2, 3, 4 };
+	static const int colorblindPrimary[] = { 3, 4, 2, 0, 0 };
+	static const int colorblindCycle[] = { 3, 4, 0 };
 
-		buildPaletteMap(normalPaletteByPlayer,
-			normalPrimary, static_cast<int>(sizeof(normalPrimary) / sizeof(normalPrimary[0])),
-			normalCycle, static_cast<int>(sizeof(normalCycle) / sizeof(normalCycle[0])));
-		buildPaletteMap(colorblindPaletteByPlayer,
-			colorblindPrimary, static_cast<int>(sizeof(colorblindPrimary) / sizeof(colorblindPrimary[0])),
-			colorblindCycle, static_cast<int>(sizeof(colorblindCycle) / sizeof(colorblindCycle[0])));
-		initialized = true;
-	}
+	static const PlayerSlotLookup<int, MAXPLAYERS> normalPaletteByPlayer =
+		buildPlayerSlotLookup<int, MAXPLAYERS>(normalPrimary, normalCycle, 0);
+	static const PlayerSlotLookup<int, MAXPLAYERS> colorblindPaletteByPlayer =
+		buildPlayerSlotLookup<int, MAXPLAYERS>(colorblindPrimary, colorblindCycle, 0);
 
 	if ( playernum < 0 || playernum >= MAXPLAYERS )
 	{

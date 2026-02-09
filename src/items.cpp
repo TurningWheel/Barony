@@ -25,6 +25,7 @@
 #include "net.hpp"
 #include "player.hpp"
 #include "mod_tools.hpp"
+#include "player_slot_map.hpp"
 
 #include <assert.h>
 
@@ -1286,47 +1287,14 @@ Sint32 itemModel(const Item* const item, bool shortModel, Entity* creature)
 	{
 		auto getLootBagModelOffset = [](const int playerOwner) -> Uint32
 		{
-			static Uint32 normalModelByPlayer[MAXPLAYERS];
-			static Uint32 colorblindModelByPlayer[MAXPLAYERS];
-			static bool initialized = false;
-			if ( !initialized )
-			{
-				const Uint32 normalPrimary[] = { 0, 1, 2, 3, 4 };
-				const Uint32 normalCycle[] = { 2, 3, 4 };
-				const Uint32 colorblindPrimary[] = { 2, 3, 1, 4, 5, 6, 7, 8 };
-				const Uint32 colorblindCycle[] = { 5, 6, 7, 8 };
-				auto buildModelMap = [](Uint32* outMap,
-					const Uint32* primary, const int primaryCount,
-					const Uint32* cycle, const int cycleCount)
-				{
-					for ( int i = 0; i < MAXPLAYERS; ++i )
-					{
-						if ( i < primaryCount )
-						{
-							outMap[i] = primary[i];
-						}
-						else if ( cycleCount > 0 )
-						{
-							outMap[i] = cycle[(i - primaryCount) % cycleCount];
-						}
-						else if ( primaryCount > 0 )
-						{
-							outMap[i] = primary[primaryCount - 1];
-						}
-						else
-						{
-							outMap[i] = 4;
-						}
-					}
-				};
-				buildModelMap(normalModelByPlayer,
-					normalPrimary, static_cast<int>(sizeof(normalPrimary) / sizeof(normalPrimary[0])),
-					normalCycle, static_cast<int>(sizeof(normalCycle) / sizeof(normalCycle[0])));
-				buildModelMap(colorblindModelByPlayer,
-					colorblindPrimary, static_cast<int>(sizeof(colorblindPrimary) / sizeof(colorblindPrimary[0])),
-					colorblindCycle, static_cast<int>(sizeof(colorblindCycle) / sizeof(colorblindCycle[0])));
-				initialized = true;
-			}
+			static const Uint32 normalPrimary[] = { 0, 1, 2, 3, 4 };
+			static const Uint32 normalCycle[] = { 2, 3, 4 };
+			static const Uint32 colorblindPrimary[] = { 2, 3, 1, 4, 5, 6, 7, 8 };
+			static const Uint32 colorblindCycle[] = { 5, 6, 7, 8 };
+			static const PlayerSlotLookup<Uint32, MAXPLAYERS> normalModelByPlayer =
+				buildPlayerSlotLookup<Uint32, MAXPLAYERS>(normalPrimary, normalCycle, 4);
+			static const PlayerSlotLookup<Uint32, MAXPLAYERS> colorblindModelByPlayer =
+				buildPlayerSlotLookup<Uint32, MAXPLAYERS>(colorblindPrimary, colorblindCycle, 4);
 
 			if ( playerOwner < 0 || playerOwner >= MAXPLAYERS )
 			{
