@@ -2543,7 +2543,7 @@ EquipItemResult equipItem(Item* const item, Item** const slot, const int player,
 
 -------------------------------------------------------------------------------*/
 
-void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDropping)
+void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDropping, bool serverCheckUse)
 {
 	if ( item == nullptr )
 	{
@@ -2597,7 +2597,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		}
 	}
 
-	EquipItemResult equipItemResult = EquipItemResult::EQUIP_ITEM_SUCCESS_UNEQUIP;
+	int equipItemResult = -1;
 
 	bool checkInventorySpaceForPaperDoll = players[player]->paperDoll.isItemOnDoll(*item);
 	if ( unequipForDropping )
@@ -3357,10 +3357,12 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		case TOOL_TOWEL:
 			item_ToolTowel(item, player);
 			if ( multiplayer == CLIENT )
+			{
 				if ( stats[player]->getEffectActive(EFF_BLEEDING) )
 				{
 					consumeItem(item, player);
 				}
+			}
 			break;
 		case TOOL_GLASSES:
 		case MONOCLE:
@@ -3456,6 +3458,10 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 					messagePlayer(player, MESSAGE_HINT, Language::get(3706));
 				}
 			}
+			if ( !players[player]->isLocalPlayer() )
+			{
+				consumeItem(item, player);
+			}
 			break;
 		case READABLE_BOOK:
 			if (numbooks && players[player]->isLocalPlayer() )
@@ -3474,6 +3480,10 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 					}
 				}
 			}
+			if ( !players[player]->isLocalPlayer() )
+			{
+				consumeItem(item, player);
+			}
 			break;
 		case SPELL_ITEM:
 		{
@@ -3481,6 +3491,10 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 			if (spell)
 			{
 				equipSpell(spell, player, item);
+			}
+			if ( !players[player]->isLocalPlayer() )
+			{
+				consumeItem(item, player);
 			}
 			break;
 		}
@@ -3750,6 +3764,33 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 				break;
 			default:
 				break;
+		}
+	}
+
+	if ( serverCheckUse )
+	{
+		if ( equipItemResult == EQUIP_ITEM_SUCCESS_UPDATE_QTY
+			|| equipItemResult == EQUIP_ITEM_FAIL_CANT_UNEQUIP )
+		{
+			if ( item->node )
+			{
+				list_RemoveNode(item->node);
+			}
+			else
+			{
+				free(item);
+			}
+		}
+		else if ( equipItemResult == -1 )
+		{
+			if ( item->node )
+			{
+				list_RemoveNode(item->node);
+			}
+			else
+			{
+				free(item);
+			}
 		}
 	}
 }

@@ -2734,7 +2734,7 @@ void onScrollUseAppraisalIncrease(Item* item, int player)
 	}
 }
 
-void item_ScrollMail(Item* item, int player)
+void item_ScrollMail(Item*& item, int player)
 {
 	if (players[player] == nullptr || players[player]->entity == nullptr)
 	{
@@ -2842,7 +2842,7 @@ void item_ScrollMail(Item* item, int player)
 	Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_LORE_PERCENT_READ, SCROLL_MAIL, (1 << (result)));
 }
 
-void item_ScrollIdentify(Item* item, int player)
+void item_ScrollIdentify(Item*& item, int player)
 {
 	if (players[player] == nullptr || players[player]->entity == nullptr)
 	{
@@ -2890,7 +2890,7 @@ void item_ScrollIdentify(Item* item, int player)
 	GenericGUI[player].openGUI(GUI_TYPE_ITEMFX, item, item->beatitude, item->type, SPELL_NONE);
 }
 
-void item_ScrollLight(Item* item, int player)
+void item_ScrollLight(Item*& item, int player)
 {
 	int c;
 
@@ -2951,7 +2951,7 @@ void item_ScrollLight(Item* item, int player)
 	item->identified = true;
 }
 
-void item_ScrollBlank(Item* item, int player)
+void item_ScrollBlank(Item*& item, int player)
 {
 	if (players[player] == nullptr || players[player]->entity == nullptr)
 	{
@@ -2979,7 +2979,7 @@ void item_ScrollBlank(Item* item, int player)
 	item->identified = true;
 }
 
-void item_ScrollEnchantWeapon(Item* item, int player)
+void item_ScrollEnchantWeapon(Item*& item, int player)
 {
 	if (players[player] == nullptr || players[player]->entity == nullptr)
 	{
@@ -3158,7 +3158,7 @@ void item_ScrollEnchantWeapon(Item* item, int player)
 	}
 }
 
-void item_ScrollEnchantArmor(Item* item, int player)
+void item_ScrollEnchantArmor(Item*& item, int player)
 {
 	Item* armor = nullptr;
 	if (players[player] == nullptr || players[player]->entity == nullptr)
@@ -3388,7 +3388,7 @@ void item_ScrollEnchantArmor(Item* item, int player)
 	}
 }
 
-void item_ScrollRemoveCurse(Item* item, int player)
+void item_ScrollRemoveCurse(Item*& item, int player)
 {
 	if (players[player] == nullptr || players[player]->entity == nullptr)
 	{
@@ -3563,7 +3563,7 @@ void item_ScrollRemoveCurse(Item* item, int player)
 	}
 }
 
-bool item_ScrollFire(Item* item, int player)
+bool item_ScrollFire(Item*& item, int player)
 {
 	if (multiplayer == CLIENT)
 	{
@@ -3647,7 +3647,7 @@ bool item_ScrollFire(Item* item, int player)
 	return false;
 }
 
-void item_ScrollFood(Item* item, int player)
+void item_ScrollFood(Item*& item, int player)
 {
 	Item* target;
 	node_t* node, *nextnode;
@@ -3717,7 +3717,7 @@ void item_ScrollFood(Item* item, int player)
 	item->identified = true;
 }
 
-void item_ScrollConjureArrow(Item* item, int player)
+void item_ScrollConjureArrow(Item*& item, int player)
 {
 	if ( players[player] == nullptr || players[player]->entity == nullptr )
 	{
@@ -3768,7 +3768,7 @@ void item_ScrollConjureArrow(Item* item, int player)
 	item->identified = true;
 }
 
-void item_ScrollMagicMapping(Item* item, int player)
+void item_ScrollMagicMapping(Item*& item, int player)
 {
 	int x, y;
 
@@ -3820,7 +3820,7 @@ void item_ScrollMagicMapping(Item* item, int player)
 	item->identified = true;
 }
 
-void item_ScrollRepair(Item* item, int player)
+void item_ScrollRepair(Item*& item, int player)
 {
 	Item* armor = nullptr;
 	if (players[player] == nullptr || players[player]->entity == nullptr)
@@ -4021,7 +4021,7 @@ void item_ScrollRepair(Item* item, int player)
 	}
 }
 
-void item_ScrollDestroyArmor(Item* item, int player)
+void item_ScrollDestroyArmor(Item*& item, int player)
 {
 	Item* armor = nullptr;
 	if (players[player] == nullptr || players[player]->entity == nullptr)
@@ -4190,7 +4190,7 @@ void item_ScrollDestroyArmor(Item* item, int player)
 	consumeItem(item, player);
 }
 
-void item_ScrollTeleportation(Item* item, int player)
+void item_ScrollTeleportation(Item*& item, int player)
 {
 	// server only function
 	if (players[player] == nullptr || players[player]->entity == nullptr)
@@ -4231,7 +4231,7 @@ void item_ScrollTeleportation(Item* item, int player)
 	item->identified = true;
 }
 
-void item_ScrollSummon(Item* item, int player)
+void item_ScrollSummon(Item*& item, int player)
 {
 	// server only function
 	if (players[player] == nullptr || players[player]->entity == nullptr)
@@ -4503,7 +4503,7 @@ void item_ToolTowel(Item*& item, int player)
 	}
 }
 
-void item_ToolTinOpener(Item* item, int player)
+void item_ToolTinOpener(Item*& item, int player)
 {
 	if (multiplayer == CLIENT)
 	{
@@ -4526,7 +4526,6 @@ void item_ToolMirror(Item*& item, int player)
 	if ( !players[player]->isLocalPlayer() )
 	{
 		consumeItem(item, player);
-		item = nullptr;
 	}
 
 	if (players[player] == nullptr || players[player]->entity == nullptr || stats[player] == nullptr )
@@ -4693,7 +4692,6 @@ void item_ToolMirror(Item*& item, int player)
 		if ( broken )
 		{
 			consumeItem(item, player);
-			item = nullptr;
 			Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_BROKEN, TOOL_MIRROR, 1);
 		}
 	}
@@ -5749,7 +5747,7 @@ void item_FoodTin(Item*& item, int player)
 	consumeItem(item, player);
 }
 
-void item_AmuletSexChange(Item* item, int player)
+void item_AmuletSexChange(Item*& item, int player)
 {
 	if ( !players[player]->isLocalPlayer() )
 	{

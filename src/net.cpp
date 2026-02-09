@@ -8173,7 +8173,7 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		    SDLNet_Read32(&net_packet->data[20]),
 		    net_packet->data[24],
 		    &stats[client]->inventory);
-		useItem(item, client);
+		useItem(item, client, nullptr, false, true);
 	}},
 
 	// use loot bag
@@ -8194,7 +8194,22 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		    SDLNet_Read32(&net_packet->data[20]),
 		    net_packet->data[24],
 		    &stats[client]->inventory);
-		equipItem(item, &stats[client]->weapon, client, false);
+		EquipItemResult res = equipItem(item, &stats[client]->weapon, client, false);
+		if ( res == EQUIP_ITEM_SUCCESS_UPDATE_QTY
+			|| res == EQUIP_ITEM_FAIL_CANT_UNEQUIP )
+		{
+			if ( item )
+			{
+				if ( item->node )
+				{
+					list_RemoveNode(item->node);
+				}
+				else
+				{
+					free(item);
+				}
+			}
+		}
 	}},
 
 	// equip item (as a shield)
@@ -8208,7 +8223,22 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		    SDLNet_Read32(&net_packet->data[20]),
 		    net_packet->data[24],
 		    &stats[client]->inventory);
-		equipItem(item, &stats[client]->shield, client, false);
+		EquipItemResult res = equipItem(item, &stats[client]->shield, client, false);
+		if ( res == EQUIP_ITEM_SUCCESS_UPDATE_QTY
+			|| res == EQUIP_ITEM_FAIL_CANT_UNEQUIP )
+		{
+			if ( item )
+			{
+				if ( item->node )
+				{
+					list_RemoveNode(item->node);
+				}
+				else
+				{
+					free(item);
+				}
+			}
+		}
 	}},
 
 	// consume torch item shield slot
@@ -8267,40 +8297,57 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		    net_packet->data[24],
 		    &stats[client]->inventory);
 		
+		int res = -1;
 		switch ( net_packet->data[27] )
 		{
 			case EQUIP_ITEM_SLOT_WEAPON:
-				equipItem(item, &stats[client]->weapon, client, false);
+				res = equipItem(item, &stats[client]->weapon, client, false);
 				break;
 			case EQUIP_ITEM_SLOT_SHIELD:
-				equipItem(item, &stats[client]->shield, client, false);
+				res = equipItem(item, &stats[client]->shield, client, false);
 				break;
 			case EQUIP_ITEM_SLOT_MASK:
-				equipItem(item, &stats[client]->mask, client, false);
+				res = equipItem(item, &stats[client]->mask, client, false);
 				break;
 			case EQUIP_ITEM_SLOT_HELM:
-				equipItem(item, &stats[client]->helmet, client, false);
+				res = equipItem(item, &stats[client]->helmet, client, false);
 				break;
 			case EQUIP_ITEM_SLOT_GLOVES:
-				equipItem(item, &stats[client]->gloves, client, false);
+				res = equipItem(item, &stats[client]->gloves, client, false);
 				break;
 			case EQUIP_ITEM_SLOT_BOOTS:
-				equipItem(item, &stats[client]->shoes, client, false);
+				res = equipItem(item, &stats[client]->shoes, client, false);
 				break;
 			case EQUIP_ITEM_SLOT_BREASTPLATE:
-				equipItem(item, &stats[client]->breastplate, client, false);
+				res = equipItem(item, &stats[client]->breastplate, client, false);
 				break;
 			case EQUIP_ITEM_SLOT_CLOAK:
-				equipItem(item, &stats[client]->cloak, client, false);
+				res = equipItem(item, &stats[client]->cloak, client, false);
 				break;
 			case EQUIP_ITEM_SLOT_AMULET:
-				equipItem(item, &stats[client]->amulet, client, false);
+				res = equipItem(item, &stats[client]->amulet, client, false);
 				break;
 			case EQUIP_ITEM_SLOT_RING:
-				equipItem(item, &stats[client]->ring, client, false);
+				res = equipItem(item, &stats[client]->ring, client, false);
 				break;
 			default:
 				break;
+		}
+
+		if ( res == EQUIP_ITEM_SUCCESS_UPDATE_QTY
+			|| res == EQUIP_ITEM_FAIL_CANT_UNEQUIP )
+		{
+			if ( item )
+			{
+				if ( item->node )
+				{
+					list_RemoveNode(item->node);
+				}
+				else
+				{
+					free(item);
+				}
+			}
 		}
 	}},
 
