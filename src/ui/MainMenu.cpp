@@ -24791,32 +24791,45 @@ failed:
                     }
                 }
 	                else if (numplayers >= 3) {
-	                    for (int c = 0, player = 0; c < (int)saveGameInfo.players_connected.size(); ++c) {
-	                        if (saveGameInfo.players_connected[c]) {
-	                        	if ( player >= 4 ) {
-                                    // This window has a fixed 2x2 thumbnail layout.
-                                    // Additional players are still present in the save, but not shown here.
-	                        		break;
-	                        	}
-	                            switch (player) {
-	                            default:
-	                            case 0:
-	                                addContinuePlayerInfo(subwindow, saveGameInfo, c, posX + 30, 16, true);
-                                break;
-                            case 1:
-                                addContinuePlayerInfo(subwindow, saveGameInfo, c, posX + 128, 16, true);
-                                break;
-                            case 2:
-                                addContinuePlayerInfo(subwindow, saveGameInfo, c, posX + 30, 114, true);
-                                break;
-                            case 3:
-                                addContinuePlayerInfo(subwindow, saveGameInfo, c, posX + 128, 114, true);
-                                break;
-                            }
-                            ++player;
-                        }
-                    }
-                }
+						int visiblePlayers = 0;
+	                    for (int c = 0; c < (int)saveGameInfo.players_connected.size(); ++c) {
+	                        if (!saveGameInfo.players_connected[c]) {
+	                        	continue;
+	                        }
+	                        if (visiblePlayers >= 4) {
+	                        	continue;
+	                        }
+	                        switch (visiblePlayers) {
+	                        default:
+	                        case 0:
+	                            addContinuePlayerInfo(subwindow, saveGameInfo, c, posX + 30, 16, true);
+	                            break;
+	                        case 1:
+	                            addContinuePlayerInfo(subwindow, saveGameInfo, c, posX + 128, 16, true);
+	                            break;
+	                        case 2:
+	                            addContinuePlayerInfo(subwindow, saveGameInfo, c, posX + 30, 114, true);
+	                            break;
+	                        case 3:
+	                            addContinuePlayerInfo(subwindow, saveGameInfo, c, posX + 128, 114, true);
+	                            break;
+	                        }
+	                        ++visiblePlayers;
+	                    }
+	                    const int hiddenPlayers = std::max(0, numplayers - visiblePlayers);
+	                    if (hiddenPlayers > 0)
+	                    {
+	                    	char extraPlayersBuf[16];
+	                    	snprintf(extraPlayersBuf, sizeof(extraPlayersBuf), "+%d", hiddenPlayers);
+	                    	auto extraPlayers = cover->addField((str + "_extra_players").c_str(), sizeof(extraPlayersBuf));
+	                    	extraPlayers->setSize(SDL_Rect{ 182, 148, 28, 20 });
+	                    	extraPlayers->setFont(smallfont_outline);
+	                    	extraPlayers->setTextColor(makeColor(255, 255, 255, 255));
+	                    	extraPlayers->setOutlineColor(makeColor(52, 32, 23, 255));
+	                    	extraPlayers->setJustify(Field::justify_t::CENTER);
+	                    	extraPlayers->setText(extraPlayersBuf);
+	                    }
+	                }
 
 		        ++index;
 		    }

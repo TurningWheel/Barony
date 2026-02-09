@@ -35,6 +35,49 @@ BaronyRNG map_server_rng;
 int numChests = 0;
 int numMimics = 0;
 TreasureRoomGenerator treasure_room_generator;
+static constexpr int kLegacySplitscreenPlayerSlots = 4;
+
+static int getConnectedPlayerCountForMapScaling()
+{
+	int connectedPlayers = 0;
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		if ( !client_disconnected[i] )
+		{
+			++connectedPlayers;
+		}
+	}
+	return connectedPlayers;
+}
+
+static int getLootVsMonsterBalanceDivisor(int connectedPlayers)
+{
+	// Preserve legacy loot/monster balance for <=4 players.
+	switch ( connectedPlayers )
+	{
+		case 1:
+			return 4;
+		case 2:
+			return 3;
+		default:
+			return 2;
+	}
+}
+
+static int getOverflowPlayersBeyondSplitscreen(int connectedPlayers)
+{
+	return std::max(0, connectedPlayers - kLegacySplitscreenPlayerSlots);
+}
+
+static int getOverflowLootToMonsterRerollDivisor(int overflowPlayers)
+{
+	// 5p starts conservative (1 in 6 reroll), then ramps up to a 1 in 3 cap.
+	constexpr int kFivePlayerDivisor = 6;
+	constexpr int kMinimumDivisor = 3;
+	const int divisor = kFivePlayerDivisor - std::max(0, overflowPlayers - 1);
+	return std::max(kMinimumDivisor, divisor);
+}
+
 void TreasureRoomGenerator::init()
 {
 	treasure_floors.clear();
@@ -3869,6 +3912,8 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 
 	int entitiesToGenerate = 30;
 	int randomEntities = 10;
+	const int connectedPlayers = getConnectedPlayerCountForMapScaling();
+	const int overflowPlayers = getOverflowPlayersBeyondSplitscreen(connectedPlayers);
 
 	if ( genEntityMin > 0 || genEntityMax > 0 )
 	{
@@ -3882,6 +3927,12 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 	{
 		// revert to old mechanics.
 		j = std::min<Uint32>(30 + map_rng.rand() % 10, numpossiblelocations); //TODO: Why are Uint32 and Sin32 being compared?
+	}
+	if ( overflowPlayers > 0 && !(genEntityMin > 0 || genEntityMax > 0) )
+	{
+		// Keep <=4p unchanged; overflow players add spawn-roll density (not map dimensions).
+		const int bonusEntityRolls = std::min(12, 2 + overflowPlayers * 2);
+		j = std::min<Uint32>(j + bonusEntityRolls, numpossiblelocations);
 	}
 	int forcedMonsterSpawns = 0;
 	int forcedLootSpawns = 0;
@@ -4705,38 +4756,22 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				// return to normal generation
 				if ( map_rng.rand() % 2 || nodecoration )
 				{
-					// balance for total number of players
-					int balance = 0;
-					for ( i = 0; i < MAXPLAYERS; i++ )
-					{
-						if ( !client_disconnected[i] )
-						{
-							balance++;
-						}
-					}
-					switch ( balance )
-					{
-						case 1:
-							balance = 4;
-							break;
-						case 2:
-							balance = 3;
-							break;
-						case 3:
-							balance = 2;
-							break;
-						case 4:
-							balance = 2;
-							break;
-						default:
-							balance = 2;
-							break;
-					}
+					const int balance = getLootVsMonsterBalanceDivisor(connectedPlayers);
 
 					// monsters/items
 					if ( balance )
 					{
-						if ( map_rng.rand() % balance )
+						bool spawnLoot = (map_rng.rand() % balance) != 0;
+						if ( spawnLoot && overflowPlayers > 0 )
+						{
+							// Keep <=4p unchanged. Overflow players bias a bounded share of loot rolls into monsters.
+							const int overflowMonsterRerollDivisor = getOverflowLootToMonsterRerollDivisor(overflowPlayers);
+							if ( map_rng.rand() % overflowMonsterRerollDivisor == 0 )
+							{
+								spawnLoot = false;
+							}
+						}
+						if ( spawnLoot )
 						{
 							if ( map.lootexcludelocations[x + y * map.width] == false )
 							{
@@ -5987,6 +6022,11 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 	int breakableMonsterLimit = 2 + (currentlevel / LENGTH_OF_LEVEL_REGION) * (1 + map_rng.rand() % 2);
 	static ConsoleVariable<int> cvar_breakableMonsterLimit("/breakable_monster_limit", 0);
 	std::set<Uint32> generatedBreakables;
+	if ( overflowPlayers > 0 )
+	{
+		// Keep <=4p unchanged; overflow players can hide more monsters in breakables.
+		breakableMonsterLimit += overflowPlayers;
+	}
 	if ( svFlags & SV_FLAG_CHEATS )
 	{
 		breakableMonsterLimit = std::max(*cvar_breakableMonsterLimit, breakableMonsterLimit);
@@ -6073,6 +6113,16 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				int index = (y) * MAPLAYERS + (x) * MAPLAYERS * map.height;
 
 				static ConsoleVariable<int> cvar_breakableMonsterChance("/breakable_monster_chance", 10);
+				int breakableMonsterChanceDivisor = 10;
+				if ( svFlags & SV_FLAG_CHEATS )
+				{
+					breakableMonsterChanceDivisor = std::min(10, *cvar_breakableMonsterChance);
+				}
+				if ( overflowPlayers > 0 )
+				{
+					// Overflow players increase hide-monster odds, with a floor to avoid over-spiking.
+					breakableMonsterChanceDivisor = std::max(4, breakableMonsterChanceDivisor - std::min(overflowPlayers, 4));
+				}
 
 				if ( spellEventExists )
 				{
@@ -6126,8 +6176,8 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				{
 					// nothing over pits 50%
 				}
-				else if ( (breakableMonsters < breakableMonsterLimit && monsterEventExists 
-					&& map_rng.rand() % ((svFlags & SV_FLAG_CHEATS) ? std::min(10, *cvar_breakableMonsterChance) : 10) == 0)
+				else if ( (breakableMonsters < breakableMonsterLimit && monsterEventExists
+					&& map_rng.rand() % breakableMonsterChanceDivisor == 0)
 					&& map.monsterexcludelocations[x + y * map.width] == false ) // 10% monster inside
 				{
 					Monster monsterEvent = NOTHING;
@@ -6183,6 +6233,11 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				{
 					std::vector<Entity*> genGold;
 					int numGold = 3 + map_rng.rand() % 3;
+					if ( overflowPlayers > 0 )
+					{
+						// Overflow players get more breakable payout opportunities.
+						numGold += map_rng.rand() % (overflowPlayers + 1);
+					}
 					while ( numGold > 0 )
 					{
 						--numGold;
@@ -6191,6 +6246,11 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 						entity->x = breakable->x;
 						entity->y = breakable->y;
 						entity->goldAmount = 2 + map_rng.rand() % 3;
+						if ( overflowPlayers > 0 )
+						{
+							// Overflow players get a small per-stack gold bump.
+							entity->goldAmount += map_rng.rand() % (1 + (overflowPlayers / 2));
+						}
 						entity->flags[INVISIBLE] = true;
 						entity->yaw = breakable->yaw;
 						entity->goldInContainer = breakable->getUID();
@@ -7026,14 +7086,8 @@ void assignActions(map_t* map)
 	map_rng.seedBytes(&mapseed, sizeof(mapseed));
 	map_server_rng.seedBytes(&mapseed, sizeof(mapseed));
 
-	int balance = 0;
-	for ( int i = 0; i < MAXPLAYERS; i++ )
-	{
-		if ( !client_disconnected[i] )
-		{
-			balance++;
-		}
-	}
+	int balance = getConnectedPlayerCountForMapScaling();
+	const int overflowPlayers = getOverflowPlayersBeyondSplitscreen(balance);
 
 	bool customMonsterCurveExists = false;
 	monsterCurveCustomManager.followersToGenerateForLeaders.clear();
@@ -7054,7 +7108,7 @@ void assignActions(map_t* map)
 	}
 
 	// assign entity behaviors
-    node_t* nextnode;
+	node_t* nextnode;
 	for ( auto node = map->entities->first; node != nullptr; node = nextnode )
 	{
 		auto entity = (Entity*)node->element;
@@ -7472,7 +7526,16 @@ void assignActions(map_t* map)
 									}
 									break;
 								default:
-									extrafood = false;
+									if ( balance > 4 )
+									{
+										// Keep <=4p unchanged; overflow players roll extra FOOD category odds.
+										const int foodRollDivisor = std::max(2, 5 - ((overflowPlayers + 1) / 2));
+										extrafood = (map_rng.rand() % foodRollDivisor) == 0;
+									}
+									else
+									{
+										extrafood = false;
+									}
 									break;
 							}
 							if ( !extrafood )
@@ -7648,6 +7711,16 @@ void assignActions(map_t* map)
 									}
 									break;
 								default:
+									if ( balance > 4 )
+									{
+										// Keep <=4p unchanged; overflow players get bigger FOOD stack sizes.
+										const int bonusRollDivisor = std::max(1, 3 - (overflowPlayers / 3));
+										if ( map_rng.rand() % bonusRollDivisor == 0 )
+										{
+											const int maxExtraFood = std::min(4, 2 + (overflowPlayers / 2));
+											entity->skill[13] += 1 + (map_rng.rand() % maxExtraFood);
+										}
+									}
 									break;
 							}
 						}
@@ -7758,6 +7831,12 @@ void assignActions(map_t* map)
 				if ( entity->goldAmount == 0 )
 				{
 					entity->goldAmount = 10 + map_rng.rand() % 100 + (currentlevel); // amount
+				}
+				if ( balance > 4 )
+				{
+					// Keep <=4p unchanged; overflow players scale bag value by a capped bonus.
+					const int bonusPercent = std::min(60, overflowPlayers * 12);
+					entity->goldAmount += std::max(1, (entity->goldAmount * bonusPercent) / 100);
 				}
 				if ( entity->goldAmount < 5 )
 				{

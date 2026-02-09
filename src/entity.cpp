@@ -3726,13 +3726,10 @@ int Entity::getHungerTickRate(Stat* myStats, bool isPlayer, bool checkItemsEffec
 		}
 	}
 
-	if ( playerCount == 3 )
+	if ( playerCount > 2 )
 	{
-		hungerTickRate *= 1.25;
-	}
-	else if ( playerCount == 4 )
-	{
-		hungerTickRate *= 1.5;
+		// Preserve legacy scaling for 3/4 players, then continue the same step size for overflow players.
+		hungerTickRate *= (1.0 + 0.25 * (playerCount - 2));
 	}
 	if ( myStats->type == INSECTOID )
 	{
@@ -3778,13 +3775,9 @@ int Entity::getHungerTickRate(Stat* myStats, bool isPlayer, bool checkItemsEffec
 	if ( playerAutomaton )
 	{
 		// give a little extra hunger duration.
-		if ( playerCount == 3 )
+		if ( playerCount > 2 )
 		{
-			hungerTickRate *= 1.25; // 1.55x (1.25 x 1.25)
-		}
-		else if ( playerCount == 4 )
-		{
-			hungerTickRate *= 1.5; // 2.55x (1.5 x 1.5)
+			hungerTickRate *= (1.0 + 0.25 * (playerCount - 2));
 		}
 
 		if ( myStats->HUNGER > 1000 && hungerTickRate > 30 )
