@@ -2121,53 +2121,63 @@ Uint32 Player::Ghost_t::cooldownTeleportDelay = TICKS_PER_SECOND * 3;
 
 int Player::Ghost_t::getSpriteForPlayer(const int player)
 {
-	if ( !colorblind_lobby )
+	static int normalGhostModelByPlayer[MAXPLAYERS];
+	static int colorblindGhostModelByPlayer[MAXPLAYERS];
+	static bool initialized = false;
+	if ( !initialized )
 	{
-		// Reuse existing ghost palettes for players 5-8 when unique assets are unavailable.
-		switch ( player )
+		const int normalPrimary[] = {
+			GHOST_MODEL_P1, GHOST_MODEL_P2, GHOST_MODEL_P3, GHOST_MODEL_P4, GHOST_MODEL_PX
+		};
+		const int normalCycle[] = { GHOST_MODEL_P2, GHOST_MODEL_P3, GHOST_MODEL_P4 };
+		const int colorblindPrimary[] = {
+			GHOST_MODEL_P3, GHOST_MODEL_P4, GHOST_MODEL_P2, GHOST_MODEL_PX, GHOST_MODEL_PX
+		};
+		const int colorblindCycle[] = { GHOST_MODEL_P3, GHOST_MODEL_P4, GHOST_MODEL_PX };
+		auto buildModelMap = [](int* outMap,
+			const int* primary, const int primaryCount,
+			const int* cycle, const int cycleCount)
 		{
-			case 0:
-				return GHOST_MODEL_P1;
-			case 1:
-				return GHOST_MODEL_P2;
-			case 2:
-				return GHOST_MODEL_P3;
-			case 3:
-				return GHOST_MODEL_P4;
-			case 4:
-				return GHOST_MODEL_PX;
-			case 5:
-				return GHOST_MODEL_P2;
-			case 6:
-				return GHOST_MODEL_P3;
-			case 7:
-				return GHOST_MODEL_P4;
-			default:
-				return GHOST_MODEL_PX;
-		}
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				if ( i < primaryCount )
+				{
+					outMap[i] = primary[i];
+				}
+				else if ( cycleCount > 0 )
+				{
+					outMap[i] = cycle[(i - primaryCount) % cycleCount];
+				}
+				else if ( primaryCount > 0 )
+				{
+					outMap[i] = primary[primaryCount - 1];
+				}
+				else
+				{
+					outMap[i] = GHOST_MODEL_PX;
+				}
+			}
+		};
+
+		buildModelMap(normalGhostModelByPlayer,
+			normalPrimary, static_cast<int>(sizeof(normalPrimary) / sizeof(normalPrimary[0])),
+			normalCycle, static_cast<int>(sizeof(normalCycle) / sizeof(normalCycle[0])));
+		buildModelMap(colorblindGhostModelByPlayer,
+			colorblindPrimary, static_cast<int>(sizeof(colorblindPrimary) / sizeof(colorblindPrimary[0])),
+			colorblindCycle, static_cast<int>(sizeof(colorblindCycle) / sizeof(colorblindCycle[0])));
+		initialized = true;
 	}
 
-	switch ( player )
+	if ( player < 0 || player >= MAXPLAYERS )
 	{
-		case 0:
-			return GHOST_MODEL_P3;
-		case 1:
-			return GHOST_MODEL_P4;
-		case 2:
-			return GHOST_MODEL_P2;
-		case 3:
-			return GHOST_MODEL_PX;
-		case 4:
-			return GHOST_MODEL_PX;
-		case 5:
-			return GHOST_MODEL_P3;
-		case 6:
-			return GHOST_MODEL_P4;
-		case 7:
-			return GHOST_MODEL_PX;
-		default:
-			return GHOST_MODEL_PX;
+		return GHOST_MODEL_PX;
 	}
+
+	// Keep legacy ordering for early slots and cycle secondary palettes for
+	// higher player indices. Repeats begin at player index 5 (first overflow)
+	// and then continue uniformly so the mapping rule stays simple.
+	return colorblind_lobby ?
+		colorblindGhostModelByPlayer[player] : normalGhostModelByPlayer[player];
 }
 
 void actDeathGhostLimb(Entity* my)

@@ -60,6 +60,23 @@ bool disableFPSLimitOnNetworkMessages = true; // always process the messages, ot
 // uncomment this to have the game log packet info
 //#define PACKETINFO
 
+static bool hasUsablePlayerSlot(const int player, const bool requireStats = true, const bool requireConnected = false)
+{
+	if ( player < 0 || player >= MAXPLAYERS || !players[player] )
+	{
+		return false;
+	}
+	if ( requireConnected && client_disconnected[player] )
+	{
+		return false;
+	}
+	if ( requireStats && !stats[player] )
+	{
+		return false;
+	}
+	return true;
+}
+
 void packetDeconstructor(void* data)
 {
 	packetsend_t* packetsend = (packetsend_t*)data;
@@ -316,7 +333,7 @@ bool messageLocalPlayers(Uint32 type, char const * const message, ...)
 
 bool messagePlayer(int player, Uint32 type, char const * const message, ...)
 {
-	if ( player < 0 || player >= MAXPLAYERS )
+	if ( !hasUsablePlayerSlot(player, false) )
 	{
 		return false;
 	}
@@ -381,7 +398,7 @@ bool messagePlayerColor(int player, Uint32 type, Uint32 color, char const * cons
 	{
 		return false;
 	}
-	if ( player < 0 || player >= MAXPLAYERS )
+	if ( !hasUsablePlayerSlot(player, false) )
 	{
 		return false;
 	}
@@ -402,11 +419,6 @@ bool messagePlayerColor(int player, Uint32 type, Uint32 color, char const * cons
 	if (intro) {
 		return false;
 	}
-	if ( !players[player] )
-	{
-		return false;
-	}
-
 	// if this is for a local player, but we've disabled this message type, don't print it!
 	const bool localPlayer = players[player]->isLocalPlayer();
 
@@ -450,7 +462,7 @@ bool messagePlayerColor(int player, Uint32 type, Uint32 color, char const * cons
 	char tempstr[256];
 	for ( c = 0; c < MAXPLAYERS; c++ )
 	{
-		if ( client_disconnected[c] || !stats[c] )
+		if ( !hasUsablePlayerSlot(c, true, true) )
 		{
 			continue;
 		}
@@ -1400,7 +1412,7 @@ void serverUpdatePlayerSummonStrength(int player)
 	{
 		return;
 	}
-	if ( client_disconnected[player] || !players[player] || !stats[player] || players[player]->isLocalPlayer() )
+	if ( !hasUsablePlayerSlot(player, true, true) || players[player]->isLocalPlayer() )
 	{
 		return;
 	}

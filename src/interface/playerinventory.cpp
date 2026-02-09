@@ -2284,6 +2284,68 @@ void select_inventory_slot(int player, int currentx, int currenty, int diffx, in
 
 std::string getItemSpritePath(const int player, Item& item)
 {
+	auto getLootBagImageIndex = [](const int playerOwner) -> Uint32
+	{
+		static Uint32 normalImageByPlayer[MAXPLAYERS];
+		static Uint32 colorblindImageByPlayer[MAXPLAYERS];
+		static bool initialized = false;
+		if ( !initialized )
+		{
+			const Uint32 normalPrimary[] = { 0, 1, 2, 3, 4 };
+			const Uint32 normalCycle[] = { 2, 3, 4 };
+			const Uint32 colorblindPrimary[] = { 2, 3, 1, 4, 5, 6, 7, 8 };
+			const Uint32 colorblindCycle[] = { 5, 6, 7, 8 };
+			auto buildImageMap = [](Uint32* outMap,
+				const Uint32* primary, const int primaryCount,
+				const Uint32* cycle, const int cycleCount)
+			{
+				for ( int i = 0; i < MAXPLAYERS; ++i )
+				{
+					if ( i < primaryCount )
+					{
+						outMap[i] = primary[i];
+					}
+					else if ( cycleCount > 0 )
+					{
+						outMap[i] = cycle[(i - primaryCount) % cycleCount];
+					}
+					else if ( primaryCount > 0 )
+					{
+						outMap[i] = primary[primaryCount - 1];
+					}
+					else
+					{
+						outMap[i] = 0;
+					}
+				}
+			};
+			buildImageMap(normalImageByPlayer,
+				normalPrimary, static_cast<int>(sizeof(normalPrimary) / sizeof(normalPrimary[0])),
+				normalCycle, static_cast<int>(sizeof(normalCycle) / sizeof(normalCycle[0])));
+			buildImageMap(colorblindImageByPlayer,
+				colorblindPrimary, static_cast<int>(sizeof(colorblindPrimary) / sizeof(colorblindPrimary[0])),
+				colorblindCycle, static_cast<int>(sizeof(colorblindCycle) / sizeof(colorblindCycle[0])));
+			initialized = true;
+		}
+
+		if ( playerOwner < 0 || playerOwner >= MAXPLAYERS )
+		{
+			return 4;
+		}
+
+		if ( colorblind_lobby )
+		{
+			// Preserve legacy order for the first slots. Once we overflow those slots
+			// (starting at player index 8), we continue with one consistent cycle.
+			return colorblindImageByPlayer[playerOwner];
+		}
+
+		// Non-colorblind mode only ships 5 variants; after the base slots, we
+		// cycle secondary palettes from player index 5 onward in the same order
+		// used by other lobby UI elements.
+		return normalImageByPlayer[playerOwner];
+		};
+
 	if ( item.type == SPELL_ITEM )
 	{
 		return ItemTooltips.getSpellIconPath(player, item, -1);
@@ -2293,63 +2355,9 @@ std::string getItemSpritePath(const int player, Item& item)
 		node_t* imagePathsNode = nullptr;
 		if ( item.type == TOOL_PLAYER_LOOT_BAG )
 		{
-				if ( colorblind_lobby )
-				{
-					int playerOwner = item.getLootBagPlayer();
-					Uint32 index = 4;
-					switch ( playerOwner )
-				{
-					case 0:
-						index = 2;
-						break;
-					case 1:
-						index = 3;
-						break;
-					case 2:
-						index = 1;
-						break;
-						case 3:
-							index = 4;
-							break;
-						case 4:
-							index = 5;
-							break;
-						case 5:
-							index = 6;
-							break;
-						case 6:
-							index = 7;
-							break;
-						case 7:
-							index = 8;
-							break;
-						default:
-							break;
-					}
-
-					imagePathsNode = list_Node(&items[item.type].images, index);
-				}
-				else
-				{
-					int playerOwner = item.getLootBagPlayer();
-					Uint32 index = playerOwner;
-					switch ( playerOwner )
-					{
-						case 5:
-							index = 2;
-							break;
-						case 6:
-							index = 3;
-							break;
-						case 7:
-							index = 4;
-							break;
-						default:
-							break;
-					}
-					imagePathsNode = list_Node(&items[item.type].images, index);
-				}
-			}
+			const int playerOwner = item.getLootBagPlayer();
+			imagePathsNode = list_Node(&items[item.type].images, getLootBagImageIndex(playerOwner));
+		}
 		else if ( item.type == MAGICSTAFF_SCEPTER )
 		{
 			if ( item.appearance % MAGICSTAFF_SCEPTER_CHARGE_MAX == 0 )

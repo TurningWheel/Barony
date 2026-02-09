@@ -2774,6 +2774,14 @@ Returns a pointer to a Stat instance given a pointer to an entity
 
 Stat* Entity::getStats() const
 {
+	auto getPlayerStatsFromIndex = [](const int index) -> Stat* {
+		if ( index >= 0 && index < MAXPLAYERS )
+		{
+			return stats[index];
+		}
+		return nullptr;
+	};
+
 	if ( this->behavior == &actMonster ) // monsters
 	{
 		if ( multiplayer == CLIENT && clientStats )
@@ -2790,19 +2798,11 @@ Stat* Entity::getStats() const
 	}
 	else if ( this->behavior == &actPlayer ) // players
 	{
-		if ( this->skill[2] >= 0 && this->skill[2] < MAXPLAYERS )
-		{
-			return stats[this->skill[2]];
-		}
-		return nullptr;
+		return getPlayerStatsFromIndex(this->skill[2]);
 	}
 	else if ( this->behavior == &actPlayerLimb ) // player bodyparts
 	{
-		if ( this->skill[2] >= 0 && this->skill[2] < MAXPLAYERS )
-		{
-			return stats[this->skill[2]];
-		}
-		return nullptr;
+		return getPlayerStatsFromIndex(this->skill[2]);
 	}
 
 	return nullptr;
@@ -10091,6 +10091,18 @@ void Entity::attack(int pose, int charge, Entity* target)
 	int weaponskill = -1;
 	node_t* node = nullptr;
 	double tangent;
+	auto isValidCombatPlayer = [](const int index, const bool requireEntity)
+	{
+		if ( index < 0 || index >= MAXPLAYERS || !players[index] || !stats[index] )
+		{
+			return false;
+		}
+		if ( requireEntity && !players[index]->entity )
+		{
+			return false;
+		}
+		return true;
+	};
 
 	if ( (myStats = getStats()) == nullptr )
 	{
@@ -10108,7 +10120,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 	}
 	if ( player >= 0 )
 	{
-		if ( player >= MAXPLAYERS || !players[player] || !players[player]->entity || !stats[player] )
+		if ( !isValidCombatPlayer(player, true) )
 		{
 			printlog("[NET]: Entity::attack() ignoring invalid attacker player index %d (uid: %u)", player, getUID());
 			player = -1;
@@ -11329,7 +11341,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 			if ( hit.entity && hit.entity->behavior == &actPlayer )
 			{
 				const int hitplayer = hit.entity->skill[2];
-				if ( hitplayer < 0 || hitplayer >= MAXPLAYERS || !players[hitplayer] || !stats[hitplayer] )
+				if ( !isValidCombatPlayer(hitplayer, false) )
 				{
 					printlog("[NET]: Entity::attack() skipping invalid hit player index %d (target uid: %u)", hitplayer, hit.entity->getUID());
 					hit.entity = nullptr;
@@ -11604,7 +11616,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 			if ( hit.entity->behavior == &actPlayer )
 			{
 				const int hitplayer = hit.entity->skill[2];
-				if ( hitplayer < 0 || hitplayer >= MAXPLAYERS || !players[hitplayer] || !stats[hitplayer] )
+				if ( !isValidCombatPlayer(hitplayer, false) )
 				{
 					printlog("[NET]: Entity::attack() aborting invalid hit player index %d (target uid: %u)", hitplayer, hit.entity->getUID());
 					return;
@@ -11852,7 +11864,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 			else if ( hit.entity->behavior == &actPlayer )
 			{
 				playerhit = hit.entity->skill[2];
-				if ( playerhit < 0 || playerhit >= MAXPLAYERS || !players[playerhit] || !stats[playerhit] )
+				if ( !isValidCombatPlayer(playerhit, false) )
 				{
 					printlog("[NET]: Entity::attack() aborting invalid player target index %d (target uid: %u)", playerhit, hit.entity->getUID());
 					return;

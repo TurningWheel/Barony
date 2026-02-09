@@ -29487,56 +29487,67 @@ void CalloutRadialMenu::closeCalloutMenuGUI()
 
 std::string& CalloutRadialMenu::WorldIconEntry_t::getPlayerIconPath(const int playernum)
 {
-	if ( colorblind_lobby )
+	static int normalPaletteByPlayer[MAXPLAYERS];
+	static int colorblindPaletteByPlayer[MAXPLAYERS];
+	static bool initialized = false;
+	if ( !initialized )
 	{
-		switch ( playernum )
+		const int normalPrimary[] = { 1, 2, 3, 4, 4 };
+		const int normalCycle[] = { 2, 3, 4 };
+		const int colorblindPrimary[] = { 3, 4, 2, 0, 0 };
+		const int colorblindCycle[] = { 3, 4, 0 };
+		auto buildPaletteMap = [](int* outMap,
+			const int* primary, const int primaryCount,
+			const int* cycle, const int cycleCount)
 		{
-		case 0:
-			return pathPlayer3;
-		case 1:
-			return pathPlayer4;
-		case 2:
-			return pathPlayer2;
-		case 3:
-			return pathPlayerX;
-		case 4:
-			return pathPlayerX;
-		case 5:
-			return pathPlayer3;
-		case 6:
-			return pathPlayer4;
-		case 7:
-			return pathPlayerX;
-		default:
-			return pathPlayerX;
-			break;
-		}
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				if ( i < primaryCount )
+				{
+					outMap[i] = primary[i];
+				}
+				else if ( cycleCount > 0 )
+				{
+					outMap[i] = cycle[(i - primaryCount) % cycleCount];
+				}
+				else if ( primaryCount > 0 )
+				{
+					outMap[i] = primary[primaryCount - 1];
+				}
+				else
+				{
+					outMap[i] = 0;
+				}
+			}
+		};
+
+		buildPaletteMap(normalPaletteByPlayer,
+			normalPrimary, static_cast<int>(sizeof(normalPrimary) / sizeof(normalPrimary[0])),
+			normalCycle, static_cast<int>(sizeof(normalCycle) / sizeof(normalCycle[0])));
+		buildPaletteMap(colorblindPaletteByPlayer,
+			colorblindPrimary, static_cast<int>(sizeof(colorblindPrimary) / sizeof(colorblindPrimary[0])),
+			colorblindCycle, static_cast<int>(sizeof(colorblindCycle) / sizeof(colorblindCycle[0])));
+		initialized = true;
 	}
-	else
+
+	if ( playernum < 0 || playernum >= MAXPLAYERS )
 	{
-		switch ( playernum )
-		{
-		case 0:
-			return pathPlayer1;
-		case 1:
-			return pathPlayer2;
-		case 2:
-			return pathPlayer3;
-		case 3:
-			return pathPlayer4;
-		case 4:
-			return pathPlayer4;
-		case 5:
-			return pathPlayer2;
-		case 6:
-			return pathPlayer3;
-		case 7:
-			return pathPlayer4;
-		default:
-			return pathPlayerX;
-			break;
-		}
+		return pathPlayerX;
 	}
+
+	// Ordering is intentional: first slots preserve legacy host/player colors.
+	// Player index 4 already reuses the 4th themed icon because there is no 5th
+	// themed asset; after that, overflow slots follow one consistent cycle.
+	// This keeps mapping predictable and avoids reusing player 1 colors first.
+	const int paletteIndex = colorblind_lobby ?
+		colorblindPaletteByPlayer[playernum] : normalPaletteByPlayer[playernum];
+
+	std::string* const kPathByPalette[] = {
+		&pathPlayerX, &pathPlayer1, &pathPlayer2, &pathPlayer3, &pathPlayer4
+	};
+	const int maxPaletteIndex = static_cast<int>(sizeof(kPathByPalette) / sizeof(kPathByPalette[0])) - 1;
+	const int clampedPaletteIndex = std::max(0, std::min(paletteIndex, maxPaletteIndex));
+	return *kPathByPalette[clampedPaletteIndex];
 }
 
 void CalloutRadialMenu::drawCallouts(const int playernum)
