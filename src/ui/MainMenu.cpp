@@ -28,6 +28,8 @@
 #include "../scrolls.hpp"
 
 #include <cassert>
+#include <cctype>
+#include <cstdlib>
 #include <functional>
 #ifdef STEAMWORKS
 #include <nfd.h>
@@ -79,6 +81,383 @@ namespace MainMenu {
     ConsoleVariable<int> cvar_displayHz("/displayhz", 0);
 	ConsoleVariable<bool> cvar_hdrEnabled("/hdr_enabled", true);
 	static const int numFilters = NUM_SERVER_FLAGS + 2;
+	constexpr Uint8 kJoinCapabilityHeloChunkV1 = 0x01;
+	constexpr int kHeloChunkHeaderSize = 12;
+	constexpr int kHeloChunkPayloadMax = 900;
+	constexpr int kHeloChunkMaxCount = 32;
+	constexpr Uint32 kHeloChunkReassemblyTimeoutTicks = 5 * TICKS_PER_SECOND;
+	static Uint16 g_heloTransferId[MAXPLAYERS] = { 0 };
+
+	struct HeloChunkReassemblyState
+	{
+		bool active = false;
+		Uint16 transferId = 0;
+		Uint8 chunkCount = 0;
+		Uint16 totalLen = 0;
+		Uint32 lastChunkTick = 0;
+		std::vector<std::vector<Uint8>> chunks;
+		std::vector<bool> received;
+		int receivedCount = 0;
+	};
+	static HeloChunkReassemblyState g_heloChunkReassemblyState;
+
+	enum class SmokeAutopilotRole : Uint8
+	{
+		DISABLED = 0,
+		ROLE_HOST,
+		ROLE_CLIENT
+	};
+
+	struct SmokeAutopilotConfig
+	{
+		bool enabled = false;
+		SmokeAutopilotRole role = SmokeAutopilotRole::DISABLED;
+		std::string connectAddress = "";
+		int connectDelayTicks = 0;
+		int retryDelayTicks = 0;
+		int expectedPlayers = 2;
+		bool autoStartLobby = false;
+		int autoStartDelayTicks = 0;
+		std::string seedString = "";
+		bool autoReady = false;
+	};
+
+	struct SmokeAutopilotRuntime
+	{
+		bool initialized = false;
+		SmokeAutopilotConfig config;
+		Uint32 nextActionTick = 0;
+		bool hostLaunchAttempted = false;
+		bool joinAttempted = false;
+		bool startIssued = false;
+		Uint32 expectedPlayersMetTick = 0;
+		bool seedApplied = false;
+		bool readyIssued = false;
+	};
+	static SmokeAutopilotRuntime g_smokeAutopilot;
+
+	static std::string toLowerCopy(const char* value)
+	{
+		std::string result = value ? value : "";
+		for ( auto& ch : result )
+		{
+			ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
+		}
+		return result;
+	}
+
+	static bool parseEnvBool(const char* key, const bool fallback)
+	{
+		const char* raw = std::getenv(key);
+		if ( !raw || !raw[0] )
+		{
+			return fallback;
+		}
+		const std::string value = toLowerCopy(raw);
+		if ( value == "1" || value == "true" || value == "yes" || value == "on" )
+		{
+			return true;
+		}
+		if ( value == "0" || value == "false" || value == "no" || value == "off" )
+		{
+			return false;
+		}
+		return fallback;
+	}
+
+	static int parseEnvInt(const char* key, const int fallback, const int minValue, const int maxValue)
+	{
+		const char* raw = std::getenv(key);
+		if ( !raw || !raw[0] )
+		{
+			return fallback;
+		}
+		char* end = nullptr;
+		const long parsed = std::strtol(raw, &end, 10);
+		if ( end == raw || (end && *end != '\0') )
+		{
+			return fallback;
+		}
+		return std::max(minValue, std::min(maxValue, static_cast<int>(parsed)));
+	}
+
+	static std::string parseEnvString(const char* key, const std::string& fallback)
+	{
+		const char* raw = std::getenv(key);
+		if ( !raw || !raw[0] )
+		{
+			return fallback;
+		}
+		return std::string(raw);
+	}
+
+	static int smokeHeloChunkPayloadMax()
+	{
+		static bool initialized = false;
+		static int value = kHeloChunkPayloadMax;
+		if ( !initialized )
+		{
+			initialized = true;
+			value = parseEnvInt("BARONY_SMOKE_HELO_CHUNK_PAYLOAD_MAX",
+				kHeloChunkPayloadMax, 64, kHeloChunkPayloadMax);
+			if ( value != kHeloChunkPayloadMax )
+			{
+				printlog("[SMOKE]: using HELO chunk payload max override: %d", value);
+			}
+		}
+		return value;
+	}
+
+	static Uint16 nextHeloTransferIdForPlayer(const int player)
+	{
+		if ( player < 0 || player >= MAXPLAYERS )
+		{
+			return 1;
+		}
+		++g_heloTransferId[player];
+		if ( g_heloTransferId[player] == 0 )
+		{
+			++g_heloTransferId[player];
+		}
+		return g_heloTransferId[player];
+	}
+
+	static void resetHeloChunkReassemblyState()
+	{
+		g_heloChunkReassemblyState.active = false;
+		g_heloChunkReassemblyState.transferId = 0;
+		g_heloChunkReassemblyState.chunkCount = 0;
+		g_heloChunkReassemblyState.totalLen = 0;
+		g_heloChunkReassemblyState.lastChunkTick = 0;
+		g_heloChunkReassemblyState.chunks.clear();
+		g_heloChunkReassemblyState.received.clear();
+		g_heloChunkReassemblyState.receivedCount = 0;
+	}
+
+	static void resetHeloChunkReassemblyStateWithLog(const char* reason)
+	{
+		if ( g_heloChunkReassemblyState.active )
+		{
+			printlog("HELO chunk timeout/reset transfer=%u (%s)",
+				static_cast<unsigned>(g_heloChunkReassemblyState.transferId), reason ? reason : "reset");
+		}
+		resetHeloChunkReassemblyState();
+	}
+
+	static bool sendChunkedHeloToHost(const int hostnum, const Uint8* heloData, const int heloLen,
+		const Uint16 transferId, const int playerNumForLog)
+	{
+		if ( !heloData || heloLen <= 0 || heloLen > NET_PACKET_SIZE )
+		{
+			printlog("[NET]: refusing to send chunked HELO with invalid payload length %d", heloLen);
+			return false;
+		}
+
+		const int chunkPayloadMax = std::min(smokeHeloChunkPayloadMax(), NET_PACKET_SIZE - kHeloChunkHeaderSize);
+		if ( chunkPayloadMax <= 0 )
+		{
+			printlog("[NET]: refusing to send chunked HELO due to invalid payload budget");
+			return false;
+		}
+
+		const int chunkCount = (heloLen + chunkPayloadMax - 1) / chunkPayloadMax;
+		if ( chunkCount <= 0 || chunkCount > kHeloChunkMaxCount || chunkCount > 0xFF )
+		{
+			printlog("[NET]: refusing to send chunked HELO with invalid chunk count %d", chunkCount);
+			return false;
+		}
+
+		printlog("sending chunked HELO: player=%d transfer=%u chunks=%d total=%d",
+			playerNumForLog, static_cast<unsigned>(transferId), chunkCount, heloLen);
+
+		for ( int chunkIndex = 0; chunkIndex < chunkCount; ++chunkIndex )
+		{
+			const int offset = chunkIndex * chunkPayloadMax;
+			const int chunkLen = std::min(chunkPayloadMax, heloLen - offset);
+			if ( chunkLen <= 0 || chunkLen > chunkPayloadMax )
+			{
+				printlog("[NET]: refusing to send chunked HELO due to invalid chunk length %d", chunkLen);
+				return false;
+			}
+
+			memcpy(net_packet->data, "HLCN", 4);
+			SDLNet_Write16(transferId, &net_packet->data[4]);
+			net_packet->data[6] = static_cast<Uint8>(chunkIndex);
+			net_packet->data[7] = static_cast<Uint8>(chunkCount);
+			SDLNet_Write16(static_cast<Uint16>(heloLen), &net_packet->data[8]);
+			SDLNet_Write16(static_cast<Uint16>(chunkLen), &net_packet->data[10]);
+			memcpy(&net_packet->data[kHeloChunkHeaderSize], heloData + offset, chunkLen);
+			net_packet->len = kHeloChunkHeaderSize + chunkLen;
+
+			if ( !sendPacketSafe(net_sock, -1, net_packet, hostnum) )
+			{
+				printlog("[NET]: failed sending chunk %d/%d for transfer %u",
+					chunkIndex + 1, chunkCount, static_cast<unsigned>(transferId));
+				return false;
+			}
+		}
+		return true;
+	}
+
+	static bool ingestHeloChunkAndMaybeAssemble()
+	{
+		const int chunkPayloadMax = std::min(smokeHeloChunkPayloadMax(), NET_PACKET_SIZE - kHeloChunkHeaderSize);
+		if ( chunkPayloadMax <= 0 )
+		{
+			return false;
+		}
+		if ( net_packet->len < kHeloChunkHeaderSize )
+		{
+			resetHeloChunkReassemblyStateWithLog("short packet");
+			return false;
+		}
+
+		const Uint16 transferId = SDLNet_Read16(&net_packet->data[4]);
+		const Uint8 chunkIndex = net_packet->data[6];
+		const Uint8 chunkCount = net_packet->data[7];
+		const Uint16 totalHeloLen = SDLNet_Read16(&net_packet->data[8]);
+		const Uint16 chunkLen = SDLNet_Read16(&net_packet->data[10]);
+
+		if ( chunkCount == 0 || chunkCount > kHeloChunkMaxCount )
+		{
+			resetHeloChunkReassemblyStateWithLog("bad chunk count");
+			return false;
+		}
+		if ( chunkIndex >= chunkCount )
+		{
+			resetHeloChunkReassemblyStateWithLog("bad chunk index");
+			return false;
+		}
+		if ( totalHeloLen < 8 || totalHeloLen > NET_PACKET_SIZE )
+		{
+			resetHeloChunkReassemblyStateWithLog("bad total length");
+			return false;
+		}
+		if ( chunkLen == 0 || chunkLen > chunkPayloadMax )
+		{
+			resetHeloChunkReassemblyStateWithLog("bad chunk len");
+			return false;
+		}
+		if ( kHeloChunkHeaderSize + chunkLen != net_packet->len )
+		{
+			resetHeloChunkReassemblyStateWithLog("length mismatch");
+			return false;
+		}
+		if ( totalHeloLen > chunkCount * chunkPayloadMax )
+		{
+			resetHeloChunkReassemblyStateWithLog("total too large for chunks");
+			return false;
+		}
+
+		if ( !g_heloChunkReassemblyState.active )
+		{
+			resetHeloChunkReassemblyState();
+			g_heloChunkReassemblyState.active = true;
+			g_heloChunkReassemblyState.transferId = transferId;
+			g_heloChunkReassemblyState.chunkCount = chunkCount;
+			g_heloChunkReassemblyState.totalLen = totalHeloLen;
+			g_heloChunkReassemblyState.chunks.resize(chunkCount);
+			g_heloChunkReassemblyState.received.assign(chunkCount, false);
+		}
+		else if ( g_heloChunkReassemblyState.transferId != transferId )
+		{
+			if ( chunkIndex != 0 )
+			{
+				return false;
+			}
+			resetHeloChunkReassemblyState();
+			g_heloChunkReassemblyState.active = true;
+			g_heloChunkReassemblyState.transferId = transferId;
+			g_heloChunkReassemblyState.chunkCount = chunkCount;
+			g_heloChunkReassemblyState.totalLen = totalHeloLen;
+			g_heloChunkReassemblyState.chunks.resize(chunkCount);
+			g_heloChunkReassemblyState.received.assign(chunkCount, false);
+		}
+
+		if ( g_heloChunkReassemblyState.chunkCount != chunkCount || g_heloChunkReassemblyState.totalLen != totalHeloLen )
+		{
+			resetHeloChunkReassemblyStateWithLog("transfer metadata mismatch");
+			return false;
+		}
+
+		printlog("recv HLCN: transfer=%u idx=%u/%u len=%u",
+			static_cast<unsigned>(transferId),
+			static_cast<unsigned>(chunkIndex + 1),
+			static_cast<unsigned>(chunkCount),
+			static_cast<unsigned>(chunkLen));
+
+		g_heloChunkReassemblyState.lastChunkTick = ticks;
+		if ( g_heloChunkReassemblyState.received[chunkIndex] )
+		{
+			const auto& existing = g_heloChunkReassemblyState.chunks[chunkIndex];
+			if ( static_cast<int>(existing.size()) != chunkLen
+				|| memcmp(existing.data(), &net_packet->data[kHeloChunkHeaderSize], chunkLen) != 0 )
+			{
+				resetHeloChunkReassemblyStateWithLog("conflicting duplicate chunk");
+			}
+			return false;
+		}
+
+		g_heloChunkReassemblyState.chunks[chunkIndex].assign(
+			&net_packet->data[kHeloChunkHeaderSize],
+			&net_packet->data[kHeloChunkHeaderSize + chunkLen]);
+		g_heloChunkReassemblyState.received[chunkIndex] = true;
+		++g_heloChunkReassemblyState.receivedCount;
+
+		if ( g_heloChunkReassemblyState.receivedCount < g_heloChunkReassemblyState.chunkCount )
+		{
+			return false;
+		}
+
+		std::vector<Uint8> reassembled(g_heloChunkReassemblyState.totalLen);
+		int offset = 0;
+		for ( int i = 0; i < g_heloChunkReassemblyState.chunkCount; ++i )
+		{
+			if ( !g_heloChunkReassemblyState.received[i] )
+			{
+				resetHeloChunkReassemblyStateWithLog("missing chunk during assembly");
+				return false;
+			}
+			const auto& chunk = g_heloChunkReassemblyState.chunks[i];
+			if ( offset + static_cast<int>(chunk.size()) > g_heloChunkReassemblyState.totalLen )
+			{
+				resetHeloChunkReassemblyStateWithLog("overflow during assembly");
+				return false;
+			}
+			memcpy(&reassembled[offset], chunk.data(), chunk.size());
+			offset += static_cast<int>(chunk.size());
+		}
+
+		if ( offset != g_heloChunkReassemblyState.totalLen )
+		{
+			resetHeloChunkReassemblyStateWithLog("assembled length mismatch");
+			return false;
+		}
+		if ( SDLNet_Read32(reassembled.data()) != 'HELO' )
+		{
+			resetHeloChunkReassemblyStateWithLog("assembled payload missing HELO");
+			return false;
+		}
+
+		const Uint16 doneTransfer = g_heloChunkReassemblyState.transferId;
+		const Uint16 doneLen = g_heloChunkReassemblyState.totalLen;
+		memcpy(net_packet->data, reassembled.data(), reassembled.size());
+		net_packet->len = static_cast<int>(reassembled.size());
+		printlog("HELO reassembled: transfer=%u total=%u",
+			static_cast<unsigned>(doneTransfer), static_cast<unsigned>(doneLen));
+		resetHeloChunkReassemblyState();
+		return true;
+	}
+
+	static void checkHeloChunkReassemblyTimeout()
+	{
+		if ( g_heloChunkReassemblyState.active
+			&& ticks - g_heloChunkReassemblyState.lastChunkTick > kHeloChunkReassemblyTimeoutTicks )
+		{
+			resetHeloChunkReassemblyStateWithLog("timeout");
+		}
+	}
+
 	enum Filter : int {
 		UNCHECKED,
 		OFF,
@@ -951,6 +1330,10 @@ namespace MainMenu {
 	static void createLobbyBrowser(Button&);
 	static void createLocalOrNetworkMenu();
 	static void refreshLobbyBrowser();
+	static bool hostLANLobbyInternal(bool playSound);
+	static bool connectToServer(const char* address, void* pLobby, LobbyType lobbyType);
+	static void startGame();
+	static void tickSmokeAutopilot();
 
 	static void sendPlayerOverNet();
 	static void sendReadyOverNet(int index, bool ready);
@@ -1178,12 +1561,182 @@ namespace MainMenu {
 		}
 	}
 
+	static SmokeAutopilotConfig& smokeAutopilotConfig()
+	{
+		if ( g_smokeAutopilot.initialized )
+		{
+			return g_smokeAutopilot.config;
+		}
+		g_smokeAutopilot.initialized = true;
+
+		auto& cfg = g_smokeAutopilot.config;
+		const std::string role = toLowerCopy(std::getenv("BARONY_SMOKE_ROLE"));
+		if ( role == "host" )
+		{
+			cfg.role = SmokeAutopilotRole::ROLE_HOST;
+		}
+		else if ( role == "client" )
+		{
+			cfg.role = SmokeAutopilotRole::ROLE_CLIENT;
+		}
+
+		cfg.enabled = parseEnvBool("BARONY_SMOKE_AUTOPILOT", cfg.role != SmokeAutopilotRole::DISABLED);
+		if ( !cfg.enabled || cfg.role == SmokeAutopilotRole::DISABLED )
+		{
+			cfg.enabled = false;
+			return cfg;
+		}
+
+		char defaultAddress[64];
+		const Uint16 port = ::portnumber ? ::portnumber : DEFAULT_PORT;
+		snprintf(defaultAddress, sizeof(defaultAddress), "127.0.0.1:%u", static_cast<unsigned>(port));
+		cfg.connectAddress = parseEnvString("BARONY_SMOKE_CONNECT_ADDRESS", defaultAddress);
+		cfg.connectDelayTicks = parseEnvInt("BARONY_SMOKE_CONNECT_DELAY_SECS", 2, 0, 60) * TICKS_PER_SECOND;
+		cfg.retryDelayTicks = parseEnvInt("BARONY_SMOKE_RETRY_DELAY_SECS", 3, 1, 120) * TICKS_PER_SECOND;
+		cfg.expectedPlayers = parseEnvInt("BARONY_SMOKE_EXPECTED_PLAYERS", 2, 1, MAXPLAYERS);
+		cfg.autoStartLobby = parseEnvBool("BARONY_SMOKE_AUTO_START", false);
+		cfg.autoStartDelayTicks = parseEnvInt("BARONY_SMOKE_AUTO_START_DELAY_SECS", 2, 0, 120) * TICKS_PER_SECOND;
+		cfg.seedString = parseEnvString("BARONY_SMOKE_SEED", "");
+		cfg.autoReady = parseEnvBool("BARONY_SMOKE_AUTO_READY", false);
+		g_smokeAutopilot.nextActionTick = ticks + static_cast<Uint32>(cfg.connectDelayTicks);
+
+		const char* roleName = cfg.role == SmokeAutopilotRole::ROLE_HOST ? "host" : "client";
+		printlog("[SMOKE]: enabled role=%s addr=%s expected=%d autoStart=%d",
+			roleName, cfg.connectAddress.c_str(), cfg.expectedPlayers, cfg.autoStartLobby ? 1 : 0);
+
+		return cfg;
+	}
+
+	static int connectedLobbyPlayers()
+	{
+		int connected = 0;
+		for ( int c = 0; c < MAXPLAYERS; ++c )
+		{
+			if ( !client_disconnected[c] )
+			{
+				++connected;
+			}
+		}
+		return connected;
+	}
+
+	static void applySmokeSeedIfNeeded()
+	{
+		auto& runtime = g_smokeAutopilot;
+		auto& cfg = smokeAutopilotConfig();
+		if ( runtime.seedApplied || cfg.seedString.empty() )
+		{
+			return;
+		}
+		gameModeManager.currentSession.seededRun.setup(cfg.seedString);
+		runtime.seedApplied = true;
+		printlog("[SMOKE]: applied seed '%s'", cfg.seedString.c_str());
+	}
+
+	static void tickSmokeAutopilot()
+	{
+		auto& runtime = g_smokeAutopilot;
+		auto& cfg = smokeAutopilotConfig();
+		if ( !cfg.enabled )
+		{
+			return;
+		}
+
+		if ( cfg.role == SmokeAutopilotRole::ROLE_HOST )
+		{
+			if ( !runtime.hostLaunchAttempted )
+			{
+				runtime.hostLaunchAttempted = true;
+				if ( !hostLANLobbyInternal(false) )
+				{
+					printlog("[SMOKE]: host launch failed, smoke autopilot disabled");
+					cfg.enabled = false;
+				}
+				return;
+			}
+
+			if ( multiplayer != SERVER )
+			{
+				return;
+			}
+
+			applySmokeSeedIfNeeded();
+			if ( !cfg.autoStartLobby || runtime.startIssued )
+			{
+				return;
+			}
+
+			const int connected = connectedLobbyPlayers();
+			if ( connected < cfg.expectedPlayers )
+			{
+				runtime.expectedPlayersMetTick = 0;
+				return;
+			}
+
+			if ( runtime.expectedPlayersMetTick == 0 )
+			{
+				runtime.expectedPlayersMetTick = ticks;
+				printlog("[SMOKE]: expected players reached (%d/%d), start in %d sec",
+					connected, cfg.expectedPlayers, cfg.autoStartDelayTicks / TICKS_PER_SECOND);
+			}
+			if ( ticks - runtime.expectedPlayersMetTick < static_cast<Uint32>(cfg.autoStartDelayTicks) )
+			{
+				return;
+			}
+
+			runtime.startIssued = true;
+			printlog("[SMOKE]: auto-starting game");
+			startGame();
+			return;
+		}
+
+		// Client autopilot.
+		if ( receivedclientnum )
+		{
+			if ( cfg.autoReady && !runtime.readyIssued && clientnum > 0 && clientnum < MAXPLAYERS )
+			{
+				runtime.readyIssued = true;
+				printlog("[SMOKE]: auto-ready client %d", clientnum);
+				createReadyStone(clientnum, true, true);
+			}
+			return;
+		}
+		if ( runtime.joinAttempted && multiplayer != CLIENT )
+		{
+			runtime.joinAttempted = false;
+			runtime.nextActionTick = ticks + cfg.retryDelayTicks;
+		}
+		if ( runtime.joinAttempted || ticks < runtime.nextActionTick )
+		{
+			return;
+		}
+
+		if ( multiplayer == CLIENT )
+		{
+			// Connect attempt already in-flight.
+			runtime.joinAttempted = true;
+			return;
+		}
+
+		if ( connectToServer(cfg.connectAddress.c_str(), nullptr, LobbyType::LobbyLAN) )
+		{
+			runtime.joinAttempted = true;
+			printlog("[SMOKE]: join attempt sent to %s", cfg.connectAddress.c_str());
+		}
+		else
+		{
+			runtime.nextActionTick = ticks + cfg.retryDelayTicks;
+			printlog("[SMOKE]: join attempt failed, retrying in %d sec", cfg.retryDelayTicks / TICKS_PER_SECOND);
+		}
+	}
+
 	static void tickMainMenu(Widget& widget) {
 		++main_menu_ticks;
 		auto back = widget.findWidget("back", false);
 		if (back) {
 		    back->setDisabled(widget.findWidget("dimmer", false) != nullptr);
 		}
+		tickSmokeAutopilot();
 	}
 
 	static void updateSliderArrows(Frame& frame) {
@@ -12301,6 +12854,7 @@ bind_failed:
 
 			if (packetId == 'JOIN') {
 			    int playerNum = MAXPLAYERS;
+				bool useChunkedHelo = false;
 
 			    // when processing connection requests using Steamworks or EOS,
 			    // we can reject join requests out of hand if the player with
@@ -12341,7 +12895,7 @@ bind_failed:
 			    }
 
 			    // process incoming join request
-			    NetworkingLobbyJoinRequestResult result = lobbyPlayerJoinRequest(playerNum, playerSlotsLocked);
+			    NetworkingLobbyJoinRequestResult result = lobbyPlayerJoinRequest(playerNum, playerSlotsLocked, useChunkedHelo);
 
 			    // finalize connections for Steamworks / EOS
 			    if (result == NetworkingLobbyJoinRequestResult::NET_LOBBY_JOIN_P2P_FAILURE) {
@@ -12369,20 +12923,48 @@ bind_failed:
 						}
 						steamIDRemote[playerNum - 1] = new CSteamID();
 						*static_cast<CSteamID*>(steamIDRemote[playerNum - 1]) = newSteamID;
-						for ( int responses = 0; responses < 5; ++responses ) {
-							SteamNetworking()->SendP2PPacket(*static_cast<CSteamID*>(steamIDRemote[playerNum - 1]), net_packet->data, net_packet->len, k_EP2PSendReliable, 0);
-							SDL_Delay(5);
-						}
 #endif // STEAMWORKS
 					}
 					else if ( LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY ) {
 #if defined USE_EOS
 						EOS.P2PConnectionInfo.assignPeerIndex(newRemoteProductId, playerNum - 1);
+	#endif
+					}
+
+					bool sentChunkedHelo = false;
+					if ( useChunkedHelo && playerNum > 0 && playerNum < MAXPLAYERS )
+					{
+						std::vector<Uint8> heloSnapshot(net_packet->len);
+						memcpy(heloSnapshot.data(), net_packet->data, heloSnapshot.size());
+						const Uint16 transferId = nextHeloTransferIdForPlayer(playerNum);
+						sentChunkedHelo = sendChunkedHeloToHost(playerNum - 1, heloSnapshot.data(),
+							static_cast<int>(heloSnapshot.size()), transferId, playerNum);
+						if ( !sentChunkedHelo )
+						{
+							printlog("[NET]: chunked HELO send failed, falling back to legacy HELO for player %d", playerNum);
+							memcpy(net_packet->data, heloSnapshot.data(), heloSnapshot.size());
+							net_packet->len = static_cast<int>(heloSnapshot.size());
+						}
+					}
+
+					if ( !sentChunkedHelo )
+					{
+						if ( LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM ) {
+#ifdef STEAMWORKS
+							for ( int responses = 0; responses < 5; ++responses ) {
+								SteamNetworking()->SendP2PPacket(*static_cast<CSteamID*>(steamIDRemote[playerNum - 1]), net_packet->data, net_packet->len, k_EP2PSendReliable, 0);
+								SDL_Delay(5);
+							}
+#endif // STEAMWORKS
+						}
+						else if ( LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY ) {
+#if defined USE_EOS
 						for ( int responses = 0; responses < 5; ++responses ) {
 							EOS.SendMessageP2P(EOS.P2PConnectionInfo.getPeerIdFromIndex(playerNum - 1), net_packet->data, net_packet->len);
 							SDL_Delay(5);
 						}
 #endif
+						}
 					}
 					sendSvFlagsOverNet();
 					sendCustomScenarioOverNet(playerNum);
@@ -12437,6 +13019,14 @@ bind_failed:
 		        //loadingsavegame = 0;
 	        }
 	    }},
+
+		// late join-handshake packets can arrive after we've already transitioned.
+		{'HELO', [](){
+			return;
+		}},
+		{'HLCN', [](){
+			return;
+		}},
 
 		// we can get an ENTU packet if the server already started and we missed it somehow
 	    /*{'ENTU', [](){
@@ -12708,14 +13298,28 @@ bind_failed:
 
 			// trying to connect to the server and get a player number
 			// receive the packet:
+			checkHeloChunkReassemblyTimeout();
 			bool gotPacket = false;
+			auto processJoinHandshakePacket = [&gotPacket]() {
+				const Uint32 packetId = SDLNet_Read32(&net_packet->data[0]);
+				if ( packetId == 'HELO' )
+				{
+					resetHeloChunkReassemblyState();
+					gotPacket = true;
+				}
+				else if ( packetId == 'HLCN' )
+				{
+					if ( ingestHeloChunkAndMaybeAssemble() )
+					{
+						gotPacket = true;
+					}
+				}
+			};
+
 			if (directConnect) {
 			    if (SDLNet_UDP_Recv(net_sock, net_packet)) {
 			        if (!handleSafePacket()) {
-			            Uint32 packetId = SDLNet_Read32(&net_packet->data[0]);
-			            if (packetId == 'HELO') {
-					        gotPacket = true;
-					    }
+						processJoinHandshakePacket();
 					}
 			    }
 			} else if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
@@ -12743,10 +13347,7 @@ bind_failed:
 					}
 
 			        if (!handleSafePacket()) {
-			            Uint32 packetId = SDLNet_Read32(&net_packet->data[0]);
-			            if (packetId == 'HELO') {
-					        gotPacket = true;
-					    }
+						processJoinHandshakePacket();
 					}
 					break;
 				}
@@ -12759,10 +13360,7 @@ bind_failed:
 					}
 
 			        if (!handleSafePacket()) {
-			            Uint32 packetId = SDLNet_Read32(&net_packet->data[0]);
-			            if (packetId == 'HELO') {
-					        gotPacket = true;
-					    }
+						processJoinHandshakePacket();
 					}
 					break;
 				}
@@ -12771,6 +13369,11 @@ bind_failed:
 
 			// parse the packet:
 			if (gotPacket) {
+				if ( net_packet->len < 8 )
+				{
+					printlog("[NET]: ignoring short HELO packet while joining (len=%d)", net_packet->len);
+					return;
+				}
 				clientnum = (int)SDLNet_Read32(&net_packet->data[4]);
 				if (clientnum >= MAXPLAYERS || clientnum <= 0) {
                     int error = clientnum;
@@ -12826,6 +13429,17 @@ bind_failed:
 #endif
                     return;
 				} else {
+					const int chunk_size = loadingsavegame ?
+						6 + 32 + 6 * 10 :	// 6 bytes for player stats, 32 for name, 60 for equipment
+						6 + 32;				// 6 bytes for player stats, 32 for name
+					const int expectedHeloLen = 8 + MAXPLAYERS * chunk_size;
+					if ( net_packet->len < expectedHeloLen )
+					{
+						printlog("[NET]: ignoring truncated HELO packet while joining (len=%d expected>=%d)",
+							net_packet->len, expectedHeloLen);
+						return;
+					}
+
 					// join game succeeded, advance to lobby
 					client_keepalive[0] = ticks;
 					PingNetworkStatus_t::reset();
@@ -12838,10 +13452,6 @@ bind_failed:
 
 					// now set up everybody else
 					for (int c = 0; c < MAXPLAYERS; c++) {
-						const int chunk_size = loadingsavegame ?
-							6 + 32 + 6 * 10:	// 6 bytes for player stats, 32 for name, 60 for equipment
-							6 + 32;				// 6 bytes for player stats, 32 for name
-							
 						stats[c]->clearStats();
 						client_disconnected[c] = net_packet->data[8 + c * chunk_size + 0]; // connectedness
 						playerSlotsLocked[c] = net_packet->data[8 + c * chunk_size + 1]; // locked state
@@ -13127,9 +13737,10 @@ bind_failed:
 	    }
 	    SDLNet_Write32(loadingsavegame, &net_packet->data[61]); // send unique game key
 		SDLNet_Write32(loadinglobbykey, &net_packet->data[65]); // send unique lobby key
+		net_packet->data[69] = kJoinCapabilityHeloChunkV1;
 	    net_packet->address.host = net_server.host;
 	    net_packet->address.port = net_server.port;
-	    net_packet->len = 69;
+	    net_packet->len = 70;
 
 	    /*if (!directConnect) {
 		    sendPacket(net_sock, -1, net_packet, 0);
@@ -23802,8 +24413,11 @@ failed:
 #endif
 	}
 
-	static void hostLANLobby(Button&) {
-		soundActivate();
+	static bool hostLANLobbyInternal(bool playSound) {
+		if ( playSound )
+		{
+			soundActivate();
+		}
 
 		closeNetworkInterfaces();
 		randomizeHostname();
@@ -23811,10 +24425,10 @@ failed:
 
 #if defined(NINTENDO)
 		if (!nxInitWireless()) {
-			return;
+			return false;
 		}
 		if (!nxHostLobby()) {
-			return;
+			return false;
 		}
 
 		// resolve localhost address
@@ -23828,11 +24442,12 @@ failed:
 			snprintf(buf, sizeof(buf), Language::get(5570), port);
 			systemErrorPrompt(buf);
 			nxShutdownWireless();
-			return;
+			return false;
 		}
 
 		// create lobby
 		createLobby(LobbyType::LobbyLAN);
+		return true;
 #else
 		// resolve localhost address
 		Uint16 port = ::portnumber ? ::portnumber : DEFAULT_PORT;
@@ -23844,12 +24459,17 @@ failed:
 			char buf[1024];
 			snprintf(buf, sizeof(buf), Language::get(5570), port);
 			errorPrompt(buf, Language::get(5558), [](Button&){soundCancel(); closeMono();});
-			return;
+			return false;
 		}
 
 		// create lobby
 		createLobby(LobbyType::LobbyLAN);
+		return true;
 #endif
+	}
+
+	static void hostLANLobby(Button&) {
+		(void)hostLANLobbyInternal(true);
 	}
 
 	static void createLocalOrNetworkMenu() {

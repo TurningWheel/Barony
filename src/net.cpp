@@ -45,8 +45,12 @@
 #endif
 
 #include <atomic>
+#include <algorithm>
+#include <cctype>
+#include <cstdlib>
 #include <future>
 #include <thread>
+#include <vector>
 
 NetHandler* net_handler = nullptr;
 
@@ -76,6 +80,165 @@ static bool hasUsablePlayerSlot(const int player, const bool requireStats = true
 	}
 	return true;
 }
+
+namespace {
+constexpr Uint8 kJoinCapabilityHeloChunkV1 = 0x01;
+constexpr int kHeloChunkHeaderSize = 12;
+constexpr int kHeloChunkPayloadMax = 900;
+constexpr int kHeloSinglePacketMax = 1100;
+constexpr int kHeloChunkMaxCount = 32;
+static Uint16 g_heloTransferId[MAXPLAYERS] = { 0 };
+
+std::string toLowerCopy(const char* value)
+{
+	std::string result = value ? value : "";
+	for ( auto& ch : result )
+	{
+		ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
+	}
+	return result;
+}
+
+bool parseEnvBool(const char* key, const bool fallback)
+{
+	const char* raw = std::getenv(key);
+	if ( !raw || !raw[0] )
+	{
+		return fallback;
+	}
+	const std::string value = toLowerCopy(raw);
+	if ( value == "1" || value == "true" || value == "yes" || value == "on" )
+	{
+		return true;
+	}
+	if ( value == "0" || value == "false" || value == "no" || value == "off" )
+	{
+		return false;
+	}
+	return fallback;
+}
+
+int parseEnvInt(const char* key, const int fallback, const int minValue, const int maxValue)
+{
+	const char* raw = std::getenv(key);
+	if ( !raw || !raw[0] )
+	{
+		return fallback;
+	}
+	char* end = nullptr;
+	const long parsed = std::strtol(raw, &end, 10);
+	if ( end == raw || (end && *end != '\0') )
+	{
+		return fallback;
+	}
+	return std::max(minValue, std::min(maxValue, static_cast<int>(parsed)));
+}
+
+bool forceChunkedHeloForSmoke()
+{
+	static bool initialized = false;
+	static bool enabled = false;
+	if ( !initialized )
+	{
+		initialized = true;
+		enabled = parseEnvBool("BARONY_SMOKE_FORCE_HELO_CHUNK", false);
+		if ( enabled )
+		{
+			printlog("[SMOKE]: BARONY_SMOKE_FORCE_HELO_CHUNK is enabled");
+		}
+	}
+	return enabled;
+}
+
+int heloChunkPayloadMax()
+{
+	static bool initialized = false;
+	static int configured = kHeloChunkPayloadMax;
+	if ( !initialized )
+	{
+		initialized = true;
+		configured = parseEnvInt("BARONY_SMOKE_HELO_CHUNK_PAYLOAD_MAX",
+			kHeloChunkPayloadMax, 64, kHeloChunkPayloadMax);
+		if ( configured != kHeloChunkPayloadMax )
+		{
+			printlog("[SMOKE]: using HELO chunk payload max override: %d", configured);
+		}
+	}
+	return configured;
+}
+
+Uint16 nextHeloTransferIdForPlayer(const int player)
+{
+	if ( player < 0 || player >= MAXPLAYERS )
+	{
+		return 1;
+	}
+	++g_heloTransferId[player];
+	if ( g_heloTransferId[player] == 0 )
+	{
+		++g_heloTransferId[player];
+	}
+	return g_heloTransferId[player];
+}
+
+bool sendChunkedHeloToHost(const int hostnum, const IPaddress& destination, const Uint8* heloData, const int heloLen,
+	const Uint16 transferId, const int playerNumForLog)
+{
+	if ( !heloData || heloLen <= 0 || heloLen > NET_PACKET_SIZE )
+	{
+		printlog("[NET]: refusing to send chunked HELO with invalid payload length %d", heloLen);
+		return false;
+	}
+
+	const int chunkPayloadMax = std::min(heloChunkPayloadMax(), NET_PACKET_SIZE - kHeloChunkHeaderSize);
+	if ( chunkPayloadMax <= 0 )
+	{
+		printlog("[NET]: refusing to send chunked HELO due to invalid payload budget");
+		return false;
+	}
+
+	const int chunkCount = (heloLen + chunkPayloadMax - 1) / chunkPayloadMax;
+	if ( chunkCount <= 0 || chunkCount > kHeloChunkMaxCount || chunkCount > 0xFF )
+	{
+		printlog("[NET]: refusing to send chunked HELO with invalid chunk count %d", chunkCount);
+		return false;
+	}
+
+	printlog("sending chunked HELO: player=%d transfer=%u chunks=%d total=%d",
+		playerNumForLog, static_cast<unsigned>(transferId), chunkCount, heloLen);
+
+	for ( int chunkIndex = 0; chunkIndex < chunkCount; ++chunkIndex )
+	{
+		const int offset = chunkIndex * chunkPayloadMax;
+		const int chunkLen = std::min(chunkPayloadMax, heloLen - offset);
+		if ( chunkLen <= 0 || chunkLen > chunkPayloadMax )
+		{
+			printlog("[NET]: refusing to send chunked HELO due to invalid chunk length %d", chunkLen);
+			return false;
+		}
+
+		memcpy(net_packet->data, "HLCN", 4);
+		SDLNet_Write16(transferId, &net_packet->data[4]);
+		net_packet->data[6] = static_cast<Uint8>(chunkIndex);
+		net_packet->data[7] = static_cast<Uint8>(chunkCount);
+		SDLNet_Write16(static_cast<Uint16>(heloLen), &net_packet->data[8]);
+		SDLNet_Write16(static_cast<Uint16>(chunkLen), &net_packet->data[10]);
+		memcpy(&net_packet->data[kHeloChunkHeaderSize], heloData + offset, chunkLen);
+
+		net_packet->address.host = destination.host;
+		net_packet->address.port = destination.port;
+		net_packet->len = kHeloChunkHeaderSize + chunkLen;
+
+		if ( !sendPacketSafe(net_sock, -1, net_packet, hostnum) )
+		{
+			printlog("[NET]: failed sending chunk %d/%d for transfer %u",
+				chunkIndex + 1, chunkCount, static_cast<unsigned>(transferId));
+			return false;
+		}
+	}
+	return true;
+}
+} // namespace
 
 void packetDeconstructor(void* data)
 {
@@ -1534,9 +1697,12 @@ void sendAllyCommandClient(int player, Uint32 uid, int command, Uint8 x, Uint8 y
 	sendPacket(net_sock, -1, net_packet, 0);
 }
 
-NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest(int& outResult, bool lockedSlots[MAXPLAYERS])
+NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest(int& outResult, bool lockedSlots[MAXPLAYERS], bool& outUseChunkedHelo)
 {
     printlog("processing lobby join request\n");
+	outUseChunkedHelo = false;
+	const bool clientSupportsHeloChunk = (net_packet->len >= 70)
+		&& ((net_packet->data[69] & kJoinCapabilityHeloChunkV1) != 0);
 
 	Uint32 result = MAXPLAYERS;
 	if ( strcmp(VERSION, (char*)net_packet->data + 48) ) // TODO this should be safer.
@@ -1725,9 +1891,30 @@ NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest(int& outResult, bool loc
 		}
 		net_packet->address.host = net_clients[c - 1].host;
 		net_packet->address.port = net_clients[c - 1].port;
+		const bool shouldChunkForSavegame = loadingsavegame && (net_packet->len > kHeloSinglePacketMax);
+		const bool shouldChunkForSmoke = forceChunkedHeloForSmoke();
+		outUseChunkedHelo = clientSupportsHeloChunk && (shouldChunkForSavegame || shouldChunkForSmoke);
 		if ( directConnect )
 		{
-		    sendPacketSafe(net_sock, -1, net_packet, 0);
+			if ( outUseChunkedHelo )
+			{
+				std::vector<Uint8> heloSnapshot(net_packet->len);
+				memcpy(heloSnapshot.data(), net_packet->data, heloSnapshot.size());
+				const Uint16 transferId = nextHeloTransferIdForPlayer(c);
+				if ( !sendChunkedHeloToHost(0, net_packet->address, heloSnapshot.data(),
+					static_cast<int>(heloSnapshot.size()), transferId, c) )
+				{
+					printlog("[NET]: chunked HELO send failed, falling back to legacy HELO for player %d", c);
+					memcpy(net_packet->data, heloSnapshot.data(), heloSnapshot.size());
+					net_packet->len = static_cast<int>(heloSnapshot.size());
+					outUseChunkedHelo = false;
+					sendPacketSafe(net_sock, -1, net_packet, 0);
+				}
+			}
+			else
+			{
+				sendPacketSafe(net_sock, -1, net_packet, 0);
+			}
 			return NET_LOBBY_JOIN_DIRECTIP_SUCCESS;
 		}
 		else
