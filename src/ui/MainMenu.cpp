@@ -11372,25 +11372,32 @@ bind_failed:
 	    }
 	}
 
-		static void lockSlot(int index, bool locked) {
-		    if (multiplayer == SERVER) {
-		        playerSlotsLocked[index] = locked;
-		        if (locked) {
-		            if (!client_disconnected[index]) {
-	                kickPlayer(index);
-	            }
-	            createLockedStone(index);
-	        } else {
-	            if (client_disconnected[index]) {
-		            if (directConnect) {
-                        createWaitingStone(index);
-                    } else {
-                        createInviteButton(index);
-                    }
-                }
-	        }
-	            checkReadyStates();
-		    }
+		static void lockSlot(int index, bool locked)
+		{
+			if ( multiplayer == SERVER )
+			{
+				playerSlotsLocked[index] = locked;
+				if ( locked )
+				{
+					if ( !client_disconnected[index] )
+					{
+						kickPlayer(index);
+					}
+					createLockedStone(index);
+				}
+				else if ( client_disconnected[index] )
+				{
+					if ( directConnect )
+					{
+						createWaitingStone(index);
+					}
+					else
+					{
+						createInviteButton(index);
+					}
+				}
+				checkReadyStates();
+			}
 		}
 
 		static int pendingLobbyPlayerCountSelection = 4;
@@ -11448,8 +11455,8 @@ bind_failed:
 			std::string promptText;
 			if (targetCount > 4)
 			{
-				promptText = "WARNING: Player counts above 4 are experimental and may be unstable.\n"
-					"This can cause desyncs and balance issues.\n"
+				promptText = "WARNING: Above 4 players is experimental.\n"
+					"Desyncs and balance issues are possible.\n"
 					"Continue?";
 			}
 
@@ -11509,35 +11516,42 @@ bind_failed:
 				confirmLobbyKickSelection, cancelLobbyKickSelection);
 		}
 
-		static void sendReadyOverNet(int index, bool ready) {
-		    if (multiplayer != SERVER && multiplayer != CLIENT) {
-		        return;
-		    }
+		static void sendReadyOverNet(int index, bool ready)
+		{
+			if ( multiplayer != SERVER && multiplayer != CLIENT )
+			{
+				return;
+			}
 
-        // packet header
-        memcpy(net_packet->data, "REDY", 4);
-	    net_packet->data[4] = (Uint8)index;
+			// packet header
+			memcpy(net_packet->data, "REDY", 4);
+			net_packet->data[4] = (Uint8)index;
 
-	    // data
-	    net_packet->data[5] = ready ? (Uint8)1u : (Uint8)0u;
+			// data
+			net_packet->data[5] = ready ? (Uint8)1u : (Uint8)0u;
 
-        // send packet
-        net_packet->len = 6;
-        if (multiplayer == SERVER) {
-	        for (int i = 1; i < MAXPLAYERS; i++ ) {
-		        if ( client_disconnected[i] ) {
-			        continue;
-		        }
-		        net_packet->address.host = net_clients[i - 1].host;
-		        net_packet->address.port = net_clients[i - 1].port;
-		        sendPacketSafe(net_sock, -1, net_packet, i - 1);
-	        }
-	    } else if (multiplayer == CLIENT) {
-	        net_packet->address.host = net_server.host;
-	        net_packet->address.port = net_server.port;
-	        sendPacketSafe(net_sock, -1, net_packet, 0);
-	    }
-	}
+			// send packet
+			net_packet->len = 6;
+			if ( multiplayer == SERVER )
+			{
+				for (int i = 1; i < MAXPLAYERS; i++ )
+				{
+					if ( client_disconnected[i] )
+					{
+						continue;
+					}
+					net_packet->address.host = net_clients[i - 1].host;
+					net_packet->address.port = net_clients[i - 1].port;
+					sendPacketSafe(net_sock, -1, net_packet, i - 1);
+				}
+			}
+			else if ( multiplayer == CLIENT )
+			{
+				net_packet->address.host = net_server.host;
+				net_packet->address.port = net_server.port;
+				sendPacketSafe(net_sock, -1, net_packet, 0);
+			}
+		}
 
 	static void sendCustomScenarioOverNet(const int playernum)
 	{
@@ -14403,11 +14417,25 @@ failed:
 		return pageOffsetX + (Frame::virtualScreenX / (slotsPerPage * 2)) * (slotInPage * 2 + 1);
 	}
 
-	static int getLobbySlotRow(int index)
+	static void focusLobbyPageForPlayer(int player)
 	{
-		(void)index;
-		// Lobby cards use paging (4 per page) instead of vertical stacking.
-		return 0;
+		if ( !main_menu_frame )
+		{
+			return;
+		}
+		auto lobby = main_menu_frame->findFrame("lobby");
+		if ( !lobby )
+		{
+			return;
+		}
+
+		const int slotsPerPage = getLobbySlotsPerPage();
+		const int clampedPlayer = std::max(0, std::min(player, MAXPLAYERS - 1));
+		const int page = clampedPlayer / slotsPerPage;
+
+		SDL_Rect pos = lobby->getActualSize();
+		pos.x = page * Frame::virtualScreenX;
+		lobby->setActualSize(pos);
 	}
 
 	static SDL_Rect getLobbySmallCardRect(int index, int width = 280, int height = 146)
@@ -19211,10 +19239,11 @@ failed:
 				auto card = lobby->findFrame((std::string("card") + std::to_string(index)).c_str());
 				if (card) {
 					const int paperdollWidth = Frame::virtualScreenX / getLobbySlotsPerPage();
+					constexpr int paperdollPaddingX = 24;
 					paperdoll->setSize(SDL_Rect{
-						getLobbySlotCenterX(index) - paperdollWidth / 2,
+						getLobbySlotCenterX(index) - paperdollWidth / 2 - paperdollPaddingX,
 						0,
-						paperdollWidth,
+						paperdollWidth + paperdollPaddingX * 2,
 						Frame::virtualScreenY * 3 / 4
 						});
 					bool showPaperdoll = false;
@@ -20161,6 +20190,7 @@ failed:
 		            }
 		        }
 		    }
+			focusLobbyPageForPlayer(clientnum);
 		}
 
 		// network ping displays
@@ -20173,10 +20203,6 @@ failed:
 					auto pingFrame = lobby->addFrame((std::string("ping") + std::to_string(index)).c_str());
 					SDL_Rect cardPos = getLobbySmallCardRect(index);
 					SDL_Rect pos{ cardPos.x + (cardPos.w - 108) / 2, cardPos.y + cardPos.h + 32, 108, 38 + 18 + 4 };
-					if ( getLobbySlotRow(index) > 0 )
-					{
-						pos.y = cardPos.y - pos.h - 8;
-					}
 					pingFrame->setSize(pos);
 				pingFrame->setHollow(true);
 				pingFrame->setTickCallback([](Widget& widget) {
@@ -20986,38 +21012,40 @@ failed:
         entry_name->data = (info.index < 0 || info.index >= lobbies.size()) ?
             (void*)lobbies.back().index : (void*)lobbies[info.index].index;
 
-        // players cell
-	        const char* players_image = nullptr;
-			std::string players_text;
-	        if (info.locked) {
-	            players_image = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Players_Grey.png";
-	        } else if (info.players > 4) {
-				char playerCountBuffer[32];
-				snprintf(playerCountBuffer, sizeof(playerCountBuffer), "%d/%d", info.players, MAXPLAYERS);
-				players_text = playerCountBuffer;
-	        } else {
-	            switch (info.players) {
-	            case 0: players_image = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Players_0.png"; break;
-	            case 1: players_image = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Players_1.png"; break;
-	            case 2: players_image = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Players_2.png"; break;
-	            case 3: players_image = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Players_3.png"; break;
-	            case 4: players_image = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Players_4.png"; break;
-	            default: players_image = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Players_4.png"; break;
-	            }
-	        }
-	        auto entry_players = players->addEntry(info.name.c_str(), true);
-	        entry_players->click = activate_fn;
-	        entry_players->ctrlClick = activate_fn;
-	        entry_players->highlight = selection_fn;
-	        entry_players->selected = selection_fn;
-	        entry_players->color = info.locked ? makeColor(50, 56, 67, 255) : 0xffffffff;
-			if (!players_text.empty()) {
+		// players cell
+		const char* players_image = nullptr;
+		std::string players_text;
+		if (info.locked) {
+			players_image = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Players_Grey.png";
+		} else if (info.players > 4) {
+			char playerCountBuffer[32];
+			snprintf(playerCountBuffer, sizeof(playerCountBuffer), "%d/%d", info.players, MAXPLAYERS);
+			players_text = playerCountBuffer;
+		} else {
+			// Lobby browser art only includes icon variants for 0-4 players.
+			static const char* kLobbyPlayerCountIcons[5] = {
+				"*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Players_0.png",
+				"*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Players_1.png",
+				"*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Players_2.png",
+				"*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Players_3.png",
+				"*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Players_4.png"
+			};
+			const int clampedPlayers = std::max(0, std::min(info.players, 4));
+			players_image = kLobbyPlayerCountIcons[clampedPlayers];
+		}
+		auto entry_players = players->addEntry(info.name.c_str(), true);
+		entry_players->click = activate_fn;
+		entry_players->ctrlClick = activate_fn;
+		entry_players->highlight = selection_fn;
+		entry_players->selected = selection_fn;
+		entry_players->color = info.locked ? makeColor(50, 56, 67, 255) : 0xffffffff;
+		if (!players_text.empty()) {
 				entry_players->text = players_text;
 			} else {
-		        entry_players->image = players_image;
+			entry_players->image = players_image;
 			}
-	        entry_players->data = (info.index < 0 || info.index >= lobbies.size()) ?
-	            (void*)lobbies.back().index : (void*)lobbies[info.index].index;
+		entry_players->data = (info.index < 0 || info.index >= lobbies.size()) ?
+			(void*)lobbies.back().index : (void*)lobbies[info.index].index;
 
 		auto entry_version = versions->addEntry(info.name.c_str(), true);
 		entry_version->click = activate_fn;
@@ -24585,7 +24613,7 @@ failed:
 						}
 					}
 				}
-                    
+
                 // add player info
                 if (numplayers == 1) {
                     addContinuePlayerInfo(subwindow, saveGameInfo, saveGameInfo.player_num, posX + 30, 114, false);
@@ -24610,6 +24638,8 @@ failed:
 	                    for (int c = 0, player = 0; c < (int)saveGameInfo.players_connected.size(); ++c) {
 	                        if (saveGameInfo.players_connected[c]) {
 	                        	if ( player >= 4 ) {
+                                    // This window has a fixed 2x2 thumbnail layout.
+                                    // Additional players are still present in the save, but not shown here.
 	                        		break;
 	                        	}
 	                            switch (player) {

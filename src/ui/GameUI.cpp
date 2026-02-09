@@ -4414,50 +4414,59 @@ std::vector<std::vector<std::string>> playerXPCapPaths = {
 
 static int getXPBarThemeIndex(const int player)
 {
-	if ( !colorblind_lobby )
+	static int normalThemeByPlayer[MAXPLAYERS];
+	static int colorblindThemeByPlayer[MAXPLAYERS];
+	static bool initialized = false;
+	if ( !initialized )
 	{
-		switch ( player )
+		const int normalPrimary[] = { 0, 1, 2, 3, 4 };
+		const int normalCycle[] = { 2, 3, 4 };
+		const int colorblindPrimary[] = { 2, 3, 1, 4, 4 };
+		const int colorblindCycle[] = { 2, 3, 4 };
+		auto buildThemeMap = [](int* outMap,
+			const int* primary, const int primaryCount,
+			const int* cycle, const int cycleCount)
 		{
-			case 0:
-			default:
-				return 0;
-			case 1:
-				return 1;
-			case 2:
-				return 2;
-			case 3:
-				return 3;
-			case 4:
-				return 4;
-			case 5:
-				return 2;
-			case 6:
-				return 3;
-			case 7:
-				return 4;
-		}
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				if ( i < primaryCount )
+				{
+					outMap[i] = primary[i];
+				}
+				else if ( cycleCount > 0 )
+				{
+					outMap[i] = cycle[(i - primaryCount) % cycleCount];
+				}
+				else if ( primaryCount > 0 )
+				{
+					outMap[i] = primary[primaryCount - 1];
+				}
+				else
+				{
+					outMap[i] = 0;
+				}
+			}
+		};
+
+		buildThemeMap(normalThemeByPlayer,
+			normalPrimary, static_cast<int>(sizeof(normalPrimary) / sizeof(normalPrimary[0])),
+			normalCycle, static_cast<int>(sizeof(normalCycle) / sizeof(normalCycle[0])));
+		buildThemeMap(colorblindThemeByPlayer,
+			colorblindPrimary, static_cast<int>(sizeof(colorblindPrimary) / sizeof(colorblindPrimary[0])),
+			colorblindCycle, static_cast<int>(sizeof(colorblindCycle) / sizeof(colorblindCycle[0])));
+		initialized = true;
 	}
 
-	switch ( player )
+	if ( player < 0 || player >= MAXPLAYERS )
 	{
-		case 0:
-		default:
-			return 2;
-		case 1:
-			return 3;
-		case 2:
-			return 1;
-		case 3:
-			return 4;
-		case 4:
-			return 4;
-		case 5:
-			return 2;
-		case 6:
-			return 3;
-		case 7:
-			return 4;
+		return colorblind_lobby ? colorblindThemeByPlayer[0] : normalThemeByPlayer[0];
 	}
+
+	// We only have five XP bar art themes. Preserve legacy order for early players,
+	// then rotate extra slots through secondary themes. Repeats begin at player index 5
+	// because that is the first overflow slot, and continue with one consistent cycle.
+	return colorblind_lobby ?
+		colorblindThemeByPlayer[player] : normalThemeByPlayer[player];
 }
 
 void createXPBar(const int player)
