@@ -31,7 +31,6 @@
 #include "../ui/MainMenu.hpp"
 #include "../mod_tools.hpp"
 #include "../book.hpp"
-#include "../player_slot_map.hpp"
 #ifdef STEAMWORKS
 #include <steam/steam_api.h>
 #include "../steam.hpp"
@@ -2285,35 +2284,6 @@ void select_inventory_slot(int player, int currentx, int currenty, int diffx, in
 
 std::string getItemSpritePath(const int player, Item& item)
 {
-	auto getLootBagImageIndex = [](const int playerOwner) -> Uint32
-	{
-		static const Uint32 normalPrimary[] = { 0, 1, 2, 3, 4 };
-		static const Uint32 normalCycle[] = { 2, 3, 4 };
-		static const Uint32 colorblindPrimary[] = { 2, 3, 1, 4, 5, 6, 7, 8 };
-		static const Uint32 colorblindCycle[] = { 5, 6, 7, 8 };
-		static const PlayerSlotLookup<Uint32, MAXPLAYERS> normalImageByPlayer =
-			buildPlayerSlotLookup<Uint32, MAXPLAYERS>(normalPrimary, normalCycle, 0);
-		static const PlayerSlotLookup<Uint32, MAXPLAYERS> colorblindImageByPlayer =
-			buildPlayerSlotLookup<Uint32, MAXPLAYERS>(colorblindPrimary, colorblindCycle, 0);
-
-		if ( playerOwner < 0 || playerOwner >= MAXPLAYERS )
-		{
-			return 4;
-		}
-
-		if ( colorblind_lobby )
-		{
-			// Preserve legacy order for the first slots. Once we overflow those slots
-			// (starting at player index 8), we continue with one consistent cycle.
-			return colorblindImageByPlayer[playerOwner];
-		}
-
-		// Non-colorblind mode only ships 5 variants; after the base slots, we
-		// cycle secondary palettes from player index 5 onward in the same order
-		// used by other lobby UI elements.
-		return normalImageByPlayer[playerOwner];
-		};
-
 	if ( item.type == SPELL_ITEM )
 	{
 		return ItemTooltips.getSpellIconPath(player, item, -1);
@@ -2324,7 +2294,8 @@ std::string getItemSpritePath(const int player, Item& item)
 		if ( item.type == TOOL_PLAYER_LOOT_BAG )
 		{
 			const int playerOwner = item.getLootBagPlayer();
-			imagePathsNode = list_Node(&items[item.type].images, getLootBagImageIndex(playerOwner));
+			imagePathsNode = list_Node(&items[item.type].images,
+				getLootBagVariationForPlayer(playerOwner, colorblind_lobby));
 		}
 		else if ( item.type == MAGICSTAFF_SCEPTER )
 		{

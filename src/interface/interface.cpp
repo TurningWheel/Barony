@@ -30393,38 +30393,54 @@ std::string CalloutRadialMenu::getCalloutKeyForCommand(CalloutRadialMenu::Callou
 
 int CalloutRadialMenu::getPlayerForDirectPlayerCmd(const int player, const CalloutRadialMenu::CalloutCommand cmd)
 {
+	if ( player < 0 || player >= MAXPLAYERS )
+	{
+		return -1;
+	}
+
+	int targetIndex = -1;
 	if ( cmd == CALLOUT_CMD_SOUTH )
 	{
-		if ( player == 0 )
-		{
-			return 1;
-		}
-		else
-		{
-			return 0;
-		}
+		targetIndex = 0;
 	}
 	else if ( cmd == CALLOUT_CMD_SOUTHWEST )
 	{
-		if ( player == 0 )
-		{
-			return 2;
-		}
-		else
-		{
-			return player == 1 ? 2 : 1;
-		}
+		targetIndex = 1;
 	}
 	else if ( cmd == CALLOUT_CMD_SOUTHEAST )
 	{
-		if ( player == 0 || player == 1 )
+		targetIndex = 2;
+	}
+	if ( targetIndex < 0 )
+	{
+		return -1;
+	}
+
+	if ( player == 0 )
+	{
+		// Legacy host ordering: first three direct targets are players 1,2,3.
+		const int hostTarget = targetIndex + 1;
+		return hostTarget < MAXPLAYERS ? hostTarget : -1;
+	}
+
+	// Legacy non-host ordering: host first, then ascending player slots.
+	if ( targetIndex == 0 )
+	{
+		return 0;
+	}
+
+	int remaining = targetIndex - 1;
+	for ( int candidate = 1; candidate < MAXPLAYERS; ++candidate )
+	{
+		if ( candidate == player )
 		{
-			return 3;
+			continue;
 		}
-		else
+		if ( remaining == 0 )
 		{
-			return player == 2 ? 3 : 2;
+			return candidate;
 		}
+		--remaining;
 	}
 	return -1;
 }
