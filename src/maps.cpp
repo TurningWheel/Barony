@@ -71,11 +71,15 @@ static int getOverflowPlayersBeyondSplitscreen(int connectedPlayers)
 
 static int getOverflowLootToMonsterRerollDivisor(int overflowPlayers)
 {
-	// 5p starts conservative (1 in 6 reroll), then ramps up to a 1 in 3 cap.
+	// 5p starts conservative (1 in 6 reroll), reaches 1 in 3 at 8p,
+	// then opens up to a 1 in 2 cap for larger overflow lobbies.
 	constexpr int kFivePlayerDivisor = 6;
-	constexpr int kMinimumDivisor = 3;
+	constexpr int kLegacyCapDivisor = 3;
+	constexpr int kExtendedCapDivisor = 2;
+
 	const int divisor = kFivePlayerDivisor - std::max(0, overflowPlayers - 1);
-	return std::max(kMinimumDivisor, divisor);
+	const int divisorFloor = overflowPlayers > 5 ? kExtendedCapDivisor : kLegacyCapDivisor;
+	return std::max(divisorFloor, divisor);
 }
 
 void TreasureRoomGenerator::init()
@@ -3931,7 +3935,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 	if ( overflowPlayers > 0 && !(genEntityMin > 0 || genEntityMax > 0) )
 	{
 		// Keep <=4p unchanged; overflow players add spawn-roll density (not map dimensions).
-		const int bonusEntityRolls = std::min(12, 2 + overflowPlayers * 2);
+		const int bonusEntityRolls = std::min(36, 2 + overflowPlayers * 2);
 		j = std::min<Uint32>(j + bonusEntityRolls, numpossiblelocations);
 	}
 	int forcedMonsterSpawns = 0;
@@ -6121,7 +6125,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				if ( overflowPlayers > 0 )
 				{
 					// Overflow players increase hide-monster odds, with a floor to avoid over-spiking.
-					breakableMonsterChanceDivisor = std::max(4, breakableMonsterChanceDivisor - std::min(overflowPlayers, 4));
+					breakableMonsterChanceDivisor = std::max(2, breakableMonsterChanceDivisor - std::min(overflowPlayers, 10));
 				}
 
 				if ( spellEventExists )
@@ -7529,7 +7533,7 @@ void assignActions(map_t* map)
 									if ( balance > 4 )
 									{
 										// Keep <=4p unchanged; overflow players roll extra FOOD category odds.
-										const int foodRollDivisor = std::max(2, 5 - ((overflowPlayers + 1) / 2));
+										const int foodRollDivisor = std::max(1, 5 - ((overflowPlayers + 1) / 2));
 										extrafood = (map_rng.rand() % foodRollDivisor) == 0;
 									}
 									else
@@ -7717,7 +7721,7 @@ void assignActions(map_t* map)
 										const int bonusRollDivisor = std::max(1, 3 - (overflowPlayers / 3));
 										if ( map_rng.rand() % bonusRollDivisor == 0 )
 										{
-											const int maxExtraFood = std::min(4, 2 + (overflowPlayers / 2));
+											const int maxExtraFood = std::min(12, 2 + (overflowPlayers / 2));
 											entity->skill[13] += 1 + (map_rng.rand() % maxExtraFood);
 										}
 									}
@@ -7835,7 +7839,7 @@ void assignActions(map_t* map)
 				if ( balance > 4 )
 				{
 					// Keep <=4p unchanged; overflow players scale bag value by a capped bonus.
-					const int bonusPercent = std::min(60, overflowPlayers * 12);
+					const int bonusPercent = std::min(180, overflowPlayers * 12);
 					entity->goldAmount += std::max(1, (entity->goldAmount * bonusPercent) / 100);
 				}
 				if ( entity->goldAmount < 5 )

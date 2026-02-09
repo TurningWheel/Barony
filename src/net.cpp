@@ -1663,6 +1663,8 @@ NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest(int& outResult, bool loc
 		SDLNet_Write32(c, &net_packet->data[4]);
 		if (loadingsavegame) {
 			constexpr int chunk_size = 6 + 32 + 6 * 10; // 6 bytes for player stats, 32 for name, 60 for equipment
+			static_assert(8 + MAXPLAYERS * chunk_size <= NET_PACKET_SIZE,
+				"NET_PACKET_SIZE is too small for loadingsavegame HELO payload");
 			for ( int x = 0; x < MAXPLAYERS; x++ )
 			{
 				net_packet->data[8 + x * chunk_size + 0] = client_disconnected[x]; // connectedness
@@ -1704,6 +1706,8 @@ NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest(int& outResult, bool loc
 			net_packet->len = 8 + MAXPLAYERS * chunk_size;
 		} else {
 			constexpr int chunk_size = 6 + 32; // 6 bytes for player stats, 32 for name
+			static_assert(8 + MAXPLAYERS * chunk_size <= NET_PACKET_SIZE,
+				"NET_PACKET_SIZE is too small for HELO payload");
 			for ( int x = 0; x < MAXPLAYERS; x++ )
 			{
 				net_packet->data[8 + x * chunk_size + 0] = client_disconnected[x]; // connectedness

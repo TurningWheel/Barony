@@ -281,11 +281,20 @@ bool bUsePreciseFieldTextReflow = true;
 bool bUseSelectedSlotCycleAnimation = false; // probably not gonna use, but can enable
 CustomColors_t hudColors;
 EnemyBarSettings_t enemyBarSettings;
-#ifdef BARONY_SUPER_MULTIPLAYER
-StatusEffectQueue_t StatusEffectQueue[MAXPLAYERS] = { {0}, {1}, {2}, {3}, {4}, {5}, {6}, {7} };
-#else
-StatusEffectQueue_t StatusEffectQueue[MAXPLAYERS] = { {0}, {1}, {2}, {3} };
-#endif
+StatusEffectQueue_t StatusEffectQueue[MAXPLAYERS];
+namespace
+{
+struct StatusEffectQueueInitializer_t
+{
+	StatusEffectQueueInitializer_t()
+	{
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			StatusEffectQueue[i].player = i;
+		}
+	}
+} StatusEffectQueueInitializer;
+}
 std::unordered_map<int, StatusEffectQueue_t::EffectDefinitionEntry_t> StatusEffectQueue_t::StatusEffectDefinitions_t::allEffects;
 std::unordered_map<int, StatusEffectQueue_t::EffectDefinitionEntry_t> StatusEffectQueue_t::StatusEffectDefinitions_t::allSustainedSpells;
 Uint32 StatusEffectQueue_t::StatusEffectDefinitions_t::tooltipDescColor = 0xFFFFFFFF;

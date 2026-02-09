@@ -11418,6 +11418,20 @@ bind_failed:
 		static int pendingLobbyPlayerCountSelection = 4;
 		static int pendingKickPlayerSelection = 1;
 
+		static int getCurrentLobbyPlayerCountSelection()
+		{
+			int targetCount = MAXPLAYERS;
+			for ( int slot = 1; slot < MAXPLAYERS; ++slot )
+			{
+				if ( playerSlotsLocked[slot] )
+				{
+					targetCount = slot;
+					break;
+				}
+			}
+			return std::max(2, std::min(targetCount, MAXPLAYERS));
+		}
+
 		static void applyLobbyPlayerCountSelection(const int requestedCount)
 		{
 			const int targetCount = std::max(1, std::min(requestedCount, MAXPLAYERS));
@@ -11453,10 +11467,9 @@ bind_failed:
 			closeBinary();
 		}
 
-		static void lobbyPlayerCountButtonCallback(Button& button)
+		static void requestLobbyPlayerCountSelection(const int requestedCount)
 		{
-			const int parsedTargetCount = atoi(button.getText());
-			const int targetCount = std::max(2, std::min(parsedTargetCount, MAXPLAYERS));
+			const int targetCount = std::max(2, std::min(requestedCount, MAXPLAYERS));
 
 			std::vector<int> kickedSlots;
 			for (int slot = targetCount; slot < MAXPLAYERS; ++slot)
@@ -11514,10 +11527,73 @@ bind_failed:
 			applyLobbyPlayerCountSelection(targetCount);
 		}
 
-		static void lobbyKickPlayerButtonCallback(Button& button)
+		static void lobbyPlayerCountDropdownEntry(Frame::entry_t& entry)
 		{
-			const int parsedPlayerNum = atoi(button.getText());
+			const int parsedTargetCount = atoi(entry.name.c_str());
+			const int targetCount = std::max(2, std::min(parsedTargetCount, MAXPLAYERS));
+
+			auto dropdown = static_cast<Frame*>(entry.parent.getParent());
+			auto card = dropdown ? static_cast<Frame*>(dropdown->getParent()) : nullptr;
+			auto button = card ? card->findButton("player_count_dropdown_button") : nullptr;
+			if ( button )
+			{
+				char countText[16] = "";
+				snprintf(countText, sizeof(countText), "%d", targetCount);
+				button->setText(countText);
+				button->select();
+			}
+			if ( dropdown )
+			{
+				dropdown->removeSelf();
+			}
+
+			requestLobbyPlayerCountSelection(targetCount);
+		}
+
+		static void lobbyPlayerCountDropdownButtonCallback(Button& button)
+		{
+			settingsOpenDropdown(button, "lobby_player_count", DropdownType::Normal, lobbyPlayerCountDropdownEntry);
+		}
+
+		static void lobbyKickPlayerDropdownEntry(Frame::entry_t& entry)
+		{
+			const int parsedPlayerNum = atoi(entry.name.c_str());
 			const int targetPlayer = std::max(1, std::min(parsedPlayerNum - 1, MAXPLAYERS - 1));
+			pendingKickPlayerSelection = targetPlayer;
+
+			auto dropdown = static_cast<Frame*>(entry.parent.getParent());
+			auto card = dropdown ? static_cast<Frame*>(dropdown->getParent()) : nullptr;
+			auto button = card ? card->findButton("kick_player_dropdown_button") : nullptr;
+			if ( button )
+			{
+				char playerText[16] = "";
+				snprintf(playerText, sizeof(playerText), "%d", targetPlayer + 1);
+				button->setText(playerText);
+				button->select();
+			}
+			if ( dropdown )
+			{
+				dropdown->removeSelf();
+			}
+			soundActivate();
+		}
+
+		static void lobbyKickPlayerDropdownButtonCallback(Button& button)
+		{
+			settingsOpenDropdown(button, "lobby_kick_player", DropdownType::Normal, lobbyKickPlayerDropdownEntry);
+		}
+
+		static void lobbyKickPlayerConfirmButtonCallback(Button& button)
+		{
+			int targetPlayer = pendingKickPlayerSelection;
+			if ( auto card = static_cast<Frame*>(button.getParent()) )
+			{
+				if ( auto selectionButton = card->findButton("kick_player_dropdown_button") )
+				{
+					const int parsedPlayerNum = atoi(selectionButton->getText());
+					targetPlayer = std::max(1, std::min(parsedPlayerNum - 1, MAXPLAYERS - 1));
+				}
+			}
 			if (client_disconnected[targetPlayer])
 			{
 				soundError();
@@ -14553,6 +14629,93 @@ failed:
 		return pageOffsetX + (Frame::virtualScreenX / (slotsPerPage * 2)) * (slotInPage * 2 + 1);
 	}
 
+	static int getLobbyPageCount()
+	{
+		const int slotsPerPage = std::max(1, getLobbySlotsPerPage());
+		return std::max(1, (MAXPLAYERS + slotsPerPage - 1) / slotsPerPage);
+	}
+
+	static int getLobbyVisiblePageIndex(const Frame& lobby)
+	{
+		const int maxOffset = std::max(0, lobby.getActualSize().w - Frame::virtualScreenX);
+		const int clampedOffset = std::max(0, std::min(lobby.getActualSize().x, maxOffset));
+		const int pageCount = getLobbyPageCount();
+		const int page = (clampedOffset + Frame::virtualScreenX / 2) / Frame::virtualScreenX;
+		return std::max(0, std::min(page, pageCount - 1));
+	}
+
+	static int getLobbyConfiguredPlayerTotal()
+	{
+		if ( currentLobbyType == LobbyType::LobbyLocal )
+		{
+			const int localCap = std::min(MAXPLAYERS, MAX_SPLITSCREEN);
+			if ( loadingsavegame )
+			{
+				int unlockedSlots = 0;
+				for ( int slot = 0; slot < localCap; ++slot )
+				{
+					if ( !playerSlotsLocked[slot] )
+					{
+						++unlockedSlots;
+					}
+				}
+				return std::max(1, unlockedSlots);
+			}
+			return std::max(1, localCap);
+		}
+
+		int total = MAXPLAYERS;
+		for ( int slot = 1; slot < MAXPLAYERS; ++slot )
+		{
+			if ( playerSlotsLocked[slot] )
+			{
+				total = slot;
+				break;
+			}
+		}
+		return std::max(1, std::min(total, MAXPLAYERS));
+	}
+
+	static int getLobbyJoinedPlayerCount()
+	{
+		if ( currentLobbyType == LobbyType::LobbyLocal )
+		{
+			const int localCap = std::min(MAXPLAYERS, MAX_SPLITSCREEN);
+			if ( loadingsavegame )
+			{
+				int joined = 0;
+				for ( int slot = 0; slot < localCap; ++slot )
+				{
+					if ( !playerSlotsLocked[slot] )
+					{
+						++joined;
+					}
+				}
+				return joined;
+			}
+
+			int joined = 0;
+			for ( int slot = 0; slot < localCap; ++slot )
+			{
+				if ( isPlayerSignedIn(slot) )
+				{
+					++joined;
+				}
+			}
+			return joined;
+		}
+
+		int joined = 0;
+		for ( int slot = 0; slot < MAXPLAYERS; ++slot )
+		{
+			if ( !playerSlotsLocked[slot] && !client_disconnected[slot] )
+			{
+				++joined;
+			}
+		}
+		return joined;
+	}
+
 	static void focusLobbyPageForPlayer(int player)
 	{
 		if ( !main_menu_frame )
@@ -15049,7 +15212,7 @@ failed:
 		if ( index != 0 || gameModeManager.getMode() == GameModeManager_t::GAME_MODE_CUSTOM_RUN_ONESHOT
 			|| gameModeManager.getMode() == GameModeManager_t::GAME_MODE_CUSTOM_RUN )
 		{
-			custom_difficulty->setWidgetDown(online ? "invite" : "player_count_2");
+			custom_difficulty->setWidgetDown(online ? "invite" : "player_count_dropdown_button");
 		}
 		else
 		{
@@ -15186,7 +15349,7 @@ failed:
 			seed_field->addWidgetAction("MenuPageLeftAlt", "privacy");
 			seed_field->setWidgetBack("back_button");
 			seed_field->setWidgetUp("custom_difficulty");
-			seed_field->setWidgetDown(online ? "invite" : "player_count_2");
+			seed_field->setWidgetDown(online ? "invite" : "player_count_dropdown_button");
 			seed_field->setWidgetRight("randomize_seed");
 			seed_field->setCallback([](Field& field) {seed_field_fn(field.getText(), field.getOwner()); });
 			seed_field->setTickCallback([](Widget& widget) {
@@ -15206,7 +15369,7 @@ failed:
 			randomize_seed->addWidgetAction("MenuPageLeftAlt", "privacy");
 			randomize_seed->setWidgetBack("back_button");
 			randomize_seed->setWidgetUp("custom_difficulty");
-			randomize_seed->setWidgetDown(online ? "invite" : "player_count_2");
+			randomize_seed->setWidgetDown(online ? "invite" : "player_count_dropdown_button");
 			randomize_seed->setWidgetLeft("seed");
 			static auto randomize_seed_fn = [](Button& button, int index) {
 				auto& prefixes = GameModeManager_t::CurrentSession_t::SeededRun_t::prefixes;
@@ -15482,7 +15645,7 @@ failed:
 #else
 			open->setWidgetUp("friends");
 #endif
-			open->setWidgetDown("player_count_2");
+			open->setWidgetDown("player_count_dropdown_button");
             if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
 #ifdef USE_EOS
                 if (EOS.currentPermissionLevel == EOS_ELobbyPermissionLevel::EOS_LPL_PUBLICADVERTISED) {
@@ -15543,55 +15706,59 @@ failed:
 		auto player_count_label = card->addField("player_count_label", 64);
 		player_count_label->setSize(SDL_Rect{30, height - 176, 264, 40});
 		player_count_label->setFont(smallfont_outline);
-		player_count_label->setText(Language::get(6018));
+		player_count_label->setText("# Players");
 		player_count_label->setJustify(Field::justify_t::CENTER);
 
 		const int minLobbyPlayers = 2;
 		const int maxLobbyPlayers = MAXPLAYERS;
 		const int playerCountButtonCount = std::max(0, maxLobbyPlayers - minLobbyPlayers + 1);
-		const int sectionButtonStartX = 10;
-		const int sectionButtonSpacingX = 44;
+		const int selectedLobbyPlayerCount = getCurrentLobbyPlayerCountSelection();
 
-		for (int c = 0; c < playerCountButtonCount; ++c) {
+		auto player_count_dropdown = card->addButton("player_count_dropdown_button");
+		player_count_dropdown->setSize(SDL_Rect{70, height - 142, 184, 40});
+		player_count_dropdown->setFont(smallfont_outline);
+		char playerCountText[16] = "";
+		snprintf(playerCountText, sizeof(playerCountText), "%d", selectedLobbyPlayerCount);
+		player_count_dropdown->setText(playerCountText);
+		player_count_dropdown->setJustify(Button::justify_t::CENTER);
+		player_count_dropdown->setBorder(0);
+		player_count_dropdown->setTextColor(uint32ColorWhite);
+		player_count_dropdown->setTextHighlightColor(uint32ColorWhite);
+		player_count_dropdown->setBackground("*images/ui/Main Menus/Settings/Settings_Drop_ScrollBG02.png");
+		player_count_dropdown->setBackgroundHighlighted("*images/ui/Main Menus/Settings/Settings_Drop_ScrollBG02_Highlighted.png");
+		player_count_dropdown->setBackgroundActivated("*images/ui/Main Menus/Settings/Settings_Drop_ScrollBG02_Highlighted.png");
+		player_count_dropdown->setColor(uint32ColorWhite);
+		player_count_dropdown->setWidgetSearchParent(name.c_str());
+		player_count_dropdown->addWidgetAction("MenuStart", "confirm");
+		player_count_dropdown->addWidgetAction("MenuPageRightAlt", "chat");
+		player_count_dropdown->addWidgetAction("MenuPageLeftAlt", "privacy");
+		player_count_dropdown->setWidgetBack("back_button");
+		if ( index != 0 || gameModeManager.getMode() == GameModeManager_t::GAME_MODE_CUSTOM_RUN_ONESHOT
+			|| gameModeManager.getMode() == GameModeManager_t::GAME_MODE_CUSTOM_RUN )
+		{
+			player_count_dropdown->setWidgetUp(online ? "open" : "seed");
+		}
+		else
+		{
+			player_count_dropdown->setWidgetUp(online ? "open" : "custom_difficulty");
+		}
+		player_count_dropdown->setWidgetDown("kick_player_dropdown_button");
+		player_count_dropdown->setWidgetLeft("player_count_dropdown_button");
+		player_count_dropdown->setWidgetRight("player_count_dropdown_button");
+		for ( int c = 0; c < playerCountButtonCount; ++c )
+		{
 			const int playerCountValue = c + minLobbyPlayers;
-			const std::string buttonName = std::string("player_count_") + std::to_string(playerCountValue);
-			auto player_count = card->addButton(buttonName.c_str());
-			player_count->setSize(SDL_Rect{sectionButtonStartX + sectionButtonSpacingX * c, height - 142, 40, 40});
-			player_count->setFont(smallfont_outline);
-			player_count->setText(std::to_string(playerCountValue).c_str());
-			player_count->setBorder(0);
-			player_count->setTextColor(uint32ColorWhite);
-			player_count->setTextHighlightColor(uint32ColorWhite);
-			player_count->setBackground("*#images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Button_Tiny00A.png");
-			player_count->setBackgroundHighlighted("*#images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Button_Tiny00B_Highlighted.png");
-			player_count->setBackgroundActivated("*#images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Button_Tiny00C_Pressed.png");
-			player_count->setColor(uint32ColorWhite);
-			player_count->setWidgetSearchParent(name.c_str());
-			player_count->addWidgetAction("MenuStart", "confirm");
-			player_count->addWidgetAction("MenuPageRightAlt", "chat");
-			player_count->addWidgetAction("MenuPageLeftAlt", "privacy");
-			player_count->setWidgetBack("back_button");
-			if ( index != 0 || gameModeManager.getMode() == GameModeManager_t::GAME_MODE_CUSTOM_RUN_ONESHOT
-				|| gameModeManager.getMode() == GameModeManager_t::GAME_MODE_CUSTOM_RUN )
-			{
-				player_count->setWidgetUp(online ? "open" : "seed");
-			}
-			else
-			{
-				player_count->setWidgetUp(online ? "open" : "custom_difficulty");
-			}
-
-			const int leftPlayerCountValue = (playerCountValue == minLobbyPlayers) ? maxLobbyPlayers : playerCountValue - 1;
-			const int rightPlayerCountValue = (playerCountValue == maxLobbyPlayers) ? minLobbyPlayers : playerCountValue + 1;
-			player_count->setWidgetLeft((std::string("player_count_") + std::to_string(leftPlayerCountValue)).c_str());
-			player_count->setWidgetRight((std::string("player_count_") + std::to_string(rightPlayerCountValue)).c_str());
-			player_count->setWidgetDown((std::string("kick_player_") + std::to_string(playerCountValue)).c_str());
-
-			if (index != 0) {
-				player_count->setCallback([](Button&){soundError();});
-			} else {
-				player_count->setCallback(lobbyPlayerCountButtonCallback);
-			}
+			const std::string key = std::string("__") + std::to_string(c);
+			const std::string value = std::to_string(playerCountValue);
+			player_count_dropdown->addWidgetAction(key.c_str(), value.c_str());
+		}
+		if ( index != 0 )
+		{
+			player_count_dropdown->setCallback([](Button&){soundError();});
+		}
+		else
+		{
+			player_count_dropdown->setCallback(lobbyPlayerCountDropdownButtonCallback);
 		}
 
 		auto kick_player_label = card->addField("kick_player_label", 64);
@@ -15600,48 +15767,93 @@ failed:
 		kick_player_label->setText(Language::get(5402));
 		kick_player_label->setJustify(Field::justify_t::CENTER);
 
-		for (int c = 0; c < playerCountButtonCount; ++c) {
-			const int playerCountValue = c + minLobbyPlayers;
-			const std::string buttonName = std::string("kick_player_") + std::to_string(playerCountValue);
-			auto kick_player = card->addButton(buttonName.c_str());
-			kick_player->setSize(SDL_Rect{sectionButtonStartX + sectionButtonSpacingX * c, height - 64, 40, 40});
-			kick_player->setFont(smallfont_outline);
-			kick_player->setText(std::to_string(playerCountValue).c_str());
-			kick_player->setBorder(0);
-			kick_player->setTextColor(uint32ColorWhite);
-			kick_player->setTextHighlightColor(uint32ColorWhite);
-			kick_player->setBackground("*#images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Button_Tiny00A.png");
-			kick_player->setBackgroundHighlighted("*#images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Button_Tiny00B_Highlighted.png");
-			kick_player->setBackgroundActivated("*#images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Button_Tiny00C_Pressed.png");
-			kick_player->setColor(uint32ColorWhite);
-			kick_player->setWidgetSearchParent(name.c_str());
-			kick_player->addWidgetAction("MenuStart", "confirm");
-			kick_player->addWidgetAction("MenuPageRightAlt", "chat");
-			kick_player->addWidgetAction("MenuPageLeftAlt", "privacy");
-			kick_player->setWidgetBack("back_button");
-
-			const int leftPlayerCountValue = (playerCountValue == minLobbyPlayers) ? maxLobbyPlayers : playerCountValue - 1;
-			const int rightPlayerCountValue = (playerCountValue == maxLobbyPlayers) ? minLobbyPlayers : playerCountValue + 1;
-			kick_player->setWidgetLeft((std::string("kick_player_") + std::to_string(leftPlayerCountValue)).c_str());
-			kick_player->setWidgetRight((std::string("kick_player_") + std::to_string(rightPlayerCountValue)).c_str());
-			kick_player->setWidgetUp((std::string("player_count_") + std::to_string(playerCountValue)).c_str());
-			if (index != 0) {
-				kick_player->setCallback([](Button&){soundError();});
-			} else {
-				kick_player->setCallback(lobbyKickPlayerButtonCallback);
+		int firstKickTarget = 1;
+		for ( ; firstKickTarget < MAXPLAYERS; ++firstKickTarget )
+		{
+			if ( !client_disconnected[firstKickTarget] )
+			{
+				break;
 			}
+		}
+		if ( firstKickTarget >= MAXPLAYERS )
+		{
+			firstKickTarget = 1;
+		}
+		pendingKickPlayerSelection = firstKickTarget;
+
+		auto kick_player_dropdown = card->addButton("kick_player_dropdown_button");
+		kick_player_dropdown->setSize(SDL_Rect{20, height - 64, 170, 40});
+		kick_player_dropdown->setFont(smallfont_outline);
+		char kickSelectionText[16] = "";
+		snprintf(kickSelectionText, sizeof(kickSelectionText), "%d", firstKickTarget + 1);
+		kick_player_dropdown->setText(kickSelectionText);
+		kick_player_dropdown->setJustify(Button::justify_t::CENTER);
+		kick_player_dropdown->setBorder(0);
+		kick_player_dropdown->setTextColor(uint32ColorWhite);
+		kick_player_dropdown->setTextHighlightColor(uint32ColorWhite);
+		kick_player_dropdown->setBackground("*images/ui/Main Menus/Settings/Settings_Drop_ScrollBG02.png");
+		kick_player_dropdown->setBackgroundHighlighted("*images/ui/Main Menus/Settings/Settings_Drop_ScrollBG02_Highlighted.png");
+		kick_player_dropdown->setBackgroundActivated("*images/ui/Main Menus/Settings/Settings_Drop_ScrollBG02_Highlighted.png");
+		kick_player_dropdown->setColor(uint32ColorWhite);
+		kick_player_dropdown->setWidgetSearchParent(name.c_str());
+		kick_player_dropdown->addWidgetAction("MenuStart", "confirm");
+		kick_player_dropdown->addWidgetAction("MenuPageRightAlt", "chat");
+		kick_player_dropdown->addWidgetAction("MenuPageLeftAlt", "privacy");
+		kick_player_dropdown->setWidgetBack("back_button");
+		kick_player_dropdown->setWidgetUp("player_count_dropdown_button");
+		kick_player_dropdown->setWidgetLeft("kick_player_confirm_button");
+		kick_player_dropdown->setWidgetRight("kick_player_confirm_button");
+		for ( int slot = 1; slot < MAXPLAYERS; ++slot )
+		{
+			const std::string keyPrefix = client_disconnected[slot] ? "~__" : "__";
+			const std::string key = keyPrefix + std::to_string(slot - 1);
+			const std::string value = std::to_string(slot + 1);
+			kick_player_dropdown->addWidgetAction(key.c_str(), value.c_str());
+		}
+		if ( index != 0 )
+		{
+			kick_player_dropdown->setCallback([](Button&){soundError();});
+		}
+		else
+		{
+			kick_player_dropdown->setCallback(lobbyKickPlayerDropdownButtonCallback);
+		}
+
+		auto kick_player_confirm = card->addButton("kick_player_confirm_button");
+		kick_player_confirm->setSize(SDL_Rect{198, height - 64, 96, 40});
+		kick_player_confirm->setFont(smallfont_outline);
+		kick_player_confirm->setText("Kick");
+		kick_player_confirm->setJustify(Button::justify_t::CENTER);
+		kick_player_confirm->setBorder(0);
+		kick_player_confirm->setTextColor(uint32ColorWhite);
+		kick_player_confirm->setTextHighlightColor(uint32ColorWhite);
+		kick_player_confirm->setBackground("*#images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Button_Customize00A.png");
+		kick_player_confirm->setBackgroundHighlighted("*#images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Button_CustomizeHigh00A.png");
+		kick_player_confirm->setBackgroundActivated("*#images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Button_CustomizePress00A.png");
+		kick_player_confirm->setColor(uint32ColorWhite);
+		kick_player_confirm->setWidgetSearchParent(name.c_str());
+		kick_player_confirm->addWidgetAction("MenuStart", "confirm");
+		kick_player_confirm->addWidgetAction("MenuPageRightAlt", "chat");
+		kick_player_confirm->addWidgetAction("MenuPageLeftAlt", "privacy");
+		kick_player_confirm->setWidgetBack("back_button");
+		kick_player_confirm->setWidgetUp("player_count_dropdown_button");
+		kick_player_confirm->setWidgetLeft("kick_player_dropdown_button");
+		kick_player_confirm->setWidgetRight("kick_player_dropdown_button");
+		if ( index != 0 )
+		{
+			kick_player_confirm->setCallback([](Button&){soundError();});
+		}
+		else
+		{
+			kick_player_confirm->setCallback(lobbyKickPlayerConfirmButtonCallback);
 		}
 
 	        // can't lock slots in local games or saved games
 		if (local || loadingsavegame) {
 			player_count_label->setColor(makeColor(70, 62, 59, 255));
-			for (int c = 0; c < playerCountButtonCount; ++c) {
-				const int playerCountValue = c + minLobbyPlayers;
-			    auto player_count = card->findButton((std::string("player_count_") + std::to_string(playerCountValue)).c_str());
-			    player_count->setBackground("*#images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Button_Tiny00D_Gray.png");
-			    player_count->setBackgroundHighlighted("*#images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Button_Tiny00D_Gray.png");
-		        player_count->setDisabled(true);
-		    }
+			player_count_dropdown->setDisabled(true);
+			player_count_dropdown->setColor(makeColor(170, 170, 170, 255));
+			player_count_dropdown->setTextColor(makeColor(170, 170, 170, 255));
 		} else {
 		    player_count_label->setColor(makeColor(166, 123, 81, 255));
 		}
@@ -15649,13 +15861,12 @@ failed:
 	        // can't kick players in local games
 		if (local) {
 			kick_player_label->setColor(makeColor(70, 62, 59, 255));
-			for (int c = 0; c < playerCountButtonCount; ++c) {
-				const int playerCountValue = c + minLobbyPlayers;
-			    auto kick_player = card->findButton((std::string("kick_player_") + std::to_string(playerCountValue)).c_str());
-			    kick_player->setBackground("*#images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Button_Tiny00D_Gray.png");
-			    kick_player->setBackgroundHighlighted("*#images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Button_Tiny00D_Gray.png");
-		        kick_player->setDisabled(true);
-		    }
+			kick_player_dropdown->setDisabled(true);
+			kick_player_dropdown->setColor(makeColor(170, 170, 170, 255));
+			kick_player_dropdown->setTextColor(makeColor(170, 170, 170, 255));
+			kick_player_confirm->setDisabled(true);
+			kick_player_confirm->setColor(makeColor(170, 170, 170, 255));
+			kick_player_confirm->setTextColor(makeColor(170, 170, 170, 255));
 		} else {
 		    kick_player_label->setColor(makeColor(166, 123, 81, 255));
 		}
@@ -20099,6 +20310,32 @@ failed:
 			label->setSize(SDL_Rect{(Frame::virtualScreenX - 256) / 2, 0, 256, 48});
 		    label->setFont(bigfont_outline);
 		    label->setText(type_str);
+
+			auto lobby_status = banner->addField("lobby_status", 64);
+			lobby_status->setHJustify(Field::justify_t::CENTER);
+			lobby_status->setVJustify(Field::justify_t::TOP);
+			lobby_status->setSize(SDL_Rect{(Frame::virtualScreenX - 420) / 2, 42, 420, 22});
+			lobby_status->setFont(smallfont_outline);
+			lobby_status->setColor(makeColor(201, 162, 100, 255));
+			lobby_status->setTickCallback([](Widget& widget) {
+				auto status = static_cast<Field*>(&widget);
+				auto banner = static_cast<Frame*>(status->getParent());
+				auto lobby = banner ? static_cast<Frame*>(banner->getParent()) : nullptr;
+				if ( !lobby )
+				{
+					return;
+				}
+
+				const int pageCount = getLobbyPageCount();
+				const int visiblePage = getLobbyVisiblePageIndex(*lobby) + 1;
+				const int joinedPlayers = getLobbyJoinedPlayerCount();
+				const int totalPlayers = getLobbyConfiguredPlayerTotal();
+
+				char buf[64];
+				snprintf(buf, sizeof(buf), "Page %d/%d   Joined: %d/%d",
+					visiblePage, pageCount, joinedPlayers, totalPlayers);
+				status->setText(buf);
+			});
 
 			if (type != LobbyType::LobbyLocal) {
 		        static auto hide_roomcode = [](Field& roomcode, Button& button, bool hide){

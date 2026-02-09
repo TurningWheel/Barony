@@ -344,7 +344,7 @@ int fullscreen = 0;
 bool borderless = false;
 bool smoothlighting = true;
 list_t removedEntities;
-Entity* client_selected[MAXPLAYERS] = {nullptr, nullptr, nullptr, nullptr};
+Entity* client_selected[MAXPLAYERS] = { nullptr };
 bool inrange[MAXPLAYERS];
 Sint32 client_classes[MAXPLAYERS];
 Uint32 client_keepalive[MAXPLAYERS];

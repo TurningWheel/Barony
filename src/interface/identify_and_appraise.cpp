@@ -772,8 +772,8 @@ int Player::Inventory_t::Appraisal_t::getAppraisalTime(Item* item)
 		}
 		else if ( playerCount > 4 )
 		{
-			// Keep 3p/4p behavior, then grow sublinearly for overflow players.
-			const double overflowScale = 1.5 + 0.25 * std::log2(static_cast<double>(playerCount - 3));
+			// Keep 3p/4p behavior and continue scaling for larger overflow lobbies.
+			const double overflowScale = 1.75 + 0.16 * static_cast<double>(playerCount - 5);
 			appraisal_time /= overflowScale;
 		}
 		if ( stats[player.playernum]->getModifiedProficiency(PRO_APPRAISAL) >= SKILL_LEVEL_LEGENDARY )

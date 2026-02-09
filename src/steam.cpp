@@ -51,7 +51,7 @@ const char* getRoomCode() {
     return roomkey_cached.c_str();
 }
 
-void* steamIDRemote[MAXPLAYERS] = {NULL, NULL, NULL, NULL};
+void* steamIDRemote[MAXPLAYERS] = { nullptr };
 
 char currentLobbyName[32] = { 0 };
 Uint32 currentSvFlags = 0;
