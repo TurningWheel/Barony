@@ -177,6 +177,8 @@ bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, En
 
 	playSoundEntity(hit.entity, 174, 64); //TODO: Dominate spell sound effect.
 
+	bool previousLeaderMatching = hit.entity->monsterAllyGetPlayerLeader() == parent;
+
 	//Make the monster a follower.
 	bool dominated = forceFollower(caster, *hit.entity);
 
@@ -185,6 +187,11 @@ bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, En
 		Uint32 color = makeColorRGB(0, 255, 0);
 		if ( parent->behavior == &actPlayer )
 		{
+			if ( previousLeaderMatching )
+			{
+				steamAchievementClient(parent->skill[2], "BARONY_ACH_CONFESSOR");
+			}
+
 			messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(2428), Language::get(2427), MSG_COMBAT);
 			if ( hit.entity->monsterAllyIndex != parent->skill[2] )
 			{
