@@ -1,15 +1,3 @@
-# 8-Player Mod
-
-This branch enables 8-player multiplayer support on top of the latest open-source Barony build.
-
-8-player mode is treated as the default target in this branch across CMake, Visual Studio, and Xcode project configs.
-
----
-
-# ORIGINAL README BELOW
-
----
-
 ![Linux-CI_fmod_steam](https://github.com/TurningWheel/Barony/workflows/Linux-CI_fmod_steam/badge.svg) ![Linux-CI_fmod_steam_eos](https://github.com/TurningWheel/Barony/workflows/Linux-CI_fmod_steam_eos/badge.svg)
 
 # Update - 3rd October 2023

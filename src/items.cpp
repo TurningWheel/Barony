@@ -1282,64 +1282,64 @@ Sint32 itemModel(const Item* const item, bool shortModel, Entity* creature)
 
 	int index = shortModel ? items[item->type].indexShort : items[item->type].index;
 
-		if ( item->type == TOOL_PLAYER_LOOT_BAG )
+	if ( item->type == TOOL_PLAYER_LOOT_BAG )
+	{
+		auto getLootBagModelOffset = [](const int playerOwner) -> Uint32
 		{
-			if ( colorblind_lobby )
+			static Uint32 normalModelByPlayer[MAXPLAYERS];
+			static Uint32 colorblindModelByPlayer[MAXPLAYERS];
+			static bool initialized = false;
+			if ( !initialized )
 			{
-			int playerOwner = item->getLootBagPlayer();
-			Uint32 playerIndex = 4;
-			switch ( playerOwner )
-			{
-			case 0:
-				playerIndex = 2;
-				break;
-			case 1:
-				playerIndex = 3;
-				break;
-			case 2:
-				playerIndex = 1;
-				break;
-			case 3:
-				playerIndex = 4;
-				break;
-			case 4:
-				playerIndex = 5;
-				break;
-			case 5:
-				playerIndex = 6;
-				break;
-			case 6:
-				playerIndex = 7;
-				break;
-			case 7:
-				playerIndex = 8;
-				break;
-			default:
-				break;
-			}
-				return index + playerIndex;
-			}
-			else
-			{
-				int playerOwner = item->getLootBagPlayer();
-				Uint32 playerIndex = playerOwner;
-				switch ( playerOwner )
+				const Uint32 normalPrimary[] = { 0, 1, 2, 3, 4 };
+				const Uint32 normalCycle[] = { 2, 3, 4 };
+				const Uint32 colorblindPrimary[] = { 2, 3, 1, 4, 5, 6, 7, 8 };
+				const Uint32 colorblindCycle[] = { 5, 6, 7, 8 };
+				auto buildModelMap = [](Uint32* outMap,
+					const Uint32* primary, const int primaryCount,
+					const Uint32* cycle, const int cycleCount)
 				{
-				case 5:
-					playerIndex = 2;
-					break;
-				case 6:
-					playerIndex = 3;
-					break;
-				case 7:
-					playerIndex = 4;
-					break;
-				default:
-					break;
-				}
-				return index + playerIndex;
+					for ( int i = 0; i < MAXPLAYERS; ++i )
+					{
+						if ( i < primaryCount )
+						{
+							outMap[i] = primary[i];
+						}
+						else if ( cycleCount > 0 )
+						{
+							outMap[i] = cycle[(i - primaryCount) % cycleCount];
+						}
+						else if ( primaryCount > 0 )
+						{
+							outMap[i] = primary[primaryCount - 1];
+						}
+						else
+						{
+							outMap[i] = 4;
+						}
+					}
+				};
+				buildModelMap(normalModelByPlayer,
+					normalPrimary, static_cast<int>(sizeof(normalPrimary) / sizeof(normalPrimary[0])),
+					normalCycle, static_cast<int>(sizeof(normalCycle) / sizeof(normalCycle[0])));
+				buildModelMap(colorblindModelByPlayer,
+					colorblindPrimary, static_cast<int>(sizeof(colorblindPrimary) / sizeof(colorblindPrimary[0])),
+					colorblindCycle, static_cast<int>(sizeof(colorblindCycle) / sizeof(colorblindCycle[0])));
+				initialized = true;
 			}
-		}
+
+			if ( playerOwner < 0 || playerOwner >= MAXPLAYERS )
+			{
+				return 4;
+			}
+
+			// Preserve the legacy first-slot order, then rotate overflow players
+			// through the secondary palette set so the mapping scales with MAXPLAYERS.
+			return colorblind_lobby ? colorblindModelByPlayer[playerOwner] : normalModelByPlayer[playerOwner];
+		};
+
+		return index + getLootBagModelOffset(item->getLootBagPlayer());
+	}
 	else if ( item->type == MAGICSTAFF_SCEPTER )
 	{
 		if ( item->appearance % MAGICSTAFF_SCEPTER_CHARGE_MAX == 0 )

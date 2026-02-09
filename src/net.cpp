@@ -1408,11 +1408,7 @@ void serverUpdatePlayerSummonStrength(int player)
 	{
 		return;
 	}
-	if ( player <= 0 || player >= MAXPLAYERS )
-	{
-		return;
-	}
-	if ( !hasUsablePlayerSlot(player, true, true) || players[player]->isLocalPlayer() )
+	if ( player <= 0 || !hasUsablePlayerSlot(player, true, true) || players[player]->isLocalPlayer() )
 	{
 		return;
 	}
