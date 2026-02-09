@@ -21040,10 +21040,10 @@ failed:
 		entry_players->selected = selection_fn;
 		entry_players->color = info.locked ? makeColor(50, 56, 67, 255) : 0xffffffff;
 		if (!players_text.empty()) {
-				entry_players->text = players_text;
-			} else {
+			entry_players->text = std::string("  ") + players_text;
+		} else {
 			entry_players->image = players_image;
-			}
+		}
 		entry_players->data = (info.index < 0 || info.index >= lobbies.size()) ?
 			(void*)lobbies.back().index : (void*)lobbies[info.index].index;
 
