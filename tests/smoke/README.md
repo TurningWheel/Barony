@@ -2,6 +2,8 @@
 
 This folder contains blackbox-oriented smoke scripts for LAN lobby automation, HELO chunking checks, and map generation sweeps.
 
+All main runners support `--app <path>` and optional `--datadir <path>` so you can run a locally built binary against a specific asset directory.
+
 ## Files
 
 - `run_lan_helo_chunk_smoke_mac.sh`
@@ -13,6 +15,7 @@ This folder contains blackbox-oriented smoke scripts for LAN lobby automation, H
   - Supports smoke-only HELO tx adversarial modes (reordering/dup/drop tests).
   - Supports strict adversarial assertions and backend tagging in `summary.env`.
   - Supports explicit transition budget via `--auto-enter-dungeon-repeats` (defaults to `--mapgen-samples`).
+  - Optionally traces/asserts lobby account label coverage for remote slots (`--trace-account-labels 1 --require-account-labels 1`).
 
 - `run_lan_helo_soak_mac.sh`
   - Repeats LAN HELO smoke runs (default 10x).
@@ -28,10 +31,11 @@ This folder contains blackbox-oriented smoke scripts for LAN lobby automation, H
   - Launches a full lobby, then repeatedly kills/relaunches selected clients.
   - Asserts rejoin progress by requiring increasing host HELO chunk counts.
   - Optionally enables and asserts ready-state snapshot sync coverage (`--auto-ready 1 --trace-ready-sync 1 --require-ready-sync 1`).
+  - Optionally traces join-reject slot-state snapshots (`--trace-join-rejects 1`) to debug transient `error code 16` retries.
   - Emits per-cycle churn CSV and an aggregate HTML report.
 
 - `run_mapgen_sweep_mac.sh`
-  - Runs repeated sessions for player counts in a range (default `1..16`).
+  - Runs repeated sessions for player counts in a range (default `1..15`).
   - Writes aggregate CSV with map generation metrics.
   - Generates a simple HTML heatmap via `generate_mapgen_heatmap.py`.
   - Supports a fast single-instance mode that simulates mapgen scaling player counts.
@@ -53,21 +57,43 @@ tests/smoke/run_lan_helo_chunk_smoke_mac.sh \
   --chunk-payload-max 200
 ```
 
-Run mapgen sweep for players `1..16`, one run each:
+Run with local build binary + Steam asset directory (avoids replacing Steam app executable):
+
+```bash
+tests/smoke/run_lan_helo_chunk_smoke_mac.sh \
+  --app /Users/sayhiben/dev/Barony-8p/build-mac/barony.app/Contents/MacOS/barony \
+  --datadir "$HOME/Library/Application Support/Steam/steamapps/common/Barony/Barony.app/Contents/Resources" \
+  --instances 4 \
+  --force-chunk 1 \
+  --chunk-payload-max 200
+```
+
+Run HELO smoke with account-label coverage assertions:
+
+```bash
+tests/smoke/run_lan_helo_chunk_smoke_mac.sh \
+  --instances 8 \
+  --force-chunk 1 \
+  --chunk-payload-max 200 \
+  --trace-account-labels 1 \
+  --require-account-labels 1
+```
+
+Run mapgen sweep for players `1..15`, one run each:
 
 ```bash
 tests/smoke/run_mapgen_sweep_mac.sh \
   --min-players 1 \
-  --max-players 16 \
+  --max-players 15 \
   --runs-per-player 1 \
   --auto-enter-dungeon 1 \
   --force-chunk 1 \
   --chunk-payload-max 200
 
-# Faster single-instance mapgen sweep (simulated mapgen players 1..16):
+# Faster single-instance mapgen sweep (simulated mapgen players 1..15):
 tests/smoke/run_mapgen_sweep_mac.sh \
   --min-players 1 \
-  --max-players 16 \
+  --max-players 15 \
   --runs-per-player 8 \
   --simulate-mapgen-players 1 \
   --inprocess-sim-batch 1 \
@@ -127,12 +153,14 @@ Each run includes:
 - `summary.env`: key-value summary (pass/fail, counts, mapgen metrics)
   - Includes additional HELO fields: `NETWORK_BACKEND`, `TX_MODE_APPLIED`,
     `PER_CLIENT_REASSEMBLY_COUNTS`, `CHUNK_RESET_REASON_COUNTS`,
-    `HELO_PLAYER_SLOTS`, `HELO_PLAYER_SLOT_COVERAGE_OK`
-  - Churn ready-sync mode adds `READY_SNAPSHOT_*` fields and `READY_SYNC_CSV`
+    `HELO_PLAYER_SLOTS`, `HELO_PLAYER_SLOT_COVERAGE_OK`,
+    `ACCOUNT_LABEL_SLOTS`, `ACCOUNT_LABEL_SLOT_COVERAGE_OK`
+  - Churn ready-sync mode adds `READY_SNAPSHOT_*` fields and `READY_SYNC_CSV`; join-reject tracing adds `JOIN_REJECT_TRACE_LINES`
 - `pids.txt`: launched process metadata
 - `stdout/`: captured process stdout
 - `instances/home-*/.barony/log.txt`: engine logs used for assertions
 - Per-instance `models.cache` files are removed by the smoke runner during cleanup to avoid runaway disk usage.
+- If `--outdir` is reused, runners clear volatile per-run state (`instances/`, `stdout/`, `summary.env`, pid/csv files) before launch so stale logs cannot satisfy assertions.
 
 Mapgen sweeps additionally emit:
 
@@ -151,7 +179,7 @@ These are read by `MainMenu.cpp` / `net.cpp` when set:
 - `BARONY_SMOKE_CONNECT_ADDRESS=127.0.0.1:57165`
 - `BARONY_SMOKE_CONNECT_DELAY_SECS=<int>`
 - `BARONY_SMOKE_RETRY_DELAY_SECS=<int>`
-- `BARONY_SMOKE_EXPECTED_PLAYERS=<1..16>`
+- `BARONY_SMOKE_EXPECTED_PLAYERS=<1..15>`
 - `BARONY_SMOKE_AUTO_START=0|1`
 - `BARONY_SMOKE_AUTO_START_DELAY_SECS=<int>`
 - `BARONY_SMOKE_AUTO_ENTER_DUNGEON=0|1` (host-only, smoke-only)
@@ -160,9 +188,11 @@ These are read by `MainMenu.cpp` / `net.cpp` when set:
 - `BARONY_SMOKE_SEED=<seed string>`
 - `BARONY_SMOKE_AUTO_READY=0|1`
 - `BARONY_SMOKE_TRACE_READY_SYNC=0|1` (host-only, smoke-only diagnostic logging)
+- `BARONY_SMOKE_TRACE_ACCOUNT_LABELS=0|1` (host-only, smoke-only diagnostic logging)
+- `BARONY_SMOKE_TRACE_JOIN_REJECTS=0|1` (host-only, smoke-only diagnostic logging)
 - `BARONY_SMOKE_FORCE_HELO_CHUNK=0|1`
 - `BARONY_SMOKE_HELO_CHUNK_PAYLOAD_MAX=<64..900>`
 - `BARONY_SMOKE_HELO_CHUNK_TX_MODE=normal|reverse|even-odd|duplicate-first|drop-last|duplicate-conflict-first` (host-only, smoke-only)
-- `BARONY_SMOKE_MAPGEN_CONNECTED_PLAYERS=<1..16>` (smoke-only mapgen scaling override)
+- `BARONY_SMOKE_MAPGEN_CONNECTED_PLAYERS=<1..15>` (smoke-only mapgen scaling override)
 
 These hooks are dormant unless `BARONY_SMOKE_AUTOPILOT` or explicit smoke role settings are enabled.

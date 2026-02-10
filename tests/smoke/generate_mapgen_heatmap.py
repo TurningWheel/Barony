@@ -87,7 +87,7 @@ def main():
             ranges[metric] = (0.0, 1.0)
 
     min_player = 1
-    max_player = 16
+    max_player = 15
 
     lines = []
     lines.append("<!doctype html>")
@@ -103,7 +103,7 @@ def main():
     lines.append("td.na{background:#2a2f36;color:#808a94;}")
     lines.append("code{background:#1d2630;padding:2px 4px;border-radius:4px;}")
     lines.append("</style></head><body>")
-    lines.append("<h1>Barony Mapgen Heatmap (Players 1-16)</h1>")
+    lines.append("<h1>Barony Mapgen Heatmap (Players 1-15)</h1>")
     lines.append(f"<p>Source CSV: <code>{html.escape(str(Path(args.input)))}</code></p>")
     lines.append("<table>")
     header = "<tr><th>Players</th>" + "".join(f"<th>{html.escape(m)}</th>" for m in METRICS) + "<th>Runs</th></tr>"

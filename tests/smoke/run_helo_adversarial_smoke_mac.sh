@@ -6,6 +6,7 @@ RUNNER="$SCRIPT_DIR/run_lan_helo_chunk_smoke_mac.sh"
 AGGREGATE="$SCRIPT_DIR/generate_smoke_aggregate_report.py"
 
 APP="$HOME/Library/Application Support/Steam/steamapps/common/Barony/Barony.app/Contents/MacOS/Barony"
+DATADIR=""
 INSTANCES=4
 WINDOW_SIZE="1280x720"
 STAGGER_SECONDS=1
@@ -23,6 +24,7 @@ Usage: run_helo_adversarial_smoke_mac.sh [options]
 
 Options:
   --app <path>                 Barony executable path.
+  --datadir <path>             Optional data directory passed through to runner via -datadir=<path>.
   --instances <n>              Number of instances per case (default: 4, min: 2).
   --size <WxH>                 Window size.
   --stagger <sec>              Delay between launches.
@@ -61,6 +63,10 @@ while (($# > 0)); do
 	case "$1" in
 		--app)
 			APP="${2:-}"
+			shift 2
+			;;
+		--datadir)
+			DATADIR="${2:-}"
 			shift 2
 			;;
 		--instances)
@@ -119,8 +125,12 @@ if [[ -z "$APP" || ! -x "$APP" ]]; then
 	echo "Barony executable not found or not executable: $APP" >&2
 	exit 1
 fi
-if ! is_uint "$INSTANCES" || (( INSTANCES < 2 || INSTANCES > 16 )); then
-	echo "--instances must be 2..16" >&2
+if [[ -n "$DATADIR" ]] && [[ ! -d "$DATADIR" ]]; then
+	echo "--datadir must reference an existing directory: $DATADIR" >&2
+	exit 1
+fi
+if ! is_uint "$INSTANCES" || (( INSTANCES < 2 || INSTANCES > 15 )); then
+	echo "--instances must be 2..15" >&2
 	exit 1
 fi
 if ! is_uint "$PASS_TIMEOUT_SECONDS" || ! is_uint "$FAIL_TIMEOUT_SECONDS" || ! is_uint "$STAGGER_SECONDS"; then
@@ -160,6 +170,10 @@ case_name,tx_mode,expected_result,observed_result,match,instances,network_backen
 CSV
 
 mismatches=0
+datadir_args=()
+if [[ -n "$DATADIR" ]]; then
+	datadir_args=(--datadir "$DATADIR")
+fi
 
 while IFS='|' read -r case_name tx_mode expected; do
 	[[ -z "$case_name" ]] && continue
@@ -173,6 +187,7 @@ while IFS='|' read -r case_name tx_mode expected; do
 	log "Case=$case_name mode=$tx_mode expected=$expected timeout=${timeout_seconds}s"
 	if "$RUNNER" \
 		--app "$APP" \
+		"${datadir_args[@]}" \
 		--instances "$INSTANCES" \
 		--size "$WINDOW_SIZE" \
 		--stagger "$STAGGER_SECONDS" \

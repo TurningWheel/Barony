@@ -6,6 +6,7 @@ RUNNER="$SCRIPT_DIR/run_lan_helo_chunk_smoke_mac.sh"
 AGGREGATE="$SCRIPT_DIR/generate_smoke_aggregate_report.py"
 
 APP="$HOME/Library/Application Support/Steam/steamapps/common/Barony/Barony.app/Contents/MacOS/Barony"
+DATADIR=""
 RUNS=10
 INSTANCES=8
 WINDOW_SIZE="1280x720"
@@ -26,6 +27,7 @@ Usage: run_lan_helo_soak_mac.sh [options]
 
 Options:
   --app <path>                   Barony executable path.
+  --datadir <path>               Optional data directory passed through to runner via -datadir=<path>.
   --runs <n>                     Number of soak runs (default: 10).
   --instances <n>                Number of game instances per run (default: 8).
   --size <WxH>                   Window size for all instances.
@@ -67,6 +69,10 @@ while (($# > 0)); do
 	case "$1" in
 		--app)
 			APP="${2:-}"
+			shift 2
+			;;
+		--datadir)
+			DATADIR="${2:-}"
 			shift 2
 			;;
 		--runs)
@@ -137,12 +143,16 @@ if [[ -z "$APP" || ! -x "$APP" ]]; then
 	echo "Barony executable not found or not executable: $APP" >&2
 	exit 1
 fi
+if [[ -n "$DATADIR" ]] && [[ ! -d "$DATADIR" ]]; then
+	echo "--datadir must reference an existing directory: $DATADIR" >&2
+	exit 1
+fi
 if ! is_uint "$RUNS" || (( RUNS < 1 )); then
 	echo "--runs must be >= 1" >&2
 	exit 1
 fi
-if ! is_uint "$INSTANCES" || (( INSTANCES < 1 || INSTANCES > 16 )); then
-	echo "--instances must be 1..16" >&2
+if ! is_uint "$INSTANCES" || (( INSTANCES < 1 || INSTANCES > 15 )); then
+	echo "--instances must be 1..15" >&2
 	exit 1
 fi
 if ! is_uint "$TIMEOUT_SECONDS" || ! is_uint "$STAGGER_SECONDS" || ! is_uint "$AUTO_START_DELAY_SECS" || ! is_uint "$AUTO_ENTER_DUNGEON_DELAY_SECS"; then
@@ -190,6 +200,10 @@ run,status,instances,host_chunk_lines,client_reassembled_lines,mapgen_found,game
 CSV
 
 failures=0
+datadir_args=()
+if [[ -n "$DATADIR" ]]; then
+	datadir_args=(--datadir "$DATADIR")
+fi
 for ((run = 1; run <= RUNS; ++run)); do
 	run_dir="$RUNS_DIR/r${run}"
 	mkdir -p "$run_dir"
@@ -197,6 +211,7 @@ for ((run = 1; run <= RUNS; ++run)); do
 
 	if "$RUNNER" \
 		--app "$APP" \
+		"${datadir_args[@]}" \
 		--instances "$INSTANCES" \
 		--size "$WINDOW_SIZE" \
 		--stagger "$STAGGER_SECONDS" \

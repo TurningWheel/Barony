@@ -19519,19 +19519,20 @@ failed:
 		account->setTickCallback([](Widget& widget) {
 			const int player = widget.getOwner();
 			auto field = static_cast<Field*>(&widget);
+			const char* accountName = players[player]->getAccountName();
 
 			// set name
 			char buf[64];
-			snprintf(buf, sizeof(buf), "(%s)", players[player]->getAccountName());
+			snprintf(buf, sizeof(buf), "(%s)", accountName);
 			field->setText(buf);
 
 			// announce new player
 			if (multiplayer == SERVER) {
-				if (!client_disconnected[player] && newPlayer[player] && stringCmp(players[player]->getAccountName(), "...", 3, 3)) {
+				if (!client_disconnected[player] && newPlayer[player] && stringCmp(accountName, "...", 3, 3)) {
 					newPlayer[player] = false;
 
 					char buf[1024];
-					int len = snprintf(buf, sizeof(buf), Language::get(5451), players[player]->getAccountName());
+					int len = snprintf(buf, sizeof(buf), Language::get(5451), accountName);
 					if (len > 0) {
 						sendChatMessageOverNet(uint32ColorBaronyBlue, buf, len);
 					}
@@ -19541,6 +19542,7 @@ failed:
 			auto index = reinterpret_cast<intptr_t>(field->getUserData());
 			field->setColor(playerColor((int)index, colorblind_lobby, false));
 			});
+		SmokeTestHooks::MainMenu::traceLobbyAccountLabelResolved(index, players[index]->getAccountName());
 
         if (local) {
             static auto cancel_fn = [](int index){

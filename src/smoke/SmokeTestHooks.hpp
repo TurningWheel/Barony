@@ -41,6 +41,8 @@ namespace MainMenu
 	bool isReadyStateSyncTraceEnabled();
 	void traceReadyStateSnapshotQueued(int player, int attempts, Uint32 firstSendTick);
 	void traceReadyStateSnapshotSent(int player, int readyEntries);
+	bool isAccountLabelTraceEnabled();
+	void traceLobbyAccountLabelResolved(int slot, const char* accountName);
 	bool isAutopilotEnvEnabled();
 	bool isHeloChunkPayloadOverrideEnvEnabled();
 	bool isHeloChunkTxModeOverrideEnvEnabled();
@@ -56,6 +58,12 @@ namespace Gameplay
 	bool isHooksEnvEnabled();
 	bool isAutoEnterDungeonEnabled();
 	void tickAutoEnterDungeon();
+}
+
+namespace Net
+{
+	bool isJoinRejectTraceEnabled();
+	void traceLobbyJoinReject(Uint32 result, Uint8 requestedSlot, const bool lockedSlots[MAXPLAYERS], const bool disconnectedSlots[MAXPLAYERS]);
 }
 
 namespace Mapgen

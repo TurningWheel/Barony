@@ -7,8 +7,9 @@ HEATMAP="$SCRIPT_DIR/generate_mapgen_heatmap.py"
 AGGREGATE="$SCRIPT_DIR/generate_smoke_aggregate_report.py"
 
 APP="$HOME/Library/Application Support/Steam/steamapps/common/Barony/Barony.app/Contents/MacOS/Barony"
+DATADIR=""
 MIN_PLAYERS=1
-MAX_PLAYERS=16
+MAX_PLAYERS=15
 RUNS_PER_PLAYER=1
 BASE_SEED=1000
 WINDOW_SIZE="1280x720"
@@ -29,8 +30,9 @@ Usage: run_mapgen_sweep_mac.sh [options]
 
 Options:
   --app <path>                 Barony executable path.
+  --datadir <path>             Optional data directory passed through to runner via -datadir=<path>.
   --min-players <n>            Start player count (default: 1).
-  --max-players <n>            End player count (default: 16).
+  --max-players <n>            End player count (default: 15).
   --runs-per-player <n>        Runs for each player count (default: 1).
   --base-seed <n>              Base seed value used for deterministic runs.
   --size <WxH>                 Window size for all instances.
@@ -74,6 +76,10 @@ while (($# > 0)); do
 	case "$1" in
 		--app)
 			APP="${2:-}"
+			shift 2
+			;;
+		--datadir)
+			DATADIR="${2:-}"
 			shift 2
 			;;
 		--min-players)
@@ -152,12 +158,16 @@ if [[ -z "$APP" || ! -x "$APP" ]]; then
 	echo "Barony executable not found or not executable: $APP" >&2
 	exit 1
 fi
+if [[ -n "$DATADIR" ]] && [[ ! -d "$DATADIR" ]]; then
+	echo "--datadir must reference an existing directory: $DATADIR" >&2
+	exit 1
+fi
 if ! is_uint "$MIN_PLAYERS" || ! is_uint "$MAX_PLAYERS" || ! is_uint "$RUNS_PER_PLAYER"; then
 	echo "--min-players, --max-players and --runs-per-player must be positive integers" >&2
 	exit 1
 fi
-if (( MIN_PLAYERS < 1 || MAX_PLAYERS > 16 || MIN_PLAYERS > MAX_PLAYERS )); then
-	echo "Player range must satisfy 1 <= min <= max <= 16" >&2
+if (( MIN_PLAYERS < 1 || MAX_PLAYERS > 15 || MIN_PLAYERS > MAX_PLAYERS )); then
+	echo "Player range must satisfy 1 <= min <= max <= 15" >&2
 	exit 1
 fi
 if (( RUNS_PER_PLAYER < 1 )); then
@@ -206,6 +216,10 @@ CSV
 
 failures=0
 total_runs=0
+datadir_args=()
+if [[ -n "$DATADIR" ]]; then
+	datadir_args=(--datadir "$DATADIR")
+fi
 
 log "Writing outputs to $OUTDIR"
 if (( SIMULATE_MAPGEN_PLAYERS )); then
@@ -261,6 +275,7 @@ for ((players = MIN_PLAYERS; players <= MAX_PLAYERS; ++players)); do
 		log "Batch run: players=${players} launched=${launched_instances} samples=${RUNS_PER_PLAYER} repeats=${batch_transition_repeats} seed=${seed_base}"
 		if "$RUNNER" \
 			--app "$APP" \
+			"${datadir_args[@]}" \
 			--instances "$launched_instances" \
 			--size "$WINDOW_SIZE" \
 			--stagger "$STAGGER_SECONDS" \
@@ -358,6 +373,7 @@ for ((players = MIN_PLAYERS; players <= MAX_PLAYERS; ++players)); do
 		fi
 		if "$RUNNER" \
 			--app "$APP" \
+			"${datadir_args[@]}" \
 			--instances "$launched_instances" \
 			--size "$WINDOW_SIZE" \
 			--stagger "$STAGGER_SECONDS" \

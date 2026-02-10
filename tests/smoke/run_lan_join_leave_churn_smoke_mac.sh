@@ -2,6 +2,7 @@
 set -euo pipefail
 
 APP="$HOME/Library/Application Support/Steam/steamapps/common/Barony/Barony.app/Contents/MacOS/Barony"
+DATADIR=""
 INSTANCES=8
 CHURN_CYCLES=2
 CHURN_COUNT=2
@@ -18,6 +19,7 @@ HELO_CHUNK_TX_MODE="normal"
 AUTO_READY=0
 TRACE_READY_SYNC=0
 REQUIRE_READY_SYNC=0
+TRACE_JOIN_REJECTS=0
 OUTDIR=""
 KEEP_RUNNING=0
 
@@ -30,6 +32,7 @@ Usage: run_lan_join_leave_churn_smoke_mac.sh [options]
 
 Options:
   --app <path>                    Barony executable path.
+  --datadir <path>                Optional data directory passed to Barony via -datadir=<path>.
   --instances <n>                 Total host+client instances (default: 8, min: 3).
   --churn-cycles <n>              Number of kill/rejoin churn cycles (default: 2).
   --churn-count <n>               Clients churned per cycle (default: 2).
@@ -46,6 +49,7 @@ Options:
   --auto-ready <0|1>              Enable BARONY_SMOKE_AUTO_READY on clients.
   --trace-ready-sync <0|1>        Enable host ready-sync trace logs (smoke-only).
   --require-ready-sync <0|1>      Assert ready snapshot queue/send coverage per slot/cycle.
+  --trace-join-rejects <0|1>      Enable host smoke trace logs for join reject slot-state snapshots.
   --outdir <path>                 Output directory.
   --keep-running                  Do not kill launched instances on exit.
   -h, --help                      Show this help.
@@ -98,6 +102,10 @@ while (($# > 0)); do
 	case "$1" in
 		--app)
 			APP="${2:-}"
+			shift 2
+			;;
+		--datadir)
+			DATADIR="${2:-}"
 			shift 2
 			;;
 		--instances)
@@ -164,6 +172,10 @@ while (($# > 0)); do
 			REQUIRE_READY_SYNC="${2:-}"
 			shift 2
 			;;
+		--trace-join-rejects)
+			TRACE_JOIN_REJECTS="${2:-}"
+			shift 2
+			;;
 		--outdir)
 			OUTDIR="${2:-}"
 			shift 2
@@ -188,8 +200,12 @@ if [[ -z "$APP" || ! -x "$APP" ]]; then
 	echo "Barony executable not found or not executable: $APP" >&2
 	exit 1
 fi
-if ! is_uint "$INSTANCES" || (( INSTANCES < 3 || INSTANCES > 16 )); then
-	echo "--instances must be 3..16" >&2
+if [[ -n "$DATADIR" ]] && [[ ! -d "$DATADIR" ]]; then
+	echo "--datadir must reference an existing directory: $DATADIR" >&2
+	exit 1
+fi
+if ! is_uint "$INSTANCES" || (( INSTANCES < 3 || INSTANCES > 15 )); then
+	echo "--instances must be 3..15" >&2
 	exit 1
 fi
 if ! is_uint "$CHURN_CYCLES" || (( CHURN_CYCLES < 1 )); then
@@ -218,6 +234,10 @@ if ! is_uint "$TRACE_READY_SYNC" || (( TRACE_READY_SYNC > 1 )); then
 fi
 if ! is_uint "$REQUIRE_READY_SYNC" || (( REQUIRE_READY_SYNC > 1 )); then
 	echo "--require-ready-sync must be 0 or 1" >&2
+	exit 1
+fi
+if ! is_uint "$TRACE_JOIN_REJECTS" || (( TRACE_JOIN_REJECTS > 1 )); then
+	echo "--trace-join-rejects must be 0 or 1" >&2
 	exit 1
 fi
 if (( REQUIRE_READY_SYNC )) && (( AUTO_READY == 0 )); then
@@ -250,6 +270,8 @@ if [[ "$OUTDIR" != /* ]]; then
 fi
 LOG_DIR="$OUTDIR/stdout"
 INSTANCE_ROOT="$OUTDIR/instances"
+rm -rf "$LOG_DIR" "$INSTANCE_ROOT"
+rm -f "$OUTDIR/summary.env" "$OUTDIR/churn_cycle_results.csv" "$OUTDIR/ready_sync_results.csv"
 mkdir -p "$LOG_DIR" "$INSTANCE_ROOT"
 
 HOST_LOG="$INSTANCE_ROOT/home-1-l1/.barony/log.txt"
@@ -317,6 +339,9 @@ launch_slot() {
 		if (( TRACE_READY_SYNC )); then
 			env_vars+=("BARONY_SMOKE_TRACE_READY_SYNC=1")
 		fi
+		if (( TRACE_JOIN_REJECTS )); then
+			env_vars+=("BARONY_SMOKE_TRACE_JOIN_REJECTS=1")
+		fi
 	else
 		env_vars+=(
 			"BARONY_SMOKE_ROLE=client"
@@ -324,7 +349,15 @@ launch_slot() {
 		)
 	fi
 
-	env "${env_vars[@]}" "$APP" -windowed -size="$WINDOW_SIZE" >"$stdout_log" 2>&1 &
+	local -a app_args=(
+		"-windowed"
+		"-size=$WINDOW_SIZE"
+	)
+	if [[ -n "$DATADIR" ]]; then
+		app_args+=("-datadir=$DATADIR")
+	fi
+
+	env "${env_vars[@]}" "$APP" "${app_args[@]}" >"$stdout_log" 2>&1 &
 	local pid="$!"
 	SLOT_PIDS[slot]="$pid"
 	ALL_PIDS+=("$pid")
@@ -435,6 +468,7 @@ done
 
 final_host_chunk_lines=$(count_fixed_lines "$HOST_LOG" "sending chunked HELO:")
 join_fail_lines=$(count_fixed_lines "$HOST_LOG" "Player failed to join lobby")
+join_reject_trace_lines=$(count_fixed_lines "$HOST_LOG" "[SMOKE]: lobby join reject code=")
 ready_snapshot_expected_total=0
 ready_snapshot_queue_lines=0
 ready_snapshot_sent_lines=0
@@ -471,6 +505,7 @@ fi
 SUMMARY_FILE="$OUTDIR/summary.env"
 {
 	echo "RESULT=$([[ $failed -eq 0 ]] && echo pass || echo fail)"
+	echo "DATADIR=$DATADIR"
 	echo "INSTANCES=$INSTANCES"
 	echo "CHURN_CYCLES=$CHURN_CYCLES"
 	echo "CHURN_COUNT=$CHURN_COUNT"
@@ -480,10 +515,12 @@ SUMMARY_FILE="$OUTDIR/summary.env"
 	echo "AUTO_READY=$AUTO_READY"
 	echo "TRACE_READY_SYNC=$TRACE_READY_SYNC"
 	echo "REQUIRE_READY_SYNC=$REQUIRE_READY_SYNC"
+	echo "TRACE_JOIN_REJECTS=$TRACE_JOIN_REJECTS"
 	echo "INITIAL_REQUIRED_HOST_CHUNK_LINES=$initial_target"
 	echo "FINAL_REQUIRED_HOST_CHUNK_LINES=$required_target"
 	echo "FINAL_HOST_CHUNK_LINES=$final_host_chunk_lines"
 	echo "JOIN_FAIL_LINES=$join_fail_lines"
+	echo "JOIN_REJECT_TRACE_LINES=$join_reject_trace_lines"
 	echo "READY_SNAPSHOT_EXPECTED_TOTAL=$ready_snapshot_expected_total"
 	echo "READY_SNAPSHOT_QUEUE_LINES=$ready_snapshot_queue_lines"
 	echo "READY_SNAPSHOT_SENT_LINES=$ready_snapshot_sent_lines"

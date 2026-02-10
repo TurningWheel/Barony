@@ -1800,6 +1800,7 @@ NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest(int& outResult, bool loc
 		net_packet->len = 8;
 		memcpy(net_packet->data, "HELO", 4);
 		SDLNet_Write32(result, &net_packet->data[4]); // error code for client to interpret
+		SmokeTestHooks::Net::traceLobbyJoinReject(result, net_packet->data[56], lockedSlots, client_disconnected);
 		printlog("sending error code %d to client.\n", result);
 		if ( directConnect )
 		{

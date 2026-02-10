@@ -2,6 +2,7 @@
 set -euo pipefail
 
 APP="$HOME/Library/Application Support/Steam/steamapps/common/Barony/Barony.app/Contents/MacOS/Barony"
+DATADIR=""
 INSTANCES=4
 WINDOW_SIZE="1280x720"
 STAGGER_SECONDS=1
@@ -25,6 +26,8 @@ OUTDIR=""
 REQUIRE_HELO=""
 REQUIRE_MAPGEN=0
 MAPGEN_SAMPLES=1
+TRACE_ACCOUNT_LABELS=0
+REQUIRE_ACCOUNT_LABELS=0
 KEEP_RUNNING=0
 
 usage() {
@@ -33,6 +36,7 @@ Usage: run_lan_helo_chunk_smoke_mac.sh [options]
 
 Options:
   --app <path>                  Barony executable path.
+  --datadir <path>              Optional data directory passed to Barony via -datadir=<path>.
   --instances <n>               Number of game instances to launch.
   --size <WxH>                  Window size (default: 1280x720).
   --stagger <sec>               Delay between launches.
@@ -49,7 +53,7 @@ Options:
                                 Defaults to --mapgen-samples.
   --force-chunk <0|1>           Enable BARONY_SMOKE_FORCE_HELO_CHUNK.
   --chunk-payload-max <n>       Smoke chunk payload cap (64..900).
-  --mapgen-players-override <n> Smoke-only mapgen scaling player count override (1..16).
+  --mapgen-players-override <n> Smoke-only mapgen scaling player count override (1..15).
   --helo-chunk-tx-mode <mode>   HELO chunk send mode: normal, reverse, even-odd,
                                 duplicate-first, drop-last, duplicate-conflict-first.
   --network-backend <name>      Backend tag for summary/env (lan|steam|eos; default: lan).
@@ -59,6 +63,9 @@ Options:
   --require-helo <0|1>          Require HELO chunk/reassembly checks.
   --require-mapgen <0|1>        Require dungeon mapgen summary in host log.
   --mapgen-samples <n>          Required number of mapgen summary lines (default: 1).
+  --trace-account-labels <0|1>  Emit smoke logs for resolved lobby account labels (host only).
+  --require-account-labels <0|1>
+                                Require account-label coverage for remote slots.
   --outdir <path>               Artifact directory.
   --keep-running                Do not kill launched instances on exit.
   -h, --help                    Show this help.
@@ -266,6 +273,62 @@ is_helo_player_slot_coverage_ok() {
 	echo 1
 }
 
+collect_account_label_slots() {
+	local host_log="$1"
+	if [[ ! -f "$host_log" ]]; then
+		echo ""
+		return
+	fi
+	local slots
+	slots="$(rg -o 'lobby account label resolved slot=[0-9]+' "$host_log" \
+		| sed -nE 's/.*slot=([0-9]+)/\1/p' \
+		| sort -n \
+		| uniq \
+		| paste -sd';' - || true)"
+	echo "$slots"
+}
+
+collect_missing_account_label_slots() {
+	local host_log="$1"
+	local expected_clients="$2"
+	if (( expected_clients <= 0 )); then
+		echo ""
+		return
+	fi
+	local missing=""
+	local slot
+	for ((slot = 1; slot <= expected_clients; ++slot)); do
+		if ! rg -F -q "lobby account label resolved slot=$slot " "$host_log"; then
+			if [[ -n "$missing" ]]; then
+				missing+=";"
+			fi
+			missing+="$slot"
+		fi
+	done
+	echo "$missing"
+}
+
+is_account_label_slot_coverage_ok() {
+	local host_log="$1"
+	local expected_clients="$2"
+	if (( expected_clients <= 0 )); then
+		echo 1
+		return
+	fi
+	if [[ ! -f "$host_log" ]]; then
+		echo 0
+		return
+	fi
+	local slot
+	for ((slot = 1; slot <= expected_clients; ++slot)); do
+		if ! rg -F -q "lobby account label resolved slot=$slot " "$host_log"; then
+			echo 0
+			return
+		fi
+	done
+	echo 1
+}
+
 extract_mapgen_metrics() {
 	local host_log="$1"
 	local line
@@ -298,6 +361,10 @@ while (($# > 0)); do
 	case "$1" in
 		--app)
 			APP="${2:-}"
+			shift 2
+			;;
+		--datadir)
+			DATADIR="${2:-}"
 			shift 2
 			;;
 		--instances)
@@ -388,6 +455,14 @@ while (($# > 0)); do
 			MAPGEN_SAMPLES="${2:-}"
 			shift 2
 			;;
+		--trace-account-labels)
+			TRACE_ACCOUNT_LABELS="${2:-}"
+			shift 2
+			;;
+		--require-account-labels)
+			REQUIRE_ACCOUNT_LABELS="${2:-}"
+			shift 2
+			;;
 		--outdir)
 			OUTDIR="${2:-}"
 			shift 2
@@ -412,8 +487,12 @@ if [[ -z "$APP" || ! -x "$APP" ]]; then
 	echo "Barony executable not found or not executable: $APP" >&2
 	exit 1
 fi
-if ! is_uint "$INSTANCES" || (( INSTANCES < 1 || INSTANCES > 16 )); then
-	echo "--instances must be 1..16 (got: $INSTANCES)" >&2
+if [[ -n "$DATADIR" ]] && [[ ! -d "$DATADIR" ]]; then
+	echo "--datadir must reference an existing directory: $DATADIR" >&2
+	exit 1
+fi
+if ! is_uint "$INSTANCES" || (( INSTANCES < 1 || INSTANCES > 15 )); then
+	echo "--instances must be 1..15 (got: $INSTANCES)" >&2
 	exit 1
 fi
 if ! is_uint "$STAGGER_SECONDS" || ! is_uint "$TIMEOUT_SECONDS"; then
@@ -451,8 +530,8 @@ if ! is_uint "$CHUNK_PAYLOAD_MAX" || (( CHUNK_PAYLOAD_MAX < 64 || CHUNK_PAYLOAD_
 	exit 1
 fi
 if [[ -n "$MAPGEN_PLAYERS_OVERRIDE" ]]; then
-	if ! is_uint "$MAPGEN_PLAYERS_OVERRIDE" || (( MAPGEN_PLAYERS_OVERRIDE < 1 || MAPGEN_PLAYERS_OVERRIDE > 16 )); then
-		echo "--mapgen-players-override must be 1..16" >&2
+	if ! is_uint "$MAPGEN_PLAYERS_OVERRIDE" || (( MAPGEN_PLAYERS_OVERRIDE < 1 || MAPGEN_PLAYERS_OVERRIDE > 15 )); then
+		echo "--mapgen-players-override must be 1..15" >&2
 		exit 1
 	fi
 fi
@@ -483,8 +562,8 @@ fi
 if [[ -z "$EXPECTED_PLAYERS" ]]; then
 	EXPECTED_PLAYERS="$INSTANCES"
 fi
-if ! is_uint "$EXPECTED_PLAYERS" || (( EXPECTED_PLAYERS < 1 || EXPECTED_PLAYERS > 16 )); then
-	echo "--expected-players must be 1..16" >&2
+if ! is_uint "$EXPECTED_PLAYERS" || (( EXPECTED_PLAYERS < 1 || EXPECTED_PLAYERS > 15 )); then
+	echo "--expected-players must be 1..15" >&2
 	exit 1
 fi
 
@@ -496,6 +575,8 @@ if [[ "$OUTDIR" != /* ]]; then
 	OUTDIR="$PWD/$OUTDIR"
 fi
 mkdir -p "$OUTDIR"
+rm -rf "$OUTDIR/stdout" "$OUTDIR/instances"
+rm -f "$OUTDIR/pids.txt" "$OUTDIR/summary.env"
 
 if [[ -z "$REQUIRE_HELO" ]]; then
 	if (( INSTANCES > 1 )); then
@@ -514,6 +595,18 @@ if ! is_uint "$REQUIRE_MAPGEN" || (( REQUIRE_MAPGEN > 1 )); then
 fi
 if ! is_uint "$MAPGEN_SAMPLES" || (( MAPGEN_SAMPLES < 1 )); then
 	echo "--mapgen-samples must be >= 1" >&2
+	exit 1
+fi
+if ! is_uint "$TRACE_ACCOUNT_LABELS" || (( TRACE_ACCOUNT_LABELS > 1 )); then
+	echo "--trace-account-labels must be 0 or 1" >&2
+	exit 1
+fi
+if ! is_uint "$REQUIRE_ACCOUNT_LABELS" || (( REQUIRE_ACCOUNT_LABELS > 1 )); then
+	echo "--require-account-labels must be 0 or 1" >&2
+	exit 1
+fi
+if (( REQUIRE_ACCOUNT_LABELS )) && (( TRACE_ACCOUNT_LABELS == 0 )); then
+	echo "--require-account-labels requires --trace-account-labels 1" >&2
 	exit 1
 fi
 if [[ -z "$AUTO_ENTER_DUNGEON_REPEATS" ]]; then
@@ -575,6 +668,9 @@ launch_instance() {
 				"BARONY_SMOKE_AUTO_ENTER_DUNGEON_DELAY_SECS=$AUTO_ENTER_DUNGEON_DELAY_SECS"
 				"BARONY_SMOKE_AUTO_ENTER_DUNGEON_REPEATS=$AUTO_ENTER_DUNGEON_REPEATS"
 			)
+		if (( TRACE_ACCOUNT_LABELS )); then
+			env_vars+=("BARONY_SMOKE_TRACE_ACCOUNT_LABELS=1")
+		fi
 		if [[ -n "$MAPGEN_PLAYERS_OVERRIDE" ]]; then
 			env_vars+=("BARONY_SMOKE_MAPGEN_CONNECTED_PLAYERS=$MAPGEN_PLAYERS_OVERRIDE")
 		fi
@@ -588,7 +684,15 @@ launch_instance() {
 		)
 	fi
 
-	env "${env_vars[@]}" "$APP" -windowed -size="$WINDOW_SIZE" >"$stdout_log" 2>&1 &
+	local -a app_args=(
+		"-windowed"
+		"-size=$WINDOW_SIZE"
+	)
+	if [[ -n "$DATADIR" ]]; then
+		app_args+=("-datadir=$DATADIR")
+	fi
+
+	env "${env_vars[@]}" "$APP" "${app_args[@]}" >"$stdout_log" 2>&1 &
 	local pid="$!"
 	PIDS+=("$pid")
 	HOME_DIRS+=("$home_dir")
@@ -631,6 +735,7 @@ tx_mode_applied=0
 per_client_reassembly_counts=""
 all_clients_exact_one=0
 all_clients_zero=0
+account_label_ok=1
 
 declare -a CLIENT_LOGS=()
 for ((i = 2; i <= INSTANCES; ++i)); do
@@ -717,6 +822,10 @@ while (( SECONDS < deadline )); do
 	if (( REQUIRE_MAPGEN )) && (( mapgen_count < MAPGEN_SAMPLES )); then
 		mapgen_ok=0
 	fi
+	account_label_ok=1
+	if (( REQUIRE_ACCOUNT_LABELS )) && (( EXPECTED_CLIENTS > 0 )); then
+		account_label_ok=$(is_account_label_slot_coverage_ok "$HOST_LOG" "$EXPECTED_CLIENTS")
+	fi
 
 	if (( STRICT_EXPECTED_FAIL )); then
 		if (( all_clients_zero == 0 )); then
@@ -725,7 +834,7 @@ while (( SECONDS < deadline )); do
 		if (( chunk_reset_lines > 0 && txmode_ok )); then
 			break
 		fi
-	elif (( helo_ok && mapgen_ok && txmode_ok )); then
+	elif (( helo_ok && mapgen_ok && txmode_ok && account_label_ok )); then
 		result="pass"
 		break
 	fi
@@ -741,15 +850,27 @@ fi
 helo_player_slots="$(collect_helo_player_slots "$HOST_LOG")"
 helo_missing_player_slots="$(collect_missing_helo_player_slots "$HOST_LOG" "$EXPECTED_CLIENTS")"
 helo_player_slot_coverage_ok="$(is_helo_player_slot_coverage_ok "$HOST_LOG" "$EXPECTED_CLIENTS")"
+account_label_slots="$(collect_account_label_slots "$HOST_LOG")"
+account_label_missing_slots="$(collect_missing_account_label_slots "$HOST_LOG" "$EXPECTED_CLIENTS")"
+account_label_slot_coverage_ok="$(is_account_label_slot_coverage_ok "$HOST_LOG" "$EXPECTED_CLIENTS")"
+account_label_lines=0
+if [[ -f "$HOST_LOG" ]]; then
+	account_label_lines=$(count_fixed_lines "$HOST_LOG" "lobby account label resolved slot=")
+fi
 chunk_reset_reason_counts=""
 if (( EXPECTED_CLIENTS > 0 )); then
 	chunk_reset_reason_counts="$(collect_chunk_reset_reason_counts "${CLIENT_LOGS[@]}")"
+fi
+
+if (( REQUIRE_ACCOUNT_LABELS )) && (( account_label_slot_coverage_ok == 0 )); then
+	result="fail"
 fi
 
 SUMMARY_FILE="$OUTDIR/summary.env"
 {
 	echo "RESULT=$result"
 	echo "OUTDIR=$OUTDIR"
+	echo "DATADIR=$DATADIR"
 	echo "INSTANCES=$INSTANCES"
 	echo "EXPECTED_PLAYERS=$EXPECTED_PLAYERS"
 	echo "AUTO_ENTER_DUNGEON=$AUTO_ENTER_DUNGEON"
@@ -786,6 +907,12 @@ SUMMARY_FILE="$OUTDIR/summary.env"
 	echo "MAPGEN_GOLD=$gold"
 	echo "MAPGEN_ITEMS=$items"
 	echo "MAPGEN_DECORATIONS=$decorations"
+	echo "TRACE_ACCOUNT_LABELS=$TRACE_ACCOUNT_LABELS"
+	echo "REQUIRE_ACCOUNT_LABELS=$REQUIRE_ACCOUNT_LABELS"
+	echo "ACCOUNT_LABEL_LINES=$account_label_lines"
+	echo "ACCOUNT_LABEL_SLOTS=$account_label_slots"
+	echo "ACCOUNT_LABEL_MISSING_SLOTS=$account_label_missing_slots"
+	echo "ACCOUNT_LABEL_SLOT_COVERAGE_OK=$account_label_slot_coverage_ok"
 	echo "HOST_LOG=$HOST_LOG"
 	echo "PID_FILE=$PID_FILE"
 } > "$SUMMARY_FILE"

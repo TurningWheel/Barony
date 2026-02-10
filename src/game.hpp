@@ -35,7 +35,7 @@ class Entity;
 
 #define DEBUG 1
 #define ENTITY_PACKET_LENGTH 47
-// Must fit large lobby handshake payloads (e.g., savegame HELO with MAXPLAYERS=16).
+// Must fit large lobby handshake payloads (e.g., savegame HELO with MAXPLAYERS=15).
 #define NET_PACKET_SIZE 2048
 
 // impulses (bound keystrokes, mousestrokes, and joystick/game controller strokes) //TODO: Player-by-player basis.
