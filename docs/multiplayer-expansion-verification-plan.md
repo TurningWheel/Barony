@@ -43,9 +43,13 @@ Current status from artifacts now shows broad LAN smoke success with strict adve
 - Post-cap baseline check passed at 15p in `/Users/sayhiben/dev/Barony-8p/tests/smoke/artifacts/cap15-baseline-p15-escalated` (`RESULT=pass`, `HOST_CHUNK_LINES=14`, `CLIENT_REASSEMBLED_LINES=14`, `CHUNK_RESET_LINES=0`).
 - Completed focused code audit of player-related bit/nibble packing after the 15p cap change:
   - ✅ Safe at 15: core high-nibble caster encodings for `EFF_NIMBLENESS`, `EFF_GREATER_MIGHT`, `EFF_COUNSEL`, `EFF_STURDINESS`, `EFF_MAXIMISE`, `EFF_MINIMISE` (encode in `/Users/sayhiben/dev/Barony-8p/src/magic/castSpell.cpp`, decode in `/Users/sayhiben/dev/Barony-8p/src/entity.cpp` and `/Users/sayhiben/dev/Barony-8p/src/actplayer.cpp`).
-  - ⚠️ Open issue: `EFF_FAST` caster attribution uses an `Uint8` bitfield (`1 << (i + 1)`) and truncates slots 8-15 (encode in `/Users/sayhiben/dev/Barony-8p/src/magic/castSpell.cpp:6906` and `/Users/sayhiben/dev/Barony-8p/src/magic/castSpell.cpp:6922`; consume in `/Users/sayhiben/dev/Barony-8p/src/actplayer.cpp:11512` and `/Users/sayhiben/dev/Barony-8p/src/actplayer.cpp:11813`).
-  - ⚠️ Open issue: `EFF_DIVINE_FIRE` high-nibble ownership appears encoded as an id but consumed like a bitmask (encode in `/Users/sayhiben/dev/Barony-8p/src/magic/actmagic.cpp:4244` and `/Users/sayhiben/dev/Barony-8p/src/magic/actmagic.cpp:4248`; consume in `/Users/sayhiben/dev/Barony-8p/src/entity.cpp:18173` and `/Users/sayhiben/dev/Barony-8p/src/entity.cpp:18176`).
-  - ⚠️ Open hardening task: `EFF_SIGIL`/`EFF_SANCTUARY` non-player sentinel currently depends on overflow behavior from `((MAXPLAYERS + 1) << 4)` into `Uint8` (encode in `/Users/sayhiben/dev/Barony-8p/src/magic/actmagic.cpp:20638` and `/Users/sayhiben/dev/Barony-8p/src/magic/actmagic.cpp:20680`; decode in `/Users/sayhiben/dev/Barony-8p/src/entity.cpp:32533` and `/Users/sayhiben/dev/Barony-8p/src/entity.cpp:32553`).
+  - ✅ Resolved: `EFF_FAST` caster attribution now uses a high-nibble owner-id encode (`(player + 1) << 4`, low nibble clear) with dual-format decode support for backward compatibility (new owner-id format plus legacy bitmask values) in `/Users/sayhiben/dev/Barony-8p/src/magic/castSpell.cpp` and `/Users/sayhiben/dev/Barony-8p/src/actplayer.cpp`.
+  - ✅ Resolved: `EFF_DIVINE_FIRE` ownership consume path now matches owner-id semantics (`==`) instead of bitwise mask checks in `/Users/sayhiben/dev/Barony-8p/src/entity.cpp`.
+  - ✅ Resolved: `EFF_SIGIL`/`EFF_SANCTUARY` now encode non-player ownership explicitly as high-nibble `0` sentinel (no overflow dependency), with player-owner nibble packing centralized in `/Users/sayhiben/dev/Barony-8p/src/magic/actmagic.cpp`.
+- Added compile-time guardrails for `EFF_FAST` owner encoding/decoding (`MAXPLAYERS <= 15`) in `/Users/sayhiben/dev/Barony-8p/src/magic/castSpell.cpp` and `/Users/sayhiben/dev/Barony-8p/src/actplayer.cpp`.
+- Added compile-time guardrail for packed owner encoding in `/Users/sayhiben/dev/Barony-8p/src/magic/actmagic.cpp` (`MAXPLAYERS <= 15`).
+- Centralized packed status-effect owner encode/decode helpers in `/Users/sayhiben/dev/Barony-8p/src/status_effect_owner_encoding.hpp` and switched `EFF_FAST`, `EFF_DIVINE_FIRE`, `EFF_SIGIL`, and `EFF_SANCTUARY` paths to use the shared codec in `/Users/sayhiben/dev/Barony-8p/src/magic/castSpell.cpp`, `/Users/sayhiben/dev/Barony-8p/src/actplayer.cpp`, `/Users/sayhiben/dev/Barony-8p/src/magic/actmagic.cpp`, and `/Users/sayhiben/dev/Barony-8p/src/entity.cpp`.
+- Applied the shared codec to the remaining core owner-nibble status-effect sites (`EFF_NIMBLENESS`, `EFF_GREATER_MIGHT`, `EFF_COUNSEL`, `EFF_STURDINESS`, `EFF_MAXIMISE`, `EFF_MINIMISE`) so raw `>> 4`/`<< 4` owner packing logic is removed from those paths in `/Users/sayhiben/dev/Barony-8p/src/magic/castSpell.cpp`, `/Users/sayhiben/dev/Barony-8p/src/actplayer.cpp`, and `/Users/sayhiben/dev/Barony-8p/src/entity.cpp`.
 
 ### Active Checklist (Updated February 10, 2026)
 - [x] Phase A correctness gate (4p/8p/15p + payload edges + legacy + transition/mapgen lane)
@@ -66,9 +70,9 @@ Current status from artifacts now shows broad LAN smoke success with strict adve
 - [x] Audit player/caster bit/nibble encoding paths for 15-player safety (spell effects, voice metadata, loot bag keying)
 - [x] Confirm core high-nibble caster ownership paths are safe at 15 (`EFF_NIMBLENESS`, `EFF_GREATER_MIGHT`, `EFF_COUNSEL`, `EFF_STURDINESS`, `EFF_MAXIMISE`, `EFF_MINIMISE`)
 - [x] Confirm full-byte `player+1` ownership paths are safe at 15 (`EFF_CONFUSED`, `EFF_TABOO`, `EFF_PINPOINT`, `EFF_PENANCE`, `EFF_CURSE_FLESH`)
-- [ ] Fix `EFF_FAST` caster attribution encoding for slots 8-15 (current `Uint8` bitfield truncates high slots)
-- [ ] Resolve `EFF_DIVINE_FIRE` high-nibble ownership semantics (id vs bitmask interpretation mismatch)
-- [ ] Harden `EFF_SIGIL`/`EFF_SANCTUARY` non-player sentinel encoding so it does not depend on overflow side effects
+- [x] Fix `EFF_FAST` caster attribution encoding for slots 8-15 (migrated to high-nibble owner-id encode with legacy bitmask decode fallback for backward compatibility)
+- [x] Resolve `EFF_DIVINE_FIRE` high-nibble ownership semantics (consume path now uses owner-id equality)
+- [x] Harden `EFF_SIGIL`/`EFF_SANCTUARY` non-player sentinel encoding so it does not depend on overflow side effects
 - [ ] Add `GameUI` status-effect queue initialization lane for 1p/5p/15p startup and late-join/rejoin safety
 - [ ] Add automation for default slot-lock behavior and occupied-slot count-reduction kick copy permutations (1-player/2-player/multi-player wording)
 - [ ] Add automation for lobby page navigation and alignment checks on keyboard/controller (focus, card placement, paperdolls, ping frames, warnings, countdown alignment while paging)
@@ -184,7 +188,7 @@ Current status from artifacts now shows broad LAN smoke success with strict adve
 | Late-join ready-state sync correctness | Partial | ✅ Extended churn test with `--require-ready-sync`; lanes passing at 8p and 16p in `/Users/sayhiben/dev/Barony-8p/tests/smoke/artifacts/churn-ready-sync-20260209-212709-p8-c3x2-r2` and `/Users/sayhiben/dev/Barony-8p/tests/smoke/artifacts/churn-ready-sync-20260209-213532-p16-c3x4` (monitor intermittent retry bursts) |
 | Lobby page navigation alignment (keyboard/controller, focus, paperdolls, ping/countdown while paging) | Missing | Add `run_lobby_page_navigation_smoke_mac.sh` with scripted paging inputs and per-tick UI snapshot assertions |
 | 5+ direct-connect account label correctness | ✅ Automated in HELO lane at 8p/16p (`ACCOUNT_LABEL_SLOT_COVERAGE_OK=1`) | ✅ Implemented with `--trace-account-labels 1 --require-account-labels 1` in `run_lan_helo_chunk_smoke_mac.sh`; evidence in `/Users/sayhiben/dev/Barony-8p/tests/smoke/artifacts/account-label-coverage-20260209-223536-p8-r5` and `/Users/sayhiben/dev/Barony-8p/tests/smoke/artifacts/account-label-coverage-20260209-223827-p16-r1` |
-| Status-effect caster ownership encoding near player cap | ⚠️ Partial: core nibble paths are safe at 15, but `EFF_FAST` bitfield attribution truncates slots 8-15 and `EFF_DIVINE_FIRE` ownership semantics are inconsistent; `EFF_SIGIL`/`EFF_SANCTUARY` sentinel relies on overflow behavior | Keep `MAXPLAYERS<=15`; fix `EFF_FAST` encoding/decoding, align `EFF_DIVINE_FIRE` semantics, and replace overflow-dependent sentinel encoding with an explicit guarded format |
+| Status-effect caster ownership encoding near player cap | ✅ Updated: audited high-risk paths now use consistent owner-id semantics (`EFF_FAST`, `EFF_DIVINE_FIRE`) and explicit non-player sentinel handling (`EFF_SIGIL`, `EFF_SANCTUARY`) with packed-owner compile-time guards | Keep `MAXPLAYERS<=15`; add targeted status-effect queue smoke coverage at 1p/5p/15p |
 | `GameUI` status-effect queue initialization at high player counts | Missing | Add `run_status_effect_queue_init_smoke_mac.sh` to assert queue initialization/index assignment safety at 1p/5p/15p, including late-join/rejoin |
 | Save/reload 5+ and legacy `players_connected` compatibility | Missing | Add `run_save_reload_compat_smoke_mac.sh` with fixture saves and continue-card state assertions |
 | Visual slot mapping (ghost icons, world icons, XP themes, loot bag visuals; normal/colorblind) | Missing | Add `run_visual_slot_mapping_smoke_mac.sh` capturing screenshots and validating expected sprite/theme indices |
@@ -265,24 +269,18 @@ This section tracks player/caster identity encodings that rely on `0xF`, high ni
 3. Loot bag owner nibble keying remains safe for slots `0..14`:
 - `/Users/sayhiben/dev/Barony-8p/src/stat.cpp:1695`, `/Users/sayhiben/dev/Barony-8p/src/items.cpp:7639`.
 
-### Open Risks and Follow-Up Tasks
+### Follow-Up Tasks
 
-1. `EFF_FAST` caster attribution truncates high slots:
-- Encode uses `Uint8(1 | (1 << (i + 1)))` at `/Users/sayhiben/dev/Barony-8p/src/magic/castSpell.cpp:6906` and `/Users/sayhiben/dev/Barony-8p/src/magic/castSpell.cpp:6922`.
-- Consume path checks the same bitfield at `/Users/sayhiben/dev/Barony-8p/src/actplayer.cpp:11512` and `/Users/sayhiben/dev/Barony-8p/src/actplayer.cpp:11813`.
-- Because storage is `Uint8`, slots `8..15` cannot be represented reliably.
-2. `EFF_DIVINE_FIRE` ownership semantics appear inconsistent:
-- Encode writes `(1 + player) << 4` at `/Users/sayhiben/dev/Barony-8p/src/magic/actmagic.cpp:4244` and `/Users/sayhiben/dev/Barony-8p/src/magic/actmagic.cpp:4248`.
-- Consume path treats high nibble like a bitmask at `/Users/sayhiben/dev/Barony-8p/src/entity.cpp:18173` and `/Users/sayhiben/dev/Barony-8p/src/entity.cpp:18176`.
-3. `EFF_SIGIL` / `EFF_SANCTUARY` non-player sentinel depends on overflow behavior:
-- Encode uses `((MAXPLAYERS + 1) << 4)` into `Uint8` at `/Users/sayhiben/dev/Barony-8p/src/magic/actmagic.cpp:20638` and `/Users/sayhiben/dev/Barony-8p/src/magic/actmagic.cpp:20680`.
-- Decode reads high nibble at `/Users/sayhiben/dev/Barony-8p/src/entity.cpp:32533` and `/Users/sayhiben/dev/Barony-8p/src/entity.cpp:32553`.
-- Works at 15 today, but is brittle and should be made explicit.
+1. ✅ `EFF_DIVINE_FIRE` ownership semantics were aligned:
+- Consume path now compares decoded owner id with `(1 + player)` using equality in `/Users/sayhiben/dev/Barony-8p/src/entity.cpp`.
+2. ✅ `EFF_SIGIL` / `EFF_SANCTUARY` non-player sentinel no longer depends on overflow:
+- Encode now preserves low nibble strength and explicitly emits high nibble `0` for non-player casters in `/Users/sayhiben/dev/Barony-8p/src/magic/actmagic.cpp`.
+- Player ownership nibble packing was centralized with an explicit `MAXPLAYERS <= 15` compile-time guard in `/Users/sayhiben/dev/Barony-8p/src/magic/actmagic.cpp`.
 
 ### Guardrails
 
 1. Keep `MAXPLAYERS` capped at 15 unless these encodings are migrated.
-2. Add compile-time guard(s) near packed-player encode/decode sites to prevent accidental cap increases without format updates.
+2. ✅ Compile-time guard(s) now exist near packed-player encode/decode sites (`/Users/sayhiben/dev/Barony-8p/src/magic/castSpell.cpp`, `/Users/sayhiben/dev/Barony-8p/src/actplayer.cpp`, `/Users/sayhiben/dev/Barony-8p/src/magic/actmagic.cpp`) to prevent accidental cap increases without format updates.
 3. Prefer new smoke assertions/hook traces in `/Users/sayhiben/dev/Barony-8p/src/smoke` and `/Users/sayhiben/dev/Barony-8p/tests/smoke` for any fixes here to keep core gameplay files minimally touched.
 
 ## 9. Assumptions and Defaults

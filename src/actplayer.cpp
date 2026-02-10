@@ -29,6 +29,7 @@
 #include "mod_tools.hpp"
 #include "classdescriptions.hpp"
 #include "player_slot_map.hpp"
+#include "status_effect_owner_encoding.hpp"
 #include "ui/MainMenu.hpp"
 #include "interface/consolecommand.hpp"
 #ifdef USE_PLAYFAB
@@ -11507,18 +11508,15 @@ void actPlayer(Entity* my)
 				}
 				if ( Uint8 effectStrength = stats[PLAYER_NUM]->getEffectActive(EFF_FAST) )
 				{
-					for ( int i = 0; i < MAXPLAYERS; ++i )
+					int caster = StatusEffectOwnerEncoding::decodeFastCasterCompat(effectStrength);
+					if ( caster >= 0 && caster < MAXPLAYERS && players[caster]->entity )
 					{
-						if ( effectStrength & (1 << (i + 1)) && players[i]->entity )
-						{
-							players[i]->mechanics.updateSustainedSpellEvent(SPELL_SPEED, dist, 0.025, nullptr);
-							break;
-						}
+						players[caster]->mechanics.updateSustainedSpellEvent(SPELL_SPEED, dist, 0.025, nullptr);
 					}
 				}
 				if ( Uint8 effectStrength = stats[PLAYER_NUM]->getEffectActive(EFF_NIMBLENESS) )
 				{
-					int caster = ((stats[PLAYER_NUM]->getEffectActive(EFF_NIMBLENESS) >> 4) & 0xF) - 1;
+					int caster = StatusEffectOwnerEncoding::decodeOwnerNibbleToPlayer(effectStrength);
 					if ( caster >= 0 && caster < MAXPLAYERS )
 					{
 						if ( players[caster]->entity )
@@ -11529,7 +11527,7 @@ void actPlayer(Entity* my)
 				}
 				if ( Uint8 effectStrength = stats[PLAYER_NUM]->getEffectActive(EFF_GREATER_MIGHT) )
 				{
-					int caster = ((stats[PLAYER_NUM]->getEffectActive(EFF_GREATER_MIGHT) >> 4) & 0xF) - 1;
+					int caster = StatusEffectOwnerEncoding::decodeOwnerNibbleToPlayer(effectStrength);
 					if ( caster >= 0 && caster < MAXPLAYERS )
 					{
 						if ( players[caster]->entity )
@@ -11540,7 +11538,7 @@ void actPlayer(Entity* my)
 				}
 				if ( Uint8 effectStrength = stats[PLAYER_NUM]->getEffectActive(EFF_COUNSEL) )
 				{
-					int caster = ((stats[PLAYER_NUM]->getEffectActive(EFF_COUNSEL) >> 4) & 0xF) - 1;
+					int caster = StatusEffectOwnerEncoding::decodeOwnerNibbleToPlayer(effectStrength);
 					if ( caster >= 0 && caster < MAXPLAYERS )
 					{
 						if ( players[caster]->entity )
@@ -11551,7 +11549,7 @@ void actPlayer(Entity* my)
 				}
 				if ( Uint8 effectStrength = stats[PLAYER_NUM]->getEffectActive(EFF_STURDINESS) )
 				{
-					int caster = ((stats[PLAYER_NUM]->getEffectActive(EFF_STURDINESS) >> 4) & 0xF) - 1;
+					int caster = StatusEffectOwnerEncoding::decodeOwnerNibbleToPlayer(effectStrength);
 					if ( caster >= 0 && caster < MAXPLAYERS )
 					{
 						if ( players[caster]->entity )
@@ -11808,18 +11806,15 @@ void actPlayer(Entity* my)
 				}
 				if ( Uint8 effectStrength = stats[PLAYER_NUM]->getEffectActive(EFF_FAST) )
 				{
-					for ( int i = 0; i < MAXPLAYERS; ++i )
+					int caster = StatusEffectOwnerEncoding::decodeFastCasterCompat(effectStrength);
+					if ( caster >= 0 && caster < MAXPLAYERS && players[caster]->entity )
 					{
-						if ( effectStrength & (1 << (i + 1)) && players[i]->entity )
-						{
-							players[i]->mechanics.updateSustainedSpellEvent(SPELL_SPEED, dist, 0.025, nullptr);
-							break;
-						}
+						players[caster]->mechanics.updateSustainedSpellEvent(SPELL_SPEED, dist, 0.025, nullptr);
 					}
 				}
 				if ( Uint8 effectStrength = stats[PLAYER_NUM]->getEffectActive(EFF_NIMBLENESS) )
 				{
-					int caster = ((stats[PLAYER_NUM]->getEffectActive(EFF_NIMBLENESS) >> 4) & 0xF) - 1;
+					int caster = StatusEffectOwnerEncoding::decodeOwnerNibbleToPlayer(effectStrength);
 					if ( caster >= 0 && caster < MAXPLAYERS )
 					{
 						if ( players[caster]->entity )
@@ -11830,7 +11825,7 @@ void actPlayer(Entity* my)
 				}
 				if ( Uint8 effectStrength = stats[PLAYER_NUM]->getEffectActive(EFF_GREATER_MIGHT) )
 				{
-					int caster = ((stats[PLAYER_NUM]->getEffectActive(EFF_GREATER_MIGHT) >> 4) & 0xF) - 1;
+					int caster = StatusEffectOwnerEncoding::decodeOwnerNibbleToPlayer(effectStrength);
 					if ( caster >= 0 && caster < MAXPLAYERS )
 					{
 						if ( players[caster]->entity )
@@ -11841,7 +11836,7 @@ void actPlayer(Entity* my)
 				}
 				if ( Uint8 effectStrength = stats[PLAYER_NUM]->getEffectActive(EFF_COUNSEL) )
 				{
-					int caster = ((stats[PLAYER_NUM]->getEffectActive(EFF_COUNSEL) >> 4) & 0xF) - 1;
+					int caster = StatusEffectOwnerEncoding::decodeOwnerNibbleToPlayer(effectStrength);
 					if ( caster >= 0 && caster < MAXPLAYERS )
 					{
 						if ( players[caster]->entity )
@@ -11852,7 +11847,7 @@ void actPlayer(Entity* my)
 				}
 				if ( Uint8 effectStrength = stats[PLAYER_NUM]->getEffectActive(EFF_STURDINESS) )
 				{
-					int caster = ((stats[PLAYER_NUM]->getEffectActive(EFF_STURDINESS) >> 4) & 0xF) - 1;
+					int caster = StatusEffectOwnerEncoding::decodeOwnerNibbleToPlayer(effectStrength);
 					if ( caster >= 0 && caster < MAXPLAYERS )
 					{
 						if ( players[caster]->entity )
