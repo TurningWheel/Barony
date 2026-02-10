@@ -28,6 +28,7 @@
 #include "../colors.hpp"
 #include "../book.hpp"
 #include "../player_slot_map.hpp"
+#include "../smoke/SmokeTestHooks.hpp"
 #include "../ui/MainMenu.hpp"
 
 #include <assert.h>
@@ -291,6 +292,7 @@ struct StatusEffectQueueInitializer_t
 		for ( int i = 0; i < MAXPLAYERS; ++i )
 		{
 			StatusEffectQueue[i].player = i;
+			SmokeTestHooks::GameUI::recordStatusEffectQueueInit(i, StatusEffectQueue[i].player);
 		}
 	}
 } StatusEffectQueueInitializer;
@@ -7142,6 +7144,7 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 void createStatusEffectQueue(const int player)
 {
 	auto& statusEffectQueue = StatusEffectQueue[player];
+	SmokeTestHooks::GameUI::traceStatusEffectQueueCreate(player, statusEffectQueue.player);
 	if ( statusEffectQueue.statusEffectFrame )
 	{
 		return;
@@ -9885,6 +9888,7 @@ void StatusEffectQueue_t::updateEntryImage(StatusEffectQueueEntry_t& entry, Fram
 void updateStatusEffectQueue(const int player)
 {
 	auto& statusEffectQueue = StatusEffectQueue[player];
+	SmokeTestHooks::GameUI::traceStatusEffectQueueUpdate(player, statusEffectQueue.player);
 	Frame* statusEffectFrame = statusEffectQueue.getStatusEffectFrame();
 	if ( !statusEffectFrame )
 	{

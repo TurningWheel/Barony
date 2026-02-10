@@ -34,6 +34,12 @@ All main runners support `--app <path>` and optional `--datadir <path>` so you c
   - Optionally traces join-reject slot-state snapshots (`--trace-join-rejects 1`) to debug transient `error code 16` retries.
   - Emits per-cycle churn CSV and an aggregate HTML report.
 
+- `run_status_effect_queue_init_smoke_mac.sh`
+  - Runs startup lanes at 1p/5p/15p with auto-start + dungeon entry.
+  - Runs late-join/rejoin churn lanes at 5p/15p.
+  - Enables smoke-only status-effect queue tracing and asserts slot-owner safety (startup: `init`/`create`/`update`, rejoin: `init`) with no mismatches.
+  - Emits `status_effect_queue_results.csv` and a run summary.
+
 - `run_mapgen_sweep_mac.sh`
   - Runs repeated sessions for player counts in a range (default `1..15`).
   - Writes aggregate CSV with map generation metrics.
@@ -144,6 +150,14 @@ tests/smoke/run_lan_join_leave_churn_smoke_mac.sh \
   --require-ready-sync 1
 ```
 
+Run status-effect queue initialization + rejoin safety lane:
+
+```bash
+tests/smoke/run_status_effect_queue_init_smoke_mac.sh \
+  --app /Users/sayhiben/dev/Barony-8p/build-mac/barony.app/Contents/MacOS/barony \
+  --datadir "$HOME/Library/Application Support/Steam/steamapps/common/Barony/Barony.app/Contents/Resources"
+```
+
 ## Artifact Layout
 
 Both scripts write to `tests/smoke/artifacts/...` by default.
@@ -155,7 +169,8 @@ Each run includes:
     `PER_CLIENT_REASSEMBLY_COUNTS`, `CHUNK_RESET_REASON_COUNTS`,
     `HELO_PLAYER_SLOTS`, `HELO_PLAYER_SLOT_COVERAGE_OK`,
     `ACCOUNT_LABEL_SLOTS`, `ACCOUNT_LABEL_SLOT_COVERAGE_OK`
-  - Churn ready-sync mode adds `READY_SNAPSHOT_*` fields and `READY_SYNC_CSV`; join-reject tracing adds `JOIN_REJECT_TRACE_LINES`
+- Churn ready-sync mode adds `READY_SNAPSHOT_*` fields and `READY_SYNC_CSV`; join-reject tracing adds `JOIN_REJECT_TRACE_LINES`
+- Status-effect queue lane adds `status_effect_queue_results.csv` with per-lane slot coverage/mismatch results (`init/create/update`).
 - `pids.txt`: launched process metadata
 - `stdout/`: captured process stdout
 - `instances/home-*/.barony/log.txt`: engine logs used for assertions
@@ -190,6 +205,7 @@ These are read by `MainMenu.cpp` / `net.cpp` when set:
 - `BARONY_SMOKE_TRACE_READY_SYNC=0|1` (host-only, smoke-only diagnostic logging)
 - `BARONY_SMOKE_TRACE_ACCOUNT_LABELS=0|1` (host-only, smoke-only diagnostic logging)
 - `BARONY_SMOKE_TRACE_JOIN_REJECTS=0|1` (host-only, smoke-only diagnostic logging)
+- `BARONY_SMOKE_TRACE_STATUS_EFFECT_QUEUE=0|1` (smoke-only diagnostic logging)
 - `BARONY_SMOKE_FORCE_HELO_CHUNK=0|1`
 - `BARONY_SMOKE_HELO_CHUNK_PAYLOAD_MAX=<64..900>`
 - `BARONY_SMOKE_HELO_CHUNK_TX_MODE=normal|reverse|even-odd|duplicate-first|drop-last|duplicate-conflict-first` (host-only, smoke-only)

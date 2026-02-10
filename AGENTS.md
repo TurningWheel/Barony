@@ -59,6 +59,7 @@ There is no dedicated unit-test suite in this repository. Required validation is
 - Build success for affected targets (`barony`, `editor` when relevant).
 - Manual smoke test of the changed flow (menu/load/gameplay/editor path you touched).
 - Keep GitHub Actions Linux build checks green for PRs.
+- For multiplayer-expansion work, update `/Users/sayhiben/dev/Barony-8p/docs/multiplayer-expansion-verification-plan.md` inline as progress happens (checklist state + artifact paths + notable caveats).
 
 ## Commit & Pull Request Guidelines
 Create a topic branch per change. For bugfix work, target `master` (per `README.md`). Keep commits focused and message subjects short, imperative, and specific (recent history includes messages like `update hash` and `fix one who knocks achievement when parrying`). In PRs, include: what changed, why, test steps/results, and linked issues. Add screenshots for visible UI/editor changes.
@@ -71,3 +72,13 @@ When running in Codex with sandboxing, ask for sandbox breakout/escalation permi
 
 - Common examples: `git ...`, `gh ...`, Steam app binary runs, and other commands that touch restricted paths/resources.
 - If a command is blocked by sandboxing, rerun with escalation rather than changing the intended workflow.
+- If launches fail with `Abort trap: 6` during smoke runs, treat it as a likely sandbox restriction signal and rerun with escalation.
+
+## Multiplayer Expansion (PR 940) Working Notes
+- Expansion target is `MAXPLAYERS=15` (not 16). Preserve nibble-packed ownership assumptions unless a deliberate encoding refactor is planned.
+- Keep smoke instrumentation isolated to `/Users/sayhiben/dev/Barony-8p/src/smoke/SmokeTestHooks.cpp` and `/Users/sayhiben/dev/Barony-8p/src/smoke/SmokeTestHooks.hpp` with minimal call sites in gameplay/UI/network files.
+- Avoid adding ad-hoc smoke utility logic directly in core gameplay files; prefer hook APIs in `SmokeTestHooks` and keep base-game paths clean.
+- Preferred local validation path is local build binary + Steam assets datadir (`--app .../build-mac/.../barony --datadir .../Barony.app/Contents/Resources`) instead of replacing the Steam executable.
+- After long or high-instance smoke runs, clean generated cache bloat (especially `models.cache` under smoke artifact homes) while preserving logs/artifacts needed for debugging.
+- Known intermittent issue: churn/rejoin can show transient `lobby full` / join retries (`error code 16`). Track with artifacts and summaries, and avoid conflating it with unrelated feature-lane pass/fail unless assertions require it.
+- Add and maintain compile-time gating for smoke hooks/call sites so smoke instrumentation compiles or executes only when a dedicated smoke-test flag is enabled.

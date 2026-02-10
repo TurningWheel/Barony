@@ -60,6 +60,15 @@ namespace Gameplay
 	void tickAutoEnterDungeon();
 }
 
+namespace GameUI
+{
+	bool isStatusEffectQueueTraceEnabled();
+	void recordStatusEffectQueueInit(int slot, int owner);
+	void flushStatusEffectQueueInitTrace();
+	void traceStatusEffectQueueCreate(int slot, int owner);
+	void traceStatusEffectQueueUpdate(int slot, int owner);
+}
+
 namespace Net
 {
 	bool isJoinRejectTraceEnabled();
