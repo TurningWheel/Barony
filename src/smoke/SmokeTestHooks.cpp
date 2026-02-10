@@ -189,7 +189,8 @@ namespace
 		Uint32 delayTicks = 0;
 		Uint32 readySinceTick = 0;
 		bool readyWindowStarted = false;
-		bool transitionIssued = false;
+		int maxTransitions = 1;
+		int transitionsIssued = 0;
 	};
 
 	static SmokeAutoEnterDungeonState g_smokeAutoEnterDungeon;
@@ -217,8 +218,9 @@ namespace
 		state.expectedPlayers = parseEnvInt("BARONY_SMOKE_EXPECTED_PLAYERS", 2, 1, MAXPLAYERS);
 		const int delaySecs = parseEnvInt("BARONY_SMOKE_AUTO_ENTER_DUNGEON_DELAY_SECS", 3, 0, 120);
 		state.delayTicks = static_cast<Uint32>(delaySecs * TICKS_PER_SECOND);
-		printlog("[SMOKE]: gameplay auto-enter enabled expected=%d delay=%d sec",
-			state.expectedPlayers, delaySecs);
+		state.maxTransitions = parseEnvInt("BARONY_SMOKE_AUTO_ENTER_DUNGEON_REPEATS", 1, 1, 256);
+		printlog("[SMOKE]: gameplay auto-enter enabled expected=%d delay=%d sec repeats=%d",
+			state.expectedPlayers, delaySecs, state.maxTransitions);
 		return state;
 	}
 
@@ -273,6 +275,32 @@ namespace MainMenu
 	{
 		static const bool enabled = envHasValue("BARONY_SMOKE_HELO_CHUNK_TX_MODE");
 		return enabled;
+	}
+
+	bool isReadyStateSyncTraceEnabled()
+	{
+		static const bool enabled = parseEnvBool("BARONY_SMOKE_TRACE_READY_SYNC", false);
+		return enabled;
+	}
+
+	void traceReadyStateSnapshotQueued(const int player, const int attempts, const Uint32 firstSendTick)
+	{
+		if ( !isReadyStateSyncTraceEnabled() )
+		{
+			return;
+		}
+		printlog("[SMOKE]: ready snapshot queued target=%d attempts=%d first_send_tick=%u",
+			player, attempts, static_cast<unsigned>(firstSendTick));
+	}
+
+	void traceReadyStateSnapshotSent(const int player, const int readyEntries)
+	{
+		if ( !isReadyStateSyncTraceEnabled() )
+		{
+			return;
+		}
+		printlog("[SMOKE]: ready snapshot sent target=%d ready_entries=%d",
+			player, readyEntries);
 	}
 
 	bool hasHeloChunkPayloadOverride()
@@ -373,6 +401,61 @@ namespace MainMenu
 			printlog("[SMOKE]: using HELO chunk tx mode override: %s", heloChunkTxModeName(mode));
 		}
 		return mode;
+	}
+
+	void applyHeloChunkTxModePlan(std::vector<HeloChunkSendPlanEntry>& sendPlan, const int chunkCount, const Uint16 transferId)
+	{
+		if ( sendPlan.empty() || chunkCount <= 0 )
+		{
+			return;
+		}
+		if ( !(isHeloChunkTxModeOverrideEnvEnabled() && hasHeloChunkTxModeOverride()) )
+		{
+			return;
+		}
+
+		const HeloChunkTxMode txMode = heloChunkTxMode();
+		switch ( txMode )
+		{
+			case HeloChunkTxMode::NORMAL:
+				break;
+			case HeloChunkTxMode::REVERSE:
+				std::reverse(sendPlan.begin(), sendPlan.end());
+				break;
+			case HeloChunkTxMode::EVEN_ODD:
+			{
+				std::vector<HeloChunkSendPlanEntry> reordered;
+				reordered.reserve(sendPlan.size());
+				for ( int i = 1; i < chunkCount; i += 2 )
+				{
+					reordered.push_back(HeloChunkSendPlanEntry{ i, false });
+				}
+				for ( int i = 0; i < chunkCount; i += 2 )
+				{
+					reordered.push_back(HeloChunkSendPlanEntry{ i, false });
+				}
+				sendPlan = reordered;
+				break;
+			}
+			case HeloChunkTxMode::DUPLICATE_FIRST:
+				sendPlan.push_back(sendPlan.front());
+				break;
+			case HeloChunkTxMode::DROP_LAST:
+				sendPlan.pop_back();
+				break;
+			case HeloChunkTxMode::DUPLICATE_CONFLICT_FIRST:
+				sendPlan.insert(sendPlan.begin() + 1, HeloChunkSendPlanEntry{ sendPlan.front().chunkIndex, true });
+				break;
+		}
+
+		if ( txMode != HeloChunkTxMode::NORMAL )
+		{
+			printlog("[SMOKE]: HELO chunk tx mode=%s transfer=%u packets=%u chunks=%u",
+				heloChunkTxModeName(txMode),
+				static_cast<unsigned>(transferId),
+				static_cast<unsigned>(sendPlan.size()),
+				static_cast<unsigned>(chunkCount));
+		}
 	}
 
 	bool isAutopilotEnabled()
@@ -527,7 +610,7 @@ namespace Gameplay
 	void tickAutoEnterDungeon()
 	{
 		auto& smoke = smokeAutoEnterDungeonState();
-		if ( !smoke.enabled || smoke.transitionIssued )
+		if ( !smoke.enabled )
 		{
 			return;
 		}
@@ -535,10 +618,8 @@ namespace Gameplay
 		{
 			return;
 		}
-		if ( currentlevel != 0 || secretlevel )
+		if ( smoke.transitionsIssued >= smoke.maxTransitions )
 		{
-			// Only intended for the first transition from the starting area.
-			smoke.transitionIssued = true;
 			return;
 		}
 		if ( loadnextlevel )
@@ -566,10 +647,13 @@ namespace Gameplay
 			return;
 		}
 
-		smoke.transitionIssued = true;
+		smoke.readySinceTick = 0;
+		smoke.readyWindowStarted = false;
+		++smoke.transitionsIssued;
 		loadnextlevel = true;
 		Compendium_t::Events_t::previousCurrentLevel = currentlevel;
-		printlog("[SMOKE]: auto-entering first dungeon level");
+		printlog("[SMOKE]: auto-entering dungeon transition %d/%d from level %d",
+			smoke.transitionsIssued, smoke.maxTransitions, currentlevel);
 	}
 }
 

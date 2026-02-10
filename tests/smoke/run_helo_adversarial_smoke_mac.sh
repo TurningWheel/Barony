@@ -13,6 +13,8 @@ PASS_TIMEOUT_SECONDS=180
 FAIL_TIMEOUT_SECONDS=60
 FORCE_CHUNK=1
 CHUNK_PAYLOAD_MAX=200
+STRICT_ADVERSARIAL=1
+REQUIRE_TXMODE_LOG=1
 OUTDIR=""
 
 usage() {
@@ -28,6 +30,8 @@ Options:
   --fail-timeout <sec>         Timeout for expected-fail cases.
   --force-chunk <0|1>          BARONY_SMOKE_FORCE_HELO_CHUNK setting.
   --chunk-payload-max <n>      HELO chunk payload cap (64..900).
+  --strict-adversarial <0|1>   Enable strict per-client/pass-fail assertions (default: 1).
+  --require-txmode-log <0|1>   Require tx-mode host logging in non-normal modes (default: 1).
   --outdir <path>              Output directory.
   -h, --help                   Show this help.
 USAGE
@@ -87,6 +91,14 @@ while (($# > 0)); do
 			CHUNK_PAYLOAD_MAX="${2:-}"
 			shift 2
 			;;
+		--strict-adversarial)
+			STRICT_ADVERSARIAL="${2:-}"
+			shift 2
+			;;
+		--require-txmode-log)
+			REQUIRE_TXMODE_LOG="${2:-}"
+			shift 2
+			;;
 		--outdir)
 			OUTDIR="${2:-}"
 			shift 2
@@ -123,6 +135,14 @@ if ! is_uint "$CHUNK_PAYLOAD_MAX" || (( CHUNK_PAYLOAD_MAX < 64 || CHUNK_PAYLOAD_
 	echo "--chunk-payload-max must be 64..900" >&2
 	exit 1
 fi
+if ! is_uint "$STRICT_ADVERSARIAL" || (( STRICT_ADVERSARIAL > 1 )); then
+	echo "--strict-adversarial must be 0 or 1" >&2
+	exit 1
+fi
+if ! is_uint "$REQUIRE_TXMODE_LOG" || (( REQUIRE_TXMODE_LOG > 1 )); then
+	echo "--require-txmode-log must be 0 or 1" >&2
+	exit 1
+fi
 
 if [[ -z "$OUTDIR" ]]; then
 	timestamp="$(date +%Y%m%d-%H%M%S)"
@@ -136,7 +156,7 @@ mkdir -p "$RUNS_DIR"
 
 CSV_PATH="$OUTDIR/adversarial_results.csv"
 cat > "$CSV_PATH" <<'CSV'
-case_name,tx_mode,expected_result,observed_result,match,instances,host_chunk_lines,client_reassembled_lines,mapgen_found,run_dir
+case_name,tx_mode,expected_result,observed_result,match,instances,network_backend,host_chunk_lines,client_reassembled_lines,per_client_reassembly_counts,chunk_reset_lines,chunk_reset_reason_counts,tx_mode_applied,tx_mode_log_lines,tx_mode_packet_plan_ok,mapgen_found,run_dir
 CSV
 
 mismatches=0
@@ -162,6 +182,9 @@ while IFS='|' read -r case_name tx_mode expected; do
 		--force-chunk "$FORCE_CHUNK" \
 		--chunk-payload-max "$CHUNK_PAYLOAD_MAX" \
 		--helo-chunk-tx-mode "$tx_mode" \
+		--network-backend "lan" \
+		--strict-adversarial "$STRICT_ADVERSARIAL" \
+		--require-txmode-log "$REQUIRE_TXMODE_LOG" \
 		--require-helo 1 \
 		--require-mapgen 0 \
 		--outdir "$run_dir"; then
@@ -179,16 +202,33 @@ while IFS='|' read -r case_name tx_mode expected; do
 	summary="$run_dir/summary.env"
 	host_chunk_lines=""
 	client_reassembled_lines=""
+	per_client_reassembly_counts=""
+	chunk_reset_lines=""
+	chunk_reset_reason_counts=""
+	tx_mode_applied=""
+	tx_mode_log_lines=""
+	tx_mode_packet_plan_ok=""
+	network_backend=""
 	mapgen_found=""
 	if [[ -f "$summary" ]]; then
+		network_backend="$(read_summary_key NETWORK_BACKEND "$summary")"
 		host_chunk_lines="$(read_summary_key HOST_CHUNK_LINES "$summary")"
 		client_reassembled_lines="$(read_summary_key CLIENT_REASSEMBLED_LINES "$summary")"
+		per_client_reassembly_counts="$(read_summary_key PER_CLIENT_REASSEMBLY_COUNTS "$summary")"
+		chunk_reset_lines="$(read_summary_key CHUNK_RESET_LINES "$summary")"
+		chunk_reset_reason_counts="$(read_summary_key CHUNK_RESET_REASON_COUNTS "$summary")"
+		tx_mode_applied="$(read_summary_key TX_MODE_APPLIED "$summary")"
+		tx_mode_log_lines="$(read_summary_key TX_MODE_LOG_LINES "$summary")"
+		tx_mode_packet_plan_ok="$(read_summary_key TX_MODE_PACKET_PLAN_OK "$summary")"
 		mapgen_found="$(read_summary_key MAPGEN_FOUND "$summary")"
 	fi
 
-	printf '%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' \
+	printf '%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' \
 		"$case_name" "$tx_mode" "$expected" "$observed" "$match" "$INSTANCES" \
-		"${host_chunk_lines:-}" "${client_reassembled_lines:-}" "${mapgen_found:-}" "$run_dir" >> "$CSV_PATH"
+		"${network_backend:-}" "${host_chunk_lines:-}" "${client_reassembled_lines:-}" \
+		"${per_client_reassembly_counts:-}" "${chunk_reset_lines:-}" "${chunk_reset_reason_counts:-}" \
+		"${tx_mode_applied:-}" "${tx_mode_log_lines:-}" "${tx_mode_packet_plan_ok:-}" \
+		"${mapgen_found:-}" "$run_dir" >> "$CSV_PATH"
 done <<'CASES'
 baseline|normal|pass
 reverse_order|reverse|pass

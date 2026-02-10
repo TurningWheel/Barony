@@ -20,6 +20,7 @@ AUTO_ENTER_DUNGEON_DELAY_SECS=3
 FORCE_CHUNK=1
 CHUNK_PAYLOAD_MAX=200
 SIMULATE_MAPGEN_PLAYERS=0
+INPROCESS_SIM_BATCH=1
 OUTDIR=""
 
 usage() {
@@ -43,6 +44,7 @@ Options:
   --chunk-payload-max <n>      Chunk payload cap (64..900).
   --simulate-mapgen-players <0|1>
                                Use one launched instance and simulate mapgen scaling players.
+  --inprocess-sim-batch <0|1>  In simulated mode, gather all runs-per-player samples from one runtime.
   --outdir <path>              Output directory.
   -h, --help                   Show this help.
 USAGE
@@ -126,6 +128,10 @@ while (($# > 0)); do
 			SIMULATE_MAPGEN_PLAYERS="${2:-}"
 			shift 2
 			;;
+		--inprocess-sim-batch)
+			INPROCESS_SIM_BATCH="${2:-}"
+			shift 2
+			;;
 		--outdir)
 			OUTDIR="${2:-}"
 			shift 2
@@ -178,6 +184,10 @@ if ! is_uint "$SIMULATE_MAPGEN_PLAYERS" || (( SIMULATE_MAPGEN_PLAYERS > 1 )); th
 	echo "--simulate-mapgen-players must be 0 or 1" >&2
 	exit 1
 fi
+if ! is_uint "$INPROCESS_SIM_BATCH" || (( INPROCESS_SIM_BATCH > 1 )); then
+	echo "--inprocess-sim-batch must be 0 or 1" >&2
+	exit 1
+fi
 
 if [[ -z "$OUTDIR" ]]; then
 	timestamp="$(date +%Y%m%d-%H%M%S)"
@@ -200,9 +210,127 @@ total_runs=0
 log "Writing outputs to $OUTDIR"
 if (( SIMULATE_MAPGEN_PLAYERS )); then
 	log "Mapgen sweep mode: single-instance simulated player scaling"
+	if (( INPROCESS_SIM_BATCH )); then
+		log "Mapgen sweep submode: in-process batch collection enabled"
+	fi
 fi
 
+parse_mapgen_metrics_lines() {
+	local host_log="$1"
+	local limit="$2"
+	local out_file="$3"
+	: > "$out_file"
+	if [[ ! -f "$host_log" ]]; then
+		echo 0
+		return
+	fi
+	local count=0
+	local line
+	while IFS= read -r line; do
+		if [[ "$line" =~ with[[:space:]]+([0-9]+)[[:space:]]+rooms,[[:space:]]+([0-9]+)[[:space:]]+monsters,[[:space:]]+([0-9]+)[[:space:]]+gold,[[:space:]]+([0-9]+)[[:space:]]+items,[[:space:]]+([0-9]+)[[:space:]]+decorations ]]; then
+			printf '%s,%s,%s,%s,%s\n' \
+				"${BASH_REMATCH[1]}" "${BASH_REMATCH[2]}" "${BASH_REMATCH[3]}" "${BASH_REMATCH[4]}" "${BASH_REMATCH[5]}" >> "$out_file"
+			count=$((count + 1))
+			if (( count >= limit )); then
+				break
+			fi
+		fi
+	done < <(rg -F "successfully generated a dungeon with" "$host_log" || true)
+	echo "$count"
+}
+
 for ((players = MIN_PLAYERS; players <= MAX_PLAYERS; ++players)); do
+	if (( SIMULATE_MAPGEN_PLAYERS && INPROCESS_SIM_BATCH )); then
+		total_runs=$((total_runs + RUNS_PER_PLAYER))
+		run_dir="$RUNS_DIR/p${players}-batch"
+		mkdir -p "$run_dir"
+
+		launched_instances=1
+		expected_players=1
+		require_helo=0
+		mapgen_players_override="$players"
+		seed_base=$((BASE_SEED + (players - MIN_PLAYERS) * RUNS_PER_PLAYER + 1))
+		batch_transition_repeats=$((RUNS_PER_PLAYER * 2))
+		if (( batch_transition_repeats < RUNS_PER_PLAYER + 2 )); then
+			batch_transition_repeats=$((RUNS_PER_PLAYER + 2))
+		fi
+		if (( batch_transition_repeats > 256 )); then
+			batch_transition_repeats=256
+		fi
+
+		log "Batch run: players=${players} launched=${launched_instances} samples=${RUNS_PER_PLAYER} repeats=${batch_transition_repeats} seed=${seed_base}"
+		if "$RUNNER" \
+			--app "$APP" \
+			--instances "$launched_instances" \
+			--size "$WINDOW_SIZE" \
+			--stagger "$STAGGER_SECONDS" \
+			--timeout "$TIMEOUT_SECONDS" \
+			--expected-players "$expected_players" \
+			--auto-start 1 \
+			--auto-start-delay "$AUTO_START_DELAY_SECS" \
+			--auto-enter-dungeon "$AUTO_ENTER_DUNGEON" \
+			--auto-enter-dungeon-delay "$AUTO_ENTER_DUNGEON_DELAY_SECS" \
+			--auto-enter-dungeon-repeats "$batch_transition_repeats" \
+			--force-chunk "$FORCE_CHUNK" \
+			--chunk-payload-max "$CHUNK_PAYLOAD_MAX" \
+			--seed "$seed_base" \
+			--require-helo "$require_helo" \
+			--require-mapgen 1 \
+			--mapgen-samples "$RUNS_PER_PLAYER" \
+			--mapgen-players-override "$mapgen_players_override" \
+			--outdir "$run_dir"; then
+			status="pass"
+		else
+			status="fail"
+		fi
+
+		summary="$run_dir/summary.env"
+		host_chunk_lines=""
+		client_reassembled_lines=""
+		mapgen_found=""
+		host_log="$run_dir/instances/home-1/.barony/log.txt"
+		if [[ -f "$summary" ]]; then
+			host_chunk_lines="$(read_summary_key HOST_CHUNK_LINES "$summary")"
+			client_reassembled_lines="$(read_summary_key CLIENT_REASSEMBLED_LINES "$summary")"
+			mapgen_found="$(read_summary_key MAPGEN_FOUND "$summary")"
+			host_log_from_summary="$(read_summary_key HOST_LOG "$summary")"
+			if [[ -n "$host_log_from_summary" ]]; then
+				host_log="$host_log_from_summary"
+			fi
+		fi
+
+		metrics_file="$run_dir/mapgen_metrics_batch.csv"
+		batch_count="$(parse_mapgen_metrics_lines "$host_log" "$RUNS_PER_PLAYER" "$metrics_file")"
+		if [[ "$status" == "pass" ]] && (( batch_count < RUNS_PER_PLAYER )); then
+			status="fail"
+		fi
+		if [[ "$status" != "pass" ]]; then
+			failures=$((failures + 1))
+		fi
+
+		for ((run = 1; run <= RUNS_PER_PLAYER; ++run)); do
+			seed=$((seed_base + run - 1))
+			rooms=""
+			monsters=""
+			gold=""
+			items=""
+			decorations=""
+			row_status="$status"
+			if (( run <= batch_count )); then
+				line="$(sed -n "${run}p" "$metrics_file" || true)"
+				IFS=',' read -r rooms monsters gold items decorations <<< "$line"
+			else
+				row_status="fail"
+			fi
+			printf '%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' \
+				"$players" "$launched_instances" "${mapgen_players_override:-}" "$run" "$seed" "$row_status" \
+				"${host_chunk_lines:-}" "${client_reassembled_lines:-}" "${mapgen_found:-}" \
+				"${rooms:-}" "${monsters:-}" "${gold:-}" "${items:-}" "${decorations:-}" \
+				"$run_dir" >> "$CSV_PATH"
+		done
+		continue
+	fi
+
 	for ((run = 1; run <= RUNS_PER_PLAYER; ++run)); do
 		total_runs=$((total_runs + 1))
 		seed=$((BASE_SEED + (players - MIN_PLAYERS) * RUNS_PER_PLAYER + run))
@@ -244,7 +372,7 @@ for ((players = MIN_PLAYERS; players <= MAX_PLAYERS; ++players)); do
 			--seed "$seed" \
 			--require-helo "$require_helo" \
 			--require-mapgen 1 \
-			"${mapgen_override_args[@]}" \
+			${mapgen_override_args[@]+"${mapgen_override_args[@]}"} \
 			--outdir "$run_dir"; then
 			status="pass"
 		else

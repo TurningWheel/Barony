@@ -12,14 +12,19 @@ AUTO_START=0
 AUTO_START_DELAY_SECS=2
 AUTO_ENTER_DUNGEON=0
 AUTO_ENTER_DUNGEON_DELAY_SECS=3
+AUTO_ENTER_DUNGEON_REPEATS=""
 FORCE_CHUNK=1
 CHUNK_PAYLOAD_MAX=200
 MAPGEN_PLAYERS_OVERRIDE=""
 HELO_CHUNK_TX_MODE="normal"
+NETWORK_BACKEND="lan"
+STRICT_ADVERSARIAL=0
+REQUIRE_TXMODE_LOG=0
 SEED=""
 OUTDIR=""
 REQUIRE_HELO=""
 REQUIRE_MAPGEN=0
+MAPGEN_SAMPLES=1
 KEEP_RUNNING=0
 
 usage() {
@@ -39,14 +44,21 @@ Options:
   --auto-enter-dungeon <0|1>    Host forces first dungeon transition after all players load.
   --auto-enter-dungeon-delay <sec>
                                 Delay before forcing dungeon entry.
+  --auto-enter-dungeon-repeats <n>
+                                Max smoke-driven dungeon transitions (host only).
+                                Defaults to --mapgen-samples.
   --force-chunk <0|1>           Enable BARONY_SMOKE_FORCE_HELO_CHUNK.
   --chunk-payload-max <n>       Smoke chunk payload cap (64..900).
   --mapgen-players-override <n> Smoke-only mapgen scaling player count override (1..16).
   --helo-chunk-tx-mode <mode>   HELO chunk send mode: normal, reverse, even-odd,
                                 duplicate-first, drop-last, duplicate-conflict-first.
+  --network-backend <name>      Backend tag for summary/env (lan|steam|eos; default: lan).
+  --strict-adversarial <0|1>    Enable strict adversarial assertions.
+  --require-txmode-log <0|1>    Require tx-mode host logs in non-normal tx modes.
   --seed <value>                Optional seed string for host run.
   --require-helo <0|1>          Require HELO chunk/reassembly checks.
   --require-mapgen <0|1>        Require dungeon mapgen summary in host log.
+  --mapgen-samples <n>          Required number of mapgen summary lines (default: 1).
   --outdir <path>               Artifact directory.
   --keep-running                Do not kill launched instances on exit.
   -h, --help                    Show this help.
@@ -69,6 +81,189 @@ count_fixed_lines() {
 		return
 	fi
 	rg -F -c "$needle" "$file" 2>/dev/null || echo 0
+}
+
+canonicalize_tx_mode() {
+	local mode="$1"
+	case "$mode" in
+		normal)
+			echo "normal"
+			;;
+		reverse)
+			echo "reverse"
+			;;
+		evenodd|even-odd|even_odd)
+			echo "even-odd"
+			;;
+		duplicate-first|duplicate_first)
+			echo "duplicate-first"
+			;;
+		drop-last|drop_last)
+			echo "drop-last"
+			;;
+		duplicate-conflict-first|duplicate_conflict_first)
+			echo "duplicate-conflict-first"
+			;;
+		*)
+			return 1
+			;;
+	esac
+}
+
+is_expected_fail_tx_mode() {
+	local mode="$1"
+	case "$mode" in
+		drop-last|duplicate-conflict-first)
+			echo 1
+			;;
+		*)
+			echo 0
+			;;
+	esac
+}
+
+tx_mode_packet_plan_valid() {
+	local host_log="$1"
+	local mode="$2"
+	if [[ "$mode" == "normal" ]]; then
+		echo 1
+		return
+	fi
+	if [[ ! -f "$host_log" ]]; then
+		echo 0
+		return
+	fi
+	local lines
+	lines="$(rg -F "[SMOKE]: HELO chunk tx mode=$mode " "$host_log" || true)"
+	if [[ -z "$lines" ]]; then
+		echo 0
+		return
+	fi
+	local ok=1
+	while IFS= read -r line; do
+		[[ -z "$line" ]] && continue
+		local packets chunks
+		packets="$(echo "$line" | sed -nE 's/.*packets=([0-9]+).*/\1/p')"
+		chunks="$(echo "$line" | sed -nE 's/.*chunks=([0-9]+).*/\1/p')"
+		if [[ -z "$packets" || -z "$chunks" ]]; then
+			ok=0
+			break
+		fi
+		if [[ "$mode" == "reverse" || "$mode" == "even-odd" ]]; then
+			if (( packets != chunks )); then
+				ok=0
+				break
+			fi
+		elif [[ "$mode" == "duplicate-first" || "$mode" == "duplicate-conflict-first" ]]; then
+			if (( packets != chunks + 1 )); then
+				ok=0
+				break
+			fi
+		elif [[ "$mode" == "drop-last" ]]; then
+			if (( packets + 1 != chunks )); then
+				ok=0
+				break
+			fi
+		fi
+	done <<< "$lines"
+	echo "$ok"
+}
+
+collect_chunk_reset_reason_counts() {
+	if (($# == 0)); then
+		echo ""
+		return
+	fi
+	local -a existing_files=()
+	local path
+	for path in "$@"; do
+		if [[ -f "$path" ]]; then
+			existing_files+=("$path")
+		fi
+	done
+	if ((${#existing_files[@]} == 0)); then
+		echo ""
+		return
+	fi
+	local all_lines=""
+	local file line reason
+	for file in "${existing_files[@]}"; do
+		while IFS= read -r line; do
+			[[ -z "$line" ]] && continue
+			reason="$(echo "$line" | sed -nE 's/.*\(([^)]*)\).*/\1/p')"
+			if [[ -z "$reason" ]]; then
+				reason="unknown"
+			fi
+			all_lines+="${reason}"$'\n'
+		done < <(rg -F "HELO chunk timeout/reset transfer=" "$file" || true)
+	done
+	if [[ -z "$all_lines" ]]; then
+		echo ""
+		return
+	fi
+	local reason_lines
+	reason_lines="$(printf '%s' "$all_lines" | sed '/^$/d' | sort | uniq -c | awk '{ count=$1; $1=""; sub(/^ /, ""); printf "%s:%s\n", $0, count }')"
+	if [[ -z "$reason_lines" ]]; then
+		echo ""
+		return
+	fi
+	echo "$reason_lines" | paste -sd';' -
+}
+
+collect_helo_player_slots() {
+	local host_log="$1"
+	if [[ ! -f "$host_log" ]]; then
+		echo ""
+		return
+	fi
+	local slots
+	slots="$(rg -o 'sending chunked HELO: player=[0-9]+' "$host_log" \
+		| sed -nE 's/.*player=([0-9]+)/\1/p' \
+		| sort -n \
+		| uniq \
+		| paste -sd';' - || true)"
+	echo "$slots"
+}
+
+collect_missing_helo_player_slots() {
+	local host_log="$1"
+	local expected_clients="$2"
+	if (( expected_clients <= 0 )); then
+		echo ""
+		return
+	fi
+	local missing=""
+	local player
+	for ((player = 1; player <= expected_clients; ++player)); do
+		if ! rg -F -q "sending chunked HELO: player=$player " "$host_log"; then
+			if [[ -n "$missing" ]]; then
+				missing+=";"
+			fi
+			missing+="$player"
+		fi
+	done
+	echo "$missing"
+}
+
+is_helo_player_slot_coverage_ok() {
+	local host_log="$1"
+	local expected_clients="$2"
+	if (( expected_clients <= 0 )); then
+		echo 1
+		return
+	fi
+	if [[ ! -f "$host_log" ]]; then
+		echo 0
+		return
+	fi
+	local player
+	for ((player = 1; player <= expected_clients; ++player)); do
+		if ! rg -F -q "sending chunked HELO: player=$player " "$host_log"; then
+			echo 0
+			return
+		fi
+	done
+	echo 1
 }
 
 extract_mapgen_metrics() {
@@ -145,6 +340,10 @@ while (($# > 0)); do
 			AUTO_ENTER_DUNGEON_DELAY_SECS="${2:-}"
 			shift 2
 			;;
+		--auto-enter-dungeon-repeats)
+			AUTO_ENTER_DUNGEON_REPEATS="${2:-}"
+			shift 2
+			;;
 		--force-chunk)
 			FORCE_CHUNK="${2:-}"
 			shift 2
@@ -161,6 +360,18 @@ while (($# > 0)); do
 			HELO_CHUNK_TX_MODE="${2:-}"
 			shift 2
 			;;
+		--network-backend)
+			NETWORK_BACKEND="${2:-}"
+			shift 2
+			;;
+		--strict-adversarial)
+			STRICT_ADVERSARIAL="${2:-}"
+			shift 2
+			;;
+		--require-txmode-log)
+			REQUIRE_TXMODE_LOG="${2:-}"
+			shift 2
+			;;
 		--seed)
 			SEED="${2:-}"
 			shift 2
@@ -171,6 +382,10 @@ while (($# > 0)); do
 			;;
 		--require-mapgen)
 			REQUIRE_MAPGEN="${2:-}"
+			shift 2
+			;;
+		--mapgen-samples)
+			MAPGEN_SAMPLES="${2:-}"
 			shift 2
 			;;
 		--outdir)
@@ -221,6 +436,12 @@ if ! is_uint "$AUTO_ENTER_DUNGEON_DELAY_SECS"; then
 	echo "--auto-enter-dungeon-delay must be a non-negative integer" >&2
 	exit 1
 fi
+if [[ -n "$AUTO_ENTER_DUNGEON_REPEATS" ]]; then
+	if ! is_uint "$AUTO_ENTER_DUNGEON_REPEATS" || (( AUTO_ENTER_DUNGEON_REPEATS < 1 || AUTO_ENTER_DUNGEON_REPEATS > 256 )); then
+		echo "--auto-enter-dungeon-repeats must be 1..256" >&2
+		exit 1
+	fi
+fi
 if ! is_uint "$FORCE_CHUNK" || (( FORCE_CHUNK > 1 )); then
 	echo "--force-chunk must be 0 or 1" >&2
 	exit 1
@@ -235,14 +456,30 @@ if [[ -n "$MAPGEN_PLAYERS_OVERRIDE" ]]; then
 		exit 1
 	fi
 fi
-case "$HELO_CHUNK_TX_MODE" in
-	normal|reverse|evenodd|even-odd|even_odd|duplicate-first|duplicate_first|drop-last|drop_last|duplicate-conflict-first|duplicate_conflict_first)
+if ! HELO_CHUNK_TX_MODE="$(canonicalize_tx_mode "$HELO_CHUNK_TX_MODE")"; then
+	echo "--helo-chunk-tx-mode must be one of: normal, reverse, even-odd, duplicate-first, drop-last, duplicate-conflict-first" >&2
+	exit 1
+fi
+case "$NETWORK_BACKEND" in
+	lan|steam|eos)
 		;;
 	*)
-		echo "--helo-chunk-tx-mode must be one of: normal, reverse, even-odd, duplicate-first, drop-last, duplicate-conflict-first" >&2
+		echo "--network-backend must be one of: lan, steam, eos" >&2
 		exit 1
 		;;
 esac
+if [[ "$NETWORK_BACKEND" != "lan" ]]; then
+	echo "--network-backend currently only supports lan in this runner" >&2
+	exit 1
+fi
+if ! is_uint "$STRICT_ADVERSARIAL" || (( STRICT_ADVERSARIAL > 1 )); then
+	echo "--strict-adversarial must be 0 or 1" >&2
+	exit 1
+fi
+if ! is_uint "$REQUIRE_TXMODE_LOG" || (( REQUIRE_TXMODE_LOG > 1 )); then
+	echo "--require-txmode-log must be 0 or 1" >&2
+	exit 1
+fi
 if [[ -z "$EXPECTED_PLAYERS" ]]; then
 	EXPECTED_PLAYERS="$INSTANCES"
 fi
@@ -275,6 +512,13 @@ if ! is_uint "$REQUIRE_MAPGEN" || (( REQUIRE_MAPGEN > 1 )); then
 	echo "--require-mapgen must be 0 or 1" >&2
 	exit 1
 fi
+if ! is_uint "$MAPGEN_SAMPLES" || (( MAPGEN_SAMPLES < 1 )); then
+	echo "--mapgen-samples must be >= 1" >&2
+	exit 1
+fi
+if [[ -z "$AUTO_ENTER_DUNGEON_REPEATS" ]]; then
+	AUTO_ENTER_DUNGEON_REPEATS="$MAPGEN_SAMPLES"
+fi
 
 LOG_DIR="$OUTDIR/stdout"
 INSTANCE_ROOT="$OUTDIR/instances"
@@ -283,6 +527,7 @@ mkdir -p "$LOG_DIR" "$INSTANCE_ROOT"
 : > "$PID_FILE"
 
 declare -a PIDS=()
+declare -a HOME_DIRS=()
 cleanup() {
 	if (( KEEP_RUNNING )); then
 		log "--keep-running enabled; leaving instances alive"
@@ -296,6 +541,9 @@ cleanup() {
 		if kill -0 "$pid" 2>/dev/null; then
 			kill -9 "$pid" 2>/dev/null || true
 		fi
+	done
+	for home_dir in "${HOME_DIRS[@]}"; do
+		rm -f "$home_dir/.barony/models.cache" 2>/dev/null || true
 	done
 }
 trap cleanup EXIT
@@ -318,14 +566,15 @@ launch_instance() {
 	)
 
 	if [[ "$role" == "host" ]]; then
-		env_vars+=(
-			"BARONY_SMOKE_ROLE=host"
-			"BARONY_SMOKE_EXPECTED_PLAYERS=$EXPECTED_PLAYERS"
-			"BARONY_SMOKE_AUTO_START=$AUTO_START"
-			"BARONY_SMOKE_AUTO_START_DELAY_SECS=$AUTO_START_DELAY_SECS"
-			"BARONY_SMOKE_AUTO_ENTER_DUNGEON=$AUTO_ENTER_DUNGEON"
-			"BARONY_SMOKE_AUTO_ENTER_DUNGEON_DELAY_SECS=$AUTO_ENTER_DUNGEON_DELAY_SECS"
-		)
+			env_vars+=(
+				"BARONY_SMOKE_ROLE=host"
+				"BARONY_SMOKE_EXPECTED_PLAYERS=$EXPECTED_PLAYERS"
+				"BARONY_SMOKE_AUTO_START=$AUTO_START"
+				"BARONY_SMOKE_AUTO_START_DELAY_SECS=$AUTO_START_DELAY_SECS"
+				"BARONY_SMOKE_AUTO_ENTER_DUNGEON=$AUTO_ENTER_DUNGEON"
+				"BARONY_SMOKE_AUTO_ENTER_DUNGEON_DELAY_SECS=$AUTO_ENTER_DUNGEON_DELAY_SECS"
+				"BARONY_SMOKE_AUTO_ENTER_DUNGEON_REPEATS=$AUTO_ENTER_DUNGEON_REPEATS"
+			)
 		if [[ -n "$MAPGEN_PLAYERS_OVERRIDE" ]]; then
 			env_vars+=("BARONY_SMOKE_MAPGEN_CONNECTED_PLAYERS=$MAPGEN_PLAYERS_OVERRIDE")
 		fi
@@ -342,6 +591,7 @@ launch_instance() {
 	env "${env_vars[@]}" "$APP" -windowed -size="$WINDOW_SIZE" >"$stdout_log" 2>&1 &
 	local pid="$!"
 	PIDS+=("$pid")
+	HOME_DIRS+=("$home_dir")
 	printf '%s %s %s %s\n' "$pid" "$idx" "$role" "$home_dir" >> "$PID_FILE"
 	log "instance=$idx role=$role pid=$pid home=$home_dir"
 }
@@ -360,40 +610,122 @@ HOST_LOG="$INSTANCE_ROOT/home-1/.barony/log.txt"
 EXPECTED_CLIENTS=$(( INSTANCES > 1 ? INSTANCES - 1 : 0 ))
 EXPECTED_CHUNK_LINES="$EXPECTED_CLIENTS"
 EXPECTED_REASSEMBLED_LINES="$EXPECTED_CLIENTS"
+EXPECTED_FAIL_TX_MODE="$(is_expected_fail_tx_mode "$HELO_CHUNK_TX_MODE")"
+TXMODE_REQUIRED=0
+if (( REQUIRE_TXMODE_LOG )) && [[ "$HELO_CHUNK_TX_MODE" != "normal" ]]; then
+	TXMODE_REQUIRED=1
+fi
+STRICT_EXPECTED_FAIL=0
+if (( STRICT_ADVERSARIAL && REQUIRE_HELO && EXPECTED_FAIL_TX_MODE )); then
+	STRICT_EXPECTED_FAIL=1
+fi
 
 result="fail"
 deadline=$((SECONDS + TIMEOUT_SECONDS))
 host_chunk_lines=0
 client_reassembled_lines=0
+chunk_reset_lines=0
+tx_mode_log_lines=0
+tx_mode_packet_plan_ok=0
+tx_mode_applied=0
+per_client_reassembly_counts=""
+all_clients_exact_one=0
+all_clients_zero=0
+
+declare -a CLIENT_LOGS=()
+for ((i = 2; i <= INSTANCES; ++i)); do
+	CLIENT_LOGS+=("$INSTANCE_ROOT/home-${i}/.barony/log.txt")
+done
 
 while (( SECONDS < deadline )); do
 	host_chunk_lines=$(count_fixed_lines "$HOST_LOG" "sending chunked HELO:")
+	if [[ "$HELO_CHUNK_TX_MODE" == "normal" ]]; then
+		tx_mode_log_lines=0
+		tx_mode_packet_plan_ok=1
+		tx_mode_applied=0
+	else
+		tx_mode_log_lines=$(count_fixed_lines "$HOST_LOG" "[SMOKE]: HELO chunk tx mode=$HELO_CHUNK_TX_MODE")
+		tx_mode_packet_plan_ok=$(tx_mode_packet_plan_valid "$HOST_LOG" "$HELO_CHUNK_TX_MODE")
+		tx_mode_applied=0
+		if (( tx_mode_log_lines > 0 )); then
+			tx_mode_applied=1
+		fi
+	fi
 
 	client_reassembled_lines=0
+	chunk_reset_lines=0
+	per_client_reassembly_counts=""
+	all_clients_exact_one=1
+	all_clients_zero=1
 	for ((i = 2; i <= INSTANCES; ++i)); do
 		client_log="$INSTANCE_ROOT/home-${i}/.barony/log.txt"
 		count=$(count_fixed_lines "$client_log" "HELO reassembled:")
 		client_reassembled_lines=$((client_reassembled_lines + count))
+		reset_count=$(count_fixed_lines "$client_log" "HELO chunk timeout/reset")
+		chunk_reset_lines=$((chunk_reset_lines + reset_count))
+		if [[ -n "$per_client_reassembly_counts" ]]; then
+			per_client_reassembly_counts+=";"
+		fi
+		per_client_reassembly_counts+="${i}:${count}"
+		if (( count != 1 )); then
+			all_clients_exact_one=0
+		fi
+		if (( count != 0 )); then
+			all_clients_zero=0
+		fi
 	done
 
 	mapgen_found=0
-	if [[ -f "$HOST_LOG" ]] && rg -F -q "successfully generated a dungeon with" "$HOST_LOG"; then
+	mapgen_count=0
+	if [[ -f "$HOST_LOG" ]]; then
+		mapgen_count=$(count_fixed_lines "$HOST_LOG" "successfully generated a dungeon with")
+	fi
+	if (( mapgen_count > 0 )); then
 		mapgen_found=1
 	fi
 	game_start_found=$(detect_game_start "$HOST_LOG")
 
 	helo_ok=1
 	if (( REQUIRE_HELO )); then
-		if (( host_chunk_lines < EXPECTED_CHUNK_LINES || client_reassembled_lines < EXPECTED_REASSEMBLED_LINES )); then
-			helo_ok=0
+		if (( STRICT_ADVERSARIAL )); then
+			if (( EXPECTED_FAIL_TX_MODE )); then
+				helo_ok=0
+			else
+				if (( host_chunk_lines < EXPECTED_CHUNK_LINES || all_clients_exact_one == 0 )); then
+					helo_ok=0
+				fi
+			fi
+		else
+			if (( host_chunk_lines < EXPECTED_CHUNK_LINES || client_reassembled_lines < EXPECTED_REASSEMBLED_LINES )); then
+				helo_ok=0
+			fi
+		fi
+		if (( EXPECTED_CLIENTS > 0 )); then
+			helo_player_slot_coverage_ok=$(is_helo_player_slot_coverage_ok "$HOST_LOG" "$EXPECTED_CLIENTS")
+			if (( helo_player_slot_coverage_ok == 0 )); then
+				helo_ok=0
+			fi
+		fi
+	fi
+	txmode_ok=1
+	if (( TXMODE_REQUIRED )); then
+		if (( tx_mode_log_lines < EXPECTED_CLIENTS || tx_mode_packet_plan_ok == 0 )); then
+			txmode_ok=0
 		fi
 	fi
 	mapgen_ok=1
-	if (( REQUIRE_MAPGEN )) && (( mapgen_found == 0 )); then
+	if (( REQUIRE_MAPGEN )) && (( mapgen_count < MAPGEN_SAMPLES )); then
 		mapgen_ok=0
 	fi
 
-	if (( helo_ok && mapgen_ok )); then
+	if (( STRICT_EXPECTED_FAIL )); then
+		if (( all_clients_zero == 0 )); then
+			break
+		fi
+		if (( chunk_reset_lines > 0 && txmode_ok )); then
+			break
+		fi
+	elif (( helo_ok && mapgen_ok && txmode_ok )); then
 		result="pass"
 		break
 	fi
@@ -402,6 +734,17 @@ done
 
 game_start_found=$(detect_game_start "$HOST_LOG")
 read -r mapgen_found rooms monsters gold items decorations < <(extract_mapgen_metrics "$HOST_LOG")
+mapgen_count=0
+if [[ -f "$HOST_LOG" ]]; then
+	mapgen_count=$(count_fixed_lines "$HOST_LOG" "successfully generated a dungeon with")
+fi
+helo_player_slots="$(collect_helo_player_slots "$HOST_LOG")"
+helo_missing_player_slots="$(collect_missing_helo_player_slots "$HOST_LOG" "$EXPECTED_CLIENTS")"
+helo_player_slot_coverage_ok="$(is_helo_player_slot_coverage_ok "$HOST_LOG" "$EXPECTED_CLIENTS")"
+chunk_reset_reason_counts=""
+if (( EXPECTED_CLIENTS > 0 )); then
+	chunk_reset_reason_counts="$(collect_chunk_reset_reason_counts "${CLIENT_LOGS[@]}")"
+fi
 
 SUMMARY_FILE="$OUTDIR/summary.env"
 {
@@ -411,26 +754,43 @@ SUMMARY_FILE="$OUTDIR/summary.env"
 	echo "EXPECTED_PLAYERS=$EXPECTED_PLAYERS"
 	echo "AUTO_ENTER_DUNGEON=$AUTO_ENTER_DUNGEON"
 	echo "AUTO_ENTER_DUNGEON_DELAY_SECS=$AUTO_ENTER_DUNGEON_DELAY_SECS"
+	echo "AUTO_ENTER_DUNGEON_REPEATS=$AUTO_ENTER_DUNGEON_REPEATS"
 	echo "CONNECT_ADDRESS=$CONNECT_ADDRESS"
+	echo "NETWORK_BACKEND=$NETWORK_BACKEND"
 	echo "FORCE_CHUNK=$FORCE_CHUNK"
 	echo "CHUNK_PAYLOAD_MAX=$CHUNK_PAYLOAD_MAX"
 	echo "MAPGEN_PLAYERS_OVERRIDE=$MAPGEN_PLAYERS_OVERRIDE"
 	echo "HELO_CHUNK_TX_MODE=$HELO_CHUNK_TX_MODE"
+	echo "STRICT_ADVERSARIAL=$STRICT_ADVERSARIAL"
+	echo "REQUIRE_TXMODE_LOG=$REQUIRE_TXMODE_LOG"
+	echo "EXPECTED_FAIL_TX_MODE=$EXPECTED_FAIL_TX_MODE"
 	echo "HOST_CHUNK_LINES=$host_chunk_lines"
 	echo "CLIENT_REASSEMBLED_LINES=$client_reassembled_lines"
+	echo "PER_CLIENT_REASSEMBLY_COUNTS=$per_client_reassembly_counts"
+	echo "CHUNK_RESET_LINES=$chunk_reset_lines"
+	echo "CHUNK_RESET_REASON_COUNTS=$chunk_reset_reason_counts"
+	echo "TX_MODE_APPLIED=$tx_mode_applied"
+	echo "TX_MODE_LOG_LINES=$tx_mode_log_lines"
+	echo "TX_MODE_PACKET_PLAN_OK=$tx_mode_packet_plan_ok"
 	echo "EXPECTED_CHUNK_LINES=$EXPECTED_CHUNK_LINES"
 	echo "EXPECTED_REASSEMBLED_LINES=$EXPECTED_REASSEMBLED_LINES"
+	echo "HELO_PLAYER_SLOTS=$helo_player_slots"
+	echo "HELO_MISSING_PLAYER_SLOTS=$helo_missing_player_slots"
+	echo "HELO_PLAYER_SLOT_COVERAGE_OK=$helo_player_slot_coverage_ok"
 	echo "MAPGEN_FOUND=$mapgen_found"
+	echo "MAPGEN_COUNT=$mapgen_count"
+	echo "MAPGEN_SAMPLES_REQUESTED=$MAPGEN_SAMPLES"
 	echo "GAMESTART_FOUND=$game_start_found"
 	echo "MAPGEN_ROOMS=$rooms"
 	echo "MAPGEN_MONSTERS=$monsters"
 	echo "MAPGEN_GOLD=$gold"
 	echo "MAPGEN_ITEMS=$items"
 	echo "MAPGEN_DECORATIONS=$decorations"
+	echo "HOST_LOG=$HOST_LOG"
 	echo "PID_FILE=$PID_FILE"
 } > "$SUMMARY_FILE"
 
-log "result=$result chunks=$host_chunk_lines reassembled=$client_reassembled_lines mapgen=$mapgen_found gamestart=$game_start_found"
+log "result=$result chunks=$host_chunk_lines reassembled=$client_reassembled_lines resets=$chunk_reset_lines txmodeApplied=$tx_mode_applied mapgen=$mapgen_found gamestart=$game_start_found"
 log "summary=$SUMMARY_FILE"
 
 if [[ "$result" != "pass" ]]; then

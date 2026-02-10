@@ -11,6 +11,8 @@ This folder contains blackbox-oriented smoke scripts for LAN lobby automation, H
   - Optionally auto-starts gameplay and can force a smoke-only transition from the starting area into dungeon floor 1.
   - Optionally waits for dungeon map generation completion.
   - Supports smoke-only HELO tx adversarial modes (reordering/dup/drop tests).
+  - Supports strict adversarial assertions and backend tagging in `summary.env`.
+  - Supports explicit transition budget via `--auto-enter-dungeon-repeats` (defaults to `--mapgen-samples`).
 
 - `run_lan_helo_soak_mac.sh`
   - Repeats LAN HELO smoke runs (default 10x).
@@ -25,6 +27,7 @@ This folder contains blackbox-oriented smoke scripts for LAN lobby automation, H
 - `run_lan_join_leave_churn_smoke_mac.sh`
   - Launches a full lobby, then repeatedly kills/relaunches selected clients.
   - Asserts rejoin progress by requiring increasing host HELO chunk counts.
+  - Optionally enables and asserts ready-state snapshot sync coverage (`--auto-ready 1 --trace-ready-sync 1 --require-ready-sync 1`).
   - Emits per-cycle churn CSV and an aggregate HTML report.
 
 - `run_mapgen_sweep_mac.sh`
@@ -67,10 +70,14 @@ tests/smoke/run_mapgen_sweep_mac.sh \
   --max-players 16 \
   --runs-per-player 8 \
   --simulate-mapgen-players 1 \
+  --inprocess-sim-batch 1 \
   --stagger 0 \
   --auto-start-delay 0 \
   --auto-enter-dungeon 1
 ```
+
+In `--simulate-mapgen-players 1` mode, `--inprocess-sim-batch 1` runs all samples for a given player count in one runtime by using repeated smoke-driven dungeon transitions.
+The sweep now sets extra transition headroom automatically so sparse/no-generate floors do not stall sample collection.
 
 Run a 10x HELO soak:
 
@@ -99,6 +106,18 @@ tests/smoke/run_lan_join_leave_churn_smoke_mac.sh \
   --churn-count 2
 ```
 
+Run churn with ready-state snapshot assertions:
+
+```bash
+tests/smoke/run_lan_join_leave_churn_smoke_mac.sh \
+  --instances 8 \
+  --churn-cycles 2 \
+  --churn-count 2 \
+  --auto-ready 1 \
+  --trace-ready-sync 1 \
+  --require-ready-sync 1
+```
+
 ## Artifact Layout
 
 Both scripts write to `tests/smoke/artifacts/...` by default.
@@ -106,9 +125,14 @@ Both scripts write to `tests/smoke/artifacts/...` by default.
 Each run includes:
 
 - `summary.env`: key-value summary (pass/fail, counts, mapgen metrics)
+  - Includes additional HELO fields: `NETWORK_BACKEND`, `TX_MODE_APPLIED`,
+    `PER_CLIENT_REASSEMBLY_COUNTS`, `CHUNK_RESET_REASON_COUNTS`,
+    `HELO_PLAYER_SLOTS`, `HELO_PLAYER_SLOT_COVERAGE_OK`
+  - Churn ready-sync mode adds `READY_SNAPSHOT_*` fields and `READY_SYNC_CSV`
 - `pids.txt`: launched process metadata
 - `stdout/`: captured process stdout
 - `instances/home-*/.barony/log.txt`: engine logs used for assertions
+- Per-instance `models.cache` files are removed by the smoke runner during cleanup to avoid runaway disk usage.
 
 Mapgen sweeps additionally emit:
 
@@ -132,8 +156,10 @@ These are read by `MainMenu.cpp` / `net.cpp` when set:
 - `BARONY_SMOKE_AUTO_START_DELAY_SECS=<int>`
 - `BARONY_SMOKE_AUTO_ENTER_DUNGEON=0|1` (host-only, smoke-only)
 - `BARONY_SMOKE_AUTO_ENTER_DUNGEON_DELAY_SECS=<int>`
+- `BARONY_SMOKE_AUTO_ENTER_DUNGEON_REPEATS=<int>` (host-only, smoke-only)
 - `BARONY_SMOKE_SEED=<seed string>`
 - `BARONY_SMOKE_AUTO_READY=0|1`
+- `BARONY_SMOKE_TRACE_READY_SYNC=0|1` (host-only, smoke-only diagnostic logging)
 - `BARONY_SMOKE_FORCE_HELO_CHUNK=0|1`
 - `BARONY_SMOKE_HELO_CHUNK_PAYLOAD_MAX=<64..900>`
 - `BARONY_SMOKE_HELO_CHUNK_TX_MODE=normal|reverse|even-odd|duplicate-first|drop-last|duplicate-conflict-first` (host-only, smoke-only)

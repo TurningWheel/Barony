@@ -174,12 +174,6 @@ namespace MainMenu {
 		printlog("sending chunked HELO: player=%d transfer=%u chunks=%d total=%d",
 			playerNumForLog, static_cast<unsigned>(transferId), chunkCount, heloLen);
 
-		struct ChunkSendPlan
-		{
-			int chunkIndex = 0;
-			bool corruptPayload = false;
-		};
-
 		std::vector<int> chunkOffsets(chunkCount, 0);
 		std::vector<int> chunkLens(chunkCount, 0);
 		for ( int chunkIndex = 0; chunkIndex < chunkCount; ++chunkIndex )
@@ -195,70 +189,13 @@ namespace MainMenu {
 			chunkLens[chunkIndex] = chunkLen;
 		}
 
-		std::vector<ChunkSendPlan> sendPlan;
+		std::vector<SmokeTestHooks::MainMenu::HeloChunkSendPlanEntry> sendPlan;
 		sendPlan.reserve(chunkCount + 1);
 		for ( int chunkIndex = 0; chunkIndex < chunkCount; ++chunkIndex )
 		{
-			sendPlan.push_back(ChunkSendPlan{ chunkIndex, false });
+			sendPlan.push_back(SmokeTestHooks::MainMenu::HeloChunkSendPlanEntry{ chunkIndex, false });
 		}
-
-		static const bool smokeTxModeOverrideEnabled =
-			SmokeTestHooks::MainMenu::isHeloChunkTxModeOverrideEnvEnabled()
-			&& SmokeTestHooks::MainMenu::hasHeloChunkTxModeOverride();
-		if ( smokeTxModeOverrideEnabled )
-		{
-			const SmokeTestHooks::MainMenu::HeloChunkTxMode txMode = SmokeTestHooks::MainMenu::heloChunkTxMode();
-			switch ( txMode )
-			{
-				case SmokeTestHooks::MainMenu::HeloChunkTxMode::NORMAL:
-					break;
-				case SmokeTestHooks::MainMenu::HeloChunkTxMode::REVERSE:
-					std::reverse(sendPlan.begin(), sendPlan.end());
-					break;
-				case SmokeTestHooks::MainMenu::HeloChunkTxMode::EVEN_ODD:
-				{
-					std::vector<ChunkSendPlan> reordered;
-					reordered.reserve(sendPlan.size());
-					for ( int i = 1; i < chunkCount; i += 2 )
-					{
-						reordered.push_back(ChunkSendPlan{ i, false });
-					}
-					for ( int i = 0; i < chunkCount; i += 2 )
-					{
-						reordered.push_back(ChunkSendPlan{ i, false });
-					}
-					sendPlan = reordered;
-					break;
-				}
-				case SmokeTestHooks::MainMenu::HeloChunkTxMode::DUPLICATE_FIRST:
-					if ( !sendPlan.empty() )
-					{
-						sendPlan.push_back(sendPlan.front());
-					}
-					break;
-				case SmokeTestHooks::MainMenu::HeloChunkTxMode::DROP_LAST:
-					if ( !sendPlan.empty() )
-					{
-						sendPlan.pop_back();
-					}
-					break;
-				case SmokeTestHooks::MainMenu::HeloChunkTxMode::DUPLICATE_CONFLICT_FIRST:
-					if ( !sendPlan.empty() )
-					{
-						sendPlan.insert(sendPlan.begin() + 1, ChunkSendPlan{ sendPlan.front().chunkIndex, true });
-					}
-					break;
-			}
-
-			if ( txMode != SmokeTestHooks::MainMenu::HeloChunkTxMode::NORMAL )
-			{
-				printlog("[SMOKE]: HELO chunk tx mode=%s transfer=%u packets=%u chunks=%u",
-					SmokeTestHooks::MainMenu::heloChunkTxModeName(txMode),
-					static_cast<unsigned>(transferId),
-					static_cast<unsigned>(sendPlan.size()),
-					static_cast<unsigned>(chunkCount));
-			}
-		}
+		SmokeTestHooks::MainMenu::applyHeloChunkTxModePlan(sendPlan, chunkCount, transferId);
 
 		for ( const auto& planned : sendPlan )
 		{
@@ -12039,6 +11976,7 @@ bind_failed:
 
 			// A newly joined client can miss historical REDY packets while it is still waiting for HELO.
 			// Mirror the host's current ready cards so the countdown logic starts from the correct state.
+			int readyEntriesSent = 0;
 			for ( int index = 0; index < MAXPLAYERS; ++index )
 			{
 				if ( client_disconnected[index] )
@@ -12064,7 +12002,9 @@ bind_failed:
 				net_packet->address.host = net_clients[player - 1].host;
 				net_packet->address.port = net_clients[player - 1].port;
 				sendPacketSafe(net_sock, -1, net_packet, player - 1);
+				++readyEntriesSent;
 			}
+			SmokeTestHooks::MainMenu::traceReadyStateSnapshotSent(player, readyEntriesSent);
 			return true;
 		}
 
@@ -12077,6 +12017,8 @@ bind_failed:
 			pendingReadyStateSync[player] = true;
 			pendingReadyStateSyncTick[player] = ticks + TICKS_PER_SECOND / 2;
 			pendingReadyStateSyncAttempts[player] = 3;
+			SmokeTestHooks::MainMenu::traceReadyStateSnapshotQueued(player,
+				pendingReadyStateSyncAttempts[player], pendingReadyStateSyncTick[player]);
 		}
 
 		static void flushPendingReadyStateSnapshots()

@@ -251,15 +251,38 @@ def summarize_adversarial(csv_paths: List[Path]) -> str:
             html.escape(r.get("expected_result", "")),
             html.escape(r.get("observed_result", "")),
             html.escape(r.get("match", "")),
+            html.escape(r.get("network_backend", "")),
             html.escape(r.get("host_chunk_lines", "")),
             html.escape(r.get("client_reassembled_lines", "")),
+            html.escape(r.get("per_client_reassembly_counts", "")),
+            html.escape(r.get("chunk_reset_lines", "")),
+            html.escape(r.get("chunk_reset_reason_counts", "")),
+            html.escape(r.get("tx_mode_applied", "")),
+            html.escape(r.get("tx_mode_log_lines", "")),
+            html.escape(r.get("tx_mode_packet_plan_ok", "")),
             html.escape(r.get("run_dir", "")),
         ]
         for r in rows
     ]
     lines.append(
         render_table(
-            ["Case", "TX Mode", "Expected", "Observed", "Match", "Host Chunks", "Client Reassembled", "Run Dir"],
+            [
+                "Case",
+                "TX Mode",
+                "Expected",
+                "Observed",
+                "Match",
+                "Backend",
+                "Host Chunks",
+                "Client Reassembled",
+                "Per-Client Reassembly",
+                "Chunk Reset Count",
+                "Chunk Reset Reasons",
+                "TX Applied",
+                "TX Log Lines",
+                "TX Plan OK",
+                "Run Dir",
+            ],
             table_rows,
         )
     )

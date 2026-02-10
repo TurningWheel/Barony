@@ -35,6 +35,7 @@
 #include "scores.hpp"
 #include "colors.hpp"
 #include "mod_tools.hpp"
+#include "smoke/SmokeTestHooks.hpp"
 #include "lobbies.hpp"
 #include "ui/MainMenu.hpp"
 #include "ui/LoadingScreen.hpp"
@@ -207,6 +208,8 @@ bool sendChunkedHeloToHost(const int hostnum, const IPaddress& destination, cons
 	printlog("sending chunked HELO: player=%d transfer=%u chunks=%d total=%d",
 		playerNumForLog, static_cast<unsigned>(transferId), chunkCount, heloLen);
 
+	std::vector<int> chunkOffsets(chunkCount, 0);
+	std::vector<int> chunkLens(chunkCount, 0);
 	for ( int chunkIndex = 0; chunkIndex < chunkCount; ++chunkIndex )
 	{
 		const int offset = chunkIndex * chunkPayloadMax;
@@ -216,6 +219,28 @@ bool sendChunkedHeloToHost(const int hostnum, const IPaddress& destination, cons
 			printlog("[NET]: refusing to send chunked HELO due to invalid chunk length %d", chunkLen);
 			return false;
 		}
+		chunkOffsets[chunkIndex] = offset;
+		chunkLens[chunkIndex] = chunkLen;
+	}
+
+	std::vector<SmokeTestHooks::MainMenu::HeloChunkSendPlanEntry> sendPlan;
+	sendPlan.reserve(chunkCount + 1);
+	for ( int chunkIndex = 0; chunkIndex < chunkCount; ++chunkIndex )
+	{
+		sendPlan.push_back(SmokeTestHooks::MainMenu::HeloChunkSendPlanEntry{ chunkIndex, false });
+	}
+	SmokeTestHooks::MainMenu::applyHeloChunkTxModePlan(sendPlan, chunkCount, transferId);
+
+	for ( const auto& planned : sendPlan )
+	{
+		const int chunkIndex = planned.chunkIndex;
+		if ( chunkIndex < 0 || chunkIndex >= chunkCount )
+		{
+			printlog("[NET]: refusing to send chunked HELO due to invalid plan index %d", chunkIndex);
+			return false;
+		}
+		const int offset = chunkOffsets[chunkIndex];
+		const int chunkLen = chunkLens[chunkIndex];
 
 		memcpy(net_packet->data, "HLCN", 4);
 		SDLNet_Write16(transferId, &net_packet->data[4]);
@@ -224,6 +249,10 @@ bool sendChunkedHeloToHost(const int hostnum, const IPaddress& destination, cons
 		SDLNet_Write16(static_cast<Uint16>(heloLen), &net_packet->data[8]);
 		SDLNet_Write16(static_cast<Uint16>(chunkLen), &net_packet->data[10]);
 		memcpy(&net_packet->data[kHeloChunkHeaderSize], heloData + offset, chunkLen);
+		if ( planned.corruptPayload )
+		{
+			net_packet->data[kHeloChunkHeaderSize] ^= 0x5A;
+		}
 
 		net_packet->address.host = destination.host;
 		net_packet->address.port = destination.port;

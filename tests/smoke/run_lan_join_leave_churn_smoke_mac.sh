@@ -15,6 +15,9 @@ CONNECT_ADDRESS="127.0.0.1:57165"
 FORCE_CHUNK=1
 CHUNK_PAYLOAD_MAX=200
 HELO_CHUNK_TX_MODE="normal"
+AUTO_READY=0
+TRACE_READY_SYNC=0
+REQUIRE_READY_SYNC=0
 OUTDIR=""
 KEEP_RUNNING=0
 
@@ -40,6 +43,9 @@ Options:
   --force-chunk <0|1>             BARONY_SMOKE_FORCE_HELO_CHUNK setting.
   --chunk-payload-max <n>         HELO chunk payload cap (64..900).
   --helo-chunk-tx-mode <mode>     HELO tx mode (normal|reverse|even-odd|duplicate-first|drop-last|duplicate-conflict-first).
+  --auto-ready <0|1>              Enable BARONY_SMOKE_AUTO_READY on clients.
+  --trace-ready-sync <0|1>        Enable host ready-sync trace logs (smoke-only).
+  --require-ready-sync <0|1>      Assert ready snapshot queue/send coverage per slot/cycle.
   --outdir <path>                 Output directory.
   --keep-running                  Do not kill launched instances on exit.
   -h, --help                      Show this help.
@@ -61,6 +67,30 @@ count_fixed_lines() {
 		echo 0
 		return
 	fi
+	rg -F -c "$needle" "$file" 2>/dev/null || echo 0
+}
+
+count_ready_snapshot_target_lines() {
+	local file="$1"
+	local mode="$2"
+	local target="$3"
+	if [[ ! -f "$file" ]]; then
+		echo 0
+		return
+	fi
+	local needle=""
+	case "$mode" in
+		queued)
+			needle="[SMOKE]: ready snapshot queued target=$target "
+			;;
+		sent)
+			needle="[SMOKE]: ready snapshot sent target=$target "
+			;;
+		*)
+			echo 0
+			return
+			;;
+	esac
 	rg -F -c "$needle" "$file" 2>/dev/null || echo 0
 }
 
@@ -122,6 +152,18 @@ while (($# > 0)); do
 			HELO_CHUNK_TX_MODE="${2:-}"
 			shift 2
 			;;
+		--auto-ready)
+			AUTO_READY="${2:-}"
+			shift 2
+			;;
+		--trace-ready-sync)
+			TRACE_READY_SYNC="${2:-}"
+			shift 2
+			;;
+		--require-ready-sync)
+			REQUIRE_READY_SYNC="${2:-}"
+			shift 2
+			;;
 		--outdir)
 			OUTDIR="${2:-}"
 			shift 2
@@ -166,6 +208,26 @@ if ! is_uint "$FORCE_CHUNK" || (( FORCE_CHUNK > 1 )); then
 	echo "--force-chunk must be 0 or 1" >&2
 	exit 1
 fi
+if ! is_uint "$AUTO_READY" || (( AUTO_READY > 1 )); then
+	echo "--auto-ready must be 0 or 1" >&2
+	exit 1
+fi
+if ! is_uint "$TRACE_READY_SYNC" || (( TRACE_READY_SYNC > 1 )); then
+	echo "--trace-ready-sync must be 0 or 1" >&2
+	exit 1
+fi
+if ! is_uint "$REQUIRE_READY_SYNC" || (( REQUIRE_READY_SYNC > 1 )); then
+	echo "--require-ready-sync must be 0 or 1" >&2
+	exit 1
+fi
+if (( REQUIRE_READY_SYNC )) && (( AUTO_READY == 0 )); then
+	echo "--require-ready-sync requires --auto-ready 1" >&2
+	exit 1
+fi
+if (( REQUIRE_READY_SYNC )) && (( TRACE_READY_SYNC == 0 )); then
+	echo "--require-ready-sync requires --trace-ready-sync 1" >&2
+	exit 1
+fi
 if ! is_uint "$CHUNK_PAYLOAD_MAX" || (( CHUNK_PAYLOAD_MAX < 64 || CHUNK_PAYLOAD_MAX > 900 )); then
 	echo "--chunk-payload-max must be 64..900" >&2
 	exit 1
@@ -194,6 +256,10 @@ HOST_LOG="$INSTANCE_ROOT/home-1-l1/.barony/log.txt"
 CSV_PATH="$OUTDIR/churn_cycle_results.csv"
 cat > "$CSV_PATH" <<'CSV'
 cycle,required_host_chunk_lines,observed_host_chunk_lines,status
+CSV
+READY_SYNC_CSV="$OUTDIR/ready_sync_results.csv"
+cat > "$READY_SYNC_CSV" <<'CSV'
+player,expected_min_queued,observed_queued,expected_min_sent,observed_sent,status
 CSV
 
 declare -a SLOT_PIDS
@@ -236,6 +302,7 @@ launch_slot() {
 		"BARONY_SMOKE_AUTOPILOT=1"
 		"BARONY_SMOKE_CONNECT_DELAY_SECS=2"
 		"BARONY_SMOKE_RETRY_DELAY_SECS=3"
+		"BARONY_SMOKE_AUTO_READY=$AUTO_READY"
 		"BARONY_SMOKE_FORCE_HELO_CHUNK=$FORCE_CHUNK"
 		"BARONY_SMOKE_HELO_CHUNK_PAYLOAD_MAX=$CHUNK_PAYLOAD_MAX"
 	)
@@ -247,6 +314,9 @@ launch_slot() {
 			"BARONY_SMOKE_AUTO_ENTER_DUNGEON=0"
 			"BARONY_SMOKE_HELO_CHUNK_TX_MODE=$HELO_CHUNK_TX_MODE"
 		)
+		if (( TRACE_READY_SYNC )); then
+			env_vars+=("BARONY_SMOKE_TRACE_READY_SYNC=1")
+		fi
 	else
 		env_vars+=(
 			"BARONY_SMOKE_ROLE=client"
@@ -365,6 +435,39 @@ done
 
 final_host_chunk_lines=$(count_fixed_lines "$HOST_LOG" "sending chunked HELO:")
 join_fail_lines=$(count_fixed_lines "$HOST_LOG" "Player failed to join lobby")
+ready_snapshot_expected_total=0
+ready_snapshot_queue_lines=0
+ready_snapshot_sent_lines=0
+ready_sync_fail=0
+if (( REQUIRE_READY_SYNC )); then
+	ready_snapshot_expected_total="$required_target"
+	ready_snapshot_queue_lines=$(count_fixed_lines "$HOST_LOG" "[SMOKE]: ready snapshot queued target=")
+	ready_snapshot_sent_lines=$(count_fixed_lines "$HOST_LOG" "[SMOKE]: ready snapshot sent target=")
+	if (( ready_snapshot_queue_lines < ready_snapshot_expected_total )); then
+		ready_sync_fail=1
+	fi
+	if (( ready_snapshot_sent_lines < ready_snapshot_expected_total )); then
+		ready_sync_fail=1
+	fi
+
+	ready_sync_expected_players=$((INSTANCES - 1))
+	for ((player = 1; player <= ready_sync_expected_players; ++player)); do
+		expected_min=1
+		observed_queued="$(count_ready_snapshot_target_lines "$HOST_LOG" queued "$player")"
+		observed_sent="$(count_ready_snapshot_target_lines "$HOST_LOG" sent "$player")"
+		row_status="pass"
+		if (( observed_queued < expected_min || observed_sent < expected_min )); then
+			row_status="fail"
+			ready_sync_fail=1
+		fi
+		printf '%s,%s,%s,%s,%s,%s\n' \
+			"$player" "$expected_min" "$observed_queued" "$expected_min" "$observed_sent" "$row_status" >> "$READY_SYNC_CSV"
+	done
+
+	if (( ready_sync_fail != 0 )); then
+		failed=1
+	fi
+fi
 SUMMARY_FILE="$OUTDIR/summary.env"
 {
 	echo "RESULT=$([[ $failed -eq 0 ]] && echo pass || echo fail)"
@@ -374,11 +477,19 @@ SUMMARY_FILE="$OUTDIR/summary.env"
 	echo "FORCE_CHUNK=$FORCE_CHUNK"
 	echo "CHUNK_PAYLOAD_MAX=$CHUNK_PAYLOAD_MAX"
 	echo "HELO_CHUNK_TX_MODE=$HELO_CHUNK_TX_MODE"
+	echo "AUTO_READY=$AUTO_READY"
+	echo "TRACE_READY_SYNC=$TRACE_READY_SYNC"
+	echo "REQUIRE_READY_SYNC=$REQUIRE_READY_SYNC"
 	echo "INITIAL_REQUIRED_HOST_CHUNK_LINES=$initial_target"
 	echo "FINAL_REQUIRED_HOST_CHUNK_LINES=$required_target"
 	echo "FINAL_HOST_CHUNK_LINES=$final_host_chunk_lines"
 	echo "JOIN_FAIL_LINES=$join_fail_lines"
+	echo "READY_SNAPSHOT_EXPECTED_TOTAL=$ready_snapshot_expected_total"
+	echo "READY_SNAPSHOT_QUEUE_LINES=$ready_snapshot_queue_lines"
+	echo "READY_SNAPSHOT_SENT_LINES=$ready_snapshot_sent_lines"
+	echo "READY_SYNC_RESULT=$([[ $ready_sync_fail -eq 0 ]] && echo pass || echo fail)"
 	echo "CHURN_CSV=$CSV_PATH"
+	echo "READY_SYNC_CSV=$READY_SYNC_CSV"
 } > "$SUMMARY_FILE"
 
 if command -v python3 >/dev/null 2>&1 && [[ -f "$AGGREGATE" ]]; then
