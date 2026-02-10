@@ -168,6 +168,12 @@ if ! is_uint "$PREWARM_TIMEOUT" || (( PREWARM_TIMEOUT < 1 )); then
 	exit 1
 fi
 
+# Barony changes working directory at startup; keep HOME roots absolute so
+# per-instance output/config paths resolve correctly.
+if [[ "$ROOT_PREFIX" != /* ]]; then
+	ROOT_PREFIX="$PWD/$ROOT_PREFIX"
+fi
+
 if (( PREWARM )); then
 	log "Checking per-instance caches before launch..."
 	for ((i = 1; i <= INSTANCES; i++)); do

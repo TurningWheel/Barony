@@ -28,6 +28,7 @@
 #include "mod_tools.hpp"
 #include "menu.hpp"
 #include "ui/MainMenu.hpp"
+#include "smoke/SmokeTestHooks.hpp"
 
 int startfloor = 0;
 BaronyRNG map_rng;
@@ -46,6 +47,11 @@ static int getConnectedPlayerCountForMapScaling()
 		{
 			++connectedPlayers;
 		}
+	}
+	const int smokeOverridePlayers = SmokeTestHooks::Mapgen::connectedPlayersOverride();
+	if ( smokeOverridePlayers > 0 )
+	{
+		return smokeOverridePlayers;
 	}
 	return connectedPlayers;
 }

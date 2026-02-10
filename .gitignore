@@ -2,6 +2,7 @@
 build/*
 build-mac/
 build-mac-steamcheck/
+tests/smoke/artifacts/
 docker/
 **/data/*
 **/fonts/*

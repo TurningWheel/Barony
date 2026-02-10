@@ -26,7 +26,9 @@
 #include "../colors.hpp"
 #include "../book.hpp"
 #include "../scrolls.hpp"
+#include "../smoke/SmokeTestHooks.hpp"
 
+#include <algorithm>
 #include <cassert>
 #include <cctype>
 #include <cstdlib>
@@ -53,7 +55,7 @@
 #endif
 
 namespace MainMenu {
-    int pause_menu_owner = 0;
+	int pause_menu_owner = 0;
 	bool cursor_delete_mode = false;
 	Frame* main_menu_frame = nullptr;
 
@@ -101,113 +103,6 @@ namespace MainMenu {
 	};
 	static HeloChunkReassemblyState g_heloChunkReassemblyState;
 
-	enum class SmokeAutopilotRole : Uint8
-	{
-		DISABLED = 0,
-		ROLE_HOST,
-		ROLE_CLIENT
-	};
-
-	struct SmokeAutopilotConfig
-	{
-		bool enabled = false;
-		SmokeAutopilotRole role = SmokeAutopilotRole::DISABLED;
-		std::string connectAddress = "";
-		int connectDelayTicks = 0;
-		int retryDelayTicks = 0;
-		int expectedPlayers = 2;
-		bool autoStartLobby = false;
-		int autoStartDelayTicks = 0;
-		std::string seedString = "";
-		bool autoReady = false;
-	};
-
-	struct SmokeAutopilotRuntime
-	{
-		bool initialized = false;
-		SmokeAutopilotConfig config;
-		Uint32 nextActionTick = 0;
-		bool hostLaunchAttempted = false;
-		bool joinAttempted = false;
-		bool startIssued = false;
-		Uint32 expectedPlayersMetTick = 0;
-		bool seedApplied = false;
-		bool readyIssued = false;
-	};
-	static SmokeAutopilotRuntime g_smokeAutopilot;
-
-	static std::string toLowerCopy(const char* value)
-	{
-		std::string result = value ? value : "";
-		for ( auto& ch : result )
-		{
-			ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
-		}
-		return result;
-	}
-
-	static bool parseEnvBool(const char* key, const bool fallback)
-	{
-		const char* raw = std::getenv(key);
-		if ( !raw || !raw[0] )
-		{
-			return fallback;
-		}
-		const std::string value = toLowerCopy(raw);
-		if ( value == "1" || value == "true" || value == "yes" || value == "on" )
-		{
-			return true;
-		}
-		if ( value == "0" || value == "false" || value == "no" || value == "off" )
-		{
-			return false;
-		}
-		return fallback;
-	}
-
-	static int parseEnvInt(const char* key, const int fallback, const int minValue, const int maxValue)
-	{
-		const char* raw = std::getenv(key);
-		if ( !raw || !raw[0] )
-		{
-			return fallback;
-		}
-		char* end = nullptr;
-		const long parsed = std::strtol(raw, &end, 10);
-		if ( end == raw || (end && *end != '\0') )
-		{
-			return fallback;
-		}
-		return std::max(minValue, std::min(maxValue, static_cast<int>(parsed)));
-	}
-
-	static std::string parseEnvString(const char* key, const std::string& fallback)
-	{
-		const char* raw = std::getenv(key);
-		if ( !raw || !raw[0] )
-		{
-			return fallback;
-		}
-		return std::string(raw);
-	}
-
-	static int smokeHeloChunkPayloadMax()
-	{
-		static bool initialized = false;
-		static int value = kHeloChunkPayloadMax;
-		if ( !initialized )
-		{
-			initialized = true;
-			value = parseEnvInt("BARONY_SMOKE_HELO_CHUNK_PAYLOAD_MAX",
-				kHeloChunkPayloadMax, 64, kHeloChunkPayloadMax);
-			if ( value != kHeloChunkPayloadMax )
-			{
-				printlog("[SMOKE]: using HELO chunk payload max override: %d", value);
-			}
-		}
-		return value;
-	}
-
 	static Uint16 nextHeloTransferIdForPlayer(const int player)
 	{
 		if ( player < 0 || player >= MAXPLAYERS )
@@ -253,7 +148,16 @@ namespace MainMenu {
 			return false;
 		}
 
-		const int chunkPayloadMax = std::min(smokeHeloChunkPayloadMax(), NET_PACKET_SIZE - kHeloChunkHeaderSize);
+		static const bool smokePayloadOverrideEnabled =
+			SmokeTestHooks::MainMenu::isHeloChunkPayloadOverrideEnvEnabled()
+			&& SmokeTestHooks::MainMenu::hasHeloChunkPayloadOverride();
+		int configuredChunkPayloadMax = kHeloChunkPayloadMax;
+		if ( smokePayloadOverrideEnabled )
+		{
+			configuredChunkPayloadMax =
+				SmokeTestHooks::MainMenu::heloChunkPayloadMaxOverride(kHeloChunkPayloadMax);
+		}
+		const int chunkPayloadMax = std::min(configuredChunkPayloadMax, NET_PACKET_SIZE - kHeloChunkHeaderSize);
 		if ( chunkPayloadMax <= 0 )
 		{
 			printlog("[NET]: refusing to send chunked HELO due to invalid payload budget");
@@ -270,6 +174,14 @@ namespace MainMenu {
 		printlog("sending chunked HELO: player=%d transfer=%u chunks=%d total=%d",
 			playerNumForLog, static_cast<unsigned>(transferId), chunkCount, heloLen);
 
+		struct ChunkSendPlan
+		{
+			int chunkIndex = 0;
+			bool corruptPayload = false;
+		};
+
+		std::vector<int> chunkOffsets(chunkCount, 0);
+		std::vector<int> chunkLens(chunkCount, 0);
 		for ( int chunkIndex = 0; chunkIndex < chunkCount; ++chunkIndex )
 		{
 			const int offset = chunkIndex * chunkPayloadMax;
@@ -279,6 +191,85 @@ namespace MainMenu {
 				printlog("[NET]: refusing to send chunked HELO due to invalid chunk length %d", chunkLen);
 				return false;
 			}
+			chunkOffsets[chunkIndex] = offset;
+			chunkLens[chunkIndex] = chunkLen;
+		}
+
+		std::vector<ChunkSendPlan> sendPlan;
+		sendPlan.reserve(chunkCount + 1);
+		for ( int chunkIndex = 0; chunkIndex < chunkCount; ++chunkIndex )
+		{
+			sendPlan.push_back(ChunkSendPlan{ chunkIndex, false });
+		}
+
+		static const bool smokeTxModeOverrideEnabled =
+			SmokeTestHooks::MainMenu::isHeloChunkTxModeOverrideEnvEnabled()
+			&& SmokeTestHooks::MainMenu::hasHeloChunkTxModeOverride();
+		if ( smokeTxModeOverrideEnabled )
+		{
+			const SmokeTestHooks::MainMenu::HeloChunkTxMode txMode = SmokeTestHooks::MainMenu::heloChunkTxMode();
+			switch ( txMode )
+			{
+				case SmokeTestHooks::MainMenu::HeloChunkTxMode::NORMAL:
+					break;
+				case SmokeTestHooks::MainMenu::HeloChunkTxMode::REVERSE:
+					std::reverse(sendPlan.begin(), sendPlan.end());
+					break;
+				case SmokeTestHooks::MainMenu::HeloChunkTxMode::EVEN_ODD:
+				{
+					std::vector<ChunkSendPlan> reordered;
+					reordered.reserve(sendPlan.size());
+					for ( int i = 1; i < chunkCount; i += 2 )
+					{
+						reordered.push_back(ChunkSendPlan{ i, false });
+					}
+					for ( int i = 0; i < chunkCount; i += 2 )
+					{
+						reordered.push_back(ChunkSendPlan{ i, false });
+					}
+					sendPlan = reordered;
+					break;
+				}
+				case SmokeTestHooks::MainMenu::HeloChunkTxMode::DUPLICATE_FIRST:
+					if ( !sendPlan.empty() )
+					{
+						sendPlan.push_back(sendPlan.front());
+					}
+					break;
+				case SmokeTestHooks::MainMenu::HeloChunkTxMode::DROP_LAST:
+					if ( !sendPlan.empty() )
+					{
+						sendPlan.pop_back();
+					}
+					break;
+				case SmokeTestHooks::MainMenu::HeloChunkTxMode::DUPLICATE_CONFLICT_FIRST:
+					if ( !sendPlan.empty() )
+					{
+						sendPlan.insert(sendPlan.begin() + 1, ChunkSendPlan{ sendPlan.front().chunkIndex, true });
+					}
+					break;
+			}
+
+			if ( txMode != SmokeTestHooks::MainMenu::HeloChunkTxMode::NORMAL )
+			{
+				printlog("[SMOKE]: HELO chunk tx mode=%s transfer=%u packets=%u chunks=%u",
+					SmokeTestHooks::MainMenu::heloChunkTxModeName(txMode),
+					static_cast<unsigned>(transferId),
+					static_cast<unsigned>(sendPlan.size()),
+					static_cast<unsigned>(chunkCount));
+			}
+		}
+
+		for ( const auto& planned : sendPlan )
+		{
+			const int chunkIndex = planned.chunkIndex;
+			if ( chunkIndex < 0 || chunkIndex >= chunkCount )
+			{
+				printlog("[NET]: refusing to send chunked HELO due to invalid plan index %d", chunkIndex);
+				return false;
+			}
+			const int offset = chunkOffsets[chunkIndex];
+			const int chunkLen = chunkLens[chunkIndex];
 
 			memcpy(net_packet->data, "HLCN", 4);
 			SDLNet_Write16(transferId, &net_packet->data[4]);
@@ -287,6 +278,10 @@ namespace MainMenu {
 			SDLNet_Write16(static_cast<Uint16>(heloLen), &net_packet->data[8]);
 			SDLNet_Write16(static_cast<Uint16>(chunkLen), &net_packet->data[10]);
 			memcpy(&net_packet->data[kHeloChunkHeaderSize], heloData + offset, chunkLen);
+			if ( planned.corruptPayload )
+			{
+				net_packet->data[kHeloChunkHeaderSize] ^= 0x5A;
+			}
 			net_packet->len = kHeloChunkHeaderSize + chunkLen;
 
 			if ( !sendPacketSafe(net_sock, -1, net_packet, hostnum) )
@@ -301,7 +296,16 @@ namespace MainMenu {
 
 	static bool ingestHeloChunkAndMaybeAssemble()
 	{
-		const int chunkPayloadMax = std::min(smokeHeloChunkPayloadMax(), NET_PACKET_SIZE - kHeloChunkHeaderSize);
+		static const bool smokePayloadOverrideEnabled =
+			SmokeTestHooks::MainMenu::isHeloChunkPayloadOverrideEnvEnabled()
+			&& SmokeTestHooks::MainMenu::hasHeloChunkPayloadOverride();
+		int configuredChunkPayloadMax = kHeloChunkPayloadMax;
+		if ( smokePayloadOverrideEnabled )
+		{
+			configuredChunkPayloadMax =
+				SmokeTestHooks::MainMenu::heloChunkPayloadMaxOverride(kHeloChunkPayloadMax);
+		}
+		const int chunkPayloadMax = std::min(configuredChunkPayloadMax, NET_PACKET_SIZE - kHeloChunkHeaderSize);
 		if ( chunkPayloadMax <= 0 )
 		{
 			return false;
@@ -1333,7 +1337,6 @@ namespace MainMenu {
 	static bool hostLANLobbyInternal(bool playSound);
 	static bool connectToServer(const char* address, void* pLobby, LobbyType lobbyType);
 	static void startGame();
-	static void tickSmokeAutopilot();
 
 	static void sendPlayerOverNet();
 	static void sendReadyOverNet(int index, bool ready);
@@ -1561,173 +1564,14 @@ namespace MainMenu {
 		}
 	}
 
-	static SmokeAutopilotConfig& smokeAutopilotConfig()
+	static bool smokeHostLANLobbyNoSound()
 	{
-		if ( g_smokeAutopilot.initialized )
-		{
-			return g_smokeAutopilot.config;
-		}
-		g_smokeAutopilot.initialized = true;
-
-		auto& cfg = g_smokeAutopilot.config;
-		const std::string role = toLowerCopy(std::getenv("BARONY_SMOKE_ROLE"));
-		if ( role == "host" )
-		{
-			cfg.role = SmokeAutopilotRole::ROLE_HOST;
-		}
-		else if ( role == "client" )
-		{
-			cfg.role = SmokeAutopilotRole::ROLE_CLIENT;
-		}
-
-		cfg.enabled = parseEnvBool("BARONY_SMOKE_AUTOPILOT", cfg.role != SmokeAutopilotRole::DISABLED);
-		if ( !cfg.enabled || cfg.role == SmokeAutopilotRole::DISABLED )
-		{
-			cfg.enabled = false;
-			return cfg;
-		}
-
-		char defaultAddress[64];
-		const Uint16 port = ::portnumber ? ::portnumber : DEFAULT_PORT;
-		snprintf(defaultAddress, sizeof(defaultAddress), "127.0.0.1:%u", static_cast<unsigned>(port));
-		cfg.connectAddress = parseEnvString("BARONY_SMOKE_CONNECT_ADDRESS", defaultAddress);
-		cfg.connectDelayTicks = parseEnvInt("BARONY_SMOKE_CONNECT_DELAY_SECS", 2, 0, 60) * TICKS_PER_SECOND;
-		cfg.retryDelayTicks = parseEnvInt("BARONY_SMOKE_RETRY_DELAY_SECS", 3, 1, 120) * TICKS_PER_SECOND;
-		cfg.expectedPlayers = parseEnvInt("BARONY_SMOKE_EXPECTED_PLAYERS", 2, 1, MAXPLAYERS);
-		cfg.autoStartLobby = parseEnvBool("BARONY_SMOKE_AUTO_START", false);
-		cfg.autoStartDelayTicks = parseEnvInt("BARONY_SMOKE_AUTO_START_DELAY_SECS", 2, 0, 120) * TICKS_PER_SECOND;
-		cfg.seedString = parseEnvString("BARONY_SMOKE_SEED", "");
-		cfg.autoReady = parseEnvBool("BARONY_SMOKE_AUTO_READY", false);
-		g_smokeAutopilot.nextActionTick = ticks + static_cast<Uint32>(cfg.connectDelayTicks);
-
-		const char* roleName = cfg.role == SmokeAutopilotRole::ROLE_HOST ? "host" : "client";
-		printlog("[SMOKE]: enabled role=%s addr=%s expected=%d autoStart=%d",
-			roleName, cfg.connectAddress.c_str(), cfg.expectedPlayers, cfg.autoStartLobby ? 1 : 0);
-
-		return cfg;
+		return hostLANLobbyInternal(false);
 	}
 
-	static int connectedLobbyPlayers()
+	static bool smokeConnectToLanServer(const char* address)
 	{
-		int connected = 0;
-		for ( int c = 0; c < MAXPLAYERS; ++c )
-		{
-			if ( !client_disconnected[c] )
-			{
-				++connected;
-			}
-		}
-		return connected;
-	}
-
-	static void applySmokeSeedIfNeeded()
-	{
-		auto& runtime = g_smokeAutopilot;
-		auto& cfg = smokeAutopilotConfig();
-		if ( runtime.seedApplied || cfg.seedString.empty() )
-		{
-			return;
-		}
-		gameModeManager.currentSession.seededRun.setup(cfg.seedString);
-		runtime.seedApplied = true;
-		printlog("[SMOKE]: applied seed '%s'", cfg.seedString.c_str());
-	}
-
-	static void tickSmokeAutopilot()
-	{
-		auto& runtime = g_smokeAutopilot;
-		auto& cfg = smokeAutopilotConfig();
-		if ( !cfg.enabled )
-		{
-			return;
-		}
-
-		if ( cfg.role == SmokeAutopilotRole::ROLE_HOST )
-		{
-			if ( !runtime.hostLaunchAttempted )
-			{
-				runtime.hostLaunchAttempted = true;
-				if ( !hostLANLobbyInternal(false) )
-				{
-					printlog("[SMOKE]: host launch failed, smoke autopilot disabled");
-					cfg.enabled = false;
-				}
-				return;
-			}
-
-			if ( multiplayer != SERVER )
-			{
-				return;
-			}
-
-			applySmokeSeedIfNeeded();
-			if ( !cfg.autoStartLobby || runtime.startIssued )
-			{
-				return;
-			}
-
-			const int connected = connectedLobbyPlayers();
-			if ( connected < cfg.expectedPlayers )
-			{
-				runtime.expectedPlayersMetTick = 0;
-				return;
-			}
-
-			if ( runtime.expectedPlayersMetTick == 0 )
-			{
-				runtime.expectedPlayersMetTick = ticks;
-				printlog("[SMOKE]: expected players reached (%d/%d), start in %d sec",
-					connected, cfg.expectedPlayers, cfg.autoStartDelayTicks / TICKS_PER_SECOND);
-			}
-			if ( ticks - runtime.expectedPlayersMetTick < static_cast<Uint32>(cfg.autoStartDelayTicks) )
-			{
-				return;
-			}
-
-			runtime.startIssued = true;
-			printlog("[SMOKE]: auto-starting game");
-			startGame();
-			return;
-		}
-
-		// Client autopilot.
-		if ( receivedclientnum )
-		{
-			if ( cfg.autoReady && !runtime.readyIssued && clientnum > 0 && clientnum < MAXPLAYERS )
-			{
-				runtime.readyIssued = true;
-				printlog("[SMOKE]: auto-ready client %d", clientnum);
-				createReadyStone(clientnum, true, true);
-			}
-			return;
-		}
-		if ( runtime.joinAttempted && multiplayer != CLIENT )
-		{
-			runtime.joinAttempted = false;
-			runtime.nextActionTick = ticks + cfg.retryDelayTicks;
-		}
-		if ( runtime.joinAttempted || ticks < runtime.nextActionTick )
-		{
-			return;
-		}
-
-		if ( multiplayer == CLIENT )
-		{
-			// Connect attempt already in-flight.
-			runtime.joinAttempted = true;
-			return;
-		}
-
-		if ( connectToServer(cfg.connectAddress.c_str(), nullptr, LobbyType::LobbyLAN) )
-		{
-			runtime.joinAttempted = true;
-			printlog("[SMOKE]: join attempt sent to %s", cfg.connectAddress.c_str());
-		}
-		else
-		{
-			runtime.nextActionTick = ticks + cfg.retryDelayTicks;
-			printlog("[SMOKE]: join attempt failed, retrying in %d sec", cfg.retryDelayTicks / TICKS_PER_SECOND);
-		}
+		return connectToServer(address, nullptr, LobbyType::LobbyLAN);
 	}
 
 	static void tickMainMenu(Widget& widget) {
@@ -1736,7 +1580,19 @@ namespace MainMenu {
 		if (back) {
 		    back->setDisabled(widget.findWidget("dimmer", false) != nullptr);
 		}
-		tickSmokeAutopilot();
+		static const bool smokeAutopilotEnabled =
+			SmokeTestHooks::MainMenu::isAutopilotEnvEnabled()
+			&& SmokeTestHooks::MainMenu::isAutopilotEnabled();
+		if ( smokeAutopilotEnabled )
+		{
+			static const SmokeTestHooks::MainMenu::AutopilotCallbacks smokeCallbacks{
+				&smokeHostLANLobbyNoSound,
+				&smokeConnectToLanServer,
+				&startGame,
+				&createReadyStone
+			};
+			SmokeTestHooks::MainMenu::tickAutopilot(smokeCallbacks);
+		}
 	}
 
 	static void updateSliderArrows(Frame& frame) {
@@ -20016,14 +19872,24 @@ failed:
 		// reset ALL player stats
         if (!loadingsavegame) {
 
-		    for (int c = 0; c < MAXPLAYERS; ++c) {
-		        if (type != LobbyType::LobbyJoined && type != LobbyType::LobbyLocal && c != 0) {
-		            newPlayer[c] = true;
-		        }
-		        if (type != LobbyType::LobbyJoined || c == clientnum) {
-					constexpr int defaultLobbyPlayerCount = 4;
-					const bool lockExtraSlotsByDefault =
-						type == LobbyType::LobbyLAN || type == LobbyType::LobbyOnline;
+			for (int c = 0; c < MAXPLAYERS; ++c) {
+				if (type != LobbyType::LobbyJoined && type != LobbyType::LobbyLocal && c != 0) {
+					newPlayer[c] = true;
+				}
+				if (type != LobbyType::LobbyJoined || c == clientnum) {
+						const bool lockExtraSlotsByDefault =
+							type == LobbyType::LobbyLAN || type == LobbyType::LobbyOnline;
+						int defaultLobbyPlayerCount = 4;
+						if ( lockExtraSlotsByDefault )
+						{
+							static const bool smokeHostSlotsEnabled =
+								SmokeTestHooks::MainMenu::isAutopilotEnvEnabled()
+								&& SmokeTestHooks::MainMenu::isAutopilotHostEnabled();
+							if ( smokeHostSlotsEnabled )
+							{
+								defaultLobbyPlayerCount = SmokeTestHooks::MainMenu::expectedHostLobbyPlayerSlots(4);
+							}
+						}
 		            playerSlotsLocked[c] = lockExtraSlotsByDefault && c >= defaultLobbyPlayerCount;
 
 					bool replayedLastCharacter = false;
