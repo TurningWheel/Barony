@@ -28,7 +28,12 @@ REQUIRE_MAPGEN=0
 MAPGEN_SAMPLES=1
 TRACE_ACCOUNT_LABELS=0
 REQUIRE_ACCOUNT_LABELS=0
+AUTO_KICK_TARGET_SLOT=0
+AUTO_KICK_DELAY_SECS=2
+REQUIRE_AUTO_KICK=0
 KEEP_RUNNING=0
+SEED_CONFIG_PATH="$HOME/.barony/config/config.json"
+SEED_BOOKS_PATH="$HOME/.barony/books/compiled_books.json"
 
 usage() {
 	cat <<'USAGE'
@@ -66,6 +71,9 @@ Options:
   --trace-account-labels <0|1>  Emit smoke logs for resolved lobby account labels (host only).
   --require-account-labels <0|1>
                                 Require account-label coverage for remote slots.
+  --auto-kick-target-slot <n>   Host smoke autopilot kicks this player slot (1..14, 0 disables).
+  --auto-kick-delay <sec>       Delay after full lobby before auto-kick (default: 2).
+  --require-auto-kick <0|1>     Require smoke auto-kick verification before pass.
   --outdir <path>               Artifact directory.
   --keep-running                Do not kill launched instances on exit.
   -h, --help                    Show this help.
@@ -80,6 +88,28 @@ log() {
 	printf '[%s] %s\n' "$(date '+%H:%M:%S')" "$*"
 }
 
+seed_smoke_home_profile() {
+	local home_dir="$1"
+	local seed_root="$home_dir/.barony"
+
+	if [[ -f "$SEED_CONFIG_PATH" ]]; then
+		mkdir -p "$seed_root/config"
+		local config_dest="$seed_root/config/config.json"
+		if command -v jq >/dev/null 2>&1; then
+			if ! jq '.skipintro = true | .mods = []' "$SEED_CONFIG_PATH" > "$config_dest" 2>/dev/null; then
+				cp "$SEED_CONFIG_PATH" "$config_dest"
+			fi
+		else
+			cp "$SEED_CONFIG_PATH" "$config_dest"
+		fi
+	fi
+
+	if [[ -f "$SEED_BOOKS_PATH" ]]; then
+		mkdir -p "$seed_root/books"
+		cp "$SEED_BOOKS_PATH" "$seed_root/books/compiled_books.json"
+	fi
+}
+
 count_fixed_lines() {
 	local file="$1"
 	local needle="$2"
@@ -88,6 +118,16 @@ count_fixed_lines() {
 		return
 	fi
 	rg -F -c "$needle" "$file" 2>/dev/null || echo 0
+}
+
+count_regex_lines() {
+	local file="$1"
+	local pattern="$2"
+	if [[ ! -f "$file" ]]; then
+		echo 0
+		return
+	fi
+	rg -c "$pattern" "$file" 2>/dev/null || echo 0
 }
 
 canonicalize_tx_mode() {
@@ -463,6 +503,18 @@ while (($# > 0)); do
 			REQUIRE_ACCOUNT_LABELS="${2:-}"
 			shift 2
 			;;
+		--auto-kick-target-slot)
+			AUTO_KICK_TARGET_SLOT="${2:-}"
+			shift 2
+			;;
+		--auto-kick-delay)
+			AUTO_KICK_DELAY_SECS="${2:-}"
+			shift 2
+			;;
+		--require-auto-kick)
+			REQUIRE_AUTO_KICK="${2:-}"
+			shift 2
+			;;
 		--outdir)
 			OUTDIR="${2:-}"
 			shift 2
@@ -609,6 +661,26 @@ if (( REQUIRE_ACCOUNT_LABELS )) && (( TRACE_ACCOUNT_LABELS == 0 )); then
 	echo "--require-account-labels requires --trace-account-labels 1" >&2
 	exit 1
 fi
+if ! is_uint "$AUTO_KICK_TARGET_SLOT" || (( AUTO_KICK_TARGET_SLOT < 0 || AUTO_KICK_TARGET_SLOT > 14 )); then
+	echo "--auto-kick-target-slot must be 0..14" >&2
+	exit 1
+fi
+if ! is_uint "$AUTO_KICK_DELAY_SECS"; then
+	echo "--auto-kick-delay must be a non-negative integer" >&2
+	exit 1
+fi
+if ! is_uint "$REQUIRE_AUTO_KICK" || (( REQUIRE_AUTO_KICK > 1 )); then
+	echo "--require-auto-kick must be 0 or 1" >&2
+	exit 1
+fi
+if (( REQUIRE_AUTO_KICK )) && (( AUTO_KICK_TARGET_SLOT == 0 )); then
+	echo "--require-auto-kick requires --auto-kick-target-slot > 0" >&2
+	exit 1
+fi
+if (( AUTO_KICK_TARGET_SLOT > 0 )) && (( AUTO_KICK_TARGET_SLOT >= EXPECTED_PLAYERS )); then
+	echo "--auto-kick-target-slot must be less than --expected-players" >&2
+	exit 1
+fi
 if [[ -z "$AUTO_ENTER_DUNGEON_REPEATS" ]]; then
 	AUTO_ENTER_DUNGEON_REPEATS="$MAPGEN_SAMPLES"
 fi
@@ -647,6 +719,7 @@ launch_instance() {
 	local home_dir="$INSTANCE_ROOT/home-${idx}"
 	local stdout_log="$LOG_DIR/instance-${idx}.stdout.log"
 	mkdir -p "$home_dir"
+	seed_smoke_home_profile "$home_dir"
 
 	local -a env_vars=(
 		"HOME=$home_dir"
@@ -659,15 +732,21 @@ launch_instance() {
 	)
 
 	if [[ "$role" == "host" ]]; then
+		env_vars+=(
+			"BARONY_SMOKE_ROLE=host"
+			"BARONY_SMOKE_EXPECTED_PLAYERS=$EXPECTED_PLAYERS"
+			"BARONY_SMOKE_AUTO_START=$AUTO_START"
+			"BARONY_SMOKE_AUTO_START_DELAY_SECS=$AUTO_START_DELAY_SECS"
+			"BARONY_SMOKE_AUTO_ENTER_DUNGEON=$AUTO_ENTER_DUNGEON"
+			"BARONY_SMOKE_AUTO_ENTER_DUNGEON_DELAY_SECS=$AUTO_ENTER_DUNGEON_DELAY_SECS"
+			"BARONY_SMOKE_AUTO_ENTER_DUNGEON_REPEATS=$AUTO_ENTER_DUNGEON_REPEATS"
+		)
+		if (( AUTO_KICK_TARGET_SLOT > 0 )); then
 			env_vars+=(
-				"BARONY_SMOKE_ROLE=host"
-				"BARONY_SMOKE_EXPECTED_PLAYERS=$EXPECTED_PLAYERS"
-				"BARONY_SMOKE_AUTO_START=$AUTO_START"
-				"BARONY_SMOKE_AUTO_START_DELAY_SECS=$AUTO_START_DELAY_SECS"
-				"BARONY_SMOKE_AUTO_ENTER_DUNGEON=$AUTO_ENTER_DUNGEON"
-				"BARONY_SMOKE_AUTO_ENTER_DUNGEON_DELAY_SECS=$AUTO_ENTER_DUNGEON_DELAY_SECS"
-				"BARONY_SMOKE_AUTO_ENTER_DUNGEON_REPEATS=$AUTO_ENTER_DUNGEON_REPEATS"
+				"BARONY_SMOKE_AUTO_KICK_TARGET_SLOT=$AUTO_KICK_TARGET_SLOT"
+				"BARONY_SMOKE_AUTO_KICK_DELAY_SECS=$AUTO_KICK_DELAY_SECS"
 			)
+		fi
 		if (( TRACE_ACCOUNT_LABELS )); then
 			env_vars+=("BARONY_SMOKE_TRACE_ACCOUNT_LABELS=1")
 		fi
@@ -736,6 +815,9 @@ per_client_reassembly_counts=""
 all_clients_exact_one=0
 all_clients_zero=0
 account_label_ok=1
+auto_kick_ok=1
+auto_kick_ok_lines=0
+auto_kick_fail_lines=0
 
 declare -a CLIENT_LOGS=()
 for ((i = 2; i <= INSTANCES; ++i)); do
@@ -826,6 +908,16 @@ while (( SECONDS < deadline )); do
 	if (( REQUIRE_ACCOUNT_LABELS )) && (( EXPECTED_CLIENTS > 0 )); then
 		account_label_ok=$(is_account_label_slot_coverage_ok "$HOST_LOG" "$EXPECTED_CLIENTS")
 	fi
+	auto_kick_ok=1
+	if (( AUTO_KICK_TARGET_SLOT > 0 )); then
+		auto_kick_ok_lines=$(count_regex_lines "$HOST_LOG" "\\[SMOKE\\]: auto-kick result target=${AUTO_KICK_TARGET_SLOT} .* status=ok")
+		auto_kick_fail_lines=$(count_regex_lines "$HOST_LOG" "\\[SMOKE\\]: auto-kick result target=${AUTO_KICK_TARGET_SLOT} .* status=fail")
+	fi
+	if (( REQUIRE_AUTO_KICK )); then
+		if (( auto_kick_ok_lines < 1 || auto_kick_fail_lines > 0 )); then
+			auto_kick_ok=0
+		fi
+	fi
 
 	if (( STRICT_EXPECTED_FAIL )); then
 		if (( all_clients_zero == 0 )); then
@@ -834,7 +926,7 @@ while (( SECONDS < deadline )); do
 		if (( chunk_reset_lines > 0 && txmode_ok )); then
 			break
 		fi
-	elif (( helo_ok && mapgen_ok && txmode_ok && account_label_ok )); then
+	elif (( helo_ok && mapgen_ok && txmode_ok && account_label_ok && auto_kick_ok )); then
 		result="pass"
 		break
 	fi
@@ -861,8 +953,25 @@ chunk_reset_reason_counts=""
 if (( EXPECTED_CLIENTS > 0 )); then
 	chunk_reset_reason_counts="$(collect_chunk_reset_reason_counts "${CLIENT_LOGS[@]}")"
 fi
+if (( AUTO_KICK_TARGET_SLOT > 0 )); then
+	auto_kick_ok_lines=$(count_regex_lines "$HOST_LOG" "\\[SMOKE\\]: auto-kick result target=${AUTO_KICK_TARGET_SLOT} .* status=ok")
+	auto_kick_fail_lines=$(count_regex_lines "$HOST_LOG" "\\[SMOKE\\]: auto-kick result target=${AUTO_KICK_TARGET_SLOT} .* status=fail")
+fi
+auto_kick_result="disabled"
+if (( AUTO_KICK_TARGET_SLOT > 0 )); then
+	if (( auto_kick_fail_lines > 0 )); then
+		auto_kick_result="fail"
+	elif (( auto_kick_ok_lines > 0 )); then
+		auto_kick_result="ok"
+	else
+		auto_kick_result="missing"
+	fi
+fi
 
 if (( REQUIRE_ACCOUNT_LABELS )) && (( account_label_slot_coverage_ok == 0 )); then
+	result="fail"
+fi
+if (( REQUIRE_AUTO_KICK )) && [[ "$auto_kick_result" != "ok" ]]; then
 	result="fail"
 fi
 
@@ -913,11 +1022,17 @@ SUMMARY_FILE="$OUTDIR/summary.env"
 	echo "ACCOUNT_LABEL_SLOTS=$account_label_slots"
 	echo "ACCOUNT_LABEL_MISSING_SLOTS=$account_label_missing_slots"
 	echo "ACCOUNT_LABEL_SLOT_COVERAGE_OK=$account_label_slot_coverage_ok"
+	echo "AUTO_KICK_TARGET_SLOT=$AUTO_KICK_TARGET_SLOT"
+	echo "AUTO_KICK_DELAY_SECS=$AUTO_KICK_DELAY_SECS"
+	echo "REQUIRE_AUTO_KICK=$REQUIRE_AUTO_KICK"
+	echo "AUTO_KICK_RESULT=$auto_kick_result"
+	echo "AUTO_KICK_OK_LINES=$auto_kick_ok_lines"
+	echo "AUTO_KICK_FAIL_LINES=$auto_kick_fail_lines"
 	echo "HOST_LOG=$HOST_LOG"
 	echo "PID_FILE=$PID_FILE"
 } > "$SUMMARY_FILE"
 
-log "result=$result chunks=$host_chunk_lines reassembled=$client_reassembled_lines resets=$chunk_reset_lines txmodeApplied=$tx_mode_applied mapgen=$mapgen_found gamestart=$game_start_found"
+log "result=$result chunks=$host_chunk_lines reassembled=$client_reassembled_lines resets=$chunk_reset_lines txmodeApplied=$tx_mode_applied mapgen=$mapgen_found gamestart=$game_start_found autoKick=$auto_kick_result"
 log "summary=$SUMMARY_FILE"
 
 if [[ "$result" != "pass" ]]; then

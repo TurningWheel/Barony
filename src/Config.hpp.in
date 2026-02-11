@@ -76,6 +76,10 @@
 	#define BARONY_SUPER_MULTIPLAYER
 #endif
 
+#if @BARONY_SMOKE_TESTS@
+	#define BARONY_SMOKE_TESTS
+#endif
+
 #if @NOT_DWORD_DEFINED@
 	/*
 	 * https://msdn.microsoft.com/en-us/library/cc230318.aspx

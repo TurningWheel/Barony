@@ -80,5 +80,9 @@ When running in Codex with sandboxing, ask for sandbox breakout/escalation permi
 - Avoid adding ad-hoc smoke utility logic directly in core gameplay files; prefer hook APIs in `SmokeTestHooks` and keep base-game paths clean.
 - Preferred local validation path is local build binary + Steam assets datadir (`--app .../build-mac/.../barony --datadir .../Barony.app/Contents/Resources`) instead of replacing the Steam executable.
 - After long or high-instance smoke runs, clean generated cache bloat (especially `models.cache` under smoke artifact homes) while preserving logs/artifacts needed for debugging.
+- If host performance degrades during smoke campaigns, check for lingering `run_mapgen_sweep_mac.sh`, `run_lan_helo_chunk_smoke_mac.sh`, and `barony` processes; terminate stale runs before launching new lanes.
 - Known intermittent issue: churn/rejoin can show transient `lobby full` / join retries (`error code 16`). Track with artifacts and summaries, and avoid conflating it with unrelated feature-lane pass/fail unless assertions require it.
 - Add and maintain compile-time gating for smoke hooks/call sites so smoke instrumentation compiles or executes only when a dedicated smoke-test flag is enabled.
+- Smoke validation requires a smoke-enabled build (`-DBARONY_SMOKE_TESTS=ON`); if expected `[SMOKE]` logs are missing, verify generated config/build mode and rebuild the smoke target before rerunning tests.
+- Fresh per-instance smoke homes can stall in intro/title flow; ensure smoke homes are pre-seeded with profile data (`skipintro=true`, `mods=[]`, and compiled books cache) so autopilot reaches lobby/gameplay deterministically.
+- During style/contribution cleanup, treat `#ifdef BARONY_SMOKE_TESTS` guards around smoke-hook callsites as an acceptable and idiomatic exception.

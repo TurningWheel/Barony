@@ -24,6 +24,7 @@ namespace MainMenu
 		bool (*connectToLanServer)(const char* address) = nullptr;
 		void (*startGame)() = nullptr;
 		void (*createReadyStone)(int index, bool local, bool ready) = nullptr;
+		void (*kickPlayer)(int index) = nullptr;
 	};
 
 	struct HeloChunkSendPlanEntry
@@ -43,7 +44,6 @@ namespace MainMenu
 	void traceReadyStateSnapshotSent(int player, int readyEntries);
 	bool isAccountLabelTraceEnabled();
 	void traceLobbyAccountLabelResolved(int slot, const char* accountName);
-	bool isAutopilotEnvEnabled();
 	bool isHeloChunkPayloadOverrideEnvEnabled();
 	bool isHeloChunkTxModeOverrideEnvEnabled();
 
@@ -55,8 +55,6 @@ namespace MainMenu
 
 namespace Gameplay
 {
-	bool isHooksEnvEnabled();
-	bool isAutoEnterDungeonEnabled();
 	void tickAutoEnterDungeon();
 }
 
@@ -71,8 +69,16 @@ namespace GameUI
 
 namespace Net
 {
+	bool isForceHeloChunkEnabled();
+	int heloChunkPayloadMaxOverride(int defaultPayloadMax, int minPayloadMax = 64);
 	bool isJoinRejectTraceEnabled();
 	void traceLobbyJoinReject(Uint32 result, Uint8 requestedSlot, const bool lockedSlots[MAXPLAYERS], const bool disconnectedSlots[MAXPLAYERS]);
+}
+
+namespace SaveReload
+{
+	bool isOwnerEncodingSweepEnabled();
+	bool runOwnerEncodingSweep(bool singleplayer, int saveIndex);
 }
 
 namespace Mapgen

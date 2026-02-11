@@ -45,7 +45,9 @@
 #include "interface/ui.hpp"
 #include "ui/GameUI.hpp"
 #include "ui/MainMenu.hpp"
+#ifdef BARONY_SMOKE_TESTS
 #include "smoke/SmokeTestHooks.hpp"
+#endif
 #include <limits>
 #include "ui/Frame.hpp"
 #include "ui/Field.hpp"
@@ -1827,13 +1829,9 @@ void gameLogic(void)
 					}
 				}
 
-				static const bool smokeAutoEnterDungeonEnabled =
-					SmokeTestHooks::Gameplay::isHooksEnvEnabled()
-					&& SmokeTestHooks::Gameplay::isAutoEnterDungeonEnabled();
-				if ( smokeAutoEnterDungeonEnabled )
-				{
-					SmokeTestHooks::Gameplay::tickAutoEnterDungeon();
-				}
+#ifdef BARONY_SMOKE_TESTS
+				SmokeTestHooks::Gameplay::tickAutoEnterDungeon();
+#endif
 				if ( loadnextlevel == true )
 				{
 					// when this flag is set, it's time to load the next level.

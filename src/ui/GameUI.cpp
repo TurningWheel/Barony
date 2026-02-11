@@ -28,7 +28,9 @@
 #include "../colors.hpp"
 #include "../book.hpp"
 #include "../player_slot_map.hpp"
+#ifdef BARONY_SMOKE_TESTS
 #include "../smoke/SmokeTestHooks.hpp"
+#endif
 #include "../ui/MainMenu.hpp"
 
 #include <assert.h>
@@ -292,7 +294,9 @@ struct StatusEffectQueueInitializer_t
 		for ( int i = 0; i < MAXPLAYERS; ++i )
 		{
 			StatusEffectQueue[i].player = i;
+#ifdef BARONY_SMOKE_TESTS
 			SmokeTestHooks::GameUI::recordStatusEffectQueueInit(i, StatusEffectQueue[i].player);
+#endif
 		}
 	}
 } StatusEffectQueueInitializer;
@@ -7144,7 +7148,9 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 void createStatusEffectQueue(const int player)
 {
 	auto& statusEffectQueue = StatusEffectQueue[player];
+#ifdef BARONY_SMOKE_TESTS
 	SmokeTestHooks::GameUI::traceStatusEffectQueueCreate(player, statusEffectQueue.player);
+#endif
 	if ( statusEffectQueue.statusEffectFrame )
 	{
 		return;
@@ -9888,7 +9894,9 @@ void StatusEffectQueue_t::updateEntryImage(StatusEffectQueueEntry_t& entry, Fram
 void updateStatusEffectQueue(const int player)
 {
 	auto& statusEffectQueue = StatusEffectQueue[player];
+#ifdef BARONY_SMOKE_TESTS
 	SmokeTestHooks::GameUI::traceStatusEffectQueueUpdate(player, statusEffectQueue.player);
+#endif
 	Frame* statusEffectFrame = statusEffectQueue.getStatusEffectFrame();
 	if ( !statusEffectFrame )
 	{

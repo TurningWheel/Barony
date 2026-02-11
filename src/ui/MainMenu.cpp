@@ -26,7 +26,9 @@
 #include "../colors.hpp"
 #include "../book.hpp"
 #include "../scrolls.hpp"
+#ifdef BARONY_SMOKE_TESTS
 #include "../smoke/SmokeTestHooks.hpp"
+#endif
 
 #include <algorithm>
 #include <cassert>
@@ -103,6 +105,16 @@ namespace MainMenu {
 	};
 	static HeloChunkReassemblyState g_heloChunkReassemblyState;
 
+#ifdef BARONY_SMOKE_TESTS
+	using HeloChunkSendPlanEntry = SmokeTestHooks::MainMenu::HeloChunkSendPlanEntry;
+#else
+	struct HeloChunkSendPlanEntry
+	{
+		int chunkIndex = 0;
+		bool corruptPayload = false;
+	};
+#endif
+
 	static Uint16 nextHeloTransferIdForPlayer(const int player)
 	{
 		if ( player < 0 || player >= MAXPLAYERS )
@@ -148,15 +160,11 @@ namespace MainMenu {
 			return false;
 		}
 
-		static const bool smokePayloadOverrideEnabled =
-			SmokeTestHooks::MainMenu::isHeloChunkPayloadOverrideEnvEnabled()
-			&& SmokeTestHooks::MainMenu::hasHeloChunkPayloadOverride();
 		int configuredChunkPayloadMax = kHeloChunkPayloadMax;
-		if ( smokePayloadOverrideEnabled )
-		{
-			configuredChunkPayloadMax =
-				SmokeTestHooks::MainMenu::heloChunkPayloadMaxOverride(kHeloChunkPayloadMax);
-		}
+#ifdef BARONY_SMOKE_TESTS
+		configuredChunkPayloadMax =
+			SmokeTestHooks::MainMenu::heloChunkPayloadMaxOverride(kHeloChunkPayloadMax);
+#endif
 		const int chunkPayloadMax = std::min(configuredChunkPayloadMax, NET_PACKET_SIZE - kHeloChunkHeaderSize);
 		if ( chunkPayloadMax <= 0 )
 		{
@@ -189,13 +197,15 @@ namespace MainMenu {
 			chunkLens[chunkIndex] = chunkLen;
 		}
 
-		std::vector<SmokeTestHooks::MainMenu::HeloChunkSendPlanEntry> sendPlan;
+		std::vector<HeloChunkSendPlanEntry> sendPlan;
 		sendPlan.reserve(chunkCount + 1);
 		for ( int chunkIndex = 0; chunkIndex < chunkCount; ++chunkIndex )
 		{
-			sendPlan.push_back(SmokeTestHooks::MainMenu::HeloChunkSendPlanEntry{ chunkIndex, false });
+			sendPlan.push_back(HeloChunkSendPlanEntry{ chunkIndex, false });
 		}
+#ifdef BARONY_SMOKE_TESTS
 		SmokeTestHooks::MainMenu::applyHeloChunkTxModePlan(sendPlan, chunkCount, transferId);
+#endif
 
 		for ( const auto& planned : sendPlan )
 		{
@@ -233,15 +243,11 @@ namespace MainMenu {
 
 	static bool ingestHeloChunkAndMaybeAssemble()
 	{
-		static const bool smokePayloadOverrideEnabled =
-			SmokeTestHooks::MainMenu::isHeloChunkPayloadOverrideEnvEnabled()
-			&& SmokeTestHooks::MainMenu::hasHeloChunkPayloadOverride();
 		int configuredChunkPayloadMax = kHeloChunkPayloadMax;
-		if ( smokePayloadOverrideEnabled )
-		{
-			configuredChunkPayloadMax =
-				SmokeTestHooks::MainMenu::heloChunkPayloadMaxOverride(kHeloChunkPayloadMax);
-		}
+#ifdef BARONY_SMOKE_TESTS
+		configuredChunkPayloadMax =
+			SmokeTestHooks::MainMenu::heloChunkPayloadMaxOverride(kHeloChunkPayloadMax);
+#endif
 		const int chunkPayloadMax = std::min(configuredChunkPayloadMax, NET_PACKET_SIZE - kHeloChunkHeaderSize);
 		if ( chunkPayloadMax <= 0 )
 		{
@@ -1274,6 +1280,7 @@ namespace MainMenu {
 	static bool hostLANLobbyInternal(bool playSound);
 	static bool connectToServer(const char* address, void* pLobby, LobbyType lobbyType);
 	static void startGame();
+	static void kickPlayer(int index);
 
 	static void sendPlayerOverNet();
 	static void sendReadyOverNet(int index, bool ready);
@@ -1517,19 +1524,16 @@ namespace MainMenu {
 		if (back) {
 		    back->setDisabled(widget.findWidget("dimmer", false) != nullptr);
 		}
-		static const bool smokeAutopilotEnabled =
-			SmokeTestHooks::MainMenu::isAutopilotEnvEnabled()
-			&& SmokeTestHooks::MainMenu::isAutopilotEnabled();
-		if ( smokeAutopilotEnabled )
-		{
-			static const SmokeTestHooks::MainMenu::AutopilotCallbacks smokeCallbacks{
-				&smokeHostLANLobbyNoSound,
-				&smokeConnectToLanServer,
-				&startGame,
-				&createReadyStone
-			};
-			SmokeTestHooks::MainMenu::tickAutopilot(smokeCallbacks);
-		}
+#ifdef BARONY_SMOKE_TESTS
+		static const SmokeTestHooks::MainMenu::AutopilotCallbacks smokeCallbacks{
+			&smokeHostLANLobbyNoSound,
+			&smokeConnectToLanServer,
+			&startGame,
+			&createReadyStone,
+			&kickPlayer
+		};
+		SmokeTestHooks::MainMenu::tickAutopilot(smokeCallbacks);
+#endif
 	}
 
 	static void updateSliderArrows(Frame& frame) {
@@ -12004,7 +12008,9 @@ bind_failed:
 				sendPacketSafe(net_sock, -1, net_packet, player - 1);
 				++readyEntriesSent;
 			}
+#ifdef BARONY_SMOKE_TESTS
 			SmokeTestHooks::MainMenu::traceReadyStateSnapshotSent(player, readyEntriesSent);
+#endif
 			return true;
 		}
 
@@ -12017,8 +12023,10 @@ bind_failed:
 			pendingReadyStateSync[player] = true;
 			pendingReadyStateSyncTick[player] = ticks + TICKS_PER_SECOND / 2;
 			pendingReadyStateSyncAttempts[player] = 3;
+#ifdef BARONY_SMOKE_TESTS
 			SmokeTestHooks::MainMenu::traceReadyStateSnapshotQueued(player,
 				pendingReadyStateSyncAttempts[player], pendingReadyStateSyncTick[player]);
+#endif
 		}
 
 		static void flushPendingReadyStateSnapshots()
@@ -19542,7 +19550,9 @@ failed:
 			auto index = reinterpret_cast<intptr_t>(field->getUserData());
 			field->setColor(playerColor((int)index, colorblind_lobby, false));
 			});
+#ifdef BARONY_SMOKE_TESTS
 		SmokeTestHooks::MainMenu::traceLobbyAccountLabelResolved(index, players[index]->getAccountName());
+#endif
 
         if (local) {
             static auto cancel_fn = [](int index){
@@ -19821,20 +19831,17 @@ failed:
 					newPlayer[c] = true;
 				}
 				if (type != LobbyType::LobbyJoined || c == clientnum) {
-						const bool lockExtraSlotsByDefault =
-							type == LobbyType::LobbyLAN || type == LobbyType::LobbyOnline;
-						int defaultLobbyPlayerCount = 4;
-						if ( lockExtraSlotsByDefault )
-						{
-							static const bool smokeHostSlotsEnabled =
-								SmokeTestHooks::MainMenu::isAutopilotEnvEnabled()
-								&& SmokeTestHooks::MainMenu::isAutopilotHostEnabled();
-							if ( smokeHostSlotsEnabled )
+							const bool lockExtraSlotsByDefault =
+								type == LobbyType::LobbyLAN || type == LobbyType::LobbyOnline;
+							int defaultLobbyPlayerCount = 4;
+#ifdef BARONY_SMOKE_TESTS
+							if ( lockExtraSlotsByDefault )
 							{
-								defaultLobbyPlayerCount = SmokeTestHooks::MainMenu::expectedHostLobbyPlayerSlots(4);
+								defaultLobbyPlayerCount =
+									SmokeTestHooks::MainMenu::expectedHostLobbyPlayerSlots(defaultLobbyPlayerCount);
 							}
-						}
-		            playerSlotsLocked[c] = lockExtraSlotsByDefault && c >= defaultLobbyPlayerCount;
+#endif
+				            playerSlotsLocked[c] = lockExtraSlotsByDefault && c >= defaultLobbyPlayerCount;
 
 					bool replayedLastCharacter = false;
 					if ( type == LobbyType::LobbyLAN )

@@ -1,7 +1,6 @@
 **/books/*
 build/*
-build-mac/
-build-mac-steamcheck/
+build-*/
 tests/smoke/artifacts/
 docker/
 **/data/*

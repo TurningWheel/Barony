@@ -35,7 +35,9 @@
 #include "scores.hpp"
 #include "colors.hpp"
 #include "mod_tools.hpp"
+#ifdef BARONY_SMOKE_TESTS
 #include "smoke/SmokeTestHooks.hpp"
+#endif
 #include "lobbies.hpp"
 #include "ui/MainMenu.hpp"
 #include "ui/LoadingScreen.hpp"
@@ -90,82 +92,32 @@ constexpr int kHeloSinglePacketMax = 1100;
 constexpr int kHeloChunkMaxCount = 32;
 static Uint16 g_heloTransferId[MAXPLAYERS] = { 0 };
 
-std::string toLowerCopy(const char* value)
+#ifdef BARONY_SMOKE_TESTS
+using HeloChunkSendPlanEntry = SmokeTestHooks::MainMenu::HeloChunkSendPlanEntry;
+#else
+struct HeloChunkSendPlanEntry
 {
-	std::string result = value ? value : "";
-	for ( auto& ch : result )
-	{
-		ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
-	}
-	return result;
-}
-
-bool parseEnvBool(const char* key, const bool fallback)
-{
-	const char* raw = std::getenv(key);
-	if ( !raw || !raw[0] )
-	{
-		return fallback;
-	}
-	const std::string value = toLowerCopy(raw);
-	if ( value == "1" || value == "true" || value == "yes" || value == "on" )
-	{
-		return true;
-	}
-	if ( value == "0" || value == "false" || value == "no" || value == "off" )
-	{
-		return false;
-	}
-	return fallback;
-}
-
-int parseEnvInt(const char* key, const int fallback, const int minValue, const int maxValue)
-{
-	const char* raw = std::getenv(key);
-	if ( !raw || !raw[0] )
-	{
-		return fallback;
-	}
-	char* end = nullptr;
-	const long parsed = std::strtol(raw, &end, 10);
-	if ( end == raw || (end && *end != '\0') )
-	{
-		return fallback;
-	}
-	return std::max(minValue, std::min(maxValue, static_cast<int>(parsed)));
-}
+	int chunkIndex = 0;
+	bool corruptPayload = false;
+};
+#endif
 
 bool forceChunkedHeloForSmoke()
 {
-	static bool initialized = false;
-	static bool enabled = false;
-	if ( !initialized )
-	{
-		initialized = true;
-		enabled = parseEnvBool("BARONY_SMOKE_FORCE_HELO_CHUNK", false);
-		if ( enabled )
-		{
-			printlog("[SMOKE]: BARONY_SMOKE_FORCE_HELO_CHUNK is enabled");
-		}
-	}
-	return enabled;
+#ifdef BARONY_SMOKE_TESTS
+	return SmokeTestHooks::Net::isForceHeloChunkEnabled();
+#else
+	return false;
+#endif
 }
 
 int heloChunkPayloadMax()
 {
-	static bool initialized = false;
-	static int configured = kHeloChunkPayloadMax;
-	if ( !initialized )
-	{
-		initialized = true;
-		configured = parseEnvInt("BARONY_SMOKE_HELO_CHUNK_PAYLOAD_MAX",
-			kHeloChunkPayloadMax, 64, kHeloChunkPayloadMax);
-		if ( configured != kHeloChunkPayloadMax )
-		{
-			printlog("[SMOKE]: using HELO chunk payload max override: %d", configured);
-		}
-	}
-	return configured;
+#ifdef BARONY_SMOKE_TESTS
+	return SmokeTestHooks::Net::heloChunkPayloadMaxOverride(kHeloChunkPayloadMax, 64);
+#else
+	return kHeloChunkPayloadMax;
+#endif
 }
 
 Uint16 nextHeloTransferIdForPlayer(const int player)
@@ -223,13 +175,15 @@ bool sendChunkedHeloToHost(const int hostnum, const IPaddress& destination, cons
 		chunkLens[chunkIndex] = chunkLen;
 	}
 
-	std::vector<SmokeTestHooks::MainMenu::HeloChunkSendPlanEntry> sendPlan;
+	std::vector<HeloChunkSendPlanEntry> sendPlan;
 	sendPlan.reserve(chunkCount + 1);
 	for ( int chunkIndex = 0; chunkIndex < chunkCount; ++chunkIndex )
 	{
-		sendPlan.push_back(SmokeTestHooks::MainMenu::HeloChunkSendPlanEntry{ chunkIndex, false });
+		sendPlan.push_back(HeloChunkSendPlanEntry{ chunkIndex, false });
 	}
+#ifdef BARONY_SMOKE_TESTS
 	SmokeTestHooks::MainMenu::applyHeloChunkTxModePlan(sendPlan, chunkCount, transferId);
+#endif
 
 	for ( const auto& planned : sendPlan )
 	{
@@ -1800,7 +1754,9 @@ NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest(int& outResult, bool loc
 		net_packet->len = 8;
 		memcpy(net_packet->data, "HELO", 4);
 		SDLNet_Write32(result, &net_packet->data[4]); // error code for client to interpret
+#ifdef BARONY_SMOKE_TESTS
 		SmokeTestHooks::Net::traceLobbyJoinReject(result, net_packet->data[56], lockedSlots, client_disconnected);
+#endif
 		printlog("sending error code %d to client.\n", result);
 		if ( directConnect )
 		{

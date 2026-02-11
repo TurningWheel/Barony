@@ -31,6 +31,20 @@ else()
 	set (BARONY_SUPER_MULTIPLAYER 0)
 endif()
 
+if (DEFINED ENV{BARONY_SMOKE_TESTS} AND NOT DEFINED BARONY_SMOKE_TESTS)
+	set (BARONY_SMOKE_TESTS $ENV{BARONY_SMOKE_TESTS})
+endif()
+
+if (NOT DEFINED BARONY_SMOKE_TESTS)
+	option(BARONY_SMOKE_TESTS "Compile smoke-test hooks and smoke instrumentation call sites" OFF)
+endif()
+
+if (BARONY_SMOKE_TESTS)
+	set (BARONY_SMOKE_TESTS 1)
+else()
+	set (BARONY_SMOKE_TESTS 0)
+endif()
+
 if (DEFINED ENV{OPTIMIZATION_LEVEL})
 	set (OPTIMIZATION_LEVEL $ENV{OPTIMIZATION_LEVEL})
 else()
@@ -230,6 +244,12 @@ if (BARONY_SUPER_MULTIPLAYER)
 	message("Building with Barony Super Multiplayer")
 else()
 	message("Building without Barony Super Multiplayer")
+endif()
+
+if (BARONY_SMOKE_TESTS)
+	message("Building with smoke-test instrumentation")
+else()
+	message("Building without smoke-test instrumentation")
 endif()
 
 if (EOS_ENABLED)

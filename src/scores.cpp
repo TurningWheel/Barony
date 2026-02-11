@@ -27,6 +27,9 @@
 #include "mod_tools.hpp"
 #include "lobbies.hpp"
 #include "shops.hpp"
+#ifdef BARONY_SMOKE_TESTS
+#include "smoke/SmokeTestHooks.hpp"
+#endif
 #ifdef USE_PLAYFAB
 #include "playfab.hpp"
 #endif
@@ -6098,6 +6101,16 @@ int saveGame(int saveIndex) {
 	std::string savefile = setSaveGameFileName(multiplayer == SINGLE, SaveFileType::JSON, saveIndex);
 	completePath(path, savefile.c_str(), outputdir);
 	auto result = FileHelper::writeObject(path, *cvar_saveText ? EFileFormat::Json_Compact : EFileFormat::Binary, info);
+#ifdef BARONY_SMOKE_TESTS
+	if ( result == true && SmokeTestHooks::SaveReload::isOwnerEncodingSweepEnabled() )
+	{
+		if ( !SmokeTestHooks::SaveReload::runOwnerEncodingSweep(multiplayer == SINGLE, saveIndex) )
+		{
+			printlog("[SMOKE]: save_reload_owner sweep failed");
+			return 1;
+		}
+	}
+#endif
 	return result == true ? 0 : 1;
 }
 
