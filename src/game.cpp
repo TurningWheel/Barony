@@ -1831,6 +1831,9 @@ void gameLogic(void)
 
 #ifdef BARONY_SMOKE_TESTS
 				SmokeTestHooks::Gameplay::tickAutoEnterDungeon();
+				SmokeTestHooks::Gameplay::tickRemoteCombatAutopilot();
+				SmokeTestHooks::Gameplay::tickLocalSplitscreenBaseline();
+				SmokeTestHooks::Gameplay::tickLocalSplitscreenCap();
 #endif
 				if ( loadnextlevel == true )
 				{

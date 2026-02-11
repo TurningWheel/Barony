@@ -31,6 +31,27 @@ REQUIRE_ACCOUNT_LABELS=0
 AUTO_KICK_TARGET_SLOT=0
 AUTO_KICK_DELAY_SECS=2
 REQUIRE_AUTO_KICK=0
+TRACE_SLOT_LOCKS=0
+REQUIRE_DEFAULT_SLOT_LOCKS=0
+AUTO_PLAYER_COUNT_TARGET=0
+AUTO_PLAYER_COUNT_DELAY_SECS=2
+TRACE_PLAYER_COUNT_COPY=0
+REQUIRE_PLAYER_COUNT_COPY=0
+EXPECT_PLAYER_COUNT_COPY_VARIANT=""
+TRACE_LOBBY_PAGE_STATE=0
+REQUIRE_LOBBY_PAGE_STATE=0
+REQUIRE_LOBBY_PAGE_FOCUS_MATCH=0
+AUTO_LOBBY_PAGE_SWEEP=0
+AUTO_LOBBY_PAGE_DELAY_SECS=2
+REQUIRE_LOBBY_PAGE_SWEEP=0
+TRACE_REMOTE_COMBAT_SLOT_BOUNDS=0
+REQUIRE_REMOTE_COMBAT_SLOT_BOUNDS=0
+REQUIRE_REMOTE_COMBAT_EVENTS=0
+AUTO_PAUSE_PULSES=0
+AUTO_PAUSE_DELAY_SECS=2
+AUTO_PAUSE_HOLD_SECS=1
+AUTO_REMOTE_COMBAT_PULSES=0
+AUTO_REMOTE_COMBAT_DELAY_SECS=2
 KEEP_RUNNING=0
 SEED_CONFIG_PATH="$HOME/.barony/config/config.json"
 SEED_BOOKS_PATH="$HOME/.barony/books/compiled_books.json"
@@ -74,6 +95,43 @@ Options:
   --auto-kick-target-slot <n>   Host smoke autopilot kicks this player slot (1..14, 0 disables).
   --auto-kick-delay <sec>       Delay after full lobby before auto-kick (default: 2).
   --require-auto-kick <0|1>     Require smoke auto-kick verification before pass.
+  --trace-slot-locks <0|1>      Emit smoke slot-lock snapshots during lobby initialization.
+  --require-default-slot-locks <0|1>
+                                Require default host slot-lock snapshot assertions.
+  --auto-player-count-target <n>
+                                Host smoke autopilot requests this lobby player-count target (2..15, 0 disables).
+  --auto-player-count-delay <sec>
+                                Delay after full lobby before host requests player-count change.
+  --trace-player-count-copy <0|1>
+                                Emit smoke logs for occupied-slot count-reduction kick prompt copy.
+  --require-player-count-copy <0|1>
+                                Require player-count prompt trace before pass.
+  --expect-player-count-copy-variant <name>
+                                Expected prompt variant when requiring player-count copy:
+                                single, double, multi, warning-only, none.
+  --trace-lobby-page-state <0|1>
+                                Emit smoke logs for lobby page/focus/alignment snapshots while paging.
+  --require-lobby-page-state <0|1>
+                                Require lobby page alignment snapshot assertions before pass.
+  --require-lobby-page-focus-match <0|1>
+                                Require focused widget page match for traced lobby snapshots.
+  --auto-lobby-page-sweep <0|1> Host smoke autopilot sweeps visible lobby pages after full lobby.
+  --auto-lobby-page-delay <sec> Delay between host auto page changes (default: 2).
+  --require-lobby-page-sweep <0|1>
+                                Require full visible-page sweep coverage before pass.
+  --trace-remote-combat-slot-bounds <0|1>
+                                Emit smoke logs for remote-combat slot bound checks/events.
+  --require-remote-combat-slot-bounds <0|1>
+                                Require zero remote-combat slot-check failures and at least one success.
+  --require-remote-combat-events <0|1>
+                                Require remote-combat event coverage (pause/unpause and enemy-bar pulses).
+  --auto-pause-pulses <n>       Host smoke autopilot issues pause/unpause pulses (0 disables).
+  --auto-pause-delay <sec>      Delay before each pause pulse (default: 2).
+  --auto-pause-hold <sec>       Pause hold duration before unpause (default: 1).
+  --auto-remote-combat-pulses <n>
+                                Host smoke autopilot triggers enemy-bar combat pulses (0 disables).
+  --auto-remote-combat-delay <sec>
+                                Delay between host enemy-bar combat pulses (default: 2).
   --outdir <path>               Artifact directory.
   --keep-running                Do not kill launched instances on exit.
   -h, --help                    Show this help.
@@ -128,6 +186,67 @@ count_regex_lines() {
 		return
 	fi
 	rg -c "$pattern" "$file" 2>/dev/null || echo 0
+}
+
+count_fixed_lines_across_logs() {
+	local needle="$1"
+	shift
+	local total=0
+	local file
+	for file in "$@"; do
+		if [[ ! -f "$file" ]]; then
+			continue
+		fi
+		local count
+		count="$(rg -F -c "$needle" "$file" 2>/dev/null || echo 0)"
+		total=$((total + count))
+	done
+	echo "$total"
+}
+
+count_regex_lines_across_logs() {
+	local pattern="$1"
+	shift
+	local total=0
+	local file
+	for file in "$@"; do
+		if [[ ! -f "$file" ]]; then
+			continue
+		fi
+		local count
+		count="$(rg -c "$pattern" "$file" 2>/dev/null || echo 0)"
+		total=$((total + count))
+	done
+	echo "$total"
+}
+
+collect_remote_combat_event_contexts() {
+	if (($# == 0)); then
+		echo ""
+		return
+	fi
+	local contexts=""
+	local file
+	for file in "$@"; do
+		if [[ ! -f "$file" ]]; then
+			continue
+		fi
+		local line
+		while IFS= read -r line; do
+			[[ -z "$line" ]] && continue
+			local context
+			context="$(echo "$line" | sed -nE 's/.*context=([^ ]+).*/\1/p')"
+			if [[ -z "$context" ]]; then
+				continue
+			fi
+			contexts+="${context}"$'\n'
+		done < <(rg -F "[SMOKE]: remote-combat event context=" "$file" || true)
+	done
+	if [[ -z "$contexts" ]]; then
+		echo ""
+		return
+	fi
+	printf '%s' "$contexts" | sed '/^$/d' | sort -u | paste -sd';' -
 }
 
 canonicalize_tx_mode() {
@@ -369,6 +488,183 @@ is_account_label_slot_coverage_ok() {
 	echo 1
 }
 
+is_default_slot_lock_snapshot_ok() {
+	local host_log="$1"
+	local expected_players="$2"
+	if [[ ! -f "$host_log" ]]; then
+		echo 0
+		return
+	fi
+	local line
+	line="$(rg -F "[SMOKE]: lobby slot-lock snapshot context=lobby-init " "$host_log" | head -n 1 || true)"
+	if [[ -z "$line" ]]; then
+		echo 0
+		return
+	fi
+	local configured free_unlocked free_locked occupied
+	configured="$(echo "$line" | sed -nE 's/.*configured=([0-9]+).*/\1/p')"
+	free_unlocked="$(echo "$line" | sed -nE 's/.*free_unlocked=([0-9]+).*/\1/p')"
+	free_locked="$(echo "$line" | sed -nE 's/.*free_locked=([0-9]+).*/\1/p')"
+	occupied="$(echo "$line" | sed -nE 's/.*occupied=([0-9]+).*/\1/p')"
+	if [[ -z "$configured" || -z "$free_unlocked" || -z "$free_locked" || -z "$occupied" ]]; then
+		echo 0
+		return
+	fi
+	local expected_unlocked=$(( expected_players > 0 ? expected_players - 1 : 0 ))
+	local max_remote_slots=$(( 15 - 1 ))
+	local expected_locked=$(( max_remote_slots - expected_unlocked ))
+	if (( expected_locked < 0 )); then
+		expected_locked=0
+	fi
+	if (( configured == expected_players && free_unlocked == expected_unlocked && free_locked == expected_locked && occupied == 0 )); then
+		echo 1
+	else
+		echo 0
+	fi
+}
+
+collect_player_count_prompt_variants() {
+	local host_log="$1"
+	if [[ ! -f "$host_log" ]]; then
+		echo ""
+		return
+	fi
+	local variants
+	variants="$(rg -o 'lobby player-count prompt target=[0-9]+ kicked=[0-9]+ variant=[a-z-]+' "$host_log" \
+		| sed -nE 's/.*variant=([a-z-]+).*/\1/p' \
+		| sort -u \
+		| paste -sd';' - || true)"
+	echo "$variants"
+}
+
+extract_last_player_count_prompt_field() {
+	local host_log="$1"
+	local key="$2"
+	if [[ ! -f "$host_log" ]]; then
+		echo ""
+		return
+	fi
+	local line
+	line="$(rg -F "[SMOKE]: lobby player-count prompt target=" "$host_log" | tail -n 1 || true)"
+	if [[ -z "$line" ]]; then
+		echo ""
+		return
+	fi
+	case "$key" in
+		target)
+			echo "$line" | sed -nE 's/.*target=([0-9]+).*/\1/p'
+			;;
+		kicked)
+			echo "$line" | sed -nE 's/.*kicked=([0-9]+).*/\1/p'
+			;;
+		variant)
+			echo "$line" | sed -nE 's/.*variant=([a-z-]+).*/\1/p'
+			;;
+		*)
+			echo ""
+			;;
+	esac
+}
+
+collect_lobby_page_snapshot_metrics() {
+	local host_log="$1"
+	if [[ ! -f "$host_log" ]]; then
+		echo "0|0|0||0|0|0|0|0|0|0|0"
+		return
+	fi
+
+	local lines
+	lines="$(rg -F "[SMOKE]: lobby page snapshot context=visible-page " "$host_log" || true)"
+	if [[ -z "$lines" ]]; then
+		echo "0|0|0||0|0|0|0|0|0|0|0"
+		return
+	fi
+
+	local snapshot_lines=0
+	local pages_seen=""
+	local page_count_total=0
+	local focus_mismatch_lines=0
+	local cards_misaligned_max=0
+	local paperdolls_misaligned_max=0
+	local pings_misaligned_max=0
+	local warnings_present_lines=0
+	local warnings_max_abs_delta=0
+	local countdown_present_lines=0
+	local countdown_max_abs_delta=0
+
+	local line
+	while IFS= read -r line; do
+		[[ -z "$line" ]] && continue
+		snapshot_lines=$((snapshot_lines + 1))
+
+		local page page_total
+		page="$(echo "$line" | sed -nE 's/.*page=([0-9]+)\/([0-9]+).*/\1/p')"
+		page_total="$(echo "$line" | sed -nE 's/.*page=([0-9]+)\/([0-9]+).*/\2/p')"
+		if [[ -n "$page_total" ]]; then
+			page_count_total="$page_total"
+		fi
+		if [[ -n "$page" ]]; then
+			if [[ ";$pages_seen;" != *";$page;"* ]]; then
+				if [[ -n "$pages_seen" ]]; then
+					pages_seen+=";"
+				fi
+				pages_seen+="$page"
+			fi
+		fi
+
+		local focus_match cards_misaligned paperdolls_misaligned pings_misaligned
+		focus_match="$(echo "$line" | sed -nE 's/.*focus_page_match=([0-9]+).*/\1/p')"
+		cards_misaligned="$(echo "$line" | sed -nE 's/.*cards_misaligned=([0-9]+).*/\1/p')"
+		paperdolls_misaligned="$(echo "$line" | sed -nE 's/.*paperdolls_misaligned=([0-9]+).*/\1/p')"
+		pings_misaligned="$(echo "$line" | sed -nE 's/.*pings_misaligned=([0-9]+).*/\1/p')"
+
+		if [[ "$focus_match" == "0" ]]; then
+			focus_mismatch_lines=$((focus_mismatch_lines + 1))
+		fi
+		if [[ -n "$cards_misaligned" ]] && (( cards_misaligned > cards_misaligned_max )); then
+			cards_misaligned_max="$cards_misaligned"
+		fi
+		if [[ -n "$paperdolls_misaligned" ]] && (( paperdolls_misaligned > paperdolls_misaligned_max )); then
+			paperdolls_misaligned_max="$paperdolls_misaligned"
+		fi
+		if [[ -n "$pings_misaligned" ]] && (( pings_misaligned > pings_misaligned_max )); then
+			pings_misaligned_max="$pings_misaligned"
+		fi
+
+		local warnings_delta countdown_delta
+		warnings_delta="$(echo "$line" | sed -nE 's/.*warnings_center_delta=(-?[0-9]+).*/\1/p')"
+		countdown_delta="$(echo "$line" | sed -nE 's/.*countdown_center_delta=(-?[0-9]+).*/\1/p')"
+
+		if [[ -n "$warnings_delta" ]] && (( warnings_delta != 9999 )); then
+			warnings_present_lines=$((warnings_present_lines + 1))
+			local abs_warning="$warnings_delta"
+			if (( abs_warning < 0 )); then
+				abs_warning=$(( -abs_warning ))
+			fi
+			if (( abs_warning > warnings_max_abs_delta )); then
+				warnings_max_abs_delta="$abs_warning"
+			fi
+		fi
+		if [[ -n "$countdown_delta" ]] && (( countdown_delta != 9999 )); then
+			countdown_present_lines=$((countdown_present_lines + 1))
+			local abs_countdown="$countdown_delta"
+			if (( abs_countdown < 0 )); then
+				abs_countdown=$(( -abs_countdown ))
+			fi
+			if (( abs_countdown > countdown_max_abs_delta )); then
+				countdown_max_abs_delta="$abs_countdown"
+			fi
+		fi
+	done <<< "$lines"
+
+	local unique_pages_count=0
+	if [[ -n "$pages_seen" ]]; then
+		unique_pages_count="$(echo "$pages_seen" | awk -F';' '{print NF}')"
+	fi
+
+	echo "${snapshot_lines}|${unique_pages_count}|${page_count_total}|${pages_seen}|${focus_mismatch_lines}|${cards_misaligned_max}|${paperdolls_misaligned_max}|${pings_misaligned_max}|${warnings_present_lines}|${warnings_max_abs_delta}|${countdown_present_lines}|${countdown_max_abs_delta}"
+}
+
 extract_mapgen_metrics() {
 	local host_log="$1"
 	local line
@@ -513,6 +809,90 @@ while (($# > 0)); do
 			;;
 		--require-auto-kick)
 			REQUIRE_AUTO_KICK="${2:-}"
+			shift 2
+			;;
+		--trace-slot-locks)
+			TRACE_SLOT_LOCKS="${2:-}"
+			shift 2
+			;;
+		--require-default-slot-locks)
+			REQUIRE_DEFAULT_SLOT_LOCKS="${2:-}"
+			shift 2
+			;;
+		--auto-player-count-target)
+			AUTO_PLAYER_COUNT_TARGET="${2:-}"
+			shift 2
+			;;
+		--auto-player-count-delay)
+			AUTO_PLAYER_COUNT_DELAY_SECS="${2:-}"
+			shift 2
+			;;
+		--trace-player-count-copy)
+			TRACE_PLAYER_COUNT_COPY="${2:-}"
+			shift 2
+			;;
+		--require-player-count-copy)
+			REQUIRE_PLAYER_COUNT_COPY="${2:-}"
+			shift 2
+			;;
+		--expect-player-count-copy-variant)
+			EXPECT_PLAYER_COUNT_COPY_VARIANT="${2:-}"
+			shift 2
+			;;
+		--trace-lobby-page-state)
+			TRACE_LOBBY_PAGE_STATE="${2:-}"
+			shift 2
+			;;
+		--require-lobby-page-state)
+			REQUIRE_LOBBY_PAGE_STATE="${2:-}"
+			shift 2
+			;;
+		--require-lobby-page-focus-match)
+			REQUIRE_LOBBY_PAGE_FOCUS_MATCH="${2:-}"
+			shift 2
+			;;
+		--auto-lobby-page-sweep)
+			AUTO_LOBBY_PAGE_SWEEP="${2:-}"
+			shift 2
+			;;
+		--auto-lobby-page-delay)
+			AUTO_LOBBY_PAGE_DELAY_SECS="${2:-}"
+			shift 2
+			;;
+		--require-lobby-page-sweep)
+			REQUIRE_LOBBY_PAGE_SWEEP="${2:-}"
+			shift 2
+			;;
+		--trace-remote-combat-slot-bounds)
+			TRACE_REMOTE_COMBAT_SLOT_BOUNDS="${2:-}"
+			shift 2
+			;;
+		--require-remote-combat-slot-bounds)
+			REQUIRE_REMOTE_COMBAT_SLOT_BOUNDS="${2:-}"
+			shift 2
+			;;
+		--require-remote-combat-events)
+			REQUIRE_REMOTE_COMBAT_EVENTS="${2:-}"
+			shift 2
+			;;
+		--auto-pause-pulses)
+			AUTO_PAUSE_PULSES="${2:-}"
+			shift 2
+			;;
+		--auto-pause-delay)
+			AUTO_PAUSE_DELAY_SECS="${2:-}"
+			shift 2
+			;;
+		--auto-pause-hold)
+			AUTO_PAUSE_HOLD_SECS="${2:-}"
+			shift 2
+			;;
+		--auto-remote-combat-pulses)
+			AUTO_REMOTE_COMBAT_PULSES="${2:-}"
+			shift 2
+			;;
+		--auto-remote-combat-delay)
+			AUTO_REMOTE_COMBAT_DELAY_SECS="${2:-}"
 			shift 2
 			;;
 		--outdir)
@@ -681,6 +1061,148 @@ if (( AUTO_KICK_TARGET_SLOT > 0 )) && (( AUTO_KICK_TARGET_SLOT >= EXPECTED_PLAYE
 	echo "--auto-kick-target-slot must be less than --expected-players" >&2
 	exit 1
 fi
+if ! is_uint "$TRACE_SLOT_LOCKS" || (( TRACE_SLOT_LOCKS > 1 )); then
+	echo "--trace-slot-locks must be 0 or 1" >&2
+	exit 1
+fi
+if ! is_uint "$REQUIRE_DEFAULT_SLOT_LOCKS" || (( REQUIRE_DEFAULT_SLOT_LOCKS > 1 )); then
+	echo "--require-default-slot-locks must be 0 or 1" >&2
+	exit 1
+fi
+if (( REQUIRE_DEFAULT_SLOT_LOCKS )) && (( TRACE_SLOT_LOCKS == 0 )); then
+	echo "--require-default-slot-locks requires --trace-slot-locks 1" >&2
+	exit 1
+fi
+if ! is_uint "$AUTO_PLAYER_COUNT_TARGET" || (( AUTO_PLAYER_COUNT_TARGET < 0 || AUTO_PLAYER_COUNT_TARGET > 15 )); then
+	echo "--auto-player-count-target must be 0..15" >&2
+	exit 1
+fi
+if (( AUTO_PLAYER_COUNT_TARGET > 0 )) && (( AUTO_PLAYER_COUNT_TARGET < 2 )); then
+	echo "--auto-player-count-target must be 2..15 when enabled" >&2
+	exit 1
+fi
+if ! is_uint "$AUTO_PLAYER_COUNT_DELAY_SECS"; then
+	echo "--auto-player-count-delay must be a non-negative integer" >&2
+	exit 1
+fi
+if ! is_uint "$TRACE_PLAYER_COUNT_COPY" || (( TRACE_PLAYER_COUNT_COPY > 1 )); then
+	echo "--trace-player-count-copy must be 0 or 1" >&2
+	exit 1
+fi
+if ! is_uint "$REQUIRE_PLAYER_COUNT_COPY" || (( REQUIRE_PLAYER_COUNT_COPY > 1 )); then
+	echo "--require-player-count-copy must be 0 or 1" >&2
+	exit 1
+fi
+if (( REQUIRE_PLAYER_COUNT_COPY )) && (( TRACE_PLAYER_COUNT_COPY == 0 )); then
+	echo "--require-player-count-copy requires --trace-player-count-copy 1" >&2
+	exit 1
+fi
+if (( REQUIRE_PLAYER_COUNT_COPY )) && (( AUTO_PLAYER_COUNT_TARGET == 0 )); then
+	echo "--require-player-count-copy requires --auto-player-count-target > 0" >&2
+	exit 1
+fi
+if [[ -n "$EXPECT_PLAYER_COUNT_COPY_VARIANT" ]]; then
+	case "$EXPECT_PLAYER_COUNT_COPY_VARIANT" in
+		single|double|multi|warning-only|none)
+			;;
+		*)
+			echo "--expect-player-count-copy-variant must be one of: single, double, multi, warning-only, none" >&2
+			exit 1
+			;;
+	esac
+	if (( TRACE_PLAYER_COUNT_COPY == 0 )); then
+		echo "--expect-player-count-copy-variant requires --trace-player-count-copy 1" >&2
+		exit 1
+	fi
+	if (( AUTO_PLAYER_COUNT_TARGET == 0 )); then
+		echo "--expect-player-count-copy-variant requires --auto-player-count-target > 0" >&2
+		exit 1
+	fi
+fi
+if ! is_uint "$TRACE_LOBBY_PAGE_STATE" || (( TRACE_LOBBY_PAGE_STATE > 1 )); then
+	echo "--trace-lobby-page-state must be 0 or 1" >&2
+	exit 1
+fi
+if ! is_uint "$REQUIRE_LOBBY_PAGE_STATE" || (( REQUIRE_LOBBY_PAGE_STATE > 1 )); then
+	echo "--require-lobby-page-state must be 0 or 1" >&2
+	exit 1
+fi
+if ! is_uint "$REQUIRE_LOBBY_PAGE_FOCUS_MATCH" || (( REQUIRE_LOBBY_PAGE_FOCUS_MATCH > 1 )); then
+	echo "--require-lobby-page-focus-match must be 0 or 1" >&2
+	exit 1
+fi
+if (( REQUIRE_LOBBY_PAGE_STATE )) && (( TRACE_LOBBY_PAGE_STATE == 0 )); then
+	echo "--require-lobby-page-state requires --trace-lobby-page-state 1" >&2
+	exit 1
+fi
+if (( REQUIRE_LOBBY_PAGE_FOCUS_MATCH )) && (( TRACE_LOBBY_PAGE_STATE == 0 )); then
+	echo "--require-lobby-page-focus-match requires --trace-lobby-page-state 1" >&2
+	exit 1
+fi
+if (( REQUIRE_LOBBY_PAGE_FOCUS_MATCH )) && (( REQUIRE_LOBBY_PAGE_STATE == 0 )); then
+	echo "--require-lobby-page-focus-match requires --require-lobby-page-state 1" >&2
+	exit 1
+fi
+if ! is_uint "$AUTO_LOBBY_PAGE_SWEEP" || (( AUTO_LOBBY_PAGE_SWEEP > 1 )); then
+	echo "--auto-lobby-page-sweep must be 0 or 1" >&2
+	exit 1
+fi
+if ! is_uint "$AUTO_LOBBY_PAGE_DELAY_SECS"; then
+	echo "--auto-lobby-page-delay must be a non-negative integer" >&2
+	exit 1
+fi
+if ! is_uint "$REQUIRE_LOBBY_PAGE_SWEEP" || (( REQUIRE_LOBBY_PAGE_SWEEP > 1 )); then
+	echo "--require-lobby-page-sweep must be 0 or 1" >&2
+	exit 1
+fi
+if (( REQUIRE_LOBBY_PAGE_SWEEP )) && (( TRACE_LOBBY_PAGE_STATE == 0 )); then
+	echo "--require-lobby-page-sweep requires --trace-lobby-page-state 1" >&2
+	exit 1
+fi
+if (( REQUIRE_LOBBY_PAGE_SWEEP )) && (( AUTO_LOBBY_PAGE_SWEEP == 0 )); then
+	echo "--require-lobby-page-sweep requires --auto-lobby-page-sweep 1" >&2
+	exit 1
+fi
+if ! is_uint "$TRACE_REMOTE_COMBAT_SLOT_BOUNDS" || (( TRACE_REMOTE_COMBAT_SLOT_BOUNDS > 1 )); then
+	echo "--trace-remote-combat-slot-bounds must be 0 or 1" >&2
+	exit 1
+fi
+if ! is_uint "$REQUIRE_REMOTE_COMBAT_SLOT_BOUNDS" || (( REQUIRE_REMOTE_COMBAT_SLOT_BOUNDS > 1 )); then
+	echo "--require-remote-combat-slot-bounds must be 0 or 1" >&2
+	exit 1
+fi
+if ! is_uint "$REQUIRE_REMOTE_COMBAT_EVENTS" || (( REQUIRE_REMOTE_COMBAT_EVENTS > 1 )); then
+	echo "--require-remote-combat-events must be 0 or 1" >&2
+	exit 1
+fi
+if (( REQUIRE_REMOTE_COMBAT_SLOT_BOUNDS || REQUIRE_REMOTE_COMBAT_EVENTS )) && (( TRACE_REMOTE_COMBAT_SLOT_BOUNDS == 0 )); then
+	echo "--require-remote-combat-slot-bounds/--require-remote-combat-events require --trace-remote-combat-slot-bounds 1" >&2
+	exit 1
+fi
+if ! is_uint "$AUTO_PAUSE_PULSES" || (( AUTO_PAUSE_PULSES < 0 || AUTO_PAUSE_PULSES > 64 )); then
+	echo "--auto-pause-pulses must be 0..64" >&2
+	exit 1
+fi
+if ! is_uint "$AUTO_PAUSE_DELAY_SECS"; then
+	echo "--auto-pause-delay must be a non-negative integer" >&2
+	exit 1
+fi
+if ! is_uint "$AUTO_PAUSE_HOLD_SECS"; then
+	echo "--auto-pause-hold must be a non-negative integer" >&2
+	exit 1
+fi
+if ! is_uint "$AUTO_REMOTE_COMBAT_PULSES" || (( AUTO_REMOTE_COMBAT_PULSES < 0 || AUTO_REMOTE_COMBAT_PULSES > 64 )); then
+	echo "--auto-remote-combat-pulses must be 0..64" >&2
+	exit 1
+fi
+if ! is_uint "$AUTO_REMOTE_COMBAT_DELAY_SECS"; then
+	echo "--auto-remote-combat-delay must be a non-negative integer" >&2
+	exit 1
+fi
+if (( REQUIRE_REMOTE_COMBAT_EVENTS )) && (( AUTO_PAUSE_PULSES == 0 && AUTO_REMOTE_COMBAT_PULSES == 0 )); then
+	echo "--require-remote-combat-events requires at least one of --auto-pause-pulses or --auto-remote-combat-pulses" >&2
+	exit 1
+fi
 if [[ -z "$AUTO_ENTER_DUNGEON_REPEATS" ]]; then
 	AUTO_ENTER_DUNGEON_REPEATS="$MAPGEN_SAMPLES"
 fi
@@ -730,6 +1252,9 @@ launch_instance() {
 		"BARONY_SMOKE_HELO_CHUNK_PAYLOAD_MAX=$CHUNK_PAYLOAD_MAX"
 		"BARONY_SMOKE_HELO_CHUNK_TX_MODE=$HELO_CHUNK_TX_MODE"
 	)
+	if (( TRACE_REMOTE_COMBAT_SLOT_BOUNDS )); then
+		env_vars+=("BARONY_SMOKE_TRACE_REMOTE_COMBAT_SLOT_BOUNDS=1")
+	fi
 
 	if [[ "$role" == "host" ]]; then
 		env_vars+=(
@@ -749,6 +1274,40 @@ launch_instance() {
 		fi
 		if (( TRACE_ACCOUNT_LABELS )); then
 			env_vars+=("BARONY_SMOKE_TRACE_ACCOUNT_LABELS=1")
+		fi
+		if (( TRACE_SLOT_LOCKS )); then
+			env_vars+=("BARONY_SMOKE_TRACE_SLOT_LOCKS=1")
+		fi
+		if (( TRACE_PLAYER_COUNT_COPY )); then
+			env_vars+=("BARONY_SMOKE_TRACE_PLAYER_COUNT_COPY=1")
+		fi
+		if (( TRACE_LOBBY_PAGE_STATE )); then
+			env_vars+=("BARONY_SMOKE_TRACE_LOBBY_PAGE_STATE=1")
+		fi
+		if (( AUTO_PLAYER_COUNT_TARGET > 0 )); then
+			env_vars+=(
+				"BARONY_SMOKE_AUTO_PLAYER_COUNT_TARGET=$AUTO_PLAYER_COUNT_TARGET"
+				"BARONY_SMOKE_AUTO_PLAYER_COUNT_DELAY_SECS=$AUTO_PLAYER_COUNT_DELAY_SECS"
+			)
+		fi
+		if (( AUTO_LOBBY_PAGE_SWEEP )); then
+			env_vars+=(
+				"BARONY_SMOKE_AUTO_LOBBY_PAGE_SWEEP=1"
+				"BARONY_SMOKE_AUTO_LOBBY_PAGE_DELAY_SECS=$AUTO_LOBBY_PAGE_DELAY_SECS"
+			)
+		fi
+		if (( AUTO_PAUSE_PULSES > 0 )); then
+			env_vars+=(
+				"BARONY_SMOKE_AUTO_PAUSE_PULSES=$AUTO_PAUSE_PULSES"
+				"BARONY_SMOKE_AUTO_PAUSE_DELAY_SECS=$AUTO_PAUSE_DELAY_SECS"
+				"BARONY_SMOKE_AUTO_PAUSE_HOLD_SECS=$AUTO_PAUSE_HOLD_SECS"
+			)
+		fi
+		if (( AUTO_REMOTE_COMBAT_PULSES > 0 )); then
+			env_vars+=(
+				"BARONY_SMOKE_AUTO_REMOTE_COMBAT_PULSES=$AUTO_REMOTE_COMBAT_PULSES"
+				"BARONY_SMOKE_AUTO_REMOTE_COMBAT_DELAY_SECS=$AUTO_REMOTE_COMBAT_DELAY_SECS"
+			)
 		fi
 		if [[ -n "$MAPGEN_PLAYERS_OVERRIDE" ]]; then
 			env_vars+=("BARONY_SMOKE_MAPGEN_CONNECTED_PLAYERS=$MAPGEN_PLAYERS_OVERRIDE")
@@ -818,10 +1377,46 @@ account_label_ok=1
 auto_kick_ok=1
 auto_kick_ok_lines=0
 auto_kick_fail_lines=0
+slot_lock_snapshot_lines=0
+default_slot_lock_ok=1
+player_count_prompt_lines=0
+player_count_prompt_variants=""
+player_count_prompt_target=""
+player_count_prompt_kicked=""
+player_count_prompt_variant=""
+player_count_copy_ok=1
+lobby_page_snapshot_lines=0
+lobby_page_unique_count=0
+lobby_page_total_count=0
+lobby_page_visited=""
+lobby_focus_mismatch_lines=0
+lobby_cards_misaligned_max=0
+lobby_paperdolls_misaligned_max=0
+lobby_pings_misaligned_max=0
+lobby_warnings_present_lines=0
+lobby_warnings_max_abs_delta=0
+lobby_countdown_present_lines=0
+lobby_countdown_max_abs_delta=0
+lobby_page_state_ok=1
+lobby_page_sweep_ok=1
+remote_combat_slot_ok_lines=0
+remote_combat_slot_fail_lines=0
+remote_combat_event_lines=0
+remote_combat_event_contexts=""
+remote_combat_pause_action_lines=0
+remote_combat_pause_complete_lines=0
+remote_combat_enemy_bar_action_lines=0
+remote_combat_enemy_complete_lines=0
+remote_combat_slot_bounds_ok=1
+remote_combat_events_ok=1
 
 declare -a CLIENT_LOGS=()
 for ((i = 2; i <= INSTANCES; ++i)); do
 	CLIENT_LOGS+=("$INSTANCE_ROOT/home-${i}/.barony/log.txt")
+done
+declare -a ALL_LOGS=("$HOST_LOG")
+for client_log in "${CLIENT_LOGS[@]}"; do
+	ALL_LOGS+=("$client_log")
 done
 
 while (( SECONDS < deadline )); do
@@ -918,6 +1513,101 @@ while (( SECONDS < deadline )); do
 			auto_kick_ok=0
 		fi
 	fi
+	default_slot_lock_ok=1
+	if (( TRACE_SLOT_LOCKS )); then
+		slot_lock_snapshot_lines=$(count_fixed_lines "$HOST_LOG" "[SMOKE]: lobby slot-lock snapshot context=lobby-init")
+	fi
+	if (( REQUIRE_DEFAULT_SLOT_LOCKS )); then
+		default_slot_lock_ok=$(is_default_slot_lock_snapshot_ok "$HOST_LOG" "$EXPECTED_PLAYERS")
+	fi
+	player_count_copy_ok=1
+	if (( TRACE_PLAYER_COUNT_COPY )); then
+		player_count_prompt_lines=$(count_fixed_lines "$HOST_LOG" "[SMOKE]: lobby player-count prompt target=")
+		player_count_prompt_variants="$(collect_player_count_prompt_variants "$HOST_LOG")"
+		player_count_prompt_target="$(extract_last_player_count_prompt_field "$HOST_LOG" target)"
+		player_count_prompt_kicked="$(extract_last_player_count_prompt_field "$HOST_LOG" kicked)"
+		player_count_prompt_variant="$(extract_last_player_count_prompt_field "$HOST_LOG" variant)"
+	fi
+	if (( REQUIRE_PLAYER_COUNT_COPY )); then
+		if (( player_count_prompt_lines < 1 )); then
+			player_count_copy_ok=0
+		fi
+		if [[ -n "$EXPECT_PLAYER_COUNT_COPY_VARIANT" ]] && [[ "$player_count_prompt_variant" != "$EXPECT_PLAYER_COUNT_COPY_VARIANT" ]]; then
+			player_count_copy_ok=0
+		fi
+	fi
+	lobby_page_state_ok=1
+	lobby_page_sweep_ok=1
+	if (( TRACE_LOBBY_PAGE_STATE )); then
+		local_page_metrics="$(collect_lobby_page_snapshot_metrics "$HOST_LOG")"
+		IFS='|' read -r lobby_page_snapshot_lines lobby_page_unique_count lobby_page_total_count lobby_page_visited \
+			lobby_focus_mismatch_lines lobby_cards_misaligned_max lobby_paperdolls_misaligned_max \
+			lobby_pings_misaligned_max lobby_warnings_present_lines lobby_warnings_max_abs_delta \
+			lobby_countdown_present_lines lobby_countdown_max_abs_delta <<< "$local_page_metrics"
+	fi
+	if (( REQUIRE_LOBBY_PAGE_STATE )); then
+		if (( lobby_page_snapshot_lines < 1 )); then
+			lobby_page_state_ok=0
+		fi
+		if (( lobby_cards_misaligned_max > 0 || lobby_paperdolls_misaligned_max > 0 || lobby_pings_misaligned_max > 0 )); then
+			lobby_page_state_ok=0
+		fi
+		if (( lobby_warnings_present_lines > 0 && lobby_warnings_max_abs_delta > 2 )); then
+			lobby_page_state_ok=0
+		fi
+		if (( lobby_countdown_present_lines > 0 && lobby_countdown_max_abs_delta > 2 )); then
+			lobby_page_state_ok=0
+		fi
+	fi
+	if (( REQUIRE_LOBBY_PAGE_FOCUS_MATCH )) && (( lobby_focus_mismatch_lines > 0 )); then
+		lobby_page_state_ok=0
+	fi
+	if (( REQUIRE_LOBBY_PAGE_SWEEP )); then
+		if (( lobby_page_total_count < 1 || lobby_page_unique_count < lobby_page_total_count )); then
+			lobby_page_sweep_ok=0
+		fi
+	fi
+	remote_combat_slot_bounds_ok=1
+	remote_combat_events_ok=1
+	if (( TRACE_REMOTE_COMBAT_SLOT_BOUNDS || REQUIRE_REMOTE_COMBAT_SLOT_BOUNDS || REQUIRE_REMOTE_COMBAT_EVENTS )); then
+		remote_combat_slot_ok_lines=$(count_regex_lines_across_logs "\\[SMOKE\\]: remote-combat slot-check .* status=ok" "${ALL_LOGS[@]}")
+		remote_combat_slot_fail_lines=$(count_regex_lines_across_logs "\\[SMOKE\\]: remote-combat slot-check .* status=fail" "${ALL_LOGS[@]}")
+		remote_combat_event_lines=$(count_fixed_lines_across_logs "[SMOKE]: remote-combat event context=" "${ALL_LOGS[@]}")
+		remote_combat_event_contexts="$(collect_remote_combat_event_contexts "${ALL_LOGS[@]}")"
+		remote_combat_pause_action_lines=$(count_fixed_lines "$HOST_LOG" "[SMOKE]: remote-combat auto-pause action=")
+		remote_combat_pause_complete_lines=$(count_fixed_lines "$HOST_LOG" "[SMOKE]: remote-combat auto-pause complete pulses=")
+		remote_combat_enemy_bar_action_lines=$(count_fixed_lines "$HOST_LOG" "[SMOKE]: remote-combat auto-event action=enemy-bar")
+		remote_combat_enemy_complete_lines=$(count_fixed_lines "$HOST_LOG" "[SMOKE]: remote-combat auto-event complete pulses=")
+	fi
+	if (( REQUIRE_REMOTE_COMBAT_SLOT_BOUNDS )); then
+		if (( remote_combat_slot_ok_lines < 1 || remote_combat_slot_fail_lines > 0 )); then
+			remote_combat_slot_bounds_ok=0
+		fi
+	fi
+	if (( REQUIRE_REMOTE_COMBAT_EVENTS )); then
+		if (( remote_combat_event_lines < 1 )); then
+			remote_combat_events_ok=0
+		fi
+		if (( AUTO_PAUSE_PULSES > 0 )); then
+			if (( remote_combat_pause_action_lines < AUTO_PAUSE_PULSES * 2 || remote_combat_pause_complete_lines < 1 )); then
+				remote_combat_events_ok=0
+			fi
+			if [[ "$remote_combat_event_contexts" != *"auto-pause-issued"* || "$remote_combat_event_contexts" != *"auto-unpause-issued"* ]]; then
+				remote_combat_events_ok=0
+			fi
+		fi
+		if (( AUTO_REMOTE_COMBAT_PULSES > 0 )); then
+			if (( remote_combat_enemy_bar_action_lines < AUTO_REMOTE_COMBAT_PULSES || remote_combat_enemy_complete_lines < 1 )); then
+				remote_combat_events_ok=0
+			fi
+			if [[ "$remote_combat_event_contexts" != *"auto-enemy-bar-pulse"* || "$remote_combat_event_contexts" != *"auto-dmgg-pulse"* || "$remote_combat_event_contexts" != *"client-DAMI"* || "$remote_combat_event_contexts" != *"client-DMGG"* ]]; then
+				remote_combat_events_ok=0
+			fi
+			if (( EXPECTED_CLIENTS > 1 )) && [[ "$remote_combat_event_contexts" != *"client-ENHP"* ]]; then
+				remote_combat_events_ok=0
+			fi
+		fi
+	fi
 
 	if (( STRICT_EXPECTED_FAIL )); then
 		if (( all_clients_zero == 0 )); then
@@ -926,7 +1616,7 @@ while (( SECONDS < deadline )); do
 		if (( chunk_reset_lines > 0 && txmode_ok )); then
 			break
 		fi
-	elif (( helo_ok && mapgen_ok && txmode_ok && account_label_ok && auto_kick_ok )); then
+	elif (( helo_ok && mapgen_ok && txmode_ok && account_label_ok && auto_kick_ok && default_slot_lock_ok && player_count_copy_ok && lobby_page_state_ok && lobby_page_sweep_ok && remote_combat_slot_bounds_ok && remote_combat_events_ok )); then
 		result="pass"
 		break
 	fi
@@ -967,11 +1657,150 @@ if (( AUTO_KICK_TARGET_SLOT > 0 )); then
 		auto_kick_result="missing"
 	fi
 fi
+slot_lock_snapshot_lines=0
+if (( TRACE_SLOT_LOCKS )); then
+	slot_lock_snapshot_lines=$(count_fixed_lines "$HOST_LOG" "[SMOKE]: lobby slot-lock snapshot context=lobby-init")
+fi
+default_slot_lock_ok=1
+if (( REQUIRE_DEFAULT_SLOT_LOCKS )); then
+	default_slot_lock_ok="$(is_default_slot_lock_snapshot_ok "$HOST_LOG" "$EXPECTED_PLAYERS")"
+fi
+player_count_prompt_lines=0
+player_count_prompt_variants=""
+player_count_prompt_target=""
+player_count_prompt_kicked=""
+player_count_prompt_variant=""
+if (( TRACE_PLAYER_COUNT_COPY )); then
+	player_count_prompt_lines=$(count_fixed_lines "$HOST_LOG" "[SMOKE]: lobby player-count prompt target=")
+	player_count_prompt_variants="$(collect_player_count_prompt_variants "$HOST_LOG")"
+	player_count_prompt_target="$(extract_last_player_count_prompt_field "$HOST_LOG" target)"
+	player_count_prompt_kicked="$(extract_last_player_count_prompt_field "$HOST_LOG" kicked)"
+	player_count_prompt_variant="$(extract_last_player_count_prompt_field "$HOST_LOG" variant)"
+fi
+player_count_copy_ok=1
+if (( REQUIRE_PLAYER_COUNT_COPY )); then
+	if (( player_count_prompt_lines < 1 )); then
+		player_count_copy_ok=0
+	fi
+	if [[ -n "$EXPECT_PLAYER_COUNT_COPY_VARIANT" ]] && [[ "$player_count_prompt_variant" != "$EXPECT_PLAYER_COUNT_COPY_VARIANT" ]]; then
+		player_count_copy_ok=0
+	fi
+fi
+lobby_page_state_ok=1
+lobby_page_sweep_ok=1
+lobby_page_snapshot_lines=0
+lobby_page_unique_count=0
+lobby_page_total_count=0
+lobby_page_visited=""
+lobby_focus_mismatch_lines=0
+lobby_cards_misaligned_max=0
+lobby_paperdolls_misaligned_max=0
+lobby_pings_misaligned_max=0
+lobby_warnings_present_lines=0
+lobby_warnings_max_abs_delta=0
+lobby_countdown_present_lines=0
+lobby_countdown_max_abs_delta=0
+if (( TRACE_LOBBY_PAGE_STATE )); then
+	page_metrics="$(collect_lobby_page_snapshot_metrics "$HOST_LOG")"
+	IFS='|' read -r lobby_page_snapshot_lines lobby_page_unique_count lobby_page_total_count lobby_page_visited \
+		lobby_focus_mismatch_lines lobby_cards_misaligned_max lobby_paperdolls_misaligned_max \
+		lobby_pings_misaligned_max lobby_warnings_present_lines lobby_warnings_max_abs_delta \
+		lobby_countdown_present_lines lobby_countdown_max_abs_delta <<< "$page_metrics"
+fi
+if (( REQUIRE_LOBBY_PAGE_STATE )); then
+	if (( lobby_page_snapshot_lines < 1 )); then
+		lobby_page_state_ok=0
+	fi
+	if (( lobby_cards_misaligned_max > 0 || lobby_paperdolls_misaligned_max > 0 || lobby_pings_misaligned_max > 0 )); then
+		lobby_page_state_ok=0
+	fi
+	if (( lobby_warnings_present_lines > 0 && lobby_warnings_max_abs_delta > 2 )); then
+		lobby_page_state_ok=0
+	fi
+	if (( lobby_countdown_present_lines > 0 && lobby_countdown_max_abs_delta > 2 )); then
+		lobby_page_state_ok=0
+	fi
+fi
+if (( REQUIRE_LOBBY_PAGE_FOCUS_MATCH )) && (( lobby_focus_mismatch_lines > 0 )); then
+	lobby_page_state_ok=0
+fi
+if (( REQUIRE_LOBBY_PAGE_SWEEP )); then
+	if (( lobby_page_total_count < 1 || lobby_page_unique_count < lobby_page_total_count )); then
+		lobby_page_sweep_ok=0
+	fi
+fi
+remote_combat_slot_ok_lines=0
+remote_combat_slot_fail_lines=0
+remote_combat_event_lines=0
+remote_combat_event_contexts=""
+remote_combat_pause_action_lines=0
+remote_combat_pause_complete_lines=0
+remote_combat_enemy_bar_action_lines=0
+remote_combat_enemy_complete_lines=0
+if (( TRACE_REMOTE_COMBAT_SLOT_BOUNDS || REQUIRE_REMOTE_COMBAT_SLOT_BOUNDS || REQUIRE_REMOTE_COMBAT_EVENTS )); then
+	remote_combat_slot_ok_lines=$(count_regex_lines_across_logs "\\[SMOKE\\]: remote-combat slot-check .* status=ok" "${ALL_LOGS[@]}")
+	remote_combat_slot_fail_lines=$(count_regex_lines_across_logs "\\[SMOKE\\]: remote-combat slot-check .* status=fail" "${ALL_LOGS[@]}")
+	remote_combat_event_lines=$(count_fixed_lines_across_logs "[SMOKE]: remote-combat event context=" "${ALL_LOGS[@]}")
+	remote_combat_event_contexts="$(collect_remote_combat_event_contexts "${ALL_LOGS[@]}")"
+	remote_combat_pause_action_lines=$(count_fixed_lines "$HOST_LOG" "[SMOKE]: remote-combat auto-pause action=")
+	remote_combat_pause_complete_lines=$(count_fixed_lines "$HOST_LOG" "[SMOKE]: remote-combat auto-pause complete pulses=")
+	remote_combat_enemy_bar_action_lines=$(count_fixed_lines "$HOST_LOG" "[SMOKE]: remote-combat auto-event action=enemy-bar")
+	remote_combat_enemy_complete_lines=$(count_fixed_lines "$HOST_LOG" "[SMOKE]: remote-combat auto-event complete pulses=")
+fi
+remote_combat_slot_bounds_ok=1
+if (( REQUIRE_REMOTE_COMBAT_SLOT_BOUNDS )); then
+	if (( remote_combat_slot_ok_lines < 1 || remote_combat_slot_fail_lines > 0 )); then
+		remote_combat_slot_bounds_ok=0
+	fi
+fi
+remote_combat_events_ok=1
+if (( REQUIRE_REMOTE_COMBAT_EVENTS )); then
+	if (( remote_combat_event_lines < 1 )); then
+		remote_combat_events_ok=0
+	fi
+	if (( AUTO_PAUSE_PULSES > 0 )); then
+		if (( remote_combat_pause_action_lines < AUTO_PAUSE_PULSES * 2 || remote_combat_pause_complete_lines < 1 )); then
+			remote_combat_events_ok=0
+		fi
+		if [[ "$remote_combat_event_contexts" != *"auto-pause-issued"* || "$remote_combat_event_contexts" != *"auto-unpause-issued"* ]]; then
+			remote_combat_events_ok=0
+		fi
+	fi
+	if (( AUTO_REMOTE_COMBAT_PULSES > 0 )); then
+		if (( remote_combat_enemy_bar_action_lines < AUTO_REMOTE_COMBAT_PULSES || remote_combat_enemy_complete_lines < 1 )); then
+			remote_combat_events_ok=0
+		fi
+		if [[ "$remote_combat_event_contexts" != *"auto-enemy-bar-pulse"* || "$remote_combat_event_contexts" != *"auto-dmgg-pulse"* || "$remote_combat_event_contexts" != *"client-DAMI"* || "$remote_combat_event_contexts" != *"client-DMGG"* ]]; then
+			remote_combat_events_ok=0
+		fi
+		if (( EXPECTED_CLIENTS > 1 )) && [[ "$remote_combat_event_contexts" != *"client-ENHP"* ]]; then
+			remote_combat_events_ok=0
+		fi
+	fi
+fi
 
 if (( REQUIRE_ACCOUNT_LABELS )) && (( account_label_slot_coverage_ok == 0 )); then
 	result="fail"
 fi
 if (( REQUIRE_AUTO_KICK )) && [[ "$auto_kick_result" != "ok" ]]; then
+	result="fail"
+fi
+if (( REQUIRE_DEFAULT_SLOT_LOCKS )) && (( default_slot_lock_ok == 0 )); then
+	result="fail"
+fi
+if (( REQUIRE_PLAYER_COUNT_COPY )) && (( player_count_copy_ok == 0 )); then
+	result="fail"
+fi
+if (( REQUIRE_LOBBY_PAGE_STATE )) && (( lobby_page_state_ok == 0 )); then
+	result="fail"
+fi
+if (( REQUIRE_LOBBY_PAGE_SWEEP )) && (( lobby_page_sweep_ok == 0 )); then
+	result="fail"
+fi
+if (( REQUIRE_REMOTE_COMBAT_SLOT_BOUNDS )) && (( remote_combat_slot_bounds_ok == 0 )); then
+	result="fail"
+fi
+if (( REQUIRE_REMOTE_COMBAT_EVENTS )) && (( remote_combat_events_ok == 0 )); then
 	result="fail"
 fi
 
@@ -1028,11 +1857,64 @@ SUMMARY_FILE="$OUTDIR/summary.env"
 	echo "AUTO_KICK_RESULT=$auto_kick_result"
 	echo "AUTO_KICK_OK_LINES=$auto_kick_ok_lines"
 	echo "AUTO_KICK_FAIL_LINES=$auto_kick_fail_lines"
+	echo "TRACE_SLOT_LOCKS=$TRACE_SLOT_LOCKS"
+	echo "REQUIRE_DEFAULT_SLOT_LOCKS=$REQUIRE_DEFAULT_SLOT_LOCKS"
+	echo "SLOT_LOCK_SNAPSHOT_LINES=$slot_lock_snapshot_lines"
+	echo "DEFAULT_SLOT_LOCK_OK=$default_slot_lock_ok"
+	echo "AUTO_PLAYER_COUNT_TARGET=$AUTO_PLAYER_COUNT_TARGET"
+	echo "AUTO_PLAYER_COUNT_DELAY_SECS=$AUTO_PLAYER_COUNT_DELAY_SECS"
+	echo "TRACE_PLAYER_COUNT_COPY=$TRACE_PLAYER_COUNT_COPY"
+	echo "REQUIRE_PLAYER_COUNT_COPY=$REQUIRE_PLAYER_COUNT_COPY"
+	echo "EXPECT_PLAYER_COUNT_COPY_VARIANT=$EXPECT_PLAYER_COUNT_COPY_VARIANT"
+	echo "PLAYER_COUNT_PROMPT_LINES=$player_count_prompt_lines"
+	echo "PLAYER_COUNT_PROMPT_VARIANTS=$player_count_prompt_variants"
+	echo "PLAYER_COUNT_PROMPT_TARGET=$player_count_prompt_target"
+	echo "PLAYER_COUNT_PROMPT_KICKED=$player_count_prompt_kicked"
+	echo "PLAYER_COUNT_PROMPT_VARIANT=$player_count_prompt_variant"
+	echo "PLAYER_COUNT_COPY_OK=$player_count_copy_ok"
+	echo "TRACE_LOBBY_PAGE_STATE=$TRACE_LOBBY_PAGE_STATE"
+	echo "REQUIRE_LOBBY_PAGE_STATE=$REQUIRE_LOBBY_PAGE_STATE"
+	echo "REQUIRE_LOBBY_PAGE_FOCUS_MATCH=$REQUIRE_LOBBY_PAGE_FOCUS_MATCH"
+	echo "AUTO_LOBBY_PAGE_SWEEP=$AUTO_LOBBY_PAGE_SWEEP"
+	echo "AUTO_LOBBY_PAGE_DELAY_SECS=$AUTO_LOBBY_PAGE_DELAY_SECS"
+	echo "REQUIRE_LOBBY_PAGE_SWEEP=$REQUIRE_LOBBY_PAGE_SWEEP"
+	echo "LOBBY_PAGE_SNAPSHOT_LINES=$lobby_page_snapshot_lines"
+	echo "LOBBY_PAGE_UNIQUE_COUNT=$lobby_page_unique_count"
+	echo "LOBBY_PAGE_TOTAL_COUNT=$lobby_page_total_count"
+	echo "LOBBY_PAGE_VISITED=$lobby_page_visited"
+	echo "LOBBY_FOCUS_MISMATCH_LINES=$lobby_focus_mismatch_lines"
+	echo "LOBBY_CARDS_MISALIGNED_MAX=$lobby_cards_misaligned_max"
+	echo "LOBBY_PAPERDOLLS_MISALIGNED_MAX=$lobby_paperdolls_misaligned_max"
+	echo "LOBBY_PINGS_MISALIGNED_MAX=$lobby_pings_misaligned_max"
+	echo "LOBBY_WARNINGS_PRESENT_LINES=$lobby_warnings_present_lines"
+	echo "LOBBY_WARNINGS_MAX_ABS_DELTA=$lobby_warnings_max_abs_delta"
+	echo "LOBBY_COUNTDOWN_PRESENT_LINES=$lobby_countdown_present_lines"
+	echo "LOBBY_COUNTDOWN_MAX_ABS_DELTA=$lobby_countdown_max_abs_delta"
+	echo "LOBBY_PAGE_STATE_OK=$lobby_page_state_ok"
+	echo "LOBBY_PAGE_SWEEP_OK=$lobby_page_sweep_ok"
+	echo "TRACE_REMOTE_COMBAT_SLOT_BOUNDS=$TRACE_REMOTE_COMBAT_SLOT_BOUNDS"
+	echo "REQUIRE_REMOTE_COMBAT_SLOT_BOUNDS=$REQUIRE_REMOTE_COMBAT_SLOT_BOUNDS"
+	echo "REQUIRE_REMOTE_COMBAT_EVENTS=$REQUIRE_REMOTE_COMBAT_EVENTS"
+	echo "AUTO_PAUSE_PULSES=$AUTO_PAUSE_PULSES"
+	echo "AUTO_PAUSE_DELAY_SECS=$AUTO_PAUSE_DELAY_SECS"
+	echo "AUTO_PAUSE_HOLD_SECS=$AUTO_PAUSE_HOLD_SECS"
+	echo "AUTO_REMOTE_COMBAT_PULSES=$AUTO_REMOTE_COMBAT_PULSES"
+	echo "AUTO_REMOTE_COMBAT_DELAY_SECS=$AUTO_REMOTE_COMBAT_DELAY_SECS"
+	echo "REMOTE_COMBAT_SLOT_OK_LINES=$remote_combat_slot_ok_lines"
+	echo "REMOTE_COMBAT_SLOT_FAIL_LINES=$remote_combat_slot_fail_lines"
+	echo "REMOTE_COMBAT_EVENT_LINES=$remote_combat_event_lines"
+	echo "REMOTE_COMBAT_EVENT_CONTEXTS=$remote_combat_event_contexts"
+	echo "REMOTE_COMBAT_AUTO_PAUSE_ACTION_LINES=$remote_combat_pause_action_lines"
+	echo "REMOTE_COMBAT_AUTO_PAUSE_COMPLETE_LINES=$remote_combat_pause_complete_lines"
+	echo "REMOTE_COMBAT_AUTO_ENEMY_BAR_LINES=$remote_combat_enemy_bar_action_lines"
+	echo "REMOTE_COMBAT_AUTO_ENEMY_COMPLETE_LINES=$remote_combat_enemy_complete_lines"
+	echo "REMOTE_COMBAT_SLOT_BOUNDS_OK=$remote_combat_slot_bounds_ok"
+	echo "REMOTE_COMBAT_EVENTS_OK=$remote_combat_events_ok"
 	echo "HOST_LOG=$HOST_LOG"
 	echo "PID_FILE=$PID_FILE"
 } > "$SUMMARY_FILE"
 
-log "result=$result chunks=$host_chunk_lines reassembled=$client_reassembled_lines resets=$chunk_reset_lines txmodeApplied=$tx_mode_applied mapgen=$mapgen_found gamestart=$game_start_found autoKick=$auto_kick_result"
+log "result=$result chunks=$host_chunk_lines reassembled=$client_reassembled_lines resets=$chunk_reset_lines txmodeApplied=$tx_mode_applied mapgen=$mapgen_found gamestart=$game_start_found autoKick=$auto_kick_result slotLockOk=$default_slot_lock_ok playerCountCopyOk=$player_count_copy_ok lobbyPageStateOk=$lobby_page_state_ok lobbyPageSweepOk=$lobby_page_sweep_ok remoteSlotOk=$remote_combat_slot_bounds_ok remoteEventsOk=$remote_combat_events_ok remoteSlotFail=$remote_combat_slot_fail_lines"
 log "summary=$SUMMARY_FILE"
 
 if [[ "$result" != "pass" ]]; then

@@ -40,6 +40,32 @@ All main runners support `--app <path>` and optional `--datadir <path>` so you c
   - Enables smoke-only status-effect queue tracing and asserts slot-owner safety (startup: `init`/`create`/`update`, rejoin: `init`) with no mismatches.
   - Emits `status_effect_queue_results.csv` and a run summary.
 
+- `run_lobby_slot_lock_and_kick_copy_smoke_mac.sh`
+  - Runs a lobby matrix for default slot-lock behavior and occupied-slot player-count reduction kick-copy variants.
+  - Asserts default host slot-lock snapshots and prompt copy variants for `single`/`double`/`multi` occupied-player reductions.
+  - Emits `slot_lock_kick_copy_results.csv` and a run summary.
+
+- `run_lobby_page_navigation_smoke_mac.sh`
+  - Runs a full-lobby page navigation lane with smoke-driven page sweep.
+  - Asserts page/alignment snapshots for card placement, paperdolls, ping frames, and centered warning/countdown overlays when present.
+  - Optionally enforces focus-page matching (`--require-focus-match 1`).
+  - Emits `page_navigation_results.csv` and a run summary.
+
+- `run_remote_combat_slot_bounds_smoke_mac.sh`
+  - Runs a full-lobby remote-combat lane with smoke-driven pause/unpause pulses, enemy-bar combat pulses, and visible damage-gib pulses.
+  - Asserts remote-combat slot bounds (`REMOTE_COMBAT_SLOT_FAIL_LINES=0`) and required event coverage contexts.
+  - Emits `remote_combat_results.csv` and a run summary.
+
+- `run_splitscreen_baseline_smoke_mac.sh`
+  - Runs a local 4-player splitscreen baseline lane in a single smoke instance.
+  - Uses local-lobby autopilot to ready 4 slots, verifies baseline camera/HUD/local-slot state, runs pause/unpause pulses, and forces first-floor transition.
+  - Emits `splitscreen_results.csv` and a run summary.
+
+- `run_splitscreen_cap_smoke_mac.sh`
+  - Runs a local splitscreen cap lane in a single smoke instance.
+  - Issues `/enablecheats` + `/splitscreen <target>` (default `15`) and asserts hard clamp behavior at 4 local players with no over-cap slot activation side effects.
+  - Emits `splitscreen_cap_results.csv` and a run summary.
+
 - `run_mapgen_sweep_mac.sh`
   - Runs repeated sessions for player counts in a range (default `1..15`).
   - Writes aggregate CSV with map generation metrics.
@@ -158,6 +184,46 @@ tests/smoke/run_status_effect_queue_init_smoke_mac.sh \
   --datadir "$HOME/Library/Application Support/Steam/steamapps/common/Barony/Barony.app/Contents/Resources"
 ```
 
+Run default slot-lock + kick-copy matrix lane:
+
+```bash
+tests/smoke/run_lobby_slot_lock_and_kick_copy_smoke_mac.sh \
+  --app /Users/sayhiben/dev/Barony-8p/build-mac/barony.app/Contents/MacOS/barony \
+  --datadir "$HOME/Library/Application Support/Steam/steamapps/common/Barony/Barony.app/Contents/Resources"
+```
+
+Run lobby page navigation/alignment lane:
+
+```bash
+tests/smoke/run_lobby_page_navigation_smoke_mac.sh \
+  --app /Users/sayhiben/dev/Barony-8p/build-mac/barony.app/Contents/MacOS/barony \
+  --datadir "$HOME/Library/Application Support/Steam/steamapps/common/Barony/Barony.app/Contents/Resources"
+```
+
+Run remote-combat slot-bounds lane:
+
+```bash
+tests/smoke/run_remote_combat_slot_bounds_smoke_mac.sh \
+  --app /Users/sayhiben/dev/Barony-8p/build-mac-smoke/barony.app/Contents/MacOS/barony \
+  --datadir "$HOME/Library/Application Support/Steam/steamapps/common/Barony/Barony.app/Contents/Resources"
+```
+
+Run local 4-player splitscreen baseline lane:
+
+```bash
+tests/smoke/run_splitscreen_baseline_smoke_mac.sh \
+  --app /Users/sayhiben/dev/Barony-8p/build-mac-smoke/barony.app/Contents/MacOS/barony \
+  --datadir "$HOME/Library/Application Support/Steam/steamapps/common/Barony/Barony.app/Contents/Resources"
+```
+
+Run local splitscreen cap lane (`/splitscreen 15` should clamp to 4):
+
+```bash
+tests/smoke/run_splitscreen_cap_smoke_mac.sh \
+  --app /Users/sayhiben/dev/Barony-8p/build-mac-smoke/barony.app/Contents/MacOS/barony \
+  --datadir "$HOME/Library/Application Support/Steam/steamapps/common/Barony/Barony.app/Contents/Resources"
+```
+
 ## Artifact Layout
 
 Both scripts write to `tests/smoke/artifacts/...` by default.
@@ -171,6 +237,11 @@ Each run includes:
     `ACCOUNT_LABEL_SLOTS`, `ACCOUNT_LABEL_SLOT_COVERAGE_OK`
 - Churn ready-sync mode adds `READY_SNAPSHOT_*` fields and `READY_SYNC_CSV`; join-reject tracing adds `JOIN_REJECT_TRACE_LINES`
 - Status-effect queue lane adds `status_effect_queue_results.csv` with per-lane slot coverage/mismatch results (`init/create/update`).
+- Lobby slot-lock/copy lane adds `slot_lock_kick_copy_results.csv` with per-lane slot-lock and prompt-variant assertions.
+- Lobby page navigation lane adds `page_navigation_results.csv` with per-lane page/alignment assertions and focus mismatch diagnostics.
+- Remote-combat lane adds `remote_combat_results.csv` with per-lane slot-bound/event assertions and context coverage.
+- Local splitscreen baseline lane adds `splitscreen_results.csv` with local lobby readiness, baseline camera/HUD/pause checks, and transition assertions.
+- Local splitscreen cap lane adds `splitscreen_cap_results.csv` with requested-player clamp assertions and over-cap leakage checks.
 - `pids.txt`: launched process metadata
 - `stdout/`: captured process stdout
 - `instances/home-*/.barony/log.txt`: engine logs used for assertions
@@ -190,7 +261,7 @@ Soak/adversarial/churn runs emit similar CSV + `smoke_aggregate_report.html`.
 These are read by `MainMenu.cpp` / `net.cpp` when set:
 
 - `BARONY_SMOKE_AUTOPILOT=1`
-- `BARONY_SMOKE_ROLE=host|client`
+- `BARONY_SMOKE_ROLE=host|client|local`
 - `BARONY_SMOKE_CONNECT_ADDRESS=127.0.0.1:57165`
 - `BARONY_SMOKE_CONNECT_DELAY_SECS=<int>`
 - `BARONY_SMOKE_RETRY_DELAY_SECS=<int>`
@@ -200,12 +271,25 @@ These are read by `MainMenu.cpp` / `net.cpp` when set:
 - `BARONY_SMOKE_AUTO_ENTER_DUNGEON=0|1` (host-only, smoke-only)
 - `BARONY_SMOKE_AUTO_ENTER_DUNGEON_DELAY_SECS=<int>`
 - `BARONY_SMOKE_AUTO_ENTER_DUNGEON_REPEATS=<int>` (host-only, smoke-only)
+- `BARONY_SMOKE_AUTO_KICK_TARGET_SLOT=<1..14>` / `BARONY_SMOKE_AUTO_KICK_DELAY_SECS=<int>`
+- `BARONY_SMOKE_AUTO_PLAYER_COUNT_TARGET=<2..15>` / `BARONY_SMOKE_AUTO_PLAYER_COUNT_DELAY_SECS=<int>`
+- `BARONY_SMOKE_AUTO_LOBBY_PAGE_SWEEP=0|1` / `BARONY_SMOKE_AUTO_LOBBY_PAGE_DELAY_SECS=<int>`
 - `BARONY_SMOKE_SEED=<seed string>`
 - `BARONY_SMOKE_AUTO_READY=0|1`
 - `BARONY_SMOKE_TRACE_READY_SYNC=0|1` (host-only, smoke-only diagnostic logging)
 - `BARONY_SMOKE_TRACE_ACCOUNT_LABELS=0|1` (host-only, smoke-only diagnostic logging)
+- `BARONY_SMOKE_TRACE_SLOT_LOCKS=0|1` (host-only, smoke-only diagnostic logging)
+- `BARONY_SMOKE_TRACE_PLAYER_COUNT_COPY=0|1` (host-only, smoke-only diagnostic logging)
+- `BARONY_SMOKE_TRACE_LOBBY_PAGE_STATE=0|1` (host-only, smoke-only diagnostic logging)
+- `BARONY_SMOKE_TRACE_REMOTE_COMBAT_SLOT_BOUNDS=0|1` (smoke-only diagnostic logging)
+- `BARONY_SMOKE_TRACE_LOCAL_SPLITSCREEN=0|1` (smoke-only local splitscreen baseline logging)
+- `BARONY_SMOKE_TRACE_LOCAL_SPLITSCREEN_CAP=0|1` (smoke-only local splitscreen cap logging)
 - `BARONY_SMOKE_TRACE_JOIN_REJECTS=0|1` (host-only, smoke-only diagnostic logging)
 - `BARONY_SMOKE_TRACE_STATUS_EFFECT_QUEUE=0|1` (smoke-only diagnostic logging)
+- `BARONY_SMOKE_AUTO_PAUSE_PULSES=<int>` / `BARONY_SMOKE_AUTO_PAUSE_DELAY_SECS=<int>` / `BARONY_SMOKE_AUTO_PAUSE_HOLD_SECS=<int>` (host-only, smoke-only)
+- `BARONY_SMOKE_AUTO_REMOTE_COMBAT_PULSES=<int>` / `BARONY_SMOKE_AUTO_REMOTE_COMBAT_DELAY_SECS=<int>` (host-only, smoke-only)
+- `BARONY_SMOKE_LOCAL_PAUSE_PULSES=<int>` / `BARONY_SMOKE_LOCAL_PAUSE_DELAY_SECS=<int>` / `BARONY_SMOKE_LOCAL_PAUSE_HOLD_SECS=<int>` (local-role, smoke-only)
+- `BARONY_SMOKE_AUTO_SPLITSCREEN_CAP_TARGET=<2..15>` / `BARONY_SMOKE_SPLITSCREEN_CAP_DELAY_SECS=<int>` / `BARONY_SMOKE_SPLITSCREEN_CAP_VERIFY_DELAY_SECS=<int>` (local-role, smoke-only)
 - `BARONY_SMOKE_FORCE_HELO_CHUNK=0|1`
 - `BARONY_SMOKE_HELO_CHUNK_PAYLOAD_MAX=<64..900>`
 - `BARONY_SMOKE_HELO_CHUNK_TX_MODE=normal|reverse|even-odd|duplicate-first|drop-last|duplicate-conflict-first` (host-only, smoke-only)

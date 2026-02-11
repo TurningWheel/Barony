@@ -5,6 +5,7 @@
 #include "../net.hpp"
 #include "../player.hpp"
 #include "../scores.hpp"
+#include "../interface/interface.hpp"
 #include "../status_effect_owner_encoding.hpp"
 
 #include <algorithm>
@@ -13,6 +14,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <sstream>
+#include <unordered_map>
 
 namespace
 {
@@ -81,7 +83,8 @@ namespace
 	{
 		DISABLED = 0,
 		ROLE_HOST,
-		ROLE_CLIENT
+		ROLE_CLIENT,
+		ROLE_LOCAL
 	};
 
 	struct SmokeAutopilotConfig
@@ -96,8 +99,12 @@ namespace
 		int autoStartDelayTicks = 0;
 		int autoKickTargetSlot = 0;
 		int autoKickDelayTicks = 0;
+		int autoPlayerCountTarget = 0;
+		int autoPlayerCountDelayTicks = 0;
 		std::string seedString = "";
 		bool autoReady = false;
+		bool autoLobbyPageSweep = false;
+		int autoLobbyPageDelayTicks = 0;
 	};
 
 	struct SmokeAutopilotRuntime
@@ -111,8 +118,14 @@ namespace
 		Uint32 expectedPlayersMetTick = 0;
 		bool autoKickIssued = false;
 		Uint32 autoKickArmedTick = 0;
+		bool autoPlayerCountIssued = false;
+		Uint32 autoPlayerCountArmedTick = 0;
+		bool autoLobbyPageSweepComplete = false;
+		int autoLobbyPageNextIndex = 0;
+		Uint32 autoLobbyPageArmedTick = 0;
 		bool seedApplied = false;
 		bool readyIssued = false;
+		bool localLobbyReady = false;
 	};
 
 	static SmokeAutopilotRuntime g_smokeAutopilot;
@@ -135,6 +148,10 @@ namespace
 		{
 			cfg.role = SmokeAutopilotRole::ROLE_CLIENT;
 		}
+		else if ( role == "local" )
+		{
+			cfg.role = SmokeAutopilotRole::ROLE_LOCAL;
+		}
 
 		cfg.enabled = parseEnvBool("BARONY_SMOKE_AUTOPILOT", cfg.role != SmokeAutopilotRole::DISABLED);
 		if ( !cfg.enabled || cfg.role == SmokeAutopilotRole::DISABLED )
@@ -154,13 +171,30 @@ namespace
 		cfg.autoStartDelayTicks = parseEnvInt("BARONY_SMOKE_AUTO_START_DELAY_SECS", 2, 0, 120) * TICKS_PER_SECOND;
 		cfg.autoKickTargetSlot = parseEnvInt("BARONY_SMOKE_AUTO_KICK_TARGET_SLOT", 0, 0, MAXPLAYERS - 1);
 		cfg.autoKickDelayTicks = parseEnvInt("BARONY_SMOKE_AUTO_KICK_DELAY_SECS", 2, 0, 120) * TICKS_PER_SECOND;
+		cfg.autoPlayerCountTarget = parseEnvInt("BARONY_SMOKE_AUTO_PLAYER_COUNT_TARGET", 0, 0, MAXPLAYERS);
+		cfg.autoPlayerCountDelayTicks = parseEnvInt("BARONY_SMOKE_AUTO_PLAYER_COUNT_DELAY_SECS", 2, 0, 120) * TICKS_PER_SECOND;
 		cfg.seedString = parseEnvString("BARONY_SMOKE_SEED", "");
 		cfg.autoReady = parseEnvBool("BARONY_SMOKE_AUTO_READY", false);
+		cfg.autoLobbyPageSweep = parseEnvBool("BARONY_SMOKE_AUTO_LOBBY_PAGE_SWEEP", false);
+		cfg.autoLobbyPageDelayTicks = parseEnvInt("BARONY_SMOKE_AUTO_LOBBY_PAGE_DELAY_SECS", 2, 0, 120) * TICKS_PER_SECOND;
 		g_smokeAutopilot.nextActionTick = ticks + static_cast<Uint32>(cfg.connectDelayTicks);
 
-		const char* roleName = cfg.role == SmokeAutopilotRole::ROLE_HOST ? "host" : "client";
-		printlog("[SMOKE]: enabled role=%s addr=%s expected=%d autoStart=%d autoKickTarget=%d",
-			roleName, cfg.connectAddress.c_str(), cfg.expectedPlayers, cfg.autoStartLobby ? 1 : 0, cfg.autoKickTargetSlot);
+		const char* roleName = "disabled";
+		if ( cfg.role == SmokeAutopilotRole::ROLE_HOST )
+		{
+			roleName = "host";
+		}
+		else if ( cfg.role == SmokeAutopilotRole::ROLE_CLIENT )
+		{
+			roleName = "client";
+		}
+		else if ( cfg.role == SmokeAutopilotRole::ROLE_LOCAL )
+		{
+			roleName = "local";
+		}
+		printlog("[SMOKE]: enabled role=%s addr=%s expected=%d autoStart=%d autoKickTarget=%d autoPlayerCountTarget=%d autoPageSweep=%d",
+			roleName, cfg.connectAddress.c_str(), cfg.expectedPlayers, cfg.autoStartLobby ? 1 : 0,
+			cfg.autoKickTargetSlot, cfg.autoPlayerCountTarget, cfg.autoLobbyPageSweep ? 1 : 0);
 
 		return cfg;
 	}
@@ -278,10 +312,108 @@ namespace
 			statusOk ? "ok" : "fail");
 	}
 
+	void maybeAutoRequestLobbyPlayerCount(const SmokeTestHooks::MainMenu::AutopilotCallbacks& callbacks,
+		SmokeAutopilotConfig& cfg, SmokeAutopilotRuntime& runtime)
+	{
+		if ( cfg.role != SmokeAutopilotRole::ROLE_HOST )
+		{
+			return;
+		}
+		if ( cfg.autoPlayerCountTarget < 2 || cfg.autoPlayerCountTarget > MAXPLAYERS )
+		{
+			return;
+		}
+		if ( runtime.autoPlayerCountIssued )
+		{
+			return;
+		}
+		if ( !callbacks.requestLobbyPlayerCountSelection )
+		{
+			runtime.autoPlayerCountIssued = true;
+			printlog("[SMOKE]: auto-player-count callback unavailable");
+			return;
+		}
+
+		const int connected = connectedLobbyPlayers();
+		if ( connected < cfg.expectedPlayers )
+		{
+			runtime.autoPlayerCountArmedTick = 0;
+			return;
+		}
+
+		if ( runtime.autoPlayerCountArmedTick == 0 )
+		{
+			runtime.autoPlayerCountArmedTick = ticks;
+			printlog("[SMOKE]: auto-player-count armed target=%d delay=%u sec",
+				cfg.autoPlayerCountTarget, static_cast<unsigned>(cfg.autoPlayerCountDelayTicks / TICKS_PER_SECOND));
+		}
+		if ( ticks - runtime.autoPlayerCountArmedTick < static_cast<Uint32>(cfg.autoPlayerCountDelayTicks) )
+		{
+			return;
+		}
+
+		runtime.autoPlayerCountIssued = true;
+		printlog("[SMOKE]: auto-player-count request target=%d", cfg.autoPlayerCountTarget);
+		callbacks.requestLobbyPlayerCountSelection(cfg.autoPlayerCountTarget);
+	}
+
+	void maybeAutoSweepLobbyPages(const SmokeTestHooks::MainMenu::AutopilotCallbacks& callbacks,
+		SmokeAutopilotConfig& cfg, SmokeAutopilotRuntime& runtime)
+	{
+		if ( cfg.role != SmokeAutopilotRole::ROLE_HOST || !cfg.autoLobbyPageSweep )
+		{
+			return;
+		}
+		if ( runtime.autoLobbyPageSweepComplete )
+		{
+			return;
+		}
+		if ( !callbacks.requestLobbyVisiblePage )
+		{
+			runtime.autoLobbyPageSweepComplete = true;
+			printlog("[SMOKE]: auto-lobby-page callback unavailable");
+			return;
+		}
+
+		const int connected = connectedLobbyPlayers();
+		if ( connected < cfg.expectedPlayers )
+		{
+			runtime.autoLobbyPageArmedTick = 0;
+			runtime.autoLobbyPageNextIndex = 0;
+			return;
+		}
+
+		if ( runtime.autoLobbyPageArmedTick == 0 )
+		{
+			runtime.autoLobbyPageArmedTick = ticks;
+			printlog("[SMOKE]: auto-lobby-page sweep armed delay=%u sec",
+				static_cast<unsigned>(cfg.autoLobbyPageDelayTicks / TICKS_PER_SECOND));
+		}
+		if ( ticks - runtime.autoLobbyPageArmedTick < static_cast<Uint32>(cfg.autoLobbyPageDelayTicks) )
+		{
+			return;
+		}
+
+		const int slotsPerPage = MAXPLAYERS > 4 ? 4 : MAXPLAYERS;
+		const int pageCount = std::max(1, (MAXPLAYERS + slotsPerPage - 1) / slotsPerPage);
+		const int pageIndex = std::max(0, std::min(runtime.autoLobbyPageNextIndex, pageCount - 1));
+		printlog("[SMOKE]: auto-lobby-page request page=%d/%d", pageIndex + 1, pageCount);
+		callbacks.requestLobbyVisiblePage(pageIndex);
+
+		runtime.autoLobbyPageNextIndex = pageIndex + 1;
+		runtime.autoLobbyPageArmedTick = ticks;
+		if ( runtime.autoLobbyPageNextIndex >= pageCount )
+		{
+			runtime.autoLobbyPageSweepComplete = true;
+			printlog("[SMOKE]: auto-lobby-page sweep complete pages=%d", pageCount);
+		}
+	}
+
 	struct SmokeAutoEnterDungeonState
 	{
 		bool initialized = false;
 		bool enabled = false;
+		bool allowSingleplayer = false;
 		int expectedPlayers = 2;
 		Uint32 delayTicks = 0;
 		Uint32 readySinceTick = 0;
@@ -305,13 +437,15 @@ namespace
 		const bool autoEnterDungeon = parseEnvBool("BARONY_SMOKE_AUTO_ENTER_DUNGEON", false);
 		const std::string smokeRole = toLowerCopy(std::getenv("BARONY_SMOKE_ROLE"));
 		const bool smokeHost = smokeRole == "host";
+		const bool smokeLocal = smokeRole == "local";
 
-		if ( !smokeEnabled || !autoEnterDungeon || !smokeHost )
+		if ( !smokeEnabled || !autoEnterDungeon || (!smokeHost && !smokeLocal) )
 		{
 			return state;
 		}
 
 		state.enabled = true;
+		state.allowSingleplayer = smokeLocal;
 		state.expectedPlayers = parseEnvInt("BARONY_SMOKE_EXPECTED_PLAYERS", 2, 1, MAXPLAYERS);
 		const int delaySecs = parseEnvInt("BARONY_SMOKE_AUTO_ENTER_DUNGEON_DELAY_SECS", 3, 0, 120);
 		state.delayTicks = static_cast<Uint32>(delaySecs * TICKS_PER_SECOND);
@@ -348,6 +482,331 @@ namespace
 			}
 		}
 		return true;
+	}
+
+	struct SmokeRemoteCombatState
+	{
+		bool initialized = false;
+		bool traceEnabled = false;
+		bool hostAutopilotEnabled = false;
+		int expectedPlayers = 2;
+		int autoPausePulses = 0;
+		Uint32 autoPauseDelayTicks = 0;
+		Uint32 autoPauseHoldTicks = 0;
+		int autoCombatPulses = 0;
+		Uint32 autoCombatDelayTicks = 0;
+		bool readyArmed = false;
+		Uint32 nextPauseTick = 0;
+		Uint32 nextCombatTick = 0;
+		bool pauseActive = false;
+		int pauseActionsIssued = 0;
+		int combatPulsesIssued = 0;
+		bool pauseCompleteLogged = false;
+		bool combatCompleteLogged = false;
+	};
+
+	static SmokeRemoteCombatState g_smokeRemoteCombat;
+
+	SmokeRemoteCombatState& smokeRemoteCombatState()
+	{
+		auto& state = g_smokeRemoteCombat;
+		if ( state.initialized )
+		{
+			return state;
+		}
+		state.initialized = true;
+
+		const bool smokeEnabled = parseEnvBool("BARONY_SMOKE_AUTOPILOT", false);
+		const std::string smokeRole = toLowerCopy(std::getenv("BARONY_SMOKE_ROLE"));
+		const bool smokeHost = smokeRole == "host";
+		state.traceEnabled = smokeEnabled && parseEnvBool("BARONY_SMOKE_TRACE_REMOTE_COMBAT_SLOT_BOUNDS", false);
+		state.expectedPlayers = parseEnvInt("BARONY_SMOKE_EXPECTED_PLAYERS", 2, 1, MAXPLAYERS);
+
+		if ( smokeEnabled && smokeHost )
+		{
+			state.autoPausePulses = parseEnvInt("BARONY_SMOKE_AUTO_PAUSE_PULSES", 0, 0, 64);
+			state.autoPauseDelayTicks = static_cast<Uint32>(
+				parseEnvInt("BARONY_SMOKE_AUTO_PAUSE_DELAY_SECS", 2, 0, 120) * TICKS_PER_SECOND);
+			state.autoPauseHoldTicks = static_cast<Uint32>(
+				parseEnvInt("BARONY_SMOKE_AUTO_PAUSE_HOLD_SECS", 1, 0, 120) * TICKS_PER_SECOND);
+			state.autoCombatPulses = parseEnvInt("BARONY_SMOKE_AUTO_REMOTE_COMBAT_PULSES", 0, 0, 64);
+			state.autoCombatDelayTicks = static_cast<Uint32>(
+				parseEnvInt("BARONY_SMOKE_AUTO_REMOTE_COMBAT_DELAY_SECS", 2, 0, 120) * TICKS_PER_SECOND);
+			state.hostAutopilotEnabled = (state.autoPausePulses > 0 || state.autoCombatPulses > 0);
+		}
+
+		if ( state.traceEnabled )
+		{
+			printlog("[SMOKE]: remote-combat trace enabled expected=%d", state.expectedPlayers);
+		}
+		if ( state.hostAutopilotEnabled )
+		{
+			printlog("[SMOKE]: remote-combat autopilot enabled pause_pulses=%d pause_delay=%u hold=%u combat_pulses=%d combat_delay=%u",
+				state.autoPausePulses,
+				static_cast<unsigned>(state.autoPauseDelayTicks / TICKS_PER_SECOND),
+				static_cast<unsigned>(state.autoPauseHoldTicks / TICKS_PER_SECOND),
+				state.autoCombatPulses,
+				static_cast<unsigned>(state.autoCombatDelayTicks / TICKS_PER_SECOND));
+		}
+		return state;
+	}
+
+	int firstConnectedRemoteSlot(const int expectedPlayers)
+	{
+		for ( int slot = 1; slot < MAXPLAYERS; ++slot )
+		{
+			if ( slot >= expectedPlayers )
+			{
+				break;
+			}
+			if ( client_disconnected[slot] )
+			{
+				continue;
+			}
+			if ( !players[slot] || !players[slot]->entity )
+			{
+				continue;
+			}
+			return slot;
+		}
+		return -1;
+	}
+
+	constexpr int kSmokeLocalMaxPlayers = 4;
+
+	struct SmokeLocalSplitscreenState
+	{
+		bool initialized = false;
+		bool enabled = false;
+		bool traceEnabled = false;
+		int expectedPlayers = kSmokeLocalMaxPlayers;
+		int autoPausePulses = 0;
+		Uint32 autoPauseDelayTicks = 0;
+		Uint32 autoPauseHoldTicks = 0;
+		bool readyArmed = false;
+		Uint32 readySinceTick = 0;
+		Uint32 nextPauseTick = 0;
+		bool pauseActive = false;
+		int pauseActionsIssued = 0;
+		bool baselineLoggedOk = false;
+		bool baselineLoggedFail = false;
+		bool pauseCompleteLogged = false;
+		bool transitionLogged = false;
+	};
+
+	static SmokeLocalSplitscreenState g_smokeLocalSplitscreen;
+
+	SmokeLocalSplitscreenState& smokeLocalSplitscreenState()
+	{
+		auto& state = g_smokeLocalSplitscreen;
+		if ( state.initialized )
+		{
+			return state;
+		}
+		state.initialized = true;
+
+		const bool smokeEnabled = parseEnvBool("BARONY_SMOKE_AUTOPILOT", false);
+		const std::string smokeRole = toLowerCopy(std::getenv("BARONY_SMOKE_ROLE"));
+		const bool smokeLocal = smokeRole == "local";
+		state.traceEnabled = smokeEnabled && parseEnvBool("BARONY_SMOKE_TRACE_LOCAL_SPLITSCREEN", false);
+		state.expectedPlayers = parseEnvInt("BARONY_SMOKE_EXPECTED_PLAYERS",
+			kSmokeLocalMaxPlayers, 1, kSmokeLocalMaxPlayers);
+		state.autoPausePulses = parseEnvInt("BARONY_SMOKE_LOCAL_PAUSE_PULSES", 0, 0, 64);
+		state.autoPauseDelayTicks = static_cast<Uint32>(
+			parseEnvInt("BARONY_SMOKE_LOCAL_PAUSE_DELAY_SECS", 2, 0, 120) * TICKS_PER_SECOND);
+		state.autoPauseHoldTicks = static_cast<Uint32>(
+			parseEnvInt("BARONY_SMOKE_LOCAL_PAUSE_HOLD_SECS", 1, 0, 120) * TICKS_PER_SECOND);
+		state.enabled = smokeEnabled && smokeLocal &&
+			(state.traceEnabled || state.autoPausePulses > 0);
+
+		if ( !state.enabled )
+		{
+			return state;
+		}
+
+		printlog("[SMOKE]: local-splitscreen baseline enabled expected=%d trace=%d pause_pulses=%d pause_delay=%u hold=%u",
+			state.expectedPlayers,
+			state.traceEnabled ? 1 : 0,
+			state.autoPausePulses,
+			static_cast<unsigned>(state.autoPauseDelayTicks / TICKS_PER_SECOND),
+			static_cast<unsigned>(state.autoPauseHoldTicks / TICKS_PER_SECOND));
+		return state;
+	}
+
+	struct SmokeLocalSplitscreenCapState
+	{
+		bool initialized = false;
+		bool enabled = false;
+		bool traceEnabled = false;
+		int targetPlayers = 0;
+		int cappedPlayers = 0;
+		Uint32 commandDelayTicks = 0;
+		Uint32 verifyDelayTicks = 0;
+		bool armed = false;
+		Uint32 armTick = 0;
+		bool commandIssued = false;
+		Uint32 verifyTick = 0;
+		bool loggedOk = false;
+		bool loggedFail = false;
+	};
+
+	static SmokeLocalSplitscreenCapState g_smokeLocalSplitscreenCap;
+
+	SmokeLocalSplitscreenCapState& smokeLocalSplitscreenCapState()
+	{
+		auto& state = g_smokeLocalSplitscreenCap;
+		if ( state.initialized )
+		{
+			return state;
+		}
+		state.initialized = true;
+
+		const bool smokeEnabled = parseEnvBool("BARONY_SMOKE_AUTOPILOT", false);
+		const std::string smokeRole = toLowerCopy(std::getenv("BARONY_SMOKE_ROLE"));
+		const bool smokeLocal = smokeRole == "local";
+		state.traceEnabled = parseEnvBool("BARONY_SMOKE_TRACE_LOCAL_SPLITSCREEN_CAP", false);
+		state.targetPlayers = parseEnvInt("BARONY_SMOKE_AUTO_SPLITSCREEN_CAP_TARGET", 0, 0, MAXPLAYERS);
+		state.cappedPlayers = std::max(2, std::min(state.targetPlayers, kSmokeLocalMaxPlayers));
+		state.commandDelayTicks = static_cast<Uint32>(
+			parseEnvInt("BARONY_SMOKE_SPLITSCREEN_CAP_DELAY_SECS", 2, 0, 120) * TICKS_PER_SECOND);
+		state.verifyDelayTicks = static_cast<Uint32>(
+			parseEnvInt("BARONY_SMOKE_SPLITSCREEN_CAP_VERIFY_DELAY_SECS", 1, 0, 120) * TICKS_PER_SECOND);
+		state.enabled = smokeEnabled && smokeLocal && state.targetPlayers >= 2;
+
+		if ( !state.enabled )
+		{
+			return state;
+		}
+
+		printlog("[SMOKE]: local-splitscreen cap enabled target=%d cap=%d trace=%d delay=%u verify_delay=%u",
+			state.targetPlayers,
+			state.cappedPlayers,
+			state.traceEnabled ? 1 : 0,
+			static_cast<unsigned>(state.commandDelayTicks / TICKS_PER_SECOND),
+			static_cast<unsigned>(state.verifyDelayTicks / TICKS_PER_SECOND));
+		return state;
+	}
+
+	int smokeLocalConnectedPlayers(const int expectedPlayers)
+	{
+		const int limit = std::max(1, std::min(expectedPlayers, kSmokeLocalMaxPlayers));
+		int connected = 0;
+		for ( int slot = 0; slot < limit; ++slot )
+		{
+			if ( !client_disconnected[slot] )
+			{
+				++connected;
+			}
+		}
+		return connected;
+	}
+
+	int smokeLocalLoadedPlayers(const int expectedPlayers)
+	{
+		const int limit = std::max(1, std::min(expectedPlayers, kSmokeLocalMaxPlayers));
+		int loaded = 0;
+		for ( int slot = 0; slot < limit; ++slot )
+		{
+			if ( client_disconnected[slot] )
+			{
+				continue;
+			}
+			if ( players[slot] && players[slot]->entity )
+			{
+				++loaded;
+			}
+		}
+		return loaded;
+	}
+
+	bool smokeLocalCameraLayoutOk(const int expectedPlayers, int& localSlotsOk,
+		int& vmouseFailures, int& hudMissing)
+	{
+		localSlotsOk = 1;
+		vmouseFailures = 0;
+		hudMissing = 0;
+
+		const int limit = std::max(1, std::min(expectedPlayers, kSmokeLocalMaxPlayers));
+		int connected = 0;
+		for ( int slot = 0; slot < limit; ++slot )
+		{
+			if ( !client_disconnected[slot] )
+			{
+				++connected;
+			}
+		}
+		if ( connected <= 0 )
+		{
+			return false;
+		}
+
+		bool cameraOk = true;
+		int playerIndex = 0;
+		for ( int slot = 0; slot < limit; ++slot )
+		{
+			if ( client_disconnected[slot] )
+			{
+				continue;
+			}
+			if ( !players[slot] )
+			{
+				localSlotsOk = 0;
+				cameraOk = false;
+				++playerIndex;
+				continue;
+			}
+			if ( !players[slot]->isLocalPlayer() )
+			{
+				localSlotsOk = 0;
+			}
+			if ( !players[slot]->hud.hudFrame )
+			{
+				++hudMissing;
+			}
+
+			int expectedX = 0;
+			int expectedY = 0;
+			int expectedW = xres;
+			int expectedH = yres;
+			if ( connected >= 3 )
+			{
+				expectedX = (playerIndex % 2) * xres / 2;
+				expectedY = (playerIndex / 2) * yres / 2;
+				expectedW = xres / 2;
+				expectedH = yres / 2;
+			}
+
+			if ( connected >= 3 )
+			{
+				if ( players[slot]->camera_x1() != expectedX
+					|| players[slot]->camera_y1() != expectedY
+					|| players[slot]->camera_width() != expectedW
+					|| players[slot]->camera_height() != expectedH )
+				{
+					cameraOk = false;
+				}
+			}
+
+			if ( auto vmouse = inputs.getVirtualMouse(slot) )
+			{
+				const int minX = players[slot]->camera_x1();
+				const int minY = players[slot]->camera_y1();
+				const int maxX = players[slot]->camera_x2();
+				const int maxY = players[slot]->camera_y2();
+				if ( vmouse->x < minX || vmouse->x >= maxX
+					|| vmouse->y < minY || vmouse->y >= maxY )
+				{
+					++vmouseFailures;
+				}
+			}
+			else
+			{
+				++vmouseFailures;
+			}
+			++playerIndex;
+		}
+
+		return cameraOk;
 	}
 }
 
@@ -393,6 +852,58 @@ namespace MainMenu
 			player, readyEntries);
 	}
 
+	bool isSlotLockTraceEnabled()
+	{
+		static const bool enabled = parseEnvBool("BARONY_SMOKE_TRACE_SLOT_LOCKS", false);
+		return enabled;
+	}
+
+	void traceLobbySlotLockSnapshot(const char* context, const bool lockedSlots[MAXPLAYERS],
+		const bool disconnectedSlots[MAXPLAYERS], const int configuredPlayers)
+	{
+		if ( !isSlotLockTraceEnabled() )
+		{
+			return;
+		}
+
+		int freeUnlocked = 0;
+		int freeLocked = 0;
+		int occupied = 0;
+		char slotStates[MAXPLAYERS + 1] = {};
+		int statePos = 0;
+
+		for ( int slot = 1; slot < MAXPLAYERS; ++slot )
+		{
+			const bool disconnected = disconnectedSlots ? disconnectedSlots[slot] : false;
+			const bool locked = lockedSlots ? lockedSlots[slot] : false;
+			char state = '?';
+			if ( !disconnected )
+			{
+				state = 'O';
+				++occupied;
+			}
+			else if ( locked )
+			{
+				state = 'L';
+				++freeLocked;
+			}
+			else
+			{
+				state = 'F';
+				++freeUnlocked;
+			}
+			if ( statePos < MAXPLAYERS )
+			{
+				slotStates[statePos++] = state;
+			}
+		}
+		slotStates[statePos] = '\0';
+
+		const char* snapshotContext = (context && context[0]) ? context : "unspecified";
+		printlog("[SMOKE]: lobby slot-lock snapshot context=%s configured=%d free_unlocked=%d free_locked=%d occupied=%d states=%s",
+			snapshotContext, configuredPlayers, freeUnlocked, freeLocked, occupied, slotStates);
+	}
+
 	bool isAccountLabelTraceEnabled()
 	{
 		static const bool enabled = parseEnvBool("BARONY_SMOKE_TRACE_ACCOUNT_LABELS", false);
@@ -422,6 +933,108 @@ namespace MainMenu
 		loggedSlots[slot] = true;
 		printlog("[SMOKE]: lobby account label resolved slot=%d account=\"%s\"",
 			slot, accountName);
+	}
+
+	bool isPlayerCountCopyTraceEnabled()
+	{
+		static const bool enabled = parseEnvBool("BARONY_SMOKE_TRACE_PLAYER_COUNT_COPY", false);
+		return enabled;
+	}
+
+	void traceLobbyPlayerCountPrompt(const int targetCount, const int kickedCount,
+		const char* variant, const char* promptText)
+	{
+		if ( !isPlayerCountCopyTraceEnabled() )
+		{
+			return;
+		}
+
+		const char* resolvedVariant = (variant && variant[0]) ? variant : "none";
+		std::string sanitized = promptText ? promptText : "";
+		for ( auto& ch : sanitized )
+		{
+			if ( ch == '\n' || ch == '\r' )
+			{
+				ch = '|';
+			}
+		}
+		if ( sanitized.size() > 256 )
+		{
+			sanitized.resize(256);
+		}
+		printlog("[SMOKE]: lobby player-count prompt target=%d kicked=%d variant=%s text=\"%s\"",
+			targetCount, kickedCount, resolvedVariant, sanitized.c_str());
+	}
+
+	bool isLobbyPageStateTraceEnabled()
+	{
+		static const bool enabled = parseEnvBool("BARONY_SMOKE_TRACE_LOBBY_PAGE_STATE", false);
+		return enabled;
+	}
+
+	void traceLobbyPageSnapshot(const char* context, const int page, const int pageCount,
+		const int pageOffsetX, const int selectedOwner, const char* selectedWidget,
+		const int focusPageMatch, const int cardsVisible, const int cardsMisaligned,
+		const int paperdollsVisible, const int paperdollsMisaligned, const int pingsVisible,
+		const int pingsMisaligned, const int warningsCenterDelta, const int countdownCenterDelta)
+	{
+		if ( !isLobbyPageStateTraceEnabled() )
+		{
+			return;
+		}
+
+		const char* snapshotContext = (context && context[0]) ? context : "unspecified";
+		std::string selectedName = selectedWidget ? selectedWidget : "";
+		if ( selectedName.empty() )
+		{
+			selectedName = "none";
+		}
+		for ( auto& ch : selectedName )
+		{
+			if ( ch == '\n' || ch == '\r' || ch == '"' )
+			{
+				ch = '_';
+			}
+		}
+		if ( selectedName.size() > 128 )
+		{
+			selectedName.resize(128);
+		}
+
+		printlog("[SMOKE]: lobby page snapshot context=%s page=%d/%d offset=%d selected_owner=%d selected_widget=%s focus_page_match=%d cards_visible=%d cards_misaligned=%d paperdolls_visible=%d paperdolls_misaligned=%d pings_visible=%d pings_misaligned=%d warnings_center_delta=%d countdown_center_delta=%d",
+			snapshotContext,
+			page,
+			pageCount,
+			pageOffsetX,
+			selectedOwner,
+			selectedName.c_str(),
+			focusPageMatch,
+			cardsVisible,
+			cardsMisaligned,
+			paperdollsVisible,
+			paperdollsMisaligned,
+			pingsVisible,
+			pingsMisaligned,
+			warningsCenterDelta,
+			countdownCenterDelta);
+	}
+
+	bool isLocalSplitscreenTraceEnabled()
+	{
+		static const bool enabled = parseEnvBool("BARONY_SMOKE_TRACE_LOCAL_SPLITSCREEN", false);
+		return enabled;
+	}
+
+	void traceLocalLobbySnapshot(const char* context, const int targetPlayers,
+		const int joinedPlayers, const int readyPlayers, const int countdownActive)
+	{
+		if ( !isLocalSplitscreenTraceEnabled() )
+		{
+			return;
+		}
+		const char* snapshotContext = (context && context[0]) ? context : "unspecified";
+		printlog("[SMOKE]: local-splitscreen lobby context=%s target=%d joined=%d ready=%d countdown=%d",
+			snapshotContext, targetPlayers, joinedPlayers, readyPlayers, countdownActive);
 	}
 
 	bool hasHeloChunkPayloadOverride()
@@ -629,10 +1242,12 @@ namespace MainMenu
 			}
 
 			applySmokeSeedIfNeeded();
+			maybeAutoRequestLobbyPlayerCount(callbacks, cfg, runtime);
 			maybeAutoKickLobbyPlayer(callbacks, cfg, runtime);
+			maybeAutoSweepLobbyPages(callbacks, cfg, runtime);
 			if ( !cfg.autoStartLobby || runtime.startIssued )
 			{
-				return;
+					return;
 			}
 
 			const int connected = connectedLobbyPlayers();
@@ -661,6 +1276,57 @@ namespace MainMenu
 
 			runtime.startIssued = true;
 			printlog("[SMOKE]: auto-starting game");
+			callbacks.startGame();
+			return;
+		}
+
+		if ( cfg.role == SmokeAutopilotRole::ROLE_LOCAL )
+		{
+			if ( !runtime.hostLaunchAttempted )
+			{
+				runtime.hostLaunchAttempted = true;
+				if ( !callbacks.hostLocalLobbyNoSound || !callbacks.hostLocalLobbyNoSound() )
+				{
+					printlog("[SMOKE]: local lobby launch failed, smoke autopilot disabled");
+					cfg.enabled = false;
+				}
+				return;
+			}
+
+			if ( multiplayer != SINGLE )
+			{
+				return;
+			}
+
+			const int localTarget = std::max(1, std::min(cfg.expectedPlayers, 4));
+			if ( !runtime.localLobbyReady )
+			{
+				if ( !callbacks.prepareLocalLobbyPlayers )
+				{
+					printlog("[SMOKE]: local lobby prep callback unavailable, smoke autopilot disabled");
+					cfg.enabled = false;
+					return;
+				}
+				runtime.localLobbyReady = callbacks.prepareLocalLobbyPlayers(localTarget);
+				if ( runtime.localLobbyReady )
+				{
+					runtime.expectedPlayersMetTick = ticks;
+					printlog("[SMOKE]: local lobby ready (%d players)", localTarget);
+				}
+				return;
+			}
+
+			if ( !cfg.autoStartLobby || runtime.startIssued || !callbacks.startGame )
+			{
+				return;
+			}
+			if ( ticks - runtime.expectedPlayersMetTick < static_cast<Uint32>(cfg.autoStartDelayTicks) )
+			{
+				return;
+			}
+
+			runtime.startIssued = true;
+			printlog("[SMOKE]: auto-starting local game");
 			callbacks.startGame();
 			return;
 		}
@@ -724,7 +1390,9 @@ namespace Gameplay
 		{
 			return;
 		}
-		if ( multiplayer != SERVER )
+		const bool allowServer = multiplayer == SERVER;
+		const bool allowSingle = smoke.allowSingleplayer && multiplayer == SINGLE;
+		if ( !allowServer && !allowSingle )
 		{
 			return;
 		}
@@ -764,6 +1432,366 @@ namespace Gameplay
 		Compendium_t::Events_t::previousCurrentLevel = currentlevel;
 		printlog("[SMOKE]: auto-entering dungeon transition %d/%d from level %d",
 			smoke.transitionsIssued, smoke.maxTransitions, currentlevel);
+	}
+
+	void tickRemoteCombatAutopilot()
+	{
+		auto& smoke = smokeRemoteCombatState();
+		if ( !smoke.hostAutopilotEnabled )
+		{
+			return;
+		}
+		if ( multiplayer != SERVER )
+		{
+			return;
+		}
+		if ( loadnextlevel )
+		{
+			return;
+		}
+
+		const int connected = smokeConnectedPlayers();
+		if ( connected < smoke.expectedPlayers || !smokeConnectedPlayersLoaded() )
+		{
+			smoke.readyArmed = false;
+			return;
+		}
+
+		if ( !smoke.readyArmed )
+		{
+			smoke.readyArmed = true;
+			smoke.nextPauseTick = ticks + smoke.autoPauseDelayTicks;
+			smoke.nextCombatTick = ticks + smoke.autoCombatDelayTicks;
+			printlog("[SMOKE]: remote-combat autopilot armed connected=%d expected=%d",
+				connected, smoke.expectedPlayers);
+		}
+
+		if ( smoke.autoCombatPulses > 0 && smoke.combatPulsesIssued < smoke.autoCombatPulses
+			&& ticks >= smoke.nextCombatTick )
+		{
+			int sourceSlot = -1;
+			if ( players[0] && players[0]->entity && !client_disconnected[0] )
+			{
+				sourceSlot = 0;
+			}
+			const int targetSlot = firstConnectedRemoteSlot(smoke.expectedPlayers);
+			bool enemyBarOk = false;
+			bool damageGibOk = false;
+			if ( sourceSlot >= 0 && targetSlot >= 1 && targetSlot < MAXPLAYERS
+				&& players[targetSlot] && players[targetSlot]->entity )
+			{
+				Entity* source = players[sourceSlot]->entity;
+				Entity* target = players[targetSlot]->entity;
+				Stat* targetStats = target->getStats();
+				const char* targetName = "Remote Player";
+				Sint32 targetHp = 1;
+				Sint32 targetMaxHp = 1;
+				if ( targetStats )
+				{
+					if ( targetStats->name[0] != '\0' )
+					{
+						targetName = targetStats->name;
+					}
+					targetHp = std::max(1, targetStats->HP);
+					targetMaxHp = std::max(targetHp, std::max(1, targetStats->MAXHP));
+				}
+				updateEnemyBar(source, target, targetName, targetHp, targetMaxHp, false, DMG_DEFAULT);
+				enemyBarOk = true;
+				if ( spawnDamageGib(target, 4, DamageGib::DMG_DEFAULT,
+					DamageGibDisplayType::DMG_GIB_NUMBER, true) )
+				{
+					damageGibOk = true;
+					Combat::traceRemoteCombatEvent("auto-dmgg-pulse", targetSlot);
+				}
+				Combat::traceRemoteCombatEvent("auto-enemy-bar-pulse", targetSlot);
+			}
+
+			++smoke.combatPulsesIssued;
+			smoke.nextCombatTick = ticks + smoke.autoCombatDelayTicks;
+			const bool ok = enemyBarOk && damageGibOk;
+			printlog("[SMOKE]: remote-combat auto-event action=enemy-bar pulse=%d/%d source_slot=%d target_slot=%d enemy_bar=%d damage_gib=%d status=%s",
+				smoke.combatPulsesIssued, smoke.autoCombatPulses, sourceSlot, targetSlot,
+				enemyBarOk ? 1 : 0, damageGibOk ? 1 : 0, ok ? "ok" : "fail");
+			if ( smoke.combatPulsesIssued >= smoke.autoCombatPulses && !smoke.combatCompleteLogged )
+			{
+				smoke.combatCompleteLogged = true;
+				printlog("[SMOKE]: remote-combat auto-event complete pulses=%d", smoke.autoCombatPulses);
+			}
+		}
+
+		const int completedPausePulses = smoke.pauseActionsIssued / 2;
+		if ( smoke.autoPausePulses > 0 && (completedPausePulses < smoke.autoPausePulses)
+			&& ticks >= smoke.nextPauseTick )
+		{
+			if ( !smoke.pauseActive )
+			{
+				pauseGame(2, 0);
+				smoke.pauseActive = true;
+				++smoke.pauseActionsIssued;
+				smoke.nextPauseTick = ticks + smoke.autoPauseHoldTicks;
+				Combat::traceRemoteCombatEvent("auto-pause-issued", 0);
+				printlog("[SMOKE]: remote-combat auto-pause action=pause pulse=%d/%d",
+					completedPausePulses + 1, smoke.autoPausePulses);
+			}
+			else
+			{
+				pauseGame(1, 0);
+				smoke.pauseActive = false;
+				++smoke.pauseActionsIssued;
+				smoke.nextPauseTick = ticks + smoke.autoPauseDelayTicks;
+				Combat::traceRemoteCombatEvent("auto-unpause-issued", 0);
+				printlog("[SMOKE]: remote-combat auto-pause action=unpause pulse=%d/%d",
+					completedPausePulses + 1, smoke.autoPausePulses);
+			}
+		}
+
+		if ( !smoke.pauseCompleteLogged && (smoke.pauseActionsIssued / 2) >= smoke.autoPausePulses
+			&& smoke.autoPausePulses > 0 )
+		{
+			smoke.pauseCompleteLogged = true;
+			printlog("[SMOKE]: remote-combat auto-pause complete pulses=%d", smoke.autoPausePulses);
+		}
+	}
+
+	void tickLocalSplitscreenBaseline()
+	{
+		auto& smoke = smokeLocalSplitscreenState();
+		if ( !smoke.enabled )
+		{
+			return;
+		}
+		if ( multiplayer != SINGLE )
+		{
+			return;
+		}
+
+		const int expected = std::max(1, std::min(smoke.expectedPlayers, kSmokeLocalMaxPlayers));
+		const int connected = smokeLocalConnectedPlayers(expected);
+		const int loaded = smokeLocalLoadedPlayers(expected);
+		const bool splitscreenOk = expected >= 2 ? splitscreen : !splitscreen;
+
+		int localSlotsOk = 0;
+		int vmouseFailures = 0;
+		int hudMissing = 0;
+		const bool cameraOk = smokeLocalCameraLayoutOk(expected, localSlotsOk, vmouseFailures, hudMissing);
+		const bool baselineOk = connected >= expected
+			&& loaded >= expected
+			&& splitscreenOk
+			&& localSlotsOk == 1
+			&& cameraOk
+			&& vmouseFailures == 0
+			&& hudMissing == 0;
+
+		if ( smoke.traceEnabled && baselineOk && !smoke.baselineLoggedOk )
+		{
+			smoke.baselineLoggedOk = true;
+			printlog("[SMOKE]: local-splitscreen baseline status=ok expected=%d connected=%d loaded=%d splitscreen=%d local_slots_ok=%d camera_ok=%d vmouse_failures=%d hud_missing=%d",
+				expected, connected, loaded, splitscreen ? 1 : 0, localSlotsOk,
+				cameraOk ? 1 : 0, vmouseFailures, hudMissing);
+		}
+		else if ( smoke.traceEnabled && !baselineOk && !smoke.baselineLoggedFail )
+		{
+			smoke.baselineLoggedFail = true;
+			printlog("[SMOKE]: local-splitscreen baseline status=wait expected=%d connected=%d loaded=%d splitscreen=%d local_slots_ok=%d camera_ok=%d vmouse_failures=%d hud_missing=%d",
+				expected, connected, loaded, splitscreen ? 1 : 0, localSlotsOk,
+				cameraOk ? 1 : 0, vmouseFailures, hudMissing);
+		}
+
+		if ( !baselineOk )
+		{
+			smoke.readyArmed = false;
+			return;
+		}
+
+		if ( !smoke.readyArmed )
+		{
+			smoke.readyArmed = true;
+			smoke.readySinceTick = ticks;
+			smoke.nextPauseTick = ticks + smoke.autoPauseDelayTicks;
+			printlog("[SMOKE]: local-splitscreen baseline armed expected=%d", expected);
+		}
+
+		const int completedPausePulses = smoke.pauseActionsIssued / 2;
+		if ( smoke.autoPausePulses > 0
+			&& completedPausePulses < smoke.autoPausePulses
+			&& ticks >= smoke.nextPauseTick )
+		{
+			if ( !smoke.pauseActive )
+			{
+				pauseGame(2, 0);
+				smoke.pauseActive = true;
+				++smoke.pauseActionsIssued;
+				smoke.nextPauseTick = ticks + smoke.autoPauseHoldTicks;
+				printlog("[SMOKE]: local-splitscreen auto-pause action=pause pulse=%d/%d gamePaused=%d",
+					completedPausePulses + 1, smoke.autoPausePulses, gamePaused ? 1 : 0);
+			}
+			else
+			{
+				pauseGame(1, 0);
+				smoke.pauseActive = false;
+				++smoke.pauseActionsIssued;
+				smoke.nextPauseTick = ticks + smoke.autoPauseDelayTicks;
+				printlog("[SMOKE]: local-splitscreen auto-pause action=unpause pulse=%d/%d gamePaused=%d",
+					completedPausePulses + 1, smoke.autoPausePulses, gamePaused ? 1 : 0);
+			}
+		}
+
+		if ( !smoke.pauseCompleteLogged
+			&& smoke.autoPausePulses > 0
+			&& (smoke.pauseActionsIssued / 2) >= smoke.autoPausePulses )
+		{
+			smoke.pauseCompleteLogged = true;
+			printlog("[SMOKE]: local-splitscreen auto-pause complete pulses=%d", smoke.autoPausePulses);
+		}
+
+		if ( !smoke.transitionLogged && currentlevel > 0 )
+		{
+			smoke.transitionLogged = true;
+			printlog("[SMOKE]: local-splitscreen transition level=%d status=ok", currentlevel);
+		}
+	}
+
+	void tickLocalSplitscreenCap()
+	{
+		auto& smoke = smokeLocalSplitscreenCapState();
+		if ( !smoke.enabled )
+		{
+			return;
+		}
+		if ( multiplayer != SINGLE )
+		{
+			return;
+		}
+		if ( smoke.targetPlayers < 2 )
+		{
+			return;
+		}
+		if ( !players[0] || !players[0]->entity )
+		{
+			return;
+		}
+
+		if ( !smoke.armed )
+		{
+			smoke.armed = true;
+			smoke.armTick = ticks;
+			if ( smoke.traceEnabled )
+			{
+				printlog("[SMOKE]: local-splitscreen cap armed target=%d cap=%d issue_in=%u",
+					smoke.targetPlayers,
+					smoke.cappedPlayers,
+					static_cast<unsigned>(smoke.commandDelayTicks / TICKS_PER_SECOND));
+			}
+			return;
+		}
+
+		if ( !smoke.commandIssued
+			&& ticks - smoke.armTick >= smoke.commandDelayTicks )
+		{
+			consoleCommand("/enablecheats");
+			if ( splitscreen )
+			{
+				consoleCommand("/splitscreen");
+			}
+
+			char command[64] = "";
+			snprintf(command, sizeof(command), "/splitscreen %d", smoke.targetPlayers);
+			consoleCommand(command);
+			smoke.commandIssued = true;
+			smoke.verifyTick = ticks + smoke.verifyDelayTicks;
+			printlog("[SMOKE]: local-splitscreen cap command issued target=%d cap=%d verify_after=%u",
+				smoke.targetPlayers,
+				smoke.cappedPlayers,
+				static_cast<unsigned>(smoke.verifyDelayTicks / TICKS_PER_SECOND));
+			return;
+		}
+
+		if ( !smoke.commandIssued || ticks < smoke.verifyTick )
+		{
+			return;
+		}
+
+		int connectedPlayers = 0;
+		int connectedLocalPlayers = 0;
+		int overCapConnected = 0;
+		int overCapLocal = 0;
+		int overCapSplitscreen = 0;
+		int underCapNonLocal = 0;
+
+		for ( int slot = 0; slot < MAXPLAYERS; ++slot )
+		{
+			const bool connected = !client_disconnected[slot];
+			const bool localPlayer = players[slot] && players[slot]->isLocalPlayer();
+			if ( connected )
+			{
+				++connectedPlayers;
+				if ( localPlayer )
+				{
+					++connectedLocalPlayers;
+				}
+				else if ( slot < smoke.cappedPlayers )
+				{
+					++underCapNonLocal;
+				}
+			}
+
+			if ( slot >= smoke.cappedPlayers )
+			{
+				if ( connected )
+				{
+					++overCapConnected;
+				}
+				if ( localPlayer )
+				{
+					++overCapLocal;
+				}
+				if ( players[slot] && players[slot]->bSplitscreen )
+				{
+					++overCapSplitscreen;
+				}
+			}
+		}
+
+		const bool ok = splitscreen
+			&& connectedPlayers == smoke.cappedPlayers
+			&& connectedLocalPlayers == smoke.cappedPlayers
+			&& overCapConnected == 0
+			&& overCapLocal == 0
+			&& overCapSplitscreen == 0
+			&& underCapNonLocal == 0;
+
+		if ( ok )
+		{
+			if ( !smoke.loggedOk )
+			{
+				smoke.loggedOk = true;
+				printlog("[SMOKE]: local-splitscreen cap status=ok target=%d cap=%d connected=%d connected_local=%d over_cap_connected=%d over_cap_local=%d over_cap_splitscreen=%d under_cap_nonlocal=%d",
+					smoke.targetPlayers,
+					smoke.cappedPlayers,
+					connectedPlayers,
+					connectedLocalPlayers,
+					overCapConnected,
+					overCapLocal,
+					overCapSplitscreen,
+					underCapNonLocal);
+			}
+			return;
+		}
+
+		if ( !smoke.loggedFail )
+		{
+			smoke.loggedFail = true;
+			printlog("[SMOKE]: local-splitscreen cap status=fail target=%d cap=%d connected=%d connected_local=%d over_cap_connected=%d over_cap_local=%d over_cap_splitscreen=%d under_cap_nonlocal=%d splitscreen=%d",
+				smoke.targetPlayers,
+				smoke.cappedPlayers,
+				connectedPlayers,
+				connectedLocalPlayers,
+				overCapConnected,
+				overCapLocal,
+				overCapSplitscreen,
+				underCapNonLocal,
+				splitscreen ? 1 : 0);
+		}
 	}
 }
 
@@ -949,6 +1977,71 @@ namespace Net
 			occupied,
 			firstFree,
 			slotStates);
+	}
+}
+
+namespace Combat
+{
+	bool isRemoteCombatSlotBoundsTraceEnabled()
+	{
+		return smokeRemoteCombatState().traceEnabled;
+	}
+
+	void traceRemoteCombatSlotBounds(const char* context, const int slot, const int rawSlot,
+		const int minInclusive, const int maxExclusive)
+	{
+		if ( !isRemoteCombatSlotBoundsTraceEnabled() )
+		{
+			return;
+		}
+
+		const int maxInclusive = maxExclusive > minInclusive ? maxExclusive - 1 : minInclusive;
+		const bool rawOk = rawSlot >= minInclusive && rawSlot < maxExclusive;
+		const bool slotOk = slot >= minInclusive && slot < maxExclusive;
+		const bool ok = rawOk && slotOk;
+		std::string key = context && context[0] ? context : "unspecified";
+		if ( ok && slot >= 0 && slot < MAXPLAYERS )
+		{
+			static std::unordered_map<std::string, std::array<bool, MAXPLAYERS>> loggedOkByContext;
+			auto& seen = loggedOkByContext[key];
+			if ( seen[slot] )
+			{
+				return;
+			}
+			seen[slot] = true;
+		}
+
+		printlog("[SMOKE]: remote-combat slot-check context=%s raw=%d slot=%d min=%d max=%d status=%s",
+			key.c_str(),
+			rawSlot,
+			slot,
+			minInclusive,
+			maxInclusive,
+			ok ? "ok" : "fail");
+	}
+
+	void traceRemoteCombatEvent(const char* context, const int slot)
+	{
+		if ( !isRemoteCombatSlotBoundsTraceEnabled() )
+		{
+			return;
+		}
+
+		std::string key = context && context[0] ? context : "unspecified";
+		if ( slot >= 0 && slot < MAXPLAYERS )
+		{
+			static std::unordered_map<std::string, std::array<bool, MAXPLAYERS>> loggedByContext;
+			auto& seen = loggedByContext[key];
+			if ( seen[slot] )
+			{
+				return;
+			}
+			seen[slot] = true;
+		}
+
+		printlog("[SMOKE]: remote-combat event context=%s slot=%d",
+			key.c_str(),
+			slot);
 	}
 }
 

@@ -85,4 +85,6 @@ When running in Codex with sandboxing, ask for sandbox breakout/escalation permi
 - Add and maintain compile-time gating for smoke hooks/call sites so smoke instrumentation compiles or executes only when a dedicated smoke-test flag is enabled.
 - Smoke validation requires a smoke-enabled build (`-DBARONY_SMOKE_TESTS=ON`); if expected `[SMOKE]` logs are missing, verify generated config/build mode and rebuild the smoke target before rerunning tests.
 - Fresh per-instance smoke homes can stall in intro/title flow; ensure smoke homes are pre-seeded with profile data (`skipintro=true`, `mods=[]`, and compiled books cache) so autopilot reaches lobby/gameplay deterministically.
+- Local splitscreen is a legacy path and should stay hard-capped at 4 players; retain dedicated smoke coverage for `/splitscreen > 4` clamp behavior and over-cap leakage checks.
+- When parsing smoke status lines with similarly named keys (for example `connected` vs `over_cap_connected`), parse exact `key=value` tokens to avoid false negatives and lane hangs.
 - During style/contribution cleanup, treat `#ifdef BARONY_SMOKE_TESTS` guards around smoke-hook callsites as an acceptable and idiomatic exception.

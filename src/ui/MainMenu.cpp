@@ -1280,9 +1280,15 @@ namespace MainMenu {
 	static bool hostLANLobbyInternal(bool playSound);
 	static bool connectToServer(const char* address, void* pLobby, LobbyType lobbyType);
 	static void startGame();
-	static void kickPlayer(int index);
+		static void kickPlayer(int index);
+		static void requestLobbyPlayerCountSelection(const int requestedCount);
+		static void requestLobbyVisiblePage(const int requestedPage);
+#ifdef BARONY_SMOKE_TESTS
+		static void emitLobbyPageSnapshot(Frame& lobby, const char* context);
+		static void selectLobbyPageFocusable(Frame& lobby, int page);
+#endif
 
-	static void sendPlayerOverNet();
+		static void sendPlayerOverNet();
 	static void sendReadyOverNet(int index, bool ready);
 	static void checkReadyStates();
 	static bool sendReadyStateSnapshotToPlayer(int player);
@@ -1513,9 +1519,81 @@ namespace MainMenu {
 		return hostLANLobbyInternal(false);
 	}
 
+	static bool smokeHostLocalLobbyNoSound()
+	{
+		createLobby(LobbyType::LobbyLocal);
+		return true;
+	}
+
 	static bool smokeConnectToLanServer(const char* address)
 	{
 		return connectToServer(address, nullptr, LobbyType::LobbyLAN);
+	}
+
+	static bool smokePrepareLocalLobbyPlayers(const int targetCount)
+	{
+		if ( currentLobbyType != LobbyType::LobbyLocal || !main_menu_frame )
+		{
+			return false;
+		}
+		auto lobby = main_menu_frame->findFrame("lobby");
+		if ( !lobby )
+		{
+			return false;
+		}
+
+		const int clampedTarget = std::max(1, std::min(targetCount, MAX_SPLITSCREEN));
+		const char* readyPath = "*images/ui/Main Menus/Play/PlayerCreation/UI_Ready_Window00.png";
+		for ( int slot = 0; slot < clampedTarget; ++slot )
+		{
+			bool readyCard = false;
+			if ( auto card = lobby->findFrame((std::string("card") + std::to_string(slot)).c_str()) )
+			{
+				if ( auto backdrop = card->findImage("backdrop") )
+				{
+					readyCard = backdrop->path == readyPath;
+				}
+			}
+			if ( !readyCard )
+			{
+				createReadyStone(slot, true, true);
+			}
+		}
+
+		int joinedPlayers = 0;
+		int readyPlayers = 0;
+		for ( int slot = 0; slot < clampedTarget; ++slot )
+		{
+			if ( isPlayerSignedIn(slot) )
+			{
+				++joinedPlayers;
+			}
+			if ( auto card = lobby->findFrame((std::string("card") + std::to_string(slot)).c_str()) )
+			{
+				if ( auto backdrop = card->findImage("backdrop") )
+				{
+					if ( backdrop->path == readyPath )
+					{
+						++readyPlayers;
+					}
+				}
+			}
+		}
+		const int countdownActive = lobby->findFrame("countdown") ? 1 : 0;
+#ifdef BARONY_SMOKE_TESTS
+		static int lastJoined = -1;
+		static int lastReady = -1;
+		static int lastCountdown = -1;
+		if ( joinedPlayers != lastJoined || readyPlayers != lastReady || countdownActive != lastCountdown )
+		{
+			lastJoined = joinedPlayers;
+			lastReady = readyPlayers;
+			lastCountdown = countdownActive;
+			SmokeTestHooks::MainMenu::traceLocalLobbySnapshot("autopilot",
+				clampedTarget, joinedPlayers, readyPlayers, countdownActive);
+		}
+#endif
+		return readyPlayers >= clampedTarget || countdownActive;
 	}
 
 	static void tickMainMenu(Widget& widget) {
@@ -1527,10 +1605,14 @@ namespace MainMenu {
 #ifdef BARONY_SMOKE_TESTS
 		static const SmokeTestHooks::MainMenu::AutopilotCallbacks smokeCallbacks{
 			&smokeHostLANLobbyNoSound,
+			&smokeHostLocalLobbyNoSound,
 			&smokeConnectToLanServer,
 			&startGame,
 			&createReadyStone,
-			&kickPlayer
+			&smokePrepareLocalLobbyPlayers,
+			&kickPlayer,
+			&requestLobbyPlayerCountSelection,
+			&requestLobbyVisiblePage
 		};
 		SmokeTestHooks::MainMenu::tickAutopilot(smokeCallbacks);
 #endif
@@ -11866,6 +11948,31 @@ bind_failed:
 				promptText.append(kickPrompt);
 			}
 
+#ifdef BARONY_SMOKE_TESTS
+			const char* promptVariant = "none";
+			if ( !kickedSlots.empty() )
+			{
+				if ( kickedSlots.size() == 1 )
+				{
+					promptVariant = "single";
+				}
+				else if ( kickedSlots.size() == 2 )
+				{
+					promptVariant = "double";
+				}
+				else
+				{
+					promptVariant = "multi";
+				}
+			}
+			else if ( targetCount > 4 )
+			{
+				promptVariant = "warning-only";
+			}
+			SmokeTestHooks::MainMenu::traceLobbyPlayerCountPrompt(targetCount,
+				static_cast<int>(kickedSlots.size()), promptVariant, promptText.c_str());
+#endif
+
 			if (!promptText.empty())
 			{
 				pendingLobbyPlayerCountSelection = targetCount;
@@ -15152,7 +15259,185 @@ failed:
 		SDL_Rect pos = lobby->getActualSize();
 		pos.x = page * Frame::virtualScreenX;
 		lobby->setActualSize(pos);
+#ifdef BARONY_SMOKE_TESTS
+		emitLobbyPageSnapshot(*lobby, "page-request");
+#endif
 	}
+
+	static void requestLobbyVisiblePage(const int requestedPage)
+	{
+		if ( !main_menu_frame )
+		{
+			return;
+		}
+		auto lobby = main_menu_frame->findFrame("lobby");
+		if ( !lobby )
+		{
+			return;
+		}
+
+		const int pageCount = getLobbyPageCount();
+		const int page = std::max(0, std::min(requestedPage, pageCount - 1));
+		SDL_Rect pos = lobby->getActualSize();
+		pos.x = page * Frame::virtualScreenX;
+		lobby->setActualSize(pos);
+#ifdef BARONY_SMOKE_TESTS
+		selectLobbyPageFocusable(*lobby, page);
+#endif
+	}
+
+#ifdef BARONY_SMOKE_TESTS
+	static void selectLobbyPageFocusable(Frame& lobby, int page)
+	{
+		page = std::max(0, page);
+		const int slotsPerPage = std::max(1, getLobbySlotsPerPage());
+		const int pageStartSlot = page * slotsPerPage;
+		const int pageEndSlot = std::min(MAXPLAYERS, pageStartSlot + slotsPerPage);
+		for ( int slot = pageStartSlot; slot < pageEndSlot; ++slot )
+		{
+			if ( auto card = lobby.findFrame((std::string("card") + std::to_string(slot)).c_str()) )
+			{
+				if ( auto start = card->findButton("start") )
+				{
+					start->select();
+					return;
+				}
+				if ( auto invite = card->findButton("invite") )
+				{
+					invite->select();
+					return;
+				}
+				card->select();
+				return;
+			}
+		}
+	}
+
+	static void emitLobbyPageSnapshot(Frame& lobby, const char* context)
+	{
+		if ( !SmokeTestHooks::MainMenu::isLobbyPageStateTraceEnabled() )
+		{
+			return;
+		}
+
+		const int pageCount = getLobbyPageCount();
+		const int visiblePage = getLobbyVisiblePageIndex(lobby);
+		const int pageOffsetX = lobby.getActualSize().x;
+		const int pageCenterX = pageOffsetX + Frame::virtualScreenX / 2;
+
+		int selectedOwner = -1;
+		const char* selectedWidgetName = "none";
+		int focusPageMatch = 1;
+		if ( main_menu_frame )
+		{
+			if ( auto selected = main_menu_frame->findSelectedWidget(getMenuOwner()) )
+			{
+				selectedOwner = selected->getOwner();
+				selectedWidgetName = selected->getName();
+				if ( selectedOwner >= 0 && selectedOwner < MAXPLAYERS )
+				{
+					focusPageMatch = getLobbySlotPage(selectedOwner) == visiblePage ? 1 : 0;
+				}
+			}
+		}
+
+		int cardsVisible = 0;
+		int cardsMisaligned = 0;
+		int paperdollsVisible = 0;
+		int paperdollsMisaligned = 0;
+		int pingsVisible = 0;
+		int pingsMisaligned = 0;
+
+		const int slotsPerPage = std::max(1, getLobbySlotsPerPage());
+		const int pageStartSlot = visiblePage * slotsPerPage;
+		const int pageEndSlot = std::min(MAXPLAYERS, pageStartSlot + slotsPerPage);
+		for ( int slot = pageStartSlot; slot < pageEndSlot; ++slot )
+		{
+			const int expectedCenterX = getLobbySlotCenterX(slot);
+
+			if ( auto card = lobby.findFrame((std::string("card") + std::to_string(slot)).c_str()) )
+			{
+				++cardsVisible;
+				const int centerX = card->getSize().x + card->getSize().w / 2;
+				const int deltaX = centerX - expectedCenterX;
+				if ( deltaX < -2 || deltaX > 2 )
+				{
+					++cardsMisaligned;
+				}
+			}
+
+			if ( auto paperdoll = lobby.findFrame((std::string("paperdoll") + std::to_string(slot)).c_str()) )
+			{
+				if ( !paperdoll->isInvisible() )
+				{
+					++paperdollsVisible;
+					const int centerX = paperdoll->getSize().x + paperdoll->getSize().w / 2;
+					const int deltaX = centerX - expectedCenterX;
+					if ( deltaX < -2 || deltaX > 2 )
+					{
+						++paperdollsMisaligned;
+					}
+				}
+			}
+
+			if ( auto ping = lobby.findFrame((std::string("ping") + std::to_string(slot)).c_str()) )
+			{
+				bool pingVisible = true;
+				if ( auto pingBg = ping->findImage("ping bg") )
+				{
+					pingVisible = !pingBg->disabled;
+				}
+				if ( pingVisible )
+				{
+					++pingsVisible;
+					const int centerX = ping->getSize().x + ping->getSize().w / 2;
+					const int deltaX = centerX - expectedCenterX;
+					if ( deltaX < -2 || deltaX > 2 )
+					{
+						++pingsMisaligned;
+					}
+				}
+			}
+		}
+
+		int warningsCenterDelta = 9999;
+		if ( auto warnings = lobby.findFrame("lobby_float_warnings") )
+		{
+			if ( !warnings->isDisabled() )
+			{
+				const int centerX = warnings->getSize().x + warnings->getSize().w / 2;
+				warningsCenterDelta = centerX - pageCenterX;
+			}
+		}
+
+		int countdownCenterDelta = 9999;
+		if ( auto countdown = lobby.findFrame("countdown") )
+		{
+			if ( !countdown->isDisabled() )
+			{
+				const int centerX = countdown->getSize().x + countdown->getSize().w / 2;
+				countdownCenterDelta = centerX - pageCenterX;
+			}
+		}
+
+		SmokeTestHooks::MainMenu::traceLobbyPageSnapshot(
+			context,
+			visiblePage + 1,
+			pageCount,
+			pageOffsetX,
+			selectedOwner,
+			selectedWidgetName,
+			focusPageMatch,
+			cardsVisible,
+			cardsMisaligned,
+			paperdollsVisible,
+			paperdollsMisaligned,
+			pingsVisible,
+			pingsMisaligned,
+			warningsCenterDelta,
+			countdownCenterDelta);
+	}
+#endif
 
 	static SDL_Rect getLobbySmallCardRect(int index, int width = 280, int height = 146)
 	{
@@ -19824,24 +20109,24 @@ failed:
 		}
 
 		// reset ALL player stats
-        if (!loadingsavegame) {
+	        if (!loadingsavegame) {
+			const bool lockExtraSlotsByDefault =
+				type == LobbyType::LobbyLAN || type == LobbyType::LobbyOnline;
+			int defaultLobbyPlayerCount = 4;
+#ifdef BARONY_SMOKE_TESTS
+			if ( lockExtraSlotsByDefault )
+			{
+				defaultLobbyPlayerCount =
+					SmokeTestHooks::MainMenu::expectedHostLobbyPlayerSlots(defaultLobbyPlayerCount);
+			}
+#endif
 
 			for (int c = 0; c < MAXPLAYERS; ++c) {
 				if (type != LobbyType::LobbyJoined && type != LobbyType::LobbyLocal && c != 0) {
 					newPlayer[c] = true;
 				}
 				if (type != LobbyType::LobbyJoined || c == clientnum) {
-							const bool lockExtraSlotsByDefault =
-								type == LobbyType::LobbyLAN || type == LobbyType::LobbyOnline;
-							int defaultLobbyPlayerCount = 4;
-#ifdef BARONY_SMOKE_TESTS
-							if ( lockExtraSlotsByDefault )
-							{
-								defaultLobbyPlayerCount =
-									SmokeTestHooks::MainMenu::expectedHostLobbyPlayerSlots(defaultLobbyPlayerCount);
-							}
-#endif
-				            playerSlotsLocked[c] = lockExtraSlotsByDefault && c >= defaultLobbyPlayerCount;
+					playerSlotsLocked[c] = lockExtraSlotsByDefault && c >= defaultLobbyPlayerCount;
 
 					bool replayedLastCharacter = false;
 					if ( type == LobbyType::LobbyLAN )
@@ -19926,8 +20211,15 @@ failed:
 						memcpy(stats[c]->name, name, len);
 						stats[c]->name[len] = '\0';
 					}
-			    }
+				}
 			}
+#ifdef BARONY_SMOKE_TESTS
+			if ( lockExtraSlotsByDefault )
+			{
+				SmokeTestHooks::MainMenu::traceLobbySlotLockSnapshot("lobby-init",
+					playerSlotsLocked, client_disconnected, defaultLobbyPlayerCount);
+			}
+#endif
 		}
 
 		GameplayPreferences_t::reset();
@@ -20518,6 +20810,15 @@ failed:
             banner->setSize(SDL_Rect{lobby->getActualSize().x, 0, Frame::virtualScreenX, 66});
 			lobby_float_warning_fn(*lobby);
 			lobby_float_voice_fn(*lobby);
+#ifdef BARONY_SMOKE_TESTS
+			static int lastTracedPage = -1;
+			const int visiblePage = getLobbyVisiblePageIndex(*lobby);
+			if ( visiblePage != lastTracedPage )
+			{
+				lastTracedPage = visiblePage;
+				emitLobbyPageSnapshot(*lobby, "visible-page");
+			}
+#endif
             });
         {
             auto background = banner->addImage(

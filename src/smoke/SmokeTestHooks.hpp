@@ -21,10 +21,14 @@ namespace MainMenu
 	struct AutopilotCallbacks
 	{
 		bool (*hostLANLobbyNoSound)() = nullptr;
+		bool (*hostLocalLobbyNoSound)() = nullptr;
 		bool (*connectToLanServer)(const char* address) = nullptr;
 		void (*startGame)() = nullptr;
 		void (*createReadyStone)(int index, bool local, bool ready) = nullptr;
+		bool (*prepareLocalLobbyPlayers)(int targetCount) = nullptr;
 		void (*kickPlayer)(int index) = nullptr;
+		void (*requestLobbyPlayerCountSelection)(int targetCount) = nullptr;
+		void (*requestLobbyVisiblePage)(int pageIndex) = nullptr;
 	};
 
 	struct HeloChunkSendPlanEntry
@@ -42,8 +46,22 @@ namespace MainMenu
 	bool isReadyStateSyncTraceEnabled();
 	void traceReadyStateSnapshotQueued(int player, int attempts, Uint32 firstSendTick);
 	void traceReadyStateSnapshotSent(int player, int readyEntries);
+	bool isSlotLockTraceEnabled();
+	void traceLobbySlotLockSnapshot(const char* context, const bool lockedSlots[MAXPLAYERS],
+		const bool disconnectedSlots[MAXPLAYERS], int configuredPlayers);
 	bool isAccountLabelTraceEnabled();
 	void traceLobbyAccountLabelResolved(int slot, const char* accountName);
+	bool isPlayerCountCopyTraceEnabled();
+	void traceLobbyPlayerCountPrompt(int targetCount, int kickedCount, const char* variant, const char* promptText);
+	bool isLobbyPageStateTraceEnabled();
+	void traceLobbyPageSnapshot(const char* context, int page, int pageCount, int pageOffsetX,
+		int selectedOwner, const char* selectedWidget, int focusPageMatch, int cardsVisible,
+		int cardsMisaligned, int paperdollsVisible, int paperdollsMisaligned,
+		int pingsVisible, int pingsMisaligned, int warningsCenterDelta,
+		int countdownCenterDelta);
+	bool isLocalSplitscreenTraceEnabled();
+	void traceLocalLobbySnapshot(const char* context, int targetPlayers, int joinedPlayers,
+		int readyPlayers, int countdownActive);
 	bool isHeloChunkPayloadOverrideEnvEnabled();
 	bool isHeloChunkTxModeOverrideEnvEnabled();
 
@@ -56,6 +74,9 @@ namespace MainMenu
 namespace Gameplay
 {
 	void tickAutoEnterDungeon();
+	void tickRemoteCombatAutopilot();
+	void tickLocalSplitscreenBaseline();
+	void tickLocalSplitscreenCap();
 }
 
 namespace GameUI
@@ -73,6 +94,13 @@ namespace Net
 	int heloChunkPayloadMaxOverride(int defaultPayloadMax, int minPayloadMax = 64);
 	bool isJoinRejectTraceEnabled();
 	void traceLobbyJoinReject(Uint32 result, Uint8 requestedSlot, const bool lockedSlots[MAXPLAYERS], const bool disconnectedSlots[MAXPLAYERS]);
+}
+
+namespace Combat
+{
+	bool isRemoteCombatSlotBoundsTraceEnabled();
+	void traceRemoteCombatSlotBounds(const char* context, int slot, int rawSlot, int minInclusive, int maxExclusive);
+	void traceRemoteCombatEvent(const char* context, int slot);
 }
 
 namespace SaveReload

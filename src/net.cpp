@@ -4003,6 +4003,11 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 
 	// enemy hp bar
 	{'ENHP', [](){
+#ifdef BARONY_SMOKE_TESTS
+		SmokeTestHooks::Combat::traceRemoteCombatSlotBounds("client-ENHP",
+			clientnum, clientnum, 0, MAXPLAYERS);
+		SmokeTestHooks::Combat::traceRemoteCombatEvent("client-ENHP", clientnum);
+#endif
 		Sint16 enemy_hp = SDLNet_Read16(&net_packet->data[4]);
 		Sint16 enemy_maxhp = SDLNet_Read16(&net_packet->data[6]);
 		Sint16 oldhp = SDLNet_Read16(&net_packet->data[8]);
@@ -4045,6 +4050,11 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 
 	// custom damage gib (miss/healing)
 	{'DMGG', [](){
+#ifdef BARONY_SMOKE_TESTS
+		SmokeTestHooks::Combat::traceRemoteCombatSlotBounds("client-DMGG",
+			clientnum, clientnum, 0, MAXPLAYERS);
+		SmokeTestHooks::Combat::traceRemoteCombatEvent("client-DMGG", clientnum);
+#endif
 		Uint32 uid = SDLNet_Read32(&net_packet->data[4]);
 		Sint16 dmg = (Sint16)SDLNet_Read16(&net_packet->data[8]);
 		DamageGib gib = DMG_DEFAULT;
@@ -4107,14 +4117,26 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 
 	// pause game
 	{'PAUS', [](){
-	    const int player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
+		const int rawPlayer = static_cast<int>(net_packet->data[4]);
+	    const int player = std::min(rawPlayer, static_cast<int>(MAXPLAYERS - 1));
+#ifdef BARONY_SMOKE_TESTS
+		SmokeTestHooks::Combat::traceRemoteCombatSlotBounds("client-PAUS-packet",
+			player, rawPlayer, 0, MAXPLAYERS);
+		SmokeTestHooks::Combat::traceRemoteCombatEvent("client-PAUS-packet", player);
+#endif
 		messagePlayer(clientnum, MESSAGE_MISC, Language::get(1118), stats[player]->name);
 		pauseGame(2, 0);
 	}},
 
 	// unpause game
 	{'UNPS', [](){
-	    const int player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
+		const int rawPlayer = static_cast<int>(net_packet->data[4]);
+	    const int player = std::min(rawPlayer, static_cast<int>(MAXPLAYERS - 1));
+#ifdef BARONY_SMOKE_TESTS
+		SmokeTestHooks::Combat::traceRemoteCombatSlotBounds("client-UNPS-packet",
+			player, rawPlayer, 0, MAXPLAYERS);
+		SmokeTestHooks::Combat::traceRemoteCombatEvent("client-UNPS-packet", player);
+#endif
 		messagePlayer(clientnum, MESSAGE_MISC, Language::get(1119), stats[player]->name);
 		pauseGame(1, 0);
 	}},
@@ -4631,6 +4653,11 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 
 	// damage indicator
 	{'DAMI', [](){
+#ifdef BARONY_SMOKE_TESTS
+		SmokeTestHooks::Combat::traceRemoteCombatSlotBounds("client-DAMI",
+			clientnum, clientnum, 0, MAXPLAYERS);
+		SmokeTestHooks::Combat::traceRemoteCombatEvent("client-DAMI", clientnum);
+#endif
 		DamageIndicatorHandler.insert(clientnum, SDLNet_Read32(&net_packet->data[4]), 
 			SDLNet_Read32(&net_packet->data[8]), net_packet->data[12] == 1 ? true : false);
 	} },
@@ -7120,14 +7147,26 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 
 	// pause game
 	{'PAUS', [](){
-		const int j = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
+		const int rawPlayer = static_cast<int>(net_packet->data[4]);
+		const int j = std::min(rawPlayer, static_cast<int>(MAXPLAYERS - 1));
+#ifdef BARONY_SMOKE_TESTS
+		SmokeTestHooks::Combat::traceRemoteCombatSlotBounds("server-PAUS-packet",
+			j, rawPlayer, 1, MAXPLAYERS);
+		SmokeTestHooks::Combat::traceRemoteCombatEvent("server-PAUS-packet", j);
+#endif
 		messagePlayer(clientnum, MESSAGE_MISC, Language::get(1118), stats[j] ? stats[j]->name : "Unknown");
 		pauseGame(2, j);
 	}},
 
 	// unpause game
 	{'UNPS', [](){
-		const int j = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
+		const int rawPlayer = static_cast<int>(net_packet->data[4]);
+		const int j = std::min(rawPlayer, static_cast<int>(MAXPLAYERS - 1));
+#ifdef BARONY_SMOKE_TESTS
+		SmokeTestHooks::Combat::traceRemoteCombatSlotBounds("server-UNPS-packet",
+			j, rawPlayer, 1, MAXPLAYERS);
+		SmokeTestHooks::Combat::traceRemoteCombatEvent("server-UNPS-packet", j);
+#endif
 		messagePlayer(clientnum, MESSAGE_MISC, Language::get(1119), stats[j] ? stats[j]->name : "Unknown");
 		pauseGame(1, j);
 	}},
