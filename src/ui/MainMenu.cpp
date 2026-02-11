@@ -207,7 +207,7 @@ namespace MainMenu {
 		SmokeTestHooks::MainMenu::applyHeloChunkTxModePlan(sendPlan, chunkCount, transferId);
 #endif
 
-		for ( const auto& planned : sendPlan )
+		for ( const HeloChunkSendPlanEntry& planned : sendPlan )
 		{
 			const int chunkIndex = planned.chunkIndex;
 			if ( chunkIndex < 0 || chunkIndex >= chunkCount )
@@ -336,7 +336,7 @@ namespace MainMenu {
 		g_heloChunkReassemblyState.lastChunkTick = ticks;
 		if ( g_heloChunkReassemblyState.received[chunkIndex] )
 		{
-			const auto& existing = g_heloChunkReassemblyState.chunks[chunkIndex];
+			const std::vector<Uint8>& existing = g_heloChunkReassemblyState.chunks[chunkIndex];
 			if ( static_cast<int>(existing.size()) != chunkLen
 				|| memcmp(existing.data(), &net_packet->data[kHeloChunkHeaderSize], chunkLen) != 0 )
 			{
@@ -365,7 +365,7 @@ namespace MainMenu {
 				resetHeloChunkReassemblyStateWithLog("missing chunk during assembly");
 				return false;
 			}
-			const auto& chunk = g_heloChunkReassemblyState.chunks[i];
+			const std::vector<Uint8>& chunk = g_heloChunkReassemblyState.chunks[i];
 			if ( offset + static_cast<int>(chunk.size()) > g_heloChunkReassemblyState.totalLen )
 			{
 				resetHeloChunkReassemblyStateWithLog("overflow during assembly");
@@ -1514,87 +1514,102 @@ namespace MainMenu {
 		}
 	}
 
-	static bool smokeHostLANLobbyNoSound()
-	{
-		return hostLANLobbyInternal(false);
-	}
-
-	static bool smokeHostLocalLobbyNoSound()
-	{
-		createLobby(LobbyType::LobbyLocal);
-		return true;
-	}
-
-	static bool smokeConnectToLanServer(const char* address)
-	{
-		return connectToServer(address, nullptr, LobbyType::LobbyLAN);
-	}
-
-	static bool smokePrepareLocalLobbyPlayers(const int targetCount)
-	{
-		if ( currentLobbyType != LobbyType::LobbyLocal || !main_menu_frame )
-		{
-			return false;
-		}
-		auto lobby = main_menu_frame->findFrame("lobby");
-		if ( !lobby )
-		{
-			return false;
-		}
-
-		const int clampedTarget = std::max(1, std::min(targetCount, MAX_SPLITSCREEN));
-		const char* readyPath = "*images/ui/Main Menus/Play/PlayerCreation/UI_Ready_Window00.png";
-		for ( int slot = 0; slot < clampedTarget; ++slot )
-		{
-			bool readyCard = false;
-			if ( auto card = lobby->findFrame((std::string("card") + std::to_string(slot)).c_str()) )
-			{
-				if ( auto backdrop = card->findImage("backdrop") )
-				{
-					readyCard = backdrop->path == readyPath;
-				}
-			}
-			if ( !readyCard )
-			{
-				createReadyStone(slot, true, true);
-			}
-		}
-
-		int joinedPlayers = 0;
-		int readyPlayers = 0;
-		for ( int slot = 0; slot < clampedTarget; ++slot )
-		{
-			if ( isPlayerSignedIn(slot) )
-			{
-				++joinedPlayers;
-			}
-			if ( auto card = lobby->findFrame((std::string("card") + std::to_string(slot)).c_str()) )
-			{
-				if ( auto backdrop = card->findImage("backdrop") )
-				{
-					if ( backdrop->path == readyPath )
-					{
-						++readyPlayers;
-					}
-				}
-			}
-		}
-		const int countdownActive = lobby->findFrame("countdown") ? 1 : 0;
 #ifdef BARONY_SMOKE_TESTS
-		static int lastJoined = -1;
-		static int lastReady = -1;
-		static int lastCountdown = -1;
-		if ( joinedPlayers != lastJoined || readyPlayers != lastReady || countdownActive != lastCountdown )
+		static bool smokeHostLANLobbyNoSound()
 		{
-			lastJoined = joinedPlayers;
-			lastReady = readyPlayers;
-			lastCountdown = countdownActive;
-			SmokeTestHooks::MainMenu::traceLocalLobbySnapshot("autopilot",
-				clampedTarget, joinedPlayers, readyPlayers, countdownActive);
+			return hostLANLobbyInternal(false);
+		}
+
+		static void createOnlineLobby();
+
+		static bool smokeHostSteamLobbyNoSound()
+		{
+#if !defined(STEAMWORKS)
+			return false;
+#else
+			closeNetworkInterfaces();
+			randomizeHostname();
+			directConnect = false;
+			LobbyHandler.setHostingType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
+			LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
+			createOnlineLobby();
+			return true;
+#endif
+		}
+
+		static bool smokeHostEosLobbyNoSound()
+		{
+#if !defined(USE_EOS)
+			return false;
+#else
+			closeNetworkInterfaces();
+			randomizeHostname();
+			directConnect = false;
+			LobbyHandler.setHostingType(LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY);
+			LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY);
+			createOnlineLobby();
+			return true;
+#endif
+		}
+
+		static bool smokeHostLocalLobbyNoSound()
+		{
+			createLobby(LobbyType::LobbyLocal);
+			return true;
+		}
+
+		static bool smokeConnectToLanServer(const char* address)
+		{
+			return connectToServer(address, nullptr, LobbyType::LobbyLAN);
+		}
+
+		static bool smokeConnectToOnlineLobby(const char* address)
+		{
+			return connectToServer(address, nullptr, LobbyType::LobbyOnline);
+		}
+
+		static Frame* smokeAutopilotLobbyFrame()
+		{
+			if ( currentLobbyType != LobbyType::LobbyLocal || !main_menu_frame )
+			{
+				return nullptr;
+			}
+			return main_menu_frame->findFrame("lobby");
+		}
+
+		static bool smokeIsLocalLobbyAutopilotContextReady()
+		{
+			return smokeAutopilotLobbyFrame() != nullptr;
+		}
+
+		static bool smokeIsLocalLobbyCardReady(const int slot)
+		{
+			Frame* lobby = smokeAutopilotLobbyFrame();
+			if ( !lobby || slot < 0 || slot >= MAX_SPLITSCREEN )
+			{
+				return false;
+			}
+			const char* readyPath = "*images/ui/Main Menus/Play/PlayerCreation/UI_Ready_Window00.png";
+			Frame* card = lobby->findFrame((std::string("card") + std::to_string(slot)).c_str());
+			if ( !card )
+			{
+				return false;
+			}
+			Frame::image_t* backdrop = card->findImage("backdrop");
+			return backdrop && backdrop->path == readyPath;
+		}
+
+		static bool smokeIsLocalLobbyCountdownActive()
+		{
+			Frame* lobby = smokeAutopilotLobbyFrame();
+			return lobby && lobby->findFrame("countdown");
+		}
+
+		static bool smokeIsLocalPlayerSignedIn(const int slot)
+		{
+			return isPlayerSignedIn(slot);
 		}
 #endif
-		return readyPlayers >= clampedTarget || countdownActive;
-	}
 
 	static void tickMainMenu(Widget& widget) {
 		++main_menu_ticks;
@@ -1605,11 +1620,17 @@ namespace MainMenu {
 #ifdef BARONY_SMOKE_TESTS
 		static const SmokeTestHooks::MainMenu::AutopilotCallbacks smokeCallbacks{
 			&smokeHostLANLobbyNoSound,
+			&smokeHostSteamLobbyNoSound,
+			&smokeHostEosLobbyNoSound,
 			&smokeHostLocalLobbyNoSound,
 			&smokeConnectToLanServer,
+			&smokeConnectToOnlineLobby,
 			&startGame,
 			&createReadyStone,
-			&smokePrepareLocalLobbyPlayers,
+			&smokeIsLocalLobbyAutopilotContextReady,
+			&smokeIsLocalLobbyCardReady,
+			&smokeIsLocalLobbyCountdownActive,
+			&smokeIsLocalPlayerSignedIn,
 			&kickPlayer,
 			&requestLobbyPlayerCountSelection,
 			&requestLobbyVisiblePage
@@ -11989,9 +12010,9 @@ bind_failed:
 			const int parsedTargetCount = atoi(entry.name.c_str());
 			const int targetCount = std::max(2, std::min(parsedTargetCount, MAXPLAYERS));
 
-			auto dropdown = static_cast<Frame*>(entry.parent.getParent());
-			auto card = dropdown ? static_cast<Frame*>(dropdown->getParent()) : nullptr;
-			auto button = card ? card->findButton("player_count_dropdown_button") : nullptr;
+			Frame* dropdown = static_cast<Frame*>(entry.parent.getParent());
+			Frame* card = dropdown ? static_cast<Frame*>(dropdown->getParent()) : nullptr;
+			Button* button = card ? card->findButton("player_count_dropdown_button") : nullptr;
 			if ( button )
 			{
 				char countText[16] = "";
@@ -12018,9 +12039,9 @@ bind_failed:
 			const int targetPlayer = std::max(1, std::min(parsedPlayerNum - 1, MAXPLAYERS - 1));
 			pendingKickPlayerSelection = targetPlayer;
 
-			auto dropdown = static_cast<Frame*>(entry.parent.getParent());
-			auto card = dropdown ? static_cast<Frame*>(dropdown->getParent()) : nullptr;
-			auto button = card ? card->findButton("kick_player_dropdown_button") : nullptr;
+			Frame* dropdown = static_cast<Frame*>(entry.parent.getParent());
+			Frame* card = dropdown ? static_cast<Frame*>(dropdown->getParent()) : nullptr;
+			Button* button = card ? card->findButton("kick_player_dropdown_button") : nullptr;
 			if ( button )
 			{
 				char playerText[16] = "";
@@ -12043,9 +12064,9 @@ bind_failed:
 		static void lobbyKickPlayerConfirmButtonCallback(Button& button)
 		{
 			int targetPlayer = pendingKickPlayerSelection;
-			if ( auto card = static_cast<Frame*>(button.getParent()) )
+			if ( Frame* card = static_cast<Frame*>(button.getParent()) )
 			{
-				if ( auto selectionButton = card->findButton("kick_player_dropdown_button") )
+				if ( Button* selectionButton = card->findButton("kick_player_dropdown_button") )
 				{
 					const int parsedPlayerNum = atoi(selectionButton->getText());
 					targetPlayer = std::max(1, std::min(parsedPlayerNum - 1, MAXPLAYERS - 1));
@@ -12079,7 +12100,7 @@ bind_failed:
 				return false;
 			}
 
-			auto lobby = main_menu_frame->findFrame("lobby");
+			Frame* lobby = main_menu_frame->findFrame("lobby");
 			if ( !lobby || lobby->isToBeDeleted() )
 			{
 				return false;
@@ -12095,12 +12116,12 @@ bind_failed:
 					continue;
 				}
 
-				auto card = lobby->findFrame((std::string("card") + std::to_string(index)).c_str());
+				Frame* card = lobby->findFrame((std::string("card") + std::to_string(index)).c_str());
 				if ( !card )
 				{
 					continue;
 				}
-				auto backdrop = card->findImage("backdrop");
+				Frame::image_t* backdrop = card->findImage("backdrop");
 				if ( !backdrop || backdrop->path != "*images/ui/Main Menus/Play/PlayerCreation/UI_Ready_Window00.png" )
 				{
 					continue;
@@ -13176,10 +13197,26 @@ bind_failed:
 			VoiceChat.receivePacket(net_packet);
 #endif
 		}},
-	};
+		};
 
-	static void handlePacketsAsClient() {
-	    if (receivedclientnum == false) {
+		static void processJoinHandshakePacket(bool& gotPacket) {
+			const Uint32 packetId = SDLNet_Read32(&net_packet->data[0]);
+			if ( packetId == 'HELO' )
+			{
+				resetHeloChunkReassemblyState();
+				gotPacket = true;
+			}
+			else if ( packetId == 'HLCN' )
+			{
+				if ( ingestHeloChunkAndMaybeAssemble() )
+				{
+					gotPacket = true;
+				}
+			}
+		}
+
+		static void handlePacketsAsClient() {
+		    if (receivedclientnum == false) {
 #ifdef STEAMWORKS
 			CSteamID newSteamID;
 			if (!directConnect && LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
@@ -13209,33 +13246,18 @@ bind_failed:
 			}
 #endif
 
-			// trying to connect to the server and get a player number
-			// receive the packet:
-			checkHeloChunkReassemblyTimeout();
-			bool gotPacket = false;
-			auto processJoinHandshakePacket = [&gotPacket]() {
-				const Uint32 packetId = SDLNet_Read32(&net_packet->data[0]);
-				if ( packetId == 'HELO' )
-				{
-					resetHeloChunkReassemblyState();
-					gotPacket = true;
-				}
-				else if ( packetId == 'HLCN' )
-				{
-					if ( ingestHeloChunkAndMaybeAssemble() )
-					{
-						gotPacket = true;
-					}
-				}
-			};
+				// trying to connect to the server and get a player number
+				// receive the packet:
+				checkHeloChunkReassemblyTimeout();
+				bool gotPacket = false;
 
-			if (directConnect) {
-			    if (SDLNet_UDP_Recv(net_sock, net_packet)) {
-			        if (!handleSafePacket()) {
-						processJoinHandshakePacket();
-					}
-			    }
-			} else if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
+				if (directConnect) {
+				    if (SDLNet_UDP_Recv(net_sock, net_packet)) {
+				        if (!handleSafePacket()) {
+							processJoinHandshakePacket(gotPacket);
+						}
+				    }
+				} else if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
 #ifdef STEAMWORKS
 				for (Uint32 numpacket = 0; numpacket < PACKET_LIMIT && net_packet; numpacket++) {
 					Uint32 packetlen = 0;
@@ -13259,11 +13281,11 @@ bind_failed:
 						continue;
 					}
 
-			        if (!handleSafePacket()) {
-						processJoinHandshakePacket();
+				        if (!handleSafePacket()) {
+							processJoinHandshakePacket(gotPacket);
+						}
+						break;
 					}
-					break;
-				}
 #endif
 			} else if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
 #ifdef USE_EOS
@@ -13272,11 +13294,11 @@ bind_failed:
 						continue;
 					}
 
-			        if (!handleSafePacket()) {
-						processJoinHandshakePacket();
+				        if (!handleSafePacket()) {
+							processJoinHandshakePacket(gotPacket);
+						}
+						break;
 					}
-					break;
-				}
 #endif // USE_EOS
 			}
 
@@ -15034,7 +15056,7 @@ failed:
 			}
 			if (enabledDLCPack1) {
 				stats[index]->playerRace = RACE_SUCCUBUS;
-				auto race = card->findButton("race");
+				Button* race = card->findButton("race");
 				if (race) {
 					race->setText(Language::get(5372));
 				}
@@ -15051,13 +15073,13 @@ failed:
 						}
 					}
 				}
-			} else {
-				stats[index]->playerRace = RACE_HUMAN;
-				auto race = card->findButton("race");
-				if (race) {
-					race->setText(Language::get(5369));
-				}
-				auto human = subframe ? subframe->findButton(Language::get(5369)) : nullptr;
+				} else {
+					stats[index]->playerRace = RACE_HUMAN;
+					Button* race = card->findButton("race");
+					if (race) {
+						race->setText(Language::get(5369));
+					}
+				Button* human = subframe ? subframe->findButton(Language::get(5369)) : nullptr;
 				if (human) {
 					human->setPressed(true);
 				}
@@ -15103,7 +15125,7 @@ failed:
 			spawnY = anchor->y;
 		}
 
-		auto preview = newEntity(
+		Entity* preview = newEntity(
 			playerHeadSprite(getMonsterFromPlayerRace(stats[index]->playerRace),
 				stats[index]->sex, stats[index]->stat_appearance),
 			1, map.entities, nullptr);
@@ -15246,7 +15268,7 @@ failed:
 		{
 			return;
 		}
-		auto lobby = main_menu_frame->findFrame("lobby");
+		Frame* lobby = main_menu_frame->findFrame("lobby");
 		if ( !lobby )
 		{
 			return;
@@ -15270,7 +15292,7 @@ failed:
 		{
 			return;
 		}
-		auto lobby = main_menu_frame->findFrame("lobby");
+		Frame* lobby = main_menu_frame->findFrame("lobby");
 		if ( !lobby )
 		{
 			return;
@@ -15295,14 +15317,14 @@ failed:
 		const int pageEndSlot = std::min(MAXPLAYERS, pageStartSlot + slotsPerPage);
 		for ( int slot = pageStartSlot; slot < pageEndSlot; ++slot )
 		{
-			if ( auto card = lobby.findFrame((std::string("card") + std::to_string(slot)).c_str()) )
+			if ( Frame* card = lobby.findFrame((std::string("card") + std::to_string(slot)).c_str()) )
 			{
-				if ( auto start = card->findButton("start") )
+				if ( Button* start = card->findButton("start") )
 				{
 					start->select();
 					return;
 				}
-				if ( auto invite = card->findButton("invite") )
+				if ( Button* invite = card->findButton("invite") )
 				{
 					invite->select();
 					return;
@@ -15330,7 +15352,7 @@ failed:
 		int focusPageMatch = 1;
 		if ( main_menu_frame )
 		{
-			if ( auto selected = main_menu_frame->findSelectedWidget(getMenuOwner()) )
+			if ( Widget* selected = main_menu_frame->findSelectedWidget(getMenuOwner()) )
 			{
 				selectedOwner = selected->getOwner();
 				selectedWidgetName = selected->getName();
@@ -15355,7 +15377,7 @@ failed:
 		{
 			const int expectedCenterX = getLobbySlotCenterX(slot);
 
-			if ( auto card = lobby.findFrame((std::string("card") + std::to_string(slot)).c_str()) )
+			if ( Frame* card = lobby.findFrame((std::string("card") + std::to_string(slot)).c_str()) )
 			{
 				++cardsVisible;
 				const int centerX = card->getSize().x + card->getSize().w / 2;
@@ -15366,7 +15388,7 @@ failed:
 				}
 			}
 
-			if ( auto paperdoll = lobby.findFrame((std::string("paperdoll") + std::to_string(slot)).c_str()) )
+			if ( Frame* paperdoll = lobby.findFrame((std::string("paperdoll") + std::to_string(slot)).c_str()) )
 			{
 				if ( !paperdoll->isInvisible() )
 				{
@@ -15380,10 +15402,10 @@ failed:
 				}
 			}
 
-			if ( auto ping = lobby.findFrame((std::string("ping") + std::to_string(slot)).c_str()) )
+			if ( Frame* ping = lobby.findFrame((std::string("ping") + std::to_string(slot)).c_str()) )
 			{
 				bool pingVisible = true;
-				if ( auto pingBg = ping->findImage("ping bg") )
+				if ( Frame::image_t* pingBg = ping->findImage("ping bg") )
 				{
 					pingVisible = !pingBg->disabled;
 				}
@@ -15401,7 +15423,7 @@ failed:
 		}
 
 		int warningsCenterDelta = 9999;
-		if ( auto warnings = lobby.findFrame("lobby_float_warnings") )
+		if ( Frame* warnings = lobby.findFrame("lobby_float_warnings") )
 		{
 			if ( !warnings->isDisabled() )
 			{
@@ -15411,7 +15433,7 @@ failed:
 		}
 
 		int countdownCenterDelta = 9999;
-		if ( auto countdown = lobby.findFrame("countdown") )
+		if ( Frame* countdown = lobby.findFrame("countdown") )
 		{
 			if ( !countdown->isDisabled() )
 			{
@@ -15461,7 +15483,7 @@ failed:
 		if (card) {
 			card->removeSelf();
 		}
-		
+
 		const int pos = getLobbySlotCenterX(index);
 		card = lobby->addFrame((std::string("card") + std::to_string(index)).c_str());
 		card->setSize(SDL_Rect{pos - 324 / 2, Frame::virtualScreenY - height, 324, height});
@@ -16416,7 +16438,7 @@ failed:
 		const int playerCountButtonCount = std::max(0, maxLobbyPlayers - minLobbyPlayers + 1);
 		const int selectedLobbyPlayerCount = getCurrentLobbyPlayerCountSelection();
 
-		auto player_count_dropdown = card->addButton("player_count_dropdown_button");
+		Button* player_count_dropdown = card->addButton("player_count_dropdown_button");
 		player_count_dropdown->setSize(SDL_Rect{70, height - 142, 184, 40});
 		player_count_dropdown->setFont(smallfont_outline);
 		char playerCountText[16] = "";
@@ -16483,7 +16505,7 @@ failed:
 		}
 		pendingKickPlayerSelection = firstKickTarget;
 
-		auto kick_player_dropdown = card->addButton("kick_player_dropdown_button");
+		Button* kick_player_dropdown = card->addButton("kick_player_dropdown_button");
 		kick_player_dropdown->setSize(SDL_Rect{20, height - 64, 170, 40});
 		kick_player_dropdown->setFont(smallfont_outline);
 		char kickSelectionText[16] = "";
@@ -16521,7 +16543,7 @@ failed:
 			kick_player_dropdown->setCallback(lobbyKickPlayerDropdownButtonCallback);
 		}
 
-		auto kick_player_confirm = card->addButton("kick_player_confirm_button");
+		Button* kick_player_confirm = card->addButton("kick_player_confirm_button");
 		kick_player_confirm->setSize(SDL_Rect{198, height - 64, 96, 40});
 		kick_player_confirm->setFont(smallfont_outline);
 		kick_player_confirm->setText("Kick");
@@ -19979,8 +20001,8 @@ failed:
 		frame->setSize(SDL_Rect{(Frame::virtualScreenX - 300) / 2, 64, 300, 120});
 		frame->setHollow(true);
 		frame->setTickCallback([](Widget& widget) {
-			auto frame = static_cast<Frame*>(&widget);
-			auto lobby = static_cast<Frame*>(widget.getParent());
+			Frame* frame = static_cast<Frame*>(&widget);
+			Frame* lobby = static_cast<Frame*>(widget.getParent());
 			if (!lobby) {
 				return;
 			}
@@ -21040,16 +21062,16 @@ failed:
 		    label->setFont(bigfont_outline);
 		    label->setText(type_str);
 
-			auto lobby_status = banner->addField("lobby_status", 64);
+			Field* lobby_status = banner->addField("lobby_status", 64);
 			lobby_status->setHJustify(Field::justify_t::CENTER);
 			lobby_status->setVJustify(Field::justify_t::TOP);
 			lobby_status->setSize(SDL_Rect{(Frame::virtualScreenX - 420) / 2, 42, 420, 22});
 			lobby_status->setFont(smallfont_outline);
 			lobby_status->setColor(makeColor(201, 162, 100, 255));
 			lobby_status->setTickCallback([](Widget& widget) {
-				auto status = static_cast<Field*>(&widget);
-				auto banner = static_cast<Frame*>(status->getParent());
-				auto lobby = banner ? static_cast<Frame*>(banner->getParent()) : nullptr;
+				Field* status = static_cast<Field*>(&widget);
+				Frame* banner = static_cast<Frame*>(status->getParent());
+				Frame* lobby = banner ? static_cast<Frame*>(banner->getParent()) : nullptr;
 				if ( !lobby )
 				{
 					return;
@@ -21322,7 +21344,7 @@ failed:
 		{
 				for ( int index = 0; index < MAXPLAYERS; ++index )
 				{
-					auto pingFrame = lobby->addFrame((std::string("ping") + std::to_string(index)).c_str());
+					Frame* pingFrame = lobby->addFrame((std::string("ping") + std::to_string(index)).c_str());
 					SDL_Rect cardPos = getLobbySmallCardRect(index);
 					SDL_Rect pos{ cardPos.x + (cardPos.w - 108) / 2, cardPos.y + cardPos.h + 32, 108, 38 + 18 + 4 };
 					pingFrame->setSize(pos);
@@ -22155,7 +22177,7 @@ failed:
 			const int clampedPlayers = std::max(0, std::min(info.players, 4));
 			players_image = kLobbyPlayerCountIcons[clampedPlayers];
 		}
-		auto entry_players = players->addEntry(info.name.c_str(), true);
+		Frame::entry_t* entry_players = players->addEntry(info.name.c_str(), true);
 		entry_players->click = activate_fn;
 		entry_players->ctrlClick = activate_fn;
 		entry_players->highlight = selection_fn;
@@ -25745,66 +25767,78 @@ failed:
 					}
 				}
 
-                // add player info
-                if (numplayers == 1) {
-                    addContinuePlayerInfo(subwindow, saveGameInfo, saveGameInfo.player_num, posX + 30, 114, false);
-                }
-                else if (numplayers == 2) {
-                    for (int c = 0, player = 0; c < (int)saveGameInfo.players_connected.size(); ++c) {
-                        if (saveGameInfo.players_connected[c]) {
-                            switch (player) {
-                            default:
-                            case 0:
-                                addContinuePlayerInfo(subwindow, saveGameInfo, c, posX + 30, 114, true);
-                                break;
-                            case 1:
-                                addContinuePlayerInfo(subwindow, saveGameInfo, c, posX + 128, 114, true);
-                                break;
-                            }
-                            ++player;
-                        }
-                    }
-                }
-	                else if (numplayers >= 3) {
-						int visiblePlayers = 0;
-	                    for (int c = 0; c < (int)saveGameInfo.players_connected.size(); ++c) {
-	                        if (!saveGameInfo.players_connected[c]) {
-	                        	continue;
-	                        }
-	                        if (visiblePlayers >= 4) {
-	                        	continue;
-	                        }
-	                        switch (visiblePlayers) {
-	                        default:
-	                        case 0:
-	                            addContinuePlayerInfo(subwindow, saveGameInfo, c, posX + 30, 16, true);
-	                            break;
-	                        case 1:
-	                            addContinuePlayerInfo(subwindow, saveGameInfo, c, posX + 128, 16, true);
-	                            break;
-	                        case 2:
-	                            addContinuePlayerInfo(subwindow, saveGameInfo, c, posX + 30, 114, true);
-	                            break;
-	                        case 3:
-	                            addContinuePlayerInfo(subwindow, saveGameInfo, c, posX + 128, 114, true);
-	                            break;
-	                        }
-	                        ++visiblePlayers;
-	                    }
-	                    const int hiddenPlayers = std::max(0, numplayers - visiblePlayers);
-	                    if (hiddenPlayers > 0)
-	                    {
-	                    	char extraPlayersBuf[16];
-	                    	snprintf(extraPlayersBuf, sizeof(extraPlayersBuf), "+%d", hiddenPlayers);
-	                    	auto extraPlayers = cover->addField((str + "_extra_players").c_str(), sizeof(extraPlayersBuf));
-	                    	extraPlayers->setSize(SDL_Rect{ 182, 148, 28, 20 });
-	                    	extraPlayers->setFont(smallfont_outline);
-	                    	extraPlayers->setTextColor(makeColor(255, 255, 255, 255));
-	                    	extraPlayers->setOutlineColor(makeColor(52, 32, 23, 255));
-	                    	extraPlayers->setJustify(Field::justify_t::CENTER);
-	                    	extraPlayers->setText(extraPlayersBuf);
-	                    }
-	                }
+				// add player info
+				if ( numplayers == 1 )
+				{
+					addContinuePlayerInfo(subwindow, saveGameInfo, saveGameInfo.player_num, posX + 30, 114, false);
+				}
+				else if ( numplayers == 2 )
+				{
+					for ( int c = 0, player = 0; c < static_cast<int>(saveGameInfo.players_connected.size()); ++c )
+					{
+						if ( saveGameInfo.players_connected[c] )
+						{
+							switch ( player )
+							{
+								default:
+								case 0:
+									addContinuePlayerInfo(subwindow, saveGameInfo, c, posX + 30, 114, true);
+									break;
+								case 1:
+									addContinuePlayerInfo(subwindow, saveGameInfo, c, posX + 128, 114, true);
+									break;
+							}
+							++player;
+						}
+					}
+				}
+				else if ( numplayers >= 3 )
+				{
+					int visiblePlayers = 0;
+					for ( int c = 0; c < static_cast<int>(saveGameInfo.players_connected.size()); ++c )
+					{
+						if ( !saveGameInfo.players_connected[c] )
+						{
+							continue;
+						}
+						if ( visiblePlayers >= 4 )
+						{
+							continue;
+						}
+
+						switch ( visiblePlayers )
+						{
+							default:
+							case 0:
+								addContinuePlayerInfo(subwindow, saveGameInfo, c, posX + 30, 16, true);
+								break;
+							case 1:
+								addContinuePlayerInfo(subwindow, saveGameInfo, c, posX + 128, 16, true);
+								break;
+							case 2:
+								addContinuePlayerInfo(subwindow, saveGameInfo, c, posX + 30, 114, true);
+								break;
+							case 3:
+								addContinuePlayerInfo(subwindow, saveGameInfo, c, posX + 128, 114, true);
+								break;
+						}
+						++visiblePlayers;
+					}
+
+					const int hiddenPlayers = std::max(0, numplayers - visiblePlayers);
+					if ( hiddenPlayers > 0 )
+					{
+						char extraPlayersBuf[16];
+						snprintf(extraPlayersBuf, sizeof(extraPlayersBuf), "+%d", hiddenPlayers);
+						Field* extraPlayers = cover->addField((str + "_extra_players").c_str(), sizeof(extraPlayersBuf));
+						extraPlayers->setSize(SDL_Rect{ 182, 148, 28, 20 });
+						extraPlayers->setFont(smallfont_outline);
+						extraPlayers->setTextColor(makeColor(255, 255, 255, 255));
+						extraPlayers->setOutlineColor(makeColor(52, 32, 23, 255));
+						extraPlayers->setJustify(Field::justify_t::CENTER);
+						extraPlayers->setText(extraPlayersBuf);
+					}
+				}
 
 		        ++index;
 		    }
@@ -32328,18 +32362,18 @@ failed:
 					modsPath += "mods";
 					modsPath = Mods::getFolderFullPath(modsPath);
 				}
-				if ( modsPath != "" )
-				{
-					result = NFD_PickFolder(modsPath.c_str(), &outPath);
-				}
-				else
-				{
-					result = NFD_PickFolder(outputdir, &outPath); // hopefully this is absolute path?
-				}
-				if ( result == NFD_ERROR )
-				{
-					result = NFD_PickFolder(PHYSFS_getBaseDir(), &outPath); // fallback path
-				}
+					if ( modsPath != "" )
+					{
+						result = NFD_PickFolder(&outPath, modsPath.c_str());
+					}
+					else
+					{
+						result = NFD_PickFolder(&outPath, outputdir); // hopefully this is absolute path?
+					}
+					if ( result == NFD_ERROR )
+					{
+						result = NFD_PickFolder(&outPath, PHYSFS_getBaseDir()); // fallback path
+					}
 
 				if ( result == NFD_OKAY )
 				{

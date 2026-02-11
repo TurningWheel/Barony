@@ -21,11 +21,17 @@ namespace MainMenu
 	struct AutopilotCallbacks
 	{
 		bool (*hostLANLobbyNoSound)() = nullptr;
+		bool (*hostSteamLobbyNoSound)() = nullptr;
+		bool (*hostEosLobbyNoSound)() = nullptr;
 		bool (*hostLocalLobbyNoSound)() = nullptr;
 		bool (*connectToLanServer)(const char* address) = nullptr;
+		bool (*connectToOnlineLobby)(const char* address) = nullptr;
 		void (*startGame)() = nullptr;
 		void (*createReadyStone)(int index, bool local, bool ready) = nullptr;
-		bool (*prepareLocalLobbyPlayers)(int targetCount) = nullptr;
+		bool (*isLocalLobbyAutopilotContextReady)() = nullptr;
+		bool (*isLocalLobbyCardReady)(int index) = nullptr;
+		bool (*isLocalLobbyCountdownActive)() = nullptr;
+		bool (*isLocalPlayerSignedIn)(int index) = nullptr;
 		void (*kickPlayer)(int index) = nullptr;
 		void (*requestLobbyPlayerCountSelection)(int targetCount) = nullptr;
 		void (*requestLobbyVisiblePage)(int pageIndex) = nullptr;
@@ -62,14 +68,18 @@ namespace MainMenu
 	bool isLocalSplitscreenTraceEnabled();
 	void traceLocalLobbySnapshot(const char* context, int targetPlayers, int joinedPlayers,
 		int readyPlayers, int countdownActive);
+	void traceLocalLobbySnapshotIfChanged(const char* context, int targetPlayers, int joinedPlayers,
+		int readyPlayers, int countdownActive);
 	bool isHeloChunkPayloadOverrideEnvEnabled();
 	bool isHeloChunkTxModeOverrideEnvEnabled();
 
 	bool isAutopilotEnabled();
 	bool isAutopilotHostEnabled();
+	bool isAutopilotBackendSteam();
+	bool isAutopilotBackendEos();
 	int expectedHostLobbyPlayerSlots(int fallbackSlots);
 	void tickAutopilot(const AutopilotCallbacks& callbacks);
-}
+	}
 
 namespace Gameplay
 {

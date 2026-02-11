@@ -7348,7 +7348,7 @@ const char* Player::getAccountName() const
 			}
 			else
 			{
-				for ( auto& player : EOS.CurrentLobbyData.playersInLobby )
+				for ( EOSFuncs::LobbyData_t::PlayerLobbyData_t& player : EOS.CurrentLobbyData.playersInLobby )
 				{
 					if ( player.clientNumber == playernum )
 					{

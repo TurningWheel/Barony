@@ -67,7 +67,7 @@ Options:
   --size <WxH>                  Window size (default: 1280x720).
   --stagger <sec>               Delay between launches.
   --timeout <sec>               Max wait for pass/fail conditions.
-  --connect-address <addr>      LAN host address for clients (default: 127.0.0.1:57165).
+  --connect-address <addr>      Client connect target. LAN uses host:port; online uses lobby key (for example S1234).
   --expected-players <n>        Host auto-start threshold (default: instances).
   --auto-start <0|1>            Host starts game when expected players connected.
   --auto-start-delay <sec>      Delay after expected players threshold.
@@ -82,7 +82,7 @@ Options:
   --mapgen-players-override <n> Smoke-only mapgen scaling player count override (1..15).
   --helo-chunk-tx-mode <mode>   HELO chunk send mode: normal, reverse, even-odd,
                                 duplicate-first, drop-last, duplicate-conflict-first.
-  --network-backend <name>      Backend tag for summary/env (lan|steam|eos; default: lan).
+  --network-backend <name>      Network backend to execute (lan|steam|eos; default: lan).
   --strict-adversarial <0|1>    Enable strict adversarial assertions.
   --require-txmode-log <0|1>    Require tx-mode host logs in non-normal tx modes.
   --seed <value>                Optional seed string for host run.
@@ -218,6 +218,22 @@ count_regex_lines_across_logs() {
 		total=$((total + count))
 	done
 	echo "$total"
+}
+
+extract_smoke_room_key() {
+	local host_log="$1"
+	local backend="$2"
+	if [[ ! -f "$host_log" ]]; then
+		echo ""
+		return
+	fi
+	local line
+	line="$(rg -F "[SMOKE]: lobby room key backend=${backend} key=" "$host_log" | tail -n 1 || true)"
+	if [[ -z "$line" ]]; then
+		echo ""
+		return
+	fi
+	echo "$line" | sed -nE 's/.* key=([^ ]+).*/\1/p'
 }
 
 collect_remote_combat_event_contexts() {
@@ -979,10 +995,6 @@ case "$NETWORK_BACKEND" in
 		exit 1
 		;;
 esac
-if [[ "$NETWORK_BACKEND" != "lan" ]]; then
-	echo "--network-backend currently only supports lan in this runner" >&2
-	exit 1
-fi
 if ! is_uint "$STRICT_ADVERSARIAL" || (( STRICT_ADVERSARIAL > 1 )); then
 	echo "--strict-adversarial must be 0 or 1" >&2
 	exit 1
@@ -1243,9 +1255,13 @@ launch_instance() {
 	mkdir -p "$home_dir"
 	seed_smoke_home_profile "$home_dir"
 
-	local -a env_vars=(
-		"HOME=$home_dir"
+	local -a env_vars=()
+	if [[ "$NETWORK_BACKEND" == "lan" ]]; then
+		env_vars+=("HOME=$home_dir")
+	fi
+	env_vars+=(
 		"BARONY_SMOKE_AUTOPILOT=1"
+		"BARONY_SMOKE_NETWORK_BACKEND=$NETWORK_BACKEND"
 		"BARONY_SMOKE_CONNECT_DELAY_SECS=2"
 		"BARONY_SMOKE_RETRY_DELAY_SECS=3"
 		"BARONY_SMOKE_FORCE_HELO_CHUNK=$FORCE_CHUNK"
@@ -1339,16 +1355,54 @@ launch_instance() {
 }
 
 log "Artifacts: $OUTDIR"
-for ((i = 1; i <= INSTANCES; ++i)); do
-	if (( i == 1 )); then
-		launch_instance "$i" "host"
-	else
-		launch_instance "$i" "client"
-	fi
-	sleep "$STAGGER_SECONDS"
-done
-
 HOST_LOG="$INSTANCE_ROOT/home-1/.barony/log.txt"
+HOST_STDOUT_LOG="$LOG_DIR/instance-1.stdout.log"
+if [[ "$NETWORK_BACKEND" != "lan" ]]; then
+	HOST_LOG="$HOST_STDOUT_LOG"
+fi
+backend_room_key=""
+backend_room_key_found=1
+backend_launch_blocked=0
+
+if [[ "$NETWORK_BACKEND" == "lan" ]]; then
+	for ((i = 1; i <= INSTANCES; ++i)); do
+		if (( i == 1 )); then
+			launch_instance "$i" "host"
+		else
+			launch_instance "$i" "client"
+		fi
+		sleep "$STAGGER_SECONDS"
+	done
+else
+	launch_instance "1" "host"
+	sleep "$STAGGER_SECONDS"
+	room_key_wait_timeout="$TIMEOUT_SECONDS"
+	if (( room_key_wait_timeout > 180 )); then
+		room_key_wait_timeout=180
+	fi
+	log "Waiting up to ${room_key_wait_timeout}s for ${NETWORK_BACKEND} room key"
+	room_key_deadline=$((SECONDS + room_key_wait_timeout))
+	while (( SECONDS < room_key_deadline )); do
+		backend_room_key="$(extract_smoke_room_key "$HOST_LOG" "$NETWORK_BACKEND")"
+		if [[ -n "$backend_room_key" ]]; then
+			break
+		fi
+		sleep 1
+	done
+	if [[ -z "$backend_room_key" ]]; then
+		backend_room_key_found=0
+		backend_launch_blocked=1
+		log "Failed to capture ${NETWORK_BACKEND} room key from host log"
+	else
+		CONNECT_ADDRESS="$backend_room_key"
+		log "Using ${NETWORK_BACKEND} room key ${CONNECT_ADDRESS} for client joins"
+		for ((i = 2; i <= INSTANCES; ++i)); do
+			launch_instance "$i" "client"
+			sleep "$STAGGER_SECONDS"
+		done
+	fi
+fi
+
 EXPECTED_CLIENTS=$(( INSTANCES > 1 ? INSTANCES - 1 : 0 ))
 EXPECTED_CHUNK_LINES="$EXPECTED_CLIENTS"
 EXPECTED_REASSEMBLED_LINES="$EXPECTED_CLIENTS"
@@ -1412,13 +1466,22 @@ remote_combat_events_ok=1
 
 declare -a CLIENT_LOGS=()
 for ((i = 2; i <= INSTANCES; ++i)); do
-	CLIENT_LOGS+=("$INSTANCE_ROOT/home-${i}/.barony/log.txt")
+	if [[ "$NETWORK_BACKEND" == "lan" ]]; then
+		CLIENT_LOGS+=("$INSTANCE_ROOT/home-${i}/.barony/log.txt")
+	else
+		CLIENT_LOGS+=("$LOG_DIR/instance-${i}.stdout.log")
+	fi
 done
 declare -a ALL_LOGS=("$HOST_LOG")
-for client_log in "${CLIENT_LOGS[@]}"; do
-	ALL_LOGS+=("$client_log")
-done
+if (( INSTANCES > 1 )); then
+	for client_log in "${CLIENT_LOGS[@]}"; do
+		ALL_LOGS+=("$client_log")
+	done
+fi
 
+if (( backend_launch_blocked )); then
+	log "Skipping handshake wait loop: backend client launch prerequisites were not met"
+else
 while (( SECONDS < deadline )); do
 	host_chunk_lines=$(count_fixed_lines "$HOST_LOG" "sending chunked HELO:")
 	if [[ "$HELO_CHUNK_TX_MODE" == "normal" ]]; then
@@ -1622,6 +1685,7 @@ while (( SECONDS < deadline )); do
 	fi
 	sleep 1
 done
+fi
 
 game_start_found=$(detect_game_start "$HOST_LOG")
 read -r mapgen_found rooms monsters gold items decorations < <(extract_mapgen_metrics "$HOST_LOG")
@@ -1816,6 +1880,9 @@ SUMMARY_FILE="$OUTDIR/summary.env"
 	echo "AUTO_ENTER_DUNGEON_REPEATS=$AUTO_ENTER_DUNGEON_REPEATS"
 	echo "CONNECT_ADDRESS=$CONNECT_ADDRESS"
 	echo "NETWORK_BACKEND=$NETWORK_BACKEND"
+	echo "BACKEND_ROOM_KEY=$backend_room_key"
+	echo "BACKEND_ROOM_KEY_FOUND=$backend_room_key_found"
+	echo "BACKEND_LAUNCH_BLOCKED=$backend_launch_blocked"
 	echo "FORCE_CHUNK=$FORCE_CHUNK"
 	echo "CHUNK_PAYLOAD_MAX=$CHUNK_PAYLOAD_MAX"
 	echo "MAPGEN_PLAYERS_OVERRIDE=$MAPGEN_PLAYERS_OVERRIDE"
@@ -1914,7 +1981,7 @@ SUMMARY_FILE="$OUTDIR/summary.env"
 	echo "PID_FILE=$PID_FILE"
 } > "$SUMMARY_FILE"
 
-log "result=$result chunks=$host_chunk_lines reassembled=$client_reassembled_lines resets=$chunk_reset_lines txmodeApplied=$tx_mode_applied mapgen=$mapgen_found gamestart=$game_start_found autoKick=$auto_kick_result slotLockOk=$default_slot_lock_ok playerCountCopyOk=$player_count_copy_ok lobbyPageStateOk=$lobby_page_state_ok lobbyPageSweepOk=$lobby_page_sweep_ok remoteSlotOk=$remote_combat_slot_bounds_ok remoteEventsOk=$remote_combat_events_ok remoteSlotFail=$remote_combat_slot_fail_lines"
+log "result=$result backend=$NETWORK_BACKEND roomKeyFound=$backend_room_key_found launchBlocked=$backend_launch_blocked chunks=$host_chunk_lines reassembled=$client_reassembled_lines resets=$chunk_reset_lines txmodeApplied=$tx_mode_applied mapgen=$mapgen_found gamestart=$game_start_found autoKick=$auto_kick_result slotLockOk=$default_slot_lock_ok playerCountCopyOk=$player_count_copy_ok lobbyPageStateOk=$lobby_page_state_ok lobbyPageSweepOk=$lobby_page_sweep_ok remoteSlotOk=$remote_combat_slot_bounds_ok remoteEventsOk=$remote_combat_events_ok remoteSlotFail=$remote_combat_slot_fail_lines"
 log "summary=$SUMMARY_FILE"
 
 if [[ "$result" != "pass" ]]; then

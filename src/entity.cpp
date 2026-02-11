@@ -2775,13 +2775,7 @@ Returns a pointer to a Stat instance given a pointer to an entity
 
 Stat* Entity::getStats() const
 {
-	auto getPlayerStatsFromIndex = [](const int index) -> Stat* {
-		if ( index >= 0 && index < MAXPLAYERS )
-		{
-			return stats[index];
-		}
-		return nullptr;
-	};
+	const int playerStatsIndex = this->skill[2];
 
 	if ( this->behavior == &actMonster ) // monsters
 	{
@@ -2797,13 +2791,12 @@ Stat* Entity::getStats() const
 			}
 		}
 	}
-	else if ( this->behavior == &actPlayer ) // players
+	else if ( this->behavior == &actPlayer || this->behavior == &actPlayerLimb ) // players and bodyparts
 	{
-		return getPlayerStatsFromIndex(this->skill[2]);
-	}
-	else if ( this->behavior == &actPlayerLimb ) // player bodyparts
-	{
-		return getPlayerStatsFromIndex(this->skill[2]);
+		if ( playerStatsIndex >= 0 && playerStatsIndex < MAXPLAYERS )
+		{
+			return stats[playerStatsIndex];
+		}
 	}
 
 	return nullptr;
@@ -10085,7 +10078,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 	int weaponskill = -1;
 	node_t* node = nullptr;
 	double tangent;
-	auto isValidCombatPlayer = [](const int index, const bool requireEntity)
+	bool (*isValidCombatPlayer)(const int, const bool) = [](const int index, const bool requireEntity)
 	{
 		if ( index < 0 || index >= MAXPLAYERS || !players[index] || !stats[index] )
 		{

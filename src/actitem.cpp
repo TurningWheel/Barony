@@ -62,7 +62,7 @@ static const char* getItemLightNameFromSprite(const int sprite)
 		{ 2409, "jewel_yellow" }
 	};
 
-	for ( const auto& lightEntry : kStaticLights )
+	for ( const StaticItemLightEntry& lightEntry : kStaticLights )
 	{
 		if ( lightEntry.sprite == sprite )
 		{

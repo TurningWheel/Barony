@@ -185,7 +185,7 @@ bool sendChunkedHeloToHost(const int hostnum, const IPaddress& destination, cons
 	SmokeTestHooks::MainMenu::applyHeloChunkTxModePlan(sendPlan, chunkCount, transferId);
 #endif
 
-	for ( const auto& planned : sendPlan )
+	for ( const HeloChunkSendPlanEntry& planned : sendPlan )
 	{
 		const int chunkIndex = planned.chunkIndex;
 		if ( chunkIndex < 0 || chunkIndex >= chunkCount )

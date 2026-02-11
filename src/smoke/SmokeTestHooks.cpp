@@ -1,6 +1,7 @@
 #include "SmokeTestHooks.hpp"
 
 #include "../game.hpp"
+#include "../lobbies.hpp"
 #include "../mod_tools.hpp"
 #include "../net.hpp"
 #include "../player.hpp"
@@ -27,7 +28,7 @@ namespace
 	std::string toLowerCopy(const char* value)
 	{
 		std::string result = value ? value : "";
-		for ( auto& ch : result )
+		for ( char& ch : result )
 		{
 			ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
 		}
@@ -87,10 +88,51 @@ namespace
 		ROLE_LOCAL
 	};
 
+	enum class SmokeAutopilotBackend : Uint8
+	{
+		LAN = 0,
+		STEAM,
+		EOS
+	};
+
+	SmokeAutopilotBackend parseSmokeAutopilotBackend()
+	{
+		const std::string raw = toLowerCopy(std::getenv("BARONY_SMOKE_NETWORK_BACKEND"));
+		if ( raw == "steam" )
+		{
+			return SmokeAutopilotBackend::STEAM;
+		}
+		else if ( raw == "eos" )
+		{
+			return SmokeAutopilotBackend::EOS;
+		}
+		return SmokeAutopilotBackend::LAN;
+	}
+
+	const char* smokeAutopilotBackendName(const SmokeAutopilotBackend backend)
+	{
+		switch ( backend )
+		{
+			case SmokeAutopilotBackend::STEAM:
+				return "steam";
+			case SmokeAutopilotBackend::EOS:
+				return "eos";
+			case SmokeAutopilotBackend::LAN:
+			default:
+				return "lan";
+		}
+	}
+
+	bool smokeAutopilotUsesOnlineBackend(const SmokeAutopilotBackend backend)
+	{
+		return backend != SmokeAutopilotBackend::LAN;
+	}
+
 	struct SmokeAutopilotConfig
 	{
 		bool enabled = false;
 		SmokeAutopilotRole role = SmokeAutopilotRole::DISABLED;
+		SmokeAutopilotBackend backend = SmokeAutopilotBackend::LAN;
 		std::string connectAddress = "";
 		int connectDelayTicks = 0;
 		int retryDelayTicks = 0;
@@ -126,6 +168,7 @@ namespace
 		bool seedApplied = false;
 		bool readyIssued = false;
 		bool localLobbyReady = false;
+		bool roomKeyLogged = false;
 	};
 
 	static SmokeAutopilotRuntime g_smokeAutopilot;
@@ -138,7 +181,7 @@ namespace
 		}
 		g_smokeAutopilot.initialized = true;
 
-		auto& cfg = g_smokeAutopilot.config;
+		SmokeAutopilotConfig& cfg = g_smokeAutopilot.config;
 		const std::string role = toLowerCopy(std::getenv("BARONY_SMOKE_ROLE"));
 		if ( role == "host" )
 		{
@@ -160,9 +203,17 @@ namespace
 			return cfg;
 		}
 
+		cfg.backend = parseSmokeAutopilotBackend();
 		char defaultAddress[64];
 		const Uint16 serverPort = ::portnumber ? ::portnumber : DEFAULT_PORT;
-		snprintf(defaultAddress, sizeof(defaultAddress), "127.0.0.1:%u", static_cast<unsigned>(serverPort));
+		if ( smokeAutopilotUsesOnlineBackend(cfg.backend) )
+		{
+			defaultAddress[0] = '\0';
+		}
+		else
+		{
+			snprintf(defaultAddress, sizeof(defaultAddress), "127.0.0.1:%u", static_cast<unsigned>(serverPort));
+		}
 		cfg.connectAddress = parseEnvString("BARONY_SMOKE_CONNECT_ADDRESS", defaultAddress);
 		cfg.connectDelayTicks = parseEnvInt("BARONY_SMOKE_CONNECT_DELAY_SECS", 2, 0, 60) * TICKS_PER_SECOND;
 		cfg.retryDelayTicks = parseEnvInt("BARONY_SMOKE_RETRY_DELAY_SECS", 3, 1, 120) * TICKS_PER_SECOND;
@@ -192,8 +243,9 @@ namespace
 		{
 			roleName = "local";
 		}
-		printlog("[SMOKE]: enabled role=%s addr=%s expected=%d autoStart=%d autoKickTarget=%d autoPlayerCountTarget=%d autoPageSweep=%d",
-			roleName, cfg.connectAddress.c_str(), cfg.expectedPlayers, cfg.autoStartLobby ? 1 : 0,
+		printlog("[SMOKE]: enabled role=%s backend=%s addr=%s expected=%d autoStart=%d autoKickTarget=%d autoPlayerCountTarget=%d autoPageSweep=%d",
+			roleName, smokeAutopilotBackendName(cfg.backend), cfg.connectAddress.c_str(),
+			cfg.expectedPlayers, cfg.autoStartLobby ? 1 : 0,
 			cfg.autoKickTargetSlot, cfg.autoPlayerCountTarget, cfg.autoLobbyPageSweep ? 1 : 0);
 
 		return cfg;
@@ -214,8 +266,8 @@ namespace
 
 	void applySmokeSeedIfNeeded()
 	{
-		auto& runtime = g_smokeAutopilot;
-		auto& cfg = smokeAutopilotConfig();
+		SmokeAutopilotRuntime& runtime = g_smokeAutopilot;
+		SmokeAutopilotConfig& cfg = smokeAutopilotConfig();
 		if ( runtime.seedApplied || cfg.seedString.empty() )
 		{
 			return;
@@ -426,7 +478,7 @@ namespace
 
 	SmokeAutoEnterDungeonState& smokeAutoEnterDungeonState()
 	{
-		auto& state = g_smokeAutoEnterDungeon;
+		SmokeAutoEnterDungeonState& state = g_smokeAutoEnterDungeon;
 		if ( state.initialized )
 		{
 			return state;
@@ -509,7 +561,7 @@ namespace
 
 	SmokeRemoteCombatState& smokeRemoteCombatState()
 	{
-		auto& state = g_smokeRemoteCombat;
+		SmokeRemoteCombatState& state = g_smokeRemoteCombat;
 		if ( state.initialized )
 		{
 			return state;
@@ -598,7 +650,7 @@ namespace
 
 	SmokeLocalSplitscreenState& smokeLocalSplitscreenState()
 	{
-		auto& state = g_smokeLocalSplitscreen;
+		SmokeLocalSplitscreenState& state = g_smokeLocalSplitscreen;
 		if ( state.initialized )
 		{
 			return state;
@@ -654,7 +706,7 @@ namespace
 
 	SmokeLocalSplitscreenCapState& smokeLocalSplitscreenCapState()
 	{
-		auto& state = g_smokeLocalSplitscreenCap;
+		SmokeLocalSplitscreenCapState& state = g_smokeLocalSplitscreenCap;
 		if ( state.initialized )
 		{
 			return state;
@@ -787,9 +839,9 @@ namespace
 				}
 			}
 
-			if ( auto vmouse = inputs.getVirtualMouse(slot) )
-			{
-				const int minX = players[slot]->camera_x1();
+				if ( decltype(inputs.getVirtualMouse(slot)) vmouse = inputs.getVirtualMouse(slot) )
+				{
+					const int minX = players[slot]->camera_x1();
 				const int minY = players[slot]->camera_y1();
 				const int maxX = players[slot]->camera_x2();
 				const int maxY = players[slot]->camera_y2();
@@ -951,7 +1003,7 @@ namespace MainMenu
 
 		const char* resolvedVariant = (variant && variant[0]) ? variant : "none";
 		std::string sanitized = promptText ? promptText : "";
-		for ( auto& ch : sanitized )
+		for ( char& ch : sanitized )
 		{
 			if ( ch == '\n' || ch == '\r' )
 			{
@@ -989,7 +1041,7 @@ namespace MainMenu
 		{
 			selectedName = "none";
 		}
-		for ( auto& ch : selectedName )
+		for ( char& ch : selectedName )
 		{
 			if ( ch == '\n' || ch == '\r' || ch == '"' )
 			{
@@ -1035,6 +1087,42 @@ namespace MainMenu
 		const char* snapshotContext = (context && context[0]) ? context : "unspecified";
 		printlog("[SMOKE]: local-splitscreen lobby context=%s target=%d joined=%d ready=%d countdown=%d",
 			snapshotContext, targetPlayers, joinedPlayers, readyPlayers, countdownActive);
+	}
+
+	void traceLocalLobbySnapshotIfChanged(const char* context, const int targetPlayers,
+		const int joinedPlayers, const int readyPlayers, const int countdownActive)
+	{
+		if ( !isLocalSplitscreenTraceEnabled() )
+		{
+			return;
+		}
+
+		struct LocalLobbySnapshotState
+		{
+			bool initialized = false;
+			int targetPlayers = -1;
+			int joinedPlayers = -1;
+			int readyPlayers = -1;
+			int countdownActive = -1;
+		};
+		static LocalLobbySnapshotState lastSnapshot;
+
+		if ( lastSnapshot.initialized
+			&& lastSnapshot.targetPlayers == targetPlayers
+			&& lastSnapshot.joinedPlayers == joinedPlayers
+			&& lastSnapshot.readyPlayers == readyPlayers
+			&& lastSnapshot.countdownActive == countdownActive )
+		{
+			return;
+		}
+
+		lastSnapshot.initialized = true;
+		lastSnapshot.targetPlayers = targetPlayers;
+		lastSnapshot.joinedPlayers = joinedPlayers;
+		lastSnapshot.readyPlayers = readyPlayers;
+		lastSnapshot.countdownActive = countdownActive;
+
+		traceLocalLobbySnapshot(context, targetPlayers, joinedPlayers, readyPlayers, countdownActive);
 	}
 
 	bool hasHeloChunkPayloadOverride()
@@ -1199,13 +1287,23 @@ namespace MainMenu
 
 	bool isAutopilotHostEnabled()
 	{
-		auto& cfg = smokeAutopilotConfig();
+		SmokeAutopilotConfig& cfg = smokeAutopilotConfig();
 		return cfg.enabled && cfg.role == SmokeAutopilotRole::ROLE_HOST;
+	}
+
+	bool isAutopilotBackendSteam()
+	{
+		return smokeAutopilotConfig().backend == SmokeAutopilotBackend::STEAM;
+	}
+
+	bool isAutopilotBackendEos()
+	{
+		return smokeAutopilotConfig().backend == SmokeAutopilotBackend::EOS;
 	}
 
 	int expectedHostLobbyPlayerSlots(const int fallbackSlots)
 	{
-		auto& cfg = smokeAutopilotConfig();
+		SmokeAutopilotConfig& cfg = smokeAutopilotConfig();
 		if ( !cfg.enabled || cfg.role != SmokeAutopilotRole::ROLE_HOST )
 		{
 			return fallbackSlots;
@@ -1215,22 +1313,45 @@ namespace MainMenu
 
 	void tickAutopilot(const AutopilotCallbacks& callbacks)
 	{
-		auto& runtime = g_smokeAutopilot;
-		auto& cfg = smokeAutopilotConfig();
+		SmokeAutopilotRuntime& runtime = g_smokeAutopilot;
+		SmokeAutopilotConfig& cfg = smokeAutopilotConfig();
 		if ( !cfg.enabled )
 		{
 			return;
 		}
 		GameUI::flushStatusEffectQueueInitTrace();
 
-		if ( cfg.role == SmokeAutopilotRole::ROLE_HOST )
-		{
-			if ( !runtime.hostLaunchAttempted )
+			if ( cfg.role == SmokeAutopilotRole::ROLE_HOST )
 			{
-				runtime.hostLaunchAttempted = true;
-				if ( !callbacks.hostLANLobbyNoSound || !callbacks.hostLANLobbyNoSound() )
+				if ( !runtime.hostLaunchAttempted )
 				{
-					printlog("[SMOKE]: host launch failed, smoke autopilot disabled");
+					runtime.hostLaunchAttempted = true;
+					const bool onlineBackend = smokeAutopilotUsesOnlineBackend(cfg.backend);
+					bool launched = false;
+					if ( onlineBackend )
+					{
+						switch ( cfg.backend )
+						{
+							case SmokeAutopilotBackend::STEAM:
+								launched = callbacks.hostSteamLobbyNoSound && callbacks.hostSteamLobbyNoSound();
+								break;
+							case SmokeAutopilotBackend::EOS:
+								launched = callbacks.hostEosLobbyNoSound && callbacks.hostEosLobbyNoSound();
+								break;
+							case SmokeAutopilotBackend::LAN:
+							default:
+								launched = false;
+								break;
+						}
+					}
+					else
+					{
+						launched = callbacks.hostLANLobbyNoSound && callbacks.hostLANLobbyNoSound();
+					}
+				if ( !launched )
+				{
+					printlog("[SMOKE]: host launch failed backend=%s, smoke autopilot disabled",
+						smokeAutopilotBackendName(cfg.backend));
 					cfg.enabled = false;
 				}
 				return;
@@ -1240,6 +1361,16 @@ namespace MainMenu
 			{
 				return;
 			}
+			if ( smokeAutopilotUsesOnlineBackend(cfg.backend) && !runtime.roomKeyLogged )
+			{
+				const std::string roomKey = LobbyHandler.getCurrentRoomKey();
+				if ( !roomKey.empty() )
+				{
+					runtime.roomKeyLogged = true;
+					printlog("[SMOKE]: lobby room key backend=%s key=%s",
+						smokeAutopilotBackendName(cfg.backend), roomKey.c_str());
+				}
+			}
 
 			applySmokeSeedIfNeeded();
 			maybeAutoRequestLobbyPlayerCount(callbacks, cfg, runtime);
@@ -1247,7 +1378,7 @@ namespace MainMenu
 			maybeAutoSweepLobbyPages(callbacks, cfg, runtime);
 			if ( !cfg.autoStartLobby || runtime.startIssued )
 			{
-					return;
+				return;
 			}
 
 			const int connected = connectedLobbyPlayers();
@@ -1280,11 +1411,11 @@ namespace MainMenu
 			return;
 		}
 
-		if ( cfg.role == SmokeAutopilotRole::ROLE_LOCAL )
-		{
-			if ( !runtime.hostLaunchAttempted )
+			if ( cfg.role == SmokeAutopilotRole::ROLE_LOCAL )
 			{
-				runtime.hostLaunchAttempted = true;
+				if ( !runtime.hostLaunchAttempted )
+				{
+					runtime.hostLaunchAttempted = true;
 				if ( !callbacks.hostLocalLobbyNoSound || !callbacks.hostLocalLobbyNoSound() )
 				{
 					printlog("[SMOKE]: local lobby launch failed, smoke autopilot disabled");
@@ -1298,20 +1429,54 @@ namespace MainMenu
 				return;
 			}
 
-			const int localTarget = std::max(1, std::min(cfg.expectedPlayers, 4));
-			if ( !runtime.localLobbyReady )
-			{
-				if ( !callbacks.prepareLocalLobbyPlayers )
+				const int localTarget = std::max(1, std::min(cfg.expectedPlayers, 4));
+				if ( !runtime.localLobbyReady )
 				{
-					printlog("[SMOKE]: local lobby prep callback unavailable, smoke autopilot disabled");
-					cfg.enabled = false;
-					return;
-				}
-				runtime.localLobbyReady = callbacks.prepareLocalLobbyPlayers(localTarget);
-				if ( runtime.localLobbyReady )
-				{
-					runtime.expectedPlayersMetTick = ticks;
-					printlog("[SMOKE]: local lobby ready (%d players)", localTarget);
+					if ( !callbacks.isLocalLobbyAutopilotContextReady
+						|| !callbacks.isLocalLobbyCardReady
+						|| !callbacks.isLocalLobbyCountdownActive
+						|| !callbacks.isLocalPlayerSignedIn
+						|| !callbacks.createReadyStone )
+					{
+						printlog("[SMOKE]: local lobby prep callback unavailable, smoke autopilot disabled");
+						cfg.enabled = false;
+						return;
+					}
+
+					if ( !callbacks.isLocalLobbyAutopilotContextReady() )
+					{
+						return;
+					}
+
+					for ( int slot = 0; slot < localTarget; ++slot )
+					{
+						if ( !callbacks.isLocalLobbyCardReady(slot) )
+						{
+							callbacks.createReadyStone(slot, true, true);
+						}
+					}
+
+					int joinedPlayers = 0;
+					int readyPlayers = 0;
+					for ( int slot = 0; slot < localTarget; ++slot )
+					{
+						if ( callbacks.isLocalPlayerSignedIn(slot) )
+						{
+							++joinedPlayers;
+						}
+						if ( callbacks.isLocalLobbyCardReady(slot) )
+						{
+							++readyPlayers;
+						}
+					}
+					const int countdownActive = callbacks.isLocalLobbyCountdownActive() ? 1 : 0;
+					traceLocalLobbySnapshotIfChanged("autopilot",
+						localTarget, joinedPlayers, readyPlayers, countdownActive);
+					runtime.localLobbyReady = readyPlayers >= localTarget || countdownActive;
+					if ( runtime.localLobbyReady )
+					{
+						runtime.expectedPlayersMetTick = ticks;
+						printlog("[SMOKE]: local lobby ready (%d players)", localTarget);
 				}
 				return;
 			}
@@ -1361,17 +1526,31 @@ namespace MainMenu
 			runtime.joinAttempted = true;
 			return;
 		}
-		if ( !callbacks.connectToLanServer )
+		if ( cfg.connectAddress.empty() )
 		{
-			printlog("[SMOKE]: connect callback unavailable, smoke autopilot disabled");
+			runtime.nextActionTick = ticks + cfg.retryDelayTicks;
+			printlog("[SMOKE]: join address unavailable for backend=%s, retrying in %d sec",
+				smokeAutopilotBackendName(cfg.backend), cfg.retryDelayTicks / TICKS_PER_SECOND);
+			return;
+		}
+
+		const bool onlineBackend = smokeAutopilotUsesOnlineBackend(cfg.backend);
+		bool (*connectToServer)(const char* address) = onlineBackend
+			? callbacks.connectToOnlineLobby
+			: callbacks.connectToLanServer;
+		if ( !connectToServer )
+		{
+			printlog("[SMOKE]: connect callback unavailable for backend=%s, smoke autopilot disabled",
+				smokeAutopilotBackendName(cfg.backend));
 			cfg.enabled = false;
 			return;
 		}
 
-		if ( callbacks.connectToLanServer(cfg.connectAddress.c_str()) )
+		if ( connectToServer(cfg.connectAddress.c_str()) )
 		{
 			runtime.joinAttempted = true;
-			printlog("[SMOKE]: join attempt sent to %s", cfg.connectAddress.c_str());
+			printlog("[SMOKE]: join attempt sent backend=%s target=%s",
+				smokeAutopilotBackendName(cfg.backend), cfg.connectAddress.c_str());
 		}
 		else
 		{
@@ -1385,7 +1564,7 @@ namespace Gameplay
 {
 	void tickAutoEnterDungeon()
 	{
-		auto& smoke = smokeAutoEnterDungeonState();
+		SmokeAutoEnterDungeonState& smoke = smokeAutoEnterDungeonState();
 		if ( !smoke.enabled )
 		{
 			return;
@@ -1436,7 +1615,7 @@ namespace Gameplay
 
 	void tickRemoteCombatAutopilot()
 	{
-		auto& smoke = smokeRemoteCombatState();
+		SmokeRemoteCombatState& smoke = smokeRemoteCombatState();
 		if ( !smoke.hostAutopilotEnabled )
 		{
 			return;
@@ -1555,7 +1734,7 @@ namespace Gameplay
 
 	void tickLocalSplitscreenBaseline()
 	{
-		auto& smoke = smokeLocalSplitscreenState();
+		SmokeLocalSplitscreenState& smoke = smokeLocalSplitscreenState();
 		if ( !smoke.enabled )
 		{
 			return;
@@ -1653,7 +1832,7 @@ namespace Gameplay
 
 	void tickLocalSplitscreenCap()
 	{
-		auto& smoke = smokeLocalSplitscreenCapState();
+		SmokeLocalSplitscreenCapState& smoke = smokeLocalSplitscreenCapState();
 		if ( !smoke.enabled )
 		{
 			return;
@@ -2003,7 +2182,7 @@ namespace Combat
 		if ( ok && slot >= 0 && slot < MAXPLAYERS )
 		{
 			static std::unordered_map<std::string, std::array<bool, MAXPLAYERS>> loggedOkByContext;
-			auto& seen = loggedOkByContext[key];
+			std::array<bool, MAXPLAYERS>& seen = loggedOkByContext[key];
 			if ( seen[slot] )
 			{
 				return;
@@ -2031,7 +2210,7 @@ namespace Combat
 		if ( slot >= 0 && slot < MAXPLAYERS )
 		{
 			static std::unordered_map<std::string, std::array<bool, MAXPLAYERS>> loggedByContext;
-			auto& seen = loggedByContext[key];
+			std::array<bool, MAXPLAYERS>& seen = loggedByContext[key];
 			if ( seen[slot] )
 			{
 				return;
@@ -2183,7 +2362,7 @@ namespace SaveReload
 		void seedOwnerEncodingEffects(SaveGameInfo::Player::stat_t& statsData, const int slot, const int connectedPlayers)
 		{
 			ensureEffectVectors(statsData);
-			for ( const auto& spec : kOwnerEncodingEffects )
+			for ( const OwnerEncodingEffectSpec& spec : kOwnerEncodingEffects )
 			{
 				const EffectExpectation expected = buildEffectExpectation(spec, slot, connectedPlayers);
 				statsData.EFFECTS[spec.effect] = expected.rawValue;
@@ -2195,7 +2374,7 @@ namespace SaveReload
 		void simulateOneEffectTick(SaveGameInfo::Player::stat_t& statsData)
 		{
 			ensureEffectVectors(statsData);
-			for ( const auto& spec : kOwnerEncodingEffects )
+			for ( const OwnerEncodingEffectSpec& spec : kOwnerEncodingEffects )
 			{
 				int& timer = statsData.EFFECTS_TIMERS[spec.effect];
 				if ( timer > 0 )
@@ -2244,7 +2423,7 @@ namespace SaveReload
 			}
 
 			bool ok = true;
-			for ( const auto& spec : kOwnerEncodingEffects )
+			for ( const OwnerEncodingEffectSpec& spec : kOwnerEncodingEffects )
 			{
 				++checks;
 				const EffectExpectation expected = buildEffectExpectation(spec, slot, connectedPlayers);
@@ -2356,13 +2535,13 @@ namespace SaveReload
 					continue;
 				}
 
-				const auto& postLoadStats = loaded.players[slot].stats;
+				const SaveGameInfo::Player::stat_t& postLoadStats = loaded.players[slot].stats;
 				if ( !validatePlayerEffects(laneName, "post_load", slot, postLoadStats, connectedPlayers, false, checks) )
 				{
 					ok = false;
 				}
 
-				auto tickedStats = postLoadStats;
+				SaveGameInfo::Player::stat_t tickedStats = postLoadStats;
 				simulateOneEffectTick(tickedStats);
 				if ( !validatePlayerEffects(laneName, "post_tick", slot, tickedStats, connectedPlayers, true, checks) )
 				{

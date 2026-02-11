@@ -33,23 +33,30 @@
 
 -------------------------------------------------------------------------------*/
 
-void updateEnemyBar(Entity* source, Entity* target, const char* name, Sint32 hp, Sint32 maxhp, bool lowPriorityTick, 
-	DamageGib gibType)
+namespace
 {
-	// server/singleplayer only function.
-	hp = std::max(0, hp); // bounds checking - furniture can go negative
-	auto isValidPlayerSlot = [](const int index) {
+	bool isValidEnemyBarPlayerSlot(const int index)
+	{
 		return index >= 0 && index < MAXPLAYERS && players[index];
-	};
-	auto canSendToRemotePlayer = [&](const int index) {
+	}
+
+	bool canSendEnemyBarToRemotePlayer(const int index)
+	{
 		return index > 0
-			&& isValidPlayerSlot(index)
+			&& isValidEnemyBarPlayerSlot(index)
 			&& !client_disconnected[index]
 			&& !players[index]->isLocalPlayer()
 			&& net_clients
 			&& net_clients[index - 1].host != 0
 			&& net_clients[index - 1].port != 0;
-	};
+	}
+}
+
+void updateEnemyBar(Entity* source, Entity* target, const char* name, Sint32 hp, Sint32 maxhp, bool lowPriorityTick, 
+	DamageGib gibType)
+{
+	// server/singleplayer only function.
+	hp = std::max(0, hp); // bounds checking - furniture can go negative
 	int player = -1;
 	int c;
 
@@ -60,7 +67,7 @@ void updateEnemyBar(Entity* source, Entity* target, const char* name, Sint32 hp,
 
 	for (c = 0; c < MAXPLAYERS; c++)
 	{
-		if ( !isValidPlayerSlot(c) )
+		if ( !isValidEnemyBarPlayerSlot(c) )
 		{
 			continue;
 		}
@@ -128,7 +135,7 @@ void updateEnemyBar(Entity* source, Entity* target, const char* name, Sint32 hp,
 	int playertarget = -1;
 	for (c = 0; c < MAXPLAYERS; c++)
 	{
-		if ( !isValidPlayerSlot(c) )
+		if ( !isValidEnemyBarPlayerSlot(c) )
 		{
 			continue;
 		}
@@ -143,11 +150,11 @@ void updateEnemyBar(Entity* source, Entity* target, const char* name, Sint32 hp,
 	if ( stats )
 	{
 		bool tookDamage = stats->HP != stats->OLDHP;
-		if ( isValidPlayerSlot(playertarget) && players[playertarget]->isLocalPlayer() )
+		if ( isValidEnemyBarPlayerSlot(playertarget) && players[playertarget]->isLocalPlayer() )
 		{
 			DamageIndicatorHandler.insert(playertarget, source->x, source->y, tookDamage);
 		}
-		else if ( multiplayer == SERVER && canSendToRemotePlayer(playertarget) )
+		else if ( multiplayer == SERVER && canSendEnemyBarToRemotePlayer(playertarget) )
 		{
 			// Remote players do not own local DamageIndicatorHandler state, so the server
 			// mirrors the hit direction through a small one-way packet.
@@ -202,13 +209,13 @@ void updateEnemyBar(Entity* source, Entity* target, const char* name, Sint32 hp,
 	}
 
 	EnemyHPDamageBarHandler::EnemyHPDetails* details = nullptr;
-	if ( isValidPlayerSlot(player) /*&& players[player]->isLocalPlayer()*/ )
+	if ( isValidEnemyBarPlayerSlot(player) /*&& players[player]->isLocalPlayer()*/ )
 	{
 		// add enemy bar to the server
 		int p = player;
 		if ( !players[player]->isLocalPlayer() )
 		{
-			if ( isValidPlayerSlot(clientnum) )
+			if ( isValidEnemyBarPlayerSlot(clientnum) )
 			{
 				p = clientnum; // remote clients, add it to the local list.
 			}
@@ -217,7 +224,7 @@ void updateEnemyBar(Entity* source, Entity* target, const char* name, Sint32 hp,
 		{
 			for ( int i = 0; i < MAXPLAYERS; ++i )
 			{
-				if ( !isValidPlayerSlot(i) )
+				if ( !isValidEnemyBarPlayerSlot(i) )
 				{
 					continue;
 				}
@@ -246,7 +253,7 @@ void updateEnemyBar(Entity* source, Entity* target, const char* name, Sint32 hp,
 		// send to all remote players
 		for ( int p = 1; p < MAXPLAYERS; ++p )
 		{
-			if ( !canSendToRemotePlayer(p) )
+			if ( !canSendEnemyBarToRemotePlayer(p) )
 			{
 				continue;
 			}

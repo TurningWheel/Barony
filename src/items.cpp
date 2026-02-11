@@ -93,7 +93,7 @@ int getLootBagPlayerForVariation(const int variation, const bool colorblind)
 		return kLootBagFallbackPlayer;
 	}
 
-	const auto& variationByPlayer = getLootBagVariationByPlayerLookup(colorblind);
+	const PlayerSlotLookup<Uint32, MAXPLAYERS>& variationByPlayer = getLootBagVariationByPlayerLookup(colorblind);
 	for ( int player = 0; player < MAXPLAYERS; ++player )
 	{
 		if ( static_cast<int>(variationByPlayer[player]) == variation )
