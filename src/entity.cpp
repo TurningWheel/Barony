@@ -4522,11 +4522,28 @@ void Entity::handleEffects(Stat* myStats)
 		{
 			Sint32 oldMP = myStats->MP;
 			myStats->MP += mpRestore;
+			Sint32 prevMaxMP = myStats->MAXMP;
+			if ( myStats->MISC_FLAGS[STAT_FLAG_MP_BONUS] != 0 )
+			{
+				myStats->MAXMP -= myStats->MISC_FLAGS[STAT_FLAG_MP_BONUS];
+			}
 			myStats->MAXMP += mpMod;
+
 			if ( behavior == &actPlayer && myStats->playerRace == RACE_INSECTOID && myStats->stat_appearance == 0 )
 			{
 				myStats->MAXMP = std::min(100, myStats->MAXMP);
+				if ( myStats->MISC_FLAGS[STAT_FLAG_MP_BONUS] != 0 )
+				{
+					myStats->MAXMP += myStats->MISC_FLAGS[STAT_FLAG_MP_BONUS];
+				}
 				this->playerInsectoidIncrementHungerToMP(myStats->MP - oldMP);
+			}
+			else
+			{
+				if ( myStats->MISC_FLAGS[STAT_FLAG_MP_BONUS] != 0 )
+				{
+					myStats->MAXMP += myStats->MISC_FLAGS[STAT_FLAG_MP_BONUS];
+				}
 			}
 			myStats->MP = std::min(myStats->MP, myStats->MAXMP);
 		}
@@ -5982,6 +5999,9 @@ void Entity::handleEffects(Stat* myStats)
 						default:
 							break;
 						}
+
+						mpcost = std::max(1, myStats->MAXMP * mpcost / 100);
+
 						bool failedCast = false;
 						if ( players[player]->mechanics.ensembleRequireRecast )
 						{
@@ -12988,7 +13008,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						if ( charge >= Stat::getMaxAttackCharge(myStats) )
 						{
-							chargeMult += 0.5;
+							chargeMult += 0.25;
 						}
 					}
 					damage *= chargeMult;
@@ -18139,7 +18159,7 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 					int effectInflictedBy = (srcStats->getEffectActive(EFF_DIVINE_FIRE) & 0xF0) >> 4;
 					if ( behavior == &actPlayer && !checkFriend(src) )
 					{
-						if ( effectInflictedBy & (1 + skill[2]) )
+						if ( effectInflictedBy == (1 + skill[2]) )
 						{
 							minRoll += srcStats->getEffectActive(EFF_DIVINE_FIRE) & 0xF;
 							bonus = true;
