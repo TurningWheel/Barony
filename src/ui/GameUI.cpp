@@ -30106,6 +30106,14 @@ void Player::Inventory_t::ItemTooltipDisplay_t::updateItem(const int player, Ite
 			playerPER = statGetPER(stats[player], players[player]->entity);
 			playerCHR = statGetCHR(stats[player], players[player]->entity);
 		}
+		spellCost = 0;
+		if ( newItem->type == SPELL_ITEM )
+		{
+			if ( auto spell = getSpellFromItem(player, newItem, false) )
+			{
+				spellCost = getCostOfSpell(spell, players[player]->entity);
+			}
+		}
 	}
 }
 
@@ -30119,6 +30127,15 @@ bool Player::Inventory_t::ItemTooltipDisplay_t::isItemSameAsCurrent(const int pl
 			appraisingThisItem = true;
 		}
 
+		int newSpellCost = 0;
+		if ( newItem->type == SPELL_ITEM )
+		{
+			if ( auto spell = getSpellFromItem(player, newItem, false) )
+			{
+				newSpellCost = getCostOfSpell(spell, players[player]->entity);
+			}
+		}
+
 		if ( newItem->uid == uid
 			&& newItem->type == type
 			&& newItem->status == status
@@ -30128,6 +30145,7 @@ bool Player::Inventory_t::ItemTooltipDisplay_t::isItemSameAsCurrent(const int pl
 			&& newItem->identified == identified
 			&& (wasAppraisalTarget == appraisingThisItem)
 			&& playernum == player
+			&& spellCost == newSpellCost
 			&& playerLVL == stats[player]->LVL
 			&& playerEXP == stats[player]->EXP
 			&& playerSTR == statGetSTR(stats[player], players[player]->entity)
