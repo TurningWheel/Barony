@@ -12607,7 +12607,15 @@ void actParticleTimer(Entity* my)
 							}
 							else if ( target->behavior == &::actChest || target->getMonsterTypeFromSprite() == MIMIC )
 							{
-								target->chestHandleDamageMagic(my->particleTimerVariable1, *my, caster);
+								if ( target->behavior == &actMonster && target->getStats() 
+									&& target->getStats()->getEffectActive(EFF_MAGIC_GREASE) )
+								{
+									target->chestHandleDamageMagic(my->particleTimerVariable1 * 2, *my, caster);
+								}
+								else
+								{
+									target->chestHandleDamageMagic(my->particleTimerVariable1, *my, caster);
+								}
 								magicOnSpellCastEvent(caster, caster, target, SPELL_BOOBY_TRAP, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
 							}
 							else if ( target->isDamageableCollider() )
