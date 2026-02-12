@@ -838,7 +838,7 @@ void IRCHandler_t::handleMessage(std::string& msg)
 #endif // !NINTENDO
 
 Uint32 ItemTooltips_t::itemsJsonHashRead = 0;
-const Uint32 ItemTooltips_t::kItemsJsonHash = 2032888212;
+const Uint32 ItemTooltips_t::kItemsJsonHash = 3805759756;
 
 void ItemTooltips_t::setSpellValueIfKeyPresent(ItemTooltips_t::spellItem_t& t, rapidjson::Value::ConstMemberIterator item_itr, Uint32& hash, Uint32& hashShift, const char* key, int& toSet)
 {
@@ -3371,6 +3371,10 @@ Sint32 getStatAttributeBonusFromItem(const int player, Item& item, std::string& 
 	Sint32 stat = 0;
 	bool cursedItemIsBuff = shouldInvertEquipmentBeatitude(stats[player]);
 	if ( item.beatitude >= 0 || cursedItemIsBuff )
+	{
+		stat += items[item.type].attributes[attribute];
+	}
+	else if ( items[item.type].attributes[attribute] < 0 )
 	{
 		stat += items[item.type].attributes[attribute];
 	}
