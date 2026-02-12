@@ -22,7 +22,7 @@ Primary conclusions from baseline:
 
 ## Current Stage
 - Stage: `Pass10 complete` (structural overflow tuning + decoration telemetry + survival-guarded long sweeps).
-- Next stage: `Pass11 targeted economy/food/decor composition tuning` with runs=3 volatility sweep and full-lobby confirmation.
+- Next stage: `Pass11 targeted economy/food/decor composition tuning` with runs=5 volatility sweep and full-lobby confirmation.
 
 ## Relevant Code and Tunables
 
@@ -163,6 +163,11 @@ From `/Users/sayhiben/dev/Barony-8p/tests/smoke/artifacts/mapgen-level-matrix-pa
 
 ## Tuning Process (Iteration Workflow)
 
+### Sweep confidence policy
+- Use `runs=3` for fast formula iteration while exploring direction.
+- Use `runs=5` for volatility/gating sweeps and promotion decisions.
+- If any key metric is near a threshold (about within 10% of a target band), escalate that lane to `runs=5` before accepting.
+
 ### Step 1: Edit overflow-only tunables
 Touch only overflow helper logic and overflow branches in:
 - `/Users/sayhiben/dev/Barony-8p/src/maps.cpp`
@@ -186,26 +191,26 @@ OUT="/Users/sayhiben/dev/Barony-8p/tests/smoke/artifacts/mapgen-level-matrix-pas
   --outdir "$OUT"
 ```
 
-### Step 4: Run required volatility matrix (`runs=3`)
+### Step 4: Run required volatility matrix (`runs=5`)
 ```bash
-OUT="/Users/sayhiben/dev/Barony-8p/tests/smoke/artifacts/mapgen-level-matrix-passNN-runs3-$(date +%Y%m%d-%H%M%S)"
+OUT="/Users/sayhiben/dev/Barony-8p/tests/smoke/artifacts/mapgen-level-matrix-passNN-runs5-$(date +%Y%m%d-%H%M%S)"
 /Users/sayhiben/dev/Barony-8p/tests/smoke/run_mapgen_level_matrix_mac.sh \
   --app "/Users/sayhiben/dev/Barony-8p/build-mac-smoke/barony.app/Contents/MacOS/barony" \
   --datadir "$HOME/Library/Application Support/Steam/steamapps/common/Barony/Barony.app/Contents/Resources" \
   --levels "1,7,16,33" \
-  --min-players 1 --max-players 15 --runs-per-player 3 \
+  --min-players 1 --max-players 15 --runs-per-player 5 \
   --simulate-mapgen-players 1 --inprocess-sim-batch 1 --inprocess-player-sweep 1 \
   --mapgen-reload-same-level 1 \
   --outdir "$OUT"
 ```
 
-### Step 5: Full-lobby confirmation (`simulate-mapgen-players=0`)
+### Step 5: Full-lobby confirmation (`simulate-mapgen-players=0`, promotion confidence)
 ```bash
 OUT="/Users/sayhiben/dev/Barony-8p/tests/smoke/artifacts/mapgen-full-posttune-passNN-$(date +%Y%m%d-%H%M%S)"
 /Users/sayhiben/dev/Barony-8p/tests/smoke/run_mapgen_sweep_mac.sh \
   --app "/Users/sayhiben/dev/Barony-8p/build-mac-smoke/barony.app/Contents/MacOS/barony" \
   --datadir "$HOME/Library/Application Support/Steam/steamapps/common/Barony/Barony.app/Contents/Resources" \
-  --min-players 1 --max-players 15 --runs-per-player 3 \
+  --min-players 1 --max-players 15 --runs-per-player 5 \
   --simulate-mapgen-players 0 \
   --auto-enter-dungeon 1 \
   --outdir "$OUT"

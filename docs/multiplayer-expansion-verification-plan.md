@@ -25,6 +25,7 @@ Target: `MAXPLAYERS=15`
 - Mapgen CSV/report telemetry now includes observed generation seeds and food availability (`mapgen_seed_observed`, `food_items`, `food_servings`) plus explicit regeneration-diversity rates (`observed_seed_unique_rate_pct`, `reload_unique_seed_rate_pct`).
 - Known intermittent: 8p churn rejoin retries (`error code 16`) can occur transiently and then recover.
 - Extended balancing playbook is now captured in `/Users/sayhiben/dev/Barony-8p/docs/extended-multiplayer-balancing-and-tuning-plan.md` (process, tunables, commands, ratio targets, and gameplay rationale).
+- Sweep confidence policy: keep `runs-per-player=3` for fast directional iteration, but require `runs-per-player=5` for volatility/gating and promotion baselines.
 - Latest integration commit on `8p-mod`: `f4da9ee9` (`mapgen: add pass10 balancing docs and sweep stability telemetry`).
 
 ## 2. Open Checklist
@@ -33,7 +34,7 @@ Target: `MAXPLAYERS=15`
 - [x] Add single-runtime simulated player-count sweep mode with observed override tracing (`mapgen_players_observed`) to reduce relaunch cost during balancing.
 - [x] Add cross-level matrix aggregate summary outputs for balancing diagnostics.
 - [x] Add observed-seed + food telemetry to mapgen sweep outputs and aggregate reporting (`mapgen_seed_observed`, `food_items`, `food_servings`, regeneration-diversity rates).
-- [x] Add volatility-aware simulated balancing baseline (`runs-per-player=3`) for mapgen tuning decisions.
+- [x] Add volatility-aware balancing sweep policy (`runs=3` fast iteration, `runs=5` gating/promotion).
 - [x] Harden same-level mapgen sweep stability against host-death stalls in long reload lanes (smoke-only survival guard).
 - [ ] Rebalance post-pass10 economy/loot/food per-player pacing for `>4p` (totals are positive, but per-player availability still drops noticeably at high party counts).
 - [x] Re-tune post-pass6b monster pressure for deeper levels (`16/33`) while preserving reduced 5p clumping and reduced food inflation (validated in pass8 simulated matrix).
@@ -104,7 +105,7 @@ Target: `MAXPLAYERS=15`
 ### 5.1 Post-tuning full-lobby calibration
 ```bash
 tests/smoke/run_mapgen_sweep_mac.sh \
-  --min-players 1 --max-players 15 --runs-per-player 3 \
+  --min-players 1 --max-players 15 --runs-per-player 5 \
   --simulate-mapgen-players 0 --auto-enter-dungeon 1 \
   --outdir "tests/smoke/artifacts/mapgen-full-posttune-$(date +%Y%m%d-%H%M%S)"
 ```
@@ -146,11 +147,11 @@ tests/smoke/run_lan_helo_chunk_smoke_mac.sh \
   --outdir "tests/smoke/artifacts/eos-handshake-$(date +%Y%m%d-%H%M%S)"
 ```
 
-### 5.6 Fast simulated mapgen matrix (single-runtime player sweeps)
+### 5.6 Volatility-gating simulated mapgen matrix (single-runtime player sweeps)
 ```bash
 tests/smoke/run_mapgen_level_matrix_mac.sh \
   --levels 1,7,16,33 \
-  --min-players 1 --max-players 15 --runs-per-player 3 \
+  --min-players 1 --max-players 15 --runs-per-player 5 \
   --simulate-mapgen-players 1 \
   --inprocess-sim-batch 1 --inprocess-player-sweep 1 \
   --mapgen-reload-same-level 1 \
