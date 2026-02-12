@@ -3314,7 +3314,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									if ( !hitstats->helmet && hitstats->getEffectActive(EFF_GROWTH) > 1 )
 									{
 										int bonus = std::min(3, hitstats->getEffectActive(EFF_GROWTH) - 1);
-										fireMultiplier += 0.05;
+										fireMultiplier += 0.05 * bonus;
 									}
 								}
 								if ( hitstats->type == SALAMANDER )

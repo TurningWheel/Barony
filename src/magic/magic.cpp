@@ -3926,7 +3926,7 @@ bool applyGenericMagicDamage(Entity* caster, Entity* hitentity, Entity& damageSo
 				if ( !targetStats->helmet && targetStats->getEffectActive(EFF_GROWTH) > 1 )
 				{
 					int bonus = std::min(3, targetStats->getEffectActive(EFF_GROWTH) - 1);
-					fireMultiplier += 0.05;
+					fireMultiplier += 0.05 * bonus;
 				}
 			}
 			if ( targetStats->type == SALAMANDER )
