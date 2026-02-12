@@ -15,6 +15,11 @@ All main runners support `--app <path>` and optional `--datadir <path>` so you c
   - Supports smoke-only HELO tx adversarial modes (reordering/dup/drop tests).
   - Supports strict adversarial assertions and backend tagging in `summary.env`.
   - Supports explicit transition budget via `--auto-enter-dungeon-repeats` (defaults to `--mapgen-samples`).
+  - Supports same-level mapgen reload sampling (`--mapgen-reload-same-level 1`) with optional per-sample seed rotation (`--mapgen-reload-seed-base <n>`).
+  - Supports dynamic mapgen player override control via `--mapgen-control-file <path>` for in-process player-count tuning.
+  - In mapgen-required same-level reload mode, fails fast with `MAPGEN_WAIT_REASON=reload-complete-no-mapgen-samples` when the selected floor is non-procedural.
+  - Emits mapgen regeneration evidence fields in `summary.env` (`MAPGEN_RELOAD_TRANSITION_*`, `MAPGEN_GENERATION_*`, `MAPGEN_RELOAD_REGEN_OK`).
+  - Seeds smoke homes with `skipintro=true` automatically (writes a minimal config when no seed config exists) to avoid intro/title startup stalls.
   - Optionally traces/asserts lobby account label coverage for remote slots (`--trace-account-labels 1 --require-account-labels 1`).
 
 - `run_lan_helo_soak_mac.sh`
@@ -71,12 +76,27 @@ All main runners support `--app <path>` and optional `--datadir <path>` so you c
   - Writes aggregate CSV with map generation metrics.
   - Generates a simple HTML heatmap via `generate_mapgen_heatmap.py`.
   - Supports a fast single-instance mode that simulates mapgen scaling player counts.
+  - Supports smoke-only start-floor control via `--start-floor <n>` for same-floor cross-player comparisons.
+  - Supports in-process same-level sample collection (`--inprocess-sim-batch 1 --mapgen-reload-same-level 1`) to avoid relaunching between samples.
+  - Supports in-process single-runtime player sweeps (`--inprocess-player-sweep 1`) that step mapgen player overrides across all requested player counts without relaunching.
+  - CSV includes mapgen wait/reload regeneration diagnostics (`mapgen_wait_reason`, `mapgen_reload_transition_lines`, `mapgen_generation_lines`, `mapgen_generation_unique_seed_count`, `mapgen_reload_regen_ok`).
+  - CSV now also records both intended and observed scaling players (`mapgen_players_override`, `mapgen_players_observed`) for sweep-control verification.
+  - CSV now records observed generation seed and food metrics (`mapgen_seed_observed`, `food_items`, `food_servings`) for regeneration and hunger-scaling analysis.
+
+- `run_mapgen_level_matrix_mac.sh`
+  - Runs multiple per-floor mapgen sweeps and keeps each floor in its own artifact/report directory.
+  - In same-level reload mode, maps each requested `--levels` floor directly to `--start-floor=<level>` so level labels and observed floor IDs stay aligned.
+  - Defaults to in-process same-level sampling (no relaunch between samples) for faster per-floor campaigns.
+  - Emits a combined matrix CSV plus per-floor trend summary (`mapgen_level_trends.csv`) and cross-level aggregate summaries (`mapgen_level_overall.csv`, `mapgen_level_overall.md`).
+  - Per-floor trends now distinguish target-floor matching from regeneration diversity (`target_level_match_rate_pct`, `observed_seed_unique_rate_pct`, `reload_unique_seed_rate_pct`).
+  - Emits an HTML aggregate report for matrix data (`mapgen_level_matrix_aggregate_report.html`).
 
 - `generate_mapgen_heatmap.py`
   - Converts the CSV output into a colorized HTML table.
 
 - `generate_smoke_aggregate_report.py`
   - Produces one HTML summary from mapgen/soak/adversarial/churn CSVs.
+  - Also supports matrix-level mapgen aggregation via `--mapgen-matrix-csv`.
 
 ## Quick Start
 
@@ -129,12 +149,25 @@ tests/smoke/run_mapgen_sweep_mac.sh \
   --runs-per-player 8 \
   --simulate-mapgen-players 1 \
   --inprocess-sim-batch 1 \
+  --inprocess-player-sweep 1 \
+  --mapgen-reload-same-level 1 \
   --stagger 0 \
   --auto-start-delay 0 \
   --auto-enter-dungeon 1
+
+# Per-floor matrix sweep (default levels: 1,7,16,25,33):
+tests/smoke/run_mapgen_level_matrix_mac.sh \
+  --runs-per-player 2 \
+  --simulate-mapgen-players 1 \
+  --inprocess-sim-batch 1 \
+  --inprocess-player-sweep 1 \
+  --mapgen-reload-same-level 1 \
+  --levels 1,7,16,25,33
 ```
 
 In `--simulate-mapgen-players 1` mode, `--inprocess-sim-batch 1` runs all samples for a given player count in one runtime by using repeated smoke-driven dungeon transitions.
+With `--inprocess-player-sweep 1` and same-level reload enabled, the sweep can also keep one runtime alive while stepping mapgen player overrides across the full player-count range.
+Choose procedural floors for mapgen balancing lanes; fixed/story floors will fail fast with `mapgen_wait_reason=reload-complete-no-mapgen-samples`.
 The sweep now sets extra transition headroom automatically so sparse/no-generate floors do not stall sample collection.
 
 Run a 10x HELO soak:
@@ -231,6 +264,7 @@ Both scripts write to `tests/smoke/artifacts/...` by default.
 Each run includes:
 
 - `summary.env`: key-value summary (pass/fail, counts, mapgen metrics)
+  - Mapgen reload diagnostics include: `MAPGEN_WAIT_REASON`, `MAPGEN_RELOAD_TRANSITION_LINES`, `MAPGEN_RELOAD_TRANSITION_SEEDS`, `MAPGEN_GENERATION_LINES`, `MAPGEN_GENERATION_SEEDS`, `MAPGEN_RELOAD_REGEN_OK`.
   - Includes additional HELO fields: `NETWORK_BACKEND`, `TX_MODE_APPLIED`,
     `PER_CLIENT_REASSEMBLY_COUNTS`, `CHUNK_RESET_REASON_COUNTS`,
     `HELO_PLAYER_SLOTS`, `HELO_PLAYER_SLOT_COVERAGE_OK`,
@@ -294,5 +328,8 @@ These are read by `MainMenu.cpp` / `net.cpp` when set:
 - `BARONY_SMOKE_HELO_CHUNK_PAYLOAD_MAX=<64..900>`
 - `BARONY_SMOKE_HELO_CHUNK_TX_MODE=normal|reverse|even-odd|duplicate-first|drop-last|duplicate-conflict-first` (host-only, smoke-only)
 - `BARONY_SMOKE_MAPGEN_CONNECTED_PLAYERS=<1..15>` (smoke-only mapgen scaling override)
+- `BARONY_SMOKE_START_FLOOR=<0..99>` (host-only, smoke-only start-floor override)
+- `BARONY_SMOKE_MAPGEN_RELOAD_SAME_LEVEL=0|1` (host-only, smoke-only same-level reload sampling)
+- `BARONY_SMOKE_MAPGEN_RELOAD_SEED_BASE=<int>` (host-only, smoke-only per-sample seed base for same-level reload mode)
 
 These hooks are dormant unless `BARONY_SMOKE_AUTOPILOT` or explicit smoke role settings are enabled.

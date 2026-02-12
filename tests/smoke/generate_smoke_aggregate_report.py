@@ -6,7 +6,13 @@ from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Tuple
 
 
-MAPGEN_METRICS = ["rooms", "monsters", "gold", "items", "decorations"]
+MAPGEN_BASE_METRICS = ["rooms", "monsters", "gold", "items", "food_servings", "decorations"]
+MAPGEN_OPTIONAL_METRICS = [
+    "decorations_blocking",
+    "decorations_utility",
+    "decorations_traps",
+    "decorations_economy",
+]
 
 
 def parse_float(value: Optional[str]) -> Optional[float]:
@@ -26,6 +32,15 @@ def parse_int(value: Optional[str]) -> Optional[int]:
     if parsed is None:
         return None
     return int(parsed)
+
+
+def resolve_mapgen_metrics(rows: List[Dict[str, str]]) -> List[str]:
+    if not rows:
+        return list(MAPGEN_BASE_METRICS)
+    keys = set(rows[0].keys())
+    metrics = [m for m in MAPGEN_BASE_METRICS if m in keys]
+    metrics.extend([m for m in MAPGEN_OPTIONAL_METRICS if m in keys])
+    return metrics
 
 
 def read_csv_rows(path: Path) -> List[Dict[str, str]]:
@@ -121,6 +136,7 @@ def summarize_mapgen(csv_paths: List[Path]) -> str:
 
     passes = [r for r in rows if r.get("status") == "pass"]
     fails = [r for r in rows if r.get("status") != "pass"]
+    metrics = resolve_mapgen_metrics(rows)
 
     by_player: Dict[int, List[Dict[str, float]]] = {}
     for row in passes:
@@ -129,7 +145,7 @@ def summarize_mapgen(csv_paths: List[Path]) -> str:
             continue
         metrics: Dict[str, float] = {}
         valid = True
-        for metric in MAPGEN_METRICS:
+        for metric in metrics:
             v = parse_float(row.get(metric))
             if v is None:
                 valid = False
@@ -142,12 +158,12 @@ def summarize_mapgen(csv_paths: List[Path]) -> str:
     avg_by_player: Dict[int, Dict[str, float]] = {}
     for player, entries in by_player.items():
         avg_by_player[player] = {
-            metric: sum(e[metric] for e in entries) / len(entries) for metric in MAPGEN_METRICS
+            metric: sum(e[metric] for e in entries) / len(entries) for metric in metrics
         }
 
     xs: List[float] = sorted(float(p) for p in avg_by_player.keys())
     metric_stats: Dict[str, Tuple[Optional[float], Optional[float], Optional[float], Optional[float]]] = {}
-    for metric in MAPGEN_METRICS:
+    for metric in metrics:
         ys = [avg_by_player[int(x)][metric] for x in xs]
         slope = linear_slope(xs, ys) if ys else None
         corr = correlation(xs, ys) if ys else None
@@ -155,17 +171,17 @@ def summarize_mapgen(csv_paths: List[Path]) -> str:
         player_norm = mean([y / x for x, y in zip(xs, ys) if x > 0]) if ys else None
         metric_stats[metric] = (slope, corr, avg, player_norm)
 
-    headers = ["Players"] + [m.capitalize() for m in MAPGEN_METRICS] + ["Runs"]
+    headers = ["Players"] + [m.capitalize() for m in metrics] + ["Runs"]
     table_rows: List[List[str]] = []
     for player in sorted(avg_by_player.keys()):
         row = [str(player)]
-        row.extend(fmt_number(avg_by_player[player][metric]) for metric in MAPGEN_METRICS)
+        row.extend(fmt_number(avg_by_player[player][metric]) for metric in metrics)
         row.append(str(len(by_player.get(player, []))))
         table_rows.append(row)
 
     stat_headers = ["Metric", "Slope/Player", "Correlation", "Mean", "Mean/Player"]
     stat_rows: List[List[str]] = []
-    for metric in MAPGEN_METRICS:
+    for metric in metrics:
         slope, corr, avg, player_norm = metric_stats[metric]
         stat_rows.append([
             html.escape(metric),
@@ -186,6 +202,233 @@ def summarize_mapgen(csv_paths: List[Path]) -> str:
     lines.append(render_table(headers, table_rows))
     lines.append("<h3>Scaling Diagnostics</h3>")
     lines.append(render_table(stat_headers, stat_rows))
+    return "\n".join(lines)
+
+
+def summarize_mapgen_matrix(csv_paths: List[Path]) -> str:
+    if not csv_paths:
+        return ""
+    rows: List[Dict[str, str]] = []
+    for path in csv_paths:
+        rows.extend(read_csv_rows(path))
+    if not rows:
+        return section_header("Mapgen Level Matrix") + "<p>No rows found.</p>"
+
+    passes = [r for r in rows if r.get("status") == "pass"]
+    if not passes:
+        return section_header("Mapgen Level Matrix") + "<p>No passing rows found.</p>"
+    metrics = resolve_mapgen_metrics(passes)
+
+    parsed_rows: List[Tuple[int, int, Dict[str, float], int, Optional[int], Optional[float]]] = []
+    observed_mismatch_rows = 0
+    observed_seed_missing_rows = 0
+    for row in passes:
+        level = parse_int(row.get("target_level"))
+        players = parse_int(row.get("players"))
+        if level is None or players is None:
+            continue
+        metric_values: Dict[str, float] = {}
+        valid = True
+        for metric in metrics:
+            value = parse_float(row.get(metric))
+            if value is None:
+                valid = False
+                break
+            metric_values[metric] = value
+        if not valid:
+            continue
+        observed_level = parse_int(row.get("mapgen_level"))
+        level_match = 1 if observed_level is not None and observed_level == level else 0
+        observed_players = parse_int(row.get("mapgen_players_observed"))
+        if observed_players is not None and observed_players != players:
+            observed_mismatch_rows += 1
+        observed_seed = parse_int(row.get("mapgen_seed_observed"))
+        if observed_seed is None:
+            observed_seed_missing_rows += 1
+        generation_lines = parse_int(row.get("mapgen_generation_lines"))
+        generation_unique_seed_count = parse_int(row.get("mapgen_generation_unique_seed_count"))
+        reload_unique_seed_rate = None
+        if generation_lines is not None and generation_lines > 0 and generation_unique_seed_count is not None:
+            reload_unique_seed_rate = 100.0 * generation_unique_seed_count / generation_lines
+        parsed_rows.append((level, players, metric_values, level_match, observed_seed, reload_unique_seed_rate))
+
+    if not parsed_rows:
+        return section_header("Mapgen Level Matrix") + "<p>No valid pass rows found.</p>"
+
+    by_level: Dict[int, List[Tuple[int, Dict[str, float], int, Optional[int], Optional[float]]]] = {}
+    for level, players, values, level_match, observed_seed, reload_unique_seed_rate in parsed_rows:
+        by_level.setdefault(level, []).append((players, values, level_match, observed_seed, reload_unique_seed_rate))
+
+    detail_headers = [
+        "Level",
+        "Rows",
+        "Players Seen",
+        "Target Level Match %",
+        "Observed Seed Unique %",
+        "Reload Unique Seed %",
+        "Metric",
+        "Slope/Player",
+        "Correlation",
+        "High vs Low %",
+    ]
+    detail_rows: List[List[str]] = []
+    slopes_by_metric: Dict[str, List[float]] = {metric: [] for metric in metrics}
+    corr_by_metric: Dict[str, List[float]] = {metric: [] for metric in metrics}
+    highlow_by_metric: Dict[str, List[float]] = {metric: [] for metric in metrics}
+    level_match_rates: List[float] = []
+    level_observed_seed_unique_rates: List[float] = []
+    level_reload_unique_seed_rates: List[float] = []
+
+    for level in sorted(by_level.keys()):
+        level_rows = by_level[level]
+        rows_count = len(level_rows)
+        target_level_match_rate = (
+            100.0 * sum(match for _, _, match, _, _ in level_rows) / rows_count if rows_count > 0 else 0.0
+        )
+        by_player_metric: Dict[int, Dict[str, List[float]]] = {}
+        observed_seeds: List[int] = []
+        reload_unique_seed_rates: List[float] = []
+        for players, values, _, observed_seed, reload_unique_seed_rate in level_rows:
+            by_player_metric.setdefault(players, {metric: [] for metric in metrics})
+            for metric in metrics:
+                by_player_metric[players][metric].append(values[metric])
+            if observed_seed is not None:
+                observed_seeds.append(observed_seed)
+            if reload_unique_seed_rate is not None:
+                reload_unique_seed_rates.append(reload_unique_seed_rate)
+
+        observed_seed_unique_rate = None
+        if observed_seeds:
+            observed_seed_unique_rate = 100.0 * len(set(observed_seeds)) / len(observed_seeds)
+        reload_unique_seed_rate = (
+            sum(reload_unique_seed_rates) / len(reload_unique_seed_rates)
+            if reload_unique_seed_rates else None
+        )
+        level_match_rates.append(target_level_match_rate)
+        if observed_seed_unique_rate is not None:
+            level_observed_seed_unique_rates.append(observed_seed_unique_rate)
+        if reload_unique_seed_rate is not None:
+            level_reload_unique_seed_rates.append(reload_unique_seed_rate)
+
+        players_sorted = sorted(by_player_metric.keys())
+        for metric in metrics:
+            xs: List[float] = []
+            ys: List[float] = []
+            for player in players_sorted:
+                values = by_player_metric[player][metric]
+                if not values:
+                    continue
+                xs.append(float(player))
+                ys.append(sum(values) / len(values))
+            slope = linear_slope(xs, ys) if xs and ys else None
+            corr = correlation(xs, ys) if xs and ys else None
+
+            low_values = [
+                sum(by_player_metric[player][metric]) / len(by_player_metric[player][metric])
+                for player in players_sorted
+                if player <= 4 and by_player_metric[player][metric]
+            ]
+            high_values = [
+                sum(by_player_metric[player][metric]) / len(by_player_metric[player][metric])
+                for player in players_sorted
+                if player >= 12 and by_player_metric[player][metric]
+            ]
+            high_vs_low = None
+            if low_values and high_values:
+                low_avg = sum(low_values) / len(low_values)
+                high_avg = sum(high_values) / len(high_values)
+                high_vs_low = ((high_avg - low_avg) / low_avg * 100.0) if low_avg else 0.0
+
+            if slope is not None:
+                slopes_by_metric[metric].append(slope)
+            if corr is not None:
+                corr_by_metric[metric].append(corr)
+            if high_vs_low is not None:
+                highlow_by_metric[metric].append(high_vs_low)
+
+            detail_rows.append(
+                [
+                    str(level),
+                    str(rows_count),
+                    str(len(players_sorted)),
+                    fmt_number(target_level_match_rate, 1),
+                    fmt_number(observed_seed_unique_rate, 1),
+                    fmt_number(reload_unique_seed_rate, 1),
+                    html.escape(metric),
+                    fmt_number(slope, 4),
+                    fmt_number(corr, 4),
+                    fmt_number(high_vs_low, 1),
+                ]
+            )
+
+    mean_target_level_match_rate = mean(level_match_rates)
+    mean_observed_seed_unique_rate = mean(level_observed_seed_unique_rates)
+    mean_reload_unique_seed_rate = mean(level_reload_unique_seed_rates)
+
+    overall_headers = [
+        "Metric",
+        "Levels",
+        "Positive Slopes",
+        "Positive Slope %",
+        "Mean Slope",
+        "Min Slope",
+        "Mean Correlation",
+        "Mean High vs Low %",
+        "Mean Target Level Match %",
+        "Mean Observed Seed Unique %",
+        "Mean Reload Unique Seed %",
+    ]
+    overall_rows: List[List[str]] = []
+    caution_metrics: List[str] = []
+    for metric in metrics:
+        slopes = slopes_by_metric[metric]
+        total = len(slopes)
+        positives = len([s for s in slopes if s > 0.0])
+        positive_pct = (100.0 * positives / total) if total else None
+        mean_slope = mean(slopes)
+        min_slope = min(slopes) if slopes else None
+        mean_corr = mean(corr_by_metric[metric])
+        mean_highlow = mean(highlow_by_metric[metric])
+        overall_rows.append(
+            [
+                html.escape(metric),
+                str(total),
+                f"{positives}/{total}",
+                fmt_number(positive_pct, 1),
+                fmt_number(mean_slope, 4),
+                fmt_number(min_slope, 4),
+                fmt_number(mean_corr, 4),
+                fmt_number(mean_highlow, 1),
+                fmt_number(mean_target_level_match_rate, 1),
+                fmt_number(mean_observed_seed_unique_rate, 1),
+                fmt_number(mean_reload_unique_seed_rate, 1),
+            ]
+        )
+        if total > 0 and positives < total:
+            caution_metrics.append(metric)
+
+    insight_lines = [
+        f"Rows: {len(rows)} ({len(passes)} pass / {len(rows) - len(passes)} fail)",
+        f"Levels observed: {len(by_level)}",
+        f"Player-override mismatches (observed vs target): {observed_mismatch_rows}",
+        f"Rows missing observed mapgen seed: {observed_seed_missing_rows}",
+        f"Mean target-level match rate: {fmt_number(mean_target_level_match_rate, 1)}%",
+        f"Mean observed-seed unique rate: {fmt_number(mean_observed_seed_unique_rate, 1)}%",
+        f"Mean reload unique-seed rate: {fmt_number(mean_reload_unique_seed_rate, 1)}%",
+        "Inputs: " + ", ".join(html.escape(str(p)) for p in csv_paths),
+    ]
+    if caution_metrics:
+        insight_lines.append(
+            "Metrics with at least one non-positive level slope: "
+            + ", ".join(html.escape(metric) for metric in caution_metrics)
+        )
+
+    lines: List[str] = [section_header("Mapgen Level Matrix")]
+    lines.append(bullet(insight_lines))
+    lines.append("<h3>Overall Cross-Level Summary</h3>")
+    lines.append(render_table(overall_headers, overall_rows))
+    lines.append("<h3>Per-Level Metric Detail</h3>")
+    lines.append(render_table(detail_headers, detail_rows))
     return "\n".join(lines)
 
 
@@ -332,18 +575,21 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Generate an aggregate smoke-test HTML report.")
     parser.add_argument("--output", required=True, help="Output HTML path.")
     parser.add_argument("--mapgen-csv", action="append", default=[], help="Mapgen sweep CSV path.")
+    parser.add_argument("--mapgen-matrix-csv", action="append", default=[], help="Mapgen level matrix CSV path.")
     parser.add_argument("--soak-csv", action="append", default=[], help="Soak CSV path.")
     parser.add_argument("--adversarial-csv", action="append", default=[], help="Adversarial HELO CSV path.")
     parser.add_argument("--churn-csv", action="append", default=[], help="Join/leave churn CSV path.")
     args = parser.parse_args()
 
     mapgen_paths = [Path(p) for p in args.mapgen_csv]
+    mapgen_matrix_paths = [Path(p) for p in args.mapgen_matrix_csv]
     soak_paths = [Path(p) for p in args.soak_csv]
     adversarial_paths = [Path(p) for p in args.adversarial_csv]
     churn_paths = [Path(p) for p in args.churn_csv]
 
     sections = [
         summarize_mapgen(mapgen_paths),
+        summarize_mapgen_matrix(mapgen_matrix_paths),
         summarize_soak(soak_paths),
         summarize_adversarial(adversarial_paths),
         summarize_churn(churn_paths),

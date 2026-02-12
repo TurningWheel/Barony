@@ -17,6 +17,10 @@ AUTO_ENTER_DUNGEON_REPEATS=""
 FORCE_CHUNK=1
 CHUNK_PAYLOAD_MAX=200
 MAPGEN_PLAYERS_OVERRIDE=""
+MAPGEN_CONTROL_FILE=""
+MAPGEN_RELOAD_SAME_LEVEL=0
+MAPGEN_RELOAD_SEED_BASE=0
+START_FLOOR=0
 HELO_CHUNK_TX_MODE="normal"
 NETWORK_BACKEND="lan"
 STRICT_ADVERSARIAL=0
@@ -80,6 +84,12 @@ Options:
   --force-chunk <0|1>           Enable BARONY_SMOKE_FORCE_HELO_CHUNK.
   --chunk-payload-max <n>       Smoke chunk payload cap (64..900).
   --mapgen-players-override <n> Smoke-only mapgen scaling player count override (1..15).
+  --mapgen-control-file <path>  Optional file read at mapgen-time for dynamic player override.
+                                If present and valid (1..15), this overrides --mapgen-players-override.
+  --mapgen-reload-same-level <0|1>
+                                Smoke-only gameplay autopilot reloads the same dungeon level between samples.
+  --mapgen-reload-seed-base <n> Base seed used for same-level reload samples (0 disables forced seed rotation).
+  --start-floor <n>            Smoke-only host start floor (0..99, default: 0).
   --helo-chunk-tx-mode <mode>   HELO chunk send mode: normal, reverse, even-odd,
                                 duplicate-first, drop-last, duplicate-conflict-first.
   --network-backend <name>      Network backend to execute (lan|steam|eos; default: lan).
@@ -149,10 +159,11 @@ log() {
 seed_smoke_home_profile() {
 	local home_dir="$1"
 	local seed_root="$home_dir/.barony"
+	local config_dest="$seed_root/config/config.json"
+	local wrote_config=0
 
 	if [[ -f "$SEED_CONFIG_PATH" ]]; then
 		mkdir -p "$seed_root/config"
-		local config_dest="$seed_root/config/config.json"
 		if command -v jq >/dev/null 2>&1; then
 			if ! jq '.skipintro = true | .mods = []' "$SEED_CONFIG_PATH" > "$config_dest" 2>/dev/null; then
 				cp "$SEED_CONFIG_PATH" "$config_dest"
@@ -160,6 +171,14 @@ seed_smoke_home_profile() {
 		else
 			cp "$SEED_CONFIG_PATH" "$config_dest"
 		fi
+		wrote_config=1
+	fi
+
+	if (( wrote_config == 0 )); then
+		mkdir -p "$seed_root/config"
+		cat > "$config_dest" <<'JSON'
+{"skipintro":true,"mods":[]}
+JSON
 	fi
 
 	if [[ -f "$SEED_BOOKS_PATH" ]]; then
@@ -684,16 +703,127 @@ collect_lobby_page_snapshot_metrics() {
 extract_mapgen_metrics() {
 	local host_log="$1"
 	local line
+	local food_line
+	local decoration_line
 	line="$(rg -F "successfully generated a dungeon with" "$host_log" | tail -n 1 || true)"
+	food_line="$(rg -F "mapgen food summary:" "$host_log" | tail -n 1 || true)"
+	decoration_line="$(rg -F "mapgen decoration summary:" "$host_log" | tail -n 1 || true)"
 	if [[ -z "$line" ]]; then
-		echo "0 0 0 0 0 0"
+		echo "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0"
 		return
 	fi
 	if [[ "$line" =~ with[[:space:]]+([0-9]+)[[:space:]]+rooms,[[:space:]]+([0-9]+)[[:space:]]+monsters,[[:space:]]+([0-9]+)[[:space:]]+gold,[[:space:]]+([0-9]+)[[:space:]]+items,[[:space:]]+([0-9]+)[[:space:]]+decorations ]]; then
-		echo "1 ${BASH_REMATCH[1]} ${BASH_REMATCH[2]} ${BASH_REMATCH[3]} ${BASH_REMATCH[4]} ${BASH_REMATCH[5]}"
+		local rooms="${BASH_REMATCH[1]}"
+		local monsters="${BASH_REMATCH[2]}"
+		local gold="${BASH_REMATCH[3]}"
+		local items="${BASH_REMATCH[4]}"
+		local decorations="${BASH_REMATCH[5]}"
+		local decor_blocking=0
+		local decor_utility=0
+		local decor_traps=0
+		local decor_economy=0
+		local food_items=0
+		local food_servings=0
+		local mapgen_level=0
+		local mapgen_secret=0
+		local mapgen_seed=0
+		if [[ "$line" =~ level=([0-9]+) ]]; then
+			mapgen_level="${BASH_REMATCH[1]}"
+		fi
+		if [[ "$line" =~ secret=([0-9]+) ]]; then
+			mapgen_secret="${BASH_REMATCH[1]}"
+		fi
+		if [[ "$food_line" =~ food=([0-9]+) ]]; then
+			food_items="${BASH_REMATCH[1]}"
+		fi
+		if [[ "$food_line" =~ food_servings=([0-9]+) ]]; then
+			food_servings="${BASH_REMATCH[1]}"
+		fi
+		if [[ "$decoration_line" =~ blocking=([0-9]+) ]]; then
+			decor_blocking="${BASH_REMATCH[1]}"
+		fi
+		if [[ "$decoration_line" =~ utility=([0-9]+) ]]; then
+			decor_utility="${BASH_REMATCH[1]}"
+		fi
+		if [[ "$decoration_line" =~ traps=([0-9]+) ]]; then
+			decor_traps="${BASH_REMATCH[1]}"
+		fi
+		if [[ "$decoration_line" =~ economy=([0-9]+) ]]; then
+			decor_economy="${BASH_REMATCH[1]}"
+		fi
+		if [[ "$line" =~ seed=([0-9]+) ]]; then
+			mapgen_seed="${BASH_REMATCH[1]}"
+		fi
+		echo "1 ${rooms} ${monsters} ${gold} ${items} ${decorations} ${decor_blocking} ${decor_utility} ${decor_traps} ${decor_economy} ${food_items} ${food_servings} ${mapgen_level} ${mapgen_secret} ${mapgen_seed}"
 	else
-		echo "0 0 0 0 0 0"
+		echo "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0"
 	fi
+}
+
+collect_mapgen_generation_seeds() {
+	local host_log="$1"
+	if [[ ! -f "$host_log" ]]; then
+		echo ""
+		return
+	fi
+	rg -F "generating a dungeon from level set '" "$host_log" \
+		| sed -nE 's/.*\(seed ([0-9]+)\).*/\1/p' \
+		| paste -sd';' - || true
+}
+
+collect_reload_transition_seeds() {
+	local host_log="$1"
+	if [[ ! -f "$host_log" ]]; then
+		echo ""
+		return
+	fi
+	rg -F "[SMOKE]: auto-reloading dungeon level transition" "$host_log" \
+		| sed -nE 's/.* seed=([0-9]+).*/\1/p' \
+		| paste -sd';' - || true
+}
+
+count_list_values() {
+	local values="$1"
+	if [[ -z "$values" ]]; then
+		echo 0
+		return
+	fi
+	echo "$values" | tr ';' '\n' | awk 'NF { ++count } END { print count + 0 }'
+}
+
+count_unique_list_values() {
+	local values="$1"
+	if [[ -z "$values" ]]; then
+		echo 0
+		return
+	fi
+	echo "$values" | tr ';' '\n' | awk 'NF { seen[$0] = 1 } END { print length(seen) + 0 }'
+}
+
+count_seed_matches() {
+	local expected_seeds="$1"
+	local observed_seeds="$2"
+	if [[ -z "$expected_seeds" || -z "$observed_seeds" ]]; then
+		echo 0
+		return
+	fi
+	awk -v expected="$expected_seeds" -v observed="$observed_seeds" '
+	BEGIN {
+		n_observed = split(observed, observed_list, ";");
+		for (i = 1; i <= n_observed; ++i) {
+			if (length(observed_list[i]) > 0) {
+				seen[observed_list[i]] = 1;
+			}
+		}
+		n_expected = split(expected, expected_list, ";");
+		matches = 0;
+		for (i = 1; i <= n_expected; ++i) {
+			if (length(expected_list[i]) > 0 && seen[expected_list[i]]) {
+				++matches;
+			}
+		}
+		print matches + 0;
+	}'
 }
 
 detect_game_start() {
@@ -773,6 +903,22 @@ while (($# > 0)); do
 			;;
 		--mapgen-players-override)
 			MAPGEN_PLAYERS_OVERRIDE="${2:-}"
+			shift 2
+			;;
+		--mapgen-control-file)
+			MAPGEN_CONTROL_FILE="${2:-}"
+			shift 2
+			;;
+		--mapgen-reload-same-level)
+			MAPGEN_RELOAD_SAME_LEVEL="${2:-}"
+			shift 2
+			;;
+		--mapgen-reload-seed-base)
+			MAPGEN_RELOAD_SEED_BASE="${2:-}"
+			shift 2
+			;;
+		--start-floor)
+			START_FLOOR="${2:-}"
 			shift 2
 			;;
 		--helo-chunk-tx-mode)
@@ -982,6 +1128,21 @@ if [[ -n "$MAPGEN_PLAYERS_OVERRIDE" ]]; then
 		echo "--mapgen-players-override must be 1..15" >&2
 		exit 1
 	fi
+fi
+if [[ -n "$MAPGEN_CONTROL_FILE" ]]; then
+	MAPGEN_CONTROL_FILE="${MAPGEN_CONTROL_FILE/#\~/$HOME}"
+fi
+if ! is_uint "$MAPGEN_RELOAD_SAME_LEVEL" || (( MAPGEN_RELOAD_SAME_LEVEL > 1 )); then
+	echo "--mapgen-reload-same-level must be 0 or 1" >&2
+	exit 1
+fi
+if ! is_uint "$MAPGEN_RELOAD_SEED_BASE"; then
+	echo "--mapgen-reload-seed-base must be a non-negative integer" >&2
+	exit 1
+fi
+if ! is_uint "$START_FLOOR" || (( START_FLOOR > 99 )); then
+	echo "--start-floor must be 0..99" >&2
+	exit 1
 fi
 if ! HELO_CHUNK_TX_MODE="$(canonicalize_tx_mode "$HELO_CHUNK_TX_MODE")"; then
 	echo "--helo-chunk-tx-mode must be one of: normal, reverse, even-odd, duplicate-first, drop-last, duplicate-conflict-first" >&2
@@ -1319,21 +1480,33 @@ launch_instance() {
 				"BARONY_SMOKE_AUTO_PAUSE_HOLD_SECS=$AUTO_PAUSE_HOLD_SECS"
 			)
 		fi
-		if (( AUTO_REMOTE_COMBAT_PULSES > 0 )); then
-			env_vars+=(
-				"BARONY_SMOKE_AUTO_REMOTE_COMBAT_PULSES=$AUTO_REMOTE_COMBAT_PULSES"
-				"BARONY_SMOKE_AUTO_REMOTE_COMBAT_DELAY_SECS=$AUTO_REMOTE_COMBAT_DELAY_SECS"
-			)
-		fi
-		if [[ -n "$MAPGEN_PLAYERS_OVERRIDE" ]]; then
-			env_vars+=("BARONY_SMOKE_MAPGEN_CONNECTED_PLAYERS=$MAPGEN_PLAYERS_OVERRIDE")
-		fi
-		if [[ -n "$SEED" ]]; then
-			env_vars+=("BARONY_SMOKE_SEED=$SEED")
-		fi
+			if (( AUTO_REMOTE_COMBAT_PULSES > 0 )); then
+				env_vars+=(
+					"BARONY_SMOKE_AUTO_REMOTE_COMBAT_PULSES=$AUTO_REMOTE_COMBAT_PULSES"
+					"BARONY_SMOKE_AUTO_REMOTE_COMBAT_DELAY_SECS=$AUTO_REMOTE_COMBAT_DELAY_SECS"
+				)
+			fi
+			if [[ -n "$MAPGEN_PLAYERS_OVERRIDE" ]]; then
+				env_vars+=("BARONY_SMOKE_MAPGEN_CONNECTED_PLAYERS=$MAPGEN_PLAYERS_OVERRIDE")
+			fi
+			if [[ -n "$MAPGEN_CONTROL_FILE" ]]; then
+				env_vars+=("BARONY_SMOKE_MAPGEN_CONTROL_FILE=$MAPGEN_CONTROL_FILE")
+			fi
+			if (( MAPGEN_RELOAD_SAME_LEVEL )); then
+				env_vars+=("BARONY_SMOKE_MAPGEN_RELOAD_SAME_LEVEL=1")
+				if (( MAPGEN_RELOAD_SEED_BASE > 0 )); then
+					env_vars+=("BARONY_SMOKE_MAPGEN_RELOAD_SEED_BASE=$MAPGEN_RELOAD_SEED_BASE")
+				fi
+			fi
+			if (( START_FLOOR > 0 )); then
+				env_vars+=("BARONY_SMOKE_START_FLOOR=$START_FLOOR")
+			fi
+			if [[ -n "$SEED" ]]; then
+				env_vars+=("BARONY_SMOKE_SEED=$SEED")
+			fi
 	else
-		env_vars+=(
-			"BARONY_SMOKE_ROLE=client"
+			env_vars+=(
+				"BARONY_SMOKE_ROLE=client"
 			"BARONY_SMOKE_CONNECT_ADDRESS=$CONNECT_ADDRESS"
 		)
 	fi
@@ -1463,6 +1636,9 @@ remote_combat_enemy_bar_action_lines=0
 remote_combat_enemy_complete_lines=0
 remote_combat_slot_bounds_ok=1
 remote_combat_events_ok=1
+mapgen_wait_reason="none"
+mapgen_reload_complete_tick=0
+reload_transition_lines=0
 
 declare -a CLIENT_LOGS=()
 for ((i = 2; i <= INSTANCES; ++i)); do
@@ -1528,6 +1704,10 @@ while (( SECONDS < deadline )); do
 	if (( mapgen_count > 0 )); then
 		mapgen_found=1
 	fi
+	reload_transition_lines=0
+	if (( MAPGEN_RELOAD_SAME_LEVEL )); then
+		reload_transition_lines=$(count_fixed_lines "$HOST_LOG" "[SMOKE]: auto-reloading dungeon level transition")
+	fi
 	game_start_found=$(detect_game_start "$HOST_LOG")
 
 	helo_ok=1
@@ -1561,6 +1741,18 @@ while (( SECONDS < deadline )); do
 	mapgen_ok=1
 	if (( REQUIRE_MAPGEN )) && (( mapgen_count < MAPGEN_SAMPLES )); then
 		mapgen_ok=0
+	fi
+	if (( REQUIRE_MAPGEN && AUTO_ENTER_DUNGEON && MAPGEN_RELOAD_SAME_LEVEL && AUTO_ENTER_DUNGEON_REPEATS > 0 )); then
+		if (( reload_transition_lines >= AUTO_ENTER_DUNGEON_REPEATS && mapgen_count < MAPGEN_SAMPLES )); then
+			if (( mapgen_reload_complete_tick == 0 )); then
+				mapgen_reload_complete_tick=$SECONDS
+			elif (( SECONDS - mapgen_reload_complete_tick >= 5 )); then
+				mapgen_wait_reason="reload-complete-no-mapgen-samples"
+				break
+			fi
+		else
+			mapgen_reload_complete_tick=0
+		fi
 	fi
 	account_label_ok=1
 	if (( REQUIRE_ACCOUNT_LABELS )) && (( EXPECTED_CLIENTS > 0 )); then
@@ -1688,10 +1880,30 @@ done
 fi
 
 game_start_found=$(detect_game_start "$HOST_LOG")
-read -r mapgen_found rooms monsters gold items decorations < <(extract_mapgen_metrics "$HOST_LOG")
+read -r mapgen_found rooms monsters gold items decorations decor_blocking decor_utility decor_traps decor_economy food_items food_servings mapgen_level mapgen_secret mapgen_seed < <(extract_mapgen_metrics "$HOST_LOG")
 mapgen_count=0
 if [[ -f "$HOST_LOG" ]]; then
 	mapgen_count=$(count_fixed_lines "$HOST_LOG" "successfully generated a dungeon with")
+fi
+reload_transition_lines=$(count_fixed_lines "$HOST_LOG" "[SMOKE]: auto-reloading dungeon level transition")
+reload_transition_seeds="$(collect_reload_transition_seeds "$HOST_LOG")"
+reload_transition_seed_count="$(count_list_values "$reload_transition_seeds")"
+mapgen_generation_count=$(count_fixed_lines "$HOST_LOG" "generating a dungeon from level set '")
+mapgen_generation_seeds="$(collect_mapgen_generation_seeds "$HOST_LOG")"
+mapgen_generation_seed_count="$(count_list_values "$mapgen_generation_seeds")"
+mapgen_generation_unique_seed_count="$(count_unique_list_values "$mapgen_generation_seeds")"
+mapgen_reload_seed_match_count="$(count_seed_matches "$reload_transition_seeds" "$mapgen_generation_seeds")"
+mapgen_reload_regen_ok=1
+if (( MAPGEN_RELOAD_SAME_LEVEL && reload_transition_lines > 0 )); then
+	if (( MAPGEN_RELOAD_SEED_BASE > 0 )); then
+		if (( mapgen_reload_seed_match_count < reload_transition_lines )); then
+			mapgen_reload_regen_ok=0
+		fi
+	else
+		if (( mapgen_generation_count < reload_transition_lines )); then
+			mapgen_reload_regen_ok=0
+		fi
+	fi
 fi
 helo_player_slots="$(collect_helo_player_slots "$HOST_LOG")"
 helo_missing_player_slots="$(collect_missing_helo_player_slots "$HOST_LOG" "$EXPECTED_CLIENTS")"
@@ -1867,6 +2079,12 @@ fi
 if (( REQUIRE_REMOTE_COMBAT_EVENTS )) && (( remote_combat_events_ok == 0 )); then
 	result="fail"
 fi
+if [[ "$mapgen_wait_reason" != "none" ]]; then
+	result="fail"
+fi
+if (( REQUIRE_MAPGEN && MAPGEN_RELOAD_SAME_LEVEL && mapgen_reload_regen_ok == 0 )); then
+	result="fail"
+fi
 
 SUMMARY_FILE="$OUTDIR/summary.env"
 {
@@ -1886,6 +2104,10 @@ SUMMARY_FILE="$OUTDIR/summary.env"
 	echo "FORCE_CHUNK=$FORCE_CHUNK"
 	echo "CHUNK_PAYLOAD_MAX=$CHUNK_PAYLOAD_MAX"
 	echo "MAPGEN_PLAYERS_OVERRIDE=$MAPGEN_PLAYERS_OVERRIDE"
+	echo "MAPGEN_CONTROL_FILE=$MAPGEN_CONTROL_FILE"
+	echo "MAPGEN_RELOAD_SAME_LEVEL=$MAPGEN_RELOAD_SAME_LEVEL"
+	echo "MAPGEN_RELOAD_SEED_BASE=$MAPGEN_RELOAD_SEED_BASE"
+	echo "START_FLOOR=$START_FLOOR"
 	echo "HELO_CHUNK_TX_MODE=$HELO_CHUNK_TX_MODE"
 	echo "STRICT_ADVERSARIAL=$STRICT_ADVERSARIAL"
 	echo "REQUIRE_TXMODE_LOG=$REQUIRE_TXMODE_LOG"
@@ -1906,12 +2128,31 @@ SUMMARY_FILE="$OUTDIR/summary.env"
 	echo "MAPGEN_FOUND=$mapgen_found"
 	echo "MAPGEN_COUNT=$mapgen_count"
 	echo "MAPGEN_SAMPLES_REQUESTED=$MAPGEN_SAMPLES"
+	echo "MAPGEN_WAIT_REASON=$mapgen_wait_reason"
 	echo "GAMESTART_FOUND=$game_start_found"
 	echo "MAPGEN_ROOMS=$rooms"
 	echo "MAPGEN_MONSTERS=$monsters"
 	echo "MAPGEN_GOLD=$gold"
 	echo "MAPGEN_ITEMS=$items"
 	echo "MAPGEN_DECORATIONS=$decorations"
+	echo "MAPGEN_DECOR_BLOCKING=$decor_blocking"
+	echo "MAPGEN_DECOR_UTILITY=$decor_utility"
+	echo "MAPGEN_DECOR_TRAPS=$decor_traps"
+	echo "MAPGEN_DECOR_ECONOMY=$decor_economy"
+	echo "MAPGEN_FOOD_ITEMS=$food_items"
+	echo "MAPGEN_FOOD_SERVINGS=$food_servings"
+	echo "MAPGEN_LEVEL=$mapgen_level"
+	echo "MAPGEN_SECRET=$mapgen_secret"
+	echo "MAPGEN_SEED=$mapgen_seed"
+	echo "MAPGEN_RELOAD_TRANSITION_LINES=$reload_transition_lines"
+	echo "MAPGEN_RELOAD_TRANSITION_SEEDS=$reload_transition_seeds"
+	echo "MAPGEN_RELOAD_TRANSITION_SEED_COUNT=$reload_transition_seed_count"
+	echo "MAPGEN_GENERATION_LINES=$mapgen_generation_count"
+	echo "MAPGEN_GENERATION_SEEDS=$mapgen_generation_seeds"
+	echo "MAPGEN_GENERATION_SEED_COUNT=$mapgen_generation_seed_count"
+	echo "MAPGEN_GENERATION_UNIQUE_SEED_COUNT=$mapgen_generation_unique_seed_count"
+	echo "MAPGEN_RELOAD_SEED_MATCH_COUNT=$mapgen_reload_seed_match_count"
+	echo "MAPGEN_RELOAD_REGEN_OK=$mapgen_reload_regen_ok"
 	echo "TRACE_ACCOUNT_LABELS=$TRACE_ACCOUNT_LABELS"
 	echo "REQUIRE_ACCOUNT_LABELS=$REQUIRE_ACCOUNT_LABELS"
 	echo "ACCOUNT_LABEL_LINES=$account_label_lines"
@@ -1981,7 +2222,7 @@ SUMMARY_FILE="$OUTDIR/summary.env"
 	echo "PID_FILE=$PID_FILE"
 } > "$SUMMARY_FILE"
 
-log "result=$result backend=$NETWORK_BACKEND roomKeyFound=$backend_room_key_found launchBlocked=$backend_launch_blocked chunks=$host_chunk_lines reassembled=$client_reassembled_lines resets=$chunk_reset_lines txmodeApplied=$tx_mode_applied mapgen=$mapgen_found gamestart=$game_start_found autoKick=$auto_kick_result slotLockOk=$default_slot_lock_ok playerCountCopyOk=$player_count_copy_ok lobbyPageStateOk=$lobby_page_state_ok lobbyPageSweepOk=$lobby_page_sweep_ok remoteSlotOk=$remote_combat_slot_bounds_ok remoteEventsOk=$remote_combat_events_ok remoteSlotFail=$remote_combat_slot_fail_lines"
+log "result=$result backend=$NETWORK_BACKEND roomKeyFound=$backend_room_key_found launchBlocked=$backend_launch_blocked chunks=$host_chunk_lines reassembled=$client_reassembled_lines resets=$chunk_reset_lines txmodeApplied=$tx_mode_applied mapgen=$mapgen_found mapgenWait=$mapgen_wait_reason mapgenReloadRegenOk=$mapgen_reload_regen_ok gamestart=$game_start_found autoKick=$auto_kick_result slotLockOk=$default_slot_lock_ok playerCountCopyOk=$player_count_copy_ok lobbyPageStateOk=$lobby_page_state_ok lobbyPageSweepOk=$lobby_page_sweep_ok remoteSlotOk=$remote_combat_slot_bounds_ok remoteEventsOk=$remote_combat_events_ok remoteSlotFail=$remote_combat_slot_fail_lines"
 log "summary=$SUMMARY_FILE"
 
 if [[ "$result" != "pass" ]]; then

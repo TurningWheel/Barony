@@ -5,7 +5,13 @@ import html
 from collections import defaultdict
 from pathlib import Path
 
-METRICS = ["rooms", "monsters", "gold", "items", "decorations"]
+BASE_METRICS = ["rooms", "monsters", "gold", "items", "food_servings", "decorations"]
+OPTIONAL_METRICS = [
+    "decorations_blocking",
+    "decorations_utility",
+    "decorations_traps",
+    "decorations_economy",
+]
 
 
 def parse_float(value: str):
@@ -52,6 +58,11 @@ def main():
         for row in reader:
             rows.append(row)
 
+    metrics = [m for m in BASE_METRICS if rows and m in rows[0]]
+    for m in OPTIONAL_METRICS:
+        if rows and m in rows[0]:
+            metrics.append(m)
+
     by_player = defaultdict(list)
     for row in rows:
         if row.get("status") != "pass":
@@ -62,7 +73,7 @@ def main():
         player = int(player_raw)
         values = {}
         valid = True
-        for metric in METRICS:
+        for metric in metrics:
             parsed = parse_float(row.get(metric, ""))
             if parsed is None:
                 valid = False
@@ -75,11 +86,11 @@ def main():
     for player, entries in by_player.items():
         avg_by_player[player] = {
             metric: sum(e[metric] for e in entries) / len(entries)
-            for metric in METRICS
+            for metric in metrics
         }
 
     ranges = {}
-    for metric in METRICS:
+    for metric in metrics:
         values = [avg_by_player[p][metric] for p in sorted(avg_by_player.keys()) if metric in avg_by_player[p]]
         if values:
             ranges[metric] = (min(values), max(values))
@@ -106,14 +117,14 @@ def main():
     lines.append("<h1>Barony Mapgen Heatmap (Players 1-15)</h1>")
     lines.append(f"<p>Source CSV: <code>{html.escape(str(Path(args.input)))}</code></p>")
     lines.append("<table>")
-    header = "<tr><th>Players</th>" + "".join(f"<th>{html.escape(m)}</th>" for m in METRICS) + "<th>Runs</th></tr>"
+    header = "<tr><th>Players</th>" + "".join(f"<th>{html.escape(m)}</th>" for m in metrics) + "<th>Runs</th></tr>"
     lines.append(header)
 
     for player in range(min_player, max_player + 1):
         lines.append("<tr>")
         lines.append(f"<td>{player}</td>")
         entry = avg_by_player.get(player)
-        for metric in METRICS:
+        for metric in metrics:
             if not entry:
                 lines.append("<td class='na'>n/a</td>")
                 continue

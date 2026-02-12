@@ -14,6 +14,8 @@
 #include <cctype>
 #include <cstdio>
 #include <cstdlib>
+#include <fstream>
+#include <limits>
 #include <sstream>
 #include <unordered_map>
 
@@ -80,6 +82,37 @@ namespace
 		return std::string(raw);
 	}
 
+	std::string trimCopy(const std::string& value)
+	{
+		const size_t begin = value.find_first_not_of(" \t\r\n");
+		if ( begin == std::string::npos )
+		{
+			return "";
+		}
+		const size_t end = value.find_last_not_of(" \t\r\n");
+		return value.substr(begin, end - begin + 1);
+	}
+
+	bool parseBoundedIntString(const std::string& value, const int minValue, const int maxValue, int& outValue)
+	{
+		if ( value.empty() )
+		{
+			return false;
+		}
+		char* end = nullptr;
+		const long parsed = std::strtol(value.c_str(), &end, 10);
+		if ( end == value.c_str() || (end && *end != '\0') )
+		{
+			return false;
+		}
+		if ( parsed < minValue || parsed > maxValue )
+		{
+			return false;
+		}
+		outValue = static_cast<int>(parsed);
+		return true;
+	}
+
 	enum class SmokeAutopilotRole : Uint8
 	{
 		DISABLED = 0,
@@ -128,11 +161,11 @@ namespace
 		return backend != SmokeAutopilotBackend::LAN;
 	}
 
-	struct SmokeAutopilotConfig
-	{
-		bool enabled = false;
-		SmokeAutopilotRole role = SmokeAutopilotRole::DISABLED;
-		SmokeAutopilotBackend backend = SmokeAutopilotBackend::LAN;
+		struct SmokeAutopilotConfig
+		{
+			bool enabled = false;
+			SmokeAutopilotRole role = SmokeAutopilotRole::DISABLED;
+			SmokeAutopilotBackend backend = SmokeAutopilotBackend::LAN;
 		std::string connectAddress = "";
 		int connectDelayTicks = 0;
 		int retryDelayTicks = 0;
@@ -142,12 +175,13 @@ namespace
 		int autoKickTargetSlot = 0;
 		int autoKickDelayTicks = 0;
 		int autoPlayerCountTarget = 0;
-		int autoPlayerCountDelayTicks = 0;
-		std::string seedString = "";
-		bool autoReady = false;
-		bool autoLobbyPageSweep = false;
-		int autoLobbyPageDelayTicks = 0;
-	};
+			int autoPlayerCountDelayTicks = 0;
+			std::string seedString = "";
+			int startFloor = 0;
+			bool autoReady = false;
+			bool autoLobbyPageSweep = false;
+			int autoLobbyPageDelayTicks = 0;
+		};
 
 	struct SmokeAutopilotRuntime
 	{
@@ -163,13 +197,14 @@ namespace
 		bool autoPlayerCountIssued = false;
 		Uint32 autoPlayerCountArmedTick = 0;
 		bool autoLobbyPageSweepComplete = false;
-		int autoLobbyPageNextIndex = 0;
-		Uint32 autoLobbyPageArmedTick = 0;
-		bool seedApplied = false;
-		bool readyIssued = false;
-		bool localLobbyReady = false;
-		bool roomKeyLogged = false;
-	};
+			int autoLobbyPageNextIndex = 0;
+			Uint32 autoLobbyPageArmedTick = 0;
+			bool seedApplied = false;
+			bool startFloorApplied = false;
+			bool readyIssued = false;
+			bool localLobbyReady = false;
+			bool roomKeyLogged = false;
+		};
 
 	static SmokeAutopilotRuntime g_smokeAutopilot;
 
@@ -220,15 +255,16 @@ namespace
 		cfg.expectedPlayers = parseEnvInt("BARONY_SMOKE_EXPECTED_PLAYERS", 2, 1, MAXPLAYERS);
 		cfg.autoStartLobby = parseEnvBool("BARONY_SMOKE_AUTO_START", false);
 		cfg.autoStartDelayTicks = parseEnvInt("BARONY_SMOKE_AUTO_START_DELAY_SECS", 2, 0, 120) * TICKS_PER_SECOND;
-		cfg.autoKickTargetSlot = parseEnvInt("BARONY_SMOKE_AUTO_KICK_TARGET_SLOT", 0, 0, MAXPLAYERS - 1);
-		cfg.autoKickDelayTicks = parseEnvInt("BARONY_SMOKE_AUTO_KICK_DELAY_SECS", 2, 0, 120) * TICKS_PER_SECOND;
-		cfg.autoPlayerCountTarget = parseEnvInt("BARONY_SMOKE_AUTO_PLAYER_COUNT_TARGET", 0, 0, MAXPLAYERS);
-		cfg.autoPlayerCountDelayTicks = parseEnvInt("BARONY_SMOKE_AUTO_PLAYER_COUNT_DELAY_SECS", 2, 0, 120) * TICKS_PER_SECOND;
-		cfg.seedString = parseEnvString("BARONY_SMOKE_SEED", "");
-		cfg.autoReady = parseEnvBool("BARONY_SMOKE_AUTO_READY", false);
-		cfg.autoLobbyPageSweep = parseEnvBool("BARONY_SMOKE_AUTO_LOBBY_PAGE_SWEEP", false);
-		cfg.autoLobbyPageDelayTicks = parseEnvInt("BARONY_SMOKE_AUTO_LOBBY_PAGE_DELAY_SECS", 2, 0, 120) * TICKS_PER_SECOND;
-		g_smokeAutopilot.nextActionTick = ticks + static_cast<Uint32>(cfg.connectDelayTicks);
+			cfg.autoKickTargetSlot = parseEnvInt("BARONY_SMOKE_AUTO_KICK_TARGET_SLOT", 0, 0, MAXPLAYERS - 1);
+			cfg.autoKickDelayTicks = parseEnvInt("BARONY_SMOKE_AUTO_KICK_DELAY_SECS", 2, 0, 120) * TICKS_PER_SECOND;
+			cfg.autoPlayerCountTarget = parseEnvInt("BARONY_SMOKE_AUTO_PLAYER_COUNT_TARGET", 0, 0, MAXPLAYERS);
+			cfg.autoPlayerCountDelayTicks = parseEnvInt("BARONY_SMOKE_AUTO_PLAYER_COUNT_DELAY_SECS", 2, 0, 120) * TICKS_PER_SECOND;
+			cfg.seedString = parseEnvString("BARONY_SMOKE_SEED", "");
+			cfg.startFloor = parseEnvInt("BARONY_SMOKE_START_FLOOR", 0, 0, 99);
+			cfg.autoReady = parseEnvBool("BARONY_SMOKE_AUTO_READY", false);
+			cfg.autoLobbyPageSweep = parseEnvBool("BARONY_SMOKE_AUTO_LOBBY_PAGE_SWEEP", false);
+			cfg.autoLobbyPageDelayTicks = parseEnvInt("BARONY_SMOKE_AUTO_LOBBY_PAGE_DELAY_SECS", 2, 0, 120) * TICKS_PER_SECOND;
+			g_smokeAutopilot.nextActionTick = ticks + static_cast<Uint32>(cfg.connectDelayTicks);
 
 		const char* roleName = "disabled";
 		if ( cfg.role == SmokeAutopilotRole::ROLE_HOST )
@@ -264,14 +300,23 @@ namespace
 		return connected;
 	}
 
-	void applySmokeSeedIfNeeded()
-	{
-		SmokeAutopilotRuntime& runtime = g_smokeAutopilot;
-		SmokeAutopilotConfig& cfg = smokeAutopilotConfig();
-		if ( runtime.seedApplied || cfg.seedString.empty() )
+		void applySmokeSeedIfNeeded()
 		{
-			return;
-		}
+			SmokeAutopilotRuntime& runtime = g_smokeAutopilot;
+			SmokeAutopilotConfig& cfg = smokeAutopilotConfig();
+			if ( !runtime.startFloorApplied )
+			{
+				startfloor = cfg.startFloor;
+				runtime.startFloorApplied = true;
+				if ( cfg.startFloor > 0 )
+				{
+					printlog("[SMOKE]: applied start floor %d", cfg.startFloor);
+				}
+			}
+			if ( runtime.seedApplied || cfg.seedString.empty() )
+			{
+				return;
+			}
 		gameModeManager.currentSession.seededRun.setup(cfg.seedString);
 		runtime.seedApplied = true;
 		printlog("[SMOKE]: applied seed '%s'", cfg.seedString.c_str());
@@ -466,12 +511,17 @@ namespace
 		bool initialized = false;
 		bool enabled = false;
 		bool allowSingleplayer = false;
+		bool reloadSameLevel = false;
+		bool preventDeath = false;
+		bool preventDeathLogged = false;
 		int expectedPlayers = 2;
 		Uint32 delayTicks = 0;
 		Uint32 readySinceTick = 0;
 		bool readyWindowStarted = false;
 		int maxTransitions = 1;
 		int transitionsIssued = 0;
+		Uint32 reloadSeedBase = 0;
+		int hpFloor = 0;
 	};
 
 	static SmokeAutoEnterDungeonState g_smokeAutoEnterDungeon;
@@ -498,12 +548,21 @@ namespace
 
 		state.enabled = true;
 		state.allowSingleplayer = smokeLocal;
+		state.reloadSameLevel = parseEnvBool("BARONY_SMOKE_MAPGEN_RELOAD_SAME_LEVEL", false);
+		state.preventDeath = parseEnvBool("BARONY_SMOKE_MAPGEN_PREVENT_DEATH", state.reloadSameLevel);
 		state.expectedPlayers = parseEnvInt("BARONY_SMOKE_EXPECTED_PLAYERS", 2, 1, MAXPLAYERS);
 		const int delaySecs = parseEnvInt("BARONY_SMOKE_AUTO_ENTER_DUNGEON_DELAY_SECS", 3, 0, 120);
 		state.delayTicks = static_cast<Uint32>(delaySecs * TICKS_PER_SECOND);
 		state.maxTransitions = parseEnvInt("BARONY_SMOKE_AUTO_ENTER_DUNGEON_REPEATS", 1, 1, 256);
-		printlog("[SMOKE]: gameplay auto-enter enabled expected=%d delay=%d sec repeats=%d",
-			state.expectedPlayers, delaySecs, state.maxTransitions);
+		state.reloadSeedBase = static_cast<Uint32>(
+			parseEnvInt("BARONY_SMOKE_MAPGEN_RELOAD_SEED_BASE", 0, 0, std::numeric_limits<int>::max()));
+		state.hpFloor = state.preventDeath
+			? parseEnvInt("BARONY_SMOKE_MAPGEN_HP_FLOOR", 500, 1, std::numeric_limits<int>::max())
+			: 0;
+		printlog("[SMOKE]: gameplay auto-enter enabled expected=%d delay=%d sec repeats=%d reload_same_level=%d seed_base=%u prevent_death=%d hp_floor=%d",
+			state.expectedPlayers, delaySecs, state.maxTransitions,
+			state.reloadSameLevel ? 1 : 0, static_cast<unsigned>(state.reloadSeedBase),
+			state.preventDeath ? 1 : 0, state.hpFloor);
 		return state;
 	}
 
@@ -1562,6 +1621,48 @@ namespace MainMenu
 
 namespace Gameplay
 {
+	void tickMapgenSurvivalGuard(SmokeAutoEnterDungeonState& smoke, const bool allowSingle)
+	{
+		if ( !smoke.preventDeath || smoke.hpFloor <= 0 )
+		{
+			return;
+		}
+		if ( client_disconnected[0] || !players[0] || !players[0]->entity || !stats[0] )
+		{
+			return;
+		}
+
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			consoleCommand("/enablecheats");
+		}
+
+		if ( allowSingle )
+		{
+			if ( !godmode )
+			{
+				consoleCommand("/god");
+			}
+		}
+		else
+		{
+			godmode = true;
+		}
+		buddhamode = true;
+
+		Stat* hostStats = stats[0];
+		hostStats->MAXHP = std::max<Sint32>(hostStats->MAXHP, static_cast<Sint32>(smoke.hpFloor));
+		hostStats->HP = std::max<Sint32>(hostStats->HP, static_cast<Sint32>(smoke.hpFloor));
+		hostStats->OLDHP = hostStats->HP;
+
+		if ( !smoke.preventDeathLogged )
+		{
+			smoke.preventDeathLogged = true;
+			printlog("[SMOKE]: mapgen survival guard active mode=%s hp_floor=%d",
+				allowSingle ? "console-god" : "forced-god", smoke.hpFloor);
+		}
+	}
+
 	void tickAutoEnterDungeon()
 	{
 		SmokeAutoEnterDungeonState& smoke = smokeAutoEnterDungeonState();
@@ -1575,6 +1676,7 @@ namespace Gameplay
 		{
 			return;
 		}
+		tickMapgenSurvivalGuard(smoke, allowSingle);
 		if ( smoke.transitionsIssued >= smoke.maxTransitions )
 		{
 			return;
@@ -1604,14 +1706,32 @@ namespace Gameplay
 			return;
 		}
 
-		smoke.readySinceTick = 0;
-		smoke.readyWindowStarted = false;
-		++smoke.transitionsIssued;
-		loadnextlevel = true;
-		Compendium_t::Events_t::previousCurrentLevel = currentlevel;
-		printlog("[SMOKE]: auto-entering dungeon transition %d/%d from level %d",
-			smoke.transitionsIssued, smoke.maxTransitions, currentlevel);
-	}
+			smoke.readySinceTick = 0;
+			smoke.readyWindowStarted = false;
+			++smoke.transitionsIssued;
+			const bool reloadSameDungeonLevel = smoke.reloadSameLevel && currentlevel > 0;
+			if ( reloadSameDungeonLevel )
+			{
+				skipLevelsOnLoad = -1;
+				loadingSameLevelAsCurrent = true;
+				if ( smoke.reloadSeedBase > 0 )
+				{
+					forceMapSeed = smoke.reloadSeedBase + static_cast<Uint32>(smoke.transitionsIssued - 1);
+				}
+			}
+			loadnextlevel = true;
+			Compendium_t::Events_t::previousCurrentLevel = currentlevel;
+			if ( reloadSameDungeonLevel )
+			{
+				printlog("[SMOKE]: auto-reloading dungeon level transition %d/%d from level %d seed=%u",
+					smoke.transitionsIssued, smoke.maxTransitions, currentlevel, static_cast<unsigned>(forceMapSeed));
+			}
+			else
+			{
+				printlog("[SMOKE]: auto-entering dungeon transition %d/%d from level %d",
+					smoke.transitionsIssued, smoke.maxTransitions, currentlevel);
+			}
+		}
 
 	void tickRemoteCombatAutopilot()
 	{
@@ -2694,24 +2814,75 @@ namespace Mapgen
 	int connectedPlayersOverride()
 	{
 		static bool initialized = false;
-		static int overridePlayers = 0;
-		if ( initialized )
-		{
-			return overridePlayers;
-		}
-		initialized = true;
+		static int envOverridePlayers = 0;
+		static std::string controlFilePath;
+		static int lastLoggedOverridePlayers = -1;
+		static std::string lastInvalidControlFileValue;
 
-		if ( !envHasValue("BARONY_SMOKE_MAPGEN_CONNECTED_PLAYERS") )
+		if ( !initialized )
 		{
-			return 0;
+			initialized = true;
+			if ( envHasValue("BARONY_SMOKE_MAPGEN_CONNECTED_PLAYERS") )
+			{
+				envOverridePlayers = parseEnvInt("BARONY_SMOKE_MAPGEN_CONNECTED_PLAYERS", 0, 1, MAXPLAYERS);
+				if ( envOverridePlayers <= 0 )
+				{
+					printlog("[SMOKE]: ignoring invalid BARONY_SMOKE_MAPGEN_CONNECTED_PLAYERS");
+				}
+			}
+			controlFilePath = trimCopy(parseEnvString("BARONY_SMOKE_MAPGEN_CONTROL_FILE", ""));
+			if ( !controlFilePath.empty() )
+			{
+				printlog("[SMOKE]: mapgen connected-player control-file configured: %s",
+					controlFilePath.c_str());
+			}
 		}
-		overridePlayers = parseEnvInt("BARONY_SMOKE_MAPGEN_CONNECTED_PLAYERS", 0, 1, MAXPLAYERS);
+
+		int overridePlayers = envOverridePlayers;
+		bool overrideFromControlFile = false;
+		if ( !controlFilePath.empty() )
+		{
+			std::ifstream controlFile(controlFilePath.c_str());
+			if ( controlFile.good() )
+			{
+				std::string rawValue;
+				std::getline(controlFile, rawValue);
+				const std::string trimmedValue = trimCopy(rawValue);
+				if ( !trimmedValue.empty() )
+				{
+					int parsedControlPlayers = 0;
+					if ( parseBoundedIntString(trimmedValue, 1, MAXPLAYERS, parsedControlPlayers) )
+					{
+						overridePlayers = parsedControlPlayers;
+						overrideFromControlFile = true;
+					}
+					else if ( trimmedValue != lastInvalidControlFileValue )
+					{
+						printlog("[SMOKE]: ignoring invalid mapgen control-file value '%s' from %s",
+							trimmedValue.c_str(), controlFilePath.c_str());
+						lastInvalidControlFileValue = trimmedValue;
+					}
+				}
+			}
+		}
+
 		if ( overridePlayers <= 0 )
 		{
-			printlog("[SMOKE]: ignoring invalid BARONY_SMOKE_MAPGEN_CONNECTED_PLAYERS");
 			return 0;
 		}
-		printlog("[SMOKE]: mapgen connected-player override active: %d", overridePlayers);
+		if ( overridePlayers != lastLoggedOverridePlayers )
+		{
+			if ( overrideFromControlFile )
+			{
+				printlog("[SMOKE]: mapgen connected-player override active: %d (control-file=%s)",
+					overridePlayers, controlFilePath.c_str());
+			}
+			else
+			{
+				printlog("[SMOKE]: mapgen connected-player override active: %d", overridePlayers);
+			}
+			lastLoggedOverridePlayers = overridePlayers;
+		}
 		return overridePlayers;
 	}
 }
