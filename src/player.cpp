@@ -7679,6 +7679,7 @@ bool Player::PlayerMechanics_t::updateSustainedSpellEvent(int spellID, real_t va
 			|| spellID == SPELL_DETECT_FOOD
 			|| spellID == SPELL_COMMAND
 			|| spellID == SPELL_FLUTTER
+			|| spellID == SPELL_OVERCHARGE
 			|| spellID == SPELL_DIG )
 		{
 			sustainedSpellIDCounter[spellID] += value * scaleValue;

@@ -9335,7 +9335,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 
 		if ( !trap && !usingFoci && !using_magicstaff )
 		{
-			if ( caster && players[player]->entity == caster && stats[player]->type == SALAMANDER )
+			if ( caster && player >= 0 && players[player]->entity == caster && stats[player]->type == SALAMANDER )
 			{
 				Uint8 effectStrength = stats[player]->getEffectActive(EFF_SALAMANDER_HEART);
 				if ( effectStrength == 2 && stats[player]->EFFECTS_TIMERS[EFF_SALAMANDER_HEART] == -1 )
@@ -9354,6 +9354,17 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							messagePlayerColor(caster->isEntityPlayer(), MESSAGE_STATUS, makeColorRGB(0, 255, 0), Language::get(6918));
 							playSoundEntity(caster, 167, 128);
 						}
+					}
+				}
+			}
+
+			if ( caster && player >= 0 )
+			{
+				if ( allowedSkillup && !usingSpellbook && castSpellProps && castSpellProps->overcharge > 0 )
+				{
+					if ( spell && spell->ID != SPELL_OVERCHARGE )
+					{
+						players[player]->mechanics.updateSustainedSpellEvent(SPELL_OVERCHARGE, 30.0, 1.0, nullptr);
 					}
 				}
 			}
