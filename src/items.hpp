@@ -857,6 +857,7 @@ bool itemLevelCurvePostProcess(Entity* my, Item* item, BaronyRNG& rng,
 #else
 	int itemLevel = currentlevel
 #endif
+	, int* lastItemType = nullptr, int* lastItemSpellType = nullptr
 );
 ItemType itemLevelCurve(Category cat, int minLevel, int maxLevel, BaronyRNG& rng);
 Item* newItemFromEntity(const Entity* entity, bool discardUid = false); //Make sure to call free(item). discardUid will free the new items uid if this is for temp purposes

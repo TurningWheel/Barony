@@ -347,7 +347,7 @@ ItemType itemLevelCurveEntity(Entity& my, Category cat, int minLevel, int maxLev
 	return result;
 }
 
-bool itemLevelCurvePostProcess(Entity* my, Item* item, BaronyRNG& rng, int itemLevel)
+bool itemLevelCurvePostProcess(Entity* my, Item* item, BaronyRNG& rng, int itemLevel, int* lastItemType, int* lastItemSpellType)
 {
 	if ( !((my && my->behavior == &actItem) || item) )
 	{
@@ -411,6 +411,20 @@ bool itemLevelCurvePostProcess(Entity* my, Item* item, BaronyRNG& rng, int itemL
 				std::map<int, int> debugChances;
 				std::map<int, int> debugChancesNum;
 #endif
+
+				int lastSpellSkill = -1;
+				if ( lastItemSpellType && *lastItemSpellType >= 0 && *lastItemSpellType < NUMITEMS )
+				{
+					int spellID = getSpellIDFromSpellbook(*lastItemSpellType);
+					if ( spellID != SPELL_NONE )
+					{
+						if ( auto spell = getSpellFromID(spellID) )
+						{
+							lastSpellSkill = spell->skillID;
+						}
+					}
+				}
+
 				for ( int i = 0; i < NUM_SPELLS; ++i )
 				{
 					auto find = allGameSpells.find(i);
@@ -423,6 +437,32 @@ bool itemLevelCurvePostProcess(Entity* my, Item* item, BaronyRNG& rng, int itemL
 								if ( (spell->difficulty / 20) <= (1 + (itemLevel / 5))
 									/*&& (spell->difficulty >= minDifficulty)*/ )
 								{
+
+									if ( lastSpellSkill >= 0 )
+									{
+										if ( lastSpellSkill == PRO_SORCERY )
+										{
+											if ( spell->skillID != PRO_MYSTICISM ) // mysticism after sorc
+											{
+												continue;
+											}
+										}
+										else if ( lastSpellSkill == PRO_MYSTICISM )
+										{
+											if ( spell->skillID != PRO_THAUMATURGY ) // thaum after mysticism
+											{
+												continue;
+											}
+										}
+										else if ( lastSpellSkill == PRO_THAUMATURGY )
+										{
+											if ( spell->skillID != PRO_SORCERY ) // sorc after thaum
+											{
+												continue;
+											}
+										}
+									}
+
 									chances.push_back(std::make_pair(spell->skillID, spell->ID));
 									if ( spell->difficulty == minDifficulty )
 									{
@@ -504,6 +544,17 @@ bool itemLevelCurvePostProcess(Entity* my, Item* item, BaronyRNG& rng, int itemL
 						item->appearance = appearance;
 					}
 				}
+			}
+		}
+		if ( lastItemType )
+		{
+			*lastItemType = itemType;
+		}
+		if ( lastItemSpellType )
+		{
+			if ( items[itemType].category == SPELLBOOK )
+			{
+				*lastItemSpellType = itemType;
 			}
 		}
 	}

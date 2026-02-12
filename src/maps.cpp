@@ -7053,6 +7053,9 @@ void assignActions(map_t* map)
 		Mods::disableSteamAchievements = true;
 	}
 
+	int lastGeneratedItemType = -1;
+	int lastGeneratedItemSpellType = -1;
+
 	// assign entity behaviors
     node_t* nextnode;
 	for ( auto node = map->entities->first; node != nullptr; node = nextnode )
@@ -7485,6 +7488,10 @@ void assignActions(map_t* map)
 									{
 										randType = map_rng.rand() % (Category::CATEGORY_MAX - 2);
 									}
+									if ( randType == BOOK && map_rng.rand() % 2 ) // BOOK items % to be re-roll, exclude book cat
+									{
+										randType = map_rng.rand() % (Category::CATEGORY_MAX - 3);
+									}
 									entity->skill[10] = itemLevelCurve(static_cast<Category>(randType), 0, currentlevel, map_rng);
 									rolledLevelCurveItem = true;
 								}
@@ -7499,6 +7506,14 @@ void assignActions(map_t* map)
 									if ( randType == THROWN && map_rng.rand() % 3 ) // THROWN items 66% to be re-roll.
 									{
 										randType = map_rng.rand() % (Category::CATEGORY_MAX - 3);
+										if ( randType >= MAGICSTAFF )
+										{
+											randType++;
+										}
+									}
+									if ( randType == BOOK && map_rng.rand() % 2 ) // BOOK items % to be re-roll, exclude book cat
+									{
+										randType = map_rng.rand() % (Category::CATEGORY_MAX - 4);
 										if ( randType >= MAGICSTAFF )
 										{
 											randType++;
@@ -7695,7 +7710,7 @@ void assignActions(map_t* map)
 
 				if ( rolledLevelCurveItem )
 				{
-					itemLevelCurvePostProcess(entity, nullptr, map_rng);
+					itemLevelCurvePostProcess(entity, nullptr, map_rng, currentlevel, &lastGeneratedItemType, &lastGeneratedItemSpellType);
 				}
 
 				auto item = newItemFromEntity(entity);
