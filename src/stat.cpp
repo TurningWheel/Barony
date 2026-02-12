@@ -1820,10 +1820,15 @@ bool Stat::emptyLootingBag(const int player, Uint32 key)
 
 real_t Stat::getEnsembleEffectBonus(Stat::EnsembleEffectsBonusType bonusType, int checkEffectStrength)
 {
-	static const Sint32 kBreakPoint4 = 41;
+	static const Sint32 kBreakPoint4 = 40;
 	static const Sint32 kBreakPoint3 = 20;
-	static const Sint32 kBreakPoint2 = 6;
+	static const Sint32 kBreakPoint2 = 4;
 	static const Sint32 kBreakPoint1 = 1;
+
+	static const Sint32 kDivBreakPoint4 = 5;
+	static const Sint32 kDivBreakPoint3 = 5;
+	static const Sint32 kDivBreakPoint2 = 4;
+	static const Sint32 kDivBreakPoint1 = 1;
 
 	real_t result = 0.0;
 	Uint8 effectStrength = getEffectActive(EFF_ENSEMBLE_FLUTE);
@@ -1846,22 +1851,22 @@ real_t Stat::getEnsembleEffectBonus(Stat::EnsembleEffectsBonusType bonusType, in
 			static const Sint32 mult1 = 1;
 			if ( effectStrength >= kBreakPoint4 )
 			{
-				total += mult4 * (1 + (effectStrength - kBreakPoint4) / 4);
+				total += mult4 * (1 + (effectStrength - kBreakPoint4) / kDivBreakPoint4);
 				effectStrength -= (effectStrength - kBreakPoint4 + 1);
 			}
 			if ( effectStrength >= kBreakPoint3 )
 			{
-				total += mult3 * (1 + (effectStrength - kBreakPoint3) / 3);
+				total += mult3 * (1 + (effectStrength - kBreakPoint3) / kDivBreakPoint3);
 				effectStrength -= (effectStrength - kBreakPoint3 + 1);
 			}
 			if ( effectStrength >= kBreakPoint2 )
 			{
-				total += mult2 * (1 + (effectStrength - kBreakPoint2) / 2);
+				total += mult2 * (1 + (effectStrength - kBreakPoint2) / kDivBreakPoint2);
 				effectStrength -= (effectStrength - kBreakPoint2 + 1);
 			}
 			if ( effectStrength >= kBreakPoint1 )
 			{
-				total += mult1 * (1 + (effectStrength - kBreakPoint1) / 1);
+				total += mult1 * (1 + (effectStrength - kBreakPoint1) / kDivBreakPoint1);
 				effectStrength -= (effectStrength - kBreakPoint1 + 1);
 			}
 			result += total;
@@ -1910,22 +1915,22 @@ real_t Stat::getEnsembleEffectBonus(Stat::EnsembleEffectsBonusType bonusType, in
 			static const Sint32 mult1 = 3;
 			if ( effectStrength >= kBreakPoint4 )
 			{
-				total += mult4 * (1 + (effectStrength - kBreakPoint4) / 4);
+				total += mult4 * (1 + (effectStrength - kBreakPoint4) / kDivBreakPoint4);
 				effectStrength -= (effectStrength - kBreakPoint4 + 1);
 			}
 			if ( effectStrength >= kBreakPoint3 )
 			{
-				total += mult3 * (1 + (effectStrength - kBreakPoint3) / 3);
+				total += mult3 * (1 + (effectStrength - kBreakPoint3) / kDivBreakPoint3);
 				effectStrength -= (effectStrength - kBreakPoint3 + 1);
 			}
 			if ( effectStrength >= kBreakPoint2 )
 			{
-				total += mult2 * (1 + (effectStrength - kBreakPoint2) / 2);
+				total += mult2 * (1 + (effectStrength - kBreakPoint2) / kDivBreakPoint2);
 				effectStrength -= (effectStrength - kBreakPoint2 + 1);
 			}
 			if ( effectStrength >= kBreakPoint1 )
 			{
-				total += mult1 * (1 + (effectStrength - kBreakPoint1) / 1);
+				total += mult1 * (1 + (effectStrength - kBreakPoint1) / kDivBreakPoint1);
 				effectStrength -= (effectStrength - kBreakPoint1 + 1);
 			}
 			result += total;
@@ -1974,22 +1979,22 @@ real_t Stat::getEnsembleEffectBonus(Stat::EnsembleEffectsBonusType bonusType, in
 			static const Sint32 mult1 = 1;
 			if ( effectStrength >= kBreakPoint4 )
 			{
-				total += mult4 * (1 + (effectStrength - kBreakPoint4) / 4);
+				total += mult4 * (1 + (effectStrength - kBreakPoint4) / kDivBreakPoint4);
 				effectStrength -= (effectStrength - kBreakPoint4 + 1);
 			}
 			if ( effectStrength >= kBreakPoint3 )
 			{
-				total += mult3 * (1 + (effectStrength - kBreakPoint3) / 3);
+				total += mult3 * (1 + (effectStrength - kBreakPoint3) / kDivBreakPoint3);
 				effectStrength -= (effectStrength - kBreakPoint3 + 1);
 			}
 			if ( effectStrength >= kBreakPoint2 )
 			{
-				total += mult2 * (1 + (effectStrength - kBreakPoint2) / 2);
+				total += mult2 * (1 + (effectStrength - kBreakPoint2) / kDivBreakPoint2);
 				effectStrength -= (effectStrength - kBreakPoint2 + 1);
 			}
 			if ( effectStrength >= kBreakPoint1 )
 			{
-				total += mult1 * (1 + (effectStrength - kBreakPoint1) / 1);
+				total += mult1 * (1 + (effectStrength - kBreakPoint1) / kDivBreakPoint1);
 				effectStrength -= (effectStrength - kBreakPoint1 + 1);
 			}
 			result += total;
@@ -2038,22 +2043,22 @@ real_t Stat::getEnsembleEffectBonus(Stat::EnsembleEffectsBonusType bonusType, in
 			static const Sint32 mult1 = 1;
 			if ( effectStrength >= kBreakPoint4 )
 			{
-				total += mult4 * (1 + (effectStrength - kBreakPoint4) / 4);
+				total += mult4 * (1 + (effectStrength - kBreakPoint4) / kDivBreakPoint4);
 				effectStrength -= (effectStrength - kBreakPoint4 + 1);
 			}
 			if ( effectStrength >= kBreakPoint3 )
 			{
-				total += mult3 * (1 + (effectStrength - kBreakPoint3) / 3);
+				total += mult3 * (1 + (effectStrength - kBreakPoint3) / kDivBreakPoint3);
 				effectStrength -= (effectStrength - kBreakPoint3 + 1);
 			}
 			if ( effectStrength >= kBreakPoint2 )
 			{
-				total += mult2 * (1 + (effectStrength - kBreakPoint2) / 2);
+				total += mult2 * (1 + (effectStrength - kBreakPoint2) / kDivBreakPoint2);
 				effectStrength -= (effectStrength - kBreakPoint2 + 1);
 			}
 			if ( effectStrength >= kBreakPoint1 )
 			{
-				total += mult1 * (1 + (effectStrength - kBreakPoint1) / 1);
+				total += mult1 * (1 + (effectStrength - kBreakPoint1) / kDivBreakPoint1);
 				effectStrength -= (effectStrength - kBreakPoint1 + 1);
 			}
 			result += total;
@@ -2102,22 +2107,22 @@ real_t Stat::getEnsembleEffectBonus(Stat::EnsembleEffectsBonusType bonusType, in
 			static const Sint32 mult1 = 1;
 			if ( effectStrength >= kBreakPoint4 )
 			{
-				total += mult4 * (1 + (effectStrength - kBreakPoint4) / 4);
+				total += mult4 * (1 + (effectStrength - kBreakPoint4) / kDivBreakPoint4);
 				effectStrength -= (effectStrength - kBreakPoint4 + 1);
 			}
 			if ( effectStrength >= kBreakPoint3 )
 			{
-				total += mult3 * (1 + (effectStrength - kBreakPoint3) / 3);
+				total += mult3 * (1 + (effectStrength - kBreakPoint3) / kDivBreakPoint3);
 				effectStrength -= (effectStrength - kBreakPoint3 + 1);
 			}
 			if ( effectStrength >= kBreakPoint2 )
 			{
-				total += mult2 * (1 + (effectStrength - kBreakPoint2) / 2);
+				total += mult2 * (1 + (effectStrength - kBreakPoint2) / kDivBreakPoint2);
 				effectStrength -= (effectStrength - kBreakPoint2 + 1);
 			}
 			if ( effectStrength >= kBreakPoint1 )
 			{
-				total += mult1 * (1 + (effectStrength - kBreakPoint1) / 1);
+				total += mult1 * (1 + (effectStrength - kBreakPoint1) / kDivBreakPoint1);
 				effectStrength -= (effectStrength - kBreakPoint1 + 1);
 			}
 			result += total;

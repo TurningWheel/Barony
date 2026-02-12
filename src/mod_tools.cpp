@@ -5361,7 +5361,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 				}
 				if ( eff1_test > eff1 )
 				{
-					nextCHRStat = i;
+					nextCHRStat = std::max(1, i - 1);
 					break;
 				}
 			}
