@@ -5915,7 +5915,7 @@ void playerDebugTests(Entity* my)
 	static ConsoleVariable<bool> cvar_test_frameskip("/test_frameskip", false);
 	if ( *cvar_test_frameskip && ticks % (5 * TICKS_PER_SECOND) == 0 )
 	{
-		SDL_Delay(50);
+		SDL_Delay(250);
 	}
 
 	static ConsoleVariable<int> cvar_test_xp("/test_xp", 0);

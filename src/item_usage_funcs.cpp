@@ -42,14 +42,64 @@ bool potionUseAbundanceEffect(Item* item, Entity* entity, Entity* usedBy)
 				{
 					if ( !itemIsEquipped(item, player) )
 					{
-						int chance = getSpellDamageFromID(SPELL_GREATER_ABUNDANCE, entity, nullptr, entity);
-						int maxchance = getSpellDamageSecondaryFromID(SPELL_GREATER_ABUNDANCE, entity, nullptr, entity);
+						int mpCost = 0;
+						int chance = getSpellDamageFromID(SPELL_GREATER_ABUNDANCE, players[player]->entity, stats[player], players[player]->entity);
+						int maxchance = getSpellDamageSecondaryFromID(SPELL_GREATER_ABUNDANCE, players[player]->entity, stats[player], players[player]->entity);
 						chance = std::min(chance, maxchance);
 						if ( local_rng.rand() % 100 < chance )
 						{
-							item->count++;
-							messagePlayerColor(player, MESSAGE_INTERACTION, makeColorRGB(0, 255, 0), Language::get(6652), item->getName());
-							result = true;
+							bool hasCost = false;
+							if ( auto spell = getSpellFromID(SPELL_GREATER_ABUNDANCE) )
+							{
+								real_t costPercent = getSpellEffectDurationSecondaryFromID(SPELL_GREATER_ABUNDANCE, players[player]->entity, stats[player], players[player]->entity) / 100.0;
+								if ( costPercent > 0.01 )
+								{
+									mpCost = std::max(1.0, spell->mana * costPercent);
+									if ( stats[player]->MP >= mpCost )
+									{
+										hasCost = true;
+									}
+								}
+								else
+								{
+									hasCost = true;
+								}
+							}
+
+							if ( hasCost )
+							{
+								item->count++;
+								messagePlayerColor(player, MESSAGE_INTERACTION, makeColorRGB(0, 255, 0), Language::get(6652), item->getName());
+								result = true;
+
+								if ( multiplayer == CLIENT )
+								{
+									strcpy((char*)net_packet->data, "FXGD");
+									net_packet->data[4] = player;
+									SDLNet_Write32((Uint32)0, &net_packet->data[5]);
+									SDLNet_Write32((Uint32)mpCost, &net_packet->data[9]);
+
+									Uint16 spellID = SPELL_NONE;
+									SDLNet_Write16(spellID, &net_packet->data[13]);
+									net_packet->address.host = net_server.host;
+									net_packet->address.port = net_server.port;
+									net_packet->len = 15;
+									sendPacketSafe(net_sock, -1, net_packet, 0);
+								}
+								else
+								{
+									if ( mpCost > stats[player]->MP )
+									{
+										cameravars[player].shakex += 0.1;
+										cameravars[player].shakey += 10;
+										playSoundPlayer(player, 28, 92);
+									}
+									Sint32 prevMP = stats[player]->MP;
+									players[player]->entity->drainMP(mpCost);
+								}
+
+								magicOnSpellCastEvent(players[player]->entity, players[player]->entity, nullptr, SPELL_GREATER_ABUNDANCE, spell_t::SPELL_LEVEL_EVENT_SUSTAIN, 1);
+							}
 						}
 					}
 				}
@@ -71,6 +121,7 @@ bool foodUseAbundanceEffect(Item* item, int player)
 			{
 				if ( !itemIsEquipped(item, player) )
 				{
+					int mpCost = 0;
 					int chance = getSpellDamageFromID(SPELL_GREATER_ABUNDANCE, players[player]->entity, stats[player], players[player]->entity);
 					int maxchance = getSpellDamageSecondaryFromID(SPELL_GREATER_ABUNDANCE, players[player]->entity, stats[player], players[player]->entity);
 					chance = std::min(chance, maxchance);
@@ -82,8 +133,8 @@ bool foodUseAbundanceEffect(Item* item, int player)
 							real_t costPercent = getSpellEffectDurationSecondaryFromID(SPELL_GREATER_ABUNDANCE, players[player]->entity, stats[player], players[player]->entity) / 100.0;
 							if ( costPercent > 0.01 )
 							{
-								int cost = std::max(1.0, spell->mana * costPercent);
-								if ( stats[player]->MP >= cost )
+								mpCost = std::max(1.0, spell->mana * costPercent);
+								if ( stats[player]->MP >= mpCost )
 								{
 									hasCost = true;
 								}
@@ -100,7 +151,33 @@ bool foodUseAbundanceEffect(Item* item, int player)
 							messagePlayerColor(player, MESSAGE_INTERACTION, makeColorRGB(0, 255, 0), Language::get(6652), item->getName());
 							result = true;
 
-							magicOnSpellCastEvent(players[player]->entity, players[player]->entity, nullptr, SPELL_GREATER_ABUNDANCE, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
+							if ( multiplayer == CLIENT )
+							{
+								strcpy((char*)net_packet->data, "FXGD");
+								net_packet->data[4] = player;
+								SDLNet_Write32((Uint32)0, &net_packet->data[5]);
+								SDLNet_Write32((Uint32)mpCost, &net_packet->data[9]);
+
+								Uint16 spellID = SPELL_NONE;
+								SDLNet_Write16(spellID, &net_packet->data[13]);
+								net_packet->address.host = net_server.host;
+								net_packet->address.port = net_server.port;
+								net_packet->len = 15;
+								sendPacketSafe(net_sock, -1, net_packet, 0);
+							}
+							else
+							{
+								if ( mpCost > stats[player]->MP )
+								{
+									cameravars[player].shakex += 0.1;
+									cameravars[player].shakey += 10;
+									playSoundPlayer(player, 28, 92);
+								}
+								Sint32 prevMP = stats[player]->MP;
+								players[player]->entity->drainMP(mpCost);
+							}
+
+							magicOnSpellCastEvent(players[player]->entity, players[player]->entity, nullptr, SPELL_GREATER_ABUNDANCE, spell_t::SPELL_LEVEL_EVENT_SUSTAIN, 1);
 						}
 					}
 				}
@@ -109,6 +186,7 @@ bool foodUseAbundanceEffect(Item* item, int player)
 			{
 				if ( !itemIsEquipped(item, player) )
 				{
+					int mpCost = 0;
 					int chance = getSpellDamageFromID(SPELL_ABUNDANCE, players[player]->entity, stats[player], players[player]->entity);
 					int maxchance = getSpellDamageSecondaryFromID(SPELL_ABUNDANCE, players[player]->entity, stats[player], players[player]->entity);
 					chance = std::min(chance, maxchance);
@@ -120,8 +198,8 @@ bool foodUseAbundanceEffect(Item* item, int player)
 							real_t costPercent = getSpellEffectDurationSecondaryFromID(SPELL_ABUNDANCE, players[player]->entity, stats[player], players[player]->entity) / 100.0;
 							if ( costPercent > 0.01 )
 							{
-								int cost = std::max(1.0, spell->mana * costPercent);
-								if ( stats[player]->MP >= cost )
+								mpCost = std::max(1.0, spell->mana * costPercent);
+								if ( stats[player]->MP >= mpCost )
 								{
 									hasCost = true;
 								}
@@ -138,7 +216,33 @@ bool foodUseAbundanceEffect(Item* item, int player)
 							messagePlayerColor(player, MESSAGE_INTERACTION, makeColorRGB(0, 255, 0), Language::get(6653), item->getName());
 							result = true;
 
-							magicOnSpellCastEvent(players[player]->entity, players[player]->entity, nullptr, SPELL_ABUNDANCE, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
+							if ( multiplayer == CLIENT )
+							{
+								strcpy((char*)net_packet->data, "FXGD");
+								net_packet->data[4] = player;
+								SDLNet_Write32((Uint32)0, &net_packet->data[5]);
+								SDLNet_Write32((Uint32)mpCost, &net_packet->data[9]);
+
+								Uint16 spellID = SPELL_NONE;
+								SDLNet_Write16(spellID, &net_packet->data[13]);
+								net_packet->address.host = net_server.host;
+								net_packet->address.port = net_server.port;
+								net_packet->len = 15;
+								sendPacketSafe(net_sock, -1, net_packet, 0);
+							}
+							else
+							{
+								if ( mpCost > stats[player]->MP )
+								{
+									cameravars[player].shakex += 0.1;
+									cameravars[player].shakey += 10;
+									playSoundPlayer(player, 28, 92);
+								}
+								Sint32 prevMP = stats[player]->MP;
+								players[player]->entity->drainMP(mpCost);
+							}
+
+							magicOnSpellCastEvent(players[player]->entity, players[player]->entity, nullptr, SPELL_ABUNDANCE, spell_t::SPELL_LEVEL_EVENT_SUSTAIN, 1);
 						}
 					}
 				}
