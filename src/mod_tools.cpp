@@ -838,7 +838,7 @@ void IRCHandler_t::handleMessage(std::string& msg)
 #endif // !NINTENDO
 
 Uint32 ItemTooltips_t::itemsJsonHashRead = 0;
-const Uint32 ItemTooltips_t::kItemsJsonHash = 1443178837;
+const Uint32 ItemTooltips_t::kItemsJsonHash = 1443175221;
 
 void ItemTooltips_t::setSpellValueIfKeyPresent(ItemTooltips_t::spellItem_t& t, rapidjson::Value::ConstMemberIterator item_itr, Uint32& hash, Uint32& hashShift, const char* key, int& toSet)
 {
@@ -2835,7 +2835,7 @@ std::string ItemTooltips_t::getSpellIconText(const int player, Item& item, const
 		snprintf(buf, sizeof(buf), str.c_str(), numSummons);
 		str = buf;
 	}
-	else if ( spell->ID == SPELL_BREATHE_FIRE )
+	else if ( spell->ID == SPELL_BREATHE_FIRE || spell->ID == SPELL_BLOOD_WAVES )
 	{
 		std::string result = getSpellIconFormatText(player, item, str, spell, 0, compendiumTooltipIntro);
 		if ( result != "" )
