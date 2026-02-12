@@ -25,6 +25,7 @@ Target: `MAXPLAYERS=15`
 - Mapgen CSV/report telemetry now includes observed generation seeds and food availability (`mapgen_seed_observed`, `food_items`, `food_servings`) plus explicit regeneration-diversity rates (`observed_seed_unique_rate_pct`, `reload_unique_seed_rate_pct`).
 - Known intermittent: 8p churn rejoin retries (`error code 16`) can occur transiently and then recover.
 - Extended balancing playbook is now captured in `/Users/sayhiben/dev/Barony-8p/docs/extended-multiplayer-balancing-and-tuning-plan.md` (process, tunables, commands, ratio targets, and gameplay rationale).
+- Latest integration commit on `8p-mod`: `f4da9ee9` (`mapgen: add pass10 balancing docs and sweep stability telemetry`).
 
 ## 2. Open Checklist
 - [ ] Re-run post-tuning full-lobby calibration (`--simulate-mapgen-players 0`) to confirm mapgen tuning under real join/load timing.
