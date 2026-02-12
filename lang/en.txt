@@ -7267,5 +7267,8 @@ has been unlocked!#
 6993 Alternate Item Use Modifier#
 6994 Hotbar Quickcast Spells#
 6995 When enabled, activating spells from the hotbar will immediately attempt to cast them.#
+6996 Mouse Events Limit#
+6997 Limits the amount of mouse movement events processed per frame to prevent large camera swings.#
+6998 Unlimited#
 
-6999 END#
+7999 END#

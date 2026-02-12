@@ -68,6 +68,7 @@ struct PlayerSettings_t
     bool gamepad_righty_invert = false;
 	float quick_turn_speed = 1.f;
 	float quick_turn_speed_mkb = 1.f;
+	int mouse_event_limit_mkb = 1000;
 	bool spell_quickcast_mkb = false;
 	bool spell_quickcast_controller = false;
 	Sint32 leftStickDeadzone = 8000;
@@ -996,6 +997,7 @@ public:
 			Sint32 playerINT;
 			Sint32 playerPER;
 			Sint32 playerCHR;
+			int spellCost = 0;
 
 			int opacitySetpoint = 100;
 			real_t opacityAnimate = 1.0;

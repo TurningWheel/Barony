@@ -59,6 +59,7 @@ namespace MainMenu {
     constexpr int MAX_FPS = 300;
     constexpr int AUTO_FPS = MAX_FPS + 1;
 	constexpr int MAX_LOBBY_FILTERS_SAVED = 32;
+	constexpr int MOUSE_EVENT_LIMIT_AUTO = 1000;
 
 	// ALL NEW menu options:
 	std::string current_audio_device;
@@ -576,6 +577,7 @@ namespace MainMenu {
 		float gamepad_deadzone_right = 25.f;
 		float quick_turn_speed_control = 1.f;
 		float quick_turn_speed_mkb_control = 1.f;
+		int mouse_event_limit_mkb_control = 1000;
 		bool spell_quickcast_mkb_enabled = false;
 		bool spell_quickcast_controller_enabled = false;
         inline void save(int index);
@@ -2820,6 +2822,7 @@ namespace MainMenu {
 		settings.rightStickDeadzone = (32000.f / 100.f) * std::min(50.f, std::max(5.f, gamepad_deadzone_right));
 		settings.quick_turn_speed = std::max(1.f, std::min(5.f, quick_turn_speed_control));
 		settings.quick_turn_speed_mkb = std::max(1.f, std::min(5.f, quick_turn_speed_mkb_control));
+		settings.mouse_event_limit_mkb = std::max(10, std::min(MOUSE_EVENT_LIMIT_AUTO, mouse_event_limit_mkb_control));
 		settings.spell_quickcast_mkb = spell_quickcast_mkb_enabled;
 		settings.spell_quickcast_controller = spell_quickcast_controller_enabled;
     }
@@ -2843,6 +2846,7 @@ namespace MainMenu {
 		controls.gamepad_deadzone_right = 100.f * settings.rightStickDeadzone / 32000.f;
 		controls.quick_turn_speed_control = settings.quick_turn_speed;
 		controls.quick_turn_speed_mkb_control = settings.quick_turn_speed_mkb;
+		controls.mouse_event_limit_mkb_control = settings.mouse_event_limit_mkb;
 		controls.spell_quickcast_mkb_enabled = settings.spell_quickcast_mkb;
 		controls.spell_quickcast_controller_enabled = settings.spell_quickcast_controller;
         return controls;
@@ -2853,7 +2857,7 @@ namespace MainMenu {
     }
 
     bool Controls::serialize(FileInterface* file) {
-        int version = 4;
+        int version = 5;
         file->property("version", version);
         file->property("mkb_world_tooltips_enabled", mkb_world_tooltips_enabled);
         file->property("gamepad_facehotbar", gamepad_facehotbar);
@@ -2872,6 +2876,7 @@ namespace MainMenu {
 		file->property("quick_turn_speed_mkb_control", quick_turn_speed_mkb_control);
 		file->propertyVersion("spell_quickcast_mkb_enabled", version >= 4, spell_quickcast_mkb_enabled);
 		file->propertyVersion("spell_quickcast_controller_enabled", version >= 4, spell_quickcast_controller_enabled);
+		file->propertyVersion("mouse_event_limit_mkb_control", version >= 5, mouse_event_limit_mkb_control);
         return true;
     }
 
@@ -3129,7 +3134,7 @@ namespace MainMenu {
 	}
 
 	bool AllSettings::serialize(FileInterface* file) {
-	    int version = 24;
+	    int version = 25;
 	    file->property("version", version);
 	    file->property("mods", mods);
 		file->property("crossplay_enabled", crossplay_enabled);
@@ -3251,6 +3256,11 @@ namespace MainMenu {
 			file->propertyVersion("quick_turn_speed_mkb_control", version >= 21, controls.quick_turn_speed_mkb_control);
 			file->propertyVersion("spell_quickcast_mkb_enabled", version >= 24, controls.spell_quickcast_mkb_enabled);
 			file->propertyVersion("spell_quickcast_controller_enabled", version >= 24, controls.spell_quickcast_controller_enabled);
+			if ( version <= 24 )
+			{
+				controls.mouse_event_limit_mkb_control = MOUSE_EVENT_LIMIT_AUTO;
+			}
+			file->propertyVersion("mouse_event_limit_mkb_control", version >= 25, controls.mouse_event_limit_mkb_control);
             for (int c = 0; c < MAX_SPLITSCREEN; ++c) {
                 this->controls[c] = controls;
             }
@@ -5228,7 +5238,7 @@ namespace MainMenu {
 			"*images/ui/Main Menus/Settings/Settings_Value_Backing00.png",
 			(fullname + "_box").c_str()
 		);
-		auto field = frame.addField((fullname + "_text").c_str(), 8);
+		auto field = frame.addField((fullname + "_text").c_str(), 16);
 		field->setSize(box->pos);
 		field->setJustify(Field::justify_t::CENTER);
 		field->setFont(smallfont_outline);
@@ -5242,7 +5252,7 @@ namespace MainMenu {
             if (fmt) {
                 field->setText(fmt(slider->getValue()));
             } else {
-                char buf[8];
+                char buf[16];
                 snprintf(buf, sizeof(buf), "%d", (int)slider->getValue());
                 field->setText(buf);
             }
@@ -7367,6 +7377,21 @@ bind_failed:
             y += settingsAddSlider(*settings_subwindow, y, "mouse_sensitivity", Language::get(5218), Language::get(5219),
                 allSettings.controls[bound_player].mouse_sensitivity, 0, 100, nullptr, [](Slider& slider)
                 {soundSliderSetting(slider, true); allSettings.controls[bound_player].mouse_sensitivity = slider.getValue();});
+
+			auto sliderMouseEventLimit = [](float v) -> const char* {
+				if ( (int)v == MOUSE_EVENT_LIMIT_AUTO ) {
+					return Language::get(6998);
+				}
+				else {
+					static char buf[16];
+					snprintf(buf, sizeof(buf), "%d", (int)v);
+					return buf;
+				}
+			};
+			y += settingsAddSlider(*settings_subwindow, y, "mouse_event_limit_mkb_control", Language::get(6996), Language::get(6997),
+				allSettings.controls[bound_player].mouse_event_limit_mkb_control, 10, MOUSE_EVENT_LIMIT_AUTO, sliderMouseEventLimit, [](Slider& slider)
+				{soundSliderSetting(slider, true); allSettings.controls[bound_player].mouse_event_limit_mkb_control = slider.getValue(); });
+
             y += settingsAddBooleanOption(*settings_subwindow, y, "reverse_mouse", Language::get(5222), Language::get(5223),
                 allSettings.controls[bound_player].reverse_mouse_enabled, [](Button& button)
                 {soundToggleSetting(button); allSettings.controls[bound_player].reverse_mouse_enabled = button.isPressed();});
@@ -7394,6 +7419,7 @@ bind_failed:
             hookSettings(*settings_subwindow,
                 {{Setting::Type::Customize, "bindings"},
                 {Setting::Type::Slider, "mouse_sensitivity"},
+				{Setting::Type::Slider, "mouse_event_limit_mkb_control"},
                 {Setting::Type::Boolean, "reverse_mouse"},
                 {Setting::Type::Boolean, "smooth_mouse"},
                 {Setting::Type::Boolean, "mkb_world_tooltips"},
