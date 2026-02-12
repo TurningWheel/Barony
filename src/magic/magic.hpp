@@ -1052,7 +1052,7 @@ void particleWaveClientReceive(Entity* my);
 void radiusMagicClientReceive(Entity* entity);
 Entity* floorMagicSetLightningParticle(Entity* my);
 void floorMagicCreateLightningSequence(Entity* spellTimer, int startTickOffset);
-void floorMagicCreateSpores(Entity* spawnOnEntity, real_t x, real_t y, Entity* caster, int damage, int spellID);
+void floorMagicCreateSpores(Entity* spawnOnEntity, real_t x, real_t y, Entity* caster, int damage, int spellID, bool magicstaff = false);
 Entity* floorMagicCreateRoots(real_t x, real_t y, Entity* caster, int damage, int spellID, int duration, int particleTimerAction);
 Entity* createVortexMagic(int sprite, real_t x, real_t y, real_t z, real_t dir, Uint32 lifetime);
 Entity* createParticleWave(ParticleTimerEffect_t::EffectType particleType, int sprite, real_t x, real_t y, real_t z, real_t dir, Uint32 lifetime, bool light);

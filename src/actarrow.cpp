@@ -1367,7 +1367,7 @@ void actArrow(Entity* my)
 
 					if ( my->sprite == PROJECTILE_SEED_POISON_SPRITE )
 					{
-						floorMagicCreateSpores(nullptr, hit.entity->x, hit.entity->y, parent, 15, SPELL_SPORES);
+						floorMagicCreateSpores(nullptr, hit.entity->x, hit.entity->y, parent, 15, SPELL_SPORES, true);
 					}
 					else if ( my->sprite == PROJECTILE_SEED_ROOT_SPRITE )
 					{
@@ -1928,7 +1928,7 @@ void actArrow(Entity* my)
 					{
 						if ( !hitstats || hit.entity->isInertMimic() )
 						{
-							floorMagicCreateSpores(nullptr, hit.entity->x, hit.entity->y, parent, 15, SPELL_SPORES);
+							floorMagicCreateSpores(nullptr, hit.entity->x, hit.entity->y, parent, 15, SPELL_SPORES, true);
 						}
 					}
 					else if ( my->sprite == PROJECTILE_SEED_ROOT_SPRITE )
@@ -1950,7 +1950,7 @@ void actArrow(Entity* my)
 			}
 			else if ( my->sprite == PROJECTILE_SEED_POISON_SPRITE )
 			{
-				floorMagicCreateSpores(nullptr, my->x, my->y, uidToEntity(my->parent), 15, SPELL_SPORES);
+				floorMagicCreateSpores(nullptr, my->x, my->y, uidToEntity(my->parent), 15, SPELL_SPORES, true);
 				my->removeLightField();
 				list_RemoveNode(my->mynode); // rocks don't stick to walls...
 			}
