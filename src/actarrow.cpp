@@ -1226,7 +1226,7 @@ void actArrow(Entity* my)
 									hitstats->setEffectActive(EFF_POISONED, 1);
 
 									int duration = TICKS_PER_SECOND * envenomDamage + 10;
-									hitstats->EFFECTS_TIMERS[EFF_POISONED] = std::max(200, duration - hit.entity->getCON() * 20);
+									hitstats->EFFECTS_TIMERS[EFF_POISONED] = std::max(160, duration - hit.entity->getCON() * 20);
 									hitstats->poisonKiller = parent->getUID();
 									if ( hit.entity->isEntityPlayer() )
 									{
