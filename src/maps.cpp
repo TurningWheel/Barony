@@ -113,7 +113,7 @@ static int getOverflowRoomSelectionTrials(int overflowPlayers)
 
 static int getOverflowBonusEntityRolls(int overflowPlayers)
 {
-	return std::min(60, 7 + overflowPlayers * 3 + overflowPlayers / 2);
+	return std::min(70, 8 + overflowPlayers * 4);
 }
 
 static int getOverflowForcedMonsterSpawns(int overflowPlayers)
@@ -124,42 +124,50 @@ static int getOverflowForcedMonsterSpawns(int overflowPlayers)
 		// Keep 5p from becoming too sparse after room-spread tuning.
 		return 3;
 	}
-	int spawns = 1 + overflowPlayers / 3;
-	if ( overflowPlayers >= 7 )
+	int spawns = 2 + overflowPlayers / 2;
+	if ( overflowPlayers >= 8 )
 	{
 		++spawns;
 	}
-	return std::min(6, spawns);
+	return std::min(7, spawns);
 }
 
 static int getOverflowForcedGoldSpawns(int overflowPlayers)
 {
-	// Keep early overflow stable, then add economy floor for larger parties (9p+ and 13p+).
+	// Keep early overflow stable, then progressively raise economy floor for larger parties.
 	int spawns = 1 + overflowPlayers / 2;
 	if ( overflowPlayers >= 5 )
 	{
 		spawns += 2;
 	}
-	if ( overflowPlayers >= 9 )
+	if ( overflowPlayers >= 8 )
 	{
-		spawns += 2;
+		++spawns;
 	}
-	return std::min(12, spawns);
+	if ( overflowPlayers >= 10 )
+	{
+		++spawns;
+	}
+	return std::min(13, spawns);
 }
 
 static int getOverflowForcedLootSpawns(int overflowPlayers)
 {
 	// Lift progression-item floor for larger parties without changing <=4p behavior.
-	int spawns = 4 + overflowPlayers + overflowPlayers / 2;
+	int spawns = 6 + overflowPlayers + (overflowPlayers * 2) / 3;
 	if ( overflowPlayers >= 5 )
 	{
 		spawns += 2;
 	}
-	if ( overflowPlayers >= 9 )
+	if ( overflowPlayers >= 8 )
 	{
 		spawns += 2;
 	}
-	return std::min(28, spawns);
+	if ( overflowPlayers >= 11 )
+	{
+		spawns += 3;
+	}
+	return std::min(36, spawns);
 }
 
 static int getOverflowLootGoldRollDivisor(int overflowPlayers)
@@ -174,24 +182,24 @@ static int getOverflowLootGoldRollDivisor(int overflowPlayers)
 	{
 		divisor -= 2;
 	}
-	return std::max(4, divisor);
+	if ( overflowPlayers >= 10 )
+	{
+		--divisor;
+	}
+	return std::max(3, divisor);
 }
 
 static int getOverflowForcedDecorationSpawns(int overflowPlayers)
 {
 	// Keep ambience growth for larger parties without over-crowding shared traversal space.
 	int spawns = 1 + overflowPlayers / 2;
-	if ( overflowPlayers >= 8 )
-	{
-		++spawns;
-	}
-	return std::min(8, spawns);
+	return std::min(6, spawns);
 }
 
 static int getOverflowDecorationObstacleBudget(int overflowPlayers)
 {
-	// Stay conservative for mid-size overflow lobbies; only relax at very high slots.
-	return overflowPlayers >= 5 ? 2 : 1;
+	// Stay conservative for most overflow lobbies; only relax obstacle tolerance at very high slots.
+	return overflowPlayers >= 9 ? 2 : 1;
 }
 
 static void tallyDecorationSpawnTelemetry(int sprite, int& blocking, int& utility, int& traps, int& economyLinked)
@@ -2017,6 +2025,15 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 	std::vector<bool> decorationexcludelocations(map.width * map.height, false);
 	const int mapgenConnectedPlayers = getConnectedPlayerCountForMapScaling();
 	const int mapgenOverflowPlayers = getOverflowPlayersBeyondSplitscreen(mapgenConnectedPlayers);
+#ifdef BARONY_SMOKE_TESTS
+	const bool smokeMapgenDebugFlags = std::getenv("BARONY_SMOKE_MAPGEN_DEBUG_FLAGS") != nullptr;
+	if ( smokeMapgenDebugFlags )
+	{
+		printlog("[SMOKE][MAPGEN][DEBUG]: pregen level=%d secret=%d seed=%u map=\"%s\" disable_monsters=%d disable_loot=%d connected=%d",
+			currentlevel, secretlevel ? 1 : 0, mapseed, map.name,
+			map.flags[MAP_FLAG_DISABLEMONSTERS], map.flags[MAP_FLAG_DISABLELOOT], mapgenConnectedPlayers);
+	}
+#endif
 
 	// generate dungeon level...
 	int roomcount = 0;
@@ -2062,6 +2079,26 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				}
 			}
 		}
+#ifdef BARONY_SMOKE_TESTS
+		if ( smokeMapgenDebugFlags )
+		{
+			int monsterOpenTiles = 0;
+			int lootOpenTiles = 0;
+			for ( int i = 0; i < map.width * map.height; ++i )
+			{
+				if ( !map.monsterexcludelocations[i] )
+				{
+					++monsterOpenTiles;
+				}
+				if ( !map.lootexcludelocations[i] )
+				{
+					++lootOpenTiles;
+				}
+			}
+			printlog("[SMOKE][MAPGEN][DEBUG]: exclusions level=%d seed=%u monster_open_tiles=%d loot_open_tiles=%d",
+				currentlevel, mapseed, monsterOpenTiles, lootOpenTiles);
+		}
+#endif
 		possiblelocations2 = (bool*) malloc(sizeof(bool) * map.width * map.height);
 		firstroomtile = (bool*) malloc(sizeof(bool) * map.width * map.height);
 		secretlevelexittile = (bool*)malloc(sizeof(bool) * map.width * map.height);
@@ -4185,14 +4222,34 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 	}
 
 	//messagePlayer(0, "Num locations: %d of %d possible, force monsters: %d, force gold: %d, force loot: %d, force decorations: %d", j, numpossiblelocations, forcedMonsterSpawns, forcedGoldSpawns, forcedLootSpawns, forcedDecorationSpawns);
-		printlog("Num locations: %d of %d possible, force monsters: %d, force gold: %d, force loot: %d, force decorations: %d", j, numpossiblelocations, forcedMonsterSpawns, forcedGoldSpawns, forcedLootSpawns, forcedDecorationSpawns);
-		int numGenItems = 0;
-		int numGenGold = 0;
-		int numGenDecorations = 0;
-		int numGenDecorationBlocking = 0;
-		int numGenDecorationUtility = 0;
-		int numGenDecorationTraps = 0;
-		int numGenDecorationEconomy = 0;
+#ifdef BARONY_SMOKE_TESTS
+	if ( smokeMapgenDebugFlags )
+	{
+		int monsterOpenTilesFinal = 0;
+		int lootOpenTilesFinal = 0;
+		for ( int i = 0; i < map.width * map.height; ++i )
+		{
+			if ( !map.monsterexcludelocations[i] )
+			{
+				++monsterOpenTilesFinal;
+			}
+			if ( !map.lootexcludelocations[i] )
+			{
+				++lootOpenTilesFinal;
+			}
+		}
+		printlog("[SMOKE][MAPGEN][DEBUG]: spawn phase exclusions level=%d seed=%u monster_open_tiles=%d loot_open_tiles=%d",
+			currentlevel, mapseed, monsterOpenTilesFinal, lootOpenTilesFinal);
+	}
+#endif
+	printlog("Num locations: %d of %d possible, force monsters: %d, force gold: %d, force loot: %d, force decorations: %d", j, numpossiblelocations, forcedMonsterSpawns, forcedGoldSpawns, forcedLootSpawns, forcedDecorationSpawns);
+	int numGenItems = 0;
+	int numGenGold = 0;
+	int numGenDecorations = 0;
+	int numGenDecorationBlocking = 0;
+	int numGenDecorationUtility = 0;
+	int numGenDecorationTraps = 0;
+	int numGenDecorationEconomy = 0;
 
 	std::vector<Uint32> itemsGeneratedList;
 	static ConsoleVariable<bool> cvar_underworldshrinetest("/underworldshrinetest", false);
@@ -4233,6 +4290,17 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				}
 			}
 		}
+
+#ifdef BARONY_SMOKE_TESTS
+		if ( smokeMapgenDebugFlags && c < 8 )
+		{
+			printlog("[SMOKE][MAPGEN][DEBUG]: spawn-pick c=%d x=%d y=%d forcedM=%d forcedG=%d forcedL=%d forcedD=%d monster_excl=%d loot_excl=%d numpossible=%d",
+				c, x, y, forcedMonsterSpawns, forcedGoldSpawns, forcedLootSpawns, forcedDecorationSpawns,
+				map.monsterexcludelocations[x + y * map.width] ? 1 : 0,
+				map.lootexcludelocations[x + y * map.width] ? 1 : 0,
+				numpossiblelocations);
+		}
+#endif
 
 		// create entity
 		entity = nullptr;
@@ -4471,6 +4539,13 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				if ( treasureRoomLocations[x + y * map.width] )
 				{
 					// try again, treasure room area
+#ifdef BARONY_SMOKE_TESTS
+					if ( smokeMapgenDebugFlags && c < 8 )
+					{
+						printlog("[SMOKE][MAPGEN][DEBUG]: exit-retry c=%d reason=treasure-room x=%d y=%d",
+							c, x, y);
+					}
+#endif
 					c--;
 					entity = NULL;
 					continue;
@@ -4479,6 +4554,13 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				if ( secretlevelexittile[y + x * map.height] && secretExitLadderTries > 0 )
 				{
 					// try again, no exits in secret level exits
+#ifdef BARONY_SMOKE_TESTS
+					if ( smokeMapgenDebugFlags && c < 8 )
+					{
+						printlog("[SMOKE][MAPGEN][DEBUG]: exit-retry c=%d reason=secret-exit-tile x=%d y=%d tries_left=%d",
+							c, x, y, secretExitLadderTries);
+					}
+#endif
 					c--;
 					entity = NULL;
 					--secretExitLadderTries;
@@ -4517,6 +4599,13 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 					{
 						obstacles++;
 					}
+#ifdef BARONY_SMOKE_TESTS
+					if ( obstacles >= 4 && smokeMapgenDebugFlags && c < 8 )
+					{
+						printlog("[SMOKE][MAPGEN][DEBUG]: exit-retry c=%d reason=enclosed-underworld x=%d y=%d obstacles=%d",
+							c, x, y, obstacles);
+					}
+#endif
 					if ( obstacles >= 4 )
 					{
 						// try again, enclosed area
@@ -4530,6 +4619,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				{
 					// determine if the ladder generated in a viable location
 					bool nopath = false;
+					bool foundStart = false;
 					bool hellLadderFix = !strncmp(map.name, "Hell", 4);
 					std::vector<Entity*> tempPassableEntities;
 					if ( hellLadderFix )
@@ -4562,6 +4652,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 						entity2 = (Entity*)node->element;
 						if ( entity2->sprite == 1 ) // note entity->behavior == nullptr at this point
 						{
+							foundStart = true;
 							list_t* path = generatePath(x, y, entity2->x / 16, entity2->y / 16,
 								entity, entity2, GeneratePathTypes::GENERATE_PATH_CHECK_EXIT, hellLadderFix);
 							if ( path == NULL )
@@ -4580,6 +4671,13 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 					{
 						ent->flags[PASSABLE] = false;
 					}
+#ifdef BARONY_SMOKE_TESTS
+					if ( nopath && smokeMapgenDebugFlags && c < 8 )
+					{
+						printlog("[SMOKE][MAPGEN][DEBUG]: exit-retry c=%d reason=no-path x=%d y=%d found_start=%d",
+							c, x, y, foundStart ? 1 : 0);
+					}
+#endif
 					if ( nopath )
 					{
 						// try again
@@ -4829,6 +4927,13 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				if ( forcedMonsterSpawns > 0 )
 				{
 					--forcedMonsterSpawns;
+#ifdef BARONY_SMOKE_TESTS
+					if ( smokeMapgenDebugFlags && c < 8 )
+					{
+						printlog("[SMOKE][MAPGEN][DEBUG]: forced-monster c=%d postdec_forcedM=%d monster_excl=%d",
+							c, forcedMonsterSpawns, map.monsterexcludelocations[x + y * map.width] ? 1 : 0);
+					}
+#endif
 					if ( map.monsterexcludelocations[x + y * map.width] == false )
 					{
 						bool doNPC = false;
@@ -4866,7 +4971,20 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 						}
 						entity->skill[5] = nummonsters;
 						++nummonsters;
+#ifdef BARONY_SMOKE_TESTS
+						if ( smokeMapgenDebugFlags && c < 8 )
+						{
+							printlog("[SMOKE][MAPGEN][DEBUG]: forced-monster-spawned c=%d nummonsters=%u sprite=%d",
+								c, nummonsters, entity ? entity->sprite : -1);
+						}
+#endif
 					}
+#ifdef BARONY_SMOKE_TESTS
+					else if ( smokeMapgenDebugFlags && c < 8 )
+					{
+						printlog("[SMOKE][MAPGEN][DEBUG]: forced-monster-skip-excluded c=%d", c);
+					}
+#endif
 				}
 				else if ( forcedGoldSpawns > 0 )
 				{
@@ -4906,28 +5024,84 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 					{
 						if ( !strncmp(map.filename, "fortress", 8) )
 						{
-							switch ( map_rng.rand() % 4 )
+							if ( overflowPlayers > 0 )
 							{
-							case 0:
-								entity = newEntity(12, 1, map.entities, nullptr); //Firecamp.
-								break; //Firecamp
-							case 1:
-								entity = newEntity(14, 1, map.entities, nullptr); //Fountain.
-								break; //Fountain
-							case 2:
-								entity = newEntity(15, 1, map.entities, nullptr); //Sink.
-								break; //Sink
-							case 3:
-								entity = newEntity(21, 1, map.entities, nullptr); //Chest.
-								setSpriteAttributes(entity, nullptr, nullptr);
-								entity->chestLocked = -1;
-								break; //Chest
+								switch ( map_rng.rand() % 6 )
+								{
+								case 0:
+								case 1:
+								case 2:
+									entity = newEntity(12, 1, map.entities, nullptr); //Firecamp.
+									break; //Firecamp
+								case 3:
+									entity = newEntity(14, 1, map.entities, nullptr); //Fountain.
+									break; //Fountain
+								case 4:
+									entity = newEntity(15, 1, map.entities, nullptr); //Sink.
+									break; //Sink
+								case 5:
+									entity = newEntity(21, 1, map.entities, nullptr); //Chest.
+									setSpriteAttributes(entity, nullptr, nullptr);
+									entity->chestLocked = -1;
+									break; //Chest
+								}
+							}
+							else
+							{
+								switch ( map_rng.rand() % 4 )
+								{
+								case 0:
+									entity = newEntity(12, 1, map.entities, nullptr); //Firecamp.
+									break; //Firecamp
+								case 1:
+									entity = newEntity(14, 1, map.entities, nullptr); //Fountain.
+									break; //Fountain
+								case 2:
+									entity = newEntity(15, 1, map.entities, nullptr); //Sink.
+									break; //Sink
+								case 3:
+									entity = newEntity(21, 1, map.entities, nullptr); //Chest.
+									setSpriteAttributes(entity, nullptr, nullptr);
+									entity->chestLocked = -1;
+									break; //Chest
+								}
 							}
 						}
 						else
 						{
-							switch ( map_rng.rand() % 7 )
+							if ( overflowPlayers > 0 )
 							{
+								switch ( map_rng.rand() % 10 )
+								{
+								case 0:
+								case 1:
+								case 2:
+								case 3:
+								case 4:
+								case 5:
+									entity = newEntity(12, 1, map.entities, nullptr); //Firecamp.
+									break; //Firecamp
+								case 6:
+									entity = newEntity(14, 1, map.entities, nullptr); //Fountain.
+									break; //Fountain
+								case 7:
+									entity = newEntity(15, 1, map.entities, nullptr); //Sink.
+									break; //Sink
+								case 8:
+									entity = newEntity(21, 1, map.entities, nullptr); //Chest.
+									setSpriteAttributes(entity, nullptr, nullptr);
+									entity->chestLocked = -1;
+									break; //Chest
+								case 9:
+									entity = newEntity(59, 1, map.entities, nullptr); //Table.
+									setSpriteAttributes(entity, nullptr, nullptr);
+									break; //Table
+								}
+							}
+							else
+							{
+								switch ( map_rng.rand() % 7 )
+								{
 								case 0:
 									entity = newEntity(12, 1, map.entities, nullptr); //Firecamp.
 									break; //Firecamp
@@ -4953,6 +5127,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 									entity = newEntity(60, 1, map.entities, nullptr); //Chair.
 									setSpriteAttributes(entity, nullptr, nullptr);
 									break; //Chair
+								}
 							}
 						}
 					}
@@ -5103,28 +5278,84 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 					{
 						if ( !strncmp(map.filename, "fortress", 8) )
 						{
-							switch ( map_rng.rand() % 4 )
+							if ( overflowPlayers > 0 )
 							{
-							case 0:
-								entity = newEntity(12, 1, map.entities, nullptr); //Firecamp.
-								break; //Firecamp
-							case 1:
-								entity = newEntity(14, 1, map.entities, nullptr); //Fountain.
-								break; //Fountain
-							case 2:
-								entity = newEntity(15, 1, map.entities, nullptr); //Sink.
-								break; //Sink
-							case 3:
-								entity = newEntity(21, 1, map.entities, nullptr); //Chest.
-								setSpriteAttributes(entity, nullptr, nullptr);
-								entity->chestLocked = -1;
-								break; //Chest
+								switch ( map_rng.rand() % 6 )
+								{
+								case 0:
+								case 1:
+								case 2:
+									entity = newEntity(12, 1, map.entities, nullptr); //Firecamp.
+									break; //Firecamp
+								case 3:
+									entity = newEntity(14, 1, map.entities, nullptr); //Fountain.
+									break; //Fountain
+								case 4:
+									entity = newEntity(15, 1, map.entities, nullptr); //Sink.
+									break; //Sink
+								case 5:
+									entity = newEntity(21, 1, map.entities, nullptr); //Chest.
+									setSpriteAttributes(entity, nullptr, nullptr);
+									entity->chestLocked = -1;
+									break; //Chest
+								}
+							}
+							else
+							{
+								switch ( map_rng.rand() % 4 )
+								{
+								case 0:
+									entity = newEntity(12, 1, map.entities, nullptr); //Firecamp.
+									break; //Firecamp
+								case 1:
+									entity = newEntity(14, 1, map.entities, nullptr); //Fountain.
+									break; //Fountain
+								case 2:
+									entity = newEntity(15, 1, map.entities, nullptr); //Sink.
+									break; //Sink
+								case 3:
+									entity = newEntity(21, 1, map.entities, nullptr); //Chest.
+									setSpriteAttributes(entity, nullptr, nullptr);
+									entity->chestLocked = -1;
+									break; //Chest
+								}
 							}
 						}
 						else
 						{
-							switch ( map_rng.rand() % 7 )
+							if ( overflowPlayers > 0 )
 							{
+								switch ( map_rng.rand() % 10 )
+								{
+								case 0:
+								case 1:
+								case 2:
+								case 3:
+								case 4:
+								case 5:
+									entity = newEntity(12, 1, map.entities, nullptr); //Firecamp entity.
+									break; //Firecamp
+								case 6:
+									entity = newEntity(14, 1, map.entities, nullptr); //Fountain entity.
+									break; //Fountain
+								case 7:
+									entity = newEntity(15, 1, map.entities, nullptr); //Sink entity.
+									break; //Sink
+								case 8:
+									entity = newEntity(21, 1, map.entities, nullptr); //Chest entity.
+									setSpriteAttributes(entity, nullptr, nullptr);
+									entity->chestLocked = -1;
+									break; //Chest
+								case 9:
+									entity = newEntity(59, 1, map.entities, nullptr); //Table entity.
+									setSpriteAttributes(entity, nullptr, nullptr);
+									break; //Table
+								}
+							}
+							else
+							{
+								switch ( map_rng.rand() % 7 )
+								{
 								case 0:
 									entity = newEntity(12, 1, map.entities, nullptr); //Firecamp entity.
 									break; //Firecamp
@@ -5150,6 +5381,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 									entity = newEntity(60, 1, map.entities, nullptr); //Chair entity.
 									setSpriteAttributes(entity, nullptr, nullptr);
 									break; //Chair
+								}
 							}
 						}
 					}
@@ -7187,12 +7419,20 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 	list_FreeAll(&mapList);
 	list_FreeAll(&doorList);
 
-		printlog("successfully generated a dungeon with %d rooms, %d monsters, %d gold, %d items, %d decorations. level=%d secret=%d players=%d seed=%u map=\"%s\"\n",
-			roomcount, nummonsters, numGenGold, numGenItems, numGenDecorations,
-			currentlevel, secretlevel ? 1 : 0, mapgenConnectedPlayers, mapseed, map.name);
-		printlog("mapgen decoration summary: level=%d secret=%d seed=%u blocking=%d utility=%d traps=%d economy=%d map=\"%s\"",
-			currentlevel, secretlevel ? 1 : 0, mapseed,
-			numGenDecorationBlocking, numGenDecorationUtility, numGenDecorationTraps, numGenDecorationEconomy, map.name);
+	printlog("successfully generated a dungeon with %d rooms, %d monsters, %d gold, %d items, %d decorations. level=%d secret=%d players=%d seed=%u map=\"%s\"\n",
+		roomcount, nummonsters, numGenGold, numGenItems, numGenDecorations,
+		currentlevel, secretlevel ? 1 : 0, mapgenConnectedPlayers, mapseed, map.name);
+	printlog("mapgen decoration summary: level=%d secret=%d seed=%u blocking=%d utility=%d traps=%d economy=%d map=\"%s\"",
+		currentlevel, secretlevel ? 1 : 0, mapseed,
+		numGenDecorationBlocking, numGenDecorationUtility, numGenDecorationTraps, numGenDecorationEconomy, map.name);
+#ifdef BARONY_SMOKE_TESTS
+	SmokeTestHooks::Mapgen::recordGenerationSummary(
+		currentlevel, secretlevel ? 1 : 0, mapseed, mapgenConnectedPlayers,
+		roomcount, nummonsters, numGenGold, numGenItems, numGenDecorations);
+	SmokeTestHooks::Mapgen::recordDecorationSummary(
+		currentlevel, secretlevel ? 1 : 0, mapseed,
+		numGenDecorationBlocking, numGenDecorationUtility, numGenDecorationTraps, numGenDecorationEconomy);
+#endif
 	//messagePlayer(0, "successfully generated a dungeon with %d rooms, %d monsters, %d gold, %d items, %d decorations.", roomcount, nummonsters, numGenGold, numGenItems, numGenDecorations);
 	return secretlevelexit;
 }
@@ -7369,6 +7609,10 @@ void assignActions(map_t* map)
 	const int overflowPlayers = getOverflowPlayersBeyondSplitscreen(balance);
 	int mapgenFoodItems = 0;
 	int mapgenFoodServings = 0;
+	int mapgenGoldBags = 0;
+	int mapgenGoldAmount = 0;
+	int mapgenItemStacks = 0;
+	int mapgenItemUnits = 0;
 
 	bool customMonsterCurveExists = false;
 	monsterCurveCustomManager.followersToGenerateForLeaders.clear();
@@ -7406,8 +7650,8 @@ void assignActions(map_t* map)
 				list_RemoveNode(entity->mynode);
 				entity = nullptr;
 				break;
-				// player:
 			}
+			// player:
 			case 1:
 			{
 				if ( numplayers >= 0 && numplayers < MAXPLAYERS )
@@ -7810,14 +8054,18 @@ void assignActions(map_t* map)
 									if ( balance > 4 )
 									{
 										// For overflow parties, bias toward progression loot and keep food supplemental.
-										int foodRollDivisor = 10;
-										if ( overflowPlayers <= 2 )
+										int foodRollDivisor = 9;
+										if ( overflowPlayers >= 4 )
 										{
-											foodRollDivisor = 9;
+											foodRollDivisor = 7;
 										}
-										else if ( overflowPlayers >= 9 )
+										if ( overflowPlayers >= 8 )
 										{
-											foodRollDivisor = 13;
+											foodRollDivisor = 6;
+										}
+										if ( overflowPlayers >= 11 )
+										{
+											foodRollDivisor = 5;
 										}
 										extrafood = (map_rng.rand() % foodRollDivisor) == 0;
 									}
@@ -8002,13 +8250,13 @@ void assignActions(map_t* map)
 								default:
 									if ( balance > 4 )
 									{
-										// Reduce overflow food stack inflation to avoid crowding out progression loot value.
-										const int baseExtraFood = (overflowPlayers >= 4) ? 1 : 0;
+										// Keep overflow food supplemental, but lift high-party starvation floor.
+										const int baseExtraFood = (overflowPlayers >= 8) ? 1 : 0;
 										entity->skill[13] += baseExtraFood;
-										const int bonusRollDivisor = std::max(4, 10 - (overflowPlayers / 2));
+										const int bonusRollDivisor = std::max(5, 10 - (overflowPlayers / 3));
 										if ( map_rng.rand() % bonusRollDivisor == 0 )
 										{
-											const int maxExtraFood = std::max(1, std::min(3, 1 + (overflowPlayers / 6)));
+											const int maxExtraFood = 1 + ((overflowPlayers >= 11) ? 1 : 0);
 											entity->skill[13] += 1 + (map_rng.rand() % maxExtraFood);
 										}
 									}
@@ -8062,13 +8310,18 @@ void assignActions(map_t* map)
 					itemLevelCurvePostProcess(entity, nullptr, map_rng);
 				}
 
-					auto item = newItemFromEntity(entity);
-					if ( item && itemCategory(item) == FOOD )
-					{
-						++mapgenFoodItems;
-						mapgenFoodServings += std::max(1, entity->skill[13]);
-					}
-					entity->sprite = itemModel(item);
+				auto item = newItemFromEntity(entity);
+				if ( item && itemCategory(item) == FOOD )
+				{
+					++mapgenFoodItems;
+					mapgenFoodServings += std::max(1, entity->skill[13]);
+				}
+				if ( item )
+				{
+					++mapgenItemStacks;
+					mapgenItemUnits += std::max(1, static_cast<int>(item->count));
+				}
+				entity->sprite = itemModel(item);
 				if ( !entity->itemNotMoving )
 				{
 					// shurikens and chakrams need to lie flat on floor as their models are rotated.
@@ -8113,6 +8366,7 @@ void assignActions(map_t* map)
 			}
 			// gold:
 			case 9:
+			{
 				entity->sizex = 4;
 				entity->sizey = 4;
 				entity->x += 8;
@@ -8124,27 +8378,27 @@ void assignActions(map_t* map)
 				entity->flags[PASSABLE] = true;
 				entity->behavior = &actGoldBag;
 				entity->goldBouncing = 1;
-					if ( entity->goldAmount == 0 )
+				bool generatedBaseGoldAmount = false;
+				if ( entity->goldAmount == 0 )
+				{
+					entity->goldAmount = 10 + map_rng.rand() % 100 + (currentlevel); // amount
+					generatedBaseGoldAmount = true;
+				}
+				if ( balance > 4 && generatedBaseGoldAmount )
+				{
+					// Overflow value tuning: more players already add bag count, so compress per-bag value.
+					entity->goldAmount = std::max(6, (entity->goldAmount * 2) / 3);
+					if ( overflowPlayers >= 8 )
 					{
-						entity->goldAmount = 10 + map_rng.rand() % 100 + (currentlevel); // amount
+						++entity->goldAmount;
 					}
-					if ( balance > 4 )
+					if ( overflowPlayers >= 11 )
 					{
-						// Keep <=4p unchanged; overflow players scale bag value with bounded % + flat bonus.
-						int bonusPercent = std::min(80, overflowPlayers * 7);
-						int flatBonus = std::min(24, overflowPlayers * 2);
-						if ( overflowPlayers >= 7 )
-						{
-							bonusPercent = std::min(96, bonusPercent + 8);
-							flatBonus = std::min(30, flatBonus + 3);
-						}
-						if ( overflowPlayers >= 10 )
-						{
-							bonusPercent = std::min(108, bonusPercent + 8);
-							flatBonus = std::min(36, flatBonus + 3);
-						}
-						entity->goldAmount += flatBonus + std::max(1, (entity->goldAmount * bonusPercent) / 100);
+						++entity->goldAmount;
 					}
+				}
+				++mapgenGoldBags;
+				mapgenGoldAmount += std::max(0, entity->goldAmount);
 				if ( entity->goldAmount < 5 )
 				{
 					entity->sprite = 1379;
@@ -8161,6 +8415,7 @@ void assignActions(map_t* map)
 					entity->goldSokoban = 1;
 				}
 				break;
+			}
 			// monster:
 			case 71:
 			case 70:
@@ -11359,8 +11614,17 @@ void assignActions(map_t* map)
 
 	printlog("mapgen food summary: level=%d secret=%d seed=%u food=%d food_servings=%d map=\"%s\"",
 		currentlevel, secretlevel ? 1 : 0, mapseed, mapgenFoodItems, mapgenFoodServings, map->name);
+	printlog("mapgen value summary: level=%d secret=%d seed=%u gold_bags=%d gold_amount=%d item_stacks=%d item_units=%d map=\"%s\"",
+		currentlevel, secretlevel ? 1 : 0, mapseed,
+		mapgenGoldBags, mapgenGoldAmount, mapgenItemStacks, mapgenItemUnits, map->name);
+#ifdef BARONY_SMOKE_TESTS
+	SmokeTestHooks::Mapgen::recordFoodAndValueSummary(
+		currentlevel, secretlevel ? 1 : 0, mapseed,
+		mapgenFoodItems, mapgenFoodServings,
+		mapgenGoldBags, mapgenGoldAmount, mapgenItemStacks, mapgenItemUnits);
+#endif
 
-    keepInventoryGlobal = svFlags & SV_FLAG_KEEPINVENTORY;
+	keepInventoryGlobal = svFlags & SV_FLAG_KEEPINVENTORY;
 }
 
 int mapLevel(int player, int radius, int _x, int _y, bool usingSpell)

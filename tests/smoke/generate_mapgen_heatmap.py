@@ -7,6 +7,10 @@ from pathlib import Path
 
 BASE_METRICS = ["rooms", "monsters", "gold", "items", "food_servings", "decorations"]
 OPTIONAL_METRICS = [
+    "gold_bags",
+    "gold_amount",
+    "item_stacks",
+    "item_units",
     "decorations_blocking",
     "decorations_utility",
     "decorations_traps",

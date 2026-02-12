@@ -267,7 +267,7 @@ fi
 log "Writing outputs to $OUTDIR"
 combined_csv="$OUTDIR/mapgen_level_matrix.csv"
 cat > "$combined_csv" <<'CSV'
-target_level,players,launched_instances,mapgen_players_override,mapgen_players_observed,run,seed,status,start_floor,host_chunk_lines,client_reassembled_lines,mapgen_found,mapgen_level,mapgen_secret,mapgen_seed_observed,rooms,monsters,gold,items,decorations,decorations_blocking,decorations_utility,decorations_traps,decorations_economy,food_items,food_servings,run_dir,mapgen_wait_reason,mapgen_reload_transition_lines,mapgen_generation_lines,mapgen_generation_unique_seed_count,mapgen_reload_regen_ok
+target_level,players,launched_instances,mapgen_players_override,mapgen_players_observed,run,seed,status,start_floor,host_chunk_lines,client_reassembled_lines,mapgen_found,mapgen_level,mapgen_secret,mapgen_seed_observed,rooms,monsters,gold,items,decorations,decorations_blocking,decorations_utility,decorations_traps,decorations_economy,food_items,food_servings,gold_bags,gold_amount,item_stacks,item_units,run_dir,mapgen_wait_reason,mapgen_reload_transition_lines,mapgen_generation_lines,mapgen_generation_unique_seed_count,mapgen_reload_regen_ok
 CSV
 
 datadir_args=()
@@ -337,7 +337,11 @@ metrics = [
     "rooms",
     "monsters",
     "gold",
+    "gold_bags",
+    "gold_amount",
     "items",
+    "item_stacks",
+    "item_units",
     "food_servings",
     "decorations",
     "decorations_blocking",

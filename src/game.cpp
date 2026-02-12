@@ -7188,15 +7188,18 @@ int main(int argc, char** argv)
  #else // !NINTENDO
 		strcpy(outputdir, "save:");
  #endif // NINTENDO
-#endif
+	#endif
+	#ifdef BARONY_SMOKE_TESTS
+		SmokeTestHooks::Mapgen::IntegrationOptions smokeMapgenIntegration;
+	#endif
 		// read command line arguments
 		if ( argc > 1 )
 		{
-			for (c = 1; c < argc; c++)
+			for ( c = 1; c < argc; c++ )
 			{
 #ifdef STEAMWORKS
-			    cmd_line += argv[c];
-			    cmd_line += " ";
+				cmd_line += argv[c];
+				cmd_line += " ";
 #endif
 				if ( argv[c] != NULL )
 				{
@@ -7240,15 +7243,46 @@ int main(int argc, char** argv)
 					{
 						no_sound = true;
 					}
+#ifdef BARONY_SMOKE_TESTS
 					else
 					{
-#ifdef USE_EOS
-						EOS.CommandLineArgs.push_back(argv[c]);
-#endif // USE_EOS
+						std::string smokeOptionError;
+						if ( SmokeTestHooks::Mapgen::parseIntegrationOptionArg(argv[c], smokeMapgenIntegration, smokeOptionError) )
+						{
+							if ( !smokeOptionError.empty() )
+							{
+								printlog("%s", smokeOptionError.c_str());
+								return 1;
+							}
+						}
+						else
+						{
+	#ifdef USE_EOS
+							EOS.CommandLineArgs.push_back(argv[c]);
+	#endif // USE_EOS
+						}
 					}
+#else
+					else
+					{
+	#ifdef USE_EOS
+						EOS.CommandLineArgs.push_back(argv[c]);
+	#endif // USE_EOS
+					}
+#endif
 				}
 			}
 		}
+#ifdef BARONY_SMOKE_TESTS
+		{
+			std::string smokeIntegrationError;
+			if ( !SmokeTestHooks::Mapgen::validateIntegrationOptions(smokeMapgenIntegration, smokeIntegrationError) )
+			{
+				printlog("%s", smokeIntegrationError.c_str());
+				return 1;
+			}
+		}
+#endif
 		printlog("Data path is %s", datadir);
 		printlog("Output path is %s", outputdir);
         
@@ -7326,7 +7360,7 @@ int main(int argc, char** argv)
 		// init message
 		printlog("Barony version: %s\n", VERSION);
 		char buffer[32];
-        getTimeAndDateFormatted(getTime(), buffer, sizeof(buffer));
+		getTimeAndDateFormatted(getTime(), buffer, sizeof(buffer));
 		printlog("Launch time: %s\n", buffer);
 
 		if ( (c = initGame()) )
@@ -7342,6 +7376,31 @@ int main(int argc, char** argv)
 			exit(c);
 		}
 		initialized = true;
+
+#ifdef BARONY_SMOKE_TESTS
+		if ( smokeMapgenIntegration.enabled )
+		{
+			printlog("[SMOKE][MAPGEN][INTEGRATION]: starting levels=%s players=%d..%d runs=%d base_seed=%u csv=%s",
+				smokeMapgenIntegration.levelsCsv.c_str(),
+				smokeMapgenIntegration.minPlayers,
+				smokeMapgenIntegration.maxPlayers,
+				smokeMapgenIntegration.runsPerPlayer,
+				smokeMapgenIntegration.baseSeed,
+				smokeMapgenIntegration.outputCsvPath.c_str());
+			int smokeResult = SmokeTestHooks::Mapgen::runIntegrationMatrix(smokeMapgenIntegration);
+			if ( !load_successful )
+			{
+				skipintro = true;
+			}
+			gameModeManager.currentSession.restoreSavedServerFlags();
+			saveConfig("default.cfg");
+			MainMenu::settingsMount(false);
+			(void)MainMenu::settingsSave();
+			deinitGame();
+			int deinitStatus = deinitApp();
+			return smokeResult == 0 ? deinitStatus : smokeResult;
+		}
+#endif
 
 		// initialize player conducts
 		setDefaultPlayerConducts();

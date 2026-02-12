@@ -21,8 +21,88 @@ Primary conclusions from baseline:
 5. Maintain splitscreen cap behavior at 4 players.
 
 ## Current Stage
-- Stage: `Pass10 complete` (structural overflow tuning + decoration telemetry + survival-guarded long sweeps).
-- Next stage: `Pass11 targeted economy/food/decor composition tuning` with runs=5 volatility sweep and full-lobby confirmation.
+- Stage: `Pass14 value-lane tuning` (gold-value compression with count/slot structure unchanged).
+- Next stage: `Pass15 depth-normalized value smoothing + full-lobby confirmation`.
+
+## Latest Iteration Notes (February 12, 2026)
+- Fixed single-runtime sweep harness timeout behavior for long `runs=5` lanes:
+  - `/Users/sayhiben/dev/Barony-8p/tests/smoke/run_mapgen_sweep_mac.sh` now auto-bumps timeout in single-runtime player-sweep mode based on sample count.
+  - `/Users/sayhiben/dev/Barony-8p/tests/smoke/run_lan_helo_chunk_smoke_mac.sh` now emits `MAPGEN_WAIT_REASON=timeout-before-mapgen-samples` when a run exits on timeout before required mapgen samples.
+- Pass11d volatility matrix now completes successfully after timeout fix:
+  - Artifact: `/Users/sayhiben/dev/Barony-8p/tests/smoke/artifacts/mapgen-level-matrix-pass11d-runs5-timeoutfix-20260211-213415`
+  - Coverage: levels `1,7,16,33`, players `1..15`, `runs=5`, all 300 rows passing.
+  - `p15 vs p4` totals: rooms `1.545x`, monsters `1.382x`, gold `2.171x`, items `2.473x`, food `2.873x`, decorations `2.286x`.
+  - `p15 vs p4` per-player: gold `0.579x`, items `0.659x`, food `0.766x`.
+  - Blocking-share at `p15`: `23.7%`.
+- Pass12a exploratory retune (overflow rooms/economy) was rejected and reverted:
+  - Artifact: `/Users/sayhiben/dev/Barony-8p/tests/smoke/artifacts/mapgen-level-matrix-pass12a-sanity-runs2-20260211-215341`
+  - Regressions: rooms overshoot (`1.832x`), monsters undershoot (`1.299x`), and food per-player overshoot (`0.902x`).
+- Pass12b/12c/12d follow-up economy passes were evaluated, then rejected for promotion:
+  - Artifacts:
+    - `/Users/sayhiben/dev/Barony-8p/tests/smoke/artifacts/mapgen-level-matrix-pass12b-econfood-runs2-20260211-221343`
+    - `/Users/sayhiben/dev/Barony-8p/tests/smoke/artifacts/mapgen-level-matrix-pass12c-econfood-runs2-20260211-222214`
+    - `/Users/sayhiben/dev/Barony-8p/tests/smoke/artifacts/mapgen-level-matrix-pass12d-econfood-runs2-20260211-223048`
+    - `/Users/sayhiben/dev/Barony-8p/tests/smoke/artifacts/mapgen-level-matrix-pass12c-econfood-runs5-20260211-223919`
+  - Key findings:
+    - Pass12b (`runs=2`) over-scaled monsters (`1.569x`) while still missing gold/player uplift.
+    - Pass12c (`runs=2`) looked directionally good (`gold/player 0.665x`, `items/player 0.717x`) but failed volatility gate at `runs=5`.
+    - Pass12c (`runs=5`) regressed to under-scaled monsters (`1.239x`) and under-scaled food/player (`0.469x`), despite better gold/player (`0.648x`) and items/player (`0.678x`).
+    - Pass12d (`runs=2`) over-scaled rooms (`1.832x`) and under-scaled items/player (`0.626x`) and food/player (`0.618x`).
+- Pass13 narrow slot-capacity/economy pass (`runs=2`) was also rejected:
+  - Artifact: `/Users/sayhiben/dev/Barony-8p/tests/smoke/artifacts/mapgen-level-matrix-pass13-slot-econ-runs2-20260211-230136`
+  - Result shape: `p15 vs p4` totals rooms `1.527x`, monsters `1.576x`, gold `2.381x`, items `2.557x`, food `2.444x`, decorations `2.346x`.
+  - Per-player at `p15`: gold `0.635x`, items `0.682x`, food `0.652x`.
+  - Primary regression: monster density moved from pass11d `0.894x` to `1.033x` (above target band), while gold/items per-player still remained below target.
+- Value-telemetry lane is now implemented end-to-end for mapgen runs:
+  - `src/maps.cpp` now emits `mapgen value summary` with `gold_bags`, `gold_amount`, `item_stacks`, `item_units`.
+  - Smoke parsers/CSVs/reports now carry those fields through:
+    - `/Users/sayhiben/dev/Barony-8p/tests/smoke/run_lan_helo_chunk_smoke_mac.sh`
+    - `/Users/sayhiben/dev/Barony-8p/tests/smoke/run_mapgen_sweep_mac.sh`
+    - `/Users/sayhiben/dev/Barony-8p/tests/smoke/run_mapgen_level_matrix_mac.sh`
+    - `/Users/sayhiben/dev/Barony-8p/tests/smoke/generate_mapgen_heatmap.py`
+    - `/Users/sayhiben/dev/Barony-8p/tests/smoke/generate_smoke_aggregate_report.py`
+  - Validation artifact:
+    - `/Users/sayhiben/dev/Barony-8p/tests/smoke/artifacts/mapgen-value-telemetry-matrix-smoke-20260211-232404`
+- Pass14 value-tuning sequence was run end-to-end:
+  - Baseline value capture (`runs=2`):
+    - `/Users/sayhiben/dev/Barony-8p/tests/smoke/artifacts/mapgen-level-matrix-pass14-baseline-value-runs2-20260211-233124`
+    - `gold_amount/player` at `p15` vs `p4`: `3.462x` (severe overshoot), while count lanes stayed near prior pass11d behavior.
+  - Pass14a (scope value bonus to ambient generated bags only, `runs=2`):
+    - `/Users/sayhiben/dev/Barony-8p/tests/smoke/artifacts/mapgen-level-matrix-pass14a-value-goldscope-runs2-20260211-234139`
+    - `gold_amount/player` reduced to `1.296x`.
+  - Pass14b (aggressive bag-value compression, `runs=2`) and deterministic follow-up pass14c:
+    - `/Users/sayhiben/dev/Barony-8p/tests/smoke/artifacts/mapgen-level-matrix-pass14b-value-goldcompress-runs2-20260211-235029`
+    - `/Users/sayhiben/dev/Barony-8p/tests/smoke/artifacts/mapgen-level-matrix-pass14c-value-goldcompress-deterministic-runs2-20260211-235840`
+    - Pass14c preserved non-value metrics exactly vs baseline and reduced `gold_amount/player` to `0.737x` in the runs=2 lane.
+  - Pass14c volatility gate (`runs=5`):
+    - `/Users/sayhiben/dev/Barony-8p/tests/smoke/artifacts/mapgen-level-matrix-pass14c-value-goldcompress-deterministic-runs5-20260212-000635`
+    - All 300 rows passed.
+    - Aggregate `p15 vs p4`: rooms `1.545x`, monsters `1.382x`, gold `2.171x`, items `2.473x`, food `3.315x`, decorations `2.286x`.
+    - Aggregate per-player: gold `0.579x`, items `0.659x`, food `0.884x`, gold value (`gold_amount/player`) `0.896x`.
+    - Level spread on `gold_amount/player` remained uneven (`L1 0.673x`, `L7 1.247x`, `L16 2.007x`, `L33 0.687x`), indicating remaining depth-mix value volatility.
+- Decision: keep pass14c deterministic gold-value compression in-tree (major value-overflow reduction with no slot-count regressions) and continue with a depth-normalized value follow-up pass before full-lobby promotion.
+- Smoke-only in-process headless integration runner is now implemented for rapid mapgen iteration:
+  - Integration ownership is now hook-local: parser/validator/runner + CSV synthesis live in `src/smoke/SmokeTestHooks.cpp` and `src/smoke/SmokeTestHooks.hpp`.
+  - `src/game.cpp` is intentionally limited to thin CLI wiring (`parseIntegrationOptionArg`, `validateIntegrationOptions`, `runIntegrationMatrix`).
+  - CSV schema matches matrix outputs (`mapgen_level_matrix.csv`) and reuses smoke mapgen player override control-file behavior.
+- Integration matrix run completed on current harness:
+  - Artifact: `/Users/sayhiben/dev/Barony-8p/tests/smoke/artifacts/mapgen-integration-matrix2-20260212-005916`
+  - Coverage: levels `1,7,16,25,33`, players `1..15`, `runs=2`, all 150 rows passing.
+  - Level 25 no longer fails due missing `players` token in generation summary; integration rows now default observed players to requested override for pass/fail gating and mark `mapgen_generation_lines=0` when generation-summary players are absent.
+- Comparability update (shared procedural matrix now aligned):
+  - Fresh parity rerun artifacts:
+    - `/Users/sayhiben/dev/Barony-8p/tests/smoke/artifacts/mapgen-integration-parity-refresh-20260212-023902`
+    - `/Users/sayhiben/dev/Barony-8p/tests/smoke/artifacts/mapgen-method-parity-refresh-20260212-023933`
+  - Scope: levels `1,7,16,33`, players `1..15`, `runs=1`, `base_seed=1000`.
+  - Result: row counts `60` vs `60`, normalized compare (`run_dir` excluded) shows no differences (`normalized_row_mismatch=0`, `missing_keys=0`).
+  - Current interpretation: in-process integration is now comparable for these procedural floors and can be used for rapid balance preflight; re-run parity checks whenever integration harness state/seed handling changes.
+
+## Recommended Next Pass Direction (Pass15)
+1. Keep pass14c room/monster/slot-count structure unchanged (`getOverflowRoomSelectionTrials`, `getOverflowBonusEntityRolls`, `getOverflowForcedMonsterSpawns`, forced decoration cap).
+2. Normalize overflow generated-gold value by depth band to reduce mid-floor (`7/16`) `gold_amount/player` overshoot without reducing low/high floor progression too sharply.
+3. Keep value-first strategy; only add count-based economy steps if post-normalization value lanes still miss progression goals.
+4. Use in-process integration runner as the fast preflight lane on shared procedural floors (`1,7,16,33`), and re-run parity validation whenever harness/mapgen summary plumbing changes.
+5. Re-run `runs=5` gate and then full-lobby (`simulate-mapgen-players=0`) confirmation before promotion.
 
 ## Relevant Code and Tunables
 
@@ -47,6 +127,8 @@ Key mapgen telemetry emitted by mapgen:
 
 ### Smoke hooks and runtime controls
 - `/Users/sayhiben/dev/Barony-8p/src/smoke/SmokeTestHooks.cpp`
+- `/Users/sayhiben/dev/Barony-8p/src/smoke/SmokeTestHooks.hpp`
+- `/Users/sayhiben/dev/Barony-8p/src/game.cpp` (wiring-only callsite for integration CLI)
 
 Important mapgen smoke controls:
 - `BARONY_SMOKE_MAPGEN_CONNECTED_PLAYERS`
@@ -178,7 +260,24 @@ cmake -S /Users/sayhiben/dev/Barony-8p -B /Users/sayhiben/dev/Barony-8p/build-ma
 cmake --build /Users/sayhiben/dev/Barony-8p/build-mac-smoke -j8 --target barony
 ```
 
-### Step 3: Run fast sanity matrix (`runs=2`)
+### Step 3: Run fast in-process integration preflight (`runs=2`)
+```bash
+USER_HOME="$HOME"
+OUT="/Users/sayhiben/dev/Barony-8p/tests/smoke/artifacts/mapgen-integration-preflight-passNN-$(date +%Y%m%d-%H%M%S)"
+mkdir -p "$OUT/home"
+HOME="$OUT/home" /Users/sayhiben/dev/Barony-8p/build-mac-smoke/barony.app/Contents/MacOS/barony \
+  -windowed -size=1280x720 -nosound \
+  -datadir="$USER_HOME/Library/Application Support/Steam/steamapps/common/Barony/Barony.app/Contents/Resources" \
+  -smoke-mapgen-integration \
+  -smoke-mapgen-integration-csv="$OUT/mapgen_level_matrix.csv" \
+  -smoke-mapgen-integration-levels=1,7,16,33 \
+  -smoke-mapgen-integration-min-players=1 \
+  -smoke-mapgen-integration-max-players=15 \
+  -smoke-mapgen-integration-runs=2 \
+  -smoke-mapgen-integration-base-seed=1000
+```
+
+### Step 4: Run fast sanity matrix (`runs=2`)
 ```bash
 OUT="/Users/sayhiben/dev/Barony-8p/tests/smoke/artifacts/mapgen-level-matrix-passNN-sanity-$(date +%Y%m%d-%H%M%S)"
 /Users/sayhiben/dev/Barony-8p/tests/smoke/run_mapgen_level_matrix_mac.sh \
@@ -191,7 +290,7 @@ OUT="/Users/sayhiben/dev/Barony-8p/tests/smoke/artifacts/mapgen-level-matrix-pas
   --outdir "$OUT"
 ```
 
-### Step 4: Run required volatility matrix (`runs=5`)
+### Step 5: Run required volatility matrix (`runs=5`)
 ```bash
 OUT="/Users/sayhiben/dev/Barony-8p/tests/smoke/artifacts/mapgen-level-matrix-passNN-runs5-$(date +%Y%m%d-%H%M%S)"
 /Users/sayhiben/dev/Barony-8p/tests/smoke/run_mapgen_level_matrix_mac.sh \
@@ -204,7 +303,7 @@ OUT="/Users/sayhiben/dev/Barony-8p/tests/smoke/artifacts/mapgen-level-matrix-pas
   --outdir "$OUT"
 ```
 
-### Step 5: Full-lobby confirmation (`simulate-mapgen-players=0`, promotion confidence)
+### Step 6: Full-lobby confirmation (`simulate-mapgen-players=0`, promotion confidence)
 ```bash
 OUT="/Users/sayhiben/dev/Barony-8p/tests/smoke/artifacts/mapgen-full-posttune-passNN-$(date +%Y%m%d-%H%M%S)"
 /Users/sayhiben/dev/Barony-8p/tests/smoke/run_mapgen_sweep_mac.sh \
@@ -216,7 +315,7 @@ OUT="/Users/sayhiben/dev/Barony-8p/tests/smoke/artifacts/mapgen-full-posttune-pa
   --outdir "$OUT"
 ```
 
-### Step 6: Hygiene and stale process cleanup
+### Step 7: Hygiene and stale process cleanup
 ```bash
 find /Users/sayhiben/dev/Barony-8p/tests/smoke/artifacts -type f -name models.cache -delete
 ps -Ao pid,ppid,etime,command | rg "run_mapgen_level_matrix_mac.sh|run_mapgen_sweep_mac.sh|run_lan_helo_chunk_smoke_mac.sh|barony.app/Contents/MacOS/barony"

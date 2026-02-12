@@ -8,6 +8,10 @@ from typing import Dict, Iterable, List, Optional, Tuple
 
 MAPGEN_BASE_METRICS = ["rooms", "monsters", "gold", "items", "food_servings", "decorations"]
 MAPGEN_OPTIONAL_METRICS = [
+    "gold_bags",
+    "gold_amount",
+    "item_stacks",
+    "item_units",
     "decorations_blocking",
     "decorations_utility",
     "decorations_traps",
@@ -143,17 +147,17 @@ def summarize_mapgen(csv_paths: List[Path]) -> str:
         p = parse_int(row.get("players"))
         if p is None:
             continue
-        metrics: Dict[str, float] = {}
+        metric_values: Dict[str, float] = {}
         valid = True
         for metric in metrics:
             v = parse_float(row.get(metric))
             if v is None:
                 valid = False
                 break
-            metrics[metric] = v
+            metric_values[metric] = v
         if not valid:
             continue
-        by_player.setdefault(p, []).append(metrics)
+        by_player.setdefault(p, []).append(metric_values)
 
     avg_by_player: Dict[int, Dict[str, float]] = {}
     for player, entries in by_player.items():

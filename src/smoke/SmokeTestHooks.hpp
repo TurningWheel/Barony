@@ -2,6 +2,7 @@
 
 #include "../main.hpp"
 
+#include <string>
 #include <vector>
 
 namespace SmokeTestHooks
@@ -121,6 +122,57 @@ namespace SaveReload
 
 namespace Mapgen
 {
-	int connectedPlayersOverride();
+	struct Summary
+	{
+		bool valid = false;
+		int level = 0;
+		int secret = 0;
+		Uint32 seed = 0;
+		int players = 0;
+		int rooms = 0;
+		int monsters = 0;
+		int gold = 0;
+		int items = 0;
+		int decorations = 0;
+		int decorationsBlocking = 0;
+		int decorationsUtility = 0;
+		int decorationsTraps = 0;
+		int decorationsEconomy = 0;
+		int foodItems = 0;
+		int foodServings = 0;
+		int goldBags = 0;
+		int goldAmount = 0;
+		int itemStacks = 0;
+		int itemUnits = 0;
+	};
+
+		int connectedPlayersOverride();
+		void resetSummary();
+		void recordGenerationSummary(int level, int secret, Uint32 seed, int players,
+			int rooms, int monsters, int gold, int items, int decorations);
+		void recordDecorationSummary(int level, int secret, Uint32 seed,
+			int blocking, int utility, int traps, int economy);
+	void recordFoodAndValueSummary(int level, int secret, Uint32 seed,
+		int foodItems, int foodServings,
+		int goldBags, int goldAmount, int itemStacks, int itemUnits);
+	const Summary& lastSummary();
+
+#ifdef BARONY_SMOKE_TESTS
+	struct IntegrationOptions
+	{
+		bool enabled = false;
+		bool append = false;
+		std::string outputCsvPath;
+		std::string levelsCsv = "1,7,16,25,33";
+		int minPlayers = 1;
+		int maxPlayers = MAXPLAYERS;
+		int runsPerPlayer = 2;
+		Uint32 baseSeed = 1000;
+	};
+
+	bool parseIntegrationOptionArg(const char* arg, IntegrationOptions& options, std::string& errorMessage);
+	bool validateIntegrationOptions(const IntegrationOptions& options, std::string& errorMessage);
+	int runIntegrationMatrix(const IntegrationOptions& options);
+#endif
 }
 }

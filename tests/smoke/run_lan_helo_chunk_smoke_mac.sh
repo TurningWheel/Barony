@@ -705,11 +705,13 @@ extract_mapgen_metrics() {
 	local line
 	local food_line
 	local decoration_line
+	local value_line
 	line="$(rg -F "successfully generated a dungeon with" "$host_log" | tail -n 1 || true)"
 	food_line="$(rg -F "mapgen food summary:" "$host_log" | tail -n 1 || true)"
 	decoration_line="$(rg -F "mapgen decoration summary:" "$host_log" | tail -n 1 || true)"
+	value_line="$(rg -F "mapgen value summary:" "$host_log" | tail -n 1 || true)"
 	if [[ -z "$line" ]]; then
-		echo "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0"
+		echo "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0"
 		return
 	fi
 	if [[ "$line" =~ with[[:space:]]+([0-9]+)[[:space:]]+rooms,[[:space:]]+([0-9]+)[[:space:]]+monsters,[[:space:]]+([0-9]+)[[:space:]]+gold,[[:space:]]+([0-9]+)[[:space:]]+items,[[:space:]]+([0-9]+)[[:space:]]+decorations ]]; then
@@ -724,6 +726,10 @@ extract_mapgen_metrics() {
 		local decor_economy=0
 		local food_items=0
 		local food_servings=0
+		local gold_bags=0
+		local gold_amount=0
+		local item_stacks=0
+		local item_units=0
 		local mapgen_level=0
 		local mapgen_secret=0
 		local mapgen_seed=0
@@ -738,6 +744,18 @@ extract_mapgen_metrics() {
 		fi
 		if [[ "$food_line" =~ food_servings=([0-9]+) ]]; then
 			food_servings="${BASH_REMATCH[1]}"
+		fi
+		if [[ "$value_line" =~ gold_bags=([0-9]+) ]]; then
+			gold_bags="${BASH_REMATCH[1]}"
+		fi
+		if [[ "$value_line" =~ gold_amount=([0-9]+) ]]; then
+			gold_amount="${BASH_REMATCH[1]}"
+		fi
+		if [[ "$value_line" =~ item_stacks=([0-9]+) ]]; then
+			item_stacks="${BASH_REMATCH[1]}"
+		fi
+		if [[ "$value_line" =~ item_units=([0-9]+) ]]; then
+			item_units="${BASH_REMATCH[1]}"
 		fi
 		if [[ "$decoration_line" =~ blocking=([0-9]+) ]]; then
 			decor_blocking="${BASH_REMATCH[1]}"
@@ -754,9 +772,9 @@ extract_mapgen_metrics() {
 		if [[ "$line" =~ seed=([0-9]+) ]]; then
 			mapgen_seed="${BASH_REMATCH[1]}"
 		fi
-		echo "1 ${rooms} ${monsters} ${gold} ${items} ${decorations} ${decor_blocking} ${decor_utility} ${decor_traps} ${decor_economy} ${food_items} ${food_servings} ${mapgen_level} ${mapgen_secret} ${mapgen_seed}"
+		echo "1 ${rooms} ${monsters} ${gold} ${items} ${decorations} ${decor_blocking} ${decor_utility} ${decor_traps} ${decor_economy} ${food_items} ${food_servings} ${gold_bags} ${gold_amount} ${item_stacks} ${item_units} ${mapgen_level} ${mapgen_secret} ${mapgen_seed}"
 	else
-		echo "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0"
+		echo "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0"
 	fi
 }
 
@@ -1880,10 +1898,13 @@ done
 fi
 
 game_start_found=$(detect_game_start "$HOST_LOG")
-read -r mapgen_found rooms monsters gold items decorations decor_blocking decor_utility decor_traps decor_economy food_items food_servings mapgen_level mapgen_secret mapgen_seed < <(extract_mapgen_metrics "$HOST_LOG")
+read -r mapgen_found rooms monsters gold items decorations decor_blocking decor_utility decor_traps decor_economy food_items food_servings gold_bags gold_amount item_stacks item_units mapgen_level mapgen_secret mapgen_seed < <(extract_mapgen_metrics "$HOST_LOG")
 mapgen_count=0
 if [[ -f "$HOST_LOG" ]]; then
 	mapgen_count=$(count_fixed_lines "$HOST_LOG" "successfully generated a dungeon with")
+fi
+if [[ "$mapgen_wait_reason" == "none" ]] && (( REQUIRE_MAPGEN )) && (( mapgen_count < MAPGEN_SAMPLES )) && (( SECONDS >= deadline )); then
+	mapgen_wait_reason="timeout-before-mapgen-samples"
 fi
 reload_transition_lines=$(count_fixed_lines "$HOST_LOG" "[SMOKE]: auto-reloading dungeon level transition")
 reload_transition_seeds="$(collect_reload_transition_seeds "$HOST_LOG")"
@@ -2141,6 +2162,10 @@ SUMMARY_FILE="$OUTDIR/summary.env"
 	echo "MAPGEN_DECOR_ECONOMY=$decor_economy"
 	echo "MAPGEN_FOOD_ITEMS=$food_items"
 	echo "MAPGEN_FOOD_SERVINGS=$food_servings"
+	echo "MAPGEN_GOLD_BAGS=$gold_bags"
+	echo "MAPGEN_GOLD_AMOUNT=$gold_amount"
+	echo "MAPGEN_ITEM_STACKS=$item_stacks"
+	echo "MAPGEN_ITEM_UNITS=$item_units"
 	echo "MAPGEN_LEVEL=$mapgen_level"
 	echo "MAPGEN_SECRET=$mapgen_secret"
 	echo "MAPGEN_SEED=$mapgen_seed"

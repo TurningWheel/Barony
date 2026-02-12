@@ -77,6 +77,7 @@ When running in Codex with sandboxing, ask for sandbox breakout/escalation permi
 ## Multiplayer Expansion (PR 940) Working Notes
 - Expansion target is `MAXPLAYERS=15` (not 16). Preserve nibble-packed ownership assumptions unless a deliberate encoding refactor is planned.
 - Keep smoke instrumentation isolated to `/Users/sayhiben/dev/Barony-8p/src/smoke/SmokeTestHooks.cpp` and `/Users/sayhiben/dev/Barony-8p/src/smoke/SmokeTestHooks.hpp` with minimal call sites in gameplay/UI/network files.
+- Keep headless mapgen integration plumbing (`-smoke-mapgen-integration*` parsing/validation/runner) in `SmokeTestHooks`; `src/game.cpp` should stay wiring-only for those options.
 - Avoid adding ad-hoc smoke utility logic directly in core gameplay files; prefer hook APIs in `SmokeTestHooks` and keep base-game paths clean.
 - Preferred local validation path is local build binary + Steam assets datadir (`--app .../build-mac/.../barony --datadir .../Barony.app/Contents/Resources`) instead of replacing the Steam executable.
 - After long or high-instance smoke runs, clean generated cache bloat (especially `models.cache` under smoke artifact homes) while preserving logs/artifacts needed for debugging.
@@ -88,3 +89,4 @@ When running in Codex with sandboxing, ask for sandbox breakout/escalation permi
 - Local splitscreen is a legacy path and should stay hard-capped at 4 players; retain dedicated smoke coverage for `/splitscreen > 4` clamp behavior and over-cap leakage checks.
 - When parsing smoke status lines with similarly named keys (for example `connected` vs `over_cap_connected`), parse exact `key=value` tokens to avoid false negatives and lane hangs.
 - During style/contribution cleanup, treat `#ifdef BARONY_SMOKE_TESTS` guards around smoke-hook callsites as an acceptable and idiomatic exception.
+- Preferred balancing loop for mapgen tuning: hook-owned in-process integration preflight (`levels=1,7,16,33`, fixed seed) -> single-runtime matrix confirmation -> runs=5 volatility gate -> full-lobby confirmation.

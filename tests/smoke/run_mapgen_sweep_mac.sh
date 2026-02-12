@@ -264,7 +264,7 @@ mkdir -p "$RUNS_DIR"
 
 CSV_PATH="$OUTDIR/mapgen_results.csv"
 cat > "$CSV_PATH" <<'CSV'
-players,launched_instances,mapgen_players_override,mapgen_players_observed,run,seed,status,start_floor,host_chunk_lines,client_reassembled_lines,mapgen_found,mapgen_level,mapgen_secret,mapgen_seed_observed,rooms,monsters,gold,items,decorations,decorations_blocking,decorations_utility,decorations_traps,decorations_economy,food_items,food_servings,run_dir,mapgen_wait_reason,mapgen_reload_transition_lines,mapgen_generation_lines,mapgen_generation_unique_seed_count,mapgen_reload_regen_ok
+players,launched_instances,mapgen_players_override,mapgen_players_observed,run,seed,status,start_floor,host_chunk_lines,client_reassembled_lines,mapgen_found,mapgen_level,mapgen_secret,mapgen_seed_observed,rooms,monsters,gold,items,decorations,decorations_blocking,decorations_utility,decorations_traps,decorations_economy,food_items,food_servings,gold_bags,gold_amount,item_stacks,item_units,run_dir,mapgen_wait_reason,mapgen_reload_transition_lines,mapgen_generation_lines,mapgen_generation_unique_seed_count,mapgen_reload_regen_ok
 CSV
 
 failures=0
@@ -298,21 +298,26 @@ parse_mapgen_metrics_lines() {
 	local mapgen_lines_file
 	local food_lines_file
 	local decoration_lines_file
+	local value_lines_file
 	mapgen_lines_file="$(mktemp)"
 	food_lines_file="$(mktemp)"
 	decoration_lines_file="$(mktemp)"
-	rg -F "successfully generated a dungeon with" "$host_log" > "$mapgen_lines_file" || true
-	rg -F "mapgen food summary:" "$host_log" > "$food_lines_file" || true
-	rg -F "mapgen decoration summary:" "$host_log" > "$decoration_lines_file" || true
+	value_lines_file="$(mktemp)"
+	rg -F "successfully generated a dungeon with" "$host_log" | rg 'level=[1-9][0-9]*' > "$mapgen_lines_file" || true
+	rg -F "mapgen food summary:" "$host_log" | rg 'level=[1-9][0-9]*' > "$food_lines_file" || true
+	rg -F "mapgen decoration summary:" "$host_log" | rg 'level=[1-9][0-9]*' > "$decoration_lines_file" || true
+	rg -F "mapgen value summary:" "$host_log" | rg 'level=[1-9][0-9]*' > "$value_lines_file" || true
 	local line=""
 	local food_line=""
 	local decoration_line=""
+	local value_line=""
 	while IFS= read -r line; do
 		if (( count >= limit )); then
 			break
 		fi
 		food_line="$(sed -n "$((count + 1))p" "$food_lines_file" || true)"
 		decoration_line="$(sed -n "$((count + 1))p" "$decoration_lines_file" || true)"
+		value_line="$(sed -n "$((count + 1))p" "$value_lines_file" || true)"
 		if [[ "$line" =~ with[[:space:]]+([0-9]+)[[:space:]]+rooms,[[:space:]]+([0-9]+)[[:space:]]+monsters,[[:space:]]+([0-9]+)[[:space:]]+gold,[[:space:]]+([0-9]+)[[:space:]]+items,[[:space:]]+([0-9]+)[[:space:]]+decorations ]]; then
 			local rooms="${BASH_REMATCH[1]}"
 			local monsters="${BASH_REMATCH[2]}"
@@ -325,6 +330,10 @@ parse_mapgen_metrics_lines() {
 			local decorations_economy=""
 			local food_items=""
 			local food_servings=""
+			local gold_bags=""
+			local gold_amount=""
+			local item_stacks=""
+			local item_units=""
 			local mapgen_level=""
 			local mapgen_secret=""
 			local mapgen_seed_observed=""
@@ -347,6 +356,18 @@ parse_mapgen_metrics_lines() {
 			if [[ "$food_line" =~ food_servings=([0-9]+) ]]; then
 				food_servings="${BASH_REMATCH[1]}"
 			fi
+			if [[ "$value_line" =~ gold_bags=([0-9]+) ]]; then
+				gold_bags="${BASH_REMATCH[1]}"
+			fi
+			if [[ "$value_line" =~ gold_amount=([0-9]+) ]]; then
+				gold_amount="${BASH_REMATCH[1]}"
+			fi
+			if [[ "$value_line" =~ item_stacks=([0-9]+) ]]; then
+				item_stacks="${BASH_REMATCH[1]}"
+			fi
+			if [[ "$value_line" =~ item_units=([0-9]+) ]]; then
+				item_units="${BASH_REMATCH[1]}"
+			fi
 			if [[ "$decoration_line" =~ blocking=([0-9]+) ]]; then
 				decorations_blocking="${BASH_REMATCH[1]}"
 			fi
@@ -359,14 +380,15 @@ parse_mapgen_metrics_lines() {
 			if [[ "$decoration_line" =~ economy=([0-9]+) ]]; then
 				decorations_economy="${BASH_REMATCH[1]}"
 			fi
-			printf '%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' \
+			printf '%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' \
 				"${rooms}" "${monsters}" "${gold}" "${items}" "${decorations}" \
 				"${decorations_blocking}" "${decorations_utility}" "${decorations_traps}" "${decorations_economy}" \
-				"${food_items}" "${food_servings}" "${mapgen_level}" "${mapgen_secret}" "${mapgen_seed_observed}" "${mapgen_players_observed}" >> "$out_file"
+				"${food_items}" "${food_servings}" "${gold_bags}" "${gold_amount}" "${item_stacks}" "${item_units}" \
+				"${mapgen_level}" "${mapgen_secret}" "${mapgen_seed_observed}" "${mapgen_players_observed}" >> "$out_file"
 			count=$((count + 1))
 		fi
 	done < "$mapgen_lines_file"
-	rm -f "$mapgen_lines_file" "$food_lines_file" "$decoration_lines_file"
+	rm -f "$mapgen_lines_file" "$food_lines_file" "$decoration_lines_file" "$value_lines_file"
 	echo "$count"
 }
 
@@ -405,15 +427,25 @@ if (( use_single_runtime_sweep )); then
 	if (( reload_seed_base == 0 )); then
 		reload_seed_base=$((seed_base * 100))
 	fi
+	single_runtime_timeout_seconds="$TIMEOUT_SECONDS"
+	per_sample_timeout_budget=$((AUTO_ENTER_DUNGEON_DELAY_SECS + 9))
+	if (( per_sample_timeout_budget < 10 )); then
+		per_sample_timeout_budget=10
+	fi
+	min_single_runtime_timeout=$((120 + total_samples * per_sample_timeout_budget))
+	if (( single_runtime_timeout_seconds < min_single_runtime_timeout )); then
+		log "Single-runtime sweep timeout auto-bump: requested=${single_runtime_timeout_seconds}s recommended=${min_single_runtime_timeout}s"
+		single_runtime_timeout_seconds="$min_single_runtime_timeout"
+	fi
 
-	log "Single-runtime sweep: players=${MIN_PLAYERS}..${MAX_PLAYERS} samples=${total_samples} repeats=${batch_transition_repeats} seed=${seed_base}"
+	log "Single-runtime sweep: players=${MIN_PLAYERS}..${MAX_PLAYERS} samples=${total_samples} repeats=${batch_transition_repeats} seed=${seed_base} timeout=${single_runtime_timeout_seconds}s"
 	"$RUNNER" \
 		--app "$APP" \
 		"${datadir_args[@]}" \
 		--instances "$launched_instances" \
 		--size "$WINDOW_SIZE" \
 		--stagger "$STAGGER_SECONDS" \
-		--timeout "$TIMEOUT_SECONDS" \
+		--timeout "$single_runtime_timeout_seconds" \
 		--expected-players "$expected_players" \
 		--auto-start 1 \
 		--auto-start-delay "$AUTO_START_DELAY_SECS" \
@@ -503,13 +535,17 @@ if (( use_single_runtime_sweep )); then
 					decorations_economy=""
 					food_items=""
 					food_servings=""
+					gold_bags=""
+					gold_amount=""
+					item_stacks=""
+					item_units=""
 					mapgen_level=""
 					mapgen_secret=""
 					mapgen_players_observed=""
 					row_status="$status"
 					if (( sample_index <= batch_count )); then
 						line="$(sed -n "${sample_index}p" "$metrics_file" || true)"
-						IFS=',' read -r rooms monsters gold items decorations decorations_blocking decorations_utility decorations_traps decorations_economy food_items food_servings mapgen_level mapgen_secret mapgen_seed_observed mapgen_players_observed <<< "$line"
+						IFS=',' read -r rooms monsters gold items decorations decorations_blocking decorations_utility decorations_traps decorations_economy food_items food_servings gold_bags gold_amount item_stacks item_units mapgen_level mapgen_secret mapgen_seed_observed mapgen_players_observed <<< "$line"
 					else
 						row_status="fail"
 					fi
@@ -525,14 +561,14 @@ if (( use_single_runtime_sweep )); then
 				if [[ "$row_status" != "pass" ]]; then
 					row_failures=1
 				fi
-				printf '%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' \
+				printf '%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' \
 					"$players" "$launched_instances" "$players" "${mapgen_players_observed:-}" \
 					"$run" "$seed" "$row_status" "$START_FLOOR" \
 					"${host_chunk_lines:-}" "${client_reassembled_lines:-}" "${mapgen_found:-}" \
 					"${mapgen_level:-}" "${mapgen_secret:-}" "${mapgen_seed_observed:-}" \
 					"${rooms:-}" "${monsters:-}" "${gold:-}" "${items:-}" "${decorations:-}" \
 					"${decorations_blocking:-}" "${decorations_utility:-}" "${decorations_traps:-}" "${decorations_economy:-}" \
-					"${food_items:-}" "${food_servings:-}" \
+					"${food_items:-}" "${food_servings:-}" "${gold_bags:-}" "${gold_amount:-}" "${item_stacks:-}" "${item_units:-}" \
 					"$run_dir" "${mapgen_wait_reason:-}" "${mapgen_reload_transition_lines:-}" "${mapgen_generation_lines:-}" \
 					"${mapgen_generation_unique_seed_count:-}" "${mapgen_reload_regen_ok:-}" >> "$CSV_PATH"
 			done
@@ -648,11 +684,15 @@ else
 						decorations_economy=""
 						food_items=""
 						food_servings=""
+						gold_bags=""
+						gold_amount=""
+						item_stacks=""
+						item_units=""
 						mapgen_players_observed=""
 						row_status="$status"
 						if (( run <= batch_count )); then
 							line="$(sed -n "${run}p" "$metrics_file" || true)"
-							IFS=',' read -r rooms monsters gold items decorations decorations_blocking decorations_utility decorations_traps decorations_economy food_items food_servings mapgen_level mapgen_secret mapgen_seed_observed mapgen_players_observed <<< "$line"
+							IFS=',' read -r rooms monsters gold items decorations decorations_blocking decorations_utility decorations_traps decorations_economy food_items food_servings gold_bags gold_amount item_stacks item_units mapgen_level mapgen_secret mapgen_seed_observed mapgen_players_observed <<< "$line"
 						else
 							row_status="fail"
 						fi
@@ -662,14 +702,14 @@ else
 					if [[ -z "$mapgen_seed_observed" ]]; then
 						mapgen_seed_observed="$seed"
 					fi
-					printf '%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' \
+					printf '%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' \
 						"$players" "$launched_instances" "${mapgen_players_override:-}" "${mapgen_players_observed:-}" \
 						"$run" "$seed" "$row_status" "$START_FLOOR" \
 						"${host_chunk_lines:-}" "${client_reassembled_lines:-}" "${mapgen_found:-}" \
 						"${mapgen_level:-}" "${mapgen_secret:-}" "${mapgen_seed_observed:-}" \
 						"${rooms:-}" "${monsters:-}" "${gold:-}" "${items:-}" "${decorations:-}" \
 						"${decorations_blocking:-}" "${decorations_utility:-}" "${decorations_traps:-}" "${decorations_economy:-}" \
-						"${food_items:-}" "${food_servings:-}" \
+						"${food_items:-}" "${food_servings:-}" "${gold_bags:-}" "${gold_amount:-}" "${item_stacks:-}" "${item_units:-}" \
 						"$run_dir" "${mapgen_wait_reason:-}" "${mapgen_reload_transition_lines:-}" "${mapgen_generation_lines:-}" \
 						"${mapgen_generation_unique_seed_count:-}" "${mapgen_reload_regen_ok:-}" >> "$CSV_PATH"
 				done
@@ -747,6 +787,10 @@ else
 					decorations_economy=""
 					food_items=""
 					food_servings=""
+					gold_bags=""
+					gold_amount=""
+					item_stacks=""
+					item_units=""
 					mapgen_wait_reason=""
 				mapgen_reload_transition_lines=""
 				mapgen_generation_lines=""
@@ -768,6 +812,10 @@ else
 						decorations_economy="$(read_summary_key MAPGEN_DECOR_ECONOMY "$summary")"
 						food_items="$(read_summary_key MAPGEN_FOOD_ITEMS "$summary")"
 						food_servings="$(read_summary_key MAPGEN_FOOD_SERVINGS "$summary")"
+						gold_bags="$(read_summary_key MAPGEN_GOLD_BAGS "$summary")"
+						gold_amount="$(read_summary_key MAPGEN_GOLD_AMOUNT "$summary")"
+						item_stacks="$(read_summary_key MAPGEN_ITEM_STACKS "$summary")"
+						item_units="$(read_summary_key MAPGEN_ITEM_UNITS "$summary")"
 					mapgen_level="$(read_summary_key MAPGEN_LEVEL "$summary")"
 					mapgen_secret="$(read_summary_key MAPGEN_SECRET "$summary")"
 					mapgen_seed_observed="$(read_summary_key MAPGEN_SEED "$summary")"
@@ -781,14 +829,14 @@ else
 				if [[ -z "$mapgen_seed_observed" ]]; then
 					mapgen_seed_observed="$seed"
 				fi
-				printf '%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' \
+				printf '%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' \
 					"$players" "$launched_instances" "${mapgen_players_override:-}" "${mapgen_players_observed:-}" \
 					"$run" "$seed" "$status" "$START_FLOOR" \
 					"${host_chunk_lines:-}" "${client_reassembled_lines:-}" "${mapgen_found:-}" \
 					"${mapgen_level:-}" "${mapgen_secret:-}" "${mapgen_seed_observed:-}" \
 					"${rooms:-}" "${monsters:-}" "${gold:-}" "${items:-}" "${decorations:-}" \
 					"${decorations_blocking:-}" "${decorations_utility:-}" "${decorations_traps:-}" "${decorations_economy:-}" \
-					"${food_items:-}" "${food_servings:-}" \
+					"${food_items:-}" "${food_servings:-}" "${gold_bags:-}" "${gold_amount:-}" "${item_stacks:-}" "${item_units:-}" \
 					"$run_dir" "${mapgen_wait_reason:-}" "${mapgen_reload_transition_lines:-}" "${mapgen_generation_lines:-}" \
 					"${mapgen_generation_unique_seed_count:-}" "${mapgen_reload_regen_ok:-}" >> "$CSV_PATH"
 		done
