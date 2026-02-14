@@ -31048,15 +31048,15 @@ failed:
 				}
 				if ( modsPath != "" )
 				{
-					result = NFD_PickFolder(modsPath.c_str(), &outPath);
+					result = NFD_PickFolder(&outPath, modsPath.c_str());
 				}
 				else
 				{
-					result = NFD_PickFolder(outputdir, &outPath); // hopefully this is absolute path?
+					result = NFD_PickFolder(&outPath, outputdir); // hopefully this is absolute path?
 				}
 				if ( result == NFD_ERROR )
 				{
-					result = NFD_PickFolder(PHYSFS_getBaseDir(), &outPath); // fallback path
+					result = NFD_PickFolder(&outPath, PHYSFS_getBaseDir()); // fallback path
 				}
 
 				if ( result == NFD_OKAY )
