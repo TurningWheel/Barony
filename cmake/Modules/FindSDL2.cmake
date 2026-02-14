@@ -102,7 +102,7 @@ IF(NOT SDL2_BUILDING_LIBRARY)
 			NAMES SDL2main
 			HINTS
 			$ENV{SDL2DIR}
-			PATH_SUFFIXES lib64 lib
+			PATH_SUFFIXES lib64 lib lib/manual-link
 			PATHS ${SDL2_SEARCH_PATHS}
 		)
 	ENDIF(NOT ${SDL2_INCLUDE_DIR} MATCHES ".framework")
@@ -124,10 +124,12 @@ IF(MINGW)
 ENDIF(MINGW)
 
 IF(SDL2_LIBRARY_TEMP)
+	SET(_SDL2_LINK_LIBS ${SDL2_LIBRARY_TEMP})
+
 	# For SDL2main
 	IF(NOT SDL2_BUILDING_LIBRARY)
 		IF(SDL2MAIN_LIBRARY)
-			SET(SDL2_LIBRARY_TEMP ${SDL2MAIN_LIBRARY} ${SDL2_LIBRARY_TEMP})
+			SET(_SDL2_LINK_LIBS ${SDL2MAIN_LIBRARY} ${_SDL2_LINK_LIBS})
 		ENDIF(SDL2MAIN_LIBRARY)
 	ENDIF(NOT SDL2_BUILDING_LIBRARY)
 
@@ -138,25 +140,28 @@ IF(SDL2_LIBRARY_TEMP)
 	# So I use a temporary variable until the end so I can set the
 	# "real" variable in one-shot.
 	IF(APPLE)
-		SET(SDL2_LIBRARY_TEMP ${SDL2_LIBRARY_TEMP} "-framework Cocoa")
+		SET(_SDL2_LINK_LIBS ${_SDL2_LINK_LIBS} "-framework Cocoa")
 	ENDIF(APPLE)
 
 	# For threads, as mentioned Apple doesn't need this.
 	# In fact, there seems to be a problem if I used the Threads package
 	# and try using this line, so I'm just skipping it entirely for OS X.
 	IF(NOT APPLE)
-		SET(SDL2_LIBRARY_TEMP ${SDL2_LIBRARY_TEMP} ${CMAKE_THREAD_LIBS_INIT})
+		SET(_SDL2_LINK_LIBS ${_SDL2_LINK_LIBS} ${CMAKE_THREAD_LIBS_INIT})
 	ENDIF(NOT APPLE)
 
 	# For MinGW library
 	IF(MINGW)
-		SET(SDL2_LIBRARY_TEMP ${MINGW32_LIBRARY} ${SDL2_LIBRARY_TEMP})
+		SET(_SDL2_LINK_LIBS ${MINGW32_LIBRARY} ${_SDL2_LINK_LIBS})
 	ENDIF(MINGW)
 
+	LIST(REMOVE_DUPLICATES _SDL2_LINK_LIBS)
+
 	# Set the final string here so the GUI reflects the final state.
-	SET(SDL2_LIBRARY ${SDL2_LIBRARY_TEMP} CACHE STRING "Where the SDL2 Library can be found")
+	SET(SDL2_LIBRARY ${_SDL2_LINK_LIBS} CACHE STRING "Where the SDL2 Library can be found" FORCE)
 	# Set the temp variable to INTERNAL so it is not seen in the CMake GUI
-	SET(SDL2_LIBRARY_TEMP "${SDL2_LIBRARY_TEMP}" CACHE INTERNAL "")
+	SET(SDL2_LIBRARY_TEMP "${_SDL2_LINK_LIBS}" CACHE INTERNAL "" FORCE)
+	UNSET(_SDL2_LINK_LIBS)
 ENDIF(SDL2_LIBRARY_TEMP)
 
 INCLUDE(FindPackageHandleStandardArgs)

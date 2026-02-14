@@ -901,7 +901,8 @@ void loadAchievementData(const char* path) {
 		printlog("[JSON]: Error: could not parse %s", path);
 		return;
 	}
-	const auto& achievements = d["achievements"].GetObject();
+	// Avoid WinAPI GetObject macro expansion on Windows.
+	const auto& achievements = (d["achievements"].GetObject)();
 
 	for (const auto& it : achievements) {
 		if (!it.name.IsString()) {
@@ -943,7 +944,7 @@ void loadAchievementData(const char* path) {
 			continue;
 		}
 #endif
-		const auto& ach = it.value.GetObject();
+		const auto& ach = (it.value.GetObject)();
 		auto& achData = Compendium_t::achievements[achName];
 		if (ach.HasMember("name") && ach["name"].IsString()) {
 			achData.name = ach["name"].GetString();

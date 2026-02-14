@@ -16,6 +16,10 @@
 #include <stdio.h>
 #ifdef USE_FMOD
 #include <fmod.hpp>
+// FMOD 2.02+ uses F_CALL; older game code still references F_CALLBACK.
+#ifndef F_CALLBACK
+#define F_CALLBACK F_CALL
+#endif
 #endif
 #ifdef USE_OPENAL
 #ifdef APPLE
