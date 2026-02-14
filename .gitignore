@@ -78,6 +78,7 @@ steam_appid.txt
 xcode/Barony/Barony.xcodeproj/project.xcworkspace/*
 xcode/Barony/Barony.xcodeproj/xcuserdata/*
 *.ps1
+!setup_barony_vs2022_x64.ps1
 !LICENSE.nativefiledialog.txt
 /VS.2015/Barony/x64/Debug
 *.sarif
@@ -86,3 +87,4 @@ xcode/Barony/Barony.xcodeproj/xcuserdata/*
 *.ilk
 /VS.2015/x64
 *.sqlite-journal
+/deps/*
