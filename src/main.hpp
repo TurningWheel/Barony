@@ -121,12 +121,15 @@ extern bool autoLimbReload;
 #endif
 #define PATH_MAX 1024
 #include <windows.h>
-#pragma warning ( push )
-#pragma warning( disable : 4091 ) // disable typedef warnings from dbghelp.h
-#include <Dbghelp.h>
-#pragma warning( pop )
-#undef min
-#undef max
+	#pragma warning ( push )
+	#pragma warning( disable : 4091 ) // disable typedef warnings from dbghelp.h
+	#include <Dbghelp.h>
+	#pragma warning( pop )
+	#undef min
+	#undef max
+	#ifdef GetObject
+		#undef GetObject
+	#endif
 #endif
 
 #ifdef APPLE
