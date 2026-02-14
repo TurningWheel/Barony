@@ -12,14 +12,20 @@
 The expansion needs repeatable smoke instrumentation without polluting base gameplay/runtime paths. Compile-time gating is required so smoke hooks are available for validation builds but absent in normal builds.
 
 ## What and Why
-Introduce the smoke hook architecture (`SmokeTestHooks`) and strict `BARONY_SMOKE_TESTS` compile gating, while keeping gameplay behavior unchanged.
+Introduce the smoke hook architecture (`SmokeHooks*.cpp` implementations with `SmokeTestHooks.hpp` API) and strict `BARONY_SMOKE_TESTS` compile gating, while keeping gameplay behavior unchanged.
 
 ## Scope
 ### In Scope
 - `CMakeLists.txt` (`BARONY_SMOKE_TESTS`)
 - `src/CMakeLists.txt`
 - `src/Config.hpp.in`
-- `src/smoke/SmokeTestHooks.cpp`
+- `src/smoke/SmokeHooksMainMenu.cpp`
+- `src/smoke/SmokeHooksGameplay.cpp`
+- `src/smoke/SmokeHooksGameUI.cpp`
+- `src/smoke/SmokeHooksNet.cpp`
+- `src/smoke/SmokeHooksCombat.cpp`
+- `src/smoke/SmokeHooksSaveReload.cpp`
+- `src/smoke/SmokeHooksMapgen.cpp`
 - `src/smoke/SmokeTestHooks.hpp`
 - Minimal guarded call sites in:
   - `src/game.cpp`
@@ -36,7 +42,7 @@ Introduce the smoke hook architecture (`SmokeTestHooks`) and strict `BARONY_SMOK
 
 ## Implementation Instructions
 1. Add `BARONY_SMOKE_TESTS` option in CMake/config headers, default OFF.
-2. Add smoke hook implementation in `src/smoke/SmokeTestHooks.*`.
+2. Add smoke hook implementation in `src/smoke/SmokeHooks*.cpp` (API in `src/smoke/SmokeTestHooks.hpp`).
 3. Add minimal call sites guarded by `#ifdef BARONY_SMOKE_TESTS`; keep intrusion thin.
 4. Route behavior through no-op wrappers when smoke is OFF so base paths stay clean.
 5. Keep mapgen/gameplay call-site edits instrumentation-only.
@@ -44,7 +50,7 @@ Introduce the smoke hook architecture (`SmokeTestHooks`) and strict `BARONY_SMOK
 
 ## Suggested Commit Structure
 1. Build/config gating for smoke mode.
-2. Add `SmokeTestHooks` code.
+2. Add `SmokeHooks*.cpp` code behind `SmokeTestHooks.hpp`.
 3. Minimal guarded call-site wiring.
 
 ## Validation Plan

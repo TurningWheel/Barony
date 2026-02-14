@@ -6,6 +6,10 @@ All main runners support `--app <path>` and optional `--datadir <path>` so you c
 
 ## Files
 
+- `lib/common.sh`
+  - Shared shell helpers for smoke runners (`is_uint`, timestamped log output, exact `summary.env` key reads, and `models.cache` pruning).
+  - Source this from new runners instead of re-implementing parser/validation helpers.
+
 - `run_lan_helo_chunk_smoke_mac.sh`
   - Launches 1 host + N-1 clients as isolated instances.
   - Uses env-driven autopilot hooks in game code to host/join automatically.

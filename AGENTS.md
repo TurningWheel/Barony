@@ -59,7 +59,7 @@ There is no dedicated unit-test suite in this repository. Required validation is
 - Build success for affected targets (`barony`, `editor` when relevant).
 - Manual smoke test of the changed flow (menu/load/gameplay/editor path you touched).
 - Keep GitHub Actions Linux build checks green for PRs.
-- For multiplayer-expansion work, update `/Users/sayhiben/dev/Barony-8p/docs/multiplayer-expansion-verification-plan.md` inline as progress happens (checklist state + artifact paths + notable caveats).
+- For multiplayer-expansion work, update `/Users/sayhiben/dev/Barony-8p/AGENTS.md` and the relevant `/Users/sayhiben/dev/Barony-8p/merge-prs/PR*.md` ticket inline as progress happens (checklist state + artifact paths + notable caveats).
 
 ## Commit & Pull Request Guidelines
 Create a topic branch per change. For bugfix work, target `master` (per `README.md`). Keep commits focused and message subjects short, imperative, and specific (recent history includes messages like `update hash` and `fix one who knocks achievement when parrying`). In PRs, include: what changed, why, test steps/results, and linked issues. Add screenshots for visible UI/editor changes.
@@ -76,9 +76,9 @@ When running in Codex with sandboxing, ask for sandbox breakout/escalation permi
 
 ## Multiplayer Expansion (PR 940) Working Notes
 - Expansion target is `MAXPLAYERS=15` (not 16). Preserve nibble-packed ownership assumptions unless a deliberate encoding refactor is planned.
-- Keep smoke instrumentation isolated to `/Users/sayhiben/dev/Barony-8p/src/smoke/SmokeTestHooks.cpp` and `/Users/sayhiben/dev/Barony-8p/src/smoke/SmokeTestHooks.hpp` with minimal call sites in gameplay/UI/network files.
-- Keep headless mapgen integration plumbing (`-smoke-mapgen-integration*` parsing/validation/runner) in `SmokeTestHooks`; `src/game.cpp` should stay wiring-only for those options.
-- Avoid adding ad-hoc smoke utility logic directly in core gameplay files; prefer hook APIs in `SmokeTestHooks` and keep base-game paths clean.
+- Keep smoke instrumentation isolated to `/Users/sayhiben/dev/Barony-8p/src/smoke/SmokeHooks*.cpp` and `/Users/sayhiben/dev/Barony-8p/src/smoke/SmokeTestHooks.hpp` with minimal call sites in gameplay/UI/network files.
+- Keep headless mapgen integration plumbing (`-smoke-mapgen-integration*` parsing/validation/runner) in smoke hook implementation files; `src/game.cpp` should stay wiring-only for those options.
+- Avoid adding ad-hoc smoke utility logic directly in core gameplay files; prefer hook APIs declared in `SmokeTestHooks.hpp` and keep base-game paths clean.
 - Preferred local validation path is local build binary + Steam assets datadir (`--app .../build-mac/.../barony --datadir .../Barony.app/Contents/Resources`) instead of replacing the Steam executable.
 - After long or high-instance smoke runs, clean generated cache bloat (especially `models.cache` under smoke artifact homes) while preserving logs/artifacts needed for debugging.
 - If host performance degrades during smoke campaigns, check for lingering `run_mapgen_sweep_mac.sh`, `run_lan_helo_chunk_smoke_mac.sh`, and `barony` processes; terminate stale runs before launching new lanes.
@@ -112,7 +112,7 @@ When running in Codex with sandboxing, ask for sandbox breakout/escalation permi
   - items/player `0.70x-0.80x`
   - food/player `0.65x-0.78x`
   - decorations `1.85x-2.25x`, blocking share `<= 45%`
-- Maintain integration ownership boundaries: integration parser/validator/runner belong in `SmokeTestHooks`; `src/game.cpp` remains wiring-only.
+- Maintain integration ownership boundaries: integration parser/validator/runner belong in smoke hook implementation files (`src/smoke/SmokeHooksMapgen.cpp`); `src/game.cpp` remains wiring-only.
 - Keep operational hygiene between long runs: prune generated `models.cache`, and terminate stale `run_mapgen_*`, `run_lan_helo_*`, and `barony` processes before relaunch.
 
 ### Technical Commands and Config Reference
@@ -195,7 +195,7 @@ tests/smoke/run_lan_helo_chunk_smoke_mac.sh \
   - Keep smoke-run homes isolated (`HOME="$OUT/home"`) to avoid cross-run config/data leakage.
   - Integration seed root is now auto-generated per invocation; do not rely on the removed `-smoke-mapgen-integration-base-seed` override.
   - Maintain compile-time/runtime gating with `BARONY_SMOKE_TESTS`; keep non-smoke gameplay paths clean.
-  - Keep integration parser/validator/runner in `src/smoke/SmokeTestHooks.*`; keep `src/game.cpp` wiring-only for `-smoke-mapgen-integration*`.
+  - Keep integration parser/validator/runner in `src/smoke/SmokeHooksMapgen.cpp` (API in `src/smoke/SmokeTestHooks.hpp`); keep `src/game.cpp` wiring-only for `-smoke-mapgen-integration*`.
 - Post-run hygiene commands:
 ```bash
 find tests/smoke/artifacts -type f -name models.cache -delete

@@ -15,6 +15,8 @@ REJOIN_PLAYER_COUNTS=(5 15)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 HELO_RUNNER="$SCRIPT_DIR/run_lan_helo_chunk_smoke_mac.sh"
 CHURN_RUNNER="$SCRIPT_DIR/run_lan_join_leave_churn_smoke_mac.sh"
+COMMON_SH="$SCRIPT_DIR/lib/common.sh"
+source "$COMMON_SH"
 declare -a LOG_FILES=()
 
 usage() {
@@ -34,11 +36,11 @@ USAGE
 }
 
 is_uint() {
-	[[ "$1" =~ ^[0-9]+$ ]]
+	smoke_is_uint "$1"
 }
 
 log() {
-	printf '[%s] %s\n' "$(date '+%H:%M:%S')" "$*"
+	smoke_log "$*"
 }
 
 count_pattern_in_logs() {
@@ -105,19 +107,11 @@ collect_missing_slots_for_lane() {
 read_summary_value() {
 	local summary_file="$1"
 	local key="$2"
-	if [[ ! -f "$summary_file" ]]; then
-		echo ""
-		return
-	fi
-	sed -n "s/^${key}=//p" "$summary_file" | tail -n 1
+	smoke_summary_get_last "$key" "$summary_file"
 }
 
 prune_models_cache() {
-	local lane_outdir="$1"
-	if [[ ! -d "$lane_outdir/instances" ]]; then
-		return
-	fi
-	find "$lane_outdir/instances" -type f -name models.cache -delete 2>/dev/null || true
+	smoke_prune_models_cache "$1"
 }
 
 collect_lane_logs() {

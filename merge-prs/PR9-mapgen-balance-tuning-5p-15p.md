@@ -18,8 +18,8 @@ Tune mapgen for 5-15 players to improve large-party pacing/economy while preserv
 ### In Scope
 - Primary: `src/maps.cpp` gameplay/balance logic
 - Optional concise summary updates only:
-  - `docs/extended-multiplayer-balancing-and-tuning-plan.md`
-  - `docs/multiplayer-expansion-verification-plan.md`
+  - `AGENTS.md` (`Validation Summary` and `Balancing Lessons and Guardrails`)
+  - PR-level summary note in the active `merge-prs/PR*.md` ticket
 
 ### Out of Scope
 - CMake/build-system changes

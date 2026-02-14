@@ -16,7 +16,7 @@ Land mapgen instrumentation and integration plumbing first so PR9 can be reviewe
 
 ## Scope
 ### In Scope
-- `src/smoke/SmokeTestHooks.cpp`
+- `src/smoke/SmokeHooksMapgen.cpp`
 - `src/smoke/SmokeTestHooks.hpp`
 - `src/game.cpp` wiring-only support for `-smoke-mapgen-integration*`
 - Smoke-only summary/logging callsites in `src/maps.cpp`
@@ -32,7 +32,7 @@ Land mapgen instrumentation and integration plumbing first so PR9 can be reviewe
 - Build-system default flips
 
 ## Implementation Instructions
-1. Implement integration parser/validator/runner in `SmokeTestHooks` only.
+1. Implement integration parser/validator/runner in `src/smoke/SmokeHooksMapgen.cpp` only.
 2. Keep `src/game.cpp` limited to CLI option wiring/dispatch (`-smoke-mapgen-integration*`).
 3. Add smoke-guarded mapgen summary emission in `src/maps.cpp` with no gameplay formula changes.
 4. Add runner scripts and report tooling for matrix/full-lobby artifact generation.
@@ -41,7 +41,7 @@ Land mapgen instrumentation and integration plumbing first so PR9 can be reviewe
 7. Reject this PR if `src/maps.cpp` includes any non-telemetry balancing delta.
 
 ## Suggested Commit Structure
-1. `SmokeTestHooks` integration runner and schema output.
+1. `SmokeHooksMapgen.cpp` integration runner and schema output.
 2. `src/game.cpp` wiring-only CLI support.
 3. Mapgen runner scripts/report generators.
 4. Smoke-only telemetry callsites in `src/maps.cpp`.
@@ -57,14 +57,14 @@ cmake --build build-mac-smoke -j8 --target barony
 - Integration parity checks against single-runtime matrix where applicable.
 
 ## Acceptance Criteria
-- [ ] `-smoke-mapgen-integration*` CLI is wired through `src/game.cpp` and executed by `SmokeTestHooks`.
+- [ ] `-smoke-mapgen-integration*` CLI is wired through `src/game.cpp` and executed by `src/smoke/SmokeHooksMapgen.cpp`.
 - [ ] Mapgen runners generate expected artifact set (`csv`, aggregate HTML, heatmap, summary env).
 - [ ] `src/maps.cpp` changes are smoke-guarded telemetry only.
 - [ ] Integration lanes pass with reproducible commands and stored artifacts.
 - [ ] No gameplay coefficient or balancing logic changes are present.
 
 ## Review Focus
-- Strict separation: wiring in `game.cpp`, logic in `SmokeTestHooks`.
+- Strict separation: wiring in `game.cpp`, logic in `src/smoke/SmokeHooksMapgen.cpp`.
 - Telemetry schema stability and artifact completeness.
 - No accidental balance changes.
 

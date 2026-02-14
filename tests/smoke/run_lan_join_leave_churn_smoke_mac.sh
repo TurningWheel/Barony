@@ -25,6 +25,8 @@ KEEP_RUNNING=0
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 AGGREGATE="$SCRIPT_DIR/generate_smoke_aggregate_report.py"
+COMMON_SH="$SCRIPT_DIR/lib/common.sh"
+source "$COMMON_SH"
 
 usage() {
 	cat <<'USAGE'
@@ -57,21 +59,15 @@ USAGE
 }
 
 is_uint() {
-	[[ "$1" =~ ^[0-9]+$ ]]
+	smoke_is_uint "$1"
 }
 
 log() {
-	printf '[%s] %s\n' "$(date '+%H:%M:%S')" "$*"
+	smoke_log "$*"
 }
 
 count_fixed_lines() {
-	local file="$1"
-	local needle="$2"
-	if [[ ! -f "$file" ]]; then
-		echo 0
-		return
-	fi
-	rg -F -c "$needle" "$file" 2>/dev/null || echo 0
+	smoke_count_fixed_lines "$1" "$2"
 }
 
 count_ready_snapshot_target_lines() {

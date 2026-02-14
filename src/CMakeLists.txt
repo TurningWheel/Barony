@@ -117,7 +117,13 @@ list(APPEND GAME_SOURCES
 
 if (BARONY_SMOKE_TESTS)
 	list(APPEND GAME_SOURCES
-		"${CMAKE_CURRENT_SOURCE_DIR}/smoke/SmokeTestHooks.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/smoke/SmokeHooksMainMenu.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/smoke/SmokeHooksGameplay.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/smoke/SmokeHooksGameUI.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/smoke/SmokeHooksNet.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/smoke/SmokeHooksCombat.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/smoke/SmokeHooksSaveReload.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/smoke/SmokeHooksMapgen.cpp"
 	)
 endif()
 

@@ -4,6 +4,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SWEEP="$SCRIPT_DIR/run_mapgen_sweep_mac.sh"
 AGGREGATE="$SCRIPT_DIR/generate_smoke_aggregate_report.py"
+COMMON_SH="$SCRIPT_DIR/lib/common.sh"
+source "$COMMON_SH"
 
 APP="$HOME/Library/Application Support/Steam/steamapps/common/Barony/Barony.app/Contents/MacOS/Barony"
 DATADIR=""
@@ -63,23 +65,17 @@ USAGE
 }
 
 is_uint() {
-	[[ "$1" =~ ^[0-9]+$ ]]
+	smoke_is_uint "$1"
 }
 
 log() {
-	printf '[%s] %s\n' "$(date '+%H:%M:%S')" "$*"
+	smoke_log "$*"
 }
 
 read_summary_key() {
 	local key="$1"
 	local file="$2"
-	local line
-	line="$(rg -n "^${key}=" "$file" | head -n 1 || true)"
-	if [[ -z "$line" ]]; then
-		echo ""
-		return
-	fi
-	echo "${line#*=}"
+	smoke_summary_get "$key" "$file"
 }
 
 while (($# > 0)); do

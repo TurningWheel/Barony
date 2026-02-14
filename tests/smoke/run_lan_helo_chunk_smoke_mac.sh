@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+COMMON_SH="$SCRIPT_DIR/lib/common.sh"
+source "$COMMON_SH"
+
 APP="$HOME/Library/Application Support/Steam/steamapps/common/Barony/Barony.app/Contents/MacOS/Barony"
 DATADIR=""
 INSTANCES=4
@@ -149,11 +153,11 @@ USAGE
 }
 
 is_uint() {
-	[[ "$1" =~ ^[0-9]+$ ]]
+	smoke_is_uint "$1"
 }
 
 log() {
-	printf '[%s] %s\n' "$(date '+%H:%M:%S')" "$*"
+	smoke_log "$*"
 }
 
 seed_smoke_home_profile() {
@@ -188,13 +192,7 @@ JSON
 }
 
 count_fixed_lines() {
-	local file="$1"
-	local needle="$2"
-	if [[ ! -f "$file" ]]; then
-		echo 0
-		return
-	fi
-	rg -F -c "$needle" "$file" 2>/dev/null || echo 0
+	smoke_count_fixed_lines "$1" "$2"
 }
 
 count_regex_lines() {

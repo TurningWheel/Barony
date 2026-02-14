@@ -3,7 +3,7 @@
 ## Summary
 This plan analyzes `PR #940`, `sayhiben/8p-mod`, and the upstream merge target (`upstream/master`, merge-base `2edf6191b0fbcd0e416cc25ca647c252e04f6a17`).
 Current PR size is `66 files`, `+18,301/-1,314`, with three heavy hotspots:
-- `src/smoke/SmokeTestHooks.cpp`
+- `src/smoke/SmokeHooksMainMenu.cpp` / `src/smoke/SmokeHooksMapgen.cpp`
 - `src/ui/MainMenu.cpp`
 - `src/maps.cpp`
 
@@ -19,10 +19,10 @@ The split ordering is **de-risking first**: platform/build baseline, then core m
 - New owner encoding helper:
   - `src/status_effect_owner_encoding.hpp`
 - Smoke integration CLI:
-  - `-smoke-mapgen-integration*` wiring in `src/game.cpp` and implementation in `src/smoke/SmokeTestHooks.cpp`
+  - `-smoke-mapgen-integration*` wiring in `src/game.cpp` and implementation in `src/smoke/SmokeHooksMapgen.cpp`
 
 ## 1) What "Good PR Size" Means Here
-- One PR should own **one concern** and at most **one high-risk hotspot** (`MainMenu.cpp`, `net.cpp`, `maps.cpp`, `SmokeTestHooks.cpp`, or `run_lan_helo_chunk_smoke_mac.sh`).
+- One PR should own **one concern** and at most **one high-risk hotspot** (`MainMenu.cpp`, `net.cpp`, `maps.cpp`, `SmokeHooksMainMenu.cpp`/`SmokeHooksMapgen.cpp`, or `run_lan_helo_chunk_smoke_mac.sh`).
 - Target shape for gameplay/network PRs in this repo: roughly **200-800 changed lines** and **<= 8 files**. For hotspot files, keep hunk count low and isolate to one behavior.
 - Keep commit structure consistent per PR:
   1. mechanical/refactor prep
@@ -216,7 +216,7 @@ The split ordering is **de-risking first**: platform/build baseline, then core m
 - `CMakeLists.txt` (`BARONY_SMOKE_TESTS`)
 - `src/CMakeLists.txt`
 - `src/Config.hpp.in`
-- `src/smoke/SmokeTestHooks.cpp`
+- `src/smoke/SmokeHooks*.cpp`
 - `src/smoke/SmokeTestHooks.hpp`
 - minimal `#ifdef BARONY_SMOKE_TESTS` callsites in `src/game.cpp`, `src/net.cpp`, `src/ui/MainMenu.cpp`, `src/ui/GameUI.cpp`, `src/scores.cpp`, `src/maps.cpp`
 
@@ -282,7 +282,7 @@ The split ordering is **de-risking first**: platform/build baseline, then core m
 **Intent / user value**: make mapgen tuning measurable and reproducible before gameplay tuning lands.
 
 **Exact scope (in)**:
-- `src/smoke/SmokeTestHooks.cpp` and `.hpp` (Mapgen summary/integration runner)
+- `src/smoke/SmokeHooksMapgen.cpp` + `src/smoke/SmokeTestHooks.hpp` (Mapgen summary/integration runner)
 - `src/game.cpp` wiring-only for `-smoke-mapgen-integration*`
 - smoke-only summary/logging callsites in `src/maps.cpp`
 - mapgen runners:
@@ -305,7 +305,7 @@ The split ordering is **de-risking first**: platform/build baseline, then core m
 - integration parity lane (`levels=1,7,16,33`, `players=1..15`) and schema validation in generated CSV
 
 **Review notes**:
-- Verify `game.cpp` remains wiring-only and integration logic stays in `SmokeTestHooks`.
+- Verify `game.cpp` remains wiring-only and integration logic stays in `src/smoke/SmokeHooksMapgen.cpp`.
 
 **Cherry-pick / rebase strategy**:
 - Enforce acceptance check that `maps.cpp` diff is smoke-guard telemetry only; reject any gameplay formula delta in this PR.
@@ -315,7 +315,7 @@ The split ordering is **de-risking first**: platform/build baseline, then core m
 
 **Exact scope (in)**:
 - primarily `src/maps.cpp`
-- optional concise docs update in `docs/extended-multiplayer-balancing-and-tuning-plan.md` and `docs/multiplayer-expansion-verification-plan.md` with summary metrics only
+- optional concise docs update in `AGENTS.md` (`Validation Summary` / `Balancing Lessons and Guardrails`) with summary metrics only
 
 **Exact scope (out)**:
 - no CMake/build changes
@@ -365,7 +365,7 @@ The split ordering is **de-risking first**: platform/build baseline, then core m
 - Create fresh commit on top of merged stack.
 
 ## 3) Consolidation and Simplification Opportunities
-- Split `src/smoke/SmokeTestHooks.cpp` by domain into:
+- Maintain split smoke hook implementation by domain:
   - `SmokeHooksMainMenu.cpp`
   - `SmokeHooksMapgen.cpp`
   - `SmokeHooksCombat.cpp`
@@ -386,7 +386,7 @@ The split ordering is **de-risking first**: platform/build baseline, then core m
 - Merge or explicitly supersede upstream PR `#942` first; otherwise platform diffs will keep re-conflicting.
 - Decide rollout default: keep `BARONY_SUPER_MULTIPLAYER` default OFF until PR 10.
 - Add CI matrix jobs for `BARONY_SUPER_MULTIPLAYER=OFF/ON` and a smoke compile check with `BARONY_SMOKE_TESTS=ON`.
-- Lock mapgen acceptance bands from `docs/extended-multiplayer-balancing-and-tuning-plan.md` before PR 9 review starts.
+- Lock mapgen acceptance bands from `AGENTS.md` (`Balancing Lessons and Guardrails`) before PR 9 review starts.
 - Pre-agree that mapgen PRs must include artifact links from `tests/smoke/artifacts/` with reproducible command lines.
 - Confirm maintainers want long-form tuning logs in-repo; if not, keep only condensed summaries in docs PRs.
 
