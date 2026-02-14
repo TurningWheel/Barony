@@ -96,11 +96,20 @@ static int getOverflowLootToMonsterRerollDivisor(int overflowPlayers)
 	{
 		divisor -= 2;
 	}
+	if ( overflowPlayers >= 9 )
+	{
+		// High-overflow parties need a little less loot->monster conversion to avoid density spikes.
+		divisor += 4;
+	}
+	if ( overflowPlayers >= 12 )
+	{
+		divisor += 2;
+	}
 	const int divisorFloor = overflowPlayers > 7 ? kExtendedCapDivisor : kLegacyCapDivisor;
 	return std::max(divisorFloor, divisor);
 }
 
-static int getOverflowRoomSelectionTrials(int overflowPlayers)
+static int getOverflowRoomSelectionTrials(int overflowPlayers, int currentLevel)
 {
 	// Keep overflow room growth moderate; avoid >2x room counts at high player slots.
 	if ( overflowPlayers == 1 )
@@ -108,12 +117,24 @@ static int getOverflowRoomSelectionTrials(int overflowPlayers)
 		// 5p is the biggest collision spike; guarantee one extra room-choice trial.
 		return 2;
 	}
-	return 1 + std::min(2, (overflowPlayers + 2) / 4);
+	int trials = 1 + std::min(2, (overflowPlayers + 2) / 4);
+	if ( overflowPlayers >= 11 && (currentLevel == 1 || currentLevel >= 16) )
+	{
+		// Re-introduce extra spread where high-party clumping remains most problematic (entry + deep floors).
+		++trials;
+	}
+	return std::min(4, trials);
 }
 
 static int getOverflowBonusEntityRolls(int overflowPlayers)
 {
-	return std::min(70, 8 + overflowPlayers * 4);
+	int rolls = 8 + overflowPlayers * 4;
+	if ( overflowPlayers >= 9 )
+	{
+		// Compensate high-end forced-spawn additions so monster/loot pressure stays balanced.
+		rolls += 8;
+	}
+	return std::min(70, rolls);
 }
 
 static int getOverflowForcedMonsterSpawns(int overflowPlayers)
@@ -129,16 +150,55 @@ static int getOverflowForcedMonsterSpawns(int overflowPlayers)
 	{
 		++spawns;
 	}
+	if ( overflowPlayers >= 10 )
+	{
+		++spawns;
+	}
+	if ( overflowPlayers >= 12 )
+	{
+		++spawns;
+	}
 	return std::min(7, spawns);
+}
+
+static int getOverflowForcedMonsterSpawnReductionByDepth(int currentLevel, int overflowPlayers)
+{
+	if ( overflowPlayers <= 0 || currentLevel > 4 )
+	{
+		return 0;
+	}
+	// Keep deeper-floor pressure intact; trim low-floor overflow monster anchors where density spikes most.
+	int reduction = 3;
+	if ( overflowPlayers >= 9 )
+	{
+		++reduction;
+	}
+	if ( overflowPlayers >= 12 )
+	{
+		++reduction;
+	}
+	return reduction;
 }
 
 static int getOverflowForcedGoldSpawns(int overflowPlayers)
 {
 	// Keep early overflow stable, then progressively raise economy floor for larger parties.
 	int spawns = 1 + overflowPlayers / 2;
+	if ( overflowPlayers >= 4 )
+	{
+		++spawns;
+	}
 	if ( overflowPlayers >= 5 )
 	{
 		spawns += 2;
+	}
+	if ( overflowPlayers >= 6 )
+	{
+		++spawns;
+	}
+	if ( overflowPlayers >= 8 )
+	{
+		++spawns;
 	}
 	if ( overflowPlayers >= 8 )
 	{
@@ -148,7 +208,11 @@ static int getOverflowForcedGoldSpawns(int overflowPlayers)
 	{
 		++spawns;
 	}
-	return std::min(13, spawns);
+	if ( overflowPlayers >= 11 )
+	{
+		++spawns;
+	}
+	return std::min(15, spawns);
 }
 
 static int getOverflowForcedLootSpawns(int overflowPlayers)
@@ -163,6 +227,22 @@ static int getOverflowForcedLootSpawns(int overflowPlayers)
 	{
 		spawns += 2;
 	}
+	if ( overflowPlayers >= 8 )
+	{
+		++spawns;
+	}
+	if ( overflowPlayers >= 6 )
+	{
+		++spawns;
+	}
+	if ( overflowPlayers >= 10 )
+	{
+		++spawns;
+	}
+	if ( overflowPlayers >= 10 )
+	{
+		++spawns;
+	}
 	if ( overflowPlayers >= 11 )
 	{
 		spawns += 3;
@@ -174,6 +254,10 @@ static int getOverflowLootGoldRollDivisor(int overflowPlayers)
 {
 	// Bias extra random gold toward larger overflow lobbies to preserve per-player progression.
 	int divisor = 10 - (overflowPlayers / 3);
+	if ( overflowPlayers >= 4 )
+	{
+		--divisor;
+	}
 	if ( overflowPlayers >= 5 )
 	{
 		--divisor;
@@ -186,20 +270,52 @@ static int getOverflowLootGoldRollDivisor(int overflowPlayers)
 	{
 		--divisor;
 	}
-	return std::max(3, divisor);
+	const int divisorFloor = overflowPlayers >= 9 ? 3 : 2;
+	return std::max(divisorFloor, divisor);
 }
 
 static int getOverflowForcedDecorationSpawns(int overflowPlayers)
 {
 	// Keep ambience growth for larger parties without over-crowding shared traversal space.
-	int spawns = 1 + overflowPlayers / 2;
-	return std::min(6, spawns);
+	int spawns = 1 + overflowPlayers / 3;
+	if ( overflowPlayers >= 8 )
+	{
+		++spawns;
+	}
+	if ( overflowPlayers >= 11 )
+	{
+		--spawns;
+	}
+	return std::max(1, std::min(3, spawns));
 }
 
 static int getOverflowDecorationObstacleBudget(int overflowPlayers)
 {
 	// Stay conservative for most overflow lobbies; only relax obstacle tolerance at very high slots.
 	return overflowPlayers >= 9 ? 2 : 1;
+}
+
+static std::pair<int, int> getOverflowGeneratedGoldValueScaleByDepth(int currentLevel)
+{
+	// Pass15 depth-normalized value smoothing:
+	// keep low/high floor progression from collapsing while damping mid-floor overflow spikes.
+	if ( currentLevel <= 4 )
+	{
+		return { 4, 5 };
+	}
+	if ( currentLevel <= 10 )
+	{
+		return { 3, 5 };
+	}
+	if ( currentLevel <= 20 )
+	{
+		return { 2, 5 };
+	}
+	if ( currentLevel <= 28 )
+	{
+		return { 7, 10 };
+	}
+	return { 11, 10 };
 }
 
 static void tallyDecorationSpawnTelemetry(int sprite, int& blocking, int& utility, int& traps, int& economyLinked)
@@ -2305,7 +2421,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 						return true;
 					};
 
-					const int roomSelectionTrials = (mapgenOverflowPlayers > 0) ? getOverflowRoomSelectionTrials(mapgenOverflowPlayers) : 1;
+					const int roomSelectionTrials = (mapgenOverflowPlayers > 0) ? getOverflowRoomSelectionTrials(mapgenOverflowPlayers, currentlevel) : 1;
 					Sint32 chosenLevelnum = map_rng.rand() % numlevels;
 					Sint32 chosenLevelnum2 = 0;
 					node_t* chosenNode = nullptr;
@@ -4195,6 +4311,11 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 		// Keep <=4p unchanged; overflow players guarantee additional monster anchors.
 		forcedMonsterSpawns += getOverflowForcedMonsterSpawns(overflowPlayers);
 	}
+	if ( forcedMonsterSpawns > 0 && overflowPlayers > 0 )
+	{
+		const int lowFloorReduction = getOverflowForcedMonsterSpawnReductionByDepth(currentlevel, overflowPlayers);
+		forcedMonsterSpawns = std::max(0, forcedMonsterSpawns - lowFloorReduction);
+	}
 	if ( genLootMin > 0 || genLootMax > 0 )
 	{
 		forcedLootSpawns = genLootMin + map_rng.rand() % std::max(genLootMax - genLootMin, 1);
@@ -4999,13 +5120,19 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 				else if ( forcedLootSpawns > 0 )
 				{
 					--forcedLootSpawns;
-					if ( map.lootexcludelocations[x + y * map.width] == false )
-					{
-						if ( map_rng.rand() % 10 == 0 )   // 10% chance
+						if ( map.lootexcludelocations[x + y * map.width] == false )
 						{
-							entity = newEntity(9, 1, map.entities, nullptr);  // gold
-							entity->goldAmount = 0;
-							numGenGold++;
+							int forcedLootGoldDivisor = 10;
+							if ( overflowPlayers > 0 )
+							{
+								// Keep overflow forced-loot rolls item-forward while explicit forced-gold carries most gold-count uplift.
+								forcedLootGoldDivisor += 2 + std::min(4, overflowPlayers / 3);
+							}
+							if ( map_rng.rand() % forcedLootGoldDivisor == 0 )
+							{
+								entity = newEntity(9, 1, map.entities, nullptr);  // gold
+								entity->goldAmount = 0;
+								numGenGold++;
 						}
 						else
 						{
@@ -5026,25 +5153,23 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 						{
 							if ( overflowPlayers > 0 )
 							{
-								switch ( map_rng.rand() % 6 )
-								{
-								case 0:
-								case 1:
-								case 2:
-									entity = newEntity(12, 1, map.entities, nullptr); //Firecamp.
-									break; //Firecamp
-								case 3:
-									entity = newEntity(14, 1, map.entities, nullptr); //Fountain.
-									break; //Fountain
-								case 4:
-									entity = newEntity(15, 1, map.entities, nullptr); //Sink.
-									break; //Sink
-								case 5:
-									entity = newEntity(21, 1, map.entities, nullptr); //Chest.
-									setSpriteAttributes(entity, nullptr, nullptr);
-									entity->chestLocked = -1;
-									break; //Chest
-								}
+									switch ( map_rng.rand() % 8 )
+									{
+									case 0:
+									case 1:
+									case 2:
+									case 3:
+									case 4:
+									case 5:
+										entity = newEntity(12, 1, map.entities, nullptr); //Firecamp.
+										break; //Firecamp
+									case 6:
+										entity = newEntity(14, 1, map.entities, nullptr); //Fountain.
+										break; //Fountain
+									case 7:
+										entity = newEntity(15, 1, map.entities, nullptr); //Sink.
+										break; //Sink
+									}
 							}
 							else
 							{
@@ -5071,32 +5196,27 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 						{
 							if ( overflowPlayers > 0 )
 							{
-								switch ( map_rng.rand() % 10 )
-								{
-								case 0:
-								case 1:
-								case 2:
-								case 3:
-								case 4:
-								case 5:
-									entity = newEntity(12, 1, map.entities, nullptr); //Firecamp.
-									break; //Firecamp
-								case 6:
-									entity = newEntity(14, 1, map.entities, nullptr); //Fountain.
-									break; //Fountain
-								case 7:
-									entity = newEntity(15, 1, map.entities, nullptr); //Sink.
-									break; //Sink
-								case 8:
-									entity = newEntity(21, 1, map.entities, nullptr); //Chest.
-									setSpriteAttributes(entity, nullptr, nullptr);
-									entity->chestLocked = -1;
-									break; //Chest
-								case 9:
-									entity = newEntity(59, 1, map.entities, nullptr); //Table.
-									setSpriteAttributes(entity, nullptr, nullptr);
-									break; //Table
-								}
+									switch ( map_rng.rand() % 12 )
+									{
+									case 0:
+									case 1:
+									case 2:
+									case 3:
+									case 4:
+									case 5:
+									case 6:
+									case 7:
+									case 8:
+									case 9:
+										entity = newEntity(12, 1, map.entities, nullptr); //Firecamp.
+										break; //Firecamp
+									case 10:
+										entity = newEntity(14, 1, map.entities, nullptr); //Fountain.
+										break; //Fountain
+									case 11:
+										entity = newEntity(15, 1, map.entities, nullptr); //Sink.
+										break; //Sink
+									}
 							}
 							else
 							{
@@ -5280,25 +5400,23 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 						{
 							if ( overflowPlayers > 0 )
 							{
-								switch ( map_rng.rand() % 6 )
-								{
-								case 0:
-								case 1:
-								case 2:
-									entity = newEntity(12, 1, map.entities, nullptr); //Firecamp.
-									break; //Firecamp
-								case 3:
-									entity = newEntity(14, 1, map.entities, nullptr); //Fountain.
-									break; //Fountain
-								case 4:
-									entity = newEntity(15, 1, map.entities, nullptr); //Sink.
-									break; //Sink
-								case 5:
-									entity = newEntity(21, 1, map.entities, nullptr); //Chest.
-									setSpriteAttributes(entity, nullptr, nullptr);
-									entity->chestLocked = -1;
-									break; //Chest
-								}
+									switch ( map_rng.rand() % 8 )
+									{
+									case 0:
+									case 1:
+									case 2:
+									case 3:
+									case 4:
+									case 5:
+										entity = newEntity(12, 1, map.entities, nullptr); //Firecamp.
+										break; //Firecamp
+									case 6:
+										entity = newEntity(14, 1, map.entities, nullptr); //Fountain.
+										break; //Fountain
+									case 7:
+										entity = newEntity(15, 1, map.entities, nullptr); //Sink.
+										break; //Sink
+									}
 							}
 							else
 							{
@@ -5325,32 +5443,27 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int, int> 
 						{
 							if ( overflowPlayers > 0 )
 							{
-								switch ( map_rng.rand() % 10 )
-								{
-								case 0:
-								case 1:
-								case 2:
-								case 3:
-								case 4:
-								case 5:
-									entity = newEntity(12, 1, map.entities, nullptr); //Firecamp entity.
-									break; //Firecamp
-								case 6:
-									entity = newEntity(14, 1, map.entities, nullptr); //Fountain entity.
-									break; //Fountain
-								case 7:
-									entity = newEntity(15, 1, map.entities, nullptr); //Sink entity.
-									break; //Sink
-								case 8:
-									entity = newEntity(21, 1, map.entities, nullptr); //Chest entity.
-									setSpriteAttributes(entity, nullptr, nullptr);
-									entity->chestLocked = -1;
-									break; //Chest
-								case 9:
-									entity = newEntity(59, 1, map.entities, nullptr); //Table entity.
-									setSpriteAttributes(entity, nullptr, nullptr);
-									break; //Table
-								}
+									switch ( map_rng.rand() % 12 )
+									{
+									case 0:
+									case 1:
+									case 2:
+									case 3:
+									case 4:
+									case 5:
+									case 6:
+									case 7:
+									case 8:
+									case 9:
+										entity = newEntity(12, 1, map.entities, nullptr); //Firecamp entity.
+										break; //Firecamp
+									case 10:
+										entity = newEntity(14, 1, map.entities, nullptr); //Fountain entity.
+										break; //Fountain
+									case 11:
+										entity = newEntity(15, 1, map.entities, nullptr); //Sink entity.
+										break; //Sink
+									}
 							}
 							else
 							{
@@ -8050,26 +8163,26 @@ void assignActions(map_t* map)
 										extrafood = true;
 									}
 									break;
-								default:
-									if ( balance > 4 )
-									{
-										// For overflow parties, bias toward progression loot and keep food supplemental.
-										int foodRollDivisor = 9;
-										if ( overflowPlayers >= 4 )
+									default:
+										if ( balance > 4 )
 										{
-											foodRollDivisor = 7;
+											// For overflow parties, bias toward progression loot and keep food supplemental.
+											int foodRollDivisor = 10;
+											if ( overflowPlayers >= 4 )
+											{
+												foodRollDivisor = 8;
+											}
+											if ( overflowPlayers >= 8 )
+											{
+												foodRollDivisor = 7;
+											}
+											if ( overflowPlayers >= 11 )
+											{
+												foodRollDivisor = 6;
+											}
+											extrafood = (map_rng.rand() % foodRollDivisor) == 0;
 										}
-										if ( overflowPlayers >= 8 )
-										{
-											foodRollDivisor = 6;
-										}
-										if ( overflowPlayers >= 11 )
-										{
-											foodRollDivisor = 5;
-										}
-										extrafood = (map_rng.rand() % foodRollDivisor) == 0;
-									}
-									else
+										else
 									{
 										extrafood = false;
 									}
@@ -8247,20 +8360,20 @@ void assignActions(map_t* map)
 										entity->skill[13] += map_rng.rand() % 3;
 									}
 									break;
-								default:
-									if ( balance > 4 )
-									{
-										// Keep overflow food supplemental, but lift high-party starvation floor.
-										const int baseExtraFood = (overflowPlayers >= 8) ? 1 : 0;
-										entity->skill[13] += baseExtraFood;
-										const int bonusRollDivisor = std::max(5, 10 - (overflowPlayers / 3));
-										if ( map_rng.rand() % bonusRollDivisor == 0 )
+									default:
+										if ( balance > 4 )
 										{
-											const int maxExtraFood = 1 + ((overflowPlayers >= 11) ? 1 : 0);
-											entity->skill[13] += 1 + (map_rng.rand() % maxExtraFood);
+											// Keep overflow food supplemental, but lift high-party starvation floor.
+											const int baseExtraFood = (overflowPlayers >= 10) ? 1 : 0;
+											entity->skill[13] += baseExtraFood;
+											const int bonusRollDivisor = std::max(7, 13 - (overflowPlayers / 2));
+											if ( map_rng.rand() % bonusRollDivisor == 0 )
+											{
+												const int maxExtraFood = 1 + ((overflowPlayers >= 12) ? 1 : 0);
+												entity->skill[13] += 1 + (map_rng.rand() % maxExtraFood);
+											}
 										}
-									}
-									break;
+										break;
 							}
 						}
 					}
@@ -8384,19 +8497,22 @@ void assignActions(map_t* map)
 					entity->goldAmount = 10 + map_rng.rand() % 100 + (currentlevel); // amount
 					generatedBaseGoldAmount = true;
 				}
-				if ( balance > 4 && generatedBaseGoldAmount )
-				{
-					// Overflow value tuning: more players already add bag count, so compress per-bag value.
-					entity->goldAmount = std::max(6, (entity->goldAmount * 2) / 3);
-					if ( overflowPlayers >= 8 )
+					if ( balance > 4 && generatedBaseGoldAmount )
 					{
-						++entity->goldAmount;
+						// Overflow value tuning: more players already add bag count, so compress per-bag value.
+						entity->goldAmount = std::max(6, (entity->goldAmount * 2) / 3);
+						if ( overflowPlayers >= 8 )
+						{
+							++entity->goldAmount;
+						}
+						if ( overflowPlayers >= 11 )
+						{
+							++entity->goldAmount;
+						}
+						const auto [depthScaleNumerator, depthScaleDenominator] = getOverflowGeneratedGoldValueScaleByDepth(currentlevel);
+						entity->goldAmount = std::max(6,
+							(entity->goldAmount * depthScaleNumerator + depthScaleDenominator / 2) / depthScaleDenominator);
 					}
-					if ( overflowPlayers >= 11 )
-					{
-						++entity->goldAmount;
-					}
-				}
 				++mapgenGoldBags;
 				mapgenGoldAmount += std::max(0, entity->goldAmount);
 				if ( entity->goldAmount < 5 )

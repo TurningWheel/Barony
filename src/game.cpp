@@ -7377,15 +7377,14 @@ int main(int argc, char** argv)
 		}
 		initialized = true;
 
-#ifdef BARONY_SMOKE_TESTS
+	#ifdef BARONY_SMOKE_TESTS
 		if ( smokeMapgenIntegration.enabled )
 		{
-			printlog("[SMOKE][MAPGEN][INTEGRATION]: starting levels=%s players=%d..%d runs=%d base_seed=%u csv=%s",
+			printlog("[SMOKE][MAPGEN][INTEGRATION]: starting levels=%s players=%d..%d runs=%d csv=%s",
 				smokeMapgenIntegration.levelsCsv.c_str(),
 				smokeMapgenIntegration.minPlayers,
 				smokeMapgenIntegration.maxPlayers,
 				smokeMapgenIntegration.runsPerPlayer,
-				smokeMapgenIntegration.baseSeed,
 				smokeMapgenIntegration.outputCsvPath.c_str());
 			int smokeResult = SmokeTestHooks::Mapgen::runIntegrationMatrix(smokeMapgenIntegration);
 			if ( !load_successful )

@@ -2968,27 +2968,6 @@ namespace Mapgen
 			return !outLevels.empty();
 		}
 
-		bool parseIntegrationUint32Arg(const std::string& value, Uint32& outValue)
-		{
-			if ( value.empty() )
-			{
-				return false;
-			}
-			std::stringstream parser(value);
-			unsigned long long parsed = 0;
-			char trailing = '\0';
-			if ( !(parser >> parsed) || (parser >> trailing) )
-			{
-				return false;
-			}
-			if ( parsed > std::numeric_limits<Uint32>::max() )
-			{
-				return false;
-			}
-			outValue = static_cast<Uint32>(parsed);
-			return true;
-		}
-
 		bool writeIntegrationControlFile(const std::string& controlFilePath, int players)
 		{
 			std::ofstream controlFile(controlFilePath.c_str(), std::ios::out | std::ios::trunc);
@@ -3084,17 +3063,9 @@ namespace Mapgen
 		}
 		if ( startsWithValue("-smoke-mapgen-integration-base-seed=", rawValue) )
 		{
-			Uint32 parsedSeed = 0;
-			if ( !parseIntegrationUint32Arg(rawValue, parsedSeed) )
-			{
-				errorMessage = "Invalid value for -smoke-mapgen-integration-base-seed";
-				return true;
-			}
-			options.enabled = true;
-			options.baseSeed = parsedSeed;
+			errorMessage = "-smoke-mapgen-integration-base-seed has been removed; integration now auto-seeds per run";
 			return true;
 		}
-
 		return false;
 	}
 
@@ -3179,9 +3150,11 @@ namespace Mapgen
 		const std::string runDir = "inprocess-mapgen-integration";
 		const int playersSpan = options.maxPlayers - options.minPlayers + 1;
 		const int samplesPerLevel = playersSpan * options.runsPerPlayer;
+		const Uint32 integrationSeedRoot = local_rng.rand();
+		printlog("[SMOKE][MAPGEN][INTEGRATION]: using auto seed root=%u", integrationSeedRoot);
 		for ( int level : levels )
 		{
-			const Uint32 levelBaseSeed = options.baseSeed + static_cast<Uint32>(level * 100000);
+			const Uint32 levelBaseSeed = integrationSeedRoot + static_cast<Uint32>(level * 100000);
 			const Uint32 levelSeedBase = levelBaseSeed + 1;
 			const Uint32 reloadSeedBase = levelSeedBase * 100;
 			const int reloadTransitionLines = std::max(0, samplesPerLevel - 1);

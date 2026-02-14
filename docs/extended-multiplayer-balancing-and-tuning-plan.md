@@ -21,8 +21,8 @@ Primary conclusions from baseline:
 5. Maintain splitscreen cap behavior at 4 players.
 
 ## Current Stage
-- Stage: `Pass14 value-lane tuning` (gold-value compression with count/slot structure unchanged).
-- Next stage: `Pass15 depth-normalized value smoothing + full-lobby confirmation`.
+- Stage: `Pass15h12 fast-lane convergence` (integration volatility aggregates are near-target; final full-lobby promotion confirmation is still pending).
+- Next stage: `Pass15h12 full-lobby confirmation + parity re-gate` (complete `simulate-mapgen-players=0` runs=5 confirmation, then decide promote/retune).
 
 ## Latest Iteration Notes (February 12, 2026)
 - Fixed single-runtime sweep harness timeout behavior for long `runs=5` lanes:
@@ -80,11 +80,72 @@ Primary conclusions from baseline:
     - Aggregate `p15 vs p4`: rooms `1.545x`, monsters `1.382x`, gold `2.171x`, items `2.473x`, food `3.315x`, decorations `2.286x`.
     - Aggregate per-player: gold `0.579x`, items `0.659x`, food `0.884x`, gold value (`gold_amount/player`) `0.896x`.
     - Level spread on `gold_amount/player` remained uneven (`L1 0.673x`, `L7 1.247x`, `L16 2.007x`, `L33 0.687x`), indicating remaining depth-mix value volatility.
-- Decision: keep pass14c deterministic gold-value compression in-tree (major value-overflow reduction with no slot-count regressions) and continue with a depth-normalized value follow-up pass before full-lobby promotion.
+- Pass15a depth-normalized overflow generated-gold value smoothing is now implemented and validated in fast integration lanes:
+  - Code path: `/Users/sayhiben/dev/Barony-8p/src/maps.cpp` (`getOverflowGeneratedGoldValueScaleByDepth`, applied only when `overflowPlayers > 0` and only to generated base gold-bag value).
+  - Artifacts:
+    - `/Users/sayhiben/dev/Barony-8p/tests/smoke/artifacts/mapgen-integration-pass15a-runs2-20260212-120325`
+    - `/Users/sayhiben/dev/Barony-8p/tests/smoke/artifacts/mapgen-integration-pass15a-runs5-20260212-120325`
+  - `runs=2` lane (`120/120` pass rows) was directionally useful but noisy by depth.
+  - `runs=5` lane (`300/300` pass rows) held stable and kept non-value count lanes aligned with pass14c aggregate shape.
+  - `gold_amount/player` (`p15 vs p4`) improved depth spread from pass14c (`L1 0.673x`, `L7 1.247x`, `L16 2.007x`, `L33 0.687x`) to pass15a (`L1 0.726x`, `L7 1.056x`, `L16 1.282x`, `L33 0.744x`).
+  - Aggregate `gold_amount/player` moved from `0.896x` (pass14c runs=5 matrix) to `0.838x` (pass15a runs=5 integration), with the large mid-floor value spike substantially reduced.
+- Pass15b-pass15f follow-up count/value passes were run in fast integration lanes (`runs=2` + `runs=5`) and used to converge on a post-pass15a candidate:
+  - Artifacts:
+    - `/Users/sayhiben/dev/Barony-8p/tests/smoke/artifacts/mapgen-integration-pass15b-runs2-20260212-121348`
+    - `/Users/sayhiben/dev/Barony-8p/tests/smoke/artifacts/mapgen-integration-pass15b-runs5-20260212-121348`
+    - `/Users/sayhiben/dev/Barony-8p/tests/smoke/artifacts/mapgen-integration-pass15c-runs2-20260212-121611`
+    - `/Users/sayhiben/dev/Barony-8p/tests/smoke/artifacts/mapgen-integration-pass15c-runs5-20260212-121611`
+    - `/Users/sayhiben/dev/Barony-8p/tests/smoke/artifacts/mapgen-integration-pass15d-runs2-20260212-121759`
+    - `/Users/sayhiben/dev/Barony-8p/tests/smoke/artifacts/mapgen-integration-pass15d-runs5-20260212-121759`
+    - `/Users/sayhiben/dev/Barony-8p/tests/smoke/artifacts/mapgen-integration-pass15e-runs2-20260212-121937`
+    - `/Users/sayhiben/dev/Barony-8p/tests/smoke/artifacts/mapgen-integration-pass15e-runs5-20260212-121938`
+    - `/Users/sayhiben/dev/Barony-8p/tests/smoke/artifacts/mapgen-integration-pass15f-runs2-20260212-122112`
+    - `/Users/sayhiben/dev/Barony-8p/tests/smoke/artifacts/mapgen-integration-pass15f-runs5-20260212-122112`
+  - Key findings:
+    - pass15b/pass15c over-expanded rooms (`1.800x`) and under-ran monster density (`0.703x-0.715x`), despite directional economy gains.
+    - pass15d restored room shape (`1.545x`) but kept monsters below target (`1.303x`).
+    - pass15e restored monster total (`1.403x`) but reintroduced deeper-floor value spikes (`L16 gold_amount/player 1.583x`).
+    - pass15f reached near-target count lanes (`gold/player 0.688x`, `items/player 0.699x`, `food/player 0.723x`, `monsters 1.387x`) but overshot value lane (`gold_amount/player 1.070x`, `L7/L16 1.467x/1.612x`).
+- Pass15g is the current integrated candidate (count shape from pass15f + value-only depth-band correction):
+  - Artifacts:
+    - `/Users/sayhiben/dev/Barony-8p/tests/smoke/artifacts/mapgen-integration-pass15g-runs2-20260212-122229`
+    - `/Users/sayhiben/dev/Barony-8p/tests/smoke/artifacts/mapgen-integration-pass15g-runs5-20260212-122229`
+  - `runs=5` (`300/300` pass rows) result shape:
+    - `p15 vs p4`: rooms `1.545x`, monsters `1.387x`, monsters/room `0.897x`, gold/player `0.688x`, items/player `0.699x`, food/player `0.723x`, decorations `2.100x`, blocking-share `19.0%`.
+    - `gold_amount/player` improved vs pass15f from `1.070x` to `1.021x`, with level spread improved at `L7/L16` from `1.467x/1.612x` to `1.274x/1.405x`.
+- Low-player guard validation after pass15g:
+  - Focused artifact (`players=2..4`, `runs=5`): `/Users/sayhiben/dev/Barony-8p/tests/smoke/artifacts/mapgen-integration-pass15g-runs5-p2to4-20260212-122642` (`60/60` pass rows).
+  - Row-level parity check on full runs confirms no `1..4p` regressions between pass15a and pass15g (`diffs=0`, `missing=0`) using:
+    - `/Users/sayhiben/dev/Barony-8p/tests/smoke/artifacts/mapgen-integration-pass15a-runs5-20260212-120325`
+    - `/Users/sayhiben/dev/Barony-8p/tests/smoke/artifacts/mapgen-integration-pass15g-runs5-20260212-122229`
+- Full-lobby confirmation after pass15g:
+  - Artifact: `/Users/sayhiben/dev/Barony-8p/tests/smoke/artifacts/mapgen-full-posttune-pass15g-20260212-132721`
+  - Coverage: level `1`, players `1..15`, `runs=5`, all `75/75` rows passing (`mapgen_wait_reason=none` on all rows).
+  - Full-lobby `p15 vs p4`: rooms `1.530x`, monsters `1.595x`, monsters/room `1.042x`, gold/player `0.610x`, items/player `0.714x`, food/player `0.610x`, decorations `3.545x`, blocking-share `46.2%`, `gold_amount/player=1.544x`.
+  - Integration comparison at level `1` (same candidate): rooms stayed aligned (`1.530x` vs `1.523x`) and items/player stayed close (`0.714x` vs `0.723x`), but full-lobby diverged on monsters/room (`1.042x` vs `0.873x`), decorations (`3.545x` vs `1.667x`), food/player (`0.610x` vs `0.785x`), and `gold_amount/player` (`1.544x` vs `0.919x`).
+- Decision: hold promotion on pass15g; keep it as baseline and run targeted retune focused on full-lobby level-1 divergence, then re-gate with integration + full-lobby.
+- Pass15h fast-lane retune resumed with unpinned high-sample volatility aggregates (`4` invocations x `runs=10`, `2400` rows each):
+  - Artifacts:
+    - `/Users/sayhiben/dev/Barony-8p/tests/smoke/artifacts/mapgen-integration-pass15h8-volatility-agg-20260212-172054`
+    - `/Users/sayhiben/dev/Barony-8p/tests/smoke/artifacts/mapgen-integration-pass15h9-volatility-agg-20260212-172508`
+    - `/Users/sayhiben/dev/Barony-8p/tests/smoke/artifacts/mapgen-integration-pass15h10-volatility-agg-20260212-172916`
+    - `/Users/sayhiben/dev/Barony-8p/tests/smoke/artifacts/mapgen-integration-pass15h11-volatility-agg-20260212-173303`
+    - `/Users/sayhiben/dev/Barony-8p/tests/smoke/artifacts/mapgen-integration-pass15h12-volatility-agg-20260212-173635`
+  - Shape evolution:
+    - pass15h8 remained room-heavy (`rooms 1.795x`) with low density (`monsters/room 0.781x`) and value overshoot (`gold_amount/player 1.086x`).
+    - pass15h9 corrected value but over-tightened rooms (`1.497x`) and raised density (`0.965x`).
+    - pass15h10/pass15h11 improved global totals but still had level-1 pressure or item-floor regressions.
+    - pass15h12 is the current integration candidate:
+      - aggregate `p15 vs p4`: rooms `1.721x`, monsters `1.415x`, monsters/room `0.813x`, gold/player `0.733x`, items/player `0.734x`, food/player `0.766x`, decorations `1.812x`, `gold_amount/player 0.923x`.
+      - level-1 `p15 vs p4`: rooms `1.582x`, monsters/room `0.889x`, decorations `1.925x`, `gold_amount/player 1.111x`.
+- Full-lobby rerun on pass15h12 was started for promotion confidence, then intentionally stopped early to continue fast retune iteration:
+  - Partial artifact: `/Users/sayhiben/dev/Barony-8p/tests/smoke/artifacts/mapgen-full-posttune-pass15h12-20260212-173948`
+  - Completed sample count before stop: `8/75` rows (all `pass`, all `mapgen_wait_reason=none`).
 - Smoke-only in-process headless integration runner is now implemented for rapid mapgen iteration:
   - Integration ownership is now hook-local: parser/validator/runner + CSV synthesis live in `src/smoke/SmokeTestHooks.cpp` and `src/smoke/SmokeTestHooks.hpp`.
   - `src/game.cpp` is intentionally limited to thin CLI wiring (`parseIntegrationOptionArg`, `validateIntegrationOptions`, `runIntegrationMatrix`).
   - CSV schema matches matrix outputs (`mapgen_level_matrix.csv`) and reuses smoke mapgen player override control-file behavior.
+  - Integration seeding is now auto-generated per invocation; the temporary deterministic `-smoke-mapgen-integration-base-seed` override used for method-parity validation has been removed from commands and parser.
 - Integration matrix run completed on current harness:
   - Artifact: `/Users/sayhiben/dev/Barony-8p/tests/smoke/artifacts/mapgen-integration-matrix2-20260212-005916`
   - Coverage: levels `1,7,16,25,33`, players `1..15`, `runs=2`, all 150 rows passing.
@@ -97,12 +158,12 @@ Primary conclusions from baseline:
   - Result: row counts `60` vs `60`, normalized compare (`run_dir` excluded) shows no differences (`normalized_row_mismatch=0`, `missing_keys=0`).
   - Current interpretation: in-process integration is now comparable for these procedural floors and can be used for rapid balance preflight; re-run parity checks whenever integration harness state/seed handling changes.
 
-## Recommended Next Pass Direction (Pass15)
-1. Keep pass14c room/monster/slot-count structure unchanged (`getOverflowRoomSelectionTrials`, `getOverflowBonusEntityRolls`, `getOverflowForcedMonsterSpawns`, forced decoration cap).
-2. Normalize overflow generated-gold value by depth band to reduce mid-floor (`7/16`) `gold_amount/player` overshoot without reducing low/high floor progression too sharply.
-3. Keep value-first strategy; only add count-based economy steps if post-normalization value lanes still miss progression goals.
-4. Use in-process integration runner as the fast preflight lane on shared procedural floors (`1,7,16,33`), and re-run parity validation whenever harness/mapgen summary plumbing changes.
-5. Re-run `runs=5` gate and then full-lobby (`simulate-mapgen-players=0`) confirmation before promotion.
+## Recommended Next Direction (Pass15h12 Follow-up)
+1. Keep pass15h12 helper values as the current candidate baseline and complete full-lobby confirmation (`simulate-mapgen-players=0`, `runs=5`, `players=1..15`) end-to-end.
+2. Re-run low-player guard lane (`players=2..4`, `runs=5`) and row-level parity compare to confirm no `1..4p` drift from accepted baseline.
+3. If full-lobby still inflates level-1 density/decor/value, apply level-1-only overflow trims (forced-monster anchors / room spread) before any global coefficient change.
+4. Preserve seedless volatility discipline: keep integration runs unpinned and rely on averaged aggregates for decisions.
+5. Keep cache/process hygiene between lanes (`models.cache` cleanup + stale process checks) before launching the next full-lobby gate.
 
 ## Relevant Code and Tunables
 
@@ -273,8 +334,7 @@ HOME="$OUT/home" /Users/sayhiben/dev/Barony-8p/build-mac-smoke/barony.app/Conten
   -smoke-mapgen-integration-levels=1,7,16,33 \
   -smoke-mapgen-integration-min-players=1 \
   -smoke-mapgen-integration-max-players=15 \
-  -smoke-mapgen-integration-runs=2 \
-  -smoke-mapgen-integration-base-seed=1000
+  -smoke-mapgen-integration-runs=2
 ```
 
 ### Step 4: Run fast sanity matrix (`runs=2`)

@@ -158,17 +158,16 @@ namespace Mapgen
 	const Summary& lastSummary();
 
 #ifdef BARONY_SMOKE_TESTS
-	struct IntegrationOptions
-	{
-		bool enabled = false;
-		bool append = false;
-		std::string outputCsvPath;
-		std::string levelsCsv = "1,7,16,25,33";
-		int minPlayers = 1;
-		int maxPlayers = MAXPLAYERS;
-		int runsPerPlayer = 2;
-		Uint32 baseSeed = 1000;
-	};
+		struct IntegrationOptions
+		{
+			bool enabled = false;
+			bool append = false;
+			std::string outputCsvPath;
+			std::string levelsCsv = "1,7,16,25,33";
+			int minPlayers = 1;
+			int maxPlayers = MAXPLAYERS;
+			int runsPerPlayer = 2;
+		};
 
 	bool parseIntegrationOptionArg(const char* arg, IntegrationOptions& options, std::string& errorMessage);
 	bool validateIntegrationOptions(const IntegrationOptions& options, std::string& errorMessage);
