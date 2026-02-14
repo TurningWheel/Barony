@@ -394,12 +394,7 @@ std::string SteamServerClientWrapper::requestAuthTicket()
 
 	consumeAuthTicket();
 
-#if defined(LINUX) || defined(APPLE)
-    // TODO update steamworks SDK for linux and mac
-    authTicketHandle = SteamUser()->GetAuthSessionTicket(rgubTicket, sizeof(rgubTicket), &cubTicket);
-#else
-    authTicketHandle = SteamUser()->GetAuthSessionTicket(rgubTicket, sizeof(rgubTicket), &cubTicket, nullptr);
-#endif
+	authTicketHandle = SteamUser()->GetAuthSessionTicket(rgubTicket, sizeof(rgubTicket), &cubTicket, nullptr);
  
 	if ( authTicketHandle )
 	{

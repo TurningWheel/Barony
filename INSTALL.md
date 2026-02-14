@@ -168,7 +168,9 @@ cmake -S . -B build -DCMAKE_INSTALL_PREFIX="$PWD\build\install-root"
 ```
 
 
-# macOS (Homebrew, Package-Based)
+# macOS (Homebrew, full-feature build)
+
+These steps were validated with `FMOD + Steamworks + CURL + Opus + TheoraPlayer` enabled.
 
 ## 1. Install tools and dependencies
 
@@ -182,92 +184,174 @@ Install dependencies with Homebrew:
 
 ```bash
 brew update
-brew install cmake ninja pkg-config sdl2 sdl2_image sdl2_net sdl2_ttf libpng physfs rapidjson
+brew install \
+  cmake ninja pkg-config git \
+  sdl2 sdl2_image sdl2_net sdl2_ttf \
+  libpng physfs rapidjson \
+  mesa mesa-glu \
+  curl openssl@3 opus theora \
+  nativefiledialog-extended
 ```
 
-## 2. Configure and build
+Notes:
+
+- The Homebrew package is `theora` (not `libtheora`).
+- Steamworks-enabled builds require NFD; the `nativefiledialog-extended` formula provides it.
+- `mesa` + `mesa-glu` provide `GL/gl.h` and `GL/glu.h` expected by this codebase on current macOS/Homebrew setups.
+
+## 2. Prepare SDK and third-party folders
+
+Expected SDK layout for local drops:
+
+- `deps/fmod/macos/api/core/inc/fmod.hpp`
+- `deps/fmod/macos/api/core/lib/libfmod.dylib`
+- `deps/steamworks/sdk/public/steam/steam_api.h`
+- `deps/steamworks/sdk/redistributable_bin/osx/libsteam_api.dylib`
+
+Steamworks finder compatibility workaround on macOS:
 
 ```bash
-cmake -S . -B build-mac -G Ninja \
+if [ ! -e deps/steamworks/sdk/redistributable_bin/osx32 ] && [ -d deps/steamworks/sdk/redistributable_bin/osx ]; then
+  ln -s osx deps/steamworks/sdk/redistributable_bin/osx32
+fi
+```
+
+Build and stage TheoraPlayer from source:
+
+```bash
+./scripts/build_theoraplayer.sh --prefix "$PWD/deps/theoraplayer"
+```
+
+## 3. Configure and build (all requested integrations ON)
+
+```bash
+export FMOD_DIR="$PWD/deps/fmod/macos"
+export STEAMWORKS_ROOT="$PWD/deps/steamworks"
+export THEORAPLAYER_DIR="$PWD/deps/theoraplayer"
+export OPUS_DIR="$(brew --prefix opus)"
+export OPENSSL_ROOT_DIR="$(brew --prefix openssl@3)"
+
+cmake -S . -B build-mac-all -G Ninja \
   -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
-  -DFMOD_ENABLED=OFF \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DFMOD_ENABLED=ON \
   -DOPENAL_ENABLED=OFF \
-  -DSTEAMWORKS_ENABLED=OFF \
-  -DEOS_ENABLED=OFF \
-  -DPLAYFAB_ENABLED=OFF \
-  -DTHEORAPLAYER_ENABLED=OFF \
-  -DCURL_ENABLED=OFF \
-  -DOPUS_ENABLED=OFF
+  -DSTEAMWORKS=ON \
+  -DEOS=OFF \
+  -DPLAYFAB=OFF \
+  -DTHEORAPLAYER=ON \
+  -DCURL=ON \
+  -DOPUS=ON
 
-cmake --build build-mac -j8
+cmake --build build-mac-all -j8
 ```
 
-## 3. Run against game assets
-
-Use the Steam resources directory as datadir:
+## 4. Run against game assets
 
 ```bash
-./build-mac/barony.app/Contents/MacOS/barony \
+./build-mac-all/barony.app/Contents/MacOS/barony \
   -datadir="$HOME/Library/Application Support/Steam/steamapps/common/Barony/Barony.app/Contents/Resources" \
   -windowed -size=1280x720
 ```
 
-## 4. Optional smoke check
+
+# Linux (Docker, recommended for full-feature build)
+
+The repo includes a containerized build flow in `docker/` that installs/builds all required Linux dependencies and third-party libraries.
+
+## 1. Build the image
 
 ```bash
-timeout 20s ./build-mac/barony.app/Contents/MacOS/barony \
-  -datadir="$HOME/Library/Application Support/Steam/steamapps/common/Barony/Barony.app/Contents/Resources" \
-  -windowed -size=1280x720
+docker compose -f docker/docker-compose.yml build
 ```
 
-Expected: exit code `124` from `timeout` after successful startup.
+## 2. Run the full-feature build
+
+```bash
+docker compose -f docker/docker-compose.yml run --rm barony-linux-build
+```
+
+Outputs:
+
+- `build-linux-all/barony`
+- `build-linux-all/editor`
+
+Notes:
+
+- `deps/fmod/linux` and `deps/steamworks` are mounted from your workspace and consumed directly.
+- If FMOD ships only `libfmod.so.<version>`, the build script auto-creates `libfmod.so` symlink in `deps/fmod/linux/api/core/lib/x86_64`.
+- Default Linux build parallelism is capped (`BARONY_BUILD_JOBS=4`) to avoid OOM kills in constrained Docker environments.
 
 
-# Linux (Package-Based)
+# Linux (native package-based full-feature build)
 
 ## 1. Install dependencies (Debian/Ubuntu example)
 
 ```bash
 sudo apt-get update
 sudo apt-get install -y \
-  build-essential cmake ninja-build pkg-config \
+  build-essential cmake ninja-build pkg-config git \
   libsdl2-dev libsdl2-image-dev libsdl2-net-dev libsdl2-ttf-dev \
   libpng-dev zlib1g-dev libphysfs-dev rapidjson-dev \
-  libgl1-mesa-dev libglu1-mesa-dev \
-  xvfb xauth
+  libgl1-mesa-dev libglu1-mesa-dev libgtk-3-dev \
+  libcurl4-openssl-dev libssl-dev \
+  libopus-dev libogg-dev libvorbis-dev libtheora-dev
 ```
 
-## 2. Configure and build
+Build NFD from source (required when Steamworks is ON):
 
 ```bash
-cmake -S . -B build-linux -G Ninja \
-  -DFMOD_ENABLED=OFF \
-  -DOPENAL_ENABLED=OFF \
-  -DSTEAMWORKS_ENABLED=OFF \
-  -DEOS_ENABLED=OFF \
-  -DPLAYFAB_ENABLED=OFF \
-  -DTHEORAPLAYER_ENABLED=OFF \
-  -DCURL_ENABLED=OFF \
-  -DOPUS_ENABLED=OFF
+git clone --depth 1 https://github.com/btzy/nativefiledialog-extended.git /tmp/nfd
+cmake -S /tmp/nfd -B /tmp/nfd/build -G Ninja \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DBUILD_SHARED_LIBS=ON \
+  -DNFD_BUILD_TESTS=OFF \
+  -DNFD_BUILD_SDL2_TESTS=OFF \
+  -DNFD_INSTALL=ON \
+  -DCMAKE_INSTALL_PREFIX=/opt/nfd
+cmake --build /tmp/nfd/build -j"$(nproc)" --target install
+```
 
-cmake --build build-linux -j"$(nproc)" --target barony
+Build and stage TheoraPlayer from source:
+
+```bash
+./scripts/build_theoraplayer.sh --prefix "$PWD/deps/theoraplayer"
+```
+
+## 2. Configure and build (all requested integrations ON)
+
+```bash
+export FMOD_DIR="$PWD/deps/fmod/linux"
+export STEAMWORKS_ROOT="$PWD/deps/steamworks"
+export NFD_DIR="/opt/nfd"
+export THEORAPLAYER_DIR="$PWD/deps/theoraplayer"
+export OPUS_DIR="/usr"
+
+if [ ! -f "$FMOD_DIR/api/core/lib/x86_64/libfmod.so" ]; then
+  lib="$(find "$FMOD_DIR/api/core/lib/x86_64" -maxdepth 1 -type f -name 'libfmod.so.*' | sort | head -n1)"
+  [ -n "$lib" ] && ln -sfn "$(basename "$lib")" "$FMOD_DIR/api/core/lib/x86_64/libfmod.so"
+fi
+
+cmake -S . -B build-linux-all -G Ninja \
+  -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DFMOD_ENABLED=ON \
+  -DOPENAL_ENABLED=OFF \
+  -DSTEAMWORKS=ON \
+  -DEOS=OFF \
+  -DPLAYFAB=OFF \
+  -DTHEORAPLAYER=ON \
+  -DCURL=ON \
+  -DOPUS=ON
+
+cmake --build build-linux-all -j4
 ```
 
 ## 3. Run
 
 ```bash
-./build-linux/barony -datadir=/path/to/Barony.app/Contents/Resources -windowed -size=1280x720
+./build-linux-all/barony -datadir=/path/to/Barony.app/Contents/Resources -windowed -size=1280x720
 ```
-
-## 4. Optional headless smoke check
-
-```bash
-timeout 30s xvfb-run -a ./build-linux/barony \
-  -datadir=/path/to/Barony.app/Contents/Resources \
-  -windowed -size=1280x720
-```
-
-Expected: exit code `124` from `timeout` after successful startup.
 
 
 # Common Build Flags
@@ -284,5 +368,6 @@ Expected: exit code `124` from `timeout` after successful startup.
 Example:
 
 ```bash
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DFMOD_ENABLED=ON -DSTEAMWORKS=ON -DEOS=OFF
+cmake -S . -B build -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_BUILD_TYPE=Release \
+  -DFMOD_ENABLED=ON -DSTEAMWORKS=ON -DTHEORAPLAYER=ON -DCURL=ON -DOPUS=ON -DEOS=OFF
 ```

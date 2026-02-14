@@ -247,12 +247,11 @@ function Build-TheoraPlayerFromSource {
 
   $tmpRoot      = Join-Path $DepsDir "_tmp_theoraplayer"
   $cloneDir     = Join-Path $tmpRoot "src"
-  $cmakeProjDir = Join-Path $tmpRoot "cmake"
   $cmakeBuildDir= Join-Path $tmpRoot "build"
+  $wrapperDir   = Join-Path $Root "scripts\theoraplayer"
 
   Remove-DirectoryIfExists $tmpRoot
   New-Item -ItemType Directory -Force -Path $cloneDir | Out-Null
-  New-Item -ItemType Directory -Force -Path $cmakeProjDir | Out-Null
 
   try {
     & git clone --depth 1 $TheoraPlayerRepoUrl $cloneDir
@@ -275,76 +274,14 @@ function Build-TheoraPlayerFromSource {
 
     $theoraRootCMake = Convert-ToCMakePath $cloneDir
     $toolchainCMake  = Convert-ToCMakePath $VcpkgToolchain
+    $wrapperCMake = Join-Path $wrapperDir "CMakeLists.txt"
+    if (-not (Test-Path $wrapperCMake)) {
+      throw "Shared TheoraPlayer wrapper not found: $wrapperCMake"
+    }
 
-    $cmakeLists = @'
-cmake_minimum_required(VERSION 3.20)
-project(theoraplayer_builder LANGUAGES C CXX)
-
-find_package(Ogg CONFIG REQUIRED)
-find_package(Vorbis CONFIG REQUIRED)
-find_package(unofficial-theora CONFIG REQUIRED)
-
-add_library(theoraplayer SHARED
-  ${THEORAPLAYER_ROOT}/theoraplayer/src/AudioInterface.cpp
-  ${THEORAPLAYER_ROOT}/theoraplayer/src/AudioInterfaceFactory.cpp
-  ${THEORAPLAYER_ROOT}/theoraplayer/src/AudioPacketQueue.cpp
-  ${THEORAPLAYER_ROOT}/theoraplayer/src/DataSource.cpp
-  ${THEORAPLAYER_ROOT}/theoraplayer/src/Exception.cpp
-  ${THEORAPLAYER_ROOT}/theoraplayer/src/FileDataSource.cpp
-  ${THEORAPLAYER_ROOT}/theoraplayer/src/FrameQueue.cpp
-  ${THEORAPLAYER_ROOT}/theoraplayer/src/Manager.cpp
-  ${THEORAPLAYER_ROOT}/theoraplayer/src/MemoryDataSource.cpp
-  ${THEORAPLAYER_ROOT}/theoraplayer/src/Mutex.cpp
-  ${THEORAPLAYER_ROOT}/theoraplayer/src/theoraplayer.cpp
-  ${THEORAPLAYER_ROOT}/theoraplayer/src/Thread.cpp
-  ${THEORAPLAYER_ROOT}/theoraplayer/src/Timer.cpp
-  ${THEORAPLAYER_ROOT}/theoraplayer/src/Utility.cpp
-  ${THEORAPLAYER_ROOT}/theoraplayer/src/VideoClip.cpp
-  ${THEORAPLAYER_ROOT}/theoraplayer/src/VideoFrame.cpp
-  ${THEORAPLAYER_ROOT}/theoraplayer/src/WorkerThread.cpp
-  ${THEORAPLAYER_ROOT}/theoraplayer/src/formats/Theora/VideoClip_Theora.cpp
-  ${THEORAPLAYER_ROOT}/theoraplayer/src/YUV/yuv_util.c
-  ${THEORAPLAYER_ROOT}/theoraplayer/src/YUV/C/yuv420_grey_c.c
-  ${THEORAPLAYER_ROOT}/theoraplayer/src/YUV/C/yuv420_rgb_c.c
-  ${THEORAPLAYER_ROOT}/theoraplayer/src/YUV/C/yuv420_yuv_c.c
-)
-
-target_include_directories(theoraplayer PRIVATE
-  ${THEORAPLAYER_ROOT}/theoraplayer/include
-  ${THEORAPLAYER_ROOT}/theoraplayer/include/theoraplayer
-  ${THEORAPLAYER_ROOT}/theoraplayer/src
-  ${THEORAPLAYER_ROOT}/theoraplayer/src/formats
-  ${THEORAPLAYER_ROOT}/theoraplayer/src/YUV
-)
-
-target_compile_definitions(theoraplayer PRIVATE
-  _USE_THEORA
-  _YUV_C
-  THEORAPLAYER_EXPORTS
-  _CRT_SECURE_NO_WARNINGS
-)
-
-target_link_libraries(theoraplayer PRIVATE
-  Ogg::ogg
-  Vorbis::vorbis
-  Vorbis::vorbisfile
-  Vorbis::vorbisenc
-  unofficial::theora::theora
-  unofficial::theora::theoradec
-  unofficial::theora::theoraenc
-)
-
-set_target_properties(theoraplayer PROPERTIES
-  CXX_STANDARD 17
-  CXX_STANDARD_REQUIRED ON
-  OUTPUT_NAME theoraplayer
-)
-'@
-    $tempCMake = Join-Path $cmakeProjDir "CMakeLists.txt"
-    Set-Content -Path $tempCMake -Value $cmakeLists -Encoding ASCII
-
-    & cmake -S $cmakeProjDir -B $cmakeBuildDir -G "Visual Studio 17 2022" -A x64 `
+    & cmake -S $wrapperDir -B $cmakeBuildDir -G "Visual Studio 17 2022" -A x64 `
       -DTHEORAPLAYER_ROOT="$theoraRootCMake" `
+      -DTHEORAPLAYER_DEP_BACKEND="vcpkg" `
       -DCMAKE_TOOLCHAIN_FILE="$toolchainCMake" `
       -DVCPKG_TARGET_TRIPLET="$VcpkgTriplet"
     if ($LASTEXITCODE -ne 0) {
