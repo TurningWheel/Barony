@@ -1,0 +1,18 @@
+services:
+  barony-linux-build:
+    platform: linux/amd64
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: barony-linux-build:latest
+    working_dir: /work
+    environment:
+      FMOD_DIR: /work/deps/fmod/linux
+      STEAMWORKS_ROOT: /work/deps/steamworks
+      NFD_DIR: /opt/nfd
+      THEORAPLAYER_DIR: /opt/theoraplayer
+      OPUS_DIR: /usr
+      BARONY_BUILD_JOBS: "4"
+    volumes:
+      - ..:/work
+    command: ["bash", "-lc", "docker/build-linux.sh"]

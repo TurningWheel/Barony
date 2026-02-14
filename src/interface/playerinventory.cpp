@@ -2293,34 +2293,9 @@ std::string getItemSpritePath(const int player, Item& item)
 		node_t* imagePathsNode = nullptr;
 		if ( item.type == TOOL_PLAYER_LOOT_BAG )
 		{
-			if ( colorblind_lobby )
-			{
-				int playerOwner = item.getLootBagPlayer();
-				Uint32 index = 4;
-				switch ( playerOwner )
-				{
-					case 0:
-						index = 2;
-						break;
-					case 1:
-						index = 3;
-						break;
-					case 2:
-						index = 1;
-						break;
-					case 3:
-						index = 4;
-						break;
-					default:
-						break;
-				}
-
-				imagePathsNode = list_Node(&items[item.type].images, index);
-			}
-			else
-			{
-				imagePathsNode = list_Node(&items[item.type].images, item.getLootBagPlayer());
-			}
+			const int playerOwner = item.getLootBagPlayer();
+			imagePathsNode = list_Node(&items[item.type].images,
+				getLootBagVariationForPlayer(playerOwner, colorblind_lobby));
 		}
 		else if ( item.type == MAGICSTAFF_SCEPTER )
 		{

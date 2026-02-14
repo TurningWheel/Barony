@@ -866,6 +866,10 @@ Item** itemSlot(Stat* myStats, Item* item);
 enum Category itemCategory(const Item* item);
 Sint32 itemModel(const Item* item, bool shortModel = false, Entity* creature = nullptr);
 Sint32 itemModelFirstperson(const Item* item);
+int getLootBagVariationForPlayer(const int playerOwner, const bool colorblind);
+int getLootBagPlayerForVariation(const int variation, const bool colorblind);
+int getLootBagLightPaletteForPlayer(const int playerOwner);
+int getLootBagLightPaletteForVariation(const int variation, const bool colorblind);
 void consumeItem(Item*& item, int player); //NOTE: Items have to be unequipped before calling this function on them. NOTE: THIS CAN FREE THE ITEM POINTER. Sets item to nullptr if it does.
 bool dropItem(Item* item, int player, const bool notifyMessage = true, const bool dropAll = false); // return true on free'd item
 bool playerGreasyDropItem(const int player, Item* const item);

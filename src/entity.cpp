@@ -36,6 +36,7 @@ See LICENSE for details.
 #endif
 #include "ui/MainMenu.hpp"
 #include "ui/GameUI.hpp"
+#include "status_effect_owner_encoding.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -2597,7 +2598,7 @@ bool Entity::increaseSkill(int skill, bool notify)
 					|| skill == PRO_RANGED
 					|| skill == PRO_STEALTH) )
 			{
-				int caster = ((myStats->getEffectActive(EFF_NIMBLENESS) >> 4) & 0xF) - 1;
+				int caster = StatusEffectOwnerEncoding::decodeOwnerNibbleToPlayer(myStats->getEffectActive(EFF_NIMBLENESS));
 				if ( caster >= 0 && caster < MAXPLAYERS )
 				{
 					if ( players[caster]->entity )
@@ -2611,7 +2612,7 @@ bool Entity::increaseSkill(int skill, bool notify)
 					|| skill == PRO_AXE
 					|| skill == PRO_MACE) )
 			{
-				int caster = ((myStats->getEffectActive(EFF_GREATER_MIGHT) >> 4) & 0xF) - 1;
+				int caster = StatusEffectOwnerEncoding::decodeOwnerNibbleToPlayer(myStats->getEffectActive(EFF_GREATER_MIGHT));
 				if ( caster >= 0 && caster < MAXPLAYERS )
 				{
 					if ( players[caster]->entity )
@@ -2624,7 +2625,7 @@ bool Entity::increaseSkill(int skill, bool notify)
 				&& (skill == PRO_SORCERY
 					|| skill == PRO_MYSTICISM) )
 			{
-				int caster = ((myStats->getEffectActive(EFF_COUNSEL) >> 4) & 0xF) - 1;
+				int caster = StatusEffectOwnerEncoding::decodeOwnerNibbleToPlayer(myStats->getEffectActive(EFF_COUNSEL));
 				if ( caster >= 0 && caster < MAXPLAYERS )
 				{
 					if ( players[caster]->entity )
@@ -2636,7 +2637,7 @@ bool Entity::increaseSkill(int skill, bool notify)
 			if ( myStats->getEffectActive(EFF_STURDINESS)
 				&& (skill == PRO_SHIELD) )
 			{
-				int caster = ((myStats->getEffectActive(EFF_STURDINESS) >> 4) & 0xF) - 1;
+				int caster = StatusEffectOwnerEncoding::decodeOwnerNibbleToPlayer(myStats->getEffectActive(EFF_STURDINESS));
 				if ( caster >= 0 && caster < MAXPLAYERS )
 				{
 					if ( players[caster]->entity )
@@ -2774,6 +2775,8 @@ Returns a pointer to a Stat instance given a pointer to an entity
 
 Stat* Entity::getStats() const
 {
+	const int playerStatsIndex = this->skill[2];
+
 	if ( this->behavior == &actMonster ) // monsters
 	{
 		if ( multiplayer == CLIENT && clientStats )
@@ -2788,13 +2791,12 @@ Stat* Entity::getStats() const
 			}
 		}
 	}
-	else if ( this->behavior == &actPlayer ) // players
+	else if ( this->behavior == &actPlayer || this->behavior == &actPlayerLimb ) // players and bodyparts
 	{
-		return stats[this->skill[2]];
-	}
-	else if ( this->behavior == &actPlayerLimb ) // player bodyparts
-	{
-		return stats[this->skill[2]];
+		if ( playerStatsIndex >= 0 && playerStatsIndex < MAXPLAYERS )
+		{
+			return stats[playerStatsIndex];
+		}
 	}
 
 	return nullptr;
@@ -3718,13 +3720,10 @@ int Entity::getHungerTickRate(Stat* myStats, bool isPlayer, bool checkItemsEffec
 		}
 	}
 
-	if ( playerCount == 3 )
+	if ( playerCount > 2 )
 	{
-		hungerTickRate *= 1.25;
-	}
-	else if ( playerCount == 4 )
-	{
-		hungerTickRate *= 1.5;
+		// Preserve legacy scaling for 3/4 players, then continue the same step size for overflow players.
+		hungerTickRate *= (1.0 + 0.25 * (playerCount - 2));
 	}
 	if ( myStats->type == INSECTOID )
 	{
@@ -3770,13 +3769,9 @@ int Entity::getHungerTickRate(Stat* myStats, bool isPlayer, bool checkItemsEffec
 	if ( playerAutomaton )
 	{
 		// give a little extra hunger duration.
-		if ( playerCount == 3 )
+		if ( playerCount > 2 )
 		{
-			hungerTickRate *= 1.25; // 1.55x (1.25 x 1.25)
-		}
-		else if ( playerCount == 4 )
-		{
-			hungerTickRate *= 1.5; // 2.55x (1.5 x 1.5)
+			hungerTickRate *= (1.0 + 0.25 * (playerCount - 2));
 		}
 
 		if ( myStats->HUNGER > 1000 && hungerTickRate > 30 )
@@ -10083,6 +10078,18 @@ void Entity::attack(int pose, int charge, Entity* target)
 	int weaponskill = -1;
 	node_t* node = nullptr;
 	double tangent;
+	bool (*isValidCombatPlayer)(const int, const bool) = [](const int index, const bool requireEntity)
+	{
+		if ( index < 0 || index >= MAXPLAYERS || !players[index] || !stats[index] )
+		{
+			return false;
+		}
+		if ( requireEntity && !players[index]->entity )
+		{
+			return false;
+		}
+		return true;
+	};
 
 	if ( (myStats = getStats()) == nullptr )
 	{
@@ -10097,6 +10104,14 @@ void Entity::attack(int pose, int charge, Entity* target)
 	else
 	{
 		player = -1; // not a player
+	}
+	if ( player >= 0 )
+	{
+		if ( !isValidCombatPlayer(player, true) )
+		{
+			printlog("[NET]: Entity::attack() ignoring invalid attacker player index %d (uid: %u)", player, getUID());
+			player = -1;
+		}
 	}
 
 	if ( multiplayer != CLIENT )
@@ -11310,6 +11325,16 @@ void Entity::attack(int pose, int charge, Entity* target)
 				}
 			}
 
+			if ( hit.entity && hit.entity->behavior == &actPlayer )
+			{
+				const int hitplayer = hit.entity->skill[2];
+				if ( !isValidCombatPlayer(hitplayer, false) )
+				{
+					printlog("[NET]: Entity::attack() skipping invalid hit player index %d (target uid: %u)", hitplayer, hit.entity->getUID());
+					hit.entity = nullptr;
+				}
+			}
+
 			if ( hit.entity && (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer) )
 			{
 				Stat* hitstats = hit.entity->getStats();
@@ -11575,6 +11600,15 @@ void Entity::attack(int pose, int charge, Entity* target)
 		if ( hit.entity != nullptr )
 		{
 			bool mimic = hit.entity->isInertMimic();
+			if ( hit.entity->behavior == &actPlayer )
+			{
+				const int hitplayer = hit.entity->skill[2];
+				if ( !isValidCombatPlayer(hitplayer, false) )
+				{
+					printlog("[NET]: Entity::attack() aborting invalid hit player index %d (target uid: %u)", hitplayer, hit.entity->getUID());
+					return;
+				}
+			}
 
 			if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
 			{
@@ -11816,8 +11850,13 @@ void Entity::attack(int pose, int charge, Entity* target)
 			}
 			else if ( hit.entity->behavior == &actPlayer )
 			{
-				hitstats = stats[hit.entity->skill[2]];
 				playerhit = hit.entity->skill[2];
+				if ( !isValidCombatPlayer(playerhit, false) )
+				{
+					printlog("[NET]: Entity::attack() aborting invalid player target index %d (target uid: %u)", playerhit, hit.entity->getUID());
+					return;
+				}
+				hitstats = stats[playerhit];
 
 				bool alertAllies = true;
 				if ( behavior == &actMonster && monsterAllyIndex != -1 )
@@ -18125,10 +18164,10 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 				bool bonus = false;
 				if ( srcStats->getEffectActive(EFF_DIVINE_FIRE) )
 				{
-					int effectInflictedBy = (srcStats->getEffectActive(EFF_DIVINE_FIRE) & 0xF0) >> 4;
+					int effectInflictedBy = StatusEffectOwnerEncoding::decodeOwnerNibbleToPlayer(srcStats->getEffectActive(EFF_DIVINE_FIRE));
 					if ( behavior == &actPlayer && !checkFriend(src) )
 					{
-						if ( effectInflictedBy & (1 + skill[2]) )
+						if ( effectInflictedBy == skill[2] )
 						{
 							minRoll += srcStats->getEffectActive(EFF_DIVINE_FIRE) & 0xF;
 							bonus = true;
@@ -32485,7 +32524,7 @@ bool Entity::modifyDamageMultipliersFromEffects(Entity* hitentity, Entity* attac
 	}
 	if ( hitstats->getEffectActive(EFF_SIGIL) )
 	{
-		int caster = ((hitstats->getEffectActive(EFF_SIGIL) >> 4) & 0xF) - 1;
+		int caster = StatusEffectOwnerEncoding::decodeOwnerNibbleToPlayer(hitstats->getEffectActive(EFF_SIGIL));
 		if ( caster >= 0 && caster < MAXPLAYERS )
 		{
 			if ( hitentity->behavior == &actMonster 
@@ -32505,7 +32544,7 @@ bool Entity::modifyDamageMultipliersFromEffects(Entity* hitentity, Entity* attac
 		real_t reduction = std::min(0.8, std::max(0.0, 0.1 + (0.15 * (int)(hitstats->getEffectActive(EFF_SANCTUARY) & 0xF))));
 		damageMultiplier = std::max(0.1, damageMultiplier * (1.0 - reduction));
 
-		int caster = ((hitstats->getEffectActive(EFF_SANCTUARY) >> 4) & 0xF) - 1;
+		int caster = StatusEffectOwnerEncoding::decodeOwnerNibbleToPlayer(hitstats->getEffectActive(EFF_SANCTUARY));
 		if ( caster >= 0 && caster < MAXPLAYERS )
 		{
 			if ( players[caster]->entity )
@@ -32527,7 +32566,7 @@ real_t Entity::getHealingSpellPotionModifierFromEffects(bool processLevelup)
 	{
 		if ( myStats->getEffectActive(EFF_SIGIL) )
 		{
-			int caster = ((myStats->getEffectActive(EFF_SIGIL) >> 4) & 0xF) - 1;
+			int caster = StatusEffectOwnerEncoding::decodeOwnerNibbleToPlayer(myStats->getEffectActive(EFF_SIGIL));
 			if ( caster >= 0 && caster < MAXPLAYERS )
 			{
 				if ( (behavior == &actMonster

@@ -26,6 +26,7 @@
 #include "../prng.hpp"
 #include "../mod_tools.hpp"
 #include "../paths.hpp"
+#include "../status_effect_owner_encoding.hpp"
 
 void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook, bool usingTome)
 {
@@ -1895,8 +1896,9 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					int maxStrength = getSpellDamageSecondaryFromID(spell->ID, caster, nullptr, caster, usingSpellbook ? spellBookBonusPercent / 100.0 : 0.0);
 					strength = std::min(strength, maxStrength);
 
-					Uint8 effectStrength = strength;
-					effectStrength |= ((1 + ((caster->isEntityPlayer() >= 0) ? caster->skill[2] : MAXPLAYERS)) & 0xF) << 4;
+					Uint8 effectStrength = StatusEffectOwnerEncoding::packStrengthWithOwnerNibble(
+						static_cast<Uint8>(strength),
+						(caster->isEntityPlayer() >= 0) ? caster->skill[2] : -1);
 
 					if ( caster->setEffect(EFF_NIMBLENESS, (Uint8)effectStrength, element->duration, false, true, true) )
 					{
@@ -1923,8 +1925,9 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					int maxStrength = getSpellDamageSecondaryFromID(spell->ID, caster, nullptr, caster, usingSpellbook ? spellBookBonusPercent / 100.0 : 0.0);
 					strength = std::min(strength, maxStrength);
 
-					Uint8 effectStrength = strength;
-					effectStrength |= ((1 + ((caster->isEntityPlayer() >= 0) ? caster->skill[2] : MAXPLAYERS)) & 0xF) << 4;
+					Uint8 effectStrength = StatusEffectOwnerEncoding::packStrengthWithOwnerNibble(
+						static_cast<Uint8>(strength),
+						(caster->isEntityPlayer() >= 0) ? caster->skill[2] : -1);
 
 					if ( caster->setEffect(EFF_GREATER_MIGHT, (Uint8)effectStrength, element->duration, false, true, true) )
 					{
@@ -1951,8 +1954,9 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					int maxStrength = getSpellDamageSecondaryFromID(spell->ID, caster, nullptr, caster, usingSpellbook ? spellBookBonusPercent / 100.0 : 0.0);
 					strength = std::min(strength, maxStrength);
 
-					Uint8 effectStrength = strength;
-					effectStrength |= ((1 + ((caster->isEntityPlayer() >= 0) ? caster->skill[2] : MAXPLAYERS)) & 0xF) << 4;
+					Uint8 effectStrength = StatusEffectOwnerEncoding::packStrengthWithOwnerNibble(
+						static_cast<Uint8>(strength),
+						(caster->isEntityPlayer() >= 0) ? caster->skill[2] : -1);
 
 					if ( caster->setEffect(EFF_COUNSEL, (Uint8)effectStrength, element->duration, false, true, true) )
 					{
@@ -1979,8 +1983,9 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					int maxStrength = getSpellDamageSecondaryFromID(spell->ID, caster, nullptr, caster, usingSpellbook ? spellBookBonusPercent / 100.0 : 0.0);
 					strength = std::min(strength, maxStrength);
 
-					Uint8 effectStrength = strength;
-					effectStrength |= ((1 + ((caster->isEntityPlayer() >= 0) ? caster->skill[2] : MAXPLAYERS)) & 0xF) << 4;
+					Uint8 effectStrength = StatusEffectOwnerEncoding::packStrengthWithOwnerNibble(
+						static_cast<Uint8>(strength),
+						(caster->isEntityPlayer() >= 0) ? caster->skill[2] : -1);
 
 					if ( caster->setEffect(EFF_STURDINESS, (Uint8)effectStrength, element->duration, false, true, true) )
 					{
@@ -2937,8 +2942,9 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							strength += prevStrength;
 							strength = std::min(maxStrength, strength);
 
-							Uint8 effectStrength = strength;
-							effectStrength |= ((1 + ((caster->isEntityPlayer() >= 0) ? caster->skill[2] : MAXPLAYERS)) & 0xF) << 4;
+							Uint8 effectStrength = StatusEffectOwnerEncoding::packStrengthWithOwnerNibble(
+								static_cast<Uint8>(strength),
+								(caster->isEntityPlayer() >= 0) ? caster->skill[2] : -1);
 
 							if ( target->setEffect(EFF_MAXIMISE, effectStrength, element->duration, true, true, true) )
 							{
@@ -3021,8 +3027,9 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							strength += prevStrength;
 							strength = std::min(maxStrength, strength);
 
-							Uint8 effectStrength = strength;
-							effectStrength |= ((1 + ((caster->isEntityPlayer() >= 0) ? caster->skill[2] : MAXPLAYERS)) & 0xF) << 4;
+							Uint8 effectStrength = StatusEffectOwnerEncoding::packStrengthWithOwnerNibble(
+								static_cast<Uint8>(strength),
+								(caster->isEntityPlayer() >= 0) ? caster->skill[2] : -1);
 
 							if ( target->setEffect(EFF_MINIMISE, effectStrength, element->duration, true, true, true) )
 							{
@@ -6903,7 +6910,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					{
 						caster->setEffect(EFF_SLOW, false, 0, true);
 					}
-					caster->setEffect(EFF_FAST, Uint8(1 | (1 << (i + 1))), duration, false, true, true);
+					caster->setEffect(EFF_FAST, StatusEffectOwnerEncoding::encodeOwnerNibbleFromPlayer(i), duration, false, true, true);
 					messagePlayerColor(i, MESSAGE_STATUS, uint32ColorGreen, Language::get(768));
 					for ( node = map.creatures->first; node; node = node->next )
 					{
@@ -6919,7 +6926,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 
 						if ( entityDist(entity, caster) <= HEAL_RADIUS && entity->checkFriend(caster) )
 						{
-							entity->setEffect(EFF_FAST, Uint8(1 | (1 << (i + 1))), duration, false, true, true);
+							entity->setEffect(EFF_FAST, StatusEffectOwnerEncoding::encodeOwnerNibbleFromPlayer(i), duration, false, true, true);
 							playSoundEntity(entity, 178, 128);
 							spawnMagicEffectParticles(entity->x, entity->y, entity->z, 174);
 							if ( entity->behavior == &actPlayer )

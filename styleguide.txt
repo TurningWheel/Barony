@@ -1,0 +1,274 @@
+Turning Wheel C++ Coding Style Guidelines
+V1.2
+Table of Contents
+Table of Contents
+General
+Whitespace, Indentation, and Braces
+Variables
+Pointers and references
+On NULL, nullptr, 0, and false
+Code comments
+Functions
+Structs, Classes, and Enums
+Preprocessor
+Filenames
+Namespaces
+C & C++ Standard Library
+Types & Casting
+Strings
+
+General
+Write cross-platform code.
+
+Crazy advanced features of C++ 11/14/17 (e.g. <functional> binds), and out-of-control metaprogramming via templates, are a big no-no.
+
+Use “const” as much as possible.
+
+
+Whitespace, Indentation, and Braces
+Spaces are preferred over tabs. All indentations should equal 4 spaces.
+
+Use singular blank lines to separate logical blocks of code. No excessive white space.
+
+Spaces go between commas, operators, and names. Incrementors require no spaces.
+int a = 10;
+if (a == b || a == 100)
+myFunc(a, b, false);
+a * b;
+++c;
+
+Use trailing braces:
+if (condition) {
+} else if (otherCondition) {
+} else {
+}
+Rather than:
+if (condition)
+{
+}
+else if (otherCondition)
+{
+}
+else
+{
+}
+Because it conserves space and encourages use of braces even for 1 line blocks (see below).
+
+Conditional statements always have braces.
+if (whatever) {
+	if (anotherThing) {
+		doSomething();
+}
+}
+Rather than:
+if (whatever)
+	if (anotherThing)
+		doSomething();
+
+Space the if from the parentheses:
+if (whatever)
+Rather than:
+if(whatever)
+
+Do not space the parentheses from the function:
+myVariable = myFunc(someParameter, anotherParameter);
+Rather than:
+myVariable = myFunc (someParameter, anotherParameter);
+
+
+Variables
+Variables start with the first letter lower-case, and camelCase the rest of the word.
+int myVariable;
+
+Except for throwaways (eg using i to iterate in a for loop), use descriptive, meaningful names. Avoid abbreviations like “frX” and “tmp1”. Consider variables as “nouns” which emphasizes their object status.
+
+Variables should be declared as needed, NOT wholly grouped at the top of a local function or source file. Reusing common variable or function names within a local scope is fine.
+
+Avoid defining variables in global scope. Instead, encapsulate them within structured types (ie, classes and structs) limited to a single code header/implementation. At high levels, the program should refer to as few unique variables as possible.
+
+Boolean values of "true" and "false" should be used in cases where "true" and "false" want to be conveyed. Do not use "0" and "1" in place of "true" and "false".
+
+Variables which are static const should be named all caps, with underscores (think C #define's):
+static const int ENTITY_BATTLESHIP = 4;
+
+Avoid magic numbers:
+if (tile.entities[i].type == 4) //What does this mean?
+Instead:
+static const int ENTITY_BATTLESHIP = 4;
+if (tile.entities[i].type == ENTITY_BATTLESHIP)
+
+Leave no variable uninitialized once declared.
+
+Avoid casual use of “auto”. Explicit code is good code.
+
+
+Pointers and references
+The reference (&) and pointer (*) keywords are part of the variable type, and should be combined with that when declaring/initializing the variable:
+const int* myPointer = nullptr;
+const int*& myReference = myPointer;
+Do not use:
+int *myPointer = nullptr;
+
+In most cases, use references instead of pointers for function parameters, especially when “nullptr” or “NULL” is unacceptable input. Compile time errors are preferred to runtime errors.
+
+As with auto, void pointers should generally be avoided.
+
+
+On NULL, nullptr, 0, and false
+Use:
+0 for integers
+0.0f for real numbers
+nullptr for pointers
+false for false
+Avoid NULL whenever possible.
+
+
+Code comments
+Use comments generously in headers. Implementation code should be comparatively sparse. Avoid needless comments like this:
+// give player one ammo
+ammo += 1;
+
+ Head more complex code chunks with singular and concise yet descriptive comments of what the code “does.” eg:
+// create new image
+Image* image = Image();
+image->color = color;
+image->x = x;
+image->y = y;
+return image;
+
+Fall throughs in switch statements should be commented to indicate it is desired behavior and not a bug:
+switch (condition) {
+case 0:
+	doSomething();
+	// Fall through
+case 1:
+	doOtherThing();
+	break;
+case 2:
+	//...
+}
+Note: Not required if intentionally falling through a series of empty case statements.
+The following is perfectly acceptable:
+switch (condition) {
+case 0:
+	doSomething();
+	break;
+case 1:
+case 2:
+case 3:
+	doSomethingGeneric();
+	break;
+case 4:
+	//...
+}
+
+Prefer C99 / C++ comments: // This is a comment.
+Rather than: /* This is not the comment you are looking for */
+Functions
+Function names should generally emphasize their “verb” status, that is, names like “calculateScore()” which modifies and returns member variable “score” are better than “score()” which modifies member variable “scoreVal”.
+
+Except for templates (which should be completely defined in a header), functions should be implemented in .cpp files, and prototyped in .hpp files.
+
+Function prototypes in the header files (*.hpp) should be prefaced with comments that explain each parameter as well as the purpose of the function’s return value.
+
+The standard header and prototype style for functions is as follows:
+
+/// general description (ex: draw an image)
+/// @param img the image to draw
+/// @param pos the location where the image should be drawn
+/// @return true on success, false on failure
+bool drawImage(const Image& img, const Rect<int>& pos) const;
+
+When functions modify their parent scope, it should be noted in the comment header.
+
+Function overloading and optional parameters should be avoided, particularly in public interfaces.
+
+Prefer passing non-primitive types as const reference.
+Any pointer or reference parameters that are not modified in a function should be const.
+
+If a function does not modify an object, const must always be specified.
+Eg:
+void someFunc(int parameter) const;
+Rather than:
+void someFunc(int parameter);
+
+Function parameter ordering: inputs first, followed by outputs.
+
+Default parameters come after the parameters which require arguments, and only up to one default parameter of the same type.
+
+
+Structs, Classes, and Enums
+Use structs for “data only” classes. Use classes where there are member functions, etc.
+
+Class names start with an uppercase letter. Struct and enum names on the other hand start with a lowercase letter and end with “_t” (as per the original C convention).
+
+Enum values are completely uppercase, and multiple words are separated with underscores. Enums should also end with a special “ENUM_LEN” or similar entry, which specifies the number of discrete values that the enum defines (this makes iterating easier).
+enum myEnum_t {
+	TEXTURE = 1,
+	GEOMETRY = 2,
+	ENTITY = 3,
+	ENUM_LEN
+};
+
+Use standard enums rather than enum classes, as they produce simpler code. Nest enum definitions in relevant classes or namespaces to prevent enum values from being used dangerously / out-of-context (which produces nasty bugs).
+
+Ordering of class data and member functions should be as follows:
+
+Public variables
+Public functions
+Protected variables
+Protected functions
+Private variables
+Private functions
+
+
+Preprocessor
+This should be used very sparingly. Avoid #define, #ifdef, and other such things as much as possible. Instead, use static const variables which respect scope, encapsulation, etc.
+
+Header files must use include guards:
+#pragma once
+
+
+Filenames
+Every class should be in its own file unless it makes sense to group several small, related classes in one file.
+
+Filenames should match the name of their main class, which means file names should generally all start with a capital letter.
+
+Every implementation file (*.cpp) should have a matching header file (*.hpp) which exposes the module to the rest of the project.
+Examples:
+Texture.cpp
+Texture.hpp
+Sound.cpp
+Sound.hpp
+
+All folder and file names must be uniquely named for case-insensitive systems. (Read: No "code.cpp" and "Code.cpp", or "mysound.ogg" and "Mysound.ogg")
+
+
+Namespaces
+Avoid the using keyword as it creates clashes and inconsistencies in the manner by which members are referenced (unless the namespace in question is exceptionally long, in which case individual members may be “used” in an implementation only).
+
+Original code should be contained inside of a namespace to increase portability and reduce clashes on certain platforms.
+
+Original namespaces should use as few characters as possible (perhaps up to 4) to reduce the number of characters that must be typed to refer to the namespace.
+
+
+C & C++ Standard Library
+Prefer C++ memory management (eg new and delete keywords) to alloc() and free().
+
+In the rare exceptions where C-style alloc() and free() calls are necessary, prefer calloc() over malloc(), as it initializes all alloc’d memory as well as guards against miscalculated buffer sizing somewhat.
+
+Avoid STL especially when an equivalent structure is provided by the codebase (eg String instead of std::string, Map instead of std::unordered_map)
+Types & Casting
+Avoid c-style casts. In order of decreasing preference, use:
+static_cast<>
+dynamic_cast<>
+reinterpret_cast<>
+
+Avoid const_cast<> completely. If you need to modify a const object, add a class method that produces a const-free version of the object. This leaves modifiability in the hands of the object rather than the user.
+
+
+Strings
+Where possible, functions should always exchange const char* (instead of std::string& or similar) as it improves inter-language compatibility dramatically. eg:
+const char* fn(const char* input);
+
+Use the String class to maintain string buffers in memory.

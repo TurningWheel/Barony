@@ -234,6 +234,7 @@ struct StatusEffectQueue_t
 			++it;
 		}
 	}
+	StatusEffectQueue_t() = default;
 	StatusEffectQueue_t(int _player) { player = _player; }
 	static void loadStatusEffectsJSON();
 	struct EffectDefinitionEntry_t

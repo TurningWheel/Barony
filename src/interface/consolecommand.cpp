@@ -54,7 +54,6 @@ template<> void ConsoleVariable<std::string>::set(const char* arg)
 	messagePlayer(clientnum, MESSAGE_MISC, "\"%s\" is \"%s\"",
 		name + 1, data.c_str());
 }
-
 /*******************************************************************************
 	int cvars
 *******************************************************************************/
@@ -2011,10 +2010,10 @@ namespace ConsoleCommands {
 			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
 			return;
 		}
-		int numPlayers = 4;
+		int numPlayers = MAX_SPLITSCREEN;
 		if ( argc > 1 )
 		{
-			numPlayers = std::max(std::min(atoi(argv[1]), MAXPLAYERS), 2);
+			numPlayers = std::max(std::min(atoi(argv[1]), MAX_SPLITSCREEN), 2);
 		}
 		splitscreen = !splitscreen;
 
@@ -2022,17 +2021,16 @@ namespace ConsoleCommands {
 		{
 			for (int i = 1; i < MAXPLAYERS; ++i)
 			{
-				if (i < numPlayers)
-				{
-					client_disconnected[i] = false;
-				}
+				const bool activeSplitscreenPlayer = (i < numPlayers) && (i < MAX_SPLITSCREEN);
+				client_disconnected[i] = !activeSplitscreenPlayer;
 			}
 		}
 		else
 		{
-			client_disconnected[1] = true;
-			client_disconnected[2] = true;
-			client_disconnected[3] = true;
+			for (int i = 1; i < MAXPLAYERS; ++i)
+			{
+				client_disconnected[i] = true;
+			}
 		}
 
 		int playercount = 1;
@@ -6800,4 +6798,3 @@ namespace ConsoleCommands {
 		Player::Inventory_t::Appraisal_t::readFromFile();
 	});
 }
-

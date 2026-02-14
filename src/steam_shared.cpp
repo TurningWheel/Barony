@@ -210,8 +210,9 @@ bool CSteamStatistics::RequestStats()
 	{
 		return false;
 	}
-	// Request user stats.
-	return SteamUserStats()->RequestCurrentStats();
+	// Modern Steamworks SDKs no longer expose RequestCurrentStats();
+	// synchronization is handled by the Steam client before process start.
+	return true;
 }
 
 bool CSteamStatistics::RequestGlobalStats()

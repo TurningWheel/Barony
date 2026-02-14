@@ -121,12 +121,15 @@ extern bool autoLimbReload;
 #endif
 #define PATH_MAX 1024
 #include <windows.h>
-#pragma warning ( push )
-#pragma warning( disable : 4091 ) // disable typedef warnings from dbghelp.h
-#include <Dbghelp.h>
-#pragma warning( pop )
-#undef min
-#undef max
+	#pragma warning ( push )
+	#pragma warning( disable : 4091 ) // disable typedef warnings from dbghelp.h
+	#include <Dbghelp.h>
+	#pragma warning( pop )
+	#undef min
+	#undef max
+	#ifdef GetObject
+		#undef GetObject
+	#endif
 #endif
 
 #ifdef APPLE
@@ -163,21 +166,21 @@ extern bool autoLimbReload;
 #include "SDL_syswm.h"
 #endif
 #ifdef APPLE
- #include <SDL2_image/SDL_image.h>
+ #include <SDL2/SDL_image.h>
 #else // APPLE
  #ifndef NINTENDO
   #include "SDL_image.h"
  #endif // NINTENDO
 #endif // !APPLE
 #ifdef APPLE
-#include <SDL2_net/SDL_net.h>
+#include <SDL2/SDL_net.h>
 #else
 #ifndef NINTENDO
 #include "SDL_net.h"
 #endif
 #endif
 #ifdef APPLE
-#include <SDL2_ttf/SDL_ttf.h>
+#include <SDL2/SDL_ttf.h>
 #else
 #include "SDL_ttf.h"
 #endif
@@ -671,7 +674,7 @@ typedef struct door_t
 #define TEXTURESIZE 32
 #define TEXTUREPOWER 5 // power of 2 that texture size is, ie pow(2,TEXTUREPOWER) = TEXTURESIZE
 #ifdef BARONY_SUPER_MULTIPLAYER
-#define MAXPLAYERS 8
+#define MAXPLAYERS 15
 #else
 #define MAXPLAYERS 4
 #endif

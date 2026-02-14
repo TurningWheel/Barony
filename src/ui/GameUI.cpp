@@ -27,6 +27,10 @@
 #include "../shops.hpp"
 #include "../colors.hpp"
 #include "../book.hpp"
+#include "../player_slot_map.hpp"
+#ifdef BARONY_SMOKE_TESTS
+#include "../smoke/SmokeTestHooks.hpp"
+#endif
 #include "../ui/MainMenu.hpp"
 
 #include <assert.h>
@@ -280,11 +284,23 @@ bool bUsePreciseFieldTextReflow = true;
 bool bUseSelectedSlotCycleAnimation = false; // probably not gonna use, but can enable
 CustomColors_t hudColors;
 EnemyBarSettings_t enemyBarSettings;
-#ifdef BARONY_SUPER_MULTIPLAYER
-StatusEffectQueue_t StatusEffectQueue[MAXPLAYERS] = { {0}, {1}, {2}, {3}, {4}, {5}, {6}, {7} };
-#else
-StatusEffectQueue_t StatusEffectQueue[MAXPLAYERS] = { {0}, {1}, {2}, {3} };
+StatusEffectQueue_t StatusEffectQueue[MAXPLAYERS];
+namespace
+{
+struct StatusEffectQueueInitializer_t
+{
+	StatusEffectQueueInitializer_t()
+	{
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			StatusEffectQueue[i].player = i;
+#ifdef BARONY_SMOKE_TESTS
+			SmokeTestHooks::GameUI::recordStatusEffectQueueInit(i, StatusEffectQueue[i].player);
 #endif
+		}
+	}
+} StatusEffectQueueInitializer;
+}
 std::unordered_map<int, StatusEffectQueue_t::EffectDefinitionEntry_t> StatusEffectQueue_t::StatusEffectDefinitions_t::allEffects;
 std::unordered_map<int, StatusEffectQueue_t::EffectDefinitionEntry_t> StatusEffectQueue_t::StatusEffectDefinitions_t::allSustainedSpells;
 Uint32 StatusEffectQueue_t::StatusEffectDefinitions_t::tooltipDescColor = 0xFFFFFFFF;
@@ -4412,6 +4428,29 @@ std::vector<std::vector<std::string>> playerXPCapPaths = {
 	}
 };
 
+static int getXPBarThemeIndex(const int player)
+{
+	static const int normalPrimary[] = { 0, 1, 2, 3, 4 };
+	static const int normalCycle[] = { 2, 3, 4 };
+	static const int colorblindPrimary[] = { 2, 3, 1, 4, 4 };
+	static const int colorblindCycle[] = { 2, 3, 4 };
+	static const PlayerSlotLookup<int, MAXPLAYERS> normalThemeByPlayer =
+		buildPlayerSlotLookup<int, MAXPLAYERS>(normalPrimary, normalCycle, 0);
+	static const PlayerSlotLookup<int, MAXPLAYERS> colorblindThemeByPlayer =
+		buildPlayerSlotLookup<int, MAXPLAYERS>(colorblindPrimary, colorblindCycle, 0);
+
+	if ( player < 0 || player >= MAXPLAYERS )
+	{
+		return colorblind_lobby ? colorblindThemeByPlayer[0] : normalThemeByPlayer[0];
+	}
+
+	// We only have five XP bar art themes. Preserve legacy order for early players,
+	// then rotate extra slots through secondary themes. Repeats begin at player index 5
+	// because that is the first overflow slot, and continue with one consistent cycle.
+	return colorblind_lobby ?
+		colorblindThemeByPlayer[player] : normalThemeByPlayer[player];
+}
+
 void createXPBar(const int player)
 {
 	auto& hud_t = players[player]->hud;
@@ -4439,50 +4478,14 @@ void createXPBar(const int player)
 	progressClipFrame->setSize(SDL_Rect{ 0, 6, 1, progressBarHeight });
 
 	std::string bodyPath = "*#images/ui/HUD/xpbar/HUD_Exp_SandBody2_";
-	int xpPathNum = player;
-	if ( !colorblind_lobby )
+	int xpPathNum = getXPBarThemeIndex(player);
+	static const char* xpBodySuffixes[] = { "00.png", "01.png", "02.png", "03.png", "04.png" };
+	if ( xpPathNum < 0 || xpPathNum >= static_cast<int>(sizeof(xpBodySuffixes) / sizeof(xpBodySuffixes[0])) )
 	{
-		switch ( player )
-		{
-			case 0:
-			default:
-				bodyPath += "00.png";
-				break;
-			case 1:
-				bodyPath += "01.png";
-				break;
-			case 2:
-				bodyPath += "02.png";
-				break;
-			case 3:
-				bodyPath += "03.png";
-				break;
-		}
+		xpPathNum = 0;
 	}
-	else
-	{
-		switch ( player )
-		{
-			case 0:
-			default:
-				bodyPath += "02.png";
-				xpPathNum = 2;
-				break;
-			case 1:
-				bodyPath += "03.png";
-				xpPathNum = 3;
-				break;
-			case 2:
-				bodyPath += "01.png";
-				xpPathNum = 1;
-				break;
-			case 3:
-				bodyPath += "04.png";
-				xpPathNum = 4;
-				break;
-		}
-	}
-	if ( player >= playerXPCapPaths.size() )
+	bodyPath += xpBodySuffixes[xpPathNum];
+	if ( xpPathNum >= static_cast<int>(playerXPCapPaths.size()) )
 	{
 		xpPathNum = 0;
 	}
@@ -7145,6 +7148,9 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 void createStatusEffectQueue(const int player)
 {
 	auto& statusEffectQueue = StatusEffectQueue[player];
+#ifdef BARONY_SMOKE_TESTS
+	SmokeTestHooks::GameUI::traceStatusEffectQueueCreate(player, statusEffectQueue.player);
+#endif
 	if ( statusEffectQueue.statusEffectFrame )
 	{
 		return;
@@ -9888,6 +9894,9 @@ void StatusEffectQueue_t::updateEntryImage(StatusEffectQueueEntry_t& entry, Fram
 void updateStatusEffectQueue(const int player)
 {
 	auto& statusEffectQueue = StatusEffectQueue[player];
+#ifdef BARONY_SMOKE_TESTS
+	SmokeTestHooks::GameUI::traceStatusEffectQueueUpdate(player, statusEffectQueue.player);
+#endif
 	Frame* statusEffectFrame = statusEffectQueue.getStatusEffectFrame();
 	if ( !statusEffectFrame )
 	{
@@ -31654,24 +31663,8 @@ void Player::HUD_t::updateXPBar()
 		if ( ticks % 5 == 0 )
 		{
 			bool moving = (xpBar.animateSetpoint * 10.0 - xpBar.animateValue != 0);
-			std::string playerStr = "00";
-			switch ( player.playernum )
-			{
-				case 0:
-				default:
-					break;
-				case 1:
-					playerStr = "01";
-					break;
-				case 2:
-					playerStr = "02";
-					break;
-				case 3:
-					playerStr = "03";
-					break;
-			}
-			int xpPathNum = player.playernum;
-			if ( player.playernum >= playerXPCapPaths.size() )
+			int xpPathNum = getXPBarThemeIndex(player.playernum);
+			if ( xpPathNum < 0 || xpPathNum >= static_cast<int>(playerXPCapPaths.size()) )
 			{
 				xpPathNum = 0;
 			}

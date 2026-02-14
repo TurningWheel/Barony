@@ -26,8 +26,14 @@
 #include "../colors.hpp"
 #include "../book.hpp"
 #include "../scrolls.hpp"
+#ifdef BARONY_SMOKE_TESTS
+#include "../smoke/SmokeTestHooks.hpp"
+#endif
 
+#include <algorithm>
 #include <cassert>
+#include <cctype>
+#include <cstdlib>
 #include <functional>
 #ifdef STEAMWORKS
 #include <nfd.h>
@@ -51,7 +57,7 @@
 #endif
 
 namespace MainMenu {
-    int pause_menu_owner = 0;
+	int pause_menu_owner = 0;
 	bool cursor_delete_mode = false;
 	Frame* main_menu_frame = nullptr;
 
@@ -79,6 +85,326 @@ namespace MainMenu {
     ConsoleVariable<int> cvar_displayHz("/displayhz", 0);
 	ConsoleVariable<bool> cvar_hdrEnabled("/hdr_enabled", true);
 	static const int numFilters = NUM_SERVER_FLAGS + 2;
+	constexpr Uint8 kJoinCapabilityHeloChunkV1 = 0x01;
+	constexpr int kHeloChunkHeaderSize = 12;
+	constexpr int kHeloChunkPayloadMax = 900;
+	constexpr int kHeloChunkMaxCount = 32;
+	constexpr Uint32 kHeloChunkReassemblyTimeoutTicks = 5 * TICKS_PER_SECOND;
+	static Uint16 g_heloTransferId[MAXPLAYERS] = { 0 };
+
+	struct HeloChunkReassemblyState
+	{
+		bool active = false;
+		Uint16 transferId = 0;
+		Uint8 chunkCount = 0;
+		Uint16 totalLen = 0;
+		Uint32 lastChunkTick = 0;
+		std::vector<std::vector<Uint8>> chunks;
+		std::vector<bool> received;
+		int receivedCount = 0;
+	};
+	static HeloChunkReassemblyState g_heloChunkReassemblyState;
+
+#ifdef BARONY_SMOKE_TESTS
+	using HeloChunkSendPlanEntry = SmokeTestHooks::MainMenu::HeloChunkSendPlanEntry;
+#else
+	struct HeloChunkSendPlanEntry
+	{
+		int chunkIndex = 0;
+		bool corruptPayload = false;
+	};
+#endif
+
+	static Uint16 nextHeloTransferIdForPlayer(const int player)
+	{
+		if ( player < 0 || player >= MAXPLAYERS )
+		{
+			return 1;
+		}
+		++g_heloTransferId[player];
+		if ( g_heloTransferId[player] == 0 )
+		{
+			++g_heloTransferId[player];
+		}
+		return g_heloTransferId[player];
+	}
+
+	static void resetHeloChunkReassemblyState()
+	{
+		g_heloChunkReassemblyState.active = false;
+		g_heloChunkReassemblyState.transferId = 0;
+		g_heloChunkReassemblyState.chunkCount = 0;
+		g_heloChunkReassemblyState.totalLen = 0;
+		g_heloChunkReassemblyState.lastChunkTick = 0;
+		g_heloChunkReassemblyState.chunks.clear();
+		g_heloChunkReassemblyState.received.clear();
+		g_heloChunkReassemblyState.receivedCount = 0;
+	}
+
+	static void resetHeloChunkReassemblyStateWithLog(const char* reason)
+	{
+		if ( g_heloChunkReassemblyState.active )
+		{
+			printlog("HELO chunk timeout/reset transfer=%u (%s)",
+				static_cast<unsigned>(g_heloChunkReassemblyState.transferId), reason ? reason : "reset");
+		}
+		resetHeloChunkReassemblyState();
+	}
+
+	static bool sendChunkedHeloToHost(const int hostnum, const Uint8* heloData, const int heloLen,
+		const Uint16 transferId, const int playerNumForLog)
+	{
+		if ( !heloData || heloLen <= 0 || heloLen > NET_PACKET_SIZE )
+		{
+			printlog("[NET]: refusing to send chunked HELO with invalid payload length %d", heloLen);
+			return false;
+		}
+
+		int configuredChunkPayloadMax = kHeloChunkPayloadMax;
+#ifdef BARONY_SMOKE_TESTS
+		configuredChunkPayloadMax =
+			SmokeTestHooks::MainMenu::heloChunkPayloadMaxOverride(kHeloChunkPayloadMax);
+#endif
+		const int chunkPayloadMax = std::min(configuredChunkPayloadMax, NET_PACKET_SIZE - kHeloChunkHeaderSize);
+		if ( chunkPayloadMax <= 0 )
+		{
+			printlog("[NET]: refusing to send chunked HELO due to invalid payload budget");
+			return false;
+		}
+
+		const int chunkCount = (heloLen + chunkPayloadMax - 1) / chunkPayloadMax;
+		if ( chunkCount <= 0 || chunkCount > kHeloChunkMaxCount || chunkCount > 0xFF )
+		{
+			printlog("[NET]: refusing to send chunked HELO with invalid chunk count %d", chunkCount);
+			return false;
+		}
+
+		printlog("sending chunked HELO: player=%d transfer=%u chunks=%d total=%d",
+			playerNumForLog, static_cast<unsigned>(transferId), chunkCount, heloLen);
+
+		std::vector<int> chunkOffsets(chunkCount, 0);
+		std::vector<int> chunkLens(chunkCount, 0);
+		for ( int chunkIndex = 0; chunkIndex < chunkCount; ++chunkIndex )
+		{
+			const int offset = chunkIndex * chunkPayloadMax;
+			const int chunkLen = std::min(chunkPayloadMax, heloLen - offset);
+			if ( chunkLen <= 0 || chunkLen > chunkPayloadMax )
+			{
+				printlog("[NET]: refusing to send chunked HELO due to invalid chunk length %d", chunkLen);
+				return false;
+			}
+			chunkOffsets[chunkIndex] = offset;
+			chunkLens[chunkIndex] = chunkLen;
+		}
+
+		std::vector<HeloChunkSendPlanEntry> sendPlan;
+		sendPlan.reserve(chunkCount + 1);
+		for ( int chunkIndex = 0; chunkIndex < chunkCount; ++chunkIndex )
+		{
+			sendPlan.push_back(HeloChunkSendPlanEntry{ chunkIndex, false });
+		}
+#ifdef BARONY_SMOKE_TESTS
+		SmokeTestHooks::MainMenu::applyHeloChunkTxModePlan(sendPlan, chunkCount, transferId);
+#endif
+
+		for ( const HeloChunkSendPlanEntry& planned : sendPlan )
+		{
+			const int chunkIndex = planned.chunkIndex;
+			if ( chunkIndex < 0 || chunkIndex >= chunkCount )
+			{
+				printlog("[NET]: refusing to send chunked HELO due to invalid plan index %d", chunkIndex);
+				return false;
+			}
+			const int offset = chunkOffsets[chunkIndex];
+			const int chunkLen = chunkLens[chunkIndex];
+
+			memcpy(net_packet->data, "HLCN", 4);
+			SDLNet_Write16(transferId, &net_packet->data[4]);
+			net_packet->data[6] = static_cast<Uint8>(chunkIndex);
+			net_packet->data[7] = static_cast<Uint8>(chunkCount);
+			SDLNet_Write16(static_cast<Uint16>(heloLen), &net_packet->data[8]);
+			SDLNet_Write16(static_cast<Uint16>(chunkLen), &net_packet->data[10]);
+			memcpy(&net_packet->data[kHeloChunkHeaderSize], heloData + offset, chunkLen);
+			if ( planned.corruptPayload )
+			{
+				net_packet->data[kHeloChunkHeaderSize] ^= 0x5A;
+			}
+			net_packet->len = kHeloChunkHeaderSize + chunkLen;
+
+			if ( !sendPacketSafe(net_sock, -1, net_packet, hostnum) )
+			{
+				printlog("[NET]: failed sending chunk %d/%d for transfer %u",
+					chunkIndex + 1, chunkCount, static_cast<unsigned>(transferId));
+				return false;
+			}
+		}
+		return true;
+	}
+
+	static bool ingestHeloChunkAndMaybeAssemble()
+	{
+		int configuredChunkPayloadMax = kHeloChunkPayloadMax;
+#ifdef BARONY_SMOKE_TESTS
+		configuredChunkPayloadMax =
+			SmokeTestHooks::MainMenu::heloChunkPayloadMaxOverride(kHeloChunkPayloadMax);
+#endif
+		const int chunkPayloadMax = std::min(configuredChunkPayloadMax, NET_PACKET_SIZE - kHeloChunkHeaderSize);
+		if ( chunkPayloadMax <= 0 )
+		{
+			return false;
+		}
+		if ( net_packet->len < kHeloChunkHeaderSize )
+		{
+			resetHeloChunkReassemblyStateWithLog("short packet");
+			return false;
+		}
+
+		const Uint16 transferId = SDLNet_Read16(&net_packet->data[4]);
+		const Uint8 chunkIndex = net_packet->data[6];
+		const Uint8 chunkCount = net_packet->data[7];
+		const Uint16 totalHeloLen = SDLNet_Read16(&net_packet->data[8]);
+		const Uint16 chunkLen = SDLNet_Read16(&net_packet->data[10]);
+
+		if ( chunkCount == 0 || chunkCount > kHeloChunkMaxCount )
+		{
+			resetHeloChunkReassemblyStateWithLog("bad chunk count");
+			return false;
+		}
+		if ( chunkIndex >= chunkCount )
+		{
+			resetHeloChunkReassemblyStateWithLog("bad chunk index");
+			return false;
+		}
+		if ( totalHeloLen < 8 || totalHeloLen > NET_PACKET_SIZE )
+		{
+			resetHeloChunkReassemblyStateWithLog("bad total length");
+			return false;
+		}
+		if ( chunkLen == 0 || chunkLen > chunkPayloadMax )
+		{
+			resetHeloChunkReassemblyStateWithLog("bad chunk len");
+			return false;
+		}
+		if ( kHeloChunkHeaderSize + chunkLen != net_packet->len )
+		{
+			resetHeloChunkReassemblyStateWithLog("length mismatch");
+			return false;
+		}
+		if ( totalHeloLen > chunkCount * chunkPayloadMax )
+		{
+			resetHeloChunkReassemblyStateWithLog("total too large for chunks");
+			return false;
+		}
+
+		if ( !g_heloChunkReassemblyState.active )
+		{
+			resetHeloChunkReassemblyState();
+			g_heloChunkReassemblyState.active = true;
+			g_heloChunkReassemblyState.transferId = transferId;
+			g_heloChunkReassemblyState.chunkCount = chunkCount;
+			g_heloChunkReassemblyState.totalLen = totalHeloLen;
+			g_heloChunkReassemblyState.chunks.resize(chunkCount);
+			g_heloChunkReassemblyState.received.assign(chunkCount, false);
+		}
+		else if ( g_heloChunkReassemblyState.transferId != transferId )
+		{
+			if ( chunkIndex != 0 )
+			{
+				return false;
+			}
+			resetHeloChunkReassemblyState();
+			g_heloChunkReassemblyState.active = true;
+			g_heloChunkReassemblyState.transferId = transferId;
+			g_heloChunkReassemblyState.chunkCount = chunkCount;
+			g_heloChunkReassemblyState.totalLen = totalHeloLen;
+			g_heloChunkReassemblyState.chunks.resize(chunkCount);
+			g_heloChunkReassemblyState.received.assign(chunkCount, false);
+		}
+
+		if ( g_heloChunkReassemblyState.chunkCount != chunkCount || g_heloChunkReassemblyState.totalLen != totalHeloLen )
+		{
+			resetHeloChunkReassemblyStateWithLog("transfer metadata mismatch");
+			return false;
+		}
+
+		printlog("recv HLCN: transfer=%u idx=%u/%u len=%u",
+			static_cast<unsigned>(transferId),
+			static_cast<unsigned>(chunkIndex + 1),
+			static_cast<unsigned>(chunkCount),
+			static_cast<unsigned>(chunkLen));
+
+		g_heloChunkReassemblyState.lastChunkTick = ticks;
+		if ( g_heloChunkReassemblyState.received[chunkIndex] )
+		{
+			const std::vector<Uint8>& existing = g_heloChunkReassemblyState.chunks[chunkIndex];
+			if ( static_cast<int>(existing.size()) != chunkLen
+				|| memcmp(existing.data(), &net_packet->data[kHeloChunkHeaderSize], chunkLen) != 0 )
+			{
+				resetHeloChunkReassemblyStateWithLog("conflicting duplicate chunk");
+			}
+			return false;
+		}
+
+		g_heloChunkReassemblyState.chunks[chunkIndex].assign(
+			&net_packet->data[kHeloChunkHeaderSize],
+			&net_packet->data[kHeloChunkHeaderSize + chunkLen]);
+		g_heloChunkReassemblyState.received[chunkIndex] = true;
+		++g_heloChunkReassemblyState.receivedCount;
+
+		if ( g_heloChunkReassemblyState.receivedCount < g_heloChunkReassemblyState.chunkCount )
+		{
+			return false;
+		}
+
+		std::vector<Uint8> reassembled(g_heloChunkReassemblyState.totalLen);
+		int offset = 0;
+		for ( int i = 0; i < g_heloChunkReassemblyState.chunkCount; ++i )
+		{
+			if ( !g_heloChunkReassemblyState.received[i] )
+			{
+				resetHeloChunkReassemblyStateWithLog("missing chunk during assembly");
+				return false;
+			}
+			const std::vector<Uint8>& chunk = g_heloChunkReassemblyState.chunks[i];
+			if ( offset + static_cast<int>(chunk.size()) > g_heloChunkReassemblyState.totalLen )
+			{
+				resetHeloChunkReassemblyStateWithLog("overflow during assembly");
+				return false;
+			}
+			memcpy(&reassembled[offset], chunk.data(), chunk.size());
+			offset += static_cast<int>(chunk.size());
+		}
+
+		if ( offset != g_heloChunkReassemblyState.totalLen )
+		{
+			resetHeloChunkReassemblyStateWithLog("assembled length mismatch");
+			return false;
+		}
+		if ( SDLNet_Read32(reassembled.data()) != 'HELO' )
+		{
+			resetHeloChunkReassemblyStateWithLog("assembled payload missing HELO");
+			return false;
+		}
+
+		const Uint16 doneTransfer = g_heloChunkReassemblyState.transferId;
+		const Uint16 doneLen = g_heloChunkReassemblyState.totalLen;
+		memcpy(net_packet->data, reassembled.data(), reassembled.size());
+		net_packet->len = static_cast<int>(reassembled.size());
+		printlog("HELO reassembled: transfer=%u total=%u",
+			static_cast<unsigned>(doneTransfer), static_cast<unsigned>(doneLen));
+		resetHeloChunkReassemblyState();
+		return true;
+	}
+
+	static void checkHeloChunkReassemblyTimeout()
+	{
+		if ( g_heloChunkReassemblyState.active
+			&& ticks - g_heloChunkReassemblyState.lastChunkTick > kHeloChunkReassemblyTimeoutTicks )
+		{
+			resetHeloChunkReassemblyStateWithLog("timeout");
+		}
+	}
+
 	enum Filter : int {
 		UNCHECKED,
 		OFF,
@@ -409,6 +735,9 @@ namespace MainMenu {
 	static bool playersInLobby[MAXPLAYERS];
 	static bool playerSlotsLocked[MAXPLAYERS];
 	static bool newPlayer[MAXPLAYERS];
+	static bool pendingReadyStateSync[MAXPLAYERS];
+	static Uint32 pendingReadyStateSyncTick[MAXPLAYERS];
+	static Uint8 pendingReadyStateSyncAttempts[MAXPLAYERS];
 	static void* saved_invite_lobby = nullptr;
 
     bool story_active = false;
@@ -948,11 +1277,24 @@ namespace MainMenu {
 	static void createLobbyBrowser(Button&);
 	static void createLocalOrNetworkMenu();
 	static void refreshLobbyBrowser();
+	static bool hostLANLobbyInternal(bool playSound);
+	static bool connectToServer(const char* address, void* pLobby, LobbyType lobbyType);
+	static void startGame();
+		static void kickPlayer(int index);
+		static void requestLobbyPlayerCountSelection(const int requestedCount);
+		static void requestLobbyVisiblePage(const int requestedPage);
+#ifdef BARONY_SMOKE_TESTS
+		static void emitLobbyPageSnapshot(Frame& lobby, const char* context);
+		static void selectLobbyPageFocusable(Frame& lobby, int page);
+#endif
 
-    static void sendPlayerOverNet();
-    static void sendReadyOverNet(int index, bool ready);
-    static void checkReadyStates();
-    static void sendChatMessageOverNet(Uint32 color, const char* msg, size_t len);
+		static void sendPlayerOverNet();
+	static void sendReadyOverNet(int index, bool ready);
+	static void checkReadyStates();
+	static bool sendReadyStateSnapshotToPlayer(int player);
+	static void queueReadyStateSnapshotForPlayer(int player);
+	static void flushPendingReadyStateSnapshots();
+	static void sendChatMessageOverNet(Uint32 color, const char* msg, size_t len);
     static void sendSvFlagsOverNet();
     static void doKeepAlive();
 	static void handleNetwork();
@@ -1172,12 +1514,129 @@ namespace MainMenu {
 		}
 	}
 
+#ifdef BARONY_SMOKE_TESTS
+		static bool smokeHostLANLobbyNoSound()
+		{
+			return hostLANLobbyInternal(false);
+		}
+
+		static void createOnlineLobby();
+
+		static bool smokeHostSteamLobbyNoSound()
+		{
+#if !defined(STEAMWORKS)
+			return false;
+#else
+			closeNetworkInterfaces();
+			randomizeHostname();
+			directConnect = false;
+			LobbyHandler.setHostingType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
+			LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_STEAM);
+			createOnlineLobby();
+			return true;
+#endif
+		}
+
+		static bool smokeHostEosLobbyNoSound()
+		{
+#if !defined(USE_EOS)
+			return false;
+#else
+			closeNetworkInterfaces();
+			randomizeHostname();
+			directConnect = false;
+			LobbyHandler.setHostingType(LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY);
+			LobbyHandler.setP2PType(LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY);
+			createOnlineLobby();
+			return true;
+#endif
+		}
+
+		static bool smokeHostLocalLobbyNoSound()
+		{
+			createLobby(LobbyType::LobbyLocal);
+			return true;
+		}
+
+		static bool smokeConnectToLanServer(const char* address)
+		{
+			return connectToServer(address, nullptr, LobbyType::LobbyLAN);
+		}
+
+		static bool smokeConnectToOnlineLobby(const char* address)
+		{
+			return connectToServer(address, nullptr, LobbyType::LobbyOnline);
+		}
+
+		static Frame* smokeAutopilotLobbyFrame()
+		{
+			if ( currentLobbyType != LobbyType::LobbyLocal || !main_menu_frame )
+			{
+				return nullptr;
+			}
+			return main_menu_frame->findFrame("lobby");
+		}
+
+		static bool smokeIsLocalLobbyAutopilotContextReady()
+		{
+			return smokeAutopilotLobbyFrame() != nullptr;
+		}
+
+		static bool smokeIsLocalLobbyCardReady(const int slot)
+		{
+			Frame* lobby = smokeAutopilotLobbyFrame();
+			if ( !lobby || slot < 0 || slot >= MAX_SPLITSCREEN )
+			{
+				return false;
+			}
+			const char* readyPath = "*images/ui/Main Menus/Play/PlayerCreation/UI_Ready_Window00.png";
+			Frame* card = lobby->findFrame((std::string("card") + std::to_string(slot)).c_str());
+			if ( !card )
+			{
+				return false;
+			}
+			Frame::image_t* backdrop = card->findImage("backdrop");
+			return backdrop && backdrop->path == readyPath;
+		}
+
+		static bool smokeIsLocalLobbyCountdownActive()
+		{
+			Frame* lobby = smokeAutopilotLobbyFrame();
+			return lobby && lobby->findFrame("countdown");
+		}
+
+		static bool smokeIsLocalPlayerSignedIn(const int slot)
+		{
+			return isPlayerSignedIn(slot);
+		}
+#endif
+
 	static void tickMainMenu(Widget& widget) {
 		++main_menu_ticks;
 		auto back = widget.findWidget("back", false);
 		if (back) {
 		    back->setDisabled(widget.findWidget("dimmer", false) != nullptr);
 		}
+#ifdef BARONY_SMOKE_TESTS
+		static const SmokeTestHooks::MainMenu::AutopilotCallbacks smokeCallbacks{
+			&smokeHostLANLobbyNoSound,
+			&smokeHostSteamLobbyNoSound,
+			&smokeHostEosLobbyNoSound,
+			&smokeHostLocalLobbyNoSound,
+			&smokeConnectToLanServer,
+			&smokeConnectToOnlineLobby,
+			&startGame,
+			&createReadyStone,
+			&smokeIsLocalLobbyAutopilotContextReady,
+			&smokeIsLocalLobbyCardReady,
+			&smokeIsLocalLobbyCountdownActive,
+			&smokeIsLocalPlayerSignedIn,
+			&kickPlayer,
+			&requestLobbyPlayerCountSelection,
+			&requestLobbyVisiblePage
+		};
+		SmokeTestHooks::MainMenu::tickAutopilot(smokeCallbacks);
+#endif
 	}
 
 	static void updateSliderArrows(Frame& frame) {
@@ -10791,9 +11250,9 @@ bind_failed:
     }
 
     static Frame* toggleLobbyChatWindow() {
-		if (!main_menu_frame) {
-			return nullptr;
-		}
+        if (!main_menu_frame) {
+            return nullptr;
+        }
         auto lobby = main_menu_frame->findFrame("lobby"); assert(lobby);
         auto frame = lobby->findFrame("chat window");
         if (frame) {
@@ -10806,12 +11265,13 @@ bind_failed:
         const SDL_Rect size = lobby->getSize();
         const int w = 848;
         const int h = 320;
+        const int pageX = lobby->getActualSize().x;
 
         static ConsoleVariable<Vector4> chatBgColor("/chat_background_color", Vector4{22.f, 24.f, 29.f, 223.f});
 
         frame = lobby->addFrame("chat window");
-		frame->setOwner(clientnum);
-        frame->setSize(SDL_Rect{(size.w - w) - 16, 64, w, h});
+        frame->setOwner(clientnum);
+        frame->setSize(SDL_Rect{pageX + (size.w - w) - 16, 64, w, h});
         frame->setBorderColor(makeColor(51, 33, 26, 255));
         frame->setColor(makeColor(chatBgColor->x, chatBgColor->y, chatBgColor->z, chatBgColor->w));
         frame->setBorder(0);
@@ -10819,9 +11279,12 @@ bind_failed:
             const int player = clientnum;
             auto frame = static_cast<Frame*>(&widget);
             auto lobby = static_cast<Frame*>(frame->getParent());
+            SDL_Rect framePos = frame->getSize();
+            framePos.x = lobby->getActualSize().x + (Frame::virtualScreenX - framePos.w) - 16;
+            frame->setSize(framePos);
 
-            const int w = frame->getSize().w;
-            const int h = frame->getSize().h;
+            const int w = framePos.w;
+            const int h = framePos.h;
 
             auto subframe = frame->findFrame("subframe"); assert(subframe);
             auto subframe_size = subframe->getActualSize();
@@ -11081,6 +11544,11 @@ bind_failed:
 	    for ( int c = 1; c < MAXPLAYERS; c++ ) {
 		    client_disconnected[c] = true;
 	    }
+		for (int c = 0; c < MAXPLAYERS; ++c) {
+			pendingReadyStateSync[c] = false;
+			pendingReadyStateSyncTick[c] = 0;
+			pendingReadyStateSyncAttempts[c] = 0;
+		}
 		currentLobbyType = LobbyType::None;
 
 		lobbyCustomScenarioClient.clear();
@@ -11372,56 +11840,406 @@ bind_failed:
 	    }
 	}
 
-	static void lockSlot(int index, bool locked) {
-	    if (multiplayer == SERVER) {
-	        playerSlotsLocked[index] = locked;
-	        if (locked) {
-	            if (!client_disconnected[index]) {
-	                kickPlayer(index);
-	            }
-	            createLockedStone(index);
-	        } else {
-	            if (client_disconnected[index]) {
-		            if (directConnect) {
-                        createWaitingStone(index);
-                    } else {
-                        createInviteButton(index);
-                    }
-                }
-	        }
-            checkReadyStates();
-	    }
-	}
+		static void lockSlot(int index, bool locked)
+		{
+			if ( multiplayer == SERVER )
+			{
+				playerSlotsLocked[index] = locked;
+				if ( locked )
+				{
+					if ( !client_disconnected[index] )
+					{
+						kickPlayer(index);
+					}
+					createLockedStone(index);
+				}
+				else if ( client_disconnected[index] )
+				{
+					if ( directConnect )
+					{
+						createWaitingStone(index);
+					}
+					else
+					{
+						createInviteButton(index);
+					}
+				}
+				checkReadyStates();
+			}
+		}
 
-	static void sendReadyOverNet(int index, bool ready) {
-	    if (multiplayer != SERVER && multiplayer != CLIENT) {
-	        return;
-	    }
+		static int pendingLobbyPlayerCountSelection = 4;
+		static int pendingKickPlayerSelection = 1;
 
-        // packet header
-        memcpy(net_packet->data, "REDY", 4);
-	    net_packet->data[4] = (Uint8)index;
+		static int getCurrentLobbyPlayerCountSelection()
+		{
+			int targetCount = MAXPLAYERS;
+			for ( int slot = 1; slot < MAXPLAYERS; ++slot )
+			{
+				if ( playerSlotsLocked[slot] )
+				{
+					targetCount = slot;
+					break;
+				}
+			}
+			return std::max(2, std::min(targetCount, MAXPLAYERS));
+		}
 
-	    // data
-	    net_packet->data[5] = ready ? (Uint8)1u : (Uint8)0u;
+		static void applyLobbyPlayerCountSelection(const int requestedCount)
+		{
+			const int targetCount = std::max(1, std::min(requestedCount, MAXPLAYERS));
+			for (int slot = 1; slot < MAXPLAYERS; ++slot)
+			{
+				lockSlot(slot, slot >= targetCount);
+			}
+			soundActivate();
+		}
 
-        // send packet
-        net_packet->len = 6;
-        if (multiplayer == SERVER) {
-	        for (int i = 1; i < MAXPLAYERS; i++ ) {
-		        if ( client_disconnected[i] ) {
-			        continue;
-		        }
-		        net_packet->address.host = net_clients[i - 1].host;
-		        net_packet->address.port = net_clients[i - 1].port;
-		        sendPacketSafe(net_sock, -1, net_packet, i - 1);
-	        }
-	    } else if (multiplayer == CLIENT) {
-	        net_packet->address.host = net_server.host;
-	        net_packet->address.port = net_server.port;
-	        sendPacketSafe(net_sock, -1, net_packet, 0);
-	    }
-	}
+		static void confirmLobbyPlayerCountSelection(Button&)
+		{
+			applyLobbyPlayerCountSelection(pendingLobbyPlayerCountSelection);
+			closeBinary();
+		}
+
+		static void cancelLobbyPlayerCountSelection(Button&)
+		{
+			soundCancel();
+			closeBinary();
+		}
+
+		static void confirmLobbyKickSelection(Button&)
+		{
+			soundActivate();
+			closeBinary();
+			kickPlayer(pendingKickPlayerSelection);
+		}
+
+		static void cancelLobbyKickSelection(Button&)
+		{
+			soundCancel();
+			closeBinary();
+		}
+
+		static void requestLobbyPlayerCountSelection(const int requestedCount)
+		{
+			const int targetCount = std::max(2, std::min(requestedCount, MAXPLAYERS));
+
+			std::vector<int> kickedSlots;
+			for (int slot = targetCount; slot < MAXPLAYERS; ++slot)
+			{
+				if (!client_disconnected[slot])
+				{
+					kickedSlots.push_back(slot);
+				}
+			}
+
+			std::string promptText;
+			if (targetCount > 4)
+			{
+				promptText = "WARNING: 5+ players\n"
+					"may desync or break.\n"
+					"Continue?";
+			}
+
+			if (!kickedSlots.empty())
+			{
+				char kickPrompt[1024] = "";
+				if (kickedSlots.size() == 1)
+				{
+					snprintf(kickPrompt, sizeof(kickPrompt), Language::get(5397),
+						players[kickedSlots[0]]->getAccountName());
+				}
+				else if (kickedSlots.size() == 2)
+				{
+					snprintf(kickPrompt, sizeof(kickPrompt), Language::get(5396),
+						players[kickedSlots[0]]->getAccountName(),
+						players[kickedSlots[1]]->getAccountName());
+				}
+				else
+				{
+					snprintf(kickPrompt, sizeof(kickPrompt),
+						"This will kick %d players.\nAre you sure?",
+						static_cast<int>(kickedSlots.size()));
+				}
+
+				if (!promptText.empty())
+				{
+					promptText.append("\n\n");
+				}
+				promptText.append(kickPrompt);
+			}
+
+#ifdef BARONY_SMOKE_TESTS
+			const char* promptVariant = "none";
+			if ( !kickedSlots.empty() )
+			{
+				if ( kickedSlots.size() == 1 )
+				{
+					promptVariant = "single";
+				}
+				else if ( kickedSlots.size() == 2 )
+				{
+					promptVariant = "double";
+				}
+				else
+				{
+					promptVariant = "multi";
+				}
+			}
+			else if ( targetCount > 4 )
+			{
+				promptVariant = "warning-only";
+			}
+			SmokeTestHooks::MainMenu::traceLobbyPlayerCountPrompt(targetCount,
+				static_cast<int>(kickedSlots.size()), promptVariant, promptText.c_str());
+#endif
+
+			if (!promptText.empty())
+			{
+				pendingLobbyPlayerCountSelection = targetCount;
+				binaryPrompt(promptText.c_str(), Language::get(5400), Language::get(5401),
+					confirmLobbyPlayerCountSelection, cancelLobbyPlayerCountSelection);
+				return;
+			}
+
+			applyLobbyPlayerCountSelection(targetCount);
+		}
+
+		static void lobbyPlayerCountDropdownEntry(Frame::entry_t& entry)
+		{
+			const int parsedTargetCount = atoi(entry.name.c_str());
+			const int targetCount = std::max(2, std::min(parsedTargetCount, MAXPLAYERS));
+
+			Frame* dropdown = static_cast<Frame*>(entry.parent.getParent());
+			Frame* card = dropdown ? static_cast<Frame*>(dropdown->getParent()) : nullptr;
+			Button* button = card ? card->findButton("player_count_dropdown_button") : nullptr;
+			if ( button )
+			{
+				char countText[16] = "";
+				snprintf(countText, sizeof(countText), "%d", targetCount);
+				button->setText(countText);
+				button->select();
+			}
+			if ( dropdown )
+			{
+				dropdown->removeSelf();
+			}
+
+			requestLobbyPlayerCountSelection(targetCount);
+		}
+
+		static void lobbyPlayerCountDropdownButtonCallback(Button& button)
+		{
+			settingsOpenDropdown(button, "lobby_player_count", DropdownType::Normal, lobbyPlayerCountDropdownEntry);
+		}
+
+		static void lobbyKickPlayerDropdownEntry(Frame::entry_t& entry)
+		{
+			const int parsedPlayerNum = atoi(entry.name.c_str());
+			const int targetPlayer = std::max(1, std::min(parsedPlayerNum - 1, MAXPLAYERS - 1));
+			pendingKickPlayerSelection = targetPlayer;
+
+			Frame* dropdown = static_cast<Frame*>(entry.parent.getParent());
+			Frame* card = dropdown ? static_cast<Frame*>(dropdown->getParent()) : nullptr;
+			Button* button = card ? card->findButton("kick_player_dropdown_button") : nullptr;
+			if ( button )
+			{
+				char playerText[16] = "";
+				snprintf(playerText, sizeof(playerText), "%d", targetPlayer + 1);
+				button->setText(playerText);
+				button->select();
+			}
+			if ( dropdown )
+			{
+				dropdown->removeSelf();
+			}
+			soundActivate();
+		}
+
+		static void lobbyKickPlayerDropdownButtonCallback(Button& button)
+		{
+			settingsOpenDropdown(button, "lobby_kick_player", DropdownType::Normal, lobbyKickPlayerDropdownEntry);
+		}
+
+		static void lobbyKickPlayerConfirmButtonCallback(Button& button)
+		{
+			int targetPlayer = pendingKickPlayerSelection;
+			if ( Frame* card = static_cast<Frame*>(button.getParent()) )
+			{
+				if ( Button* selectionButton = card->findButton("kick_player_dropdown_button") )
+				{
+					const int parsedPlayerNum = atoi(selectionButton->getText());
+					targetPlayer = std::max(1, std::min(parsedPlayerNum - 1, MAXPLAYERS - 1));
+				}
+			}
+			if (client_disconnected[targetPlayer])
+			{
+				soundError();
+				return;
+			}
+
+			char prompt[1024];
+			snprintf(prompt, sizeof(prompt), Language::get(5403), players[targetPlayer]->getAccountName());
+			pendingKickPlayerSelection = targetPlayer;
+			binaryPrompt(prompt, Language::get(5400), Language::get(5401),
+				confirmLobbyKickSelection, cancelLobbyKickSelection);
+		}
+
+		static bool sendReadyStateSnapshotToPlayer(int player)
+		{
+			if ( multiplayer != SERVER )
+			{
+				return false;
+			}
+			if ( player <= 0 || player >= MAXPLAYERS || client_disconnected[player] )
+			{
+				return true;
+			}
+			if ( !main_menu_frame || main_menu_frame->isToBeDeleted() )
+			{
+				return false;
+			}
+
+			Frame* lobby = main_menu_frame->findFrame("lobby");
+			if ( !lobby || lobby->isToBeDeleted() )
+			{
+				return false;
+			}
+
+			// A newly joined client can miss historical REDY packets while it is still waiting for HELO.
+			// Mirror the host's current ready cards so the countdown logic starts from the correct state.
+			int readyEntriesSent = 0;
+			for ( int index = 0; index < MAXPLAYERS; ++index )
+			{
+				if ( client_disconnected[index] )
+				{
+					continue;
+				}
+
+				Frame* card = lobby->findFrame((std::string("card") + std::to_string(index)).c_str());
+				if ( !card )
+				{
+					continue;
+				}
+				Frame::image_t* backdrop = card->findImage("backdrop");
+				if ( !backdrop || backdrop->path != "*images/ui/Main Menus/Play/PlayerCreation/UI_Ready_Window00.png" )
+				{
+					continue;
+				}
+
+				memcpy(net_packet->data, "REDY", 4);
+				net_packet->data[4] = static_cast<Uint8>(index);
+				net_packet->data[5] = 1;
+				net_packet->len = 6;
+				net_packet->address.host = net_clients[player - 1].host;
+				net_packet->address.port = net_clients[player - 1].port;
+				sendPacketSafe(net_sock, -1, net_packet, player - 1);
+				++readyEntriesSent;
+			}
+#ifdef BARONY_SMOKE_TESTS
+			SmokeTestHooks::MainMenu::traceReadyStateSnapshotSent(player, readyEntriesSent);
+#endif
+			return true;
+		}
+
+		static void queueReadyStateSnapshotForPlayer(int player)
+		{
+			if ( player <= 0 || player >= MAXPLAYERS )
+			{
+				return;
+			}
+			pendingReadyStateSync[player] = true;
+			pendingReadyStateSyncTick[player] = ticks + TICKS_PER_SECOND / 2;
+			pendingReadyStateSyncAttempts[player] = 3;
+#ifdef BARONY_SMOKE_TESTS
+			SmokeTestHooks::MainMenu::traceReadyStateSnapshotQueued(player,
+				pendingReadyStateSyncAttempts[player], pendingReadyStateSyncTick[player]);
+#endif
+		}
+
+		static void flushPendingReadyStateSnapshots()
+		{
+			if ( multiplayer != SERVER )
+			{
+				return;
+			}
+
+			for ( int player = 1; player < MAXPLAYERS; ++player )
+			{
+				if ( !pendingReadyStateSync[player] )
+				{
+					continue;
+				}
+				if ( client_disconnected[player] )
+				{
+					pendingReadyStateSync[player] = false;
+					pendingReadyStateSyncTick[player] = 0;
+					pendingReadyStateSyncAttempts[player] = 0;
+					continue;
+				}
+				if ( ticks < pendingReadyStateSyncTick[player] )
+				{
+					continue;
+				}
+
+				if ( !sendReadyStateSnapshotToPlayer(player) )
+				{
+					pendingReadyStateSyncTick[player] = ticks + TICKS_PER_SECOND / 2;
+					continue;
+				}
+
+				if ( pendingReadyStateSyncAttempts[player] > 0 )
+				{
+					--pendingReadyStateSyncAttempts[player];
+				}
+				if ( pendingReadyStateSyncAttempts[player] == 0 )
+				{
+					pendingReadyStateSync[player] = false;
+					pendingReadyStateSyncTick[player] = 0;
+				}
+				else
+				{
+					pendingReadyStateSyncTick[player] = ticks + TICKS_PER_SECOND;
+				}
+			}
+		}
+
+		static void sendReadyOverNet(int index, bool ready)
+		{
+			if ( multiplayer != SERVER && multiplayer != CLIENT )
+			{
+				return;
+			}
+
+			// packet header
+			memcpy(net_packet->data, "REDY", 4);
+			net_packet->data[4] = (Uint8)index;
+
+			// data
+			net_packet->data[5] = ready ? (Uint8)1u : (Uint8)0u;
+
+			// send packet
+			net_packet->len = 6;
+			if ( multiplayer == SERVER )
+			{
+				for (int i = 1; i < MAXPLAYERS; i++ )
+				{
+					if ( client_disconnected[i] )
+					{
+						continue;
+					}
+					net_packet->address.host = net_clients[i - 1].host;
+					net_packet->address.port = net_clients[i - 1].port;
+					sendPacketSafe(net_sock, -1, net_packet, i - 1);
+				}
+			}
+			else if ( multiplayer == CLIENT )
+			{
+				net_packet->address.host = net_server.host;
+				net_packet->address.port = net_server.port;
+				sendPacketSafe(net_sock, -1, net_packet, 0);
+			}
+		}
 
 	static void sendCustomScenarioOverNet(const int playernum)
 	{
@@ -11885,11 +12703,20 @@ bind_failed:
 			sendCustomSeedOverNet();
 		}},
 
-		// keepalive
-		{'KPAL', [](){
-			const Uint8 player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
-			client_keepalive[player] = ticks;
-		}},
+			// keepalive
+			{'KPAL', [](){
+				const Uint8 player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
+				client_keepalive[player] = ticks;
+				if ( player > 0 && pendingReadyStateSync[player] )
+				{
+					if ( sendReadyStateSnapshotToPlayer(player) )
+					{
+						pendingReadyStateSync[player] = false;
+						pendingReadyStateSyncTick[player] = 0;
+						pendingReadyStateSyncAttempts[player] = 0;
+					}
+				}
+			}},
 
 		// the client sent a gameplayer preferences update
 		{'GPPR', []() {
@@ -11912,7 +12739,8 @@ bind_failed:
 		EOS_ProductUserId newRemoteProductId = nullptr;
 #endif
 
-        updateLobby();
+	        updateLobby();
+			flushPendingReadyStateSnapshots();
 
 		for (int numpacket = 0; numpacket < PACKET_LIMIT; numpacket++) {
 			if (directConnect) {
@@ -11960,6 +12788,7 @@ bind_failed:
 
 			if (packetId == 'JOIN') {
 			    int playerNum = MAXPLAYERS;
+				bool useChunkedHelo = false;
 
 			    // when processing connection requests using Steamworks or EOS,
 			    // we can reject join requests out of hand if the player with
@@ -12000,7 +12829,7 @@ bind_failed:
 			    }
 
 			    // process incoming join request
-			    NetworkingLobbyJoinRequestResult result = lobbyPlayerJoinRequest(playerNum, playerSlotsLocked);
+			    NetworkingLobbyJoinRequestResult result = lobbyPlayerJoinRequest(playerNum, playerSlotsLocked, useChunkedHelo);
 
 			    // finalize connections for Steamworks / EOS
 			    if (result == NetworkingLobbyJoinRequestResult::NET_LOBBY_JOIN_P2P_FAILURE) {
@@ -12028,20 +12857,48 @@ bind_failed:
 						}
 						steamIDRemote[playerNum - 1] = new CSteamID();
 						*static_cast<CSteamID*>(steamIDRemote[playerNum - 1]) = newSteamID;
-						for ( int responses = 0; responses < 5; ++responses ) {
-							SteamNetworking()->SendP2PPacket(*static_cast<CSteamID*>(steamIDRemote[playerNum - 1]), net_packet->data, net_packet->len, k_EP2PSendReliable, 0);
-							SDL_Delay(5);
-						}
 #endif // STEAMWORKS
 					}
 					else if ( LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY ) {
 #if defined USE_EOS
 						EOS.P2PConnectionInfo.assignPeerIndex(newRemoteProductId, playerNum - 1);
+	#endif
+					}
+
+					bool sentChunkedHelo = false;
+					if ( useChunkedHelo && playerNum > 0 && playerNum < MAXPLAYERS )
+					{
+						std::vector<Uint8> heloSnapshot(net_packet->len);
+						memcpy(heloSnapshot.data(), net_packet->data, heloSnapshot.size());
+						const Uint16 transferId = nextHeloTransferIdForPlayer(playerNum);
+						sentChunkedHelo = sendChunkedHeloToHost(playerNum - 1, heloSnapshot.data(),
+							static_cast<int>(heloSnapshot.size()), transferId, playerNum);
+						if ( !sentChunkedHelo )
+						{
+							printlog("[NET]: chunked HELO send failed, falling back to legacy HELO for player %d", playerNum);
+							memcpy(net_packet->data, heloSnapshot.data(), heloSnapshot.size());
+							net_packet->len = static_cast<int>(heloSnapshot.size());
+						}
+					}
+
+					if ( !sentChunkedHelo )
+					{
+						if ( LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM ) {
+#ifdef STEAMWORKS
+							for ( int responses = 0; responses < 5; ++responses ) {
+								SteamNetworking()->SendP2PPacket(*static_cast<CSteamID*>(steamIDRemote[playerNum - 1]), net_packet->data, net_packet->len, k_EP2PSendReliable, 0);
+								SDL_Delay(5);
+							}
+#endif // STEAMWORKS
+						}
+						else if ( LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY ) {
+#if defined USE_EOS
 						for ( int responses = 0; responses < 5; ++responses ) {
 							EOS.SendMessageP2P(EOS.P2PConnectionInfo.getPeerIdFromIndex(playerNum - 1), net_packet->data, net_packet->len);
 							SDL_Delay(5);
 						}
 #endif
+						}
 					}
 					sendSvFlagsOverNet();
 					sendCustomScenarioOverNet(playerNum);
@@ -12058,11 +12915,12 @@ bind_failed:
 			        printlog("Player failed to join lobby");
 			    }
 
-			    // finally, open a player card!
-			    if (playerNum >= 1 && playerNum < MAXPLAYERS) {
-		            createReadyStone(playerNum, false, false);
-			    }
-			}
+				    // finally, open a player card!
+				    if (playerNum >= 1 && playerNum < MAXPLAYERS) {
+			            createReadyStone(playerNum, false, false);
+						queueReadyStateSnapshotForPlayer(playerNum);
+				    }
+				}
 
 		    auto find = serverPacketHandlers.find(packetId);
 		    if (find == serverPacketHandlers.end()) {
@@ -12095,6 +12953,14 @@ bind_failed:
 		        //loadingsavegame = 0;
 	        }
 	    }},
+
+		// late join-handshake packets can arrive after we've already transitioned.
+		{'HELO', [](){
+			return;
+		}},
+		{'HLCN', [](){
+			return;
+		}},
 
 		// we can get an ENTU packet if the server already started and we missed it somehow
 	    /*{'ENTU', [](){
@@ -12331,10 +13197,26 @@ bind_failed:
 			VoiceChat.receivePacket(net_packet);
 #endif
 		}},
-	};
+		};
 
-	static void handlePacketsAsClient() {
-	    if (receivedclientnum == false) {
+		static void processJoinHandshakePacket(bool& gotPacket) {
+			const Uint32 packetId = SDLNet_Read32(&net_packet->data[0]);
+			if ( packetId == 'HELO' )
+			{
+				resetHeloChunkReassemblyState();
+				gotPacket = true;
+			}
+			else if ( packetId == 'HLCN' )
+			{
+				if ( ingestHeloChunkAndMaybeAssemble() )
+				{
+					gotPacket = true;
+				}
+			}
+		}
+
+		static void handlePacketsAsClient() {
+		    if (receivedclientnum == false) {
 #ifdef STEAMWORKS
 			CSteamID newSteamID;
 			if (!directConnect && LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
@@ -12364,19 +13246,18 @@ bind_failed:
 			}
 #endif
 
-			// trying to connect to the server and get a player number
-			// receive the packet:
-			bool gotPacket = false;
-			if (directConnect) {
-			    if (SDLNet_UDP_Recv(net_sock, net_packet)) {
-			        if (!handleSafePacket()) {
-			            Uint32 packetId = SDLNet_Read32(&net_packet->data[0]);
-			            if (packetId == 'HELO') {
-					        gotPacket = true;
-					    }
-					}
-			    }
-			} else if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
+				// trying to connect to the server and get a player number
+				// receive the packet:
+				checkHeloChunkReassemblyTimeout();
+				bool gotPacket = false;
+
+				if (directConnect) {
+				    if (SDLNet_UDP_Recv(net_sock, net_packet)) {
+				        if (!handleSafePacket()) {
+							processJoinHandshakePacket(gotPacket);
+						}
+				    }
+				} else if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
 #ifdef STEAMWORKS
 				for (Uint32 numpacket = 0; numpacket < PACKET_LIMIT && net_packet; numpacket++) {
 					Uint32 packetlen = 0;
@@ -12400,14 +13281,11 @@ bind_failed:
 						continue;
 					}
 
-			        if (!handleSafePacket()) {
-			            Uint32 packetId = SDLNet_Read32(&net_packet->data[0]);
-			            if (packetId == 'HELO') {
-					        gotPacket = true;
-					    }
+				        if (!handleSafePacket()) {
+							processJoinHandshakePacket(gotPacket);
+						}
+						break;
 					}
-					break;
-				}
 #endif
 			} else if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
 #ifdef USE_EOS
@@ -12416,19 +13294,21 @@ bind_failed:
 						continue;
 					}
 
-			        if (!handleSafePacket()) {
-			            Uint32 packetId = SDLNet_Read32(&net_packet->data[0]);
-			            if (packetId == 'HELO') {
-					        gotPacket = true;
-					    }
+				        if (!handleSafePacket()) {
+							processJoinHandshakePacket(gotPacket);
+						}
+						break;
 					}
-					break;
-				}
 #endif // USE_EOS
 			}
 
 			// parse the packet:
 			if (gotPacket) {
+				if ( net_packet->len < 8 )
+				{
+					printlog("[NET]: ignoring short HELO packet while joining (len=%d)", net_packet->len);
+					return;
+				}
 				clientnum = (int)SDLNet_Read32(&net_packet->data[4]);
 				if (clientnum >= MAXPLAYERS || clientnum <= 0) {
                     int error = clientnum;
@@ -12484,6 +13364,17 @@ bind_failed:
 #endif
                     return;
 				} else {
+					const int chunk_size = loadingsavegame ?
+						6 + 32 + 6 * 10 :	// 6 bytes for player stats, 32 for name, 60 for equipment
+						6 + 32;				// 6 bytes for player stats, 32 for name
+					const int expectedHeloLen = 8 + MAXPLAYERS * chunk_size;
+					if ( net_packet->len < expectedHeloLen )
+					{
+						printlog("[NET]: ignoring truncated HELO packet while joining (len=%d expected>=%d)",
+							net_packet->len, expectedHeloLen);
+						return;
+					}
+
 					// join game succeeded, advance to lobby
 					client_keepalive[0] = ticks;
 					PingNetworkStatus_t::reset();
@@ -12496,10 +13387,6 @@ bind_failed:
 
 					// now set up everybody else
 					for (int c = 0; c < MAXPLAYERS; c++) {
-						const int chunk_size = loadingsavegame ?
-							6 + 32 + 6 * 10:	// 6 bytes for player stats, 32 for name, 60 for equipment
-							6 + 32;				// 6 bytes for player stats, 32 for name
-							
 						stats[c]->clearStats();
 						client_disconnected[c] = net_packet->data[8 + c * chunk_size + 0]; // connectedness
 						playerSlotsLocked[c] = net_packet->data[8 + c * chunk_size + 1]; // locked state
@@ -12785,9 +13672,10 @@ bind_failed:
 	    }
 	    SDLNet_Write32(loadingsavegame, &net_packet->data[61]); // send unique game key
 		SDLNet_Write32(loadinglobbykey, &net_packet->data[65]); // send unique lobby key
+		net_packet->data[69] = kJoinCapabilityHeloChunkV1;
 	    net_packet->address.host = net_server.host;
 	    net_packet->address.port = net_server.port;
-	    net_packet->len = 69;
+	    net_packet->len = 70;
 
 	    /*if (!directConnect) {
 		    sendPacket(net_sock, -1, net_packet, 0);
@@ -14168,7 +15056,7 @@ failed:
 			}
 			if (enabledDLCPack1) {
 				stats[index]->playerRace = RACE_SUCCUBUS;
-				auto race = card->findButton("race");
+				Button* race = card->findButton("race");
 				if (race) {
 					race->setText(Language::get(5372));
 				}
@@ -14185,13 +15073,13 @@ failed:
 						}
 					}
 				}
-			} else {
-				stats[index]->playerRace = RACE_HUMAN;
-				auto race = card->findButton("race");
-				if (race) {
-					race->setText(Language::get(5369));
-				}
-				auto human = subframe ? subframe->findButton(Language::get(5369)) : nullptr;
+				} else {
+					stats[index]->playerRace = RACE_HUMAN;
+					Button* race = card->findButton("race");
+					if (race) {
+						race->setText(Language::get(5369));
+					}
+				Button* human = subframe ? subframe->findButton(Language::get(5369)) : nullptr;
 				if (human) {
 					human->setPressed(true);
 				}
@@ -14204,18 +15092,399 @@ failed:
 		RaceDescriptions::update_details_text(*card);
 	}
 
+	static void ensureLobbyPreviewEntity(int index)
+	{
+		if ( !intro || index < 0 || index >= MAXPLAYERS )
+		{
+			return;
+		}
+		if ( !players[index] || players[index]->entity || players[index]->ghost.my )
+		{
+			return;
+		}
+		if ( !stats[index] || !map.entities || !map.creatures )
+		{
+			return;
+		}
+
+		Entity* anchor = nullptr;
+		for ( int c = 0; c < MAXPLAYERS; ++c )
+		{
+			if ( players[c] && players[c]->entity )
+			{
+				anchor = players[c]->entity;
+				break;
+			}
+		}
+
+		real_t spawnX = 8.0;
+		real_t spawnY = 8.0;
+		if ( anchor )
+		{
+			spawnX = anchor->x;
+			spawnY = anchor->y;
+		}
+
+		Entity* preview = newEntity(
+			playerHeadSprite(getMonsterFromPlayerRace(stats[index]->playerRace),
+				stats[index]->sex, stats[index]->stat_appearance),
+			1, map.entities, nullptr);
+		if ( !preview )
+		{
+			return;
+		}
+
+		preview->x = spawnX;
+		preview->y = spawnY;
+		preview->new_x = preview->x;
+		preview->new_y = preview->y;
+		preview->z = -1;
+		preview->yaw = 0.0;
+		preview->sizex = 4;
+		preview->sizey = 4;
+		preview->focalx = limbs[HUMAN][0][0];
+		preview->focaly = limbs[HUMAN][0][1];
+		preview->focalz = limbs[HUMAN][0][2];
+		preview->flags[INVISIBLE] = false;
+		preview->flags[GENIUS] = true;
+		preview->flags[PASSABLE] = true;
+		preview->flags[UPDATENEEDED] = false;
+		preview->flags[BLOCKSIGHT] = false;
+		preview->behavior = &actPlayer;
+		preview->skill[2] = index;
+		preview->addToCreatureList(map.creatures);
+		players[index]->entity = preview;
+	}
+
+	static int getLobbySlotsPerPage()
+	{
+		return MAXPLAYERS > 4 ? 4 : MAXPLAYERS;
+	}
+
+	static int getLobbySlotPage(int index)
+	{
+		return std::max(0, index) / getLobbySlotsPerPage();
+	}
+
+	static int getLobbySlotCenterX(int index)
+	{
+		const int slotsPerPage = getLobbySlotsPerPage();
+		const int slotInPage = std::max(0, index) % slotsPerPage;
+		const int page = getLobbySlotPage(index);
+		const int pageOffsetX = page * Frame::virtualScreenX;
+		return pageOffsetX + (Frame::virtualScreenX / (slotsPerPage * 2)) * (slotInPage * 2 + 1);
+	}
+
+	static int getLobbyPageCount()
+	{
+		const int slotsPerPage = std::max(1, getLobbySlotsPerPage());
+		return std::max(1, (MAXPLAYERS + slotsPerPage - 1) / slotsPerPage);
+	}
+
+	static int getLobbyVisiblePageIndex(const Frame& lobby)
+	{
+		const int maxOffset = std::max(0, lobby.getActualSize().w - Frame::virtualScreenX);
+		const int clampedOffset = std::max(0, std::min(lobby.getActualSize().x, maxOffset));
+		const int pageCount = getLobbyPageCount();
+		const int page = (clampedOffset + Frame::virtualScreenX / 2) / Frame::virtualScreenX;
+		return std::max(0, std::min(page, pageCount - 1));
+	}
+
+	static int getLobbyConfiguredPlayerTotal()
+	{
+		if ( currentLobbyType == LobbyType::LobbyLocal )
+		{
+			const int localCap = std::min(MAXPLAYERS, MAX_SPLITSCREEN);
+			if ( loadingsavegame )
+			{
+				int unlockedSlots = 0;
+				for ( int slot = 0; slot < localCap; ++slot )
+				{
+					if ( !playerSlotsLocked[slot] )
+					{
+						++unlockedSlots;
+					}
+				}
+				return std::max(1, unlockedSlots);
+			}
+			return std::max(1, localCap);
+		}
+
+		int total = MAXPLAYERS;
+		for ( int slot = 1; slot < MAXPLAYERS; ++slot )
+		{
+			if ( playerSlotsLocked[slot] )
+			{
+				total = slot;
+				break;
+			}
+		}
+		return std::max(1, std::min(total, MAXPLAYERS));
+	}
+
+	static int getLobbyJoinedPlayerCount()
+	{
+		if ( currentLobbyType == LobbyType::LobbyLocal )
+		{
+			const int localCap = std::min(MAXPLAYERS, MAX_SPLITSCREEN);
+			if ( loadingsavegame )
+			{
+				int joined = 0;
+				for ( int slot = 0; slot < localCap; ++slot )
+				{
+					if ( !playerSlotsLocked[slot] )
+					{
+						++joined;
+					}
+				}
+				return joined;
+			}
+
+			int joined = 0;
+			for ( int slot = 0; slot < localCap; ++slot )
+			{
+				if ( isPlayerSignedIn(slot) )
+				{
+					++joined;
+				}
+			}
+			return joined;
+		}
+
+		int joined = 0;
+		for ( int slot = 0; slot < MAXPLAYERS; ++slot )
+		{
+			if ( !playerSlotsLocked[slot] && !client_disconnected[slot] )
+			{
+				++joined;
+			}
+		}
+		return joined;
+	}
+
+	static void focusLobbyPageForPlayer(int player)
+	{
+		if ( !main_menu_frame )
+		{
+			return;
+		}
+		Frame* lobby = main_menu_frame->findFrame("lobby");
+		if ( !lobby )
+		{
+			return;
+		}
+
+		const int slotsPerPage = getLobbySlotsPerPage();
+		const int clampedPlayer = std::max(0, std::min(player, MAXPLAYERS - 1));
+		const int page = clampedPlayer / slotsPerPage;
+
+		SDL_Rect pos = lobby->getActualSize();
+		pos.x = page * Frame::virtualScreenX;
+		lobby->setActualSize(pos);
+#ifdef BARONY_SMOKE_TESTS
+		emitLobbyPageSnapshot(*lobby, "page-request");
+#endif
+	}
+
+	static void requestLobbyVisiblePage(const int requestedPage)
+	{
+		if ( !main_menu_frame )
+		{
+			return;
+		}
+		Frame* lobby = main_menu_frame->findFrame("lobby");
+		if ( !lobby )
+		{
+			return;
+		}
+
+		const int pageCount = getLobbyPageCount();
+		const int page = std::max(0, std::min(requestedPage, pageCount - 1));
+		SDL_Rect pos = lobby->getActualSize();
+		pos.x = page * Frame::virtualScreenX;
+		lobby->setActualSize(pos);
+#ifdef BARONY_SMOKE_TESTS
+		selectLobbyPageFocusable(*lobby, page);
+#endif
+	}
+
+#ifdef BARONY_SMOKE_TESTS
+	static void selectLobbyPageFocusable(Frame& lobby, int page)
+	{
+		page = std::max(0, page);
+		const int slotsPerPage = std::max(1, getLobbySlotsPerPage());
+		const int pageStartSlot = page * slotsPerPage;
+		const int pageEndSlot = std::min(MAXPLAYERS, pageStartSlot + slotsPerPage);
+		for ( int slot = pageStartSlot; slot < pageEndSlot; ++slot )
+		{
+			if ( Frame* card = lobby.findFrame((std::string("card") + std::to_string(slot)).c_str()) )
+			{
+				if ( Button* start = card->findButton("start") )
+				{
+					start->select();
+					return;
+				}
+				if ( Button* invite = card->findButton("invite") )
+				{
+					invite->select();
+					return;
+				}
+				card->select();
+				return;
+			}
+		}
+	}
+
+	static void emitLobbyPageSnapshot(Frame& lobby, const char* context)
+	{
+		if ( !SmokeTestHooks::MainMenu::isLobbyPageStateTraceEnabled() )
+		{
+			return;
+		}
+
+		const int pageCount = getLobbyPageCount();
+		const int visiblePage = getLobbyVisiblePageIndex(lobby);
+		const int pageOffsetX = lobby.getActualSize().x;
+		const int pageCenterX = pageOffsetX + Frame::virtualScreenX / 2;
+
+		int selectedOwner = -1;
+		const char* selectedWidgetName = "none";
+		int focusPageMatch = 1;
+		if ( main_menu_frame )
+		{
+			if ( Widget* selected = main_menu_frame->findSelectedWidget(getMenuOwner()) )
+			{
+				selectedOwner = selected->getOwner();
+				selectedWidgetName = selected->getName();
+				if ( selectedOwner >= 0 && selectedOwner < MAXPLAYERS )
+				{
+					focusPageMatch = getLobbySlotPage(selectedOwner) == visiblePage ? 1 : 0;
+				}
+			}
+		}
+
+		int cardsVisible = 0;
+		int cardsMisaligned = 0;
+		int paperdollsVisible = 0;
+		int paperdollsMisaligned = 0;
+		int pingsVisible = 0;
+		int pingsMisaligned = 0;
+
+		const int slotsPerPage = std::max(1, getLobbySlotsPerPage());
+		const int pageStartSlot = visiblePage * slotsPerPage;
+		const int pageEndSlot = std::min(MAXPLAYERS, pageStartSlot + slotsPerPage);
+		for ( int slot = pageStartSlot; slot < pageEndSlot; ++slot )
+		{
+			const int expectedCenterX = getLobbySlotCenterX(slot);
+
+			if ( Frame* card = lobby.findFrame((std::string("card") + std::to_string(slot)).c_str()) )
+			{
+				++cardsVisible;
+				const int centerX = card->getSize().x + card->getSize().w / 2;
+				const int deltaX = centerX - expectedCenterX;
+				if ( deltaX < -2 || deltaX > 2 )
+				{
+					++cardsMisaligned;
+				}
+			}
+
+			if ( Frame* paperdoll = lobby.findFrame((std::string("paperdoll") + std::to_string(slot)).c_str()) )
+			{
+				if ( !paperdoll->isInvisible() )
+				{
+					++paperdollsVisible;
+					const int centerX = paperdoll->getSize().x + paperdoll->getSize().w / 2;
+					const int deltaX = centerX - expectedCenterX;
+					if ( deltaX < -2 || deltaX > 2 )
+					{
+						++paperdollsMisaligned;
+					}
+				}
+			}
+
+			if ( Frame* ping = lobby.findFrame((std::string("ping") + std::to_string(slot)).c_str()) )
+			{
+				bool pingVisible = true;
+				if ( Frame::image_t* pingBg = ping->findImage("ping bg") )
+				{
+					pingVisible = !pingBg->disabled;
+				}
+				if ( pingVisible )
+				{
+					++pingsVisible;
+					const int centerX = ping->getSize().x + ping->getSize().w / 2;
+					const int deltaX = centerX - expectedCenterX;
+					if ( deltaX < -2 || deltaX > 2 )
+					{
+						++pingsMisaligned;
+					}
+				}
+			}
+		}
+
+		int warningsCenterDelta = 9999;
+		if ( Frame* warnings = lobby.findFrame("lobby_float_warnings") )
+		{
+			if ( !warnings->isDisabled() )
+			{
+				const int centerX = warnings->getSize().x + warnings->getSize().w / 2;
+				warningsCenterDelta = centerX - pageCenterX;
+			}
+		}
+
+		int countdownCenterDelta = 9999;
+		if ( Frame* countdown = lobby.findFrame("countdown") )
+		{
+			if ( !countdown->isDisabled() )
+			{
+				const int centerX = countdown->getSize().x + countdown->getSize().w / 2;
+				countdownCenterDelta = centerX - pageCenterX;
+			}
+		}
+
+		SmokeTestHooks::MainMenu::traceLobbyPageSnapshot(
+			context,
+			visiblePage + 1,
+			pageCount,
+			pageOffsetX,
+			selectedOwner,
+			selectedWidgetName,
+			focusPageMatch,
+			cardsVisible,
+			cardsMisaligned,
+			paperdollsVisible,
+			paperdollsMisaligned,
+			pingsVisible,
+			pingsMisaligned,
+			warningsCenterDelta,
+			countdownCenterDelta);
+	}
+#endif
+
+	static SDL_Rect getLobbySmallCardRect(int index, int width = 280, int height = 146)
+	{
+		constexpr int baseCardY = 100;
+		const int centerX = getLobbySlotCenterX(index);
+		return SDL_Rect{
+			centerX - width / 2,
+			Frame::virtualScreenY - height - baseCardY,
+			width,
+			height
+		};
+	}
+
 	static Frame* initCharacterCard(int index, int height) {
 		auto lobby = main_menu_frame->findFrame("lobby");
-        if (!lobby) {
-            return nullptr;
-        }
+		if (!lobby) {
+			return nullptr;
+		}
 
 		auto card = lobby->findFrame((std::string("card") + std::to_string(index)).c_str());
 		if (card) {
 			card->removeSelf();
 		}
-        
-        const int pos = (Frame::virtualScreenX / 8) * (index * 2 + 1);
+
+		const int pos = getLobbySlotCenterX(index);
 		card = lobby->addFrame((std::string("card") + std::to_string(index)).c_str());
 		card->setSize(SDL_Rect{pos - 324 / 2, Frame::virtualScreenY - height, 324, height});
 		card->setActualSize(SDL_Rect{0, 0, card->getSize().w, card->getSize().h});
@@ -14667,7 +15936,7 @@ failed:
 		if ( index != 0 || gameModeManager.getMode() == GameModeManager_t::GAME_MODE_CUSTOM_RUN_ONESHOT
 			|| gameModeManager.getMode() == GameModeManager_t::GAME_MODE_CUSTOM_RUN )
 		{
-			custom_difficulty->setWidgetDown(online ? "invite" : "player_count_2");
+			custom_difficulty->setWidgetDown(online ? "invite" : "player_count_dropdown_button");
 		}
 		else
 		{
@@ -14804,7 +16073,7 @@ failed:
 			seed_field->addWidgetAction("MenuPageLeftAlt", "privacy");
 			seed_field->setWidgetBack("back_button");
 			seed_field->setWidgetUp("custom_difficulty");
-			seed_field->setWidgetDown(online ? "invite" : "player_count_2");
+			seed_field->setWidgetDown(online ? "invite" : "player_count_dropdown_button");
 			seed_field->setWidgetRight("randomize_seed");
 			seed_field->setCallback([](Field& field) {seed_field_fn(field.getText(), field.getOwner()); });
 			seed_field->setTickCallback([](Widget& widget) {
@@ -14824,7 +16093,7 @@ failed:
 			randomize_seed->addWidgetAction("MenuPageLeftAlt", "privacy");
 			randomize_seed->setWidgetBack("back_button");
 			randomize_seed->setWidgetUp("custom_difficulty");
-			randomize_seed->setWidgetDown(online ? "invite" : "player_count_2");
+			randomize_seed->setWidgetDown(online ? "invite" : "player_count_dropdown_button");
 			randomize_seed->setWidgetLeft("seed");
 			static auto randomize_seed_fn = [](Button& button, int index) {
 				auto& prefixes = GameModeManager_t::CurrentSession_t::SeededRun_t::prefixes;
@@ -15100,7 +16369,7 @@ failed:
 #else
 			open->setWidgetUp("friends");
 #endif
-			open->setWidgetDown("player_count_2");
+			open->setWidgetDown("player_count_dropdown_button");
             if (LobbyHandler.getHostingType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
 #ifdef USE_EOS
                 if (EOS.currentPermissionLevel == EOS_ELobbyPermissionLevel::EOS_LPL_PUBLICADVERTISED) {
@@ -15159,259 +16428,169 @@ failed:
 		}
 
 		auto player_count_label = card->addField("player_count_label", 64);
-		player_count_label->setSize(SDL_Rect{40, height - 158, 116, 40});
+		player_count_label->setSize(SDL_Rect{30, height - 176, 264, 40});
 		player_count_label->setFont(smallfont_outline);
-		player_count_label->setText(Language::get(6018));
+		player_count_label->setText("# Players");
 		player_count_label->setJustify(Field::justify_t::CENTER);
 
-        for (int c = 0; c < 3; ++c) {
-            const std::string button_name = std::string("player_count_") + std::to_string(c + 2);
-		    auto player_count = card->addButton(button_name.c_str());
-		    player_count->setSize(SDL_Rect{156 + 44 * c, height - 158, 40, 40});
-		    player_count->setFont(smallfont_outline);
-		    player_count->setText(std::to_string(c + 2).c_str());
-		    player_count->setBorder(0);
-		    player_count->setTextColor(uint32ColorWhite);
-	        player_count->setTextHighlightColor(uint32ColorWhite);
-		    player_count->setBackground("*#images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Button_Tiny00A.png");
-		    player_count->setBackgroundHighlighted("*#images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Button_Tiny00B_Highlighted.png");
-		    player_count->setBackgroundActivated("*#images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Button_Tiny00C_Pressed.png");
-		    player_count->setColor(uint32ColorWhite);
-		    player_count->setWidgetSearchParent(name.c_str());
-			player_count->addWidgetAction("MenuStart", "confirm");
-			player_count->addWidgetAction("MenuPageRightAlt", "chat");
-			player_count->addWidgetAction("MenuPageLeftAlt", "privacy");
-			player_count->setWidgetBack("back_button");
-			if ( index != 0 || gameModeManager.getMode() == GameModeManager_t::GAME_MODE_CUSTOM_RUN_ONESHOT
-				|| gameModeManager.getMode() == GameModeManager_t::GAME_MODE_CUSTOM_RUN )
-			{
-				player_count->setWidgetUp(online ? "open" : "seed");
-			}
-			else
-			{
-				player_count->setWidgetUp(online ? "open" : "custom_difficulty");
-			}
-		    player_count->setWidgetLeft((std::string("player_count_") + std::to_string(c + 1)).c_str());
-		    player_count->setWidgetRight((std::string("player_count_") + std::to_string(c + 3)).c_str());
-		    player_count->setWidgetDown((std::string("kick_player_") + std::to_string(c + 2)).c_str());
-			if (index != 0) {
-				player_count->setCallback([](Button&){soundError();});
-			} else {
-				switch (c) {
-				case 0:
-					player_count->setCallback([](Button&){
-						if (client_disconnected[2] && client_disconnected[3]) {
-							lockSlot(1, false);
-							lockSlot(2, true);
-							lockSlot(3, true);
-							soundActivate();
-						} else {
-							if (!client_disconnected[2] && !client_disconnected[3]) {
-								char prompt[1024];
-								snprintf(prompt, sizeof(prompt), Language::get(5396),
-									players[2]->getAccountName(), players[3]->getAccountName());
-								binaryPrompt(prompt, Language::get(5398), Language::get(5399),
-									[](Button&){ // okay
-										lockSlot(1, false);
-										lockSlot(2, true);
-										lockSlot(3, true);
-										soundActivate();
-										closeBinary();
-										},
-									[](Button&){ // go back
-										soundCancel();
-										closeBinary();
-										});
-							}
-							else if (!client_disconnected[2]) {
-								char prompt[1024];
-								snprintf(prompt, sizeof(prompt), Language::get(5397), players[2]->getAccountName());
-								binaryPrompt(prompt, Language::get(5400), Language::get(5401),
-									[](Button&){ // okay
-										lockSlot(1, false);
-										lockSlot(2, true);
-										lockSlot(3, true);
-										soundActivate();
-										closeBinary();
-										},
-									[](Button&){ // go back
-										soundCancel();
-										closeBinary();
-										});
-							}
-							else if (!client_disconnected[3]) {
-								char prompt[1024];
-								snprintf(prompt, sizeof(prompt), Language::get(5397), players[3]->getAccountName());
-								binaryPrompt(prompt, Language::get(5400), Language::get(5401),
-									[](Button&){ // okay
-										lockSlot(1, false);
-										lockSlot(2, true);
-										lockSlot(3, true);
-										soundActivate();
-										closeBinary();
-										},
-									[](Button&){ // go back
-										soundCancel();
-										closeBinary();
-										});
-							}
-						}
-						});
-					break;
-				case 1:
-					player_count->setCallback([](Button&){
-						if (client_disconnected[3]) {
-							lockSlot(1, false);
-							lockSlot(2, false);
-							lockSlot(3, true);
-							soundActivate();
-						} else {
-							char prompt[1024];
-							snprintf(prompt, sizeof(prompt), Language::get(5397), players[3]->getAccountName());
-							binaryPrompt(prompt, Language::get(5400), Language::get(5401),
-								[](Button&){ // yes
-									lockSlot(1, false);
-									lockSlot(2, false);
-									lockSlot(3, true);
-									soundActivate();
-									closeBinary();
-									},
-								[](Button&){ // no
-									soundCancel();
-									closeBinary();
-									});
-						}
-						});
-					break;
-				case 2:
-					player_count->setCallback([](Button&){
-						lockSlot(1, false);
-						lockSlot(2, false);
-						lockSlot(3, false);
-						soundActivate();
-						});
-					break;
-				}
-			}
-        }
+		const int minLobbyPlayers = 2;
+		const int maxLobbyPlayers = MAXPLAYERS;
+		const int playerCountButtonCount = std::max(0, maxLobbyPlayers - minLobbyPlayers + 1);
+		const int selectedLobbyPlayerCount = getCurrentLobbyPlayerCountSelection();
+
+		Button* player_count_dropdown = card->addButton("player_count_dropdown_button");
+		player_count_dropdown->setSize(SDL_Rect{70, height - 142, 184, 40});
+		player_count_dropdown->setFont(smallfont_outline);
+		char playerCountText[16] = "";
+		snprintf(playerCountText, sizeof(playerCountText), "%d", selectedLobbyPlayerCount);
+		player_count_dropdown->setText(playerCountText);
+		player_count_dropdown->setJustify(Button::justify_t::CENTER);
+		player_count_dropdown->setBorder(0);
+		player_count_dropdown->setTextColor(uint32ColorWhite);
+		player_count_dropdown->setTextHighlightColor(uint32ColorWhite);
+		player_count_dropdown->setBackground("*images/ui/Main Menus/Settings/Settings_Drop_ScrollBG02.png");
+		player_count_dropdown->setBackgroundHighlighted("*images/ui/Main Menus/Settings/Settings_Drop_ScrollBG02_Highlighted.png");
+		player_count_dropdown->setBackgroundActivated("*images/ui/Main Menus/Settings/Settings_Drop_ScrollBG02_Highlighted.png");
+		player_count_dropdown->setColor(uint32ColorWhite);
+		player_count_dropdown->setWidgetSearchParent(name.c_str());
+		player_count_dropdown->addWidgetAction("MenuStart", "confirm");
+		player_count_dropdown->addWidgetAction("MenuPageRightAlt", "chat");
+		player_count_dropdown->addWidgetAction("MenuPageLeftAlt", "privacy");
+		player_count_dropdown->setWidgetBack("back_button");
+		if ( index != 0 || gameModeManager.getMode() == GameModeManager_t::GAME_MODE_CUSTOM_RUN_ONESHOT
+			|| gameModeManager.getMode() == GameModeManager_t::GAME_MODE_CUSTOM_RUN )
+		{
+			player_count_dropdown->setWidgetUp(online ? "open" : "seed");
+		}
+		else
+		{
+			player_count_dropdown->setWidgetUp(online ? "open" : "custom_difficulty");
+		}
+		player_count_dropdown->setWidgetDown("kick_player_dropdown_button");
+		player_count_dropdown->setWidgetLeft("player_count_dropdown_button");
+		player_count_dropdown->setWidgetRight("player_count_dropdown_button");
+		for ( int c = 0; c < playerCountButtonCount; ++c )
+		{
+			const int playerCountValue = c + minLobbyPlayers;
+			const std::string key = std::string("__") + std::to_string(c);
+			const std::string value = std::to_string(playerCountValue);
+			player_count_dropdown->addWidgetAction(key.c_str(), value.c_str());
+		}
+		if ( index != 0 )
+		{
+			player_count_dropdown->setCallback([](Button&){soundError();});
+		}
+		else
+		{
+			player_count_dropdown->setCallback(lobbyPlayerCountDropdownButtonCallback);
+		}
 
 		auto kick_player_label = card->addField("kick_player_label", 64);
-		kick_player_label->setSize(SDL_Rect{40, height - 114, 116, 40});
+		kick_player_label->setSize(SDL_Rect{30, height - 98, 264, 40});
 		kick_player_label->setFont(smallfont_outline);
 		kick_player_label->setText(Language::get(5402));
 		kick_player_label->setJustify(Field::justify_t::CENTER);
 
-        for (int c = 0; c < 3; ++c) {
-            const std::string button_name = std::string("kick_player_") + std::to_string(c + 2);
-		    auto kick_player = card->addButton(button_name.c_str());
-		    kick_player->setSize(SDL_Rect{156 + 44 * c, height - 114, 40, 40});
-		    kick_player->setFont(smallfont_outline);
-		    kick_player->setText(std::to_string(c + 2).c_str());
-		    kick_player->setBorder(0);
-		    kick_player->setTextColor(uint32ColorWhite);
-	        kick_player->setTextHighlightColor(uint32ColorWhite);
-		    kick_player->setBackground("*#images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Button_Tiny00A.png");
-		    kick_player->setBackgroundHighlighted("*#images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Button_Tiny00B_Highlighted.png");
-		    kick_player->setBackgroundActivated("*#images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Button_Tiny00C_Pressed.png");
-		    kick_player->setColor(uint32ColorWhite);
-		    kick_player->setWidgetSearchParent(name.c_str());
-			kick_player->addWidgetAction("MenuStart", "confirm");
-			kick_player->addWidgetAction("MenuPageRightAlt", "chat");
-			kick_player->addWidgetAction("MenuPageLeftAlt", "privacy");
-			kick_player->setWidgetBack("back_button");
-		    kick_player->setWidgetLeft((std::string("kick_player_") + std::to_string(c + 1)).c_str());
-		    kick_player->setWidgetRight((std::string("kick_player_") + std::to_string(c + 3)).c_str());
-		    kick_player->setWidgetUp((std::string("player_count_") + std::to_string(c + 2)).c_str());
-			if (index != 0) {
-				kick_player->setCallback([](Button&){soundError();});
-			} else {
-				switch (c) {
-				case 0:
-					kick_player->setCallback([](Button&){
-						if (client_disconnected[1]) {
-							soundError();
-							return;
-						}
-						char prompt[1024];
-						snprintf(prompt, sizeof(prompt), Language::get(5403), players[1]->getAccountName());
-						binaryPrompt(prompt, Language::get(5400), Language::get(5401),
-							[](Button&){ // yes
-								soundActivate();
-								closeBinary();
-								kickPlayer(1);
-								},
-							[](Button&){ // no
-								soundCancel();
-								closeBinary();
-								});
-						});
-					break;
-				case 1:
-					kick_player->setCallback([](Button&){
-						if (client_disconnected[2]) {
-							soundError();
-							return;
-						}
-						char prompt[1024];
-						snprintf(prompt, sizeof(prompt), Language::get(5403), players[2]->getAccountName());
-						binaryPrompt(prompt, Language::get(5400), Language::get(5401),
-							[](Button&){ // yes
-								soundActivate();
-								closeBinary();
-								kickPlayer(2);
-								},
-							[](Button&){ // no
-								soundCancel();
-								closeBinary();
-								});
-						});
-					break;
-				case 2:
-					kick_player->setCallback([](Button&){
-						if (client_disconnected[3]) {
-							soundError();
-							return;
-						}
-						char prompt[1024];
-						snprintf(prompt, sizeof(prompt), Language::get(5403), players[3]->getAccountName());
-						binaryPrompt(prompt, Language::get(5400), Language::get(5401),
-							[](Button&){ // yes
-								soundActivate();
-								closeBinary();
-								kickPlayer(3);
-								},
-							[](Button&){ // no
-								soundCancel();
-								closeBinary();
-								});
-						});
-					break;
-				}
+		int firstKickTarget = 1;
+		for ( ; firstKickTarget < MAXPLAYERS; ++firstKickTarget )
+		{
+			if ( !client_disconnected[firstKickTarget] )
+			{
+				break;
 			}
-        }
+		}
+		if ( firstKickTarget >= MAXPLAYERS )
+		{
+			firstKickTarget = 1;
+		}
+		pendingKickPlayerSelection = firstKickTarget;
 
-        // can't lock slots in local games or saved games
+		Button* kick_player_dropdown = card->addButton("kick_player_dropdown_button");
+		kick_player_dropdown->setSize(SDL_Rect{20, height - 64, 170, 40});
+		kick_player_dropdown->setFont(smallfont_outline);
+		char kickSelectionText[16] = "";
+		snprintf(kickSelectionText, sizeof(kickSelectionText), "%d", firstKickTarget + 1);
+		kick_player_dropdown->setText(kickSelectionText);
+		kick_player_dropdown->setJustify(Button::justify_t::CENTER);
+		kick_player_dropdown->setBorder(0);
+		kick_player_dropdown->setTextColor(uint32ColorWhite);
+		kick_player_dropdown->setTextHighlightColor(uint32ColorWhite);
+		kick_player_dropdown->setBackground("*images/ui/Main Menus/Settings/Settings_Drop_ScrollBG02.png");
+		kick_player_dropdown->setBackgroundHighlighted("*images/ui/Main Menus/Settings/Settings_Drop_ScrollBG02_Highlighted.png");
+		kick_player_dropdown->setBackgroundActivated("*images/ui/Main Menus/Settings/Settings_Drop_ScrollBG02_Highlighted.png");
+		kick_player_dropdown->setColor(uint32ColorWhite);
+		kick_player_dropdown->setWidgetSearchParent(name.c_str());
+		kick_player_dropdown->addWidgetAction("MenuStart", "confirm");
+		kick_player_dropdown->addWidgetAction("MenuPageRightAlt", "chat");
+		kick_player_dropdown->addWidgetAction("MenuPageLeftAlt", "privacy");
+		kick_player_dropdown->setWidgetBack("back_button");
+		kick_player_dropdown->setWidgetUp("player_count_dropdown_button");
+		kick_player_dropdown->setWidgetLeft("kick_player_confirm_button");
+		kick_player_dropdown->setWidgetRight("kick_player_confirm_button");
+		for ( int slot = 1; slot < MAXPLAYERS; ++slot )
+		{
+			const std::string keyPrefix = client_disconnected[slot] ? "~__" : "__";
+			const std::string key = keyPrefix + std::to_string(slot - 1);
+			const std::string value = std::to_string(slot + 1);
+			kick_player_dropdown->addWidgetAction(key.c_str(), value.c_str());
+		}
+		if ( index != 0 )
+		{
+			kick_player_dropdown->setCallback([](Button&){soundError();});
+		}
+		else
+		{
+			kick_player_dropdown->setCallback(lobbyKickPlayerDropdownButtonCallback);
+		}
+
+		Button* kick_player_confirm = card->addButton("kick_player_confirm_button");
+		kick_player_confirm->setSize(SDL_Rect{198, height - 64, 96, 40});
+		kick_player_confirm->setFont(smallfont_outline);
+		kick_player_confirm->setText("Kick");
+		kick_player_confirm->setJustify(Button::justify_t::CENTER);
+		kick_player_confirm->setBorder(0);
+		kick_player_confirm->setTextColor(uint32ColorWhite);
+		kick_player_confirm->setTextHighlightColor(uint32ColorWhite);
+		kick_player_confirm->setBackground("*#images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Button_Customize00A.png");
+		kick_player_confirm->setBackgroundHighlighted("*#images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Button_CustomizeHigh00A.png");
+		kick_player_confirm->setBackgroundActivated("*#images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Button_CustomizePress00A.png");
+		kick_player_confirm->setColor(uint32ColorWhite);
+		kick_player_confirm->setWidgetSearchParent(name.c_str());
+		kick_player_confirm->addWidgetAction("MenuStart", "confirm");
+		kick_player_confirm->addWidgetAction("MenuPageRightAlt", "chat");
+		kick_player_confirm->addWidgetAction("MenuPageLeftAlt", "privacy");
+		kick_player_confirm->setWidgetBack("back_button");
+		kick_player_confirm->setWidgetUp("player_count_dropdown_button");
+		kick_player_confirm->setWidgetLeft("kick_player_dropdown_button");
+		kick_player_confirm->setWidgetRight("kick_player_dropdown_button");
+		if ( index != 0 )
+		{
+			kick_player_confirm->setCallback([](Button&){soundError();});
+		}
+		else
+		{
+			kick_player_confirm->setCallback(lobbyKickPlayerConfirmButtonCallback);
+		}
+
+	        // can't lock slots in local games or saved games
 		if (local || loadingsavegame) {
 			player_count_label->setColor(makeColor(70, 62, 59, 255));
-			for (int c = 0; c < 3; ++c) {
-			    auto player_count = card->findButton((std::string("player_count_") + std::to_string(c + 2)).c_str());
-			    player_count->setBackground("*#images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Button_Tiny00D_Gray.png");
-			    player_count->setBackgroundHighlighted("*#images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Button_Tiny00D_Gray.png");
-		        player_count->setDisabled(true);
-		    }
+			player_count_dropdown->setDisabled(true);
+			player_count_dropdown->setColor(makeColor(170, 170, 170, 255));
+			player_count_dropdown->setTextColor(makeColor(170, 170, 170, 255));
 		} else {
 		    player_count_label->setColor(makeColor(166, 123, 81, 255));
 		}
 
-        // can't kick players in local games
+	        // can't kick players in local games
 		if (local) {
 			kick_player_label->setColor(makeColor(70, 62, 59, 255));
-			for (int c = 0; c < 3; ++c) {
-			    auto kick_player = card->findButton((std::string("kick_player_") + std::to_string(c + 2)).c_str());
-			    kick_player->setBackground("*#images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Button_Tiny00D_Gray.png");
-			    kick_player->setBackgroundHighlighted("*#images/ui/Main Menus/Play/PlayerCreation/LobbySettings/UI_LobbySettings_Button_Tiny00D_Gray.png");
-		        kick_player->setDisabled(true);
-		    }
+			kick_player_dropdown->setDisabled(true);
+			kick_player_dropdown->setColor(makeColor(170, 170, 170, 255));
+			kick_player_dropdown->setTextColor(makeColor(170, 170, 170, 255));
+			kick_player_confirm->setDisabled(true);
+			kick_player_confirm->setColor(makeColor(170, 170, 170, 255));
+			kick_player_confirm->setTextColor(makeColor(170, 170, 170, 255));
 		} else {
 		    kick_player_label->setColor(makeColor(166, 123, 81, 255));
 		}
@@ -18037,9 +19216,9 @@ failed:
 			card->removeSelf();
 		}
 
-        const int pos = (Frame::virtualScreenX / 8) * (index * 2 + 1);
-		card = lobby->addFrame((std::string("card") + std::to_string(index)).c_str());
-		card->setSize(SDL_Rect{pos - 280 / 2, Frame::virtualScreenY - 146 - 100, 280, 146});
+	        SDL_Rect cardPos = getLobbySmallCardRect(index);
+			card = lobby->addFrame((std::string("card") + std::to_string(index)).c_str());
+			card->setSize(cardPos);
 		card->setActualSize(SDL_Rect{0, 0, card->getSize().w, card->getSize().h});
 		card->setColor(0);
 		card->setBorder(0);
@@ -18136,9 +19315,9 @@ failed:
 			card->removeSelf();
 		}
 
-        const int pos = (Frame::virtualScreenX / 8) * (index * 2 + 1);
-		card = lobby->addFrame((std::string("card") + std::to_string(index)).c_str());
-		card->setSize(SDL_Rect{pos - 280 / 2, Frame::virtualScreenY - 146 - 100, 280, 146});
+	        SDL_Rect cardPos = getLobbySmallCardRect(index);
+			card = lobby->addFrame((std::string("card") + std::to_string(index)).c_str());
+			card->setSize(cardPos);
 		card->setActualSize(SDL_Rect{0, 0, card->getSize().w, card->getSize().h});
 		card->setColor(0);
 		card->setBorder(0);
@@ -18419,9 +19598,9 @@ failed:
 			card->removeSelf();
 		}
 
-        const int pos = (Frame::virtualScreenX / 8) * (index * 2 + 1);
-		card = lobby->addFrame((std::string("card") + std::to_string(index)).c_str());
-		card->setSize(SDL_Rect{pos - 280 / 2, Frame::virtualScreenY - 146 - 100, 280, 146});
+	        SDL_Rect cardPos = getLobbySmallCardRect(index);
+			card = lobby->addFrame((std::string("card") + std::to_string(index)).c_str());
+			card->setSize(cardPos);
 		card->setActualSize(SDL_Rect{0, 0, card->getSize().w, card->getSize().h});
 		card->setColor(0);
 		card->setBorder(0);
@@ -18480,9 +19659,9 @@ failed:
 			card->removeSelf();
 		}
 
-        const int pos = (Frame::virtualScreenX / 8) * (index * 2 + 1);
-		card = lobby->addFrame((std::string("card") + std::to_string(index)).c_str());
-		card->setSize(SDL_Rect{pos - 280 / 2, Frame::virtualScreenY - 146 - 100, 280, 146});
+	        SDL_Rect cardPos = getLobbySmallCardRect(index);
+			card = lobby->addFrame((std::string("card") + std::to_string(index)).c_str());
+			card->setSize(cardPos);
 		card->setActualSize(SDL_Rect{0, 0, card->getSize().w, card->getSize().h});
 		card->setColor(0);
 		card->setBorder(0);
@@ -18592,9 +19771,9 @@ failed:
 			card->removeSelf();
 		}
 
-        const int pos = (Frame::virtualScreenX / 8) * (index * 2 + 1);
-		card = lobby->addFrame((std::string("card") + std::to_string(index)).c_str()); assert(card);
-		card->setSize(SDL_Rect{pos - 280 / 2, Frame::virtualScreenY - 146 - 100, 280, 146});
+	        SDL_Rect cardPos = getLobbySmallCardRect(index);
+			card = lobby->addFrame((std::string("card") + std::to_string(index)).c_str()); assert(card);
+			card->setSize(cardPos);
 		card->setActualSize(SDL_Rect{0, 0, card->getSize().w, card->getSize().h});
 		card->setColor(0);
 		card->setBorder(0);
@@ -18655,19 +19834,20 @@ failed:
 		account->setTickCallback([](Widget& widget) {
 			const int player = widget.getOwner();
 			auto field = static_cast<Field*>(&widget);
+			const char* accountName = players[player]->getAccountName();
 
 			// set name
 			char buf[64];
-			snprintf(buf, sizeof(buf), "(%s)", players[player]->getAccountName());
+			snprintf(buf, sizeof(buf), "(%s)", accountName);
 			field->setText(buf);
 
 			// announce new player
 			if (multiplayer == SERVER) {
-				if (!client_disconnected[player] && newPlayer[player] && stringCmp(players[player]->getAccountName(), "...", 3, 3)) {
+				if (!client_disconnected[player] && newPlayer[player] && stringCmp(accountName, "...", 3, 3)) {
 					newPlayer[player] = false;
 
 					char buf[1024];
-					int len = snprintf(buf, sizeof(buf), Language::get(5451), players[player]->getAccountName());
+					int len = snprintf(buf, sizeof(buf), Language::get(5451), accountName);
 					if (len > 0) {
 						sendChatMessageOverNet(uint32ColorBaronyBlue, buf, len);
 					}
@@ -18677,6 +19857,9 @@ failed:
 			auto index = reinterpret_cast<intptr_t>(field->getUserData());
 			field->setColor(playerColor((int)index, colorblind_lobby, false));
 			});
+#ifdef BARONY_SMOKE_TESTS
+		SmokeTestHooks::MainMenu::traceLobbyAccountLabelResolved(index, players[index]->getAccountName());
+#endif
 
         if (local) {
             static auto cancel_fn = [](int index){
@@ -18817,6 +20000,16 @@ failed:
 		auto frame = lobby->addFrame("countdown");
 		frame->setSize(SDL_Rect{(Frame::virtualScreenX - 300) / 2, 64, 300, 120});
 		frame->setHollow(true);
+		frame->setTickCallback([](Widget& widget) {
+			Frame* frame = static_cast<Frame*>(&widget);
+			Frame* lobby = static_cast<Frame*>(widget.getParent());
+			if (!lobby) {
+				return;
+			}
+			SDL_Rect size = frame->getSize();
+			size.x = lobby->getActualSize().x + (Frame::virtualScreenX - size.w) / 2;
+			frame->setSize(size);
+		});
 
         static Uint32 countdown_end;
         countdown_end = ticks + TICKS_PER_SECOND * 3;
@@ -18938,14 +20131,24 @@ failed:
 		}
 
 		// reset ALL player stats
-        if (!loadingsavegame) {
+	        if (!loadingsavegame) {
+			const bool lockExtraSlotsByDefault =
+				type == LobbyType::LobbyLAN || type == LobbyType::LobbyOnline;
+			int defaultLobbyPlayerCount = 4;
+#ifdef BARONY_SMOKE_TESTS
+			if ( lockExtraSlotsByDefault )
+			{
+				defaultLobbyPlayerCount =
+					SmokeTestHooks::MainMenu::expectedHostLobbyPlayerSlots(defaultLobbyPlayerCount);
+			}
+#endif
 
-		    for (int c = 0; c < MAXPLAYERS; ++c) {
-		        if (type != LobbyType::LobbyJoined && type != LobbyType::LobbyLocal && c != 0) {
-		            newPlayer[c] = true;
-		        }
-		        if (type != LobbyType::LobbyJoined || c == clientnum) {
-		            playerSlotsLocked[c] = false;
+			for (int c = 0; c < MAXPLAYERS; ++c) {
+				if (type != LobbyType::LobbyJoined && type != LobbyType::LobbyLocal && c != 0) {
+					newPlayer[c] = true;
+				}
+				if (type != LobbyType::LobbyJoined || c == clientnum) {
+					playerSlotsLocked[c] = lockExtraSlotsByDefault && c >= defaultLobbyPlayerCount;
 
 					bool replayedLastCharacter = false;
 					if ( type == LobbyType::LobbyLAN )
@@ -19030,8 +20233,15 @@ failed:
 						memcpy(stats[c]->name, name, len);
 						stats[c]->name[len] = '\0';
 					}
-			    }
+				}
 			}
+#ifdef BARONY_SMOKE_TESTS
+			if ( lockExtraSlotsByDefault )
+			{
+				SmokeTestHooks::MainMenu::traceLobbySlotLockSnapshot("lobby-init",
+					playerSlotsLocked, client_disconnected, defaultLobbyPlayerCount);
+			}
+#endif
 		}
 
 		GameplayPreferences_t::reset();
@@ -19127,17 +20337,27 @@ failed:
 				auto lobby = static_cast<Frame*>(widget.getParent());
 				auto card = lobby->findFrame((std::string("card") + std::to_string(index)).c_str());
 				if (card) {
+					const int paperdollWidth = Frame::virtualScreenX / getLobbySlotsPerPage();
 					paperdoll->setSize(SDL_Rect{
-						index * Frame::virtualScreenX / 4,
+						getLobbySlotCenterX(index) - paperdollWidth / 2,
 						0,
-						Frame::virtualScreenX / 4,
+						paperdollWidth,
 						Frame::virtualScreenY * 3 / 4
 						});
+					bool showPaperdoll = false;
 					if (loadingsavegame) {
-					    widget.setInvisible(playerSlotsLocked[index]);
+						showPaperdoll = !playerSlotsLocked[index];
 					} else {
-					    widget.setInvisible(!isPlayerSignedIn(index));
+						showPaperdoll = isPlayerSignedIn(index);
+						if (!showPaperdoll) {
+							// JOIN/REDY cards always include the account field.
+							showPaperdoll = card->findField("account") != nullptr;
+						}
 					}
+					if (showPaperdoll) {
+						ensureLobbyPreviewEntity(index);
+					}
+					widget.setInvisible(!showPaperdoll);
 				}
 				});
 			paperdoll->setDrawCallback([](const Widget& widget, SDL_Rect pos){
@@ -19252,6 +20472,11 @@ failed:
 			}
 
 			SDL_Rect pos = frame.getSize();
+			const int pageX = frame.getActualSize().x;
+			const int visiblePage = std::max(0, pageX / Frame::virtualScreenX);
+			const int slotsPerPage = getLobbySlotsPerPage();
+			const int slotSpacing = Frame::virtualScreenX / slotsPerPage;
+			pos.x = pageX;
 			pos.y = 60 + 24 + 22;
 			pos.h = 60;
 
@@ -19265,7 +20490,12 @@ failed:
 			}
 			for ( int i = 0; i < MAXPLAYERS; ++i )
 			{
-				const int x = i * (Frame::virtualScreenX / 4) + 32; /*(Frame::virtualScreenX / 8) * (i * 2 + 1)*/;
+				if (getLobbySlotPage(i) != visiblePage)
+				{
+					continue;
+				}
+				const int slotInPage = std::max(0, i) % slotsPerPage;
+				const int x = slotInPage * slotSpacing + 32;
 				if ( !client_disconnected[i] && isPlayerSignedIn(i) )
 				{
 					auto& images = lobbyVoice->getImages();
@@ -19462,6 +20692,7 @@ failed:
 
 			SDL_Rect pos = frame.getSize();
 			pos.y = 60;
+			pos.x = frame.getActualSize().x;
 			lobbyWarnings->setSize(pos);
 
 			int customRunType = 0;
@@ -19562,7 +20793,7 @@ failed:
 					totalWidth += f->getSize().w;
 				}
 			}
-			pos.x = pos.w / 2 - totalWidth / 2;
+			pos.x = frame.getActualSize().x + pos.w / 2 - totalWidth / 2;
 			totalWidth += 8;
 			if ( pos.x % 2 == 1 )
 			{
@@ -19601,6 +20832,15 @@ failed:
             banner->setSize(SDL_Rect{lobby->getActualSize().x, 0, Frame::virtualScreenX, 66});
 			lobby_float_warning_fn(*lobby);
 			lobby_float_voice_fn(*lobby);
+#ifdef BARONY_SMOKE_TESTS
+			static int lastTracedPage = -1;
+			const int visiblePage = getLobbyVisiblePageIndex(*lobby);
+			if ( visiblePage != lastTracedPage )
+			{
+				lastTracedPage = visiblePage;
+				emitLobbyPageSnapshot(*lobby, "visible-page");
+			}
+#endif
             });
         {
             auto background = banner->addImage(
@@ -19821,6 +21061,32 @@ failed:
 			label->setSize(SDL_Rect{(Frame::virtualScreenX - 256) / 2, 0, 256, 48});
 		    label->setFont(bigfont_outline);
 		    label->setText(type_str);
+
+			Field* lobby_status = banner->addField("lobby_status", 64);
+			lobby_status->setHJustify(Field::justify_t::CENTER);
+			lobby_status->setVJustify(Field::justify_t::TOP);
+			lobby_status->setSize(SDL_Rect{(Frame::virtualScreenX - 420) / 2, 42, 420, 22});
+			lobby_status->setFont(smallfont_outline);
+			lobby_status->setColor(makeColor(201, 162, 100, 255));
+			lobby_status->setTickCallback([](Widget& widget) {
+				Field* status = static_cast<Field*>(&widget);
+				Frame* banner = static_cast<Frame*>(status->getParent());
+				Frame* lobby = banner ? static_cast<Frame*>(banner->getParent()) : nullptr;
+				if ( !lobby )
+				{
+					return;
+				}
+
+				const int pageCount = getLobbyPageCount();
+				const int visiblePage = getLobbyVisiblePageIndex(*lobby) + 1;
+				const int joinedPlayers = getLobbyJoinedPlayerCount();
+				const int totalPlayers = getLobbyConfiguredPlayerTotal();
+
+				char buf[64];
+				snprintf(buf, sizeof(buf), "Page %d/%d   Joined: %d/%d",
+					visiblePage, pageCount, joinedPlayers, totalPlayers);
+				status->setText(buf);
+			});
 
 			if (type != LobbyType::LobbyLocal) {
 		        static auto hide_roomcode = [](Field& roomcode, Button& button, bool hide){
@@ -20068,6 +21334,7 @@ failed:
 		            }
 		        }
 		    }
+			focusLobbyPageForPlayer(clientnum);
 		}
 
 		// network ping displays
@@ -20075,13 +21342,12 @@ failed:
 				&& (type == LobbyType::LobbyLAN || type == LobbyType::LobbyOnline
 					|| type == LobbyType::LobbyJoined) )
 		{
-			for ( int index = 0; index < MAXPLAYERS; ++index )
-			{
-				auto pingFrame = lobby->addFrame((std::string("ping") + std::to_string(index)).c_str());
-				const int x = (Frame::virtualScreenX / 8) * (index * 2 + 1);
-				SDL_Rect pos{ x - 108 / 2, Frame::virtualScreenY - 270, 108, 38 + 18 + 4 };
-				pos.y += 146 + 32;
-				pingFrame->setSize(pos);
+				for ( int index = 0; index < MAXPLAYERS; ++index )
+				{
+					Frame* pingFrame = lobby->addFrame((std::string("ping") + std::to_string(index)).c_str());
+					SDL_Rect cardPos = getLobbySmallCardRect(index);
+					SDL_Rect pos{ cardPos.x + (cardPos.w - 108) / 2, cardPos.y + cardPos.h + 32, 108, 38 + 18 + 4 };
+					pingFrame->setSize(pos);
 				pingFrame->setHollow(true);
 				pingFrame->setTickCallback([](Widget& widget) {
 					auto frame = static_cast<Frame*>(&widget);
@@ -20890,29 +22156,40 @@ failed:
         entry_name->data = (info.index < 0 || info.index >= lobbies.size()) ?
             (void*)lobbies.back().index : (void*)lobbies[info.index].index;
 
-        // players cell
-        const char* players_image;
-        if (info.locked) {
-            players_image = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Players_Grey.png";
-        } else {
-            switch (info.players) {
-            case 0: players_image = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Players_0.png"; break;
-            case 1: players_image = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Players_1.png"; break;
-            case 2: players_image = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Players_2.png"; break;
-            case 3: players_image = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Players_3.png"; break;
-            case 4: players_image = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Players_4.png"; break;
-            default: players_image = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Players_4.png"; break;
-            }
-        }
-        auto entry_players = players->addEntry(info.name.c_str(), true);
-        entry_players->click = activate_fn;
-        entry_players->ctrlClick = activate_fn;
-        entry_players->highlight = selection_fn;
-        entry_players->selected = selection_fn;
-        entry_players->color = 0xffffffff;
-        entry_players->image = players_image;
-        entry_players->data = (info.index < 0 || info.index >= lobbies.size()) ?
-            (void*)lobbies.back().index : (void*)lobbies[info.index].index;
+		// players cell
+		const char* players_image = nullptr;
+		std::string players_text;
+		if (info.locked) {
+			players_image = "*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Players_Grey.png";
+		} else if (info.players > 4) {
+			char playerCountBuffer[32];
+			snprintf(playerCountBuffer, sizeof(playerCountBuffer), "%d/%d", info.players, MAXPLAYERS);
+			players_text = playerCountBuffer;
+		} else {
+			// Lobby browser art only includes icon variants for 0-4 players.
+			static const char* kLobbyPlayerCountIcons[5] = {
+				"*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Players_0.png",
+				"*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Players_1.png",
+				"*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Players_2.png",
+				"*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Players_3.png",
+				"*images/ui/Main Menus/Play/LobbyBrowser/Lobby_Players_4.png"
+			};
+			const int clampedPlayers = std::max(0, std::min(info.players, 4));
+			players_image = kLobbyPlayerCountIcons[clampedPlayers];
+		}
+		Frame::entry_t* entry_players = players->addEntry(info.name.c_str(), true);
+		entry_players->click = activate_fn;
+		entry_players->ctrlClick = activate_fn;
+		entry_players->highlight = selection_fn;
+		entry_players->selected = selection_fn;
+		entry_players->color = info.locked ? makeColor(50, 56, 67, 255) : 0xffffffff;
+		if (!players_text.empty()) {
+			entry_players->text = std::string("  ") + players_text;
+		} else {
+			entry_players->image = players_image;
+		}
+		entry_players->data = (info.index < 0 || info.index >= lobbies.size()) ?
+			(void*)lobbies.back().index : (void*)lobbies[info.index].index;
 
 		auto entry_version = versions->addEntry(info.name.c_str(), true);
 		entry_version->click = activate_fn;
@@ -23276,8 +24553,11 @@ failed:
 #endif
 	}
 
-	static void hostLANLobby(Button&) {
-		soundActivate();
+	static bool hostLANLobbyInternal(bool playSound) {
+		if ( playSound )
+		{
+			soundActivate();
+		}
 
 		closeNetworkInterfaces();
 		randomizeHostname();
@@ -23285,10 +24565,10 @@ failed:
 
 #if defined(NINTENDO)
 		if (!nxInitWireless()) {
-			return;
+			return false;
 		}
 		if (!nxHostLobby()) {
-			return;
+			return false;
 		}
 
 		// resolve localhost address
@@ -23302,11 +24582,12 @@ failed:
 			snprintf(buf, sizeof(buf), Language::get(5570), port);
 			systemErrorPrompt(buf);
 			nxShutdownWireless();
-			return;
+			return false;
 		}
 
 		// create lobby
 		createLobby(LobbyType::LobbyLAN);
+		return true;
 #else
 		// resolve localhost address
 		Uint16 port = ::portnumber ? ::portnumber : DEFAULT_PORT;
@@ -23318,12 +24599,17 @@ failed:
 			char buf[1024];
 			snprintf(buf, sizeof(buf), Language::get(5570), port);
 			errorPrompt(buf, Language::get(5558), [](Button&){soundCancel(); closeMono();});
-			return;
+			return false;
 		}
 
 		// create lobby
 		createLobby(LobbyType::LobbyLAN);
+		return true;
 #endif
+	}
+
+	static void hostLANLobby(Button&) {
+		(void)hostLANLobbyInternal(true);
 	}
 
 	static void createLocalOrNetworkMenu() {
@@ -24480,49 +25766,79 @@ failed:
 						}
 					}
 				}
-                    
-                // add player info
-                if (numplayers == 1) {
-                    addContinuePlayerInfo(subwindow, saveGameInfo, saveGameInfo.player_num, posX + 30, 114, false);
-                }
-                else if (numplayers == 2) {
-                    for (int c = 0, player = 0; c < (int)saveGameInfo.players_connected.size(); ++c) {
-                        if (saveGameInfo.players_connected[c]) {
-                            switch (player) {
-                            default:
-                            case 0:
-                                addContinuePlayerInfo(subwindow, saveGameInfo, c, posX + 30, 114, true);
-                                break;
-                            case 1:
-                                addContinuePlayerInfo(subwindow, saveGameInfo, c, posX + 128, 114, true);
-                                break;
-                            }
-                            ++player;
-                        }
-                    }
-                }
-                else if (numplayers >= 3) {
-                    for (int c = 0, player = 0; c < (int)saveGameInfo.players_connected.size(); ++c) {
-                        if (saveGameInfo.players_connected[c]) {
-                            switch (player) {
-                            default:
-                            case 0:
-                                addContinuePlayerInfo(subwindow, saveGameInfo, c, posX + 30, 16, true);
-                                break;
-                            case 1:
-                                addContinuePlayerInfo(subwindow, saveGameInfo, c, posX + 128, 16, true);
-                                break;
-                            case 2:
-                                addContinuePlayerInfo(subwindow, saveGameInfo, c, posX + 30, 114, true);
-                                break;
-                            case 3:
-                                addContinuePlayerInfo(subwindow, saveGameInfo, c, posX + 128, 114, true);
-                                break;
-                            }
-                            ++player;
-                        }
-                    }
-                }
+
+				// add player info
+				if ( numplayers == 1 )
+				{
+					addContinuePlayerInfo(subwindow, saveGameInfo, saveGameInfo.player_num, posX + 30, 114, false);
+				}
+				else if ( numplayers == 2 )
+				{
+					for ( int c = 0, player = 0; c < static_cast<int>(saveGameInfo.players_connected.size()); ++c )
+					{
+						if ( saveGameInfo.players_connected[c] )
+						{
+							switch ( player )
+							{
+								default:
+								case 0:
+									addContinuePlayerInfo(subwindow, saveGameInfo, c, posX + 30, 114, true);
+									break;
+								case 1:
+									addContinuePlayerInfo(subwindow, saveGameInfo, c, posX + 128, 114, true);
+									break;
+							}
+							++player;
+						}
+					}
+				}
+				else if ( numplayers >= 3 )
+				{
+					int visiblePlayers = 0;
+					for ( int c = 0; c < static_cast<int>(saveGameInfo.players_connected.size()); ++c )
+					{
+						if ( !saveGameInfo.players_connected[c] )
+						{
+							continue;
+						}
+						if ( visiblePlayers >= 4 )
+						{
+							continue;
+						}
+
+						switch ( visiblePlayers )
+						{
+							default:
+							case 0:
+								addContinuePlayerInfo(subwindow, saveGameInfo, c, posX + 30, 16, true);
+								break;
+							case 1:
+								addContinuePlayerInfo(subwindow, saveGameInfo, c, posX + 128, 16, true);
+								break;
+							case 2:
+								addContinuePlayerInfo(subwindow, saveGameInfo, c, posX + 30, 114, true);
+								break;
+							case 3:
+								addContinuePlayerInfo(subwindow, saveGameInfo, c, posX + 128, 114, true);
+								break;
+						}
+						++visiblePlayers;
+					}
+
+					const int hiddenPlayers = std::max(0, numplayers - visiblePlayers);
+					if ( hiddenPlayers > 0 )
+					{
+						char extraPlayersBuf[16];
+						snprintf(extraPlayersBuf, sizeof(extraPlayersBuf), "+%d", hiddenPlayers);
+						Field* extraPlayers = cover->addField((str + "_extra_players").c_str(), sizeof(extraPlayersBuf));
+						extraPlayers->setSize(SDL_Rect{ 182, 148, 28, 20 });
+						extraPlayers->setFont(smallfont_outline);
+						extraPlayers->setTextColor(makeColor(255, 255, 255, 255));
+						extraPlayers->setOutlineColor(makeColor(52, 32, 23, 255));
+						extraPlayers->setJustify(Field::justify_t::CENTER);
+						extraPlayers->setText(extraPlayersBuf);
+					}
+				}
 
 		        ++index;
 		    }
@@ -31046,18 +32362,18 @@ failed:
 					modsPath += "mods";
 					modsPath = Mods::getFolderFullPath(modsPath);
 				}
-				if ( modsPath != "" )
-				{
-					result = NFD_PickFolder(modsPath.c_str(), &outPath);
-				}
-				else
-				{
-					result = NFD_PickFolder(outputdir, &outPath); // hopefully this is absolute path?
-				}
-				if ( result == NFD_ERROR )
-				{
-					result = NFD_PickFolder(PHYSFS_getBaseDir(), &outPath); // fallback path
-				}
+					if ( modsPath != "" )
+					{
+						result = NFD_PickFolder(&outPath, modsPath.c_str());
+					}
+					else
+					{
+						result = NFD_PickFolder(&outPath, outputdir); // hopefully this is absolute path?
+					}
+					if ( result == NFD_ERROR )
+					{
+						result = NFD_PickFolder(&outPath, PHYSFS_getBaseDir()); // fallback path
+					}
 
 				if ( result == NFD_OKAY )
 				{

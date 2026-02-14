@@ -45,6 +45,9 @@
 #include "interface/ui.hpp"
 #include "ui/GameUI.hpp"
 #include "ui/MainMenu.hpp"
+#ifdef BARONY_SMOKE_TESTS
+#include "smoke/SmokeTestHooks.hpp"
+#endif
 #include <limits>
 #include "ui/Frame.hpp"
 #include "ui/Field.hpp"
@@ -1826,9 +1829,15 @@ void gameLogic(void)
 					}
 				}
 
+#ifdef BARONY_SMOKE_TESTS
+				SmokeTestHooks::Gameplay::tickAutoEnterDungeon();
+				SmokeTestHooks::Gameplay::tickRemoteCombatAutopilot();
+				SmokeTestHooks::Gameplay::tickLocalSplitscreenBaseline();
+				SmokeTestHooks::Gameplay::tickLocalSplitscreenCap();
+#endif
 				if ( loadnextlevel == true )
 				{
-				    // when this flag is set, it's time to load the next level.
+					// when this flag is set, it's time to load the next level.
 					loadnextlevel = false;
 					loadedNextLevel = true;
 
@@ -4076,7 +4085,7 @@ static void bindControllerToPlayer(int id, int player) {
     inputs.getVirtualMouse(player)->draw_cursor = false;
     inputs.getVirtualMouse(player)->lastMovementFromController = true;
     printlog("(Device %d bound to player %d)", id, player);
-    for (int c = 0; c < 4; ++c) {
+    for (int c = 0; c < MAX_SPLITSCREEN; ++c) {
         auto& input = Input::inputs[c];
 	    input.refresh();
     }
@@ -4991,7 +5000,7 @@ bool handleEvents(void)
 					printlog("Device %d successfully initialized as game controller in slot %d.\n", sdl_device_index, id);
 					controller.initBindings();
 					Input::gameControllers[id] = controller.getControllerDevice();
-					for (int c = 0; c < 4; ++c) {
+					for (int c = 0; c < MAX_SPLITSCREEN; ++c) {
 						Input::inputs[c].refresh();
 					}
 					break;
@@ -5034,7 +5043,7 @@ bool handleEvents(void)
 						printlog("Device %d removed as game controller (it was in slot %d).\n", instanceID, id);
 						controller.close();
 						Input::gameControllers.erase(id);
-						for ( int c = 0; c < 4; ++c ) {
+						for ( int c = 0; c < MAX_SPLITSCREEN; ++c ) {
 							Input::inputs[c].refresh();
 						}
 					}
@@ -5066,7 +5075,7 @@ bool handleEvents(void)
 					printlog(" NumAxes: %d", SDL_JoystickNumAxes(joystick));
 					printlog(" NumButtons: %d", SDL_JoystickNumButtons(joystick));
 					printlog(" NumHats: %d", SDL_JoystickNumHats(joystick));
-					for (int c = 0; c < 4; ++c) {
+					for (int c = 0; c < MAX_SPLITSCREEN; ++c) {
 						Input::inputs[c].refresh();
 					}
 				}
@@ -5154,7 +5163,7 @@ bool handleEvents(void)
 							index = pair.first;
 							printlog("Removed joystick with device index (%d), instance id (%d)", index, event.jdevice.which);
 							Input::joysticks.erase(index);
-							for ( int c = 0; c < 4; ++c ) {
+							for ( int c = 0; c < MAX_SPLITSCREEN; ++c ) {
 								Input::inputs[c].refresh();
 							}
 							break;
@@ -5352,7 +5361,7 @@ void pauseGame(int mode /* 0 == toggle, 1 == force unpause, 2 == force pause */,
 	    playSound(500, 96);
 		gamePaused = true;
 		bool noOneUsingKeyboard = true;
-		for (int c = 0; c < 4; ++c)
+		for (int c = 0; c < MAX_SPLITSCREEN; ++c)
 		{
 		    if (inputs.bPlayerUsingKeyboardControl(c) && MainMenu::isPlayerSignedIn(c) && players[c]->isLocalPlayer()) {
 		        noOneUsingKeyboard = false;
@@ -7179,15 +7188,18 @@ int main(int argc, char** argv)
  #else // !NINTENDO
 		strcpy(outputdir, "save:");
  #endif // NINTENDO
-#endif
+	#endif
+	#ifdef BARONY_SMOKE_TESTS
+		SmokeTestHooks::Mapgen::IntegrationOptions smokeMapgenIntegration;
+	#endif
 		// read command line arguments
 		if ( argc > 1 )
 		{
-			for (c = 1; c < argc; c++)
+			for ( c = 1; c < argc; c++ )
 			{
 #ifdef STEAMWORKS
-			    cmd_line += argv[c];
-			    cmd_line += " ";
+				cmd_line += argv[c];
+				cmd_line += " ";
 #endif
 				if ( argv[c] != NULL )
 				{
@@ -7231,15 +7243,46 @@ int main(int argc, char** argv)
 					{
 						no_sound = true;
 					}
+#ifdef BARONY_SMOKE_TESTS
 					else
 					{
-#ifdef USE_EOS
-						EOS.CommandLineArgs.push_back(argv[c]);
-#endif // USE_EOS
+						std::string smokeOptionError;
+						if ( SmokeTestHooks::Mapgen::parseIntegrationOptionArg(argv[c], smokeMapgenIntegration, smokeOptionError) )
+						{
+							if ( !smokeOptionError.empty() )
+							{
+								printlog("%s", smokeOptionError.c_str());
+								return 1;
+							}
+						}
+						else
+						{
+	#ifdef USE_EOS
+							EOS.CommandLineArgs.push_back(argv[c]);
+	#endif // USE_EOS
+						}
 					}
+#else
+					else
+					{
+	#ifdef USE_EOS
+						EOS.CommandLineArgs.push_back(argv[c]);
+	#endif // USE_EOS
+					}
+#endif
 				}
 			}
 		}
+#ifdef BARONY_SMOKE_TESTS
+		{
+			std::string smokeIntegrationError;
+			if ( !SmokeTestHooks::Mapgen::validateIntegrationOptions(smokeMapgenIntegration, smokeIntegrationError) )
+			{
+				printlog("%s", smokeIntegrationError.c_str());
+				return 1;
+			}
+		}
+#endif
 		printlog("Data path is %s", datadir);
 		printlog("Output path is %s", outputdir);
         
@@ -7317,7 +7360,7 @@ int main(int argc, char** argv)
 		// init message
 		printlog("Barony version: %s\n", VERSION);
 		char buffer[32];
-        getTimeAndDateFormatted(getTime(), buffer, sizeof(buffer));
+		getTimeAndDateFormatted(getTime(), buffer, sizeof(buffer));
 		printlog("Launch time: %s\n", buffer);
 
 		if ( (c = initGame()) )
@@ -7334,6 +7377,30 @@ int main(int argc, char** argv)
 		}
 		initialized = true;
 
+	#ifdef BARONY_SMOKE_TESTS
+		if ( smokeMapgenIntegration.enabled )
+		{
+			printlog("[SMOKE][MAPGEN][INTEGRATION]: starting levels=%s players=%d..%d runs=%d csv=%s",
+				smokeMapgenIntegration.levelsCsv.c_str(),
+				smokeMapgenIntegration.minPlayers,
+				smokeMapgenIntegration.maxPlayers,
+				smokeMapgenIntegration.runsPerPlayer,
+				smokeMapgenIntegration.outputCsvPath.c_str());
+			int smokeResult = SmokeTestHooks::Mapgen::runIntegrationMatrix(smokeMapgenIntegration);
+			if ( !load_successful )
+			{
+				skipintro = true;
+			}
+			gameModeManager.currentSession.restoreSavedServerFlags();
+			saveConfig("default.cfg");
+			MainMenu::settingsMount(false);
+			(void)MainMenu::settingsSave();
+			deinitGame();
+			int deinitStatus = deinitApp();
+			return smokeResult == 0 ? deinitStatus : smokeResult;
+		}
+#endif
+
 		// initialize player conducts
 		setDefaultPlayerConducts();
 
@@ -7341,7 +7408,7 @@ int main(int argc, char** argv)
 		if (!nxIsHandheldMode()) {
 			nxAssignControllers(1, 1, true, false, true, false, nullptr);
 		}
-		for (int c = 0; c < 4; ++c) {
+		for (int c = 0; c < MAX_SPLITSCREEN; ++c) {
 			game_controllers[c].open(0, c); // first parameter is not used by Nintendo.
 			bindControllerToPlayer(c, c);
 		}

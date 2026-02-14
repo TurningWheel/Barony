@@ -33,6 +33,25 @@
 
 -------------------------------------------------------------------------------*/
 
+namespace
+{
+	bool isValidEnemyBarPlayerSlot(const int index)
+	{
+		return index >= 0 && index < MAXPLAYERS && players[index];
+	}
+
+	bool canSendEnemyBarToRemotePlayer(const int index)
+	{
+		return index > 0
+			&& isValidEnemyBarPlayerSlot(index)
+			&& !client_disconnected[index]
+			&& !players[index]->isLocalPlayer()
+			&& net_clients
+			&& net_clients[index - 1].host != 0
+			&& net_clients[index - 1].port != 0;
+	}
+}
+
 void updateEnemyBar(Entity* source, Entity* target, const char* name, Sint32 hp, Sint32 maxhp, bool lowPriorityTick, 
 	DamageGib gibType)
 {
@@ -48,6 +67,10 @@ void updateEnemyBar(Entity* source, Entity* target, const char* name, Sint32 hp,
 
 	for (c = 0; c < MAXPLAYERS; c++)
 	{
+		if ( !isValidEnemyBarPlayerSlot(c) )
+		{
+			continue;
+		}
 		if (source == players[c]->entity || source == players[c]->ghost.my )
 		{
 			player = c;
@@ -112,6 +135,10 @@ void updateEnemyBar(Entity* source, Entity* target, const char* name, Sint32 hp,
 	int playertarget = -1;
 	for (c = 0; c < MAXPLAYERS; c++)
 	{
+		if ( !isValidEnemyBarPlayerSlot(c) )
+		{
+			continue;
+		}
 		if (target == players[c]->entity)
 		{
 			playertarget = c;
@@ -123,12 +150,14 @@ void updateEnemyBar(Entity* source, Entity* target, const char* name, Sint32 hp,
 	if ( stats )
 	{
 		bool tookDamage = stats->HP != stats->OLDHP;
-		if ( playertarget >= 0 && players[playertarget]->isLocalPlayer() )
+		if ( isValidEnemyBarPlayerSlot(playertarget) && players[playertarget]->isLocalPlayer() )
 		{
 			DamageIndicatorHandler.insert(playertarget, source->x, source->y, tookDamage);
 		}
-		else if ( playertarget > 0 && multiplayer == SERVER && !players[playertarget]->isLocalPlayer() )
+		else if ( multiplayer == SERVER && canSendEnemyBarToRemotePlayer(playertarget) )
 		{
+			// Remote players do not own local DamageIndicatorHandler state, so the server
+			// mirrors the hit direction through a small one-way packet.
 			strcpy((char*)net_packet->data, "DAMI");
 			SDLNet_Write32(source->x, &net_packet->data[4]);
 			SDLNet_Write32(source->y, &net_packet->data[8]);
@@ -180,18 +209,25 @@ void updateEnemyBar(Entity* source, Entity* target, const char* name, Sint32 hp,
 	}
 
 	EnemyHPDamageBarHandler::EnemyHPDetails* details = nullptr;
-	if ( player >= 0 /*&& players[player]->isLocalPlayer()*/ )
+	if ( isValidEnemyBarPlayerSlot(player) /*&& players[player]->isLocalPlayer()*/ )
 	{
 		// add enemy bar to the server
 		int p = player;
 		if ( !players[player]->isLocalPlayer() )
 		{
-			p = clientnum; // remote clients, add it to the local list.
+			if ( isValidEnemyBarPlayerSlot(clientnum) )
+			{
+				p = clientnum; // remote clients, add it to the local list.
+			}
 		}
 		if ( splitscreen ) // check if anyone else has this enemy bar on their screen
 		{
 			for ( int i = 0; i < MAXPLAYERS; ++i )
 			{
+				if ( !isValidEnemyBarPlayerSlot(i) )
+				{
+					continue;
+				}
 				if ( players[i]->isLocalPlayer() )
 				{
 					if ( enemyHPDamageBarHandler[i].HPBars.find(target->getUID()) != enemyHPDamageBarHandler[i].HPBars.end() )
@@ -217,63 +253,63 @@ void updateEnemyBar(Entity* source, Entity* target, const char* name, Sint32 hp,
 		// send to all remote players
 		for ( int p = 1; p < MAXPLAYERS; ++p )
 		{
-			if ( !players[p]->isLocalPlayer() )
+			if ( !canSendEnemyBarToRemotePlayer(p) )
 			{
-				if ( p == playertarget )
-				{
-					continue;
-				}
-				strcpy((char*)net_packet->data, "ENHP");
-				SDLNet_Write16(static_cast<Sint16>(hp), &net_packet->data[4]);
-				SDLNet_Write16(static_cast<Sint16>(maxhp), &net_packet->data[6]);
-				if ( stats )
-				{
-					SDLNet_Write16(static_cast<Sint16>(oldhp), &net_packet->data[8]);
-				}
-				else
-				{
-					SDLNet_Write16(static_cast<Sint16>(oldhp), &net_packet->data[8]);
-				}
-				SDLNet_Write32(target->getUID(), &net_packet->data[10]);
-				net_packet->data[14] = lowPriorityTick ? 1 : 0; // 1 == true
-				if ( EnemyHPDamageBarHandler::bDamageGibTypesEnabled )
-				{
-					net_packet->data[14] |= (gibType << 1) & 0xFE;
-				}
-				if ( stats && details )
-				{
-					SDLNet_Write32(details->enemy_statusEffects1, &net_packet->data[15]);
-					SDLNet_Write32(details->enemy_statusEffects2, &net_packet->data[19]);
-					SDLNet_Write32(details->enemy_statusEffects3, &net_packet->data[23]);
-					SDLNet_Write32(details->enemy_statusEffects4, &net_packet->data[27]);
-					SDLNet_Write32(details->enemy_statusEffects5, &net_packet->data[31]);
-					SDLNet_Write32(details->enemy_statusEffectsLowDuration1, &net_packet->data[35]);
-					SDLNet_Write32(details->enemy_statusEffectsLowDuration2, &net_packet->data[39]);
-					SDLNet_Write32(details->enemy_statusEffectsLowDuration3, &net_packet->data[43]);
-					SDLNet_Write32(details->enemy_statusEffectsLowDuration4, &net_packet->data[47]);
-					SDLNet_Write32(details->enemy_statusEffectsLowDuration5, &net_packet->data[51]);
-				}
-				else
-				{
-					SDLNet_Write32(0, &net_packet->data[15]);
-					SDLNet_Write32(0, &net_packet->data[19]);
-					SDLNet_Write32(0, &net_packet->data[23]);
-					SDLNet_Write32(0, &net_packet->data[27]);
-					SDLNet_Write32(0, &net_packet->data[31]);
-					SDLNet_Write32(0, &net_packet->data[35]);
-					SDLNet_Write32(0, &net_packet->data[39]);
-					SDLNet_Write32(0, &net_packet->data[43]);
-					SDLNet_Write32(0, &net_packet->data[47]);
-					SDLNet_Write32(0, &net_packet->data[51]);
-				}
-				strcpy((char*)(&net_packet->data[55]), name);
-				net_packet->data[55 + strlen(name)] = 0;
-				net_packet->address.host = net_clients[p - 1].host;
-				net_packet->address.port = net_clients[p - 1].port;
-				net_packet->len = 55 + strlen(name) + 1;
-				sendPacketSafe(net_sock, -1, net_packet, p - 1);
-
+				continue;
 			}
+			if ( p == playertarget )
+			{
+				continue;
+			}
+			strcpy((char*)net_packet->data, "ENHP");
+			SDLNet_Write16(static_cast<Sint16>(hp), &net_packet->data[4]);
+			SDLNet_Write16(static_cast<Sint16>(maxhp), &net_packet->data[6]);
+			if ( stats )
+			{
+				SDLNet_Write16(static_cast<Sint16>(oldhp), &net_packet->data[8]);
+			}
+			else
+			{
+				SDLNet_Write16(static_cast<Sint16>(oldhp), &net_packet->data[8]);
+			}
+			SDLNet_Write32(target->getUID(), &net_packet->data[10]);
+			net_packet->data[14] = lowPriorityTick ? 1 : 0; // 1 == true
+			if ( EnemyHPDamageBarHandler::bDamageGibTypesEnabled )
+			{
+				net_packet->data[14] |= (gibType << 1) & 0xFE;
+			}
+			if ( stats && details )
+			{
+				SDLNet_Write32(details->enemy_statusEffects1, &net_packet->data[15]);
+				SDLNet_Write32(details->enemy_statusEffects2, &net_packet->data[19]);
+				SDLNet_Write32(details->enemy_statusEffects3, &net_packet->data[23]);
+				SDLNet_Write32(details->enemy_statusEffects4, &net_packet->data[27]);
+				SDLNet_Write32(details->enemy_statusEffects5, &net_packet->data[31]);
+				SDLNet_Write32(details->enemy_statusEffectsLowDuration1, &net_packet->data[35]);
+				SDLNet_Write32(details->enemy_statusEffectsLowDuration2, &net_packet->data[39]);
+				SDLNet_Write32(details->enemy_statusEffectsLowDuration3, &net_packet->data[43]);
+				SDLNet_Write32(details->enemy_statusEffectsLowDuration4, &net_packet->data[47]);
+				SDLNet_Write32(details->enemy_statusEffectsLowDuration5, &net_packet->data[51]);
+			}
+			else
+			{
+				SDLNet_Write32(0, &net_packet->data[15]);
+				SDLNet_Write32(0, &net_packet->data[19]);
+				SDLNet_Write32(0, &net_packet->data[23]);
+				SDLNet_Write32(0, &net_packet->data[27]);
+				SDLNet_Write32(0, &net_packet->data[31]);
+				SDLNet_Write32(0, &net_packet->data[35]);
+				SDLNet_Write32(0, &net_packet->data[39]);
+				SDLNet_Write32(0, &net_packet->data[43]);
+				SDLNet_Write32(0, &net_packet->data[47]);
+				SDLNet_Write32(0, &net_packet->data[51]);
+			}
+			strcpy((char*)(&net_packet->data[55]), name);
+			net_packet->data[55 + strlen(name)] = 0;
+			net_packet->address.host = net_clients[p - 1].host;
+			net_packet->address.port = net_clients[p - 1].port;
+			net_packet->len = 55 + strlen(name) + 1;
+			sendPacketSafe(net_sock, -1, net_packet, p - 1);
 		}
 	}
 }
