@@ -168,34 +168,118 @@ cmake -S . -B build -DCMAKE_INSTALL_PREFIX="$PWD\build\install-root"
 ```
 
 
-# Linux (Quick Notes)
+# macOS (Homebrew, Package-Based)
 
-Install dependencies (example Debian/Ubuntu):
+## 1. Install tools and dependencies
 
-```bash
-sudo apt-get install libsdl2-dev libsdl2-image-dev libsdl2-net-dev libsdl2-ttf-dev libpng-dev zlib1g-dev libphysfs-dev rapidjson-dev libglew-dev
-```
-
-Build:
+Install Xcode Command Line Tools first (if needed):
 
 ```bash
-mkdir -p build
-cd build
-cmake ..
-cmake --build . -- -j
+xcode-select --install
 ```
+
+Install dependencies with Homebrew:
+
+```bash
+brew update
+brew install cmake ninja pkg-config sdl2 sdl2_image sdl2_net sdl2_ttf libpng physfs rapidjson
+```
+
+## 2. Configure and build
+
+```bash
+cmake -S . -B build-mac -G Ninja \
+  -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
+  -DFMOD_ENABLED=OFF \
+  -DOPENAL_ENABLED=OFF \
+  -DSTEAMWORKS_ENABLED=OFF \
+  -DEOS_ENABLED=OFF \
+  -DPLAYFAB_ENABLED=OFF \
+  -DTHEORAPLAYER_ENABLED=OFF \
+  -DCURL_ENABLED=OFF \
+  -DOPUS_ENABLED=OFF
+
+cmake --build build-mac -j8
+```
+
+## 3. Run against game assets
+
+Use the Steam resources directory as datadir:
+
+```bash
+./build-mac/barony.app/Contents/MacOS/barony \
+  -datadir="$HOME/Library/Application Support/Steam/steamapps/common/Barony/Barony.app/Contents/Resources" \
+  -windowed -size=1280x720
+```
+
+## 4. Optional smoke check
+
+```bash
+timeout 20s ./build-mac/barony.app/Contents/MacOS/barony \
+  -datadir="$HOME/Library/Application Support/Steam/steamapps/common/Barony/Barony.app/Contents/Resources" \
+  -windowed -size=1280x720
+```
+
+Expected: exit code `124` from `timeout` after successful startup.
+
+
+# Linux (Package-Based)
+
+## 1. Install dependencies (Debian/Ubuntu example)
+
+```bash
+sudo apt-get update
+sudo apt-get install -y \
+  build-essential cmake ninja-build pkg-config \
+  libsdl2-dev libsdl2-image-dev libsdl2-net-dev libsdl2-ttf-dev \
+  libpng-dev zlib1g-dev libphysfs-dev rapidjson-dev \
+  libgl1-mesa-dev libglu1-mesa-dev \
+  xvfb xauth
+```
+
+## 2. Configure and build
+
+```bash
+cmake -S . -B build-linux -G Ninja \
+  -DFMOD_ENABLED=OFF \
+  -DOPENAL_ENABLED=OFF \
+  -DSTEAMWORKS_ENABLED=OFF \
+  -DEOS_ENABLED=OFF \
+  -DPLAYFAB_ENABLED=OFF \
+  -DTHEORAPLAYER_ENABLED=OFF \
+  -DCURL_ENABLED=OFF \
+  -DOPUS_ENABLED=OFF
+
+cmake --build build-linux -j"$(nproc)" --target barony
+```
+
+## 3. Run
+
+```bash
+./build-linux/barony -datadir=/path/to/Barony.app/Contents/Resources -windowed -size=1280x720
+```
+
+## 4. Optional headless smoke check
+
+```bash
+timeout 30s xvfb-run -a ./build-linux/barony \
+  -datadir=/path/to/Barony.app/Contents/Resources \
+  -windowed -size=1280x720
+```
+
+Expected: exit code `124` from `timeout` after successful startup.
 
 
 # Common Build Flags
 
 - `-DFMOD_ENABLED=ON|OFF`
 - `-DOPENAL_ENABLED=ON|OFF` (legacy/unmaintained)
-- `-DSTEAMWORKS=ON|OFF`
-- `-DEOS=ON|OFF`
-- `-DCURL=ON|OFF`
-- `-DOPUS=ON|OFF`
-- `-DPLAYFAB=ON|OFF` (requires CURL and PlayFab tokens)
-- `-DTHEORAPLAYER=ON|OFF`
+- `-DSTEAMWORKS=ON|OFF` (or `-DSTEAMWORKS_ENABLED=1|0`)
+- `-DEOS=ON|OFF` (or `-DEOS_ENABLED=1|0`)
+- `-DCURL=ON|OFF` (or `-DCURL_ENABLED=1|0`)
+- `-DOPUS=ON|OFF` (or `-DOPUS_ENABLED=1|0`)
+- `-DPLAYFAB=ON|OFF` (or `-DPLAYFAB_ENABLED=1|0`, requires CURL and PlayFab tokens)
+- `-DTHEORAPLAYER=ON|OFF` (or `-DTHEORAPLAYER_ENABLED=1|0`)
 
 Example:
 

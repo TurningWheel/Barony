@@ -86,3 +86,6 @@ xcode/Barony/Barony.xcodeproj/xcuserdata/*
 /VS.2015/x64
 *.sqlite-journal
 /deps/*
+# Local smoke outputs and SDK drops
+tests/smoke/artifacts/
+third_party/steamworks_sdk/

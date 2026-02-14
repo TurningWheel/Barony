@@ -166,21 +166,21 @@ extern bool autoLimbReload;
 #include "SDL_syswm.h"
 #endif
 #ifdef APPLE
- #include <SDL2_image/SDL_image.h>
+ #include <SDL2/SDL_image.h>
 #else // APPLE
  #ifndef NINTENDO
   #include "SDL_image.h"
  #endif // NINTENDO
 #endif // !APPLE
 #ifdef APPLE
-#include <SDL2_net/SDL_net.h>
+#include <SDL2/SDL_net.h>
 #else
 #ifndef NINTENDO
 #include "SDL_net.h"
 #endif
 #endif
 #ifdef APPLE
-#include <SDL2_ttf/SDL_ttf.h>
+#include <SDL2/SDL_ttf.h>
 #else
 #include "SDL_ttf.h"
 #endif
