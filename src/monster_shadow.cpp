@@ -1546,6 +1546,26 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 		}
 	}
 
+	{
+		Sint32 targetSTR = statGetSTR(targetStats, target);
+		Sint32 mySTR = myStats->STR;
+		if ( targetSTR > mySTR )
+		{
+			int diff = targetSTR - mySTR;
+			myStats->STR += diff / 5;
+		}
+	}
+
+	{
+		Sint32 targetDEX = statGetDEX(targetStats, target);
+		Sint32 myDEX = myStats->DEX;
+		if ( targetDEX > myDEX )
+		{
+			int diff = targetDEX - myDEX;
+			myStats->DEX += diff / 5;
+		}
+	}
+
 	//3. Random chance to mimic other things.
 	//Mimic target's skills (proficiencies).
 	//First, get proficiencies to mimic:
