@@ -203,6 +203,11 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 			{
 				entityPointsOfInterest.push_back(entity);
 			}
+			else if ( entity->behavior == &actWorkbench || entity->behavior == &actCauldron
+				|| entity->behavior == &actMailbox )
+			{
+				entityPointsOfInterest.push_back(entity);
+			}
 			else if ( entity->behavior == &actItem && entity->sprite >= items[TOOL_PLAYER_LOOT_BAG].index &&
 				entity->sprite < (items[TOOL_PLAYER_LOOT_BAG].index + items[TOOL_PLAYER_LOOT_BAG].variations) )
 			{
@@ -777,6 +782,17 @@ void drawMinimap(const int player, SDL_Rect rect, bool drawingSharedMap)
 				{
 					// boulder
 					drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(191, 63, 0, 255));
+				}
+			}
+			else if ( entity->behavior == &actWorkbench || entity->behavior == &actCauldron
+				|| entity->behavior == &actMailbox )
+			{
+				int x = std::min<int>(std::max<int>(0, entity->x / 16), map.width - 1);
+				int y = std::min<int>(std::max<int>(0, entity->y / 16), map.height - 1);
+				if ( minimap[y][x] == 1 || minimap[y][x] == 2 )
+				{
+					// boulder
+					drawCircleMesh((real_t)x + 0.5, (real_t)y + 0.5, (real_t)1.0, rect, makeColor(140, 220, 255, 255));
 				}
 			}
 			else if ( entity->behavior == &actItem && entity->sprite >= items[TOOL_PLAYER_LOOT_BAG].index &&
