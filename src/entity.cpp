@@ -8155,7 +8155,8 @@ real_t Entity::getACEffectiveness(Entity* my, Stat* myStats, bool isPlayer, Enti
 		return 1.0;
 	}
 
-	if ( myStats->defending || (myStats->parrying && myStats->weapon && itemCategory(myStats->weapon) == WEAPON) )
+	if ( (myStats->defending && !(myStats->shield && !Item::doesItemProvideBeatitudeAC(myStats->shield->type)))
+		|| (myStats->parrying && myStats->weapon && itemCategory(myStats->weapon) == WEAPON) )
 	{
 		return 1.0;
 	}
@@ -8289,7 +8290,7 @@ Sint32 Entity::getAttack(Entity* my, Stat* myStats, bool isPlayer, int chargeMod
 	if ( !shapeshifted && myStats->weapon && myStats->weapon->type == RAPIER )
 	{
 		int atk = statGetDEX(myStats, my);
-		if ( chargeModifier >= 0 && chargeModifier < Stat::getMaxAttackCharge(myStats) )
+		if ( chargeModifier >= 0 && chargeModifier < Stat::getMaxAttackCharge(myStats) && my && my->behavior == &actPlayer )
 		{
 			atk /= 2;
 		}

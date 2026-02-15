@@ -6913,8 +6913,8 @@ Host to enable the game setting.
 6649 Your provisions return to normal.#
 6650 You beg for your food to be multiplied...#
 6651 You beg for your provisions to be multiplied...#
-6652 Greater abundance preserved your %s!#
-6653 Abundance preserved your %s!#
+6652 Greater Abundance preserves your %s!#
+6653 Abundance preserves your %s!#
 6654 Your magic protects the %s from damage!#
 6655 You cover your equipment with a magic barrier!#
 6656 The protective barrier fades from your equipment.#

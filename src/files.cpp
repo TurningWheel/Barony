@@ -1775,7 +1775,7 @@ std::unordered_map<std::string, int> mapHashes = {
 	{ "swamp_locks00c.lmp", 8958 },
 	{ "swamp_locks00d.lmp", 6773 },
 	{ "swamp_locks00e.lmp", 8390 },
-	{ "swamp_locks01.lmp", 41985 },
+	{ "swamp_locks01.lmp", 50531 },
 	{ "swamp_locks01a.lmp", 883 },
 	{ "swamp_locks01b.lmp", 883 },
 	{ "swamp_locks01c.lmp", 883 },

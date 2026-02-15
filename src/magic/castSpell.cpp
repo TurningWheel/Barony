@@ -5325,7 +5325,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							magicOnSpellCastEvent(caster, caster, target, spell->ID, spellEventFlags | spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
 							spawnMagicEffectParticles(target->x, target->y, target->z, 171);
 							createParticleRock(target, 78);
-							playSoundEntity(target, 167, 128);
+							//playSoundEntity(target, 167, 128);
 
 							if ( caster->behavior == &actPlayer )
 							{

@@ -5238,8 +5238,8 @@ namespace ConsoleCommands {
 						else if ( entity->sprite == 208 || entity->sprite == 209
 							|| entity->sprite == 210 || entity->sprite == 211 )
 						{
-							printlog("Map: %s Wall lock: Material: %s, pickable: %d, skeleton key: %d", f.c_str(), Language::get(6383 + entity->wallLockMaterial), entity->wallLockPickable,
-								entity->wallLockPickableSkeletonKey);
+							printlog("Map: %s Wall lock: Material: %s, pickable: %d, skeleton key: %d, auto gen key: %d", f.c_str(), Language::get(6383 + entity->wallLockMaterial), entity->wallLockPickable,
+								entity->wallLockPickableSkeletonKey, entity->wallLockAutoGenKey);
 						}
 					}
 				}
