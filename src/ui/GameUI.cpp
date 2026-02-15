@@ -848,6 +848,12 @@ void createHPMPBars(const int player)
 		auto div75Percent = foregroundFrame->addImage(SDL_Rect{ 0, 8, 2, 18 }, 0xFFFFFFFF,
 			"*#images/ui/HUD/hpmpbars/HUD_Bars_Divider_01.png", "mp img div 75pc");
 		div75Percent->disabled = true;
+		auto div40Percent = foregroundFrame->addImage(SDL_Rect{ 0, 8, 2, 18 }, makeColorRGB(80, 214, 253),
+			"*#images/ui/HUD/hpmpbars/HUD_Bars_Divider_01_White.png", "mp img div 40pc");
+		div40Percent->disabled = true;
+		auto div60Percent = foregroundFrame->addImage(SDL_Rect{ 0, 8, 2, 18 }, makeColorRGB(253, 220, 118),
+			"*#images/ui/HUD/hpmpbars/HUD_Bars_Divider_01_White.png", "mp img div 60pc");
+		div60Percent->disabled = true;
 
 		auto font = "fonts/pixel_maz.ttf#32#2";
 		auto mptext = foregroundFrame->addField("mp text", 16);
@@ -34053,12 +34059,52 @@ void Player::HUD_t::updateMPBar()
 		div75Percent->disabled = false;
 		div75Percent->pos.x = mpProgressBot->pos.x + fullBarWidth * .75 - 2;
 
+		auto div40Percent = mpForegroundFrame->findImage("mp img div 40pc");
+		div40Percent->disabled = true;
+		auto div60Percent = mpForegroundFrame->findImage("mp img div 60pc");
+		div60Percent->disabled = true;
+		/*if ( stats[player.playernum]->type == SALAMANDER || (stats[player.playernum]->playerRace == RACE_SALAMANDER && stats[player.playernum]->stat_appearance == 0) )
+		{
+			if ( stats[player.playernum]->getEffectActive(EFF_SALAMANDER_HEART) >= 1 && stats[player.playernum]->getEffectActive(EFF_SALAMANDER_HEART) <= 2 )
+			{
+				div60Percent->pos.x = mpProgressBot->pos.x + fullBarWidth * .6 - 2;
+				Uint8 r, g, b, a;
+				getColor(div60Percent->color, &r, &g, &b, nullptr);
+				real_t opacity = 0.5 + .4 * (1.0 * cos(((ticks % (2 * TICKS_PER_SECOND)) / (real_t)(2 * TICKS_PER_SECOND)) * 2 * PI) + 1.0);
+				div60Percent->color = makeColor(r, g, b, std::min(1.0, opacity) * 255);
+				div60Percent->disabled = false;
+				div75Percent->disabled = true;
+				div50Percent->disabled = true;
+				div25Percent->disabled = true;
+			}
+			if ( stats[player.playernum]->getEffectActive(EFF_SALAMANDER_HEART) >= 3 && stats[player.playernum]->getEffectActive(EFF_SALAMANDER_HEART) <= 4 )
+			{
+				div40Percent->pos.x = mpProgressBot->pos.x + fullBarWidth * .4 - 2;
+				div40Percent->disabled = false;
+				div75Percent->disabled = true;
+				div50Percent->disabled = true;
+				div25Percent->disabled = true;
+			}
+		}*/
+
 		if ( div50Percent->pos.x - div25Percent->pos.x < HPMPdividerThresholdInterval )
 		{
 			div75Percent->disabled = true;
 			// 2 dividers 33%/66%
 			div25Percent->pos.x = mpProgressBot->pos.x + fullBarWidth * .33 - 2;
 			div50Percent->pos.x = mpProgressBot->pos.x + fullBarWidth * .66 - 2;
+
+			/*if ( stats[player.playernum]->type == SALAMANDER || (stats[player.playernum]->playerRace == RACE_SALAMANDER && stats[player.playernum]->stat_appearance == 0) )
+			{
+				div25Percent->pos.x = mpProgressBot->pos.x + fullBarWidth * .25 - 2;
+				div50Percent->pos.x = mpProgressBot->pos.x + fullBarWidth * .75 - 2;
+				if ( stats[player.playernum]->getEffectActive(EFF_SALAMANDER_HEART) >= 1 )
+				{
+					div25Percent->pos.x = mpProgressBot->pos.x + fullBarWidth * .4 - 2;
+					div50Percent->pos.x = mpProgressBot->pos.x + fullBarWidth * .6 - 2;
+				}
+			}*/
+
 			if ( div50Percent->pos.x - div25Percent->pos.x < HPMPdividerThresholdInterval )
 			{
 				// 1 divider 50%
@@ -34066,6 +34112,7 @@ void Player::HUD_t::updateMPBar()
 				div50Percent->pos.x = mpProgressBot->pos.x + fullBarWidth * .5 - 2;
 			}
 		}
+
 	}
 
 	mpProgress->path = MPBarPaths_t::get(player.playernum, "mp img progress");
