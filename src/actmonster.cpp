@@ -10514,7 +10514,7 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 		{
 			if ( myStats->getAttribute("fire_sprite") != "" )
 			{
-				bow = 3.0;
+				bow = 2.0;
 			}
 			else
 			{
