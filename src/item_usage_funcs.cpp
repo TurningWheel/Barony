@@ -4095,6 +4095,18 @@ void item_ScrollRepair(Item*& item, int player)
 			}
 			else
 			{
+				if ( player >= 0 && player < MAXPLAYERS )
+				{
+					if ( multiplayer == CLIENT )
+					{
+						players[player]->mechanics.updateBreakableCounterClient(Player::PlayerMechanics_t::BreakableEvent::GBREAK_DEGRADE);
+					}
+					else
+					{
+						players[player]->mechanics.incrementBreakableCounter(Player::PlayerMechanics_t::BreakableEvent::GBREAK_DEGRADE, nullptr);
+					}
+				}
+
 				if ( armor->type == TOOL_CRYSTALSHARD )
 				{
 					playSoundPlayer(player, 162, 64);
@@ -4275,6 +4287,18 @@ void item_ScrollDestroyArmor(Item*& item, int player)
 
 			if ( armor->status == BROKEN )
 			{
+				if ( player >= 0 && player < MAXPLAYERS )
+				{
+					if ( multiplayer == CLIENT )
+					{
+						players[player]->mechanics.updateBreakableCounterClient(Player::PlayerMechanics_t::BreakableEvent::GBREAK_DEGRADE);
+					}
+					else
+					{
+						players[player]->mechanics.incrementBreakableCounter(Player::PlayerMechanics_t::BreakableEvent::GBREAK_DEGRADE, nullptr);
+					}
+				}
+
 				if ( armor->type == TOOL_CRYSTALSHARD )
 				{
 					playSoundPlayer(player, 162, 64);

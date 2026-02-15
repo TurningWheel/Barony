@@ -2460,6 +2460,7 @@ public:
 		void incrementBreakableCounter(BreakableEvent eventType, Entity* entity);
 		int getBreakableCounterTier();
 		void updateBreakableCounterServer();
+		void updateBreakableCounterClient(BreakableEvent eventType);
 		Uint32 ensembleDataUpdate = 0;
 		PlayerMechanics_t(Player& p) : player(p)
 		{};

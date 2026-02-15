@@ -8544,6 +8544,10 @@ int Player::PlayerMechanics_t::getBreakableCounterTier()
 
 void Player::PlayerMechanics_t::incrementBreakableCounter(Player::PlayerMechanics_t::BreakableEvent eventType, Entity* entity)
 {
+	if ( multiplayer == CLIENT )
+	{
+		return;
+	}
 	if ( stats[player.playernum]->type == GREMLIN )
 	{
 		int amount = 0;
@@ -8594,6 +8598,26 @@ void Player::PlayerMechanics_t::incrementBreakableCounter(Player::PlayerMechanic
 				playSoundEntity(player.entity, 168, 128);
 			}
 			updateBreakableCounterServer();
+		}
+	}
+}
+
+void Player::PlayerMechanics_t::updateBreakableCounterClient(Player::PlayerMechanics_t::BreakableEvent eventType)
+{
+	if ( multiplayer == CLIENT )
+	{
+		if ( stats[player.playernum]->type == GREMLIN )
+		{
+			if ( eventType == BreakableEvent::GBREAK_DEGRADE )
+			{
+				strcpy((char*)net_packet->data, "GBRK");
+				net_packet->data[4] = player.playernum;
+				net_packet->data[5] = (int)eventType;
+				net_packet->len = 6;
+				net_packet->address.host = net_server.host;
+				net_packet->address.port = net_server.port;
+				sendPacketSafe(net_sock, -1, net_packet, 0);
+			}
 		}
 	}
 }

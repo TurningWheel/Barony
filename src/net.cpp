@@ -9447,6 +9447,25 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 			}
 		}
 	} },
+
+	// update breakable counter
+	{ 'GBRK', []() {
+		int player = net_packet->data[4];
+		if ( player >= 0 && player < MAXPLAYERS )
+		{
+			if ( !players[player]->isLocalPlayer() )
+			{
+				if ( players[player]->entity )
+				{
+					int eventType = net_packet->data[5];
+					if ( eventType == (int)Player::PlayerMechanics_t::BreakableEvent::GBREAK_DEGRADE )
+					{
+						players[player]->mechanics.incrementBreakableCounter(Player::PlayerMechanics_t::BreakableEvent::GBREAK_DEGRADE, nullptr);
+					}
+				}
+			}
+		}
+	} },
 };
 
 void serverHandlePacket()
