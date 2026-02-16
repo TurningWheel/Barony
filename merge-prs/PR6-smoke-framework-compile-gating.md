@@ -5,8 +5,23 @@
 - Priority: High
 - Epic: Multiplayer Expansion 1-15
 - Risk: Medium
+- Status (Updated 2026-02-14): Planned, no extraction branch cut yet
 - Depends On: PR4, PR5
 - Blocks: PR7, PR8, PR9 validation quality
+
+## Progress Snapshot (2026-02-14)
+- Smoke runner/tooling has already been heavily refactored on branch into `tests/smoke/smoke_runner.py` with argparse.
+- Keep that runner/tooling work out of PR6; PR6 remains source/CMake compile-gating only.
+- Current branch structure now uses `tests/smoke/smoke_framework/*` modules; this does not change PR6 scope boundaries.
+
+## Extraction Guardrails (Current Branch)
+- Include only:
+  - `CMakeLists.txt`, `src/CMakeLists.txt`, `src/Config.hpp.in`
+  - `src/smoke/SmokeHooks*.cpp`, `src/smoke/SmokeTestHooks.hpp`
+  - minimal guarded callsites in scoped `src/*` runtime files
+- Exclude:
+  - all `tests/smoke/*` files (runner, framework, docs, pyproject/bootstrap)
+  - any mapgen gameplay coefficient/math updates
 
 ## Background
 The expansion needs repeatable smoke instrumentation without polluting base gameplay/runtime paths. Compile-time gating is required so smoke hooks are available for validation builds but absent in normal builds.
@@ -36,7 +51,7 @@ Introduce the smoke hook architecture (`SmokeHooks*.cpp` implementations with `S
   - `src/maps.cpp`
 
 ### Out of Scope
-- `tests/smoke/*` shell/python runners
+- `tests/smoke/*` runner/tooling changes (Python CLI and docs)
 - Any mapgen balance coefficient changes
 - Any lobby protocol behavior changes
 
@@ -46,7 +61,7 @@ Introduce the smoke hook architecture (`SmokeHooks*.cpp` implementations with `S
 3. Add minimal call sites guarded by `#ifdef BARONY_SMOKE_TESTS`; keep intrusion thin.
 4. Route behavior through no-op wrappers when smoke is OFF so base paths stay clean.
 5. Keep mapgen/gameplay call-site edits instrumentation-only.
-6. Explicitly defer runner scripts and mapgen tooling to later PRs.
+6. Explicitly defer runner/tooling changes in `tests/smoke/*` to PR7/PR8.
 
 ## Suggested Commit Structure
 1. Build/config gating for smoke mode.

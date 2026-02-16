@@ -9,6 +9,35 @@ Current PR size is `66 files`, `+18,301/-1,314`, with three heavy hotspots:
 
 The split ordering is **de-risking first**: platform/build baseline, then core multiplayer scaffolding and protocol, then smoke framework/tooling, then mapgen plumbing, then mapgen balance, then default enablement.
 
+## Progress Snapshot (Updated 2026-02-14)
+- Legacy smoke shell wrappers under `tests/smoke/` have been removed and replaced by a unified Python CLI entrypoint: `tests/smoke/smoke_runner.py`.
+- Smoke CLI surface is argparse-based for both non-mapgen and mapgen lanes, with stdlib-only packaging/bootstrap in place (`tests/smoke/pyproject.toml`, `tests/smoke/.python-version`).
+- `smoke_runner.py` is now a thin registration entrypoint; lane execution/parsers were moved into `tests/smoke/smoke_framework/*` modules.
+- `lan-helo-chunk` was split into focused modules (`lan_helo_chunk_args`, `lan_helo_chunk_launch`, `lan_helo_chunk_runtime`, `lan_helo_chunk_post`, `lan_helo_chunk_summary`).
+- Shared lane result/count helpers now exist in `tests/smoke/smoke_framework/lane_matrix.py` and are adopted across core/lobby/churn lanes.
+- Remaining smoke-suite work is no longer shell migration; it is targeted decomposition of the largest lanes (`join-leave-churn`, mapgen lanes), helper-level self-checks/tests, and vestigial-lane culling.
+
+## Execution Status Matrix (Updated 2026-02-14)
+- PR1 Platform/build baseline: planned (awaiting extraction branch or upstream-#942 confirmation path).
+- PR2 Feature gate + cap scaffolding: planned.
+- PR3 Slot mapping refactor: planned.
+- PR4 Lobby/join protocol hardening: planned.
+- PR5 Status-effect owner encoding: planned.
+- PR6 Smoke compile-time framework: planned (scope frozen as code-only, no `tests/smoke/*`).
+- PR7 Non-mapgen smoke runner: in progress on branch (argparse + module split complete; extraction cleanup remaining).
+- PR8 Mapgen telemetry/integration plumbing: planned and blocked on clean mapgen-only extraction boundary.
+- PR9 Mapgen balance tuning: planned and blocked on PR8.
+- PR10 Default enablement: planned and blocked on PR1-PR9.
+
+## Immediate Next Milestones
+- Finalize PR7 extraction readiness:
+  - complete `join-leave-churn` helper decomposition in `churn_statusfx_lane.py`
+  - finish vestigial non-mapgen lane/helper audit
+  - run final non-mapgen compile/help/lane sanity pack and freeze scope
+- Prepare PR8 boundary:
+  - isolate mapgen-only hunks across `src/*`, `smoke_runner.py`, and `smoke_framework/*`
+  - reject any non-mapgen smoke-lane behavior changes in PR8 candidate diff
+
 ## Important API / Interface Changes Across the Series
 - CMake options and config macros:
   - `BARONY_SUPER_MULTIPLAYER` in `CMakeLists.txt` + `src/Config.hpp.in`
@@ -22,7 +51,7 @@ The split ordering is **de-risking first**: platform/build baseline, then core m
   - `-smoke-mapgen-integration*` wiring in `src/game.cpp` and implementation in `src/smoke/SmokeHooksMapgen.cpp`
 
 ## 1) What "Good PR Size" Means Here
-- One PR should own **one concern** and at most **one high-risk hotspot** (`MainMenu.cpp`, `net.cpp`, `maps.cpp`, `SmokeHooksMainMenu.cpp`/`SmokeHooksMapgen.cpp`, or `run_lan_helo_chunk_smoke_mac.sh`).
+- One PR should own **one concern** and at most **one high-risk hotspot** (`MainMenu.cpp`, `net.cpp`, `maps.cpp`, `SmokeHooksMainMenu.cpp`/`SmokeHooksMapgen.cpp`, or `tests/smoke/smoke_runner.py`).
 - Target shape for gameplay/network PRs in this repo: roughly **200-800 changed lines** and **<= 8 files**. For hotspot files, keep hunk count low and isolate to one behavior.
 - Keep commit structure consistent per PR:
   1. mechanical/refactor prep
@@ -156,7 +185,7 @@ The split ordering is **de-risking first**: platform/build baseline, then core m
 
 **Exact scope (out)**:
 - no smoke hook framework
-- no shell runners
+- no smoke runner/tooling changes
 - no mapgen formulas
 
 **Key commits**:
@@ -221,7 +250,7 @@ The split ordering is **de-risking first**: platform/build baseline, then core m
 - minimal `#ifdef BARONY_SMOKE_TESTS` callsites in `src/game.cpp`, `src/net.cpp`, `src/ui/MainMenu.cpp`, `src/ui/GameUI.cpp`, `src/scores.cpp`, `src/maps.cpp`
 
 **Exact scope (out)**:
-- no shell runners
+- no `tests/smoke/` runner/tooling changes
 - no mapgen balance constants/divisors
 
 **Key commits**:
@@ -242,41 +271,42 @@ The split ordering is **de-risking first**: platform/build baseline, then core m
 **Cherry-pick / rebase strategy**:
 - Keep only `src/*` and CMake files; defer all `tests/smoke/*` to next PR.
 
-### 7. Smoke Runner Lanes (Non-Mapgen)
+### 7. Smoke Runner Suite (Non-Mapgen, Python CLI)
 **Intent / user value**: reproducible regression lanes for lobby/combat/splitscreen/save/rejoin.
 
 **Exact scope (in)**:
-- non-mapgen scripts and docs in `tests/smoke/` such as:
-  - `run_lan_helo_chunk_smoke_mac.sh`
-  - `run_helo_adversarial_smoke_mac.sh`
-  - `run_lan_helo_soak_mac.sh`
-  - `run_lan_join_leave_churn_smoke_mac.sh`
-  - `run_lobby_*`
-  - `run_remote_combat_slot_bounds_smoke_mac.sh`
-  - `run_splitscreen_*`
-  - `run_status_effect_queue_init_smoke_mac.sh`
-  - `run_save_reload_compat_smoke_mac.sh`
-  - `tests/smoke/README.md`
+- `tests/smoke/smoke_runner.py` CLI registration/dispatch entrypoint
+- `tests/smoke/smoke_framework/` non-mapgen lane modules and shared framework helpers
+- `tests/smoke/README.md`
+- `tests/smoke/pyproject.toml`
+- `tests/smoke/.python-version`
+- removal of legacy wrappers:
+  - `tests/smoke/run_*_smoke_mac.sh`
+  - `tests/smoke/lib/common.sh`
 
 **Exact scope (out)**:
 - no gameplay code changes
+- no mapgen balance changes
 
 **Key commits**:
-- Script-only slices from `fc6c6ced`, `4f24a78a`, `0f87d77f`, `14ae1081`, `9ed76e40`, `396263f1`, `b018bfeb`.
+- File-scoped extraction from current smoke refactor branch state in `tests/smoke/` (non-mapgen lanes and shared framework modules only).
 
 **Dependencies**: PR 6.
 
 **Risk level / rollback**: low-medium.
 
 **Test plan**:
-- `bash -n` on each script
-- run one short 4p lane and one 15p lane
+- `python3 -m py_compile tests/smoke/smoke_runner.py tests/smoke/smoke_framework/*.py`
+- argparse sanity for key subcommands:
+  - `python3 tests/smoke/smoke_runner.py --help`
+  - `python3 tests/smoke/smoke_runner.py <lane> --help`
+- run one short 4p lane and one 15p lane via `smoke_runner.py`
 
 **Review notes**:
-- Look for duplicated parser logic and exact `key=value` parsing safety.
+- Look for exact `key=value` parsing safety, shared helper reuse, and clean lane boundaries.
 
 **Cherry-pick / rebase strategy**:
-- Include only `tests/smoke/` files not tied to mapgen matrix sweeps.
+- Include only non-mapgen hunks in `tests/smoke/smoke_runner.py` and `tests/smoke/smoke_framework/*`, plus smoke README/bootstrap file changes and shell-wrapper deletions.
 
 ### 8. Mapgen Telemetry and Integration Plumbing (No Balance Policy Change)
 **Intent / user value**: make mapgen tuning measurable and reproducible before gameplay tuning lands.
@@ -285,14 +315,15 @@ The split ordering is **de-risking first**: platform/build baseline, then core m
 - `src/smoke/SmokeHooksMapgen.cpp` + `src/smoke/SmokeTestHooks.hpp` (Mapgen summary/integration runner)
 - `src/game.cpp` wiring-only for `-smoke-mapgen-integration*`
 - smoke-only summary/logging callsites in `src/maps.cpp`
-- mapgen runners:
-  - `tests/smoke/run_mapgen_sweep_mac.sh`
-  - `tests/smoke/run_mapgen_level_matrix_mac.sh`
+- mapgen tooling:
+  - mapgen lane modules in `tests/smoke/smoke_framework/mapgen_lanes.py` (and mapgen-specific helpers)
+  - mapgen subcommand registration in `tests/smoke/smoke_runner.py`
   - `tests/smoke/generate_mapgen_heatmap.py`
   - `tests/smoke/generate_smoke_aggregate_report.py`
 
 **Exact scope (out)**:
 - no changes to overflow balancing constants/divisors in `maps.cpp`
+- no non-mapgen lane behavior changes in `smoke_runner.py` / non-mapgen `smoke_framework/*` modules
 
 **Key commits**:
 - Instrumentation-only slices from `f4da9ee9`, `a35e2c7b`, `9ce7ac93`, plus support from earlier smoke commits.
@@ -306,9 +337,11 @@ The split ordering is **de-risking first**: platform/build baseline, then core m
 
 **Review notes**:
 - Verify `game.cpp` remains wiring-only and integration logic stays in `src/smoke/SmokeHooksMapgen.cpp`.
+- In smoke tooling, review only mapgen-lane hunks (`smoke_runner.py` mapgen registration + mapgen framework modules) for this PR.
 
 **Cherry-pick / rebase strategy**:
 - Enforce acceptance check that `maps.cpp` diff is smoke-guard telemetry only; reject any gameplay formula delta in this PR.
+- For smoke tooling files, keep only mapgen-related hunks and leave non-mapgen changes in PR7.
 
 ### 9. Mapgen Balance Tuning for 5-15 Players (Gameplay Only)
 **Intent / user value**: tune large-party mapgen while preserving 1-4 parity.
@@ -320,7 +353,7 @@ The split ordering is **de-risking first**: platform/build baseline, then core m
 **Exact scope (out)**:
 - no CMake/build changes
 - no smoke framework changes
-- no shell runner logic changes
+- no non-mapgen smoke runner refactors
 
 **Key commits**:
 - Gameplay portions from `b7c36be9`, `4288b719`, `9ed76e40`, `f4da9ee9`, `a35e2c7b`, `9ce7ac93`.
@@ -371,11 +404,16 @@ The split ordering is **de-risking first**: platform/build baseline, then core m
   - `SmokeHooksCombat.cpp`
   - `SmokeHooksSaveReload.cpp`
   to reduce review blast radius.
-- Extract shared shell helpers from `tests/smoke/run_lan_helo_chunk_smoke_mac.sh` into `tests/smoke/lib/common.sh` (`is_uint`, summary parsing, cache prune, env setup).
-- Keep one canonical parser for `summary.env` key reads; currently repeated across many `run_*_smoke_mac.sh`.
+- Keep `tests/smoke/smoke_runner.py` thin (registration only) and continue decomposing the largest lane modules:
+  - `churn_statusfx_lane.py` (`join-leave-churn` runtime, ready-sync, summary assembly)
+  - `mapgen_lanes.py` (parser vs orchestration vs report assembly)
+- Keep one canonical parser for `summary.env` key reads and exact token parsing in shared helper functions (already partially consolidated).
+- Expand shared lane result/count/row assembly helpers where patterns still repeat (currently partially centralized via `lane_matrix.py`).
+- Add a lightweight smoke framework self-check lane (CLI/parser/module wiring) plus a small helper test layer for parser/token edge cases.
 - Move shared network lobby constants (`kJoinCapabilityHeloChunkV1`, packet header structs) to a dedicated header (for example `src/net_lobby_protocol.hpp`) to avoid UI/net drift.
 - Keep `#ifdef BARONY_SMOKE_TESTS` callsites thin by routing through no-op wrappers; reduce conditional spread in `src/net.cpp` and `src/ui/MainMenu.cpp`.
 - In `src/maps.cpp`, convert overflow tuning constants into a small struct/table keyed by overflow band and depth band to make review of coefficient changes explicit.
+- Keep smoke tooling Python stdlib-only (no runtime dependency creep) unless a clear value-add justifies new deps.
 - Exclude local-only process files from upstream PRs:
   - `AGENTS.md`
   - `styleguide.txt`
@@ -388,7 +426,9 @@ The split ordering is **de-risking first**: platform/build baseline, then core m
 - Add CI matrix jobs for `BARONY_SUPER_MULTIPLAYER=OFF/ON` and a smoke compile check with `BARONY_SMOKE_TESTS=ON`.
 - Lock mapgen acceptance bands from `AGENTS.md` (`Balancing Lessons and Guardrails`) before PR 9 review starts.
 - Pre-agree that mapgen PRs must include artifact links from `tests/smoke/artifacts/` with reproducible command lines.
+- Confirm there are no downstream jobs still invoking deleted `tests/smoke/*.sh` wrappers. (Local repo check is already clean; verify CI/docs automation usage.)
 - Confirm maintainers want long-form tuning logs in-repo; if not, keep only condensed summaries in docs PRs.
+- Before cutting PR8, freeze PR7 scope and land/extract remaining non-mapgen smoke refactors to avoid cross-contamination.
 
 ## 5) Paste-Ready Markdown Tracking Plan
 
@@ -399,7 +439,7 @@ The split ordering is **de-risking first**: platform/build baseline, then core m
 - [ ] PR 4: Lobby/join protocol hardening for high player counts - [link]
 - [ ] PR 5: Status-effect owner encoding hardening (15 cap-safe) - [link]
 - [ ] PR 6: Smoke framework + compile-time gating (code only) - [link]
-- [ ] PR 7: Smoke runner lanes (non-mapgen) - [link]
+- [ ] PR 7: Smoke runner suite (non-mapgen, Python CLI) - [link] (in progress on branch: shell removal + argparse + module split)
 - [ ] PR 8: Mapgen telemetry/integration plumbing (no balance change) - [link]
 - [ ] PR 9: Mapgen balance tuning (gameplay only, maps-focused) - [link]
 - [ ] PR 10: Default enablement flip + release notes - [link]
@@ -411,7 +451,7 @@ The split ordering is **de-risking first**: platform/build baseline, then core m
 4. Merge PR 4 after HELO chunk and fallback smoke lane is green.
 5. Merge PR 5 after 15p caster-owner correctness checks pass.
 6. Merge PR 6 after smoke ON/OFF build gating is verified.
-7. Merge PR 7 after smoke lane scripts pass baseline lanes.
+7. Merge PR 7 after argparse smoke lanes pass baseline 4p/15p checks and no `.sh` smoke wrappers remain.
 8. Merge PR 8 after integration parity checks are green (`levels=1,7,16,33`).
 9. Merge PR 9 only with runs=5 volatility + full-lobby confirmation + low-player parity evidence.
 10. Merge PR 10 only when all above are green and maintainers approve default flip.

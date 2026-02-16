@@ -5,11 +5,20 @@
 - Priority: Critical
 - Epic: Multiplayer Expansion 1-15
 - Risk: High
+- Status (Updated 2026-02-14): Planned, blocked on PR8 extraction/merge
 - Depends On: PR8
 - Blocks: PR10 default enablement
 
 ## Background
 The largest gameplay risk is map generation balance at high player counts. PR8 provides instrumentation/plumbing; PR9 now applies policy tuning with strict 1-4 parity and reproducible evidence requirements.
+
+## Progress Snapshot (2026-02-14)
+- Smoke tooling prerequisites are in place on branch (Python CLI and framework modules), and shell wrappers are removed.
+- PR9 remains intentionally unstarted from an extraction standpoint until PR8 mapgen plumbing is isolated.
+
+## Preconditions Before PR9 Extraction
+- PR8 must be extracted/merged (or at minimum frozen) so PR9 can stay gameplay-only.
+- PR9 candidate diff must exclude all tooling/build/telemetry-plumbing changes and focus primarily on `src/maps.cpp` balance logic.
 
 ## What and Why
 Tune mapgen for 5-15 players to improve large-party pacing/economy while preserving 1-4 behavior and maintaining stable progression quality across target floors.
@@ -24,7 +33,7 @@ Tune mapgen for 5-15 players to improve large-party pacing/economy while preserv
 ### Out of Scope
 - CMake/build-system changes
 - Smoke framework architecture changes
-- Smoke runner script logic changes
+- Smoke runner framework/tooling logic changes
 - Lobby/protocol changes
 
 ## Implementation Instructions

@@ -5,29 +5,8 @@ import html
 from collections import defaultdict
 from pathlib import Path
 
-BASE_METRICS = ["rooms", "monsters", "gold", "items", "food_servings", "decorations"]
-OPTIONAL_METRICS = [
-    "gold_bags",
-    "gold_amount",
-    "item_stacks",
-    "item_units",
-    "decorations_blocking",
-    "decorations_utility",
-    "decorations_traps",
-    "decorations_economy",
-]
-
-
-def parse_float(value: str):
-    if value is None:
-        return None
-    value = value.strip()
-    if value == "":
-        return None
-    try:
-        return float(value)
-    except ValueError:
-        return None
+from smoke_framework.mapgen_schema import MAPGEN_BASE_METRICS, MAPGEN_OPTIONAL_METRICS
+from smoke_framework.stats import parse_float_or_none
 
 
 def lerp(a: int, b: int, t: float) -> int:
@@ -62,8 +41,8 @@ def main():
         for row in reader:
             rows.append(row)
 
-    metrics = [m for m in BASE_METRICS if rows and m in rows[0]]
-    for m in OPTIONAL_METRICS:
+    metrics = [m for m in MAPGEN_BASE_METRICS if rows and m in rows[0]]
+    for m in MAPGEN_OPTIONAL_METRICS:
         if rows and m in rows[0]:
             metrics.append(m)
 
@@ -78,7 +57,7 @@ def main():
         values = {}
         valid = True
         for metric in metrics:
-            parsed = parse_float(row.get(metric, ""))
+            parsed = parse_float_or_none(row.get(metric, ""))
             if parsed is None:
                 valid = False
                 break

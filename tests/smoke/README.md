@@ -4,110 +4,99 @@ This folder contains blackbox-oriented smoke scripts for LAN lobby automation, H
 
 All main runners support `--app <path>` and optional `--datadir <path>` so you can run a locally built binary against a specific asset directory.
 
+## Runner Architecture
+
+- Entry point: `python3 tests/smoke/smoke_runner.py <lane> [options]`.
+- `smoke_runner.py` composes top-level lane parser registration (`argparse`) from lane modules.
+- Shared framework helpers live under `tests/smoke/smoke_framework/` (`common`, `process`, `summary`, `csvio`, `logscan`, `fs`, `local_lane`, `orchestration`, `tokens`, `statusfx`, `mapgen`, `mapgen_schema`, `mapgen_validation`, `mapgen_parser`, `mapgen_sweep_lane`, `mapgen_matrix_lane`, `mapgen_runtime`, `stats`, `helo_metrics`, `core_lane`, `core_parser`, `splitscreen_parser`, `splitscreen_runtime`, `splitscreen_baseline_lane`, `splitscreen_cap_lane`, `splitscreen_lanes`, `lan_helo_chunk_lane`, `lan_helo_chunk_parser`, `lan_helo_chunk_args`, `lan_helo_chunk_launch`, `lan_helo_chunk_runtime`, `lan_helo_chunk_post`, `lan_helo_chunk_summary`, `lane_helpers`, `lane_matrix`, `lane_status`, `churn_statusfx_lane`, `churn_join_leave`, `churn_statusfx_parser`, `lobby_remote_lane`, `lobby_remote_parser`, `self_check_lane`, `parser_common`, `reports`).
+- `pyproject.toml` documents runtime expectations (`stdlib`-only dependencies) and an installable console script.
+- `lan-helo-chunk` execution and parser registration are split across `smoke_framework/lan_helo_chunk_lane.py` and `smoke_framework/lan_helo_chunk_parser.py`.
+- `lan-helo-chunk` argument normalization and launch/runtime plumbing are further split into `smoke_framework/lan_helo_chunk_args.py` and `smoke_framework/lan_helo_chunk_launch.py`.
+- `lan-helo-chunk` handshake/wait-loop runtime state now lives in `smoke_framework/lan_helo_chunk_runtime.py`.
+- `lan-helo-chunk` post-run metrics collection and result gating are split into `smoke_framework/lan_helo_chunk_post.py`.
+- `lan-helo-chunk` summary payload assembly is centralized in `smoke_framework/lan_helo_chunk_summary.py`.
+- `lan-helo-chunk` runtime polling uses cached log scanning to avoid repeated full-file rescans.
+- `core` lane execution/parser ownership is split across `smoke_framework/core_lane.py` and `smoke_framework/core_parser.py`.
+- `join-leave-churn` and `status-effect-queue-init` execution/parser ownership is split across `smoke_framework/churn_statusfx_lane.py` and `smoke_framework/churn_statusfx_parser.py`.
+- `join-leave-churn` lifecycle/churn-loop/ready-sync/summary internals are split into `smoke_framework/churn_join_leave.py`.
+- `lobby` remote lane execution/parser ownership is split across `smoke_framework/lobby_remote_lane.py` and `smoke_framework/lobby_remote_parser.py`.
+- `splitscreen` parser/runtime/lane ownership is split across `smoke_framework/splitscreen_parser.py`, `smoke_framework/splitscreen_runtime.py`, `smoke_framework/splitscreen_baseline_lane.py`, and `smoke_framework/splitscreen_cap_lane.py` (`smoke_framework/splitscreen_lanes.py` remains a compatibility shim).
+- Repeated parser args (`--app`, `--datadir`) are centralized via `smoke_framework/parser_common.py`.
+- Mapgen lane orchestration is split across `smoke_framework/mapgen_sweep_lane.py` and `smoke_framework/mapgen_matrix_lane.py`.
+- Shared mapgen metric schema and validation live in `smoke_framework/mapgen_schema.py` and `smoke_framework/mapgen_validation.py`.
+- Shared numeric/statistical helpers for mapgen reports live in `smoke_framework/stats.py`.
+- Mapgen parser registration lives in `smoke_framework/mapgen_parser.py`.
+- Shared lane argument validation, nested child-lane invocation, and single-lane rollup helpers live in `smoke_framework/lane_helpers.py`.
+- Aggregate report launching is shared via `smoke_framework/reports.py`.
+- Shared lane pass/fail and count bookkeeping lives in `smoke_framework/lane_matrix.py`.
+- Shared pass/fail status helpers live in `smoke_framework/lane_status.py`.
+- Lightweight framework self-check lane lives in `smoke_framework/self_check_lane.py`.
+
+## Lanes
+
+- `lan-helo-chunk`
+  - Base host/client orchestration lane.
+  - Produces `summary.env`, stdout logs, per-instance homes/logs, and supports mapgen/reload and lobby instrumentation flags.
+- `helo-soak`
+  - Repeats LAN HELO smoke runs (default 10x).
+  - Emits `soak_results.csv` and aggregate HTML.
+- `helo-adversarial`
+  - Runs adversarial tx-mode matrix (`reverse`, `even-odd`, `duplicate-first`, `drop-last`, `duplicate-conflict-first`).
+  - Emits `adversarial_results.csv` and aggregate HTML.
+- `lobby-kick-target`
+  - Sweeps player counts and validates host auto-kick behavior at highest target slot.
+  - Emits `kick_target_results.csv`.
+- `save-reload-compat`
+  - Runs owner-encoding save/reload compatibility sweep across 1..15p lanes.
+  - Emits `save_reload_owner_encoding_results.csv`.
+- `join-leave-churn`
+  - Repeatedly kills/relaunches clients and verifies rejoin progress.
+  - Optional ready-sync and join-reject trace assertions.
+- `status-effect-queue-init`
+  - Startup (1p/5p/15p) plus rejoin lanes with queue-owner safety assertions.
+  - Emits `status_effect_queue_results.csv`.
+- `lobby-slot-lock-kick-copy`
+  - Validates default slot-lock snapshots and occupied-slot reduction prompt variants.
+  - Emits `slot_lock_kick_copy_results.csv`.
+- `lobby-page-navigation`
+  - Full-lobby page sweep and page/focus/alignment assertions.
+  - Emits `page_navigation_results.csv`.
+- `remote-combat-slot-bounds`
+  - Pause/unpause/combat pulse lane with remote-combat slot bounds and event assertions.
+  - Emits `remote_combat_results.csv`.
+- `splitscreen-baseline`
+  - Local 4p baseline assertions for local lobby/camera/HUD/pause and transition flow.
+  - Emits `splitscreen_results.csv`.
+- `splitscreen-cap`
+  - `/splitscreen` over-cap clamp assertion lane (legacy local cap remains 4).
+  - Emits `splitscreen_cap_results.csv`.
+- `mapgen-sweep`
+  - Player-count sweep lane with mapgen telemetry CSV + heatmap + aggregate HTML.
+  - Supports simulated mapgen players and in-process same-level sampling/sweeps.
+- `mapgen-level-matrix`
+  - Multi-floor mapgen matrix lane with per-floor and cross-floor aggregate outputs.
+- `framework-self-check`
+  - Lightweight parser/helper wiring checks for smoke framework internals.
+
 ## Files
 
-- `lib/common.sh`
-  - Shared shell helpers for smoke runners (`is_uint`, timestamped log output, exact `summary.env` key reads, and `models.cache` pruning).
-  - Source this from new runners instead of re-implementing parser/validation helpers.
-
-- `run_lan_helo_chunk_smoke_mac.sh`
-  - Launches 1 host + N-1 clients as isolated instances.
-  - Uses env-driven autopilot hooks in game code to host/join automatically.
-  - Verifies chunked HELO send/reassembly by parsing per-instance logs.
-  - Optionally auto-starts gameplay and can force a smoke-only transition from the starting area into dungeon floor 1.
-  - Optionally waits for dungeon map generation completion.
-  - Supports smoke-only HELO tx adversarial modes (reordering/dup/drop tests).
-  - Supports strict adversarial assertions and backend tagging in `summary.env`.
-  - Supports explicit transition budget via `--auto-enter-dungeon-repeats` (defaults to `--mapgen-samples`).
-  - Supports same-level mapgen reload sampling (`--mapgen-reload-same-level 1`) with optional per-sample seed rotation (`--mapgen-reload-seed-base <n>`).
-  - Supports dynamic mapgen player override control via `--mapgen-control-file <path>` for in-process player-count tuning.
-  - In mapgen-required same-level reload mode, fails fast with `MAPGEN_WAIT_REASON=reload-complete-no-mapgen-samples` when the selected floor is non-procedural.
-  - Emits mapgen regeneration evidence fields in `summary.env` (`MAPGEN_RELOAD_TRANSITION_*`, `MAPGEN_GENERATION_*`, `MAPGEN_RELOAD_REGEN_OK`).
-  - Seeds smoke homes with `skipintro=true` automatically (writes a minimal config when no seed config exists) to avoid intro/title startup stalls.
-  - Optionally traces/asserts lobby account label coverage for remote slots (`--trace-account-labels 1 --require-account-labels 1`).
-
-- `run_lan_helo_soak_mac.sh`
-  - Repeats LAN HELO smoke runs (default 10x).
-  - Emits `soak_results.csv` and an aggregate HTML report.
-
-- `run_helo_adversarial_smoke_mac.sh`
-  - Runs a matrix of HELO tx modes:
-    - expected pass: `normal`, `reverse`, `even-odd`, `duplicate-first`
-    - expected fail: `drop-last`, `duplicate-conflict-first`
-  - Emits `adversarial_results.csv` and an aggregate HTML report.
-
-- `run_lan_join_leave_churn_smoke_mac.sh`
-  - Launches a full lobby, then repeatedly kills/relaunches selected clients.
-  - Asserts rejoin progress by requiring increasing host HELO chunk counts.
-  - Optionally enables and asserts ready-state snapshot sync coverage (`--auto-ready 1 --trace-ready-sync 1 --require-ready-sync 1`).
-  - Optionally traces join-reject slot-state snapshots (`--trace-join-rejects 1`) to debug transient `error code 16` retries.
-  - Emits per-cycle churn CSV and an aggregate HTML report.
-
-- `run_status_effect_queue_init_smoke_mac.sh`
-  - Runs startup lanes at 1p/5p/15p with auto-start + dungeon entry.
-  - Runs late-join/rejoin churn lanes at 5p/15p.
-  - Enables smoke-only status-effect queue tracing and asserts slot-owner safety (startup: `init`/`create`/`update`, rejoin: `init`) with no mismatches.
-  - Emits `status_effect_queue_results.csv` and a run summary.
-
-- `run_lobby_slot_lock_and_kick_copy_smoke_mac.sh`
-  - Runs a lobby matrix for default slot-lock behavior and occupied-slot player-count reduction kick-copy variants.
-  - Asserts default host slot-lock snapshots and prompt copy variants for `single`/`double`/`multi` occupied-player reductions.
-  - Emits `slot_lock_kick_copy_results.csv` and a run summary.
-
-- `run_lobby_page_navigation_smoke_mac.sh`
-  - Runs a full-lobby page navigation lane with smoke-driven page sweep.
-  - Asserts page/alignment snapshots for card placement, paperdolls, ping frames, and centered warning/countdown overlays when present.
-  - Optionally enforces focus-page matching (`--require-focus-match 1`).
-  - Emits `page_navigation_results.csv` and a run summary.
-
-- `run_remote_combat_slot_bounds_smoke_mac.sh`
-  - Runs a full-lobby remote-combat lane with smoke-driven pause/unpause pulses, enemy-bar combat pulses, and visible damage-gib pulses.
-  - Asserts remote-combat slot bounds (`REMOTE_COMBAT_SLOT_FAIL_LINES=0`) and required event coverage contexts.
-  - Emits `remote_combat_results.csv` and a run summary.
-
-- `run_splitscreen_baseline_smoke_mac.sh`
-  - Runs a local 4-player splitscreen baseline lane in a single smoke instance.
-  - Uses local-lobby autopilot to ready 4 slots, verifies baseline camera/HUD/local-slot state, runs pause/unpause pulses, and forces first-floor transition.
-  - Emits `splitscreen_results.csv` and a run summary.
-
-- `run_splitscreen_cap_smoke_mac.sh`
-  - Runs a local splitscreen cap lane in a single smoke instance.
-  - Issues `/enablecheats` + `/splitscreen <target>` (default `15`) and asserts hard clamp behavior at 4 local players with no over-cap slot activation side effects.
-  - Emits `splitscreen_cap_results.csv` and a run summary.
-
-- `run_mapgen_sweep_mac.sh`
-  - Runs repeated sessions for player counts in a range (default `1..15`).
-  - Writes aggregate CSV with map generation metrics.
-  - Generates a simple HTML heatmap via `generate_mapgen_heatmap.py`.
-  - Supports a fast single-instance mode that simulates mapgen scaling player counts.
-  - Supports smoke-only start-floor control via `--start-floor <n>` for same-floor cross-player comparisons.
-  - Supports in-process same-level sample collection (`--inprocess-sim-batch 1 --mapgen-reload-same-level 1`) to avoid relaunching between samples.
-  - Supports in-process single-runtime player sweeps (`--inprocess-player-sweep 1`) that step mapgen player overrides across all requested player counts without relaunching.
-  - CSV includes mapgen wait/reload regeneration diagnostics (`mapgen_wait_reason`, `mapgen_reload_transition_lines`, `mapgen_generation_lines`, `mapgen_generation_unique_seed_count`, `mapgen_reload_regen_ok`).
-  - CSV now also records both intended and observed scaling players (`mapgen_players_override`, `mapgen_players_observed`) for sweep-control verification.
-  - CSV now records observed generation seed and food metrics (`mapgen_seed_observed`, `food_items`, `food_servings`) for regeneration and hunger-scaling analysis.
-
-- `run_mapgen_level_matrix_mac.sh`
-  - Runs multiple per-floor mapgen sweeps and keeps each floor in its own artifact/report directory.
-  - In same-level reload mode, maps each requested `--levels` floor directly to `--start-floor=<level>` so level labels and observed floor IDs stay aligned.
-  - Defaults to in-process same-level sampling (no relaunch between samples) for faster per-floor campaigns.
-  - Emits a combined matrix CSV plus per-floor trend summary (`mapgen_level_trends.csv`) and cross-level aggregate summaries (`mapgen_level_overall.csv`, `mapgen_level_overall.md`).
-  - Per-floor trends now distinguish target-floor matching from regeneration diversity (`target_level_match_rate_pct`, `observed_seed_unique_rate_pct`, `reload_unique_seed_rate_pct`).
-  - Emits an HTML aggregate report for matrix data (`mapgen_level_matrix_aggregate_report.html`).
-
+- `smoke_runner.py`
+  - Primary CLI + lane registration and top-level orchestration entrypoint.
+- `smoke_framework/`
+  - Shared runner framework helpers (filesystem, process lifecycle, summary parsing/writing, csv/log/token parsing, local lane prep, and nested lane orchestration).
+- `.python-version`
+  - Local `pyenv` interpreter pin for smoke tooling (`3.11`).
 - `generate_mapgen_heatmap.py`
-  - Converts the CSV output into a colorized HTML table.
-
+  - Converts mapgen CSV output into HTML heatmap.
 - `generate_smoke_aggregate_report.py`
-  - Produces one HTML summary from mapgen/soak/adversarial/churn CSVs.
-  - Also supports matrix-level mapgen aggregation via `--mapgen-matrix-csv`.
+  - Produces aggregate HTML summaries from lane CSV outputs.
 
 ## Quick Start
 
 Run HELO chunking smoke for 4 players:
 
 ```bash
-tests/smoke/run_lan_helo_chunk_smoke_mac.sh \
+python3 tests/smoke/smoke_runner.py lan-helo-chunk \
   --instances 4 \
   --force-chunk 1 \
   --chunk-payload-max 200
@@ -116,7 +105,7 @@ tests/smoke/run_lan_helo_chunk_smoke_mac.sh \
 Run with local build binary + Steam asset directory (avoids replacing Steam app executable):
 
 ```bash
-tests/smoke/run_lan_helo_chunk_smoke_mac.sh \
+python3 tests/smoke/smoke_runner.py lan-helo-chunk \
   --app /Users/sayhiben/dev/Barony-8p/build-mac/barony.app/Contents/MacOS/barony \
   --datadir "$HOME/Library/Application Support/Steam/steamapps/common/Barony/Barony.app/Contents/Resources" \
   --instances 4 \
@@ -127,7 +116,7 @@ tests/smoke/run_lan_helo_chunk_smoke_mac.sh \
 Run HELO smoke with account-label coverage assertions:
 
 ```bash
-tests/smoke/run_lan_helo_chunk_smoke_mac.sh \
+python3 tests/smoke/smoke_runner.py lan-helo-chunk \
   --instances 8 \
   --force-chunk 1 \
   --chunk-payload-max 200 \
@@ -138,7 +127,7 @@ tests/smoke/run_lan_helo_chunk_smoke_mac.sh \
 Run mapgen sweep for players `1..15`, one run each:
 
 ```bash
-tests/smoke/run_mapgen_sweep_mac.sh \
+python3 tests/smoke/smoke_runner.py mapgen-sweep \
   --min-players 1 \
   --max-players 15 \
   --runs-per-player 1 \
@@ -147,7 +136,7 @@ tests/smoke/run_mapgen_sweep_mac.sh \
   --chunk-payload-max 200
 
 # Faster single-instance mapgen sweep (simulated mapgen players 1..15):
-tests/smoke/run_mapgen_sweep_mac.sh \
+python3 tests/smoke/smoke_runner.py mapgen-sweep \
   --min-players 1 \
   --max-players 15 \
   --runs-per-player 8 \
@@ -159,14 +148,14 @@ tests/smoke/run_mapgen_sweep_mac.sh \
   --auto-start-delay 0 \
   --auto-enter-dungeon 1
 
-# Per-floor matrix sweep (default levels: 1,7,16,25,33):
-tests/smoke/run_mapgen_level_matrix_mac.sh \
+# Per-floor matrix sweep (default levels: 1,7,16,33):
+python3 tests/smoke/smoke_runner.py mapgen-level-matrix \
   --runs-per-player 2 \
   --simulate-mapgen-players 1 \
   --inprocess-sim-batch 1 \
   --inprocess-player-sweep 1 \
   --mapgen-reload-same-level 1 \
-  --levels 1,7,16,25,33
+  --levels 1,7,16,33
 ```
 
 In `--simulate-mapgen-players 1` mode, `--inprocess-sim-batch 1` runs all samples for a given player count in one runtime by using repeated smoke-driven dungeon transitions.
@@ -177,7 +166,7 @@ The sweep now sets extra transition headroom automatically so sparse/no-generate
 Run a 10x HELO soak:
 
 ```bash
-tests/smoke/run_lan_helo_soak_mac.sh \
+python3 tests/smoke/smoke_runner.py helo-soak \
   --runs 10 \
   --instances 8 \
   --force-chunk 1 \
@@ -187,15 +176,29 @@ tests/smoke/run_lan_helo_soak_mac.sh \
 Run adversarial HELO matrix:
 
 ```bash
-tests/smoke/run_helo_adversarial_smoke_mac.sh \
+python3 tests/smoke/smoke_runner.py helo-adversarial \
   --instances 4 \
   --chunk-payload-max 200
+```
+
+Run lobby auto-kick target matrix:
+
+```bash
+python3 tests/smoke/smoke_runner.py lobby-kick-target \
+  --min-players 2 \
+  --max-players 15
+```
+
+Run save/reload owner-encoding compatibility sweep:
+
+```bash
+python3 tests/smoke/smoke_runner.py save-reload-compat
 ```
 
 Run join/leave churn smoke:
 
 ```bash
-tests/smoke/run_lan_join_leave_churn_smoke_mac.sh \
+python3 tests/smoke/smoke_runner.py join-leave-churn \
   --instances 8 \
   --churn-cycles 2 \
   --churn-count 2
@@ -204,7 +207,7 @@ tests/smoke/run_lan_join_leave_churn_smoke_mac.sh \
 Run churn with ready-state snapshot assertions:
 
 ```bash
-tests/smoke/run_lan_join_leave_churn_smoke_mac.sh \
+python3 tests/smoke/smoke_runner.py join-leave-churn \
   --instances 8 \
   --churn-cycles 2 \
   --churn-count 2 \
@@ -216,7 +219,7 @@ tests/smoke/run_lan_join_leave_churn_smoke_mac.sh \
 Run status-effect queue initialization + rejoin safety lane:
 
 ```bash
-tests/smoke/run_status_effect_queue_init_smoke_mac.sh \
+python3 tests/smoke/smoke_runner.py status-effect-queue-init \
   --app /Users/sayhiben/dev/Barony-8p/build-mac/barony.app/Contents/MacOS/barony \
   --datadir "$HOME/Library/Application Support/Steam/steamapps/common/Barony/Barony.app/Contents/Resources"
 ```
@@ -224,7 +227,7 @@ tests/smoke/run_status_effect_queue_init_smoke_mac.sh \
 Run default slot-lock + kick-copy matrix lane:
 
 ```bash
-tests/smoke/run_lobby_slot_lock_and_kick_copy_smoke_mac.sh \
+python3 tests/smoke/smoke_runner.py lobby-slot-lock-kick-copy \
   --app /Users/sayhiben/dev/Barony-8p/build-mac/barony.app/Contents/MacOS/barony \
   --datadir "$HOME/Library/Application Support/Steam/steamapps/common/Barony/Barony.app/Contents/Resources"
 ```
@@ -232,7 +235,7 @@ tests/smoke/run_lobby_slot_lock_and_kick_copy_smoke_mac.sh \
 Run lobby page navigation/alignment lane:
 
 ```bash
-tests/smoke/run_lobby_page_navigation_smoke_mac.sh \
+python3 tests/smoke/smoke_runner.py lobby-page-navigation \
   --app /Users/sayhiben/dev/Barony-8p/build-mac/barony.app/Contents/MacOS/barony \
   --datadir "$HOME/Library/Application Support/Steam/steamapps/common/Barony/Barony.app/Contents/Resources"
 ```
@@ -240,7 +243,7 @@ tests/smoke/run_lobby_page_navigation_smoke_mac.sh \
 Run remote-combat slot-bounds lane:
 
 ```bash
-tests/smoke/run_remote_combat_slot_bounds_smoke_mac.sh \
+python3 tests/smoke/smoke_runner.py remote-combat-slot-bounds \
   --app /Users/sayhiben/dev/Barony-8p/build-mac-smoke/barony.app/Contents/MacOS/barony \
   --datadir "$HOME/Library/Application Support/Steam/steamapps/common/Barony/Barony.app/Contents/Resources"
 ```
@@ -248,7 +251,7 @@ tests/smoke/run_remote_combat_slot_bounds_smoke_mac.sh \
 Run local 4-player splitscreen baseline lane:
 
 ```bash
-tests/smoke/run_splitscreen_baseline_smoke_mac.sh \
+python3 tests/smoke/smoke_runner.py splitscreen-baseline \
   --app /Users/sayhiben/dev/Barony-8p/build-mac-smoke/barony.app/Contents/MacOS/barony \
   --datadir "$HOME/Library/Application Support/Steam/steamapps/common/Barony/Barony.app/Contents/Resources"
 ```
@@ -256,9 +259,21 @@ tests/smoke/run_splitscreen_baseline_smoke_mac.sh \
 Run local splitscreen cap lane (`/splitscreen 15` should clamp to 4):
 
 ```bash
-tests/smoke/run_splitscreen_cap_smoke_mac.sh \
+python3 tests/smoke/smoke_runner.py splitscreen-cap \
   --app /Users/sayhiben/dev/Barony-8p/build-mac-smoke/barony.app/Contents/MacOS/barony \
   --datadir "$HOME/Library/Application Support/Steam/steamapps/common/Barony/Barony.app/Contents/Resources"
+```
+
+Run lightweight framework parser/helper self-checks:
+
+```bash
+python3 tests/smoke/smoke_runner.py framework-self-check
+```
+
+Run lightweight helper unit tests:
+
+```bash
+python3 -m unittest discover -s tests/smoke/tests -p "test_*.py"
 ```
 
 ## Artifact Layout

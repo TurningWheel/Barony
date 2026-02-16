@@ -81,7 +81,7 @@ When running in Codex with sandboxing, ask for sandbox breakout/escalation permi
 - Avoid adding ad-hoc smoke utility logic directly in core gameplay files; prefer hook APIs declared in `SmokeTestHooks.hpp` and keep base-game paths clean.
 - Preferred local validation path is local build binary + Steam assets datadir (`--app .../build-mac/.../barony --datadir .../Barony.app/Contents/Resources`) instead of replacing the Steam executable.
 - After long or high-instance smoke runs, clean generated cache bloat (especially `models.cache` under smoke artifact homes) while preserving logs/artifacts needed for debugging.
-- If host performance degrades during smoke campaigns, check for lingering `run_mapgen_sweep_mac.sh`, `run_lan_helo_chunk_smoke_mac.sh`, and `barony` processes; terminate stale runs before launching new lanes.
+- If host performance degrades during smoke campaigns, check for lingering `smoke_runner.py mapgen-sweep`, `smoke_runner.py lan-helo-chunk`, and `barony` processes; terminate stale runs before launching new lanes.
 - Known intermittent issue: churn/rejoin can show transient `lobby full` / join retries (`error code 16`). Track with artifacts and summaries, and avoid conflating it with unrelated feature-lane pass/fail unless assertions require it.
 - Add and maintain compile-time gating for smoke hooks/call sites so smoke instrumentation compiles or executes only when a dedicated smoke-test flag is enabled.
 - Smoke validation requires a smoke-enabled build (`-DBARONY_SMOKE_TESTS=ON`); if expected `[SMOKE]` logs are missing, verify generated config/build mode and rebuild the smoke target before rerunning tests.
@@ -113,7 +113,7 @@ When running in Codex with sandboxing, ask for sandbox breakout/escalation permi
   - food/player `0.65x-0.78x`
   - decorations `1.85x-2.25x`, blocking share `<= 45%`
 - Maintain integration ownership boundaries: integration parser/validator/runner belong in smoke hook implementation files (`src/smoke/SmokeHooksMapgen.cpp`); `src/game.cpp` remains wiring-only.
-- Keep operational hygiene between long runs: prune generated `models.cache`, and terminate stale `run_mapgen_*`, `run_lan_helo_*`, and `barony` processes before relaunch.
+- Keep operational hygiene between long runs: prune generated `models.cache`, and terminate stale `smoke_runner.py` lane processes plus `barony` before relaunch.
 
 ### Technical Commands and Config Reference
 - Smoke-enabled build (required for `[SMOKE]` hooks/logs):
@@ -142,7 +142,7 @@ HOME="$OUT/home" build-mac-smoke/barony.app/Contents/MacOS/barony \
   - Scripted single-runtime matrix lane (`simulate-mapgen-players=1`, `runs=2/5`):
 ```bash
 OUT="tests/smoke/artifacts/mapgen-level-matrix-passNN-$(date +%Y%m%d-%H%M%S)"
-tests/smoke/run_mapgen_level_matrix_mac.sh \
+python3 tests/smoke/smoke_runner.py mapgen-level-matrix \
   --app "build-mac-smoke/barony.app/Contents/MacOS/barony" \
   --datadir "$HOME/Library/Application Support/Steam/steamapps/common/Barony/Barony.app/Contents/Resources" \
   --levels "1,7,16,33" \
@@ -153,7 +153,7 @@ tests/smoke/run_mapgen_level_matrix_mac.sh \
 ```
   - Full-lobby confirmation (`simulate-mapgen-players=0`):
 ```bash
-tests/smoke/run_mapgen_sweep_mac.sh \
+python3 tests/smoke/smoke_runner.py mapgen-sweep \
   --min-players 1 --max-players 15 --runs-per-player 5 \
   --simulate-mapgen-players 0 --auto-enter-dungeon 1 \
   --outdir "tests/smoke/artifacts/mapgen-full-posttune-$(date +%Y%m%d-%H%M%S)"
@@ -161,7 +161,7 @@ tests/smoke/run_mapgen_sweep_mac.sh \
 - Additional validation lane commands:
   - Same-level mapgen regeneration sanity lane (procedural floor):
 ```bash
-tests/smoke/run_lan_helo_chunk_smoke_mac.sh \
+python3 tests/smoke/smoke_runner.py lan-helo-chunk \
   --instances 1 --auto-start 1 --auto-start-delay 0 \
   --auto-enter-dungeon 1 --auto-enter-dungeon-delay 3 \
   --mapgen-samples 3 --require-mapgen 1 \
@@ -171,7 +171,7 @@ tests/smoke/run_lan_helo_chunk_smoke_mac.sh \
 ```
   - Churn/rejoin retry investigation (`error code 16`):
 ```bash
-tests/smoke/run_lan_join_leave_churn_smoke_mac.sh \
+python3 tests/smoke/smoke_runner.py join-leave-churn \
   --instances 8 --churn-cycles 3 --churn-count 2 \
   --force-chunk 1 --chunk-payload-max 200 \
   --auto-ready 1 --trace-ready-sync 1 --require-ready-sync 1 \
@@ -180,12 +180,12 @@ tests/smoke/run_lan_join_leave_churn_smoke_mac.sh \
 ```
   - Steam/EOS handshake lanes:
 ```bash
-tests/smoke/run_lan_helo_chunk_smoke_mac.sh \
+python3 tests/smoke/smoke_runner.py lan-helo-chunk \
   --network-backend steam --instances 2 \
   --force-chunk 1 --chunk-payload-max 200 --timeout 360 \
   --outdir "tests/smoke/artifacts/steam-handshake-multiacct-$(date +%Y%m%d-%H%M%S)"
 
-tests/smoke/run_lan_helo_chunk_smoke_mac.sh \
+python3 tests/smoke/smoke_runner.py lan-helo-chunk \
   --network-backend eos --instances 2 \
   --force-chunk 1 --chunk-payload-max 200 --timeout 360 \
   --outdir "tests/smoke/artifacts/eos-handshake-$(date +%Y%m%d-%H%M%S)"
@@ -199,5 +199,5 @@ tests/smoke/run_lan_helo_chunk_smoke_mac.sh \
 - Post-run hygiene commands:
 ```bash
 find tests/smoke/artifacts -type f -name models.cache -delete
-ps -Ao pid,ppid,etime,command | rg "run_mapgen_level_matrix_mac.sh|run_mapgen_sweep_mac.sh|run_lan_helo_chunk_smoke_mac.sh|barony.app/Contents/MacOS/barony"
+ps -Ao pid,ppid,etime,command | rg "smoke_runner.py (mapgen-level-matrix|mapgen-sweep|lan-helo-chunk)|barony.app/Contents/MacOS/barony"
 ```

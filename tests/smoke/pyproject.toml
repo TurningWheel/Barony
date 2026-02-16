@@ -1,0 +1,13 @@
+[project]
+name = "barony-smoke-tools"
+version = "0.1.0"
+description = "Smoke-test orchestration tools for Barony multiplayer validation."
+requires-python = ">=3.10"
+dependencies = []
+
+[project.scripts]
+barony-smoke = "smoke_runner:main"
+
+[tool.barony-smoke]
+entrypoint = "smoke_runner.py"
+notes = "Runtime dependencies are Python standard library only."

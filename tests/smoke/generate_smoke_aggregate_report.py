@@ -5,46 +5,26 @@ import html
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Tuple
 
-
-MAPGEN_BASE_METRICS = ["rooms", "monsters", "gold", "items", "food_servings", "decorations"]
-MAPGEN_OPTIONAL_METRICS = [
-    "gold_bags",
-    "gold_amount",
-    "item_stacks",
-    "item_units",
-    "decorations_blocking",
-    "decorations_utility",
-    "decorations_traps",
-    "decorations_economy",
-]
-
-
-def parse_float(value: Optional[str]) -> Optional[float]:
-    if value is None:
-        return None
-    value = value.strip()
-    if not value:
-        return None
-    try:
-        return float(value)
-    except ValueError:
-        return None
-
-
-def parse_int(value: Optional[str]) -> Optional[int]:
-    parsed = parse_float(value)
-    if parsed is None:
-        return None
-    return int(parsed)
+from smoke_framework.mapgen_schema import (
+    MAPGEN_BASE_METRICS,
+    MAPGEN_OPTIONAL_METRICS,
+    resolve_mapgen_metrics_from_rows,
+)
+from smoke_framework.stats import (
+    correlation,
+    linear_slope,
+    mean,
+    parse_float_or_none,
+    parse_int_or_none,
+)
 
 
 def resolve_mapgen_metrics(rows: List[Dict[str, str]]) -> List[str]:
-    if not rows:
-        return list(MAPGEN_BASE_METRICS)
-    keys = set(rows[0].keys())
-    metrics = [m for m in MAPGEN_BASE_METRICS if m in keys]
-    metrics.extend([m for m in MAPGEN_OPTIONAL_METRICS if m in keys])
-    return metrics
+    return resolve_mapgen_metrics_from_rows(
+        rows,
+        preferred=(*MAPGEN_BASE_METRICS, *MAPGEN_OPTIONAL_METRICS),
+        default=MAPGEN_BASE_METRICS,
+    )
 
 
 def read_csv_rows(path: Path) -> List[Dict[str, str]]:
@@ -52,55 +32,6 @@ def read_csv_rows(path: Path) -> List[Dict[str, str]]:
         return []
     with path.open("r", newline="", encoding="utf-8") as f:
         return list(csv.DictReader(f))
-
-
-def mean(values: Iterable[float]) -> Optional[float]:
-    values = list(values)
-    if not values:
-        return None
-    return sum(values) / len(values)
-
-
-def variance(values: Iterable[float]) -> Optional[float]:
-    values = list(values)
-    if len(values) < 2:
-        return None
-    m = mean(values)
-    assert m is not None
-    return sum((v - m) ** 2 for v in values) / (len(values) - 1)
-
-
-def stddev(values: Iterable[float]) -> Optional[float]:
-    var = variance(values)
-    if var is None:
-        return None
-    return var ** 0.5
-
-
-def covariance(xs: List[float], ys: List[float]) -> Optional[float]:
-    if len(xs) != len(ys) or len(xs) < 2:
-        return None
-    mx = mean(xs)
-    my = mean(ys)
-    assert mx is not None and my is not None
-    return sum((x - mx) * (y - my) for x, y in zip(xs, ys)) / (len(xs) - 1)
-
-
-def linear_slope(xs: List[float], ys: List[float]) -> Optional[float]:
-    cov = covariance(xs, ys)
-    varx = variance(xs)
-    if cov is None or varx is None or varx == 0:
-        return None
-    return cov / varx
-
-
-def correlation(xs: List[float], ys: List[float]) -> Optional[float]:
-    cov = covariance(xs, ys)
-    sx = stddev(xs)
-    sy = stddev(ys)
-    if cov is None or sx is None or sy is None or sx == 0 or sy == 0:
-        return None
-    return cov / (sx * sy)
 
 
 def fmt_number(value: Optional[float], digits: int = 2) -> str:
@@ -144,13 +75,13 @@ def summarize_mapgen(csv_paths: List[Path]) -> str:
 
     by_player: Dict[int, List[Dict[str, float]]] = {}
     for row in passes:
-        p = parse_int(row.get("players"))
+        p = parse_int_or_none(row.get("players"))
         if p is None:
             continue
         metric_values: Dict[str, float] = {}
         valid = True
         for metric in metrics:
-            v = parse_float(row.get(metric))
+            v = parse_float_or_none(row.get(metric))
             if v is None:
                 valid = False
                 break
@@ -227,30 +158,30 @@ def summarize_mapgen_matrix(csv_paths: List[Path]) -> str:
     observed_mismatch_rows = 0
     observed_seed_missing_rows = 0
     for row in passes:
-        level = parse_int(row.get("target_level"))
-        players = parse_int(row.get("players"))
+        level = parse_int_or_none(row.get("target_level"))
+        players = parse_int_or_none(row.get("players"))
         if level is None or players is None:
             continue
         metric_values: Dict[str, float] = {}
         valid = True
         for metric in metrics:
-            value = parse_float(row.get(metric))
+            value = parse_float_or_none(row.get(metric))
             if value is None:
                 valid = False
                 break
             metric_values[metric] = value
         if not valid:
             continue
-        observed_level = parse_int(row.get("mapgen_level"))
+        observed_level = parse_int_or_none(row.get("mapgen_level"))
         level_match = 1 if observed_level is not None and observed_level == level else 0
-        observed_players = parse_int(row.get("mapgen_players_observed"))
+        observed_players = parse_int_or_none(row.get("mapgen_players_observed"))
         if observed_players is not None and observed_players != players:
             observed_mismatch_rows += 1
-        observed_seed = parse_int(row.get("mapgen_seed_observed"))
+        observed_seed = parse_int_or_none(row.get("mapgen_seed_observed"))
         if observed_seed is None:
             observed_seed_missing_rows += 1
-        generation_lines = parse_int(row.get("mapgen_generation_lines"))
-        generation_unique_seed_count = parse_int(row.get("mapgen_generation_unique_seed_count"))
+        generation_lines = parse_int_or_none(row.get("mapgen_generation_lines"))
+        generation_unique_seed_count = parse_int_or_none(row.get("mapgen_generation_unique_seed_count"))
         reload_unique_seed_rate = None
         if generation_lines is not None and generation_lines > 0 and generation_unique_seed_count is not None:
             reload_unique_seed_rate = 100.0 * generation_unique_seed_count / generation_lines

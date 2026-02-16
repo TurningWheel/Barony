@@ -5,6 +5,7 @@
 - Priority: High
 - Epic: Multiplayer Expansion 1-15
 - Risk: Medium-High
+- Status (Updated 2026-02-14): Planned, not yet isolated for review
 - Depends On: PR2
 - Blocks: Correctness confidence for high-slot combat
 
