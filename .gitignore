@@ -1,6 +1,11 @@
 **/books/*
 build/*
 build-*/
+tests/smoke/artifacts/
+docker/*
+!docker/Dockerfile
+!docker/docker-compose.yml
+!docker/build-linux.sh
 **/data/*
 **/fonts/*
 **/images/*
