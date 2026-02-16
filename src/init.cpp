@@ -541,10 +541,12 @@ int initApp(char const * const title, int fullscreen)
 	auto loading_music_task = std::async(std::launch::async, [&loading_music_done]() {
 		File* fp;
 		updateLoadingScreen(10);
+#ifndef EDITOR
 		if ( !loadMusic() )
 		{
 			printlog("WARN: loadMusic() from initApp() failed!");
 		}
+#endif
 		loading_music_done = true;
 	});
 	while ( !loading_music_done )
