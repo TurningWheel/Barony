@@ -8585,6 +8585,10 @@ void Player::PlayerMechanics_t::incrementBreakableCounter(Player::PlayerMechanic
 			amount += 5;
 		}
 		int prevTier = getBreakableCounterTier();
+		if ( !strncmp(map.name, "Boss", 4) || !strncmp(map.name, "Sanctum", 7) || !strncmp(map.name, "Hell Boss", 9) )
+		{
+			amount = std::max(10, amount);
+		}
 		gremlinBreakableCounter += amount;
 		gremlinBreakableCounter = std::min(50, gremlinBreakableCounter);
 		if ( getBreakableCounterTier() > prevTier )
