@@ -6726,9 +6726,9 @@ Host to enable the game setting.
 6470 Your protection stops a spell!#
 6471 Your protection stops a flying %s!#
 6472 Your protection stops a %s!#
-6473 Your ward your body against physical harm!#
+6473 You ward your body against physical harm!#
 6474 You ward your spirit against harmful magics!#
-6475 Your ward youself against mundane and magical attack!#
+6475 You ward youself against mundane and magical attack!#
 6476 Your joints are filled with nimble grace.#
 6477 Your muscles swell with greater might.#
 6478 Your mind stirs deeply with wise counsel.#
