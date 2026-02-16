@@ -11677,6 +11677,9 @@ void Mods::unloadMods(bool force)
 	static int modelsIndexUpdateStart = 1;
 	static int modelsIndexUpdateEnd = nummodels;
 
+	static std::vector<polymodel_t> polymodelsToUpdate;
+	polymodelsToUpdate.reserve(nummodels);
+
 	// begin async load process
 	std::atomic_bool loading_done{ false };
 	auto loading_task = std::async(std::launch::async, [&loading_done]() {
@@ -11700,6 +11703,13 @@ void Mods::unloadMods(bool force)
 					free(polymodels[c].faces);
 					polymodels[c].faces = nullptr;
 				}
+
+				polymodelsToUpdate.emplace_back(polymodel_t());
+				polymodelsToUpdate.back().faces = nullptr;
+				polymodelsToUpdate.back().vao = polymodels[c].vao;
+				polymodelsToUpdate.back().positions = polymodels[c].positions;
+				polymodelsToUpdate.back().colors = polymodels[c].colors;
+				polymodelsToUpdate.back().normals = polymodels[c].normals;
 			}
 			free(polymodels);
 			polymodels = nullptr;
@@ -11753,6 +11763,22 @@ void Mods::unloadMods(bool force)
 			GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].normals));
 		}
 	}
+	for ( auto& polymodel : polymodelsToUpdate )
+	{
+		if ( polymodel.vao ) {
+			GL_CHECK_ERR(glDeleteVertexArrays(1, &polymodel.vao));
+		}
+		if ( polymodel.positions ) {
+			GL_CHECK_ERR(glDeleteBuffers(1, &polymodel.positions));
+		}
+		if ( polymodel.colors ) {
+			GL_CHECK_ERR(glDeleteBuffers(1, &polymodel.colors));
+		}
+		if ( polymodel.normals ) {
+			GL_CHECK_ERR(glDeleteBuffers(1, &polymodel.normals));
+		}
+	}
+	polymodelsToUpdate.clear();
 	generateVBOs(0, nummodels);
 
 	// reload books

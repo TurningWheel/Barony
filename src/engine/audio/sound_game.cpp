@@ -3414,7 +3414,7 @@ bool checkSoundReady(FMOD::Sound* sound)
 
 	if ( fmod_result == FMOD_OK )
 	{
-		if ( openState == FMOD_OPENSTATE_READY )
+		if ( openState != FMOD_OPENSTATE_LOADING )
 		{
 			return true;
 		}
