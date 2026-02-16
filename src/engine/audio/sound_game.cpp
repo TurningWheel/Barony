@@ -3403,9 +3403,98 @@ static ConsoleCommand ccmd_ensemble_transition_state("/ensemble_transition_state
 		}
 	});
 
+bool checkSoundReady(FMOD::Sound* sound)
+{
+	if ( !sound ) { return true; }
+	FMOD_OPENSTATE openState = FMOD_OPENSTATE_LOADING;
+	unsigned int percentBuffered = 0;
+	bool starving = false;
+	bool diskBusy = false;
+	fmod_result = sound->getOpenState(&openState, &percentBuffered, &starving, &diskBusy);
+
+	if ( fmod_result == FMOD_OK )
+	{
+		if ( openState == FMOD_OPENSTATE_READY )
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
 void EnsembleSounds_t::setup()
 {
 	songTransitionState = TRANSITION_EXPLORE;
+
+	if ( no_sound )
+	{
+		return;
+	}
+
+	Uint32 startTick = SDL_GetTicks();
+
+	for ( int i = 0; i < NUMENSEMBLEMUSIC; )
+	{
+		bool result = checkSoundReady(exploreSound[i]);
+		if ( !result )
+		{
+			i = 0;
+			continue;
+		}
+		++i;
+	}
+
+	for ( int i = 0; i < NUMENSEMBLEMUSIC; )
+	{
+		bool result = checkSoundReady(combatSound[i]);
+		if ( !result )
+		{
+			i = 0;
+			continue;
+		}
+		++i;
+	}
+
+	for ( int i = 0; i < NUMENSEMBLEMUSIC; )
+	{
+		bool result = false;
+		for ( int j = 0; j < NUM_COMBAT_TRANS; ++j )
+		{
+			result = checkSoundReady(combatTransSound[j][i]);
+			if ( !result )
+			{
+				break;
+			}
+		}
+
+		if ( !result )
+		{
+			i = 0;
+			continue;
+		}
+
+		for ( int j = 0; j < NUM_EXPLORE_TRANS; ++j )
+		{
+			result = checkSoundReady(exploreTransSound[j][i]);
+			if ( !result )
+			{
+				break;
+			}
+		}
+
+		if ( !result )
+		{
+			i = 0;
+			continue;
+		}
+
+		++i;
+	}
+
+	Uint32 endTick = SDL_GetTicks();
+
+	printlog("EnsembleSounds_t::setup() in %lums", endTick - startTick);
 
 	for ( int i = 0; i < NUMENSEMBLEMUSIC; ++i )
 	{
@@ -3437,6 +3526,7 @@ void EnsembleSounds_t::setup()
 			music_ensemble_global_send_group->addGroup(transceiver_group[i]);
 		}
 
+		if ( exploreSound[i] )
 		{
 			int syncPoints = 0;
 			exploreSound[i]->getNumSyncPoints(&syncPoints);
@@ -3530,7 +3620,7 @@ void EnsembleSounds_t::setup()
 			fmod_result = exploreChannel[i]->setCallback(ensembleExplorationCallback);
 		}
 
-
+		if ( combatSound[i] )
 		{
 			int syncPoints = 0;
 			combatSound[i]->getNumSyncPoints(&syncPoints);
@@ -3584,6 +3674,11 @@ void EnsembleSounds_t::setup()
 
 		for ( int j = 0; j < NUM_EXPLORE_TRANS; ++j )
 		{
+			if ( !exploreTransSound[j][i] )
+			{
+				continue;
+			}
+
 			int syncPoints = 0;
 			exploreTransSound[j][i]->getNumSyncPoints(&syncPoints);
 			for ( int point = 0; point < syncPoints; ++point )
@@ -3620,11 +3715,16 @@ void EnsembleSounds_t::setup()
 			}
 			FMODErrorCheck();
 			//result = fmod_system->playSound(exploreTransSound[j][i], groupTx[i], true, &channelTrans[j][count]);
-			FMODErrorCheck();
+			//FMODErrorCheck();
 		}
 
 		for ( int j = 0; j < NUM_COMBAT_TRANS; ++j )
 		{
+			if ( !combatTransSound[j][i] )
+			{
+				continue;
+			}
+
 			int syncPoints = 0;
 			combatTransSound[j][i]->getNumSyncPoints(&syncPoints);
 			for ( int point = 0; point < syncPoints; ++point )
@@ -3657,9 +3757,11 @@ void EnsembleSounds_t::setup()
 			fmod_result = combatTransSound[j][i]->addSyncPoint(beat, FMOD_TIMEUNIT_PCM, nullptr, nullptr);
 			FMODErrorCheck();
 			//result = fmod_system->playSound(combatTransSound[j][i], groupTx[i], true, &channelCombatTrans[j][count]);
-			FMODErrorCheck();
+			//FMODErrorCheck();
 		}
 	}
+
+	ensembleSounds.firstTimeSetup = false;
 }
 
 static ConsoleVariable<int> cvar_ensemble_combat_length("/ensemble_combat_length", 30);

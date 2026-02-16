@@ -369,13 +369,14 @@ int initGame()
 		}
 		updateLoadingScreen(96);
 		
-		if ( !loadMusic() )
-		{
-			printlog("WARN: loadMusic() from initGame() failed!");
-		}
-
 		loadAllScores(SCORESFILE);
 		loadAllScores(SCORESFILE_MULTIPLAYER);
+
+#ifdef USE_FMOD
+#ifndef EDITOR
+		ensembleSounds.setup();
+#endif
+#endif
 
 		updateLoadingScreen(98);
 		loading_done = true;
