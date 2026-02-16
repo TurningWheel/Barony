@@ -4286,6 +4286,32 @@ bool handleEvents(void)
 	time1 = std::chrono::high_resolution_clock::now();
 #endif
 
+	int mouseMovementEventLimit = 1000;
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		if ( inputs.getPlayerIDAllowedKeyboard() == i && !intro && !gamePaused )
+		{
+			mouseMovementEventLimit = playerSettings[i].mouse_event_limit_mkb;
+			break;
+		}
+	}
+
+	static std::map<Uint32, int> mouseMotionEventsTimestamp;
+	static ConsoleVariable<bool> cvar_debug_mouse_motion("/debug_mouse_motion", false);
+	if ( *cvar_debug_mouse_motion )
+	{
+		int maxMotion = 0;
+		for ( auto& val : mouseMotionEventsTimestamp )
+		{
+			maxMotion = std::max(val.second, maxMotion);
+		}
+		if ( maxMotion > 1 )
+		{
+			messagePlayer(clientnum, MESSAGE_HINT, "Max mouse motion events: %d", maxMotion);
+		}
+	}
+	mouseMotionEventsTimestamp.clear();
+
 	while ( SDL_PollEvent(&event) )   // poll SDL events
 	{
 #ifdef USE_IMGUI
@@ -4625,29 +4651,41 @@ bool handleEvents(void)
 				}
 				break;
 			case SDL_MOUSEMOTION: // if the mouse is moved...
-			    if (demo_mode == DemoMode::PLAYING) {
-			        break;
-			    }
+			{
+				if ( demo_mode == DemoMode::PLAYING ) {
+					break;
+				}
 				if ( firstmouseevent == true )
 				{
 					firstmouseevent = false;
 					break;
 				}
 				menuselect = 0;
-                float factorX;
-                float factorY;
-                {
-                    int w1, w2, h1, h2;
-                    SDL_GL_GetDrawableSize(screen, &w1, &h1);
-                    SDL_GetWindowSize(screen, &w2, &h2);
-                    factorX = (float)w1 / w2;
-                    factorY = (float)h1 / h2;
-                }
-				mousex = event.motion.x * factorX;
-				mousey = event.motion.y * factorY;
-				mousexrel += event.motion.xrel;
-				mouseyrel += event.motion.yrel;
-				
+				bool doMotion = true;
+				if ( mouseMovementEventLimit < 1000 )
+				{
+					mouseMotionEventsTimestamp[event.motion.timestamp]++;
+					if ( mouseMotionEventsTimestamp[event.motion.timestamp] >= mouseMovementEventLimit )
+					{
+						doMotion = false;
+					}
+				}
+
+				if ( doMotion )
+				{
+					float factorX;
+					float factorY;
+					int w1, w2, h1, h2;
+					SDL_GL_GetDrawableSize(screen, &w1, &h1);
+					SDL_GetWindowSize(screen, &w2, &h2);
+					factorX = (float)w1 / w2;
+					factorY = (float)h1 / h2;
+					mousex = event.motion.x * factorX;
+					mousey = event.motion.y * factorY;
+					mousexrel += event.motion.xrel;
+					mouseyrel += event.motion.yrel;
+				}
+
 				//{
 				// // debug code for checking checking mouse motions during lag
 				//static std::map < Uint32, std::vector<SDL_MouseMotionEvent>> evs;
@@ -4706,7 +4744,7 @@ bool handleEvents(void)
 				//}
 				//}
 
-				if (initialized)
+				if ( initialized )
 				{
 					for ( int i = 0; i < MAXPLAYERS; ++i )
 					{
@@ -4725,6 +4763,7 @@ bool handleEvents(void)
 					}
 				}
 				break;
+			}
 			case SDL_CONTROLLERBUTTONDOWN: // if joystick button is pressed
 			{
 			    if (demo_mode == DemoMode::PLAYING) {

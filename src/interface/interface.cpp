@@ -12293,7 +12293,7 @@ bool GenericGUIMenu::tinkeringIsItemUpgradeable(const Item* item)
 	return false;
 }
 
-const int TINKER_MIN_ITEM_SKILL_REQ = 10;
+const int TINKER_MIN_ITEM_SKILL_REQ = 0;
 
 int GenericGUIMenu::tinkeringPlayerHasSkillLVLToCraft(const Item* item)
 {

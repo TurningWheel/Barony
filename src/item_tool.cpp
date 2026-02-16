@@ -1229,17 +1229,17 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 		{
 			auto generatedPotion = potionStandardAppearanceMap.at(
 				rng.discrete(potionChances.data(), potionChances.size()));
-			item = newItem(static_cast<ItemType>(generatedPotion.first), EXCELLENT, 0, 1, generatedPotion.second, false, NULL);
+			item = newItem(static_cast<ItemType>(generatedPotion.first), EXCELLENT, 0, 1, generatedPotion.second, true, NULL);
 		}
 		else
 		{
 			if ( entity.skill[3] == 1 ) // slime
 			{
-				item = newItem(POTION_ACID, EXCELLENT, 0, 1, 0, false, NULL);
+				item = newItem(POTION_ACID, EXCELLENT, 0, 1, 0, true, NULL);
 			}
 			else
 			{
-				item = newItem(POTION_WATER, EXCELLENT, 0, 1, 0, false, NULL);
+				item = newItem(POTION_WATER, EXCELLENT, 0, 1, 0, true, NULL);
 			}
 		}
 		if ( item )

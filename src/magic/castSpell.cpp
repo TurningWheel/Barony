@@ -2382,7 +2382,17 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 								{
 									if ( entityDist(caster, entity) < 10000.0 )
 									{
-										breakables.push_back(entity);
+										int mapx = entity->x / 16;
+										int mapy = entity->y / 16;
+										if ( mapx > 0 && mapx < map.width
+											&& mapy > 0 && mapy < map.height )
+										{
+											int mapIndex = (mapy)*MAPLAYERS + (mapx)*MAPLAYERS * map.height;
+											if ( map.tiles[mapIndex] ) // don't spawn over pit because gravity
+											{
+												breakables.push_back(entity); 
+											}
+										}
 									}
 								}
 							}
@@ -5315,7 +5325,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							magicOnSpellCastEvent(caster, caster, target, spell->ID, spellEventFlags | spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
 							spawnMagicEffectParticles(target->x, target->y, target->z, 171);
 							createParticleRock(target, 78);
-							playSoundEntity(target, 167, 128);
+							//playSoundEntity(target, 167, 128);
 
 							if ( caster->behavior == &actPlayer )
 							{
@@ -5327,7 +5337,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							{
 								serverSpawnMiscParticles(target, PARTICLE_EFFECT_ABILITY_ROCK, 78);
 							}
+							target->removeLightField();
 							list_RemoveNode(target->mynode);
+
+							generatePathMaps();
 						}
 						itemPool.clear();
 					}
@@ -7205,6 +7218,14 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						{
 							if ( stats[i]->getEffectActive(c) )
 							{
+								if ( c == EFF_BLIND && players[i]->entity->effectShapeshift == NOTHING 
+									&& stats[i]->mask
+									&& (stats[i]->mask->type == TOOL_BLINDFOLD
+										|| stats[i]->mask->type == TOOL_BLINDFOLD_TELEPATHY
+										|| stats[i]->mask->type == TOOL_BLINDFOLD_FOCUS) )
+								{
+									continue;
+								}
 								stats[i]->clearEffect(c);
 								if ( stats[i]->EFFECTS_TIMERS[c] > 0 )
 								{
@@ -7265,6 +7286,15 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 									{
 										if ( target_stat->getEffectActive(c) )
 										{
+											if ( c == EFF_BLIND && (entity->behavior == &actMonster
+													|| (entity->behavior == &actPlayer && entity->effectShapeshift == NOTHING))
+												&& target_stat->mask
+												&& (target_stat->mask->type == TOOL_BLINDFOLD
+													|| target_stat->mask->type == TOOL_BLINDFOLD_TELEPATHY
+													|| target_stat->mask->type == TOOL_BLINDFOLD_FOCUS) )
+											{
+												continue;
+											}
 											target_stat->clearEffect(c);
 											if ( target_stat->EFFECTS_TIMERS[c] > 0 )
 											{
@@ -9305,7 +9335,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 
 		if ( !trap && !usingFoci && !using_magicstaff )
 		{
-			if ( caster && players[player]->entity == caster && stats[player]->type == SALAMANDER )
+			if ( caster && player >= 0 && players[player]->entity == caster && stats[player]->type == SALAMANDER )
 			{
 				Uint8 effectStrength = stats[player]->getEffectActive(EFF_SALAMANDER_HEART);
 				if ( effectStrength == 2 && stats[player]->EFFECTS_TIMERS[EFF_SALAMANDER_HEART] == -1 )
@@ -9324,6 +9354,17 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							messagePlayerColor(caster->isEntityPlayer(), MESSAGE_STATUS, makeColorRGB(0, 255, 0), Language::get(6918));
 							playSoundEntity(caster, 167, 128);
 						}
+					}
+				}
+			}
+
+			if ( caster && player >= 0 )
+			{
+				if ( allowedSkillup && !usingSpellbook && castSpellProps && castSpellProps->overcharge > 0 )
+				{
+					if ( spell && spell->ID != SPELL_OVERCHARGE )
+					{
+						players[player]->mechanics.updateSustainedSpellEvent(SPELL_OVERCHARGE, 30.0, 1.0, nullptr);
 					}
 				}
 			}

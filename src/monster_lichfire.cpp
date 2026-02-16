@@ -21,6 +21,7 @@
 #include "player.hpp"
 #include "magic/magic.hpp"
 #include "prng.hpp"
+#include "scores.hpp"
 
 static const int LICH_BODY = 0;
 static const int LICH_RIGHTARM = 2;
@@ -256,11 +257,11 @@ void lichFireDie(Entity* my)
 			{
 				continue;
 			}
-			if ( entity->behavior == &actMonster )
+			if ( entity->behavior == &actMonster && !entity->monsterAllyGetPlayerLeader() )
 			{
 				spawnExplosion(entity->x, entity->y, entity->z);
 				Stat* stats = entity->getStats();
-				if ( stats )
+				if ( stats && achievementObserver.checkUidIsFromPlayer(stats->leader_uid) < 0 )
 				{
 					if ( stats->type != HUMAN )
 					{

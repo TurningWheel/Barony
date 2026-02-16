@@ -10625,7 +10625,7 @@ void Player::Inventory_t::updateInventory()
 						&& (itemCategory(item) == POTION 
 							|| itemCategory(item) == SPELL_CAT
 							|| itemCategory(item) == SPELLBOOK || item->type == FOOD_CREAMPIE) &&
-						(keystatus[SDLK_LALT] || keystatus[SDLK_RALT]) )
+						(/*keystatus[SDLK_LALT] || keystatus[SDLK_RALT]*/Input::inputs[player].binary("Alternate Use Modifier")) )
 					{
 						Input::inputs[player].consumeBinaryToggle("MenuRightClick");
 						if ( guiAllowDefaultRightClick() )

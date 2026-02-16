@@ -5915,7 +5915,7 @@ void playerDebugTests(Entity* my)
 	static ConsoleVariable<bool> cvar_test_frameskip("/test_frameskip", false);
 	if ( *cvar_test_frameskip && ticks % (5 * TICKS_PER_SECOND) == 0 )
 	{
-		SDL_Delay(50);
+		SDL_Delay(250);
 	}
 
 	static ConsoleVariable<int> cvar_test_xp("/test_xp", 0);
@@ -9702,6 +9702,27 @@ void actPlayer(Entity* my)
 					skipUse = true;
 				}
 
+				if ( players[PLAYER_NUM]->shootmode 
+					&& stats[PLAYER_NUM]->defending
+					&& !gamePaused 
+					&& !movie
+					&& !fadeout
+					&& !players[PLAYER_NUM]->usingCommand() && players[PLAYER_NUM]->bControlEnabled
+					&& input.binaryToggle("Use")
+					&& input.binaryToggle("Defend") )
+				{
+					if ( stats[PLAYER_NUM]->shield && stats[PLAYER_NUM]->shield->type == TOOL_FRYING_PAN )
+					{
+						if ( !GenericGUI[PLAYER_NUM].isGUIOpen() )
+						{
+							input.consumeBinaryToggle("Use");
+							input.consumeBindingsSharedWithBinding("Use");
+							GenericGUI[PLAYER_NUM].openGUI(GUI_TYPE_ALCHEMY, true, stats[PLAYER_NUM]->shield);
+							skipUse = true;
+						}
+					}
+				}
+
 				if ( !skipUse )
 				{
 					if ( tempDisableWorldUI )
@@ -11488,10 +11509,10 @@ void actPlayer(Entity* my)
 							|| lavatiles[map.tiles[index_y * MAPLAYERS + index_x * MAPLAYERS * map.height]] )
 						{
 							players[PLAYER_NUM]->mechanics.updateSustainedSpellEvent(SPELL_LEVITATION, dist, 0.5, nullptr);
-						}
-						if ( stats[PLAYER_NUM]->getEffectActive(EFF_FLUTTER) )
-						{
-							players[PLAYER_NUM]->mechanics.updateSustainedSpellEvent(SPELL_FLUTTER, dist, 0.5, nullptr);
+							if ( stats[PLAYER_NUM]->getEffectActive(EFF_FLUTTER) )
+							{
+								players[PLAYER_NUM]->mechanics.updateSustainedSpellEvent(SPELL_FLUTTER, dist, 0.5, nullptr);
+							}
 						}
 					}
 				}
@@ -11789,10 +11810,10 @@ void actPlayer(Entity* my)
 							|| lavatiles[map.tiles[index_y * MAPLAYERS + index_x * MAPLAYERS * map.height]] )
 						{
 							players[PLAYER_NUM]->mechanics.updateSustainedSpellEvent(SPELL_LEVITATION, dist, 0.5, nullptr);
-						}
-						if ( stats[PLAYER_NUM]->getEffectActive(EFF_FLUTTER) )
-						{
-							players[PLAYER_NUM]->mechanics.updateSustainedSpellEvent(SPELL_FLUTTER, dist, 0.5, nullptr);
+							if ( stats[PLAYER_NUM]->getEffectActive(EFF_FLUTTER) )
+							{
+								players[PLAYER_NUM]->mechanics.updateSustainedSpellEvent(SPELL_FLUTTER, dist, 0.5, nullptr);
+							}
 						}
 					}
 				}

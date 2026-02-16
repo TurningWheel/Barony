@@ -1258,7 +1258,7 @@ void serverUpdatePlayerGameplayStats(int player, int gameplayStat, int changeval
 		net_packet->len = 12;
 		sendPacketSafe(net_sock, -1, net_packet, player - 1);
 	}
-	//messagePlayer(clientnum, "[DEBUG]: sent: %d, %d: val %d", gameplayStat, changeval, gameStatistics[gameplayStat]);
+	//messagePlayer(clientnum, MESSAGE_DEBUG, "[DEBUG]: sent: %d, %d: val %d", gameplayStat, changeval, gameStatistics[gameplayStat]);
 }
 
 void serverUpdatePlayerConduct(int player, int conduct, int value)
@@ -3402,6 +3402,26 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 					}
 					break;
 				}
+				case PARTICLE_EFFECT_PSYCHIC_SPEAR:
+				{
+					int duration = SDLNet_Read32(&net_packet->data[15]);
+					Sint32 dir = SDLNet_Read32(&net_packet->data[19]);
+					if ( Entity* fx = createParticleAestheticOrbit(entity, 2362, duration, PARTICLE_EFFECT_PSYCHIC_SPEAR) )
+					{
+						fx->yaw = dir / 256.0;
+						//fx->skill[3] = spell->caster;
+						fx->pitch = 0;// PI / 4;
+						fx->fskill[0] = fx->yaw + PI / 2 + (local_rng.rand() % 6) * PI / 3;
+						fx->fskill[1] = PI / 4 + PI / 8;// +(i + 1) * 2 * PI / 3;
+						fx->x = entity->x - 8.0 * cos(fx->yaw);
+						fx->y = entity->y - 8.0 * sin(fx->yaw);
+						fx->z = entity->z;// -8.0;
+						fx->scalex = 0.0;
+						fx->scaley = 0.0;
+						fx->scalez = 0.0;
+					}
+					break;
+				}
 				case PARTICLE_EFFECT_FOCI_LIGHT:
 				{
 					createParticleFociLight(entity, sprite, false);
@@ -4306,6 +4326,32 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 			if ( item->status == BROKEN && net_packet->data[4] == 4 && itemCategory(item) == SPELLBOOK )
 			{
 				consumeItem(item, clientnum);
+			}
+			else if ( item )
+			{
+				if ( players[clientnum]->isLocalPlayer() )
+				{
+					std::unordered_set<Uint32> appearancesOfSimilarItems;
+					std::vector<Item*> itemsToReroll;
+					for ( node_t* node = stats[clientnum]->inventory.first; node != NULL; node = node->next )
+					{
+						Item* item2 = static_cast<Item*>(node->element);
+						if ( item2 && item2 != item && !itemCompare(item, item2, true) )
+						{
+							itemsToReroll.push_back(item2);
+
+							// items are the same (incl. appearance!)
+							// if they shouldn't stack, we need to change appearance of the new item.
+							appearancesOfSimilarItems.insert(item2->appearance);
+						}
+					}
+
+					for ( auto rerollItem : itemsToReroll )
+					{
+						Item::itemFindUniqueAppearance(rerollItem, appearancesOfSimilarItems);
+						appearancesOfSimilarItems.insert(rerollItem->appearance);
+					}
+				}
 			}
 		}
 	}},
@@ -8127,7 +8173,7 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		    SDLNet_Read32(&net_packet->data[20]),
 		    net_packet->data[24],
 		    &stats[client]->inventory);
-		useItem(item, client);
+		useItem(item, client, nullptr, false, true);
 	}},
 
 	// use loot bag
@@ -8148,7 +8194,22 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		    SDLNet_Read32(&net_packet->data[20]),
 		    net_packet->data[24],
 		    &stats[client]->inventory);
-		equipItem(item, &stats[client]->weapon, client, false);
+		EquipItemResult res = equipItem(item, &stats[client]->weapon, client, false);
+		if ( res == EQUIP_ITEM_SUCCESS_UPDATE_QTY
+			|| res == EQUIP_ITEM_FAIL_CANT_UNEQUIP )
+		{
+			if ( item )
+			{
+				if ( item->node )
+				{
+					list_RemoveNode(item->node);
+				}
+				else
+				{
+					free(item);
+				}
+			}
+		}
 	}},
 
 	// equip item (as a shield)
@@ -8162,7 +8223,22 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		    SDLNet_Read32(&net_packet->data[20]),
 		    net_packet->data[24],
 		    &stats[client]->inventory);
-		equipItem(item, &stats[client]->shield, client, false);
+		EquipItemResult res = equipItem(item, &stats[client]->shield, client, false);
+		if ( res == EQUIP_ITEM_SUCCESS_UPDATE_QTY
+			|| res == EQUIP_ITEM_FAIL_CANT_UNEQUIP )
+		{
+			if ( item )
+			{
+				if ( item->node )
+				{
+					list_RemoveNode(item->node);
+				}
+				else
+				{
+					free(item);
+				}
+			}
+		}
 	}},
 
 	// consume torch item shield slot
@@ -8221,40 +8297,57 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		    net_packet->data[24],
 		    &stats[client]->inventory);
 		
+		int res = -1;
 		switch ( net_packet->data[27] )
 		{
 			case EQUIP_ITEM_SLOT_WEAPON:
-				equipItem(item, &stats[client]->weapon, client, false);
+				res = equipItem(item, &stats[client]->weapon, client, false);
 				break;
 			case EQUIP_ITEM_SLOT_SHIELD:
-				equipItem(item, &stats[client]->shield, client, false);
+				res = equipItem(item, &stats[client]->shield, client, false);
 				break;
 			case EQUIP_ITEM_SLOT_MASK:
-				equipItem(item, &stats[client]->mask, client, false);
+				res = equipItem(item, &stats[client]->mask, client, false);
 				break;
 			case EQUIP_ITEM_SLOT_HELM:
-				equipItem(item, &stats[client]->helmet, client, false);
+				res = equipItem(item, &stats[client]->helmet, client, false);
 				break;
 			case EQUIP_ITEM_SLOT_GLOVES:
-				equipItem(item, &stats[client]->gloves, client, false);
+				res = equipItem(item, &stats[client]->gloves, client, false);
 				break;
 			case EQUIP_ITEM_SLOT_BOOTS:
-				equipItem(item, &stats[client]->shoes, client, false);
+				res = equipItem(item, &stats[client]->shoes, client, false);
 				break;
 			case EQUIP_ITEM_SLOT_BREASTPLATE:
-				equipItem(item, &stats[client]->breastplate, client, false);
+				res = equipItem(item, &stats[client]->breastplate, client, false);
 				break;
 			case EQUIP_ITEM_SLOT_CLOAK:
-				equipItem(item, &stats[client]->cloak, client, false);
+				res = equipItem(item, &stats[client]->cloak, client, false);
 				break;
 			case EQUIP_ITEM_SLOT_AMULET:
-				equipItem(item, &stats[client]->amulet, client, false);
+				res = equipItem(item, &stats[client]->amulet, client, false);
 				break;
 			case EQUIP_ITEM_SLOT_RING:
-				equipItem(item, &stats[client]->ring, client, false);
+				res = equipItem(item, &stats[client]->ring, client, false);
 				break;
 			default:
 				break;
+		}
+
+		if ( res == EQUIP_ITEM_SUCCESS_UPDATE_QTY
+			|| res == EQUIP_ITEM_FAIL_CANT_UNEQUIP )
+		{
+			if ( item )
+			{
+				if ( item->node )
+				{
+					list_RemoveNode(item->node);
+				}
+				else
+				{
+					free(item);
+				}
+			}
 		}
 	}},
 
@@ -9349,6 +9442,25 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 					else
 					{
 						magicOnSpellCastEvent(players[player]->entity, players[player]->entity, nullptr, spellID, eventType, eventValue);
+					}
+				}
+			}
+		}
+	} },
+
+	// update breakable counter
+	{ 'GBRK', []() {
+		int player = net_packet->data[4];
+		if ( player >= 0 && player < MAXPLAYERS )
+		{
+			if ( !players[player]->isLocalPlayer() )
+			{
+				if ( players[player]->entity )
+				{
+					int eventType = net_packet->data[5];
+					if ( eventType == (int)Player::PlayerMechanics_t::BreakableEvent::GBREAK_DEGRADE )
+					{
+						players[player]->mechanics.incrementBreakableCounter(Player::PlayerMechanics_t::BreakableEvent::GBREAK_DEGRADE, nullptr);
 					}
 				}
 			}

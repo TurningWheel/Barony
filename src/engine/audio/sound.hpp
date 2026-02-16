@@ -177,6 +177,7 @@ struct EnsembleSounds_t
     Uint32 lastTickCombatPlaying = 0;
     Uint32 combatDelay = 0;
     Uint32 lastUpdateTick = 0;
+    bool firstTimeSetup = true;
 };
 extern EnsembleSounds_t ensembleSounds;
 

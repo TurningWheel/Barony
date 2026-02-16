@@ -1928,7 +1928,7 @@ spell_t* getSpellFromItem(const int player, Item* item, bool usePlayerInventory)
 	}
 	else
 	{
-		for ( auto spell : allGameSpells )
+		for ( auto& spell : allGameSpells )
 		{
 			if ( spell.second->ID == appearance )
 			{

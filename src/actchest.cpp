@@ -137,6 +137,9 @@ void createChestInventory(Entity* my, int chestType)
 		newItem(SPELLBOOK_VAMPIRIC_AURA, EXCELLENT, 0, 1, rng.rand(), true, inventory);
 	}
 
+	int lastGeneratedItemType = -1;
+	int lastGeneratedItemSpellType = -1;
+
 	switch ( chesttype )   //Note that all of this needs to be properly balanced over time.
 	{
 		//TODO: Make all applicable item additions work on a category based search?
@@ -157,7 +160,7 @@ void createChestInventory(Entity* my, int chestType)
 			Item* currentItem = newItem(itemLevelCurve(static_cast<Category>(cat), 0, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 			if ( currentItem )
 			{
-				itemLevelCurvePostProcess(my, currentItem, rng);
+				itemLevelCurvePostProcess(my, currentItem, rng, currentlevel, &lastGeneratedItemType, &lastGeneratedItemSpellType);
 			}
 		}
 		break;
@@ -169,7 +172,7 @@ void createChestInventory(Entity* my, int chestType)
 			Item* item = newItem(itemLevelCurve(SCROLL, 0, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 			if ( item )
 			{
-				itemLevelCurvePostProcess(my, item, rng);
+				itemLevelCurvePostProcess(my, item, rng, currentlevel, &lastGeneratedItemType, &lastGeneratedItemSpellType);
 			}
 		}
 		else
@@ -186,7 +189,7 @@ void createChestInventory(Entity* my, int chestType)
 						Item* item = newItem(itemLevelCurve(SCROLL, 0, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 						if ( item )
 						{
-							itemLevelCurvePostProcess(my, item, rng);
+							itemLevelCurvePostProcess(my, item, rng, currentlevel, &lastGeneratedItemType, &lastGeneratedItemSpellType);
 						}
 					}
 					else
@@ -211,7 +214,7 @@ void createChestInventory(Entity* my, int chestType)
 			Item* item = newItem(itemLevelCurve(FOOD, 0, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 			if ( item )
 			{
-				itemLevelCurvePostProcess(my, item, rng);
+				itemLevelCurvePostProcess(my, item, rng, currentlevel, &lastGeneratedItemType, &lastGeneratedItemSpellType);
 			}
 		}
 		if ( rng.rand() % 10 == 0 )
@@ -247,7 +250,7 @@ void createChestInventory(Entity* my, int chestType)
 				Item* item = newItem(itemLevelCurve(RING, 0, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 				if ( item )
 				{
-					itemLevelCurvePostProcess(my, item, rng);
+					itemLevelCurvePostProcess(my, item, rng, currentlevel, &lastGeneratedItemType, &lastGeneratedItemSpellType);
 				}
 			}
 			else
@@ -257,7 +260,7 @@ void createChestInventory(Entity* my, int chestType)
 				Item* item = newItem(itemLevelCurve(AMULET, 0, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 				if ( item )
 				{
-					itemLevelCurvePostProcess(my, item, rng);
+					itemLevelCurvePostProcess(my, item, rng, currentlevel, &lastGeneratedItemType, &lastGeneratedItemSpellType);
 				}
 			}
 		}
@@ -266,7 +269,7 @@ void createChestInventory(Entity* my, int chestType)
 			Item* item = newItem(SCROLL_IDENTIFY, static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 			if ( item )
 			{
-				itemLevelCurvePostProcess(my, item, rng);
+				itemLevelCurvePostProcess(my, item, rng, currentlevel, &lastGeneratedItemType, &lastGeneratedItemSpellType);
 			}
 		}
 		if ( rng.rand() % 4 == 0 ) // 25%
@@ -274,7 +277,7 @@ void createChestInventory(Entity* my, int chestType)
 			Item* item = newItem(SCROLL_REMOVECURSE, static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 			if ( item )
 			{
-				itemLevelCurvePostProcess(my, item, rng);
+				itemLevelCurvePostProcess(my, item, rng, currentlevel, &lastGeneratedItemType, &lastGeneratedItemSpellType);
 			}
 		}
 		break;
@@ -302,7 +305,7 @@ void createChestInventory(Entity* my, int chestType)
 			Item* item = newItem(itemLevelCurve(WEAPON, minimumQuality, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 			if ( item )
 			{
-				itemLevelCurvePostProcess(my, item, rng);
+				itemLevelCurvePostProcess(my, item, rng, currentlevel, &lastGeneratedItemType, &lastGeneratedItemSpellType);
 			}
 		}
 		break;
@@ -347,7 +350,7 @@ void createChestInventory(Entity* my, int chestType)
 			Item* item = newItem(itemLevelCurve(ARMOR, minimumQuality, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 			if ( item )
 			{
-				itemLevelCurvePostProcess(my, item, rng);
+				itemLevelCurvePostProcess(my, item, rng, currentlevel, &lastGeneratedItemType, &lastGeneratedItemSpellType);
 			}
 		}
 		break;
@@ -406,12 +409,12 @@ void createChestInventory(Entity* my, int chestType)
 			Item* item = newItem(itemLevelCurve(WEAPON, minimumQuality, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 			if ( item )
 			{
-				itemLevelCurvePostProcess(my, item, rng);
+				itemLevelCurvePostProcess(my, item, rng, currentlevel, &lastGeneratedItemType, &lastGeneratedItemSpellType);
 			}
 			item = newItem(itemLevelCurve(ARMOR, minimumQuality, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 			if ( item )
 			{
-				itemLevelCurvePostProcess(my, item, rng);
+				itemLevelCurvePostProcess(my, item, rng, currentlevel, &lastGeneratedItemType, &lastGeneratedItemSpellType);
 			}
 
 			// try for thrown items.
@@ -421,7 +424,7 @@ void createChestInventory(Entity* my, int chestType)
 				Item* thrown = newItem(itemLevelCurve(THROWN, minimumQuality, currentlevel, rng), WORN, 0, 3 + rng.rand() % 3, rng.rand(), false, inventory);
 				if ( thrown )
 				{
-					itemLevelCurvePostProcess(my, thrown, rng);
+					itemLevelCurvePostProcess(my, thrown, rng, currentlevel, &lastGeneratedItemType, &lastGeneratedItemSpellType);
 				}
 			}
 		}
@@ -472,7 +475,7 @@ void createChestInventory(Entity* my, int chestType)
 				Item* thrown = newItem(itemLevelCurve(THROWN, minimumQuality, currentlevel, rng), WORN, 0, 3 + rng.rand() % 3, rng.rand(), false, inventory);
 				if ( thrown )
 				{
-					itemLevelCurvePostProcess(my, thrown, rng);
+					itemLevelCurvePostProcess(my, thrown, rng, currentlevel, &lastGeneratedItemType, &lastGeneratedItemSpellType);
 				}
 			}
 			break;
@@ -505,7 +508,7 @@ void createChestInventory(Entity* my, int chestType)
 				Item* item = newItem(itemLevelCurve(SCROLL, 0, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 				if ( item )
 				{
-					itemLevelCurvePostProcess(my, item, rng);
+					itemLevelCurvePostProcess(my, item, rng, currentlevel, &lastGeneratedItemType, &lastGeneratedItemSpellType);
 				}
 			}
 			if ( rng.rand() % 10 == 0 )
@@ -541,7 +544,7 @@ void createChestInventory(Entity* my, int chestType)
 					//		spell_level = 0 + 5 * rng.rand() % 3;
 					//	}
 					//}
-					itemLevelCurvePostProcess(my, item, rng, spell_level);
+					itemLevelCurvePostProcess(my, item, rng, spell_level, &lastGeneratedItemType, &lastGeneratedItemSpellType);
 				}
 			}
 			break;
@@ -552,7 +555,7 @@ void createChestInventory(Entity* my, int chestType)
 			Item* item = newItem(itemLevelCurve(MAGICSTAFF, 0, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 			if ( item )
 			{
-				itemLevelCurvePostProcess(my, item, rng);
+				itemLevelCurvePostProcess(my, item, rng, currentlevel, &lastGeneratedItemType, &lastGeneratedItemSpellType);
 			}
 			break;
 		}
@@ -567,7 +570,7 @@ void createChestInventory(Entity* my, int chestType)
 				Item* item = newItem(itemLevelCurve(SCROLL, 0, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 				if ( item )
 				{
-					itemLevelCurvePostProcess(my, item, rng);
+					itemLevelCurvePostProcess(my, item, rng, currentlevel, &lastGeneratedItemType, &lastGeneratedItemSpellType);
 				}
 			}
 
@@ -583,13 +586,13 @@ void createChestInventory(Entity* my, int chestType)
 				//		spell_level = 0 + 5 * rng.rand() % 3;
 				//	}
 				//}
-				itemLevelCurvePostProcess(my, item, rng, spell_level);
+				itemLevelCurvePostProcess(my, item, rng, spell_level, &lastGeneratedItemType, &lastGeneratedItemSpellType);
 			}
 			//newItem(static_cast<ItemType>(MAGICSTAFF_LIGHT + rng.rand() % 10), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 			item = newItem(itemLevelCurve(MAGICSTAFF, 0, currentlevel + 5, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 			if ( item )
 			{
-				itemLevelCurvePostProcess(my, item, rng);
+				itemLevelCurvePostProcess(my, item, rng, currentlevel, &lastGeneratedItemType, &lastGeneratedItemSpellType);
 			}
 
 			if ( rng.rand() % 50 == 0 )
@@ -719,7 +722,7 @@ void createChestInventory(Entity* my, int chestType)
 			Item* item = newItem(itemLevelCurve(POTION, 0, currentlevel + 7, rng), static_cast<Status>(WORN + rng.rand() % 3), 0, 1, rng.rand(), false, inventory);
 			if ( item )
 			{
-				itemLevelCurvePostProcess(my, item, rng);
+				itemLevelCurvePostProcess(my, item, rng, currentlevel, &lastGeneratedItemType, &lastGeneratedItemSpellType);
 			}
 		}
 		if ( rng.rand() % 8 == 0 )

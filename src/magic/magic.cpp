@@ -177,6 +177,8 @@ bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, En
 
 	playSoundEntity(hit.entity, 174, 64); //TODO: Dominate spell sound effect.
 
+	bool previousLeaderMatching = hit.entity->monsterAllyGetPlayerLeader() == parent;
+
 	//Make the monster a follower.
 	bool dominated = forceFollower(caster, *hit.entity);
 
@@ -185,6 +187,11 @@ bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, En
 		Uint32 color = makeColorRGB(0, 255, 0);
 		if ( parent->behavior == &actPlayer )
 		{
+			if ( previousLeaderMatching )
+			{
+				steamAchievementClient(parent->skill[2], "BARONY_ACH_CONFESSOR");
+			}
+
 			messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, Language::get(2428), Language::get(2427), MSG_COMBAT);
 			if ( hit.entity->monsterAllyIndex != parent->skill[2] )
 			{
@@ -1346,6 +1353,7 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 			bool allowStealFollowers = false;
 			Stat* casterStats = nullptr;
 			int currentCharmedFollowerCount = 0;
+			int numFollowers = 0;
 			if ( parent )
 			{
 				casterStats = parent->getStats();
@@ -1380,6 +1388,27 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 						else if ( difficulty <= 2 )
 						{
 							chance = 60; // special base chance for monsters.
+						}
+
+						if ( Entity* leader = parent->monsterAllyGetPlayerLeader() )
+						{
+							if ( Stat* leaderStats = leader->getStats() )
+							{
+								// search followers for charmed.
+								for ( node_t* node = leaderStats->FOLLOWERS.first; node != NULL; node = node->next )
+								{
+									Uint32* c = (Uint32*)node->element;
+									Entity* follower = nullptr;
+									if ( c )
+									{
+										follower = uidToEntity(*c);
+									}
+									if ( follower )
+									{
+										++numFollowers;
+									}
+								}
+							}
 						}
 					}
 					else if ( parent->behavior == &actPlayer )
@@ -1511,6 +1540,11 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 								// i am their leader, ignore
 								doPacify = true;
 							}
+						}
+
+						if ( numFollowers >= 8 )
+						{
+							doPacify = true; // stop after a point
 						}
 					}
 				}
@@ -3892,7 +3926,7 @@ bool applyGenericMagicDamage(Entity* caster, Entity* hitentity, Entity& damageSo
 				if ( !targetStats->helmet && targetStats->getEffectActive(EFF_GROWTH) > 1 )
 				{
 					int bonus = std::min(3, targetStats->getEffectActive(EFF_GROWTH) - 1);
-					fireMultiplier += 0.05;
+					fireMultiplier += 0.05 * bonus;
 				}
 			}
 			if ( targetStats->type == SALAMANDER )

@@ -537,6 +537,24 @@ int initApp(char const * const title, int fullscreen)
 	createLoadingScreen(10);
 	doLoadingScreen();
 
+	std::atomic_bool loading_music_done{ false };
+	auto loading_music_task = std::async(std::launch::async, [&loading_music_done]() {
+		File* fp;
+		updateLoadingScreen(10);
+#ifndef EDITOR
+		if ( !loadMusic() )
+		{
+			printlog("WARN: loadMusic() from initApp() failed!");
+		}
+#endif
+		loading_music_done = true;
+	});
+	while ( !loading_music_done )
+	{
+		doLoadingScreen();
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+	}
+
 	// load sprites
 	printlog("loading sprites...\n");
 	fp = openDataFile("images/sprites.txt", "rb");

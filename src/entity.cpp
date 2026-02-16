@@ -4522,11 +4522,28 @@ void Entity::handleEffects(Stat* myStats)
 		{
 			Sint32 oldMP = myStats->MP;
 			myStats->MP += mpRestore;
+			Sint32 prevMaxMP = myStats->MAXMP;
+			if ( myStats->MISC_FLAGS[STAT_FLAG_MP_BONUS] != 0 )
+			{
+				myStats->MAXMP -= myStats->MISC_FLAGS[STAT_FLAG_MP_BONUS];
+			}
 			myStats->MAXMP += mpMod;
+
 			if ( behavior == &actPlayer && myStats->playerRace == RACE_INSECTOID && myStats->stat_appearance == 0 )
 			{
 				myStats->MAXMP = std::min(100, myStats->MAXMP);
+				if ( myStats->MISC_FLAGS[STAT_FLAG_MP_BONUS] != 0 )
+				{
+					myStats->MAXMP += myStats->MISC_FLAGS[STAT_FLAG_MP_BONUS];
+				}
 				this->playerInsectoidIncrementHungerToMP(myStats->MP - oldMP);
+			}
+			else
+			{
+				if ( myStats->MISC_FLAGS[STAT_FLAG_MP_BONUS] != 0 )
+				{
+					myStats->MAXMP += myStats->MISC_FLAGS[STAT_FLAG_MP_BONUS];
+				}
 			}
 			myStats->MP = std::min(myStats->MP, myStats->MAXMP);
 		}
@@ -5186,7 +5203,7 @@ void Entity::handleEffects(Stat* myStats)
 	bool naturalHeal = false;
 	if ( healthRegenInterval >= 0 )
 	{
-		if ( myStats->HP < myStats->MAXHP )
+		if ( myStats->HP < myStats->MAXHP && myStats->HP > 0 )
 		{
 			this->char_heal++;
 			/*if ( (svFlags & SV_FLAG_HUNGER) || behavior == &actMonster || (behavior == &actPlayer && myStats->type == SKELETON) )*/
@@ -5224,7 +5241,7 @@ void Entity::handleEffects(Stat* myStats)
   		int interval = getSpellEffectDurationSecondaryFromID(SPELL_FOCI_LIGHT_PEACE, nullptr, nullptr, nullptr);
 		interval -= (effectStrength - 1) * getSpellDamageSecondaryFromID(SPELL_FOCI_LIGHT_PEACE, nullptr, nullptr, nullptr);
 		interval = std::max(1, interval);
-		if ( ((myStats->EFFECTS_ACCRETION_TIME[EFF_FOCI_LIGHT_PEACE]) % interval == 0) )
+		if ( ((myStats->EFFECTS_ACCRETION_TIME[EFF_FOCI_LIGHT_PEACE]) % interval == 0) && myStats->HP > 0 )
 		{
 			Sint32 oldHP = myStats->HP;
 			this->modHP(1);
@@ -5310,7 +5327,7 @@ void Entity::handleEffects(Stat* myStats)
 	}
 
 	if ( myStats->getEffectActive(EFF_MARIGOLD) && (svFlags & SV_FLAG_HUNGER)
-		&& myStats->EFFECTS_TIMERS[EFF_MARIGOLD] > 0 )
+		&& myStats->EFFECTS_TIMERS[EFF_MARIGOLD] > 0 && myStats->HP > 0 )
 	{
 		if ( behavior == &actPlayer )
 		{
@@ -5345,7 +5362,7 @@ void Entity::handleEffects(Stat* myStats)
 	}
 
 	if ( myStats->getEffectActive(EFF_HP_MP_REGEN) && (svFlags & SV_FLAG_HUNGER)
-		&& myStats->EFFECTS_TIMERS[EFF_HP_MP_REGEN] > 0 )
+		&& myStats->EFFECTS_TIMERS[EFF_HP_MP_REGEN] > 0 && myStats->HP > 0 )
 	{
 		if ( behavior == &actPlayer )
 		{
@@ -5982,6 +5999,9 @@ void Entity::handleEffects(Stat* myStats)
 						default:
 							break;
 						}
+
+						mpcost = std::max(1, myStats->MAXMP * mpcost / 100);
+
 						bool failedCast = false;
 						if ( players[player]->mechanics.ensembleRequireRecast )
 						{
@@ -8135,7 +8155,8 @@ real_t Entity::getACEffectiveness(Entity* my, Stat* myStats, bool isPlayer, Enti
 		return 1.0;
 	}
 
-	if ( myStats->defending || (myStats->parrying && myStats->weapon && itemCategory(myStats->weapon) == WEAPON) )
+	if ( (myStats->defending && !(myStats->shield && !Item::doesItemProvideBeatitudeAC(myStats->shield->type)))
+		|| (myStats->parrying && myStats->weapon && itemCategory(myStats->weapon) == WEAPON) )
 	{
 		return 1.0;
 	}
@@ -8269,7 +8290,7 @@ Sint32 Entity::getAttack(Entity* my, Stat* myStats, bool isPlayer, int chargeMod
 	if ( !shapeshifted && myStats->weapon && myStats->weapon->type == RAPIER )
 	{
 		int atk = statGetDEX(myStats, my);
-		if ( chargeModifier >= 0 && chargeModifier < Stat::getMaxAttackCharge(myStats) )
+		if ( chargeModifier >= 0 && chargeModifier < Stat::getMaxAttackCharge(myStats) && my && my->behavior == &actPlayer )
 		{
 			atk /= 2;
 		}
@@ -11383,7 +11404,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						{
 							if ( (previousMonsterState == MONSTER_STATE_WAIT
 								|| previousMonsterState == MONSTER_STATE_PATH
-								|| (previousMonsterState == MONSTER_STATE_HUNT && uidToEntity(hit.entity->monsterTarget) == nullptr))
+								|| (previousMonsterState == MONSTER_STATE_HUNT /*&& uidToEntity(hit.entity->monsterTarget) == nullptr*/))
 								&& !hitstats->getEffectActive(EFF_ROOTED) )
 							{
 								// unaware monster, get backstab damage.
@@ -12868,12 +12889,20 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 							if ( (previousMonsterState == MONSTER_STATE_WAIT
 								|| previousMonsterState == MONSTER_STATE_PATH
-								|| (previousMonsterState == MONSTER_STATE_HUNT && uidToEntity(hit.entity->monsterTarget) == nullptr))
+								|| (previousMonsterState == MONSTER_STATE_HUNT /*&& uidToEntity(hit.entity->monsterTarget) == nullptr*/))
 								&& !hitstats->getEffectActive(EFF_ROOTED) )
 							{
 								// unaware monster, get backstab damage.
 								backstab = true;
 								int bonus = (stats[player]->getModifiedProficiency(PRO_STEALTH) / 20 + 2) * (2 * stealthCapstoneBonus);
+								int chance = 0; // 3 in 4
+								if ( previousMonsterState == MONSTER_STATE_HUNT && uidToEntity(hit.entity->monsterTarget) != nullptr )
+								{
+									// reduced damage
+									chance = 2; // 1 in 4
+									bonus = (stats[player]->getModifiedProficiency(PRO_STEALTH) / 20 + 1) * (stealthCapstoneBonus);
+								}
+
 								if ( myStats->helmet && myStats->helmet->type == HAT_HOOD_ASSASSIN )
 								{
 									if ( myStats->helmet->beatitude >= 0 || shouldInvertEquipmentBeatitude(myStats) )
@@ -12901,7 +12930,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 									}
 									else
 									{
-										if ( local_rng.rand() % 4 > 0 )
+										if ( local_rng.rand() % 4 > chance )
 										{
 											this->increaseSkill(PRO_STEALTH);
 											if ( player >= 0 )
@@ -12980,7 +13009,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						if ( charge >= Stat::getMaxAttackCharge(myStats) )
 						{
-							chargeMult += 0.5;
+							chargeMult += 0.25;
 						}
 					}
 					damage *= chargeMult;
@@ -14227,8 +14256,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 								envenomWeapon = true;
 								hitstats->setEffectActive(EFF_POISONED, 1);
 
-								int duration = 310 * envenomDamage;
-								hitstats->EFFECTS_TIMERS[EFF_POISONED] = std::max(200, duration - hit.entity->getCON() * 20);
+								int duration = TICKS_PER_SECOND * envenomDamage + 10;
+								hitstats->EFFECTS_TIMERS[EFF_POISONED] = std::max(160, duration - hit.entity->getCON() * 20);
 								hitstats->poisonKiller = getUID();
 								if ( playerhit >= 0 )
 								{
@@ -15582,6 +15611,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						if ( achievementObserver.playerAchievements[playerhit].parryTank > 0 )
 						{
 							achievementObserver.playerAchievements[playerhit].parryTank = -1;
+							serverUpdatePlayerGameplayStats(playerhit, STATISTICS_PARRY_TANK, 0);
 						}
 					}
 					if ( parriedDamage > 0 )
@@ -15707,12 +15737,14 @@ void Entity::attack(int pose, int charge, Entity* target)
 							if ( damage == 0 )
 							{
 								achievementObserver.playerAchievements[playerhit].parryTank += 1;
+								serverUpdatePlayerGameplayStats(playerhit, STATISTICS_PARRY_TANK, 1);
 							}
 							else
 							{
 								if ( achievementObserver.playerAchievements[playerhit].parryTank > 0 )
 								{
 									achievementObserver.playerAchievements[playerhit].parryTank = -1;
+									serverUpdatePlayerGameplayStats(playerhit, STATISTICS_PARRY_TANK, 0);
 								}
 							}
 						}
@@ -18128,7 +18160,7 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 					int effectInflictedBy = (srcStats->getEffectActive(EFF_DIVINE_FIRE) & 0xF0) >> 4;
 					if ( behavior == &actPlayer && !checkFriend(src) )
 					{
-						if ( effectInflictedBy & (1 + skill[2]) )
+						if ( effectInflictedBy == (1 + skill[2]) )
 						{
 							minRoll += srcStats->getEffectActive(EFF_DIVINE_FIRE) & 0xF;
 							bonus = true;
@@ -24894,6 +24926,7 @@ bool Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 					playSoundEntity(this, 35 + local_rng.rand() % 3, 64);
 					addItemToMonsterInventory(item);
 					item = nullptr;
+					entity->removeLightField();
 					list_RemoveNode(entity->mynode);
 					pickedUpItemReturnValue = true;
 				}
@@ -24907,6 +24940,7 @@ bool Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 					{
 						messagePlayer(monsterAllyIndex, MESSAGE_WORLD, Language::get(3145), items[item->type].getUnidentifiedName());
 					}
+					entity->removeLightField();
 					list_RemoveNode(entity->mynode); // slimes eat the item up.
 					pickedUpItemReturnValue = true;
 				}
@@ -24985,6 +25019,7 @@ bool Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 
 					(*shouldWield) = item;
 					item = nullptr;
+					entity->removeLightField();
 					list_RemoveNode(entity->mynode);
 					pickedUpItemReturnValue = true;
 				}
@@ -25007,6 +25042,7 @@ bool Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 						addItemToMonsterInventory(item);
 					}
 					item = nullptr;
+					entity->removeLightField();
 					list_RemoveNode(entity->mynode);
 					pickedUpItemReturnValue = true;
 				}
@@ -25026,6 +25062,7 @@ bool Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 									// stack the items.
 									toStack->count += item->count;
 									item = nullptr;
+									entity->removeLightField();
 									list_RemoveNode(entity->mynode);
 									pickedUpItemReturnValue = true;
 									addItem = false;
@@ -25038,6 +25075,7 @@ bool Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 					{
 						addItemToMonsterInventory(item);
 						item = nullptr;
+						entity->removeLightField();
 						list_RemoveNode(entity->mynode);
 						pickedUpItemReturnValue = true;
 					}
@@ -25837,6 +25875,31 @@ bool Entity::degradeArmor(Stat& hitstats, Item& armor, int armornum)
 			Compendium_t::Events_t::eventUpdate(playerhit, Compendium_t::CPDM_BROKEN, armor.type, 1);
 		}
 	}
+
+	if ( playerhit >= 0 && players[playerhit]->isLocalPlayer() )
+	{
+		std::unordered_set<Uint32> appearancesOfSimilarItems;
+		std::vector<Item*> itemsToReroll;
+		for ( node_t* node = stats[playerhit]->inventory.first; node != NULL; node = node->next )
+		{
+			Item* item2 = static_cast<Item*>(node->element);
+			if ( item2 && item2 != &armor && !itemCompare(&armor, item2, true) )
+			{
+				itemsToReroll.push_back(item2);
+
+				// items are the same (incl. appearance!)
+				// if they shouldn't stack, we need to change appearance of the new item.
+				appearancesOfSimilarItems.insert(item2->appearance);
+			}
+		}
+
+		for ( auto rerollItem : itemsToReroll )
+		{
+			Item::itemFindUniqueAppearance(rerollItem, appearancesOfSimilarItems);
+			appearancesOfSimilarItems.insert(rerollItem->appearance);
+		}
+	}
+
 	if ( playerhit > 0 && multiplayer == SERVER && !players[playerhit]->isLocalPlayer() )
 	{
 		strcpy((char*)net_packet->data, "ARMR");

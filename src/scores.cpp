@@ -3094,7 +3094,7 @@ void updateGameplayStatisticsInMainLoop()
 		}
 	}
 
-	if ( multiplayer != CLIENT && ticks % (TICKS_PER_SECOND / 2) == 0 )
+	/*if ( multiplayer != CLIENT && ticks % (TICKS_PER_SECOND / 2) == 0 )
 	{
 		for ( int i = 0; i < MAXPLAYERS; ++i )
 		{
@@ -3109,7 +3109,7 @@ void updateGameplayStatisticsInMainLoop()
 				achievementObserver.playerAchievements[i].parryTank = 0;
 			}
 		}
-	}
+	}*/
 
 
 	if ( ticks % (TICKS_PER_SECOND * 5) == 0 )
@@ -4800,10 +4800,10 @@ void AchievementObserver::updatePlayerAchievement(int player, Achievement achiev
 		case BARONY_ACH_COOP_ESCAPE_MINES:
 		{
 			std::unordered_set<int> races;
-			std::unordered_set<int> short_races;
+			int shortRaces = 0;
+			int totalRaces = 0;
 			std::unordered_set<int> classes;
 			std::vector<int> awardAchievementsToAllPlayers;
-			int num = 0;
 			for ( int i = 0; i < MAXPLAYERS; ++i )
 			{
 				if ( !client_disconnected[i] )
@@ -4817,17 +4817,17 @@ void AchievementObserver::updatePlayerAchievement(int player, Achievement achiev
 							|| (stats[i]->playerRace == RACE_DRYAD && stats[i]->sex == FEMALE)
 							|| (stats[i]->playerRace == RACE_MYCONID && stats[i]->sex == MALE) )
 						{
-							short_races.insert(stats[i]->playerRace);
+							++shortRaces;
 						}
 					}
 					//if ( client_classes[i] > CLASS_MONK )
 					{
 						classes.insert(client_classes[i]);
 					}
-					++num;
+					++totalRaces;
 				}
 			}
-			if ( gameModeManager.currentSession.challengeRun.isActive() && num >= 2 )
+			if ( gameModeManager.currentSession.challengeRun.isActive() && totalRaces >= 2 )
 			{
 				awardAchievementsToAllPlayers.push_back(BARONY_ACH_SPROUTS);
 			}
@@ -4872,7 +4872,7 @@ void AchievementObserver::updatePlayerAchievement(int player, Achievement achiev
 					awardAchievementsToAllPlayers.push_back(BARONY_ACH_FOREIGN_EXCHANGE);
 				}
 
-				if ( races.size() >= 3 && short_races.size() == races.size() )
+				if ( totalRaces >= 3 && shortRaces == totalRaces )
 				{
 					awardAchievementsToAllPlayers.push_back(BARONY_ACH_SHORT_SHORTS);
 				}

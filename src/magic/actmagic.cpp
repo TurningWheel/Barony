@@ -3314,7 +3314,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									if ( !hitstats->helmet && hitstats->getEffectActive(EFF_GROWTH) > 1 )
 									{
 										int bonus = std::min(3, hitstats->getEffectActive(EFF_GROWTH) - 1);
-										fireMultiplier += 0.05;
+										fireMultiplier += 0.05 * bonus;
 									}
 								}
 								if ( hitstats->type == SALAMANDER )
@@ -4784,6 +4784,8 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								fx->scalez = 0.0;
 								fx->actmagicSpellbookBonus = my->actmagicSpellbookBonus;
 								fx->actmagicFromSpellbook = my->actmagicFromSpellbook;
+
+								serverSpawnMiscParticles(hit.entity, PARTICLE_EFFECT_PSYCHIC_SPEAR, 2362, 0, 5 * TICKS_PER_SECOND, fx->yaw * 256.0);
 							}
 						}
 					}
@@ -4904,7 +4906,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								if ( hitstats && hitstats->getEffectActive(EFF_ASLEEP) )
 								{
 									// check to see if we're reapplying the sleep effect.
-									int preventSleepRoll = (local_rng.rand() % 4) - resistance;
+									int preventSleepRoll = (local_rng.rand() % 1) - resistance;
 									if ( hit.entity->behavior == &actPlayer || (preventSleepRoll <= 0) )
 									{
 										magicTrapReapplySleep = false;
@@ -9147,20 +9149,23 @@ void actParticleAestheticOrbit(Entity* my)
 				{
 					playSoundEntityLocal(my, 821, 92);
 
-					Entity* caster = uidToEntity(my->skill[3]);
-					int damage = getSpellDamageFromID(SPELL_PSYCHIC_SPEAR, caster, caster ? caster->getStats() : nullptr, my, my->actmagicSpellbookBonus / 100.0);
-					if ( Stat* parentStats = parent->getStats() )
+					if ( multiplayer != CLIENT )
 					{
-						real_t hpThreshold = getSpellEffectDurationSecondaryFromID(SPELL_PSYCHIC_SPEAR, caster, caster ? caster->getStats() : nullptr, my, my->actmagicSpellbookBonus / 100.0) / 100.0;
-						real_t parentHPRatio = std::min(1.0, parentStats->HP / std::max(1.0, (real_t)parentStats->MAXHP));
-						if ( parentHPRatio >= hpThreshold )
+						Entity* caster = uidToEntity(my->skill[3]);
+						int damage = getSpellDamageFromID(SPELL_PSYCHIC_SPEAR, caster, caster ? caster->getStats() : nullptr, my, my->actmagicSpellbookBonus / 100.0);
+						if ( Stat* parentStats = parent->getStats() )
 						{
-							real_t scale = std::min(1.0, std::max(0.0, (parentHPRatio - hpThreshold) / (1.0 - hpThreshold)));
-							damage += scale * getSpellDamageSecondaryFromID(SPELL_PSYCHIC_SPEAR, caster, caster ? caster->getStats() : nullptr, my, my->actmagicSpellbookBonus / 100.0);
+							real_t hpThreshold = getSpellEffectDurationSecondaryFromID(SPELL_PSYCHIC_SPEAR, caster, caster ? caster->getStats() : nullptr, my, my->actmagicSpellbookBonus / 100.0) / 100.0;
+							real_t parentHPRatio = std::min(1.0, parentStats->HP / std::max(1.0, (real_t)parentStats->MAXHP));
+							if ( parentHPRatio >= hpThreshold )
+							{
+								real_t scale = std::min(1.0, std::max(0.0, (parentHPRatio - hpThreshold) / (1.0 - hpThreshold)));
+								damage += scale * getSpellDamageSecondaryFromID(SPELL_PSYCHIC_SPEAR, caster, caster ? caster->getStats() : nullptr, my, my->actmagicSpellbookBonus / 100.0);
+							}
 						}
-					}
 
-					applyGenericMagicDamage(caster, parent, *my, SPELL_PSYCHIC_SPEAR, damage, true);
+						applyGenericMagicDamage(caster, parent, *my, SPELL_PSYCHIC_SPEAR, damage, true);
+					}
 
 					if ( Entity* fx = createParticleAOEIndicator(my, my->x, my->y, 0.0, TICKS_PER_SECOND, 16.0) )
 					{
@@ -10594,7 +10599,7 @@ Entity* floorMagicCreateRoots(real_t x, real_t y, Entity* caster, int damage, in
 	return spellTimer;
 }
 
-void floorMagicCreateSpores(Entity* spawnOnEntity, real_t x, real_t y, Entity* caster, int damage, int spellID)
+void floorMagicCreateSpores(Entity* spawnOnEntity, real_t x, real_t y, Entity* caster, int damage, int spellID, bool magicstaff)
 {
 	if ( multiplayer == CLIENT )
 	{
@@ -10670,6 +10675,7 @@ void floorMagicCreateSpores(Entity* spawnOnEntity, real_t x, real_t y, Entity* c
 	spellTimer->particleTimerVariable1 = damage;
 	spellTimer->particleTimerVariable2 = spellID;
 	spellTimer->particleTimerVariable4 = 0;
+	spellTimer->actmagicCastByMagicstaff = magicstaff ? 1 : 0;
 
 	auto& timerEffects = particleTimerEffects[spellTimer->getUID()];
 
@@ -12602,7 +12608,15 @@ void actParticleTimer(Entity* my)
 							}
 							else if ( target->behavior == &::actChest || target->getMonsterTypeFromSprite() == MIMIC )
 							{
-								target->chestHandleDamageMagic(my->particleTimerVariable1, *my, caster);
+								if ( target->behavior == &actMonster && target->getStats() 
+									&& target->getStats()->getEffectActive(EFF_MAGIC_GREASE) )
+								{
+									target->chestHandleDamageMagic(my->particleTimerVariable1 * 2, *my, caster);
+								}
+								else
+								{
+									target->chestHandleDamageMagic(my->particleTimerVariable1, *my, caster);
+								}
 								magicOnSpellCastEvent(caster, caster, target, SPELL_BOOBY_TRAP, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
 							}
 							else if ( target->isDamageableCollider() )
@@ -13710,6 +13724,7 @@ void actParticleTimer(Entity* my)
 								fx->sizex = 8;
 								fx->sizey = 8;
 								fx->parent = my->getUID();
+								fx->actmagicCastByMagicstaff = my->actmagicCastByMagicstaff;
 								floorMagicParticleSetUID(*fx, true);
 							}
 						}

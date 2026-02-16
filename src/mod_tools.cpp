@@ -838,7 +838,7 @@ void IRCHandler_t::handleMessage(std::string& msg)
 #endif // !NINTENDO
 
 Uint32 ItemTooltips_t::itemsJsonHashRead = 0;
-const Uint32 ItemTooltips_t::kItemsJsonHash = 2032888212;
+const Uint32 ItemTooltips_t::kItemsJsonHash = 1443175221;
 
 void ItemTooltips_t::setSpellValueIfKeyPresent(ItemTooltips_t::spellItem_t& t, rapidjson::Value::ConstMemberIterator item_itr, Uint32& hash, Uint32& hashShift, const char* key, int& toSet)
 {
@@ -2835,7 +2835,7 @@ std::string ItemTooltips_t::getSpellIconText(const int player, Item& item, const
 		snprintf(buf, sizeof(buf), str.c_str(), numSummons);
 		str = buf;
 	}
-	else if ( spell->ID == SPELL_BREATHE_FIRE )
+	else if ( spell->ID == SPELL_BREATHE_FIRE || spell->ID == SPELL_BLOOD_WAVES )
 	{
 		std::string result = getSpellIconFormatText(player, item, str, spell, 0, compendiumTooltipIntro);
 		if ( result != "" )
@@ -3371,6 +3371,10 @@ Sint32 getStatAttributeBonusFromItem(const int player, Item& item, std::string& 
 	Sint32 stat = 0;
 	bool cursedItemIsBuff = shouldInvertEquipmentBeatitude(stats[player]);
 	if ( item.beatitude >= 0 || cursedItemIsBuff )
+	{
+		stat += items[item.type].attributes[attribute];
+	}
+	else if ( items[item.type].attributes[attribute] < 0 )
 	{
 		stat += items[item.type].attributes[attribute];
 	}
@@ -4232,18 +4236,33 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 					|| ((skill == PRO_MYSTICISM || skill == PRO_SORCERY || skill == PRO_THAUMATURGY)
 						&& itemTypeIsFoci(item.type)) )
 				{
-					int bonus = 10;
-					if ( skill == PRO_MYSTICISM || skill == PRO_SORCERY || skill == PRO_THAUMATURGY )
+					if ( itemTypeIsFoci(item.type) )
 					{
-						bonus = 5;
-					}
-					if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
-					{
-						equipmentBonus += std::min(Stat::maxEquipmentBonusToSkill, (1 + abs(item.beatitude)) * bonus);
+						if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+						{
+							equipmentBonus = 10;
+							equipmentBonus += 5 * std::min(10, abs(item.beatitude));
+						}
+						else
+						{
+							equipmentBonus = 10;
+						}
 					}
 					else
 					{
-						equipmentBonus += bonus;
+						int bonus = 10;
+						if ( skill == PRO_MYSTICISM || skill == PRO_SORCERY || skill == PRO_THAUMATURGY )
+						{
+							bonus = 5;
+						}
+						if ( item.beatitude >= 0 || shouldInvertEquipmentBeatitude(stats[player]) )
+						{
+							equipmentBonus += std::min(Stat::maxEquipmentBonusToSkill, (1 + abs(item.beatitude)) * bonus);
+						}
+						else
+						{
+							equipmentBonus += bonus;
+						}
 					}
 				}
 
@@ -5346,7 +5365,7 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 				}
 				if ( eff1_test > eff1 )
 				{
-					nextCHRStat = i;
+					nextCHRStat = std::max(1, i - 1);
 					break;
 				}
 			}
@@ -11658,6 +11677,9 @@ void Mods::unloadMods(bool force)
 	static int modelsIndexUpdateStart = 1;
 	static int modelsIndexUpdateEnd = nummodels;
 
+	static std::vector<polymodel_t> polymodelsToUpdate;
+	polymodelsToUpdate.reserve(nummodels);
+
 	// begin async load process
 	std::atomic_bool loading_done{ false };
 	auto loading_task = std::async(std::launch::async, [&loading_done]() {
@@ -11681,6 +11703,13 @@ void Mods::unloadMods(bool force)
 					free(polymodels[c].faces);
 					polymodels[c].faces = nullptr;
 				}
+
+				polymodelsToUpdate.emplace_back(polymodel_t());
+				polymodelsToUpdate.back().faces = nullptr;
+				polymodelsToUpdate.back().vao = polymodels[c].vao;
+				polymodelsToUpdate.back().positions = polymodels[c].positions;
+				polymodelsToUpdate.back().colors = polymodels[c].colors;
+				polymodelsToUpdate.back().normals = polymodels[c].normals;
 			}
 			free(polymodels);
 			polymodels = nullptr;
@@ -11734,6 +11763,22 @@ void Mods::unloadMods(bool force)
 			GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].normals));
 		}
 	}
+	for ( auto& polymodel : polymodelsToUpdate )
+	{
+		if ( polymodel.vao ) {
+			GL_CHECK_ERR(glDeleteVertexArrays(1, &polymodel.vao));
+		}
+		if ( polymodel.positions ) {
+			GL_CHECK_ERR(glDeleteBuffers(1, &polymodel.positions));
+		}
+		if ( polymodel.colors ) {
+			GL_CHECK_ERR(glDeleteBuffers(1, &polymodel.colors));
+		}
+		if ( polymodel.normals ) {
+			GL_CHECK_ERR(glDeleteBuffers(1, &polymodel.normals));
+		}
+	}
+	polymodelsToUpdate.clear();
 	generateVBOs(0, nummodels);
 
 	// reload books
