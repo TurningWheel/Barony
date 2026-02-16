@@ -3403,9 +3403,12 @@ static ConsoleCommand ccmd_ensemble_transition_state("/ensemble_transition_state
 		}
 	});
 
-bool checkSoundReady(FMOD::Sound* sound)
+bool checkSoundReady(FMOD::Sound* sound, const char* str, int i, int j)
 {
-	if ( !sound ) { return true; }
+	if ( !sound ) { 
+		printlog("EnsembleSounds_t::setup() Warn: no sound pointer for %s: %d %d", str, i, j);
+		return true; 
+	}
 	FMOD_OPENSTATE openState = FMOD_OPENSTATE_LOADING;
 	unsigned int percentBuffered = 0;
 	bool starving = false;
@@ -3414,7 +3417,7 @@ bool checkSoundReady(FMOD::Sound* sound)
 
 	if ( fmod_result == FMOD_OK )
 	{
-		if ( openState != FMOD_OPENSTATE_LOADING )
+		if ( openState == FMOD_OPENSTATE_READY )
 		{
 			return true;
 		}
@@ -3436,7 +3439,8 @@ void EnsembleSounds_t::setup()
 
 	for ( int i = 0; i < NUMENSEMBLEMUSIC; )
 	{
-		bool result = checkSoundReady(exploreSound[i]);
+		fmod_system->update();
+		bool result = checkSoundReady(exploreSound[i], "explore sound", i, 0);
 		if ( !result )
 		{
 			i = 0;
@@ -3447,7 +3451,8 @@ void EnsembleSounds_t::setup()
 
 	for ( int i = 0; i < NUMENSEMBLEMUSIC; )
 	{
-		bool result = checkSoundReady(combatSound[i]);
+		fmod_system->update();
+		bool result = checkSoundReady(combatSound[i], "combat sound", i, 0);
 		if ( !result )
 		{
 			i = 0;
@@ -3458,10 +3463,18 @@ void EnsembleSounds_t::setup()
 
 	for ( int i = 0; i < NUMENSEMBLEMUSIC; )
 	{
+		fmod_system->update();
 		bool result = false;
 		for ( int j = 0; j < NUM_COMBAT_TRANS; ++j )
 		{
-			result = checkSoundReady(combatTransSound[j][i]);
+			if ( j >= 2 )
+			{
+				result = true;
+			}
+			else
+			{
+				result = checkSoundReady(combatTransSound[j][i], "combat trans sound", i, j);
+			}
 			if ( !result )
 			{
 				break;
@@ -3476,7 +3489,14 @@ void EnsembleSounds_t::setup()
 
 		for ( int j = 0; j < NUM_EXPLORE_TRANS; ++j )
 		{
-			result = checkSoundReady(exploreTransSound[j][i]);
+			if ( j != 3 )
+			{
+				result = true;
+			}
+			else
+			{
+				result = checkSoundReady(exploreTransSound[j][i], "explore trans sound", i, j);
+			}
 			if ( !result )
 			{
 				break;
